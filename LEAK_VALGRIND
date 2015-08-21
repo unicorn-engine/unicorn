@@ -1,0 +1,237 @@
+==25446== Memcheck, a memory error detector
+==25446== Copyright (C) 2002-2013, and GNU GPL'd, by Julian Seward et al.
+==25446== Using Valgrind-3.10.1 and LibVEX; rerun with -h for copyright info
+==25446== Command: ./samples/sample_x86.static -32
+==25446== 
+==25446== Warning: set address range perms: large range [0xe30000, 0x14e30000) (defined)
+==25446== Conditional jump or move depends on uninitialised value(s)
+==25446==    at 0x4379C1: tcg_target_init_x86_64 (tcg-target.c:2280)
+==25446==    by 0x437F8F: tcg_context_init_x86_64 (tcg.c:372)
+==25446==    by 0x4481A8: cpu_gen_init_x86_64 (translate-all.c:132)
+==25446==    by 0x448953: tcg_exec_init_x86_64 (translate-all.c:709)
+==25446==    by 0x40D390: tcg_init (accel.c:44)
+==25446==    by 0x40D5E5: accel_init_machine (accel.c:114)
+==25446==    by 0x40D3D5: configure_accelerator (accel.c:71)
+==25446==    by 0x40D8B6: machine_initialize (vl.c:128)
+==25446==    by 0x404F95: uc_open (uc.c:245)
+==25446==    by 0x403637: test_i386 (in /home/w00d/Workspace/unicorn/samples/sample_x86.static)
+==25446==    by 0x404A90: main (in /home/w00d/Workspace/unicorn/samples/sample_x86.static)
+==25446== 
+==25446== Conditional jump or move depends on uninitialised value(s)
+==25446==    at 0x4379F3: tcg_target_init_x86_64 (tcg-target.c:2295)
+==25446==    by 0x437F8F: tcg_context_init_x86_64 (tcg.c:372)
+==25446==    by 0x4481A8: cpu_gen_init_x86_64 (translate-all.c:132)
+==25446==    by 0x448953: tcg_exec_init_x86_64 (translate-all.c:709)
+==25446==    by 0x40D390: tcg_init (accel.c:44)
+==25446==    by 0x40D5E5: accel_init_machine (accel.c:114)
+==25446==    by 0x40D3D5: configure_accelerator (accel.c:71)
+==25446==    by 0x40D8B6: machine_initialize (vl.c:128)
+==25446==    by 0x404F95: uc_open (uc.c:245)
+==25446==    by 0x403637: test_i386 (in /home/w00d/Workspace/unicorn/samples/sample_x86.static)
+==25446==    by 0x404A90: main (in /home/w00d/Workspace/unicorn/samples/sample_x86.static)
+==25446== 
+==25446== Thread 2:
+==25446== Conditional jump or move depends on uninitialised value(s)
+==25446==    at 0x4849B2: disas_insn (translate.c:4748)
+==25446==    by 0x492DC2: gen_intermediate_code_internal_x86_64 (translate.c:8382)
+==25446==    by 0x492FF7: gen_intermediate_code_x86_64 (translate.c:8429)
+==25446==    by 0x448288: cpu_x86_gen_code (translate-all.c:175)
+==25446==    by 0x4494F2: tb_gen_code_x86_64 (translate-all.c:1087)
+==25446==    by 0x43310D: tb_find_slow_x86_64 (cpu-exec.c:356)
+==25446==    by 0x433290: tb_find_fast_x86_64 (cpu-exec.c:384)
+==25446==    by 0x432C68: cpu_x86_exec (cpu-exec.c:203)
+==25446==    by 0x40C49A: tcg_cpu_exec_x86_64 (cpus.c:178)
+==25446==    by 0x40C515: tcg_exec_all_x86_64 (cpus.c:199)
+==25446==    by 0x40C2F5: qemu_tcg_cpu_thread_fn_x86_64 (cpus.c:132)
+==25446==    by 0x15C6D353: start_thread (in /usr/lib/libpthread-2.21.so)
+==25446== 
+==25446== 
+==25446== HEAP SUMMARY:
+==25446==     in use at exit: 8,062 bytes in 156 blocks
+==25446==   total heap usage: 583 allocs, 427 frees, 32,993,443 bytes allocated
+==25446== 
+==25446== Thread 1:
+==25446== 7 bytes in 1 blocks are definitely lost in loss record 50 of 150
+==25446==    at 0x15A59F90: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D6559: g_malloc (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x161EEDFE: g_strdup (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x445132: memory_region_init_x86_64 (memory.c:898)
+==25446==    by 0x445BEC: memory_region_init_ram_x86_64 (memory.c:1152)
+==25446==    by 0x4422A3: memory_map_x86_64 (memory.c:36)
+==25446==    by 0x4057C1: uc_mem_map (uc.c:552)
+==25446==    by 0x40366F: test_i386 (in /home/w00d/Workspace/unicorn/samples/sample_x86.static)
+==25446==    by 0x404A90: main (in /home/w00d/Workspace/unicorn/samples/sample_x86.static)
+==25446== 
+==25446== 8 bytes in 1 blocks are definitely lost in loss record 52 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x40C362: qemu_tcg_init_vcpu_x86_64 (cpus.c:155)
+==25446==    by 0x40C223: qemu_init_vcpu_x86_64 (cpus.c:95)
+==25446==    by 0x456C07: x86_cpu_realizefn (cpu.c:2292)
+==25446==    by 0x4129EF: device_set_realized (qdev.c:184)
+==25446==    by 0x411AAD: property_set_bool (object.c:1504)
+==25446==    by 0x410234: object_property_set (object.c:829)
+==25446==    by 0x4122BB: object_property_set_qobject (qom-qobject.c:24)
+==25446==    by 0x4104E4: object_property_set_bool (object.c:897)
+==25446==    by 0x45072A: pc_new_cpu (pc.c:105)
+==25446==    by 0x4507E3: pc_cpus_init (pc.c:130)
+==25446== 
+==25446== 48 bytes in 1 blocks are definitely lost in loss record 102 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x40C377: qemu_tcg_init_vcpu_x86_64 (cpus.c:156)
+==25446==    by 0x40C223: qemu_init_vcpu_x86_64 (cpus.c:95)
+==25446==    by 0x456C07: x86_cpu_realizefn (cpu.c:2292)
+==25446==    by 0x4129EF: device_set_realized (qdev.c:184)
+==25446==    by 0x411AAD: property_set_bool (object.c:1504)
+==25446==    by 0x410234: object_property_set (object.c:829)
+==25446==    by 0x4122BB: object_property_set_qobject (qom-qobject.c:24)
+==25446==    by 0x4104E4: object_property_set_bool (object.c:897)
+==25446==    by 0x45072A: pc_new_cpu (pc.c:105)
+==25446==    by 0x4507E3: pc_cpus_init (pc.c:130)
+==25446== 
+==25446== 144 bytes in 1 blocks are definitely lost in loss record 139 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x44BBB7: tcg_cpu_address_space_init_x86_64 (exec.c:403)
+==25446==    by 0x40C347: qemu_tcg_init_vcpu_x86_64 (cpus.c:150)
+==25446==    by 0x40C223: qemu_init_vcpu_x86_64 (cpus.c:95)
+==25446==    by 0x456C07: x86_cpu_realizefn (cpu.c:2292)
+==25446==    by 0x4129EF: device_set_realized (qdev.c:184)
+==25446==    by 0x411AAD: property_set_bool (object.c:1504)
+==25446==    by 0x410234: object_property_set (object.c:829)
+==25446==    by 0x4122BB: object_property_set_qobject (qom-qobject.c:24)
+==25446==    by 0x4104E4: object_property_set_bool (object.c:897)
+==25446==    by 0x45072A: pc_new_cpu (pc.c:105)
+==25446== 
+==25446== 320 bytes in 1 blocks are definitely lost in loss record 140 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x44D669: qemu_ram_alloc_from_ptr_x86_64 (exec.c:1092)
+==25446==    by 0x44D752: qemu_ram_alloc_x86_64 (exec.c:1111)
+==25446==    by 0x445C28: memory_region_init_ram_x86_64 (memory.c:1156)
+==25446==    by 0x4422A3: memory_map_x86_64 (memory.c:36)
+==25446==    by 0x4057C1: uc_mem_map (uc.c:552)
+==25446==    by 0x40366F: test_i386 (in /home/w00d/Workspace/unicorn/samples/sample_x86.static)
+==25446==    by 0x404A90: main (in /home/w00d/Workspace/unicorn/samples/sample_x86.static)
+==25446== 
+==25446== 360 (96 direct, 264 indirect) bytes in 1 blocks are definitely lost in loss record 141 of 150
+==25446==    at 0x15A59F90: malloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D6559: g_malloc (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x40F68E: object_new_with_type (object.c:425)
+==25446==    by 0x40F6FD: object_new (object.c:436)
+==25446==    by 0x40D851: machine_initialize (vl.c:119)
+==25446==    by 0x404F95: uc_open (uc.c:245)
+==25446==    by 0x403637: test_i386 (in /home/w00d/Workspace/unicorn/samples/sample_x86.static)
+==25446==    by 0x404A90: main (in /home/w00d/Workspace/unicorn/samples/sample_x86.static)
+==25446== 
+==25446== 601 (80 direct, 521 indirect) bytes in 1 blocks are definitely lost in loss record 142 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x40FEFE: object_property_add (object.c:755)
+==25446==    by 0x411957: object_property_add_str (object.c:1464)
+==25446==    by 0x412219: object_instance_init (object.c:1699)
+==25446==    by 0x40F117: object_init_with_type (object.c:310)
+==25446==    by 0x40F0ED: object_init_with_type (object.c:306)
+==25446==    by 0x40F2EB: object_initialize_with_type (object.c:340)
+==25446==    by 0x40F6AE: object_new_with_type (object.c:426)
+==25446==    by 0x40F6FD: object_new (object.c:436)
+==25446==    by 0x410A57: object_get_root (object.c:1041)
+==25446==    by 0x412CF4: qdev_get_machine (qdev.c:278)
+==25446== 
+==25446== 616 (80 direct, 536 indirect) bytes in 1 blocks are definitely lost in loss record 143 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x40FEFE: object_property_add (object.c:755)
+==25446==    by 0x411957: object_property_add_str (object.c:1464)
+==25446==    by 0x412219: object_instance_init (object.c:1699)
+==25446==    by 0x40F117: object_init_with_type (object.c:310)
+==25446==    by 0x40F0ED: object_init_with_type (object.c:306)
+==25446==    by 0x40F2EB: object_initialize_with_type (object.c:340)
+==25446==    by 0x40F34C: object_initialize (object.c:348)
+==25446==    by 0x4450E7: memory_region_init_x86_64 (memory.c:892)
+==25446==    by 0x44E837: memory_map_init_x86_64 (exec.c:1572)
+==25446==    by 0x44E88D: cpu_exec_init_all_x86_64 (exec.c:1580)
+==25446== 
+==25446== 616 (80 direct, 536 indirect) bytes in 1 blocks are definitely lost in loss record 144 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x40FEFE: object_property_add (object.c:755)
+==25446==    by 0x411957: object_property_add_str (object.c:1464)
+==25446==    by 0x412219: object_instance_init (object.c:1699)
+==25446==    by 0x40F117: object_init_with_type (object.c:310)
+==25446==    by 0x40F0ED: object_init_with_type (object.c:306)
+==25446==    by 0x40F2EB: object_initialize_with_type (object.c:340)
+==25446==    by 0x40F34C: object_initialize (object.c:348)
+==25446==    by 0x4450E7: memory_region_init_x86_64 (memory.c:892)
+==25446==    by 0x445B7B: memory_region_init_io_x86_64 (memory.c:1139)
+==25446==    by 0x44E20D: io_mem_init (exec.c:1421)
+==25446== 
+==25446== 616 (80 direct, 536 indirect) bytes in 1 blocks are definitely lost in loss record 145 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x40FEFE: object_property_add (object.c:755)
+==25446==    by 0x411957: object_property_add_str (object.c:1464)
+==25446==    by 0x412219: object_instance_init (object.c:1699)
+==25446==    by 0x40F117: object_init_with_type (object.c:310)
+==25446==    by 0x40F0ED: object_init_with_type (object.c:306)
+==25446==    by 0x40F2EB: object_initialize_with_type (object.c:340)
+==25446==    by 0x40F34C: object_initialize (object.c:348)
+==25446==    by 0x4450E7: memory_region_init_x86_64 (memory.c:892)
+==25446==    by 0x445B7B: memory_region_init_io_x86_64 (memory.c:1139)
+==25446==    by 0x44E249: io_mem_init (exec.c:1422)
+==25446== 
+==25446== 616 (80 direct, 536 indirect) bytes in 1 blocks are definitely lost in loss record 146 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x40FEFE: object_property_add (object.c:755)
+==25446==    by 0x411957: object_property_add_str (object.c:1464)
+==25446==    by 0x412219: object_instance_init (object.c:1699)
+==25446==    by 0x40F117: object_init_with_type (object.c:310)
+==25446==    by 0x40F0ED: object_init_with_type (object.c:306)
+==25446==    by 0x40F2EB: object_initialize_with_type (object.c:340)
+==25446==    by 0x40F34C: object_initialize (object.c:348)
+==25446==    by 0x4450E7: memory_region_init_x86_64 (memory.c:892)
+==25446==    by 0x445B7B: memory_region_init_io_x86_64 (memory.c:1139)
+==25446==    by 0x44E282: io_mem_init (exec.c:1424)
+==25446== 
+==25446== 616 (80 direct, 536 indirect) bytes in 1 blocks are definitely lost in loss record 147 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x40FEFE: object_property_add (object.c:755)
+==25446==    by 0x411957: object_property_add_str (object.c:1464)
+==25446==    by 0x412219: object_instance_init (object.c:1699)
+==25446==    by 0x40F117: object_init_with_type (object.c:310)
+==25446==    by 0x40F0ED: object_init_with_type (object.c:306)
+==25446==    by 0x40F2EB: object_initialize_with_type (object.c:340)
+==25446==    by 0x40F34C: object_initialize (object.c:348)
+==25446==    by 0x4450E7: memory_region_init_x86_64 (memory.c:892)
+==25446==    by 0x445BEC: memory_region_init_ram_x86_64 (memory.c:1152)
+==25446==    by 0x4422A3: memory_map_x86_64 (memory.c:36)
+==25446== 
+==25446== 616 (80 direct, 536 indirect) bytes in 1 blocks are definitely lost in loss record 148 of 150
+==25446==    at 0x15A5C080: calloc (in /usr/lib/valgrind/vgpreload_memcheck-amd64-linux.so)
+==25446==    by 0x161D65B1: g_malloc0 (in /usr/lib/libglib-2.0.so.0.4400.1)
+==25446==    by 0x40FEFE: object_property_add (object.c:755)
+==25446==    by 0x411957: object_property_add_str (object.c:1464)
+==25446==    by 0x412219: object_instance_init (object.c:1699)
+==25446==    by 0x40F117: object_init_with_type (object.c:310)
+==25446==    by 0x40F0ED: object_init_with_type (object.c:306)
+==25446==    by 0x40F2EB: object_initialize_with_type (object.c:340)
+==25446==    by 0x40F34C: object_initialize (object.c:348)
+==25446==    by 0x4450E7: memory_region_init_x86_64 (memory.c:892)
+==25446==    by 0x445B7B: memory_region_init_io_x86_64 (memory.c:1139)
+==25446==    by 0x44E2FE: subpage_init_x86_64 (exec.c:1438)
+==25446== 
+==25446== LEAK SUMMARY:
+==25446==    definitely lost: 1,183 bytes in 13 blocks
+==25446==    indirectly lost: 4,001 bytes in 140 blocks
+==25446==      possibly lost: 0 bytes in 0 blocks
+==25446==    still reachable: 2,878 bytes in 3 blocks
+==25446==         suppressed: 0 bytes in 0 blocks
+==25446== Reachable blocks (those to which a pointer was found) are not shown.
+==25446== To see them, rerun with: --leak-check=full --show-leak-kinds=all
+==25446== 
+==25446== For counts of detected and suppressed errors, rerun with: -v
+==25446== Use --track-origins=yes to see where uninitialised values come from
+==25446== ERROR SUMMARY: 16 errors from 16 contexts (suppressed: 0 from 0)

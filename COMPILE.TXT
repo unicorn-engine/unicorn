@@ -1,0 +1,218 @@
+This documentation explains how to compile, install & run Unicorn on MacOSX,
+Linux, *BSD & Solaris. We also show steps to cross-compile for Microsoft Windows.
+
+                        *-*-*-*-*-*
+
+[0] Dependencies
+
+Unicorn requires few dependent packages as followings
+
+- For Mac OS X, "pkg-config" is needed.
+  Brew users can install "pkg-config" with:
+
+      $ brew install pkg-config
+
+- For Linux, glib2-dev is needed.
+  Ubuntu/Debian users can install this with:
+
+      $ sudo apt-get install libglib2.0-dev
+
+- For Windows, cross-compile using Mingw. Mingw-glib2 is needed.
+
+    On Ubuntu 14.04 64-bit, do:
+
+        1. Download DEB packages for Mingw64 from https://launchpad.net/~greg-hellings/+archive/ubuntu/mingw-libs/+build/2924251
+
+        2. To cross-compile for Windows 32-bit, install Mingw with (ignore all the warnings):
+
+            $ sudo dpkg -i --force-depends mingw64-x86-glib2_2.31.0_all.deb
+
+           To cross-compile for Windows 64-bit, install Mingw with:
+
+            $ sudo dpkg -i --force-depends mingw64-x64-glib2_2.31.0_all.deb
+
+
+
+[1] Tailor Unicorn to your need.
+
+  Out of 8 archtitectures supported by Unicorn (Arm, Arm64, Mips, PPC, Sparc,
+  SystemZ, XCore & X86), if you just need several selected archs, choose which
+  ones you want to compile in by editing "config.mk" before going to next steps.
+
+  By default, all 8 architectures are compiled.
+
+  The other way of customize Unicorn without having to edit config.mk is to
+  pass the desired options on the commandline to ./make.sh. Currently,
+  Unicorn supports 3 options, as followings.
+
+  - UNICORN_ARCHS: specify list of architectures to compiled in.
+  - UNICORN_STATIC: build static library.
+  - UNICORN_SHARED: build dynamic (shared) library.
+
+  To avoid editing config.mk for these customization, we can pass their values to
+  make.sh, as followings.
+
+  $ UNICORN_ARCHS="arm aarch64 x86" ./make.sh
+
+  NOTE: on commandline, put these values in front of ./make.sh, not after it.
+
+  For each option, refer to docs/README for more details.
+
+
+
+[2] Compile from source
+
+  On *nix (such as MacOSX, Linux, *BSD, Solaris):
+
+  - To compile for current platform, run:
+
+		$ ./make.sh
+
+  - On 64-bit OS, run the command below to cross-compile Unicorn for 32-bit binary:
+
+		$ ./make.sh nix32
+
+
+
+[3] Install Unicorn on *nix (such as MacOSX, Linux, *BSD, Solaris)
+
+  To install Unicorn, run:
+
+	$ sudo ./make.sh install
+
+	For FreeBSD/OpenBSD, where sudo is unavailable, run:
+
+		$ su; ./make.sh install
+
+  Users are then required to enter root password to copy Unicorn into machine
+  system directories.
+
+  Afterwards, run ./tests/test* to see the tests disassembling sample code.
+
+
+  NOTE: The core framework installed by "./make.sh install" consist of
+  following files:
+
+	/usr/include/unicorn/unicorn.h
+	/usr/include/unicorn/x86.h
+	/usr/include/unicorn/arm.h
+	/usr/include/unicorn/arm64.h
+	/usr/include/unicorn/mips.h
+	/usr/include/unicorn/ppc.h
+	/usr/include/unicorn/sparc.h
+	/usr/include/unicorn/m68k.h
+	/usr/include/unicorn/platform.h
+	/usr/lib/libunicorn.so (for Linux/*nix), or /usr/lib/libunicorn.dylib (OSX)
+	/usr/lib/libunicorn.a
+
+
+
+[4] Cross-compile for Windows from *nix
+
+  To cross-compile for Windows, Linux & gcc-mingw-w64-i686 (and also gcc-mingw-w64-x86-64
+  for 64-bit binaries) are required.
+
+	- To cross-compile Windows 32-bit binary, simply run:
+
+		$ ./make.sh cross-win32
+
+	- To cross-compile Windows 64-bit binary, run:
+
+		$ ./make.sh cross-win64
+
+  Resulted files libunicorn.dll, libunicorn.dll.a & tests/test*.exe can then
+  be used on Windows machine.
+
+  To run sample_x86.exe on Windows 32-bit, you need the following files:
+
+   - unicorn.dll
+   - /usr/i686-w64-mingw32/sys-root/mingw/bin/libglib-2.0-0.dll
+   - /usr/lib/gcc/i686-w64-mingw32/4.8/libgcc_s_sjlj-1.dll
+   - /usr/i686-w64-mingw32/lib/libwinpthread-1.dll
+
+  To run sample_x86.exe on Windows 64-bit, you need the following files:
+   - unicorn.dll
+   - /usr/x86_64-w64-mingw32/sys-root/mingw/bin/libglib-2.0-0.dll
+   - /usr/lib/gcc/x86_64-w64-mingw32/4.8/libgcc_s_sjlj-1.dll
+   - /usr/x86_64-w64-mingw32/lib/libwinpthread-1.dll
+
+  Then run either "sample_x86.exe -32" or "sample_x86.exe -64" to test emulators for X86 32-bit or X86 64-bit.
+  For other architectures, run "sample_xxx.exe" found in the same directory.
+
+
+
+[5] Cross-compile for iOS from Mac OSX.
+
+  To cross-compile for iOS (iPhone/iPad/iPod), Mac OSX with XCode installed is required. 
+
+	- To cross-compile for ArmV7 (iPod 4, iPad 1/2/3, iPhone4, iPhone4S), run:
+		$ ./make.sh ios_armv7
+
+	- To cross-compile for ArmV7s (iPad 4, iPhone 5C, iPad mini), run:
+		$ ./make.sh ios_armv7s
+
+	- To cross-compile for Arm64 (iPhone 5S, iPad mini Retina, iPad Air), run:
+		$ ./make.sh ios_arm64
+
+	- To cross-compile for all iDevices (armv7 + armv7s + arm64), run:
+		$ ./make.sh ios
+
+  Resulted files libunicorn.dylib, libunicorn.a & tests/test* can then
+  be used on iOS devices.
+
+
+
+[6] Cross-compile for Android
+
+  To cross-compile for Android (smartphone/tablet), Android NDK is required.
+  NOTE: Only ARM and ARM64 are currently supported.
+
+	$ NDK=/android/android-ndk-r10e ./make.sh cross-android arm
+  or
+	$ NDK=/android/android-ndk-r10e ./make.sh cross-android arm64
+
+  Resulted files libunicorn.so, libunicorn.a & tests/test* can then
+  be used on Android devices.
+
+
+
+[7] Compile on Windows with Cygwin
+
+  To compile under Cygwin gcc-mingw-w64-i686 or x86_64-w64-mingw32 run:
+
+        - To compile Windows 32-bit binary under Cygwin, run:
+
+                $ ./make.sh cygwin-mingw32
+
+        - To compile Windows 64-bit binary under Cygwin, run:
+
+                $ ./make.sh cygwin-mingw64
+
+  Resulted files libunicorn.dll, libunicorn.dll.a & tests/test*.exe can then
+  be used on Windows machine.
+
+
+
+[8] By default, "cc" (default C compiler on the system) is used as compiler.
+
+	- To use "clang" compiler instead, run the command below:
+
+		$ ./make.sh clang
+
+	- To use "gcc" compiler instead, run:
+
+		$ ./make.sh gcc
+
+
+
+[9] To uninstall Unicorn, run the command below:
+
+		$ sudo ./make.sh uninstall
+
+
+
+[10] Language bindings
+
+  So far, only Python is supported by bindings in the main code.
+  Look for the bindings under directory bindings/, and refer to README file
+  of corresponding languages.

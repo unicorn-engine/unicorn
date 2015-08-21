@@ -1,0 +1,42 @@
+This file credits all the contributors of the Unicorn engine project.
+
+
+Key developers
+==============
+Nguyen Anh Quynh <aquynh -at- gmail.com>
+Dang Hoang Vu <dang.hvu -at- gmail.com>
+
+
+Beta testers (in no particular order)
+==============================
+Nguyen Tan Cong
+Loi Anh Tuan
+Edgar Barbosa
+Joxean Koret
+Chris Eagle
+Jay Little, Trail of Bits
+Jeong Wook Oh
+Luis Miras
+Yan Shoshitaishvili, Shellphish & UC Santa Barbara
+Erik Fischer
+Darel Griffin, NCC Group
+Anton Cherepanov
+Mohamed Saher (halsten)
+Tyler Colgan
+Jonathon Reinhart, jonathon.reinhart at gmail.com
+Blue Skeye
+Chris Maixner
+Pancake "radare"
+Ryan Hileman
+Tim "diff" Strazzere
+WanderingGlitch of the Zero Day Initiative
+Sascha Schirra
+François Serman
+
+
+Contributors (in no particular order)
+=====================================
+(Please let us know if you want to have your name here)
+
+Nguyen Tan Cong
+Loi Anh Tuan

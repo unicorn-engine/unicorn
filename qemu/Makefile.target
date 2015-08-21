@@ -1,0 +1,119 @@
+# -*- Mode: makefile -*-
+
+include ../config-host.mak
+include config-target.mak
+include config-devices.mak
+include $(SRC_PATH)/rules.mak
+
+$(call set-vpath, $(SRC_PATH))
+QEMU_CFLAGS += -I.. -I$(SRC_PATH)/target-$(TARGET_BASE_ARCH) -DNEED_CPU_H
+
+QEMU_CFLAGS+=-I$(SRC_PATH)/include
+
+ifdef CONFIG_USER_ONLY
+# user emulator name
+QEMU_PROG=qemu-$(TARGET_NAME)
+QEMU_PROG_BUILD = $(QEMU_PROG)
+else
+# system emulator name
+QEMU_PROG=qemu-system-$(TARGET_NAME)$(EXESUF)
+ifneq (,$(findstring -mwindows,$(libs_softmmu)))
+# Terminate program name with a 'w' because the linker builds a windows executable.
+QEMU_PROGW=qemu-system-$(TARGET_NAME)w$(EXESUF)
+$(QEMU_PROG): $(QEMU_PROGW)
+	$(call quiet-command,$(OBJCOPY) --subsystem console $(QEMU_PROGW) $(QEMU_PROG),"  GEN   $(TARGET_DIR)$(QEMU_PROG)")
+QEMU_PROG_BUILD = $(QEMU_PROGW)
+else
+QEMU_PROG_BUILD = $(QEMU_PROG)
+endif
+endif
+
+PROGS=$(QEMU_PROG) $(QEMU_PROGW)
+
+config-target.h: config-target.h-timestamp
+config-target.h-timestamp: config-target.mak
+
+all: $(PROGS)
+
+# Dummy command so that make thinks it has done something
+	@true
+
+#########################################################
+# cpu emulator library
+obj-y = exec.o translate-all.o cpu-exec.o
+obj-y += tcg/tcg.o tcg/optimize.o
+obj-y += fpu/softfloat.o
+obj-y += target-$(TARGET_BASE_ARCH)/
+
+#########################################################
+# System emulator target
+ifdef CONFIG_SOFTMMU
+obj-y += cpus.o ioport.o
+obj-y += hw/
+obj-y += memory.o cputlb.o
+obj-y += memory_mapping.o
+LIBS+=$(libs_softmmu)
+
+# Hardware support
+ifeq ($(TARGET_NAME), sparc64)
+obj-y += hw/sparc64/
+else
+obj-y += hw/$(TARGET_BASE_ARCH)/
+endif
+
+endif # CONFIG_SOFTMMU
+
+# Workaround for http://gcc.gnu.org/PR55489, see configure.
+%/translate.o: QEMU_CFLAGS += $(TRANSLATE_OPT_CFLAGS)
+
+dummy := $(call unnest-vars,,obj-y)
+all-obj-y := $(obj-y)
+
+block-obj-y :=
+common-obj-y :=
+include $(SRC_PATH)/Makefile.objs
+
+dummy := $(call unnest-vars,..,util-obj-y)
+
+target-obj-y-save := $(target-obj-y) $(util-obj-y)
+
+dummy := $(call unnest-vars,.., \
+               block-obj-y \
+               block-obj-m)
+
+dummy := $(call unnest-vars,..,common-obj-y,common-obj-m)
+
+target-obj-y := $(target-obj-y-save)
+all-obj-y += $(common-obj-y)
+all-obj-y += $(target-obj-y)
+all-obj-$(CONFIG_SOFTMMU) += $(block-obj-y)
+
+# determine shared lib extension
+IS_APPLE := $(shell $(CC) -dM -E - < /dev/null | grep __apple_build_version__ | wc -l | tr -d " ")
+ifeq ($(IS_APPLE),1)
+EXT = dylib
+else
+# Cygwin?
+IS_CYGWIN := $(shell $(CC) -dumpmachine | grep -i cygwin | wc -l)
+ifeq ($(IS_CYGWIN),1)
+EXT = dll
+else
+EXT = so
+endif
+endif
+
+# build either PROG or PROGW
+$(QEMU_PROG_BUILD): $(all-obj-y)
+
+clean:
+	rm -f *.a *~ $(PROGS)
+	rm -f $(shell find . -name '*.[od]')
+
+install: all
+ifneq ($(PROGS),)
+	$(call install-prog,$(PROGS),$(DESTDIR)$(bindir))
+endif
+
+GENERATED_HEADERS += config-target.h
+Makefile: $(GENERATED_HEADERS)
+

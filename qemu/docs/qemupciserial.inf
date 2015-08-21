@@ -1,0 +1,102 @@
+; qemupciserial.inf for QEMU, based on MSPORTS.INF
+
+; The driver itself is shipped with Windows (serial.sys).  This is
+; just a inf file to tell windows which pci id the serial pci card
+; emulated by qemu has, and to apply a name tag to it which windows
+; will show in the device manager.
+
+; Installing the driver: Go to device manager.  You should find a "pci
+; serial card" tagged with a yellow question mark.  Open properties.
+; Pick "update driver".  Then "select driver manually".  Pick "Ports
+; (Com+Lpt)" from the list.  Click "Have a disk".  Select this file.
+; Procedure may vary a bit depending on the windows version.
+
+; This file covers all options: pci-serial, pci-serial-2x, pci-serial-4x
+; for both 32 and 64 bit platforms.
+
+[Version]
+Signature="$Windows NT$"
+Class=MultiFunction
+ClassGUID={4d36e971-e325-11ce-bfc1-08002be10318}
+Provider=%QEMU%
+DriverVer=12/29/2013,1.3.0
+[ControlFlags]
+ExcludeFromSelect=*
+[Manufacturer]
+%QEMU%=QEMU,NTx86,NTAMD64
+
+[QEMU.NTx86]
+%QEMU-PCI_SERIAL_1_PORT%=ComPort_inst1, PCI\VEN_1B36&DEV_0002
+%QEMU-PCI_SERIAL_2_PORT%=ComPort_inst2, PCI\VEN_1B36&DEV_0003
+%QEMU-PCI_SERIAL_4_PORT%=ComPort_inst4, PCI\VEN_1B36&DEV_0004
+
+[QEMU.NTAMD64]
+%QEMU-PCI_SERIAL_1_PORT%=ComPort_inst1, PCI\VEN_1B36&DEV_0002
+%QEMU-PCI_SERIAL_2_PORT%=ComPort_inst2, PCI\VEN_1B36&DEV_0003
+%QEMU-PCI_SERIAL_4_PORT%=ComPort_inst4, PCI\VEN_1B36&DEV_0004
+
+[ComPort_inst1]
+Include=mf.inf
+Needs=MFINSTALL.mf
+
+[ComPort_inst2]
+Include=mf.inf
+Needs=MFINSTALL.mf
+
+[ComPort_inst4]
+Include=mf.inf
+Needs=MFINSTALL.mf
+
+[ComPort_inst1.HW]
+AddReg=ComPort_inst1.RegHW
+
+[ComPort_inst2.HW]
+AddReg=ComPort_inst2.RegHW
+
+[ComPort_inst4.HW]
+AddReg=ComPort_inst4.RegHW
+
+[ComPort_inst1.Services]
+Include=mf.inf
+Needs=MFINSTALL.mf.Services
+
+[ComPort_inst2.Services]
+Include=mf.inf
+Needs=MFINSTALL.mf.Services
+
+[ComPort_inst4.Services]
+Include=mf.inf
+Needs=MFINSTALL.mf.Services
+
+[ComPort_inst1.RegHW]
+HKR,Child0000,HardwareID,,*PNP0501
+HKR,Child0000,VaryingResourceMap,1,00, 00,00,00,00, 08,00,00,00
+HKR,Child0000,ResourceMap,1,02
+
+[ComPort_inst2.RegHW]
+HKR,Child0000,HardwareID,,*PNP0501
+HKR,Child0000,VaryingResourceMap,1,00, 00,00,00,00, 08,00,00,00
+HKR,Child0000,ResourceMap,1,02
+HKR,Child0001,HardwareID,,*PNP0501
+HKR,Child0001,VaryingResourceMap,1,00, 08,00,00,00, 08,00,00,00
+HKR,Child0001,ResourceMap,1,02
+
+[ComPort_inst4.RegHW]
+HKR,Child0000,HardwareID,,*PNP0501
+HKR,Child0000,VaryingResourceMap,1,00, 00,00,00,00, 08,00,00,00
+HKR,Child0000,ResourceMap,1,02
+HKR,Child0001,HardwareID,,*PNP0501
+HKR,Child0001,VaryingResourceMap,1,00, 08,00,00,00, 08,00,00,00
+HKR,Child0001,ResourceMap,1,02
+HKR,Child0002,HardwareID,,*PNP0501
+HKR,Child0002,VaryingResourceMap,1,00, 10,00,00,00, 08,00,00,00
+HKR,Child0002,ResourceMap,1,02
+HKR,Child0003,HardwareID,,*PNP0501
+HKR,Child0003,VaryingResourceMap,1,00, 18,00,00,00, 08,00,00,00
+HKR,Child0003,ResourceMap,1,02
+
+[Strings]
+QEMU="QEMU"
+QEMU-PCI_SERIAL_1_PORT="1x QEMU PCI Serial Card"
+QEMU-PCI_SERIAL_2_PORT="2x QEMU PCI Serial Card"
+QEMU-PCI_SERIAL_4_PORT="4x QEMU PCI Serial Card"

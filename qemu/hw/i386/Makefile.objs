@@ -1,0 +1,2 @@
+obj-$(CONFIG_KVM) += kvm/
+obj-y += pc.o pc_piix.o

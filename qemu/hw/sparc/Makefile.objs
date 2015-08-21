@@ -1,0 +1,1 @@
+obj-y += leon3.o
