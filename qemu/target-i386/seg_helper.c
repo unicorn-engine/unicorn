@@ -22,6 +22,7 @@
 #include "qemu/log.h"
 #include "exec/helper-proto.h"
 #include "exec/cpu_ldst.h"
+#include "uc_priv.h"
 
 //#define DEBUG_PCALL
 
@@ -944,6 +945,16 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
 #else
 void helper_syscall(CPUX86State *env, int next_eip_addend)
 {
+    // Unicorn: call interrupt callback if registered
+    struct uc_struct *uc = env->uc;
+    if (uc->hook_intr_idx) {
+        ((uc_cb_hookintr_t)uc->hook_callbacks[uc->hook_intr_idx].callback)(
+            (uch)uc, 80,
+            uc->hook_callbacks[uc->hook_intr_idx].user_data);
+        env->eip += next_eip_addend;
+        return;
+    }
+
     int selector;
 
     if (!(env->efer & MSR_EFER_SCE)) {
