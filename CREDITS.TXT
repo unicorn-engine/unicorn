@@ -35,6 +35,7 @@ François Serman
 Sean Heelan
 Luke Burnett
 Parker Thompson
+Daniel Godas-Lopez
 
 
 Contributors (in no particular order)
