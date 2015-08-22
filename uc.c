@@ -645,6 +645,18 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                                   return UC_ERR_OK;
                               } else
                                   return UC_ERR_OOM;
+                     case X86_INS_SYSCALL:
+                     case X86_INS_SYSENTER:
+                              // FIXME: only one event handler at the same time
+                              i = hook_find_new(uc);
+                              if (i) {
+                                  uc->hook_callbacks[i].callback = callback;
+                                  uc->hook_callbacks[i].user_data = user_data;
+                                  *evh = i;
+                                  uc->hook_syscall_idx = i;
+                                  return UC_ERR_OK;
+                              } else
+                                  return UC_ERR_OOM;
                  }
                  break;
     }

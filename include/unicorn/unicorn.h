@@ -19,6 +19,9 @@ extern "C" {
 
 #include "platform.h"
 
+// Handle to use with all APIs
+typedef size_t uch;
+
 #include "m68k.h"
 #include "x86.h"
 #include "arm.h"
@@ -64,9 +67,6 @@ extern "C" {
 #define UC_SECOND_SCALE 1000000
 // 1 milisecond = 1000 nanoseconds
 #define UC_MILISECOND_SCALE 1000
-
-// Handle using with all API
-typedef size_t uch;
 
 // Architecture type
 typedef enum uc_arch {

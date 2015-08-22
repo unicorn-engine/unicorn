@@ -945,15 +945,15 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
 #else
 void helper_syscall(CPUX86State *env, int next_eip_addend)
 {
-    // Unicorn: call interrupt callback if registered
-    struct uc_struct *uc = env->uc;
-    if (uc->hook_intr_idx) {
-        ((uc_cb_hookintr_t)uc->hook_callbacks[uc->hook_intr_idx].callback)(
-            (uch)uc, 80,
-            uc->hook_callbacks[uc->hook_intr_idx].user_data);
-        env->eip += next_eip_addend;
-        return;
-    }
+	// Unicorn: call interrupt callback if registered
+	struct uc_struct *uc = env->uc;
+	if (uc->hook_syscall_idx) {
+		((uc_cb_insn_syscall_t)uc->hook_callbacks[uc->hook_syscall_idx].callback)(
+			(uch)uc, uc->hook_callbacks[uc->hook_syscall_idx].user_data);
+		env->eip += next_eip_addend;
+	}
+
+	return;
 
     int selector;
 

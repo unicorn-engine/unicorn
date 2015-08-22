@@ -408,15 +408,15 @@ def test_x86_64_syscall():
         # write machine code to be emulated to memory
         mu.mem_write(ADDRESS, X86_CODE64_SYSCALL)
 
-        def hook_intr(mu, intno, user_data):
+        def hook_syscall(mu, user_data):
             rax = mu.reg_read(X86_REG_RAX)
-            if intno == 80 and rax == 0x100:
+            if rax == 0x100:
                 mu.reg_write(X86_REG_RAX, 0x200)
             else:
                 print('ERROR: was not expecting rax=%d in syscall' % rax)
 
         # hook interrupts for syscall
-        mu.hook_add(UC_HOOK_INTR, hook_intr)
+        mu.hook_add(UC_HOOK_INSN, hook_syscall, None, X86_INS_SYSCALL)
 
         # syscall handler is expecting rax=0x100
         mu.reg_write(X86_REG_RAX, 0x100)

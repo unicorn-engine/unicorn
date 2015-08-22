@@ -231,6 +231,7 @@ UC_HOOK_INSN_IN_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, ctypes.c_size_t, ctypes.c
         ctypes.c_int, ctypes.c_void_p)
 UC_HOOK_INSN_OUT_CB = ctypes.CFUNCTYPE(None, ctypes.c_size_t, ctypes.c_uint32, \
         ctypes.c_int, ctypes.c_uint32, ctypes.c_void_p)
+UC_HOOK_INSN_SYSCALL_CB = ctypes.CFUNCTYPE(None, ctypes.c_size_t, ctypes.c_void_p)
 
 
 # access to error code via @errno of UcError
@@ -383,6 +384,12 @@ class Uc(object):
         cb(self, port, size, value, data)
 
 
+    def _hook_insn_syscall_cb(self, handle, user_data):
+        # call user's callback with self object
+        (cb, data) = self._callbacks[user_data]
+        cb(self, data)
+
+
     # add a hook
     def hook_add(self, htype, callback, user_data=None, arg1=1, arg2=0):
         _h2 = ctypes.c_size_t()
@@ -413,6 +420,8 @@ class Uc(object):
                 cb = ctypes.cast(UC_HOOK_INSN_IN_CB(self._hook_insn_in_cb), UC_HOOK_INSN_IN_CB)
             if arg1 == x86_const.X86_INS_OUT: # OUT instruction
                 cb = ctypes.cast(UC_HOOK_INSN_OUT_CB(self._hook_insn_out_cb), UC_HOOK_INSN_OUT_CB)
+            if arg1 in (x86_const.X86_INS_SYSCALL, x86_const.X86_INS_SYSENTER): # SYSCALL/SYSENTER instruction
+                cb = ctypes.cast(UC_HOOK_INSN_SYSCALL_CB(self._hook_insn_syscall_cb), UC_HOOK_INSN_SYSCALL_CB)
             status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, \
                     cb, ctypes.cast(self._callback_count, ctypes.c_void_p), insn)
         elif htype == UC_HOOK_INTR:
