@@ -40,10 +40,10 @@ static unsigned int all_arch = 0;
 
 static void archs_enable(void)
 {
-	static bool initialized = false;
+    static bool initialized = false;
 
-	if (initialized)
-		return;
+    if (initialized)
+        return;
 
 #ifdef UNICORN_HAS_ARM
     all_arch = all_arch + (1 << UC_ARCH_ARM);
@@ -64,14 +64,14 @@ static void archs_enable(void)
     all_arch = all_arch + (1 << UC_ARCH_X86);
 #endif
 
-	initialized = true;
+    initialized = true;
 }
 
 
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
 {
-	archs_enable();
+    archs_enable();
 
     if (major != NULL && minor != NULL) {
         *major = UC_API_MAJOR;
@@ -133,18 +133,18 @@ const char *uc_strerror(uc_err code)
 UNICORN_EXPORT
 bool uc_support(int query)
 {
-	archs_enable();
+    archs_enable();
 
-	if (query == UC_ARCH_ALL)
-		return all_arch == ((1 << UC_ARCH_ARM) | (1 << UC_ARCH_ARM64) |
-				(1 << UC_ARCH_MIPS) | (1 << UC_ARCH_X86) |
-				(1 << UC_ARCH_M68K) | (1 << UC_ARCH_SPARC));
+    if (query == UC_ARCH_ALL)
+        return all_arch == ((1 << UC_ARCH_ARM) | (1 << UC_ARCH_ARM64) |
+                (1 << UC_ARCH_MIPS) | (1 << UC_ARCH_X86) |
+                (1 << UC_ARCH_M68K) | (1 << UC_ARCH_SPARC));
 
-	if ((unsigned int)query < UC_ARCH_MAX)
-		return ((all_arch & (1 << query)) != 0);
+    if ((unsigned int)query < UC_ARCH_MAX)
+        return ((all_arch & (1 << query)) != 0);
 
-	// unsupported query
-	return false;
+    // unsupported query
+    return false;
 }
 
 
@@ -153,7 +153,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
 {
     struct uc_struct *uc;
 
-	archs_enable();
+    archs_enable();
 
     if (arch < UC_ARCH_MAX) {
         uc = calloc(1, sizeof(*uc));
