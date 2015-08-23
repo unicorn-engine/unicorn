@@ -392,6 +392,7 @@ uc_err uc_hook_del(uch handle, uch *h2);
 
  @handle: handle returned by uc_open()
  @address: starting address of the new memory region to be mapped in.
+    This address will be round down to 8KB boundary
  @size: size of the new memory region to be mapped in. This will be round up to
     the next 8KB boundary.
 

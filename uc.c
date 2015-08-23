@@ -553,7 +553,7 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
         return UC_ERR_UCH;
 
     // align to 8KB boundary
-    map_begin[map_count] = address & (~ (8*1024));
+    map_begin[map_count] = address & (~ (8*1024 - 1));
     s = (size + 8*1024 - 1) & (~ (8*1024));
     map_end[map_count] = s + map_begin[map_count];
     uc->memory_map(uc, map_begin[map_count], s);
