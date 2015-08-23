@@ -126,6 +126,8 @@ const char *uc_strerror(uc_err code)
             return "Invalid instruction (UC_ERR_INSN_INVALID)";
         case UC_ERR_HOOK:
             return "Invalid hook type (UC_ERR_HOOK)";
+        case UC_ERR_MAP:
+            return "Invalid memory mapping (UC_ERR_MAP)";
     }
 }
 
@@ -551,6 +553,10 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
     if (handle == 0)
         // invalid handle
         return UC_ERR_UCH;
+
+    if (size == 0)
+        // invalid memory mapping
+        return UC_ERR_MAP;
 
     // align to 8KB boundary
     map_begin[map_count] = address & (~ (8*1024 - 1));

@@ -53,6 +53,7 @@ __all__ = [
     'UC_ERR_CODE_INVALID',
     'UC_ERR_HOOK',
     'UC_ERR_INSN_INVALID',
+    'UC_ERR_MAP',
 
     'UC_HOOK_INTR',
     'UC_HOOK_INSN',
@@ -122,6 +123,7 @@ UC_ERR_MEM_WRITE = 8     # Quit emulation due to invalid memory WRITE: uc_emu_st
 UC_ERR_CODE_INVALID = 9  # Quit emulation due to invalid code address: uc_emu_start()
 UC_ERR_HOOK = 10         # Invalid hook type: uc_hook_add()
 UC_ERR_INSN_INVALID = 11 # Invalid instruction
+UC_ERR_MAP = 12          # Invalid memory mapping
 
 
 # All type of hooks for uc_hook_add() API.
