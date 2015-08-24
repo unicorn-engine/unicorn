@@ -51,9 +51,9 @@ static void test_arm64(void)
     uc_mem_write(handle, ADDRESS, (uint8_t *)ARM_CODE, sizeof(ARM_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(handle, ARM64_REG_X11, &x11);
-    uc_reg_write(handle, ARM64_REG_X13, &x13);
-    uc_reg_write(handle, ARM64_REG_X15, &x15);
+    uc_reg_write(handle, UC_ARM64_REG_X11, &x11);
+    uc_reg_write(handle, UC_ARM64_REG_X13, &x13);
+    uc_reg_write(handle, UC_ARM64_REG_X15, &x15);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -71,7 +71,7 @@ static void test_arm64(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, ARM64_REG_X11, &x11);
+    uc_reg_read(handle, UC_ARM64_REG_X11, &x11);
     printf(">>> X11 = 0x%" PRIx64 "\n", x11);
 
     uc_close(&handle);

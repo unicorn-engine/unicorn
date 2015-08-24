@@ -9,7 +9,7 @@ __all__ = [
     'Uc',
 
     'uc_version',
-    'uc_support',
+    'uc_arch_supported',
     'version_bind',
     'debug',
 
@@ -53,6 +53,7 @@ __all__ = [
     'UC_ERR_CODE_INVALID',
     'UC_ERR_HOOK',
     'UC_ERR_INSN_INVALID',
+    'UC_ERR_MAP',
 
     'UC_HOOK_INTR',
     'UC_HOOK_INSN',
@@ -122,6 +123,7 @@ UC_ERR_MEM_WRITE = 8     # Quit emulation due to invalid memory WRITE: uc_emu_st
 UC_ERR_CODE_INVALID = 9  # Quit emulation due to invalid code address: uc_emu_start()
 UC_ERR_HOOK = 10         # Invalid hook type: uc_hook_add()
 UC_ERR_INSN_INVALID = 11 # Invalid instruction
+UC_ERR_MAP = 12          # Invalid memory mapping
 
 
 # All type of hooks for uc_hook_add() API.
@@ -202,7 +204,7 @@ def _setup_prototype(lib, fname, restype, *argtypes):
     getattr(lib, fname).argtypes = argtypes
 
 _setup_prototype(_uc, "uc_version", ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
-_setup_prototype(_uc, "uc_support", ctypes.c_bool, ctypes.c_int)
+_setup_prototype(_uc, "uc_arch_supported", ctypes.c_bool, ctypes.c_int)
 _setup_prototype(_uc, "uc_open", ctypes.c_int, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_size_t))
 _setup_prototype(_uc, "uc_close", ctypes.c_int, ctypes.POINTER(ctypes.c_size_t))
 _setup_prototype(_uc, "uc_strerror", ctypes.c_char_p, ctypes.c_int)
@@ -231,6 +233,7 @@ UC_HOOK_INSN_IN_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, ctypes.c_size_t, ctypes.c
         ctypes.c_int, ctypes.c_void_p)
 UC_HOOK_INSN_OUT_CB = ctypes.CFUNCTYPE(None, ctypes.c_size_t, ctypes.c_uint32, \
         ctypes.c_int, ctypes.c_uint32, ctypes.c_void_p)
+UC_HOOK_INSN_SYSCALL_CB = ctypes.CFUNCTYPE(None, ctypes.c_size_t, ctypes.c_void_p)
 
 
 # access to error code via @errno of UcError
@@ -256,8 +259,8 @@ def version_bind():
 
 
 # check to see if this engine supports a particular arch
-def uc_support(query):
-    return _uc.uc_support(query)
+def uc_arch_supported(query):
+    return _uc.uc_arch_supported(query)
 
 
 class Uc(object):
@@ -383,6 +386,12 @@ class Uc(object):
         cb(self, port, size, value, data)
 
 
+    def _hook_insn_syscall_cb(self, handle, user_data):
+        # call user's callback with self object
+        (cb, data) = self._callbacks[user_data]
+        cb(self, data)
+
+
     # add a hook
     def hook_add(self, htype, callback, user_data=None, arg1=1, arg2=0):
         _h2 = ctypes.c_size_t()
@@ -409,10 +418,12 @@ class Uc(object):
                     cb, ctypes.cast(self._callback_count, ctypes.c_void_p))
         elif htype == UC_HOOK_INSN:
             insn = ctypes.c_int(arg1)
-            if arg1 == x86_const.X86_INS_IN:  # IN instruction
+            if arg1 == x86_const.UC_X86_INS_IN:  # IN instruction
                 cb = ctypes.cast(UC_HOOK_INSN_IN_CB(self._hook_insn_in_cb), UC_HOOK_INSN_IN_CB)
-            if arg1 == x86_const.X86_INS_OUT: # OUT instruction
+            if arg1 == x86_const.UC_X86_INS_OUT: # OUT instruction
                 cb = ctypes.cast(UC_HOOK_INSN_OUT_CB(self._hook_insn_out_cb), UC_HOOK_INSN_OUT_CB)
+            if arg1 in (x86_const.UC_X86_INS_SYSCALL, x86_const.UC_X86_INS_SYSENTER): # SYSCALL/SYSENTER instruction
+                cb = ctypes.cast(UC_HOOK_INSN_SYSCALL_CB(self._hook_insn_syscall_cb), UC_HOOK_INSN_SYSCALL_CB)
             status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, \
                     cb, ctypes.cast(self._callback_count, ctypes.c_void_p), insn)
         elif htype == UC_HOOK_INTR:
@@ -439,19 +450,14 @@ class Uc(object):
 def debug():
     archs = { "arm": UC_ARCH_ARM, "arm64": UC_ARCH_ARM64, \
         "mips": UC_ARCH_MIPS, "sparc": UC_ARCH_SPARC, \
-        "m68k": UC_ARCH_M68K }
+        "m68k": UC_ARCH_M68K, "x86": UC_ARCH_X86 }
 
     all_archs = ""
     keys = archs.keys()
     keys.sort()
     for k in keys:
-        if uc_support(archs[k]):
+        if uc_arch_supported(archs[k]):
             all_archs += "-%s" % k
-
-    if uc_support(UC_ARCH_X86):
-        all_archs += "-x86"
-        if uc_support(UC_SUPPORT_X86_REDUCE):
-            all_archs += "_reduce"
 
     (major, minor, _combined) = uc_version()
 

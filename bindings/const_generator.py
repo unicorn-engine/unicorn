@@ -50,7 +50,7 @@ def gen(lang):
             if line == '' or line.startswith('//'):
                 continue
 
-            if not line.startswith(prefix.upper()):
+            if not line.startswith("UC_" + prefix.upper()):
                 continue
 
             tmp = line.strip().split(',')
@@ -59,7 +59,7 @@ def gen(lang):
                 if not t or t.startswith('//'): continue
                 f = re.split('\s+', t)
 
-                if f[0].startswith(prefix.upper()):
+                if f[0].startswith("UC_" + prefix.upper()):
                     if len(f) > 1 and f[1] not in '//=':
                         print("Error: Unable to convert %s" % f)
                         continue

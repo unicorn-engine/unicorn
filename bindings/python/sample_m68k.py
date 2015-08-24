@@ -37,7 +37,7 @@ def test_m68k():
         mu.mem_write(ADDRESS, M68K_CODE)
 
         # initialize machine registers
-        mu.reg_write(M68K_REG_D3, 0x1234)
+        mu.reg_write(UC_M68K_REG_D3, 0x1234)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -51,7 +51,7 @@ def test_m68k():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        d3 = mu.reg_read(M68K_REG_D3)
+        d3 = mu.reg_read(UC_M68K_REG_D3)
         print(">>> D3 = 0x%x" %d3)
 
     except UcError as e:

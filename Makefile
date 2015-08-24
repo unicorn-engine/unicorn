@@ -287,6 +287,13 @@ header: FORCE
 		$(shell python qemu/header_gen.py $(var) > qemu/$(var).h;))
 	@echo "Generated headers for $(TARGETS)."
 
+
+uninstall:
+	rm -rf $(INCDIR)/$(LIBNAME)
+	rm -f $(LIBDIR)/lib$(LIBNAME).*
+	rm -f $(PKGCFGDIR)/$(LIBNAME).pc
+
+
 clean:
 	$(MAKE) -C qemu clean
 	rm -rf *.d *.o

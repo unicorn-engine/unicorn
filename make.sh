@@ -54,7 +54,7 @@ install() {
     PREFIX=/usr/local
     ${MAKE} install
   else  # not OSX
-    test -d /usr/lib64 && ${MAKE} LIBDIRARCH=lib64
+    test -d /usr/lib64 && LIBDIRARCH=lib64
     ${MAKE} install
   fi
 }

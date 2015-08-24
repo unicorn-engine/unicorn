@@ -146,6 +146,7 @@ struct uc_struct {
     int hook_intr_idx; // for handling interrupt
     int hook_out_idx; // for handling OUT instruction (X86)
     int hook_in_idx; // for handling IN instruction (X86)
+    int hook_syscall_idx; // for handling SYSCALL/SYSENTER (X86)
 
 
     bool init_tcg;      // already initialized local TCGv variables?

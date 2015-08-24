@@ -34,12 +34,12 @@ int sparc_reg_read(uch handle, unsigned int regid, void *value)
     struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;
 
-    if (regid >= SPARC_REG_G0 && regid <= SPARC_REG_G7)
-        *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.gregs[regid - SPARC_REG_G0];
+    if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
+        *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0];
     else {
         switch(regid) {
             default: break;
-            case SPARC_REG_PC:
+            case UC_SPARC_REG_PC:
                      *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.pc;
                      break;
         }
@@ -59,12 +59,12 @@ int sparc_reg_write(uch handle, unsigned int regid, void *value)
     struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;
 
-    if (regid >= SPARC_REG_G0 && regid <= SPARC_REG_G7)
-        SPARC_CPU(uc, mycpu)->env.gregs[regid - SPARC_REG_G0] = *(int32_t *)value;
+    if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
+        SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0] = *(int32_t *)value;
     else {
         switch(regid) {
             default: break;
-            case SPARC_REG_PC:
+            case UC_SPARC_REG_PC:
                      SPARC_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
                      SPARC_CPU(uc, mycpu)->env.npc = *(uint32_t *)value + 4;
                      break;

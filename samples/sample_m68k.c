@@ -66,26 +66,26 @@ static void test_m68k(void)
     uc_mem_write(handle, ADDRESS, (uint8_t *)M68K_CODE, sizeof(M68K_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(handle, M68K_REG_D0, &d0);
-    uc_reg_write(handle, M68K_REG_D1, &d1);
-    uc_reg_write(handle, M68K_REG_D2, &d2);
-    uc_reg_write(handle, M68K_REG_D3, &d3);
-    uc_reg_write(handle, M68K_REG_D4, &d4);
-    uc_reg_write(handle, M68K_REG_D5, &d5);
-    uc_reg_write(handle, M68K_REG_D6, &d6);
-    uc_reg_write(handle, M68K_REG_D7, &d7);
+    uc_reg_write(handle, UC_M68K_REG_D0, &d0);
+    uc_reg_write(handle, UC_M68K_REG_D1, &d1);
+    uc_reg_write(handle, UC_M68K_REG_D2, &d2);
+    uc_reg_write(handle, UC_M68K_REG_D3, &d3);
+    uc_reg_write(handle, UC_M68K_REG_D4, &d4);
+    uc_reg_write(handle, UC_M68K_REG_D5, &d5);
+    uc_reg_write(handle, UC_M68K_REG_D6, &d6);
+    uc_reg_write(handle, UC_M68K_REG_D7, &d7);
 
-    uc_reg_write(handle, M68K_REG_A0, &a0);
-    uc_reg_write(handle, M68K_REG_A1, &a1);
-    uc_reg_write(handle, M68K_REG_A2, &a2);
-    uc_reg_write(handle, M68K_REG_A3, &a3);
-    uc_reg_write(handle, M68K_REG_A4, &a4);
-    uc_reg_write(handle, M68K_REG_A5, &a5);
-    uc_reg_write(handle, M68K_REG_A6, &a6);
-    uc_reg_write(handle, M68K_REG_A7, &a7);
+    uc_reg_write(handle, UC_M68K_REG_A0, &a0);
+    uc_reg_write(handle, UC_M68K_REG_A1, &a1);
+    uc_reg_write(handle, UC_M68K_REG_A2, &a2);
+    uc_reg_write(handle, UC_M68K_REG_A3, &a3);
+    uc_reg_write(handle, UC_M68K_REG_A4, &a4);
+    uc_reg_write(handle, UC_M68K_REG_A5, &a5);
+    uc_reg_write(handle, UC_M68K_REG_A6, &a6);
+    uc_reg_write(handle, UC_M68K_REG_A7, &a7);
 
-    uc_reg_write(handle, M68K_REG_PC, &pc);
-    uc_reg_write(handle, M68K_REG_SR, &sr);
+    uc_reg_write(handle, UC_M68K_REG_PC, &pc);
+    uc_reg_write(handle, UC_M68K_REG_SR, &sr);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -103,26 +103,26 @@ static void test_m68k(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, M68K_REG_D0, &d0);
-    uc_reg_read(handle, M68K_REG_D1, &d1);
-    uc_reg_read(handle, M68K_REG_D2, &d2);
-    uc_reg_read(handle, M68K_REG_D3, &d3);
-    uc_reg_read(handle, M68K_REG_D4, &d4);
-    uc_reg_read(handle, M68K_REG_D5, &d5);
-    uc_reg_read(handle, M68K_REG_D6, &d6);
-    uc_reg_read(handle, M68K_REG_D7, &d7);
+    uc_reg_read(handle, UC_M68K_REG_D0, &d0);
+    uc_reg_read(handle, UC_M68K_REG_D1, &d1);
+    uc_reg_read(handle, UC_M68K_REG_D2, &d2);
+    uc_reg_read(handle, UC_M68K_REG_D3, &d3);
+    uc_reg_read(handle, UC_M68K_REG_D4, &d4);
+    uc_reg_read(handle, UC_M68K_REG_D5, &d5);
+    uc_reg_read(handle, UC_M68K_REG_D6, &d6);
+    uc_reg_read(handle, UC_M68K_REG_D7, &d7);
 
-    uc_reg_read(handle, M68K_REG_A0, &a0);
-    uc_reg_read(handle, M68K_REG_A1, &a1);
-    uc_reg_read(handle, M68K_REG_A2, &a2);
-    uc_reg_read(handle, M68K_REG_A3, &a3);
-    uc_reg_read(handle, M68K_REG_A4, &a4);
-    uc_reg_read(handle, M68K_REG_A5, &a5);
-    uc_reg_read(handle, M68K_REG_A6, &a6);
-    uc_reg_read(handle, M68K_REG_A7, &a7);
+    uc_reg_read(handle, UC_M68K_REG_A0, &a0);
+    uc_reg_read(handle, UC_M68K_REG_A1, &a1);
+    uc_reg_read(handle, UC_M68K_REG_A2, &a2);
+    uc_reg_read(handle, UC_M68K_REG_A3, &a3);
+    uc_reg_read(handle, UC_M68K_REG_A4, &a4);
+    uc_reg_read(handle, UC_M68K_REG_A5, &a5);
+    uc_reg_read(handle, UC_M68K_REG_A6, &a6);
+    uc_reg_read(handle, UC_M68K_REG_A7, &a7);
 
-    uc_reg_read(handle, M68K_REG_PC, &pc);
-    uc_reg_read(handle, M68K_REG_SR, &sr);
+    uc_reg_read(handle, UC_M68K_REG_PC, &pc);
+    uc_reg_read(handle, UC_M68K_REG_SR, &sr);
 
     printf(">>> A0 = 0x%x\t\t>>> D0 = 0x%x\n", a0, d0);
     printf(">>> A1 = 0x%x\t\t>>> D1 = 0x%x\n", a1, d1);

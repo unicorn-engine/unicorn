@@ -36,43 +36,9 @@ static uint64_t map_begin[32], map_end[32];
 static int map_count = 0;
 
 
-static unsigned int all_arch = 0;
-
-static void archs_enable(void)
-{
-	static bool initialized = false;
-
-	if (initialized)
-		return;
-
-#ifdef UNICORN_HAS_ARM
-    all_arch = all_arch + (1 << UC_ARCH_ARM);
-#endif
-#ifdef UNICORN_HAS_ARM64
-    all_arch = all_arch + (1 << UC_ARCH_ARM64);
-#endif
-#ifdef UNICORN_HAS_MIPS
-    all_arch = all_arch + (1 << UC_ARCH_MIPS);
-#endif
-#ifdef UNICORN_HAS_SPARC
-    all_arch = all_arch + (1 << UC_ARCH_SPARC);
-#endif
-#ifdef UNICORN_HAS_M68K
-    all_arch = all_arch + (1 << UC_ARCH_M68K);
-#endif
-#ifdef UNICORN_HAS_X86
-    all_arch = all_arch + (1 << UC_ARCH_X86);
-#endif
-
-	initialized = true;
-}
-
-
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
 {
-	archs_enable();
-
     if (major != NULL && minor != NULL) {
         *major = UC_API_MAJOR;
         *minor = UC_API_MINOR;
@@ -126,25 +92,41 @@ const char *uc_strerror(uc_err code)
             return "Invalid instruction (UC_ERR_INSN_INVALID)";
         case UC_ERR_HOOK:
             return "Invalid hook type (UC_ERR_HOOK)";
+        case UC_ERR_MAP:
+            return "Invalid memory mapping (UC_ERR_MAP)";
     }
 }
 
 
 UNICORN_EXPORT
-bool uc_support(int query)
+bool uc_arch_supported(uc_arch arch)
 {
-	archs_enable();
+    switch (arch) {
+#ifdef UNICORN_HAS_ARM
+        case UC_ARCH_ARM:   return true;
+#endif
+#ifdef UNICORN_HAS_ARM64
+        case UC_ARCH_ARM64: return true;
+#endif
+#ifdef UNICORN_HAS_M68K
+        case UC_ARCH_M68K:  return true;
+#endif
+#ifdef UNICORN_HAS_MIPS
+        case UC_ARCH_MIPS:  return true;
+#endif
+#ifdef UNICORN_HAS_PPC
+        case UC_ARCH_PPC:   return true;
+#endif
+#ifdef UNICORN_HAS_SPARC
+        case UC_ARCH_SPARC: return true;
+#endif
+#ifdef UNICORN_HAS_X86
+        case UC_ARCH_X86:   return true;
+#endif
 
-	if (query == UC_ARCH_ALL)
-		return all_arch == ((1 << UC_ARCH_ARM) | (1 << UC_ARCH_ARM64) |
-				(1 << UC_ARCH_MIPS) | (1 << UC_ARCH_X86) |
-				(1 << UC_ARCH_M68K) | (1 << UC_ARCH_SPARC));
-
-	if ((unsigned int)query < UC_ARCH_MAX)
-		return ((all_arch & (1 << query)) != 0);
-
-	// unsupported query
-	return false;
+        /* Invalid or disabled arch */
+        default:            return false;
+    }
 }
 
 
@@ -152,8 +134,6 @@ UNICORN_EXPORT
 uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
 {
     struct uc_struct *uc;
-
-	archs_enable();
 
     if (arch < UC_ARCH_MAX) {
         uc = calloc(1, sizeof(*uc));
@@ -197,6 +177,14 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
 #ifdef UNICORN_HAS_ARM
             case UC_ARCH_ARM:
                 uc->init_arch = arm_uc_init;
+
+                // verify mode
+                if (mode != UC_MODE_ARM && mode != UC_MODE_THUMB) {
+                    *handle = 0;
+                    free(uc);
+                    return UC_ERR_MODE;
+                }
+
                 if (mode == UC_MODE_THUMB)
                     uc->thumb = 1;
                 break;
@@ -427,7 +415,7 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
             break;
 
         case UC_ARCH_M68K:
-            uc_reg_write(handle, M68K_REG_PC, &begin);
+            uc_reg_write(handle, UC_M68K_REG_PC, &begin);
             break;
 
         case UC_ARCH_X86:
@@ -435,13 +423,13 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
                 default:
                     break;
                 case UC_MODE_16:
-                    uc_reg_write(handle, X86_REG_IP, &begin);
+                    uc_reg_write(handle, UC_X86_REG_IP, &begin);
                     break;
                 case UC_MODE_32:
-                    uc_reg_write(handle, X86_REG_EIP, &begin);
+                    uc_reg_write(handle, UC_X86_REG_EIP, &begin);
                     break;
                 case UC_MODE_64:
-                    uc_reg_write(handle, X86_REG_RIP, &begin);
+                    uc_reg_write(handle, UC_X86_REG_RIP, &begin);
                     break;
             }
             break;
@@ -452,23 +440,23 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
                     break;
                 case UC_MODE_THUMB:
                 case UC_MODE_ARM:
-                    uc_reg_write(handle, ARM_REG_R15, &begin);
+                    uc_reg_write(handle, UC_ARM_REG_R15, &begin);
                     break;
             }
             break;
 
         case UC_ARCH_ARM64:
-            uc_reg_write(handle, ARM64_REG_PC, &begin);
+            uc_reg_write(handle, UC_ARM64_REG_PC, &begin);
             break;
 
         case UC_ARCH_MIPS:
             // TODO: MIPS32/MIPS64/BIGENDIAN etc
-            uc_reg_write(handle, MIPS_REG_PC, &begin);
+            uc_reg_write(handle, UC_MIPS_REG_PC, &begin);
             break;
 
         case UC_ARCH_SPARC:
             // TODO: Sparc/Sparc64
-            uc_reg_write(handle, SPARC_REG_PC, &begin);
+            uc_reg_write(handle, UC_SPARC_REG_PC, &begin);
             break;
     }
 
@@ -552,6 +540,10 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
         // invalid handle
         return UC_ERR_UCH;
 
+    if (size == 0)
+        // invalid memory mapping
+        return UC_ERR_MAP;
+
     // align to 8KB boundary
     map_begin[map_count] = address & (~ (8*1024 - 1));
     s = (size + 8*1024 - 1) & (~ (8*1024 - 1));
@@ -623,7 +615,7 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
         case UC_ARCH_X86:
                  switch(insn_id) {
                      default: break;
-                     case X86_INS_OUT:
+                     case UC_X86_INS_OUT:
                               // FIXME: only one event handler at the same time
                               i = hook_find_new(uc);
                               if (i) {
@@ -634,7 +626,7 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                                   return UC_ERR_OK;
                               } else
                                   return UC_ERR_OOM;
-                     case X86_INS_IN:
+                     case UC_X86_INS_IN:
                               // FIXME: only one event handler at the same time
                               i = hook_find_new(uc);
                               if (i) {
@@ -642,6 +634,18 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                                   uc->hook_callbacks[i].user_data = user_data;
                                   *evh = i;
                                   uc->hook_in_idx = i;
+                                  return UC_ERR_OK;
+                              } else
+                                  return UC_ERR_OOM;
+                     case UC_X86_INS_SYSCALL:
+                     case UC_X86_INS_SYSENTER:
+                              // FIXME: only one event handler at the same time
+                              i = hook_find_new(uc);
+                              if (i) {
+                                  uc->hook_callbacks[i].callback = callback;
+                                  uc->hook_callbacks[i].user_data = user_data;
+                                  *evh = i;
+                                  uc->hook_syscall_idx = i;
                                   return UC_ERR_OK;
                               } else
                                   return UC_ERR_OOM;

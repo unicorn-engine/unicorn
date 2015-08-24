@@ -12,6 +12,7 @@ X86_CODE32_MEM_READ = b"\x8B\x0D\xAA\xAA\xAA\xAA\x41\x4a" # mov ecx,[0xaaaaaaaa]
 X86_CODE32_MEM_WRITE = b"\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a" # mov [0xaaaaaaaa], ecx; INC ecx; dec edx
 X86_CODE64 = b"\x41\xBC\x3B\xB0\x28\x2A\x49\x0F\xC9\x90\x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9\x4D\x29\xF4\x49\x81\xC9\xF6\x8A\xC6\x53\x4D\x87\xED\x48\x0F\xAD\xD2\x49\xF7\xD4\x48\xF7\xE1\x4D\x19\xC5\x4D\x89\xC5\x48\xF7\xD6\x41\xB8\x4F\x8D\x6B\x59\x4D\x87\xD0\x68\x6A\x1E\x09\x3C\x59"
 X86_CODE32_INOUT = b"\x41\xE4\x3F\x4a\xE6\x46\x43" # INC ecx; IN AL, 0x3f; DEC edx; OUT 0x46, AL; INC ebx
+X86_CODE64_SYSCALL = '\x0f\x05' # SYSCALL
 
 # memory address where emulation starts
 ADDRESS = 0x1000000
@@ -25,7 +26,7 @@ def hook_block(uc, address, size, user_data):
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
     print(">>> Tracing instruction at 0x%x, instruction size = %u" %(address, size))
-    #eip = uc.reg_read(X86_REG_EIP)
+    #eip = uc.reg_read(UC_X86_REG_EIP)
     #print(">>> EIP = 0x%x" %(eip))
 
 
@@ -55,7 +56,7 @@ def hook_mem_access(uc, access, address, size, value, user_data):
 
 # callback for IN instruction
 def hook_in(uc, port, size, user_data):
-    eip = uc.reg_read(X86_REG_EIP)
+    eip = uc.reg_read(UC_X86_REG_EIP)
     print("--- reading from port 0x%x, size: %u, address: 0x%x" %(port, size, eip))
     if size == 1:
         # read 1 byte to AL
@@ -72,20 +73,20 @@ def hook_in(uc, port, size, user_data):
 
 # callback for OUT instruction
 def hook_out(uc, port, size, value, user_data):
-    eip = uc.reg_read(X86_REG_EIP)
+    eip = uc.reg_read(UC_X86_REG_EIP)
     print("--- writing to port 0x%x, size: %u, value: 0x%x, address: 0x%x" %(port, size, value, eip))
 
     # confirm that value is indeed the value of AL/AX/EAX
     v = 0
     if size == 1:
         # read 1 byte in AL
-        v = uc.reg_read(X86_REG_AL)
+        v = uc.reg_read(UC_X86_REG_AL)
     if size == 2:
         # read 2 bytes in AX
-        v = uc.reg_read(X86_REG_AX)
+        v = uc.reg_read(UC_X86_REG_AX)
     if size == 4:
         # read 4 bytes in EAX
-        v = uc.reg_read(X86_REG_EAX)
+        v = uc.reg_read(UC_X86_REG_EAX)
 
     print("--- register value = 0x%x" %v)
 
@@ -104,8 +105,8 @@ def test_i386():
         mu.mem_write(ADDRESS, X86_CODE32)
 
         # initialize machine registers
-        mu.reg_write(X86_REG_ECX, 0x1234)
-        mu.reg_write(X86_REG_EDX, 0x7890)
+        mu.reg_write(UC_X86_REG_ECX, 0x1234)
+        mu.reg_write(UC_X86_REG_EDX, 0x7890)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -119,8 +120,8 @@ def test_i386():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        r_ecx = mu.reg_read(X86_REG_ECX)
-        r_edx = mu.reg_read(X86_REG_EDX)
+        r_ecx = mu.reg_read(UC_X86_REG_ECX)
+        r_edx = mu.reg_read(UC_X86_REG_EDX)
         print(">>> ECX = 0x%x" %r_ecx)
         print(">>> EDX = 0x%x" %r_edx)
 
@@ -148,8 +149,8 @@ def test_i386_loop():
         mu.mem_write(ADDRESS, X86_CODE32_LOOP)
 
         # initialize machine registers
-        mu.reg_write(X86_REG_ECX, 0x1234)
-        mu.reg_write(X86_REG_EDX, 0x7890)
+        mu.reg_write(UC_X86_REG_ECX, 0x1234)
+        mu.reg_write(UC_X86_REG_EDX, 0x7890)
 
         # emulate machine code in infinite time
         mu.emu_start(ADDRESS, ADDRESS + len(X86_CODE32_LOOP), 2 * UC_SECOND_SCALE)
@@ -157,8 +158,8 @@ def test_i386_loop():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        r_ecx = mu.reg_read(X86_REG_ECX)
-        r_edx = mu.reg_read(X86_REG_EDX)
+        r_ecx = mu.reg_read(UC_X86_REG_ECX)
+        r_edx = mu.reg_read(UC_X86_REG_EDX)
         print(">>> ECX = 0x%x" %r_ecx)
         print(">>> EDX = 0x%x" %r_edx)
 
@@ -179,8 +180,8 @@ def test_i386_invalid_mem_read():
         mu.mem_write(ADDRESS, X86_CODE32_MEM_READ)
 
         # initialize machine registers
-        mu.reg_write(X86_REG_ECX, 0x1234)
-        mu.reg_write(X86_REG_EDX, 0x7890)
+        mu.reg_write(UC_X86_REG_ECX, 0x1234)
+        mu.reg_write(UC_X86_REG_EDX, 0x7890)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -197,8 +198,8 @@ def test_i386_invalid_mem_read():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        r_ecx = mu.reg_read(X86_REG_ECX)
-        r_edx = mu.reg_read(X86_REG_EDX)
+        r_ecx = mu.reg_read(UC_X86_REG_ECX)
+        r_edx = mu.reg_read(UC_X86_REG_EDX)
         print(">>> ECX = 0x%x" %r_ecx)
         print(">>> EDX = 0x%x" %r_edx)
 
@@ -219,8 +220,8 @@ def test_i386_invalid_mem_write():
         mu.mem_write(ADDRESS, X86_CODE32_MEM_WRITE)
 
         # initialize machine registers
-        mu.reg_write(X86_REG_ECX, 0x1234)
-        mu.reg_write(X86_REG_EDX, 0x7890)
+        mu.reg_write(UC_X86_REG_ECX, 0x1234)
+        mu.reg_write(UC_X86_REG_EDX, 0x7890)
 
         # tracing all basic blocks with customized callback
         #mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -240,8 +241,8 @@ def test_i386_invalid_mem_write():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        r_ecx = mu.reg_read(X86_REG_ECX)
-        r_edx = mu.reg_read(X86_REG_EDX)
+        r_ecx = mu.reg_read(UC_X86_REG_ECX)
+        r_edx = mu.reg_read(UC_X86_REG_EDX)
         print(">>> ECX = 0x%x" %r_ecx)
         print(">>> EDX = 0x%x" %r_edx)
 
@@ -279,8 +280,8 @@ def test_i386_inout():
         mu.mem_write(ADDRESS, X86_CODE32_INOUT)
 
         # initialize machine registers
-        mu.reg_write(X86_REG_EAX, 0x1234)
-        mu.reg_write(X86_REG_ECX, 0x6789)
+        mu.reg_write(UC_X86_REG_EAX, 0x1234)
+        mu.reg_write(UC_X86_REG_ECX, 0x6789)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -289,8 +290,8 @@ def test_i386_inout():
         mu.hook_add(UC_HOOK_CODE, hook_code)
 
         # handle IN & OUT instruction
-        mu.hook_add(UC_HOOK_INSN, hook_in, None, X86_INS_IN)
-        mu.hook_add(UC_HOOK_INSN, hook_out, None, X86_INS_OUT)
+        mu.hook_add(UC_HOOK_INSN, hook_in, None, UC_X86_INS_IN)
+        mu.hook_add(UC_HOOK_INSN, hook_out, None, UC_X86_INS_OUT)
 
         # emulate machine code in infinite time
         mu.emu_start(ADDRESS, ADDRESS + len(X86_CODE32_INOUT))
@@ -298,8 +299,8 @@ def test_i386_inout():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        r_ecx = mu.reg_read(X86_REG_ECX)
-        r_eax = mu.reg_read(X86_REG_EAX)
+        r_ecx = mu.reg_read(UC_X86_REG_ECX)
+        r_eax = mu.reg_read(UC_X86_REG_EAX)
         print(">>> EAX = 0x%x" %r_eax)
         print(">>> ECX = 0x%x" %r_ecx)
     except UcError as e:
@@ -319,23 +320,23 @@ def test_x86_64():
         mu.mem_write(ADDRESS, X86_CODE64)
 
         # initialize machine registers
-        mu.reg_write(X86_REG_RAX, 0x71f3029efd49d41d)
-        mu.reg_write(X86_REG_RBX, 0xd87b45277f133ddb)
-        mu.reg_write(X86_REG_RCX, 0xab40d1ffd8afc461)
-        mu.reg_write(X86_REG_RDX, 0x919317b4a733f01)
-        mu.reg_write(X86_REG_RSI, 0x4c24e753a17ea358)
-        mu.reg_write(X86_REG_RDI, 0xe509a57d2571ce96)
-        mu.reg_write(X86_REG_R8, 0xea5b108cc2b9ab1f)
-        mu.reg_write(X86_REG_R9, 0x19ec097c8eb618c1)
-        mu.reg_write(X86_REG_R10, 0xec45774f00c5f682)
-        mu.reg_write(X86_REG_R11, 0xe17e9dbec8c074aa)
-        mu.reg_write(X86_REG_R12, 0x80f86a8dc0f6d457)
-        mu.reg_write(X86_REG_R13, 0x48288ca5671c5492)
-        mu.reg_write(X86_REG_R14, 0x595f72f6e4017f6e)
-        mu.reg_write(X86_REG_R15, 0x1efd97aea331cccc)
+        mu.reg_write(UC_X86_REG_RAX, 0x71f3029efd49d41d)
+        mu.reg_write(UC_X86_REG_RBX, 0xd87b45277f133ddb)
+        mu.reg_write(UC_X86_REG_RCX, 0xab40d1ffd8afc461)
+        mu.reg_write(UC_X86_REG_RDX, 0x919317b4a733f01)
+        mu.reg_write(UC_X86_REG_RSI, 0x4c24e753a17ea358)
+        mu.reg_write(UC_X86_REG_RDI, 0xe509a57d2571ce96)
+        mu.reg_write(UC_X86_REG_R8, 0xea5b108cc2b9ab1f)
+        mu.reg_write(UC_X86_REG_R9, 0x19ec097c8eb618c1)
+        mu.reg_write(UC_X86_REG_R10, 0xec45774f00c5f682)
+        mu.reg_write(UC_X86_REG_R11, 0xe17e9dbec8c074aa)
+        mu.reg_write(UC_X86_REG_R12, 0x80f86a8dc0f6d457)
+        mu.reg_write(UC_X86_REG_R13, 0x48288ca5671c5492)
+        mu.reg_write(UC_X86_REG_R14, 0x595f72f6e4017f6e)
+        mu.reg_write(UC_X86_REG_R15, 0x1efd97aea331cccc)
 
         # setup stack
-        mu.reg_write(X86_REG_RSP, ADDRESS + 0x200000)
+        mu.reg_write(UC_X86_REG_RSP, ADDRESS + 0x200000)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -358,20 +359,20 @@ def test_x86_64():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        rax = mu.reg_read(X86_REG_RAX)
-        rbx = mu.reg_read(X86_REG_RBX)
-        rcx = mu.reg_read(X86_REG_RCX)
-        rdx = mu.reg_read(X86_REG_RDX)
-        rsi = mu.reg_read(X86_REG_RSI)
-        rdi = mu.reg_read(X86_REG_RDI)
-        r8 = mu.reg_read(X86_REG_R8)
-        r9 = mu.reg_read(X86_REG_R9)
-        r10 = mu.reg_read(X86_REG_R10)
-        r11 = mu.reg_read(X86_REG_R11)
-        r12 = mu.reg_read(X86_REG_R12)
-        r13 = mu.reg_read(X86_REG_R13)
-        r14 = mu.reg_read(X86_REG_R14)
-        r15 = mu.reg_read(X86_REG_R15)
+        rax = mu.reg_read(UC_X86_REG_RAX)
+        rbx = mu.reg_read(UC_X86_REG_RBX)
+        rcx = mu.reg_read(UC_X86_REG_RCX)
+        rdx = mu.reg_read(UC_X86_REG_RDX)
+        rsi = mu.reg_read(UC_X86_REG_RSI)
+        rdi = mu.reg_read(UC_X86_REG_RDI)
+        r8 = mu.reg_read(UC_X86_REG_R8)
+        r9 = mu.reg_read(UC_X86_REG_R9)
+        r10 = mu.reg_read(UC_X86_REG_R10)
+        r11 = mu.reg_read(UC_X86_REG_R11)
+        r12 = mu.reg_read(UC_X86_REG_R12)
+        r13 = mu.reg_read(UC_X86_REG_R13)
+        r14 = mu.reg_read(UC_X86_REG_R14)
+        r15 = mu.reg_read(UC_X86_REG_R15)
 
         print(">>> RAX = %x" %rax)
         print(">>> RBX = %x" %rbx)
@@ -395,6 +396,47 @@ def test_x86_64():
         print("ERROR: %s" % e)
 
 
+def test_x86_64_syscall():
+    print("Emulate x86_64 code with 'syscall' instruction")
+    try:
+        # Initialize emulator in X86-64bit mode
+        mu = Uc(UC_ARCH_X86, UC_MODE_64)
+
+        # map 2MB memory for this emulation
+        mu.mem_map(ADDRESS, 2 * 1024 * 1024)
+
+        # write machine code to be emulated to memory
+        mu.mem_write(ADDRESS, X86_CODE64_SYSCALL)
+
+        def hook_syscall(mu, user_data):
+            rax = mu.reg_read(UC_X86_REG_RAX)
+            if rax == 0x100:
+                mu.reg_write(UC_X86_REG_RAX, 0x200)
+            else:
+                print('ERROR: was not expecting rax=%d in syscall' % rax)
+
+        # hook interrupts for syscall
+        mu.hook_add(UC_HOOK_INSN, hook_syscall, None, UC_X86_INS_SYSCALL)
+
+        # syscall handler is expecting rax=0x100
+        mu.reg_write(UC_X86_REG_RAX, 0x100)
+
+        try:
+            # emulate machine code in infinite time
+            mu.emu_start(ADDRESS, ADDRESS + len(X86_CODE64_SYSCALL))
+        except UcError as e:
+            print("ERROR: %s" % e)
+
+        # now print out some registers
+        print(">>> Emulation done. Below is the CPU context")
+
+        rax = mu.reg_read(UC_X86_REG_RAX)
+        print(">>> RAX = 0x%x" % rax)
+
+    except UcError as e:
+        print("ERROR: %s" % e)
+
+
 if __name__ == '__main__':
     test_i386()
     print("=" * 20)
@@ -407,3 +449,5 @@ if __name__ == '__main__':
     test_i386_inout()
     print("=" * 20)
     test_x86_64()
+    print("=" * 20)
+    test_x86_64_syscall()

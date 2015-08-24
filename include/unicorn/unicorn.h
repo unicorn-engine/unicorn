@@ -19,6 +19,9 @@ extern "C" {
 
 #include "platform.h"
 
+// Handle to use with all APIs
+typedef size_t uch;
+
 #include "m68k.h"
 #include "x86.h"
 #include "arm.h"
@@ -65,9 +68,6 @@ extern "C" {
 // 1 milisecond = 1000 nanoseconds
 #define UC_MILISECOND_SCALE 1000
 
-// Handle using with all API
-typedef size_t uch;
-
 // Architecture type
 typedef enum uc_arch {
     UC_ARCH_ARM = 1,    // ARM architecture (including Thumb, Thumb-2)
@@ -78,7 +78,6 @@ typedef enum uc_arch {
     UC_ARCH_SPARC,      // Sparc architecture
     UC_ARCH_M68K,       // M68K architecture
     UC_ARCH_MAX,
-    UC_ARCH_ALL = 0xFFFF, // All architectures - for uc_support()
 } uc_arch;
 
 // Mode type
@@ -116,6 +115,7 @@ typedef enum uc_err {
     UC_ERR_CODE_INVALID, // Quit emulation due to invalid code address: uc_emu_start()
     UC_ERR_HOOK,    // Invalid hook type: uc_hook_add()
     UC_ERR_INSN_INVALID, // Quit emulation due to invalid instruction: uc_emu_start()
+    UC_ERR_MAP, // Invalid memory mapping: uc_mem_map()
 } uc_err;
 
 
@@ -203,16 +203,14 @@ unsigned int uc_version(unsigned int *major, unsigned int *minor);
 
 
 /*
- This API can be used to either ask for archs supported by this library.
+ Determine if the given architecture is supported by this library.
 
- To check if a particular arch is supported by this library, set @query to
- arch mode (UC_ARCH_* value).
- To verify if this library supports all the archs, use UC_ARCH_ALL.
+ @arch: architecture type (UC_ARCH_*)
 
  @return True if this library supports the given arch.
 */
 UNICORN_EXPORT
-bool uc_support(int query);
+bool uc_arch_supported(uc_arch arch);
 
 
 /*
@@ -392,6 +390,7 @@ uc_err uc_hook_del(uch handle, uch *h2);
 
  @handle: handle returned by uc_open()
  @address: starting address of the new memory region to be mapped in.
+    This address will be round down to 8KB boundary
  @size: size of the new memory region to be mapped in. This will be round up to
     the next 8KB boundary.
 

@@ -38,9 +38,9 @@ def test_arm64():
         mu.mem_write(ADDRESS, ARM64_CODE)
 
         # initialize machine registers
-        mu.reg_write(ARM64_REG_X11, 0x1234)
-        mu.reg_write(ARM64_REG_X13, 0x6789)
-        mu.reg_write(ARM64_REG_X15, 0x3333)
+        mu.reg_write(UC_ARM64_REG_X11, 0x1234)
+        mu.reg_write(UC_ARM64_REG_X13, 0x6789)
+        mu.reg_write(UC_ARM64_REG_X15, 0x3333)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -54,9 +54,9 @@ def test_arm64():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        x11 = mu.reg_read(ARM64_REG_X11)
-        x13 = mu.reg_read(ARM64_REG_X13)
-        x15 = mu.reg_read(ARM64_REG_X15)
+        x11 = mu.reg_read(UC_ARM64_REG_X11)
+        x13 = mu.reg_read(UC_ARM64_REG_X13)
+        x15 = mu.reg_read(UC_ARM64_REG_X15)
         print(">>> X11 = 0x%x" %x11)
 
     except UcError as e:

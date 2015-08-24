@@ -173,11 +173,11 @@ def hook_intr(uc, intno, user_data):
     if intno != 0x80:
         return
 
-    eax = uc.reg_read(X86_REG_EAX)
-    ebx = uc.reg_read(X86_REG_EBX)
-    ecx = uc.reg_read(X86_REG_ECX)
-    edx = uc.reg_read(X86_REG_EDX)
-    eip = uc.reg_read(X86_REG_EIP)
+    eax = uc.reg_read(UC_X86_REG_EAX)
+    ebx = uc.reg_read(UC_X86_REG_EBX)
+    ecx = uc.reg_read(UC_X86_REG_ECX)
+    edx = uc.reg_read(UC_X86_REG_EDX)
+    eip = uc.reg_read(UC_X86_REG_EIP)
 
     # print(">>> INTERRUPT %d" % eax)
 
@@ -217,7 +217,7 @@ def hook_intr(uc, intno, user_data):
         filename = uc.mem_read(filename_addr, FILENAME_MAX_LEN)
 
         dummy_fd = id_gen.next()                 
-        uc.reg_write(X86_REG_EAX, dummy_fd)
+        uc.reg_write(UC_X86_REG_EAX, dummy_fd)
 
         msg = "open file (filename=%s flags=%d mode=%d) with fd(%d)" % (bytearray_to_string(filename), flags, mode, dummy_fd)
 
@@ -234,8 +234,8 @@ def hook_intr(uc, intno, user_data):
         print(">>> SYS_DUP2 oldfd=%d newfd=%d" % (ebx, ecx))
     elif eax == 102: # sys_socketcall
         # ref: http://www.skyfree.org/linux/kernel_network/socket.html
-        call = uc.reg_read(X86_REG_EBX)
-        args = uc.reg_read(X86_REG_ECX)
+        call = uc.reg_read(UC_X86_REG_EBX)
+        args = uc.reg_read(UC_X86_REG_ECX)
 
         buf = uc.mem_read(args, SOCKETCALL_MAX_ARGS*SIZE_REG)        
         args = struct.unpack("<" + "I"*SOCKETCALL_MAX_ARGS, buf)
@@ -249,7 +249,7 @@ def hook_intr(uc, intno, user_data):
             protocol = args[2]
 
             dummy_fd = id_gen.next()                 
-            uc.reg_write(X86_REG_EAX, dummy_fd)
+            uc.reg_write(UC_X86_REG_EAX, dummy_fd)
 
             if family == 2:  # AF_INET 
 
@@ -353,7 +353,7 @@ def test_i386(code):
         mu.mem_write(ADDRESS, code)
 
         # initialize stack
-        mu.reg_write(X86_REG_ESP, ADDRESS + 0x200000)
+        mu.reg_write(UC_X86_REG_ESP, ADDRESS + 0x200000)
     
         # tracing all instructions with customized callback
         # mu.hook_add(UC_HOOK_CODE, hook_code)
