@@ -303,7 +303,7 @@ uc_err uc_reg_read(uch handle, int regid, void *value);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_write(uch handle, uint64_t address, uint8_t *bytes, size_t size);
+uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size);
 
 /*
  Read a range of bytes in memory.

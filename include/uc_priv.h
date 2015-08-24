@@ -28,7 +28,7 @@ typedef int (*reg_access_t)(uch handle, unsigned int regid, void *value);
 
 typedef void (*reg_reset_t)(uch handle);
 
-typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr, uint8_t *buf, int len);
+typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr, const uint8_t *buf, int len);
 
 typedef bool (*uc_read_mem_t)(AddressSpace *as, hwaddr addr, uint8_t *buf, int len);
 
