@@ -79,3 +79,5 @@ tmp/
 
 bindings/python/build/
 config.log
+
+regress/map_crash
