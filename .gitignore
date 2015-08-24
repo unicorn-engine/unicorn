@@ -79,3 +79,7 @@ tmp/
 
 bindings/python/build/
 config.log
+
+regress/map_crash
+regress/sigill
+regress/sigill2

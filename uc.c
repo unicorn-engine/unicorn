@@ -356,7 +356,7 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
 
 
 UNICORN_EXPORT
-uc_err uc_mem_write(uch handle, uint64_t address, uint8_t *bytes, size_t size)
+uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size)
 {
     struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
 
@@ -409,6 +409,11 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
     if (handle == 0)
         // invalid handle
         return UC_ERR_UCH;
+
+    // reset the counter
+    uc->emu_counter = 0;
+    uc->stop_request = false;
+    uc->invalid_error = UC_ERR_OK;
 
     switch(uc->arch) {
         default:
@@ -473,11 +478,6 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
     uc->pause_all_vcpus(uc);
     // emulation is done
     uc->emulation_done = true;
-
-    // reset the counter
-    uc->emu_counter = 0;
-    uc->stop_request = false;
-    uc->invalid_error = UC_ERR_OK;
 
     return uc->invalid_error;
 }

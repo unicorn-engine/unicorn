@@ -14,7 +14,7 @@ static inline bool cpu_physical_mem_read(AddressSpace *as, hwaddr addr,
 }
 
 static inline bool cpu_physical_mem_write(AddressSpace *as, hwaddr addr,
-                                            uint8_t *buf, int len)
+                                            const uint8_t *buf, int len)
 {
     return !cpu_physical_memory_rw(as, addr, (void *)buf, len, 1);
 }
