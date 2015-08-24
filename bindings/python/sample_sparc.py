@@ -37,9 +37,9 @@ def test_sparc():
         mu.mem_write(ADDRESS, SPARC_CODE)
 
         # initialize machine registers
-        mu.reg_write(SPARC_REG_G1, 0x1230)
-        mu.reg_write(SPARC_REG_G2, 0x6789)
-        mu.reg_write(SPARC_REG_G3, 0x5555)
+        mu.reg_write(UC_SPARC_REG_G1, 0x1230)
+        mu.reg_write(UC_SPARC_REG_G2, 0x6789)
+        mu.reg_write(UC_SPARC_REG_G3, 0x5555)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -53,7 +53,7 @@ def test_sparc():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        g3 = mu.reg_read(SPARC_REG_G3)
+        g3 = mu.reg_read(UC_SPARC_REG_G3)
         print(">>> G3 = 0x%x" %g3)
 
     except UcError as e:

@@ -38,9 +38,9 @@ def test_arm():
         mu.mem_write(ADDRESS, ARM_CODE)
 
         # initialize machine registers
-        mu.reg_write(ARM_REG_R0, 0x1234)
-        mu.reg_write(ARM_REG_R2, 0x6789)
-        mu.reg_write(ARM_REG_R3, 0x3333)
+        mu.reg_write(UC_ARM_REG_R0, 0x1234)
+        mu.reg_write(UC_ARM_REG_R2, 0x6789)
+        mu.reg_write(UC_ARM_REG_R3, 0x3333)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -54,8 +54,8 @@ def test_arm():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        r0 = mu.reg_read(ARM_REG_R0)
-        r1 = mu.reg_read(ARM_REG_R1)
+        r0 = mu.reg_read(UC_ARM_REG_R0)
+        r1 = mu.reg_read(UC_ARM_REG_R1)
         print(">>> R0 = 0x%x" %r0)
         print(">>> R1 = 0x%x" %r1)
 

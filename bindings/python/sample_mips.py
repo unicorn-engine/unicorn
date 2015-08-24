@@ -39,7 +39,7 @@ def test_mips_eb():
         mu.mem_write(ADDRESS, MIPS_CODE_EB)
 
         # initialize machine registers
-        mu.reg_write(MIPS_REG_1, 0x6789)
+        mu.reg_write(UC_MIPS_REG_1, 0x6789)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -53,7 +53,7 @@ def test_mips_eb():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        r1 = mu.reg_read(MIPS_REG_1)
+        r1 = mu.reg_read(UC_MIPS_REG_1)
         print(">>> r1 = 0x%x" %r1)
 
     except UcError as e:
@@ -74,7 +74,7 @@ def test_mips_el():
         mu.mem_write(ADDRESS, MIPS_CODE_EL)
 
         # initialize machine registers
-        mu.reg_write(MIPS_REG_1, 0x6789)
+        mu.reg_write(UC_MIPS_REG_1, 0x6789)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -88,7 +88,7 @@ def test_mips_el():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        r1 = mu.reg_read(MIPS_REG_1)
+        r1 = mu.reg_read(UC_MIPS_REG_1)
         print(">>> r1 = 0x%x" %r1)
 
     except UcError as e:
