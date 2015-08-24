@@ -1,7 +1,5 @@
-.PHONY: all clean
-
-CFLAGS+=-I../include
-LDFLAGS=-L.. -lunicorn
+CFLAGS += -I../include
+LDFLAGS = -L.. -lunicorn
 
 TESTS = map_crash
 
