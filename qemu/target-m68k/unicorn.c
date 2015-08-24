@@ -38,14 +38,14 @@ int m68k_reg_read(uch handle, unsigned int regid, void *value)
     struct uc_struct *uc = (struct uc_struct *)handle;
     CPUState *mycpu = first_cpu;
 
-    if (regid >= M68K_REG_A0 && regid <= M68K_REG_A7)
-        *(int32_t *)value = M68K_CPU(uc, mycpu)->env.aregs[regid - M68K_REG_A0];
-    else if (regid >= M68K_REG_D0 && regid <= M68K_REG_D7)
-        *(int32_t *)value = M68K_CPU(uc, mycpu)->env.dregs[regid - M68K_REG_D0];
+    if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
+        *(int32_t *)value = M68K_CPU(uc, mycpu)->env.aregs[regid - UC_M68K_REG_A0];
+    else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
+        *(int32_t *)value = M68K_CPU(uc, mycpu)->env.dregs[regid - UC_M68K_REG_D0];
     else {
         switch(regid) {
             default: break;
-            case M68K_REG_PC:
+            case UC_M68K_REG_PC:
                      *(int32_t *)value = M68K_CPU(uc, mycpu)->env.pc;
                      break;
         }
@@ -65,14 +65,14 @@ int m68k_reg_write(uch handle, unsigned int regid, void *value)
     struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;
 
-    if (regid >= M68K_REG_A0 && regid <= M68K_REG_A7)
-        M68K_CPU(uc, mycpu)->env.aregs[regid - M68K_REG_A0] = *(int32_t *)value;
-    else if (regid >= M68K_REG_D0 && regid <= M68K_REG_D7)
-        M68K_CPU(uc, mycpu)->env.dregs[regid - M68K_REG_D0] = *(int32_t *)value;
+    if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
+        M68K_CPU(uc, mycpu)->env.aregs[regid - UC_M68K_REG_A0] = *(int32_t *)value;
+    else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
+        M68K_CPU(uc, mycpu)->env.dregs[regid - UC_M68K_REG_D0] = *(int32_t *)value;
     else {
         switch(regid) {
             default: break;
-            case M68K_REG_PC:
+            case UC_M68K_REG_PC:
                      M68K_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
                      break;
         }

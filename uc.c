@@ -415,7 +415,7 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
             break;
 
         case UC_ARCH_M68K:
-            uc_reg_write(handle, M68K_REG_PC, &begin);
+            uc_reg_write(handle, UC_M68K_REG_PC, &begin);
             break;
 
         case UC_ARCH_X86:
