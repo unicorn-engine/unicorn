@@ -41,7 +41,7 @@ static void hook_code(uch handle, uint64_t address, uint32_t size, void *user_da
     int eflags;
     printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
 
-    uc_reg_read(handle, X86_REG_EFLAGS, &eflags);
+    uc_reg_read(handle, UC_X86_REG_EFLAGS, &eflags);
     printf(">>> --- EFLAGS is 0x%x\n", eflags);
 
     // Uncomment below code to stop the emulation using uc_emu_stop()
@@ -54,7 +54,7 @@ static void hook_code64(uch handle, uint64_t address, uint32_t size, void *user_
 {
     uint64_t rip;
 
-    uc_reg_read(handle, X86_REG_RIP, &rip);
+    uc_reg_read(handle, UC_X86_REG_RIP, &rip);
     printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
     printf(">>> RIP is 0x%"PRIx64 "\n", rip);
 
@@ -103,7 +103,7 @@ static uint32_t hook_in(uch handle, uint32_t port, int size, void *user_data)
 {
     uint32_t eip;
 
-    uc_reg_read(handle, X86_REG_EIP, &eip);
+    uc_reg_read(handle, UC_X86_REG_EIP, &eip);
 
     printf("--- reading from port 0x%x, size: %u, address: 0x%x\n", port, size, eip);
 
@@ -129,7 +129,7 @@ static void hook_out(uch handle, uint32_t port, int size, uint32_t value, void *
     uint32_t tmp;
     uint32_t eip;
 
-    uc_reg_read(handle, X86_REG_EIP, &eip);
+    uc_reg_read(handle, UC_X86_REG_EIP, &eip);
 
     printf("--- writing to port 0x%x, size: %u, value: 0x%x, address: 0x%x\n", port, size, value, eip);
 
@@ -138,13 +138,13 @@ static void hook_out(uch handle, uint32_t port, int size, uint32_t value, void *
         default:
             return;   // should never reach this
         case 1:
-            uc_reg_read(handle, X86_REG_AL, &tmp);
+            uc_reg_read(handle, UC_X86_REG_AL, &tmp);
             break;
         case 2:
-            uc_reg_read(handle, X86_REG_AX, &tmp);
+            uc_reg_read(handle, UC_X86_REG_AX, &tmp);
             break;
         case 4:
-            uc_reg_read(handle, X86_REG_EAX, &tmp);
+            uc_reg_read(handle, UC_X86_REG_EAX, &tmp);
             break;
     }
 
@@ -180,8 +180,8 @@ static void test_i386(void)
     }
 
     // initialize machine registers
-    uc_reg_write(handle, X86_REG_ECX, &r_ecx);
-    uc_reg_write(handle, X86_REG_EDX, &r_edx);
+    uc_reg_write(handle, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_write(handle, UC_X86_REG_EDX, &r_edx);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -199,8 +199,8 @@ static void test_i386(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, X86_REG_ECX, &r_ecx);
-    uc_reg_read(handle, X86_REG_EDX, &r_edx);
+    uc_reg_read(handle, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_read(handle, UC_X86_REG_EDX, &r_edx);
     printf(">>> ECX = 0x%x\n", r_ecx);
     printf(">>> EDX = 0x%x\n", r_edx);
 
@@ -286,8 +286,8 @@ static void test_i386_loop(void)
     }
 
     // initialize machine registers
-    uc_reg_write(handle, X86_REG_ECX, &r_ecx);
-    uc_reg_write(handle, X86_REG_EDX, &r_edx);
+    uc_reg_write(handle, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_write(handle, UC_X86_REG_EDX, &r_edx);
 
     // emulate machine code in 2 seconds, so we can quit even
     // if the code loops
@@ -300,8 +300,8 @@ static void test_i386_loop(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, X86_REG_ECX, &r_ecx);
-    uc_reg_read(handle, X86_REG_EDX, &r_edx);
+    uc_reg_read(handle, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_read(handle, UC_X86_REG_EDX, &r_edx);
     printf(">>> ECX = 0x%x\n", r_ecx);
     printf(">>> EDX = 0x%x\n", r_edx);
 
@@ -338,8 +338,8 @@ static void test_i386_invalid_mem_read(void)
     }
 
     // initialize machine registers
-    uc_reg_write(handle, X86_REG_ECX, &r_ecx);
-    uc_reg_write(handle, X86_REG_EDX, &r_edx);
+    uc_reg_write(handle, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_write(handle, UC_X86_REG_EDX, &r_edx);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -357,8 +357,8 @@ static void test_i386_invalid_mem_read(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, X86_REG_ECX, &r_ecx);
-    uc_reg_read(handle, X86_REG_EDX, &r_edx);
+    uc_reg_read(handle, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_read(handle, UC_X86_REG_EDX, &r_edx);
     printf(">>> ECX = 0x%x\n", r_ecx);
     printf(">>> EDX = 0x%x\n", r_edx);
 
@@ -396,8 +396,8 @@ static void test_i386_invalid_mem_write(void)
     }
 
     // initialize machine registers
-    uc_reg_write(handle, X86_REG_ECX, &r_ecx);
-    uc_reg_write(handle, X86_REG_EDX, &r_edx);
+    uc_reg_write(handle, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_write(handle, UC_X86_REG_EDX, &r_edx);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -418,8 +418,8 @@ static void test_i386_invalid_mem_write(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, X86_REG_ECX, &r_ecx);
-    uc_reg_read(handle, X86_REG_EDX, &r_edx);
+    uc_reg_read(handle, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_read(handle, UC_X86_REG_EDX, &r_edx);
     printf(">>> ECX = 0x%x\n", r_ecx);
     printf(">>> EDX = 0x%x\n", r_edx);
 
@@ -467,8 +467,8 @@ static void test_i386_jump_invalid(void)
     }
 
     // initialize machine registers
-    uc_reg_write(handle, X86_REG_ECX, &r_ecx);
-    uc_reg_write(handle, X86_REG_EDX, &r_edx);
+    uc_reg_write(handle, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_write(handle, UC_X86_REG_EDX, &r_edx);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -486,8 +486,8 @@ static void test_i386_jump_invalid(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, X86_REG_ECX, &r_ecx);
-    uc_reg_read(handle, X86_REG_EDX, &r_edx);
+    uc_reg_read(handle, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_read(handle, UC_X86_REG_EDX, &r_edx);
     printf(">>> ECX = 0x%x\n", r_ecx);
     printf(">>> EDX = 0x%x\n", r_edx);
 
@@ -524,8 +524,8 @@ static void test_i386_inout(void)
     }
 
     // initialize machine registers
-    uc_reg_write(handle, X86_REG_EAX, &r_eax);
-    uc_reg_write(handle, X86_REG_ECX, &r_ecx);
+    uc_reg_write(handle, UC_X86_REG_EAX, &r_eax);
+    uc_reg_write(handle, UC_X86_REG_ECX, &r_ecx);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -534,9 +534,9 @@ static void test_i386_inout(void)
     uc_hook_add(handle, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
 
     // handle IN instruction
-    uc_hook_add(handle, &trace3, UC_HOOK_INSN, hook_in, NULL, X86_INS_IN);
+    uc_hook_add(handle, &trace3, UC_HOOK_INSN, hook_in, NULL, UC_X86_INS_IN);
     // handle OUT instruction
-    uc_hook_add(handle, &trace4, UC_HOOK_INSN, hook_out, NULL, X86_INS_OUT);
+    uc_hook_add(handle, &trace4, UC_HOOK_INSN, hook_out, NULL, UC_X86_INS_OUT);
 
     // emulate machine code in infinite time
     err = uc_emu_start(handle, ADDRESS, ADDRESS + sizeof(X86_CODE32_INOUT) - 1, 0, 0);
@@ -548,8 +548,8 @@ static void test_i386_inout(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, X86_REG_EAX, &r_eax);
-    uc_reg_read(handle, X86_REG_ECX, &r_ecx);
+    uc_reg_read(handle, UC_X86_REG_EAX, &r_eax);
+    uc_reg_read(handle, UC_X86_REG_ECX, &r_ecx);
     printf(">>> EAX = 0x%x\n", r_eax);
     printf(">>> ECX = 0x%x\n", r_ecx);
 
@@ -599,22 +599,22 @@ static void test_x86_64(void)
     }
 
     // initialize machine registers
-    uc_reg_write(handle, X86_REG_RSP, &rsp);
+    uc_reg_write(handle, UC_X86_REG_RSP, &rsp);
 
-    uc_reg_write(handle, X86_REG_RAX, &rax);
-    uc_reg_write(handle, X86_REG_RBX, &rbx);
-    uc_reg_write(handle, X86_REG_RCX, &rcx);
-    uc_reg_write(handle, X86_REG_RDX, &rdx);
-    uc_reg_write(handle, X86_REG_RSI, &rsi);
-    uc_reg_write(handle, X86_REG_RDI, &rdi);
-    uc_reg_write(handle, X86_REG_R8, &r8);
-    uc_reg_write(handle, X86_REG_R9, &r9);
-    uc_reg_write(handle, X86_REG_R10, &r10);
-    uc_reg_write(handle, X86_REG_R11, &r11);
-    uc_reg_write(handle, X86_REG_R12, &r12);
-    uc_reg_write(handle, X86_REG_R13, &r13);
-    uc_reg_write(handle, X86_REG_R14, &r14);
-    uc_reg_write(handle, X86_REG_R15, &r15);
+    uc_reg_write(handle, UC_X86_REG_RAX, &rax);
+    uc_reg_write(handle, UC_X86_REG_RBX, &rbx);
+    uc_reg_write(handle, UC_X86_REG_RCX, &rcx);
+    uc_reg_write(handle, UC_X86_REG_RDX, &rdx);
+    uc_reg_write(handle, UC_X86_REG_RSI, &rsi);
+    uc_reg_write(handle, UC_X86_REG_RDI, &rdi);
+    uc_reg_write(handle, UC_X86_REG_R8, &r8);
+    uc_reg_write(handle, UC_X86_REG_R9, &r9);
+    uc_reg_write(handle, UC_X86_REG_R10, &r10);
+    uc_reg_write(handle, UC_X86_REG_R11, &r11);
+    uc_reg_write(handle, UC_X86_REG_R12, &r12);
+    uc_reg_write(handle, UC_X86_REG_R13, &r13);
+    uc_reg_write(handle, UC_X86_REG_R14, &r14);
+    uc_reg_write(handle, UC_X86_REG_R15, &r15);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -639,20 +639,20 @@ static void test_x86_64(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, X86_REG_RAX, &rax);
-    uc_reg_read(handle, X86_REG_RBX, &rbx);
-    uc_reg_read(handle, X86_REG_RCX, &rcx);
-    uc_reg_read(handle, X86_REG_RDX, &rdx);
-    uc_reg_read(handle, X86_REG_RSI, &rsi);
-    uc_reg_read(handle, X86_REG_RDI, &rdi);
-    uc_reg_read(handle, X86_REG_R8, &r8);
-    uc_reg_read(handle, X86_REG_R9, &r9);
-    uc_reg_read(handle, X86_REG_R10, &r10);
-    uc_reg_read(handle, X86_REG_R11, &r11);
-    uc_reg_read(handle, X86_REG_R12, &r12);
-    uc_reg_read(handle, X86_REG_R13, &r13);
-    uc_reg_read(handle, X86_REG_R14, &r14);
-    uc_reg_read(handle, X86_REG_R15, &r15);
+    uc_reg_read(handle, UC_X86_REG_RAX, &rax);
+    uc_reg_read(handle, UC_X86_REG_RBX, &rbx);
+    uc_reg_read(handle, UC_X86_REG_RCX, &rcx);
+    uc_reg_read(handle, UC_X86_REG_RDX, &rdx);
+    uc_reg_read(handle, UC_X86_REG_RSI, &rsi);
+    uc_reg_read(handle, UC_X86_REG_RDI, &rdi);
+    uc_reg_read(handle, UC_X86_REG_R8, &r8);
+    uc_reg_read(handle, UC_X86_REG_R9, &r9);
+    uc_reg_read(handle, UC_X86_REG_R10, &r10);
+    uc_reg_read(handle, UC_X86_REG_R11, &r11);
+    uc_reg_read(handle, UC_X86_REG_R12, &r12);
+    uc_reg_read(handle, UC_X86_REG_R13, &r13);
+    uc_reg_read(handle, UC_X86_REG_R14, &r14);
+    uc_reg_read(handle, UC_X86_REG_R15, &r15);
 
     printf(">>> RAX = 0x%" PRIx64 "\n", rax);
     printf(">>> RBX = 0x%" PRIx64 "\n", rbx);

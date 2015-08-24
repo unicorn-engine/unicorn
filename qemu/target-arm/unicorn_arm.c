@@ -48,20 +48,20 @@ int arm_reg_read(uch handle, unsigned int regid, void *value)
             break;
         case UC_MODE_ARM:
         case UC_MODE_THUMB:
-            if (regid >= ARM_REG_R0 && regid <= ARM_REG_R12)
-                *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[regid - ARM_REG_R0];
+            if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
+                *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0];
             else {
                 switch(regid) {
-                    //case ARM_REG_SP:
-                    case ARM_REG_R13:
+                    //case UC_ARM_REG_SP:
+                    case UC_ARM_REG_R13:
                         *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[13];
                         break;
-                    //case ARM_REG_LR:
-                    case ARM_REG_R14:
+                    //case UC_ARM_REG_LR:
+                    case UC_ARM_REG_R14:
                         *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[14];
                         break;
-                    //case ARM_REG_PC:
-                    case ARM_REG_R15:
+                    //case UC_ARM_REG_PC:
+                    case UC_ARM_REG_R15:
                         *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[15];
                         break;
                 }
@@ -91,20 +91,20 @@ int arm_reg_write(uch handle, unsigned int regid, void *value)
 
         case UC_MODE_ARM:
         case UC_MODE_THUMB:
-            if (regid >= ARM_REG_R0 && regid <= ARM_REG_R12)
-                ARM_CPU(uc, mycpu)->env.regs[regid - ARM_REG_R0] = *(int32_t *)value;
+            if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
+                ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0] = *(int32_t *)value;
             else {
                 switch(regid) {
-                    //case ARM_REG_SP:
-                    case ARM_REG_R13:
+                    //case UC_ARM_REG_SP:
+                    case UC_ARM_REG_R13:
                         ARM_CPU(uc, mycpu)->env.regs[13] = *(int32_t *)value;
                         break;
-                    //case ARM_REG_LR:
-                    case ARM_REG_R14:
+                    //case UC_ARM_REG_LR:
+                    case UC_ARM_REG_R14:
                         ARM_CPU(uc, mycpu)->env.regs[14] = *(int32_t *)value;
                         break;
-                    //case ARM_REG_PC:
-                    case ARM_REG_R15:
+                    //case UC_ARM_REG_PC:
+                    case UC_ARM_REG_R15:
                         ARM_CPU(uc, mycpu)->env.regs[15] = *(int32_t *)value;
                         break;
                 }

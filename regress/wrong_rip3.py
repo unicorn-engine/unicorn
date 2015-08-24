@@ -15,9 +15,9 @@ mu.mem_write(0, binary1)
 # emu for maximum 1 instruction.
 mu.emu_start(0, 10, 0, 1)
 
-print("EAX = %u" %mu.reg_read(X86_REG_EAX))
+print("EAX = %u" %mu.reg_read(UC_X86_REG_EAX))
 
-pos = mu.reg_read(X86_REG_EIP)
+pos = mu.reg_read(UC_X86_REG_EIP)
 
 print("EIP = %x" %pos)
 

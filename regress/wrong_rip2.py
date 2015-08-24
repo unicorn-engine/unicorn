@@ -16,17 +16,17 @@ mu.mem_write(0, binary1 + binary2)
 # emu for maximum 1 instruction.
 mu.emu_start(0, 10, 0, 1)
 
-print("RAX = %u" %mu.reg_read(X86_REG_RAX))
+print("RAX = %u" %mu.reg_read(UC_X86_REG_RAX))
 
-pos = mu.reg_read(X86_REG_RIP)
+pos = mu.reg_read(UC_X86_REG_RIP)
 
 print("RIP = %x" %pos)
 
 mu.emu_start(5, 10, 0, 1)
 
-pos = mu.reg_read(X86_REG_RIP)
+pos = mu.reg_read(UC_X86_REG_RIP)
 
 print("RIP = %x" %pos)
 
-print("RAX = %u" %mu.reg_read(X86_REG_RAX))
+print("RAX = %u" %mu.reg_read(UC_X86_REG_RAX))
 

@@ -37,12 +37,12 @@ int mips_reg_read(uch handle, unsigned int regid, void *value)
     struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;
 
-    if (regid >= MIPS_REG_0 && regid <= MIPS_REG_31)
-        *(int32_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - MIPS_REG_0];
+    if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
+        *(int32_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0];
     else {
         switch(regid) {
             default: break;
-            case MIPS_REG_PC:
+            case UC_MIPS_REG_PC:
                      *(int32_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.PC;
                      break;
         }
@@ -62,12 +62,12 @@ int mips_reg_write(uch handle, unsigned int regid, void *value)
     struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;
 
-    if (regid >= MIPS_REG_0 && regid <= MIPS_REG_31)
-        MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - MIPS_REG_0] = *(int32_t *)value;
+    if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
+        MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0] = *(int32_t *)value;
     else {
         switch(regid) {
             default: break;
-            case MIPS_REG_PC:
+            case UC_MIPS_REG_PC:
                      MIPS_CPU(uc, mycpu)->env.active_tc.PC = *(int32_t *)value;
                      break;
         }

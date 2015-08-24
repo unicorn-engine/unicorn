@@ -53,9 +53,9 @@ static void test_arm(void)
     uc_mem_write(handle, ADDRESS, (uint8_t *)ARM_CODE, sizeof(ARM_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(handle, ARM_REG_R0, &r0);
-    uc_reg_write(handle, ARM_REG_R2, &r2);
-    uc_reg_write(handle, ARM_REG_R3, &r3);
+    uc_reg_write(handle, UC_ARM_REG_R0, &r0);
+    uc_reg_write(handle, UC_ARM_REG_R2, &r2);
+    uc_reg_write(handle, UC_ARM_REG_R3, &r3);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -73,8 +73,8 @@ static void test_arm(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, ARM_REG_R0, &r0);
-    uc_reg_read(handle, ARM_REG_R1, &r1);
+    uc_reg_read(handle, UC_ARM_REG_R0, &r0);
+    uc_reg_read(handle, UC_ARM_REG_R1, &r1);
     printf(">>> R0 = 0x%x\n", r0);
     printf(">>> R1 = 0x%x\n", r1);
 
@@ -106,7 +106,7 @@ static void test_thumb(void)
     uc_mem_write(handle, ADDRESS, (uint8_t *)THUMB_CODE, sizeof(THUMB_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(handle, ARM_REG_SP, &sp);
+    uc_reg_write(handle, UC_ARM_REG_SP, &sp);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -124,7 +124,7 @@ static void test_thumb(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, ARM_REG_SP, &sp);
+    uc_reg_read(handle, UC_ARM_REG_SP, &sp);
     printf(">>> SP = 0x%x\n", sp);
 
     uc_close(&handle);
