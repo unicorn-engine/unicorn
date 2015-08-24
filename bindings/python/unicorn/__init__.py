@@ -9,7 +9,7 @@ __all__ = [
     'Uc',
 
     'uc_version',
-    'uc_support',
+    'uc_arch_supported',
     'version_bind',
     'debug',
 
@@ -204,7 +204,7 @@ def _setup_prototype(lib, fname, restype, *argtypes):
     getattr(lib, fname).argtypes = argtypes
 
 _setup_prototype(_uc, "uc_version", ctypes.c_int, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
-_setup_prototype(_uc, "uc_support", ctypes.c_bool, ctypes.c_int)
+_setup_prototype(_uc, "uc_arch_supported", ctypes.c_bool, ctypes.c_int)
 _setup_prototype(_uc, "uc_open", ctypes.c_int, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_size_t))
 _setup_prototype(_uc, "uc_close", ctypes.c_int, ctypes.POINTER(ctypes.c_size_t))
 _setup_prototype(_uc, "uc_strerror", ctypes.c_char_p, ctypes.c_int)
@@ -259,8 +259,8 @@ def version_bind():
 
 
 # check to see if this engine supports a particular arch
-def uc_support(query):
-    return _uc.uc_support(query)
+def uc_arch_supported(query):
+    return _uc.uc_arch_supported(query)
 
 
 class Uc(object):
@@ -450,19 +450,14 @@ class Uc(object):
 def debug():
     archs = { "arm": UC_ARCH_ARM, "arm64": UC_ARCH_ARM64, \
         "mips": UC_ARCH_MIPS, "sparc": UC_ARCH_SPARC, \
-        "m68k": UC_ARCH_M68K }
+        "m68k": UC_ARCH_M68K, "x86": UC_ARCH_X86 }
 
     all_archs = ""
     keys = archs.keys()
     keys.sort()
     for k in keys:
-        if uc_support(archs[k]):
+        if uc_arch_supported(archs[k]):
             all_archs += "-%s" % k
-
-    if uc_support(UC_ARCH_X86):
-        all_archs += "-x86"
-        if uc_support(UC_SUPPORT_X86_REDUCE):
-            all_archs += "_reduce"
 
     (major, minor, _combined) = uc_version()
 
