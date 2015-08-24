@@ -71,7 +71,7 @@ int sparc_reg_read(uch handle, unsigned int regid, void *value)
 #define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
-int sparc_reg_write(uch handle, unsigned int regid, void *value)
+int sparc_reg_write(uch handle, unsigned int regid, const void *value)
 {
     struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;

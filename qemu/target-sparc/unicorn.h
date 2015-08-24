@@ -6,7 +6,7 @@
 
 // functions to read & write registers
 int sparc_reg_read(uch handle, unsigned int regid, void *value);
-int sparc_reg_write(uch handle, unsigned int regid, void *value);
+int sparc_reg_write(uch handle, unsigned int regid, const void *value);
 
 void sparc_reg_reset(uch handle);
 
