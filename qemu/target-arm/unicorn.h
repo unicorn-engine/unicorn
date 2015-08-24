@@ -6,9 +6,9 @@
 
 // functions to read & write registers
 int arm_reg_read(uch handle, unsigned int regid, void *value);
-int arm_reg_write(uch handle, unsigned int regid, void *value);
+int arm_reg_write(uch handle, unsigned int regid, const void *value);
 int arm64_reg_read(uch handle, unsigned int regid, void *value);
-int arm64_reg_write(uch handle, unsigned int regid, void *value);
+int arm64_reg_write(uch handle, unsigned int regid, const void *value);
 
 void arm_reg_reset(uch handle);
 void arm64_reg_reset(uch handle);

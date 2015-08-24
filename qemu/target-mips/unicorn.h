@@ -6,7 +6,7 @@
 
 // functions to read & write registers
 int mips_reg_read(uch handle, unsigned int regid, void *value);
-int mips_reg_write(uch handle, unsigned int regid, void *value);
+int mips_reg_write(uch handle, unsigned int regid, const void *value);
 
 void mips_reg_reset(uch handle);
 

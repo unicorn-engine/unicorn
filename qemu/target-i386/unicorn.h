@@ -6,7 +6,7 @@
 
 // functions to read & write registers
 int x86_reg_read(uch handle, unsigned int regid, void *value);
-int x86_reg_write(uch handle, unsigned int regid, void *value);
+int x86_reg_write(uch handle, unsigned int regid, const void *value);
 
 void x86_reg_reset(uch handle);
 

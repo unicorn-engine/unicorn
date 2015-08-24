@@ -274,7 +274,7 @@ const char *uc_strerror(uc_err code);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_reg_write(uch handle, int regid, void *value);
+uc_err uc_reg_write(uch handle, int regid, const void *value);
 
 /*
  Read register value.
