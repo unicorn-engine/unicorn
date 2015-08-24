@@ -38,7 +38,7 @@ def instruction_trace_test():
         mu.mem_write(BASE_ADDRESS, THUMB_CODE)
 
         # setup stack
-        mu.reg_write(ARM_REG_SP, BASE_ADDRESS + 2 * 1024 * 1024)
+        mu.reg_write(UC_ARM_REG_SP, BASE_ADDRESS + 2 * 1024 * 1024)
 
         # tracing all instructions with customized callback
         mu.hook_add(UC_HOOK_CODE, hook_code, user_data=mu)

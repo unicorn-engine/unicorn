@@ -76,7 +76,7 @@ def test_thumb():
         mu.mem_write(ADDRESS, THUMB_CODE)
 
         # initialize machine registers
-        mu.reg_write(ARM_REG_SP, 0x1234)
+        mu.reg_write(UC_ARM_REG_SP, 0x1234)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -90,7 +90,7 @@ def test_thumb():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        sp = mu.reg_read(ARM_REG_SP)
+        sp = mu.reg_read(UC_ARM_REG_SP)
         print(">>> SP = 0x%x" %sp)
 
     except UcError as e:
