@@ -416,11 +416,11 @@ class Uc(object):
                     cb, ctypes.cast(self._callback_count, ctypes.c_void_p))
         elif htype == UC_HOOK_INSN:
             insn = ctypes.c_int(arg1)
-            if arg1 == x86_const.X86_INS_IN:  # IN instruction
+            if arg1 == x86_const.UC_X86_INS_IN:  # IN instruction
                 cb = ctypes.cast(UC_HOOK_INSN_IN_CB(self._hook_insn_in_cb), UC_HOOK_INSN_IN_CB)
-            if arg1 == x86_const.X86_INS_OUT: # OUT instruction
+            if arg1 == x86_const.UC_X86_INS_OUT: # OUT instruction
                 cb = ctypes.cast(UC_HOOK_INSN_OUT_CB(self._hook_insn_out_cb), UC_HOOK_INSN_OUT_CB)
-            if arg1 in (x86_const.X86_INS_SYSCALL, x86_const.X86_INS_SYSENTER): # SYSCALL/SYSENTER instruction
+            if arg1 in (x86_const.UC_X86_INS_SYSCALL, x86_const.UC_X86_INS_SYSENTER): # SYSCALL/SYSENTER instruction
                 cb = ctypes.cast(UC_HOOK_INSN_SYSCALL_CB(self._hook_insn_syscall_cb), UC_HOOK_INSN_SYSCALL_CB)
             status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, \
                     cb, ctypes.cast(self._callback_count, ctypes.c_void_p), insn)

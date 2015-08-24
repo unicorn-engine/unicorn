@@ -20,7 +20,7 @@ mu.mem_write(CODE_ADDR, binary1)
 # emu for maximum 1 sec.
 mu.emu_start(CODE_ADDR, len(binary1), UC_SECOND_SCALE)
 
-print("RAX = %x" %mu.reg_read(X86_REG_RAX))
+print("RAX = %x" %mu.reg_read(UC_X86_REG_RAX))
 
 # write machine code to be emulated to memory
 mu.mem_write(CODE_ADDR, binary2)
@@ -28,5 +28,5 @@ mu.mem_write(CODE_ADDR, binary2)
 # emu for maximum 1 sec.
 mu.emu_start(CODE_ADDR, len(binary2), UC_SECOND_SCALE)
 
-print("RAX = %x" %mu.reg_read(X86_REG_RAX))
+print("RAX = %x" %mu.reg_read(UC_X86_REG_RAX))
 

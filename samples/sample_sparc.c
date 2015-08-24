@@ -52,9 +52,9 @@ static void test_sparc(void)
     uc_mem_write(handle, ADDRESS, (uint8_t *)SPARC_CODE, sizeof(SPARC_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(handle, SPARC_REG_G1, &g1);
-    uc_reg_write(handle, SPARC_REG_G2, &g2);
-    uc_reg_write(handle, SPARC_REG_G3, &g3);
+    uc_reg_write(handle, UC_SPARC_REG_G1, &g1);
+    uc_reg_write(handle, UC_SPARC_REG_G2, &g2);
+    uc_reg_write(handle, UC_SPARC_REG_G3, &g3);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -73,7 +73,7 @@ static void test_sparc(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, SPARC_REG_G3, &g3);
+    uc_reg_read(handle, UC_SPARC_REG_G3, &g3);
     printf(">>> G3 = 0x%x\n", g3);
 
     uc_close(&handle);

@@ -16,17 +16,17 @@ pos = 0
 # emu for maximum 1 instruction.
 mu.emu_start(pos, len(binary1), 0, 1)
 
-print("EAX = %u" %mu.reg_read(X86_REG_EAX))
+print("EAX = %u" %mu.reg_read(UC_X86_REG_EAX))
 
-pos = mu.reg_read(X86_REG_EIP)
+pos = mu.reg_read(UC_X86_REG_EIP)
 
 print("EIP = %x" %pos)
 
 # emu to the end
 mu.emu_start(pos, len(binary1))
 
-print("EAX = %u" %mu.reg_read(X86_REG_EAX))
+print("EAX = %u" %mu.reg_read(UC_X86_REG_EAX))
 
-pos = mu.reg_read(X86_REG_EIP)
+pos = mu.reg_read(UC_X86_REG_EIP)
 
 print("EIP = %x" %pos)

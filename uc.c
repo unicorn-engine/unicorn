@@ -435,13 +435,13 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
                 default:
                     break;
                 case UC_MODE_16:
-                    uc_reg_write(handle, X86_REG_IP, &begin);
+                    uc_reg_write(handle, UC_X86_REG_IP, &begin);
                     break;
                 case UC_MODE_32:
-                    uc_reg_write(handle, X86_REG_EIP, &begin);
+                    uc_reg_write(handle, UC_X86_REG_EIP, &begin);
                     break;
                 case UC_MODE_64:
-                    uc_reg_write(handle, X86_REG_RIP, &begin);
+                    uc_reg_write(handle, UC_X86_REG_RIP, &begin);
                     break;
             }
             break;
@@ -452,23 +452,23 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
                     break;
                 case UC_MODE_THUMB:
                 case UC_MODE_ARM:
-                    uc_reg_write(handle, ARM_REG_R15, &begin);
+                    uc_reg_write(handle, UC_ARM_REG_R15, &begin);
                     break;
             }
             break;
 
         case UC_ARCH_ARM64:
-            uc_reg_write(handle, ARM64_REG_PC, &begin);
+            uc_reg_write(handle, UC_ARM64_REG_PC, &begin);
             break;
 
         case UC_ARCH_MIPS:
             // TODO: MIPS32/MIPS64/BIGENDIAN etc
-            uc_reg_write(handle, MIPS_REG_PC, &begin);
+            uc_reg_write(handle, UC_MIPS_REG_PC, &begin);
             break;
 
         case UC_ARCH_SPARC:
             // TODO: Sparc/Sparc64
-            uc_reg_write(handle, SPARC_REG_PC, &begin);
+            uc_reg_write(handle, UC_SPARC_REG_PC, &begin);
             break;
     }
 
@@ -623,7 +623,7 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
         case UC_ARCH_X86:
                  switch(insn_id) {
                      default: break;
-                     case X86_INS_OUT:
+                     case UC_X86_INS_OUT:
                               // FIXME: only one event handler at the same time
                               i = hook_find_new(uc);
                               if (i) {
@@ -634,7 +634,7 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                                   return UC_ERR_OK;
                               } else
                                   return UC_ERR_OOM;
-                     case X86_INS_IN:
+                     case UC_X86_INS_IN:
                               // FIXME: only one event handler at the same time
                               i = hook_find_new(uc);
                               if (i) {
@@ -645,8 +645,8 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                                   return UC_ERR_OK;
                               } else
                                   return UC_ERR_OOM;
-                     case X86_INS_SYSCALL:
-                     case X86_INS_SYSENTER:
+                     case UC_X86_INS_SYSCALL:
+                     case UC_X86_INS_SYSENTER:
                               // FIXME: only one event handler at the same time
                               i = hook_find_new(uc);
                               if (i) {

@@ -27,7 +27,7 @@ static void hook_code(uch handle, uint64_t address, uint32_t size, void *user_da
 
     printf("Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
 
-    uc_reg_read(handle, X86_REG_EIP, &r_eip);
+    uc_reg_read(handle, UC_X86_REG_EIP, &r_eip);
     printf("*** EIP = %x ***: ", r_eip);
 
     size = MIN(sizeof(tmp), size);
@@ -53,8 +53,8 @@ static void hook_intr(uch handle, uint32_t intno, void *user_data)
     if (intno != 0x80)
         return;
 
-    uc_reg_read(handle, X86_REG_EAX, &r_eax);
-    uc_reg_read(handle, X86_REG_EIP, &r_eip);
+    uc_reg_read(handle, UC_X86_REG_EAX, &r_eax);
+    uc_reg_read(handle, UC_X86_REG_EIP, &r_eip);
 
     switch(r_eax) {
         default:
@@ -66,10 +66,10 @@ static void hook_intr(uch handle, uint32_t intno, void *user_data)
             break;
         case 4: // sys_write
             // ECX = buffer address
-            uc_reg_read(handle, X86_REG_ECX, &r_ecx);
+            uc_reg_read(handle, UC_X86_REG_ECX, &r_ecx);
 
             // EDX = buffer size
-            uc_reg_read(handle, X86_REG_EDX, &r_edx);
+            uc_reg_read(handle, UC_X86_REG_EDX, &r_edx);
 
             // read the buffer in
             size = MIN(sizeof(buffer)-1, r_edx);
@@ -113,7 +113,7 @@ static void test_i386(void)
     }
 
     // initialize machine registers
-    uc_reg_write(handle, X86_REG_ESP, &r_esp);
+    uc_reg_write(handle, UC_X86_REG_ESP, &r_esp);
 
     // tracing all instructions by having @begin > @end
     uc_hook_add(handle, &trace1, UC_HOOK_CODE, hook_code, NULL, 1, 0);

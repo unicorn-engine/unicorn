@@ -40,16 +40,16 @@ def hook_intr(uc, intno, user_data):
         uc.emu_stop()
         return
 
-    eax = uc.reg_read(X86_REG_EAX)
-    eip = uc.reg_read(X86_REG_EIP)
+    eax = uc.reg_read(UC_X86_REG_EAX)
+    eip = uc.reg_read(UC_X86_REG_EIP)
     if eax == 1:    # sys_exit
         print(">>> 0x%x: interrupt 0x%x, EAX = 0x%x" %(eip, intno, eax))
         uc.emu_stop()
     elif eax == 4:    # sys_write
         # ECX = buffer address
-        ecx = uc.reg_read(X86_REG_ECX)
+        ecx = uc.reg_read(UC_X86_REG_ECX)
         # EDX = buffer size
-        edx = uc.reg_read(X86_REG_EDX)
+        edx = uc.reg_read(UC_X86_REG_EDX)
 
         try:
             buf = uc.mem_read(ecx, edx)
@@ -79,7 +79,7 @@ def test_i386(mode, code):
         mu.mem_write(ADDRESS, code)
 
         # initialize stack
-        mu.reg_write(X86_REG_ESP, ADDRESS + 0x200000)
+        mu.reg_write(UC_X86_REG_ESP, ADDRESS + 0x200000)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)

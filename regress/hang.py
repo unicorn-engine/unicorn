@@ -17,13 +17,13 @@ def hook_code(uc, address, size, user_data):
 # callback for tracing Linux interrupt
 def hook_intr(uc, intno, user_data):
     # only handle Linux syscall
-    rip = uc.reg_read(X86_REG_RIP)
+    rip = uc.reg_read(UC_X86_REG_RIP)
     if intno != 0x80:
         print("=== 0x%x: got interrupt %x, quit" %(rip, intno));
         uc.emu_stop()
         return
 
-    eax = uc.reg_read(X86_REG_EAX)
+    eax = uc.reg_read(UC_X86_REG_EAX)
     print(">>> 0x%x: interrupt 0x%x, EAX = 0x%x" %(rip, intno, eax))
 
 
@@ -40,7 +40,7 @@ mu.hook_add(UC_HOOK_CODE, hook_code)
 mu.hook_add(UC_HOOK_INTR, hook_intr)
 
 # setup stack
-mu.reg_write(X86_REG_RSP, 1024 * 1024)
+mu.reg_write(UC_X86_REG_RSP, 1024 * 1024)
 
 # fill in memory with 0xCC (software breakpoint int 3)
 for i in xrange(1 * 1024):

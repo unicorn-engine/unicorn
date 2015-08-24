@@ -50,7 +50,7 @@ static void test_mips_eb(void)
     uc_mem_write(handle, ADDRESS, (uint8_t *)MIPS_CODE_EB, sizeof(MIPS_CODE_EB) - 1);
 
     // initialize machine registers
-    uc_reg_write(handle, MIPS_REG_1, &r1);
+    uc_reg_write(handle, UC_MIPS_REG_1, &r1);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -68,7 +68,7 @@ static void test_mips_eb(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, MIPS_REG_1, &r1);
+    uc_reg_read(handle, UC_MIPS_REG_1, &r1);
     printf(">>> R1 = 0x%x\n", r1);
 
     uc_close(&handle);
@@ -100,7 +100,7 @@ static void test_mips_el(void)
     uc_mem_write(handle, ADDRESS, (uint8_t *)MIPS_CODE_EL, sizeof(MIPS_CODE_EL) - 1);
 
     // initialize machine registers
-    uc_reg_write(handle, MIPS_REG_1, &r1);
+    uc_reg_write(handle, UC_MIPS_REG_1, &r1);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
@@ -118,7 +118,7 @@ static void test_mips_el(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, MIPS_REG_1, &r1);
+    uc_reg_read(handle, UC_MIPS_REG_1, &r1);
     printf(">>> R1 = 0x%x\n", r1);
 
     uc_close(&handle);
