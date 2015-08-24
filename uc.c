@@ -36,43 +36,9 @@ static uint64_t map_begin[32], map_end[32];
 static int map_count = 0;
 
 
-static unsigned int all_arch = 0;
-
-static void archs_enable(void)
-{
-    static bool initialized = false;
-
-    if (initialized)
-        return;
-
-#ifdef UNICORN_HAS_ARM
-    all_arch = all_arch + (1 << UC_ARCH_ARM);
-#endif
-#ifdef UNICORN_HAS_ARM64
-    all_arch = all_arch + (1 << UC_ARCH_ARM64);
-#endif
-#ifdef UNICORN_HAS_MIPS
-    all_arch = all_arch + (1 << UC_ARCH_MIPS);
-#endif
-#ifdef UNICORN_HAS_SPARC
-    all_arch = all_arch + (1 << UC_ARCH_SPARC);
-#endif
-#ifdef UNICORN_HAS_M68K
-    all_arch = all_arch + (1 << UC_ARCH_M68K);
-#endif
-#ifdef UNICORN_HAS_X86
-    all_arch = all_arch + (1 << UC_ARCH_X86);
-#endif
-
-    initialized = true;
-}
-
-
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
 {
-    archs_enable();
-
     if (major != NULL && minor != NULL) {
         *major = UC_API_MAJOR;
         *minor = UC_API_MINOR;
@@ -133,20 +99,34 @@ const char *uc_strerror(uc_err code)
 
 
 UNICORN_EXPORT
-bool uc_support(int query)
+bool uc_arch_supported(uc_arch arch)
 {
-    archs_enable();
+    switch (arch) {
+#ifdef UNICORN_HAS_ARM
+        case UC_ARCH_ARM:   return true;
+#endif
+#ifdef UNICORN_HAS_ARM64
+        case UC_ARCH_ARM64: return true;
+#endif
+#ifdef UNICORN_HAS_M68K
+        case UC_ARCH_M68K:  return true;
+#endif
+#ifdef UNICORN_HAS_MIPS
+        case UC_ARCH_MIPS:  return true;
+#endif
+#ifdef UNICORN_HAS_PPC
+        case UC_ARCH_PPC:   return true;
+#endif
+#ifdef UNICORN_HAS_SPARC
+        case UC_ARCH_SPARC: return true;
+#endif
+#ifdef UNICORN_HAS_X86
+        case UC_ARCH_X86:   return true;
+#endif
 
-    if (query == UC_ARCH_ALL)
-        return all_arch == ((1 << UC_ARCH_ARM) | (1 << UC_ARCH_ARM64) |
-                (1 << UC_ARCH_MIPS) | (1 << UC_ARCH_X86) |
-                (1 << UC_ARCH_M68K) | (1 << UC_ARCH_SPARC));
-
-    if ((unsigned int)query < UC_ARCH_MAX)
-        return ((all_arch & (1 << query)) != 0);
-
-    // unsupported query
-    return false;
+        /* Invalid or disabled arch */
+        default:            return false;
+    }
 }
 
 
@@ -154,8 +134,6 @@ UNICORN_EXPORT
 uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
 {
     struct uc_struct *uc;
-
-    archs_enable();
 
     if (arch < UC_ARCH_MAX) {
         uc = calloc(1, sizeof(*uc));

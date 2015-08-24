@@ -78,7 +78,6 @@ typedef enum uc_arch {
     UC_ARCH_SPARC,      // Sparc architecture
     UC_ARCH_M68K,       // M68K architecture
     UC_ARCH_MAX,
-    UC_ARCH_ALL = 0xFFFF, // All architectures - for uc_support()
 } uc_arch;
 
 // Mode type
@@ -204,16 +203,14 @@ unsigned int uc_version(unsigned int *major, unsigned int *minor);
 
 
 /*
- This API can be used to either ask for archs supported by this library.
+ Determine if the given architecture is supported by this library.
 
- To check if a particular arch is supported by this library, set @query to
- arch mode (UC_ARCH_* value).
- To verify if this library supports all the archs, use UC_ARCH_ALL.
+ @arch: architecture type (UC_ARCH_*)
 
  @return True if this library supports the given arch.
 */
 UNICORN_EXPORT
-bool uc_support(int query);
+bool uc_arch_supported(uc_arch arch);
 
 
 /*
