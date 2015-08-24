@@ -65,6 +65,12 @@ def hook_intr(uc, intno, user_data):
         print(">>> 0x%x: interrupt 0x%x, EAX = 0x%x" %(eip, intno, eax))
 
 
+def hook_syscall(mu, user_data):
+    rax = mu.reg_read(UC_X86_REG_RAX)
+    print(">>> got SYSCALL with RAX = 0x%x" %(rax))
+    mu.emu_stop()
+
+
 # Test X86 32 bit
 def test_i386(mode, code):
     print("Emulate x86 code")
@@ -90,6 +96,9 @@ def test_i386(mode, code):
         # handle interrupt ourself
         mu.hook_add(UC_HOOK_INTR, hook_intr)
 
+        # handle SYSCALL
+        mu.hook_add(UC_HOOK_INSN, hook_syscall, None, UC_X86_INS_SYSCALL)
+
         # emulate machine code in infinite time
         mu.emu_start(ADDRESS, ADDRESS + len(code))
 
@@ -102,9 +111,9 @@ def test_i386(mode, code):
 
 
 if __name__ == '__main__':
-    #test_i386(UC_MODE_32, X86_CODE32_SELF)
-    #print("=" * 20)
-    #test_i386(UC_MODE_32, X86_CODE32)
-    #print("=" * 20)
+    test_i386(UC_MODE_32, X86_CODE32_SELF)
+    print("=" * 20)
+    test_i386(UC_MODE_32, X86_CODE32)
+    print("=" * 20)
     test_i386(UC_MODE_64, X86_CODE64)  # FIXME
 
