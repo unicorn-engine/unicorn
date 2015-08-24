@@ -75,7 +75,7 @@ endif
 
 .PHONY: all clean
 
-UNICORN_ARCHS := $(shell if [ -a ../config.log ]; then cat ../config.log;\
+UNICORN_ARCHS := $(shell if [ -e ../config.log ]; then cat ../config.log;\
 				 else printf "$(UNICORN_ARCHS)"; fi)
 
 SOURCES =
