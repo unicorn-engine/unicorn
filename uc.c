@@ -410,6 +410,11 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
         // invalid handle
         return UC_ERR_UCH;
 
+    // reset the counter
+    uc->emu_counter = 0;
+    uc->stop_request = false;
+    uc->invalid_error = UC_ERR_OK;
+
     switch(uc->arch) {
         default:
             break;
@@ -473,11 +478,6 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
     uc->pause_all_vcpus(uc);
     // emulation is done
     uc->emulation_done = true;
-
-    // reset the counter
-    uc->emu_counter = 0;
-    uc->stop_request = false;
-    uc->invalid_error = UC_ERR_OK;
 
     return uc->invalid_error;
 }

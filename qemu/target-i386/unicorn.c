@@ -938,6 +938,16 @@ int x86_uc_machine_init(struct uc_struct *uc)
     return machine_initialize(uc);
 }
 
+static bool x86_stop_interrupt(int intno)
+{
+    switch(intno) {
+        default:
+            return false;
+        case EXCP06_ILLOP:
+            return true;
+    }
+}
+
 void pc_machine_init(struct uc_struct *uc);
 
 __attribute__ ((visibility ("default")))
@@ -954,5 +964,6 @@ void x86_uc_init(struct uc_struct* uc)
     uc->reg_reset = x86_reg_reset;
     uc->release = x86_release;
     uc->set_pc = x86_set_pc;
+    uc->stop_interrupt = x86_stop_interrupt;
     uc_common_init(uc);
 }
