@@ -26,7 +26,7 @@ Tyler Colgan
 Jonathon Reinhart, jonathon.reinhart at gmail.com
 Blue Skeye
 Chris Maixner
-Pancake "radare"
+Sergi Alvarez, aka pancake (author of radare)
 Ryan Hileman
 Tim "diff" Strazzere
 WanderingGlitch of the Zero Day Initiative
