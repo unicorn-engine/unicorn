@@ -321,7 +321,7 @@ uc_err uc_reg_read(uch handle, int regid, void *value)
 
 
 UNICORN_EXPORT
-uc_err uc_reg_write(uch handle, int regid, void *value)
+uc_err uc_reg_write(uch handle, int regid, const void *value)
 {
     struct uc_struct *uc;
 

@@ -6,7 +6,7 @@
 
 // functions to read & write registers
 int m68k_reg_read(uch handle, unsigned int regid, void *value);
-int m68k_reg_write(uch handle, unsigned int regid, void *value);
+int m68k_reg_write(uch handle, unsigned int regid, const void *value);
 
 void m68k_reg_reset(uch handle);
 
