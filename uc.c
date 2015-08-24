@@ -356,7 +356,7 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
 
 
 UNICORN_EXPORT
-uc_err uc_mem_write(uch handle, uint64_t address, uint8_t *bytes, size_t size)
+uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size)
 {
     struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
 
