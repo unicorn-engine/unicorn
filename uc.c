@@ -177,6 +177,14 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
 #ifdef UNICORN_HAS_ARM
             case UC_ARCH_ARM:
                 uc->init_arch = arm_uc_init;
+
+                // verify mode
+                if (mode != UC_MODE_ARM && mode != UC_MODE_THUMB) {
+                    *handle = 0;
+                    free(uc);
+                    return UC_ERR_MODE;
+                }
+
                 if (mode == UC_MODE_THUMB)
                     uc->thumb = 1;
                 break;
