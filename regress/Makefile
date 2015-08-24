@@ -1,7 +1,9 @@
+.PHONY: all clean
+
 CFLAGS+=-I../include
 LDFLAGS=-L.. -lunicorn
 
-TESTS=map_crash map_regs
+TESTS = map_crash
 
 all: $(TESTS)
 

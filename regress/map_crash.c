@@ -4,7 +4,8 @@
 #include <stdlib.h>
 
 #define UC_BUG_WRITE_SIZE 13000
-#define UC_BUG_WRITE_ADDR 0x1000
+//#define UC_BUG_WRITE_ADDR 0x1000
+#define UC_BUG_WRITE_ADDR 0x2000
 
 int main() {
 	int size;
