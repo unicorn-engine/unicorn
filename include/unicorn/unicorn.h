@@ -121,7 +121,7 @@ typedef enum uc_err {
 
 // Callback function for tracing code (UC_HOOK_CODE & UC_HOOK_BLOCK)
 // @address: address where the code is being executed
-// @size: size of machine instruction being executed
+// @size: size of machine instruction(s) being executed, or 0 when size is unknown
 // @user_data: user data passed to tracing APIs.
 typedef void (*uc_cb_hookcode_t)(uch handle, uint64_t address, uint32_t size, void *user_data);
 

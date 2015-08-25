@@ -83,3 +83,4 @@ config.log
 regress/map_crash
 regress/sigill
 regress/sigill2
+regress/block_test

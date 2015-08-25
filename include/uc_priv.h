@@ -163,6 +163,8 @@ struct uc_struct {
     uint64_t addr_end;  // address where emulation stops (@end param of uc_emu_start())
 
     int thumb;  // thumb mode for ARM
+    // full TCG cache leads to middle-block break in the last translation?
+    bool block_full;
 };
 
 #include "qemu_macro.h"

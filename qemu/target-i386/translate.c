@@ -8256,6 +8256,7 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     target_ulong cs_base;
     int num_insns;
     int max_insns;
+    bool block_full = false;
 
     /* generate intermediate code */
     pc_start = tb->pc;
@@ -8349,7 +8350,9 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
         max_insns = CF_COUNT_MASK;
 
     // Unicorn: trace this block on request
-    if (env->uc->hook_block) {
+    // Only hook this block if it is not broken from previous translation due to
+    // full translation cache
+    if (env->uc->hook_block && !env->uc->block_full) {
         struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             env->uc->block_addr = pc_start;
@@ -8407,6 +8410,7 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
             num_insns >= max_insns) {
             gen_jmp_im(dc, pc_ptr - dc->cs_base);
             gen_eob(dc);
+            block_full = true;
             break;
         }
     }
@@ -8427,6 +8431,8 @@ done_generating:
         tb->size = pc_ptr - pc_start;
         // tb->icount = num_insns;
     }
+
+    env->uc->block_full = block_full;
 }
 
 void gen_intermediate_code(CPUX86State *env, TranslationBlock *tb)
