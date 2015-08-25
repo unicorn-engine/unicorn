@@ -7,6 +7,17 @@ JAVA_PLATFORM_INC := $(shell dirname `find $(JAVA_INC) -name jni_md.h`)
 UNICORN_INC=../../include
 
 SAMPLES := $(shell ls samples/*.java)
+SRC := $(shell ls unicorn/*.java)
+
+OS := $(shell uname)
+ifeq ($(OS),Darwin)
+   LIB_EXT=.dylib
+endif
+ifeq ($(OS),Linux)
+   LIB_EXT=.so
+else
+   LIB_EXT=.dll
+endif
 
 CC=gcc
 CFLAGS=-fPIC
@@ -38,16 +49,17 @@ unicorn_Unicorn.h: unicorn/Unicorn.java
 unicorn_Unicorn.o: unicorn_Unicorn.c unicorn_Unicorn.h
 	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
 
-libunicorn_java.so: unicorn_Unicorn.o
+libunicorn_java$(LIB_EXT): unicorn_Unicorn.o
 
-lib: libunicorn_java.so unicorn_Unicorn.h
+lib: libunicorn_java$(LIB_EXT) unicorn_Unicorn.h
 	$(CC) -o $< $(LDFLAGS) $(OBJS) $(LIBDIR) $(LIBS)
 
 samples: $(SAMPLES:.java=.class)
+jarfiles: $(SRC:.java=.class)
 
-jar: unicorn/Unicorn.class
+jar: jarfiles
 	jar cf $(JARFILE) unicorn/*.class 
 
 install: lib jar
-	cp -a libunicorn_java.so /usr/local/lib
-	cp -a $(JARFILE) $(JAVA_HOME)/lib/ext
+	cp libunicorn_java$(LIB_EXT) $(JAVA_HOME)/lib/ext
+	cp $(JARFILE) $(JAVA_HOME)/lib/ext
