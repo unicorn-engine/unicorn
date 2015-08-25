@@ -6,7 +6,7 @@
 
 #include <unicorn/unicorn.h>
 
-static count = 1;
+static int count = 1;
 
 // Callback function for tracing code (UC_HOOK_CODE & UC_HOOK_BLOCK)
 // @address: address where the code is being executed
@@ -79,4 +79,6 @@ int main() {
    fprintf(stderr, "ok %d - uc_emu_start\n", count++);
 
    fprintf(stderr, "ok %d - Done", count++);
+
+   return 0;
 }
