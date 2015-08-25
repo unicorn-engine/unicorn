@@ -1,0 +1,144 @@
+/*
+
+Java bindings for the Unicorn Emulator Engine
+
+Copyright(c) 2015 Chris Eagle
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+version 2 as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+*/
+
+package unicorn;
+
+public interface ArmRegs {
+   public static final int UC_ARM_REG_INVALID = 0;
+   public static final int UC_ARM_REG_APSR = 1;
+   public static final int UC_ARM_REG_APSR_NZCV = 2;
+   public static final int UC_ARM_REG_CPSR = 3;
+   public static final int UC_ARM_REG_FPEXC = 4;
+   public static final int UC_ARM_REG_FPINST = 5;
+   public static final int UC_ARM_REG_FPSCR = 6;
+   public static final int UC_ARM_REG_FPSCR_NZCV = 7;
+   public static final int UC_ARM_REG_FPSID = 8;
+   public static final int UC_ARM_REG_ITSTATE = 9;
+   public static final int UC_ARM_REG_LR = 10;
+   public static final int UC_ARM_REG_PC = 11;
+   public static final int UC_ARM_REG_SP = 12;
+   public static final int UC_ARM_REG_SPSR = 13;
+   public static final int UC_ARM_REG_D0 = 14;
+   public static final int UC_ARM_REG_D1 = 15;
+   public static final int UC_ARM_REG_D2 = 16;
+   public static final int UC_ARM_REG_D3 = 17;
+   public static final int UC_ARM_REG_D4 = 18;
+   public static final int UC_ARM_REG_D5 = 19;
+   public static final int UC_ARM_REG_D6 = 20;
+   public static final int UC_ARM_REG_D7 = 21;
+   public static final int UC_ARM_REG_D8 = 22;
+   public static final int UC_ARM_REG_D9 = 23;
+   public static final int UC_ARM_REG_D10 = 24;
+   public static final int UC_ARM_REG_D11 = 25;
+   public static final int UC_ARM_REG_D12 = 26;
+   public static final int UC_ARM_REG_D13 = 27;
+   public static final int UC_ARM_REG_D14 = 28;
+   public static final int UC_ARM_REG_D15 = 29;
+   public static final int UC_ARM_REG_D16 = 30;
+   public static final int UC_ARM_REG_D17 = 31;
+   public static final int UC_ARM_REG_D18 = 32;
+   public static final int UC_ARM_REG_D19 = 33;
+   public static final int UC_ARM_REG_D20 = 34;
+   public static final int UC_ARM_REG_D21 = 35;
+   public static final int UC_ARM_REG_D22 = 36;
+   public static final int UC_ARM_REG_D23 = 37;
+   public static final int UC_ARM_REG_D24 = 38;
+   public static final int UC_ARM_REG_D25 = 39;
+   public static final int UC_ARM_REG_D26 = 40;
+   public static final int UC_ARM_REG_D27 = 41;
+   public static final int UC_ARM_REG_D28 = 42;
+   public static final int UC_ARM_REG_D29 = 43;
+   public static final int UC_ARM_REG_D30 = 44;
+   public static final int UC_ARM_REG_D31 = 45;
+   public static final int UC_ARM_REG_FPINST2 = 46;
+   public static final int UC_ARM_REG_MVFR0 = 47;
+   public static final int UC_ARM_REG_MVFR1 = 48;
+   public static final int UC_ARM_REG_MVFR2 = 49;
+   public static final int UC_ARM_REG_Q0 = 50;
+   public static final int UC_ARM_REG_Q1 = 51;
+   public static final int UC_ARM_REG_Q2 = 52;
+   public static final int UC_ARM_REG_Q3 = 53;
+   public static final int UC_ARM_REG_Q4 = 54;
+   public static final int UC_ARM_REG_Q5 = 55;
+   public static final int UC_ARM_REG_Q6 = 56;
+   public static final int UC_ARM_REG_Q7 = 57;
+   public static final int UC_ARM_REG_Q8 = 58;
+   public static final int UC_ARM_REG_Q9 = 59;
+   public static final int UC_ARM_REG_Q10 = 60;
+   public static final int UC_ARM_REG_Q11 = 61;
+   public static final int UC_ARM_REG_Q12 = 62;
+   public static final int UC_ARM_REG_Q13 = 63;
+   public static final int UC_ARM_REG_Q14 = 64;
+   public static final int UC_ARM_REG_Q15 = 65;
+   public static final int UC_ARM_REG_R0 = 66;
+   public static final int UC_ARM_REG_R1 = 67;
+   public static final int UC_ARM_REG_R2 = 68;
+   public static final int UC_ARM_REG_R3 = 69;
+   public static final int UC_ARM_REG_R4 = 70;
+   public static final int UC_ARM_REG_R5 = 71;
+   public static final int UC_ARM_REG_R6 = 72;
+   public static final int UC_ARM_REG_R7 = 73;
+   public static final int UC_ARM_REG_R8 = 74;
+   public static final int UC_ARM_REG_R9 = 75;
+   public static final int UC_ARM_REG_R10 = 76;
+   public static final int UC_ARM_REG_R11 = 77;
+   public static final int UC_ARM_REG_R12 = 78;
+   public static final int UC_ARM_REG_S0 = 79;
+   public static final int UC_ARM_REG_S1 = 80;
+   public static final int UC_ARM_REG_S2 = 81;
+   public static final int UC_ARM_REG_S3 = 82;
+   public static final int UC_ARM_REG_S4 = 83;
+   public static final int UC_ARM_REG_S5 = 84;
+   public static final int UC_ARM_REG_S6 = 85;
+   public static final int UC_ARM_REG_S7 = 86;
+   public static final int UC_ARM_REG_S8 = 87;
+   public static final int UC_ARM_REG_S9 = 88;
+   public static final int UC_ARM_REG_S10 = 89;
+   public static final int UC_ARM_REG_S11 = 90;
+   public static final int UC_ARM_REG_S12 = 91;
+   public static final int UC_ARM_REG_S13 = 92;
+   public static final int UC_ARM_REG_S14 = 93;
+   public static final int UC_ARM_REG_S15 = 94;
+   public static final int UC_ARM_REG_S16 = 95;
+   public static final int UC_ARM_REG_S17 = 96;
+   public static final int UC_ARM_REG_S18 = 97;
+   public static final int UC_ARM_REG_S19 = 98;
+   public static final int UC_ARM_REG_S20 = 99;
+   public static final int UC_ARM_REG_S21 = 100;
+   public static final int UC_ARM_REG_S22 = 101;
+   public static final int UC_ARM_REG_S23 = 102;
+   public static final int UC_ARM_REG_S24 = 103;
+   public static final int UC_ARM_REG_S25 = 104;
+   public static final int UC_ARM_REG_S26 = 105;
+   public static final int UC_ARM_REG_S27 = 106;
+   public static final int UC_ARM_REG_S28 = 107;
+   public static final int UC_ARM_REG_S29 = 108;
+   public static final int UC_ARM_REG_S30 = 109;
+   public static final int UC_ARM_REG_S31 = 110;
+   public static final int UC_ARM_REG_ENDING = 111;
+   public static final int UC_ARM_REG_R13 = UC_ARM_REG_SP;
+   public static final int UC_ARM_REG_R14 = UC_ARM_REG_LR;
+   public static final int UC_ARM_REG_R15 = UC_ARM_REG_PC;
+   public static final int UC_ARM_REG_SB = UC_ARM_REG_R9;
+   public static final int UC_ARM_REG_SL = UC_ARM_REG_R10;
+   public static final int UC_ARM_REG_FP = UC_ARM_REG_R11;
+   public static final int UC_ARM_REG_IP = UC_ARM_REG_R12;
+}
