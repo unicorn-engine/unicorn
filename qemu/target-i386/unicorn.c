@@ -122,6 +122,10 @@ void x86_reg_reset(uch handle)
     switch(uc->mode) {
         default:
             break;
+        case UC_MODE_16:
+            env->hflags = 0;
+            env->cr[0] = 0;
+            break;
         case UC_MODE_32:
             env->hflags |= HF_CS32_MASK | HF_SS32_MASK | HF_OSFXSR_MASK;
             env->cr[0] = CR0_PE_MASK;   // protected mode
