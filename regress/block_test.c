@@ -18,7 +18,7 @@ void cb_hookblock(uch handle, uint64_t address, uint32_t size, void *user_data) 
       fprintf(stderr, "not ok %d - address != 0x1000000 && address != 0x1000200\n", count++);
       _exit(1);
    }
-   fprintf(stderr, "ok %d - address (0x%x) is start of basic block\n", count++, address);
+   fprintf(stderr, "ok %d - address (0x%x) is start of basic block\n", count++, (uint32_t)address);
    if (size != 0x200) {
       fprintf(stderr, "not ok %d - basic block size != 0x200\n", count++);
       _exit(1);
