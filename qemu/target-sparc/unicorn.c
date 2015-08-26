@@ -32,12 +32,10 @@ static void sparc_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUSPARCState *)uc->current_cpu->env_ptr)->npc = address + 4;
 }
 
-void sparc_reg_reset(uch handle)
+void sparc_reg_reset(struct uc_struct *uc)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
-    CPUArchState *env;
+    CPUArchState *env = first_cpu->env_ptr;
 
-    env = first_cpu->env_ptr;
     memset(env->gregs, 0, sizeof(env->gregs));
     memset(env->fpr, 0, sizeof(env->fpr));
     memset(env->regbase, 0, sizeof(env->regbase));
@@ -46,9 +44,8 @@ void sparc_reg_reset(uch handle)
     env->npc = 0;
 }
 
-int sparc_reg_read(uch handle, unsigned int regid, void *value)
+int sparc_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;
 
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
@@ -71,9 +68,8 @@ int sparc_reg_read(uch handle, unsigned int regid, void *value)
 #define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
-int sparc_reg_write(uch handle, unsigned int regid, const void *value)
+int sparc_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;
 
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
