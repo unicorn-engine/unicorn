@@ -384,6 +384,12 @@ uc_err uc_hook_add(uch handle, uch *h2, uc_hook_t type, void *callback, void *us
 UNICORN_EXPORT
 uc_err uc_hook_del(uch handle, uch *h2);
 
+typedef enum uc_prot {
+   UC_PROT_READ = 1,
+   UC_PROT_WRITE = 2,
+   UC_PROT_EXEC = 4
+} uc_prot;
+
 /*
  Map memory in for emulation.
  This API adds a memory region that can be used by emulation.
