@@ -283,6 +283,8 @@ uc_err uc_close(uch *handle)
     uc->root->free(uc->root);
 
     free(uc->hook_callbacks);
+    
+    free(uc->memory_map);
 
     // finally, free uc itself.
     memset(uc, 0, sizeof(*uc));
