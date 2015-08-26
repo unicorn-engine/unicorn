@@ -180,9 +180,9 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
     // Unicorn: callback on memory read
     if (env->uc->hook_mem_read && READ_ACCESS_TYPE == MMU_DATA_LOAD) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_MEM_READ, addr);
+        struct hook_struct *trace = hook_find(env->uc, UC_MEM_READ, addr);
         if (trace) {
-            ((uc_cb_hookmem_t)trace->callback)((uch)env->uc, UC_MEM_READ,
+            ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_READ,
                     (uint64_t)addr, (int)DATA_SIZE, (int64_t)0, trace->user_data);
         }
     }
@@ -190,7 +190,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     // Unicorn: callback on invalid memory
     if (!memory_mapping(addr) && env->uc->hook_mem_idx) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
-                    (uch)env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
+                    env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
             // save error & quit
             env->invalid_addr = addr;
@@ -302,9 +302,9 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
     // Unicorn: callback on memory read
     if (env->uc->hook_mem_read && READ_ACCESS_TYPE == MMU_DATA_LOAD) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_MEM_READ, addr);
+        struct hook_struct *trace = hook_find(env->uc, UC_MEM_READ, addr);
         if (trace) {
-            ((uc_cb_hookmem_t)trace->callback)((uch)env->uc, UC_MEM_READ,
+            ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_READ,
                     (uint64_t)addr, (int)DATA_SIZE, (int64_t)0, trace->user_data);
         }
     }
@@ -312,7 +312,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     // Unicorn: callback on invalid memory
     if (!memory_mapping(addr) && env->uc->hook_mem_idx) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
-                    (uch)env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
+                    env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
             // save error & quit
             env->invalid_addr = addr;
@@ -462,9 +462,9 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 
     // Unicorn: callback on memory write
     if (env->uc->hook_mem_write) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_MEM_WRITE, addr);
+        struct hook_struct *trace = hook_find(env->uc, UC_MEM_WRITE, addr);
         if (trace) {
-            ((uc_cb_hookmem_t)trace->callback)((uch)env->uc, UC_MEM_WRITE,
+            ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_WRITE,
                     (uint64_t)addr, (int)DATA_SIZE, (int64_t)val, trace->user_data);
         }
     }
@@ -472,7 +472,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     // Unicorn: callback on invalid memory
     if (!memory_mapping(addr) && env->uc->hook_mem_idx) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
-                    (uch)env->uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
+                    env->uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
             // save error & quit
             env->invalid_addr = addr;
@@ -576,9 +576,9 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 
     // Unicorn: callback on memory write
     if (env->uc->hook_mem_write) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_MEM_WRITE, addr);
+        struct hook_struct *trace = hook_find(env->uc, UC_MEM_WRITE, addr);
         if (trace) {
-            ((uc_cb_hookmem_t)trace->callback)((uch)env->uc, UC_MEM_WRITE,
+            ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_WRITE,
                     (uint64_t)addr, (int)DATA_SIZE, (int64_t)val, trace->user_data);
         }
     }
@@ -586,7 +586,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     // Unicorn: callback on invalid memory
     if (!memory_mapping(addr) && env->uc->hook_mem_idx) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
-                    (uch)env->uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
+                    env->uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
             // save error & quit
             env->invalid_addr = addr;
