@@ -188,7 +188,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 
     // Unicorn: callback on invalid memory
-    if (!memory_mapping(addr) && env->uc->hook_mem_idx) {
+    if (!memory_mapping(env->uc, addr) && env->uc->hook_mem_idx) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
                     (uch)env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
@@ -310,7 +310,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 
     // Unicorn: callback on invalid memory
-    if (!memory_mapping(addr) && env->uc->hook_mem_idx) {
+    if (!memory_mapping(env->uc, addr) && env->uc->hook_mem_idx) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
                     (uch)env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
@@ -470,7 +470,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     }
 
     // Unicorn: callback on invalid memory
-    if (!memory_mapping(addr) && env->uc->hook_mem_idx) {
+    if (!memory_mapping(env->uc, addr) && env->uc->hook_mem_idx) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
                     (uch)env->uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
@@ -584,7 +584,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     }
 
     // Unicorn: callback on invalid memory
-    if (!memory_mapping(addr) && env->uc->hook_mem_idx) {
+    if (!memory_mapping(env->uc, addr) && env->uc->hook_mem_idx) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
                     (uch)env->uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
