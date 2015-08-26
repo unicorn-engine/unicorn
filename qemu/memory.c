@@ -47,11 +47,12 @@ MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, ui
 
 int memory_free(struct uc_struct *uc)
 {
+    int i;
     get_system_memory(uc)->enabled = false;
-    if (uc->ram) {
-        uc->ram->enabled = false;
-        memory_region_del_subregion(get_system_memory(uc), uc->ram);
-        g_free(uc->ram);
+    for (i = 0; i < uc->mapped_block_count; i++) {
+        uc->mapped_blocks[i].region->enabled = false;
+        memory_region_del_subregion(get_system_memory(uc), uc->mapped_blocks[i].region);
+        g_free(uc->mapped_blocks[i].region);
     }
     return 0;
 }
