@@ -13,6 +13,7 @@ X86_CODE32_MEM_WRITE = b"\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a" # mov [0xaaaaaaaa], e
 X86_CODE64 = b"\x41\xBC\x3B\xB0\x28\x2A\x49\x0F\xC9\x90\x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9\x4D\x29\xF4\x49\x81\xC9\xF6\x8A\xC6\x53\x4D\x87\xED\x48\x0F\xAD\xD2\x49\xF7\xD4\x48\xF7\xE1\x4D\x19\xC5\x4D\x89\xC5\x48\xF7\xD6\x41\xB8\x4F\x8D\x6B\x59\x4D\x87\xD0\x68\x6A\x1E\x09\x3C\x59"
 X86_CODE32_INOUT = b"\x41\xE4\x3F\x4a\xE6\x46\x43" # INC ecx; IN AL, 0x3f; DEC edx; OUT 0x46, AL; INC ebx
 X86_CODE64_SYSCALL = '\x0f\x05' # SYSCALL
+X86_CODE16 = '\x00\x00' # add   byte ptr [bx + si], al
 
 # memory address where emulation starts
 ADDRESS = 0x1000000
@@ -437,6 +438,36 @@ def test_x86_64_syscall():
         print("ERROR: %s" % e)
 
 
+def test_x86_16():
+    print("Emulate x86 16-bit code")
+    try:
+        # Initialize emulator in X86-16bit mode
+        mu = Uc(UC_ARCH_X86, UC_MODE_16)
+
+        # map 8KB memory for this emulation
+        mu.mem_map(0, 8 * 1024)
+
+        # set CPU registers
+        mu.reg_write(UC_X86_REG_EAX, 7)
+        mu.reg_write(UC_X86_REG_EBX, 5)
+        mu.reg_write(UC_X86_REG_ESI, 6)
+
+        # write machine code to be emulated to memory
+        mu.mem_write(0, X86_CODE16)
+
+        # emulate machine code in infinite time
+        mu.emu_start(0, len(X86_CODE16))
+
+        # now print out some registers
+        print(">>> Emulation done. Below is the CPU context")
+
+        tmp = mu.mem_read(11, 1)
+        print("[0x%x] = 0x%x" %(11, tmp[0]))
+
+    except UcError as e:
+        print("ERROR: %s" % e)
+
+
 if __name__ == '__main__':
     test_i386()
     print("=" * 20)
@@ -451,3 +482,5 @@ if __name__ == '__main__':
     test_x86_64()
     print("=" * 20)
     test_x86_64_syscall()
+    print("=" * 20)
+    test_x86_16()
