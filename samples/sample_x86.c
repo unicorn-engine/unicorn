@@ -24,7 +24,8 @@
 
 //#define X86_CODE64 "\x41\xBC\x3B\xB0\x28\x2A \x49\x0F\xC9 \x90 \x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9" // <== still crash
 //#define X86_CODE64 "\x41\xBC\x3B\xB0\x28\x2A\x49\x0F\xC9\x90\x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9" 
-#define X86_CODE64 "\x41\xBC\x3B\xB0\x28\x2A\x49\x0F\xC9\x90\x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9\x4D\x29\xF4\x49\x81\xC9\xF6\x8A\xC6\x53\x4D\x87\xED\x48\x0F\xAD\xD2\x49\xF7\xD4\x48\xF7\xE1\x4D\x19\xC5\x4D\x89\xC5\x48\xF7\xD6\x41\xB8\x4F\x8D\x6B\x59\x4D\x87\xD0\x68\x6A\x1E\x09\x3C\x59" //\xc3"
+#define X86_CODE64 "\x41\xBC\x3B\xB0\x28\x2A\x49\x0F\xC9\x90\x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9\x4D\x29\xF4\x49\x81\xC9\xF6\x8A\xC6\x53\x4D\x87\xED\x48\x0F\xAD\xD2\x49\xF7\xD4\x48\xF7\xE1\x4D\x19\xC5\x4D\x89\xC5\x48\xF7\xD6\x41\xB8\x4F\x8D\x6B\x59\x4D\x87\xD0\x68\x6A\x1E\x09\x3C\x59"
+#define X86_CODE16 "\x00\x00"   // add   byte ptr [bx + si], al
 
 // memory address where emulation starts
 #define ADDRESS 0x1000000
@@ -672,6 +673,58 @@ static void test_x86_64(void)
     uc_close(&handle);
 }
 
+static void test_x86_16(void)
+{
+    uch handle;
+    uc_err err;
+    uint8_t tmp;
+
+    int32_t eax = 7;
+    int32_t ebx = 5;
+    int32_t esi = 6;
+
+    printf("Emulate x86 16-bit code\n");
+
+    // Initialize emulator in X86-16bit mode
+    err = uc_open(UC_ARCH_X86, UC_MODE_16, &handle);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        return;
+    }
+
+    // map 8KB memory for this emulation
+    uc_mem_map(handle, 0, 8 * 1024);
+
+    // write machine code to be emulated to memory
+    if (uc_mem_write(handle, 0, (uint8_t *)X86_CODE16, sizeof(X86_CODE64) - 1)) {
+        printf("Failed to write emulation code to memory, quit!\n");
+        return;
+    }
+
+    // initialize machine registers
+    uc_reg_write(handle, UC_X86_REG_EAX, &eax);
+    uc_reg_write(handle, UC_X86_REG_EBX, &ebx);
+    uc_reg_write(handle, UC_X86_REG_ESI, &esi);
+
+    // emulate machine code in infinite time (last param = 0), or when
+    // finishing all the code.
+    err = uc_emu_start(handle, 0, sizeof(X86_CODE16) - 1, 0, 0);
+    if (err) {
+        printf("Failed on uc_emu_start() with error returned %u: %s\n",
+                err, uc_strerror(err));
+    }
+
+    // now print out some registers
+    printf(">>> Emulation done. Below is the CPU context\n");
+
+    // read from memory
+    if (!uc_mem_read(handle, 11, &tmp, 1))
+        printf(">>> Read 1 bytes from [0x%x] = 0x%x\n", 11, tmp);
+    else
+        printf(">>> Failed to read 1 bytes from [0x%x]\n", 11);
+
+    uc_close(&handle);
+}
 int main(int argc, char **argv, char **envp)
 {
     if (argc == 2) {
@@ -689,6 +742,10 @@ int main(int argc, char **argv, char **envp)
             test_x86_64();
         }
 
+        if (!strcmp(argv[1], "-16")) {
+            test_x86_16();
+        }
+
         // test memleak
         if (!strcmp(argv[1], "-0")) {
             while(1) {
@@ -697,7 +754,7 @@ int main(int argc, char **argv, char **envp)
             }
         }
     } else {
-        printf("Syntax: %s <-32|-64>\n", argv[0]);
+        printf("Syntax: %s <-16|-32|-64>\n", argv[0]);
     }
 
     return 0;
