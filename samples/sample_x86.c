@@ -725,6 +725,7 @@ static void test_x86_16(void)
 
     uc_close(&handle);
 }
+
 int main(int argc, char **argv, char **envp)
 {
     if (argc == 2) {
