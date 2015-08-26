@@ -9,8 +9,8 @@
 int main() {
     int size;
     uint8_t *buf;
-    uch uh;
-    uc_err err = uc_open (UC_ARCH_X86, UC_MODE_64, &uh);
+    struct uc_struct *uc;
+    uc_err err = uc_open (UC_ARCH_X86, UC_MODE_64, &uc);
     if (err) {
         fprintf (stderr, "Cannot initialize unicorn\n");
         return 1;
@@ -22,9 +22,9 @@ int main() {
         return 1;
     }
     memset (buf, 0, size);
-    if (!uc_mem_map (uh, UC_BUG_WRITE_ADDR, size)) {
-        uc_mem_write (uh, UC_BUG_WRITE_ADDR, buf, size);
+    if (!uc_mem_map(uc, UC_BUG_WRITE_ADDR, size)) {
+        uc_mem_write(uc, UC_BUG_WRITE_ADDR, buf, size);
     }
-    uc_close (&uh);
+    uc_close(uc);
     return 0;
 }
