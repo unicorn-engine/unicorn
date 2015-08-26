@@ -38,13 +38,9 @@ size_t hook_find_new(struct uc_struct *uc)
 }
 
 // return -1 on failure, index to hook_callbacks[] on success.
-size_t hook_add(uch handle, int type, uint64_t begin, uint64_t end, void *callback, void *user_data)
+size_t hook_add(struct uc_struct *uc, int type, uint64_t begin, uint64_t end, void *callback, void *user_data)
 {
     int i;
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
-    if (handle == 0)
-        return -1;
 
     // find the first free slot. skip slot 0, so index > 0
     i = hook_find_new(uc);
@@ -95,13 +91,8 @@ size_t hook_add(uch handle, int type, uint64_t begin, uint64_t end, void *callba
 }
 
 // return 0 on success, -1 on failure
-uc_err hook_del(uch handle, uch *h2)
+uc_err hook_del(struct uc_struct *uc, uch *h2)
 {
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
-    if (handle == 0)
-        return UC_ERR_UCH;
-
     if (*h2 == uc->hook_block_idx) {
         uc->hook_block_idx = 0;
     }
@@ -205,26 +196,19 @@ static struct hook_struct *_hook_find(struct uc_struct *uc, int type, uint64_t a
 }
 
 
-static void hook_count_cb(uch handle, uint64_t address, uint32_t size, void *user_data)
+static void hook_count_cb(struct uc_struct *uc, uint64_t address, uint32_t size, void *user_data)
 {
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
     // count this instruction
     uc->emu_counter++;
 
     if (uc->emu_counter > uc->emu_count)
-        uc_emu_stop(handle);
+        uc_emu_stop(uc);
     else if (uc->hook_count_callback)
-        uc->hook_count_callback(handle, address, size, user_data);
+        uc->hook_count_callback(uc, address, size, user_data);
 }
 
-struct hook_struct *hook_find(uch handle, int type, uint64_t address)
+struct hook_struct *hook_find(struct uc_struct *uc, int type, uint64_t address)
 {
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
-    if (handle == 0)
-        return NULL;
-
     // stop executing callbacks if we already got stop request
     if (uc->stop_request)
         return NULL;
@@ -269,6 +253,5 @@ void helper_uc_tracecode(int32_t size, void *callback, void *handle, int64_t add
         uc->set_pc(uc, address);
     }
 
-    ((uc_cb_hookcode_t)callback)((uch)handle, address, size, user_data);
+    ((uc_cb_hookcode_t)callback)(uc, address, size, user_data);
 }
-
