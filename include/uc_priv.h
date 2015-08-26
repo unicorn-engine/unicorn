@@ -15,6 +15,12 @@
 
 QTAILQ_HEAD(CPUTailQ, CPUState);
 
+typedef struct MemoryBlock {
+   uint64_t begin;  //inclusive
+   uint64_t end;    //exclusive
+   uint32_t perms;
+} MemoryBlock;
+
 typedef struct ModuleEntry {
     void (*init)(void);
     QTAILQ_ENTRY(ModuleEntry) node;
@@ -60,6 +66,9 @@ struct hook_struct {
 
 // extend memory to keep 32 more hooks each time
 #define HOOK_SIZE 32
+
+//relloc increment, KEEP THIS A POWER OF 2!
+#define MEM_BLOCK_INCR 32
 
 struct uc_struct {
     uc_arch arch;
@@ -165,11 +174,13 @@ struct uc_struct {
     int thumb;  // thumb mode for ARM
     // full TCG cache leads to middle-block break in the last translation?
     bool block_full;
+    MemoryBlock *mapped_blocks;
+    uint32_t mapped_block_count;
 };
 
 #include "qemu_macro.h"
 
 // check if this address is mapped in (via uc_mem_map())
-bool memory_mapping(uint64_t address);
+bool memory_mapping(struct uc_struct* uc, uint64_t address);
 
 #endif
