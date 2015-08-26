@@ -24,10 +24,10 @@ typedef struct ModuleEntry {
 typedef QTAILQ_HEAD(, ModuleEntry) ModuleTypeList;
 
 // return 0 on success, -1 on failure
-typedef int (*reg_read_t)(uch handle, unsigned int regid, void *value);
-typedef int (*reg_write_t)(uch handle, unsigned int regid, const void *value);
+typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int regid, void *value);
+typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int regid, const void *value);
 
-typedef void (*reg_reset_t)(uch handle);
+typedef void (*reg_reset_t)(struct uc_struct *uc);
 
 typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr, const uint8_t *buf, int len);
 

@@ -19,6 +19,8 @@ extern "C" {
 
 #include "platform.h"
 
+struct uc_struct;
+
 // Handle to use with all APIs
 typedef size_t uch;
 
@@ -123,24 +125,24 @@ typedef enum uc_err {
 // @address: address where the code is being executed
 // @size: size of machine instruction(s) being executed, or 0 when size is unknown
 // @user_data: user data passed to tracing APIs.
-typedef void (*uc_cb_hookcode_t)(uch handle, uint64_t address, uint32_t size, void *user_data);
+typedef void (*uc_cb_hookcode_t)(struct uc_struct *uc, uint64_t address, uint32_t size, void *user_data);
 
 // Callback function for tracing interrupts (for uc_hook_intr())
 // @intno: interrupt number
 // @user_data: user data passed to tracing APIs.
-typedef void (*uc_cb_hookintr_t)(uch handle, uint32_t intno, void *user_data);
+typedef void (*uc_cb_hookintr_t)(struct uc_struct *uc, uint32_t intno, void *user_data);
 
 // Callback function for tracing IN instruction of X86
 // @port: port number
 // @size: data size (1/2/4) to be read from this port
 // @user_data: user data passed to tracing APIs.
-typedef uint32_t (*uc_cb_insn_in_t)(uch handle, uint32_t port, int size, void *user_data);
+typedef uint32_t (*uc_cb_insn_in_t)(struct uc_struct *uc, uint32_t port, int size, void *user_data);
 
 // x86's handler for OUT
 // @port: port number
 // @size: data size (1/2/4) to be written to this port
 // @value: data value to be written to this port
-typedef void (*uc_cb_insn_out_t)(uch handle, uint32_t port, int size, uint32_t value, void *user_data);
+typedef void (*uc_cb_insn_out_t)(struct uc_struct *uc, uint32_t port, int size, uint32_t value, void *user_data);
 
 // All type of memory accesses for UC_HOOK_MEM_*
 typedef enum uc_mem_type {
@@ -167,7 +169,7 @@ typedef enum uc_hook_t {
 // @size: size of data being read or written
 // @value: value of data being written to memory, or irrelevant if type = READ.
 // @user_data: user data passed to tracing APIs
-typedef void (*uc_cb_hookmem_t)(uch handle, uc_mem_type type,
+typedef void (*uc_cb_hookmem_t)(struct uc_struct *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data);
 
 // Callback function for handling memory events (for UC_HOOK_MEM_INVALID)
@@ -177,7 +179,7 @@ typedef void (*uc_cb_hookmem_t)(uch handle, uc_mem_type type,
 // @value: value of data being written to memory, or irrelevant if type = READ.
 // @user_data: user data passed to tracing APIs
 // @return: return true to continue, or false to stop program (due to invalid memory).
-typedef bool (*uc_cb_eventmem_t)(uch handle, uc_mem_type type,
+typedef bool (*uc_cb_eventmem_t)(struct uc_struct *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data);
 
 
@@ -214,43 +216,43 @@ bool uc_arch_supported(uc_arch arch);
 
 
 /*
- Initialize UC handle: this must be done before any usage of UC.
+ Create new instance of unicorn engine.
 
  @arch: architecture type (UC_ARCH_*)
  @mode: hardware mode. This is combined of UC_MODE_*
- @handle: pointer to handle, which will be updated at return time
+ @uc: pointer to struct uc_struct, which will be updated at return time
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle);
+uc_err uc_open(uc_arch arch, uc_mode mode, struct uc_struct **uc);
 
 /*
- Close UC handle: MUST do to release the handle when it is not used anymore.
+ Close UC instance: MUST do to release the handle when it is not used anymore.
  NOTE: this must be called only when there is no longer usage of Unicorn.
  The reason is the this API releases some cached memory, thus access to any
  Unicorn API after uc_close() might crash your application.
- After this, @handle is invalid, and nolonger usable.
+ After this, @uc is invalid, and nolonger usable.
 
- @handle: pointer to a handle returned by uc_open()
+ @uc: pointer to a handle returned by uc_open()
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_close(uch *handle);
+uc_err uc_close(struct uc_struct *uc);
 
 /*
  Report the last error number when some API function fail.
  Like glibc's errno, uc_errno might not retain its old value once accessed.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
 
  @return: error code of uc_err enum type (UC_ERR_*, see above)
 */
 UNICORN_EXPORT
-uc_err uc_errno(uch handle);
+uc_err uc_errno(struct uc_struct *uc);
 
 /*
  Return a string describing given error code.
@@ -266,7 +268,7 @@ const char *uc_strerror(uc_err code);
 /*
  Write to register.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @regid:  register ID that is to be modified.
  @value:  pointer to the value that will set to register @regid
 
@@ -274,12 +276,12 @@ const char *uc_strerror(uc_err code);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_reg_write(uch handle, int regid, const void *value);
+uc_err uc_reg_write(struct uc_struct *uc, int regid, const void *value);
 
 /*
  Read register value.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @regid:  register ID that is to be retrieved.
  @value:  pointer to a variable storing the register value.
 
@@ -287,12 +289,12 @@ uc_err uc_reg_write(uch handle, int regid, const void *value);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_reg_read(uch handle, int regid, void *value);
+uc_err uc_reg_read(struct uc_struct *uc, int regid, void *value);
 
 /*
  Write to a range of bytes in memory.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @address: starting memory address of bytes to set.
  @bytes:   pointer to a variable containing data to be written to memory.
  @size:   size of memory to write to.
@@ -303,12 +305,12 @@ uc_err uc_reg_read(uch handle, int regid, void *value);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size);
+uc_err uc_mem_write(struct uc_struct *uc, uint64_t address, const uint8_t *bytes, size_t size);
 
 /*
  Read a range of bytes in memory.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @address: starting memory address of bytes to get.
  @bytes:   pointer to a variable containing data copied from memory.
  @size:   size of memory to read.
@@ -319,12 +321,12 @@ uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t s
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size);
+uc_err uc_mem_read(struct uc_struct *uc, uint64_t address, uint8_t *bytes, size_t size);
 
 /*
  Emulate machine code in a specific duration of time.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @begin: address where emulation starts
  @until: address where emulation stops (i.e when this address is hit)
  @timeout: duration to emulate the code (in microseconds). When this value is 0,
@@ -336,26 +338,26 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
+uc_err uc_emu_start(struct uc_struct *uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
 
 /*
  Stop emulation (which was started by uc_emu_start() API.
  This is typically called from callback functions registered via tracing APIs.
  NOTE: for now, this will stop the execution only after the current block.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_emu_stop(uch handle);
+uc_err uc_emu_stop(struct uc_struct *uc);
 
 /*
  Register callback for a hook event.
  The callback will be run when the hook event is hit.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @h2: hook handle returned from this registration. To be used in uc_hook_del() API
  @type: hook type
  @callback: callback to be run when instruction is hit
@@ -367,28 +369,28 @@ uc_err uc_emu_stop(uch handle);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_hook_add(uch handle, uch *h2, uc_hook_t type, void *callback, void *user_data, ...);
+uc_err uc_hook_add(struct uc_struct *uc, uch *h2, uc_hook_t type, void *callback, void *user_data, ...);
 
 /*
  Unregister (remove) a hook callback.
  This API removes the hook callback registered by uc_hook_add().
  NOTE: this should be called only when you no longer want to trace.
- After this, @hhandle is invalid, and nolonger usable.
+ After this, @h2 is invalid, and nolonger usable.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @h2: handle returned by uc_hook_add()
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_hook_del(uch handle, uch *h2);
+uc_err uc_hook_del(struct uc_struct *uc, uch *h2);
 
 /*
  Map memory in for emulation.
  This API adds a memory region that can be used by emulation.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @address: starting address of the new memory region to be mapped in.
     This address must be aligned to 4KB, or this will return with UC_ERR_MAP error.
  @size: size of the new memory region to be mapped in.
@@ -398,7 +400,7 @@ uc_err uc_hook_del(uch handle, uch *h2);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_map(uch handle, uint64_t address, size_t size);
+uc_err uc_mem_map(struct uc_struct *uc, uint64_t address, size_t size);
 
 #ifdef __cplusplus
 }
