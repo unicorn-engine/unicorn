@@ -69,8 +69,6 @@ const char *uc_strerror(uc_err code)
             return "Invalid/unsupported architecture(UC_ERR_ARCH)";
         case UC_ERR_HANDLE:
             return "Invalid handle (UC_ERR_HANDLE)";
-        case UC_ERR_UCH:
-            return "Invalid uch (UC_ERR_UCH)";
         case UC_ERR_MODE:
             return "Invalid mode (UC_ERR_MODE)";
         case UC_ERR_VERSION:

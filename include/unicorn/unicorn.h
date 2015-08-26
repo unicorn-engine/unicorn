@@ -108,7 +108,6 @@ typedef enum uc_err {
     UC_ERR_OOM,      // Out-Of-Memory error: uc_open(), uc_emulate()
     UC_ERR_ARCH,     // Unsupported architecture: uc_open()
     UC_ERR_HANDLE,   // Invalid handle
-    UC_ERR_UCH,      // Invalid handle (uch)
     UC_ERR_MODE,     // Invalid/unsupported mode: uc_open()
     UC_ERR_VERSION,  // Unsupported version (bindings)
     UC_ERR_MEM_READ, // Quit emulation due to invalid memory READ: uc_emu_start()
