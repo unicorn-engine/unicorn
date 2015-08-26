@@ -48,12 +48,9 @@ void x86_release(void *ctx)
     g_free(s->tb_ctx.tbs);
 }
 
-void x86_reg_reset(uch handle)
+void x86_reg_reset(struct uc_struct *uc)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
-    CPUArchState *env;
-
-    env = first_cpu->env_ptr;
+    CPUArchState *env = first_cpu->env_ptr;
 
     env->invalid_error = UC_ERR_OK; // no error
     memset(env->regs, 0, sizeof(env->regs));
@@ -138,12 +135,9 @@ void x86_reg_reset(uch handle)
     }
 }
 
-int x86_reg_read(uch handle, unsigned int regid, void *value)
+int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 {
-    CPUState *mycpu;
-    struct uc_struct *uc = (struct uc_struct *) handle;
-
-    mycpu = first_cpu;
+    CPUState *mycpu = first_cpu;
 
     switch(uc->mode) {
         default:
@@ -540,12 +534,9 @@ int x86_reg_read(uch handle, unsigned int regid, void *value)
 #define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
-int x86_reg_write(uch handle, unsigned int regid, const void *value)
+int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
-    CPUState *mycpu;
-    struct uc_struct *uc = (struct uc_struct *) handle;
-
-    mycpu = first_cpu;
+    CPUState *mycpu = first_cpu;
 
     switch(uc->mode) {
         default:
