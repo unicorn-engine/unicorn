@@ -10,8 +10,7 @@ import uuid
 import random
 
 SIZE_REG = 4
-SOCKETCALL_MAX_ARGS = 6
-FILENAME_MAX_LEN = 128
+SOCKETCALL_MAX_ARGS = 3
 
 SOCKET_TYPES = {
     1: "SOCK_STREAM",
@@ -133,15 +132,17 @@ def bin_to_ipv4(ip):
         (ip & 0xff00) >> 8,
         (ip & 0xff))
 
-def bytearray_to_string(ba):
+def read_string(uc, addr):
     ret = ""
 
-    i = 0
-    while i < len(ba) and ba[i] != 0x0:
-        ret += chr(ba[i])
+    c = uc.mem_read(addr, 1)[0]
+    read_bytes = 1
 
-        i += 1
-        
+    while c != 0x0:
+        ret += chr(c)
+        c = uc.mem_read(addr+read_bytes, 1)[0]
+        read_bytes += 1
+
     return ret
 
 def parse_sock_address(sock_addr):
@@ -189,9 +190,9 @@ def hook_intr(uc, intno, user_data):
         buf = ecx
         count = edx
 
-        dummy_content = str(uuid.uuid1())
+        dummy_content = str(uuid.uuid1())[:32]
         if len(dummy_content) > count:
-            dummy_content = dummy_content[:count]
+            dummy_content = dummy_content[:count]        
 
         uc.mem_write(buf, dummy_content)
 
@@ -206,7 +207,7 @@ def hook_intr(uc, intno, user_data):
 
         content = uc.mem_read(buf, count)
 
-        msg = "write data=%s count=%d to fd(%d)" % (bytearray_to_string(content), count, fd)
+        msg = "write data=%s count=%d to fd(%d)" % (content, count, fd)
 
         print(">>> %s" % msg)
         fd_chains.add_log(fd, msg)
@@ -214,21 +215,21 @@ def hook_intr(uc, intno, user_data):
         filename_addr = ebx
         flags = ecx
         mode = edx
-        filename = uc.mem_read(filename_addr, FILENAME_MAX_LEN)
+        filename = read_string(uc, filename_addr)
 
         dummy_fd = id_gen.next()                 
         uc.reg_write(UC_X86_REG_EAX, dummy_fd)
 
-        msg = "open file (filename=%s flags=%d mode=%d) with fd(%d)" % (bytearray_to_string(filename), flags, mode, dummy_fd)
+        msg = "open file (filename=%s flags=%d mode=%d) with fd(%d)" % (filename, flags, mode, dummy_fd)
 
         fd_chains.create_chain(dummy_fd)
         fd_chains.add_log(dummy_fd, msg)
         print(">>> %s" % msg)
     elif eax == 11: # sys_execv
         # print(">>> ebx=0x%x, ecx=0x%x, edx=0x%x" % (ebx, ecx, edx))
-        filename = uc.mem_read(ebx, FILENAME_MAX_LEN)
+        filename = read_string(uc, ebx)
 
-        print(">>> SYS_EXECV filename=%s" % bytearray_to_string(filename))
+        print(">>> SYS_EXECV filename=%s" % filename)
     elif eax == 63: # sys_dup2
         fd_chains.link_fd(ecx, ebx)
         print(">>> SYS_DUP2 oldfd=%d newfd=%d" % (ebx, ecx))
@@ -237,8 +238,19 @@ def hook_intr(uc, intno, user_data):
         call = uc.reg_read(UC_X86_REG_EBX)
         args = uc.reg_read(UC_X86_REG_ECX)
 
-        buf = uc.mem_read(args, SOCKETCALL_MAX_ARGS*SIZE_REG)        
-        args = struct.unpack("<" + "I"*SOCKETCALL_MAX_ARGS, buf)
+        SOCKETCALL_NUM_ARGS = {
+            1: 3,   # sys_socket
+            2: 3,   # sys_bind
+            3: 3,   # sys_connect
+            4: 2,   # sys_listen
+            5: 3,   # sys_accept
+            9: 4,   # sys_send
+            11: 4,  # sys_receive
+            13: 2   # sys_shutdown
+        }
+
+        buf = uc.mem_read(args, SOCKETCALL_NUM_ARGS[call]*SIZE_REG)        
+        args = struct.unpack("<" + "I"*SOCKETCALL_NUM_ARGS[call], buf)
 
         # int sys_socketcall(int call, unsigned long *args)
         if call == 1: # sys_socket
