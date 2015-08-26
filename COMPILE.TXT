@@ -7,10 +7,10 @@ Linux, *BSD & Solaris. We also show steps to cross-compile for Microsoft Windows
 
 Unicorn requires few dependent packages as followings
 
-- For Mac OS X, "pkg-config" is needed.
-  Brew users can install "pkg-config" with:
+- For Mac OS X, "pkg-config" and "glib" are needed.
+  Brew users can install "pkg-config" and "glib" with:
 
-      $ brew install pkg-config
+      $ brew install pkg-config glib
 
 - For Linux, glib2-dev is needed.
   Ubuntu/Debian users can install this with:
