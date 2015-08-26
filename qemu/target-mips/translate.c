@@ -19169,9 +19169,9 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     int num_insns;
     int max_insns;
     int insn_bytes;
-    int is_slot;
+    int is_slot = 0;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    TCGArg *save_opparam_ptr;
+    TCGArg *save_opparam_ptr = NULL;
 
     if (search_pc)
         qemu_log("search pc %d\n", search_pc);
