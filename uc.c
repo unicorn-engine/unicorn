@@ -555,10 +555,10 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
         }
         uc->mapped_blocks = blocks;
     }
-    blocks[uc->mapped_block_count].begin = address;
-    blocks[uc->mapped_block_count].end = address + size;
+    uc->mapped_blocks[uc->mapped_block_count].begin = address;
+    uc->mapped_blocks[uc->mapped_block_count].end = address + size;
     //TODO extend uc_mem_map to accept permissions, figure out how to pass this down to qemu
-    blocks[uc->mapped_block_count].perms = UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC;
+    uc->mapped_blocks[uc->mapped_block_count].perms = UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC;
     uc->memory_map(uc, address, size);
     uc->mapped_block_count++;
 
