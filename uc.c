@@ -31,11 +31,6 @@
 
 #include "qemu/include/hw/boards.h"
 
-// TODO
-static uint64_t map_begin[32], map_end[32];
-static int map_count = 0;
-
-
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
 {
@@ -534,6 +529,7 @@ static uc_err _hook_mem_access(uch handle, uc_mem_type type,
 UNICORN_EXPORT
 uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
 {
+    MemoryBlock *blocks;
     struct uc_struct* uc = (struct uc_struct *)handle;
 
     if (handle == 0)
@@ -552,20 +548,29 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
     if ((size & (4*1024 - 1)) != 0)
         return UC_ERR_MAP;
 
-    map_begin[map_count] = address;
-    map_end[map_count] = size + map_begin[map_count];
-    uc->memory_map(uc, map_begin[map_count], size);
-    map_count++;
+    if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
+        blocks = realloc(uc->mapped_blocks, sizeof(MemoryBlock) * (uc->mapped_block_count + MEM_BLOCK_INCR));
+        if (blocks == NULL) {
+            return UC_ERR_OOM;
+        }
+        uc->mapped_blocks = blocks;
+    }
+    uc->mapped_blocks[uc->mapped_block_count].begin = address;
+    uc->mapped_blocks[uc->mapped_block_count].end = address + size;
+    //TODO extend uc_mem_map to accept permissions, figure out how to pass this down to qemu
+    uc->mapped_blocks[uc->mapped_block_count].perms = UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC;
+    uc->memory_map(uc, address, size);
+    uc->mapped_block_count++;
 
     return UC_ERR_OK;
 }
 
-bool memory_mapping(uint64_t address)
+bool memory_mapping(struct uc_struct* uc, uint64_t address)
 {
     unsigned int i;
 
-    for(i = 0; i < map_count; i++) {
-        if (address >= map_begin[i] && address <= map_end[i])
+    for(i = 0; i < uc->mapped_block_count; i++) {
+        if (address >= uc->mapped_blocks[i].begin && address < uc->mapped_blocks[i].end)
             return true;
     }
 

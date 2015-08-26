@@ -66,17 +66,17 @@ public class Sample_x86 {
    private static class MyBlockHook implements BlockHook {
       public void hook(Unicorn u, long address, int size, Object user_data)
       {
-          System.out.print(String.format(">>> Tracing basic block at 0x%x, block size = 0x%x\n", address, size));
+          System.out.printf(">>> Tracing basic block at 0x%x, block size = 0x%x\n", address, size);
       }
    }
       
    // callback for tracing instruction
    private static class MyCodeHook implements CodeHook {
       public void hook(Unicorn u, long address, int size, Object user_data) {
-       System.out.print(String.format(">>> Tracing instruction at 0x%x, instruction size = 0x%x\n", address, size));
+       System.out.printf(">>> Tracing instruction at 0x%x, instruction size = 0x%x\n", address, size);
    
        byte eflags[] = u.reg_read(Unicorn.UC_X86_REG_EFLAGS, 4);
-       System.out.print(String.format(">>> --- EFLAGS is 0x%x\n", toInt(eflags)));
+       System.out.printf(">>> --- EFLAGS is 0x%x\n", toInt(eflags));
    
        // Uncomment below code to stop the emulation using uc_emu_stop()
        // if (address == 0x1000009)
@@ -88,8 +88,8 @@ public class Sample_x86 {
       public boolean hook(Unicorn u, int type, long address, int size, long value, Object user) {
          switch(type) {
             case Unicorn.UC_MEM_WRITE:
-               System.out.print(String.format(">>> Missing memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
-                                address, size, value));
+               System.out.printf(">>> Missing memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
+                                address, size, value);
                // map this memory in with 2MB in size
                u.mem_map(0xaaaa0000, 2 * 1024*1024);
                // return true to indicate we want to continue
@@ -103,8 +103,8 @@ public class Sample_x86 {
    private static class MyCode64Hook implements CodeHook {
       public void hook(Unicorn u, long address, int size, Object user_data) {      
           byte[] r_rip = u.reg_read(Unicorn.UC_X86_REG_RIP, 8);
-          System.out.print(String.format(">>> Tracing instruction at 0x%x, instruction size = 0x%x\n", address, size));
-          System.out.print(String.format(">>> RIP is 0x%x\n", toInt(r_rip)));
+          System.out.printf(">>> Tracing instruction at 0x%x, instruction size = 0x%x\n", address, size);
+          System.out.printf(">>> RIP is 0x%x\n", toInt(r_rip));
       
           // Uncomment below code to stop the emulation using uc_emu_stop()
           // if (address == 0x1000009)
@@ -115,14 +115,14 @@ public class Sample_x86 {
       
    private static class MyRead64Hook implements ReadHook {
       public void hook(Unicorn u, long address, int size, Object user) {
-         System.out.print(String.format(">>> Memory is being READ at 0x%x, data size = %d\n", address, size));
+         System.out.printf(">>> Memory is being READ at 0x%x, data size = %d\n", address, size);
       }
    }
 
    private static class MyWrite64Hook implements WriteHook {
       public void hook(Unicorn u, long address, int size, long value, Object user) {
-         System.out.print(String.format(">>> Memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
-                          address, size, value));
+         System.out.printf(">>> Memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
+                          address, size, value);
       }
    }
    
@@ -133,7 +133,7 @@ public class Sample_x86 {
       {
           byte[] r_eip = u.reg_read(Unicorn.UC_X86_REG_EIP, 4);
       
-          System.out.print(String.format("--- reading from port 0x%x, size: %d, address: 0x%x\n", port, size, toInt(r_eip)));
+          System.out.printf("--- reading from port 0x%x, size: %d, address: 0x%x\n", port, size, toInt(r_eip));
       
           switch(size) {
               case 1:
@@ -155,7 +155,7 @@ public class Sample_x86 {
       public void hook(Unicorn u, int port, int size, int value, Object user) {
           byte[] eip = u.reg_read(Unicorn.UC_X86_REG_EIP, 4);
           byte[] tmp = null;
-          System.out.print(String.format("--- writing to port 0x%x, size: %d, value: 0x%x, address: 0x%x\n", port, size, value, toInt(eip)));
+          System.out.printf("--- writing to port 0x%x, size: %d, value: 0x%x, address: 0x%x\n", port, size, value, toInt(eip));
       
           // confirm that value is indeed the value of AL/AX/EAX
           switch(size) {
@@ -172,7 +172,7 @@ public class Sample_x86 {
                   break;
           }
       
-          System.out.print(String.format("--- register value = 0x%x\n", toInt(tmp)));
+          System.out.printf("--- register value = 0x%x\n", toInt(tmp));
       }
    }
    
@@ -217,8 +217,8 @@ public class Sample_x86 {
        try {
           uc.emu_start(ADDRESS, ADDRESS + X86_CODE32.length, 0, 0);
        } catch (UnicornException uex) {
-           System.out.print(String.format("Failed on uc_emu_start() with error : %s\n",
-                   uex.getMessage()));
+           System.out.printf("Failed on uc_emu_start() with error : %s\n",
+                   uex.getMessage());
        }
    
        // now print out some registers
@@ -226,15 +226,15 @@ public class Sample_x86 {
    
        r_ecx = uc.reg_read(Unicorn.UC_X86_REG_ECX, 4);
        r_edx = uc.reg_read(Unicorn.UC_X86_REG_EDX, 4);
-       System.out.print(String.format(">>> ECX = 0x%x\n", toInt(r_ecx)));
-       System.out.print(String.format(">>> EDX = 0x%x\n", toInt(r_edx)));
+       System.out.printf(">>> ECX = 0x%x\n", toInt(r_ecx));
+       System.out.printf(">>> EDX = 0x%x\n", toInt(r_edx));
    
        // read from memory
        try {
           byte tmp[] = uc.mem_read(ADDRESS, 4);
-           System.out.print(String.format(">>> Read 4 bytes from [0x%x] = 0x%x\n", ADDRESS, toInt(tmp)));
+           System.out.printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", ADDRESS, toInt(tmp));
         } catch (UnicornException ex) {
-           System.out.print(String.format(">>> Failed to read 4 bytes from [0x%x]\n", ADDRESS));
+           System.out.printf(">>> Failed to read 4 bytes from [0x%x]\n", ADDRESS);
        }
        uc.close();
    }
@@ -279,8 +279,8 @@ public class Sample_x86 {
    
        r_eax = u.reg_read(Unicorn.UC_X86_REG_EAX, 4);
        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX, 4);
-       System.out.print(String.format(">>> EAX = 0x%x\n", toInt(r_eax)));
-       System.out.print(String.format(">>> ECX = 0x%x\n", toInt(r_ecx)));
+       System.out.printf(">>> EAX = 0x%x\n", toInt(r_eax));
+       System.out.printf(">>> ECX = 0x%x\n", toInt(r_ecx));
    
        u.close();
    }
@@ -344,8 +344,8 @@ public class Sample_x86 {
    
        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX, 4);
        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX, 4);
-       System.out.print(String.format(">>> ECX = 0x%x\n", toInt(r_ecx)));
-       System.out.print(String.format(">>> EDX = 0x%x\n", toInt(r_edx)));
+       System.out.printf(">>> ECX = 0x%x\n", toInt(r_ecx));
+       System.out.printf(">>> EDX = 0x%x\n", toInt(r_edx));
    
        u.close();
    }
@@ -379,15 +379,20 @@ public class Sample_x86 {
        u.hook_add(new MyCodeHook(), 1, 0, null);
    
        // emulate machine code in infinite time
-       u.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_READ.length, 0, 0);
+       try {
+          u.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_READ.length, 0, 0);
+       } catch (UnicornException uex) {
+          int err = u.errno();
+          System.out.printf("Failed on u.emu_start() with error returned: %s\n", uex.getMessage());       
+       } 
    
        // now print out some registers
        System.out.print(">>> Emulation done. Below is the CPU context\n");
    
        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX, 4);
        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX, 4);
-       System.out.print(String.format(">>> ECX = 0x%x\n", toInt(r_ecx)));
-       System.out.print(String.format(">>> EDX = 0x%x\n", toInt(r_edx)));
+       System.out.printf(">>> ECX = 0x%x\n", toInt(r_ecx));
+       System.out.printf(">>> EDX = 0x%x\n", toInt(r_edx));
    
        u.close();
    }
@@ -424,22 +429,30 @@ public class Sample_x86 {
        u.hook_add(new MyMemInvalidHook(), null);
    
        // emulate machine code in infinite time
-       u.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_WRITE.length, 0, 0);
+       try {
+           u.emu_start(ADDRESS, ADDRESS + X86_CODE32_MEM_WRITE.length, 0, 0);
+       } catch (UnicornException uex) {
+           System.out.printf("Failed on uc_emu_start() with error returned: %s\n", uex.getMessage());
+       }
    
        // now print out some registers
        System.out.print(">>> Emulation done. Below is the CPU context\n");
    
        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX, 4);
        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX, 4);
-       System.out.print(String.format(">>> ECX = 0x%x\n", toInt(r_ecx)));
-       System.out.print(String.format(">>> EDX = 0x%x\n", toInt(r_edx)));
+       System.out.printf(">>> ECX = 0x%x\n", toInt(r_ecx));
+       System.out.printf(">>> EDX = 0x%x\n", toInt(r_edx));
    
        // read from memory
        byte tmp[] = u.mem_read(0xaaaaaaaa, 4);
-       System.out.print(String.format(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xaaaaaaaa, toInt(tmp)));
+       System.out.printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xaaaaaaaa, toInt(tmp));
    
-       u.mem_read(0xffffffaa, 4);
-       System.out.print(String.format(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xffffffaa, toInt(tmp)));
+       try {
+           u.mem_read(0xffffffaa, 4);
+           System.out.printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xffffffaa, toInt(tmp));
+       } catch (UnicornException uex) {
+           System.out.printf(">>> Failed to read 4 bytes from [0x%x]\n", 0xffffffaa);
+       }
    
        u.close();
    }
@@ -473,15 +486,19 @@ public class Sample_x86 {
        u.hook_add(new MyCodeHook(), 1, 0, null);
    
        // emulate machine code in infinite time
-       u.emu_start(ADDRESS, ADDRESS + X86_CODE32_JMP_INVALID.length, 0, 0);
+       try {
+           u.emu_start(ADDRESS, ADDRESS + X86_CODE32_JMP_INVALID.length, 0, 0);
+       } catch (UnicornException uex) {
+           System.out.printf("Failed on uc_emu_start() with error returned: %s\n", uex.getMessage());
+       }
    
        // now print out some registers
        System.out.print(">>> Emulation done. Below is the CPU context\n");
    
        r_ecx = u.reg_read(Unicorn.UC_X86_REG_ECX, 4);
        r_edx = u.reg_read(Unicorn.UC_X86_REG_EDX, 4);
-       System.out.print(String.format(">>> ECX = 0x%x\n", toInt(r_ecx)));
-       System.out.print(String.format(">>> EDX = 0x%x\n", toInt(r_edx)));
+       System.out.printf(">>> ECX = 0x%x\n", toInt(r_ecx));
+       System.out.printf(">>> EDX = 0x%x\n", toInt(r_edx));
    
        u.close();
    }
@@ -568,20 +585,20 @@ public class Sample_x86 {
        byte[] r_r14 = u.reg_read(Unicorn.UC_X86_REG_R14, 8);
        byte[] r_r15 = u.reg_read(Unicorn.UC_X86_REG_R15, 8);
    
-       System.out.print(String.format(">>> RAX = 0x%x\n", toInt(r_rax)));
-       System.out.print(String.format(">>> RBX = 0x%x\n", toInt(r_rbx)));
-       System.out.print(String.format(">>> RCX = 0x%x\n", toInt(r_rcx)));
-       System.out.print(String.format(">>> RDX = 0x%x\n", toInt(r_rdx)));
-       System.out.print(String.format(">>> RSI = 0x%x\n", toInt(r_rsi)));
-       System.out.print(String.format(">>> RDI = 0x%x\n", toInt(r_rdi)));
-       System.out.print(String.format(">>> R8 = 0x%x\n", toInt(r_r8)));
-       System.out.print(String.format(">>> R9 = 0x%x\n", toInt(r_r9)));
-       System.out.print(String.format(">>> R10 = 0x%x\n", toInt(r_r10)));
-       System.out.print(String.format(">>> R11 = 0x%x\n", toInt(r_r11)));
-       System.out.print(String.format(">>> R12 = 0x%x\n", toInt(r_r12)));
-       System.out.print(String.format(">>> R13 = 0x%x\n", toInt(r_r13)));
-       System.out.print(String.format(">>> R14 = 0x%x\n", toInt(r_r14)));
-       System.out.print(String.format(">>> R15 = 0x%x\n", toInt(r_r15)));
+       System.out.printf(">>> RAX = 0x%x\n", toInt(r_rax));
+       System.out.printf(">>> RBX = 0x%x\n", toInt(r_rbx));
+       System.out.printf(">>> RCX = 0x%x\n", toInt(r_rcx));
+       System.out.printf(">>> RDX = 0x%x\n", toInt(r_rdx));
+       System.out.printf(">>> RSI = 0x%x\n", toInt(r_rsi));
+       System.out.printf(">>> RDI = 0x%x\n", toInt(r_rdi));
+       System.out.printf(">>> R8 = 0x%x\n", toInt(r_r8));
+       System.out.printf(">>> R9 = 0x%x\n", toInt(r_r9));
+       System.out.printf(">>> R10 = 0x%x\n", toInt(r_r10));
+       System.out.printf(">>> R11 = 0x%x\n", toInt(r_r11));
+       System.out.printf(">>> R12 = 0x%x\n", toInt(r_r12));
+       System.out.printf(">>> R13 = 0x%x\n", toInt(r_r13));
+       System.out.printf(">>> R14 = 0x%x\n", toInt(r_r14));
+       System.out.printf(">>> R15 = 0x%x\n", toInt(r_r15));
    
        u.close();
    }
