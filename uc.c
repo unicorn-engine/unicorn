@@ -49,15 +49,8 @@ unsigned int uc_version(unsigned int *major, unsigned int *minor)
 
 
 UNICORN_EXPORT
-uc_err uc_errno(uch handle)
+uc_err uc_errno(struct uc_struct *uc)
 {
-    struct uc_struct *uc;
-
-    if (!handle)
-        return UC_ERR_UCH;
-
-    uc = (struct uc_struct *)(uintptr_t)handle;
-
     return uc->errnum;
 }
 
@@ -131,7 +124,7 @@ bool uc_arch_supported(uc_arch arch)
 
 
 UNICORN_EXPORT
-uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
+uc_err uc_open(uc_arch arch, uc_mode mode, struct uc_struct **result)
 {
     struct uc_struct *uc;
 
@@ -180,7 +173,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
 
                 // verify mode
                 if (mode != UC_MODE_ARM && mode != UC_MODE_THUMB) {
-                    *handle = 0;
                     free(uc);
                     return UC_ERR_MODE;
                 }
@@ -230,38 +222,29 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
         }
 
         if (uc->init_arch == NULL) {
-            *handle = 0;
             return UC_ERR_ARCH;
         }
 
         machine_initialize(uc);
 
-        *handle = (uintptr_t)uc;
+        *result = uc;
 
         if (uc->reg_reset)
-            uc->reg_reset(*handle);
+            uc->reg_reset(uc);
 
         uc->hook_size = HOOK_SIZE;
         uc->hook_callbacks = calloc(1, sizeof(uc->hook_callbacks[0]) * HOOK_SIZE);
 
         return UC_ERR_OK;
     } else {
-        *handle = 0;
         return UC_ERR_ARCH;
     }
 }
 
 
 UNICORN_EXPORT
-uc_err uc_close(uch *handle)
+uc_err uc_close(struct uc_struct *uc)
 {
-    struct uc_struct *uc;
-
-    // invalid handle ?
-    if (*handle == 0)
-        return UC_ERR_UCH;
-
-    uc = (struct uc_struct *)(*handle);
     if (uc->release)
         uc->release(uc->tcg_ctx);
 
@@ -293,26 +276,15 @@ uc_err uc_close(uch *handle)
     memset(uc, 0, sizeof(*uc));
     free(uc);
 
-    // invalidate this handle by ZERO out its value.
-    // this is to make sure it is unusable after uc_close()
-    *handle = 0;
-
     return UC_ERR_OK;
 }
 
 
 UNICORN_EXPORT
-uc_err uc_reg_read(uch handle, int regid, void *value)
+uc_err uc_reg_read(struct uc_struct *uc, int regid, void *value)
 {
-    struct uc_struct *uc;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
-    uc = (struct uc_struct *)handle;
     if (uc->reg_read)
-        uc->reg_read(handle, regid, value);
+        uc->reg_read(uc, regid, value);
     else
         return -1;  // FIXME: need a proper uc_err
 
@@ -321,17 +293,10 @@ uc_err uc_reg_read(uch handle, int regid, void *value)
 
 
 UNICORN_EXPORT
-uc_err uc_reg_write(uch handle, int regid, const void *value)
+uc_err uc_reg_write(struct uc_struct *uc, int regid, const void *value)
 {
-    struct uc_struct *uc;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
-    uc = (struct uc_struct *)handle;
     if (uc->reg_write)
-        uc->reg_write(handle, regid, value);
+        uc->reg_write(uc, regid, value);
     else
         return -1;  // FIXME: need a proper uc_err
 
@@ -340,14 +305,8 @@ uc_err uc_reg_write(uch handle, int regid, const void *value)
 
 
 UNICORN_EXPORT
-uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
+uc_err uc_mem_read(struct uc_struct *uc, uint64_t address, uint8_t *bytes, size_t size)
 {
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
     if (uc->read_mem(&uc->as, address, bytes, size) == false)
         return UC_ERR_MEM_READ;
 
@@ -356,14 +315,8 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
 
 
 UNICORN_EXPORT
-uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size)
+uc_err uc_mem_write(struct uc_struct *uc, uint64_t address, const uint8_t *bytes, size_t size)
 {
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
     if (uc->write_mem(&uc->as, address, bytes, size) == false)
         return UC_ERR_MEM_WRITE;
 
@@ -392,24 +345,16 @@ static void *_timeout_fn(void *arg)
     return NULL;
 }
 
-static void enable_emu_timer(uch handle, uint64_t timeout)
+static void enable_emu_timer(struct uc_struct *uc, uint64_t timeout)
 {
-    struct uc_struct *uc = (struct uc_struct *)handle;
-
     uc->timeout = timeout;
     qemu_thread_create(&uc->timer, "timeout", _timeout_fn,
             uc, QEMU_THREAD_JOINABLE);
 }
 
 UNICORN_EXPORT
-uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout, size_t count)
+uc_err uc_emu_start(struct uc_struct* uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count)
 {
-    struct uc_struct* uc = (struct uc_struct *)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
     // reset the counter
     uc->emu_counter = 0;
     uc->stop_request = false;
@@ -421,7 +366,7 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
             break;
 
         case UC_ARCH_M68K:
-            uc_reg_write(handle, UC_M68K_REG_PC, &begin);
+            uc_reg_write(uc, UC_M68K_REG_PC, &begin);
             break;
 
         case UC_ARCH_X86:
@@ -429,13 +374,13 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
                 default:
                     break;
                 case UC_MODE_16:
-                    uc_reg_write(handle, UC_X86_REG_IP, &begin);
+                    uc_reg_write(uc, UC_X86_REG_IP, &begin);
                     break;
                 case UC_MODE_32:
-                    uc_reg_write(handle, UC_X86_REG_EIP, &begin);
+                    uc_reg_write(uc, UC_X86_REG_EIP, &begin);
                     break;
                 case UC_MODE_64:
-                    uc_reg_write(handle, UC_X86_REG_RIP, &begin);
+                    uc_reg_write(uc, UC_X86_REG_RIP, &begin);
                     break;
             }
             break;
@@ -446,23 +391,23 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
                     break;
                 case UC_MODE_THUMB:
                 case UC_MODE_ARM:
-                    uc_reg_write(handle, UC_ARM_REG_R15, &begin);
+                    uc_reg_write(uc, UC_ARM_REG_R15, &begin);
                     break;
             }
             break;
 
         case UC_ARCH_ARM64:
-            uc_reg_write(handle, UC_ARM64_REG_PC, &begin);
+            uc_reg_write(uc, UC_ARM64_REG_PC, &begin);
             break;
 
         case UC_ARCH_MIPS:
             // TODO: MIPS32/MIPS64/BIGENDIAN etc
-            uc_reg_write(handle, UC_MIPS_REG_PC, &begin);
+            uc_reg_write(uc, UC_MIPS_REG_PC, &begin);
             break;
 
         case UC_ARCH_SPARC:
             // TODO: Sparc/Sparc64
-            uc_reg_write(handle, UC_SPARC_REG_PC, &begin);
+            uc_reg_write(uc, UC_SPARC_REG_PC, &begin);
             break;
     }
 
@@ -475,7 +420,7 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
 
     uc->vm_start(uc);
     if (timeout)
-        enable_emu_timer(handle, timeout * 1000);   // microseconds -> nanoseconds
+        enable_emu_timer(uc, timeout * 1000);   // microseconds -> nanoseconds
     uc->pause_all_vcpus(uc);
     // emulation is done
     uc->emulation_done = true;
@@ -485,14 +430,8 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
 
 
 UNICORN_EXPORT
-uc_err uc_emu_stop(uch handle)
+uc_err uc_emu_stop(struct uc_struct *uc)
 {
-    struct uc_struct* uc = (struct uc_struct *)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
     uc->stop_request = true;
     // exit the current TB
     cpu_exit(uc->current_cpu);
@@ -501,12 +440,12 @@ uc_err uc_emu_stop(uch handle)
 }
 
 
-static int _hook_code(uch handle, int type, uint64_t begin, uint64_t end,
+static int _hook_code(struct uc_struct *uc, int type, uint64_t begin, uint64_t end,
         void *callback, void *user_data, uch *h2)
 {
     int i;
 
-    i = hook_add(handle, type, begin, end, callback, user_data);
+    i = hook_add(uc, type, begin, end, callback, user_data);
     if (i == 0)
         return UC_ERR_OOM;  // FIXME
 
@@ -516,13 +455,13 @@ static int _hook_code(uch handle, int type, uint64_t begin, uint64_t end,
 }
 
 
-static uc_err _hook_mem_access(uch handle, uc_mem_type type,
+static uc_err _hook_mem_access(struct uc_struct *uc, uc_mem_type type,
         uint64_t begin, uint64_t end,
         void *callback, void *user_data, uch *h2)
 {
     int i;
 
-    i = hook_add(handle, type, begin, end, callback, user_data);
+    i = hook_add(uc, type, begin, end, callback, user_data);
     if (i == 0)
         return UC_ERR_OOM;  // FIXME
 
@@ -532,14 +471,8 @@ static uc_err _hook_mem_access(uch handle, uc_mem_type type,
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
+uc_err uc_mem_map(struct uc_struct *uc, uint64_t address, size_t size)
 {
-    struct uc_struct* uc = (struct uc_struct *)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
     if (size == 0)
         // invalid memory mapping
         return UC_ERR_MAP;
@@ -663,17 +596,12 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_add(uch handle, uch *h2, uc_hook_t type, void *callback, void *user_data, ...)
+uc_err uc_hook_add(struct uc_struct *uc, uch *h2, uc_hook_t type, void *callback, void *user_data, ...)
 {
-    struct uc_struct* uc = (struct uc_struct *)handle;
     va_list valist;
     int ret = UC_ERR_OK;
     int id;
     uint64_t begin, end;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
 
     va_start(valist, user_data);
 
@@ -691,12 +619,12 @@ uc_err uc_hook_add(uch handle, uch *h2, uc_hook_t type, void *callback, void *us
         case UC_HOOK_CODE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_code(handle, UC_HOOK_CODE, begin, end, callback, user_data, h2);
+            ret = _hook_code(uc, UC_HOOK_CODE, begin, end, callback, user_data, h2);
             break;
         case UC_HOOK_BLOCK:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_code(handle, UC_HOOK_BLOCK, begin, end, callback, user_data, h2);
+            ret = _hook_code(uc, UC_HOOK_BLOCK, begin, end, callback, user_data, h2);
             break;
         case UC_HOOK_MEM_INVALID:
             ret = _hook_mem_invalid(uc, callback, user_data, h2);
@@ -704,16 +632,16 @@ uc_err uc_hook_add(uch handle, uch *h2, uc_hook_t type, void *callback, void *us
         case UC_HOOK_MEM_READ:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(handle, UC_MEM_READ, begin, end, callback, user_data, h2);
+            ret = _hook_mem_access(uc, UC_MEM_READ, begin, end, callback, user_data, h2);
             break;
         case UC_HOOK_MEM_WRITE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(handle, UC_MEM_WRITE, begin, end, callback, user_data, h2);
+            ret = _hook_mem_access(uc, UC_MEM_WRITE, begin, end, callback, user_data, h2);
         case UC_HOOK_MEM_READ_WRITE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(handle, UC_MEM_READ_WRITE, begin, end, callback, user_data, h2);
+            ret = _hook_mem_access(uc, UC_MEM_READ_WRITE, begin, end, callback, user_data, h2);
             break;
     }
 
@@ -723,18 +651,12 @@ uc_err uc_hook_add(uch handle, uch *h2, uc_hook_t type, void *callback, void *us
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_del(uch handle, uch *h2)
+uc_err uc_hook_del(struct uc_struct *uc, uch *h2)
 {
-    //struct uc_struct* uc = (struct uc_struct *)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
     if (*h2 == 0)
         // invalid handle
         return UC_ERR_HANDLE;
 
-    return hook_del(handle, h2);
+    return hook_del(uc, h2);
 }
 
