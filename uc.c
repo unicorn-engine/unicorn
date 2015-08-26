@@ -548,13 +548,15 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
     if ((size & (4*1024 - 1)) != 0)
         return UC_ERR_MAP;
 
-    blocks = realloc(uc->mapped_blocks, sizeof(MemoryBlock) * (uc->mapped_block_count + 1));
-    if (blocks == NULL) {
-        return UC_ERR_OOM;
+    if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
+        blocks = realloc(uc->mapped_blocks, sizeof(MemoryBlock) * (uc->mapped_block_count + MEM_BLOCK_INCR));
+        if (blocks == NULL) {
+            return UC_ERR_OOM;
+        }
+        uc->mapped_blocks = blocks;
     }
-    uc->mapped_blocks = blocks;
     blocks[uc->mapped_block_count].begin = address;
-    blocks[uc->mapped_block_count].size = size;
+    blocks[uc->mapped_block_count].end = address + size;
     //TODO extend uc_mem_map to accept permissions, figure out how to pass this down to qemu
     blocks[uc->mapped_block_count].perms = UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC;
     uc->memory_map(uc, address, size);
@@ -568,7 +570,7 @@ bool memory_mapping(struct uc_struct* uc, uint64_t address)
     unsigned int i;
 
     for(i = 0; i < uc->mapped_block_count; i++) {
-        if (address >= uc->mapped_blocks[i].begin && address < (uc->mapped_blocks[i].begin + uc->mapped_blocks[i].size))
+        if (address >= uc->mapped_blocks[i].begin && address < uc->mapped_blocks[i].end)
             return true;
     }
 
