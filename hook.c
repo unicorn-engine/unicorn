@@ -91,47 +91,45 @@ size_t hook_add(struct uc_struct *uc, int type, uint64_t begin, uint64_t end, vo
 }
 
 // return 0 on success, -1 on failure
-uc_err hook_del(struct uc_struct *uc, uch *h2)
+uc_err hook_del(struct uc_struct *uc, uc_hook_h hh)
 {
-    if (*h2 == uc->hook_block_idx) {
+    if (hh == uc->hook_block_idx) {
         uc->hook_block_idx = 0;
     }
 
-    if (*h2 == uc->hook_insn_idx) {
+    if (hh == uc->hook_insn_idx) {
         uc->hook_insn_idx = 0;
     }
 
-    if (*h2 == uc->hook_read_idx) {
+    if (hh == uc->hook_read_idx) {
         uc->hook_read_idx = 0;
     }
 
-    if (*h2 == uc->hook_write_idx) {
+    if (hh == uc->hook_write_idx) {
         uc->hook_write_idx = 0;
     }
 
-    if (*h2 == uc->hook_mem_idx) {
+    if (hh == uc->hook_mem_idx) {
         uc->hook_mem_idx = 0;
     }
 
-    if (*h2 == uc->hook_intr_idx) {
+    if (hh == uc->hook_intr_idx) {
         uc->hook_intr_idx = 0;
     }
 
-    if (*h2 == uc->hook_out_idx) {
+    if (hh == uc->hook_out_idx) {
         uc->hook_out_idx = 0;
     }
 
-    if (*h2 == uc->hook_in_idx) {
+    if (hh == uc->hook_in_idx) {
         uc->hook_in_idx = 0;
     }
 
-    uc->hook_callbacks[*h2].callback = NULL;
-    uc->hook_callbacks[*h2].user_data = NULL;
-    uc->hook_callbacks[*h2].hook_type = 0;
-    uc->hook_callbacks[*h2].begin = 0;
-    uc->hook_callbacks[*h2].end = 0;
-
-    *h2 = 0;
+    uc->hook_callbacks[hh].callback = NULL;
+    uc->hook_callbacks[hh].user_data = NULL;
+    uc->hook_callbacks[hh].hook_type = 0;
+    uc->hook_callbacks[hh].begin = 0;
+    uc->hook_callbacks[hh].end = 0;
 
     return UC_ERR_OK;
 }

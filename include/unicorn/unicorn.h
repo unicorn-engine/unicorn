@@ -21,8 +21,7 @@ extern "C" {
 
 struct uc_struct;
 
-// Handle to use with all APIs
-typedef size_t uch;
+typedef size_t uc_hook_h;
 
 #include "m68k.h"
 #include "x86.h"
@@ -358,7 +357,7 @@ uc_err uc_emu_stop(struct uc_struct *uc);
  The callback will be run when the hook event is hit.
 
  @uc: handle returned by uc_open()
- @h2: hook handle returned from this registration. To be used in uc_hook_del() API
+ @hh: hook handle returned from this registration. To be used in uc_hook_del() API
  @type: hook type
  @callback: callback to be run when instruction is hit
  @user_data: user-defined data. This will be passed to callback function in its
@@ -369,22 +368,22 @@ uc_err uc_emu_stop(struct uc_struct *uc);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_hook_add(struct uc_struct *uc, uch *h2, uc_hook_t type, void *callback, void *user_data, ...);
+uc_err uc_hook_add(struct uc_struct *uc, uc_hook_h *hh, uc_hook_t type, void *callback, void *user_data, ...);
 
 /*
  Unregister (remove) a hook callback.
  This API removes the hook callback registered by uc_hook_add().
  NOTE: this should be called only when you no longer want to trace.
- After this, @h2 is invalid, and nolonger usable.
+ After this, @hh is invalid, and nolonger usable.
 
  @uc: handle returned by uc_open()
- @h2: handle returned by uc_hook_add()
+ @hh: handle returned by uc_hook_add()
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_hook_del(struct uc_struct *uc, uch *h2);
+uc_err uc_hook_del(struct uc_struct *uc, uc_hook_h *hh);
 
 /*
  Map memory in for emulation.
