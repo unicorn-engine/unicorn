@@ -198,6 +198,8 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             // printf("***** Invalid memory read at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return 0;
+        } else {
+            env->invalid_error = UC_ERR_OK;
         }
     }
 
@@ -233,6 +235,8 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             // printf("Invalid memory read at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return 0;
+        } else {
+            env->invalid_error = UC_ERR_OK;
         }
 
         /* ??? Note that the io helpers always read data in the target
@@ -316,6 +320,8 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             // printf("***** Invalid memory read at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return 0;
+        } else {
+            env->invalid_error = UC_ERR_OK;
         }
     }
 
@@ -474,6 +480,8 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return;
+        } else {
+            env->invalid_error = UC_ERR_OK;
         }
     }
 
@@ -586,6 +594,8 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return;
+        } else {
+            env->invalid_error = UC_ERR_OK;
         }
     }
 

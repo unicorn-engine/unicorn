@@ -249,7 +249,7 @@ else
 endif
 
 
-install: compile_lib $(PKGCFGF)
+install: all $(PKGCFGF)
 	mkdir -p $(LIBDIR)
 ifeq ($(UNICORN_SHARED),yes)
 	$(INSTALL_LIB) $(LIBRARY) $(LIBDIR)
