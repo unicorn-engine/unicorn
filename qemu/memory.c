@@ -31,18 +31,18 @@
 
 
 // Unicorn engine
-int memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size)
+MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, uint32_t perms)
 {
     uc->ram = g_new(MemoryRegion, 1);
 
-    memory_region_init_ram(uc, uc->ram, NULL, "pc.ram", size, &error_abort);
+    memory_region_init_ram(uc, uc->ram, NULL, "pc.ram", size, perms, &error_abort);
 
     memory_region_add_subregion(get_system_memory(uc), begin, uc->ram);
 
     if (uc->current_cpu)
         tlb_flush(uc->current_cpu, 1);
 
-    return 0;
+    return uc->ram;
 }
 
 int memory_free(struct uc_struct *uc)
@@ -1151,10 +1151,14 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
                             Object *owner,
                             const char *name,
                             uint64_t size,
+                            uint32_t perms,
                             Error **errp)
 {
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
+    if (!(perms & UC_PROT_WRITE)) {
+        mr->readonly = true;
+    }
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
     mr->ram_addr = qemu_ram_alloc(size, mr, errp);

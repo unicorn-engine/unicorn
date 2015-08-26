@@ -16,7 +16,7 @@
 QTAILQ_HEAD(CPUTailQ, CPUState);
 
 typedef struct MemoryBlock {
-   uint64_t begin;  //inclusive
+   MemoryRegion *region;  //inclusive
    uint64_t end;    //exclusive
    uint32_t perms;
 } MemoryBlock;
@@ -51,7 +51,9 @@ typedef void (*uc_args_uc_long_t)(struct uc_struct*, unsigned long);
 
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
-typedef int (*uc_args_uc_ram_size_t)(struct uc_struct*,  ram_addr_t begin, size_t size);
+typedef MemoryRegion* (*uc_args_uc_ram_size_t)(struct uc_struct*,  ram_addr_t begin, size_t size, uint32_t perms);
+
+typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
 // which interrupt should make emulation stop?
 typedef bool (*uc_args_int_t)(int intno);
@@ -94,6 +96,7 @@ struct uc_struct {
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;
     uc_args_uc_ram_size_t memory_map;
+    uc_readonly_mem_t readonly_mem;
     // list of cpu
     void* cpu;
 

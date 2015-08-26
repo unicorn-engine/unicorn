@@ -350,7 +350,18 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
 
     return UC_ERR_OK;
 }
+static const MemoryBlock *getMemoryBlock(struct uc_struct *uc, uint64_t address);
+static const MemoryBlock *getMemoryBlock(struct uc_struct *uc, uint64_t address) {
+    unsigned int i;
 
+    for(i = 0; i < uc->mapped_block_count; i++) {
+        if (address >= uc->mapped_blocks[i].region->addr && address < uc->mapped_blocks[i].end)
+            return &uc->mapped_blocks[i];
+    }
+
+    // not found
+    return NULL;   
+}
 
 UNICORN_EXPORT
 uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size)
@@ -361,8 +372,20 @@ uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t s
         // invalid handle
         return UC_ERR_UCH;
 
+    const MemoryBlock *mb = getMemoryBlock(uc, address);
+    if (mb == NULL)
+        return UC_ERR_MEM_WRITE;
+
+    if (!(mb->perms & UC_PROT_WRITE)) //write protected
+        //but this is not the program accessing memory, so temporarily mark writable
+        uc->readonly_mem(mb->region, false);
+
     if (uc->write_mem(&uc->as, address, bytes, size) == false)
         return UC_ERR_MEM_WRITE;
+
+    if (!(mb->perms & UC_PROT_WRITE)) //write protected
+        //now write protect it again
+        uc->readonly_mem(mb->region, true);
 
     return UC_ERR_OK;
 }
@@ -529,7 +552,7 @@ static uc_err _hook_mem_access(uch handle, uc_mem_type type,
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
+uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms)
 {
     MemoryBlock *blocks;
     struct uc_struct* uc = (struct uc_struct *)handle;
@@ -550,6 +573,10 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
     if ((size & (4*1024 - 1)) != 0)
         return UC_ERR_MAP;
 
+    // check for only valid permissions
+    if ((perms & ~(UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC)) != 0)
+        return UC_ERR_MAP;
+
     if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
         blocks = realloc(uc->mapped_blocks, sizeof(MemoryBlock) * (uc->mapped_block_count + MEM_BLOCK_INCR));
         if (blocks == NULL) {
@@ -557,14 +584,20 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
         }
         uc->mapped_blocks = blocks;
     }
-    uc->mapped_blocks[uc->mapped_block_count].begin = address;
     uc->mapped_blocks[uc->mapped_block_count].end = address + size;
     //TODO extend uc_mem_map to accept permissions, figure out how to pass this down to qemu
-    uc->mapped_blocks[uc->mapped_block_count].perms = UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC;
-    uc->memory_map(uc, address, size);
+    uc->mapped_blocks[uc->mapped_block_count].perms = perms;
+    uc->mapped_blocks[uc->mapped_block_count].region = uc->memory_map(uc, address, size, perms);
     uc->mapped_block_count++;
 
     return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
+{
+    //old api, maps RWX by default
+    return uc_mem_map_ex(handle, address, size, UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC);
 }
 
 bool memory_mapping(struct uc_struct* uc, uint64_t address)
@@ -572,7 +605,7 @@ bool memory_mapping(struct uc_struct* uc, uint64_t address)
     unsigned int i;
 
     for(i = 0; i < uc->mapped_block_count; i++) {
-        if (address >= uc->mapped_blocks[i].begin && address < uc->mapped_blocks[i].end)
+        if (address >= uc->mapped_blocks[i].region->addr && address < uc->mapped_blocks[i].end)
             return true;
     }
 
