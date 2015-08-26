@@ -649,12 +649,8 @@ uc_err uc_hook_add(struct uc_struct *uc, uc_hook_h *hh, uc_hook_t type, void *ca
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_del(struct uc_struct *uc, uc_hook_h *hh)
+uc_err uc_hook_del(struct uc_struct *uc, uc_hook_h hh)
 {
-    if (*hh == 0)
-        // invalid handle
-        return UC_ERR_HANDLE;
-
     return hook_del(uc, hh);
 }
 

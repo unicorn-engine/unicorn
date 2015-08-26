@@ -382,7 +382,7 @@ uc_err uc_hook_add(struct uc_struct *uc, uc_hook_h *hh, uc_hook_t type, void *ca
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_hook_del(struct uc_struct *uc, uc_hook_h *hh);
+uc_err uc_hook_del(struct uc_struct *uc, uc_hook_h hh);
 
 /*
  Map memory in for emulation.
