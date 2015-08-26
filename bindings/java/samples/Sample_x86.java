@@ -38,6 +38,7 @@ public class Sample_x86 {
    public static final byte[] X86_CODE32_JMP_INVALID = {-23,-23,-18,-18,-18,65,74};
    public static final byte[] X86_CODE32_INOUT = {65,-28,63,74,-26,70,67};
    public static final byte[] X86_CODE64 = {65,-68,59,-80,40,42,73,15,-55,-112,77,15,-83,-49,73,-121,-3,-112,72,-127,-46,-118,-50,119,53,72,-9,-39,77,41,-12,73,-127,-55,-10,-118,-58,83,77,-121,-19,72,15,-83,-46,73,-9,-44,72,-9,-31,77,25,-59,77,-119,-59,72,-9,-42,65,-72,79,-115,107,89,77,-121,-48,104,106,30,9,60,89};
+   public static final byte[] X86_CODE16 = {0, 0}; // add   byte ptr [bx + si], al
    
    // memory address where emulation starts
    public static final int ADDRESS = 0x1000000;
@@ -585,6 +586,41 @@ public class Sample_x86 {
        u.close();
    }
 
+   static void test_x86_16()
+   {
+       byte[] eax = toBytes(7);
+       byte[] ebx = toBytes(5);
+       byte[] esi = toBytes(6);
+   
+       System.out.print("Emulate x86 16-bit code\n");
+   
+       // Initialize emulator in X86-16bit mode
+       Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_16);
+   
+       // map 8KB memory for this emulation
+       u.mem_map(0, 8 * 1024);
+   
+       // write machine code to be emulated to memory
+       u.mem_write(0, X86_CODE16);
+   
+       // initialize machine registers
+       u.reg_write(Unicorn.UC_X86_REG_EAX, eax);
+       u.reg_write(Unicorn.UC_X86_REG_EBX, ebx);
+       u.reg_write(Unicorn.UC_X86_REG_ESI, esi);
+   
+       // emulate machine code in infinite time (last param = 0), or when
+       // finishing all the code.
+       u.emu_start(0, X86_CODE16.length, 0, 0);
+   
+       // now print out some registers
+       System.out.print(">>> Emulation done. Below is the CPU context\n");
+   
+       // read from memory
+       byte[] tmp = u.mem_read(11, 1);
+   
+       u.close();
+   }
+
    public static void main(String args[])
    {
        if (args.length == 1) {
@@ -602,6 +638,10 @@ public class Sample_x86 {
                test_x86_64();
            }
    
+           if (args[0].equals("-16")) {
+               test_x86_16();
+           }
+
            // test memleak
            if (args[0].equals("-0")) {
                while(true) {
@@ -610,7 +650,7 @@ public class Sample_x86 {
                }
            }
        } else {
-           System.out.print("Syntax: java Sample_x86 <-32|-64>\n");
+           System.out.print("Syntax: java Sample_x86 <-16|-32|-64>\n");
        }
    
    }
