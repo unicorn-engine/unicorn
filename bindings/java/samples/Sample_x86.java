@@ -617,7 +617,8 @@ public class Sample_x86 {
    
        // read from memory
        byte[] tmp = u.mem_read(11, 1);
-   
+       System.out.printf(">>> Read 1 bytes from [0x%x] = 0x%x\n", 11, toInt(tmp));
+
        u.close();
    }
 
