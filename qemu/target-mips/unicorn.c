@@ -22,19 +22,17 @@ static void mips_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUMIPSState *)uc->current_cpu->env_ptr)->active_tc.PC = address;
 }
 
-void mips_reg_reset(uch handle)
+void mips_reg_reset(struct uc_struct *uc)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
-    CPUArchState *env;
-
-    env = first_cpu->env_ptr;
+    (void)uc;
+    CPUArchState *env = first_cpu->env_ptr;
     memset(env->active_tc.gpr, 0, sizeof(env->active_tc.gpr));
 
-    env->active_tc.PC = 0; }
+    env->active_tc.PC = 0;
+}
 
-int mips_reg_read(uch handle, unsigned int regid, void *value)
+int mips_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;
 
     if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
@@ -57,9 +55,8 @@ int mips_reg_read(uch handle, unsigned int regid, void *value)
 #define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
-int mips_reg_write(uch handle, unsigned int regid, const void *value)
+int mips_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;
 
     if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)

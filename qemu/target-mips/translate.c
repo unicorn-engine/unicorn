@@ -11344,7 +11344,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
 
     // Unicorn: trace this instruction on request
     if (env->uc->hook_insn) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_CODE, ctx->pc);
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
         // if requested to emulate only some instructions, check if
@@ -13944,7 +13944,7 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx)
 
     // Unicorn: trace this instruction on request
     if (env->uc->hook_insn) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_CODE, ctx->pc);
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
         // if requested to emulate only some instructions, check if
@@ -18523,7 +18523,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx)
 
     // Unicorn: trace this instruction on request
     if (env->uc->hook_insn) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_CODE, ctx->pc);
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
         // if requested to emulate only some instructions, check if
@@ -19208,7 +19208,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
 
     // Unicorn: trace this block on request
     if (env->uc->hook_block) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_BLOCK, pc_start);
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             // save block address to see if we need to patch block size later
             env->uc->block_addr = pc_start;
