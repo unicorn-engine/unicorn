@@ -535,7 +535,6 @@ UNICORN_EXPORT
 uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
 {
     struct uc_struct* uc = (struct uc_struct *)handle;
-    size_t s;
 
     if (handle == 0)
         // invalid handle
@@ -545,11 +544,17 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
         // invalid memory mapping
         return UC_ERR_MAP;
 
-    // align to 8KB boundary
-    map_begin[map_count] = address & (~ (8*1024 - 1));
-    s = (size + 8*1024 - 1) & (~ (8*1024 - 1));
-    map_end[map_count] = s + map_begin[map_count];
-    uc->memory_map(uc, map_begin[map_count], s);
+    // address must be aligned to 4KB
+    if ((address & (4*1024 - 1)) != 0)
+        return UC_ERR_MAP;
+
+    // size must be multiple of 4KB
+    if ((size & (4*1024 - 1)) != 0)
+        return UC_ERR_MAP;
+
+    map_begin[map_count] = address;
+    map_end[map_count] = size + map_begin[map_count];
+    uc->memory_map(uc, map_begin[map_count], size);
     map_count++;
 
     return UC_ERR_OK;
