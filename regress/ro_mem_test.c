@@ -4,7 +4,7 @@
 
 #include <unicorn/unicorn.h>
 
-const uint8_t PROGRAM[] = "\xeb\x08\x58\xc7\x00\x78\x56\x34\x12\x90\xe8\xf3\xff\xff\xff";
+const uint8_t PROGRAM[] = "\xeb\x08\x58\xc7\x00\x78\x56\x34\x12\x90\xe8\xf3\xff\xff\xff\x41\x41\x41\x41";
 
 /*
 bits 32
@@ -124,7 +124,25 @@ int main(int argc, char **argv, char **envp) {
                 err, uc_strerror(err));
         return 3;
     }
+    else {
+        printf("uc_emu_start returned UC_ERR_OK\n");
+    }
     printf("END execution\n");
+
+    printf("Verifying content at 0x40000f is unchanged\n");
+    if (!uc_mem_read(handle, 0x40000f, bytes, 4)) {
+        printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", (uint32_t)0x40000f, *(uint32_t*) bytes);
+        if (0x41414141 != *(uint32_t*) bytes) {
+            printf("ERROR content in read only memory changed\n");
+        }
+        else {
+            printf("SUCCESS content in read only memory unchanged\n");
+        }
+    }
+    else {
+        printf(">>> Failed to read 4 bytes from [0x%x]\n", (uint32_t)(esp - 4));
+        return 4;
+    }
 
     printf("Verifying content at bottom of stack is readable and correct\n");
     if (!uc_mem_read(handle, esp - 4, bytes, 4)) {
