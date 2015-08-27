@@ -11044,6 +11044,7 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     int num_insns;
     int max_insns;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
+    bool block_full = false;
 
     pc_start = tb->pc;
 
@@ -11105,7 +11106,9 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     tcg_clear_temp_count();
 
     // Unicorn: trace this block on request
-    if (env->uc->hook_block) {
+    // Only hook this block if it is not broken from previous translation due to
+    // full translation cache
+    if (env->uc->hook_block && !env->uc->block_full) {
         struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             // save block address to see if we need to patch block size later
@@ -11186,6 +11189,11 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
              dc->pc < next_page_start &&
              num_insns < max_insns);
 
+    /* if too long translation, save this info */
+    if (tcg_ctx->gen_opc_ptr >= gen_opc_end || num_insns >= max_insns) {
+        block_full = true;
+    }
+
     //if (tb->cflags & CF_LAST_IO) {
     //    gen_io_end();
     //}
@@ -11251,4 +11259,6 @@ done_generating:
         tb->size = dc->pc - pc_start;
         tb->icount = num_insns;
     }
+
+    env->uc->block_full = block_full;
 }
