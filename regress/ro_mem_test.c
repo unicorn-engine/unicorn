@@ -18,10 +18,25 @@ bottom:
    call top
 */
 
+// callback for tracing instruction
+static void hook_code(uch handle, uint64_t address, uint32_t size, void *user_data)
+{
+    uint32_t esp;
+    printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
+
+    uc_reg_read(handle, UC_X86_REG_ESP, &esp);
+    printf(">>> --- ESP is 0x%x\n", esp);
+
+}
+
+#define STACK 0x500000
+#define STACK_SIZE 0x5000
+
 int main(int argc, char **argv, char **envp) {
-    uch handle;
+    uch handle, trace2;
     uc_err err;
     uint8_t bytes[8];
+    uint32_t esp;
 
     printf("Memory mapping test\n");
 
@@ -36,6 +51,11 @@ int main(int argc, char **argv, char **envp) {
     uc_mem_map(handle, 0x200000, 0x2000);
     uc_mem_map(handle, 0x300000, 0x3000);
     uc_mem_map_ex(handle, 0x400000, 0x4000, UC_PROT_READ | UC_PROT_EXEC);
+    uc_mem_map_ex(handle, STACK, STACK_SIZE, UC_PROT_READ | UC_PROT_WRITE);
+
+    esp = STACK + STACK_SIZE;
+
+    uc_reg_write(handle, UC_X86_REG_ESP, &esp); 
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, 0x400000, PROGRAM, sizeof(PROGRAM))) {
@@ -45,6 +65,8 @@ int main(int argc, char **argv, char **envp) {
     else {
         printf("Allowed to write to read only memory via uc_mem_write\n");
     }
+
+    //uc_hook_add(handle, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)0x400000, (uint64_t)0x400fff);
 
     // emulate machine code in infinite time
     printf("BEGIN execution\n");
