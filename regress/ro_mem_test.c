@@ -4,7 +4,7 @@
 
 #include <unicorn/unicorn.h>
 
-#define PROGRAM "\xeb\x08\x58\xc7\x00\x78\x56\x34\x12\x90\xe8\xf3\xff\xff\xff"
+const uint8_t PROGRAM[] = "\xeb\x08\x58\xc7\x00\x78\x56\x34\x12\x90\xe8\xf3\xff\xff\xff";
 
 /*
 bits 32
@@ -37,6 +37,7 @@ int main(int argc, char **argv, char **envp) {
     uc_err err;
     uint8_t bytes[8];
     uint32_t esp;
+    int result;
 
     printf("Memory mapping test\n");
 
@@ -44,7 +45,7 @@ int main(int argc, char **argv, char **envp) {
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &handle);
     if (err) {
         printf("Failed on uc_open() with error returned: %u\n", err);
-        return;
+        return 1;
     }
 
     uc_mem_map(handle, 0x100000, 0x1000);
@@ -60,7 +61,7 @@ int main(int argc, char **argv, char **envp) {
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, 0x400000, PROGRAM, sizeof(PROGRAM))) {
         printf("Failed to write emulation code to memory, quit!\n");
-        return;
+        return 2;
     }
     else {
         printf("Allowed to write to read only memory via uc_mem_write\n");
@@ -74,13 +75,19 @@ int main(int argc, char **argv, char **envp) {
     if (err) {
         printf("Failed on uc_emu_start() with error returned %u: %s\n",
                 err, uc_strerror(err));
+        return 3;
     }
     printf("END execution\n");
 
-    if (!uc_mem_read(handle, 0x400000 + sizeof(PROGRAM) - 1, bytes, 4))
-        printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0x400000 + sizeof(PROGRAM) - 1,*(uint32_t*) bytes);
-    else
-        printf(">>> Failed to read 4 bytes from [0x%x]\n", 0x400000 + sizeof(PROGRAM) - 1);
+    if (!uc_mem_read(handle, 0x400000 + sizeof(PROGRAM) - 1, bytes, 4)) {
+        printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", (uint32_t)(0x400000 + sizeof(PROGRAM) - 1),*(uint32_t*) bytes);
+    }
+    else {
+        printf(">>> Failed to read 4 bytes from [0x%x]\n", (uint32_t)(0x400000 + sizeof(PROGRAM) - 1));
+        return 4;
+    }
 
     uc_close(&handle);
+    
+    return 0;
 }
