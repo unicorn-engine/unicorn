@@ -1,7 +1,9 @@
 CFLAGS += -I../include
 LDFLAGS = -L.. -lunicorn
 
-TESTS = map_crash sigill sigill2 block_test
+TESTS = map_crash map_write
+TESTS += sigill sigill2
+TESTS += block_test
 
 all: $(TESTS)
 
