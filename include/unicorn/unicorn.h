@@ -427,25 +427,6 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size);
 UNICORN_EXPORT
 uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms);
 
-/*
- Set memory permissions for emulation memory.
- This API changes permissions on an existing memory region.
-
- @handle: handle returned by uc_open()
- @start: starting address of the memory region to be modified.
-    This address must be aligned to 4KB, or this will return with UC_ERR_MAP error.
- @block_size: size of the memory region to be modified.
-    This size must be multiple of 4KB, or this will return with UC_ERR_MAP error.
- @perms: New permissions for the mapped region.
-    This must be some combination of UC_PROT_READ | UC_PROT_WRITE,
-    or this will return with UC_ERR_MAP error.
-
- @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
- for detailed error).
-*/
-UNICORN_EXPORT
-uc_err uc_mem_protect(uch handle, uint64_t start, size_t block_size, uint32_t perms);
-
 #ifdef __cplusplus
 }
 #endif
