@@ -3076,6 +3076,7 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
     int num_insns;
     int max_insns;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
+    bool block_full = false;
 
     /* generate intermediate code */
     pc_start = tb->pc;
@@ -3101,7 +3102,9 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
         max_insns = CF_COUNT_MASK;
 
     // Unicorn: trace this block on request
-    if (env->uc->hook_block) {
+    // Only hook this block if it is not broken from previous translation due to
+    // full translation cache
+    if (env->uc->hook_block && !env->uc->block_full) {
         struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             // save block address to see if we need to patch block size later
@@ -3145,6 +3148,10 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
             (pc_offset) < (TARGET_PAGE_SIZE - 32) &&
             num_insns < max_insns);
 
+    /* if too long translation, save this info */
+    if (tcg_ctx->gen_opc_ptr >= gen_opc_end || num_insns >= max_insns)
+        block_full = true;
+
     //if (tb->cflags & CF_LAST_IO)
     //    gen_io_end();
     if (unlikely(cs->singlestep_enabled)) {
@@ -3187,6 +3194,8 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
 
     //optimize_flags();
     //expand_target_qops();
+
+    env->uc->block_full = block_full;
 }
 
 void gen_intermediate_code(CPUM68KState *env, TranslationBlock *tb)
