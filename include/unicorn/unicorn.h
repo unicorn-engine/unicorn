@@ -116,6 +116,7 @@ typedef enum uc_err {
     UC_ERR_HOOK,    // Invalid hook type: uc_hook_add()
     UC_ERR_INSN_INVALID, // Quit emulation due to invalid instruction: uc_emu_start()
     UC_ERR_MAP, // Invalid memory mapping: uc_mem_map()
+    UC_ERR_MEM_WRITE_RO, // Quit emulation due to invalid memory WRITE: uc_emu_start()
 } uc_err;
 
 
@@ -147,6 +148,7 @@ typedef enum uc_mem_type {
     UC_MEM_READ = 16,   // Memory is read from
     UC_MEM_WRITE,       // Memory is written to
     UC_MEM_READ_WRITE,  // Memory is accessed (either READ or WRITE)
+    UC_MEM_WRITE_RO,    // Read only memory is written to
 } uc_mem_type;
 
 // All type of hooks for uc_hook_add() API.

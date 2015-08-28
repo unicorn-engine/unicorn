@@ -16,9 +16,8 @@
 QTAILQ_HEAD(CPUTailQ, CPUState);
 
 typedef struct MemoryBlock {
-   MemoryRegion *region;  //inclusive
+   MemoryRegion *region;  //inclusive begin
    uint64_t end;    //exclusive
-   uint32_t perms;
 } MemoryBlock;
 
 typedef struct ModuleEntry {
@@ -184,6 +183,6 @@ struct uc_struct {
 #include "qemu_macro.h"
 
 // check if this address is mapped in (via uc_mem_map())
-bool memory_mapping(struct uc_struct* uc, uint64_t address);
+MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address);
 
 #endif

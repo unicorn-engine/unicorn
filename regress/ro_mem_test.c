@@ -4,15 +4,22 @@
 
 #include <unicorn/unicorn.h>
 
-const uint8_t PROGRAM[] = "\xeb\x08\x58\xc7\x00\x78\x56\x34\x12\x90\xe8\xf3\xff\xff\xff\x41\x41\x41\x41";
+const uint8_t PROGRAM[] =  
+   "\xeb\x1a\x58\x83\xc0\x04\x83\xe0\xfc\x83\xc0\x01\xc7\x00\x78\x56"
+   "\x34\x12\x83\xc0\x07\xc7\x00\x21\x43\x65\x87\x90\xe8\xe1\xff\xff"
+   "\xff" "xxxxAAAAxxxBBBB";
+// total size: 33 bytes
 
 /*
-bits 32
-
    jmp short bottom
 top:
    pop eax
-   mov dword [eax], 0x12345678
+   add eax, 4
+   and eax, 0xfffffffc
+   add eax, 1             ; unaligned
+   mov dword [eax], 0x12345678  ; try to write into code section
+   add eax, 7             ; aligned
+   mov dword [eax], 0x87654321  ; try to write into code section
    nop
 bottom:
    call top
@@ -47,11 +54,15 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
                  upper = (esp + 0xfff) & ~0xfff;
                  printf(">>> Stack appears to be missing at 0x%"PRIx64 ", allocating now\n", address);
                  // map this memory in with 2MB in size
-                 uc_mem_map(handle, upper - 0x8000, 0x8000);
+                 uc_mem_map_ex(handle, upper - 0x8000, 0x8000, UC_PROT_READ | UC_PROT_WRITE);
                  // return true to indicate we want to continue
                  return true;
             }
-            printf(">>> Missing memory is being WRITE at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
+            printf(">>> Missing memory is being WRITTEN at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
+                   address, size, value);
+            return false;
+        case UC_MEM_WRITE_RO:
+            printf(">>> RO memory is being WRITTEN at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
                    address, size, value);
             return false;
     }
@@ -75,13 +86,6 @@ int main(int argc, char **argv, char **envp) {
 
     printf("Memory mapping test\n");
 
-    if (map_stack) {
-        printf("Pre-mapping stack\n");
-    }
-    else {
-        printf("Mapping stack on first invalid memory access\n");
-    }
-
     // Initialize emulator in X86-32bit mode
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &handle);
     if (err) {
@@ -95,7 +99,11 @@ int main(int argc, char **argv, char **envp) {
     uc_mem_map_ex(handle, 0x400000, 0x4000, UC_PROT_READ | UC_PROT_EXEC);
     
     if (map_stack) {
+       printf("Pre-mapping stack\n");
        uc_mem_map_ex(handle, STACK, STACK_SIZE, UC_PROT_READ | UC_PROT_WRITE);
+    }
+    else {
+        printf("Mapping stack on first invalid memory access\n");
     }
 
     esp = STACK + STACK_SIZE;
@@ -117,22 +125,50 @@ int main(int argc, char **argv, char **envp) {
     uc_hook_add(handle, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL);
 
     // emulate machine code in infinite time
-    printf("BEGIN execution\n");
-    err = uc_emu_start(handle, 0x400000, 0x400000 + sizeof(PROGRAM), 0, 5);
+    printf("BEGIN execution - 1\n");
+    err = uc_emu_start(handle, 0x400000, 0x400000 + sizeof(PROGRAM), 0, 10);
     if (err) {
-        printf("Failed on uc_emu_start() with error returned %u: %s\n",
+        printf("Expected failue on uc_emu_start() with error returned %u: %s\n",
                 err, uc_strerror(err));
-        return 3;
     }
     else {
-        printf("uc_emu_start returned UC_ERR_OK\n");
+        printf("UNEXPECTED uc_emu_start returned UC_ERR_OK\n");
     }
-    printf("END execution\n");
+    printf("END execution - 1\n");
 
-    printf("Verifying content at 0x40000f is unchanged\n");
-    if (!uc_mem_read(handle, 0x40000f, bytes, 4)) {
-        printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", (uint32_t)0x40000f, *(uint32_t*) bytes);
+    // emulate machine code in infinite time
+    printf("BEGIN execution - 2\n");
+    uint32_t eax = 0x40002C;
+    uc_reg_write(handle, UC_X86_REG_EAX, &eax); 
+    err = uc_emu_start(handle, 0x400015, 0x400000 + sizeof(PROGRAM), 0, 2);
+    if (err) {
+        printf("Expected failure on uc_emu_start() with error returned %u: %s\n",
+                err, uc_strerror(err));
+    }
+    else {
+        printf("UNEXPECTED uc_emu_start returned UC_ERR_OK\n");
+    }
+    printf("END execution - 2\n");
+
+    printf("Verifying content at 0x400025 is unchanged\n");
+    if (!uc_mem_read(handle, 0x400025, bytes, 4)) {
+        printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", (uint32_t)0x400025, *(uint32_t*) bytes);
         if (0x41414141 != *(uint32_t*) bytes) {
+            printf("ERROR content in read only memory changed\n");
+        }
+        else {
+            printf("SUCCESS content in read only memory unchanged\n");
+        }
+    }
+    else {
+        printf(">>> Failed to read 4 bytes from [0x%x]\n", (uint32_t)(esp - 4));
+        return 4;
+    }
+
+    printf("Verifying content at 0x40002C is unchanged\n");
+    if (!uc_mem_read(handle, 0x40002C, bytes, 4)) {
+        printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", (uint32_t)0x40002C, *(uint32_t*) bytes);
+        if (0x42424242 != *(uint32_t*) bytes) {
             printf("ERROR content in read only memory changed\n");
         }
         else {

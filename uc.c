@@ -89,6 +89,8 @@ const char *uc_strerror(uc_err code)
             return "Invalid hook type (UC_ERR_HOOK)";
         case UC_ERR_MAP:
             return "Invalid memory mapping (UC_ERR_MAP)";
+        case UC_ERR_MEM_WRITE_RO:
+            return "Invalid memory write (UC_ERR_MEM_WRITE_RO)";
     }
 }
 
@@ -376,14 +378,14 @@ uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t s
     if (mb == NULL)
         return UC_ERR_MEM_WRITE;
 
-    if (!(mb->perms & UC_PROT_WRITE)) //write protected
+    if (!(mb->region->perms & UC_PROT_WRITE)) //write protected
         //but this is not the program accessing memory, so temporarily mark writable
         uc->readonly_mem(mb->region, false);
 
     if (uc->write_mem(&uc->as, address, bytes, size) == false)
         return UC_ERR_MEM_WRITE;
 
-    if (!(mb->perms & UC_PROT_WRITE)) //write protected
+    if (!(mb->region->perms & UC_PROT_WRITE)) //write protected
         //now write protect it again
         uc->readonly_mem(mb->region, true);
 
@@ -586,7 +588,6 @@ uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms)
     }
     uc->mapped_blocks[uc->mapped_block_count].end = address + size;
     //TODO extend uc_mem_map to accept permissions, figure out how to pass this down to qemu
-    uc->mapped_blocks[uc->mapped_block_count].perms = perms;
     uc->mapped_blocks[uc->mapped_block_count].region = uc->memory_map(uc, address, size, perms);
     uc->mapped_block_count++;
 
@@ -600,17 +601,17 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
     return uc_mem_map_ex(handle, address, size, UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC);
 }
 
-bool memory_mapping(struct uc_struct* uc, uint64_t address)
+MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
 {
     unsigned int i;
 
     for(i = 0; i < uc->mapped_block_count; i++) {
         if (address >= uc->mapped_blocks[i].region->addr && address < uc->mapped_blocks[i].end)
-            return true;
+            return uc->mapped_blocks[i].region;
     }
 
     // not found
-    return false;
+    return NULL;
 }
 
 static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_eventmem_t callback,
@@ -777,4 +778,3 @@ uc_err uc_hook_del(uch handle, uch *h2)
 
     return hook_del(handle, h2);
 }
-

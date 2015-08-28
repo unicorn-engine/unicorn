@@ -1160,6 +1160,7 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
     if (!(perms & UC_PROT_WRITE)) {
         mr->readonly = true;
     }
+    mr->perms = perms;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
     mr->ram_addr = qemu_ram_alloc(size, mr, errp);
