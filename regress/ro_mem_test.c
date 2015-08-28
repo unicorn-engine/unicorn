@@ -1,6 +1,5 @@
 /*
-
-non-writable memory test case
+Non-writable memory test case
 
 Copyright(c) 2015 Chris Eagle
 
@@ -123,8 +122,7 @@ int main(int argc, char **argv, char **envp)
     if (map_stack) {
         printf("Pre-mapping stack\n");
         uc_mem_map_ex(handle, STACK, STACK_SIZE, UC_PROT_READ | UC_PROT_WRITE);
-    }
-    else {
+    } else {
         printf("Mapping stack on first invalid memory access\n");
     }
 
@@ -136,8 +134,7 @@ int main(int argc, char **argv, char **envp)
     if (uc_mem_write(handle, 0x400000, PROGRAM, sizeof(PROGRAM))) {
         printf("Failed to write emulation code to memory, quit!\n");
         return 2;
-    }
-    else {
+    } else {
         printf("Allowed to write to read only memory via uc_mem_write\n");
     }
 
@@ -152,8 +149,7 @@ int main(int argc, char **argv, char **envp)
     if (err) {
         printf("Expected failue on uc_emu_start() with error returned %u: %s\n",
                 err, uc_strerror(err));
-    }
-    else {
+    } else {
         printf("UNEXPECTED uc_emu_start returned UC_ERR_OK\n");
     }
     printf("END execution - 1\n");
@@ -166,8 +162,7 @@ int main(int argc, char **argv, char **envp)
     if (err) {
         printf("Expected failure on uc_emu_start() with error returned %u: %s\n",
                 err, uc_strerror(err));
-    }
-    else {
+    } else {
         printf("UNEXPECTED uc_emu_start returned UC_ERR_OK\n");
     }
     printf("END execution - 2\n");
@@ -177,12 +172,10 @@ int main(int argc, char **argv, char **envp)
         printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", (uint32_t)0x400025, *(uint32_t*) bytes);
         if (0x41414141 != *(uint32_t*) bytes) {
             printf("ERROR content in read only memory changed\n");
-        }
-        else {
+        } else {
             printf("SUCCESS content in read only memory unchanged\n");
         }
-    }
-    else {
+    } else {
         printf(">>> Failed to read 4 bytes from [0x%x]\n", (uint32_t)(esp - 4));
         return 4;
     }
@@ -192,12 +185,10 @@ int main(int argc, char **argv, char **envp)
         printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", (uint32_t)0x40002C, *(uint32_t*) bytes);
         if (0x42424242 != *(uint32_t*) bytes) {
             printf("ERROR content in read only memory changed\n");
-        }
-        else {
+        } else {
             printf("SUCCESS content in read only memory unchanged\n");
         }
-    }
-    else {
+    } else {
         printf(">>> Failed to read 4 bytes from [0x%x]\n", (uint32_t)(esp - 4));
         return 4;
     }
@@ -205,8 +196,7 @@ int main(int argc, char **argv, char **envp)
     printf("Verifying content at bottom of stack is readable and correct\n");
     if (!uc_mem_read(handle, esp - 4, bytes, 4)) {
         printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", (uint32_t)(esp - 4), *(uint32_t*) bytes);
-    }
-    else {
+    } else {
         printf(">>> Failed to read 4 bytes from [0x%x]\n", (uint32_t)(esp - 4));
         return 4;
     }

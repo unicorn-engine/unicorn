@@ -1,6 +1,5 @@
 /*
-
-non-readable memory test case
+Non-readable memory test case
 
 Copyright(c) 2015 Chris Eagle
 
@@ -76,8 +75,7 @@ int main(int argc, char **argv, char **envp)
     if (uc_mem_write(handle, 0x100000, PROGRAM, sizeof(PROGRAM))) {
         printf("Failed to write emulation code to memory, quit!\n");
         return 2;
-    }
-    else {
+    } else {
         printf("Allowed to write to read only memory via uc_mem_write\n");
     }
 
@@ -95,8 +93,7 @@ int main(int argc, char **argv, char **envp)
     if (err) {
         printf("Expected failure on uc_emu_start() with error returned %u: %s\n",
                 err, uc_strerror(err));
-    }
-    else {
+    } else {
         printf("UNEXPECTED uc_emu_start returned UC_ERR_OK\n");
     }
     printf("END execution\n");
