@@ -8,7 +8,7 @@
 
 int main() {
 	uch uh;
-	char *buf, *buf2;
+	uint8_t *buf, *buf2;
 	int i;
 	uc_err err;
 
