@@ -248,6 +248,11 @@ static void gen_update_cc_op(DisasContext *s)
     }
 }
 
+static void fpu_update_ip(CPUX86State *env)
+{
+	env->fpip = env->eip;
+}
+
 #ifdef TARGET_X86_64
 
 #define NB_OP_SIZES 4
@@ -6065,6 +6070,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             gen_exception(s, EXCP07_PREX, pc_start - s->cs_base);
             break;
         }
+        fpu_update_ip(env);
         modrm = cpu_ldub_code(env, s->pc++);
         mod = (modrm >> 6) & 3;
         rm = modrm & 7;
