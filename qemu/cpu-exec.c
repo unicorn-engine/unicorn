@@ -117,13 +117,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     (uc->arch == UC_ARCH_M68K && cpu->exception_index == 0x2f)   /* M68K's EXCP_TRAP15 */
                     ) {
                     cpu->halted = 1;
-                    //cpu->exception_index = EXCP_HLT;
-                    //no_shutdown = 0;
-                    //printf(">>> calling shutdown-request...\n");
-                    //printf(">>> ** current EIP = %x\n", X86_CPU(cpu)->env.eip);
-                    //qemu_system_shutdown_request();
-                    //pause_all_vcpus();
-                    //cpu_loop_exit(cpu);
                     ret = EXCP_HLT;
                     break;
                 }
