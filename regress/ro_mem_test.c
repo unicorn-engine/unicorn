@@ -26,25 +26,25 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <unicorn/unicorn.h>
 
 const uint8_t PROGRAM[] =  
-"\xeb\x1a\x58\x83\xc0\x04\x83\xe0\xfc\x83\xc0\x01\xc7\x00\x78\x56"
-"\x34\x12\x83\xc0\x07\xc7\x00\x21\x43\x65\x87\x90\xe8\xe1\xff\xff"
-"\xff" "xxxxAAAAxxxBBBB";
+    "\xeb\x1a\x58\x83\xc0\x04\x83\xe0\xfc\x83\xc0\x01\xc7\x00\x78\x56"
+    "\x34\x12\x83\xc0\x07\xc7\x00\x21\x43\x65\x87\x90\xe8\xe1\xff\xff"
+    "\xff" "xxxxAAAAxxxBBBB";
 // total size: 33 bytes
 
 /*
    jmp short bottom
 top:
-pop eax
-add eax, 4
-and eax, 0xfffffffc
-add eax, 1             ; unaligned
-mov dword [eax], 0x12345678  ; try to write into code section
-add eax, 7             ; aligned
-mov dword [eax], 0x87654321  ; try to write into code section
-nop
+    pop eax
+    add eax, 4
+    and eax, 0xfffffffc
+    add eax, 1             ; unaligned
+    mov dword [eax], 0x12345678  ; try to write into code section
+    add eax, 7             ; aligned
+    mov dword [eax], 0x87654321  ; try to write into code section
+    nop
 bottom:
-call top
- */
+    call top
+*/
 
 // callback for tracing instruction
 static void hook_code(uch handle, uint64_t address, uint32_t size, void *user_data)
