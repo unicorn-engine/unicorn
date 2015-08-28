@@ -97,6 +97,7 @@ endif
 ifneq (,$(findstring x86,$(UNICORN_ARCHS)))
 SOURCES += sample_x86.c
 SOURCES += shellcode.c
+SOURCES += mem_protect.c
 endif
 ifneq (,$(findstring m68k,$(UNICORN_ARCHS)))
 SOURCES += sample_m68k.c
@@ -111,7 +112,7 @@ all: $(BINARY)
 clean:
 	rm -rf *.o $(OBJS_ELF) $(BINARY) $(SAMPLEDIR)/*.exe $(SAMPLEDIR)/*.static $(OBJDIR)/lib$(LIBNAME)* $(OBJDIR)/$(LIBNAME)*
 	rm -rf libunicorn*.so libunicorn*.lib libunicorn*.dylib unicorn*.dll unicorn*.lib
-	rm -rf sample_x86 sample_arm sample_arm64 sample_mips sample_sparc sample_ppc sample_m68k shellcode
+	rm -rf sample_x86 sample_arm sample_arm64 sample_mips sample_sparc sample_ppc sample_m68k shellcode mem_protect
 
 $(BINARY): $(OBJS)
 

@@ -173,9 +173,6 @@ int main(int argc, char **argv, char **envp)
 {
    uch handle, trace1, trace2;
    uc_err err;
-   uint8_t bytes[8];
-   uint32_t esp;
-   int result;
    
    printf("# Memory protect test\n");
    
