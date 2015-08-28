@@ -70,7 +70,8 @@ static int log_num = 1;
 
 static uint32_t current_perms = UC_PROT_READ | UC_PROT_WRITE;
 
-static void hexdump(const char *prefix, const uint8_t *bytes, uint32_t len) {
+static void hexdump(const char *prefix, const uint8_t *bytes, uint32_t len)
+{
    uint32_t i;
    printf("%s", prefix);
    for (i = 0; i < len; i++) {
@@ -80,7 +81,8 @@ static void hexdump(const char *prefix, const uint8_t *bytes, uint32_t len) {
 }
 
 // callback for tracing instruction
-static void hook_code(uch handle, uint64_t addr, uint32_t size, void *user_data) {
+static void hook_code(uch handle, uint64_t addr, uint32_t size, void *user_data)
+{
    uint8_t opcode;
    uint8_t bytes[5];
    if (uc_mem_read(handle, addr, &opcode, 1) != UC_ERR_OK) {
@@ -130,7 +132,8 @@ static void hook_code(uch handle, uint64_t addr, uint32_t size, void *user_data)
 
 // callback for tracing memory access (READ or WRITE)
 static bool hook_mem_invalid(uch handle, uc_mem_type type,
-        uint64_t addr, int size, int64_t value, void *user_data) {
+        uint64_t addr, int size, int64_t value, void *user_data)
+{
    uint8_t bytes[5];   
    switch(type) {
       default:
@@ -166,7 +169,8 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
    }
 }
 
-int main(int argc, char **argv, char **envp) {
+int main(int argc, char **argv, char **envp)
+{
    uch handle, trace1, trace2;
    uc_err err;
    uint8_t bytes[8];
