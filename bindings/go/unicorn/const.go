@@ -1,0 +1,22 @@
+package unicorn
+
+// #include <unicorn/unicorn.h>
+import "C"
+
+// TODO: update const script to generate these?
+const (
+	UC_HOOK_BLOCK          = C.UC_HOOK_BLOCK
+	UC_HOOK_CODE           = C.UC_HOOK_CODE
+	UC_HOOK_MEM_INVALID    = C.UC_HOOK_MEM_INVALID
+	UC_HOOK_MEM_READ       = C.UC_HOOK_MEM_READ
+	UC_HOOK_MEM_WRITE      = C.UC_HOOK_MEM_WRITE
+	UC_HOOK_MEM_READ_WRITE = C.UC_HOOK_MEM_READ_WRITE
+	UC_HOOK_INSN           = C.UC_HOOK_INSN
+
+	UC_ARCH_X86 = C.UC_ARCH_X86
+	UC_MODE_32  = C.UC_MODE_32
+	UC_MODE_64  = C.UC_MODE_64
+
+	UC_ERR_MEM_READ  = C.UC_ERR_MEM_READ
+	UC_ERR_MEM_WRITE = C.UC_ERR_MEM_WRITE
+)
