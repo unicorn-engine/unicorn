@@ -31,8 +31,6 @@
 
 #include "qemu/include/hw/boards.h"
 
-static MemoryRegion *getMemoryBlock(struct uc_struct *uc, uint64_t address);
-
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
 {
@@ -355,19 +353,6 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
     return UC_ERR_OK;
 }
 
-static MemoryRegion *getMemoryBlock(struct uc_struct *uc, uint64_t address)
-{
-    unsigned int i;
-
-    for(i = 0; i < uc->mapped_block_count; i++) {
-        if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
-            return uc->mapped_blocks[i];
-    }
-
-    // not found
-    return NULL;   
-}
-
 UNICORN_EXPORT
 uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size)
 {
@@ -378,7 +363,7 @@ uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t s
         // invalid handle
         return UC_ERR_UCH;
 
-    MemoryRegion *mr = getMemoryBlock(uc, address);
+    MemoryRegion *mr = memory_mapping(uc, address);
     if (mr == NULL)
         return UC_ERR_MEM_WRITE;
 
