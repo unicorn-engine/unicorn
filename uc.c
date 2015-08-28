@@ -89,6 +89,8 @@ const char *uc_strerror(uc_err code)
             return "Invalid hook type (UC_ERR_HOOK)";
         case UC_ERR_MAP:
             return "Invalid memory mapping (UC_ERR_MAP)";
+        case UC_ERR_MEM_WRITE_RO:
+            return "Invalid memory write (UC_ERR_MEM_WRITE_RO)";
     }
 }
 
@@ -351,18 +353,31 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
     return UC_ERR_OK;
 }
 
-
 UNICORN_EXPORT
 uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size)
 {
     struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
+    uint32_t operms;
 
     if (handle == 0)
         // invalid handle
         return UC_ERR_UCH;
 
+    MemoryRegion *mr = memory_mapping(uc, address);
+    if (mr == NULL)
+        return UC_ERR_MEM_WRITE;
+
+    operms = mr->perms;
+    if (!(operms & UC_PROT_WRITE)) //write protected
+        //but this is not the program accessing memory, so temporarily mark writable
+        uc->readonly_mem(mr, false);
+
     if (uc->write_mem(&uc->as, address, bytes, size) == false)
         return UC_ERR_MEM_WRITE;
+
+    if (!(operms & UC_PROT_WRITE)) //write protected
+        //now write protect it again
+        uc->readonly_mem(mr, true);
 
     return UC_ERR_OK;
 }
@@ -529,9 +544,9 @@ static uc_err _hook_mem_access(uch handle, uc_mem_type type,
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
+uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms)
 {
-    MemoryBlock *blocks;
+    MemoryRegion **regions;
     struct uc_struct* uc = (struct uc_struct *)handle;
 
     if (handle == 0)
@@ -550,34 +565,41 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
     if ((size & (4*1024 - 1)) != 0)
         return UC_ERR_MAP;
 
+    // check for only valid permissions
+    if ((perms & ~(UC_PROT_READ | UC_PROT_WRITE)) != 0)
+        return UC_ERR_MAP;
+
     if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
-        blocks = realloc(uc->mapped_blocks, sizeof(MemoryBlock) * (uc->mapped_block_count + MEM_BLOCK_INCR));
-        if (blocks == NULL) {
+        regions = (MemoryRegion**)realloc(uc->mapped_blocks, sizeof(MemoryRegion*) * (uc->mapped_block_count + MEM_BLOCK_INCR));
+        if (regions == NULL) {
             return UC_ERR_OOM;
         }
-        uc->mapped_blocks = blocks;
+        uc->mapped_blocks = regions;
     }
-    uc->mapped_blocks[uc->mapped_block_count].begin = address;
-    uc->mapped_blocks[uc->mapped_block_count].end = address + size;
-    //TODO extend uc_mem_map to accept permissions, figure out how to pass this down to qemu
-    uc->mapped_blocks[uc->mapped_block_count].perms = UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC;
-    uc->memory_map(uc, address, size);
+    uc->mapped_blocks[uc->mapped_block_count] = uc->memory_map(uc, address, size, perms);
     uc->mapped_block_count++;
 
     return UC_ERR_OK;
 }
 
-bool memory_mapping(struct uc_struct* uc, uint64_t address)
+UNICORN_EXPORT
+uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
+{
+    //old api, maps RW by default
+    return uc_mem_map_ex(handle, address, size, UC_PROT_READ | UC_PROT_WRITE);
+}
+
+MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
 {
     unsigned int i;
 
     for(i = 0; i < uc->mapped_block_count; i++) {
-        if (address >= uc->mapped_blocks[i].begin && address < uc->mapped_blocks[i].end)
-            return true;
+        if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
+            return uc->mapped_blocks[i];
     }
 
     // not found
-    return false;
+    return NULL;
 }
 
 static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_eventmem_t callback,
@@ -744,4 +766,3 @@ uc_err uc_hook_del(uch handle, uch *h2)
 
     return hook_del(handle, h2);
 }
-
