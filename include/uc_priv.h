@@ -15,11 +15,6 @@
 
 QTAILQ_HEAD(CPUTailQ, CPUState);
 
-typedef struct MemoryBlock {
-   MemoryRegion *region;  //inclusive begin
-   uint64_t end;    //exclusive
-} MemoryBlock;
-
 typedef struct ModuleEntry {
     void (*init)(void);
     QTAILQ_ENTRY(ModuleEntry) node;
@@ -176,7 +171,7 @@ struct uc_struct {
     int thumb;  // thumb mode for ARM
     // full TCG cache leads to middle-block break in the last translation?
     bool block_full;
-    MemoryBlock *mapped_blocks;
+    MemoryRegion **mapped_blocks;
     uint32_t mapped_block_count;
 };
 

@@ -96,7 +96,7 @@ int main(int argc, char **argv, char **envp) {
     uc_mem_map(handle, 0x100000, 0x1000);
     uc_mem_map(handle, 0x200000, 0x2000);
     uc_mem_map(handle, 0x300000, 0x3000);
-    uc_mem_map_ex(handle, 0x400000, 0x4000, UC_PROT_READ | UC_PROT_EXEC);
+    uc_mem_map_ex(handle, 0x400000, 0x4000, UC_PROT_READ);
     
     if (map_stack) {
        printf("Pre-mapping stack\n");

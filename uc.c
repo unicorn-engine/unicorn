@@ -352,13 +352,14 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
 
     return UC_ERR_OK;
 }
-static const MemoryBlock *getMemoryBlock(struct uc_struct *uc, uint64_t address);
-static const MemoryBlock *getMemoryBlock(struct uc_struct *uc, uint64_t address) {
+
+static MemoryRegion *getMemoryBlock(struct uc_struct *uc, uint64_t address);
+static MemoryRegion *getMemoryBlock(struct uc_struct *uc, uint64_t address) {
     unsigned int i;
 
     for(i = 0; i < uc->mapped_block_count; i++) {
-        if (address >= uc->mapped_blocks[i].region->addr && address < uc->mapped_blocks[i].end)
-            return &uc->mapped_blocks[i];
+        if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
+            return uc->mapped_blocks[i];
     }
 
     // not found
@@ -369,25 +370,27 @@ UNICORN_EXPORT
 uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size)
 {
     struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
+    uint32_t operms;
 
     if (handle == 0)
         // invalid handle
         return UC_ERR_UCH;
 
-    const MemoryBlock *mb = getMemoryBlock(uc, address);
-    if (mb == NULL)
+    MemoryRegion *mr = getMemoryBlock(uc, address);
+    if (mr == NULL)
         return UC_ERR_MEM_WRITE;
 
-    if (!(mb->region->perms & UC_PROT_WRITE)) //write protected
+    operms = mr->perms;
+    if (!(operms & UC_PROT_WRITE)) //write protected
         //but this is not the program accessing memory, so temporarily mark writable
-        uc->readonly_mem(mb->region, false);
+        uc->readonly_mem(mr, false);
 
     if (uc->write_mem(&uc->as, address, bytes, size) == false)
         return UC_ERR_MEM_WRITE;
 
-    if (!(mb->region->perms & UC_PROT_WRITE)) //write protected
+    if (!(operms & UC_PROT_WRITE)) //write protected
         //now write protect it again
-        uc->readonly_mem(mb->region, true);
+        uc->readonly_mem(mr, true);
 
     return UC_ERR_OK;
 }
@@ -556,7 +559,7 @@ static uc_err _hook_mem_access(uch handle, uc_mem_type type,
 UNICORN_EXPORT
 uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms)
 {
-    MemoryBlock *blocks;
+    MemoryRegion **regions;
     struct uc_struct* uc = (struct uc_struct *)handle;
 
     if (handle == 0)
@@ -576,19 +579,17 @@ uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms)
         return UC_ERR_MAP;
 
     // check for only valid permissions
-    if ((perms & ~(UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC)) != 0)
+    if ((perms & ~(UC_PROT_READ | UC_PROT_WRITE)) != 0)
         return UC_ERR_MAP;
 
     if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
-        blocks = realloc(uc->mapped_blocks, sizeof(MemoryBlock) * (uc->mapped_block_count + MEM_BLOCK_INCR));
-        if (blocks == NULL) {
+        regions = (MemoryRegion**)realloc(uc->mapped_blocks, sizeof(MemoryRegion*) * (uc->mapped_block_count + MEM_BLOCK_INCR));
+        if (regions == NULL) {
             return UC_ERR_OOM;
         }
-        uc->mapped_blocks = blocks;
+        uc->mapped_blocks = regions;
     }
-    uc->mapped_blocks[uc->mapped_block_count].end = address + size;
-    //TODO extend uc_mem_map to accept permissions, figure out how to pass this down to qemu
-    uc->mapped_blocks[uc->mapped_block_count].region = uc->memory_map(uc, address, size, perms);
+    uc->mapped_blocks[uc->mapped_block_count] = uc->memory_map(uc, address, size, perms);
     uc->mapped_block_count++;
 
     return UC_ERR_OK;
@@ -597,8 +598,92 @@ uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms)
 UNICORN_EXPORT
 uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
 {
-    //old api, maps RWX by default
-    return uc_mem_map_ex(handle, address, size, UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC);
+    //old api, maps RW by default
+    return uc_mem_map_ex(handle, address, size, UC_PROT_READ | UC_PROT_WRITE);
+}
+
+UNICORN_EXPORT
+uc_err uc_mem_protect(uch handle, uint64_t start, size_t block_size, uint32_t perms)
+{
+    uint64_t address;
+    uint64_t size;
+    struct uc_struct* uc = (struct uc_struct *)handle;
+
+    if (handle == 0)
+        // invalid handle
+        return UC_ERR_UCH;
+
+    if (block_size == 0)
+        // invalid memory mapping
+        return UC_ERR_MAP;
+
+    // address must be aligned to 4KB
+    if ((start & (4*1024 - 1)) != 0)
+        return UC_ERR_MAP;
+
+    // size must be multiple of 4KB
+    if ((block_size & (4*1024 - 1)) != 0)
+        return UC_ERR_MAP;
+
+    // check for only valid permissions
+    if ((perms & ~(UC_PROT_READ | UC_PROT_WRITE)) != 0)
+        return UC_ERR_MAP;
+        
+    //check that users entire requested block is mapped
+    address = start;
+    size = block_size;
+    while (size > 0) {
+        uint64_t region_size;
+        MemoryRegion *mr = memory_mapping(uc, address);
+        if (mr == NULL) {
+            return UC_ERR_MAP;
+        }
+        region_size = int128_get64(mr->size);
+        if (address > mr->addr) {
+            //in case start address is not aligned with start of region
+            region_size -= address - mr->addr;
+        }
+        if (size < region_size) {
+            //entire region is covered
+            break;
+        }
+        size -= region_size;
+        address += region_size;
+    }
+
+    //Now we know entire region is mapped, so change permissions
+    address = start;
+    size = block_size;
+    while (size > 0) {
+        MemoryRegion *mr = memory_mapping(uc, address);
+        uint64_t region_size = int128_get64(mr->size);
+        if (address > mr->addr) {
+            //in case start address is not aligned with start of region
+            region_size -= address - mr->addr;
+            //TODO Learn how to split regions
+            //In this case some proper subset of the region is having it's permissions changed
+            //need to split region and add new portions into uc->mapped_blocks list
+            //In this case, there is a portion of the region with original perms: mr->addr..start
+            //and a portion getting new perms: start..start+block_size
+
+            //split the block and stay in the loop
+        }
+        if (size < int128_get64(mr->size)) {
+            //TODO Learn how to split regions
+            //In this case some proper subset of the region is having it's permissions changed
+            //need to split region and add new portions into uc->mapped_blocks list
+            //In this case, there is a portion of the region with new perms: start..start+block_size
+            //and a portion getting new perms: mr->addr+size..mr->addr+mr->size
+
+            //split the block and break
+            break;
+        }
+        size -= int128_get64(mr->size);
+        address += int128_get64(mr->size);
+        mr->perms = perms;
+        uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+    }
+    return UC_ERR_OK;
 }
 
 MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
@@ -606,8 +691,8 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
     unsigned int i;
 
     for(i = 0; i < uc->mapped_block_count; i++) {
-        if (address >= uc->mapped_blocks[i].region->addr && address < uc->mapped_blocks[i].end)
-            return uc->mapped_blocks[i].region;
+        if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
+            return uc->mapped_blocks[i];
     }
 
     // not found

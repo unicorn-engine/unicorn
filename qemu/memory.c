@@ -50,9 +50,9 @@ int memory_free(struct uc_struct *uc)
     int i;
     get_system_memory(uc)->enabled = false;
     for (i = 0; i < uc->mapped_block_count; i++) {
-        uc->mapped_blocks[i].region->enabled = false;
-        memory_region_del_subregion(get_system_memory(uc), uc->mapped_blocks[i].region);
-        g_free(uc->mapped_blocks[i].region);
+        uc->mapped_blocks[i]->enabled = false;
+        memory_region_del_subregion(get_system_memory(uc), uc->mapped_blocks[i]);
+        g_free(uc->mapped_blocks[i]);
     }
     return 0;
 }
@@ -1315,6 +1315,12 @@ void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
     if (mr->readonly != readonly) {
         memory_region_transaction_begin(mr->uc);
         mr->readonly = readonly;
+        if (readonly) {
+            mr->perms &= ~UC_PROT_WRITE;
+        }
+        else {
+            mr->perms |= UC_PROT_WRITE;
+        }
         mr->uc->memory_region_update_pending |= mr->enabled;
         memory_region_transaction_commit(mr->uc);
     }
@@ -1534,6 +1540,7 @@ static void memory_region_add_subregion_common(MemoryRegion *mr,
     assert(!subregion->container);
     subregion->container = mr;
     subregion->addr = offset;
+    subregion->end = offset + int128_get64(subregion->size);
     memory_region_update_container_subregions(subregion);
 }
 

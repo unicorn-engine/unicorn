@@ -171,6 +171,7 @@ struct MemoryRegion {
     NotifierList iommu_notify;
     struct uc_struct *uc;
     uint32_t perms;   //all perms, partially redundant with readonly
+    uint64_t end;
 };
 
 /**
