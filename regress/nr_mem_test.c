@@ -56,7 +56,7 @@ int main(int argc, char **argv, char **envp)
 {
     uch handle, trace1, trace2;
     uc_err err;
-    uint32_t eax;
+    uint32_t eax, ebx;
     
     printf("Memory protections test\n");
 
@@ -80,7 +80,7 @@ int main(int argc, char **argv, char **envp)
     }
 
     uc_mem_write(handle, 0x300000, (const uint8_t*)"\x41\x41\x41\x41", 4);
-    uc_mem_write(handle, 0x300000, (const uint8_t*)"\x42\x42\x42\x42", 4);
+    uc_mem_write(handle, 0x400000, (const uint8_t*)"\x42\x42\x42\x42", 4);
 
     //uc_hook_add(handle, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)0x400000, (uint64_t)0x400fff);
 
@@ -89,7 +89,7 @@ int main(int argc, char **argv, char **envp)
 
     // emulate machine code in infinite time
     printf("BEGIN execution\n");
-    err = uc_emu_start(handle, 0x400000, 0x400000 + sizeof(PROGRAM), 0, 2);
+    err = uc_emu_start(handle, 0x100000, 0x100000 + sizeof(PROGRAM), 0, 2);
     if (err) {
         printf("Expected failure on uc_emu_start() with error returned %u: %s\n",
                 err, uc_strerror(err));
@@ -100,6 +100,8 @@ int main(int argc, char **argv, char **envp)
 
     uc_reg_read(handle, UC_X86_REG_EAX, &eax);
     printf("Final eax = 0x%x\n", eax);
+    uc_reg_read(handle, UC_X86_REG_EBX, &ebx);
+    printf("Final ebx = 0x%x\n", ebx);
 
     uc_close(&handle);
     
