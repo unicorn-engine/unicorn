@@ -8,14 +8,16 @@
 
 int got_sigill = 0;
 
-void _interrupt(uch handle, uint32_t intno, void *user_data) {
+void _interrupt(uch handle, uint32_t intno, void *user_data)
+{
     if (intno == 6) {
         uc_emu_stop (handle);
-	got_sigill = 1;
+        got_sigill = 1;
     }
 }
 
-int main() {
+int main()
+{
     int size;
     uint8_t *buf;
     uch uh;
@@ -34,7 +36,7 @@ int main() {
     memset (buf, 0, size);
     if (!uc_mem_map (uh, UC_BUG_WRITE_ADDR, size)) {
         uc_mem_write (uh, UC_BUG_WRITE_ADDR,
-            (const uint8_t*)"\xff\xff\xff\xff\xff\xff\xff\xff", 8);
+                (const uint8_t*)"\xff\xff\xff\xff\xff\xff\xff\xff", 8);
     }
     uc_hook_add (uh, &uh_trap, UC_HOOK_INTR, _interrupt, NULL);
     uc_emu_start (uh, UC_BUG_WRITE_ADDR, UC_BUG_WRITE_ADDR+8, 0, 1);

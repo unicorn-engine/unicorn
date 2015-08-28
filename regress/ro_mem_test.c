@@ -5,25 +5,25 @@
 #include <unicorn/unicorn.h>
 
 const uint8_t PROGRAM[] =  
-   "\xeb\x1a\x58\x83\xc0\x04\x83\xe0\xfc\x83\xc0\x01\xc7\x00\x78\x56"
-   "\x34\x12\x83\xc0\x07\xc7\x00\x21\x43\x65\x87\x90\xe8\xe1\xff\xff"
-   "\xff" "xxxxAAAAxxxBBBB";
+"\xeb\x1a\x58\x83\xc0\x04\x83\xe0\xfc\x83\xc0\x01\xc7\x00\x78\x56"
+"\x34\x12\x83\xc0\x07\xc7\x00\x21\x43\x65\x87\x90\xe8\xe1\xff\xff"
+"\xff" "xxxxAAAAxxxBBBB";
 // total size: 33 bytes
 
 /*
    jmp short bottom
 top:
-   pop eax
-   add eax, 4
-   and eax, 0xfffffffc
-   add eax, 1             ; unaligned
-   mov dword [eax], 0x12345678  ; try to write into code section
-   add eax, 7             ; aligned
-   mov dword [eax], 0x87654321  ; try to write into code section
-   nop
+pop eax
+add eax, 4
+and eax, 0xfffffffc
+add eax, 1             ; unaligned
+mov dword [eax], 0x12345678  ; try to write into code section
+add eax, 7             ; aligned
+mov dword [eax], 0x87654321  ; try to write into code section
+nop
 bottom:
-   call top
-*/
+call top
+ */
 
 // callback for tracing instruction
 static void hook_code(uch handle, uint64_t address, uint32_t size, void *user_data)
@@ -50,20 +50,20 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
         case UC_MEM_WRITE:
             //if this is a push, esp has not been adjusted yet
             if (esp == (address + size)) {
-                 uint32_t upper;
-                 upper = (esp + 0xfff) & ~0xfff;
-                 printf(">>> Stack appears to be missing at 0x%"PRIx64 ", allocating now\n", address);
-                 // map this memory in with 2MB in size
-                 uc_mem_map_ex(handle, upper - 0x8000, 0x8000, UC_PROT_READ | UC_PROT_WRITE);
-                 // return true to indicate we want to continue
-                 return true;
+                uint32_t upper;
+                upper = (esp + 0xfff) & ~0xfff;
+                printf(">>> Stack appears to be missing at 0x%"PRIx64 ", allocating now\n", address);
+                // map this memory in with 2MB in size
+                uc_mem_map_ex(handle, upper - 0x8000, 0x8000, UC_PROT_READ | UC_PROT_WRITE);
+                // return true to indicate we want to continue
+                return true;
             }
             printf(">>> Missing memory is being WRITTEN at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
-                   address, size, value);
+                    address, size, value);
             return false;
         case UC_MEM_WRITE_RO:
             printf(">>> RO memory is being WRITTEN at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
-                   address, size, value);
+                    address, size, value);
             return false;
     }
 }
@@ -72,14 +72,15 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
 #define STACK 0x500000
 #define STACK_SIZE 0x5000
 
-int main(int argc, char **argv, char **envp) {
+int main(int argc, char **argv, char **envp)
+{
     uch handle, trace1, trace2;
     uc_err err;
     uint8_t bytes[8];
     uint32_t esp;
     int result;
     int map_stack = 0;
-    
+
     if (argc == 2 && strcmp(argv[1], "--map-stack") == 0) {
         map_stack = 1;
     }
@@ -97,10 +98,10 @@ int main(int argc, char **argv, char **envp) {
     uc_mem_map(handle, 0x200000, 0x2000);
     uc_mem_map(handle, 0x300000, 0x3000);
     uc_mem_map_ex(handle, 0x400000, 0x4000, UC_PROT_READ);
-    
+
     if (map_stack) {
-       printf("Pre-mapping stack\n");
-       uc_mem_map_ex(handle, STACK, STACK_SIZE, UC_PROT_READ | UC_PROT_WRITE);
+        printf("Pre-mapping stack\n");
+        uc_mem_map_ex(handle, STACK, STACK_SIZE, UC_PROT_READ | UC_PROT_WRITE);
     }
     else {
         printf("Mapping stack on first invalid memory access\n");
@@ -190,6 +191,6 @@ int main(int argc, char **argv, char **envp) {
     }
 
     uc_close(&handle);
-    
+
     return 0;
 }
