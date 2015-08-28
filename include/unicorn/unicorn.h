@@ -432,9 +432,9 @@ uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms);
  This API changes permissions on an existing memory region.
 
  @handle: handle returned by uc_open()
- @address: starting address of the memory region to be modified.
+ @start: starting address of the memory region to be modified.
     This address must be aligned to 4KB, or this will return with UC_ERR_MAP error.
- @size: size of the memory region to be modified.
+ @block_size: size of the memory region to be modified.
     This size must be multiple of 4KB, or this will return with UC_ERR_MAP error.
  @perms: New permissions for the mapped region.
     This must be some combination of UC_PROT_READ | UC_PROT_WRITE,
