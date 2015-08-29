@@ -429,6 +429,7 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
     uc->stop_request = false;
     uc->invalid_error = UC_ERR_OK;
     uc->block_full = false;
+    uc->emulation_done = false;
 
     switch(uc->arch) {
         default:
