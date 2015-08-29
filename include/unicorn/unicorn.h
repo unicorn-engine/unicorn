@@ -405,8 +405,8 @@ typedef enum uc_prot {
  @size: size of the new memory region to be mapped in.
     This size must be multiple of 4KB, or this will return with UC_ERR_MAP error.
  @perms: Permissions for the newly mapped region.
-    This must be some combination of UC_PROT_READ | UC_PROT_WRITE,
-    or this will return with UC_ERR_MAP error.
+    This must be some combination of UC_PROT_READ & UC_PROT_WRITE,
+    or this will return with UC_ERR_MAP error. See uc_prot type above.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
