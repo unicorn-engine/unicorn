@@ -507,6 +507,9 @@ uc_err uc_emu_stop(uch handle)
         // invalid handle
         return UC_ERR_UCH;
 
+    if (uc->emulation_done)
+        return UC_ERR_OK;
+
     uc->stop_request = true;
     // exit the current TB
     cpu_exit(uc->current_cpu);
