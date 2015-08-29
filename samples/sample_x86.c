@@ -77,7 +77,7 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
                  printf(">>> Missing memory is being WRITE at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
                          address, size, value);
                  // map this memory in with 2MB in size
-                 uc_mem_map(handle, 0xaaaa0000, 2 * 1024*1024);
+                 uc_mem_map(handle, 0xaaaa0000, 2 * 1024*1024, UC_PROT_ALL);
                  // return true to indicate we want to continue
                  return true;
     }
@@ -186,7 +186,7 @@ static void test_i386(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, ADDRESS, (uint8_t *)X86_CODE32, sizeof(X86_CODE32) - 1)) {
@@ -245,7 +245,7 @@ static void test_i386_jump(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, ADDRESS, (uint8_t *)X86_CODE32_JUMP,
@@ -292,7 +292,7 @@ static void test_i386_loop(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, ADDRESS, (uint8_t *)X86_CODE32_LOOP, sizeof(X86_CODE32_LOOP) - 1)) {
@@ -344,7 +344,7 @@ static void test_i386_invalid_mem_read(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, ADDRESS, (uint8_t *)X86_CODE32_MEM_READ, sizeof(X86_CODE32_MEM_READ) - 1)) {
@@ -402,7 +402,7 @@ static void test_i386_invalid_mem_write(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, ADDRESS, (uint8_t *)X86_CODE32_MEM_WRITE, sizeof(X86_CODE32_MEM_WRITE) - 1)) {
@@ -473,7 +473,7 @@ static void test_i386_jump_invalid(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, ADDRESS, (uint8_t *)X86_CODE32_JMP_INVALID, sizeof(X86_CODE32_JMP_INVALID) - 1)) {
@@ -530,7 +530,7 @@ static void test_i386_inout(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, ADDRESS, (uint8_t *)X86_CODE32_INOUT, sizeof(X86_CODE32_INOUT) - 1)) {
@@ -605,7 +605,7 @@ static void test_x86_64(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, ADDRESS, (uint8_t *)X86_CODE64, sizeof(X86_CODE64) - 1)) {
@@ -706,7 +706,7 @@ static void test_x86_64_syscall(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, ADDRESS, (uint8_t *)X86_CODE64_SYSCALL, sizeof(X86_CODE64_SYSCALL) - 1)) {
@@ -758,7 +758,7 @@ static void test_x86_16(void)
     }
 
     // map 8KB memory for this emulation
-    uc_mem_map(handle, 0, 8 * 1024);
+    uc_mem_map(handle, 0, 8 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, 0, (uint8_t *)X86_CODE16, sizeof(X86_CODE64) - 1)) {

@@ -550,7 +550,7 @@ static uc_err _hook_mem_access(uch handle, uc_mem_type type,
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms)
+uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms)
 {
     MemoryRegion **regions;
     struct uc_struct* uc = (struct uc_struct *)handle;
@@ -586,13 +586,6 @@ uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms)
     uc->mapped_block_count++;
 
     return UC_ERR_OK;
-}
-
-UNICORN_EXPORT
-uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
-{
-    //old api, maps RW by default
-    return uc_mem_map_ex(handle, address, size, UC_PROT_READ | UC_PROT_WRITE);
 }
 
 MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)

@@ -34,7 +34,7 @@ int main()
         return 1;
     }
     memset (buf, 0, size);
-    if (!uc_mem_map (uh, UC_BUG_WRITE_ADDR, size)) {
+    if (!uc_mem_map (uh, UC_BUG_WRITE_ADDR, size, UC_PROT_ALL)) {
         uc_mem_write (uh, UC_BUG_WRITE_ADDR,
                 (const uint8_t*)"\xff\xff\xff\xff\xff\xff\xff\xff", 8);
     }
