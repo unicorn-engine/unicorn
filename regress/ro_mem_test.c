@@ -82,7 +82,7 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
             printf(">>> Missing memory is being WRITTEN at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
                     address, size, value);
             return false;
-        case UC_MEM_WRITE_NR:
+        case UC_MEM_WRITE_NW:
             printf(">>> RO memory is being WRITTEN at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
                     address, size, value);
             return false;
