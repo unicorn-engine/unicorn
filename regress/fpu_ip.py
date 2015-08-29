@@ -4,7 +4,7 @@ from unicorn.x86_const import *
 from capstone import *
 
 ESP = 0x2000
-PAGE_SIZE = 0x8000
+PAGE_SIZE = 2 * 1024 * 1024
 
 #	mov [esp], DWORD 0x37f
 #	fldcw [esp]
@@ -40,7 +40,6 @@ def mem_reader(addr, size):
 mu = Uc(UC_ARCH_X86, UC_MODE_32)
 
 mu.mem_map(0x0, PAGE_SIZE)
-mu.mem_map(0x4000, PAGE_SIZE)
 mu.mem_write(0x4000, CODE)
 mu.reg_write(UC_X86_REG_ESP, ESP)
 mu.hook_add(UC_HOOK_CODE, hook_code)
@@ -50,3 +49,13 @@ mu.emu_start(0x4000, 0, 0, 5)
 esp = mu.reg_read(UC_X86_REG_ESP)
 print("value at ESP [0x%X - 4]: " % esp)
 mem_reader(esp +  14, 4)
+
+# EXPECTED OUTPUT:
+#   0x4000: 	mov	dword ptr [esp], 0x37f
+#   0x4007: 	fldcw	word ptr [esp]
+#   0x400A: 	fnop	
+#   0x400C: 	fnstenv	dword ptr [esp + 8]
+#   0x4010: 	pop	ecx
+# value at ESP [0x2004 - 4]: 
+#  0x0  0x0  0xa  0x40 
+#  ^ this value should match the fnop instuction addr
