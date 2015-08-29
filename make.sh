@@ -38,8 +38,8 @@ build_cross() {
   [ "$UNAME" = Darwin ] && LIBARCHS="i386 x86_64"
   CROSS=$1
   CC=$CROSS-gcc \
-  AR=$CROSS-ar \
-  RANLIB=$CROSS-ranlib \
+  AR=$CROSS-gcc-ar \
+  RANLIB=$CROSS-gcc-ranlib \
   GLIB="-L/usr/$CROSS/lib/ -lglib-2.0" \
   ${MAKE}
 }
