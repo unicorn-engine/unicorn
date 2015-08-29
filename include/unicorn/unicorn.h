@@ -390,31 +390,17 @@ UNICORN_EXPORT
 uc_err uc_hook_del(uch handle, uch *h2);
 
 typedef enum uc_prot {
+   UC_PROT_NONE = 0,
    UC_PROT_READ = 1,
    UC_PROT_WRITE = 2,
    UC_PROT_EXEC = 4,
+   UC_PROT_ALL = 7,
 } uc_prot;
 
 /*
  Map memory in for emulation.
  This API adds a memory region that can be used by emulation. The region is mapped
  with permissions UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC.
-
- @handle: handle returned by uc_open()
- @address: starting address of the new memory region to be mapped in.
-    This address must be aligned to 4KB, or this will return with UC_ERR_MAP error.
- @size: size of the new memory region to be mapped in.
-    This size must be multiple of 4KB, or this will return with UC_ERR_MAP error.
-
- @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
- for detailed error).
-*/
-UNICORN_EXPORT
-uc_err uc_mem_map(uch handle, uint64_t address, size_t size);
-
-/*
- Map memory in for emulation.
- This API adds a memory region that can be used by emulation.
 
  @handle: handle returned by uc_open()
  @address: starting address of the new memory region to be mapped in.
@@ -429,7 +415,7 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms);
+uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms);
 
 /*
  Set memory permissions for emulation memory.

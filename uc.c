@@ -340,6 +340,26 @@ uc_err uc_reg_write(uch handle, int regid, const void *value)
 }
 
 
+// check if a memory area is mapped
+// this is complicated because an area can overlap adjacent blocks
+static bool check_mem_area(struct uc_struct *uc, uint64_t address, size_t size)
+{
+    size_t count = 0, len;
+
+    while(count < size) {
+        MemoryRegion *mr = memory_mapping(uc, address);
+        if (mr) {
+            len = MIN(size - count, mr->end - address);
+            count += len;
+            address += len;
+        } else  // this address is not mapped in yet
+            break;
+    }
+
+    return (count == size);
+}
+
+
 UNICORN_EXPORT
 uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
 {
@@ -349,39 +369,73 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
         // invalid handle
         return UC_ERR_UCH;
 
-    if (uc->read_mem(&uc->as, address, bytes, size) == false)
+    if (!check_mem_area(uc, address, size))
         return UC_ERR_MEM_READ;
 
-    return UC_ERR_OK;
+    size_t count = 0, len;
+
+    // memory area can overlap adjacent memory blocks
+    while(count < size) {
+        MemoryRegion *mr = memory_mapping(uc, address);
+        if (mr) {
+            len = MIN(size - count, mr->end - address);
+            if (uc->read_mem(&uc->as, address, bytes, len) == false)
+                break;
+            count += len;
+            address += len;
+            bytes += len;
+        } else  // this address is not mapped in yet
+            break;
+    }
+
+    if (count == size)
+        return UC_ERR_OK;
+    else
+        return UC_ERR_MEM_READ;
 }
 
 UNICORN_EXPORT
 uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size)
 {
     struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-    uint32_t operms;
 
     if (handle == 0)
         // invalid handle
         return UC_ERR_UCH;
 
-    MemoryRegion *mr = memory_mapping(uc, address);
-    if (mr == NULL)
+    if (!check_mem_area(uc, address, size))
         return UC_ERR_MEM_WRITE;
 
-    operms = mr->perms;
-    if (!(operms & UC_PROT_WRITE)) //write protected
-        //but this is not the program accessing memory, so temporarily mark writable
-        uc->readonly_mem(mr, false);
+    size_t count = 0, len;
 
-    if (uc->write_mem(&uc->as, address, bytes, size) == false)
+    // memory area can overlap adjacent memory blocks
+    while(count < size) {
+        MemoryRegion *mr = memory_mapping(uc, address);
+        if (mr) {
+            uint32_t operms = mr->perms;
+            if (!(operms & UC_PROT_WRITE)) // write protected
+                // but this is not the program accessing memory, so temporarily mark writable
+                uc->readonly_mem(mr, false);
+
+            len = MIN(size - count, mr->end - address);
+            if (uc->write_mem(&uc->as, address, bytes, len) == false)
+                break;
+
+            if (!(operms & UC_PROT_WRITE)) // write protected
+                // now write protect it again
+                uc->readonly_mem(mr, true);
+
+            count += len;
+            address += len;
+            bytes += len;
+        } else  // this address is not mapped in yet
+            break;
+    }
+
+    if (count == size)
+        return UC_ERR_OK;
+    else
         return UC_ERR_MEM_WRITE;
-
-    if (!(operms & UC_PROT_WRITE)) //write protected
-        //now write protect it again
-        uc->readonly_mem(mr, true);
-
-    return UC_ERR_OK;
 }
 
 #define TIMEOUT_STEP 2    // microseconds
@@ -550,7 +604,7 @@ static uc_err _hook_mem_access(uch handle, uc_mem_type type,
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms)
+uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms)
 {
     MemoryRegion **regions;
     struct uc_struct* uc = (struct uc_struct *)handle;
@@ -586,13 +640,6 @@ uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms)
     uc->mapped_block_count++;
 
     return UC_ERR_OK;
-}
-
-UNICORN_EXPORT
-uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
-{
-    //old api, maps RW by default
-    return uc_mem_map_ex(handle, address, size, UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC);
 }
 
 UNICORN_EXPORT

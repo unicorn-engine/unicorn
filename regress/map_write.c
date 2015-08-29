@@ -18,7 +18,7 @@ int main()
         printf ("uc_open %d\n", err);
         return 1;
     }
-    err = uc_mem_map (uh, ADDR, SIZE);
+    err = uc_mem_map (uh, ADDR, SIZE, UC_PROT_ALL);
     if (err) {
         printf ("uc_mem_map %d\n", err);
         return 1;

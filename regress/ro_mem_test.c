@@ -74,7 +74,7 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
                 upper = (esp + 0xfff) & ~0xfff;
                 printf(">>> Stack appears to be missing at 0x%"PRIx64 ", allocating now\n", address);
                 // map this memory in with 2MB in size
-                uc_mem_map_ex(handle, upper - 0x8000, 0x8000, UC_PROT_READ | UC_PROT_WRITE);
+                uc_mem_map(handle, upper - 0x8000, 0x8000, UC_PROT_READ | UC_PROT_WRITE);
                 // return true to indicate we want to continue
                 return true;
             }
@@ -114,14 +114,14 @@ int main(int argc, char **argv, char **envp)
         return 1;
     }
 
-    uc_mem_map(handle, 0x100000, 0x1000);
-    uc_mem_map(handle, 0x200000, 0x2000);
-    uc_mem_map(handle, 0x300000, 0x3000);
-    uc_mem_map_ex(handle, 0x400000, 0x4000, UC_PROT_READ);
+    uc_mem_map(handle, 0x100000, 0x1000, UC_PROT_ALL);
+    uc_mem_map(handle, 0x200000, 0x2000, UC_PROT_ALL);
+    uc_mem_map(handle, 0x300000, 0x3000, UC_PROT_ALL);
+    uc_mem_map(handle, 0x400000, 0x4000, UC_PROT_READ);
 
     if (map_stack) {
         printf("Pre-mapping stack\n");
-        uc_mem_map_ex(handle, STACK, STACK_SIZE, UC_PROT_READ | UC_PROT_WRITE);
+        uc_mem_map(handle, STACK, STACK_SIZE, UC_PROT_READ | UC_PROT_WRITE);
     } else {
         printf("Mapping stack on first invalid memory access\n");
     }

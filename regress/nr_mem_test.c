@@ -67,9 +67,9 @@ int main(int argc, char **argv, char **envp)
         return 1;
     }
 
-    uc_mem_map_ex(handle, 0x100000, 0x1000, UC_PROT_READ);
-    uc_mem_map_ex(handle, 0x300000, 0x1000, UC_PROT_READ | UC_PROT_WRITE);
-    uc_mem_map_ex(handle, 0x400000, 0x1000, UC_PROT_WRITE);
+    uc_mem_map(handle, 0x100000, 0x1000, UC_PROT_READ);
+    uc_mem_map(handle, 0x300000, 0x1000, UC_PROT_READ | UC_PROT_WRITE);
+    uc_mem_map(handle, 0x400000, 0x1000, UC_PROT_WRITE);
     
     // write machine code to be emulated to memory
     if (uc_mem_write(handle, 0x100000, PROGRAM, sizeof(PROGRAM))) {

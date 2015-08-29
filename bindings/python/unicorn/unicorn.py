@@ -73,7 +73,7 @@ _setup_prototype(_uc, "uc_mem_write", ctypes.c_int, ctypes.c_size_t, ctypes.c_ui
 _setup_prototype(_uc, "uc_emu_start", ctypes.c_int, ctypes.c_size_t, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
 _setup_prototype(_uc, "uc_emu_stop", ctypes.c_int, ctypes.c_size_t)
 _setup_prototype(_uc, "uc_hook_del", ctypes.c_int, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t))
-_setup_prototype(_uc, "uc_mem_map", ctypes.c_int, ctypes.c_size_t, ctypes.c_uint64, ctypes.c_size_t)
+_setup_prototype(_uc, "uc_mem_map", ctypes.c_int, ctypes.c_size_t, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
 
 # uc_hook_add is special due to variable number of arguments
 _uc.uc_hook_add = getattr(_uc, "uc_hook_add")
@@ -201,8 +201,8 @@ class Uc(object):
 
 
     # map a range of memory
-    def mem_map(self, address, size):
-        status = _uc.uc_mem_map(self._uch, address, size)
+    def mem_map(self, address, size, perms=UC_PROT_ALL):
+        status = _uc.uc_mem_map(self._uch, address, size, perms)
         if status != UC_ERR_OK:
             raise UcError(status)
 
