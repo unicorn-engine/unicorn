@@ -170,6 +170,8 @@ struct MemoryRegion {
     MemoryRegionIoeventfd *ioeventfds;
     NotifierList iommu_notify;
     struct uc_struct *uc;
+    uint32_t perms;   //all perms, partially redundant with readonly
+    uint64_t end;
 };
 
 /**
@@ -315,12 +317,14 @@ void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
  * @owner: the object that tracks the region's reference count
  * @name: the name of the region.
  * @size: size of the region.
+ * @perms: permissions on the region (UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC).
  * @errp: pointer to Error*, to store an error if it happens.
  */
 void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
                             struct Object *owner,
                             const char *name,
                             uint64_t size,
+                            uint32_t perms,
                             Error **errp);
 
 /**
@@ -934,7 +938,7 @@ void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
 
 void memory_register_types(struct uc_struct *uc);
 
-int memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size);
+MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, uint32_t perms);
 int memory_free(struct uc_struct *uc);
 
 #endif

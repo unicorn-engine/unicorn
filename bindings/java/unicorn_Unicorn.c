@@ -502,13 +502,13 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_hook_1del
 /*
  * Class:     unicorn_Unicorn
  * Method:    mem_map
- * Signature: (JJ)V
+ * Signature: (JJI)V
  */
 JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1map
-  (JNIEnv *env, jobject self, jlong address, jlong size) {
+  (JNIEnv *env, jobject self, jlong address, jlong size, jint perms) {
    uch handle = getHandle(env, self);
 
-   uc_err err = uc_mem_map(handle, (uint64_t)address, (size_t)size);
+   uc_err err = uc_mem_map(handle, (uint64_t)address, (size_t)size, (uint32_t)perms);
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }

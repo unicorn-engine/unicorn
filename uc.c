@@ -89,6 +89,10 @@ const char *uc_strerror(uc_err code)
             return "Invalid hook type (UC_ERR_HOOK)";
         case UC_ERR_MAP:
             return "Invalid memory mapping (UC_ERR_MAP)";
+        case UC_ERR_MEM_WRITE_NW:
+            return "Write to non-writable (UC_ERR_MEM_WRITE_NW)";
+        case UC_ERR_MEM_READ_NR:
+            return "Read from non-readable (UC_ERR_MEM_READ_NR)";
     }
 }
 
@@ -336,6 +340,26 @@ uc_err uc_reg_write(uch handle, int regid, const void *value)
 }
 
 
+// check if a memory area is mapped
+// this is complicated because an area can overlap adjacent blocks
+static bool check_mem_area(struct uc_struct *uc, uint64_t address, size_t size)
+{
+    size_t count = 0, len;
+
+    while(count < size) {
+        MemoryRegion *mr = memory_mapping(uc, address);
+        if (mr) {
+            len = MIN(size - count, mr->end - address);
+            count += len;
+            address += len;
+        } else  // this address is not mapped in yet
+            break;
+    }
+
+    return (count == size);
+}
+
+
 UNICORN_EXPORT
 uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
 {
@@ -345,12 +369,30 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
         // invalid handle
         return UC_ERR_UCH;
 
-    if (uc->read_mem(&uc->as, address, bytes, size) == false)
+    if (!check_mem_area(uc, address, size))
         return UC_ERR_MEM_READ;
 
-    return UC_ERR_OK;
-}
+    size_t count = 0, len;
 
+    // memory area can overlap adjacent memory blocks
+    while(count < size) {
+        MemoryRegion *mr = memory_mapping(uc, address);
+        if (mr) {
+            len = MIN(size - count, mr->end - address);
+            if (uc->read_mem(&uc->as, address, bytes, len) == false)
+                break;
+            count += len;
+            address += len;
+            bytes += len;
+        } else  // this address is not mapped in yet
+            break;
+    }
+
+    if (count == size)
+        return UC_ERR_OK;
+    else
+        return UC_ERR_MEM_READ;
+}
 
 UNICORN_EXPORT
 uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size)
@@ -361,10 +403,39 @@ uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t s
         // invalid handle
         return UC_ERR_UCH;
 
-    if (uc->write_mem(&uc->as, address, bytes, size) == false)
+    if (!check_mem_area(uc, address, size))
         return UC_ERR_MEM_WRITE;
 
-    return UC_ERR_OK;
+    size_t count = 0, len;
+
+    // memory area can overlap adjacent memory blocks
+    while(count < size) {
+        MemoryRegion *mr = memory_mapping(uc, address);
+        if (mr) {
+            uint32_t operms = mr->perms;
+            if (!(operms & UC_PROT_WRITE)) // write protected
+                // but this is not the program accessing memory, so temporarily mark writable
+                uc->readonly_mem(mr, false);
+
+            len = MIN(size - count, mr->end - address);
+            if (uc->write_mem(&uc->as, address, bytes, len) == false)
+                break;
+
+            if (!(operms & UC_PROT_WRITE)) // write protected
+                // now write protect it again
+                uc->readonly_mem(mr, true);
+
+            count += len;
+            address += len;
+            bytes += len;
+        } else  // this address is not mapped in yet
+            break;
+    }
+
+    if (count == size)
+        return UC_ERR_OK;
+    else
+        return UC_ERR_MEM_WRITE;
 }
 
 #define TIMEOUT_STEP 2    // microseconds
@@ -412,6 +483,7 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
     uc->stop_request = false;
     uc->invalid_error = UC_ERR_OK;
     uc->block_full = false;
+    uc->emulation_done = false;
 
     switch(uc->arch) {
         default:
@@ -490,6 +562,9 @@ uc_err uc_emu_stop(uch handle)
         // invalid handle
         return UC_ERR_UCH;
 
+    if (uc->emulation_done)
+        return UC_ERR_OK;
+
     uc->stop_request = true;
     // exit the current TB
     cpu_exit(uc->current_cpu);
@@ -529,9 +604,9 @@ static uc_err _hook_mem_access(uch handle, uc_mem_type type,
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
+uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms)
 {
-    MemoryBlock *blocks;
+    MemoryRegion **regions;
     struct uc_struct* uc = (struct uc_struct *)handle;
 
     if (handle == 0)
@@ -550,34 +625,34 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size)
     if ((size & (4*1024 - 1)) != 0)
         return UC_ERR_MAP;
 
+    // check for only valid permissions
+    if ((perms & ~(UC_PROT_READ | UC_PROT_WRITE)) != 0)
+        return UC_ERR_MAP;
+
     if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
-        blocks = realloc(uc->mapped_blocks, sizeof(MemoryBlock) * (uc->mapped_block_count + MEM_BLOCK_INCR));
-        if (blocks == NULL) {
+        regions = (MemoryRegion**)realloc(uc->mapped_blocks, sizeof(MemoryRegion*) * (uc->mapped_block_count + MEM_BLOCK_INCR));
+        if (regions == NULL) {
             return UC_ERR_OOM;
         }
-        uc->mapped_blocks = blocks;
+        uc->mapped_blocks = regions;
     }
-    uc->mapped_blocks[uc->mapped_block_count].begin = address;
-    uc->mapped_blocks[uc->mapped_block_count].end = address + size;
-    //TODO extend uc_mem_map to accept permissions, figure out how to pass this down to qemu
-    uc->mapped_blocks[uc->mapped_block_count].perms = UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC;
-    uc->memory_map(uc, address, size);
+    uc->mapped_blocks[uc->mapped_block_count] = uc->memory_map(uc, address, size, perms);
     uc->mapped_block_count++;
 
     return UC_ERR_OK;
 }
 
-bool memory_mapping(struct uc_struct* uc, uint64_t address)
+MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
 {
     unsigned int i;
 
     for(i = 0; i < uc->mapped_block_count; i++) {
-        if (address >= uc->mapped_blocks[i].begin && address < uc->mapped_blocks[i].end)
-            return true;
+        if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
+            return uc->mapped_blocks[i];
     }
 
     // not found
-    return false;
+    return NULL;
 }
 
 static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_eventmem_t callback,
@@ -744,4 +819,3 @@ uc_err uc_hook_del(uch handle, uch *h2)
 
     return hook_del(handle, h2);
 }
-

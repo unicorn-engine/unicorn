@@ -31,27 +31,28 @@
 
 
 // Unicorn engine
-int memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size)
+MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, uint32_t perms)
 {
     uc->ram = g_new(MemoryRegion, 1);
 
-    memory_region_init_ram(uc, uc->ram, NULL, "pc.ram", size, &error_abort);
+    memory_region_init_ram(uc, uc->ram, NULL, "pc.ram", size, perms, &error_abort);
 
     memory_region_add_subregion(get_system_memory(uc), begin, uc->ram);
 
     if (uc->current_cpu)
         tlb_flush(uc->current_cpu, 1);
 
-    return 0;
+    return uc->ram;
 }
 
 int memory_free(struct uc_struct *uc)
 {
+    int i;
     get_system_memory(uc)->enabled = false;
-    if (uc->ram) {
-        uc->ram->enabled = false;
-        memory_region_del_subregion(get_system_memory(uc), uc->ram);
-        g_free(uc->ram);
+    for (i = 0; i < uc->mapped_block_count; i++) {
+        uc->mapped_blocks[i]->enabled = false;
+        memory_region_del_subregion(get_system_memory(uc), uc->mapped_blocks[i]);
+        g_free(uc->mapped_blocks[i]);
     }
     return 0;
 }
@@ -1151,10 +1152,15 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
                             Object *owner,
                             const char *name,
                             uint64_t size,
+                            uint32_t perms,
                             Error **errp)
 {
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
+    if (!(perms & UC_PROT_WRITE)) {
+        mr->readonly = true;
+    }
+    mr->perms = perms;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
     mr->ram_addr = qemu_ram_alloc(size, mr, errp);
@@ -1309,6 +1315,12 @@ void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
     if (mr->readonly != readonly) {
         memory_region_transaction_begin(mr->uc);
         mr->readonly = readonly;
+        if (readonly) {
+            mr->perms &= ~UC_PROT_WRITE;
+        }
+        else {
+            mr->perms |= UC_PROT_WRITE;
+        }
         mr->uc->memory_region_update_pending |= mr->enabled;
         memory_region_transaction_commit(mr->uc);
     }
@@ -1528,6 +1540,7 @@ static void memory_region_add_subregion_common(MemoryRegion *mr,
     assert(!subregion->container);
     subregion->container = mr;
     subregion->addr = offset;
+    subregion->end = offset + int128_get64(subregion->size);
     memory_region_update_container_subregions(subregion);
 }
 
