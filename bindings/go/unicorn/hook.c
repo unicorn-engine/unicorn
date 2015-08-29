@@ -9,8 +9,8 @@ void hookCode_cgo(uch handle, uint64_t addr, uint32_t size, void *user) {
     hookCode(handle, addr, size, user);
 }
 
-bool hookMemInvalid_cgo(uch handle, uc_mem_type type, uint64_t addr, int64_t value, void *user) {
-    return hookMemInvalid(handle, type, addr, value, user);
+bool hookMemInvalid_cgo(uch handle, uc_mem_type type, uint64_t addr, int size, int64_t value, void *user) {
+    return hookMemInvalid(handle, type, addr, size, value, user);
 }
 
 void hookMemAccess_cgo(uch handle, uc_mem_type type, uint64_t addr, int size, int64_t value, void *user) {
