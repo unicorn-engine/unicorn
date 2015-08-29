@@ -17,7 +17,7 @@ func (u UcError) Error() string {
 }
 
 func errReturn(err C.uc_err) error {
-	if err != C.UC_ERR_OK {
+	if err != UC_ERR_OK {
 		return UcError(err)
 	}
 	return nil
@@ -36,10 +36,10 @@ func NewUc(arch, mode int) (*Uc, error) {
 	var major, minor C.uint
 	C.uc_version(&major, &minor)
 	if major != C.UC_API_MAJOR || minor != C.UC_API_MINOR {
-		return nil, UcError(C.UC_ERR_VERSION)
+		return nil, UcError(UC_ERR_VERSION)
 	}
 	var handle C.uch
-	if ucerr := C.uc_open(C.uc_arch(arch), C.uc_mode(mode), &handle); ucerr != C.UC_ERR_OK {
+	if ucerr := C.uc_open(C.uc_arch(arch), C.uc_mode(mode), &handle); ucerr != UC_ERR_OK {
 		return nil, UcError(ucerr)
 	}
 	uc := &Uc{handle, arch, mode}

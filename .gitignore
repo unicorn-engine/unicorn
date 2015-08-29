@@ -86,4 +86,4 @@ regress/sigill2
 regress/block_test
 regress/map_write
 regress/ro_mem_test
-
+regress/nr_mem_test
