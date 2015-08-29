@@ -23,8 +23,7 @@ package unicorn;
 
 import java.util.*;
 
-public class Unicorn implements UnicornArchs, UnicornModes, UnicornHooks,
-                                ArmRegs, Arm64Regs, M68kRegs, SparcRegs, MipsRegs, X86Regs, X86Instructions { 
+public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, SparcConst, MipsConst, X86Const { 
 
    // Scales to calculate timeout on microsecond unit
    // 1 second = 1000,000 microseconds
