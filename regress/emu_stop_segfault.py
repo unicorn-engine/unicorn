@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 """See https://github.com/unicorn-engine/unicorn/issues/65"""
 
 import unicorn
