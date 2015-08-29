@@ -1,27 +1,11 @@
-/*
-
-Java bindings for the Unicorn Emulator Engine
-
-Copyright(c) 2015 Chris Eagle
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-*/
+// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT
 
 package unicorn;
 
-public interface SparcRegs {
+public interface SparcConst {
+
+// SPARC registers
+
    public static final int UC_SPARC_REG_INVALID = 0;
    public static final int UC_SPARC_REG_F0 = 1;
    public static final int UC_SPARC_REG_F1 = 2;
@@ -112,6 +96,7 @@ public interface SparcRegs {
    public static final int UC_SPARC_REG_XCC = 87;
    public static final int UC_SPARC_REG_PC = 88;
    public static final int UC_SPARC_REG_ENDING = 89;
-   public static final int UC_SPARC_REG_O6 = UC_SPARC_REG_SP;
-   public static final int UC_SPARC_REG_I6 = UC_SPARC_REG_FP;
+   public static final int UC_SPARC_REG_O6 = 85;
+   public static final int UC_SPARC_REG_I6 = 53;
+
 }

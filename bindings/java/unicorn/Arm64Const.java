@@ -1,27 +1,11 @@
-/*
-
-Java bindings for the Unicorn Emulator Engine
-
-Copyright(c) 2015 Chris Eagle
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-*/
+// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT
 
 package unicorn;
 
-public interface Arm64Regs {
+public interface Arm64Const {
+
+// ARM64 registers
+
    public static final int UC_ARM64_REG_INVALID = 0;
    public static final int UC_ARM64_REG_X29 = 1;
    public static final int UC_ARM64_REG_X30 = 2;
@@ -282,10 +266,15 @@ public interface Arm64Regs {
    public static final int UC_ARM64_REG_V29 = 257;
    public static final int UC_ARM64_REG_V30 = 258;
    public static final int UC_ARM64_REG_V31 = 259;
+
+// pseudo registers
    public static final int UC_ARM64_REG_PC = 260;
    public static final int UC_ARM64_REG_ENDING = 261;
-   public static final int UC_ARM64_REG_IP1 = UC_ARM64_REG_X16;
-   public static final int UC_ARM64_REG_IP0 = UC_ARM64_REG_X17;
-   public static final int UC_ARM64_REG_FP = UC_ARM64_REG_X29;
-   public static final int UC_ARM64_REG_LR = UC_ARM64_REG_X30;
+
+// alias registers
+   public static final int UC_ARM64_REG_IP1 = 215;
+   public static final int UC_ARM64_REG_IP0 = 216;
+   public static final int UC_ARM64_REG_FP = 1;
+   public static final int UC_ARM64_REG_LR = 2;
+
 }

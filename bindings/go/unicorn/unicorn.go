@@ -84,6 +84,10 @@ func (u *Uc) MemRead(addr, size uint64) ([]byte, error) {
 	return dst, u.MemReadInto(dst, addr)
 }
 
+func (u *Uc) MemMapProt(addr, size uint64, prot int) error {
+	return errReturn(C.uc_mem_map(u.Handle, C.uint64_t(addr), C.size_t(size), C.uint32_t(prot)))
+}
+
 func (u *Uc) MemMap(addr, size uint64) error {
-	return errReturn(C.uc_mem_map(u.Handle, C.uint64_t(addr), C.size_t(size)))
+	return u.MemMapProt(addr, size, UC_PROT_ALL)
 }

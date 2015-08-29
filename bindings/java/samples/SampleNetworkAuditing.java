@@ -245,25 +245,25 @@ public class SampleNetworkAuditing {
    static {
       SOCKET_TYPES = new Hashtable<Long, String>();
       ADDR_FAMILY = new Hashtable<Long, String>();
-      SOCKET_TYPES.put(1, "SOCK_STREAM");
-      SOCKET_TYPES.put(2, "SOCK_DGRAM");
-      SOCKET_TYPES.put(3, "SOCK_RAW");
-      SOCKET_TYPES.put(4, "SOCK_RDM");
-      SOCKET_TYPES.put(5, "SOCK_SEQPACKET");
-      SOCKET_TYPES.put(10, "SOCK_PACKET");
+      SOCKET_TYPES.put(1L, "SOCK_STREAM");
+      SOCKET_TYPES.put(2L, "SOCK_DGRAM");
+      SOCKET_TYPES.put(3L, "SOCK_RAW");
+      SOCKET_TYPES.put(4L, "SOCK_RDM");
+      SOCKET_TYPES.put(5L, "SOCK_SEQPACKET");
+      SOCKET_TYPES.put(10L, "SOCK_PACKET");
    
-      ADDR_FAMILY.put(0, "AF_UNSPEC");
-      ADDR_FAMILY.put(1, "AF_UNIX");
-      ADDR_FAMILY.put(2, "AF_INET");
-      ADDR_FAMILY.put(3, "AF_AX25");
-      ADDR_FAMILY.put(4, "AF_IPX");
-      ADDR_FAMILY.put(5, "AF_APPLETALK");
-      ADDR_FAMILY.put(6, "AF_NETROM");
-      ADDR_FAMILY.put(7, "AF_BRIDGE");
-      ADDR_FAMILY.put(8, "AF_AAL5");
-      ADDR_FAMILY.put(9, "AF_X25");
-      ADDR_FAMILY.put(10, "AF_INET6");
-      ADDR_FAMILY.put(12, "AF_MAX");
+      ADDR_FAMILY.put(0L, "AF_UNSPEC");
+      ADDR_FAMILY.put(1L, "AF_UNIX");
+      ADDR_FAMILY.put(2L, "AF_INET");
+      ADDR_FAMILY.put(3L, "AF_AX25");
+      ADDR_FAMILY.put(4L, "AF_IPX");
+      ADDR_FAMILY.put(5L, "AF_APPLETALK");
+      ADDR_FAMILY.put(6L, "AF_NETROM");
+      ADDR_FAMILY.put(7L, "AF_BRIDGE");
+      ADDR_FAMILY.put(8L, "AF_AAL5");
+      ADDR_FAMILY.put(9L, "AF_X25");
+      ADDR_FAMILY.put(10L, "AF_INET6");
+      ADDR_FAMILY.put(12L, "AF_MAX");
    }
 
 // http://shell-storm.org/shellcode/files/shellcode-861.php
@@ -395,7 +395,7 @@ public class SampleNetworkAuditing {
          Unicorn mu = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
          
          // map 2MB memory for this emulation
-         mu.mem_map(ADDRESS, 2 * 1024 * 1024);
+         mu.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
          
          // write machine code to be emulated to memory
          mu.mem_write(ADDRESS, code);

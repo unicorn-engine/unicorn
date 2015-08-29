@@ -121,7 +121,7 @@ public class Shellcode {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_SELF);

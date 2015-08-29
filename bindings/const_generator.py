@@ -40,6 +40,22 @@ template = {
             'comment_open': '//',
             'comment_close': '',
         },
+    'java': {
+            'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\npackage unicorn;\n\npublic interface %sConst {\n",
+            'footer': "\n}\n",
+            'line_format': '   public static final int %s = %s;\n',
+            'out_file': './java/unicorn/%sConst.java',
+            # prefixes for constant filenames of all archs - case sensitive
+            'arm.h': 'Arm',
+            'arm64.h': 'Arm64',
+            'mips.h': 'Mips',
+            'x86.h': 'X86',
+            'sparc.h': 'Sparc',
+            'm68k.h': 'M68k',
+            'unicorn.h': 'Unicorn',
+            'comment_open': '//',
+            'comment_close': '',
+        },
 }
 
 # markup for comments to be added to autogen files
