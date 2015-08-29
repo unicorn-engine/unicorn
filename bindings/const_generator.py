@@ -52,7 +52,7 @@ template = {
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
-            'unicorn.h': 'unicorn',
+            'unicorn.h': 'Unicorn',
             'comment_open': '//',
             'comment_close': '',
         },
