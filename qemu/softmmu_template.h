@@ -178,6 +178,9 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     uintptr_t haddr;
     DATA_TYPE res;
 
+    struct uc_struct *uc = env->uc;
+    MemoryRegion *mr = memory_mapping(uc, addr);
+
     // Unicorn: callback on memory read
     if (env->uc->hook_mem_read && READ_ACCESS_TYPE == MMU_DATA_LOAD) {
         struct hook_struct *trace = hook_find((uch)env->uc, UC_MEM_READ, addr);
@@ -188,7 +191,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 
     // Unicorn: callback on invalid memory
-    if (env->uc->hook_mem_idx && !memory_mapping(env->uc, addr)) {
+    if (env->uc->hook_mem_idx && mr == NULL) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
                     (uch)env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
@@ -200,6 +203,26 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             return 0;
         } else {
             env->invalid_error = UC_ERR_OK;
+        }
+    }
+
+    // Unicorn: callback on read only memory
+    if (mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
+        bool result = false;
+        if (uc->hook_mem_idx) {
+            result = ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+                        (uch)uc, UC_MEM_READ_NR, addr, DATA_SIZE, 0,
+                        uc->hook_callbacks[uc->hook_mem_idx].user_data);
+        }
+        if (result) {
+            env->invalid_error = UC_ERR_OK;
+        }
+        else {
+            env->invalid_addr = addr;
+            env->invalid_error = UC_ERR_MEM_READ_NR;
+            // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
+            cpu_exit(uc->current_cpu);
+            return 0;
         }
     }
 
@@ -300,6 +323,9 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     uintptr_t haddr;
     DATA_TYPE res;
 
+    struct uc_struct *uc = env->uc;
+    MemoryRegion *mr = memory_mapping(uc, addr);
+
     // Unicorn: callback on memory read
     if (env->uc->hook_mem_read && READ_ACCESS_TYPE == MMU_DATA_LOAD) {
         struct hook_struct *trace = hook_find((uch)env->uc, UC_MEM_READ, addr);
@@ -310,7 +336,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 
     // Unicorn: callback on invalid memory
-    if (env->uc->hook_mem_idx && !memory_mapping(env->uc, addr)) {
+    if (env->uc->hook_mem_idx && mr == NULL) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
                     (uch)env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
@@ -322,6 +348,26 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             return 0;
         } else {
             env->invalid_error = UC_ERR_OK;
+        }
+    }
+
+    // Unicorn: callback on read only memory
+    if (mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
+        bool result = false;
+        if (uc->hook_mem_idx) {
+            result = ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+                        (uch)uc, UC_MEM_READ_NR, addr, DATA_SIZE, 0,
+                        uc->hook_callbacks[uc->hook_mem_idx].user_data);
+        }
+        if (result) {
+            env->invalid_error = UC_ERR_OK;
+        }
+        else {
+            env->invalid_addr = addr;
+            env->invalid_error = UC_ERR_MEM_READ_NR;
+            // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
+            cpu_exit(uc->current_cpu);
+            return 0;
         }
     }
 
@@ -460,31 +506,53 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     target_ulong tlb_addr = env->tlb_table[mmu_idx][index].addr_write;
     uintptr_t haddr;
 
+    struct uc_struct *uc = env->uc;
+    MemoryRegion *mr = memory_mapping(uc, addr);
+
     // Unicorn: callback on memory write
-    if (env->uc->hook_mem_write) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_MEM_WRITE, addr);
+    if (uc->hook_mem_write) {
+        struct hook_struct *trace = hook_find((uch)uc, UC_MEM_WRITE, addr);
         if (trace) {
-            ((uc_cb_hookmem_t)trace->callback)((uch)env->uc, UC_MEM_WRITE,
+            ((uc_cb_hookmem_t)trace->callback)((uch)uc, UC_MEM_WRITE,
                     (uint64_t)addr, (int)DATA_SIZE, (int64_t)val, trace->user_data);
         }
     }
 
     // Unicorn: callback on invalid memory
-    if (env->uc->hook_mem_idx && !memory_mapping(env->uc, addr)) {
-        if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
-                    (uch)env->uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
-                    env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
+    if (uc->hook_mem_idx && mr == NULL) {
+        if (!((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+                    (uch)uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
+                    uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             // save error & quit
             env->invalid_addr = addr;
             env->invalid_error = UC_ERR_MEM_WRITE;
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
-            cpu_exit(env->uc->current_cpu);
+            cpu_exit(uc->current_cpu);
             return;
         } else {
             env->invalid_error = UC_ERR_OK;
         }
     }
 
+    // Unicorn: callback on read only memory
+    if (mr != NULL && !(mr->perms & UC_PROT_WRITE)) {  //read only memory
+        bool result = false;
+        if (uc->hook_mem_idx) {
+            result = ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+                        (uch)uc, UC_MEM_WRITE_NW, addr, DATA_SIZE, (int64_t)val,
+                        uc->hook_callbacks[uc->hook_mem_idx].user_data);
+        }
+        if (result) {
+            env->invalid_error = UC_ERR_OK;
+        }
+        else {
+            env->invalid_addr = addr;
+            env->invalid_error = UC_ERR_MEM_WRITE_NW;
+            // printf("***** Invalid memory write (ro) at " TARGET_FMT_lx "\n", addr);
+            cpu_exit(uc->current_cpu);
+            return;
+        }
+    }
 
     /* Adjust the given return address.  */
     retaddr -= GETPC_ADJ;
@@ -546,6 +614,8 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
                Undo that for the recursion.  */
             glue(helper_ret_stb, MMUSUFFIX)(env, addr + i, val8,
                                             mmu_idx, retaddr + GETPC_ADJ);
+            if (env->invalid_error != UC_ERR_OK)
+                break;
         }
         return;
     }
@@ -574,28 +644,51 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     target_ulong tlb_addr = env->tlb_table[mmu_idx][index].addr_write;
     uintptr_t haddr;
 
+    struct uc_struct *uc = env->uc;
+    MemoryRegion *mr = memory_mapping(uc, addr);
+
     // Unicorn: callback on memory write
-    if (env->uc->hook_mem_write) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_MEM_WRITE, addr);
+    if (uc->hook_mem_write) {
+        struct hook_struct *trace = hook_find((uch)uc, UC_MEM_WRITE, addr);
         if (trace) {
-            ((uc_cb_hookmem_t)trace->callback)((uch)env->uc, UC_MEM_WRITE,
+            ((uc_cb_hookmem_t)trace->callback)((uch)uc, UC_MEM_WRITE,
                     (uint64_t)addr, (int)DATA_SIZE, (int64_t)val, trace->user_data);
         }
     }
 
     // Unicorn: callback on invalid memory
-    if (env->uc->hook_mem_idx && !memory_mapping(env->uc, addr)) {
-        if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
-                    (uch)env->uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
-                    env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
+    if (uc->hook_mem_idx && mr == NULL) {
+        if (!((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+                    (uch)uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
+                    uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             // save error & quit
             env->invalid_addr = addr;
             env->invalid_error = UC_ERR_MEM_WRITE;
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
-            cpu_exit(env->uc->current_cpu);
+            cpu_exit(uc->current_cpu);
             return;
         } else {
             env->invalid_error = UC_ERR_OK;
+        }
+    }
+
+    // Unicorn: callback on read only memory
+    if (mr != NULL && !(mr->perms & UC_PROT_WRITE)) {  //read only memory
+        bool result = false;
+        if (uc->hook_mem_idx) {
+            result = ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+                        (uch)uc, UC_MEM_WRITE_NW, addr, DATA_SIZE, (int64_t)val,
+                        uc->hook_callbacks[uc->hook_mem_idx].user_data);
+        }
+        if (result) {
+            env->invalid_error = UC_ERR_OK;
+        }
+        else {
+            env->invalid_addr = addr;
+            env->invalid_error = UC_ERR_MEM_WRITE_NW;
+            // printf("***** Invalid memory write (ro) at " TARGET_FMT_lx "\n", addr);
+            cpu_exit(uc->current_cpu);
+            return;
         }
     }
 
@@ -659,6 +752,8 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
                Undo that for the recursion.  */
             glue(helper_ret_stb, MMUSUFFIX)(env, addr + i, val8,
                                             mmu_idx, retaddr + GETPC_ADJ);
+            if (env->invalid_error != UC_ERR_OK)
+                break;
         }
         return;
     }

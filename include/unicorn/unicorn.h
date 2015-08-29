@@ -116,6 +116,8 @@ typedef enum uc_err {
     UC_ERR_HOOK,    // Invalid hook type: uc_hook_add()
     UC_ERR_INSN_INVALID, // Quit emulation due to invalid instruction: uc_emu_start()
     UC_ERR_MAP, // Invalid memory mapping: uc_mem_map()
+    UC_ERR_MEM_WRITE_NW, // Quit emulation due to write to non-writable: uc_emu_start()
+    UC_ERR_MEM_READ_NR, // Quit emulation due to read from non-readable: uc_emu_start()
 } uc_err;
 
 
@@ -147,6 +149,8 @@ typedef enum uc_mem_type {
     UC_MEM_READ = 16,   // Memory is read from
     UC_MEM_WRITE,       // Memory is written to
     UC_MEM_READ_WRITE,  // Memory is accessed (either READ or WRITE)
+    UC_MEM_WRITE_NW,    // write to non-writable
+    UC_MEM_READ_NR,     // read from non-readable
 } uc_mem_type;
 
 // All type of hooks for uc_hook_add() API.
@@ -387,12 +391,12 @@ uc_err uc_hook_del(uch handle, uch *h2);
 typedef enum uc_prot {
    UC_PROT_READ = 1,
    UC_PROT_WRITE = 2,
-   UC_PROT_EXEC = 4
 } uc_prot;
 
 /*
  Map memory in for emulation.
- This API adds a memory region that can be used by emulation.
+ This API adds a memory region that can be used by emulation. The region is mapped
+ with permissions UC_PROT_READ | UC_PROT_WRITE.
 
  @handle: handle returned by uc_open()
  @address: starting address of the new memory region to be mapped in.
@@ -405,6 +409,25 @@ typedef enum uc_prot {
 */
 UNICORN_EXPORT
 uc_err uc_mem_map(uch handle, uint64_t address, size_t size);
+
+/*
+ Map memory in for emulation.
+ This API adds a memory region that can be used by emulation.
+
+ @handle: handle returned by uc_open()
+ @address: starting address of the new memory region to be mapped in.
+    This address must be aligned to 4KB, or this will return with UC_ERR_MAP error.
+ @size: size of the new memory region to be mapped in.
+    This size must be multiple of 4KB, or this will return with UC_ERR_MAP error.
+ @perms: Permissions for the newly mapped region.
+    This must be some combination of UC_PROT_READ | UC_PROT_WRITE,
+    or this will return with UC_ERR_MAP error.
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+ for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_mem_map_ex(uch handle, uint64_t address, size_t size, uint32_t perms);
 
 #ifdef __cplusplus
 }

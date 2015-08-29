@@ -4,9 +4,10 @@
 #include <stdlib.h>
 
 #define UC_BUG_WRITE_SIZE 13000
-#define UC_BUG_WRITE_ADDR 0x1000    // fix this by change this to 0x2000
+#define UC_BUG_WRITE_ADDR 0x1000
 
-int main() {
+int main()
+{
     int size;
     uint8_t *buf;
     uch uh;

@@ -20,7 +20,7 @@ int main()
     size = UC_BUG_WRITE_SIZE;
     if (!uc_mem_map (uh, UC_BUG_WRITE_ADDR, size)) {
         uc_mem_write (uh, UC_BUG_WRITE_ADDR,
-            (const uint8_t*)"\xff\xff\xff\xff\xff\xff\xff\xff", 8);
+                (const uint8_t*)"\xff\xff\xff\xff\xff\xff\xff\xff", 8);
     }
     err = uc_emu_start (uh, UC_BUG_WRITE_ADDR, UC_BUG_WRITE_ADDR+8, 0, 1);
     uc_close (&uh);
