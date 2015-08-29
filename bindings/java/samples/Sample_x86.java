@@ -91,7 +91,7 @@ public class Sample_x86 {
                System.out.printf(">>> Missing memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
                                 address, size, value);
                // map this memory in with 2MB in size
-               u.mem_map(0xaaaa0000, 2 * 1024*1024);
+               u.mem_map(0xaaaa0000, 2 * 1024*1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
                // return true to indicate we want to continue
                return true;
          }
@@ -193,7 +193,7 @@ public class Sample_x86 {
        }
    
        // map 2MB memory for this emulation
-       uc.mem_map(ADDRESS, 2 * 1024 * 1024);
+       uc.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        try {
@@ -251,7 +251,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_INOUT);
@@ -294,7 +294,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_JUMP);
@@ -326,7 +326,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_LOOP);
@@ -363,7 +363,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_MEM_READ);
@@ -410,7 +410,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_MEM_WRITE);
@@ -470,7 +470,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_JMP_INVALID);
@@ -528,7 +528,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_64);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE64);
@@ -615,7 +615,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_16);
    
        // map 8KB memory for this emulation
-       u.mem_map(0, 8 * 1024);
+       u.mem_map(0, 8 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(0, X86_CODE16);

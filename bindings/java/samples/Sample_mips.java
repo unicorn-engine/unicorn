@@ -78,7 +78,7 @@ public class Sample_mips {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_MIPS, Unicorn.UC_MODE_MIPS32 + Unicorn.UC_MODE_BIG_ENDIAN);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, MIPS_CODE_EB);
@@ -116,7 +116,7 @@ public class Sample_mips {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_MIPS, Unicorn.UC_MODE_MIPS32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, MIPS_CODE_EL);

@@ -623,7 +623,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param address Base address of the memory range
  * @param size    Size of the memory block.
  */
-   public native void mem_map(long address, long size) throws UnicornException;
+   public native void mem_map(long address, long size, int perms) throws UnicornException;
 
 }
 

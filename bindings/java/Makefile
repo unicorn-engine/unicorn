@@ -1,3 +1,6 @@
+
+.PHONY: gen_const clean
+
 JAVA_HOME := $(shell jrunscript -e 'java.lang.System.out.println(java.lang.System.getProperty("java.home"));')
 
 JAVA_INC := $(shell realpath $(JAVA_HOME)/../include)
@@ -63,3 +66,13 @@ jar: jarfiles
 install: lib jar
 	cp libunicorn_java$(LIB_EXT) $(JAVA_HOME)/lib/ext
 	cp $(JARFILE) $(JAVA_HOME)/lib/ext
+
+gen_const:
+	cd .. && python const_generator.py java
+
+clean:
+	rm unicorn/*.class
+	rm samples/*.class
+	rm *.so
+	rm *.dylib
+	rm *.dll
