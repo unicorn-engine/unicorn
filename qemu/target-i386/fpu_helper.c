@@ -986,7 +986,18 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
             }
         }
     }
-    if (data32) {
+    switch (env->uc->mode) {
+    case (UC_MODE_64):
+        /* 64 bit */
+        cpu_stl_data(env, ptr, env->fpuc);
+        cpu_stl_data(env, ptr + 4, fpus);
+        cpu_stl_data(env, ptr + 8, fptag);
+        cpu_stl_data(env, ptr + 12, env->fpip); /* fpip */
+        cpu_stl_data(env, ptr + 20, 0); /* fpcs */
+        cpu_stl_data(env, ptr + 24, 0); /* fpoo */
+        cpu_stl_data(env, ptr + 28, 0); /* fpos */
+        break;
+    case (UC_MODE_32):
         /* 32 bit */
         cpu_stl_data(env, ptr, env->fpuc);
         cpu_stl_data(env, ptr + 4, fpus);
@@ -995,7 +1006,8 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
         cpu_stl_data(env, ptr + 16, 0); /* fpcs */
         cpu_stl_data(env, ptr + 20, 0); /* fpoo */
         cpu_stl_data(env, ptr + 24, 0); /* fpos */
-    } else {
+        break;
+    case (UC_MODE_16):
         /* 16 bit */
         cpu_stw_data(env, ptr, env->fpuc);
         cpu_stw_data(env, ptr + 2, fpus);
@@ -1004,6 +1016,9 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
         cpu_stw_data(env, ptr + 8, 0);
         cpu_stw_data(env, ptr + 10, 0);
         cpu_stw_data(env, ptr + 12, 0);
+        break;
+    default:
+        break;
     }
 }
 
