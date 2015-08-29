@@ -17,6 +17,8 @@ if test -e $DIR/sample_x86; then
   $DIR/sample_x86 -64
   echo "=========================="
   $DIR/sample_x86 -16
+  echo "=========================="
+  $DIR/shellcode -32
 fi
 if test -e $DIR/sample_arm; then
   echo "=========================="

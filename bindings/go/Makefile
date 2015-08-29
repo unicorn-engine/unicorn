@@ -2,9 +2,13 @@
 
 .PHONY: gen_const test
 
+all:
+	$(MAKE) gen_const
+	cd unicorn && go build
+	$(MAKE) test
+
 gen_const:
 	cd .. && python const_generator.py go
-	cd unicorn && go build
 
 test:
 	cd unicorn && go test
