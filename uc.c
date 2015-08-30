@@ -31,6 +31,13 @@
 
 #include "qemu/include/hw/boards.h"
 
+//keep this a power of two!
+#define UC_BLOCK_SIZE 0x1000
+#define UC_ALIGN_MASK (UC_BLOCK_SIZE - 1)
+
+static uint8_t *copy_region(uch uc, MemoryRegion *mr);
+static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t size, bool do_delete);
+
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
 {
@@ -622,12 +629,12 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms)
         // invalid memory mapping
         return UC_ERR_MAP;
 
-    // address must be aligned to 4KB
-    if ((address & (4*1024 - 1)) != 0)
+    // address must be aligned to UC_BLOCK_SIZE
+    if ((address & UC_ALIGN_MASK) != 0)
         return UC_ERR_MAP;
 
-    // size must be multiple of 4KB
-    if ((size & (4*1024 - 1)) != 0)
+    // size must be multiple of UC_BLOCK_SIZE
+    if ((size & UC_ALIGN_MASK) != 0)
         return UC_ERR_MAP;
 
     // check for only valid permissions
@@ -647,6 +654,111 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms)
     return UC_ERR_OK;
 }
 
+//create a backup copy of the indicated MemoryRegion
+//generally used in prepartion for splitting a MemoryRegion
+static uint8_t *copy_region(uch handle, MemoryRegion *mr)
+{
+    uint8_t *block = (uint8_t *)malloc(int128_get64(mr->size));
+    if (block != NULL) {
+        uc_err err = uc_mem_read(handle, mr->addr, block, int128_get64(mr->size));
+        if (err != UC_ERR_OK) {
+            free(block);
+            block = NULL;
+        }
+    }
+    return block;
+}
+
+/*
+Split the given MemoryRegion at the indicated address for the indicated size
+this may result in the create of up to 3 spanning sections. If the delete
+parameter is true, the no new section will be created to replace the indicate
+range. This functions exists to support uc_mem_protect and uc_mem_unmap.
+
+This is a static function and callers have already done some preliminary 
+parameter validation.
+*/
+//TODO: investigate whether qemu region manipulation functions already offer this capability
+static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t size, bool do_delete)
+{
+    uint8_t *backup;
+    uint32_t perms;
+    uint64_t begin, end, chunk_end;
+    size_t l_size, m_size, r_size;
+    chunk_end = address + size;
+    if (address <= mr->addr && chunk_end >= mr->end) {
+        //trivial case, if we are deleting, just unmap
+        if (do_delete)
+            return uc_mem_unmap(handle, mr->addr, int128_get64(mr->size)) == UC_ERR_OK;
+        return true;
+    }
+
+    if (size == 0)
+        //trivial case
+        return true;
+
+    if (address >= mr->end || chunk_end <= mr->addr)
+        //impossible case
+        return false;
+
+    backup = copy_region(handle, mr);
+    if (backup == NULL)
+        return false;
+
+    //save the essential information required for the split before mr gets deleted
+    perms = mr->perms;
+    begin = mr->addr;
+    end = mr->end;
+    
+    if (uc_mem_unmap(handle, mr->addr, int128_get64(mr->size)) != UC_ERR_OK)
+        goto error;
+
+    /* overlapping cases
+     *               |------mr------|
+     * case 1    |---size--|
+     * case 2           |--size--|
+     * case 3                  |---size--|
+     */
+
+    //adjust some things
+    if (address < begin)
+        address = begin;
+    if (chunk_end > end)
+        chunk_end = end;
+
+    //compute sub region sizes
+    l_size = (size_t)(address - begin);
+    r_size = (size_t)(end - chunk_end);
+    m_size = (size_t)(chunk_end - address);
+
+    //If there are error in any of the below operations, things are too far gone
+    //at that point to recover. Could try to remap orignal region, but these smaller
+    //allocation just failed so no guarantee that we can recover the original
+    //allocation at this point
+    if (l_size > 0) {
+        if (uc_mem_map(handle, begin, l_size, perms) != UC_ERR_OK)
+            goto error;
+        if (uc_mem_write(handle, begin, backup, l_size) != UC_ERR_OK)
+            goto error;
+    }
+    if (m_size > 0 && !do_delete) {
+        if (uc_mem_map(handle, address, m_size, perms) != UC_ERR_OK)
+            goto error;
+        if (uc_mem_write(handle, address, backup + l_size, m_size) != UC_ERR_OK)
+            goto error;
+    }
+    if (r_size > 0) {
+        if (uc_mem_map(handle, chunk_end, r_size, perms) != UC_ERR_OK)
+            goto error;
+        if (uc_mem_write(handle, chunk_end, backup + l_size + m_size, r_size) != UC_ERR_OK)
+            goto error;
+    }
+    return true;
+error:
+    free(backup);
+    return false;
+}
+
 UNICORN_EXPORT
 uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
 {
@@ -661,12 +773,12 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
         // invalid memory mapping
         return UC_ERR_MAP;
 
-    // address must be aligned to 4KB
-    if ((address & (4*1024 - 1)) != 0)
+    // address must be aligned to UC_BLOCK_SIZE
+    if ((address & UC_ALIGN_MASK) != 0)
         return UC_ERR_MAP;
 
-    // size must be multiple of 4KB
-    if ((size & (4*1024 - 1)) != 0)
+    // size must be multiple of UC_BLOCK_SIZE
+    if ((size & UC_ALIGN_MASK) != 0)
         return UC_ERR_MAP;
 
     // check for only valid permissions
@@ -730,6 +842,7 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
     MemoryRegion *mr;
     unsigned int i;
     struct uc_struct* uc = (struct uc_struct *)handle;
+    size_t count, len;
 
     if (handle == 0)
         // invalid handle
@@ -739,23 +852,24 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
         // nothing to unmap
         return UC_ERR_OK;
 
-    // address must be aligned to 4KB
-    if ((address & (4*1024 - 1)) != 0)
+    // address must be aligned to UC_BLOCK_SIZE
+    if ((address & UC_ALIGN_MASK) != 0)
         return UC_ERR_MAP;
 
-    // size must be multiple of 4KB
-    if ((size & (4*1024 - 1)) != 0)
+    // size must be multiple of UC_BLOCK_SIZE
+    if ((size & UC_ALIGN_MASK) != 0)
         return UC_ERR_MAP;
 
     //check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size))
         return UC_ERR_MAP;
 
-    //Now we know entire region is mapped, so change permissions
+    //Now we know entire region is mapped, so begin the delete
     //check trivial case first
     mr = memory_mapping(uc, address);
     if (address == mr->addr && size == int128_get64(mr->size)) {
         //regions exactly matches an existing region just unmap it
+        //this termiantes a possible recursion between this function and split_region
         uc->memory_unmap(uc, mr);
         for (i = 0; i < uc->mapped_block_count; i++) {
             if (uc->mapped_blocks[i] == mr) {
@@ -765,13 +879,20 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
                 break;
             }
         }
-        return UC_ERR_OK;
      }
     else {
         //ouch, we are going to need to subdivide blocks
+        count = 0;
+        while(count < size) {
+            MemoryRegion *mr = memory_mapping(uc, address);
+            len = MIN(size - count, mr->end - address);
+            if (!split_region(handle, mr, address, len, true))
+                return UC_ERR_MAP;
+            count += len;
+            address += len;
+        }
     }
-
-    return UC_ERR_MAP;
+    return UC_ERR_OK;
 }
 
 MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
