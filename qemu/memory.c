@@ -45,6 +45,18 @@ MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, ui
     return uc->ram;
 }
 
+void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
+{
+    targer_ulong addr;
+    //make sure all pages associated with the MemoryRegion are flushed
+    for (addr = mr->addr; addr < mr->end; addr += 0x1000) {
+       tlb_flush_page(uc->current_cpu, addr);
+    }
+    mr->enabled = false;
+    memory_region_del_subregion(get_system_memory(uc), mr);
+    g_free(mr);
+}
+
 int memory_free(struct uc_struct *uc)
 {
     int i;

@@ -7,6 +7,7 @@
 #define phys_mem_clean phys_mem_clean_aarch64
 #define tb_cleanup tb_cleanup_aarch64
 #define memory_map memory_map_aarch64
+#define memory_unmap memory_unmap_aarch64
 #define memory_free memory_free_aarch64
 #define helper_raise_exception helper_raise_exception_aarch64
 #define tcg_enabled tcg_enabled_aarch64
