@@ -549,6 +549,11 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
     // emulation is done
     uc->emulation_done = true;
 
+    if (timeout) {
+        // wait for the timer to finish
+        qemu_thread_join(&uc->timer);
+    }
+
     return uc->invalid_error;
 }
 

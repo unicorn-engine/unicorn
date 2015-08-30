@@ -33,16 +33,16 @@
 // Unicorn engine
 MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, uint32_t perms)
 {
-    uc->ram = g_new(MemoryRegion, 1);
+    MemoryRegion *ram = g_new(MemoryRegion, 1);
 
-    memory_region_init_ram(uc, uc->ram, NULL, "pc.ram", size, perms, &error_abort);
+    memory_region_init_ram(uc, ram, NULL, "pc.ram", size, perms, &error_abort);
 
-    memory_region_add_subregion(get_system_memory(uc), begin, uc->ram);
+    memory_region_add_subregion(get_system_memory(uc), begin, ram);
 
     if (uc->current_cpu)
         tlb_flush(uc->current_cpu, 1);
 
-    return uc->ram;
+    return ram;
 }
 
 int memory_free(struct uc_struct *uc)
