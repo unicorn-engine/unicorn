@@ -34,6 +34,12 @@ func hookMemAccess(handle C.uch, typ C.uc_mem_type, addr uint64, size int, value
 	hook.Callback.(func(*Uc, int, uint64, int, int64))(hook.Uc, int(typ), addr, size, value)
 }
 
+//export hookInterrupt
+func hookInterrupt(handle C.uch, intno uint32, user unsafe.Pointer) {
+	hook := (*HookData)(user)
+	hook.Callback.(func(*Uc, uint32))(hook.Uc, intno)
+}
+
 //export hookX86In
 func hookX86In(handle C.uch, port, size uint32, user unsafe.Pointer) uint32 {
 	hook := (*HookData)(user)
@@ -64,6 +70,8 @@ func (u *Uc) HookAdd(htype int, cb interface{}, insn ...int) (C.uch, error) {
 		callback = C.hookMemInvalid_cgo
 	case UC_HOOK_MEM_READ, UC_HOOK_MEM_WRITE, UC_HOOK_MEM_READ_WRITE:
 		callback = C.hookMemAccess_cgo
+	case UC_HOOK_INTR:
+		callback = C.hookInterrupt_cgo
 	case UC_HOOK_INSN:
 		extra = C.int(insn[0])
 		switch extra {

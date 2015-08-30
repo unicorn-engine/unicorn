@@ -17,6 +17,10 @@ void hookMemAccess_cgo(uch handle, uc_mem_type type, uint64_t addr, int size, in
     hookMemAccess(handle, type, addr, size, value, user);
 }
 
+void hookInterrupt_cgo(uch handle, uint32_t intno, void *user) {
+    hookInterrupt(handle, intno, user);
+}
+
 uint32_t hookX86In_cgo(uch handle, uint32_t port, uint32_t size, void *user) {
     return hookX86In(handle, port, size, user);
 }
