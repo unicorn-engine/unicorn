@@ -638,7 +638,7 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms)
         return UC_ERR_MAP;
 
     // check for only valid permissions
-    if ((perms & ~(UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC)) != 0)
+    if ((perms & ~UC_PROT_ALL) != 0)
         return UC_ERR_MAP;
 
     if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
@@ -782,7 +782,7 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
         return UC_ERR_MAP;
 
     // check for only valid permissions
-    if ((perms & ~(UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC)) != 0)
+    if ((perms & ~UC_PROT_ALL) != 0)
         return UC_ERR_MAP;
         
     //check that user's entire requested block is mapped
@@ -790,50 +790,32 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
         return UC_ERR_MAP;
 
     //Now we know entire region is mapped, so change permissions
-    //check trivial case first
+    //If request exactly matches a region we don't need to split
     mr = memory_mapping(uc, address);
-    if (address == mr->addr && size == int128_get64(mr->size)) {
-        //regions exactly matches an existing region just change perms
-        mr->perms = perms;
-        uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
-    }
-    else {
+    if (address != mr->addr || size != int128_get64(mr->size)) {
         //ouch, we are going to need to subdivide blocks
-/*
-        address = start;
-        size = block_size;
-        while (size > 0) {
-            MemoryRegion *mr = memory_mapping(uc, address);
-            uint64_t region_size = int128_get64(mr->size);
-            if (address > mr->addr) {
-                //in case start address is not aligned with start of region
-                region_size -= address - mr->addr;
-                //TODO Learn how to split regions
-                //In this case some proper subset of the region is having it's permissions changed
-                //need to split region and add new portions into uc->mapped_blocks list
-                //In this case, there is a portion of the region with original perms: mr->addr..start
-                //and a portion getting new perms: start..start+block_size
-    
-                //split the block and stay in the loop
-            }
-            if (size < int128_get64(mr->size)) {
-                //TODO Learn how to split regions
-                //In this case some proper subset of the region is having it's permissions changed
-                //need to split region and add new portions into uc->mapped_blocks list
-                //In this case, there is a portion of the region with new perms: start..start+block_size
-                //and a portion getting new perms: mr->addr+size..mr->addr+mr->size
-    
-                //split the block and break
-                break;
-            }
-            size -= int128_get64(mr->size);
-            address += int128_get64(mr->size);
-            mr->perms = perms;
-            uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+        uint64_t addr = address;
+        size_t count = 0, len;
+        while(count < size) {
+            MemoryRegion *mr = memory_mapping(uc, addr);
+            len = MIN(size - count, mr->end - addr);
+            if (!split_region(handle, mr, addr, len, false))
+                return UC_ERR_MAP;
+            count += len;
+            addr += len;
         }
-*/
-     }
-     return UC_ERR_OK;
+        //Grab a pointer to the newly split MemoryRegion
+        mr = memory_mapping(uc, address);
+        if (mr == NULL) {
+            //this should never happern if splitting succeeded
+            return UC_ERR_MAP;
+        }
+    }
+    //regions exactly matches an existing region just change perms
+    mr->perms = perms;
+    uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
@@ -842,7 +824,6 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
     MemoryRegion *mr;
     unsigned int i;
     struct uc_struct* uc = (struct uc_struct *)handle;
-    size_t count, len;
 
     if (handle == 0)
         // invalid handle
@@ -882,7 +863,7 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
      }
     else {
         //ouch, we are going to need to subdivide blocks
-        count = 0;
+        size_t count = 0, len;
         while(count < size) {
             MemoryRegion *mr = memory_mapping(uc, address);
             len = MIN(size - count, mr->end - address);
