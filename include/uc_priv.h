@@ -95,7 +95,6 @@ struct uc_struct {
     void* cpu;
 
     MemoryRegion *system_memory;    // qemu/exec.c
-    MemoryRegion *ram;
     MemoryRegion io_mem_rom;    // qemu/exec.c
     MemoryRegion io_mem_notdirty;   // qemu/exec.c
     MemoryRegion io_mem_unassigned; // qemu/exec.c

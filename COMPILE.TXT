@@ -66,11 +66,11 @@ Unicorn requires few dependent packages as followings
 
   - To compile for current platform, run:
 
-		$ ./make.sh
+        $ ./make.sh
 
   - On 64-bit OS, run the command below to cross-compile Unicorn for 32-bit binary:
 
-		$ ./make.sh nix32
+        $ ./make.sh nix32
 
 
 
@@ -78,11 +78,11 @@ Unicorn requires few dependent packages as followings
 
   To install Unicorn, run:
 
-	$ sudo ./make.sh install
+    $ sudo ./make.sh install
 
-	For FreeBSD/OpenBSD, where sudo is unavailable, run:
+    For FreeBSD/OpenBSD, where sudo is unavailable, run:
 
-		$ su; ./make.sh install
+        $ su; ./make.sh install
 
   Users are then required to enter root password to copy Unicorn into machine
   system directories.
@@ -93,17 +93,17 @@ Unicorn requires few dependent packages as followings
   NOTE: The core framework installed by "./make.sh install" consist of
   following files:
 
-	/usr/include/unicorn/unicorn.h
-	/usr/include/unicorn/x86.h
-	/usr/include/unicorn/arm.h
-	/usr/include/unicorn/arm64.h
-	/usr/include/unicorn/mips.h
-	/usr/include/unicorn/ppc.h
-	/usr/include/unicorn/sparc.h
-	/usr/include/unicorn/m68k.h
-	/usr/include/unicorn/platform.h
-	/usr/lib/libunicorn.so (for Linux/*nix), or /usr/lib/libunicorn.dylib (OSX)
-	/usr/lib/libunicorn.a
+    /usr/include/unicorn/unicorn.h
+    /usr/include/unicorn/x86.h
+    /usr/include/unicorn/arm.h
+    /usr/include/unicorn/arm64.h
+    /usr/include/unicorn/mips.h
+    /usr/include/unicorn/ppc.h
+    /usr/include/unicorn/sparc.h
+    /usr/include/unicorn/m68k.h
+    /usr/include/unicorn/platform.h
+    /usr/lib/libunicorn.so (for Linux/*nix), or /usr/lib/libunicorn.dylib (OSX)
+    /usr/lib/libunicorn.a
 
 
 
@@ -112,19 +112,18 @@ Unicorn requires few dependent packages as followings
   To cross-compile for Windows, Linux & gcc-mingw-w64-i686 (and also gcc-mingw-w64-x86-64
   for 64-bit binaries) are required.
 
-	- To cross-compile Windows 32-bit binary, simply run:
+    - To cross-compile Windows 32-bit binary, simply run:
 
-		$ ./make.sh cross-win32
+        $ ./make.sh cross-win32
 
-	- To cross-compile Windows 64-bit binary, run:
+    - To cross-compile Windows 64-bit binary, run:
 
-		$ ./make.sh cross-win64
+        $ ./make.sh cross-win64
 
-  Resulted files libunicorn.dll, libunicorn.dll.a & tests/test*.exe can then
+  Resulted files unicorn.dll, unicorn.lib & samples/sample*.exe can then
   be used on Windows machine.
 
   To run sample_x86.exe on Windows 32-bit, you need the following files:
-
    - unicorn.dll
    - /usr/i686-w64-mingw32/sys-root/mingw/bin/libglib-2.0-0.dll
    - /usr/lib/gcc/i686-w64-mingw32/4.8/libgcc_s_sjlj-1.dll
@@ -145,17 +144,17 @@ Unicorn requires few dependent packages as followings
 
   To cross-compile for iOS (iPhone/iPad/iPod), Mac OSX with XCode installed is required. 
 
-	- To cross-compile for ArmV7 (iPod 4, iPad 1/2/3, iPhone4, iPhone4S), run:
-		$ ./make.sh ios_armv7
+    - To cross-compile for ArmV7 (iPod 4, iPad 1/2/3, iPhone4, iPhone4S), run:
+        $ ./make.sh ios_armv7
 
-	- To cross-compile for ArmV7s (iPad 4, iPhone 5C, iPad mini), run:
-		$ ./make.sh ios_armv7s
+    - To cross-compile for ArmV7s (iPad 4, iPhone 5C, iPad mini), run:
+        $ ./make.sh ios_armv7s
 
-	- To cross-compile for Arm64 (iPhone 5S, iPad mini Retina, iPad Air), run:
-		$ ./make.sh ios_arm64
+    - To cross-compile for Arm64 (iPhone 5S, iPad mini Retina, iPad Air), run:
+        $ ./make.sh ios_arm64
 
-	- To cross-compile for all iDevices (armv7 + armv7s + arm64), run:
-		$ ./make.sh ios
+    - To cross-compile for all iDevices (armv7 + armv7s + arm64), run:
+        $ ./make.sh ios
 
   Resulted files libunicorn.dylib, libunicorn.a & tests/test* can then
   be used on iOS devices.
@@ -167,47 +166,69 @@ Unicorn requires few dependent packages as followings
   To cross-compile for Android (smartphone/tablet), Android NDK is required.
   NOTE: Only ARM and ARM64 are currently supported.
 
-	$ NDK=/android/android-ndk-r10e ./make.sh cross-android arm
+    $ NDK=/android/android-ndk-r10e ./make.sh cross-android arm
   or
-	$ NDK=/android/android-ndk-r10e ./make.sh cross-android arm64
+    $ NDK=/android/android-ndk-r10e ./make.sh cross-android arm64
 
   Resulted files libunicorn.so, libunicorn.a & tests/test* can then
   be used on Android devices.
 
 
 
-[7] Compile on Windows with Cygwin
+[7] Compile on Windows with MinGW (MSYS2)
 
-  To compile under Cygwin gcc-mingw-w64-i686 or x86_64-w64-mingw32 run:
+  To compile with MinGW you need to install MSYS2: https://msys2.github.io/ 
+  Follow the install instructions and don't forget to update the system packages as written in 5 & 6 paragraphs
+  
+        - To compile Windows 32-bit binary with MinGW, run:
+                $ pacman -S make
+                $ pacman -S pkg-config
+                $ pacman -S mingw-w64-i686-glib2
+                $ pacman -S mingw-w64-i686-toolchain
+                $ ./make.sh cross-win32
 
-        - To compile Windows 32-bit binary under Cygwin, run:
+        - To compile Windows 64-bit binary with MinGW, run:
+                $ pacman -S make
+                $ pacman -S pkg-config
+                $ pacman -S mingw-w64-x86_64-glib2
+                $ pacman -S mingw-w64-x86_64-toolchain
+                $ ./make.sh cross-win64
 
-                $ ./make.sh cygwin-mingw32
-
-        - To compile Windows 64-bit binary under Cygwin, run:
-
-                $ ./make.sh cygwin-mingw64
-
-  Resulted files libunicorn.dll, libunicorn.dll.a & tests/test*.exe can then
+  Resulted files unicorn.dll, unicorn.lib & samples/sample*.exe can then
   be used on Windows machine.
 
+  To run sample_x86.exe on Windows 32-bit, you need the following files:
+   - unicorn.dll
+   - C:\msys32\mingw32\bin\libiconv-2.dll
+   - C:\msys32\mingw32\bin\libintl-8.dll
+   - C:\msys32\mingw32\bin\libglib-2.0-0.dll
+   - C:\msys32\mingw32\bin\libgcc_s_seh-1.dll
+   - C:\msys32\mingw32\bin\libwinpthread-1.dll
+
+  To run sample_x86.exe on Windows 64-bit, you need the following files:
+   - unicorn.dll
+   - C:\msys64\mingw64\bin\libiconv-2.dll
+   - C:\msys64\mingw64\bin\libintl-8.dll
+   - C:\msys64\mingw64\bin\libglib-2.0-0.dll
+   - C:\msys64\mingw64\bin\libgcc_s_seh-1.dll
+   - C:\msys64\mingw64\bin\libwinpthread-1.dll
 
 
 [8] By default, "cc" (default C compiler on the system) is used as compiler.
 
-	- To use "clang" compiler instead, run the command below:
+    - To use "clang" compiler instead, run the command below:
 
-		$ ./make.sh clang
+        $ ./make.sh clang
 
-	- To use "gcc" compiler instead, run:
+    - To use "gcc" compiler instead, run:
 
-		$ ./make.sh gcc
+        $ ./make.sh gcc
 
 
 
 [9] To uninstall Unicorn, run the command below:
 
-		$ sudo ./make.sh uninstall
+        $ sudo ./make.sh uninstall
 
 
 

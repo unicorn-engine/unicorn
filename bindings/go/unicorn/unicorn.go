@@ -72,10 +72,16 @@ func (u *Uc) RegRead(reg int) (uint64, error) {
 }
 
 func (u *Uc) MemWrite(addr uint64, data []byte) error {
+	if len(data) == 0 {
+		return nil
+	}
 	return errReturn(C.uc_mem_write(u.Handle, C.uint64_t(addr), (*C.uint8_t)(unsafe.Pointer(&data[0])), C.size_t(len(data))))
 }
 
 func (u *Uc) MemReadInto(dst []byte, addr uint64) error {
+	if len(dst) == 0 {
+		return nil
+	}
 	return errReturn(C.uc_mem_read(u.Handle, C.uint64_t(addr), (*C.uint8_t)(unsafe.Pointer(&dst[0])), C.size_t(len(dst))))
 }
 
@@ -84,6 +90,10 @@ func (u *Uc) MemRead(addr, size uint64) ([]byte, error) {
 	return dst, u.MemReadInto(dst, addr)
 }
 
+func (u *Uc) MemMapProt(addr, size uint64, prot int) error {
+	return errReturn(C.uc_mem_map(u.Handle, C.uint64_t(addr), C.size_t(size), C.uint32_t(prot)))
+}
+
 func (u *Uc) MemMap(addr, size uint64) error {
-	return errReturn(C.uc_mem_map(u.Handle, C.uint64_t(addr), C.size_t(size)))
+	return u.MemMapProt(addr, size, UC_PROT_ALL)
 }

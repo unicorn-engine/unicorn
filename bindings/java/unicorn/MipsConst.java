@@ -1,28 +1,14 @@
-/*
-
-Java bindings for the Unicorn Emulator Engine
-
-Copyright(c) 2015 Chris Eagle
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-*/
+// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT
 
 package unicorn;
 
-public interface MipsRegs {
+public interface MipsConst {
+
+// MIPS registers
+
    public static final int UC_MIPS_REG_INVALID = 0;
+
+// General purpose registers
    public static final int UC_MIPS_REG_PC = 1;
    public static final int UC_MIPS_REG_0 = 2;
    public static final int UC_MIPS_REG_1 = 3;
@@ -56,6 +42,8 @@ public interface MipsRegs {
    public static final int UC_MIPS_REG_29 = 31;
    public static final int UC_MIPS_REG_30 = 32;
    public static final int UC_MIPS_REG_31 = 33;
+
+// DSP registers
    public static final int UC_MIPS_REG_DSPCCOND = 34;
    public static final int UC_MIPS_REG_DSPCARRY = 35;
    public static final int UC_MIPS_REG_DSPEFI = 36;
@@ -67,10 +55,14 @@ public interface MipsRegs {
    public static final int UC_MIPS_REG_DSPOUTFLAG23 = 42;
    public static final int UC_MIPS_REG_DSPPOS = 43;
    public static final int UC_MIPS_REG_DSPSCOUNT = 44;
+
+// ACC registers
    public static final int UC_MIPS_REG_AC0 = 45;
    public static final int UC_MIPS_REG_AC1 = 46;
    public static final int UC_MIPS_REG_AC2 = 47;
    public static final int UC_MIPS_REG_AC3 = 48;
+
+// COP registers
    public static final int UC_MIPS_REG_CC0 = 49;
    public static final int UC_MIPS_REG_CC1 = 50;
    public static final int UC_MIPS_REG_CC2 = 51;
@@ -79,6 +71,8 @@ public interface MipsRegs {
    public static final int UC_MIPS_REG_CC5 = 54;
    public static final int UC_MIPS_REG_CC6 = 55;
    public static final int UC_MIPS_REG_CC7 = 56;
+
+// FPU registers
    public static final int UC_MIPS_REG_F0 = 57;
    public static final int UC_MIPS_REG_F1 = 58;
    public static final int UC_MIPS_REG_F2 = 59;
@@ -119,6 +113,8 @@ public interface MipsRegs {
    public static final int UC_MIPS_REG_FCC5 = 94;
    public static final int UC_MIPS_REG_FCC6 = 95;
    public static final int UC_MIPS_REG_FCC7 = 96;
+
+// AFPR128
    public static final int UC_MIPS_REG_W0 = 97;
    public static final int UC_MIPS_REG_W1 = 98;
    public static final int UC_MIPS_REG_W2 = 99;
@@ -160,45 +156,46 @@ public interface MipsRegs {
    public static final int UC_MIPS_REG_MPL1 = 135;
    public static final int UC_MIPS_REG_MPL2 = 136;
    public static final int UC_MIPS_REG_ENDING = 137;
-   public static final int UC_MIPS_REG_ZERO = UC_MIPS_REG_0;
-   public static final int UC_MIPS_REG_AT = UC_MIPS_REG_1;
-   public static final int UC_MIPS_REG_V0 = UC_MIPS_REG_2;
-   public static final int UC_MIPS_REG_V1 = UC_MIPS_REG_3;
-   public static final int UC_MIPS_REG_A0 = UC_MIPS_REG_4;
-   public static final int UC_MIPS_REG_A1 = UC_MIPS_REG_5;
-   public static final int UC_MIPS_REG_A2 = UC_MIPS_REG_6;
-   public static final int UC_MIPS_REG_A3 = UC_MIPS_REG_7;
-   public static final int UC_MIPS_REG_T0 = UC_MIPS_REG_8;
-   public static final int UC_MIPS_REG_T1 = UC_MIPS_REG_9;
-   public static final int UC_MIPS_REG_T2 = UC_MIPS_REG_10;
-   public static final int UC_MIPS_REG_T3 = UC_MIPS_REG_11;
-   public static final int UC_MIPS_REG_T4 = UC_MIPS_REG_12;
-   public static final int UC_MIPS_REG_T5 = UC_MIPS_REG_13;
-   public static final int UC_MIPS_REG_T6 = UC_MIPS_REG_14;
-   public static final int UC_MIPS_REG_T7 = UC_MIPS_REG_15;
-   public static final int UC_MIPS_REG_S0 = UC_MIPS_REG_16;
-   public static final int UC_MIPS_REG_S1 = UC_MIPS_REG_17;
-   public static final int UC_MIPS_REG_S2 = UC_MIPS_REG_18;
-   public static final int UC_MIPS_REG_S3 = UC_MIPS_REG_19;
-   public static final int UC_MIPS_REG_S4 = UC_MIPS_REG_20;
-   public static final int UC_MIPS_REG_S5 = UC_MIPS_REG_21;
-   public static final int UC_MIPS_REG_S6 = UC_MIPS_REG_22;
-   public static final int UC_MIPS_REG_S7 = UC_MIPS_REG_23;
-   public static final int UC_MIPS_REG_T8 = UC_MIPS_REG_24;
-   public static final int UC_MIPS_REG_T9 = UC_MIPS_REG_25;
-   public static final int UC_MIPS_REG_K0 = UC_MIPS_REG_26;
-   public static final int UC_MIPS_REG_K1 = UC_MIPS_REG_27;
-   public static final int UC_MIPS_REG_GP = UC_MIPS_REG_28;
-   public static final int UC_MIPS_REG_SP = UC_MIPS_REG_29;
-   public static final int UC_MIPS_REG_FP = UC_MIPS_REG_30;
-   public static final int UC_MIPS_REG_S8 = UC_MIPS_REG_30;
-   public static final int UC_MIPS_REG_RA = UC_MIPS_REG_31;
-   public static final int UC_MIPS_REG_HI0 = UC_MIPS_REG_AC0;
-   public static final int UC_MIPS_REG_HI1 = UC_MIPS_REG_AC1;
-   public static final int UC_MIPS_REG_HI2 = UC_MIPS_REG_AC2;
-   public static final int UC_MIPS_REG_HI3 = UC_MIPS_REG_AC3;
-   public static final int UC_MIPS_REG_LO0 = UC_MIPS_REG_HI0;
-   public static final int UC_MIPS_REG_LO1 = UC_MIPS_REG_HI1;
-   public static final int UC_MIPS_REG_LO2 = UC_MIPS_REG_HI2;
-   public static final int UC_MIPS_REG_LO3 = UC_MIPS_REG_HI3;
+   public static final int UC_MIPS_REG_ZERO = 2;
+   public static final int UC_MIPS_REG_AT = 3;
+   public static final int UC_MIPS_REG_V0 = 4;
+   public static final int UC_MIPS_REG_V1 = 5;
+   public static final int UC_MIPS_REG_A0 = 6;
+   public static final int UC_MIPS_REG_A1 = 7;
+   public static final int UC_MIPS_REG_A2 = 8;
+   public static final int UC_MIPS_REG_A3 = 9;
+   public static final int UC_MIPS_REG_T0 = 10;
+   public static final int UC_MIPS_REG_T1 = 11;
+   public static final int UC_MIPS_REG_T2 = 12;
+   public static final int UC_MIPS_REG_T3 = 13;
+   public static final int UC_MIPS_REG_T4 = 14;
+   public static final int UC_MIPS_REG_T5 = 15;
+   public static final int UC_MIPS_REG_T6 = 16;
+   public static final int UC_MIPS_REG_T7 = 17;
+   public static final int UC_MIPS_REG_S0 = 18;
+   public static final int UC_MIPS_REG_S1 = 19;
+   public static final int UC_MIPS_REG_S2 = 20;
+   public static final int UC_MIPS_REG_S3 = 21;
+   public static final int UC_MIPS_REG_S4 = 22;
+   public static final int UC_MIPS_REG_S5 = 23;
+   public static final int UC_MIPS_REG_S6 = 24;
+   public static final int UC_MIPS_REG_S7 = 25;
+   public static final int UC_MIPS_REG_T8 = 26;
+   public static final int UC_MIPS_REG_T9 = 27;
+   public static final int UC_MIPS_REG_K0 = 28;
+   public static final int UC_MIPS_REG_K1 = 29;
+   public static final int UC_MIPS_REG_GP = 30;
+   public static final int UC_MIPS_REG_SP = 31;
+   public static final int UC_MIPS_REG_FP = 32;
+   public static final int UC_MIPS_REG_S8 = 32;
+   public static final int UC_MIPS_REG_RA = 33;
+   public static final int UC_MIPS_REG_HI0 = 45;
+   public static final int UC_MIPS_REG_HI1 = 46;
+   public static final int UC_MIPS_REG_HI2 = 47;
+   public static final int UC_MIPS_REG_HI3 = 48;
+   public static final int UC_MIPS_REG_LO0 = 45;
+   public static final int UC_MIPS_REG_LO1 = 46;
+   public static final int UC_MIPS_REG_LO2 = 47;
+   public static final int UC_MIPS_REG_LO3 = 48;
+
 }

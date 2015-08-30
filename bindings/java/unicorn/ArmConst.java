@@ -1,27 +1,11 @@
-/*
-
-Java bindings for the Unicorn Emulator Engine
-
-Copyright(c) 2015 Chris Eagle
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-*/
+// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT
 
 package unicorn;
 
-public interface ArmRegs {
+public interface ArmConst {
+
+// ARM registers
+
    public static final int UC_ARM_REG_INVALID = 0;
    public static final int UC_ARM_REG_APSR = 1;
    public static final int UC_ARM_REG_APSR_NZCV = 2;
@@ -134,11 +118,14 @@ public interface ArmRegs {
    public static final int UC_ARM_REG_S30 = 109;
    public static final int UC_ARM_REG_S31 = 110;
    public static final int UC_ARM_REG_ENDING = 111;
-   public static final int UC_ARM_REG_R13 = UC_ARM_REG_SP;
-   public static final int UC_ARM_REG_R14 = UC_ARM_REG_LR;
-   public static final int UC_ARM_REG_R15 = UC_ARM_REG_PC;
-   public static final int UC_ARM_REG_SB = UC_ARM_REG_R9;
-   public static final int UC_ARM_REG_SL = UC_ARM_REG_R10;
-   public static final int UC_ARM_REG_FP = UC_ARM_REG_R11;
-   public static final int UC_ARM_REG_IP = UC_ARM_REG_R12;
+
+// alias registers
+   public static final int UC_ARM_REG_R13 = 12;
+   public static final int UC_ARM_REG_R14 = 10;
+   public static final int UC_ARM_REG_R15 = 11;
+   public static final int UC_ARM_REG_SB = 75;
+   public static final int UC_ARM_REG_SL = 76;
+   public static final int UC_ARM_REG_FP = 77;
+   public static final int UC_ARM_REG_IP = 78;
+
 }
