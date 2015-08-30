@@ -19172,6 +19172,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     int is_slot = 0;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TCGArg *save_opparam_ptr = NULL;
+    bool block_full = false;
 
     if (search_pc)
         qemu_log("search pc %d\n", search_pc);
@@ -19207,7 +19208,9 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     LOG_DISAS("\ntb %p idx %d hflags %04x\n", tb, ctx.mem_idx, ctx.hflags);
 
     // Unicorn: trace this block on request
-    if (env->uc->hook_block) {
+    // Only hook this block if it is not broken from previous translation due to
+    // full translation cache
+    if (env->uc->hook_block && !env->uc->block_full) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             // save block address to see if we need to patch block size later
@@ -19251,7 +19254,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
         // Unicorn: end address tells us to stop emulation
         if (ctx.pc == ctx.uc->addr_end) {
             generate_exception(&ctx, EXCP_SYSCALL);
-            insn_bytes = 0;
+            break;
         } else {
             // Unicorn: save param buffer
             if (env->uc->hook_insn)
@@ -19315,6 +19318,11 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
         //if (singlestep)
         //    break;
     }
+
+    if (tcg_ctx->gen_opc_ptr >= gen_opc_end || num_insns >= max_insns) {
+        block_full = true;
+    }
+
     //if (tb->cflags & CF_LAST_IO) {
     //    gen_io_end();
     //}
@@ -19350,6 +19358,8 @@ done_generating:
         tb->size = ctx.pc - pc_start;
         tb->icount = num_insns;
     }
+
+    env->uc->block_full = block_full;
 }
 
 void gen_intermediate_code (CPUMIPSState *env, struct TranslationBlock *tb)

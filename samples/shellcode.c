@@ -104,7 +104,7 @@ static void test_i386(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE32_SELF, sizeof(X86_CODE32_SELF) - 1)) {

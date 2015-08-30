@@ -45,7 +45,9 @@ typedef void (*uc_args_uc_long_t)(struct uc_struct*, unsigned long);
 
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
-typedef int (*uc_args_uc_ram_size_t)(struct uc_struct*,  ram_addr_t begin, size_t size);
+typedef MemoryRegion* (*uc_args_uc_ram_size_t)(struct uc_struct*,  ram_addr_t begin, size_t size, uint32_t perms);
+
+typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
 // which interrupt should make emulation stop?
 typedef bool (*uc_args_int_t)(int intno);
@@ -60,6 +62,9 @@ struct hook_struct {
 
 // extend memory to keep 32 more hooks each time
 #define HOOK_SIZE 32
+
+//relloc increment, KEEP THIS A POWER OF 2!
+#define MEM_BLOCK_INCR 32
 
 struct uc_struct {
     uc_arch arch;
@@ -85,11 +90,11 @@ struct uc_struct {
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;
     uc_args_uc_ram_size_t memory_map;
+    uc_readonly_mem_t readonly_mem;
     // list of cpu
     void* cpu;
 
     MemoryRegion *system_memory;    // qemu/exec.c
-    MemoryRegion *ram;
     MemoryRegion io_mem_rom;    // qemu/exec.c
     MemoryRegion io_mem_notdirty;   // qemu/exec.c
     MemoryRegion io_mem_unassigned; // qemu/exec.c
@@ -165,11 +170,13 @@ struct uc_struct {
     int thumb;  // thumb mode for ARM
     // full TCG cache leads to middle-block break in the last translation?
     bool block_full;
+    MemoryRegion **mapped_blocks;
+    uint32_t mapped_block_count;
 };
 
 #include "qemu_macro.h"
 
 // check if this address is mapped in (via uc_mem_map())
-bool memory_mapping(uint64_t address);
+MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address);
 
 #endif

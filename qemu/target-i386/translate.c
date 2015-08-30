@@ -8254,7 +8254,7 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     uint64_t flags;
     target_ulong pc_start;
     target_ulong cs_base;
-    int num_insns;
+    int num_insns = 0;
     int max_insns;
     bool block_full = false;
 
@@ -8339,12 +8339,18 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     // done with initializing TCG variables
     env->uc->init_tcg = true;
 
+    // early check to see if the address of this block is the until address
+    if (tb->pc == env->uc->addr_end) {
+        gen_tb_start(tcg_ctx);
+        gen_interrupt(dc, 0x99, tb->pc - tb->cs_base, tb->pc - tb->cs_base);
+        goto done_generating;
+    }
+
     gen_opc_end = tcg_ctx->gen_opc_buf + OPC_MAX_SIZE;
 
     dc->is_jmp = DISAS_NEXT;
     pc_ptr = pc_start;
     lj = -1;
-    num_insns = 0;
     max_insns = tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0)
         max_insns = CF_COUNT_MASK;

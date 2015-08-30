@@ -5383,6 +5383,7 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     int max_insns;
     unsigned int insn;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
+    bool block_full = false;
 
     memset(dc, 0, sizeof(DisasContext));
     dc->uc = env->uc;
@@ -5405,7 +5406,9 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
         max_insns = CF_COUNT_MASK;
 
     // Unicorn: trace this block on request
-    if (env->uc->hook_block) {
+    // Only hook this block if it is not broken from previous translation due to
+    // full translation cache
+    if (env->uc->hook_block && !env->uc->block_full) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             // save block address to see if we need to patch block size later
@@ -5473,6 +5476,10 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
              (dc->pc - pc_start) < (TARGET_PAGE_SIZE - 32) &&
              num_insns < max_insns);
 
+    /* if too long translation, save this info */
+    if (tcg_ctx->gen_opc_ptr >= gen_opc_end || num_insns >= max_insns)
+        block_full = true;
+
  exit_gen_loop:
     //if (tb->cflags & CF_LAST_IO) {
     //    gen_io_end();
@@ -5506,6 +5513,8 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
         tb->size = last_pc + 4 - pc_start;
         tb->icount = num_insns;
     }
+
+    env->uc->block_full = block_full;
 }
 
 void gen_intermediate_code(CPUSPARCState * env, TranslationBlock * tb)

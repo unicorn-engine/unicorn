@@ -39,7 +39,7 @@ int main() {
    }
    fprintf(stderr, "ok %d - uc_open\n", count++);
 
-   err = uc_mem_map(uc, 0x1000000, 4096);
+   err = uc_mem_map(uc, 0x1000000, 4096, UC_PROT_ALL);
    if (err != UC_ERR_OK) {
       fprintf(stderr, "not ok %d - %s\n", count++, uc_strerror(err));
       exit(0);

@@ -4,9 +4,10 @@
 #include <stdlib.h>
 
 #define UC_BUG_WRITE_SIZE 13000
-#define UC_BUG_WRITE_ADDR 0x1000    // fix this by change this to 0x2000
+#define UC_BUG_WRITE_ADDR 0x1000
 
-int main() {
+int main()
+{
     int size;
     uint8_t *buf;
     struct uc_struct *uc;
@@ -22,8 +23,8 @@ int main() {
         return 1;
     }
     memset (buf, 0, size);
-    if (!uc_mem_map(uc, UC_BUG_WRITE_ADDR, size)) {
-        uc_mem_write(uc, UC_BUG_WRITE_ADDR, buf, size);
+    if (!uc_mem_map (uc, UC_BUG_WRITE_ADDR, size, UC_PROT_ALL)) {
+        uc_mem_write (uc, UC_BUG_WRITE_ADDR, buf, size);
     }
     uc_close(uc);
     return 0;

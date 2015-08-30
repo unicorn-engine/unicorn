@@ -11149,6 +11149,7 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
     int num_insns;
     int max_insns;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
+    bool block_full = false;
 
     /* generate intermediate code */
 
@@ -11228,7 +11229,9 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
     tcg_clear_temp_count();
 
     // Unicorn: trace this block on request
-    if (env->uc->hook_block) {
+    // Only hook this block if it is not broken from previous translation due to
+    // full translation cache
+    if (env->uc->hook_block && !env->uc->block_full) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             // save block address to see if we need to patch block size later
@@ -11398,6 +11401,11 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
         //gen_io_end();
     }
 
+    /* if too long translation, save this info */
+    if (tcg_ctx->gen_opc_ptr >= gen_opc_end || num_insns >= max_insns) {
+        block_full = true;
+    }
+
     /* At this stage dc->condjmp will only be set when the skipped
        instruction was a conditional branch or trap, and the PC has
        already been written.  */
@@ -11502,6 +11510,8 @@ done_generating:
         tb->size = dc->pc - pc_start;
         //tb->icount = num_insns;
     }
+
+    env->uc->block_full = block_full;
 }
 
 void gen_intermediate_code(CPUARMState *env, TranslationBlock *tb)

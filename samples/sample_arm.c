@@ -47,7 +47,7 @@ static void test_arm(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     uc_mem_write(uc, ADDRESS, (uint8_t *)ARM_CODE, sizeof(ARM_CODE) - 1);
@@ -100,7 +100,7 @@ static void test_thumb(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     uc_mem_write(uc, ADDRESS, (uint8_t *)THUMB_CODE, sizeof(THUMB_CODE) - 1);

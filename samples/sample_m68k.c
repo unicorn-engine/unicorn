@@ -60,7 +60,7 @@ static void test_m68k(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024);
+    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
     uc_mem_write(uc, ADDRESS, (uint8_t *)M68K_CODE, sizeof(M68K_CODE) - 1);
