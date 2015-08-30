@@ -17,33 +17,33 @@ type HookData struct {
 }
 
 //export hookCode
-func hookCode(handle C.uch, addr C.uint64_t, size C.uint32_t, user unsafe.Pointer) {
+func hookCode(handle C.uch, addr uint64, size uint32, user unsafe.Pointer) {
 	hook := (*HookData)(user)
 	hook.Callback.(func(*Uc, uint64, uint32))(hook.Uc, uint64(addr), uint32(size))
 }
 
 //export hookMemInvalid
-func hookMemInvalid(handle C.uch, typ C.uc_mem_type, addr C.uint64_t, size int, value C.int64_t, user unsafe.Pointer) C.bool {
+func hookMemInvalid(handle C.uch, typ C.uc_mem_type, addr uint64, size int, value int64, user unsafe.Pointer) bool {
 	hook := (*HookData)(user)
-	return C.bool(hook.Callback.(func(*Uc, int, uint64, int, int64) bool)(hook.Uc, int(typ), uint64(addr), size, int64(value)))
+	return hook.Callback.(func(*Uc, int, uint64, int, int64) bool)(hook.Uc, int(typ), addr, size, value)
 }
 
 //export hookMemAccess
-func hookMemAccess(handle C.uch, typ C.uc_mem_type, addr C.uint64_t, size int, value C.int64_t, user unsafe.Pointer) {
+func hookMemAccess(handle C.uch, typ C.uc_mem_type, addr uint64, size int, value int64, user unsafe.Pointer) {
 	hook := (*HookData)(user)
-	hook.Callback.(func(*Uc, int, uint64, int, int64))(hook.Uc, int(typ), uint64(addr), size, int64(value))
+	hook.Callback.(func(*Uc, int, uint64, int, int64))(hook.Uc, int(typ), addr, size, value)
 }
 
 //export hookX86In
-func hookX86In(handle C.uch, port, size uint32, user unsafe.Pointer) C.uint32_t {
+func hookX86In(handle C.uch, port, size uint32, user unsafe.Pointer) uint32 {
 	hook := (*HookData)(user)
-	return C.uint32_t(hook.Callback.(func(*Uc, uint32, uint32) uint32)(hook.Uc, port, size))
+	return hook.Callback.(func(*Uc, uint32, uint32) uint32)(hook.Uc, port, size)
 }
 
 //export hookX86Out
 func hookX86Out(handle C.uch, port, size, value uint32, user unsafe.Pointer) {
 	hook := (*HookData)(user)
-	hook.Callback.(func(*Uc, uint32, uint32, uint32))(hook.Uc, uint32(port), uint32(size), uint32(value))
+	hook.Callback.(func(*Uc, uint32, uint32, uint32))(hook.Uc, port, size, value)
 }
 
 //export hookX86Syscall
