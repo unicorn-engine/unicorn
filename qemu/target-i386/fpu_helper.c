@@ -1019,6 +1019,7 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
             cpu_stw_data(env, ptr + 10, 0);
             cpu_stw_data(env, ptr + 12, 0);
         }
+    }
 
 }
 
