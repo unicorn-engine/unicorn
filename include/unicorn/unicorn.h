@@ -149,9 +149,9 @@ typedef enum uc_mem_type {
     UC_MEM_READ = 16,   // Memory is read from
     UC_MEM_WRITE,       // Memory is written to
     UC_MEM_READ_WRITE,  // Memory is accessed (either READ or WRITE)
-    UC_MEM_WRITE_NW,    // write to non-writable
-    UC_MEM_READ_NR,     // read from non-readable
-    UC_MEM_NX,          // read from non-readable
+    UC_MEM_WRITE_NW,    // write to non-writable memory
+    UC_MEM_READ_NR,     // read from non-readable memory
+    UC_MEM_NX,          // fetch from non-executable memory
 } uc_mem_type;
 
 // All type of hooks for uc_hook_add() API.
