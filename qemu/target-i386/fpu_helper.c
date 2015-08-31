@@ -986,7 +986,7 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
             }
         }
     }
-#ifdef TARGET_X86_64
+
     // DFLAG enum: tcg.h, case here to int
     if (env->hflags & HF_CS64_MASK) {
         cpu_stl_data(env, ptr, env->fpuc);
@@ -996,29 +996,24 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
         cpu_stl_data(env, ptr + 20, 0); /* fpcs */
         cpu_stl_data(env, ptr + 24, 0); /* fpoo */
         cpu_stl_data(env, ptr + 28, 0); /* fpos */
-    }
-#endif
-    if (!(env->hflags & HF_CS64_MASK))
-    {
-        if (data32) {
-            /* 32 bit */
-            cpu_stl_data(env, ptr, env->fpuc);
-            cpu_stl_data(env, ptr + 4, fpus);
-            cpu_stl_data(env, ptr + 8, fptag);
-            cpu_stl_data(env, ptr + 12, env->fpip); /* fpip */
-            cpu_stl_data(env, ptr + 16, 0); /* fpcs */
-            cpu_stl_data(env, ptr + 20, 0); /* fpoo */
-            cpu_stl_data(env, ptr + 24, 0); /* fpos */
-        } else {
-            /* 16 bit */
-            cpu_stw_data(env, ptr, env->fpuc);
-            cpu_stw_data(env, ptr + 2, fpus);
-            cpu_stw_data(env, ptr + 4, fptag);
-            cpu_stw_data(env, ptr + 6, env->fpip);
-            cpu_stw_data(env, ptr + 8, 0);
-            cpu_stw_data(env, ptr + 10, 0);
-            cpu_stw_data(env, ptr + 12, 0);
-        }
+    } else if (data32) {
+        /* 32 bit */
+        cpu_stl_data(env, ptr, env->fpuc);
+        cpu_stl_data(env, ptr + 4, fpus);
+        cpu_stl_data(env, ptr + 8, fptag);
+        cpu_stl_data(env, ptr + 12, env->fpip); /* fpip */
+        cpu_stl_data(env, ptr + 16, 0); /* fpcs */
+        cpu_stl_data(env, ptr + 20, 0); /* fpoo */
+        cpu_stl_data(env, ptr + 24, 0); /* fpos */
+    } else {
+        /* 16 bit */
+        cpu_stw_data(env, ptr, env->fpuc);
+        cpu_stw_data(env, ptr + 2, fpus);
+        cpu_stw_data(env, ptr + 4, fptag);
+        cpu_stw_data(env, ptr + 6, env->fpip);
+        cpu_stw_data(env, ptr + 8, 0);
+        cpu_stw_data(env, ptr + 10, 0);
+        cpu_stw_data(env, ptr + 12, 0);
     }
 
 }
