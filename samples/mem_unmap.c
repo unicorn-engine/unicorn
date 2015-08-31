@@ -111,7 +111,7 @@ static void hook_code(uch handle, uint64_t addr, uint32_t size, void *user_data)
          printf("# Handling HLT\n");
          if (uc_emu_stop(handle) != UC_ERR_OK) {
             printf("not ok %d - uc_emu_stop fail during hook_code callback, addr: 0x%" PRIx64 "\n", log_num++, addr);
-            _exit(1);
+            _exit(-1);
          }
          else {
             printf("ok %d - hlt encountered, uc_emu_stop called\n", log_num++);
@@ -149,7 +149,7 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
             printf("not ok %d - uc_mem_read success after unmap at test %d\n", log_num++, test_num - 1);
          }
 
-         if (uc_mem_map(handle, addr & ~0xfff, 0x1000, UC_PROT_READ | UC_PROT_WRITE) != UC_ERR_OK) {
+         if (uc_mem_map(handle, addr & ~0xfffL, 0x1000, UC_PROT_READ | UC_PROT_WRITE) != UC_ERR_OK) {
             printf("not ok %d - uc_mem_map fail during hook_mem_invalid callback, addr: 0x%" PRIx64 "\n", log_num++, addr);
          }
          else {
@@ -202,7 +202,7 @@ int main(int argc, char **argv, char **envp)
 
    if (uc_mem_write(handle, 0x401000, (uint8_t*)buf2, 4096)) {
       printf("not ok %d - Failed to write random buffer 2 to memory, quit!\n", log_num++);
-      return 2;
+      return 3;
    }
    else {
       printf("ok %d - Random buffer 2 written to memory\n", log_num++);
@@ -211,7 +211,7 @@ int main(int argc, char **argv, char **envp)
    // write machine code to be emulated to memory
    if (uc_mem_write(handle, CODE_SECTION, PROGRAM, sizeof(PROGRAM))) {
       printf("not ok %d - Failed to write emulation code to memory, quit!\n", log_num++);
-      return 2;
+      return 4;
    }
    else {
       printf("ok %d - Program written to memory\n", log_num++);
@@ -219,7 +219,7 @@ int main(int argc, char **argv, char **envp)
 
    if (uc_hook_add(handle, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0) != UC_ERR_OK) {
       printf("not ok %d - Failed to install UC_HOOK_CODE handler\n", log_num++);
-      return 3;
+      return 5;
    }
    else {
       printf("ok %d - UC_HOOK_CODE installed\n", log_num++);
@@ -228,7 +228,7 @@ int main(int argc, char **argv, char **envp)
    // intercept memory write events
    if (uc_hook_add(handle, &trace1, UC_HOOK_MEM_WRITE, hook_mem_write, NULL) != UC_ERR_OK) {
       printf("not ok %d - Failed to install UC_HOOK_MEM_WRITE handler\n", log_num++);
-      return 4;
+      return 6;
    }
    else {
       printf("ok %d - UC_HOOK_MEM_WRITE installed\n", log_num++);
@@ -237,7 +237,7 @@ int main(int argc, char **argv, char **envp)
    // intercept invalid memory events
    if (uc_hook_add(handle, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL) != UC_ERR_OK) {
       printf("not ok %d - Failed to install UC_HOOK_MEM_INVALID handler\n", log_num++);
-      return 4;
+      return 7;
    }
    else {
       printf("ok %d - UC_HOOK_MEM_INVALID installed\n", log_num++);
@@ -245,10 +245,10 @@ int main(int argc, char **argv, char **envp)
 
    // emulate machine code until told to stop by hook_code
    printf("# BEGIN execution\n");
-   err = uc_emu_start(handle, CODE_SECTION, CODE_SECTION + CODE_SIZE, 0, 100);
+   err = uc_emu_start(handle, CODE_SECTION, CODE_SECTION + CODE_SIZE, 0, 0);
    if (err != UC_ERR_OK) {
       printf("not ok %d - Failure on uc_emu_start() with error %u:%s\n", log_num++, err, uc_strerror(err));
-      return 5;
+      return 8;
    }
    else {
       printf("ok %d - uc_emu_start complete\n", log_num++);
