@@ -25,12 +25,6 @@ import java.util.*;
 
 public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, SparcConst, MipsConst, X86Const { 
 
-   // Scales to calculate timeout on microsecond unit
-   // 1 second = 1000,000 microseconds
-   public static final int UC_SECOND_SCALE = 1000000;
-   // 1 milisecond = 1000 nanoseconds
-   public static final int UC_MILISECOND_SCALE = 1000;
-
    private long blockHandle = 0;
    private long interruptHandle = 0;
    private long codeHandle = 0;
@@ -622,8 +616,26 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  *
  * @param address Base address of the memory range
  * @param size    Size of the memory block.
+ * @param perms   Permissions on the memory block. A combination of UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC
  */
    public native void mem_map(long address, long size, int perms) throws UnicornException;
+
+/**
+ * Unmap a range of memory.
+ *
+ * @param address Base address of the memory range
+ * @param size    Size of the memory block.
+ */
+   public native void mem_unmap(long address, long size) throws UnicornException;
+
+/**
+ * Change permissions on a range of memory.
+ *
+ * @param address Base address of the memory range
+ * @param size    Size of the memory block.
+ * @param perms   New permissions on the memory block. A combination of UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC
+ */
+   public native void mem_protect(long address, long size, int perms) throws UnicornException;
 
 }
 

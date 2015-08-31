@@ -513,3 +513,33 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1map
       throwException(env, err);
    }
 }
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    mem_unmap
+ * Signature: (JJ)V
+ */
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1unmap
+  (JNIEnv *env, jobject self, jlong address, jlong size) {
+   uch handle = getHandle(env, self);
+
+   uc_err err = uc_mem_unmap(handle, (uint64_t)address, (size_t)size);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    mem_protect
+ * Signature: (JJI)V
+ */
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1protect
+  (JNIEnv *env, jobject self, jlong address, jlong size, jint perms) {
+   uch handle = getHandle(env, self);
+
+   uc_err err = uc_mem_protect(handle, (uint64_t)address, (size_t)size, (uint32_t)perms);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+}
