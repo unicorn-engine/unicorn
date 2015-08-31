@@ -76,6 +76,9 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->memory_unmap = memory_unmap;
     uc->readonly_mem = memory_region_set_readonly;
 
+    uc->target_page_size = TARGET_PAGE_SIZE;
+    uc->target_page_align = TARGET_PAGE_SIZE - 1;    
+
     if (!uc->release)
         uc->release = release_common;
 }

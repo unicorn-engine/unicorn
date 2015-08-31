@@ -49,7 +49,7 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 {
     target_ulong addr;
     //make sure all pages associated with the MemoryRegion are flushed
-    for (addr = mr->addr; addr < mr->end; addr += TARGET_PAGE_SIZE) {
+    for (addr = mr->addr; addr < mr->end; addr += uc->target_page_size) {
        tlb_flush_page(uc->current_cpu, addr);
     }
     mr->enabled = false;

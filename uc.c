@@ -31,10 +31,6 @@
 
 #include "qemu/include/hw/boards.h"
 
-//keep this a power of two!
-#define UC_PAGE_SIZE 0x1000
-#define UC_ALIGN_MASK (UC_PAGE_SIZE - 1)
-
 static uint8_t *copy_region(uch uc, MemoryRegion *mr);
 static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t size, bool do_delete);
 
@@ -629,12 +625,12 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms)
         // invalid memory mapping
         return UC_ERR_MAP;
 
-    // address must be aligned to UC_PAGE_SIZE
-    if ((address & UC_ALIGN_MASK) != 0)
+    // address must be aligned to uc->target_page_size
+    if ((address & uc->target_page_align) != 0)
         return UC_ERR_MAP;
 
-    // size must be multiple of UC_PAGE_SIZE
-    if ((size & UC_ALIGN_MASK) != 0)
+    // size must be multiple of uc->target_page_size
+    if ((size & uc->target_page_align) != 0)
         return UC_ERR_MAP;
 
     // check for only valid permissions
@@ -773,12 +769,12 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
         // invalid memory mapping
         return UC_ERR_MAP;
 
-    // address must be aligned to UC_PAGE_SIZE
-    if ((address & UC_ALIGN_MASK) != 0)
+    // address must be aligned to uc->target_page_size
+    if ((address & uc->target_page_align) != 0)
         return UC_ERR_MAP;
 
-    // size must be multiple of UC_PAGE_SIZE
-    if ((size & UC_ALIGN_MASK) != 0)
+    // size must be multiple of uc->target_page_size
+    if ((size & uc->target_page_align) != 0)
         return UC_ERR_MAP;
 
     // check for only valid permissions
@@ -833,12 +829,12 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
         // nothing to unmap
         return UC_ERR_OK;
 
-    // address must be aligned to UC_PAGE_SIZE
-    if ((address & UC_ALIGN_MASK) != 0)
+    // address must be aligned to uc->target_page_size
+    if ((address & uc->target_page_align) != 0)
         return UC_ERR_MAP;
 
-    // size must be multiple of UC_PAGE_SIZE
-    if ((size & UC_ALIGN_MASK) != 0)
+    // size must be multiple of uc->target_page_size
+    if ((size & uc->target_page_align) != 0)
         return UC_ERR_MAP;
 
     //check that user's entire requested block is mapped
