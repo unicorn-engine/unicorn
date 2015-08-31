@@ -989,7 +989,6 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
 #ifdef TARGET_X86_64
     // DFLAG enum: tcg.h, case here to int
     if (env->hflags & HF_CS64_MASK) {
-        printf("HELLO\n");
         cpu_stl_data(env, ptr, env->fpuc);
         cpu_stl_data(env, ptr + 4, fpus);
         cpu_stl_data(env, ptr + 8, fptag);
