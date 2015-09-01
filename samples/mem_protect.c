@@ -145,7 +145,7 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
       default:
          printf("not ok %d - UC_HOOK_MEM_INVALID type: %d at 0x%" PRIx64 "\n", log_num++, type, addr);
          return false;
-      case UC_MEM_WRITE_NW:
+      case UC_MEM_WRITE_PROT:
          printf("# write to non-writeable memory at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n", addr, size, value);
 
          if (uc_mem_read(handle, addr, (uint8_t*)&testval, sizeof(testval)) != UC_ERR_OK) {

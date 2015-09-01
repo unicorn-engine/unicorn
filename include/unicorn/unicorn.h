@@ -116,9 +116,9 @@ typedef enum uc_err {
     UC_ERR_HOOK,    // Invalid hook type: uc_hook_add()
     UC_ERR_INSN_INVALID, // Quit emulation due to invalid instruction: uc_emu_start()
     UC_ERR_MAP, // Invalid memory mapping: uc_mem_map()
-    UC_ERR_PROT_WRITE, // Quit emulation due to UC_PROT_WRITE violation: uc_emu_start()
-    UC_ERR_PROT_READ, // Quit emulation due to UC_PROT_READ violation: uc_emu_start()
-    UC_ERR_PROT_EXEC, // Quit emulation due to UC_PROT_EXEC violation: uc_emu_start()
+    UC_ERR_WRITE_PROT, // Quit emulation due to UC_PROT_WRITE violation: uc_emu_start()
+    UC_ERR_READ_PROT, // Quit emulation due to UC_PROT_READ violation: uc_emu_start()
+    UC_ERR_EXEC_PROT, // Quit emulation due to UC_PROT_EXEC violation: uc_emu_start()
 } uc_err;
 
 
@@ -150,9 +150,9 @@ typedef enum uc_mem_type {
     UC_MEM_READ = 16,   // Memory is read from
     UC_MEM_WRITE,       // Memory is written to
     UC_MEM_READ_WRITE,  // Memory is accessed (either READ or WRITE)
-    UC_MEM_WRITE_NW,    // write to non-writable memory
-    UC_MEM_READ_NR,     // read from non-readable memory
-    UC_MEM_NX,          // fetch from non-executable memory
+    UC_MEM_WRITE_PROT,  // write to write protected memory
+    UC_MEM_READ_PROT,   // read from read protected memory
+    UC_MEM_EXEC_PROT,   // fetch from non-executable memory
 } uc_mem_type;
 
 // All type of hooks for uc_hook_add() API.

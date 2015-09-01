@@ -118,7 +118,7 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
       default:
          printf("not ok %d - UC_HOOK_MEM_INVALID type: %d at 0x%" PRIx64 "\n", log_num++, type, addr);
          return false;
-      case UC_MEM_NX:
+      case UC_MEM_EXEC_PROT:
          printf("# Fetch from non-executable memory at 0x%"PRIx64 "\n", addr);
 
          //make page executable
@@ -129,7 +129,7 @@ static bool hook_mem_invalid(uch handle, uc_mem_type type,
             printf("ok %d - uc_mem_protect success at 0x%" PRIx64 "\n", log_num++, addr);
          }
          return true;
-      case UC_MEM_WRITE_NW:
+      case UC_MEM_WRITE_PROT:
          printf("# write to non-writeable memory at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n", addr, size, value);
 
          if (uc_mem_protect(handle, addr & ~0xfffL, 0x1000, UC_PROT_READ | UC_PROT_WRITE) != UC_ERR_OK) {
