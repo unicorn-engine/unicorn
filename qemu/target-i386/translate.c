@@ -248,6 +248,11 @@ static void gen_update_cc_op(DisasContext *s)
     }
 }
 
+static void fpu_update_ip(CPUX86State *env, target_ulong pc)
+{
+	env->fpip = pc;
+}
+
 #ifdef TARGET_X86_64
 
 #define NB_OP_SIZES 4
@@ -6110,6 +6115,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                         /* fcomp needs pop */
                         gen_helper_fpop(tcg_ctx, cpu_env);
                     }
+                    fpu_update_ip(env, pc_start);
                 }
                 break;
             case 0x08: /* flds */
@@ -6194,6 +6200,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                         gen_helper_fpop(tcg_ctx, cpu_env);
                     break;
                 }
+                fpu_update_ip(env, pc_start);
                 break;
             case 0x0c: /* fldenv mem */
                 gen_update_cc_op(s);
@@ -6219,12 +6226,14 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fldt_ST0(tcg_ctx, cpu_env, cpu_A0);
+                fpu_update_ip(env, pc_start);
                 break;
             case 0x1f: /* fstpt mem */
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fstt_ST0(tcg_ctx, cpu_env, cpu_A0);
                 gen_helper_fpop(tcg_ctx, cpu_env);
+                fpu_update_ip(env, pc_start);
                 break;
             case 0x2c: /* frstor mem */
                 gen_update_cc_op(s);
@@ -6245,21 +6254,25 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fbld_ST0(tcg_ctx, cpu_env, cpu_A0);
+                fpu_update_ip(env, pc_start);
                 break;
             case 0x3e: /* fbstp */
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fbst_ST0(tcg_ctx, cpu_env, cpu_A0);
                 gen_helper_fpop(tcg_ctx, cpu_env);
+                fpu_update_ip(env, pc_start);
                 break;
             case 0x3d: /* fildll */
                 tcg_gen_qemu_ld_i64(s->uc, cpu_tmp1_i64, cpu_A0, s->mem_index, MO_LEQ);
                 gen_helper_fildll_ST0(tcg_ctx, cpu_env, cpu_tmp1_i64);
+                fpu_update_ip(env, pc_start);
                 break;
             case 0x3f: /* fistpll */
                 gen_helper_fistll_ST0(tcg_ctx, cpu_tmp1_i64, cpu_env);
                 tcg_gen_qemu_st_i64(s->uc, cpu_tmp1_i64, cpu_A0, s->mem_index, MO_LEQ);
                 gen_helper_fpop(tcg_ctx, cpu_env);
+                fpu_update_ip(env, pc_start);
                 break;
             default:
                 goto illegal_op;
@@ -6574,6 +6587,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             default:
                 goto illegal_op;
             }
+            fpu_update_ip(env, pc_start);
         }
         break;
         /************************/
