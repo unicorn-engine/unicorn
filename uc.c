@@ -92,10 +92,12 @@ const char *uc_strerror(uc_err code)
             return "Invalid hook type (UC_ERR_HOOK)";
         case UC_ERR_MAP:
             return "Invalid memory mapping (UC_ERR_MAP)";
-        case UC_ERR_MEM_WRITE_NW:
-            return "Write to non-writable (UC_ERR_MEM_WRITE_NW)";
-        case UC_ERR_MEM_READ_NR:
-            return "Read from non-readable (UC_ERR_MEM_READ_NR)";
+        case UC_ERR_PROT_WRITE:
+            return "Write to non-writable memory (UC_ERR_PROT_WRITE)";
+        case UC_ERR_PROT_READ:
+            return "Read from non-readable memory (UC_ERR_PROT_READ)";
+        case UC_ERR_PROT_EXEC:
+            return "Fetch from non-executable memory (UC_ERR_PROT_EXEC)";
     }
 }
 

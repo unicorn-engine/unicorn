@@ -191,8 +191,8 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         }
         else {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_READ;
-            // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
+            env->invalid_error = UC_ERR_PROT_EXEC;
+            // printf("***** Invalid fetch (non-executable) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return 0;
         }
@@ -233,7 +233,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         }
         else {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_READ_NR;
+            env->invalid_error = UC_ERR_PROT_READ;
             // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return 0;
@@ -350,8 +350,8 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         }
         else {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_READ;
-            // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
+            env->invalid_error = UC_ERR_PROT_EXEC;
+            // printf("***** Invalid fetch (non-executable) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return 0;
         }
@@ -392,7 +392,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         }
         else {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_READ_NR;
+            env->invalid_error = UC_ERR_PROT_READ;
             // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return 0;
@@ -571,7 +571,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         }
         else {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_WRITE_NW;
+            env->invalid_error = UC_ERR_PROT_WRITE;
             // printf("***** Invalid memory write (ro) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return;
@@ -705,7 +705,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         }
         else {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_WRITE_NW;
+            env->invalid_error = UC_ERR_PROT_WRITE;
             // printf("***** Invalid memory write (ro) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return;
