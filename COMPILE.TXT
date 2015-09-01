@@ -87,7 +87,7 @@ Unicorn requires few dependent packages as followings
   Users are then required to enter root password to copy Unicorn into machine
   system directories.
 
-  Afterwards, run ./tests/test* to see the tests disassembling sample code.
+  Afterwards, run ./samples/sample_all.sh to see the sample emulations.
 
 
   NOTE: The core framework installed by "./make.sh install" consist of

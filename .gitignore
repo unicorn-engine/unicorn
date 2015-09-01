@@ -88,3 +88,4 @@ regress/map_write
 regress/ro_mem_test
 regress/nr_mem_test
 regress/timeout_segfault
+regress/rep_movsb
