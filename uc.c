@@ -465,7 +465,7 @@ static void enable_emu_timer(uch handle, uint64_t timeout)
     struct uc_struct *uc = (struct uc_struct *)handle;
 
     uc->timeout = timeout;
-    qemu_thread_create(&uc->timer, "timeout", _timeout_fn,
+    qemu_thread_create(uc, &uc->timer, "timeout", _timeout_fn,
             uc, QEMU_THREAD_JOINABLE);
 }
 

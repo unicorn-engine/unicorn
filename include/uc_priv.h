@@ -172,6 +172,8 @@ struct uc_struct {
     bool block_full;
     MemoryRegion **mapped_blocks;
     uint32_t mapped_block_count;
+
+    void *qemu_thread_data; // to support cross compile to Windows (qemu-thread-win32.c)
 };
 
 #include "qemu_macro.h"
