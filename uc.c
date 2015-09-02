@@ -791,16 +791,17 @@ uc_err uc_hook_add(uch handle, uch *h2, uc_hook_t type, void *callback, void *us
         case UC_HOOK_MEM_READ:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(handle, UC_MEM_READ, begin, end, callback, user_data, h2);
+            ret = _hook_mem_access(handle, UC_HOOK_MEM_READ, begin, end, callback, user_data, h2);
             break;
         case UC_HOOK_MEM_WRITE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(handle, UC_MEM_WRITE, begin, end, callback, user_data, h2);
+            ret = _hook_mem_access(handle, UC_HOOK_MEM_WRITE, begin, end, callback, user_data, h2);
+            break;
         case UC_HOOK_MEM_READ_WRITE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(handle, UC_MEM_READ_WRITE, begin, end, callback, user_data, h2);
+            ret = _hook_mem_access(handle, UC_HOOK_MEM_READ_WRITE, begin, end, callback, user_data, h2);
             break;
     }
 
