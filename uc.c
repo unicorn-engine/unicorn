@@ -593,7 +593,7 @@ static int _hook_code(uch handle, int type, uint64_t begin, uint64_t end,
 }
 
 
-static uc_err _hook_mem_access(uch handle, uc_mem_type type,
+static uc_err _hook_mem_access(uch handle, uc_hook_t type,
         uint64_t begin, uint64_t end,
         void *callback, void *user_data, uch *h2)
 {
