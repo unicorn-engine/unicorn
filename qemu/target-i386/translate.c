@@ -8175,9 +8175,15 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         // printf("\n");
         if (changed_cc_op) {
             if (cc_op_dirty)
+#if TCG_TARGET_REG_BITS == 32
+                *(save_opparam_ptr + 16) = s->pc - pc_start;
+            else
+                *(save_opparam_ptr + 14) = s->pc - pc_start;
+#else
                 *(save_opparam_ptr + 12) = s->pc - pc_start;
             else
                 *(save_opparam_ptr + 10) = s->pc - pc_start;
+#endif
         } else {
             *(save_opparam_ptr + 1) = s->pc - pc_start;
         }
