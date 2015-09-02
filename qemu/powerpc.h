@@ -7,6 +7,7 @@
 #define phys_mem_clean phys_mem_clean_powerpc
 #define tb_cleanup tb_cleanup_powerpc
 #define memory_map memory_map_powerpc
+#define memory_unmap memory_unmap_powerpc
 #define memory_free memory_free_powerpc
 #define helper_raise_exception helper_raise_exception_powerpc
 #define tcg_enabled tcg_enabled_powerpc

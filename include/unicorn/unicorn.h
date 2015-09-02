@@ -104,7 +104,7 @@ typedef enum uc_mode {
 // These are values returned by uc_errno()
 typedef enum uc_err {
     UC_ERR_OK = 0,   // No error: everything was fine
-    UC_ERR_OOM,      // Out-Of-Memory error: uc_open(), uc_emulate()
+    UC_ERR_NOMEM,      // Out-Of-Memory error: uc_open(), uc_emulate()
     UC_ERR_ARCH,     // Unsupported architecture: uc_open()
     UC_ERR_HANDLE,   // Invalid handle
     UC_ERR_UCH,      // Invalid handle (uch)
@@ -116,8 +116,10 @@ typedef enum uc_err {
     UC_ERR_HOOK,    // Invalid hook type: uc_hook_add()
     UC_ERR_INSN_INVALID, // Quit emulation due to invalid instruction: uc_emu_start()
     UC_ERR_MAP, // Invalid memory mapping: uc_mem_map()
-    UC_ERR_MEM_WRITE_NW, // Quit emulation due to write to non-writable: uc_emu_start()
-    UC_ERR_MEM_READ_NR, // Quit emulation due to read from non-readable: uc_emu_start()
+    UC_ERR_WRITE_PROT, // Quit emulation due to UC_PROT_WRITE violation: uc_emu_start()
+    UC_ERR_READ_PROT, // Quit emulation due to UC_PROT_READ violation: uc_emu_start()
+    UC_ERR_EXEC_PROT, // Quit emulation due to UC_PROT_EXEC violation: uc_emu_start()
+    UC_ERR_INVAL,     // Inavalid argument provided to uc_xxx function (See specific function API)
 } uc_err;
 
 
@@ -149,8 +151,9 @@ typedef enum uc_mem_type {
     UC_MEM_READ = 16,   // Memory is read from
     UC_MEM_WRITE,       // Memory is written to
     UC_MEM_READ_WRITE,  // Memory is accessed (either READ or WRITE)
-    UC_MEM_WRITE_NW,    // write to non-writable
-    UC_MEM_READ_NR,     // read from non-readable
+    UC_MEM_WRITE_PROT,  // write to write protected memory
+    UC_MEM_READ_PROT,   // read from read protected memory
+    UC_MEM_EXEC_PROT,   // fetch from non-executable memory
 } uc_mem_type;
 
 // All type of hooks for uc_hook_add() API.
@@ -392,27 +395,65 @@ typedef enum uc_prot {
    UC_PROT_NONE = 0,
    UC_PROT_READ = 1,
    UC_PROT_WRITE = 2,
-   UC_PROT_ALL = 3,
+   UC_PROT_EXEC = 4,
+   UC_PROT_ALL = 7,
 } uc_prot;
 
 /*
  Map memory in for emulation.
- This API adds a memory region that can be used by emulation.
+ This API adds a memory region that can be used by emulation. The region is mapped
+ with permissions UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC.
 
  @handle: handle returned by uc_open()
  @address: starting address of the new memory region to be mapped in.
-    This address must be aligned to 4KB, or this will return with UC_ERR_MAP error.
+    This address must be aligned to 4KB, or this will return with UC_ERR_INVAL error.
  @size: size of the new memory region to be mapped in.
-    This size must be multiple of 4KB, or this will return with UC_ERR_MAP error.
+    This size must be multiple of 4KB, or this will return with UC_ERR_INVAL error.
  @perms: Permissions for the newly mapped region.
-    This must be some combination of UC_PROT_READ & UC_PROT_WRITE,
-    or this will return with UC_ERR_MAP error. See uc_prot type above.
+    This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
+    or this will return with UC_ERR_INVAL error.
+
+ @return UC_ERR_OK on success, UC_ERR_NOMEM if no memory is available to satisfy the
+    request, or other value on failure (refer to uc_err enum for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms);
+
+/*
+ Set memory permissions for emulation memory.
+ This API changes permissions on an existing memory region.
+
+ @handle: handle returned by uc_open()
+ @address: starting address of the memory region to be modified.
+    This address must be aligned to 4KB, or this will return with UC_ERR_INVAL error.
+ @size: size of the memory region to be modified.
+    This size must be multiple of 4KB, or this will return with UC_ERR_INVAL error.
+ @perms: New permissions for the mapped region.
+    This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
+    or this will return with UC_ERR_INVAL error.
+
+ @return UC_ERR_OK on success, UC_ERR_HANDLE for an invalid handle, UC_ERR_INVAL
+    for invalid perms or unaligned address or size, UC_ERR_NOMEM if entire region
+    is not mapped.
+*/
+UNICORN_EXPORT
+uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms);
+
+/*
+ Unmap a region of emulation memory.
+ This API deletes a memory mapping from the emulation memory space.
+
+ @handle: handle returned by uc_open()
+ @address: starting address of the memory region to be unmapped.
+    This address must be aligned to 4KB, or this will return with UC_ERR_INVAL error.
+ @size: size of the memory region to be modified.
+    This size must be multiple of 4KB, or this will return with UC_ERR_INVAL error.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms);
+uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size);
 
 #ifdef __cplusplus
 }
