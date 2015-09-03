@@ -7,6 +7,7 @@
 #define phys_mem_clean phys_mem_clean_arm
 #define tb_cleanup tb_cleanup_arm
 #define memory_map memory_map_arm
+#define memory_unmap memory_unmap_arm
 #define memory_free memory_free_arm
 #define helper_raise_exception helper_raise_exception_arm
 #define tcg_enabled tcg_enabled_arm

@@ -7,6 +7,7 @@
 #define phys_mem_clean phys_mem_clean_sparc
 #define tb_cleanup tb_cleanup_sparc
 #define memory_map memory_map_sparc
+#define memory_unmap memory_unmap_sparc
 #define memory_free memory_free_sparc
 #define helper_raise_exception helper_raise_exception_sparc
 #define tcg_enabled tcg_enabled_sparc

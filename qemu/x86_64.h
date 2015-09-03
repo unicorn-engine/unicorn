@@ -7,6 +7,7 @@
 #define phys_mem_clean phys_mem_clean_x86_64
 #define tb_cleanup tb_cleanup_x86_64
 #define memory_map memory_map_x86_64
+#define memory_unmap memory_unmap_x86_64
 #define memory_free memory_free_x86_64
 #define helper_raise_exception helper_raise_exception_x86_64
 #define tcg_enabled tcg_enabled_x86_64
