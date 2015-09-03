@@ -160,7 +160,7 @@ int main(int argc, char **argv, char **envp)
     uint32_t eax = 0x40002C;
     uc_reg_write(handle, UC_X86_REG_EAX, &eax); 
     //resume execution at the mov dword [eax], 0x87654321
-    //to test an aligned write as well 
+    //to test an aligned write as well
     err = uc_emu_start(handle, 0x400015, 0x400000 + sizeof(PROGRAM), 0, 2);
     if (err) {
         printf("Expected failure on uc_emu_start() with error returned %u: %s\n",

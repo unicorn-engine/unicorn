@@ -670,14 +670,14 @@ static uint8_t *copy_region(uch handle, MemoryRegion *mr)
 }
 
 /*
-Split the given MemoryRegion at the indicated address for the indicated size
-this may result in the create of up to 3 spanning sections. If the delete
-parameter is true, the no new section will be created to replace the indicate
-range. This functions exists to support uc_mem_protect and uc_mem_unmap.
+   Split the given MemoryRegion at the indicated address for the indicated size
+   this may result in the create of up to 3 spanning sections. If the delete
+   parameter is true, the no new section will be created to replace the indicate
+   range. This functions exists to support uc_mem_protect and uc_mem_unmap.
 
-This is a static function and callers have already done some preliminary 
-parameter validation.
-*/
+   This is a static function and callers have already done some preliminary 
+   parameter validation.
+ */
 //TODO: investigate whether qemu region manipulation functions already offer this capability
 static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t size, bool do_delete)
 {
@@ -709,7 +709,7 @@ static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t 
     perms = mr->perms;
     begin = mr->addr;
     end = mr->end;
-    
+
     if (uc_mem_unmap(handle, mr->addr, int128_get64(mr->size)) != UC_ERR_OK)
         goto error;
 
@@ -784,7 +784,7 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
     // check for only valid permissions
     if ((perms & ~UC_PROT_ALL) != 0)
         return UC_ERR_INVAL;
-        
+
     //check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size))
         return UC_ERR_NOMEM;
@@ -860,8 +860,7 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
                 break;
             }
         }
-     }
-    else {
+    } else {
         //ouch, we are going to need to subdivide blocks
         size_t count = 0, len;
         while(count < size) {
