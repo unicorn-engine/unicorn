@@ -15,19 +15,19 @@
 // memory address where emulation starts
 #define ADDRESS 0x10000
 
-static void hook_block(struct uc_struct *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_block(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     printf(">>> Tracing basic block at 0x%"PRIx64 ", block size = 0x%x\n", address, size);
 }
 
-static void hook_code(struct uc_struct *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
 }
 
 static void test_arm(void)
 {
-    struct uc_struct *uc;
+    ucengine *uc;
     uc_err err;
     uc_hook_h trace1, trace2;
 
@@ -83,7 +83,7 @@ static void test_arm(void)
 
 static void test_thumb(void)
 {
-    struct uc_struct *uc;
+    ucengine *uc;
     uc_err err;
     uc_hook_h trace1, trace2;
 

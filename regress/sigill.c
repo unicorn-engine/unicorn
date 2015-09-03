@@ -8,7 +8,7 @@
 
 int got_sigill = 0;
 
-void _interrupt(struct uc_struct *uc, uint32_t intno, void *user_data)
+void _interrupt(ucengine *uc, uint32_t intno, void *user_data)
 {
     if (intno == 6) {
         uc_emu_stop(uc);
@@ -20,7 +20,7 @@ int main()
 {
     int size;
     uint8_t *buf;
-    struct uc_struct *uc;
+    ucengine *uc;
     uc_hook_h uh_trap;
     uc_err err = uc_open (UC_ARCH_X86, UC_MODE_64, &uc);
     if (err) {

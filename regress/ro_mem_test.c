@@ -46,7 +46,7 @@ bottom:
 */
 
 // callback for tracing instruction
-static void hook_code(struct uc_struct *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     uint32_t esp;
     printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
@@ -57,7 +57,7 @@ static void hook_code(struct uc_struct *uc, uint64_t address, uint32_t size, voi
 }
 
 // callback for tracing memory access (READ or WRITE)
-static bool hook_mem_invalid(struct uc_struct *uc, uc_mem_type type,
+static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
 {
     uint32_t esp;
@@ -94,7 +94,7 @@ static bool hook_mem_invalid(struct uc_struct *uc, uc_mem_type type,
 
 int main(int argc, char **argv, char **envp)
 {
-    struct uc_struct *uc;
+    ucengine *uc;
     uc_hook_h trace1, trace2;
     uc_err err;
     uint8_t bytes[8];

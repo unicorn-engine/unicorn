@@ -8,7 +8,7 @@
 
 int main()
 {
-    struct uc_struct *uc;
+    ucengine *uc;
     uint8_t *buf, *buf2;
     int i;
     uc_err err;

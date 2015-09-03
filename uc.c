@@ -44,7 +44,7 @@ unsigned int uc_version(unsigned int *major, unsigned int *minor)
 
 
 UNICORN_EXPORT
-uc_err uc_errno(struct uc_struct *uc)
+uc_err uc_errno(ucengine *uc)
 {
     return uc->errnum;
 }
@@ -121,7 +121,7 @@ bool uc_arch_supported(uc_arch arch)
 
 
 UNICORN_EXPORT
-uc_err uc_open(uc_arch arch, uc_mode mode, struct uc_struct **result)
+uc_err uc_open(uc_arch arch, uc_mode mode, ucengine **result)
 {
     struct uc_struct *uc;
 
@@ -240,7 +240,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, struct uc_struct **result)
 
 
 UNICORN_EXPORT
-uc_err uc_close(struct uc_struct *uc)
+uc_err uc_close(ucengine *uc)
 {
     if (uc->release)
         uc->release(uc->tcg_ctx);
@@ -280,7 +280,7 @@ uc_err uc_close(struct uc_struct *uc)
 
 
 UNICORN_EXPORT
-uc_err uc_reg_read(struct uc_struct *uc, int regid, void *value)
+uc_err uc_reg_read(ucengine *uc, int regid, void *value)
 {
     if (uc->reg_read)
         uc->reg_read(uc, regid, value);
@@ -292,7 +292,7 @@ uc_err uc_reg_read(struct uc_struct *uc, int regid, void *value)
 
 
 UNICORN_EXPORT
-uc_err uc_reg_write(struct uc_struct *uc, int regid, const void *value)
+uc_err uc_reg_write(ucengine *uc, int regid, const void *value)
 {
     if (uc->reg_write)
         uc->reg_write(uc, regid, value);
@@ -305,7 +305,7 @@ uc_err uc_reg_write(struct uc_struct *uc, int regid, const void *value)
 
 // check if a memory area is mapped
 // this is complicated because an area can overlap adjacent blocks
-static bool check_mem_area(struct uc_struct *uc, uint64_t address, size_t size)
+static bool check_mem_area(ucengine *uc, uint64_t address, size_t size)
 {
     size_t count = 0, len;
 
@@ -324,7 +324,7 @@ static bool check_mem_area(struct uc_struct *uc, uint64_t address, size_t size)
 
 
 UNICORN_EXPORT
-uc_err uc_mem_read(struct uc_struct *uc, uint64_t address, uint8_t *bytes, size_t size)
+uc_err uc_mem_read(ucengine *uc, uint64_t address, uint8_t *bytes, size_t size)
 {
     if (!check_mem_area(uc, address, size))
         return UC_ERR_MEM_READ;
@@ -352,7 +352,7 @@ uc_err uc_mem_read(struct uc_struct *uc, uint64_t address, uint8_t *bytes, size_
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_write(struct uc_struct *uc, uint64_t address, const uint8_t *bytes, size_t size)
+uc_err uc_mem_write(ucengine *uc, uint64_t address, const uint8_t *bytes, size_t size)
 {
     if (!check_mem_area(uc, address, size))
         return UC_ERR_MEM_WRITE;
@@ -392,7 +392,7 @@ uc_err uc_mem_write(struct uc_struct *uc, uint64_t address, const uint8_t *bytes
 #define TIMEOUT_STEP 2    // microseconds
 static void *_timeout_fn(void *arg)
 {
-    struct uc_struct *uc = (struct uc_struct *)arg;
+    struct uc_struct *uc = arg;
     int64_t current_time = get_clock();
 
     do {
@@ -411,7 +411,7 @@ static void *_timeout_fn(void *arg)
     return NULL;
 }
 
-static void enable_emu_timer(struct uc_struct *uc, uint64_t timeout)
+static void enable_emu_timer(ucengine *uc, uint64_t timeout)
 {
     uc->timeout = timeout;
     qemu_thread_create(uc, &uc->timer, "timeout", _timeout_fn,
@@ -419,7 +419,7 @@ static void enable_emu_timer(struct uc_struct *uc, uint64_t timeout)
 }
 
 UNICORN_EXPORT
-uc_err uc_emu_start(struct uc_struct* uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count)
+uc_err uc_emu_start(ucengine* uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count)
 {
     // reset the counter
     uc->emu_counter = 0;
@@ -502,7 +502,7 @@ uc_err uc_emu_start(struct uc_struct* uc, uint64_t begin, uint64_t until, uint64
 
 
 UNICORN_EXPORT
-uc_err uc_emu_stop(struct uc_struct *uc)
+uc_err uc_emu_stop(ucengine *uc)
 {
     if (uc->emulation_done)
         return UC_ERR_OK;
@@ -515,7 +515,7 @@ uc_err uc_emu_stop(struct uc_struct *uc)
 }
 
 
-static int _hook_code(struct uc_struct *uc, int type, uint64_t begin, uint64_t end,
+static int _hook_code(ucengine *uc, int type, uint64_t begin, uint64_t end,
         void *callback, void *user_data, uc_hook_h *hh)
 {
     int i;
@@ -530,7 +530,7 @@ static int _hook_code(struct uc_struct *uc, int type, uint64_t begin, uint64_t e
 }
 
 
-static uc_err _hook_mem_access(struct uc_struct *uc, uc_hook_t type,
+static uc_err _hook_mem_access(ucengine *uc, uc_hook_t type,
         uint64_t begin, uint64_t end,
         void *callback, void *user_data, uc_hook_h *hh)
 {
@@ -546,7 +546,7 @@ static uc_err _hook_mem_access(struct uc_struct *uc, uc_hook_t type,
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_map(struct uc_struct *uc, uint64_t address, size_t size, uint32_t perms)
+uc_err uc_mem_map(ucengine *uc, uint64_t address, size_t size, uint32_t perms)
 {
     MemoryRegion **regions;
 
@@ -579,7 +579,7 @@ uc_err uc_mem_map(struct uc_struct *uc, uint64_t address, size_t size, uint32_t 
     return UC_ERR_OK;
 }
 
-MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
+MemoryRegion *memory_mapping(ucengine* uc, uint64_t address)
 {
     unsigned int i;
 
@@ -682,7 +682,7 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_add(struct uc_struct *uc, uc_hook_h *hh, uc_hook_t type, void *callback, void *user_data, ...)
+uc_err uc_hook_add(ucengine *uc, uc_hook_h *hh, uc_hook_t type, void *callback, void *user_data, ...)
 {
     va_list valist;
     int ret = UC_ERR_OK;
@@ -738,7 +738,7 @@ uc_err uc_hook_add(struct uc_struct *uc, uc_hook_h *hh, uc_hook_t type, void *ca
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_del(struct uc_struct *uc, uc_hook_h hh)
+uc_err uc_hook_del(ucengine *uc, uc_hook_h hh)
 {
     return hook_del(uc, hh);
 }

@@ -50,7 +50,7 @@ hlt
 static int log_num = 1;
 
 // callback for tracing instruction
-static void hook_code(struct uc_struct *uc, uint64_t addr, uint32_t size, void *user_data)
+static void hook_code(ucengine *uc, uint64_t addr, uint32_t size, void *user_data)
 {
    uint8_t opcode;
    if (uc_mem_read(uc, addr, &opcode, 1) != UC_ERR_OK) {
@@ -74,7 +74,7 @@ static void hook_code(struct uc_struct *uc, uint64_t addr, uint32_t size, void *
 }
 
 // callback for tracing memory access (READ or WRITE)
-static void hook_mem_write(struct uc_struct *uc, uc_mem_type type,
+static void hook_mem_write(ucengine *uc, uc_mem_type type,
         uint64_t addr, int size, int64_t value, void *user_data)
 {
    printf("# write to memory at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n", addr, size, value);
@@ -89,7 +89,7 @@ static void hook_mem_write(struct uc_struct *uc, uc_mem_type type,
 
 int main(int argc, char **argv, char **envp)
 {
-   struct uc_struct *uc;
+   ucengine *uc;
    uc_hook_h trace1, trace2;
    uc_err err;
    uint8_t buf1[100], readbuf[100];

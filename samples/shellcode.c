@@ -20,7 +20,7 @@
 
 #define MIN(a, b) (a < b? a : b)
 // callback for tracing instruction
-static void hook_code(struct uc_struct *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     int r_eip;
     char tmp[16];
@@ -43,7 +43,7 @@ static void hook_code(struct uc_struct *uc, uint64_t address, uint32_t size, voi
 #define MIN(a, b) (a < b? a : b)
 // callback for handling interrupt
 // ref: http://syscalls.kernelgrok.com/
-static void hook_intr(struct uc_struct *uc, uint32_t intno, void *user_data)
+static void hook_intr(ucengine *uc, uint32_t intno, void *user_data)
 {
     int32_t r_eax, r_ecx, r_eip;
     uint32_t r_edx, size;
@@ -88,7 +88,7 @@ static void hook_intr(struct uc_struct *uc, uint32_t intno, void *user_data)
 
 static void test_i386(void)
 {
-    struct uc_struct *uc;
+    ucengine *uc;
     uc_err err;
     uc_hook_h trace1, trace2;
 
