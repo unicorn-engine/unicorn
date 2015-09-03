@@ -32,7 +32,7 @@
 #include "qemu/include/hw/boards.h"
 
 static uint8_t *copy_region(uch uc, MemoryRegion *mr);
-static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t size);
+static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t size, bool do_delete);
 
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
@@ -678,11 +678,15 @@ static uint8_t *copy_region(uch handle, MemoryRegion *mr)
 
    This is a static function and callers have already done some preliminary 
    parameter validation.
+   
+   The do_delete argument indicates that we are being called to support
+   uc_mem_unmap. In this case we save some time by choosing NOT to remap
+   the areas that are intended to get unmapped
  */
 // TODO: investigate whether qemu region manipulation functions already offered
 // this capability
 static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
-        size_t size)
+        size_t size, bool do_delete)
 {
     uint8_t *backup;
     uint32_t perms;
@@ -690,9 +694,8 @@ static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
     size_t l_size, m_size, r_size;
 
     chunk_end = address + size;
-    if (address <= mr->addr && chunk_end >= mr->end) {
+    if (address <= mr->addr && chunk_end >= mr->end)
         return true;
-    }
 
     if (size == 0)
         //trivial case
@@ -742,7 +745,7 @@ static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
         if (uc_mem_write(handle, begin, backup, l_size) != UC_ERR_OK)
             goto error;
     }
-    if (m_size > 0) {
+    if (m_size > 0 && !do_delete) {
         if (uc_mem_map(handle, address, m_size, perms) != UC_ERR_OK)
             goto error;
         if (uc_mem_write(handle, address, backup + l_size, m_size) != UC_ERR_OK)
@@ -788,7 +791,7 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
     if ((perms & ~UC_PROT_ALL) != 0)
         return UC_ERR_INVAL;
 
-    //check that user's entire requested block is mapped
+    // check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size))
         return UC_ERR_NOMEM;
 
@@ -799,24 +802,16 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
     while(count < size) {
         mr = memory_mapping(uc, addr);
         len = MIN(size - count, mr->end - addr);
-        if (!split_region(handle, mr, addr, len))
+        if (!split_region(handle, mr, addr, len, false))
             return UC_ERR_NOMEM;
-        count += len;
-        addr += len;
-    }
 
-    // Now iterate all the regions to set permission
-    addr = address;
-    count = 0;
-    while(count < size) {
         mr = memory_mapping(uc, addr);
-        len = MIN(size - count, mr->end - addr);
         mr->perms = perms;
         uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+
         count += len;
         addr += len;
     }
-
     return UC_ERR_OK;
 }
 
@@ -824,7 +819,6 @@ UNICORN_EXPORT
 uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
 {
     MemoryRegion *mr;
-    unsigned int i;
     struct uc_struct* uc = (struct uc_struct *)handle;
     uint64_t addr;
     size_t count, len;
@@ -845,42 +839,27 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
     if ((size & uc->target_page_align) != 0)
         return UC_ERR_MAP;
 
-    //check that user's entire requested block is mapped
+    // check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size))
         return UC_ERR_NOMEM;
 
-    // Now we know entire region is mapped, so change permissions
+    // Now we know entire region is mapped, so do the unmap
     // We may need to split regions if this area spans adjacent regions
     addr = address;
     count = 0;
     while(count < size) {
         mr = memory_mapping(uc, addr);
         len = MIN(size - count, mr->end - addr);
-        if (!split_region(handle, mr, addr, len))
+        if (!split_region(handle, mr, addr, len, true))
             return UC_ERR_NOMEM;
-        count += len;
-        addr += len;
-    }
-
-    // Now iterate all the regions to set permission
-    addr = address;
-    count = 0;
-    while(count < size) {
+        // if we can retieve the mapping, then no splitting took place
+        // so unmap here
         mr = memory_mapping(uc, addr);
-        len = MIN(size - count, mr->end - addr);
-        uc->memory_unmap(uc, mr);
-        for (i = 0; i < uc->mapped_block_count; i++) {
-            if (uc->mapped_blocks[i] == mr) {
-                uc->mapped_block_count--;
-                //shift remainder of array down over deleted pointer
-                memcpy(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
-                break;
-            }
-        }
+        if (mr != NULL)
+           uc->memory_unmap(uc, mr);
         count += len;
         addr += len;
     }
-
     return UC_ERR_OK;
 }
 
