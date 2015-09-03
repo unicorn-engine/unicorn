@@ -32,7 +32,7 @@
 #include "qemu/include/hw/boards.h"
 
 static uint8_t *copy_region(uch uc, MemoryRegion *mr);
-static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t size, bool do_delete);
+static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t size);
 
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
@@ -654,8 +654,8 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms)
     return UC_ERR_OK;
 }
 
-//create a backup copy of the indicated MemoryRegion
-//generally used in prepartion for splitting a MemoryRegion
+// Create a backup copy of the indicated MemoryRegion.
+// Generally used in prepartion for splitting a MemoryRegion.
 static uint8_t *copy_region(uch handle, MemoryRegion *mr)
 {
     uint8_t *block = (uint8_t *)malloc(int128_get64(mr->size));
@@ -666,6 +666,7 @@ static uint8_t *copy_region(uch handle, MemoryRegion *mr)
             block = NULL;
         }
     }
+
     return block;
 }
 
@@ -678,18 +679,18 @@ static uint8_t *copy_region(uch handle, MemoryRegion *mr)
    This is a static function and callers have already done some preliminary 
    parameter validation.
  */
-//TODO: investigate whether qemu region manipulation functions already offer this capability
-static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t size, bool do_delete)
+// TODO: investigate whether qemu region manipulation functions already offered
+// this capability
+static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
+        size_t size)
 {
     uint8_t *backup;
     uint32_t perms;
     uint64_t begin, end, chunk_end;
     size_t l_size, m_size, r_size;
+
     chunk_end = address + size;
     if (address <= mr->addr && chunk_end >= mr->end) {
-        //trivial case, if we are deleting, just unmap
-        if (do_delete)
-            return uc_mem_unmap(handle, mr->addr, int128_get64(mr->size)) == UC_ERR_OK;
         return true;
     }
 
@@ -731,17 +732,17 @@ static bool split_region(uch handle, MemoryRegion *mr, uint64_t address, size_t 
     r_size = (size_t)(end - chunk_end);
     m_size = (size_t)(chunk_end - address);
 
-    //If there are error in any of the below operations, things are too far gone
-    //at that point to recover. Could try to remap orignal region, but these smaller
-    //allocation just failed so no guarantee that we can recover the original
-    //allocation at this point
+    // If there are error in any of the below operations, things are too far gone
+    // at that point to recover. Could try to remap orignal region, but these smaller
+    // allocation just failed so no guarantee that we can recover the original
+    // allocation at this point
     if (l_size > 0) {
         if (uc_mem_map(handle, begin, l_size, perms) != UC_ERR_OK)
             goto error;
         if (uc_mem_write(handle, begin, backup, l_size) != UC_ERR_OK)
             goto error;
     }
-    if (m_size > 0 && !do_delete) {
+    if (m_size > 0) {
         if (uc_mem_map(handle, address, m_size, perms) != UC_ERR_OK)
             goto error;
         if (uc_mem_write(handle, address, backup + l_size, m_size) != UC_ERR_OK)
@@ -764,6 +765,8 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
 {
     struct uc_struct* uc = (struct uc_struct *)handle;
     MemoryRegion *mr;
+    uint64_t addr = address;
+    size_t count, len;
 
     if (handle == 0)
         // invalid handle
@@ -789,31 +792,30 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
     if (!check_mem_area(uc, address, size))
         return UC_ERR_NOMEM;
 
-    //Now we know entire region is mapped, so change permissions
-    //If request exactly matches a region we don't need to split
-    mr = memory_mapping(uc, address);
-    if (address != mr->addr || size != int128_get64(mr->size)) {
-        //ouch, we are going to need to subdivide blocks
-        uint64_t addr = address;
-        size_t count = 0, len;
-        while(count < size) {
-            MemoryRegion *mr = memory_mapping(uc, addr);
-            len = MIN(size - count, mr->end - addr);
-            if (!split_region(handle, mr, addr, len, false))
-                return UC_ERR_NOMEM;
-            count += len;
-            addr += len;
-        }
-        //Grab a pointer to the newly split MemoryRegion
-        mr = memory_mapping(uc, address);
-        if (mr == NULL) {
-            //this should never happern if splitting succeeded
+    // Now we know entire region is mapped, so change permissions
+    // We may need to split regions if this area spans adjacent regions
+    addr = address;
+    count = 0;
+    while(count < size) {
+        mr = memory_mapping(uc, addr);
+        len = MIN(size - count, mr->end - addr);
+        if (!split_region(handle, mr, addr, len))
             return UC_ERR_NOMEM;
-        }
+        count += len;
+        addr += len;
     }
-    //regions exactly matches an existing region just change perms
-    mr->perms = perms;
-    uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+
+    // Now iterate all the regions to set permission
+    addr = address;
+    count = 0;
+    while(count < size) {
+        mr = memory_mapping(uc, addr);
+        len = MIN(size - count, mr->end - addr);
+        mr->perms = perms;
+        uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+        count += len;
+        addr += len;
+    }
 
     return UC_ERR_OK;
 }
@@ -824,6 +826,8 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
     MemoryRegion *mr;
     unsigned int i;
     struct uc_struct* uc = (struct uc_struct *)handle;
+    uint64_t addr;
+    size_t count, len;
 
     if (handle == 0)
         // invalid handle
@@ -845,12 +849,25 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
     if (!check_mem_area(uc, address, size))
         return UC_ERR_NOMEM;
 
-    //Now we know entire region is mapped, so begin the delete
-    //check trivial case first
-    mr = memory_mapping(uc, address);
-    if (address == mr->addr && size == int128_get64(mr->size)) {
-        //regions exactly matches an existing region just unmap it
-        //this termiantes a possible recursion between this function and split_region
+    // Now we know entire region is mapped, so change permissions
+    // We may need to split regions if this area spans adjacent regions
+    addr = address;
+    count = 0;
+    while(count < size) {
+        mr = memory_mapping(uc, addr);
+        len = MIN(size - count, mr->end - addr);
+        if (!split_region(handle, mr, addr, len))
+            return UC_ERR_NOMEM;
+        count += len;
+        addr += len;
+    }
+
+    // Now iterate all the regions to set permission
+    addr = address;
+    count = 0;
+    while(count < size) {
+        mr = memory_mapping(uc, addr);
+        len = MIN(size - count, mr->end - addr);
         uc->memory_unmap(uc, mr);
         for (i = 0; i < uc->mapped_block_count; i++) {
             if (uc->mapped_blocks[i] == mr) {
@@ -860,18 +877,10 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
                 break;
             }
         }
-    } else {
-        //ouch, we are going to need to subdivide blocks
-        size_t count = 0, len;
-        while(count < size) {
-            MemoryRegion *mr = memory_mapping(uc, address);
-            len = MIN(size - count, mr->end - address);
-            if (!split_region(handle, mr, address, len, true))
-                return UC_ERR_NOMEM;
-            count += len;
-            address += len;
-        }
+        count += len;
+        addr += len;
     }
+
     return UC_ERR_OK;
 }
 
