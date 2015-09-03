@@ -21,21 +21,18 @@ static void m68k_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUM68KState *)uc->current_cpu->env_ptr)->pc = address;
 }
 
-void m68k_reg_reset(uch handle)
+void m68k_reg_reset(struct uc_struct *uc)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
-    CPUArchState *env;
+    CPUArchState *env = first_cpu->env_ptr;
 
-    env = first_cpu->env_ptr;
     memset(env->aregs, 0, sizeof(env->aregs));
     memset(env->dregs, 0, sizeof(env->dregs));
 
     env->pc = 0;
 }
 
-int m68k_reg_read(uch handle, unsigned int regid, void *value)
+int m68k_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 {
-    struct uc_struct *uc = (struct uc_struct *)handle;
     CPUState *mycpu = first_cpu;
 
     if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
@@ -60,9 +57,8 @@ int m68k_reg_read(uch handle, unsigned int regid, void *value)
 #define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
-int m68k_reg_write(uch handle, unsigned int regid, const void *value)
+int m68k_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
     CPUState *mycpu = first_cpu;
 
     if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)

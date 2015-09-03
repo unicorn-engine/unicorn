@@ -10,7 +10,7 @@ extern "C" {
 
 // Callback function for tracing SYSCALL/SYSENTER (for uc_hook_intr())
 // @user_data: user data passed to tracing APIs.
-typedef void (*uc_cb_insn_syscall_t)(uch handle, void *user_data);
+typedef void (*uc_cb_insn_syscall_t)(struct uc_struct *uc, void *user_data);
 
 //> X86 registers
 typedef enum uc_x86_reg {

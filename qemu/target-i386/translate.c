@@ -4761,7 +4761,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
 
     // Unicorn: trace this instruction on request
     if (env->uc->hook_insn) {
-        trace = hook_find((uch)env->uc, UC_HOOK_CODE, pc_start);
+        trace = hook_find(env->uc, UC_HOOK_CODE, pc_start);
         if (trace) {
             if (s->last_cc_op != s->cc_op) {
                 sync_eflags(s, tcg_ctx);
@@ -8379,7 +8379,7 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
     if (env->uc->hook_block && !env->uc->block_full) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_BLOCK, pc_start);
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             env->uc->block_addr = pc_start;
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, pc_start, trace->user_data);

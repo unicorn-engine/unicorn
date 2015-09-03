@@ -12,7 +12,7 @@ static int count = 1;
 // @address: address where the code is being executed
 // @size: size of machine instruction being executed
 // @user_data: user data passed to tracing APIs.
-void cb_hookblock(uch handle, uint64_t address, uint32_t size, void *user_data) {
+void cb_hookblock(ucengine *uc, uint64_t address, uint32_t size, void *user_data) {
    fprintf(stderr, "# >>> Tracing basic block at 0x%llx, block size = 0x%x\n", address, size);
    if (address != 0x1000000 && address != 0x1000200) {
       fprintf(stderr, "not ok %d - address != 0x1000000 && address != 0x1000200\n", count++);
@@ -27,19 +27,19 @@ void cb_hookblock(uch handle, uint64_t address, uint32_t size, void *user_data) 
 }
 
 int main() {
-   uch u;
+   ucengine *uc;
 
    fprintf(stderr, "# basic block callback test\n");
    fprintf(stderr, "# there are only two basic blocks 0x1000000-0x10001ff and 0x1000200-0x10003ff\n");
    
-   uc_err err = uc_open(UC_ARCH_X86, UC_MODE_32, &u);
+   uc_err err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
    if (err != UC_ERR_OK) {
       fprintf(stderr, "not ok %d - %s\n", count++, uc_strerror(err));
       exit(0);
    }
    fprintf(stderr, "ok %d - uc_open\n", count++);
 
-   err = uc_mem_map(u, 0x1000000, 4096, UC_PROT_ALL);
+   err = uc_mem_map(uc, 0x1000000, 4096, UC_PROT_ALL);
    if (err != UC_ERR_OK) {
       fprintf(stderr, "not ok %d - %s\n", count++, uc_strerror(err));
       exit(0);
@@ -55,23 +55,23 @@ int main() {
    memset(code, 0x90, sizeof(code));
    memcpy(code + 1024 - 5, "\xe9\x00\xfe\xff\xff", 5);
 
-   err = uc_mem_write(u, 0x1000000, code, sizeof(code));
+   err = uc_mem_write(uc, 0x1000000, code, sizeof(code));
    if (err != UC_ERR_OK) {
       fprintf(stderr, "not ok %d - %s\n", count++, uc_strerror(err));
       exit(0);
    }
    fprintf(stderr, "ok %d - uc_mem_write\n", count++);
    
-   uch h1, h2;
+   uc_hook_h h1, h2;
 
-   err = uc_hook_add(u, &h1, UC_HOOK_BLOCK, cb_hookblock, NULL, (uint64_t)1, (uint64_t)0);
+   err = uc_hook_add(uc, &h1, UC_HOOK_BLOCK, cb_hookblock, NULL, (uint64_t)1, (uint64_t)0);
    if (err != UC_ERR_OK) {
       fprintf(stderr, "not ok %d - %s\n", count++, uc_strerror(err));
       exit(0);
    }
    fprintf(stderr, "ok %d - uc_hook_add\n", count++);
 
-   err = uc_emu_start(u, 0x1000000, 0x1000000 + sizeof(code), 0, 1030);
+   err = uc_emu_start(uc, 0x1000000, 0x1000000 + sizeof(code), 0, 1030);
    if (err != UC_ERR_OK) {
       fprintf(stderr, "not ok %d - %s\n", count++, uc_strerror(err));
       exit(0);

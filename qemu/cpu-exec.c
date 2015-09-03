@@ -141,7 +141,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     // Unicorn: call interrupt callback if registered
                     if (uc->hook_intr_idx)
                         ((uc_cb_hookintr_t)uc->hook_callbacks[uc->hook_intr_idx].callback)(
-                            (uch)uc, cpu->exception_index,
+                            uc, cpu->exception_index,
                             uc->hook_callbacks[uc->hook_intr_idx].user_data);
                     cpu->exception_index = -1;
 #endif

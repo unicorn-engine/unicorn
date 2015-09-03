@@ -20,18 +20,18 @@
 
 #define MIN(a, b) (a < b? a : b)
 // callback for tracing instruction
-static void hook_code(uch handle, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     int r_eip;
     char tmp[16];
 
     printf("Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
 
-    uc_reg_read(handle, UC_X86_REG_EIP, &r_eip);
+    uc_reg_read(uc, UC_X86_REG_EIP, &r_eip);
     printf("*** EIP = %x ***: ", r_eip);
 
     size = MIN(sizeof(tmp), size);
-    if (!uc_mem_read(handle, address, (uint8_t *)tmp, size)) {
+    if (!uc_mem_read(uc, address, (uint8_t *)tmp, size)) {
         int i;
         for (i=0; i<size; i++) {
             printf("%x ", ((uint8_t*)tmp)[i]);
@@ -43,7 +43,7 @@ static void hook_code(uch handle, uint64_t address, uint32_t size, void *user_da
 #define MIN(a, b) (a < b? a : b)
 // callback for handling interrupt
 // ref: http://syscalls.kernelgrok.com/
-static void hook_intr(uch handle, uint32_t intno, void *user_data)
+static void hook_intr(ucengine *uc, uint32_t intno, void *user_data)
 {
     int32_t r_eax, r_ecx, r_eip;
     uint32_t r_edx, size;
@@ -53,8 +53,8 @@ static void hook_intr(uch handle, uint32_t intno, void *user_data)
     if (intno != 0x80)
         return;
 
-    uc_reg_read(handle, UC_X86_REG_EAX, &r_eax);
-    uc_reg_read(handle, UC_X86_REG_EIP, &r_eip);
+    uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
+    uc_reg_read(uc, UC_X86_REG_EIP, &r_eip);
 
     switch(r_eax) {
         default:
@@ -62,19 +62,19 @@ static void hook_intr(uch handle, uint32_t intno, void *user_data)
             break;
         case 1: // sys_exit
             printf(">>> 0x%x: interrupt 0x%x, SYS_EXIT. quit!\n\n", r_eip, intno);
-            uc_emu_stop(handle);
+            uc_emu_stop(uc);
             break;
         case 4: // sys_write
             // ECX = buffer address
-            uc_reg_read(handle, UC_X86_REG_ECX, &r_ecx);
+            uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx);
 
             // EDX = buffer size
-            uc_reg_read(handle, UC_X86_REG_EDX, &r_edx);
+            uc_reg_read(uc, UC_X86_REG_EDX, &r_edx);
 
             // read the buffer in
             size = MIN(sizeof(buffer)-1, r_edx);
 
-            if (!uc_mem_read(handle, r_ecx, buffer, size)) {
+            if (!uc_mem_read(uc, r_ecx, buffer, size)) {
                 buffer[size] = '\0';
                 printf(">>> 0x%x: interrupt 0x%x, SYS_WRITE. buffer = 0x%x, size = %u, content = '%s'\n",
                         r_eip, intno, r_ecx, r_edx, buffer);
@@ -88,44 +88,44 @@ static void hook_intr(uch handle, uint32_t intno, void *user_data)
 
 static void test_i386(void)
 {
-    uch handle, evh;
+    ucengine *uc;
     uc_err err;
-    uch trace1;
+    uc_hook_h trace1, trace2;
 
     int r_esp = ADDRESS + 0x200000;  // ESP register
 
     printf("Emulate i386 code\n");
 
     // Initialize emulator in X86-32bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_32, &handle);
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u\n", err);
         return;
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(handle, ADDRESS, (uint8_t *)X86_CODE32_SELF, sizeof(X86_CODE32_SELF) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE32_SELF, sizeof(X86_CODE32_SELF) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
 
     // initialize machine registers
-    uc_reg_write(handle, UC_X86_REG_ESP, &r_esp);
+    uc_reg_write(uc, UC_X86_REG_ESP, &r_esp);
 
     // tracing all instructions by having @begin > @end
-    uc_hook_add(handle, &trace1, UC_HOOK_CODE, hook_code, NULL, 1, 0);
+    uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code, NULL, 1, 0);
 
     // handle interrupt ourself
-    uc_hook_add(handle, &evh, UC_HOOK_INTR, hook_intr, NULL);
+    uc_hook_add(uc, &trace2, UC_HOOK_INTR, hook_intr, NULL);
 
     printf("\n>>> Start tracing this Linux code\n");
 
     // emulate machine code in infinite time
-    // err = uc_emu_start(handle, ADDRESS, ADDRESS + sizeof(X86_CODE32_SELF), 0, 12); <--- emulate only 12 instructions
-    err = uc_emu_start(handle, ADDRESS, ADDRESS + sizeof(X86_CODE32_SELF) - 1, 0, 0);
+    // err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_SELF), 0, 12); <--- emulate only 12 instructions
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_SELF) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned %u: %s\n",
                 err, uc_strerror(err));
@@ -133,7 +133,7 @@ static void test_i386(void)
 
     printf("\n>>> Emulation done.\n");
 
-    uc_close(&handle);
+    uc_close(uc);
 }
 
 int main(int argc, char **argv, char **envp)

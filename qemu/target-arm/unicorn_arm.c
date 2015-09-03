@@ -25,9 +25,9 @@ static void arm_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUARMState *)uc->current_cpu->env_ptr)->regs[15] = address;
 }
 
-void arm_reg_reset(uch handle)
+void arm_reg_reset(struct uc_struct *uc)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
+    (void)uc;
     CPUArchState *env;
 
     env = first_cpu->env_ptr;
@@ -36,10 +36,9 @@ void arm_reg_reset(uch handle)
     env->pc = 0;
 }
 
-int arm_reg_read(uch handle, unsigned int regid, void *value)
+int arm_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 {
     CPUState *mycpu;
-    struct uc_struct *uc = (struct uc_struct *) handle;
 
     mycpu = first_cpu;
 
@@ -78,12 +77,9 @@ int arm_reg_read(uch handle, unsigned int regid, void *value)
 #define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
-int arm_reg_write(uch handle, unsigned int regid, const void *value)
+int arm_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
-    CPUState *mycpu;
-    struct uc_struct *uc = (struct uc_struct *) handle;
-
-    mycpu = first_cpu;
+    CPUState *mycpu = first_cpu;
 
     switch(uc->mode) {
         default:
