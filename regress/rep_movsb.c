@@ -50,17 +50,17 @@ hlt
 static int log_num = 1;
 
 // callback for tracing instruction
-static void hook_code(uch handle, uint64_t addr, uint32_t size, void *user_data)
+static void hook_code(struct uc_struct *uc, uint64_t addr, uint32_t size, void *user_data)
 {
    uint8_t opcode;
-   if (uc_mem_read(handle, addr, &opcode, 1) != UC_ERR_OK) {
+   if (uc_mem_read(uc, addr, &opcode, 1) != UC_ERR_OK) {
       printf("not ok %d - uc_mem_read fail during hook_code callback, addr: 0x%" PRIx64 "\n", log_num++, addr);
       _exit(-1);
    }
    switch (opcode) {
       case 0xf4:  //hlt
          printf("# Handling HLT\n");
-         if (uc_emu_stop(handle) != UC_ERR_OK) {
+         if (uc_emu_stop(uc) != UC_ERR_OK) {
             printf("not ok %d - uc_emu_stop fail during hook_code callback, addr: 0x%" PRIx64 "\n", log_num++, addr);
             _exit(-1);
          }
@@ -74,7 +74,7 @@ static void hook_code(uch handle, uint64_t addr, uint32_t size, void *user_data)
 }
 
 // callback for tracing memory access (READ or WRITE)
-static void hook_mem_write(uch handle, uc_mem_type type,
+static void hook_mem_write(struct uc_struct *uc, uc_mem_type type,
         uint64_t addr, int size, int64_t value, void *user_data)
 {
    printf("# write to memory at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n", addr, size, value);
@@ -89,7 +89,8 @@ static void hook_mem_write(uch handle, uc_mem_type type,
 
 int main(int argc, char **argv, char **envp)
 {
-   uch handle, trace1, trace2;
+   struct uc_struct *uc;
+   uc_hook_h trace1, trace2;
    uc_err err;
    uint8_t buf1[100], readbuf[100];
    
@@ -98,7 +99,7 @@ int main(int argc, char **argv, char **envp)
    memset(buf1, 'A', 20);
 
    // Initialize emulator in X86-32bit mode
-   err = uc_open(UC_ARCH_X86, UC_MODE_32, &handle);
+   err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
    if (err) {
       printf("not ok %d - Failed on uc_open() with error returned: %u\n", log_num++, err);
       return 1;
@@ -107,11 +108,11 @@ int main(int argc, char **argv, char **envp)
       printf("ok %d - uc_open() success\n", log_num++);
    }
 
-   uc_mem_map(handle, 0x100000, 0x1000, UC_PROT_READ);
-   uc_mem_map(handle, 0x200000, 0x2000, UC_PROT_READ | UC_PROT_WRITE);
+   uc_mem_map(uc, 0x100000, 0x1000, UC_PROT_READ);
+   uc_mem_map(uc, 0x200000, 0x2000, UC_PROT_READ | UC_PROT_WRITE);
 
    // fill in the data that we want to copy
-   if (uc_mem_write(handle, 0x200000, (uint8_t*)buf1, 20)) {
+   if (uc_mem_write(uc, 0x200000, (uint8_t*)buf1, 20)) {
       printf("not ok %d - Failed to write read buffer to memory, quit!\n", log_num++);
       return 2;
    }
@@ -120,7 +121,7 @@ int main(int argc, char **argv, char **envp)
    }
 
    // write machine code to be emulated to memory
-   if (uc_mem_write(handle, 0x100000, PROGRAM, sizeof(PROGRAM))) {
+   if (uc_mem_write(uc, 0x100000, PROGRAM, sizeof(PROGRAM))) {
       printf("not ok %d - Failed to write emulation code to memory, quit!\n", log_num++);
       return 4;
    }
@@ -128,7 +129,7 @@ int main(int argc, char **argv, char **envp)
       printf("ok %d - Program written to memory\n", log_num++);
    }
 
-   if (uc_hook_add(handle, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK) {
+   if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK) {
       printf("not ok %d - Failed to install UC_HOOK_CODE handler\n", log_num++);
       return 5;
    }
@@ -137,7 +138,7 @@ int main(int argc, char **argv, char **envp)
    }
 
    // intercept memory write events only, NOT read events
-   if (uc_hook_add(handle, &trace1, UC_HOOK_MEM_WRITE, hook_mem_write, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK) {
+   if (uc_hook_add(uc, &trace1, UC_HOOK_MEM_WRITE, hook_mem_write, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK) {
       printf("not ok %d - Failed to install UC_HOOK_MEM_WRITE handler\n", log_num++);
       return 6;
    }
@@ -147,7 +148,7 @@ int main(int argc, char **argv, char **envp)
 
    // emulate machine code until told to stop by hook_code
    printf("# BEGIN execution\n");
-   err = uc_emu_start(handle, 0x100000, 0x101000, 0, 0);
+   err = uc_emu_start(uc, 0x100000, 0x101000, 0, 0);
    if (err != UC_ERR_OK) {
       printf("not ok %d - Failure on uc_emu_start() with error %u:%s\n", log_num++, err, uc_strerror(err));
       return 8;
@@ -159,7 +160,7 @@ int main(int argc, char **argv, char **envp)
 
    //make sure that data got copied
    // fill in sections that shouldn't get touched
-   if (uc_mem_read(handle, 0x201000, (uint8_t*)readbuf, 20)) {
+   if (uc_mem_read(uc, 0x201000, (uint8_t*)readbuf, 20)) {
       printf("not ok %d - Failed to read random buffer 1 from memory\n", log_num++);
    }
    else {
@@ -172,7 +173,7 @@ int main(int argc, char **argv, char **envp)
       }
    }
 
-   if (uc_close(&handle) == UC_ERR_OK) {
+   if (uc_close(uc) == UC_ERR_OK) {
       printf("ok %d - uc_close complete\n", log_num++);
    }
    else {

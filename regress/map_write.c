@@ -8,17 +8,17 @@
 
 int main()
 {
-    uch uh;
+    struct uc_struct *uc;
     uint8_t *buf, *buf2;
     int i;
     uc_err err;
 
-    err = uc_open (UC_ARCH_X86, UC_MODE_64, &uh);
+    err = uc_open (UC_ARCH_X86, UC_MODE_64, &uc);
     if (err) {
         printf ("uc_open %d\n", err);
         return 1;
     }
-    err = uc_mem_map (uh, ADDR, SIZE, UC_PROT_ALL);
+    err = uc_mem_map (uc, ADDR, SIZE, UC_PROT_ALL);
     if (err) {
         printf ("uc_mem_map %d\n", err);
         return 1;
@@ -29,12 +29,12 @@ int main()
         buf[i] = i & 0xff;
     }
     /* crash here */
-    err = uc_mem_write (uh, ADDR, buf, SIZE+OVERFLOW); 
+    err = uc_mem_write (uc, ADDR, buf, SIZE+OVERFLOW); 
     if (err) {
         printf ("uc_mem_map %d\n", err);
         return 1;
     }
-    err = uc_mem_read (uh, ADDR+10, buf2, 4);
+    err = uc_mem_read (uc, ADDR+10, buf2, 4);
     if (err) {
         printf ("uc_mem_map %d\n", err);
         return 1;
