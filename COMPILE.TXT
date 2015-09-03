@@ -178,8 +178,16 @@ Unicorn requires few dependent packages as followings
 [7] Compile on Windows with MinGW (MSYS2)
 
   To compile with MinGW you need to install MSYS2: https://msys2.github.io/ 
-  Follow the install instructions and don't forget to update the system packages as written in 5 & 6 paragraphs
+  Follow the install instructions and don't forget to update the system packages with:
+
+        $ pacman --needed -Sy bash pacman pacman-mirrors msys2-runtime
+
+     Then close MSYS2, run it again from Start menu and update the rest with:
+
+        $ pacman -Su
   
+  Finally, compile Unicorn with the next steps:
+
         - To compile Windows 32-bit binary with MinGW, run:
                 $ pacman -S make
                 $ pacman -S pkg-config

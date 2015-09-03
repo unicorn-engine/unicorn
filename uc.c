@@ -414,7 +414,7 @@ static void *_timeout_fn(void *arg)
 static void enable_emu_timer(struct uc_struct *uc, uint64_t timeout)
 {
     uc->timeout = timeout;
-    qemu_thread_create(&uc->timer, "timeout", _timeout_fn,
+    qemu_thread_create(uc, &uc->timer, "timeout", _timeout_fn,
             uc, QEMU_THREAD_JOINABLE);
 }
 
@@ -530,7 +530,7 @@ static int _hook_code(struct uc_struct *uc, int type, uint64_t begin, uint64_t e
 }
 
 
-static uc_err _hook_mem_access(struct uc_struct *uc, uc_mem_type type,
+static uc_err _hook_mem_access(struct uc_struct *uc, uc_hook_t type,
         uint64_t begin, uint64_t end,
         void *callback, void *user_data, uc_hook_h *hh)
 {
@@ -718,16 +718,17 @@ uc_err uc_hook_add(struct uc_struct *uc, uc_hook_h *hh, uc_hook_t type, void *ca
         case UC_HOOK_MEM_READ:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(uc, UC_MEM_READ, begin, end, callback, user_data, hh);
+            ret = _hook_mem_access(uc, UC_HOOK_MEM_READ, begin, end, callback, user_data, hh);
             break;
         case UC_HOOK_MEM_WRITE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(uc, UC_MEM_WRITE, begin, end, callback, user_data, hh);
+            ret = _hook_mem_access(uc, UC_HOOK_MEM_WRITE, begin, end, callback, user_data, hh);
+            break;
         case UC_HOOK_MEM_READ_WRITE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(uc, UC_MEM_READ_WRITE, begin, end, callback, user_data, hh);
+            ret = _hook_mem_access(uc, UC_HOOK_MEM_READ_WRITE, begin, end, callback, user_data, hh);
             break;
     }
 

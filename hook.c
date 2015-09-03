@@ -63,17 +63,17 @@ size_t hook_add(struct uc_struct *uc, int type, uint64_t begin, uint64_t end, vo
                      if (begin > end)
                          uc->hook_insn_idx = i;
                      break;
-            case UC_MEM_READ:
+            case UC_HOOK_MEM_READ:
                      uc->hook_mem_read = true;
                      if (begin > end)
                          uc->hook_read_idx = i;
                      break;
-            case UC_MEM_WRITE:
+            case UC_HOOK_MEM_WRITE:
                      uc->hook_mem_write = true;
                      if (begin > end)
                          uc->hook_write_idx = i;
                      break;
-            case UC_MEM_READ_WRITE:
+            case UC_HOOK_MEM_READ_WRITE:
                      uc->hook_mem_read = true;
                      uc->hook_mem_write = true;
                      if (begin > end) {
@@ -151,12 +151,13 @@ static struct hook_struct *_hook_find(struct uc_struct *uc, int type, uint64_t a
             if (uc->hook_insn_idx)
                 return &uc->hook_callbacks[uc->hook_insn_idx];
             break;
-        case UC_MEM_READ:
+        case UC_HOOK_MEM_READ:
             // already hooked all memory read?
-            if (uc->hook_read_idx)
+            if (uc->hook_read_idx) {
                 return &uc->hook_callbacks[uc->hook_read_idx];
+            }
             break;
-        case UC_MEM_WRITE:
+        case UC_HOOK_MEM_WRITE:
             // already hooked all memory write?
             if (uc->hook_write_idx)
                 return &uc->hook_callbacks[uc->hook_write_idx];
@@ -174,14 +175,14 @@ static struct hook_struct *_hook_find(struct uc_struct *uc, int type, uint64_t a
                              return &uc->hook_callbacks[i];
                      }
                      break;
-            case UC_MEM_READ:
-                     if (uc->hook_callbacks[i].hook_type == UC_MEM_READ || uc->hook_callbacks[i].hook_type == UC_MEM_READ_WRITE) {
+            case UC_HOOK_MEM_READ:
+                     if (uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_READ || uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_READ_WRITE) {
                          if (uc->hook_callbacks[i].begin <= address && address <= uc->hook_callbacks[i].end)
                              return &uc->hook_callbacks[i];
                      }
                      break;
-            case UC_MEM_WRITE:
-                     if (uc->hook_callbacks[i].hook_type == UC_MEM_WRITE || uc->hook_callbacks[i].hook_type == UC_MEM_READ_WRITE) {
+            case UC_HOOK_MEM_WRITE:
+                     if (uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_WRITE || uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_READ_WRITE) {
                          if (uc->hook_callbacks[i].begin <= address && address <= uc->hook_callbacks[i].end)
                              return &uc->hook_callbacks[i];
                      }

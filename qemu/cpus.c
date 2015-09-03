@@ -124,7 +124,7 @@ static void *qemu_tcg_cpu_thread_fn(void *arg)
     struct uc_struct *uc = cpu->uc;
 
     //qemu_tcg_init_cpu_signals();
-    qemu_thread_get_self(cpu->thread);
+    qemu_thread_get_self(uc, cpu->thread);
 
     qemu_mutex_lock(&uc->qemu_global_mutex);
     CPU_FOREACH(cpu) {
@@ -185,7 +185,7 @@ static void qemu_tcg_init_vcpu(CPUState *cpu)
         uc->tcg_halt_cond = cpu->halt_cond;
         snprintf(thread_name, VCPU_THREAD_NAME_SIZE, "CPU %d/TCG",
                 cpu->cpu_index);
-        qemu_thread_create(cpu->thread, thread_name, qemu_tcg_cpu_thread_fn,
+        qemu_thread_create(uc, cpu->thread, thread_name, qemu_tcg_cpu_thread_fn,
                 cpu, QEMU_THREAD_JOINABLE);
 #ifdef _WIN32
         cpu->hThread = qemu_thread_get_handle(cpu->thread);

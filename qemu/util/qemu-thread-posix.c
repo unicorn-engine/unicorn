@@ -389,7 +389,7 @@ void qemu_event_wait(QemuEvent *ev)
     }
 }
 
-void qemu_thread_create(QemuThread *thread, const char *name,
+void qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *name,
                        void *(*start_routine)(void*),
                        void *arg, int mode)
 {
@@ -426,7 +426,7 @@ void qemu_thread_create(QemuThread *thread, const char *name,
     pthread_attr_destroy(&attr);
 }
 
-void qemu_thread_get_self(QemuThread *thread)
+void qemu_thread_get_self(struct uc_struct *uc, QemuThread *thread)
 {
     thread->thread = pthread_self();
 }
@@ -436,7 +436,7 @@ bool qemu_thread_is_self(QemuThread *thread)
    return pthread_equal(pthread_self(), thread->thread);
 }
 
-void qemu_thread_exit(void *retval)
+void qemu_thread_exit(struct uc_struct *uc, void *retval)
 {
     pthread_exit(retval);
 }
