@@ -43,11 +43,12 @@ Unicorn requires few dependent packages as followings
 
   The other way of customize Unicorn without having to edit config.mk is to
   pass the desired options on the commandline to ./make.sh. Currently,
-  Unicorn supports 3 options, as followings.
+  Unicorn supports 4 options, as followings.
 
   - UNICORN_ARCHS: specify list of architectures to compiled in.
   - UNICORN_STATIC: build static library.
   - UNICORN_SHARED: build dynamic (shared) library.
+  - UNICORN_QEMU_FLAGS: specify extra flags for qemu's configure script
 
   To avoid editing config.mk for these customization, we can pass their values to
   make.sh, as followings.
