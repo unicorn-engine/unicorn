@@ -64,7 +64,7 @@ ucerr = ctypes.c_int
 ucengine = ctypes.c_void_p
 uc_hook_h = ctypes.c_size_t
 
-_setup_prototype(_uc, "uc_version", ucerr, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
+_setup_prototype(_uc, "uc_version", ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 _setup_prototype(_uc, "uc_arch_supported", ctypes.c_bool, ctypes.c_int)
 _setup_prototype(_uc, "uc_open", ucerr, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ucengine))
 _setup_prototype(_uc, "uc_close", ucerr, ucengine)
@@ -81,7 +81,7 @@ _setup_prototype(_uc, "uc_mem_map", ucerr, ucengine, ctypes.c_uint64, ctypes.c_s
 
 # uc_hook_add is special due to variable number of arguments
 _uc.uc_hook_add = getattr(_uc, "uc_hook_add")
-_uc.uc_hook_add.restype = ctypes.c_int
+_uc.uc_hook_add.restype = ucerr
 
 UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, ucengine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p)
 UC_HOOK_MEM_INVALID_CB = ctypes.CFUNCTYPE(ctypes.c_bool, ucengine, ctypes.c_int, \
