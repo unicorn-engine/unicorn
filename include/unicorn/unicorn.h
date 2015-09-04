@@ -433,7 +433,7 @@ uc_err uc_mem_map(ucengine *uc, uint64_t address, size_t size, uint32_t perms);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size);
+uc_err uc_mem_unmap(ucengine *uc, uint64_t address, size_t size);
 
 /*
  Set memory permissions for emulation memory.
@@ -452,7 +452,7 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms);
+uc_err uc_mem_protect(ucengine *uc, uint64_t address, size_t size, uint32_t perms);
 
 #ifdef __cplusplus
 }

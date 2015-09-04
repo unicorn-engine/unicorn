@@ -185,7 +185,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     // Unicorn: callback on fetch from NX
     if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  //non-executable
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
-                                       (uch)uc, UC_MEM_EXEC_PROT, addr, DATA_SIZE, 0,
+                                       uc, UC_MEM_EXEC_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
         } else {
@@ -343,7 +343,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     // Unicorn: callback on fetch from NX
     if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  //non-executable
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
-                                       (uch)uc, UC_MEM_EXEC_PROT, addr, DATA_SIZE, 0,
+                                       uc, UC_MEM_EXEC_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
         } else {

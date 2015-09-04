@@ -31,8 +31,6 @@
 
 #include "qemu/include/hw/boards.h"
 
-static uint8_t *copy_region(struct uc_struct *uc, MemoryRegion *mr);
-static bool split_region(struct uc_struct *uc, MemoryRegion *mr, uint64_t address, size_t size, bool do_delete);
 
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
@@ -589,11 +587,11 @@ uc_err uc_mem_map(ucengine *uc, uint64_t address, size_t size, uint32_t perms)
 
 // Create a backup copy of the indicated MemoryRegion.
 // Generally used in prepartion for splitting a MemoryRegion.
-static uint8_t *copy_region(uch handle, MemoryRegion *mr)
+static uint8_t *copy_region(struct uc_struct *uc, MemoryRegion *mr)
 {
     uint8_t *block = (uint8_t *)malloc(int128_get64(mr->size));
     if (block != NULL) {
-        uc_err err = uc_mem_read(handle, mr->addr, block, int128_get64(mr->size));
+        uc_err err = uc_mem_read(uc, mr->addr, block, int128_get64(mr->size));
         if (err != UC_ERR_OK) {
             free(block);
             block = NULL;
@@ -618,7 +616,7 @@ static uint8_t *copy_region(uch handle, MemoryRegion *mr)
  */
 // TODO: investigate whether qemu region manipulation functions already offered
 // this capability
-static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
+static bool split_region(struct uc_struct *uc, MemoryRegion *mr, uint64_t address,
         size_t size, bool do_delete)
 {
     uint8_t *backup;
@@ -641,7 +639,7 @@ static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
         // impossible case
         return false;
 
-    backup = copy_region(handle, mr);
+    backup = copy_region(uc, mr);
     if (backup == NULL)
         return false;
 
@@ -651,7 +649,7 @@ static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
     end = mr->end;
 
     // unmap this region first, then do split it later
-    if (uc_mem_unmap(handle, mr->addr, int128_get64(mr->size)) != UC_ERR_OK)
+    if (uc_mem_unmap(uc, mr->addr, int128_get64(mr->size)) != UC_ERR_OK)
         goto error;
 
     /* overlapping cases
@@ -677,23 +675,23 @@ static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
     // allocation just failed so no guarantee that we can recover the original
     // allocation at this point
     if (l_size > 0) {
-        if (uc_mem_map(handle, begin, l_size, perms) != UC_ERR_OK)
+        if (uc_mem_map(uc, begin, l_size, perms) != UC_ERR_OK)
             goto error;
-        if (uc_mem_write(handle, begin, backup, l_size) != UC_ERR_OK)
+        if (uc_mem_write(uc, begin, backup, l_size) != UC_ERR_OK)
             goto error;
     }
 
     if (m_size > 0 && !do_delete) {
-        if (uc_mem_map(handle, address, m_size, perms) != UC_ERR_OK)
+        if (uc_mem_map(uc, address, m_size, perms) != UC_ERR_OK)
             goto error;
-        if (uc_mem_write(handle, address, backup + l_size, m_size) != UC_ERR_OK)
+        if (uc_mem_write(uc, address, backup + l_size, m_size) != UC_ERR_OK)
             goto error;
     }
 
     if (r_size > 0) {
-        if (uc_mem_map(handle, chunk_end, r_size, perms) != UC_ERR_OK)
+        if (uc_mem_map(uc, chunk_end, r_size, perms) != UC_ERR_OK)
             goto error;
-        if (uc_mem_write(handle, chunk_end, backup + l_size + m_size, r_size) != UC_ERR_OK)
+        if (uc_mem_write(uc, chunk_end, backup + l_size + m_size, r_size) != UC_ERR_OK)
             goto error;
     }
 
@@ -705,16 +703,11 @@ error:
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
+uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size, uint32_t perms)
 {
-    struct uc_struct* uc = (struct uc_struct *)handle;
     MemoryRegion *mr;
     uint64_t addr = address;
     size_t count, len;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
 
     if (size == 0)
         // trivial case, no change
@@ -743,7 +736,7 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
     while(count < size) {
         mr = memory_mapping(uc, addr);
         len = MIN(size - count, mr->end - addr);
-        if (!split_region(handle, mr, addr, len, false))
+        if (!split_region(uc, mr, addr, len, false))
             return UC_ERR_NOMEM;
 
         mr = memory_mapping(uc, addr);
@@ -757,16 +750,11 @@ uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms)
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
+uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
 {
     MemoryRegion *mr;
-    struct uc_struct* uc = (struct uc_struct *)handle;
     uint64_t addr;
     size_t count, len;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
 
     if (size == 0)
         // nothing to unmap
@@ -791,7 +779,7 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
     while(count < size) {
         mr = memory_mapping(uc, addr);
         len = MIN(size - count, mr->end - addr);
-        if (!split_region(handle, mr, addr, len, true))
+        if (!split_region(uc, mr, addr, len, true))
             return UC_ERR_NOMEM;
         // if we can retrieve the mapping, then no splitting took place
         // so unmap here
