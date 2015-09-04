@@ -49,9 +49,12 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 {
     int i;
     target_ulong addr;
-    //make sure all pages associated with the MemoryRegion are flushed
-    for (addr = mr->addr; addr < mr->end; addr += uc->target_page_size) {
-       tlb_flush_page(uc->current_cpu, addr);
+    // Make sure all pages associated with the MemoryRegion are flushed
+    // Only need to do this if we are in a running state
+    if (uc->current_cpu) {
+        for (addr = mr->addr; addr < mr->end; addr += uc->target_page_size) {
+           tlb_flush_page(uc->current_cpu, addr);
+        }
     }
     mr->enabled = false;
     memory_region_del_subregion(get_system_memory(uc), mr);
