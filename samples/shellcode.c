@@ -40,7 +40,6 @@ static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_
     }
 }
 
-#define MIN(a, b) (a < b? a : b)
 // callback for handling interrupt
 // ref: http://syscalls.kernelgrok.com/
 static void hook_intr(ucengine *uc, uint32_t intno, void *user_data)
