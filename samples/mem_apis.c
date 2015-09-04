@@ -68,20 +68,6 @@ static void hook_code(ucengine *uc, uint64_t addr, uint32_t size, void *user_dat
     }
 }
 
-// callback for tracing memory access (READ or WRITE)
-static void hook_mem_write(ucengine *uc, uc_mem_type type,
-        uint64_t addr, int size, int64_t value, void *user_data)
-{
-    printf("# write to memory at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n", addr, size, value);
-}
-
-// callback for tracing memory access (READ or WRITE)
-static void hook_mem_read(ucengine *uc, uc_mem_type type,
-        uint64_t addr, int size, int64_t value, void *user_data)
-{
-    printf("# read from memory at 0x%"PRIx64 ", data size = %u\n", addr, size);
-}
-
 // callback for tracing invalid memory access (READ/WRITE/EXEC)
 static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
         uint64_t addr, int size, int64_t value, void *user_data)
@@ -338,4 +324,5 @@ int main(int argc, char **argv, char **envp)
     nx_test();
     perms_test();
     unmap_test();
+    return 0;
 }
