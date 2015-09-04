@@ -7,6 +7,7 @@
 #define phys_mem_clean phys_mem_clean_mips64
 #define tb_cleanup tb_cleanup_mips64
 #define memory_map memory_map_mips64
+#define memory_unmap memory_unmap_mips64
 #define memory_free memory_free_mips64
 #define helper_raise_exception helper_raise_exception_mips64
 #define tcg_enabled tcg_enabled_mips64

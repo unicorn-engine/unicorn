@@ -64,7 +64,7 @@ static void test_sparc(void)
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(SPARC_CODE) -1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(SPARC_CODE) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u (%s)\n",
                 err, uc_strerror(err));

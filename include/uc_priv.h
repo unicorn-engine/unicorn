@@ -47,6 +47,8 @@ typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
 typedef MemoryRegion* (*uc_args_uc_ram_size_t)(struct uc_struct*,  ram_addr_t begin, size_t size, uint32_t perms);
 
+typedef void (*uc_mem_unmap_t)(struct uc_struct*, MemoryRegion *mr);
+
 typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
 // which interrupt should make emulation stop?
@@ -90,6 +92,7 @@ struct uc_struct {
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;
     uc_args_uc_ram_size_t memory_map;
+    uc_mem_unmap_t memory_unmap;
     uc_readonly_mem_t readonly_mem;
     // list of cpu
     void* cpu;
@@ -172,8 +175,9 @@ struct uc_struct {
     bool block_full;
     MemoryRegion **mapped_blocks;
     uint32_t mapped_block_count;
-
     void *qemu_thread_data; // to support cross compile to Windows (qemu-thread-win32.c)
+    uint32_t target_page_size;
+    uint32_t target_page_align;
 };
 
 #include "qemu_macro.h"

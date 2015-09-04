@@ -51,6 +51,16 @@ shellcode.static
 sample_m68k
 sample_m68k.exe
 sample_m68k.static
+mem_exec
+mem_exec.exe
+mem_exec.static
+mem_protect
+mem_protect.exe
+mem_protect.static
+mem_unmap
+mem_unmap.exe
+mem_unmap.static
+
 
 libunicorn*.dll
 libunicorn*.so

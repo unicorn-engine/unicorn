@@ -45,6 +45,29 @@ MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, ui
     return ram;
 }
 
+void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
+{
+    int i;
+    target_ulong addr;
+    //make sure all pages associated with the MemoryRegion are flushed
+    for (addr = mr->addr; addr < mr->end; addr += uc->target_page_size) {
+       tlb_flush_page(uc->current_cpu, addr);
+    }
+    mr->enabled = false;
+    memory_region_del_subregion(get_system_memory(uc), mr);
+
+    for (i = 0; i < uc->mapped_block_count; i++) {
+        if (uc->mapped_blocks[i] == mr) {
+            uc->mapped_block_count--;
+            //shift remainder of array down over deleted pointer
+            memcpy(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
+            break;
+        }
+    }
+
+    g_free(mr);
+}
+
 int memory_free(struct uc_struct *uc)
 {
     int i;

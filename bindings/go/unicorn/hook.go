@@ -60,21 +60,26 @@ func hookX86Syscall(handle C.uch, user unsafe.Pointer) {
 
 var hookRetain = make(map[C.uch]*HookData)
 
-func (u *Uc) HookAdd(htype int, cb interface{}, insn ...int) (C.uch, error) {
+func (u *Uc) HookAdd(htype int, cb interface{}, extra ...uint64) (C.uch, error) {
 	var callback unsafe.Pointer
-	var extra C.int
+	var iarg1 C.int
+	var uarg1, uarg2 C.uint64_t
+	rangeMode := false
 	switch htype {
 	case UC_HOOK_BLOCK, UC_HOOK_CODE:
+		rangeMode = true
 		callback = C.hookCode_cgo
 	case UC_HOOK_MEM_INVALID:
+		rangeMode = true
 		callback = C.hookMemInvalid_cgo
 	case UC_HOOK_MEM_READ, UC_HOOK_MEM_WRITE, UC_HOOK_MEM_READ_WRITE:
+		rangeMode = true
 		callback = C.hookMemAccess_cgo
 	case UC_HOOK_INTR:
 		callback = C.hookInterrupt_cgo
 	case UC_HOOK_INSN:
-		extra = C.int(insn[0])
-		switch extra {
+		iarg1 = C.int(extra[0])
+		switch iarg1 {
 		case UC_X86_INS_IN:
 			callback = C.hookX86In_cgo
 		case UC_X86_INS_OUT:
@@ -89,7 +94,17 @@ func (u *Uc) HookAdd(htype int, cb interface{}, insn ...int) (C.uch, error) {
 	}
 	var h2 C.uch
 	data := &HookData{u, cb}
-	C.uc_hook_add2(u.Handle, &h2, C.uc_hook_t(htype), callback, unsafe.Pointer(data), extra)
+	if rangeMode {
+		if len(extra) == 2 {
+			uarg1 = C.uint64_t(extra[0])
+			uarg2 = C.uint64_t(extra[1])
+		} else {
+			uarg1, uarg2 = 1, 0
+		}
+		C.uc_hook_add_u2(u.Handle, &h2, C.uc_hook_t(htype), callback, unsafe.Pointer(data), uarg1, uarg2)
+	} else {
+		C.uc_hook_add_i1(u.Handle, &h2, C.uc_hook_t(htype), callback, unsafe.Pointer(data), iarg1)
+	}
 	hookRetain[h2] = data
 	return h2, nil
 }
