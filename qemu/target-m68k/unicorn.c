@@ -62,9 +62,9 @@ int m68k_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
     CPUState *mycpu = first_cpu;
 
     if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
-        M68K_CPU(uc, mycpu)->env.aregs[regid - UC_M68K_REG_A0] = *(int32_t *)value;
+        M68K_CPU(uc, mycpu)->env.aregs[regid - UC_M68K_REG_A0] = *(uint32_t *)value;
     else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
-        M68K_CPU(uc, mycpu)->env.dregs[regid - UC_M68K_REG_D0] = *(int32_t *)value;
+        M68K_CPU(uc, mycpu)->env.dregs[regid - UC_M68K_REG_D0] = *(uint32_t *)value;
     else {
         switch(regid) {
             default: break;

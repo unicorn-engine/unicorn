@@ -113,6 +113,7 @@ typedef enum uc_err {
     UC_ERR_VERSION,  // Unsupported version (bindings)
     UC_ERR_MEM_READ, // Quit emulation due to invalid memory READ: uc_emu_start()
     UC_ERR_MEM_WRITE, // Quit emulation due to invalid memory WRITE: uc_emu_start()
+    UC_ERR_MEM_FETCH, // Quit emulation due to invalid memory FETCH: uc_emu_start()
     UC_ERR_CODE_INVALID, // Quit emulation due to invalid code address: uc_emu_start()
     UC_ERR_HOOK,    // Invalid hook type: uc_hook_add()
     UC_ERR_INSN_INVALID, // Quit emulation due to invalid instruction: uc_emu_start()
@@ -152,6 +153,7 @@ typedef enum uc_mem_type {
     UC_MEM_READ = 16,   // Memory is read from
     UC_MEM_WRITE,       // Memory is written to
     UC_MEM_READ_WRITE,  // Memory is accessed (either READ or WRITE)
+    UC_MEM_EXEC,        // Unmapped memory is fetched, but unmapped (invalid memory access)
     UC_MEM_WRITE_PROT,  // write to write protected memory
     UC_MEM_READ_PROT,   // read from read protected memory
     UC_MEM_EXEC_PROT,   // fetch from non-executable memory
