@@ -447,9 +447,8 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size);
     This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
     or this will return with UC_ERR_INVAL error.
 
- @return UC_ERR_OK on success, UC_ERR_HANDLE for an invalid handle, UC_ERR_INVAL
-    for invalid perms or unaligned address or size, UC_ERR_NOMEM if entire region
-    is not mapped.
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+ for detailed error).
 */
 UNICORN_EXPORT
 uc_err uc_mem_protect(uch handle, uint64_t address, size_t size, uint32_t perms);
