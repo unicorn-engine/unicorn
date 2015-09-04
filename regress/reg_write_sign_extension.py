@@ -6,7 +6,7 @@ import unicorn
 ADDR = 0xffaabbcc
 
 def hook_mem_invalid(mu, access, address, size, value, user_data):
-    print ">>> Access type: %u, Expected value: 0x%x, actual value: 0x%x" % (access, ADDR, address)
+    print ">>> Access type: %u, expected value: 0x%x, actual value: 0x%x" % (access, ADDR, address)
     assert(address == ADDR)
     mu.mem_map(address & 0xfffff000, 4 * 1024)
     mu.mem_write(address, b'\xcc')
