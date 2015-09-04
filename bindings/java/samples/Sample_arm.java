@@ -51,7 +51,7 @@ public class Sample_arm {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_ARM, Unicorn.UC_MODE_ARM);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, ARM_CODE);
@@ -93,7 +93,7 @@ public class Sample_arm {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_ARM, Unicorn.UC_MODE_THUMB);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, THUMB_CODE);
