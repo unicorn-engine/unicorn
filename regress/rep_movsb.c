@@ -90,7 +90,7 @@ static void hook_mem_write(ucengine *uc, uc_mem_type type,
 int main(int argc, char **argv, char **envp)
 {
    ucengine *uc;
-   uc_hook_h trace1, trace2;
+   uchook trace1, trace2;
    uc_err err;
    uint8_t buf1[100], readbuf[100];
    

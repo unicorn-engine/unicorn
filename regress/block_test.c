@@ -62,7 +62,7 @@ int main() {
    }
    fprintf(stderr, "ok %d - uc_mem_write\n", count++);
    
-   uc_hook_h h1, h2;
+   uchook h1, h2;
 
    err = uc_hook_add(uc, &h1, UC_HOOK_BLOCK, cb_hookblock, NULL, (uint64_t)1, (uint64_t)0);
    if (err != UC_ERR_OK) {

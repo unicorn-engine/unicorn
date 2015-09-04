@@ -28,7 +28,7 @@ static void test_arm64(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     int64_t x11 = 0x1234;     // X11 register
     int64_t x13 = 0x6789;     // X13 register

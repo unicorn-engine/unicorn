@@ -29,7 +29,7 @@ static void test_sparc(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     int g1 = 0x1230;     // G1 register
     int g2 = 0x6789;     // G2 register

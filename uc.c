@@ -521,7 +521,7 @@ uc_err uc_emu_stop(ucengine *uc)
 
 
 static int _hook_code(ucengine *uc, int type, uint64_t begin, uint64_t end,
-        void *callback, void *user_data, uc_hook_h *hh)
+        void *callback, void *user_data, uchook *hh)
 {
     int i;
 
@@ -537,7 +537,7 @@ static int _hook_code(ucengine *uc, int type, uint64_t begin, uint64_t end,
 
 static uc_err _hook_mem_access(ucengine *uc, uc_hook_t type,
         uint64_t begin, uint64_t end,
-        void *callback, void *user_data, uc_hook_h *hh)
+        void *callback, void *user_data, uchook *hh)
 {
     int i;
 
@@ -806,7 +806,7 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
 }
 
 static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_eventmem_t callback,
-        void *user_data, uc_hook_h *evh)
+        void *user_data, uchook *evh)
 {
     size_t i;
 
@@ -825,7 +825,7 @@ static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_eventmem_t callback,
 
 
 static uc_err _hook_intr(struct uc_struct* uc, void *callback,
-        void *user_data, uc_hook_h *evh)
+        void *user_data, uchook *evh)
 {
     size_t i;
 
@@ -844,7 +844,7 @@ static uc_err _hook_intr(struct uc_struct* uc, void *callback,
 
 
 static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callback,
-        void *user_data, uc_hook_h *evh)
+        void *user_data, uchook *evh)
 {
     size_t i;
 
@@ -895,7 +895,7 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_add(ucengine *uc, uc_hook_h *hh, uc_hook_t type, void *callback, void *user_data, ...)
+uc_err uc_hook_add(ucengine *uc, uchook *hh, uc_hook_t type, void *callback, void *user_data, ...)
 {
     va_list valist;
     int ret = UC_ERR_OK;
@@ -951,7 +951,7 @@ uc_err uc_hook_add(ucengine *uc, uc_hook_h *hh, uc_hook_t type, void *callback, 
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_del(ucengine *uc, uc_hook_h hh)
+uc_err uc_hook_del(ucengine *uc, uchook hh)
 {
     return hook_del(uc, hh);
 }

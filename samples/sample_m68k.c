@@ -25,7 +25,7 @@ static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_
 static void test_m68k(void)
 {
     ucengine *uc;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
     uc_err err;
 
     int d0 = 0x0000;     // d0 data register

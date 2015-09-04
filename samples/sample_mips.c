@@ -29,7 +29,7 @@ static void test_mips_eb(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     int r1 = 0x6789;     // R1 register
 
@@ -78,7 +78,7 @@ static void test_mips_el(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     int r1 = 0x6789;     // R1 register
 

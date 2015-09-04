@@ -38,7 +38,7 @@ static void test_arm(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     int r0 = 0x1234;     // R0 register
     int r2 = 0x6789;     // R1 register
@@ -94,7 +94,7 @@ static void test_thumb(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     int sp = 0x1234;     // R0 register
 

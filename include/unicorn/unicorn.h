@@ -22,7 +22,7 @@ extern "C" {
 struct uc_struct;
 typedef struct uc_struct ucengine;
 
-typedef size_t uc_hook_h;
+typedef size_t uchook;
 
 #include "m68k.h"
 #include "x86.h"
@@ -375,7 +375,7 @@ uc_err uc_emu_stop(ucengine *uc);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_hook_add(ucengine *uc, uc_hook_h *hh, uc_hook_t type, void *callback, void *user_data, ...);
+uc_err uc_hook_add(ucengine *uc, uchook *hh, uc_hook_t type, void *callback, void *user_data, ...);
 
 /*
  Unregister (remove) a hook callback.
@@ -390,7 +390,7 @@ uc_err uc_hook_add(ucengine *uc, uc_hook_h *hh, uc_hook_t type, void *callback, 
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_hook_del(ucengine *uc, uc_hook_h hh);
+uc_err uc_hook_del(ucengine *uc, uchook hh);
 
 typedef enum uc_prot {
    UC_PROT_NONE = 0,
