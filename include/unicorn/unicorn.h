@@ -150,13 +150,13 @@ typedef void (*uc_cb_insn_out_t)(ucengine *uc, uint32_t port, int size, uint32_t
 
 // All type of memory accesses for UC_HOOK_MEM_*
 typedef enum uc_mem_type {
-    UC_MEM_READ = 16,   // Memory is read from
-    UC_MEM_WRITE,       // Memory is written to
-    UC_MEM_READ_WRITE,  // Memory is accessed (either READ or WRITE)
-    UC_MEM_EXEC,        // Unmapped memory is fetched, but unmapped (invalid memory access)
-    UC_MEM_WRITE_PROT,  // write to write protected memory
-    UC_MEM_READ_PROT,   // read from read protected memory
-    UC_MEM_EXEC_PROT,   // fetch from non-executable memory
+    UC_MEM_READ = 16,   // Unmapped memory is read from
+    UC_MEM_WRITE,       // Unmapped memory is written to
+    UC_MEM_READ_WRITE,  // Unmapped memory is accessed (either READ or WRITE)
+    UC_MEM_EXEC,        // Unmapped memory is fetched
+    UC_MEM_WRITE_PROT,  // Write to write protected, but mapped, memory
+    UC_MEM_READ_PROT,   // Read from read protected, but mapped, memory
+    UC_MEM_EXEC_PROT,   // Fetch from non-executable, but mapped, memory
 } uc_mem_type;
 
 // All type of hooks for uc_hook_add() API.
