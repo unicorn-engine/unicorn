@@ -48,12 +48,15 @@ void x86_release(void *ctx)
     g_free(s->tb_ctx.tbs);
 }
 
-void x86_reg_reset(uch handle)
+void x86_reg_reset(struct uc_struct *uc)
 {
-    struct uc_struct *uc = (struct uc_struct *) handle;
-    CPUArchState *env;
+    CPUArchState *env = first_cpu->env_ptr;
 
-    env = first_cpu->env_ptr;
+    env->features[FEAT_1_EDX] = CPUID_CX8 | CPUID_CMOV | CPUID_SSE2 | CPUID_FXSR | CPUID_SSE | CPUID_CLFLUSH;
+    env->features[FEAT_1_ECX] = CPUID_EXT_SSSE3 | CPUID_EXT_SSE41 | CPUID_EXT_SSE42 | CPUID_EXT_AES;
+    env->features[FEAT_8000_0001_EDX] = CPUID_EXT2_3DNOW | CPUID_EXT2_RDTSCP;
+    env->features[FEAT_8000_0001_ECX] = CPUID_EXT3_LAHF_LM | CPUID_EXT3_ABM | CPUID_EXT3_SKINIT | CPUID_EXT3_CR8LEG;
+    env->features[FEAT_7_0_EBX] = CPUID_7_0_EBX_BMI1 | CPUID_7_0_EBX_BMI2 | CPUID_7_0_EBX_ADX | CPUID_7_0_EBX_SMAP;
 
     env->invalid_error = UC_ERR_OK; // no error
     memset(env->regs, 0, sizeof(env->regs));
@@ -138,12 +141,9 @@ void x86_reg_reset(uch handle)
     }
 }
 
-int x86_reg_read(uch handle, unsigned int regid, void *value)
+int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 {
-    CPUState *mycpu;
-    struct uc_struct *uc = (struct uc_struct *) handle;
-
-    mycpu = first_cpu;
+    CPUState *mycpu = first_cpu;
 
     switch(uc->mode) {
         default:
@@ -540,12 +540,9 @@ int x86_reg_read(uch handle, unsigned int regid, void *value)
 #define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
-int x86_reg_write(uch handle, unsigned int regid, const void *value)
+int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
-    CPUState *mycpu;
-    struct uc_struct *uc = (struct uc_struct *) handle;
-
-    mycpu = first_cpu;
+    CPUState *mycpu = first_cpu;
 
     switch(uc->mode) {
         default:

@@ -2632,7 +2632,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn)
 
     // Unicorn: trace this instruction on request
     if (dc->uc->hook_insn) {
-        struct hook_struct *trace = hook_find((uch)dc->uc, UC_HOOK_CODE, dc->pc);
+        struct hook_struct *trace = hook_find(dc->uc, UC_HOOK_CODE, dc->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 4, trace->callback, dc->uc, dc->pc, trace->user_data);
         // if requested to emulate only some instructions, check if
@@ -5409,7 +5409,7 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
     if (env->uc->hook_block && !env->uc->block_full) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_BLOCK, pc_start);
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             // save block address to see if we need to patch block size later
             env->uc->block_addr = pc_start;

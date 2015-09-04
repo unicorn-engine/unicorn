@@ -38,13 +38,9 @@ size_t hook_find_new(struct uc_struct *uc)
 }
 
 // return -1 on failure, index to hook_callbacks[] on success.
-size_t hook_add(uch handle, int type, uint64_t begin, uint64_t end, void *callback, void *user_data)
+size_t hook_add(struct uc_struct *uc, int type, uint64_t begin, uint64_t end, void *callback, void *user_data)
 {
     int i;
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
-    if (handle == 0)
-        return -1;
 
     // find the first free slot. skip slot 0, so index > 0
     i = hook_find_new(uc);
@@ -67,17 +63,17 @@ size_t hook_add(uch handle, int type, uint64_t begin, uint64_t end, void *callba
                      if (begin > end)
                          uc->hook_insn_idx = i;
                      break;
-            case UC_MEM_READ:
+            case UC_HOOK_MEM_READ:
                      uc->hook_mem_read = true;
                      if (begin > end)
                          uc->hook_read_idx = i;
                      break;
-            case UC_MEM_WRITE:
+            case UC_HOOK_MEM_WRITE:
                      uc->hook_mem_write = true;
                      if (begin > end)
                          uc->hook_write_idx = i;
                      break;
-            case UC_MEM_READ_WRITE:
+            case UC_HOOK_MEM_READ_WRITE:
                      uc->hook_mem_read = true;
                      uc->hook_mem_write = true;
                      if (begin > end) {
@@ -95,52 +91,45 @@ size_t hook_add(uch handle, int type, uint64_t begin, uint64_t end, void *callba
 }
 
 // return 0 on success, -1 on failure
-uc_err hook_del(uch handle, uch *h2)
+uc_err hook_del(struct uc_struct *uc, uchook hh)
 {
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
-    if (handle == 0)
-        return UC_ERR_UCH;
-
-    if (*h2 == uc->hook_block_idx) {
+    if (hh == uc->hook_block_idx) {
         uc->hook_block_idx = 0;
     }
 
-    if (*h2 == uc->hook_insn_idx) {
+    if (hh == uc->hook_insn_idx) {
         uc->hook_insn_idx = 0;
     }
 
-    if (*h2 == uc->hook_read_idx) {
+    if (hh == uc->hook_read_idx) {
         uc->hook_read_idx = 0;
     }
 
-    if (*h2 == uc->hook_write_idx) {
+    if (hh == uc->hook_write_idx) {
         uc->hook_write_idx = 0;
     }
 
-    if (*h2 == uc->hook_mem_idx) {
+    if (hh == uc->hook_mem_idx) {
         uc->hook_mem_idx = 0;
     }
 
-    if (*h2 == uc->hook_intr_idx) {
+    if (hh == uc->hook_intr_idx) {
         uc->hook_intr_idx = 0;
     }
 
-    if (*h2 == uc->hook_out_idx) {
+    if (hh == uc->hook_out_idx) {
         uc->hook_out_idx = 0;
     }
 
-    if (*h2 == uc->hook_in_idx) {
+    if (hh == uc->hook_in_idx) {
         uc->hook_in_idx = 0;
     }
 
-    uc->hook_callbacks[*h2].callback = NULL;
-    uc->hook_callbacks[*h2].user_data = NULL;
-    uc->hook_callbacks[*h2].hook_type = 0;
-    uc->hook_callbacks[*h2].begin = 0;
-    uc->hook_callbacks[*h2].end = 0;
-
-    *h2 = 0;
+    uc->hook_callbacks[hh].callback = NULL;
+    uc->hook_callbacks[hh].user_data = NULL;
+    uc->hook_callbacks[hh].hook_type = 0;
+    uc->hook_callbacks[hh].begin = 0;
+    uc->hook_callbacks[hh].end = 0;
 
     return UC_ERR_OK;
 }
@@ -162,12 +151,13 @@ static struct hook_struct *_hook_find(struct uc_struct *uc, int type, uint64_t a
             if (uc->hook_insn_idx)
                 return &uc->hook_callbacks[uc->hook_insn_idx];
             break;
-        case UC_MEM_READ:
+        case UC_HOOK_MEM_READ:
             // already hooked all memory read?
-            if (uc->hook_read_idx)
+            if (uc->hook_read_idx) {
                 return &uc->hook_callbacks[uc->hook_read_idx];
+            }
             break;
-        case UC_MEM_WRITE:
+        case UC_HOOK_MEM_WRITE:
             // already hooked all memory write?
             if (uc->hook_write_idx)
                 return &uc->hook_callbacks[uc->hook_write_idx];
@@ -185,14 +175,14 @@ static struct hook_struct *_hook_find(struct uc_struct *uc, int type, uint64_t a
                              return &uc->hook_callbacks[i];
                      }
                      break;
-            case UC_MEM_READ:
-                     if (uc->hook_callbacks[i].hook_type == UC_MEM_READ || uc->hook_callbacks[i].hook_type == UC_MEM_READ_WRITE) {
+            case UC_HOOK_MEM_READ:
+                     if (uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_READ || uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_READ_WRITE) {
                          if (uc->hook_callbacks[i].begin <= address && address <= uc->hook_callbacks[i].end)
                              return &uc->hook_callbacks[i];
                      }
                      break;
-            case UC_MEM_WRITE:
-                     if (uc->hook_callbacks[i].hook_type == UC_MEM_WRITE || uc->hook_callbacks[i].hook_type == UC_MEM_READ_WRITE) {
+            case UC_HOOK_MEM_WRITE:
+                     if (uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_WRITE || uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_READ_WRITE) {
                          if (uc->hook_callbacks[i].begin <= address && address <= uc->hook_callbacks[i].end)
                              return &uc->hook_callbacks[i];
                      }
@@ -205,26 +195,19 @@ static struct hook_struct *_hook_find(struct uc_struct *uc, int type, uint64_t a
 }
 
 
-static void hook_count_cb(uch handle, uint64_t address, uint32_t size, void *user_data)
+static void hook_count_cb(struct uc_struct *uc, uint64_t address, uint32_t size, void *user_data)
 {
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
     // count this instruction
     uc->emu_counter++;
 
     if (uc->emu_counter > uc->emu_count)
-        uc_emu_stop(handle);
+        uc_emu_stop(uc);
     else if (uc->hook_count_callback)
-        uc->hook_count_callback(handle, address, size, user_data);
+        uc->hook_count_callback(uc, address, size, user_data);
 }
 
-struct hook_struct *hook_find(uch handle, int type, uint64_t address)
+struct hook_struct *hook_find(struct uc_struct *uc, int type, uint64_t address)
 {
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
-    if (handle == 0)
-        return NULL;
-
     // stop executing callbacks if we already got stop request
     if (uc->stop_request)
         return NULL;
@@ -269,6 +252,5 @@ void helper_uc_tracecode(int32_t size, void *callback, void *handle, int64_t add
         uc->set_pc(uc, address);
     }
 
-    ((uc_cb_hookcode_t)callback)((uch)handle, address, size, user_data);
+    ((uc_cb_hookcode_t)callback)(uc, address, size, user_data);
 }
-

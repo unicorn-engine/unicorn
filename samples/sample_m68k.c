@@ -12,20 +12,20 @@
 // memory address where emulation starts
 #define ADDRESS 0x10000
 
-static void hook_block(uch handle, uint64_t address, uint32_t size, void *user_data)
+static void hook_block(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     printf(">>> Tracing basic block at 0x%"PRIx64 ", block size = 0x%x\n", address, size);
 }
 
-static void hook_code(uch handle, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
 }
 
 static void test_m68k(void)
 {
-    uch handle;
-    uch trace1, trace2;
+    ucengine *uc;
+    uchook trace1, trace2;
     uc_err err;
 
     int d0 = 0x0000;     // d0 data register
@@ -52,7 +52,7 @@ static void test_m68k(void)
     printf("Emulate M68K code\n");
 
     // Initialize emulator in M68K mode
-    err = uc_open(UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, &handle);
+    err = uc_open(UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
                 err, uc_strerror(err));
@@ -60,42 +60,42 @@ static void test_m68k(void)
     }
 
     // map 2MB memory for this emulation
-    uc_mem_map(handle, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    uc_mem_write(handle, ADDRESS, (uint8_t *)M68K_CODE, sizeof(M68K_CODE) - 1);
+    uc_mem_write(uc, ADDRESS, (uint8_t *)M68K_CODE, sizeof(M68K_CODE) - 1);
 
     // initialize machine registers
-    uc_reg_write(handle, UC_M68K_REG_D0, &d0);
-    uc_reg_write(handle, UC_M68K_REG_D1, &d1);
-    uc_reg_write(handle, UC_M68K_REG_D2, &d2);
-    uc_reg_write(handle, UC_M68K_REG_D3, &d3);
-    uc_reg_write(handle, UC_M68K_REG_D4, &d4);
-    uc_reg_write(handle, UC_M68K_REG_D5, &d5);
-    uc_reg_write(handle, UC_M68K_REG_D6, &d6);
-    uc_reg_write(handle, UC_M68K_REG_D7, &d7);
+    uc_reg_write(uc, UC_M68K_REG_D0, &d0);
+    uc_reg_write(uc, UC_M68K_REG_D1, &d1);
+    uc_reg_write(uc, UC_M68K_REG_D2, &d2);
+    uc_reg_write(uc, UC_M68K_REG_D3, &d3);
+    uc_reg_write(uc, UC_M68K_REG_D4, &d4);
+    uc_reg_write(uc, UC_M68K_REG_D5, &d5);
+    uc_reg_write(uc, UC_M68K_REG_D6, &d6);
+    uc_reg_write(uc, UC_M68K_REG_D7, &d7);
 
-    uc_reg_write(handle, UC_M68K_REG_A0, &a0);
-    uc_reg_write(handle, UC_M68K_REG_A1, &a1);
-    uc_reg_write(handle, UC_M68K_REG_A2, &a2);
-    uc_reg_write(handle, UC_M68K_REG_A3, &a3);
-    uc_reg_write(handle, UC_M68K_REG_A4, &a4);
-    uc_reg_write(handle, UC_M68K_REG_A5, &a5);
-    uc_reg_write(handle, UC_M68K_REG_A6, &a6);
-    uc_reg_write(handle, UC_M68K_REG_A7, &a7);
+    uc_reg_write(uc, UC_M68K_REG_A0, &a0);
+    uc_reg_write(uc, UC_M68K_REG_A1, &a1);
+    uc_reg_write(uc, UC_M68K_REG_A2, &a2);
+    uc_reg_write(uc, UC_M68K_REG_A3, &a3);
+    uc_reg_write(uc, UC_M68K_REG_A4, &a4);
+    uc_reg_write(uc, UC_M68K_REG_A5, &a5);
+    uc_reg_write(uc, UC_M68K_REG_A6, &a6);
+    uc_reg_write(uc, UC_M68K_REG_A7, &a7);
 
-    uc_reg_write(handle, UC_M68K_REG_PC, &pc);
-    uc_reg_write(handle, UC_M68K_REG_SR, &sr);
+    uc_reg_write(uc, UC_M68K_REG_PC, &pc);
+    uc_reg_write(uc, UC_M68K_REG_SR, &sr);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(handle, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
 
     // tracing all instruction
-    uc_hook_add(handle, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(handle, ADDRESS, ADDRESS + sizeof(M68K_CODE)-1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(M68K_CODE)-1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -103,26 +103,26 @@ static void test_m68k(void)
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(handle, UC_M68K_REG_D0, &d0);
-    uc_reg_read(handle, UC_M68K_REG_D1, &d1);
-    uc_reg_read(handle, UC_M68K_REG_D2, &d2);
-    uc_reg_read(handle, UC_M68K_REG_D3, &d3);
-    uc_reg_read(handle, UC_M68K_REG_D4, &d4);
-    uc_reg_read(handle, UC_M68K_REG_D5, &d5);
-    uc_reg_read(handle, UC_M68K_REG_D6, &d6);
-    uc_reg_read(handle, UC_M68K_REG_D7, &d7);
+    uc_reg_read(uc, UC_M68K_REG_D0, &d0);
+    uc_reg_read(uc, UC_M68K_REG_D1, &d1);
+    uc_reg_read(uc, UC_M68K_REG_D2, &d2);
+    uc_reg_read(uc, UC_M68K_REG_D3, &d3);
+    uc_reg_read(uc, UC_M68K_REG_D4, &d4);
+    uc_reg_read(uc, UC_M68K_REG_D5, &d5);
+    uc_reg_read(uc, UC_M68K_REG_D6, &d6);
+    uc_reg_read(uc, UC_M68K_REG_D7, &d7);
 
-    uc_reg_read(handle, UC_M68K_REG_A0, &a0);
-    uc_reg_read(handle, UC_M68K_REG_A1, &a1);
-    uc_reg_read(handle, UC_M68K_REG_A2, &a2);
-    uc_reg_read(handle, UC_M68K_REG_A3, &a3);
-    uc_reg_read(handle, UC_M68K_REG_A4, &a4);
-    uc_reg_read(handle, UC_M68K_REG_A5, &a5);
-    uc_reg_read(handle, UC_M68K_REG_A6, &a6);
-    uc_reg_read(handle, UC_M68K_REG_A7, &a7);
+    uc_reg_read(uc, UC_M68K_REG_A0, &a0);
+    uc_reg_read(uc, UC_M68K_REG_A1, &a1);
+    uc_reg_read(uc, UC_M68K_REG_A2, &a2);
+    uc_reg_read(uc, UC_M68K_REG_A3, &a3);
+    uc_reg_read(uc, UC_M68K_REG_A4, &a4);
+    uc_reg_read(uc, UC_M68K_REG_A5, &a5);
+    uc_reg_read(uc, UC_M68K_REG_A6, &a6);
+    uc_reg_read(uc, UC_M68K_REG_A7, &a7);
 
-    uc_reg_read(handle, UC_M68K_REG_PC, &pc);
-    uc_reg_read(handle, UC_M68K_REG_SR, &sr);
+    uc_reg_read(uc, UC_M68K_REG_PC, &pc);
+    uc_reg_read(uc, UC_M68K_REG_SR, &sr);
 
     printf(">>> A0 = 0x%x\t\t>>> D0 = 0x%x\n", a0, d0);
     printf(">>> A1 = 0x%x\t\t>>> D1 = 0x%x\n", a1, d1);
@@ -135,7 +135,7 @@ static void test_m68k(void)
     printf(">>> PC = 0x%x\n", pc);
     printf(">>> SR = 0x%x\n", sr);
 
-    uc_close(&handle);
+    uc_close(uc);
 }
 
 int main(int argc, char **argv, char **envp)

@@ -31,6 +31,7 @@
 
 #include "qemu/include/hw/boards.h"
 
+
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
 {
@@ -44,15 +45,8 @@ unsigned int uc_version(unsigned int *major, unsigned int *minor)
 
 
 UNICORN_EXPORT
-uc_err uc_errno(uch handle)
+uc_err uc_errno(ucengine *uc)
 {
-    struct uc_struct *uc;
-
-    if (!handle)
-        return UC_ERR_UCH;
-
-    uc = (struct uc_struct *)(uintptr_t)handle;
-
     return uc->errnum;
 }
 
@@ -65,14 +59,12 @@ const char *uc_strerror(uc_err code)
             return "Unknown error code";
         case UC_ERR_OK:
             return "OK (UC_ERR_OK)";
-        case UC_ERR_OOM:
-            return "Out of memory (UC_ERR_OOM)";
+        case UC_ERR_NOMEM:
+            return "No memory available or memory not present (UC_ERR_NOMEM)";
         case UC_ERR_ARCH:
             return "Invalid/unsupported architecture(UC_ERR_ARCH)";
         case UC_ERR_HANDLE:
             return "Invalid handle (UC_ERR_HANDLE)";
-        case UC_ERR_UCH:
-            return "Invalid uch (UC_ERR_UCH)";
         case UC_ERR_MODE:
             return "Invalid mode (UC_ERR_MODE)";
         case UC_ERR_VERSION:
@@ -89,10 +81,14 @@ const char *uc_strerror(uc_err code)
             return "Invalid hook type (UC_ERR_HOOK)";
         case UC_ERR_MAP:
             return "Invalid memory mapping (UC_ERR_MAP)";
-        case UC_ERR_MEM_WRITE_NW:
-            return "Write to non-writable (UC_ERR_MEM_WRITE_NW)";
-        case UC_ERR_MEM_READ_NR:
-            return "Read from non-readable (UC_ERR_MEM_READ_NR)";
+        case UC_ERR_WRITE_PROT:
+            return "Write to write-protected memory (UC_ERR_WRITE_PROT)";
+        case UC_ERR_READ_PROT:
+            return "Read from non-readable memory (UC_ERR_READ_PROT)";
+        case UC_ERR_EXEC_PROT:
+            return "Fetch from non-executable memory (UC_ERR_EXEC_PROT)";
+        case UC_ERR_INVAL:
+            return "Invalid argumet (UC_ERR_INVAL)";
     }
 }
 
@@ -130,7 +126,7 @@ bool uc_arch_supported(uc_arch arch)
 
 
 UNICORN_EXPORT
-uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
+uc_err uc_open(uc_arch arch, uc_mode mode, ucengine **result)
 {
     struct uc_struct *uc;
 
@@ -138,7 +134,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
         uc = calloc(1, sizeof(*uc));
         if (!uc) {
             // memory insufficient
-            return UC_ERR_OOM;
+            return UC_ERR_NOMEM;
         }
 
         uc->errnum = UC_ERR_OK;
@@ -179,7 +175,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
 
                 // verify mode
                 if (mode != UC_MODE_ARM && mode != UC_MODE_THUMB) {
-                    *handle = 0;
                     free(uc);
                     return UC_ERR_MODE;
                 }
@@ -229,38 +224,29 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uch *handle)
         }
 
         if (uc->init_arch == NULL) {
-            *handle = 0;
             return UC_ERR_ARCH;
         }
 
         machine_initialize(uc);
 
-        *handle = (uintptr_t)uc;
+        *result = uc;
 
         if (uc->reg_reset)
-            uc->reg_reset(*handle);
+            uc->reg_reset(uc);
 
         uc->hook_size = HOOK_SIZE;
         uc->hook_callbacks = calloc(1, sizeof(uc->hook_callbacks[0]) * HOOK_SIZE);
 
         return UC_ERR_OK;
     } else {
-        *handle = 0;
         return UC_ERR_ARCH;
     }
 }
 
 
 UNICORN_EXPORT
-uc_err uc_close(uch *handle)
+uc_err uc_close(ucengine *uc)
 {
-    struct uc_struct *uc;
-
-    // invalid handle ?
-    if (*handle == 0)
-        return UC_ERR_UCH;
-
-    uc = (struct uc_struct *)(*handle);
     if (uc->release)
         uc->release(uc->tcg_ctx);
 
@@ -294,26 +280,15 @@ uc_err uc_close(uch *handle)
     memset(uc, 0, sizeof(*uc));
     free(uc);
 
-    // invalidate this handle by ZERO out its value.
-    // this is to make sure it is unusable after uc_close()
-    *handle = 0;
-
     return UC_ERR_OK;
 }
 
 
 UNICORN_EXPORT
-uc_err uc_reg_read(uch handle, int regid, void *value)
+uc_err uc_reg_read(ucengine *uc, int regid, void *value)
 {
-    struct uc_struct *uc;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
-    uc = (struct uc_struct *)handle;
     if (uc->reg_read)
-        uc->reg_read(handle, regid, value);
+        uc->reg_read(uc, regid, value);
     else
         return -1;  // FIXME: need a proper uc_err
 
@@ -322,17 +297,10 @@ uc_err uc_reg_read(uch handle, int regid, void *value)
 
 
 UNICORN_EXPORT
-uc_err uc_reg_write(uch handle, int regid, const void *value)
+uc_err uc_reg_write(ucengine *uc, int regid, const void *value)
 {
-    struct uc_struct *uc;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
-    uc = (struct uc_struct *)handle;
     if (uc->reg_write)
-        uc->reg_write(handle, regid, value);
+        uc->reg_write(uc, regid, value);
     else
         return -1;  // FIXME: need a proper uc_err
 
@@ -342,7 +310,7 @@ uc_err uc_reg_write(uch handle, int regid, const void *value)
 
 // check if a memory area is mapped
 // this is complicated because an area can overlap adjacent blocks
-static bool check_mem_area(struct uc_struct *uc, uint64_t address, size_t size)
+static bool check_mem_area(ucengine *uc, uint64_t address, size_t size)
 {
     size_t count = 0, len;
 
@@ -361,14 +329,8 @@ static bool check_mem_area(struct uc_struct *uc, uint64_t address, size_t size)
 
 
 UNICORN_EXPORT
-uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
+uc_err uc_mem_read(ucengine *uc, uint64_t address, uint8_t *bytes, size_t size)
 {
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
     if (!check_mem_area(uc, address, size))
         return UC_ERR_MEM_READ;
 
@@ -395,14 +357,8 @@ uc_err uc_mem_read(uch handle, uint64_t address, uint8_t *bytes, size_t size)
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t size)
+uc_err uc_mem_write(ucengine *uc, uint64_t address, const uint8_t *bytes, size_t size)
 {
-    struct uc_struct *uc = (struct uc_struct *)(uintptr_t)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
     if (!check_mem_area(uc, address, size))
         return UC_ERR_MEM_WRITE;
 
@@ -441,7 +397,7 @@ uc_err uc_mem_write(uch handle, uint64_t address, const uint8_t *bytes, size_t s
 #define TIMEOUT_STEP 2    // microseconds
 static void *_timeout_fn(void *arg)
 {
-    struct uc_struct *uc = (struct uc_struct *)arg;
+    struct uc_struct *uc = arg;
     int64_t current_time = get_clock();
 
     do {
@@ -454,30 +410,22 @@ static void *_timeout_fn(void *arg)
     // timeout before emulation is done?
     if (!uc->emulation_done) {
         // force emulation to stop
-        uc_emu_stop((uch)uc);
+        uc_emu_stop(uc);
     }
 
     return NULL;
 }
 
-static void enable_emu_timer(uch handle, uint64_t timeout)
+static void enable_emu_timer(ucengine *uc, uint64_t timeout)
 {
-    struct uc_struct *uc = (struct uc_struct *)handle;
-
     uc->timeout = timeout;
-    qemu_thread_create(&uc->timer, "timeout", _timeout_fn,
+    qemu_thread_create(uc, &uc->timer, "timeout", _timeout_fn,
             uc, QEMU_THREAD_JOINABLE);
 }
 
 UNICORN_EXPORT
-uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout, size_t count)
+uc_err uc_emu_start(ucengine* uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count)
 {
-    struct uc_struct* uc = (struct uc_struct *)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
     // reset the counter
     uc->emu_counter = 0;
     uc->stop_request = false;
@@ -490,7 +438,7 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
             break;
 
         case UC_ARCH_M68K:
-            uc_reg_write(handle, UC_M68K_REG_PC, &begin);
+            uc_reg_write(uc, UC_M68K_REG_PC, &begin);
             break;
 
         case UC_ARCH_X86:
@@ -498,13 +446,13 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
                 default:
                     break;
                 case UC_MODE_16:
-                    uc_reg_write(handle, UC_X86_REG_IP, &begin);
+                    uc_reg_write(uc, UC_X86_REG_IP, &begin);
                     break;
                 case UC_MODE_32:
-                    uc_reg_write(handle, UC_X86_REG_EIP, &begin);
+                    uc_reg_write(uc, UC_X86_REG_EIP, &begin);
                     break;
                 case UC_MODE_64:
-                    uc_reg_write(handle, UC_X86_REG_RIP, &begin);
+                    uc_reg_write(uc, UC_X86_REG_RIP, &begin);
                     break;
             }
             break;
@@ -515,23 +463,23 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
                     break;
                 case UC_MODE_THUMB:
                 case UC_MODE_ARM:
-                    uc_reg_write(handle, UC_ARM_REG_R15, &begin);
+                    uc_reg_write(uc, UC_ARM_REG_R15, &begin);
                     break;
             }
             break;
 
         case UC_ARCH_ARM64:
-            uc_reg_write(handle, UC_ARM64_REG_PC, &begin);
+            uc_reg_write(uc, UC_ARM64_REG_PC, &begin);
             break;
 
         case UC_ARCH_MIPS:
             // TODO: MIPS32/MIPS64/BIGENDIAN etc
-            uc_reg_write(handle, UC_MIPS_REG_PC, &begin);
+            uc_reg_write(uc, UC_MIPS_REG_PC, &begin);
             break;
 
         case UC_ARCH_SPARC:
             // TODO: Sparc/Sparc64
-            uc_reg_write(handle, UC_SPARC_REG_PC, &begin);
+            uc_reg_write(uc, UC_SPARC_REG_PC, &begin);
             break;
     }
 
@@ -544,7 +492,7 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
 
     uc->vm_start(uc);
     if (timeout)
-        enable_emu_timer(handle, timeout * 1000);   // microseconds -> nanoseconds
+        enable_emu_timer(uc, timeout * 1000);   // microseconds -> nanoseconds
     uc->pause_all_vcpus(uc);
     // emulation is done
     uc->emulation_done = true;
@@ -559,14 +507,8 @@ uc_err uc_emu_start(uch handle, uint64_t begin, uint64_t until, uint64_t timeout
 
 
 UNICORN_EXPORT
-uc_err uc_emu_stop(uch handle)
+uc_err uc_emu_stop(ucengine *uc)
 {
-    struct uc_struct* uc = (struct uc_struct *)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
     if (uc->emulation_done)
         return UC_ERR_OK;
 
@@ -578,72 +520,275 @@ uc_err uc_emu_stop(uch handle)
 }
 
 
-static int _hook_code(uch handle, int type, uint64_t begin, uint64_t end,
-        void *callback, void *user_data, uch *h2)
+static int _hook_code(ucengine *uc, int type, uint64_t begin, uint64_t end,
+        void *callback, void *user_data, uchook *hh)
 {
     int i;
 
-    i = hook_add(handle, type, begin, end, callback, user_data);
+    i = hook_add(uc, type, begin, end, callback, user_data);
     if (i == 0)
-        return UC_ERR_OOM;  // FIXME
+        return UC_ERR_NOMEM;  // FIXME
 
-    *h2 = i;
+    *hh = i;
 
     return UC_ERR_OK;
 }
 
 
-static uc_err _hook_mem_access(uch handle, uc_mem_type type,
+static uc_err _hook_mem_access(ucengine *uc, uc_hook_t type,
         uint64_t begin, uint64_t end,
-        void *callback, void *user_data, uch *h2)
+        void *callback, void *user_data, uchook *hh)
 {
     int i;
 
-    i = hook_add(handle, type, begin, end, callback, user_data);
+    i = hook_add(uc, type, begin, end, callback, user_data);
     if (i == 0)
-        return UC_ERR_OOM;  // FIXME
+        return UC_ERR_NOMEM;  // FIXME
 
-    *h2 = i;
+    *hh = i;
 
     return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms)
+uc_err uc_mem_map(ucengine *uc, uint64_t address, size_t size, uint32_t perms)
 {
     MemoryRegion **regions;
-    struct uc_struct* uc = (struct uc_struct *)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
 
     if (size == 0)
         // invalid memory mapping
-        return UC_ERR_MAP;
+        return UC_ERR_INVAL;
 
-    // address must be aligned to 4KB
-    if ((address & (4*1024 - 1)) != 0)
-        return UC_ERR_MAP;
+    // address must be aligned to uc->target_page_size
+    if ((address & uc->target_page_align) != 0)
+        return UC_ERR_INVAL;
 
-    // size must be multiple of 4KB
-    if ((size & (4*1024 - 1)) != 0)
-        return UC_ERR_MAP;
+    // size must be multiple of uc->target_page_size
+    if ((size & uc->target_page_align) != 0)
+        return UC_ERR_INVAL;
 
     // check for only valid permissions
-    if ((perms & ~(UC_PROT_READ | UC_PROT_WRITE)) != 0)
-        return UC_ERR_MAP;
+    if ((perms & ~UC_PROT_ALL) != 0)
+        return UC_ERR_INVAL;
 
     if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
-        regions = (MemoryRegion**)realloc(uc->mapped_blocks, sizeof(MemoryRegion*) * (uc->mapped_block_count + MEM_BLOCK_INCR));
+        regions = (MemoryRegion**)realloc(uc->mapped_blocks,
+                sizeof(MemoryRegion*) * (uc->mapped_block_count + MEM_BLOCK_INCR));
         if (regions == NULL) {
-            return UC_ERR_OOM;
+            return UC_ERR_NOMEM;
         }
         uc->mapped_blocks = regions;
     }
     uc->mapped_blocks[uc->mapped_block_count] = uc->memory_map(uc, address, size, perms);
     uc->mapped_block_count++;
 
+    return UC_ERR_OK;
+}
+
+// Create a backup copy of the indicated MemoryRegion.
+// Generally used in prepartion for splitting a MemoryRegion.
+static uint8_t *copy_region(struct uc_struct *uc, MemoryRegion *mr)
+{
+    uint8_t *block = (uint8_t *)malloc(int128_get64(mr->size));
+    if (block != NULL) {
+        uc_err err = uc_mem_read(uc, mr->addr, block, int128_get64(mr->size));
+        if (err != UC_ERR_OK) {
+            free(block);
+            block = NULL;
+        }
+    }
+
+    return block;
+}
+
+/*
+   Split the given MemoryRegion at the indicated address for the indicated size
+   this may result in the create of up to 3 spanning sections. If the delete
+   parameter is true, the no new section will be created to replace the indicate
+   range. This functions exists to support uc_mem_protect and uc_mem_unmap.
+
+   This is a static function and callers have already done some preliminary 
+   parameter validation.
+   
+   The do_delete argument indicates that we are being called to support
+   uc_mem_unmap. In this case we save some time by choosing NOT to remap
+   the areas that are intended to get unmapped
+ */
+// TODO: investigate whether qemu region manipulation functions already offered
+// this capability
+static bool split_region(struct uc_struct *uc, MemoryRegion *mr, uint64_t address,
+        size_t size, bool do_delete)
+{
+    uint8_t *backup;
+    uint32_t perms;
+    uint64_t begin, end, chunk_end;
+    size_t l_size, m_size, r_size;
+
+    chunk_end = address + size;
+
+    // if this region belongs to area [address, address+size],
+    // then there is no work to do.
+    if (address <= mr->addr && chunk_end >= mr->end)
+        return true;
+
+    if (size == 0)
+        // trivial case
+        return true;
+
+    if (address >= mr->end || chunk_end <= mr->addr)
+        // impossible case
+        return false;
+
+    backup = copy_region(uc, mr);
+    if (backup == NULL)
+        return false;
+
+    // save the essential information required for the split before mr gets deleted
+    perms = mr->perms;
+    begin = mr->addr;
+    end = mr->end;
+
+    // unmap this region first, then do split it later
+    if (uc_mem_unmap(uc, mr->addr, int128_get64(mr->size)) != UC_ERR_OK)
+        goto error;
+
+    /* overlapping cases
+     *               |------mr------|
+     * case 1    |---size--|
+     * case 2           |--size--|
+     * case 3                  |---size--|
+     */
+
+    // adjust some things
+    if (address < begin)
+        address = begin;
+    if (chunk_end > end)
+        chunk_end = end;
+
+    // compute sub region sizes
+    l_size = (size_t)(address - begin);
+    r_size = (size_t)(end - chunk_end);
+    m_size = (size_t)(chunk_end - address);
+
+    // If there are error in any of the below operations, things are too far gone
+    // at that point to recover. Could try to remap orignal region, but these smaller
+    // allocation just failed so no guarantee that we can recover the original
+    // allocation at this point
+    if (l_size > 0) {
+        if (uc_mem_map(uc, begin, l_size, perms) != UC_ERR_OK)
+            goto error;
+        if (uc_mem_write(uc, begin, backup, l_size) != UC_ERR_OK)
+            goto error;
+    }
+
+    if (m_size > 0 && !do_delete) {
+        if (uc_mem_map(uc, address, m_size, perms) != UC_ERR_OK)
+            goto error;
+        if (uc_mem_write(uc, address, backup + l_size, m_size) != UC_ERR_OK)
+            goto error;
+    }
+
+    if (r_size > 0) {
+        if (uc_mem_map(uc, chunk_end, r_size, perms) != UC_ERR_OK)
+            goto error;
+        if (uc_mem_write(uc, chunk_end, backup + l_size + m_size, r_size) != UC_ERR_OK)
+            goto error;
+    }
+
+    return true;
+
+error:
+    free(backup);
+    return false;
+}
+
+UNICORN_EXPORT
+uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size, uint32_t perms)
+{
+    MemoryRegion *mr;
+    uint64_t addr = address;
+    size_t count, len;
+
+    if (size == 0)
+        // trivial case, no change
+        return UC_ERR_OK;
+
+    // address must be aligned to uc->target_page_size
+    if ((address & uc->target_page_align) != 0)
+        return UC_ERR_INVAL;
+
+    // size must be multiple of uc->target_page_size
+    if ((size & uc->target_page_align) != 0)
+        return UC_ERR_INVAL;
+
+    // check for only valid permissions
+    if ((perms & ~UC_PROT_ALL) != 0)
+        return UC_ERR_INVAL;
+
+    // check that user's entire requested block is mapped
+    if (!check_mem_area(uc, address, size))
+        return UC_ERR_NOMEM;
+
+    // Now we know entire region is mapped, so change permissions
+    // We may need to split regions if this area spans adjacent regions
+    addr = address;
+    count = 0;
+    while(count < size) {
+        mr = memory_mapping(uc, addr);
+        len = MIN(size - count, mr->end - addr);
+        if (!split_region(uc, mr, addr, len, false))
+            return UC_ERR_NOMEM;
+
+        mr = memory_mapping(uc, addr);
+        mr->perms = perms;
+        uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+
+        count += len;
+        addr += len;
+    }
+    return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
+{
+    MemoryRegion *mr;
+    uint64_t addr;
+    size_t count, len;
+
+    if (size == 0)
+        // nothing to unmap
+        return UC_ERR_OK;
+
+    // address must be aligned to uc->target_page_size
+    if ((address & uc->target_page_align) != 0)
+        return UC_ERR_INVAL;
+
+    // size must be multiple of uc->target_page_size
+    if ((size & uc->target_page_align) != 0)
+        return UC_ERR_MAP;
+
+    // check that user's entire requested block is mapped
+    if (!check_mem_area(uc, address, size))
+        return UC_ERR_NOMEM;
+
+    // Now we know entire region is mapped, so do the unmap
+    // We may need to split regions if this area spans adjacent regions
+    addr = address;
+    count = 0;
+    while(count < size) {
+        mr = memory_mapping(uc, addr);
+        len = MIN(size - count, mr->end - addr);
+        if (!split_region(uc, mr, addr, len, true))
+            return UC_ERR_NOMEM;
+        // if we can retrieve the mapping, then no splitting took place
+        // so unmap here
+        mr = memory_mapping(uc, addr);
+        if (mr != NULL)
+           uc->memory_unmap(uc, mr);
+        count += len;
+        addr += len;
+    }
     return UC_ERR_OK;
 }
 
@@ -661,7 +806,7 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
 }
 
 static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_eventmem_t callback,
-        void *user_data, uch *evh)
+        void *user_data, uchook *evh)
 {
     size_t i;
 
@@ -675,12 +820,12 @@ static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_eventmem_t callback,
         uc->hook_mem_idx = i;
         return UC_ERR_OK;
     } else
-        return UC_ERR_OOM;
+        return UC_ERR_NOMEM;
 }
 
 
 static uc_err _hook_intr(struct uc_struct* uc, void *callback,
-        void *user_data, uch *evh)
+        void *user_data, uchook *evh)
 {
     size_t i;
 
@@ -694,12 +839,12 @@ static uc_err _hook_intr(struct uc_struct* uc, void *callback,
         uc->hook_intr_idx = i;
         return UC_ERR_OK;
     } else
-        return UC_ERR_OOM;
+        return UC_ERR_NOMEM;
 }
 
 
 static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callback,
-        void *user_data, uch *evh)
+        void *user_data, uchook *evh)
 {
     size_t i;
 
@@ -718,7 +863,7 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                                   uc->hook_out_idx = i;
                                   return UC_ERR_OK;
                               } else
-                                  return UC_ERR_OOM;
+                                  return UC_ERR_NOMEM;
                      case UC_X86_INS_IN:
                               // FIXME: only one event handler at the same time
                               i = hook_find_new(uc);
@@ -729,7 +874,7 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                                   uc->hook_in_idx = i;
                                   return UC_ERR_OK;
                               } else
-                                  return UC_ERR_OOM;
+                                  return UC_ERR_NOMEM;
                      case UC_X86_INS_SYSCALL:
                      case UC_X86_INS_SYSENTER:
                               // FIXME: only one event handler at the same time
@@ -741,7 +886,7 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                                   uc->hook_syscall_idx = i;
                                   return UC_ERR_OK;
                               } else
-                                  return UC_ERR_OOM;
+                                  return UC_ERR_NOMEM;
                  }
                  break;
     }
@@ -750,17 +895,12 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_add(uch handle, uch *h2, uc_hook_t type, void *callback, void *user_data, ...)
+uc_err uc_hook_add(ucengine *uc, uchook *hh, uc_hook_t type, void *callback, void *user_data, ...)
 {
-    struct uc_struct* uc = (struct uc_struct *)handle;
     va_list valist;
     int ret = UC_ERR_OK;
     int id;
     uint64_t begin, end;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
 
     va_start(valist, user_data);
 
@@ -769,38 +909,39 @@ uc_err uc_hook_add(uch handle, uch *h2, uc_hook_t type, void *callback, void *us
             ret = UC_ERR_HOOK;
             break;
         case UC_HOOK_INTR:
-            ret = _hook_intr(uc, callback, user_data, h2);
+            ret = _hook_intr(uc, callback, user_data, hh);
             break;
         case UC_HOOK_INSN:
             id = va_arg(valist, int);
-            ret = _hook_insn(uc, id, callback, user_data, h2);
+            ret = _hook_insn(uc, id, callback, user_data, hh);
             break;
         case UC_HOOK_CODE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_code(handle, UC_HOOK_CODE, begin, end, callback, user_data, h2);
+            ret = _hook_code(uc, UC_HOOK_CODE, begin, end, callback, user_data, hh);
             break;
         case UC_HOOK_BLOCK:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_code(handle, UC_HOOK_BLOCK, begin, end, callback, user_data, h2);
+            ret = _hook_code(uc, UC_HOOK_BLOCK, begin, end, callback, user_data, hh);
             break;
         case UC_HOOK_MEM_INVALID:
-            ret = _hook_mem_invalid(uc, callback, user_data, h2);
+            ret = _hook_mem_invalid(uc, callback, user_data, hh);
             break;
         case UC_HOOK_MEM_READ:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(handle, UC_MEM_READ, begin, end, callback, user_data, h2);
+            ret = _hook_mem_access(uc, UC_HOOK_MEM_READ, begin, end, callback, user_data, hh);
             break;
         case UC_HOOK_MEM_WRITE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(handle, UC_MEM_WRITE, begin, end, callback, user_data, h2);
+            ret = _hook_mem_access(uc, UC_HOOK_MEM_WRITE, begin, end, callback, user_data, hh);
+            break;
         case UC_HOOK_MEM_READ_WRITE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(handle, UC_MEM_READ_WRITE, begin, end, callback, user_data, h2);
+            ret = _hook_mem_access(uc, UC_HOOK_MEM_READ_WRITE, begin, end, callback, user_data, hh);
             break;
     }
 
@@ -810,17 +951,7 @@ uc_err uc_hook_add(uch handle, uch *h2, uc_hook_t type, void *callback, void *us
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_del(uch handle, uch *h2)
+uc_err uc_hook_del(ucengine *uc, uchook hh)
 {
-    //struct uc_struct* uc = (struct uc_struct *)handle;
-
-    if (handle == 0)
-        // invalid handle
-        return UC_ERR_UCH;
-
-    if (*h2 == 0)
-        // invalid handle
-        return UC_ERR_HANDLE;
-
-    return hook_del(handle, h2);
+    return hook_del(uc, hh);
 }

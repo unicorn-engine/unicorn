@@ -2944,8 +2944,8 @@ typedef void (*SSEFunc_0_epl)(TCGContext *s, TCGv_ptr env, TCGv_ptr reg, TCGv_i6
 typedef void (*SSEFunc_0_epp)(TCGContext *s, TCGv_ptr env, TCGv_ptr reg_a, TCGv_ptr reg_b);
 typedef void (*SSEFunc_0_eppi)(TCGContext *s, TCGv_ptr env, TCGv_ptr reg_a, TCGv_ptr reg_b,
                                TCGv_i32 val);
-typedef void (*SSEFunc_0_ppi)(TCGv_ptr reg_a, TCGv_ptr reg_b, TCGv_i32 val);
-typedef void (*SSEFunc_0_eppt)(TCGv_ptr env, TCGv_ptr reg_a, TCGv_ptr reg_b,
+typedef void (*SSEFunc_0_ppi)(TCGContext *s, TCGv_ptr reg_a, TCGv_ptr reg_b, TCGv_i32 val);
+typedef void (*SSEFunc_0_eppt)(TCGContext *s, TCGv_ptr env, TCGv_ptr reg_a, TCGv_ptr reg_b,
                                TCGv val);
 
 #define SSE_SPECIAL ((void *)1)
@@ -4669,7 +4669,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
             /* XXX: introduce a new table? */
             sse_fn_ppi = (SSEFunc_0_ppi)sse_fn_epp;
-            sse_fn_ppi(cpu_ptr0, cpu_ptr1, tcg_const_i32(tcg_ctx, val));
+            sse_fn_ppi(tcg_ctx, cpu_ptr0, cpu_ptr1, tcg_const_i32(tcg_ctx, val));
             break;
         case 0xc2:
             /* compare insns */
@@ -4694,7 +4694,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
             /* XXX: introduce a new table? */
             sse_fn_eppt = (SSEFunc_0_eppt)sse_fn_epp;
-            sse_fn_eppt(cpu_env, cpu_ptr0, cpu_ptr1, cpu_A0);
+            sse_fn_eppt(tcg_ctx, cpu_env, cpu_ptr0, cpu_ptr1, cpu_A0);
             break;
         default:
             tcg_gen_addi_ptr(tcg_ctx, cpu_ptr0, cpu_env, op1_offset);
@@ -4761,7 +4761,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
 
     // Unicorn: trace this instruction on request
     if (env->uc->hook_insn) {
-        trace = hook_find((uch)env->uc, UC_HOOK_CODE, pc_start);
+        trace = hook_find(env->uc, UC_HOOK_CODE, pc_start);
         if (trace) {
             if (s->last_cc_op != s->cc_op) {
                 sync_eflags(s, tcg_ctx);
@@ -8175,9 +8175,15 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         // printf("\n");
         if (changed_cc_op) {
             if (cc_op_dirty)
+#if TCG_TARGET_REG_BITS == 32
+                *(save_opparam_ptr + 16) = s->pc - pc_start;
+            else
+                *(save_opparam_ptr + 14) = s->pc - pc_start;
+#else
                 *(save_opparam_ptr + 12) = s->pc - pc_start;
             else
                 *(save_opparam_ptr + 10) = s->pc - pc_start;
+#endif
         } else {
             *(save_opparam_ptr + 1) = s->pc - pc_start;
         }
@@ -8373,7 +8379,7 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
     if (env->uc->hook_block && !env->uc->block_full) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_BLOCK, pc_start);
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             env->uc->block_addr = pc_start;
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, pc_start, trace->user_data);

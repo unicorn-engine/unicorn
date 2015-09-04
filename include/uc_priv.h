@@ -24,10 +24,10 @@ typedef struct ModuleEntry {
 typedef QTAILQ_HEAD(, ModuleEntry) ModuleTypeList;
 
 // return 0 on success, -1 on failure
-typedef int (*reg_read_t)(uch handle, unsigned int regid, void *value);
-typedef int (*reg_write_t)(uch handle, unsigned int regid, const void *value);
+typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int regid, void *value);
+typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int regid, const void *value);
 
-typedef void (*reg_reset_t)(uch handle);
+typedef void (*reg_reset_t)(struct uc_struct *uc);
 
 typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr, const uint8_t *buf, int len);
 
@@ -46,6 +46,8 @@ typedef void (*uc_args_uc_long_t)(struct uc_struct*, unsigned long);
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
 typedef MemoryRegion* (*uc_args_uc_ram_size_t)(struct uc_struct*,  ram_addr_t begin, size_t size, uint32_t perms);
+
+typedef void (*uc_mem_unmap_t)(struct uc_struct*, MemoryRegion *mr);
 
 typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
@@ -90,6 +92,7 @@ struct uc_struct {
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;
     uc_args_uc_ram_size_t memory_map;
+    uc_mem_unmap_t memory_unmap;
     uc_readonly_mem_t readonly_mem;
     // list of cpu
     void* cpu;
@@ -172,6 +175,9 @@ struct uc_struct {
     bool block_full;
     MemoryRegion **mapped_blocks;
     uint32_t mapped_block_count;
+    void *qemu_thread_data; // to support cross compile to Windows (qemu-thread-win32.c)
+    uint32_t target_page_size;
+    uint32_t target_page_align;
 };
 
 #include "qemu_macro.h"

@@ -10984,7 +10984,7 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
 
     // Unicorn: trace this instruction on request
     if (env->uc->hook_insn) {
-        struct hook_struct *trace = hook_find((uch)s->uc, UC_HOOK_CODE, s->pc - 4);
+        struct hook_struct *trace = hook_find(s->uc, UC_HOOK_CODE, s->pc - 4);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 4, trace->callback, env->uc, s->pc - 4, trace->user_data);
         // if requested to emulate only some instructions, check if
@@ -11109,7 +11109,7 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
     if (env->uc->hook_block && !env->uc->block_full) {
-        struct hook_struct *trace = hook_find((uch)env->uc, UC_HOOK_BLOCK, pc_start);
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
         if (trace) {
             // save block address to see if we need to patch block size later
             env->uc->block_addr = pc_start;
