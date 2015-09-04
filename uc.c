@@ -642,7 +642,8 @@ uc_err uc_mem_map(uch handle, uint64_t address, size_t size, uint32_t perms)
         return UC_ERR_INVAL;
 
     if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
-        regions = (MemoryRegion**)realloc(uc->mapped_blocks, sizeof(MemoryRegion*) * (uc->mapped_block_count + MEM_BLOCK_INCR));
+        regions = (MemoryRegion**)realloc(uc->mapped_blocks,
+                sizeof(MemoryRegion*) * (uc->mapped_block_count + MEM_BLOCK_INCR));
         if (regions == NULL) {
             return UC_ERR_NOMEM;
         }
@@ -694,26 +695,30 @@ static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
     size_t l_size, m_size, r_size;
 
     chunk_end = address + size;
+
+    // if this region belongs to area [address, address+size],
+    // then there is no work to do.
     if (address <= mr->addr && chunk_end >= mr->end)
         return true;
 
     if (size == 0)
-        //trivial case
+        // trivial case
         return true;
 
     if (address >= mr->end || chunk_end <= mr->addr)
-        //impossible case
+        // impossible case
         return false;
 
     backup = copy_region(handle, mr);
     if (backup == NULL)
         return false;
 
-    //save the essential information required for the split before mr gets deleted
+    // save the essential information required for the split before mr gets deleted
     perms = mr->perms;
     begin = mr->addr;
     end = mr->end;
 
+    // unmap this region first, then do split it later
     if (uc_mem_unmap(handle, mr->addr, int128_get64(mr->size)) != UC_ERR_OK)
         goto error;
 
@@ -724,13 +729,13 @@ static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
      * case 3                  |---size--|
      */
 
-    //adjust some things
+    // adjust some things
     if (address < begin)
         address = begin;
     if (chunk_end > end)
         chunk_end = end;
 
-    //compute sub region sizes
+    // compute sub region sizes
     l_size = (size_t)(address - begin);
     r_size = (size_t)(end - chunk_end);
     m_size = (size_t)(chunk_end - address);
@@ -745,19 +750,23 @@ static bool split_region(uch handle, MemoryRegion *mr, uint64_t address,
         if (uc_mem_write(handle, begin, backup, l_size) != UC_ERR_OK)
             goto error;
     }
+
     if (m_size > 0 && !do_delete) {
         if (uc_mem_map(handle, address, m_size, perms) != UC_ERR_OK)
             goto error;
         if (uc_mem_write(handle, address, backup + l_size, m_size) != UC_ERR_OK)
             goto error;
     }
+
     if (r_size > 0) {
         if (uc_mem_map(handle, chunk_end, r_size, perms) != UC_ERR_OK)
             goto error;
         if (uc_mem_write(handle, chunk_end, backup + l_size + m_size, r_size) != UC_ERR_OK)
             goto error;
     }
+
     return true;
+
 error:
     free(backup);
     return false;
@@ -852,7 +861,7 @@ uc_err uc_mem_unmap(uch handle, uint64_t address, size_t size)
         len = MIN(size - count, mr->end - addr);
         if (!split_region(handle, mr, addr, len, true))
             return UC_ERR_NOMEM;
-        // if we can retieve the mapping, then no splitting took place
+        // if we can retrieve the mapping, then no splitting took place
         // so unmap here
         mr = memory_mapping(uc, addr);
         if (mr != NULL)
