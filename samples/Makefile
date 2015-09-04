@@ -7,7 +7,7 @@ LIBNAME = unicorn
 
 # Find GLIB
 ifndef GLIB
-GLIB = `pkg-config --libs glib-2.0`
+GLIB = $(shell pkg-config --libs glib-2.0)
 endif
 
 UNICORN_DEP_LIBS_STATIC += -lpthread -lm $(GLIB)

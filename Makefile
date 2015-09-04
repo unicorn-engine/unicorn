@@ -204,11 +204,11 @@ config:
 qemu/config-host.h-timestamp:
 ifeq ($(UNICORN_DEBUG),yes)
 	cd qemu && \
-	./configure --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)"
+	./configure --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
 	printf "$(UNICORN_ARCHS)" > config.log
 else
 	cd qemu && \
-	./configure --disable-debug-info --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)"
+	./configure --disable-debug-info --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
 	printf "$(UNICORN_ARCHS)" > config.log
 endif
 

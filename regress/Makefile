@@ -1,5 +1,5 @@
 CFLAGS += -I../include
-LDFLAGS = -L.. -lunicorn
+LDFLAGS += ../libunicorn.a $(shell pkg-config --libs glib-2.0) -lpthread -lm
 
 TESTS = map_crash map_write
 TESTS += sigill sigill2
@@ -15,5 +15,8 @@ all: $(TESTS)
 
 clean:
 	rm -f $(TESTS)
+
+%: %.c
+	$(CC) $(CFLAGS) $^ $(LDFLAGS) -o $@
 
 .PHONY: all clean
