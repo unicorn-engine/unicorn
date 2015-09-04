@@ -73,7 +73,7 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
     CPUState *mycpu = first_cpu;
 
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
-        SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0] = *(int32_t *)value;
+        SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0] = *(uint32_t *)value;
     else {
         switch(regid) {
             default: break;
