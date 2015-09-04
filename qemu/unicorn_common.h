@@ -73,7 +73,11 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->pause_all_vcpus = pause_all_vcpus;
     uc->vm_start = vm_start;
     uc->memory_map = memory_map;
+    uc->memory_unmap = memory_unmap;
     uc->readonly_mem = memory_region_set_readonly;
+
+    uc->target_page_size = TARGET_PAGE_SIZE;
+    uc->target_page_align = TARGET_PAGE_SIZE - 1;
 
     if (!uc->release)
         uc->release = release_common;

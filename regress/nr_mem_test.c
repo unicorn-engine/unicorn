@@ -55,7 +55,7 @@ static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
 int main(int argc, char **argv, char **envp)
 {
     ucengine *uc;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
     uc_err err;
     uint32_t eax, ebx;
     

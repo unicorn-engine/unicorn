@@ -171,7 +171,7 @@ static void test_i386(void)
     ucengine *uc;
     uc_err err;
     uint32_t tmp;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     int r_ecx = 0x1234;     // ECX register
     int r_edx = 0x7890;     // EDX register
@@ -232,7 +232,7 @@ static void test_i386_jump(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     printf("===================================\n");
     printf("Emulate i386 code with jump\n");
@@ -328,7 +328,7 @@ static void test_i386_invalid_mem_read(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     int r_ecx = 0x1234;     // ECX register
     int r_edx = 0x7890;     // EDX register
@@ -385,7 +385,7 @@ static void test_i386_invalid_mem_write(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2, trace3;
+    uchook trace1, trace2, trace3;
     uint32_t tmp;
 
     int r_ecx = 0x1234;     // ECX register
@@ -457,7 +457,7 @@ static void test_i386_jump_invalid(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     int r_ecx = 0x1234;     // ECX register
     int r_edx = 0x7890;     // EDX register
@@ -513,7 +513,7 @@ static void test_i386_inout(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2, trace3, trace4;
+    uchook trace1, trace2, trace3, trace4;
 
     int r_eax = 0x1234;     // EAX register
     int r_ecx = 0x6789;     // ECX register
@@ -574,7 +574,7 @@ static void test_x86_64(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2, trace3, trace4;
+    uchook trace1, trace2, trace3, trace4;
 
     int64_t rax = 0x71f3029efd49d41d;
     int64_t rbx = 0xd87b45277f133ddb;
@@ -689,7 +689,7 @@ static void test_x86_64(void)
 static void test_x86_64_syscall(void)
 {
     ucengine *uc;
-    uc_hook_h trace1;
+    uchook trace1;
     uc_err err;
 
     int64_t rax = 0x100;

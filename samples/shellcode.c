@@ -90,7 +90,7 @@ static void test_i386(void)
 {
     ucengine *uc;
     uc_err err;
-    uc_hook_h trace1, trace2;
+    uchook trace1, trace2;
 
     int r_esp = ADDRESS + 0x200000;  // ESP register
 

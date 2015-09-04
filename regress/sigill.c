@@ -21,7 +21,7 @@ int main()
     int size;
     uint8_t *buf;
     ucengine *uc;
-    uc_hook_h uh_trap;
+    uchook uh_trap;
     uc_err err = uc_open (UC_ARCH_X86, UC_MODE_64, &uc);
     if (err) {
         fprintf (stderr, "Cannot initialize unicorn\n");

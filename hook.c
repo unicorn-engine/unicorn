@@ -91,7 +91,7 @@ size_t hook_add(struct uc_struct *uc, int type, uint64_t begin, uint64_t end, vo
 }
 
 // return 0 on success, -1 on failure
-uc_err hook_del(struct uc_struct *uc, uc_hook_h hh)
+uc_err hook_del(struct uc_struct *uc, uchook hh)
 {
     if (hh == uc->hook_block_idx) {
         uc->hook_block_idx = 0;
