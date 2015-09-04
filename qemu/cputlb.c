@@ -300,7 +300,7 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
                  (addr & TARGET_PAGE_MASK))) {
         cpu_ldub_code(env1, addr);
         //check for NX related error from softmmu
-        if (env1->invalid_error == UC_ERR_MEM_READ) {
+        if (env1->invalid_error == UC_ERR_EXEC_PROT) {
             env1->invalid_error = UC_ERR_CODE_INVALID;
             return -1;
         }
