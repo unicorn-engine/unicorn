@@ -1,5 +1,6 @@
 #include <sys/types.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -13,7 +14,7 @@ static int count = 1;
 // @size: size of machine instruction being executed
 // @user_data: user data passed to tracing APIs.
 void cb_hookblock(ucengine *uc, uint64_t address, uint32_t size, void *user_data) {
-   fprintf(stderr, "# >>> Tracing basic block at 0x%llx, block size = 0x%x\n", address, size);
+   fprintf(stderr, "# >>> Tracing basic block at 0x%"PRIx64", block size = 0x%x\n", address, size);
    if (address != 0x1000000 && address != 0x1000200) {
       fprintf(stderr, "not ok %d - address != 0x1000000 && address != 0x1000200\n", count++);
       _exit(1);
