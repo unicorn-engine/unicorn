@@ -73,12 +73,14 @@ const char *uc_strerror(uc_err code)
             return "Invalid memory read (UC_ERR_MEM_READ)";
         case UC_ERR_MEM_WRITE:
             return "Invalid memory write (UC_ERR_MEM_WRITE)";
+        case UC_ERR_MEM_FETCH:
+            return "Invalid memory fetch (UC_ERR_MEM_FETCH)";
         case UC_ERR_CODE_INVALID:
             return "Invalid code address (UC_ERR_CODE_INVALID)";
-        case UC_ERR_INSN_INVALID:
-            return "Invalid instruction (UC_ERR_INSN_INVALID)";
         case UC_ERR_HOOK:
             return "Invalid hook type (UC_ERR_HOOK)";
+        case UC_ERR_INSN_INVALID:
+            return "Invalid instruction (UC_ERR_INSN_INVALID)";
         case UC_ERR_MAP:
             return "Invalid memory mapping (UC_ERR_MAP)";
         case UC_ERR_WRITE_PROT:

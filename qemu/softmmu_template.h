@@ -182,8 +182,24 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     MemoryRegion *mr = memory_mapping(uc, addr);
 
 #if defined(SOFTMMU_CODE_ACCESS)
+    // Unicorn: callback on fetch from unmapped memory
+    if (mr == NULL) {  // memory is not mapped
+        if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+                                       uc, UC_MEM_EXEC, addr, DATA_SIZE, 0,
+                                       uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
+            env->invalid_error = UC_ERR_OK;
+            mr = memory_mapping(uc, addr);  // FIXME: what if mr is still NULL at this time?
+        } else {
+            env->invalid_addr = addr;
+            env->invalid_error = UC_ERR_MEM_FETCH;
+            // printf("***** Invalid fetch (unmapped memory) at " TARGET_FMT_lx "\n", addr);
+            cpu_exit(uc->current_cpu);
+            return 0;
+        }
+    }
+
     // Unicorn: callback on fetch from NX
-    if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  //non-executable
+    if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  // non-executable
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, UC_MEM_EXEC_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
@@ -199,7 +215,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #endif
 
     // Unicorn: callback on memory read
-    if (env->uc->hook_mem_read && READ_ACCESS_TYPE == MMU_DATA_LOAD) {
+    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && env->uc->hook_mem_read) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_MEM_READ, addr);
         if (trace) {
             ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_READ,
@@ -208,7 +224,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 
     // Unicorn: callback on invalid memory
-    if (env->uc->hook_mem_idx && mr == NULL) {
+    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && env->uc->hook_mem_idx && mr == NULL) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
                     env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
@@ -224,7 +240,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 
     // Unicorn: callback on non-readable memory
-    if (mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
+    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, UC_MEM_READ_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
@@ -340,8 +356,24 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     MemoryRegion *mr = memory_mapping(uc, addr);
 
 #if defined(SOFTMMU_CODE_ACCESS)
+    // Unicorn: callback on fetch from unmapped memory
+    if (mr == NULL) {  // memory is not mapped
+        if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+                                       uc, UC_MEM_EXEC, addr, DATA_SIZE, 0,
+                                       uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
+            env->invalid_error = UC_ERR_OK;
+            mr = memory_mapping(uc, addr);  // FIXME: what if mr is still NULL at this time?
+        } else {
+            env->invalid_addr = addr;
+            env->invalid_error = UC_ERR_MEM_FETCH;
+            // printf("***** Invalid fetch (unmapped memory) at " TARGET_FMT_lx "\n", addr);
+            cpu_exit(uc->current_cpu);
+            return 0;
+        }
+    }
+
     // Unicorn: callback on fetch from NX
-    if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  //non-executable
+    if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  // non-executable
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, UC_MEM_EXEC_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
@@ -357,7 +389,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #endif
 
     // Unicorn: callback on memory read
-    if (env->uc->hook_mem_read && READ_ACCESS_TYPE == MMU_DATA_LOAD) {
+    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && env->uc->hook_mem_read) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_MEM_READ, addr);
         if (trace) {
             ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_READ,
@@ -366,7 +398,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 
     // Unicorn: callback on invalid memory
-    if (env->uc->hook_mem_idx && mr == NULL) {
+    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && env->uc->hook_mem_idx && mr == NULL) {
         if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
                     env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
                     env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
@@ -382,7 +414,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 
     // Unicorn: callback on non-readable memory
-    if (mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
+    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, UC_MEM_READ_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
