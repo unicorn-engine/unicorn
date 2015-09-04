@@ -44,7 +44,7 @@ static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
         default:
             // return false to indicate we want to stop emulation
             return false;
-        case UC_MEM_READ_NR:
+        case UC_MEM_READ_PROT:
             printf(">>> non-readable memory is being read at 0x%"PRIx64 ", data size = %u\n",
                    address, size);
             return false;
