@@ -798,9 +798,18 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
 {
     unsigned int i;
 
+    // try with the cache index first
+    i = uc->mapped_block_cache_index;
+
+    if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
+        return uc->mapped_blocks[i];
+
     for(i = 0; i < uc->mapped_block_count; i++) {
-        if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
+        if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end) {
+            // cache this index for the next query
+            uc->mapped_block_cache_index = i;
             return uc->mapped_blocks[i];
+        }
     }
 
     // not found

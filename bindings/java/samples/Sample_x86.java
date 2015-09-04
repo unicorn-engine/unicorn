@@ -64,23 +64,22 @@ public class Sample_x86 {
    // callback for tracing basic blocks
    // callback for tracing instruction
    private static class MyBlockHook implements BlockHook {
-      public void hook(Unicorn u, long address, int size, Object user_data)
-      {
-          System.out.printf(">>> Tracing basic block at 0x%x, block size = 0x%x\n", address, size);
+      public void hook(Unicorn u, long address, int size, Object user_data) {
+         System.out.printf(">>> Tracing basic block at 0x%x, block size = 0x%x\n", address, size);
       }
    }
       
    // callback for tracing instruction
    private static class MyCodeHook implements CodeHook {
       public void hook(Unicorn u, long address, int size, Object user_data) {
-       System.out.printf(">>> Tracing instruction at 0x%x, instruction size = 0x%x\n", address, size);
-   
-       byte eflags[] = u.reg_read(Unicorn.UC_X86_REG_EFLAGS, 4);
-       System.out.printf(">>> --- EFLAGS is 0x%x\n", toInt(eflags));
-   
-       // Uncomment below code to stop the emulation using uc_emu_stop()
-       // if (address == 0x1000009)
-       //    u.emu_stop();
+         System.out.printf(">>> Tracing instruction at 0x%x, instruction size = 0x%x\n", address, size);
+         
+         byte eflags[] = u.reg_read(Unicorn.UC_X86_REG_EFLAGS, 4);
+         System.out.printf(">>> --- EFLAGS is 0x%x\n", toInt(eflags));
+         
+         // Uncomment below code to stop the emulation using uc_emu_stop()
+         // if (address == 0x1000009)
+         //    u.emu_stop();
       }
    }
    
@@ -91,7 +90,7 @@ public class Sample_x86 {
                System.out.printf(">>> Missing memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
                                 address, size, value);
                // map this memory in with 2MB in size
-               u.mem_map(0xaaaa0000, 2 * 1024*1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+               u.mem_map(0xaaaa0000, 2 * 1024*1024, Unicorn.UC_PROT_ALL);
                // return true to indicate we want to continue
                return true;
          }
@@ -102,13 +101,13 @@ public class Sample_x86 {
    // callback for tracing instruction
    private static class MyCode64Hook implements CodeHook {
       public void hook(Unicorn u, long address, int size, Object user_data) {      
-          byte[] r_rip = u.reg_read(Unicorn.UC_X86_REG_RIP, 8);
-          System.out.printf(">>> Tracing instruction at 0x%x, instruction size = 0x%x\n", address, size);
-          System.out.printf(">>> RIP is 0x%x\n", toInt(r_rip));
-      
-          // Uncomment below code to stop the emulation using uc_emu_stop()
-          // if (address == 0x1000009)
-          //    uc_emu_stop(handle);
+         byte[] r_rip = u.reg_read(Unicorn.UC_X86_REG_RIP, 8);
+         System.out.printf(">>> Tracing instruction at 0x%x, instruction size = 0x%x\n", address, size);
+         System.out.printf(">>> RIP is 0x%x\n", toInt(r_rip));
+         
+         // Uncomment below code to stop the emulation using uc_emu_stop()
+         // if (address == 0x1000009)
+         //    uc_emu_stop(handle);
       }
    }
 
@@ -129,55 +128,53 @@ public class Sample_x86 {
    // callback for IN instruction (X86).
    // this returns the data read from the port
    private static class MyInHook implements InHook {
-      public int hook(Unicorn u, int port, int size, Object user_data)
-      {
-          byte[] r_eip = u.reg_read(Unicorn.UC_X86_REG_EIP, 4);
+      public int hook(Unicorn u, int port, int size, Object user_data) {
+         byte[] r_eip = u.reg_read(Unicorn.UC_X86_REG_EIP, 4);
+         
+         System.out.printf("--- reading from port 0x%x, size: %d, address: 0x%x\n", port, size, toInt(r_eip));
       
-          System.out.printf("--- reading from port 0x%x, size: %d, address: 0x%x\n", port, size, toInt(r_eip));
-      
-          switch(size) {
-              case 1:
-                  // read 1 byte to AL
-                  return 0xf1;
-              case 2:
-                  // read 2 byte to AX
-                  return 0xf2;
-              case 4:
-                  // read 4 byte to EAX
-                  return 0xf4;
-          }
-          return 0;
+         switch(size) {
+            case 1:
+               // read 1 byte to AL
+               return 0xf1;
+            case 2:
+               // read 2 byte to AX
+               return 0xf2;
+            case 4:
+               // read 4 byte to EAX
+               return 0xf4;
+         }
+         return 0;
       }
    }
    
    // callback for OUT instruction (X86).
    private static class MyOutHook implements OutHook {
       public void hook(Unicorn u, int port, int size, int value, Object user) {
-          byte[] eip = u.reg_read(Unicorn.UC_X86_REG_EIP, 4);
-          byte[] tmp = null;
-          System.out.printf("--- writing to port 0x%x, size: %d, value: 0x%x, address: 0x%x\n", port, size, value, toInt(eip));
+         byte[] eip = u.reg_read(Unicorn.UC_X86_REG_EIP, 4);
+         byte[] tmp = null;
+         System.out.printf("--- writing to port 0x%x, size: %d, value: 0x%x, address: 0x%x\n", port, size, value, toInt(eip));
+         
+         // confirm that value is indeed the value of AL/AX/EAX
+         switch(size) {
+            default:
+               return;   // should never reach this
+            case 1:
+               tmp = u.reg_read(Unicorn.UC_X86_REG_AL, 1);
+               break;
+            case 2:
+               tmp = u.reg_read(Unicorn.UC_X86_REG_AX, 2);
+               break;
+            case 4:
+               tmp = u.reg_read(Unicorn.UC_X86_REG_EAX, 4);
+               break;
+         }
       
-          // confirm that value is indeed the value of AL/AX/EAX
-          switch(size) {
-              default:
-                  return;   // should never reach this
-              case 1:
-                  tmp = u.reg_read(Unicorn.UC_X86_REG_AL, 1);
-                  break;
-              case 2:
-                  tmp = u.reg_read(Unicorn.UC_X86_REG_AX, 2);
-                  break;
-              case 4:
-                  tmp = u.reg_read(Unicorn.UC_X86_REG_EAX, 4);
-                  break;
-          }
-      
-          System.out.printf("--- register value = 0x%x\n", toInt(tmp));
+         System.out.printf("--- register value = 0x%x\n", toInt(tmp));
       }
    }
    
-   static void test_i386()
-   {
+   static void test_i386() {
        byte r_ecx[] = {(byte)0x34, (byte)0x12, 0, 0};   //0x1234;     // ECX register
        byte r_edx[] = {(byte)0x90, (byte)0x78, 0, 0};   //0x7890;     // EDX register
    
@@ -188,19 +185,19 @@ public class Sample_x86 {
        try {
          uc = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
        } catch (UnicornException uex) {
-           System.out.println("Failed on uc_open() with error returned: " + uex);
-           return;
+          System.out.println("Failed on uc_open() with error returned: " + uex);
+          return;
        }
    
        // map 2MB memory for this emulation
-       uc.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       uc.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        try {
-         uc.mem_write(ADDRESS, X86_CODE32);
+          uc.mem_write(ADDRESS, X86_CODE32);
        } catch (UnicornException uex) {
-           System.out.println("Failed to write emulation code to memory, quit!\n");
-           return;
+          System.out.println("Failed to write emulation code to memory, quit!\n");
+          return;
        }
    
        // initialize machine registers
@@ -251,7 +248,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_INOUT);
@@ -294,7 +291,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_JUMP);
@@ -326,7 +323,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_LOOP);
@@ -363,7 +360,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_MEM_READ);
@@ -410,7 +407,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_MEM_WRITE);
@@ -470,7 +467,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE32_JMP_INVALID);
@@ -528,7 +525,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_64);
    
        // map 2MB memory for this emulation
-       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        u.mem_write(ADDRESS, X86_CODE64);
@@ -615,7 +612,7 @@ public class Sample_x86 {
        Unicorn u = new Unicorn(Unicorn.UC_ARCH_X86, Unicorn.UC_MODE_16);
    
        // map 8KB memory for this emulation
-       u.mem_map(0, 8 * 1024, Unicorn.UC_PROT_READ | Unicorn.UC_PROT_WRITE);
+       u.mem_map(0, 8 * 1024, Unicorn.UC_PROT_ALL);
    
        // write machine code to be emulated to memory
        u.mem_write(0, X86_CODE16);
