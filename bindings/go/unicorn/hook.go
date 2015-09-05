@@ -17,50 +17,50 @@ type HookData struct {
 }
 
 //export hookCode
-func hookCode(handle C.uch, addr uint64, size uint32, user unsafe.Pointer) {
+func hookCode(handle *C.uc_engine, addr uint64, size uint32, user unsafe.Pointer) {
 	hook := (*HookData)(user)
 	hook.Callback.(func(*Uc, uint64, uint32))(hook.Uc, uint64(addr), uint32(size))
 }
 
 //export hookMemInvalid
-func hookMemInvalid(handle C.uch, typ C.uc_mem_type, addr uint64, size int, value int64, user unsafe.Pointer) bool {
+func hookMemInvalid(handle *C.uc_engine, typ C.uc_mem_type, addr uint64, size int, value int64, user unsafe.Pointer) bool {
 	hook := (*HookData)(user)
 	return hook.Callback.(func(*Uc, int, uint64, int, int64) bool)(hook.Uc, int(typ), addr, size, value)
 }
 
 //export hookMemAccess
-func hookMemAccess(handle C.uch, typ C.uc_mem_type, addr uint64, size int, value int64, user unsafe.Pointer) {
+func hookMemAccess(handle *C.uc_engine, typ C.uc_mem_type, addr uint64, size int, value int64, user unsafe.Pointer) {
 	hook := (*HookData)(user)
 	hook.Callback.(func(*Uc, int, uint64, int, int64))(hook.Uc, int(typ), addr, size, value)
 }
 
 //export hookInterrupt
-func hookInterrupt(handle C.uch, intno uint32, user unsafe.Pointer) {
+func hookInterrupt(handle *C.uc_engine, intno uint32, user unsafe.Pointer) {
 	hook := (*HookData)(user)
 	hook.Callback.(func(*Uc, uint32))(hook.Uc, intno)
 }
 
 //export hookX86In
-func hookX86In(handle C.uch, port, size uint32, user unsafe.Pointer) uint32 {
+func hookX86In(handle *C.uc_engine, port, size uint32, user unsafe.Pointer) uint32 {
 	hook := (*HookData)(user)
 	return hook.Callback.(func(*Uc, uint32, uint32) uint32)(hook.Uc, port, size)
 }
 
 //export hookX86Out
-func hookX86Out(handle C.uch, port, size, value uint32, user unsafe.Pointer) {
+func hookX86Out(handle *C.uc_engine, port, size, value uint32, user unsafe.Pointer) {
 	hook := (*HookData)(user)
 	hook.Callback.(func(*Uc, uint32, uint32, uint32))(hook.Uc, port, size, value)
 }
 
 //export hookX86Syscall
-func hookX86Syscall(handle C.uch, user unsafe.Pointer) {
+func hookX86Syscall(handle *C.uc_engine, user unsafe.Pointer) {
 	hook := (*HookData)(user)
 	hook.Callback.(func(*Uc))(hook.Uc)
 }
 
-var hookRetain = make(map[C.uch]*HookData)
+var hookRetain = make(map[C.uc_hook]*HookData)
 
-func (u *Uc) HookAdd(htype int, cb interface{}, extra ...uint64) (C.uch, error) {
+func (u *Uc) HookAdd(htype int, cb interface{}, extra ...uint64) (C.uc_hook, error) {
 	var callback unsafe.Pointer
 	var iarg1 C.int
 	var uarg1, uarg2 C.uint64_t
@@ -92,7 +92,7 @@ func (u *Uc) HookAdd(htype int, cb interface{}, extra ...uint64) (C.uch, error) 
 	default:
 		return 0, errors.New("Unknown hook type.")
 	}
-	var h2 C.uch
+	var h2 C.uc_hook
 	data := &HookData{u, cb}
 	if rangeMode {
 		if len(extra) == 2 {
@@ -109,7 +109,7 @@ func (u *Uc) HookAdd(htype int, cb interface{}, extra ...uint64) (C.uch, error) 
 	return h2, nil
 }
 
-func (u *Uc) HookDel(hook *C.uch) error {
-	delete(hookRetain, *hook)
+func (u *Uc) HookDel(hook C.uc_hook) error {
+	delete(hookRetain, hook)
 	return errReturn(C.uc_hook_del(u.Handle, hook))
 }
