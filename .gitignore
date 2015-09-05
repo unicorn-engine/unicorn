@@ -60,6 +60,9 @@ mem_protect.static
 mem_unmap
 mem_unmap.exe
 mem_unmap.static
+mem_apis
+mem_apis.exe
+mem_apis.static
 
 
 libunicorn*.dll
