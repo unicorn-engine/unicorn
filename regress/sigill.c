@@ -8,7 +8,7 @@
 
 int got_sigill = 0;
 
-void _interrupt(ucengine *uc, uint32_t intno, void *user_data)
+void _interrupt(uc_engine *uc, uint32_t intno, void *user_data)
 {
     if (intno == 6) {
         uc_emu_stop(uc);
@@ -20,8 +20,8 @@ int main()
 {
     int size;
     uint8_t *buf;
-    ucengine *uc;
-    uchook uh_trap;
+    uc_engine *uc;
+    uc_hook uh_trap;
     uc_err err = uc_open (UC_ARCH_X86, UC_MODE_64, &uc);
     if (err) {
         fprintf (stderr, "Cannot initialize unicorn\n");

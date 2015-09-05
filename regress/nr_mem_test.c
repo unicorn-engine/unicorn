@@ -36,7 +36,7 @@ bits 32
 */
 
 // callback for tracing memory access (READ or WRITE)
-static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
+static bool hook_mem_invalid(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
 {
 
@@ -54,8 +54,8 @@ static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
 
 int main(int argc, char **argv, char **envp)
 {
-    ucengine *uc;
-    uchook trace1, trace2;
+    uc_engine *uc;
+    uc_hook trace1, trace2;
     uc_err err;
     uint32_t eax, ebx;
     

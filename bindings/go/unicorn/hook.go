@@ -101,9 +101,9 @@ func (u *Uc) HookAdd(htype int, cb interface{}, extra ...uint64) (C.uch, error) 
 		} else {
 			uarg1, uarg2 = 1, 0
 		}
-		C.uc_hook_add_u2(u.Handle, &h2, C.uc_hook_t(htype), callback, unsafe.Pointer(data), uarg1, uarg2)
+		C.uc_hook_add_u2(u.Handle, &h2, C.uc_hook_type(htype), callback, unsafe.Pointer(data), uarg1, uarg2)
 	} else {
-		C.uc_hook_add_i1(u.Handle, &h2, C.uc_hook_t(htype), callback, unsafe.Pointer(data), iarg1)
+		C.uc_hook_add_i1(u.Handle, &h2, C.uc_hook_type(htype), callback, unsafe.Pointer(data), iarg1)
 	}
 	hookRetain[h2] = data
 	return h2, nil

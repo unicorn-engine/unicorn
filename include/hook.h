@@ -8,7 +8,7 @@
 size_t hook_add(struct uc_struct *uc, int type, uint64_t begin, uint64_t end, void *callback, void *user_data);
 
 // return 0 on success, -1 on failure
-uc_err hook_del(struct uc_struct *uc, uchook hh);
+uc_err hook_del(struct uc_struct *uc, uc_hook hh);
 
 // return NULL on failure
 struct hook_struct *hook_find(struct uc_struct *uc, int type, uint64_t address);

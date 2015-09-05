@@ -20,7 +20,7 @@
 
 #define MIN(a, b) (a < b? a : b)
 // callback for tracing instruction
-static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     int r_eip;
     char tmp[16];
@@ -42,7 +42,7 @@ static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_
 
 // callback for handling interrupt
 // ref: http://syscalls.kernelgrok.com/
-static void hook_intr(ucengine *uc, uint32_t intno, void *user_data)
+static void hook_intr(uc_engine *uc, uint32_t intno, void *user_data)
 {
     int32_t r_eax, r_ecx, r_eip;
     uint32_t r_edx, size;
@@ -87,9 +87,9 @@ static void hook_intr(ucengine *uc, uint32_t intno, void *user_data)
 
 static void test_i386(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
-    uchook trace1, trace2;
+    uc_hook trace1, trace2;
 
     int r_esp = ADDRESS + 0x200000;  // ESP register
 

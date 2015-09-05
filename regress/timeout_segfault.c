@@ -24,21 +24,21 @@ https://github.com/unicorn-engine/unicorn/issues/78
 // number of seconds to wait before timeout
 #define TIMEOUT 5
 
-static void hook_block(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     printf(">>> Tracing basic block at 0x%"PRIx64 ", block size = 0x%x\n", address, size);
 }
 
-static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
 }
 
 static void test_arm(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
-    uchook trace1, trace2;
+    uc_hook trace1, trace2;
 
     int r0 = 0x1234;     // R0 register
     int r2 = 0x6789;     // R1 register
@@ -92,9 +92,9 @@ static void test_arm(void)
 
 static void test_thumb(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
-    uchook trace1, trace2;
+    uc_hook trace1, trace2;
 
     int sp = 0x1234;     // R0 register
 

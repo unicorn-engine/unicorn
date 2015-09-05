@@ -32,13 +32,13 @@
 #define ADDRESS 0x1000000
 
 // callback for tracing basic blocks
-static void hook_block(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     printf(">>> Tracing basic block at 0x%"PRIx64 ", block size = 0x%x\n", address, size);
 }
 
 // callback for tracing instruction
-static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     int eflags;
     printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
@@ -52,7 +52,7 @@ static void hook_code(ucengine *uc, uint64_t address, uint32_t size, void *user_
 }
 
 // callback for tracing instruction
-static void hook_code64(ucengine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code64(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     uint64_t rip;
 
@@ -66,7 +66,7 @@ static void hook_code64(ucengine *uc, uint64_t address, uint32_t size, void *use
 }
 
 // callback for tracing memory access (READ or WRITE)
-static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
+static bool hook_mem_invalid(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
 {
     switch(type) {
@@ -83,7 +83,7 @@ static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
     }
 }
 
-static void hook_mem64(ucengine *uc, uc_mem_type type,
+static void hook_mem64(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
 {
     switch(type) {
@@ -101,7 +101,7 @@ static void hook_mem64(ucengine *uc, uc_mem_type type,
 
 // callback for IN instruction (X86).
 // this returns the data read from the port
-static uint32_t hook_in(ucengine *uc, uint32_t port, int size, void *user_data)
+static uint32_t hook_in(uc_engine *uc, uint32_t port, int size, void *user_data)
 {
     uint32_t eip;
 
@@ -126,7 +126,7 @@ static uint32_t hook_in(ucengine *uc, uint32_t port, int size, void *user_data)
 }
 
 // callback for OUT instruction (X86).
-static void hook_out(ucengine *uc, uint32_t port, int size, uint32_t value, void *user_data)
+static void hook_out(uc_engine *uc, uint32_t port, int size, uint32_t value, void *user_data)
 {
     uint32_t tmp;
     uint32_t eip;
@@ -154,7 +154,7 @@ static void hook_out(ucengine *uc, uint32_t port, int size, uint32_t value, void
 }
 
 // callback for SYSCALL instruction (X86).
-static void hook_syscall(ucengine *uc, void *user_data)
+static void hook_syscall(uc_engine *uc, void *user_data)
 {
     uint64_t rax;
 
@@ -168,10 +168,10 @@ static void hook_syscall(ucengine *uc, void *user_data)
 
 static void test_i386(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
     uint32_t tmp;
-    uchook trace1, trace2;
+    uc_hook trace1, trace2;
 
     int r_ecx = 0x1234;     // ECX register
     int r_edx = 0x7890;     // EDX register
@@ -230,9 +230,9 @@ static void test_i386(void)
 
 static void test_i386_jump(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
-    uchook trace1, trace2;
+    uc_hook trace1, trace2;
 
     printf("===================================\n");
     printf("Emulate i386 code with jump\n");
@@ -275,7 +275,7 @@ static void test_i386_jump(void)
 // emulate code that loop forever
 static void test_i386_loop(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
 
     int r_ecx = 0x1234;     // ECX register
@@ -326,9 +326,9 @@ static void test_i386_loop(void)
 // emulate code that read invalid memory
 static void test_i386_invalid_mem_read(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
-    uchook trace1, trace2;
+    uc_hook trace1, trace2;
 
     int r_ecx = 0x1234;     // ECX register
     int r_edx = 0x7890;     // EDX register
@@ -383,9 +383,9 @@ static void test_i386_invalid_mem_read(void)
 // emulate code that read invalid memory
 static void test_i386_invalid_mem_write(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
-    uchook trace1, trace2, trace3;
+    uc_hook trace1, trace2, trace3;
     uint32_t tmp;
 
     int r_ecx = 0x1234;     // ECX register
@@ -455,9 +455,9 @@ static void test_i386_invalid_mem_write(void)
 // emulate code that jump to invalid memory
 static void test_i386_jump_invalid(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
-    uchook trace1, trace2;
+    uc_hook trace1, trace2;
 
     int r_ecx = 0x1234;     // ECX register
     int r_edx = 0x7890;     // EDX register
@@ -511,9 +511,9 @@ static void test_i386_jump_invalid(void)
 
 static void test_i386_inout(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
-    uchook trace1, trace2, trace3, trace4;
+    uc_hook trace1, trace2, trace3, trace4;
 
     int r_eax = 0x1234;     // EAX register
     int r_ecx = 0x6789;     // ECX register
@@ -572,9 +572,9 @@ static void test_i386_inout(void)
 
 static void test_x86_64(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
-    uchook trace1, trace2, trace3, trace4;
+    uc_hook trace1, trace2, trace3, trace4;
 
     int64_t rax = 0x71f3029efd49d41d;
     int64_t rbx = 0xd87b45277f133ddb;
@@ -688,8 +688,8 @@ static void test_x86_64(void)
 
 static void test_x86_64_syscall(void)
 {
-    ucengine *uc;
-    uchook trace1;
+    uc_engine *uc;
+    uc_hook trace1;
     uc_err err;
 
     int64_t rax = 0x100;
@@ -739,7 +739,7 @@ static void test_x86_64_syscall(void)
 
 static void test_x86_16(void)
 {
-    ucengine *uc;
+    uc_engine *uc;
     uc_err err;
     uint8_t tmp;
 

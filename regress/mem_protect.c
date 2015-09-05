@@ -77,7 +77,7 @@ static int log_num = 1;
 #define CODE_SIZE 0x1000
 
 // callback for tracing instruction
-static void hook_code(ucengine *uc, uint64_t addr, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t addr, uint32_t size, void *user_data)
 {
     uint8_t opcode;
     uint32_t testval;
@@ -125,14 +125,14 @@ static void hook_code(ucengine *uc, uint64_t addr, uint32_t size, void *user_dat
 }
 
 // callback for tracing memory access (READ or WRITE)
-static void hook_mem_write(ucengine *uc, uc_mem_type type,
+static void hook_mem_write(uc_engine *uc, uc_mem_type type,
         uint64_t addr, int size, int64_t value, void *user_data)
 {
     printf("# write to memory at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n", addr, size, value);
 }
 
 // callback for tracing invalid memory access (READ or WRITE)
-static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
+static bool hook_mem_invalid(uc_engine *uc, uc_mem_type type,
         uint64_t addr, int size, int64_t value, void *user_data)
 {
     uint32_t testval;
@@ -160,8 +160,8 @@ static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
 
 int main(int argc, char **argv, char **envp)
 {
-    ucengine *uc;
-    uchook trace1, trace2;
+    uc_engine *uc;
+    uc_hook trace1, trace2;
     uc_err err;
     uint32_t addr, testval;
     int32_t buf1[1024], buf2[1024], readbuf[1024];

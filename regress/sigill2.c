@@ -10,7 +10,7 @@ int main()
 {
     int size;
     uint8_t *buf;
-    ucengine *uc;
+    uc_engine *uc;
 
     uc_err err = uc_open (UC_ARCH_X86, UC_MODE_64, &uc);
     if (err) {

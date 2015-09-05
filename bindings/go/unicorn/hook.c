@@ -1,11 +1,11 @@
 #include <unicorn/unicorn.h>
 #include "_cgo_export.h"
 
-uc_err uc_hook_add_i1(uch handle, uch *h2, uc_hook_t type, void *callback, void *user, int arg1) {
+uc_err uc_hook_add_i1(uch handle, uch *h2, uc_hook_type type, void *callback, void *user, int arg1) {
     return uc_hook_add(handle, h2, type, callback, user, arg1);
 }
 
-uc_err uc_hook_add_u2(uch handle, uch *h2, uc_hook_t type, void *callback, void *user, uint64_t arg1, uint64_t arg2) {
+uc_err uc_hook_add_u2(uch handle, uch *h2, uc_hook_type type, void *callback, void *user, uint64_t arg1, uint64_t arg2) {
     return uc_hook_add(handle, h2, type, callback, user, arg1, arg2);
 }
 

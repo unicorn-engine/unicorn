@@ -13,7 +13,7 @@ static int count = 1;
 // @address: address where the code is being executed
 // @size: size of machine instruction being executed
 // @user_data: user data passed to tracing APIs.
-void cb_hookblock(ucengine *uc, uint64_t address, uint32_t size, void *user_data) {
+void cb_hookblock(uc_engine *uc, uint64_t address, uint32_t size, void *user_data) {
    fprintf(stderr, "# >>> Tracing basic block at 0x%"PRIx64", block size = 0x%x\n", address, size);
    if (address != 0x1000000 && address != 0x1000200) {
       fprintf(stderr, "not ok %d - address != 0x1000000 && address != 0x1000200\n", count++);
@@ -28,7 +28,7 @@ void cb_hookblock(ucengine *uc, uint64_t address, uint32_t size, void *user_data
 }
 
 int main() {
-   ucengine *uc;
+   uc_engine *uc;
 
    fprintf(stderr, "# basic block callback test\n");
    fprintf(stderr, "# there are only two basic blocks 0x1000000-0x10001ff and 0x1000200-0x10003ff\n");
@@ -63,7 +63,7 @@ int main() {
    }
    fprintf(stderr, "ok %d - uc_mem_write\n", count++);
    
-   uchook h1, h2;
+   uc_hook h1, h2;
 
    err = uc_hook_add(uc, &h1, UC_HOOK_BLOCK, cb_hookblock, NULL, (uint64_t)1, (uint64_t)0);
    if (err != UC_ERR_OK) {

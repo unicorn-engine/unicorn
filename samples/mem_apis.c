@@ -31,7 +31,7 @@
 static int insts_executed;
 
 // callback for tracing instructions, detect HLT and terminate emulation
-static void hook_code(ucengine *uc, uint64_t addr, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t addr, uint32_t size, void *user_data)
 {
     uint8_t opcode;
     unsigned char buf[256];
@@ -72,7 +72,7 @@ static void hook_code(ucengine *uc, uint64_t addr, uint32_t size, void *user_dat
 }
 
 // callback for tracing invalid memory access (READ/WRITE/EXEC)
-static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
+static bool hook_mem_invalid(uc_engine *uc, uc_mem_type type,
         uint64_t addr, int size, int64_t value, void *user_data)
 {
     switch(type) {
@@ -99,8 +99,8 @@ static bool hook_mem_invalid(ucengine *uc, uc_mem_type type,
 
 static void do_nx_demo(bool cause_fault)
 {
-    ucengine *uc;
-    uchook trace1, trace2;
+    uc_engine *uc;
+    uc_hook trace1, trace2;
     uc_err err;
     uint8_t code_buf[0x3000];
 
@@ -181,8 +181,8 @@ static const uint8_t WRITE_DEMO[] =
 
 static void do_perms_demo(bool change_perms)
 {
-    ucengine *uc;
-    uchook trace1, trace2;
+    uc_engine *uc;
+    uc_hook trace1, trace2;
     uc_err err;
     uint8_t code_buf[0x3000];
 
@@ -257,8 +257,8 @@ static void perms_test()
 
 static void do_unmap_demo(bool do_unmap)
 {
-    ucengine *uc;
-    uchook trace1, trace2;
+    uc_engine *uc;
+    uc_hook trace1, trace2;
     uc_err err;
     uint8_t code_buf[0x3000];
 

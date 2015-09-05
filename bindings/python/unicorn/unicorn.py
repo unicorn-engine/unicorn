@@ -61,40 +61,40 @@ def _setup_prototype(lib, fname, restype, *argtypes):
     getattr(lib, fname).argtypes = argtypes
 
 ucerr = ctypes.c_int
-ucengine = ctypes.c_void_p
+uc_engine = ctypes.c_void_p
 uc_hook_h = ctypes.c_size_t
 
 _setup_prototype(_uc, "uc_version", ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 _setup_prototype(_uc, "uc_arch_supported", ctypes.c_bool, ctypes.c_int)
-_setup_prototype(_uc, "uc_open", ucerr, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ucengine))
-_setup_prototype(_uc, "uc_close", ucerr, ucengine)
+_setup_prototype(_uc, "uc_open", ucerr, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(uc_engine))
+_setup_prototype(_uc, "uc_close", ucerr, uc_engine)
 _setup_prototype(_uc, "uc_strerror", ctypes.c_char_p, ucerr)
-_setup_prototype(_uc, "uc_errno", ucerr, ucengine)
-_setup_prototype(_uc, "uc_reg_read", ucerr, ucengine, ctypes.c_int, ctypes.c_void_p)
-_setup_prototype(_uc, "uc_reg_write", ucerr, ucengine, ctypes.c_int, ctypes.c_void_p)
-_setup_prototype(_uc, "uc_mem_read", ucerr, ucengine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
-_setup_prototype(_uc, "uc_mem_write", ucerr, ucengine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
-_setup_prototype(_uc, "uc_emu_start", ucerr, ucengine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
-_setup_prototype(_uc, "uc_emu_stop", ucerr, ucengine)
-_setup_prototype(_uc, "uc_hook_del", ucerr, ucengine, uc_hook_h)
-_setup_prototype(_uc, "uc_mem_map", ucerr, ucengine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
+_setup_prototype(_uc, "uc_errno", ucerr, uc_engine)
+_setup_prototype(_uc, "uc_reg_read", ucerr, uc_engine, ctypes.c_int, ctypes.c_void_p)
+_setup_prototype(_uc, "uc_reg_write", ucerr, uc_engine, ctypes.c_int, ctypes.c_void_p)
+_setup_prototype(_uc, "uc_mem_read", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
+_setup_prototype(_uc, "uc_mem_write", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
+_setup_prototype(_uc, "uc_emu_start", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
+_setup_prototype(_uc, "uc_emu_stop", ucerr, uc_engine)
+_setup_prototype(_uc, "uc_hook_del", ucerr, uc_engine, uc_hook_h)
+_setup_prototype(_uc, "uc_mem_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
 
 # uc_hook_add is special due to variable number of arguments
 _uc.uc_hook_add = getattr(_uc, "uc_hook_add")
 _uc.uc_hook_add.restype = ucerr
 
-UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, ucengine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p)
-UC_HOOK_MEM_INVALID_CB = ctypes.CFUNCTYPE(ctypes.c_bool, ucengine, ctypes.c_int, \
+UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p)
+UC_HOOK_MEM_INVALID_CB = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_int, \
         ctypes.c_uint64, ctypes.c_int, ctypes.c_int64, ctypes.c_void_p)
-UC_HOOK_MEM_ACCESS_CB = ctypes.CFUNCTYPE(None, ucengine, ctypes.c_int, \
+UC_HOOK_MEM_ACCESS_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_int, \
         ctypes.c_uint64, ctypes.c_int, ctypes.c_int64, ctypes.c_void_p)
-UC_HOOK_INTR_CB = ctypes.CFUNCTYPE(None, ucengine, ctypes.c_uint32, \
+UC_HOOK_INTR_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint32, \
         ctypes.c_void_p)
-UC_HOOK_INSN_IN_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, ucengine, ctypes.c_uint32, \
+UC_HOOK_INSN_IN_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_uint32, \
         ctypes.c_int, ctypes.c_void_p)
-UC_HOOK_INSN_OUT_CB = ctypes.CFUNCTYPE(None, ucengine, ctypes.c_uint32, \
+UC_HOOK_INSN_OUT_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint32, \
         ctypes.c_int, ctypes.c_uint32, ctypes.c_void_p)
-UC_HOOK_INSN_SYSCALL_CB = ctypes.CFUNCTYPE(None, ucengine, ctypes.c_void_p)
+UC_HOOK_INSN_SYSCALL_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_void_p)
 
 
 # access to error code via @errno of UcError

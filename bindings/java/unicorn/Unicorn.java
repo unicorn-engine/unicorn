@@ -73,7 +73,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_BLOCK 
  *
- * @param  eng     A Unicorn ucengine* eng returned by uc_open
+ * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address The address of the instruction being executed
  * @param  size    The size of the basic block being executed
  * @see         hook_add, unicorn.BlockHook
@@ -93,7 +93,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_INTR 
  *
- * @param  eng     A Unicorn ucengine* eng returned by uc_open
+ * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  intno   The interrupt number
  * @see         hook_add, unicorn.InterruptHook
  */
@@ -112,7 +112,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_CODE 
  *
- * @param  eng     A Unicorn ucengine* eng returned by uc_open
+ * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address The address of the instruction being executed
  * @param  size    The size of the instruction being executed
  * @see         hook_add, unicorn.CodeHook
@@ -132,7 +132,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_MEM_INVALID 
  *
- * @param  eng     A Unicorn ucengine* eng returned by uc_open
+ * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  type    This memory is being read (UC_MEM_READ), or written (UC_MEM_WRITE)
  * @param  address Address of instruction being executed
  * @param  size    Size of data being read or written
@@ -157,7 +157,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_MEM_READ 
  *
- * @param  eng     A Unicorn ucengine* eng returned by uc_open
+ * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address Address of instruction being executed
  * @param  size    Size of data being read
  * @see         hook_add, unicorn.ReadHook
@@ -177,7 +177,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_MEM_WRITE 
  *
- * @param  eng     A Unicorn ucengine* eng returned by uc_open
+ * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address Address of instruction being executed
  * @param  size    Size of data being read
  * @param  value   value being written
@@ -198,7 +198,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_MEM_READ_WRITE 
  *
- * @param  eng     A Unicorn ucengine* eng returned by uc_open
+ * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  type    Type of access being performed (UC_MEM_READ, UC_MEM_WRITE, UC_MEM_READ_WRITE)
  * @param  address Address of instruction being executed
  * @param  size    Size of data being read
@@ -221,7 +221,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_INSN 
  *
- * @param  eng     A Unicorn ucengine* eng returned by uc_open
+ * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  port    I/O Port number
  * @param  size    Data size (1/2/4) to be read from this port
  * @return  Data supplied from the input port
@@ -245,7 +245,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_INSN 
  *
- * @param  eng     A Unicorn ucengine* eng returned by uc_open
+ * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  port    I/O Port number
  * @param  size    Data size (1/2/4) to be written to this port
  * @see         hook_add, unicorn.OutHook
@@ -267,7 +267,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_INSN 
  *
- * @param  eng     A Unicorn ucengine* eng returned by uc_open
+ * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @see         hook_add, unicorn.SyscallHook
  */
    private static void invokeSyscallCallbacks(long eng) {
@@ -340,7 +340,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    public native static boolean arch_supported(int arch);
 
 /**
- * Close the underlying ucengine* eng associated with this Unicorn object 
+ * Close the underlying uc_engine* eng associated with this Unicorn object 
  *
  */
    public native void close() throws UnicornException;
@@ -417,7 +417,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 /**
  * Hook registration helper for hook types that require no additional arguments.
  *
- * @param eng      Internal unicorn ucengine* eng associated with hooking Unicorn object
+ * @param eng      Internal unicorn uc_engine* eng associated with hooking Unicorn object
  * @param type     UC_HOOK_* hook type
  * @return         Unicorn uch returned for registered hook function
  */
@@ -426,7 +426,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 /**
  * Hook registration helper for hook types that require one additional argument.
  *
- * @param eng      Internal unicorn ucengine* eng associated with hooking Unicorn object
+ * @param eng      Internal unicorn uc_engine* eng associated with hooking Unicorn object
  * @param type     UC_HOOK_* hook type
  * @param arg1     Additional varargs argument
  * @return         Unicorn uch returned for registered hook function
@@ -436,7 +436,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 /**
  * Hook registration helper for hook types that require two additional arguments.
  *
- * @param eng      Internal unicorn ucengine* eng associated with hooking Unicorn object
+ * @param eng      Internal unicorn uc_engine* eng associated with hooking Unicorn object
  * @param type     UC_HOOK_* hook type
  * @param arg1     First additional varargs argument
  * @param arg2     Second additional varargs argument

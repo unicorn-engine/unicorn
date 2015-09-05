@@ -8,7 +8,7 @@
 
 int main()
 {
-    ucengine *uc;
+    uc_engine *uc;
     uint8_t *buf, *buf2;
     int i;
     uc_err err;
