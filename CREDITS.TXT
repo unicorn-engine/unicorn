@@ -39,6 +39,10 @@ Daniel Godas-Lopez
 Antonio "s4tan" Parata
 Corey Kallenberg
 Shift
+Gabriel Quadros
+Fabian Yamaguchi
+Ralf-Philipp Weinmann
+
 
 Contributors (in no particular order)
 =====================================
