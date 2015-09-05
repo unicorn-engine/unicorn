@@ -35,7 +35,9 @@ static void hook_code(ucengine *uc, uint64_t addr, uint32_t size, void *user_dat
 {
     uint8_t opcode;
     unsigned char buf[256];
+
     insts_executed++;
+
     if (uc_mem_read(uc, addr, buf, size) != UC_ERR_OK) {
         printf("not ok - uc_mem_read fail during hook_code callback, addr: 0x%" PRIx64 "\n", addr);
         if (uc_emu_stop(uc) != UC_ERR_OK) {
@@ -43,27 +45,28 @@ static void hook_code(ucengine *uc, uint64_t addr, uint32_t size, void *user_dat
             _exit(-1);
         }        
     }
+
     opcode = buf[0];
     switch (opcode) {
-        case 0x41:  //inc ecx
+        case 0x41:  // inc ecx
             if (uc_mem_protect(uc, 0x101000, 0x1000, UC_PROT_READ) != UC_ERR_OK) {
                 printf("not ok - uc_mem_protect fail during hook_code callback, addr: 0x%" PRIx64 "\n", addr);
                 _exit(-1);
             }
             break;
-        case 0x42:  //inc edx
+        case 0x42:  // inc edx
             if (uc_mem_unmap(uc, 0x101000, 0x1000) != UC_ERR_OK) {
                 printf("not ok - uc_mem_unmap fail during hook_code callback, addr: 0x%" PRIx64 "\n", addr);
                 _exit(-1);
             }
             break;
-        case 0xf4:  //hlt
+        case 0xf4:  // hlt
             if (uc_emu_stop(uc) != UC_ERR_OK) {
                 printf("not ok - uc_emu_stop fail during hook_code callback, addr: 0x%" PRIx64 "\n", addr);
                 _exit(-1);
             }
             break;
-        default:  //all others
+        default:  // all others
             break;
     }
 }
@@ -115,24 +118,25 @@ static void do_nx_demo(bool cause_fault)
 
     uc_mem_map(uc, 0x100000, 0x3000, UC_PROT_READ | UC_PROT_EXEC);
 
-/*
-bits 32
-page0:
-   times 4091 inc eax
-   jmp page2
-page1:
-   times 4095 inc eax
-   hlt
-page2:
-   jmp page1
-*/
-    memset(code_buf, 0x40, sizeof(code_buf));  //fill with inc eax
-    memcpy(code_buf + 0x1000 - 5, "\xe9\x00\x10\x00\x00", 5); //jump to 0x102000
-    memcpy(code_buf + 0x2000, "\xe9\xfb\xef\xff\xff", 5); //jump to 0x101000
+    /*
+       bits 32
+    page0:
+        times 4091 inc eax
+        jmp page2
+        page1:
+        times 4095 inc eax
+        hlt
+    page2:
+        jmp page1
+     */
+    memset(code_buf, 0x40, sizeof(code_buf));  // fill with inc eax
+    memcpy(code_buf + 0x1000 - 5, "\xe9\x00\x10\x00\x00", 5); // jump to 0x102000
+    memcpy(code_buf + 0x2000, "\xe9\xfb\xef\xff\xff", 5); // jump to 0x101000
     code_buf[0x1fff] = 0xf4;   //hlt
+
     if (cause_fault) {
-       //insert instruction to trigger U_PROT_EXEC change (see hook_code function)
-        code_buf[0x1000] = 0x41;   //inc ecx at page1
+        // insert instruction to trigger U_PROT_EXEC change (see hook_code function)
+        code_buf[0x1000] = 0x41;   // inc ecx at page1
     }  
 
     // write machine code to be emulated to memory
@@ -143,8 +147,7 @@ page2:
 
     // intercept code and invalid memory events
     if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK ||
-        uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL) != UC_ERR_OK) {
-         
+            uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL) != UC_ERR_OK) {
         printf("not ok - Failed to install hooks\n");
         return;
     }
@@ -158,11 +161,13 @@ page2:
     } else {
         printf("SUCCESSFUL EXECUTION\n");
     }
+
     printf("Executed %d instructions\n\n", insts_executed);
+
     uc_close(uc);
 }
 
-void nx_test()
+static void nx_test()
 {
     printf("NX demo - step 1: show that code runs to completion\n");
     do_nx_demo(false);
@@ -170,9 +175,9 @@ void nx_test()
     do_nx_demo(true);
 }
 
-const uint8_t WRITE_DEMO[] = 
-   "\x90\xc7\x05\x00\x20\x10\x00\x78\x56\x34\x12\xc7\x05\xfc\x0f\x10"
-   "\x00\x78\x56\x34\x12\xc7\x05\x00\x10\x10\x00\x21\x43\x65\x87";
+static const uint8_t WRITE_DEMO[] =
+    "\x90\xc7\x05\x00\x20\x10\x00\x78\x56\x34\x12\xc7\x05\xfc\x0f\x10"
+    "\x00\x78\x56\x34\x12\xc7\x05\x00\x10\x10\x00\x21\x43\x65\x87";
 
 static void do_perms_demo(bool change_perms)
 {
@@ -195,20 +200,22 @@ static void do_perms_demo(bool change_perms)
 
     uc_mem_map(uc, 0x100000, 0x3000, UC_PROT_ALL);
 
-/*
-bits 32
-   nop
-   mov dword [0x102000], 0x12345678
-   mov dword [0x100ffc], 0x12345678
-   mov dword [0x101000], 0x87654321    ; crashing case crashes here
-   times 1000 nop
-   hlt
-*/
+    /*
+       bits 32
+       nop
+       mov dword [0x102000], 0x12345678
+       mov dword [0x100ffc], 0x12345678
+       mov dword [0x101000], 0x87654321    ; crashing case crashes here
+       times 1000 nop
+       hlt
+     */
     memcpy(code_buf, WRITE_DEMO, sizeof(WRITE_DEMO) - 1);
     memset(code_buf + sizeof(WRITE_DEMO) - 1, 0x90, 1000);
-    code_buf[sizeof(WRITE_DEMO) - 1 + 1000] = 0xf4;    //hlt
+    code_buf[sizeof(WRITE_DEMO) - 1 + 1000] = 0xf4;    // hlt
+
     if (change_perms) {
-        code_buf[0] = 0x41;  //inc ecx  (see hook_code function)
+        // write protect memory area [0x101000, 0x101fff]. see hook_code function
+        code_buf[0] = 0x41;  // inc ecx
     }
 
     // write machine code to be emulated to memory
@@ -219,8 +226,7 @@ bits 32
 
     // intercept code and invalid memory events
     if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK ||
-        uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL) != UC_ERR_OK) {
-         
+            uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL) != UC_ERR_OK) {
         printf("not ok - Failed to install hooks\n");
         return;
     }
@@ -234,11 +240,13 @@ bits 32
     } else {
         printf("SUCCESSFUL EXECUTION\n");
     }
+
     printf("Executed %d instructions\n\n", insts_executed);
+
     uc_close(uc);
 }
 
-void perms_test()
+static void perms_test()
 {
     printf("Permissions demo - step 1: show that area is writeable\n");
     do_perms_demo(false);
@@ -268,20 +276,22 @@ static void do_unmap_demo(bool do_unmap)
 
     uc_mem_map(uc, 0x100000, 0x3000, UC_PROT_ALL);
 
-/*
-bits 32
-   nop
-   mov dword [0x102000], 0x12345678
-   mov dword [0x100ffc], 0x12345678
-   mov dword [0x101000], 0x87654321  ; crashing case crashes here
-   times 1000 nop
-   hlt
-*/
+    /*
+       bits 32
+       nop
+       mov dword [0x102000], 0x12345678
+       mov dword [0x100ffc], 0x12345678
+       mov dword [0x101000], 0x87654321  ; crashing case crashes here
+       times 1000 nop
+       hlt
+     */
     memcpy(code_buf, WRITE_DEMO, sizeof(WRITE_DEMO) - 1);
     memset(code_buf + sizeof(WRITE_DEMO) - 1, 0x90, 1000);
-    code_buf[sizeof(WRITE_DEMO) - 1 + 1000] = 0xf4;    //hlt
+    code_buf[sizeof(WRITE_DEMO) - 1 + 1000] = 0xf4;    // hlt
+
     if (do_unmap) {
-        code_buf[0] = 0x42;  //inc edx  (see hook_code function)
+        // unmap memory area [0x101000, 0x101fff]. see hook_code function
+        code_buf[0] = 0x42;  // inc edx  (see hook_code function)
     }
 
     // write machine code to be emulated to memory
@@ -292,8 +302,7 @@ bits 32
 
     // intercept code and invalid memory events
     if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK ||
-        uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL) != UC_ERR_OK) {
-         
+            uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL) != UC_ERR_OK) {
         printf("not ok - Failed to install hooks\n");
         return;
     }
@@ -307,11 +316,13 @@ bits 32
     } else {
         printf("SUCCESSFUL EXECUTION\n");
     }
+
     printf("Executed %d instructions\n\n", insts_executed);
+
     uc_close(uc);
 }
 
-void unmap_test()
+static void unmap_test()
 {
     printf("Unmap demo - step 1: show that area is writeable\n");
     do_unmap_demo(false);
@@ -324,5 +335,6 @@ int main(int argc, char **argv, char **envp)
     nx_test();
     perms_test();
     unmap_test();
+
     return 0;
 }
