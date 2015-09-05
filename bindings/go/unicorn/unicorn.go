@@ -24,7 +24,7 @@ func errReturn(err C.uc_err) error {
 }
 
 type Uc struct {
-	Handle     C.uch
+	Handle     *C.uc_engine
 	Arch, Mode int
 }
 
@@ -38,7 +38,7 @@ func NewUc(arch, mode int) (*Uc, error) {
 	if major != C.UC_API_MAJOR || minor != C.UC_API_MINOR {
 		return nil, UcError(UC_ERR_VERSION)
 	}
-	var handle C.uch
+	var handle *C.uc_engine
 	if ucerr := C.uc_open(C.uc_arch(arch), C.uc_mode(mode), &handle); ucerr != UC_ERR_OK {
 		return nil, UcError(ucerr)
 	}
