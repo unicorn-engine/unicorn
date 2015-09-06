@@ -144,6 +144,10 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                             uc, cpu->exception_index,
                             uc->hook_callbacks[uc->hook_intr_idx].user_data);
                     cpu->exception_index = -1;
+#if defined(TARGET_X86_64)
+                    // point EIP to the next instruction after INT
+                    env->eip = env->exception_next_eip;
+#endif
 #endif
                 }
             }

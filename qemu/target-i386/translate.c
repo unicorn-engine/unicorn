@@ -2796,7 +2796,7 @@ static void gen_interrupt(DisasContext *s, int intno,
 
     gen_update_cc_op(s);
     // Unicorn: skip to the next instruction after our interrupt callback
-    gen_jmp_im(s, next_eip);
+    gen_jmp_im(s, cur_eip);
     gen_helper_raise_interrupt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, intno),
                                tcg_const_i32(tcg_ctx, next_eip - cur_eip));
     s->is_jmp = DISAS_TB_JUMP;
