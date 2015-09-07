@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from unicorn import *
 uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
 uc.mem_map(0x1000, 0x1000)
