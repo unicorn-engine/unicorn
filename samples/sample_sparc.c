@@ -49,7 +49,7 @@ static void test_sparc(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    uc_mem_write(uc, ADDRESS, (uint8_t *)SPARC_CODE, sizeof(SPARC_CODE) - 1);
+    uc_mem_write(uc, ADDRESS, SPARC_CODE, sizeof(SPARC_CODE) - 1);
 
     // initialize machine registers
     uc_reg_write(uc, UC_SPARC_REG_G1, &g1);

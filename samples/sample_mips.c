@@ -47,7 +47,7 @@ static void test_mips_eb(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    uc_mem_write(uc, ADDRESS, (uint8_t *)MIPS_CODE_EB, sizeof(MIPS_CODE_EB) - 1);
+    uc_mem_write(uc, ADDRESS, MIPS_CODE_EB, sizeof(MIPS_CODE_EB) - 1);
 
     // initialize machine registers
     uc_reg_write(uc, UC_MIPS_REG_1, &r1);
@@ -97,7 +97,7 @@ static void test_mips_el(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    uc_mem_write(uc, ADDRESS, (uint8_t *)MIPS_CODE_EL, sizeof(MIPS_CODE_EL) - 1);
+    uc_mem_write(uc, ADDRESS, MIPS_CODE_EL, sizeof(MIPS_CODE_EL) - 1);
 
     // initialize machine registers
     uc_reg_write(uc, UC_MIPS_REG_1, &r1);

@@ -189,7 +189,7 @@ static void test_i386(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE32, sizeof(X86_CODE32) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32, sizeof(X86_CODE32) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
@@ -220,7 +220,7 @@ static void test_i386(void)
     printf(">>> EDX = 0x%x\n", r_edx);
 
     // read from memory
-    if (!uc_mem_read(uc, ADDRESS, (uint8_t *)&tmp, 4))
+    if (!uc_mem_read(uc, ADDRESS, &tmp, sizeof(tmp)))
         printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", ADDRESS, tmp);
     else
         printf(">>> Failed to read 4 bytes from [0x%x]\n", ADDRESS);
@@ -248,7 +248,7 @@ static void test_i386_jump(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE32_JUMP,
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_JUMP,
           sizeof(X86_CODE32_JUMP) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
@@ -295,7 +295,7 @@ static void test_i386_loop(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE32_LOOP, sizeof(X86_CODE32_LOOP) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_LOOP, sizeof(X86_CODE32_LOOP) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
@@ -347,7 +347,7 @@ static void test_i386_invalid_mem_read(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE32_MEM_READ, sizeof(X86_CODE32_MEM_READ) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_MEM_READ, sizeof(X86_CODE32_MEM_READ) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
@@ -405,7 +405,7 @@ static void test_i386_invalid_mem_write(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE32_MEM_WRITE, sizeof(X86_CODE32_MEM_WRITE) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_MEM_WRITE, sizeof(X86_CODE32_MEM_WRITE) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
@@ -439,12 +439,12 @@ static void test_i386_invalid_mem_write(void)
     printf(">>> EDX = 0x%x\n", r_edx);
 
     // read from memory
-    if (!uc_mem_read(uc, 0xaaaaaaaa, (uint8_t *)&tmp, 4))
+    if (!uc_mem_read(uc, 0xaaaaaaaa, &tmp, sizeof(tmp)))
         printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xaaaaaaaa, tmp);
     else
         printf(">>> Failed to read 4 bytes from [0x%x]\n", 0xffffffaa);
 
-    if (!uc_mem_read(uc, 0xffffffaa, (uint8_t *)&tmp, 4))
+    if (!uc_mem_read(uc, 0xffffffaa, &tmp, sizeof(tmp)))
         printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xffffffaa, tmp);
     else
         printf(">>> Failed to read 4 bytes from [0x%x]\n", 0xffffffaa);
@@ -476,7 +476,7 @@ static void test_i386_jump_invalid(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE32_JMP_INVALID, sizeof(X86_CODE32_JMP_INVALID) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_JMP_INVALID, sizeof(X86_CODE32_JMP_INVALID) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
@@ -532,7 +532,7 @@ static void test_i386_inout(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE32_INOUT, sizeof(X86_CODE32_INOUT) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_INOUT, sizeof(X86_CODE32_INOUT) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
@@ -607,7 +607,7 @@ static void test_x86_64(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE64, sizeof(X86_CODE64) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, X86_CODE64, sizeof(X86_CODE64) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
@@ -708,7 +708,7 @@ static void test_x86_64_syscall(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE64_SYSCALL, sizeof(X86_CODE64_SYSCALL) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, X86_CODE64_SYSCALL, sizeof(X86_CODE64_SYSCALL) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
@@ -760,7 +760,7 @@ static void test_x86_16(void)
     uc_mem_map(uc, 0, 8 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, 0, (uint8_t *)X86_CODE16, sizeof(X86_CODE64) - 1)) {
+    if (uc_mem_write(uc, 0, X86_CODE16, sizeof(X86_CODE64) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
