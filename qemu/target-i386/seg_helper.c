@@ -950,8 +950,8 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
     if (uc->hook_syscall_idx) {
         ((uc_cb_insn_syscall_t)uc->hook_callbacks[uc->hook_syscall_idx].callback)(
             uc, uc->hook_callbacks[uc->hook_syscall_idx].user_data);
-        env->eip += next_eip_addend;
     }
+    env->eip += next_eip_addend;
 
     return;
 
