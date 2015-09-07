@@ -88,7 +88,7 @@ static void hook_code(uc_engine *uc, uint64_t addr, uint32_t size, void *user_da
     switch (opcode) {
         case 0x90:  //nop
             printf("# Handling NOP\n");
-            if (uc_mem_read(uc, 0x200000 + test_num * 0x100000, (uint8_t*)&testval, sizeof(testval)) != UC_ERR_OK) {
+            if (uc_mem_read(uc, 0x200000 + test_num * 0x100000, &testval, sizeof(testval)) != UC_ERR_OK) {
                 printf("not ok %d - uc_mem_read fail for address: 0x%x\n", log_num++, 0x200000 + test_num * 0x100000);
             } else {
                 printf("ok %d - good uc_mem_read for address: 0x%x\n", log_num++, 0x200000 + test_num * 0x100000);
@@ -143,7 +143,7 @@ static bool hook_mem_invalid(uc_engine *uc, uc_mem_type type,
         case UC_MEM_WRITE_PROT:
             printf("# write to non-writeable memory at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n", addr, size, value);
 
-            if (uc_mem_read(uc, addr, (uint8_t*)&testval, sizeof(testval)) != UC_ERR_OK) {
+            if (uc_mem_read(uc, addr, &testval, sizeof(testval)) != UC_ERR_OK) {
                 printf("not ok %d - uc_mem_read fail for address: 0x%" PRIx64 "\n", log_num++, addr);
             } else {
                 printf("ok %d - uc_mem_read success after mem_protect at test %d\n", log_num++, test_num - 1);
@@ -191,14 +191,14 @@ int main(int argc, char **argv, char **envp)
     uc_mem_map(uc, 0x3ff000, 0x3000, UC_PROT_READ | UC_PROT_WRITE);
 
     // fill in sections that shouldn't get touched
-    if (uc_mem_write(uc, 0x3ff000, (uint8_t*)buf1, 4096)) {
+    if (uc_mem_write(uc, 0x3ff000, buf1, sizeof(buf1))) {
         printf("not ok %d - Failed to write random buffer 1 to memory, quit!\n", log_num++);
         return 2;
     } else {
         printf("ok %d - Random buffer 1 written to memory\n", log_num++);
     }
 
-    if (uc_mem_write(uc, 0x401000, (uint8_t*)buf2, 4096)) {
+    if (uc_mem_write(uc, 0x401000, buf2, sizeof(buf2))) {
         printf("not ok %d - Failed to write random buffer 2 to memory, quit!\n", log_num++);
         return 3;
     } else {
@@ -251,7 +251,7 @@ int main(int argc, char **argv, char **envp)
     testval = 0x42424242;
     for (addr = 0x200000; addr <= 0x400000; addr += 0x100000) {
         uint32_t val;
-        if (uc_mem_read(uc, addr, (uint8_t*)&val, sizeof(val)) != UC_ERR_OK) {
+        if (uc_mem_read(uc, addr, &val, sizeof(val)) != UC_ERR_OK) {
             printf("not ok %d - Failed uc_mem_read for address 0x%x\n", log_num++, addr);
         } else {
             printf("ok %d - Good uc_mem_read from 0x%x\n", log_num++, addr);
@@ -270,7 +270,7 @@ int main(int argc, char **argv, char **envp)
 
     //make sure that random blocks didn't get nuked
     // fill in sections that shouldn't get touched
-    if (uc_mem_read(uc, 0x3ff000, (uint8_t*)readbuf, 4096)) {
+    if (uc_mem_read(uc, 0x3ff000, readbuf, sizeof(readbuf))) {
         printf("not ok %d - Failed to read random buffer 1 from memory\n", log_num++);
     } else {
         printf("ok %d - Random buffer 1 read from memory\n", log_num++);
@@ -281,7 +281,7 @@ int main(int argc, char **argv, char **envp)
         }
     }
 
-    if (uc_mem_read(uc, 0x401000, (uint8_t*)readbuf, 4096)) {
+    if (uc_mem_read(uc, 0x401000, readbuf, sizeof(readbuf))) {
         printf("not ok %d - Failed to read random buffer 2 from memory\n", log_num++);
     } else {
         printf("ok %d - Random buffer 2 read from memory\n", log_num++);
