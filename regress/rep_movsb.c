@@ -112,7 +112,7 @@ int main(int argc, char **argv, char **envp)
    uc_mem_map(uc, 0x200000, 0x2000, UC_PROT_READ | UC_PROT_WRITE);
 
    // fill in the data that we want to copy
-   if (uc_mem_write(uc, 0x200000, (uint8_t*)buf1, 20)) {
+   if (uc_mem_write(uc, 0x200000, buf1, 20)) {
       printf("not ok %d - Failed to write read buffer to memory, quit!\n", log_num++);
       return 2;
    }
@@ -160,7 +160,7 @@ int main(int argc, char **argv, char **envp)
 
    //make sure that data got copied
    // fill in sections that shouldn't get touched
-   if (uc_mem_read(uc, 0x201000, (uint8_t*)readbuf, 20)) {
+   if (uc_mem_read(uc, 0x201000, readbuf, 20)) {
       printf("not ok %d - Failed to read random buffer 1 from memory\n", log_num++);
    }
    else {
