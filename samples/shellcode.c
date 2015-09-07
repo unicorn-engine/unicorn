@@ -23,7 +23,7 @@
 static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     int r_eip;
-    char tmp[16];
+    uint8_t tmp[16];
 
     printf("Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
 
@@ -31,10 +31,10 @@ static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user
     printf("*** EIP = %x ***: ", r_eip);
 
     size = MIN(sizeof(tmp), size);
-    if (!uc_mem_read(uc, address, (uint8_t *)tmp, size)) {
+    if (!uc_mem_read(uc, address, tmp, size)) {
         int i;
         for (i=0; i<size; i++) {
-            printf("%x ", ((uint8_t*)tmp)[i]);
+            printf("%x ", tmp[i]);
         }
         printf("\n");
     }
@@ -106,7 +106,7 @@ static void test_i386(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, (uint8_t *)X86_CODE32_SELF, sizeof(X86_CODE32_SELF) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_SELF, sizeof(X86_CODE32_SELF) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }

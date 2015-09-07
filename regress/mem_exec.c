@@ -183,14 +183,14 @@ int main(int argc, char **argv, char **envp)
     }
 
     // fill in sections that shouldn't get touched
-    if (uc_mem_write(uc, 0x1ff000, (uint8_t*)buf1, 4096)) {
+    if (uc_mem_write(uc, 0x1ff000, buf1, sizeof(buf1))) {
         printf("not ok %d - Failed to write random buffer 1 to memory, quit!\n", log_num++);
         return 3;
     } else {
         printf("ok %d - Random buffer 1 written to memory\n", log_num++);
     }
 
-    if (uc_mem_write(uc, 0x301000, (uint8_t*)buf2, 4096)) {
+    if (uc_mem_write(uc, 0x301000, buf2, sizeof(buf2))) {
         printf("not ok %d - Failed to write random buffer 2 to memory, quit!\n", log_num++);
         return 4;
     } else {
@@ -248,7 +248,7 @@ int main(int argc, char **argv, char **envp)
 
     //make sure that random blocks didn't get nuked
     // fill in sections that shouldn't get touched
-    if (uc_mem_read(uc, 0x1ff000, (uint8_t*)readbuf, 4096)) {
+    if (uc_mem_read(uc, 0x1ff000, readbuf, sizeof(readbuf))) {
         printf("not ok %d - Failed to read random buffer 1 from memory\n", log_num++);
     } else {
         printf("ok %d - Random buffer 1 read from memory\n", log_num++);
@@ -259,7 +259,7 @@ int main(int argc, char **argv, char **envp)
         }
     }
 
-    if (uc_mem_read(uc, 0x301000, (uint8_t*)readbuf, 4096)) {
+    if (uc_mem_read(uc, 0x301000, readbuf, sizeof(readbuf))) {
         printf("not ok %d - Failed to read random buffer 2 from memory\n", log_num++);
     } else {
         printf("ok %d - Random buffer 2 read from memory\n", log_num++);
