@@ -111,6 +111,16 @@ int arm_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
     return 0;
 }
 
+static bool arm_stop_interrupt(int intno)
+{
+    switch(intno) {
+        default:
+            return false;
+        case EXCP_UDEF:
+            return true;
+    }
+}
+
 void arm_uc_init(struct uc_struct* uc)
 {
     register_accel_types(uc);
@@ -120,5 +130,6 @@ void arm_uc_init(struct uc_struct* uc)
     uc->reg_write = arm_reg_write;
     uc->reg_reset = arm_reg_reset;
     uc->set_pc = arm_set_pc;
+    uc->stop_interrupt = arm_stop_interrupt;
     uc_common_init(uc);
 }
