@@ -7,10 +7,15 @@
 #include <cmocka.h>
 #include <unicorn/unicorn.h>
 
-static void uc_assert_success(uc_err err)
-{
-    assert_int_equal(err, 0);
-    // uc_strerror(err)
-}
+#define uc_assert_success(err)              \
+do {                                        \
+    uc_err __err = err;                     \
+    if (__err != UC_ERR_OK) {               \
+        fail_msg("%s", uc_strerror(__err)); \
+    }                                       \
+} while (0)
+    
+
+
 
 #endif /* UNICORN_TEST_H */

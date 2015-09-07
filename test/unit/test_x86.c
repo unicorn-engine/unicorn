@@ -14,7 +14,7 @@ static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *use
 // callback for tracing instruction
 static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
-    int eflags;
+    //int eflags;
     //printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
 
     //uc_reg_read(uc, UC_X86_REG_EFLAGS, &eflags);

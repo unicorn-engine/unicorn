@@ -1,4 +1,5 @@
 
+CFLAGS += -Wall -Werror -Wno-unused-function -g
 CFLAGS += -L ../../
 CFLAGS += -lcmocka -lunicorn
 CFLAGS += -I ../../include
@@ -15,12 +16,8 @@ clean:
 .PHONY: test
 test: export LD_LIBRARY_PATH=../../
 test: ${ALL_TESTS}
-	@#echo ${ALL_TESTS} | xargs -n1 | xargs -I CMD  sh -c ./CMD
-	@for test in ${ALL_TESTS}; do  \
-		echo -e "\n--------------------------------------------------------------------------------"; \
-		echo "TEST: $$test"; \
-		./$$test || break; \
-	done
+	./test_x86
+	./test_mem_map
 
 
 test_x86: test_x86.c
