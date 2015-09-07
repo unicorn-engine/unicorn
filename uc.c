@@ -331,8 +331,10 @@ static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
 
 
 UNICORN_EXPORT
-uc_err uc_mem_read(uc_engine *uc, uint64_t address, uint8_t *bytes, size_t size)
+uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
 {
+    uint8_t *bytes = _bytes;
+
     if (!check_mem_area(uc, address, size))
         return UC_ERR_MEM_READ;
 
@@ -359,8 +361,10 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, uint8_t *bytes, size_t size)
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_write(uc_engine *uc, uint64_t address, const uint8_t *bytes, size_t size)
+uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t size)
 {
+    const uint8_t *bytes = _bytes;
+
     if (!check_mem_area(uc, address, size))
         return UC_ERR_MEM_WRITE;
 
