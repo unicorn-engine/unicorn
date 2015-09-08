@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from unicorn import *
 from unicorn.sparc_const import *
 
