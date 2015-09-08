@@ -51,6 +51,9 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
             case UC_ARM64_REG_PC:
                      *(uint64_t *)value = ARM_CPU(uc, mycpu)->env.pc;
                      break;
+            case UC_ARM64_REG_SP:
+                     *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[31];
+                     break;
         }
     }
 
@@ -79,6 +82,9 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                      break;
             case UC_ARM64_REG_PC:
                      ARM_CPU(uc, mycpu)->env.pc = *(uint64_t *)value;
+                     break;
+            case UC_ARM64_REG_SP:
+                     ARM_CPU(uc, mycpu)->env.xregs[31] = *(uint64_t *)value;
                      break;
         }
     }
