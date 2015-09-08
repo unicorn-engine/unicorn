@@ -6,8 +6,8 @@ import (
 
 var ADDRESS uint64 = 0x1000000
 
-func MakeUc(mode int, code string) (*Uc, error) {
-	mu, err := NewUc(ARCH_X86, mode)
+func MakeUc(mode int, code string) (Unicorn, error) {
+	mu, err := NewUnicorn(ARCH_X86, mode)
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +84,7 @@ func TestX86InOut(t *testing.T) {
 	}
 	var outVal uint64
 	var inCalled, outCalled bool
-	mu.HookAdd(HOOK_INSN, func(mu *Uc, port, size uint32) uint32 {
+	mu.HookAdd(HOOK_INSN, func(_ Unicorn, port, size uint32) uint32 {
 		inCalled = true
 		switch size {
 		case 1:
@@ -97,7 +97,7 @@ func TestX86InOut(t *testing.T) {
 			return 0
 		}
 	}, X86_INS_IN)
-	mu.HookAdd(HOOK_INSN, func(uc *Uc, port, size, value uint32) {
+	mu.HookAdd(HOOK_INSN, func(_ Unicorn, port, size, value uint32) {
 		outCalled = true
 		var err error
 		switch size {
@@ -129,7 +129,7 @@ func TestX86Syscall(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mu.HookAdd(HOOK_INSN, func(mu *Uc) {
+	mu.HookAdd(HOOK_INSN, func(_ Unicorn) {
 		rax, _ := mu.RegRead(X86_REG_RAX)
 		mu.RegWrite(X86_REG_RAX, rax+1)
 	}, X86_INS_SYSCALL)
