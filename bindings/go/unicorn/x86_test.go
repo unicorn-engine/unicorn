@@ -7,7 +7,7 @@ import (
 var ADDRESS uint64 = 0x1000000
 
 func MakeUc(mode int, code string) (*Uc, error) {
-	mu, err := NewUc(UC_ARCH_X86, mode)
+	mu, err := NewUc(ARCH_X86, mode)
 	if err != nil {
 		return nil, err
 	}
@@ -17,10 +17,10 @@ func MakeUc(mode int, code string) (*Uc, error) {
 	if err := mu.MemWrite(ADDRESS, []byte(code)); err != nil {
 		return nil, err
 	}
-	if err := mu.RegWrite(UC_X86_REG_ECX, 0x1234); err != nil {
+	if err := mu.RegWrite(X86_REG_ECX, 0x1234); err != nil {
 		return nil, err
 	}
-	if err := mu.RegWrite(UC_X86_REG_EDX, 0x7890); err != nil {
+	if err := mu.RegWrite(X86_REG_EDX, 0x7890); err != nil {
 		return nil, err
 	}
 	return mu, nil
@@ -28,15 +28,15 @@ func MakeUc(mode int, code string) (*Uc, error) {
 
 func TestX86(t *testing.T) {
 	code := "\x41\x4a"
-	mu, err := MakeUc(UC_MODE_32, code)
+	mu, err := MakeUc(MODE_32, code)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if err := mu.Start(ADDRESS, ADDRESS+uint64(len(code))); err != nil {
 		t.Fatal(err)
 	}
-	ecx, _ := mu.RegRead(UC_X86_REG_ECX)
-	edx, _ := mu.RegRead(UC_X86_REG_EDX)
+	ecx, _ := mu.RegRead(X86_REG_ECX)
+	edx, _ := mu.RegRead(X86_REG_EDX)
 	if ecx != 0x1235 || edx != 0x788f {
 		t.Fatal("Bad register values.")
 	}
@@ -44,16 +44,16 @@ func TestX86(t *testing.T) {
 
 func TestX86InvalidRead(t *testing.T) {
 	code := "\x8B\x0D\xAA\xAA\xAA\xAA\x41\x4a"
-	mu, err := MakeUc(UC_MODE_32, code)
+	mu, err := MakeUc(MODE_32, code)
 	if err != nil {
 		t.Fatal(err)
 	}
 	err = mu.Start(ADDRESS, ADDRESS+uint64(len(code)))
-	if err.(UcError) != UC_ERR_MEM_READ {
-		t.Fatal("Expected UC_ERR_MEM_READ")
+	if err.(UcError) != ERR_MEM_READ {
+		t.Fatal("Expected ERR_MEM_READ")
 	}
-	ecx, _ := mu.RegRead(UC_X86_REG_ECX)
-	edx, _ := mu.RegRead(UC_X86_REG_EDX)
+	ecx, _ := mu.RegRead(X86_REG_ECX)
+	edx, _ := mu.RegRead(X86_REG_EDX)
 	if ecx != 0x1234 || edx != 0x7890 {
 		t.Fatal("Bad register values.")
 	}
@@ -61,16 +61,16 @@ func TestX86InvalidRead(t *testing.T) {
 
 func TestX86InvalidWrite(t *testing.T) {
 	code := "\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a"
-	mu, err := MakeUc(UC_MODE_32, code)
+	mu, err := MakeUc(MODE_32, code)
 	if err != nil {
 		t.Fatal(err)
 	}
 	err = mu.Start(ADDRESS, ADDRESS+uint64(len(code)))
-	if err.(UcError) != UC_ERR_MEM_WRITE {
-		t.Fatal("Expected UC_ERR_MEM_WRITE")
+	if err.(UcError) != ERR_MEM_WRITE {
+		t.Fatal("Expected ERR_MEM_WRITE")
 	}
-	ecx, _ := mu.RegRead(UC_X86_REG_ECX)
-	edx, _ := mu.RegRead(UC_X86_REG_EDX)
+	ecx, _ := mu.RegRead(X86_REG_ECX)
+	edx, _ := mu.RegRead(X86_REG_EDX)
 	if ecx != 0x1234 || edx != 0x7890 {
 		t.Fatal("Bad register values.")
 	}
@@ -78,13 +78,13 @@ func TestX86InvalidWrite(t *testing.T) {
 
 func TestX86InOut(t *testing.T) {
 	code := "\x41\xE4\x3F\x4a\xE6\x46\x43"
-	mu, err := MakeUc(UC_MODE_32, code)
+	mu, err := MakeUc(MODE_32, code)
 	if err != nil {
 		t.Fatal(err)
 	}
 	var outVal uint64
 	var inCalled, outCalled bool
-	mu.HookAdd(UC_HOOK_INSN, func(mu *Uc, port, size uint32) uint32 {
+	mu.HookAdd(HOOK_INSN, func(mu *Uc, port, size uint32) uint32 {
 		inCalled = true
 		switch size {
 		case 1:
@@ -96,22 +96,22 @@ func TestX86InOut(t *testing.T) {
 		default:
 			return 0
 		}
-	}, UC_X86_INS_IN)
-	mu.HookAdd(UC_HOOK_INSN, func(uc *Uc, port, size, value uint32) {
+	}, X86_INS_IN)
+	mu.HookAdd(HOOK_INSN, func(uc *Uc, port, size, value uint32) {
 		outCalled = true
 		var err error
 		switch size {
 		case 1:
-			outVal, err = mu.RegRead(UC_X86_REG_AL)
+			outVal, err = mu.RegRead(X86_REG_AL)
 		case 2:
-			outVal, err = mu.RegRead(UC_X86_REG_AX)
+			outVal, err = mu.RegRead(X86_REG_AX)
 		case 4:
-			outVal, err = mu.RegRead(UC_X86_REG_EAX)
+			outVal, err = mu.RegRead(X86_REG_EAX)
 		}
 		if err != nil {
 			t.Fatal(err)
 		}
-	}, UC_X86_INS_OUT)
+	}, X86_INS_OUT)
 	if err := mu.Start(ADDRESS, ADDRESS+uint64(len(code))); err != nil {
 		t.Fatal(err)
 	}
@@ -125,20 +125,20 @@ func TestX86InOut(t *testing.T) {
 
 func TestX86Syscall(t *testing.T) {
 	code := "\x0f\x05"
-	mu, err := MakeUc(UC_MODE_64, code)
+	mu, err := MakeUc(MODE_64, code)
 	if err != nil {
 		t.Fatal(err)
 	}
-	mu.HookAdd(UC_HOOK_INSN, func(mu *Uc) {
-		rax, _ := mu.RegRead(UC_X86_REG_RAX)
-		mu.RegWrite(UC_X86_REG_RAX, rax+1)
-	}, UC_X86_INS_SYSCALL)
-	mu.RegWrite(UC_X86_REG_RAX, 0x100)
+	mu.HookAdd(HOOK_INSN, func(mu *Uc) {
+		rax, _ := mu.RegRead(X86_REG_RAX)
+		mu.RegWrite(X86_REG_RAX, rax+1)
+	}, X86_INS_SYSCALL)
+	mu.RegWrite(X86_REG_RAX, 0x100)
 	err = mu.Start(ADDRESS, ADDRESS+uint64(len(code)))
 	if err != nil {
 		t.Fatal(err)
 	}
-	v, _ := mu.RegRead(UC_X86_REG_RAX)
+	v, _ := mu.RegRead(X86_REG_RAX)
 	if v != 0x101 {
 		t.Fatal("Incorrect syscall return value.")
 	}

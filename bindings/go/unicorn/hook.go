@@ -66,25 +66,25 @@ func (u *Uc) HookAdd(htype int, cb interface{}, extra ...uint64) (C.uc_hook, err
 	var uarg1, uarg2 C.uint64_t
 	rangeMode := false
 	switch htype {
-	case UC_HOOK_BLOCK, UC_HOOK_CODE:
+	case HOOK_BLOCK, HOOK_CODE:
 		rangeMode = true
 		callback = C.hookCode_cgo
-	case UC_HOOK_MEM_INVALID:
+	case HOOK_MEM_INVALID:
 		rangeMode = true
 		callback = C.hookMemInvalid_cgo
-	case UC_HOOK_MEM_READ, UC_HOOK_MEM_WRITE, UC_HOOK_MEM_READ_WRITE:
+	case HOOK_MEM_READ, HOOK_MEM_WRITE, HOOK_MEM_READ_WRITE:
 		rangeMode = true
 		callback = C.hookMemAccess_cgo
-	case UC_HOOK_INTR:
+	case HOOK_INTR:
 		callback = C.hookInterrupt_cgo
-	case UC_HOOK_INSN:
+	case HOOK_INSN:
 		iarg1 = C.int(extra[0])
 		switch iarg1 {
-		case UC_X86_INS_IN:
+		case X86_INS_IN:
 			callback = C.hookX86In_cgo
-		case UC_X86_INS_OUT:
+		case X86_INS_OUT:
 			callback = C.hookX86Out_cgo
-		case UC_X86_INS_SYSCALL, UC_X86_INS_SYSENTER:
+		case X86_INS_SYSCALL, X86_INS_SYSENTER:
 			callback = C.hookX86Syscall_cgo
 		default:
 			return 0, errors.New("Unknown instruction type.")

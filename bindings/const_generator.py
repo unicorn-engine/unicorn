@@ -11,7 +11,7 @@ template = {
     'python': {
             'header': "# For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [%s_const.py]\n",
             'footer': "",
-            'line_format': '%s = %s\n',
+            'line_format': 'UC_%s = %s\n',
             'out_file': './python/unicorn/%s_const.py',
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
@@ -43,7 +43,7 @@ template = {
     'java': {
             'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\npackage unicorn;\n\npublic interface %sConst {\n",
             'footer': "\n}\n",
-            'line_format': '   public static final int %s = %s;\n',
+            'line_format': '   public static final int UC_%s = %s;\n',
             'out_file': './java/unicorn/%sConst.java',
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
@@ -119,10 +119,11 @@ def gen(lang):
                         if match:
                             rhs = previous[match.group(1)]
 
+                    lhs_strip = re.sub(r'^UC_', '', lhs)
                     count = int(rhs) + 1
                     if (count == 1):
                         outfile.write("\n")
-                    outfile.write(templ['line_format'] % (lhs, rhs))
+                    outfile.write(templ['line_format'] % (lhs_strip, rhs))
                     previous[lhs] = rhs
 
         outfile.write(templ['footer'])

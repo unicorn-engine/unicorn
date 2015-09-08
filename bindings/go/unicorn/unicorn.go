@@ -17,7 +17,7 @@ func (u UcError) Error() string {
 }
 
 func errReturn(err C.uc_err) error {
-	if err != UC_ERR_OK {
+	if err != ERR_OK {
 		return UcError(err)
 	}
 	return nil
@@ -36,10 +36,10 @@ func NewUc(arch, mode int) (*Uc, error) {
 	var major, minor C.uint
 	C.uc_version(&major, &minor)
 	if major != C.UC_API_MAJOR || minor != C.UC_API_MINOR {
-		return nil, UcError(UC_ERR_VERSION)
+		return nil, UcError(ERR_VERSION)
 	}
 	var handle *C.uc_engine
-	if ucerr := C.uc_open(C.uc_arch(arch), C.uc_mode(mode), &handle); ucerr != UC_ERR_OK {
+	if ucerr := C.uc_open(C.uc_arch(arch), C.uc_mode(mode), &handle); ucerr != ERR_OK {
 		return nil, UcError(ucerr)
 	}
 	uc := &Uc{handle, arch, mode}
@@ -75,14 +75,14 @@ func (u *Uc) MemWrite(addr uint64, data []byte) error {
 	if len(data) == 0 {
 		return nil
 	}
-	return errReturn(C.uc_mem_write(u.Handle, C.uint64_t(addr), (*C.uint8_t)(unsafe.Pointer(&data[0])), C.size_t(len(data))))
+	return errReturn(C.uc_mem_write(u.Handle, C.uint64_t(addr), unsafe.Pointer(&data[0]), C.size_t(len(data))))
 }
 
 func (u *Uc) MemReadInto(dst []byte, addr uint64) error {
 	if len(dst) == 0 {
 		return nil
 	}
-	return errReturn(C.uc_mem_read(u.Handle, C.uint64_t(addr), (*C.uint8_t)(unsafe.Pointer(&dst[0])), C.size_t(len(dst))))
+	return errReturn(C.uc_mem_read(u.Handle, C.uint64_t(addr), unsafe.Pointer(&dst[0]), C.size_t(len(dst))))
 }
 
 func (u *Uc) MemRead(addr, size uint64) ([]byte, error) {
@@ -95,5 +95,5 @@ func (u *Uc) MemMapProt(addr, size uint64, prot int) error {
 }
 
 func (u *Uc) MemMap(addr, size uint64) error {
-	return u.MemMapProt(addr, size, UC_PROT_ALL)
+	return u.MemMapProt(addr, size, PROT_ALL)
 }
