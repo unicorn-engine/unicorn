@@ -156,6 +156,5 @@ void mips_cpu_register_types(void *opaque)
         .class_init = mips_cpu_class_init,
     };
 
-    printf(">>> mips_cpu_register_types\n");
     type_register_static(opaque, &mips_cpu_type_info);
 }
