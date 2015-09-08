@@ -55,7 +55,7 @@ public interface UnicornConst {
    public static final int UC_MEM_READ = 16;
    public static final int UC_MEM_WRITE = 17;
    public static final int UC_MEM_READ_WRITE = 18;
-   public static final int UC_MEM_EXEC = 19;
+   public static final int UC_MEM_FETCH = 19;
    public static final int UC_MEM_WRITE_PROT = 20;
    public static final int UC_MEM_READ_PROT = 21;
    public static final int UC_MEM_EXEC_PROT = 22;
