@@ -185,7 +185,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     // Unicorn: callback on fetch from unmapped memory
     if (mr == NULL) {  // memory is not mapped
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
-                                       uc, UC_MEM_EXEC, addr, DATA_SIZE, 0,
+                                       uc, UC_MEM_FETCH, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
             mr = memory_mapping(uc, addr);  // FIXME: what if mr is still NULL at this time?
@@ -359,7 +359,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     // Unicorn: callback on fetch from unmapped memory
     if (mr == NULL) {  // memory is not mapped
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
-                                       uc, UC_MEM_EXEC, addr, DATA_SIZE, 0,
+                                       uc, UC_MEM_FETCH, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
             mr = memory_mapping(uc, addr);  // FIXME: what if mr is still NULL at this time?

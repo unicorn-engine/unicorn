@@ -153,7 +153,7 @@ typedef enum uc_mem_type {
     UC_MEM_READ = 16,   // Unmapped memory is read from
     UC_MEM_WRITE,       // Unmapped memory is written to
     UC_MEM_READ_WRITE,  // Unmapped memory is accessed (either READ or WRITE)
-    UC_MEM_EXEC,        // Unmapped memory is fetched
+    UC_MEM_FETCH,        // Unmapped memory is fetched
     UC_MEM_WRITE_PROT,  // Write to write protected, but mapped, memory
     UC_MEM_READ_PROT,   // Read from read protected, but mapped, memory
     UC_MEM_EXEC_PROT,   // Fetch from non-executable, but mapped, memory
