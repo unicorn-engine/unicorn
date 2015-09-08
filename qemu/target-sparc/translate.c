@@ -2617,7 +2617,7 @@ static void gen_faligndata(TCGContext *tcg_ctx, TCGv dst, TCGv gsr, TCGv s1, TCG
         goto nfpu_insn;
 
 /* before an instruction, dc->pc must be static */
-static void disas_sparc_insn(DisasContext * dc, unsigned int insn)
+static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_insn)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     unsigned int opc, rs1, rs2, rd;
@@ -2630,8 +2630,14 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn)
         tcg_gen_debug_insn_start(tcg_ctx, dc->pc);
     }
 
+    // end address tells us to stop emulation
+    if (dc->pc == dc->uc->addr_end) {
+        insn = 0x91d02000; // generate TRAP to end this TB
+        hook_insn = false;  // do not hook this instruction
+    }
+
     // Unicorn: trace this instruction on request
-    if (dc->uc->hook_insn) {
+    if (hook_insn && dc->uc->hook_insn) {
         struct hook_struct *trace = hook_find(dc->uc, UC_HOOK_CODE, dc->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 4, trace->callback, dc->uc, dc->pc, trace->user_data);
@@ -5379,7 +5385,7 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     DisasContext dc1, *dc = &dc1;
     CPUBreakpoint *bp;
     int j, lj = -1;
-    int num_insns;
+    int num_insns = 0;
     int max_insns;
     unsigned int insn;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
@@ -5400,7 +5406,15 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     dc->singlestep = (cs->singlestep_enabled); // || singlestep);
     gen_opc_end = tcg_ctx->gen_opc_buf + OPC_MAX_SIZE;
 
-    num_insns = 0;
+
+    // early check to see if the address of this block is the until address
+    if (pc_start == env->uc->addr_end) {
+        gen_tb_start(tcg_ctx);
+        insn = 0x91d02000; // generate TRAP to end this TB
+        disas_sparc_insn(dc, insn, false);
+        goto exit_gen_loop;
+    }
+
     max_insns = tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0)
         max_insns = CF_COUNT_MASK;
@@ -5454,7 +5468,7 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
             insn = cpu_ldl_code(env, dc->pc);
         }
 
-        disas_sparc_insn(dc, insn);
+        disas_sparc_insn(dc, insn, true);
         num_insns++;
 
         if (dc->is_br)
