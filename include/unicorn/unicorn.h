@@ -118,9 +118,9 @@ typedef enum uc_err {
     UC_ERR_HOOK,    // Invalid hook type: uc_hook_add()
     UC_ERR_INSN_INVALID, // Quit emulation due to invalid instruction: uc_emu_start()
     UC_ERR_MAP, // Invalid memory mapping: uc_mem_map()
-    UC_ERR_WRITE_PROT, // Quit emulation due to UC_PROT_WRITE violation: uc_emu_start()
-    UC_ERR_READ_PROT, // Quit emulation due to UC_PROT_READ violation: uc_emu_start()
-    UC_ERR_EXEC_PROT, // Quit emulation due to UC_PROT_EXEC violation: uc_emu_start()
+    UC_ERR_WRITE_PROT, // Quit emulation due to UC_MEM_WRITE_PROT violation: uc_emu_start()
+    UC_ERR_READ_PROT, // Quit emulation due to UC_MEM_READ_PROT violation: uc_emu_start()
+    UC_ERR_EXEC_PROT, // Quit emulation due to UC_MEM_EXEC_PROT violation: uc_emu_start()
     UC_ERR_ARG,     // Inavalid argument provided to uc_xxx function (See specific function API)
     UC_ERR_READ_UNALIGNED,  // Unaligned read
     UC_ERR_WRITE_UNALIGNED,  // Unaligned write
