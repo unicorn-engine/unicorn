@@ -91,6 +91,13 @@ const char *uc_strerror(uc_err code)
             return "Fetch from non-executable memory (UC_ERR_EXEC_PROT)";
         case UC_ERR_INVAL:
             return "Invalid argumet (UC_ERR_INVAL)";
+
+        case UC_ERR_READ_UNALIGNED:
+            return "Read from unaligned memory (UC_ERR_READ_UNALIGNED)";
+        case UC_ERR_WRITE_UNALIGNED:
+            return "Write to unaligned memory (UC_ERR_WRITE_UNALIGNED)";
+        case UC_ERR_FETCH_UNALIGNED:
+            return "Fetch from unaligned memory (UC_ERR_FETCH_UNALIGNED)";
     }
 }
 

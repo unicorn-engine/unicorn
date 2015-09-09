@@ -177,27 +177,35 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     target_ulong tlb_addr = env->tlb_table[mmu_idx][index].ADDR_READ;
     uintptr_t haddr;
     DATA_TYPE res;
+    int mem_access, error_code;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
 
+    // memory can be unmapped while reading or fetching
+    if (mr == NULL) {
 #if defined(SOFTMMU_CODE_ACCESS)
-    // Unicorn: callback on fetch from unmapped memory
-    if (mr == NULL) {  // memory is not mapped
+        mem_access = UC_MEM_FETCH;
+        error_code = UC_ERR_MEM_FETCH;
+#else
+        mem_access = UC_MEM_READ;
+        error_code = UC_ERR_MEM_READ;
+#endif
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
-                                       uc, UC_MEM_FETCH, addr, DATA_SIZE, 0,
+                                       uc, mem_access, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
             mr = memory_mapping(uc, addr);  // FIXME: what if mr is still NULL at this time?
         } else {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_FETCH;
+            env->invalid_error = error_code;
             // printf("***** Invalid fetch (unmapped memory) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return 0;
         }
     }
 
+#if defined(SOFTMMU_CODE_ACCESS)
     // Unicorn: callback on fetch from NX
     if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  // non-executable
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
@@ -220,22 +228,6 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         if (trace) {
             ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_READ,
                     (uint64_t)addr, (int)DATA_SIZE, (int64_t)0, trace->user_data);
-        }
-    }
-
-    // Unicorn: callback on invalid memory
-    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && env->uc->hook_mem_idx && mr == NULL) {
-        if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
-                    env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
-                    env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
-            // save error & quit
-            env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_READ;
-            // printf("***** Invalid memory read at " TARGET_FMT_lx "\n", addr);
-            cpu_exit(env->uc->current_cpu);
-            return 0;
-        } else {
-            env->invalid_error = UC_ERR_OK;
         }
     }
 
@@ -263,8 +255,16 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
          != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
 #ifdef ALIGNED_ONLY
         if ((addr & (DATA_SIZE - 1)) != 0) {
-            cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-                                 mmu_idx, retaddr);
+            //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
+            //                     mmu_idx, retaddr);
+            env->invalid_addr = addr;
+#if defined(SOFTMMU_CODE_ACCESS)
+            env->invalid_error = UC_ERR_FETCH_UNALIGNED;
+#else
+            env->invalid_error = UC_ERR_READ_UNALIGNED;
+#endif
+            cpu_exit(uc->current_cpu);
+            return 0;
         }
 #endif
         if (!VICTIM_TLB_HIT(ADDR_READ)) {
@@ -307,8 +307,16 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         unsigned shift;
     do_unaligned_access:
 #ifdef ALIGNED_ONLY
-        cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-                             mmu_idx, retaddr);
+        //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
+        //                     mmu_idx, retaddr);
+        env->invalid_addr = addr;
+#if defined(SOFTMMU_CODE_ACCESS)
+        env->invalid_error = UC_ERR_FETCH_UNALIGNED;
+#else
+        env->invalid_error = UC_ERR_READ_UNALIGNED;
+#endif
+        cpu_exit(uc->current_cpu);
+        return 0;
 #endif
         addr1 = addr & ~(DATA_SIZE - 1);
         addr2 = addr1 + DATA_SIZE;
@@ -326,8 +334,16 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     /* Handle aligned access or unaligned access in the same page.  */
 #ifdef ALIGNED_ONLY
     if ((addr & (DATA_SIZE - 1)) != 0) {
-        cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-                             mmu_idx, retaddr);
+        //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
+        //                     mmu_idx, retaddr);
+        env->invalid_addr = addr;
+#if defined(SOFTMMU_CODE_ACCESS)
+        env->invalid_error = UC_ERR_FETCH_UNALIGNED;
+#else
+        env->invalid_error = UC_ERR_READ_UNALIGNED;
+#endif
+        cpu_exit(uc->current_cpu);
+        return 0;
     }
 #endif
 
@@ -351,27 +367,35 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     target_ulong tlb_addr = env->tlb_table[mmu_idx][index].ADDR_READ;
     uintptr_t haddr;
     DATA_TYPE res;
+    int mem_access, error_code;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
 
+    // memory can be unmapped while reading or fetching
+    if (mr == NULL) {
 #if defined(SOFTMMU_CODE_ACCESS)
-    // Unicorn: callback on fetch from unmapped memory
-    if (mr == NULL) {  // memory is not mapped
+        mem_access = UC_MEM_FETCH;
+        error_code = UC_ERR_MEM_FETCH;
+#else
+        mem_access = UC_MEM_READ;
+        error_code = UC_ERR_MEM_READ;
+#endif
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
-                                       uc, UC_MEM_FETCH, addr, DATA_SIZE, 0,
+                                       uc, mem_access, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
             mr = memory_mapping(uc, addr);  // FIXME: what if mr is still NULL at this time?
         } else {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_FETCH;
+            env->invalid_error = error_code;
             // printf("***** Invalid fetch (unmapped memory) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return 0;
         }
     }
 
+#if defined(SOFTMMU_CODE_ACCESS)
     // Unicorn: callback on fetch from NX
     if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  // non-executable
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
@@ -394,22 +418,6 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         if (trace) {
             ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_READ,
                     (uint64_t)addr, (int)DATA_SIZE, (int64_t)0, trace->user_data);
-        }
-    }
-
-    // Unicorn: callback on invalid memory
-    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && env->uc->hook_mem_idx && mr == NULL) {
-        if (!((uc_cb_eventmem_t)env->uc->hook_callbacks[env->uc->hook_mem_idx].callback)(
-                    env->uc, UC_MEM_READ, addr, DATA_SIZE, 0,
-                    env->uc->hook_callbacks[env->uc->hook_mem_idx].user_data)) {
-            // save error & quit
-            env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_READ;
-            // printf("***** Invalid memory read at " TARGET_FMT_lx "\n", addr);
-            cpu_exit(env->uc->current_cpu);
-            return 0;
-        } else {
-            env->invalid_error = UC_ERR_OK;
         }
     }
 
@@ -436,8 +444,16 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
          != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
 #ifdef ALIGNED_ONLY
         if ((addr & (DATA_SIZE - 1)) != 0) {
-            cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-                                 mmu_idx, retaddr);
+            //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
+            //                     mmu_idx, retaddr);
+            env->invalid_addr = addr;
+#if defined(SOFTMMU_CODE_ACCESS)
+            env->invalid_error = UC_ERR_FETCH_UNALIGNED;
+#else
+            env->invalid_error = UC_ERR_READ_UNALIGNED;
+#endif
+            cpu_exit(uc->current_cpu);
+            return 0;
         }
 #endif
         if (!VICTIM_TLB_HIT(ADDR_READ)) {
@@ -479,8 +495,16 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         unsigned shift;
     do_unaligned_access:
 #ifdef ALIGNED_ONLY
-        cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-                             mmu_idx, retaddr);
+        //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
+        //                     mmu_idx, retaddr);
+        env->invalid_addr = addr;
+#if defined(SOFTMMU_CODE_ACCESS)
+        env->invalid_error = UC_ERR_FETCH_UNALIGNED;
+#else
+        env->invalid_error = UC_ERR_READ_UNALIGNED;
+#endif
+        cpu_exit(uc->current_cpu);
+        return 0;
 #endif
         addr1 = addr & ~(DATA_SIZE - 1);
         addr2 = addr1 + DATA_SIZE;
@@ -498,8 +522,16 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     /* Handle aligned access or unaligned access in the same page.  */
 #ifdef ALIGNED_ONLY
     if ((addr & (DATA_SIZE - 1)) != 0) {
-        cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-                             mmu_idx, retaddr);
+        //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
+        //                     mmu_idx, retaddr);
+        env->invalid_addr = addr;
+#if defined(SOFTMMU_CODE_ACCESS)
+        env->invalid_error = UC_ERR_FETCH_UNALIGNED;
+#else
+        env->invalid_error = UC_ERR_READ_UNALIGNED;
+#endif
+        cpu_exit(uc->current_cpu);
+        return 0;
     }
 #endif
 
@@ -615,8 +647,12 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
 #ifdef ALIGNED_ONLY
         if ((addr & (DATA_SIZE - 1)) != 0) {
-            cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
-                                 mmu_idx, retaddr);
+            //cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
+            //                     mmu_idx, retaddr);
+            env->invalid_addr = addr;
+            env->invalid_error = UC_ERR_WRITE_UNALIGNED;
+            cpu_exit(uc->current_cpu);
+            return;
         }
 #endif
         if (!VICTIM_TLB_HIT(addr_write)) {
@@ -656,6 +692,10 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 #ifdef ALIGNED_ONLY
         cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
                              mmu_idx, retaddr);
+        env->invalid_addr = addr;
+        env->invalid_error = UC_ERR_WRITE_UNALIGNED;
+        cpu_exit(uc->current_cpu);
+        return;
 #endif
         /* XXX: not efficient, but simple */
         /* Note: relies on the fact that tlb_fill() does not remove the
@@ -678,6 +718,10 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     if ((addr & (DATA_SIZE - 1)) != 0) {
         cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
                              mmu_idx, retaddr);
+        env->invalid_addr = addr;
+        env->invalid_error = UC_ERR_WRITE_UNALIGNED;
+        cpu_exit(uc->current_cpu);
+        return;
     }
 #endif
 
@@ -751,6 +795,10 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         if ((addr & (DATA_SIZE - 1)) != 0) {
             cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
                                  mmu_idx, retaddr);
+            env->invalid_addr = addr;
+            env->invalid_error = UC_ERR_WRITE_UNALIGNED;
+            cpu_exit(uc->current_cpu);
+            return;
         }
 #endif
         if (!VICTIM_TLB_HIT(addr_write)) {
@@ -790,6 +838,10 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 #ifdef ALIGNED_ONLY
         cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
                              mmu_idx, retaddr);
+        env->invalid_addr = addr;
+        env->invalid_error = UC_ERR_WRITE_UNALIGNED;
+        cpu_exit(uc->current_cpu);
+        return;
 #endif
         /* XXX: not efficient, but simple */
         /* Note: relies on the fact that tlb_fill() does not remove the
@@ -812,6 +864,10 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     if ((addr & (DATA_SIZE - 1)) != 0) {
         cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
                              mmu_idx, retaddr);
+        env->invalid_addr = addr;
+        env->invalid_error = UC_ERR_WRITE_UNALIGNED;
+        cpu_exit(uc->current_cpu);
+        return;
     }
 #endif
 

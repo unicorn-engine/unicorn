@@ -122,6 +122,9 @@ typedef enum uc_err {
     UC_ERR_READ_PROT, // Quit emulation due to UC_PROT_READ violation: uc_emu_start()
     UC_ERR_EXEC_PROT, // Quit emulation due to UC_PROT_EXEC violation: uc_emu_start()
     UC_ERR_INVAL,     // Inavalid argument provided to uc_xxx function (See specific function API)
+    UC_ERR_READ_UNALIGNED,  // Unaligned read
+    UC_ERR_WRITE_UNALIGNED,  // Unaligned write
+    UC_ERR_FETCH_UNALIGNED,  // Unaligned fetch
 } uc_err;
 
 
