@@ -121,7 +121,7 @@ typedef enum uc_err {
     UC_ERR_WRITE_PROT, // Quit emulation due to UC_PROT_WRITE violation: uc_emu_start()
     UC_ERR_READ_PROT, // Quit emulation due to UC_PROT_READ violation: uc_emu_start()
     UC_ERR_EXEC_PROT, // Quit emulation due to UC_PROT_EXEC violation: uc_emu_start()
-    UC_ERR_INVAL,     // Inavalid argument provided to uc_xxx function (See specific function API)
+    UC_ERR_ARG,     // Inavalid argument provided to uc_xxx function (See specific function API)
     UC_ERR_READ_UNALIGNED,  // Unaligned read
     UC_ERR_WRITE_UNALIGNED,  // Unaligned write
     UC_ERR_FETCH_UNALIGNED,  // Unaligned fetch
@@ -411,12 +411,12 @@ typedef enum uc_prot {
 
  @uc: handle returned by uc_open()
  @address: starting address of the new memory region to be mapped in.
-    This address must be aligned to 4KB, or this will return with UC_ERR_INVAL error.
+    This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
  @size: size of the new memory region to be mapped in.
-    This size must be multiple of 4KB, or this will return with UC_ERR_INVAL error.
+    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
  @perms: Permissions for the newly mapped region.
     This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
-    or this will return with UC_ERR_INVAL error.
+    or this will return with UC_ERR_ARG error.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
@@ -430,9 +430,9 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
 
  @handle: handle returned by uc_open()
  @address: starting address of the memory region to be unmapped.
-    This address must be aligned to 4KB, or this will return with UC_ERR_INVAL error.
+    This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
  @size: size of the memory region to be modified.
-    This size must be multiple of 4KB, or this will return with UC_ERR_INVAL error.
+    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
@@ -446,12 +446,12 @@ uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size);
 
  @handle: handle returned by uc_open()
  @address: starting address of the memory region to be modified.
-    This address must be aligned to 4KB, or this will return with UC_ERR_INVAL error.
+    This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
  @size: size of the memory region to be modified.
-    This size must be multiple of 4KB, or this will return with UC_ERR_INVAL error.
+    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
  @perms: New permissions for the mapped region.
     This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
-    or this will return with UC_ERR_INVAL error.
+    or this will return with UC_ERR_ARG error.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
