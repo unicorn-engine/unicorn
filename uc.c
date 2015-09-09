@@ -69,12 +69,12 @@ const char *uc_strerror(uc_err code)
             return "Invalid mode (UC_ERR_MODE)";
         case UC_ERR_VERSION:
             return "Different API version between core & binding (UC_ERR_VERSION)";
-        case UC_ERR_MEM_READ:
-            return "Invalid memory read (UC_ERR_MEM_READ)";
-        case UC_ERR_MEM_WRITE:
-            return "Invalid memory write (UC_ERR_MEM_WRITE)";
-        case UC_ERR_MEM_FETCH:
-            return "Invalid memory fetch (UC_ERR_MEM_FETCH)";
+        case UC_ERR_READ_INVALID:
+            return "Invalid memory read (UC_ERR_READ_INVALID)";
+        case UC_ERR_WRITE_INVALID:
+            return "Invalid memory write (UC_ERR_WRITE_INVALID)";
+        case UC_ERR_FETCH_INVALID:
+            return "Invalid memory fetch (UC_ERR_FETCH_INVALID)";
         case UC_ERR_CODE_INVALID:
             return "Invalid code address (UC_ERR_CODE_INVALID)";
         case UC_ERR_HOOK:
@@ -343,7 +343,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     uint8_t *bytes = _bytes;
 
     if (!check_mem_area(uc, address, size))
-        return UC_ERR_MEM_READ;
+        return UC_ERR_READ_INVALID;
 
     size_t count = 0, len;
 
@@ -364,7 +364,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     if (count == size)
         return UC_ERR_OK;
     else
-        return UC_ERR_MEM_READ;
+        return UC_ERR_READ_INVALID;
 }
 
 UNICORN_EXPORT
@@ -373,7 +373,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
     const uint8_t *bytes = _bytes;
 
     if (!check_mem_area(uc, address, size))
-        return UC_ERR_MEM_WRITE;
+        return UC_ERR_WRITE_INVALID;
 
     size_t count = 0, len;
 
@@ -404,7 +404,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
     if (count == size)
         return UC_ERR_OK;
     else
-        return UC_ERR_MEM_WRITE;
+        return UC_ERR_WRITE_INVALID;
 }
 
 #define TIMEOUT_STEP 2    // microseconds

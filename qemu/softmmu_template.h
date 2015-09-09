@@ -186,10 +186,10 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     if (mr == NULL) {
 #if defined(SOFTMMU_CODE_ACCESS)
         mem_access = UC_MEM_FETCH;
-        error_code = UC_ERR_MEM_FETCH;
+        error_code = UC_ERR_FETCH_INVALID;
 #else
         mem_access = UC_MEM_READ;
-        error_code = UC_ERR_MEM_READ;
+        error_code = UC_ERR_READ_INVALID;
 #endif
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, mem_access, addr, DATA_SIZE, 0,
@@ -283,7 +283,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         ioaddr = env->iotlb[mmu_idx][index];
         if (ioaddr == 0) {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_READ;
+            env->invalid_error = UC_ERR_READ_INVALID;
             // printf("Invalid memory read at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return 0;
@@ -376,10 +376,10 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     if (mr == NULL) {
 #if defined(SOFTMMU_CODE_ACCESS)
         mem_access = UC_MEM_FETCH;
-        error_code = UC_ERR_MEM_FETCH;
+        error_code = UC_ERR_FETCH_INVALID;
 #else
         mem_access = UC_MEM_READ;
-        error_code = UC_ERR_MEM_READ;
+        error_code = UC_ERR_READ_INVALID;
 #endif
         if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, mem_access, addr, DATA_SIZE, 0,
@@ -473,7 +473,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
         if (ioaddr == 0) {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_READ;
+            env->invalid_error = UC_ERR_READ_INVALID;
             // printf("Invalid memory read at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return 0;
@@ -614,7 +614,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
                     uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             // save error & quit
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_WRITE;
+            env->invalid_error = UC_ERR_WRITE_INVALID;
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return;
@@ -670,7 +670,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         ioaddr = env->iotlb[mmu_idx][index];
         if (ioaddr == 0) {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_WRITE;
+            env->invalid_error = UC_ERR_WRITE_INVALID;
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return;
@@ -760,7 +760,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
                     uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             // save error & quit
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_WRITE;
+            env->invalid_error = UC_ERR_WRITE_INVALID;
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return;
@@ -816,7 +816,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         ioaddr = env->iotlb[mmu_idx][index];
         if (ioaddr == 0) {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_MEM_WRITE;
+            env->invalid_error = UC_ERR_WRITE_INVALID;
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return;

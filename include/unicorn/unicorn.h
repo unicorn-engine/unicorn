@@ -111,9 +111,9 @@ typedef enum uc_err {
     UC_ERR_HANDLE,   // Invalid handle
     UC_ERR_MODE,     // Invalid/unsupported mode: uc_open()
     UC_ERR_VERSION,  // Unsupported version (bindings)
-    UC_ERR_MEM_READ, // Quit emulation due to invalid memory READ: uc_emu_start()
-    UC_ERR_MEM_WRITE, // Quit emulation due to invalid memory WRITE: uc_emu_start()
-    UC_ERR_MEM_FETCH, // Quit emulation due to invalid memory FETCH: uc_emu_start()
+    UC_ERR_READ_INVALID, // Quit emulation due to invalid memory READ: uc_emu_start()
+    UC_ERR_WRITE_INVALID, // Quit emulation due to invalid memory WRITE: uc_emu_start()
+    UC_ERR_FETCH_INVALID, // Quit emulation due to invalid memory FETCH: uc_emu_start()
     UC_ERR_CODE_INVALID, // Quit emulation due to invalid code address: uc_emu_start()
     UC_ERR_HOOK,    // Invalid hook type: uc_hook_add()
     UC_ERR_INSN_INVALID, // Quit emulation due to invalid instruction: uc_emu_start()

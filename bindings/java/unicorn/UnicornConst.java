@@ -41,9 +41,9 @@ public interface UnicornConst {
    public static final int UC_ERR_HANDLE = 3;
    public static final int UC_ERR_MODE = 4;
    public static final int UC_ERR_VERSION = 5;
-   public static final int UC_ERR_MEM_READ = 6;
-   public static final int UC_ERR_MEM_WRITE = 7;
-   public static final int UC_ERR_MEM_FETCH = 8;
+   public static final int UC_ERR_READ_INVALID = 6;
+   public static final int UC_ERR_WRITE_INVALID = 7;
+   public static final int UC_ERR_FETCH_INVALID = 8;
    public static final int UC_ERR_CODE_INVALID = 9;
    public static final int UC_ERR_HOOK = 10;
    public static final int UC_ERR_INSN_INVALID = 11;
