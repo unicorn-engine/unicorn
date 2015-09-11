@@ -76,7 +76,7 @@ public class Sample_sparc {
        System.out.print("Emulate SPARC code\n");
    
        // Initialize emulator in Sparc mode
-       Unicorn u = new Unicorn(Unicorn.UC_ARCH_SPARC, Unicorn.UC_MODE_BIG_ENDIAN);
+       Unicorn u = new Unicorn(Unicorn.UC_ARCH_SPARC, Unicorn.UC_MODE_32);
    
        // map 2MB memory for this emulation
        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);

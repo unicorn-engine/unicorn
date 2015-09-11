@@ -51,7 +51,5 @@ void mips_machine_init(struct uc_struct *uc)
         .arch = UC_ARCH_MIPS,
     };
 
-    printf(">>> mips_machine_init\n");
-
     qemu_register_machine(uc, &mips_machine, TYPE_MACHINE, NULL);
 }

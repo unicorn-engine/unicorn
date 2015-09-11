@@ -69,12 +69,12 @@ const char *uc_strerror(uc_err code)
             return "Invalid mode (UC_ERR_MODE)";
         case UC_ERR_VERSION:
             return "Different API version between core & binding (UC_ERR_VERSION)";
-        case UC_ERR_MEM_READ:
-            return "Invalid memory read (UC_ERR_MEM_READ)";
-        case UC_ERR_MEM_WRITE:
-            return "Invalid memory write (UC_ERR_MEM_WRITE)";
-        case UC_ERR_MEM_FETCH:
-            return "Invalid memory fetch (UC_ERR_MEM_FETCH)";
+        case UC_ERR_READ_INVALID:
+            return "Invalid memory read (UC_ERR_READ_INVALID)";
+        case UC_ERR_WRITE_INVALID:
+            return "Invalid memory write (UC_ERR_WRITE_INVALID)";
+        case UC_ERR_FETCH_INVALID:
+            return "Invalid memory fetch (UC_ERR_FETCH_INVALID)";
         case UC_ERR_CODE_INVALID:
             return "Invalid code address (UC_ERR_CODE_INVALID)";
         case UC_ERR_HOOK:
@@ -89,8 +89,15 @@ const char *uc_strerror(uc_err code)
             return "Read from non-readable memory (UC_ERR_READ_PROT)";
         case UC_ERR_EXEC_PROT:
             return "Fetch from non-executable memory (UC_ERR_EXEC_PROT)";
-        case UC_ERR_INVAL:
-            return "Invalid argumet (UC_ERR_INVAL)";
+        case UC_ERR_ARG:
+            return "Invalid argumet (UC_ERR_ARG)";
+
+        case UC_ERR_READ_UNALIGNED:
+            return "Read from unaligned memory (UC_ERR_READ_UNALIGNED)";
+        case UC_ERR_WRITE_UNALIGNED:
+            return "Write to unaligned memory (UC_ERR_WRITE_UNALIGNED)";
+        case UC_ERR_FETCH_UNALIGNED:
+            return "Fetch from unaligned memory (UC_ERR_FETCH_UNALIGNED)";
     }
 }
 
@@ -336,7 +343,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     uint8_t *bytes = _bytes;
 
     if (!check_mem_area(uc, address, size))
-        return UC_ERR_MEM_READ;
+        return UC_ERR_READ_INVALID;
 
     size_t count = 0, len;
 
@@ -357,7 +364,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     if (count == size)
         return UC_ERR_OK;
     else
-        return UC_ERR_MEM_READ;
+        return UC_ERR_READ_INVALID;
 }
 
 UNICORN_EXPORT
@@ -366,7 +373,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
     const uint8_t *bytes = _bytes;
 
     if (!check_mem_area(uc, address, size))
-        return UC_ERR_MEM_WRITE;
+        return UC_ERR_WRITE_INVALID;
 
     size_t count = 0, len;
 
@@ -397,7 +404,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
     if (count == size)
         return UC_ERR_OK;
     else
-        return UC_ERR_MEM_WRITE;
+        return UC_ERR_WRITE_INVALID;
 }
 
 #define TIMEOUT_STEP 2    // microseconds
@@ -563,19 +570,19 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 
     if (size == 0)
         // invalid memory mapping
-        return UC_ERR_INVAL;
+        return UC_ERR_ARG;
 
     // address must be aligned to uc->target_page_size
     if ((address & uc->target_page_align) != 0)
-        return UC_ERR_INVAL;
+        return UC_ERR_ARG;
 
     // size must be multiple of uc->target_page_size
     if ((size & uc->target_page_align) != 0)
-        return UC_ERR_INVAL;
+        return UC_ERR_ARG;
 
     // check for only valid permissions
     if ((perms & ~UC_PROT_ALL) != 0)
-        return UC_ERR_INVAL;
+        return UC_ERR_ARG;
 
     if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
         regions = (MemoryRegion**)realloc(uc->mapped_blocks,
@@ -721,15 +728,15 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size, uint3
 
     // address must be aligned to uc->target_page_size
     if ((address & uc->target_page_align) != 0)
-        return UC_ERR_INVAL;
+        return UC_ERR_ARG;
 
     // size must be multiple of uc->target_page_size
     if ((size & uc->target_page_align) != 0)
-        return UC_ERR_INVAL;
+        return UC_ERR_ARG;
 
     // check for only valid permissions
     if ((perms & ~UC_PROT_ALL) != 0)
-        return UC_ERR_INVAL;
+        return UC_ERR_ARG;
 
     // check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size))
@@ -768,7 +775,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
 
     // address must be aligned to uc->target_page_size
     if ((address & uc->target_page_align) != 0)
-        return UC_ERR_INVAL;
+        return UC_ERR_ARG;
 
     // size must be multiple of uc->target_page_size
     if ((size & uc->target_page_align) != 0)
