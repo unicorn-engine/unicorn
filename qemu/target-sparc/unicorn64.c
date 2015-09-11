@@ -32,13 +32,19 @@ int sparc_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
     CPUState *mycpu = first_cpu;
 
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
-        *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0];
+        *(int64_t *)value = SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0];
     else {
         switch(regid) {
             default: break;
             case UC_SPARC_REG_PC:
-                     *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.pc;
-                     break;
+                *(int64_t *)value = SPARC_CPU(uc, mycpu)->env.pc;
+                break;
+            case UC_SPARC_REG_SP:
+                *(int64_t *)value = SPARC_CPU(uc, mycpu)->env.regbase[6];
+                break;
+            case UC_SPARC_REG_FP:
+                *(int64_t *)value = SPARC_CPU(uc, mycpu)->env.regbase[22];
+                break;
         }
     }
 
@@ -56,14 +62,20 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
     CPUState *mycpu = first_cpu;
 
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
-        SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0] = *(uint32_t *)value;
+        SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0] = *(uint64_t *)value;
     else {
         switch(regid) {
             default: break;
             case UC_SPARC_REG_PC:
-                     SPARC_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
-                     SPARC_CPU(uc, mycpu)->env.npc = *(uint32_t *)value + 4;
-                     break;
+                 SPARC_CPU(uc, mycpu)->env.pc = *(uint64_t *)value;
+                 SPARC_CPU(uc, mycpu)->env.npc = *(uint64_t *)value + 8;
+                 break;
+            case UC_SPARC_REG_SP:
+                SPARC_CPU(uc, mycpu)->env.regbase[6] = *(uint64_t *)value;
+                break;
+            case UC_SPARC_REG_FP:
+                SPARC_CPU(uc, mycpu)->env.regbase[22] = *(uint64_t *)value;
+                break;
         }
     }
 
