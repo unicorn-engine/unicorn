@@ -13,6 +13,7 @@
 #endif
 
 #include <time.h>   // nanosleep
+#include <limits.h> // INT_MAX
 
 #include <string.h>
 #ifndef _WIN32
@@ -342,6 +343,9 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
 {
     uint8_t *bytes = _bytes;
 
+    if(size > INT_MAX)
+	    return UC_ERR_READ_INVALID;
+
     if (!check_mem_area(uc, address, size))
         return UC_ERR_READ_INVALID;
 
@@ -371,6 +375,9 @@ UNICORN_EXPORT
 uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t size)
 {
     const uint8_t *bytes = _bytes;
+
+    if(size > INT_MAX)
+	    return UC_ERR_WRITE_INVALID;
 
     if (!check_mem_area(uc, address, size))
         return UC_ERR_WRITE_INVALID;
