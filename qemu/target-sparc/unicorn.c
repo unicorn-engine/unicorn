@@ -42,6 +42,7 @@ void sparc_reg_reset(struct uc_struct *uc)
 
     env->pc = 0;
     env->npc = 0;
+    env->regwptr = env->regbase;
 }
 
 int sparc_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
