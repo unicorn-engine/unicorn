@@ -63,12 +63,6 @@ int sparc_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
             case UC_SPARC_REG_PC:
                 *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.pc;
                 break;
-            case UC_SPARC_REG_SP:
-                *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.regwptr[6];
-                break;
-            case UC_SPARC_REG_FP:
-                *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.regwptr[22];
-                break;
         }
     }
 
@@ -99,12 +93,6 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
             case UC_SPARC_REG_PC:
                 SPARC_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
                 SPARC_CPU(uc, mycpu)->env.npc = *(uint32_t *)value + 4;
-                break;
-            case UC_SPARC_REG_SP:
-                SPARC_CPU(uc, mycpu)->env.regwptr[6] = *(uint32_t *)value;
-                break;
-            case UC_SPARC_REG_FP:
-                SPARC_CPU(uc, mycpu)->env.regwptr[22] = *(uint32_t *)value;
                 break;
         }
     }
