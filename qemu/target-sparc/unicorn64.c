@@ -34,6 +34,12 @@ int sparc_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
         *(int64_t *)value = SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0];
+    else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7)
+        *(int64_t *)value = SPARC_CPU(uc, mycpu)->env.regwptr[regid - UC_SPARC_REG_O0];
+    else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7)
+        *(int64_t *)value = SPARC_CPU(uc, mycpu)->env.regwptr[8 + regid - UC_SPARC_REG_L0];
+    else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7)
+        *(int64_t *)value = SPARC_CPU(uc, mycpu)->env.regwptr[16 + regid - UC_SPARC_REG_I0];
     else {
         switch(regid) {
             default: break;
@@ -64,6 +70,12 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
         SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0] = *(uint64_t *)value;
+    else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7)
+        SPARC_CPU(uc, mycpu)->env.regwptr[regid - UC_SPARC_REG_O0] = *(uint64_t *)value;
+    else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7)
+        SPARC_CPU(uc, mycpu)->env.regwptr[8 + regid - UC_SPARC_REG_L0] = *(uint64_t *)value;
+    else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7)
+        SPARC_CPU(uc, mycpu)->env.regwptr[16 + regid - UC_SPARC_REG_I0] = *(uint64_t *)value;
     else {
         switch(regid) {
             default: break;
