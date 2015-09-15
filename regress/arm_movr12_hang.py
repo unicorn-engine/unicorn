@@ -5,7 +5,7 @@ from unicorn.arm_const import *
 
 uc = Uc(UC_ARCH_ARM, UC_MODE_ARM)
 uc.mem_map(0x1000, 0x1000)
-uc.mem_write(0x1000, '00c000e3'.decode('hex'))
+uc.mem_write(0x1000, '00c000e3'.decode('hex'))  # movw r12, #0
 def hook_block(uc, addr, *args):
     print 'enter block 0x%04x' % addr
 
