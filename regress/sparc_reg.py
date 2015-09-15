@@ -33,6 +33,15 @@ uc.reg_write(UC_SPARC_REG_FP, 200)
   # 0x54:	\xAA\x05\x60\x01	add	%l5, 1, %l5
   # 0x58:	\xAC\x05\xA0\x01	add	%l6, 1, %l6
   # 0x5c:	\xAE\x05\xE0\x01	add	%l7, 1, %l7
+  # 0x0:	\xB0\x06\x20\x01	add	%i0, 1, %i0
+  # 0x4:	\xB2\x06\x60\x01	add	%i1, 1, %i1
+  # 0x8:	\xB4\x06\xA0\x01	add	%i2, 1, %i2
+  # 0xc:	\xB6\x06\xE0\x01	add	%i3, 1, %i3
+  # 0x10:	\xB8\x07\x20\x01	add	%i4, 1, %i4
+  # 0x14:	\xBA\x07\x60\x01	add	%i5, 1, %i5
+  # 0x18:	\xBC\x07\xA0\x01	add	%fp, 1, %fp
+  # 0x1c:	\xBE\x07\xE0\x01	add	%i7, 1, %i7
+
 
 CODE =  "\x80\x00\x20\x01" \
 		"\x82\x00\x60\x01" \
@@ -57,11 +66,20 @@ CODE =  "\x80\x00\x20\x01" \
 		"\xA8\x05\x20\x01" \
 		"\xAA\x05\x60\x01" \
 		"\xAC\x05\xA0\x01" \
-		"\xAE\x05\xE0\x01"
+		"\xAE\x05\xE0\x01" \
+		"\xB0\x06\x20\x01" \
+		"\xB2\x06\x60\x01" \
+		"\xB4\x06\xA0\x01" \
+		"\xB6\x06\xE0\x01" \
+		"\xB8\x07\x20\x01" \
+		"\xBA\x07\x60\x01" \
+		"\xBC\x07\xA0\x01" \
+		"\xBE\x07\xE0\x01"
+
 
 uc.mem_map(0, PAGE_SIZE)
 uc.mem_write(0, CODE)
-uc.emu_start(0, len(CODE), 0, 24)
+uc.emu_start(0, len(CODE), 0, 32)
 
 def print_registers(mu):
 	g0 = mu.reg_read(UC_SPARC_REG_G0)
@@ -146,9 +164,9 @@ def print_registers(mu):
 
 print_registers(uc)
 
-assert uc.reg_read(UC_SPARC_REG_PC) == 96  # make sure we executed all instructions 
+assert uc.reg_read(UC_SPARC_REG_PC) == 128  # make sure we executed all instructions 
 assert uc.reg_read(UC_SPARC_REG_SP) == 101
-assert uc.reg_read(UC_SPARC_REG_FP) == 200
+assert uc.reg_read(UC_SPARC_REG_FP) == 201
 
 assert uc.reg_read(UC_SPARC_REG_G0) == 0 # G0 is always zero
 assert uc.reg_read(UC_SPARC_REG_G1) == 1
@@ -177,5 +195,11 @@ assert uc.reg_read(UC_SPARC_REG_L5) == 1
 assert uc.reg_read(UC_SPARC_REG_L6) == 1
 assert uc.reg_read(UC_SPARC_REG_L7) == 1
 
-assert uc.reg_read(UC_SPARC_REG_O0) == 1
-assert uc.reg_read(UC_SPARC_REG_L0) == 1
+assert uc.reg_read(UC_SPARC_REG_I0) == 1
+assert uc.reg_read(UC_SPARC_REG_I1) == 1
+assert uc.reg_read(UC_SPARC_REG_I2) == 1
+assert uc.reg_read(UC_SPARC_REG_I3) == 1
+assert uc.reg_read(UC_SPARC_REG_I4) == 1
+assert uc.reg_read(UC_SPARC_REG_I5) == 1
+assert uc.reg_read(UC_SPARC_REG_I6) == 201
+assert uc.reg_read(UC_SPARC_REG_I7) == 1
