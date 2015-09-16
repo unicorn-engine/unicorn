@@ -43,8 +43,6 @@ static void sun4u_init(struct uc_struct *uc, MachineState *machine)
         fprintf(stderr, "Unable to find Sparc CPU definition\n");
         exit(1);
     }
-
-    cpu_sparc_set_id(&cpu->env, 0);
 }
 
 void sun4u_machine_init(struct uc_struct *uc)
