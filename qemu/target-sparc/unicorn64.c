@@ -6,6 +6,7 @@
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
+#include "unicorn_common.h"
 
 
 #define READ_QWORD(x) ((uint64)x)
@@ -14,6 +15,22 @@
 #define READ_BYTE_H(x) ((x & 0xffff) >> 8)
 #define READ_BYTE_L(x) (x & 0xff)
 
+
+static bool sparc_stop_interrupt(int intno)
+{
+    switch(intno) {
+        default:
+            return false;
+        case TT_ILL_INSN:
+            return true;
+    }
+}
+
+static void sparc_set_pc(struct uc_struct *uc, uint64_t address)
+{
+    ((CPUSPARCState *)uc->current_cpu->env_ptr)->pc = address;
+    ((CPUSPARCState *)uc->current_cpu->env_ptr)->npc = address + 4;
+}
 
 void sparc_reg_reset(struct uc_struct *uc)
 {
@@ -75,7 +92,7 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
             default: break;
             case UC_SPARC_REG_PC:
                  SPARC_CPU(uc, mycpu)->env.pc = *(uint64_t *)value;
-                 SPARC_CPU(uc, mycpu)->env.npc = *(uint64_t *)value + 8;
+                 SPARC_CPU(uc, mycpu)->env.npc = *(uint64_t *)value + 4;
                  break;
         }
     }
@@ -93,4 +110,7 @@ void sparc64_uc_init(struct uc_struct* uc)
     uc->reg_read = sparc_reg_read;
     uc->reg_write = sparc_reg_write;
     uc->reg_reset = sparc_reg_reset;
+    uc->set_pc = sparc_set_pc;
+    uc->stop_interrupt = sparc_stop_interrupt;
+    uc_common_init(uc);
 }
