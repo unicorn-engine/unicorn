@@ -141,6 +141,7 @@ class Uc(object):
             raise UcError(status)
         # internal mapping table to save callback & userdata
         self._callbacks = {}
+        self._ctype_cbs = {}
         self._callback_count = 0
 
 
@@ -261,6 +262,7 @@ class Uc(object):
         # save callback & user_data
         self._callback_count += 1
         self._callbacks[self._callback_count] = (callback, user_data)
+        cb = None
 
         if htype in (UC_HOOK_BLOCK, UC_HOOK_CODE):
             begin = ctypes.c_uint64(arg1)
@@ -292,6 +294,9 @@ class Uc(object):
             cb = ctypes.cast(UC_HOOK_INTR_CB(self._hook_intr_cb), UC_HOOK_INTR_CB)
             status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, \
                     cb, ctypes.cast(self._callback_count, ctypes.c_void_p))
+
+        # save the ctype function so gc will leave it alone.
+        self._ctype_cbs[self._callback_count] = cb
 
         if status != UC_ERR_OK:
             raise UcError(status)
