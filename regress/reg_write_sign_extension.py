@@ -3,6 +3,8 @@
 """See https://github.com/unicorn-engine/unicorn/issues/98"""
 
 import unicorn
+import regress
+
 ADDR = 0xffaabbcc
 
 def hook_mem_invalid(mu, access, address, size, value, user_data):
@@ -12,12 +14,18 @@ def hook_mem_invalid(mu, access, address, size, value, user_data):
     mu.mem_write(address, b'\xcc')
     return True
 
-mu = unicorn.Uc(unicorn.UC_ARCH_X86, unicorn.UC_MODE_32)
-mu.reg_write(unicorn.x86_const.UC_X86_REG_EBX, ADDR)
+class RegWriteSignExt(regress.RegressTest):
 
-mu.mem_map(0x10000000, 1024 * 4)
-# jmp ebx
-mu.mem_write(0x10000000, b'\xff\xe3')
+    def runTest(self):
+        mu = unicorn.Uc(unicorn.UC_ARCH_X86, unicorn.UC_MODE_32)
+        mu.reg_write(unicorn.x86_const.UC_X86_REG_EBX, ADDR)
 
-mu.hook_add(unicorn.UC_HOOK_MEM_INVALID, hook_mem_invalid)
-mu.emu_start(0x10000000, 0x10000000 + 2, count=1)
+        mu.mem_map(0x10000000, 1024 * 4)
+        # jmp ebx
+        mu.mem_write(0x10000000, b'\xff\xe3')
+
+        mu.hook_add(unicorn.UC_HOOK_MEM_INVALID, hook_mem_invalid)
+        mu.emu_start(0x10000000, 0x10000000 + 2, count=1)
+
+if __name__ == '__main__':
+    regress.main()
