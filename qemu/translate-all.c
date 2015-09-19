@@ -1073,7 +1073,6 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TranslationBlock *tb;
     tb_page_addr_t phys_pc, phys_page2;
-    target_ulong virt_page2;
     int code_gen_size;
 
     phys_pc = get_page_addr_code(env, pc);
@@ -1094,11 +1093,13 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     tcg_ctx->code_gen_ptr = (void *)(((uintptr_t)tcg_ctx->code_gen_ptr +
             code_gen_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
 
-    /* check next page if needed */
-    virt_page2 = (pc + tb->size - 1) & TARGET_PAGE_MASK;
     phys_page2 = -1;
-    if ((pc & TARGET_PAGE_MASK) != virt_page2) {
-        phys_page2 = get_page_addr_code(env, virt_page2);
+    /* check next page if needed */
+    if (tb->size) {
+        target_ulong virt_page2 = (pc + tb->size - 1) & TARGET_PAGE_MASK;
+        if ((pc & TARGET_PAGE_MASK) != virt_page2) {
+            phys_page2 = get_page_addr_code(env, virt_page2);
+        }
     }
     tb_link_page(cpu->uc, tb, phys_pc, phys_page2);
     return tb;
