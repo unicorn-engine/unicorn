@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 import unittest
 
 from os.path import dirname, basename, isfile
@@ -12,7 +14,10 @@ def main():
     unittest.main()
 
 if __name__ == '__main__':
-    modules = glob.glob(dirname(__file__)+"./*.py")
+    directory = dirname(__file__)
+    if directory == '':
+        directory = '.'
+    modules = glob.glob(directory+"/*.py")
     __all__ = [ basename(f)[:-3] for f in modules if isfile(f)]
     suite = unittest.TestSuite()
 
