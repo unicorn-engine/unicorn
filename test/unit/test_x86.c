@@ -128,7 +128,7 @@ static uint32_t hook_in(uc_engine *uc, uint32_t port, int size, void *user_data)
 
     uc_reg_read(uc, UC_X86_REG_EIP, &eip);
 
-    printf("--- reading from port 0x%x, size: %u, address: 0x%x\n", port, size, eip);
+    //printf("--- reading from port 0x%x, size: %u, address: 0x%x\n", port, size, eip);
 
     switch(size) {
         default:
@@ -153,7 +153,7 @@ static void hook_out(uc_engine *uc, uint32_t port, int size, uint32_t value, voi
 
     uc_reg_read(uc, UC_X86_REG_EIP, &eip);
 
-    printf("--- writing to port 0x%x, size: %u, value: 0x%x, address: 0x%x\n", port, size, value, eip);
+    //printf("--- writing to port 0x%x, size: %u, value: 0x%x, address: 0x%x\n", port, size, value, eip);
 
     // TODO: confirm that value is indeed the value of AL/AX/EAX
     switch(size) {
@@ -170,7 +170,7 @@ static void hook_out(uc_engine *uc, uint32_t port, int size, uint32_t value, voi
             break;
     }
 
-    printf("--- register value = 0x%x\n", tmp);
+    //printf("--- register value = 0x%x\n", tmp);
 }
 
 static void test_i386_inout(void **state)
@@ -232,8 +232,8 @@ static void test_i386_inout(void **state)
 
     uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
     uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx);
-    printf(">>> EAX = 0x%x\n", r_eax);
-    printf(">>> ECX = 0x%x\n", r_ecx);
+    //printf(">>> EAX = 0x%x\n", r_eax);
+    //printf(">>> ECX = 0x%x\n", r_ecx);
     // TODO: Assert on the register values here
 
     uc_assert_success(uc_close(uc));
@@ -317,7 +317,7 @@ static void test_i386_invalid_mem_read(void **state)
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, address, address+sizeof(code), 0, 0);
-    uc_assert_err(UC_ERR_MEM_READ, err);    // TODO: Currently returns MEM_WRITE
+    uc_assert_err(UC_ERR_READ_INVALID, err);    // TODO: Currently returns WRITE_INVALID
 
 
     uc_assert_success(uc_close(uc));
@@ -348,7 +348,7 @@ static void test_i386_invalid_mem_write(void **state)
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, address, address+sizeof(code), 0, 0);
-    uc_assert_err(UC_ERR_MEM_WRITE, err);
+    uc_assert_err(UC_ERR_WRITE_INVALID, err);
 
 
     uc_assert_success(uc_close(uc));
@@ -394,12 +394,12 @@ static void hook_mem64(uc_engine *uc, uc_mem_type type,
     switch(type) {
         default: break;
         case UC_MEM_READ:
-                 printf(">>> Memory is being READ at 0x%"PRIx64 ", data size = %u\n",
-                         address, size);
+                 //printf(">>> Memory is being READ at 0x%"PRIx64 ", data size = %u\n",
+                 //        address, size);
                  break;
         case UC_MEM_WRITE:
-                 printf(">>> Memory is being WRITE at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
-                         address, size, value);
+                 //printf(">>> Memory is being WRITE at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
+                 //        address, size, value);
                  break;
     }
 }
@@ -410,8 +410,8 @@ static void hook_code64(uc_engine *uc, uint64_t address, uint32_t size, void *us
     uint64_t rip;
 
     uc_reg_read(uc, UC_X86_REG_RIP, &rip);
-    printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
-    printf(">>> RIP is 0x%"PRIx64 "\n", rip);
+    //printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
+    //printf(">>> RIP is 0x%"PRIx64 "\n", rip);
 
     // Uncomment below code to stop the emulation using uc_emu_stop()
     // if (address == 0x1000009)
@@ -512,6 +512,7 @@ static void test_x86_64(void **state)
     uc_reg_read(uc, UC_X86_REG_R14, &r14);
     uc_reg_read(uc, UC_X86_REG_R15, &r15);
 
+#if 0
     printf(">>> RAX = 0x%" PRIx64 "\n", rax);
     printf(">>> RBX = 0x%" PRIx64 "\n", rbx);
     printf(">>> RCX = 0x%" PRIx64 "\n", rcx);
@@ -526,6 +527,7 @@ static void test_x86_64(void **state)
     printf(">>> R13 = 0x%" PRIx64 "\n", r13);
     printf(">>> R14 = 0x%" PRIx64 "\n", r14);
     printf(">>> R15 = 0x%" PRIx64 "\n", r15);
+#endif
 
     uc_assert_success(uc_close(uc));
 }
