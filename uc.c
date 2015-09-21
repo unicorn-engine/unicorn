@@ -809,6 +809,9 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
 {
     unsigned int i;
 
+    if (uc->mapped_block_count == 0)
+        return NULL;
+
     // try with the cache index first
     i = uc->mapped_block_cache_index;
 
