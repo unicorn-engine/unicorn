@@ -246,3 +246,12 @@ Unicorn requires few dependent packages as followings
   So far, only Python is supported by bindings in the main code.
   Look for the bindings under directory bindings/, and refer to README file
   of corresponding languages.
+
+
+[11] Unit tests
+
+  Automated unit tests use the cmocka unit testing framework (https://cmocka.org/).
+  It can be installed in most Linux distros using the package manager, e.g.
+  `sudo yum install libcmocka libcmocka-devel`, or you can easily build and install it from source.
+    
+  You can run the tests by running `make test` in the project directory.
