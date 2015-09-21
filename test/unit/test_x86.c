@@ -391,7 +391,7 @@ static void test_i386_invalid_mem_read(void **state)
 
     static const uint64_t address = 0x1000000;
     static const uint8_t code[] = {
-        0x88, 0x0D, 0xAA, 0xAA, 0xAA, 0xAA,     // mov  ecx, [0xAAAAAAAA]
+        0x8b, 0x0D, 0xAA, 0xAA, 0xAA, 0xAA,     // mov  ecx, [0xAAAAAAAA]
     };
 
     // Initialize emulator in X86-32bit mode
@@ -408,8 +408,7 @@ static void test_i386_invalid_mem_read(void **state)
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, address, address+sizeof(code), 0, 0);
-    uc_assert_err(UC_ERR_READ_INVALID, err);    // TODO: Currently returns WRITE_INVALID
-
+    uc_assert_err(UC_ERR_READ_INVALID, err);
 
     uc_assert_success(uc_close(uc));
 }
