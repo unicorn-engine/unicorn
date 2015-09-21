@@ -544,7 +544,7 @@ static void test_x86_64(void **state)
     uc_assert_success(err);
 
     // write machine code to be emulated to memory
-    err = uc_mem_write(uc, address, code, sizeof(code));
+    err = uc_mem_write(uc, address, code, sizeof(code) - 1);
     uc_assert_success(err);
 
     // initialize machine registers
@@ -583,7 +583,7 @@ static void test_x86_64(void **state)
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(uc, address, address+sizeof(code), 0, 0);
+    err = uc_emu_start(uc, address, address+sizeof(code) - 1, 0, 0);
     uc_assert_success(err);
 
     // Read registers
@@ -739,8 +739,7 @@ int main(void) {
         cmocka_unit_test(test_i386_invalid_mem_write),
         cmocka_unit_test(test_i386_jump_invalid),
 
-        // TODO: Infinite loop, then segfault
-        //cmocka_unit_test(test_x86_64),
+        cmocka_unit_test(test_x86_64),
         cmocka_unit_test(test_x86_64_syscall),
 
         cmocka_unit_test(test_x86_16),
