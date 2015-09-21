@@ -7,16 +7,13 @@
 #include <cmocka.h>
 #include <unicorn/unicorn.h>
 
-#define UC_ASSERT_ERR_ANY   0xDEADBEEF
-
 /**
  * Assert that err matches expect
  */
 #define uc_assert_err(expect, err)                                  \
 do {                                                                \
     uc_err __err = err;                                             \
-    if ((__err != expect)                                           \
-        || (expect == UC_ASSERT_ERR_ANY && __err == UC_ERR_OK)) {   \
+    if (__err != expect) {                                          \
         fail_msg("%s", uc_strerror(__err));                         \
     }                                                               \
 } while (0)
@@ -33,7 +30,13 @@ do {                                                                \
  * as this serves to document which errors a function will return
  * in various scenarios.
  */
-#define uc_assert_fail(err)     uc_assert_err(UC_ASSERT_ERR_ANY, err)
+#define uc_assert_fail(err)                                         \
+do {                                                                \
+    uc_err __err = err;                                             \
+    if (__err == UC_ERR_OK) {                                       \
+        fail_msg("%s", uc_strerror(__err));                         \
+    }                                                               \
+} while (0)
 
 
 #endif /* UNICORN_TEST_H */
