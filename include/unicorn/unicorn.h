@@ -155,23 +155,24 @@ typedef void (*uc_cb_insn_out_t)(uc_engine *uc, uint32_t port, int size, uint32_
 typedef enum uc_mem_type {
     UC_MEM_READ = 16,   // Unmapped memory is read from
     UC_MEM_WRITE,       // Unmapped memory is written to
-    UC_MEM_READ_WRITE,  // Unmapped memory is accessed (either READ or WRITE)
-    UC_MEM_FETCH,        // Unmapped memory is fetched
+    UC_MEM_FETCH,       // Unmapped memory is fetched
     UC_MEM_WRITE_PROT,  // Write to write protected, but mapped, memory
     UC_MEM_READ_PROT,   // Read from read protected, but mapped, memory
-    UC_MEM_EXEC_PROT,   // Fetch from non-executable, but mapped, memory
+    UC_MEM_FETCH_PROT,  // Fetch from non-executable, but mapped, memory
 } uc_mem_type;
 
 // All type of hooks for uc_hook_add() API.
 typedef enum uc_hook_type {
-    UC_HOOK_INTR = 32,      // Hook all interrupt events
-    UC_HOOK_INSN,           // Hook a particular instruction
-    UC_HOOK_CODE,           // Hook a range of code
-    UC_HOOK_BLOCK,          // Hook basic blocks
-    UC_HOOK_MEM_INVALID,    // Hook for all invalid memory access events
-    UC_HOOK_MEM_READ,       // Hook all memory read events.
-    UC_HOOK_MEM_WRITE,      // Hook all memory write events.
-    UC_HOOK_MEM_READ_WRITE, // Hook all memory accesses (either READ or WRITE).
+    UC_HOOK_INTR = 32,          // Hook all interrupt events
+    UC_HOOK_INSN,               // Hook a particular instruction
+    UC_HOOK_CODE,               // Hook a range of code
+    UC_HOOK_BLOCK,              // Hook basic blocks
+    UC_HOOK_MEM_INVALID_READ,   // Hook for invalid memory read events
+    UC_HOOK_MEM_INVALID_WRITE,  // Hook for invalid memory write events
+    UC_HOOK_MEM_INVALID_FETCH,  // Hook for invalid memory fetch for execution events
+    UC_HOOK_MEM_READ,           // Hook all memory read events.
+    UC_HOOK_MEM_WRITE,          // Hook all memory write events.
+    UC_HOOK_MEM_FETCH,          // Hook all memory fetch for execution events
 } uc_hook_type;
 
 // Callback function for hooking memory (UC_HOOK_MEM_*)
