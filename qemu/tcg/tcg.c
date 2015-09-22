@@ -1431,7 +1431,6 @@ static inline void tcg_la_func_end(TCGContext *s, uint8_t *dead_temps,
     memset(mem_temps + s->nb_globals, 0, s->nb_temps - s->nb_globals);
 }
 
-#if 0
 /* liveness analysis: end of basic block: all temps are dead, globals
    and local temps should be in memory. */
 static inline void tcg_la_bb_end(TCGContext *s, uint8_t *dead_temps,
@@ -1445,7 +1444,6 @@ static inline void tcg_la_bb_end(TCGContext *s, uint8_t *dead_temps,
         mem_temps[i] = s->temps[i].temp_local;
     }
 }
-#endif
 
 /* Liveness analysis : update the opc_dead_args array to tell if a
    given input arguments is dead. Instructions updating dead
@@ -1684,12 +1682,12 @@ static void tcg_liveness_analysis(TCGContext *s)
                 }
 
                 /* if end of basic block, update */
-                if (def->flags & TCG_OPF_BB_END) {
-                    // Unicorn: do not optimize dead temps.
+                if (def->flags & TCG_OPF_BB_END && op != INDEX_op_brcond_i32) {
+                    // Unicorn: do not optimize dead temps on brcond,
                     // this causes problem because check_exit_request() inserts
                     // brcond instruction in the middle of the TB,
                     // which incorrectly flags end-of-block
-                    // tcg_la_bb_end(s, dead_temps, mem_temps);
+                    tcg_la_bb_end(s, dead_temps, mem_temps);
                 } else if (def->flags & TCG_OPF_SIDE_EFFECTS) {
                     /* globals should be synced to memory */
                     memset(mem_temps, 1, s->nb_globals);
