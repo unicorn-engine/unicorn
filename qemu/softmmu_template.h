@@ -191,7 +191,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         mem_access = UC_MEM_READ;
         error_code = UC_ERR_READ_INVALID;
 #endif
-        if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+        if (uc->hook_mem_idx != 0 && ((uc_cb_hookmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, mem_access, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
@@ -208,7 +208,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #if defined(SOFTMMU_CODE_ACCESS)
     // Unicorn: callback on fetch from NX
     if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  // non-executable
-        if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+        if (uc->hook_mem_idx != 0 && ((uc_cb_hookmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, UC_MEM_EXEC_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
@@ -233,7 +233,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
     // Unicorn: callback on non-readable memory
     if (READ_ACCESS_TYPE == MMU_DATA_LOAD && mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
-        if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+        if (uc->hook_mem_idx != 0 && ((uc_cb_hookmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, UC_MEM_READ_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
@@ -381,7 +381,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         mem_access = UC_MEM_READ;
         error_code = UC_ERR_READ_INVALID;
 #endif
-        if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+        if (uc->hook_mem_idx != 0 && ((uc_cb_hookmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, mem_access, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
@@ -398,7 +398,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #if defined(SOFTMMU_CODE_ACCESS)
     // Unicorn: callback on fetch from NX
     if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  // non-executable
-        if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+        if (uc->hook_mem_idx != 0 && ((uc_cb_hookmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, UC_MEM_EXEC_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
@@ -423,7 +423,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
     // Unicorn: callback on non-readable memory
     if (READ_ACCESS_TYPE == MMU_DATA_LOAD && mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
-        if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+        if (uc->hook_mem_idx != 0 && ((uc_cb_hookmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, UC_MEM_READ_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
@@ -609,7 +609,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 
     // Unicorn: callback on invalid memory
     if (uc->hook_mem_idx && mr == NULL) {
-        if (!((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+        if (!((uc_cb_hookmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                     uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
                     uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             // save error & quit
@@ -625,7 +625,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 
     // Unicorn: callback on non-writable memory
     if (mr != NULL && !(mr->perms & UC_PROT_WRITE)) {  //non-writable
-        if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+        if (uc->hook_mem_idx != 0 && ((uc_cb_hookmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, UC_MEM_WRITE_PROT, addr, DATA_SIZE, (int64_t)val,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
@@ -755,7 +755,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 
     // Unicorn: callback on invalid memory
     if (uc->hook_mem_idx && mr == NULL) {
-        if (!((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+        if (!((uc_cb_hookmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                     uc, UC_MEM_WRITE, addr, DATA_SIZE, (int64_t)val,
                     uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             // save error & quit
@@ -771,7 +771,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 
     // Unicorn: callback on non-writable memory
     if (mr != NULL && !(mr->perms & UC_PROT_WRITE)) {  //non-writable
-        if (uc->hook_mem_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
+        if (uc->hook_mem_idx != 0 && ((uc_cb_hookmem_t)uc->hook_callbacks[uc->hook_mem_idx].callback)(
                                        uc, UC_MEM_WRITE_PROT, addr, DATA_SIZE, (int64_t)val,
                                        uc->hook_callbacks[uc->hook_mem_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;

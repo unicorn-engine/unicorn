@@ -184,16 +184,6 @@ typedef enum uc_hook_type {
 typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data);
 
-// Callback function for handling memory events (for UC_HOOK_MEM_INVALID)
-// @type: this memory is being READ, or WRITE
-// @address: address where the code is being executed
-// @size: size of data being read or written
-// @value: value of data being written to memory, or irrelevant if type = READ.
-// @user_data: user data passed to tracing APIs
-// @return: return true to continue, or false to stop program (due to invalid memory).
-typedef bool (*uc_cb_eventmem_t)(uc_engine *uc, uc_mem_type type,
-        uint64_t address, int size, int64_t value, void *user_data);
-
 
 /*
  Return combined API version & major and minor version numbers.

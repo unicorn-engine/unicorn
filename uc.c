@@ -830,7 +830,7 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
     return NULL;
 }
 
-static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_eventmem_t callback,
+static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_hookmem_t callback,
         void *user_data, uc_hook *evh)
 {
     size_t i;
