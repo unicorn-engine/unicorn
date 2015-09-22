@@ -19207,6 +19207,13 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
         max_insns = CF_COUNT_MASK;
     LOG_DISAS("\ntb %p idx %d hflags %04x\n", tb, ctx.mem_idx, ctx.hflags);
 
+    // Unicorn: early check to see if the address of this block is the until address
+    if (tb->pc == env->uc->addr_end) {
+        gen_tb_start(tcg_ctx);
+        generate_exception(&ctx, EXCP_SYSCALL);
+        goto done_generating;
+    }
+
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
