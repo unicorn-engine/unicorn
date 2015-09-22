@@ -3,6 +3,7 @@
 *.d
 *.o
 *.a
+*.dSYM
 
 qemu/config-all-devices.mak
 
