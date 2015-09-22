@@ -251,7 +251,7 @@ endif
 
 .PHONY: test
 test: all
-	$(MAKE) -C test/unit test
+	$(MAKE) -C tests/unit test
 
 
 install: all $(PKGCFGF)

@@ -19,7 +19,7 @@ class BxHang(regress.RegressTest):
         uc.reg_write(UC_ARM_REG_LR, 0x1004)
         uc.hook_add(UC_HOOK_BLOCK, hook_block)
         print 'block should only run once'
-        uc.emu_start(0x1000, 0x1004, timeout=500)
+        uc.emu_start(0x1000, 0x1004)
 
         self.assertEqual(uc.count, 1)
 
