@@ -307,7 +307,7 @@ ifeq (,$(findstring yes,$(UNICORN_BUILD_CORE_ONLY)))
 	cd samples && $(MAKE) clean
 	rm -f $(BLDIR)/samples/lib$(LIBNAME).$(EXT)
 endif
-	$(MAKE) -C test/unit clean
+	$(MAKE) -C tests/unit clean
 
 ifdef BUILDDIR
 	rm -rf $(BUILDDIR)
