@@ -1,7 +1,6 @@
 #!/usr/bin/python
 from capstone import *
 from unicorn import *
-from unicorn.mips_const import *
 
 import regress
 
@@ -19,7 +18,7 @@ class MipsBranchDelay(regress.RegressTest):
             disas(mem, addr)
 
         CODE = 0x400000
-        asm = '0000a4126a00822800000000'.decode('hex')
+        asm = '0000a4126a00822800000000'.decode('hex') # beq $a0, $s5, 0x4008a0; slti   $v0, $a0, 0x6a; nop
 
         print 'Input instructions:'
         disas(asm, CODE)

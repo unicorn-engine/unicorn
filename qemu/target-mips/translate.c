@@ -1415,7 +1415,7 @@ enum {
                       * exception condition */
     BS_STOP     = 1, /* We want to stop translation for any reason */
     BS_BRANCH   = 2, /* We reached a branch condition     */
-    BS_EXCP     = 3, /* We reached an exception condition */    // qq
+    BS_EXCP     = 3, /* We reached an exception condition */
 };
 
 static const char * const regnames[] = {
@@ -11322,7 +11322,7 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
     return 4;
 }
 
-static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
+static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, int is_slot)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv **cpu_gpr = (TCGv **)tcg_ctx->cpu_gpr;
@@ -11343,7 +11343,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
     n_bytes = 2;
 
     // Unicorn: trace this instruction on request
-    if (env->uc->hook_insn) {
+    if (!is_slot && env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
@@ -13928,7 +13928,7 @@ static void decode_micromips32_opc (CPUMIPSState *env, DisasContext *ctx,
     }
 }
 
-static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx)
+static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, int is_slot)
 {
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TCGv **cpu_gpr = (TCGv **)tcg_ctx->cpu_gpr;
@@ -13943,7 +13943,7 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx)
     }
 
     // Unicorn: trace this instruction on request
-    if (env->uc->hook_insn) {
+    if (!is_slot && env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
@@ -18503,7 +18503,7 @@ static void gen_msa(CPUMIPSState *env, DisasContext *ctx)
     }
 }
 
-static void decode_opc (CPUMIPSState *env, DisasContext *ctx)
+static void decode_opc (CPUMIPSState *env, DisasContext *ctx, int is_slot)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 #if defined(TARGET_MIPS64)
@@ -18514,6 +18514,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx)
     uint32_t op, op1;
     int16_t imm;
 
+
     /* make sure instructions are on a word boundary */
     if (ctx->pc & 0x3) {
         env->CP0_BadVAddr = ctx->pc;
@@ -18522,7 +18523,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx)
     }
 
     // Unicorn: trace this instruction on request
-    if (env->uc->hook_insn) {
+    if (!is_slot && env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
@@ -19227,7 +19228,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     }
 
     gen_tb_start(tcg_ctx);
-    while (ctx.bstate == BS_NONE) { // qq
+    while (ctx.bstate == BS_NONE) {
         if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
             QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
                 if (bp->pc == ctx.pc) {
@@ -19268,16 +19269,16 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
                 save_opparam_ptr = tcg_ctx->gen_opparam_ptr;
 
             is_slot = ctx.hflags & MIPS_HFLAG_BMASK;
-            if (!(ctx.hflags & MIPS_HFLAG_M16)) {   // qq
+            if (!(ctx.hflags & MIPS_HFLAG_M16)) {
                 ctx.opcode = cpu_ldl_code(env, ctx.pc);
                 insn_bytes = 4;
-                decode_opc(env, &ctx);
-            } else if (ctx.insn_flags & ASE_MICROMIPS) {    // qq
+                decode_opc(env, &ctx, is_slot);
+            } else if (ctx.insn_flags & ASE_MICROMIPS) {
                 ctx.opcode = cpu_lduw_code(env, ctx.pc);
-                insn_bytes = decode_micromips_opc(env, &ctx);
-            } else if (ctx.insn_flags & ASE_MIPS16) {   // qq
+                insn_bytes = decode_micromips_opc(env, &ctx, is_slot);
+            } else if (ctx.insn_flags & ASE_MIPS16) {
                 ctx.opcode = cpu_lduw_code(env, ctx.pc);
-                insn_bytes = decode_mips16_opc(env, &ctx);
+                insn_bytes = decode_mips16_opc(env, &ctx, is_slot);
             } else {
                 generate_exception(&ctx, EXCP_RI);
                 ctx.bstate = BS_STOP;
