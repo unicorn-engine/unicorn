@@ -167,9 +167,9 @@ typedef enum uc_hook_type {
     UC_HOOK_INSN,               // Hook a particular instruction
     UC_HOOK_CODE,               // Hook a range of code
     UC_HOOK_BLOCK,              // Hook basic blocks
-    UC_HOOK_MEM_INVALID_READ,   // Hook for invalid memory read events
-    UC_HOOK_MEM_INVALID_WRITE,  // Hook for invalid memory write events
-    UC_HOOK_MEM_INVALID_FETCH,  // Hook for invalid memory fetch for execution events
+    UC_HOOK_MEM_READ_INVALID,   // Hook for invalid memory read events
+    UC_HOOK_MEM_WRITE_INVALID,  // Hook for invalid memory write events
+    UC_HOOK_MEM_FETCH_INVALID,  // Hook for invalid memory fetch for execution events
     UC_HOOK_MEM_READ,           // Hook all memory read events.
     UC_HOOK_MEM_WRITE,          // Hook all memory write events.
     UC_HOOK_MEM_FETCH,          // Hook all memory fetch for execution events
