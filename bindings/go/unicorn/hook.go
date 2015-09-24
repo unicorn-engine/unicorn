@@ -71,10 +71,7 @@ func (u *uc) HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error) {
 	case HOOK_BLOCK, HOOK_CODE:
 		rangeMode = true
 		callback = C.hookCode_cgo
-	case HOOK_MEM_INVALID:
-		rangeMode = true
-		callback = C.hookMemInvalid_cgo
-	case HOOK_MEM_READ, HOOK_MEM_WRITE, HOOK_MEM_READ_WRITE:
+	case HOOK_MEM_READ, HOOK_MEM_WRITE, HOOK_MEM_READ | HOOK_MEM_WRITE:
 		rangeMode = true
 		callback = C.hookMemAccess_cgo
 	case HOOK_INTR:
@@ -92,7 +89,14 @@ func (u *uc) HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error) {
 			return 0, errors.New("Unknown instruction type.")
 		}
 	default:
-		return 0, errors.New("Unknown hook type.")
+		// special case for mask
+		if htype&(HOOK_MEM_READ_INVALID|HOOK_MEM_WRITE_INVALID|HOOK_MEM_FETCH_INVALID|
+			HOOK_MEM_READ_PROT|HOOK_MEM_WRITE_PROT|HOOK_MEM_FETCH_PROT) != 0 {
+			rangeMode = true
+			callback = C.hookMemInvalid_cgo
+		} else {
+			return 0, errors.New("Unknown hook type.")
+		}
 	}
 	var h2 C.uc_hook
 	data := &HookData{u, cb}
