@@ -193,14 +193,6 @@ typedef enum uc_hook_type {
 #define UC_HOOK_MEM_FETCH_ERR (UC_HOOK_MEM_FETCH_PROT + UC_HOOK_MEM_FETCH_INVALID)
 // hook type for all events of illegal memory access
 #define UC_HOOK_MEM_ERR (UC_HOOK_MEM_INVALID + UC_HOOK_MEM_PROT)
-// hook type for all events of read memory access
-#define UC_HOOK_MEM_READ_ALL (UC_HOOK_MEM_READ_ERR + UC_HOOK_MEM_READ)
-// hook type for all events of write memory access
-#define UC_HOOK_MEM_WRITE_ALL (UC_HOOK_MEM_WRITE_ERR + UC_HOOK_MEM_WRITE)
-// hook type for all events of fetch memory access
-#define UC_HOOK_MEM_FETCH_ALL (UC_HOOK_MEM_FETCH_ERR + UC_HOOK_MEM_FETCH)
-// hook type for all events of memory access
-#define UC_HOOK_MEM_ALL (UC_HOOK_READ_ALL + UC_HOOK_WRITE_ALL + UC_HOOK_FETCH_ALL)
 
 // Callback function for hooking memory (UC_MEM_READ, UC_MEM_WRITE & UC_MEM_FETCH)
 // @type: this memory is being READ, or WRITE
