@@ -147,8 +147,7 @@ static void do_nx_demo(bool cause_fault)
 
     // intercept code and invalid memory events
     if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK ||
-            uc_hook_add(uc, &trace1,
-                UC_HOOK_MEM_READ_INVALID | UC_HOOK_MEM_WRITE_INVALID | UC_HOOK_MEM_FETCH_INVALID | UC_HOOK_MEM_FETCH_PROT | UC_HOOK_MEM_WRITE_PROT | UC_HOOK_MEM_READ_PROT,
+            uc_hook_add(uc, &trace1, UC_HOOK_MEM_ERR,
                 hook_mem_invalid, NULL) != UC_ERR_OK) {
         printf("not ok - Failed to install hooks\n");
         return;
