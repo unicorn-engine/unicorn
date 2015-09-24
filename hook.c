@@ -73,7 +73,7 @@ size_t hook_add(struct uc_struct *uc, int type, uint64_t begin, uint64_t end, vo
                      if (begin > end)
                          uc->hook_write_idx = i;
                      break;
-            case UC_HOOK_MEM_READ_WRITE:
+            case UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE:
                      uc->hook_mem_read = true;
                      uc->hook_mem_write = true;
                      if (begin > end) {
@@ -109,8 +109,28 @@ uc_err hook_del(struct uc_struct *uc, uc_hook hh)
         uc->hook_write_idx = 0;
     }
 
-    if (hh == uc->hook_mem_idx) {
-        uc->hook_mem_idx = 0;
+    if (hh == uc->hook_mem_read_idx) {
+        uc->hook_mem_read_idx = 0;
+    }
+
+    if (hh == uc->hook_mem_write_idx) {
+        uc->hook_mem_write_idx = 0;
+    }
+
+    if (hh == uc->hook_mem_fetch_idx) {
+        uc->hook_mem_fetch_idx = 0;
+    }
+
+    if (hh == uc->hook_mem_read_prot_idx) {
+        uc->hook_mem_read_prot_idx = 0;
+    }
+
+    if (hh == uc->hook_mem_write_prot_idx) {
+        uc->hook_mem_write_prot_idx = 0;
+    }
+
+    if (hh == uc->hook_mem_fetch_prot_idx) {
+        uc->hook_mem_fetch_prot_idx = 0;
     }
 
     if (hh == uc->hook_intr_idx) {
@@ -176,13 +196,13 @@ static struct hook_struct *_hook_find(struct uc_struct *uc, int type, uint64_t a
                      }
                      break;
             case UC_HOOK_MEM_READ:
-                     if (uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_READ || uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_READ_WRITE) {
+                     if (uc->hook_callbacks[i].hook_type & UC_HOOK_MEM_READ) {
                          if (uc->hook_callbacks[i].begin <= address && address <= uc->hook_callbacks[i].end)
                              return &uc->hook_callbacks[i];
                      }
                      break;
             case UC_HOOK_MEM_WRITE:
-                     if (uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_WRITE || uc->hook_callbacks[i].hook_type == UC_HOOK_MEM_READ_WRITE) {
+                     if (uc->hook_callbacks[i].hook_type & UC_HOOK_MEM_WRITE) {
                          if (uc->hook_callbacks[i].begin <= address && address <= uc->hook_callbacks[i].end)
                              return &uc->hook_callbacks[i];
                      }

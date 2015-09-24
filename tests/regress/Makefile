@@ -1,5 +1,5 @@
 CFLAGS += -I../include
-LDFLAGS += ../libunicorn.a $(shell pkg-config --libs glib-2.0) -lpthread -lm
+LDFLAGS += ../../libunicorn.a $(shell pkg-config --libs glib-2.0) -lpthread -lm
 
 TESTS = map_crash map_write
 TESTS += sigill sigill2

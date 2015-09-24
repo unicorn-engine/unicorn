@@ -138,7 +138,7 @@ static bool hook_mem_invalid(uc_engine *uc, uc_mem_type type,
     uint32_t testval;
     switch(type) {
         default:
-            printf("not ok %d - UC_HOOK_MEM_INVALID type: %d at 0x%" PRIx64 "\n", log_num++, type, addr);
+            printf("not ok %d - memory invalid type: %d at 0x%" PRIx64 "\n", log_num++, type, addr);
             return false;
         case UC_MEM_WRITE_PROT:
             printf("# write to non-writeable memory at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n", addr, size, value);
@@ -229,11 +229,11 @@ int main(int argc, char **argv, char **envp)
     }
 
     // intercept invalid memory events
-    if (uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL) != UC_ERR_OK) {
-        printf("not ok %d - Failed to install UC_HOOK_MEM_INVALID ucr\n", log_num++);
+    if (uc_hook_add(uc, &trace1, UC_HOOK_MEM_WRITE_PROT, hook_mem_invalid, NULL) != UC_ERR_OK) {
+        printf("not ok %d - Failed to install memory invalid handler\n", log_num++);
         return 7;
     } else {
-        printf("ok %d - UC_HOOK_MEM_INVALID installed\n", log_num++);
+        printf("ok %d - memory invalid handler installed\n", log_num++);
     }
 
     // emulate machine code until told to stop by hook_code

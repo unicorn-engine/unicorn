@@ -11,7 +11,7 @@ all: ${ALL_TESTS}
 
 .PHONY: clean
 clean:
-	rm ${ALL_TESTS}
+	rm -rf ${ALL_TESTS}
 
 .PHONY: test
 test: export LD_LIBRARY_PATH=../../

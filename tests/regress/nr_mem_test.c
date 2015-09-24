@@ -86,7 +86,7 @@ int main(int argc, char **argv, char **envp)
     //uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)0x400000, (uint64_t)0x400fff);
 
     // intercept invalid memory events
-    uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL);
+    uc_hook_add(uc, &trace1, UC_MEM_READ_PROT, hook_mem_invalid, NULL);
 
     // emulate machine code in infinite time
     printf("BEGIN execution\n");

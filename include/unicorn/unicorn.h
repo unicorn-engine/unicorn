@@ -120,7 +120,7 @@ typedef enum uc_err {
     UC_ERR_MAP, // Invalid memory mapping: uc_mem_map()
     UC_ERR_WRITE_PROT, // Quit emulation due to UC_MEM_WRITE_PROT violation: uc_emu_start()
     UC_ERR_READ_PROT, // Quit emulation due to UC_MEM_READ_PROT violation: uc_emu_start()
-    UC_ERR_EXEC_PROT, // Quit emulation due to UC_MEM_EXEC_PROT violation: uc_emu_start()
+    UC_ERR_FETCH_PROT, // Quit emulation due to UC_MEM_FETCH_PROT violation: uc_emu_start()
     UC_ERR_ARG,     // Inavalid argument provided to uc_xxx function (See specific function API)
     UC_ERR_READ_UNALIGNED,  // Unaligned read
     UC_ERR_WRITE_UNALIGNED,  // Unaligned write
@@ -153,9 +153,12 @@ typedef void (*uc_cb_insn_out_t)(uc_engine *uc, uint32_t port, int size, uint32_
 
 // All type of memory accesses for UC_HOOK_MEM_*
 typedef enum uc_mem_type {
-    UC_MEM_READ = 16,   // Unmapped memory is read from
-    UC_MEM_WRITE,       // Unmapped memory is written to
-    UC_MEM_FETCH,       // Unmapped memory is fetched
+    UC_MEM_READ = 16,   // Memory is read from
+    UC_MEM_WRITE,       // Memory is written to
+    UC_MEM_FETCH,       // Memory is fetched
+    UC_MEM_READ_INVALID,    // Unmapped memory is read from
+    UC_MEM_WRITE_INVALID,   // Unmapped memory is written to
+    UC_MEM_FETCH_INVALID,   // Unmapped memory is fetched
     UC_MEM_WRITE_PROT,  // Write to write protected, but mapped, memory
     UC_MEM_READ_PROT,   // Read from read protected, but mapped, memory
     UC_MEM_FETCH_PROT,  // Fetch from non-executable, but mapped, memory
@@ -163,16 +166,19 @@ typedef enum uc_mem_type {
 
 // All type of hooks for uc_hook_add() API.
 typedef enum uc_hook_type {
-    UC_HOOK_INTR = 32,          // Hook all interrupt events
-    UC_HOOK_INSN,               // Hook a particular instruction
-    UC_HOOK_CODE,               // Hook a range of code
-    UC_HOOK_BLOCK,              // Hook basic blocks
-    UC_HOOK_MEM_READ_INVALID,   // Hook for invalid memory read events
-    UC_HOOK_MEM_WRITE_INVALID,  // Hook for invalid memory write events
-    UC_HOOK_MEM_FETCH_INVALID,  // Hook for invalid memory fetch for execution events
-    UC_HOOK_MEM_READ,           // Hook all memory read events.
-    UC_HOOK_MEM_WRITE,          // Hook all memory write events.
-    UC_HOOK_MEM_FETCH,          // Hook all memory fetch for execution events
+    UC_HOOK_INTR = 1 << 0,   // Hook all interrupt events
+    UC_HOOK_INSN = 1 << 1,   // Hook a particular instruction
+    UC_HOOK_CODE = 1 << 2,   // Hook a range of code
+    UC_HOOK_BLOCK = 1 << 3,  // Hook basic blocks
+    UC_HOOK_MEM_READ_INVALID = 1 << 4,   // Hook for invalid memory read events
+    UC_HOOK_MEM_WRITE_INVALID = 1 << 5,  // Hook for invalid memory write events
+    UC_HOOK_MEM_FETCH_INVALID = 1 << 6,  // Hook for invalid memory fetch for execution events
+    UC_HOOK_MEM_READ_PROT = 1 << 7,   // Hook for memory read on read-protected memory
+    UC_HOOK_MEM_WRITE_PROT = 1 << 8,  // Hook for memory write on write-protected memory
+    UC_HOOK_MEM_FETCH_PROT = 1 << 9,  // Hook for memory fetch on non-executable memory
+    UC_HOOK_MEM_READ = 1 << 10,   // Hook memory read events.
+    UC_HOOK_MEM_WRITE = 1 << 11,  // Hook memory write events.
+    UC_HOOK_MEM_FETCH = 1 << 12,  // Hook memory fetch for execution events
 } uc_hook_type;
 
 // Callback function for hooking memory (UC_HOOK_MEM_*)
@@ -381,7 +387,7 @@ uc_err uc_emu_stop(uc_engine *uc);
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, uc_hook_type type, void *callback, void *user_data, ...);
+uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, ...);
 
 /*
  Unregister (remove) a hook callback.

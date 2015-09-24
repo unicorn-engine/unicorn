@@ -24,7 +24,7 @@ class RegWriteSignExt(regress.RegressTest):
         # jmp ebx
         mu.mem_write(0x10000000, b'\xff\xe3')
 
-        mu.hook_add(unicorn.UC_HOOK_MEM_INVALID, hook_mem_invalid)
+        mu.hook_add(unicorn.UC_HOOK_MEM_FETCH_INVALID | unicorn.UC_HOOK_MEM_FETCH_PROT, hook_mem_invalid)
         mu.emu_start(0x10000000, 0x10000000 + 2, count=1)
 
 if __name__ == '__main__':

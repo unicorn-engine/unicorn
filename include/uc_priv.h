@@ -152,7 +152,13 @@ struct uc_struct {
     bool hook_block, hook_insn, hook_mem_read, hook_mem_write;
     uint64_t block_addr;    // save the last block address we hooked
     // indexes to event callbacks
-    int hook_mem_idx;  // for handling invalid memory access
+    int hook_mem_read_idx;  // for handling invalid memory read access on unmapped memory
+    int hook_mem_write_idx;  // for handling invalid memory write access on unmapped memory
+    int hook_mem_fetch_idx;  // for handling invalid memory fetch access on unmapped memory
+    int hook_mem_read_prot_idx;  // for handling invalid memory read access on read-protected memory
+    int hook_mem_write_prot_idx;  // for handling invalid memory write access on write-protected memory
+    int hook_mem_fetch_prot_idx;  // for handling invalid memory fetch access on non-executable memory
+
     int hook_intr_idx; // for handling interrupt
     int hook_out_idx; // for handling OUT instruction (X86)
     int hook_in_idx; // for handling IN instruction (X86)

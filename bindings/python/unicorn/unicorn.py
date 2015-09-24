@@ -272,11 +272,13 @@ class Uc(object):
             cb = ctypes.cast(UC_HOOK_CODE_CB(self._hookcode_cb), UC_HOOK_CODE_CB)
             status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, cb, \
                     ctypes.cast(self._callback_count, ctypes.c_void_p), begin, end)
-        elif htype == UC_HOOK_MEM_INVALID:
+        elif htype & UC_HOOK_MEM_READ_INVALID or htype & UC_HOOK_MEM_WRITE_INVALID or \
+            htype & UC_HOOK_MEM_FETCH_INVALID or htype & UC_HOOK_MEM_READ_PROT or \
+            htype & UC_HOOK_MEM_WRITE_PROT or htype & UC_HOOK_MEM_FETCH_PROT:
             cb = ctypes.cast(UC_HOOK_MEM_INVALID_CB(self._hook_mem_invalid_cb), UC_HOOK_MEM_INVALID_CB)
             status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, \
                     cb, ctypes.cast(self._callback_count, ctypes.c_void_p))
-        elif htype in (UC_HOOK_MEM_READ, UC_HOOK_MEM_WRITE, UC_HOOK_MEM_READ_WRITE):
+        elif htype in (UC_HOOK_MEM_READ, UC_HOOK_MEM_WRITE, UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE):
             cb = ctypes.cast(UC_HOOK_MEM_ACCESS_CB(self._hook_mem_access_cb), UC_HOOK_MEM_ACCESS_CB)
             status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, \
                     cb, ctypes.cast(self._callback_count, ctypes.c_void_p))

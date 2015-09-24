@@ -87,8 +87,8 @@ const char *uc_strerror(uc_err code)
             return "Write to write-protected memory (UC_ERR_WRITE_PROT)";
         case UC_ERR_READ_PROT:
             return "Read from non-readable memory (UC_ERR_READ_PROT)";
-        case UC_ERR_EXEC_PROT:
-            return "Fetch from non-executable memory (UC_ERR_EXEC_PROT)";
+        case UC_ERR_FETCH_PROT:
+            return "Fetch from non-executable memory (UC_ERR_FETCH_PROT)";
         case UC_ERR_ARG:
             return "Invalid argumet (UC_ERR_ARG)";
 
@@ -830,7 +830,7 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
     return NULL;
 }
 
-static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_eventmem_t callback,
+static uc_err _hook_mem_invalid(struct uc_struct* uc, int type, uc_cb_eventmem_t callback,
         void *user_data, uc_hook *evh)
 {
     size_t i;
@@ -842,7 +842,18 @@ static uc_err _hook_mem_invalid(struct uc_struct* uc, uc_cb_eventmem_t callback,
         uc->hook_callbacks[i].callback = callback;
         uc->hook_callbacks[i].user_data = user_data;
         *evh = i;
-        uc->hook_mem_idx = i;
+        if (type & UC_HOOK_MEM_READ_INVALID)
+            uc->hook_mem_read_idx = i;
+        if (type & UC_HOOK_MEM_READ_PROT)
+            uc->hook_mem_read_prot_idx = i;
+        if (type & UC_HOOK_MEM_WRITE_INVALID)
+            uc->hook_mem_write_idx = i;
+        if (type & UC_HOOK_MEM_WRITE_PROT)
+            uc->hook_mem_write_prot_idx = i;
+        if (type & UC_HOOK_MEM_FETCH_INVALID)
+            uc->hook_mem_fetch_idx = i;
+        if (type & UC_HOOK_MEM_FETCH_PROT)
+            uc->hook_mem_fetch_prot_idx = i;
         return UC_ERR_OK;
     } else
         return UC_ERR_NOMEM;
@@ -920,7 +931,7 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, uc_hook_type type, void *callback, void *user_data, ...)
+uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, ...)
 {
     va_list valist;
     int ret = UC_ERR_OK;
@@ -929,9 +940,26 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, uc_hook_type type, void *callback
 
     va_start(valist, user_data);
 
+    if (type & UC_HOOK_MEM_READ_INVALID)
+        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_READ_INVALID, callback, user_data, hh);
+
+    if (type & UC_HOOK_MEM_WRITE_INVALID)
+        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_WRITE_INVALID, callback, user_data, hh);
+
+    if (type & UC_HOOK_MEM_FETCH_INVALID)
+        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_FETCH_INVALID, callback, user_data, hh);
+
+    if (type & UC_HOOK_MEM_READ_PROT)
+        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_READ_PROT, callback, user_data, hh);
+
+    if (type & UC_HOOK_MEM_WRITE_PROT)
+        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_WRITE_PROT, callback, user_data, hh);
+
+    if (type & UC_HOOK_MEM_FETCH_PROT)
+        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_FETCH_PROT, callback, user_data, hh);
+
     switch(type) {
         default:
-            ret = UC_ERR_HOOK;
             break;
         case UC_HOOK_INTR:
             ret = _hook_intr(uc, callback, user_data, hh);
@@ -950,9 +978,6 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, uc_hook_type type, void *callback
             end = va_arg(valist, uint64_t);
             ret = _hook_code(uc, UC_HOOK_BLOCK, begin, end, callback, user_data, hh);
             break;
-        case UC_HOOK_MEM_INVALID:
-            ret = _hook_mem_invalid(uc, callback, user_data, hh);
-            break;
         case UC_HOOK_MEM_READ:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
@@ -963,10 +988,10 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, uc_hook_type type, void *callback
             end = va_arg(valist, uint64_t);
             ret = _hook_mem_access(uc, UC_HOOK_MEM_WRITE, begin, end, callback, user_data, hh);
             break;
-        case UC_HOOK_MEM_READ_WRITE:
+        case UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE:
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(uc, UC_HOOK_MEM_READ_WRITE, begin, end, callback, user_data, hh);
+            ret = _hook_mem_access(uc, UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE, begin, end, callback, user_data, hh);
             break;
     }
 
