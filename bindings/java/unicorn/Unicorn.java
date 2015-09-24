@@ -520,6 +520,21 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    }
    
 /**
+ * Hook registration for UC_HOOK_MEM_WRITE | UC_HOOK_MEM_WRITE hooks. The registered callback function will be
+ * invoked whenever a memory write or read is performed within the address range begin <= addr <= end. For
+ * the special case in which begin > end, the callback will be invoked for ALL memory writes.
+ *
+ * @param callback Implementation of a MemHook interface
+ * @param begin    Start address of memory range
+ * @param end      End address of memory range
+ * @param user_data  User data to be passed to the callback function each time the event is triggered
+ */
+   public void hook_add(MemHook callback, long begin, long end, Object user_data) throws UnicornException {
+      hook_add((ReadHook)callback, begin, end, user_data);
+      hook_add((WriteHook)callback, begin, end, user_data);
+   }
+   
+/**
  * Hook registration for UC_HOOK_MEM_XXX_INVALID and UC_HOOK_MEM_XXX_PROT hooks.
  * The registered callback function will be invoked whenever a read or write is
  * attempted from an invalid or protected memory address.
@@ -529,18 +544,23 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
    public void hook_add(EventMemHook callback, int type, Object user_data) throws UnicornException {
-      Long handle = eventMemHandles.get(type);
-      if (handle == null) {
-         eventMemHandles.put(type, registerHook(eng, type));
+      //test all of the EventMem related bits in type
+      for (Integer htype : eventMemMap.keySet()) {
+         if ((type & htype) != 0) { //the 'htype' bit is set in type
+            Long handle = eventMemHandles.get(htype);
+            if (handle == null) {
+               eventMemHandles.put(htype, registerHook(eng, htype));
+            }
+            int cbType = eventMemMap.get(htype);
+            ArrayList<Tuple> flist = eventMemLists.get(cbType);
+            if (flist == null) {
+               flist = new ArrayList<Tuple>();
+               allLists.add(flist);
+               eventMemLists.put(cbType, flist);
+            }
+            flist.add(new Tuple(callback, user_data));
+         }
       }
-      int cbType = eventMemMap.get(type);
-      ArrayList<Tuple> flist = eventMemLists.get(cbType);
-      if (flist == null) {
-         flist = new ArrayList<Tuple>();
-         allLists.add(flist);
-         eventMemLists.put(cbType, flist);
-      }
-      flist.add(new Tuple(callback, user_data));
    }
 
 /**
