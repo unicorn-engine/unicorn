@@ -181,7 +181,7 @@ typedef enum uc_hook_type {
     UC_HOOK_MEM_FETCH = 1 << 12,  // Hook memory fetch for execution events
 } uc_hook_type;
 
-// Callback function for hooking memory (UC_HOOK_MEM_*)
+// Callback function for hooking memory (UC_MEM_READ, UC_MEM_WRITE & UC_MEM_FETCH)
 // @type: this memory is being READ, or WRITE
 // @address: address where the code is being executed
 // @size: size of data being read or written
@@ -190,7 +190,8 @@ typedef enum uc_hook_type {
 typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data);
 
-// Callback function for handling memory events (for UC_HOOK_MEM_INVALID)
+// Callback function for handling invalid memory access events (UC_MEM_*_INVALID and
+//   UC_MEM_*PROT events)
 // @type: this memory is being READ, or WRITE
 // @address: address where the code is being executed
 // @size: size of data being read or written
