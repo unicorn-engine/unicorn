@@ -33,10 +33,9 @@ static jmethodID invokeBlockCallbacks = 0;
 static jmethodID invokeInterruptCallbacks = 0;
 static jmethodID invokeCodeCallbacks = 0;
 
-static jmethodID invokeMemInvalidCallbacks = 0;
+static jmethodID invokeEventMemCallbacks = 0;
 static jmethodID invokeReadCallbacks = 0;
 static jmethodID invokeWriteCallbacks = 0;
-static jmethodID invokeReadWriteCallbacks = 0;
 static jmethodID invokeInCallbacks = 0;
 static jmethodID invokeOutCallbacks = 0;
 static jmethodID invokeSyscallCallbacks = 0;
@@ -157,9 +156,6 @@ static void cb_hookmem(uc_engine *eng, uc_mem_type type,
       case UC_MEM_WRITE:
          (*env)->CallStaticVoidMethod(env, clz, invokeWriteCallbacks, (jlong)eng, (jlong)address, (int)size, (jlong)value);
          break;
-      case UC_MEM_READ_WRITE:
-         (*env)->CallStaticVoidMethod(env, clz, invokeReadWriteCallbacks, (jlong)eng, (int)type, (jlong)address, (int)size, (jlong)value);
-         break;
    }
    (*cachedJVM)->DetachCurrentThread(cachedJVM);
 }
@@ -179,7 +175,7 @@ static bool cb_eventmem(uc_engine *eng, uc_mem_type type,
    if ((*env)->ExceptionCheck(env)) {
       return false;
    }
-   jboolean res = (*env)->CallStaticBooleanMethod(env, clz, invokeMemInvalidCallbacks, (jlong)eng, (int)type, (jlong)address, (int)size, (jlong)value);
+   jboolean res = (*env)->CallStaticBooleanMethod(env, clz, invokeEventMemCallbacks, (jlong)eng, (int)type, (jlong)address, (int)size, (jlong)value);
    (*cachedJVM)->DetachCurrentThread(cachedJVM);
    return res;
 }
@@ -393,9 +389,14 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_registerHook__JI
          }
          err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookintr, env);
          break;
-      case UC_HOOK_MEM_INVALID:    // Hook for all invalid memory access events
-         if (invokeMemInvalidCallbacks == 0) {
-            invokeMemInvalidCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeMemInvalidCallbacks", "(JIJIJ)Z");
+      case UC_HOOK_MEM_FETCH_INVALID:    // Hook for all invalid memory access events
+      case UC_HOOK_MEM_READ_INVALID:    // Hook for all invalid memory access events
+      case UC_HOOK_MEM_WRITE_INVALID:    // Hook for all invalid memory access events
+      case UC_HOOK_MEM_FETCH_PROT:    // Hook for all invalid memory access events
+      case UC_HOOK_MEM_READ_PROT:    // Hook for all invalid memory access events
+      case UC_HOOK_MEM_WRITE_PROT:    // Hook for all invalid memory access events
+         if (invokeEventMemCallbacks == 0) {
+            invokeEventMemCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeEventMemCallbacks", "(JIJIJ)Z");
          }
          err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_eventmem, env);
          break;
@@ -468,12 +469,6 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_registerHook__JIJJ
       case UC_HOOK_MEM_WRITE:      // Hook all memory write events.
          if (invokeWriteCallbacks == 0) {
             invokeWriteCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeWriteCallbacks", "(JJIJ)V");
-         }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookmem, env, arg1, arg2);
-         break;
-      case UC_HOOK_MEM_READ_WRITE: // Hook all memory accesses (either READ or WRITE).
-         if (invokeReadWriteCallbacks == 0) {
-            invokeReadWriteCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeReadWriteCallbacks", "(JIJIJ)V");
          }
          err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookmem, env, arg1, arg2);
          break;

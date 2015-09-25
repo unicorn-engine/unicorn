@@ -21,9 +21,9 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 package unicorn;
 
-public interface MemoryInvalidHook extends Hook {
+public interface EventMemHook extends Hook {
 
-   public boolean hook(Unicorn u, int type, long address, int size, long value, Object user);
+   public boolean hook(Unicorn u, long address, int size, long value, Object user);
 
 }
 

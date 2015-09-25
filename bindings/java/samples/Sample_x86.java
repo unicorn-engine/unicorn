@@ -83,18 +83,14 @@ public class Sample_x86 {
       }
    }
    
-   private static class MyMemInvalidHook implements MemoryInvalidHook {
-      public boolean hook(Unicorn u, int type, long address, int size, long value, Object user) {
-         switch(type) {
-            case Unicorn.UC_MEM_WRITE:
-               System.out.printf(">>> Missing memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
-                                address, size, value);
-               // map this memory in with 2MB in size
-               u.mem_map(0xaaaa0000, 2 * 1024*1024, Unicorn.UC_PROT_ALL);
-               // return true to indicate we want to continue
-               return true;
-         }
-         return false;
+   private static class MyWriteInvalidHook implements EventMemHook {
+      public boolean hook(Unicorn u, long address, int size, long value, Object user) {
+         System.out.printf(">>> Missing memory is being WRITE at 0x%x, data size = %d, data value = 0x%x\n",
+                          address, size, value);
+         // map this memory in with 2MB in size
+         u.mem_map(0xaaaa0000, 2 * 1024*1024, Unicorn.UC_PROT_ALL);
+         // return true to indicate we want to continue
+         return true;
       }
    }
    
@@ -423,7 +419,7 @@ public class Sample_x86 {
        u.hook_add(new MyCodeHook(), 1, 0, null);
    
        // intercept invalid memory events
-       u.hook_add(new MyMemInvalidHook(), null);
+       u.hook_add(new MyWriteInvalidHook(), Unicorn.UC_HOOK_MEM_WRITE_INVALID, null);
    
        // emulate machine code in infinite time
        try {
