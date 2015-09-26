@@ -31,10 +31,15 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    private long interruptHandle = 0;
    private long codeHandle = 0;
 
-   private long memInvalidHandle = 0;
+   private Hashtable<Integer, Long> eventMemHandles = new Hashtable<Integer, Long>();
+   private long readInvalidHandle = 0;
+   private long writeInvalidHandle = 0;
+   private long fetchProtHandle = 0;
+   private long readProtHandle = 0;
+   private long writeProtHandle = 0;
+
    private long readHandle = 0;
    private long writeHandle = 0;
-   private long readWriteHandle = 0;
    private long inHandle = 0;
    private long outHandle = 0;
    private long syscallHandle = 0;
@@ -51,21 +56,28 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    private ArrayList<Tuple> blockList = new ArrayList<Tuple>();     
    private ArrayList<Tuple> intrList = new ArrayList<Tuple>();      
    private ArrayList<Tuple> codeList = new ArrayList<Tuple>();      
-   private ArrayList<Tuple> memInvalidList = new ArrayList<Tuple>();
    private ArrayList<Tuple> readList = new ArrayList<Tuple>();      
    private ArrayList<Tuple> writeList = new ArrayList<Tuple>();     
-   private ArrayList<Tuple> readWriteList = new ArrayList<Tuple>(); 
    private ArrayList<Tuple> inList = new ArrayList<Tuple>();        
    private ArrayList<Tuple> outList = new ArrayList<Tuple>();       
    private ArrayList<Tuple> syscallList = new ArrayList<Tuple>();   
    
+   private Hashtable<Integer, ArrayList<Tuple> > eventMemLists = new Hashtable<Integer, ArrayList<Tuple> >();
+   
    private ArrayList<ArrayList<Tuple>> allLists = new ArrayList<ArrayList<Tuple>>();
 
+   private static Hashtable<Integer,Integer> eventMemMap = new Hashtable<Integer,Integer>();
    private static Hashtable<Long,Unicorn> unicorns = new Hashtable<Long,Unicorn>();
 
    //required to load native method implementations   
    static { 
       System.loadLibrary("unicorn_java");    //loads unicorn.dll  or libunicorn.so
+      eventMemMap.put(UC_HOOK_MEM_READ_INVALID, UC_MEM_READ_INVALID);
+      eventMemMap.put(UC_HOOK_MEM_WRITE_INVALID, UC_MEM_WRITE_INVALID);
+      eventMemMap.put(UC_HOOK_MEM_FETCH_INVALID, UC_MEM_FETCH_INVALID);
+      eventMemMap.put(UC_HOOK_MEM_READ_PROT, UC_MEM_READ_PROT);
+      eventMemMap.put(UC_HOOK_MEM_WRITE_PROT, UC_MEM_WRITE_PROT);
+      eventMemMap.put(UC_HOOK_MEM_FETCH_PROT, UC_MEM_FETCH_PROT);
    } 
 
 /**
@@ -128,25 +140,29 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    }
 
 /**
- * Invoke all UC_HOOK_MEM_INVALID callbacks registered for a specific Unicorn.
+ * Invoke all UC_HOOK_MEM_XXX_INVALID andor UC_HOOK_MEM_XXX_PROT callbacks registered
+ * for a specific Unicorn.
  * This function gets invoked from the native C callback registered for
- * for UC_HOOK_MEM_INVALID 
+ * for UC_HOOK_MEM_XXX_INVALID or UC_HOOK_MEM_XXX_PROT
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
- * @param  type    This memory is being read (UC_MEM_READ), or written (UC_MEM_WRITE)
+ * @param  type    The type of event that is taking place
  * @param  address Address of instruction being executed
  * @param  size    Size of data being read or written
  * @param  value   Value of data being written to memory, or irrelevant if type = READ.
  * @return         true to continue, or false to stop program (due to invalid memory).
- * @see         hook_add, unicorn.MemoryInvalidHook
+ * @see            hook_add, unicorn.EventMemHook
  */
-   private static boolean invokeMemInvalidCallbacks(long eng, int type, long address, int size, long value) {
+   private static boolean invokeEventMemCallbacks(long eng, int type, long address, int size, long value) {
       Unicorn u = unicorns.get(eng);
       boolean result = true;
       if (u != null) {
-         for (Tuple p : u.memInvalidList) {
-            MemoryInvalidHook mh = (MemoryInvalidHook)p.function;
-            result &= mh.hook(u, type, address, size, value, p.data);
+         ArrayList<Tuple> funcList = u.eventMemLists.get(type);
+         if (funcList != null) {
+            for (Tuple p : funcList) {
+               EventMemHook emh = (EventMemHook)p.function;
+               result &= emh.hook(u, address, size, value, p.data);
+            }
          }
       }
       return result;
@@ -189,28 +205,6 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
          for (Tuple p : u.writeList) {
             WriteHook wh = (WriteHook)p.function;
             wh.hook(u, address, size, value, p.data);
-         }
-      }
-   }
-
-/**
- * Invoke all UC_HOOK_MEM_READ_WRITE callbacks registered for a specific Unicorn.
- * This function gets invoked from the native C callback registered for
- * for UC_HOOK_MEM_READ_WRITE 
- *
- * @param  eng     A Unicorn uc_engine* eng returned by uc_open
- * @param  type    Type of access being performed (UC_MEM_READ, UC_MEM_WRITE, UC_MEM_READ_WRITE)
- * @param  address Address of instruction being executed
- * @param  size    Size of data being read
- * @param  value   value being written (if applicable)
- * @see         hook_add, unicorn.ReadWriteHook
- */
-   private static void invokeReadWriteCallbacks(long eng, int type, long address, int size, long value) {
-      Unicorn u = unicorns.get(eng);
-      if (u != null) {
-         for (Tuple p : u.readWriteList) {
-            ReadWriteHook rwh = (ReadWriteHook)p.function;
-            rwh.hook(u, type, address, size, value, p.data);
          }
       }
    }
@@ -303,10 +297,8 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       allLists.add(blockList);
       allLists.add(intrList);
       allLists.add(codeList);
-      allLists.add(memInvalidList);
       allLists.add(readList);
       allLists.add(writeList);
-      allLists.add(readWriteList);
       allLists.add(inList);
       allLists.add(outList);
       allLists.add(syscallList);
@@ -528,34 +520,47 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    }
    
 /**
- * Hook registration for UC_HOOK_MEM_READ_WRITE hooks. The registered callback function will be
- * invoked whenever a memory read or write is performed within the address range begin <= mem_addr <= end. For
- * the special case in which begin > end, the callback will be invoked for ALL memory reads and writes.
+ * Hook registration for UC_HOOK_MEM_WRITE | UC_HOOK_MEM_WRITE hooks. The registered callback function will be
+ * invoked whenever a memory write or read is performed within the address range begin <= addr <= end. For
+ * the special case in which begin > end, the callback will be invoked for ALL memory writes.
  *
- * @param callback Implementation of a ReadWriteHook interface
- * @param begin    Start address of memory read/write range
- * @param end      End address of memory read/write range
+ * @param callback Implementation of a MemHook interface
+ * @param begin    Start address of memory range
+ * @param end      End address of memory range
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
-   public void hook_add(ReadWriteHook callback, long begin, long end, Object user_data) throws UnicornException {
-      if (readWriteHandle == 0) {
-         readWriteHandle = registerHook(eng, UC_HOOK_MEM_READ_WRITE, begin, end);
-      }
-      readWriteList.add(new Tuple(callback, user_data));
+   public void hook_add(MemHook callback, long begin, long end, Object user_data) throws UnicornException {
+      hook_add((ReadHook)callback, begin, end, user_data);
+      hook_add((WriteHook)callback, begin, end, user_data);
    }
-
+   
 /**
- * Hook registration for UC_HOOK_MEM_INVALID hooks. The registered callback function will be
- * invoked whenever a read or write is attempted from an unmapped memory address.
+ * Hook registration for UC_HOOK_MEM_XXX_INVALID and UC_HOOK_MEM_XXX_PROT hooks.
+ * The registered callback function will be invoked whenever a read or write is
+ * attempted from an invalid or protected memory address.
  *
- * @param callback Implementation of a MemoryInvalidHook interface
+ * @param callback Implementation of a EventMemHook interface
+ * @param type Type of memory event being hooked such as UC_HOOK_MEM_READ_INVALID or UC_HOOK_MEM_WRITE_PROT
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
-   public void hook_add(MemoryInvalidHook callback, Object user_data) throws UnicornException {
-      if (memInvalidHandle == 0) {
-         memInvalidHandle = registerHook(eng, UC_HOOK_MEM_INVALID);
+   public void hook_add(EventMemHook callback, int type, Object user_data) throws UnicornException {
+      //test all of the EventMem related bits in type
+      for (Integer htype : eventMemMap.keySet()) {
+         if ((type & htype) != 0) { //the 'htype' bit is set in type
+            Long handle = eventMemHandles.get(htype);
+            if (handle == null) {
+               eventMemHandles.put(htype, registerHook(eng, htype));
+            }
+            int cbType = eventMemMap.get(htype);
+            ArrayList<Tuple> flist = eventMemLists.get(cbType);
+            if (flist == null) {
+               flist = new ArrayList<Tuple>();
+               allLists.add(flist);
+               eventMemLists.put(cbType, flist);
+            }
+            flist.add(new Tuple(callback, user_data));
+         }
       }
-      memInvalidList.add(new Tuple(callback, user_data));
    }
 
 /**

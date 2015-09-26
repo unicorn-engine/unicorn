@@ -3101,6 +3101,13 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
     if (max_insns == 0)
         max_insns = CF_COUNT_MASK;
 
+    // Unicorn: early check to see if the address of this block is the until address
+    if (tb->pc == env->uc->addr_end) {
+        gen_tb_start(tcg_ctx);
+        gen_exception(dc, dc->pc, EXCP_TRAP15);
+        goto done_generating;
+    }
+
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
@@ -3179,6 +3186,8 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
                 break;
         }
     }
+
+done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
     *tcg_ctx->gen_opc_ptr = INDEX_op_end;
 

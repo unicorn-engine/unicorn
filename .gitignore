@@ -3,6 +3,7 @@
 *.d
 *.o
 *.a
+*.dSYM
 
 qemu/config-all-devices.mak
 
@@ -93,12 +94,12 @@ tmp/
 bindings/python/build/
 config.log
 
-regress/map_crash
-regress/sigill
-regress/sigill2
-regress/block_test
-regress/map_write
-regress/ro_mem_test
-regress/nr_mem_test
-regress/timeout_segfault
-regress/rep_movsb
+map_crash
+sigill
+sigill2
+block_test
+map_write
+ro_mem_test
+nr_mem_test
+timeout_segfault
+rep_movsb

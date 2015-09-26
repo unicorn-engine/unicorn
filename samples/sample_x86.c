@@ -73,7 +73,7 @@ static bool hook_mem_invalid(uc_engine *uc, uc_mem_type type,
         default:
             // return false to indicate we want to stop emulation
             return false;
-        case UC_MEM_WRITE:
+        case UC_MEM_WRITE_INVALID:
                  printf(">>> Missing memory is being WRITE at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n",
                          address, size, value);
                  // map this memory in with 2MB in size
@@ -421,7 +421,7 @@ static void test_i386_invalid_mem_write(void)
     uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
 
     // intercept invalid memory events
-    uc_hook_add(uc, &trace3, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL);
+    uc_hook_add(uc, &trace3, UC_HOOK_MEM_READ_INVALID | UC_HOOK_MEM_WRITE_INVALID, hook_mem_invalid, NULL);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_MEM_WRITE) - 1, 0, 0);

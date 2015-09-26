@@ -11105,6 +11105,13 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
 
     tcg_clear_temp_count();
 
+    // Unicorn: early check to see if the address of this block is the until address
+    if (tb->pc == env->uc->addr_end) {
+        gen_tb_start(tcg_ctx);
+        gen_exception_insn(dc, 0, EXCP_SWI, 0);
+        goto done_generating;
+    }
+
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache

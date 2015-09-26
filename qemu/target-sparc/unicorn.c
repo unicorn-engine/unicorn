@@ -42,6 +42,7 @@ void sparc_reg_reset(struct uc_struct *uc)
 
     env->pc = 0;
     env->npc = 0;
+    env->regwptr = env->regbase;
 }
 
 int sparc_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
@@ -50,23 +51,23 @@ int sparc_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
         *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0];
+    else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7)
+        *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.regwptr[regid - UC_SPARC_REG_O0];
+    else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7)
+            *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.regwptr[8 + regid - UC_SPARC_REG_L0];
+    else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7)
+            *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.regwptr[16 + regid - UC_SPARC_REG_I0];
     else {
         switch(regid) {
             default: break;
             case UC_SPARC_REG_PC:
-                     *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.pc;
-                     break;
+                *(int32_t *)value = SPARC_CPU(uc, mycpu)->env.pc;
+                break;
         }
     }
 
     return 0;
 }
-
-
-#define WRITE_DWORD(x, w) (x = (x & ~0xffffffff) | (w & 0xffffffff))
-#define WRITE_WORD(x, w) (x = (x & ~0xffff) | (w & 0xffff))
-#define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
-#define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
 int sparc_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
@@ -74,16 +75,21 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 
     if (regid >= UC_SPARC_REG_G0 && regid <= UC_SPARC_REG_G7)
         SPARC_CPU(uc, mycpu)->env.gregs[regid - UC_SPARC_REG_G0] = *(uint32_t *)value;
+    else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7)
+        SPARC_CPU(uc, mycpu)->env.regwptr[regid - UC_SPARC_REG_O0] = *(uint32_t *)value;
+    else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7)
+        SPARC_CPU(uc, mycpu)->env.regwptr[8 + regid - UC_SPARC_REG_L0] = *(uint32_t *)value;
+    else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7)
+            SPARC_CPU(uc, mycpu)->env.regwptr[16 + regid - UC_SPARC_REG_I0] = *(uint32_t *)value;
     else {
         switch(regid) {
             default: break;
             case UC_SPARC_REG_PC:
-                     SPARC_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
-                     SPARC_CPU(uc, mycpu)->env.npc = *(uint32_t *)value + 4;
-                     break;
+                SPARC_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
+                SPARC_CPU(uc, mycpu)->env.npc = *(uint32_t *)value + 4;
+                break;
         }
     }
-
 
     return 0;
 }

@@ -249,6 +249,11 @@ else
 endif
 
 
+.PHONY: test
+test: all
+	$(MAKE) -C tests/unit test
+
+
 install: all $(PKGCFGF)
 	mkdir -p $(LIBDIR)
 ifeq ($(UNICORN_SHARED),yes)
@@ -302,6 +307,7 @@ ifeq (,$(findstring yes,$(UNICORN_BUILD_CORE_ONLY)))
 	cd samples && $(MAKE) clean
 	rm -f $(BLDIR)/samples/lib$(LIBNAME).$(EXT)
 endif
+	$(MAKE) -C tests/unit clean
 
 ifdef BUILDDIR
 	rm -rf $(BUILDDIR)
