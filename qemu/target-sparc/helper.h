@@ -1,10 +1,10 @@
 DEF_HELPER_5(uc_tracecode, void, i32, ptr, ptr, i64, ptr)
+DEF_HELPER_1(power_down, void, env)
 
 #ifndef TARGET_SPARC64
 DEF_HELPER_1(rett, void, env)
 DEF_HELPER_2(wrpsr, void, env, tl)
 DEF_HELPER_1(rdpsr, tl, env)
-DEF_HELPER_1(power_down, void, env)
 #else
 DEF_HELPER_2(wrpil, void, env, tl)
 DEF_HELPER_2(wrpstate, void, env, tl)

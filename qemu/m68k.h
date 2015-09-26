@@ -1,6 +1,7 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_M68K_H
 #define UNICORN_AUTOGEN_M68K_H
+#define helper_power_down helper_power_down_m68k
 #define check_exit_request check_exit_request_m68k
 #define address_space_unregister address_space_unregister_m68k
 #define tb_invalidate_phys_page_fast tb_invalidate_phys_page_fast_m68k

@@ -10396,7 +10396,8 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
 
     // Unicorn: end address tells us to stop emulation
     if (s->pc == s->uc->addr_end) {
-        gen_exception_insn(s, 0, EXCP_SWI, 0);
+        // imitate WFI instruction to halt emulation
+        s->is_jmp = DISAS_WFI;
         return;
     }
 
@@ -11230,8 +11231,9 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
 
     // Unicorn: early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
+        // imitate WFI instruction to halt emulation
         gen_tb_start(tcg_ctx);
-        gen_exception_insn(dc, 0, EXCP_SWI, 0);
+        dc->is_jmp = DISAS_WFI;
         goto done_generating;
     }
 
@@ -11289,6 +11291,7 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
         store_cpu_field(tcg_ctx, tmp, condexec_bits);
       }
     do {
+        //printf(">>> arm pc = %x\n", dc->pc);
 #ifdef CONFIG_USER_ONLY
         /* Intercept jump to the magic kernel page.  */
         if (dc->pc >= 0xffff0000) {
@@ -11370,7 +11373,8 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
 
             // end address tells us to stop emulation
             if (dc->pc == dc->uc->addr_end) {
-                gen_exception_insn(dc, 0, EXCP_SWI, 0);
+                // imitate WFI instruction to halt emulation
+                dc->is_jmp = DISAS_WFI;
             } else {
                 insn = arm_ldl_code(env, dc->pc, dc->bswap_code);
                 dc->pc += 4;

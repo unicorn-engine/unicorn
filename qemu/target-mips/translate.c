@@ -19211,7 +19211,8 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     // Unicorn: early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
         gen_tb_start(tcg_ctx);
-        generate_exception(&ctx, EXCP_SYSCALL);
+        gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
+        ctx.bstate = BS_EXCP;
         goto done_generating;
     }
 
@@ -19229,6 +19230,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
 
     gen_tb_start(tcg_ctx);
     while (ctx.bstate == BS_NONE) {
+        // printf(">>> mips pc = %x\n", ctx.pc);
         if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
             QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
                 if (bp->pc == ctx.pc) {
@@ -19261,7 +19263,8 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
 
         // Unicorn: end address tells us to stop emulation
         if (ctx.pc == ctx.uc->addr_end) {
-            generate_exception(&ctx, EXCP_SYSCALL);
+            gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
+            ctx.bstate = BS_EXCP;
             break;
         } else {
             // Unicorn: save param buffer
