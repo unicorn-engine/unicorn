@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from unicorn import *
 from unicorn.mips_const import *
 
