@@ -166,7 +166,7 @@ typedef enum uc_mem_type {
 
 // All type of hooks for uc_hook_add() API.
 typedef enum uc_hook_type {
-    UC_HOOK_INTR = 1 << 0,   // Hook all interrupt events
+    UC_HOOK_INTR = 1 << 0,   // Hook all interrupt/syscall events
     UC_HOOK_INSN = 1 << 1,   // Hook a particular instruction
     UC_HOOK_CODE = 1 << 2,   // Hook a range of code
     UC_HOOK_BLOCK = 1 << 3,  // Hook basic blocks
