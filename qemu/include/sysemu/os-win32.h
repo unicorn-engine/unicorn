@@ -28,6 +28,7 @@
 
 #include <windows.h>
 #include <winsock2.h>
+#include <setjmp.h>
 
 /* Workaround for older versions of MinGW. */
 #ifndef ECONNREFUSED
