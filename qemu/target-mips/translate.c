@@ -19348,6 +19348,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
         switch (ctx.bstate) {
         case BS_STOP:
             gen_goto_tb(&ctx, 0, ctx.pc);
+            env->uc->next_pc = ctx.pc;
             break;
         case BS_NONE:
             save_cpu_state(&ctx, 0);

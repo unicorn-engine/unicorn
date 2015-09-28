@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from unicorn import *
 from unicorn.mips_const import *
 
@@ -13,4 +15,4 @@ uc.mem_write(addr, code)
 uc.reg_write(UC_MIPS_REG_V0, 100)
 uc.hook_add(UC_HOOK_INTR, intr_hook)
 
-uc.emu_start(addr, len(code))
+uc.emu_start(addr, addr+len(code))
