@@ -3,6 +3,8 @@
 from unicorn import *
 from unicorn.mips_const import *
 
+import regress
+
 def code_hook(uc, addr, size, user_data):
     print 'code hook: pc=%08x sp=%08x' % (addr, uc.reg_read(UC_MIPS_REG_SP))
 
@@ -36,6 +38,14 @@ def run(step=False):
     print 'sp =', hex(uc.reg_read(UC_MIPS_REG_SP))
     print 'at =', hex(uc.reg_read(UC_MIPS_REG_AT))
     print
+    return uc.reg_read(UC_MIPS_REG_SP)
 
-run(step=False)
-run(step=True)
+
+class MipsSingleStep(regress.RegressTest):
+    def test(self):
+        sp1 = run(step=False)
+        sp2 = run(step=True)
+        self.assertEqual(sp1, sp2)
+
+if __name__ == '__main__':
+    regress.main()
