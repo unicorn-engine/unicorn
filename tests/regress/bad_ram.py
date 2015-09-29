@@ -20,7 +20,10 @@ class Hang(regress.RegressTest):
 
         mu.mem_write(CODE_ADDR, binary1)
         mu.reg_write(UC_X86_REG_RSP, RSP_ADDR)
-        mu.emu_start(CODE_ADDR, CODE_ADDR + PAGE_SIZE, 0)
+        try:
+            self.assertEqual(mu.emu_start(CODE_ADDR, CODE_ADDR + PAGE_SIZE, 0), UC_ERR_FETCH_INVALID)
+        except UcError as e:
+            print("ERROR: %s" % e)
 
 
 if __name__ == '__main__':
