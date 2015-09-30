@@ -69,14 +69,12 @@ const char *uc_strerror(uc_err code)
             return "Invalid mode (UC_ERR_MODE)";
         case UC_ERR_VERSION:
             return "Different API version between core & binding (UC_ERR_VERSION)";
-        case UC_ERR_READ_INVALID:
-            return "Invalid memory read (UC_ERR_READ_INVALID)";
-        case UC_ERR_WRITE_INVALID:
-            return "Invalid memory write (UC_ERR_WRITE_INVALID)";
-        case UC_ERR_FETCH_INVALID:
-            return "Invalid memory fetch (UC_ERR_FETCH_INVALID)";
-        case UC_ERR_CODE_INVALID:
-            return "Invalid code address (UC_ERR_CODE_INVALID)";
+        case UC_ERR_READ_UNMAPPED:
+            return "Invalid memory read (UC_ERR_READ_UNMAPPED)";
+        case UC_ERR_WRITE_UNMAPPED:
+            return "Invalid memory write (UC_ERR_WRITE_UNMAPPED)";
+        case UC_ERR_FETCH_UNMAPPED:
+            return "Invalid memory fetch (UC_ERR_FETCH_UNMAPPED)";
         case UC_ERR_HOOK:
             return "Invalid hook type (UC_ERR_HOOK)";
         case UC_ERR_INSN_INVALID:
@@ -343,7 +341,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     uint8_t *bytes = _bytes;
 
     if (!check_mem_area(uc, address, size))
-        return UC_ERR_READ_INVALID;
+        return UC_ERR_READ_UNMAPPED;
 
     size_t count = 0, len;
 
@@ -364,7 +362,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     if (count == size)
         return UC_ERR_OK;
     else
-        return UC_ERR_READ_INVALID;
+        return UC_ERR_READ_UNMAPPED;
 }
 
 UNICORN_EXPORT
@@ -373,7 +371,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
     const uint8_t *bytes = _bytes;
 
     if (!check_mem_area(uc, address, size))
-        return UC_ERR_WRITE_INVALID;
+        return UC_ERR_WRITE_UNMAPPED;
 
     size_t count = 0, len;
 
@@ -404,7 +402,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
     if (count == size)
         return UC_ERR_OK;
     else
-        return UC_ERR_WRITE_INVALID;
+        return UC_ERR_WRITE_UNMAPPED;
 }
 
 #define TIMEOUT_STEP 2    // microseconds
@@ -842,15 +840,15 @@ static uc_err _hook_mem_invalid(struct uc_struct* uc, int type, uc_cb_eventmem_t
         uc->hook_callbacks[i].callback = callback;
         uc->hook_callbacks[i].user_data = user_data;
         *evh = i;
-        if (type & UC_HOOK_MEM_READ_INVALID)
+        if (type & UC_HOOK_MEM_READ_UNMAPPED)
             uc->hook_mem_read_idx = i;
         if (type & UC_HOOK_MEM_READ_PROT)
             uc->hook_mem_read_prot_idx = i;
-        if (type & UC_HOOK_MEM_WRITE_INVALID)
+        if (type & UC_HOOK_MEM_WRITE_UNMAPPED)
             uc->hook_mem_write_idx = i;
         if (type & UC_HOOK_MEM_WRITE_PROT)
             uc->hook_mem_write_prot_idx = i;
-        if (type & UC_HOOK_MEM_FETCH_INVALID)
+        if (type & UC_HOOK_MEM_FETCH_UNMAPPED)
             uc->hook_mem_fetch_idx = i;
         if (type & UC_HOOK_MEM_FETCH_PROT)
             uc->hook_mem_fetch_prot_idx = i;
@@ -940,14 +938,14 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *u
 
     va_start(valist, user_data);
 
-    if (type & UC_HOOK_MEM_READ_INVALID)
-        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_READ_INVALID, callback, user_data, hh);
+    if (type & UC_HOOK_MEM_READ_UNMAPPED)
+        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_READ_UNMAPPED, callback, user_data, hh);
 
-    if (type & UC_HOOK_MEM_WRITE_INVALID)
-        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_WRITE_INVALID, callback, user_data, hh);
+    if (type & UC_HOOK_MEM_WRITE_UNMAPPED)
+        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_WRITE_UNMAPPED, callback, user_data, hh);
 
-    if (type & UC_HOOK_MEM_FETCH_INVALID)
-        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_FETCH_INVALID, callback, user_data, hh);
+    if (type & UC_HOOK_MEM_FETCH_UNMAPPED)
+        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_FETCH_UNMAPPED, callback, user_data, hh);
 
     if (type & UC_HOOK_MEM_READ_PROT)
         ret = _hook_mem_invalid(uc, UC_HOOK_MEM_READ_PROT, callback, user_data, hh);

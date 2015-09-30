@@ -31,9 +31,8 @@ public interface UnicornErrors {
    public static final int UC_ERR_VERSION = 6;  // Unsupported version (bindings)
    public static final int UC_ERR_MEM_READ = 7; // Quit emulation due to invalid memory READ: uc_emu_start()
    public static final int UC_ERR_MEM_WRITE = 8; // Quit emulation due to invalid memory WRITE: uc_emu_start()
-   public static final int UC_ERR_CODE_INVALID = 9; // Quit emulation due to invalid code address: uc_emu_start()
-   public static final int UC_ERR_HOOK = 10;    // Invalid hook type: uc_hook_add()
-   public static final int UC_ERR_INSN_INVALID = 11; // Quit emulation due to invalid instruction: uc_emu_start()
-   public static final int UC_ERR_MAP = 12;     // Invalid memory mapping: uc_mem_map()
+   public static final int UC_ERR_HOOK = 9;    // Invalid hook type: uc_hook_add()
+   public static final int UC_ERR_INSN_INVALID = 10; // Quit emulation due to invalid instruction: uc_emu_start()
+   public static final int UC_ERR_MAP = 11;     // Invalid memory mapping: uc_mem_map()
 }
 

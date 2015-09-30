@@ -224,7 +224,7 @@ int main(int argc, char **argv, char **envp)
     }
 
     // intercept invalid memory events
-    if (uc_hook_add(uc, &trace1, UC_HOOK_MEM_WRITE_INVALID, hook_mem_invalid, NULL) != UC_ERR_OK) {
+    if (uc_hook_add(uc, &trace1, UC_HOOK_MEM_WRITE_UNMAPPED, hook_mem_invalid, NULL) != UC_ERR_OK) {
         printf("not ok %d - Failed to install memory invalid handler\n", log_num++);
         return 7;
     } else {

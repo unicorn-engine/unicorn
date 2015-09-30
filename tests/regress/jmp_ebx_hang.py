@@ -22,7 +22,7 @@ class JumEbxHang(regress.RegressTest):
         with self.assertRaises(UcError) as m:
             mu.emu_start(CODE_ADDR, CODE_ADDR + 2, count=1)
 
-        self.assertEqual(m.exception.errno, unicorn.UC_ERR_CODE_INVALID)
+        self.assertEqual(m.exception.errno, unicorn.UC_ERR_FETCH_UNMAPPED)
 
         print(">>> jmp ebx (ebx = 0xaa96a47f)");
         mu = unicorn.Uc(unicorn.UC_ARCH_X86, unicorn.UC_MODE_32)
@@ -33,7 +33,7 @@ class JumEbxHang(regress.RegressTest):
         with self.assertRaises(UcError) as m:
             mu.emu_start(CODE_ADDR, CODE_ADDR + 2, count=1)
 
-        self.assertEqual(m.exception.errno, unicorn.UC_ERR_CODE_INVALID)
+        self.assertEqual(m.exception.errno, unicorn.UC_ERR_FETCH_UNMAPPED)
 
 if __name__ == '__main__':
     regress.main()

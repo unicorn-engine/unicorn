@@ -419,7 +419,7 @@ public class Sample_x86 {
        u.hook_add(new MyCodeHook(), 1, 0, null);
    
        // intercept invalid memory events
-       u.hook_add(new MyWriteInvalidHook(), Unicorn.UC_HOOK_MEM_WRITE_INVALID, null);
+       u.hook_add(new MyWriteInvalidHook(), Unicorn.UC_HOOK_MEM_WRITE_UNMAPPED, null);
    
        // emulate machine code in infinite time
        try {

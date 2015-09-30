@@ -33,7 +33,7 @@ def hook_code(uc, address, size, user_data):
 
 # callback for tracing invalid memory access (READ or WRITE)
 def hook_mem_invalid(uc, access, address, size, value, user_data):
-    if access == UC_MEM_WRITE_INVALID:
+    if access == UC_MEM_WRITE_UNMAPPED:
         print(">>> Missing memory is being WRITE at 0x%x, data size = %u, data value = 0x%x" \
                 %(address, size, value))
         # map this memory in with 2MB in size
@@ -231,7 +231,7 @@ def test_i386_invalid_mem_write():
         #mu.hook_add(UC_HOOK_CODE, hook_code)
 
         # intercept invalid memory events
-        mu.hook_add(UC_HOOK_MEM_READ_INVALID | UC_HOOK_MEM_WRITE_INVALID, hook_mem_invalid)
+        mu.hook_add(UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED, hook_mem_invalid)
 
         try:
             # emulate machine code in infinite time

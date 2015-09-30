@@ -72,9 +72,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    //required to load native method implementations   
    static { 
       System.loadLibrary("unicorn_java");    //loads unicorn.dll  or libunicorn.so
-      eventMemMap.put(UC_HOOK_MEM_READ_INVALID, UC_MEM_READ_INVALID);
-      eventMemMap.put(UC_HOOK_MEM_WRITE_INVALID, UC_MEM_WRITE_INVALID);
-      eventMemMap.put(UC_HOOK_MEM_FETCH_INVALID, UC_MEM_FETCH_INVALID);
+      eventMemMap.put(UC_HOOK_MEM_READ_UNMAPPED, UC_MEM_READ_UNMAPPED);
+      eventMemMap.put(UC_HOOK_MEM_WRITE_UNMAPPED, UC_MEM_WRITE_UNMAPPED);
+      eventMemMap.put(UC_HOOK_MEM_FETCH_UNMAPPED, UC_MEM_FETCH_UNMAPPED);
       eventMemMap.put(UC_HOOK_MEM_READ_PROT, UC_MEM_READ_PROT);
       eventMemMap.put(UC_HOOK_MEM_WRITE_PROT, UC_MEM_WRITE_PROT);
       eventMemMap.put(UC_HOOK_MEM_FETCH_PROT, UC_MEM_FETCH_PROT);
@@ -140,10 +140,10 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    }
 
 /**
- * Invoke all UC_HOOK_MEM_XXX_INVALID andor UC_HOOK_MEM_XXX_PROT callbacks registered
+ * Invoke all UC_HOOK_MEM_XXX_UNMAPPED andor UC_HOOK_MEM_XXX_PROT callbacks registered
  * for a specific Unicorn.
  * This function gets invoked from the native C callback registered for
- * for UC_HOOK_MEM_XXX_INVALID or UC_HOOK_MEM_XXX_PROT
+ * for UC_HOOK_MEM_XXX_UNMAPPED or UC_HOOK_MEM_XXX_PROT
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  type    The type of event that is taking place
@@ -535,12 +535,12 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    }
    
 /**
- * Hook registration for UC_HOOK_MEM_XXX_INVALID and UC_HOOK_MEM_XXX_PROT hooks.
+ * Hook registration for UC_HOOK_MEM_XXX_UNMAPPED and UC_HOOK_MEM_XXX_PROT hooks.
  * The registered callback function will be invoked whenever a read or write is
  * attempted from an invalid or protected memory address.
  *
  * @param callback Implementation of a EventMemHook interface
- * @param type Type of memory event being hooked such as UC_HOOK_MEM_READ_INVALID or UC_HOOK_MEM_WRITE_PROT
+ * @param type Type of memory event being hooked such as UC_HOOK_MEM_READ_UNMAPPED or UC_HOOK_MEM_WRITE_PROT
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
    public void hook_add(EventMemHook callback, int type, Object user_data) throws UnicornException {

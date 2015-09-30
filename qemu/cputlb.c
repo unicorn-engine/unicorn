@@ -302,7 +302,6 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
         cpu_ldub_code(env1, addr);
         //check for NX related error from softmmu
         if (env1->invalid_error == UC_ERR_FETCH_PROT) {
-            env1->invalid_error = UC_ERR_CODE_INVALID;
             return -1;
         }
     }
@@ -317,14 +316,14 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
             //cpu_abort(cpu, "Trying to execute code outside RAM or ROM at 0x"
             //          TARGET_FMT_lx "\n", addr);    // qq
             env1->invalid_addr = addr;
-            env1->invalid_error = UC_ERR_CODE_INVALID;
-            return -1;  // qq FIXME
+            env1->invalid_error = UC_ERR_FETCH_UNMAPPED;
+            return -1;
         }
     }
     p = (void *)((uintptr_t)addr + env1->tlb_table[mmu_idx][page_index].addend);
     if (!qemu_ram_addr_from_host_nofail(cpu->uc, p, &ram_addr)) {
         env1->invalid_addr = addr;
-        env1->invalid_error = UC_ERR_FETCH_INVALID; // FIXME UC_ERR_FETCH_UNMAPPED
+        env1->invalid_error = UC_ERR_FETCH_UNMAPPED;
         return -1;
     } else
         return ram_addr;

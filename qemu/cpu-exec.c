@@ -200,7 +200,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                 have_tb_lock = true;
                 tb = tb_find_fast(env);	// qq
                 if (!tb) {   // invalid TB due to invalid code?
-                    uc->invalid_error = UC_ERR_CODE_INVALID;
+                    uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
                     ret = EXCP_HLT;
                     break;
                 }
