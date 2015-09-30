@@ -11234,7 +11234,7 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
         // imitate WFI instruction to halt emulation
         gen_tb_start(tcg_ctx);
         dc->is_jmp = DISAS_WFI;
-        goto done_generating;
+        goto tb_end;
     }
 
     // Unicorn: trace this block on request
@@ -11416,6 +11416,8 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
     if (tcg_ctx->gen_opc_ptr >= gen_opc_end || num_insns >= max_insns) {
         block_full = true;
     }
+
+tb_end:
 
     /* At this stage dc->condjmp will only be set when the skipped
        instruction was a conditional branch or trap, and the PC has
