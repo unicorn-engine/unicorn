@@ -42,6 +42,8 @@ Shift
 Gabriel Quadros
 Fabian Yamaguchi
 Ralf-Philipp Weinmann
+Mike Guidry
+Joshua "posixninja" Hill
 
 
 Contributors (in no particular order)
