@@ -108,18 +108,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     break;
                 }
 
-                if ((uc->arch == UC_ARCH_X86 && cpu->exception_index == 0x99) || // X86's Int 0x99
-                    (uc->arch == UC_ARCH_ARM && cpu->exception_index == 2) || /* ARM's EXCP_SWI */
-                    (uc->arch == UC_ARCH_ARM64 && cpu->exception_index == 2) || /* ARM's EXCP_SWI */
-                    (uc->arch == UC_ARCH_MIPS && cpu->exception_index == 17) ||   /* Mips's EXCP_SYSCALL */
-                    (uc->arch == UC_ARCH_SPARC && cpu->exception_index == 0x80) ||  /* Sparc's TT_TRAP */
-                    (uc->arch == UC_ARCH_SPARC && cpu->exception_index == 0x100) ||  /* Sparc64's TT_TRAP */
-                    (uc->arch == UC_ARCH_M68K && cpu->exception_index == 0x2f)   /* M68K's EXCP_TRAP15 */
-                    ) {
-                    cpu->halted = 1;
-                    ret = EXCP_HLT;
-                    break;
-                }
                 if (cpu->exception_index >= EXCP_INTERRUPT) {
                     /* exit request from the cpu execution loop */
                     ret = cpu->exception_index;
@@ -147,6 +135,9 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
 #if defined(TARGET_X86_64)
                     // point EIP to the next instruction after INT
                     env->eip = env->exception_next_eip;
+#endif
+#if defined(TARGET_MIPS) || defined(TARGET_MIPS64)
+                    env->active_tc.PC = uc->next_pc;
 #endif
 #endif
                 }
@@ -209,7 +200,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                 have_tb_lock = true;
                 tb = tb_find_fast(env);	// qq
                 if (!tb) {   // invalid TB due to invalid code?
-                    uc->invalid_error = UC_ERR_CODE_INVALID;
+                    uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
                     ret = EXCP_HLT;
                     break;
                 }

@@ -4751,7 +4751,11 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
 
     // end address tells us to stop emulation
     if (s->pc == s->uc->addr_end) {
-        gen_interrupt(s, 0x99, pc_start - s->cs_base, pc_start - s->cs_base);
+        // imitate the HLT instruction
+        gen_update_cc_op(s);
+        gen_jmp_im(s, pc_start - s->cs_base);
+        gen_helper_hlt(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
+        s->is_jmp = DISAS_TB_JUMP;
         return s->pc;
     }
 
@@ -8361,8 +8365,11 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
 
     // early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
+        // imitate the HLT instruction
         gen_tb_start(tcg_ctx);
-        gen_interrupt(dc, 0x99, tb->pc - tb->cs_base, tb->pc - tb->cs_base);
+        gen_jmp_im(dc, tb->pc - tb->cs_base);
+        gen_helper_hlt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
+        dc->is_jmp = DISAS_TB_JUMP;
         goto done_generating;
     }
 

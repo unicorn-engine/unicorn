@@ -185,14 +185,14 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     // memory can be unmapped while reading or fetching
     if (mr == NULL) {
 #if defined(SOFTMMU_CODE_ACCESS)
-        error_code = UC_ERR_FETCH_INVALID;
+        error_code = UC_ERR_FETCH_UNMAPPED;
         if (uc->hook_mem_fetch_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_fetch_idx].callback)(
-                                       uc, UC_MEM_FETCH_INVALID, addr, DATA_SIZE, 0,
+                                       uc, UC_MEM_FETCH_UNMAPPED, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_fetch_idx].user_data)) {
 #else
-        error_code = UC_ERR_READ_INVALID;
+        error_code = UC_ERR_READ_UNMAPPED;
         if (uc->hook_mem_read_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_read_idx].callback)(
-                                       uc, UC_MEM_READ_INVALID, addr, DATA_SIZE, 0,
+                                       uc, UC_MEM_READ_UNMAPPED, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_read_idx].user_data)) {
 #endif
             env->invalid_error = UC_ERR_OK;
@@ -284,7 +284,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         ioaddr = env->iotlb[mmu_idx][index];
         if (ioaddr == 0) {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_READ_INVALID;
+            env->invalid_error = UC_ERR_READ_UNMAPPED;
             // printf("Invalid memory read at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return 0;
@@ -376,14 +376,14 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     // memory can be unmapped while reading or fetching
     if (mr == NULL) {
 #if defined(SOFTMMU_CODE_ACCESS)
-        error_code = UC_ERR_FETCH_INVALID;
+        error_code = UC_ERR_FETCH_UNMAPPED;
         if (uc->hook_mem_fetch_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_fetch_idx].callback)(
-                                       uc, UC_MEM_FETCH_INVALID, addr, DATA_SIZE, 0,
+                                       uc, UC_MEM_FETCH_UNMAPPED, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_fetch_idx].user_data)) {
 #else
-        error_code = UC_ERR_READ_INVALID;
+        error_code = UC_ERR_READ_UNMAPPED;
         if (uc->hook_mem_read_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_read_idx].callback)(
-                                       uc, UC_MEM_READ_INVALID, addr, DATA_SIZE, 0,
+                                       uc, UC_MEM_READ_UNMAPPED, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_read_idx].user_data)) {
 #endif
             env->invalid_error = UC_ERR_OK;
@@ -475,7 +475,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
         if (ioaddr == 0) {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_READ_INVALID;
+            env->invalid_error = UC_ERR_READ_UNMAPPED;
             // printf("Invalid memory read at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return 0;
@@ -612,11 +612,11 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     // Unicorn: callback on invalid memory
     if (uc->hook_mem_write_idx && mr == NULL) {
         if (!((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_write_idx].callback)(
-                    uc, UC_MEM_WRITE_INVALID, addr, DATA_SIZE, (int64_t)val,
+                    uc, UC_MEM_WRITE_UNMAPPED, addr, DATA_SIZE, (int64_t)val,
                     uc->hook_callbacks[uc->hook_mem_write_idx].user_data)) {
             // save error & quit
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_WRITE_INVALID;
+            env->invalid_error = UC_ERR_WRITE_UNMAPPED;
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return;
@@ -673,7 +673,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         ioaddr = env->iotlb[mmu_idx][index];
         if (ioaddr == 0) {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_WRITE_INVALID;
+            env->invalid_error = UC_ERR_WRITE_UNMAPPED;
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return;
@@ -759,11 +759,11 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     // Unicorn: callback on invalid memory
     if (uc->hook_mem_write_idx && mr == NULL) {
         if (!((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_write_idx].callback)(
-                    uc, UC_MEM_WRITE_INVALID, addr, DATA_SIZE, (int64_t)val,
+                    uc, UC_MEM_WRITE_UNMAPPED, addr, DATA_SIZE, (int64_t)val,
                     uc->hook_callbacks[uc->hook_mem_write_idx].user_data)) {
             // save error & quit
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_WRITE_INVALID;
+            env->invalid_error = UC_ERR_WRITE_UNMAPPED;
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
             return;
@@ -820,7 +820,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         ioaddr = env->iotlb[mmu_idx][index];
         if (ioaddr == 0) {
             env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_WRITE_INVALID;
+            env->invalid_error = UC_ERR_WRITE_UNMAPPED;
             // printf("***** Invalid memory write at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
             return;

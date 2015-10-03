@@ -160,7 +160,7 @@ static void cb_hookmem(uc_engine *eng, uc_mem_type type,
    (*cachedJVM)->DetachCurrentThread(cachedJVM);
 }
 
-// Callback function for handling memory events (for UC_HOOK_MEM_INVALID)
+// Callback function for handling memory events (for UC_HOOK_MEM_UNMAPPED)
 // @type: this memory is being READ, or WRITE
 // @address: address where the code is being executed
 // @size: size of data being read or written
@@ -389,9 +389,9 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_registerHook__JI
          }
          err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookintr, env);
          break;
-      case UC_HOOK_MEM_FETCH_INVALID:    // Hook for all invalid memory access events
-      case UC_HOOK_MEM_READ_INVALID:    // Hook for all invalid memory access events
-      case UC_HOOK_MEM_WRITE_INVALID:    // Hook for all invalid memory access events
+      case UC_HOOK_MEM_FETCH_UNMAPPED:    // Hook for all invalid memory access events
+      case UC_HOOK_MEM_READ_UNMAPPED:    // Hook for all invalid memory access events
+      case UC_HOOK_MEM_WRITE_UNMAPPED:    // Hook for all invalid memory access events
       case UC_HOOK_MEM_FETCH_PROT:    // Hook for all invalid memory access events
       case UC_HOOK_MEM_READ_PROT:    // Hook for all invalid memory access events
       case UC_HOOK_MEM_WRITE_PROT:    // Hook for all invalid memory access events

@@ -5419,6 +5419,14 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     if (max_insns == 0)
         max_insns = CF_COUNT_MASK;
 
+    // Unicorn: early check to see if the address of this block is the until address
+    if (tb->pc == env->uc->addr_end) {
+        gen_tb_start(tcg_ctx);
+        save_state(dc);
+        gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
+        goto done_generating;
+    }
+
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
@@ -5462,7 +5470,9 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
         //    gen_io_start();
         // Unicorn: end address tells us to stop emulation
         if (dc->pc == dc->uc->addr_end) {
-            insn = 0x91d02000; // generate TRAP to end this TB
+            save_state(dc);
+            gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
+            break;
         } else {
             last_pc = dc->pc;
             insn = cpu_ldl_code(env, dc->pc);
@@ -5511,6 +5521,8 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
             tcg_gen_exit_tb(tcg_ctx, 0);
         }
     }
+
+done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
     *tcg_ctx->gen_opc_ptr = INDEX_op_end;
     if (spc) {

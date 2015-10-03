@@ -2586,7 +2586,12 @@ int tcg_gen_code(TCGContext *s, tcg_insn_unit *gen_code_buf)    // qq
     }
 #endif
 
+    //printf("====== before gen code\n");
+    //tcg_dump_ops(s);
     tcg_gen_code_common(s, gen_code_buf, -1);   // qq
+
+    //printf("====== after gen code\n");
+    //tcg_dump_ops(s);
 
     /* flush instruction cache */
     flush_icache_range((uintptr_t)s->code_buf, (uintptr_t)s->code_ptr);

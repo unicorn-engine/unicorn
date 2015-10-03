@@ -3038,7 +3038,7 @@ static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
 
     // Unicorn: end address tells us to stop emulation
     if (s->pc == s->uc->addr_end) {
-        gen_exception(s, s->pc, EXCP_TRAP15);
+        gen_exception(s, s->pc, EXCP_HLT);
         return;
     }
 
@@ -3104,7 +3104,7 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
     // Unicorn: early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
         gen_tb_start(tcg_ctx);
-        gen_exception(dc, dc->pc, EXCP_TRAP15);
+        gen_exception(dc, dc->pc, EXCP_HLT);
         goto done_generating;
     }
 

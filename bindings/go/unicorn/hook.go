@@ -90,7 +90,7 @@ func (u *uc) HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error) {
 		}
 	default:
 		// special case for mask
-		if htype&(HOOK_MEM_READ_INVALID|HOOK_MEM_WRITE_INVALID|HOOK_MEM_FETCH_INVALID|
+		if htype&(HOOK_MEM_READ_UNMAPPED|HOOK_MEM_WRITE_UNMAPPED|HOOK_MEM_FETCH_UNMAPPED|
 			HOOK_MEM_READ_PROT|HOOK_MEM_WRITE_PROT|HOOK_MEM_FETCH_PROT) != 0 {
 			rangeMode = true
 			callback = C.hookMemInvalid_cgo

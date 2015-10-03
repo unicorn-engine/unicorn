@@ -7,6 +7,7 @@
 import sys
 
 symbols = (
+    'helper_power_down',
     'check_exit_request',
     'address_space_unregister',
     'tb_invalidate_phys_page_fast',

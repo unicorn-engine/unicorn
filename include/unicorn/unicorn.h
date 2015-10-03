@@ -111,10 +111,9 @@ typedef enum uc_err {
     UC_ERR_HANDLE,   // Invalid handle
     UC_ERR_MODE,     // Invalid/unsupported mode: uc_open()
     UC_ERR_VERSION,  // Unsupported version (bindings)
-    UC_ERR_READ_INVALID, // Quit emulation due to invalid memory READ: uc_emu_start()
-    UC_ERR_WRITE_INVALID, // Quit emulation due to invalid memory WRITE: uc_emu_start()
-    UC_ERR_FETCH_INVALID, // Quit emulation due to invalid memory FETCH: uc_emu_start()
-    UC_ERR_CODE_INVALID, // Quit emulation due to invalid code address: uc_emu_start()
+    UC_ERR_READ_UNMAPPED, // Quit emulation due to READ on unmapped memory: uc_emu_start()
+    UC_ERR_WRITE_UNMAPPED, // Quit emulation due to WRITE on unmapped memory: uc_emu_start()
+    UC_ERR_FETCH_UNMAPPED, // Quit emulation due to FETCH on unmapped memory: uc_emu_start()
     UC_ERR_HOOK,    // Invalid hook type: uc_hook_add()
     UC_ERR_INSN_INVALID, // Quit emulation due to invalid instruction: uc_emu_start()
     UC_ERR_MAP, // Invalid memory mapping: uc_mem_map()
@@ -156,9 +155,9 @@ typedef enum uc_mem_type {
     UC_MEM_READ = 16,   // Memory is read from
     UC_MEM_WRITE,       // Memory is written to
     UC_MEM_FETCH,       // Memory is fetched
-    UC_MEM_READ_INVALID,    // Unmapped memory is read from
-    UC_MEM_WRITE_INVALID,   // Unmapped memory is written to
-    UC_MEM_FETCH_INVALID,   // Unmapped memory is fetched
+    UC_MEM_READ_UNMAPPED,    // Unmapped memory is read from
+    UC_MEM_WRITE_UNMAPPED,   // Unmapped memory is written to
+    UC_MEM_FETCH_UNMAPPED,   // Unmapped memory is fetched
     UC_MEM_WRITE_PROT,  // Write to write protected, but mapped, memory
     UC_MEM_READ_PROT,   // Read from read protected, but mapped, memory
     UC_MEM_FETCH_PROT,  // Fetch from non-executable, but mapped, memory
@@ -166,13 +165,13 @@ typedef enum uc_mem_type {
 
 // All type of hooks for uc_hook_add() API.
 typedef enum uc_hook_type {
-    UC_HOOK_INTR = 1 << 0,   // Hook all interrupt events
+    UC_HOOK_INTR = 1 << 0,   // Hook all interrupt/syscall events
     UC_HOOK_INSN = 1 << 1,   // Hook a particular instruction
     UC_HOOK_CODE = 1 << 2,   // Hook a range of code
     UC_HOOK_BLOCK = 1 << 3,  // Hook basic blocks
-    UC_HOOK_MEM_READ_INVALID = 1 << 4,   // Hook for invalid memory read events
-    UC_HOOK_MEM_WRITE_INVALID = 1 << 5,  // Hook for invalid memory write events
-    UC_HOOK_MEM_FETCH_INVALID = 1 << 6,  // Hook for invalid memory fetch for execution events
+    UC_HOOK_MEM_READ_UNMAPPED = 1 << 4,   // Hook for memory read on unmapped memory
+    UC_HOOK_MEM_WRITE_UNMAPPED = 1 << 5,  // Hook for invalid memory write events
+    UC_HOOK_MEM_FETCH_UNMAPPED = 1 << 6,  // Hook for invalid memory fetch for execution events
     UC_HOOK_MEM_READ_PROT = 1 << 7,   // Hook for memory read on read-protected memory
     UC_HOOK_MEM_WRITE_PROT = 1 << 8,  // Hook for memory write on write-protected memory
     UC_HOOK_MEM_FETCH_PROT = 1 << 9,  // Hook for memory fetch on non-executable memory
@@ -182,17 +181,17 @@ typedef enum uc_hook_type {
 } uc_hook_type;
 
 // hook type for all events of unmapped memory access
-#define UC_HOOK_MEM_INVALID (UC_HOOK_MEM_READ_INVALID + UC_HOOK_MEM_WRITE_INVALID + UC_HOOK_MEM_FETCH_INVALID)
+#define UC_HOOK_MEM_UNMAPPED (UC_HOOK_MEM_READ_UNMAPPED + UC_HOOK_MEM_WRITE_UNMAPPED + UC_HOOK_MEM_FETCH_UNMAPPED)
 // hook type for all events of illegal protected memory access
 #define UC_HOOK_MEM_PROT (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_FETCH_PROT)
 // hook type for all events of illegal read memory access
-#define UC_HOOK_MEM_READ_ERR (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_READ_INVALID)
+#define UC_HOOK_MEM_READ_INVALID (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_READ_UNMAPPED)
 // hook type for all events of illegal write memory access
-#define UC_HOOK_MEM_WRITE_ERR (UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_WRITE_INVALID)
+#define UC_HOOK_MEM_WRITE_INVALID (UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_WRITE_UNMAPPED)
 // hook type for all events of illegal fetch memory access
-#define UC_HOOK_MEM_FETCH_ERR (UC_HOOK_MEM_FETCH_PROT + UC_HOOK_MEM_FETCH_INVALID)
+#define UC_HOOK_MEM_FETCH_INVALID (UC_HOOK_MEM_FETCH_PROT + UC_HOOK_MEM_FETCH_UNMAPPED)
 // hook type for all events of illegal memory access
-#define UC_HOOK_MEM_ERR (UC_HOOK_MEM_INVALID + UC_HOOK_MEM_PROT)
+#define UC_HOOK_MEM_INVALID (UC_HOOK_MEM_UNMAPPED + UC_HOOK_MEM_PROT)
 
 // Callback function for hooking memory (UC_MEM_READ, UC_MEM_WRITE & UC_MEM_FETCH)
 // @type: this memory is being READ, or WRITE
@@ -203,7 +202,7 @@ typedef enum uc_hook_type {
 typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data);
 
-// Callback function for handling invalid memory access events (UC_MEM_*_INVALID and
+// Callback function for handling invalid memory access events (UC_MEM_*_UNMAPPED and
 //   UC_MEM_*PROT events)
 // @type: this memory is being READ, or WRITE
 // @address: address where the code is being executed

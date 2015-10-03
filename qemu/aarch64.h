@@ -1,6 +1,7 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_AARCH64_H
 #define UNICORN_AUTOGEN_AARCH64_H
+#define helper_power_down helper_power_down_aarch64
 #define check_exit_request check_exit_request_aarch64
 #define address_space_unregister address_space_unregister_aarch64
 #define tb_invalidate_phys_page_fast tb_invalidate_phys_page_fast_aarch64

@@ -28,13 +28,13 @@ class MipsExcept(regress.RegressTest):
             uc.reg_write(UC_MIPS_REG_SP, 0xFFFFFFF0)
             uc.emu_start(CODE, CODE + len(asm), 200)
 
-        self.assertEqual(UC_ERR_READ_INVALID, m.exception.errno)
+        self.assertEqual(UC_ERR_READ_UNMAPPED, m.exception.errno)
 
         with self.assertRaises(UcError) as m:
             uc.reg_write(UC_MIPS_REG_SP, 0x80000000)
             uc.emu_start(CODE, CODE + len(asm), 100)
 
-        self.assertEqual(UC_ERR_READ_INVALID, m.exception.errno)
+        self.assertEqual(UC_ERR_READ_UNMAPPED, m.exception.errno)
 
 if __name__ == '__main__':
     regress.main()

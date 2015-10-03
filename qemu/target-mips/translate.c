@@ -11322,7 +11322,7 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
     return 4;
 }
 
-static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, int is_slot)
+static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv **cpu_gpr = (TCGv **)tcg_ctx->cpu_gpr;
@@ -11343,7 +11343,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, int is_slot)
     n_bytes = 2;
 
     // Unicorn: trace this instruction on request
-    if (!is_slot && env->uc->hook_insn) {
+    if (!is_bc_slot && env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
@@ -13928,7 +13928,7 @@ static void decode_micromips32_opc (CPUMIPSState *env, DisasContext *ctx,
     }
 }
 
-static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, int is_slot)
+static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot)
 {
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TCGv **cpu_gpr = (TCGv **)tcg_ctx->cpu_gpr;
@@ -13943,7 +13943,7 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, int is_sl
     }
 
     // Unicorn: trace this instruction on request
-    if (!is_slot && env->uc->hook_insn) {
+    if (!is_bc_slot && env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
@@ -18503,7 +18503,7 @@ static void gen_msa(CPUMIPSState *env, DisasContext *ctx)
     }
 }
 
-static void decode_opc (CPUMIPSState *env, DisasContext *ctx, int is_slot)
+static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 #if defined(TARGET_MIPS64)
@@ -18523,7 +18523,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, int is_slot)
     }
 
     // Unicorn: trace this instruction on request
-    if (!is_slot && env->uc->hook_insn) {
+    if (!is_bc_slot && env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
@@ -19171,6 +19171,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     int max_insns;
     int insn_bytes;
     int is_slot = 0;
+    bool is_bc_slot = false;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TCGArg *save_opparam_ptr = NULL;
     bool block_full = false;
@@ -19211,7 +19212,8 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     // Unicorn: early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
         gen_tb_start(tcg_ctx);
-        generate_exception(&ctx, EXCP_SYSCALL);
+        gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
+        ctx.bstate = BS_EXCP;
         goto done_generating;
     }
 
@@ -19229,6 +19231,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
 
     gen_tb_start(tcg_ctx);
     while (ctx.bstate == BS_NONE) {
+        // printf(">>> mips pc = %x\n", ctx.pc);
         if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
             QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
                 if (bp->pc == ctx.pc) {
@@ -19261,7 +19264,8 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
 
         // Unicorn: end address tells us to stop emulation
         if (ctx.pc == ctx.uc->addr_end) {
-            generate_exception(&ctx, EXCP_SYSCALL);
+            gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
+            ctx.bstate = BS_EXCP;
             break;
         } else {
             // Unicorn: save param buffer
@@ -19269,16 +19273,18 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
                 save_opparam_ptr = tcg_ctx->gen_opparam_ptr;
 
             is_slot = ctx.hflags & MIPS_HFLAG_BMASK;
+            is_bc_slot = (is_slot & MIPS_HFLAG_BMASK_BASE) == MIPS_HFLAG_BC;
+
             if (!(ctx.hflags & MIPS_HFLAG_M16)) {
                 ctx.opcode = cpu_ldl_code(env, ctx.pc);
                 insn_bytes = 4;
-                decode_opc(env, &ctx, is_slot);
+                decode_opc(env, &ctx, is_bc_slot);
             } else if (ctx.insn_flags & ASE_MICROMIPS) {
                 ctx.opcode = cpu_lduw_code(env, ctx.pc);
-                insn_bytes = decode_micromips_opc(env, &ctx, is_slot);
+                insn_bytes = decode_micromips_opc(env, &ctx, is_bc_slot);
             } else if (ctx.insn_flags & ASE_MIPS16) {
                 ctx.opcode = cpu_lduw_code(env, ctx.pc);
-                insn_bytes = decode_mips16_opc(env, &ctx, is_slot);
+                insn_bytes = decode_mips16_opc(env, &ctx, is_bc_slot);
             } else {
                 generate_exception(&ctx, EXCP_RI);
                 ctx.bstate = BS_STOP;
@@ -19286,18 +19292,19 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             }
 
             // Unicorn: patch the callback for the instruction size
-            if (env->uc->hook_insn)
+            if (!is_bc_slot && env->uc->hook_insn)
                 *(save_opparam_ptr + 1) = insn_bytes;
         }
 
         if (ctx.hflags & MIPS_HFLAG_BMASK) {
             if (!(ctx.hflags & (MIPS_HFLAG_BDS16 | MIPS_HFLAG_BDS32 |
-                                MIPS_HFLAG_FBNSLOT))) {
+                            MIPS_HFLAG_FBNSLOT))) {
                 /* force to generate branch as there is neither delay nor
                    forbidden slot */
                 is_slot = 1;
             }
         }
+
         if (is_slot) {
             gen_branch(&ctx, insn_bytes);
         }
@@ -19341,6 +19348,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
         switch (ctx.bstate) {
         case BS_STOP:
             gen_goto_tb(&ctx, 0, ctx.pc);
+            env->uc->next_pc = ctx.pc;
             break;
         case BS_NONE:
             save_cpu_state(&ctx, 0);

@@ -164,7 +164,7 @@ def print_registers(mu):
 
 print_registers(uc)
 
-assert uc.reg_read(UC_SPARC_REG_PC) == 128  # make sure we executed all instructions 
+assert uc.reg_read(UC_SPARC_REG_PC) == 132  # make sure we executed all instructions
 assert uc.reg_read(UC_SPARC_REG_SP) == 101
 assert uc.reg_read(UC_SPARC_REG_FP) == 201
 

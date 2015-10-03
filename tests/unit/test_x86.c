@@ -408,7 +408,7 @@ static void test_i386_invalid_mem_read(void **state)
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, address, address+sizeof(code), 0, 0);
-    uc_assert_err(UC_ERR_READ_INVALID, err);
+    uc_assert_err(UC_ERR_READ_UNMAPPED, err);
 
     uc_assert_success(uc_close(uc));
 }
@@ -438,7 +438,7 @@ static void test_i386_invalid_mem_write(void **state)
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, address, address+sizeof(code), 0, 0);
-    uc_assert_err(UC_ERR_WRITE_INVALID, err);
+    uc_assert_err(UC_ERR_WRITE_UNMAPPED, err);
 
 
     uc_assert_success(uc_close(uc));
@@ -469,7 +469,7 @@ static void test_i386_jump_invalid(void **state)
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, address, address+sizeof(code), 0, 0);
-    uc_assert_err(UC_ERR_CODE_INVALID, err);
+    uc_assert_err(UC_ERR_FETCH_UNMAPPED, err);
 
 
     uc_assert_success(uc_close(uc));
