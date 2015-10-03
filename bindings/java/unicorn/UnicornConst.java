@@ -76,6 +76,12 @@ public interface UnicornConst {
    public static final int UC_HOOK_MEM_READ = 1024;
    public static final int UC_HOOK_MEM_WRITE = 2048;
    public static final int UC_HOOK_MEM_FETCH = 4096;
+   public static final int UC_HOOK_MEM_UNMAPPED = 112;
+   public static final int UC_HOOK_MEM_PROT = 896;
+   public static final int UC_HOOK_MEM_READ_INVALID = 144;
+   public static final int UC_HOOK_MEM_WRITE_INVALID = 288;
+   public static final int UC_HOOK_MEM_FETCH_INVALID = 576;
+   public static final int UC_HOOK_MEM_INVALID = 1008;
 
    public static final int UC_PROT_NONE = 0;
    public static final int UC_PROT_READ = 1;
