@@ -66,8 +66,8 @@ def gen(lang):
     templ = template[lang]
     for target in include:
         prefix = templ[target]
-        outfile = open(templ['out_file'] %(prefix), 'w')
-        outfile.write(templ['header'] % (prefix))
+        outfile = open(templ['out_file'] %(prefix), 'wb')   # open as binary prevents windows newlines
+        outfile.write((templ['header'] % (prefix)).encode("utf-8"))
         if target == 'unicorn.h':
             prefix = ''
         lines = open(INCL_DIR + target).readlines()
@@ -78,8 +78,8 @@ def gen(lang):
             line = line.strip()
 
             if line.startswith(MARKUP):  # markup for comments
-                outfile.write("\n%s%s%s\n" %(templ['comment_open'], \
-                            line.replace(MARKUP, ''), templ['comment_close']))
+                outfile.write(("\n%s%s%s\n" %(templ['comment_open'], \
+                            line.replace(MARKUP, ''), templ['comment_close'])).encode("utf-8"))
                 continue
 
             if line == '' or line.startswith('//'):
@@ -126,12 +126,12 @@ def gen(lang):
                     lhs_strip = re.sub(r'^UC_', '', lhs)
                     count = int(rhs) + 1
                     if (count == 1):
-                        outfile.write("\n")
+                        outfile.write(("\n").encode("utf-8"))
 
-                    outfile.write(templ['line_format'] % (lhs_strip, rhs))
+                    outfile.write((templ['line_format'] % (lhs_strip, rhs)).encode("utf-8"))
                     previous[lhs] = str(rhs)
 
-        outfile.write(templ['footer'])
+        outfile.write((templ['footer']).encode("utf-8"))
         outfile.close()
 
 def main():
