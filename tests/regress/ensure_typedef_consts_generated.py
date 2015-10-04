@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 """See https://github.com/unicorn-engine/unicorn/issues/161
 
 Ensure that constants which are specified via a typedef, rather than an enum,
