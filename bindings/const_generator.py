@@ -93,7 +93,7 @@ def gen(lang):
 
                 # parse #define UC_TARGET (num)
                 define = False
-                if f[0] == '#define' and len(f) >= 3 and f[2].isdigit():
+                if f[0] == '#define' and len(f) >= 3:
                     define = True
                     f.pop(0)
                     f.insert(1, '=')
@@ -106,25 +106,30 @@ def gen(lang):
                         rhs = ''.join(f[2:])
                     else:
                         rhs = str(count)
-                        count += 1
 
                     lhs = f[0].strip()
                     # evaluate bitshifts in constants e.g. "UC_X86 = 1 << 1"
                     match = re.match(r'(?P<rhs>\s*\d+\s*<<\s*\d+\s*)', rhs)
                     if match:
-                        rhs = eval(match.group(1))
+                        rhs = str(eval(match.group(1)))
                     else:
                         # evaluate references to other constants e.g. "UC_ARM_REG_X = UC_ARM_REG_SP"
                         match = re.match(r'^([^\d]\w+)$', rhs)
                         if match:
                             rhs = previous[match.group(1)]
 
+                    if not rhs.isdigit():
+                        for k, v in previous.items():
+                            rhs = re.sub(r'\b%s\b' % k, v, rhs)
+                        rhs = str(eval(rhs))
+
                     lhs_strip = re.sub(r'^UC_', '', lhs)
                     count = int(rhs) + 1
                     if (count == 1):
                         outfile.write("\n")
+
                     outfile.write(templ['line_format'] % (lhs_strip, rhs))
-                    previous[lhs] = rhs
+                    previous[lhs] = str(rhs)
 
         outfile.write(templ['footer'])
         outfile.close()
