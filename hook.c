@@ -27,8 +27,7 @@ size_t hook_find_new(struct uc_struct *uc)
         return 0;
 
     // reset the newly added slots
-    memset(new + uc->hook_size * sizeof(uc->hook_callbacks[0]), 0,
-            HOOK_SIZE * sizeof(uc->hook_callbacks[0]));
+    memset(new + uc->hook_size, 0, HOOK_SIZE * sizeof(uc->hook_callbacks[0]));
 
     uc->hook_callbacks = new;
     uc->hook_size += HOOK_SIZE;
