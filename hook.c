@@ -10,7 +10,7 @@
 size_t hook_find_new(struct uc_struct *uc)
 {
     size_t i;
-    struct hook_struct *new;
+    void *new;
 
     // find the first free slot. skip slot 0, so index > 0
     for(i = 1; i < uc->hook_size; i++) {
