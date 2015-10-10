@@ -89,13 +89,14 @@ const char *uc_strerror(uc_err code)
             return "Fetch from non-executable memory (UC_ERR_FETCH_PROT)";
         case UC_ERR_ARG:
             return "Invalid argumet (UC_ERR_ARG)";
-
         case UC_ERR_READ_UNALIGNED:
             return "Read from unaligned memory (UC_ERR_READ_UNALIGNED)";
         case UC_ERR_WRITE_UNALIGNED:
             return "Write to unaligned memory (UC_ERR_WRITE_UNALIGNED)";
         case UC_ERR_FETCH_UNALIGNED:
             return "Fetch from unaligned memory (UC_ERR_FETCH_UNALIGNED)";
+        case UC_ERR_HOOK_EXIST:
+            return "Hook for this type event already existed (UC_ERR_HOOK_EXIST)";
     }
 }
 
@@ -538,7 +539,7 @@ static int _hook_code(uc_engine *uc, int type, uint64_t begin, uint64_t end,
 
     i = hook_add(uc, type, begin, end, callback, user_data);
     if (i == 0)
-        return UC_ERR_NOMEM;  // FIXME
+        return UC_ERR_NOMEM;
 
     *hh = i;
 
@@ -554,7 +555,7 @@ static uc_err _hook_mem_access(uc_engine *uc, uc_hook_type type,
 
     i = hook_add(uc, type, begin, end, callback, user_data);
     if (i == 0)
-        return UC_ERR_NOMEM;  // FIXME
+        return UC_ERR_NOMEM;
 
     *hh = i;
 
@@ -833,7 +834,24 @@ static uc_err _hook_mem_invalid(struct uc_struct* uc, int type, uc_cb_eventmem_t
 {
     size_t i;
 
-    // FIXME: only one event handler at the same time
+    // only one event handler at the same time
+    if ((type & UC_HOOK_MEM_READ_UNMAPPED) != 0 && (uc->hook_mem_read_idx != 0))
+        return UC_ERR_HOOK_EXIST;
+
+    if ((type & UC_HOOK_MEM_READ_PROT) != 0 && (uc->hook_mem_read_prot_idx != 0))
+        return UC_ERR_HOOK_EXIST;
+
+    if ((type & UC_HOOK_MEM_WRITE_UNMAPPED) != 0 && (uc->hook_mem_write_idx != 0))
+        return UC_ERR_HOOK_EXIST;
+
+    if ((type & UC_HOOK_MEM_WRITE_PROT) != 0 && (uc->hook_mem_write_prot_idx != 0))
+        return UC_ERR_HOOK_EXIST;
+
+    if ((type & UC_HOOK_MEM_FETCH_UNMAPPED) != 0 && (uc->hook_mem_fetch_idx != 0))
+        return UC_ERR_HOOK_EXIST;
+
+    if ((type & UC_HOOK_MEM_FETCH_PROT) != 0 && (uc->hook_mem_fetch_prot_idx != 0))
+        return UC_ERR_HOOK_EXIST;
 
     i = hook_find_new(uc);
     if (i) {
@@ -863,7 +881,9 @@ static uc_err _hook_intr(struct uc_struct* uc, void *callback,
 {
     size_t i;
 
-    // FIXME: only one event handler at the same time
+    // only one event handler at the same time
+    if (uc->hook_intr_idx)
+        return UC_ERR_HOOK_EXIST;
 
     i = hook_find_new(uc);
     if (i) {
@@ -888,7 +908,10 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                  switch(insn_id) {
                      default: break;
                      case UC_X86_INS_OUT:
-                              // FIXME: only one event handler at the same time
+                              // only one event handler at the same time
+                              if (uc->hook_out_idx)
+                                  return UC_ERR_HOOK_EXIST;
+
                               i = hook_find_new(uc);
                               if (i) {
                                   uc->hook_callbacks[i].callback = callback;
@@ -899,7 +922,10 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                               } else
                                   return UC_ERR_NOMEM;
                      case UC_X86_INS_IN:
-                              // FIXME: only one event handler at the same time
+                              // only one event handler at the same time
+                              if (uc->hook_in_idx)
+                                  return UC_ERR_HOOK_EXIST;
+
                               i = hook_find_new(uc);
                               if (i) {
                                   uc->hook_callbacks[i].callback = callback;
@@ -911,7 +937,10 @@ static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callb
                                   return UC_ERR_NOMEM;
                      case UC_X86_INS_SYSCALL:
                      case UC_X86_INS_SYSENTER:
-                              // FIXME: only one event handler at the same time
+                              // only one event handler at the same time
+                              if (uc->hook_syscall_idx)
+                                  return UC_ERR_HOOK_EXIST;
+
                               i = hook_find_new(uc);
                               if (i) {
                                   uc->hook_callbacks[i].callback = callback;

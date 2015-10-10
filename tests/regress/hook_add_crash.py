@@ -9,5 +9,8 @@ def hook_mem_read_unmapped(mu, access, address, size, value, user_data):
 
 mu = unicorn.Uc(unicorn.UC_ARCH_X86, unicorn.UC_MODE_32)
 
-for x in range(0, 1000):
-    mu.hook_add(unicorn.UC_HOOK_MEM_READ_UNMAPPED, hook_mem_read_unmapped, None)
+try:
+    for x in range(0, 1000):
+        mu.hook_add(unicorn.UC_HOOK_MEM_READ_UNMAPPED, hook_mem_read_unmapped, None)
+except unicorn.UcError as e:
+    print("ERROR: %s" % e)
