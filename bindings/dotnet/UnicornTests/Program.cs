@@ -30,13 +30,13 @@ namespace UnicornTests
     class Program
     {
         private const Int64 ADDRESS = 0x1000000;
-        
-        private static Int32[] X86_CODE32_SELF =
-            {
-                -21, 28, 90, -119, -42, -117, 2, 102, 61, -54, 125, 117, 6, 102, 5, 3, 3, -119, 2, -2, -62, 61, 65, 65,
-                65, 65, 117, -23, -1, -26, -24, -33, -1, -1, -1, 49, -46, 106, 11, 88, -103, 82, 104, 47, 47, 115, 104,
-                104, 47, 98, 105, 110, -119, -29, 82, 83, -119, -31, -54, 125, 65, 65, 65, 65, 65, 65, 65, 65
-            };
+
+        private static Byte[] X86_CODE32_SELF =
+        {
+            0xeb, 0x19, 0x31, 0xc0, 0x31, 0xdb, 0x31, 0xd2, 0x31, 0xc9, 0xb0, 0x04, 0xb3, 0x01, 0x59, 0xb2, 0x05, 0xcd,
+            0x80, 0x31, 0xc0, 0xb0, 0x01, 0x31, 0xdb, 0xcd, 0x80, 0xe8, 0xe2, 0xff, 0xff, 0xff, 0x68, 0x65, 0x6c, 0x6c,
+            0x6f
+        };
 
         private static UInt64 ToInt(Byte[] val)
         {
@@ -48,7 +48,6 @@ namespace UnicornTests
             }
             return res;
         }
-
 
         private static void CheckError(Int32 err)
         {
@@ -67,17 +66,6 @@ namespace UnicornTests
                 intVal = (Int64)((UInt64)intVal >> 8);
             }
             return res;
-        }
-
-        private static Byte[] ToBytes(IEnumerable<int> ints)
-        {
-            var bytes = new List<Byte>();
-            foreach (var i in ints)
-            {
-                var b = (Byte) i;
-                bytes.Add(b);
-            }
-            return bytes.ToArray();
         }
 
         private static void CodeHookCallback(Unicorn u, UInt64 addr, Int32 size, Object userData)
@@ -156,7 +144,7 @@ namespace UnicornTests
             }
         }
         
-        static unsafe void Main(String[] args)
+        static void Main(String[] args)
         {
             var u = new Unicorn((UInt32)Common.UC_ARCH_X86, (UInt32)Common.UC_MODE_32);
             Console.WriteLine("Unicorn version: {0}", u.Version());
@@ -165,7 +153,7 @@ namespace UnicornTests
             CheckError(u.MemMap(ADDRESS, new UIntPtr(2 * 1024 * 1024), Common.UC_PROT_ALL));
 
             // write machine code to be emulated to memory
-            CheckError(u.MemWrite(ADDRESS, ToBytes(X86_CODE32_SELF)));
+            CheckError(u.MemWrite(ADDRESS, X86_CODE32_SELF));
 
             // initialize machine registers
             CheckError(u.RegWrite(X86.UC_X86_REG_ESP, Int64ToBytes(ADDRESS + 0x200000)));

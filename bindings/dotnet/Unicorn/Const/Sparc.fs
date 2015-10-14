@@ -24,7 +24,7 @@ namespace UnicornEngine.Const
 open System
 
 [<AutoOpen>]
-module Spark =
+module Sparc =
 
     // SPARC registers
     let UC_SPARC_REG_INVALID = 0

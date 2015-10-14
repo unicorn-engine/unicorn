@@ -49,7 +49,7 @@
     <Compile Include="Const\Common.fs" />
     <Compile Include="Const\M68k.fs" />
     <Compile Include="Const\Mips.fs" />
-    <Compile Include="Const\Spark.fs" />
+    <Compile Include="Const\Sparc.fs" />
     <Compile Include="Const\X86.fs" />
     <Compile Include="Const\UcError.fs" />
     <Compile Include="Hooks.fs" />
