@@ -29,7 +29,7 @@ namespace UnicornTests
 {
     class Program
     {
-        private const Int64 ADDRESS = 0x1000000;
+        private const UInt64 ADDRESS = 0x1000000;
 
         private static Byte[] X86_CODE32_SELF =
         {
@@ -57,13 +57,13 @@ namespace UnicornTests
             }
         }
 
-        private static Byte[] Int64ToBytes(Int64 intVal)
+        private static Byte[] Int64ToBytes(UInt64 intVal)
         {
             var res = new Byte[8];
             for (var i = 0; i < res.Length; i++)
             {
                 res[i] = (Byte)(intVal & 0xff);
-                intVal = (Int64)((UInt64)intVal >> 8);
+                intVal = intVal >> 8;
             }
             return res;
         }
@@ -146,7 +146,7 @@ namespace UnicornTests
         
         static void Main(String[] args)
         {
-            var u = new Unicorn((UInt32)Common.UC_ARCH_X86, (UInt32)Common.UC_MODE_32);
+            var u = new Unicorn(Common.UC_ARCH_X86, Common.UC_MODE_32);
             Console.WriteLine("Unicorn version: {0}", u.Version());
 
             // map 2MB of memory for this emulation
@@ -168,7 +168,7 @@ namespace UnicornTests
             Console.WriteLine(">>> Start tracing linux code");
 
             // emulate machine code in infinite time
-            u.EmuStart(ADDRESS, (UInt64)(ADDRESS + X86_CODE32_SELF.Length), 0u, new UIntPtr(0));
+            u.EmuStart(ADDRESS, ADDRESS + (UInt64)X86_CODE32_SELF.Length, 0u, new UIntPtr(0));
 
             Console.WriteLine();
             Console.WriteLine(">>> Emulation Done!");

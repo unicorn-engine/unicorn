@@ -39,7 +39,7 @@ and OutHook = delegate of Unicorn * Int32 * Int32 * Int32 * Object -> unit
 and SyscallHook = delegate of Unicorn * Object -> unit
 
 // the managed unicorn engine
-and Unicorn(arch: UInt32, mode: UInt32) = 
+and Unicorn(arch: Int32, mode: Int32) = 
 
     // hook callback list
     let _codeHooks = new Dictionary<IntPtr, (CodeHook * Object)>()
@@ -70,7 +70,7 @@ and Unicorn(arch: UInt32, mode: UInt32) =
     do
         let mem = Marshal.AllocHGlobal(IntPtr.Size)
         _eng <- [|new UIntPtr(mem.ToPointer())|]
-        let err = NativeUnicornEngine.uc_open(arch, mode, _eng)
+        let err = NativeUnicornEngine.uc_open(uint32 arch, uint32 mode, _eng)
         checkResult(err, "Unable to open the Unicorn Engine")
 
     member this.MemMap(address: UInt64, size: UIntPtr, perm: Int32) =
