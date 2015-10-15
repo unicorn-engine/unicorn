@@ -5,7 +5,7 @@ Linux, *BSD & Solaris. We also show steps to cross-compile for Microsoft Windows
 
 [0] Dependencies
 
-Unicorn requires few dependent packages as followings
+Unicorn requires few dependent packages as follows.
 
 - For Mac OS X, "pkg-config" and "glib" are needed.
   Brew users can install "pkg-config" and "glib" with:
@@ -43,7 +43,7 @@ Unicorn requires few dependent packages as followings
 
   The other way of customize Unicorn without having to edit config.mk is to
   pass the desired options on the commandline to ./make.sh. Currently,
-  Unicorn supports 4 options, as followings.
+  Unicorn supports 4 options, as follows.
 
   - UNICORN_ARCHS: specify list of architectures to compiled in.
   - UNICORN_STATIC: build static library.
@@ -51,7 +51,7 @@ Unicorn requires few dependent packages as followings
   - UNICORN_QEMU_FLAGS: specify extra flags for qemu's configure script
 
   To avoid editing config.mk for these customization, we can pass their values to
-  make.sh, as followings.
+  make.sh, as follows.
 
   $ UNICORN_ARCHS="arm aarch64 x86" ./make.sh
 
