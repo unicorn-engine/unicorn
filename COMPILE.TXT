@@ -241,7 +241,6 @@ Unicorn requires few dependent packages as follows.
 
 [9] Language bindings
 
-  So far, only Python is supported by bindings in the main code.
   Look for the bindings under directory bindings/, and refer to README file
   of corresponding languages.
 
