@@ -17,6 +17,7 @@ all:
 	cd python && $(MAKE) gen_const
 	cd go && $(MAKE) gen_const
 	cd java && $(MAKE) gen_const
+	python const_generator.py dotnet
 
 samples: expected python
 
