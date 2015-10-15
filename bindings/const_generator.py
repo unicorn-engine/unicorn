@@ -1,9 +1,9 @@
 # Unicorn Engine
 # By Dang Hoang Vu, 2013
 from __future__ import print_function
-import sys, re
+import sys, re, os
 
-INCL_DIR = '../include/unicorn/'
+INCL_DIR = os.path.join('..', 'include', 'unicorn')
 
 include = [ 'arm.h', 'arm64.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'unicorn.h' ]
 
@@ -56,6 +56,22 @@ template = {
             'comment_open': '//',
             'comment_close': '',
         },
+    'dotnet': {
+            'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\nnamespace UnicornEngine.Const\n\nopen System\n\n[<AutoOpen>]\nmodule %s =\n",
+            'footer': "\n",
+            'line_format': '   let UC_%s = %s\n',
+            'out_file': os.path.join('dotnet', 'Unicorn', 'Const', '%s.fs'),
+            # prefixes for constant filenames of all archs - case sensitive
+            'arm.h': 'Arm',
+            'arm64.h': 'Arm64',
+            'mips.h': 'Mips',
+            'x86.h': 'X86',
+            'sparc.h': 'Sparc',
+            'm68k.h': 'M68k',
+            'unicorn.h': 'Common',
+            'comment_open': '//',
+            'comment_close': '',
+        },
 }
 
 # markup for comments to be added to autogen files
@@ -70,7 +86,7 @@ def gen(lang):
         outfile.write((templ['header'] % (prefix)).encode("utf-8"))
         if target == 'unicorn.h':
             prefix = ''
-        lines = open(INCL_DIR + target).readlines()
+        lines = open(os.path.join(INCL_DIR, target)).readlines()
 
         previous = {}
         count = 0
