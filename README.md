@@ -10,7 +10,7 @@ Unicorn offers some unparalleled features:
 - Clean/simple/lightweight/intuitive architecture-neutral API
 - Implemented in pure C language, with bindings for Python, Java, and Go
 - Native support for Windows & *nix (with Mac OSX, Linux, *BSD & Solaris confirmed)
-- High performace via Just-In-Time compilation
+- High performance via Just-In-Time compilation
 - Support for fine-grained instrumentation at various levels
 - Thread-safety by design
 - Distributed under open source license GPL
