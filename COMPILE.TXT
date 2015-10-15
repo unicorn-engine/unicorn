@@ -12,16 +12,20 @@ Unicorn requires few dependent packages as follows.
 
       $ brew install pkg-config glib
 
-- For Linux, glib2-dev is needed.
+- For Linux, "glib2-dev" is needed.
   Ubuntu/Debian users can install this with:
 
       $ sudo apt-get install libglib2.0-dev
 
 - For Windows, cross-compile requires Mingw. Mingw-glib2 is needed.
+  At the moment, it is confirmed that Unicorn can be compiled either on Ubuntu
+  or Windows.
 
-    On Ubuntu 14.04 64-bit, do:
+    - On Ubuntu 14.04 64-bit, do:
 
-        1. Download DEB packages for Mingw64 from https://launchpad.net/~greg-hellings/+archive/ubuntu/mingw-libs/+build/2924251
+        1. Download DEB packages for Mingw64 from:
+
+            https://launchpad.net/~greg-hellings/+archive/ubuntu/mingw-libs/+build/2924251
 
         2. To cross-compile for Windows 32-bit, install Mingw with (ignore all the warnings):
 
@@ -30,6 +34,31 @@ Unicorn requires few dependent packages as follows.
            To cross-compile for Windows 64-bit, install Mingw with:
 
             $ sudo dpkg -i --force-depends mingw64-x64-glib2_2.31.0_all.deb
+
+
+    - On Windows, install MinGW via package MSYS2 at https://msys2.github.io/
+
+        Follow the install instructions and don't forget to update the system packages with:
+
+              $ pacman --needed -Sy bash pacman pacman-mirrors msys2-runtime
+
+        Then close MSYS2, run it again from Start menu and update the rest with:
+
+              $ pacman -Su
+
+        Finally, install required toolchain to build C projects.
+
+              - To compile for Windows 32-bit, run:
+                      $ pacman -S make
+                      $ pacman -S pkg-config
+                      $ pacman -S mingw-w64-i686-glib2
+                      $ pacman -S mingw-w64-i686-toolchain
+
+              - To compile for Windows 64-bit, run:
+                      $ pacman -S make
+                      $ pacman -S pkg-config
+                      $ pacman -S mingw-w64-x86_64-glib2
+                      $ pacman -S mingw-w64-x86_64-toolchain
 
 
 
@@ -107,29 +136,13 @@ Unicorn requires few dependent packages as follows.
 
 [3] Compile from source on Windows - with MinGW (MSYS2)
 
-  To compile with MinGW you need to install MSYS2: https://msys2.github.io/ 
-  Follow the install instructions and don't forget to update the system packages with:
-
-        $ pacman --needed -Sy bash pacman pacman-mirrors msys2-runtime
-
-     Then close MSYS2, run it again from Start menu and update the rest with:
-
-        $ pacman -Su
-
-  Finally, compile Unicorn with the next steps:
+  To compile with MinGW, install MSYS2 as instructed in the first section.
+  Then, build Unicorn with the next steps:
 
         - To compile Windows 32-bit binary with MinGW, run:
-                $ pacman -S make
-                $ pacman -S pkg-config
-                $ pacman -S mingw-w64-i686-glib2
-                $ pacman -S mingw-w64-i686-toolchain
                 $ ./make.sh cross-win32
 
         - To compile Windows 64-bit binary with MinGW, run:
-                $ pacman -S make
-                $ pacman -S pkg-config
-                $ pacman -S mingw-w64-x86_64-glib2
-                $ pacman -S mingw-w64-x86_64-toolchain
                 $ ./make.sh cross-win64
 
   Resulted files unicorn.dll, unicorn.lib & samples/sample*.exe can then
