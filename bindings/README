@@ -1,0 +1,9 @@
+This directory contains bindings & test code for Python, Java, Go and .NET.
+See <language>/README or <language>/README.TXT for how to install each binding.
+
+The following bindings are contributed by community.
+
+- Java binding: by Chris Eagle.
+- Go binding: by Ryan Hileman.
+- .NET binding: by Antonio Parata.
+
