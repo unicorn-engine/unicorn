@@ -55,7 +55,7 @@ and Unicorn(arch: Int32, mode: Int32) =
     let mutable _eng = [|UIntPtr.Zero|]
 
     let checkResult(errCode: Int32, errMsg: String) =
-        if errCode <> Common.UC_ERR_OK then raise(ApplicationException(errMsg + ". Error: " + UcError.toErrorDesc(errCode)))        
+        if errCode <> Common.UC_ERR_OK then raise(ApplicationException(String.Format("{0}. Error: {1}", errMsg, errCode)))
     
     let getId =
         let counter = ref 0
@@ -103,9 +103,9 @@ and Unicorn(arch: Int32, mode: Int32) =
     member this.ErrNo() =
         NativeUnicornEngine.errno(_eng.[0])
 
-    member this.StrError() =
-        // TODO: to be implemented
-        raise(NotImplementedException())
+    member this.StrError(errorNo: Int32) =
+        let errorStringPointer = NativeUnicornEngine.strerror(errorNo)
+        Marshal.PtrToStringAnsi(errorStringPointer)
 
     member this.AddCodeHook(callback: CodeHook, userData: Object, beginAdd: UInt64, endAddr: UInt64) =   
         let trampoline(u: IntPtr) (addr: UInt64) (size: Int32) (user: IntPtr) =

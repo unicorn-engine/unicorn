@@ -53,7 +53,7 @@ namespace UnicornTests
         {
             if (err != Common.UC_ERR_OK)
             {
-                throw new ApplicationException("Operation failed, error: " + UcError.toErrorDesc(err));
+                throw new ApplicationException("Operation failed, error: " + err);
             }
         }
 
@@ -74,7 +74,7 @@ namespace UnicornTests
 
             var eipBuffer = new Byte[4];
             CheckError(u.RegRead(X86.UC_X86_REG_EIP, eipBuffer));
-         
+
             var effectiveSize = Math.Min(16, size);
             var tmp = new Byte[effectiveSize];
             CheckError(u.MemRead(addr, tmp));
@@ -114,7 +114,7 @@ namespace UnicornTests
                     u.EmuStop();
                     break;
                 case 4: // sys_write
-                    
+
                     // ECX = buffer address
                     var ecxBuffer = new Byte[4];
 
@@ -134,8 +134,8 @@ namespace UnicornTests
                     var content = Encoding.Default.GetString(buffer);
 
                     Console.WriteLine(
-                        "Interrupt >>> 0x{0}: num {1}, SYS_WRITE. buffer = 0x{2}, size = , content = '{3}'", 
-                        eip.ToString("X"), 
+                        "Interrupt >>> 0x{0}: num {1}, SYS_WRITE. buffer = 0x{2}, size = , content = '{3}'",
+                        eip.ToString("X"),
                         ecx.ToString("X"),
                         edx.ToString("X"),
                         content);
@@ -143,12 +143,12 @@ namespace UnicornTests
                     break;
             }
         }
-        
+
         static void Main(String[] args)
         {
             var u = new Unicorn(Common.UC_ARCH_X86, Common.UC_MODE_32);
             Console.WriteLine("Unicorn version: {0}", u.Version());
-
+            
             // map 2MB of memory for this emulation
             CheckError(u.MemMap(ADDRESS, new UIntPtr(2 * 1024 * 1024), Common.UC_PROT_ALL));
 

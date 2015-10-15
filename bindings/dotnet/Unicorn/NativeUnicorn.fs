@@ -64,6 +64,9 @@ module NativeUnicornEngine =
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
         extern Int32 uc_errno(UIntPtr eng)
 
+        [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl)>]
+        extern IntPtr uc_strerror(Int32 err)
+
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl, EntryPoint = "uc_hook_add")>]
         extern Int32 uc_hook_add_noarg(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData)
 
@@ -86,6 +89,7 @@ module NativeUnicornEngine =
     let mutable emu_stop = fun(eng) -> Imported.uc_emu_stop(eng)
     let mutable arch_supported = fun(arch) -> Imported.uc_arch_supported(arch)
     let mutable errno = fun(eng) -> Imported.uc_errno(eng)
+    let mutable strerror = fun(err) -> Imported.uc_strerror(err)
     let mutable hook_add_noarg = fun(eng, hh, callbackType, callback, userData) -> Imported.uc_hook_add_noarg(eng, hh, callbackType, callback, userData)
     let mutable hook_add_arg0 = fun(eng, hh, callbackType, callback, userData, arg0) -> Imported.uc_hook_add_arg0(eng, hh, callbackType, callback, userData, arg0)
     let mutable hook_add_arg0_arg1 = fun(eng, hh, callbackType, callback, userData, arg0, arg1) -> Imported.uc_hook_add_arg0_arg1(eng, hh, callbackType, callback, userData, arg0, arg1)
