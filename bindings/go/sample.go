@@ -34,11 +34,11 @@ func addHooks(mu uc.Unicorn) {
 	invalid := uc.HOOK_MEM_READ_INVALID | uc.HOOK_MEM_WRITE_INVALID | uc.HOOK_MEM_FETCH_INVALID
 	mu.HookAdd(invalid, func(mu uc.Unicorn, access int, addr uint64, size int, value int64) bool {
 		switch access {
-		case uc.MEM_WRITE_INVALID:
+		case uc.MEM_WRITE_UNMAPPED | uc.MEM_WRITE_PROT:
 			fmt.Printf("invalid write")
-		case uc.MEM_READ_INVALID:
+		case uc.MEM_READ_UNMAPPED | uc.MEM_READ_PROT:
 			fmt.Printf("invalid read")
-		case uc.MEM_FETCH_INVALID:
+		case uc.MEM_FETCH_UNMAPPED | uc.MEM_FETCH_PROT:
 			fmt.Printf("invalid fetch")
 		default:
 			fmt.Printf("unknown memory error")
