@@ -73,29 +73,44 @@ and Unicorn(arch: Int32, mode: Int32) =
         let err = NativeUnicornEngine.uc_open(uint32 arch, uint32 mode, _eng)
         checkResult(err, "Unable to open the Unicorn Engine")
 
+    member private this.CheckResult(errorCode: Int32) =
+        // return the exception instead of raising it in order to have a more meaningful stack trace
+        if errorCode <> Common.UC_ERR_OK then
+            let errorMessage = this.StrError(errorCode)
+            Some <| UnicornEngineException(errorCode, errorMessage)
+        else None
+
     member this.MemMap(address: UInt64, size: UIntPtr, perm: Int32) =
-        NativeUnicornEngine.mem_map(_eng.[0], address, size, uint32 perm)
+        match NativeUnicornEngine.mem_map(_eng.[0], address, size, uint32 perm) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
-    member this.MemWrite(address: UInt64, buffer: Byte array) =
-        NativeUnicornEngine.mem_write(_eng.[0], address, buffer, new UIntPtr(uint32 buffer.Length))
+    member this.MemWrite(address: UInt64, value: Byte array) =
+        match NativeUnicornEngine.mem_write(_eng.[0], address, value, new UIntPtr(uint32 value.Length)) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
-    member this.MemRead(address: UInt64, value: Byte array) =
-        NativeUnicornEngine.mem_read(_eng.[0], address, value, new UIntPtr(uint32 value.Length))
+    member this.MemRead(address: UInt64, memValue: Byte array) =
+        match NativeUnicornEngine.mem_read(_eng.[0], address, memValue, new UIntPtr(uint32 memValue.Length)) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.RegWrite(regId: Int32, value: Byte array) =
-        NativeUnicornEngine.reg_write(_eng.[0], regId, value)
+        match NativeUnicornEngine.reg_write(_eng.[0], regId, value) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.RegRead(regId: Int32, regValue: Byte array) =
-        NativeUnicornEngine.reg_read(_eng.[0], regId, regValue)
+        match NativeUnicornEngine.reg_read(_eng.[0], regId, regValue) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.EmuStart(beginAddr: UInt64, untilAddr: UInt64, timeout: UInt64, count: UIntPtr) =
-        NativeUnicornEngine.emu_start(_eng.[0], beginAddr, untilAddr, timeout, count)
+        match NativeUnicornEngine.emu_start(_eng.[0], beginAddr, untilAddr, timeout, count) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.EmuStop() =
-        NativeUnicornEngine.emu_stop(_eng.[0])
+        match NativeUnicornEngine.emu_stop(_eng.[0]) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.Close() =
-        NativeUnicornEngine.close(_eng.[0])
+        match NativeUnicornEngine.close(_eng.[0]) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.ArchSupported(arch: Int32) =
         NativeUnicornEngine.arch_supported(arch)
@@ -117,7 +132,8 @@ and Unicorn(arch: Int32, mode: Int32) =
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new CodeHookInternal(trampoline))
         let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
-        (NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_CODE, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr), hh)
+        match NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_CODE, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.HookDel(callback: CodeHook) =
         hookDel _codeHooks callback
@@ -132,7 +148,8 @@ and Unicorn(arch: Int32, mode: Int32) =
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new BlockHookInternal(trampoline))
         let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
-        (NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_BLOCK, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr), hh)
+        match NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_BLOCK, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.HookDel(callback: BlockHook) =
         hookDel _blockHooks callback
@@ -147,7 +164,8 @@ and Unicorn(arch: Int32, mode: Int32) =
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new InterruptHookInternal(trampoline))
         let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
-        (NativeUnicornEngine.hook_add_noarg(_eng.[0], hh, Common.UC_HOOK_INTR, new UIntPtr(funcPointer.ToPointer()), id), hh)
+        match NativeUnicornEngine.hook_add_noarg(_eng.[0], hh, Common.UC_HOOK_INTR, new UIntPtr(funcPointer.ToPointer()), id) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.HookDel(callback: InterruptHook) =
         hookDel _interruptHooks callback
@@ -162,7 +180,8 @@ and Unicorn(arch: Int32, mode: Int32) =
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new MemReadHookInternal(trampoline))
         let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
-        (NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_MEM_READ, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr), hh)
+        match NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_MEM_READ, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.HookDel(callback: MemReadHook) =
         hookDel _memReadHooks callback
@@ -177,7 +196,8 @@ and Unicorn(arch: Int32, mode: Int32) =
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new MemWriteHookInternal(trampoline))
         let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
-        (NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_MEM_WRITE, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr), hh)
+        match NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_MEM_WRITE, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.HookDel(callback: MemWriteHook) =
         hookDel _memWriteHooks callback
@@ -193,7 +213,8 @@ and Unicorn(arch: Int32, mode: Int32) =
 
             let funcPointer = Marshal.GetFunctionPointerForDelegate(new EventMemHookInternal(trampoline))
             let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
-            (NativeUnicornEngine.hook_add_noarg(_eng.[0], hh, check, new UIntPtr(funcPointer.ToPointer()), id), hh)
+            match NativeUnicornEngine.hook_add_noarg(_eng.[0], hh, check, new UIntPtr(funcPointer.ToPointer()), id) |> this.CheckResult with 
+            | Some e -> raise e | None -> ()
 
         // test all the events types agains the input eventType
         [
@@ -221,7 +242,8 @@ and Unicorn(arch: Int32, mode: Int32) =
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new InHookInternal(trampoline))
         let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
-        (NativeUnicornEngine.hook_add_arg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), id, new IntPtr(X86.UC_X86_INS_IN)), hh)
+        match NativeUnicornEngine.hook_add_arg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), id, new IntPtr(X86.UC_X86_INS_IN)) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.AddOutHook(callback: OutHook, userData: Object) =
         let trampoline(u: IntPtr) (port: Int32) (size: Int32) (value: Int32) (user: IntPtr) =
@@ -233,7 +255,8 @@ and Unicorn(arch: Int32, mode: Int32) =
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new OutHookInternal(trampoline))
         let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
-        (NativeUnicornEngine.hook_add_arg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), id, new IntPtr(X86.UC_X86_INS_OUT)), hh)
+        match NativeUnicornEngine.hook_add_arg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), id, new IntPtr(X86.UC_X86_INS_OUT)) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
 
     member this.AddSyscallHook(callback: SyscallHook, userData: Object) =
         let trampoline(u: IntPtr) (user: IntPtr) =
@@ -245,7 +268,8 @@ and Unicorn(arch: Int32, mode: Int32) =
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new SyscallHookInternal(trampoline))
         let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
-        (NativeUnicornEngine.hook_add_arg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), id, new IntPtr(X86.UC_X86_INS_SYSCALL)), hh)
+        match NativeUnicornEngine.hook_add_arg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), id, new IntPtr(X86.UC_X86_INS_SYSCALL)) |> this.CheckResult with 
+        | Some e -> raise e | None -> ()
     
     member this.Version() =
         let (major, minor) = (new UIntPtr(), new UIntPtr())

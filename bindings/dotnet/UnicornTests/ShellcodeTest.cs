@@ -1,4 +1,25 @@
-﻿using System;
+﻿/*
+
+.NET bindings for the UnicornEngine Emulator Engine
+
+Copyright(c) 2015 Antonio Parata
+
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+version 2 as published by the Free Software Foundation.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
+
+*/
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -49,33 +70,40 @@ namespace UnicornTests
 
         public static void RunTest(Byte[] code, UInt64 address)
         {
-            var u = new Unicorn(Common.UC_ARCH_X86, Common.UC_MODE_32);
-            Console.WriteLine("Unicorn version: {0}", u.Version());
+            try
+            {
+                var u = new Unicorn(Common.UC_ARCH_X86, Common.UC_MODE_32);
+                Console.WriteLine("Unicorn version: {0}", u.Version());
 
-            // map 2MB of memory for this emulation
-            Utils.CheckError(u.MemMap(address, new UIntPtr(2 * 1024 * 1024), Common.UC_PROT_ALL));
+                // map 2MB of memory for this emulation
+                u.MemMap(address, new UIntPtr(2 * 1024 * 1024), Common.UC_PROT_ALL);
 
-            // write machine code to be emulated to memory
-            Utils.CheckError(u.MemWrite(address, code));
+                // write machine code to be emulated to memory
+                u.MemWrite(address, code);
 
-            // initialize machine registers
-            Utils.CheckError(u.RegWrite(X86.UC_X86_REG_ESP, Utils.Int64ToBytes(address + 0x200000)));
+                // initialize machine registers
+                u.RegWrite(X86.UC_X86_REG_ESP, Utils.Int64ToBytes(address + 0x200000));
 
-            // tracing all instructions by having @begin > @end
-            Utils.CheckError(u.AddCodeHook(CodeHookCallback, null, 1, 0).Item1);
+                // tracing all instructions by having @begin > @end
+                u.AddCodeHook(CodeHookCallback, null, 1, 0);
 
-            // handle interrupt ourself
-            Utils.CheckError(u.AddInterruptHook(InterruptHookCallback, null).Item1);
+                // handle interrupt ourself
+                u.AddInterruptHook(InterruptHookCallback, null);
 
-            // handle SYSCALL
-            Utils.CheckError(u.AddSyscallHook(SyscallHookCallback, null).Item1);
+                // handle SYSCALL
+                u.AddSyscallHook(SyscallHookCallback, null);
 
-            Console.WriteLine(">>> Start tracing linux code");
+                Console.WriteLine(">>> Start tracing linux code");
 
-            // emulate machine code in infinite time
-            u.EmuStart(address, address + (UInt64)code.Length, 0u, new UIntPtr(0));
+                // emulate machine code in infinite time
+                u.EmuStart(address, address + (UInt64)code.Length, 0u, new UIntPtr(0));
 
-            Console.WriteLine(">>> Emulation Done!");
+                Console.WriteLine(">>> Emulation Done!");
+            }
+            catch (UnicornEngineException ex)
+            {
+                Console.Error.WriteLine("Emulation FAILED! " + ex.Message);
+            }
         }
 
         private static void CodeHookCallback(Unicorn u, UInt64 addr, Int32 size, Object userData)
@@ -83,11 +111,11 @@ namespace UnicornTests
             Console.Write("Tracing >>> 0x{0} ", addr.ToString("X"));
 
             var eipBuffer = new Byte[4];
-            Utils.CheckError(u.RegRead(X86.UC_X86_REG_EIP, eipBuffer));
+            u.RegRead(X86.UC_X86_REG_EIP, eipBuffer);
 
             var effectiveSize = Math.Min(16, size);
             var tmp = new Byte[effectiveSize];
-            Utils.CheckError(u.MemRead(addr, tmp));
+            u.MemRead(addr, tmp);
 
             foreach (var t in tmp)
             {
@@ -100,7 +128,7 @@ namespace UnicornTests
         private static void SyscallHookCallback(Unicorn u, Object userData)
         {
             var eaxBuffer = new Byte[4];
-            Utils.CheckError(u.RegRead(X86.UC_X86_REG_EAX, eaxBuffer));
+            u.RegRead(X86.UC_X86_REG_EAX, eaxBuffer);
             var eax = Utils.ToInt(eaxBuffer);
 
             Console.WriteLine("Syscall >>> EAX = 0x{0}", eax.ToString("X"));
@@ -119,8 +147,8 @@ namespace UnicornTests
             var eaxBuffer = new Byte[4];
             var eipBuffer = new Byte[4];
 
-            Utils.CheckError(u.RegRead(X86.UC_X86_REG_EAX, eaxBuffer));
-            Utils.CheckError(u.RegRead(X86.UC_X86_REG_EIP, eipBuffer));
+            u.RegRead(X86.UC_X86_REG_EAX, eaxBuffer);
+            u.RegRead(X86.UC_X86_REG_EIP, eipBuffer);
 
             var eax = Utils.ToInt(eaxBuffer);
             var eip = Utils.ToInt(eipBuffer);
@@ -142,8 +170,8 @@ namespace UnicornTests
                     // EDX = buffer size
                     var edxBuffer = new Byte[4];
 
-                    Utils.CheckError(u.RegRead(X86.UC_X86_REG_ECX, ecxBuffer));
-                    Utils.CheckError(u.RegRead(X86.UC_X86_REG_EDX, edxBuffer));
+                    u.RegRead(X86.UC_X86_REG_ECX, ecxBuffer);
+                    u.RegRead(X86.UC_X86_REG_EDX, edxBuffer);
 
                     var ecx = Utils.ToInt(ecxBuffer);
                     var edx = Utils.ToInt(edxBuffer);
@@ -151,7 +179,7 @@ namespace UnicornTests
                     // read the buffer in
                     var size = Math.Min(256, edx);
                     var buffer = new Byte[size];
-                    Utils.CheckError(u.MemRead(ecx, buffer));
+                    u.MemRead(ecx, buffer);
                     var content = Encoding.Default.GetString(buffer);
 
                     Console.WriteLine(
