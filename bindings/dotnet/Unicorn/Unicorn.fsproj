@@ -51,9 +51,9 @@
     <Compile Include="Const\Mips.fs" />
     <Compile Include="Const\Sparc.fs" />
     <Compile Include="Const\X86.fs" />
-    <Compile Include="Const\UcError.fs" />
     <Compile Include="Hooks.fs" />
     <Compile Include="NativeUnicorn.fs" />
+    <Compile Include="UnicornEngineException.fs" />
     <Compile Include="Unicorn.fs" />
   </ItemGroup>
   <PropertyGroup>
