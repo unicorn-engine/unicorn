@@ -97,6 +97,7 @@ IS_APPLE := $(shell $(CC) -dM -E - < /dev/null | grep __apple_build_version__ | 
 ifeq ($(IS_APPLE),1)
 EXT = dylib
 VERSION_EXT = $(API_MAJOR).$(EXT)
+$(LIBNAME)_LDFLAGS += -dynamiclib -install_name lib$(LIBNAME).$(VERSION_EXT) -current_version $(PKG_MAJOR).$(PKG_MINOR).$(PKG_EXTRA) -compatibility_version $(PKG_MAJOR).$(PKG_MINOR)
 AR_EXT = a
 UNICORN_CFLAGS += -fvisibility=hidden
 else
@@ -118,6 +119,7 @@ else
 EXT = so
 VERSION_EXT = $(EXT).$(API_MAJOR)
 AR_EXT = a
+$(LIBNAME)_LDFLAGS += -Wl,-soname,lib$(LIBNAME).$(VERSION_EXT)
 UNICORN_CFLAGS += -fvisibility=hidden
 endif
 endif
@@ -223,9 +225,9 @@ $(LIBRARY): $(UC_TARGET_OBJ) uc.o hook.o
 ifeq ($(UNICORN_SHARED),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(LIBRARY))
-	@$(CC) $(CFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm
+	@$(CC) $(CFLAGS) $($(LIBNAME)_LDFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm
 else
-	$(CC) $(CFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm
+	$(CC) $(CFLAGS) $($(LIBNAME)_LDFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm
 endif
 endif
 
