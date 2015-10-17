@@ -7,6 +7,7 @@ from . import arm_const, arm64_const, mips_const, sparc_const, m68k_const, x86_c
 from unicorn_const import *
 
 import ctypes, ctypes.util, sys
+from platform import system
 from os.path import split, join, dirname
 import distutils.sysconfig
 
@@ -51,8 +52,23 @@ if _found == False:
             break
         except OSError:
             pass
-    if _found == False:
-        raise ImportError("ERROR: fail to load the dynamic library.")
+
+# Attempt Darwin specific load (10.11 specific),
+# since LD_LIBRARY_PATH is not guaranteed to exist
+if system() == 'Darwin':
+    _lib_path = '/usr/local/lib/'
+    for _lib in _all_libs:
+        try:
+            _lib_file = join(_lib_path, _lib)
+            # print "Trying to load:", _lib_file
+            _uc = ctypes.cdll.LoadLibrary(_lib_file)
+            _found = True
+            break
+        except OSError:
+            pass
+
+if _found == False:
+    raise ImportError("ERROR: fail to load the dynamic library.")
 
 
 # setup all the function prototype
