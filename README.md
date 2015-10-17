@@ -13,7 +13,7 @@ Unicorn offers some unparalleled features:
 - High performance via Just-In-Time compilation
 - Support for fine-grained instrumentation at various levels
 - Thread-safety by design
-- Distributed under open source license GPL
+- Distributed under free software license GPLv2
 
 Further information is available at http://www.unicorn-engine.org
 
