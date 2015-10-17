@@ -51,6 +51,9 @@ int arm_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                 *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0];
             else {
                 switch(regid) {
+                    case UC_ARM_REG_CPSR:
+                        *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env);
+                        break;
                     //case UC_ARM_REG_SP:
                     case UC_ARM_REG_R13:
                         *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[13];
