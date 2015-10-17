@@ -27,4 +27,4 @@ See [COMPILE.TXT](COMPILE.TXT) file for how to compile and install Unicorn.
 License
 -------
 
-This project is released under the GPL license.
+This project is released under the [GPL license][COPYING].
