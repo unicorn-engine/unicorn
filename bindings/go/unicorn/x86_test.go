@@ -49,7 +49,7 @@ func TestX86InvalidRead(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = mu.Start(ADDRESS, ADDRESS+uint64(len(code)))
-	if err.(UcError) != ERR_READ_INVALID {
+	if err.(UcError) != ERR_READ_UNMAPPED {
 		t.Fatal("Expected ERR_READ_INVALID")
 	}
 	ecx, _ := mu.RegRead(X86_REG_ECX)
@@ -66,7 +66,7 @@ func TestX86InvalidWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = mu.Start(ADDRESS, ADDRESS+uint64(len(code)))
-	if err.(UcError) != ERR_WRITE_INVALID {
+	if err.(UcError) != ERR_WRITE_UNMAPPED {
 		t.Fatal("Expected ERR_WRITE_INVALID")
 	}
 	ecx, _ := mu.RegRead(X86_REG_ECX)
