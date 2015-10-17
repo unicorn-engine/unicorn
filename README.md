@@ -6,7 +6,7 @@ based on [QEMU](http://qemu.org).
 
 Unicorn offers some unparalleled features:
 
-- Multi-architecture: ARM, AMM64 (ARMv8), M68K, MIPS, SPARC, and X86 (16, 32, 64-bit)
+- Multi-architecture: ARM, ARM64 (ARMv8), M68K, MIPS, SPARC, and X86 (16, 32, 64-bit)
 - Clean/simple/lightweight/intuitive architecture-neutral API
 - Implemented in pure C language, with bindings for Python, Java, and Go
 - Native support for Windows & *nix (with Mac OSX, Linux, *BSD & Solaris confirmed)
