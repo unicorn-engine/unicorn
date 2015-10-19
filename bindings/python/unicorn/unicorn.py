@@ -8,7 +8,7 @@ from unicorn_const import *
 
 import ctypes, ctypes.util, sys
 from platform import system
-from os.path import split, join, dirname
+from os.path import split, join, dirname, exists
 import distutils.sysconfig
 
 
@@ -17,13 +17,19 @@ if not hasattr(sys.modules[__name__], '__file__'):
     __file__ = inspect.getfile(inspect.currentframe())
 
 _lib_path = split(__file__)[0]
-_all_libs = ['unicorn.dll', 'libunicorn.so', 'libunicorn.dylib']
+_all_libs = ('unicorn.dll', 'libunicorn.so', 'libunicorn.dylib')
+# Windows DLL in dependency order
+_all_windows_dlls = ("libwinpthread-1.dll", "libgcc_s_seh-1.dll", "libgcc_s_dw2-1.dll", "libintl-8.dll", "libglib-2.0-0.dll", "libiconv-2.dll")
 _found = False
 
 for _lib in _all_libs:
     try:
+        if _lib == 'unicorn.dll':
+            for dll in _all_windows_dlls:    # load all the rest DLLs first
+                _lib_file = join(_lib_path, dll)
+                if exists(_lib_file):
+                    ctypes.cdll.LoadLibrary(_lib_file)
         _lib_file = join(_lib_path, _lib)
-        # print "Trying to load:", _lib_file
         _uc = ctypes.cdll.LoadLibrary(_lib_file)
         _found = True
         break
@@ -45,8 +51,12 @@ if _found == False:
     _lib_path = distutils.sysconfig.get_python_lib()
     for _lib in _all_libs:
         try:
+            if _lib == 'unicorn.dll':
+                for dll in _all_windows_dlls:    # load all the rest DLLs first
+                    _lib_file = join(_lib_path, 'unicorn', dll)
+                    if exists(_lib_file):
+                        ctypes.cdll.LoadLibrary(_lib_file)
             _lib_file = join(_lib_path, 'unicorn', _lib)
-            # print "Trying to load:", _lib_file
             _uc = ctypes.cdll.LoadLibrary(_lib_file)
             _found = True
             break
@@ -55,7 +65,7 @@ if _found == False:
 
 # Attempt Darwin specific load (10.11 specific),
 # since LD_LIBRARY_PATH is not guaranteed to exist
-if system() == 'Darwin':
+if (_found == False) and (system() == 'Darwin'):
     _lib_path = '/usr/local/lib/'
     for _lib in _all_libs:
         try:
