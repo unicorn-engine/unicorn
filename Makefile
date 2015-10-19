@@ -59,9 +59,9 @@ UNICORN_CFLAGS += -fPIC
 V ?= 0
 
 ifeq ($(UNICORN_DEBUG),yes)
-CFLAGS += -O3
-else
 CFLAGS += -g
+else
+CFLAGS += -O3
 endif
 
 ifeq ($(CROSS),)
