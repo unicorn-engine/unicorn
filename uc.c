@@ -814,7 +814,7 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
     // try with the cache index first
     i = uc->mapped_block_cache_index;
 
-    if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
+    if (i < uc->mapped_block_count && address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
         return uc->mapped_blocks[i];
 
     for(i = 0; i < uc->mapped_block_count; i++) {

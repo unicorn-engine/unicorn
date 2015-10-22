@@ -8,6 +8,7 @@ TESTS += ro_mem_test nr_mem_test
 TESTS += timeout_segfault
 TESTS += rep_movsb
 TESTS += mem_unmap
+TESTS += mem_double_unmap
 TESTS += mem_protect
 TESTS += mem_exec
 
