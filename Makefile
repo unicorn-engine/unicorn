@@ -131,7 +131,8 @@ LIBRARY = $(BLDIR)/$(LIBNAME).$(EXT)
 else ifeq ($(IS_CYGWIN),1)
 LIBRARY = $(BLDIR)/$(LIBNAME).$(EXT)
 else	# *nix
-LIBRARY = $(BLDIR)/lib$(LIBNAME).$(EXT)
+LIBRARY = $(BLDIR)/lib$(LIBNAME).$(VERSION_EXT)
+LIBRARY_SYMLINK = $(BLDIR)/lib$(LIBNAME).$(EXT)
 endif
 endif
 
@@ -228,6 +229,9 @@ ifeq ($(V),0)
 	@$(CC) $(CFLAGS) $($(LIBNAME)_LDFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm
 else
 	$(CC) $(CFLAGS) $($(LIBNAME)_LDFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm
+endif
+ifneq (,$(LIBRARY_SYMLINK))
+	@ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
 endif
 endif
 
