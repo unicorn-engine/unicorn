@@ -18,31 +18,31 @@ int main(int argc, char **argv, char **envp)
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
     if (err) {
         printf("not ok - Failed on uc_open() with error returned: %u\n", err);
-        return;
+        return -1;
     }
 
     uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL);
     if (err) {
         printf("not ok - Failed on uc_mem_map() with error returned: %u\n", err);
-        return;
+        return -1;
     }
 
     uc_mem_map(uc, 0x4000, 0x1000, UC_PROT_ALL);
     if (err) {
         printf("not ok - Failed on uc_mem_map() with error returned: %u\n", err);
-        return;
+        return -1;
     }
 
     err = uc_mem_unmap(uc, 0x4000, 0x1000);
     if (err) {
         printf("not ok - Failed on uc_mem_unmap() with error returned: %u\n", err);
-        return;
+        return -1;
     }
 
     err = uc_mem_unmap(uc, 0x4000, 0x1000);
     if (!err) {
         printf("not ok - second unmap succeeded\n");
-        return 1;
+        return -1;
     }
 
     printf("Tests OK\n");
