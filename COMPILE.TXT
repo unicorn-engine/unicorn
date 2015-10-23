@@ -102,6 +102,10 @@ Unicorn requires few dependent packages as follows.
 
         $ ./make.sh nix32
 
+  - If Python 2.x is not the default Python interpreter, ensure that the
+    appropriate option is set: 
+    
+        $ UNICORN_QEMU_FLAGS="--python=/path/to/python2" ./make.sh
 
   After compiling, install Unicorn with:
 
