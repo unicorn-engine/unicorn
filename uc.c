@@ -341,6 +341,10 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
 {
     uint8_t *bytes = _bytes;
 
+    // qemu cpu_physical_memory_rw() size is an int
+    if (size > INT_MAX)
+        return UC_ERR_ARG;
+
     if (!check_mem_area(uc, address, size))
         return UC_ERR_READ_UNMAPPED;
 
@@ -370,6 +374,10 @@ UNICORN_EXPORT
 uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t size)
 {
     const uint8_t *bytes = _bytes;
+
+    // qemu cpu_physical_memory_rw() size is an int
+    if (size > INT_MAX)
+        return UC_ERR_ARG;
 
     if (!check_mem_area(uc, address, size))
         return UC_ERR_WRITE_UNMAPPED;
