@@ -14,7 +14,7 @@ clean:
 	rm -rf ${ALL_TESTS}
 
 .PHONY: test
-test: export LD_LIBRARY_PATH=../../
+test: export LD_LIBRARY_PATH=.
 test: ${ALL_TESTS}
 	./test_sanity
 	./test_x86
@@ -23,9 +23,12 @@ test: ${ALL_TESTS}
 test_sanity: test_sanity.c
 test_x86: test_x86.c
 test_mem_map: test_mem_map.c
+${ALL_TESTS}: libunicorn.so.0
 
 ${ALL_TESTS}:
 	gcc ${CFLAGS} -o $@ $^
 
+libunicorn.so.0:
+	ln -s ../../libunicorn.so $@
 
 
