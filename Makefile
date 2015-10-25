@@ -266,7 +266,7 @@ ifeq ($(UNICORN_SHARED),yes)
 	$(INSTALL_LIB) $(LIBRARY) $(LIBDIR)
 ifneq ($(VERSION_EXT),)
 	cd $(LIBDIR) && \
-	ln -s lib$(LIBNAME).$(VERSION_EXT) lib$(LIBNAME).$(EXT)
+	ln -sf lib$(LIBNAME).$(VERSION_EXT) lib$(LIBNAME).$(EXT)
 endif
 endif
 ifeq ($(UNICORN_STATIC),yes)
