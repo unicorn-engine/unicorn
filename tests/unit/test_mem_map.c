@@ -13,7 +13,7 @@ static int setup(void **state)
 {
     uc_engine *uc;
 
-    uc_assert_success(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    uc_assert_success(uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc));
 
     *state = uc;
     return 0;

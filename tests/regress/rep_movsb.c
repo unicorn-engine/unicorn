@@ -99,7 +99,7 @@ int main(int argc, char **argv, char **envp)
    memset(buf1, 'A', 20);
 
    // Initialize emulator in X86-32bit mode
-   err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+   err = uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc);
    if (err) {
       printf("not ok %d - Failed on uc_open() with error returned: %u\n", log_num++, err);
       return 1;

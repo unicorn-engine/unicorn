@@ -37,7 +37,7 @@ static void test_arm64(void)
     printf("Emulate ARM64 code\n");
 
     // Initialize emulator in ARM mode
-    err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc);
+    err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM, NULL, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
                 err, uc_strerror(err));

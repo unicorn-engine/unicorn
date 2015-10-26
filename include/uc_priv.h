@@ -71,6 +71,7 @@ struct hook_struct {
 struct uc_struct {
     uc_arch arch;
     uc_mode mode;
+    char model[32]; // CPU model, or empty ('') for default model
     QemuMutex qemu_global_mutex; // qemu/cpus.c
     QemuCond qemu_cpu_cond; // qemu/cpus.c
     QemuThread *tcg_cpu_thread; // qemu/cpus.c

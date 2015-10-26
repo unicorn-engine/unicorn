@@ -48,7 +48,7 @@ static void test_arm(void)
     printf("Emulate ARM code\n");
 
     // Initialize emulator in ARM mode
-    err = uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc);
+    err = uc_open(UC_ARCH_ARM, UC_MODE_ARM, NULL, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
                 err, uc_strerror(err));
@@ -101,7 +101,7 @@ static void test_thumb(void)
     printf("Emulate THUMB code\n");
 
     // Initialize emulator in ARM mode
-    err = uc_open(UC_ARCH_ARM, UC_MODE_THUMB, &uc);
+    err = uc_open(UC_ARCH_ARM, UC_MODE_THUMB, NULL, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
                 err, uc_strerror(err));

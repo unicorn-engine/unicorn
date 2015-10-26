@@ -52,7 +52,7 @@ static void test_m68k(void)
     printf("Emulate M68K code\n");
 
     // Initialize emulator in M68K mode
-    err = uc_open(UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, &uc);
+    err = uc_open(UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, NULL, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
                 err, uc_strerror(err));

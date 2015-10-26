@@ -12,7 +12,7 @@ int main()
     uint8_t *buf;
     uc_engine *uc;
 
-    uc_err err = uc_open (UC_ARCH_X86, UC_MODE_64, &uc);
+    uc_err err = uc_open (UC_ARCH_X86, UC_MODE_64, NULL, &uc);
     if (err) {
         fprintf (stderr, "Cannot initialize unicorn\n");
         return 1;

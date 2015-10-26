@@ -33,7 +33,7 @@ int main() {
    fprintf(stderr, "# basic block callback test\n");
    fprintf(stderr, "# there are only two basic blocks 0x1000000-0x10001ff and 0x1000200-0x10003ff\n");
    
-   uc_err err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+   uc_err err = uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc);
    if (err != UC_ERR_OK) {
       fprintf(stderr, "not ok %d - %s\n", count++, uc_strerror(err));
       exit(0);

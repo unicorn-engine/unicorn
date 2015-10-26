@@ -8,7 +8,7 @@ static int setup32(void **state)
 {
     uc_engine *uc;
 
-    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc));
 
     *state = uc;
     return 0;
@@ -126,7 +126,7 @@ static void test_i386(void **state)
     int r_edx = 0x7890;     // EDX register
 
     // Initialize emulator in X86-32bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc);
     uc_assert_success(err);
 
     // map 2MB memory for this emulation
@@ -182,7 +182,7 @@ static void test_i386_jump(void **state)
     const uint64_t address = 0x1000000;
 
     // Initialize emulator in X86-32bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc);
     uc_assert_success(err);
 
     // map 2MB memory for this emulation
@@ -284,7 +284,7 @@ static void test_i386_inout(void **state)
 
 
     // Initialize emulator in X86-32bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc);
     uc_assert_success(err);
 
     // map 2MB memory for this emulation
@@ -349,7 +349,7 @@ static void test_i386_loop(void **state)
     };
 
     // Initialize emulator in X86-32bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc);
     uc_assert_success(err);
 
     // map 2MB memory for this emulation
@@ -395,7 +395,7 @@ static void test_i386_invalid_mem_read(void **state)
     };
 
     // Initialize emulator in X86-32bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc);
     uc_assert_success(err);
 
     // map 2MB memory for this emulation
@@ -425,7 +425,7 @@ static void test_i386_invalid_mem_write(void **state)
     };
 
     // Initialize emulator in X86-32bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc);
     uc_assert_success(err);
 
     // map 2MB memory for this emulation
@@ -456,7 +456,7 @@ static void test_i386_jump_invalid(void **state)
     };
 
     // Initialize emulator in X86-32bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc);
     uc_assert_success(err);
 
     // map 2MB memory for this emulation
@@ -536,7 +536,7 @@ static void test_x86_64(void **state)
 
 
     // Initialize emulator in X86-64bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_64, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_64, NULL, &uc);
     uc_assert_success(err);
 
     // map 2MB memory for this emulation
@@ -650,7 +650,7 @@ static void test_x86_64_syscall(void **state)
     int64_t rax = 0x100;
 
     // Initialize emulator in X86-64bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_64, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_64, NULL, &uc);
     uc_assert_success(err);
 
     // map 2MB memory for this emulation
@@ -699,7 +699,7 @@ static void test_x86_16(void **state)
     int32_t esi = 6;
 
     // Initialize emulator in X86-16bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_16, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_16, NULL, &uc);
     uc_assert_success(err);
 
     // map 8KB memory for this emulation

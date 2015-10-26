@@ -38,10 +38,10 @@
 
 static void machvirt_init(struct uc_struct *uc, MachineState *machine)
 {
-    const char *cpu_model = machine->cpu_model;
+    const char *cpu_model = uc->model;
     int n;
 
-    if (!cpu_model) {
+    if (cpu_model[0] == '\0') {
         cpu_model = "cortex-a57";   // ARM64
     }
 

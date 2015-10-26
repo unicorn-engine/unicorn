@@ -252,13 +252,14 @@ bool uc_arch_supported(uc_arch arch);
 
  @arch: architecture type (UC_ARCH_*)
  @mode: hardware mode. This is combined of UC_MODE_*
+ @model: CPU model in string, or NULL for default model.
  @uc: pointer to uc_engine, which will be updated at return time
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
  for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **uc);
+uc_err uc_open(uc_arch arch, uc_mode mode, char *model, uc_engine **uc);
 
 /*
  Close UC instance: MUST do to release the handle when it is not used anymore.

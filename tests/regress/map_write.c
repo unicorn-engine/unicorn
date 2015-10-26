@@ -13,7 +13,7 @@ int main()
     int i;
     uc_err err;
 
-    err = uc_open (UC_ARCH_X86, UC_MODE_64, &uc);
+    err = uc_open (UC_ARCH_X86, UC_MODE_64, NULL, &uc);
     if (err) {
         printf ("uc_open %d\n", err);
         return 1;

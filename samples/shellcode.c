@@ -96,7 +96,7 @@ static void test_i386(void)
     printf("Emulate i386 code\n");
 
     // Initialize emulator in X86-32bit mode
-    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, NULL, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u\n", err);
         return;

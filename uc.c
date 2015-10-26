@@ -134,7 +134,7 @@ bool uc_arch_supported(uc_arch arch)
 
 
 UNICORN_EXPORT
-uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
+uc_err uc_open(uc_arch arch, uc_mode mode, char *model, uc_engine **result)
 {
     struct uc_struct *uc;
 
@@ -148,6 +148,10 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         uc->errnum = UC_ERR_OK;
         uc->arch = arch;
         uc->mode = mode;
+        if (model) {
+            // uc->model[] is already filled with zeros.
+            strncpy(uc->model, model, sizeof(uc->model) - 1);
+        }
 
         // uc->cpus = QTAILQ_HEAD_INITIALIZER(uc->cpus);
         uc->cpus.tqh_first = NULL;

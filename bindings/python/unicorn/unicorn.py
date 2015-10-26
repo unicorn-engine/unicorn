@@ -92,7 +92,7 @@ uc_hook_h = ctypes.c_size_t
 
 _setup_prototype(_uc, "uc_version", ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 _setup_prototype(_uc, "uc_arch_supported", ctypes.c_bool, ctypes.c_int)
-_setup_prototype(_uc, "uc_open", ucerr, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(uc_engine))
+_setup_prototype(_uc, "uc_open", ucerr, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(ctypes.c_char), ctypes.POINTER(uc_engine))
 _setup_prototype(_uc, "uc_close", ucerr, uc_engine)
 _setup_prototype(_uc, "uc_strerror", ctypes.c_char_p, ucerr)
 _setup_prototype(_uc, "uc_errno", ucerr, uc_engine)
@@ -151,7 +151,7 @@ def uc_arch_supported(query):
 
 
 class Uc(object):
-    def __init__(self, arch, mode):
+    def __init__(self, arch, mode, model=None):
         # verify version compatibility with the core before doing anything
         (major, minor, _combined) = uc_version()
         if major != UC_API_MAJOR or minor != UC_API_MINOR:
@@ -161,7 +161,7 @@ class Uc(object):
 
         self._arch, self._mode = arch, mode
         self._uch = ctypes.c_void_p()
-        status = _uc.uc_open(arch, mode, ctypes.byref(self._uch))
+        status = _uc.uc_open(arch, mode, model, ctypes.byref(self._uch))
         if status != UC_ERR_OK:
             self._uch = None
             raise UcError(status)

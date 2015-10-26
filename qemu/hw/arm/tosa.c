@@ -19,8 +19,13 @@
 
 static void tosa_init(struct uc_struct *uc, MachineState *machine)
 {
-    //cpu_arm_init(uc, "pxa255");
-    cpu_arm_init(uc, "cortex-a15"); // FIXME
+    const char *cpu_model = uc->model;
+
+    if (cpu_model[0] == '\0') {
+        cpu_model = "cortex-a15";
+    }
+
+    cpu_arm_init(uc, cpu_model);
 }
 
 void tosa_machine_init(struct uc_struct *uc)

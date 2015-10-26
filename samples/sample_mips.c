@@ -36,7 +36,7 @@ static void test_mips_eb(void)
     printf("Emulate MIPS code (big-endian)\n");
 
     // Initialize emulator in MIPS mode
-    err = uc_open(UC_ARCH_MIPS, UC_MODE_MIPS32 + UC_MODE_BIG_ENDIAN, &uc);
+    err = uc_open(UC_ARCH_MIPS, UC_MODE_MIPS32 + UC_MODE_BIG_ENDIAN, NULL, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
                 err, uc_strerror(err));
@@ -86,7 +86,7 @@ static void test_mips_el(void)
     printf("Emulate MIPS code (little-endian)\n");
 
     // Initialize emulator in MIPS mode
-    err = uc_open(UC_ARCH_MIPS, UC_MODE_MIPS32, &uc);
+    err = uc_open(UC_ARCH_MIPS, UC_MODE_MIPS32, NULL, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
                 err, uc_strerror(err));
