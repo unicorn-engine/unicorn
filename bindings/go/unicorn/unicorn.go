@@ -7,6 +7,7 @@ import (
 /*
 #cgo LDFLAGS: -lunicorn
 #include <unicorn/unicorn.h>
+#include <stdlib.h>
 */
 import "C"
 
@@ -33,7 +34,7 @@ type Unicorn interface {
 	RegRead(reg int) (uint64, error)
 	RegWrite(reg int, value uint64) error
 	Start(begin, until uint64) error
-	StartWithOptions(begin, until uint64, options *UcOptions) error
+	StartWithOptions(begin, until uint64, options *StartOptions) error
 	Stop() error
 	HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error)
 	HookDel(hook Hook) error
@@ -43,31 +44,37 @@ type uc struct {
 	handle *C.uc_engine
 }
 
-type UcOptions struct {
-	Timeout, Count uint64
-}
-
-func NewUnicorn(arch, mode int) (Unicorn, error) {
+func NewUnicornModel(arch, mode int, model string) (Unicorn, error) {
+	mstr := C.CString(model)
+	defer C.free(unsafe.Pointer(mstr))
 	var major, minor C.uint
 	C.uc_version(&major, &minor)
 	if major != C.UC_API_MAJOR || minor != C.UC_API_MINOR {
 		return nil, UcError(ERR_VERSION)
 	}
 	var handle *C.uc_engine
-	if ucerr := C.uc_open(C.uc_arch(arch), C.uc_mode(mode), &handle); ucerr != ERR_OK {
+	if ucerr := C.uc_open(C.uc_arch(arch), C.uc_mode(mode), mstr, &handle); ucerr != ERR_OK {
 		return nil, UcError(ucerr)
 	}
 	uc := &uc{handle}
 	return uc, nil
 }
 
-func (u *uc) StartWithOptions(begin, until uint64, options *UcOptions) error {
+func NewUnicorn(arch, mode int) (Unicorn, error) {
+	return NewUnicornModel(arch, mode, "")
+}
+
+type StartOptions struct {
+	Timeout, Count uint64
+}
+
+func (u *uc) StartWithOptions(begin, until uint64, options *StartOptions) error {
 	ucerr := C.uc_emu_start(u.handle, C.uint64_t(begin), C.uint64_t(until), C.uint64_t(options.Timeout), C.size_t(options.Count))
 	return errReturn(ucerr)
 }
 
 func (u *uc) Start(begin, until uint64) error {
-	return u.StartWithOptions(begin, until, &UcOptions{})
+	return u.StartWithOptions(begin, until, &StartOptions{})
 }
 
 func (u *uc) Stop() error {
