@@ -19,7 +19,7 @@ if not hasattr(sys.modules[__name__], '__file__'):
 _lib_path = split(__file__)[0]
 _all_libs = ('unicorn.dll', 'libunicorn.so', 'libunicorn.dylib')
 # Windows DLL in dependency order
-_all_windows_dlls = ("libwinpthread-1.dll", "libgcc_s_seh-1.dll", "libgcc_s_dw2-1.dll", "libintl-8.dll", "libglib-2.0-0.dll", "libiconv-2.dll")
+_all_windows_dlls = ("libwinpthread-1.dll", "libgcc_s_seh-1.dll", "libgcc_s_dw2-1.dll",  "libiconv-2.dll", "libintl-8.dll", "libglib-2.0-0.dll")
 _found = False
 
 for _lib in _all_libs:
