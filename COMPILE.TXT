@@ -98,10 +98,14 @@ Unicorn requires few dependent packages as follows.
 
         $ ./make.sh
 
+  - Unicorn requires Python 2.x to compile. If Python 2.x is not the default
+    Python interpreter, ensure that the appropriate option is set:
+
+        $ UNICORN_QEMU_FLAGS="--python=/path/to/python2" ./make.sh
+
   - To cross-compile Unicorn on 64-bit OS to target 32-bit binary, run:
 
         $ ./make.sh nix32
-
 
   After compiling, install Unicorn with:
 

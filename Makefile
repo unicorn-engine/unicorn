@@ -131,7 +131,8 @@ LIBRARY = $(BLDIR)/$(LIBNAME).$(EXT)
 else ifeq ($(IS_CYGWIN),1)
 LIBRARY = $(BLDIR)/$(LIBNAME).$(EXT)
 else	# *nix
-LIBRARY = $(BLDIR)/lib$(LIBNAME).$(EXT)
+LIBRARY = $(BLDIR)/lib$(LIBNAME).$(VERSION_EXT)
+LIBRARY_SYMLINK = $(BLDIR)/lib$(LIBNAME).$(EXT)
 endif
 endif
 
@@ -229,6 +230,9 @@ ifeq ($(V),0)
 else
 	$(CC) $(CFLAGS) $($(LIBNAME)_LDFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm
 endif
+ifneq (,$(LIBRARY_SYMLINK))
+	@ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
+endif
 endif
 
 $(ARCHIVE): $(UC_TARGET_OBJ) uc.o hook.o
@@ -262,8 +266,7 @@ ifeq ($(UNICORN_SHARED),yes)
 	$(INSTALL_LIB) $(LIBRARY) $(LIBDIR)
 ifneq ($(VERSION_EXT),)
 	cd $(LIBDIR) && \
-	mv lib$(LIBNAME).$(EXT) lib$(LIBNAME).$(VERSION_EXT) && \
-	ln -s lib$(LIBNAME).$(VERSION_EXT) lib$(LIBNAME).$(EXT)
+	ln -sf lib$(LIBNAME).$(VERSION_EXT) lib$(LIBNAME).$(EXT)
 endif
 endif
 ifeq ($(UNICORN_STATIC),yes)

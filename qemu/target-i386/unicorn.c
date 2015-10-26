@@ -260,22 +260,22 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                     *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.eip);
                     break;
                 case UC_X86_REG_CS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_CS].base;
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.segs[R_CS].base;
                     break;
                 case UC_X86_REG_DS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_DS].base;
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.segs[R_DS].base;
                     break;
                 case UC_X86_REG_SS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_SS].base;
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.segs[R_SS].base;
                     break;
                 case UC_X86_REG_ES:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_ES].base;
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.segs[R_ES].base;
                     break;
                 case UC_X86_REG_FS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_FS].base;
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.segs[R_FS].base;
                     break;
                 case UC_X86_REG_GS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_GS].base;
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.segs[R_GS].base;
                     break;
             }
             break;
@@ -412,22 +412,22 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                     *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.eip);
                     break;
                 case UC_X86_REG_CS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_CS].base;
+                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.segs[R_CS].base;
                     break;
                 case UC_X86_REG_DS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_DS].base;
+                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.segs[R_DS].base;
                     break;
                 case UC_X86_REG_SS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_SS].base;
+                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.segs[R_SS].base;
                     break;
                 case UC_X86_REG_ES:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_ES].base;
+                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.segs[R_ES].base;
                     break;
                 case UC_X86_REG_FS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_FS].base;
+                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.segs[R_FS].base;
                     break;
                 case UC_X86_REG_GS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_GS].base;
+                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.segs[R_GS].base;
                     break;
                 case UC_X86_REG_R8:
                     *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[8]);
@@ -660,22 +660,22 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     WRITE_WORD(X86_CPU(uc, mycpu)->env.eip, *(uint16_t *)value);
                     break;
                 case UC_X86_REG_CS:
-                    X86_CPU(uc, mycpu)->env.segs[R_CS].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_CS].base = *(uint32_t *)value;
                     break;
                 case UC_X86_REG_DS:
-                    X86_CPU(uc, mycpu)->env.segs[R_DS].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_DS].base = *(uint32_t *)value;
                     break;
                 case UC_X86_REG_SS:
-                    X86_CPU(uc, mycpu)->env.segs[R_SS].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_SS].base = *(uint32_t *)value;
                     break;
                 case UC_X86_REG_ES:
-                    X86_CPU(uc, mycpu)->env.segs[R_ES].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_ES].base = *(uint32_t *)value;
                     break;
                 case UC_X86_REG_FS:
-                    X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint32_t *)value;
                     break;
                 case UC_X86_REG_GS:
-                    X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint32_t *)value;
                     break;
             }
             break;
@@ -812,22 +812,22 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     WRITE_WORD(X86_CPU(uc, mycpu)->env.eip, *(uint16_t *)value);
                     break;
                 case UC_X86_REG_CS:
-                    X86_CPU(uc, mycpu)->env.segs[R_CS].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_CS].base = *(uint64_t *)value;
                     break;
                 case UC_X86_REG_DS:
-                    X86_CPU(uc, mycpu)->env.segs[R_DS].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_DS].base = *(uint64_t *)value;
                     break;
                 case UC_X86_REG_SS:
-                    X86_CPU(uc, mycpu)->env.segs[R_SS].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_SS].base = *(uint64_t *)value;
                     break;
                 case UC_X86_REG_ES:
-                    X86_CPU(uc, mycpu)->env.segs[R_ES].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_ES].base = *(uint64_t *)value;
                     break;
                 case UC_X86_REG_FS:
-                    X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint64_t *)value;
                     break;
                 case UC_X86_REG_GS:
-                    X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint16_t *)value;
+                    X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint64_t *)value;
                     break;
                 case UC_X86_REG_R8:
                     X86_CPU(uc, mycpu)->env.regs[8] = *(uint64_t *)value;

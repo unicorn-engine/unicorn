@@ -88,7 +88,7 @@ const char *uc_strerror(uc_err code)
         case UC_ERR_FETCH_PROT:
             return "Fetch from non-executable memory (UC_ERR_FETCH_PROT)";
         case UC_ERR_ARG:
-            return "Invalid argumet (UC_ERR_ARG)";
+            return "Invalid argument (UC_ERR_ARG)";
         case UC_ERR_READ_UNALIGNED:
             return "Read from unaligned memory (UC_ERR_READ_UNALIGNED)";
         case UC_ERR_WRITE_UNALIGNED:
@@ -814,7 +814,7 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
     // try with the cache index first
     i = uc->mapped_block_cache_index;
 
-    if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
+    if (i < uc->mapped_block_count && address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end)
         return uc->mapped_blocks[i];
 
     for(i = 0; i < uc->mapped_block_count; i++) {
