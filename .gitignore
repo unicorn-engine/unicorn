@@ -105,6 +105,9 @@ ro_mem_test
 nr_mem_test
 timeout_segfault
 rep_movsb
+mem_double_unmap
+mips_kseg0_1
+
 
 #################
 ## Visual Studio

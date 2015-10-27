@@ -11,6 +11,7 @@ TESTS += mem_unmap
 TESTS += mem_double_unmap
 TESTS += mem_protect
 TESTS += mem_exec
+TESTS += mips_kseg0_1
 
 all: $(TESTS)
 
