@@ -811,6 +811,10 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
     if (uc->mapped_block_count == 0)
         return NULL;
 
+    if (uc->mem_redirect) {
+        address = uc->mem_redirect(address);
+    }
+
     // try with the cache index first
     i = uc->mapped_block_cache_index;
 

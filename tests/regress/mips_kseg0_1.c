@@ -69,5 +69,7 @@ int main()
 
     uc_close(uc);
 
+    printf("Good, this bug is fixed!\n");
+
     return 0;
 }

@@ -54,6 +54,9 @@ typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 // which interrupt should make emulation stop?
 typedef bool (*uc_args_int_t)(int intno);
 
+// some architecture redirect virtual memory to physical memory like Mips
+typedef uint64_t (*uc_mem_redirect_t)(uint64_t address);
+
 
 struct hook_struct {
     int hook_type; // uc_tracecode_type & uc_tracemem_type
@@ -94,6 +97,7 @@ struct uc_struct {
     uc_args_uc_ram_size_t memory_map;
     uc_mem_unmap_t memory_unmap;
     uc_readonly_mem_t readonly_mem;
+    uc_mem_redirect_t mem_redirect;
     // list of cpu
     void* cpu;
 
