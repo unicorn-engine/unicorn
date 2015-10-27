@@ -697,7 +697,7 @@ void object_ref(Object *obj)
     if (!obj) {
         return;
     }
-     atomic_inc(&obj->ref);
+    atomic_inc(&obj->ref);
 }
 
 void object_unref(struct uc_struct *uc, Object *obj)

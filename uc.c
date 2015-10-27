@@ -793,6 +793,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
         len = MIN(size - count, mr->end - addr);
         if (!split_region(uc, mr, addr, len, true))
             return UC_ERR_NOMEM;
+
         // if we can retrieve the mapping, then no splitting took place
         // so unmap here
         mr = memory_mapping(uc, addr);
@@ -801,6 +802,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
         count += len;
         addr += len;
     }
+
     return UC_ERR_OK;
 }
 

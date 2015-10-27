@@ -49,6 +49,7 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 {
     int i;
     target_ulong addr;
+
     // Make sure all pages associated with the MemoryRegion are flushed
     // Only need to do this if we are in a running state
     if (uc->current_cpu) {
@@ -67,8 +68,6 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
             break;
         }
     }
-
-    g_free(mr);
 }
 
 int memory_free(struct uc_struct *uc)
