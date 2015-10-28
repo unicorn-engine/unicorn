@@ -105,6 +105,7 @@ _setup_prototype(_uc, "uc_emu_stop", ucerr, uc_engine)
 _setup_prototype(_uc, "uc_hook_del", ucerr, uc_engine, uc_hook_h)
 _setup_prototype(_uc, "uc_mem_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
 _setup_prototype(_uc, "uc_mem_unmap", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t)
+_setup_prototype(_uc, "uc_mem_protect", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
 
 # uc_hook_add is special due to variable number of arguments
 _uc.uc_hook_add = getattr(_uc, "uc_hook_add")
@@ -243,6 +244,13 @@ class Uc(object):
     # unmap a range of memory
     def mem_unmap(self, address, size):
         status = _uc.uc_mem_unmap(self._uch, address, size)
+        if status != UC_ERR_OK:
+            raise UcError(status)
+
+
+    # protect a range of memory
+    def mem_protect(self, address, size, perms=UC_PROT_ALL):
+        status = _uc.uc_mem_protect(self._uch, address, size, perms)
         if status != UC_ERR_OK:
             raise UcError(status)
 
