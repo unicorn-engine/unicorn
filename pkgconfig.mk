@@ -1,7 +1,7 @@
 # Package version of Unicorn for Makefile.
 # To be used to generate unicorn.pc for pkg-config
 
-# version major & minor 
+# version major & minor
 PKG_MAJOR = 0
 PKG_MINOR = 9
 

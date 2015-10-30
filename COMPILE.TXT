@@ -201,7 +201,7 @@ Unicorn requires few dependent packages as follows.
 
 [5] Cross-compile for iOS from Mac OSX.
 
-  To cross-compile for iOS (iPhone/iPad/iPod), Mac OSX with XCode installed is required. 
+  To cross-compile for iOS (iPhone/iPad/iPod), Mac OSX with XCode installed is required.
 
     - To cross-compile for ArmV7 (iPod 4, iPad 1/2/3, iPhone4, iPhone4S), run:
         $ ./make.sh ios_armv7
@@ -264,5 +264,5 @@ Unicorn requires few dependent packages as follows.
   Automated unit tests use the cmocka unit testing framework (https://cmocka.org/).
   It can be installed in most Linux distros using the package manager, e.g.
   `sudo yum install libcmocka libcmocka-devel`, or you can easily build and install it from source.
-    
+
   You can run the tests by running `make test` in the project directory.
