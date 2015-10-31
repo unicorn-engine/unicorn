@@ -43,7 +43,7 @@ static void hook_code(uc_engine *uc, uint64_t addr, uint32_t size, void *user_da
         if (uc_emu_stop(uc) != UC_ERR_OK) {
             printf("not ok - uc_emu_stop fail during hook_code callback, addr: 0x%" PRIx64 "\n", addr);
             _exit(-1);
-        }        
+        }
     }
 
     opcode = buf[0];
@@ -137,7 +137,7 @@ static void do_nx_demo(bool cause_fault)
     if (cause_fault) {
         // insert instruction to trigger U_PROT_EXEC change (see hook_code function)
         code_buf[0x1000] = 0x41;   // inc ecx at page1
-    }  
+    }
 
     // write machine code to be emulated to memory
     if (uc_mem_write(uc, 0x100000, code_buf, sizeof(code_buf))) {

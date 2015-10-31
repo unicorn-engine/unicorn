@@ -62,7 +62,7 @@ const char *uc_strerror(uc_err code)
         case UC_ERR_NOMEM:
             return "No memory available or memory not present (UC_ERR_NOMEM)";
         case UC_ERR_ARCH:
-            return "Invalid/unsupported architecture(UC_ERR_ARCH)";
+            return "Invalid/unsupported architecture (UC_ERR_ARCH)";
         case UC_ERR_HANDLE:
             return "Invalid handle (UC_ERR_HANDLE)";
         case UC_ERR_MODE:
@@ -96,7 +96,7 @@ const char *uc_strerror(uc_err code)
         case UC_ERR_FETCH_UNALIGNED:
             return "Fetch from unaligned memory (UC_ERR_FETCH_UNALIGNED)";
         case UC_ERR_HOOK_EXIST:
-            return "Hook for this type event already existed (UC_ERR_HOOK_EXIST)";
+            return "Hook for this type event already exists (UC_ERR_HOOK_EXIST)";
     }
 }
 
@@ -281,7 +281,7 @@ uc_err uc_close(uc_engine *uc)
     uc->root->free(uc->root);
 
     free(uc->hook_callbacks);
-    
+
     free(uc->mapped_blocks);
 
     // finally, free uc itself.
@@ -619,9 +619,9 @@ static uint8_t *copy_region(struct uc_struct *uc, MemoryRegion *mr)
    parameter is true, the no new section will be created to replace the indicate
    range. This functions exists to support uc_mem_protect and uc_mem_unmap.
 
-   This is a static function and callers have already done some preliminary 
+   This is a static function and callers have already done some preliminary
    parameter validation.
-   
+
    The do_delete argument indicates that we are being called to support
    uc_mem_unmap. In this case we save some time by choosing NOT to remap
    the areas that are intended to get unmapped
