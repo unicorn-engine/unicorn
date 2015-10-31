@@ -24,3 +24,16 @@ func TestMemUnmap(t *testing.T) {
 		t.Fatal(fmt.Errorf("Expected ERR_WRITE_UNMAPPED, got: %v", err))
 	}
 }
+
+func TestDoubleClose(t *testing.T) {
+	mu, err := NewUnicorn(ARCH_X86, MODE_32)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := mu.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if err := mu.Close(); err != nil {
+		t.Fatal(err)
+	}
+}

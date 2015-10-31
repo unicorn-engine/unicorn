@@ -1,6 +1,8 @@
 package unicorn
 
 import (
+	"runtime"
+	"sync"
 	"unsafe"
 )
 
@@ -37,10 +39,12 @@ type Unicorn interface {
 	Stop() error
 	HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error)
 	HookDel(hook Hook) error
+	Close() error
 }
 
 type uc struct {
 	handle *C.uc_engine
+	final  sync.Once
 }
 
 type UcOptions struct {
@@ -57,8 +61,19 @@ func NewUnicorn(arch, mode int) (Unicorn, error) {
 	if ucerr := C.uc_open(C.uc_arch(arch), C.uc_mode(mode), &handle); ucerr != ERR_OK {
 		return nil, UcError(ucerr)
 	}
-	uc := &uc{handle}
-	return uc, nil
+	u := &uc{handle: handle}
+	runtime.SetFinalizer(u, func(u *uc) { u.Close() })
+	return u, nil
+}
+
+func (u *uc) Close() (err error) {
+	u.final.Do(func() {
+		if u.handle != nil {
+			err = errReturn(C.uc_close(u.handle))
+			u.handle = nil
+		}
+	})
+	return err
 }
 
 func (u *uc) StartWithOptions(begin, until uint64, options *UcOptions) error {
