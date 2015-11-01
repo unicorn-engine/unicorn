@@ -6,12 +6,12 @@ from source.
 
    Follow README in the root directory to compile & install the core.
 
-   On *nix, this can simply done by:
+   On *nix, this can simply be done by (project root directory):
 
         $ sudo ./make.sh install
 
 
-1. To install pure Python binding on *nix, run the command below:
+1. To install pure Python binding on *nix, run the command below in the Python bindings directory:
 
 		$ sudo make install
 
