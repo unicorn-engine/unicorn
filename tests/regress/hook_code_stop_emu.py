@@ -67,15 +67,17 @@ class HookCodeStopEmuTest(regress.RegressTest):
             # 0x1016:  4883c201        add rdx, 1
             
             stepper = SingleStepper(mu, self)
-            self.assertEqual(0x1000, mu.reg_read(UC_X86_REG_RIP), "Unexpected PC")
             showpc(mu)
+            self.assertEqual(0x1000, mu.reg_read(UC_X86_REG_RIP), "Unexpected PC")
+
 
             stepper.step()
+            showpc(mu)            
             self.assertEqual(0x1007, mu.reg_read(UC_X86_REG_RIP),
                              "Emulator failed to stop after one instruction")
-            showpc(mu)
 
             stepper.step()
+            showpc(mu)            
             self.assertEqual(0x1009, mu.reg_read(UC_X86_REG_RIP),
                              "Emulator failed to stop after one instruction")
 
