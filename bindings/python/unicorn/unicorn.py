@@ -4,7 +4,7 @@ _python2 = sys.version_info[0] < 3
 if _python2:
     range = xrange
 from . import arm_const, arm64_const, mips_const, sparc_const, m68k_const, x86_const
-from unicorn_const import *
+from .unicorn_const import *
 
 import ctypes, ctypes.util, sys
 from platform import system
