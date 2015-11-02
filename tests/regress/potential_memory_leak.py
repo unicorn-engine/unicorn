@@ -14,7 +14,7 @@ class MemoryLeak(regress.RegressTest):
         elif platform.system() == "Linux":
             rusage_multiplier = 1024
         else:
-            # resource.getrusage(...) is platform dependent. Only tested under Mac and Linux. 
+            # resource.getrusage(...) is platform dependent. Only tested under OS X and Linux.
             return
         max_rss_before = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * rusage_multiplier
         for i in xrange(10000):
