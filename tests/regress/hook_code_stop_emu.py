@@ -29,7 +29,6 @@ class SingleStepper:
             self._test.assertEqual(1, self._hit_count, "HOOK_CODE invoked too many times")
             uc.emu_stop()
 
-
     def step(self):
         self._hit_count = 0
         h = self._emu.hook_add(UC_HOOK_CODE, self._stop_hook)
