@@ -525,8 +525,10 @@ uc_err uc_emu_stop(uc_engine *uc)
         return UC_ERR_OK;
 
     uc->stop_request = true;
-    // exit the current TB
-    cpu_exit(uc->current_cpu);
+    if (uc->current_cpu) {
+        // exit the current TB
+        cpu_exit(uc->current_cpu);
+    }
 
     return UC_ERR_OK;
 }
