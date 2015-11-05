@@ -52,3 +52,4 @@ Contributors (in no particular order)
 
 Nguyen Tan Cong
 Loi Anh Tuan
+Shaun Wheelhouse: Homebrew package.
