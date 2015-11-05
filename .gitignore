@@ -107,6 +107,7 @@ timeout_segfault
 rep_movsb
 mem_double_unmap
 mips_kseg0_1
+eflags_nosync
 
 
 #################

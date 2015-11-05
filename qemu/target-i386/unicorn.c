@@ -70,6 +70,7 @@ void x86_reg_reset(struct uc_struct *uc)
 
     env->eip = 0;
     env->eflags = 0;
+    env->eflags0 = 0;
 
     env->fpstt = 0; /* top of stack index */
     env->fpus = 0;
@@ -580,6 +581,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     break;
                 case UC_X86_REG_EFLAGS:
                     X86_CPU(uc, mycpu)->env.eflags = *(uint32_t *)value;
+                    X86_CPU(uc, mycpu)->env.eflags0 = *(uint32_t *)value;
                     break;
                 case UC_X86_REG_EAX:
                     X86_CPU(uc, mycpu)->env.regs[R_EAX] = *(uint32_t *)value;
@@ -693,6 +695,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     break;
                 case UC_X86_REG_EFLAGS:
                     X86_CPU(uc, mycpu)->env.eflags = *(uint64_t *)value;
+                    X86_CPU(uc, mycpu)->env.eflags0 = *(uint64_t *)value;
                     break;
                 case UC_X86_REG_RAX:
                     X86_CPU(uc, mycpu)->env.regs[R_EAX] = *(uint64_t *)value;
