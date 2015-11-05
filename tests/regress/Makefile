@@ -13,6 +13,7 @@ TESTS += mem_protect
 TESTS += mem_exec
 TESTS += mips_kseg0_1
 TESTS += eflags_nosync
+TESTS += 00opcode_uc_crash
 
 all: $(TESTS)
 
