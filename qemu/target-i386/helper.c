@@ -1141,4 +1141,5 @@ void x86_cpu_exec_exit(CPUState *cs)
     CPUX86State *env = &cpu->env;
 
     env->eflags = cpu_compute_eflags(env);
+    env->eflags0 = env->eflags;
 }

@@ -839,6 +839,7 @@ typedef struct CPUX86State {
     /* standard registers */
     target_ulong regs[CPU_NB_REGS];
     target_ulong eip;
+    target_ulong eflags0; // copy of eflags that does not change thru the BB
     target_ulong eflags; /* eflags register. During CPU emulation, CC
                         flags and DF are set to zero because they are
                         stored elsewhere */
@@ -1314,7 +1315,7 @@ void update_fp_status(CPUX86State *env);
 
 static inline uint32_t cpu_compute_eflags(CPUX86State *env)
 {
-    return env->eflags | cpu_cc_compute_all(env, CC_OP) | (env->df & DF_MASK);
+    return env->eflags0 | cpu_cc_compute_all(env, CC_OP) | (env->df & DF_MASK);
 }
 
 /* NOTE: the translator must set DisasContext.cc_op to CC_OP_EFLAGS
