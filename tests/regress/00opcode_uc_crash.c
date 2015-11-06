@@ -20,14 +20,14 @@ static void VM_exec()
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
     if(err)
     {
-        printf("Failed on uc_open() with error returned: %s", uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %s\n", uc_strerror(err));
         return;
     }
 
     err = uc_mem_map(uc, ADDRESS, (4 * 1024 * 1024), UC_PROT_ALL);
     if(err != UC_ERR_OK)
     {
-        printf("Failed to map memory %s", uc_strerror(err));
+        printf("Failed to map memory %s\n", uc_strerror(err));
         return;
     }
 
@@ -35,7 +35,7 @@ static void VM_exec()
     err = uc_mem_write(uc, ADDRESS, X86_CODE32, sizeof(X86_CODE32) - 1);
     if(err != UC_ERR_OK)
     {
-        printf("Failed to write emulation code to memory, quit!: %s(len %lu)", uc_strerror(err), sizeof(X86_CODE32) - 1);
+        printf("Failed to write emulation code to memory, quit!: %s(len %lu)\n", uc_strerror(err), sizeof(X86_CODE32) - 1);
         return;
     }
 
@@ -46,7 +46,7 @@ static void VM_exec()
     err = uc_emu_start(uc, ADDRESS, ADDRESS + (sizeof(X86_CODE32) - 1), 0, 0);
     if(err)
     {
-        printf("Failed on uc_emu_start() with error returned %u: %s", err, uc_strerror(err));
+        printf("Failed on uc_emu_start() with error returned %u: %s\n", err, uc_strerror(err));
 
         uc_close(uc);
         return;
