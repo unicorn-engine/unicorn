@@ -114,7 +114,7 @@ struct uc_struct {
     bool global_dirty_log;  // qemu/memory.c
     /* This is a multi-level map on the virtual address space.
        The bottom level has pointers to PageDesc.  */
-    void *l1_map;  // qemu/translate-all.c
+    void **l1_map;  // qemu/translate-all.c
     size_t l1_map_size;
     /* code generation context */
     void *tcg_ctx;  // for "TCGContext tcg_ctx" in qemu/translate-all.c
