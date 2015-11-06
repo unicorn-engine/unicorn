@@ -294,8 +294,8 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
         TranslationBlock *tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
         if (cc->synchronize_from_tb) {
             // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count)
-                cc->synchronize_from_tb(cpu, tb);   // qq
+            if (env->uc->emu_counter <= env->uc->emu_count && !env->uc->stop_request)
+                cc->synchronize_from_tb(cpu, tb);
         } else {
             assert(cc->set_pc);
             // avoid sync twice when helper_uc_tracecode() already did this.

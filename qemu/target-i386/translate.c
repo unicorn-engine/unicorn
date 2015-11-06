@@ -4774,11 +4774,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             }
             // generate code to call callback
             gen_uc_tracecode(tcg_ctx, 0xf1f1f1f1, trace->callback, env->uc, pc_start, trace->user_data);
-            // if requested to emulate only some instructions, check if
-            // we need to exit immediately
-            if (env->uc->emu_count > 0) {
-                check_exit_request(tcg_ctx);
-            }
+            // the callback might want to stop emulation immediately
+            check_exit_request(tcg_ctx);
         }
     }
 
