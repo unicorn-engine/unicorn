@@ -328,12 +328,7 @@ void helper_write_eflags(CPUX86State *env, target_ulong t0,
 
 target_ulong helper_read_eflags(CPUX86State *env)
 {
-    uint32_t eflags;
-
-    eflags = cpu_cc_compute_all(env, CC_OP);
-    eflags |= (env->df & DF_MASK);
-    eflags |= env->eflags & ~(VM_MASK | RF_MASK);
-    return eflags;
+    return cpu_compute_eflags(env);
 }
 
 void helper_clts(CPUX86State *env)

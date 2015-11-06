@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
@@ -26,7 +27,7 @@ static bool hook_invalid_mem(uc_engine *uc, uc_mem_type type, uint64_t address, 
 
     if(address == 0)
     {
-        printf("Address is 0, proof 0x%llX\n", address);
+        printf("Address is 0, proof 0x%" PRIx64 "\n", address);
         return false;
     }
 
@@ -34,9 +35,9 @@ static bool hook_invalid_mem(uc_engine *uc, uc_mem_type type, uint64_t address, 
     {
         default:
             return false;
-        break;
+            break;
         case UC_MEM_WRITE_UNMAPPED:
-            printf("Mapping write address 0x%08llX to aligned 0x%08llX\n", address, address_align);
+            printf("Mapping write address 0x%" PRIx64 " to aligned 0x%" PRIx64 "\n", address, address_align);
 
             err = uc_mem_map(uc, address_align, PAGE_8K, UC_PROT_ALL);
             if(err != UC_ERR_OK)
@@ -46,10 +47,10 @@ static bool hook_invalid_mem(uc_engine *uc, uc_mem_type type, uint64_t address, 
             }
 
             return true;
-        break;
+            break;
         case UC_MEM_READ_UNMAPPED:
 
-            printf("Mapping read address 0x%08llX to aligned 0x%08llX\n", address, address_align);
+            printf("Mapping read address 0x%" PRIx64 " to aligned 0x%" PRIx64 "\n", address, address_align);
 
 
             err = uc_mem_map(uc, address_align, PAGE_8K, UC_PROT_ALL);
@@ -60,7 +61,7 @@ static bool hook_invalid_mem(uc_engine *uc, uc_mem_type type, uint64_t address, 
             }
 
             return true;
-        break;
+            break;
     }
 }
 
@@ -104,7 +105,7 @@ static void VM_exec()
     err = uc_mem_write(uc, ADDRESS, X86_CODE32, sizeof(X86_CODE32) - 1);
     if(err != UC_ERR_OK)
     {
-        printf("Failed to write emulation code to memory, quit!: %s(len %d)", uc_strerror(err), sizeof(X86_CODE32) - 1);
+        printf("Failed to write emulation code to memory, quit!: %s(len %lu)", uc_strerror(err), sizeof(X86_CODE32) - 1);
         return;
     }
 
@@ -130,7 +131,7 @@ static void VM_exec()
     {
         printf("Failed on uc_emu_start() with error returned %u: %s", err, uc_strerror(err));
         instructions = 0;
-    
+
         uc_close(uc);
         return;
     }
@@ -158,9 +159,9 @@ static void VM_exec()
     printf(">>> ESI = 0x%08X %s\n", r_esi, (r_esi == tr_esi ? "" : "(m)"));
     printf(">>> EDI = 0x%08X %s\n", r_edi, (r_edi == tr_edi ? "" : "(m)"));
     printf(">>> EIP = 0x%08X %s\n", (r_eip - ADDRESS) + tr_eip, (r_eip == tr_eip ? "" : "(m)\n"));
-    printf(">>> EFLAGS = 0x%08X %s", eflags, (eflags == t_eflags ? "" : "(m)\n"));
+    printf(">>> EFLAGS = 0x%08X %s\n", eflags, (eflags == t_eflags ? "" : "(m)"));
 
-    printf(">>> Instructions executed %llu\n", instructions);
+    printf(">>> Instructions executed %" PRIu64 "\n", instructions);
 
     assert(r_eax == 0x1DB10106);
     assert(r_ebx == 0x7EFDE000);
@@ -173,7 +174,6 @@ static void VM_exec()
     assert(eflags == 0x00000206); //we shouldn't fail this assert, eflags should be 0x00000206 because the last AND instruction produces a non-zero result.
 
     instructions = 0;
-
 }
 
 
