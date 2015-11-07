@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 //> M68K registers
-typedef enum m68k_reg {
+typedef enum uc_m68k_reg {
 	UC_M68K_REG_INVALID = 0,
 
 	UC_M68K_REG_A0,
@@ -41,7 +41,7 @@ typedef enum m68k_reg {
 	UC_M68K_REG_PC,
 
 	UC_M68K_REG_ENDING,   // <-- mark the end of the list of registers
-} m68k_reg;
+} uc_m68k_reg;
 
 #ifdef __cplusplus
 }
