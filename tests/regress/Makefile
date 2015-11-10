@@ -14,6 +14,7 @@ TESTS += mem_exec
 TESTS += mips_kseg0_1
 TESTS += eflags_nosync
 TESTS += 00opcode_uc_crash
+TESTS += eflags_noset
 
 all: $(TESTS)
 
