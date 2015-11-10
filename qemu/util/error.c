@@ -40,7 +40,7 @@ void error_set(Error **errp, ErrorClass err_class, const char *fmt, ...)
     err->err_class = err_class;
 
     if (errp == &error_abort) {
-        abort();
+        // abort();
     }
 
     *errp = err;
@@ -75,7 +75,7 @@ void error_set_errno(Error **errp, int os_errno, ErrorClass err_class,
     err->err_class = err_class;
 
     if (errp == &error_abort) {
-        abort();
+        // abort();
     }
 
     *errp = err;
@@ -160,7 +160,7 @@ void error_free(Error *err)
 void error_propagate(Error **dst_errp, Error *local_err)
 {
     if (local_err && dst_errp == &error_abort) {
-        abort();
+        // abort();
     } else if (dst_errp && !*dst_errp) {
         *dst_errp = local_err;
     } else if (local_err) {

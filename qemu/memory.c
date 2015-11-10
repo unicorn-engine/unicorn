@@ -36,6 +36,9 @@ MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, ui
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
     memory_region_init_ram(uc, ram, NULL, "pc.ram", size, perms, &error_abort);
+    if (ram->ram_addr == -1)
+        // out of memory
+        return NULL;
 
     memory_region_add_subregion(get_system_memory(uc), begin, ram);
 

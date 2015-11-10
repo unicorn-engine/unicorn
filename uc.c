@@ -593,7 +593,11 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
         }
         uc->mapped_blocks = regions;
     }
+
     uc->mapped_blocks[uc->mapped_block_count] = uc->memory_map(uc, address, size, perms);
+    if (uc->mapped_blocks[uc->mapped_block_count] == NULL)
+        return UC_ERR_NOMEM;
+
     uc->mapped_block_count++;
 
     return UC_ERR_OK;

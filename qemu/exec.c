@@ -1083,6 +1083,7 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
     return new_block->offset;
 }
 
+// return -1 on error
 ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
         MemoryRegion *mr, Error **errp)
 {
@@ -1092,6 +1093,9 @@ ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
 
     size = TARGET_PAGE_ALIGN(size);
     new_block = g_malloc0(sizeof(*new_block));
+    if (new_block == NULL)
+        return -1;
+
     new_block->mr = mr;
     new_block->length = size;
     new_block->fd = -1;
