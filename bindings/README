@@ -7,3 +7,7 @@ The following bindings are contributed by community.
 - Go binding: by Ryan Hileman.
 - .NET binding: by Antonio Parata.
 
+More bindings created & maintained externally by community are available as follows.
+
+- UnicornPascal: Delphi/Free Pascal binding (by Stievie).
+    https://github.com/stievie/UnicornPascal
