@@ -161,8 +161,8 @@ LIBDIRARCH ?= lib
 # Or better, pass 'LIBDIRARCH=lib64' to 'make install/uninstall' via 'make.sh'.
 #LIBDIRARCH ?= lib64
 
-LIBDIR ?= $(DESTDIR)$(PREFIX)/$(LIBDIRARCH)
-INCDIR ?= $(DESTDIR)$(PREFIX)/include
+LIBDIR ?= $(PREFIX)/$(LIBDIRARCH)
+INCDIR ?= $(PREFIX)/include
 
 LIBDATADIR ?= $(LIBDIR)
 
@@ -261,21 +261,21 @@ test: all
 
 
 install: all $(PKGCFGF)
-	mkdir -p $(LIBDIR)
+	mkdir -p $(DESTDIR)/$(LIBDIR)
 ifeq ($(UNICORN_SHARED),yes)
-	$(INSTALL_LIB) $(LIBRARY) $(LIBDIR)
+	$(INSTALL_LIB) $(LIBRARY) $(DESTDIR)/$(LIBDIR)
 ifneq ($(VERSION_EXT),)
-	cd $(LIBDIR) && \
+	cd $(DESTDIR)/$(LIBDIR) && \
 	ln -sf lib$(LIBNAME).$(VERSION_EXT) lib$(LIBNAME).$(EXT)
 endif
 endif
 ifeq ($(UNICORN_STATIC),yes)
-	$(INSTALL_DATA) $(ARCHIVE) $(LIBDIR)
+	$(INSTALL_DATA) $(ARCHIVE) $(DESTDIR)/$(LIBDIR)
 endif
-	mkdir -p $(INCDIR)/$(LIBNAME)
-	$(INSTALL_DATA) include/unicorn/*.h $(INCDIR)/$(LIBNAME)
-	mkdir -p $(PKGCFGDIR)
-	$(INSTALL_DATA) $(PKGCFGF) $(PKGCFGDIR)/
+	mkdir -p $(DESTDIR)/$(INCDIR)/$(LIBNAME)
+	$(INSTALL_DATA) include/unicorn/*.h $(DESTDIR)/$(INCDIR)/$(LIBNAME)
+	mkdir -p $(DESTDIR)/$(PKGCFGDIR)
+	$(INSTALL_DATA) $(PKGCFGF) $(DESTDIR)/$(PKGCFGDIR)/
 
 
 TAG ?= HEAD
