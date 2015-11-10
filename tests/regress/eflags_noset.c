@@ -14,28 +14,46 @@
 #define TARGET_PAGE_PREPARE(addr) (((addr) + PAGE_4K - 1) & TARGET_PAGE_MASK)
 #define TARGET_PAGE_ALIGN(addr) (addr - (TARGET_PAGE_PREPARE(addr) - addr) & TARGET_PAGE_MASK)
 
-unsigned int realEflags()
-{
-    unsigned int val = 0;
-    unsigned int i = 0xFFFFFEFF; //attempt to set ALL bits except trap flag.
+#if defined(__i386__)
+typedef uint32_t puint;
+#define PRIX3264 PRIX32
+#else
+typedef uint64_t puint;
+#define PRIX3264 PRIX64
+#endif
 
+uint32_t realEflags()
+{
+    puint val = 0;
+    puint i = 0xFFFFFEFF; //attempt to set ALL bits except trap flag.
+
+#if defined(__i386__)
     __asm__("pushf\n\t"
     "push %0\n\t"
     "popf\n\t" 
     "pushf\n\t"
     "pop %0\n\t"
     "popf"
+#else
+    __asm__("pushfq\n\t"
+    "pushq %0\n\t"
+    "popfq\n\t" 
+    "pushfq\n\t"
+    "popq %0\n\t"
+    "popfq"
+#endif
     : "=r"(val)
     : "r"(i)
     : "%0"); 
 
-    printf("Real system eflags: 0x%08X\n", val);
+    printf("Real system eflags: 0x%08"PRIX3264"\n", val);
 
-    return val;
+    return (uint32_t)val & 0xFFFFFFFF;
 }
 
 static void VM_exec()
 {
+
     uc_engine *uc;
     uc_err err;
     unsigned int r_eax, eflags, r_esp, realflags = 0;
@@ -63,7 +81,7 @@ static void VM_exec()
     err = uc_mem_write(uc, ADDRESS, X86_CODE32, sizeof(X86_CODE32) - 1);
     if(err != UC_ERR_OK)
     {
-        printf("Failed to write emulation code to memory, quit!: %s(len %lu)\n", uc_strerror(err), sizeof(X86_CODE32) - 1);
+        printf("Failed to write emulation code to memory, quit!: %s(len %lu)\n", uc_strerror(err), (unsigned long)sizeof(X86_CODE32) - 1);
         return;
     }
 
@@ -94,10 +112,7 @@ static void VM_exec()
     realflags = realEflags();
 
     assert(r_eax == realflags);
-
-    puts("Unicorn EFLAGS match expected system eflags");
 }
-
 
 int main(int argc, char *argv[])
 {
