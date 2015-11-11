@@ -17,10 +17,12 @@
 #include "exec/address-spaces.h"
 
 
-static void tosa_init(struct uc_struct *uc, MachineState *machine)
+static int tosa_init(struct uc_struct *uc, MachineState *machine)
 {
     //cpu_arm_init(uc, "pxa255");
     cpu_arm_init(uc, "cortex-a15"); // FIXME
+
+    return 0;
 }
 
 void tosa_machine_init(struct uc_struct *uc)

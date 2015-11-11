@@ -37,16 +37,19 @@ static bool cpu_can_run(CPUState *cpu);
 static void cpu_handle_guest_debug(CPUState *cpu);
 static int tcg_cpu_exec(struct uc_struct *uc, CPUArchState *env);
 static bool tcg_exec_all(struct uc_struct* uc);
-static void qemu_tcg_init_vcpu(CPUState *cpu);
+static int qemu_tcg_init_vcpu(CPUState *cpu);
 static void *qemu_tcg_cpu_thread_fn(void *arg);
 
-void vm_start(struct uc_struct* uc)
+int vm_start(struct uc_struct* uc)
 {
-    resume_all_vcpus(uc);
+    if (resume_all_vcpus(uc)) {
+        return -1;
+    }
 
-    //sleep(3);
     // kick off TCG thread
     qemu_mutex_unlock_iothread(uc);
+
+    return 0;
 }
 
 bool cpu_is_stopped(CPUState *cpu)
@@ -78,7 +81,7 @@ void pause_all_vcpus(struct uc_struct *uc)
 }
 
 
-void resume_all_vcpus(struct uc_struct *uc)
+int resume_all_vcpus(struct uc_struct *uc)
 {
     CPUState *cpu;
 
@@ -93,7 +96,8 @@ void resume_all_vcpus(struct uc_struct *uc)
             CPU_FOREACH(cpu) {
                 cpu->created = true;
                 cpu->halted = 0;
-                qemu_init_vcpu(cpu);
+                if (qemu_init_vcpu(cpu))
+                    return -1;
             }
             qemu_mutex_lock_iothread(uc);
         }
@@ -103,18 +107,21 @@ void resume_all_vcpus(struct uc_struct *uc)
     CPU_FOREACH(cpu) {
         cpu_resume(cpu);
     }
+
+    return 0;
 }
 
-void qemu_init_vcpu(CPUState *cpu)
+int qemu_init_vcpu(CPUState *cpu)
 {
     cpu->nr_cores = smp_cores;
     cpu->nr_threads = smp_threads;
     cpu->stopped = true;
     cpu->uc->tcg_cpu_thread = NULL;
 
-    if (tcg_enabled(cpu->uc)) {
-        qemu_tcg_init_vcpu(cpu);
-    }
+    if (tcg_enabled(cpu->uc))
+        return qemu_tcg_init_vcpu(cpu);
+
+    return 0;
 }
 
 
@@ -132,7 +139,6 @@ static void *qemu_tcg_cpu_thread_fn(void *arg)
         cpu->created = true;
     }
     qemu_cond_signal(&uc->qemu_cpu_cond);
-
 
    /* wait for initial kick-off after machine start */
     while (QTAILQ_FIRST(&uc->cpus)->stopped) {
@@ -170,7 +176,7 @@ static void *qemu_tcg_cpu_thread_fn(void *arg)
 /* For temporary buffers for forming a name */
 #define VCPU_THREAD_NAME_SIZE 16
 
-static void qemu_tcg_init_vcpu(CPUState *cpu)
+static int qemu_tcg_init_vcpu(CPUState *cpu)
 {
     struct uc_struct *uc = cpu->uc;
     char thread_name[VCPU_THREAD_NAME_SIZE];
@@ -185,8 +191,9 @@ static void qemu_tcg_init_vcpu(CPUState *cpu)
         uc->tcg_halt_cond = cpu->halt_cond;
         snprintf(thread_name, VCPU_THREAD_NAME_SIZE, "CPU %d/TCG",
                 cpu->cpu_index);
-        qemu_thread_create(uc, cpu->thread, thread_name, qemu_tcg_cpu_thread_fn,
-                cpu, QEMU_THREAD_JOINABLE);
+        if (qemu_thread_create(uc, cpu->thread, thread_name, qemu_tcg_cpu_thread_fn,
+                cpu, QEMU_THREAD_JOINABLE))
+            return -1;
 #ifdef _WIN32
         cpu->hThread = qemu_thread_get_handle(cpu->thread);
 #endif
@@ -198,6 +205,8 @@ static void qemu_tcg_init_vcpu(CPUState *cpu)
         cpu->thread = uc->tcg_cpu_thread;
         cpu->halt_cond = uc->tcg_halt_cond;
     }
+
+    return 0;
 }
 
 static int tcg_cpu_exec(struct uc_struct *uc, CPUArchState *env)

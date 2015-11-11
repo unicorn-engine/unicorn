@@ -196,7 +196,7 @@ static void apic_reset_common(struct uc_struct *uc, DeviceState *dev)
     }
 }
 
-static void apic_common_realize(struct uc_struct *uc, DeviceState *dev, Error **errp)
+static int apic_common_realize(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     APICCommonState *s = APIC_COMMON(uc, dev);
     APICCommonClass *info;
@@ -204,7 +204,7 @@ static void apic_common_realize(struct uc_struct *uc, DeviceState *dev, Error **
     if (uc->apic_no >= MAX_APICS) {
         error_setg(errp, "%s initialization failed.",
                    object_get_typename(OBJECT(dev)));
-        return;
+        return -1;
     }
     s->idx = uc->apic_no++;
 
@@ -225,6 +225,8 @@ static void apic_common_realize(struct uc_struct *uc, DeviceState *dev, Error **
     if (uc->apic_report_tpr_access && info->enable_tpr_reporting) {
         info->enable_tpr_reporting(s, true);
     }
+
+    return 0;
 }
 
 static void apic_common_class_init(struct uc_struct *uc, ObjectClass *klass, void *data)

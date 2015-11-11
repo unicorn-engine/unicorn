@@ -33,7 +33,7 @@
 #include "exec/address-spaces.h"
 
 
-static void leon3_generic_hw_init(struct uc_struct *uc, MachineState *machine)
+static int leon3_generic_hw_init(struct uc_struct *uc, MachineState *machine)
 {
     const char *cpu_model = machine->cpu_model;
     SPARCCPU *cpu;
@@ -46,10 +46,12 @@ static void leon3_generic_hw_init(struct uc_struct *uc, MachineState *machine)
     cpu = cpu_sparc_init(uc, cpu_model);
     if (cpu == NULL) {
         fprintf(stderr, "qemu: Unable to find Sparc CPU definition\n");
-        exit(1);
+        return -1;
     }
 
     cpu_sparc_set_id(&cpu->env, 0);
+
+    return 0;
 }
 
 void leon3_machine_init(struct uc_struct *uc)

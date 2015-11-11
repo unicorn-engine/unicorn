@@ -216,13 +216,15 @@ static void cpu_common_parse_features(CPUState *cpu, char *features,
     }
 }
 
-static void cpu_common_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
+static int cpu_common_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     CPUState *cpu = CPU(dev);
 
     if (dev->hotplugged) {
         cpu_resume(cpu);
     }
+
+    return 0;
 }
 
 static void cpu_common_initfn(struct uc_struct *uc, Object *obj, void *opaque)

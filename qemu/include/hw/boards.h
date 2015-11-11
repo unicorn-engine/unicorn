@@ -9,7 +9,7 @@
 #include "qom/object.h"
 #include "uc_priv.h"
 
-typedef void QEMUMachineInitFunc(struct uc_struct *uc, MachineState *ms);
+typedef int QEMUMachineInitFunc(struct uc_struct *uc, MachineState *ms);
 
 typedef void QEMUMachineResetFunc(void);
 
@@ -54,7 +54,7 @@ struct MachineClass {
     const char *family; /* NULL iff @name identifies a standalone machtype */
     const char *name;
 
-    void (*init)(struct uc_struct *uc, MachineState *state);
+    int (*init)(struct uc_struct *uc, MachineState *state);
     void (*reset)(void);
 
     int max_cpus;

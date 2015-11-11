@@ -329,7 +329,7 @@ static void arm_cpu_finalizefn(struct uc_struct *uc, Object *obj, void *opaque)
     g_hash_table_destroy(cpu->cp_regs);
 }
 
-static void arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
+static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     CPUState *cs = CPU(dev);
     ARMCPU *cpu = ARM_CPU(uc, dev);
@@ -399,6 +399,8 @@ static void arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **er
     cpu_reset(cs);
 
     acc->parent_realize(uc, dev, errp);
+
+    return 0;
 }
 
 static ObjectClass *arm_cpu_class_by_name(struct uc_struct *uc, const char *cpu_model)

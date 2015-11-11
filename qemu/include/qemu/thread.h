@@ -53,7 +53,8 @@ void qemu_event_wait(QemuEvent *ev);
 void qemu_event_destroy(QemuEvent *ev);
 
 struct uc_struct;
-void qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *name,
+// return -1 on error, 0 on success
+int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *name,
                         void *(*start_routine)(void *),
                         void *arg, int mode);
 void *qemu_thread_join(QemuThread *thread);

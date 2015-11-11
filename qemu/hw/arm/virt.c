@@ -36,7 +36,7 @@
 #include "exec/address-spaces.h"
 
 
-static void machvirt_init(struct uc_struct *uc, MachineState *machine)
+static int machvirt_init(struct uc_struct *uc, MachineState *machine)
 {
     const char *cpu_model = machine->cpu_model;
     int n;
@@ -51,12 +51,14 @@ static void machvirt_init(struct uc_struct *uc, MachineState *machine)
 
         if (!oc) {
             fprintf(stderr, "Unable to find CPU definition\n");
-            exit(1);
+            return -1;
         }
 
         cpuobj = object_new(uc, object_class_get_name(oc));
         object_property_set_bool(uc, cpuobj, true, "realized", NULL);
     }
+
+    return 0;
 }
 
 void machvirt_machine_init(struct uc_struct *uc)

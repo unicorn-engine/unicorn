@@ -146,7 +146,7 @@ static const M68kCPUInfo m68k_cpus[] = {
     { .name = "any",   .instance_init = any_cpu_initfn },
 };
 
-static void m68k_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
+static int m68k_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     CPUState *cs = CPU(dev);
     M68kCPUClass *mcc = M68K_CPU_GET_CLASS(uc, dev);
@@ -155,6 +155,8 @@ static void m68k_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **e
     qemu_init_vcpu(cs);
 
     mcc->parent_realize(cs->uc, dev, errp);
+
+    return 0;
 }
 
 static void m68k_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)

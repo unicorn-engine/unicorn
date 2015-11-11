@@ -716,7 +716,7 @@ void object_unref(struct uc_struct *uc, Object *obj)
 ObjectProperty *
 object_property_add(Object *obj, const char *name, const char *type,
                     ObjectPropertyAccessor *get,
-                    ObjectPropertyAccessor *set,
+                    ObjectPropertySetAccessor *set,
                     ObjectPropertyRelease *release,
                     void *opaque, Error **errp)
 {
@@ -826,7 +826,8 @@ void object_property_set(struct uc_struct *uc, Object *obj, Visitor *v, const ch
     if (!prop->set) {
         error_set(errp, QERR_PERMISSION_DENIED);
     } else {
-        prop->set(uc, obj, v, prop->opaque, name, errp);
+        if (prop->set(uc, obj, v, prop->opaque, name, errp))
+            error_set(errp, QERR_UNDEFINED_ERROR);
     }
 }
 
@@ -1169,7 +1170,7 @@ static Object *object_resolve_link(struct uc_struct *uc, Object *obj, const char
     return target;
 }
 
-static void object_set_link_property(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
+static int object_set_link_property(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
                                      const char *name, Error **errp)
 {
     Error *local_err = NULL;
@@ -1188,18 +1189,20 @@ static void object_set_link_property(struct uc_struct *uc, Object *obj, Visitor 
     g_free(path);
     if (local_err) {
         error_propagate(errp, local_err);
-        return;
+        return -1;
     }
 
     prop->check(obj, name, new_target, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        return;
+        return -1;
     }
 
     object_ref(new_target);
     *child = new_target;
     object_unref(uc, old_target);
+
+    return 0;
 }
 
 static Object *object_resolve_link_property(struct uc_struct *uc, Object *parent, void *opaque, const gchar *part)
@@ -1410,7 +1413,7 @@ Object *object_resolve_path(struct uc_struct *uc, const char *path, bool *ambigu
 typedef struct StringProperty
 {
     char *(*get)(struct uc_struct *uc, Object *, Error **);
-    void (*set)(struct uc_struct *uc, Object *, const char *, Error **);
+    int (*set)(struct uc_struct *uc, Object *, const char *, Error **);
 } StringProperty;
 
 static void property_get_str(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
@@ -1426,7 +1429,7 @@ static void property_get_str(struct uc_struct *uc, Object *obj, Visitor *v, void
     }
 }
 
-static void property_set_str(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
+static int property_set_str(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
                              const char *name, Error **errp)
 {
     StringProperty *prop = opaque;
@@ -1436,11 +1439,13 @@ static void property_set_str(struct uc_struct *uc, Object *obj, Visitor *v, void
     visit_type_str(v, &value, name, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        return;
+        return -1;
     }
 
     prop->set(uc, obj, value, errp);
     g_free(value);
+
+    return 0;
 }
 
 static void property_release_str(struct uc_struct *uc, Object *obj, const char *name,
@@ -1452,7 +1457,7 @@ static void property_release_str(struct uc_struct *uc, Object *obj, const char *
 
 void object_property_add_str(Object *obj, const char *name,
                            char *(*get)(struct uc_struct *uc, Object *, Error **),
-                           void (*set)(struct uc_struct *uc, Object *, const char *, Error **),
+                           int (*set)(struct uc_struct *uc, Object *, const char *, Error **),
                            Error **errp)
 {
     Error *local_err = NULL;
@@ -1475,7 +1480,7 @@ void object_property_add_str(Object *obj, const char *name,
 typedef struct BoolProperty
 {
     bool (*get)(struct uc_struct *uc, Object *, Error **);
-    void (*set)(struct uc_struct *uc, Object *, bool, Error **);
+    int (*set)(struct uc_struct *uc, Object *, bool, Error **);
 } BoolProperty;
 
 static void property_get_bool(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
@@ -1488,7 +1493,7 @@ static void property_get_bool(struct uc_struct *uc, Object *obj, Visitor *v, voi
     visit_type_bool(v, &value, name, errp);
 }
 
-static void property_set_bool(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
+static int property_set_bool(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
                               const char *name, Error **errp)
 {
     BoolProperty *prop = opaque;
@@ -1498,10 +1503,10 @@ static void property_set_bool(struct uc_struct *uc, Object *obj, Visitor *v, voi
     visit_type_bool(v, &value, name, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        return;
+        return -1;
     }
 
-    prop->set(uc, obj, value, errp);
+    return prop->set(uc, obj, value, errp);
 }
 
 static void property_release_bool(struct uc_struct *uc, Object *obj, const char *name,
@@ -1513,7 +1518,7 @@ static void property_release_bool(struct uc_struct *uc, Object *obj, const char 
 
 void object_property_add_bool(struct uc_struct *uc, Object *obj, const char *name,
                               bool (*get)(struct uc_struct *uc, Object *, Error **),
-                              void (*set)(struct uc_struct *uc, Object *, bool, Error **),
+                              int (*set)(struct uc_struct *uc, Object *, bool, Error **),
                               Error **errp)
 {
     Error *local_err = NULL;
@@ -1611,12 +1616,14 @@ static void property_get_alias(struct uc_struct *uc, Object *obj, struct Visitor
     object_property_get(uc, prop->target_obj, v, prop->target_name, errp);
 }
 
-static void property_set_alias(struct uc_struct *uc, Object *obj, struct Visitor *v, void *opaque,
+static int property_set_alias(struct uc_struct *uc, Object *obj, struct Visitor *v, void *opaque,
                                const char *name, Error **errp)
 {
     AliasProperty *prop = opaque;
 
     object_property_set(uc, prop->target_obj, v, prop->target_name, errp);
+
+    return 0;
 }
 
 static Object *property_resolve_alias(struct uc_struct *uc, Object *obj, void *opaque,

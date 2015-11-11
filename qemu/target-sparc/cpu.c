@@ -783,7 +783,7 @@ static bool sparc_cpu_has_work(CPUState *cs)
         cpu_interrupts_enabled(env);
 }
 
-static void sparc_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
+static int sparc_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     SPARCCPUClass *scc = SPARC_CPU_GET_CLASS(uc, dev);
 #if defined(CONFIG_USER_ONLY)
@@ -798,6 +798,8 @@ static void sparc_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **
     qemu_init_vcpu(CPU(dev));
 
     scc->parent_realize(uc, dev, errp);
+
+    return 0;
 }
 
 static void sparc_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)

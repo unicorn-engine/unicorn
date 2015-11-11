@@ -16,7 +16,7 @@
 
 
 /* Board init.  */
-static void dummy_m68k_init(struct uc_struct *uc, MachineState *machine)
+static int dummy_m68k_init(struct uc_struct *uc, MachineState *machine)
 {
     const char *cpu_model = machine->cpu_model;
     CPUM68KState *env;
@@ -27,12 +27,14 @@ static void dummy_m68k_init(struct uc_struct *uc, MachineState *machine)
     env = cpu_init(uc, cpu_model);
     if (!env) {
         fprintf(stderr, "Unable to find m68k CPU definition\n");
-        exit(1);
+        return -1;
     }
 
     /* Initialize CPU registers.  */
     env->vbr = 0;
     env->pc = 0;
+
+    return 0;
 }
 
 void dummy_m68k_machine_init(struct uc_struct *uc)

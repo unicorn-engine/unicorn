@@ -36,6 +36,7 @@ typedef bool (*uc_read_mem_t)(AddressSpace *as, hwaddr addr, uint8_t *buf, int l
 typedef void (*uc_args_void_t)(void*);
 
 typedef void (*uc_args_uc_t)(struct uc_struct*);
+typedef int (*uc_args_int_uc_t)(struct uc_struct*);
 
 typedef bool (*uc_args_tcg_enable_t)(struct uc_struct*);
 
@@ -91,7 +92,8 @@ struct uc_struct {
     uc_args_uc_u64_t set_pc;  // set PC for tracecode
     uc_args_int_t stop_interrupt;   // check if the interrupt should stop emulation
 
-    uc_args_uc_t init_arch, pause_all_vcpus, vm_start, cpu_exec_init_all;
+    uc_args_uc_t init_arch, pause_all_vcpus, cpu_exec_init_all;
+    uc_args_int_uc_t vm_start;
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;
     uc_args_uc_ram_size_t memory_map;

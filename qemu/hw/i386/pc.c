@@ -104,7 +104,7 @@ static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *cpu_model, int64_t a
     }
 
     object_property_set_int(uc, OBJECT(cpu), apic_id, "apic-id", &local_err);
-    object_property_set_bool(uc, OBJECT(cpu), true, "realized", &local_err);
+    object_property_set_bool(uc, OBJECT(cpu), true, "realized", &local_err);    // qq
 
     if (local_err) {
         error_propagate(errp, local_err);
@@ -114,7 +114,7 @@ static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *cpu_model, int64_t a
     return cpu;
 }
 
-void pc_cpus_init(struct uc_struct *uc, const char *cpu_model)
+int pc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     int i;
     Error *error = NULL;
@@ -129,13 +129,15 @@ void pc_cpus_init(struct uc_struct *uc, const char *cpu_model)
     }
 
     for (i = 0; i < smp_cpus; i++) {
-        uc->cpu = pc_new_cpu(uc, cpu_model, x86_cpu_apic_id_from_index(i), &error);
+        uc->cpu = pc_new_cpu(uc, cpu_model, x86_cpu_apic_id_from_index(i), &error); // qq
         if (error) {
             //error_report("%s", error_get_pretty(error));
             error_free(error);
-            exit(1);
+            return -1;
         }
     }
+
+    return 0;
 }
 
 static void pc_machine_initfn(struct uc_struct *uc, Object *obj, void *opaque)

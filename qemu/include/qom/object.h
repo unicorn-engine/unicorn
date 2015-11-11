@@ -304,6 +304,11 @@ typedef void (ObjectPropertyAccessor)(struct uc_struct *uc, Object *obj,
                                       void *opaque,
                                       const char *name,
                                       Error **errp);
+typedef int (ObjectPropertySetAccessor)(struct uc_struct *uc, Object *obj,
+                                      struct Visitor *v,
+                                      void *opaque,
+                                      const char *name,
+                                      Error **errp);
 
 /**
  * ObjectPropertyResolve:
@@ -342,7 +347,7 @@ typedef struct ObjectProperty
     gchar *type;
     gchar *description;
     ObjectPropertyAccessor *get;
-    ObjectPropertyAccessor *set;
+    ObjectPropertySetAccessor *set;
     ObjectPropertyResolve *resolve;
     ObjectPropertyRelease *release;
     void *opaque;
@@ -799,7 +804,7 @@ void object_unref(struct uc_struct *uc, Object *obj);
 ObjectProperty *object_property_add(Object *obj, const char *name,
                                     const char *type,
                                     ObjectPropertyAccessor *get,
-                                    ObjectPropertyAccessor *set,
+                                    ObjectPropertySetAccessor *set,
                                     ObjectPropertyRelease *release,
                                     void *opaque, Error **errp);
 
@@ -1168,7 +1173,7 @@ void object_property_add_link(Object *obj, const char *name,
  */
 void object_property_add_str(Object *obj, const char *name,
                              char *(*get)(struct uc_struct *uc, Object *, Error **),
-                             void (*set)(struct uc_struct *uc, Object *, const char *, Error **),
+                             int (*set)(struct uc_struct *uc, Object *, const char *, Error **),
                              Error **errp);
 
 /**
@@ -1184,7 +1189,7 @@ void object_property_add_str(Object *obj, const char *name,
  */
 void object_property_add_bool(struct uc_struct *uc, Object *obj, const char *name,
                               bool (*get)(struct uc_struct *uc, Object *, Error **),
-                              void (*set)(struct uc_struct *uc, Object *, bool, Error **),
+                              int (*set)(struct uc_struct *uc, Object *, bool, Error **),
                               Error **errp);
 
 /**

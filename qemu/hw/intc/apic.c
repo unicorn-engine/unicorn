@@ -186,8 +186,9 @@ static void apic_post_load(APICCommonState *s)
     }
 }
 
-static void apic_realize(struct uc_struct *uc, DeviceState *dev, Error **errp)
+static int apic_realize(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
+    return 0;
 }
 
 static void apic_class_init(struct uc_struct *uc, ObjectClass *klass, void *data)

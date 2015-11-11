@@ -27,7 +27,7 @@ static void error_exit(int err, const char *msg)
                   NULL, err, 0, (LPTSTR)&pstr, 2, NULL);
     fprintf(stderr, "qemu: %s: %s\n", msg, pstr);
     LocalFree(pstr);
-    abort();
+    //abort();
 }
 
 void qemu_mutex_init(QemuMutex *mutex)
@@ -326,7 +326,7 @@ void *qemu_thread_join(QemuThread *thread)
     return ret;
 }
 
-void qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *name,
+int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *name,
                        void *(*start_routine)(void *),
                        void *arg, int mode)
 {
@@ -350,9 +350,13 @@ void qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *na
                                       data, 0, &thread->tid);
     if (!hThread) {
         error_exit(GetLastError(), __func__);
+        return -1;
     }
+
     CloseHandle(hThread);
     thread->data = (mode == QEMU_THREAD_DETACHED) ? NULL : data;
+
+    return 0;
 }
 
 void qemu_thread_get_self(struct uc_struct *uc, QemuThread *thread)

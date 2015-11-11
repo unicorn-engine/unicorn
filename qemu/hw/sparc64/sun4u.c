@@ -30,7 +30,7 @@
 
 
 /* Sun4u hardware initialisation */
-static void sun4u_init(struct uc_struct *uc, MachineState *machine)
+static int sun4u_init(struct uc_struct *uc, MachineState *machine)
 {
     const char *cpu_model = machine->cpu_model;
     SPARCCPU *cpu;
@@ -41,8 +41,10 @@ static void sun4u_init(struct uc_struct *uc, MachineState *machine)
     cpu = cpu_sparc_init(uc, cpu_model);
     if (cpu == NULL) {
         fprintf(stderr, "Unable to find Sparc CPU definition\n");
-        exit(1);
+        return -1;
     }
+
+    return 0;
 }
 
 void sun4u_machine_init(struct uc_struct *uc)

@@ -155,7 +155,7 @@ static bool device_get_realized(struct uc_struct *uc, Object *obj, Error **errp)
     return dev->realized;
 }
 
-static void device_set_realized(struct uc_struct *uc, Object *obj, bool value, Error **errp)
+static int device_set_realized(struct uc_struct *uc, Object *obj, bool value, Error **errp)
 {
     DeviceState *dev = DEVICE(uc, obj);
     DeviceClass *dc = DEVICE_GET_CLASS(uc, dev);
@@ -164,7 +164,7 @@ static void device_set_realized(struct uc_struct *uc, Object *obj, bool value, E
 
     if (dev->hotplugged && !dc->hotpluggable) {
         error_set(errp, QERR_DEVICE_NO_HOTPLUG, object_get_typename(obj));
-        return;
+        return -1;
     }
 
     if (value && !dev->realized) {
@@ -181,7 +181,8 @@ static void device_set_realized(struct uc_struct *uc, Object *obj, bool value, E
 #endif
 
         if (dc->realize) {
-            dc->realize(uc, dev, &local_err);
+            if (dc->realize(uc, dev, &local_err))
+                return -1;
         }
 
         if (local_err != NULL) {
@@ -222,7 +223,7 @@ static void device_set_realized(struct uc_struct *uc, Object *obj, bool value, E
     }
 
     dev->realized = value;
-    return;
+    return 0;
 
 child_realize_fail:
     QLIST_FOREACH(bus, &dev->child_bus, sibling) {
@@ -237,7 +238,7 @@ post_realize_fail:
 
 fail:
     error_propagate(errp, local_err);
-    return;
+    return -1;
 }
 
 static void device_initfn(struct uc_struct *uc, Object *obj, void *opaque)

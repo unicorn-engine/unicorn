@@ -582,7 +582,7 @@ void cpu_resume(CPUState *cpu);
  *
  * Initializes a vCPU.
  */
-void qemu_init_vcpu(CPUState *cpu);
+int qemu_init_vcpu(CPUState *cpu);
 
 #define SSTEP_ENABLE  0x1  /* Enable simulated HW single stepping */
 #define SSTEP_NOIRQ   0x2  /* Do not use IRQ while single stepping */

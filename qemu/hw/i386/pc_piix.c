@@ -36,14 +36,14 @@
 #define GIGABYTE_ALIGN true
 
 /* PC hardware initialisation */
-static void pc_init1(struct uc_struct *uc, MachineState *machine)
+static int pc_init1(struct uc_struct *uc, MachineState *machine)
 {
-    pc_cpus_init(uc, machine->cpu_model);
+    return pc_cpus_init(uc, machine->cpu_model);
 }
 
-static void pc_init_pci(struct uc_struct *uc, MachineState *machine)
+static int pc_init_pci(struct uc_struct *uc, MachineState *machine)
 {
-    pc_init1(uc, machine);
+    return pc_init1(uc, machine);
 }
 
 #define PC_I440FX_MACHINE_OPTIONS \

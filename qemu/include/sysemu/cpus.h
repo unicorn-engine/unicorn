@@ -5,7 +5,7 @@ struct uc_struct;
 
 /* cpus.c */
 void qemu_init_cpu_loop(struct uc_struct*);
-void resume_all_vcpus(struct uc_struct*);
+int resume_all_vcpus(struct uc_struct*);
 void pause_all_vcpus(struct uc_struct*);
 void cpu_stop_current(struct uc_struct*);
 

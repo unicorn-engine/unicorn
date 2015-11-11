@@ -20,7 +20,7 @@
 #include "exec/address-spaces.h"
 
 
-static void mips_r4k_init(struct uc_struct *uc, MachineState *machine)
+static int mips_r4k_init(struct uc_struct *uc, MachineState *machine)
 {
     const char *cpu_model = machine->cpu_model;
     MIPSCPU *cpu;
@@ -38,8 +38,10 @@ static void mips_r4k_init(struct uc_struct *uc, MachineState *machine)
     cpu = cpu_mips_init(uc, cpu_model);
     if (cpu == NULL) {
         fprintf(stderr, "Unable to find CPU definition\n");
-        exit(1);
+        return -1;
     }
+
+    return 0;
 }
 
 void mips_machine_init(struct uc_struct *uc)

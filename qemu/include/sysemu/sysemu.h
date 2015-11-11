@@ -17,7 +17,7 @@ typedef struct vm_change_state_entry VMChangeStateEntry;
 #define VMRESET_SILENT   false
 #define VMRESET_REPORT   true
 
-void vm_start(struct uc_struct*);
+int vm_start(struct uc_struct*);
 
 void qemu_system_reset_request(struct uc_struct*);
 void qemu_system_shutdown_request(void);

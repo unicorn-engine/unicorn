@@ -97,6 +97,8 @@ const char *uc_strerror(uc_err code)
             return "Fetch from unaligned memory (UC_ERR_FETCH_UNALIGNED)";
         case UC_ERR_HOOK_EXIST:
             return "Hook for this type event already exists (UC_ERR_HOOK_EXIST)";
+        case UC_ERR_RESOURCE:
+            return "Insufficient resource (UC_ERR_RESOURCE)";
     }
 }
 
@@ -235,7 +237,8 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
             return UC_ERR_ARCH;
         }
 
-        machine_initialize(uc);
+        if (machine_initialize(uc))
+            return UC_ERR_RESOURCE;
 
         *result = uc;
 
@@ -502,7 +505,10 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
 
     uc->addr_end = until;
 
-    uc->vm_start(uc);
+    if (uc->vm_start(uc)) {
+        return UC_ERR_RESOURCE;
+    }
+
     if (timeout)
         enable_emu_timer(uc, timeout * 1000);   // microseconds -> nanoseconds
     uc->pause_all_vcpus(uc);

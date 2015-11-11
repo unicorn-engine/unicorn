@@ -94,8 +94,6 @@ int machine_initialize(struct uc_struct *uc)
     MachineClass *machine_class;
     MachineState *current_machine;
 
-    //printf(">>> starting machine initialize\n");
-
     module_call_init(uc, MODULE_INIT_QOM);
     register_types_object(uc);
     machine_register_types(uc);
@@ -115,11 +113,8 @@ int machine_initialize(struct uc_struct *uc)
         return -2;
     }
 
-    // printf("222\n");
     current_machine = MACHINE(uc, object_new(uc, object_class_get_name(
                     OBJECT_CLASS(machine_class))));
-    //object_property_add_child(object_get_root(), "machine",
-    //                          OBJECT(current_machine), &error_abort);
 
     current_machine->uc = uc;
     uc->cpu_exec_init_all(uc);
@@ -129,14 +124,10 @@ int machine_initialize(struct uc_struct *uc)
 
     qemu_init_cpu_loop(uc);
     qemu_mutex_lock_iothread(uc);
-    //cpu_ticks_init();
-    // printf("333\n");
 
     current_machine->cpu_model = NULL;
-    machine_class->init(uc, current_machine);
 
-    //printf(">>> ending machine initialize\n");
-    return 0;
+    return machine_class->init(uc, current_machine);
 }
 
 void qemu_system_reset_request(struct uc_struct* uc)
