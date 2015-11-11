@@ -109,6 +109,7 @@ mem_double_unmap
 mips_kseg0_1
 eflags_nosync
 00opcode_uc_crash
+eflags_noset
 
 
 #################
