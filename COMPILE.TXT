@@ -49,12 +49,14 @@ Unicorn requires few dependent packages as follows.
         Finally, install required toolchain to build C projects.
 
               - To compile for Windows 32-bit, run:
+                      $ pacman -S python2
                       $ pacman -S make
                       $ pacman -S pkg-config
                       $ pacman -S mingw-w64-i686-glib2
                       $ pacman -S mingw-w64-i686-toolchain
 
               - To compile for Windows 64-bit, run:
+                      $ pacman -S python2
                       $ pacman -S make
                       $ pacman -S pkg-config
                       $ pacman -S mingw-w64-x86_64-glib2
