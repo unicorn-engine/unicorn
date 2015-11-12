@@ -2283,21 +2283,21 @@ static void tcg_target_init(TCGContext *s)
 {
     query_facilities();
 
-    tcg_regset_set32(tcg_target_available_regs[TCG_TYPE_I32], 0, 0xffff);
-    tcg_regset_set32(tcg_target_available_regs[TCG_TYPE_I64], 0, 0xffff);
+    tcg_regset_set32(s->tcg_target_available_regs[TCG_TYPE_I32], 0, 0xffff);
+    tcg_regset_set32(s->tcg_target_available_regs[TCG_TYPE_I64], 0, 0xffff);
 
-    tcg_regset_clear(tcg_target_call_clobber_regs);
-    tcg_regset_set_reg(tcg_target_call_clobber_regs, TCG_REG_R0);
-    tcg_regset_set_reg(tcg_target_call_clobber_regs, TCG_REG_R1);
-    tcg_regset_set_reg(tcg_target_call_clobber_regs, TCG_REG_R2);
-    tcg_regset_set_reg(tcg_target_call_clobber_regs, TCG_REG_R3);
-    tcg_regset_set_reg(tcg_target_call_clobber_regs, TCG_REG_R4);
-    tcg_regset_set_reg(tcg_target_call_clobber_regs, TCG_REG_R5);
+    tcg_regset_clear(s->tcg_target_call_clobber_regs);
+    tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_R0);
+    tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_R1);
+    tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_R2);
+    tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_R3);
+    tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_R4);
+    tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_R5);
     /* The r6 register is technically call-saved, but it's also a parameter
        register, so it can get killed by setup for the qemu_st helper.  */
-    tcg_regset_set_reg(tcg_target_call_clobber_regs, TCG_REG_R6);
+    tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_R6);
     /* The return register can be considered call-clobbered.  */
-    tcg_regset_set_reg(tcg_target_call_clobber_regs, TCG_REG_R14);
+    tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_R14);
 
     tcg_regset_clear(s->reserved_regs);
     tcg_regset_set_reg(s->reserved_regs, TCG_TMP0);
@@ -2305,7 +2305,7 @@ static void tcg_target_init(TCGContext *s)
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_R0);
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_CALL_STACK);
 
-    tcg_add_target_add_op_defs(s390_op_defs);
+    tcg_add_target_add_op_defs(s, s390_op_defs);
 }
 
 #define FRAME_SIZE  ((int)(TCG_TARGET_CALL_STACK_OFFSET          \

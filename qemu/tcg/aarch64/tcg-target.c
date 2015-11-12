@@ -1718,10 +1718,10 @@ static const TCGTargetOpDef aarch64_op_defs[] = {
 
 static void tcg_target_init(TCGContext *s)
 {
-    tcg_regset_set32(tcg_target_available_regs[TCG_TYPE_I32], 0, 0xffffffff);
-    tcg_regset_set32(tcg_target_available_regs[TCG_TYPE_I64], 0, 0xffffffff);
+    tcg_regset_set32(s->tcg_target_available_regs[TCG_TYPE_I32], 0, 0xffffffff);
+    tcg_regset_set32(s->tcg_target_available_regs[TCG_TYPE_I64], 0, 0xffffffff);
 
-    tcg_regset_set32(tcg_target_call_clobber_regs, 0,
+    tcg_regset_set32(s->tcg_target_call_clobber_regs, 0,
                      (1 << TCG_REG_X0) | (1 << TCG_REG_X1) |
                      (1 << TCG_REG_X2) | (1 << TCG_REG_X3) |
                      (1 << TCG_REG_X4) | (1 << TCG_REG_X5) |
@@ -1739,7 +1739,7 @@ static void tcg_target_init(TCGContext *s)
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_TMP);
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_X18); /* platform register */
 
-    tcg_add_target_add_op_defs(aarch64_op_defs);
+    tcg_add_target_add_op_defs(s, aarch64_op_defs);
 }
 
 /* Saving pairs: (X19, X20) .. (X27, X28), (X29(fp), X30(lr)).  */

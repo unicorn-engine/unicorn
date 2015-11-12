@@ -1560,10 +1560,10 @@ static void tcg_target_init(TCGContext *s)
     }
 #endif
 
-    tcg_regset_set32(tcg_target_available_regs[TCG_TYPE_I32], 0, 0xffffffff);
-    tcg_regset_set32(tcg_target_available_regs[TCG_TYPE_I64], 0, ALL_64);
+    tcg_regset_set32(s->tcg_target_available_regs[TCG_TYPE_I32], 0, 0xffffffff);
+    tcg_regset_set32(s->tcg_target_available_regs[TCG_TYPE_I64], 0, ALL_64);
 
-    tcg_regset_set32(tcg_target_call_clobber_regs, 0,
+    tcg_regset_set32(s->tcg_target_call_clobber_regs, 0,
                      (1 << TCG_REG_G1) |
                      (1 << TCG_REG_G2) |
                      (1 << TCG_REG_G3) |
@@ -1589,7 +1589,7 @@ static void tcg_target_init(TCGContext *s)
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_T1); /* for internal use */
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_T2); /* for internal use */
 
-    tcg_add_target_add_op_defs(sparc_op_defs);
+    tcg_add_target_add_op_defs(s, sparc_op_defs);
 }
 
 #if SPARC64

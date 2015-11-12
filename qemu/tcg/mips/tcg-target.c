@@ -1776,8 +1776,8 @@ static void tcg_target_qemu_prologue(TCGContext *s)
 static void tcg_target_init(TCGContext *s)
 {
     tcg_target_detect_isa();
-    tcg_regset_set(tcg_target_available_regs[TCG_TYPE_I32], 0xffffffff);
-    tcg_regset_set(tcg_target_call_clobber_regs,
+    tcg_regset_set(s->tcg_target_available_regs[TCG_TYPE_I32], 0xffffffff);
+    tcg_regset_set(s->tcg_target_call_clobber_regs,
                    (1 << TCG_REG_V0) |
                    (1 << TCG_REG_V1) |
                    (1 << TCG_REG_A0) |
@@ -1805,7 +1805,7 @@ static void tcg_target_init(TCGContext *s)
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_SP);   /* stack pointer */
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_GP);   /* global pointer */
 
-    tcg_add_target_add_op_defs(mips_op_defs);
+    tcg_add_target_add_op_defs(s, mips_op_defs);
 }
 
 void tb_set_jmp_target1(uintptr_t jmp_addr, uintptr_t addr)
