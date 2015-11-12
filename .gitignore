@@ -110,6 +110,7 @@ mips_kseg0_1
 eflags_nosync
 00opcode_uc_crash
 eflags_noset
+mem_map_large
 
 
 #################
