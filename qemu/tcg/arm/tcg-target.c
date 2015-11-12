@@ -1994,8 +1994,8 @@ static void tcg_target_init(TCGContext *s)
         }
     }
 
-    tcg_regset_set32(tcg_target_available_regs[TCG_TYPE_I32], 0, 0xffff);
-    tcg_regset_set32(tcg_target_call_clobber_regs, 0,
+    tcg_regset_set32(s->tcg_target_available_regs[TCG_TYPE_I32], 0, 0xffff);
+    tcg_regset_set32(s->tcg_target_call_clobber_regs, 0,
                      (1 << TCG_REG_R0) |
                      (1 << TCG_REG_R1) |
                      (1 << TCG_REG_R2) |
@@ -2008,7 +2008,7 @@ static void tcg_target_init(TCGContext *s)
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_TMP);
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_PC);
 
-    tcg_add_target_add_op_defs(arm_op_defs);
+    tcg_add_target_add_op_defs(s, arm_op_defs);
 }
 
 static inline void tcg_out_ld(TCGContext *s, TCGType type, TCGReg arg,

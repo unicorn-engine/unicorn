@@ -2534,9 +2534,9 @@ static void tcg_target_init(TCGContext *s)
         have_isa_2_06 = true;
     }
 
-    tcg_regset_set32(tcg_target_available_regs[TCG_TYPE_I32], 0, 0xffffffff);
-    tcg_regset_set32(tcg_target_available_regs[TCG_TYPE_I64], 0, 0xffffffff);
-    tcg_regset_set32(tcg_target_call_clobber_regs, 0,
+    tcg_regset_set32(s->tcg_target_available_regs[TCG_TYPE_I32], 0, 0xffffffff);
+    tcg_regset_set32(s->tcg_target_available_regs[TCG_TYPE_I64], 0, 0xffffffff);
+    tcg_regset_set32(s->tcg_target_call_clobber_regs, 0,
                      (1 << TCG_REG_R0) |
                      (1 << TCG_REG_R2) |
                      (1 << TCG_REG_R3) |
@@ -2564,7 +2564,7 @@ static void tcg_target_init(TCGContext *s)
         tcg_regset_set_reg(s->reserved_regs, TCG_REG_RA);  /* return addr */
     }
 
-    tcg_add_target_add_op_defs(ppc_op_defs);
+    tcg_add_target_add_op_defs(s, ppc_op_defs);
 }
 
 #ifdef __ELF__
