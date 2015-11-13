@@ -176,7 +176,9 @@ class RunAcrossBBTest(regress.RegressTest):
             # 1010: b8 00 00 00 00          mov    eax,0x0   <
             # 1015: 40                      inc    eax       <
             # 1016: 40                      inc    eax       <
-            self.assertEqual(0x1016, mu.reg_read(UC_X86_REG_EIP), "unexpected PC (4)")
+            self.assertEqual(0x1016, mu.reg_read(UC_X86_REG_EIP),
+	                     "unexpected PC (4): 0x%x vs 0x%x" % (
+				     0x1016, mu.reg_read(UC_X86_REG_EIP)))
             showpc(mu)
 
         except UcError as e:
