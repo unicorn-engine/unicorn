@@ -38,7 +38,7 @@ class RunAcrossBBTest(regress.RegressTest):
             #######################################################################
             # emu SETUP
             #######################################################################
-	    print("\n---- test: run_all ----")
+            print("\n---- test: run_all ----")
 
 
             mu = Uc(UC_ARCH_X86, UC_MODE_32)
@@ -93,7 +93,7 @@ class RunAcrossBBTest(regress.RegressTest):
             #######################################################################
             # emu SETUP
             #######################################################################
-	    print("\n---- test: run_across_bb ----")
+            print("\n---- test: run_across_bb ----")
 
 
             mu = Uc(UC_ARCH_X86, UC_MODE_32)
