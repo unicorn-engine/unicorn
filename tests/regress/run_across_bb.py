@@ -33,11 +33,67 @@ def showpc(mu):
 
 
 class RunAcrossBBTest(regress.RegressTest):
+    def test_run_all(self):
+        try:
+            #######################################################################
+            # emu SETUP
+            #######################################################################
+	    print("\n---- test: run_all ----")
+
+
+            mu = Uc(UC_ARCH_X86, UC_MODE_32)
+
+            def hook_code(uc, address, size, user_data):
+                print(">>> Tracing instruction at 0x%x, instruction size = %u" %(address, size))
+            mu.hook_add(UC_HOOK_CODE, hook_code)
+
+            # base of CODE
+            mu.mem_map(0x1000, 0x1000)
+            mu.mem_write(0x1000, CODE)
+
+            # stack
+            mu.mem_map(0x2000, 0x1000)
+
+            mu.reg_write(UC_X86_REG_EIP, 0x1000)
+            mu.reg_write(UC_X86_REG_ESP, 0x2800)
+            self.assertEqual(0x1000, mu.reg_read(UC_X86_REG_EIP), "unexpected PC")
+            self.assertEqual(0x2800, mu.reg_read(UC_X86_REG_ESP), "unexpected SP")
+            showpc(mu)
+
+            mu.emu_start(0x1000, 0x1016)
+            # should exec the following four instructions:
+            # 1000: b8 00 00 00 00          mov    eax,0x0  <
+            # 1005: 40                      inc    eax      <
+            # 1006: 40                      inc    eax      <
+            # 1007: 68 10 10 00 00          push   0x1010   <
+            # 100c: c3                      ret   -----------+
+            # 100d: cc                      int3             |
+            # 100e: cc                      int3             |
+            # 100f: cc                      int3             |
+            # 1010: b8 00 00 00 00          mov    eax,0x0 <-+
+            # 1015: 40                      inc    eax       <
+            # 1016: 40                      inc    eax       <
+            self.assertEqual(0x1016, mu.reg_read(UC_X86_REG_EIP), "unexpected PC (2)")
+            self.assertEqual(0x2800, mu.reg_read(UC_X86_REG_ESP), "unexpected SP (2)")
+            showpc(mu)
+
+        except UcError as e:
+            if e.errno == UC_ERR_FETCH_UNMAPPED:
+                # during initial test dev, bad fetch at 0x1010, but the data is there,
+                #   and this proves it
+                print("!!! about to bail due to bad fetch... here's the data at PC:")
+                print(binascii.hexlify(mu.mem_read(mu.reg_read(UC_X86_REG_EIP), 0x8)))
+
+            self.assertFalse(True, "ERROR: %s @ 0x%x" % (e, mu.reg_read(UC_X86_REG_EIP)))
+
+
+
     def test_run_across_bb(self):
         try:
             #######################################################################
             # emu SETUP
             #######################################################################
+	    print("\n---- test: run_across_bb ----")
 
 
             mu = Uc(UC_ARCH_X86, UC_MODE_32)
