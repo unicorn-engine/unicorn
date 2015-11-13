@@ -8367,6 +8367,7 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
         gen_jmp_im(dc, tb->pc - tb->cs_base);
         gen_helper_hlt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
         dc->is_jmp = DISAS_TB_JUMP;
+		pc_ptr = pc_start;
         goto done_generating;
     }
 
