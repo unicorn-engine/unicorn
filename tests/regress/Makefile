@@ -16,6 +16,7 @@ TESTS += eflags_nosync
 TESTS += 00opcode_uc_crash
 TESTS += eflags_noset
 TESTS += mem_map_large
+TESTS += invalid_read_in_cpu_tb_exec
 
 all: $(TESTS)
 
