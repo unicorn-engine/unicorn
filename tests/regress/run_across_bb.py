@@ -316,7 +316,11 @@ class RunAcrossBBTest(regress.RegressTest):
                 print("!!! about to bail due to bad fetch...")
 		showpc(mu)
                 print("here's the data at PC:")
-                print(binascii.hexlify(mu.mem_read(mu.reg_read(UC_X86_REG_EIP), 0x8)))
+		try:
+                    print(binascii.hexlify(mu.mem_read(mu.reg_read(UC_X86_REG_EIP), 0x8)))
+		except UcError:
+		    print("pc currently unmapped")
+
 
             self.assertFalse(True, "ERROR: %s @ 0x%x" % (e, mu.reg_read(UC_X86_REG_EIP)))
 
