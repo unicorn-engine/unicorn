@@ -4,6 +4,11 @@ static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *use
   printf("hook_block(…)\n");
 }
 
+/*
+ * Disassembly according to capstone:
+ *   add byte ptr [rip - 1], 0x30
+ *   jmp 0x1000000
+ */
 #define BINARY "\x80\x05\xff\xff\xff\xff\x30\xeb\xf7\x30"
 #define MEMORY_SIZE 2 * 1024 * 1024
 #define STARTING_ADDRESS 0x1000000
