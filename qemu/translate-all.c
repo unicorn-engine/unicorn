@@ -1202,6 +1202,7 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
                 restore the CPU state */
 
                 current_tb_modified = 1;
+                // self-modifying code will restore state from TB
                 cpu_restore_state_from_tb(cpu, current_tb, cpu->mem_io_pc);
                 cpu_get_tb_cpu_state(env, &current_pc, &current_cs_base,
                                      &current_flags);
