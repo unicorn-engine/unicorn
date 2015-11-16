@@ -112,6 +112,7 @@ eflags_nosync
 eflags_noset
 mem_map_large
 invalid_read_in_cpu_tb_exec
+invalid_read_in_cpu_tb_exec_x86_64
 
 
 #################
