@@ -8360,6 +8360,8 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     // done with initializing TCG variables
     env->uc->init_tcg = true;
 
+    pc_ptr = pc_start;
+
     // early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
         // imitate the HLT instruction
@@ -8367,17 +8369,15 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
         gen_jmp_im(dc, tb->pc - tb->cs_base);
         gen_helper_hlt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
         dc->is_jmp = DISAS_TB_JUMP;
-        pc_ptr = pc_start;
         goto done_generating;
     }
 
     gen_opc_end = tcg_ctx->gen_opc_buf + OPC_MAX_SIZE;
 
     dc->is_jmp = DISAS_NEXT;
-    pc_ptr = pc_start;
     lj = -1;
     max_insns = tb->cflags & CF_COUNT_MASK;
-    if (max_insns == 0)
+    if (max_insns <= 1)
         max_insns = CF_COUNT_MASK;
 
     // Unicorn: trace this block on request
@@ -8460,7 +8460,6 @@ done_generating:
 
     if (!search_pc) {
         tb->size = pc_ptr - pc_start;
-        // tb->icount = num_insns;
     }
 
     env->uc->block_full = block_full;
