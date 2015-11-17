@@ -17,7 +17,7 @@ TESTS += 00opcode_uc_crash
 TESTS += eflags_noset
 TESTS += mem_map_large
 TESTS += invalid_read_in_cpu_tb_exec
-TESTS += invalid_read_in_cpu_tb_exec_x86_64
+TESTS += invalid_write_in_cpu_tb_exec_x86_64
 
 all: $(TESTS)
 
