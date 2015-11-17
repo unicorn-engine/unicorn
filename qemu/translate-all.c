@@ -204,7 +204,13 @@ static int cpu_gen_code(CPUArchState *env, TranslationBlock *tb, int *gen_code_s
     s->interm_time += profile_getclock() - ti;
     s->code_time -= profile_getclock();
 #endif
-    gen_code_size = tcg_gen_code(s, gen_code_buf);  // qq
+    gen_code_size = tcg_gen_code(s, gen_code_buf);
+    //printf(">>> code size = %u: ", gen_code_size);
+    //int i;
+    //for (i = 0; i < gen_code_size; i++) {
+    //    printf(" %02x", gen_code_buf[i]);
+    //}
+    //printf("\n");
     *gen_code_size_ptr = gen_code_size;
 #ifdef CONFIG_PROFILER
     s->code_time += profile_getclock();
