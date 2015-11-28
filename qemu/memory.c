@@ -53,6 +53,7 @@ MemoryRegion *memory_map_ptr(struct uc_struct *uc, ram_addr_t begin, size_t size
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
     memory_region_init_ram_ptr(uc, ram, NULL, "pc.ram", size, ptr);
+    ram->perms = UC_PROT_ALL;
     if (ram->ram_addr == -1)
         // out of memory
         return NULL;
