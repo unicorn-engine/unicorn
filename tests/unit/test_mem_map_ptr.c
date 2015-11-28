@@ -45,7 +45,7 @@ static void test_basic(void **state)
     void *host_mem = calloc(1, mem_len);
 
     /* Map a region */
-    uc_assert_success(uc_mem_map_ptr(uc, mem_start, mem_len, host_mem));
+    uc_assert_success(uc_mem_map_ptr(uc, mem_start, mem_len, UC_PROT_ALL, host_mem));
 
     /* Write some data to it */
     uc_assert_success(uc_mem_write(uc, test_addr, "test", 4));

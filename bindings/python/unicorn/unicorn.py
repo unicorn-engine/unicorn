@@ -104,7 +104,7 @@ _setup_prototype(_uc, "uc_emu_start", ucerr, uc_engine, ctypes.c_uint64, ctypes.
 _setup_prototype(_uc, "uc_emu_stop", ucerr, uc_engine)
 _setup_prototype(_uc, "uc_hook_del", ucerr, uc_engine, uc_hook_h)
 _setup_prototype(_uc, "uc_mem_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
-_setup_prototype(_uc, "uc_mem_map_ptr", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p)
+_setup_prototype(_uc, "uc_mem_map_ptr", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_mem_unmap", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t)
 _setup_prototype(_uc, "uc_mem_protect", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
 
@@ -243,8 +243,8 @@ class Uc(object):
 
 
     # map a range of memory from a raw host memory address
-    def mem_map_ptr(self, address, size, ptr):
-        status = _uc.uc_mem_map_ptr(self._uch, address, size, ptr)
+    def mem_map_ptr(self, address, size, perms, ptr):
+        status = _uc.uc_mem_map_ptr(self._uch, address, size, perms, ptr)
         if status != UC_ERR_OK:
             raise UcError(status)
 
