@@ -447,6 +447,24 @@ UNICORN_EXPORT
 uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
 
 /*
+ Map existing host memory in for emulation.
+ This API adds a memory region that can be used by emulation.
+
+ @uc: handle returned by uc_open()
+ @address: starting address of the new memory region to be mapped in.
+    This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
+ @size: size of the new memory region to be mapped in.
+    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+ @ptr: pointer to host memory backing the newly mapped memory. Existing host
+    memory permissions are preserved.
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+ for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, void *ptr);
+
+/*
  Unmap a region of emulation memory.
  This API deletes a memory mapping from the emulation memory space.
 

@@ -8,6 +8,7 @@
 #define phys_mem_clean phys_mem_clean_mipsel
 #define tb_cleanup tb_cleanup_mipsel
 #define memory_map memory_map_mipsel
+#define memory_map_ptr memory_map_ptr_mipsel
 #define memory_unmap memory_unmap_mipsel
 #define memory_free memory_free_mipsel
 #define helper_raise_exception helper_raise_exception_mipsel
