@@ -48,12 +48,12 @@ MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, ui
     return ram;
 }
 
-MemoryRegion *memory_map_ptr(struct uc_struct *uc, ram_addr_t begin, size_t size, void *ptr)
+MemoryRegion *memory_map_ptr(struct uc_struct *uc, ram_addr_t begin, size_t size, uint32_t perms, void *ptr)
 {
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
     memory_region_init_ram_ptr(uc, ram, NULL, "pc.ram", size, ptr);
-    ram->perms = UC_PROT_ALL;
+    ram->perms = perms;
     if (ram->ram_addr == -1)
         // out of memory
         return NULL;
