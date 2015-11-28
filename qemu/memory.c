@@ -48,6 +48,23 @@ MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, ui
     return ram;
 }
 
+MemoryRegion *memory_map_ptr(struct uc_struct *uc, ram_addr_t begin, size_t size, void *ptr)
+{
+    MemoryRegion *ram = g_new(MemoryRegion, 1);
+
+    memory_region_init_ram_ptr(uc, ram, NULL, "pc.ram", size, ptr);
+    if (ram->ram_addr == -1)
+        // out of memory
+        return NULL;
+
+    memory_region_add_subregion(get_system_memory(uc), begin, ram);
+
+    if (uc->current_cpu)
+        tlb_flush(uc->current_cpu, 1);
+
+    return ram;
+}
+
 void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 {
     int i;
