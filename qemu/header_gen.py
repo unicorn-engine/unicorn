@@ -14,6 +14,7 @@ symbols = (
     'phys_mem_clean',
     'tb_cleanup',
     'memory_map',
+    'memory_map_ptr',
     'memory_unmap',
     'memory_free',
     'helper_raise_exception',
