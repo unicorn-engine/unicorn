@@ -250,7 +250,7 @@ static void test_i386_map_ptr(void)
     }
 
     // malloc 2MB memory for this emulation
-    mem = malloc(2 * 1024 * 1024);
+    mem = calloc(1, 2 * 1024 * 1024);
     if (mem == NULL) {
         printf("Failed to malloc()\n");
         return;

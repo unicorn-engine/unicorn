@@ -571,7 +571,7 @@ static uc_err _hook_mem_access(uc_engine *uc, uc_hook_type type,
 }
 
 // common setup/error checking shared between uc_mem_map and uc_mem_map_ptr
-static uc_err mem_map_start(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
+static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, MemoryRegion *block)
 {
     MemoryRegion **regions;
 
@@ -591,6 +591,9 @@ static uc_err mem_map_start(uc_engine *uc, uint64_t address, size_t size, uint32
     if ((perms & ~UC_PROT_ALL) != 0)
         return UC_ERR_ARG;
 
+    if (block == NULL)
+        return UC_ERR_NOMEM;
+
     if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
         regions = (MemoryRegion**)realloc(uc->mapped_blocks,
                 sizeof(MemoryRegion*) * (uc->mapped_block_count + MEM_BLOCK_INCR));
@@ -600,16 +603,7 @@ static uc_err mem_map_start(uc_engine *uc, uint64_t address, size_t size, uint32
         uc->mapped_blocks = regions;
     }
 
-    return UC_ERR_OK;
-}
-
-// common final step shared by uc_mem_map and uc_mem_map_ptr
-static uc_err mem_map_finish(uc_engine *uc, MemoryRegion *block)
-{
     uc->mapped_blocks[uc->mapped_block_count] = block;
-    if (uc->mapped_blocks[uc->mapped_block_count] == NULL)
-        return UC_ERR_NOMEM;
-
     uc->mapped_block_count++;
 
     return UC_ERR_OK;
@@ -618,25 +612,16 @@ static uc_err mem_map_finish(uc_engine *uc, MemoryRegion *block)
 UNICORN_EXPORT
 uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 {
-    uc_err err;
-    if ((err = mem_map_start(uc, address, size, perms)) != UC_ERR_OK)
-        return err;
-
-    return mem_map_finish(uc, uc->memory_map(uc, address, size, perms));
+    return mem_map(uc, address, size, perms, uc->memory_map(uc, address, size, perms));
 }
 
 UNICORN_EXPORT
 uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, void *ptr)
 {
-    uc_err err;
-
     if (ptr == NULL)
         return UC_ERR_ARG;
 
-    if ((err = mem_map_start(uc, address, size, UC_PROT_ALL)) != UC_ERR_OK)
-        return err;
-
-    return mem_map_finish(uc, uc->memory_map_ptr(uc, address, size, ptr));
+    return mem_map(uc, address, size, UC_PROT_ALL, uc->memory_map_ptr(uc, address, size, ptr));
 }
 
 // Create a backup copy of the indicated MemoryRegion.
