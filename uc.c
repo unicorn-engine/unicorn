@@ -628,10 +628,11 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 UNICORN_EXPORT
 uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, void *ptr)
 {
+    uc_err err;
+
     if (ptr == NULL)
         return UC_ERR_ARG;
 
-    uc_err err;
     if ((err = mem_map_start(uc, address, size, UC_PROT_ALL)) != UC_ERR_OK)
         return err;
 
