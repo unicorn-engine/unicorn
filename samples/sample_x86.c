@@ -256,7 +256,7 @@ static void test_i386_map_ptr(void)
         return;
     }
 
-    uc_mem_map_ptr(uc, ADDRESS, 2 * 1024 * 1024, mem);
+    uc_mem_map_ptr(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL, mem);
 
     // write machine code to be emulated to memory
     if (!memcpy(mem, X86_CODE32, sizeof(X86_CODE32) - 1)) {

@@ -616,12 +616,12 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 }
 
 UNICORN_EXPORT
-uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, void *ptr)
+uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, void *ptr)
 {
     if (ptr == NULL)
         return UC_ERR_ARG;
 
-    return mem_map(uc, address, size, UC_PROT_ALL, uc->memory_map_ptr(uc, address, size, ptr));
+    return mem_map(uc, address, size, UC_PROT_ALL, uc->memory_map_ptr(uc, address, size, perms, ptr));
 }
 
 // Create a backup copy of the indicated MemoryRegion.
