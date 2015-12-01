@@ -114,6 +114,7 @@ mem_map_large
 invalid_read_in_cpu_tb_exec
 invalid_write_in_cpu_tb_exec_x86_64
 x86_16_segfault
+mips_invalid_read_of_size_4_when_tracing
 
 
 #################

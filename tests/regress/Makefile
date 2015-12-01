@@ -19,6 +19,7 @@ TESTS += mem_map_large
 TESTS += invalid_read_in_cpu_tb_exec
 TESTS += invalid_write_in_cpu_tb_exec_x86_64
 TESTS += x86_16_segfault
+TESTS += mips_invalid_read_of_size_4_when_tracing
 
 all: $(TESTS)
 
