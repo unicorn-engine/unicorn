@@ -26,8 +26,8 @@
 // Zak Escano  -  November 2015
 // 
 
-#ifndef _UNICORN_DYNLOAD_H_
-#define _UNICORN_DYNLOAD_H_
+#ifndef UNICORN_DYNLOAD_H
+#define UNICORN_DYNLOAD_H
 
 // Undefine shared here so that functions aren't defined as: "__declspec(dllexport)"
 #ifdef UNICORN_SHARED
@@ -63,5 +63,5 @@ bool uc_dyn_free(void);
 }
 #endif
 
-#endif // _UNICORN_DYNLOAD_H_
+#endif // UNICORN_DYNLOAD_H
 
