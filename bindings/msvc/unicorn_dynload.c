@@ -95,127 +95,148 @@ static uc_mem_protect_t gp_uc_mem_protect = NULL;
 
 bool uc_dyn_load(const char* path, int flags)
 {
-	if( path == NULL )
-	{
-		path = DYNLOAD_DEFPATH;
-	}
-	
-	if( g_dyn_handle )
-	{
-		if( !uc_dyn_free() )
-			return false;
-	}
-	
-	g_dyn_handle = DYNLOAD_LOADLIB(path, flags);
-	if( g_dyn_handle == NULL )
-	{
-		//int err = DYNLOAD_GETERROR();
-		//printf("Error loading %s: Last error is %X\n", path, err);
-		return false;
-	}
-	
-	gp_uc_version = (uc_version_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_version");
-	gp_uc_arch_supported = (uc_arch_supported_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_arch_supported");
-	gp_uc_open = (uc_open_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_open");
-	gp_uc_close = (uc_close_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_close");
-	gp_uc_errno = (uc_errno_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_errno");
-	gp_uc_strerror = (uc_strerror_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_strerror");
-	gp_uc_reg_write = (uc_reg_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_write");
-	gp_uc_reg_read = (uc_reg_read_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_read");
-	gp_uc_mem_write = (uc_mem_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_write");
-	gp_uc_mem_read = (uc_mem_read_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_read");
-	gp_uc_emu_start = (uc_emu_start_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_emu_start");
-	gp_uc_emu_stop = (uc_emu_stop_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_emu_stop");
-	gp_uc_hook_add = (uc_hook_add_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_hook_add");
-	gp_uc_hook_del = (uc_hook_del_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_hook_del");
-	gp_uc_mem_map = (uc_mem_map_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_map");
-	gp_uc_mem_unmap = (uc_mem_unmap_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_unmap");
-	gp_uc_mem_protect = (uc_mem_protect_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_protect");
-	return true;
+    if (path == NULL) {
+        path = DYNLOAD_DEFPATH;
+    }
+
+    if (g_dyn_handle) {
+        if (!uc_dyn_free())
+            return false;
+    }
+
+    g_dyn_handle = DYNLOAD_LOADLIB(path, flags);
+    if (g_dyn_handle == NULL) {
+        //int err = DYNLOAD_GETERROR();
+        //printf("Error loading %s: Last error is %X\n", path, err);
+        return false;
+    }
+
+    gp_uc_version = (uc_version_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_version");
+    gp_uc_arch_supported = (uc_arch_supported_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_arch_supported");
+    gp_uc_open = (uc_open_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_open");
+    gp_uc_close = (uc_close_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_close");
+    gp_uc_errno = (uc_errno_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_errno");
+    gp_uc_strerror = (uc_strerror_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_strerror");
+    gp_uc_reg_write = (uc_reg_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_write");
+    gp_uc_reg_read = (uc_reg_read_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_read");
+    gp_uc_mem_write = (uc_mem_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_write");
+    gp_uc_mem_read = (uc_mem_read_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_read");
+    gp_uc_emu_start = (uc_emu_start_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_emu_start");
+    gp_uc_emu_stop = (uc_emu_stop_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_emu_stop");
+    gp_uc_hook_add = (uc_hook_add_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_hook_add");
+    gp_uc_hook_del = (uc_hook_del_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_hook_del");
+    gp_uc_mem_map = (uc_mem_map_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_map");
+    gp_uc_mem_unmap = (uc_mem_unmap_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_unmap");
+    gp_uc_mem_protect = (uc_mem_protect_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_protect");
+    return true;
 }
 
 bool uc_dyn_free(void)
 {
-	if( g_dyn_handle==NULL )
-		return true;
-	
-	DYNLOAD_FREELIB(g_dyn_handle);
-	g_dyn_handle = NULL;
-	
-	gp_uc_version = NULL;
-	gp_uc_arch_supported = NULL;
-	gp_uc_open = NULL;
-	gp_uc_close = NULL;
-	gp_uc_errno = NULL;
-	gp_uc_strerror = NULL;
-	gp_uc_reg_write = NULL;
-	gp_uc_reg_read = NULL;
-	gp_uc_mem_write = NULL;
-	gp_uc_mem_read = NULL;
-	gp_uc_emu_start = NULL;
-	gp_uc_emu_stop = NULL;
-	gp_uc_hook_add = NULL;
-	gp_uc_hook_del = NULL;
-	gp_uc_mem_map = NULL;
-	gp_uc_mem_unmap = NULL;
-	gp_uc_mem_protect = NULL;
-	return true;
+    if (g_dyn_handle==NULL)
+        return true;
+
+    DYNLOAD_FREELIB(g_dyn_handle);
+    g_dyn_handle = NULL;
+
+    gp_uc_version = NULL;
+    gp_uc_arch_supported = NULL;
+    gp_uc_open = NULL;
+    gp_uc_close = NULL;
+    gp_uc_errno = NULL;
+    gp_uc_strerror = NULL;
+    gp_uc_reg_write = NULL;
+    gp_uc_reg_read = NULL;
+    gp_uc_mem_write = NULL;
+    gp_uc_mem_read = NULL;
+    gp_uc_emu_start = NULL;
+    gp_uc_emu_stop = NULL;
+    gp_uc_hook_add = NULL;
+    gp_uc_hook_del = NULL;
+    gp_uc_mem_map = NULL;
+    gp_uc_mem_unmap = NULL;
+    gp_uc_mem_protect = NULL;
+    return true;
 }
 
 
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
-{ return gp_uc_version(major, minor); }
+{
+    return gp_uc_version(major, minor);
+}
 
 bool uc_arch_supported(uc_arch arch)
-{ return gp_uc_arch_supported(arch); }
+{
+    return gp_uc_arch_supported(arch);
+}
 
 uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **uc)
-{ return gp_uc_open(arch, mode, uc); }
+{
+    return gp_uc_open(arch, mode, uc);
+}
 
 uc_err uc_close(uc_engine *uc)
-{ return gp_uc_close(uc); }
+{
+    return gp_uc_close(uc);
+}
 
 uc_err uc_errno(uc_engine *uc)
-{ return gp_uc_errno(uc); }
+{
+    return gp_uc_errno(uc);
+}
 
 const char *uc_strerror(uc_err code)
-{ return gp_uc_strerror(code); }
+{
+    return gp_uc_strerror(code);
+}
 
 uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
-{ return gp_uc_reg_write(uc, regid, value); }
+{
+    return gp_uc_reg_write(uc, regid, value);
+}
 
 uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
-{ return gp_uc_reg_read(uc, regid, value); }
+{
+    return gp_uc_reg_read(uc, regid, value);
+}
 
 uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *bytes, size_t size)
-{ return gp_uc_mem_write(uc, address, bytes, size); }
+{
+    return gp_uc_mem_write(uc, address, bytes, size);
+}
 
 uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size)
-{ return gp_uc_mem_read(uc, address, bytes, size); }
+{
+    return gp_uc_mem_read(uc, address, bytes, size);
+}
 
 uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count)
-{ return gp_uc_emu_start(uc, begin, until, timeout, count); }
+{
+    return gp_uc_emu_start(uc, begin, until, timeout, count);
+}
 
 uc_err uc_emu_stop(uc_engine *uc)
-{ return gp_uc_emu_stop(uc); }
+{
+    return gp_uc_emu_stop(uc);
+}
 
 uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, ...)
 {
-	va_list valist;
+    va_list valist;
     uc_err ret = UC_ERR_OK;
-	int id;
+    int id;
     uint64_t begin, end;
-	va_start(valist, user_data);
-	
-	switch(type) {
+    va_start(valist, user_data);
+
+    switch(type) {
         default:
             break;
         case UC_HOOK_INTR:
-			// 0 extra args
-			ret = gp_uc_hook_add(uc, hh, type, callback, user_data);
-			break;
-		case UC_HOOK_INSN:
-			// 1 extra arg
+            // 0 extra args
+            ret = gp_uc_hook_add(uc, hh, type, callback, user_data);
+            break;
+        case UC_HOOK_INSN:
+            // 1 extra arg
             id = va_arg(valist, int);
             ret = gp_uc_hook_add(uc, hh, type, callback, user_data, id);
             break;
@@ -224,26 +245,34 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *u
         case UC_HOOK_MEM_READ:
         case UC_HOOK_MEM_WRITE:
         case UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE:
-			// 2 extra arg
+            // 2 extra arg
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
             ret = gp_uc_hook_add(uc, hh, type, callback, user_data, begin, end);
             break;
     }
 
-	va_end(valist);
-	return ret;
+    va_end(valist);
+    return ret;
 }
 
 uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
-{ return gp_uc_hook_del(uc, hh); }
+{
+    return gp_uc_hook_del(uc, hh);
+}
 
 uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
-{ return gp_uc_mem_map(uc, address, size, perms); }
+{
+    return gp_uc_mem_map(uc, address, size, perms);
+}
 
 uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size)
-{ return gp_uc_mem_unmap(uc, address, size); }
+{
+    return gp_uc_mem_unmap(uc, address, size);
+}
 
 uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
-{ return gp_uc_mem_protect(uc, address, size, perms); }
+{
+    return gp_uc_mem_protect(uc, address, size, perms);
+}
 
