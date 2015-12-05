@@ -28,6 +28,7 @@ func errReturn(err C.uc_err) error {
 type Unicorn interface {
 	MemMap(addr, size uint64) error
 	MemMapProt(addr, size uint64, prot int) error
+	MemProtect(addr, size uint64, prot int) error
 	MemUnmap(addr, size uint64) error
 	MemRead(addr, size uint64) ([]byte, error)
 	MemReadInto(dst []byte, addr uint64) error
@@ -126,6 +127,10 @@ func (u *uc) MemMapProt(addr, size uint64, prot int) error {
 
 func (u *uc) MemMap(addr, size uint64) error {
 	return u.MemMapProt(addr, size, PROT_ALL)
+}
+
+func (u *uc) MemProtect(addr, size uint64, prot int) error {
+	return errReturn(C.uc_mem_protect(u.handle, C.uint64_t(addr), C.size_t(size), C.uint32_t(prot)))
 }
 
 func (u *uc) MemUnmap(addr, size uint64) error {
