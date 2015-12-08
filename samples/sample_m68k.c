@@ -3,8 +3,28 @@
 
 /* Sample code to demonstrate how to emulate m68k code */
 
+// windows specific
+#ifdef _MSC_VER
+#include <io.h>
+#include <windows.h>
+#define PRIx64 "llX"
+#ifdef DYNLOAD
+#include <unicorn/unicorn_dynload.h>
+#else // DYNLOAD
+#include <unicorn/unicorn.h>
+#ifdef _WIN64
+#pragma comment(lib, "unicorn_staload64.lib")
+#else // _WIN64
+#pragma comment(lib, "unicorn_staload.lib")
+#endif // _WIN64
+#endif // DYNLOAD
+
+// posix specific
+#else // _MSC_VER
+#include <unistd.h>
 #include <inttypes.h>
 #include <unicorn/unicorn.h>
+#endif // _MSC_VER
 
 // code to be emulated
 #define M68K_CODE "\x76\xed" // movq #-19, %d3
@@ -140,6 +160,24 @@ static void test_m68k(void)
 
 int main(int argc, char **argv, char **envp)
 {
-    test_m68k();
+	// dynamically load shared library
+#ifdef DYNLOAD
+	if( !uc_dyn_load(NULL, 0) )
+	{
+		printf("Error dynamically loading shared library.\n");
+		printf("Please check that unicorn.dll/unicorn.so is available as well as\n");
+		printf("any other dependent dll/so files.\n");
+		printf("The easiest way is to place them in the same directory as this app.\n");
+		return 1;
+	}
+#endif
+    
+	test_m68k();
+
+    // dynamically free shared library
+#ifdef DYNLOAD
+    uc_dyn_free();
+#endif
+    
     return 0;
 }

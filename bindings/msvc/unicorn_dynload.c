@@ -26,6 +26,9 @@
 // Zak Escano  -  November 2015
 // 
 
+// Only use this if DYNLOAD is set in preprocessor definitions
+#ifdef DYNLOAD
+
 // This is to detect whether we are loading a dll in windows or a so in linux.
 #ifdef _MSC_VER
 #define WINDOWS_DLL	1
@@ -276,3 +279,4 @@ uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t per
     return gp_uc_mem_protect(uc, address, size, perms);
 }
 
+#endif // DYNLOAD
