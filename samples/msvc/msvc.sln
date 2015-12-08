@@ -1,21 +1,21 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mem_apis", "mem_apis\mem_apis.vcxproj", "{ECA2292F-FD4F-4943-B0FC-093B6D35FEBA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "mem_apis", "msvc_mem_apis\mem_apis.vcxproj", "{ECA2292F-FD4F-4943-B0FC-093B6D35FEBA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_arm", "sample_arm\sample_arm.vcxproj", "{8FF2F8F8-14CE-4899-998F-2C0BBE43FB6E}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_arm", "msvc_sample_arm\sample_arm.vcxproj", "{8FF2F8F8-14CE-4899-998F-2C0BBE43FB6E}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_arm64", "sample_arm64\sample_arm64.vcxproj", "{43AEBCD7-BD18-4F0D-8AF8-536F62F92AAD}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_arm64", "msvc_sample_arm64\sample_arm64.vcxproj", "{43AEBCD7-BD18-4F0D-8AF8-536F62F92AAD}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_m68k", "sample_m68k\sample_m68k.vcxproj", "{39ABA118-6289-43D6-AB6C-8B3AB3CB9390}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_m68k", "msvc_sample_m68k\sample_m68k.vcxproj", "{39ABA118-6289-43D6-AB6C-8B3AB3CB9390}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_mips", "sample_mips\sample_mips.vcxproj", "{5E004A76-1625-44F1-A1EA-64C4FD15F642}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_mips", "msvc_sample_mips\sample_mips.vcxproj", "{5E004A76-1625-44F1-A1EA-64C4FD15F642}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_x86", "sample_x86\sample_x86.vcxproj", "{F8AD989E-D273-42DA-80A6-B6466EB134CA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_x86", "msvc_sample_x86\sample_x86.vcxproj", "{F8AD989E-D273-42DA-80A6-B6466EB134CA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_sparc", "sample_sparc\sample_sparc.vcxproj", "{2906001D-9B80-4400-8B3A-4445CDAED54F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "sample_sparc", "msvc_sample_sparc\sample_sparc.vcxproj", "{2906001D-9B80-4400-8B3A-4445CDAED54F}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shellcode", "shellcode\shellcode.vcxproj", "{4A8F2E9A-C2D8-4A93-8451-5F3BD73A4227}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shellcode", "msvc_shellcode\shellcode.vcxproj", "{4A8F2E9A-C2D8-4A93-8451-5F3BD73A4227}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
