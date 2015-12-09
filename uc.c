@@ -184,13 +184,18 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 uc->init_arch = arm_uc_init;
 
                 // verify mode
-                if (mode != UC_MODE_ARM && mode != UC_MODE_THUMB) {
+                /* TODO: set UC_MODE_ARM to non-null value to simplify logic */
+                if ((mode & ~UC_MODE_BYTESWAP) != UC_MODE_ARM && (mode & ~UC_MODE_BYTESWAP) != UC_MODE_THUMB) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
 
-                if (mode == UC_MODE_THUMB)
+                if (mode & UC_MODE_THUMB)
                     uc->thumb = 1;
+
+                if (mode & UC_MODE_BYTESWAP)
+                    uc->byteswap = 1;
+
                 break;
 #endif
 #ifdef UNICORN_HAS_ARM64

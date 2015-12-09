@@ -35,6 +35,7 @@ module Common =
    let UC_MODE_V9 = 16
    let UC_MODE_QPX = 16
    let UC_MODE_BIG_ENDIAN = 1073741824
+   let UC_MODE_BYTESWAP = 1073741824
    let UC_MODE_MIPS32 = 4
    let UC_MODE_MIPS64 = 8
 

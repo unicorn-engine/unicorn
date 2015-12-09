@@ -169,8 +169,9 @@ static void arm_cpu_reset(CPUState *s)
         env->thumb = initial_pc & 1;
     }
 
-    // Unicorn: force Thumb mode by setting of uc_open()
+    // Unicorn: force Thumb and byteswap mode by setting of uc_open()
     env->thumb = env->uc->thumb;
+    env->bswap_code = env->uc->byteswap;
 
     if (env->cp15.c1_sys & SCTLR_V) {
         env->regs[15] = 0xFFFF0000;

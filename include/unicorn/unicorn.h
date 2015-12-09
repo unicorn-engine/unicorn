@@ -98,6 +98,7 @@ typedef enum uc_mode {
     UC_MODE_V9 = 1 << 4, // SparcV9 mode (Sparc)
     UC_MODE_QPX = 1 << 4, // Quad Processing eXtensions mode (PPC)
     UC_MODE_BIG_ENDIAN = 1 << 30,   // big-endian mode
+    UC_MODE_BYTESWAP = 1 << 30,     // ARM instruction byteswapping
     UC_MODE_MIPS32 = UC_MODE_32,    // Mips32 ISA (Mips)
     UC_MODE_MIPS64 = UC_MODE_64,    // Mips64 ISA (Mips)
 } uc_mode;
