@@ -11,7 +11,7 @@ class MipsBranchDelay(regress.RegressTest):
 
         def disas(code, addr):
             for i in md.disasm(code, addr):
-                print '0x%x: %s %s' % (i.address, str(i.bytes).encode('hex'), i.op_str)
+                print '0x%x: %s %-6s %s' % (i.address, str(i.bytes).encode('hex'), i.mnemonic, i.op_str)
 
         def hook_code(uc, addr, size, _):
             mem = str(uc.mem_read(addr, size))
