@@ -23,6 +23,7 @@ TESTS += mips_invalid_read_of_size_4_when_tracing
 TESTS += invalid_read_in_tb_flush_x86_64
 TESTS += sparc_jump_to_zero
 TESTS += mips_delay_slot_code_hook
+TESTS += mem_nofree
 
 all: $(TESTS)
 
