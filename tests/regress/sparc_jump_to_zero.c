@@ -7,7 +7,7 @@
 #define MEMORY_SIZE 2 * 1024 * 1024
 #define MEMORY_PERMISSIONS UC_PROT_ALL
 
-#define BINARY_CODE "\x02\xbc"
+#define BINARY_CODE "\x02\xbc\x00\x00"
 
 int main(int argc, char **argv, char **envp) {
   uc_engine *uc;
