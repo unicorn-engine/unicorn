@@ -258,6 +258,9 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc)
 {
+    MemoryRegion *mr;
+    int i;
+
     if (uc->release)
         uc->release(uc->tcg_ctx);
 
@@ -271,11 +274,19 @@ uc_err uc_close(uc_engine *uc)
 
     g_free(uc->tcg_ctx);
 
+    for (i = 0; i < uc->mapped_block_count; i++) {
+        mr = uc->mapped_blocks[i];
+        mr->destructor(mr);
+        if((char *)mr->name)
+            g_free((char *)mr->name);
+        if(mr->ioeventfds)
+            g_free(mr->ioeventfds);
+    }
+
     free((void*) uc->system_memory->name);
     g_free(uc->system_memory);
     g_hash_table_destroy(uc->type_table);
 
-    int i;
     for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
         free(uc->ram_list.dirty_memory[i]);
     }

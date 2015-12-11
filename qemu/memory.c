@@ -68,6 +68,11 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
             uc->mapped_block_count--;
             //shift remainder of array down over deleted pointer
             memcpy(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
+            mr->destructor(mr);
+            if((char *)mr->name)
+                g_free((char *)mr->name);
+            if(mr->ioeventfds)
+                g_free(mr->ioeventfds);
             break;
         }
     }
