@@ -277,10 +277,8 @@ uc_err uc_close(uc_engine *uc)
     for (i = 0; i < uc->mapped_block_count; i++) {
         mr = uc->mapped_blocks[i];
         mr->destructor(mr);
-        if((char *)mr->name)
-            g_free((char *)mr->name);
-        if(mr->ioeventfds)
-            g_free(mr->ioeventfds);
+        g_free((char *)mr->name);
+        g_free(mr->ioeventfds);
     }
 
     free((void*) uc->system_memory->name);
