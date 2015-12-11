@@ -119,6 +119,7 @@ mips_invalid_read_of_size_4_when_tracing
 invalid_read_in_tb_flush_x86_64
 sparc_jump_to_zero
 mem_nofree
+mips_delay_slot_code_hook
 
 
 #################
