@@ -7,6 +7,7 @@
 #include "unicorn_test.h"
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 /* Called before every test to set up a new instance */
 static int setup(void **state)
@@ -59,7 +60,7 @@ static int number_of_memory_reads = 0;
 static void hook_mem64(uc_engine *uc, uc_mem_type type, uint64_t address, int size, int64_t value, void *user_data)
 {
   number_of_memory_reads += 1;
-  printf(">>> Memory is being accessed at 0x%lx, data size = %u\n", address, size);
+  printf(">>> Memory is being accessed at 0x%"PRIx64 ", data size = %u\n", address, size);
 }
 
 //if a read is performed from a big address whith a non-zero last digit, multiple read events are triggered
@@ -106,7 +107,7 @@ static void test_high_address_read_values(void **state)
     uint64_t rax = 0;
     uc_assert_success(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
     if(rax != 0x4242424242424242) {
-        fail_msg("wrong memory read from code %lx", rax);
+        fail_msg("wrong memory read from code %"PRIx64, rax);
     }
 }
 
