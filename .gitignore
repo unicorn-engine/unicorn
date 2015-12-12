@@ -122,6 +122,7 @@ mem_nofree
 mips_delay_slot_code_hook
 
 test_mem_high
+rw_hookstack
 
 
 #################
