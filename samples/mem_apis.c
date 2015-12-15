@@ -26,7 +26,7 @@
 #include <windows.h>
 #define PRIx64 "llX"
 #ifdef DYNLOAD
-#include <unicorn/unicorn_dynload.h>
+#include "unicorn_dynload.h"
 #else // DYNLOAD
 #include <unicorn/unicorn.h>
 #ifdef _WIN64

@@ -34,7 +34,7 @@
 #define WINDOWS_DLL	1
 #endif
 
-#include <unicorn/unicorn_dynload.h>
+#include "unicorn_dynload.h"
 
 #ifdef WINDOWS_DLL
 #include <Windows.h>
