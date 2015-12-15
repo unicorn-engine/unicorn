@@ -33,7 +33,7 @@
 #ifdef UNICORN_SHARED
 #undef UNICORN_SHARED
 #endif
-#include "unicorn.h"
+#include <unicorn/unicorn.h>
 
 #ifdef __cplusplus
 extern "C" {
