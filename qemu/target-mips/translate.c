@@ -11343,7 +11343,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_s
     n_bytes = 2;
 
     // Unicorn: trace this instruction on request
-    if (!is_bc_slot && env->uc->hook_insn) {
+    if (env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace) {
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
@@ -13945,7 +13945,7 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool is_b
     }
 
     // Unicorn: trace this instruction on request
-    if (!is_bc_slot && env->uc->hook_insn) {
+    if (env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace) {
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
@@ -18526,7 +18526,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot, b
     }
 
     // Unicorn: trace this instruction on request
-    if (!is_bc_slot && env->uc->hook_insn) {
+    if (env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
         if (trace) {
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
