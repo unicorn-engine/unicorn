@@ -11322,7 +11322,7 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
     return 4;
 }
 
-static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot, bool *insn_need_patch)
+static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv **cpu_gpr = (TCGv **)tcg_ctx->cpu_gpr;
@@ -13930,7 +13930,7 @@ static void decode_micromips32_opc (CPUMIPSState *env, DisasContext *ctx,
     }
 }
 
-static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot, bool *insn_need_patch)
+static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch)
 {
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TCGv **cpu_gpr = (TCGv **)tcg_ctx->cpu_gpr;
@@ -18507,7 +18507,7 @@ static void gen_msa(CPUMIPSState *env, DisasContext *ctx)
     }
 }
 
-static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot, bool *insn_need_patch)
+static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 #if defined(TARGET_MIPS64)
@@ -19176,7 +19176,6 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     int max_insns;
     int insn_bytes;
     int is_slot = 0;
-    bool is_bc_slot = false;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TCGArg *save_opparam_ptr = NULL;
     bool block_full = false;
@@ -19279,18 +19278,17 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
                 save_opparam_ptr = tcg_ctx->gen_opparam_ptr;
 
             is_slot = ctx.hflags & MIPS_HFLAG_BMASK;
-            is_bc_slot = (is_slot & MIPS_HFLAG_BMASK_BASE) == MIPS_HFLAG_BC;
 
             if (!(ctx.hflags & MIPS_HFLAG_M16)) {
                 ctx.opcode = cpu_ldl_code(env, ctx.pc);
                 insn_bytes = 4;
-                decode_opc(env, &ctx, is_bc_slot, &insn_need_patch);
+                decode_opc(env, &ctx, &insn_need_patch);
             } else if (ctx.insn_flags & ASE_MICROMIPS) {
                 ctx.opcode = cpu_lduw_code(env, ctx.pc);
-                insn_bytes = decode_micromips_opc(env, &ctx, is_bc_slot, &insn_need_patch);
+                insn_bytes = decode_micromips_opc(env, &ctx, &insn_need_patch);
             } else if (ctx.insn_flags & ASE_MIPS16) {
                 ctx.opcode = cpu_lduw_code(env, ctx.pc);
-                insn_bytes = decode_mips16_opc(env, &ctx, is_bc_slot, &insn_need_patch);
+                insn_bytes = decode_mips16_opc(env, &ctx, &insn_need_patch);
             } else {
                 generate_exception(&ctx, EXCP_RI);
                 ctx.bstate = BS_STOP;
