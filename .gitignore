@@ -6,6 +6,7 @@
 *.dSYM
 *.so
 *.so.*
+*.exe
 
 qemu/config-all-devices.mak
 

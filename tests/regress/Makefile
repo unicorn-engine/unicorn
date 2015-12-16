@@ -1,5 +1,11 @@
-CFLAGS += -I../include
+
+CFLAGS += -I../../include
+
+ifeq (MING,$(findstring MING,$(shell uname -s)))
+LDFLAGS += ../../unicorn.lib $(shell pkg-config --libs glib-2.0) -lpthread -lm
+else
 LDFLAGS += ../../libunicorn.a $(shell pkg-config --libs glib-2.0) -lpthread -lm
+endif
 
 TESTS = map_crash map_write
 TESTS += sigill sigill2
