@@ -232,9 +232,17 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *u
     va_start(valist, user_data);
 
     switch(type) {
+        // note this default case will capture any combinations of
+        // UC_HOOK_MEM_*_PROT and UC_HOOK_MEM_*_UNMAPPED
         default:
-            break;
         case UC_HOOK_INTR:
+        case UC_HOOK_MEM_READ_UNMAPPED:
+        case UC_HOOK_MEM_WRITE_UNMAPPED:
+        case UC_HOOK_MEM_FETCH_UNMAPPED:
+        case UC_HOOK_MEM_READ_PROT:
+        case UC_HOOK_MEM_WRITE_PROT:
+        case UC_HOOK_MEM_FETCH_PROT:
+        case UC_HOOK_MEM_FETCH:
             // 0 extra args
             ret = gp_uc_hook_add(uc, hh, type, callback, user_data);
             break;
@@ -248,7 +256,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *u
         case UC_HOOK_MEM_READ:
         case UC_HOOK_MEM_WRITE:
         case UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE:
-            // 2 extra arg
+            // 2 extra args
             begin = va_arg(valist, uint64_t);
             end = va_arg(valist, uint64_t);
             ret = gp_uc_hook_add(uc, hh, type, callback, user_data, begin, end);
