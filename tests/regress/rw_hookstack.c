@@ -49,32 +49,32 @@ int main(int argc, char *argv[])
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
     if(err) {
         printf("Failed on uc_open() with error returned: %s\n", uc_strerror(err));
-        return;
+        return 1;
     }
 
     err = uc_mem_map(uc, ADDRESS, SIZE, UC_PROT_ALL);
     if(err != UC_ERR_OK) {
         printf("Failed to map memory %s\n", uc_strerror(err));
-        return;
+        return 1;
     }
 
     err = uc_mem_write(uc, ADDRESS, CODE32, sizeof(CODE32) - 1);
     if(err != UC_ERR_OK) {
         printf("Failed to write to memory %s\n", uc_strerror(err));
-        return;
+        return 1;
     }
 
 loop:
     err = uc_mem_map(uc, stkval, STACK_SIZE, UC_PROT_ALL);
     if(err != UC_ERR_OK) {
         printf("Failed to map memory %s\n", uc_strerror(err));
-        return;
+        return 1;
     }
 
     err = uc_mem_write(uc, ESP, &val, sizeof(val));
     if(err != UC_ERR_OK) {
         printf("Failed to write to memory %s\n", uc_strerror(err));
-        return;
+        return 1;
     }
 
 
@@ -88,7 +88,7 @@ loop:
         printf("Failed on uc_emu_start() with error returned %u: %s\n", err, uc_strerror(err));
 
         uc_close(uc);
-        return;
+        return 1;
     }
 
     uc_reg_read(uc, UC_X86_REG_EAX, &EAX);
