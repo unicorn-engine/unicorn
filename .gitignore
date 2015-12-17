@@ -123,6 +123,7 @@ mem_nofree
 mips_delay_slot_code_hook
 threaded_emu_start
 
+test_mem_map_ptr
 test_mem_high
 rw_hookstack
 
