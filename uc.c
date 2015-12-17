@@ -258,6 +258,8 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc)
 {
+    int i;
+
     if (uc->release)
         uc->release(uc->tcg_ctx);
 
@@ -275,7 +277,6 @@ uc_err uc_close(uc_engine *uc)
     g_free(uc->system_memory);
     g_hash_table_destroy(uc->type_table);
 
-    int i;
     for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
         free(uc->ram_list.dirty_memory[i]);
     }
@@ -579,6 +580,10 @@ static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t per
         // invalid memory mapping
         return UC_ERR_ARG;
 
+    // address cannot wrapp around
+    if (address + size - 1 < address)
+        return UC_ERR_ARG;
+
     // address must be aligned to uc->target_page_size
     if ((address & uc->target_page_align) != 0)
         return UC_ERR_ARG;
@@ -851,7 +856,7 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
         return uc->mapped_blocks[i];
 
     for(i = 0; i < uc->mapped_block_count; i++) {
-        if (address >= uc->mapped_blocks[i]->addr && address < uc->mapped_blocks[i]->end) {
+        if (address >= uc->mapped_blocks[i]->addr && address <= uc->mapped_blocks[i]->end - 1) {
             // cache this index for the next query
             uc->mapped_block_cache_index = i;
             return uc->mapped_blocks[i];

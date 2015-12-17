@@ -20,6 +20,11 @@
 #include "cpu.h"
 #include "exec/helper-proto.h"
 
+static uint32_t compute_null(CPUSPARCState *env)
+{
+    return 0;
+}
+
 static uint32_t compute_all_flags(CPUSPARCState *env)
 {
     return env->psr & PSR_ICC;
@@ -433,6 +438,7 @@ typedef struct CCTable {
 
 static const CCTable icc_table[CC_OP_NB] = {
     /* CC_OP_DYNAMIC should never happen */
+    [CC_OP_DYNAMIC] = { compute_null, compute_null },
     [CC_OP_FLAGS] = { compute_all_flags, compute_C_flags },
     [CC_OP_DIV] = { compute_all_div, compute_C_div },
     [CC_OP_ADD] = { compute_all_add, compute_C_add },
@@ -449,6 +455,7 @@ static const CCTable icc_table[CC_OP_NB] = {
 #ifdef TARGET_SPARC64
 static const CCTable xcc_table[CC_OP_NB] = {
     /* CC_OP_DYNAMIC should never happen */
+    [CC_OP_DYNAMIC] = { compute_null, compute_null },
     [CC_OP_FLAGS] = { compute_all_flags_xcc, compute_C_flags_xcc },
     [CC_OP_DIV] = { compute_all_logic_xcc, compute_C_logic },
     [CC_OP_ADD] = { compute_all_add_xcc, compute_C_add_xcc },

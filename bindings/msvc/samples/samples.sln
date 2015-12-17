@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dynload", "dynload\dynload.vcxproj", "{EBBC5CEA-1237-4E20-9E38-E610D3C529EB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "staload", "staload\staload.vcxproj", "{85FFC5E9-CC3D-41F6-8970-092FAC8E5E39}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{EBBC5CEA-1237-4E20-9E38-E610D3C529EB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EBBC5CEA-1237-4E20-9E38-E610D3C529EB}.Debug|Win32.Build.0 = Debug|Win32
+		{EBBC5CEA-1237-4E20-9E38-E610D3C529EB}.Debug|x64.ActiveCfg = Debug|x64
+		{EBBC5CEA-1237-4E20-9E38-E610D3C529EB}.Debug|x64.Build.0 = Debug|x64
+		{EBBC5CEA-1237-4E20-9E38-E610D3C529EB}.Release|Win32.ActiveCfg = Release|Win32
+		{EBBC5CEA-1237-4E20-9E38-E610D3C529EB}.Release|Win32.Build.0 = Release|Win32
+		{EBBC5CEA-1237-4E20-9E38-E610D3C529EB}.Release|x64.ActiveCfg = Release|x64
+		{EBBC5CEA-1237-4E20-9E38-E610D3C529EB}.Release|x64.Build.0 = Release|x64
+		{85FFC5E9-CC3D-41F6-8970-092FAC8E5E39}.Debug|Win32.ActiveCfg = Debug|Win32
+		{85FFC5E9-CC3D-41F6-8970-092FAC8E5E39}.Debug|Win32.Build.0 = Debug|Win32
+		{85FFC5E9-CC3D-41F6-8970-092FAC8E5E39}.Debug|x64.ActiveCfg = Debug|x64
+		{85FFC5E9-CC3D-41F6-8970-092FAC8E5E39}.Debug|x64.Build.0 = Debug|x64
+		{85FFC5E9-CC3D-41F6-8970-092FAC8E5E39}.Release|Win32.ActiveCfg = Release|Win32
+		{85FFC5E9-CC3D-41F6-8970-092FAC8E5E39}.Release|Win32.Build.0 = Release|Win32
+		{85FFC5E9-CC3D-41F6-8970-092FAC8E5E39}.Release|x64.ActiveCfg = Release|x64
+		{85FFC5E9-CC3D-41F6-8970-092FAC8E5E39}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

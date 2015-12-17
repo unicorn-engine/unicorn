@@ -86,6 +86,9 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
             uc->mapped_block_count--;
             //shift remainder of array down over deleted pointer
             memcpy(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
+            mr->destructor(mr);
+            g_free((char *)mr->name);
+            g_free(mr->ioeventfds);
             break;
         }
     }
@@ -93,13 +96,20 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 
 int memory_free(struct uc_struct *uc)
 {
+    MemoryRegion *mr;
     int i;
+
     get_system_memory(uc)->enabled = false;
     for (i = 0; i < uc->mapped_block_count; i++) {
-        uc->mapped_blocks[i]->enabled = false;
-        memory_region_del_subregion(get_system_memory(uc), uc->mapped_blocks[i]);
-        g_free(uc->mapped_blocks[i]);
+        mr = uc->mapped_blocks[i];
+        mr->enabled = false;
+        memory_region_del_subregion(get_system_memory(uc), mr);
+        mr->destructor(mr);
+        g_free((char *)mr->name);
+        g_free(mr->ioeventfds);
+        g_free(mr);
     }
+
     return 0;
 }
 

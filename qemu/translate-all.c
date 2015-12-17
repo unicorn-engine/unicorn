@@ -807,6 +807,9 @@ static void page_flush_tb(struct uc_struct *uc)
 {
     int i;
 
+    if (uc->l1_map == NULL)
+        return;
+
     for (i = 0; i < V_L1_SIZE; i++) {
         page_flush_tb_1(V_L1_SHIFT / V_L2_BITS - 1, uc->l1_map + i);
     }

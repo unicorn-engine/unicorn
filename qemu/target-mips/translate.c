@@ -11322,7 +11322,7 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
     return 4;
 }
 
-static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot)
+static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv **cpu_gpr = (TCGv **)tcg_ctx->cpu_gpr;
@@ -11343,10 +11343,12 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_s
     n_bytes = 2;
 
     // Unicorn: trace this instruction on request
-    if (!is_bc_slot && env->uc->hook_insn) {
+    if (env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
-        if (trace)
+        if (trace) {
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
+            *insn_need_patch = true;
+        }
         // if requested to emulate only some instructions, check if
         // we need to exit immediately
         if (env->uc->emu_count > 0) {
@@ -13928,7 +13930,7 @@ static void decode_micromips32_opc (CPUMIPSState *env, DisasContext *ctx,
     }
 }
 
-static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot)
+static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch)
 {
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TCGv **cpu_gpr = (TCGv **)tcg_ctx->cpu_gpr;
@@ -13943,10 +13945,12 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool is_b
     }
 
     // Unicorn: trace this instruction on request
-    if (!is_bc_slot && env->uc->hook_insn) {
+    if (env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
-        if (trace)
+        if (trace) {
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
+            *insn_need_patch = true;
+        }
         // if requested to emulate only some instructions, check if
         // we need to exit immediately
         if (env->uc->emu_count > 0) {
@@ -18503,7 +18507,7 @@ static void gen_msa(CPUMIPSState *env, DisasContext *ctx)
     }
 }
 
-static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot)
+static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 #if defined(TARGET_MIPS64)
@@ -18514,7 +18518,6 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot)
     uint32_t op, op1;
     int16_t imm;
 
-
     /* make sure instructions are on a word boundary */
     if (ctx->pc & 0x3) {
         env->CP0_BadVAddr = ctx->pc;
@@ -18523,10 +18526,12 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool is_bc_slot)
     }
 
     // Unicorn: trace this instruction on request
-    if (!is_bc_slot && env->uc->hook_insn) {
+    if (env->uc->hook_insn) {
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
-        if (trace)
+        if (trace) {
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
+            *insn_need_patch = true;
+        }
         // if requested to emulate only some instructions, check if
         // we need to exit immediately
         if (env->uc->emu_count > 0) {
@@ -19171,7 +19176,6 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     int max_insns;
     int insn_bytes;
     int is_slot = 0;
-    bool is_bc_slot = false;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TCGArg *save_opparam_ptr = NULL;
     bool block_full = false;
@@ -19268,23 +19272,23 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             ctx.bstate = BS_EXCP;
             break;
         } else {
+            bool insn_need_patch = false;
             // Unicorn: save param buffer
             if (env->uc->hook_insn)
                 save_opparam_ptr = tcg_ctx->gen_opparam_ptr;
 
             is_slot = ctx.hflags & MIPS_HFLAG_BMASK;
-            is_bc_slot = (is_slot & MIPS_HFLAG_BMASK_BASE) == MIPS_HFLAG_BC;
 
             if (!(ctx.hflags & MIPS_HFLAG_M16)) {
                 ctx.opcode = cpu_ldl_code(env, ctx.pc);
                 insn_bytes = 4;
-                decode_opc(env, &ctx, is_bc_slot);
+                decode_opc(env, &ctx, &insn_need_patch);
             } else if (ctx.insn_flags & ASE_MICROMIPS) {
                 ctx.opcode = cpu_lduw_code(env, ctx.pc);
-                insn_bytes = decode_micromips_opc(env, &ctx, is_bc_slot);
+                insn_bytes = decode_micromips_opc(env, &ctx, &insn_need_patch);
             } else if (ctx.insn_flags & ASE_MIPS16) {
                 ctx.opcode = cpu_lduw_code(env, ctx.pc);
-                insn_bytes = decode_mips16_opc(env, &ctx, is_bc_slot);
+                insn_bytes = decode_mips16_opc(env, &ctx, &insn_need_patch);
             } else {
                 generate_exception(&ctx, EXCP_RI);
                 ctx.bstate = BS_STOP;
@@ -19292,7 +19296,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             }
 
             // Unicorn: patch the callback for the instruction size
-            if (!is_bc_slot && env->uc->hook_insn)
+            if (insn_need_patch)
                 *(save_opparam_ptr + 1) = insn_bytes;
         }
 
