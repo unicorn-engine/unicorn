@@ -62,6 +62,11 @@ Unicorn requires few dependent packages as follows.
                       $ pacman -S mingw-w64-x86_64-glib2
                       $ pacman -S mingw-w64-x86_64-toolchain
 
+- For Cygwin, "make", "gcc-core", "pkg-config", "libpcre-devel", "zlib-devel" and "libglib2.0-devel" are needed.
+  If apt-cyg is available, you can install these with:
+
+      $ apt-cyg install make gcc-core pkg-config libpcre-devel zlib-devel libglib2.0-devel
+
 
 
 [1] Tailor Unicorn to your need.
@@ -172,7 +177,30 @@ Unicorn requires few dependent packages as follows.
 
 
 
-[4] Cross-compile for Windows from *nix
+[4] Compile and install from source on Cygwin
+
+  To build Unicorn on Cygwin, run:
+
+    $ ./make.sh
+
+  After compiling, install Unicorn with:
+
+    $ ./make.sh install
+
+  Resulted files cygunicorn.dll, libunicorn.dll.a and libunicorn.a can be 
+  used on Cygwin but not native Windows.
+
+  NOTE: The core framework installed by "./make.sh install" consist of
+  following files:
+
+    /usr/include/unicorn/*.h
+    /usr/bin/cygunicorn.dll
+    /usr/lib/libunicorn.dll.a
+    /usr/lib/libunicorn.a
+
+
+
+[5] Cross-compile for Windows from *nix
 
   To cross-compile for Windows, Linux & gcc-mingw-w64-i686 (and also gcc-mingw-w64-x86-64
   for 64-bit binaries) are required.
@@ -205,7 +233,7 @@ Unicorn requires few dependent packages as follows.
 
 
 
-[5] Cross-compile for iOS from Mac OSX.
+[6] Cross-compile for iOS from Mac OSX.
 
   To cross-compile for iOS (iPhone/iPad/iPod), Mac OSX with XCode installed is required.
 
@@ -226,7 +254,7 @@ Unicorn requires few dependent packages as follows.
 
 
 
-[6] Cross-compile for Android
+[7] Cross-compile for Android
 
   To cross-compile for Android (smartphone/tablet), Android NDK is required.
   NOTE: Only ARM and ARM64 are currently supported.
@@ -240,7 +268,7 @@ Unicorn requires few dependent packages as follows.
 
 
 
-[7] By default, "cc" (default C compiler on the system) is used as compiler.
+[8] By default, "cc" (default C compiler on the system) is used as compiler.
 
     - To use "clang" compiler instead, run the command below:
 
@@ -252,20 +280,20 @@ Unicorn requires few dependent packages as follows.
 
 
 
-[8] To uninstall Unicorn, run the command below:
+[9] To uninstall Unicorn, run the command below:
 
         $ sudo ./make.sh uninstall
 
 
 
-[9] Language bindings
+[10] Language bindings
 
   Look for the bindings under directory bindings/, and refer to README file
   of corresponding languages.
 
 
 
-[10] Unit tests
+[11] Unit tests
 
   Automated unit tests use the cmocka unit testing framework (https://cmocka.org/).
   It can be installed in most Linux distros using the package manager, e.g.

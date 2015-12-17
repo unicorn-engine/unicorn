@@ -105,8 +105,10 @@ else
 IS_CYGWIN := $(shell $(CC) -dumpmachine | grep -i cygwin | wc -l)
 ifeq ($(IS_CYGWIN),1)
 EXT = dll
-AR_EXT = lib
+AR_EXT = a
 BIN_EXT = .exe
+UNICORN_CFLAGS := $(UNICORN_CFLAGS:-fPIC=)
+#UNICORN_QEMU_FLAGS += --disable-stack-protector
 else
 # mingw?
 IS_MINGW := $(shell $(CC) --version | grep -i mingw | wc -l)
@@ -129,7 +131,10 @@ ifeq ($(UNICORN_SHARED),yes)
 ifeq ($(IS_MINGW),1)
 LIBRARY = $(BLDIR)/$(LIBNAME).$(EXT)
 else ifeq ($(IS_CYGWIN),1)
-LIBRARY = $(BLDIR)/$(LIBNAME).$(EXT)
+LIBRARY = $(BLDIR)/cyg$(LIBNAME).$(EXT)
+LIBRARY_DLLA = $(BLDIR)/lib$(LIBNAME).$(EXT).$(AR_EXT)
+$(LIBNAME)_LDFLAGS += -Wl,--out-implib=$(LIBRARY_DLLA)
+$(LIBNAME)_LDFLAGS += -lssp
 else	# *nix
 LIBRARY = $(BLDIR)/lib$(LIBNAME).$(VERSION_EXT)
 LIBRARY_SYMLINK = $(BLDIR)/lib$(LIBNAME).$(EXT)
@@ -140,7 +145,7 @@ ifeq ($(UNICORN_STATIC),yes)
 ifeq ($(IS_MINGW),1)
 ARCHIVE = $(BLDIR)/$(LIBNAME).$(AR_EXT)
 else ifeq ($(IS_CYGWIN),1)
-ARCHIVE = $(BLDIR)/$(LIBNAME).$(AR_EXT)
+ARCHIVE = $(BLDIR)/lib$(LIBNAME).$(AR_EXT)
 else
 ARCHIVE = $(BLDIR)/lib$(LIBNAME).$(AR_EXT)
 endif
@@ -163,6 +168,7 @@ LIBDIRARCH ?= lib
 
 LIBDIR ?= $(PREFIX)/$(LIBDIRARCH)
 INCDIR ?= $(PREFIX)/include
+BINDIR ?= $(PREFIX)/bin
 
 LIBDATADIR ?= $(LIBDIR)
 
@@ -188,9 +194,9 @@ all: compile_lib
 ifeq (,$(findstring yes,$(UNICORN_BUILD_CORE_ONLY)))
 ifeq ($(UNICORN_SHARED),yes)
 ifeq ($(V),0)
-	@$(INSTALL_DATA) $(LIBRARY) $(BLDIR)/samples/
+	@$(INSTALL_LIB) $(LIBRARY) $(BLDIR)/samples/
 else
-	$(INSTALL_DATA) $(LIBRARY) $(BLDIR)/samples/
+	$(INSTALL_LIB) $(LIBRARY) $(BLDIR)/samples/
 endif
 endif
 
@@ -216,7 +222,7 @@ else
 endif
 
 compile_lib: config qemu/config-host.h-timestamp
-	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll && cd qemu && $(MAKE) -j 8
+	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll cyg$(LIBNAME)*.dll && cd qemu && $(MAKE) -j 8
 	$(MAKE) unicorn
 	cd samples && $(MAKE) clean
 
@@ -226,9 +232,9 @@ $(LIBRARY): $(UC_TARGET_OBJ) uc.o hook.o
 ifeq ($(UNICORN_SHARED),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(LIBRARY))
-	@$(CC) $(CFLAGS) $($(LIBNAME)_LDFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm
+	@$(CC) $(CFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm $($(LIBNAME)_LDFLAGS)
 else
-	$(CC) $(CFLAGS) $($(LIBNAME)_LDFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm
+	$(CC) $(CFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm $($(LIBNAME)_LDFLAGS)
 endif
 ifneq (,$(LIBRARY_SYMLINK))
 	@ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
@@ -261,21 +267,26 @@ test: all
 
 
 install: all $(PKGCFGF)
-	mkdir -p $(DESTDIR)/$(LIBDIR)
+	mkdir -p $(DESTDIR)$(LIBDIR)
 ifeq ($(UNICORN_SHARED),yes)
-	$(INSTALL_LIB) $(LIBRARY) $(DESTDIR)/$(LIBDIR)
+ifeq ($(IS_CYGWIN),1)
+	$(INSTALL_LIB) $(LIBRARY) $(DESTDIR)$(BINDIR)
+	$(INSTALL_DATA) $(LIBRARY_DLLA) $(DESTDIR)$(LIBDIR)
+else
+	$(INSTALL_LIB) $(LIBRARY) $(DESTDIR)$(LIBDIR)
+endif
 ifneq ($(VERSION_EXT),)
-	cd $(DESTDIR)/$(LIBDIR) && \
+	cd $(DESTDIR)$(LIBDIR) && \
 	ln -sf lib$(LIBNAME).$(VERSION_EXT) lib$(LIBNAME).$(EXT)
 endif
 endif
 ifeq ($(UNICORN_STATIC),yes)
-	$(INSTALL_DATA) $(ARCHIVE) $(DESTDIR)/$(LIBDIR)
+	$(INSTALL_DATA) $(ARCHIVE) $(DESTDIR)$(LIBDIR)
 endif
-	mkdir -p $(DESTDIR)/$(INCDIR)/$(LIBNAME)
-	$(INSTALL_DATA) include/unicorn/*.h $(DESTDIR)/$(INCDIR)/$(LIBNAME)
-	mkdir -p $(DESTDIR)/$(PKGCFGDIR)
-	$(INSTALL_DATA) $(PKGCFGF) $(DESTDIR)/$(PKGCFGDIR)/
+	mkdir -p $(DESTDIR)$(INCDIR)/$(LIBNAME)
+	$(INSTALL_DATA) include/unicorn/*.h $(DESTDIR)$(INCDIR)/$(LIBNAME)
+	mkdir -p $(DESTDIR)$(PKGCFGDIR)
+	$(INSTALL_DATA) $(PKGCFGF) $(DESTDIR)$(PKGCFGDIR)/
 
 
 TAG ?= HEAD
@@ -301,13 +312,14 @@ header: FORCE
 uninstall:
 	rm -rf $(INCDIR)/$(LIBNAME)
 	rm -f $(LIBDIR)/lib$(LIBNAME).*
+	rm -f $(BINDIR)/cyg$(LIBNAME).*
 	rm -f $(PKGCFGDIR)/$(LIBNAME).pc
 
 
 clean:
 	$(MAKE) -C qemu clean
 	rm -rf *.d *.o
-	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll
+	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll cyg$(LIBNAME)*.dll
 ifeq (,$(findstring yes,$(UNICORN_BUILD_CORE_ONLY)))
 	cd samples && $(MAKE) clean
 	rm -f $(BLDIR)/samples/lib$(LIBNAME).$(EXT)
