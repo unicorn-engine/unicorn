@@ -18,49 +18,50 @@ type HookData struct {
 
 type Hook uint64
 
+var hookToUintptr = make(map[Hook]uintptr)
+var hookDataMap = make(map[uintptr]*HookData)
+
 //export hookCode
 func hookCode(handle unsafe.Pointer, addr uint64, size uint32, user unsafe.Pointer) {
-	hook := (*HookData)(user)
+	hook := hookDataMap[uintptr(user)]
 	hook.Callback.(func(Unicorn, uint64, uint32))(hook.Uc, uint64(addr), uint32(size))
 }
 
 //export hookMemInvalid
 func hookMemInvalid(handle unsafe.Pointer, typ C.uc_mem_type, addr uint64, size int, value int64, user unsafe.Pointer) bool {
-	hook := (*HookData)(user)
+	hook := hookDataMap[uintptr(user)]
 	return hook.Callback.(func(Unicorn, int, uint64, int, int64) bool)(hook.Uc, int(typ), addr, size, value)
 }
 
 //export hookMemAccess
 func hookMemAccess(handle unsafe.Pointer, typ C.uc_mem_type, addr uint64, size int, value int64, user unsafe.Pointer) {
-	hook := (*HookData)(user)
+	hook := hookDataMap[uintptr(user)]
 	hook.Callback.(func(Unicorn, int, uint64, int, int64))(hook.Uc, int(typ), addr, size, value)
 }
 
 //export hookInterrupt
 func hookInterrupt(handle unsafe.Pointer, intno uint32, user unsafe.Pointer) {
-	hook := (*HookData)(user)
+	hook := hookDataMap[uintptr(user)]
 	hook.Callback.(func(Unicorn, uint32))(hook.Uc, intno)
 }
 
 //export hookX86In
 func hookX86In(handle unsafe.Pointer, port, size uint32, user unsafe.Pointer) uint32 {
-	hook := (*HookData)(user)
+	hook := hookDataMap[uintptr(user)]
 	return hook.Callback.(func(Unicorn, uint32, uint32) uint32)(hook.Uc, port, size)
 }
 
 //export hookX86Out
 func hookX86Out(handle unsafe.Pointer, port, size, value uint32, user unsafe.Pointer) {
-	hook := (*HookData)(user)
+	hook := hookDataMap[uintptr(user)]
 	hook.Callback.(func(Unicorn, uint32, uint32, uint32))(hook.Uc, port, size, value)
 }
 
 //export hookX86Syscall
 func hookX86Syscall(handle unsafe.Pointer, user unsafe.Pointer) {
-	hook := (*HookData)(user)
+	hook := hookDataMap[uintptr(user)]
 	hook.Callback.(func(Unicorn))(hook.Uc)
 }
-
-var hookRetain = make(map[Hook]*HookData)
 
 func (u *uc) HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error) {
 	var callback unsafe.Pointer
@@ -100,6 +101,7 @@ func (u *uc) HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error) {
 	}
 	var h2 C.uc_hook
 	data := &HookData{u, cb}
+	uptr := uintptr(unsafe.Pointer(data))
 	if rangeMode {
 		if len(extra) == 2 {
 			uarg1 = C.uint64_t(extra[0])
@@ -107,15 +109,19 @@ func (u *uc) HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error) {
 		} else {
 			uarg1, uarg2 = 1, 0
 		}
-		C.uc_hook_add_u2(u.handle, &h2, C.uc_hook_type(htype), callback, unsafe.Pointer(data), uarg1, uarg2)
+		C.uc_hook_add_u2(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), uarg1, uarg2)
 	} else {
-		C.uc_hook_add_i1(u.handle, &h2, C.uc_hook_type(htype), callback, unsafe.Pointer(data), iarg1)
+		C.uc_hook_add_i1(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), iarg1)
 	}
-	hookRetain[Hook(h2)] = data
+	hookDataMap[uptr] = data
+	hookToUintptr[Hook(h2)] = uptr
 	return Hook(h2), nil
 }
 
 func (u *uc) HookDel(hook Hook) error {
-	delete(hookRetain, hook)
+	if uptr, ok := hookToUintptr[hook]; ok {
+		delete(hookToUintptr, hook)
+		delete(hookDataMap, uptr)
+	}
 	return errReturn(C.uc_hook_del(u.handle, C.uc_hook(hook)))
 }
