@@ -11349,11 +11349,8 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
             *insn_need_patch = true;
         }
-        // if requested to emulate only some instructions, check if
-        // we need to exit immediately
-        if (env->uc->emu_count > 0) {
-            check_exit_request(tcg_ctx);
-        }
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
     }
 
     switch (op) {
@@ -13951,11 +13948,8 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool *ins
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
             *insn_need_patch = true;
         }
-        // if requested to emulate only some instructions, check if
-        // we need to exit immediately
-        if (env->uc->emu_count > 0) {
-            check_exit_request(tcg_ctx);
-        }
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
     }
 
     op = (ctx->opcode >> 10) & 0x3f;
@@ -18532,11 +18526,8 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
             gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
             *insn_need_patch = true;
         }
-        // if requested to emulate only some instructions, check if
-        // we need to exit immediately
-        if (env->uc->emu_count > 0) {
-            check_exit_request(tcg_ctx);
-        }
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
     }
 
     /* Handle blikely not taken case */
