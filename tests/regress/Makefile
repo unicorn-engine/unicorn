@@ -32,6 +32,7 @@ TESTS += mips_delay_slot_code_hook
 TESTS += mem_nofree
 TESTS += rw_hookstack
 TESTS += threaded_emu_start
+TESTS += emu_stop_in_hook_overrun
 
 all: $(TESTS)
 
