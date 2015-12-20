@@ -70,11 +70,11 @@ AR ?= ar
 RANLIB ?= ranlib
 STRIP ?= strip
 else
-CC ?= $(CROSS)-gcc
-AR ?= $(CROSS)-ar
-RANLIB ?= $(CROSS)-ranlib
-STRIP ?= $(CROSS)-strip
-GLIB="-L/usr/$(CROSS)/lib/ -lglib-2.0"
+CC = $(CROSS)-gcc
+AR = $(CROSS)-ar
+RANLIB = $(CROSS)-ranlib
+STRIP = $(CROSS)-strip
+GLIB = "-L/usr/$(CROSS)/lib/ -lglib-2.0"
 endif
 
 # Find GLIB
