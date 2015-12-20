@@ -7691,11 +7691,8 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
         struct hook_struct *trace = hook_find(s->uc, UC_HOOK_CODE, s->pc - 4);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 4, trace->callback, s->uc, s->pc - 4, trace->user_data);
-        // if requested to emulate only some instructions, check if
-        // we need to exit immediately
-        if (s->uc->emu_count > 0) {
-            check_exit_request(tcg_ctx);
-        }
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
     }
 
     cond = insn >> 28;

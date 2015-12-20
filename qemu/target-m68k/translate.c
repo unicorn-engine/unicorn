@@ -3047,11 +3047,9 @@ static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
         struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, s->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 2, trace->callback, env->uc, s->pc, trace->user_data);
-        // if requested to emulate only some instructions, check if
-        // we need to exit immediately
-        if (env->uc->emu_count > 0) {
-            check_exit_request(tcg_ctx);
-        }
+
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
     }
 
     insn = cpu_lduw_code(env, s->pc);
