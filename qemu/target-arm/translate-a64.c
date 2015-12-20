@@ -10988,11 +10988,8 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
         struct hook_struct *trace = hook_find(s->uc, UC_HOOK_CODE, s->pc - 4);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 4, trace->callback, env->uc, s->pc - 4, trace->user_data);
-        // if requested to emulate only some instructions, check if
-        // we need to exit immediately
-        if (env->uc->emu_count > 0) {
-            check_exit_request(tcg_ctx);
-        }
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
     }
 
     s->fp_access_checked = false;

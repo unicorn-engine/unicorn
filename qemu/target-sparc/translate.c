@@ -2641,11 +2641,9 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
         struct hook_struct *trace = hook_find(dc->uc, UC_HOOK_CODE, dc->pc);
         if (trace)
             gen_uc_tracecode(tcg_ctx, 4, trace->callback, dc->uc, dc->pc, trace->user_data);
-        // if requested to emulate only some instructions, check if
-        // we need to exit immediately
-        if (dc->uc->emu_count > 0) {
-            check_exit_request(tcg_ctx);
-        }
+
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
     }
 
     opc = GET_FIELD(insn, 0, 1);
