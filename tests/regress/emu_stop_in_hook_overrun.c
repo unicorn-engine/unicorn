@@ -63,11 +63,6 @@ int main(int argc, char **argv, char **envp)
 	int ret;
 	uc_hook hhc;
 	uint32_t val;
-#ifdef _WIN32
-	HANDLE th = (HANDLE)-1;
-#else
-	pthread_t th;
-#endif
 
 	// dynamically load shared library
 #ifdef DYNLOAD
