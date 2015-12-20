@@ -123,6 +123,7 @@ mem_nofree
 mips_delay_slot_code_hook
 threaded_emu_start
 emu_stop_in_hook_overrun
+mips_branch_likely_issue
 
 test_mem_map_ptr
 test_mem_high
