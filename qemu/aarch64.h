@@ -2945,6 +2945,7 @@
 #define tcg_init tcg_init_aarch64
 #define tcg_invert_cond tcg_invert_cond_aarch64
 #define tcg_la_bb_end tcg_la_bb_end_aarch64
+#define tcg_la_br_end tcg_la_br_end_aarch64
 #define tcg_la_func_end tcg_la_func_end_aarch64
 #define tcg_liveness_analysis tcg_liveness_analysis_aarch64
 #define tcg_malloc tcg_malloc_aarch64
