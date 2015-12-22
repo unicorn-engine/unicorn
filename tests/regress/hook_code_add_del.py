@@ -38,8 +38,8 @@ class HookCodeAddDelTest(regress.RegressTest):
                 emu.reg_write(UC_X86_REG_ESP, STACK_ADDRESS + STACK_SIZE)
                 
                 # UC_HOOK_CODE hook will work even after deletion
-                emu.hook_add(UC_HOOK_CODE, hook_code, None)
-                emu.hook_del(UC_HOOK_CODE)
+                i = emu.hook_add(UC_HOOK_CODE, hook_code, None)
+                emu.hook_del(i)
                 
                 emu.emu_start(EP, EP + len(CODE), count = 3)
                 print("EIP: 0x%x" % emu.reg_read(UC_X86_REG_EIP))
