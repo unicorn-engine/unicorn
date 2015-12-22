@@ -128,6 +128,7 @@ mips_branch_likely_issue
 test_mem_map_ptr
 test_mem_high
 rw_hookstack
+hook_extrainvoke
 
 
 #################
