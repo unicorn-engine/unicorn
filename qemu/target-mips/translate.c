@@ -18501,7 +18501,23 @@ static void gen_msa(CPUMIPSState *env, DisasContext *ctx)
     }
 }
 
-static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch)
+// Unicorn: trace this instruction on request
+static void hook_insn(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch, int *insn_patch_offset, int offset_value)
+{
+    if (env->uc->hook_insn) {
+        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
+        if (trace) {
+            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
+            *insn_need_patch = true;
+        }
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
+        *insn_patch_offset = offset_value;
+    }
+}
+
+static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch, int *insn_patch_offset)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 #if defined(TARGET_MIPS64)
@@ -18519,17 +18535,6 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
         return;
     }
 
-    // Unicorn: trace this instruction on request
-    if (env->uc->hook_insn) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
-        if (trace) {
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
-            *insn_need_patch = true;
-        }
-        // the callback might want to stop emulation immediately
-        check_exit_request(tcg_ctx);
-    }
-
     /* Handle blikely not taken case */
     if ((ctx->hflags & MIPS_HFLAG_BMASK_BASE) == MIPS_HFLAG_BL) {
         int l1 = gen_new_label(tcg_ctx);
@@ -18539,6 +18544,9 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
         tcg_gen_movi_i32(tcg_ctx, tcg_ctx->hflags, ctx->hflags & ~MIPS_HFLAG_BMASK);
         gen_goto_tb(ctx, 1, ctx->pc + 4);
         gen_set_label(tcg_ctx, l1);
+        hook_insn(env, ctx, insn_need_patch, insn_patch_offset, 14);
+    } else {
+        hook_insn(env, ctx, insn_need_patch, insn_patch_offset, 1);
     }
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT))) {
@@ -19264,6 +19272,8 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             break;
         } else {
             bool insn_need_patch = false;
+            int insn_patch_offset = 1;
+
             // Unicorn: save param buffer
             if (env->uc->hook_insn)
                 save_opparam_ptr = tcg_ctx->gen_opparam_ptr;
@@ -19273,7 +19283,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             if (!(ctx.hflags & MIPS_HFLAG_M16)) {
                 ctx.opcode = cpu_ldl_code(env, ctx.pc);
                 insn_bytes = 4;
-                decode_opc(env, &ctx, &insn_need_patch);
+                decode_opc(env, &ctx, &insn_need_patch, &insn_patch_offset);
             } else if (ctx.insn_flags & ASE_MICROMIPS) {
                 ctx.opcode = cpu_lduw_code(env, ctx.pc);
                 insn_bytes = decode_micromips_opc(env, &ctx, &insn_need_patch);
@@ -19287,8 +19297,15 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             }
 
             // Unicorn: patch the callback for the instruction size
-            if (insn_need_patch)
-                *(save_opparam_ptr + 1) = insn_bytes;
+            if (insn_need_patch) {
+                /*
+                   int i;
+                   for (i = 0; i < 30; i++)
+                   printf("[%u] = %x\n", i, *(save_opparam_ptr + i));
+                   printf("\n");
+                 */
+                *(save_opparam_ptr + insn_patch_offset) = insn_bytes;
+            }
         }
 
         if (ctx.hflags & MIPS_HFLAG_BMASK) {
