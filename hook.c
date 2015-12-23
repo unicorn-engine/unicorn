@@ -143,6 +143,10 @@ uc_err hook_del(struct uc_struct *uc, uc_hook hh)
     if (hh == uc->hook_in_idx) {
         uc->hook_in_idx = 0;
     }
+    
+    if(hh == uc->hook_syscall_idx) {
+        uc->hook_syscall_idx = 0;
+    }
 
     uc->hook_callbacks[hh].callback = NULL;
     uc->hook_callbacks[hh].user_data = NULL;
