@@ -7426,10 +7426,14 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         if (CODE64(s) && env->cpuid_vendor1 != CPUID_VENDOR_INTEL_1)
             goto illegal_op;
 
-        gen_update_cc_op(s);
-        gen_jmp_im(s, pc_start - s->cs_base);
-        gen_helper_sysenter(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
-        gen_eob(s);
+        if (!s->pe) {
+            gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
+        } else {
+            gen_update_cc_op(s);
+            gen_jmp_im(s, pc_start - s->cs_base);
+            gen_helper_sysenter(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
+            gen_eob(s);
+        }
         break;
     case 0x135: /* sysexit */
         /* For Intel SYSEXIT is valid on 64-bit */
