@@ -2301,8 +2301,18 @@ void helper_lret_protected(CPUX86State *env, int shift, int addend)
     helper_ret_protected(env, shift, 0, addend);
 }
 
-void helper_sysenter(CPUX86State *env)
+void helper_sysenter(CPUX86State *env, int next_eip_addend)
 {
+    // Unicorn: call interrupt callback if registered
+    struct uc_struct *uc = env->uc;
+    if (uc->hook_syscall_idx) {
+        ((uc_cb_insn_syscall_t)uc->hook_callbacks[uc->hook_syscall_idx].callback)(
+            uc, uc->hook_callbacks[uc->hook_syscall_idx].user_data);
+    }
+    env->eip += next_eip_addend;
+
+    return;
+
     if (env->sysenter_cs == 0) {
         raise_exception_err(env, EXCP0D_GPF, 0);
     }

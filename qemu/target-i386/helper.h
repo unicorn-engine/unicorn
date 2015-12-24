@@ -49,7 +49,7 @@ DEF_HELPER_4(enter_level, void, env, int, int, tl)
 #ifdef TARGET_X86_64
 DEF_HELPER_4(enter64_level, void, env, int, int, tl)
 #endif
-DEF_HELPER_1(sysenter, void, env)
+DEF_HELPER_2(sysenter, void, env, int)
 DEF_HELPER_2(sysexit, void, env, int)
 #ifdef TARGET_X86_64
 DEF_HELPER_2(syscall, void, env, int)
