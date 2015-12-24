@@ -764,6 +764,8 @@ do_check_protect_pse36:
         }
     }
  do_mapping:
+
+#if 0
     pte = pte & env->a20_mask;
 
     /* align to page_size */
@@ -774,6 +776,12 @@ do_check_protect_pse36:
     vaddr = addr & TARGET_PAGE_MASK;
     page_offset = vaddr & (page_size - 1);
     paddr = pte + page_offset;
+#endif
+
+    // Unicorn: indentity map guest virtual address to host virtual address
+    vaddr = addr & TARGET_PAGE_MASK;
+    paddr = vaddr;
+    //printf(">>> map address %"PRIx64" to %"PRIx64"\n", vaddr, paddr);
 
     tlb_set_page(cs, vaddr, paddr, prot, mmu_idx, page_size);
     return 0;

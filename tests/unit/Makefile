@@ -19,6 +19,8 @@ test: ${ALL_TESTS}
 	./test_sanity
 	./test_x86
 	./test_mem_map
+	./test_mem_map_ptr
+	./test_mem_high
 
 test_sanity: test_sanity.c
 test_x86: test_x86.c

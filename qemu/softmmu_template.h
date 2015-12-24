@@ -238,8 +238,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
                                        uc, UC_MEM_READ_PROT, addr, DATA_SIZE, 0,
                                        uc->hook_callbacks[uc->hook_mem_read_prot_idx].user_data)) {
             env->invalid_error = UC_ERR_OK;
-        }
-        else {
+        } else {
             env->invalid_addr = addr;
             env->invalid_error = UC_ERR_READ_PROT;
             // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
