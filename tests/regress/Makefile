@@ -35,6 +35,7 @@ TESTS += threaded_emu_start
 TESTS += emu_stop_in_hook_overrun
 TESTS += mips_branch_likely_issue
 TESTS += hook_extrainvoke
+TESTS += sysenter_hook_x86
 
 all: $(TESTS)
 
