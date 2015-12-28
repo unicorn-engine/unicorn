@@ -523,7 +523,7 @@ int x86_cpu_handle_mmu_fault(CPUState *cs, vaddr addr,
     int is_dirty, prot, page_size, is_write, is_user;
     hwaddr paddr;
     uint64_t rsvd_mask = PG_HI_RSVD_MASK;
-    uint32_t page_offset;
+    //uint32_t page_offset;
     target_ulong vaddr;
 
     is_user = mmu_idx == MMU_USER_IDX;
