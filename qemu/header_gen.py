@@ -2951,6 +2951,7 @@ symbols = (
     'tcg_init',
     'tcg_invert_cond',
     'tcg_la_bb_end',
+    'tcg_la_br_end',
     'tcg_la_func_end',
     'tcg_liveness_analysis',
     'tcg_malloc',
