@@ -17,7 +17,6 @@ class MipsSyscall(regress.RegressTest):
 
         uc.emu_start(addr, addr + len(code))
 
-        #self.assertEqual(addr + len(code), uc.reg_read(UC_MIPS_REG_PC))
         self.assertEqual(uc.reg_read(UC_MIPS_REG_AT), 0x3456)
 
 
