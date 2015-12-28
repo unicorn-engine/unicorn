@@ -29,4 +29,4 @@ test_mem_map_ptr: test_mem_map_ptr.c
 test_mem_high: test_mem_high.c
 
 ${ALL_TESTS}:
-	gcc ${CFLAGS} -o $@ $^
+	clang ${CFLAGS} -o $@ $^

@@ -129,6 +129,18 @@ static void test_bad_unmap(void **state)
 }
 
 
+/* Try to unmap memory that has not been mapped twice*/
+static void test_unmap_double_map(void **state)
+{
+    uc_engine *uc = *state;
+
+    /* TODO: Which error should this return? */
+    uc_assert_success(uc_mem_map(uc, 0,      0x4000, 0));   /* 0x0000 - 0x1000 */
+    uc_assert_success(uc_mem_map(uc, 0x0000, 0x1000, 0));   /* 0x1000 - 0x2000 */
+
+    uc_assert_fail(uc_mem_unmap(uc, 0x2000, 0x2000));
+}
+
 int main(void) {
 #define test(x)     cmocka_unit_test_setup_teardown(x, setup, teardown)
     const struct CMUnitTest tests[] = {
@@ -137,6 +149,7 @@ int main(void) {
         //test(test_bad_write),
         test(test_bad_unmap),
         test(test_rw_across_boundaries),
+        test(test_unmap_double_map),
     };
 #undef test
     return cmocka_run_group_tests(tests, NULL, NULL);
