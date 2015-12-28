@@ -1699,15 +1699,15 @@ static void tcg_liveness_analysis(TCGContext *s)
                     // this causes problem because check_exit_request() inserts
                     // brcond instruction in the middle of the TB,
                     // which incorrectly flags end-of-block
-		    if (op != INDEX_op_brcond_i32)
-                    	tcg_la_bb_end(s, dead_temps, mem_temps);
-		    // Unicorn: we do not touch dead temps for brcond,
-		    // but we should refresh TCG globals In-Memory states,
-		    // otherwise, important CPU states(especially conditional flags) might be forgotten,
-		    // result in wrongly generated host code that run into wrong branch.
-		    // Refer to https://github.com/unicorn-engine/unicorn/issues/287 for further information
-		    else
-			tcg_la_br_end(s, mem_temps);
+                    if (op != INDEX_op_brcond_i32)
+                        tcg_la_bb_end(s, dead_temps, mem_temps);
+                    // Unicorn: we do not touch dead temps for brcond,
+                    // but we should refresh TCG globals In-Memory states,
+                    // otherwise, important CPU states(especially conditional flags) might be forgotten,
+                    // result in wrongly generated host code that run into wrong branch.
+                    // Refer to https://github.com/unicorn-engine/unicorn/issues/287 for further information
+                    else
+                        tcg_la_br_end(s, mem_temps);
                 } else if (def->flags & TCG_OPF_SIDE_EFFECTS) {
                     /* globals should be synced to memory */
                     memset(mem_temps, 1, s->nb_globals);
