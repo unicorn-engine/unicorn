@@ -343,12 +343,15 @@ static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
 UNICORN_EXPORT
 uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
 {
+    size_t count = 0, len;
     uint8_t *bytes = _bytes;
+
+    if (uc->mem_redirect) {
+        address = uc->mem_redirect(address);
+    }
 
     if (!check_mem_area(uc, address, size))
         return UC_ERR_READ_UNMAPPED;
-
-    size_t count = 0, len;
 
     // memory area can overlap adjacent memory blocks
     while(count < size) {
@@ -373,12 +376,15 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
 UNICORN_EXPORT
 uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t size)
 {
+    size_t count = 0, len;
     const uint8_t *bytes = _bytes;
+
+    if (uc->mem_redirect) {
+        address = uc->mem_redirect(address);
+    }
 
     if (!check_mem_area(uc, address, size))
         return UC_ERR_WRITE_UNMAPPED;
-
-    size_t count = 0, len;
 
     // memory area can overlap adjacent memory blocks
     while(count < size) {
@@ -617,6 +623,10 @@ static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t per
 UNICORN_EXPORT
 uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 {
+    if (uc->mem_redirect) {
+        address = uc->mem_redirect(address);
+    }
+
     return mem_map(uc, address, size, perms, uc->memory_map(uc, address, size, perms));
 }
 
@@ -625,6 +635,10 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t per
 {
     if (ptr == NULL)
         return UC_ERR_ARG;
+
+    if (uc->mem_redirect) {
+        address = uc->mem_redirect(address);
+    }
 
     return mem_map(uc, address, size, UC_PROT_ALL, uc->memory_map_ptr(uc, address, size, perms, ptr));
 }
@@ -769,6 +783,10 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size, uint3
     if ((perms & ~UC_PROT_ALL) != 0)
         return UC_ERR_ARG;
 
+    if (uc->mem_redirect) {
+        address = uc->mem_redirect(address);
+    }
+
     // check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size))
         return UC_ERR_NOMEM;
@@ -811,6 +829,10 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
     // size must be multiple of uc->target_page_size
     if ((size & uc->target_page_align) != 0)
         return UC_ERR_MAP;
+
+    if (uc->mem_redirect) {
+        address = uc->mem_redirect(address);
+    }
 
     // check that user's entire requested block is mapped
     if (!check_mem_area(uc, address, size))

@@ -182,7 +182,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
 
-    // memory can be unmapped while reading or fetching
+    // memory might be still unmapped while reading or fetching
     if (mr == NULL) {
 #if defined(SOFTMMU_CODE_ACCESS)
         error_code = UC_ERR_FETCH_UNMAPPED;
