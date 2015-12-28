@@ -119,7 +119,7 @@ else
 EXT = so
 VERSION_EXT = $(EXT).$(API_MAJOR)
 AR_EXT = a
-$(LIBNAME)_LDFLAGS += -Wl,-soname,lib$(LIBNAME).$(VERSION_EXT)
+$(LIBNAME)_LDFLAGS += -Wl,-Bsymbolic-functions,-soname,lib$(LIBNAME).$(VERSION_EXT)
 UNICORN_CFLAGS += -fvisibility=hidden
 endif
 endif
