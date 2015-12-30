@@ -129,16 +129,13 @@ static void test_bad_unmap(void **state)
 }
 
 
-/* Try to unmap memory that has not been mapped twice*/
+/* Try to map overlapped memory range */
 static void test_unmap_double_map(void **state)
 {
     uc_engine *uc = *state;
 
-    /* TODO: Which error should this return? */
-    uc_assert_success(uc_mem_map(uc, 0,      0x4000, 0));   /* 0x0000 - 0x1000 */
-    uc_assert_success(uc_mem_map(uc, 0x0000, 0x1000, 0));   /* 0x1000 - 0x2000 */
-
-    uc_assert_fail(uc_mem_unmap(uc, 0x2000, 0x2000));
+    uc_assert_success(uc_mem_map(uc, 0,      0x4000, 0));   /* 0x0000 - 0x4000 */
+    uc_assert_fail(uc_mem_map(uc, 0x0000, 0x1000, 0));   /* 0x1000 - 0x1000 */
 }
 
 int main(void) {
