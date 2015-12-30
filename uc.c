@@ -577,6 +577,30 @@ static uc_err _hook_mem_access(uc_engine *uc, uc_hook_type type,
     return UC_ERR_OK;
 }
 
+// find if a memory range overlaps with existing mapped regions
+static bool memory_overlap(struct uc_struct *uc, uint64_t begin, size_t size)
+{
+    unsigned int i;
+    uint64_t end = begin + size - 1;
+
+    for(i = 0; i < uc->mapped_block_count; i++) {
+        // begin address falls inside this region?
+        if (begin >= uc->mapped_blocks[i]->addr && begin <= uc->mapped_blocks[i]->end - 1)
+            return true;
+
+        // end address falls inside this region?
+        if (end >= uc->mapped_blocks[i]->addr && end <= uc->mapped_blocks[i]->end - 1)
+            return true;
+
+        // this region falls totally inside this range?
+        if (begin < uc->mapped_blocks[i]->addr && end > uc->mapped_blocks[i]->end - 1)
+            return true;
+    }
+
+    // not found
+    return false;
+}
+
 // common setup/error checking shared between uc_mem_map and uc_mem_map_ptr
 static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, MemoryRegion *block)
 {
@@ -601,6 +625,10 @@ static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t per
     // check for only valid permissions
     if ((perms & ~UC_PROT_ALL) != 0)
         return UC_ERR_ARG;
+
+    // this area overlaps existing mapped regions?
+    if (memory_overlap(uc, address, size))
+        return UC_ERR_MAP;
 
     if (block == NULL)
         return UC_ERR_NOMEM;
@@ -860,6 +888,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
     return UC_ERR_OK;
 }
 
+// find the memory region of this address
 MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
 {
     unsigned int i;
