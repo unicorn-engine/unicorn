@@ -62,7 +62,9 @@ Unicorn requires few dependent packages as follows.
                       $ pacman -S mingw-w64-x86_64-glib2
                       $ pacman -S mingw-w64-x86_64-toolchain
 
-- For Cygwin, "make", "gcc-core", "pkg-config", "libpcre-devel", "zlib-devel" and "libglib2.0-devel" are needed.
+- For Cygwin, "make", "gcc-core", "pkg-config", "libpcre-devel", "zlib-devel"
+  and "libglib2.0-devel" are needed.
+
   If apt-cyg is available, you can install these with:
 
       $ apt-cyg install make gcc-core pkg-config libpcre-devel zlib-devel libglib2.0-devel
