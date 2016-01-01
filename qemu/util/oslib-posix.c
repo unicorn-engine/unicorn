@@ -61,7 +61,9 @@ extern int daemon(int, int);
 #include <sys/signal.h>
 
 #ifdef CONFIG_LINUX
+#if !defined(__CYGWIN__)
 #include <sys/syscall.h>
+#endif
 #include <sys/vfs.h>
 #endif
 

@@ -432,8 +432,7 @@ HOST_VARIANT_DIR=""
 
 case $targetos in
 CYGWIN*)
-  mingw32="yes"
-  QEMU_CFLAGS="-mno-cygwin $QEMU_CFLAGS"
+  linux="yes"
 ;;
 MINGW32*)
   mingw32="yes"

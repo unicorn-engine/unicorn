@@ -65,7 +65,7 @@ static const int tcg_target_reg_alloc_order[] = {
 
 static const int tcg_target_call_iarg_regs[] = {
 #if TCG_TARGET_REG_BITS == 64
-#if defined(_WIN64)
+#if (defined(_WIN64)||defined(__CYGWIN__))
     TCG_REG_RCX,
     TCG_REG_RDX,
 #else
@@ -2191,7 +2191,7 @@ static int tcg_target_callee_save_regs[] = {
 #if TCG_TARGET_REG_BITS == 64
     TCG_REG_RBP,
     TCG_REG_RBX,
-#if defined(_WIN64)
+#if (defined(_WIN64)||defined(__CYGWIN__))
     TCG_REG_RDI,
     TCG_REG_RSI,
 #endif
@@ -2316,7 +2316,7 @@ static void tcg_target_init(TCGContext *s)
     tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_EDX);
     tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_ECX);
     if (TCG_TARGET_REG_BITS == 64) {
-#if !defined(_WIN64)
+#if !(defined(_WIN64)||defined(__CYGWIN__))
         tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_RDI);
         tcg_regset_set_reg(s->tcg_target_call_clobber_regs, TCG_REG_RSI);
 #endif

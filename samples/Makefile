@@ -48,8 +48,10 @@ AR_EXT = a
 IS_CYGWIN := $(shell $(CC) -dumpmachine | grep -i cygwin | wc -l)
 ifeq ($(IS_CYGWIN),1)
 CFLAGS := $(CFLAGS:-fPIC=)
+LDFLAGS += -lssp
+LDFLAGS_STATIC += -lssp
 BIN_EXT = .exe
-AR_EXT = lib
+AR_EXT = a
 else
 # mingw?
 IS_MINGW := $(shell $(CC) --version | grep -i mingw | wc -l)
@@ -64,7 +66,7 @@ ifeq ($(UNICORN_STATIC),yes)
 ifeq ($(IS_MINGW),1)
 ARCHIVE = $(LIBDIR)/$(LIBNAME).$(AR_EXT)
 else ifeq ($(IS_CYGWIN),1)
-ARCHIVE = $(LIBDIR)/$(LIBNAME).$(AR_EXT)
+ARCHIVE = $(LIBDIR)/lib$(LIBNAME).$(AR_EXT)
 else
 ARCHIVE = $(LIBDIR)/lib$(LIBNAME).$(AR_EXT)
 #ARCHIVE_X86 = $(LIBDIR)/lib$(LIBNAME)_x86.$(AR_EXT)

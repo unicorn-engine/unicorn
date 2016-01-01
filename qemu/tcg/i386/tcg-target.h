@@ -67,7 +67,7 @@ typedef enum {
 /* used for function call generation */
 #define TCG_REG_CALL_STACK TCG_REG_ESP 
 #define TCG_TARGET_STACK_ALIGN 16
-#if defined(_WIN64)
+#if defined(_WIN64) || (defined(__CYGWIN__)&&defined(__x86_64__))
 #define TCG_TARGET_CALL_STACK_OFFSET 32
 #else
 #define TCG_TARGET_CALL_STACK_OFFSET 0
