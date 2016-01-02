@@ -72,33 +72,35 @@ namespace UnicornTests
         {
             try
             {
-                var u = new Unicorn(Common.UC_ARCH_X86, Common.UC_MODE_32);
-                Console.WriteLine("Unicorn version: {0}", u.Version());
+                using (var u = new Unicorn(Common.UC_ARCH_X86, Common.UC_MODE_32))
+                {
+                    Console.WriteLine("Unicorn version: {0}", u.Version());
 
-                // map 2MB of memory for this emulation
-                u.MemMap(address, new UIntPtr(2 * 1024 * 1024), Common.UC_PROT_ALL);
+                    // map 2MB of memory for this emulation
+                    u.MemMap(address, new UIntPtr(2 * 1024 * 1024), Common.UC_PROT_ALL);
 
-                // write machine code to be emulated to memory
-                u.MemWrite(address, code);
+                    // write machine code to be emulated to memory
+                    u.MemWrite(address, code);
 
-                // initialize machine registers
-                u.RegWrite(X86.UC_X86_REG_ESP, Utils.Int64ToBytes(address + 0x200000));
+                    // initialize machine registers
+                    u.RegWrite(X86.UC_X86_REG_ESP, Utils.Int64ToBytes(address + 0x200000));
 
-                // tracing all instructions by having @begin > @end
-                u.AddCodeHook(CodeHookCallback, null, 1, 0);
+                    // tracing all instructions by having @begin > @end
+                    u.AddCodeHook(CodeHookCallback, null, 1, 0);
 
-                // handle interrupt ourself
-                u.AddInterruptHook(InterruptHookCallback, null);
+                    // handle interrupt ourself
+                    u.AddInterruptHook(InterruptHookCallback, null);
 
-                // handle SYSCALL
-                u.AddSyscallHook(SyscallHookCallback, null);
+                    // handle SYSCALL
+                    u.AddSyscallHook(SyscallHookCallback, null);
 
-                Console.WriteLine(">>> Start tracing linux code");
+                    Console.WriteLine(">>> Start tracing linux code");
 
-                // emulate machine code in infinite time
-                u.EmuStart(address, address + (UInt64)code.Length, 0u, new UIntPtr(0));
+                    // emulate machine code in infinite time
+                    u.EmuStart(address, address + (UInt64)code.Length, 0u, new UIntPtr(0));
 
-                Console.WriteLine(">>> Emulation Done!");
+                    Console.WriteLine(">>> Emulation Done!");
+                }
             }
             catch (UnicornEngineException ex)
             {

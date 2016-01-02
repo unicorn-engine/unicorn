@@ -34,6 +34,9 @@ namespace UnicornTests
             // Run all shellcode tests
             ShellcodeTest.TestX86Code32Self();
             ShellcodeTest.TestX86Code32();
+
+            Console.Write("Tests completed");
+            Console.ReadLine();
         }
     }
 }

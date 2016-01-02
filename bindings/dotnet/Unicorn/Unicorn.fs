@@ -51,6 +51,7 @@ and Unicorn(arch: Int32, mode: Int32) =
     let _inHooks = new Dictionary<IntPtr, (InHook * Object)>()
     let _outHooks = new Dictionary<IntPtr, (OutHook * Object)>()
     let _syscallHooks = new Dictionary<IntPtr, (SyscallHook * Object)>()
+    let _disposablePointers = new List<nativeint>()
 
     let mutable _eng = [|UIntPtr.Zero|]
 
@@ -66,10 +67,14 @@ and Unicorn(arch: Int32, mode: Int32) =
         callbacks.Keys
         |> Seq.tryFind(fun k -> match callbacks.[k] with | (c, _) -> c = callback)
         |> (fun k -> if k.IsSome then callbacks.Remove(k.Value) |> ignore)
+
+    let allocate(size: Int32) =
+        let mem = Marshal.AllocHGlobal(size)
+        _disposablePointers.Add(mem)
+        mem.ToPointer()
             
-    do
-        let mem = Marshal.AllocHGlobal(IntPtr.Size)
-        _eng <- [|new UIntPtr(mem.ToPointer())|]
+    do  
+        _eng <- [|new UIntPtr(allocate(IntPtr.Size))|]
         let err = NativeUnicornEngine.uc_open(uint32 arch, uint32 mode, _eng)
         checkResult(err, "Unable to open the Unicorn Engine")
 
@@ -130,8 +135,8 @@ and Unicorn(arch: Int32, mode: Int32) =
         let id = getId()
         _codeHooks.Add(id, (callback, userData))
 
-        let funcPointer = Marshal.GetFunctionPointerForDelegate(new CodeHookInternal(trampoline))
-        let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
+        let funcPointer = Marshal.GetFunctionPointerForDelegate(new CodeHookInternal(trampoline))        
+        let hh = new UIntPtr(allocate(IntPtr.Size))
         match NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_CODE, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr) |> this.CheckResult with 
         | Some e -> raise e | None -> ()
 
@@ -147,7 +152,7 @@ and Unicorn(arch: Int32, mode: Int32) =
         _blockHooks.Add(id, (callback, userData))
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new BlockHookInternal(trampoline))
-        let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
+        let hh = new UIntPtr(allocate(IntPtr.Size))
         match NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_BLOCK, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr) |> this.CheckResult with 
         | Some e -> raise e | None -> ()
 
@@ -163,7 +168,7 @@ and Unicorn(arch: Int32, mode: Int32) =
         _interruptHooks.Add(id, (callback, userData))
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new InterruptHookInternal(trampoline))
-        let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
+        let hh = new UIntPtr(allocate(IntPtr.Size))
         match NativeUnicornEngine.hook_add_noarg(_eng.[0], hh, Common.UC_HOOK_INTR, new UIntPtr(funcPointer.ToPointer()), id) |> this.CheckResult with 
         | Some e -> raise e | None -> ()
 
@@ -179,7 +184,7 @@ and Unicorn(arch: Int32, mode: Int32) =
         _memReadHooks.Add(id, (callback, userData))
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new MemReadHookInternal(trampoline))
-        let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
+        let hh = new UIntPtr(allocate(IntPtr.Size))
         match NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_MEM_READ, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr) |> this.CheckResult with 
         | Some e -> raise e | None -> ()
 
@@ -195,7 +200,7 @@ and Unicorn(arch: Int32, mode: Int32) =
         _memWriteHooks.Add(id, (callback, userData))
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new MemWriteHookInternal(trampoline))
-        let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
+        let hh = new UIntPtr(allocate(IntPtr.Size))
         match NativeUnicornEngine.hook_add_arg0_arg1(_eng.[0], hh, Common.UC_HOOK_MEM_WRITE, new UIntPtr(funcPointer.ToPointer()), id, beginAdd, endAddr) |> this.CheckResult with 
         | Some e -> raise e | None -> ()
 
@@ -212,7 +217,7 @@ and Unicorn(arch: Int32, mode: Int32) =
             _memEventHooks.Add(id, (callback, userData))
 
             let funcPointer = Marshal.GetFunctionPointerForDelegate(new EventMemHookInternal(trampoline))
-            let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
+            let hh = new UIntPtr(allocate(IntPtr.Size))
             match NativeUnicornEngine.hook_add_noarg(_eng.[0], hh, check, new UIntPtr(funcPointer.ToPointer()), id) |> this.CheckResult with 
             | Some e -> raise e | None -> ()
 
@@ -241,7 +246,7 @@ and Unicorn(arch: Int32, mode: Int32) =
         _inHooks.Add(id, (callback, userData))
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new InHookInternal(trampoline))
-        let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
+        let hh = new UIntPtr(allocate(IntPtr.Size))
         match NativeUnicornEngine.hook_add_arg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), id, new IntPtr(X86.UC_X86_INS_IN)) |> this.CheckResult with 
         | Some e -> raise e | None -> ()
 
@@ -254,7 +259,7 @@ and Unicorn(arch: Int32, mode: Int32) =
         _outHooks.Add(id, (callback, userData))
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new OutHookInternal(trampoline))
-        let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
+        let hh = new UIntPtr(allocate(IntPtr.Size))
         match NativeUnicornEngine.hook_add_arg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), id, new IntPtr(X86.UC_X86_INS_OUT)) |> this.CheckResult with 
         | Some e -> raise e | None -> ()
 
@@ -267,7 +272,7 @@ and Unicorn(arch: Int32, mode: Int32) =
         _syscallHooks.Add(id, (callback, userData))
 
         let funcPointer = Marshal.GetFunctionPointerForDelegate(new SyscallHookInternal(trampoline))
-        let hh = new UIntPtr(Marshal.AllocHGlobal(IntPtr.Size).ToPointer())
+        let hh = new UIntPtr(allocate(IntPtr.Size))
         match NativeUnicornEngine.hook_add_arg0(_eng.[0], hh, Common.UC_HOOK_INSN, new UIntPtr(funcPointer.ToPointer()), id, new IntPtr(X86.UC_X86_INS_SYSCALL)) |> this.CheckResult with 
         | Some e -> raise e | None -> ()
     
@@ -275,3 +280,24 @@ and Unicorn(arch: Int32, mode: Int32) =
         let (major, minor) = (new UIntPtr(), new UIntPtr())
         let combined = NativeUnicornEngine.version(major, minor)
         (major.ToUInt32(), minor.ToUInt32(), combined)
+
+    abstract Dispose : Boolean -> unit
+    default this.Dispose(disposing: Boolean) =
+        if (disposing) then
+            // free managed resources, this is the default dispose implementation pattern
+            ()
+
+        _disposablePointers
+        |> Seq.filter(fun pointer -> pointer <> IntPtr.Zero)
+        |> Seq.iter Marshal.FreeHGlobal
+
+    member this.Dispose() =
+        this.Dispose(true)
+        GC.SuppressFinalize(this)
+
+    override this.Finalize() =
+        this.Dispose(false)
+
+    interface IDisposable with
+        member this.Dispose() =
+            this.Dispose()
