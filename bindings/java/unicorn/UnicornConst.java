@@ -32,6 +32,7 @@ public interface UnicornConst {
    public static final int UC_MODE_V9 = 16;
    public static final int UC_MODE_QPX = 16;
    public static final int UC_MODE_BIG_ENDIAN = 1073741824;
+   public static final int UC_MODE_BYTESWAP = 1073741824;
    public static final int UC_MODE_MIPS32 = 4;
    public static final int UC_MODE_MIPS64 = 8;
 
