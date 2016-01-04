@@ -57,10 +57,10 @@ template = {
             'comment_close': '',
         },
     'dotnet': {
-            'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\nnamespace UnicornEngine.Const\n\nopen System\n\n[<AutoOpen>]\nmodule %s =\n",
+            'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\nnamespace UnicornManaged.Const\n\nopen System\n\n[<AutoOpen>]\nmodule %s =\n",
             'footer': "\n",
-            'line_format': '   let UC_%s = %s\n',
-            'out_file': os.path.join('dotnet', 'Unicorn', 'Const', '%s.fs'),
+            'line_format': '    let UC_%s = %s\n',
+            'out_file': os.path.join('dotnet', 'UnicornManaged', 'Const', '%s.fs'),
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'Arm',
             'arm64.h': 'Arm64',
