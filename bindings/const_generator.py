@@ -69,7 +69,7 @@ template = {
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
             'unicorn.h': 'Common',
-            'comment_open': '//',
+            'comment_open': '    //',
             'comment_close': '',
         },
 }
