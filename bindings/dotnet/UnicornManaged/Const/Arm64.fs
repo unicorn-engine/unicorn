@@ -7,7 +7,7 @@ open System
 [<AutoOpen>]
 module Arm64 =
 
-// ARM64 registers
+    // ARM64 registers
 
     let UC_ARM64_REG_INVALID = 0
     let UC_ARM64_REG_X29 = 1
@@ -270,11 +270,11 @@ module Arm64 =
     let UC_ARM64_REG_V30 = 258
     let UC_ARM64_REG_V31 = 259
 
-// pseudo registers
+    // pseudo registers
     let UC_ARM64_REG_PC = 260
     let UC_ARM64_REG_ENDING = 261
 
-// alias registers
+    // alias registers
     let UC_ARM64_REG_IP1 = 215
     let UC_ARM64_REG_IP0 = 216
     let UC_ARM64_REG_FP = 1

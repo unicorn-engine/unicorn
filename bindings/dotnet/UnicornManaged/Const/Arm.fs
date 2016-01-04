@@ -7,7 +7,7 @@ open System
 [<AutoOpen>]
 module Arm =
 
-// ARM registers
+    // ARM registers
 
     let UC_ARM_REG_INVALID = 0
     let UC_ARM_REG_APSR = 1
@@ -122,7 +122,7 @@ module Arm =
     let UC_ARM_REG_S31 = 110
     let UC_ARM_REG_ENDING = 111
 
-// alias registers
+    // alias registers
     let UC_ARM_REG_R13 = 12
     let UC_ARM_REG_R14 = 10
     let UC_ARM_REG_R15 = 11

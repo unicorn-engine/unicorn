@@ -20,10 +20,10 @@ type internal MemReadHookInternal = delegate of IntPtr * Int64 * Int32 * IntPtr 
 type internal MemWriteHookInternal = delegate of IntPtr * Int64 * Int32 * Int64 * IntPtr -> unit
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-type internal EventMemHookInternal = delegate of IntPtr * Int64 * Int32 * Int64 * IntPtr -> unit
+type internal EventMemHookInternal = delegate of IntPtr * Int32 * Int64 * Int32 * Int64 * IntPtr-> Boolean
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
-type internal InHookInternal = delegate of IntPtr * Int32 * Int32 * IntPtr -> unit
+type internal InHookInternal = delegate of IntPtr * Int32 * Int32 * IntPtr -> Int32
 
 [<UnmanagedFunctionPointer(CallingConvention.Cdecl)>]
 type internal OutHookInternal = delegate of IntPtr * Int32 * Int32 * Int32 * IntPtr -> unit

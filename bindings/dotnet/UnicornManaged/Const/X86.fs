@@ -7,7 +7,7 @@ open System
 [<AutoOpen>]
 module X86 =
 
-// X86 registers
+    // X86 registers
 
     let UC_X86_REG_INVALID = 0
     let UC_X86_REG_AH = 1
@@ -253,7 +253,7 @@ module X86 =
     let UC_X86_REG_R15W = 241
     let UC_X86_REG_ENDING = 242
 
-// X86 instructions
+    // X86 instructions
 
     let UC_X86_INS_INVALID = 0
     let UC_X86_INS_AAA = 1
@@ -378,7 +378,7 @@ module X86 =
     let UC_X86_INS_CVTPS2DQ = 120
     let UC_X86_INS_CVTPS2PD = 121
     let UC_X86_INS_CVTSD2SI = 122
-    (*let UC_X86_INS_CVTSD2SS = 123
+    let UC_X86_INS_CVTSD2SS = 123
     let UC_X86_INS_CVTSI2SD = 124
     let UC_X86_INS_CVTSI2SS = 125
     let UC_X86_INS_CVTSS2SD = 126
@@ -472,9 +472,9 @@ module X86 =
     let UC_X86_INS_HSUBPS = 214
     let UC_X86_INS_IDIV = 215
     let UC_X86_INS_FILD = 216
-    let UC_X86_INS_IMUL = 217*)
+    let UC_X86_INS_IMUL = 217
     let UC_X86_INS_IN = 218
-    (*let UC_X86_INS_INC = 219
+    let UC_X86_INS_INC = 219
     let UC_X86_INS_INSB = 220
     let UC_X86_INS_INSERTPS = 221
     let UC_X86_INS_INSERTQ = 222
@@ -754,9 +754,9 @@ module X86 =
     let UC_X86_INS_MWAIT = 496
     let UC_X86_INS_NEG = 497
     let UC_X86_INS_NOP = 498
-    let UC_X86_INS_NOT = 499*)
+    let UC_X86_INS_NOT = 499
     let UC_X86_INS_OUT = 500
-    (*let UC_X86_INS_OUTSB = 501
+    let UC_X86_INS_OUTSB = 501
     let UC_X86_INS_OUTSD = 502
     let UC_X86_INS_OUTSW = 503
     let UC_X86_INS_PACKUSDW = 504
@@ -953,9 +953,9 @@ module X86 =
     let UC_X86_INS_FSUB = 695
     let UC_X86_INS_FISUB = 696
     let UC_X86_INS_FSUBP = 697
-    let UC_X86_INS_SWAPGS = 698*)
+    let UC_X86_INS_SWAPGS = 698
     let UC_X86_INS_SYSCALL = 699
-    (*let UC_X86_INS_SYSENTER = 700
+    let UC_X86_INS_SYSENTER = 700
     let UC_X86_INS_SYSEXIT = 701
     let UC_X86_INS_SYSRET = 702
     let UC_X86_INS_T1MSKC = 703
@@ -1594,4 +1594,4 @@ module X86 =
     let UC_X86_INS_FDISI8087_NOP = 1336
     let UC_X86_INS_FENI8087_NOP = 1337
     let UC_X86_INS_ENDING = 1338
-    *)
+

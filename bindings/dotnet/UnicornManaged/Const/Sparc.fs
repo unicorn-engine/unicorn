@@ -7,7 +7,7 @@ open System
 [<AutoOpen>]
 module Sparc =
 
-// SPARC registers
+    // SPARC registers
 
     let UC_SPARC_REG_INVALID = 0
     let UC_SPARC_REG_F0 = 1

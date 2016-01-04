@@ -69,11 +69,7 @@ namespace UnicornSamples
 
                     // write machine code to be emulated to memory
                     u.MemWrite(address, code);
-
-                    //var read = new Byte[code.Length];
-                    //u.MemRead(address, read);
-                    //Console.WriteLine(Disassemble(disassembler, code));//
-
+                    
                     // initialize machine registers
                     u.RegWrite(X86.UC_X86_REG_ESP, Utils.Int64ToBytes(address + 0x200000));
 
@@ -88,7 +84,7 @@ namespace UnicornSamples
 
                     // handle SYSCALL
                     u.AddSyscallHook(SyscallHookCallback);
-
+                    
                     Console.WriteLine(">>> Start tracing code");
 
                     // emulate machine code in infinite time
@@ -134,7 +130,7 @@ namespace UnicornSamples
             u.RegRead(X86.UC_X86_REG_EAX, eaxBuffer);
             var eax = Utils.ToInt(eaxBuffer);
 
-            Console.WriteLine("Syscall >>> EAX = 0x{0}", eax.ToString("X"));
+            Console.WriteLine("[!] Syscall EAX = 0x{0}", eax.ToString("X"));
 
             u.EmuStop();
         }
@@ -159,10 +155,10 @@ namespace UnicornSamples
             switch (eax)
             {
                 default:
-                    Console.WriteLine("Interrupt >>> 0x{0} num {1}, EAX=0x{2}", eip.ToString("X"), intNumber.ToString("X"), eax.ToString("X"));
+                    Console.WriteLine("[!] Interrupt 0x{0} num {1}, EAX=0x{2}", eip.ToString("X"), intNumber.ToString("X"), eax.ToString("X"));
                     break;
                 case 1: // sys_exit
-                    Console.WriteLine("Interrupt >>> 0x{0} num {1}, SYS_EXIT", eip.ToString("X"), intNumber.ToString("X"));
+                    Console.WriteLine("[!] Interrupt 0x{0} num {1}, SYS_EXIT", eip.ToString("X"), intNumber.ToString("X"));
                     u.EmuStop();
                     break;
                 case 4: // sys_write
@@ -186,7 +182,7 @@ namespace UnicornSamples
                     var content = Encoding.Default.GetString(buffer);
 
                     Console.WriteLine(
-                        "Interrupt >>> 0x{0}: num {1}, SYS_WRITE. buffer = 0x{2}, size = , content = '{3}'",
+                        "[!] Interrupt 0x{0}: num {1}, SYS_WRITE. buffer = 0x{2}, size = , content = '{3}'",
                         eip.ToString("X"),
                         ecx.ToString("X"),
                         edx.ToString("X"),

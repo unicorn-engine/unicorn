@@ -7,11 +7,11 @@ open System
 [<AutoOpen>]
 module Mips =
 
-// MIPS registers
+    // MIPS registers
 
     let UC_MIPS_REG_INVALID = 0
 
-// General purpose registers
+    // General purpose registers
     let UC_MIPS_REG_PC = 1
     let UC_MIPS_REG_0 = 2
     let UC_MIPS_REG_1 = 3
@@ -46,7 +46,7 @@ module Mips =
     let UC_MIPS_REG_30 = 32
     let UC_MIPS_REG_31 = 33
 
-// DSP registers
+    // DSP registers
     let UC_MIPS_REG_DSPCCOND = 34
     let UC_MIPS_REG_DSPCARRY = 35
     let UC_MIPS_REG_DSPEFI = 36
@@ -59,13 +59,13 @@ module Mips =
     let UC_MIPS_REG_DSPPOS = 43
     let UC_MIPS_REG_DSPSCOUNT = 44
 
-// ACC registers
+    // ACC registers
     let UC_MIPS_REG_AC0 = 45
     let UC_MIPS_REG_AC1 = 46
     let UC_MIPS_REG_AC2 = 47
     let UC_MIPS_REG_AC3 = 48
 
-// COP registers
+    // COP registers
     let UC_MIPS_REG_CC0 = 49
     let UC_MIPS_REG_CC1 = 50
     let UC_MIPS_REG_CC2 = 51
@@ -75,7 +75,7 @@ module Mips =
     let UC_MIPS_REG_CC6 = 55
     let UC_MIPS_REG_CC7 = 56
 
-// FPU registers
+    // FPU registers
     let UC_MIPS_REG_F0 = 57
     let UC_MIPS_REG_F1 = 58
     let UC_MIPS_REG_F2 = 59
@@ -117,7 +117,7 @@ module Mips =
     let UC_MIPS_REG_FCC6 = 95
     let UC_MIPS_REG_FCC7 = 96
 
-// AFPR128
+    // AFPR128
     let UC_MIPS_REG_W0 = 97
     let UC_MIPS_REG_W1 = 98
     let UC_MIPS_REG_W2 = 99

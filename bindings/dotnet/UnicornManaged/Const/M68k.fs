@@ -7,7 +7,7 @@ open System
 [<AutoOpen>]
 module M68k =
 
-// M68K registers
+    // M68K registers
 
     let UC_M68K_REG_INVALID = 0
     let UC_M68K_REG_A0 = 1

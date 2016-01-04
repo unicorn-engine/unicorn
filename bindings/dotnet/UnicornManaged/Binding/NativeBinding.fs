@@ -63,7 +63,7 @@ module NativeBinding =
         extern Int32 uc_hook_add_noarg(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl, EntryPoint = "uc_hook_add")>]
-        extern Int32 uc_hook_add_arg0(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData, IntPtr arg0)
+        extern Int32 uc_hook_add_arg0(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData, Int32 arg0)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl, EntryPoint = "uc_hook_add")>]
         extern Int32 uc_hook_add_arg0_arg1(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData, UInt64 arg0, UInt64 arg1)

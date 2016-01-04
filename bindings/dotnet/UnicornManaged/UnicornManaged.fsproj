@@ -57,7 +57,8 @@
     <Compile Include="Binding\NativeBinding.fs" />
     <Compile Include="Binding\BindingFactory.fs" />
     <Compile Include="UnicornEngineException.fs" />
-    <Compile Include="Hooks.fs" />
+    <Compile Include="InternalHooks.fs" />
+    <Compile Include="ConvertUtility.fs" />
     <Compile Include="Unicorn.fs" />
   </ItemGroup>
   <PropertyGroup>
