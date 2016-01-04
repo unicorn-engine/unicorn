@@ -1,17 +1,18 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>6f0e55fa-a056-45ff-bb24-641457b430a8</ProjectGuid>
+    <ProjectGuid>0c21f1c1-2725-4a46-9022-1905f85822a5</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>UnicornSln</RootNamespace>
+    <RootNamespace>UnicornManaged</RootNamespace>
     <AssemblyName>UnicornManaged</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
-    <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
-    <Name>Unicorn</Name>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFSharpCoreVersion>4.3.1.0</TargetFSharpCoreVersion>
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <Name>UnicornManaged</Name>
     <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
@@ -23,10 +24,6 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>bin\Debug\UnicornManaged.XML</DocumentationFile>
-    <PlatformTarget>x86</PlatformTarget>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <EnableUnmanagedDebugging>true</EnableUnmanagedDebugging>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -35,7 +32,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\UnicornSln.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\UnicornManaged.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -47,6 +44,7 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Const\Arm.fs" />
     <Compile Include="Const\Arm64.fs" />
     <Compile Include="Const\Common.fs" />
@@ -54,9 +52,12 @@
     <Compile Include="Const\Mips.fs" />
     <Compile Include="Const\Sparc.fs" />
     <Compile Include="Const\X86.fs" />
-    <Compile Include="Hooks.fs" />
-    <Compile Include="NativeUnicorn.fs" />
+    <Compile Include="Binding\IBinding.fs" />
+    <Compile Include="Binding\MockBinding.fs" />
+    <Compile Include="Binding\NativeBinding.fs" />
+    <Compile Include="Binding\BindingFactory.fs" />
     <Compile Include="UnicornEngineException.fs" />
+    <Compile Include="Hooks.fs" />
     <Compile Include="Unicorn.fs" />
   </ItemGroup>
   <PropertyGroup>
