@@ -5,8 +5,8 @@
 
 #include <unicorn/unicorn.h>
 
-#define ADDRESS1 0x1000000
-#define ADDRESS2 0x2000000
+#define ADDRESS1 0x10000000
+#define ADDRESS2 0x20000000
 #define SIZE (80 * 1024 * 1024)
 
 static void VM_exec()
