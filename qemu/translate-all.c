@@ -723,7 +723,6 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
     tcg_ctx = uc->tcg_ctx;
     tcg_ctx->code_gen_ptr = tcg_ctx->code_gen_buffer;
     tcg_ctx->uc = uc;
-    tcg_register_jit(tcg_ctx->code_gen_buffer, tcg_ctx->code_gen_buffer_size);
     page_init();
 #if !defined(CONFIG_USER_ONLY) || !defined(CONFIG_USE_GUEST_BASE)
     /* There's no guest base to take into account, so go ahead and
