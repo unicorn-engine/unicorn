@@ -135,7 +135,7 @@ static bool hook_mem_invalid(uc_engine *uc, uc_mem_type type,
         default:
             printf("not ok %d - memory invalid type: %d at 0x%" PRIx64 "\n", log_num++, type, addr);
             return false;
-        case UC_MEM_WRITE:
+        case UC_MEM_WRITE_UNMAPPED:
             printf("# write to invalid memory at 0x%"PRIx64 ", data size = %u, data value = 0x%"PRIx64 "\n", addr, size, value);
 
             if (uc_mem_read(uc, addr, &testval, sizeof(testval)) != UC_ERR_OK) {
