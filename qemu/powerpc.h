@@ -8,6 +8,7 @@
 #define phys_mem_clean phys_mem_clean_powerpc
 #define tb_cleanup tb_cleanup_powerpc
 #define memory_map memory_map_powerpc
+#define memory_map_ptr memory_map_ptr_powerpc
 #define memory_unmap memory_unmap_powerpc
 #define memory_free memory_free_powerpc
 #define helper_raise_exception helper_raise_exception_powerpc
@@ -2944,6 +2945,7 @@
 #define tcg_init tcg_init_powerpc
 #define tcg_invert_cond tcg_invert_cond_powerpc
 #define tcg_la_bb_end tcg_la_bb_end_powerpc
+#define tcg_la_br_end tcg_la_br_end_powerpc
 #define tcg_la_func_end tcg_la_func_end_powerpc
 #define tcg_liveness_analysis tcg_liveness_analysis_powerpc
 #define tcg_malloc tcg_malloc_powerpc
@@ -3014,8 +3016,6 @@
 #define tcg_reg_alloc_op tcg_reg_alloc_op_powerpc
 #define tcg_reg_alloc_start tcg_reg_alloc_start_powerpc
 #define tcg_reg_free tcg_reg_free_powerpc
-#define tcg_register_jit tcg_register_jit_powerpc
-#define tcg_register_jit_int tcg_register_jit_int_powerpc
 #define tcg_reg_sync tcg_reg_sync_powerpc
 #define tcg_set_frame tcg_set_frame_powerpc
 #define tcg_set_nop tcg_set_nop_powerpc

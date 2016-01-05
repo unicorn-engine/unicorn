@@ -3022,8 +3022,6 @@ symbols = (
     'tcg_reg_alloc_op',
     'tcg_reg_alloc_start',
     'tcg_reg_free',
-    'tcg_register_jit',
-    'tcg_register_jit_int',
     'tcg_reg_sync',
     'tcg_set_frame',
     'tcg_set_nop',

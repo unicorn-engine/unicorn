@@ -3016,8 +3016,6 @@
 #define tcg_reg_alloc_op tcg_reg_alloc_op_x86_64
 #define tcg_reg_alloc_start tcg_reg_alloc_start_x86_64
 #define tcg_reg_free tcg_reg_free_x86_64
-#define tcg_register_jit tcg_register_jit_x86_64
-#define tcg_register_jit_int tcg_register_jit_int_x86_64
 #define tcg_reg_sync tcg_reg_sync_x86_64
 #define tcg_set_frame tcg_set_frame_x86_64
 #define tcg_set_nop tcg_set_nop_x86_64
