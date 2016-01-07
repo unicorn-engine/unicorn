@@ -2343,47 +2343,4 @@ static void tcg_target_qemu_prologue(TCGContext *s)
     tcg_out_insn(s, RR, BCR, S390_CC_ALWAYS, TCG_REG_R14);
 }
 
-typedef struct {
-    DebugFrameHeader h;
-    uint8_t fde_def_cfa[4];
-    uint8_t fde_reg_ofs[18];
-} DebugFrame;
-
-/* We're expecting a 2 byte uleb128 encoded value.  */
-QEMU_BUILD_BUG_ON(FRAME_SIZE >= (1 << 14));
-
 #define ELF_HOST_MACHINE  EM_S390
-
-static const DebugFrame debug_frame = {
-    .h.cie.len = sizeof(DebugFrameCIE)-4, /* length after .len member */
-    .h.cie.id = -1,
-    .h.cie.version = 1,
-    .h.cie.code_align = 1,
-    .h.cie.data_align = 8,                /* sleb128 8 */
-    .h.cie.return_column = TCG_REG_R14,
-
-    /* Total FDE size does not include the "len" member.  */
-    .h.fde.len = sizeof(DebugFrame) - offsetof(DebugFrame, h.fde.cie_offset),
-
-    .fde_def_cfa = {
-        12, TCG_REG_CALL_STACK,         /* DW_CFA_def_cfa %r15, ... */
-        (FRAME_SIZE & 0x7f) | 0x80,     /* ... uleb128 FRAME_SIZE */
-        (FRAME_SIZE >> 7)
-    },
-    .fde_reg_ofs = {
-        0x86, 6,                        /* DW_CFA_offset, %r6, 48 */
-        0x87, 7,                        /* DW_CFA_offset, %r7, 56 */
-        0x88, 8,                        /* DW_CFA_offset, %r8, 64 */
-        0x89, 9,                        /* DW_CFA_offset, %r92, 72 */
-        0x8a, 10,                       /* DW_CFA_offset, %r10, 80 */
-        0x8b, 11,                       /* DW_CFA_offset, %r11, 88 */
-        0x8c, 12,                       /* DW_CFA_offset, %r12, 96 */
-        0x8d, 13,                       /* DW_CFA_offset, %r13, 104 */
-        0x8e, 14,                       /* DW_CFA_offset, %r14, 112 */
-    }
-};
-
-void tcg_register_jit(void *buf, size_t buf_size)
-{
-    tcg_register_jit_int(buf, buf_size, &debug_frame, sizeof(debug_frame));
-}

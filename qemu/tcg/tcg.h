@@ -936,8 +936,6 @@ static inline size_t tcg_current_code_size(TCGContext *s)
     ((uintptr_t (*)(void *, void *))tcg_ctx->code_gen_prologue)(env, tb_ptr)
 #endif
 
-void tcg_register_jit(void *buf, size_t buf_size);
-
 /*
  * Memory helpers that will be used by TCG generated code.
  */
