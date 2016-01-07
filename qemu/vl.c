@@ -107,15 +107,18 @@ int machine_initialize(struct uc_struct *uc)
     module_call_init(uc, MODULE_INIT_MACHINE);
     // this will auto initialize all register objects above.
     machine_class = find_default_machine(uc, uc->arch);
-    if (machine_class == NULL) {
-        //fprintf(stderr, "No machine specified, and there is no default.\n"
-        //        "Use -machine help to list supported machines!\n");
-        return -2;
+    if(!uc->machine_state)
+    {
+        if (machine_class == NULL) {
+           //fprintf(stderr, "No machine specified, and there is no default.\n"
+            //        "Use -machine help to list supported machines!\n");
+            return -2;
+        }
+
+        current_machine = MACHINE(uc, object_new(uc, object_class_get_name(
+                        OBJECT_CLASS(machine_class))));
+        uc->machine_state = current_machine;
     }
-
-    current_machine = MACHINE(uc, object_new(uc, object_class_get_name(
-                    OBJECT_CLASS(machine_class))));
-
     current_machine->uc = uc;
     uc->cpu_exec_init_all(uc);
 

@@ -441,7 +441,7 @@ void qemu_thread_exit(struct uc_struct *uc, void *retval)
     pthread_exit(retval);
 }
 
-void *qemu_thread_join(QemuThread *thread)
+void *qemu_thread_join(struct uc_struct *uc, QemuThread *thread)
 {
     int err;
     void *ret;
