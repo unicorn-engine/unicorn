@@ -4751,6 +4751,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     bool changed_cc_op = false;
 
 
+    s->pc = pc_start;
+
     // end address tells us to stop emulation
     if (s->pc == s->uc->addr_end) {
         // imitate the HLT instruction
@@ -4781,7 +4783,6 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         }
     }
 
-    s->pc = pc_start;
     prefixes = 0;
     s->override = -1;
     rex_w = -1;

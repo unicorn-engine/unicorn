@@ -3016,8 +3016,6 @@
 #define tcg_reg_alloc_op tcg_reg_alloc_op_mips
 #define tcg_reg_alloc_start tcg_reg_alloc_start_mips
 #define tcg_reg_free tcg_reg_free_mips
-#define tcg_register_jit tcg_register_jit_mips
-#define tcg_register_jit_int tcg_register_jit_int_mips
 #define tcg_reg_sync tcg_reg_sync_mips
 #define tcg_set_frame tcg_set_frame_mips
 #define tcg_set_nop tcg_set_nop_mips

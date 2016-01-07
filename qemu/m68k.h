@@ -3016,8 +3016,6 @@
 #define tcg_reg_alloc_op tcg_reg_alloc_op_m68k
 #define tcg_reg_alloc_start tcg_reg_alloc_start_m68k
 #define tcg_reg_free tcg_reg_free_m68k
-#define tcg_register_jit tcg_register_jit_m68k
-#define tcg_register_jit_int tcg_register_jit_int_m68k
 #define tcg_reg_sync tcg_reg_sync_m68k
 #define tcg_set_frame tcg_set_frame_m68k
 #define tcg_set_nop tcg_set_nop_m68k

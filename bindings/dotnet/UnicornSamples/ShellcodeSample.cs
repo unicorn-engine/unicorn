@@ -1,40 +1,22 @@
-﻿/*
-
-.NET bindings for the UnicornEngine Emulator Engine
-
-Copyright(c) 2015 Antonio Parata
-
-This program is free software; you can redistribute it and/or
-modify it under the terms of the GNU General Public License
-version 2 as published by the Free Software Foundation.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program; if not, write to the Free Software
-Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
-
-*/
-
+﻿using Gee.External.Capstone;
+using Gee.External.Capstone.X86;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using UnicornEngine;
-using UnicornEngine.Const;
+using UnicornManaged;
+using UnicornManaged.Const;
 
-namespace UnicornTests
+namespace UnicornSamples
 {
-    internal class ShellcodeTest
+    internal class ShellcodeSample
     {
-        private const UInt64 ADDRESS = 0x1000000;
+        private const Int64 ADDRESS = 0x1000000;
 
-        public static void TestX86Code32Self()
+        public static void X86Code32Self()
         {
             Byte[] X86_CODE32_SELF =
             {
@@ -44,14 +26,10 @@ namespace UnicornTests
                 0x6e, 0x89, 0xe3, 0x52, 0x53, 0x89, 0xe1, 0xca, 0x7d, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41, 0x41
             };
 
-            Console.WriteLine();
-            Console.WriteLine("*** Start Shellcode: " + MethodInfo.GetCurrentMethod().Name);
-            RunTest(X86_CODE32_SELF, ADDRESS);
-            Console.WriteLine("End Shellcode: " + MethodInfo.GetCurrentMethod().Name);
-            Console.WriteLine();
+            Run(X86_CODE32_SELF);
         }
 
-        public static void TestX86Code32()
+        public static void X86Code32()
         {
             Byte[] X86_CODE32 =
             {
@@ -60,55 +38,75 @@ namespace UnicornTests
                 0x6c, 0x6c, 0x6f
             };
 
+            Run(X86_CODE32);
+        }
+
+        private static void Run(Byte[] code)
+        {
             Console.WriteLine();
-            Console.WriteLine("*** Start Shellcode: " + MethodInfo.GetCurrentMethod().Name);
-            RunTest(X86_CODE32, ADDRESS);
-            Console.WriteLine("End Shellcode: " + MethodInfo.GetCurrentMethod().Name);
+            var stackTrace = new StackTrace();
+            var stackFrame = stackTrace.GetFrames()[1];
+            var methodName = stackFrame.GetMethod().Name;
+
+            Console.WriteLine("*** Start: " + methodName);
+            RunTest(code, ADDRESS);
+            Console.WriteLine("*** End: " + methodName);
             Console.WriteLine();
         }
-        
 
-        public static void RunTest(Byte[] code, UInt64 address)
+
+        private static void RunTest(Byte[] code, Int64 address)
         {
             try
             {
-                var u = new Unicorn(Common.UC_ARCH_X86, Common.UC_MODE_32);
-                Console.WriteLine("Unicorn version: {0}", u.Version());
+                using (var u = new Unicorn(Common.UC_ARCH_X86, Common.UC_MODE_32))
+                using(var disassembler = CapstoneDisassembler.CreateX86Disassembler(DisassembleMode.Bit32))
+                {
+                    Console.WriteLine("Unicorn version: {0}", u.Version());
+                    
+                    // map 2MB of memory for this emulation
+                    u.MemMap(address, 2 * 1024 * 1024, Common.UC_PROT_ALL);
 
-                // map 2MB of memory for this emulation
-                u.MemMap(address, new UIntPtr(2 * 1024 * 1024), Common.UC_PROT_ALL);
+                    // write machine code to be emulated to memory
+                    u.MemWrite(address, code);
+                    
+                    // initialize machine registers
+                    u.RegWrite(X86.UC_X86_REG_ESP, Utils.Int64ToBytes(address + 0x200000));
 
-                // write machine code to be emulated to memory
-                u.MemWrite(address, code);
+                    var regv = new Byte[4];
+                    u.RegRead(X86.UC_X86_REG_ESP, regv);
 
-                // initialize machine registers
-                u.RegWrite(X86.UC_X86_REG_ESP, Utils.Int64ToBytes(address + 0x200000));
+                    // tracing all instructions by having @begin > @end
+                    u.AddCodeHook((uc, addr, size, userData) => CodeHookCallback(disassembler, uc, addr, size, userData), 1, 0);
 
-                // tracing all instructions by having @begin > @end
-                u.AddCodeHook(CodeHookCallback, null, 1, 0);
+                    // handle interrupt ourself
+                    u.AddInterruptHook(InterruptHookCallback);
 
-                // handle interrupt ourself
-                u.AddInterruptHook(InterruptHookCallback, null);
+                    // handle SYSCALL
+                    u.AddSyscallHook(SyscallHookCallback);
+                    
+                    Console.WriteLine(">>> Start tracing code");
 
-                // handle SYSCALL
-                u.AddSyscallHook(SyscallHookCallback, null);
+                    // emulate machine code in infinite time
+                    u.EmuStart(address, address + code.Length, 0u, 0u);
 
-                Console.WriteLine(">>> Start tracing linux code");
-
-                // emulate machine code in infinite time
-                u.EmuStart(address, address + (UInt64)code.Length, 0u, new UIntPtr(0));
-
-                Console.WriteLine(">>> Emulation Done!");
+                    Console.WriteLine(">>> Emulation Done!");
+                }
             }
             catch (UnicornEngineException ex)
             {
                 Console.Error.WriteLine("Emulation FAILED! " + ex.Message);
             }
         }
-
-        private static void CodeHookCallback(Unicorn u, UInt64 addr, Int32 size, Object userData)
+        
+        private static void CodeHookCallback(
+            CapstoneDisassembler<X86Instruction, X86Register, X86InstructionGroup,X86InstructionDetail> disassembler, 
+            Unicorn u, 
+            Int64 addr, 
+            Int32 size, 
+            Object userData)
         {
-            Console.Write("Tracing >>> 0x{0} ", addr.ToString("X"));
+            Console.Write("[+] 0x{0}: ", addr.ToString("X"));
 
             var eipBuffer = new Byte[4];
             u.RegRead(X86.UC_X86_REG_EIP, eipBuffer);
@@ -117,12 +115,13 @@ namespace UnicornTests
             var tmp = new Byte[effectiveSize];
             u.MemRead(addr, tmp);
 
+            var sb = new StringBuilder();
             foreach (var t in tmp)
             {
-                Console.Write("{0} ", (0xFF & t).ToString("X"));
+                sb.AppendFormat("{0} ", (0xFF & t).ToString("X"));
             }
-
-            Console.WriteLine();
+            Console.Write("{0,-20}", sb);
+            Console.WriteLine(Utils.Disassemble(disassembler, tmp));
         }
 
         private static void SyscallHookCallback(Unicorn u, Object userData)
@@ -131,7 +130,7 @@ namespace UnicornTests
             u.RegRead(X86.UC_X86_REG_EAX, eaxBuffer);
             var eax = Utils.ToInt(eaxBuffer);
 
-            Console.WriteLine("Syscall >>> EAX = 0x{0}", eax.ToString("X"));
+            Console.WriteLine("[!] Syscall EAX = 0x{0}", eax.ToString("X"));
 
             u.EmuStop();
         }
@@ -156,10 +155,10 @@ namespace UnicornTests
             switch (eax)
             {
                 default:
-                    Console.WriteLine("Interrupt >>> 0x{0} num {1}, EAX=0x{2}", eip.ToString("X"), intNumber.ToString("X"), eax.ToString("X"));
+                    Console.WriteLine("[!] Interrupt 0x{0} num {1}, EAX=0x{2}", eip.ToString("X"), intNumber.ToString("X"), eax.ToString("X"));
                     break;
                 case 1: // sys_exit
-                    Console.WriteLine("Interrupt >>> 0x{0} num {1}, SYS_EXIT", eip.ToString("X"), intNumber.ToString("X"));
+                    Console.WriteLine("[!] Interrupt 0x{0} num {1}, SYS_EXIT", eip.ToString("X"), intNumber.ToString("X"));
                     u.EmuStop();
                     break;
                 case 4: // sys_write
@@ -183,7 +182,7 @@ namespace UnicornTests
                     var content = Encoding.Default.GetString(buffer);
 
                     Console.WriteLine(
-                        "Interrupt >>> 0x{0}: num {1}, SYS_WRITE. buffer = 0x{2}, size = , content = '{3}'",
+                        "[!] Interrupt 0x{0}: num {1}, SYS_WRITE. buffer = 0x{2}, size = , content = '{3}'",
                         eip.ToString("X"),
                         ecx.ToString("X"),
                         edx.ToString("X"),
