@@ -59,7 +59,7 @@ static void mips_codehook(uc_engine *uc, uint64_t address, uint32_t size, void *
 		printf("\nloop %d:\n", loop_count);
 		loop_count++;
 	}
-	printf("Code: %llX\n", address);
+	printf("Code: %"PRIx64"\n", address);
 }
 
 

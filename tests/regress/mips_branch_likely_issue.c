@@ -61,7 +61,7 @@ bool test2_delayslot_hooked = false;
 // This hook is used to show that code is executing in the emulator.
 static void mips_codehook(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
-    printf("Test %d Executing: %llX\n", test_num, address);
+    printf("Test %d Executing: %"PRIx64"\n", test_num, address);
     if( test_num == 1 && address == 0x100010 )
     {
         printf("Delay slot hook called!\n");
