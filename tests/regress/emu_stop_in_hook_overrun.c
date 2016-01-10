@@ -47,10 +47,10 @@ bool test_passed_ok = false;
 // This hook is used to show that code is executing in the emulator.
 static void mips_codehook(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
-    printf("Executing: %llX\n", address);
+    printf("Executing: %"PRIx64"\n", address);
     if( address == 0x100008 )
     {
-        printf("Stopping at: %llX\n", address);
+        printf("Stopping at: %"PRIx64"\n", address);
         uc_emu_stop(uc);
     }
 }
