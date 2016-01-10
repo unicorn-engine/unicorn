@@ -78,17 +78,15 @@ static void release_common(void *t)
 
     g_free(uc->system_memory);
 
-    if(uc->qemu_thread_data)
+    if (uc->qemu_thread_data)
         free(uc->qemu_thread_data);
 
 #if TCG_TARGET_REG_BITS == 32
-    for(int i = 0; i < s->nb_globals; i++)
-    {
+    for(int i = 0; i < s->nb_globals; i++) {
         TCGTemp *ts = &s->temps[i];
-        if(ts->base_type == TCG_TYPE_I64)
-        {
-            if(ts->name && ((strcmp(ts->name+(strlen(ts->name)-2), "_0") == 0) || (strcmp(ts->name+(strlen(ts->name)-2), "_1") == 0)))
-            {
+        if (ts->base_type == TCG_TYPE_I64) {
+            if (ts->name && ((strcmp(ts->name+(strlen(ts->name)-2), "_0") == 0) ||
+                        (strcmp(ts->name+(strlen(ts->name)-2), "_1") == 0))) {
                 free((void *)ts->name);
             }
         }

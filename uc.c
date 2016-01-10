@@ -277,9 +277,6 @@ uc_err uc_close(uc_engine *uc)
         free(uc->ram_list.dirty_memory[i]);
     }
 
-    // TODO: remove uc->root    (created with object_new())
-    //uc->root->free(uc->root);
-
     free(uc->hook_callbacks);
 
     free(uc->mapped_blocks);
