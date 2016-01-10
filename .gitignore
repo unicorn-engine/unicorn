@@ -132,6 +132,13 @@ rw_hookstack
 hook_extrainvoke
 sysenter_hook_x86
 
+memleak_x86
+memleak_arm
+memleak_arm64
+memleak_mips
+memleak_m68k
+memleak_sparc
+
 
 #################
 ## Visual Studio

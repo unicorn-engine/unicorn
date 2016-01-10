@@ -37,6 +37,13 @@ TESTS += mips_branch_likely_issue
 TESTS += hook_extrainvoke
 TESTS += sysenter_hook_x86
 
+TESTS += memleak_x86
+TESTS += memleak_arm
+TESTS += memleak_arm64
+TESTS += memleak_mips
+TESTS += memleak_m68k
+TESTS += memleak_sparc
+
 all: $(TESTS)
 
 clean:
