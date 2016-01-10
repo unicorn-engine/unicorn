@@ -914,14 +914,6 @@ int main(int argc, char **argv, char **envp)
         if (!strcmp(argv[1], "-16")) {
             test_x86_16();
         }
-
-        // test memleak
-        if (!strcmp(argv[1], "-0")) {
-            while(1) {
-                test_i386();
-                // test_x86_64();
-            }
-        }
     } else {
         printf("Syntax: %s <-16|-32|-64>\n", argv[0]);
     }
