@@ -8,6 +8,8 @@
 *.so.*
 *.exe
 *.dll
+*.class
+*.jar
 
 qemu/config-all-devices.mak
 
