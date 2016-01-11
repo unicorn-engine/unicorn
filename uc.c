@@ -628,13 +628,8 @@ static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t per
     return UC_ERR_OK;
 }
 
-UNICORN_EXPORT
-uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
+static uc_err mem_map_check(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 {
-    if (uc->mem_redirect) {
-        address = uc->mem_redirect(address);
-    }
-
     if (size == 0)
         // invalid memory mapping
         return UC_ERR_ARG;
@@ -655,18 +650,40 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
     if ((perms & ~UC_PROT_ALL) != 0)
         return UC_ERR_ARG;
 
+    return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
+{
+    uc_err res;
+
+    if (uc->mem_redirect) {
+        address = uc->mem_redirect(address);
+    }
+
+    res = mem_map_check(uc, address, size, perms);
+    if (res)
+        return res;
+
     return mem_map(uc, address, size, perms, uc->memory_map(uc, address, size, perms));
 }
 
 UNICORN_EXPORT
 uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, void *ptr)
 {
+    uc_err res;
+
     if (ptr == NULL)
         return UC_ERR_ARG;
 
     if (uc->mem_redirect) {
         address = uc->mem_redirect(address);
     }
+
+    res = mem_map_check(uc, address, size, perms);
+    if (res)
+        return res;
 
     return mem_map(uc, address, size, UC_PROT_ALL, uc->memory_map_ptr(uc, address, size, perms, ptr));
 }
