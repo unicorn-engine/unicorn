@@ -12,7 +12,7 @@ static int count = 1;
 bool cb_hookunmapped(uc_engine *uc, uc_mem_type type, uint64_t address, uint32_t size, int64_t value, void *user_data) {
    uint32_t pc = 0;
    uc_reg_read(uc, UC_X86_REG_EIP, &pc);
-   fprintf(stderr, "mem unmapped: 0x%x type: %x address: 0x%"PRIx64" length: %x value: %x\n", 
+   fprintf(stderr, "mem unmapped: 0x%x type: %x address: 0x%"PRIx64" length: %x value: 0x%"PRIx64"\n", 
            pc, type, address, size, value);
 
    uc_err err = UC_ERR_OK;
@@ -24,14 +24,22 @@ bool cb_hookunmapped(uc_engine *uc, uc_mem_type type, uint64_t address, uint32_t
    return true;
 }
 
-char *CODE = "\x8B\x74\x01\x28"          // move esi, dword ptr [ecx + eax + 0x28]
-             "\x0C\xF0"                  // add esi, eax
-             "\x8D\x45\xFC"              // lea eax, dword ptr [ebp - 4]
-             "\x50"                      // push eax
-             "\x6A\x40"                  // push 0x40
-             "\x6A\x10"                  // push 0x10
-             "\x56"                      // push esi
-             "\xFF\x15\x20\x20\x00\x10"; // call some address
+// move esi, dword ptr [ecx + eax + 0x28]
+// add esi, eax
+// lea eax, dword ptr [ebp - 4]
+// push eax
+// push 0x40
+// push 0x10
+// push esi
+// call some address
+#define CODE "\x8B\x74\x01\x28" \
+             "\x0C\xF0" \
+             "\x8D\x45\xFC" \
+             "\x50" \
+             "\x6A\x40" \
+             "\x6A\x10" \
+             "\x56" \
+             "\xFF\x15\x20\x20\x00\x10"
 
 int main() {
    uc_engine *uc;
