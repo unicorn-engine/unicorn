@@ -92,6 +92,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
 
     cc->cpu_exec_enter(cpu);
     cpu->exception_index = -1;
+    env->invalid_error = UC_ERR_OK;
 
     /* prepare setjmp context for exception handling */
     for(;;) {
