@@ -58,7 +58,6 @@ void x86_reg_reset(struct uc_struct *uc)
     env->features[FEAT_8000_0001_ECX] = CPUID_EXT3_LAHF_LM | CPUID_EXT3_ABM | CPUID_EXT3_SKINIT | CPUID_EXT3_CR8LEG;
     env->features[FEAT_7_0_EBX] = CPUID_7_0_EBX_BMI1 | CPUID_7_0_EBX_BMI2 | CPUID_7_0_EBX_ADX | CPUID_7_0_EBX_SMAP;
 
-    env->invalid_error = UC_ERR_OK; // no error
     memset(env->regs, 0, sizeof(env->regs));
     memset(env->segs, 0, sizeof(env->segs));
     memset(env->cr, 0, sizeof(env->cr));
