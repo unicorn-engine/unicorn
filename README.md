@@ -35,17 +35,15 @@ More documentation is available in [docs/README.md](docs/README.md).
 Contact
 -------
 
-Contact us via mailing list, email or twitter. More information is available
-at http://www.unicorn-engine.org/contact/.
+[Contact us](http://www.unicorn-engine.org/contact/) via mailing list, email or twitter for any questions.
 
 
 Contribute
 ----------
 
-If you want to contribute, please pick up something from our Github issues
-at https://github.com/unicorn-engine/unicorn.
+If you want to contribute, please pick up something from our [Github issues](https://github.com/unicorn-engine/unicorn).
 
-We also maintain a TODO list at https://github.com/unicorn-engine/unicorn/wiki/TODO.
+We also maintain a list of more challenged problems in a [TODO list](https://github.com/unicorn-engine/unicorn/wiki/TODO).
 
-[CREDITS.TXT](CREDITS.TXT) lists important contributors of our project.
+[CREDITS.TXT](CREDITS.TXT) records important contributors of our project.
 
