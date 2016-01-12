@@ -18,13 +18,34 @@ Unicorn offers some unparalleled features:
 Further information is available at http://www.unicorn-engine.org
 
 
-Compilation
------------
-
-See [COMPILE.TXT](COMPILE.TXT) file for how to compile and install Unicorn.
-
-
 License
 -------
 
 This project is released under the [GPL license](COPYING).
+
+
+Compilation & Docs
+------------------
+
+See [COMPILE.TXT](COMPILE.TXT) file for how to compile and install Unicorn.
+
+More documentation is available in [docs/README](docs/README)
+
+
+Contact
+-------
+
+Contact us via mailing list, email or twitter. More information is available
+at http://www.unicorn-engine.org/contact/
+
+
+Contribute
+----------
+
+If you want to contribute, please pick up something from our Github issues
+at https://github.com/unicorn-engine/unicorn
+
+We also maintain a TODO list at https://github.com/unicorn-engine/unicorn/wiki/TODO.
+
+[CREDITS.TXT](CREDITS.TXT) lists important contributors of our project.
+
