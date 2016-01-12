@@ -41,7 +41,7 @@ Contact
 Contribute
 ----------
 
-If you want to contribute, please pick up something from our [Github issues](https://github.com/unicorn-engine/unicorn).
+If you want to contribute, please pick up something from our [Github issues](https://github.com/unicorn-engine/unicorn/issues).
 
 We also maintain a list of more challenged problems in a [TODO list](https://github.com/unicorn-engine/unicorn/wiki/TODO).
 
