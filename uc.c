@@ -1138,3 +1138,50 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
 {
     return hook_del(uc, hh);
 }
+
+UNICORN_EXPORT
+void uc_list_mapped_mem(uc_engine* uc)
+{
+	unsigned char type[4] = { 'R', 'W', 'X', 0 };
+	uint64_t start;
+	uint64_t end;
+
+	if (uc->mapped_block_count != 0)
+	{
+		printf("\n===========================mapped memory status ===========================\n\n");
+		for (int i = 0; i < uc->mapped_block_count; i++)
+		{
+			unsigned char perms[4] = { '-', '-', '-', 0 };
+			switch (uc->mapped_blocks[i]->perms)
+			{
+			case UC_PROT_NONE:
+				break;
+			case UC_PROT_READ:
+				perms[0] = type[0];
+				break;
+			case UC_PROT_WRITE:
+				perms[1] = type[1];
+				break;
+			case UC_PROT_READ | UC_PROT_WRITE:
+				perms[0] = type[0];
+				perms[1] = type[1];
+				break;
+			case UC_PROT_EXEC:
+				perms[2] = type[2];
+				break;
+			case UC_PROT_ALL:
+				perms[0] = type[0];
+				perms[1] = type[1];
+				perms[2] = type[2];
+				break;
+			default:
+				break;
+			}
+			start = uc->mapped_blocks[i]->addr;
+			end = uc->mapped_blocks[i]->addr + uc->mapped_blocks[i]->size.lo;
+			printf("id:%-2d    [range]:0x%016"PRIx64"--0x%016"PRIx64"  [attributes]:%s  \n", i, start, end, perms);
+		}
+
+	}
+	else printf("can't list mem\n");
+}
