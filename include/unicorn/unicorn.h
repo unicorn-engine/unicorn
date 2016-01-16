@@ -215,6 +215,14 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
 typedef bool (*uc_cb_eventmem_t)(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data);
 
+/* Memory region mapped by uc_mem_map() and uc_mem_map_ptr()
+   Retrieve the list of memory regions with uc_mem_regions()
+*/
+typedef struct uc_mem_region {
+    uint64_t begin; // begin address of the region (inclusive)
+    uint64_t end;   // end address of the region (inclusive)
+    uint32_t perms; // memory permissions of the region
+} uc_mem_region;
 
 /*
  Return combined API version & major and minor version numbers.
@@ -502,6 +510,23 @@ uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size);
 */
 UNICORN_EXPORT
 uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
+
+/*
+ Retrieve all memory regions mapped by uc_mem_map() and uc_mem_map_ptr()
+ This API allocates memory for @regions, and user must free this memory later
+ by free() to avoid leaking memory.
+ NOTE: memory regions may be splitted by uc_mem_unmap()
+
+ @handle: handle returned by uc_open()
+ @regions: pointer to an array of uc_mem_region struct. This is allocated by
+   Unicorn, and must be freed by user later
+ @count: pointer to number of struct uc_mem_region contained in @regions
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_mem_regions(uc_engine *handle, uc_mem_region **regions, uint32_t *count);
 
 #ifdef __cplusplus
 }
