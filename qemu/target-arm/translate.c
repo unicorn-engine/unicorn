@@ -7680,6 +7680,7 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
     TCGv_i32 tmp3;
     TCGv_i32 addr;
     TCGv_i64 tmp64;
+    struct hook *hook;
 
     /* M variants do not implement ARM mode.  */
     if (arm_dc_feature(s, ARM_FEATURE_M)) {
@@ -7687,10 +7688,10 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
     }
 
     // Unicorn: trace this instruction on request
-    if (s->uc->hook_insn) {
-        struct hook_struct *trace = hook_find(s->uc, UC_HOOK_CODE, s->pc - 4);
-        if (trace)
-            gen_uc_tracecode(tcg_ctx, 4, trace->callback, s->uc, s->pc - 4, trace->user_data);
+    HOOK_FOREACH(s->uc, hook, UC_HOOK_CODE) {
+        if (! HOOK_BOUND_CHECK(hook, s->pc - 4))
+            continue;
+        gen_uc_tracecode(tcg_ctx, 4, hook->callback, s->uc, s->pc - 4, hook->user_data);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
@@ -10390,6 +10391,7 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
     TCGv_i32 tmp;
     TCGv_i32 tmp2;
     TCGv_i32 addr;
+    struct hook *hook;
 
     // Unicorn: end address tells us to stop emulation
     if (s->pc == s->uc->addr_end) {
@@ -10408,15 +10410,12 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
     }
 
     // Unicorn: trace this instruction on request
-    if (env->uc->hook_insn) {
-        struct hook_struct *trace = hook_find(s->uc, UC_HOOK_CODE, s->pc);
-        if (trace)
-            gen_uc_tracecode(tcg_ctx, 2, trace->callback, env->uc, s->pc, trace->user_data);
-        // if requested to emulate only some instructions, check to see
-        // if we need to exit immediately
-        if (env->uc->emu_count > 0) {
-            check_exit_request(tcg_ctx);
-        }
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_CODE) {
+        if (! HOOK_BOUND_CHECK(hook, s->pc))
+            continue;
+        gen_uc_tracecode(tcg_ctx, 2, hook->callback, env->uc, s->pc, hook->user_data);
+        // check to see if we need to exit immediately
+        check_exit_request(tcg_ctx);
     }
 
     insn = arm_lduw_code(env, s->pc, s->bswap_code);
@@ -11148,6 +11147,7 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
     int max_insns;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     bool block_full = false;
+    struct hook *hook;
 
     /* generate intermediate code */
 
@@ -11237,12 +11237,13 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (env->uc->hook_block && !env->uc->block_full) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
-        if (trace) {
+    if (!env->uc->block_full) {
+        HOOK_FOREACH(env->uc, hook, UC_HOOK_BLOCK) {
+            if (! HOOK_BOUND_CHECK(hook, pc_start))
+                continue;
             // save block address to see if we need to patch block size later
             env->uc->block_addr = pc_start;
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, pc_start, trace->user_data);
+            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, hook->callback, env->uc, pc_start, hook->user_data);
         }
     }
 

@@ -64,6 +64,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     TranslationBlock *tb;
     uint8_t *tc_ptr;
     uintptr_t next_tb;
+    struct hook *hook;
 
     /* This must be volatile so it is not trashed by longjmp() */
     volatile bool have_tb_lock = false;
@@ -127,11 +128,10 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     ret = cpu->exception_index;
                     break;
 #else
-                    // Unicorn: call interrupt callback if registered
-                    if (uc->hook_intr_idx)
-                        ((uc_cb_hookintr_t)uc->hook_callbacks[uc->hook_intr_idx].callback)(
-                            uc, cpu->exception_index,
-                            uc->hook_callbacks[uc->hook_intr_idx].user_data);
+                    // Unicorn: call registered interrupt callbacks
+                    HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
+                        ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
+                    }
                     cpu->exception_index = -1;
 #if defined(TARGET_X86_64)
                     // point EIP to the next instruction after INT

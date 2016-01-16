@@ -228,7 +228,7 @@ compile_lib: config qemu/config-host.h-timestamp
 
 unicorn: $(LIBRARY) $(ARCHIVE)
 
-$(LIBRARY): $(UC_TARGET_OBJ) uc.o hook.o
+$(LIBRARY): $(UC_TARGET_OBJ) uc.o list.o
 ifeq ($(UNICORN_SHARED),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(LIBRARY))
@@ -241,7 +241,7 @@ ifneq (,$(LIBRARY_SYMLINK))
 endif
 endif
 
-$(ARCHIVE): $(UC_TARGET_OBJ) uc.o hook.o
+$(ARCHIVE): $(UC_TARGET_OBJ) uc.o list.o
 ifeq ($(UNICORN_STATIC),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(ARCHIVE))

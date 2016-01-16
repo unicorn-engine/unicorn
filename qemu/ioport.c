@@ -66,39 +66,45 @@ const MemoryRegionOps unassigned_io_ops = {
 void cpu_outb(struct uc_struct *uc, pio_addr_t addr, uint8_t val)
 {
     //LOG_IOPORT("outb: %04"FMT_pioaddr" %02"PRIx8"\n", addr, val);
-    // Unicorn: call interrupt callback if registered
-    if (uc->hook_out_idx)
-        ((uc_cb_insn_out_t)uc->hook_callbacks[uc->hook_out_idx].callback)(
-            uc, addr, 1, val,
-            uc->hook_callbacks[uc->hook_out_idx].user_data);
+    // Unicorn: call registered OUT callbacks
+    struct hook *hook;
+    HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
+        if (hook->insn == UC_X86_INS_OUT)
+            ((uc_cb_insn_out_t)hook->callback)(uc, addr, 1, val, hook->user_data);
+    }
 }
 
 void cpu_outw(struct uc_struct *uc, pio_addr_t addr, uint16_t val)
 {
     //LOG_IOPORT("outw: %04"FMT_pioaddr" %04"PRIx16"\n", addr, val);
-    // Unicorn: call interrupt callback if registered
-    if (uc->hook_out_idx)
-        ((uc_cb_insn_out_t)uc->hook_callbacks[uc->hook_out_idx].callback)(
-            uc, addr, 2, val,
-            uc->hook_callbacks[uc->hook_out_idx].user_data);
+    // Unicorn: call registered OUT callbacks
+    struct hook *hook;
+    HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
+        if (hook->insn == UC_X86_INS_OUT)
+            ((uc_cb_insn_out_t)hook->callback)(uc, addr, 2, val, hook->user_data);
+    }
 }
 
 void cpu_outl(struct uc_struct *uc, pio_addr_t addr, uint32_t val)
 {
     //LOG_IOPORT("outl: %04"FMT_pioaddr" %08"PRIx32"\n", addr, val);
-    if (uc->hook_out_idx)
-        ((uc_cb_insn_out_t)uc->hook_callbacks[uc->hook_out_idx].callback)(
-            uc, addr, 4, val,
-            uc->hook_callbacks[uc->hook_out_idx].user_data);
+    // Unicorn: call registered OUT callbacks
+    struct hook *hook;
+    HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
+        if (hook->insn == UC_X86_INS_OUT)
+            ((uc_cb_insn_out_t)hook->callback)(uc, addr, 4, val, hook->user_data);
+    }
 }
 
 uint8_t cpu_inb(struct uc_struct *uc, pio_addr_t addr)
 {
     //LOG_IOPORT("inb : %04"FMT_pioaddr" %02"PRIx8"\n", addr, val);
-    if (uc->hook_in_idx)
-        return ((uc_cb_insn_in_t)uc->hook_callbacks[uc->hook_in_idx].callback)(
-            uc, addr, 1,
-            uc->hook_callbacks[uc->hook_in_idx].user_data);
+    // Unicorn: call registered IN callbacks
+    struct hook *hook;
+    HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
+        if (hook->insn == UC_X86_INS_IN)
+            return ((uc_cb_insn_in_t)hook->callback)(uc, addr, 1, hook->user_data);
+    }
 
     return 0;
 }
@@ -106,10 +112,12 @@ uint8_t cpu_inb(struct uc_struct *uc, pio_addr_t addr)
 uint16_t cpu_inw(struct uc_struct *uc, pio_addr_t addr)
 {
     //LOG_IOPORT("inw : %04"FMT_pioaddr" %04"PRIx16"\n", addr, val);
-    if (uc->hook_in_idx)
-        return ((uc_cb_insn_in_t)uc->hook_callbacks[uc->hook_in_idx].callback)(
-            uc, addr, 2,
-            uc->hook_callbacks[uc->hook_in_idx].user_data);
+    // Unicorn: call registered IN callbacks
+    struct hook *hook;
+    HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
+        if (hook->insn == UC_X86_INS_IN)
+            return ((uc_cb_insn_in_t)hook->callback)(uc, addr, 2, hook->user_data);
+    }
 
     return 0;
 }
@@ -117,10 +125,12 @@ uint16_t cpu_inw(struct uc_struct *uc, pio_addr_t addr)
 uint32_t cpu_inl(struct uc_struct *uc, pio_addr_t addr)
 {
     //LOG_IOPORT("inl : %04"FMT_pioaddr" %08"PRIx32"\n", addr, val);
-    if (uc->hook_in_idx)
-        return ((uc_cb_insn_in_t)uc->hook_callbacks[uc->hook_in_idx].callback)(
-            uc, addr, 4,
-            uc->hook_callbacks[uc->hook_in_idx].user_data);
+    // Unicorn: call registered IN callbacks
+    struct hook *hook;
+    HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
+        if (hook->insn == UC_X86_INS_IN)
+            return ((uc_cb_insn_in_t)hook->callback)(uc, addr, 4, hook->user_data);
+    }
 
     return 0;
 }

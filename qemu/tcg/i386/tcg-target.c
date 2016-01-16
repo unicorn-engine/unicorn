@@ -1209,7 +1209,7 @@ static inline void tcg_out_tlb_load(TCGContext *s, TCGReg addrlo, TCGReg addrhi,
     tcg_out_mov(s, ttype, r1, addrlo);
 
     // Unicorn: fast path if hookmem is not enable
-    if (!s->uc->hook_mem_read && !s->uc->hook_mem_write)
+    if (!HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ) && !HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE))
         tcg_out_opc(s, OPC_JCC_long + JCC_JNE, 0, 0, 0);
     else
         tcg_out_opc(s, OPC_JMP_long, 0, 0, 0); /* slow_path */

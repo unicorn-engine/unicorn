@@ -945,14 +945,16 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
 #else
 void helper_syscall(CPUX86State *env, int next_eip_addend)
 {
-    // Unicorn: call interrupt callback if registered
-    struct uc_struct *uc = env->uc;
-    if (uc->hook_syscall_idx) {
-        ((uc_cb_insn_syscall_t)uc->hook_callbacks[uc->hook_syscall_idx].callback)(
-            uc, uc->hook_callbacks[uc->hook_syscall_idx].user_data);
+    // Unicorn: call registered syscall hooks
+    struct hook *hook;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (! HOOK_BOUND_CHECK(hook, env->eip))
+            continue;
+        if (hook->insn == UC_X86_INS_SYSCALL)
+            ((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data);
     }
-    env->eip += next_eip_addend;
 
+    env->eip += next_eip_addend;
     return;
 
     int selector;
@@ -2303,14 +2305,16 @@ void helper_lret_protected(CPUX86State *env, int shift, int addend)
 
 void helper_sysenter(CPUX86State *env, int next_eip_addend)
 {
-    // Unicorn: call interrupt callback if registered
-    struct uc_struct *uc = env->uc;
-    if (uc->hook_syscall_idx) {
-        ((uc_cb_insn_syscall_t)uc->hook_callbacks[uc->hook_syscall_idx].callback)(
-            uc, uc->hook_callbacks[uc->hook_syscall_idx].user_data);
+    // Unicorn: call registered SYSENTER hooks
+    struct hook *hook;
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (! HOOK_BOUND_CHECK(hook, env->eip))
+            continue;
+        if (hook->insn == UC_X86_INS_SYSENTER)
+            ((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data);
     }
-    env->eip += next_eip_addend;
 
+    env->eip += next_eip_addend;
     return;
 
     if (env->sysenter_cs == 0) {

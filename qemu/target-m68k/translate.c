@@ -3031,6 +3031,7 @@ static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     uint16_t insn;
+    struct hook *hook;
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT))) {
         tcg_gen_debug_insn_start(tcg_ctx, s->pc);
@@ -3043,11 +3044,10 @@ static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
     }
 
     // Unicorn: trace this instruction on request
-    if (env->uc->hook_insn) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, s->pc);
-        if (trace)
-            gen_uc_tracecode(tcg_ctx, 2, trace->callback, env->uc, s->pc, trace->user_data);
-
+    HOOK_FOREACH(env->uc, hook, UC_HOOK_CODE) {
+        if (! HOOK_BOUND_CHECK(hook, s->pc))
+            continue;
+        gen_uc_tracecode(tcg_ctx, 2, hook->callback, env->uc, s->pc, hook->user_data);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
@@ -3075,6 +3075,7 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
     int max_insns;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     bool block_full = false;
+    struct hook *hook;
 
     /* generate intermediate code */
     pc_start = tb->pc;
@@ -3109,12 +3110,13 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (env->uc->hook_block && !env->uc->block_full) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
-        if (trace) {
+    if (!env->uc->block_full) {
+        HOOK_FOREACH(env->uc, hook, UC_HOOK_BLOCK) {
+            if (! HOOK_BOUND_CHECK(hook, pc_start))
+                continue;
             // save block address to see if we need to patch block size later
             env->uc->block_addr = pc_start;
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, pc_start, trace->user_data);
+            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, hook->callback, env->uc, pc_start, hook->user_data);
         }
     }
 

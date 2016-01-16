@@ -179,7 +179,7 @@ static int cpu_gen_code(CPUArchState *env, TranslationBlock *tb, int *gen_code_s
     gen_intermediate_code(env, tb);
 
     // Unicorn: when tracing block, patch 1st operand for block size
-    if (env->uc->hook_block && env->uc->block_addr == tb->pc) {
+    if (HOOK_EXISTS(env->uc, UC_HOOK_BLOCK) && env->uc->block_addr == tb->pc) {
         if (env->uc->block_full)    // block size is unknown
             *(s->gen_opparam_buf + 1) = 0;
         else
