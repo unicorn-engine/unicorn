@@ -480,7 +480,7 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t per
  Unmap a region of emulation memory.
  This API deletes a memory mapping from the emulation memory space.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @address: starting address of the memory region to be unmapped.
     This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
  @size: size of the memory region to be modified.
@@ -496,7 +496,7 @@ uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size);
  Set memory permissions for emulation memory.
  This API changes permissions on an existing memory region.
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @address: starting address of the memory region to be modified.
     This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
  @size: size of the memory region to be modified.
@@ -517,7 +517,7 @@ uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t per
  by free() to avoid leaking memory.
  NOTE: memory regions may be splitted by uc_mem_unmap()
 
- @handle: handle returned by uc_open()
+ @uc: handle returned by uc_open()
  @regions: pointer to an array of uc_mem_region struct. This is allocated by
    Unicorn, and must be freed by user later
  @count: pointer to number of struct uc_mem_region contained in @regions
@@ -526,7 +526,7 @@ uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t per
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_regions(uc_engine *handle, uc_mem_region **regions, uint32_t *count);
+uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count);
 
 #ifdef __cplusplus
 }
