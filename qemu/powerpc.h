@@ -1,6 +1,8 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_POWERPC_H
 #define UNICORN_AUTOGEN_POWERPC_H
+#define use_idiv_instructions use_idiv_instructions_powerpc
+#define tcg_target_deposit_valid tcg_target_deposit_valid_powerpc
 #define helper_power_down helper_power_down_powerpc
 #define check_exit_request check_exit_request_powerpc
 #define address_space_unregister address_space_unregister_powerpc

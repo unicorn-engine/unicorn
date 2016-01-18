@@ -1,6 +1,8 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_SPARC_H
 #define UNICORN_AUTOGEN_SPARC_H
+#define use_idiv_instructions use_idiv_instructions_sparc
+#define tcg_target_deposit_valid tcg_target_deposit_valid_sparc
 #define helper_power_down helper_power_down_sparc
 #define check_exit_request check_exit_request_sparc
 #define address_space_unregister address_space_unregister_sparc

@@ -7,6 +7,8 @@
 import sys
 
 symbols = (
+    'use_idiv_instructions',
+    'tcg_target_deposit_valid',
     'helper_power_down',
     'check_exit_request',
     'address_space_unregister',

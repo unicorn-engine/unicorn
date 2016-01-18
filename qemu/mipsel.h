@@ -1,6 +1,8 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_MIPSEL_H
 #define UNICORN_AUTOGEN_MIPSEL_H
+#define use_idiv_instructions use_idiv_instructions_mipsel
+#define tcg_target_deposit_valid tcg_target_deposit_valid_mipsel
 #define helper_power_down helper_power_down_mipsel
 #define check_exit_request check_exit_request_mipsel
 #define address_space_unregister address_space_unregister_mipsel
