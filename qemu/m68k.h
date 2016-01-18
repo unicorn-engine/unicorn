@@ -1,7 +1,7 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_M68K_H
 #define UNICORN_AUTOGEN_M68K_H
-#define use_idiv_instructions use_idiv_instructions_m68k
+#define use_idiv_instructions_rt use_idiv_instructions_rt_m68k
 #define tcg_target_deposit_valid tcg_target_deposit_valid_m68k
 #define helper_power_down helper_power_down_m68k
 #define check_exit_request check_exit_request_m68k

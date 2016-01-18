@@ -1,7 +1,7 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_AARCH64_H
 #define UNICORN_AUTOGEN_AARCH64_H
-#define use_idiv_instructions use_idiv_instructions_aarch64
+#define use_idiv_instructions_rt use_idiv_instructions_rt_aarch64
 #define tcg_target_deposit_valid tcg_target_deposit_valid_aarch64
 #define helper_power_down helper_power_down_aarch64
 #define check_exit_request check_exit_request_aarch64

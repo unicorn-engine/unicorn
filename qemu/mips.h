@@ -1,7 +1,7 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_MIPS_H
 #define UNICORN_AUTOGEN_MIPS_H
-#define use_idiv_instructions use_idiv_instructions_mips
+#define use_idiv_instructions_rt use_idiv_instructions_rt_mips
 #define tcg_target_deposit_valid tcg_target_deposit_valid_mips
 #define helper_power_down helper_power_down_mips
 #define check_exit_request check_exit_request_mips

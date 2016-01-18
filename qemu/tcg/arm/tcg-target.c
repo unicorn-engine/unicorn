@@ -57,7 +57,7 @@ static int arm_arch = __ARM_ARCH;
 #define use_armv7_instructions  (__ARM_ARCH >= 7 || arm_arch >= 7)
 
 #ifndef use_idiv_instructions
-bool use_idiv_instructions;
+bool use_idiv_instructions_rt;
 #endif
 
 /* ??? Ought to think about changing CONFIG_SOFTMMU to always defined.  */
@@ -1984,7 +1984,7 @@ static void tcg_target_init(TCGContext *s)
 #ifndef use_idiv_instructions
     {
         unsigned long hwcap = qemu_getauxval(AT_HWCAP);
-        use_idiv_instructions = (hwcap & HWCAP_ARM_IDIVA) != 0;
+        use_idiv_instructions_rt = (hwcap & HWCAP_ARM_IDIVA) != 0;
     }
 #endif
     if (__ARM_ARCH < 7) {
