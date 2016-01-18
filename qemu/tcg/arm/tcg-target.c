@@ -56,7 +56,7 @@ static int arm_arch = __ARM_ARCH;
 #define use_armv6_instructions  (__ARM_ARCH >= 6 || arm_arch >= 6)
 #define use_armv7_instructions  (__ARM_ARCH >= 7 || arm_arch >= 7)
 
-#ifndef use_idiv_instructions
+#ifndef __ARM_ARCH_EXT_IDIV__
 bool use_idiv_instructions_rt;
 #endif
 
@@ -1981,7 +1981,7 @@ static void tcg_target_init(TCGContext *s)
 {
     /* Only probe for the platform and capabilities if we havn't already
        determined maximum values at compile time.  */
-#ifndef use_idiv_instructions
+#ifndef __ARM_ARCH_EXT_IDIV__
     {
         unsigned long hwcap = qemu_getauxval(AT_HWCAP);
         use_idiv_instructions_rt = (hwcap & HWCAP_ARM_IDIVA) != 0;
