@@ -176,7 +176,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     int index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     target_ulong tlb_addr = env->tlb_table[mmu_idx][index].ADDR_READ;
     uintptr_t haddr;
-    DATA_TYPE res;
+    DATA_TYPE res = 0;
     int error_code;
 
     struct uc_struct *uc = env->uc;
@@ -223,15 +223,6 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 #endif
 
-    // Unicorn: callback on memory read
-    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && env->uc->hook_mem_read) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_MEM_READ, addr);
-        if (trace) {
-            ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_READ,
-                    (uint64_t)addr, (int)DATA_SIZE, (int64_t)0, trace->user_data);
-        }
-    }
-
     // Unicorn: callback on non-readable memory
     if (READ_ACCESS_TYPE == MMU_DATA_LOAD && mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
         if (uc->hook_mem_read_prot_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_read_prot_idx].callback)(
@@ -243,7 +234,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             env->invalid_error = UC_ERR_READ_PROT;
             // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
-            return 0;
+            goto out;
         }
     }
 
@@ -264,7 +255,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             env->invalid_error = UC_ERR_READ_UNALIGNED;
 #endif
             cpu_exit(uc->current_cpu);
-            return 0;
+            goto out;
         }
 #endif
         if (!VICTIM_TLB_HIT(ADDR_READ)) {
@@ -286,7 +277,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             env->invalid_error = UC_ERR_READ_UNMAPPED;
             // printf("Invalid memory read at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
-            return 0;
+            goto out;
         } else {
             env->invalid_error = UC_ERR_OK;
         }
@@ -295,7 +286,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
            byte ordering.  We should push the LE/BE request down into io.  */
         res = glue(io_read, SUFFIX)(env, ioaddr, addr, retaddr);
         res = TGT_LE(res);
-        return res;
+        goto out;
     }
 
     /* Handle slow unaligned access (it spans two pages or IO).  */
@@ -316,7 +307,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         env->invalid_error = UC_ERR_READ_UNALIGNED;
 #endif
         cpu_exit(uc->current_cpu);
-        return 0;
+        goto out;
 #endif
         addr1 = addr & ~(DATA_SIZE - 1);
         addr2 = addr1 + DATA_SIZE;
@@ -328,7 +319,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
         /* Little-endian combine.  */
         res = (res1 >> shift) | (res2 << ((DATA_SIZE * 8) - shift));
-        return res;
+        goto out;
     }
 
     /* Handle aligned access or unaligned access in the same page.  */
@@ -343,7 +334,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         env->invalid_error = UC_ERR_READ_UNALIGNED;
 #endif
         cpu_exit(uc->current_cpu);
-        return 0;
+        goto out;
     }
 #endif
 
@@ -353,6 +344,18 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #else
     res = glue(glue(ld, LSUFFIX), _le_p)((uint8_t *)haddr);
 #endif
+
+out:
+
+    // Unicorn: callback on memory read
+    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && env->uc->hook_mem_read) {
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_MEM_READ, addr);
+        if (trace) {
+            ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_READ,
+                    (uint64_t)addr, (int)DATA_SIZE, (int64_t)res, trace->user_data);
+        }
+    }
+
     return res;
 }
 
@@ -366,7 +369,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     int index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     target_ulong tlb_addr = env->tlb_table[mmu_idx][index].ADDR_READ;
     uintptr_t haddr;
-    DATA_TYPE res;
+    DATA_TYPE res = 0;
     int error_code;
 
     struct uc_struct *uc = env->uc;
@@ -413,15 +416,6 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 #endif
 
-    // Unicorn: callback on memory read
-    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && env->uc->hook_mem_read) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_MEM_READ, addr);
-        if (trace) {
-            ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_READ,
-                    (uint64_t)addr, (int)DATA_SIZE, (int64_t)0, trace->user_data);
-        }
-    }
-
     // Unicorn: callback on non-readable memory
     if (READ_ACCESS_TYPE == MMU_DATA_LOAD && mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
         if (uc->hook_mem_read_prot_idx != 0 && ((uc_cb_eventmem_t)uc->hook_callbacks[uc->hook_mem_read_prot_idx].callback)(
@@ -433,7 +427,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             env->invalid_error = UC_ERR_READ_PROT;
             // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->current_cpu);
-            return 0;
+            goto out;
         }
     }
 
@@ -454,7 +448,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             env->invalid_error = UC_ERR_READ_UNALIGNED;
 #endif
             cpu_exit(uc->current_cpu);
-            return 0;
+            goto out;
         }
 #endif
         if (!VICTIM_TLB_HIT(ADDR_READ)) {
@@ -477,14 +471,14 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             env->invalid_error = UC_ERR_READ_UNMAPPED;
             // printf("Invalid memory read at " TARGET_FMT_lx "\n", addr);
             cpu_exit(env->uc->current_cpu);
-            return 0;
+            goto out;
         }
 
         /* ??? Note that the io helpers always read data in the target
            byte ordering.  We should push the LE/BE request down into io.  */
         res = glue(io_read, SUFFIX)(env, ioaddr, addr, retaddr);
         res = TGT_BE(res);
-        return res;
+        goto out;
     }
 
     /* Handle slow unaligned access (it spans two pages or IO).  */
@@ -505,7 +499,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         env->invalid_error = UC_ERR_READ_UNALIGNED;
 #endif
         cpu_exit(uc->current_cpu);
-        return 0;
+        goto out;
 #endif
         addr1 = addr & ~(DATA_SIZE - 1);
         addr2 = addr1 + DATA_SIZE;
@@ -517,7 +511,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
         /* Big-endian combine.  */
         res = (res1 << shift) | (res2 >> ((DATA_SIZE * 8) - shift));
-        return res;
+        goto out;
     }
 
     /* Handle aligned access or unaligned access in the same page.  */
@@ -532,12 +526,24 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
         env->invalid_error = UC_ERR_READ_UNALIGNED;
 #endif
         cpu_exit(uc->current_cpu);
-        return 0;
+        goto out;
     }
 #endif
 
     haddr = addr + env->tlb_table[mmu_idx][index].addend;
     res = glue(glue(ld, LSUFFIX), _be_p)((uint8_t *)haddr);
+
+out:
+
+    // Unicorn: callback on memory read
+    if (READ_ACCESS_TYPE == MMU_DATA_LOAD && env->uc->hook_mem_read) {
+        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_MEM_READ, addr);
+        if (trace) {
+            ((uc_cb_hookmem_t)trace->callback)(env->uc, UC_MEM_READ,
+                    (uint64_t)addr, (int)DATA_SIZE, (int64_t)res, trace->user_data);
+        }
+    }
+
     return res;
 }
 #endif /* DATA_SIZE > 1 */
