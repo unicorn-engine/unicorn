@@ -11,6 +11,15 @@
 #include "unicorn/unicorn.h"
 #include "hook.h"
 
+// These are masks of supported modes for each cpu/arch.
+// They should be updated when changes are made to the uc_mode enum typedef.
+#define UC_MODE_ARM_MASK    (UC_MODE_ARM|UC_MODE_THUMB|UC_MODE_LITTLE_ENDIAN)
+#define UC_MODE_MIPS_MASK   (UC_MODE_MICRO|UC_MODE_MIPS3|UC_MODE_MIPS32R6|UC_MODE_MIPS32|UC_MODE_MIPS64|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN)
+#define UC_MODE_X86_MASK    (UC_MODE_16|UC_MODE_32|UC_MODE_64|UC_MODE_LITTLE_ENDIAN)
+#define UC_MODE_PPC_MASK    (UC_MODE_PPC64|UC_MODE_QPX|UC_MODE_LITTLE_ENDIAN)
+#define UC_MODE_SPARC_MASK  (UC_MODE_V9|UC_MODE_LITTLE_ENDIAN)
+#define UC_MODE_M68K_MASK   (UC_MODE_LITTLE_ENDIAN)
+
 #define ARR_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
 QTAILQ_HEAD(CPUTailQ, CPUState);
