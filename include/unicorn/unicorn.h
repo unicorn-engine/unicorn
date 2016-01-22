@@ -86,22 +86,35 @@ typedef enum uc_arch {
 
 // Mode type
 typedef enum uc_mode {
-    UC_MODE_LITTLE_ENDIAN = 0,  // little-endian mode (default mode)
-    UC_MODE_ARM = 0,    // 32-bit ARM
-    UC_MODE_16 = 1 << 1,    // 16-bit mode (X86)
-    UC_MODE_32 = 1 << 2,    // 32-bit mode (X86)
-    UC_MODE_64 = 1 << 3,    // 64-bit mode (X86, PPC)
-    UC_MODE_THUMB = 1 << 4, // ARM's Thumb mode, including Thumb-2
-    UC_MODE_MCLASS = 1 << 5,    // ARM's Cortex-M series
-    UC_MODE_V8 = 1 << 6,    // ARMv8 A32 encodings for ARM
-    UC_MODE_MICRO = 1 << 4, // MicroMips mode (MIPS)
-    UC_MODE_MIPS3 = 1 << 5, // Mips III ISA
-    UC_MODE_MIPS32R6 = 1 << 6, // Mips32r6 ISA
-    UC_MODE_V9 = 1 << 4, // SparcV9 mode (Sparc)
-    UC_MODE_QPX = 1 << 4, // Quad Processing eXtensions mode (PPC)
-    UC_MODE_BIG_ENDIAN = 1 << 30,   // big-endian mode
-    UC_MODE_MIPS32 = UC_MODE_32,    // Mips32 ISA (Mips)
-    UC_MODE_MIPS64 = UC_MODE_64,    // Mips64 ISA (Mips)
+    UC_MODE_LITTLE_ENDIAN = 0,    // little-endian mode (default mode)
+    UC_MODE_BIG_ENDIAN = 1 << 30, // big-endian mode (currently only supported by MIPS)
+    // arm / arm64
+    UC_MODE_ARM = 0,              // 32-bit ARM
+    UC_MODE_THUMB = 1 << 4,       // ARM's Thumb mode, including Thumb-2
+    UC_MODE_MCLASS = 1 << 5,      // ARM's Cortex-M series (currently unsupported)
+    UC_MODE_V8 = 1 << 6,          // ARMv8 A32 encodings for ARM (currently unsupported)
+    UC_MODE_ARM_MASK = UC_MODE_ARM|UC_MODE_THUMB|UC_MODE_MCLASS|UC_MODE_MCLASS|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN,
+    // mips
+    UC_MODE_MICRO = 1 << 4,       // MicroMips mode
+    UC_MODE_MIPS3 = 1 << 5,       // Mips III ISA
+    UC_MODE_MIPS32R6 = 1 << 6,    // Mips32r6 ISA
+    UC_MODE_MIPS32 = 1 << 2,      // Mips32 ISA
+    UC_MODE_MIPS64 = 1 << 3,      // Mips64 ISA
+    UC_MODE_MIPS_MASK = UC_MODE_MICRO|UC_MODE_MIPS3|UC_MODE_MIPS32R6|UC_MODE_MIPS32|UC_MODE_MIPS64|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN,
+    // x86 / x64
+    UC_MODE_16 = 1 << 1,          // 16-bit mode
+    UC_MODE_32 = 1 << 2,          // 32-bit mode
+    UC_MODE_64 = 1 << 3,          // 64-bit mode
+    UC_MODE_X86_MASK = UC_MODE_16|UC_MODE_32|UC_MODE_64|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN,
+    // ppc 
+    UC_MODE_PPC64 = 1 << 3,       // 64-bit mode
+    UC_MODE_QPX = 1 << 4,         // Quad Processing eXtensions mode
+    UC_MODE_PPC_MASK = UC_MODE_PPC64|UC_MODE_QPX|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN,
+    // sparc
+    UC_MODE_V9 = 1 << 4,          // SparcV9 mode
+    UC_MODE_SPARC_MASK = UC_MODE_V9|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN,
+    // m68k
+    UC_MODE_M68K_MASK = UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN,
 } uc_mode;
 
 // All type of errors encountered by Unicorn API.
