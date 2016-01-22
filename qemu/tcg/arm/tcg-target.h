@@ -52,7 +52,8 @@ typedef enum {
 #ifdef __ARM_ARCH_EXT_IDIV__
 #define use_idiv_instructions  1
 #else
-extern bool use_idiv_instructions;
+extern bool use_idiv_instructions_rt;
+#define use_idiv_instructions  use_idiv_instructions_rt
 #endif
 
 

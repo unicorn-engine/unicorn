@@ -1,6 +1,8 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_MIPS_H
 #define UNICORN_AUTOGEN_MIPS_H
+#define use_idiv_instructions_rt use_idiv_instructions_rt_mips
+#define tcg_target_deposit_valid tcg_target_deposit_valid_mips
 #define helper_power_down helper_power_down_mips
 #define check_exit_request check_exit_request_mips
 #define address_space_unregister address_space_unregister_mips
@@ -2808,7 +2810,6 @@
 #define tb_phys_invalidate tb_phys_invalidate_mips
 #define tb_reset_jump tb_reset_jump_mips
 #define tb_set_jmp_target tb_set_jmp_target_mips
-#define tb_set_jmp_target1 tb_set_jmp_target1_mips
 #define tcg_accel_class_init tcg_accel_class_init_mips
 #define tcg_accel_type tcg_accel_type_mips
 #define tcg_add_param_i32 tcg_add_param_i32_mips

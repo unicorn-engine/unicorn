@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <inttypes.h>
 
 
 //  Demostration of a self-modifying "IMUL eax,mem,Ib" opcode
@@ -110,7 +111,7 @@ static void hook_code32(uc_engine *uc,
     uint32_t tmp4[1];
     uint32_t ecx;
 
-    printf("\nhook_code32: Address: %lx, Opcode Size: %d\n", address, size);
+    printf("\nhook_code32: Address: %"PRIx64", Opcode Size: %d\n", address, size);
     size = MIN(sizeof(tmp), size);
     if (!uc_mem_read(uc, address, tmp, size)) 
     {
@@ -202,7 +203,7 @@ static void hook_mem32(uc_engine *uc,
     ctype = '?';
     if (type == 16) ctype = 'R';
     if (type == 17) ctype = 'W';
-    printf("hook_mem32(%c): Address: 0x%lx, Size: %d, Value:0x%lx\n", ctype, address, size, value);
+    printf("hook_mem32(%c): Address: 0x%"PRIx64", Size: %d, Value:0x%"PRIx64"\n", ctype, address, size, value);
 
     // if (!uc_mem_read(uc, 0x6000003a, tmp, 4)) 
     // {

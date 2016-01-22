@@ -184,7 +184,8 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 uc->init_arch = arm_uc_init;
 
                 // verify mode
-                if (mode != UC_MODE_ARM && mode != UC_MODE_THUMB) {
+                // TODO: support Big endian, MCLASS & V8
+                if (mode & (~(UC_MODE_ARM | UC_MODE_THUMB | UC_MODE_BIG_ENDIAN | UC_MODE_LITTLE_ENDIAN))) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
