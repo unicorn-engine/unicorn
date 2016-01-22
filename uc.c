@@ -185,7 +185,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 
                 // verify mode
                 // TODO: support Big endian, MCLASS & V8
-                if (mode & (~(UC_MODE_ARM | UC_MODE_THUMB | UC_MODE_BIG_ENDIAN | UC_MODE_LITTLE_ENDIAN))) {
+                if (mode & ~UC_MODE_ARM_MASK) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
