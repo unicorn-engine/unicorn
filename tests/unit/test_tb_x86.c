@@ -201,14 +201,9 @@ static void hook_mem32(uc_engine *uc,
     //uint32_t tmp[1];
 
     ctype = '?';
-    if (type == UC_MEM_READ) {
-		ctype = 'R';
-		printf("hook_mem32(%c): Address: 0x%"PRIx64", Size: %d \n", ctype, address, size);
-	}
-    if (type == UC_MEM_WRITE) {
-		ctype = 'W';
-		printf("hook_mem32(%c): Address: 0x%"PRIx64", Size: %d, Value:0x%"PRIx64"\n", ctype, address, size, value);
-	}
+    if (type == 16) ctype = 'R';
+    if (type == 17) ctype = 'W';
+    printf("hook_mem32(%c): Address: 0x%"PRIx64", Size: %d, Value:0x%"PRIx64"\n", ctype, address, size, value);
 
     // if (!uc_mem_read(uc, 0x6000003a, tmp, 4)) 
     // {
