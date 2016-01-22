@@ -2810,7 +2810,6 @@
 #define tb_phys_invalidate tb_phys_invalidate_sparc64
 #define tb_reset_jump tb_reset_jump_sparc64
 #define tb_set_jmp_target tb_set_jmp_target_sparc64
-#define tb_set_jmp_target1 tb_set_jmp_target1_sparc64
 #define tcg_accel_class_init tcg_accel_class_init_sparc64
 #define tcg_accel_type tcg_accel_type_sparc64
 #define tcg_add_param_i32 tcg_add_param_i32_sparc64

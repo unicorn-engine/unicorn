@@ -2810,7 +2810,6 @@
 #define tb_phys_invalidate tb_phys_invalidate_arm
 #define tb_reset_jump tb_reset_jump_arm
 #define tb_set_jmp_target tb_set_jmp_target_arm
-#define tb_set_jmp_target1 tb_set_jmp_target1_arm
 #define tcg_accel_class_init tcg_accel_class_init_arm
 #define tcg_accel_type tcg_accel_type_arm
 #define tcg_add_param_i32 tcg_add_param_i32_arm

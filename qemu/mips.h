@@ -2810,7 +2810,6 @@
 #define tb_phys_invalidate tb_phys_invalidate_mips
 #define tb_reset_jump tb_reset_jump_mips
 #define tb_set_jmp_target tb_set_jmp_target_mips
-#define tb_set_jmp_target1 tb_set_jmp_target1_mips
 #define tcg_accel_class_init tcg_accel_class_init_mips
 #define tcg_accel_type tcg_accel_type_mips
 #define tcg_add_param_i32 tcg_add_param_i32_mips

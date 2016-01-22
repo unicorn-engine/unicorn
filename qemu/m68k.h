@@ -2810,7 +2810,6 @@
 #define tb_phys_invalidate tb_phys_invalidate_m68k
 #define tb_reset_jump tb_reset_jump_m68k
 #define tb_set_jmp_target tb_set_jmp_target_m68k
-#define tb_set_jmp_target1 tb_set_jmp_target1_m68k
 #define tcg_accel_class_init tcg_accel_class_init_m68k
 #define tcg_accel_type tcg_accel_type_m68k
 #define tcg_add_param_i32 tcg_add_param_i32_m68k
