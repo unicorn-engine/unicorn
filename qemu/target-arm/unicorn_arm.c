@@ -42,27 +42,25 @@ int arm_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 
     mycpu = first_cpu;
 
-    if (!(uc->mode & ~UC_MODE_ARM_MASK)  {
-        if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
-            *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0];
-        else {
-            switch(regid) {
-                case UC_ARM_REG_CPSR:
-                    *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env);
-                    break;
-                //case UC_ARM_REG_SP:
-                case UC_ARM_REG_R13:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[13];
-                    break;
-                //case UC_ARM_REG_LR:
-                case UC_ARM_REG_R14:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[14];
-                    break;
-                //case UC_ARM_REG_PC:
-                case UC_ARM_REG_R15:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[15];
-                    break;
-            }
+    if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
+        *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0];
+    else {
+        switch(regid) {
+            case UC_ARM_REG_CPSR:
+                *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env);
+                break;
+            //case UC_ARM_REG_SP:
+            case UC_ARM_REG_R13:
+                *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[13];
+                break;
+            //case UC_ARM_REG_LR:
+            case UC_ARM_REG_R14:
+                *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[14];
+                break;
+            //case UC_ARM_REG_PC:
+            case UC_ARM_REG_R15:
+                *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[15];
+                break;
         }
     }
 
@@ -78,24 +76,22 @@ int arm_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
     CPUState *mycpu = first_cpu;
 
-    if (!(uc->mode & ~UC_MODE_ARM_MASK) {
-        if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
-            ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
-        else {
-            switch(regid) {
-                //case UC_ARM_REG_SP:
-                case UC_ARM_REG_R13:
-                    ARM_CPU(uc, mycpu)->env.regs[13] = *(uint32_t *)value;
-                    break;
-                //case UC_ARM_REG_LR:
-                case UC_ARM_REG_R14:
-                    ARM_CPU(uc, mycpu)->env.regs[14] = *(uint32_t *)value;
-                    break;
-                //case UC_ARM_REG_PC:
-                case UC_ARM_REG_R15:
-                    ARM_CPU(uc, mycpu)->env.regs[15] = *(uint32_t *)value;
-                    break;
-            }
+    if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
+        ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
+    else {
+        switch(regid) {
+            //case UC_ARM_REG_SP:
+            case UC_ARM_REG_R13:
+                ARM_CPU(uc, mycpu)->env.regs[13] = *(uint32_t *)value;
+                break;
+            //case UC_ARM_REG_LR:
+            case UC_ARM_REG_R14:
+                ARM_CPU(uc, mycpu)->env.regs[14] = *(uint32_t *)value;
+                break;
+            //case UC_ARM_REG_PC:
+            case UC_ARM_REG_R15:
+                ARM_CPU(uc, mycpu)->env.regs[15] = *(uint32_t *)value;
+                break;
         }
     }
 
