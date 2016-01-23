@@ -21,22 +21,24 @@ module Common =
     let UC_ARCH_MAX = 8
 
     let UC_MODE_LITTLE_ENDIAN = 0
+    let UC_MODE_BIG_ENDIAN = 1073741824
 
     let UC_MODE_ARM = 0
-    let UC_MODE_16 = 2
-    let UC_MODE_32 = 4
-    let UC_MODE_64 = 8
     let UC_MODE_THUMB = 16
     let UC_MODE_MCLASS = 32
     let UC_MODE_V8 = 64
     let UC_MODE_MICRO = 16
     let UC_MODE_MIPS3 = 32
     let UC_MODE_MIPS32R6 = 64
-    let UC_MODE_V9 = 16
-    let UC_MODE_QPX = 16
-    let UC_MODE_BIG_ENDIAN = 1073741824
     let UC_MODE_MIPS32 = 4
     let UC_MODE_MIPS64 = 8
+    let UC_MODE_16 = 2
+    let UC_MODE_32 = 4
+    let UC_MODE_64 = 8
+    let UC_MODE_PPC64 = 8
+    let UC_MODE_QPX = 16
+    let UC_MODE_SPARC64 = 8
+    let UC_MODE_V9 = 16
 
     let UC_ERR_OK = 0
     let UC_ERR_NOMEM = 1
