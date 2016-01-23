@@ -90,6 +90,7 @@ module Common =
     let UC_HOOK_MEM_WRITE_INVALID = 288
     let UC_HOOK_MEM_FETCH_INVALID = 576
     let UC_HOOK_MEM_INVALID = 1008
+    let UC_QUERY_MODE = 1
 
     let UC_PROT_NONE = 0
     let UC_PROT_READ = 1

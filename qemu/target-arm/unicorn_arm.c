@@ -113,7 +113,7 @@ static uc_err arm_query(struct uc_struct *uc, uc_query_type type, size_t *result
     CPUState *mycpu = first_cpu;
 
     switch(type) {
-        case UC_QUERY_ARM_MODE:
+        case UC_QUERY_MODE:
             *result = (ARM_CPU(uc, mycpu)->env.thumb != 0);
             return UC_ERR_OK;
         default:

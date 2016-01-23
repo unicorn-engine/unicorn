@@ -87,6 +87,7 @@ public interface UnicornConst {
    public static final int UC_HOOK_MEM_WRITE_INVALID = 288;
    public static final int UC_HOOK_MEM_FETCH_INVALID = 576;
    public static final int UC_HOOK_MEM_INVALID = 1008;
+   public static final int UC_QUERY_MODE = 1;
 
    public static final int UC_PROT_NONE = 0;
    public static final int UC_PROT_READ = 1;

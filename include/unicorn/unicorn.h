@@ -257,8 +257,9 @@ typedef struct uc_mem_region {
 
 // All type of queries for uc_query() API.
 typedef enum uc_query_type {
-    // Query current hardware mode for ARM. Return 1 for Thumb, 0 for ARM
-    UC_QUERY_ARM_MODE = 1,
+    // Dynamically query current hardware mode.
+    // For ARM, uc_query() return 1 for Thumb mode, and 0 for Arm mode
+    UC_QUERY_MODE = 1,
 } uc_query_type;
 
 /*
@@ -325,8 +326,9 @@ uc_err uc_close(uc_engine *uc);
  Query internal status of engine.
 
  @uc: handle returned by uc_open()
- @type: query type
- @result: status retrieved
+ @type: query type. See uc_query_type
+
+ @result: save the internal status queried
 
  @return: error code of uc_err enum type (UC_ERR_*, see above)
 */
