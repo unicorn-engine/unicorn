@@ -10970,7 +10970,6 @@ static void disas_data_proc_simd_fp(DisasContext *s, uint32_t insn)
 static void disas_a64_insn(CPUARMState *env, DisasContext *s)
 {
     uint32_t insn;
-    struct hook *hook;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
 
     // Unicorn: end address tells us to stop emulation
@@ -10985,10 +10984,8 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
     s->pc += 4;
 
     // Unicorn: trace this instruction on request
-    HOOK_FOREACH(env->uc, hook, UC_HOOK_CODE) {
-        if (! HOOK_BOUND_CHECK(hook, s->pc - 4))
-            continue;
-        gen_uc_tracecode(tcg_ctx, 4, hook->callback, env->uc, s->pc - 4, hook->user_data);
+    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, s->pc - 4)) {
+        gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, env->uc, s->pc - 4);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
@@ -11044,7 +11041,6 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     int max_insns;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     bool block_full = false;
-    struct hook *hook;
 
     pc_start = tb->pc;
 
@@ -11116,14 +11112,10 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (! env->uc->block_full) {
-        HOOK_FOREACH(env->uc, hook, UC_HOOK_BLOCK) {
-            if (! HOOK_BOUND_CHECK(hook, pc_start))
-                continue;
-            // save block address to see if we need to patch block size later
-            env->uc->block_addr = pc_start;
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, hook->callback, env->uc, pc_start, hook->user_data);
-        }
+    if (! env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+        // save block address to see if we need to patch block size later
+        env->uc->block_addr = pc_start;
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     }
 
     gen_tb_start(tcg_ctx);

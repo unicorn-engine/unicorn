@@ -4745,7 +4745,6 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     TCGv cpu_tmp4 = *(TCGv *)tcg_ctx->cpu_tmp4;
     TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
     TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
-    struct hook *hook = NULL;
     TCGArg *save_opparam_ptr = tcg_ctx->gen_opparam_ptr;
     bool cc_op_dirty = s->cc_op_dirty;
     bool changed_cc_op = false;
@@ -4773,14 +4772,9 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             s->last_cc_op = s->cc_op;
             changed_cc_op = true;
         }
-        HOOK_FOREACH(env->uc, hook, UC_HOOK_CODE) {
-            if (! HOOK_BOUND_CHECK(hook, pc_start))
-                continue;
-            // generate code to call callback
-            gen_uc_tracecode(tcg_ctx, 0xf1f1f1f1, hook->callback, env->uc, pc_start, hook->user_data);
-            // the callback might want to stop emulation immediately
-            check_exit_request(tcg_ctx);
-        }
+        gen_uc_tracecode(tcg_ctx, 0xf1f1f1f1, UC_HOOK_CODE_IDX, env->uc, pc_start);
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
     }
 
     prefixes = 0;
@@ -8173,7 +8167,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         gen_helper_unlock(tcg_ctx, cpu_env);
 
     // Unicorn: patch the callback for the instruction size
-    if (hook) {
+    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, pc_start)) {
         // int i;
         // for(i = 0; i < 20; i++)
         //     printf("=== [%u] = %x\n", i, *(save_opparam_ptr + i));
@@ -8282,7 +8276,6 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     int num_insns = 0;
     int max_insns;
     bool block_full = false;
-    struct hook *hook;
 
     /* generate intermediate code */
     pc_start = tb->pc;
@@ -8388,13 +8381,9 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (!env->uc->block_full) {
-        HOOK_FOREACH(env->uc, hook, UC_HOOK_BLOCK) {
-            if (! HOOK_BOUND_CHECK(hook, pc_start))
-                continue;
-            env->uc->block_addr = pc_start;
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, hook->callback, env->uc, pc_start, hook->user_data);
-        }
+    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+        env->uc->block_addr = pc_start;
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     }
 
     gen_tb_start(tcg_ctx);

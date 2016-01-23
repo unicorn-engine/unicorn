@@ -7680,7 +7680,6 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
     TCGv_i32 tmp3;
     TCGv_i32 addr;
     TCGv_i64 tmp64;
-    struct hook *hook;
 
     /* M variants do not implement ARM mode.  */
     if (arm_dc_feature(s, ARM_FEATURE_M)) {
@@ -7688,10 +7687,8 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
     }
 
     // Unicorn: trace this instruction on request
-    HOOK_FOREACH(s->uc, hook, UC_HOOK_CODE) {
-        if (! HOOK_BOUND_CHECK(hook, s->pc - 4))
-            continue;
-        gen_uc_tracecode(tcg_ctx, 4, hook->callback, s->uc, s->pc - 4, hook->user_data);
+    if (HOOK_EXISTS_BOUNDED(s->uc, UC_HOOK_CODE, s->pc - 4)) {
+        gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, s->uc, s->pc - 4);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
@@ -10391,7 +10388,6 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
     TCGv_i32 tmp;
     TCGv_i32 tmp2;
     TCGv_i32 addr;
-    struct hook *hook;
 
     // Unicorn: end address tells us to stop emulation
     if (s->pc == s->uc->addr_end) {
@@ -10410,11 +10406,9 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
     }
 
     // Unicorn: trace this instruction on request
-    HOOK_FOREACH(env->uc, hook, UC_HOOK_CODE) {
-        if (! HOOK_BOUND_CHECK(hook, s->pc))
-            continue;
-        gen_uc_tracecode(tcg_ctx, 2, hook->callback, env->uc, s->pc, hook->user_data);
-        // check to see if we need to exit immediately
+    if (HOOK_EXISTS_BOUNDED(s->uc, UC_HOOK_CODE, s->pc)) {
+        gen_uc_tracecode(tcg_ctx, 2, UC_HOOK_CODE_IDX, s->uc, s->pc);
+        // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
 
@@ -11147,7 +11141,6 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
     int max_insns;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     bool block_full = false;
-    struct hook *hook;
 
     /* generate intermediate code */
 
@@ -11237,14 +11230,10 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (!env->uc->block_full) {
-        HOOK_FOREACH(env->uc, hook, UC_HOOK_BLOCK) {
-            if (! HOOK_BOUND_CHECK(hook, pc_start))
-                continue;
-            // save block address to see if we need to patch block size later
-            env->uc->block_addr = pc_start;
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, hook->callback, env->uc, pc_start, hook->user_data);
-        }
+    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+        // save block address to see if we need to patch block size later
+        env->uc->block_addr = pc_start;
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     }
 
     gen_tb_start(tcg_ctx);
