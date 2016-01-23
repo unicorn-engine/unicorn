@@ -172,7 +172,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 #ifdef UNICORN_HAS_M68K
             case UC_ARCH_M68K:
                 if ((mode & ~UC_MODE_M68K_MASK) ||
-                	!(mode & UC_MODE_BIG_ENDIAN)) {
+                        !(mode & UC_MODE_BIG_ENDIAN)) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
@@ -182,8 +182,8 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 #ifdef UNICORN_HAS_X86
             case UC_ARCH_X86:
                 if ((mode & ~UC_MODE_X86_MASK) ||
-                	(mode & UC_MODE_BIG_ENDIAN) ||
-                	!(mode & (UC_MODE_16|UC_MODE_32|UC_MODE_64))) {
+                        (mode & UC_MODE_BIG_ENDIAN) ||
+                        !(mode & (UC_MODE_16|UC_MODE_32|UC_MODE_64))) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
@@ -193,7 +193,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 #ifdef UNICORN_HAS_ARM
             case UC_ARCH_ARM:
                 if ((mode & ~UC_MODE_ARM_MASK) ||
-                	(mode & UC_MODE_BIG_ENDIAN)) {
+                        (mode & UC_MODE_BIG_ENDIAN)) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
@@ -206,7 +206,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 #ifdef UNICORN_HAS_ARM64
             case UC_ARCH_ARM64:
                 if ((mode & ~UC_MODE_ARM_MASK) ||
-                	(mode & UC_MODE_BIG_ENDIAN)) {
+                        (mode & UC_MODE_BIG_ENDIAN)) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
@@ -217,7 +217,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 #if defined(UNICORN_HAS_MIPS) || defined(UNICORN_HAS_MIPSEL) || defined(UNICORN_HAS_MIPS64) || defined(UNICORN_HAS_MIPS64EL)
             case UC_ARCH_MIPS:
                 if ((mode & ~UC_MODE_MIPS_MASK) ||
-                	!(mode & (UC_MODE_MIPS32|UC_MODE_MIPS64))) {
+                        !(mode & (UC_MODE_MIPS32|UC_MODE_MIPS64))) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
