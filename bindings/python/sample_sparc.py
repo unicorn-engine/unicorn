@@ -28,7 +28,7 @@ def test_sparc():
     print("Emulate SPARC code")
     try:
         # Initialize emulator in SPARC EB mode
-        mu = Uc(UC_ARCH_SPARC, UC_MODE_32)
+        mu = Uc(UC_ARCH_SPARC, UC_MODE_SPARC32)
 
         # map 2MB memory for this emulation
         mu.mem_map(ADDRESS, 2 * 1024 * 1024)

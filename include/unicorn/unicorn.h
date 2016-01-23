@@ -89,8 +89,8 @@ typedef enum uc_mode {
     UC_MODE_LITTLE_ENDIAN = 0,    // little-endian mode (default mode)
     UC_MODE_BIG_ENDIAN = 1 << 30, // big-endian mode
     // arm / arm64
-    UC_MODE_ARM = 0,              // Start executing in ARM mode
-    UC_MODE_THUMB = 1 << 4,       // Start executing in THUMB mode (including Thumb-2)
+    UC_MODE_ARM = 0,              // ARM mode
+    UC_MODE_THUMB = 1 << 4,       // THUMB mode (including Thumb-2)
     UC_MODE_MCLASS = 1 << 5,      // ARM's Cortex-M series (currently unsupported)
     UC_MODE_V8 = 1 << 6,          // ARMv8 A32 encodings for ARM (currently unsupported)
     // mips
@@ -107,6 +107,7 @@ typedef enum uc_mode {
     UC_MODE_PPC64 = 1 << 3,       // 64-bit mode (currently unsupported)
     UC_MODE_QPX = 1 << 4,         // Quad Processing eXtensions mode (currently unsupported)
     // sparc
+    UC_MODE_SPARC32 = 1 << 2,     // 32-bit mode
     UC_MODE_SPARC64 = 1 << 3,     // 64-bit mode
     UC_MODE_V9 = 1 << 4,          // SparcV9 mode (currently unsupported)
     // m68k

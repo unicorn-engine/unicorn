@@ -34,6 +34,7 @@ public interface UnicornConst {
    public static final int UC_MODE_64 = 8;
    public static final int UC_MODE_PPC64 = 8;
    public static final int UC_MODE_QPX = 16;
+   public static final int UC_MODE_SPARC32 = 4;
    public static final int UC_MODE_SPARC64 = 8;
    public static final int UC_MODE_V9 = 16;
 
