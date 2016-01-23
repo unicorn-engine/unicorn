@@ -170,7 +170,7 @@ static void do_nx_demo(bool cause_fault)
     // intercept code and invalid memory events
     if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK ||
             uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID,
-                hook_mem_invalid, NULL) != UC_ERR_OK) {
+                hook_mem_invalid, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK) {
         printf("not ok - Failed to install hooks\n");
         return;
     }
@@ -251,7 +251,7 @@ static void do_perms_demo(bool change_perms)
     if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK ||
             uc_hook_add(uc, &trace1,
                 UC_HOOK_MEM_INVALID,
-                hook_mem_invalid, NULL) != UC_ERR_OK) {
+                hook_mem_invalid, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK) {
         printf("not ok - Failed to install hooks\n");
         return;
     }
@@ -329,7 +329,7 @@ static void do_unmap_demo(bool do_unmap)
     if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK ||
             uc_hook_add(uc, &trace1,
                 UC_HOOK_MEM_INVALID,
-                hook_mem_invalid, NULL) != UC_ERR_OK) {
+                hook_mem_invalid, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK) {
         printf("not ok - Failed to install hooks\n");
         return;
     }

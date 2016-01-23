@@ -10970,7 +10970,6 @@ static void disas_data_proc_simd_fp(DisasContext *s, uint32_t insn)
 static void disas_a64_insn(CPUARMState *env, DisasContext *s)
 {
     uint32_t insn;
-    struct hook *hook;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
 
     // Unicorn: end address tells us to stop emulation
@@ -11042,7 +11041,6 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     int max_insns;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     bool block_full = false;
-    struct hook *hook;
 
     pc_start = tb->pc;
 

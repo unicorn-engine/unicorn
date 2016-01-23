@@ -110,7 +110,7 @@ enum uc_hook_idx {
 
 // if statement to check hook bounds
 #define HOOK_BOUND_CHECK(hh, addr)                  \
-    ((((addr) >= (hh)->begin && (addr) < (hh)->end) \
+    ((((addr) >= (hh)->begin && (addr) <= (hh)->end) \
          || (hh)->begin > (hh)->end))
 
 #define HOOK_EXISTS(uc, idx) ((uc)->hook[idx##_IDX].head != NULL)
