@@ -171,24 +171,33 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 break;
 #ifdef UNICORN_HAS_M68K
             case UC_ARCH_M68K:
+                if ((mode & ~UC_MODE_M68K_MASK) ||
+                	!(mode & UC_MODE_BIG_ENDIAN)) {
+                    free(uc);
+                    return UC_ERR_MODE;
+                }
                 uc->init_arch = m68k_uc_init;
                 break;
 #endif
 #ifdef UNICORN_HAS_X86
             case UC_ARCH_X86:
+                if ((mode & ~UC_MODE_X86_MASK) ||
+                	(mode & UC_MODE_BIG_ENDIAN) ||
+                	!(mode & (UC_MODE_16|UC_MODE_32|UC_MODE_64)) {
+                    free(uc);
+                    return UC_ERR_MODE;
+                }
                 uc->init_arch = x86_uc_init;
                 break;
 #endif
 #ifdef UNICORN_HAS_ARM
             case UC_ARCH_ARM:
-                uc->init_arch = arm_uc_init;
-
-                // verify mode
-                // TODO: support Big endian, MCLASS & V8
-                if (mode & ~UC_MODE_ARM_MASK) {
+                if ((mode & ~UC_MODE_ARM_MASK) ||
+                	(mode & UC_MODE_BIG_ENDIAN)) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
+                uc->init_arch = arm_uc_init;
 
                 if (mode & UC_MODE_THUMB)
                     uc->thumb = 1;
@@ -196,12 +205,22 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 #endif
 #ifdef UNICORN_HAS_ARM64
             case UC_ARCH_ARM64:
+                if ((mode & ~UC_MODE_ARM_MASK) ||
+                	(mode & UC_MODE_BIG_ENDIAN)) {
+                    free(uc);
+                    return UC_ERR_MODE;
+                }
                 uc->init_arch = arm64_uc_init;
                 break;
 #endif
 
 #if defined(UNICORN_HAS_MIPS) || defined(UNICORN_HAS_MIPSEL) || defined(UNICORN_HAS_MIPS64) || defined(UNICORN_HAS_MIPS64EL)
             case UC_ARCH_MIPS:
+                if ((mode & ~UC_MODE_MIPS_MASK) ||
+                	!(mode & (UC_MODE_MIPS32|UC_MODE_MIPS64)) {
+                    free(uc);
+                    return UC_ERR_MODE;
+                }
                 if (mode & UC_MODE_BIG_ENDIAN) {
 #ifdef UNICORN_HAS_MIPS
                     if (mode & UC_MODE_MIPS32)
@@ -226,6 +245,10 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 
 #ifdef UNICORN_HAS_SPARC
             case UC_ARCH_SPARC:
+                if (mode & ~UC_MODE_SPARC_MASK) {
+                    free(uc);
+                    return UC_ERR_MODE;
+                }
                 if (mode & UC_MODE_SPARC64)
                     uc->init_arch = sparc64_uc_init;
                 else
