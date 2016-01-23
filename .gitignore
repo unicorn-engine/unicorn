@@ -134,6 +134,7 @@ test_mem_high
 rw_hookstack
 hook_extrainvoke
 sysenter_hook_x86
+test_tb_x86
 
 
 #################
