@@ -42,7 +42,7 @@ int arm_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 
     mycpu = first_cpu;
 
-    if (uc->mode & ~UC_MODE_ARM_MASK) {
+    if (!(uc->mode & ~UC_MODE_ARM_MASK)  {
         if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
             *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0];
         else {
@@ -78,7 +78,7 @@ int arm_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
     CPUState *mycpu = first_cpu;
 
-    if (uc->mode & ~UC_MODE_ARM_MASK) {
+    if (!(uc->mode & ~UC_MODE_ARM_MASK) {
         if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
             ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
         else {
