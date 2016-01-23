@@ -1190,3 +1190,15 @@ uint32_t uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
     return UC_ERR_OK;
 }
 
+UNICORN_EXPORT
+uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
+{
+    switch(uc->arch) {
+        case UC_ARCH_ARM:
+            return uc->query(uc, type, result);
+        default:
+            return UC_ERR_ARG;
+    }
+
+    return UC_ERR_OK;
+}

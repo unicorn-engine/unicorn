@@ -32,6 +32,8 @@ typedef struct ModuleEntry {
 
 typedef QTAILQ_HEAD(, ModuleEntry) ModuleTypeList;
 
+typedef uc_err (*query_t)(struct uc_struct *uc, uc_query_type type, size_t *result);
+
 // return 0 on success, -1 on failure
 typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int regid, void *value);
 typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int regid, const void *value);
@@ -93,6 +95,7 @@ struct uc_struct {
     struct CPUTailQ cpus;   // qemu/cpu-exec.c
     uc_err errnum;  // qemu/cpu-exec.c
     AddressSpace as;
+    query_t query;
     reg_read_t reg_read;
     reg_write_t reg_write;
     reg_reset_t reg_reset;

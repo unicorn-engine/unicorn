@@ -108,6 +108,19 @@ static bool arm_stop_interrupt(int intno)
     }
 }
 
+static uc_err arm_query(struct uc_struct *uc, uc_query_type type, size_t *result)
+{
+    CPUState *mycpu = first_cpu;
+
+    switch(type) {
+        case UC_QUERY_ARM_MODE:
+            *result = (ARM_CPU(uc, mycpu)->env.thumb != 0);
+            return UC_ERR_OK;
+        default:
+            return UC_ERR_ARG;
+    }
+}
+
 void arm_uc_init(struct uc_struct* uc)
 {
     register_accel_types(uc);
@@ -118,5 +131,6 @@ void arm_uc_init(struct uc_struct* uc)
     uc->reg_reset = arm_reg_reset;
     uc->set_pc = arm_set_pc;
     uc->stop_interrupt = arm_stop_interrupt;
+    uc->query = arm_query;
     uc_common_init(uc);
 }

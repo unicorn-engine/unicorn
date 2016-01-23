@@ -255,6 +255,12 @@ typedef struct uc_mem_region {
     uint32_t perms; // memory permissions of the region
 } uc_mem_region;
 
+// All type of queries for uc_query() API.
+typedef enum uc_query_type {
+    // Query current hardware mode for ARM. Return 1 for Thumb, 0 for ARM
+    UC_QUERY_ARM_MODE = 1,
+} uc_query_type;
+
 /*
  Return combined API version & major and minor version numbers.
 
@@ -314,6 +320,18 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **uc);
 */
 UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc);
+
+/*
+ Query internal status of engine.
+
+ @uc: handle returned by uc_open()
+ @type: query type
+ @result: status retrieved
+
+ @return: error code of uc_err enum type (UC_ERR_*, see above)
+*/
+UNICORN_EXPORT
+uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result);
 
 /*
  Report the last error number when some API function fail.
