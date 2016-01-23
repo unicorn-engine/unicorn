@@ -18,6 +18,8 @@ void list_clear(struct list *list)
         free(cur);
         cur = next;
     }
+    list->head = NULL;
+    list->tail = NULL;
 }
 
 // returns generated linked list node, or NULL on failure

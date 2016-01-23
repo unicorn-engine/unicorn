@@ -1009,17 +1009,23 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
 }
 
 // TCG helper
-void helper_uc_tracecode(int32_t size, void *callback, void *handle, int64_t address, void *user_data);
-void helper_uc_tracecode(int32_t size, void *callback, void *handle, int64_t address, void *user_data)
+void helper_uc_tracecode(int32_t size, uc_hook_type type, void *handle, int64_t address);
+void helper_uc_tracecode(int32_t size, uc_hook_type type, void *handle, int64_t address)
 {
     struct uc_struct *uc = handle;
+    struct list_item *cur = uc->hook[type].head;
+    struct hook *hook;
 
     // sync PC in CPUArchState with address
     if (uc->set_pc) {
         uc->set_pc(uc, address);
     }
 
-    ((uc_cb_hookcode_t)callback)(uc, address, size, user_data);
+    while (cur != NULL && !uc->stop_request) {
+        hook = (struct hook *)cur->data;
+        ((uc_cb_hookcode_t)hook->callback)(uc, address, size, hook->user_data);
+        cur = cur->next;
+    }
 }
 
 UNICORN_EXPORT

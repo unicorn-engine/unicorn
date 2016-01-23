@@ -2625,7 +2625,6 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
     TCGv_i32 cpu_src1_32, cpu_src2_32, cpu_dst_32;
     TCGv_i64 cpu_src1_64, cpu_src2_64, cpu_dst_64;
     target_long simm;
-    struct hook *hook;
 
     if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT))) {
         tcg_gen_debug_insn_start(tcg_ctx, dc->pc);
@@ -2638,14 +2637,10 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
     }
 
     // Unicorn: trace this instruction on request
-    if (hook_insn) {
-        HOOK_FOREACH(dc->uc, hook, UC_HOOK_CODE) {
-            if (! HOOK_BOUND_CHECK(hook, dc->pc))
-                continue;
-            gen_uc_tracecode(tcg_ctx, 4, hook->callback, dc->uc, dc->pc, hook->user_data);
-            // the callback might want to stop emulation immediately
-            check_exit_request(tcg_ctx);
-        }
+    if (hook_insn && HOOK_EXISTS_BOUNDED(dc->uc, UC_HOOK_CODE, dc->pc)) {
+        gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, dc->uc, dc->pc);
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
     }
 
     opc = GET_FIELD(insn, 0, 1);
@@ -5390,7 +5385,6 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     unsigned int insn;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     bool block_full = false;
-    struct hook *hook;
 
     memset(dc, 0, sizeof(DisasContext));
     dc->uc = env->uc;
@@ -5431,14 +5425,10 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (!env->uc->block_full) {
-        HOOK_FOREACH(env->uc, hook, UC_HOOK_BLOCK) {
-            if (! HOOK_BOUND_CHECK(hook, pc_start))
-                continue;
-            // save block address to see if we need to patch block size later
-            env->uc->block_addr = pc_start;
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, hook->callback, env->uc, pc_start, hook->user_data);
-        }
+    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+        // save block address to see if we need to patch block size later
+        env->uc->block_addr = pc_start;
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     }
 
     gen_tb_start(tcg_ctx);
