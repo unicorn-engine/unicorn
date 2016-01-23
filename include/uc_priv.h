@@ -9,7 +9,7 @@
 
 #include "qemu.h"
 #include "unicorn/unicorn.h"
-#include "hook.h"
+#include "list.h"
 
 // These are masks of supported modes for each cpu/arch.
 // They should be updated when changes are made to the uc_mode enum typedef.
@@ -69,16 +69,62 @@ typedef bool (*uc_args_int_t)(int intno);
 // some architecture redirect virtual memory to physical memory like Mips
 typedef uint64_t (*uc_mem_redirect_t)(uint64_t address);
 
-
-struct hook_struct {
-    int hook_type; // uc_tracecode_type & uc_tracemem_type
-    uint64_t begin, end;    // range of address to be monitored
-    void *callback; // either uc_cb_tracecode_t or uc_cb_tracemem_t
+struct hook {
+    int type;            // UC_HOOK_*
+    int insn;            // instruction for HOOK_INSN
+    int refs;            // reference count to free hook stored in multiple lists
+    uint64_t begin, end; // only trigger if PC or memory access is in this address (depends on hook type)
+    void *callback;      // a uc_cb_* type
     void *user_data;
 };
 
-// extend memory to keep 32 more hooks each time
-#define HOOK_SIZE 32
+// hook list offsets
+// mirrors the order of uc_hook_type from include/unicorn/unicorn.h
+enum uc_hook_idx {
+    UC_HOOK_INTR_IDX,
+    UC_HOOK_INSN_IDX,
+    UC_HOOK_CODE_IDX,
+    UC_HOOK_BLOCK_IDX,
+    UC_HOOK_MEM_READ_UNMAPPED_IDX,
+    UC_HOOK_MEM_WRITE_UNMAPPED_IDX,
+    UC_HOOK_MEM_FETCH_UNMAPPED_IDX,
+    UC_HOOK_MEM_READ_PROT_IDX,
+    UC_HOOK_MEM_WRITE_PROT_IDX,
+    UC_HOOK_MEM_FETCH_PROT_IDX,
+    UC_HOOK_MEM_READ_IDX,
+    UC_HOOK_MEM_WRITE_IDX,
+    UC_HOOK_MEM_FETCH_IDX,
+
+    UC_HOOK_MAX,
+};
+
+// for loop macro to loop over hook lists
+#define HOOK_FOREACH(uc, hh, idx)                         \
+    struct list_item *cur;                                \
+    for (                                                 \
+        cur = (uc)->hook[idx##_IDX].head;                 \
+        cur != NULL && ((hh) = (struct hook *)cur->data)  \
+            /* stop excuting callbacks on stop request */ \
+            && !uc->stop_request;                         \
+        cur = cur->next)
+
+// if statement to check hook bounds
+#define HOOK_BOUND_CHECK(hh, addr)                  \
+    ((((addr) >= (hh)->begin && (addr) < (hh)->end) \
+         || (hh)->begin > (hh)->end))
+
+#define HOOK_EXISTS(uc, idx) ((uc)->hook[idx##_IDX].head != NULL)
+#define HOOK_EXISTS_BOUNDED(uc, idx, addr) _hook_exists_bounded((uc)->hook[idx##_IDX].head, addr)
+
+static inline bool _hook_exists_bounded(struct list_item *cur, uint64_t addr)
+{
+    while (cur != NULL) {
+        if (HOOK_BOUND_CHECK((struct hook *)cur->data, addr))
+            return true;
+        cur = cur->next;
+    }
+    return false;
+}
 
 //relloc increment, KEEP THIS A POWER OF 2!
 #define MEM_BLOCK_INCR 32
@@ -153,35 +199,16 @@ struct uc_struct {
     bool apic_report_tpr_access;
     CPUState *current_cpu;
 
-    // all the hook callbacks
-    size_t hook_size;
-    struct hook_struct *hook_callbacks;
+    // linked lists containing hooks per type
+    struct list hook[UC_HOOK_MAX];
 
     // hook to count number of instructions for uc_emu_start()
-    struct hook_struct hook_count;
-    uc_cb_hookcode_t hook_count_callback;
+    uc_hook count_hook;
 
     size_t emu_counter; // current counter of uc_emu_start()
     size_t emu_count; // save counter of uc_emu_start()
 
-    // indexes if hooking ALL block/code/read/write events
-    unsigned int hook_block_idx, hook_insn_idx, hook_read_idx, hook_write_idx;
-    // boolean variables for quick check on hooking block, code, memory accesses
-    bool hook_block, hook_insn, hook_mem_read, hook_mem_write;
     uint64_t block_addr;    // save the last block address we hooked
-    // indexes to event callbacks
-    int hook_mem_read_idx;  // for handling invalid memory read access on unmapped memory
-    int hook_mem_write_idx;  // for handling invalid memory write access on unmapped memory
-    int hook_mem_fetch_idx;  // for handling invalid memory fetch access on unmapped memory
-    int hook_mem_read_prot_idx;  // for handling invalid memory read access on read-protected memory
-    int hook_mem_write_prot_idx;  // for handling invalid memory write access on write-protected memory
-    int hook_mem_fetch_prot_idx;  // for handling invalid memory fetch access on non-executable memory
-
-    int hook_intr_idx; // for handling interrupt
-    int hook_out_idx; // for handling OUT instruction (X86)
-    int hook_in_idx; // for handling IN instruction (X86)
-    int hook_syscall_idx; // for handling SYSCALL/SYSENTER (X86)
-
 
     bool init_tcg;      // already initialized local TCGv variables?
     bool stop_request;  // request to immediately stop emulation - for uc_emu_stop()

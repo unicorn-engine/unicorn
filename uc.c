@@ -20,7 +20,6 @@
 #endif
 
 #include "uc_priv.h"
-#include "hook.h"
 
 // target specific headers
 #include "qemu/target-m68k/unicorn.h"
@@ -95,8 +94,6 @@ const char *uc_strerror(uc_err code)
             return "Write to unaligned memory (UC_ERR_WRITE_UNALIGNED)";
         case UC_ERR_FETCH_UNALIGNED:
             return "Fetch from unaligned memory (UC_ERR_FETCH_UNALIGNED)";
-        case UC_ERR_HOOK_EXIST:
-            return "Hook for this type event already exists (UC_ERR_HOOK_EXIST)";
         case UC_ERR_RESOURCE:
             return "Insufficient resource (UC_ERR_RESOURCE)";
     }
@@ -269,9 +266,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         if (uc->reg_reset)
             uc->reg_reset(uc);
 
-        uc->hook_size = HOOK_SIZE;
-        uc->hook_callbacks = calloc(1, sizeof(uc->hook_callbacks[0]) * HOOK_SIZE);
-
         return UC_ERR_OK;
     } else {
         return UC_ERR_ARCH;
@@ -283,6 +277,8 @@ UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc)
 {
     int i;
+    struct list_item *cur;
+    struct hook *hook;
 
     if (uc->release)
         uc->release(uc->tcg_ctx);
@@ -308,7 +304,20 @@ uc_err uc_close(uc_engine *uc)
     // TODO: remove uc->root    (created with object_new())
     uc->root->free(uc->root);
 
-    free(uc->hook_callbacks);
+    // free hooks and hook lists
+    for (i = 0; i < UC_HOOK_MAX; i++) {
+        cur = uc->hook[i].head;
+        // hook can be in more than one list
+        // so we refcount to know when to free
+        while (cur) {
+            hook = (struct hook *)cur->data;
+            if (--hook->refs == 0) {
+                free(hook);
+            }
+            cur = cur->next;
+        }
+        list_clear(&uc->hook[i]);
+    }
 
     free(uc->mapped_blocks);
 
@@ -469,6 +478,15 @@ static void enable_emu_timer(uc_engine *uc, uint64_t timeout)
             uc, QEMU_THREAD_JOINABLE);
 }
 
+static void hook_count_cb(struct uc_struct *uc, uint64_t address, uint32_t size, void *user_data)
+{
+    // count this instruction. ah ah ah.
+    uc->emu_counter++;
+
+    if (uc->emu_counter > uc->emu_count)
+        uc_emu_stop(uc);
+}
+
 UNICORN_EXPORT
 uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count)
 {
@@ -530,8 +548,17 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     }
 
     uc->emu_count = count;
-    if (count > 0) {
-        uc->hook_insn = true;
+    // remove count hook if counting isn't necessary
+    if (count <= 0 && uc->count_hook != 0) {
+        uc_hook_del(uc, uc->count_hook);
+        uc->count_hook = 0;
+    }
+    // set up count hook to count instructions.
+    if (count > 0 && uc->count_hook == 0) {
+        uc_err err = uc_hook_add(uc, &uc->count_hook, UC_HOOK_CODE, hook_count_cb, NULL);
+        if (err != UC_ERR_OK) {
+            return err;
+        }
     }
 
     uc->addr_end = until;
@@ -566,37 +593,6 @@ uc_err uc_emu_stop(uc_engine *uc)
         // exit the current TB
         cpu_exit(uc->current_cpu);
     }
-
-    return UC_ERR_OK;
-}
-
-
-static int _hook_code(uc_engine *uc, int type, uint64_t begin, uint64_t end,
-        void *callback, void *user_data, uc_hook *hh)
-{
-    int i;
-
-    i = hook_add(uc, type, begin, end, callback, user_data);
-    if (i == 0)
-        return UC_ERR_NOMEM;
-
-    *hh = i;
-
-    return UC_ERR_OK;
-}
-
-
-static uc_err _hook_mem_access(uc_engine *uc, uc_hook_type type,
-        uint64_t begin, uint64_t end,
-        void *callback, void *user_data, uc_hook *hh)
-{
-    int i;
-
-    i = hook_add(uc, type, begin, end, callback, user_data);
-    if (i == 0)
-        return UC_ERR_NOMEM;
-
-    *hh = i;
 
     return UC_ERR_OK;
 }
@@ -959,200 +955,63 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
     return NULL;
 }
 
-static uc_err _hook_mem_invalid(struct uc_struct* uc, int type, uc_cb_eventmem_t callback,
-        void *user_data, uc_hook *evh)
-{
-    size_t i;
-
-    // only one event handler at the same time
-    if ((type & UC_HOOK_MEM_READ_UNMAPPED) != 0 && (uc->hook_mem_read_idx != 0))
-        return UC_ERR_HOOK_EXIST;
-
-    if ((type & UC_HOOK_MEM_READ_PROT) != 0 && (uc->hook_mem_read_prot_idx != 0))
-        return UC_ERR_HOOK_EXIST;
-
-    if ((type & UC_HOOK_MEM_WRITE_UNMAPPED) != 0 && (uc->hook_mem_write_idx != 0))
-        return UC_ERR_HOOK_EXIST;
-
-    if ((type & UC_HOOK_MEM_WRITE_PROT) != 0 && (uc->hook_mem_write_prot_idx != 0))
-        return UC_ERR_HOOK_EXIST;
-
-    if ((type & UC_HOOK_MEM_FETCH_UNMAPPED) != 0 && (uc->hook_mem_fetch_idx != 0))
-        return UC_ERR_HOOK_EXIST;
-
-    if ((type & UC_HOOK_MEM_FETCH_PROT) != 0 && (uc->hook_mem_fetch_prot_idx != 0))
-        return UC_ERR_HOOK_EXIST;
-
-    i = hook_find_new(uc);
-    if (i) {
-        uc->hook_callbacks[i].callback = callback;
-        uc->hook_callbacks[i].user_data = user_data;
-        *evh = i;
-        if (type & UC_HOOK_MEM_READ_UNMAPPED)
-            uc->hook_mem_read_idx = i;
-        if (type & UC_HOOK_MEM_READ_PROT)
-            uc->hook_mem_read_prot_idx = i;
-        if (type & UC_HOOK_MEM_WRITE_UNMAPPED)
-            uc->hook_mem_write_idx = i;
-        if (type & UC_HOOK_MEM_WRITE_PROT)
-            uc->hook_mem_write_prot_idx = i;
-        if (type & UC_HOOK_MEM_FETCH_UNMAPPED)
-            uc->hook_mem_fetch_idx = i;
-        if (type & UC_HOOK_MEM_FETCH_PROT)
-            uc->hook_mem_fetch_prot_idx = i;
-        return UC_ERR_OK;
-    } else
-        return UC_ERR_NOMEM;
-}
-
-
-static uc_err _hook_intr(struct uc_struct* uc, void *callback,
-        void *user_data, uc_hook *evh)
-{
-    size_t i;
-
-    // only one event handler at the same time
-    if (uc->hook_intr_idx)
-        return UC_ERR_HOOK_EXIST;
-
-    i = hook_find_new(uc);
-    if (i) {
-        uc->hook_callbacks[i].callback = callback;
-        uc->hook_callbacks[i].user_data = user_data;
-        *evh = i;
-        uc->hook_intr_idx = i;
-        return UC_ERR_OK;
-    } else
-        return UC_ERR_NOMEM;
-}
-
-
-static uc_err _hook_insn(struct uc_struct *uc, unsigned int insn_id, void *callback,
-        void *user_data, uc_hook *evh)
-{
-    size_t i;
-
-    switch(uc->arch) {
-        default: break;
-        case UC_ARCH_X86:
-                 switch(insn_id) {
-                     default: break;
-                     case UC_X86_INS_OUT:
-                              // only one event handler at the same time
-                              if (uc->hook_out_idx)
-                                  return UC_ERR_HOOK_EXIST;
-
-                              i = hook_find_new(uc);
-                              if (i) {
-                                  uc->hook_callbacks[i].callback = callback;
-                                  uc->hook_callbacks[i].user_data = user_data;
-                                  *evh = i;
-                                  uc->hook_out_idx = i;
-                                  return UC_ERR_OK;
-                              } else
-                                  return UC_ERR_NOMEM;
-                     case UC_X86_INS_IN:
-                              // only one event handler at the same time
-                              if (uc->hook_in_idx)
-                                  return UC_ERR_HOOK_EXIST;
-
-                              i = hook_find_new(uc);
-                              if (i) {
-                                  uc->hook_callbacks[i].callback = callback;
-                                  uc->hook_callbacks[i].user_data = user_data;
-                                  *evh = i;
-                                  uc->hook_in_idx = i;
-                                  return UC_ERR_OK;
-                              } else
-                                  return UC_ERR_NOMEM;
-                     case UC_X86_INS_SYSCALL:
-                     case UC_X86_INS_SYSENTER:
-                              // only one event handler at the same time
-                              if (uc->hook_syscall_idx)
-                                  return UC_ERR_HOOK_EXIST;
-
-                              i = hook_find_new(uc);
-                              if (i) {
-                                  uc->hook_callbacks[i].callback = callback;
-                                  uc->hook_callbacks[i].user_data = user_data;
-                                  *evh = i;
-                                  uc->hook_syscall_idx = i;
-                                  return UC_ERR_OK;
-                              } else
-                                  return UC_ERR_NOMEM;
-                 }
-                 break;
-    }
-
-    return UC_ERR_OK;
-}
-
 UNICORN_EXPORT
 uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, ...)
 {
     va_list valist;
     int ret = UC_ERR_OK;
-    int id;
-    uint64_t begin, end;
 
     va_start(valist, user_data);
 
-    if (type & UC_HOOK_MEM_READ_UNMAPPED)
-        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_READ_UNMAPPED, callback, user_data, hh);
+    struct hook *hook = calloc(1, sizeof(struct hook));
+    if (hook == NULL) {
+        return UC_ERR_NOMEM;
+    }
+    hook->type = type;
+    hook->callback = callback;
+    hook->user_data = user_data;
+    hook->refs = 0;
+    *hh = (uc_hook)hook;
 
-    if (type & UC_HOOK_MEM_WRITE_UNMAPPED)
-        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_WRITE_UNMAPPED, callback, user_data, hh);
-
-    if (type & UC_HOOK_MEM_FETCH_UNMAPPED)
-        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_FETCH_UNMAPPED, callback, user_data, hh);
-
-    if (type & UC_HOOK_MEM_READ_PROT)
-        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_READ_PROT, callback, user_data, hh);
-
-    if (type & UC_HOOK_MEM_WRITE_PROT)
-        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_WRITE_PROT, callback, user_data, hh);
-
-    if (type & UC_HOOK_MEM_FETCH_PROT)
-        ret = _hook_mem_invalid(uc, UC_HOOK_MEM_FETCH_PROT, callback, user_data, hh);
-
-    switch(type) {
-        default:
-            break;
-        case UC_HOOK_INTR:
-            ret = _hook_intr(uc, callback, user_data, hh);
-            break;
-        case UC_HOOK_INSN:
-            id = va_arg(valist, int);
-            ret = _hook_insn(uc, id, callback, user_data, hh);
-            break;
-        case UC_HOOK_CODE:
-            begin = va_arg(valist, uint64_t);
-            end = va_arg(valist, uint64_t);
-            ret = _hook_code(uc, UC_HOOK_CODE, begin, end, callback, user_data, hh);
-            break;
-        case UC_HOOK_BLOCK:
-            begin = va_arg(valist, uint64_t);
-            end = va_arg(valist, uint64_t);
-            ret = _hook_code(uc, UC_HOOK_BLOCK, begin, end, callback, user_data, hh);
-            break;
-        case UC_HOOK_MEM_READ:
-            begin = va_arg(valist, uint64_t);
-            end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(uc, UC_HOOK_MEM_READ, begin, end, callback, user_data, hh);
-            break;
-        case UC_HOOK_MEM_WRITE:
-            begin = va_arg(valist, uint64_t);
-            end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(uc, UC_HOOK_MEM_WRITE, begin, end, callback, user_data, hh);
-            break;
-        case UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE:
-            begin = va_arg(valist, uint64_t);
-            end = va_arg(valist, uint64_t);
-            ret = _hook_mem_access(uc, UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE, begin, end, callback, user_data, hh);
-            break;
+    // everybody but HOOK_INSN gets begin/end, so exit early here.
+    if (type & UC_HOOK_INSN) {
+        hook->insn = va_arg(valist, int);
+        hook->begin = 1;
+        hook->end = 0;
+        if (list_append(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
+            free(hook);
+            return UC_ERR_NOMEM;
+        }
+        hook->refs++;
+        return UC_ERR_OK;
     }
 
+    hook->begin = va_arg(valist, uint64_t);
+    hook->end = va_arg(valist, uint64_t);
     va_end(valist);
+
+    int i = 0;
+    while ((type >> i) > 0) {
+        if ((type >> i) & 1) {
+            // TODO: invalid hook error?
+            if (i < UC_HOOK_MAX) {
+                if (list_append(&uc->hook[i], hook) == NULL) {
+                    if (hook->refs == 0) {
+                        free(hook);
+                    }
+                    return UC_ERR_NOMEM;
+                }
+                hook->refs++;
+            }
+        }
+        i++;
+    }
+
+    // we didn't use the hook
+    // TODO: return an error?
+    if (hook->refs == 0) {
+        free(hook);
+    }
 
     return ret;
 }
@@ -1160,7 +1019,37 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *u
 UNICORN_EXPORT
 uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
 {
-    return hook_del(uc, hh);
+    int i;
+    struct hook *hook;
+    for (i = 0; i < UC_HOOK_MAX; i++) {
+        if (list_remove(&uc->hook[i], (void *)hh)) {
+            hook = (struct hook *)hh;
+            if (--hook->refs == 0) {
+                free(hook);
+            }
+        }
+    }
+    return UC_ERR_OK;
+}
+
+// TCG helper
+void helper_uc_tracecode(int32_t size, uc_hook_type type, void *handle, int64_t address);
+void helper_uc_tracecode(int32_t size, uc_hook_type type, void *handle, int64_t address)
+{
+    struct uc_struct *uc = handle;
+    struct list_item *cur = uc->hook[type].head;
+    struct hook *hook;
+
+    // sync PC in CPUArchState with address
+    if (uc->set_pc) {
+        uc->set_pc(uc, address);
+    }
+
+    while (cur != NULL && !uc->stop_request) {
+        hook = (struct hook *)cur->data;
+        ((uc_cb_hookcode_t)hook->callback)(uc, address, size, hook->user_data);
+        cur = cur->next;
+    }
 }
 
 UNICORN_EXPORT
