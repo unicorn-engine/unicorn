@@ -75,7 +75,7 @@ int main(int argc, char **argv, char **envp)
 #endif
 
 	// Initialize emulator in MIPS 32bit little endian mode
-    err = uc_open(UC_ARCH_MIPS, UC_MODE_MIPS32, &uc);
+    err = uc_open(UC_ARCH_MIPS, UC_MODE_MIPS32 | UC_MODE_LITTLE_ENDIAN, &uc);
     if (err)
 	{
         printf("Failed on uc_open() with error returned: %u\n", err);

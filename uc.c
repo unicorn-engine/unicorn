@@ -190,7 +190,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                     return UC_ERR_MODE;
                 }
 
-                if (mode == UC_MODE_THUMB)
+                if (mode & UC_MODE_THUMB)
                     uc->thumb = 1;
                 break;
 #endif
@@ -226,7 +226,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 
 #ifdef UNICORN_HAS_SPARC
             case UC_ARCH_SPARC:
-                if (mode & UC_MODE_64)
+                if (mode & UC_MODE_SPARC64)
                     uc->init_arch = sparc64_uc_init;
                 else
                     uc->init_arch = sparc_uc_init;

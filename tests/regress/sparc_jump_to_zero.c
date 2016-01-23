@@ -1,7 +1,7 @@
 #include <unicorn/unicorn.h>
 
 #define HARDWARE_ARCHITECTURE UC_ARCH_SPARC
-#define HARDWARE_MODE UC_MODE_32
+#define HARDWARE_MODE 0
 
 #define MEMORY_STARTING_ADDRESS 0x1000000
 #define MEMORY_SIZE 2 * 1024 * 1024
