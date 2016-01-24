@@ -506,14 +506,7 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
             break;
 
         case UC_ARCH_ARM:
-            switch(uc->mode) {
-                default:
-                    break;
-                case UC_MODE_THUMB:
-                case UC_MODE_ARM:
-                    uc_reg_write(uc, UC_ARM_REG_R15, &begin);
-                    break;
-            }
+            uc_reg_write(uc, UC_ARM_REG_R15, &begin);
             break;
 
         case UC_ARCH_ARM64:
