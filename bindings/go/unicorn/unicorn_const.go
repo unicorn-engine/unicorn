@@ -30,6 +30,7 @@ const (
 	MODE_16 = 2
 	MODE_32 = 4
 	MODE_64 = 8
+	MODE_PPC32 = 4
 	MODE_PPC64 = 8
 	MODE_QPX = 16
 	MODE_SPARC32 = 4

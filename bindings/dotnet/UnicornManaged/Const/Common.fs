@@ -35,6 +35,7 @@ module Common =
     let UC_MODE_16 = 2
     let UC_MODE_32 = 4
     let UC_MODE_64 = 8
+    let UC_MODE_PPC32 = 4
     let UC_MODE_PPC64 = 8
     let UC_MODE_QPX = 16
     let UC_MODE_SPARC32 = 4
