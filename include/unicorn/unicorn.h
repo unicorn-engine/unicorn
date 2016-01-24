@@ -104,6 +104,7 @@ typedef enum uc_mode {
     UC_MODE_32 = 1 << 2,          // 32-bit mode
     UC_MODE_64 = 1 << 3,          // 64-bit mode
     // ppc 
+    UC_MODE_PPC32 = 1 << 2,       // 32-bit mode (currently unsupported)
     UC_MODE_PPC64 = 1 << 3,       // 64-bit mode (currently unsupported)
     UC_MODE_QPX = 1 << 4,         // Quad Processing eXtensions mode (currently unsupported)
     // sparc

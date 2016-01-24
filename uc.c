@@ -245,7 +245,9 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 
 #ifdef UNICORN_HAS_SPARC
             case UC_ARCH_SPARC:
-                if (mode & ~UC_MODE_SPARC_MASK) {
+                if ((mode & ~UC_MODE_SPARC_MASK) ||
+                        !(mode & UC_MODE_BIG_ENDIAN) ||
+                        !(mode & (UC_MODE_SPARC32|UC_MODE_SPARC64))) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
