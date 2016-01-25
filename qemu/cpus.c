@@ -42,6 +42,11 @@ static void *qemu_tcg_cpu_thread_fn(void *arg);
 
 int vm_start(struct uc_struct* uc)
 {
+    if (uc->lock_at_vm_start) {
+        uc->lock_at_vm_start = false;
+        qemu_mutex_lock_iothread(uc);
+    }
+    
     if (resume_all_vcpus(uc)) {
         return -1;
     }

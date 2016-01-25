@@ -93,6 +93,7 @@ int machine_initialize(struct uc_struct *uc)
 {
     MachineClass *machine_class;
     MachineState *current_machine;
+    int ret;
 
     module_call_init(uc, MODULE_INIT_QOM);
     register_types_object(uc);
@@ -127,7 +128,11 @@ int machine_initialize(struct uc_struct *uc)
 
     current_machine->cpu_model = NULL;
 
-    return machine_class->init(uc, current_machine);
+    ret = machine_class->init(uc, current_machine);
+    
+    qemu_mutex_unlock_iothread(uc);
+    uc->lock_at_vm_start = true;
+    return ret;
 }
 
 void qemu_system_reset_request(struct uc_struct* uc)
