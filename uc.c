@@ -1047,7 +1047,9 @@ void helper_uc_tracecode(int32_t size, uc_hook_type type, void *handle, int64_t 
 
     while (cur != NULL && !uc->stop_request) {
         hook = (struct hook *)cur->data;
-        ((uc_cb_hookcode_t)hook->callback)(uc, address, size, hook->user_data);
+        if (HOOK_BOUND_CHECK(hook, address)) {
+            ((uc_cb_hookcode_t)hook->callback)(uc, address, size, hook->user_data);
+        }
         cur = cur->next;
     }
 }
