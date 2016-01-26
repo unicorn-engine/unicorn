@@ -948,7 +948,7 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
     // Unicorn: call registered syscall hooks
     struct hook *hook;
     HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
-        if (! HOOK_BOUND_CHECK(hook, env->eip))
+        if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
         if (hook->insn == UC_X86_INS_SYSCALL)
             ((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data);
@@ -2308,7 +2308,7 @@ void helper_sysenter(CPUX86State *env, int next_eip_addend)
     // Unicorn: call registered SYSENTER hooks
     struct hook *hook;
     HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
-        if (! HOOK_BOUND_CHECK(hook, env->eip))
+        if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
         if (hook->insn == UC_X86_INS_SYSENTER)
             ((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data);

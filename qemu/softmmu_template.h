@@ -190,7 +190,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #if defined(SOFTMMU_CODE_ACCESS)
         error_code = UC_ERR_FETCH_UNMAPPED;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_FETCH_UNMAPPED) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, DATA_SIZE, 0, hook->user_data)))
                 break;
@@ -198,7 +198,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #else
         error_code = UC_ERR_READ_UNMAPPED;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_UNMAPPED) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, addr, DATA_SIZE, 0, hook->user_data)))
                 break;
@@ -221,7 +221,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  // non-executable
         handled = false;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_FETCH_PROT) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, addr, DATA_SIZE, 0, hook->user_data)))
                 break;
@@ -242,7 +242,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     // Unicorn: callback on memory read
     if (READ_ACCESS_TYPE == MMU_DATA_LOAD) {
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             ((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, addr, DATA_SIZE, 0, hook->user_data);
         }
@@ -252,7 +252,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     if (READ_ACCESS_TYPE == MMU_DATA_LOAD && mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
         handled = false;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_PROT) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, addr, DATA_SIZE, 0, hook->user_data)))
                 break;
@@ -402,7 +402,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #if defined(SOFTMMU_CODE_ACCESS)
         error_code = UC_ERR_FETCH_UNMAPPED;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_FETCH_UNMAPPED) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, DATA_SIZE, 0, hook->user_data)))
                 break;
@@ -410,7 +410,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #else
         error_code = UC_ERR_READ_UNMAPPED;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_UNMAPPED) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, addr, DATA_SIZE, 0, hook->user_data)))
                 break;
@@ -433,7 +433,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     if (mr != NULL && !(mr->perms & UC_PROT_EXEC)) {  // non-executable
         handled = false;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_FETCH_PROT) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, addr, DATA_SIZE, 0, hook->user_data)))
                 break;
@@ -454,7 +454,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     // Unicorn: callback on memory read
     if (READ_ACCESS_TYPE == MMU_DATA_LOAD) {
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             ((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ, addr, DATA_SIZE, 0, hook->user_data);
         }
@@ -464,7 +464,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     if (READ_ACCESS_TYPE == MMU_DATA_LOAD && mr != NULL && !(mr->perms & UC_PROT_READ)) {  //non-readable
         handled = false;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_PROT) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, addr, DATA_SIZE, 0, hook->user_data)))
                 break;
@@ -647,7 +647,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 
     // Unicorn: callback on memory write
     HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
         ((uc_cb_hookmem_t)hook->callback)(uc, UC_MEM_WRITE, addr, DATA_SIZE, val, hook->user_data);
     }
@@ -656,13 +656,13 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     if (mr == NULL) {
         handled = false;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE_UNMAPPED) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_UNMAPPED, addr, DATA_SIZE, val, hook->user_data)))
                 break;
         }
 
-        if (! handled) {
+        if (!handled) {
             // save error & quit
             env->invalid_addr = addr;
             env->invalid_error = UC_ERR_WRITE_UNMAPPED;
@@ -679,7 +679,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     if (mr != NULL && !(mr->perms & UC_PROT_WRITE)) {  //non-writable
         handled = false;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE_PROT) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, addr, DATA_SIZE, val, hook->user_data)))
                 break;
@@ -805,7 +805,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 
     // Unicorn: callback on memory write
     HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE) {
-        if (! HOOK_BOUND_CHECK(hook, addr))
+        if (!HOOK_BOUND_CHECK(hook, addr))
             continue;
         ((uc_cb_hookmem_t)hook->callback)(uc, UC_MEM_WRITE, addr, DATA_SIZE, val, hook->user_data);
     }
@@ -814,7 +814,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     if (mr == NULL) {
         handled = false;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE_UNMAPPED) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_UNMAPPED, addr, DATA_SIZE, val, hook->user_data)))
                 break;
@@ -837,7 +837,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     if (mr != NULL && !(mr->perms & UC_PROT_WRITE)) {  //non-writable
         handled = false;
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE_PROT) {
-            if (! HOOK_BOUND_CHECK(hook, addr))
+            if (!HOOK_BOUND_CHECK(hook, addr))
                 continue;
             if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_WRITE_PROT, addr, DATA_SIZE, val, hook->user_data)))
                 break;

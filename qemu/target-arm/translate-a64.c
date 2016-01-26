@@ -11112,7 +11112,7 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (! env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
         // save block address to see if we need to patch block size later
         env->uc->block_addr = pc_start;
         gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
