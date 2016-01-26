@@ -142,13 +142,13 @@ static void do_nx_demo(bool cause_fault)
 
     /*
        bits 32
-    page0:
+    page0: @0
         times 4091 inc eax
         jmp page2
-        page1:
-        times 4095 inc eax
+    page1: @1000
+        times 4095 inc eax  (or INC ECX)
         hlt
-    page2:
+    page2: @2000
         jmp page1
      */
     memset(code_buf, 0x40, sizeof(code_buf));  // fill with inc eax
