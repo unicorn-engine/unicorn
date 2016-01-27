@@ -826,6 +826,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size, uint3
     MemoryRegion *mr;
     uint64_t addr = address;
     size_t count, len;
+    bool remove_exec = false;
 
     if (size == 0)
         // trivial case, no change
@@ -862,12 +863,22 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size, uint3
             return UC_ERR_NOMEM;
 
         mr = memory_mapping(uc, addr);
+        // will this remove EXEC permission?
+        if (((mr->perms & UC_PROT_EXEC) != 0) && ((perms & UC_PROT_EXEC) == 0))
+            remove_exec = true;
         mr->perms = perms;
         uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
 
         count += len;
         addr += len;
     }
+
+    // if EXEC permission is removed, then quit TB and continue at the same place
+    if (remove_exec) {
+        uc->quit_request = true;
+        uc_emu_stop(uc);
+    }
+
     return UC_ERR_OK;
 }
 
