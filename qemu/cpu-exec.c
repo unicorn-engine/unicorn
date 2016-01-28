@@ -236,6 +236,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     tc_ptr = tb->tc_ptr;
                     /* execute the generated code */
                     next_tb = cpu_tb_exec(cpu, tc_ptr);	// qq
+
                     switch (next_tb & TB_EXIT_MASK) {
                         case TB_EXIT_REQUESTED:
                             /* Something asked us to stop executing
@@ -302,12 +303,13 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
         TranslationBlock *tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
         if (cc->synchronize_from_tb) {
             // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count && !env->uc->stop_request)
+            if (env->uc->emu_counter <= env->uc->emu_count &&
+                    !env->uc->stop_request && !env->uc->quit_request)
                 cc->synchronize_from_tb(cpu, tb);
         } else {
             assert(cc->set_pc);
             // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count)
+            if (env->uc->emu_counter <= env->uc->emu_count && !env->uc->quit_request)
                 cc->set_pc(cpu, tb->pc);
         }
     }
