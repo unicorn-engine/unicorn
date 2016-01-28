@@ -66,6 +66,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     uintptr_t next_tb;
     struct hook *hook;
 
+
     /* This must be volatile so it is not trashed by longjmp() */
     volatile bool have_tb_lock = false;
 
@@ -100,6 +101,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
         if (sigsetjmp(cpu->jmp_env, 0) == 0) {
             if (uc->stop_request || uc->invalid_error)
                 break;
+
             /* if an exception is pending, we execute it here */
             if (cpu->exception_index >= 0) {
                 //printf(">>> GOT INTERRUPT. exception idx = %x\n", cpu->exception_index);	// qq

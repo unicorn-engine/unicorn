@@ -494,7 +494,6 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
 {
     // reset the counter
     uc->emu_counter = 0;
-    uc->stop_request = false;
     uc->invalid_error = UC_ERR_OK;
     uc->block_full = false;
     uc->emulation_done = false;
@@ -541,6 +540,8 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
             uc_reg_write(uc, UC_SPARC_REG_PC, &begin);
             break;
     }
+
+    uc->stop_request = false;
 
     uc->emu_count = count;
     // remove count hook if counting isn't necessary

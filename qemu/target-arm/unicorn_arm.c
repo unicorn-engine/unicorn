@@ -91,6 +91,9 @@ int arm_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
             //case UC_ARM_REG_PC:
             case UC_ARM_REG_R15:
                 ARM_CPU(uc, mycpu)->env.regs[15] = *(uint32_t *)value;
+                // force to quit execution and flush TB
+                uc->quit_request = true;
+                uc_emu_stop(uc);
                 break;
         }
     }

@@ -70,6 +70,9 @@ int m68k_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
             default: break;
             case UC_M68K_REG_PC:
                      M68K_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
+                     // force to quit execution and flush TB
+                     uc->quit_request = true;
+                     uc_emu_stop(uc);
                      break;
         }
     }

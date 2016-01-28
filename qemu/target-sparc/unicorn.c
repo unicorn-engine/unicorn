@@ -87,6 +87,9 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
             case UC_SPARC_REG_PC:
                 SPARC_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
                 SPARC_CPU(uc, mycpu)->env.npc = *(uint32_t *)value + 4;
+                // force to quit execution and flush TB
+                uc->quit_request = true;
+                uc_emu_stop(uc);
                 break;
         }
     }

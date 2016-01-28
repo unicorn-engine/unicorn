@@ -135,6 +135,8 @@ rw_hookstack
 hook_extrainvoke
 sysenter_hook_x86
 test_tb_x86
+test_multihook
+test_pc_change
 
 
 #################
