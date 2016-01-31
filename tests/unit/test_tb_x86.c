@@ -150,7 +150,7 @@ static void hook_code32(uc_engine *uc,
             printf("FAILED EAX register not having 0x5ffffff9\n");
             exit(-1);
         }
-        printf("EAX = %8.8x\n", ecx);
+        printf("ECX = %8.8x\n", ecx);
 
         printf("%8.8x + 0x41 = %8.8x\n", 0x5ffffff9, 0x5ffffff9 + 0x41);
 
