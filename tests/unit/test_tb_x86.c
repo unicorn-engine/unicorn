@@ -10,6 +10,8 @@
 #include <string.h>
 #include <inttypes.h>
 
+#define RIP_NEXT_TO_THE_SELFMODIFY_OPCODE (1)
+
 
 //  Demostration of a self-modifying "IMUL eax,mem,Ib" opcode
 //  And the QEMU's ability to flush the translation buffer properly
@@ -112,6 +114,7 @@ static void hook_code32(uc_engine *uc,
     uint32_t ecx;
 
     printf("\nhook_code32: Address: %"PRIx64", Opcode Size: %d\n", address, size);
+    print_registers(uc);
     size = MIN(sizeof(tmp), size);
     if (!uc_mem_read(uc, address, tmp, size)) 
     {
@@ -123,6 +126,8 @@ static void hook_code32(uc_engine *uc,
         }
         printf("\n");
     }
+    dump_stack_mem(uc);
+
 
     if (address == 0x60000025)
     {
@@ -160,7 +165,7 @@ static void hook_code32(uc_engine *uc,
             }
             printf("Proved that 0x6000003a contains the proper 0x5151494a\n");
         }
-        dump_stack_mem(uc);
+    //    dump_stack_mem(uc);
     }
 
     // Stop after 'imul eax,[ecx+0x41],0x10
@@ -218,6 +223,18 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
     uc_engine *uc = *state;
     uc_hook trace1, trace2, trace3, trace4;
     void *mem;
+#ifdef RIP_NEXT_TO_THE_SELFMODIFY_OPCODE
+    // These values assumes just before PC = 0x60000021
+    int64_t eax = 0x00000041;
+    int64_t ecx = 0x5ffffff8;
+    int64_t edx = 0x5ffffff8;
+    int64_t ebx = 0x034a129b;
+    int64_t esp = 0x6010229a;
+    int64_t ebp = 0x60000002;
+    int64_t esi = 0x1f350211;
+    int64_t edi = 0x488ac239;
+#else
+    //  These values assumes PC == 0x6000000
     int64_t eax = 0x73952c43;
     int64_t ecx = 0x6010229a;
     int64_t edx = 0x2a500e50;
@@ -226,6 +243,7 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
     int64_t ebp = 0x60000000;
     int64_t esi = 0x1f350211;
     int64_t edi = 0x488ac239;
+#endif
 
     mem = calloc(1, CODE_SPACE);
     assert_int_not_equal(0, mem);
@@ -283,7 +301,14 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
                 (uint64_t)0));
 
     uc_assert_success(uc_emu_start(uc,
-                       PHY_STACK_REGION,
+#ifdef RIP_NEXT_TO_THE_SELFMODIFY_OPCODE
+    //  Register set (before self-modifying IMUL opcode)
+    //  Start at "0x00000021: xorb   %al, 0x30(%ecx)
+    //  Start at "0x00000021: xor    byte ptr [ecx + 0x30], al
+                       PHY_STACK_REGION+0x0021,   //  0x0024 didn't work
+#else
+                       PHY_STACK_REGION+0x0000,
+#endif
                        PHY_STACK_REGION+sizeof(X86_CODE32_ALPHA_MIXED) - 1,
                        0, 0));
 
