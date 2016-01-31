@@ -278,7 +278,7 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
 
     uc_assert_success(uc_hook_add(uc,
                 &trace2,
-                UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE | UC_HOOK_MEM_FETCH,
+                UC_HOOK_MEM_VALID,
                 hook_mem32,
                 NULL,
                 (uint64_t)1,
