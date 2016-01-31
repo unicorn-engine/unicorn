@@ -42,6 +42,7 @@ static void release_common(void *t)
     g_free(def->args_ct);
     g_free(def->sorted_args);
     g_free(s->tcg_op_defs);
+
     TCGPool *po, *to;
     for (po = s->pool_first; po; po = to) {
         to = po->next;

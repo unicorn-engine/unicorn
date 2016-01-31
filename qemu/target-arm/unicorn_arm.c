@@ -25,6 +25,23 @@ static void arm_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUARMState *)uc->current_cpu->env_ptr)->regs[15] = address;
 }
 
+void arm_release(void* ctx);
+
+void arm_release(void* ctx)
+{
+    TCGContext *s = (TCGContext *) ctx;
+
+    g_free(s->tb_ctx.tbs);
+    struct uc_struct* uc = s->uc;
+    ARMCPU* cpu = (ARMCPU*) uc->cpu;
+    g_free(cpu->cpreg_indexes);
+    g_free(cpu->cpreg_values);
+    g_free(cpu->cpreg_vmstate_indexes);
+    g_free(cpu->cpreg_vmstate_values);
+
+    release_common(ctx);
+}
+
 void arm_reg_reset(struct uc_struct *uc)
 {
     (void)uc;
@@ -134,5 +151,6 @@ void arm_uc_init(struct uc_struct* uc)
     uc->reg_reset = arm_reg_reset;
     uc->set_pc = arm_set_pc;
     uc->stop_interrupt = arm_stop_interrupt;
+    uc->release = arm_release;
     uc_common_init(uc);
 }
