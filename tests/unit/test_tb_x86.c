@@ -206,8 +206,8 @@ static void hook_mem32(uc_engine *uc,
     //uint32_t tmp[1];
 
     ctype = '?';
-    if (type == 16) ctype = 'R';
-    if (type == 17) ctype = 'W';
+    if (type == UC_MEM_READ) ctype = 'R';
+    if (type == UC_MEM_WRITE) ctype = 'W';
     printf("hook_mem32(%c): Address: 0x%"PRIx64", Size: %d, Value:0x%"PRIx64"\n", ctype, address, size, value);
 
     // if (!uc_mem_read(uc, 0x6000003a, tmp, 4)) 
@@ -221,7 +221,7 @@ static void hook_mem32(uc_engine *uc,
 static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
 {
     uc_engine *uc = *state;
-    uc_hook trace1, trace2, trace3, trace4;
+    uc_hook trace1, trace2;
     void *mem;
 #ifdef RIP_NEXT_TO_THE_SELFMODIFY_OPCODE
     // These values assumes just before PC = 0x60000021
@@ -278,23 +278,7 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
 
     uc_assert_success(uc_hook_add(uc,
                 &trace2,
-                UC_HOOK_MEM_READ,
-                hook_mem32,
-                NULL,
-                (uint64_t)1,
-                (uint64_t)0));
-
-    uc_assert_success(uc_hook_add(uc,
-                &trace3,
-                UC_HOOK_MEM_WRITE,
-                hook_mem32,
-                NULL,
-                (uint64_t)1,
-                (uint64_t)0));
-
-    uc_assert_success(uc_hook_add(uc,
-                &trace4,
-                UC_HOOK_MEM_FETCH,
+                UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE | UC_HOOK_MEM_FETCH,
                 hook_mem32,
                 NULL,
                 (uint64_t)1,
