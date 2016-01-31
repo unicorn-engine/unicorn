@@ -8,14 +8,6 @@ from unicorn.x86_const import *
 import struct
 import uuid
 
-# Python 2/3 Compat without installing six
-DEAD_PYTHON = False
-import sys
-
-if sys.version_info[0] < 3:
-    DEAD_PYTHON = True
-    print("Python 2.x is dead. Start thinking about migrating to 3.x. https://wiki.python.org/moin/Python2orPython3")
-
 SIZE_REG = 4
 SOCKETCALL_MAX_ARGS = 3
 
@@ -105,14 +97,9 @@ class LogChain:
         if fd in self.__chains:
             return fd
 
-        if DEAD_PYTHON:
-            for orig_fd, links in self.__linking_fds.iteritems():
-                if fd in links:
-                    return orig_fd
-        else:
-            for orig_fd, links in self.__linking_fds.items():
-                if fd in links:
-                    return orig_fd
+        for orig_fd, links in self.__linking_fds.items():
+            if fd in links:
+                return orig_fd
 
         return None
 
@@ -122,16 +109,11 @@ class LogChain:
 | START REPORT |
 ----------------
 """)
-        if DEAD_PYTHON:
-            for my_id, logs in self.__chains.iteritems():
-                print("---- START FD(%d) ----" % my_id)
-                print("\n".join(logs))
-                print("---- END FD(%d) ----" % my_id)
-        else:
-            for my_id, logs in self.__chains.items():
-                print("---- START FD(%d) ----" % my_id)
-                print("\n".join(logs))
-                print("---- END FD(%d) ----" % my_id)
+
+        for my_id, logs in self.__chains.items():
+            print("---- START FD(%d) ----" % my_id)
+            print("\n".join(logs))
+            print("---- END FD(%d) ----" % my_id)
 
         print("""
 --------------
