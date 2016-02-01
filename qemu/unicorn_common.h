@@ -36,6 +36,9 @@ static void release_common(void *t)
     TCGContext *s = (TCGContext *)t;
     struct uc_struct* uc = s->uc;
     CPUState *cpu;
+#if TCG_TARGET_REG_BITS == 32
+    int i;
+#endif
 
     // Clean TCG.
     TCGOpDef* def = &s->tcg_op_defs[0];
@@ -83,7 +86,7 @@ static void release_common(void *t)
         free(uc->qemu_thread_data);
 
 #if TCG_TARGET_REG_BITS == 32
-    for(int i = 0; i < s->nb_globals; i++) {
+    for(i = 0; i < s->nb_globals; i++) {
         TCGTemp *ts = &s->temps[i];
         if (ts->base_type == TCG_TYPE_I64) {
             if (ts->name && ((strcmp(ts->name+(strlen(ts->name)-2), "_0") == 0) ||
