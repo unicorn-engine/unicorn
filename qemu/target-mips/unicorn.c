@@ -81,6 +81,9 @@ int mips_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
             default: break;
             case UC_MIPS_REG_PC:
                      MIPS_CPU(uc, mycpu)->env.active_tc.PC = *(uint32_t *)value;
+                     // force to quit execution and flush TB
+                     uc->quit_request = true;
+                     uc_emu_stop(uc);
                      break;
         }
     }

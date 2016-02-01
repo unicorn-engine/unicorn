@@ -11343,12 +11343,9 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
     n_bytes = 2;
 
     // Unicorn: trace this instruction on request
-    if (env->uc->hook_insn) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
-        if (trace) {
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
-            *insn_need_patch = true;
-        }
+    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, ctx->pc)) {
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_CODE_IDX, env->uc, ctx->pc);
+        *insn_need_patch = true;
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
@@ -13942,12 +13939,9 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool *ins
     }
 
     // Unicorn: trace this instruction on request
-    if (env->uc->hook_insn) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
-        if (trace) {
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
-            *insn_need_patch = true;
-        }
+    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, ctx->pc)) {
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_CODE_IDX, env->uc, ctx->pc);
+        *insn_need_patch = true;
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
@@ -18504,13 +18498,10 @@ static void gen_msa(CPUMIPSState *env, DisasContext *ctx)
 // Unicorn: trace this instruction on request
 static void hook_insn(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch, int *insn_patch_offset, int offset_value)
 {
-    if (env->uc->hook_insn) {
-        TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, ctx->pc);
-        if (trace) {
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, ctx->pc, trace->user_data);
-            *insn_need_patch = true;
-        }
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, ctx->pc)) {
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_CODE_IDX, env->uc, ctx->pc);
+        *insn_need_patch = true;
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
         *insn_patch_offset = offset_value;
@@ -19223,13 +19214,10 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (env->uc->hook_block && !env->uc->block_full) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
-        if (trace) {
-            // save block address to see if we need to patch block size later
-            env->uc->block_addr = pc_start;
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, pc_start, trace->user_data);
-        }
+    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+        // save block address to see if we need to patch block size later
+        env->uc->block_addr = pc_start;
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     }
 
     gen_tb_start(tcg_ctx);
@@ -19275,7 +19263,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             int insn_patch_offset = 1;
 
             // Unicorn: save param buffer
-            if (env->uc->hook_insn)
+            if (HOOK_EXISTS(env->uc, UC_HOOK_CODE))
                 save_opparam_ptr = tcg_ctx->gen_opparam_ptr;
 
             is_slot = ctx.hflags & MIPS_HFLAG_BMASK;

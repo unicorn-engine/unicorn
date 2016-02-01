@@ -29,8 +29,8 @@
 
 static void error_exit(int err, const char *msg)
 {
-    // fprintf(stderr, "qemu: %s: %s\n", msg, strerror(err));
-    // abort();
+    fprintf(stderr, "qemu: %s: %s\n", msg, strerror(err));
+    abort();
 }
 
 void qemu_mutex_init(QemuMutex *mutex)

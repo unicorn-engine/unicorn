@@ -1,6 +1,9 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_MIPSEL_H
 #define UNICORN_AUTOGEN_MIPSEL_H
+#define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_mipsel
+#define use_idiv_instructions_rt use_idiv_instructions_rt_mipsel
+#define tcg_target_deposit_valid tcg_target_deposit_valid_mipsel
 #define helper_power_down helper_power_down_mipsel
 #define check_exit_request check_exit_request_mipsel
 #define address_space_unregister address_space_unregister_mipsel
@@ -2806,7 +2809,6 @@
 #define tb_phys_invalidate tb_phys_invalidate_mipsel
 #define tb_reset_jump tb_reset_jump_mipsel
 #define tb_set_jmp_target tb_set_jmp_target_mipsel
-#define tb_set_jmp_target1 tb_set_jmp_target1_mipsel
 #define tcg_accel_class_init tcg_accel_class_init_mipsel
 #define tcg_accel_type tcg_accel_type_mipsel
 #define tcg_add_param_i32 tcg_add_param_i32_mipsel

@@ -59,35 +59,27 @@ int arm_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 
     mycpu = first_cpu;
 
-    switch(uc->mode) {
-        default:
-            break;
-        case UC_MODE_ARM:
-        case UC_MODE_THUMB:
-            if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
-                *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0];
-            else {
-                switch(regid) {
-                    case UC_ARM_REG_CPSR:
-                        *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env);
-                        break;
-                    //case UC_ARM_REG_SP:
-                    case UC_ARM_REG_R13:
-                        *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[13];
-                        break;
-                    //case UC_ARM_REG_LR:
-                    case UC_ARM_REG_R14:
-                        *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[14];
-                        break;
-                    //case UC_ARM_REG_PC:
-                    case UC_ARM_REG_R15:
-                        *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[15];
-                        break;
-                }
-            }
-            break;
+    if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
+        *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0];
+    else {
+        switch(regid) {
+            case UC_ARM_REG_CPSR:
+                *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env);
+                break;
+            //case UC_ARM_REG_SP:
+            case UC_ARM_REG_R13:
+                *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[13];
+                break;
+            //case UC_ARM_REG_LR:
+            case UC_ARM_REG_R14:
+                *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[14];
+                break;
+            //case UC_ARM_REG_PC:
+            case UC_ARM_REG_R15:
+                *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[15];
+                break;
+        }
     }
-
 
     return 0;
 }
@@ -101,31 +93,28 @@ int arm_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
     CPUState *mycpu = first_cpu;
 
-    switch(uc->mode) {
-        default:
-            break;
+    if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
+        ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
+    else {
+        switch(regid) {
+            //case UC_ARM_REG_SP:
+            case UC_ARM_REG_R13:
+                ARM_CPU(uc, mycpu)->env.regs[13] = *(uint32_t *)value;
+                break;
+            //case UC_ARM_REG_LR:
+            case UC_ARM_REG_R14:
+                ARM_CPU(uc, mycpu)->env.regs[14] = *(uint32_t *)value;
+                break;
+            //case UC_ARM_REG_PC:
+            case UC_ARM_REG_R15:
+                ARM_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
+                ARM_CPU(uc, mycpu)->env.regs[15] = *(uint32_t *)value;
+                // force to quit execution and flush TB
+                uc->quit_request = true;
+                uc_emu_stop(uc);
 
-        case UC_MODE_ARM:
-        case UC_MODE_THUMB:
-            if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
-                ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
-            else {
-                switch(regid) {
-                    //case UC_ARM_REG_SP:
-                    case UC_ARM_REG_R13:
-                        ARM_CPU(uc, mycpu)->env.regs[13] = *(uint32_t *)value;
-                        break;
-                    //case UC_ARM_REG_LR:
-                    case UC_ARM_REG_R14:
-                        ARM_CPU(uc, mycpu)->env.regs[14] = *(uint32_t *)value;
-                        break;
-                    //case UC_ARM_REG_PC:
-                    case UC_ARM_REG_R15:
-                        ARM_CPU(uc, mycpu)->env.regs[15] = *(uint32_t *)value;
-                        break;
-                }
-            }
-            break;
+                break;
+        }
     }
 
     return 0;
@@ -141,6 +130,19 @@ static bool arm_stop_interrupt(int intno)
     }
 }
 
+static uc_err arm_query(struct uc_struct *uc, uc_query_type type, size_t *result)
+{
+    CPUState *mycpu = first_cpu;
+
+    switch(type) {
+        case UC_QUERY_MODE:
+            *result = (ARM_CPU(uc, mycpu)->env.thumb != 0);
+            return UC_ERR_OK;
+        default:
+            return UC_ERR_ARG;
+    }
+}
+
 void arm_uc_init(struct uc_struct* uc)
 {
     register_accel_types(uc);
@@ -152,5 +154,6 @@ void arm_uc_init(struct uc_struct* uc)
     uc->set_pc = arm_set_pc;
     uc->stop_interrupt = arm_stop_interrupt;
     uc->release = arm_release;
+    uc->query = arm_query;
     uc_common_init(uc);
 }

@@ -64,6 +64,8 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     TranslationBlock *tb;
     uint8_t *tc_ptr;
     uintptr_t next_tb;
+    struct hook *hook;
+
 
     /* This must be volatile so it is not trashed by longjmp() */
     volatile bool have_tb_lock = false;
@@ -92,12 +94,14 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
 
     cc->cpu_exec_enter(cpu);
     cpu->exception_index = -1;
+    env->invalid_error = UC_ERR_OK;
 
     /* prepare setjmp context for exception handling */
     for(;;) {
         if (sigsetjmp(cpu->jmp_env, 0) == 0) {
             if (uc->stop_request || uc->invalid_error)
                 break;
+
             /* if an exception is pending, we execute it here */
             if (cpu->exception_index >= 0) {
                 //printf(">>> GOT INTERRUPT. exception idx = %x\n", cpu->exception_index);	// qq
@@ -126,11 +130,10 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     ret = cpu->exception_index;
                     break;
 #else
-                    // Unicorn: call interrupt callback if registered
-                    if (uc->hook_intr_idx)
-                        ((uc_cb_hookintr_t)uc->hook_callbacks[uc->hook_intr_idx].callback)(
-                            uc, cpu->exception_index,
-                            uc->hook_callbacks[uc->hook_intr_idx].user_data);
+                    // Unicorn: call registered interrupt callbacks
+                    HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
+                        ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
+                    }
                     cpu->exception_index = -1;
 #if defined(TARGET_X86_64)
                     // point EIP to the next instruction after INT
@@ -233,6 +236,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     tc_ptr = tb->tc_ptr;
                     /* execute the generated code */
                     next_tb = cpu_tb_exec(cpu, tc_ptr);	// qq
+
                     switch (next_tb & TB_EXIT_MASK) {
                         case TB_EXIT_REQUESTED:
                             /* Something asked us to stop executing
@@ -299,12 +303,13 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
         TranslationBlock *tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
         if (cc->synchronize_from_tb) {
             // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count && !env->uc->stop_request)
+            if (env->uc->emu_counter <= env->uc->emu_count &&
+                    !env->uc->stop_request && !env->uc->quit_request)
                 cc->synchronize_from_tb(cpu, tb);
         } else {
             assert(cc->set_pc);
             // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count)
+            if (env->uc->emu_counter <= env->uc->emu_count && !env->uc->quit_request)
                 cc->set_pc(cpu, tb->pc);
         }
     }

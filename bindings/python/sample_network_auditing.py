@@ -7,7 +7,6 @@ from unicorn import *
 from unicorn.x86_const import *
 import struct
 import uuid
-import random
 
 SIZE_REG = 4
 SOCKETCALL_MAX_ARGS = 3
@@ -51,10 +50,11 @@ X86_REVERSE_TCP_2 = b"\x31\xc0\x31\xdb\x31\xc9\x31\xd2\xb0\x66\xb3\x01\x51\x6a\x
 # memory address where emulation starts
 ADDRESS = 0x1000000
 
+
 # supported classes
 class IdGenerator:
     def __init__(self):
-        self.__next_id = 3 # exclude sdtin, stdout, stderr
+        self.__next_id = 3  # exclude sdtin, stdout, stderr
 
     def next(self):
         next_id = self.__next_id
@@ -62,6 +62,7 @@ class IdGenerator:
         self.__next_id += 1
 
         return next_id
+
 
 class LogChain:
     def __init__(self):
@@ -72,11 +73,11 @@ class LogChain:
         self.__chains = {}
         self.__linking_fds = {}
 
-    def create_chain(self, id):
-        if not self.__chains.has_key(id):
-            self.__chains[id] = []
+    def create_chain(self, my_id):
+        if not my_id in self.__chains:
+            self.__chains[my_id] = []
         else:
-            print("LogChain: id %d existed" % id)        
+            print("LogChain: id %d existed" % my_id)
 
     def add_log(self, id, msg):
         fd = self.get_original_fd(id)
@@ -87,20 +88,20 @@ class LogChain:
             print("LogChain: id %d doesn't exist" % id)
 
     def link_fd(self, from_fd, to_fd):
-        if not self.__linking_fds.has_key(to_fd):
+        if not to_fd in self.__linking_fds:
             self.__linking_fds[to_fd] = []
 
         self.__linking_fds[to_fd].append(from_fd)
 
     def get_original_fd(self, fd):
-        if self.__chains.has_key(fd):
+        if fd in self.__chains:
             return fd
 
-        for orig_fd, links in self.__linking_fds.iteritems():
+        for orig_fd, links in self.__linking_fds.items():
             if fd in links:
                 return orig_fd
 
-        return None 
+        return None
 
     def print_report(self):
         print("""
@@ -108,10 +109,11 @@ class LogChain:
 | START REPORT |
 ----------------
 """)
-        for id, logs in self.__chains.iteritems():            
-            print("---- START FD(%d) ----" % id)
+
+        for my_id, logs in self.__chains.items():
+            print("---- START FD(%d) ----" % my_id)
             print("\n".join(logs))
-            print("---- END FD(%d) ----" % id)
+            print("---- END FD(%d) ----" % my_id)
 
         print("""
 --------------
@@ -119,10 +121,9 @@ class LogChain:
 --------------
 """)
 
+
 # end supported classes
 
-id_gen = IdGenerator()
-fd_chains = LogChain()
 
 # utilities
 def bin_to_ipv4(ip):
@@ -132,6 +133,7 @@ def bin_to_ipv4(ip):
         (ip & 0xff00) >> 8,
         (ip & 0xff))
 
+
 def read_string(uc, addr):
     ret = ""
 
@@ -140,36 +142,43 @@ def read_string(uc, addr):
 
     while c != 0x0:
         ret += chr(c)
-        c = uc.mem_read(addr+read_bytes, 1)[0]
+        c = uc.mem_read(addr + read_bytes, 1)[0]
         read_bytes += 1
 
     return ret
 
+
 def parse_sock_address(sock_addr):
     sin_family, = struct.unpack("<h", sock_addr[:2])
-            
-    if sin_family == 2: # AF_INET
-        port, host = struct.unpack(">HI", sock_addr[2:8])                
+
+    if sin_family == 2:  # AF_INET
+        port, host = struct.unpack(">HI", sock_addr[2:8])
         return "%s:%d" % (bin_to_ipv4(host), port)
-    elif sin_family == 6: # AF_INET6
+    elif sin_family == 6:  # AF_INET6
         return ""
+
 
 def print_sockcall(msg):
     print(">>> SOCKCALL %s" % msg)
+
+
 # end utilities
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
-    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
+    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" % (address, size))
     # read this instruction code from memory
     tmp = uc.mem_read(address, size)
-    print(">>> Instruction code at [0x%x] =" %(address), end="")
+    print(">>> Instruction code at [0x%x] =" % (address), end="")
     for i in tmp:
-        print(" %x" %i, end="")
+        print(" %x" % i, end="")
     print("")
+
 
 # callback for tracing Linux interrupt
 def hook_intr(uc, intno, user_data):
+    global id_gen
+
     # only handle Linux syscall
     if intno != 0x80:
         return
@@ -182,17 +191,17 @@ def hook_intr(uc, intno, user_data):
 
     # print(">>> INTERRUPT %d" % eax)
 
-    if eax == 1:    # sys_exit
+    if eax == 1:  # sys_exit
         print(">>> SYS_EXIT")
         uc.emu_stop()
-    elif eax == 3: # sys_read        
+    elif eax == 3:  # sys_read
         fd = ebx
         buf = ecx
         count = edx
 
         dummy_content = str(uuid.uuid1())[:32]
         if len(dummy_content) > count:
-            dummy_content = dummy_content[:count]        
+            dummy_content = dummy_content[:count]
 
         uc.mem_write(buf, dummy_content)
 
@@ -200,7 +209,7 @@ def hook_intr(uc, intno, user_data):
 
         fd_chains.add_log(fd, msg)
         print(">>> %s" % msg)
-    elif eax == 4: # sys_write
+    elif eax == 4:  # sys_write
         fd = ebx
         buf = ecx
         count = edx
@@ -211,13 +220,13 @@ def hook_intr(uc, intno, user_data):
 
         print(">>> %s" % msg)
         fd_chains.add_log(fd, msg)
-    elif eax == 5: # sys_open
+    elif eax == 5:  # sys_open
         filename_addr = ebx
         flags = ecx
         mode = edx
         filename = read_string(uc, filename_addr)
 
-        dummy_fd = id_gen.next()                 
+        dummy_fd = id_gen.next()
         uc.reg_write(UC_X86_REG_EAX, dummy_fd)
 
         msg = "open file (filename=%s flags=%d mode=%d) with fd(%d)" % (filename, flags, mode, dummy_fd)
@@ -225,42 +234,42 @@ def hook_intr(uc, intno, user_data):
         fd_chains.create_chain(dummy_fd)
         fd_chains.add_log(dummy_fd, msg)
         print(">>> %s" % msg)
-    elif eax == 11: # sys_execv
+    elif eax == 11:  # sys_execv
         # print(">>> ebx=0x%x, ecx=0x%x, edx=0x%x" % (ebx, ecx, edx))
         filename = read_string(uc, ebx)
 
         print(">>> SYS_EXECV filename=%s" % filename)
-    elif eax == 63: # sys_dup2
+    elif eax == 63:  # sys_dup2
         fd_chains.link_fd(ecx, ebx)
         print(">>> SYS_DUP2 oldfd=%d newfd=%d" % (ebx, ecx))
-    elif eax == 102: # sys_socketcall
+    elif eax == 102:  # sys_socketcall
         # ref: http://www.skyfree.org/linux/kernel_network/socket.html
         call = uc.reg_read(UC_X86_REG_EBX)
         args = uc.reg_read(UC_X86_REG_ECX)
 
         SOCKETCALL_NUM_ARGS = {
-            1: 3,   # sys_socket
-            2: 3,   # sys_bind
-            3: 3,   # sys_connect
-            4: 2,   # sys_listen
-            5: 3,   # sys_accept
-            9: 4,   # sys_send
+            1: 3,  # sys_socket
+            2: 3,  # sys_bind
+            3: 3,  # sys_connect
+            4: 2,  # sys_listen
+            5: 3,  # sys_accept
+            9: 4,  # sys_send
             11: 4,  # sys_receive
-            13: 2   # sys_shutdown
+            13: 2  # sys_shutdown
         }
 
-        buf = uc.mem_read(args, SOCKETCALL_NUM_ARGS[call]*SIZE_REG)        
-        args = struct.unpack("<" + "I"*SOCKETCALL_NUM_ARGS[call], buf)
+        buf = uc.mem_read(args, SOCKETCALL_NUM_ARGS[call] * SIZE_REG)
+        args = struct.unpack("<" + "I" * SOCKETCALL_NUM_ARGS[call], buf)
 
         # int sys_socketcall(int call, unsigned long *args)
-        if call == 1: # sys_socket
+        if call == 1:  # sys_socket
             # err = sys_socket(a0,a1,a[2])
             # int sys_socket(int family, int type, int protocol)
             family = args[0]
             sock_type = args[1]
             protocol = args[2]
 
-            dummy_fd = id_gen.next()                 
+            dummy_fd = id_gen.next()
             uc.reg_write(UC_X86_REG_EAX, dummy_fd)
 
             if family == 2:  # AF_INET 
@@ -269,10 +278,10 @@ def hook_intr(uc, intno, user_data):
                 fd_chains.create_chain(dummy_fd)
                 fd_chains.add_log(dummy_fd, msg)
                 print_sockcall(msg)
-            elif family == 3: # AF_INET6
+            elif family == 3:  # AF_INET6
                 pass
 
-        elif call == 2: # sys_bind
+        elif call == 2:  # sys_bind
             fd = args[0]
             umyaddr = args[1]
             addrlen = args[2]
@@ -283,19 +292,19 @@ def hook_intr(uc, intno, user_data):
             fd_chains.add_log(fd, msg)
             print_sockcall(msg)
 
-        elif call == 3: # sys_connect
+        elif call == 3:  # sys_connect
             # err = sys_connect(a0, (struct sockaddr *)a1, a[2])
             # int sys_connect(int fd, struct sockaddr *uservaddr, int addrlen)
             fd = args[0]
             uservaddr = args[1]
             addrlen = args[2]
 
-            sock_addr = uc.mem_read(uservaddr, addrlen)        
+            sock_addr = uc.mem_read(uservaddr, addrlen)
             msg = "fd(%d) connect to %s" % (fd, parse_sock_address(sock_addr))
             fd_chains.add_log(fd, msg)
             print_sockcall(msg)
 
-        elif call == 4: # sys_listen
+        elif call == 4:  # sys_listen
             fd = args[0]
             backlog = args[1]
 
@@ -303,7 +312,7 @@ def hook_intr(uc, intno, user_data):
             fd_chains.add_log(fd, msg)
             print_sockcall(msg)
 
-        elif call == 5: # sys_accept
+        elif call == 5:  # sys_accept
             fd = args[0]
             upeer_sockaddr = args[1]
             upeer_addrlen = args[2]
@@ -321,7 +330,7 @@ def hook_intr(uc, intno, user_data):
                 fd_chains.add_log(fd, msg)
                 print_sockcall(msg)
 
-        elif call == 9: # sys_send
+        elif call == 9:  # sys_send
             fd = args[0]
             buff = args[1]
             length = args[2]
@@ -332,7 +341,7 @@ def hook_intr(uc, intno, user_data):
             fd_chains.add_log(fd, msg)
             print_sockcall(msg)
 
-        elif call == 11: # sys_receive
+        elif call == 11:  # sys_receive
             fd = args[0]
             ubuf = args[1]
             size = args[2]
@@ -342,7 +351,7 @@ def hook_intr(uc, intno, user_data):
             fd_chains.add_log(fd, msg)
             print_sockcall(msg)
 
-        elif call == 13: # sys_shutdown
+        elif call == 13:  # sys_shutdown
             fd = args[0]
             how = args[1]
 
@@ -350,8 +359,11 @@ def hook_intr(uc, intno, user_data):
             fd_chains.add_log(fd, msg)
             print_sockcall(msg)
 
+
 # Test X86 32 bit
 def test_i386(code):
+    global fd_chains
+
     fd_chains.clean()
     print("Emulate i386 code")
     try:
@@ -366,7 +378,7 @@ def test_i386(code):
 
         # initialize stack
         mu.reg_write(UC_X86_REG_ESP, ADDRESS + 0x200000)
-    
+
         # tracing all instructions with customized callback
         # mu.hook_add(UC_HOOK_CODE, hook_code)
 
@@ -384,9 +396,13 @@ def test_i386(code):
 
     fd_chains.print_report()
 
+
+# Globals
+fd_chains = LogChain()
+id_gen = IdGenerator()
+
 if __name__ == '__main__':
-    test_i386(X86_SEND_ETCPASSWD)        
+    test_i386(X86_SEND_ETCPASSWD)
     test_i386(X86_BIND_TCP)
     test_i386(X86_REVERSE_TCP)
     test_i386(X86_REVERSE_TCP_2)
-

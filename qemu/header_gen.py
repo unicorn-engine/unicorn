@@ -7,6 +7,9 @@
 import sys
 
 symbols = (
+    'aarch64_tb_set_jmp_target',
+    'use_idiv_instructions_rt',
+    'tcg_target_deposit_valid',
     'helper_power_down',
     'check_exit_request',
     'address_space_unregister',
@@ -2812,7 +2815,6 @@ symbols = (
     'tb_phys_invalidate',
     'tb_reset_jump',
     'tb_set_jmp_target',
-    'tb_set_jmp_target1',
     'tcg_accel_class_init',
     'tcg_accel_type',
     'tcg_add_param_i32',

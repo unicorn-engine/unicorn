@@ -8,6 +8,8 @@
 *.so.*
 *.exe
 *.dll
+*.class
+*.jar
 
 qemu/config-all-devices.mak
 
@@ -125,12 +127,16 @@ mips_delay_slot_code_hook
 threaded_emu_start
 emu_stop_in_hook_overrun
 mips_branch_likely_issue
+emu_clear_errors
 
 test_mem_map_ptr
 test_mem_high
 rw_hookstack
 hook_extrainvoke
 sysenter_hook_x86
+test_tb_x86
+test_multihook
+test_pc_change
 
 memleak_x86
 memleak_arm

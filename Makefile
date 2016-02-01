@@ -222,13 +222,13 @@ else
 endif
 
 compile_lib: config qemu/config-host.h-timestamp
-	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll cyg$(LIBNAME)*.dll && cd qemu && $(MAKE) -j 8
+	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll cyg$(LIBNAME)*.dll && cd qemu && $(MAKE) -j 4
 	$(MAKE) unicorn
 	cd samples && $(MAKE) clean
 
 unicorn: $(LIBRARY) $(ARCHIVE)
 
-$(LIBRARY): $(UC_TARGET_OBJ) uc.o hook.o
+$(LIBRARY): $(UC_TARGET_OBJ) uc.o list.o
 ifeq ($(UNICORN_SHARED),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(LIBRARY))
@@ -241,7 +241,7 @@ ifneq (,$(LIBRARY_SYMLINK))
 endif
 endif
 
-$(ARCHIVE): $(UC_TARGET_OBJ) uc.o hook.o
+$(ARCHIVE): $(UC_TARGET_OBJ) uc.o list.o
 ifeq ($(UNICORN_STATIC),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(ARCHIVE))

@@ -59,7 +59,6 @@ void x86_reg_reset(struct uc_struct *uc)
     env->features[FEAT_8000_0001_ECX] = CPUID_EXT3_LAHF_LM | CPUID_EXT3_ABM | CPUID_EXT3_SKINIT | CPUID_EXT3_CR8LEG;
     env->features[FEAT_7_0_EBX] = CPUID_7_0_EBX_BMI1 | CPUID_7_0_EBX_BMI2 | CPUID_7_0_EBX_ADX | CPUID_7_0_EBX_SMAP;
 
-    env->invalid_error = UC_ERR_OK; // no error
     memset(env->regs, 0, sizeof(env->regs));
     memset(env->segs, 0, sizeof(env->segs));
     memset(env->cr, 0, sizeof(env->cr));
@@ -658,9 +657,15 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     break;
                 case UC_X86_REG_EIP:
                     X86_CPU(uc, mycpu)->env.eip = *(uint32_t *)value;
+                    // force to quit execution and flush TB
+                    uc->quit_request = true;
+                    uc_emu_stop(uc);
                     break;
                 case UC_X86_REG_IP:
                     WRITE_WORD(X86_CPU(uc, mycpu)->env.eip, *(uint16_t *)value);
+                    // force to quit execution and flush TB
+                    uc->quit_request = true;
+                    uc_emu_stop(uc);
                     break;
                 case UC_X86_REG_CS:
                     X86_CPU(uc, mycpu)->env.segs[R_CS].base = *(uint32_t *)value;
@@ -808,12 +813,21 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     break;
                 case UC_X86_REG_RIP:
                     X86_CPU(uc, mycpu)->env.eip = *(uint64_t *)value;
+                    // force to quit execution and flush TB
+                    uc->quit_request = true;
+                    uc_emu_stop(uc);
                     break;
                 case UC_X86_REG_EIP:
                     WRITE_DWORD(X86_CPU(uc, mycpu)->env.eip, *(uint32_t *)value);
+                    // force to quit execution and flush TB
+                    uc->quit_request = true;
+                    uc_emu_stop(uc);
                     break;
                 case UC_X86_REG_IP:
                     WRITE_WORD(X86_CPU(uc, mycpu)->env.eip, *(uint16_t *)value);
+                    // force to quit execution and flush TB
+                    uc->quit_request = true;
+                    uc_emu_stop(uc);
                     break;
                 case UC_X86_REG_CS:
                     X86_CPU(uc, mycpu)->env.segs[R_CS].base = *(uint64_t *)value;

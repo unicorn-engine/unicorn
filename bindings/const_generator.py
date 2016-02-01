@@ -116,7 +116,8 @@ def gen(lang):
 
                 if f[0].startswith("UC_" + prefix.upper()):
                     if len(f) > 1 and f[1] not in ('//', '='):
-                        print("Error: Unable to convert %s" % f)
+                        print("WARNING: Unable to convert %s" % f)
+                        print("  Line =", line)
                         continue
                     elif len(f) > 1 and f[1] == '=':
                         rhs = ''.join(f[2:])

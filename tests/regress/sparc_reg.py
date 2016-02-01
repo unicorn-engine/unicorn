@@ -5,7 +5,7 @@ from unicorn.sparc_const import *
 
 PAGE_SIZE = 1 * 1024 * 1024
 
-uc = Uc(UC_ARCH_SPARC, UC_MODE_32)
+uc = Uc(UC_ARCH_SPARC, UC_MODE_SPARC32|UC_MODE_BIG_ENDIAN)
 uc.reg_write(UC_SPARC_REG_SP, 100)
 uc.reg_write(UC_SPARC_REG_FP, 200)
 
