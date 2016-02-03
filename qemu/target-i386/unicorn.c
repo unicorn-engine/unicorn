@@ -277,6 +277,42 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                 case UC_X86_REG_GS:
                     *(int32_t *)value = X86_CPU(uc, mycpu)->env.segs[R_GS].base;
                     break;
+                case UC_X86_REG_IDTR_LIMIT:
+                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.idt.limit);
+                    break;
+                case UC_X86_REG_IDTR_BASE:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.idt.base;
+                    break;
+                case UC_X86_REG_GDTR_LIMIT:
+                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.gdt.limit);
+                    break;
+                case UC_X86_REG_GDTR_BASE:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.gdt.base;
+                    break;
+                case UC_X86_REG_LDTR_SS:
+                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.ldt.selector);
+                    break;
+                case UC_X86_REG_LDTR_LIMIT:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.ldt.limit;
+                    break;
+                case UC_X86_REG_LDTR_BASE:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.ldt.base;
+                    break;
+                case UC_X86_REG_LDTR_ATTR:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.ldt.flags;
+                    break;
+                case UC_X86_REG_TR_SS:
+                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.tr.selector);
+                    break;
+                case UC_X86_REG_TR_LIMIT:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.tr.limit;
+                    break;
+                case UC_X86_REG_TR_BASE:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.tr.base;
+                    break;
+                case UC_X86_REG_TR_ATTR:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.tr.flags;
+                    break;
             }
             break;
 
@@ -525,6 +561,42 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                 case UC_X86_REG_R15B:
                     *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[15]);
                     break;
+                case UC_X86_REG_IDTR_LIMIT:
+                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.idt.limit);
+                    break;
+                case UC_X86_REG_IDTR_BASE:
+                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.idt.base;
+                    break;
+                case UC_X86_REG_GDTR_LIMIT:
+                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.gdt.limit);
+                    break;
+                case UC_X86_REG_GDTR_BASE:
+                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.gdt.base;
+                    break;
+                case UC_X86_REG_LDTR_SS:
+                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.ldt.selector);
+                    break;
+                case UC_X86_REG_LDTR_LIMIT:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.ldt.limit;
+                    break;
+                case UC_X86_REG_LDTR_BASE:
+                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.ldt.base;
+                    break;
+                case UC_X86_REG_LDTR_ATTR:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.ldt.flags;
+                    break;
+                case UC_X86_REG_TR_SS:
+                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.tr.selector);
+                    break;
+                case UC_X86_REG_TR_LIMIT:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.tr.limit;
+                    break;
+                case UC_X86_REG_TR_BASE:
+                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.tr.base;
+                    break;
+                case UC_X86_REG_TR_ATTR:
+                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.tr.flags;
+                    break;
             }
             break;
 #endif
@@ -683,6 +755,42 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     break;
                 case UC_X86_REG_GS:
                     X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint32_t *)value;
+                    break;
+                case UC_X86_REG_IDTR_LIMIT:
+                    WRITE_WORD(X86_CPU(uc, mycpu)->env.idt.limit, *(uint16_t *)value);
+                    break;
+                case UC_X86_REG_IDTR_BASE:
+                    X86_CPU(uc, mycpu)->env.idt.base = *(uint32_t *)value;
+                    break;
+                case UC_X86_REG_GDTR_LIMIT:
+                    WRITE_WORD(X86_CPU(uc, mycpu)->env.gdt.limit, *(uint16_t *)value);
+                    break;
+                case UC_X86_REG_GDTR_BASE:
+                    X86_CPU(uc, mycpu)->env.gdt.base = *(uint32_t *)value;
+                    break;
+                case UC_X86_REG_LDTR_SS:
+                    WRITE_WORD(X86_CPU(uc, mycpu)->env.ldt.selector, *(uint16_t *)value);
+                    break;
+                case UC_X86_REG_LDTR_LIMIT:
+                    X86_CPU(uc, mycpu)->env.ldt.limit = *(uint32_t *)value;
+                    break;
+                case UC_X86_REG_LDTR_BASE:
+                    X86_CPU(uc, mycpu)->env.ldt.base = *(uint32_t *)value;
+                    break;
+                case UC_X86_REG_LDTR_ATTR:
+                    X86_CPU(uc, mycpu)->env.ldt.flags = *(uint32_t *)value;
+                    break;
+                case UC_X86_REG_TR_SS:
+                    WRITE_WORD(X86_CPU(uc, mycpu)->env.tr.selector, *(uint16_t *)value);
+                    break;
+                case UC_X86_REG_TR_LIMIT:
+                    X86_CPU(uc, mycpu)->env.tr.limit = *(uint32_t *)value;
+                    break;
+                case UC_X86_REG_TR_BASE:
+                    X86_CPU(uc, mycpu)->env.tr.base = *(uint32_t *)value;
+                    break;
+                case UC_X86_REG_TR_ATTR:
+                    X86_CPU(uc, mycpu)->env.tr.flags = *(uint32_t *)value;
                     break;
             }
             break;
@@ -941,6 +1049,42 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     break;
                 case UC_X86_REG_R15B:
                     WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[15], *(uint8_t *)value);
+                    break;
+                case UC_X86_REG_IDTR_LIMIT:
+                    WRITE_WORD(X86_CPU(uc, mycpu)->env.idt.limit, *(uint16_t *)value);
+                    break;
+                case UC_X86_REG_IDTR_BASE:
+                    X86_CPU(uc, mycpu)->env.idt.base = *(uint64_t *)value;
+                    break;
+                case UC_X86_REG_GDTR_LIMIT:
+                    WRITE_WORD(X86_CPU(uc, mycpu)->env.gdt.limit, *(uint16_t *)value);
+                    break;
+                case UC_X86_REG_GDTR_BASE:
+                    X86_CPU(uc, mycpu)->env.gdt.base = *(uint64_t *)value;
+                    break;
+                case UC_X86_REG_LDTR_SS:
+                    WRITE_WORD(X86_CPU(uc, mycpu)->env.ldt.selector, *(uint16_t *)value);
+                    break;
+                case UC_X86_REG_LDTR_LIMIT:
+                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.ldt.limit, *(uint32_t *)value);
+                    break;
+                case UC_X86_REG_LDTR_BASE:
+                    X86_CPU(uc, mycpu)->env.ldt.base = *(uint64_t *)value;
+                    break;
+                case UC_X86_REG_LDTR_ATTR:
+                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.ldt.flags, *(uint32_t *)value);
+                    break;
+                case UC_X86_REG_TR_SS:
+                    WRITE_WORD(X86_CPU(uc, mycpu)->env.tr.selector, *(uint16_t *)value);
+                    break;
+                case UC_X86_REG_TR_LIMIT:
+                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.tr.limit, *(uint32_t *)value);
+                    break;
+                case UC_X86_REG_TR_BASE:
+                    X86_CPU(uc, mycpu)->env.tr.base = *(uint64_t *)value;
+                    break;
+                case UC_X86_REG_TR_ATTR:
+                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.tr.flags, *(uint32_t *)value);
                     break;
             }
             break;
