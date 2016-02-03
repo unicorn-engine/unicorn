@@ -729,6 +729,56 @@ static void test_x86_16(void **state)
 
 /******************************************************************************/
 
+
+/******************************************************************************/
+
+// callback for SYSCALL instruction (X86).
+static void hook_empty_bb(uc_engine *uc, uint64_t addr, uint64_t bb_size, void *user_data)
+{
+    if(bb_size == 0) {
+        fail_msg("Invalid Basic Block Size, shouldn't be 0");
+    }
+    assert_int_equal(9, bb_size);
+}
+
+static void test_x86_64_empty_bb(void **state)
+{
+    uc_engine *uc;
+    uc_hook trace1;
+    uc_err err;
+
+    static const uint64_t address = 0x40000;
+    static const uint8_t code[] = {
+        0x83, 0xc0, 0x01,  //add eax, 1
+        0x83, 0xc0, 0x02,  //add eax, 2
+        0x83, 0xc0, 0x03   //add eax, 3
+    };
+
+    // Initialize emulator in X86-64bit mode
+    err = uc_open(UC_ARCH_X86, UC_MODE_64, &uc);
+    uc_assert_success(err);
+
+    // map 2MB memory for this emulation
+    err = uc_mem_map(uc, address, 2 * 1024 * 1024, UC_PROT_ALL);
+    uc_assert_success(err);
+
+    // write machine code to be emulated to memory
+    err = uc_mem_write(uc, address, code, sizeof(code));
+    uc_assert_success(err);
+
+    // hook interrupts for syscall
+    err = uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_empty_bb, NULL);
+    uc_assert_success(err);
+
+    // emulate machine code in infinite time (last param = 0), or when
+    // finishing all the code.
+    err = uc_emu_start(uc, address, address+10000, 0, 0);
+    uc_assert_success(err);
+
+    uc_assert_success(uc_close(uc));
+}
+
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_i386),
@@ -743,6 +793,7 @@ int main(void) {
         cmocka_unit_test(test_x86_64_syscall),
 
         cmocka_unit_test(test_x86_16),
+        cmocka_unit_test(test_x86_64_empty_bb),
 
         cmocka_unit_test_setup_teardown(test_basic_blocks, setup32, teardown),
     };
