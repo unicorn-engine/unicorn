@@ -138,6 +138,29 @@ static void test_unmap_double_map(void **state)
     uc_assert_fail(uc_mem_map(uc, 0x0000, 0x1000, 0));   /* 0x1000 - 0x1000 */
 }
 
+static void test_overlap_unmap_double_map(void **state)
+{
+    uc_engine *uc = *state;
+    uc_mem_map(  uc, 0x1000, 0x2000, 0);
+    uc_mem_map(  uc, 0x1000, 0x1000, 0);
+    uc_mem_unmap(uc, 0x2000, 0x1000);
+}
+
+static void test_strange_map(void **state)
+{
+    uc_engine *uc = *state;
+    uc_mem_map(  uc, 0x0,0x3000,0); 
+    uc_mem_unmap(uc, 0x1000,0x1000); 
+    uc_mem_map(  uc, 0x3000,0x1000,0); 
+    uc_mem_map(  uc, 0x4000,0x1000,0); 
+    uc_mem_map(  uc, 0x1000,0x1000,0); 
+    uc_mem_map(  uc, 0x5000,0x1000,0); 
+    uc_mem_unmap(uc, 0x0,0x1000); 
+}
+
+
+
+
 int main(void) {
 #define test(x)     cmocka_unit_test_setup_teardown(x, setup, teardown)
     const struct CMUnitTest tests[] = {
@@ -147,6 +170,8 @@ int main(void) {
         test(test_bad_unmap),
         test(test_rw_across_boundaries),
         test(test_unmap_double_map),
+        test(test_overlap_unmap_double_map),
+        test(test_strange_map),
     };
 #undef test
     return cmocka_run_group_tests(tests, NULL, NULL);
