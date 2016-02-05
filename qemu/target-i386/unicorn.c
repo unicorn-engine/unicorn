@@ -260,22 +260,22 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                     *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.eip);
                     break;
                 case UC_X86_REG_CS:
-                    *(int32_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_CS].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_CS].selector;
                     break;
                 case UC_X86_REG_DS:
-                    *(int32_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_DS].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_DS].selector;
                     break;
                 case UC_X86_REG_SS:
-                    *(int32_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_SS].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_SS].selector;
                     break;
                 case UC_X86_REG_ES:
-                    *(int32_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_ES].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_ES].selector;
                     break;
                 case UC_X86_REG_FS:
-                    *(int32_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
                     break;
                 case UC_X86_REG_GS:
-                    *(int32_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
                     break;
             }
             break;
@@ -412,22 +412,22 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                     *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.eip);
                     break;
                 case UC_X86_REG_CS:
-                    *(int64_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_CS].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_CS].selector;
                     break;
                 case UC_X86_REG_DS:
-                    *(int64_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_DS].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_DS].selector;
                     break;
                 case UC_X86_REG_SS:
-                    *(int64_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_SS].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_SS].selector;
                     break;
                 case UC_X86_REG_ES:
-                    *(int64_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_ES].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_ES].selector;
                     break;
                 case UC_X86_REG_FS:
-                    *(int64_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
                     break;
                 case UC_X86_REG_GS:
-                    *(int64_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
+                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
                     break;
                 case UC_X86_REG_R8:
                     *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[8]);
