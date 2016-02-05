@@ -699,7 +699,7 @@ typedef enum {
 
 typedef struct SegmentCache {
     uint32_t selector;
-    uint64_t base;   /* handle 32 or 64 bit CPUs */
+    target_ulong base;
     uint32_t limit;
     uint32_t flags;
 } SegmentCache;

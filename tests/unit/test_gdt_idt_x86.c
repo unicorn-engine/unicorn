@@ -47,10 +47,10 @@ static void test_idt_gdt_i386(/*void **state*/)
     uc_engine *uc;
     uc_err err;
     uint8_t buf[6];
-    x86_mmr idt;
-    x86_mmr gdt;
-    x86_mmr ldt;
-    x86_mmr tr;
+    uc_x86_mmr idt;
+    uc_x86_mmr gdt;
+    uc_x86_mmr ldt;
+    uc_x86_mmr tr;
 
     const uint8_t code[] = "\x0f\x01\x0c\x24\x0f\x01\x44\x24\x06"; // sidt [esp]; sgdt [esp+6]
     const uint64_t address = 0x1000000;

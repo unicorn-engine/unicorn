@@ -10,12 +10,12 @@ extern "C" {
 
 //Memory-Management Register fields (idtr, gdtr, ldtr, tr)
 //borrow from SegmentCache in qemu/target-i386/cpu.h
-typedef struct x86_mmr {
-    uint32_t selector;
-    uint64_t base;   /* handle 32 or 64 bit CPUs */
+typedef struct uc_x86_mmr {
+    uint16_t selector;  /* not used by gdtr and idtr */
+    uint64_t base;      /* handle 32 or 64 bit CPUs */
     uint32_t limit;
-    uint32_t flags;
-} x86_mmr;
+    uint32_t flags;     /* not used by gdtr and idtr */
+} uc_x86_mmr;
 
 // Callback function for tracing SYSCALL/SYSENTER (for uc_hook_intr())
 // @user_data: user data passed to tracing APIs.
