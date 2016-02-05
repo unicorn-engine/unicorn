@@ -91,11 +91,15 @@ static void test_idt_gdt_i386(/*void **state*/)
     uc_assert_success(err);
     err = uc_reg_write(uc, UC_X86_REG_GDTR, &gdt);
     uc_assert_success(err);
+    err = uc_reg_write(uc, UC_X86_REG_LDTR, &ldt);
+    uc_assert_success(err);
+    err = uc_reg_write(uc, UC_X86_REG_TR, &tr);
+    uc_assert_success(err);
 
-    idt.base = 0;
-    idt.limit = 0;
-    gdt.base = 0;
-    gdt.limit = 0;
+    memset(&idt, 0, sizeof(idt));
+    memset(&gdt, 0, sizeof(gdt));
+    memset(&ldt, 0, sizeof(ldt));
+    memset(&tr, 0, sizeof(tr));
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, address, address+sizeof(code)-1, 0, 0);
