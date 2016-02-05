@@ -734,13 +734,13 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     X86_CPU(uc, mycpu)->env.gdt.base = (uint32_t)((uc_x86_mmr *)value)->base;
                     break;
                 case UC_X86_REG_LDTR:
-                    X86_CPU(uc, mycpu)->env.ldt.limit = (uint16_t)((uc_x86_mmr *)value)->limit;
+                    X86_CPU(uc, mycpu)->env.ldt.limit = ((uc_x86_mmr *)value)->limit;
                     X86_CPU(uc, mycpu)->env.ldt.base = (uint32_t)((uc_x86_mmr *)value)->base;
                     X86_CPU(uc, mycpu)->env.ldt.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
                     X86_CPU(uc, mycpu)->env.ldt.flags = ((uc_x86_mmr *)value)->flags;
                     break;
                 case UC_X86_REG_TR:
-                    X86_CPU(uc, mycpu)->env.tr.limit = (uint16_t)((uc_x86_mmr *)value)->limit;
+                    X86_CPU(uc, mycpu)->env.tr.limit = ((uc_x86_mmr *)value)->limit;
                     X86_CPU(uc, mycpu)->env.tr.base = (uint32_t)((uc_x86_mmr *)value)->base;
                     X86_CPU(uc, mycpu)->env.tr.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
                     X86_CPU(uc, mycpu)->env.tr.flags = ((uc_x86_mmr *)value)->flags;
