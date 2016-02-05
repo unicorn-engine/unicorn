@@ -47,16 +47,30 @@ static void test_idt_gdt_i386(/*void **state*/)
     uc_engine *uc;
     uc_err err;
     uint8_t buf[6];
+    x86_mmr idt;
+    x86_mmr gdt;
+    x86_mmr ldt;
+    x86_mmr tr;
 
     const uint8_t code[] = "\x0f\x01\x0c\x24\x0f\x01\x44\x24\x06"; // sidt [esp]; sgdt [esp+6]
     const uint64_t address = 0x1000000;
 
     int r_esp = address + 0x1000 - 0x100;     // initial esp
 
-    int idt_base = 0x12345678;  
-    int idt_limit = 0xabcd;     
-    int gdt_base = 0x87654321;  
-    int gdt_limit = 0xdcba;     
+    idt.base = 0x12345678;  
+    idt.limit = 0xabcd;     
+    gdt.base = 0x87654321;  
+    gdt.limit = 0xdcba;     
+
+    ldt.base = 0xfedcba98;  
+    ldt.limit = 0x11111111;     
+    ldt.selector = 0x3333;     
+    ldt.flags = 0x55555555;     
+
+    tr.base = 0x22222222;  
+    tr.limit = 0x33333333;     
+    tr.selector = 0x4444;     
+    tr.flags = 0x66666666;     
 
     // Initialize emulator in X86-32bit mode
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
@@ -73,36 +87,44 @@ static void test_idt_gdt_i386(/*void **state*/)
     // initialize machine registers
     err = uc_reg_write(uc, UC_X86_REG_ESP, &r_esp);
     uc_assert_success(err);
-    err = uc_reg_write(uc, UC_X86_REG_IDTR_BASE, &idt_base);
+    err = uc_reg_write(uc, UC_X86_REG_IDTR, &idt);
     uc_assert_success(err);
-    err = uc_reg_write(uc, UC_X86_REG_IDTR_LIMIT, &idt_limit);
-    uc_assert_success(err);
-    err = uc_reg_write(uc, UC_X86_REG_GDTR_BASE, &gdt_base);
-    uc_assert_success(err);
-    err = uc_reg_write(uc, UC_X86_REG_GDTR_LIMIT, &gdt_limit);
+    err = uc_reg_write(uc, UC_X86_REG_GDTR, &gdt);
     uc_assert_success(err);
 
-    idt_base = 0;
-    idt_limit = 0;
-    gdt_base = 0;
-    gdt_limit = 0;
+    idt.base = 0;
+    idt.limit = 0;
+    gdt.base = 0;
+    gdt.limit = 0;
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, address, address+sizeof(code)-1, 0, 0);
     uc_assert_success(err);
 
 
-    uc_reg_read(uc, UC_X86_REG_IDTR_BASE, &idt_base);
-    assert(idt_base == 0x12345678);
-    
-    uc_reg_read(uc, UC_X86_REG_IDTR_LIMIT, &idt_limit);
-    assert(idt_limit == 0xabcd);
+    uc_reg_read(uc, UC_X86_REG_IDTR, &idt);
+    assert(idt.base == 0x12345678);
+    assert(idt.limit == 0xabcd);
 
-    uc_reg_read(uc, UC_X86_REG_GDTR_BASE, &gdt_base);
-    assert(gdt_base == 0x87654321);
+    uc_reg_read(uc, UC_X86_REG_GDTR, &gdt);
+    assert(gdt.base == 0x87654321);
+    assert(gdt.limit == 0xdcba);
 
-    uc_reg_read(uc, UC_X86_REG_GDTR_LIMIT, &gdt_limit);
-    assert(gdt_limit == 0xdcba);
+    //userspace can only set ldt selector, remainder are loaded from 
+    //GDT/LDT, but we allow all to emulator user
+    uc_reg_read(uc, UC_X86_REG_LDTR, &ldt);
+    assert(ldt.base == 0xfedcba98);
+    assert(ldt.limit == 0x11111111);
+    assert(ldt.selector == 0x3333);
+    assert(ldt.flags = 0x55555555);
+
+    //userspace can only set tr selector, remainder are loaded from 
+    //GDT/LDT, but we allow all to emulator user
+    uc_reg_read(uc, UC_X86_REG_TR, &tr);
+    assert(tr.base == 0x22222222);
+    assert(tr.limit == 0x33333333);
+    assert(tr.selector == 0x4444);
+    assert(tr.flags = 0x66666666);
 
     // read from memory
     err = uc_mem_read(uc, r_esp, buf, 6);
