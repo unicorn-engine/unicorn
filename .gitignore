@@ -137,6 +137,7 @@ sysenter_hook_x86
 test_tb_x86
 test_multihook
 test_pc_change
+mem_fuzz
 
 
 #################
