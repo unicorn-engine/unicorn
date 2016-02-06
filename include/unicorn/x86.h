@@ -8,6 +8,15 @@
 extern "C" {
 #endif
 
+//Memory-Management Register fields (idtr, gdtr, ldtr, tr)
+//borrow from SegmentCache in qemu/target-i386/cpu.h
+typedef struct uc_x86_mmr {
+    uint16_t selector;  /* not used by gdtr and idtr */
+    uint64_t base;      /* handle 32 or 64 bit CPUs */
+    uint32_t limit;
+    uint32_t flags;     /* not used by gdtr and idtr */
+} uc_x86_mmr;
+
 // Callback function for tracing SYSCALL/SYSENTER (for uc_hook_intr())
 // @user_data: user data passed to tracing APIs.
 typedef void (*uc_cb_insn_syscall_t)(struct uc_struct *uc, void *user_data);
@@ -64,6 +73,7 @@ typedef enum uc_x86_reg {
 	UC_X86_REG_R9D, UC_X86_REG_R10D, UC_X86_REG_R11D, UC_X86_REG_R12D, UC_X86_REG_R13D,
 	UC_X86_REG_R14D, UC_X86_REG_R15D, UC_X86_REG_R8W, UC_X86_REG_R9W, UC_X86_REG_R10W,
 	UC_X86_REG_R11W, UC_X86_REG_R12W, UC_X86_REG_R13W, UC_X86_REG_R14W, UC_X86_REG_R15W,
+	UC_X86_REG_IDTR, UC_X86_REG_GDTR, UC_X86_REG_LDTR, UC_X86_REG_TR,
 
 	UC_X86_REG_ENDING		// <-- mark the end of the list of registers
 } uc_x86_reg;
