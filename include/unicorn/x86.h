@@ -8,13 +8,13 @@
 extern "C" {
 #endif
 
-//Memory-Management Register fields (idtr, gdtr, ldtr, tr)
-//borrow from SegmentCache in qemu/target-i386/cpu.h
+// Memory-Management Register for instructions IDTR, GDTR, LDTR, TR.
+// Borrow from SegmentCache in qemu/target-i386/cpu.h
 typedef struct uc_x86_mmr {
-    uint16_t selector;  /* not used by gdtr and idtr */
+    uint16_t selector;  /* not used by GDTR and IDTR */
     uint64_t base;      /* handle 32 or 64 bit CPUs */
     uint32_t limit;
-    uint32_t flags;     /* not used by gdtr and idtr */
+    uint32_t flags;     /* not used by GDTR and IDTR */
 } uc_x86_mmr;
 
 // Callback function for tracing SYSCALL/SYSENTER (for uc_hook_intr())
