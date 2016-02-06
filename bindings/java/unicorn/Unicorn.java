@@ -288,7 +288,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  *
  * @param  arch  Architecture type (UC_ARCH_*)
  * @param  mode  Hardware mode. This is combined of UC_MODE_*
- * @see    unicorn.UnicornArchs, unicorn.UnicornModes
+ * @see    unicorn.UnicornConst
  *
  */
    public Unicorn(int arch, int mode) throws UnicornException {
@@ -327,7 +327,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  *
  *  @param   arch   Architecture type (UC_ARCH_*)
  *  @return  true if this library supports the given arch.
- *  @see     unicorn.UnicornArchs
+ *  @see     unicorn.UnicornConst
  */
    public native static boolean arch_supported(int arch);
 
@@ -338,11 +338,22 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    public native void close() throws UnicornException;
    
 /**
+ * Query internal status of engine.
+ *
+ * @param   type     query type. See UC_QUERY_*
+ * @param   result   save the internal status queried
+ * 
+ * @return: error code. see UC_ERR_*
+ * @see     unicorn.UnicornConst
+ */
+   public native int query(int type) throws UnicornException;
+
+/**
  * Report the last error number when some API function fail.
  * Like glibc's errno, uc_errno might not retain its old value once accessed.
  *
  * @return Error code of uc_err enum type (UC_ERR_*, see above)
- * @see unicorn.UnicornErrors
+ * @see unicorn.UnicornConst
  */
    public native int errno();
 
@@ -351,7 +362,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  *
  * @param  code   Error code (see UC_ERR_* above)
  * @return Returns a String that describes the error code
- * @see unicorn.UnicornErrors
+ * @see unicorn.UnicornConst
  */
    public native static String strerror(int code);
 
@@ -626,6 +637,19 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    public native void mem_map(long address, long size, int perms) throws UnicornException;
 
 /**
+ *  Map existing host memory in for emulation.
+ *  This API adds a memory region that can be used by emulation.
+ *
+ * @param address Base address of the memory range
+ * @param size    Size of the memory block.
+ * @param perms   Permissions on the memory block. A combination of UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC
+ * @param ptr     Block of host memory backing the newly mapped memory. This block is
+ *                expected to be an equal or larger size than provided, and be mapped with at
+ *                least PROT_READ | PROT_WRITE. If it is not, the resulting behavior is undefined.
+ */
+   public native void mem_map_ptr(long address, long size, int perms, byte[] block) throws UnicornException;
+
+/**
  * Unmap a range of memory.
  *
  * @param address Base address of the memory range
@@ -641,6 +665,14 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param perms   New permissions on the memory block. A combination of UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC
  */
    public native void mem_protect(long address, long size, int perms) throws UnicornException;
+
+/**
+ * Retrieve all memory regions mapped by mem_map() and mem_map_ptr()
+ * NOTE: memory regions may be split by mem_unmap()
+ * 
+ * @return  list of mapped regions.
+*/
+   public native MemRegion[] mem_regions() throws UnicornException;
 
 }
 
