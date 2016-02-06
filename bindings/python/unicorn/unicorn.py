@@ -107,6 +107,7 @@ _setup_prototype(_uc, "uc_mem_map", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_
 _setup_prototype(_uc, "uc_mem_map_ptr", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_mem_unmap", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t)
 _setup_prototype(_uc, "uc_mem_protect", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
+_setup_prototype(_uc, "uc_query", ucerr, uc_engine, ctypes.c_uint32, ctypes.POINTER(ctypes.c_size_t))
 
 # uc_hook_add is special due to variable number of arguments
 _uc.uc_hook_add = getattr(_uc, "uc_hook_add")
@@ -262,6 +263,14 @@ class Uc(object):
         if status != UC_ERR_OK:
             raise UcError(status)
 
+    # return CPU mode at runtime
+    def query(self, query_mode):
+        result = ctypes.c_size_t(0)
+        status = _uc.uc_query(self._uch, query_mode, ctypes.byref(result))
+        if status != UC_ERR_OK:
+            raise UcError(status)
+        return result.value
+
 
     def _hookcode_cb(self, handle, address, size, user_data):
         # call user's callback with self object
@@ -381,3 +390,4 @@ def debug():
     (major, minor, _combined) = uc_version()
 
     return "python-%s-c%u.%u-b%u.%u" % (all_archs, major, minor, UC_API_MAJOR, UC_API_MINOR)
+    
