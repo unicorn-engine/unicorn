@@ -26,6 +26,8 @@ import java.util.*;
 public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, SparcConst, MipsConst, X86Const { 
 
    private long eng;
+   private int arch;
+   private int mode;
 
    private long blockHandle = 0;
    private long interruptHandle = 0;
@@ -275,6 +277,38 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       }
    }
 
+/** 
+ * Write to register.
+ *
+ * @param  regid  Register ID that is to be modified.
+ * @param  value  Number containing the new register value
+ */
+   private native void reg_write_num(int regid, Number value) throws UnicornException;
+
+/** 
+ * Write to register.
+ *
+ * @param  regid  Register ID that is to be modified.
+ * @param  value  X86 specific memory management register containing the new register value
+ */
+   private native void reg_write_mmr(int regid, X86_MMR value) throws UnicornException;
+
+/**
+ * Read register value.
+ *
+ * @param regid  Register ID that is to be retrieved.
+ * @return Number containing the requested register value.
+ */
+   private native Number reg_read_num(int regid) throws UnicornException;
+
+/**
+ * Read register value.
+ *
+ * @param regid  Register ID that is to be retrieved.
+ * @return X86_MMR containing the requested register value.
+ */
+   private native Number reg_read_mmr(int regid) throws UnicornException;
+
 /**
  * Native access to uc_open 
  *
@@ -292,6 +326,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  *
  */
    public Unicorn(int arch, int mode) throws UnicornException {
+      //remember these in case we need arch specific code
+      this.arch = arch;
+      this.mode = mode;
       eng = open(arch, mode);
       unicorns.put(eng, this);
       allLists.add(blockList);
@@ -369,19 +406,60 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 /** 
  * Write to register.
  *
+ * @deprecated use reg_write(int regid, Object value) instead
  * @param  regid  Register ID that is to be modified.
  * @param  value  Array containing value that will be written into register @regid
  */
+@Deprecated
    public native void reg_write(int regid, byte[] value) throws UnicornException;
+
+/** 
+ * Write to register.
+ *
+ * @param  regid  Register ID that is to be modified.
+ * @param  value  Object containing the new register value. Long, BigInteger, or
+ *                other custom class used to represent register values
+ */
+   public void reg_write(int regid, Object value) throws UnicornException {
+      if (value instanceof Number) {
+         reg_write_num(regid, (Number)value);
+      }
+      else if (arch == UC_ARCH_X86 && value instanceof X86_MMR) {
+         if (regid >= UC_X86_REG_IDTR && regid <= UC_X86_REG_TR) {
+            reg_write_mmr(regid, (X86_MMR)value);
+         }
+      }
+      else {
+         throw new ClassCastException("Invalid value type");
+      }
+   }
+
+/**
+ * Read register value.
+ *
+ * @deprecated use Object reg_write(int regid) instead
+ * @param regid  Register ID that is to be retrieved.
+ * @param regsz  Size of the register being retrieved.
+ * @return Byte array containing the requested register value.
+ */
+@Deprecated
+   public native byte[] reg_read(int regid, int regsz) throws UnicornException;
 
 /**
  * Read register value.
  *
  * @param regid  Register ID that is to be retrieved.
- * @param regsz  Size of the register being retrieved.
- * @return Byte array containing the requested register value.
+ * @return Object containing the requested register value. Long, BigInteger, or
+ *                other custom class used to represent register values
  */
-   public native byte[] reg_read(int regid, int regsz) throws UnicornException;
+   public Object reg_read(int regid) throws UnicornException {
+      if (arch == UC_ARCH_X86 && regid >= UC_X86_REG_IDTR && regid <= UC_X86_REG_TR) {
+         return reg_read_mmr(regid);
+      }
+      else {
+         return reg_read_num(regid);
+      }
+   }
 
 /** 
  * Write to memory.
