@@ -244,7 +244,28 @@ JNIEXPORT jboolean JNICALL Java_unicorn_Unicorn_arch_1supported
 JNIEXPORT void JNICALL Java_unicorn_Unicorn_close
   (JNIEnv *env, jobject self) {
    uc_engine *eng = getEngine(env, self);
-   uc_close(eng);
+   uc_err err = uc_close(eng);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+   //We also need to ReleaseByteArrayElements for any regions that 
+   //were mapped with uc_mem_map_ptr
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    query
+ * Signature: (I)I
+ */
+JNIEXPORT jint JNICALL Java_unicorn_Unicorn_query
+  (JNIEnv *env, jobject self, jint type) {
+   uc_engine *eng = getEngine(env, self);
+   size_t result;
+   uc_err err = uc_query(eng, type, &result);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+   return (jint)result;
 }
 
 /*
@@ -510,6 +531,24 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1map
 
 /*
  * Class:     unicorn_Unicorn
+ * Method:    mem_map_ptr
+ * Signature: (JJI[B)V
+ */
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1map_1ptr
+  (JNIEnv *env, jobject self, jlong address, jlong size, jint perms, jbyteArray block) {
+   uc_engine *eng = getEngine(env, self);
+   jbyte *array = (*env)->GetByteArrayElements(env, block, NULL);
+   uc_err err = uc_mem_map_ptr(eng, (uint64_t)address, (size_t)size, (uint32_t)perms, (void*)array);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+   //Need to track address/block/array so that we can ReleaseByteArrayElements when the
+   //block gets unmapped or when uc_close gets called
+   //(*env)->ReleaseByteArrayElements(env, block, array, JNI_ABORT);
+}
+
+/*
+ * Class:     unicorn_Unicorn
  * Method:    mem_unmap
  * Signature: (JJ)V
  */
@@ -521,6 +560,9 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1unmap
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }
+
+   //If a region was mapped using uc_mem_map_ptr, we also need to
+   //ReleaseByteArrayElements for that region
 }
 
 /*
@@ -536,4 +578,36 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_mem_1protect
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    mem_regions
+ * Signature: ()[Lunicorn/MemRegion;
+ */
+JNIEXPORT jobjectArray JNICALL Java_unicorn_Unicorn_mem_1regions
+  (JNIEnv *env, jobject self) {
+   uc_engine *eng = getEngine(env, self);
+
+   uc_mem_region *regions = NULL;
+   uint32_t count = 0;
+   uint32_t i;
+
+   uc_err err = uc_mem_regions(eng, &regions, &count);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+   jclass clz = (*env)->FindClass(env, "unicorn/MemRegion");
+   if ((*env)->ExceptionCheck(env)) {
+      return NULL;
+   }
+   jobjectArray result = (*env)->NewObjectArray(env, (jsize)count, clz, NULL);
+   jmethodID cons = (*env)->GetMethodID(env, clz, "<init>", "(JJI)V");
+   for (i = 0; i < count; i++) {
+      jobject mr = (*env)->NewObject(env, clz, cons, regions[i].begin, regions[i].end, regions[i].perms);
+      (*env)->SetObjectArrayElement(env, result, (jsize)i, mr);
+   }
+   free(regions);
+   
+   return result;
 }
