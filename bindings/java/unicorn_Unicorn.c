@@ -24,8 +24,8 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdlib.h>
 #include <string.h>
 
-
 #include <unicorn/unicorn.h>
+#include <unicorn/x86.h>
 #include "unicorn_Unicorn.h"
 
 //cache jmethodID values as we look them up
@@ -199,6 +199,117 @@ static uc_engine *getEngine(JNIEnv *env, jobject self) {
       haveFid = 1;
    }
    return (uc_engine *)(*env)->GetLongField(env, self, fid);
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    reg_write_num
+ * Signature: (ILjava/lang/Number;)V
+ */
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_reg_1write_1num
+  (JNIEnv *env, jobject self, jint regid, jobject value) {
+   uc_engine *eng = getEngine(env, self);
+
+   jclass clz = (*env)->FindClass(env, "java/lang/Number");
+   if ((*env)->ExceptionCheck(env)) {
+      return;
+   }
+
+   jmethodID longValue = (*env)->GetMethodID(env, clz, "longValue", "()J");
+   jlong longVal = (*env)->CallLongMethod(env, value, longValue);
+   uc_err err = uc_reg_write(eng, regid, &longVal);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    reg_write_mmr
+ * Signature: (ILunicorn/X86_MMR;)V
+ */
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_reg_1write_1mmr
+  (JNIEnv *env, jobject self, jint regid, jobject value) {
+   uc_engine *eng = getEngine(env, self);
+   uc_x86_mmr mmr;
+
+   jclass clz = (*env)->FindClass(env, "unicorn/X86_MMR");
+   if ((*env)->ExceptionCheck(env)) {
+      return;
+   }
+
+   jfieldID fid = (*env)->GetFieldID(env, clz, "base", "J");
+   mmr.base = (uint64_t)(*env)->GetLongField(env, value, fid);
+
+   fid = (*env)->GetFieldID(env, clz, "limit", "I");
+   mmr.limit = (uint32_t)(*env)->GetLongField(env, value, fid);
+
+   fid = (*env)->GetFieldID(env, clz, "flags", "I");
+   mmr.flags = (uint32_t)(*env)->GetLongField(env, value, fid);
+
+   fid = (*env)->GetFieldID(env, clz, "selector", "S");
+   mmr.selector = (uint16_t)(*env)->GetLongField(env, value, fid);
+
+   uc_err err = uc_reg_write(eng, regid, &mmr);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    reg_read_num
+ * Signature: (I)Ljava/lang/Number;
+ */
+JNIEXPORT jobject JNICALL Java_unicorn_Unicorn_reg_1read_1num
+  (JNIEnv *env, jobject self, jint regid) {
+   uc_engine *eng = getEngine(env, self);
+
+   jclass clz = (*env)->FindClass(env, "java/lang/Long");
+   if ((*env)->ExceptionCheck(env)) {
+      return NULL;
+   }
+
+   jlong longVal;
+   uc_err err = uc_reg_read(eng, regid, &longVal);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+
+   jmethodID cons = (*env)->GetMethodID(env, clz, "<init>", "(J)V");
+   jobject result = (*env)->NewObject(env, clz, cons, longVal);
+   if ((*env)->ExceptionCheck(env)) {
+      return NULL;
+   }
+   return result;
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    reg_read_mmr
+ * Signature: (I)Ljava/lang/Number;
+ */
+JNIEXPORT jobject JNICALL Java_unicorn_Unicorn_reg_1read_1mmr
+  (JNIEnv *env, jobject self, jint regid) {
+   uc_engine *eng = getEngine(env, self);
+
+   jclass clz = (*env)->FindClass(env, "unicorn/X86_MMR");
+   if ((*env)->ExceptionCheck(env)) {
+      return NULL;
+   }
+
+   uc_x86_mmr mmr;
+   uc_err err = uc_reg_read(eng, regid, &mmr);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+
+   jmethodID cons = (*env)->GetMethodID(env, clz, "<init>", "(JIIS)V");
+   jobject result = (*env)->NewObject(env, clz, cons, mmr.base, mmr.limit, mmr.flags, mmr.selector);
+   if ((*env)->ExceptionCheck(env)) {
+      return NULL;
+   }
+   return result;
 }
 
 /*
