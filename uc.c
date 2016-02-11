@@ -622,10 +622,6 @@ static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t per
 {
     MemoryRegion **regions;
 
-    // this area overlaps existing mapped regions?
-    if (memory_overlap(uc, address, size))
-        return UC_ERR_MAP;
-
     if (block == NULL)
         return UC_ERR_NOMEM;
 
@@ -665,6 +661,11 @@ static uc_err mem_map_check(uc_engine *uc, uint64_t address, size_t size, uint32
     // check for only valid permissions
     if ((perms & ~UC_PROT_ALL) != 0)
         return UC_ERR_ARG;
+
+    // this area overlaps existing mapped regions?
+    if (memory_overlap(uc, address, size)) {
+        return UC_ERR_MAP;
+    }
 
     return UC_ERR_OK;
 }
