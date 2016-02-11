@@ -44,14 +44,14 @@ uint64_t get_aligned_len(){
 void perform_map_step(uc_engine *uc){
     uint64_t addr = get_aligned_addr();
     uint64_t len = get_aligned_len();
-    printf("map(0x%"PRIx64",0x%"PRIx64"); //%d\n", addr, len, step);
+    printf("map(uc,0x%"PRIx64",0x%"PRIx64"); //%d\n", addr, len, step);
     uc_mem_map(uc, addr, len, UC_PROT_READ | UC_PROT_WRITE);
 }
 
 void perform_unmap_step(uc_engine *uc){
     uint64_t addr = get_aligned_addr();
     uint64_t len = get_aligned_len();
-    printf("unmap(0x%"PRIx64",0x%"PRIx64"); //%d\n", addr, len, step);
+    printf("unmap(uc,0x%"PRIx64",0x%"PRIx64"); //%d\n", addr, len, step);
     uc_mem_unmap(uc, addr, len);
 }
 
@@ -60,7 +60,7 @@ void perform_write_step(uc_engine *uc){
     memset(buff, 0, 4096*4);
     uint64_t addr = get_addr();
     uint64_t len = get_len()%(4096*3);
-    printf("write(0x%"PRIx64",0x%"PRIx64"); //%d\n", addr, len, step);
+    printf("write(uc,0x%"PRIx64",0x%"PRIx64"); //%d\n", addr, len, step);
     uc_mem_write(uc, addr, buff, len);
 }
 
@@ -68,16 +68,16 @@ void perform_read_step(uc_engine *uc){
     char* buff[4096*4];
     uint64_t addr = get_addr();
     uint64_t len = get_len()%(4096*3);
-    printf("read(0x%"PRIx64",0x%"PRIx64"); //%d\n", addr, len, step);
+    printf("read(uc,0x%"PRIx64",0x%"PRIx64"); //%d\n", addr, len, step);
     uc_mem_read(uc, addr, buff, len);
 }
 
 void perform_fuzz_step(uc_engine *uc){
-  switch( ((uint32_t)rand())%2 ){
+  switch( ((uint32_t)rand())%4 ){
     case 0: perform_map_step(uc); break;
     case 1: perform_unmap_step(uc); break;
-    //case 2: perform_read_step(uc); break;
-    //case 3: perform_write_step(uc); break;
+    case 2: perform_read_step(uc); break;
+    case 3: perform_write_step(uc); break;
   }
 }
 
