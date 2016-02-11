@@ -96,8 +96,8 @@ static void test_basic_blocks(void **state)
     OK(uc_mem_write(uc, address, code, sizeof(code)));
 
     // trace all basic blocks
-    OK(uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, test_basic_blocks_hook, &bbtest, (uint64_t)1, (uint64_t)0));
-    OK(uc_hook_add(uc, &trace2, UC_HOOK_BLOCK, test_basic_blocks_hook2, &bbtest, (uint64_t)1, (uint64_t)0));
+    OK(uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, test_basic_blocks_hook, &bbtest, 1, 0));
+    OK(uc_hook_add(uc, &trace2, UC_HOOK_BLOCK, test_basic_blocks_hook2, &bbtest, 1, 0));
 
     OK(uc_emu_start(uc, address, address+sizeof(code), 0, 0));
 }

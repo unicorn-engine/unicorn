@@ -551,7 +551,7 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     }
     // set up count hook to count instructions.
     if (count > 0 && uc->count_hook == 0) {
-        uc_err err = uc_hook_add(uc, &uc->count_hook, UC_HOOK_CODE, hook_count_cb, NULL);
+        uc_err err = uc_hook_add(uc, &uc->count_hook, UC_HOOK_CODE, hook_count_cb, NULL, 1, 0);
         if (err != UC_ERR_OK) {
             return err;
         }
@@ -565,6 +565,7 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
 
     if (timeout)
         enable_emu_timer(uc, timeout * 1000);   // microseconds -> nanoseconds
+
     uc->pause_all_vcpus(uc);
     // emulation is done
     uc->emulation_done = true;
@@ -963,17 +964,19 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
 }
 
 UNICORN_EXPORT
-uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, ...)
+uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
+        void *user_data, uint64_t begin, uint64_t end, ...)
 {
-    va_list valist;
     int ret = UC_ERR_OK;
-
-    va_start(valist, user_data);
+    int i = 0;
 
     struct hook *hook = calloc(1, sizeof(struct hook));
     if (hook == NULL) {
         return UC_ERR_NOMEM;
     }
+
+    hook->begin = begin;
+    hook->end = end;
     hook->type = type;
     hook->callback = callback;
     hook->user_data = user_data;
@@ -982,22 +985,21 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *u
 
     // everybody but HOOK_INSN gets begin/end, so exit early here.
     if (type & UC_HOOK_INSN) {
+        va_list valist;
+
+        va_start(valist, end);
         hook->insn = va_arg(valist, int);
-        hook->begin = 1;
-        hook->end = 0;
+        va_end(valist);
+
         if (list_append(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
             free(hook);
             return UC_ERR_NOMEM;
         }
+
         hook->refs++;
         return UC_ERR_OK;
     }
 
-    hook->begin = va_arg(valist, uint64_t);
-    hook->end = va_arg(valist, uint64_t);
-    va_end(valist);
-
-    int i = 0;
     while ((type >> i) > 0) {
         if ((type >> i) & 1) {
             // TODO: invalid hook error?

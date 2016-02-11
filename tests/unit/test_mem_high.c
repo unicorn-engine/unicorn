@@ -79,7 +79,7 @@ static void test_high_address_reads(void **state)
     uint8_t code[] = {0x48,0x8b,0x00,0x90,0x90,0x90,0x90}; // mov rax, [rax], nops
     uc_assert_success(uc_mem_map(uc, base_addr, 4096, UC_PROT_ALL));
     uc_assert_success(uc_mem_write(uc, base_addr, code, 7));
-    uc_assert_success(uc_hook_add(uc, &trace2, UC_HOOK_MEM_READ, hook_mem64, NULL, (uint64_t)1, (uint64_t)0));
+    uc_assert_success(uc_hook_add(uc, &trace2, UC_HOOK_MEM_READ, hook_mem64, NULL, 1, 0));
     uc_assert_success(uc_emu_start(uc, base_addr, base_addr + 3, 0, 0));
     if(number_of_memory_reads != 1) {
         fail_msg("wrong number of memory reads for instruction %i", number_of_memory_reads);

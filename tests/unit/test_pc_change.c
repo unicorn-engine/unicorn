@@ -83,7 +83,7 @@ static void test_pc_change(void **state)
     printf("ECX = %u, EDX = %u\n", r_ecx, r_edx);
 
     // trace all instructions
-    OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, test_code_hook, NULL, (uint64_t)1, (uint64_t)0));
+    OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, test_code_hook, NULL, 1, 0));
 
     OK(uc_emu_start(uc, address, address+sizeof(code), 0, 0));
 
