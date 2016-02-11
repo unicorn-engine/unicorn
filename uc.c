@@ -983,7 +983,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
     hook->refs = 0;
     *hh = (uc_hook)hook;
 
-    // everybody but HOOK_INSN gets begin/end, so exit early here.
+    // UC_HOOK_INSN has an extra argument for instruction ID
     if (type & UC_HOOK_INSN) {
         va_list valist;
 
