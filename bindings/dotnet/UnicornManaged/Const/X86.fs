@@ -251,7 +251,11 @@ module X86 =
     let UC_X86_REG_R13W = 239
     let UC_X86_REG_R14W = 240
     let UC_X86_REG_R15W = 241
-    let UC_X86_REG_ENDING = 242
+    let UC_X86_REG_IDTR = 242
+    let UC_X86_REG_GDTR = 243
+    let UC_X86_REG_LDTR = 244
+    let UC_X86_REG_TR = 245
+    let UC_X86_REG_ENDING = 246
 
     // X86 instructions
 
