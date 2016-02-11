@@ -3,9 +3,9 @@
 package unicorn;
 
 public interface UnicornConst {
+   public static final int UC_API_MAJOR = 1;
 
-   public static final int UC_API_MAJOR = 0;
-   public static final int UC_API_MINOR = 9;
+   public static final int UC_API_MINOR = 0;
    public static final int UC_SECOND_SCALE = 1000000;
    public static final int UC_MILISECOND_SCALE = 1000;
    public static final int UC_ARCH_ARM = 1;
