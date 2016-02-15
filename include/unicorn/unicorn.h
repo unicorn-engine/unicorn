@@ -261,7 +261,6 @@ typedef struct uc_mem_region {
 // All type of queries for uc_query() API.
 typedef enum uc_query_type {
     // Dynamically query current hardware mode.
-    // For ARM, uc_query() return 1 for Thumb mode, and 0 for Arm mode
     UC_QUERY_MODE = 1,
 } uc_query_type;
 

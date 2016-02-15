@@ -37,6 +37,7 @@ TESTS += mips_branch_likely_issue
 TESTS += hook_extrainvoke
 TESTS += sysenter_hook_x86
 TESTS += emu_clear_errors
+TESTS += mem_fuzz
 
 TESTS += memleak_x86
 TESTS += memleak_arm

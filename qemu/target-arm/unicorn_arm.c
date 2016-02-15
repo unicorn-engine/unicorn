@@ -133,10 +133,15 @@ static bool arm_stop_interrupt(int intno)
 static uc_err arm_query(struct uc_struct *uc, uc_query_type type, size_t *result)
 {
     CPUState *mycpu = first_cpu;
+    uint32_t mode;
 
     switch(type) {
         case UC_QUERY_MODE:
-            *result = (ARM_CPU(uc, mycpu)->env.thumb != 0);
+            // zero out ARM/THUMB mode
+            mode = uc->mode & ~(UC_MODE_ARM | UC_MODE_THUMB);
+            // THUMB mode or ARM MOde
+            mode += ((ARM_CPU(uc, mycpu)->env.thumb != 0)? UC_MODE_THUMB : UC_MODE_ARM);
+            *result = mode;
             return UC_ERR_OK;
         default:
             return UC_ERR_ARG;

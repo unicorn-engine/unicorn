@@ -138,15 +138,88 @@ static void test_unmap_double_map(void **state)
     uc_assert_fail(uc_mem_map(uc, 0x0000, 0x1000, 0));   /* 0x1000 - 0x1000 */
 }
 
+static void test_overlap_unmap_double_map(void **state)
+{
+    uc_engine *uc = *state;
+    uc_mem_map(  uc, 0x1000, 0x2000, 0);
+    uc_mem_map(  uc, 0x1000, 0x1000, 0);
+    uc_mem_unmap(uc, 0x2000, 0x1000);
+}
+
+static void test_strange_map(void **state)
+{
+    uc_engine *uc = *state;
+    uc_mem_map(  uc, 0x0,0x3000,0); 
+    uc_mem_unmap(uc, 0x1000,0x1000); 
+    uc_mem_map(  uc, 0x3000,0x1000,0); 
+    uc_mem_map(  uc, 0x4000,0x1000,0); 
+    uc_mem_map(  uc, 0x1000,0x1000,0); 
+    uc_mem_map(  uc, 0x5000,0x1000,0); 
+    uc_mem_unmap(uc, 0x0,0x1000); 
+}
+
+void write(uc_engine* uc, uint64_t addr, uint64_t len){
+  uint8_t* buff = alloca(len);
+  memset(buff,0,len);
+  uc_mem_write(uc, addr, buff, len);
+
+}
+
+void read(uc_engine* uc, uint64_t addr, uint64_t len){
+  uint8_t* buff = alloca(len);
+  uc_mem_read(uc, addr, buff, len);
+}
+
+void map(uc_engine* uc, uint64_t addr, uint64_t len){
+    uc_mem_map(uc, addr, len, UC_PROT_READ | UC_PROT_WRITE);
+}
+
+void unmap(uc_engine* uc, uint64_t addr, uint64_t len){
+    uc_mem_unmap(uc, addr, len);
+}
+
+//most likely same bug as in test_strange_map, but looked different in fuzzer (sefault instead of assertion fail)
+static void test_assertion_fail(void **state){
+  uc_engine *uc = *state;
+
+  map(uc,0x2000,0x4000); //5
+  unmap(uc,0x3000,0x2000); //11
+  map(uc,0x0,0x2000); //23
+  map(uc,0x3000,0x2000); //24
+  map(uc,0x9000,0x4000); //32
+  map(uc,0x8000,0x1000); //34
+  unmap(uc,0x1000,0x4000); //35
+}
+
+static void test_bad_offset(void **state){
+  uc_engine *uc = *state;
+  map(uc,0x9000,0x4000); //17
+  map(uc,0x4000,0x2000); //32
+  unmap(uc,0x5000,0x1000); //35
+  map(uc,0x0,0x1000); //42
+  map(uc,0x5000,0x4000); //51
+  map(uc,0x2000,0x1000); //53
+  map(uc,0x1000,0x1000); //55
+  unmap(uc,0x7000,0x3000); //58
+  unmap(uc,0x5000,0x1000); //59
+  unmap(uc,0x4000,0x2000); //70
+}
+
+
+
 int main(void) {
 #define test(x)     cmocka_unit_test_setup_teardown(x, setup, teardown)
     const struct CMUnitTest tests[] = {
         test(test_basic),
         //test(test_bad_read),
         //test(test_bad_write),
+        test(test_bad_offset),
+        test(test_assertion_fail),
         test(test_bad_unmap),
         test(test_rw_across_boundaries),
         test(test_unmap_double_map),
+        test(test_overlap_unmap_double_map),
+        test(test_strange_map),
     };
 #undef test
     return cmocka_run_group_tests(tests, NULL, NULL);
