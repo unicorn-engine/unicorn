@@ -2630,12 +2630,6 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
         tcg_gen_debug_insn_start(tcg_ctx, dc->pc);
     }
 
-    // end address tells us to stop emulation
-    if (dc->pc == dc->uc->addr_end) {
-        insn = 0x91d02000; // generate TRAP to end this TB
-        hook_insn = false;  // do not hook this instruction
-    }
-
     // Unicorn: trace this instruction on request
     if (hook_insn && HOOK_EXISTS_BOUNDED(dc->uc, UC_HOOK_CODE, dc->pc)) {
         gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, dc->uc, dc->pc);
@@ -5405,9 +5399,8 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     // early check to see if the address of this block is the until address
     if (pc_start == env->uc->addr_end) {
         gen_tb_start(tcg_ctx);
-        insn = 0x91d02000; // generate TRAP to end this TB
-        disas_sparc_insn(dc, insn, false);
-        goto exit_gen_loop;
+        gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
+        goto done_generating;
     }
 
     max_insns = tb->cflags & CF_COUNT_MASK;
