@@ -1,9 +1,9 @@
 package unicorn
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [unicorn_const.go]
 const (
+	API_MAJOR = 1
 
-	API_MAJOR = 0
-	API_MINOR = 9
+	API_MINOR = 0
 	SECOND_SCALE = 1000000
 	MILISECOND_SCALE = 1000
 	ARCH_ARM = 1

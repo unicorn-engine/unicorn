@@ -291,8 +291,8 @@ def test_i386_inout():
         mu.hook_add(UC_HOOK_CODE, hook_code)
 
         # handle IN & OUT instruction
-        mu.hook_add(UC_HOOK_INSN, hook_in, None, UC_X86_INS_IN)
-        mu.hook_add(UC_HOOK_INSN, hook_out, None, UC_X86_INS_OUT)
+        mu.hook_add(UC_HOOK_INSN, hook_in, None, 1, 0, UC_X86_INS_IN)
+        mu.hook_add(UC_HOOK_INSN, hook_out, None, 1, 0, UC_X86_INS_OUT)
 
         # emulate machine code in infinite time
         mu.emu_start(ADDRESS, ADDRESS + len(X86_CODE32_INOUT))
@@ -417,7 +417,7 @@ def test_x86_64_syscall():
                 print('ERROR: was not expecting rax=%d in syscall' % rax)
 
         # hook interrupts for syscall
-        mu.hook_add(UC_HOOK_INSN, hook_syscall, None, UC_X86_INS_SYSCALL)
+        mu.hook_add(UC_HOOK_INSN, hook_syscall, None, 1, 0, UC_X86_INS_SYSCALL)
 
         # syscall handler is expecting rax=0x100
         mu.reg_write(UC_X86_REG_RAX, 0x100)

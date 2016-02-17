@@ -315,7 +315,7 @@ class Uc(object):
 
 
     # add a hook
-    def hook_add(self, htype, callback, user_data=None, arg1=1, arg2=0):
+    def hook_add(self, htype, callback, user_data=None, begin=1, end=0, arg1=0):
         _h2 = uc_hook_h()
 
         # save callback & user_data
@@ -332,30 +332,28 @@ class Uc(object):
             if arg1 in (x86_const.UC_X86_INS_SYSCALL, x86_const.UC_X86_INS_SYSENTER): # SYSCALL/SYSENTER instruction
                 cb = ctypes.cast(UC_HOOK_INSN_SYSCALL_CB(self._hook_insn_syscall_cb), UC_HOOK_INSN_SYSCALL_CB)
             status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, \
-                    cb, ctypes.cast(self._callback_count, ctypes.c_void_p), insn)
+                    cb, ctypes.cast(self._callback_count, ctypes.c_void_p), ctypes.c_uint64(begin), ctypes.c_uint64(end), insn)
         elif htype == UC_HOOK_INTR:
             cb = ctypes.cast(UC_HOOK_INTR_CB(self._hook_intr_cb), UC_HOOK_INTR_CB)
             status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, \
-                    cb, ctypes.cast(self._callback_count, ctypes.c_void_p))
+                    cb, ctypes.cast(self._callback_count, ctypes.c_void_p), ctypes.c_uint64(begin), ctypes.c_uint64(end))
         else:
-            begin = ctypes.c_uint64(arg1)
-            end = ctypes.c_uint64(arg2)
             if htype in (UC_HOOK_BLOCK, UC_HOOK_CODE):
                 # set callback with wrapper, so it can be called
                 # with this object as param
                 cb = ctypes.cast(UC_HOOK_CODE_CB(self._hookcode_cb), UC_HOOK_CODE_CB)
                 status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, cb, \
-                    ctypes.cast(self._callback_count, ctypes.c_void_p), begin, end)
+                    ctypes.cast(self._callback_count, ctypes.c_void_p), ctypes.c_uint64(begin), ctypes.c_uint64(end))
             elif htype & UC_HOOK_MEM_READ_UNMAPPED or htype & UC_HOOK_MEM_WRITE_UNMAPPED or \
                 htype & UC_HOOK_MEM_FETCH_UNMAPPED or htype & UC_HOOK_MEM_READ_PROT or \
                 htype & UC_HOOK_MEM_WRITE_PROT or htype & UC_HOOK_MEM_FETCH_PROT:
                 cb = ctypes.cast(UC_HOOK_MEM_INVALID_CB(self._hook_mem_invalid_cb), UC_HOOK_MEM_INVALID_CB)
                 status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, \
-                    cb, ctypes.cast(self._callback_count, ctypes.c_void_p))
+                    cb, ctypes.cast(self._callback_count, ctypes.c_void_p), ctypes.c_uint64(begin), ctypes.c_uint64(end))
             else:
                 cb = ctypes.cast(UC_HOOK_MEM_ACCESS_CB(self._hook_mem_access_cb), UC_HOOK_MEM_ACCESS_CB)
                 status = _uc.uc_hook_add(self._uch, ctypes.byref(_h2), htype, \
-                    cb, ctypes.cast(self._callback_count, ctypes.c_void_p))
+                    cb, ctypes.cast(self._callback_count, ctypes.c_void_p), ctypes.c_uint64(begin), ctypes.c_uint64(end))
 
         # save the ctype function so gc will leave it alone.
         self._ctype_cbs[self._callback_count] = cb
