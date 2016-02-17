@@ -55,3 +55,6 @@ Loi Anh Tuan
 Shaun Wheelhouse: Homebrew package
 Kamil Rytarowski: Pkgsrc package
 Zak Escano: MSVC binding
+Chris Eagle: Java binding
+Ryan Hileman: Go binding
+Antonio Parata: .NET binding
