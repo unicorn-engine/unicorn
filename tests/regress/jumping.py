@@ -23,7 +23,7 @@ import regress
 
 
 mu = 0
-zf = 0 # (0:clear, 1:set)
+zf = 1 # (0:clear, 1:set)
 
 
 class Init(regress.RegressTest):
