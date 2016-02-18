@@ -23,7 +23,7 @@ import regress
 
 
 mu = 0
-zf = 1 # (0:clear, 1:set)
+zf = 0 # (0:clear, 1:set)
 
 
 class Init(regress.RegressTest):
@@ -159,8 +159,8 @@ class Init(regress.RegressTest):
         except UcError as e:
             print("ERROR: %s" % e)
 
-        # now print out some registers
-        print(">>> Emulation done. Below is the CPU context")
+        rdx = mu.reg_read(UC_X86_REG_RDX)
+        self.assertEqual(rdx, 0xbabe, "RDX contains the wrong value. Eflags modification failed.")
 
 
 if __name__ == '__main__':
