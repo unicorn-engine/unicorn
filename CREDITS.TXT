@@ -58,3 +58,4 @@ Zak Escano: MSVC binding
 Chris Eagle: Java binding
 Ryan Hileman: Go binding
 Antonio Parata: .NET binding
+Jonathon Reinhart: C unit test
