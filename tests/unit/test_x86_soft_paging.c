@@ -202,7 +202,7 @@ static void test_high_paging(void **state) {
 
 
 int main(void) {
-    const struct CMUnitTests tests[] = {
+    const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_low_paging),
         cmocka_unit_test(test_high_paging),
     };
