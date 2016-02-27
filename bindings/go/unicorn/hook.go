@@ -100,9 +100,9 @@ func (u *uc) HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int)
 	data := &HookData{u, cb}
 	uptr := uintptr(unsafe.Pointer(data))
 	if insnMode {
-		C.uc_hook_add_wrap(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end))
-	} else {
 		C.uc_hook_add_insn(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end), insn)
+	} else {
+		C.uc_hook_add_wrap(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end))
 	}
 	hookDataMap[uptr] = data
 	hookToUintptr[Hook(h2)] = uptr
