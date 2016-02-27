@@ -25,12 +25,18 @@ func errReturn(err C.uc_err) error {
 	return nil
 }
 
+type MemRegion struct {
+	Begin, End uint64
+	Prot       int
+}
+
 type Unicorn interface {
 	MemMap(addr, size uint64) error
 	MemMapProt(addr, size uint64, prot int) error
 	MemMapPtr(addr, size uint64, prot int, ptr unsafe.Pointer) error
 	MemProtect(addr, size uint64, prot int) error
 	MemUnmap(addr, size uint64) error
+	MemRegions() ([]*MemRegion, error)
 	MemRead(addr, size uint64) ([]byte, error)
 	MemReadInto(dst []byte, addr uint64) error
 	MemWrite(addr uint64, data []byte) error
@@ -102,6 +108,25 @@ func (u *uc) RegRead(reg int) (uint64, error) {
 	var val C.uint64_t
 	ucerr := C.uc_reg_read(u.handle, C.int(reg), unsafe.Pointer(&val))
 	return uint64(val), errReturn(ucerr)
+}
+
+func (u *uc) MemRegions() ([]*MemRegion, error) {
+	var regions *C.struct_uc_mem_region
+	var count C.uint32_t
+	ucerr := C.uc_mem_regions(u.handle, &regions, &count)
+	if ucerr != C.UC_ERR_OK {
+		return nil, errReturn(ucerr)
+	}
+	ret := make([]*MemRegion, count)
+	tmp := (*[1 << 30]C.struct_uc_mem_region)(unsafe.Pointer(regions))[:count]
+	for i, v := range tmp {
+		ret[i] = &MemRegion{
+			Begin: uint64(v.begin),
+			End:   uint64(v.end),
+			Prot:  int(v.perms),
+		}
+	}
+	return ret, nil
 }
 
 func (u *uc) MemWrite(addr uint64, data []byte) error {

@@ -37,3 +37,25 @@ func TestDoubleClose(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestMemRegions(t *testing.T) {
+	mu, err := NewUnicorn(ARCH_X86, MODE_32)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = mu.MemMap(0x1000, 0x1000)
+	if err != nil {
+		t.Fatal(err)
+	}
+	regions, err := mu.MemRegions()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(regions) != 1 {
+		t.Fatalf("returned wrong number of regions: %d != 1", len(regions))
+	}
+	r := regions[0]
+	if r.Begin != 0x1000 || r.End != 0x1fff || r.Prot != 7 {
+		t.Fatalf("incorrect region: %#v", r)
+	}
+}
