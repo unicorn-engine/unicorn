@@ -48,6 +48,7 @@ type Unicorn interface {
 	Stop() error
 	HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int) (Hook, error)
 	HookDel(hook Hook) error
+	Query(queryType int) (uint64, error)
 	Close() error
 }
 
@@ -166,4 +167,10 @@ func (u *uc) MemProtect(addr, size uint64, prot int) error {
 
 func (u *uc) MemUnmap(addr, size uint64) error {
 	return errReturn(C.uc_mem_unmap(u.handle, C.uint64_t(addr), C.size_t(size)))
+}
+
+func (u *uc) Query(queryType int) (uint64, error) {
+	var ret C.size_t
+	ucerr := C.uc_query(u.handle, C.uc_query_type(queryType), &ret)
+	return uint64(ret), errReturn(ucerr)
 }

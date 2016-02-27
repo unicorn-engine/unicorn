@@ -59,3 +59,17 @@ func TestMemRegions(t *testing.T) {
 		t.Fatalf("incorrect region: %#v", r)
 	}
 }
+
+func TestQuery(t *testing.T) {
+	mu, err := NewUnicorn(ARCH_ARM, MODE_THUMB)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mode, err := mu.Query(QUERY_MODE)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if mode != MODE_THUMB {
+		t.Fatal("query returned invalid mode: %d != %d", mode, MODE_THUMB)
+	}
+}
