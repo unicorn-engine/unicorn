@@ -39,7 +39,7 @@ type Unicorn interface {
 	Start(begin, until uint64) error
 	StartWithOptions(begin, until uint64, options *UcOptions) error
 	Stop() error
-	HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error)
+	HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int) (Hook, error)
 	HookDel(hook Hook) error
 	Close() error
 }
