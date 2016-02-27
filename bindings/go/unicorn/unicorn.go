@@ -36,6 +36,7 @@ type Unicorn interface {
 	MemWrite(addr uint64, data []byte) error
 	RegRead(reg int) (uint64, error)
 	RegWrite(reg int, value uint64) error
+	RegWriteMmr(reg int, value *X86Mmr) error
 	Start(begin, until uint64) error
 	StartWithOptions(begin, until uint64, options *UcOptions) error
 	Stop() error
