@@ -1,12 +1,16 @@
 #include <unicorn/unicorn.h>
 #include "_cgo_export.h"
 
-uc_err uc_hook_add_i1(uc_engine *handle, uc_hook *h2, uc_hook_type type, void *callback, uintptr_t user, int arg1) {
-    return uc_hook_add(handle, h2, type, callback, (void *)user, arg1);
+uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
+                void *user_data, uint64_t begin, uint64_t end, ...);
+
+
+uc_err uc_hook_add_wrap(uc_engine *handle, uc_hook *h2, uc_hook_type type, void *callback, uintptr_t user, uint64_t begin, uint64_t end) {
+    return uc_hook_add(handle, h2, type, callback, (void *)user, begin, end);
 }
 
-uc_err uc_hook_add_u2(uc_engine *handle, uc_hook *h2, uc_hook_type type, void *callback, uintptr_t user, uint64_t arg1, uint64_t arg2) {
-    return uc_hook_add(handle, h2, type, callback, (void *)user, arg1, arg2);
+uc_err uc_hook_add_insn(uc_engine *handle, uc_hook *h2, uc_hook_type type, void *callback, uintptr_t user, uint64_t begin, uint64_t end, int insn) {
+    return uc_hook_add(handle, h2, type, callback, (void *)user, begin, end, insn);
 }
 
 void hookCode_cgo(uc_engine *handle, uint64_t addr, uint32_t size, uintptr_t user) {
