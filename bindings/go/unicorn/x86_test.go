@@ -143,3 +143,18 @@ func TestX86Syscall(t *testing.T) {
 		t.Fatal("Incorrect syscall return value.")
 	}
 }
+
+func TestX86Mmr(t *testing.T) {
+	mu, err := MakeUc(MODE_64, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = mu.RegWriteMmr(X86_REG_GDTR, &X86Mmr{Selector: 0, Base: 0x1000, Limit: 0x1fff, Flags: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mmr, err := mu.RegReadMmr(X86_REG_GDTR)
+	if mmr.Selector != 0 || mmr.Base != 0x1000 || mmr.Limit != 0x1fff || mmr.Flags != 0 {
+		t.Fatalf("mmr read failed: %#v", mmr)
+	}
+}
