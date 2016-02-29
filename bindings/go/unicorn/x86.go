@@ -24,3 +24,15 @@ func (u *uc) RegWriteMmr(reg int, value *X86Mmr) error {
 	ucerr := C.uc_reg_write(u.handle, C.int(reg), unsafe.Pointer(&val))
 	return errReturn(ucerr)
 }
+
+func (u *uc) RegReadMmr(reg int) (*X86Mmr, error) {
+	var val C.uc_x86_mmr
+	ucerr := C.uc_reg_read(u.handle, C.int(reg), unsafe.Pointer(&val))
+	ret := &X86Mmr{
+		Selector: uint16(val.selector),
+		Base:     uint64(val.base),
+		Limit:    uint32(val.limit),
+		Flags:    uint32(val.flags),
+	}
+	return ret, errReturn(ucerr)
+}
