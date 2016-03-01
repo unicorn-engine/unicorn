@@ -1,0 +1,9 @@
+language: c
+sudo: false
+before_install:
+        - export LD_LIBRARY_PATH=`pwd`/samples/:$LD_LIBRARY_PATH
+script:
+        - ./make.sh
+compiler:
+        - clang
+        - gcc
