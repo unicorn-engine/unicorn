@@ -1,6 +1,8 @@
 Unicorn Engine
 ==============
 
+[![Build Status](https://travis-ci.org/unicorn-engine/unicorn.svg?branch=master)](https://travis-ci.org/unicorn-engine/unicorn)
+
 Unicorn is a lightweight, multi-platform, multi-architecture CPU emulator framework
 based on [QEMU](http://qemu.org).
 
