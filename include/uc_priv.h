@@ -22,6 +22,17 @@
 
 #define ARR_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
+#define READ_QWORD(x) ((uint64)x)
+#define READ_DWORD(x) (x & 0xffffffff)
+#define READ_WORD(x) (x & 0xffff)
+#define READ_BYTE_H(x) ((x & 0xffff) >> 8)
+#define READ_BYTE_L(x) (x & 0xff)
+#define WRITE_DWORD(x, w) (x = (x & ~0xffffffff) | (w & 0xffffffff))
+#define WRITE_WORD(x, w) (x = (x & ~0xffff) | (w & 0xffff))
+#define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | ((b & 0xff) << 8))
+#define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
+
+
 QTAILQ_HEAD(CPUTailQ, CPUState);
 
 typedef struct ModuleEntry {
