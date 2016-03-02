@@ -54,7 +54,7 @@ int m68k_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 
 #define WRITE_DWORD(x, w) (x = (x & ~0xffffffff) | (w & 0xffffffff))
 #define WRITE_WORD(x, w) (x = (x & ~0xffff) | (w & 0xffff))
-#define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
+#define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | ((b & 0xff) << 8))
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
 int m68k_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
