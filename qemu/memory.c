@@ -1856,7 +1856,7 @@ void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *ro
 
 void address_space_destroy(AddressSpace *as)
 {
-    MemoryListener *listener;
+    MemoryListener *listener, *next_listener;
 
     /* Flush out anything from MemoryListeners listening in on this */
     memory_region_transaction_begin(as->uc);
@@ -1867,9 +1867,11 @@ void address_space_destroy(AddressSpace *as)
 
     address_space_destroy_dispatch(as);
 
-    // TODO(danghvu): why assert fail here?
-    QTAILQ_FOREACH(listener, &as->uc->memory_listeners, link) {
-        // assert(listener->address_space_filter != as);
+    QTAILQ_FOREACH_SAFE(listener, &as->uc->memory_listeners, link, next_listener) {
+        if (listener->address_space_filter == as) {
+            memory_listener_unregister(as->uc, listener);
+            g_free(listener);
+        }
     }
 
     flatview_unref(as->current_map);
