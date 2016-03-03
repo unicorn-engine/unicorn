@@ -3,7 +3,7 @@ sudo: false
 before_install:
         - export LD_LIBRARY_PATH=`pwd`/samples/:$LD_LIBRARY_PATH
         - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-        - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install pkg-config glib; fi
+        - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install glib; fi
 
 script:
         - ./make.sh
