@@ -1094,6 +1094,11 @@ uint32_t uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
 UNICORN_EXPORT
 uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
 {
+    if (type == UC_QUERY_PAGE_SIZE) {
+        *result = uc->target_page_size;
+        return UC_ERR_OK;
+    }
+    
     switch(uc->arch) {
         case UC_ARCH_ARM:
             return uc->query(uc, type, result);
