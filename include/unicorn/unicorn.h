@@ -262,6 +262,7 @@ typedef struct uc_mem_region {
 typedef enum uc_query_type {
     // Dynamically query current hardware mode.
     UC_QUERY_MODE = 1,
+    UC_QUERY_PAGE_SIZE,
 } uc_query_type;
 
 /*
