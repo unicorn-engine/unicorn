@@ -63,7 +63,7 @@ def copy_sources():
 
     src.extend(glob.glob("../../Makefile"))
     src.extend(glob.glob("../../LICENSE*"))
-    src.extend(glob.glob("../../README"))
+    src.extend(glob.glob("../../README.md"))
     src.extend(glob.glob("../../*.TXT"))
     src.extend(glob.glob("../../RELEASE_NOTES"))
     src.extend(glob.glob("../../make.sh"))
