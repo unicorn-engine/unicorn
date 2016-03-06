@@ -81,6 +81,8 @@ if _found == False:
     raise ImportError("ERROR: fail to load the dynamic library.")
 
 
+__version__ = "%s.%s" %(UC_API_MAJOR, UC_API_MINOR)
+
 # setup all the function prototype
 def _setup_prototype(lib, fname, restype, *argtypes):
     getattr(lib, fname).restype = restype
