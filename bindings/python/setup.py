@@ -24,7 +24,7 @@ PKG_NAME = 'unicorn'
 if os.path.exists(PATH_LIB64) and os.path.exists(PATH_LIB32):
     PKG_NAME = 'unicorn-windows'
 
-VERSION = '0.9'
+VERSION = '1.0'
 SYSTEM = sys.platform
 
 # virtualenv breaks import, but get_python_lib() will work.
