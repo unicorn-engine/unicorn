@@ -459,7 +459,7 @@ uc_err uc_emu_stop(uc_engine *uc);
  @user_data: user-defined data. This will be passed to callback function in its
       last argument @user_data
  @begin: start address of the area where the callback is effect (inclusive)
- @begin: end address of the area where the callback is effect (inclusive)
+ @end: end address of the area where the callback is effect (inclusive)
    NOTE 1: the callback is called only if related address is in range [@begin, @end]
    NOTE 2: if @begin > @end, callback is called whenever this hook type is triggered
  @...: variable arguments (depending on @type)
