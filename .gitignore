@@ -139,6 +139,7 @@ test_multihook
 test_pc_change
 mem_fuzz
 test_x86_soft_paging
+fs_gs_size
 
 
 #################

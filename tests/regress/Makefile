@@ -38,6 +38,7 @@ TESTS += hook_extrainvoke
 TESTS += sysenter_hook_x86
 TESTS += emu_clear_errors
 TESTS += mem_fuzz
+TESTS += fs_gs_size
 
 all: $(TESTS)
 
