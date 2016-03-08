@@ -24,4 +24,4 @@ install:
   - msys64\usr\bin\bash -lc "for i in {1..3}; do pacman --noconfirm -Suy python2 make pkg-config mingw-w64-x86_64-glib2 mingw-w64-x86_64-toolchain && break || sleep 15; done"
 
 build_script:
-  - ./make.sh cross-win64
+  - make.sh cross-win64
