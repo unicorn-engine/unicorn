@@ -12,8 +12,6 @@ environment:
       ADD_PATH: /mingw64/bin
     - HOST_ARCH_ARG: --host=i686-w64-mingw32
       ADD_PATH: /mingw32/bin
-    - HOST_ARCH_ARG: --enable-msvc
-      ADD_PATH: /mingw64/bin
 
 install:
   - C:\"Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"
