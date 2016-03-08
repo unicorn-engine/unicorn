@@ -1,0 +1,27 @@
+version: 1.0-{build}
+
+platform:
+  - x64
+
+environment:
+  global:
+    MSYS2_BASEVER: 20150512
+    MSYS2_ARCH: x86_64
+  matrix:
+    - HOST_ARCH_ARG: --host=x86_64-w64-mingw32
+      ADD_PATH: /mingw64/bin
+    - HOST_ARCH_ARG: --host=i686-w64-mingw32
+      ADD_PATH: /mingw32/bin
+    - HOST_ARCH_ARG: --enable-msvc
+      ADD_PATH: /mingw64/bin
+
+install:
+  - C:\"Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"
+  - appveyor DownloadFile "http://kent.dl.sourceforge.net/project/msys2/Base/%MSYS2_ARCH%/msys2-base-%MSYS2_ARCH%-%MSYS2_BASEVER%.tar.xz" -FileName "msys2.tar.xz"
+  - 7z x msys2.tar.xz
+  - 7z x msys2.tar > NUL
+  - msys64\usr\bin\bash -lc ""
+  - msys64\usr\bin\bash -lc "for i in {1..3}; do pacman --noconfirm -Suy python2 make pkg-config mingw-w64-x86_64-glib2 mingw-w64-x86_64-toolchain && break || sleep 15; done"
+
+build_script:
+  - ./make.sh cross-win64
