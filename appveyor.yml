@@ -14,7 +14,6 @@ environment:
 
 install:
   - C:\"Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"
-  - C:\msys64\usr\bin\bash -lc "pacman --noconfirm -Suy python2 make pkg-config mingw-w64-x86_64-glib2 mingw-w64-x86_64-toolchain"
 
 build_script:
   - make.sh cross-win64
