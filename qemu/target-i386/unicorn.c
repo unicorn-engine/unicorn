@@ -152,9 +152,41 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
         case UC_X86_REG_FPSW:
             {
                 uint16_t fpus = X86_CPU(uc, mycpu)->env.fpus;
-		fpus = fpus & ~(7<<11);
-                fpus |= (X86_CPU(uc, mycpu)->env.fpstt&7)<<11;
+        		fpus  = fpus & ~0x3800;
+                fpus |= ( X86_CPU(uc, mycpu)->env.fpstt & 0x7 ) << 11;
                 *(uint16_t*) value = fpus;
+            }
+        case UC_X86_REG_FPCW:
+            *(uint16_t*) value = X86_CPU(uc, mycpu)->env.fpuc;
+            break;
+        case UC_X86_REG_FPTAG:
+            {
+                #define EXPD(fp)        (fp.l.upper & 0x7fff)
+                #define MANTD(fp)       (fp.l.lower)
+                #define MAXEXPD 0x7fff
+                int fptag, exp, i;
+                uint64_t mant;
+                CPU_LDoubleU tmp;
+                fptag = 0;
+                for (i = 7; i >= 0; i--) {
+                    fptag <<= 2;
+                    if (X86_CPU(uc, mycpu)->env.fptags[i]) {
+                        fptag |= 3;
+                    } else {
+                        tmp.d = X86_CPU(uc, mycpu)->env.fpregs[i].d;
+                        exp = EXPD(tmp);
+                        mant = MANTD(tmp);
+                        if (exp == 0 && mant == 0) {
+                            /* zero */
+                            fptag |= 1;
+                        } else if (exp == 0 || exp == MAXEXPD
+                                   || (mant & (1LL << 63)) == 0) {
+                            /* NaNs, infinity, denormal */
+                            fptag |= 2;
+                        }
+                    }
+                }
+                *(uint16_t*) value = fptag; 
             }
             break;
     }
@@ -606,10 +638,22 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
         case UC_X86_REG_FPSW:
             {
                 uint16_t fpus = *(uint16_t*) value;
-                X86_CPU(uc, mycpu)->env.fpus = fpus;
-                X86_CPU(uc, mycpu)->env.fpstt = (fpus>>11)&7;
+                X86_CPU(uc, mycpu)->env.fpus = fpus & ~0x3800;
+                X86_CPU(uc, mycpu)->env.fpstt = (fpus >> 11) & 0x7;
             }
             break;
+        case UC_X86_REG_FPCW:
+            *(uint16_t*) value = X86_CPU(uc, mycpu)->env.fpuc;
+            break;
+        case UC_X86_REG_FPTAG:
+            {
+                int i;
+                uint16_t fptag = *(uint16_t*) value;
+                for (i = 0; i < 8; i++) {
+                    X86_CPU(uc, mycpu)->env.fptags[i] = ((fptag & 3) == 3);
+                    fptag >>= 2;
+                }
+            }
         }
 
     switch(uc->mode) {
