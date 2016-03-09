@@ -140,6 +140,25 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 {
     CPUState *mycpu = first_cpu;
 
+    switch(regid) {
+        default:
+            break;
+        case UC_X86_REG_FP0 ... UC_X86_REG_FP7:
+            {
+                floatx80 reg = X86_CPU(uc, mycpu)->env.fpregs[regid - UC_X86_REG_FP0].d;
+                cpu_get_fp80(value, value+sizeof(uint64_t), reg);
+            }
+            break;
+        case UC_X86_REG_FPSW:
+            {
+                uint16_t fpus = X86_CPU(uc, mycpu)->env.fpus;
+		fpus = fpus & ~(7<<11);
+                fpus |= (X86_CPU(uc, mycpu)->env.fpstt&7)<<11;
+                *(uint16_t*) value = fpus;
+            }
+            break;
+    }
+
     switch(uc->mode) {
         default:
             break;
@@ -572,6 +591,26 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
 int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
     CPUState *mycpu = first_cpu;
+
+    switch(regid) {
+        default:
+            break;
+        case UC_X86_REG_FP0 ... UC_X86_REG_FP7:
+            {
+                //floatx80 cpu_set_fp80(uint64_t mant, uint16_t upper);
+                uint64_t mant = *(uint64_t*) value;
+                uint16_t upper =  *(uint16_t*) (value+sizeof(uint64_t));
+                X86_CPU(uc, mycpu)->env.fpregs[regid - UC_X86_REG_FP0].d = cpu_set_fp80(mant, upper);
+            }
+            break;
+        case UC_X86_REG_FPSW:
+            {
+                uint16_t fpus = *(uint16_t*) value;
+                X86_CPU(uc, mycpu)->env.fpus = fpus;
+                X86_CPU(uc, mycpu)->env.fpstt = (fpus>>11)&7;
+            }
+            break;
+        }
 
     switch(uc->mode) {
         default:
