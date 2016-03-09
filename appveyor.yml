@@ -12,8 +12,5 @@ environment:
     - HOST_ARCH_ARG: --host=i686-w64-mingw32
       ADD_PATH: /mingw32/bin
 
-install:
-  - C:\"Program Files (x86)\Microsoft Visual Studio 12.0\VC\vcvarsall.bat"
-
 build_script:
   - make.sh cross-win64
