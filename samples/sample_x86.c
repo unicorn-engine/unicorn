@@ -219,10 +219,10 @@ static void test_i386(void)
     uc_reg_write(uc, UC_X86_REG_EDX, &r_edx);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing all instruction by having @begin > @end
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32) - 1, 0, 0);
@@ -289,10 +289,10 @@ static void test_i386_map_ptr(void)
     uc_reg_write(uc, UC_X86_REG_EDX, &r_edx);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing all instruction by having @begin > @end
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32) - 1, 0, 0);
@@ -345,10 +345,10 @@ static void test_i386_jump(void)
     }
 
     // tracing 1 basic block with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)ADDRESS, (uint64_t)ADDRESS);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, ADDRESS, ADDRESS);
 
     // tracing 1 instruction at ADDRESS
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)ADDRESS, (uint64_t)ADDRESS);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, ADDRESS, ADDRESS);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_JUMP) - 1, 0, 0);
@@ -447,10 +447,10 @@ static void test_i386_invalid_mem_read(void)
     uc_reg_write(uc, UC_X86_REG_EDX, &r_edx);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing all instruction by having @begin > @end
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_MEM_READ) - 1, 0, 0);
@@ -505,13 +505,13 @@ static void test_i386_invalid_mem_write(void)
     uc_reg_write(uc, UC_X86_REG_EDX, &r_edx);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing all instruction by having @begin > @end
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0);
 
     // intercept invalid memory events
-    uc_hook_add(uc, &trace3, UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED, hook_mem_invalid, NULL);
+    uc_hook_add(uc, &trace3, UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED, hook_mem_invalid, NULL, 1, 0);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_MEM_WRITE) - 1, 0, 0);
@@ -576,10 +576,10 @@ static void test_i386_jump_invalid(void)
     uc_reg_write(uc, UC_X86_REG_EDX, &r_edx);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing all instructions by having @begin > @end
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_JMP_INVALID) - 1, 0, 0);
@@ -633,15 +633,15 @@ static void test_i386_inout(void)
     uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing all instructions
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0);
 
     // uc IN instruction
-    uc_hook_add(uc, &trace3, UC_HOOK_INSN, hook_in, NULL, UC_X86_INS_IN);
+    uc_hook_add(uc, &trace3, UC_HOOK_INSN, hook_in, NULL, 1, 0, UC_X86_INS_IN);
     // uc OUT instruction
-    uc_hook_add(uc, &trace4, UC_HOOK_INSN, hook_out, NULL, UC_X86_INS_OUT);
+    uc_hook_add(uc, &trace4, UC_HOOK_INSN, hook_out, NULL, 1, 0, UC_X86_INS_OUT);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_INOUT) - 1, 0, 0);
@@ -722,16 +722,16 @@ static void test_x86_64(void)
     uc_reg_write(uc, UC_X86_REG_R15, &r15);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing all instructions in the range [ADDRESS, ADDRESS+20]
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code64, NULL, (uint64_t)ADDRESS, (uint64_t)(ADDRESS+20));
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code64, NULL, ADDRESS, ADDRESS+20);
 
     // tracing all memory WRITE access (with @begin > @end)
-    uc_hook_add(uc, &trace3, UC_HOOK_MEM_WRITE, hook_mem64, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace3, UC_HOOK_MEM_WRITE, hook_mem64, NULL, 1, 0);
 
     // tracing all memory READ access (with @begin > @end)
-    uc_hook_add(uc, &trace4, UC_HOOK_MEM_READ, hook_mem64, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace4, UC_HOOK_MEM_READ, hook_mem64, NULL, 1, 0);
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
@@ -805,7 +805,7 @@ static void test_x86_64_syscall(void)
     }
 
     // hook interrupts for syscall
-    uc_hook_add(uc, &trace1, UC_HOOK_INSN, hook_syscall, NULL, UC_X86_INS_SYSCALL);
+    uc_hook_add(uc, &trace1, UC_HOOK_INSN, hook_syscall, NULL, 1, 0, UC_X86_INS_SYSCALL);
 
     // initialize machine registers
     uc_reg_write(uc, UC_X86_REG_RAX, &rax);

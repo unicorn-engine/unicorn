@@ -96,7 +96,7 @@ func TestX86InOut(t *testing.T) {
 		default:
 			return 0
 		}
-	}, X86_INS_IN)
+	}, 1, 0, X86_INS_IN)
 	mu.HookAdd(HOOK_INSN, func(_ Unicorn, port, size, value uint32) {
 		outCalled = true
 		var err error
@@ -111,7 +111,7 @@ func TestX86InOut(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-	}, X86_INS_OUT)
+	}, 1, 0, X86_INS_OUT)
 	if err := mu.Start(ADDRESS, ADDRESS+uint64(len(code))); err != nil {
 		t.Fatal(err)
 	}
@@ -132,7 +132,7 @@ func TestX86Syscall(t *testing.T) {
 	mu.HookAdd(HOOK_INSN, func(_ Unicorn) {
 		rax, _ := mu.RegRead(X86_REG_RAX)
 		mu.RegWrite(X86_REG_RAX, rax+1)
-	}, X86_INS_SYSCALL)
+	}, 1, 0, X86_INS_SYSCALL)
 	mu.RegWrite(X86_REG_RAX, 0x100)
 	err = mu.Start(ADDRESS, ADDRESS+uint64(len(code)))
 	if err != nil {
@@ -141,5 +141,20 @@ func TestX86Syscall(t *testing.T) {
 	v, _ := mu.RegRead(X86_REG_RAX)
 	if v != 0x101 {
 		t.Fatal("Incorrect syscall return value.")
+	}
+}
+
+func TestX86Mmr(t *testing.T) {
+	mu, err := MakeUc(MODE_64, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = mu.RegWriteMmr(X86_REG_GDTR, &X86Mmr{Selector: 0, Base: 0x1000, Limit: 0x1fff, Flags: 0})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mmr, err := mu.RegReadMmr(X86_REG_GDTR)
+	if mmr.Selector != 0 || mmr.Base != 0x1000 || mmr.Limit != 0x1fff || mmr.Flags != 0 {
+		t.Fatalf("mmr read failed: %#v", mmr)
 	}
 }

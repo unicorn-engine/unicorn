@@ -85,7 +85,7 @@ static void test_basic_blocks(void **state)
     OK(uc_mem_write(uc, address, code, sizeof(code)));
 
     // trace all basic blocks
-    OK(uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, test_basic_blocks_hook, &bbtest, (uint64_t)1, (uint64_t)0));
+    OK(uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, test_basic_blocks_hook, &bbtest, 1, 0));
 
     OK(uc_emu_start(uc, address, address+sizeof(code), 0, 0));
 }
@@ -144,11 +144,11 @@ static void test_i386(void **state)
     uc_assert_success(err);
 
     // tracing all basic blocks with customized callback
-    err = uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    err = uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
     uc_assert_success(err);
 
     // tracing all instruction by having @begin > @end
-    err = uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
+    err = uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0);
     uc_assert_success(err);
 
     // emulate machine code in infinite time
@@ -194,11 +194,11 @@ static void test_i386_jump(void **state)
     uc_assert_success(err);
 
     // tracing 1 basic block with customized callback
-    err = uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)address, (uint64_t)address);
+    err = uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, address, address);
     uc_assert_success(err);
 
     // tracing 1 instruction at address
-    err = uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)address, (uint64_t)address);
+    err = uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, address, address);
     uc_assert_success(err);
 
     // emulate machine code in infinite time
@@ -302,19 +302,19 @@ static void test_i386_inout(void **state)
     uc_assert_success(err);
 
     // tracing all basic blocks with customized callback
-    err = uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    err = uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
     uc_assert_success(err);
 
     // tracing all instructions
-    err = uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
+    err = uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0);
     uc_assert_success(err);
 
     // uc IN instruction
-    err = uc_hook_add(uc, &trace3, UC_HOOK_INSN, hook_in, NULL, UC_X86_INS_IN);
+    err = uc_hook_add(uc, &trace3, UC_HOOK_INSN, hook_in, NULL, 1, 0, UC_X86_INS_IN);
     uc_assert_success(err);
 
     // uc OUT instruction
-    err = uc_hook_add(uc, &trace4, UC_HOOK_INSN, hook_out, NULL, UC_X86_INS_OUT);
+    err = uc_hook_add(uc, &trace4, UC_HOOK_INSN, hook_out, NULL, 1, 0, UC_X86_INS_OUT);
     uc_assert_success(err);
 
     // emulate machine code in infinite time
@@ -566,19 +566,19 @@ static void test_x86_64(void **state)
     uc_assert_success(uc_reg_write(uc, UC_X86_REG_R15, &r15));
 
     // tracing all basic blocks with customized callback
-    err = uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    err = uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
     uc_assert_success(err);
 
     // tracing all instructions in the range [address, address+20]
-    err = uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code64, NULL, (uint64_t)address, (uint64_t)(address+20));
+    err = uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code64, NULL, address, address+20);
     uc_assert_success(err);
 
     // tracing all memory WRITE access (with @begin > @end)
-    err = uc_hook_add(uc, &trace3, UC_HOOK_MEM_WRITE, hook_mem64, NULL, (uint64_t)1, (uint64_t)0);
+    err = uc_hook_add(uc, &trace3, UC_HOOK_MEM_WRITE, hook_mem64, NULL, 1, 0);
     uc_assert_success(err);
 
     // tracing all memory READ access (with @begin > @end)
-    err = uc_hook_add(uc, &trace4, UC_HOOK_MEM_READ, hook_mem64, NULL, (uint64_t)1, (uint64_t)0);
+    err = uc_hook_add(uc, &trace4, UC_HOOK_MEM_READ, hook_mem64, NULL, 1, 0);
     uc_assert_success(err);
 
     // emulate machine code in infinite time (last param = 0), or when
@@ -662,7 +662,7 @@ static void test_x86_64_syscall(void **state)
     uc_assert_success(err);
 
     // hook interrupts for syscall
-    err = uc_hook_add(uc, &trace1, UC_HOOK_INSN, hook_syscall, NULL, UC_X86_INS_SYSCALL);
+    err = uc_hook_add(uc, &trace1, UC_HOOK_INSN, hook_syscall, NULL, 1, 0, UC_X86_INS_SYSCALL);
     uc_assert_success(err);
 
     // initialize machine registers

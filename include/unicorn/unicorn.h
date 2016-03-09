@@ -57,8 +57,8 @@ typedef size_t uc_hook;
 #endif
 
 // Unicorn API version
-#define UC_API_MAJOR 0
-#define UC_API_MINOR 9
+#define UC_API_MAJOR 1
+#define UC_API_MINOR 0
 
 /*
   Macro to create combined version which can be compared to
@@ -262,6 +262,7 @@ typedef struct uc_mem_region {
 typedef enum uc_query_type {
     // Dynamically query current hardware mode.
     UC_QUERY_MODE = 1,
+    UC_QUERY_PAGE_SIZE,
 } uc_query_type;
 
 /*
@@ -457,13 +458,19 @@ uc_err uc_emu_stop(uc_engine *uc);
  @callback: callback to be run when instruction is hit
  @user_data: user-defined data. This will be passed to callback function in its
       last argument @user_data
+ @begin: start address of the area where the callback is effect (inclusive)
+ @end: end address of the area where the callback is effect (inclusive)
+   NOTE 1: the callback is called only if related address is in range [@begin, @end]
+   NOTE 2: if @begin > @end, callback is called whenever this hook type is triggered
  @...: variable arguments (depending on @type)
+   NOTE: if @type = UC_HOOK_INSN, this is the instruction ID (ex: UC_X86_INS_OUT)
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, ...);
+uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
+        void *user_data, uint64_t begin, uint64_t end, ...);
 
 /*
  Unregister (remove) a hook callback.

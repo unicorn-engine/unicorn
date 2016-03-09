@@ -3,9 +3,9 @@
 package unicorn;
 
 public interface UnicornConst {
+   public static final int UC_API_MAJOR = 1;
 
-   public static final int UC_API_MAJOR = 0;
-   public static final int UC_API_MINOR = 9;
+   public static final int UC_API_MINOR = 0;
    public static final int UC_SECOND_SCALE = 1000000;
    public static final int UC_MILISECOND_SCALE = 1000;
    public static final int UC_ARCH_ARM = 1;
@@ -90,6 +90,7 @@ public interface UnicornConst {
    public static final int UC_HOOK_MEM_INVALID = 1008;
    public static final int UC_HOOK_MEM_VALID = 7168;
    public static final int UC_QUERY_MODE = 1;
+   public static final int UC_QUERY_PAGE_SIZE = 2;
 
    public static final int UC_PROT_NONE = 0;
    public static final int UC_PROT_READ = 1;

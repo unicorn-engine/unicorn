@@ -273,16 +273,16 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
                 UC_HOOK_CODE,
                 hook_code32,
                 NULL,
-                (uint64_t)1,
-                (uint64_t)0));
+                1,
+                0));
 
     uc_assert_success(uc_hook_add(uc,
                 &trace2,
                 UC_HOOK_MEM_VALID,
                 hook_mem32,
                 NULL,
-                (uint64_t)1,
-                (uint64_t)0));
+                1,
+                0));
 
     uc_assert_success(uc_emu_start(uc,
 #ifdef RIP_NEXT_TO_THE_SELFMODIFY_OPCODE

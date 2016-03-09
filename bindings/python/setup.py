@@ -24,7 +24,7 @@ PKG_NAME = 'unicorn'
 if os.path.exists(PATH_LIB64) and os.path.exists(PATH_LIB32):
     PKG_NAME = 'unicorn-windows'
 
-VERSION = '0.9'
+VERSION = '1.0'
 SYSTEM = sys.platform
 
 # virtualenv breaks import, but get_python_lib() will work.
@@ -63,7 +63,7 @@ def copy_sources():
 
     src.extend(glob.glob("../../Makefile"))
     src.extend(glob.glob("../../LICENSE*"))
-    src.extend(glob.glob("../../README"))
+    src.extend(glob.glob("../../README.md"))
     src.extend(glob.glob("../../*.TXT"))
     src.extend(glob.glob("../../RELEASE_NOTES"))
     src.extend(glob.glob("../../make.sh"))
