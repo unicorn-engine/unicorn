@@ -49,6 +49,7 @@ static void release_common(void *t)
     tcg_pool_reset(s);
     g_hash_table_destroy(s->helpers);
     g_free(uc->tcg_cpu_thread);
+    g_free(uc->tcg_halt_cond);
 
     // Clean memory.
     phys_mem_clean(uc);
