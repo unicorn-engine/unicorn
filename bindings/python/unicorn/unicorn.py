@@ -156,7 +156,6 @@ def uc_arch_supported(query):
     return _uc.uc_arch_supported(query)
 
 
-
 class uc_x86_mmr(ctypes.Structure):
     '''Memory-Management Register for instructions IDTR, GDTR, LDTR, TR.'''
     _fields_ = [
@@ -166,12 +165,14 @@ class uc_x86_mmr(ctypes.Structure):
         ("flags", ctypes.c_uint32),     # not used by GDTR and IDTR
        ]
 
+
 class uc_x86_float80(ctypes.Structure):
     '''Float80'''
     _fields_ = [
         ("mantissa", ctypes.c_uint64),
         ("exponent", ctypes.c_uint16),
         ]
+
 
 class Uc(object):
     def __init__(self, arch, mode):
