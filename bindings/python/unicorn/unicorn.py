@@ -246,6 +246,8 @@ class Uc(object):
 
     # write to a register
     def reg_write(self, reg_id, value):
+        reg = None
+
         if self._arch == UC_ARCH_X86:
             if reg_id in [ x86_const.UC_X86_REG_IDTR, x86_const.UC_X86_REG_GDTR, x86_const.UC_X86_REG_LDTR, x86_const.UC_X86_REG_TR]:
                 assert isinstance(value, tuple) and len(value)==4
@@ -258,7 +260,8 @@ class Uc(object):
                 reg = uc_x86_float80()
                 reg.mantissa = value[0]
                 reg.exponent = value[1]
-        else:
+        
+        if reg is None:
             # convert to 64bit number to be safe
             reg = ctypes.c_int64(value)
 
