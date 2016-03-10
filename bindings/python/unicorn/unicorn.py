@@ -206,6 +206,7 @@ class Uc(object):
             except: # _uc might be pulled from under our feet
                 pass
 
+
     # emulate from @begin, and stop when reaching address @until
     def emu_start(self, begin, until, timeout=0, count=0):
         status = _uc.uc_emu_start(self._uch, begin, until, timeout, count)

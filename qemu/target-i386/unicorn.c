@@ -152,7 +152,7 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
         case UC_X86_REG_FPSW:
             {
                 uint16_t fpus = X86_CPU(uc, mycpu)->env.fpus;
-        		fpus  = fpus & ~0x3800;
+                fpus  = fpus & ~0x3800;
                 fpus |= ( X86_CPU(uc, mycpu)->env.fpstt & 0x7 ) << 11;
                 *(uint16_t*) value = fpus;
             }
@@ -629,9 +629,8 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
             break;
         case UC_X86_REG_FP0 ... UC_X86_REG_FP7:
             {
-                //floatx80 cpu_set_fp80(uint64_t mant, uint16_t upper);
                 uint64_t mant = *(uint64_t*) value;
-                uint16_t upper =  *(uint16_t*) (value+sizeof(uint64_t));
+                uint16_t upper = *(uint16_t*) (value + sizeof(uint64_t));
                 X86_CPU(uc, mycpu)->env.fpregs[regid - UC_X86_REG_FP0].d = cpu_set_fp80(mant, upper);
             }
             break;
@@ -654,7 +653,8 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     fptag >>= 2;
                 }
             }
-        }
+            break;
+    }
 
     switch(uc->mode) {
         default:
