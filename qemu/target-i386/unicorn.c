@@ -642,7 +642,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
             }
             break;
         case UC_X86_REG_FPCW:
-            *(uint16_t*) value = X86_CPU(uc, mycpu)->env.fpuc;
+            X86_CPU(uc, mycpu)->env.fpuc = *(uint16_t *)value;
             break;
         case UC_X86_REG_FPTAG:
             {
