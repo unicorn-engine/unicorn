@@ -156,6 +156,24 @@ def uc_arch_supported(query):
     return _uc.uc_arch_supported(query)
 
 
+class uc_x86_mmr(ctypes.Structure):
+    '''Memory-Management Register for instructions IDTR, GDTR, LDTR, TR.'''
+    _fields_ = [
+        ("selector", ctypes.c_uint16),  # not used by GDTR and IDTR
+        ("base", ctypes.c_uint64),      # handle 32 or 64 bit CPUs
+        ("limit", ctypes.c_uint32),
+        ("flags", ctypes.c_uint32),     # not used by GDTR and IDTR
+       ]
+
+
+class uc_x86_float80(ctypes.Structure):
+    '''Float80'''
+    _fields_ = [
+        ("mantissa", ctypes.c_uint64),
+        ("exponent", ctypes.c_uint16),
+        ]
+
+
 class Uc(object):
     def __init__(self, arch, mode):
         # verify version compatibility with the core before doing anything
@@ -205,6 +223,20 @@ class Uc(object):
 
     # return the value of a register
     def reg_read(self, reg_id):
+        if self._arch == UC_ARCH_X86:
+            if reg_id in [ x86_const.UC_X86_REG_IDTR, x86_const.UC_X86_REG_GDTR, x86_const.UC_X86_REG_LDTR, x86_const.UC_X86_REG_TR]:
+                reg = uc_x86_mmr()
+                status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
+                if status != UC_ERR_OK:
+                    raise UcError(status)
+                return (reg.selector,reg.base, reg.limits, reg.flags)
+            if reg_id in range(x86_const.UC_X86_REG_FP0,x86_const.UC_X86_REG_FP0+8):
+                reg = uc_x86_float80()
+                status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
+                if status != UC_ERR_OK:
+                    raise UcError(status)
+                return (reg.mantissa, reg.exponent)
+
         # read to 64bit number to be safe
         reg = ctypes.c_int64(0)
         status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
@@ -215,8 +247,25 @@ class Uc(object):
 
     # write to a register
     def reg_write(self, reg_id, value):
-        # convert to 64bit number to be safe
-        reg = ctypes.c_int64(value)
+        reg = None
+
+        if self._arch == UC_ARCH_X86:
+            if reg_id in [ x86_const.UC_X86_REG_IDTR, x86_const.UC_X86_REG_GDTR, x86_const.UC_X86_REG_LDTR, x86_const.UC_X86_REG_TR]:
+                assert isinstance(value, tuple) and len(value)==4
+                reg = uc_x86_mmr()
+                reg.selector=value[0]
+                reg.base=value[1]
+                reg.limits=value[2]
+                reg.flags=value[3]
+            if reg_id in range(x86_const.UC_X86_REG_FP0, x86_const.UC_X86_REG_FP0+8):
+                reg = uc_x86_float80()
+                reg.mantissa = value[0]
+                reg.exponent = value[1]
+        
+        if reg is None:
+            # convert to 64bit number to be safe
+            reg = ctypes.c_int64(value)
+
         status = _uc.uc_reg_write(self._uch, reg_id, ctypes.byref(reg))
         if status != UC_ERR_OK:
             raise UcError(status)
