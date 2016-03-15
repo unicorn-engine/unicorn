@@ -120,7 +120,7 @@ func (u *uc) MemRegions() ([]*MemRegion, error) {
 		return nil, errReturn(ucerr)
 	}
 	ret := make([]*MemRegion, count)
-	tmp := (*[1 << 30]C.struct_uc_mem_region)(unsafe.Pointer(regions))[:count]
+	tmp := (*[1 << 24]C.struct_uc_mem_region)(unsafe.Pointer(regions))[:count]
 	for i, v := range tmp {
 		ret[i] = &MemRegion{
 			Begin: uint64(v.begin),
