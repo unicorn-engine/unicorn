@@ -156,6 +156,7 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                 fpus |= ( X86_CPU(uc, mycpu)->env.fpstt & 0x7 ) << 11;
                 *(uint16_t*) value = fpus;
             }
+	    break;
         case UC_X86_REG_FPCW:
             *(uint16_t*) value = X86_CPU(uc, mycpu)->env.fpuc;
             break;
