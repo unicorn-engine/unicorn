@@ -113,7 +113,7 @@ public class Sample_mips {
        System.out.print("Emulate MIPS code (little-endian)\n");
    
        // Initialize emulator in MIPS mode
-       Unicorn u = new Unicorn(Unicorn.UC_ARCH_MIPS, Unicorn.UC_MODE_MIPS32);
+       Unicorn u = new Unicorn(Unicorn.UC_ARCH_MIPS, Unicorn.UC_MODE_MIPS32 + Unicorn.UC_MODE_LITTLE_ENDIAN);
    
        // map 2MB memory for this emulation
        u.mem_map(ADDRESS, 2 * 1024 * 1024, Unicorn.UC_PROT_ALL);

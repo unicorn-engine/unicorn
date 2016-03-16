@@ -231,8 +231,14 @@ static bool tcg_exec_all(struct uc_struct* uc)
         //qemu_clock_enable(QEMU_CLOCK_VIRTUAL,
         //                  (cpu->singlestep_enabled & SSTEP_NOTIMER) == 0);
         if (cpu_can_run(cpu)) {
+            uc->quit_request = false;
             r = tcg_cpu_exec(uc, env);
-            if (uc->stop_request) {
+
+            // quit current TB but continue emulating?
+            if (uc->quit_request) {
+                // reset stop_request
+                uc->stop_request = false;
+            } else if (uc->stop_request) {
                 //printf(">>> got STOP request!!!\n");
                 finish = true;
                 break;

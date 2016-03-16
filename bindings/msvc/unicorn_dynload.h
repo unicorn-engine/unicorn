@@ -1,6 +1,6 @@
 // 
 // Dynamic loader for unicorn shared library in windows and linux.
-// This was made for v0.9 of unicorn.
+// This was made for v1.0 of unicorn.
 // Newer versions of unicorn may require changes to these files.
 // 
 // Windows Notes:

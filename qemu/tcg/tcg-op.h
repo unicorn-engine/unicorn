@@ -27,14 +27,13 @@
 
 int gen_new_label(TCGContext *);
 
-static inline void gen_uc_tracecode(TCGContext *tcg_ctx, int32_t size, void *callback, void *uc, uint64_t pc, void *data)
+static inline void gen_uc_tracecode(TCGContext *tcg_ctx, int32_t size, int32_t type, void *uc, uint64_t pc)
 {
     TCGv_i32 tsize = tcg_const_i32(tcg_ctx, size);
-    TCGv_ptr tcallback = tcg_const_ptr(tcg_ctx, callback);
+    TCGv_i32 ttype = tcg_const_i32(tcg_ctx, type);
     TCGv_ptr tuc = tcg_const_ptr(tcg_ctx, uc);
     TCGv_i64 tpc = tcg_const_i64(tcg_ctx, pc);
-    TCGv_ptr tdata = tcg_const_ptr(tcg_ctx, data);
-    gen_helper_uc_tracecode(tcg_ctx, tsize, tcallback, tuc, tpc, tdata);
+    gen_helper_uc_tracecode(tcg_ctx, tsize, ttype, tuc, tpc);
 }
 
 static inline void tcg_gen_op0(TCGContext *s, TCGOpcode opc)

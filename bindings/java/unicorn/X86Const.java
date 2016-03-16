@@ -248,7 +248,13 @@ public interface X86Const {
    public static final int UC_X86_REG_R13W = 239;
    public static final int UC_X86_REG_R14W = 240;
    public static final int UC_X86_REG_R15W = 241;
-   public static final int UC_X86_REG_ENDING = 242;
+   public static final int UC_X86_REG_IDTR = 242;
+   public static final int UC_X86_REG_GDTR = 243;
+   public static final int UC_X86_REG_LDTR = 244;
+   public static final int UC_X86_REG_TR = 245;
+   public static final int UC_X86_REG_FPCW = 246;
+   public static final int UC_X86_REG_FPTAG = 247;
+   public static final int UC_X86_REG_ENDING = 248;
 
 // X86 instructions
 

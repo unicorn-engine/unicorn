@@ -7,13 +7,7 @@
 #include "unicorn.h"
 #include "cpu.h"
 #include "unicorn_common.h"
-
-
-#define READ_QWORD(x) ((uint64)x)
-#define READ_DWORD(x) (x & 0xffffffff)
-#define READ_WORD(x) (x & 0xffff)
-#define READ_BYTE_H(x) ((x & 0xffff) >> 8)
-#define READ_BYTE_L(x) (x & 0xff)
+#include "uc_priv.h"
 
 
 static bool sparc_stop_interrupt(int intno)
@@ -87,6 +81,9 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
             case UC_SPARC_REG_PC:
                 SPARC_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
                 SPARC_CPU(uc, mycpu)->env.npc = *(uint32_t *)value + 4;
+                // force to quit execution and flush TB
+                uc->quit_request = true;
+                uc_emu_stop(uc);
                 break;
         }
     }

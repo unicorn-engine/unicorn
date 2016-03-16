@@ -1,6 +1,6 @@
 // 
 // Dynamic loader for unicorn shared library in windows and linux.
-// This was made for v0.9 of unicorn.
+// This was made for v1.0 of unicorn.
 // Newer versions of unicorn may require changes to these files.
 // 
 // Windows Notes:
@@ -62,6 +62,7 @@ typedef unsigned int (*uc_version_t)(unsigned int *major, unsigned int *minor);
 typedef bool   (*uc_arch_supported_t)(uc_arch arch);
 typedef uc_err (*uc_open_t)(uc_arch arch, uc_mode mode, uc_engine **uc);
 typedef uc_err (*uc_close_t)(uc_engine *uc);
+typedef uc_err (*uc_query_t)(uc_engine *uc, uc_query_type type, size_t *result);
 typedef uc_err (*uc_errno_t)(uc_engine *uc);
 typedef const char* (*uc_strerror_t)(uc_err code);
 typedef uc_err (*uc_reg_write_t)(uc_engine *uc, int regid, const void *value);
@@ -70,17 +71,20 @@ typedef uc_err (*uc_mem_write_t)(uc_engine *uc, uint64_t address, const void *by
 typedef uc_err (*uc_mem_read_t)(uc_engine *uc, uint64_t address, void *bytes, size_t size);
 typedef uc_err (*uc_emu_start_t)(uc_engine *uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
 typedef uc_err (*uc_emu_stop_t)(uc_engine *uc);
-typedef uc_err (*uc_hook_add_t)(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, ...);
+typedef uc_err (*uc_hook_add_t)(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, uint64_t begin, uint64_t end, ...);
 typedef uc_err (*uc_hook_del_t)(uc_engine *uc, uc_hook hh);
 typedef uc_err (*uc_mem_map_t)(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
+typedef uc_err (*uc_mem_map_ptr_t)(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, void *ptr);
 typedef uc_err (*uc_mem_unmap_t)(uc_engine *uc, uint64_t address, size_t size);
 typedef uc_err (*uc_mem_protect_t)(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
+typedef uc_err (*uc_mem_regions_t)(uc_engine *uc, uc_mem_region **regions, uint32_t *count);
 
 
 static uc_version_t gp_uc_version = NULL;
 static uc_arch_supported_t gp_uc_arch_supported = NULL;
 static uc_open_t gp_uc_open = NULL;
 static uc_close_t gp_uc_close = NULL;
+static uc_query_t gp_uc_query = NULL;
 static uc_errno_t gp_uc_errno = NULL;
 static uc_strerror_t gp_uc_strerror = NULL;
 static uc_reg_write_t gp_uc_reg_write = NULL;
@@ -92,8 +96,10 @@ static uc_emu_stop_t gp_uc_emu_stop = NULL;
 static uc_hook_add_t gp_uc_hook_add = NULL;
 static uc_hook_del_t gp_uc_hook_del = NULL;
 static uc_mem_map_t gp_uc_mem_map = NULL;
+static uc_mem_map_ptr_t gp_uc_mem_map_ptr = NULL;
 static uc_mem_unmap_t gp_uc_mem_unmap = NULL;
 static uc_mem_protect_t gp_uc_mem_protect = NULL;
+static uc_mem_regions_t gp_uc_mem_regions = NULL;
 
 
 bool uc_dyn_load(const char* path, int flags)
@@ -118,6 +124,7 @@ bool uc_dyn_load(const char* path, int flags)
     gp_uc_arch_supported = (uc_arch_supported_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_arch_supported");
     gp_uc_open = (uc_open_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_open");
     gp_uc_close = (uc_close_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_close");
+    gp_uc_query = (uc_query_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_query");
     gp_uc_errno = (uc_errno_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_errno");
     gp_uc_strerror = (uc_strerror_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_strerror");
     gp_uc_reg_write = (uc_reg_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_write");
@@ -129,8 +136,10 @@ bool uc_dyn_load(const char* path, int flags)
     gp_uc_hook_add = (uc_hook_add_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_hook_add");
     gp_uc_hook_del = (uc_hook_del_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_hook_del");
     gp_uc_mem_map = (uc_mem_map_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_map");
+    gp_uc_mem_map_ptr = (uc_mem_map_ptr_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_map_ptr");
     gp_uc_mem_unmap = (uc_mem_unmap_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_unmap");
     gp_uc_mem_protect = (uc_mem_protect_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_protect");
+    gp_uc_mem_regions = (uc_mem_regions_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_regions");
     return true;
 }
 
@@ -146,6 +155,7 @@ bool uc_dyn_free(void)
     gp_uc_arch_supported = NULL;
     gp_uc_open = NULL;
     gp_uc_close = NULL;
+    gp_uc_query = NULL;
     gp_uc_errno = NULL;
     gp_uc_strerror = NULL;
     gp_uc_reg_write = NULL;
@@ -157,8 +167,10 @@ bool uc_dyn_free(void)
     gp_uc_hook_add = NULL;
     gp_uc_hook_del = NULL;
     gp_uc_mem_map = NULL;
+    gp_uc_mem_map_ptr = NULL;
     gp_uc_mem_unmap = NULL;
     gp_uc_mem_protect = NULL;
+    gp_uc_mem_regions = NULL;
     return true;
 }
 
@@ -181,6 +193,11 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **uc)
 uc_err uc_close(uc_engine *uc)
 {
     return gp_uc_close(uc);
+}
+
+uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
+{
+    return gp_uc_query(uc, type, result);
 }
 
 uc_err uc_errno(uc_engine *uc)
@@ -223,43 +240,40 @@ uc_err uc_emu_stop(uc_engine *uc)
     return gp_uc_emu_stop(uc);
 }
 
-uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, ...)
+uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, uint64_t begin, uint64_t end, ...)
 {
     va_list valist;
     uc_err ret = UC_ERR_OK;
     int id;
-    uint64_t begin, end;
     va_start(valist, user_data);
 
     switch(type) {
         // note this default case will capture any combinations of
         // UC_HOOK_MEM_*_PROT and UC_HOOK_MEM_*_UNMAPPED
+        // as well as any combination of
+        // UC_HOOK_MEM_READ, UC_HOOK_MEM_WRITE and UC_HOOK_MEM_FETCH
         default:
         case UC_HOOK_INTR:
+        case UC_HOOK_CODE:
+        case UC_HOOK_BLOCK:
+        // all combinations of UC_HOOK_MEM_*_PROT and UC_HOOK_MEM_*_UNMAPPED are caught by 'default'
         case UC_HOOK_MEM_READ_UNMAPPED:
         case UC_HOOK_MEM_WRITE_UNMAPPED:
         case UC_HOOK_MEM_FETCH_UNMAPPED:
         case UC_HOOK_MEM_READ_PROT:
         case UC_HOOK_MEM_WRITE_PROT:
         case UC_HOOK_MEM_FETCH_PROT:
+        // all combinations of read/write/fetch are caught by 'default'
+        case UC_HOOK_MEM_READ:
+        case UC_HOOK_MEM_WRITE:
         case UC_HOOK_MEM_FETCH:
             // 0 extra args
-            ret = gp_uc_hook_add(uc, hh, type, callback, user_data);
+            ret = gp_uc_hook_add(uc, hh, type, callback, user_data, begin, end);
             break;
         case UC_HOOK_INSN:
             // 1 extra arg
             id = va_arg(valist, int);
-            ret = gp_uc_hook_add(uc, hh, type, callback, user_data, id);
-            break;
-        case UC_HOOK_CODE:
-        case UC_HOOK_BLOCK:
-        case UC_HOOK_MEM_READ:
-        case UC_HOOK_MEM_WRITE:
-        case UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE:
-            // 2 extra args
-            begin = va_arg(valist, uint64_t);
-            end = va_arg(valist, uint64_t);
-            ret = gp_uc_hook_add(uc, hh, type, callback, user_data, begin, end);
+            ret = gp_uc_hook_add(uc, hh, type, callback, user_data, begin, end, id);
             break;
     }
 
@@ -277,6 +291,11 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
     return gp_uc_mem_map(uc, address, size, perms);
 }
 
+uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, void *ptr)
+{
+    return gp_uc_mem_map_ptr(uc, address, size, perms, ptr);
+}
+
 uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size)
 {
     return gp_uc_mem_unmap(uc, address, size);
@@ -285,6 +304,11 @@ uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size)
 uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 {
     return gp_uc_mem_protect(uc, address, size, perms);
+}
+
+uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
+{
+    return gp_uc_mem_regions(uc, regions, count);
 }
 
 #endif // DYNLOAD

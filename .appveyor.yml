@@ -1,0 +1,16 @@
+version: 1.0-{build}
+
+platform:
+  - x64
+
+environment:
+  global:
+    MSYS2_ARCH: x86_64
+  matrix:
+    - HOST_ARCH_ARG: --host=x86_64-w64-mingw32
+      ADD_PATH: /mingw64/bin
+    - HOST_ARCH_ARG: --host=i686-w64-mingw32
+      ADD_PATH: /mingw32/bin
+
+build_script:
+  - make.sh cross-win64

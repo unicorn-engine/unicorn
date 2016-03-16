@@ -63,23 +63,21 @@ func hookX86Syscall(handle unsafe.Pointer, user unsafe.Pointer) {
 	hook.Callback.(func(Unicorn))(hook.Uc)
 }
 
-func (u *uc) HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error) {
+func (u *uc) HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int) (Hook, error) {
 	var callback unsafe.Pointer
-	var iarg1 C.int
-	var uarg1, uarg2 C.uint64_t
-	rangeMode := false
+	var insn C.int
+	var insnMode bool
 	switch htype {
 	case HOOK_BLOCK, HOOK_CODE:
-		rangeMode = true
 		callback = C.hookCode_cgo
 	case HOOK_MEM_READ, HOOK_MEM_WRITE, HOOK_MEM_READ | HOOK_MEM_WRITE:
-		rangeMode = true
 		callback = C.hookMemAccess_cgo
 	case HOOK_INTR:
 		callback = C.hookInterrupt_cgo
 	case HOOK_INSN:
-		iarg1 = C.int(extra[0])
-		switch iarg1 {
+		insn = C.int(extra[0])
+		insnMode = true
+		switch insn {
 		case X86_INS_IN:
 			callback = C.hookX86In_cgo
 		case X86_INS_OUT:
@@ -93,7 +91,6 @@ func (u *uc) HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error) {
 		// special case for mask
 		if htype&(HOOK_MEM_READ_UNMAPPED|HOOK_MEM_WRITE_UNMAPPED|HOOK_MEM_FETCH_UNMAPPED|
 			HOOK_MEM_READ_PROT|HOOK_MEM_WRITE_PROT|HOOK_MEM_FETCH_PROT) != 0 {
-			rangeMode = true
 			callback = C.hookMemInvalid_cgo
 		} else {
 			return 0, errors.New("Unknown hook type.")
@@ -102,16 +99,10 @@ func (u *uc) HookAdd(htype int, cb interface{}, extra ...uint64) (Hook, error) {
 	var h2 C.uc_hook
 	data := &HookData{u, cb}
 	uptr := uintptr(unsafe.Pointer(data))
-	if rangeMode {
-		if len(extra) == 2 {
-			uarg1 = C.uint64_t(extra[0])
-			uarg2 = C.uint64_t(extra[1])
-		} else {
-			uarg1, uarg2 = 1, 0
-		}
-		C.uc_hook_add_u2(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), uarg1, uarg2)
+	if insnMode {
+		C.uc_hook_add_insn(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end), insn)
 	} else {
-		C.uc_hook_add_i1(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), iarg1)
+		C.uc_hook_add_wrap(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end))
 	}
 	hookDataMap[uptr] = data
 	hookToUintptr[Hook(h2)] = uptr

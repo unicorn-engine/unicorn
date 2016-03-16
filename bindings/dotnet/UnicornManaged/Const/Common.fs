@@ -6,9 +6,9 @@ open System
 
 [<AutoOpen>]
 module Common =
+    let UC_API_MAJOR = 1
 
-    let UC_API_MAJOR = 0
-    let UC_API_MINOR = 9
+    let UC_API_MINOR = 0
     let UC_SECOND_SCALE = 1000000
     let UC_MILISECOND_SCALE = 1000
     let UC_ARCH_ARM = 1
@@ -21,22 +21,26 @@ module Common =
     let UC_ARCH_MAX = 8
 
     let UC_MODE_LITTLE_ENDIAN = 0
+    let UC_MODE_BIG_ENDIAN = 1073741824
 
     let UC_MODE_ARM = 0
-    let UC_MODE_16 = 2
-    let UC_MODE_32 = 4
-    let UC_MODE_64 = 8
     let UC_MODE_THUMB = 16
     let UC_MODE_MCLASS = 32
     let UC_MODE_V8 = 64
     let UC_MODE_MICRO = 16
     let UC_MODE_MIPS3 = 32
     let UC_MODE_MIPS32R6 = 64
-    let UC_MODE_V9 = 16
-    let UC_MODE_QPX = 16
-    let UC_MODE_BIG_ENDIAN = 1073741824
     let UC_MODE_MIPS32 = 4
     let UC_MODE_MIPS64 = 8
+    let UC_MODE_16 = 2
+    let UC_MODE_32 = 4
+    let UC_MODE_64 = 8
+    let UC_MODE_PPC32 = 4
+    let UC_MODE_PPC64 = 8
+    let UC_MODE_QPX = 16
+    let UC_MODE_SPARC32 = 4
+    let UC_MODE_SPARC64 = 8
+    let UC_MODE_V9 = 16
 
     let UC_ERR_OK = 0
     let UC_ERR_NOMEM = 1
@@ -87,6 +91,9 @@ module Common =
     let UC_HOOK_MEM_WRITE_INVALID = 288
     let UC_HOOK_MEM_FETCH_INVALID = 576
     let UC_HOOK_MEM_INVALID = 1008
+    let UC_HOOK_MEM_VALID = 7168
+    let UC_QUERY_MODE = 1
+    let UC_QUERY_PAGE_SIZE = 2
 
     let UC_PROT_NONE = 0
     let UC_PROT_READ = 1

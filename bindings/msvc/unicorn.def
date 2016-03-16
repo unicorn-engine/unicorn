@@ -3,6 +3,7 @@ uc_version
 uc_arch_supported
 uc_open
 uc_close
+uc_query
 uc_errno
 uc_strerror
 uc_reg_write
@@ -14,5 +15,7 @@ uc_emu_stop
 uc_hook_add
 uc_hook_del
 uc_mem_map
+uc_mem_map_ptr
 uc_mem_unmap
 uc_mem_protect
+uc_mem_regions

@@ -7,6 +7,7 @@
 import sys
 
 symbols = (
+    'aarch64_tb_set_jmp_target',
     'use_idiv_instructions_rt',
     'tcg_target_deposit_valid',
     'helper_power_down',

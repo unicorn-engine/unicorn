@@ -3043,11 +3043,8 @@ static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
     }
 
     // Unicorn: trace this instruction on request
-    if (env->uc->hook_insn) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_CODE, s->pc);
-        if (trace)
-            gen_uc_tracecode(tcg_ctx, 2, trace->callback, env->uc, s->pc, trace->user_data);
-
+    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, s->pc)) {
+        gen_uc_tracecode(tcg_ctx, 2, UC_HOOK_CODE_IDX, env->uc, s->pc);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
@@ -3109,13 +3106,10 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (env->uc->hook_block && !env->uc->block_full) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
-        if (trace) {
-            // save block address to see if we need to patch block size later
-            env->uc->block_addr = pc_start;
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, pc_start, trace->user_data);
-        }
+    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+        // save block address to see if we need to patch block size later
+        env->uc->block_addr = pc_start;
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     }
 
     gen_tb_start(tcg_ctx);

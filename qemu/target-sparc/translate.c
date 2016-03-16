@@ -2630,18 +2630,9 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
         tcg_gen_debug_insn_start(tcg_ctx, dc->pc);
     }
 
-    // end address tells us to stop emulation
-    if (dc->pc == dc->uc->addr_end) {
-        insn = 0x91d02000; // generate TRAP to end this TB
-        hook_insn = false;  // do not hook this instruction
-    }
-
     // Unicorn: trace this instruction on request
-    if (hook_insn && dc->uc->hook_insn) {
-        struct hook_struct *trace = hook_find(dc->uc, UC_HOOK_CODE, dc->pc);
-        if (trace)
-            gen_uc_tracecode(tcg_ctx, 4, trace->callback, dc->uc, dc->pc, trace->user_data);
-
+    if (hook_insn && HOOK_EXISTS_BOUNDED(dc->uc, UC_HOOK_CODE, dc->pc)) {
+        gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, dc->uc, dc->pc);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
@@ -5408,9 +5399,8 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     // early check to see if the address of this block is the until address
     if (pc_start == env->uc->addr_end) {
         gen_tb_start(tcg_ctx);
-        insn = 0x91d02000; // generate TRAP to end this TB
-        disas_sparc_insn(dc, insn, false);
-        goto exit_gen_loop;
+        gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
+        goto done_generating;
     }
 
     max_insns = tb->cflags & CF_COUNT_MASK;
@@ -5428,13 +5418,10 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (env->uc->hook_block && !env->uc->block_full) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
-        if (trace) {
-            // save block address to see if we need to patch block size later
-            env->uc->block_addr = pc_start;
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, pc_start, trace->user_data);
-        }
+    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+        // save block address to see if we need to patch block size later
+        env->uc->block_addr = pc_start;
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     }
 
     gen_tb_start(tcg_ctx);

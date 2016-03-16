@@ -57,7 +57,7 @@ static void test_sparc(void)
     printf("Emulate SPARC code\n");
 
     // Initialize emulator in Sparc mode
-    err = uc_open(UC_ARCH_SPARC, UC_MODE_32, &uc);
+    err = uc_open(UC_ARCH_SPARC, UC_MODE_SPARC32|UC_MODE_BIG_ENDIAN, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
                 err, uc_strerror(err));
@@ -76,10 +76,10 @@ static void test_sparc(void)
     uc_reg_write(uc, UC_SPARC_REG_G3, &g3);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing all instructions with customized callback
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0);
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.

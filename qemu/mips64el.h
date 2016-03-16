@@ -1,6 +1,7 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_MIPS64EL_H
 #define UNICORN_AUTOGEN_MIPS64EL_H
+#define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_mips64el
 #define use_idiv_instructions_rt use_idiv_instructions_rt_mips64el
 #define tcg_target_deposit_valid tcg_target_deposit_valid_mips64el
 #define helper_power_down helper_power_down_mips64el

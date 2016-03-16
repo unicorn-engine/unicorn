@@ -1,6 +1,7 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_POWERPC_H
 #define UNICORN_AUTOGEN_POWERPC_H
+#define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_powerpc
 #define use_idiv_instructions_rt use_idiv_instructions_rt_powerpc
 #define tcg_target_deposit_valid tcg_target_deposit_valid_powerpc
 #define helper_power_down helper_power_down_powerpc

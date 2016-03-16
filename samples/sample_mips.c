@@ -72,10 +72,10 @@ static void test_mips_eb(void)
     uc_reg_write(uc, UC_MIPS_REG_1, &r1);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing one instruction at ADDRESS with customized callback
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)ADDRESS, (uint64_t)ADDRESS);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, ADDRESS, ADDRESS);
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
@@ -105,7 +105,7 @@ static void test_mips_el(void)
     printf("Emulate MIPS code (little-endian)\n");
 
     // Initialize emulator in MIPS mode
-    err = uc_open(UC_ARCH_MIPS, UC_MODE_MIPS32, &uc);
+    err = uc_open(UC_ARCH_MIPS, UC_MODE_MIPS32 + UC_MODE_LITTLE_ENDIAN, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
                 err, uc_strerror(err));
@@ -122,10 +122,10 @@ static void test_mips_el(void)
     uc_reg_write(uc, UC_MIPS_REG_1, &r1);
 
     // tracing all basic blocks with customized callback
-    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing one instruction at ADDRESS with customized callback
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)ADDRESS, (uint64_t)ADDRESS);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, ADDRESS, ADDRESS);
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.

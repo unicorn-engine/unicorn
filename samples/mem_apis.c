@@ -142,13 +142,13 @@ static void do_nx_demo(bool cause_fault)
 
     /*
        bits 32
-    page0:
+    page0: @0
         times 4091 inc eax
         jmp page2
-        page1:
-        times 4095 inc eax
+    page1: @1000
+        times 4095 inc eax  (or INC ECX)
         hlt
-    page2:
+    page2: @2000
         jmp page1
      */
     memset(code_buf, 0x40, sizeof(code_buf));  // fill with inc eax
@@ -168,9 +168,9 @@ static void do_nx_demo(bool cause_fault)
     }
 
     // intercept code and invalid memory events
-    if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK ||
+    if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0) != UC_ERR_OK ||
             uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID,
-                hook_mem_invalid, NULL) != UC_ERR_OK) {
+                hook_mem_invalid, NULL, 1, 0) != UC_ERR_OK) {
         printf("not ok - Failed to install hooks\n");
         return;
     }
@@ -248,10 +248,10 @@ static void do_perms_demo(bool change_perms)
     }
 
     // intercept code and invalid memory events
-    if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK ||
+    if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0) != UC_ERR_OK ||
             uc_hook_add(uc, &trace1,
                 UC_HOOK_MEM_INVALID,
-                hook_mem_invalid, NULL) != UC_ERR_OK) {
+                hook_mem_invalid, NULL, 1, 0) != UC_ERR_OK) {
         printf("not ok - Failed to install hooks\n");
         return;
     }
@@ -326,10 +326,10 @@ static void do_unmap_demo(bool do_unmap)
     }
 
     // intercept code and invalid memory events
-    if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)1, (uint64_t)0) != UC_ERR_OK ||
+    if (uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 1, 0) != UC_ERR_OK ||
             uc_hook_add(uc, &trace1,
                 UC_HOOK_MEM_INVALID,
-                hook_mem_invalid, NULL) != UC_ERR_OK) {
+                hook_mem_invalid, NULL, 1, 0) != UC_ERR_OK) {
         printf("not ok - Failed to install hooks\n");
         return;
     }

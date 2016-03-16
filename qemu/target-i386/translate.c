@@ -516,14 +516,14 @@ static inline void gen_op_addq_A0_reg_sN(TCGContext *s, int shift, int reg)
 
 static inline void gen_op_ld_v(DisasContext *s, int idx, TCGv t0, TCGv a0)
 {
-    if (s->uc->hook_mem_read)
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ))
         gen_jmp_im(s, s->prev_pc); // Unicorn: sync EIP
     tcg_gen_qemu_ld_tl(s->uc, t0, a0, s->mem_index, idx | MO_LE);
 }
 
 static inline void gen_op_st_v(DisasContext *s, int idx, TCGv t0, TCGv a0)
 {
-    if (s->uc->hook_mem_write)
+    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE))
         gen_jmp_im(s, s->prev_pc); // Unicorn: sync EIP
     tcg_gen_qemu_st_tl(s->uc, t0, a0, s->mem_index, idx | MO_LE);
 }
@@ -4721,6 +4721,17 @@ static void sync_eflags(DisasContext *s, TCGContext *tcg_ctx)
     tcg_gen_st_tl(tcg_ctx, *cpu_T[0], cpu_env, offsetof(CPUX86State, eflags));
 }
 
+static void restore_eflags(DisasContext *s, TCGContext *tcg_ctx)
+{
+    TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
+    TCGv_ptr cpu_env = tcg_ctx->cpu_env;
+
+    tcg_gen_ld_tl(tcg_ctx, *cpu_T[0], cpu_env, offsetof(CPUX86State, eflags));
+    gen_helper_write_eflags(tcg_ctx, cpu_env, *cpu_T[0], 
+            tcg_const_i32(tcg_ctx, (TF_MASK | AC_MASK | ID_MASK | NT_MASK) & 0xffff));
+    set_cc_op(s, CC_OP_EFLAGS);
+}
+
 /* convert one instruction. s->is_jmp is set if the translation must
    be stopped. Return the next pc value */
 static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
@@ -4745,11 +4756,9 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     TCGv cpu_tmp4 = *(TCGv *)tcg_ctx->cpu_tmp4;
     TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
     TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
-    struct hook_struct *trace = NULL;
     TCGArg *save_opparam_ptr = tcg_ctx->gen_opparam_ptr;
     bool cc_op_dirty = s->cc_op_dirty;
     bool changed_cc_op = false;
-
 
     s->pc = pc_start;
 
@@ -4768,19 +4777,16 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     }
 
     // Unicorn: trace this instruction on request
-    if (env->uc->hook_insn) {
-        trace = hook_find(env->uc, UC_HOOK_CODE, pc_start);
-        if (trace) {
-            if (s->last_cc_op != s->cc_op) {
-                sync_eflags(s, tcg_ctx);
-                s->last_cc_op = s->cc_op;
-                changed_cc_op = true;
-            }
-            // generate code to call callback
-            gen_uc_tracecode(tcg_ctx, 0xf1f1f1f1, trace->callback, env->uc, pc_start, trace->user_data);
-            // the callback might want to stop emulation immediately
-            check_exit_request(tcg_ctx);
+    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, pc_start)) {
+        if (s->last_cc_op != s->cc_op) {
+            sync_eflags(s, tcg_ctx);
+            s->last_cc_op = s->cc_op;
+            changed_cc_op = true;
         }
+        gen_uc_tracecode(tcg_ctx, 0xf1f1f1f1, UC_HOOK_CODE_IDX, env->uc, pc_start);
+        restore_eflags(s, tcg_ctx);
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
     }
 
     prefixes = 0;
@@ -8173,7 +8179,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         gen_helper_unlock(tcg_ctx, cpu_env);
 
     // Unicorn: patch the callback for the instruction size
-    if (trace) {
+    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, pc_start)) {
         // int i;
         // for(i = 0; i < 20; i++)
         //     printf("=== [%u] = %x\n", i, *(save_opparam_ptr + i));
@@ -8387,12 +8393,9 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
-    if (env->uc->hook_block && !env->uc->block_full) {
-        struct hook_struct *trace = hook_find(env->uc, UC_HOOK_BLOCK, pc_start);
-        if (trace) {
-            env->uc->block_addr = pc_start;
-            gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, trace->callback, env->uc, pc_start, trace->user_data);
-        }
+    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+        env->uc->block_addr = pc_start;
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     }
 
     gen_tb_start(tcg_ctx);

@@ -3,21 +3,11 @@
 
 #include "hw/boards.h"
 #include "hw/arm/arm.h"
-
 #include "sysemu/cpus.h"
-
 #include "unicorn.h"
-
 #include "cpu.h"
-
 #include "unicorn_common.h"
-
-
-#define READ_QWORD(x) ((uint64)x)
-#define READ_DWORD(x) (x & 0xffffffff)
-#define READ_WORD(x) (x & 0xffff)
-#define READ_BYTE_H(x) ((x & 0xffff) >> 8)
-#define READ_BYTE_L(x) (x & 0xff)
+#include "uc_priv.h"
 
 
 static void arm64_set_pc(struct uc_struct *uc, uint64_t address)
@@ -60,11 +50,6 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
     return 0;
 }
 
-#define WRITE_DWORD(x, w) (x = (x & ~0xffffffff) | (w & 0xffffffff))
-#define WRITE_WORD(x, w) (x = (x & ~0xffff) | (w & 0xffff))
-#define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
-#define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
-
 int arm64_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
 {
     CPUState *mycpu = first_cpu;
@@ -82,6 +67,9 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                      break;
             case UC_ARM64_REG_PC:
                      ARM_CPU(uc, mycpu)->env.pc = *(uint64_t *)value;
+                     // force to quit execution and flush TB
+                     uc->quit_request = true;
+                     uc_emu_stop(uc);
                      break;
             case UC_ARM64_REG_SP:
                      ARM_CPU(uc, mycpu)->env.xregs[31] = *(uint64_t *)value;

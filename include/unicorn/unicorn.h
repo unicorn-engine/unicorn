@@ -57,8 +57,8 @@ typedef size_t uc_hook;
 #endif
 
 // Unicorn API version
-#define UC_API_MAJOR 0
-#define UC_API_MINOR 9
+#define UC_API_MAJOR 1
+#define UC_API_MINOR 0
 
 /*
   Macro to create combined version which can be compared to
@@ -78,7 +78,7 @@ typedef enum uc_arch {
     UC_ARCH_ARM64,      // ARM-64, also called AArch64
     UC_ARCH_MIPS,       // Mips architecture
     UC_ARCH_X86,        // X86 architecture (including x86 & x86-64)
-    UC_ARCH_PPC,        // PowerPC architecture
+    UC_ARCH_PPC,        // PowerPC architecture (currently unsupported)
     UC_ARCH_SPARC,      // Sparc architecture
     UC_ARCH_M68K,       // M68K architecture
     UC_ARCH_MAX,
@@ -86,22 +86,32 @@ typedef enum uc_arch {
 
 // Mode type
 typedef enum uc_mode {
-    UC_MODE_LITTLE_ENDIAN = 0,  // little-endian mode (default mode)
-    UC_MODE_ARM = 0,    // 32-bit ARM
-    UC_MODE_16 = 1 << 1,    // 16-bit mode (X86)
-    UC_MODE_32 = 1 << 2,    // 32-bit mode (X86)
-    UC_MODE_64 = 1 << 3,    // 64-bit mode (X86, PPC)
-    UC_MODE_THUMB = 1 << 4, // ARM's Thumb mode, including Thumb-2
-    UC_MODE_MCLASS = 1 << 5,    // ARM's Cortex-M series
-    UC_MODE_V8 = 1 << 6,    // ARMv8 A32 encodings for ARM
-    UC_MODE_MICRO = 1 << 4, // MicroMips mode (MIPS)
-    UC_MODE_MIPS3 = 1 << 5, // Mips III ISA
-    UC_MODE_MIPS32R6 = 1 << 6, // Mips32r6 ISA
-    UC_MODE_V9 = 1 << 4, // SparcV9 mode (Sparc)
-    UC_MODE_QPX = 1 << 4, // Quad Processing eXtensions mode (PPC)
-    UC_MODE_BIG_ENDIAN = 1 << 30,   // big-endian mode
-    UC_MODE_MIPS32 = UC_MODE_32,    // Mips32 ISA (Mips)
-    UC_MODE_MIPS64 = UC_MODE_64,    // Mips64 ISA (Mips)
+    UC_MODE_LITTLE_ENDIAN = 0,    // little-endian mode (default mode)
+    UC_MODE_BIG_ENDIAN = 1 << 30, // big-endian mode
+    // arm / arm64
+    UC_MODE_ARM = 0,              // ARM mode
+    UC_MODE_THUMB = 1 << 4,       // THUMB mode (including Thumb-2)
+    UC_MODE_MCLASS = 1 << 5,      // ARM's Cortex-M series (currently unsupported)
+    UC_MODE_V8 = 1 << 6,          // ARMv8 A32 encodings for ARM (currently unsupported)
+    // mips
+    UC_MODE_MICRO = 1 << 4,       // MicroMips mode (currently unsupported)
+    UC_MODE_MIPS3 = 1 << 5,       // Mips III ISA (currently unsupported)
+    UC_MODE_MIPS32R6 = 1 << 6,    // Mips32r6 ISA (currently unsupported)
+    UC_MODE_MIPS32 = 1 << 2,      // Mips32 ISA
+    UC_MODE_MIPS64 = 1 << 3,      // Mips64 ISA
+    // x86 / x64
+    UC_MODE_16 = 1 << 1,          // 16-bit mode
+    UC_MODE_32 = 1 << 2,          // 32-bit mode
+    UC_MODE_64 = 1 << 3,          // 64-bit mode
+    // ppc 
+    UC_MODE_PPC32 = 1 << 2,       // 32-bit mode (currently unsupported)
+    UC_MODE_PPC64 = 1 << 3,       // 64-bit mode (currently unsupported)
+    UC_MODE_QPX = 1 << 4,         // Quad Processing eXtensions mode (currently unsupported)
+    // sparc
+    UC_MODE_SPARC32 = 1 << 2,     // 32-bit mode
+    UC_MODE_SPARC64 = 1 << 3,     // 64-bit mode
+    UC_MODE_V9 = 1 << 4,          // SparcV9 mode (currently unsupported)
+    // m68k
 } uc_mode;
 
 // All type of errors encountered by Unicorn API.
@@ -208,6 +218,8 @@ typedef enum uc_hook_type {
 #define UC_HOOK_MEM_FETCH_INVALID (UC_HOOK_MEM_FETCH_PROT + UC_HOOK_MEM_FETCH_UNMAPPED)
 // hook type for all events of illegal memory access
 #define UC_HOOK_MEM_INVALID (UC_HOOK_MEM_UNMAPPED + UC_HOOK_MEM_PROT)
+// hook type for all events of valid memory access
+#define UC_HOOK_MEM_VALID (UC_HOOK_MEM_READ + UC_HOOK_MEM_WRITE + UC_HOOK_MEM_FETCH)
 
 /*
   Callback function for hooking memory (UC_MEM_READ, UC_MEM_WRITE & UC_MEM_FETCH)
@@ -245,6 +257,13 @@ typedef struct uc_mem_region {
     uint64_t end;   // end address of the region (inclusive)
     uint32_t perms; // memory permissions of the region
 } uc_mem_region;
+
+// All type of queries for uc_query() API.
+typedef enum uc_query_type {
+    // Dynamically query current hardware mode.
+    UC_QUERY_MODE = 1,
+    UC_QUERY_PAGE_SIZE,
+} uc_query_type;
 
 /*
  Return combined API version & major and minor version numbers.
@@ -305,6 +324,19 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **uc);
 */
 UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc);
+
+/*
+ Query internal status of engine.
+
+ @uc: handle returned by uc_open()
+ @type: query type. See uc_query_type
+
+ @result: save the internal status queried
+
+ @return: error code of uc_err enum type (UC_ERR_*, see above)
+*/
+UNICORN_EXPORT
+uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result);
 
 /*
  Report the last error number when some API function fail.
@@ -426,13 +458,19 @@ uc_err uc_emu_stop(uc_engine *uc);
  @callback: callback to be run when instruction is hit
  @user_data: user-defined data. This will be passed to callback function in its
       last argument @user_data
+ @begin: start address of the area where the callback is effect (inclusive)
+ @end: end address of the area where the callback is effect (inclusive)
+   NOTE 1: the callback is called only if related address is in range [@begin, @end]
+   NOTE 2: if @begin > @end, callback is called whenever this hook type is triggered
  @...: variable arguments (depending on @type)
+   NOTE: if @type = UC_HOOK_INSN, this is the instruction ID (ex: UC_X86_INS_OUT)
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *user_data, ...);
+uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
+        void *user_data, uint64_t begin, uint64_t end, ...);
 
 /*
  Unregister (remove) a hook callback.

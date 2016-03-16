@@ -97,7 +97,7 @@ def test_i386(mode, code):
         mu.hook_add(UC_HOOK_INTR, hook_intr)
 
         # handle SYSCALL
-        mu.hook_add(UC_HOOK_INSN, hook_syscall, None, UC_X86_INS_SYSCALL)
+        mu.hook_add(UC_HOOK_INSN, hook_syscall, None, 1, 0, UC_X86_INS_SYSCALL)
 
         # emulate machine code in infinite time
         mu.emu_start(ADDRESS, ADDRESS + len(code))
