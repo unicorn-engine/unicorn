@@ -6,6 +6,8 @@
 #include "unicorn_test.h"
 #include <inttypes.h>
 
+#define DEBUG 1
+
 #define OK(x)   uc_assert_success(x)
 
 volatile int expected_instructions = 0;
@@ -29,8 +31,8 @@ static void test_code_hook(uc_engine *uc,
 
 #ifdef DEBUG
     printf("instruction at 0x%"PRIx64": ", address);
+    uint8_t tmp[256];
     if (!uc_mem_read(uc, address, tmp, size)) {
-        uint8_t tmp[256];
         uint32_t i;
 
         for (i = 0; i < size; i++) {
@@ -75,6 +77,7 @@ static void
 test_hook_count(uc_engine *uc,
                 const uint8_t *code,
                 int start_offset,
+                int code_length,
                 int expected_instructions)
 {
 
@@ -92,9 +95,15 @@ test_hook_count(uc_engine *uc,
     // write machine code to be emulated to memory
     OK(uc_mem_write(uc, address, code, expected_instructions));
 
+#ifdef DEBUG
+    printf("Address: %8.8lx\n", address);
+    printf("Start  : %8.8lx\n", address + start_offset);
+    printf("End    : %8.8lx\n", address + code_length);
+    printf("Count  : %d\n", expected_instructions);
+#endif
     OK(uc_emu_start(uc,
-                    address,
                     address+start_offset,
+                    address+code_length,
                     0,
                     expected_instructions));
 
@@ -106,7 +115,23 @@ test_hook_count(uc_engine *uc,
 
 
 /* Perform fine-grain emulation control of exactly 1 instruction */
-static void test_hook_count_1(void **state)
+/* of 1-opcode code space*/
+static void test_hook_count_1_begin(void **state)
+{
+    uc_engine *uc = *state;
+    const uint8_t code[] = {
+        0x41,           // inc ECX @0x1000000
+    };
+    int code_length = sizeof(code)-1;
+    int start_offset = 0;
+    int ins_count = 1;
+
+    test_hook_count(uc, code, start_offset, code_length, ins_count);
+}
+
+
+/* Perform fine-grain emulation control of exactly 1 instruction */
+static void test_hook_count_1_midpoint(void **state)
 {
     uc_engine *uc = *state;
     const uint8_t code[] = {
@@ -116,11 +141,36 @@ static void test_hook_count_1(void **state)
         0x41,           // inc ECX @0x1000003
         0x41,           // inc ECX
         0x41,           // inc ECX
-
         0x42,           // inc EDX @0x1000006
         0x42,           // inc EDX
     };
-    test_hook_count(uc, code, 0, 1);
+    int code_length = sizeof(code);
+    int start_offset = code_length/2;
+    int ins_count = 1;
+
+    test_hook_count(uc, code, start_offset, code_length, ins_count);
+}
+
+
+/* Perform fine-grain emulation control of exactly 1 instruction */
+static void test_hook_count_1_end(void **state)
+{
+    uc_engine *uc = *state;
+    const uint8_t code[] = {
+        0x41,           // inc ECX @0x1000000
+        0x41,           // inc ECX
+        0x41,           // inc ECX
+        0x41,           // inc ECX @0x1000003
+        0x41,           // inc ECX
+        0x41,           // inc ECX
+        0x42,           // inc EDX @0x1000006
+        0x42,           // inc EDX
+    };
+    int code_length = sizeof(code);
+    int start_offset = code_length;
+    int ins_count = 1;
+
+    test_hook_count(uc, code, start_offset, code_length, ins_count);
 }
 
 
@@ -128,7 +178,6 @@ static void test_hook_count_1(void **state)
 /* varied instruction steps. */
 static void test_hook_count_range(void **state)
 {
-    int i;
     uc_engine *uc = *state;
     const uint8_t code[] = {
         0x41,           // inc ECX @0x1000000
@@ -140,9 +189,14 @@ static void test_hook_count_range(void **state)
         0x42,           // inc EDX @0x1000006
         0x42,           // inc EDX
     };
-    for (i = 2; i < 7; i++)
+    int code_length = sizeof(code);
+    int start_offset;
+    int ins_count = 2;
+
+    for (start_offset = 2; start_offset < (code_length - ins_count); start_offset++)
     {
-        test_hook_count(uc, code, 1, i);
+        printf("Iteration %d\n", start_offset);
+        test_hook_count(uc, code, start_offset, code_length, ins_count);
     }
 }
 
@@ -157,11 +211,14 @@ static void test_hook_count_end(void **state)
         0x41,           // inc ECX @0x1000003
         0x41,           // inc ECX
         0x41,           // inc ECX
-
         0x42,           // inc EDX @0x1000006
         0x42,           // inc EDX
     };
-    test_hook_count(uc, code, sizeof(code)-1, 1);
+    int code_length = sizeof(code);
+    int ins_count = 3;
+    int start_offset = sizeof(code) - ins_count;
+
+    test_hook_count(uc, code, start_offset, code_length, ins_count);
 }
 
 
@@ -175,19 +232,23 @@ static void test_hook_count_midpoint(void **state)
         0x41,           // inc ECX @0x1000003
         0x41,           // inc ECX
         0x41,           // inc ECX
-
         0x42,           // inc EDX @0x1000006
         0x42,           // inc EDX
     };
-    test_hook_count(uc, code, sizeof(code)/2, 2);
-    test_hook_count(uc, code, 2, sizeof(code)-2);
+    int code_length = sizeof(code);
+    int ins_count = 3;
+    int start_offset = 2;
+
+    test_hook_count(uc, code, start_offset, code_length, ins_count);
 }
 
 
 int main(void)
 {
     const struct CMUnitTest tests[] = {
-        cmocka_unit_test_setup_teardown(test_hook_count_1, setup32, teardown),
+        cmocka_unit_test_setup_teardown(test_hook_count_1_begin, setup32, teardown),
+        cmocka_unit_test_setup_teardown(test_hook_count_1_midpoint, setup32, teardown),
+        cmocka_unit_test_setup_teardown(test_hook_count_1_end, setup32, teardown),
         cmocka_unit_test_setup_teardown(test_hook_count_range, setup32, teardown),
         cmocka_unit_test_setup_teardown(test_hook_count_midpoint, setup32, teardown),
         cmocka_unit_test_setup_teardown(test_hook_count_end, setup32, teardown),
