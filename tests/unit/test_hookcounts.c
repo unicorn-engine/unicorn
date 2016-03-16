@@ -93,12 +93,12 @@ test_hook_count(uc_engine *uc,
     OK(uc_mem_map(uc, address, MEMSIZE, UC_PROT_ALL));
 
     // write machine code to be emulated to memory
-    OK(uc_mem_write(uc, address, code, expected_instructions));
+    OK(uc_mem_write(uc, address, code, code_length));
 
 #ifdef DEBUG
     printf("Address: %8.8lx\n", address);
     printf("Start  : %8.8lx\n", address + start_offset);
-    printf("End    : %8.8lx\n", address + code_length);
+    printf("End    : %8.8lx\n", address + code_length - 1);
     printf("Count  : %d\n", expected_instructions);
 #endif
     OK(uc_emu_start(uc,
@@ -122,7 +122,7 @@ static void test_hook_count_1_begin(void **state)
     const uint8_t code[] = {
         0x41,           // inc ECX @0x1000000
     };
-    int code_length = sizeof(code)-1;
+    int code_length = sizeof(code);
     int start_offset = 0;
     int ins_count = 1;
 
@@ -167,7 +167,7 @@ static void test_hook_count_1_end(void **state)
         0x42,           // inc EDX
     };
     int code_length = sizeof(code);
-    int start_offset = code_length;
+    int start_offset = code_length - 1;
     int ins_count = 1;
 
     test_hook_count(uc, code, start_offset, code_length, ins_count);
@@ -222,6 +222,27 @@ static void test_hook_count_end(void **state)
 }
 
 
+static void test_hook_count_begins(void **state)
+{
+    uc_engine *uc = *state;
+    const uint8_t code[] = {
+        0x41,           // inc ECX @0x1000000
+        0x41,           // inc ECX
+        0x41,           // inc ECX
+        0x41,           // inc ECX @0x1000003
+        0x41,           // inc ECX
+        0x41,           // inc ECX
+        0x42,           // inc EDX @0x1000006
+        0x42,           // inc EDX
+    };
+    int code_length = sizeof(code);
+    int ins_count = 3;
+    int start_offset = 0;
+
+    test_hook_count(uc, code, start_offset, code_length, ins_count);
+}
+
+
 static void test_hook_count_midpoint(void **state)
 {
     uc_engine *uc = *state;
@@ -249,6 +270,7 @@ int main(void)
         cmocka_unit_test_setup_teardown(test_hook_count_1_begin, setup32, teardown),
         cmocka_unit_test_setup_teardown(test_hook_count_1_midpoint, setup32, teardown),
         cmocka_unit_test_setup_teardown(test_hook_count_1_end, setup32, teardown),
+        cmocka_unit_test_setup_teardown(test_hook_count_begins, setup32, teardown),
         cmocka_unit_test_setup_teardown(test_hook_count_range, setup32, teardown),
         cmocka_unit_test_setup_teardown(test_hook_count_midpoint, setup32, teardown),
         cmocka_unit_test_setup_teardown(test_hook_count_end, setup32, teardown),
