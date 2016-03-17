@@ -96,9 +96,9 @@ test_hook_count(uc_engine *uc,
     OK(uc_mem_write(uc, address, code, code_length));
 
 #ifdef DEBUG
-    printf("Address: %8.8lx\n", address);
-    printf("Start  : %8.8lx\n", address + start_offset);
-    printf("End    : %8.8lx\n", address + code_length - 1);
+    printf("Address: %"PRIx64"\n", address);
+    printf("Start  : %"PRIx64"\n", address + start_offset);
+    printf("End    : %"PRIx64"\n", address + code_length - 1);
     printf("Count  : %d\n", expected_instructions);
 #endif
     OK(uc_emu_start(uc,
