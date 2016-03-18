@@ -229,7 +229,7 @@ class Uc(object):
                 status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
                 if status != UC_ERR_OK:
                     raise UcError(status)
-                return (reg.selector,reg.base, reg.limits, reg.flags)
+                return (reg.selector,reg.base, reg.limit, reg.flags)
             if reg_id in range(x86_const.UC_X86_REG_FP0,x86_const.UC_X86_REG_FP0+8):
                 reg = uc_x86_float80()
                 status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
@@ -255,7 +255,7 @@ class Uc(object):
                 reg = uc_x86_mmr()
                 reg.selector=value[0]
                 reg.base=value[1]
-                reg.limits=value[2]
+                reg.limit=value[2]
                 reg.flags=value[3]
             if reg_id in range(x86_const.UC_X86_REG_FP0, x86_const.UC_X86_REG_FP0+8):
                 reg = uc_x86_float80()
