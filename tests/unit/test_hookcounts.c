@@ -24,7 +24,7 @@ static void test_code_hook(uc_engine *uc,
 {
 
     ++total_instructions;
-    if (total_instructions > expected_instructions)
+    if (total_instructions == expected_instructions)
     {
         uc_emu_stop(uc);
     }
@@ -78,13 +78,13 @@ test_hook_count(uc_engine *uc,
                 const uint8_t *code,
                 int start_offset,
                 int code_length,
-                int expected_instructions)
+                int count)
 {
 
 #define BASEADDR    0x1000000
 #define MEMSIZE     (2 * 1024 * 1024)
 
-    uint64_t address = BASEADDR + (expected_instructions * MEMSIZE);
+    uint64_t address = BASEADDR + (count * MEMSIZE);
     total_instructions = 0;
 
 #undef BASEADDR
@@ -99,13 +99,14 @@ test_hook_count(uc_engine *uc,
     printf("Address: %"PRIx64"\n", address);
     printf("Start  : %"PRIx64"\n", address + start_offset);
     printf("End    : %"PRIx64"\n", address + code_length - 1);
-    printf("Count  : %d\n", expected_instructions);
+    printf("Count  : %d\n", count);
 #endif
+    expected_instructions = count;
     OK(uc_emu_start(uc,
                     address+start_offset,
                     address+code_length,
                     0,
-                    expected_instructions));
+                    count));
 
     assert_int_equal(expected_instructions, total_instructions);
 
