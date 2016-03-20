@@ -148,7 +148,7 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                 floatx80 reg = X86_CPU(uc, mycpu)->env.fpregs[regid - UC_X86_REG_FP0].d;
                 cpu_get_fp80(value, value+sizeof(uint64_t), reg);
             }
-            break;
+            return 0;
         case UC_X86_REG_FPSW:
             {
                 uint16_t fpus = X86_CPU(uc, mycpu)->env.fpus;
@@ -156,10 +156,10 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                 fpus |= ( X86_CPU(uc, mycpu)->env.fpstt & 0x7 ) << 11;
                 *(uint16_t*) value = fpus;
             }
-	    break;
+            return 0;
         case UC_X86_REG_FPCW:
             *(uint16_t*) value = X86_CPU(uc, mycpu)->env.fpuc;
-            break;
+            return 0;
         case UC_X86_REG_FPTAG:
             {
                 #define EXPD(fp)        (fp.l.upper & 0x7fff)
@@ -189,7 +189,7 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                 }
                 *(uint16_t*) value = fptag; 
             }
-            break;
+            return 0;
     }
 
     switch(uc->mode) {
@@ -634,17 +634,17 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                 uint16_t upper = *(uint16_t*) (value + sizeof(uint64_t));
                 X86_CPU(uc, mycpu)->env.fpregs[regid - UC_X86_REG_FP0].d = cpu_set_fp80(mant, upper);
             }
-            break;
+            return 0;
         case UC_X86_REG_FPSW:
             {
                 uint16_t fpus = *(uint16_t*) value;
                 X86_CPU(uc, mycpu)->env.fpus = fpus & ~0x3800;
                 X86_CPU(uc, mycpu)->env.fpstt = (fpus >> 11) & 0x7;
             }
-            break;
+            return 0;
         case UC_X86_REG_FPCW:
             X86_CPU(uc, mycpu)->env.fpuc = *(uint16_t *)value;
-            break;
+            return 0;
         case UC_X86_REG_FPTAG:
             {
                 int i;
@@ -653,6 +653,8 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     X86_CPU(uc, mycpu)->env.fptags[i] = ((fptag & 3) == 3);
                     fptag >>= 2;
                 }
+
+                return 0;
             }
             break;
     }
