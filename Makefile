@@ -224,7 +224,6 @@ endif
 compile_lib: config qemu/config-host.h-timestamp
 	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll cyg$(LIBNAME)*.dll && cd qemu && $(MAKE) -j 4
 	$(MAKE) unicorn
-	cd samples && $(MAKE) clean
 
 unicorn: $(LIBRARY) $(ARCHIVE)
 
@@ -266,7 +265,7 @@ test: all
 	$(MAKE) -C tests/unit test
 
 
-install: all $(PKGCFGF)
+install: compile_lib $(PKGCFGF)
 	mkdir -p $(DESTDIR)$(LIBDIR)
 ifeq ($(UNICORN_SHARED),yes)
 ifeq ($(IS_CYGWIN),1)
