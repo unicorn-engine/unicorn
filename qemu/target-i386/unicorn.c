@@ -210,6 +210,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                 case UC_X86_REG_FS:
                     *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
                     return 0;
+				case UC_X86_REG_FS_BASE:
+                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_FS].base;
+                    return 0;
                 case UC_X86_REG_GS:
                     *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
                     return 0;
@@ -320,6 +323,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                     break;
                 case UC_X86_REG_FS:
                     *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
+                    break;
+                case UC_X86_REG_FS_BASE:
+                    *(int32_t *)value = (int32_t)X86_CPU(uc, mycpu)->env.segs[R_FS].base;
                     break;
                 case UC_X86_REG_GS:
                     *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
@@ -492,6 +498,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
                     break;
                 case UC_X86_REG_FS:
                     *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
+                    break;
+                case UC_X86_REG_FS_BASE:
+                    *(int32_t *)value = (int32_t)X86_CPU(uc, mycpu)->env.segs[R_FS].base;
                     break;
                 case UC_X86_REG_GS:
                     *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
@@ -676,6 +685,9 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                 case UC_X86_REG_FS:
                     X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
                     return 0;
+                case UC_X86_REG_FS_BASE:
+                    X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint16_t *)value;
+                    return 0;
                 case UC_X86_REG_GS:
                     X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
                     return 0;
@@ -793,6 +805,9 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     break;
                 case UC_X86_REG_FS:
                     X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
+                    break;
+                case UC_X86_REG_FS_BASE:
+                    X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint32_t *)value;
                     break;
                 case UC_X86_REG_GS:
                     X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
@@ -976,6 +991,9 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                 case UC_X86_REG_FS:
                     X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
                     break;
+                case UC_X86_REG_FS_BASE:
+                    X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint64_t *)value;
+                    break;					
                 case UC_X86_REG_GS:
                     X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
                     break;
