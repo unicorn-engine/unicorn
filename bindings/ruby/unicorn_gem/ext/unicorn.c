@@ -43,14 +43,11 @@ void Init_unicorn() {
     rb_define_method(UcClass, "mem_read", m_uc_mem_read, 2);
     rb_define_method(UcClass, "mem_write", m_uc_mem_write, 2);
     rb_define_method(UcClass, "mem_map", m_uc_mem_map, -1);
-    //rb_define_method(UcClass, "mem_map_ptr", m_uc_mem_map_pzt, 4);
     rb_define_method(UcClass, "mem_unmap", m_uc_mem_unmap, 2);
     rb_define_method(UcClass, "mem_protect", m_uc_mem_protect, 3);
     rb_define_method(UcClass, "hook_add", m_uc_hook_add, -1);
     rb_define_method(UcClass, "hook_del", m_uc_hook_del, 1);
     rb_define_method(UcClass, "query", m_uc_hook_del, 1);
-    
-
 }
 
 VALUE m_uc_initialize(VALUE self, VALUE arch, VALUE mode) {
@@ -220,16 +217,6 @@ VALUE m_uc_mem_map(int argc, VALUE* argv, VALUE self){
     }
     return Qnil;
 }
-
-// VALUE m_uc_mem_map_ptr(VALUE self, VALUE address, VALUE size, VALUE perms, VALUE ptr){
-//     uc_err err;
-    
-//     err = uc_mem_map_ptr(_uc, NUM2INT(address), NUM2INT(size), NUM2INT(perms), NUM2INT(ptr));
-//     if (err != UC_ERR_OK) {
-//       rb_raise(UcError, "%s", uc_strerror(err));
-//     }
-//     return Qnil;
-// }
 
 VALUE m_uc_mem_unmap(VALUE self, VALUE address, VALUE size){
     uc_err err;
