@@ -1,6 +1,6 @@
-#Installation
+# Installation
 
-##Softwarerequirements
+## Software requirements
 
 ### Linux
 - ruby >= 1.9.3
@@ -15,11 +15,10 @@
 - XCode
 
 ## Install unicorn
-  cd path_to_unicorn
-  ./make.sh install
+ * cd path_to_unicorn
+ * ./make.sh install
 
 ## Install ruby binding
-  cd bindings/ruby
-  make install
+ * cd bindings/ruby
+ * make install
     
-
