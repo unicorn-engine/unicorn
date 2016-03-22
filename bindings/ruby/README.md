@@ -15,11 +15,11 @@
 - XCode
 
 ## Install unicorn
-cd <path to unicorn>
-./make.sh install
+  cd path_to_unicorn
+  ./make.sh install
 
 ## Install ruby binding
-cd bindings/ruby
-make install
+  cd bindings/ruby
+  make install
     
 
