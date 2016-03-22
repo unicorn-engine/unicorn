@@ -26,7 +26,6 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value);
 VALUE m_uc_mem_read(VALUE self, VALUE address, VALUE size);
 VALUE m_uc_mem_write(VALUE self, VALUE address, VALUE bytes);
 VALUE m_uc_mem_map(int argc, VALUE* argv, VALUE self);
-//VALUE m_uc_mem_map_ptr(VALUE self, VALUE address, VALUE size, VALUE perms, VALUE ptr);
 VALUE m_uc_mem_unmap(VALUE self, VALUE address, VALUE size);
 VALUE m_uc_mem_protect(VALUE self, VALUE address, VALUE size, VALUE perms);
 VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self);
