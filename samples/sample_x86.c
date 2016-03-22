@@ -470,7 +470,7 @@ static void test_i386_invalid_mem_read(void)
     uc_close(uc);
 }
 
-// emulate code that read invalid memory
+// emulate code that write invalid memory
 static void test_i386_invalid_mem_write(void)
 {
     uc_engine *uc;
@@ -532,7 +532,7 @@ static void test_i386_invalid_mem_write(void)
     if (!uc_mem_read(uc, 0xaaaaaaaa, &tmp, sizeof(tmp)))
         printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xaaaaaaaa, tmp);
     else
-        printf(">>> Failed to read 4 bytes from [0x%x]\n", 0xffffffaa);
+        printf(">>> Failed to read 4 bytes from [0x%x]\n", 0xaaaaaaaa);
 
     if (!uc_mem_read(uc, 0xffffffaa, &tmp, sizeof(tmp)))
         printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xffffffaa, tmp);
@@ -850,7 +850,7 @@ static void test_x86_16(void)
     uc_mem_map(uc, 0, 8 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, 0, X86_CODE16, sizeof(X86_CODE64) - 1)) {
+    if (uc_mem_write(uc, 0, X86_CODE16, sizeof(X86_CODE16) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
