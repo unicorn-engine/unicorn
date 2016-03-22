@@ -850,7 +850,7 @@ static void test_x86_16(void)
     uc_mem_map(uc, 0, 8 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, 0, X86_CODE16, sizeof(X86_CODE64) - 1)) {
+    if (uc_mem_write(uc, 0, X86_CODE16, sizeof(X86_CODE16) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
