@@ -28,7 +28,6 @@ VALUE UcClass = Qnil;
 VALUE UcError = Qnil;
 
 
-
 void Init_unicorn() {
     rb_require("unicorn/unicorn_const");
     UnicornModule = rb_define_module("Unicorn");
@@ -72,7 +71,7 @@ VALUE m_uc_emu_start(int argc, VALUE* argv, VALUE self){
     uc_err err;
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
-    
+
     rb_scan_args(argc, argv, "22",&begin, &until, &timeout, &count);
     if (NIL_P(timeout))         
         timeout = INT2NUM(0);  
@@ -100,7 +99,6 @@ VALUE m_uc_emu_stop(VALUE self){
 }
 
 VALUE m_uc_reg_read(VALUE self, VALUE reg_id){
-    
     uc_err err;
     int32_t tmp_reg = NUM2INT(reg_id);
     int64_t reg_value = 0;
@@ -131,7 +129,6 @@ VALUE m_uc_reg_read(VALUE self, VALUE reg_id){
             rb_ary_store(mmr_ary, 3, UINT2NUM(mmr.flags));
             return mmr_ary;
         default:
-            
             err = uc_reg_read(_uc, tmp_reg, &reg_value);
             if (err != UC_ERR_OK) {
               rb_raise(UcError, "%s", uc_strerror(err));
@@ -155,7 +152,7 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
         case UC_X86_REG_LDTR:
         case UC_X86_REG_TR:
             Check_Type(reg_value, T_ARRAY);
-            
+
             mmr.selector = NUM2USHORT(rb_ary_entry(reg_value,0));
             mmr.base = NUM2ULL(rb_ary_entry(reg_value,1));
             mmr.limit = NUM2UINT(rb_ary_entry(reg_value,2));
@@ -220,7 +217,7 @@ VALUE m_uc_mem_map(int argc, VALUE* argv, VALUE self){
 
 VALUE m_uc_mem_unmap(VALUE self, VALUE address, VALUE size){
     uc_err err;
-   uc_engine *_uc;
+    uc_engine *_uc;
     _uc = (uc_engine*) NUM2ULL(rb_iv_get(self, "@uch"));
     err = uc_mem_unmap(_uc, NUM2ULL(address), NUM2UINT(size));
     if (err != UC_ERR_OK) {
@@ -231,7 +228,7 @@ VALUE m_uc_mem_unmap(VALUE self, VALUE address, VALUE size){
 
 VALUE m_uc_mem_protect(VALUE self, VALUE address, VALUE size, VALUE perms){
     uc_err err;
-   uc_engine *_uc;
+    uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
     err = uc_mem_protect(_uc, NUM2ULL(address), NUM2UINT(size), NUM2UINT(perms));
     if (err != UC_ERR_OK) {
@@ -250,7 +247,6 @@ static void cb_hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *u
     ud = rb_ary_entry(passthrough, 1);
     rUc = rb_ary_entry(passthrough, 2);
     rb_funcall(cb, rb_intern("call"), 4, rUc, ULL2NUM(address), UINT2NUM(size), ud);
-
 }
 
 static void cb_hook_mem_access(uc_engine *uc, uint32_t access, uint64_t address, uint32_t size, int64_t value, void *user_data){
@@ -264,7 +260,6 @@ static void cb_hook_mem_access(uc_engine *uc, uint32_t access, uint64_t address,
     rUc = rb_ary_entry(passthrough, 2);
 
     rb_funcall(cb, rb_intern("call"), 6, rUc, UINT2NUM(access), ULL2NUM(address), UINT2NUM(size), LL2NUM(value), ud);
-
 }
 
 static bool cb_hook_mem_invalid(uc_engine *uc, uint32_t access, uint64_t address, uint32_t size, int64_t value, void *user_data){
@@ -289,7 +284,6 @@ static uint32_t cb_hook_insn_in(uc_engine *uc, uint32_t port, int size, void *us
     ud = rb_ary_entry(passthrough, 1);
     rUc = rb_ary_entry(passthrough, 2);
     return NUM2UINT(rb_funcall(cb, rb_intern("call"), 4, rUc, UINT2NUM(port), INT2NUM(size), ud));
-
 }
 
 static void cb_hook_insn_out(uc_engine *uc, uint32_t port, int size, uint32_t value, void *user_data){
@@ -302,7 +296,6 @@ static void cb_hook_insn_out(uc_engine *uc, uint32_t port, int size, uint32_t va
     ud = rb_ary_entry(passthrough, 1);
     rUc = rb_ary_entry(passthrough, 2);
     rb_funcall(cb, rb_intern("call"), 5, rUc, UINT2NUM(port), INT2NUM(size), UINT2NUM(value), ud);
-
 }
 
 static void cb_hook_insn_syscall(uc_engine *uc, void *user_data){
@@ -315,7 +308,6 @@ static void cb_hook_insn_syscall(uc_engine *uc, void *user_data){
     ud = rb_ary_entry(passthrough, 1);
     rUc = rb_ary_entry(passthrough, 2);
     rb_funcall(cb, rb_intern("call"), 2, rUc, ud);
-
 }
 
 static void cb_hook_intr(uc_engine *uc, uint64_t address, uint32_t size, int64_t value, void *user_data){
@@ -328,9 +320,7 @@ static void cb_hook_intr(uc_engine *uc, uint64_t address, uint32_t size, int64_t
     ud = rb_ary_entry(passthrough, 1);
     rUc = rb_ary_entry(passthrough, 2);
     rb_funcall(cb, rb_intern("call"), 5, rUc, ULL2NUM(address), UINT2NUM(size), LL2NUM(value), ud);
-
 }
-
 
 VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
     VALUE hook_type;
@@ -351,11 +341,9 @@ VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
     if (NIL_P(arg1))         
         arg1 = INT2NUM(0); 
 
-
     VALUE passthrough;
     uc_hook trace;
     uc_err err;
-
 
     if (rb_class_of(callback) != rb_cProc)
         rb_raise(UcError, "Expected Proc callback");
@@ -367,7 +355,6 @@ VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
 
     uint32_t htype = NUM2UINT(hook_type);
     if(htype == UC_HOOK_INSN){
-        
             switch(NUM2INT(arg1)){
                 case UC_X86_INS_IN:
                     err = uc_hook_add(_uc, &trace,  htype, cb_hook_insn_in,(void *)passthrough, NUM2ULL(begin), NUM2ULL(end), NUM2INT(arg1));
@@ -386,7 +373,6 @@ VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
             err = uc_hook_add(_uc, &trace,  htype, cb_hook_intr,(void *)passthrough, NUM2ULL(begin), NUM2ULL(end));
     }
     else if(htype == UC_HOOK_CODE || htype == UC_HOOK_BLOCK){
-            
             err = uc_hook_add(_uc, &trace,  htype, cb_hook_code,(void *)passthrough, NUM2ULL(begin), NUM2ULL(end));
     }
     else if (htype & UC_HOOK_MEM_READ_UNMAPPED 
@@ -407,8 +393,6 @@ VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
             err = uc_hook_add(_uc, &trace,  htype, cb_hook_mem_access,(void *)passthrough, NUM2ULL(begin), NUM2ULL(end));
     }
 
-
-    
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
     }
@@ -425,7 +409,7 @@ VALUE m_uc_hook_del(VALUE self, VALUE hook){
       rb_raise(UcError, "%s", uc_strerror(err));
     }
     return Qnil;
-}   
+}
 
 VALUE m_uc_query(VALUE self, VALUE query_mode){
     int qm = NUM2INT(query_mode);
@@ -438,4 +422,4 @@ VALUE m_uc_query(VALUE self, VALUE query_mode){
       rb_raise(UcError, "%s", uc_strerror(err));
     }
     return INT2NUM(result);
-}   
+}

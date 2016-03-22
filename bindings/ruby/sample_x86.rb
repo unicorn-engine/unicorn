@@ -76,7 +76,6 @@ end
 
 # callback for OUT instruction
 HOOK_OUT = Proc.new do |uc, port, size, value, user_data|
-
     eip = uc.reg_read(UC_X86_REG_EIP)
     puts("--- writing to port 0x%x, size: %u, value: 0x%x, address: 0x%x" % [port, size, value, eip])
 
@@ -137,9 +136,8 @@ def test_i386()
     tmp = mu.mem_read(ADDRESS, 2)
     print(">>> Read 2 bytes from [0x%x] =" % (ADDRESS))
     tmp.each_byte { |i| print(" 0x%x" % i) }
-            
-        
-        puts
+
+    puts
 
     rescue UcError => e
         puts("ERROR: %s" % e)
@@ -494,18 +492,18 @@ def test_x86_16()
 end
 
 
-    test_i386()
-    puts("=" * 20)
-    test_i386_loop()
-    puts("=" * 20)
-    test_i386_invalid_mem_read()
-    puts("=" * 20)
-    test_i386_invalid_mem_write()
-    puts("=" * 20)
-    test_i386_inout()
-    puts("=" * 20)
-    test_x86_64()
-    puts("=" * 20)
-    test_x86_64_syscall()
-    puts("=" * 20)
-    test_x86_16()
+test_i386()
+puts("=" * 20)
+test_i386_loop()
+puts("=" * 20)
+test_i386_invalid_mem_read()
+puts("=" * 20)
+test_i386_invalid_mem_write()
+puts("=" * 20)
+test_i386_inout()
+puts("=" * 20)
+test_x86_64()
+puts("=" * 20)
+test_x86_64_syscall()
+puts("=" * 20)
+test_x86_16()
