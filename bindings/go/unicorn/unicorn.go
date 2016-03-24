@@ -62,9 +62,14 @@ type UcOptions struct {
 	Timeout, Count uint64
 }
 
-func NewUnicorn(arch, mode int) (Unicorn, error) {
+func Version() (int, int) {
 	var major, minor C.uint
 	C.uc_version(&major, &minor)
+	return int(major), int(minor)
+}
+
+func NewUnicorn(arch, mode int) (Unicorn, error) {
+	major, minor := Version()
 	if major != C.UC_API_MAJOR || minor != C.UC_API_MINOR {
 		return nil, UcError(ERR_VERSION)
 	}
