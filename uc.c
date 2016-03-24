@@ -559,14 +559,13 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
 
     uc->addr_end = until;
 
+    if (timeout)
+        enable_emu_timer(uc, timeout * 1000);   // microseconds -> nanoseconds
+
     if (uc->vm_start(uc)) {
         return UC_ERR_RESOURCE;
     }
 
-    if (timeout)
-        enable_emu_timer(uc, timeout * 1000);   // microseconds -> nanoseconds
-
-    uc->pause_all_vcpus(uc);
     // emulation is done
     uc->emulation_done = true;
 

@@ -38,17 +38,13 @@ static void cpu_handle_guest_debug(CPUState *cpu);
 static int tcg_cpu_exec(struct uc_struct *uc, CPUArchState *env);
 static bool tcg_exec_all(struct uc_struct* uc);
 static int qemu_tcg_init_vcpu(CPUState *cpu);
-static void *qemu_tcg_cpu_thread_fn(void *arg);
+static void *qemu_tcg_cpu_loop(struct uc_struct *uc);
 
 int vm_start(struct uc_struct* uc)
 {
     if (resume_all_vcpus(uc)) {
         return -1;
     }
-
-    // kick off TCG thread
-    qemu_mutex_unlock_iothread(uc);
-
     return 0;
 }
 
@@ -99,7 +95,6 @@ int resume_all_vcpus(struct uc_struct *uc)
                 if (qemu_init_vcpu(cpu))
                     return -1;
             }
-            qemu_mutex_lock_iothread(uc);
         }
     }
 
@@ -107,6 +102,7 @@ int resume_all_vcpus(struct uc_struct *uc)
     CPU_FOREACH(cpu) {
         cpu_resume(cpu);
     }
+    qemu_tcg_cpu_loop(uc);
 
     return 0;
 }
@@ -125,13 +121,11 @@ int qemu_init_vcpu(CPUState *cpu)
 }
 
 
-static void *qemu_tcg_cpu_thread_fn(void *arg)
+static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
 {
-    CPUState *cpu = arg;
-    struct uc_struct *uc = cpu->uc;
+    CPUState *cpu;
 
     //qemu_tcg_init_cpu_signals();
-    qemu_thread_get_self(uc, cpu->thread);
 
     qemu_mutex_lock(&uc->qemu_global_mutex);
     CPU_FOREACH(cpu) {
@@ -140,23 +134,7 @@ static void *qemu_tcg_cpu_thread_fn(void *arg)
     }
     qemu_cond_signal(&uc->qemu_cpu_cond);
 
-   /* wait for initial kick-off after machine start */
-    while (QTAILQ_FIRST(&uc->cpus)->stopped) {
-        qemu_cond_wait(uc->tcg_halt_cond, &uc->qemu_global_mutex);
-    }
-
     while (1) {
-#if 0
-        int count = 0;
-        if (count < 10) {
-            count++;
-            unsigned int eip = X86_CPU(mycpu)->env.eip;
-            printf(">>> current EIP = %x\n", eip);
-            printf(">>> ECX = %x\n", (unsigned int)X86_CPU(mycpu)->env.regs[R_ECX]);
-            printf(">>> EDX = %x\n", (unsigned int)X86_CPU(mycpu)->env.regs[R_EDX]);
-        }
-#endif
-
         if (tcg_exec_all(uc))
             break;
     }
@@ -191,15 +169,10 @@ static int qemu_tcg_init_vcpu(CPUState *cpu)
         uc->tcg_halt_cond = cpu->halt_cond;
         snprintf(thread_name, VCPU_THREAD_NAME_SIZE, "CPU %d/TCG",
                 cpu->cpu_index);
-        if (qemu_thread_create(uc, cpu->thread, thread_name, qemu_tcg_cpu_thread_fn,
-                cpu, QEMU_THREAD_JOINABLE))
-            return -1;
+        qemu_thread_get_self(uc, cpu->thread);
 #ifdef _WIN32
         cpu->hThread = qemu_thread_get_handle(cpu->thread);
 #endif
-        while (!cpu->created) {
-            qemu_cond_wait(&uc->qemu_cpu_cond, &uc->qemu_global_mutex);
-        }
         uc->tcg_cpu_thread = cpu->thread;
     } else {
         cpu->thread = uc->tcg_cpu_thread;
