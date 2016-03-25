@@ -58,7 +58,7 @@ static void VM_exec()
     uc_reg_write(uc, UC_X86_REG_ESP, &r_esp); //make stack pointer point to already mapped memory so we don't need to hook.
     uc_reg_write(uc, UC_X86_REG_EFLAGS, &eflags);
 
-    uc_hook_add(uc, &trace, UC_HOOK_CODE, (void *)hook_ins, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace, UC_HOOK_CODE, (void *)hook_ins, NULL, 1, 0);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, ADDRESS, ADDRESS + (sizeof(X86_CODE32) - 1), 0, 0);

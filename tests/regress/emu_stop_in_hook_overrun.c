@@ -98,7 +98,7 @@ int main(int argc, char **argv, char **envp)
 
     // hook all instructions by having @begin > @end
     printf("uc_hook_add()\n");
-    uc_hook_add(uc, &hhc, UC_HOOK_CODE, mips_codehook, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &hhc, UC_HOOK_CODE, mips_codehook, NULL, 1, 0);
     if( err )
     {
         printf("Failed on uc_hook_add(code) with error returned: %u\n", err);

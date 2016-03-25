@@ -25,7 +25,7 @@ int main(int argc, char **argv, char **envp) {
     return 1;
   }
   uc_hook hook;
-  uc_hook_add(uc, &hook, UC_HOOK_BLOCK, hook_block, NULL, (uint64_t)1, (uint64_t)0);
+  uc_hook_add(uc, &hook, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
   printf("uc_emu_start(…)\n");
   uc_emu_start(uc, STARTING_ADDRESS, STARTING_ADDRESS + sizeof(BINARY) - 1, 0, 20);
   printf("done\n");

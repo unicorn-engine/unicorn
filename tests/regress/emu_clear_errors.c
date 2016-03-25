@@ -112,7 +112,7 @@ int main() {
 
    uc_hook h1;
 
-   err = uc_hook_add(uc, &h1, UC_HOOK_MEM_UNMAPPED, cb_hookunmapped, NULL);
+   err = uc_hook_add(uc, &h1, UC_HOOK_MEM_UNMAPPED, cb_hookunmapped, NULL, 1, 0);
    if (err != UC_ERR_OK) {
       fprintf(stderr, "not ok %d - %s\n", count++, uc_strerror(err));
       exit(0);

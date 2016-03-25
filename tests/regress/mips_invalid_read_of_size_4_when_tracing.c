@@ -25,7 +25,7 @@ int main(int argc, char **argv, char **envp) {
     return 1;
   }
   uc_hook trace;
-  uc_hook_add(uc, &trace, UC_HOOK_CODE, hook_code, NULL, (uint64_t)MEMORY_STARTING_ADDRESS, (uint64_t)(MEMORY_STARTING_ADDRESS + 1));
+  uc_hook_add(uc, &trace, UC_HOOK_CODE, hook_code, NULL, MEMORY_STARTING_ADDRESS, MEMORY_STARTING_ADDRESS + 1);
   printf("uc_emu_start(…)\n");
   uc_emu_start(uc, MEMORY_STARTING_ADDRESS, MEMORY_STARTING_ADDRESS + sizeof(BINARY_CODE) - 1, 0, 0);
   printf("done\n");

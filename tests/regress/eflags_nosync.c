@@ -120,10 +120,10 @@ static void VM_exec()
     uc_reg_write(uc, UC_X86_REG_EDI, &r_edi);
     uc_reg_write(uc, UC_X86_REG_EFLAGS, &eflags);
 
-    uc_hook_add(uc, &trace1, UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED, (void *)hook_invalid_mem, NULL);
+    uc_hook_add(uc, &trace1, UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED, (void *)hook_invalid_mem, NULL, 1, 0);
 
     // tracing all instruction by having @begin > @end
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, (void *)hook_ins, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, (void *)hook_ins, NULL, 1, 0);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, ADDRESS, ADDRESS + (sizeof(X86_CODE32) - 1), 0, 0);

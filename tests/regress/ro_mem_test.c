@@ -139,10 +139,10 @@ int main(int argc, char **argv, char **envp)
         printf("Allowed to write to read only memory via uc_mem_write\n");
     }
 
-    //uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, (uint64_t)0x400000, (uint64_t)0x400fff);
+    //uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, 0x400000, 0x400fff);
 
     // intercept invalid memory events
-    uc_hook_add(uc, &trace1, UC_HOOK_MEM_WRITE_UNMAPPED | UC_HOOK_MEM_WRITE_PROT, hook_mem_invalid, NULL);
+    uc_hook_add(uc, &trace1, UC_HOOK_MEM_WRITE_UNMAPPED | UC_HOOK_MEM_WRITE_PROT, hook_mem_invalid, NULL, 1, 0);
 
     // emulate machine code in infinite time
     printf("BEGIN execution - 1\n");
