@@ -782,22 +782,22 @@ int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
                     uc_emu_stop(uc);
                     break;
                 case UC_X86_REG_CS:
-                    X86_CPU(uc, mycpu)->env.segs[R_CS].selector = *(uint16_t *)value;
+                    cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_CS, *(uint16_t *)value);
                     break;
                 case UC_X86_REG_DS:
-                    X86_CPU(uc, mycpu)->env.segs[R_DS].selector = *(uint16_t *)value;
+                    cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_DS, *(uint16_t *)value);
                     break;
                 case UC_X86_REG_SS:
-                    X86_CPU(uc, mycpu)->env.segs[R_SS].selector = *(uint16_t *)value;
+                    cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_SS, *(uint16_t *)value);
                     break;
                 case UC_X86_REG_ES:
-                    X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
+                    cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_ES, *(uint16_t *)value);
                     break;
                 case UC_X86_REG_FS:
-                    X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
+                    cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
                     break;
                 case UC_X86_REG_GS:
-                    X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
+                    cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
                     break;
                 case UC_X86_REG_IDTR:
                     X86_CPU(uc, mycpu)->env.idt.limit = (uint16_t)((uc_x86_mmr *)value)->limit;

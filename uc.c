@@ -451,33 +451,45 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
         return UC_ERR_WRITE_UNMAPPED;
 }
 
-#define TIMEOUT_STEP 2    // microseconds
-static void *_timeout_fn(void *arg)
+#ifdef _WIN32
+static void CALLBACK _timeout_fn(HWND hWnd, UINT uMsg, UINT_PTR idEvent, DWORD dwTime)
 {
-    struct uc_struct *uc = arg;
-    int64_t current_time = get_clock();
-
-    do {
-        usleep(TIMEOUT_STEP);
-        // perhaps emulation is even done before timeout?
-        if (uc->emulation_done)
-            break;
-    } while(get_clock() - current_time < uc->timeout);
-
+    struct uc_struct *uc = (struct uc_struct *)idEvent;
+#else
+static void _timeout_fn(int signum, siginfo_t *info, void *ctx)
+{
+    struct uc_struct *uc = (struct uc_struct *)info->si_ptr;
+#endif
     // timeout before emulation is done?
     if (!uc->emulation_done) {
         // force emulation to stop
         uc_emu_stop(uc);
     }
-
-    return NULL;
 }
 
 static void enable_emu_timer(uc_engine *uc, uint64_t timeout)
 {
     uc->timeout = timeout;
-    qemu_thread_create(uc, &uc->timer, "timeout", _timeout_fn,
-            uc, QEMU_THREAD_JOINABLE);
+#ifdef _WIN32
+    uc->timer = SetTimer(NULL, (UINT_PTR)uc, timeout / 1000000, _timeout_fn);
+#else
+    struct sigaction sigact;
+    struct sigevent sigev;
+    struct itimerspec timespec;
+    memset(&sigev, 0, sizeof(sigev));
+    memset(&sigact, 0, sizeof(sigact));
+    memset(&timespec, 0, sizeof(timespec));
+    timespec.it_value.tv_sec = timeout / 1000000000;
+    timespec.it_value.tv_nsec = timeout % 1000000000;
+    sigact.sa_sigaction = _timeout_fn;
+    sigact.sa_flags |= SA_SIGINFO;
+    sigaction(SIGALRM, &sigact, NULL);
+    sigev.sigev_notify = SIGEV_SIGNAL;
+    sigev.sigev_signo = SIGALRM;
+    sigev.sigev_value.sival_ptr = uc;
+    timer_create(CLOCK_REALTIME, &sigev, &uc->timer);
+    timer_settime(uc->timer, 0, &timespec, NULL);
+#endif
 }
 
 static void hook_count_cb(struct uc_struct *uc, uint64_t address, uint32_t size, void *user_data)
@@ -559,20 +571,23 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
 
     uc->addr_end = until;
 
+    if (timeout)
+        enable_emu_timer(uc, timeout * 1000);   // microseconds -> nanoseconds
+
     if (uc->vm_start(uc)) {
         return UC_ERR_RESOURCE;
     }
 
-    if (timeout)
-        enable_emu_timer(uc, timeout * 1000);   // microseconds -> nanoseconds
-
-    uc->pause_all_vcpus(uc);
     // emulation is done
     uc->emulation_done = true;
 
     if (timeout) {
         // wait for the timer to finish
-        qemu_thread_join(&uc->timer);
+#ifdef _WIN32
+        KillTimer(NULL, uc->timer);
+#else
+        timer_delete(uc->timer);
+#endif
     }
 
     return uc->invalid_error;

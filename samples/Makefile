@@ -10,7 +10,7 @@ ifndef GLIB
 GLIB = $(shell pkg-config --libs glib-2.0)
 endif
 
-UNICORN_DEP_LIBS_STATIC += -lpthread -lm $(GLIB)
+UNICORN_DEP_LIBS_STATIC += -lpthread -lrt -lm $(GLIB)
 
 # Verbose output?
 V ?= 0
@@ -157,7 +157,7 @@ endif
 
 
 define link-dynamic
-	$(CC) $< $(LDFLAGS) -o $@
+	$(CC) $< $(LDFLAGS) -o $@ -lrt
 endef
 
 

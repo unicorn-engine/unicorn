@@ -149,12 +149,7 @@ static void test_idt_gdt_i386(/*void **state*/)
 /******************************************************************************/
 
 int main(void) {
-/*
-    const struct CMUnitTest tests[] = {
-        cmocka_unit_test(test_idt_gdt_i386)
-    };
-    return cmocka_run_group_tests(tests, NULL, NULL);
-*/
+
    test_idt_gdt_i386();
    
    fprintf(stderr, "success\n");
