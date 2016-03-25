@@ -231,9 +231,9 @@ $(LIBRARY): $(UC_TARGET_OBJ) uc.o list.o
 ifeq ($(UNICORN_SHARED),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(LIBRARY))
-	@$(CC) $(CFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm $($(LIBNAME)_LDFLAGS)
+	@$(CC) $(CFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm -lrt $($(LIBNAME)_LDFLAGS)
 else
-	$(CC) $(CFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm $($(LIBNAME)_LDFLAGS)
+	$(CC) $(CFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm -lrt $($(LIBNAME)_LDFLAGS)
 endif
 ifneq (,$(LIBRARY_SYMLINK))
 	@ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
