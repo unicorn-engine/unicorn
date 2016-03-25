@@ -2258,7 +2258,6 @@
 #define parse_value parse_value_mips64
 #define par_write par_write_mips64
 #define patch_reloc patch_reloc_mips64
-#define pause_all_vcpus pause_all_vcpus_mips64
 #define phys_map_node_alloc phys_map_node_alloc_mips64
 #define phys_map_node_reserve phys_map_node_reserve_mips64
 #define phys_mem_alloc phys_mem_alloc_mips64
@@ -2419,7 +2418,6 @@
 #define qemu_clocks qemu_clocks_mips64
 #define qemu_cond_destroy qemu_cond_destroy_mips64
 #define qemu_cpu_is_self qemu_cpu_is_self_mips64
-#define qemu_cpu_kick_thread qemu_cpu_kick_thread_mips64
 #define qemu_daemon qemu_daemon_mips64
 #define qemu_event_destroy qemu_event_destroy_mips64
 #define qemu_event_init qemu_event_init_mips64
@@ -2516,9 +2514,7 @@
 #define qemu_st_helpers qemu_st_helpers_mips64
 #define qemu_strnlen qemu_strnlen_mips64
 #define qemu_strsep qemu_strsep_mips64
-#define qemu_tcg_cpu_thread_fn qemu_tcg_cpu_thread_fn_mips64
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_mips64
-#define qemu_thread_exit qemu_thread_exit_mips64
 #define qemu_try_memalign qemu_try_memalign_mips64
 #define qentry_destroy qentry_destroy_mips64
 #define qerror_human qerror_human_mips64

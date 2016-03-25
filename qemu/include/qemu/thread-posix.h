@@ -29,8 +29,4 @@ struct QemuEvent {
     unsigned value;
 };
 
-struct QemuThread {
-    pthread_t thread;
-};
-
 #endif

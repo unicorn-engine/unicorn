@@ -10,7 +10,7 @@ ifndef GLIB
 GLIB = $(shell pkg-config --libs glib-2.0)
 endif
 
-UNICORN_DEP_LIBS_STATIC += -lpthread -lm $(GLIB)
+UNICORN_DEP_LIBS_STATIC += -lpthread -lrt -lm $(GLIB)
 
 # Verbose output?
 V ?= 0
@@ -100,6 +100,7 @@ ifneq (,$(findstring x86,$(UNICORN_ARCHS)))
 SOURCES += sample_x86.c
 SOURCES += shellcode.c
 SOURCES += mem_apis.c
+SOURCES += sample_x86_32_gdt_and_seg_regs.c
 endif
 ifneq (,$(findstring m68k,$(UNICORN_ARCHS)))
 SOURCES += sample_m68k.c
@@ -114,7 +115,7 @@ all: $(BINARY)
 clean:
 	rm -rf *.o $(OBJS_ELF) $(BINARY) $(SAMPLEDIR)/*.exe $(SAMPLEDIR)/*.static $(OBJDIR)/lib$(LIBNAME)* $(OBJDIR)/$(LIBNAME)*
 	rm -rf libunicorn*.so libunicorn*.lib libunicorn*.dylib unicorn*.dll unicorn*.lib
-	rm -rf sample_x86 sample_arm sample_arm64 sample_mips sample_sparc sample_ppc sample_m68k shellcode mem_apis
+	rm -rf sample_x86 sample_arm sample_arm64 sample_mips sample_sparc sample_ppc sample_m68k shellcode mem_apis sample_x86_32_gdt_and_seg_regs
 
 $(BINARY): $(OBJS)
 
@@ -153,7 +154,7 @@ endif
 
 
 define link-dynamic
-	$(CC) $< $(LDFLAGS) -o $@
+	$(CC) $< $(LDFLAGS) -o $@ -lrt
 endef
 
 

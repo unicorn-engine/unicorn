@@ -8,16 +8,12 @@ typedef struct QemuMutex QemuMutex;
 typedef struct QemuCond QemuCond;
 typedef struct QemuSemaphore QemuSemaphore;
 typedef struct QemuEvent QemuEvent;
-typedef struct QemuThread QemuThread;
 
 #ifdef _WIN32
 #include "qemu/thread-win32.h"
 #else
 #include "qemu/thread-posix.h"
 #endif
-
-#define QEMU_THREAD_JOINABLE 0
-#define QEMU_THREAD_DETACHED 1
 
 void qemu_mutex_init(QemuMutex *mutex);
 void qemu_mutex_destroy(QemuMutex *mutex);
@@ -51,15 +47,5 @@ void qemu_event_set(QemuEvent *ev);
 void qemu_event_reset(QemuEvent *ev);
 void qemu_event_wait(QemuEvent *ev);
 void qemu_event_destroy(QemuEvent *ev);
-
-struct uc_struct;
-// return -1 on error, 0 on success
-int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *name,
-                        void *(*start_routine)(void *),
-                        void *arg, int mode);
-void *qemu_thread_join(QemuThread *thread);
-void qemu_thread_get_self(struct uc_struct *uc, QemuThread *thread);
-bool qemu_thread_is_self(QemuThread *thread);
-void qemu_thread_exit(struct uc_struct *uc, void *retval);
 
 #endif

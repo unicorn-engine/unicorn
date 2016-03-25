@@ -19,7 +19,7 @@ ifeq ($(CONFIG_SOFTMMU),y)
 common-obj-y += hw/
 common-obj-y += accel.o
 
-common-obj-y += vl.o main-loop.o qemu-timer.o
+common-obj-y += vl.o qemu-timer.o
 
 endif
 

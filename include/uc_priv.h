@@ -147,7 +147,6 @@ struct uc_struct {
     uc_mode mode;
     QemuMutex qemu_global_mutex; // qemu/cpus.c
     QemuCond qemu_cpu_cond; // qemu/cpus.c
-    QemuThread *tcg_cpu_thread; // qemu/cpus.c
     QemuCond *tcg_halt_cond; // qemu/cpus.c
     struct CPUTailQ cpus;   // qemu/cpu-exec.c
     uc_err errnum;  // qemu/cpu-exec.c
@@ -163,7 +162,7 @@ struct uc_struct {
     uc_args_uc_u64_t set_pc;  // set PC for tracecode
     uc_args_int_t stop_interrupt;   // check if the interrupt should stop emulation
 
-    uc_args_uc_t init_arch, pause_all_vcpus, cpu_exec_init_all;
+    uc_args_uc_t init_arch, cpu_exec_init_all;
     uc_args_int_uc_t vm_start;
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;
@@ -228,7 +227,11 @@ struct uc_struct {
     bool stop_request;  // request to immediately stop emulation - for uc_emu_stop()
     bool quit_request;  // request to quit the current TB, but continue to emulate - for uc_mem_protect()
     bool emulation_done;  // emulation is done by uc_emu_start()
-    QemuThread timer;   // timer for emulation timeout
+#ifdef _WIN32
+    UINT_PTR timer;     // timer for emulation timeout
+#else
+    timer_t timer;      // timer for emulation timeout
+#endif
     uint64_t timeout;   // timeout for uc_emu_start()
 
     uint64_t invalid_addr;  // invalid address to be accessed
@@ -242,7 +245,6 @@ struct uc_struct {
     MemoryRegion **mapped_blocks;
     uint32_t mapped_block_count;
     uint32_t mapped_block_cache_index;
-    void *qemu_thread_data; // to support cross compile to Windows (qemu-thread-win32.c)
     uint32_t target_page_size;
     uint32_t target_page_align;
     uint64_t next_pc;   // save next PC for some special cases
