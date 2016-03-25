@@ -36,7 +36,7 @@ public class Sample_x86_mmr {
        }
    
        // map 4k 
-       uc.mem_map(ADDRESS, 0x1000, Unicorn.UC_PROT_ALL);
+       uc.mem_map(0x400000, 0x1000, Unicorn.UC_PROT_ALL);
 
        X86_MMR ldtr1 = new X86_MMR(0x1111111122222222L, 0x33333333, 0x44444444, (short)0x5555);
        X86_MMR ldtr2;
