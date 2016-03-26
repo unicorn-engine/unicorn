@@ -154,10 +154,7 @@ static void gdt_demo() {
     uc_hook hook1, hook2;
     uc_err err;
     uint8_t buf[128];
-    uc_x86_mmr idtr;
     uc_x86_mmr gdtr;
-    uc_x86_mmr ldtr;
-    uc_x86_mmr tr;
 
 /*
 bits 32
