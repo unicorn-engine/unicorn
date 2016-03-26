@@ -437,16 +437,6 @@ static inline bool cpu_has_work(CPUState *cpu)
 }
 
 /**
- * qemu_cpu_is_self:
- * @cpu: The vCPU to check against.
- *
- * Checks whether the caller is executing on the vCPU thread.
- *
- * Returns: %true if called from @cpu's thread, %false otherwise.
- */
-bool qemu_cpu_is_self(CPUState *cpu);
-
-/**
  * qemu_cpu_kick:
  * @cpu: The vCPU to kick.
  *

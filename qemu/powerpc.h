@@ -2418,7 +2418,6 @@
 #define qemu_clock_ptr qemu_clock_ptr_powerpc
 #define qemu_clocks qemu_clocks_powerpc
 #define qemu_cond_destroy qemu_cond_destroy_powerpc
-#define qemu_cpu_is_self qemu_cpu_is_self_powerpc
 #define qemu_cpu_kick_thread qemu_cpu_kick_thread_powerpc
 #define qemu_daemon qemu_daemon_powerpc
 #define qemu_event_destroy qemu_event_destroy_powerpc
@@ -2516,7 +2515,6 @@
 #define qemu_st_helpers qemu_st_helpers_powerpc
 #define qemu_strnlen qemu_strnlen_powerpc
 #define qemu_strsep qemu_strsep_powerpc
-#define qemu_tcg_cpu_thread_fn qemu_tcg_cpu_thread_fn_powerpc
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_powerpc
 #define qemu_thread_exit qemu_thread_exit_powerpc
 #define qemu_try_memalign qemu_try_memalign_powerpc

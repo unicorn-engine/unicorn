@@ -147,7 +147,6 @@ struct uc_struct {
     uc_mode mode;
     QemuMutex qemu_global_mutex; // qemu/cpus.c
     QemuCond qemu_cpu_cond; // qemu/cpus.c
-    QemuThread *tcg_cpu_thread; // qemu/cpus.c
     QemuCond *tcg_halt_cond; // qemu/cpus.c
     struct CPUTailQ cpus;   // qemu/cpu-exec.c
     uc_err errnum;  // qemu/cpu-exec.c
@@ -163,7 +162,7 @@ struct uc_struct {
     uc_args_uc_u64_t set_pc;  // set PC for tracecode
     uc_args_int_t stop_interrupt;   // check if the interrupt should stop emulation
 
-    uc_args_uc_t init_arch, pause_all_vcpus, cpu_exec_init_all;
+    uc_args_uc_t init_arch, cpu_exec_init_all;
     uc_args_int_uc_t vm_start;
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;
