@@ -75,6 +75,7 @@ typedef enum uc_x86_reg {
 	UC_X86_REG_R11W, UC_X86_REG_R12W, UC_X86_REG_R13W, UC_X86_REG_R14W, UC_X86_REG_R15W,
 	UC_X86_REG_IDTR, UC_X86_REG_GDTR, UC_X86_REG_LDTR, UC_X86_REG_TR, UC_X86_REG_FPCW,
 	UC_X86_REG_FPTAG,
+	UC_X86_REG_FS_BASE,
 
 	UC_X86_REG_ENDING		// <-- mark the end of the list of registers
 } uc_x86_reg;
