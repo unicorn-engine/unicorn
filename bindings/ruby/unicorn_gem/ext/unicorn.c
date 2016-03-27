@@ -367,7 +367,6 @@ VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
                     err = uc_hook_add(_uc, &trace,  htype, cb_hook_insn_syscall,(void *)passthrough, NUM2ULL(begin), NUM2ULL(end), NUM2INT(arg1));
                     break;
             }
-            err = uc_hook_add(_uc, &trace,  htype, cb_hook_intr,(void *)passthrough, NUM2ULL(begin), NUM2ULL(end));
     }
     else if(htype == UC_HOOK_INTR){
             err = uc_hook_add(_uc, &trace,  htype, cb_hook_intr,(void *)passthrough, NUM2ULL(begin), NUM2ULL(end));
