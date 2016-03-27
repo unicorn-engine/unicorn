@@ -1029,15 +1029,19 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 UNICORN_EXPORT
 uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
 {
-    int i;
-    struct hook *hook;
-    for (i = 0; i < UC_HOOK_MAX; i++) {
-        if (list_remove(&uc->hook[i], (void *)hh)) {
-            hook = (struct hook *)hh;
-            if (--hook->refs == 0) {
-                free(hook);
+    int i = 0;
+    struct hook *hook = (struct hook *)hh;
+    int type = hook->type;
+
+    while ((type >> i) > 0 && i < UC_HOOK_MAX) {
+        if ((type >> i) & 1) {
+            if (list_remove(&uc->hook[i], (void *)hh)) {
+                if (--hook->refs == 0) {
+                    free(hook);
+                }
             }
         }
+        i++;
     }
     return UC_ERR_OK;
 }

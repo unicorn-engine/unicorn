@@ -54,6 +54,8 @@ bool list_remove(struct list *list, void *data)
         if (cur->data == data) {
             if (cur == list->head) {
                 list->head = next;
+            } else {
+                prev->next = next;
             }
             if (cur == list->tail) {
                 list->tail = prev;
