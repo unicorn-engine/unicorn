@@ -27,40 +27,40 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <unistd.h>
 
 struct SegmentDescriptor {
-   union {
-      struct {   
+    union {
+        struct {
 # if __BYTE_ORDER == __LITTLE_ENDIAN
-         unsigned short limit0;
-         unsigned short base0;
-         unsigned char base1;
-         unsigned int type:4;
-         unsigned int system:1;      /* S flag */
-         unsigned int dpl:2;
-         unsigned int present:1;     /* P flag */
-         unsigned int limit1:4;
-         unsigned int avail:1;
-         unsigned int is_64_code:1;  /* L flag */
-         unsigned int db:1;          /* DB flag */
-         unsigned int granularity:1; /* G flag */
-         unsigned char base2;
+            unsigned short limit0;
+            unsigned short base0;
+            unsigned char base1;
+            unsigned int type:4;
+            unsigned int system:1;      /* S flag */
+            unsigned int dpl:2;
+            unsigned int present:1;     /* P flag */
+            unsigned int limit1:4;
+            unsigned int avail:1;
+            unsigned int is_64_code:1;  /* L flag */
+            unsigned int db:1;          /* DB flag */
+            unsigned int granularity:1; /* G flag */
+            unsigned char base2;
 # else
-         unsigned char base2;
-         unsigned int granularity:1; /* G flag */
-         unsigned int db:1;          /* DB flag */
-         unsigned int is_64_code:1;  /* L flag */
-         unsigned int avail:1;
-         unsigned int limit1:4;
-         unsigned int present:1;     /* P flag */
-         unsigned int dpl:2;
-         unsigned int system:1;      /* S flag */
-         unsigned int type:4;
-         unsigned char base1;
-         unsigned short base0;
-         unsigned short limit0;
+            unsigned char base2;
+            unsigned int granularity:1; /* G flag */
+            unsigned int db:1;          /* DB flag */
+            unsigned int is_64_code:1;  /* L flag */
+            unsigned int avail:1;
+            unsigned int limit1:4;
+            unsigned int present:1;     /* P flag */
+            unsigned int dpl:2;
+            unsigned int system:1;      /* S flag */
+            unsigned int type:4;
+            unsigned char base1;
+            unsigned short base0;
+            unsigned short limit0;
 # endif
-      };
-      uint64_t desc;
-   };
+        };
+        uint64_t desc;
+    };
 };
 
 #define SEGBASE(d) ((uint32_t)((((d).desc >> 16) & 0xffffff) | (((d).desc >> 32) & 0xff000000)))
@@ -103,42 +103,47 @@ do {                                                                \
 
 /******************************************************************************/
 
-void hook_mem(uc_engine *uc, uc_mem_type type, uint64_t address, int size, int64_t value, void *user_data) {
-   switch(type) {
-      case UC_MEM_WRITE:
-         printf("mem write at 0x%"PRIx64 ", size = %u, value = 0x%"PRIx64 "\n", address, size, value);
-         break;
-      default: break;
-   }
+static void hook_mem(uc_engine *uc, uc_mem_type type, uint64_t address, int size, int64_t value, void *user_data)
+{
+    switch(type) {
+        case UC_MEM_WRITE:
+            printf("mem write at 0x%"PRIx64 ", size = %u, value = 0x%"PRIx64 "\n", address, size, value);
+            break;
+        default: break;
+    }
 }
 
-void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data) {
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+{
     printf("Executing at 0x%"PRIx64 ", ilen = 0x%x\n", address, size);
 }
 
 //VERY basic descriptor init function, sets many fields to user space sane defaults
-void init_descriptor(struct SegmentDescriptor *desc, uint32_t base, uint32_t limit, uint8_t is_code) {
-   desc->desc = 0;  //clear the descriptor
-   desc->base0 = base & 0xffff;
-   desc->base1 = (base >> 16) & 0xff;
-   desc->base2 = base >> 24;
-   if (limit > 0xfffff) {
-      //need Giant granularity
-      limit >>= 12;
-      desc->granularity = 1;
-   }
-   desc->limit0 = limit & 0xffff;
-   desc->limit1 = limit >> 16;
-    
-   //some sane defaults
-   desc->dpl = 3;
-   desc->present = 1;
-   desc->db = 1;   //32 bit
-   desc->type = is_code ? 0xb : 3;
-   desc->system = 1;  //code or data
+static void init_descriptor(struct SegmentDescriptor *desc, uint32_t base, uint32_t limit, uint8_t is_code)
+{
+    desc->desc = 0;  //clear the descriptor
+    desc->base0 = base & 0xffff;
+    desc->base1 = (base >> 16) & 0xff;
+    desc->base2 = base >> 24;
+    if (limit > 0xfffff) {
+        //need Giant granularity
+        limit >>= 12;
+        desc->granularity = 1;
+    }
+    desc->limit0 = limit & 0xffff;
+    desc->limit1 = limit >> 16;
+
+    //some sane defaults
+    desc->dpl = 3;
+    desc->present = 1;
+    desc->db = 1;   //32 bit
+    desc->type = is_code ? 0xb : 3;
+    desc->system = 1;  //code or data
 }
 
-void hex_dump(unsigned char *ptr, unsigned int len) {
+/*
+static void hex_dump(unsigned char *ptr, unsigned int len)
+{
    int i;
    for (i = 0; i < len; i++) {
       if (i != 0 && (i & 0xf) == 0) {
@@ -148,23 +153,25 @@ void hex_dump(unsigned char *ptr, unsigned int len) {
    }
    fprintf(stderr, "\n");
 }
+*/
 
-static void gdt_demo() {
+static void gdt_demo()
+{
     uc_engine *uc;
     uc_hook hook1, hook2;
     uc_err err;
     uint8_t buf[128];
     uc_x86_mmr gdtr;
 
-/*
-bits 32
+    /*
+       bits 32
 
-push dword 0x01234567
-push dword 0x89abcdef
+       push dword 0x01234567
+       push dword 0x89abcdef
 
-mov dword [fs:0], 0x01234567
-mov dword [fs:4], 0x89abcdef
-*/
+       mov dword [fs:0], 0x01234567
+       mov dword [fs:4], 0x89abcdef
+     */
 
     const uint8_t code[] = "\x68\x67\x45\x23\x01\x68\xef\xcd\xab\x89\x64\xc7\x05\x00\x00\x00\x00\x67\x45\x23\x01\x64\xc7\x05\x04\x00\x00\x00\xef\xcd\xab\x89";
     const uint64_t code_address = 0x1000000;
@@ -183,17 +190,17 @@ mov dword [fs:4], 0x89abcdef
 
     gdtr.base = gdt_address;  
     gdtr.limit = 31 * sizeof(struct SegmentDescriptor) - 1;
-    
+
     init_descriptor(&gdt[14], 0, 0xfffff000, 1);  //code segment
     init_descriptor(&gdt[15], 0, 0xfffff000, 0);  //data segment
     init_descriptor(&gdt[16], 0x7efdd000, 0xfff, 0);  //one page data segment simulate fs
     init_descriptor(&gdt[17], 0, 0xfffff000, 0);  //ring 0 data
     gdt[17].dpl = 0;  //set descriptor privilege level
 
-/*
-    fprintf(stderr, "GDT: \n");
-    hex_dump((unsigned char*)gdt, 31 * sizeof(struct SegmentDescriptor));
-*/
+    /*
+       fprintf(stderr, "GDT: \n");
+       hex_dump((unsigned char*)gdt, 31 * sizeof(struct SegmentDescriptor));
+     */
 
     // Initialize emulator in X86-32bit mode
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
@@ -257,10 +264,10 @@ mov dword [fs:4], 0x89abcdef
     // read from memory
     err = uc_mem_read(uc, r_esp - 8, buf, 8);
     uc_assert_success(err);
-    
+
     int i;
     for (i = 0; i < 8; i++) {
-       fprintf(stderr, "%02hhx", buf[i]);
+        fprintf(stderr, "%02hhx", buf[i]);
     }
     fprintf(stderr, "\n");
 
@@ -273,15 +280,15 @@ mov dword [fs:4], 0x89abcdef
     assert(memcmp(buf, "\x67\x45\x23\x01\xef\xcd\xab\x89", 8) == 0);
 
     uc_close(uc);
-    
 }
 
 /******************************************************************************/
 
-int main(int argc, char **argv) {
-   gdt_demo();
-   
-   fprintf(stderr, "success\n");
-   
-   return 0;
+int main(int argc, char **argv)
+{
+    gdt_demo();
+
+    fprintf(stderr, "success\n");
+
+    return 0;
 }
