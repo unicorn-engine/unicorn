@@ -88,7 +88,7 @@ class GdtRead(regress.RegressTest):
 
         uc.emu_start(CODE_ADDR, CODE_ADDR+len(CODE))
 
-        self.assertEqual(uc.read_reg(UC_X86_REG_ECX), 0x41414141)
+        self.assertEqual(uc.reg_read(UC_X86_REG_ECX), 0x41414141)
 
 if __name__ == '__main__':
     regress.main()
