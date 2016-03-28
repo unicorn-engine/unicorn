@@ -26,42 +26,44 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <stdlib.h>
 #include <unistd.h>
 
+#pragma pack(push, 1)
 struct SegmentDescriptor {
-    union {
-        struct {
-# if __BYTE_ORDER == __LITTLE_ENDIAN
-            unsigned short limit0;
-            unsigned short base0;
-            unsigned char base1;
-            unsigned int type:4;
-            unsigned int system:1;      /* S flag */
-            unsigned int dpl:2;
-            unsigned int present:1;     /* P flag */
-            unsigned int limit1:4;
-            unsigned int avail:1;
-            unsigned int is_64_code:1;  /* L flag */
-            unsigned int db:1;          /* DB flag */
-            unsigned int granularity:1; /* G flag */
-            unsigned char base2;
-# else
-            unsigned char base2;
-            unsigned int granularity:1; /* G flag */
-            unsigned int db:1;          /* DB flag */
-            unsigned int is_64_code:1;  /* L flag */
-            unsigned int avail:1;
-            unsigned int limit1:4;
-            unsigned int present:1;     /* P flag */
-            unsigned int dpl:2;
-            unsigned int system:1;      /* S flag */
-            unsigned int type:4;
-            unsigned char base1;
-            unsigned short base0;
-            unsigned short limit0;
-# endif
-        };
-        uint64_t desc;
-    };
+   union {
+      struct {   
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+         unsigned short limit0;
+         unsigned short base0;
+         unsigned char base1;
+         unsigned char type:4;
+         unsigned char system:1;      /* S flag */
+         unsigned char dpl:2;
+         unsigned char present:1;     /* P flag */
+         unsigned char limit1:4;
+         unsigned char avail:1;
+         unsigned char is_64_code:1;  /* L flag */
+         unsigned char db:1;          /* DB flag */
+         unsigned char granularity:1; /* G flag */
+         unsigned char base2;
+#else
+         unsigned char base2;
+         unsigned char granularity:1; /* G flag */
+         unsigned char db:1;          /* DB flag */
+         unsigned char is_64_code:1;  /* L flag */
+         unsigned char avail:1;
+         unsigned char limit1:4;
+         unsigned char present:1;     /* P flag */
+         unsigned char dpl:2;
+         unsigned char system:1;      /* S flag */
+         unsigned char type:4;
+         unsigned char base1;
+         unsigned short base0;
+         unsigned short limit0;
+#endif
+      };
+      uint64_t desc;
+   };
 };
+#pragma pack(pop)
 
 #define SEGBASE(d) ((uint32_t)((((d).desc >> 16) & 0xffffff) | (((d).desc >> 32) & 0xff000000)))
 #define SEGLIMIT(d) ((d).limit0 | (((unsigned int)(d).limit1) << 16))
