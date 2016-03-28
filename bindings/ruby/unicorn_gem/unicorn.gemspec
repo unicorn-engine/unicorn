@@ -8,7 +8,7 @@ Gem::Specification.new do |spec|
   spec.version       = Unicorn::VERSION
   spec.authors       = ["Sascha Schirra"]
   spec.email         = ["sashs@scoding.de"]
-  spec.license       = GPLv2
+  spec.license       = 'GPL-2.0'
   spec.summary       = %q{Ruby binding for Unicorn-Engine}
   spec.description   = %q{Ruby binding for Unicorn-Engine <unicorn-engine.org>}
   spec.homepage      = "https://unicorn-engine.org"
