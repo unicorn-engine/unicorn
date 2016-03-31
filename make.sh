@@ -51,7 +51,7 @@ install() {
     rm -rf /usr/lib/libunicorn*
     rm -rf /usr/include/unicorn
     # install into /usr/local
-    PREFIX=/usr/local
+    PREFIX="${PREFIX-/usr/local}"
     ${MAKE} install
   else  # not OSX
     test -d /usr/lib64 && LIBDIRARCH=lib64
@@ -64,7 +64,7 @@ uninstall() {
   if [ "$UNAME" = "Darwin" ]; then
     # find the directory automatically, so we can support both Macport & Brew
     PKGCFGDIR="$(pkg-config --variable pc_path pkg-config | cut -d ':' -f 1)"
-    PREFIX=/usr/local
+    PREFIX="${PREFIX-/usr/local}"
     ${MAKE} uninstall
   else  # not OSX
     test -d /usr/lib64 && LIBDIRARCH=lib64
@@ -80,7 +80,7 @@ fi
 
 if [ -n "`echo "$UNAME" | grep BSD`" ]; then
   MAKE=gmake
-  PREFIX=/usr/local
+  PREFIX="${PREFIX-/usr/local}"
 fi
 
 [ -z "${UNAME}" ] && UNAME=$(uname)
