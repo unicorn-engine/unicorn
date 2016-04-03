@@ -78,7 +78,7 @@ loop:
     }
 
 
-    uc_hook_add(uc, &trace, UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, (void *)hook_mem_rw, NULL);
+    uc_hook_add(uc, &trace, UC_HOOK_MEM_WRITE | UC_HOOK_MEM_READ, (void *)hook_mem_rw, NULL, 1, 0);
 
     uc_reg_write(uc, UC_X86_REG_EAX, &EAX);
     uc_reg_write(uc, UC_X86_REG_ESP, &ESP);
