@@ -1,6 +1,8 @@
 Unicorn Engine
 ==============
 
+[![Join the chat at https://gitter.im/unicorn-engine/unicorn](https://badges.gitter.im/unicorn-engine/unicorn.svg)](https://gitter.im/unicorn-engine/unicorn?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![Build Status](https://travis-ci.org/unicorn-engine/unicorn.svg?branch=master)](https://travis-ci.org/unicorn-engine/unicorn)
 [![Build status](https://ci.appveyor.com/api/projects/status/kojr7bald748ba2x/branch/master?svg=true)](https://ci.appveyor.com/project/aquynh/unicorn/branch/master)
 
