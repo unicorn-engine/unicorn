@@ -23,57 +23,67 @@ void arm64_reg_reset(struct uc_struct *uc)
     env->pc = 0;
 }
 
-int arm64_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
+int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
     CPUState *mycpu = first_cpu;
+    int i;
 
-    if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28)
-        *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_X0];
-    else {
-        switch(regid) {
-            default: break;
-            case UC_ARM64_REG_X29:
-                     *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[29];
-                     break;
-            case UC_ARM64_REG_X30:
-                     *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[30];
-                     break;
-            case UC_ARM64_REG_PC:
-                     *(uint64_t *)value = ARM_CPU(uc, mycpu)->env.pc;
-                     break;
-            case UC_ARM64_REG_SP:
-                     *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[31];
-                     break;
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        void *value = vals[i];
+        if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28)
+            *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_X0];
+        else {
+            switch(regid) {
+                default: break;
+                case UC_ARM64_REG_X29:
+                         *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[29];
+                         break;
+                case UC_ARM64_REG_X30:
+                         *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[30];
+                         break;
+                case UC_ARM64_REG_PC:
+                         *(uint64_t *)value = ARM_CPU(uc, mycpu)->env.pc;
+                         break;
+                case UC_ARM64_REG_SP:
+                         *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[31];
+                         break;
+            }
         }
     }
 
     return 0;
 }
 
-int arm64_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
+int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, int count)
 {
     CPUState *mycpu = first_cpu;
+    int i;
 
-    if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28)
-        ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_X0] = *(uint64_t *)value;
-    else {
-        switch(regid) {
-            default: break;
-            case UC_ARM64_REG_X29:
-                     ARM_CPU(uc, mycpu)->env.xregs[29] = *(uint64_t *)value;
-                     break;
-            case UC_ARM64_REG_X30:
-                     ARM_CPU(uc, mycpu)->env.xregs[30] = *(uint64_t *)value;
-                     break;
-            case UC_ARM64_REG_PC:
-                     ARM_CPU(uc, mycpu)->env.pc = *(uint64_t *)value;
-                     // force to quit execution and flush TB
-                     uc->quit_request = true;
-                     uc_emu_stop(uc);
-                     break;
-            case UC_ARM64_REG_SP:
-                     ARM_CPU(uc, mycpu)->env.xregs[31] = *(uint64_t *)value;
-                     break;
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        const void *value = vals[i];
+        if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28)
+            ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_X0] = *(uint64_t *)value;
+        else {
+            switch(regid) {
+                default: break;
+                case UC_ARM64_REG_X29:
+                         ARM_CPU(uc, mycpu)->env.xregs[29] = *(uint64_t *)value;
+                         break;
+                case UC_ARM64_REG_X30:
+                         ARM_CPU(uc, mycpu)->env.xregs[30] = *(uint64_t *)value;
+                         break;
+                case UC_ARM64_REG_PC:
+                         ARM_CPU(uc, mycpu)->env.pc = *(uint64_t *)value;
+                         // force to quit execution and flush TB
+                         uc->quit_request = true;
+                         uc_emu_stop(uc);
+                         break;
+                case UC_ARM64_REG_SP:
+                         ARM_CPU(uc, mycpu)->env.xregs[31] = *(uint64_t *)value;
+                         break;
+            }
         }
     }
 

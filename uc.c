@@ -332,10 +332,10 @@ uc_err uc_close(uc_engine *uc)
 
 
 UNICORN_EXPORT
-uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
+uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
 {
     if (uc->reg_read)
-        uc->reg_read(uc, regid, value);
+        uc->reg_read(uc, (unsigned int *)ids, vals, count);
     else
         return -1;  // FIXME: need a proper uc_err
 
@@ -344,14 +344,28 @@ uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
 
 
 UNICORN_EXPORT
-uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
+uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
 {
     if (uc->reg_write)
-        uc->reg_write(uc, regid, value);
+        uc->reg_write(uc, (unsigned int *)ids, vals, count);
     else
         return -1;  // FIXME: need a proper uc_err
 
     return UC_ERR_OK;
+}
+
+
+UNICORN_EXPORT
+uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
+{
+    return uc_reg_read_batch(uc, &regid, &value, 1);
+}
+
+
+UNICORN_EXPORT
+uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
+{
+    return uc_reg_write_batch(uc, &regid, (void *const *)&value, 1);
 }
 
 

@@ -7,8 +7,10 @@ import (
 )
 
 /*
+#cgo CFLAGS: -O3
 #cgo LDFLAGS: -lunicorn
 #include <unicorn/unicorn.h>
+#include "uc.h"
 */
 import "C"
 
@@ -41,7 +43,9 @@ type Unicorn interface {
 	MemReadInto(dst []byte, addr uint64) error
 	MemWrite(addr uint64, data []byte) error
 	RegRead(reg int) (uint64, error)
+	RegReadBatch(regs []int) ([]uint64, error)
 	RegWrite(reg int, value uint64) error
+	RegWriteBatch(regs []int, vals []uint64) error
 	RegReadMmr(reg int) (*X86Mmr, error)
 	RegWriteMmr(reg int, value *X86Mmr) error
 	Start(begin, until uint64) error
@@ -115,6 +119,38 @@ func (u *uc) RegRead(reg int) (uint64, error) {
 	var val C.uint64_t
 	ucerr := C.uc_reg_read(u.handle, C.int(reg), unsafe.Pointer(&val))
 	return uint64(val), errReturn(ucerr)
+}
+
+func (u *uc) RegWriteBatch(regs []int, vals []uint64) error {
+	if len(regs) == 0 {
+		return nil
+	}
+	if len(vals) < len(regs) {
+		regs = regs[:len(vals)]
+	}
+	cregs := make([]C.int, len(regs))
+	for i, v := range regs {
+		cregs[i] = C.int(v)
+	}
+	cregs2 := (*C.int)(unsafe.Pointer(&cregs[0]))
+	cvals := (*C.uint64_t)(unsafe.Pointer(&vals[0]))
+	ucerr := C.uc_reg_write_batch_helper(u.handle, cregs2, cvals, C.int(len(regs)))
+	return errReturn(ucerr)
+}
+
+func (u *uc) RegReadBatch(regs []int) ([]uint64, error) {
+	if len(regs) == 0 {
+		return nil, nil
+	}
+	cregs := make([]C.int, len(regs))
+	for i, v := range regs {
+		cregs[i] = C.int(v)
+	}
+	cregs2 := (*C.int)(unsafe.Pointer(&cregs[0]))
+	vals := make([]uint64, len(regs))
+	cvals := (*C.uint64_t)(unsafe.Pointer(&vals[0]))
+	ucerr := C.uc_reg_read_batch_helper(u.handle, cregs2, cvals, C.int(len(regs)))
+	return vals, errReturn(ucerr)
 }
 
 func (u *uc) MemRegions() ([]*MemRegion, error) {
