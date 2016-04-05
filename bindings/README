@@ -8,6 +8,7 @@ The following bindings are contributed by community.
 - .NET binding: by Antonio Parata.
 - MSVC binding: by Zak Escano
 - Ruby binding: by Sascha Schirra
+- Haskell binding: by Adrian Herrera.
 
 More bindings created & maintained externally by community are available as follows.
 
