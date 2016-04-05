@@ -101,6 +101,7 @@ SOURCES += sample_x86.c
 SOURCES += shellcode.c
 SOURCES += mem_apis.c
 SOURCES += sample_x86_32_gdt_and_seg_regs.c
+SOURCES += sample_batch_reg.c
 endif
 ifneq (,$(findstring m68k,$(UNICORN_ARCHS)))
 SOURCES += sample_m68k.c
@@ -114,7 +115,7 @@ all: clean_bins $(BINARY)
 
 clean_bins:
 	rm -rf *.o $(OBJS_ELF) $(BINARY) $(SAMPLEDIR)/*.exe $(SAMPLEDIR)/*.static $(OBJDIR)/lib$(LIBNAME)* $(OBJDIR)/$(LIBNAME)*
-	rm -rf sample_x86 sample_arm sample_arm64 sample_mips sample_sparc sample_ppc sample_m68k shellcode mem_apis sample_x86_32_gdt_and_seg_regs
+	rm -rf sample_x86 sample_arm sample_arm64 sample_mips sample_sparc sample_ppc sample_m68k shellcode mem_apis sample_x86_32_gdt_and_seg_regs sample_batch_reg
 
 clean_libs:
 	rm -rf libunicorn*.so libunicorn*.lib libunicorn*.dylib unicorn*.dll unicorn*.lib
