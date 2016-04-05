@@ -18,6 +18,7 @@ all:
 	cd go && $(MAKE) gen_const
 	cd java && $(MAKE) gen_const
 	python const_generator.py dotnet
+	cd haskell && cabal configure && cabal build
 
 samples: expected python
 
@@ -54,6 +55,7 @@ sample_diff: FORCE
 clean:
 	rm -rf $(TMPDIR)
 	cd python && $(MAKE) clean
+	cd haskell && cabal clean
 
 check:
 	make -C python check
