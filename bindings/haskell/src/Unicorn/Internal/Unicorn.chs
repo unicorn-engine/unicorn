@@ -78,9 +78,9 @@ import Unicorn.Internal.Util
 -- | Memory region mapped by 'memMap'. Retrieve the list of memory regions with
 -- 'memRegions'.
 data MemoryRegion = MemoryRegion {
-    begin :: Word64,            -- ^ Begin address of the region (inclusive)
-    end   :: Word64,            -- ^ End address of the region (inclusive)
-    perms :: [MemoryPermission] -- ^ Memory permissions of the region
+    mrBegin :: Word64,            -- ^ Begin address of the region (inclusive)
+    mrEnd   :: Word64,            -- ^ End address of the region (inclusive)
+    mrPerms :: [MemoryPermission] -- ^ Memory permissions of the region
 }
 
 instance Storable MemoryRegion where
@@ -91,9 +91,9 @@ instance Storable MemoryRegion where
                     <*> liftA fromIntegral ({# get uc_mem_region->end #} p)
                     <*> liftA expandMemPerms ({# get uc_mem_region->perms #} p)
     poke p mr   = do
-        {# set uc_mem_region.begin #} p (fromIntegral $ begin mr)
-        {# set uc_mem_region.end #} p (fromIntegral $ end mr)
-        {# set uc_mem_region.perms #} p (combineEnums $ perms mr)
+        {# set uc_mem_region.begin #} p (fromIntegral $ mrBegin mr)
+        {# set uc_mem_region.end #} p (fromIntegral $ mrEnd mr)
+        {# set uc_mem_region.perms #} p (combineEnums $ mrPerms mr)
 
 -- | A pointer to a memory region.
 {# pointer *uc_mem_region as MemoryRegionPtr -> MemoryRegion #}
@@ -225,11 +225,11 @@ expandMemPerms perms =
     else
         checkRWE maskedPerms [ProtRead, ProtWrite, ProtExec]
     where
-        checkRWE perms (prot:prots) =
-            if perms .&. (fromEnum prot) /= 0 then
-                prot : checkRWE perms prots
+        checkRWE p (x:xs) =
+            if p .&. (fromEnum x) /= 0 then
+                x : checkRWE p xs
             else
-                checkRWE perms prots
+                checkRWE p xs
         checkRWE _ [] =
             []
 

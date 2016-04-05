@@ -44,7 +44,6 @@ import Foreign
 
 import Unicorn.Internal.Core
 import Unicorn.Internal.Hook
-import Unicorn.Internal.Util
 import qualified Unicorn.CPU.X86 as X86
 
 -------------------------------------------------------------------------------
