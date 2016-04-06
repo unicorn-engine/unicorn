@@ -70,7 +70,12 @@ mem_unmap.static
 mem_apis
 mem_apis.exe
 mem_apis.static
-
+sample_batch_reg
+sample_batch_reg.exe
+sample_batch_reg.static
+sample_x86_32_gdt_and_seg_regs
+sample_x86_32_gdt_and_seg_regs.exe
+sample_x86_32_gdt_and_seg_regs.static
 
 libunicorn*.dll
 libunicorn*.so
