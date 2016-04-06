@@ -39,42 +39,51 @@ void mips_reg_reset(struct uc_struct *uc)
     env->active_tc.PC = 0;
 }
 
-int mips_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
+int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
     CPUState *mycpu = first_cpu;
+    int i;
 
-    if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
-        *(int32_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0];
-    else {
-        switch(regid) {
-            default: break;
-            case UC_MIPS_REG_PC:
-                     *(int32_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.PC;
-                     break;
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        void *value = vals[i];
+        if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
+            *(int32_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0];
+        else {
+            switch(regid) {
+                default: break;
+                case UC_MIPS_REG_PC:
+                         *(int32_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.PC;
+                         break;
+            }
         }
     }
 
     return 0;
 }
 
-int mips_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
+int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, int count)
 {
     CPUState *mycpu = first_cpu;
+    int i;
 
-    if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
-        MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0] = *(uint32_t *)value;
-    else {
-        switch(regid) {
-            default: break;
-            case UC_MIPS_REG_PC:
-                     MIPS_CPU(uc, mycpu)->env.active_tc.PC = *(uint32_t *)value;
-                     // force to quit execution and flush TB
-                     uc->quit_request = true;
-                     uc_emu_stop(uc);
-                     break;
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        const void *value = vals[i];
+        if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
+            MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0] = *(uint32_t *)value;
+        else {
+            switch(regid) {
+                default: break;
+                case UC_MIPS_REG_PC:
+                         MIPS_CPU(uc, mycpu)->env.active_tc.PC = *(uint32_t *)value;
+                         // force to quit execution and flush TB
+                         uc->quit_request = true;
+                         uc_emu_stop(uc);
+                         break;
+            }
         }
     }
-
 
     return 0;
 }

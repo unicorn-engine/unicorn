@@ -46,8 +46,8 @@ typedef QTAILQ_HEAD(, ModuleEntry) ModuleTypeList;
 typedef uc_err (*query_t)(struct uc_struct *uc, uc_query_type type, size_t *result);
 
 // return 0 on success, -1 on failure
-typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int regid, void *value);
-typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int regid, const void *value);
+typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int *regs, void **vals, int count);
+typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int *regs, void *const *vals, int count);
 
 typedef void (*reg_reset_t)(struct uc_struct *uc);
 

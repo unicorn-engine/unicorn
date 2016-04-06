@@ -5,8 +5,8 @@
 #define UC_QEMU_TARGET_MIPS_H
 
 // functions to read & write registers
-int mips_reg_read(struct uc_struct *uc, unsigned int regid, void *value);
-int mips_reg_write(struct uc_struct *uc, unsigned int regid, const void *value);
+int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count);
+int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, int count);
 
 void mips_reg_reset(struct uc_struct *uc);
 
