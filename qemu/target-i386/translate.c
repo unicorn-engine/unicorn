@@ -4784,7 +4784,6 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             changed_cc_op = true;
         }
         gen_uc_tracecode(tcg_ctx, 0xf1f1f1f1, UC_HOOK_CODE_IDX, env->uc, pc_start);
-        restore_eflags(s, tcg_ctx);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
