@@ -4721,6 +4721,7 @@ static void sync_eflags(DisasContext *s, TCGContext *tcg_ctx)
     tcg_gen_st_tl(tcg_ctx, *cpu_T[0], cpu_env, offsetof(CPUX86State, eflags));
 }
 
+/*
 static void restore_eflags(DisasContext *s, TCGContext *tcg_ctx)
 {
     TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
@@ -4731,6 +4732,7 @@ static void restore_eflags(DisasContext *s, TCGContext *tcg_ctx)
             tcg_const_i32(tcg_ctx, (TF_MASK | AC_MASK | ID_MASK | NT_MASK) & 0xffff));
     set_cc_op(s, CC_OP_EFLAGS);
 }
+*/
 
 /* convert one instruction. s->is_jmp is set if the translation must
    be stopped. Return the next pc value */
