@@ -18,7 +18,7 @@ all:
 	cd go && $(MAKE) gen_const
 	cd java && $(MAKE) gen_const
 	python const_generator.py dotnet
-	cd haskell && cabal configure && cabal build
+	cd haskell && cabal install --dependencies-only && cabal configure && cabal build
 
 samples: expected python
 
