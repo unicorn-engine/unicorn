@@ -14,3 +14,10 @@ cabal.sandbox.config
 *.prof
 *.aux
 *.hp
+SampleArm
+SampleArm64
+SampleM68k
+SampleMips
+SampleSparc
+SampleX86
+Shellcode
