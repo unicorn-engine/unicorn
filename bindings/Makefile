@@ -1,15 +1,15 @@
 # Unicorn Engine
 # By Nguyen Anh Quynh & Dang Hoang Vu, 2015
-TMPDIR = /tmp/unicorn_sample
+TMP_DIR = /tmp/unicorn_sample
 
 DIFF = diff -u -w
 
-SAMPLE_ARM = $(TMPDIR)/sample_arm
-SAMPLE_ARM64 = $(TMPDIR)/sample_arm64
-SAMPLE_MIPS = $(TMPDIR)/sample_mips
-SAMPLE_M68K = $(TMPDIR)/sample_m68k
-SAMPLE_SPARC = $(TMPDIR)/sample_sparc
-SAMPLE_X86 = $(TMPDIR)/sample_x86
+SAMPLE_ARM = $(TMP_DIR)/sample_arm
+SAMPLE_ARM64 = $(TMP_DIR)/sample_arm64
+SAMPLE_MIPS = $(TMP_DIR)/sample_mips
+SAMPLE_M68K = $(TMP_DIR)/sample_m68k
+SAMPLE_SPARC = $(TMP_DIR)/sample_sparc
+SAMPLE_X86 = $(TMP_DIR)/sample_x86
 
 .PHONY: all expected python
 
@@ -26,7 +26,7 @@ sample_python: expected python
 
 expected:
 	cd ../samples && $(MAKE)
-	mkdir -p $(TMPDIR)
+	mkdir -p $(TMP_DIR)
 	../samples/sample_arm > $(SAMPLE_ARM)_e
 	../samples/sample_arm64 > $(SAMPLE_ARM64)_e
 	../samples/sample_mips > $(SAMPLE_MIPS)_e
@@ -53,7 +53,7 @@ sample_diff: FORCE
 	$(DIFF) $(SAMPLE_X86)_e $(SAMPLE_X86)_o
 
 clean:
-	rm -rf $(TMPDIR)
+	rm -rf $(TMP_DIR)
 	cd python && $(MAKE) clean
 	cd haskell && cabal clean
 
