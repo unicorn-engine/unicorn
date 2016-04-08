@@ -11,14 +11,19 @@ SAMPLE_M68K = $(TMP_DIR)/sample_m68k
 SAMPLE_SPARC = $(TMP_DIR)/sample_sparc
 SAMPLE_X86 = $(TMP_DIR)/sample_x86
 
-.PHONY: all expected python
+.PHONY: build install samples sample_python expected python sample_diff clean check
 
-all:
+build:
 	cd python && $(MAKE) gen_const
 	cd go && $(MAKE) gen_const
 	cd java && $(MAKE) gen_const
 	python const_generator.py dotnet
 	cd haskell && cabal install --dependencies-only && cabal configure && cabal build
+
+install: build
+	cd python && $(MAKE) install
+	cd java && $(MAKE) install
+	cd haskell && cabal install
 
 samples: expected python
 
@@ -55,6 +60,7 @@ sample_diff: FORCE
 clean:
 	rm -rf $(TMP_DIR)
 	cd python && $(MAKE) clean
+	cd java && $(MAKE) clean
 	cd haskell && cabal clean
 
 check:

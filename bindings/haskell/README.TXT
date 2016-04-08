@@ -26,3 +26,8 @@ If the build fails, install c2hs manually `cabal install c2hs` (note that this
 will probably also require you to run `cabal install alex` and `cabal install
 happy` as well). If you are NOT using a sandbox, ensure that `$HOME/.cabal/bin`
 is on your PATH.
+
+To build a sample (after having built and installed the Haskell bindings)
+
+    $ cd bindings/haskell
+    $ ghc --make samples/SampleArm.hs
