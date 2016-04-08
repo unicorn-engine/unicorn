@@ -18,12 +18,10 @@ build:
 	cd go && $(MAKE) gen_const
 	cd java && $(MAKE) gen_const
 	python const_generator.py dotnet
-	cd haskell && cabal install --dependencies-only && cabal configure && cabal build
 
 install: build
 	cd python && $(MAKE) install
 	cd java && $(MAKE) install
-	cd haskell && cabal install
 
 samples: expected python
 
@@ -61,7 +59,6 @@ clean:
 	rm -rf $(TMP_DIR)
 	cd python && $(MAKE) clean
 	cd java && $(MAKE) clean
-	cd haskell && cabal clean
 
 check:
 	make -C python check
