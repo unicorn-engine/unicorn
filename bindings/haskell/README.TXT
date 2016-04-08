@@ -22,6 +22,7 @@ from source.
 If you are installing into a sandbox, run `cabal sandbox init` before
 installing Unicorn's dependencies.
 
-If the build fails, try installing c2hs manually via `cabal install c2hs` (note
-that this is a known problem). If you are NOT using a sandbox, make sure that
-`$HOME/.cabal/bin` is on your PATH.
+If the build fails, install c2hs manually `cabal install c2hs` (note that this
+will probably also require you to run `cabal install alex` and `cabal install
+happy` as well). If you are NOT using a sandbox, ensure that `$HOME/.cabal/bin`
+is on your PATH.
