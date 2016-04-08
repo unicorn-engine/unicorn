@@ -61,7 +61,7 @@ testArm64 = do
         blockHookAdd uc hookBlock () 1 0
 
         -- Tracing one instruction at address with customized callback
-        codeHookAdd uc hookCode ()address address
+        codeHookAdd uc hookCode () address address
 
         -- Emulate machine code in infinite time (last param = Nothing), or
         -- when finishing all the code
