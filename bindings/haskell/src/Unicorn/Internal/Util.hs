@@ -6,13 +6,14 @@ License     : GPL-2
 -}
 module Unicorn.Internal.Util where
 
+import Control.Applicative
 import Data.Bits
 import Foreign
 
 -- | Combine a list of Enums by performing a bitwise-OR.
 combineEnums :: (Enum a, Num b, Bits b) => [a] -> b
 combineEnums =
-    foldr (\p -> (.|.) (enumToNum p)) 0
+    foldr ((.|.) <$> enumToNum) 0
 
 -- | Cast a pointer and then peek inside it.
 castPtrAndPeek :: Storable a => Ptr b -> IO a

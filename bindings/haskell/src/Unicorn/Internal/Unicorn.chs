@@ -61,19 +61,19 @@ import Unicorn.Internal.Util
 {# enum uc_arch as Architecture
     {underscoreToCase}
     with prefix = "UC_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 -- | CPU hardware mode.
 {# enum uc_mode as Mode
     {underscoreToCase}
     with prefix="UC_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 -- | Memory permissions.
 {# enum uc_prot as MemoryPermission
     {underscoreToCase}
     with prefix="UC_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 -- | Memory region mapped by 'memMap'. Retrieve the list of memory regions with
 -- 'memRegions'.
@@ -102,7 +102,7 @@ instance Storable MemoryRegion where
 {# enum uc_query_type as QueryType
     {underscoreToCase}
     with prefix="UC_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 -------------------------------------------------------------------------------
 -- Emulator control

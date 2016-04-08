@@ -56,6 +56,6 @@ import Unicorn.Internal.Core (Reg)
     omit (UC_MIPS_REG_INVALID,
           UC_MIPS_REG_ENDING)
     with prefix="UC_MIPS_REG_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 instance Reg Register
