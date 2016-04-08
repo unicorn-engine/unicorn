@@ -14,10 +14,8 @@ from source.
 1. Change directories into the Haskell bindings, build and install
 
     $ cd bindings/haskell
-    $ cabal install --dependencies-only
-    $ cabal configure
-    $ cabal build
     $ cabal install
+
 
 If you are installing into a sandbox, run `cabal sandbox init` before
 installing Unicorn's dependencies.
