@@ -42,7 +42,7 @@ mkEngine ptr =
 {# enum uc_err as Error
     {underscoreToCase}
     with prefix = "UC_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 -- | The emulator runs in the IO monad and allows for the handling of errors
 -- "under the hood".

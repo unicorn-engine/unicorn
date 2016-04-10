@@ -24,6 +24,6 @@ import Unicorn.Internal.Core (Reg)
     omit (UC_M68K_REG_INVALID,
           UC_M68K_REG_ENDING)
     with prefix="UC_M68K_REG_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 instance Reg Register

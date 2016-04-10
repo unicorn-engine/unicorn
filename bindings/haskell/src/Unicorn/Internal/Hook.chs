@@ -103,7 +103,7 @@ type Hook = {# type uc_hook #}
           UC_HOOK_MEM_WRITE,
           UC_HOOK_MEM_FETCH)
     with prefix="UC_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 -- | Memory hook types (for valid memory accesses).
 {# enum uc_hook_type as MemoryHookType
@@ -119,7 +119,7 @@ type Hook = {# type uc_hook #}
           UC_HOOK_MEM_WRITE_PROT,
           UC_HOOK_MEM_FETCH_PROT)
     with prefix="UC_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 -- | Memory event hook types (for invalid memory accesses).
 {# enum uc_hook_type as MemoryEventHookType
@@ -132,7 +132,7 @@ type Hook = {# type uc_hook #}
           UC_HOOK_MEM_WRITE,
           UC_HOOK_MEM_FETCH)
     with prefix="UC_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 -- | Unify the hook types with a type class
 class Enum a => HookTypeC a
@@ -145,7 +145,7 @@ instance HookTypeC MemoryEventHookType
 {# enum uc_mem_type as MemoryAccess
     {underscoreToCase}
     with prefix="UC_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 -------------------------------------------------------------------------------
 -- Hook callbacks

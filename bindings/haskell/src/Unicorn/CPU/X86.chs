@@ -52,7 +52,7 @@ instance Storable Mmr where
     omit (UC_X86_REG_INVALID,
           UC_X86_REG_ENDING)
     with prefix="UC_X86_REG_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
 
 instance Reg Register
 
@@ -62,4 +62,4 @@ instance Reg Register
     omit (UC_X86_INS_INVALID,
           UC_X86_INS_ENDING)
     with prefix="UC_X86_INS_"
-    deriving (Show, Eq) #}
+    deriving (Show, Eq, Bounded) #}
