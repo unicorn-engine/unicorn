@@ -37,7 +37,6 @@
 #include <stdlib.h>
 #include "config-host.h"
 #include "sysemu/sysemu.h"
-#include "qemu/main-loop.h"
 // #include "trace.h"
 //#include "qemu/sockets.h"
 
@@ -165,11 +164,6 @@ int qemu_gettimeofday(qemu_timeval *tp)
   /* Always return 0 as per Open Group Base Specifications Issue 6.
      Do not set errno on error.  */
   return 0;
-}
-
-int qemu_get_thread_id(void)
-{
-    return GetCurrentThreadId();
 }
 
 char *

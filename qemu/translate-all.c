@@ -1529,15 +1529,6 @@ static void tcg_handle_interrupt(CPUState *cpu, int mask)
 {
     cpu->interrupt_request |= mask;
 
-    /*
-     * If called from iothread context, wake the target cpu in
-     * case its halted.
-     */
-    if (!qemu_cpu_is_self(cpu)) {
-        qemu_cpu_kick(cpu);
-        return;
-    }
-
     cpu->tcg_exit_req = 1;
 }
 
