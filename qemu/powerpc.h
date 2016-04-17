@@ -2258,7 +2258,6 @@
 #define parse_value parse_value_powerpc
 #define par_write par_write_powerpc
 #define patch_reloc patch_reloc_powerpc
-#define pause_all_vcpus pause_all_vcpus_powerpc
 #define phys_map_node_alloc phys_map_node_alloc_powerpc
 #define phys_map_node_reserve phys_map_node_reserve_powerpc
 #define phys_mem_alloc phys_mem_alloc_powerpc
@@ -2418,7 +2417,6 @@
 #define qemu_clock_ptr qemu_clock_ptr_powerpc
 #define qemu_clocks qemu_clocks_powerpc
 #define qemu_cond_destroy qemu_cond_destroy_powerpc
-#define qemu_cpu_kick_thread qemu_cpu_kick_thread_powerpc
 #define qemu_daemon qemu_daemon_powerpc
 #define qemu_event_destroy qemu_event_destroy_powerpc
 #define qemu_event_init qemu_event_init_powerpc
@@ -2516,7 +2514,6 @@
 #define qemu_strnlen qemu_strnlen_powerpc
 #define qemu_strsep qemu_strsep_powerpc
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_powerpc
-#define qemu_thread_exit qemu_thread_exit_powerpc
 #define qemu_try_memalign qemu_try_memalign_powerpc
 #define qentry_destroy qentry_destroy_powerpc
 #define qerror_human qerror_human_powerpc
