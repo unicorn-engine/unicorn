@@ -14,3 +14,6 @@ More bindings created & maintained externally by community are available as foll
 
 - UnicornPascal: Delphi/Free Pascal binding (by Stievie).
     https://github.com/stievie/UnicornPascal
+
+- Unicorn-Rs: Rust binding (by Sébastien Duquette)
+    https://github.com/ekse/unicorn-rs
