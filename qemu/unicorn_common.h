@@ -35,12 +35,17 @@ static void release_common(void *t)
 {
     TCGContext *s = (TCGContext *)t;
     struct uc_struct* uc = s->uc;
+    CPUState *cpu;
+#if TCG_TARGET_REG_BITS == 32
+    int i;
+#endif
 
     // Clean TCG.
     TCGOpDef* def = &s->tcg_op_defs[0];
     g_free(def->args_ct);
     g_free(def->sorted_args);
     g_free(s->tcg_op_defs);
+
     TCGPool *po, *to;
     for (po = s->pool_first; po; po = to) {
         to = po->next;
@@ -55,8 +60,45 @@ static void release_common(void *t)
     memory_free(uc);
 
     // Clean CPU.
+    CPU_FOREACH(cpu) {
+        g_free(cpu->tcg_as_listener);
+        g_free(cpu->thread);
+        g_free(cpu->halt_cond);
+    }
+
+    OBJECT(uc->machine_state->accelerator)->ref = 1;
+    OBJECT(uc->machine_state)->ref = 1;
+    OBJECT(uc->owner)->ref = 1;
+    OBJECT(uc->root)->ref = 1;
+
+    object_unref(uc, OBJECT(uc->machine_state->accelerator));
+    object_unref(uc, OBJECT(uc->machine_state));
     object_unref(uc, uc->cpu);
+    object_unref(uc, OBJECT(&uc->io_mem_notdirty));
+    object_unref(uc, OBJECT(&uc->io_mem_unassigned));
+    object_unref(uc, OBJECT(&uc->io_mem_rom));
+    object_unref(uc, OBJECT(uc->root));
     g_hash_table_foreach(uc->type_table, free_table, uc);
+
+    g_free(uc->system_memory);
+
+    if (uc->qemu_thread_data)
+        free(uc->qemu_thread_data);
+
+#if TCG_TARGET_REG_BITS == 32
+    for(i = 0; i < s->nb_globals; i++) {
+        TCGTemp *ts = &s->temps[i];
+        if (ts->base_type == TCG_TYPE_I64) {
+            if (ts->name && ((strcmp(ts->name+(strlen(ts->name)-2), "_0") == 0) ||
+                        (strcmp(ts->name+(strlen(ts->name)-2), "_1") == 0))) {
+                free((void *)ts->name);
+            }
+        }
+    }
+#endif
+
+    qemu_mutex_destroy(&uc->qemu_global_mutex);
+    qemu_cond_destroy(&uc->qemu_cpu_cond);
 
     // Clean cache.
     tb_cleanup(uc);

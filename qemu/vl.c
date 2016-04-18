@@ -115,7 +115,7 @@ int machine_initialize(struct uc_struct *uc)
 
     current_machine = MACHINE(uc, object_new(uc, object_class_get_name(
                     OBJECT_CLASS(machine_class))));
-
+    uc->machine_state = current_machine;
     current_machine->uc = uc;
     uc->cpu_exec_init_all(uc);
 

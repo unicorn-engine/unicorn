@@ -152,6 +152,13 @@ mem_fuzz
 test_x86_soft_paging
 test_hookcounts
 
+memleak_x86
+memleak_arm
+memleak_arm64
+memleak_mips
+memleak_m68k
+memleak_sparc
+
 
 #################
 ## Visual Studio

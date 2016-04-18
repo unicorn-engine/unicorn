@@ -28,6 +28,7 @@
 #include "config-host.h"
 #include "sysemu/sysemu.h"
 #include "sysemu/cpus.h"
+#include "qemu/thread.h"
 
 #include "exec/address-spaces.h"	// debug, can be removed later
 
@@ -76,7 +77,9 @@ void pause_all_vcpus(struct uc_struct *uc)
     CPUState *cpu;
 
     CPU_FOREACH(cpu) {
-        qemu_thread_join(cpu->thread);	// qq: fix qemu_thread_join() to work for instance
+        qemu_thread_join(uc, cpu->thread);
+        free(cpu->thread);
+        cpu->thread = NULL;
     }
 }
 
@@ -146,17 +149,6 @@ static void *qemu_tcg_cpu_thread_fn(void *arg)
     }
 
     while (1) {
-#if 0
-        int count = 0;
-        if (count < 10) {
-            count++;
-            unsigned int eip = X86_CPU(mycpu)->env.eip;
-            printf(">>> current EIP = %x\n", eip);
-            printf(">>> ECX = %x\n", (unsigned int)X86_CPU(mycpu)->env.regs[R_ECX]);
-            printf(">>> EDX = %x\n", (unsigned int)X86_CPU(mycpu)->env.regs[R_EDX]);
-        }
-#endif
-
         if (tcg_exec_all(uc))
             break;
     }
@@ -164,6 +156,13 @@ static void *qemu_tcg_cpu_thread_fn(void *arg)
     CPU_FOREACH(cpu) {
         cpu->thread_id = 0;
         cpu->created = false;
+        qemu_cond_destroy(cpu->halt_cond);
+        free(cpu->halt_cond);
+#ifdef _WIN32
+        if (cpu->hThread)
+            CloseHandle(cpu->hThread);
+#endif
+        cpu->halt_cond = NULL;
     }
 
     qemu_mutex_unlock(&uc->qemu_global_mutex);

@@ -15,6 +15,23 @@ static void arm64_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUARMState *)uc->current_cpu->env_ptr)->pc = address;
 }
 
+void arm64_release(void* ctx);
+
+void arm64_release(void* ctx)
+{
+    TCGContext *s = (TCGContext *) ctx;
+
+    g_free(s->tb_ctx.tbs);
+    struct uc_struct* uc = s->uc;
+    ARMCPU* cpu = (ARMCPU*) uc->cpu;
+    g_free(cpu->cpreg_indexes);
+    g_free(cpu->cpreg_values);
+    g_free(cpu->cpreg_vmstate_indexes);
+    g_free(cpu->cpreg_vmstate_values);
+
+    release_common(ctx);
+}
+
 void arm64_reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env = first_cpu->env_ptr;
@@ -101,5 +118,6 @@ void arm64_uc_init(struct uc_struct* uc)
     uc->reg_write = arm64_reg_write;
     uc->reg_reset = arm64_reg_reset;
     uc->set_pc = arm64_set_pc;
+    uc->release = arm64_release;
     uc_common_init(uc);
 }

@@ -285,9 +285,7 @@ uc_err uc_close(uc_engine *uc)
     if (uc->release)
         uc->release(uc->tcg_ctx);
 
-#ifndef _WIN32
     free(uc->l1_map);
-#endif
 
     if (uc->bounce.buffer) {
         free(uc->bounce.buffer);
@@ -295,8 +293,6 @@ uc_err uc_close(uc_engine *uc)
 
     g_free(uc->tcg_ctx);
 
-    free((void*) uc->system_memory->name);
-    g_free(uc->system_memory);
     g_hash_table_destroy(uc->type_table);
 
     for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
@@ -586,7 +582,7 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
 
     if (timeout) {
         // wait for the timer to finish
-        qemu_thread_join(&uc->timer);
+        qemu_thread_join(uc, &uc->timer);
     }
 
     return uc->invalid_error;

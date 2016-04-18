@@ -45,6 +45,13 @@ TESTS += 004-segmentation_fault_1
 TESTS += 005-qemu__fatal__illegal_instruction__0000___00000404
 TESTS += 006-qemu__fatal__illegal_instruction__0421___00040026
 
+TESTS += memleak_x86
+TESTS += memleak_arm
+TESTS += memleak_arm64
+TESTS += memleak_mips
+TESTS += memleak_m68k
+TESTS += memleak_sparc
+
 all: $(TESTS)
 
 clean:

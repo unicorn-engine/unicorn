@@ -199,10 +199,12 @@ struct uc_struct {
     QemuMutex flat_view_mutex;
     QTAILQ_HEAD(memory_listeners, MemoryListener) memory_listeners;
     QTAILQ_HEAD(, AddressSpace) address_spaces;
+    MachineState *machine_state;
     // qom/object.c
     GHashTable *type_table;
     Type type_interface;
     Object *root;
+    Object *owner;
     bool enumerating_types;
     // util/module.c
     ModuleTypeList init_type_list[MODULE_INIT_MAX];

@@ -2417,7 +2417,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_powerpc
 #define qemu_clock_ptr qemu_clock_ptr_powerpc
 #define qemu_clocks qemu_clocks_powerpc
-#define qemu_cond_destroy qemu_cond_destroy_powerpc
 #define qemu_cpu_is_self qemu_cpu_is_self_powerpc
 #define qemu_cpu_kick_thread qemu_cpu_kick_thread_powerpc
 #define qemu_daemon qemu_daemon_powerpc
@@ -2445,7 +2444,6 @@
 #define qemu_log_flush qemu_log_flush_powerpc
 #define qemu_loglevel_mask qemu_loglevel_mask_powerpc
 #define qemu_log_vprintf qemu_log_vprintf_powerpc
-#define qemu_mutex_destroy qemu_mutex_destroy_powerpc
 #define qemu_mutex_lock_ramlist qemu_mutex_lock_ramlist_powerpc
 #define qemu_mutex_trylock qemu_mutex_trylock_powerpc
 #define qemu_mutex_unlock_ramlist qemu_mutex_unlock_ramlist_powerpc

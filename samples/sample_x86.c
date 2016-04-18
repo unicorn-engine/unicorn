@@ -148,7 +148,7 @@ static uint32_t hook_in(uc_engine *uc, uint32_t port, int size, void *user_data)
 // callback for OUT instruction (X86).
 static void hook_out(uc_engine *uc, uint32_t port, int size, uint32_t value, void *user_data)
 {
-    uint32_t tmp;
+    uint32_t tmp = 0;
     uint32_t eip;
 
     uc_reg_read(uc, UC_X86_REG_EIP, &eip);
@@ -605,6 +605,7 @@ static void test_i386_inout(void)
     uc_err err;
     uc_hook trace1, trace2, trace3, trace4;
 
+
     int r_eax = 0x1234;     // EAX register
     int r_ecx = 0x6789;     // ECX register
 
@@ -912,14 +913,6 @@ int main(int argc, char **argv, char **envp)
 
         if (!strcmp(argv[1], "-16")) {
             test_x86_16();
-        }
-
-        // test memleak
-        if (!strcmp(argv[1], "-0")) {
-            while(1) {
-                test_i386();
-                // test_x86_64();
-            }
         }
     } else {
         printf("Syntax: %s <-16|-32|-64>\n", argv[0]);
