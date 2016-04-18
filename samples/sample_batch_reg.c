@@ -1,3 +1,4 @@
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
@@ -35,7 +36,7 @@ void hook_syscall(uc_engine *uc, void *user_data)
 
     for (i = 0; i < 7; i++) {
         if (i != 0) printf(", ");
-        printf("%llu", vals[i]);
+        printf("%" PRIu64, vals[i]);
     }
 
     printf("}\n");
@@ -43,7 +44,7 @@ void hook_syscall(uc_engine *uc, void *user_data)
 
 void hook_code(uc_engine *uc, uint64_t addr, uint32_t size, void *user_data)
 {
-    printf("HOOK_CODE: 0x%llx, 0x%x\n", addr, size);
+    printf("HOOK_CODE: 0x%" PRIx64 ", 0x%x\n", addr, size);
 }
 
 int main()
@@ -81,7 +82,7 @@ int main()
 
     for (i = 0; i < 7; i++) {
         if (i != 0) printf(", ");
-        printf("%llu", vals[i]);
+        printf("%" PRIu64, vals[i]);
     }
 
     printf("}\n");
