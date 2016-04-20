@@ -122,6 +122,7 @@ static bool arm_stop_interrupt(int intno)
         default:
             return false;
         case EXCP_UDEF:
+        case EXCP_YIELD:
             return true;
     }
 }
