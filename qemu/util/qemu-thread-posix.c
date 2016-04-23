@@ -426,16 +426,6 @@ int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *nam
     return 0;
 }
 
-void qemu_thread_get_self(struct uc_struct *uc, QemuThread *thread)
-{
-    thread->thread = pthread_self();
-}
-
-bool qemu_thread_is_self(QemuThread *thread)
-{
-   return pthread_equal(pthread_self(), thread->thread);
-}
-
 void qemu_thread_exit(struct uc_struct *uc, void *retval)
 {
     pthread_exit(retval);

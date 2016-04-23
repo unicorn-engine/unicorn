@@ -123,7 +123,6 @@ int machine_initialize(struct uc_struct *uc)
     configure_accelerator(current_machine);
 
     qemu_init_cpu_loop(uc);
-    qemu_mutex_lock_iothread(uc);
 
     current_machine->cpu_model = NULL;
 

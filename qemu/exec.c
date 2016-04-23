@@ -432,10 +432,7 @@ void cpu_exec_init(CPUArchState *env, void *opaque)
     QTAILQ_INIT(&cpu->watchpoints);
 
     cpu->as = &uc->as;
-#ifndef CONFIG_USER_ONLY
-    //cpu->as = &address_space_memory;
-    cpu->thread_id = qemu_get_thread_id();
-#endif
+
     QTAILQ_INSERT_TAIL(&uc->cpus, cpu, node);
     //QTAILQ_INSERT_TAIL(&uc->cpus, cpu, node);
 #if defined(CONFIG_USER_ONLY)
