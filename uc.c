@@ -578,7 +578,7 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
 
     if (timeout) {
         // wait for the timer to finish
-        qemu_thread_join(uc, &uc->timer);
+        qemu_thread_join(&uc->timer);
     }
 
     return uc->invalid_error;

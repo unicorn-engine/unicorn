@@ -298,7 +298,7 @@ void qemu_thread_exit(struct uc_struct *uc, void *arg)
     _endthreadex(0);
 }
 
-void *qemu_thread_join(struct uc_struct *uc, QemuThread *thread)
+void *qemu_thread_join(QemuThread *thread)
 {
     QemuThreadData *data;
     void *ret;
@@ -323,7 +323,6 @@ void *qemu_thread_join(struct uc_struct *uc, QemuThread *thread)
     ret = data->ret;
     assert(data->mode != QEMU_THREAD_DETACHED);
     DeleteCriticalSection(&data->cs);
-    uc->qemu_thread_data = NULL;
     g_free(data);
     return ret;
 }
