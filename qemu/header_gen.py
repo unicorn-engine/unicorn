@@ -2422,7 +2422,6 @@ symbols = (
     'qemu_clock_get_us',
     'qemu_clock_ptr',
     'qemu_clocks',
-    'qemu_cond_destroy',
     'qemu_daemon',
     'qemu_event_destroy',
     'qemu_event_init',

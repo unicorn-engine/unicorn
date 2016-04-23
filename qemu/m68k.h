@@ -2416,7 +2416,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_m68k
 #define qemu_clock_ptr qemu_clock_ptr_m68k
 #define qemu_clocks qemu_clocks_m68k
-#define qemu_cond_destroy qemu_cond_destroy_m68k
 #define qemu_daemon qemu_daemon_m68k
 #define qemu_event_destroy qemu_event_destroy_m68k
 #define qemu_event_init qemu_event_init_m68k

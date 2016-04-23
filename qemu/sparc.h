@@ -2416,7 +2416,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_sparc
 #define qemu_clock_ptr qemu_clock_ptr_sparc
 #define qemu_clocks qemu_clocks_sparc
-#define qemu_cond_destroy qemu_cond_destroy_sparc
 #define qemu_daemon qemu_daemon_sparc
 #define qemu_event_destroy qemu_event_destroy_sparc
 #define qemu_event_init qemu_event_init_sparc

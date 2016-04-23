@@ -2416,7 +2416,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_powerpc
 #define qemu_clock_ptr qemu_clock_ptr_powerpc
 #define qemu_clocks qemu_clocks_powerpc
-#define qemu_cond_destroy qemu_cond_destroy_powerpc
 #define qemu_daemon qemu_daemon_powerpc
 #define qemu_event_destroy qemu_event_destroy_powerpc
 #define qemu_event_init qemu_event_init_powerpc

@@ -2416,7 +2416,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_mipsel
 #define qemu_clock_ptr qemu_clock_ptr_mipsel
 #define qemu_clocks qemu_clocks_mipsel
-#define qemu_cond_destroy qemu_cond_destroy_mipsel
 #define qemu_daemon qemu_daemon_mipsel
 #define qemu_event_destroy qemu_event_destroy_mipsel
 #define qemu_event_init qemu_event_init_mipsel
