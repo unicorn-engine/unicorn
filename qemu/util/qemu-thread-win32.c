@@ -298,7 +298,7 @@ void qemu_thread_exit(struct uc_struct *uc, void *arg)
     _endthreadex(0);
 }
 
-void *qemu_thread_join(struct uc_struct *uc, QemuThread *thread)
+void *qemu_thread_join(QemuThread *thread)
 {
     QemuThreadData *data;
     void *ret;
@@ -323,7 +323,6 @@ void *qemu_thread_join(struct uc_struct *uc, QemuThread *thread)
     ret = data->ret;
     assert(data->mode != QEMU_THREAD_DETACHED);
     DeleteCriticalSection(&data->cs);
-    uc->qemu_thread_data = NULL;
     g_free(data);
     return ret;
 }
@@ -361,12 +360,6 @@ int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *nam
     return 0;
 }
 
-void qemu_thread_get_self(struct uc_struct *uc, QemuThread *thread)
-{
-    thread->data = uc->qemu_thread_data;
-    thread->tid = GetCurrentThreadId();
-}
-
 HANDLE qemu_thread_get_handle(QemuThread *thread)
 {
     QemuThreadData *data;
@@ -387,9 +380,4 @@ HANDLE qemu_thread_get_handle(QemuThread *thread)
     }
     LeaveCriticalSection(&data->cs);
     return handle;
-}
-
-bool qemu_thread_is_self(QemuThread *thread)
-{
-    return GetCurrentThreadId() == thread->tid;
 }

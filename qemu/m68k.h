@@ -2258,7 +2258,6 @@
 #define parse_value parse_value_m68k
 #define par_write par_write_m68k
 #define patch_reloc patch_reloc_m68k
-#define pause_all_vcpus pause_all_vcpus_m68k
 #define phys_map_node_alloc phys_map_node_alloc_m68k
 #define phys_map_node_reserve phys_map_node_reserve_m68k
 #define phys_mem_alloc phys_mem_alloc_m68k
@@ -2417,8 +2416,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_m68k
 #define qemu_clock_ptr qemu_clock_ptr_m68k
 #define qemu_clocks qemu_clocks_m68k
-#define qemu_cpu_is_self qemu_cpu_is_self_m68k
-#define qemu_cpu_kick_thread qemu_cpu_kick_thread_m68k
 #define qemu_daemon qemu_daemon_m68k
 #define qemu_event_destroy qemu_event_destroy_m68k
 #define qemu_event_init qemu_event_init_m68k
@@ -2514,9 +2511,7 @@
 #define qemu_st_helpers qemu_st_helpers_m68k
 #define qemu_strnlen qemu_strnlen_m68k
 #define qemu_strsep qemu_strsep_m68k
-#define qemu_tcg_cpu_thread_fn qemu_tcg_cpu_thread_fn_m68k
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_m68k
-#define qemu_thread_exit qemu_thread_exit_m68k
 #define qemu_try_memalign qemu_try_memalign_m68k
 #define qentry_destroy qentry_destroy_m68k
 #define qerror_human qerror_human_m68k

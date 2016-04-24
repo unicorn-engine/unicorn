@@ -299,9 +299,6 @@ uc_err uc_close(uc_engine *uc)
         free(uc->ram_list.dirty_memory[i]);
     }
 
-    // TODO: remove uc->root    (created with object_new())
-    uc->root->free(uc->root);
-
     // free hooks and hook lists
     for (i = 0; i < UC_HOOK_MAX; i++) {
         cur = uc->hook[i].head;
@@ -569,20 +566,19 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
 
     uc->addr_end = until;
 
+    if (timeout)
+        enable_emu_timer(uc, timeout * 1000);   // microseconds -> nanoseconds
+
     if (uc->vm_start(uc)) {
         return UC_ERR_RESOURCE;
     }
 
-    if (timeout)
-        enable_emu_timer(uc, timeout * 1000);   // microseconds -> nanoseconds
-
-    uc->pause_all_vcpus(uc);
     // emulation is done
     uc->emulation_done = true;
 
     if (timeout) {
         // wait for the timer to finish
-        qemu_thread_join(uc, &uc->timer);
+        qemu_thread_join(&uc->timer);
     }
 
     return uc->invalid_error;

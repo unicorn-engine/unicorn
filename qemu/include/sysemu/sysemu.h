@@ -2,8 +2,6 @@
 #define SYSEMU_H
 /* Misc. things related to the system emulator.  */
 
-#include "qemu/main-loop.h"
-
 #include "qemu/timer.h"
 #include "qapi/error.h"
 
