@@ -37,6 +37,13 @@ else
 CC = $(CROSS)gcc
 endif
 
+ifeq ($(UNICORN_ASAN),yes)
+CC = clang -fsanitize=address -fno-omit-frame-pointer
+CXX = clang++ -fsanitize=address -fno-omit-frame-pointer
+AR = llvm-ar
+LDFLAGS := -fsanitize=address ${LDFLAGS}
+endif
+
 
 #CFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
 #LDFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))

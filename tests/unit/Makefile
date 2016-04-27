@@ -4,6 +4,13 @@ CFLAGS += -L ../../
 CFLAGS += -lcmocka -lunicorn
 CFLAGS += -I ../../include
 
+ifeq ($(UNICORN_ASAN),yes)
+CC = clang -fsanitize=address -fno-omit-frame-pointer
+CXX = clang++ -fsanitize=address -fno-omit-frame-pointer
+AR = llvm-ar
+LDFLAGS := -fsanitize=address ${LDFLAGS}
+endif
+
 ALL_TESTS = test_sanity test_x86 test_mem_map test_mem_high test_mem_map_ptr \
 	test_tb_x86 test_multihook test_pc_change test_x86_soft_paging \
         test_hookcounts
