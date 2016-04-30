@@ -1,7 +1,7 @@
-To compile Keystone on Mac OS X, Linux, BSD, Solaris and all kind of nix OS,
+To compile Unicorn on Mac OS X, Linux, BSD, Solaris and all kind of nix OS,
 see [COMPILE-NIX.md](COMPILE-NIX.md)
 
-To compile Keystone on Windows, see [COMPILE-WINDOWS.md](COMPILE-WINDOWS.md)
+To compile Unicorn on Windows, see [COMPILE-WINDOWS.md](COMPILE-WINDOWS.md)
 
 Then learn more on how to code your own tools with our samples.
 
