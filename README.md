@@ -32,7 +32,7 @@ This project is released under the [GPL license](COPYING).
 Compilation & Docs
 ------------------
 
-See [COMPILE.TXT](COMPILE.TXT) file for how to compile and install Unicorn.
+See [docs/COMPILE.md](docs/COMPILE.md) file for how to compile and install Unicorn.
 
 More documentation is available in [docs/README.md](docs/README.md).
 
