@@ -13,11 +13,11 @@ or Windows.
 
 - On Ubuntu 14.04 64-bit, do:
 
-  1. Download DEB packages for Mingw64 from:
+  - Download DEB packages for Mingw64 from:
 
   https://launchpad.net/~greg-hellings/+archive/ubuntu/mingw-libs/+build/2924251
 
-  2. To cross-compile for Windows 32-bit, install Mingw with (ignore all the warnings):
+  - To cross-compile for Windows 32-bit, install Mingw with (ignore all the warnings):
 
         $ sudo dpkg -i --force-depends mingw64-x86-glib2_2.31.0_all.deb
 
