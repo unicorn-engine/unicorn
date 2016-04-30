@@ -1,6 +1,7 @@
 We also show steps to cross-compile Unicorn for Microsoft Windows.
 
-To compile for *nix OS, see [COMPILE-NIX.md](COMPILE-NIX.md)
+To compile for Linux, Mac OS X and Unix-based OS, see [COMPILE-NIX.md](COMPILE-NIX.md)
+
 ---
 
 

@@ -1,7 +1,8 @@
 This documentation explains how to compile, install & run Unicorn on MacOSX,
-Linux, *BSD, Solaris, Android & iOS.
+Linux, BSD, Solaris, Android & iOS.
 
 To compile for Microsoft Windows, see [COMPILE-WINDOWS.md](COMPILE-WINDOWS.md)
+
 ----
 
 
