@@ -141,7 +141,6 @@ Unicorn requires few dependent packages as follows.
     /usr/include/unicorn/ppc.h
     /usr/include/unicorn/sparc.h
     /usr/include/unicorn/m68k.h
-    /usr/include/unicorn/platform.h
     /usr/lib/libunicorn.so (for Linux/*nix), or /usr/lib/libunicorn.dylib (OSX)
     /usr/lib/libunicorn.a
 
