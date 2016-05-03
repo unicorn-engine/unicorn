@@ -65,7 +65,7 @@ int loop_count = 0;
 // This hook is used to show that code is executing in the emulator.
 static void mips_codehook(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
-	printf("Code: %llX\n", address);
+	printf("Code: %"PRIx64"\n", address);
 }
 
 
@@ -164,7 +164,7 @@ int main(int argc, char **argv, char **envp)
 	
     // hook all instructions by having @begin > @end
 	printf("uc_hook_add()\n");
-    uc_hook_add(uc, &hhc, UC_HOOK_CODE, mips_codehook, NULL, (uint64_t)1, (uint64_t)0);
+    uc_hook_add(uc, &hhc, UC_HOOK_CODE, mips_codehook, NULL, 1, 0);
 	if( err )
 	{
         printf("Failed on uc_hook_add(code) with error returned: %u\n", err);

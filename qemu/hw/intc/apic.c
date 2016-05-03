@@ -70,7 +70,6 @@ static void apic_sync_vapic(APICCommonState *s, int sync_type)
         //length = offsetof(VAPICState, enabled) - offsetof(VAPICState, isr);
 
         if (sync_type & SYNC_TO_VAPIC) {
-            assert(qemu_cpu_is_self(CPU(s->cpu)));
 
             vapic_state.tpr = s->tpr;
             vapic_state.enabled = 1;

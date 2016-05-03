@@ -70,7 +70,13 @@ mem_unmap.static
 mem_apis
 mem_apis.exe
 mem_apis.static
-
+sample_batch_reg
+sample_batch_reg.exe
+sample_batch_reg.static
+sample_x86_32_gdt_and_seg_regs
+sample_x86_32_gdt_and_seg_regs.exe
+sample_x86_32_gdt_and_seg_regs.static
+mem_64_c
 
 libunicorn*.dll
 libunicorn*.so
@@ -128,6 +134,12 @@ threaded_emu_start
 emu_stop_in_hook_overrun
 mips_branch_likely_issue
 emu_clear_errors
+001-bad_condition_code_0xe
+002-qemu__fatal__unimplemented_control_register_write_0xffb___0x0
+003-qemu__fatal__wdebug_not_implemented
+004-segmentation_fault_1
+005-qemu__fatal__illegal_instruction__0000___00000404
+006-qemu__fatal__illegal_instruction__0421___00040026
 
 test_mem_map_ptr
 test_mem_high
@@ -139,6 +151,14 @@ test_multihook
 test_pc_change
 mem_fuzz
 test_x86_soft_paging
+test_hookcounts
+
+memleak_x86
+memleak_arm
+memleak_arm64
+memleak_mips
+memleak_m68k
+memleak_sparc
 
 
 #################

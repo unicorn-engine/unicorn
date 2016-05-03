@@ -38,7 +38,7 @@ int main()
         uc_mem_write(uc, UC_BUG_WRITE_ADDR,
                 (const uint8_t*)"\xff\xff\xff\xff\xff\xff\xff\xff", 8);
     }
-    uc_hook_add(uc, &uh_trap, UC_HOOK_INTR, _interrupt, NULL);
+    uc_hook_add(uc, &uh_trap, UC_HOOK_INTR, _interrupt, NULL, 1, 0);
     uc_emu_start(uc, UC_BUG_WRITE_ADDR, UC_BUG_WRITE_ADDR+8, 0, 1);
     uc_close(uc);
     printf ("Correct: %s\n", got_sigill? "YES": "NO");

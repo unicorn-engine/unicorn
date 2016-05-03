@@ -148,7 +148,7 @@ static uint32_t hook_in(uc_engine *uc, uint32_t port, int size, void *user_data)
 // callback for OUT instruction (X86).
 static void hook_out(uc_engine *uc, uint32_t port, int size, uint32_t value, void *user_data)
 {
-    uint32_t tmp;
+    uint32_t tmp = 0;
     uint32_t eip;
 
     uc_reg_read(uc, UC_X86_REG_EIP, &eip);
@@ -470,7 +470,7 @@ static void test_i386_invalid_mem_read(void)
     uc_close(uc);
 }
 
-// emulate code that read invalid memory
+// emulate code that write invalid memory
 static void test_i386_invalid_mem_write(void)
 {
     uc_engine *uc;
@@ -532,7 +532,7 @@ static void test_i386_invalid_mem_write(void)
     if (!uc_mem_read(uc, 0xaaaaaaaa, &tmp, sizeof(tmp)))
         printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xaaaaaaaa, tmp);
     else
-        printf(">>> Failed to read 4 bytes from [0x%x]\n", 0xffffffaa);
+        printf(">>> Failed to read 4 bytes from [0x%x]\n", 0xaaaaaaaa);
 
     if (!uc_mem_read(uc, 0xffffffaa, &tmp, sizeof(tmp)))
         printf(">>> Read 4 bytes from [0x%x] = 0x%x\n", 0xffffffaa, tmp);
@@ -604,6 +604,7 @@ static void test_i386_inout(void)
     uc_engine *uc;
     uc_err err;
     uc_hook trace1, trace2, trace3, trace4;
+
 
     int r_eax = 0x1234;     // EAX register
     int r_ecx = 0x6789;     // ECX register
@@ -850,7 +851,7 @@ static void test_x86_16(void)
     uc_mem_map(uc, 0, 8 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, 0, X86_CODE16, sizeof(X86_CODE64) - 1)) {
+    if (uc_mem_write(uc, 0, X86_CODE16, sizeof(X86_CODE16) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
@@ -912,14 +913,6 @@ int main(int argc, char **argv, char **envp)
 
         if (!strcmp(argv[1], "-16")) {
             test_x86_16();
-        }
-
-        // test memleak
-        if (!strcmp(argv[1], "-0")) {
-            while(1) {
-                test_i386();
-                // test_x86_64();
-            }
         }
     } else {
         printf("Syntax: %s <-16|-32|-64>\n", argv[0]);

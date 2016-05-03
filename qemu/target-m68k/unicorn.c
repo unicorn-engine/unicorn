@@ -6,14 +6,8 @@
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
-
 #include "unicorn_common.h"
-
-#define READ_QWORD(x) ((uint64)x)
-#define READ_DWORD(x) (x & 0xffffffff)
-#define READ_WORD(x) (x & 0xffff)
-#define READ_BYTE_H(x) ((x & 0xffff) >> 8)
-#define READ_BYTE_L(x) (x & 0xff)
+#include "uc_priv.h"
 
 
 static void m68k_set_pc(struct uc_struct *uc, uint64_t address)
@@ -31,52 +25,55 @@ void m68k_reg_reset(struct uc_struct *uc)
     env->pc = 0;
 }
 
-int m68k_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
+int m68k_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
     CPUState *mycpu = first_cpu;
+    int i;
 
-    if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
-        *(int32_t *)value = M68K_CPU(uc, mycpu)->env.aregs[regid - UC_M68K_REG_A0];
-    else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
-        *(int32_t *)value = M68K_CPU(uc, mycpu)->env.dregs[regid - UC_M68K_REG_D0];
-    else {
-        switch(regid) {
-            default: break;
-            case UC_M68K_REG_PC:
-                     *(int32_t *)value = M68K_CPU(uc, mycpu)->env.pc;
-                     break;
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        void *value = vals[i];
+        if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
+            *(int32_t *)value = M68K_CPU(uc, mycpu)->env.aregs[regid - UC_M68K_REG_A0];
+        else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
+            *(int32_t *)value = M68K_CPU(uc, mycpu)->env.dregs[regid - UC_M68K_REG_D0];
+        else {
+            switch(regid) {
+                default: break;
+                case UC_M68K_REG_PC:
+                         *(int32_t *)value = M68K_CPU(uc, mycpu)->env.pc;
+                         break;
+            }
         }
     }
 
     return 0;
 }
 
-
-#define WRITE_DWORD(x, w) (x = (x & ~0xffffffff) | (w & 0xffffffff))
-#define WRITE_WORD(x, w) (x = (x & ~0xffff) | (w & 0xffff))
-#define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
-#define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
-
-int m68k_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
+int m68k_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, int count)
 {
     CPUState *mycpu = first_cpu;
+    int i;
 
-    if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
-        M68K_CPU(uc, mycpu)->env.aregs[regid - UC_M68K_REG_A0] = *(uint32_t *)value;
-    else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
-        M68K_CPU(uc, mycpu)->env.dregs[regid - UC_M68K_REG_D0] = *(uint32_t *)value;
-    else {
-        switch(regid) {
-            default: break;
-            case UC_M68K_REG_PC:
-                     M68K_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
-                     // force to quit execution and flush TB
-                     uc->quit_request = true;
-                     uc_emu_stop(uc);
-                     break;
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        const void *value = vals[i];
+        if (regid >= UC_M68K_REG_A0 && regid <= UC_M68K_REG_A7)
+            M68K_CPU(uc, mycpu)->env.aregs[regid - UC_M68K_REG_A0] = *(uint32_t *)value;
+        else if (regid >= UC_M68K_REG_D0 && regid <= UC_M68K_REG_D7)
+            M68K_CPU(uc, mycpu)->env.dregs[regid - UC_M68K_REG_D0] = *(uint32_t *)value;
+        else {
+            switch(regid) {
+                default: break;
+                case UC_M68K_REG_PC:
+                         M68K_CPU(uc, mycpu)->env.pc = *(uint32_t *)value;
+                         // force to quit execution and flush TB
+                         uc->quit_request = true;
+                         uc_emu_stop(uc);
+                         break;
+            }
         }
     }
-
 
     return 0;
 }

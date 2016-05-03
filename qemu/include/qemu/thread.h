@@ -58,8 +58,6 @@ int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *nam
                         void *(*start_routine)(void *),
                         void *arg, int mode);
 void *qemu_thread_join(QemuThread *thread);
-void qemu_thread_get_self(struct uc_struct *uc, QemuThread *thread);
-bool qemu_thread_is_self(QemuThread *thread);
 void qemu_thread_exit(struct uc_struct *uc, void *retval);
 
 #endif

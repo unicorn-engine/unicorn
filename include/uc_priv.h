@@ -22,6 +22,17 @@
 
 #define ARR_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
+#define READ_QWORD(x) ((uint64)x)
+#define READ_DWORD(x) (x & 0xffffffff)
+#define READ_WORD(x) (x & 0xffff)
+#define READ_BYTE_H(x) ((x & 0xffff) >> 8)
+#define READ_BYTE_L(x) (x & 0xff)
+#define WRITE_DWORD(x, w) (x = (x & ~0xffffffff) | (w & 0xffffffff))
+#define WRITE_WORD(x, w) (x = (x & ~0xffff) | (w & 0xffff))
+#define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | ((b & 0xff) << 8))
+#define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
+
+
 QTAILQ_HEAD(CPUTailQ, CPUState);
 
 typedef struct ModuleEntry {
@@ -35,8 +46,8 @@ typedef QTAILQ_HEAD(, ModuleEntry) ModuleTypeList;
 typedef uc_err (*query_t)(struct uc_struct *uc, uc_query_type type, size_t *result);
 
 // return 0 on success, -1 on failure
-typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int regid, void *value);
-typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int regid, const void *value);
+typedef int (*reg_read_t)(struct uc_struct *uc, unsigned int *regs, void **vals, int count);
+typedef int (*reg_write_t)(struct uc_struct *uc, unsigned int *regs, void *const *vals, int count);
 
 typedef void (*reg_reset_t)(struct uc_struct *uc);
 
@@ -136,7 +147,6 @@ struct uc_struct {
     uc_mode mode;
     QemuMutex qemu_global_mutex; // qemu/cpus.c
     QemuCond qemu_cpu_cond; // qemu/cpus.c
-    QemuThread *tcg_cpu_thread; // qemu/cpus.c
     QemuCond *tcg_halt_cond; // qemu/cpus.c
     struct CPUTailQ cpus;   // qemu/cpu-exec.c
     uc_err errnum;  // qemu/cpu-exec.c
@@ -152,7 +162,7 @@ struct uc_struct {
     uc_args_uc_u64_t set_pc;  // set PC for tracecode
     uc_args_int_t stop_interrupt;   // check if the interrupt should stop emulation
 
-    uc_args_uc_t init_arch, pause_all_vcpus, cpu_exec_init_all;
+    uc_args_uc_t init_arch, cpu_exec_init_all;
     uc_args_int_uc_t vm_start;
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;
@@ -188,10 +198,12 @@ struct uc_struct {
     QemuMutex flat_view_mutex;
     QTAILQ_HEAD(memory_listeners, MemoryListener) memory_listeners;
     QTAILQ_HEAD(, AddressSpace) address_spaces;
+    MachineState *machine_state;
     // qom/object.c
     GHashTable *type_table;
     Type type_interface;
     Object *root;
+    Object *owner;
     bool enumerating_types;
     // util/module.c
     ModuleTypeList init_type_list[MODULE_INIT_MAX];

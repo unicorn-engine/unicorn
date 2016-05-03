@@ -10,6 +10,13 @@ MAKE_JOBS=$((${MAKE_JOBS}+0))
 [ ${MAKE_JOBS} -lt 1 ] && \
   MAKE_JOBS=4
 
+# build for ASAN
+asan() {
+  UNICORN_DEBUG=yes
+  UNICORN_ASAN=yes
+  ${MAKE} V=1
+}
+
 # build iOS lib for all iDevices, or only specific device
 build_iOS() {
   IOS_SDK=`xcrun --sdk iphoneos --show-sdk-path`
@@ -51,7 +58,7 @@ install() {
     rm -rf /usr/lib/libunicorn*
     rm -rf /usr/include/unicorn
     # install into /usr/local
-    PREFIX=/usr/local
+    PREFIX="${PREFIX-/usr/local}"
     ${MAKE} install
   else  # not OSX
     test -d /usr/lib64 && LIBDIRARCH=lib64
@@ -64,7 +71,7 @@ uninstall() {
   if [ "$UNAME" = "Darwin" ]; then
     # find the directory automatically, so we can support both Macport & Brew
     PKGCFGDIR="$(pkg-config --variable pc_path pkg-config | cut -d ':' -f 1)"
-    PREFIX=/usr/local
+    PREFIX="${PREFIX-/usr/local}"
     ${MAKE} uninstall
   else  # not OSX
     test -d /usr/lib64 && LIBDIRARCH=lib64
@@ -80,7 +87,7 @@ fi
 
 if [ -n "`echo "$UNAME" | grep BSD`" ]; then
   MAKE=gmake
-  PREFIX=/usr/local
+  PREFIX="${PREFIX-/usr/local}"
 fi
 
 [ -z "${UNAME}" ] && UNAME=$(uname)
@@ -90,6 +97,7 @@ export CC INSTALL_BIN PREFIX PKGCFGDIR LIBDIRARCH LIBARCHS CFLAGS LDFLAGS
 
 case "$1" in
   "" ) build;;
+  "asan" ) asan;;
   "default" ) build;;
   "install" ) install;;
   "uninstall" ) uninstall;;

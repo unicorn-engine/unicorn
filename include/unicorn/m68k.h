@@ -9,7 +9,6 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include "platform.h"
 
 #ifdef _MSC_VER
 #pragma warning(disable:4201)

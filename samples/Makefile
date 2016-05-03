@@ -37,6 +37,13 @@ else
 CC = $(CROSS)gcc
 endif
 
+ifeq ($(UNICORN_ASAN),yes)
+CC = clang -fsanitize=address -fno-omit-frame-pointer
+CXX = clang++ -fsanitize=address -fno-omit-frame-pointer
+AR = llvm-ar
+LDFLAGS := -fsanitize=address ${LDFLAGS}
+endif
+
 
 #CFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
 #LDFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
@@ -75,7 +82,7 @@ ARCHIVE = $(LIBDIR)/lib$(LIBNAME).$(AR_EXT)
 endif
 endif
 
-.PHONY: all clean
+.PHONY: all clean clean_bins clean_libs
 
 UNICORN_ARCHS := $(shell if [ -e ../config.log ]; then cat ../config.log;\
 				 else printf "$(UNICORN_ARCHS)"; fi)
@@ -100,6 +107,8 @@ ifneq (,$(findstring x86,$(UNICORN_ARCHS)))
 SOURCES += sample_x86.c
 SOURCES += shellcode.c
 SOURCES += mem_apis.c
+SOURCES += sample_x86_32_gdt_and_seg_regs.c
+SOURCES += sample_batch_reg.c
 endif
 ifneq (,$(findstring m68k,$(UNICORN_ARCHS)))
 SOURCES += sample_m68k.c
@@ -109,12 +118,16 @@ OBJS = $(addprefix $(OBJDIR)/,$(SOURCES:.c=.o))
 OBJS_ELF = $(addprefix $(OBJDIR)/,$(SOURCES:.c=))
 BINARY = $(addprefix $(SAMPLEDIR)/,$(SOURCES:.c=$(BIN_EXT)))
 
-all: $(BINARY)
+all: clean_bins $(BINARY)
 
-clean:
+clean_bins:
 	rm -rf *.o $(OBJS_ELF) $(BINARY) $(SAMPLEDIR)/*.exe $(SAMPLEDIR)/*.static $(OBJDIR)/lib$(LIBNAME)* $(OBJDIR)/$(LIBNAME)*
+	rm -rf sample_x86 sample_arm sample_arm64 sample_mips sample_sparc sample_ppc sample_m68k shellcode mem_apis sample_x86_32_gdt_and_seg_regs sample_batch_reg
+
+clean_libs:
 	rm -rf libunicorn*.so libunicorn*.lib libunicorn*.dylib unicorn*.dll unicorn*.lib
-	rm -rf sample_x86 sample_arm sample_arm64 sample_mips sample_sparc sample_ppc sample_m68k shellcode mem_apis
+
+clean: clean_bins clean_libs
 
 $(BINARY): $(OBJS)
 

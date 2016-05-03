@@ -2258,7 +2258,6 @@
 #define parse_value parse_value_arm
 #define par_write par_write_arm
 #define patch_reloc patch_reloc_arm
-#define pause_all_vcpus pause_all_vcpus_arm
 #define phys_map_node_alloc phys_map_node_alloc_arm
 #define phys_map_node_reserve phys_map_node_reserve_arm
 #define phys_mem_alloc phys_mem_alloc_arm
@@ -2417,9 +2416,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_arm
 #define qemu_clock_ptr qemu_clock_ptr_arm
 #define qemu_clocks qemu_clocks_arm
-#define qemu_cond_destroy qemu_cond_destroy_arm
-#define qemu_cpu_is_self qemu_cpu_is_self_arm
-#define qemu_cpu_kick_thread qemu_cpu_kick_thread_arm
 #define qemu_daemon qemu_daemon_arm
 #define qemu_event_destroy qemu_event_destroy_arm
 #define qemu_event_init qemu_event_init_arm
@@ -2445,7 +2441,6 @@
 #define qemu_log_flush qemu_log_flush_arm
 #define qemu_loglevel_mask qemu_loglevel_mask_arm
 #define qemu_log_vprintf qemu_log_vprintf_arm
-#define qemu_mutex_destroy qemu_mutex_destroy_arm
 #define qemu_mutex_lock_ramlist qemu_mutex_lock_ramlist_arm
 #define qemu_mutex_trylock qemu_mutex_trylock_arm
 #define qemu_mutex_unlock_ramlist qemu_mutex_unlock_ramlist_arm
@@ -2516,9 +2511,7 @@
 #define qemu_st_helpers qemu_st_helpers_arm
 #define qemu_strnlen qemu_strnlen_arm
 #define qemu_strsep qemu_strsep_arm
-#define qemu_tcg_cpu_thread_fn qemu_tcg_cpu_thread_fn_arm
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_arm
-#define qemu_thread_exit qemu_thread_exit_arm
 #define qemu_try_memalign qemu_try_memalign_arm
 #define qentry_destroy qentry_destroy_arm
 #define qerror_human qerror_human_arm

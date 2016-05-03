@@ -158,6 +158,15 @@ static void test_strange_map(void **state)
     uc_mem_unmap(uc, 0x0,0x1000); 
 }
 
+static void test_query_page_size(void **state)
+{
+    uc_engine *uc = *state;
+
+    size_t page_size;
+    uc_assert_success(uc_query(uc, UC_QUERY_PAGE_SIZE, &page_size));
+    assert_int_equal(4096, page_size);
+}
+
 void write(uc_engine* uc, uint64_t addr, uint64_t len){
   uint8_t* buff = alloca(len);
   memset(buff,0,len);
@@ -220,6 +229,7 @@ int main(void) {
         test(test_unmap_double_map),
         test(test_overlap_unmap_double_map),
         test(test_strange_map),
+        test(test_query_page_size),
     };
 #undef test
     return cmocka_run_group_tests(tests, NULL, NULL);

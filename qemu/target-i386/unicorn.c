@@ -2,20 +2,14 @@
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 
 #include "hw/boards.h"
-#include "sysemu/cpus.h"
 #include "hw/i386/pc.h"
+#include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
 #include "tcg.h"
-
 #include "unicorn_common.h"
 #include <unicorn/x86.h>  /* needed for uc_x86_mmr */
-
-#define READ_QWORD(x) ((uint64)x)
-#define READ_DWORD(x) (x & 0xffffffff)
-#define READ_WORD(x) (x & 0xffff)
-#define READ_BYTE_H(x) ((x & 0xffff) >> 8)
-#define READ_BYTE_L(x) (x & 0xff)
+#include "uc_priv.h"
 
 
 static void x86_set_pc(struct uc_struct *uc, uint64_t address)
@@ -27,8 +21,10 @@ void x86_release(void *ctx);
 
 void x86_release(void *ctx)
 {
-    release_common(ctx);
+    int i;
     TCGContext *s = (TCGContext *) ctx;
+
+    release_common(ctx);
 
     // arch specific
     g_free(s->cpu_A0);
@@ -41,7 +37,6 @@ void x86_release(void *ctx)
     g_free(s->cpu_cc_src);
     g_free(s->cpu_cc_src2);
 
-    int i;
     for (i = 0; i < CPU_NB_REGS; ++i) {
         g_free(s->cpu_regs[i]);
     }
@@ -142,890 +137,979 @@ void x86_reg_reset(struct uc_struct *uc)
     }
 }
 
-int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value)
+int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
     CPUState *mycpu = first_cpu;
+    int i;
 
-    switch(uc->mode) {
-        default:
-            break;
-        case UC_MODE_16:
-            switch(regid) {
-                default: break;
-                case UC_X86_REG_ES:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_ES].selector;
-                    return 0;
-                case UC_X86_REG_SS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_SS].selector;
-                    return 0;
-                case UC_X86_REG_DS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_DS].selector;
-                    return 0;
-                case UC_X86_REG_FS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
-                    return 0;
-                case UC_X86_REG_GS:
-                    *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
-                    return 0;
-            }
-            // fall-thru
-        case UC_MODE_32:
-            switch(regid) {
-                default:
-                    break;
-                case UC_X86_REG_CR0 ... UC_X86_REG_CR4:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.cr[regid - UC_X86_REG_CR0];
-                    break;
-                case UC_X86_REG_DR0 ... UC_X86_REG_DR7:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0];
-                    break;
-                case UC_X86_REG_EFLAGS:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.eflags;
-                    break;
-                case UC_X86_REG_EAX:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EAX];
-                    break;
-                case UC_X86_REG_AX:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
-                    break;
-                case UC_X86_REG_AH:
-                    *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
-                    break;
-                case UC_X86_REG_AL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
-                    break;
-                case UC_X86_REG_EBX:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EBX];
-                    break;
-                case UC_X86_REG_BX:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
-                    break;
-                case UC_X86_REG_BH:
-                    *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
-                    break;
-                case UC_X86_REG_BL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
-                    break;
-                case UC_X86_REG_ECX:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ECX];
-                    break;
-                case UC_X86_REG_CX:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
-                    break;
-                case UC_X86_REG_CH:
-                    *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
-                    break;
-                case UC_X86_REG_CL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
-                    break;
-                case UC_X86_REG_EDX:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EDX];
-                    break;
-                case UC_X86_REG_DX:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
-                    break;
-                case UC_X86_REG_DH:
-                    *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
-                    break;
-                case UC_X86_REG_DL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
-                    break;
-                case UC_X86_REG_ESP:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ESP];
-                    break;
-                case UC_X86_REG_SP:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESP]);
-                    break;
-                case UC_X86_REG_EBP:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EBP];
-                    break;
-                case UC_X86_REG_BP:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBP]);
-                    break;
-                case UC_X86_REG_ESI:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ESI];
-                    break;
-                case UC_X86_REG_SI:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESI]);
-                    break;
-                case UC_X86_REG_EDI:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EDI];
-                    break;
-                case UC_X86_REG_DI:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDI]);
-                    break;
-                case UC_X86_REG_EIP:
-                    *(int32_t *)value = X86_CPU(uc, mycpu)->env.eip;
-                    break;
-                case UC_X86_REG_IP:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.eip);
-                    break;
-                case UC_X86_REG_CS:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_CS].selector;
-                    break;
-                case UC_X86_REG_DS:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_DS].selector;
-                    break;
-                case UC_X86_REG_SS:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_SS].selector;
-                    break;
-                case UC_X86_REG_ES:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_ES].selector;
-                    break;
-                case UC_X86_REG_FS:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
-                    break;
-                case UC_X86_REG_GS:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
-                    break;
-                case UC_X86_REG_IDTR:
-                    ((uc_x86_mmr *)value)->limit = (uint16_t)X86_CPU(uc, mycpu)->env.idt.limit;
-                    ((uc_x86_mmr *)value)->base = (uint32_t)X86_CPU(uc, mycpu)->env.idt.base;
-                    break;
-                case UC_X86_REG_GDTR:
-                    ((uc_x86_mmr *)value)->limit = (uint16_t)X86_CPU(uc, mycpu)->env.gdt.limit;
-                    ((uc_x86_mmr *)value)->base = (uint32_t)X86_CPU(uc, mycpu)->env.gdt.base;
-                    break;
-                case UC_X86_REG_LDTR:
-                    ((uc_x86_mmr *)value)->limit = X86_CPU(uc, mycpu)->env.ldt.limit;
-                    ((uc_x86_mmr *)value)->base = (uint32_t)X86_CPU(uc, mycpu)->env.ldt.base;
-                    ((uc_x86_mmr *)value)->selector = (uint16_t)X86_CPU(uc, mycpu)->env.ldt.selector;
-                    ((uc_x86_mmr *)value)->flags = X86_CPU(uc, mycpu)->env.ldt.flags;
-                    break;
-                case UC_X86_REG_TR:
-                    ((uc_x86_mmr *)value)->limit = X86_CPU(uc, mycpu)->env.tr.limit;
-                    ((uc_x86_mmr *)value)->base = (uint32_t)X86_CPU(uc, mycpu)->env.tr.base;
-                    ((uc_x86_mmr *)value)->selector = (uint16_t)X86_CPU(uc, mycpu)->env.tr.selector;
-                    ((uc_x86_mmr *)value)->flags = X86_CPU(uc, mycpu)->env.tr.flags;
-                    break;
-            }
-            break;
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        void *value = vals[i];
+        switch(regid) {
+            default:
+                break;
+            case UC_X86_REG_FP0 ... UC_X86_REG_FP7:
+                {
+                    floatx80 reg = X86_CPU(uc, mycpu)->env.fpregs[regid - UC_X86_REG_FP0].d;
+                    cpu_get_fp80(value, value+sizeof(uint64_t), reg);
+                }
+                continue;
+            case UC_X86_REG_FPSW:
+                {
+                    uint16_t fpus = X86_CPU(uc, mycpu)->env.fpus;
+                    fpus  = fpus & ~0x3800;
+                    fpus |= ( X86_CPU(uc, mycpu)->env.fpstt & 0x7 ) << 11;
+                    *(uint16_t*) value = fpus;
+                }
+                continue;
+            case UC_X86_REG_FPCW:
+                *(uint16_t*) value = X86_CPU(uc, mycpu)->env.fpuc;
+                continue;
+            case UC_X86_REG_FPTAG:
+                {
+                    #define EXPD(fp)        (fp.l.upper & 0x7fff)
+                    #define MANTD(fp)       (fp.l.lower)
+                    #define MAXEXPD 0x7fff
+                    int fptag, exp, i;
+                    uint64_t mant;
+                    CPU_LDoubleU tmp;
+                    fptag = 0;
+                    for (i = 7; i >= 0; i--) {
+                        fptag <<= 2;
+                        if (X86_CPU(uc, mycpu)->env.fptags[i]) {
+                            fptag |= 3;
+                        } else {
+                            tmp.d = X86_CPU(uc, mycpu)->env.fpregs[i].d;
+                            exp = EXPD(tmp);
+                            mant = MANTD(tmp);
+                            if (exp == 0 && mant == 0) {
+                                /* zero */
+                                fptag |= 1;
+                            } else if (exp == 0 || exp == MAXEXPD
+                                       || (mant & (1LL << 63)) == 0) {
+                                /* NaNs, infinity, denormal */
+                                fptag |= 2;
+                            }
+                        }
+                    }
+                    *(uint16_t*) value = fptag; 
+                }
+                continue;
+        }
+
+        switch(uc->mode) {
+            default:
+                break;
+            case UC_MODE_16:
+                switch(regid) {
+                    default: break;
+                    case UC_X86_REG_ES:
+                        *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_ES].selector;
+                        continue;
+                    case UC_X86_REG_SS:
+                        *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_SS].selector;
+                        continue;
+                    case UC_X86_REG_DS:
+                        *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_DS].selector;
+                        continue;
+                    case UC_X86_REG_FS:
+                        *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
+                        continue;
+                    case UC_X86_REG_GS:
+                        *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
+                        continue;
+                }
+                // fall-thru
+            case UC_MODE_32:
+                switch(regid) {
+                    default:
+                        break;
+                    case UC_X86_REG_CR0 ... UC_X86_REG_CR4:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.cr[regid - UC_X86_REG_CR0];
+                        break;
+                    case UC_X86_REG_DR0 ... UC_X86_REG_DR7:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0];
+                        break;
+                    case UC_X86_REG_EFLAGS:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.eflags;
+                        break;
+                    case UC_X86_REG_EAX:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EAX];
+                        break;
+                    case UC_X86_REG_AX:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
+                        break;
+                    case UC_X86_REG_AH:
+                        *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
+                        break;
+                    case UC_X86_REG_AL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
+                        break;
+                    case UC_X86_REG_EBX:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EBX];
+                        break;
+                    case UC_X86_REG_BX:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
+                        break;
+                    case UC_X86_REG_BH:
+                        *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
+                        break;
+                    case UC_X86_REG_BL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
+                        break;
+                    case UC_X86_REG_ECX:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ECX];
+                        break;
+                    case UC_X86_REG_CX:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
+                        break;
+                    case UC_X86_REG_CH:
+                        *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
+                        break;
+                    case UC_X86_REG_CL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
+                        break;
+                    case UC_X86_REG_EDX:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EDX];
+                        break;
+                    case UC_X86_REG_DX:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
+                        break;
+                    case UC_X86_REG_DH:
+                        *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
+                        break;
+                    case UC_X86_REG_DL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
+                        break;
+                    case UC_X86_REG_ESP:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ESP];
+                        break;
+                    case UC_X86_REG_SP:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESP]);
+                        break;
+                    case UC_X86_REG_EBP:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EBP];
+                        break;
+                    case UC_X86_REG_BP:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBP]);
+                        break;
+                    case UC_X86_REG_ESI:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ESI];
+                        break;
+                    case UC_X86_REG_SI:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESI]);
+                        break;
+                    case UC_X86_REG_EDI:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EDI];
+                        break;
+                    case UC_X86_REG_DI:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDI]);
+                        break;
+                    case UC_X86_REG_EIP:
+                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.eip;
+                        break;
+                    case UC_X86_REG_IP:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.eip);
+                        break;
+                    case UC_X86_REG_CS:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_CS].selector;
+                        break;
+                    case UC_X86_REG_DS:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_DS].selector;
+                        break;
+                    case UC_X86_REG_SS:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_SS].selector;
+                        break;
+                    case UC_X86_REG_ES:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_ES].selector;
+                        break;
+                    case UC_X86_REG_FS:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
+                        break;
+                    case UC_X86_REG_GS:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
+                        break;
+                    case UC_X86_REG_IDTR:
+                        ((uc_x86_mmr *)value)->limit = (uint16_t)X86_CPU(uc, mycpu)->env.idt.limit;
+                        ((uc_x86_mmr *)value)->base = (uint32_t)X86_CPU(uc, mycpu)->env.idt.base;
+                        break;
+                    case UC_X86_REG_GDTR:
+                        ((uc_x86_mmr *)value)->limit = (uint16_t)X86_CPU(uc, mycpu)->env.gdt.limit;
+                        ((uc_x86_mmr *)value)->base = (uint32_t)X86_CPU(uc, mycpu)->env.gdt.base;
+                        break;
+                    case UC_X86_REG_LDTR:
+                        ((uc_x86_mmr *)value)->limit = X86_CPU(uc, mycpu)->env.ldt.limit;
+                        ((uc_x86_mmr *)value)->base = (uint32_t)X86_CPU(uc, mycpu)->env.ldt.base;
+                        ((uc_x86_mmr *)value)->selector = (uint16_t)X86_CPU(uc, mycpu)->env.ldt.selector;
+                        ((uc_x86_mmr *)value)->flags = X86_CPU(uc, mycpu)->env.ldt.flags;
+                        break;
+                    case UC_X86_REG_TR:
+                        ((uc_x86_mmr *)value)->limit = X86_CPU(uc, mycpu)->env.tr.limit;
+                        ((uc_x86_mmr *)value)->base = (uint32_t)X86_CPU(uc, mycpu)->env.tr.base;
+                        ((uc_x86_mmr *)value)->selector = (uint16_t)X86_CPU(uc, mycpu)->env.tr.selector;
+                        ((uc_x86_mmr *)value)->flags = X86_CPU(uc, mycpu)->env.tr.flags;
+                        break;
+                }
+                break;
 
 #ifdef TARGET_X86_64
-        case UC_MODE_64:
-            switch(regid) {
-                default:
-                    break;
-                case UC_X86_REG_CR0 ... UC_X86_REG_CR4:
-                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.cr[regid - UC_X86_REG_CR0];
-                    break;
-                case UC_X86_REG_DR0 ... UC_X86_REG_DR7:
-                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0];
-                    break;
-                case UC_X86_REG_EFLAGS:
-                    *(int64_t *)value = X86_CPU(uc, mycpu)->env.eflags;
-                    break;
-                case UC_X86_REG_RAX:
-                    *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EAX];
-                    break;
-                case UC_X86_REG_EAX:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
-                    break;
-                case UC_X86_REG_AX:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
-                    break;
-                case UC_X86_REG_AH:
-                    *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
-                    break;
-                case UC_X86_REG_AL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
-                    break;
-                case UC_X86_REG_RBX:
-                    *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EBX];
-                    break;
-                case UC_X86_REG_EBX:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
-                    break;
-                case UC_X86_REG_BX:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
-                    break;
-                case UC_X86_REG_BH:
-                    *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
-                    break;
-                case UC_X86_REG_BL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
-                    break;
-                case UC_X86_REG_RCX:
-                    *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ECX];
-                    break;
-                case UC_X86_REG_ECX:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
-                    break;
-                case UC_X86_REG_CX:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
-                    break;
-                case UC_X86_REG_CH:
-                    *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
-                    break;
-                case UC_X86_REG_CL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
-                    break;
-                case UC_X86_REG_RDX:
-                    *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EDX];
-                    break;
-                case UC_X86_REG_EDX:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
-                    break;
-                case UC_X86_REG_DX:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
-                    break;
-                case UC_X86_REG_DH:
-                    *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
-                    break;
-                case UC_X86_REG_DL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
-                    break;
-                case UC_X86_REG_RSP:
-                    *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ESP];
-                    break;
-                case UC_X86_REG_ESP:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ESP]);
-                    break;
-                case UC_X86_REG_SP:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESP]);
-                    break;
-                case UC_X86_REG_SPL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ESP]);
-                    break;
-                case UC_X86_REG_RBP:
-                    *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EBP];
-                    break;
-                case UC_X86_REG_EBP:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EBP]);
-                    break;
-                case UC_X86_REG_BP:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBP]);
-                    break;
-                case UC_X86_REG_BPL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBP]);
-                    break;
-                case UC_X86_REG_RSI:
-                    *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ESI];
-                    break;
-                case UC_X86_REG_ESI:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ESI]);
-                    break;
-                case UC_X86_REG_SI:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESI]);
-                    break;
-                case UC_X86_REG_SIL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ESI]);
-                    break;
-                case UC_X86_REG_RDI:
-                    *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EDI];
-                    break;
-                case UC_X86_REG_EDI:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EDI]);
-                    break;
-                case UC_X86_REG_DI:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDI]);
-                    break;
-                case UC_X86_REG_DIL:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDI]);
-                    break;
-                case UC_X86_REG_RIP:
-                    *(uint64_t *)value = X86_CPU(uc, mycpu)->env.eip;
-                    break;
-                case UC_X86_REG_EIP:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.eip);
-                    break;
-                case UC_X86_REG_IP:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.eip);
-                    break;
-                case UC_X86_REG_CS:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_CS].selector;
-                    break;
-                case UC_X86_REG_DS:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_DS].selector;
-                    break;
-                case UC_X86_REG_SS:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_SS].selector;
-                    break;
-                case UC_X86_REG_ES:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_ES].selector;
-                    break;
-                case UC_X86_REG_FS:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
-                    break;
-                case UC_X86_REG_GS:
-                    *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
-                    break;
-                case UC_X86_REG_R8:
-                    *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[8]);
-                    break;
-                case UC_X86_REG_R8D:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[8]);
-                    break;
-                case UC_X86_REG_R8W:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[8]);
-                    break;
-                case UC_X86_REG_R8B:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[8]);
-                    break;
-                case UC_X86_REG_R9:
-                    *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[9]);
-                    break;
-                case UC_X86_REG_R9D:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[9]);
-                    break;
-                case UC_X86_REG_R9W:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[9]);
-                    break;
-                case UC_X86_REG_R9B:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[9]);
-                    break;
-                case UC_X86_REG_R10:
-                    *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[10]);
-                    break;
-                case UC_X86_REG_R10D:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[10]);
-                    break;
-                case UC_X86_REG_R10W:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[10]);
-                    break;
-                case UC_X86_REG_R10B:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[10]);
-                    break;
-                case UC_X86_REG_R11:
-                    *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[11]);
-                    break;
-                case UC_X86_REG_R11D:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[11]);
-                    break;
-                case UC_X86_REG_R11W:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[11]);
-                    break;
-                case UC_X86_REG_R11B:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[11]);
-                    break;
-                case UC_X86_REG_R12:
-                    *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[12]);
-                    break;
-                case UC_X86_REG_R12D:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[12]);
-                    break;
-                case UC_X86_REG_R12W:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[12]);
-                    break;
-                case UC_X86_REG_R12B:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[12]);
-                    break;
-                case UC_X86_REG_R13:
-                    *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[13]);
-                    break;
-                case UC_X86_REG_R13D:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[13]);
-                    break;
-                case UC_X86_REG_R13W:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[13]);
-                    break;
-                case UC_X86_REG_R13B:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[13]);
-                    break;
-                case UC_X86_REG_R14:
-                    *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[14]);
-                    break;
-                case UC_X86_REG_R14D:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[14]);
-                    break;
-                case UC_X86_REG_R14W:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[14]);
-                    break;
-                case UC_X86_REG_R14B:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[14]);
-                    break;
-                case UC_X86_REG_R15:
-                    *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[15]);
-                    break;
-                case UC_X86_REG_R15D:
-                    *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[15]);
-                    break;
-                case UC_X86_REG_R15W:
-                    *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[15]);
-                    break;
-                case UC_X86_REG_R15B:
-                    *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[15]);
-                    break;
-                case UC_X86_REG_IDTR:
-                    ((uc_x86_mmr *)value)->limit = (uint16_t)X86_CPU(uc, mycpu)->env.idt.limit;
-                    ((uc_x86_mmr *)value)->base = X86_CPU(uc, mycpu)->env.idt.base;
-                    break;
-                case UC_X86_REG_GDTR:
-                    ((uc_x86_mmr *)value)->limit = (uint16_t)X86_CPU(uc, mycpu)->env.gdt.limit;
-                    ((uc_x86_mmr *)value)->base = X86_CPU(uc, mycpu)->env.gdt.base;
-                    break;
-                case UC_X86_REG_LDTR:
-                    ((uc_x86_mmr *)value)->limit = X86_CPU(uc, mycpu)->env.ldt.limit;
-                    ((uc_x86_mmr *)value)->base = X86_CPU(uc, mycpu)->env.ldt.base;
-                    ((uc_x86_mmr *)value)->selector = (uint16_t)X86_CPU(uc, mycpu)->env.ldt.selector;
-                    ((uc_x86_mmr *)value)->flags = X86_CPU(uc, mycpu)->env.ldt.flags;
-                    break;
-                case UC_X86_REG_TR:
-                    ((uc_x86_mmr *)value)->limit = X86_CPU(uc, mycpu)->env.tr.limit;
-                    ((uc_x86_mmr *)value)->base = X86_CPU(uc, mycpu)->env.tr.base;
-                    ((uc_x86_mmr *)value)->selector = (uint16_t)X86_CPU(uc, mycpu)->env.tr.selector;
-                    ((uc_x86_mmr *)value)->flags = X86_CPU(uc, mycpu)->env.tr.flags;
-                    break;
-            }
-            break;
+            case UC_MODE_64:
+                switch(regid) {
+                    default:
+                        break;
+                    case UC_X86_REG_CR0 ... UC_X86_REG_CR4:
+                        *(int64_t *)value = X86_CPU(uc, mycpu)->env.cr[regid - UC_X86_REG_CR0];
+                        break;
+                    case UC_X86_REG_DR0 ... UC_X86_REG_DR7:
+                        *(int64_t *)value = X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0];
+                        break;
+                    case UC_X86_REG_EFLAGS:
+                        *(int64_t *)value = X86_CPU(uc, mycpu)->env.eflags;
+                        break;
+                    case UC_X86_REG_RAX:
+                        *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EAX];
+                        break;
+                    case UC_X86_REG_EAX:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
+                        break;
+                    case UC_X86_REG_AX:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
+                        break;
+                    case UC_X86_REG_AH:
+                        *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
+                        break;
+                    case UC_X86_REG_AL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EAX]);
+                        break;
+                    case UC_X86_REG_RBX:
+                        *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EBX];
+                        break;
+                    case UC_X86_REG_EBX:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
+                        break;
+                    case UC_X86_REG_BX:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
+                        break;
+                    case UC_X86_REG_BH:
+                        *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
+                        break;
+                    case UC_X86_REG_BL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBX]);
+                        break;
+                    case UC_X86_REG_RCX:
+                        *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ECX];
+                        break;
+                    case UC_X86_REG_ECX:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
+                        break;
+                    case UC_X86_REG_CX:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
+                        break;
+                    case UC_X86_REG_CH:
+                        *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
+                        break;
+                    case UC_X86_REG_CL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ECX]);
+                        break;
+                    case UC_X86_REG_RDX:
+                        *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EDX];
+                        break;
+                    case UC_X86_REG_EDX:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
+                        break;
+                    case UC_X86_REG_DX:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
+                        break;
+                    case UC_X86_REG_DH:
+                        *(int8_t *)value = READ_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
+                        break;
+                    case UC_X86_REG_DL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDX]);
+                        break;
+                    case UC_X86_REG_RSP:
+                        *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ESP];
+                        break;
+                    case UC_X86_REG_ESP:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ESP]);
+                        break;
+                    case UC_X86_REG_SP:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESP]);
+                        break;
+                    case UC_X86_REG_SPL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ESP]);
+                        break;
+                    case UC_X86_REG_RBP:
+                        *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EBP];
+                        break;
+                    case UC_X86_REG_EBP:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EBP]);
+                        break;
+                    case UC_X86_REG_BP:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBP]);
+                        break;
+                    case UC_X86_REG_BPL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBP]);
+                        break;
+                    case UC_X86_REG_RSI:
+                        *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_ESI];
+                        break;
+                    case UC_X86_REG_ESI:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ESI]);
+                        break;
+                    case UC_X86_REG_SI:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESI]);
+                        break;
+                    case UC_X86_REG_SIL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ESI]);
+                        break;
+                    case UC_X86_REG_RDI:
+                        *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EDI];
+                        break;
+                    case UC_X86_REG_EDI:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EDI]);
+                        break;
+                    case UC_X86_REG_DI:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDI]);
+                        break;
+                    case UC_X86_REG_DIL:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDI]);
+                        break;
+                    case UC_X86_REG_RIP:
+                        *(uint64_t *)value = X86_CPU(uc, mycpu)->env.eip;
+                        break;
+                    case UC_X86_REG_EIP:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.eip);
+                        break;
+                    case UC_X86_REG_IP:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.eip);
+                        break;
+                    case UC_X86_REG_CS:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_CS].selector;
+                        break;
+                    case UC_X86_REG_DS:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_DS].selector;
+                        break;
+                    case UC_X86_REG_SS:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_SS].selector;
+                        break;
+                    case UC_X86_REG_ES:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_ES].selector;
+                        break;
+                    case UC_X86_REG_FS:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_FS].selector;
+                        break;
+                    case UC_X86_REG_GS:
+                        *(int16_t *)value = (uint16_t)X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
+                        break;
+                    case UC_X86_REG_R8:
+                        *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[8]);
+                        break;
+                    case UC_X86_REG_R8D:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[8]);
+                        break;
+                    case UC_X86_REG_R8W:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[8]);
+                        break;
+                    case UC_X86_REG_R8B:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[8]);
+                        break;
+                    case UC_X86_REG_R9:
+                        *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[9]);
+                        break;
+                    case UC_X86_REG_R9D:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[9]);
+                        break;
+                    case UC_X86_REG_R9W:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[9]);
+                        break;
+                    case UC_X86_REG_R9B:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[9]);
+                        break;
+                    case UC_X86_REG_R10:
+                        *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[10]);
+                        break;
+                    case UC_X86_REG_R10D:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[10]);
+                        break;
+                    case UC_X86_REG_R10W:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[10]);
+                        break;
+                    case UC_X86_REG_R10B:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[10]);
+                        break;
+                    case UC_X86_REG_R11:
+                        *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[11]);
+                        break;
+                    case UC_X86_REG_R11D:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[11]);
+                        break;
+                    case UC_X86_REG_R11W:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[11]);
+                        break;
+                    case UC_X86_REG_R11B:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[11]);
+                        break;
+                    case UC_X86_REG_R12:
+                        *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[12]);
+                        break;
+                    case UC_X86_REG_R12D:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[12]);
+                        break;
+                    case UC_X86_REG_R12W:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[12]);
+                        break;
+                    case UC_X86_REG_R12B:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[12]);
+                        break;
+                    case UC_X86_REG_R13:
+                        *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[13]);
+                        break;
+                    case UC_X86_REG_R13D:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[13]);
+                        break;
+                    case UC_X86_REG_R13W:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[13]);
+                        break;
+                    case UC_X86_REG_R13B:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[13]);
+                        break;
+                    case UC_X86_REG_R14:
+                        *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[14]);
+                        break;
+                    case UC_X86_REG_R14D:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[14]);
+                        break;
+                    case UC_X86_REG_R14W:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[14]);
+                        break;
+                    case UC_X86_REG_R14B:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[14]);
+                        break;
+                    case UC_X86_REG_R15:
+                        *(int64_t *)value = READ_QWORD(X86_CPU(uc, mycpu)->env.regs[15]);
+                        break;
+                    case UC_X86_REG_R15D:
+                        *(int32_t *)value = READ_DWORD(X86_CPU(uc, mycpu)->env.regs[15]);
+                        break;
+                    case UC_X86_REG_R15W:
+                        *(int16_t *)value = READ_WORD(X86_CPU(uc, mycpu)->env.regs[15]);
+                        break;
+                    case UC_X86_REG_R15B:
+                        *(int8_t *)value = READ_BYTE_L(X86_CPU(uc, mycpu)->env.regs[15]);
+                        break;
+                    case UC_X86_REG_IDTR:
+                        ((uc_x86_mmr *)value)->limit = (uint16_t)X86_CPU(uc, mycpu)->env.idt.limit;
+                        ((uc_x86_mmr *)value)->base = X86_CPU(uc, mycpu)->env.idt.base;
+                        break;
+                    case UC_X86_REG_GDTR:
+                        ((uc_x86_mmr *)value)->limit = (uint16_t)X86_CPU(uc, mycpu)->env.gdt.limit;
+                        ((uc_x86_mmr *)value)->base = X86_CPU(uc, mycpu)->env.gdt.base;
+                        break;
+                    case UC_X86_REG_LDTR:
+                        ((uc_x86_mmr *)value)->limit = X86_CPU(uc, mycpu)->env.ldt.limit;
+                        ((uc_x86_mmr *)value)->base = X86_CPU(uc, mycpu)->env.ldt.base;
+                        ((uc_x86_mmr *)value)->selector = (uint16_t)X86_CPU(uc, mycpu)->env.ldt.selector;
+                        ((uc_x86_mmr *)value)->flags = X86_CPU(uc, mycpu)->env.ldt.flags;
+                        break;
+                    case UC_X86_REG_TR:
+                        ((uc_x86_mmr *)value)->limit = X86_CPU(uc, mycpu)->env.tr.limit;
+                        ((uc_x86_mmr *)value)->base = X86_CPU(uc, mycpu)->env.tr.base;
+                        ((uc_x86_mmr *)value)->selector = (uint16_t)X86_CPU(uc, mycpu)->env.tr.selector;
+                        ((uc_x86_mmr *)value)->flags = X86_CPU(uc, mycpu)->env.tr.flags;
+                        break;
+                }
+                break;
 #endif
+        }
     }
-
 
     return 0;
 }
 
-
-#define WRITE_DWORD(x, w) (x = (x & ~0xffffffff) | (w & 0xffffffff))
-#define WRITE_WORD(x, w) (x = (x & ~0xffff) | (w & 0xffff))
-#define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | (b & 0xff))
-#define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
-
-int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value)
+int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, int count)
 {
     CPUState *mycpu = first_cpu;
+    int i;
 
-    switch(uc->mode) {
-        default:
-            break;
+    for (i = 0; i < count; i++) {
+        unsigned int regid = regs[i];
+        const void *value = vals[i];
+        switch(regid) {
+            default:
+                break;
+            case UC_X86_REG_FP0 ... UC_X86_REG_FP7:
+                {
+                    uint64_t mant = *(uint64_t*) value;
+                    uint16_t upper = *(uint16_t*) (value + sizeof(uint64_t));
+                    X86_CPU(uc, mycpu)->env.fpregs[regid - UC_X86_REG_FP0].d = cpu_set_fp80(mant, upper);
+                }
+                continue;
+            case UC_X86_REG_FPSW:
+                {
+                    uint16_t fpus = *(uint16_t*) value;
+                    X86_CPU(uc, mycpu)->env.fpus = fpus & ~0x3800;
+                    X86_CPU(uc, mycpu)->env.fpstt = (fpus >> 11) & 0x7;
+                }
+                continue;
+            case UC_X86_REG_FPCW:
+                X86_CPU(uc, mycpu)->env.fpuc = *(uint16_t *)value;
+                continue;
+            case UC_X86_REG_FPTAG:
+                {
+                    int i;
+                    uint16_t fptag = *(uint16_t*) value;
+                    for (i = 0; i < 8; i++) {
+                        X86_CPU(uc, mycpu)->env.fptags[i] = ((fptag & 3) == 3);
+                        fptag >>= 2;
+                    }
 
-        case UC_MODE_16:
-            switch(regid) {
-                default: break;
-                case UC_X86_REG_ES:
-                    X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
-                    return 0;
-                case UC_X86_REG_SS:
-                    X86_CPU(uc, mycpu)->env.segs[R_SS].selector = *(uint16_t *)value;
-                    return 0;
-                case UC_X86_REG_DS:
-                    X86_CPU(uc, mycpu)->env.segs[R_DS].selector = *(uint16_t *)value;
-                    return 0;
-                case UC_X86_REG_FS:
-                    X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
-                    return 0;
-                case UC_X86_REG_GS:
-                    X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
-                    return 0;
-            }
-            // fall-thru
-        case UC_MODE_32:
-            switch(regid) {
-                default:
-                    break;
-                case UC_X86_REG_CR0 ... UC_X86_REG_CR4:
-                    X86_CPU(uc, mycpu)->env.cr[regid - UC_X86_REG_CR0] = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_DR0 ... UC_X86_REG_DR7:
-                    X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0] = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_EFLAGS:
-                    X86_CPU(uc, mycpu)->env.eflags = *(uint32_t *)value;
-                    X86_CPU(uc, mycpu)->env.eflags0 = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_EAX:
-                    X86_CPU(uc, mycpu)->env.regs[R_EAX] = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_AX:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_AH:
-                    WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_AL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_EBX:
-                    X86_CPU(uc, mycpu)->env.regs[R_EBX] = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_BX:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_BH:
-                    WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_BL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_ECX:
-                    X86_CPU(uc, mycpu)->env.regs[R_ECX] = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_CX:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_CH:
-                    WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_CL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_EDX:
-                    X86_CPU(uc, mycpu)->env.regs[R_EDX] = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_DX:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_DH:
-                    WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_DL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_ESP:
-                    X86_CPU(uc, mycpu)->env.regs[R_ESP] = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_SP:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESP], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_EBP:
-                    X86_CPU(uc, mycpu)->env.regs[R_EBP] = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_BP:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBP], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_ESI:
-                    X86_CPU(uc, mycpu)->env.regs[R_ESI] = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_SI:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESI], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_EDI:
-                    X86_CPU(uc, mycpu)->env.regs[R_EDI] = *(uint32_t *)value;
-                    break;
-                case UC_X86_REG_DI:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDI], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_EIP:
-                    X86_CPU(uc, mycpu)->env.eip = *(uint32_t *)value;
-                    // force to quit execution and flush TB
-                    uc->quit_request = true;
-                    uc_emu_stop(uc);
-                    break;
-                case UC_X86_REG_IP:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.eip, *(uint16_t *)value);
-                    // force to quit execution and flush TB
-                    uc->quit_request = true;
-                    uc_emu_stop(uc);
-                    break;
-                case UC_X86_REG_CS:
-                    X86_CPU(uc, mycpu)->env.segs[R_CS].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_DS:
-                    X86_CPU(uc, mycpu)->env.segs[R_DS].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_SS:
-                    X86_CPU(uc, mycpu)->env.segs[R_SS].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_ES:
-                    X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_FS:
-                    X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_GS:
-                    X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_IDTR:
-                    X86_CPU(uc, mycpu)->env.idt.limit = (uint16_t)((uc_x86_mmr *)value)->limit;
-                    X86_CPU(uc, mycpu)->env.idt.base = (uint32_t)((uc_x86_mmr *)value)->base;
-                    break;
-                case UC_X86_REG_GDTR:
-                    X86_CPU(uc, mycpu)->env.gdt.limit = (uint16_t)((uc_x86_mmr *)value)->limit;
-                    X86_CPU(uc, mycpu)->env.gdt.base = (uint32_t)((uc_x86_mmr *)value)->base;
-                    break;
-                case UC_X86_REG_LDTR:
-                    X86_CPU(uc, mycpu)->env.ldt.limit = ((uc_x86_mmr *)value)->limit;
-                    X86_CPU(uc, mycpu)->env.ldt.base = (uint32_t)((uc_x86_mmr *)value)->base;
-                    X86_CPU(uc, mycpu)->env.ldt.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
-                    X86_CPU(uc, mycpu)->env.ldt.flags = ((uc_x86_mmr *)value)->flags;
-                    break;
-                case UC_X86_REG_TR:
-                    X86_CPU(uc, mycpu)->env.tr.limit = ((uc_x86_mmr *)value)->limit;
-                    X86_CPU(uc, mycpu)->env.tr.base = (uint32_t)((uc_x86_mmr *)value)->base;
-                    X86_CPU(uc, mycpu)->env.tr.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
-                    X86_CPU(uc, mycpu)->env.tr.flags = ((uc_x86_mmr *)value)->flags;
-                    break;
-            }
-            break;
+                    continue;
+                }
+                break;
+        }
+
+        switch(uc->mode) {
+            default:
+                break;
+
+            case UC_MODE_16:
+                switch(regid) {
+                    default: break;
+                    case UC_X86_REG_ES:
+                        X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
+                        continue;
+                    case UC_X86_REG_SS:
+                        X86_CPU(uc, mycpu)->env.segs[R_SS].selector = *(uint16_t *)value;
+                        continue;
+                    case UC_X86_REG_DS:
+                        X86_CPU(uc, mycpu)->env.segs[R_DS].selector = *(uint16_t *)value;
+                        continue;
+                    case UC_X86_REG_FS:
+                        X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
+                        continue;
+                    case UC_X86_REG_GS:
+                        X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
+                        continue;
+                }
+                // fall-thru
+            case UC_MODE_32:
+                switch(regid) {
+                    default:
+                        break;
+                    case UC_X86_REG_CR0 ... UC_X86_REG_CR4:
+                        X86_CPU(uc, mycpu)->env.cr[regid - UC_X86_REG_CR0] = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_DR0 ... UC_X86_REG_DR7:
+                        X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0] = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_EFLAGS:
+                        X86_CPU(uc, mycpu)->env.eflags = *(uint32_t *)value;
+                        X86_CPU(uc, mycpu)->env.eflags0 = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_EAX:
+                        X86_CPU(uc, mycpu)->env.regs[R_EAX] = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_AX:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_AH:
+                        WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_AL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_EBX:
+                        X86_CPU(uc, mycpu)->env.regs[R_EBX] = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_BX:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_BH:
+                        WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_BL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_ECX:
+                        X86_CPU(uc, mycpu)->env.regs[R_ECX] = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_CX:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_CH:
+                        WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_CL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_EDX:
+                        X86_CPU(uc, mycpu)->env.regs[R_EDX] = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_DX:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_DH:
+                        WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_DL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_ESP:
+                        X86_CPU(uc, mycpu)->env.regs[R_ESP] = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_SP:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESP], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_EBP:
+                        X86_CPU(uc, mycpu)->env.regs[R_EBP] = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_BP:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBP], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_ESI:
+                        X86_CPU(uc, mycpu)->env.regs[R_ESI] = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_SI:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESI], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_EDI:
+                        X86_CPU(uc, mycpu)->env.regs[R_EDI] = *(uint32_t *)value;
+                        break;
+                    case UC_X86_REG_DI:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDI], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_EIP:
+                        X86_CPU(uc, mycpu)->env.eip = *(uint32_t *)value;
+                        // force to quit execution and flush TB
+                        uc->quit_request = true;
+                        uc_emu_stop(uc);
+                        break;
+                    case UC_X86_REG_IP:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.eip, *(uint16_t *)value);
+                        // force to quit execution and flush TB
+                        uc->quit_request = true;
+                        uc_emu_stop(uc);
+                        break;
+                    case UC_X86_REG_CS:
+                        cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_CS, *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_DS:
+                        cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_DS, *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_SS:
+                        cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_SS, *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_ES:
+                        cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_ES, *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_FS:
+                        cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_GS:
+                        cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_IDTR:
+                        X86_CPU(uc, mycpu)->env.idt.limit = (uint16_t)((uc_x86_mmr *)value)->limit;
+                        X86_CPU(uc, mycpu)->env.idt.base = (uint32_t)((uc_x86_mmr *)value)->base;
+                        break;
+                    case UC_X86_REG_GDTR:
+                        X86_CPU(uc, mycpu)->env.gdt.limit = (uint16_t)((uc_x86_mmr *)value)->limit;
+                        X86_CPU(uc, mycpu)->env.gdt.base = (uint32_t)((uc_x86_mmr *)value)->base;
+                        break;
+                    case UC_X86_REG_LDTR:
+                        X86_CPU(uc, mycpu)->env.ldt.limit = ((uc_x86_mmr *)value)->limit;
+                        X86_CPU(uc, mycpu)->env.ldt.base = (uint32_t)((uc_x86_mmr *)value)->base;
+                        X86_CPU(uc, mycpu)->env.ldt.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
+                        X86_CPU(uc, mycpu)->env.ldt.flags = ((uc_x86_mmr *)value)->flags;
+                        break;
+                    case UC_X86_REG_TR:
+                        X86_CPU(uc, mycpu)->env.tr.limit = ((uc_x86_mmr *)value)->limit;
+                        X86_CPU(uc, mycpu)->env.tr.base = (uint32_t)((uc_x86_mmr *)value)->base;
+                        X86_CPU(uc, mycpu)->env.tr.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
+                        X86_CPU(uc, mycpu)->env.tr.flags = ((uc_x86_mmr *)value)->flags;
+                        break;
+                }
+                break;
 
 #ifdef TARGET_X86_64
-        case UC_MODE_64:
-            switch(regid) {
-                default:
-                    break;
-                case UC_X86_REG_CR0 ... UC_X86_REG_CR4:
-                    X86_CPU(uc, mycpu)->env.cr[regid - UC_X86_REG_CR0] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_DR0 ... UC_X86_REG_DR7:
-                    X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_EFLAGS:
-                    X86_CPU(uc, mycpu)->env.eflags = *(uint64_t *)value;
-                    X86_CPU(uc, mycpu)->env.eflags0 = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_RAX:
-                    X86_CPU(uc, mycpu)->env.regs[R_EAX] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_EAX:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_AX:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_AH:
-                    WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_AL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_RBX:
-                    X86_CPU(uc, mycpu)->env.regs[R_EBX] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_EBX:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_BX:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_BH:
-                    WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_BL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_RCX:
-                    X86_CPU(uc, mycpu)->env.regs[R_ECX] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_ECX:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_CX:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_CH:
-                    WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_CL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_RDX:
-                    X86_CPU(uc, mycpu)->env.regs[R_EDX] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_EDX:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_DX:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_DH:
-                    WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_DL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_RSP:
-                    X86_CPU(uc, mycpu)->env.regs[R_ESP] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_ESP:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ESP], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_SP:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESP], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_SPL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ESP], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_RBP:
-                    X86_CPU(uc, mycpu)->env.regs[R_EBP] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_EBP:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EBP], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_BP:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBP], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_BPL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBP], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_RSI:
-                    X86_CPU(uc, mycpu)->env.regs[R_ESI] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_ESI:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ESI], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_SI:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESI], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_SIL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ESI], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_RDI:
-                    X86_CPU(uc, mycpu)->env.regs[R_EDI] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_EDI:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EDI], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_DI:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDI], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_DIL:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDI], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_RIP:
-                    X86_CPU(uc, mycpu)->env.eip = *(uint64_t *)value;
-                    // force to quit execution and flush TB
-                    uc->quit_request = true;
-                    uc_emu_stop(uc);
-                    break;
-                case UC_X86_REG_EIP:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.eip, *(uint32_t *)value);
-                    // force to quit execution and flush TB
-                    uc->quit_request = true;
-                    uc_emu_stop(uc);
-                    break;
-                case UC_X86_REG_IP:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.eip, *(uint16_t *)value);
-                    // force to quit execution and flush TB
-                    uc->quit_request = true;
-                    uc_emu_stop(uc);
-                    break;
-                case UC_X86_REG_CS:
-                    X86_CPU(uc, mycpu)->env.segs[R_CS].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_DS:
-                    X86_CPU(uc, mycpu)->env.segs[R_DS].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_SS:
-                    X86_CPU(uc, mycpu)->env.segs[R_SS].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_ES:
-                    X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_FS:
-                    X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_GS:
-                    X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
-                    break;
-                case UC_X86_REG_R8:
-                    X86_CPU(uc, mycpu)->env.regs[8] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_R8D:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[8], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_R8W:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[8], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_R8B:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[8], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_R9:
-                    X86_CPU(uc, mycpu)->env.regs[9] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_R9D:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[9], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_R9W:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[9], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_R9B:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[9], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_R10:
-                    X86_CPU(uc, mycpu)->env.regs[10] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_R10D:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[10], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_R10W:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[10], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_R10B:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[10], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_R11:
-                    X86_CPU(uc, mycpu)->env.regs[11] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_R11D:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[11], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_R11W:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[11], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_R11B:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[11], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_R12:
-                    X86_CPU(uc, mycpu)->env.regs[12] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_R12D:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[12], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_R12W:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[12], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_R12B:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[12], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_R13:
-                    X86_CPU(uc, mycpu)->env.regs[13] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_R13D:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[13], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_R13W:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[13], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_R13B:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[13], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_R14:
-                    X86_CPU(uc, mycpu)->env.regs[14] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_R14D:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[14], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_R14W:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[14], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_R14B:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[14], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_R15:
-                    X86_CPU(uc, mycpu)->env.regs[15] = *(uint64_t *)value;
-                    break;
-                case UC_X86_REG_R15D:
-                    WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[15], *(uint32_t *)value);
-                    break;
-                case UC_X86_REG_R15W:
-                    WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[15], *(uint16_t *)value);
-                    break;
-                case UC_X86_REG_R15B:
-                    WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[15], *(uint8_t *)value);
-                    break;
-                case UC_X86_REG_IDTR:
-                    X86_CPU(uc, mycpu)->env.idt.limit = (uint16_t)((uc_x86_mmr *)value)->limit;
-                    X86_CPU(uc, mycpu)->env.idt.base = ((uc_x86_mmr *)value)->base;
-                    break;
-                case UC_X86_REG_GDTR:
-                    X86_CPU(uc, mycpu)->env.gdt.limit = (uint16_t)((uc_x86_mmr *)value)->limit;
-                    X86_CPU(uc, mycpu)->env.gdt.base = ((uc_x86_mmr *)value)->base;
-                    break;
-                case UC_X86_REG_LDTR:
-                    X86_CPU(uc, mycpu)->env.ldt.limit = ((uc_x86_mmr *)value)->limit;
-                    X86_CPU(uc, mycpu)->env.ldt.base = ((uc_x86_mmr *)value)->base;
-                    X86_CPU(uc, mycpu)->env.ldt.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
-                    X86_CPU(uc, mycpu)->env.ldt.flags = ((uc_x86_mmr *)value)->flags;
-                    break;
-                case UC_X86_REG_TR:
-                    X86_CPU(uc, mycpu)->env.tr.limit = ((uc_x86_mmr *)value)->limit;
-                    X86_CPU(uc, mycpu)->env.tr.base = ((uc_x86_mmr *)value)->base;
-                    X86_CPU(uc, mycpu)->env.tr.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
-                    X86_CPU(uc, mycpu)->env.tr.flags = ((uc_x86_mmr *)value)->flags;
-                    break;
-            }
-            break;
+            case UC_MODE_64:
+                switch(regid) {
+                    default:
+                        break;
+                    case UC_X86_REG_CR0 ... UC_X86_REG_CR4:
+                        X86_CPU(uc, mycpu)->env.cr[regid - UC_X86_REG_CR0] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_DR0 ... UC_X86_REG_DR7:
+                        X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_EFLAGS:
+                        X86_CPU(uc, mycpu)->env.eflags = *(uint64_t *)value;
+                        X86_CPU(uc, mycpu)->env.eflags0 = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_RAX:
+                        X86_CPU(uc, mycpu)->env.regs[R_EAX] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_EAX:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_AX:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_AH:
+                        WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_AL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EAX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_RBX:
+                        X86_CPU(uc, mycpu)->env.regs[R_EBX] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_EBX:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_BX:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_BH:
+                        WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_BL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_RCX:
+                        X86_CPU(uc, mycpu)->env.regs[R_ECX] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_ECX:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_CX:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_CH:
+                        WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_CL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ECX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_RDX:
+                        X86_CPU(uc, mycpu)->env.regs[R_EDX] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_EDX:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_DX:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_DH:
+                        WRITE_BYTE_H(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_DL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDX], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_RSP:
+                        X86_CPU(uc, mycpu)->env.regs[R_ESP] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_ESP:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ESP], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_SP:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESP], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_SPL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ESP], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_RBP:
+                        X86_CPU(uc, mycpu)->env.regs[R_EBP] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_EBP:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EBP], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_BP:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EBP], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_BPL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EBP], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_RSI:
+                        X86_CPU(uc, mycpu)->env.regs[R_ESI] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_ESI:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_ESI], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_SI:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_ESI], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_SIL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_ESI], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_RDI:
+                        X86_CPU(uc, mycpu)->env.regs[R_EDI] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_EDI:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[R_EDI], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_DI:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[R_EDI], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_DIL:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[R_EDI], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_RIP:
+                        X86_CPU(uc, mycpu)->env.eip = *(uint64_t *)value;
+                        // force to quit execution and flush TB
+                        uc->quit_request = true;
+                        uc_emu_stop(uc);
+                        break;
+                    case UC_X86_REG_EIP:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.eip, *(uint32_t *)value);
+                        // force to quit execution and flush TB
+                        uc->quit_request = true;
+                        uc_emu_stop(uc);
+                        break;
+                    case UC_X86_REG_IP:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.eip, *(uint16_t *)value);
+                        // force to quit execution and flush TB
+                        uc->quit_request = true;
+                        uc_emu_stop(uc);
+                        break;
+                    case UC_X86_REG_CS:
+                        X86_CPU(uc, mycpu)->env.segs[R_CS].selector = *(uint16_t *)value;
+                        break;
+                    case UC_X86_REG_DS:
+                        X86_CPU(uc, mycpu)->env.segs[R_DS].selector = *(uint16_t *)value;
+                        break;
+                    case UC_X86_REG_SS:
+                        X86_CPU(uc, mycpu)->env.segs[R_SS].selector = *(uint16_t *)value;
+                        break;
+                    case UC_X86_REG_ES:
+                        X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
+                        break;
+                    case UC_X86_REG_FS:
+                        X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
+                        break;
+                    case UC_X86_REG_GS:
+                        X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
+                        break;
+                    case UC_X86_REG_R8:
+                        X86_CPU(uc, mycpu)->env.regs[8] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_R8D:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[8], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_R8W:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[8], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_R8B:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[8], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_R9:
+                        X86_CPU(uc, mycpu)->env.regs[9] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_R9D:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[9], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_R9W:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[9], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_R9B:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[9], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_R10:
+                        X86_CPU(uc, mycpu)->env.regs[10] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_R10D:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[10], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_R10W:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[10], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_R10B:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[10], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_R11:
+                        X86_CPU(uc, mycpu)->env.regs[11] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_R11D:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[11], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_R11W:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[11], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_R11B:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[11], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_R12:
+                        X86_CPU(uc, mycpu)->env.regs[12] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_R12D:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[12], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_R12W:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[12], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_R12B:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[12], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_R13:
+                        X86_CPU(uc, mycpu)->env.regs[13] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_R13D:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[13], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_R13W:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[13], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_R13B:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[13], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_R14:
+                        X86_CPU(uc, mycpu)->env.regs[14] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_R14D:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[14], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_R14W:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[14], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_R14B:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[14], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_R15:
+                        X86_CPU(uc, mycpu)->env.regs[15] = *(uint64_t *)value;
+                        break;
+                    case UC_X86_REG_R15D:
+                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.regs[15], *(uint32_t *)value);
+                        break;
+                    case UC_X86_REG_R15W:
+                        WRITE_WORD(X86_CPU(uc, mycpu)->env.regs[15], *(uint16_t *)value);
+                        break;
+                    case UC_X86_REG_R15B:
+                        WRITE_BYTE_L(X86_CPU(uc, mycpu)->env.regs[15], *(uint8_t *)value);
+                        break;
+                    case UC_X86_REG_IDTR:
+                        X86_CPU(uc, mycpu)->env.idt.limit = (uint16_t)((uc_x86_mmr *)value)->limit;
+                        X86_CPU(uc, mycpu)->env.idt.base = ((uc_x86_mmr *)value)->base;
+                        break;
+                    case UC_X86_REG_GDTR:
+                        X86_CPU(uc, mycpu)->env.gdt.limit = (uint16_t)((uc_x86_mmr *)value)->limit;
+                        X86_CPU(uc, mycpu)->env.gdt.base = ((uc_x86_mmr *)value)->base;
+                        break;
+                    case UC_X86_REG_LDTR:
+                        X86_CPU(uc, mycpu)->env.ldt.limit = ((uc_x86_mmr *)value)->limit;
+                        X86_CPU(uc, mycpu)->env.ldt.base = ((uc_x86_mmr *)value)->base;
+                        X86_CPU(uc, mycpu)->env.ldt.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
+                        X86_CPU(uc, mycpu)->env.ldt.flags = ((uc_x86_mmr *)value)->flags;
+                        break;
+                    case UC_X86_REG_TR:
+                        X86_CPU(uc, mycpu)->env.tr.limit = ((uc_x86_mmr *)value)->limit;
+                        X86_CPU(uc, mycpu)->env.tr.base = ((uc_x86_mmr *)value)->base;
+                        X86_CPU(uc, mycpu)->env.tr.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
+                        X86_CPU(uc, mycpu)->env.tr.flags = ((uc_x86_mmr *)value)->flags;
+                        break;
+                }
+                break;
 #endif
+        }
     }
 
     return 0;

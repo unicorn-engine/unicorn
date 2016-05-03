@@ -90,6 +90,9 @@ static void qemu_cpu_kick_thread(CPUState *cpu)
                     GetLastError());
             exit(1);
         }
+
+        CloseHandle(cpu->hThread);
+        cpu->hThread = 0;
     }
 #endif
 }

@@ -8,6 +8,8 @@
 extern "C" {
 #endif
 
+#include <stdint.h>
+
 // Memory-Management Register for instructions IDTR, GDTR, LDTR, TR.
 // Borrow from SegmentCache in qemu/target-i386/cpu.h
 typedef struct uc_x86_mmr {
@@ -73,7 +75,8 @@ typedef enum uc_x86_reg {
 	UC_X86_REG_R9D, UC_X86_REG_R10D, UC_X86_REG_R11D, UC_X86_REG_R12D, UC_X86_REG_R13D,
 	UC_X86_REG_R14D, UC_X86_REG_R15D, UC_X86_REG_R8W, UC_X86_REG_R9W, UC_X86_REG_R10W,
 	UC_X86_REG_R11W, UC_X86_REG_R12W, UC_X86_REG_R13W, UC_X86_REG_R14W, UC_X86_REG_R15W,
-	UC_X86_REG_IDTR, UC_X86_REG_GDTR, UC_X86_REG_LDTR, UC_X86_REG_TR,
+	UC_X86_REG_IDTR, UC_X86_REG_GDTR, UC_X86_REG_LDTR, UC_X86_REG_TR, UC_X86_REG_FPCW,
+	UC_X86_REG_FPTAG,
 
 	UC_X86_REG_ENDING		// <-- mark the end of the list of registers
 } uc_x86_reg;

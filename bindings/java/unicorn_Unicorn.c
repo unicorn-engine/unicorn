@@ -519,7 +519,7 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_registerHook__JI
          if (invokeInterruptCallbacks == 0) {
             invokeInterruptCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeInterruptCallbacks", "(JI)V");
          }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookintr, env);
+         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookintr, env, 1, 0);
          break;
       case UC_HOOK_MEM_FETCH_UNMAPPED:    // Hook for all invalid memory access events
       case UC_HOOK_MEM_READ_UNMAPPED:    // Hook for all invalid memory access events
@@ -530,7 +530,7 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_registerHook__JI
          if (invokeEventMemCallbacks == 0) {
             invokeEventMemCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeEventMemCallbacks", "(JIJIJ)Z");
          }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_eventmem, env);
+         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_eventmem, env, 1, 0);
          break;
    }
    return (jlong)hh;
@@ -552,18 +552,18 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_registerHook__JII
                if (invokeOutCallbacks == 0) {
                   invokeOutCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeOutCallbacks", "(JIII)V");
                }
-               err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_insn_out, env, arg1);
+               err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_insn_out, env, 1, 0, arg1);
             case UC_X86_INS_IN:
                if (invokeInCallbacks == 0) {
                   invokeInCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeInCallbacks", "(JII)I");
                }
-               err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_insn_in, env, arg1);
+               err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_insn_in, env, 1, 0, arg1);
             case UC_X86_INS_SYSENTER:
             case UC_X86_INS_SYSCALL:
                if (invokeSyscallCallbacks == 0) {
                   invokeSyscallCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeSyscallCallbacks", "(J)V");
                }
-               err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_insn_syscall, env, arg1);
+               err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_insn_syscall, env, 1, 0, arg1);
          }
          break;
    }
@@ -584,25 +584,25 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_registerHook__JIJJ
          if (invokeCodeCallbacks == 0) {
             invokeCodeCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeCodeCallbacks", "(JJI)V");
          }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookcode, env, arg1, arg2);
+         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookcode, env, 1, 0, arg1, arg2);
          break;
       case UC_HOOK_BLOCK:          // Hook basic blocks
          if (invokeBlockCallbacks == 0) {
             invokeBlockCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeBlockCallbacks", "(JJI)V");
          }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookblock, env, arg1, arg2);
+         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookblock, env, 1, 0, arg1, arg2);
          break;
       case UC_HOOK_MEM_READ:       // Hook all memory read events.
          if (invokeReadCallbacks == 0) {
             invokeReadCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeReadCallbacks", "(JJI)V");
          }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookmem, env, arg1, arg2);
+         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookmem, env, 1, 0, arg1, arg2);
          break;
       case UC_HOOK_MEM_WRITE:      // Hook all memory write events.
          if (invokeWriteCallbacks == 0) {
             invokeWriteCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeWriteCallbacks", "(JJIJ)V");
          }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookmem, env, arg1, arg2);
+         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookmem, env, 1, 0, arg1, arg2);
          break;
    }
    return (jlong)hh;

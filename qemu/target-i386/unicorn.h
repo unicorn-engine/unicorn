@@ -5,8 +5,8 @@
 #define UC_QEMU_TARGET_I386_H
 
 // functions to read & write registers
-int x86_reg_read(struct uc_struct *uc, unsigned int regid, void *value);
-int x86_reg_write(struct uc_struct *uc, unsigned int regid, const void *value);
+int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count);
+int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, int count);
 
 void x86_reg_reset(struct uc_struct *uc);
 

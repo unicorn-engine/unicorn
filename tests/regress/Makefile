@@ -38,6 +38,20 @@ TESTS += hook_extrainvoke
 TESTS += sysenter_hook_x86
 TESTS += emu_clear_errors
 TESTS += mem_fuzz
+TESTS += 001-bad_condition_code_0xe
+TESTS += 002-qemu__fatal__unimplemented_control_register_write_0xffb___0x0
+TESTS += 003-qemu__fatal__wdebug_not_implemented
+TESTS += 004-segmentation_fault_1
+TESTS += 005-qemu__fatal__illegal_instruction__0000___00000404
+TESTS += 006-qemu__fatal__illegal_instruction__0421___00040026
+TESTS += mem_64_c
+
+TESTS += memleak_x86
+TESTS += memleak_arm
+TESTS += memleak_arm64
+TESTS += memleak_mips
+TESTS += memleak_m68k
+TESTS += memleak_sparc
 
 all: $(TESTS)
 

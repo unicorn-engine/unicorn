@@ -2258,7 +2258,6 @@
 #define parse_value parse_value_sparc64
 #define par_write par_write_sparc64
 #define patch_reloc patch_reloc_sparc64
-#define pause_all_vcpus pause_all_vcpus_sparc64
 #define phys_map_node_alloc phys_map_node_alloc_sparc64
 #define phys_map_node_reserve phys_map_node_reserve_sparc64
 #define phys_mem_alloc phys_mem_alloc_sparc64
@@ -2417,9 +2416,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_sparc64
 #define qemu_clock_ptr qemu_clock_ptr_sparc64
 #define qemu_clocks qemu_clocks_sparc64
-#define qemu_cond_destroy qemu_cond_destroy_sparc64
-#define qemu_cpu_is_self qemu_cpu_is_self_sparc64
-#define qemu_cpu_kick_thread qemu_cpu_kick_thread_sparc64
 #define qemu_daemon qemu_daemon_sparc64
 #define qemu_event_destroy qemu_event_destroy_sparc64
 #define qemu_event_init qemu_event_init_sparc64
@@ -2445,7 +2441,6 @@
 #define qemu_log_flush qemu_log_flush_sparc64
 #define qemu_loglevel_mask qemu_loglevel_mask_sparc64
 #define qemu_log_vprintf qemu_log_vprintf_sparc64
-#define qemu_mutex_destroy qemu_mutex_destroy_sparc64
 #define qemu_mutex_lock_ramlist qemu_mutex_lock_ramlist_sparc64
 #define qemu_mutex_trylock qemu_mutex_trylock_sparc64
 #define qemu_mutex_unlock_ramlist qemu_mutex_unlock_ramlist_sparc64
@@ -2516,9 +2511,7 @@
 #define qemu_st_helpers qemu_st_helpers_sparc64
 #define qemu_strnlen qemu_strnlen_sparc64
 #define qemu_strsep qemu_strsep_sparc64
-#define qemu_tcg_cpu_thread_fn qemu_tcg_cpu_thread_fn_sparc64
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_sparc64
-#define qemu_thread_exit qemu_thread_exit_sparc64
 #define qemu_try_memalign qemu_try_memalign_sparc64
 #define qentry_destroy qentry_destroy_sparc64
 #define qerror_human qerror_human_sparc64

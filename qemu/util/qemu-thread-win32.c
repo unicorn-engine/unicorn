@@ -276,6 +276,7 @@ static unsigned __stdcall win32_start_routine(void *arg)
     void *thread_arg = data->arg;
 
     if (data->mode == QEMU_THREAD_DETACHED) {
+        data->uc->qemu_thread_data = NULL;
         g_free(data);
         data = NULL;
     }
@@ -359,12 +360,6 @@ int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *nam
     return 0;
 }
 
-void qemu_thread_get_self(struct uc_struct *uc, QemuThread *thread)
-{
-    thread->data = uc->qemu_thread_data;
-    thread->tid = GetCurrentThreadId();
-}
-
 HANDLE qemu_thread_get_handle(QemuThread *thread)
 {
     QemuThreadData *data;
@@ -385,9 +380,4 @@ HANDLE qemu_thread_get_handle(QemuThread *thread)
     }
     LeaveCriticalSection(&data->cs);
     return handle;
-}
-
-bool qemu_thread_is_self(QemuThread *thread)
-{
-    return GetCurrentThreadId() == thread->tid;
 }
