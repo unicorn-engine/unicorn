@@ -65,7 +65,7 @@ class SIMDNotReadArm(regress.RegressTest):
         mu.reg_write(UC_ARM_REG_R0, SCRATCH_ADDRESS + 0x100)
         
         mu.reg_write(UC_ARM_REG_D6, UC_ARM_REG_D6)
-        mu.reg_write(UC_ARM_REG_D6, UC_ARM_REG_D7)
+        mu.reg_write(UC_ARM_REG_D7, UC_ARM_REG_D7)
 
 
         # tracing all basic blocks with customized callback
