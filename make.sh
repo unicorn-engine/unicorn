@@ -10,6 +10,13 @@ MAKE_JOBS=$((${MAKE_JOBS}+0))
 [ ${MAKE_JOBS} -lt 1 ] && \
   MAKE_JOBS=4
 
+# build for ASAN
+asan() {
+  UNICORN_DEBUG=yes
+  UNICORN_ASAN=yes
+  ${MAKE} V=1
+}
+
 # build iOS lib for all iDevices, or only specific device
 build_iOS() {
   IOS_SDK=`xcrun --sdk iphoneos --show-sdk-path`
@@ -90,6 +97,7 @@ export CC INSTALL_BIN PREFIX PKGCFGDIR LIBDIRARCH LIBARCHS CFLAGS LDFLAGS
 
 case "$1" in
   "" ) build;;
+  "asan" ) asan;;
   "default" ) build;;
   "install" ) install;;
   "uninstall" ) uninstall;;

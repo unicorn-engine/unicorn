@@ -64,6 +64,13 @@ else
 CFLAGS += -O3
 endif
 
+ifeq ($(UNICORN_ASAN),yes)
+CC = clang -fsanitize=address -fno-omit-frame-pointer
+CXX = clang++ -fsanitize=address -fno-omit-frame-pointer
+AR = llvm-ar
+LDFLAGS := -fsanitize=address ${LDFLAGS}
+endif
+
 ifeq ($(CROSS),)
 CC ?= cc
 AR ?= ar
@@ -213,11 +220,11 @@ config:
 qemu/config-host.h-timestamp:
 ifeq ($(UNICORN_DEBUG),yes)
 	cd qemu && \
-	./configure --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
+	./configure --cc="${CC}" --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
 	printf "$(UNICORN_ARCHS)" > config.log
 else
 	cd qemu && \
-	./configure --disable-debug-info --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
+	./configure --cc="${CC}" --disable-debug-info --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
 	printf "$(UNICORN_ARCHS)" > config.log
 endif
 
@@ -263,7 +270,6 @@ endif
 .PHONY: test
 test: all
 	$(MAKE) -C tests/unit test
-
 
 install: compile_lib $(PKGCFGF)
 	mkdir -p $(DESTDIR)$(LIBDIR)

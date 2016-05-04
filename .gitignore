@@ -76,6 +76,7 @@ sample_batch_reg.static
 sample_x86_32_gdt_and_seg_regs
 sample_x86_32_gdt_and_seg_regs.exe
 sample_x86_32_gdt_and_seg_regs.static
+mem_64_c
 
 libunicorn*.dll
 libunicorn*.so
