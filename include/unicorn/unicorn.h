@@ -9,7 +9,13 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#ifdef _MSC_VER
+typedef int bool;
+#define false 0
+#define true 1
+#else
 #include <stdbool.h>
+#endif
 #include <stdarg.h>
 #if defined(UNICORN_HAS_OSXKERNEL)
 #include <libkern/libkern.h>

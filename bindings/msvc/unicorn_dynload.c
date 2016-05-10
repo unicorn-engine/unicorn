@@ -67,6 +67,8 @@ typedef uc_err (*uc_errno_t)(uc_engine *uc);
 typedef const char* (*uc_strerror_t)(uc_err code);
 typedef uc_err (*uc_reg_write_t)(uc_engine *uc, int regid, const void *value);
 typedef uc_err (*uc_reg_read_t)(uc_engine *uc, int regid, void *value);
+typedef uc_err (*uc_reg_write_batch_t)(uc_engine *uc, int *regs, void *const *vals, int count);
+typedef uc_err (*uc_reg_read_batch_t)(uc_engine *uc, int *regs, void **vals, int count);
 typedef uc_err (*uc_mem_write_t)(uc_engine *uc, uint64_t address, const void *bytes, size_t size);
 typedef uc_err (*uc_mem_read_t)(uc_engine *uc, uint64_t address, void *bytes, size_t size);
 typedef uc_err (*uc_emu_start_t)(uc_engine *uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
@@ -89,6 +91,8 @@ static uc_errno_t gp_uc_errno = NULL;
 static uc_strerror_t gp_uc_strerror = NULL;
 static uc_reg_write_t gp_uc_reg_write = NULL;
 static uc_reg_read_t gp_uc_reg_read = NULL;
+static uc_reg_write_batch_t gp_uc_reg_write_batch = NULL;
+static uc_reg_read_batch_t gp_uc_reg_read_batch = NULL;
 static uc_mem_write_t gp_uc_mem_write = NULL;
 static uc_mem_read_t gp_uc_mem_read = NULL;
 static uc_emu_start_t gp_uc_emu_start = NULL;
@@ -129,6 +133,8 @@ bool uc_dyn_load(const char* path, int flags)
     gp_uc_strerror = (uc_strerror_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_strerror");
     gp_uc_reg_write = (uc_reg_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_write");
     gp_uc_reg_read = (uc_reg_read_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_read");
+    gp_uc_reg_write_batch = (uc_reg_write_batch_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_write_batch");
+    gp_uc_reg_read_batch = (uc_reg_read_batch_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_reg_read_batch");
     gp_uc_mem_write = (uc_mem_write_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_write");
     gp_uc_mem_read = (uc_mem_read_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_read");
     gp_uc_emu_start = (uc_emu_start_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_emu_start");
@@ -160,6 +166,8 @@ bool uc_dyn_free(void)
     gp_uc_strerror = NULL;
     gp_uc_reg_write = NULL;
     gp_uc_reg_read = NULL;
+    gp_uc_reg_write_batch = NULL;
+    gp_uc_reg_read_batch = NULL;
     gp_uc_mem_write = NULL;
     gp_uc_mem_read = NULL;
     gp_uc_emu_start = NULL;
@@ -220,6 +228,16 @@ uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
     return gp_uc_reg_read(uc, regid, value);
 }
 
+uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals, int count)
+{
+    return gp_uc_reg_write_batch(uc, regs, vals, count);
+}
+
+uc_err uc_reg_read_batch(uc_engine *uc, int *regs, void **vals, int count)
+{
+    return gp_uc_reg_read_batch(uc, regs, vals, count);
+}
+
 uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *bytes, size_t size)
 {
     return gp_uc_mem_write(uc, address, bytes, size);
@@ -245,7 +263,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback, void *u
     va_list valist;
     uc_err ret = UC_ERR_OK;
     int id;
-    va_start(valist, user_data);
+    va_start(valist, end);
 
     switch(type) {
         // note this default case will capture any combinations of
