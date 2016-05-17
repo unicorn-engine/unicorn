@@ -82,6 +82,7 @@ int resume_all_vcpus(struct uc_struct *uc)
 
     //qemu_clock_enable(QEMU_CLOCK_VIRTUAL, true);
     CPU_FOREACH(cpu) {
+        tlb_flush(cpu, 1);
         cpu_resume(cpu);
     }
     qemu_tcg_cpu_loop(uc);
