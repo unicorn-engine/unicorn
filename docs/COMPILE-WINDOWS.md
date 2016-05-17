@@ -19,7 +19,7 @@ or Windows.
 
   - To cross-compile for Windows 32-bit, install Mingw with (ignore all the warnings):
 
-        $ sudo dpkg -i --force-depends mingw64-x86-glib2_2.31.0_all.deb
+          $ sudo dpkg -i --force-depends mingw64-x86-glib2_2.31.0_all.deb
 
   To cross-compile for Windows 64-bit, install Mingw with:
 
@@ -40,19 +40,19 @@ or Windows.
 
   - To compile for Windows 32-bit, run:
 
-        $ pacman -S python2
-        $ pacman -S make
-        $ pacman -S pkg-config
-        $ pacman -S mingw-w64-i686-glib2
-        $ pacman -S mingw-w64-i686-toolchain
+          $ pacman -S python2
+          $ pacman -S make
+          $ pacman -S pkg-config
+          $ pacman -S mingw-w64-i686-glib2
+          $ pacman -S mingw-w64-i686-toolchain
 
   - To compile for Windows 64-bit, run:
 
-        $ pacman -S python2
-        $ pacman -S make
-        $ pacman -S pkg-config
-        $ pacman -S mingw-w64-x86_64-glib2
-        $ pacman -S mingw-w64-x86_64-toolchain
+          $ pacman -S python2
+          $ pacman -S make
+          $ pacman -S pkg-config
+          $ pacman -S mingw-w64-x86_64-glib2
+          $ pacman -S mingw-w64-x86_64-toolchain
 
 - For Cygwin, "make", "gcc-core", "pkg-config", "libpcre-devel", "zlib-devel"
   and "libglib2.0-devel" are needed.
