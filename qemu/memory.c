@@ -71,7 +71,7 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
     int i;
     target_ulong addr;
     Object *obj;
-	CPUState *cpu;
+    CPUState *cpu;
 
     // Make sure all pages associated with the MemoryRegion are flushed
 	CPU_FOREACH(cpu) {
