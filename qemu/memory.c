@@ -74,9 +74,17 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
     CPUState *cpu;
 
     // Make sure all pages associated with the MemoryRegion are flushed
-	CPU_FOREACH(cpu) {
+    if (uc->current_cpu) {
+        // flush tlb of current cpu in a running status
         for (addr = mr->addr; addr < mr->end; addr += uc->target_page_size) {
-           tlb_flush_page(cpu, addr);
+           tlb_flush_page(uc->current_cpu, addr);
+        }
+    } else {
+        // flush tlb for all available cpu
+        CPU_FOREACH(cpu) {
+            for (addr = mr->addr; addr < mr->end; addr += uc->target_page_size) {
+               tlb_flush_page(cpu, addr);
+            }
         }
     }
     mr->enabled = false;
