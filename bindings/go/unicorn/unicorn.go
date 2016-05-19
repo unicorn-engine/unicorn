@@ -154,7 +154,7 @@ func (u *uc) RegReadBatch(regs []int) ([]uint64, error) {
 }
 
 func (u *uc) MemRegions() ([]*MemRegion, error) {
-	var regions *C.struct_uc_mem_region
+	var regions *C.uc_mem_region
 	var count C.uint32_t
 	ucerr := C.uc_mem_regions(u.handle, &regions, &count)
 	if ucerr != C.UC_ERR_OK {
