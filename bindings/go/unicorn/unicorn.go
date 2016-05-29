@@ -60,6 +60,7 @@ type Unicorn interface {
 type uc struct {
 	handle *C.uc_engine
 	final  sync.Once
+	hooks  map[Hook]uintptr
 }
 
 type UcOptions struct {
@@ -81,7 +82,7 @@ func NewUnicorn(arch, mode int) (Unicorn, error) {
 	if ucerr := C.uc_open(C.uc_arch(arch), C.uc_mode(mode), &handle); ucerr != ERR_OK {
 		return nil, UcError(ucerr)
 	}
-	u := &uc{handle: handle}
+	u := &uc{handle: handle, hooks: make(map[Hook]uintptr)}
 	runtime.SetFinalizer(u, func(u *uc) { u.Close() })
 	return u, nil
 }
@@ -89,6 +90,10 @@ func NewUnicorn(arch, mode int) (Unicorn, error) {
 func (u *uc) Close() (err error) {
 	u.final.Do(func() {
 		if u.handle != nil {
+			for _, uptr := range u.hooks {
+				delete(hookDataMap, uptr)
+			}
+			u.hooks = nil
 			err = errReturn(C.uc_close(u.handle))
 			u.handle = nil
 		}
