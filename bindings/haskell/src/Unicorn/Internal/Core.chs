@@ -31,8 +31,7 @@ import Foreign
 {# pointer *uc_engine as EnginePtr -> Engine #}
 
 -- | Make a new Unicorn engine out of an engine pointer. The returned Unicorn
--- engine will automatically close 'uc_close_wrapper' when it goes out of
--- scope.
+-- engine will automatically call 'uc_close_wrapper' when it goes out of scope.
 mkEngine :: EnginePtr -> IO Engine
 mkEngine ptr =
     liftM Engine (newForeignPtr close ptr)
@@ -41,7 +40,7 @@ mkEngine ptr =
 -- 'errno'.
 {# enum uc_err as Error
     {underscoreToCase}
-    with prefix = "UC_"
+    with prefix="UC_"
     deriving (Show, Eq, Bounded) #}
 
 -- | The emulator runs in the IO monad and allows for the handling of errors
