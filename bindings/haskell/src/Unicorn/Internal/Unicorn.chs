@@ -38,11 +38,10 @@ module Unicorn.Internal.Unicorn (
     ucStrerror,
 ) where
 
-import Foreign
-import Foreign.C
-
 import Control.Applicative
 import Data.ByteString (ByteString, useAsCStringLen)
+import Foreign
+import Foreign.C
 import Prelude hiding (until)
 
 import Unicorn.Internal.Util
