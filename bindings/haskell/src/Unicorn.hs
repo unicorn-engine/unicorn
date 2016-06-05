@@ -48,10 +48,9 @@ module Unicorn (
 import Control.Monad (liftM)
 import Control.Monad.Trans.Class (lift)
 import Control.Monad.Trans.Either (hoistEither, left, right, runEitherT)
-import Foreign
-
-import Prelude hiding (until)
 import Data.ByteString (ByteString, pack)
+import Foreign
+import Prelude hiding (until)
 
 import Unicorn.Internal.Core
 import Unicorn.Internal.Unicorn
@@ -76,7 +75,7 @@ open :: Architecture    -- ^ CPU architecture
 open arch mode = do
     (err, ucPtr) <- lift $ ucOpen arch mode
     if err == ErrOk then
-        -- Return a pointer to the unicorn engine if ucOpen completed
+        -- Return a pointer to the Unicorn engine if ucOpen completed
         -- successfully
         lift $ mkEngine ucPtr
     else

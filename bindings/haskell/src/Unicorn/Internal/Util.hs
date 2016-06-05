@@ -6,7 +6,6 @@ License     : GPL-2
 -}
 module Unicorn.Internal.Util where
 
-import Control.Applicative
 import Data.Bits
 import Foreign
 
