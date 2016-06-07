@@ -10,9 +10,11 @@ extern "C" {
 
 #include <stdint.h>
 #ifdef _MSC_VER
+#ifndef __cplusplus
 typedef unsigned char bool;
 #define false 0
 #define true 1
+#endif
 #else
 #include <stdbool.h>
 #endif
