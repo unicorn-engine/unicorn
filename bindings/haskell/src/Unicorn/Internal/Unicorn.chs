@@ -38,11 +38,10 @@ module Unicorn.Internal.Unicorn (
     ucStrerror,
 ) where
 
-import Foreign
-import Foreign.C
-
 import Control.Applicative
 import Data.ByteString (ByteString, useAsCStringLen)
+import Foreign
+import Foreign.C
 import Prelude hiding (until)
 
 import Unicorn.Internal.Util
@@ -60,7 +59,7 @@ import Unicorn.Internal.Util
 -- | CPU architecture.
 {# enum uc_arch as Architecture
     {underscoreToCase}
-    with prefix = "UC_"
+    with prefix="UC_"
     deriving (Show, Eq, Bounded) #}
 
 -- | CPU hardware mode.

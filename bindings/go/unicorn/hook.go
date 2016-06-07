@@ -18,7 +18,6 @@ type HookData struct {
 
 type Hook uint64
 
-var hookToUintptr = make(map[Hook]uintptr)
 var hookDataMap = make(map[uintptr]*HookData)
 
 //export hookCode
@@ -105,13 +104,13 @@ func (u *uc) HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int)
 		C.uc_hook_add_wrap(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end))
 	}
 	hookDataMap[uptr] = data
-	hookToUintptr[Hook(h2)] = uptr
+	u.hooks[Hook(h2)] = uptr
 	return Hook(h2), nil
 }
 
 func (u *uc) HookDel(hook Hook) error {
-	if uptr, ok := hookToUintptr[hook]; ok {
-		delete(hookToUintptr, hook)
+	if uptr, ok := u.hooks[hook]; ok {
+		delete(u.hooks, hook)
 		delete(hookDataMap, uptr)
 	}
 	return errReturn(C.uc_hook_del(u.handle, C.uc_hook(hook)))
