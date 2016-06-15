@@ -39,7 +39,7 @@ static int teardown(void **state)
 	return 0;
 }
 
-void ayy(void **state)
+void test_hang(void **state)
 {
 	uint32_t code[] = {
 		0xd503201f, /* NOP */
@@ -53,7 +53,20 @@ void ayy(void **state)
 	uint64_t x0 = 0;
 	uint64_t x1 = 1;
 
-	uint64_t addr = 0x13f0;
+	/*
+	 *	emulation will hang if some instruction hits every quarter of a page,
+	 *	i.e. these offsets:
+	 *	0x1400, 0x1800, 0x1c00, 0x2000
+	 *
+	 *	in this test, the code to be emulated is mapped just before the 0x1400
+	 *	offset, so that the final instruction emulated (MOV X0, X1) hits the offset,
+	 *	causing the hang.
+	 *	If you try to write the code just four bytes behind, the hang doesn't occur.
+	 *
+	 *	So far, this strange behaviour has only been observed with AArch64 Unicorn APIs.
+	*/
+
+	uint64_t addr = 0x13f0; // try to map at (0x13f0 - 0x4) and the hang doesn't occur
 	uint64_t trunc_addr = trunc_page(addr);    // round down to nearest page
 
 	uc_mem_map(uc, trunc_addr, 2 * 1024 * 1024, UC_PROT_ALL);
@@ -81,7 +94,7 @@ void ayy(void **state)
 int main(int argc, const char * argv[]) {
 
 	const struct CMUnitTest tests[] = {
-		cmocka_unit_test_setup_teardown(ayy, init, teardown),
+		cmocka_unit_test_setup_teardown(test_hang, init, teardown),
 	};
 
 	return cmocka_run_group_tests(tests, NULL, NULL);;
