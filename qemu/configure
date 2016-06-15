@@ -220,7 +220,6 @@ pkgversion=""
 pie=""
 zero_malloc=""
 win_sdk="no"
-zlib="yes"
 
 # parse CC options first
 for opt do
@@ -1073,23 +1072,6 @@ fi
 if ! has "$pkg_config_exe"; then
   error_exit "pkg-config binary '$pkg_config_exe' not found"
 fi
-
-##########################################
-# zlib check
-
-if test "$zlib" != "no" ; then
-    cat > $TMPC << EOF
-#include <zlib.h>
-int main(void) { zlibVersion(); return 0; }
-EOF
-    if compile_prog "" "-lz" ; then
-        :
-    else
-        error_exit "zlib check failed" \
-            "Make sure to have the zlib libs and headers installed."
-    fi
-fi
-LIBS="$LIBS -lz"
 
 ##########################################
 # libtool probe
