@@ -7,7 +7,6 @@
 #include "qemu/crc32c.h"
 #include "exec/cpu_ldst.h"
 #include "arm_ldst.h"
-#include <zlib.h> /* For crc32 */
 
 #ifndef CONFIG_USER_ONLY
 static inline int get_phys_addr(CPUARMState *env, target_ulong address,
