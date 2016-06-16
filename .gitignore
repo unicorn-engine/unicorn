@@ -37,27 +37,6 @@ qemu/config-host.mak
 qemu/qapi-types.c
 qemu/qapi-visit.c
 
-sample_x86
-sample_x86.exe
-sample_x86.static
-sample_arm
-sample_arm.exe
-sample_arm.static
-sample_arm64
-sample_arm64.exe
-sample_arm64.static
-sample_mips
-sample_mips.exe
-sample_mips.static
-sample_sparc
-sample_sparc.exe
-sample_sparc.static
-shellcode
-shellcode.exe
-shellcode.static
-sample_m68k
-sample_m68k.exe
-sample_m68k.static
 mem_exec
 mem_exec.exe
 mem_exec.static
@@ -70,12 +49,6 @@ mem_unmap.static
 mem_apis
 mem_apis.exe
 mem_apis.static
-sample_batch_reg
-sample_batch_reg.exe
-sample_batch_reg.static
-sample_x86_32_gdt_and_seg_regs
-sample_x86_32_gdt_and_seg_regs.exe
-sample_x86_32_gdt_and_seg_regs.static
 mem_64_c
 
 libunicorn*.dll
