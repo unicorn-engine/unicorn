@@ -37,20 +37,6 @@ qemu/config-host.mak
 qemu/qapi-types.c
 qemu/qapi-visit.c
 
-mem_exec
-mem_exec.exe
-mem_exec.static
-mem_protect
-mem_protect.exe
-mem_protect.static
-mem_unmap
-mem_unmap.exe
-mem_unmap.static
-mem_apis
-mem_apis.exe
-mem_apis.static
-mem_64_c
-
 libunicorn*.dll
 libunicorn*.so
 libunicorn*.dylib
@@ -80,51 +66,7 @@ tmp/
 bindings/python/build/
 config.log
 
-map_crash
-sigill
-sigill2
-block_test
-map_write
-ro_mem_test
-nr_mem_test
-timeout_segfault
-rep_movsb
-mem_double_unmap
-mips_kseg0_1
-eflags_nosync
-00opcode_uc_crash
-eflags_noset
-mem_map_large
-invalid_read_in_cpu_tb_exec
-invalid_write_in_cpu_tb_exec_x86_64
-x86_16_segfault
-mips_invalid_read_of_size_4_when_tracing
-invalid_read_in_tb_flush_x86_64
-sparc_jump_to_zero
-mem_nofree
-mips_delay_slot_code_hook
-threaded_emu_start
-emu_stop_in_hook_overrun
-mips_branch_likely_issue
-emu_clear_errors
-001-bad_condition_code_0xe
-002-qemu__fatal__unimplemented_control_register_write_0xffb___0x0
-003-qemu__fatal__wdebug_not_implemented
-004-segmentation_fault_1
-005-qemu__fatal__illegal_instruction__0000___00000404
-006-qemu__fatal__illegal_instruction__0421___00040026
 
-rw_hookstack
-hook_extrainvoke
-sysenter_hook_x86
-mem_fuzz
-
-memleak_x86
-memleak_arm
-memleak_arm64
-memleak_mips
-memleak_m68k
-memleak_sparc
 
 
 #################
