@@ -50,12 +50,6 @@ unicorn_*.exp
 unicorn_*.dll
 
 
-docs/paper/*.dvi
-docs/paper/*.ps
-docs/paper/*.pdf
-docs/paper/*.htm
-docs/paper/*.log
-
 *.tgz
 *.zip
 *.pyc
