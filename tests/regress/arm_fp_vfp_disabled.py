@@ -30,11 +30,15 @@ class FpVfpDisabled(regress.RegressTest):
         # vpush {d8}
         code += '2ded028b'
         
+        address = 0x1000
+        mem_size = 0x1000
+        code_bytes = code.decode('hex')
+        
         uc = Uc(UC_ARCH_ARM, UC_MODE_THUMB)
-        uc.mem_map(0x1000, 0x1000)
-        uc.mem_write(0x1000, code.decode('hex'))
-        uc.reg_write(UC_ARM_REG_SP, 0x2000)
-        uc.emu_start(0x1000, 0x1004)
+        uc.mem_map(address, mem_size)
+        uc.mem_write(address, code_bytes)
+        uc.reg_write(UC_ARM_REG_SP, address + mem_size)
+        uc.emu_start(address, address + len(code_bytes))
 
 if __name__ == '__main__':
     regress.main()
