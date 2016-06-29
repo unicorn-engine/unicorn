@@ -202,6 +202,14 @@ class uc_x86_float80(ctypes.Structure):
     ]
 
 
+class uc_x86_xmm(ctypes.Structure):
+    """128-bit xmm register"""
+    _fields_ = [
+        ("lowdword", ctypes.c_uint64),
+        ("highdword", ctypes.c_uint64),
+    ]
+
+
 class Uc(object):
     def __init__(self, arch, mode):
         # verify version compatibility with the core before doing anything
@@ -260,6 +268,12 @@ class Uc(object):
                 if status != uc.UC_ERR_OK:
                     raise UcError(status)
                 return reg.mantissa, reg.exponent
+            if reg_id in range(x86_const.UC_X86_REG_XMM0, x86_const.UC_X86_REG_XMM0+8):
+                reg = uc_x86_xmm()
+                status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
+                if status != uc.UC_ERR_OK:
+                    raise UcError(status)
+                return reg.lowdword | (reg.highdword << 64)
 
         # read to 64bit number to be safe
         reg = ctypes.c_int64(0)
@@ -284,6 +298,10 @@ class Uc(object):
                 reg = uc_x86_float80()
                 reg.mantissa = value[0]
                 reg.exponent = value[1]
+            if reg_id in range(x86_const.UC_X86_REG_XMM0, x86_const.UC_X86_REG_XMM0+8):
+                reg = uc_x86_xmm()
+                reg.lowdword = value & 0xffffffffffffffff
+                reg.highdword = value >> 64
 
         if reg is None:
             # convert to 64bit number to be safe

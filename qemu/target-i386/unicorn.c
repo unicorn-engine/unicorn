@@ -195,6 +195,14 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                     *(uint16_t*) value = fptag; 
                 }
                 continue;
+            case UC_X86_REG_XMM0 ... UC_X86_REG_XMM7:
+                {
+                    float64 *dst = (float64*)value;
+                    XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
+                    dst[0] = reg->_d[0];
+                    dst[1] = reg->_d[1];
+                    continue;
+                }
         }
 
         switch(uc->mode) {
@@ -666,6 +674,14 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                     continue;
                 }
                 break;
+            case UC_X86_REG_XMM0 ... UC_X86_REG_XMM7:
+                {
+                    float64 *src = (float64*)value;
+                    XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
+                    reg->_d[0] = src[0];
+                    reg->_d[1] = src[1];
+                    continue;
+                }
         }
 
         switch(uc->mode) {
