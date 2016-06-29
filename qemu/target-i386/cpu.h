@@ -1315,7 +1315,7 @@ void update_fp_status(CPUX86State *env);
 
 static inline uint32_t cpu_compute_eflags(CPUX86State *env)
 {
-    return env->eflags0 | cpu_cc_compute_all(env, CC_OP) | (env->df & DF_MASK);
+    return (env->eflags0 & ~(CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C | DF_MASK)) | cpu_cc_compute_all(env, CC_OP) | (env->df & DF_MASK);
 }
 
 /* NOTE: the translator must set DisasContext.cc_op to CC_OP_EFLAGS
