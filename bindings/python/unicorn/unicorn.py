@@ -156,7 +156,7 @@ class UcError(Exception):
         self.errno = errno
 
     def __str__(self):
-        return _uc.uc_strerror(self.errno)
+        return _uc.uc_strerror(self.errno).decode('ascii')
 
 
 # return the core's version
