@@ -18,7 +18,7 @@ class VldrPcInsn(regress.RegressTest):
         # this should throw an error
         # the eax test is just to prove the second instruction doesn't execute
         try:
-            uc.emu_start(0x1000, len(code))
+            uc.emu_start(0x1000, 0x1000 + len(code))
         except UcError:
             return
         self.assertEqual(uc.reg_read(UC_X86_REG_EAX), 1)
