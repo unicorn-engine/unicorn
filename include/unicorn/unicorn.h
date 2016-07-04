@@ -145,6 +145,7 @@ typedef enum uc_err {
     UC_ERR_FETCH_UNALIGNED,  // Unaligned fetch
     UC_ERR_HOOK_EXIST,  // hook for this event already existed
     UC_ERR_RESOURCE,    // Insufficient resource: uc_emu_start()
+    UC_ERR_UNHANDLED_INTERRUPT // Unhandled CPU interrupt.
 } uc_err;
 
 

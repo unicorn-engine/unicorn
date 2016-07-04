@@ -63,6 +63,7 @@ module Common =
     let UC_ERR_FETCH_UNALIGNED = 18
     let UC_ERR_HOOK_EXIST = 19
     let UC_ERR_RESOURCE = 20
+    let UC_ERR_UNHANDLED_INTERRUPT = 21
     let UC_MEM_READ = 16
     let UC_MEM_WRITE = 17
     let UC_MEM_FETCH = 18

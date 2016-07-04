@@ -130,9 +130,18 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     ret = cpu->exception_index;
                     break;
 #else
+                    bool catched = false;
                     // Unicorn: call registered interrupt callbacks
                     HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
                         ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
+                        catched = true;
+                    }
+                    // Unicorn: If un-catched interrupt, stop executions.
+                    if (!catched) {
+                        cpu->halted = 1;
+                        uc->invalid_error = UC_ERR_UNHANDLED_INTERRUPT;
+                        ret = EXCP_HLT;
+                        break;
                     }
                     cpu->exception_index = -1;
 #if defined(TARGET_X86_64)
