@@ -18,7 +18,7 @@ class VldrPcInsn(regress.RegressTest):
         with self.assertRaises(UcError) as ex_ctx:
             uc.emu_start(0x1000, 0x1000 + len(code))
 
-        self.assertEquals(ex_ctx.exception.errno, UC_ERR_UNHANDLED_INTERRUPT)
+        self.assertEquals(ex_ctx.exception.errno, UC_ERR_EXCEPTION)
 
 if __name__ == '__main__':
     regress.main()

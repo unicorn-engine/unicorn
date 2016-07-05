@@ -139,7 +139,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     // Unicorn: If un-catched interrupt, stop executions.
                     if (!catched) {
                         cpu->halted = 1;
-                        uc->invalid_error = UC_ERR_UNHANDLED_INTERRUPT;
+                        uc->invalid_error = UC_ERR_EXCEPTION;
                         ret = EXCP_HLT;
                         break;
                     }

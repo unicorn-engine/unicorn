@@ -96,8 +96,8 @@ const char *uc_strerror(uc_err code)
             return "Fetch from unaligned memory (UC_ERR_FETCH_UNALIGNED)";
         case UC_ERR_RESOURCE:
             return "Insufficient resource (UC_ERR_RESOURCE)";
-        case UC_ERR_UNHANDLED_INTERRUPT:
-            return "Unhandled machine interrupt (UC_ERR_UNHANDLED_INTERRUPT)";
+        case UC_ERR_EXCEPTION:
+            return "Unhandled CPU exception (UC_ERR_EXCEPTION)";
     }
 }
 
