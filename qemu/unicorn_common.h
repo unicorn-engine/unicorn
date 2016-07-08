@@ -2,6 +2,7 @@
 #define UNICORN_COMMON_H_
 
 #include "tcg.h"
+#include <sys/mman.h>
 
 // This header define common patterns/codes that will be included in all arch-sepcific
 // codes for unicorns purposes.
@@ -19,23 +20,12 @@ static inline bool cpu_physical_mem_write(AddressSpace *as, hwaddr addr,
     return !cpu_physical_memory_rw(as, addr, (void *)buf, len, 1);
 }
 
-static void free_table(gpointer key, gpointer value, gpointer data)
-{
-    TypeInfo *ti = (TypeInfo*) value;
-    g_free((void*) ti->class);
-    g_free((void*) ti->name);
-    g_free((void*) ti->parent);
-    g_free((void*) ti);
-}
-
 void tb_cleanup(struct uc_struct *uc);
 
 /** Freeing common resources */
 static void release_common(void *t)
 {
     TCGContext *s = (TCGContext *)t;
-    struct uc_struct* uc = s->uc;
-    CPUState *cpu;
 #if TCG_TARGET_REG_BITS == 32
     int i;
 #endif
@@ -45,7 +35,9 @@ static void release_common(void *t)
     g_free(def->args_ct);
     g_free(def->sorted_args);
     g_free(s->tcg_op_defs);
-    g_free(s->code_gen_buffer);
+    if (s->code_gen_buffer) {
+        munmap(s->code_gen_buffer, s->code_gen_buffer_size);
+    }
 
     TCGPool *po, *to;
     for (po = s->pool_first; po; po = to) {
@@ -55,36 +47,11 @@ static void release_common(void *t)
     tcg_pool_reset(s);
     g_hash_table_destroy(s->helpers);
 
-    // Clean memory.
-    phys_mem_clean(uc);
-    address_space_destroy(&(uc->as));
-    memory_free(uc);
-
-    // Clean CPU.
-    CPU_FOREACH(cpu) {
-        g_free(cpu->tcg_as_listener);
-        g_free(cpu->thread);
-        g_free(cpu->halt_cond);
-    }
-
-    OBJECT(uc->machine_state->accelerator)->ref = 1;
-    OBJECT(uc->machine_state)->ref = 1;
-    OBJECT(uc->owner)->ref = 1;
-    OBJECT(uc->root)->ref = 1;
-
-    object_unref(uc, OBJECT(uc->machine_state->accelerator));
-    object_unref(uc, OBJECT(uc->machine_state));
-    object_unref(uc, uc->cpu);
-    object_unref(uc, OBJECT(&uc->io_mem_notdirty));
-    object_unref(uc, OBJECT(&uc->io_mem_unassigned));
-    object_unref(uc, OBJECT(&uc->io_mem_rom));
-    object_unref(uc, OBJECT(uc->root));
-    g_hash_table_foreach(uc->type_table, free_table, uc);
-
-    g_free(uc->system_memory);
-
-    if (uc->qemu_thread_data)
-        free(uc->qemu_thread_data);
+    // TODO(danghvu): these function is not available outside qemu
+    // so we keep them here instead of outside uc_close.
+    phys_mem_clean(s->uc);
+    address_space_destroy(&(s->uc->as));
+    memory_free(s->uc);
 
 #if TCG_TARGET_REG_BITS == 32
     for(i = 0; i < s->nb_globals; i++) {
@@ -97,12 +64,6 @@ static void release_common(void *t)
         }
     }
 #endif
-
-    qemu_mutex_destroy(&uc->qemu_global_mutex);
-    qemu_cond_destroy(&uc->qemu_cpu_cond);
-
-    // Clean cache.
-    tb_cleanup(uc);
 }
 
 static inline void uc_common_init(struct uc_struct* uc)
