@@ -338,7 +338,7 @@ uc_err uc_close(uc_engine *uc)
     }
 
     g_hash_table_foreach(uc->type_table, free_table, uc);
-    g_hash_table_unref(uc->type_table);
+    g_hash_table_destroy(uc->type_table);
 
     for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
         free(uc->ram_list.dirty_memory[i]);
@@ -1153,7 +1153,7 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
         *result = uc->target_page_size;
         return UC_ERR_OK;
     }
-    
+
     switch(uc->arch) {
         case UC_ARCH_ARM:
             return uc->query(uc, type, result);

@@ -52,6 +52,7 @@ static void release_common(void *t)
     phys_mem_clean(s->uc);
     address_space_destroy(&(s->uc->as));
     memory_free(s->uc);
+    tb_cleanup(s->uc);
 
 #if TCG_TARGET_REG_BITS == 32
     for(i = 0; i < s->nb_globals; i++) {
