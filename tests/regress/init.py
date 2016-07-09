@@ -12,7 +12,7 @@ class Init(regress.RegressTest):
 
     def init_unicorn(self, ip, sp, counter):
         global mu
-        print "[+] Emulating IP: %x SP: %x - Counter: %x" % (ip, sp, counter)
+        #print "[+] Emulating IP: %x SP: %x - Counter: %x" % (ip, sp, counter)
         mu = Uc(UC_ARCH_X86, UC_MODE_64)
         mu.mem_map(0x1000000, 2 * 1024 * 1024)
         mu.mem_write(0x1000000, "\x90")
