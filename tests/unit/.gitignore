@@ -1,3 +1,2 @@
-test_x86
-test_mem_map
-test_sanity
+!*.c
+test_*

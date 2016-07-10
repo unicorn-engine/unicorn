@@ -140,8 +140,10 @@ static int qemu_tcg_init_vcpu(CPUState *cpu)
     tcg_cpu_address_space_init(cpu, cpu->as);
 
     /* share a single thread for all cpus with TCG */
-    cpu->halt_cond = g_malloc0(sizeof(QemuCond));
-    qemu_cond_init(cpu->halt_cond);
+    if (!cpu->halt_cond) {
+        cpu->halt_cond = g_malloc0(sizeof(QemuCond));
+        qemu_cond_init(cpu->halt_cond);
+    }
     uc->tcg_halt_cond = cpu->halt_cond;
 
     return 0;

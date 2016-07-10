@@ -60,6 +60,7 @@ public interface UnicornConst {
    public static final int UC_ERR_FETCH_UNALIGNED = 18;
    public static final int UC_ERR_HOOK_EXIST = 19;
    public static final int UC_ERR_RESOURCE = 20;
+   public static final int UC_ERR_EXCEPTION = 21;
    public static final int UC_MEM_READ = 16;
    public static final int UC_MEM_WRITE = 17;
    public static final int UC_MEM_FETCH = 18;

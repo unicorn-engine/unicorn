@@ -10,9 +10,11 @@ extern "C" {
 
 #include <stdint.h>
 #ifdef _MSC_VER
+#ifndef __cplusplus
 typedef unsigned char bool;
 #define false 0
 #define true 1
+#endif
 #else
 #include <stdbool.h>
 #endif
@@ -143,6 +145,7 @@ typedef enum uc_err {
     UC_ERR_FETCH_UNALIGNED,  // Unaligned fetch
     UC_ERR_HOOK_EXIST,  // hook for this event already existed
     UC_ERR_RESOURCE,    // Insufficient resource: uc_emu_start()
+    UC_ERR_EXCEPTION // Unhandled CPU exception
 } uc_err;
 
 
