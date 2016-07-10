@@ -4078,7 +4078,8 @@ mips_symbols = (
     'mips_reg_read',
     'mips_reg_write',
     'mips_tcg_init',
-    'mips_cpu_list'
+    'mips_cpu_list',
+    'mips_release'
 )
 
 sparc_symbols = (

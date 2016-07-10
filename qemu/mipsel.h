@@ -4070,4 +4070,5 @@
 #define mips_reg_write mips_reg_write_mipsel
 #define mips_tcg_init mips_tcg_init_mipsel
 #define mips_cpu_list mips_cpu_list_mipsel
+#define mips_release mips_release_mipsel
 #endif

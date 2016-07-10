@@ -30,6 +30,34 @@ static void mips_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUMIPSState *)uc->current_cpu->env_ptr)->active_tc.PC = address;
 }
 
+
+void mips_release(void *ctx);
+void mips_release(void *ctx)
+{
+    int i;
+    TCGContext *tcg_ctx = (TCGContext *) ctx;
+    release_common(ctx);
+    MIPSCPU* cpu = MIPS_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
+    g_free(cpu->env.tlb);
+    g_free(cpu->env.mvp);
+
+    for (i = 0; i < MIPS_DSP_ACC; i++) {
+        g_free(tcg_ctx->cpu_HI[i]);
+        g_free(tcg_ctx->cpu_LO[i]);
+    }
+
+    for (i = 0; i < 32; i++) {
+        g_free(tcg_ctx->cpu_gpr[i]);
+    }
+
+    g_free(tcg_ctx->cpu_PC);
+    g_free(tcg_ctx->btarget);
+    g_free(tcg_ctx->bcond);
+    g_free(tcg_ctx->cpu_dspctrl);
+
+    g_free(tcg_ctx->tb_ctx.tbs);
+}
+
 void mips_reg_reset(struct uc_struct *uc)
 {
     (void)uc;
@@ -109,6 +137,7 @@ __attribute__ ((visibility ("default")))
     uc->reg_read = mips_reg_read;
     uc->reg_write = mips_reg_write;
     uc->reg_reset = mips_reg_reset;
+    uc->release = mips_release;
     uc->set_pc = mips_set_pc;
     uc->mem_redirect = mips_mem_redirect;
     uc_common_init(uc);

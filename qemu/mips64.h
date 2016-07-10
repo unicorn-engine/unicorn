@@ -4070,4 +4070,5 @@
 #define mips_reg_write mips_reg_write_mips64
 #define mips_tcg_init mips_tcg_init_mips64
 #define mips_cpu_list mips_cpu_list_mips64
+#define mips_release mips_release_mips64
 #endif
