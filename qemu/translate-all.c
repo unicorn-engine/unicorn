@@ -126,6 +126,9 @@ static void tb_link_page(struct uc_struct *uc, TranslationBlock *tb,
     tb_page_addr_t phys_pc, tb_page_addr_t phys_page2);
 static TranslationBlock *tb_find_pc(struct uc_struct *uc, uintptr_t tc_ptr);
 
+// Unicorn: for cleaning up memory later.
+void free_code_gen_buffer(struct uc_struct *uc);
+
 static void cpu_gen_init(struct uc_struct *uc)
 {
     uc->tcg_ctx = g_malloc(sizeof(TCGContext));
@@ -563,6 +566,11 @@ static inline void *split_cross_256mb(struct uc_struct *uc, void *buf1, size_t s
 static uint8_t static_code_gen_buffer[DEFAULT_CODE_GEN_BUFFER_SIZE]
     __attribute__((aligned(CODE_GEN_ALIGN)));
 
+void free_code_gen_buffer(struct uc_struct *uc)
+{
+    // Do nothing, we use a static buffer.
+}
+
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
@@ -576,6 +584,13 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     return buf;
 }
 #elif defined(USE_MMAP)
+void free_code_gen_buffer(struct uc_struct *uc)
+{
+    TCGContext *tcg_ctx = uc->tcg_ctx;
+    if (tcg_ctx->code_gen_buffer)
+        munmap(tcg_ctx->code_gen_buffer, tcg_ctx->code_gen_buffer_size);
+}
+
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 {
     int flags = MAP_PRIVATE | MAP_ANONYMOUS;
@@ -648,6 +663,13 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     return buf;
 }
 #else
+void free_code_gen_buffer(struct uc_struct *uc)
+{
+    TCGContext *tcg_ctx = uc->tcg_ctx;
+    if (tcg_ctx->code_gen_buffer)
+        g_free(tcg_ctx->code_gen_buffer);
+}
+
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;

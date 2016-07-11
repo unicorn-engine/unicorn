@@ -14,6 +14,7 @@
 #define memory_map_ptr memory_map_ptr_m68k
 #define memory_unmap memory_unmap_m68k
 #define memory_free memory_free_m68k
+#define free_code_gen_buffer free_code_gen_buffer_m68k
 #define helper_raise_exception helper_raise_exception_m68k
 #define tcg_enabled tcg_enabled_m68k
 #define tcg_exec_init tcg_exec_init_m68k

@@ -14,6 +14,7 @@
 #define memory_map_ptr memory_map_ptr_mips
 #define memory_unmap memory_unmap_mips
 #define memory_free memory_free_mips
+#define free_code_gen_buffer free_code_gen_buffer_mips
 #define helper_raise_exception helper_raise_exception_mips
 #define tcg_enabled tcg_enabled_mips
 #define tcg_exec_init tcg_exec_init_mips
