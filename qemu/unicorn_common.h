@@ -21,6 +21,7 @@ static inline bool cpu_physical_mem_write(AddressSpace *as, hwaddr addr,
 }
 
 void tb_cleanup(struct uc_struct *uc);
+void free_code_gen_buffer(struct uc_struct *uc);
 
 /** Freeing common resources */
 static void release_common(void *t)
@@ -35,9 +36,6 @@ static void release_common(void *t)
     g_free(def->args_ct);
     g_free(def->sorted_args);
     g_free(s->tcg_op_defs);
-    if (s->code_gen_buffer) {
-        munmap(s->code_gen_buffer, s->code_gen_buffer_size);
-    }
 
     TCGPool *po, *to;
     for (po = s->pool_first; po; po = to) {
@@ -53,6 +51,7 @@ static void release_common(void *t)
     address_space_destroy(&(s->uc->as));
     memory_free(s->uc);
     tb_cleanup(s->uc);
+    free_code_gen_buffer(s->uc);
 
 #if TCG_TARGET_REG_BITS == 32
     for(i = 0; i < s->nb_globals; i++) {

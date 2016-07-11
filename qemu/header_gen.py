@@ -20,6 +20,7 @@ symbols = (
     'memory_map_ptr',
     'memory_unmap',
     'memory_free',
+    'free_code_gen_buffer',
     'helper_raise_exception',
     'tcg_enabled',
     'tcg_exec_init',

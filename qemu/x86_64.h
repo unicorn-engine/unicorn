@@ -14,6 +14,7 @@
 #define memory_map_ptr memory_map_ptr_x86_64
 #define memory_unmap memory_unmap_x86_64
 #define memory_free memory_free_x86_64
+#define free_code_gen_buffer free_code_gen_buffer_x86_64
 #define helper_raise_exception helper_raise_exception_x86_64
 #define tcg_enabled tcg_enabled_x86_64
 #define tcg_exec_init tcg_exec_init_x86_64
