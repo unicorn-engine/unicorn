@@ -2,7 +2,9 @@
 #define UNICORN_COMMON_H_
 
 #include "tcg.h"
+#ifndef _WIN32
 #include <sys/mman.h>
+#endif
 
 // This header define common patterns/codes that will be included in all arch-sepcific
 // codes for unicorns purposes.
