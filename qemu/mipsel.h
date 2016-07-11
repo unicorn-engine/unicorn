@@ -14,6 +14,7 @@
 #define memory_map_ptr memory_map_ptr_mipsel
 #define memory_unmap memory_unmap_mipsel
 #define memory_free memory_free_mipsel
+#define free_code_gen_buffer free_code_gen_buffer_mipsel
 #define helper_raise_exception helper_raise_exception_mipsel
 #define tcg_enabled tcg_enabled_mipsel
 #define tcg_exec_init tcg_exec_init_mipsel
