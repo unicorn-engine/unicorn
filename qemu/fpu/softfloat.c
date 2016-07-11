@@ -5355,8 +5355,12 @@ floatx80 floatx80_sqrt( floatx80 a STATUS_PARAM )
         z.high = floatx80_default_nan_high;
         return z;
     }
+    if ( aSig0 == 0 ) return packFloatx80( 0, 0, 0 );
+    while (aExp != 0 && (aSig0 & 0x8000000000000000) == 0) {
+        aExp--;
+        aSig0 <<= 1;
+    }
     if ( aExp == 0 ) {
-        if ( aSig0 == 0 ) return packFloatx80( 0, 0, 0 );
         normalizeFloatx80Subnormal( aSig0, &aExp, &aSig0 );
     }
     zExp = ( ( aExp - 0x3FFF )>>1 ) + 0x3FFF;
