@@ -15,9 +15,6 @@
 #include <time.h>   // nanosleep
 
 #include <string.h>
-#ifndef _WIN32
-#include <sys/mman.h>
-#endif
 
 #include "uc_priv.h"
 

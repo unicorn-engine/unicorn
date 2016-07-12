@@ -50,7 +50,7 @@ class Emulator:
 
 class Init(regress.RegressTest):
     def init_unicorn(self, ip, sp, counter):
-        print "[+] Emulating IP: %x SP: %x - Counter: %x" % (ip, sp, counter)
+        #print "[+] Emulating IP: %x SP: %x - Counter: %x" % (ip, sp, counter)
         E = Emulator(ip, sp)
         E.write_data(ip, "\x90")
         E.write_data(sp, self.generate_value(counter))
