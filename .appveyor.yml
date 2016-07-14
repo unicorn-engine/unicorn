@@ -1,16 +1,56 @@
-version: 1.0-{build}
+#
+# Appveyor configuration file for CI build of Unicorn on Windows (under Cygwin)
+#
+# For further details see http://www.appveyor.com
+#
 
-platform:
-  - x64
-
+#
+# Custom environment variables
+#
 environment:
-  global:
-    MSYS2_ARCH: x86_64
-  matrix:
-    - HOST_ARCH_ARG: --host=x86_64-w64-mingw32
-      ADD_PATH: /mingw64/bin
-    - HOST_ARCH_ARG: --host=i686-w64-mingw32
-      ADD_PATH: /mingw32/bin
+    global:
+        CYG_ROOT: C:\cygwin
+        CYG_MIRROR: http://cygwin.mirror.constant.com
+        CYG_CACHE: C:\cygwin\var\cache\setup
+        CYG_BASH: C:\cygwin\bin\bash
 
+#
+# Cache Cygwin files to speed up build
+#
+cache:
+    - '%CYG_CACHE%'
+
+#
+# Initialisation prior to pulling Unicorn repository
+# Attempt to ensure we don't try to convert line endings to Win32 CRLF as this will cause build to fail
+#
+init:
+    - git config --global core.autocrlf input
+
+#
+# Install needed build dependencies
+#
+install:
+    - cd %CYG_CACHE%
+    - ps: 'Start-FileDownload "http://cygwin.com/setup-x86.exe" -FileName "setup-x86.exe"'
+    - 'echo Installing Cygwin packages ...'
+    - 'setup-x86.exe -q --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages make,gcc-core,pkg-config,libpcre-devel,libglib2.0-devel > NUL 2>&1'
+    - '%CYG_BASH% -lc "cygcheck -dc cygwin"'
+
+# Cygwin build script
+#
+# NOTES:
+#
+# The stdin/stdout file descriptor appears not to be valid for the Appveyor
+# build which causes failures as certain functions attempt to redirect 
+# default file handles. Ensure a dummy file descriptor is opened with 'exec'.
+#
 build_script:
-  - make.sh cross-win64
+    - 'echo Building ...'
+    - pwd
+    - '%CYG_BASH% -lc "export CYGWIN=winsymlinks:native; cd /cygdrive/c/projects/unicorn; ./make.sh"'
+
+#
+# Disable tests for now
+#
+test: off
