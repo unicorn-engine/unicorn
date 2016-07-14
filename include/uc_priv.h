@@ -240,6 +240,7 @@ struct uc_struct {
     int thumb;  // thumb mode for ARM
     // full TCG cache leads to middle-block break in the last translation?
     bool block_full;
+    int size_arg;     // what tcg arg slot do we need to update with the size of the block?
     MemoryRegion **mapped_blocks;
     uint32_t mapped_block_count;
     uint32_t mapped_block_cache_index;

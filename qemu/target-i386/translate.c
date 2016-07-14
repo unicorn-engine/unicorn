@@ -8388,15 +8388,17 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     dc->is_jmp = DISAS_NEXT;
     lj = -1;
     max_insns = tb->cflags & CF_COUNT_MASK;
-    if (max_insns <= 1)
+    if (max_insns == 0)
         max_insns = CF_COUNT_MASK;
 
     // Unicorn: trace this block on request
-    // Only hook this block if it is not broken from previous translation due to
-    // full translation cache
+    // Only hook this block if the previous block was not truncated due to space
     if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
         env->uc->block_addr = pc_start;
+        env->uc->size_arg = tcg_ctx->gen_opparam_buf - tcg_ctx->gen_opparam_ptr + 1;
         gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
+    } else {
+        env->uc->size_arg = -1;
     }
 
     gen_tb_start(tcg_ctx);
