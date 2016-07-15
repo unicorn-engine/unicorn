@@ -15,6 +15,12 @@ Unicorn requires few dependent packages as follows.
 
         $ brew install pkg-config glib
 
+  NOTE: to build Unicorn universal binaries (which support both 32-bit &
+  64-bit), you need to have glib in universal format. To do that, build &
+  install glib with:
+
+        $ brew install glib --universal
+
 - For Linux, "glib2-dev" is needed.
   Ubuntu/Debian users can install this with:
 
