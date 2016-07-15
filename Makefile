@@ -105,8 +105,10 @@ ifeq ($(IS_APPLE),1)
 EXT = dylib
 VERSION_EXT = $(API_MAJOR).$(EXT)
 $(LIBNAME)_LDFLAGS += -dynamiclib -install_name lib$(LIBNAME).$(VERSION_EXT) -current_version $(PKG_MAJOR).$(PKG_MINOR).$(PKG_EXTRA) -compatibility_version $(PKG_MAJOR).$(PKG_MINOR)
+$(LIBNAME)_LDFLAGS += -m32 -arch i386 -m64 -arch x86_64
 AR_EXT = a
 UNICORN_CFLAGS += -fvisibility=hidden
+UNICORN_CFLAGS += -m32 -arch i386 -m64 -arch x86_64
 else
 # Cygwin?
 IS_CYGWIN := $(shell $(CC) -dumpmachine | grep -i cygwin | wc -l)
