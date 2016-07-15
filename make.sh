@@ -41,6 +41,12 @@ build() {
   ${MAKE}
 }
 
+build_macos_universal() {
+  [ "$UNAME" = Darwin ] && LIBARCHS="i386 x86_64"
+  MACOS_UNIVERSAL=yes \
+  ${MAKE}
+}
+
 build_cross() {
   [ "$UNAME" = Darwin ] && LIBARCHS="i386 x86_64"
   CROSS=$1
@@ -97,6 +103,7 @@ export CC INSTALL_BIN PREFIX PKGCFGDIR LIBDIRARCH LIBARCHS CFLAGS LDFLAGS
 
 case "$1" in
   "" ) build;;
+  "macos-universal" ) build_macos_universal;;
   "asan" ) asan;;
   "default" ) build;;
   "install" ) install;;

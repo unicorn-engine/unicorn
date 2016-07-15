@@ -58,6 +58,11 @@ To build Unicorn on *nix (such as MacOSX, Linux, *BSD, Solaris):
 
         $ ./make.sh
 
+  On Mac OS, to build universal binaries including both 32-bit & 64-bit code,
+  replace above command with:
+
+        $ ./make.sh macos-universal
+
 - Unicorn requires Python 2.x to compile. If Python 2.x is not the default
     Python interpreter, ensure that the appropriate option is set:
 
