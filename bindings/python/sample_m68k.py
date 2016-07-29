@@ -8,7 +8,7 @@ from unicorn.m68k_const import *
 
 
 # code to be emulated
-M68K_CODE  = "\x76\xed" # movq #-19, %d3
+M68K_CODE  = b"\x76\xed" # movq #-19, %d3
 # memory address where emulation starts
 ADDRESS    = 0x10000
 

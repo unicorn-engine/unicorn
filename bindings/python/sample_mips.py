@@ -8,8 +8,8 @@ from unicorn.mips_const import *
 
 
 # code to be emulated
-MIPS_CODE_EB = "\x34\x21\x34\x56" # ori $at, $at, 0x3456;
-MIPS_CODE_EL = "\x56\x34\x21\x34" # ori $at, $at, 0x3456;
+MIPS_CODE_EB = b"\x34\x21\x34\x56" # ori $at, $at, 0x3456;
+MIPS_CODE_EL = b"\x56\x34\x21\x34" # ori $at, $at, 0x3456;
 
 # memory address where emulation starts
 ADDRESS      = 0x10000
