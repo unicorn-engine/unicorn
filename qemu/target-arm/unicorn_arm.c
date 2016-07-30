@@ -108,6 +108,7 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, i
                 case UC_ARM_REG_R15:
                     ARM_CPU(uc, mycpu)->env.pc = (*(uint32_t *)value & ~1);
                     ARM_CPU(uc, mycpu)->env.thumb = (*(uint32_t *)value & 1);
+                    ARM_CPU(uc, mycpu)->env.uc->thumb = (*(uint32_t *)value & 1);
                     ARM_CPU(uc, mycpu)->env.regs[15] = (*(uint32_t *)value & ~1);
                     // force to quit execution and flush TB
                     uc->quit_request = true;
