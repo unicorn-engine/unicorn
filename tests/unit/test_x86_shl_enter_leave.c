@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <string.h>
 #include <inttypes.h>
 
 #include "unicorn_test.h"
@@ -21,12 +22,12 @@ typedef struct _reg_value
 
 typedef struct _instruction
 {
-	const char*			asmStr;
-	const uint8_t*		code;
-	uint32_t			codeSize;
-	const reg_value*	values;
-	uint32_t			nbValues;
-	uint32_t			addr;
+	const char*		asmStr;
+	uint8_t			code[16]; //x86 inst == 15 bytes max
+	uint32_t		codeSize;
+	reg_value*		values;
+	uint32_t		nbValues;
+	uint32_t		addr;
 } instruction;
 
 typedef struct _block
@@ -41,11 +42,24 @@ typedef struct _block
 #define CAT2(X, Y)		X ## Y
 #define CAT(X, Y)		CAT2(X, Y)
 
-#define ADD_INSTRUCTION(BLOCK, CODE_ASM, CODE, REGVALUES)	\
+#define BLOCK_START(BLOCK) \
+	{ \
+		block* blockPtr = &BLOCK; \
+		blockPtr->nbInsts = 0; \
+		instruction* instPtr = NULL;
+
+#define BLOCK_END() }
+
+#define BLOCK_ADD(CODE_ASM, CODE)	\
+				const uint8_t CAT(code, __LINE__)[] = CODE; \
+				instPtr = newInstruction(CAT(code, __LINE__), sizeof(CAT(code, __LINE__)), CODE_ASM, NULL, 0); \
+				addInstructionToBlock(blockPtr, instPtr);
+
+#define BLOCK_ADD_CHECK(CODE_ASM, CODE, REGVALUES)	\
 				const uint8_t CAT(code, __LINE__)[] = CODE; \
 				const reg_value CAT(regValues, __LINE__)[] = REGVALUES; \
-				inst = newInstruction(CAT(code, __LINE__), sizeof(CAT(code, __LINE__)), CODE_ASM, CAT(regValues, __LINE__), sizeof(CAT(regValues, __LINE__)) / sizeof(reg_value)); \
-				addInstructionToBlock(BLOCK, inst);
+				instPtr = newInstruction(CAT(code, __LINE__), sizeof(CAT(code, __LINE__)), CODE_ASM, CAT(regValues, __LINE__), sizeof(CAT(regValues, __LINE__)) / sizeof(reg_value)); \
+				addInstructionToBlock(blockPtr, instPtr);
 
 #define V(...)	{ __VA_ARGS__ }
 
@@ -58,6 +72,7 @@ void			freeBlock(block* _block);
 const char*		getRegisterName(uint32_t _regid);
 uint32_t		getRegisterValue(uc_engine *uc, uint32_t _regid);
 instruction*	getInstruction(block * _block, uint32_t _addr);
+void			initRegisters(uc_engine *uc);
 
 /******************************************************************************/
 
@@ -72,8 +87,6 @@ void hook_code_test_i386_shl(uc_engine *uc, uint64_t address, uint32_t size, voi
 
 	for (i = 0; i < currInst->nbValues; i++)
 	{
-		if (currInst->values[i].regId == UC_X86_REG_INVALID) continue;
-
 		uint32_t regValue = getRegisterValue(uc, currInst->values[i].regId);
 		print_message("|\t\ttesting %s : ", getRegisterName(currInst->values[i].regId));
 		assert_int_equal(regValue & currInst->values[i].mask, currInst->values[i].regValue);
@@ -107,54 +120,37 @@ bool hook_mem_invalid(uc_engine *uc, uc_mem_type type, uint64_t addr, int size, 
 #define ADDR_CODE	0x100000
 #define	ADDR_STACK	0x200000
 
+
+
 static void test_i386_shl_cl(void **state)
 {
 	uc_engine *uc;
 	uc_hook trace1;
+	block b;
 
 	// Initialize emulator in X86-32bit mode
 	OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
 	OK(uc_mem_map(uc, ADDR_CODE, 0x1000, UC_PROT_ALL));
+	
+	initRegisters(uc);
 
-	{
-		block block;
-		instruction* inst;
+	BLOCK_START(b);
+	BLOCK_ADD(		"mov ebx, 3Ch", V(0xBB, 0x3C, 0x00, 0x00, 0x00));
+	BLOCK_ADD_CHECK("mov cl, 2",	V(0xB1, 0x02),					V(V(UC_X86_REG_EBX, 0x3C, NO_MASK)));
+	BLOCK_ADD_CHECK("shl ebx, cl",	V(0xD3, 0xE3),					V(V(UC_X86_REG_CL, 0x2, NO_MASK)));
+	BLOCK_ADD_CHECK("lahf",			V(0x9F),						V(V(UC_X86_REG_EBX, 0xF0, NO_MASK), V(UC_X86_REG_EFLAGS, 0x4, ALL_MASK)));
+	BLOCK_ADD_CHECK("int3",			V(0xCC),						V(V(UC_X86_REG_AH, 0x4, PF_MASK)));
+	BLOCK_END();
 
-		block.nbInsts = 0;
+	loadBlock(uc, &b, ADDR_CODE);
 
-		ADD_INSTRUCTION(&block, "mov ebx, 3Ch", 
-						V(0xBB, 0x3C, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_INVALID, 0x0, NO_MASK)));
-		ADD_INSTRUCTION(&block, "mov cl, 2", 
-						V(0xB1, 0x02), 
-						V(V(UC_X86_REG_EBX, 0x3C, NO_MASK)));
-		ADD_INSTRUCTION(&block, "shl ebx, cl", 
-						V(0xD3, 0xE3), 
-						V(V(UC_X86_REG_EBX, 0x3C, NO_MASK), V(UC_X86_REG_CL, 0x2, NO_MASK)));
-		ADD_INSTRUCTION(&block, "lahf", 
-						V(0x9F), 
-						V(V(UC_X86_REG_EBX, 0xF0, NO_MASK), V(UC_X86_REG_CL, 0x2, NO_MASK), V(UC_X86_REG_EFLAGS, 0x4, ALL_MASK)));
-		ADD_INSTRUCTION(&block, "int3", 
-						V(0xCC), 
-						V(V(UC_X86_REG_AH, 0x4, PF_MASK), V(UC_X86_REG_EBX, 0xF0, NO_MASK), V(UC_X86_REG_CL, 0x2, NO_MASK), V(UC_X86_REG_EFLAGS, 0x4, ALL_MASK)));
+	OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_test_i386_shl, &b, 1, 0));
+	OK(uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL, 1, 0));
 
-		loadBlock(uc, &block, ADDR_CODE);
+	// emulate machine code in infinite time
+	OK(uc_emu_start(uc, ADDR_CODE, ADDR_CODE + b.size, 0, 0));
 
-		// initialize machine registers
-		uint32_t zero = 0;
-		OK(uc_reg_write(uc, UC_X86_REG_EAX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_EBX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_ECX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_EDX, &zero));
-
-		OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_test_i386_shl, &block, 1, 0));
-		OK(uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL, 1, 0));
-
-		// emulate machine code in infinite time
-		OK(uc_emu_start(uc, ADDR_CODE, ADDR_CODE + block.size, 0, 0));
-
-		freeBlock(&block);
-	}
+	freeBlock(&b);
 
 	uc_close(uc);
 }
@@ -163,47 +159,30 @@ static void test_i386_shl_imm(void **state)
 {
 	uc_engine *uc;
 	uc_hook trace1;
+	block b;
 
 	// Initialize emulator in X86-32bit mode
 	OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
 	OK(uc_mem_map(uc, ADDR_CODE, 0x1000, UC_PROT_ALL));
 
-	{
-		block block;
-		instruction* inst;
+	initRegisters(uc);
 
-		block.nbInsts = 0;
+	BLOCK_START(b);
+	BLOCK_ADD(		"mov ebx, 3Ch",	V(0xBB, 0x3C, 0x00, 0x00, 0x00));
+	BLOCK_ADD(		"shl ebx, 2",	V(0xC1, 0xE3, 0x02));
+	BLOCK_ADD_CHECK("lahf",			V(0x9F),						V(V(UC_X86_REG_EBX, 0xF0, NO_MASK), V(UC_X86_REG_EFLAGS, 0x4, ALL_MASK)));
+	BLOCK_ADD_CHECK("int3",			V(0xCC),						V(V(UC_X86_REG_AH, 0x4, PF_MASK)));
+	BLOCK_END();
 
-		ADD_INSTRUCTION(&block, "mov ebx, 3Ch",
-						V(0xBB, 0x3C, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_INVALID, 0x0, NO_MASK)));
-		ADD_INSTRUCTION(&block, "shl ebx, 2",
-						V(0xC1, 0xE3, 0x02), 
-						V(V(UC_X86_REG_EBX, 0x3C, NO_MASK)));
-		ADD_INSTRUCTION(&block, "lahf",
-						V(0x9F), 
-						V(V(UC_X86_REG_EBX, 0xF0, NO_MASK), V(UC_X86_REG_EFLAGS, 0x4, ALL_MASK)));
-		ADD_INSTRUCTION(&block, "int3",
-						V(0xCC), 
-						V(V(UC_X86_REG_AH, 0x4, PF_MASK), V(UC_X86_REG_EBX, 0xF0, NO_MASK), V(UC_X86_REG_EFLAGS, 0x4, ALL_MASK)));
-
-		loadBlock(uc, &block, ADDR_CODE);
-
-		// initialize machine registers
-		uint32_t zero = 0;
-		OK(uc_reg_write(uc, UC_X86_REG_EAX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_EBX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_ECX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_EDX, &zero));
-
-		OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_test_i386_shl, &block, 1, 0));
-		OK(uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL, 1, 0));
-
-		// emulate machine code in infinite time
-		OK(uc_emu_start(uc, ADDR_CODE, ADDR_CODE + block.size, 0, 0));
-
-		freeBlock(&block);
-	}
+	loadBlock(uc, &b, ADDR_CODE);
+	
+	OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_test_i386_shl, &b, 1, 0));
+	OK(uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL, 1, 0));
+	
+	// emulate machine code in infinite time
+	OK(uc_emu_start(uc, ADDR_CODE, ADDR_CODE + b.size, 0, 0));
+	
+	freeBlock(&b);
 
 	uc_close(uc);
 }
@@ -212,66 +191,36 @@ static void test_i386_enter_leave(void **state)
 {
 	uc_engine *uc;
 	uc_hook trace1;
+	block b;
 
 	// Initialize emulator in X86-32bit mode
 	OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
 	OK(uc_mem_map(uc, ADDR_CODE, 0x1000, UC_PROT_ALL));
 	OK(uc_mem_map(uc, ADDR_STACK - 0x1000, 0x1000, UC_PROT_ALL));
 
-	{
-		block block;
-		instruction* inst;
+	initRegisters(uc);
 
-		block.nbInsts = 0;
+	BLOCK_START(b);
+	BLOCK_ADD(		"mov esp, 0x200000",	V(0xBC, 0x00, 0x00, 0x20, 0x00));
+	BLOCK_ADD_CHECK("mov eax, 1", 			V(0xB8, 0x01, 0x00, 0x00, 0x00),	V(V(UC_X86_REG_ESP, 0x200000, NO_MASK)));
+	BLOCK_ADD_CHECK("call 0x100015",		V(0xE8, 0x06, 0x00, 0x00, 0x00),	V(V(UC_X86_REG_EAX, 0x1, NO_MASK)));
+	BLOCK_ADD_CHECK("mov eax, 3",			V(0xB8, 0x03, 0x00, 0x00, 0x00),	V(V(UC_X86_REG_EAX, 0x2, NO_MASK)));
+	BLOCK_ADD_CHECK("int3",					V(0xCC), 							V(V(UC_X86_REG_EAX, 0x3, NO_MASK)));
+	BLOCK_ADD_CHECK("enter 0x10,0",			V(0xC8, 0x10, 0x00, 0x00),			V(V(UC_X86_REG_ESP, 0x200000 - 4, NO_MASK)));
+	BLOCK_ADD_CHECK("mov eax, 2",			V(0xB8, 0x02, 0x00, 0x00, 0x00),	V(V(UC_X86_REG_ESP, 0x200000 - 4 - 4 - 0x10, NO_MASK), V(UC_X86_REG_EBP, 0x200000 - 4 - 4, NO_MASK)));
+	BLOCK_ADD_CHECK("leave",				V(0xC9),							V(V(UC_X86_REG_EAX, 0x2, NO_MASK)));
+	BLOCK_ADD_CHECK("ret",					V(0xC3),							V(V(UC_X86_REG_ESP, 0x200000 - 4, NO_MASK)));
+	BLOCK_END();
 
-		ADD_INSTRUCTION(&block, "mov esp, 0x200000", 
-						V(0xBC, 0x00, 0x00, 0x20, 0x00), 
-						V(V(UC_X86_REG_INVALID, 0x0, NO_MASK)));
-		ADD_INSTRUCTION(&block, "mov eax, 1", 
-						V(0xB8, 0x01, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_ESP, 0x200000, NO_MASK)));
-		ADD_INSTRUCTION(&block, "call 0x100015", 
-						V(0xE8, 0x06, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_EAX, 0x1, NO_MASK), V(UC_X86_REG_ESP, 0x200000, NO_MASK)));
-		ADD_INSTRUCTION(&block, "mov eax, 3", 
-						V(0xB8, 0x03, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_EAX, 0x2, NO_MASK)));
-		ADD_INSTRUCTION(&block, "int3", 
-						V(0xCC), 
-						V(V(UC_X86_REG_EAX, 0x3, NO_MASK)));
-		ADD_INSTRUCTION(&block, "enter 0x10,0", 
-						V(0xC8, 0x10, 0x00, 0x00), 
-						V(V(UC_X86_REG_ESP, 0x200000 - 4, NO_MASK)));
-		ADD_INSTRUCTION(&block, "mov eax, 2", 
-						V(0xB8, 0x02, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_ESP, 0x200000 - 4 - 4 - 0x10, NO_MASK), V(UC_X86_REG_EBP, 0x200000 - 4 - 4, NO_MASK)));
-		ADD_INSTRUCTION(&block, "leave", 
-						V(0xC9), 
-						V(V(UC_X86_REG_EAX, 0x2, NO_MASK), V(UC_X86_REG_INVALID, 0x0, NO_MASK)));
-		ADD_INSTRUCTION(&block, "mov eax, 2", 
-						V(0xB8, 0x02, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_INVALID, 0x0, NO_MASK)));
-		ADD_INSTRUCTION(&block, "ret", 
-						V(0xC3), 
-						V(V(UC_X86_REG_ESP, 0x200000 - 4, NO_MASK)));
+	loadBlock(uc, &b, ADDR_CODE);
 
-		loadBlock(uc, &block, ADDR_CODE);
+	OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_test_i386_shl, &b, 1, 0));
+	OK(uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL, 1, 0));
 
-		// initialize machine registers
-		uint32_t zero = 0;
-		OK(uc_reg_write(uc, UC_X86_REG_EAX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_EBX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_ECX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_EDX, &zero));
+	// emulate machine code in infinite time
+	OK(uc_emu_start(uc, ADDR_CODE, ADDR_CODE + b.size, 0, 0));
 
-		OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_test_i386_shl, &block, 1, 0));
-		OK(uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL, 1, 0));
-
-		// emulate machine code in infinite time
-		OK(uc_emu_start(uc, ADDR_CODE, ADDR_CODE + block.size, 0, 0));
-
-		freeBlock(&block);
-	}
+	freeBlock(&b);
 
 	uc_close(uc);
 }
@@ -280,64 +229,38 @@ static void test_i386_enter_nested_leave(void **state)
 {
 	uc_engine *uc;
 	uc_hook trace1;
+	block b;
 
 	// Initialize emulator in X86-32bit mode
 	OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
 	OK(uc_mem_map(uc, ADDR_CODE, 0x1000, UC_PROT_ALL));
 	OK(uc_mem_map(uc, ADDR_STACK - 0x1000, 0x1000, UC_PROT_ALL));
 
-	{
-		block block;
-		instruction* inst;
+	initRegisters(uc);
 
-		block.nbInsts = 0;
+	BLOCK_START(b);
+	BLOCK_ADD(		"mov esp, 0x200000",	V(0xBC, 0x00, 0x00, 0x20, 0x00));
+	BLOCK_ADD_CHECK("mov eax, 1",			V(0xB8, 0x01, 0x00, 0x00, 0x00),	V(V(UC_X86_REG_ESP, 0x200000, NO_MASK)));
+	BLOCK_ADD_CHECK("call 0x100015", 		V(0xE8, 0x06, 0x00, 0x00, 0x00),	V(V(UC_X86_REG_EAX, 0x1, NO_MASK)));
+	BLOCK_ADD_CHECK("mov eax, 3",			V(0xB8, 0x03, 0x00, 0x00, 0x00),	V(V(UC_X86_REG_EAX, 0x2, NO_MASK)));
+	BLOCK_ADD_CHECK("int3",					V(0xCC),							V(V(UC_X86_REG_EAX, 0x3, NO_MASK)));
+	BLOCK_ADD_CHECK("mov ebp, esp",			V(0x89, 0xE5),						V(V(UC_X86_REG_ESP, 0x200000 - 4, NO_MASK)));
+	BLOCK_ADD_CHECK("enter 0x10,1",			V(0xC8, 0x10, 0x00, 0x01),			V(V(UC_X86_REG_EBP, 0x200000 - 4, NO_MASK)));
+	BLOCK_ADD_CHECK("mov eax, 2",			V(0xB8, 0x02, 0x00, 0x00, 0x00),	V(V(UC_X86_REG_ESP, 0x200000 - 4 - 2*4 - 0x10, NO_MASK), V(UC_X86_REG_EBP, 0x200000 - 4 - 4, NO_MASK)));
+	BLOCK_ADD_CHECK("leave",				V(0xC9),							V(V(UC_X86_REG_EAX, 0x2, NO_MASK)));
+	BLOCK_ADD_CHECK("ret",					V(0xC3),							V(V(UC_X86_REG_ESP, 0x200000 - 4, NO_MASK)));
+	BLOCK_END();
 
-		ADD_INSTRUCTION(&block, "mov esp, 0x200000", 
-						V(0xBC, 0x00, 0x00, 0x20, 0x00), 
-						V(V(UC_X86_REG_INVALID, 0x0, NO_MASK)));
-		ADD_INSTRUCTION(&block, "mov eax, 1", 
-						V(0xB8, 0x01, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_ESP, 0x200000, NO_MASK)));
-		ADD_INSTRUCTION(&block, "call 0x100015", 
-						V(0xE8, 0x06, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_EAX, 0x1, NO_MASK), V(UC_X86_REG_ESP, 0x200000, NO_MASK)));
-		ADD_INSTRUCTION(&block, "mov eax, 3", 
-						V(0xB8, 0x03, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_EAX, 0x2, NO_MASK)));
-		ADD_INSTRUCTION(&block, "int3", 
-						V(0xCC), 
-						V(V(UC_X86_REG_EAX, 0x3, NO_MASK)));
-		ADD_INSTRUCTION(&block, "enter 0x10,1", 
-						V(0xC8, 0x10, 0x00, 0x01), 
-						V(V(UC_X86_REG_ESP, 0x200000 - 4, NO_MASK)));
-		ADD_INSTRUCTION(&block, "mov eax, 2", 
-						V(0xB8, 0x02, 0x00, 0x00, 0x00), 
-						V(V(UC_X86_REG_ESP, 0x200000 - 4 - 2*4 - 0x10, NO_MASK), V(UC_X86_REG_EBP, 0x200000 - 4 - 4, NO_MASK)));
-		ADD_INSTRUCTION(&block, "leave", 
-						V(0xC9), 
-						V(V(UC_X86_REG_EAX, 0x2, NO_MASK)));
-		ADD_INSTRUCTION(&block, "ret", 
-						V(0xC3), 
-						V(V(UC_X86_REG_ESP, 0x200000 - 4, NO_MASK)));
+	loadBlock(uc, &b, ADDR_CODE);
 
-		loadBlock(uc, &block, ADDR_CODE);
+	OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_test_i386_shl, &b, 1, 0));
+	OK(uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL, 1, 0));
 
-		// initialize machine registers
-		uint32_t zero = 0;
-		OK(uc_reg_write(uc, UC_X86_REG_EAX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_EBX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_ECX, &zero));
-		OK(uc_reg_write(uc, UC_X86_REG_EDX, &zero));
+	// emulate machine code in infinite time
+	OK(uc_emu_start(uc, ADDR_CODE, ADDR_CODE + b.size, 0, 0));
 
-		OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_test_i386_shl, &block, 1, 0));
-		OK(uc_hook_add(uc, &trace1, UC_HOOK_MEM_INVALID, hook_mem_invalid, NULL, 1, 0));
-
-		// emulate machine code in infinite time
-		OK(uc_emu_start(uc, ADDR_CODE, ADDR_CODE + block.size, 0, 0));
-
-		freeBlock(&block);
-	}
-
+	freeBlock(&b);
+	
 	uc_close(uc);
 }
 
@@ -361,10 +284,15 @@ instruction* newInstruction(const uint8_t * _code, uint32_t _codeSize, const cha
 	instruction* inst = (instruction*)malloc(sizeof(instruction));
 
 	inst->asmStr = _asmStr;
-	inst->code = _code;
+	memcpy(inst->code, _code, _codeSize);
 	inst->codeSize = _codeSize;
-	inst->values = _values;
-	inst->nbValues = _nbValues;
+	inst->nbValues = 0;
+	if (_values)
+	{
+		inst->values = (reg_value*)malloc(_nbValues*sizeof(reg_value));
+		memcpy(inst->values, _values, _nbValues*sizeof(reg_value));
+		inst->nbValues = _nbValues;
+	}
 
 	return inst;
 }
@@ -398,7 +326,26 @@ void freeBlock(block* _block)
 {
 	uint32_t i;
 	for (i = 0; i < _block->nbInsts; i++)
+	{
+		if (_block->insts[i]->nbValues > 0)
+			free(_block->insts[i]->values);
 		free(_block->insts[i]);
+	}
+}
+
+void initRegisters(uc_engine *uc)
+{
+	// initialize machine registers
+	uint32_t zero = 0;
+	OK(uc_reg_write(uc, UC_X86_REG_EAX, &zero));
+	OK(uc_reg_write(uc, UC_X86_REG_EBX, &zero));
+	OK(uc_reg_write(uc, UC_X86_REG_ECX, &zero));
+	OK(uc_reg_write(uc, UC_X86_REG_EDX, &zero));
+	OK(uc_reg_write(uc, UC_X86_REG_EBP, &zero));
+	OK(uc_reg_write(uc, UC_X86_REG_ESP, &zero));
+	OK(uc_reg_write(uc, UC_X86_REG_EDI, &zero));
+	OK(uc_reg_write(uc, UC_X86_REG_ESI, &zero));
+	OK(uc_reg_write(uc, UC_X86_REG_EFLAGS, &zero));
 }
 
 instruction* getInstruction(block* _block, uint32_t _addr)
