@@ -235,7 +235,7 @@ else
 endif
 
 compile_lib: config qemu/config-host.h-timestamp
-	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll cyg$(LIBNAME)*.dll && cd qemu && $(MAKE) -j 4
+	cd qemu && $(MAKE) -j 4
 	$(MAKE) unicorn
 
 unicorn: $(LIBRARY) $(ARCHIVE)
