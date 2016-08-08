@@ -76,10 +76,14 @@ if not _found:
         except OSError:
             pass
 
-# Attempt Darwin specific load (10.11 specific),
-# since LD_LIBRARY_PATH is not guaranteed to exist
-if not _found and platform.system() == "Darwin":
-    _lib_path = "/usr/local/lib/"
+if not _found:
+    # Attempt Darwin specific load (10.11 specific),
+    # since LD_LIBRARY_PATH is not guaranteed to exist
+    if platform.system() == "Darwin":
+        _lib_path = "/usr/local/lib/"
+    elif platform.system() == "Linux":
+        _lib_path = "/usr/lib64/"
+
     for _lib in _all_libs:
         try:
             _lib_file = os.path.join(_lib_path, _lib)
