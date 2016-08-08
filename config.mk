@@ -2,7 +2,7 @@
 # By Nguyen Anh Quynh, 2015
 
 # This file contains all customized compile options for Unicorn emulator.
-# Consult COMPILE.TXT & docs/README for more details.
+# Consult docs/COMPILE.md & docs/README.md for more details.
 
 ################################################################################
 # Compile with debug info when you want to debug code.
