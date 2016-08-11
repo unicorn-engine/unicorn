@@ -675,7 +675,7 @@ static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t per
         return UC_ERR_NOMEM;
 
     if ((uc->mapped_block_count & (MEM_BLOCK_INCR - 1)) == 0) {  //time to grow
-        regions = (MemoryRegion**)realloc(uc->mapped_blocks,
+        regions = (MemoryRegion**)g_realloc(uc->mapped_blocks,
                 sizeof(MemoryRegion*) * (uc->mapped_block_count + MEM_BLOCK_INCR));
         if (regions == NULL) {
             return UC_ERR_NOMEM;
@@ -758,7 +758,7 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t per
 // Generally used in prepartion for splitting a MemoryRegion.
 static uint8_t *copy_region(struct uc_struct *uc, MemoryRegion *mr)
 {
-    uint8_t *block = (uint8_t *)malloc(int128_get64(mr->size));
+    uint8_t *block = (uint8_t *)g_malloc0(int128_get64(mr->size));
     if (block != NULL) {
         uc_err err = uc_mem_read(uc, mr->addr, block, int128_get64(mr->size));
         if (err != UC_ERR_OK) {
@@ -1125,7 +1125,7 @@ uint32_t uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
     *count = uc->mapped_block_count;
 
     if (*count) {
-        r = malloc(*count * sizeof(uc_mem_region));
+        r = g_malloc0(*count * sizeof(uc_mem_region));
         if (r == NULL) {
             // out of memory
             return UC_ERR_NOMEM;
