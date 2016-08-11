@@ -2,6 +2,7 @@ package unicorn
 
 import (
 	"errors"
+	"sync"
 	"unsafe"
 )
 
@@ -18,47 +19,54 @@ type HookData struct {
 
 type Hook uint64
 
+var hookDataLock sync.RWMutex
 var hookDataMap = make(map[uintptr]*HookData)
+
+func getHookData(user unsafe.Pointer) *HookData {
+	hookDataLock.RLock()
+	defer hookDataLock.RUnlock()
+	return hookDataMap[uintptr(user)]
+}
 
 //export hookCode
 func hookCode(handle unsafe.Pointer, addr uint64, size uint32, user unsafe.Pointer) {
-	hook := hookDataMap[uintptr(user)]
+	hook := getHookData(user)
 	hook.Callback.(func(Unicorn, uint64, uint32))(hook.Uc, uint64(addr), uint32(size))
 }
 
 //export hookMemInvalid
 func hookMemInvalid(handle unsafe.Pointer, typ C.uc_mem_type, addr uint64, size int, value int64, user unsafe.Pointer) bool {
-	hook := hookDataMap[uintptr(user)]
+	hook := getHookData(user)
 	return hook.Callback.(func(Unicorn, int, uint64, int, int64) bool)(hook.Uc, int(typ), addr, size, value)
 }
 
 //export hookMemAccess
 func hookMemAccess(handle unsafe.Pointer, typ C.uc_mem_type, addr uint64, size int, value int64, user unsafe.Pointer) {
-	hook := hookDataMap[uintptr(user)]
+	hook := getHookData(user)
 	hook.Callback.(func(Unicorn, int, uint64, int, int64))(hook.Uc, int(typ), addr, size, value)
 }
 
 //export hookInterrupt
 func hookInterrupt(handle unsafe.Pointer, intno uint32, user unsafe.Pointer) {
-	hook := hookDataMap[uintptr(user)]
+	hook := getHookData(user)
 	hook.Callback.(func(Unicorn, uint32))(hook.Uc, intno)
 }
 
 //export hookX86In
 func hookX86In(handle unsafe.Pointer, port, size uint32, user unsafe.Pointer) uint32 {
-	hook := hookDataMap[uintptr(user)]
+	hook := getHookData(user)
 	return hook.Callback.(func(Unicorn, uint32, uint32) uint32)(hook.Uc, port, size)
 }
 
 //export hookX86Out
 func hookX86Out(handle unsafe.Pointer, port, size, value uint32, user unsafe.Pointer) {
-	hook := hookDataMap[uintptr(user)]
+	hook := getHookData(user)
 	hook.Callback.(func(Unicorn, uint32, uint32, uint32))(hook.Uc, port, size, value)
 }
 
 //export hookX86Syscall
 func hookX86Syscall(handle unsafe.Pointer, user unsafe.Pointer) {
-	hook := hookDataMap[uintptr(user)]
+	hook := getHookData(user)
 	hook.Callback.(func(Unicorn))(hook.Uc)
 }
 
@@ -103,7 +111,9 @@ func (u *uc) HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int)
 	} else {
 		C.uc_hook_add_wrap(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end))
 	}
+	hookDataLock.Lock()
 	hookDataMap[uptr] = data
+	hookDataLock.Unlock()
 	u.hooks[Hook(h2)] = uptr
 	return Hook(h2), nil
 }
@@ -111,7 +121,9 @@ func (u *uc) HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int)
 func (u *uc) HookDel(hook Hook) error {
 	if uptr, ok := u.hooks[hook]; ok {
 		delete(u.hooks, hook)
+		hookDataLock.Lock()
 		delete(hookDataMap, uptr)
+		hookDataLock.Unlock()
 	}
 	return errReturn(C.uc_hook_del(u.handle, C.uc_hook(hook)))
 }

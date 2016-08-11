@@ -8,8 +8,8 @@ from unicorn.arm_const import *
 
 
 # code to be emulated
-ARM_CODE   = "\x37\x00\xa0\xe3\x03\x10\x42\xe0" # mov r0, #0x37; sub r1, r2, r3
-THUMB_CODE = "\x83\xb0" # sub    sp, #0xc
+ARM_CODE   = b"\x37\x00\xa0\xe3\x03\x10\x42\xe0" # mov r0, #0x37; sub r1, r2, r3
+THUMB_CODE = b"\x83\xb0" # sub    sp, #0xc
 # memory address where emulation starts
 ADDRESS    = 0x10000
 

@@ -105,8 +105,14 @@ ifeq ($(IS_APPLE),1)
 EXT = dylib
 VERSION_EXT = $(API_MAJOR).$(EXT)
 $(LIBNAME)_LDFLAGS += -dynamiclib -install_name lib$(LIBNAME).$(VERSION_EXT) -current_version $(PKG_MAJOR).$(PKG_MINOR).$(PKG_EXTRA) -compatibility_version $(PKG_MAJOR).$(PKG_MINOR)
+ifeq ($(MACOS_UNIVERSAL),yes)
+$(LIBNAME)_LDFLAGS += -m32 -arch i386 -m64 -arch x86_64
+endif
 AR_EXT = a
 UNICORN_CFLAGS += -fvisibility=hidden
+ifeq ($(MACOS_UNIVERSAL),yes)
+UNICORN_CFLAGS += -m32 -arch i386 -m64 -arch x86_64
+endif
 else
 # Cygwin?
 IS_CYGWIN := $(shell $(CC) -dumpmachine | grep -i cygwin | wc -l)
@@ -229,7 +235,7 @@ else
 endif
 
 compile_lib: config qemu/config-host.h-timestamp
-	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll cyg$(LIBNAME)*.dll && cd qemu && $(MAKE) -j 4
+	cd qemu && $(MAKE) -j 4
 	$(MAKE) unicorn
 
 unicorn: $(LIBRARY) $(ARCHIVE)

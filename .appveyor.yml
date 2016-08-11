@@ -1,16 +1,39 @@
-version: 1.0-{build}
-
-platform:
-  - x64
-
+# Appveyor configuration file for CI build of Unicorn Engine on Windows (under Cygwin)
 environment:
-  global:
-    MSYS2_ARCH: x86_64
-  matrix:
-    - HOST_ARCH_ARG: --host=x86_64-w64-mingw32
-      ADD_PATH: /mingw64/bin
-    - HOST_ARCH_ARG: --host=i686-w64-mingw32
-      ADD_PATH: /mingw32/bin
+    matrix:
+        - CYG_ROOT: C:\cygwin64
+          CYG_SETUP: setup-x86_64.exe
+          CYG_MIRROR: http://cygwin.mirror.constant.com
+          CYG_CACHE: C:\cygwin64\var\cache\setup
+          CYG_BASH: C:\cygwin64\bin\bash
+          CC: gcc
+        - CYG_ROOT: C:\cygwin
+          CYG_SETUP: setup-x86.exe
+          CYG_MIRROR: http://cygwin.mirror.constant.com
+          CYG_CACHE: C:\cygwin\var\cache\setup
+          CYG_BASH: C:\cygwin\bin\bash
+          CC: gcc
+
+# Cache Cygwin files to speed up build
+cache:
+    - '%CYG_CACHE%'
+clone_depth: 1
+
+# Attempt to ensure we don't try to convert line endings to Win32 CRLF as this will cause build to fail
+init:
+    - git config --global core.autocrlf input
+
+# Install needed build dependencies
+install:
+    - ps: 'Start-FileDownload "http://cygwin.com/$env:CYG_SETUP" -FileName "$env:CYG_SETUP"'
+    - '%CYG_SETUP% --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages make,gcc-core,pkg-config,libpcre-devel,libglib2.0-devel > NUL 2>&1'
+    - '%CYG_BASH% -lc "cygcheck -dc cygwin"'
 
 build_script:
-  - make.sh cross-win64
+    - 'echo building...'
+    - '%CYG_BASH% -lc "export CYGWIN=winsymlinks:native; cd $APPVEYOR_BUILD_FOLDER; ./make.sh"'
+
+#
+# Disable tests for now
+#
+test: off

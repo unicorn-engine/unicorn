@@ -23,8 +23,6 @@
 static int mips_r4k_init(struct uc_struct *uc, MachineState *machine)
 {
     const char *cpu_model = machine->cpu_model;
-    MIPSCPU *cpu;
-
 
     /* init CPUs */
     if (cpu_model == NULL) {

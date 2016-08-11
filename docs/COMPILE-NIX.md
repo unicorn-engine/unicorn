@@ -15,6 +15,12 @@ Unicorn requires few dependent packages as follows.
 
         $ brew install pkg-config glib
 
+  NOTE: to build Unicorn universal binaries (which support both 32-bit &
+  64-bit), you need to have glib in universal format. To do that, build &
+  install glib with:
+
+        $ brew install glib --universal
+
 - For Linux, "glib2-dev" is needed.
   Ubuntu/Debian users can install this with:
 
@@ -57,6 +63,11 @@ To build Unicorn on *nix (such as MacOSX, Linux, *BSD, Solaris):
 - To compile for current platform, run:
 
         $ ./make.sh
+
+  On Mac OS, to build universal binaries including both 32-bit & 64-bit code,
+  replace above command with:
+
+        $ ./make.sh macos-universal
 
 - Unicorn requires Python 2.x to compile. If Python 2.x is not the default
     Python interpreter, ensure that the appropriate option is set:

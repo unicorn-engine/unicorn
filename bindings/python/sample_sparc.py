@@ -8,7 +8,7 @@ from unicorn.sparc_const import *
 
 
 # code to be emulated
-SPARC_CODE = "\x86\x00\x40\x02" # add %g1, %g2, %g3;
+SPARC_CODE = b"\x86\x00\x40\x02" # add %g1, %g2, %g3;
 # memory address where emulation starts
 ADDRESS    = 0x10000
 

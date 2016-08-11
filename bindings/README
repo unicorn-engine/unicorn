@@ -1,5 +1,5 @@
 This directory contains bindings & test code for Python, Java, Go, .NET and MSVC.
-See <language>/README or <language>/README.TXT for how to install each binding.
+See <language>/README or <language>/README.TXT or <language>/README.md for how to install each binding.
 
 The following bindings are contributed by community.
 

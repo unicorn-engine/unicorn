@@ -199,7 +199,7 @@ def hook_intr(uc, intno, user_data):
         buf = ecx
         count = edx
 
-        dummy_content = str(uuid.uuid1())[:32]
+        dummy_content = str(uuid.uuid1()).encode("latin1")[:32]
         if len(dummy_content) > count:
             dummy_content = dummy_content[:count]
 
