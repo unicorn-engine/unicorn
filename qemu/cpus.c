@@ -122,7 +122,7 @@ static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
     CPU_FOREACH(cpu) {
         cpu->created = false;
         qemu_cond_destroy(cpu->halt_cond);
-        free(cpu->halt_cond);
+        g_free(cpu->halt_cond);
         cpu->halt_cond = NULL;
     }
 
