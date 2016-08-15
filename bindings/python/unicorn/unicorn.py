@@ -3,9 +3,9 @@
 import ctypes
 import ctypes.util
 import distutils.sysconfig
+import pkg_resources
 import inspect
 import os.path
-import platform
 import sys
 
 from . import x86_const, unicorn_const as uc
@@ -17,12 +17,12 @@ _python2 = sys.version_info[0] < 3
 if _python2:
     range = xrange
 
-_lib_path = os.path.split(__file__)[0]
-_all_libs = (
-    "unicorn.dll",
-    "libunicorn.so",
-    "libunicorn.dylib",
-)
+if sys.platform == 'darwin':
+    _lib = "libunicorn.1.dylib"
+elif sys.platform in ('win32', 'cygwin'):
+    _lib = "unicorn.dll"
+else:
+    _lib = "libunicorn.so.1"
 
 # Windows DLL in dependency order
 _all_windows_dlls = (
@@ -33,70 +33,43 @@ _all_windows_dlls = (
     "libintl-8.dll",
     "libglib-2.0-0.dll",
 )
-_found = False
 
-for _lib in _all_libs:
+def _load_win_support(path):
+    for dll in _all_windows_dlls:
+        lib_file = os.path.join(path, dll)
+        if os.path.exists(lib_file):
+            ctypes.cdll.LoadLibrary(lib_file)
+
+def _load_lib(path):
     try:
-        if _lib == "unicorn.dll":
-            for dll in _all_windows_dlls:    # load all the rest DLLs first
-                _lib_file = os.path.join(_lib_path, dll)
-                if os.path.exists(_lib_file):
-                    ctypes.cdll.LoadLibrary(_lib_file)
-        _lib_file = os.path.join(_lib_path, _lib)
-        _uc = ctypes.cdll.LoadLibrary(_lib_file)
-        _found = True
-        break
+        if sys.platform in ('win32', 'cygwin'):
+            _load_win_support(path)
+
+        lib_file = os.path.join(path, _lib)
+        return ctypes.cdll.LoadLibrary(lib_file)
     except OSError:
-        pass
+        return None
 
-if not _found:
-    # try loading from default paths
-    for _lib in _all_libs:
-        try:
-            _uc = ctypes.cdll.LoadLibrary(_lib)
-            _found = True
-            break
-        except OSError:
-            pass
+_uc = None
 
-if not _found:
-    # last try: loading from python lib directory
-    _lib_path = distutils.sysconfig.get_python_lib()
-    for _lib in _all_libs:
-        try:
-            if _lib == "unicorn.dll":
-                for dll in _all_windows_dlls:    # load all the rest DLLs first
-                    _lib_file = os.path.join(_lib_path, "unicorn", dll)
-                    if os.path.exists(_lib_file):
-                        ctypes.cdll.LoadLibrary(_lib_file)
-            _lib_file = os.path.join(_lib_path, "unicorn", _lib)
-            _uc = ctypes.cdll.LoadLibrary(_lib_file)
-            _found = True
-            break
-        except OSError:
-            pass
+# Loading attempts, in order
+# - pkg_resources can get us the path to the local libraries
+# - we can get the path to the local libraries by parsing our filename
+# - global load
+# - python's lib directory
+# - last-gasp attempt at some hardcoded paths on darwin and linux
 
-if not _found:
-    # Attempt Darwin specific load (10.11 specific),
-    # since LD_LIBRARY_PATH is not guaranteed to exist
-    if platform.system() == "Darwin":
-        _lib_path = "/usr/local/lib/"
-    elif platform.system() == "Linux":
-        _lib_path = "/usr/lib64/"
+_path_list = [pkg_resources.resource_filename(__name__, 'lib'),
+              os.path.join(os.path.split(__file__)[0], 'lib'),
+              '',
+              distutils.sysconfig.get_python_lib(),
+              "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64']
 
-    for _lib in _all_libs:
-        try:
-            _lib_file = os.path.join(_lib_path, _lib)
-            # print "Trying to load:", _lib_file
-            _uc = ctypes.cdll.LoadLibrary(_lib_file)
-            _found = True
-            break
-        except OSError:
-            pass
-
-if not _found:
+for _path in _path_list:
+    _uc = _load_lib(_path)
+    if _uc is not None: break
+else:
     raise ImportError("ERROR: fail to load the dynamic library.")
-
 
 __version__ = "%s.%s" % (uc.UC_API_MAJOR, uc.UC_API_MINOR)
 

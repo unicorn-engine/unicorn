@@ -2,7 +2,7 @@
 
 OBJDIR = ./build
 
-.PHONY: gen_const install install3 clean
+.PHONY: gen_const install install3 clean sdist sdist3 bdist bdist3
 
 gen_const:
 	cd .. && python const_generator.py python
@@ -32,7 +32,6 @@ sdist:
 	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
-	cp README.pypi-src README
 	cp PKG-INFO.src PKG-INFO
 	python setup.py sdist register upload
 
@@ -41,15 +40,29 @@ sdist3:
 	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
-	cp README.pypi-src README
 	cp PKG-INFO.src PKG-INFO
 	python3 setup.py sdist register upload
+
+# build & upload PyPi package with precompiled core
+bdist:
+	rm -rf src/ dist/
+	rm -rf prebuilt/win64/unicorn.dll
+	rm -rf prebuilt/win32/unicorn.dll
+	cp PKG-INFO.src PKG-INFO
+	python setup.py bdist_wheel register upload
+
+# build & upload PyPi package with precompiled core
+bdist3:
+	rm -rf src/ dist/
+	rm -rf prebuilt/win64/unicorn.dll
+	rm -rf prebuilt/win32/unicorn.dll
+	cp PKG-INFO.src PKG-INFO
+	python3 setup.py bdist_wheel register upload
 
 # build & upload PyPi package with prebuilt core
 # NOTE: be sure to have precompiled core under prebuilt/win*/ beforehand
 sdist_win:
 	rm -rf src/ dist/
-	cp README.pypi-win README
 	cp PKG-INFO.win PKG-INFO
 	python setup.py sdist register upload
 
@@ -57,15 +70,16 @@ sdist_win:
 # NOTE: be sure to have precompiled core under prebuilt/win*/ beforehand
 sdist3_win:
 	rm -rf src/ dist/
-	cp README.pypi-win README
 	cp PKG-INFO.win PKG-INFO
 	python3 setup.py sdist register upload
 
 clean:
-	rm -rf $(OBJDIR) src/ dist/ README
-	rm -f unicorn/*.so
+	rm -rf $(OBJDIR) src/ dist/ MANIFEST
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
+	rm -rf unicorn/lib unicorn/include
+	rm -rf unicorn/*.pyc
+	rm -rf unicorn.egg-info
 
 
 SAMPLES = sample_arm.py sample_arm64.py sample_mips.py
