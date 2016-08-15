@@ -31,7 +31,7 @@
 
 
 // code to be emulated
-#define X86_CODE32 "\x41\x4a" // INC ecx; DEC edx
+#define X86_CODE32 "\x41\x4a\x66\x0f\xef\xc1" // INC ecx; DEC edx; PXOR xmm0, xmm1
 #define X86_CODE32_JUMP "\xeb\x02\x90\x90\x90\x90\x90\x90" // jmp 4; nop; nop; nop; nop; nop; nop
 // #define X86_CODE32_SELF "\xeb\x1c\x5a\x89\xd6\x8b\x02\x66\x3d\xca\x7d\x75\x06\x66\x05\x03\x03\x89\x02\xfe\xc2\x3d\x41\x41\x41\x41\x75\xe9\xff\xe6\xe8\xdf\xff\xff\xff\x31\xd2\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x52\x53\x89\xe1\xca\x7d\x41\x41\x41\x41"
 //#define X86_CODE32 "\x51\x51\x51\x51" // PUSH ecx;
@@ -195,6 +195,9 @@ static void test_i386(void)
 
     int r_ecx = 0x1234;     // ECX register
     int r_edx = 0x7890;     // EDX register
+    // XMM0 and XMM1 registers, low qword then high qword
+    uint64_t r_xmm0[2] = {0x08090a0b0c0d0e0f, 0x0001020304050607};
+    uint64_t r_xmm1[2] = {0x8090a0b0c0d0e0f0, 0x0010203040506070};
 
     printf("Emulate i386 code\n");
 
@@ -217,6 +220,8 @@ static void test_i386(void)
     // initialize machine registers
     uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx);
     uc_reg_write(uc, UC_X86_REG_EDX, &r_edx);
+    uc_reg_write(uc, UC_X86_REG_XMM0, &r_xmm0);
+    uc_reg_write(uc, UC_X86_REG_XMM1, &r_xmm1);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -236,8 +241,10 @@ static void test_i386(void)
 
     uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx);
     uc_reg_read(uc, UC_X86_REG_EDX, &r_edx);
+    uc_reg_read(uc, UC_X86_REG_XMM0, &r_xmm0);
     printf(">>> ECX = 0x%x\n", r_ecx);
     printf(">>> EDX = 0x%x\n", r_edx);
+    printf(">>> XMM0 = 0x%.16lx%.16lx\n", r_xmm0[1], r_xmm0[0]);
 
     // read from memory
     if (!uc_mem_read(uc, ADDRESS, &tmp, sizeof(tmp)))
