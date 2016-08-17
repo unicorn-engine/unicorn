@@ -57,7 +57,7 @@ build_cross() {
   ${MAKE}
 }
 
-build_nix32() {
+build_linux32() {
   PKG_CONFIG_PATH="/usr/lib/i386-linux-gnu/pkgconfig" \
   CFLAGS=-m32 \
   LDFLAGS=-m32 \
@@ -127,7 +127,7 @@ case "$1" in
   "ios_armv7" ) build_iOS armv7;;
   "ios_armv7s" ) build_iOS armv7s;;
   "ios_arm64" ) build_iOS arm64;;
-  "nix32" ) build_nix32;;
+  "linux32" ) build_linux32;;
   * )
     echo "Usage: $0 ["`grep '^  "' $0 | cut -d '"' -f 2 | tr "\\n" "|"`"]"
     exit 1;;

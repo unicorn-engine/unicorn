@@ -74,9 +74,9 @@ To build Unicorn on *nix (such as MacOSX, Linux, *BSD, Solaris):
 
         $ UNICORN_QEMU_FLAGS="--python=/path/to/python2" ./make.sh
 
-- To cross-compile Unicorn on 64-bit OS to target 32-bit binary, run:
+- To cross-compile Unicorn on 64-bit Linux to target 32-bit binary, run:
 
-        $ ./make.sh nix32
+        $ ./make.sh linux32
 
   After compiling, install Unicorn with:
 
