@@ -57,6 +57,16 @@ build_cross() {
   ${MAKE}
 }
 
+build_linux32() {
+  PKG_CONFIG_PATH="/usr/lib/i386-linux-gnu/pkgconfig" \
+  CFLAGS=-m32 \
+  LDFLAGS=-m32 \
+  LDFLAGS_STATIC=-m32 \
+  LIBRARY_PATH="/usr/lib/i386-linux-gnu" \
+  UNICORN_QEMU_FLAGS="--cpu=i386" \
+  ${MAKE}
+}
+
 install() {
   # Mac OSX needs to find the right directory for pkgconfig
   if [ "$UNAME" = Darwin ]; then
@@ -117,6 +127,7 @@ case "$1" in
   "ios_armv7" ) build_iOS armv7;;
   "ios_armv7s" ) build_iOS armv7s;;
   "ios_arm64" ) build_iOS arm64;;
+  "linux32" ) build_linux32;;
   * )
     echo "Usage: $0 ["`grep '^  "' $0 | cut -d '"' -f 2 | tr "\\n" "|"`"]"
     exit 1;;
