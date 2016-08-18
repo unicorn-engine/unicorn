@@ -25,9 +25,9 @@ template = {
             'comment_close': '',
         },
     'python-dict': {
-            'header': "# For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [%s_const_dict.py]\n%s_const = {\n",
+            'header': "# For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n%s_const = {\n",
             'footer': "}",
-            'line_format': '\'UC_%s\': %s\n',
+            'line_format': '\'UC_%s\': %s,\n',
             'out_file': './python/unicorn/%s_const_dict.py',
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
