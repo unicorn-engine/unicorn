@@ -24,6 +24,22 @@ template = {
             'comment_open': '#',
             'comment_close': '',
         },
+    'python-dict': {
+            'header': "# For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [%s_const_dict.py]\n%s_const = {\n",
+            'footer': "}",
+            'line_format': '\'UC_%s\': %s\n',
+            'out_file': './python/unicorn/%s_const_dict.py',
+            # prefixes for constant filenames of all archs - case sensitive
+            'arm.h': 'arm',
+            'arm64.h': 'arm64',
+            'mips.h': 'mips',
+            'x86.h': 'x86',
+            'sparc.h': 'sparc',
+            'm68k.h': 'm68k',
+            'unicorn.h': 'unicorn',
+            'comment_open': '#',
+            'comment_close': '',
+        },
     'ruby': {
             'header': "# For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [%s_const.rb]\n\nmodule Unicorn\n",
             'footer': "end",
