@@ -9,6 +9,7 @@ int main() {
     
     if ((err = uc_open(UC_ARCH_X86, UC_MODE_32, &u)) != UC_ERR_OK) {
         printf("uc_open() failed: %s\n", uc_strerror(err));
+        return -1;
     }
 
     if ((err = uc_mem_map(u, 0x100000000, 0x002c0000, UC_PROT_ALL)) != UC_ERR_OK) {
@@ -22,6 +23,7 @@ int main() {
     
     if ((err = uc_close(u)) != UC_ERR_OK) {
         printf("uc_close() failed: %s\n", uc_strerror(err));
+        return -1;
     }
     
     printf("Success.\n");
