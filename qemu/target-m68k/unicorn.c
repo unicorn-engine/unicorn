@@ -10,6 +10,8 @@
 #include "uc_priv.h"
 
 
+const int M68K_REGS_STORAGE_SIZE = offsetof(CPUM68KState, tlb_table);
+
 static void m68k_set_pc(struct uc_struct *uc, uint64_t address)
 {
     ((CPUM68KState *)uc->current_cpu->env_ptr)->pc = address;

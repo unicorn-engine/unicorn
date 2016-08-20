@@ -624,6 +624,35 @@ uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t per
 UNICORN_EXPORT
 uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count);
 
+/*
+ Save a copy of the current state's registers
+ This API should be used to efficiently make or update a saved copy of the
+ state's registers.
+
+ @uc: handle returned by uc_open()
+ @buffer: pointer to the region to store the registers in. The first call to
+   this function should pass NULL in this parameter, so a region of the
+   appropriate size for the current architecure can be allocated. Further calls
+   to this function may pass in the return value of previous calls.
+
+ @return a pointer to the region the registers were saved in. If buffer was
+   NULL, this is a newly allocated region, otherwise it is the same as buffer.
+   Any allocation performed by this function must be freed by the user.
+*/
+UNICORN_EXPORT
+void *uc_save_regstate(uc_engine *uc, void *buffer);
+
+/*
+ Restore the current state's registers from a saved copy
+ This API should be used to roll the CPU register state back to a previous
+ state saved by uc_save_regstate().
+
+ @uc: handle returned by uc_open()
+ @buffer: pointer returned by uc_save_regstate()
+*/
+UNICORN_EXPORT
+void uc_restore_regstate(uc_engine *uc, void *buffer);
+
 #ifdef __cplusplus
 }
 #endif

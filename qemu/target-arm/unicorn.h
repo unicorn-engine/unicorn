@@ -19,4 +19,7 @@ void arm_uc_init(struct uc_struct* uc);
 __attribute__ ((visibility ("default")))
 void arm64_uc_init(struct uc_struct* uc);
 
+extern const int ARM_REGS_STORAGE_SIZE;
+extern const int ARM64_REGS_STORAGE_SIZE;
+
 #endif

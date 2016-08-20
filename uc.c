@@ -1160,3 +1160,36 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
 
     return UC_ERR_OK;
 }
+
+size_t cpu_regs_size(uc_arch arch, uc_mode mode);
+size_t cpu_regs_size(uc_arch arch, uc_mode mode) {
+    // each of these constants is defined by offsetof(CPUXYZState, tlb_table)
+    // tbl_table is the first entry in the CPU_COMMON macro, so it marks the end
+    // of the interesting CPU registers
+    switch (arch) {
+        case UC_ARCH_M68K:  return M68K_REGS_STORAGE_SIZE;
+        case UC_ARCH_X86:   return X86_REGS_STORAGE_SIZE;
+        case UC_ARCH_ARM:   return ARM_REGS_STORAGE_SIZE;
+        case UC_ARCH_ARM64: return ARM64_REGS_STORAGE_SIZE;
+        case UC_ARCH_MIPS:  return mode & UC_MODE_MIPS64 ? MIPS64_REGS_STORAGE_SIZE : MIPS_REGS_STORAGE_SIZE;
+        case UC_ARCH_SPARC: return mode & UC_MODE_SPARC64 ? SPARC64_REGS_STORAGE_SIZE : SPARC_REGS_STORAGE_SIZE;
+        default: return 0;
+    }
+}
+
+UNICORN_EXPORT
+void *uc_save_regstate(uc_engine *uc, void *buffer) {
+    size_t sz = cpu_regs_size(uc->arch, uc->mode);
+    if (!buffer) {
+        buffer = malloc(sz);
+    }
+
+    memcpy(buffer, uc->current_cpu->env_ptr, sz);
+    return buffer;
+}
+
+UNICORN_EXPORT
+void uc_restore_regstate(uc_engine *uc, void *buffer) {
+    size_t sz = cpu_regs_size(uc->arch, uc->mode);
+    memcpy(uc->current_cpu->env_ptr, buffer, sz);
+}

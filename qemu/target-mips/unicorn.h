@@ -15,4 +15,7 @@ void mipsel_uc_init(struct uc_struct* uc);
 void mips64_uc_init(struct uc_struct* uc);
 void mips64el_uc_init(struct uc_struct* uc);
 
+extern const int MIPS_REGS_STORAGE_SIZE;
+extern const int MIPS64_REGS_STORAGE_SIZE;
+
 #endif
