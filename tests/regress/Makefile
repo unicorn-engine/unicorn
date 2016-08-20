@@ -45,6 +45,7 @@ TESTS += 004-segmentation_fault_1
 TESTS += 005-qemu__fatal__illegal_instruction__0000___00000404
 TESTS += 006-qemu__fatal__illegal_instruction__0421___00040026
 TESTS += mem_64_c
+TESTS += mem_map_0x100000000
 
 TESTS += memleak_x86
 TESTS += memleak_arm
