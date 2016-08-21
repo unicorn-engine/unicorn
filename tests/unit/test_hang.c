@@ -87,8 +87,8 @@ void test_hang(void **state)
 	uc_reg_read(uc, UC_ARM64_REG_X0, &x0);
 	uc_reg_read(uc, UC_ARM64_REG_X1, &x1);
 
-	printf("x0: %#llx\n", x0);
-	printf("x1: %#llx\n", x1);
+	printf("x0: %#lx\n", x0);
+	printf("x1: %#lx\n", x1);
 }
 
 int main(int argc, const char * argv[]) {
