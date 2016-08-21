@@ -44,7 +44,13 @@ static int teardown(void **state)
 }
 
 /***********************************************************************************/
-    
+  
+typedef struct {
+    bool good;
+    uint64_t actual;
+    uint64_t expected;
+} TestData;
+
 const uint64_t CodePage = 0x10000;
 const uint64_t CodeSize = 0x4000;
 
@@ -56,6 +62,7 @@ const uint64_t CodeSize = 0x4000;
 static bool mem_hook_i386(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
 {
+    TestData *data = user_data;
     if (type == UC_MEM_READ_UNMAPPED)
     {
         uint32_t eip;
@@ -63,6 +70,9 @@ static bool mem_hook_i386(uc_engine *uc, uc_mem_type type,
 
         uc_reg_read(uc, UC_X86_REG_EIP, &eip);
         uc_reg_read(uc, UC_X86_REG_EAX, &eax);
+
+        data->actual = eip;
+        data->expected = CodePage + 0x05;
 
         /**
          *  Code:
@@ -72,9 +82,10 @@ static bool mem_hook_i386(uc_engine *uc, uc_mem_type type,
         if ((eax == 0x41414141) &&       // Proof we're at 0x10005.
             (eip != (CodePage + 0x5)))   // Proof uc_reg_read is wrong
         {
-            printf("De-synced EIP value. 0x%08X != 0x%08X\n", eip, (uint32_t)CodePage + 0x05);
-            // Failure raised by the uc_emu_start() call.
+            data->good = false;
         }
+        else
+            data->good = true;
     }
     return false;
 }
@@ -87,6 +98,7 @@ static bool mem_hook_i386(uc_engine *uc, uc_mem_type type,
 static bool mem_hook_amd64(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
 {
+    TestData *data = user_data;
     if (type == UC_MEM_READ_UNMAPPED)
     {
         uint64_t rip;
@@ -95,19 +107,34 @@ static bool mem_hook_amd64(uc_engine *uc, uc_mem_type type,
         uc_reg_read(uc, UC_X86_REG_RIP, &rip);
         uc_reg_read(uc, UC_X86_REG_RAX, &rax);
 
+        data->actual = rip;
+        data->expected = CodePage + 0x0A;
+
         /**
          *  Code:
          *  0x10000: mov rax, 0x4141414141414141 ;; <- Returned RIP
          *  0x10005: mov rcx, [rax]              ;; <- Expected RIP
          */
         if ((rax == 0x4141414141414141) &&       // Proof we're at 0x10005
-            (rip != (CodePage + 0x5)))           // Proof uc_reg_read is wrong
+            (rip != (CodePage + 0xA)))           // Proof uc_reg_read is wrong
         {
-            printf("De-synced RIP value. 0x%016lX != 0x%016lX\n", rip, CodePage + 0x05);
-            // Failure raised by the uc_emu_start() call.
+            data->good = false;
         }
+        else
+            data->good = true;
     }
     return false;
+}
+
+/**
+ *  Empty Code Hook. 
+ */
+static void code_hook(uc_engine *uc, uint64_t addr, uint32_t size, void *user)
+{
+    (void) uc;
+    (void) addr;
+    (void) size;
+    (void) user;
 }
 
 /**
@@ -120,6 +147,7 @@ static bool mem_hook_amd64(uc_engine *uc, uc_mem_type type,
  */
 static void test_i386(void **state)
 {
+    TestData data;
     uc_engine *uc = *state;
     uc_hook trace1;
 
@@ -130,8 +158,11 @@ static void test_i386(void **state)
 
     uc_assert_success(uc_mem_map(uc, CodePage, CodeSize, UC_PROT_ALL));
     uc_assert_success(uc_mem_write(uc, CodePage, i386_bug, sizeof(i386_bug)));
-    uc_assert_success(uc_hook_add(uc, &trace1, UC_HOOK_MEM_READ_UNMAPPED, mem_hook_i386, NULL, 1, 0));
-    uc_assert_success(uc_emu_start(uc, CodePage, CodePage + sizeof(i386_bug), 0, 0));
+    uc_assert_success(uc_hook_add(uc, &trace1, UC_HOOK_MEM_READ_UNMAPPED, mem_hook_i386, &data, 1, 0));
+    uc_assert_fail(uc_emu_start(uc, CodePage, CodePage + sizeof(i386_bug), 0, 0));
+
+    if (!data.good)
+        fail_msg("De-synced RIP value. 0x%016lX != 0x%016lX\n", data.expected, data.actual);
 }
 
 /**
@@ -144,6 +175,7 @@ static void test_i386(void **state)
  */
 static void test_amd64(void **state)
 {
+    TestData data;
     uc_engine *uc = *state;
     uc_hook trace1;
 
@@ -155,8 +187,72 @@ static void test_amd64(void **state)
 
     uc_assert_success(uc_mem_map(uc, CodePage, CodeSize, UC_PROT_ALL));
     uc_assert_success(uc_mem_write(uc, CodePage, amd64_bug, sizeof(amd64_bug)));
-    uc_assert_success(uc_hook_add(uc, &trace1, UC_HOOK_MEM_READ_UNMAPPED, mem_hook_amd64, NULL, 1, 0));
-    uc_assert_success(uc_emu_start(uc, CodePage, CodePage + sizeof(amd64_bug), 0, 0));
+    uc_assert_success(uc_hook_add(uc, &trace1, UC_HOOK_MEM_READ_UNMAPPED, mem_hook_amd64, &data, 1, 0));
+    uc_assert_fail(uc_emu_start(uc, CodePage, CodePage + sizeof(amd64_bug), 0, 0));
+
+    if (!data.good)
+        fail_msg("De-synced RIP value. 0x%016lX != 0x%016lX\n", data.expected, data.actual);
+}
+
+/**
+ *  Test temporary fix for bug for i386. 
+ *  
+ *  1. Map Code Page
+ *  2. Write Code to page.
+ *  3. Install Unmapped Read hook.
+ *  4. Install Code hook.
+ *  5. Run the VM.
+ */
+static void test_i386_fix(void **state)
+{
+    TestData data;
+    uc_engine *uc = *state;
+    uc_hook trace1, trace2;
+
+    const uint8_t i386_bug[] = {
+        0xb8, 0x41, 0x41, 0x41, 0x41,  // mov eax, 0x41414141
+        0x8b, 0x08                     // mov ecx, [eax]
+    };
+
+    uc_assert_success(uc_mem_map(uc, CodePage, CodeSize, UC_PROT_ALL));
+    uc_assert_success(uc_mem_write(uc, CodePage, i386_bug, sizeof(i386_bug)));
+    uc_assert_success(uc_hook_add(uc, &trace1, UC_HOOK_MEM_READ_UNMAPPED, mem_hook_i386, &data, 1, 0));
+    uc_assert_success(uc_hook_add(uc, &trace2, UC_HOOK_CODE, code_hook, NULL, 1, 0));
+    uc_assert_fail(uc_emu_start(uc, CodePage, CodePage + sizeof(i386_bug), 0, 0));
+
+    if (!data.good)
+        fail_msg("De-synced RIP value. 0x%016lX != 0x%016lX\n", data.expected, data.actual);
+}
+
+/**
+ *  Test temporary fix for bug for amd64.. 
+ *  
+ *  1. Map Code Page
+ *  2. Write Code to page.
+ *  3. Install Unmapped Read hook.
+ *  4. Install Code hook.
+ *  5. Run the VM.
+ */
+static void test_amd64_fix(void **state)
+{
+    TestData data;
+    uc_engine *uc = *state;
+    uc_hook trace1, trace2;
+
+    const uint8_t amd64_bug[] = {
+        0x48, 0xb8, 0x41, 0x41, 0x41, 0x41,
+        0x41, 0x41, 0x41, 0x41,
+        0x48, 0x8b, 0x08
+    };
+
+    uc_assert_success(uc_mem_map(uc, CodePage, CodeSize, UC_PROT_ALL));
+    uc_assert_success(uc_mem_write(uc, CodePage, amd64_bug, sizeof(amd64_bug)));
+    uc_assert_success(uc_hook_add(uc, &trace1, UC_HOOK_MEM_READ_UNMAPPED, mem_hook_amd64, &data, 1, 0));
+    uc_assert_success(uc_hook_add(uc, &trace2, UC_HOOK_CODE, code_hook, NULL, 1, 0));
+    uc_assert_fail(uc_emu_start(uc, CodePage, CodePage + sizeof(amd64_bug), 0, 0));
+
+    if (!data.good)
+        fail_msg("De-synced RIP value. 0x%016lX != 0x%016lX\n", data.expected, data.actual);
 }
 
 /**
@@ -166,7 +262,9 @@ int main(int argc, char **argv, char **envp)
 {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test_setup_teardown(test_i386, setup_i386, teardown),
-        cmocka_unit_test_setup_teardown(test_amd64, setup_amd64, teardown)
+        cmocka_unit_test_setup_teardown(test_amd64, setup_amd64, teardown),
+        cmocka_unit_test_setup_teardown(test_i386_fix, setup_i386, teardown),
+        cmocka_unit_test_setup_teardown(test_amd64_fix, setup_amd64, teardown)
     };
     
     return cmocka_run_group_tests(tests, NULL, NULL);
