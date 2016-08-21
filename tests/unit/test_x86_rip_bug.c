@@ -103,7 +103,7 @@ static bool mem_hook_amd64(uc_engine *uc, uc_mem_type type,
         if ((rax == 0x4141414141414141) &&       // Proof we're at 0x10005
             (rip != (CodePage + 0x5)))           // Proof uc_reg_read is wrong
         {
-            printf("De-synced RIP value. 0x%016lX != 0x%016lX\n", rip, CodePage + 0x05);
+            printf("De-synced RIP value. 0x%"PRIX64" != 0x%"PRIX64"\n", rip, CodePage + 0x05);
             // Failure raised by the uc_emu_start() call.
         }
     }
