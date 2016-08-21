@@ -162,7 +162,7 @@ static void test_i386(void **state)
     uc_assert_fail(uc_emu_start(uc, CodePage, CodePage + sizeof(i386_bug), 0, 0));
 
     if (!data.good)
-        fail_msg("De-synced RIP value. 0x%016lX != 0x%016lX\n", data.expected, data.actual);
+        fail_msg("De-synced RIP value. 0x%"PRIX64" != 0x%"PRIX64"\n", data.expected, data.actual);
 }
 
 /**
@@ -191,7 +191,7 @@ static void test_amd64(void **state)
     uc_assert_fail(uc_emu_start(uc, CodePage, CodePage + sizeof(amd64_bug), 0, 0));
 
     if (!data.good)
-        fail_msg("De-synced RIP value. 0x%016lX != 0x%016lX\n", data.expected, data.actual);
+        fail_msg("De-synced RIP value. 0x%"PRIX64" != 0x%"PRIX64"\n", data.expected, data.actual);
 }
 
 /**
@@ -221,7 +221,7 @@ static void test_i386_fix(void **state)
     uc_assert_fail(uc_emu_start(uc, CodePage, CodePage + sizeof(i386_bug), 0, 0));
 
     if (!data.good)
-        fail_msg("De-synced RIP value. 0x%016lX != 0x%016lX\n", data.expected, data.actual);
+        fail_msg("De-synced RIP value. 0x%"PRIX64" != 0x%"PRIX64"\n", data.expected, data.actual);
 }
 
 /**
@@ -252,7 +252,7 @@ static void test_amd64_fix(void **state)
     uc_assert_fail(uc_emu_start(uc, CodePage, CodePage + sizeof(amd64_bug), 0, 0));
 
     if (!data.good)
-        fail_msg("De-synced RIP value. 0x%016lX != 0x%016lX\n", data.expected, data.actual);
+        fail_msg("De-synced RIP value. 0x%"PRIX64" != 0x%"PRIX64"\n", data.expected, data.actual);
 }
 
 /**
