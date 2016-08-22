@@ -6,8 +6,7 @@ before_install:
         - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install glib; fi
         - git clone git://git.cryptomilk.org/projects/cmocka.git -b cmocka-1.0.1 && cmake cmocka
 script:
-        - ./make.sh
-        - make test
+        - ./make.sh && make test
 compiler:
         - clang
         - gcc
