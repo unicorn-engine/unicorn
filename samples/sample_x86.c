@@ -244,7 +244,7 @@ static void test_i386(void)
     uc_reg_read(uc, UC_X86_REG_XMM0, &r_xmm0);
     printf(">>> ECX = 0x%x\n", r_ecx);
     printf(">>> EDX = 0x%x\n", r_edx);
-    printf(">>> XMM0 = 0x%.16lx%.16lx\n", r_xmm0[1], r_xmm0[0]);
+    printf(">>> XMM0 = 0x%.16"PRIx64"%.16"PRIx64"\n", r_xmm0[1], r_xmm0[0]);
 
     // read from memory
     if (!uc_mem_read(uc, ADDRESS, &tmp, sizeof(tmp)))
