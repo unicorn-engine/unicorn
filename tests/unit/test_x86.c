@@ -119,11 +119,14 @@ static void test_i386(void **state)
     uint32_t tmp;
     uc_hook trace1, trace2;
 
-    const uint8_t code[] = "\x41\x4a"; // INC ecx; DEC edx
+    const uint8_t code[] = "\x41\x4a\x66\x0f\xef\xc1"; // INC ecx; DEC edx; PXOR xmm0, xmm1
     const uint64_t address = 0x1000000;
 
     int r_ecx = 0x1234;     // ECX register
     int r_edx = 0x7890;     // EDX register
+    // XMM0 and XMM1 registers, low qword then high qword
+    uint64_t r_xmm0[2] = {0x08090a0b0c0d0e0f, 0x0001020304050607};
+    uint64_t r_xmm1[2] = {0x8090a0b0c0d0e0f0, 0x0010203040506070};
 
     // Initialize emulator in X86-32bit mode
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
@@ -141,6 +144,10 @@ static void test_i386(void **state)
     err = uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx);
     uc_assert_success(err);
     err = uc_reg_write(uc, UC_X86_REG_EDX, &r_edx);
+    uc_assert_success(err);
+    err = uc_reg_write(uc, UC_X86_REG_XMM0, &r_xmm0);
+    uc_assert_success(err);
+    err = uc_reg_write(uc, UC_X86_REG_XMM1, &r_xmm1);
     uc_assert_success(err);
 
     // tracing all basic blocks with customized callback
@@ -160,9 +167,12 @@ static void test_i386(void **state)
 
     uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx);
     uc_reg_read(uc, UC_X86_REG_EDX, &r_edx);
+    uc_reg_read(uc, UC_X86_REG_XMM0, &r_xmm0);
 
     assert_int_equal(r_ecx, 0x1235);
     assert_int_equal(r_edx, 0x788F);
+    uint64_t r_xmm0_expected[2] = {0x8899aabbccddeeff, 0x0011223344556677};
+    assert_memory_equal(r_xmm0, r_xmm0_expected, sizeof(r_xmm0));
 
     // read from memory
     err = uc_mem_read(uc, address, (uint8_t *)&tmp, 4);

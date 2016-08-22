@@ -6,7 +6,7 @@ from unicorn import *
 from unicorn.x86_const import *
 
 
-X86_CODE32 = b"\x41\x4a" # INC ecx; DEC edx
+X86_CODE32 = b"\x41\x4a\x66\x0f\xef\xc1" # INC ecx; DEC edx; PXOR xmm0, xmm1
 X86_CODE32_LOOP = b"\x41\x4a\xeb\xfe" # INC ecx; DEC edx; JMP self-loop
 X86_CODE32_MEM_READ = b"\x8B\x0D\xAA\xAA\xAA\xAA\x41\x4a" # mov ecx,[0xaaaaaaaa]; INC ecx; DEC edx
 X86_CODE32_MEM_WRITE = b"\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a" # mov [0xaaaaaaaa], ecx; INC ecx; DEC edx
@@ -108,6 +108,8 @@ def test_i386():
         # initialize machine registers
         mu.reg_write(UC_X86_REG_ECX, 0x1234)
         mu.reg_write(UC_X86_REG_EDX, 0x7890)
+        mu.reg_write(UC_X86_REG_XMM0, 0x000102030405060708090a0b0c0d0e0f)
+        mu.reg_write(UC_X86_REG_XMM1, 0x00102030405060708090a0b0c0d0e0f0)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
@@ -123,8 +125,10 @@ def test_i386():
 
         r_ecx = mu.reg_read(UC_X86_REG_ECX)
         r_edx = mu.reg_read(UC_X86_REG_EDX)
+        r_xmm0 = mu.reg_read(UC_X86_REG_XMM0)
         print(">>> ECX = 0x%x" %r_ecx)
         print(">>> EDX = 0x%x" %r_edx)
+        print(">>> XMM0 = 0x%x" %r_xmm0)
 
         # read from memory
         tmp = mu.mem_read(ADDRESS, 2)
