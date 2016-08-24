@@ -11,6 +11,7 @@
 #define phys_mem_clean phys_mem_clean_powerpc
 #define tb_cleanup tb_cleanup_powerpc
 #define memory_map memory_map_powerpc
+#define memory_map_io memory_map_io_powerpc
 #define memory_map_ptr memory_map_ptr_powerpc
 #define memory_unmap memory_unmap_powerpc
 #define memory_free memory_free_powerpc

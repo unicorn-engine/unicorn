@@ -125,6 +125,11 @@ struct MemoryRegionOps {
     const MemoryRegionMmio old_mmio;
 };
 
+struct mmio_data {
+    void *user_data;
+    void *callback;
+};
+
 typedef struct MemoryRegionIOMMUOps MemoryRegionIOMMUOps;
 
 struct MemoryRegionIOMMUOps {
@@ -939,6 +944,7 @@ void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
 void memory_register_types(struct uc_struct *uc);
 
 MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, uint32_t perms);
+MemoryRegion *memory_map_io(struct uc_struct *uc, ram_addr_t begin, size_t size, struct mmio_data *data);
 MemoryRegion *memory_map_ptr(struct uc_struct *uc, ram_addr_t begin, size_t size, uint32_t perms, void *ptr);
 void memory_unmap(struct uc_struct *uc, MemoryRegion *mr);
 int memory_free(struct uc_struct *uc);

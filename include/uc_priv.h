@@ -70,6 +70,8 @@ typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
 typedef MemoryRegion* (*uc_args_uc_ram_size_t)(struct uc_struct*,  ram_addr_t begin, size_t size, uint32_t perms);
 
+typedef MemoryRegion* (*uc_args_uc_mmio_size_ptr_t)(struct uc_struct*,  ram_addr_t begin, size_t size, struct mmio_data *data);
+
 typedef MemoryRegion* (*uc_args_uc_ram_size_ptr_t)(struct uc_struct*,  ram_addr_t begin, size_t size, uint32_t perms, void *ptr);
 
 typedef void (*uc_mem_unmap_t)(struct uc_struct*, MemoryRegion *mr);
@@ -167,6 +169,7 @@ struct uc_struct {
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;
     uc_args_uc_ram_size_t memory_map;
+    uc_args_uc_mmio_size_ptr_t memory_map_io;
     uc_args_uc_ram_size_ptr_t memory_map_ptr;
     uc_mem_unmap_t memory_unmap;
     uc_readonly_mem_t readonly_mem;
