@@ -48,6 +48,38 @@ MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, ui
     return ram;
 }
 
+static uint64_t mmio_read_helper(struct uc_struct *uc, void *data, hwaddr addr, unsigned size)
+{
+    struct mmio_data *mmiodata = (struct mmio_data*)data; // Naming is hard.
+    uint64_t value;
+    ((uc_cb_mmio_t)mmiodata->callback)(uc, UC_MEM_READ, addr, size, &value, mmiodata->user_data);
+    return value;
+}
+
+static void mmio_write_helper(struct uc_struct *uc, void *data, hwaddr addr, uint64_t value, unsigned size)
+{
+    struct mmio_data *mmiodata = (struct mmio_data*)data; // Naming is hard.
+    ((uc_cb_mmio_t)mmiodata->callback)(uc, UC_MEM_WRITE, addr, size, &value, mmiodata->user_data);
+}
+
+static const struct MemoryRegionOps mmio_ops = {
+    .read = mmio_read_helper,
+    .write = mmio_write_helper,
+    .endianness = DEVICE_NATIVE_ENDIAN
+};
+
+MemoryRegion *memory_map_io(struct uc_struct *uc, ram_addr_t begin, size_t size, struct mmio_data *data)
+{
+    MemoryRegion *mmio = g_new(MemoryRegion, 1);
+    memory_region_init_io(uc, mmio, NULL, &mmio_ops, (void*)data, "pc.mmio", size);
+    memory_region_add_subregion(get_system_memory(uc), begin, mmio);
+
+    if (uc->current_cpu)
+        tlb_flush(uc->current_cpu, 1);
+
+    return mmio;
+}
+
 MemoryRegion *memory_map_ptr(struct uc_struct *uc, ram_addr_t begin, size_t size, uint32_t perms, void *ptr)
 {
     MemoryRegion *ram = g_new(MemoryRegion, 1);
@@ -1207,6 +1239,7 @@ void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
 {
     memory_region_init(uc, mr, owner, name, size);
     mr->ops = ops;
+    mr->perms = UC_PROT_ALL;
     mr->opaque = opaque;
     mr->terminates = true;
     mr->ram_addr = ~(ram_addr_t)0;
@@ -1917,4 +1950,3 @@ void memory_register_types(struct uc_struct *uc)
 {
     type_register_static(uc, &memory_region_info);
 }
-

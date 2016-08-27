@@ -1144,6 +1144,34 @@ uint32_t uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
 }
 
 UNICORN_EXPORT
+uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
+        uc_cb_mmio_t callback, void *user_data)
+{
+    uc_err res;
+    struct mmio_data *data;
+
+    if (callback == NULL)
+        return UC_ERR_ARG;
+
+    if (uc->mem_redirect) {
+        address = uc->mem_redirect(address);
+    }
+
+    res = mem_map_check(uc, address, size, UC_PROT_ALL);
+    if (res)
+        return res;
+
+    data = g_new(struct mmio_data, 1);
+    *data = (struct mmio_data){
+        .user_data = user_data,
+        .callback = callback
+    };
+
+
+    return mem_map(uc, address, size, UC_PROT_ALL, uc->memory_map_io(uc, address, size, data));
+}
+
+UNICORN_EXPORT
 uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
 {
     if (type == UC_QUERY_PAGE_SIZE) {

@@ -110,7 +110,7 @@ typedef enum uc_mode {
     UC_MODE_16 = 1 << 1,          // 16-bit mode
     UC_MODE_32 = 1 << 2,          // 32-bit mode
     UC_MODE_64 = 1 << 3,          // 64-bit mode
-    // ppc 
+    // ppc
     UC_MODE_PPC32 = 1 << 2,       // 32-bit mode (currently unsupported)
     UC_MODE_PPC64 = 1 << 3,       // 64-bit mode (currently unsupported)
     UC_MODE_QPX = 1 << 4,         // Quad Processing eXtensions mode (currently unsupported)
@@ -255,6 +255,20 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
 */
 typedef bool (*uc_cb_eventmem_t)(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data);
+
+/*
+  Callback function for handling reads and writes to MMIO regions.
+
+  @type: this memory is being READ, or WRITE
+  @address: address being read or written
+  @size: size of data being read or written
+  @value: pointer to value of data being written to, or read from memory.
+  @user_data: user data passed to uc_mmio_map
+
+*/
+
+typedef void (*uc_cb_mmio_t)(uc_engine *uc, uc_mem_type type,
+        uint64_t address, int size, uint64_t *value, void *user_data);
 
 /*
   Memory region mapped by uc_mem_map() and uc_mem_map_ptr()
@@ -623,6 +637,26 @@ uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t per
 */
 UNICORN_EXPORT
 uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count);
+
+/*
+ Map MMIO in for emulation.
+ This API adds a MMIO region that can be used by emulation.
+
+ @uc: handle returned by uc_open()
+ @address: starting address of the new MMIO region to be mapped in.
+    This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
+ @size: size of the new MMIO region to be mapped in.
+    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+ @callback: function for handling reads and writes to this MMIO region.
+ @user_data: user-defined data. This will be passed to callback function in its
+      last argument @user_data
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
+        uc_cb_mmio_t callback, void *user_data);
 
 #ifdef __cplusplus
 }
