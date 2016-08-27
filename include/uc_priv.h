@@ -68,9 +68,9 @@ typedef void (*uc_args_uc_long_t)(struct uc_struct*, unsigned long);
 
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
-typedef MemoryRegion* (*uc_args_uc_ram_size_t)(struct uc_struct*,  ram_addr_t begin, size_t size, uint32_t perms);
+typedef MemoryRegion* (*uc_args_uc_ram_size_t)(struct uc_struct*,  hwaddr begin, size_t size, uint32_t perms);
 
-typedef MemoryRegion* (*uc_args_uc_ram_size_ptr_t)(struct uc_struct*,  ram_addr_t begin, size_t size, uint32_t perms, void *ptr);
+typedef MemoryRegion* (*uc_args_uc_ram_size_ptr_t)(struct uc_struct*,  hwaddr begin, size_t size, uint32_t perms, void *ptr);
 
 typedef void (*uc_mem_unmap_t)(struct uc_struct*, MemoryRegion *mr);
 
