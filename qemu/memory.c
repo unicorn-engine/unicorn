@@ -31,7 +31,7 @@
 
 
 // Unicorn engine
-MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, uint32_t perms)
+MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms)
 {
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
@@ -48,7 +48,7 @@ MemoryRegion *memory_map(struct uc_struct *uc, ram_addr_t begin, size_t size, ui
     return ram;
 }
 
-MemoryRegion *memory_map_ptr(struct uc_struct *uc, ram_addr_t begin, size_t size, uint32_t perms, void *ptr)
+MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms, void *ptr)
 {
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
