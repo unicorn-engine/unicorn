@@ -35,7 +35,7 @@ static void VM_exec()
     err = uc_mem_write(uc, ADDRESS, X86_CODE32, sizeof(X86_CODE32) - 1);
     if(err != UC_ERR_OK)
     {
-        printf("Failed to write emulation code to memory, quit!: %s(len %lu)\n", uc_strerror(err), sizeof(X86_CODE32) - 1);
+        printf("Failed to write emulation code to memory, quit!: %s(len %zu)\n", uc_strerror(err), sizeof(X86_CODE32) - 1);
         return;
     }
 
