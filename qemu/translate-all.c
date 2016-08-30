@@ -179,12 +179,12 @@ static int cpu_gen_code(CPUArchState *env, TranslationBlock *tb, int *gen_code_s
 
     gen_intermediate_code(env, tb);
 
-    // Unicorn: when tracing block, patch 1st operand for block size
-    if (env->uc->block_addr == tb->pc && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, tb->pc)) {
+    // Unicorn: when tracing block, patch block size operand for callback
+    if (env->uc->size_arg != -1 && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, tb->pc)) {
         if (env->uc->block_full)    // block size is unknown
-            *(s->gen_opparam_buf + 1) = 0;
+            *(s->gen_opparam_buf + env->uc->size_arg) = 0;
         else
-            *(s->gen_opparam_buf + 1) = tb->size;
+            *(s->gen_opparam_buf + env->uc->size_arg) = tb->size;
     }
 
     /* generate machine code */
