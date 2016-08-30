@@ -1,3 +1,17 @@
+# Assembly instructions (tested on ubuntu 16.04 x86_64):
+# $ as --32 x86_self_modifying.s -o x86_self_modifying.o
+# $ ld -melf_i386 -z execstack x86_self_modifying.o -o x86_self_modifying.elf
+
+# Test that it works. return code should be 65
+# $ ./x86_self_modifying.elf
+# $ echo $?
+# 65
+
+# Fix the entry point address in x86_self_modifying.py
+# $ readelf -h x86_self_modifying.elf | grep Entry
+# Entry point address:               0x8048074
+
+
 .intel_syntax noprefix
 
 .global _start
