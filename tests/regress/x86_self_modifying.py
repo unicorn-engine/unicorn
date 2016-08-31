@@ -6,6 +6,9 @@ from struct import pack
 import os
 import regress
 
+# The file we're loading is a full assembled ELF.
+# Source for it, along with assembly instructions, are in x86_self_modifying.s
+
 CODE_ADDR = 0x08048000
 STACK_ADDR = 0x2000000
 CODE = open(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'x86_self_modifying.elf')).read()
