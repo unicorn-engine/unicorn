@@ -729,6 +729,68 @@ static void test_x86_16(void **state)
 
 /******************************************************************************/
 
+static void test_i386_reg_save(void **state)
+{
+    uc_engine *uc;
+
+    static const uint64_t address = 0;
+    static const uint8_t code[] = {
+        0x40       // inc eax
+    };
+    int32_t eax = 1;
+
+    // Initialize emulator
+    uc_assert_success(uc_open(UC_ARCH_X86, UC_MODE_16, &uc));
+
+    // map 8KB memory for this emulation
+    uc_assert_success(uc_mem_map(uc, address, 8 * 1024, UC_PROT_ALL));
+
+    // write machine code to be emulated to memory
+    uc_assert_success(uc_mem_write(uc, address, code, sizeof(code)));
+
+    // set eax to 1
+    uc_assert_success(uc_reg_write(uc, UC_X86_REG_EAX, &eax));
+
+    // step one instruction
+    uc_assert_success(uc_emu_start(uc, address, address+1, 0, 0));
+
+    // save the state
+    void *saved_regs = uc_save_regstate(uc, NULL);
+
+    // step one instruction
+    uc_assert_success(uc_emu_start(uc, address, address+1, 0, 0));
+
+    // check that eax == 3
+    uc_assert_success(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    assert_int_equal(eax, 3);
+
+    // restore the state
+    uc_restore_regstate(uc, saved_regs);
+
+    // check that eax == 2
+    uc_assert_success(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    assert_int_equal(eax, 2);
+
+    // step one instruction
+    uc_assert_success(uc_emu_start(uc, address, address+1, 0, 0));
+
+    // check that eax == 3
+    uc_assert_success(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    assert_int_equal(eax, 3);
+
+    // restore the state
+    uc_restore_regstate(uc, saved_regs);
+
+    // check that eax == 2
+    uc_assert_success(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    assert_int_equal(eax, 2);
+
+    // clean up;
+    free(saved_regs);
+    uc_assert_success(uc_close(uc));
+}
+/******************************************************************************/
+
 int main(void) {
     const struct CMUnitTest tests[] = {
         cmocka_unit_test(test_i386),
@@ -738,6 +800,7 @@ int main(void) {
         cmocka_unit_test(test_i386_invalid_mem_read),
         cmocka_unit_test(test_i386_invalid_mem_write),
         cmocka_unit_test(test_i386_jump_invalid),
+        cmocka_unit_test(test_i386_reg_save),
 
         cmocka_unit_test(test_x86_64),
         cmocka_unit_test(test_x86_64_syscall),
