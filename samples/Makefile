@@ -16,15 +16,9 @@ UNICORN_DEP_LIBS_STATIC += -lpthread -lm $(GLIB)
 V ?= 0
 
 INCDIR = ../include
-ifndef BUILDDIR
 SAMPLEDIR = .
 OBJDIR = .
 LIBDIR = ..
-else
-SAMPLEDIR = $(BUILDDIR)/samples
-OBJDIR = $(BUILDDIR)/obj/samples
-LIBDIR = $(BUILDDIR)
-endif
 
 CFLAGS += -Wall -I$(INCDIR)
 LDFLAGS += -lpthread -L$(LIBDIR) -l$(LIBNAME)

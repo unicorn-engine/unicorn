@@ -1,10 +1,6 @@
 # Python binding for Unicorn engine. Nguyen Anh Quynh <aquynh@gmail.com>
 
-ifndef BUILDDIR
 OBJDIR = ./build
-else
-OBJDIR = $(abspath $(BUILDDIR))/obj/bindings/python
-endif
 
 .PHONY: gen_const install install3 clean
 
