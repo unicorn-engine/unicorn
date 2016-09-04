@@ -213,11 +213,7 @@ else
 endif
 endif
 
-ifndef BUILDDIR
 	@cd samples && $(MAKE)
-else
-	@cd samples && $(MAKE) BUILDDIR=$(BLDIR)
-endif
 endif
 
 config:
@@ -336,10 +332,6 @@ ifeq (,$(findstring yes,$(UNICORN_BUILD_CORE_ONLY)))
 	rm -f $(BLDIR)/samples/lib$(LIBNAME).$(EXT)
 endif
 	$(MAKE) -C tests/unit clean
-
-ifdef BUILDDIR
-	rm -rf $(BUILDDIR)
-endif
 
 
 define generate-pkgcfg
