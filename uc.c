@@ -1184,12 +1184,12 @@ void *uc_save_regstate(uc_engine *uc, void *buffer) {
         buffer = malloc(sz);
     }
 
-    memcpy(buffer, uc->current_cpu->env_ptr, sz);
+    memcpy(buffer, first_cpu->env_ptr, sz);
     return buffer;
 }
 
 UNICORN_EXPORT
 void uc_restore_regstate(uc_engine *uc, void *buffer) {
     size_t sz = cpu_regs_size(uc->arch, uc->mode);
-    memcpy(uc->current_cpu->env_ptr, buffer, sz);
+    memcpy(first_cpu->env_ptr, buffer, sz);
 }

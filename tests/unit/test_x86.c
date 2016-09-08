@@ -740,7 +740,7 @@ static void test_i386_reg_save(void **state)
     int32_t eax = 1;
 
     // Initialize emulator
-    uc_assert_success(uc_open(UC_ARCH_X86, UC_MODE_16, &uc));
+    uc_assert_success(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
 
     // map 8KB memory for this emulation
     uc_assert_success(uc_mem_map(uc, address, 8 * 1024, UC_PROT_ALL));
