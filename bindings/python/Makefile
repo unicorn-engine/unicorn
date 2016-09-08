@@ -32,7 +32,6 @@ sdist:
 	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
-	cp PKG-INFO.src PKG-INFO
 	python setup.py sdist register upload
 
 # build & upload PyPi package with source code of the core
@@ -40,7 +39,6 @@ sdist3:
 	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
-	cp PKG-INFO.src PKG-INFO
 	python3 setup.py sdist register upload
 
 # build & upload PyPi package with precompiled core
@@ -48,7 +46,6 @@ bdist:
 	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
-	cp PKG-INFO.src PKG-INFO
 	python setup.py bdist_wheel register upload
 
 # build & upload PyPi package with precompiled core
@@ -56,21 +53,18 @@ bdist3:
 	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
-	cp PKG-INFO.src PKG-INFO
 	python3 setup.py bdist_wheel register upload
 
 # build & upload PyPi package with prebuilt core
 # NOTE: be sure to have precompiled core under prebuilt/win*/ beforehand
 sdist_win:
 	rm -rf src/ dist/
-	cp PKG-INFO.win PKG-INFO
 	python setup.py sdist register upload
 
 # build & upload PyPi package with prebuilt core
 # NOTE: be sure to have precompiled core under prebuilt/win*/ beforehand
 sdist3_win:
 	rm -rf src/ dist/
-	cp PKG-INFO.win PKG-INFO
 	python3 setup.py sdist register upload
 
 clean:
