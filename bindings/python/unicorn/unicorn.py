@@ -18,11 +18,11 @@ if _python2:
     range = xrange
 
 if sys.platform == 'darwin':
-    _lib = "libunicorn.1.dylib"
+    _lib = "libunicorn.dylib"
 elif sys.platform in ('win32', 'cygwin'):
     _lib = "unicorn.dll"
 else:
-    _lib = "libunicorn.so.1"
+    _lib = "libunicorn.so"
 
 # Windows DLL in dependency order
 _all_windows_dlls = (

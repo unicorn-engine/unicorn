@@ -36,13 +36,13 @@ SRC_DIR = os.path.join(ROOT_DIR, 'src')
 BUILD_DIR = SRC_DIR if os.path.exists(SRC_DIR) else os.path.join(ROOT_DIR, '../..')
 
 if SYSTEM == 'darwin':
-    LIBRARY_FILE = "libunicorn.1.dylib"
+    LIBRARY_FILE = "libunicorn.dylib"
     STATIC_LIBRARY_FILE = 'libunicorn.a'
 elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
     STATIC_LIBRARY_FILE = None
 else:
-    LIBRARY_FILE = "libunicorn.so.1"
+    LIBRARY_FILE = "libunicorn.so"
     STATIC_LIBRARY_FILE = 'libunicorn.a'
 
 def clean_bins():
@@ -122,7 +122,6 @@ def build_libraries():
     shutil.copy(LIBRARY_FILE, LIBS_DIR)
     if STATIC_LIBRARY_FILE: shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
     os.chdir(cwd)
-    if SYSTEM == "linux2": os.symlink(LIBRARY_FILE, os.path.join(LIBS_DIR, 'libunicorn.so'))
 
 
 class custom_sdist(sdist):
