@@ -308,6 +308,56 @@ def test_i386_inout():
         print("ERROR: %s" % e)
 
 
+def test_i386_reg_save():
+    print("Save/restore registers in opaque blob")
+    address = 0
+    code = '\x40'  # inc eax
+    try:
+        # Initialize emulator
+        mu = Uc(UC_ARCH_X86, UC_MODE_32)
+
+        # map 8KB memory for this emulation
+        mu.mem_map(address, 8 * 1024, UC_PROT_ALL)
+
+        # write machine code to be emulated to memory
+        mu.mem_write(address, code)
+
+        print(">>> set eax to 1")
+        mu.reg_write(UC_X86_REG_EAX, 1)
+
+        print(">>> execute 'inc eax'")
+        mu.emu_start(address, address+1)
+
+        print(">>> save the register state")
+        saved_regs = mu.save_regs()
+
+        print(">>> execute 'inc eax'")
+        mu.emu_start(address, address+1)
+
+        print(">>> assert eax == 3")
+        assert mu.reg_read(UC_X86_REG_EAX) == 3
+
+        print(">>> restore the register state")
+        mu.restore_regs(saved_regs)
+
+        print(">>> assert eax == 2")
+        assert mu.reg_read(UC_X86_REG_EAX) == 2
+
+        print(">>> execute 'inc eax'")
+        mu.emu_start(address, address+1)
+
+        print(">>> assert eax == 3")
+        assert mu.reg_read(UC_X86_REG_EAX) == 3
+
+        print(">>> restore the register state")
+        mu.restore_regs(saved_regs)
+
+        print(">>> assert eax == 2")
+        assert mu.reg_read(UC_X86_REG_EAX) == 2
+
+    except UcError as e:
+        print("ERROR: %s" % e)
+
 def test_x86_64():
     print("Emulate x86_64 code")
     try:
@@ -478,6 +528,8 @@ if __name__ == '__main__':
     test_i386_invalid_mem_write()
     print("=" * 20)
     test_i386_inout()
+    print("=" * 20)
+    test_i386_reg_save()
     print("=" * 20)
     test_x86_64()
     print("=" * 20)
