@@ -1162,7 +1162,8 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
 }
 
 size_t cpu_regs_size(uc_arch arch, uc_mode mode);
-size_t cpu_regs_size(uc_arch arch, uc_mode mode) {
+size_t cpu_regs_size(uc_arch arch, uc_mode mode)
+{
     // each of these constants is defined by offsetof(CPUXYZState, tlb_table)
     // tbl_table is the first entry in the CPU_COMMON macro, so it marks the end
     // of the interesting CPU registers
@@ -1178,7 +1179,8 @@ size_t cpu_regs_size(uc_arch arch, uc_mode mode) {
 }
 
 UNICORN_EXPORT
-void *uc_save_regstate(uc_engine *uc, void *buffer) {
+void *uc_save_regstate(uc_engine *uc, void *buffer)
+{
     size_t sz = cpu_regs_size(uc->arch, uc->mode);
     if (!buffer) {
         buffer = malloc(sz);
@@ -1189,7 +1191,8 @@ void *uc_save_regstate(uc_engine *uc, void *buffer) {
 }
 
 UNICORN_EXPORT
-void uc_restore_regstate(uc_engine *uc, void *buffer) {
+void uc_restore_regstate(uc_engine *uc, void *buffer)
+{
     size_t sz = cpu_regs_size(uc->arch, uc->mode);
     memcpy(first_cpu->env_ptr, buffer, sz);
 }
