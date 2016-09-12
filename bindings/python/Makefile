@@ -1,30 +1,28 @@
 # Python binding for Unicorn engine. Nguyen Anh Quynh <aquynh@gmail.com>
 
-OBJDIR = ./build
-
-.PHONY: gen_const install install3 clean sdist sdist3 bdist bdist3
+.PHONY: gen_const install install3 clean sdist sdist3 bdist bdist3 sdist_win bdist_win
 
 gen_const:
 	cd .. && python const_generator.py python
 
 install:
-	rm -rf $(OBJDIR) src/
+	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
 	if test -n "${DESTDIR}"; then \
-		python setup.py build -b $(OBJDIR) install --root="${DESTDIR}"; \
+		python setup.py install --root="${DESTDIR}"; \
 	else \
-		python setup.py build -b $(OBJDIR) install; \
+		python setup.py install; \
 	fi
 
 install3:
-	rm -rf $(OBJDIR) src/
+	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
 	if test -n "${DESTDIR}"; then \
-		python3 setup.py build -b $(OBJDIR) install --root="${DESTDIR}"; \
+		python3 setup.py install --root="${DESTDIR}"; \
 	else \
-		python3 setup.py build -b $(OBJDIR) install; \
+		python3 setup.py install; \
 	fi
 
 # build & upload PyPi package with source code of the core
@@ -68,7 +66,7 @@ sdist3_win:
 	python3 setup.py sdist register upload
 
 clean:
-	rm -rf $(OBJDIR) src/ dist/ MANIFEST
+	rm -rf src/ dist/ build/ MANIFEST
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
 	rm -rf unicorn/lib unicorn/include

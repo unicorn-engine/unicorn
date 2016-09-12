@@ -183,12 +183,6 @@ setup(
     ],
     requires=['ctypes'],
     cmdclass=cmdclass,
-    libraries=[(
-        'unicorn', dict(
-            package='unicorn',
-            sources=dummy_src()
-        ),
-    )],
     zip_safe=True,
     include_package_data=True,
     package_data={

@@ -58,6 +58,12 @@ _*.diff
 tmp/
 
 bindings/python/build/
+bindings/python/dist/
+bindings/python/src/
+bindings/python/unicorn.egg-info/
+bindings/python/unicorn/lib/
+bindings/python/unicorn/include/
+bindings/python/MANIFEST
 config.log
 
 
