@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # Python binding for Unicorn engine. Nguyen Anh Quynh <aquynh@gmail.com>
 
+from __future__ import print_function
 import glob
 import os
 import shutil
@@ -162,7 +163,7 @@ try:
 
     cmdclass['develop'] = custom_develop
 except ImportError:
-    print "Proper 'develop' support unavailable."
+    print("Proper 'develop' support unavailable.")
 
 def join_all(src, files):
     return tuple(os.path.join(src, f) for f in files)
