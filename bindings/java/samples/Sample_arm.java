@@ -109,7 +109,7 @@ public class Sample_arm {
    
        // emulate machine code in infinite time (last param = 0), or when
        // finishing all the code.
-       u.emu_start(ADDRESS, ADDRESS + THUMB_CODE.length, 0, 0);
+       u.emu_start(ADDRESS | 1, ADDRESS + THUMB_CODE.length, 0, 0);
    
        // now print out some registers
        System.out.print(">>> Emulation done. Below is the CPU context\n");

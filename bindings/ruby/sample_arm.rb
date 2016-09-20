@@ -87,7 +87,7 @@ def test_thumb()
         mu.hook_add(UC_HOOK_CODE, $hook_code)
 
         # emulate machine code in infinite time
-        mu.emu_start(ADDRESS, ADDRESS + THUMB_CODE.bytesize)
+        mu.emu_start(ADDRESS | 1, ADDRESS + THUMB_CODE.bytesize)
 
         # now print out some registers
         puts(">>> Emulation done. Below is the CPU context")
