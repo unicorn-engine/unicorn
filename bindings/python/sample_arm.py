@@ -85,7 +85,8 @@ def test_thumb():
         mu.hook_add(UC_HOOK_CODE, hook_code)
 
         # emulate machine code in infinite time
-        mu.emu_start(ADDRESS, ADDRESS + len(THUMB_CODE))
+        # Note we start at ADDRESS | 1 to indicate THUMB mode.
+        mu.emu_start(ADDRESS | 1, ADDRESS + len(THUMB_CODE))
 
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
