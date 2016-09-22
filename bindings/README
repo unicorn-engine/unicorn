@@ -17,3 +17,6 @@ More bindings created & maintained externally by community are available as foll
 
 - Unicorn-Rs: Rust binding (by Sébastien Duquette)
     https://github.com/ekse/unicorn-rs
+
+- UnicornEngine: Perl binding (by Vikas Naresh Kumar)
+    https://metacpan.org/pod/UnicornEngine
