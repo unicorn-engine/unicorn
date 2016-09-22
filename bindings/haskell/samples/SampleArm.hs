@@ -4,6 +4,7 @@ import Unicorn
 import Unicorn.Hook
 import qualified Unicorn.CPU.Arm as Arm
 
+import Data.Bits
 import qualified Data.ByteString as BS
 import Data.Word
 import qualified Numeric as N (showHex)
@@ -112,7 +113,7 @@ testThumb = do
         -- Emulate machine code in infinite time (last param = Nothing), or
         -- when finishing all the code
         let codeLen = codeLength thumbCode
-        start uc address (address + codeLen) Nothing Nothing
+        start uc (address .|. 1) (address + codeLen) Nothing Nothing
 
         -- Return the results
         sp <- regRead uc Arm.Sp
