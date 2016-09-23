@@ -28,7 +28,7 @@ static void sparc_set_pc(struct uc_struct *uc, uint64_t address)
 
 void sparc_reg_reset(struct uc_struct *uc)
 {
-    CPUArchState *env = first_cpu->env_ptr;
+    CPUArchState *env = uc->cpu->env_ptr;
 
     memset(env->gregs, 0, sizeof(env->gregs));
     memset(env->fpr, 0, sizeof(env->fpr));
@@ -41,7 +41,7 @@ void sparc_reg_reset(struct uc_struct *uc)
 
 int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
-    CPUState *mycpu = first_cpu;
+    CPUState *mycpu = uc->cpu;
     int i;
 
     for (i = 0; i < count; i++) {
@@ -70,7 +70,7 @@ int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
 
 int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, int count)
 {
-    CPUState *mycpu = first_cpu;
+    CPUState *mycpu = uc->cpu;
     int i;
 
     for (i = 0; i < count; i++) {

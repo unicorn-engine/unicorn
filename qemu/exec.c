@@ -382,14 +382,10 @@ address_space_translate_for_iotlb(AddressSpace *as, hwaddr addr, hwaddr *xlat,
 
 CPUState *qemu_get_cpu(struct uc_struct *uc, int index)
 {
-    CPUState *cpu;
-
-    CPU_FOREACH(cpu) {
-        if (cpu->cpu_index == index) {
-            return cpu;
-        }
+    CPUState *cpu = uc->cpu;
+    if (cpu->cpu_index == index) {
+        return cpu;
     }
-
     return NULL;
 }
 
@@ -413,31 +409,19 @@ void cpu_exec_init(CPUArchState *env, void *opaque)
 {
     struct uc_struct *uc = opaque;
     CPUState *cpu = ENV_GET_CPU(env);
-    CPUState *some_cpu;
-    int cpu_index;
 
     cpu->uc = uc;
     env->uc = uc;
 
-#if defined(CONFIG_USER_ONLY)
-    cpu_list_lock();
-#endif
-    cpu_index = 0;
-    CPU_FOREACH(some_cpu) {
-        cpu_index++;
-    }
-    cpu->cpu_index = cpu_index;
+    cpu->cpu_index = 0;
     cpu->numa_node = 0;
     QTAILQ_INIT(&cpu->breakpoints);
     QTAILQ_INIT(&cpu->watchpoints);
 
     cpu->as = &uc->as;
 
-    QTAILQ_INSERT_TAIL(&uc->cpus, cpu, node);
-    //QTAILQ_INSERT_TAIL(&uc->cpus, cpu, node);
-#if defined(CONFIG_USER_ONLY)
-    cpu_list_unlock();
-#endif
+    // TODO: assert uc does not already have a cpu?
+    uc->cpu = cpu;
 }
 
 #if defined(TARGET_HAS_ICE)
@@ -1518,19 +1502,10 @@ static void tcg_commit(MemoryListener *listener)
 {
     struct uc_struct* uc = listener->address_space_filter->uc;
 
-    CPUState *cpu;
-
     /* since each CPU stores ram addresses in its TLB cache, we must
        reset the modified entries */
     /* XXX: slow ! */
-    CPU_FOREACH(cpu) {
-        /* FIXME: Disentangle the cpu.h circular files deps so we can
-           directly get the right CPU from listener.  */
-        if (cpu->tcg_as_listener != listener) {
-            continue;
-        }
-        tlb_flush(cpu, 1);
-    }
+    tlb_flush(uc->cpu, 1);
 }
 
 void address_space_init_dispatch(AddressSpace *as)

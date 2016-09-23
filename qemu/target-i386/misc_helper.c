@@ -578,11 +578,7 @@ void helper_mwait(CPUX86State *env, int next_eip_addend)
     cpu = x86_env_get_cpu(env);
     cs = CPU(cpu);
     /* XXX: not complete but not completely erroneous */
-    if (cs->cpu_index != 0 || CPU_NEXT(cs) != NULL) {
-        do_pause(cpu);
-    } else {
-        do_hlt(cpu);
-    }
+    do_hlt(cpu);
 }
 
 void helper_pause(CPUX86State *env, int next_eip_addend)

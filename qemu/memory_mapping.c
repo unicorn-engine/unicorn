@@ -197,38 +197,21 @@ typedef struct GuestPhysListener {
     MemoryListener listener;
 } GuestPhysListener;
 
-static CPUState *find_paging_enabled_cpu(struct uc_struct* uc)
-{
-    CPUState *cpu;
-
-    CPU_FOREACH(cpu) {
-        if (cpu_paging_enabled(cpu)) {
-            return cpu;
-        }
-    }
-
-    return NULL;
-}
-
 void qemu_get_guest_memory_mapping(struct uc_struct *uc,
                                    MemoryMappingList *list,
                                    const GuestPhysBlockList *guest_phys_blocks,
                                    Error **errp)
 {
-    CPUState *cpu, *first_paging_enabled_cpu;
+    CPUState *cpu = uc->cpu;
     GuestPhysBlock *block;
     ram_addr_t offset, length;
 
-    first_paging_enabled_cpu = find_paging_enabled_cpu(uc);
-    if (first_paging_enabled_cpu) {
-        for (cpu = first_paging_enabled_cpu; cpu != NULL;
-             cpu = CPU_NEXT(cpu)) {
-            Error *err = NULL;
-            cpu_get_memory_mapping(cpu, list, &err);
-            if (err) {
-                error_propagate(errp, err);
-                return;
-            }
+    if (cpu_paging_enabled(cpu)) {
+        Error *err = NULL;
+        cpu_get_memory_mapping(cpu, list, &err);
+        if (err) {
+            error_propagate(errp, err);
+            return;
         }
         return;
     }

@@ -58,7 +58,7 @@ void cpu_smm_update(CPUX86State *env)
 {
     struct uc_struct *uc = x86_env_get_cpu(env)->parent_obj.uc;
 
-    if (smm_set && smm_arg && CPU(x86_env_get_cpu(env)) == first_cpu) {
+    if (smm_set && smm_arg && CPU(x86_env_get_cpu(env)) == uc->cpu) {
         smm_set(!!(env->hflags & HF_SMM_MASK), smm_arg);
     }
 }

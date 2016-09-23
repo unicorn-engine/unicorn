@@ -34,7 +34,7 @@ void arm64_release(void* ctx)
 
 void arm64_reg_reset(struct uc_struct *uc)
 {
-    CPUArchState *env = first_cpu->env_ptr;
+    CPUArchState *env = uc->cpu->env_ptr;
     memset(env->xregs, 0, sizeof(env->xregs));
 
     env->pc = 0;
@@ -42,7 +42,7 @@ void arm64_reg_reset(struct uc_struct *uc)
 
 int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
-    CPUState *mycpu = first_cpu;
+    CPUState *mycpu = uc->cpu;
     int i;
 
     for (i = 0; i < count; i++) {
@@ -74,7 +74,7 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
 
 int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, int count)
 {
-    CPUState *mycpu = first_cpu;
+    CPUState *mycpu = uc->cpu;
     int i;
 
     for (i = 0; i < count; i++) {

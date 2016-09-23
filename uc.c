@@ -156,9 +156,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         uc->arch = arch;
         uc->mode = mode;
 
-        // uc->cpus = QTAILQ_HEAD_INITIALIZER(uc->cpus);
-        uc->cpus.tqh_first = NULL;
-        uc->cpus.tqh_last = &(uc->cpus.tqh_first);
         // uc->ram_list = { .blocks = QTAILQ_HEAD_INITIALIZER(ram_list.blocks) };
         uc->ram_list.blocks.tqh_first = NULL;
         uc->ram_list.blocks.tqh_last = &(uc->ram_list.blocks.tqh_first);
@@ -289,7 +286,6 @@ uc_err uc_close(uc_engine *uc)
     int i;
     struct list_item *cur;
     struct hook *hook;
-    CPUState *cpu;
 
     // Cleanup internally.
     if (uc->release)
@@ -297,11 +293,9 @@ uc_err uc_close(uc_engine *uc)
     g_free(uc->tcg_ctx);
 
     // Cleanup CPU.
-    CPU_FOREACH(cpu) {
-        g_free(cpu->tcg_as_listener);
-        g_free(cpu->thread);
-        g_free(cpu->halt_cond);
-    }
+    g_free(uc->cpu->tcg_as_listener);
+    g_free(uc->cpu->thread);
+    g_free(uc->cpu->halt_cond);
 
     // Cleanup all objects.
     OBJECT(uc->machine_state->accelerator)->ref = 1;
@@ -311,7 +305,6 @@ uc_err uc_close(uc_engine *uc)
 
     object_unref(uc, OBJECT(uc->machine_state->accelerator));
     object_unref(uc, OBJECT(uc->machine_state));
-    object_unref(uc, uc->cpu);
     object_unref(uc, OBJECT(&uc->io_mem_notdirty));
     object_unref(uc, OBJECT(&uc->io_mem_unassigned));
     object_unref(uc, OBJECT(&uc->io_mem_rom));
@@ -634,6 +627,7 @@ uc_err uc_emu_stop(uc_engine *uc)
         return UC_ERR_OK;
 
     uc->stop_request = true;
+    // TODO: make this atomic somehow?
     if (uc->current_cpu) {
         // exit the current TB
         cpu_exit(uc->current_cpu);

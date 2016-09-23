@@ -38,7 +38,7 @@ void arm_reg_reset(struct uc_struct *uc)
     (void)uc;
     CPUArchState *env;
 
-    env = first_cpu->env_ptr;
+    env = uc->cpu->env_ptr;
     memset(env->regs, 0, sizeof(env->regs));
 
     env->pc = 0;
@@ -49,7 +49,7 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
     CPUState *mycpu;
     int i;
 
-    mycpu = first_cpu;
+    mycpu = uc->cpu;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
@@ -84,7 +84,7 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
 
 int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, int count)
 {
-    CPUState *mycpu = first_cpu;
+    CPUState *mycpu = uc->cpu;
     int i;
 
     for (i = 0; i < count; i++) {
@@ -135,7 +135,7 @@ static bool arm_stop_interrupt(int intno)
 
 static uc_err arm_query(struct uc_struct *uc, uc_query_type type, size_t *result)
 {
-    CPUState *mycpu = first_cpu;
+    CPUState *mycpu = uc->cpu;
     uint32_t mode;
 
     switch(type) {

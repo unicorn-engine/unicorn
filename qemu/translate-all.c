@@ -855,9 +855,7 @@ void tb_flush(CPUArchState *env1)
     }
     tcg_ctx->tb_ctx.nb_tbs = 0;
 
-    CPU_FOREACH(cpu) {
-        memset(cpu->tb_jmp_cache, 0, sizeof(cpu->tb_jmp_cache));
-    }
+    memset(cpu->tb_jmp_cache, 0, sizeof(cpu->tb_jmp_cache));
 
     memset(tcg_ctx->tb_ctx.tb_phys_hash, 0, sizeof(tcg_ctx->tb_ctx.tb_phys_hash));
     page_flush_tb(uc);
@@ -982,7 +980,7 @@ void tb_phys_invalidate(struct uc_struct *uc,
     TranslationBlock *tb, tb_page_addr_t page_addr)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
-    CPUState *cpu;
+    CPUState *cpu = uc->cpu;
     PageDesc *p;
     unsigned int h, n1;
     tb_page_addr_t phys_pc;
@@ -1009,10 +1007,8 @@ void tb_phys_invalidate(struct uc_struct *uc,
 
     /* remove the TB from the hash list */
     h = tb_jmp_cache_hash_func(tb->pc);
-    CPU_FOREACH(cpu) {
-        if (cpu->tb_jmp_cache[h] == tb) {
-            cpu->tb_jmp_cache[h] = NULL;
-        }
+    if (cpu->tb_jmp_cache[h] == tb) {
+        cpu->tb_jmp_cache[h] = NULL;
     }
 
     /* suppress this TB from the two jump lists */

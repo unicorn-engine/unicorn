@@ -152,25 +152,23 @@ void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry, uintptr_t start,
 void cpu_tlb_reset_dirty_all(struct uc_struct *uc,
     ram_addr_t start1, ram_addr_t length)
 {
-    CPUState *cpu;
+    CPUState *cpu = uc->cpu;
     CPUArchState *env;
 
-    CPU_FOREACH(cpu) {
-        int mmu_idx;
+    int mmu_idx;
 
-        env = cpu->env_ptr;
-        for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
-            unsigned int i;
+    env = cpu->env_ptr;
+    for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
+        unsigned int i;
 
-            for (i = 0; i < CPU_TLB_SIZE; i++) {
-                tlb_reset_dirty_range(&env->tlb_table[mmu_idx][i],
-                                      start1, length);
-            }
+        for (i = 0; i < CPU_TLB_SIZE; i++) {
+            tlb_reset_dirty_range(&env->tlb_table[mmu_idx][i],
+                                  start1, length);
+        }
 
-            for (i = 0; i < CPU_VTLB_SIZE; i++) {
-                tlb_reset_dirty_range(&env->tlb_v_table[mmu_idx][i],
-                                      start1, length);
-            }
+        for (i = 0; i < CPU_VTLB_SIZE; i++) {
+            tlb_reset_dirty_range(&env->tlb_v_table[mmu_idx][i],
+                                  start1, length);
         }
     }
 }

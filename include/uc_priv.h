@@ -33,8 +33,6 @@
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
 
-QTAILQ_HEAD(CPUTailQ, CPUState);
-
 typedef struct ModuleEntry {
     void (*init)(void);
     QTAILQ_ENTRY(ModuleEntry) node;
@@ -148,7 +146,6 @@ struct uc_struct {
     QemuMutex qemu_global_mutex; // qemu/cpus.c
     QemuCond qemu_cpu_cond; // qemu/cpus.c
     QemuCond *tcg_halt_cond; // qemu/cpus.c
-    struct CPUTailQ cpus;   // qemu/cpu-exec.c
     uc_err errnum;  // qemu/cpu-exec.c
     AddressSpace as;
     query_t query;
@@ -171,8 +168,8 @@ struct uc_struct {
     uc_mem_unmap_t memory_unmap;
     uc_readonly_mem_t readonly_mem;
     uc_mem_redirect_t mem_redirect;
-    // list of cpu
-    void* cpu;
+    // TODO: remove current_cpu, as it's a flag for something else ("cpu running"?)
+    CPUState *cpu, *current_cpu;
 
     MemoryRegion *system_memory;    // qemu/exec.c
     MemoryRegion io_mem_rom;    // qemu/exec.c
@@ -180,7 +177,6 @@ struct uc_struct {
     MemoryRegion io_mem_unassigned; // qemu/exec.c
     MemoryRegion io_mem_watch;  // qemu/exec.c
     RAMList ram_list;   // qemu/exec.c
-    CPUState *next_cpu; // qemu/cpus.c
     BounceBuffer bounce;    // qemu/cpu-exec.c
     volatile sig_atomic_t exit_request; // qemu/cpu-exec.c
     spinlock_t x86_global_cpu_lock; // for X86 arch only
@@ -212,7 +208,6 @@ struct uc_struct {
     int apic_no;
     bool mmio_registered;
     bool apic_report_tpr_access;
-    CPUState *current_cpu;
 
     // linked lists containing hooks per type
     struct list hook[UC_HOOK_MAX];
@@ -249,8 +244,6 @@ struct uc_struct {
     uint32_t target_page_align;
     uint64_t next_pc;   // save next PC for some special cases
 };
-
-#include "qemu_macro.h"
 
 // check if this address is mapped in (via uc_mem_map())
 MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address);

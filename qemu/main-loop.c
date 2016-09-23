@@ -43,7 +43,7 @@ void qemu_mutex_lock_iothread(struct uc_struct* uc)
         qemu_mutex_lock(&uc->qemu_global_mutex);
     } else {
         if (qemu_mutex_trylock(&uc->qemu_global_mutex)) {
-            qemu_cpu_kick_thread(first_cpu);
+            qemu_cpu_kick_thread(uc->cpu);
             qemu_mutex_lock(&uc->qemu_global_mutex);
         }
     }

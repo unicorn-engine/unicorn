@@ -284,45 +284,33 @@ static void tlbimvaa_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void tlbiall_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    CPUState *other_cs;
     struct uc_struct *uc = env->uc;
-
-    CPU_FOREACH(other_cs) {
-        tlb_flush(other_cs, 1);
-    }
+    // TODO: issue #642
+    // tlb_flush(other_cpu, 1);
 }
 
 static void tlbiasid_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    CPUState *other_cs;
     struct uc_struct *uc = env->uc;
-
-    CPU_FOREACH(other_cs) {
-        tlb_flush(other_cs, value == 0);
-    }
+    // TODO: issue #642
+    // tlb_flush(other_cpu, value == 0);
 }
 
 static void tlbimva_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    CPUState *other_cs;
     struct uc_struct *uc = env->uc;
-
-    CPU_FOREACH(other_cs) {
-        tlb_flush_page(other_cs, value & TARGET_PAGE_MASK);
-    }
+    // TODO: issue #642
+    // tlb_flush(other_cpu, value & TARGET_PAGE_MASK);
 }
 
 static void tlbimvaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    CPUState *other_cs;
     struct uc_struct *uc = env->uc;
-
-    CPU_FOREACH(other_cs) {
-        tlb_flush_page(other_cs, value & TARGET_PAGE_MASK);
-    }
+    // TODO: issue #642
+    // tlb_flush(other_cpu, value & TARGET_PAGE_MASK);
 }
 
 static const ARMCPRegInfo cp_reginfo[] = {
@@ -1874,37 +1862,28 @@ static void tlbi_aa64_asid_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void tlbi_aa64_va_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                                   uint64_t value)
 {
-    CPUState *other_cs;
     uint64_t pageaddr = sextract64(value << 12, 0, 56);
     struct uc_struct *uc = env->uc;
-
-    CPU_FOREACH(other_cs) {
-        tlb_flush_page(other_cs, pageaddr);
-    }
+    // TODO: issue #642
+    // tlb_flush(other_cpu, pageaddr);
 }
 
 static void tlbi_aa64_vaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                                   uint64_t value)
 {
-    CPUState *other_cs;
     uint64_t pageaddr = sextract64(value << 12, 0, 56);
     struct uc_struct *uc = env->uc;
-
-    CPU_FOREACH(other_cs) {
-        tlb_flush_page(other_cs, pageaddr);
-    }
+    // TODO: issue #642
+    // tlb_flush(other_cpu, pageaddr);
 }
 
 static void tlbi_aa64_asid_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                                   uint64_t value)
 {
-    CPUState *other_cs;
     int asid = extract64(value, 48, 16);
     struct uc_struct *uc = env->uc;
-
-    CPU_FOREACH(other_cs) {
-        tlb_flush(other_cs, asid == 0);
-    }
+    // TODO: issue #642
+    // tlb_flush(other_cpu, asid == 0);
 }
 
 static CPAccessResult aa64_zva_access(CPUARMState *env, const ARMCPRegInfo *ri)

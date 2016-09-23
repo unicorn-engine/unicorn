@@ -61,29 +61,18 @@ void run_on_cpu(CPUState *cpu, void (*func)(void *data), void *data)
 
 int resume_all_vcpus(struct uc_struct *uc)
 {
-    CPUState *cpu;
-
-    {
-        // Fix call multiple time (vu).
-        // We have to check whether this is the second time, then reset all CPU.
-        bool created = false;
-        CPU_FOREACH(cpu) {
-            created |= cpu->created;
-        }
-        if (!created) {
-            CPU_FOREACH(cpu) {
-                cpu->created = true;
-                cpu->halted = 0;
-                if (qemu_init_vcpu(cpu))
-                    return -1;
-            }
-        }
+    CPUState *cpu = uc->cpu;
+    // Fix call multiple time (vu).
+    // We have to check whether this is the second time, then reset all CPU.
+    if (!cpu->created) {
+        cpu->created = true;
+        cpu->halted = 0;
+        if (qemu_init_vcpu(cpu))
+            return -1;
     }
 
     //qemu_clock_enable(QEMU_CLOCK_VIRTUAL, true);
-    CPU_FOREACH(cpu) {
-        cpu_resume(cpu);
-    }
+    cpu_resume(cpu);
     qemu_tcg_cpu_loop(uc);
 
     return 0;
@@ -104,14 +93,12 @@ int qemu_init_vcpu(CPUState *cpu)
 
 static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
 {
-    CPUState *cpu;
+    CPUState *cpu = uc->cpu;
 
     //qemu_tcg_init_cpu_signals();
 
     qemu_mutex_lock(&uc->qemu_global_mutex);
-    CPU_FOREACH(cpu) {
-        cpu->created = true;
-    }
+    cpu->created = true;
     qemu_cond_signal(&uc->qemu_cpu_cond);
 
     while (1) {
@@ -119,15 +106,12 @@ static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
             break;
     }
 
-    CPU_FOREACH(cpu) {
-        cpu->created = false;
-        qemu_cond_destroy(cpu->halt_cond);
-        g_free(cpu->halt_cond);
-        cpu->halt_cond = NULL;
-    }
+    cpu->created = false;
+    qemu_cond_destroy(cpu->halt_cond);
+    g_free(cpu->halt_cond);
+    cpu->halt_cond = NULL;
 
     qemu_mutex_unlock(&uc->qemu_global_mutex);
-
     return NULL;
 }
 
@@ -158,14 +142,8 @@ static bool tcg_exec_all(struct uc_struct* uc)
 {
     int r;
     bool finish = false;
-    CPUState *next_cpu = uc->next_cpu;
-
-    if (next_cpu == NULL) {
-        next_cpu = first_cpu;
-    }
-
-    for (; next_cpu != NULL && !uc->exit_request; next_cpu = CPU_NEXT(next_cpu)) {
-        CPUState *cpu = next_cpu;
+    while (!uc->exit_request) {
+        CPUState *cpu = uc->cpu;
         CPUArchState *env = cpu->env_ptr;
 
         //qemu_clock_enable(QEMU_CLOCK_VIRTUAL,

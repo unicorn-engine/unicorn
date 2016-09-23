@@ -24,14 +24,11 @@
 
 bool cpu_exists(struct uc_struct* uc, int64_t id)
 {
-    CPUState *cpu;
+    CPUState *cpu = uc->cpu;
+    CPUClass *cc = CPU_GET_CLASS(uc, cpu);
 
-    CPU_FOREACH(cpu) {
-        CPUClass *cc = CPU_GET_CLASS(uc, cpu);
-
-        if (cc->get_arch_id(cpu) == id) {
-            return true;
-        }
+    if (cc->get_arch_id(cpu) == id) {
+        return true;
     }
     return false;
 }
