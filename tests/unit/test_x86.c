@@ -755,7 +755,7 @@ static void test_i386_reg_save(void **state)
     uc_assert_success(uc_emu_start(uc, address, address+1, 0, 0));
 
     // save the state
-    void *saved_regs = uc_save_regstate(uc, NULL);
+    void *saved_regs = uc_regstate_save(uc, NULL);
 
     // step one instruction
     uc_assert_success(uc_emu_start(uc, address, address+1, 0, 0));
@@ -765,7 +765,7 @@ static void test_i386_reg_save(void **state)
     assert_int_equal(eax, 3);
 
     // restore the state
-    uc_restore_regstate(uc, saved_regs);
+    uc_regstate_restore(uc, saved_regs);
 
     // check that eax == 2
     uc_assert_success(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
@@ -779,7 +779,7 @@ static void test_i386_reg_save(void **state)
     assert_int_equal(eax, 3);
 
     // restore the state
-    uc_restore_regstate(uc, saved_regs);
+    uc_regstate_restore(uc, saved_regs);
 
     // check that eax == 2
     uc_assert_success(uc_reg_read(uc, UC_X86_REG_EAX, &eax));

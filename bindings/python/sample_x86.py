@@ -329,7 +329,7 @@ def test_i386_reg_save():
         mu.emu_start(address, address+1)
 
         print(">>> save the register state")
-        saved_regs = mu.save_regs()
+        saved_regs = mu.regstate_save()
 
         print(">>> execute 'inc eax'")
         mu.emu_start(address, address+1)
@@ -338,7 +338,7 @@ def test_i386_reg_save():
         assert mu.reg_read(UC_X86_REG_EAX) == 3
 
         print(">>> restore the register state")
-        mu.restore_regs(saved_regs)
+        mu.regstate_restore(saved_regs)
 
         print(">>> assert eax == 2")
         assert mu.reg_read(UC_X86_REG_EAX) == 2
@@ -350,7 +350,7 @@ def test_i386_reg_save():
         assert mu.reg_read(UC_X86_REG_EAX) == 3
 
         print(">>> restore the register state")
-        mu.restore_regs(saved_regs)
+        mu.regstate_restore(saved_regs)
 
         print(">>> assert eax == 2")
         assert mu.reg_read(UC_X86_REG_EAX) == 2

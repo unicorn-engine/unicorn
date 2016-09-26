@@ -640,18 +640,18 @@ uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count);
    Any allocation performed by this function must be freed by the user.
 */
 UNICORN_EXPORT
-void *uc_save_regstate(uc_engine *uc, void *buffer);
+void *uc_regstate_save(uc_engine *uc, void *buffer);
 
 /*
  Restore the current state's registers from a saved copy
  This API should be used to roll the CPU register state back to a previous
- state saved by uc_save_regstate().
+ state saved by uc_regstate_save().
 
  @uc: handle returned by uc_open()
- @buffer: pointer returned by uc_save_regstate()
+ @buffer: pointer returned by uc_regstate_save()
 */
 UNICORN_EXPORT
-void uc_restore_regstate(uc_engine *uc, void *buffer);
+void uc_regstate_restore(uc_engine *uc, void *buffer);
 
 #ifdef __cplusplus
 }

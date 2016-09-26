@@ -1179,7 +1179,7 @@ size_t cpu_regs_size(uc_arch arch, uc_mode mode)
 }
 
 UNICORN_EXPORT
-void *uc_save_regstate(uc_engine *uc, void *buffer)
+void *uc_regstate_save(uc_engine *uc, void *buffer)
 {
     size_t sz = cpu_regs_size(uc->arch, uc->mode);
     if (!buffer) {
@@ -1191,7 +1191,7 @@ void *uc_save_regstate(uc_engine *uc, void *buffer)
 }
 
 UNICORN_EXPORT
-void uc_restore_regstate(uc_engine *uc, void *buffer)
+void uc_regstate_restore(uc_engine *uc, void *buffer)
 {
     size_t sz = cpu_regs_size(uc->arch, uc->mode);
     memcpy(first_cpu->env_ptr, buffer, sz);
