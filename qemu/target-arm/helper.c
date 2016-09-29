@@ -284,7 +284,7 @@ static void tlbimvaa_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void tlbiall_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    struct uc_struct *uc = env->uc;
+    //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, 1);
 }
@@ -292,7 +292,7 @@ static void tlbiall_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void tlbiasid_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    struct uc_struct *uc = env->uc;
+    //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, value == 0);
 }
@@ -300,7 +300,7 @@ static void tlbiasid_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void tlbimva_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    struct uc_struct *uc = env->uc;
+    //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, value & TARGET_PAGE_MASK);
 }
@@ -308,7 +308,7 @@ static void tlbimva_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void tlbimvaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    struct uc_struct *uc = env->uc;
+    //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, value & TARGET_PAGE_MASK);
 }
