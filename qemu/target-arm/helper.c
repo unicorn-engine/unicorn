@@ -1862,8 +1862,8 @@ static void tlbi_aa64_asid_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void tlbi_aa64_va_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                                   uint64_t value)
 {
-    uint64_t pageaddr = sextract64(value << 12, 0, 56);
-    struct uc_struct *uc = env->uc;
+    //uint64_t pageaddr = sextract64(value << 12, 0, 56);
+    //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, pageaddr);
 }
@@ -1871,8 +1871,8 @@ static void tlbi_aa64_va_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void tlbi_aa64_vaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                                   uint64_t value)
 {
-    uint64_t pageaddr = sextract64(value << 12, 0, 56);
-    struct uc_struct *uc = env->uc;
+    //uint64_t pageaddr = sextract64(value << 12, 0, 56);
+    //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, pageaddr);
 }
@@ -1880,8 +1880,8 @@ static void tlbi_aa64_vaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void tlbi_aa64_asid_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                                   uint64_t value)
 {
-    int asid = extract64(value, 48, 16);
-    struct uc_struct *uc = env->uc;
+    //int asid = extract64(value, 48, 16);
+    //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, asid == 0);
 }
