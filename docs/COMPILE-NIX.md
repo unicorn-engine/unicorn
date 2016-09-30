@@ -34,7 +34,8 @@ Out of 6 archtitectures supported by Unicorn (Arm, Arm64, M68K, Mips, Sparc,
 & X86), if you just need several selected archs, choose which ones you want
 to compile in by editing "config.mk" before going to next steps.
 
-By default, all 6 architectures are compiled.
+By default, all 6 architectures are compiled. If this is what you want, skip
+to the section 2.
 
 The other way of customize Unicorn without having to edit config.mk is to
 pass the desired options on the commandline to ./make.sh. Currently,
