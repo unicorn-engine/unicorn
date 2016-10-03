@@ -43,7 +43,7 @@ static int leon3_generic_hw_init(struct uc_struct *uc, MachineState *machine)
         cpu_model = "LEON3";
     }
 
-    cpu = cpu_sparc_init(uc, cpu_model);
+    uc->cpu = cpu = cpu_sparc_init(uc, cpu_model);
     if (cpu == NULL) {
         fprintf(stderr, "qemu: Unable to find Sparc CPU definition\n");
         return -1;

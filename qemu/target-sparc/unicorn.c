@@ -26,6 +26,38 @@ static void sparc_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUSPARCState *)uc->current_cpu->env_ptr)->npc = address + 4;
 }
 
+void sparc_release(void *ctx);
+void sparc_release(void *ctx)
+{
+    int i;
+    TCGContext *tcg_ctx = (TCGContext *) ctx;
+    release_common(ctx);
+    g_free(tcg_ctx->cpu_wim);
+    g_free(tcg_ctx->cpu_cond);
+    g_free(tcg_ctx->cpu_cc_src);
+    g_free(tcg_ctx->cpu_cc_src2);
+    g_free(tcg_ctx->cpu_cc_dst);
+    g_free(tcg_ctx->cpu_fsr);
+    g_free(tcg_ctx->sparc_cpu_pc);
+    g_free(tcg_ctx->cpu_npc);
+    g_free(tcg_ctx->cpu_y);
+    g_free(tcg_ctx->cpu_tbr);
+
+    for (i = 0; i < 8; i++) {
+      g_free(tcg_ctx->cpu_gregs[i]);
+    }
+    for (i = 0; i < 32; i++) {
+        g_free(tcg_ctx->cpu_gpr[i]);
+    }
+
+    g_free(tcg_ctx->cpu_PC);
+    g_free(tcg_ctx->btarget);
+    g_free(tcg_ctx->bcond);
+    g_free(tcg_ctx->cpu_dspctrl);
+
+    g_free(tcg_ctx->tb_ctx.tbs);
+}
+
 void sparc_reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env = uc->cpu->env_ptr;
@@ -107,6 +139,7 @@ void sparc_uc_init(struct uc_struct* uc)
     register_accel_types(uc);
     sparc_cpu_register_types(uc);
     leon3_machine_init(uc);
+    uc->release = sparc_release;
     uc->reg_read = sparc_reg_read;
     uc->reg_write = sparc_reg_write;
     uc->reg_reset = sparc_reg_reset;
