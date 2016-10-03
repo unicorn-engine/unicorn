@@ -305,6 +305,7 @@ uc_err uc_close(uc_engine *uc)
 
     object_unref(uc, OBJECT(uc->machine_state->accelerator));
     object_unref(uc, OBJECT(uc->machine_state));
+    object_unref(uc, OBJECT(uc->cpu));
     object_unref(uc, OBJECT(&uc->io_mem_notdirty));
     object_unref(uc, OBJECT(&uc->io_mem_unassigned));
     object_unref(uc, OBJECT(&uc->io_mem_rom));
