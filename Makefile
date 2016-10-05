@@ -213,7 +213,7 @@ else
 endif
 endif
 
-	@cd samples && $(MAKE)
+	+$(MAKE) -C samples
 endif
 
 config:
@@ -328,7 +328,7 @@ clean:
 	rm -rf *.d *.o
 	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll cyg$(LIBNAME)*.dll
 ifeq (,$(findstring yes,$(UNICORN_BUILD_CORE_ONLY)))
-	cd samples && $(MAKE) clean
+	+$(MAKE) -C samples clean
 	rm -f $(BLDIR)/samples/lib$(LIBNAME).$(EXT)
 endif
 	$(MAKE) -C tests/unit clean
