@@ -3,13 +3,6 @@
 
 include ../config.mk
 
-LIBNAME = unicorn
-
-# Find GLIB
-ifndef GLIB
-GLIB = $(shell pkg-config --libs glib-2.0)
-endif
-
 UNICORN_DEP_LIBS_STATIC += -lpthread -lm $(GLIB)
 
 # Verbose output?
@@ -29,13 +22,6 @@ CC ?= cc
 LDFLAGS += -lm $(GLIB)
 else
 CC = $(CROSS)gcc
-endif
-
-ifeq ($(UNICORN_ASAN),yes)
-CC = clang -fsanitize=address -fno-omit-frame-pointer
-CXX = clang++ -fsanitize=address -fno-omit-frame-pointer
-AR = llvm-ar
-LDFLAGS := -fsanitize=address ${LDFLAGS}
 endif
 
 
@@ -60,19 +46,6 @@ ifeq ($(IS_MINGW),1)
 CFLAGS := $(CFLAGS:-fPIC=)
 BIN_EXT = .exe
 AR_EXT = lib
-endif
-endif
-
-ifeq ($(UNICORN_STATIC),yes)
-ifeq ($(IS_MINGW),1)
-ARCHIVE = $(LIBDIR)/$(LIBNAME).$(AR_EXT)
-else ifeq ($(IS_CYGWIN),1)
-ARCHIVE = $(LIBDIR)/lib$(LIBNAME).$(AR_EXT)
-else
-ARCHIVE = $(LIBDIR)/lib$(LIBNAME).$(AR_EXT)
-#ARCHIVE_X86 = $(LIBDIR)/lib$(LIBNAME)_x86.$(AR_EXT)
-#ARCHIVE_ARM = $(LIBDIR)/lib$(LIBNAME)_arm.$(AR_EXT)
-#ARCHIVE_ARM64 = $(LIBDIR)/lib$(LIBNAME)_arm64.$(AR_EXT)
 endif
 endif
 
