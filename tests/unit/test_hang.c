@@ -88,8 +88,8 @@ void test_hang(void **state)
 	uc_reg_read(uc, UC_ARM64_REG_X0, &x0);
 	uc_reg_read(uc, UC_ARM64_REG_X1, &x1);
 
-	printf("x0: %"PRIu64"\n", x0);
-	printf("x1: %"PRIu64"\n", x1);
+	printf("x0: %"PRIx64"\n", x0);
+	printf("x1: %"PRIx64"\n", x1);
 }
 
 int main(int argc, const char * argv[]) {
