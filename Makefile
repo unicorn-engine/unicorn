@@ -8,6 +8,7 @@ include config.mk
 include pkgconfig.mk	# package version
 
 LIBNAME = unicorn
+UNAME_S := $(shell uname -s)
 
 GENOBJ = $(shell find qemu/$(1) -name "*.o" 2>/dev/null) $(wildcard qemu/util/*.o) $(wildcard qemu/*.o) $(wildcard qemu/qom/*.o)\
 		 $(wildcard qemu/hw/core/*.o) $(wildcard qemu/qapi/*.o) $(wildcard qemu/qobject/*.o)
@@ -100,65 +101,63 @@ VERSION_EXT =
 
 BIN_EXT =
 
-IS_APPLE := $(shell $(CC) -dM -E - < /dev/null | grep -cm 1 -e __apple_build_version__ -e __APPLE_CC__)
-ifeq ($(IS_APPLE),1)
+# Apple?
+ifeq ($(UNAME_S),Darwin)
 EXT = dylib
 VERSION_EXT = $(API_MAJOR).$(EXT)
 $(LIBNAME)_LDFLAGS += -dynamiclib -install_name lib$(LIBNAME).$(VERSION_EXT) -current_version $(PKG_MAJOR).$(PKG_MINOR).$(PKG_EXTRA) -compatibility_version $(PKG_MAJOR).$(PKG_MINOR)
-ifeq ($(MACOS_UNIVERSAL),yes)
-$(LIBNAME)_LDFLAGS += -m32 -arch i386 -m64 -arch x86_64
-endif
 AR_EXT = a
 UNICORN_CFLAGS += -fvisibility=hidden
+
 ifeq ($(MACOS_UNIVERSAL),yes)
+$(LIBNAME)_LDFLAGS += -m32 -arch i386 -m64 -arch x86_64
 UNICORN_CFLAGS += -m32 -arch i386 -m64 -arch x86_64
 endif
-else
+
 # Cygwin?
-IS_CYGWIN := $(shell $(CC) -dumpmachine | grep -i cygwin | wc -l)
-ifeq ($(IS_CYGWIN),1)
+else ifneq ($(filter CYGWIN%,$(UNAME_S)),)
 EXT = dll
 AR_EXT = a
 BIN_EXT = .exe
 UNICORN_CFLAGS := $(UNICORN_CFLAGS:-fPIC=)
 #UNICORN_QEMU_FLAGS += --disable-stack-protector
-else
+
 # mingw?
-IS_MINGW := $(shell $(CC) --version | grep -i mingw | wc -l)
-ifeq ($(IS_MINGW),1)
+else ifneq ($(filter MINGW%,$(UNAME_S)),)
 EXT = dll
 AR_EXT = lib
 BIN_EXT = .exe
+
+# Linux, Darwin
 else
-# Linux, *BSD
 EXT = so
 VERSION_EXT = $(EXT).$(API_MAJOR)
 AR_EXT = a
 $(LIBNAME)_LDFLAGS += -Wl,-Bsymbolic-functions,-soname,lib$(LIBNAME).$(VERSION_EXT)
 UNICORN_CFLAGS += -fvisibility=hidden
 endif
-endif
-endif
 
 ifeq ($(UNICORN_SHARED),yes)
-ifeq ($(IS_MINGW),1)
+ifneq ($(filter MINGW%,$(UNAME_S)),)
 LIBRARY = $(BLDIR)/$(LIBNAME).$(EXT)
-else ifeq ($(IS_CYGWIN),1)
+else ifneq ($(filter CYGWIN%,$(UNAME_S)),)
 LIBRARY = $(BLDIR)/cyg$(LIBNAME).$(EXT)
 LIBRARY_DLLA = $(BLDIR)/lib$(LIBNAME).$(EXT).$(AR_EXT)
 $(LIBNAME)_LDFLAGS += -Wl,--out-implib=$(LIBRARY_DLLA)
 $(LIBNAME)_LDFLAGS += -lssp
-else	# *nix
+# Linux, Darwin
+else
 LIBRARY = $(BLDIR)/lib$(LIBNAME).$(VERSION_EXT)
 LIBRARY_SYMLINK = $(BLDIR)/lib$(LIBNAME).$(EXT)
 endif
 endif
 
 ifeq ($(UNICORN_STATIC),yes)
-ifeq ($(IS_MINGW),1)
+ifneq ($(filter MINGW%,$(UNAME_S)),)
 ARCHIVE = $(BLDIR)/$(LIBNAME).$(AR_EXT)
-else ifeq ($(IS_CYGWIN),1)
+else ifneq ($(filter CYGWIN%,$(UNAME_S)),)
 ARCHIVE = $(BLDIR)/lib$(LIBNAME).$(AR_EXT)
+# Linux, Darwin
 else
 ARCHIVE = $(BLDIR)/lib$(LIBNAME).$(AR_EXT)
 endif
@@ -172,7 +171,6 @@ PREFIX ?= /usr
 DESTDIR ?=
 BLDIR = .
 OBJDIR = .
-UNAME_S := $(shell uname -s)
 
 LIBDIRARCH ?= lib
 # Uncomment the below line to installs x86_64 libs to lib64/ directory.
@@ -191,8 +189,7 @@ LIBDATADIR ?= $(LIBDIR)
 ifndef USE_GENERIC_LIBDATADIR
 ifeq ($(UNAME_S), FreeBSD)
 LIBDATADIR = $(DESTDIR)$(PREFIX)/libdata
-endif
-ifeq ($(UNAME_S), DragonFly)
+else ifeq ($(UNAME_S), DragonFly)
 LIBDATADIR = $(DESTDIR)$(PREFIX)/libdata
 endif
 endif
@@ -276,7 +273,7 @@ test: all
 install: compile_lib $(PKGCFGF)
 	mkdir -p $(DESTDIR)$(LIBDIR)
 ifeq ($(UNICORN_SHARED),yes)
-ifeq ($(IS_CYGWIN),1)
+ifneq ($(filter CYGWIN%,$(UNAME_S)),)
 	$(INSTALL_LIB) $(LIBRARY) $(DESTDIR)$(BINDIR)
 	$(INSTALL_DATA) $(LIBRARY_DLLA) $(DESTDIR)$(LIBDIR)
 else
@@ -302,6 +299,10 @@ DIST_VERSION = latest
 else
 DIST_VERSION = $(TAG)
 endif
+
+bindings: compile_lib
+	$(MAKE) -C bindings build
+	$(MAKE) -C bindings samples
 
 dist:
 	git archive --format=tar.gz --prefix=unicorn-$(DIST_VERSION)/ $(TAG) > unicorn-$(DIST_VERSION).tgz

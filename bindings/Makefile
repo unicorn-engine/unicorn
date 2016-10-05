@@ -11,40 +11,42 @@ SAMPLE_M68K = $(TMP_DIR)/sample_m68k
 SAMPLE_SPARC = $(TMP_DIR)/sample_sparc
 SAMPLE_X86 = $(TMP_DIR)/sample_x86
 
+ENV_VARS = LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../
+
 .PHONY: build install samples sample_python expected python sample_diff clean check
 
 build:
-	cd python && $(MAKE) gen_const
-	cd go && $(MAKE) gen_const
-	cd java && $(MAKE) gen_const
+	$(MAKE) -C python gen_const
+	$(MAKE) -C go gen_const
+	$(MAKE) -C java gen_const
 	python const_generator.py dotnet
 
 install: build
-	cd python && $(MAKE) install
-	cd java && $(MAKE) install
+	$(MAKE) -C python install
+	$(MAKE) -C java install
 
 samples: expected python
 
 sample_python: expected python
 
 expected:
-	cd ../samples && $(MAKE)
+	$(MAKE) -C ../samples
 	mkdir -p $(TMP_DIR)
-	../samples/sample_arm > $(SAMPLE_ARM)_e
-	../samples/sample_arm64 > $(SAMPLE_ARM64)_e
-	../samples/sample_mips > $(SAMPLE_MIPS)_e
-	../samples/sample_sparc > $(SAMPLE_SPARC)_e
-	../samples/sample_m68k > $(SAMPLE_M68K)_e
-	../samples/sample_x86 > $(SAMPLE_X86)_e
+	$(ENV_VARS) ../samples/sample_arm > $(SAMPLE_ARM)_e
+	$(ENV_VARS) ../samples/sample_arm64 > $(SAMPLE_ARM64)_e
+	$(ENV_VARS) ../samples/sample_mips > $(SAMPLE_MIPS)_e
+	$(ENV_VARS) ../samples/sample_sparc > $(SAMPLE_SPARC)_e
+	$(ENV_VARS) ../samples/sample_m68k > $(SAMPLE_M68K)_e
+	$(ENV_VARS) ../samples/sample_x86 > $(SAMPLE_X86)_e
 
 python: FORCE
-	cd python && $(MAKE)
-	python python/sample_arm.py > $(SAMPLE_ARM)_o
-	python python/sample_arm64.py > $(SAMPLE_ARM64)_o
-	python python/sample_mips.py > $(SAMPLE_MIPS)_o
-	python python/sample_sparc.py > $(SAMPLE_SPARC)_o
-	python python/sample_m68k.py > $(SAMPLE_M68K)_o
-	python python/sample_x86.py > $(SAMPLE_X86)_o
+	$(MAKE) -C python
+	$(ENV_VARS) python python/sample_arm.py > $(SAMPLE_ARM)_o
+	$(ENV_VARS) python python/sample_arm64.py > $(SAMPLE_ARM64)_o
+	$(ENV_VARS) python python/sample_mips.py > $(SAMPLE_MIPS)_o
+	$(ENV_VARS) python python/sample_sparc.py > $(SAMPLE_SPARC)_o
+	$(ENV_VARS) python python/sample_m68k.py > $(SAMPLE_M68K)_o
+	$(ENV_VARS) python python/sample_x86.py > $(SAMPLE_X86)_o
 	$(MAKE) sample_diff
 
 sample_diff: FORCE
@@ -57,8 +59,8 @@ sample_diff: FORCE
 
 clean:
 	rm -rf $(TMP_DIR)
-	cd python && $(MAKE) clean
-	cd java && $(MAKE) clean
+	$(MAKE) -C python clean
+	$(MAKE) -C java clean
 
 check:
 	make -C python check
