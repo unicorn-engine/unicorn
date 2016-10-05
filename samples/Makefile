@@ -37,14 +37,14 @@ ifeq ($(IS_CYGWIN),1)
 CFLAGS := $(CFLAGS:-fPIC=)
 LDFLAGS += -lssp
 LDFLAGS_STATIC += -lssp
-BIN_EXT = .exe
+
 AR_EXT = a
 else
 # mingw?
 IS_MINGW := $(shell $(CC) --version | grep -i mingw | wc -l)
 ifeq ($(IS_MINGW),1)
 CFLAGS := $(CFLAGS:-fPIC=)
-BIN_EXT = .exe
+
 AR_EXT = lib
 endif
 endif
