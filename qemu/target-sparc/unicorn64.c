@@ -10,6 +10,8 @@
 #include "uc_priv.h"
 
 
+const int SPARC64_REGS_STORAGE_SIZE = offsetof(CPUSPARCState, tlb_table);
+
 static bool sparc_stop_interrupt(int intno)
 {
     switch(intno) {

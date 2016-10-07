@@ -10,6 +10,8 @@
 #include "uc_priv.h"
 
 
+const int ARM_REGS_STORAGE_SIZE = offsetof(CPUARMState, tlb_table);
+
 static void arm_set_pc(struct uc_struct *uc, uint64_t address)
 {
     ((CPUARMState *)uc->current_cpu->env_ptr)->pc = address;

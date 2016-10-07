@@ -100,6 +100,9 @@ _setup_prototype(_uc, "uc_mem_map_ptr", ucerr, uc_engine, ctypes.c_uint64, ctype
 _setup_prototype(_uc, "uc_mem_unmap", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t)
 _setup_prototype(_uc, "uc_mem_protect", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
 _setup_prototype(_uc, "uc_query", ucerr, uc_engine, ctypes.c_uint32, ctypes.POINTER(ctypes.c_size_t))
+_setup_prototype(_uc, "uc_regstate_save", ctypes.c_voidp, uc_engine, ctypes.c_voidp)
+_setup_prototype(_uc, "uc_regstate_restore", None, uc_engine, ctypes.c_voidp)
+_setup_prototype(_uc, "free", None, ctypes.c_voidp)
 
 # uc_hook_add is special due to variable number of arguments
 _uc.uc_hook_add = _uc.uc_hook_add
@@ -440,6 +443,27 @@ class Uc(object):
             raise UcError(status)
         h = 0
 
+    def regstate_save(self, store=None):
+        if store is None:
+            ptr = ctypes.cast(0, ctypes.c_voidp)
+            return _ActivePointer(_uc.uc_regstate_save(self._uch, ptr))
+        elif type(store) is _ActivePointer:
+            _uc.uc_regstate_save(self._uch, store.pointer)
+            return store
+        else:
+            raise TypeError("Bad register store %s" % repr(store))
+
+    def regstate_restore(self, store):
+        if type(store) is not _ActivePointer:
+            raise TYpeError("Bad register store %s" % repr(store))
+        _uc.uc_regstate_restore(self._uch, store.pointer)
+
+class _ActivePointer(object):
+    def __init__(self, pointer):
+        self.pointer = pointer
+
+    def __del__(self):
+        _uc.free(self.pointer)
 
 # print out debugging info
 def debug():

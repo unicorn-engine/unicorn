@@ -12,4 +12,5 @@ void m68k_reg_reset(struct uc_struct *uc);
 
 void m68k_uc_init(struct uc_struct* uc);
 
+extern const int M68K_REGS_STORAGE_SIZE;
 #endif

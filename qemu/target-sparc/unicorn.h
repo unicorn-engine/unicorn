@@ -13,4 +13,7 @@ void sparc_reg_reset(struct uc_struct *uc);
 void sparc_uc_init(struct uc_struct* uc);
 void sparc64_uc_init(struct uc_struct* uc);
 
+extern const int SPARC_REGS_STORAGE_SIZE;
+extern const int SPARC64_REGS_STORAGE_SIZE;
+
 #endif
