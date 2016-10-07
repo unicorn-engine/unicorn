@@ -635,7 +635,7 @@ uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count);
    appropriate size for the current architecture can be allocated. Further calls
    to this function may pass in the return value of previous calls.
 
- @return a pointer to the region the contexxt was saved in. If buffer was
+ @return a pointer to the region the context was saved in. If buffer was
    NULL, this is a newly allocated region, otherwise it is the same as buffer.
    Any allocation performed by this function must be freed by the user.
 */
