@@ -742,6 +742,7 @@ static void test_x86_16(void **state)
 static void test_i386_reg_save(void **state)
 {
     uc_engine *uc;
+    uc_context *saved_regs;
 
     static const uint64_t address = 0;
     static const uint8_t code[] = {
@@ -764,8 +765,11 @@ static void test_i386_reg_save(void **state)
     // step one instruction
     uc_assert_success(uc_emu_start(uc, address, address+1, 0, 0));
 
+    // grab a buffer to use for state saving
+    uc_assert_success(uc_context_alloc(uc, &saved_regs));
+
     // save the state
-    void *saved_regs = uc_context_save(uc, NULL);
+    uc_assert_success(uc_context_save(uc, saved_regs));
 
     // step one instruction
     uc_assert_success(uc_emu_start(uc, address, address+1, 0, 0));
@@ -796,7 +800,7 @@ static void test_i386_reg_save(void **state)
     assert_int_equal(eax, 2);
 
     // clean up;
-    free(saved_regs);
+    uc_context_free(saved_regs);
     uc_assert_success(uc_close(uc));
 }
 /******************************************************************************/

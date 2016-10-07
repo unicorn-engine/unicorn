@@ -1174,20 +1174,47 @@ size_t cpu_regs_size(uc_arch arch, uc_mode mode)
 }
 
 UNICORN_EXPORT
-void *uc_context_save(uc_engine *uc, void *buffer)
+uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 {
-    size_t sz = cpu_regs_size(uc->arch, uc->mode);
-    if (!buffer) {
-        buffer = malloc(sz);
+    size_t size = cpu_regs_size(uc->arch, uc->mode);
+    *context = malloc(size + sizeof(uc_context));
+    if (*context) {
+        (*context)->size = size;
+        (*context)->arch = uc->arch;
+        (*context)->mode = uc->mode;
+        (*context)->used = false;
+        return UC_ERR_OK;
+    } else {
+        return UC_ERR_NOMEM;
     }
-
-    memcpy(buffer, uc->cpu->env_ptr, sz);
-    return buffer;
 }
 
 UNICORN_EXPORT
-void uc_context_restore(uc_engine *uc, void *buffer)
+uc_err uc_context_free(uc_context *context)
 {
-    size_t sz = cpu_regs_size(uc->arch, uc->mode);
-    memcpy(uc->cpu->env_ptr, buffer, sz);
+    free(context);
+    return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_context_save(uc_engine *uc, uc_context *context)
+{
+    if (context->arch != uc->arch || context->mode != uc->mode) {
+        return UC_ERR_ARG;
+    } else {
+        memcpy(context->data, uc->cpu->env_ptr, context->size);
+        context->used = true;
+        return UC_ERR_OK;
+    }
+}
+
+UNICORN_EXPORT
+uc_err uc_context_restore(uc_engine *uc, uc_context *context)
+{
+    if (context->arch != uc->arch || context->mode != uc->mode || !context->used) {
+        return UC_ERR_ARG;
+    } else {
+        memcpy(uc->cpu->env_ptr, context->data, context->size);
+        return UC_ERR_OK;
+    }
 }

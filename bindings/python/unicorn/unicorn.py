@@ -80,6 +80,7 @@ def _setup_prototype(lib, fname, restype, *argtypes):
 
 ucerr = ctypes.c_int
 uc_engine = ctypes.c_void_p
+uc_context = ctypes.c_void_p
 uc_hook_h = ctypes.c_size_t
 
 _setup_prototype(_uc, "uc_version", ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
@@ -100,8 +101,10 @@ _setup_prototype(_uc, "uc_mem_map_ptr", ucerr, uc_engine, ctypes.c_uint64, ctype
 _setup_prototype(_uc, "uc_mem_unmap", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t)
 _setup_prototype(_uc, "uc_mem_protect", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
 _setup_prototype(_uc, "uc_query", ucerr, uc_engine, ctypes.c_uint32, ctypes.POINTER(ctypes.c_size_t))
-_setup_prototype(_uc, "uc_context_save", ctypes.c_voidp, uc_engine, ctypes.c_voidp)
-_setup_prototype(_uc, "uc_context_restore", None, uc_engine, ctypes.c_voidp)
+_setup_prototype(_uc, "uc_context_alloc", ucerr, uc_engine, ctypes.POINTER(uc_context))
+_setup_prototype(_uc, "uc_context_free", ucerr, uc_context)
+_setup_prototype(_uc, "uc_context_save", ucerr, uc_engine, uc_context)
+_setup_prototype(_uc, "uc_context_restore", ucerr, uc_engine, uc_context)
 _setup_prototype(_uc, "free", None, ctypes.c_voidp)
 
 # uc_hook_add is special due to variable number of arguments
@@ -443,27 +446,36 @@ class Uc(object):
             raise UcError(status)
         h = 0
 
-    def context_save(self, store=None):
-        if store is None:
-            ptr = ctypes.cast(0, ctypes.c_voidp)
-            return _ActivePointer(_uc.uc_context_save(self._uch, ptr))
-        elif type(store) is _ActivePointer:
-            _uc.uc_context_save(self._uch, store.pointer)
-            return store
-        else:
-            raise TypeError("Bad register store %s" % repr(store))
+    def context_save(self):
+        ptr = ctypes.cast(0, ctypes.c_voidp)
+        status = _uc.uc_context_alloc(self._uch, ctypes.byref(ptr))
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
 
-    def context_restore(self, store):
-        if type(store) is not _ActivePointer:
-            raise TYpeError("Bad register store %s" % repr(store))
-        _uc.uc_context_restore(self._uch, store.pointer)
+        status = _uc.uc_context_save(self._uch, ptr)
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
 
-class _ActivePointer(object):
+        return SavedContext(ptr)
+
+    def context_update(self, context):
+        status = _uc.uc_context_save(self._uch, context.pointer)
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+
+    def context_restore(self, context):
+        status = _uc.uc_context_restore(self._uch, context.pointer)
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+
+class SavedContext(object):
     def __init__(self, pointer):
         self.pointer = pointer
 
     def __del__(self):
-        _uc.free(self.pointer)
+        status = _uc.uc_context_free(self.pointer)
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
 
 # print out debugging info
 def debug():

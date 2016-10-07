@@ -273,6 +273,15 @@ typedef enum uc_query_type {
     UC_QUERY_PAGE_SIZE,
 } uc_query_type;
 
+// Metadata stub for the variable-size cpu context used with uc_context_*()
+typedef struct uc_context {
+   uc_arch arch;
+   uc_mode mode;
+   size_t size;
+   bool used;
+   char data[0];
+} uc_context;
+
 /*
  Return combined API version & major and minor version numbers.
 
@@ -625,22 +634,45 @@ UNICORN_EXPORT
 uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count);
 
 /*
+ Allocate a region that can be used with uc_context_{save,restore} to perform
+ quick save/rollback of the CPU context, which includes registers and some
+ internal metadata. Contexts may not be shared across engine instances with
+ differing arches or modes.
+
+ @uc: handle returned by uc_open()
+ @context: pointer to a uc_engine*. This will be updated with the pointer to
+   the new context on successful return of this function.
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_context_alloc(uc_engine *uc, uc_context **context);
+
+/*
+ Free the resource allocated by uc_context_alloc.
+
+ @context: handle returned by uc_context_alloc()
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_context_free(uc_context *context);
+
+/*
  Save a copy of the internal CPU context.
  This API should be used to efficiently make or update a saved copy of the
  internal CPU state.
 
  @uc: handle returned by uc_open()
- @buffer: pointer to the region to store the context in. The first call to
-   this function should pass NULL in this parameter, so a region of the
-   appropriate size for the current architecture can be allocated. Further calls
-   to this function may pass in the return value of previous calls.
+ @context: handle returned by uc_context_alloc()
 
- @return a pointer to the region the context was saved in. If buffer was
-   NULL, this is a newly allocated region, otherwise it is the same as buffer.
-   Any allocation performed by this function must be freed by the user.
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
 */
 UNICORN_EXPORT
-void *uc_context_save(uc_engine *uc, void *buffer);
+uc_err uc_context_save(uc_engine *uc, uc_context *context);
 
 /*
  Restore the current CPU context from a saved copy.
@@ -648,10 +680,13 @@ void *uc_context_save(uc_engine *uc, void *buffer);
  state saved by uc_context_save().
 
  @uc: handle returned by uc_open()
- @buffer: pointer returned by uc_context_save()
+ @buffer: handle returned by uc_context_alloc that has been used with uc_context_save
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
 */
 UNICORN_EXPORT
-void uc_context_restore(uc_engine *uc, void *buffer);
+uc_err uc_context_restore(uc_engine *uc, uc_context *context);
 
 #ifdef __cplusplus
 }
