@@ -1181,7 +1181,7 @@ void *uc_context_save(uc_engine *uc, void *buffer)
         buffer = malloc(sz);
     }
 
-    memcpy(buffer, first_cpu->env_ptr, sz);
+    memcpy(buffer, uc->cpu->env_ptr, sz);
     return buffer;
 }
 
@@ -1189,5 +1189,5 @@ UNICORN_EXPORT
 void uc_context_restore(uc_engine *uc, void *buffer)
 {
     size_t sz = cpu_regs_size(uc->arch, uc->mode);
-    memcpy(first_cpu->env_ptr, buffer, sz);
+    memcpy(uc->cpu->env_ptr, buffer, sz);
 }
