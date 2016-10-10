@@ -245,6 +245,15 @@ struct uc_struct {
     uint64_t next_pc;   // save next PC for some special cases
 };
 
+// Metadata stub for the variable-size cpu context used with uc_context_*()
+struct uc_context {
+   uc_arch arch;
+   uc_mode mode;
+   size_t size;
+   bool used;
+   char data[0];
+};
+
 // check if this address is mapped in (via uc_mem_map())
 MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address);
 

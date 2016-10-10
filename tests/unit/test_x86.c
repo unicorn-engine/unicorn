@@ -742,7 +742,7 @@ static void test_x86_16(void **state)
 static void test_i386_reg_save(void **state)
 {
     uc_engine *uc;
-    uc_context *saved_regs;
+    uc_context *saved_context;
 
     static const uint64_t address = 0;
     static const uint8_t code[] = {
@@ -766,10 +766,10 @@ static void test_i386_reg_save(void **state)
     uc_assert_success(uc_emu_start(uc, address, address+1, 0, 0));
 
     // grab a buffer to use for state saving
-    uc_assert_success(uc_context_alloc(uc, &saved_regs));
+    uc_assert_success(uc_context_alloc(uc, &saved_context));
 
     // save the state
-    uc_assert_success(uc_context_save(uc, saved_regs));
+    uc_assert_success(uc_context_save(uc, saved_context));
 
     // step one instruction
     uc_assert_success(uc_emu_start(uc, address, address+1, 0, 0));
@@ -779,7 +779,7 @@ static void test_i386_reg_save(void **state)
     assert_int_equal(eax, 3);
 
     // restore the state
-    uc_context_restore(uc, saved_regs);
+    uc_context_restore(uc, saved_context);
 
     // check that eax == 2
     uc_assert_success(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
@@ -793,14 +793,14 @@ static void test_i386_reg_save(void **state)
     assert_int_equal(eax, 3);
 
     // restore the state
-    uc_context_restore(uc, saved_regs);
+    uc_context_restore(uc, saved_context);
 
     // check that eax == 2
     uc_assert_success(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
     assert_int_equal(eax, 2);
 
     // clean up;
-    uc_context_free(saved_regs);
+    uc_context_free(saved_context);
     uc_assert_success(uc_close(uc));
 }
 /******************************************************************************/

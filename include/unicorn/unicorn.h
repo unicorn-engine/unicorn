@@ -273,14 +273,9 @@ typedef enum uc_query_type {
     UC_QUERY_PAGE_SIZE,
 } uc_query_type;
 
-// Metadata stub for the variable-size cpu context used with uc_context_*()
-typedef struct uc_context {
-   uc_arch arch;
-   uc_mode mode;
-   size_t size;
-   bool used;
-   char data[0];
-} uc_context;
+// Opaque storage for CPU context, used with uc_context_*()
+struct uc_context;
+typedef struct uc_context uc_context;
 
 /*
  Return combined API version & major and minor version numbers.

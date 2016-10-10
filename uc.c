@@ -1156,8 +1156,8 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
     return UC_ERR_OK;
 }
 
-size_t cpu_regs_size(uc_arch arch, uc_mode mode);
-size_t cpu_regs_size(uc_arch arch, uc_mode mode)
+size_t cpu_context_size(uc_arch arch, uc_mode mode);
+size_t cpu_context_size(uc_arch arch, uc_mode mode)
 {
     // each of these constants is defined by offsetof(CPUXYZState, tlb_table)
     // tbl_table is the first entry in the CPU_COMMON macro, so it marks the end
@@ -1176,13 +1176,14 @@ size_t cpu_regs_size(uc_arch arch, uc_mode mode)
 UNICORN_EXPORT
 uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 {
-    size_t size = cpu_regs_size(uc->arch, uc->mode);
-    *context = malloc(size + sizeof(uc_context));
-    if (*context) {
-        (*context)->size = size;
-        (*context)->arch = uc->arch;
-        (*context)->mode = uc->mode;
-        (*context)->used = false;
+    struct uc_context **_context = context;
+    size_t size = cpu_context_size(uc->arch, uc->mode);
+    *_context = malloc(size + sizeof(uc_context));
+    if (*_context) {
+        (*_context)->size = size;
+        (*_context)->arch = uc->arch;
+        (*_context)->mode = uc->mode;
+        (*_context)->used = false;
         return UC_ERR_OK;
     } else {
         return UC_ERR_NOMEM;
@@ -1199,11 +1200,12 @@ uc_err uc_context_free(uc_context *context)
 UNICORN_EXPORT
 uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
-    if (context->arch != uc->arch || context->mode != uc->mode) {
+    struct uc_context *_context = context;
+    if (_context->arch != uc->arch || _context->mode != uc->mode) {
         return UC_ERR_ARG;
     } else {
-        memcpy(context->data, uc->cpu->env_ptr, context->size);
-        context->used = true;
+        memcpy(_context->data, uc->cpu->env_ptr, _context->size);
+        _context->used = true;
         return UC_ERR_OK;
     }
 }
@@ -1211,10 +1213,11 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
 UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
-    if (context->arch != uc->arch || context->mode != uc->mode || !context->used) {
+    struct uc_context *_context = context;
+    if (_context->arch != uc->arch || _context->mode != uc->mode || !_context->used) {
         return UC_ERR_ARG;
     } else {
-        memcpy(uc->cpu->env_ptr, context->data, context->size);
+        memcpy(uc->cpu->env_ptr, _context->data, _context->size);
         return UC_ERR_OK;
     }
 }
