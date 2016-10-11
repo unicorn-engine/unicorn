@@ -1181,9 +1181,6 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
     *_context = malloc(size + sizeof(uc_context));
     if (*_context) {
         (*_context)->size = size;
-        (*_context)->arch = uc->arch;
-        (*_context)->mode = uc->mode;
-        (*_context)->used = false;
         return UC_ERR_OK;
     } else {
         return UC_ERR_NOMEM;
@@ -1201,23 +1198,14 @@ UNICORN_EXPORT
 uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
     struct uc_context *_context = context;
-    if (_context->arch != uc->arch || _context->mode != uc->mode) {
-        return UC_ERR_ARG;
-    } else {
-        memcpy(_context->data, uc->cpu->env_ptr, _context->size);
-        _context->used = true;
-        return UC_ERR_OK;
-    }
+    memcpy(_context->data, uc->cpu->env_ptr, _context->size);
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
     struct uc_context *_context = context;
-    if (_context->arch != uc->arch || _context->mode != uc->mode || !_context->used) {
-        return UC_ERR_ARG;
-    } else {
-        memcpy(uc->cpu->env_ptr, _context->data, _context->size);
-        return UC_ERR_OK;
-    }
+    memcpy(uc->cpu->env_ptr, _context->data, _context->size);
+    return UC_ERR_OK;
 }
