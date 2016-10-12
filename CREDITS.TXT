@@ -63,3 +63,4 @@ Sascha Schirra: Ruby binding
 Adrian Herrera: Haskell binding
 practicalswift: Various cool bugs found by fuzzing
 farmdve: Memory leaking fix
+Andrew Dutcher: cpu_context_{save, restore} API.
