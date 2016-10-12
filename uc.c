@@ -1156,8 +1156,7 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
     return UC_ERR_OK;
 }
 
-size_t cpu_context_size(uc_arch arch, uc_mode mode);
-size_t cpu_context_size(uc_arch arch, uc_mode mode)
+static size_t cpu_context_size(uc_arch arch, uc_mode mode)
 {
     // each of these constants is defined by offsetof(CPUXYZState, tlb_table)
     // tbl_table is the first entry in the CPU_COMMON macro, so it marks the end
@@ -1178,6 +1177,7 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 {
     struct uc_context **_context = context;
     size_t size = cpu_context_size(uc->arch, uc->mode);
+
     *_context = malloc(size + sizeof(uc_context));
     if (*_context) {
         (*_context)->size = size;
