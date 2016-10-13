@@ -3,13 +3,6 @@
 
 include ../config.mk
 
-LIBNAME = unicorn
-
-# Find GLIB
-ifndef GLIB
-GLIB = $(shell pkg-config --libs glib-2.0)
-endif
-
 UNICORN_DEP_LIBS_STATIC += -lpthread -lm $(GLIB)
 
 # Verbose output?
@@ -31,13 +24,6 @@ else
 CC = $(CROSS)gcc
 endif
 
-ifeq ($(UNICORN_ASAN),yes)
-CC = clang -fsanitize=address -fno-omit-frame-pointer
-CXX = clang++ -fsanitize=address -fno-omit-frame-pointer
-AR = llvm-ar
-LDFLAGS := -fsanitize=address ${LDFLAGS}
-endif
-
 
 #CFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
 #LDFLAGS += $(foreach arch,$(LIBARCHS),-arch $(arch))
@@ -51,28 +37,15 @@ ifeq ($(IS_CYGWIN),1)
 CFLAGS := $(CFLAGS:-fPIC=)
 LDFLAGS += -lssp
 LDFLAGS_STATIC += -lssp
-BIN_EXT = .exe
+
 AR_EXT = a
 else
 # mingw?
 IS_MINGW := $(shell $(CC) --version | grep -i mingw | wc -l)
 ifeq ($(IS_MINGW),1)
 CFLAGS := $(CFLAGS:-fPIC=)
-BIN_EXT = .exe
-AR_EXT = lib
-endif
-endif
 
-ifeq ($(UNICORN_STATIC),yes)
-ifeq ($(IS_MINGW),1)
-ARCHIVE = $(LIBDIR)/$(LIBNAME).$(AR_EXT)
-else ifeq ($(IS_CYGWIN),1)
-ARCHIVE = $(LIBDIR)/lib$(LIBNAME).$(AR_EXT)
-else
-ARCHIVE = $(LIBDIR)/lib$(LIBNAME).$(AR_EXT)
-#ARCHIVE_X86 = $(LIBDIR)/lib$(LIBNAME)_x86.$(AR_EXT)
-#ARCHIVE_ARM = $(LIBDIR)/lib$(LIBNAME)_arm.$(AR_EXT)
-#ARCHIVE_ARM64 = $(LIBDIR)/lib$(LIBNAME)_arm64.$(AR_EXT)
+AR_EXT = lib
 endif
 endif
 
@@ -115,7 +88,7 @@ BINARY = $(addprefix $(SAMPLEDIR)/,$(SOURCES:.c=$(BIN_EXT)))
 all: clean_bins $(BINARY)
 
 clean_bins:
-	rm -rf *.o $(OBJS_ELF) $(BINARY) $(SAMPLEDIR)/*.exe $(SAMPLEDIR)/*.static $(OBJDIR)/lib$(LIBNAME)* $(OBJDIR)/$(LIBNAME)*
+	rm -rf *.o $(OBJS_ELF) $(BINARY) $(SAMPLEDIR)/*.exe $(SAMPLEDIR)/*.static $(OBJDIR)/lib$(LIBNAME)*
 	rm -rf sample_x86 sample_arm sample_arm64 sample_mips sample_sparc sample_ppc sample_m68k shellcode mem_apis sample_x86_32_gdt_and_seg_regs sample_batch_reg
 
 clean_libs:
