@@ -312,8 +312,8 @@ def test_i386_inout():
         print("ERROR: %s" % e)
 
 
-def test_i386_reg_save():
-    print("Save/restore registers in opaque blob")
+def test_i386_context_save():
+    print("Save/restore CPU context in opaque blob")
     address = 0
     code = '\x40'  # inc eax
     try:
@@ -332,7 +332,7 @@ def test_i386_reg_save():
         print(">>> execute 'inc eax'")
         mu.emu_start(address, address+1)
 
-        print(">>> save the register state")
+        print(">>> save the CPU context")
         saved_context = mu.context_save()
 
         print(">>> execute 'inc eax'")
@@ -341,7 +341,7 @@ def test_i386_reg_save():
         print(">>> assert eax == 3")
         assert mu.reg_read(UC_X86_REG_EAX) == 3
 
-        print(">>> restore the register state")
+        print(">>> restore the CPU context")
         mu.context_restore(saved_context)
 
         print(">>> assert eax == 2")
@@ -353,7 +353,7 @@ def test_i386_reg_save():
         print(">>> assert eax == 3")
         assert mu.reg_read(UC_X86_REG_EAX) == 3
 
-        print(">>> restore the register state")
+        print(">>> restore the CPU context")
         mu.context_restore(saved_context)
 
         print(">>> assert eax == 2")
@@ -533,7 +533,7 @@ if __name__ == '__main__':
     print("=" * 20)
     test_i386_inout()
     print("=" * 20)
-    test_i386_reg_save()
+    test_i386_context_save()
     print("=" * 20)
     test_x86_64()
     print("=" * 20)
