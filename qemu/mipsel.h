@@ -2176,7 +2176,6 @@
 #define object_property_allow_set_link object_property_allow_set_link_mipsel
 #define object_property_del object_property_del_mipsel
 #define object_property_del_all object_property_del_all_mipsel
-#define object_property_del_child object_property_del_child_mipsel
 #define object_property_find object_property_find_mipsel
 #define object_property_get object_property_get_mipsel
 #define object_property_get_bool object_property_get_bool_mipsel

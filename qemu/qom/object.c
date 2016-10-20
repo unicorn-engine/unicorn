@@ -371,7 +371,7 @@ static void object_property_del_all(struct uc_struct *uc, Object *obj)
     }
 }
 
-static void object_property_del_child(struct uc_struct *uc, Object *obj, Object *child, Error **errp)
+void object_property_del_child(struct uc_struct *uc, Object *obj, Object *child, Error **errp)
 {
     ObjectProperty *prop;
 

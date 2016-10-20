@@ -810,6 +810,8 @@ ObjectProperty *object_property_add(Object *obj, const char *name,
 
 void object_property_del(struct uc_struct *uc, Object *obj, const char *name, Error **errp);
 
+void object_property_del_child(struct uc_struct *uc, Object *obj, Object *child, Error **errp);
+
 /**
  * object_property_find:
  * @obj: the object

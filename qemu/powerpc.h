@@ -14,6 +14,7 @@
 #define memory_map_ptr memory_map_ptr_powerpc
 #define memory_unmap memory_unmap_powerpc
 #define memory_free memory_free_powerpc
+#define free_code_gen_buffer free_code_gen_buffer_powerpc
 #define helper_raise_exception helper_raise_exception_powerpc
 #define tcg_enabled tcg_enabled_powerpc
 #define tcg_exec_init tcg_exec_init_powerpc
@@ -2175,7 +2176,6 @@
 #define object_property_allow_set_link object_property_allow_set_link_powerpc
 #define object_property_del object_property_del_powerpc
 #define object_property_del_all object_property_del_all_powerpc
-#define object_property_del_child object_property_del_child_powerpc
 #define object_property_find object_property_find_powerpc
 #define object_property_get object_property_get_powerpc
 #define object_property_get_bool object_property_get_bool_powerpc
