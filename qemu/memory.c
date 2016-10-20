@@ -66,6 +66,8 @@ MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, ui
     return ram;
 }
 
+static void memory_region_update_container_subregions(MemoryRegion *subregion);
+
 void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 {
     int i;
@@ -79,7 +81,6 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
            tlb_flush_page(uc->current_cpu, addr);
         }
     }
-    mr->enabled = false;
     memory_region_del_subregion(get_system_memory(uc), mr);
 
     for (i = 0; i < uc->mapped_block_count; i++) {
@@ -94,6 +95,7 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
             g_free(mr->ioeventfds);
             g_free((char *)mr->name);
             mr->name = NULL;
+            object_property_del_child(mr->uc, qdev_get_machine(mr->uc), obj, &error_abort);
             break;
         }
     }
@@ -105,7 +107,6 @@ int memory_free(struct uc_struct *uc)
     Object *obj;
     int i;
 
-    get_system_memory(uc)->enabled = false;
     for (i = 0; i < uc->mapped_block_count; i++) {
         mr = uc->mapped_blocks[i];
         mr->enabled = false;
@@ -115,6 +116,7 @@ int memory_free(struct uc_struct *uc)
         obj->ref = 1;
         obj->free = g_free;
         g_free(mr->ioeventfds);
+        object_property_del_child(mr->uc, qdev_get_machine(mr->uc), obj, &error_abort);
     }
 
     return 0;

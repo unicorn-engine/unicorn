@@ -2176,7 +2176,6 @@
 #define object_property_allow_set_link object_property_allow_set_link_sparc
 #define object_property_del object_property_del_sparc
 #define object_property_del_all object_property_del_all_sparc
-#define object_property_del_child object_property_del_child_sparc
 #define object_property_find object_property_find_sparc
 #define object_property_get object_property_get_sparc
 #define object_property_get_bool object_property_get_bool_sparc
