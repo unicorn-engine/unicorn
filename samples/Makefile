@@ -4,6 +4,7 @@
 include ../config.mk
 
 LIBNAME = unicorn
+UNAME_S := $(shell uname -s)
 
 # Find GLIB
 ifndef GLIB
@@ -20,7 +21,7 @@ SAMPLEDIR = .
 OBJDIR = .
 LIBDIR = ..
 
-CFLAGS += -Wall -I$(INCDIR)
+CFLAGS += -Wall -Werror -I$(INCDIR)
 LDFLAGS += -lpthread -L$(LIBDIR) -l$(LIBNAME)
 LDFLAGS_STATIC += $(UNICORN_DEP_LIBS_STATIC)
 
@@ -46,27 +47,24 @@ BIN_EXT =
 AR_EXT = a
 
 # Cygwin?
-IS_CYGWIN := $(shell $(CC) -dumpmachine | grep -i cygwin | wc -l)
-ifeq ($(IS_CYGWIN),1)
+ifneq ($(filter CYGWIN%,$(UNAME_S)),)
 CFLAGS := $(CFLAGS:-fPIC=)
 LDFLAGS += -lssp
 LDFLAGS_STATIC += -lssp
 BIN_EXT = .exe
 AR_EXT = a
-else
 # mingw?
-IS_MINGW := $(shell $(CC) --version | grep -i mingw | wc -l)
-ifeq ($(IS_MINGW),1)
+else ifneq ($(filter MINGW%,$(UNAME_S)),)
 CFLAGS := $(CFLAGS:-fPIC=)
 BIN_EXT = .exe
 AR_EXT = lib
 endif
-endif
+
 
 ifeq ($(UNICORN_STATIC),yes)
-ifeq ($(IS_MINGW),1)
+ifneq ($(filter MINGW%,$(UNAME_S)),)
 ARCHIVE = $(LIBDIR)/$(LIBNAME).$(AR_EXT)
-else ifeq ($(IS_CYGWIN),1)
+else ifneq ($(filter CYGWIN%,$(UNAME_S)),)
 ARCHIVE = $(LIBDIR)/lib$(LIBNAME).$(AR_EXT)
 else
 ARCHIVE = $(LIBDIR)/lib$(LIBNAME).$(AR_EXT)
@@ -112,7 +110,7 @@ OBJS = $(addprefix $(OBJDIR)/,$(SOURCES:.c=.o))
 OBJS_ELF = $(addprefix $(OBJDIR)/,$(SOURCES:.c=))
 BINARY = $(addprefix $(SAMPLEDIR)/,$(SOURCES:.c=$(BIN_EXT)))
 
-all: clean_bins $(BINARY)
+all: $(BINARY)
 
 clean_bins:
 	rm -rf *.o $(OBJS_ELF) $(BINARY) $(SAMPLEDIR)/*.exe $(SAMPLEDIR)/*.static $(OBJDIR)/lib$(LIBNAME)* $(OBJDIR)/$(LIBNAME)*
@@ -133,7 +131,7 @@ ifeq ($(UNICORN_SHARED),yes)
 	@$(link-dynamic)
 endif
 ifeq ($(UNICORN_STATIC),yes)
-ifneq ($(IS_MINGW),1)
+ifneq ($(filter MINGW%,$(UNAME_S)),)
 	$(call log,LINK,$(notdir $(call staticname,$@)))
 	@$(link-static)
 endif
@@ -143,7 +141,7 @@ ifeq ($(UNICORN_SHARED),yes)
 	$(link-dynamic)
 endif
 ifeq ($(UNICORN_STATIC),yes)
-ifneq ($(IS_MINGW),1)
+ifneq ($(filter MINGW%,$(UNAME_S)),)
 	$(link-static)
 endif
 endif

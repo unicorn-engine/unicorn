@@ -222,7 +222,7 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
 {
     uc_engine *uc = *state;
     uc_hook trace1, trace2;
-    void *mem;
+    //void *mem;
 #ifdef RIP_NEXT_TO_THE_SELFMODIFY_OPCODE
     // These values assumes just before PC = 0x60000021
     int64_t eax = 0x00000041;
@@ -245,8 +245,9 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
     int64_t edi = 0x488ac239;
 #endif
 
-    mem = calloc(1, CODE_SPACE);
-    assert_int_not_equal(0, mem);
+    //mem = calloc(1, CODE_SPACE);
+    // TODO examine
+    //assert_int_not_equal(0, mem);
 
     uc_assert_success(uc_open(UC_ARCH_X86, 
                               UC_MODE_32, 

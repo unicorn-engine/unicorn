@@ -93,3 +93,4 @@ build/
 [Bb]in/
 [Oo]bj/
 packages/
+cmocka/
