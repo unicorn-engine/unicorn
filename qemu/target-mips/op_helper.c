@@ -1797,8 +1797,8 @@ target_ulong helper_emt(void)
 
 target_ulong helper_dvpe(CPUMIPSState *env)
 {
-    struct uc_struct *uc = env->uc;
-    CPUState *other_cs = uc->cpu;
+    //struct uc_struct *uc = env->uc;
+    //CPUState *other_cs = uc->cpu;
     target_ulong prev = env->mvp->CP0_MVPControl;
 
     // TODO: #642 SMP groups
@@ -1817,8 +1817,8 @@ target_ulong helper_dvpe(CPUMIPSState *env)
 
 target_ulong helper_evpe(CPUMIPSState *env)
 {
-    struct uc_struct *uc = env->uc;
-    CPUState *other_cs = uc->cpu;
+    //struct uc_struct *uc = env->uc;
+    //CPUState *other_cs = uc->cpu;
     target_ulong prev = env->mvp->CP0_MVPControl;
 
     // TODO: #642 SMP groups
