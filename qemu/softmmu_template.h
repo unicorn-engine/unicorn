@@ -240,6 +240,10 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #endif
 
     // Unicorn: callback on memory read
+    // NOTE: this happens before the actual read, so we cannot tell
+    // the callback if read access is succesful, or not.
+    // See UC_HOOK_MEM_READ_AFTER & UC_MEM_READ_AFTER if you only care
+    // about successful read
     if (READ_ACCESS_TYPE == MMU_DATA_LOAD) {
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ) {
             if (!HOOK_BOUND_CHECK(hook, addr))
@@ -317,7 +321,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
            byte ordering.  We should push the LE/BE request down into io.  */
         res = glue(io_read, SUFFIX)(env, ioaddr, addr, retaddr);
         res = TGT_LE(res);
-        return res;
+        goto _out;
     }
 
     /* Handle slow unaligned access (it spans two pages or IO).  */
@@ -350,7 +354,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
         /* Little-endian combine.  */
         res = (res1 >> shift) | (res2 << ((DATA_SIZE * 8) - shift));
-        return res;
+        goto _out;
     }
 
     /* Handle aligned access or unaligned access in the same page.  */
@@ -375,6 +379,17 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #else
     res = glue(glue(ld, LSUFFIX), _le_p)((uint8_t *)haddr);
 #endif
+
+_out:
+    // Unicorn: callback on successful read
+    if (READ_ACCESS_TYPE == MMU_DATA_LOAD) {
+        HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_AFTER) {
+            if (!HOOK_BOUND_CHECK(hook, addr))
+                continue;
+            ((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ_AFTER, addr, DATA_SIZE, res, hook->user_data);
+        }
+    }
+
     return res;
 }
 
@@ -452,6 +467,10 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 #endif
 
     // Unicorn: callback on memory read
+    // NOTE: this happens before the actual read, so we cannot tell
+    // the callback if read access is succesful, or not.
+    // See UC_HOOK_MEM_READ_AFTER & UC_MEM_READ_AFTER if you only care
+    // about successful read
     if (READ_ACCESS_TYPE == MMU_DATA_LOAD) {
         HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ) {
             if (!HOOK_BOUND_CHECK(hook, addr))
@@ -528,7 +547,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
            byte ordering.  We should push the LE/BE request down into io.  */
         res = glue(io_read, SUFFIX)(env, ioaddr, addr, retaddr);
         res = TGT_BE(res);
-        return res;
+        goto _out;
     }
 
     /* Handle slow unaligned access (it spans two pages or IO).  */
@@ -561,7 +580,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
         /* Big-endian combine.  */
         res = (res1 << shift) | (res2 >> ((DATA_SIZE * 8) - shift));
-        return res;
+        goto _out;
     }
 
     /* Handle aligned access or unaligned access in the same page.  */
@@ -582,6 +601,17 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
 
     haddr = addr + env->tlb_table[mmu_idx][index].addend;
     res = glue(glue(ld, LSUFFIX), _be_p)((uint8_t *)haddr);
+
+_out:
+    // Unicorn: callback on successful read
+    if (READ_ACCESS_TYPE == MMU_DATA_LOAD) {
+        HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_AFTER) {
+            if (!HOOK_BOUND_CHECK(hook, addr))
+                continue;
+            ((uc_cb_hookmem_t)hook->callback)(env->uc, UC_MEM_READ_AFTER, addr, DATA_SIZE, res, hook->user_data);
+        }
+    }
+
     return res;
 }
 #endif /* DATA_SIZE > 1 */

@@ -105,6 +105,7 @@ enum uc_hook_idx {
     UC_HOOK_MEM_READ_IDX,
     UC_HOOK_MEM_WRITE_IDX,
     UC_HOOK_MEM_FETCH_IDX,
+    UC_HOOK_MEM_READ_AFTER_IDX,
 
     UC_HOOK_MAX,
 };
