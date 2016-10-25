@@ -71,7 +71,7 @@ for _path in _path_list:
 else:
     raise ImportError("ERROR: fail to load the dynamic library.")
 
-__version__ = "%s.%s" % (uc.UC_API_MAJOR, uc.UC_API_MINOR)
+__version__ = "%u.%u.%u" % (uc.UC_VERSION_MAJOR, uc.UC_VERSION_MINOR, uc.UC_VERSION_EXTRA)
 
 # setup all the function prototype
 def _setup_prototype(lib, fname, restype, *argtypes):

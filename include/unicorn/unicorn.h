@@ -67,6 +67,12 @@ typedef size_t uc_hook;
 #define UC_API_MAJOR 1
 #define UC_API_MINOR 0
 
+// Unicorn package version
+#define UC_VERSION_MAJOR UC_API_MAJOR
+#define UC_VERSION_MINOR UC_API_MINOR
+#define UC_VERSION_EXTRA 0
+
+
 /*
   Macro to create combined version which can be compared to
   result of uc_version() API.
