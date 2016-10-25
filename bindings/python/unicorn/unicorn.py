@@ -89,8 +89,8 @@ _setup_prototype(_uc, "uc_open", ucerr, ctypes.c_uint, ctypes.c_uint, ctypes.POI
 _setup_prototype(_uc, "uc_close", ucerr, uc_engine)
 _setup_prototype(_uc, "uc_strerror", ctypes.c_char_p, ucerr)
 _setup_prototype(_uc, "uc_errno", ucerr, uc_engine)
-_setup_prototype(_uc, "uc_reg_read", ucerr, uc_engine, ctypes.c_int, ctypes.c_void_p)
-_setup_prototype(_uc, "uc_reg_write", ucerr, uc_engine, ctypes.c_int, ctypes.c_void_p)
+_setup_prototype(_uc, "uc_reg_read", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_void_p)
+_setup_prototype(_uc, "uc_reg_write", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_mem_read", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
 _setup_prototype(_uc, "uc_mem_write", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
 _setup_prototype(_uc, "uc_emu_start", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
@@ -114,11 +114,11 @@ _uc.uc_hook_add.restype = ucerr
 UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p)
 UC_HOOK_MEM_INVALID_CB = ctypes.CFUNCTYPE(
     ctypes.c_bool, uc_engine, ctypes.c_int,
-    ctypes.c_uint64, ctypes.c_int, ctypes.c_int64, ctypes.c_void_p
+    ctypes.c_uint64, ctypes.c_uint, ctypes.c_uint64, ctypes.c_void_p
 )
 UC_HOOK_MEM_ACCESS_CB = ctypes.CFUNCTYPE(
     None, uc_engine, ctypes.c_int,
-    ctypes.c_uint64, ctypes.c_int, ctypes.c_int64, ctypes.c_void_p
+    ctypes.c_uint64, ctypes.c_uint, ctypes.c_uint64, ctypes.c_void_p
 )
 UC_HOOK_INTR_CB = ctypes.CFUNCTYPE(
     None, uc_engine, ctypes.c_uint32, ctypes.c_void_p
@@ -255,7 +255,7 @@ class Uc(object):
                 return reg.low_qword | (reg.high_qword << 64)
 
         # read to 64bit number to be safe
-        reg = ctypes.c_int64(0)
+        reg = ctypes.c_uint64(0)
         status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
         if status != uc.UC_ERR_OK:
             raise UcError(status)
@@ -284,7 +284,7 @@ class Uc(object):
 
         if reg is None:
             # convert to 64bit number to be safe
-            reg = ctypes.c_int64(value)
+            reg = ctypes.c_uint64(value)
 
         status = _uc.uc_reg_write(self._uch, reg_id, ctypes.byref(reg))
         if status != uc.UC_ERR_OK:
