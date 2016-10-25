@@ -19,6 +19,7 @@ build:
 	$(MAKE) -C python gen_const
 	$(MAKE) -C go gen_const
 	$(MAKE) -C java gen_const
+	$(MAKE) -C ruby gen_const
 	python const_generator.py dotnet
 
 install: build
