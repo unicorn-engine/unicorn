@@ -7,26 +7,15 @@ environment:
           CYG_CACHE: C:\cygwin64\var\cache\setup
           CYG_BASH: C:\cygwin64\bin\bash
           CC: gcc
-# TODO: Uncomment
-#        - CYG_ROOT: C:\cygwin64
-#          CYG_SETUP: setup-x86_64.exe
-#          CYG_MIRROR: http://cygwin.mirror.constant.com
-#          CYG_CACHE: C:\cygwin64\var\cache\setup
-#          CYG_BASH: C:\cygwin64\bin\bash
-#          CC: clang
         - CYG_ROOT: C:\cygwin
           CYG_SETUP: setup-x86.exe
           CYG_MIRROR: http://cygwin.mirror.constant.com
           CYG_CACHE: C:\cygwin\var\cache\setup
           CYG_BASH: C:\cygwin\bin\bash
           CC: gcc
-# TODO: Uncomment
-#        - CYG_ROOT: C:\cygwin
-#          CYG_SETUP: setup-x86.exe
-#          CYG_MIRROR: http://cygwin.mirror.constant.com
-#          CYG_CACHE: C:\cygwin\var\cache\setup
-#          CYG_BASH: C:\cygwin\bin\bash
-#          CC: clang
+#        - MSYS_ROOT: C:\msys64
+#          MSYS_BASH: C:\msys64\mingw64\bin\sh
+#          CC: x86_64-w64-mingw32-gcc
 
 # Cache Cygwin files to speed up build
 cache:
@@ -42,13 +31,11 @@ init:
 # Install needed build dependencies
 install:
     - ps: 'if ($env:CYG_ROOT) { Start-FileDownload "http://cygwin.com/$env:CYG_SETUP" -FileName "$env:CYG_SETUP" }'
-    - '%CYG_SETUP% --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages make,gcc-core,clang,pkg-config,libpcre-devel,libglib2.0-devel,cmake --upgrade-also'
-    - '%CYG_BASH% -lc "cygcheck -dc cygwin"'
-
+    - if defined CYG_ROOT (%CYG_SETUP% --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages make,gcc-core,clang,pkg-config,libpcre-devel,libglib2.0-devel,cmake,python-setuptools --upgrade-also)
+    - if defined MSYS_ROOT (%MSYS_BASH% -lc "pacman -S --noconfirm mingw-w64-x86_64-glib2")
 build_script:
-    # TODO: uncomment and enable tests
-    - '%CYG_BASH% -lc "export CYGWIN=winsymlinks:native; cd $APPVEYOR_BUILD_FOLDER; ./install-cmocka-linux.sh; ./make.sh; export PATH=$PATH:../../:../../cmocka/src; make test"'
-    #- '%CYG_BASH% -lc "export CYGWIN=winsymlinks:native; cd $APPVEYOR_BUILD_FOLDER; ./install-cmocka-linux.sh; ./make.sh"'
+    - if defined CYG_ROOT (%CYG_BASH% -lc "export CYGWIN=winsymlinks:native; cd $APPVEYOR_BUILD_FOLDER; ./install-cmocka-linux.sh; make; export PATH=$PATH:../../:../../cmocka/src:../:../cmocka/src; make test")
+    - if defined MSYS_ROOT (%MSYS_BASH% -lc "MSYS=winsymlinks, cd $(cygpath ${APPVEYOR_BUILD_FOLDER}); x86_64-w64-mingw32-gcc --version; ./install-cmocka-linux.sh; make")
     #- 'cd %APPVEYOR_BUILD_FOLDER% && cd bindings\dotnet && msbuild UnicornDotNet.sln'
 # Allows RDP
 #on_finish:

@@ -13,7 +13,7 @@ SAMPLE_X86 = $(TMP_DIR)/sample_x86
 
 ENV_VARS = LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../
 
-.PHONY: build install samples sample_python expected python sample_diff clean check
+.PHONY: build install expected python sample_diff clean check test
 
 build:
 	$(MAKE) -C python gen_const
@@ -26,9 +26,7 @@ install: build
 	$(MAKE) -C python install
 	$(MAKE) -C java install
 
-samples: expected python
-
-sample_python: expected python
+test: expected python sample_diff
 
 expected:
 	$(MAKE) -C ../samples
@@ -38,9 +36,11 @@ expected:
 	$(ENV_VARS) ../samples/sample_mips > $(SAMPLE_MIPS)_e
 	$(ENV_VARS) ../samples/sample_sparc > $(SAMPLE_SPARC)_e
 	$(ENV_VARS) ../samples/sample_m68k > $(SAMPLE_M68K)_e
-	$(ENV_VARS) ../samples/sample_x86 > $(SAMPLE_X86)_e
+	$(ENV_VARS) ../samples/sample_x86 -16 > $(SAMPLE_X86)_e
+	$(ENV_VARS) ../samples/sample_x86 -32 >> $(SAMPLE_X86)_e
+	$(ENV_VARS) ../samples/sample_x86 -64 >> $(SAMPLE_X86)_e
 
-python: FORCE
+python:
 	$(MAKE) -C python
 	$(ENV_VARS) python python/sample_arm.py > $(SAMPLE_ARM)_o
 	$(ENV_VARS) python python/sample_arm64.py > $(SAMPLE_ARM64)_o
@@ -48,9 +48,8 @@ python: FORCE
 	$(ENV_VARS) python python/sample_sparc.py > $(SAMPLE_SPARC)_o
 	$(ENV_VARS) python python/sample_m68k.py > $(SAMPLE_M68K)_o
 	$(ENV_VARS) python python/sample_x86.py > $(SAMPLE_X86)_o
-	$(MAKE) sample_diff
 
-sample_diff: FORCE
+sample_diff:
 	$(DIFF) $(SAMPLE_ARM)_e $(SAMPLE_ARM)_o
 	$(DIFF) $(SAMPLE_ARM64)_e $(SAMPLE_ARM64)_o
 	$(DIFF) $(SAMPLE_MIPS)_e $(SAMPLE_MIPS)_o
@@ -65,5 +64,3 @@ clean:
 
 check:
 	make -C python check
-
-FORCE:

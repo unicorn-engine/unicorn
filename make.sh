@@ -36,17 +36,6 @@ build_iOS() {
     ${MAKE}
 }
 
-build() {
-  [ "$UNAME" = Darwin ] && LIBARCHS="i386 x86_64"
-  ${MAKE}
-}
-
-build_macos_universal() {
-  [ "$UNAME" = Darwin ] && LIBARCHS="i386 x86_64"
-  MACOS_UNIVERSAL=yes \
-  ${MAKE}
-}
-
 build_cross() {
   [ "$UNAME" = Darwin ] && LIBARCHS="i386 x86_64"
   CROSS=$1
@@ -112,17 +101,14 @@ fi
 export CC INSTALL_BIN PREFIX PKGCFGDIR LIBDIRARCH LIBARCHS CFLAGS LDFLAGS
 
 case "$1" in
-  "" ) build;;
-  "macos-universal" ) build_macos_universal;;
+  "" ) ${MAKE};;
   "asan" ) asan;;
-  "default" ) build;;
   "install" ) install;;
   "uninstall" ) uninstall;;
+  "macos-universal" ) MACOS_UNIVERSAL=yes ${MAKE};;
   "cross-win32" ) build_cross i686-w64-mingw32;;
   "cross-win64" ) build_cross x86_64-w64-mingw32;;
-  "cross-android" ) CROSS=arm-linux-androideabi build;;
-  "clang" ) CC=clang build;;
-  "gcc" ) CC=gcc build;;
+  "cross-android" ) CROSS=arm-linux-androideabi ${MAKE};;
   "ios" ) build_iOS;;
   "ios_armv7" ) build_iOS armv7;;
   "ios_armv7s" ) build_iOS armv7s;;

@@ -13,8 +13,9 @@ copyright:           (c) 2016, Adrian Herrera
 category:            System
 build-type:          Simple
 stability:           experimental
-cabal-version:       >=1.10
-extra-source-files:  cbits/, include/
+cabal-version:       >= 1.10
+extra-source-files:    cbits/
+                     , include/
 
 library
   exposed-modules:     Unicorn.Internal.Core
@@ -29,10 +30,10 @@ library
                        Unicorn.Hook
                        Unicorn
   other-modules:       Unicorn.Internal.Util
-  build-depends:       base >=4 && <5,
-                       bytestring >= 0.9.1,
-                       transformers < 0.6,
-                       either >= 4.4
+  build-depends:         base >=4 && <5
+                       , bytestring >= 0.9.1
+                       , transformers < 0.6
+                       , either >= 4.4
   hs-source-dirs:      src
   c-sources:           src/cbits/unicorn_wrapper.c
   include-dirs:        src/include

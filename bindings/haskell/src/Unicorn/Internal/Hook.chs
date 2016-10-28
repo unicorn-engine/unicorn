@@ -11,53 +11,53 @@ Low-level bindings for inserting hook points into the Unicorn emulator engine.
 This module should not be directly imported; it is only exposed because of the
 way cabal handles ordering of chs files.
 -}
-module Unicorn.Internal.Hook (
-    -- * Types
-    Hook,
-    HookType(..),
-    MemoryHookType(..),
-    MemoryEventHookType(..),
-    MemoryAccess(..),
+module Unicorn.Internal.Hook
+    ( -- * Types
+      Hook
+    , HookType(..)
+    , MemoryHookType(..)
+    , MemoryEventHookType(..)
+    , MemoryAccess(..)
 
-    -- * Hook callback bindings
-    CodeHook,
-    InterruptHook,
-    BlockHook,
-    InHook,
-    OutHook,
-    SyscallHook,
-    MemoryHook,
-    MemoryReadHook,
-    MemoryWriteHook,
-    MemoryEventHook,
+      -- * Hook callback bindings
+    , CodeHook
+    , InterruptHook
+    , BlockHook
+    , InHook
+    , OutHook
+    , SyscallHook
+    , MemoryHook
+    , MemoryReadHook
+    , MemoryWriteHook
+    , MemoryEventHook
 
-    -- * Hook marshalling
-    marshalCodeHook,
-    marshalInterruptHook,
-    marshalBlockHook,
-    marshalInHook,
-    marshalOutHook,
-    marshalSyscallHook,
-    marshalMemoryHook,
-    marshalMemoryReadHook,
-    marshalMemoryWriteHook,
-    marshalMemoryEventHook,
+      -- * Hook marshallin
+    , marshalCodeHook
+    , marshalInterruptHook
+    , marshalBlockHook
+    , marshalInHook
+    , marshalOutHook
+    , marshalSyscallHook
+    , marshalMemoryHook
+    , marshalMemoryReadHook
+    , marshalMemoryWriteHook
+    , marshalMemoryEventHook
 
-    -- * Hook registration and deletion bindings
-    ucHookAdd,
-    ucInsnHookAdd,
-    ucHookDel,
-) where
+      -- * Hook registration and deletion bindings
+    , ucHookAdd
+    , ucInsnHookAdd
+    , ucHookDel
+    ) where
 
 import Control.Monad
 import Foreign
 
 import Unicorn.Internal.Util
 
-{# context lib="unicorn" #}
-
 {# import Unicorn.Internal.Core #}
 {# import Unicorn.CPU.X86 #}
+
+{# context lib = "unicorn" #}
 
 #include <unicorn/unicorn.h>
 #include "unicorn_wrapper.h"
@@ -79,7 +79,8 @@ import Unicorn.Internal.Util
 foreign import ccall "&uc_close_dummy"
     closeDummy :: FunPtr (EnginePtr -> IO ())
 
-mkEngineNC :: EnginePtr -> IO Engine
+mkEngineNC :: EnginePtr
+           -> IO Engine
 mkEngineNC ptr =
     liftM Engine (newForeignPtr closeDummy ptr)
 
@@ -92,47 +93,55 @@ type Hook = {# type uc_hook #}
 -- Note that the both valid and invalid memory access hooks are omitted from
 -- this enum (and are exposed to the user).
 {# enum uc_hook_type as HookType
-    {underscoreToCase}
-    omit (UC_HOOK_MEM_READ_UNMAPPED,
-          UC_HOOK_MEM_WRITE_UNMAPPED,
-          UC_HOOK_MEM_FETCH_UNMAPPED,
-          UC_HOOK_MEM_READ_PROT,
-          UC_HOOK_MEM_WRITE_PROT,
-          UC_HOOK_MEM_FETCH_PROT,
-          UC_HOOK_MEM_READ,
-          UC_HOOK_MEM_WRITE,
-          UC_HOOK_MEM_FETCH)
-    with prefix="UC_"
-    deriving (Show, Eq, Bounded) #}
+   { underscoreToCase }
+   omit ( UC_HOOK_MEM_READ_UNMAPPED
+        , UC_HOOK_MEM_WRITE_UNMAPPED
+        , UC_HOOK_MEM_FETCH_UNMAPPED
+        , UC_HOOK_MEM_READ_PROT
+        , UC_HOOK_MEM_WRITE_PROT
+        , UC_HOOK_MEM_FETCH_PROT
+        , UC_HOOK_MEM_READ
+        , UC_HOOK_MEM_WRITE
+        , UC_HOOK_MEM_FETCH
+        , UC_HOOK_MEM_READ_AFTER
+        )
+   with prefix = "UC_"
+   deriving (Show, Eq, Bounded)
+#}
 
 -- | Memory hook types (for valid memory accesses).
 {# enum uc_hook_type as MemoryHookType
-    {underscoreToCase}
-    omit (UC_HOOK_INTR,
-          UC_HOOK_INSN,
-          UC_HOOK_CODE,
-          UC_HOOK_BLOCK,
-          UC_HOOK_MEM_READ_UNMAPPED,
-          UC_HOOK_MEM_WRITE_UNMAPPED,
-          UC_HOOK_MEM_FETCH_UNMAPPED,
-          UC_HOOK_MEM_READ_PROT,
-          UC_HOOK_MEM_WRITE_PROT,
-          UC_HOOK_MEM_FETCH_PROT)
-    with prefix="UC_"
-    deriving (Show, Eq, Bounded) #}
+   { underscoreToCase }
+   omit ( UC_HOOK_INTR
+        , UC_HOOK_INSN
+        , UC_HOOK_CODE
+        , UC_HOOK_BLOCK
+        , UC_HOOK_MEM_READ_UNMAPPED
+        , UC_HOOK_MEM_WRITE_UNMAPPED
+        , UC_HOOK_MEM_FETCH_UNMAPPED
+        , UC_HOOK_MEM_READ_PROT
+        , UC_HOOK_MEM_WRITE_PROT
+        , UC_HOOK_MEM_FETCH_PROT
+        )
+   with prefix = "UC_"
+   deriving (Show, Eq, Bounded)
+#}
 
 -- | Memory event hook types (for invalid memory accesses).
 {# enum uc_hook_type as MemoryEventHookType
-    {underscoreToCase}
-    omit (UC_HOOK_INTR,
-          UC_HOOK_INSN,
-          UC_HOOK_CODE,
-          UC_HOOK_BLOCK,
-          UC_HOOK_MEM_READ,
-          UC_HOOK_MEM_WRITE,
-          UC_HOOK_MEM_FETCH)
-    with prefix="UC_"
-    deriving (Show, Eq, Bounded) #}
+   { underscoreToCase }
+   omit ( UC_HOOK_INTR
+        , UC_HOOK_INSN
+        , UC_HOOK_CODE
+        , UC_HOOK_BLOCK
+        , UC_HOOK_MEM_READ
+        , UC_HOOK_MEM_WRITE
+        , UC_HOOK_MEM_FETCH
+        , UC_HOOK_MEM_READ_AFTER
+        )
+   with prefix = "UC_"
+   deriving (Show, Eq, Bounded)
+#}
 
 -- | Unify the hook types with a type class
 class Enum a => HookTypeC a
@@ -143,9 +152,10 @@ instance HookTypeC MemoryEventHookType
 
 -- | Memory access.
 {# enum uc_mem_type as MemoryAccess
-    {underscoreToCase}
-    with prefix="UC_"
-    deriving (Show, Eq, Bounded) #}
+   { underscoreToCase }
+   with prefix = "UC_"
+   deriving (Show, Eq, Bounded)
+#}
 
 -------------------------------------------------------------------------------
 -- Hook callbacks
@@ -159,16 +169,18 @@ type CodeHook a =  Engine       -- ^ 'Unicorn' engine handle
                 -> a            -- ^ User data passed to tracing APIs
                 -> IO ()
 
-type CCodeHook =  EnginePtr -> Word64 -> Word32 -> Ptr () -> IO ()
+type CCodeHook = EnginePtr -> Word64 -> Word32 -> Ptr () -> IO ()
 
 foreign import ccall "wrapper"
-    mkCodeHook :: CCodeHook -> IO {# type uc_cb_hookcode_t #}
+    mkCodeHook :: CCodeHook
+               -> IO {# type uc_cb_hookcode_t #}
 
 marshalCodeHook :: Storable a
-                => CodeHook a -> IO {# type uc_cb_hookcode_t #}
+                => CodeHook a
+                -> IO {# type uc_cb_hookcode_t #}
 marshalCodeHook codeHook =
     mkCodeHook $ \ucPtr address size userDataPtr -> do
-        uc <- mkEngineNC ucPtr
+        uc       <- mkEngineNC ucPtr
         userData <- castPtrAndPeek userDataPtr
         let maybeSize = if size == 0 then Nothing
                         else Just $ fromIntegral size
@@ -186,10 +198,11 @@ foreign import ccall "wrapper"
     mkInterruptHook :: CInterruptHook -> IO {# type uc_cb_hookintr_t #}
 
 marshalInterruptHook :: Storable a
-                     => InterruptHook a -> IO {# type uc_cb_hookintr_t #}
+                     => InterruptHook a
+                     -> IO {# type uc_cb_hookintr_t #}
 marshalInterruptHook interruptHook =
     mkInterruptHook $ \ucPtr intNo userDataPtr -> do
-        uc <- mkEngineNC ucPtr
+        uc       <- mkEngineNC ucPtr
         userData <- castPtrAndPeek userDataPtr
         interruptHook uc (fromIntegral intNo) userData
 
@@ -197,7 +210,8 @@ marshalInterruptHook interruptHook =
 type BlockHook a = CodeHook a
 
 marshalBlockHook :: Storable a
-                 => BlockHook a -> IO {# type uc_cb_hookcode_t #}
+                 => BlockHook a
+                 -> IO {# type uc_cb_hookcode_t #}
 marshalBlockHook =
     marshalCodeHook
 
@@ -214,10 +228,11 @@ foreign import ccall "wrapper"
     mkInHook :: CInHook -> IO {# type uc_cb_insn_in_t #}
 
 marshalInHook :: Storable a
-              => InHook a -> IO {# type uc_cb_insn_in_t #}
+              => InHook a
+              -> IO {# type uc_cb_insn_in_t #}
 marshalInHook inHook =
     mkInHook $ \ucPtr port size userDataPtr -> do
-        uc <- mkEngineNC ucPtr
+        uc       <- mkEngineNC ucPtr
         userData <- castPtrAndPeek userDataPtr
         inHook uc (fromIntegral port) (fromIntegral size) userData
 
@@ -232,13 +247,15 @@ type OutHook a =  Engine    -- ^ 'Unicorn' engine handle
 type COutHook = EnginePtr -> Word32 -> Int32 -> Word32 -> Ptr () -> IO ()
 
 foreign import ccall "wrapper"
-    mkOutHook :: COutHook -> IO {# type uc_cb_insn_out_t #}
+    mkOutHook :: COutHook
+              -> IO {# type uc_cb_insn_out_t #}
 
 marshalOutHook :: Storable a
-               => OutHook a -> IO {# type uc_cb_insn_out_t #}
+               => OutHook a
+               -> IO {# type uc_cb_insn_out_t #}
 marshalOutHook outHook =
     mkOutHook $ \ucPtr port size value userDataPtr -> do
-        uc <- mkEngineNC ucPtr
+        uc       <- mkEngineNC ucPtr
         userData <- castPtrAndPeek userDataPtr
         outHook uc (fromIntegral port) (fromIntegral size) (fromIntegral value)
                 userData
@@ -251,13 +268,15 @@ type SyscallHook a =  Engine    -- ^ 'Unicorn' engine handle
 type CSyscallHook = Ptr () -> Ptr () -> IO ()
 
 foreign import ccall "wrapper"
-    mkSyscallHook :: CSyscallHook -> IO {# type uc_cb_insn_syscall_t #}
+    mkSyscallHook :: CSyscallHook
+                  -> IO {# type uc_cb_insn_syscall_t #}
 
 marshalSyscallHook :: Storable a
-                   => SyscallHook a -> IO {# type uc_cb_insn_syscall_t #}
+                   => SyscallHook a
+                   -> IO {# type uc_cb_insn_syscall_t #}
 marshalSyscallHook syscallHook =
     mkSyscallHook $ \ucPtr userDataPtr -> do
-        uc <- mkEngineNC $ castPtr ucPtr
+        uc       <- mkEngineNC $ castPtr ucPtr
         userData <- castPtrAndPeek userDataPtr
         syscallHook uc userData
 
@@ -281,13 +300,15 @@ type CMemoryHook =  EnginePtr
                  -> IO ()
 
 foreign import ccall "wrapper"
-    mkMemoryHook :: CMemoryHook -> IO {# type uc_cb_hookmem_t #}
+    mkMemoryHook :: CMemoryHook
+                 -> IO {# type uc_cb_hookmem_t #}
 
 marshalMemoryHook :: Storable a
-                  => MemoryHook a -> IO {# type uc_cb_hookmem_t #}
+                  => MemoryHook a
+                  -> IO {# type uc_cb_hookmem_t #}
 marshalMemoryHook memoryHook =
     mkMemoryHook $ \ucPtr memAccessI address size value userDataPtr -> do
-        uc <- mkEngineNC ucPtr
+        uc       <- mkEngineNC ucPtr
         userData <- castPtrAndPeek userDataPtr
         let memAccess  = toMemAccess memAccessI
             maybeValue = case memAccess of
@@ -304,10 +325,11 @@ type MemoryReadHook a =  Engine -- ^ 'Unicorn' engine handle
                       -> IO ()
 
 marshalMemoryReadHook :: Storable a
-                      => MemoryReadHook a -> IO {# type uc_cb_hookmem_t #}
+                      => MemoryReadHook a
+                      -> IO {# type uc_cb_hookmem_t #}
 marshalMemoryReadHook memoryReadHook =
     mkMemoryHook $ \ucPtr _ address size _ userDataPtr -> do
-        uc <- mkEngineNC ucPtr
+        uc       <- mkEngineNC ucPtr
         userData <- castPtrAndPeek userDataPtr
         memoryReadHook uc address (fromIntegral size) userData
 
@@ -321,10 +343,11 @@ type MemoryWriteHook a =  Engine    -- ^ 'Unicorn' engine handle
                        -> IO ()
 
 marshalMemoryWriteHook :: Storable a
-                       => MemoryWriteHook a -> IO {# type uc_cb_hookmem_t #}
+                       => MemoryWriteHook a
+                       -> IO {# type uc_cb_hookmem_t #}
 marshalMemoryWriteHook memoryWriteHook =
     mkMemoryHook $ \ucPtr _ address size value userDataPtr -> do
-        uc <- mkEngineNC ucPtr
+        uc       <- mkEngineNC ucPtr
         userData <- castPtrAndPeek userDataPtr
         memoryWriteHook uc address (fromIntegral size) (fromIntegral value)
                         userData
@@ -351,15 +374,17 @@ type CMemoryEventHook =  EnginePtr
                       -> IO Int32
 
 foreign import ccall "wrapper"
-    mkMemoryEventHook :: CMemoryEventHook -> IO {# type uc_cb_eventmem_t #}
+    mkMemoryEventHook :: CMemoryEventHook
+                      -> IO {# type uc_cb_eventmem_t #}
 
 marshalMemoryEventHook :: Storable a
-                       => MemoryEventHook a -> IO {# type uc_cb_eventmem_t #}
+                       => MemoryEventHook a
+                       -> IO {# type uc_cb_eventmem_t #}
 marshalMemoryEventHook eventMemoryHook =
     mkMemoryEventHook $ \ucPtr memAccessI address size value userDataPtr -> do
-        uc <- mkEngineNC ucPtr
+        uc       <- mkEngineNC ucPtr
         userData <- castPtrAndPeek userDataPtr
-        let memAccess = toMemAccess memAccessI
+        let memAccess  = toMemAccess memAccessI
             maybeValue = case memAccess of
                              MemReadUnmapped  -> Nothing
                              MemReadProt      -> Nothing
@@ -369,7 +394,7 @@ marshalMemoryEventHook eventMemoryHook =
         res <- eventMemoryHook uc memAccess address (fromIntegral size)
                                maybeValue userData
         return $ boolToInt res
-    where boolToInt True = 1
+    where boolToInt True  = 1
           boolToInt False = 0
 
 
@@ -378,38 +403,43 @@ marshalMemoryEventHook eventMemoryHook =
 -------------------------------------------------------------------------------
 
 {# fun variadic uc_hook_add as ucHookAdd
-    `(Storable a, HookTypeC h)' =>
-    {`Engine',
-     alloca- `Hook' peek*,
-     enumToNum `h',
-     castFunPtrToPtr `FunPtr b',
-     castPtr `Ptr a',
-     `Word64',
-     `Word64'}
-    -> `Error' #}
+   `HookTypeC h' =>
+   { `Engine'
+   , alloca- `Hook' peek*
+   , enumToNum `h'
+   , castFunPtrToPtr `FunPtr b'
+   , castPtr `Ptr a'
+   , `Word64'
+   , `Word64'
+   } -> `Error'
+#}
 
 {# fun variadic uc_hook_add[int] as ucInsnHookAdd
-    `(Storable a, HookTypeC h)' =>
-    {`Engine',
-     alloca- `Hook' peek*,
-     enumToNum `h',
-     castFunPtrToPtr `FunPtr b',
-     castPtr `Ptr a',
-     `Word64',
-     `Word64',
-     enumToNum `Instruction'}
-    -> `Error' #}
+   `HookTypeC h' =>
+   { `Engine'
+   , alloca- `Hook' peek*
+   , enumToNum `h'
+   , castFunPtrToPtr `FunPtr b'
+   , castPtr `Ptr a'
+   , `Word64'
+   , `Word64'
+   , enumToNum `Instruction'
+   } -> `Error'
+#}
 
 -- | Unregister (remove) a hook callback.
 {# fun uc_hook_del as ^
-    {`Engine',
-     fromIntegral `Hook'}
-    -> `Error' #}
+   { `Engine'
+   , fromIntegral `Hook'
+   } -> `Error'
+#}
 
 -------------------------------------------------------------------------------
 -- Helper functions
 -------------------------------------------------------------------------------
 
-toMemAccess :: Integral a => a -> MemoryAccess
+toMemAccess :: Integral a
+            => a
+            -> MemoryAccess
 toMemAccess =
     toEnum . fromIntegral

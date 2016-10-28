@@ -55,6 +55,9 @@ type Unicorn interface {
 	HookDel(hook Hook) error
 	Query(queryType int) (uint64, error)
 	Close() error
+
+	ContextSave(reuse Context) (Context, error)
+	ContextRestore(Context) error
 }
 
 type uc struct {

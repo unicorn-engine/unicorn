@@ -63,6 +63,7 @@ ifeq ($(UNICORN_DEBUG),yes)
 CFLAGS += -g
 else
 CFLAGS += -O3
+UNICORN_QEMU_FLAGS += --disable-debug-info
 endif
 
 ifeq ($(UNICORN_ASAN),yes)
@@ -97,9 +98,6 @@ PKG_VERSION = $(PKG_MAJOR).$(PKG_MINOR).$(PKG_EXTRA)
 endif
 
 API_MAJOR=$(shell echo `grep -e UC_API_MAJOR include/unicorn/unicorn.h | grep -v = | awk '{print $$3}'` | awk '{print $$1}')
-VERSION_EXT =
-
-BIN_EXT =
 
 # Apple?
 ifeq ($(UNAME_S),Darwin)
@@ -127,6 +125,8 @@ else ifneq ($(filter MINGW%,$(UNAME_S)),)
 EXT = dll
 AR_EXT = lib
 BIN_EXT = .exe
+UNICORN_QEMU_FLAGS += --disable-stack-protector
+UNICORN_CFLAGS := $(UNICORN_CFLAGS:-fPIC=)
 
 # Linux, Darwin
 else
@@ -139,27 +139,25 @@ endif
 
 ifeq ($(UNICORN_SHARED),yes)
 ifneq ($(filter MINGW%,$(UNAME_S)),)
-LIBRARY = $(BLDIR)/$(LIBNAME).$(EXT)
+LIBRARY = $(LIBNAME).$(EXT)
 else ifneq ($(filter CYGWIN%,$(UNAME_S)),)
-LIBRARY = $(BLDIR)/cyg$(LIBNAME).$(EXT)
-LIBRARY_DLLA = $(BLDIR)/lib$(LIBNAME).$(EXT).$(AR_EXT)
+LIBRARY = cyg$(LIBNAME).$(EXT)
+LIBRARY_DLLA = lib$(LIBNAME).$(EXT).$(AR_EXT)
 $(LIBNAME)_LDFLAGS += -Wl,--out-implib=$(LIBRARY_DLLA)
 $(LIBNAME)_LDFLAGS += -lssp
 # Linux, Darwin
 else
-LIBRARY = $(BLDIR)/lib$(LIBNAME).$(VERSION_EXT)
-LIBRARY_SYMLINK = $(BLDIR)/lib$(LIBNAME).$(EXT)
+LIBRARY = lib$(LIBNAME).$(VERSION_EXT)
+LIBRARY_SYMLINK = lib$(LIBNAME).$(EXT)
 endif
 endif
 
 ifeq ($(UNICORN_STATIC),yes)
 ifneq ($(filter MINGW%,$(UNAME_S)),)
-ARCHIVE = $(BLDIR)/$(LIBNAME).$(AR_EXT)
-else ifneq ($(filter CYGWIN%,$(UNAME_S)),)
-ARCHIVE = $(BLDIR)/lib$(LIBNAME).$(AR_EXT)
-# Linux, Darwin
+ARCHIVE = $(LIBNAME).$(AR_EXT)
+# Cygwin, Linux, Darwin
 else
-ARCHIVE = $(BLDIR)/lib$(LIBNAME).$(AR_EXT)
+ARCHIVE = lib$(LIBNAME).$(AR_EXT)
 endif
 endif
 
@@ -169,8 +167,6 @@ INSTALL_LIB ?= $(INSTALL_BIN) -m0755
 PKGCFGF = $(LIBNAME).pc
 PREFIX ?= /usr
 DESTDIR ?=
-BLDIR = .
-OBJDIR = .
 
 LIBDIRARCH ?= lib
 # Uncomment the below line to installs x86_64 libs to lib64/ directory.
@@ -200,75 +196,39 @@ else
 PKGCFGDIR ?= $(LIBDATADIR)/pkgconfig
 endif
 
-all: compile_lib
-ifeq (,$(findstring yes,$(UNICORN_BUILD_CORE_ONLY)))
-ifeq ($(UNICORN_SHARED),yes)
-ifeq ($(V),0)
-	@$(INSTALL_LIB) $(LIBRARY) $(BLDIR)/samples/
-else
-	$(INSTALL_LIB) $(LIBRARY) $(BLDIR)/samples/
-endif
-endif
-
-	@cd samples && $(MAKE)
-endif
+.PHONY: all
+all: unicorn
+	$(MAKE) -C samples
 
 config:
 	if [ "$(UNICORN_ARCHS)" != "`cat config.log`" ]; then $(MAKE) clean; fi
 
 qemu/config-host.h-timestamp:
-ifeq ($(UNICORN_DEBUG),yes)
 	cd qemu && \
 	./configure --cc="${CC}" --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
 	printf "$(UNICORN_ARCHS)" > config.log
-else
-	cd qemu && \
-	./configure --cc="${CC}" --disable-debug-info --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
-	printf "$(UNICORN_ARCHS)" > config.log
-endif
 
 compile_lib: config qemu/config-host.h-timestamp
-	cd qemu && $(MAKE) -j 4
-	$(MAKE) unicorn
+	$(MAKE) -C qemu -j 4
 
-unicorn: $(LIBRARY) $(ARCHIVE)
+unicorn: compile_lib $(LIBRARY) $(ARCHIVE)
 
-$(LIBRARY): $(UC_TARGET_OBJ) uc.o list.o
-ifeq ($(UNICORN_SHARED),yes)
-ifeq ($(V),0)
-	$(call log,GEN,$(LIBRARY))
-	@$(CC) $(CFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm $($(LIBNAME)_LDFLAGS)
-else
-	$(CC) $(CFLAGS) -shared $^ -o $(LIBRARY) $(GLIB) -lm $($(LIBNAME)_LDFLAGS)
-endif
-ifneq (,$(LIBRARY_SYMLINK))
-	@ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
-endif
-endif
+$(LIBRARY): $(UC_TARGET_OBJ)
+	$(CC) $(CFLAGS) -shared $(GENOBJ) uc.o list.o -o $(LIBRARY) $(GLIB) -lm $($(LIBNAME)_LDFLAGS)
+	ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
 
 $(ARCHIVE): $(UC_TARGET_OBJ) uc.o list.o
-ifeq ($(UNICORN_STATIC),yes)
-ifeq ($(V),0)
-	$(call log,GEN,$(ARCHIVE))
-	@$(create-archive)
-else
-	$(create-archive)
-endif
-endif
+	$(AR) q $(ARCHIVE) $^
+	$(RANLIB) $(ARCHIVE)
 
 
 $(PKGCFGF):
-ifeq ($(V),0)
-	$(call log,GEN,$(@:$(BLDIR)/%=%))
-	@$(generate-pkgcfg)
-else
 	$(generate-pkgcfg)
-endif
-
 
 .PHONY: test
 test: all
 	$(MAKE) -C tests/unit test
+	$(MAKE) -C bindings test
 
 install: compile_lib $(PKGCFGF)
 	mkdir -p $(DESTDIR)$(LIBDIR)
@@ -309,7 +269,7 @@ dist:
 	git archive --format=zip --prefix=unicorn-$(DIST_VERSION)/ $(TAG) > unicorn-$(DIST_VERSION).zip
 
 
-header: FORCE
+header:
 	$(eval TARGETS := m68k arm aarch64 mips mipsel mips64 mips64el\
 		powerpc sparc sparc64 x86_64)
 	$(foreach var,$(TARGETS),\
@@ -328,10 +288,7 @@ clean:
 	$(MAKE) -C qemu clean
 	rm -rf *.d *.o
 	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll cyg$(LIBNAME)*.dll
-ifeq (,$(findstring yes,$(UNICORN_BUILD_CORE_ONLY)))
-	cd samples && $(MAKE) clean
-	rm -f $(BLDIR)/samples/lib$(LIBNAME).$(EXT)
-endif
+	$(MAKE) -C samples clean
 	$(MAKE) -C tests/unit clean
 
 
@@ -351,10 +308,3 @@ define log
 	@printf "  %-7s %s\n" "$(1)" "$(2)"
 endef
 
-
-define create-archive
-	$(AR) q $(ARCHIVE) $^
-	$(RANLIB) $(ARCHIVE)
-endef
-
-FORCE:

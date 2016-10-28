@@ -63,7 +63,8 @@ _path_list = [pkg_resources.resource_filename(__name__, 'lib'),
               os.path.join(os.path.split(__file__)[0], 'lib'),
               '',
               distutils.sysconfig.get_python_lib(),
-              "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64']
+              "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64',
+              os.environ['PATH']]
 
 for _path in _path_list:
     _uc = _load_lib(_path)
@@ -105,7 +106,6 @@ _setup_prototype(_uc, "uc_context_alloc", ucerr, uc_engine, ctypes.POINTER(uc_co
 _setup_prototype(_uc, "uc_context_free", ucerr, uc_context)
 _setup_prototype(_uc, "uc_context_save", ucerr, uc_engine, uc_context)
 _setup_prototype(_uc, "uc_context_restore", ucerr, uc_engine, uc_context)
-_setup_prototype(_uc, "free", None, ctypes.c_voidp)
 
 # uc_hook_add is special due to variable number of arguments
 _uc.uc_hook_add = _uc.uc_hook_add

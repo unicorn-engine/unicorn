@@ -9,41 +9,47 @@ framework based on QEMU.
 
 Further information is available at <http://www.unicorn-engine.org>.
 -}
-module Unicorn (
-    -- * Emulator control
-    Emulator,
-    Engine,
-    Architecture(..),
-    Mode(..),
-    QueryType(..),
-    runEmulator,
-    open,
-    query,
-    start,
-    stop,
+module Unicorn
+    ( -- * Emulator control
+      Emulator
+    , Engine
+    , Architecture(..)
+    , Mode(..)
+    , QueryType(..)
+    , runEmulator
+    , open
+    , query
+    , start
+    , stop
 
-    -- * Register operations
-    regWrite,
-    regRead,
+      -- * Register operations
+    , regWrite
+    , regRead
 
-    -- * Memory operations
-    MemoryPermission(..),
-    MemoryRegion(..),
-    memWrite,
-    memRead,
-    memMap,
-    memUnmap,
-    memProtect,
-    memRegions,
+      -- * Memory operations
+    , MemoryPermission(..)
+    , MemoryRegion(..)
+    , memWrite
+    , memRead
+    , memMap
+    , memUnmap
+    , memProtect
+    , memRegions
 
-    -- * Error handling
-    Error(..),
-    errno,
-    strerror,
+      -- * Context operations
+    , Context
+    , contextAllocate
+    , contextSave
+    , contextRestore
 
-    -- * Misc.
-    version,
-) where
+      -- * Error handling
+    , Error(..)
+    , errno
+    , strerror
+
+      -- * Misc.
+    , version
+    ) where
 
 import Control.Monad (liftM)
 import Control.Monad.Trans.Class (lift)
@@ -132,8 +138,8 @@ stop uc = do
 -------------------------------------------------------------------------------
 
 -- | Write to register.
-regWrite :: Reg r =>
-            Engine      -- ^ 'Unicorn' engine handle
+regWrite :: Reg r
+         => Engine      -- ^ 'Unicorn' engine handle
          -> r           -- ^ Register ID to write to
          -> Int64       -- ^ Value to write to register
          -> Emulator () -- ^ An 'Error' on failure
@@ -147,8 +153,8 @@ regWrite uc regId value = do
         left err
 
 -- | Read register value.
-regRead :: Reg r =>
-           Engine           -- ^ 'Unicorn' engine handle
+regRead :: Reg r
+        => Engine           -- ^ 'Unicorn' engine handle
         -> r                -- ^ Register ID to read from
         -> Emulator Int64   -- ^ The value read from the register on success,
                             -- or an 'Error' on failure
@@ -256,6 +262,46 @@ memRegions uc = do
     if err == ErrOk then do
         regions <- lift $ peekArray count regionPtr
         right regions
+    else
+        left err
+
+-------------------------------------------------------------------------------
+-- Context operations
+-------------------------------------------------------------------------------
+
+-- | Allocate a region that can be used to perform quick save/rollback of the
+-- CPU context, which includes registers and some internal metadata. Contexts
+-- may not be shared across engine instances with differing architectures or
+-- modes.
+contextAllocate :: Engine           -- ^ 'Unicon' engine handle
+                -> Emulator Context -- ^ A CPU context
+contextAllocate uc = do
+    (err, contextPtr) <- lift $ ucContextAlloc uc
+    if err == ErrOk then
+        -- Return a CPU context if ucContextAlloc completed successfully
+        lift $ mkContext contextPtr
+    else
+        left err
+
+-- | Save a copy of the internal CPU context.
+contextSave :: Engine       -- ^ 'Unicorn' engine handle
+            -> Context      -- ^ A CPU context
+            -> Emulator ()  -- ^ An error on failure
+contextSave uc context = do
+    err <- lift $ ucContextSave uc context
+    if err == ErrOk then
+        right ()
+    else
+        left err
+
+-- | Restore the current CPU context from a saved copy.
+contextRestore :: Engine        -- ^ 'Unicorn' engine handle
+               -> Context       -- ^ A CPU context
+               -> Emulator ()   -- ^ An error on failure
+contextRestore uc context = do
+    err <- lift $ ucContextRestore uc context
+    if err == ErrOk then
+        right ()
     else
         left err
 

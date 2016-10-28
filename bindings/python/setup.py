@@ -23,7 +23,7 @@ if os.path.exists(PATH_LIB64) and os.path.exists(PATH_LIB32):
     PKG_NAME = 'unicorn-windows'
 
 SYSTEM = sys.platform
-VERSION = '1.0'
+VERSION = '1.0.0'
 
 # adapted from commit e504b81 of Nguyen Tan Cong
 # Reference: https://docs.python.org/2/library/platform.html#cross-platform
