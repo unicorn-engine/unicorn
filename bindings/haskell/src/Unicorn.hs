@@ -36,6 +36,12 @@ module Unicorn (
     memProtect,
     memRegions,
 
+    -- * Context operations
+    Context,
+    contextAlloc,
+    contextSave,
+    contextRestore,
+
     -- * Error handling
     Error(..),
     errno,
@@ -256,6 +262,46 @@ memRegions uc = do
     if err == ErrOk then do
         regions <- lift $ peekArray count regionPtr
         right regions
+    else
+        left err
+
+-------------------------------------------------------------------------------
+-- Context operations
+-------------------------------------------------------------------------------
+
+-- | Allocate a region that can be used to perform quick save/rollback of the
+-- CPU context, which includes registers and some internal metadata. Contexts
+-- may not be shared across engine instances with differing architectures or
+-- modes.
+contextAlloc :: Engine              -- ^ 'Unicon' engine handle
+             -> Emulator Context    -- ^ A CPU context
+contextAlloc uc = do
+    (err, contextPtr) <- lift $ ucContextAlloc uc
+    if err == ErrOk then
+        -- Return a CPU context if ucContextAlloc completed successfully
+        lift $ mkContext contextPtr
+    else
+        left err
+
+-- | Save a copy of the internal CPU context.
+contextSave :: Engine       -- ^ 'Unicorn' engine handle
+            -> Context      -- ^ A CPU context
+            -> Emulator ()  -- ^ An error on failure
+contextSave uc context = do
+    err <- lift $ ucContextSave uc context
+    if err == ErrOk then
+        right ()
+    else
+        left err
+
+-- | Restore the current CPU context from a saved copy.
+contextRestore :: Engine        -- ^ 'Unicorn' engine handle
+               -> Context       -- ^ A CPU context
+               -> Emulator ()   -- ^ An error on failure
+contextRestore uc context = do
+    err <- lift $ ucContextRestore uc context
+    if err == ErrOk then
+        right ()
     else
         left err
 

@@ -19,6 +19,7 @@ module Unicorn.Internal.Unicorn (
     MemoryPermission(..),
     MemoryRegion(..),
     QueryType(..),
+    Context,
 
     -- * Function bindings
     ucOpen,
@@ -33,12 +34,17 @@ module Unicorn.Internal.Unicorn (
     ucMemUnmap,
     ucMemProtect,
     ucMemRegions,
+    mkContext,
+    ucContextAlloc,
+    ucContextSave,
+    ucContextRestore,
     ucVersion,
     ucErrno,
     ucStrerror,
 ) where
 
 import Control.Applicative
+import Control.Monad
 import Data.ByteString (ByteString, useAsCStringLen)
 import Foreign
 import Foreign.C
@@ -51,6 +57,7 @@ import Unicorn.Internal.Util
 {# import Unicorn.Internal.Core #}
 
 #include <unicorn/unicorn.h>
+#include "unicorn_wrapper.h"
 
 -------------------------------------------------------------------------------
 -- Types
@@ -102,6 +109,20 @@ instance Storable MemoryRegion where
     {underscoreToCase}
     with prefix="UC_"
     deriving (Show, Eq, Bounded) #}
+
+-- | Opaque storage for CPU context, used with the context functions.
+{# pointer *uc_context as Context
+    foreign finalizer uc_context_free_wrapper as contextFree
+    newtype #}
+
+-- | A pointer to a CPU context.
+{# pointer *uc_context as ContextPtr -> Context #}
+
+-- | Make a CPU context out of a context pointer. The returned CPU context will
+-- automatically call 'uc_context_free' when it goes out of scope.
+mkContext :: ContextPtr -> IO Context
+mkContext ptr =
+    liftM Context (newForeignPtr contextFree ptr)
 
 -------------------------------------------------------------------------------
 -- Emulator control
@@ -190,6 +211,27 @@ instance Storable MemoryRegion where
     {`Engine',
      alloca- `MemoryRegionPtr' peek*,
      alloca- `Int' castPtrAndPeek*}
+    -> `Error' #}
+
+-------------------------------------------------------------------------------
+-- Context
+-------------------------------------------------------------------------------
+
+{# fun uc_context_alloc as ^
+    {`Engine',
+     alloca- `ContextPtr' peek*}
+    -> `Error' #}
+
+-- TODO uc_context_free
+
+{# fun uc_context_save as ^
+    {`Engine',
+     `Context'}
+    -> `Error' #}
+
+{# fun uc_context_restore as ^
+    {`Engine',
+     `Context'}
     -> `Error' #}
 
 -------------------------------------------------------------------------------
