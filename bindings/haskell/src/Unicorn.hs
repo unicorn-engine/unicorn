@@ -9,47 +9,47 @@ framework based on QEMU.
 
 Further information is available at <http://www.unicorn-engine.org>.
 -}
-module Unicorn (
-    -- * Emulator control
-    Emulator,
-    Engine,
-    Architecture(..),
-    Mode(..),
-    QueryType(..),
-    runEmulator,
-    open,
-    query,
-    start,
-    stop,
+module Unicorn
+    ( -- * Emulator control
+      Emulator
+    , Engine
+    , Architecture(..)
+    , Mode(..)
+    , QueryType(..)
+    , runEmulator
+    , open
+    , query
+    , start
+    , stop
 
-    -- * Register operations
-    regWrite,
-    regRead,
+      -- * Register operations
+    , regWrite
+    , regRead
 
-    -- * Memory operations
-    MemoryPermission(..),
-    MemoryRegion(..),
-    memWrite,
-    memRead,
-    memMap,
-    memUnmap,
-    memProtect,
-    memRegions,
+      -- * Memory operations
+    , MemoryPermission(..)
+    , MemoryRegion(..)
+    , memWrite
+    , memRead
+    , memMap
+    , memUnmap
+    , memProtect
+    , memRegions
 
-    -- * Context operations
-    Context,
-    contextAlloc,
-    contextSave,
-    contextRestore,
+      -- * Context operations
+    , Context
+    , contextAlloc
+    , contextSave
+    , contextRestore
 
-    -- * Error handling
-    Error(..),
-    errno,
-    strerror,
+      -- * Error handling
+    , Error(..)
+    , errno
+    , strerror
 
-    -- * Misc.
-    version,
-) where
+      -- * Misc.
+    , version
+    ) where
 
 import Control.Monad (liftM)
 import Control.Monad.Trans.Class (lift)
@@ -138,8 +138,8 @@ stop uc = do
 -------------------------------------------------------------------------------
 
 -- | Write to register.
-regWrite :: Reg r =>
-            Engine      -- ^ 'Unicorn' engine handle
+regWrite :: Reg r
+         => Engine      -- ^ 'Unicorn' engine handle
          -> r           -- ^ Register ID to write to
          -> Int64       -- ^ Value to write to register
          -> Emulator () -- ^ An 'Error' on failure
@@ -153,8 +153,8 @@ regWrite uc regId value = do
         left err
 
 -- | Read register value.
-regRead :: Reg r =>
-           Engine           -- ^ 'Unicorn' engine handle
+regRead :: Reg r
+        => Engine           -- ^ 'Unicorn' engine handle
         -> r                -- ^ Register ID to read from
         -> Emulator Int64   -- ^ The value read from the register on success,
                             -- or an 'Error' on failure
