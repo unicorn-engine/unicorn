@@ -101,7 +101,8 @@ type Hook = {# type uc_hook #}
           UC_HOOK_MEM_FETCH_PROT,
           UC_HOOK_MEM_READ,
           UC_HOOK_MEM_WRITE,
-          UC_HOOK_MEM_FETCH)
+          UC_HOOK_MEM_FETCH,
+          UC_HOOK_MEM_READ_AFTER)
     with prefix="UC_"
     deriving (Show, Eq, Bounded) #}
 
@@ -130,7 +131,8 @@ type Hook = {# type uc_hook #}
           UC_HOOK_BLOCK,
           UC_HOOK_MEM_READ,
           UC_HOOK_MEM_WRITE,
-          UC_HOOK_MEM_FETCH)
+          UC_HOOK_MEM_FETCH,
+          UC_HOOK_MEM_READ_AFTER)
     with prefix="UC_"
     deriving (Show, Eq, Bounded) #}
 
