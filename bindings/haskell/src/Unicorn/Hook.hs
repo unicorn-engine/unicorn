@@ -6,36 +6,36 @@ License     : GPL-2
 
 Insert hook points into the Unicorn emulator engine.
 -}
-module Unicorn.Hook (
-    -- * Hook types
-    Hook,
-    MemoryHookType(..),
-    MemoryEventHookType(..),
-    MemoryAccess(..),
+module Unicorn.Hook
+    ( -- * Hook types
+      Hook
+    , MemoryHookType(..)
+    , MemoryEventHookType(..)
+    , MemoryAccess(..)
 
-    -- * Hook callbacks
-    CodeHook,
-    InterruptHook,
-    BlockHook,
-    InHook,
-    OutHook,
-    SyscallHook,
-    MemoryHook,
-    MemoryReadHook,
-    MemoryWriteHook,
-    MemoryEventHook,
+      -- * Hook callbacks
+    , CodeHook
+    , InterruptHook
+    , BlockHook
+    , InHook
+    , OutHook
+    , SyscallHook
+    , MemoryHook
+    , MemoryReadHook
+    , MemoryWriteHook
+    , MemoryEventHook
 
-    -- * Hook callback management
-    codeHookAdd,
-    interruptHookAdd,
-    blockHookAdd,
-    inHookAdd,
-    outHookAdd,
-    syscallHookAdd,
-    memoryHookAdd,
-    memoryEventHookAdd,
-    hookDel,
-) where
+      -- * Hook callback management
+    , codeHookAdd
+    , interruptHookAdd
+    , blockHookAdd
+    , inHookAdd
+    , outHookAdd
+    , syscallHookAdd
+    , memoryHookAdd
+    , memoryEventHookAdd
+    , hookDel
+    ) where
 
 import Control.Monad
 import Control.Monad.Trans.Class
@@ -213,7 +213,8 @@ hookDel uc hook = do
 -- Takes the tuple returned by `ucHookAdd`, an IO (Error, Hook), and
 -- returns either a `Right Hook` if no error occurred or a `Left Error` if an
 -- error occurred
-getResult :: IO (Error, Hook) -> IO (Either Error Hook)
+getResult :: IO (Error, Hook)
+          -> IO (Either Error Hook)
 getResult =
     liftM (uncurry checkResult)
     where checkResult err hook =
