@@ -98,11 +98,11 @@ Then, build Unicorn with the next steps:
 
 - To compile Windows 32-bit binary with MinGW, run:
 
-        $ ./make.sh cross-win32
+        $ UNICORN_QEMU_FLAGS="--disable-stack-protector" ./make.sh cross-win32
 
 - To compile Windows 64-bit binary with MinGW, run:
 
-        $ ./make.sh cross-win64
+        $ UNICORN_QEMU_FLAGS="--disable-stack-protector" ./make.sh cross-win64
 
 Resulted files unicorn.dll, unicorn.lib & samples/sample*.exe can then
 be used on Windows machine.
