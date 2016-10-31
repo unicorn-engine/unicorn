@@ -38,7 +38,7 @@ module Unicorn
 
       -- * Context operations
     , Context
-    , contextAlloc
+    , contextAllocate
     , contextSave
     , contextRestore
 
@@ -273,9 +273,9 @@ memRegions uc = do
 -- CPU context, which includes registers and some internal metadata. Contexts
 -- may not be shared across engine instances with differing architectures or
 -- modes.
-contextAlloc :: Engine              -- ^ 'Unicon' engine handle
-             -> Emulator Context    -- ^ A CPU context
-contextAlloc uc = do
+contextAllocate :: Engine           -- ^ 'Unicon' engine handle
+                -> Emulator Context -- ^ A CPU context
+contextAllocate uc = do
     (err, contextPtr) <- lift $ ucContextAlloc uc
     if err == ErrOk then
         -- Return a CPU context if ucContextAlloc completed successfully

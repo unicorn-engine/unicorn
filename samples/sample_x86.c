@@ -41,6 +41,7 @@
 
 #define X86_CODE32_JMP_INVALID "\xe9\xe9\xee\xee\xee\x41\x4a" //  JMP outside; INC ecx; DEC edx
 #define X86_CODE32_INOUT "\x41\xE4\x3F\x4a\xE6\x46\x43" // INC ecx; IN AL, 0x3f; DEC edx; OUT 0x46, AL; INC ebx
+#define X86_CODE32_INC "\x40"   // INC eax
 
 //#define X86_CODE64 "\x41\xBC\x3B\xB0\x28\x2A \x49\x0F\xC9 \x90 \x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9" // <== still crash
 //#define X86_CODE64 "\x41\xBC\x3B\xB0\x28\x2A\x49\x0F\xC9\x90\x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9"
@@ -668,6 +669,105 @@ static void test_i386_inout(void)
     uc_close(uc);
 }
 
+// emulate code and save/restore the CPU context
+static void test_i386_context_save(void)
+{
+    uc_engine *uc;
+    uc_context *context;
+    uc_err err;
+
+    int r_eax = 0x1;    // EAX register
+
+    printf("===================================\n");
+    printf("Save/restore CPU context in opaque blob\n");
+
+    // initialize emulator in X86-32bit mode
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        return;
+    }
+
+    // map 8KB memory for this emulation
+    uc_mem_map(uc, ADDRESS, 8 * 1024, UC_PROT_ALL);
+
+    // write machine code to be emulated to memory
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_INC, sizeof(X86_CODE32_INC) - 1)) {
+        printf("Failed to write emulation code to memory, quit!\n");
+        return;
+    }
+
+    // initialize machine registers
+    uc_reg_write(uc, UC_X86_REG_EAX, &r_eax);
+
+    // emulate machine code in infinite time
+    printf(">>> Running emulation for the first time\n");
+
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_INC) - 1, 0, 0);
+    if (err) {
+        printf("Failed on uc_emu_start() with error returned %u: %s\n",
+                err, uc_strerror(err));
+    }
+
+    // now print out some registers
+    printf(">>> Emulation done. Below is the CPU context\n");
+
+    uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
+    printf(">>> EAX = 0x%x\n", r_eax);
+
+    // allocate and save the CPU context
+    printf(">>> Saving CPU context\n");
+
+    err = uc_context_alloc(uc, &context);
+    if (err) {
+        printf("Failed on uc_context_alloc() with error returned: %u\n", err);
+        return;
+    }
+
+    err = uc_context_save(uc, context);
+    if (err) {
+        printf("Failed on uc_context_save() with error returned: %u\n", err);
+        return;
+    }
+
+    // emulate machine code again
+    printf(">>> Running emulation for the second time\n");
+
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_INC) - 1, 0, 0);
+    if (err) {
+        printf("Failed on uc_emu_start() with error returned %u: %s\n",
+                err, uc_strerror(err));
+    }
+
+    // now print out some registers
+    printf(">>> Emulation done. Below is the CPU context\n");
+
+    uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
+    printf(">>> EAX = 0x%x\n", r_eax);
+
+    // restore CPU context
+    err = uc_context_restore(uc, context);
+    if (err) {
+        printf("Failed on uc_context_restore() with error returned: %u\n", err);
+        return;
+    }
+
+    // now print out some registers
+    printf(">>> CPU context restored. Below is the CPU context\n");
+
+    uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
+    printf(">>> EAX = 0x%x\n", r_eax);
+
+    // free the CPU context
+    err = uc_context_free(context);
+    if (err) {
+        printf("Failed on uc_context_free() with error returned: %u\n", err);
+        return;
+    }
+
+    uc_close(uc);
+}
+
 static void test_x86_64(void)
 {
     uc_engine *uc;
@@ -906,6 +1006,7 @@ int main(int argc, char **argv, char **envp)
             test_i386();
             test_i386_map_ptr();
             test_i386_inout();
+            test_i386_context_save();
             test_i386_jump();
             test_i386_loop();
             test_i386_invalid_mem_read();
