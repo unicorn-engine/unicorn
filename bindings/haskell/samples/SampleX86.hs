@@ -40,6 +40,10 @@ x86Code32JmpInvalid = BS.pack [0xe9, 0xe9, 0xee, 0xee, 0xee, 0x41, 0x4a]
 x86Code32InOut :: BS.ByteString
 x86Code32InOut = BS.pack [0x41, 0xe4, 0x3f, 0x4a, 0xe6, 0x46, 0x43]
 
+-- inc eax
+x86Code32Inc :: BS.ByteString
+x86Code32Inc = BS.pack [0x40]
+
 x86Code64 :: BS.ByteString
 x86Code64 = BS.pack [0x41, 0xbc, 0x3b, 0xb0, 0x28, 0x2a, 0x49, 0x0f, 0xc9,
                      0x90, 0x4d, 0x0f, 0xad, 0xcf, 0x49, 0x87, 0xfd, 0x90,
@@ -494,6 +498,70 @@ testI386InOut = do
         Left err -> putStrLn $ "Failed with error " ++ show err ++ ": " ++
                                strerror err
 
+-- Emulate code and save/restore the CPU context
+testI386ContextSave :: IO ()
+testI386ContextSave = do
+    putStrLn "==================================="
+    putStrLn "Save/restore CPU context in opaque blob"
+
+    result <- runEmulator $ do
+        -- Initialize emulator in X86-32bit mode
+        uc <- open ArchX86 [Mode32]
+
+        -- Map 8KB memory for this emulation
+        memMap uc address (8 * 1024) [ProtAll]
+
+        -- Write machine code to be emulated to memory
+        memWrite uc address x86Code32Inc
+
+        -- Initialize machine registers
+        regWrite uc X86.Eax 0x1
+
+        -- Emulate machine code in infinite time
+        emuPutStrLn ">>> Running emulation for the first time"
+
+        let codeLen = codeLength x86Code32Inc
+        start uc address (address + codeLen) Nothing Nothing
+
+        -- Now print out some registers
+        emuPutStrLn ">>> Emulation done. Below is the CPU context"
+
+        eax <- regRead uc X86.Eax
+
+        emuPutStrLn $ ">>> EAX = 0x" ++ showHex eax
+
+        -- Allocate and save the CPU context
+        emuPutStrLn ">>> Saving CPU context"
+
+        context <- contextAllocate uc
+        contextSave uc context
+
+        -- Emulate machine code again
+        emuPutStrLn ">>> Running emulation for the second time"
+
+        start uc address (address + codeLen) Nothing Nothing
+
+        -- Now print out some registers
+        emuPutStrLn ">>> Emulation done. Below is the CPU context"
+
+        eax <- regRead uc X86.Eax
+
+        emuPutStrLn $ ">>> EAX = 0x" ++ showHex eax
+
+        -- Restore CPU context
+        contextRestore uc context
+
+        -- Now print out some registers
+        emuPutStrLn ">>> Emulation done. Below is the CPU context"
+
+        eax <- regRead uc X86.Eax
+
+        emuPutStrLn $ ">>> EAX = 0x" ++ showHex eax
+    case result of
+        Right _  -> return ()
+        Left err -> putStrLn $ "Failed with error " ++ show err ++ ": " ++
+                               strerror err
+
 testX8664 :: IO ()
 testX8664 = do
     putStrLn "Emulate x86_64 code"
@@ -660,6 +728,7 @@ main = do
         ["-32"] -> do
             testI386
             testI386InOut
+            testI386ContextSave
             testI386Jump
             testI386Loop
             testI386InvalidMemRead
