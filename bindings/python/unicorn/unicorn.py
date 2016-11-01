@@ -105,7 +105,6 @@ _setup_prototype(_uc, "uc_context_alloc", ucerr, uc_engine, ctypes.POINTER(uc_co
 _setup_prototype(_uc, "uc_context_free", ucerr, uc_context)
 _setup_prototype(_uc, "uc_context_save", ucerr, uc_engine, uc_context)
 _setup_prototype(_uc, "uc_context_restore", ucerr, uc_engine, uc_context)
-_setup_prototype(_uc, "free", None, ctypes.c_voidp)
 
 # uc_hook_add is special due to variable number of arguments
 _uc.uc_hook_add = _uc.uc_hook_add
