@@ -1162,12 +1162,24 @@ static size_t cpu_context_size(uc_arch arch, uc_mode mode)
     // tbl_table is the first entry in the CPU_COMMON macro, so it marks the end
     // of the interesting CPU registers
     switch (arch) {
+#ifdef UNICORN_HAS_M68K
         case UC_ARCH_M68K:  return M68K_REGS_STORAGE_SIZE;
+#endif
+#ifdef UNICORN_HAS_X86
         case UC_ARCH_X86:   return X86_REGS_STORAGE_SIZE;
+#endif
+#ifdef UNICORN_HAS_ARM
         case UC_ARCH_ARM:   return ARM_REGS_STORAGE_SIZE;
+#endif
+#ifdef UNICORN_HAS_ARM64
         case UC_ARCH_ARM64: return ARM64_REGS_STORAGE_SIZE;
+#endif
+#ifdef UNICORN_HAS_MIPS
         case UC_ARCH_MIPS:  return mode & UC_MODE_MIPS64 ? MIPS64_REGS_STORAGE_SIZE : MIPS_REGS_STORAGE_SIZE;
+#endif
+#ifdef UNICORN_HAS_SPARC
         case UC_ARCH_SPARC: return mode & UC_MODE_SPARC64 ? SPARC64_REGS_STORAGE_SIZE : SPARC_REGS_STORAGE_SIZE;
+#endif
         default: return 0;
     }
 }
