@@ -127,6 +127,7 @@ else ifneq ($(filter MINGW%,$(UNAME_S)),)
 EXT = dll
 AR_EXT = lib
 BIN_EXT = .exe
+UNICORN_QEMU_FLAGS += --disable-stack-protector
 
 # Linux, Darwin
 else
