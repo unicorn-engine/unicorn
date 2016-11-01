@@ -269,7 +269,7 @@ static void gdt_demo()
 
     int i;
     for (i = 0; i < 8; i++) {
-        fprintf(stderr, "%02hhx", buf[i]);
+        fprintf(stderr, "%02x", buf[i]);
     }
     fprintf(stderr, "\n");
 
