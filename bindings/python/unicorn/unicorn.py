@@ -64,6 +64,7 @@ _path_list = [pkg_resources.resource_filename(__name__, 'lib'),
               '',
               distutils.sysconfig.get_python_lib(),
               "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64']
+#print("DEBUG _path_list = %s" %_path_list)
 
 for _path in _path_list:
     _uc = _load_lib(_path)
