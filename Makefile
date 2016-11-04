@@ -128,6 +128,7 @@ EXT = dll
 AR_EXT = lib
 BIN_EXT = .exe
 UNICORN_QEMU_FLAGS += --disable-stack-protector
+UNICORN_CFLAGS := $(UNICORN_CFLAGS:-fPIC=)
 
 # Linux, Darwin
 else

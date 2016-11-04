@@ -1,9 +1,6 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 
-#if defined (WIN32) || defined (WIN64) || defined (_WIN32) || defined (_WIN64)
-#pragma warning(disable:4996)
-#endif
 #if defined(UNICORN_HAS_OSXKERNEL)
 #include <libkern/libkern.h>
 #else
