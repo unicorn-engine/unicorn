@@ -11,7 +11,6 @@
 int main(int argc, char **argv, char **envp)
 {
     uc_engine *uc;
-    uc_hook trace1, trace2;
     uc_err err;
 
     // Initialize emulator in X86-32bit mode

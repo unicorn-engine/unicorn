@@ -7,8 +7,8 @@ import (
 )
 
 /*
-#cgo CFLAGS: -O3
-#cgo LDFLAGS: -lunicorn
+#cgo CFLAGS: -O3 -Wall -Werror -I../../../include
+#cgo LDFLAGS: -L../../../ -lunicorn -lglib-2.0
 #include <unicorn/unicorn.h>
 #include "uc.h"
 */

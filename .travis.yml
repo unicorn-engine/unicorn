@@ -6,9 +6,7 @@ before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" && "$MACOS_UNIVERSAL" == "yes" ]]; then brew install glib --universal cmocka; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./install-cmocka-linux.sh; fi
 script:
-  - make && make test
-# TODO make bindings enabled
-#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then make clean && ./make.sh ios; fi
+  - make && make -C bindings/go && make -C bindings/go test && make test
 compiler:
   - clang
   - gcc
@@ -23,8 +21,6 @@ matrix:
   - os: osx
     compiler: gcc
     env: MACOS_UNIVERSAL=yes
-#  - os: osx
-#    compiler: x86_64-w64-mingw32-gcc
 addons:
   apt:
     packages:

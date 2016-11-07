@@ -17,12 +17,11 @@ _python2 = sys.version_info[0] < 3
 if _python2:
     range = xrange
 
-if sys.platform == 'darwin':
-    _lib = "libunicorn.dylib"
-elif sys.platform in ('win32', 'cygwin'):
-    _lib = "unicorn.dll"
-else:
-    _lib = "libunicorn.so"
+_lib = { 'darwin': 'libunicorn.dylib',
+         'win32': 'unicorn.dll',
+         'cygwin': 'cygunicorn.dll',
+         'linux': 'libunicorn.so',
+         'linux2': 'libunicorn.so' }
 
 # Windows DLL in dependency order
 _all_windows_dlls = (
@@ -45,7 +44,7 @@ def _load_lib(path):
         if sys.platform in ('win32', 'cygwin'):
             _load_win_support(path)
 
-        lib_file = os.path.join(path, _lib)
+        lib_file = os.path.join(path, _lib[sys.platform])
         return ctypes.cdll.LoadLibrary(lib_file)
     except OSError:
         return None

@@ -1,21 +1,23 @@
 # Appveyor configuration file for CI build of Unicorn Engine on Windows (under Cygwin)
 environment:
+    CYG_MIRROR: http://cygwin.mirror.constant.com
     matrix:
+        - MSYSTEM: MINGW64
+          BASH: C:\msys64\usr\bin\bash
+          CC: x86_64-w64-mingw32-gcc
+        - MSYSTEM: MINGW32
+          BASH: C:\msys64\usr\bin\bash
+          CC: i686-w64-mingw32-gcc
         - CYG_ROOT: C:\cygwin64
-          CYG_SETUP: setup-x86_64.exe
-          CYG_MIRROR: http://cygwin.mirror.constant.com
           CYG_CACHE: C:\cygwin64\var\cache\setup
-          CYG_BASH: C:\cygwin64\bin\bash
+          CYG_SETUP: setup-x86_64.exe
+          BASH: C:\cygwin64\bin\bash
           CC: gcc
         - CYG_ROOT: C:\cygwin
-          CYG_SETUP: setup-x86.exe
-          CYG_MIRROR: http://cygwin.mirror.constant.com
           CYG_CACHE: C:\cygwin\var\cache\setup
-          CYG_BASH: C:\cygwin\bin\bash
+          CYG_SETUP: setup-x86.exe
+          BASH: C:\cygwin\bin\bash
           CC: gcc
-#        - MSYS_ROOT: C:\msys64
-#          MSYS_BASH: C:\msys64\mingw64\bin\sh
-#          CC: x86_64-w64-mingw32-gcc
 
 # Cache Cygwin files to speed up build
 cache:
@@ -30,12 +32,13 @@ init:
 
 # Install needed build dependencies
 install:
-    - ps: 'if ($env:CYG_ROOT) { Start-FileDownload "http://cygwin.com/$env:CYG_SETUP" -FileName "$env:CYG_SETUP" }'
-    - if defined CYG_ROOT (%CYG_SETUP% --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages make,gcc-core,clang,pkg-config,libpcre-devel,libglib2.0-devel,cmake,python-setuptools --upgrade-also)
-    - if defined MSYS_ROOT (%MSYS_BASH% -lc "pacman -S --noconfirm mingw-w64-x86_64-glib2")
+    - ps: if (Test-Path Env:\CYG_ROOT) { Start-FileDownload "http://cygwin.com/$env:CYG_SETUP" -FileName "$env:CYG_SETUP" }
+    - if defined CYG_ROOT (%CYG_SETUP% --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages make,gcc-core,clang,pkg-config,libpcre-devel,libglib2.0-devel,cmake,python-setuptools,ruby,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core --upgrade-also)
+    - if defined MSYSTEM (%BASH% -lc "pacman -Sy --noconfirm mingw-w64-x86_64-glib2 mingw-w64-i686-glib2 cmake")
 build_script:
-    - if defined CYG_ROOT (%CYG_BASH% -lc "export CYGWIN=winsymlinks:native; cd $APPVEYOR_BUILD_FOLDER; ./install-cmocka-linux.sh; make; export PATH=$PATH:../../:../../cmocka/src:../:../cmocka/src; make test")
-    - if defined MSYS_ROOT (%MSYS_BASH% -lc "MSYS=winsymlinks, cd $(cygpath ${APPVEYOR_BUILD_FOLDER}); x86_64-w64-mingw32-gcc --version; ./install-cmocka-linux.sh; make")
+    - if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}); ./install-cmocka-linux.sh; make;")
+    - if "%MSYSTEM%" == "MINGW64" (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}); make -C bindings/go")
+    # make test
     #- 'cd %APPVEYOR_BUILD_FOLDER% && cd bindings\dotnet && msbuild UnicornDotNet.sln'
 # Allows RDP
 #on_finish:
@@ -43,4 +46,5 @@ build_script:
 
 # Disable tests for now
 #
-test: off
+test_script:
+    - if defined CYG_ROOT (%BASH% -lc "export CYGWIN=winsymlinks:native; cd $APPVEYOR_BUILD_FOLDER; export PATH=$PATH:$APPVEYOR_BUILD_FOLDER:$APPVEYOR_BUILD_FOLDER/cmocka/src; make test")

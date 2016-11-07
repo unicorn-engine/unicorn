@@ -84,7 +84,6 @@ void perform_fuzz_step(uc_engine *uc){
 int main(int argc, char **argv, char **envp)
 {
     uc_engine *uc;
-    uc_hook trace1, trace2;
     uc_err err;
     if(argc<2){
       printf("usage: mem_fuzz $seed\n");

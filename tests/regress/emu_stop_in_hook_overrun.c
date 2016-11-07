@@ -60,7 +60,6 @@ int main(int argc, char **argv, char **envp)
 {
     uc_engine *uc;
     uc_err err;
-    int ret;
     uc_hook hhc;
     uint32_t val;
 

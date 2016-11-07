@@ -442,38 +442,25 @@ def test_i386_context_save():
         # write machine code to be emulated to memory
         mu.mem_write(address, code)
 
-        print(">>> set eax to 1")
+        # set eax to 1
         mu.reg_write(UC_X86_REG_EAX, 1)
 
-        print(">>> execute 'inc eax'")
+        print(">>> Running emulation for the first time")
         mu.emu_start(address, address+1)
 
-        print(">>> save the CPU context")
+        print(">>> Emulation done. Below is the CPU context")
+        print(">>> EAX = 0x%x" %(mu.reg_read(UC_X86_REG_EAX)))
+        print(">>> Saving CPU context")
         saved_context = mu.context_save()
 
-        print(">>> execute 'inc eax'")
+        print(">>> Running emulation for the second time")
         mu.emu_start(address, address+1)
+        print(">>> Emulation done. Below is the CPU context")
+        print(">>> EAX = 0x%x" %(mu.reg_read(UC_X86_REG_EAX)))
 
-        print(">>> assert eax == 3")
-        assert mu.reg_read(UC_X86_REG_EAX) == 3
-
-        print(">>> restore the CPU context")
+        print(">>> CPU context restored. Below is the CPU context")
         mu.context_restore(saved_context)
-
-        print(">>> assert eax == 2")
-        assert mu.reg_read(UC_X86_REG_EAX) == 2
-
-        print(">>> execute 'inc eax'")
-        mu.emu_start(address, address+1)
-
-        print(">>> assert eax == 3")
-        assert mu.reg_read(UC_X86_REG_EAX) == 3
-
-        print(">>> restore the CPU context")
-        mu.context_restore(saved_context)
-
-        print(">>> assert eax == 2")
-        assert mu.reg_read(UC_X86_REG_EAX) == 2
+        print(">>> EAX = 0x%x" %(mu.reg_read(UC_X86_REG_EAX)))
 
     except UcError as e:
         print("ERROR: %s" % e)
@@ -643,6 +630,8 @@ if __name__ == '__main__':
     test_i386_map_ptr()
     print("=" * 35)
     test_i386_inout()
+    print("=" * 35)
+    test_i386_context_save()
     print("=" * 35)
     test_i386_jump()
     print("=" * 35)

@@ -10,8 +10,7 @@ include pkgconfig.mk	# package version
 LIBNAME = unicorn
 UNAME_S := $(shell uname -s)
 
-GENOBJ = $(shell find qemu/$(1) -name "*.o" 2>/dev/null) $(wildcard qemu/util/*.o) $(wildcard qemu/*.o) $(wildcard qemu/qom/*.o)\
-		 $(wildcard qemu/hw/core/*.o) $(wildcard qemu/qapi/*.o) $(wildcard qemu/qobject/*.o)
+GENOBJ = $(shell find qemu/$(1) -name "*.o" 2>/dev/null) 
 
 ifneq (,$(findstring x86,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(call GENOBJ,x86_64-softmmu)
@@ -196,6 +195,8 @@ else
 PKGCFGDIR ?= $(LIBDATADIR)/pkgconfig
 endif
 
+$(LIBNAME)_LDFLAGS += $(GLIB) -lm
+
 .PHONY: all
 all: unicorn
 	$(MAKE) -C samples
@@ -210,15 +211,16 @@ qemu/config-host.h-timestamp:
 
 compile_lib: config qemu/config-host.h-timestamp
 	$(MAKE) -C qemu -j 4
+	$(eval UC_TARGET_OBJ += $$(wildcard qemu/util/*.o) $$(wildcard qemu/*.o) $$(wildcard qemu/qom/*.o) $$(wildcard qemu/hw/core/*.o) $$(wildcard qemu/qapi/*.o) $$(wildcard qemu/qobject/*.o))
 
-unicorn: compile_lib $(LIBRARY) $(ARCHIVE)
+unicorn: $(LIBRARY) $(ARCHIVE)
 
-$(LIBRARY): $(UC_TARGET_OBJ)
-	$(CC) $(CFLAGS) -shared $(GENOBJ) uc.o list.o -o $(LIBRARY) $(GLIB) -lm $($(LIBNAME)_LDFLAGS)
-	ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
+$(LIBRARY): compile_lib uc.o list.o
+	$(CC) $(CFLAGS) -shared $(UC_TARGET_OBJ) uc.o list.o -o $(LIBRARY) $($(LIBNAME)_LDFLAGS)
+	-ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
 
-$(ARCHIVE): $(UC_TARGET_OBJ) uc.o list.o
-	$(AR) q $(ARCHIVE) $^
+$(ARCHIVE): compile_lib uc.o list.o
+	$(AR) q $(ARCHIVE) $(UC_TARGET_OBJ) uc.o list.o
 	$(RANLIB) $(ARCHIVE)
 
 
@@ -228,6 +230,7 @@ $(PKGCFGF):
 .PHONY: test
 test: all
 	$(MAKE) -C tests/unit test
+	$(MAKE) -C tests/regress test
 	$(MAKE) -C bindings test
 
 install: compile_lib $(PKGCFGF)
