@@ -201,15 +201,12 @@ $(LIBNAME)_LDFLAGS += $(GLIB) -lm
 all: unicorn
 	$(MAKE) -C samples
 
-config:
-	if [ "$(UNICORN_ARCHS)" != "`cat config.log`" ]; then $(MAKE) clean; fi
-
-qemu/config-host.h-timestamp:
+qemu/config-host.h-timestamp config.log:
 	cd qemu && \
 	./configure --cc="${CC}" --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
 	printf "$(UNICORN_ARCHS)" > config.log
 
-compile_lib: config qemu/config-host.h-timestamp
+compile_lib: qemu/config-host.h-timestamp config.log
 	$(MAKE) -C qemu -j 4
 	$(eval UC_TARGET_OBJ += $$(wildcard qemu/util/*.o) $$(wildcard qemu/*.o) $$(wildcard qemu/qom/*.o) $$(wildcard qemu/hw/core/*.o) $$(wildcard qemu/qapi/*.o) $$(wildcard qemu/qobject/*.o))
 
