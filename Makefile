@@ -201,25 +201,22 @@ $(LIBNAME)_LDFLAGS += $(GLIB) -lm
 all: unicorn
 	$(MAKE) -C samples
 
-qemu/config-host.h-timestamp config.log:
+qemu/config-host.h-timestamp:
 	cd qemu && \
 	./configure --cc="${CC}" --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
 	printf "$(UNICORN_ARCHS)" > config.log
-
-compile_lib: qemu/config-host.h-timestamp config.log
 	$(MAKE) -C qemu -j 4
 	$(eval UC_TARGET_OBJ += $$(wildcard qemu/util/*.o) $$(wildcard qemu/*.o) $$(wildcard qemu/qom/*.o) $$(wildcard qemu/hw/core/*.o) $$(wildcard qemu/qapi/*.o) $$(wildcard qemu/qobject/*.o))
 
 unicorn: $(LIBRARY) $(ARCHIVE)
 
-$(LIBRARY): compile_lib uc.o list.o
+$(LIBRARY): qemu/config-host.h-timestamp uc.o list.o
 	$(CC) $(CFLAGS) -shared $(UC_TARGET_OBJ) uc.o list.o -o $(LIBRARY) $($(LIBNAME)_LDFLAGS)
 	-ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
 
-$(ARCHIVE): compile_lib uc.o list.o
+$(ARCHIVE): qemu/config-host.h-timestamp uc.o list.o
 	$(AR) q $(ARCHIVE) $(UC_TARGET_OBJ) uc.o list.o
 	$(RANLIB) $(ARCHIVE)
-
 
 $(PKGCFGF):
 	$(generate-pkgcfg)
@@ -230,7 +227,7 @@ test: all
 	$(MAKE) -C tests/regress test
 	$(MAKE) -C bindings test
 
-install: compile_lib $(PKGCFGF)
+install: qemu/config-host.h-timestamp $(PKGCFGF)
 	mkdir -p $(DESTDIR)$(LIBDIR)
 ifeq ($(UNICORN_SHARED),yes)
 ifneq ($(filter CYGWIN%,$(UNAME_S)),)
@@ -260,7 +257,7 @@ else
 DIST_VERSION = $(TAG)
 endif
 
-bindings: compile_lib
+bindings: qemu/config-host.h-timestamp
 	$(MAKE) -C bindings build
 	$(MAKE) -C bindings samples
 
