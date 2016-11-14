@@ -2,7 +2,7 @@
 set -ex
 mkdir cmocka
 wget https://cmocka.org/files/1.1/cmocka-1.1.0.tar.xz -O /tmp/cmocka-1.1.0.tar.xz
-tar -xvf /tmp/cmocka-1.1.0.tar.xz -C /tmp
+tar -xf /tmp/cmocka-1.1.0.tar.xz -C /tmp
 cd cmocka && cmake /tmp/cmocka-1.1.0 && make
 # cmake builds an so instead of a dll in mingw/msys
 if [[ ! -z $MSYSTEM ]]; then
