@@ -1,6 +1,8 @@
 # Appveyor configuration file for CI build of Unicorn Engine on Windows (under Cygwin)
 environment:
     CYG_MIRROR: http://cygwin.mirror.constant.com
+    CYG_PACKAGES: make,gcc-core,clang,pkg-config,libpcre-devel,libglib2.0-devel,cmake,python-setuptools,ruby,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core
+    MSYS_PACKAGES: mingw-w64-x86_64-glib2 mingw-w64-i686-glib2 cmake
     matrix:
         - MSYSTEM: MINGW64
           BASH: C:\msys64\usr\bin\bash
@@ -33,19 +35,19 @@ init:
 # Install needed build dependencies
 install:
     - ps: if (Test-Path Env:\CYG_ROOT) { Start-FileDownload "http://cygwin.com/$env:CYG_SETUP" -FileName "$env:CYG_SETUP" }
-    - if defined CYG_ROOT (%CYG_SETUP% --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages make,gcc-core,clang,pkg-config,libpcre-devel,libglib2.0-devel,cmake,python-setuptools,ruby,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core --upgrade-also)
-    - if defined MSYSTEM (%BASH% -lc "pacman -Suuy --noconfirm mingw-w64-x86_64-glib2 mingw-w64-i686-glib2 cmake")
+    - if defined CYG_ROOT (%CYG_SETUP% --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages "%CYG_PACKAGES% --upgrade-also)
+    - if defined MSYSTEM (%BASH% -lc "pacman -Suuy --noconfirm ${MSYS_PACKAGES}")
     - if defined MSYSTEM (%BASH% -lc "pacman -Suuy --noconfirm")
 build_script:
-    - if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}); ./install-cmocka-linux.sh; make;")
-    - if "%MSYSTEM%" == "MINGW64" (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}); make -C bindings/go")
+    - if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && ./install-cmocka-linux.sh && make")
+    - if "%MSYSTEM%" == "MINGW64" (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && make -C bindings/go")
     # make test
     #- 'cd %APPVEYOR_BUILD_FOLDER% && cd bindings\dotnet && msbuild UnicornDotNet.sln'
 # Allows RDP
 #on_finish:
 #    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
-# Disable tests for now
+# Test cygwin only
 #
 test_script:
-    - if defined CYG_ROOT (%BASH% -lc "export CYGWIN=winsymlinks:native; cd $APPVEYOR_BUILD_FOLDER; export PATH=$PATH:$APPVEYOR_BUILD_FOLDER:$APPVEYOR_BUILD_FOLDER/cmocka/src; make test")
+    - if defined CYG_ROOT (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER:$APPVEYOR_BUILD_FOLDER/cmocka/src && make test")
