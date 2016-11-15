@@ -39,7 +39,7 @@ install:
     - if defined MSYSTEM (%BASH% -lc "pacman -Suuy --noconfirm ${MSYS_PACKAGES}")
     - if defined MSYSTEM (%BASH% -lc "pacman -Suuy --noconfirm")
 build_script:
-    - if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && ./install-cmocka-linux.sh && make")
+    - if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && make")
     - if "%MSYSTEM%" == "MINGW64" (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && make -C bindings/go")
     # make test
     #- 'cd %APPVEYOR_BUILD_FOLDER% && cd bindings\dotnet && msbuild UnicornDotNet.sln'
@@ -50,4 +50,4 @@ build_script:
 # Test cygwin only
 #
 test_script:
-    - if defined CYG_ROOT (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER:$APPVEYOR_BUILD_FOLDER/cmocka/src && make test")
+    - if defined CYG_ROOT (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && ./install-cmocka-linux.sh && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER:$APPVEYOR_BUILD_FOLDER/cmocka/src && make test")
