@@ -106,8 +106,11 @@ def build_libraries():
         got_all = True
         for dll in ALL_WINDOWS_DLLS:
             dllpath = os.path.join(sys.prefix, 'bin', dll)
+            dllpath2 = os.path.join(ROOT_DIR, 'prebuilt', dll)
             if os.path.exists(dllpath):
                 shutil.copy(dllpath, LIBS_DIR)
+            elif os.path.exists(dllpath2):
+                shutil.copy(dllpath2, LIBS_DIR)
             else:
                 got_all = False
 
@@ -116,6 +119,12 @@ def build_libraries():
             # enforce this
             if 'upload' in sys.argv:
                 sys.exit(1)
+
+    # check if a prebuilt library exists
+    # if so, use it instead of building
+    if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)):
+        shutil.copy(os.path.join(ROOT_DIR, 'prebuild', LIBRARY_FILE), LIBS_DIR)
+        return
 
     # otherwise, build!!
     os.chdir(BUILD_DIR)
