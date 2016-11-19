@@ -11,7 +11,7 @@
 #define PAGE_4K (1 << 12)
 #define TARGET_PAGE_MASK ~(PAGE_4K - 1)
 #define TARGET_PAGE_PREPARE(addr) (((addr) + PAGE_4K - 1) & TARGET_PAGE_MASK)
-#define TARGET_PAGE_ALIGN(addr) (addr - (TARGET_PAGE_PREPARE(addr) - addr) & TARGET_PAGE_MASK)
+#define TARGET_PAGE_ALIGN(addr) ((addr - (TARGET_PAGE_PREPARE(addr) - addr)) & TARGET_PAGE_MASK)
 
 static uint64_t instructions = 0;
 
@@ -69,7 +69,6 @@ static void VM_exec()
 {
     uc_engine *uc;
     uc_err err;
-    uint32_t tmp;
     uc_hook trace1, trace2;
     unsigned int r_eax, r_ebx, r_ecx, r_edx, r_ebp, r_esp, r_esi, r_edi, r_eip, eflags;
     unsigned int tr_eax, tr_ebx, tr_ecx, tr_edx, tr_ebp, tr_esp, tr_esi, tr_edi, tr_eip, t_eflags;

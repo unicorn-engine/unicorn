@@ -168,12 +168,15 @@ int main(int argc, char **argv, char **envp)
     }
 #endif
     
-	if (argc == 2) {
+    if (argc == 2) {
         if (!strcmp(argv[1], "-32")) {
             test_i386();
         }
+        else if (!strcmp(argv[1], "-h")) {
+            printf("Syntax: %s <-32|-64>\n", argv[0]);
+        }
     } else {
-        printf("Syntax: %s <-32|-64>\n", argv[0]);
+        test_i386();
     }
 
     // dynamically free shared library

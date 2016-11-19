@@ -2,42 +2,26 @@ language: c
 sudo: false
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install glib cmocka; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" && "$MACOS_UNIVERSAL" != "yes" ]]; then brew install glib cmocka; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" && "$MACOS_UNIVERSAL" == "yes" ]]; then brew install glib --universal cmocka; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./install-cmocka-linux.sh; fi
 script:
-  - if [[ $CC == *"x86_64"* ]]; then ./make.sh cross-win64; elif [[ $CC == *"i686"* ]]; then ./make.sh cross-win32; else ./make.sh && make test; fi
-# TODO make bindings enabled
-#  - ./make.sh && make test && make bindings
-# TODO make universal build
-#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew remove glib && brew install glib --universal && make clean && ./make.sh macos-universal && make test; fi
-# TODO test iOS builds
-#  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then make clean && ./make.sh ios; fi
+  - make && make -C bindings/go && make -C bindings/go test && make test
 compiler:
   - clang
   - gcc
-# TODO update mingw32 to gcc 4.7+ for compilation
-#  - i686-w64-mingw32-gcc
-#  - x86_64-w64-mingw32-gcc
 os:
   - linux
   - osx
-#matrix:
-#  exclude:
-#  - os: osx
-#    compiler: i686-w64-mingw32-gcc
-#  - os: osx
-#    compiler: x86_64-w64-mingw32-gcc
+matrix:
+  include:
+  - os: osx
+    compiler: clang
+    env: MACOS_UNIVERSAL=yes
+  - os: osx
+    compiler: gcc
+    env: MACOS_UNIVERSAL=yes
 addons:
   apt:
     packages:
-    - mingw-w64
-    - gcc-mingw-w64
-    - mingw-w64-dev
-    - gcc-mingw-w64-i686
-    - gcc-mingw-w64-x86-64
-    - binutils-mingw-w64-i686
-    - binutils-mingw-w64-x86-64
-# TODO are mingw32 builds necessary?
-#    - mingw32
-#    - mingw32-binutils
-#    - mingw32-runtime
+    # mingw-w64 packages too old in precise

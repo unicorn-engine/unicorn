@@ -22,7 +22,7 @@ def hook_block(uc, address, size, user_data):
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
-    print(">>> Tracing instruction at 0x%x, instruction size = %u" %(address, size))
+    print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
 
 
 # Test MIPS EB
@@ -54,7 +54,7 @@ def test_mips_eb():
         print(">>> Emulation done. Below is the CPU context")
 
         r1 = mu.reg_read(UC_MIPS_REG_1)
-        print(">>> r1 = 0x%x" %r1)
+        print(">>> R1 = 0x%x" %r1)
 
     except UcError as e:
         print("ERROR: %s" % e)
@@ -89,7 +89,7 @@ def test_mips_el():
         print(">>> Emulation done. Below is the CPU context")
 
         r1 = mu.reg_read(UC_MIPS_REG_1)
-        print(">>> r1 = 0x%x" %r1)
+        print(">>> R1 = 0x%x" %r1)
 
     except UcError as e:
         print("ERROR: %s" % e)
@@ -97,5 +97,5 @@ def test_mips_el():
 
 if __name__ == '__main__':
     test_mips_eb()
-    print("=" * 20)
+    print("=" * 27)
     test_mips_el()

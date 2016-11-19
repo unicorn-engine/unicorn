@@ -21,7 +21,7 @@ def hook_code(uc, address, size, user_data):
     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
     # read this instruction code from memory
     tmp = uc.mem_read(address, size)
-    print(">>> Instruction code at [0x%x] =" %(address), end="")
+    print("*** EIP = %x *** :" %(address), end="")
     for i in tmp:
         print(" %02x" %i, end="")
     print("")

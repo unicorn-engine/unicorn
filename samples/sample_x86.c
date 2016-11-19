@@ -996,13 +996,15 @@ int main(int argc, char **argv, char **envp)
         printf("Error dynamically loading shared library.\n");
         printf("Please check that unicorn.dll/unicorn.so is available as well as\n");
         printf("any other dependent dll/so files.\n");
-        printf("The easiest way is to place them in the same directory as this app.\n");
         return 1;
     }
 #endif
     
-	if (argc == 2) {
-        if (!strcmp(argv[1], "-32")) {
+    if (argc == 2) {
+        if (!strcmp(argv[1], "-16")) {
+            test_x86_16();
+        }
+        else if (!strcmp(argv[1], "-32")) {
             test_i386();
             test_i386_map_ptr();
             test_i386_inout();
@@ -1013,19 +1015,29 @@ int main(int argc, char **argv, char **envp)
             test_i386_invalid_mem_write();
             test_i386_jump_invalid();
         }
-
-        if (!strcmp(argv[1], "-64")) {
+        else if (!strcmp(argv[1], "-64")) {
             test_x86_64();
             test_x86_64_syscall();
         }
-
-        if (!strcmp(argv[1], "-16")) {
-            test_x86_16();
+        else if (!strcmp(argv[1], "-h")) {
+            printf("Syntax: %s <-16|-32|-64>\n", argv[0]);
         }
-    } else {
-        printf("Syntax: %s <-16|-32|-64>\n", argv[0]);
-    }
+   }
+   else {
+        test_x86_16();
+        test_i386();
+        test_i386_map_ptr();
+        test_i386_inout();
+        test_i386_context_save();
+        test_i386_jump();
+        test_i386_loop();
+        test_i386_invalid_mem_read();
+        test_i386_invalid_mem_write();
+        test_i386_jump_invalid();
+        test_x86_64();
+        test_x86_64_syscall();
 
+    }
     // dynamically free shared library
 #ifdef DYNLOAD
     uc_dyn_free();

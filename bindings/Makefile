@@ -1,19 +1,17 @@
 # Unicorn Engine
 # By Nguyen Anh Quynh & Dang Hoang Vu, 2015
-TMP_DIR = /tmp/unicorn_sample
+DIFF = diff
 
-DIFF = diff -u -w
-
-SAMPLE_ARM = $(TMP_DIR)/sample_arm
-SAMPLE_ARM64 = $(TMP_DIR)/sample_arm64
-SAMPLE_MIPS = $(TMP_DIR)/sample_mips
-SAMPLE_M68K = $(TMP_DIR)/sample_m68k
-SAMPLE_SPARC = $(TMP_DIR)/sample_sparc
-SAMPLE_X86 = $(TMP_DIR)/sample_x86
+SAMPLE_SOURCE = $(wildcard ../samples/*.c)
+SAMPLE = $(SAMPLE_SOURCE:../samples/%.c=%)
+SAMPLE := $(SAMPLE:mem_apis=)
+SAMPLE := $(SAMPLE:sample_batch_reg=)
+SAMPLE := $(SAMPLE:sample_x86_32_gdt_and_seg_regs=)
+SAMPLE := $(SAMPLE:shellcode=)
 
 ENV_VARS = LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../
 
-.PHONY: build install samples sample_python expected python sample_diff clean check
+.PHONY: build install python c clean check test
 
 build:
 	$(MAKE) -C python gen_const
@@ -26,44 +24,24 @@ install: build
 	$(MAKE) -C python install
 	$(MAKE) -C java install
 
-samples: expected python
+test: $(SAMPLE:%=%.py.test)
 
-sample_python: expected python
-
-expected:
+c:
 	$(MAKE) -C ../samples
-	mkdir -p $(TMP_DIR)
-	$(ENV_VARS) ../samples/sample_arm > $(SAMPLE_ARM)_e
-	$(ENV_VARS) ../samples/sample_arm64 > $(SAMPLE_ARM64)_e
-	$(ENV_VARS) ../samples/sample_mips > $(SAMPLE_MIPS)_e
-	$(ENV_VARS) ../samples/sample_sparc > $(SAMPLE_SPARC)_e
-	$(ENV_VARS) ../samples/sample_m68k > $(SAMPLE_M68K)_e
-	$(ENV_VARS) ../samples/sample_x86 > $(SAMPLE_X86)_e
-
-python: FORCE
+python:
 	$(MAKE) -C python
-	$(ENV_VARS) python python/sample_arm.py > $(SAMPLE_ARM)_o
-	$(ENV_VARS) python python/sample_arm64.py > $(SAMPLE_ARM64)_o
-	$(ENV_VARS) python python/sample_mips.py > $(SAMPLE_MIPS)_o
-	$(ENV_VARS) python python/sample_sparc.py > $(SAMPLE_SPARC)_o
-	$(ENV_VARS) python python/sample_m68k.py > $(SAMPLE_M68K)_o
-	$(ENV_VARS) python python/sample_x86.py > $(SAMPLE_X86)_o
-	$(MAKE) sample_diff
+%.c.txt: c
+	$(ENV_VARS) ../samples/$(@:%.c.txt=%) > $@
+%.py.txt: python
+	$(ENV_VARS) python python/$(@:%.txt=%) > $@
 
-sample_diff: FORCE
-	$(DIFF) $(SAMPLE_ARM)_e $(SAMPLE_ARM)_o
-	$(DIFF) $(SAMPLE_ARM64)_e $(SAMPLE_ARM64)_o
-	$(DIFF) $(SAMPLE_MIPS)_e $(SAMPLE_MIPS)_o
-	$(DIFF) $(SAMPLE_SPARC)_e $(SAMPLE_SPARC)_o
-	$(DIFF) $(SAMPLE_M68K)_e $(SAMPLE_M68K)_o
-	$(DIFF) $(SAMPLE_X86)_e $(SAMPLE_X86)_o
+%.py.test: %.c.txt %.py.txt
+	$(DIFF) $(@:%.py.test=%.c.txt) $(@:%.py.test=%.py.txt)
 
 clean:
-	rm -rf $(TMP_DIR)
+#	rm -rf *.txt
 	$(MAKE) -C python clean
 	$(MAKE) -C java clean
 
 check:
 	make -C python check
-
-FORCE:
