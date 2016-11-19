@@ -128,3 +128,11 @@ endef
 
 
 staticname = $(subst $(BIN_EXT),,$(1)).static$(BIN_EXT)
+
+define log
+	@printf "  %-7s %s\n" "$(1)" "$(2)"
+endef
+
+define compile
+	${CC} ${CFLAGS} -c $< -o $@
+endef
