@@ -10,13 +10,15 @@ ifndef GLIB
 GLIB = $(shell pkg-config --libs glib-2.0)
 endif
 
+LIBDIR = ..
 BIN_EXT =
+AR_EXT = a
 
 # Verbose output?
 V ?= 0
 
 CFLAGS += -Wall -Werror -I../include
-LDFLAGS += -L.. -lunicorn
+LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm $(GLIB)
 LDLIBS += -lpthread -lunicorn -lm $(GLIB)
 
 ifneq ($(CROSS),)
@@ -28,6 +30,7 @@ CC = clang
 CXX = clang++
 AR = llvm-ar
 CFLAGS += -fsanitize=address -fno-omit-frame-pointer
+LDFLAGS := -fsanitize=address ${LDFLAGS}
 endif
 
 # Cygwin?
@@ -35,10 +38,22 @@ ifneq ($(filter CYGWIN%,$(UNAME_S)),)
 CFLAGS := $(CFLAGS:-fPIC=)
 LDLIBS += -lssp
 BIN_EXT = .exe
+AR_EXT = a
 # mingw?
 else ifneq ($(filter MINGW%,$(UNAME_S)),)
 CFLAGS := $(CFLAGS:-fPIC=)
 BIN_EXT = .exe
+AR_EXT = lib
+endif
+
+ifeq ($(UNICORN_STATIC),yes)
+ifneq ($(filter MINGW%,$(UNAME_S)),)
+ARCHIVE = $(LIBDIR)/unicorn.$(AR_EXT)
+else ifneq ($(filter CYGWIN%,$(UNAME_S)),)
+ARCHIVE = $(LIBDIR)/libunicorn.$(AR_EXT)
+else
+ARCHIVE = $(LIBDIR)/libunicorn.$(AR_EXT)
+endif
 endif
 
 .PHONY: all clean
@@ -123,7 +138,7 @@ endef
 
 
 define link-static
-	$(CC) $< $(ARCHIVE) $(LDFLAGS_STATIC) -o $(call staticname,$@)
+	$(CC) $< $(ARCHIVE) $(LDFLAGS) -o $(call staticname,$@)
 endef
 
 
