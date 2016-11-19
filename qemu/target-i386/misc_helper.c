@@ -566,7 +566,6 @@ void helper_monitor(CPUX86State *env, target_ulong ptr)
 
 void helper_mwait(CPUX86State *env, int next_eip_addend)
 {
-    CPUState *cs;
     X86CPU *cpu;
 
     if ((uint32_t)env->regs[R_ECX] != 0) {
@@ -576,7 +575,6 @@ void helper_mwait(CPUX86State *env, int next_eip_addend)
     env->eip += next_eip_addend;
 
     cpu = x86_env_get_cpu(env);
-    cs = CPU(cpu);
     /* XXX: not complete but not completely erroneous */
     do_hlt(cpu);
 }
