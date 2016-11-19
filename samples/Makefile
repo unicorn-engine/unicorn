@@ -10,11 +10,13 @@ ifndef GLIB
 GLIB = $(shell pkg-config --libs glib-2.0)
 endif
 
+BIN_EXT =
+
 # Verbose output?
 V ?= 0
 
 CFLAGS += -Wall -Werror -I../include
-LDFLAGS += -L.. 
+LDFLAGS += -L.. -lunicorn
 LDLIBS += -lpthread -lunicorn -lm $(GLIB)
 
 ifneq ($(CROSS),)
@@ -32,9 +34,11 @@ endif
 ifneq ($(filter CYGWIN%,$(UNAME_S)),)
 CFLAGS := $(CFLAGS:-fPIC=)
 LDLIBS += -lssp
+BIN_EXT = .exe
 # mingw?
 else ifneq ($(filter MINGW%,$(UNAME_S)),)
 CFLAGS := $(CFLAGS:-fPIC=)
+BIN_EXT = .exe
 endif
 
 .PHONY: all clean
@@ -69,9 +73,58 @@ ifneq (,$(findstring m68k,$(UNICORN_ARCHS)))
 SOURCES += sample_m68k.c
 endif
 
-BINS = $(SOURCES:.c=)
+BINS = $(SOURCES:.c=$(BIN_EXT))
+OBJS = $(SOURCES:.c=.o)
 
 all: $(BINS)
 
+$(BINS): $(OBJS)
+
 clean:		
 	rm -rf *.o $(BINS)
+
+%$(BIN_EXT): %.o
+	@mkdir -p $(@D)
+ifeq ($(V),0)
+ifeq ($(UNICORN_SHARED),yes)
+	$(call log,LINK,$(notdir $@))
+	@$(link-dynamic)
+endif
+ifeq ($(UNICORN_STATIC),yes)
+ifneq ($(filter MINGW%,$(UNAME_S)),)
+	$(call log,LINK,$(notdir $(call staticname,$@)))
+	@$(link-static)
+endif
+endif
+else
+ifeq ($(UNICORN_SHARED),yes)
+	$(link-dynamic)
+endif
+ifeq ($(UNICORN_STATIC),yes)
+ifneq ($(filter MINGW%,$(UNAME_S)),)
+	$(link-static)
+endif
+endif
+endif
+
+%.o: %.c
+	@mkdir -p $(@D)
+ifeq ($(V),0)
+	$(call log,CC,$(@:%=%))
+	@$(compile)
+else
+	$(compile)
+endif
+
+
+define link-dynamic
+	$(CC) $< $(LDFLAGS) -o $@
+endef
+
+
+define link-static
+	$(CC) $< $(ARCHIVE) $(LDFLAGS_STATIC) -o $(call staticname,$@)
+endef
+
+
+staticname = $(subst $(BIN_EXT),,$(1)).static$(BIN_EXT)

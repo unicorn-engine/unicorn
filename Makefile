@@ -211,12 +211,28 @@ qemu/config-host.h-timestamp:
 unicorn: $(LIBRARY) $(ARCHIVE)
 
 $(LIBRARY): qemu/config-host.h-timestamp uc.o list.o
+ifeq ($(UNICORN_SHARED),yes)
+ifeq ($(V),0)
+	$(call log,GEN,$(LIBRARY))
+	@$(CC) $(CFLAGS) -shared $(UC_TARGET_OBJ) uc.o list.o -o $(LIBRARY) $($(LIBNAME)_LDFLAGS)
+	@-ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
+else
 	$(CC) $(CFLAGS) -shared $(UC_TARGET_OBJ) uc.o list.o -o $(LIBRARY) $($(LIBNAME)_LDFLAGS)
 	-ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
+endif
+endif
 
 $(ARCHIVE): qemu/config-host.h-timestamp uc.o list.o
+ifeq ($(UNICORN_STATIC),yes)
+ifeq ($(V),0)
+	$(call log,GEN,$(ARCHIVE))
+	@$(AR) q $(ARCHIVE) $(UC_TARGET_OBJ) uc.o list.o
+	@$(RANLIB) $(ARCHIVE)
+else
 	$(AR) q $(ARCHIVE) $(UC_TARGET_OBJ) uc.o list.o
 	$(RANLIB) $(ARCHIVE)
+endif
+endif
 
 $(PKGCFGF):
 	$(generate-pkgcfg)
