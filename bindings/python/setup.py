@@ -4,30 +4,32 @@
 from __future__ import print_function
 import glob
 import os
+import subprocess
 import shutil
 import sys
+import platform
 
 from distutils import log
 from distutils.core import setup
+from distutils.util import get_platform
 from distutils.command.build import build
 from distutils.command.sdist import sdist
 from setuptools.command.bdist_egg import bdist_egg
 
-# prebuilt libraries for Windows - for sdist
-PATH_LIB64 = "prebuilt/win64/unicorn.dll"
-PATH_LIB32 = "prebuilt/win32/unicorn.dll"
-
-# package name can be 'unicorn' or 'unicorn-windows'
-PKG_NAME = 'unicorn'
-if os.path.exists(PATH_LIB64) and os.path.exists(PATH_LIB32):
-    PKG_NAME = 'unicorn-windows'
-
 SYSTEM = sys.platform
 VERSION = '1.0.0'
 
-# adapted from commit e504b81 of Nguyen Tan Cong
-# Reference: https://docs.python.org/2/library/platform.html#cross-platform
-IS_64BITS = sys.maxsize > 2**32
+# sys.maxint is 2**31 - 1 on both 32 and 64 bit mingw
+IS_64BITS = platform.architecture()[0] == '64bit'
+
+ALL_WINDOWS_DLLS = (
+    "libwinpthread-1.dll",
+    "libgcc_s_seh-1.dll" if IS_64BITS else "libgcc_s_dw2-1.dll",
+    "libiconv-2.dll",
+    "libpcre-1.dll",
+    "libintl-8.dll",
+    "libglib-2.0-0.dll",
+)
 
 # are we building from the repository or from a source distribution?
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -99,26 +101,50 @@ def build_libraries():
     # copy public headers
     shutil.copytree(os.path.join(BUILD_DIR, 'include', 'unicorn'), os.path.join(HEADERS_DIR, 'unicorn'))
 
-    # if Windows prebuilt library is available, then include it
-    if SYSTEM in ("win32", "cygwin"):
-        if IS_64BITS and os.path.exists(PATH_LIB64):
-            shutil.copy(PATH_LIB64, LIBS_DIR)
-            return
-        elif os.path.exists(PATH_LIB32):
-            shutil.copy(PATH_LIB32, LIBS_DIR)
-            return
+    # copy special library dependencies
+    if SYSTEM == 'win32':
+        got_all = True
+        for dll in ALL_WINDOWS_DLLS:
+            dllpath = os.path.join(sys.prefix, 'bin', dll)
+            dllpath2 = os.path.join(ROOT_DIR, 'prebuilt', dll)
+            if os.path.exists(dllpath):
+                shutil.copy(dllpath, LIBS_DIR)
+            elif os.path.exists(dllpath2):
+                shutil.copy(dllpath2, LIBS_DIR)
+            else:
+                got_all = False
+
+        if not got_all:
+            print('Warning: not all DLLs were found! This build is not appropriate for a binary distribution')
+            # enforce this
+            if 'upload' in sys.argv:
+                sys.exit(1)
+
+    # check if a prebuilt library exists
+    # if so, use it instead of building
+    if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)):
+        shutil.copy(os.path.join(ROOT_DIR, 'prebuild', LIBRARY_FILE), LIBS_DIR)
+        return
 
     # otherwise, build!!
     os.chdir(BUILD_DIR)
 
     # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
+    new_env = dict(os.environ)
+    new_env['UNICORN_BUILD_CORE_ONLY'] = 'yes'
+    cmd = ['sh', './make.sh']
     if SYSTEM == "cygwin":
         if IS_64BITS:
-            os.system("UNICORN_BUILD_CORE_ONLY=yes ./make.sh cygwin-mingw64")
+            cmd.append('cygwin-mingw64')
         else:
-            os.system("UNICORN_BUILD_CORE_ONLY=yes ./make.sh cygwin-mingw32")
-    else:   # Unix
-        os.system("UNICORN_BUILD_CORE_ONLY=yes ./make.sh")
+            cmd.append('cygwin-mingw32')
+    elif SYSTEM == "win32":
+        if IS_64BITS:
+            cmd.append('cross-win64')
+        else:
+            cmd.append('cross-win32')
+
+    subprocess.call(cmd, env=new_env)
 
     shutil.copy(LIBRARY_FILE, LIBS_DIR)
     if STATIC_LIBRARY_FILE: shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
@@ -128,10 +154,7 @@ def build_libraries():
 class custom_sdist(sdist):
     def run(self):
         clean_bins()
-
-        # if prebuilt libraries are existent, then do not copy source
-        if not os.path.exists(PATH_LIB64) or not os.path.exists(PATH_LIB32):
-            copy_sources()
+        copy_sources()
         return sdist.run(self)
 
 class custom_build(build):
@@ -153,6 +176,25 @@ cmdclass['build'] = custom_build
 cmdclass['sdist'] = custom_sdist
 cmdclass['bdist_egg'] = custom_bdist_egg
 
+if 'bdist_wheel' in sys.argv and '--plat-name' not in sys.argv:
+    idx = sys.argv.index('bdist_wheel') + 1
+    sys.argv.insert(idx, '--plat-name')
+    name = get_platform()
+    if 'linux' in name:
+        # linux_* platform tags are disallowed because the python ecosystem is fubar
+        # linux builds should be built in the centos 5 vm for maximum compatibility
+        # see https://github.com/pypa/manylinux
+        # see also https://github.com/angr/angr-dev/blob/master/bdist.sh
+        sys.argv.insert(idx + 1, 'manylinux1_' + platform.machine())
+    elif 'mingw' in name:
+        if IS_64BITS:
+            sys.argv.insert(idx + 1, 'win_amd64')
+        else:
+            sys.argv.insert(idx + 1, 'win32')
+    else:
+        # https://www.python.org/dev/peps/pep-0425/
+        sys.argv.insert(idx + 1, name.replace('.', '_').replace('-', '_'))
+
 try:
     from setuptools.command.develop import develop
     class custom_develop(develop):
@@ -171,7 +213,7 @@ def join_all(src, files):
 setup(
     provides=['unicorn'],
     packages=['unicorn'],
-    name=PKG_NAME,
+    name='unicorn',
     version=VERSION,
     author='Nguyen Anh Quynh',
     author_email='aquynh@gmail.com',
@@ -186,6 +228,7 @@ setup(
     cmdclass=cmdclass,
     zip_safe=True,
     include_package_data=True,
+    is_pure=True,
     package_data={
         'unicorn': ['lib/*', 'include/unicorn/*']
     }

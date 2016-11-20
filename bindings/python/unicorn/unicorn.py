@@ -29,15 +29,32 @@ _all_windows_dlls = (
     "libgcc_s_seh-1.dll",
     "libgcc_s_dw2-1.dll",
     "libiconv-2.dll",
+    "libpcre-1.dll",
     "libintl-8.dll",
     "libglib-2.0-0.dll",
 )
 
+_loaded_windows_dlls = set()
+
 def _load_win_support(path):
     for dll in _all_windows_dlls:
+        if dll in _loaded_windows_dlls:
+            continue
+
         lib_file = os.path.join(path, dll)
-        if os.path.exists(lib_file):
-            ctypes.cdll.LoadLibrary(lib_file)
+        if ('/' not in path and '\\' not in path) or os.path.exists(lib_file):
+            try:
+                #print('Trying to load windows library', lib_file)
+                ctypes.cdll.LoadLibrary(lib_file)
+                #print('SUCCESS')
+                _loaded_windows_dlls.add(dll)
+            except OSError:
+                #print('FAILURE')
+                continue
+
+# Initial attempt: load all dlls globally
+if sys.platform in ('win32', 'cygwin'):
+    _load_win_support('')
 
 def _load_lib(path):
     try:
@@ -45,8 +62,12 @@ def _load_lib(path):
             _load_win_support(path)
 
         lib_file = os.path.join(path, _lib[sys.platform])
-        return ctypes.cdll.LoadLibrary(lib_file)
+        #print('Trying to load shared library', lib_file)
+        dll = ctypes.cdll.LoadLibrary(lib_file)
+        #print('SUCCESS')
+        return dll
     except OSError:
+        #print('FAILURE')
         return None
 
 _uc = None
