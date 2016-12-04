@@ -123,7 +123,7 @@ def build_libraries():
     # check if a prebuilt library exists
     # if so, use it instead of building
     if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)):
-        shutil.copy(os.path.join(ROOT_DIR, 'prebuild', LIBRARY_FILE), LIBS_DIR)
+        shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE), LIBS_DIR)
         return
 
     # otherwise, build!!

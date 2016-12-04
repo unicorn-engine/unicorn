@@ -23,6 +23,7 @@ _lib = { 'darwin': 'libunicorn.dylib',
          'linux': 'libunicorn.so',
          'linux2': 'libunicorn.so' }
 
+
 # Windows DLL in dependency order
 _all_windows_dlls = (
     "libwinpthread-1.dll",
@@ -44,12 +45,12 @@ def _load_win_support(path):
         lib_file = os.path.join(path, dll)
         if ('/' not in path and '\\' not in path) or os.path.exists(lib_file):
             try:
-                #print('Trying to load windows library', lib_file)
+                #print('Trying to load Windows library', lib_file)
                 ctypes.cdll.LoadLibrary(lib_file)
                 #print('SUCCESS')
                 _loaded_windows_dlls.add(dll)
-            except OSError:
-                #print('FAILURE')
+            except OSError as e:
+                #print('FAIL to load %s' %lib_file, e)
                 continue
 
 # Initial attempt: load all dlls globally
@@ -66,8 +67,8 @@ def _load_lib(path):
         dll = ctypes.cdll.LoadLibrary(lib_file)
         #print('SUCCESS')
         return dll
-    except OSError:
-        #print('FAILURE')
+    except OSError as e:
+        print('FAIL to load %s' %lib_file, e)
         return None
 
 _uc = None
@@ -85,6 +86,9 @@ _path_list = [pkg_resources.resource_filename(__name__, 'lib'),
               distutils.sysconfig.get_python_lib(),
               "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64',
               os.environ['PATH']]
+
+#print(_path_list)
+#print("-" * 80)
 
 for _path in _path_list:
     _uc = _load_lib(_path)
