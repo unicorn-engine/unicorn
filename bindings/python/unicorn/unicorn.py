@@ -68,7 +68,7 @@ def _load_lib(path):
         #print('SUCCESS')
         return dll
     except OSError as e:
-        print('FAIL to load %s' %lib_file, e)
+        #print('FAIL to load %s' %lib_file, e)
         return None
 
 _uc = None
