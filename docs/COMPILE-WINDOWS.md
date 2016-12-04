@@ -110,19 +110,21 @@ be used on Windows machine.
 To run sample_x86.exe on Windows 32-bit, you need the following files:
 
         unicorn.dll
+        %MSYS2%\mingw32\bin\libgcc_s_dw2-1.dll
+        %MSYS2%\mingw32\bin\libglib-2.0-0.dll
         %MSYS2%\mingw32\bin\libiconv-2.dll
         %MSYS2%\mingw32\bin\libintl-8.dll
-        %MSYS2%\mingw32\bin\libglib-2.0-0.dll
-        %MSYS2%\mingw32\bin\libgcc_s_dw2-1.dll
+        %MSYS2%\mingw32\bin\libpcre-1.dll
         %MSYS2%\mingw32\bin\libwinpthread-1.dll
 
 To run sample_x86.exe on Windows 64-bit, you need the following files:
 
         unicorn.dll
+        %MSYS2%\mingw64\bin\libgcc_s_seh-1.dll
+        %MSYS2%\mingw64\bin\libglib-2.0-0.dll
         %MSYS2%\mingw64\bin\libiconv-2.dll
         %MSYS2%\mingw64\bin\libintl-8.dll
-        %MSYS2%\mingw64\bin\libglib-2.0-0.dll
-        %MSYS2%\mingw64\bin\libgcc_s_seh-1.dll
+        %MSYS2%\mingw64\bin\libpcre-1.dll
         %MSYS2%\mingw64\bin\libwinpthread-1.dll
 
 
