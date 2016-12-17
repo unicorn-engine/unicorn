@@ -183,9 +183,9 @@ LIBDATADIR ?= $(LIBDIR)
 
 ifndef USE_GENERIC_LIBDATADIR
 ifeq ($(UNAME_S), FreeBSD)
-LIBDATADIR = $(DESTDIR)$(PREFIX)/libdata
+LIBDATADIR = $(PREFIX)/libdata
 else ifeq ($(UNAME_S), DragonFly)
-LIBDATADIR = $(DESTDIR)$(PREFIX)/libdata
+LIBDATADIR = $(PREFIX)/libdata
 endif
 endif
 
