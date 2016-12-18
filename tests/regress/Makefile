@@ -1,5 +1,5 @@
 CFLAGS += -Wall -Werror -I../../include
-LDLIBS += -L../../ $(shell pkg-config --libs glib-2.0) -lpthread -lm -lunicorn
+LDLIBS += -L../../ -lpthread -lm -lunicorn
 
 EXECUTE_VARS = LD_LIBRARY_PATH=../../cmocka/src:../../ DYLD_LIBRARY_PATH=../../
 

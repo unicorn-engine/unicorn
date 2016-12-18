@@ -41,7 +41,7 @@
 #include <sys/time.h>
 #include <assert.h>
 #include <signal.h>
-#include "glib-compat.h"
+#include "glib_compat.h"
 
 #ifdef _WIN32
 #include "sysemu/os-win32.h"

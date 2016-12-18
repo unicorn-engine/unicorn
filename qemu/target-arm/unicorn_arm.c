@@ -24,13 +24,13 @@ void arm_release(void* ctx)
 {
     TCGContext *s = (TCGContext *) ctx;
 
-    g_free(s->tb_ctx.tbs);
+    free(s->tb_ctx.tbs);
     struct uc_struct* uc = s->uc;
     ARMCPU* cpu = (ARMCPU*) uc->cpu;
-    g_free(cpu->cpreg_indexes);
-    g_free(cpu->cpreg_values);
-    g_free(cpu->cpreg_vmstate_indexes);
-    g_free(cpu->cpreg_vmstate_values);
+    free(cpu->cpreg_indexes);
+    free(cpu->cpreg_values);
+    free(cpu->cpreg_vmstate_indexes);
+    free(cpu->cpreg_vmstate_values);
 
     release_common(ctx);
 }

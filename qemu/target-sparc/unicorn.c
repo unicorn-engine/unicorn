@@ -34,30 +34,30 @@ void sparc_release(void *ctx)
     int i;
     TCGContext *tcg_ctx = (TCGContext *) ctx;
     release_common(ctx);
-    g_free(tcg_ctx->cpu_wim);
-    g_free(tcg_ctx->cpu_cond);
-    g_free(tcg_ctx->cpu_cc_src);
-    g_free(tcg_ctx->cpu_cc_src2);
-    g_free(tcg_ctx->cpu_cc_dst);
-    g_free(tcg_ctx->cpu_fsr);
-    g_free(tcg_ctx->sparc_cpu_pc);
-    g_free(tcg_ctx->cpu_npc);
-    g_free(tcg_ctx->cpu_y);
-    g_free(tcg_ctx->cpu_tbr);
+    free(tcg_ctx->cpu_wim);
+    free(tcg_ctx->cpu_cond);
+    free(tcg_ctx->cpu_cc_src);
+    free(tcg_ctx->cpu_cc_src2);
+    free(tcg_ctx->cpu_cc_dst);
+    free(tcg_ctx->cpu_fsr);
+    free(tcg_ctx->sparc_cpu_pc);
+    free(tcg_ctx->cpu_npc);
+    free(tcg_ctx->cpu_y);
+    free(tcg_ctx->cpu_tbr);
 
     for (i = 0; i < 8; i++) {
-      g_free(tcg_ctx->cpu_gregs[i]);
+      free(tcg_ctx->cpu_gregs[i]);
     }
     for (i = 0; i < 32; i++) {
-        g_free(tcg_ctx->cpu_gpr[i]);
+        free(tcg_ctx->cpu_gpr[i]);
     }
 
-    g_free(tcg_ctx->cpu_PC);
-    g_free(tcg_ctx->btarget);
-    g_free(tcg_ctx->bcond);
-    g_free(tcg_ctx->cpu_dspctrl);
+    free(tcg_ctx->cpu_PC);
+    free(tcg_ctx->btarget);
+    free(tcg_ctx->bcond);
+    free(tcg_ctx->cpu_dspctrl);
 
-    g_free(tcg_ctx->tb_ctx.tbs);
+    free(tcg_ctx->tb_ctx.tbs);
 }
 
 void sparc_reg_reset(struct uc_struct *uc)

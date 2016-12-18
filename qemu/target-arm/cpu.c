@@ -273,7 +273,7 @@ static void arm_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cs->env_ptr = &cpu->env;
     cpu_exec_init(&cpu->env, opaque);
     cpu->cp_regs = g_hash_table_new_full(g_int_hash, g_int_equal,
-                                         g_free, g_free);
+                                         free, free);
 
 #if 0
 #ifndef CONFIG_USER_ONLY
@@ -414,7 +414,7 @@ static ObjectClass *arm_cpu_class_by_name(struct uc_struct *uc, const char *cpu_
 
     typename = g_strdup_printf("%s-" TYPE_ARM_CPU, cpu_model);
     oc = object_class_by_name(uc, typename);
-    g_free(typename);
+    free(typename);
     if (!oc || !object_class_dynamic_cast(uc, oc, TYPE_ARM_CPU) ||
         object_class_is_abstract(oc)) {
         return NULL;
@@ -1084,7 +1084,7 @@ static void cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)
 
     type_info.name = g_strdup_printf("%s-" TYPE_ARM_CPU, info->name);
     type_register(uc, &type_info);
-    g_free((void *)type_info.name);
+    free((void *)type_info.name);
 }
 
 void arm_cpu_register_types(void *opaque)

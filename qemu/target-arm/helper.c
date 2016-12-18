@@ -155,7 +155,7 @@ static void count_cpreg(gpointer key, gpointer opaque)
     }
 }
 
-static gint cpreg_key_compare(gconstpointer a, gconstpointer b)
+static int32_t cpreg_key_compare(gconstpointer a, gconstpointer b)
 {
     uint64_t aidx = cpreg_to_kvm_id(*(uint32_t *)a);
     uint64_t bidx = cpreg_to_kvm_id(*(uint32_t *)b);
@@ -3102,7 +3102,7 @@ static void arm_cpu_list_entry(gpointer data, gpointer user_data)
     name = g_strndup(typename, strlen(typename) - strlen("-" TYPE_ARM_CPU));
     (*s->cpu_fprintf)(s->file, "  %s\n",
                       name);
-    g_free(name);
+    free(name);
 }
 #endif
 

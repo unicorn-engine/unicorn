@@ -59,7 +59,7 @@ static QObject *qmp_output_pop(QmpOutputVisitor *qov)
     QObject *value;
     QTAILQ_REMOVE(&qov->stack, e, node);
     value = e->value;
-    g_free(e);
+    free(e);
     return value;
 }
 
@@ -211,11 +211,11 @@ void qmp_output_visitor_cleanup(QmpOutputVisitor *v)
 
     QTAILQ_FOREACH_SAFE(e, &v->stack, node, tmp) {
         QTAILQ_REMOVE(&v->stack, e, node);
-        g_free(e);
+        free(e);
     }
 
     qobject_decref(root);
-    g_free(v);
+    free(v);
 }
 
 QmpOutputVisitor *qmp_output_visitor_new(void)

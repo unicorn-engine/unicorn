@@ -46,24 +46,24 @@ void mips_release(void *ctx)
     TCGContext *tcg_ctx = (TCGContext *) ctx;
     release_common(ctx);
     MIPSCPU* cpu = MIPS_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
-    g_free(cpu->env.tlb);
-    g_free(cpu->env.mvp);
+    free(cpu->env.tlb);
+    free(cpu->env.mvp);
 
     for (i = 0; i < MIPS_DSP_ACC; i++) {
-        g_free(tcg_ctx->cpu_HI[i]);
-        g_free(tcg_ctx->cpu_LO[i]);
+        free(tcg_ctx->cpu_HI[i]);
+        free(tcg_ctx->cpu_LO[i]);
     }
 
     for (i = 0; i < 32; i++) {
-        g_free(tcg_ctx->cpu_gpr[i]);
+        free(tcg_ctx->cpu_gpr[i]);
     }
 
-    g_free(tcg_ctx->cpu_PC);
-    g_free(tcg_ctx->btarget);
-    g_free(tcg_ctx->bcond);
-    g_free(tcg_ctx->cpu_dspctrl);
+    free(tcg_ctx->cpu_PC);
+    free(tcg_ctx->btarget);
+    free(tcg_ctx->bcond);
+    free(tcg_ctx->cpu_dspctrl);
 
-    g_free(tcg_ctx->tb_ctx.tbs);
+    free(tcg_ctx->tb_ctx.tbs);
 }
 
 void mips_reg_reset(struct uc_struct *uc)

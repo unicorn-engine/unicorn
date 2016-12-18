@@ -14,7 +14,7 @@
 #ifndef QEMU_OBJECT_H
 #define QEMU_OBJECT_H
 
-#include <glib.h>
+#include "glib_compat.h"
 #include <stdint.h>
 #include <stdbool.h>
 #include "qemu/queue.h"
@@ -933,34 +933,6 @@ int64_t object_property_get_int(struct uc_struct *uc, Object *obj, const char *n
                                 Error **errp);
 
 /**
- * object_property_get_enum:
- * @obj: the object
- * @name: the name of the property
- * @strings: strings corresponding to enums
- * @errp: returns an error if this function fails
- *
- * Returns: the value of the property, converted to an integer, or
- * undefined if an error occurs (including when the property value is not
- * an enum).
- */
-int object_property_get_enum(struct uc_struct *uc, Object *obj, const char *name,
-                             const char *strings[], Error **errp);
-
-/**
- * object_property_get_uint16List:
- * @obj: the object
- * @name: the name of the property
- * @list: the returned int list
- * @errp: returns an error if this function fails
- *
- * Returns: the value of the property, converted to integers, or
- * undefined if an error occurs (including when the property value is not
- * an list of integers).
- */
-void object_property_get_uint16List(struct uc_struct *uc, Object *obj, const char *name,
-                                    uint16List **list, Error **errp);
-
-/**
  * object_property_set:
  * @obj: the object
  * @v: the visitor that will be used to write the property value.  This should
@@ -985,19 +957,6 @@ void object_property_set(struct uc_struct *uc, Object *obj, struct Visitor *v, c
  */
 void object_property_parse(struct uc_struct *uc, Object *obj, const char *string,
                            const char *name, Error **errp);
-
-/**
- * object_property_print:
- * @obj: the object
- * @name: the name of the property
- * @human: if true, print for human consumption
- * @errp: returns an error if this function fails
- *
- * Returns a string representation of the value of the property.  The
- * caller shall free the string.
- */
-char *object_property_print(struct uc_struct *uc, Object *obj, const char *name, bool human,
-                            Error **errp);
 
 /**
  * object_property_get_type:
@@ -1166,7 +1125,7 @@ void object_property_add_link(Object *obj, const char *name,
  * @obj: the object to add a property to
  * @name: the name of the property
  * @get: the getter or NULL if the property is write-only.  This function must
- *   return a string to be freed by g_free().
+ *   return a string to be freed by free().
  * @set: the setter or NULL if the property is read-only
  * @errp: if an error occurs, a pointer to an area to store the error
  *

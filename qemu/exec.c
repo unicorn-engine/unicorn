@@ -517,7 +517,7 @@ void cpu_watchpoint_remove_by_ref(CPUState *cpu, CPUWatchpoint *watchpoint)
 
     tlb_flush_page(cpu, watchpoint->vaddr);
 
-    g_free(watchpoint);
+    free(watchpoint);
 }
 
 /* Remove all matching watchpoints.  */
@@ -610,7 +610,7 @@ void cpu_breakpoint_remove_by_ref(CPUState *cpu, CPUBreakpoint *breakpoint)
 
     breakpoint_invalidate(cpu, breakpoint->pc);
 
-    g_free(breakpoint);
+    free(breakpoint);
 #endif
 }
 
@@ -814,7 +814,7 @@ static void phys_section_destroy(MemoryRegion *mr)
     if (mr->subpage) {
         subpage_t *subpage = container_of(mr, subpage_t, iomem);
         object_unref(mr->uc, OBJECT(&subpage->iomem));
-        g_free(subpage);
+        free(subpage);
     }
 }
 
@@ -824,8 +824,8 @@ static void phys_sections_free(PhysPageMap *map)
         MemoryRegionSection *section = &map->sections[--map->sections_nb];
         phys_section_destroy(section->mr);
     }
-    g_free(map->sections);
-    g_free(map->nodes);
+    free(map->sections);
+    free(map->nodes);
 }
 
 static void register_subpage(struct uc_struct* uc,
@@ -1086,7 +1086,7 @@ ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
     }
     addr = ram_block_add(mr->uc, new_block, &local_err);
     if (local_err) {
-        g_free(new_block);
+        free(new_block);
         error_propagate(errp, local_err);
         return -1;
     }
@@ -1109,7 +1109,7 @@ void qemu_ram_free_from_ptr(struct uc_struct *uc, ram_addr_t addr)
             QTAILQ_REMOVE(&uc->ram_list.blocks, block, next);
             uc->ram_list.mru_block = NULL;
             uc->ram_list.version++;
-            g_free(block);
+            free(block);
             break;
         }
     }
@@ -1137,7 +1137,7 @@ void qemu_ram_free(struct uc_struct *uc, ram_addr_t addr)
             } else {
                 qemu_anon_ram_free(block->host, block->length);
             }
-            g_free(block);
+            free(block);
             break;
         }
     }
@@ -1457,7 +1457,7 @@ MemoryRegion *iotlb_to_region(AddressSpace *as, hwaddr index)
 void phys_mem_clean(struct uc_struct* uc)
 {
     AddressSpaceDispatch* d = uc->as.next_dispatch;
-    g_free(d->map.sections);
+    free(d->map.sections);
 }
 
 static void mem_begin(MemoryListener *listener)
@@ -1494,7 +1494,7 @@ static void mem_commit(MemoryListener *listener)
 
     if (cur) {
         phys_sections_free(&cur->map);
-        g_free(cur);
+        free(cur);
     }
 }
 
@@ -1531,13 +1531,13 @@ void address_space_destroy_dispatch(AddressSpace *as)
     AddressSpaceDispatch *d = as->dispatch;
 
     memory_listener_unregister(as->uc, &as->dispatch_listener);
-    g_free(d->map.nodes);
-    g_free(d);
+    free(d->map.nodes);
+    free(d);
 
     if (as->dispatch != as->next_dispatch) {
         d = as->next_dispatch;
-        g_free(d->map.nodes);
-        g_free(d);
+        free(d->map.nodes);
+        free(d);
     }
 
     as->dispatch = NULL;

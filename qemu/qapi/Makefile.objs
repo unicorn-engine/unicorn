@@ -1,3 +1,3 @@
 util-obj-y = qapi-visit-core.o qapi-dealloc-visitor.o qmp-input-visitor.o
 util-obj-y += qmp-output-visitor.o
-util-obj-y += string-input-visitor.o string-output-visitor.o
+util-obj-y += string-input-visitor.o

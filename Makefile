@@ -82,12 +82,6 @@ CC = $(CROSS)-gcc
 AR = $(CROSS)-ar
 RANLIB = $(CROSS)-ranlib
 STRIP = $(CROSS)-strip
-GLIB = "-L/usr/$(CROSS)/lib/ -lglib-2.0"
-endif
-
-# Find GLIB
-ifndef GLIB
-GLIB = `pkg-config --libs glib-2.0`
 endif
 
 ifeq ($(PKG_EXTRA),)
@@ -195,7 +189,7 @@ else
 PKGCFGDIR ?= $(LIBDATADIR)/pkgconfig
 endif
 
-$(LIBNAME)_LDFLAGS += $(GLIB) -lm
+$(LIBNAME)_LDFLAGS += -lm
 
 .PHONY: all
 all: unicorn

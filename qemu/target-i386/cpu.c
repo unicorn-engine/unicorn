@@ -523,7 +523,7 @@ static ObjectClass *x86_cpu_class_by_name(struct uc_struct *uc, const char *cpu_
 
     typename = x86_cpu_type_name(cpu_model);
     oc = object_class_by_name(uc, typename);
-    g_free(typename);
+    free(typename);
     return oc;
 }
 
@@ -1756,7 +1756,7 @@ static void x86_register_cpudef_type(struct uc_struct *uc, X86CPUDefinition *def
     };
 
     type_register(uc, &ti);
-    g_free(typename);
+    free(typename);
 }
 
 #if !defined(CONFIG_USER_ONLY)

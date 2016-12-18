@@ -67,7 +67,7 @@ void error_set_errno(Error **errp, int os_errno, ErrorClass err_class,
     msg1 = g_strdup_vprintf(fmt, ap);
     if (os_errno != 0) {
         err->msg = g_strdup_printf("%s: %s", msg1, strerror(os_errno));
-        g_free(msg1);
+        free(msg1);
     } else {
         err->msg = msg1;
     }
@@ -110,8 +110,8 @@ void error_set_win32(Error **errp, int win32_err, ErrorClass err_class,
         char *msg2 = g_win32_error_message(win32_err);
         err->msg = g_strdup_printf("%s: %s (error: %x)", msg1, msg2,
                                    (unsigned)win32_err);
-        g_free(msg2);
-        g_free(msg1);
+        free(msg2);
+        free(msg1);
     } else {
         err->msg = msg1;
     }
@@ -152,8 +152,8 @@ const char *error_get_pretty(Error *err)
 void error_free(Error *err)
 {
     if (err) {
-        g_free(err->msg);
-        g_free(err);
+        free(err->msg);
+        free(err);
     }
 }
 

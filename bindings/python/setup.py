@@ -28,7 +28,6 @@ ALL_WINDOWS_DLLS = (
     "libiconv-2.dll",
     "libpcre-1.dll",
     "libintl-8.dll",
-    "libglib-2.0-0.dll",
 )
 
 # are we building from the repository or from a source distribution?
