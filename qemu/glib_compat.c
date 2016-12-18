@@ -257,7 +257,7 @@ void g_slist_free_full(GSList *list, GDestroyNotify free_func) {
    GSList *lp, *next;
    for (lp = list; lp; lp = next) {
       next = lp->next;
-      (*free_func)(lp->data);
+      if (free_func) (*free_func)(lp->data);
       free(lp);
    }
 }
@@ -453,7 +453,14 @@ void g_hash_table_remove_all(GHashTable *hash_table) {
    if (hash_table == NULL) return;
    int i;
    for (i = 0; i < hash_table->size; i++) {
-      g_slist_free_full(hash_table->buckets[i], free);
+      GSList *lp;
+      for (lp = hash_table->buckets[i]; lp; lp = lp->next) {
+         KeyValue *kv = (KeyValue*)lp->data;
+         if (hash_table->key_destroy_func) (*hash_table->key_destroy_func)(kv->key);
+         if (hash_table->value_destroy_func) (*hash_table->value_destroy_func)(kv->value);
+         free(lp->data);
+      }
+      g_slist_free(hash_table->buckets[i]);
       hash_table->buckets[i] = NULL;
    }
    hash_table->num_entries = 0;
@@ -468,6 +475,8 @@ int g_hash_table_remove(GHashTable *hash_table, const void* key) {
       KeyValue *kv = (KeyValue*)(lp->data);
       int match = hash_table->key_equal_func ? (*hash_table->key_equal_func)(kv->key, key) : (kv->key == key);
       if (match) {
+         if (hash_table->key_destroy_func) (*hash_table->key_destroy_func)(kv->key);
+         if (hash_table->value_destroy_func) (*hash_table->value_destroy_func)(kv->value);
          free(kv);
          if (prev == NULL) {
             hash_table->buckets[bnum] = lp->next;
