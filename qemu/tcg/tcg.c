@@ -299,7 +299,7 @@ void tcg_pool_reset(TCGContext *s)
     TCGPool *p, *t;
     for (p = s->pool_first_large; p; p = t) {
         t = p->next;
-        g_free(p);
+        free(p);
     }
     s->pool_first_large = NULL;
     s->pool_cur = s->pool_end = NULL;

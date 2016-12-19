@@ -168,5 +168,5 @@ void qemu_register_machine(struct uc_struct *uc, QEMUMachine *m, const char *typ
         ti.class_init = machine_class_init;
 
     type_register(uc, &ti);
-    g_free(name);
+    free(name);
 }

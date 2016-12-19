@@ -28,10 +28,10 @@
 static void free_table(gpointer key, gpointer value, gpointer data)
 {
     TypeInfo *ti = (TypeInfo*) value;
-    g_free((void*) ti->class);
-    g_free((void*) ti->name);
-    g_free((void*) ti->parent);
-    g_free((void*) ti);
+    free((void*) ti->class);
+    free((void*) ti->name);
+    free((void*) ti->parent);
+    free((void*) ti);
 }
 
 UNICORN_EXPORT
@@ -287,12 +287,12 @@ uc_err uc_close(uc_engine *uc)
     // Cleanup internally.
     if (uc->release)
         uc->release(uc->tcg_ctx);
-    g_free(uc->tcg_ctx);
+    free(uc->tcg_ctx);
 
     // Cleanup CPU.
-    g_free(uc->cpu->tcg_as_listener);
-    g_free(uc->cpu->thread);
-    g_free(uc->cpu->halt_cond);
+    free(uc->cpu->tcg_as_listener);
+    free(uc->cpu->thread);
+    free(uc->cpu->halt_cond);
 
     // Cleanup all objects.
     OBJECT(uc->machine_state->accelerator)->ref = 1;
@@ -309,7 +309,7 @@ uc_err uc_close(uc_engine *uc)
     object_unref(uc, OBJECT(uc->root));
 
     // System memory.
-    g_free(uc->system_memory);
+    free(uc->system_memory);
 
     // Thread relateds.
     if (uc->qemu_thread_data)

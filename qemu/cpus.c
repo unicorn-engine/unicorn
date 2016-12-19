@@ -108,7 +108,7 @@ static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
 
     cpu->created = false;
     qemu_cond_destroy(cpu->halt_cond);
-    g_free(cpu->halt_cond);
+    free(cpu->halt_cond);
     cpu->halt_cond = NULL;
 
     qemu_mutex_unlock(&uc->qemu_global_mutex);

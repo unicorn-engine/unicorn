@@ -119,7 +119,7 @@ static inline GList *g_list_insert_sorted_merged(GList *list,
     return list;
 }
 
-static inline gint range_compare(gconstpointer a, gconstpointer b)
+static inline int32_t range_compare(gconstpointer a, gconstpointer b)
 {
     Range *ra = (Range *)a, *rb = (Range *)b;
     if (ra->begin == rb->begin && ra->end == rb->end) {

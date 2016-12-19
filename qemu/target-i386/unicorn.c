@@ -29,21 +29,21 @@ void x86_release(void *ctx)
     release_common(ctx);
 
     // arch specific
-    g_free(s->cpu_A0);
-    g_free(s->cpu_T[0]);
-    g_free(s->cpu_T[1]);
-    g_free(s->cpu_tmp0);
-    g_free(s->cpu_tmp4);
-    g_free(s->cpu_cc_srcT);
-    g_free(s->cpu_cc_dst);
-    g_free(s->cpu_cc_src);
-    g_free(s->cpu_cc_src2);
+    free(s->cpu_A0);
+    free(s->cpu_T[0]);
+    free(s->cpu_T[1]);
+    free(s->cpu_tmp0);
+    free(s->cpu_tmp4);
+    free(s->cpu_cc_srcT);
+    free(s->cpu_cc_dst);
+    free(s->cpu_cc_src);
+    free(s->cpu_cc_src2);
 
     for (i = 0; i < CPU_NB_REGS; ++i) {
-        g_free(s->cpu_regs[i]);
+        free(s->cpu_regs[i]);
     }
 
-    g_free(s->tb_ctx.tbs);
+    free(s->tb_ctx.tbs);
 }
 
 void x86_reg_reset(struct uc_struct *uc)

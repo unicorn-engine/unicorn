@@ -13,7 +13,7 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
-#include <glib.h>
+#include "glib_compat.h"
 
 #include "cpu.h"
 #include "exec/cpu-all.h"
@@ -161,7 +161,7 @@ void memory_mapping_list_free(MemoryMappingList *list)
 
     QTAILQ_FOREACH_SAFE(p, &list->head, next, q) {
         QTAILQ_REMOVE(&list->head, p, next);
-        g_free(p);
+        free(p);
     }
 
     list->num = 0;
@@ -181,7 +181,7 @@ void guest_phys_blocks_free(GuestPhysBlockList *list)
 
     QTAILQ_FOREACH_SAFE(p, &list->head, next, q) {
         QTAILQ_REMOVE(&list->head, p, next);
-        g_free(p);
+        free(p);
     }
     list->num = 0;
 }

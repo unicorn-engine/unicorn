@@ -74,7 +74,7 @@ static ObjectClass *m68k_cpu_class_by_name(struct uc_struct *uc, const char *cpu
 
     typename = g_strdup_printf("%s-" TYPE_M68K_CPU, cpu_model);
     oc = object_class_by_name(uc, typename);
-    g_free(typename);
+    free(typename);
     if (oc != NULL && (object_class_dynamic_cast(uc, oc, TYPE_M68K_CPU) == NULL ||
                        object_class_is_abstract(oc))) {
         return NULL;
@@ -208,7 +208,7 @@ static void register_cpu_type(void *opaque, const M68kCPUInfo *info)
 
     type_info.name = g_strdup_printf("%s-" TYPE_M68K_CPU, info->name);
     type_register(opaque, &type_info);
-    g_free((void *)type_info.name);
+    free((void *)type_info.name);
 }
 
 void m68k_cpu_register_types(void *opaque)

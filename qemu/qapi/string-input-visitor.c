@@ -34,7 +34,7 @@ struct StringInputVisitor
 
 static void free_range(void *range, void *dummy)
 {
-    g_free(range);
+    free(range);
 }
 
 static void parse_str(StringInputVisitor *siv, Error **errp)
@@ -321,7 +321,7 @@ void string_input_visitor_cleanup(StringInputVisitor *v)
 {
     g_list_foreach(v->ranges, free_range, NULL);
     g_list_free(v->ranges);
-    g_free(v);
+    free(v);
 }
 
 StringInputVisitor *string_input_visitor_new(const char *str)

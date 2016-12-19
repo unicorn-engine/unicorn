@@ -288,9 +288,9 @@ QemuOpt *qemu_opt_find(QemuOpts *opts, const char *name)
 static void qemu_opt_del(QemuOpt *opt)
 {
     QTAILQ_REMOVE(&opt->opts->head, opt, next);
-    g_free(opt->name);
-    g_free(opt->str);
-    g_free(opt);
+    free(opt->name);
+    free(opt->str);
+    free(opt);
 }
 
 /* qemu_opt_set allows many settings for the same option.
@@ -327,7 +327,7 @@ const char *qemu_opt_get(QemuOpts *opts, const char *name)
 
 /* Get a known option (or its default) and remove it from the list
  * all in one action. Return a malloced string of the option value.
- * Result must be freed by caller with g_free().
+ * Result must be freed by caller with free().
  */
 char *qemu_opt_get_del(QemuOpts *opts, const char *name)
 {
@@ -576,7 +576,7 @@ int qemu_opt_set_bool(QemuOpts *opts, const char *name, bool val)
     opt->desc = find_desc_by_name(desc, name);
     if (!opt->desc && !opts_accepts_any(opts)) {
         qerror_report(QERR_INVALID_PARAMETER, name);
-        g_free(opt);
+        free(opt);
         return -1;
     }
 
@@ -598,7 +598,7 @@ int qemu_opt_set_number(QemuOpts *opts, const char *name, int64_t val)
     opt->desc = find_desc_by_name(desc, name);
     if (!opt->desc && !opts_accepts_any(opts)) {
         qerror_report(QERR_INVALID_PARAMETER, name);
-        g_free(opt);
+        free(opt);
         return -1;
     }
 
@@ -698,7 +698,7 @@ const char *qemu_opts_id(QemuOpts *opts)
     return opts->id;
 }
 
-/* The id string will be g_free()d by qemu_opts_del */
+/* The id string will be free()d by qemu_opts_del */
 void qemu_opts_set_id(QemuOpts *opts, char *id)
 {
     opts->id = id;
@@ -719,8 +719,8 @@ void qemu_opts_del(QemuOpts *opts)
         qemu_opt_del(opt);
     }
     QTAILQ_REMOVE(&opts->list->head, opts, next);
-    g_free(opts->id);
-    g_free(opts);
+    free(opts->id);
+    free(opts);
 }
 
 void qemu_opts_print(QemuOpts *opts)
@@ -1064,7 +1064,7 @@ static size_t count_opts_list(QemuOptsList *list)
 
 void qemu_opts_free(QemuOptsList *list)
 {
-    g_free(list);
+    free(list);
 }
 
 /* Realloc dst option list and append options from an option list (list)

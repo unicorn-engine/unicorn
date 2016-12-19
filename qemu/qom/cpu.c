@@ -46,7 +46,7 @@ CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const cha
 
     oc = cpu_class_by_name(uc, typename, name);
     if (oc == NULL) {
-        g_free(str);
+        free(str);
         return NULL;
     }
 
@@ -55,7 +55,7 @@ CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const cha
 
     featurestr = strtok(NULL, ",");
     cc->parse_features(cpu, featurestr, &err);
-    g_free(str);
+    free(str);
     if (err != NULL) {
         goto out;
     }

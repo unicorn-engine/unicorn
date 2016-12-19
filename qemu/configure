@@ -1088,34 +1088,6 @@ if test -n "$libtool"; then
 fi
 
 ##########################################
-# glib support probe
-
-if test "$mingw32" = yes; then
-    # g_poll is required in order to integrate with the glib main loop.
-    glib_req_ver=2.20
-else
-    glib_req_ver=2.12
-fi
-glib_modules=gthread-2.0
-
-for i in $glib_modules; do
-    if $pkg_config --atleast-version=$glib_req_ver $i; then
-        glib_cflags=`$pkg_config --cflags $i`
-        glib_libs=`$pkg_config --libs $i`
-        CFLAGS="$glib_cflags $CFLAGS"
-        LIBS="$glib_libs $LIBS"
-    else
-        error_exit "glib-$glib_req_ver $i is required to compile QEMU"
-    fi
-done
-
-# g_test_trap_subprocess added in 2.38. Used by some tests.
-glib_subprocess=yes
-if ! $pkg_config --atleast-version=2.38 glib-2.0; then
-    glib_subprocess=no
-fi
-
-##########################################
 # pthread probe
 PTHREADLIBS_LIST="-pthread -lpthread -lpthreadGC2"
 
@@ -1599,10 +1571,6 @@ fi
 if test "$bswap_h" = "yes" ; then
   echo "CONFIG_MACHINE_BSWAP_H=y" >> $config_host_mak
 fi
-if test "glib_subprocess" = "yes" ; then
-  echo "CONFIG_HAS_GLIB_SUBPROCESS_TESTS=y" >> $config_host_mak
-fi
-echo "GLIB_CFLAGS=$glib_cflags" >> $config_host_mak
 if test "$signalfd" = "yes" ; then
   echo "CONFIG_SIGNALFD=y" >> $config_host_mak
 fi
