@@ -13,7 +13,7 @@ AR_EXT = a
 V ?= 0
 
 CFLAGS += -Wall -Werror -I../include
-LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm -lrt
+LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm
 LDLIBS += -lpthread -lunicorn -lm -lrt
 
 ifneq ($(CROSS),)
