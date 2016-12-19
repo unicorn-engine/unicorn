@@ -39,18 +39,19 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 /* typedefs for glib related types that may still be referenced */
 typedef void* gpointer;
 typedef const void *gconstpointer;
-typedef uint32_t guint;
+typedef int gint;
+typedef unsigned int guint;
 typedef char gchar;
 typedef int gboolean;
 
 typedef int (*GCompareFunc)(const void *v1, const void *v2);
 typedef void (*GDestroyNotify)(void *data);
 
-uint32_t g_direct_hash(const void *v);
+guint g_direct_hash(const void *v);
 int g_direct_equal(const void *v1, const void *v2);
-uint32_t g_str_hash(const void *v);
+guint g_str_hash(const void *v);
 int g_str_equal(const void *v1, const void *v2);
-uint32_t g_int_hash(const void *v);
+guint g_int_hash(const void *v);
 int g_int_equal(const void *v1, const void *v2);
 
 typedef struct _GList {
@@ -85,7 +86,7 @@ GSList *g_slist_sort(GSList *list, compare_func compare);
 GSList *g_slist_find_custom(GSList *list, const void *data, compare_func func);
 GSList *g_slist_remove(GSList *list, const void *data);
 
-typedef uint32_t (*GHashFunc)(const void *key);
+typedef guint (*GHashFunc)(const void *key);
 typedef int (*GEqualFunc)(const void *a, const void *b);
 typedef void (*GHFunc)(void* key, void* value, void* user_data);
 typedef int (*GHRFunc)(void* key, void* value, void* user_data);
@@ -104,7 +105,7 @@ void g_hash_table_remove_all(GHashTable *hash_table);
 int g_hash_table_remove(GHashTable *hash_table, const void* key);
 void g_hash_table_unref(GHashTable *hash_table);
 GHashTable *g_hash_table_ref(GHashTable *hash_table);
-uint32_t g_hash_table_size(GHashTable *hash_table);
+guint g_hash_table_size(GHashTable *hash_table);
 
 /* replacement for g_malloc dependency */
 void *g_malloc(size_t size);
