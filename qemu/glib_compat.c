@@ -383,7 +383,7 @@ typedef struct _KeyValue {
    void *value;
 } KeyValue;
 
-typedef struct _GHashTable {
+struct _GHashTable {
    GHashFunc hash_func;
    GEqualFunc key_equal_func;
    GDestroyNotify key_destroy_func;
@@ -392,7 +392,7 @@ typedef struct _GHashTable {
    uint32_t size;
    uint32_t num_entries;
    GSList **buckets;
-} GHashTable;
+};
 
 void g_hash_table_destroy(GHashTable *hash_table)
 {
