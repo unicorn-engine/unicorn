@@ -155,7 +155,7 @@ static void count_cpreg(gpointer key, gpointer opaque)
     }
 }
 
-static int32_t cpreg_key_compare(gconstpointer a, gconstpointer b)
+static gint cpreg_key_compare(gconstpointer a, gconstpointer b)
 {
     uint64_t aidx = cpreg_to_kvm_id(*(uint32_t *)a);
     uint64_t bidx = cpreg_to_kvm_id(*(uint32_t *)b);

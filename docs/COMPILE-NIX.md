@@ -8,24 +8,10 @@ To compile for Microsoft Windows, see [COMPILE-WINDOWS.md](COMPILE-WINDOWS.md)
 
 [0] Dependencies
 
-Unicorn requires few dependent packages as follows.
+For MacOS, Unicorn requires "pkg-config" package.
+Brew users can install this with:
 
-- For Mac OS X, "pkg-config" and "glib" are needed.
-  Brew users can install "pkg-config" and "glib" with:
-
-        $ brew install pkg-config glib
-
-  NOTE: to build Unicorn universal binaries (which support both 32-bit &
-  64-bit), you need to have glib in universal format. To do that, build &
-  install glib with:
-
-        $ brew install glib --universal
-
-- For Linux, "glib2-dev" is needed.
-  Ubuntu/Debian users can install this with:
-
-        $ sudo apt-get install libglib2.0-dev
-
+        $ brew install pkg-config
 
 
 [1] Tailor Unicorn to your need.
@@ -75,12 +61,8 @@ To build Unicorn on *nix (such as MacOSX, Linux, *BSD, Solaris):
 
         $ UNICORN_QEMU_FLAGS="--python=/path/to/python2" ./make.sh
 
-- To cross-compile Unicorn on 64-bit Linux to target 32-bit binary, install
-  libglib2.0-dev for i386. On Ubuntu, this can be done with:
-
-        $ sudo apt-get install libglib2.0-dev:i386
-
-  Then cross-compile to 32-bit with:
+- To cross-compile Unicorn on 64-bit Linux to target 32-bit binary,
+  cross-compile to 32-bit with:
 
         $ ./make.sh linux32
 

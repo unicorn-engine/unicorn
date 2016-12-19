@@ -14,7 +14,7 @@ V ?= 0
 
 CFLAGS += -Wall -Werror -I../include
 LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm
-LDLIBS += -lpthread -lunicorn -lm
+LDLIBS += -lpthread -lunicorn -lm -lrt
 
 ifneq ($(CROSS),)
 CC = $(CROSS)gcc

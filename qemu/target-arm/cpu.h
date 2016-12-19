@@ -1285,6 +1285,7 @@ static inline bool arm_excp_unmasked(CPUState *cs, unsigned int excp_idx)
         return !(env->daif & PSTATE_I);
     default:
         g_assert_not_reached();
+        return false;
     }
 }
 
