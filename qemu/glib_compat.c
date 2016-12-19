@@ -59,7 +59,12 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 /* hashing and equality functions */
 
-/* too many pointers are multiples of 8/16 */
+/*
+   Too many pointers are multiples of 8/16 so I rotate the low bits out
+   otherwise we get too many collisions at multiples of 8/16
+   This may be marginally better than what glib does in their direct_hash
+   but someone with some chops in this space should fix if it needs improving
+*/
 uint32_t g_direct_hash(const void *v) {
 #ifdef __HAVE_64_BIT_PTRS
    uint64_t hash = (uint64_t)v;
@@ -77,7 +82,10 @@ int g_direct_equal(const void *v1, const void *v2) {
    return v1 == v2;
 }
 
-/* djb2+ */
+/*
+   djb2+ string hashing
+   see: http://www.cse.yorku.ca/~oz/hash.html
+*/
 uint32_t g_str_hash(const void *v) {
    const char *s = (const char*)v;
    uint32_t hash = 5381;
@@ -92,6 +100,10 @@ int g_str_equal(const void *v1, const void *v2) {
    return strcmp((const char*)v1, (const char*)v2) == 0;
 }
 
+/*
+  Bob Jenkins integer hash algorithm
+  see: http://burtleburtle.net/bob/hash/integer.html
+*/
 uint32_t g_int_hash(const void *v) {
    uint32_t hash = *(const uint32_t*)v;
    hash = (hash + 0x7ed55d16) + (hash << 12);
