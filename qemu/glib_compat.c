@@ -65,15 +65,15 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
    This may be marginally better than what glib does in their direct_hash
    but someone with some chops in this space should fix if it needs improving
 */
-uint32_t g_direct_hash(const void *v)
+guint g_direct_hash(const void *v)
 {
 #ifdef __HAVE_64_BIT_PTRS
    uint64_t hash = (uint64_t)v;
    hash = (hash >> 4) | (hash << 60);
    hash = hash ^ (hash >> 32);
-   return (uint32_t)hash;
+   return (guint)hash;
 #else
-   uint32_t hash = (uint32_t)v;
+   guint hash = (guint)v;
    hash = (hash >> 3) | (hash << 29);
    return hash;
 #endif
@@ -88,10 +88,10 @@ int g_direct_equal(const void *v1, const void *v2)
    djb2+ string hashing
    see: http://www.cse.yorku.ca/~oz/hash.html
 */
-uint32_t g_str_hash(const void *v)
+guint g_str_hash(const void *v)
 {
    const char *s = (const char*)v;
-   uint32_t hash = 5381;
+   guint hash = 5381;
    while (*s) {
       hash = ((hash << 5) + hash) ^ (int)*s;      
       s++;
@@ -108,9 +108,9 @@ int g_str_equal(const void *v1, const void *v2)
   Bob Jenkins integer hash algorithm
   see: http://burtleburtle.net/bob/hash/integer.html
 */
-uint32_t g_int_hash(const void *v)
+guint g_int_hash(const void *v)
 {
-   uint32_t hash = *(const uint32_t*)v;
+   guint hash = *(const guint*)v;
    hash = (hash + 0x7ed55d16) + (hash << 12);
    hash = (hash ^ 0xc761c23c) ^ (hash >> 19);
    hash = (hash + 0x165667b1) + (hash << 5);
@@ -134,7 +134,7 @@ GList *g_list_first(GList *list)
    return list;
 }
 
-void g_list_foreach(GList *list, list_func func, void* user_data)
+void g_list_foreach(GList *list, GFunc func, void* user_data)
 {
    GList *lp;
    for (lp = list; lp; lp = lp->next) {
@@ -156,7 +156,7 @@ void g_list_free(GList *list)
    }
 }
 
-GList *g_list_insert_sorted(GList *list, void* data, compare_func compare)
+GList *g_list_insert_sorted(GList *list, void* data, GCompareFunc compare)
 {
    GList *i;
    GList *n = (GList*)g_malloc(sizeof(GList));
@@ -197,7 +197,7 @@ GList *g_list_remove_link(GList *list, GList *llink)
    return list;
 }
 
-GList *g_list_sort(GList *list, compare_func compare)
+GList *g_list_sort(GList *list, GCompareFunc compare)
 {
    GList *i, *it, *j;
    /* base case for singletons or empty lists */
@@ -264,7 +264,7 @@ GSList *g_slist_append(GSList *list, void* data)
    return head;   
 }
 
-void g_slist_foreach(GSList *list, list_func func, void* user_data)
+void g_slist_foreach(GSList *list, GFunc func, void* user_data)
 {
    GSList *lp;
    for (lp = list; lp; lp = lp->next) {
@@ -299,7 +299,7 @@ GSList *g_slist_prepend(GSList *list, void* data)
    return head;   
 }
 
-GSList *g_slist_sort(GSList *list, compare_func compare)
+GSList *g_slist_sort(GSList *list, GCompareFunc compare)
 {
    GSList *i, *it, *j;
    /* base case for singletons or empty lists */
@@ -345,7 +345,7 @@ GSList *g_slist_sort(GSList *list, compare_func compare)
    return list;
 }
 
-GSList *g_slist_find_custom(GSList *list, const void *data, compare_func func)
+GSList *g_slist_find_custom(GSList *list, const void *data, GCompareFunc func)
 {
    GSList *lp;
    for (lp = list; lp; lp = lp->next) {
@@ -432,7 +432,7 @@ int g_hash_table_insert(GHashTable *hash_table, void* key, void* value)
 {
    if (hash_table == NULL) return 1;
    GSList *lp;
-   uint32_t hash = (*hash_table->hash_func)(key);
+   guint hash = (*hash_table->hash_func)(key);
    int bnum = hash % hash_table->size;
    for (lp = hash_table->buckets[bnum]; lp; lp = lp->next) {
       KeyValue *kv = (KeyValue*)(lp->data);
@@ -457,7 +457,7 @@ void* g_hash_table_lookup(GHashTable *hash_table, const void* key)
 {
    if (hash_table == NULL) return NULL;
    GSList *lp;
-   uint32_t hash = (*hash_table->hash_func)(key);
+   guint hash = (*hash_table->hash_func)(key);
    int bnum = hash % hash_table->size;
    for (lp = hash_table->buckets[bnum]; lp; lp = lp->next) {
       KeyValue *kv = (KeyValue*)(lp->data);
@@ -511,7 +511,7 @@ int g_hash_table_remove(GHashTable *hash_table, const void* key)
 {
    GSList *lp, *prev = NULL;
    if (hash_table == NULL) return 0;
-   uint32_t hash = (*hash_table->hash_func)(key);
+   guint hash = (*hash_table->hash_func)(key);
    int bnum = hash % hash_table->size;
    for (lp = hash_table->buckets[bnum]; lp; lp = lp->next) {
       KeyValue *kv = (KeyValue*)(lp->data);
@@ -551,7 +551,7 @@ GHashTable *g_hash_table_ref(GHashTable *hash_table)
    return hash_table;
 }
 
-uint32_t g_hash_table_size(GHashTable *hash_table)
+guint g_hash_table_size(GHashTable *hash_table)
 {
    return hash_table ? hash_table->num_entries : 0;
 }
