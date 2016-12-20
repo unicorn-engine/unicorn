@@ -5,15 +5,6 @@ To compile for Microsoft Windows, see [COMPILE-WINDOWS.md](COMPILE-WINDOWS.md)
 
 ----
 
-
-[0] Dependencies
-
-For MacOS, Unicorn requires "pkg-config" package.
-Brew users can install this with:
-
-        $ brew install pkg-config
-
-
 [1] Tailor Unicorn to your need.
 
 Out of 6 archtitectures supported by Unicorn (Arm, Arm64, M68K, Mips, Sparc,
