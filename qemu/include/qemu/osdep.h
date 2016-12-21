@@ -210,7 +210,7 @@ void fips_set_state(bool requested);
 bool fips_get_state(void);
 
 /* Get the saved exec dir.
- * Caller needs to release the returned string by free() */
+ * Caller needs to release the returned string by g_free() */
 char *qemu_get_exec_dir(void);
 
 /**

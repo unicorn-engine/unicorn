@@ -32,14 +32,14 @@ static void release_common(void *t)
 
     // Clean TCG.
     TCGOpDef* def = &s->tcg_op_defs[0];
-    free(def->args_ct);
-    free(def->sorted_args);
-    free(s->tcg_op_defs);
+    g_free(def->args_ct);
+    g_free(def->sorted_args);
+    g_free(s->tcg_op_defs);
 
     TCGPool *po, *to;
     for (po = s->pool_first; po; po = to) {
         to = po->next;
-        free(po);
+        g_free(po);
     }
     tcg_pool_reset(s);
     g_hash_table_destroy(s->helpers);

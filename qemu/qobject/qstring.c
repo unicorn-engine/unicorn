@@ -144,6 +144,6 @@ static void qstring_destroy_obj(QObject *obj)
 
     assert(obj != NULL);
     qs = qobject_to_qstring(obj);
-    free(qs->string);
-    free(qs);
+    g_free(qs->string);
+    g_free(qs);
 }

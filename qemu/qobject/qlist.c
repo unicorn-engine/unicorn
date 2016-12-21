@@ -98,7 +98,7 @@ QObject *qlist_pop(QList *qlist)
     QTAILQ_REMOVE(&qlist->head, entry, next);
 
     ret = entry->value;
-    free(entry);
+    g_free(entry);
 
     return ret;
 }
@@ -163,8 +163,8 @@ static void qlist_destroy_obj(QObject *obj)
     QTAILQ_FOREACH_SAFE(entry, &qlist->head, next, next_entry) {
         QTAILQ_REMOVE(&qlist->head, entry, next);
         qobject_decref(entry->value);
-        free(entry);
+        g_free(entry);
     }
 
-    free(qlist);
+    g_free(qlist);
 }

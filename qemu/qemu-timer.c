@@ -103,7 +103,7 @@ void timerlist_free(QEMUTimerList *timer_list)
         QLIST_REMOVE(timer_list, list);
     }
     qemu_mutex_destroy(&timer_list->active_timers_lock);
-    free(timer_list);
+    g_free(timer_list);
 }
 
 bool timerlist_has_timers(QEMUTimerList *timer_list)

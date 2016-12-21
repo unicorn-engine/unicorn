@@ -101,7 +101,7 @@ static AccelClass *accel_find(struct uc_struct *uc, const char *opt_name)
 {
     char *class_name = g_strdup_printf(ACCEL_CLASS_NAME("%s"), opt_name);
     AccelClass *ac = ACCEL_CLASS(uc, object_class_by_name(uc, class_name));
-    free(class_name);
+    g_free(class_name);
     return ac;
 }
 

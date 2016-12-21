@@ -161,7 +161,7 @@ void memory_mapping_list_free(MemoryMappingList *list)
 
     QTAILQ_FOREACH_SAFE(p, &list->head, next, q) {
         QTAILQ_REMOVE(&list->head, p, next);
-        free(p);
+        g_free(p);
     }
 
     list->num = 0;
@@ -181,7 +181,7 @@ void guest_phys_blocks_free(GuestPhysBlockList *list)
 
     QTAILQ_FOREACH_SAFE(p, &list->head, next, q) {
         QTAILQ_REMOVE(&list->head, p, next);
-        free(p);
+        g_free(p);
     }
     list->num = 0;
 }

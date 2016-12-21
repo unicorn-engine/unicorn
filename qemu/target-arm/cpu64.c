@@ -212,7 +212,7 @@ static void aarch64_cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)
 
     type_info.name = g_strdup_printf("%s-" TYPE_ARM_CPU, info->name);
     type_register(uc, &type_info);
-    free((void *)type_info.name);
+    g_free((void *)type_info.name);
 }
 
 void aarch64_cpu_register_types(void *opaque)

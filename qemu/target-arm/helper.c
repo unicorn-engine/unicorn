@@ -3102,7 +3102,7 @@ static void arm_cpu_list_entry(gpointer data, gpointer user_data)
     name = g_strndup(typename, strlen(typename) - strlen("-" TYPE_ARM_CPU));
     (*s->cpu_fprintf)(s->file, "  %s\n",
                       name);
-    free(name);
+    g_free(name);
 }
 #endif
 

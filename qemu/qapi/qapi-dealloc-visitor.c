@@ -55,7 +55,7 @@ static void *qapi_dealloc_pop(QapiDeallocVisitor *qov)
     QObject *value;
     QTAILQ_REMOVE(&qov->stack, e, node);
     value = e->value;
-    free(e);
+    g_free(e);
     return value;
 }
 
@@ -72,7 +72,7 @@ static void qapi_dealloc_end_struct(Visitor *v, Error **errp)
     QapiDeallocVisitor *qov = to_qov(v);
     void **obj = qapi_dealloc_pop(qov);
     if (obj) {
-        free(*obj);
+        g_free(*obj);
     }
 }
 
@@ -90,7 +90,7 @@ static void qapi_dealloc_end_implicit_struct(Visitor *v, Error **errp)
     QapiDeallocVisitor *qov = to_qov(v);
     void **obj = qapi_dealloc_pop(qov);
     if (obj) {
-        free(*obj);
+        g_free(*obj);
     }
 }
 
@@ -114,7 +114,7 @@ static GenericList *qapi_dealloc_next_list(Visitor *v, GenericList **listp,
 
     if (list) {
         list = list->next;
-        free(*listp);
+        g_free(*listp);
         return list;
     }
 
@@ -132,7 +132,7 @@ static void qapi_dealloc_type_str(Visitor *v, char **obj, const char *name,
                                   Error **errp)
 {
     if (obj) {
-        free(*obj);
+        g_free(*obj);
     }
 }
 
@@ -194,7 +194,7 @@ Visitor *qapi_dealloc_get_visitor(QapiDeallocVisitor *v)
 
 void qapi_dealloc_visitor_cleanup(QapiDeallocVisitor *v)
 {
-    free(v);
+    g_free(v);
 }
 
 QapiDeallocVisitor *qapi_dealloc_visitor_new(void)

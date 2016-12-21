@@ -1112,7 +1112,7 @@ void do_cpu_init(X86CPU *cpu)
     memcpy(&env->start_init_save, &save->start_init_save,
            offsetof(CPUX86State, end_init_save) -
            offsetof(CPUX86State, start_init_save));
-    free(save);
+    g_free(save);
 
     apic_init_reset(env->uc, cpu->apic_state);
 }

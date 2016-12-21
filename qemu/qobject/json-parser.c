@@ -354,8 +354,8 @@ static void parser_context_free(JSONParserContext *ctxt)
         for (i = 0; i < ctxt->tokens.count; i++) {
             qobject_decref(ctxt->tokens.buf[i]);
         }
-        free(ctxt->tokens.buf);
-        free(ctxt);
+        g_free(ctxt->tokens.buf);
+        g_free(ctxt);
     }
 }
 

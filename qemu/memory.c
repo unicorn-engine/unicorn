@@ -91,9 +91,9 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
             mr->destructor(mr);
             obj = OBJECT(mr);
             obj->ref = 1;
-            obj->free = free;
-            free(mr->ioeventfds);
-            free((char *)mr->name);
+            obj->free = g_free;
+            g_free(mr->ioeventfds);
+            g_free((char *)mr->name);
             mr->name = NULL;
             object_property_del_child(mr->uc, qdev_get_machine(mr->uc), obj, &error_abort);
             break;
@@ -114,8 +114,8 @@ int memory_free(struct uc_struct *uc)
         mr->destructor(mr);
         obj = OBJECT(mr);
         obj->ref = 1;
-        obj->free = free;
-        free(mr->ioeventfds);
+        obj->free = g_free;
+        g_free(mr->ioeventfds);
         object_property_del_child(mr->uc, qdev_get_machine(mr->uc), obj, &error_abort);
     }
 
@@ -375,8 +375,8 @@ static void flatview_destroy(FlatView *view)
     for (i = 0; i < view->nr; i++) {
         memory_region_unref(view->ranges[i].mr);
     }
-    free(view->ranges);
-    free(view);
+    g_free(view->ranges);
+    g_free(view);
 }
 
 static void flatview_ref(FlatView *view)
@@ -767,7 +767,7 @@ static void address_space_update_ioeventfds(AddressSpace *as)
     address_space_add_del_ioeventfds(as, ioeventfds, ioeventfd_nb,
                                      as->ioeventfds, as->ioeventfd_nb);
 
-    free(as->ioeventfds);
+    g_free(as->ioeventfds);
     as->ioeventfds = ioeventfds;
     as->ioeventfd_nb = ioeventfd_nb;
     flatview_unref(view);
@@ -973,8 +973,8 @@ void memory_region_init(struct uc_struct *uc, MemoryRegion *mr,
         char *name_array = g_strdup_printf("%s[*]", escaped_name);
         object_property_add_child(owner, name_array, OBJECT(mr), &error_abort);
         object_unref(uc, OBJECT(mr));
-        free(name_array);
-        free(escaped_name);
+        g_free(name_array);
+        g_free(escaped_name);
     }
 }
 
@@ -998,7 +998,7 @@ static void memory_region_get_container(struct uc_struct *uc, Object *obj, Visit
     }
     visit_type_str(v, &path, name, errp);
     if (mr->container) {
-        free(path);
+        g_free(path);
     }
 }
 
@@ -1283,8 +1283,8 @@ static void memory_region_finalize(struct uc_struct *uc, Object *obj, void *opaq
     // assert(memory_region_transaction_depth == 0);
     mr->destructor(mr);
     memory_region_clear_coalescing(mr);
-    free((char *)mr->name);
-    free(mr->ioeventfds);
+    g_free((char *)mr->name);
+    g_free(mr->ioeventfds);
 }
 
 void memory_region_ref(MemoryRegion *mr)
@@ -1482,7 +1482,7 @@ void memory_region_clear_coalescing(MemoryRegion *mr)
     while (!QTAILQ_EMPTY(&mr->coalesced)) {
         cmr = QTAILQ_FIRST(&mr->coalesced);
         QTAILQ_REMOVE(&mr->coalesced, cmr, link);
-        free(cmr);
+        g_free(cmr);
         updated = true;
     }
 
@@ -1883,8 +1883,8 @@ void address_space_destroy(AddressSpace *as)
     }
 
     flatview_unref(as->current_map);
-    free(as->name);
-    free(as->ioeventfds);
+    g_free(as->name);
+    g_free(as->ioeventfds);
 }
 
 bool io_mem_read(MemoryRegion *mr, hwaddr addr, uint64_t *pval, unsigned size)
