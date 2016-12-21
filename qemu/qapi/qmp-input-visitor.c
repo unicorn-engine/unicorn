@@ -308,7 +308,7 @@ Visitor *qmp_input_get_visitor(QmpInputVisitor *v)
 void qmp_input_visitor_cleanup(QmpInputVisitor *v)
 {
     qobject_decref(v->stack[0].obj);
-    free(v);
+    g_free(v);
 }
 
 QmpInputVisitor *qmp_input_visitor_new(QObject *obj)

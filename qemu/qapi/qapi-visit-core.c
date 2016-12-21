@@ -304,10 +304,10 @@ void input_type_enum(Visitor *v, int *obj, const char *strings[],
 
     if (strings[value] == NULL) {
         error_set(errp, QERR_INVALID_PARAMETER, enum_str);
-        free(enum_str);
+        g_free(enum_str);
         return;
     }
 
-    free(enum_str);
+    g_free(enum_str);
     *obj = value;
 }

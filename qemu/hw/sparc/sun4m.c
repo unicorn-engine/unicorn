@@ -745,7 +745,7 @@ static void prom_init(hwaddr addr, const char *bios_name)
         if (ret < 0 || ret > PROM_SIZE_MAX) {
             ret = load_image_targphys(filename, addr, PROM_SIZE_MAX);
         }
-        free(filename);
+        g_free(filename);
     } else {
         ret = -1;
     }

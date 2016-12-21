@@ -57,7 +57,7 @@ struct arm_boot_info {
      * sets get_dtb. This will only be used if no dtb file is provided
      * by the user. On success, sets *size to the length of the created
      * dtb, and returns a pointer to it. (The caller must free this memory
-     * with free() when it has finished with it.) On failure, returns NULL.
+     * with g_free() when it has finished with it.) On failure, returns NULL.
      */
     void *(*get_dtb)(const struct arm_boot_info *info, int *size);
     /* if a board needs to be able to modify a device tree provided by

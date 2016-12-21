@@ -64,5 +64,5 @@ QFloat *qobject_to_qfloat(const QObject *obj)
 static void qfloat_destroy_obj(QObject *obj)
 {
     assert(obj != NULL);
-    free(qobject_to_qfloat(obj));
+    g_free(qobject_to_qfloat(obj));
 }

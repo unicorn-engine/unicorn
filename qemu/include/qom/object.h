@@ -1125,7 +1125,7 @@ void object_property_add_link(Object *obj, const char *name,
  * @obj: the object to add a property to
  * @name: the name of the property
  * @get: the getter or NULL if the property is write-only.  This function must
- *   return a string to be freed by free().
+ *   return a string to be freed by g_free().
  * @set: the setter or NULL if the property is read-only
  * @errp: if an error occurs, a pointer to an area to store the error
  *
