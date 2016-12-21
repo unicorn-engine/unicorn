@@ -5,11 +5,6 @@ include ../config.mk
 
 UNAME_S := $(shell uname -s)
 
-# Find GLIB
-ifndef GLIB
-GLIB = $(shell pkg-config --libs glib-2.0)
-endif
-
 LIBDIR = ..
 BIN_EXT =
 AR_EXT = a
@@ -18,8 +13,8 @@ AR_EXT = a
 V ?= 0
 
 CFLAGS += -Wall -Werror -I../include
-LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm $(GLIB)
-LDLIBS += -lpthread -lunicorn -lm $(GLIB)
+LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm
+LDLIBS += -lpthread -lunicorn -lm
 
 ifneq ($(CROSS),)
 CC = $(CROSS)gcc
