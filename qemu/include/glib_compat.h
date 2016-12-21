@@ -106,6 +106,7 @@ GHashTable *g_hash_table_ref(GHashTable *hash_table);
 guint g_hash_table_size(GHashTable *hash_table);
 
 /* replacement for g_malloc dependency */
+#define g_free(x) free(x)
 void *g_malloc(size_t size);
 void *g_malloc0(size_t size);
 void *g_try_malloc0(size_t size);
