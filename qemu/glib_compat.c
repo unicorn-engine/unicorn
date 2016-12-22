@@ -27,32 +27,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "glib_compat.h"
 
-#ifdef _WIN32
-   #ifdef _WIN64
-      #define __HAVE_64_BIT_PTRS
-   #else
-      #define __HAVE_32_BIT_PTRS
-   #endif
-#else
-   #ifdef _WIN64
-      #define __HAVE_64_BIT_PTRS
-   #endif
+#undef __HAVE_64_BIT_PTRS
+
+#ifdef _WIN64
+    #define __HAVE_64_BIT_PTRS
 #endif
 
 #ifdef __GNUC__
-   #ifdef __x86_64__
-      #define __HAVE_64_BIT_PTRS
-   #else
-      #ifdef __ppc64__
-         #define __HAVE_64_BIT_PTRS
-      #else
-         #ifdef __aarch64__
-            #define __HAVE_64_BIT_PTRS
-         #else
-            #define __HAVE_32_BIT_PTRS
-         #endif
-      #endif
-   #endif
+#if defined(__x86_64__) || defined(__ppc64__) || defined(__aarch64__)
+    #define __HAVE_64_BIT_PTRS
+#endif
 #endif
 
 /* All functions below added to eliminate GLIB dependency */
@@ -77,11 +61,6 @@ guint g_direct_hash(const void *v)
    hash = (hash >> 3) | (hash << 29);
    return hash;
 #endif
-}
-
-int g_direct_equal(const void *v1, const void *v2)
-{
-   return v1 == v2;
 }
 
 /*
@@ -281,16 +260,6 @@ void g_slist_free(GSList *list)
    }
 }
 
-void g_slist_free_full(GSList *list, GDestroyNotify free_func)
-{
-   GSList *lp, *next;
-   for (lp = list; lp; lp = next) {
-      next = lp->next;
-      if (free_func) (*free_func)(lp->data);
-      free(lp);
-   }
-}
-
 GSList *g_slist_prepend(GSList *list, void* data)
 {
    GSList *head = (GSList*)g_malloc(sizeof(GSList));
@@ -342,34 +311,6 @@ GSList *g_slist_sort(GSList *list, GCompareFunc compare)
    }
    if (i) it->next = i;
    else it->next = j;
-   return list;
-}
-
-GSList *g_slist_find_custom(GSList *list, const void *data, GCompareFunc func)
-{
-   GSList *lp;
-   for (lp = list; lp; lp = lp->next) {
-      if ((*func)(lp->data, data) == 0) return lp;
-   }
-   return NULL;
-}
-
-GSList *g_slist_remove(GSList *list, const void *data)
-{
-   GSList *lp, *prev = NULL;
-   for (lp = list; lp; lp = lp->next) {
-      if (lp->data == data) {
-         if (prev == NULL) {
-            list = lp->next;
-         }
-         else {
-            prev->next = lp->next;
-         }
-         free(lp);
-         break;
-      }
-      prev = lp;
-   }
    return list;
 }
 
@@ -555,7 +496,6 @@ guint g_hash_table_size(GHashTable *hash_table)
 {
    return hash_table ? hash_table->num_entries : 0;
 }
-
 
 /* END of g_hash_table related functions */
 

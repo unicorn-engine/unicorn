@@ -49,7 +49,6 @@ typedef gint (*GCompareFunc)(const void *v1, const void *v2);
 typedef void (*GDestroyNotify)(void *data);
 
 guint g_direct_hash(const void *v);
-int g_direct_equal(const void *v1, const void *v2);
 guint g_str_hash(const void *v);
 int g_str_equal(const void *v1, const void *v2);
 guint g_int_hash(const void *v);
@@ -78,11 +77,8 @@ typedef struct _GSList {
 GSList *g_slist_append(GSList *list, void* data);
 void g_slist_foreach(GSList *list, GFunc func, void* user_data);
 void g_slist_free(GSList *list);
-void g_slist_free_full(GSList *list, GDestroyNotify free_func);
 GSList *g_slist_prepend(GSList *list, void* data);
 GSList *g_slist_sort(GSList *list, GCompareFunc compare);
-GSList *g_slist_find_custom(GSList *list, const void *data, GCompareFunc func);
-GSList *g_slist_remove(GSList *list, const void *data);
 
 typedef guint (*GHashFunc)(const void *key);
 typedef int (*GEqualFunc)(const void *a, const void *b);
