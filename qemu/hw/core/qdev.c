@@ -176,7 +176,7 @@ static int device_set_realized(struct uc_struct *uc, Object *obj, bool value, Er
             object_property_add_child(container_get(qdev_get_machine(),
                                                     "/unattached"),
                                       name, obj, &error_abort);
-            free(name);
+            g_free(name);
         }
 #endif
 
@@ -305,7 +305,7 @@ static void qbus_finalize(struct uc_struct *uc, Object *obj, void *opaque)
 {
     BusState *bus = BUS(uc, obj);
 
-    free((char *)bus->name);
+    g_free((char *)bus->name);
 }
 
 static const TypeInfo bus_info = {

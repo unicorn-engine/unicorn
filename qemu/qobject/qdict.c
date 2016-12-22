@@ -432,8 +432,8 @@ static void qentry_destroy(QDictEntry *e)
     assert(e->value != NULL);
 
     qobject_decref(e->value);
-    free(e->key);
-    free(e);
+    g_free(e->key);
+    g_free(e);
 }
 
 /**
@@ -474,7 +474,7 @@ static void qdict_destroy_obj(QObject *obj)
         }
     }
 
-    free(qdict);
+    g_free(qdict);
 }
 
 static void qdict_flatten_qdict(QDict *qdict, QDict *target,
@@ -509,7 +509,7 @@ static void qdict_flatten_qlist(QList *qlist, QDict *target, const char *prefix)
             qdict_put_obj(target, new_key, value);
         }
 
-        free(new_key);
+        g_free(new_key);
     }
 }
 
@@ -550,7 +550,7 @@ static void qdict_flatten_qdict(QDict *qdict, QDict *target, const char *prefix)
             delete = true;
         }
 
-        free(new_key);
+        g_free(new_key);
 
         if (delete) {
             qdict_del(qdict, entry->key);

@@ -142,7 +142,7 @@ static void tb_clean_internal(struct uc_struct *uc, int i, void** lp)
     }
     tb_clean_internal(uc, i-1, (*lp) + ((0 >> (i * V_L2_BITS)) & (V_L2_SIZE - 1)));
     if (lp && *lp) {
-        free(*lp);
+        g_free(*lp);
     }
 }
 
@@ -667,7 +667,7 @@ void free_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
     if (tcg_ctx->code_gen_buffer)
-        free(tcg_ctx->code_gen_buffer);
+        g_free(tcg_ctx->code_gen_buffer);
 }
 
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
@@ -792,7 +792,7 @@ void tb_free(struct uc_struct *uc, TranslationBlock *tb)
 static inline void invalidate_page_bitmap(PageDesc *p)
 {
     if (p->code_bitmap) {
-        free(p->code_bitmap);
+        g_free(p->code_bitmap);
         p->code_bitmap = NULL;
     }
     p->code_write_count = 0;

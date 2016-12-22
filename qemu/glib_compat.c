@@ -501,6 +501,11 @@ guint g_hash_table_size(GHashTable *hash_table)
 
 /* general g_XXX substitutes */
 
+void g_free(void *ptr)
+{
+   free(ptr);
+}
+
 void *g_malloc(size_t size)
 {
    if (size == 0) return NULL;

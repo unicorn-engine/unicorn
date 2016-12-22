@@ -227,7 +227,7 @@ static void type_initialize_interface(struct uc_struct *uc, TypeImpl *ti, TypeIm
     iface_impl = type_new(uc, &info);
     iface_impl->parent_type = parent_type;
     type_initialize(uc, iface_impl);
-    free((char *)info.name);
+    g_free((char *)info.name);
 
     new_iface = (InterfaceClass *)iface_impl->class;
     new_iface->concrete_class = ti->class;
@@ -363,10 +363,10 @@ static void object_property_del_all(struct uc_struct *uc, Object *obj)
             prop->release(uc, obj, prop->name, prop->opaque);
         }
 
-        free(prop->name);
-        free(prop->type);
-        free(prop->description);
-        free(prop);
+        g_free(prop->name);
+        g_free(prop->type);
+        g_free(prop->description);
+        g_free(prop);
     }
 }
 
@@ -423,7 +423,7 @@ static Object *object_new_with_type(struct uc_struct *uc, Type type)
 
     obj = g_malloc(type->instance_size);
     object_initialize_with_type(uc, obj, type->instance_size, type);
-    obj->free = free;
+    obj->free = g_free;
 
     return obj;
 }
@@ -733,12 +733,12 @@ object_property_add(Object *obj, const char *name, const char *type,
 
             ret = object_property_add(obj, full_name, type, get, set,
                                       release, opaque, NULL);
-            free(full_name);
+            g_free(full_name);
             if (ret) {
                 break;
             }
         }
-        free(name_no_array);
+        g_free(name_no_array);
         return ret;
     }
 
@@ -793,10 +793,10 @@ void object_property_del(struct uc_struct *uc, Object *obj, const char *name, Er
 
     QTAILQ_REMOVE(&obj->properties, prop, node);
 
-    free(prop->name);
-    free(prop->type);
-    free(prop->description);
-    free(prop);
+    g_free(prop->name);
+    g_free(prop->type);
+    g_free(prop->description);
+    g_free(prop);
 }
 
 void object_property_get(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
@@ -867,7 +867,7 @@ void object_property_set_link(struct uc_struct *uc, Object *obj, Object *value,
     if (value) {
         gchar *path = object_get_canonical_path(value);
         object_property_set_str(uc, obj, path, name, errp);
-        free(path);
+        g_free(path);
     } else {
         object_property_set_str(uc, obj, "", name, errp);
     }
@@ -886,7 +886,7 @@ Object *object_property_get_link(struct uc_struct *uc, Object *obj, const char *
         }
     }
 
-    free(str);
+    g_free(str);
     return target;
 }
 
@@ -989,7 +989,7 @@ static void object_get_child_property(struct uc_struct *uc, Object *obj, Visitor
 
     path = object_get_canonical_path(child);
     visit_type_str(v, &path, name, errp);
-    free(path);
+    g_free(path);
 }
 
 static Object *object_resolve_child_property(struct uc_struct *uc, Object *parent, void *opaque, const gchar *part)
@@ -1035,7 +1035,7 @@ void object_property_add_child(Object *obj, const char *name,
     child->parent = obj;
 
 out:
-    free(type);
+    g_free(type);
 }
 
 void object_property_allow_set_link(Object *obj, const char *name,
@@ -1060,7 +1060,7 @@ static void object_get_link_property(struct uc_struct *uc, Object *obj, Visitor 
     if (*child) {
         path = object_get_canonical_path(*child);
         visit_type_str(v, &path, name, errp);
-        free(path);
+        g_free(path);
     } else {
         path = (gchar *)"";
         visit_type_str(v, &path, name, errp);
@@ -1101,7 +1101,7 @@ static Object *object_resolve_link(struct uc_struct *uc, Object *obj, const char
         }
         target = NULL;
     }
-    free(target_type);
+    g_free(target_type);
 
     return target;
 }
@@ -1122,7 +1122,7 @@ static int object_set_link_property(struct uc_struct *uc, Object *obj, Visitor *
         new_target = object_resolve_link(uc, obj, name, path, &local_err);
     }
 
-    free(path);
+    g_free(path);
     if (local_err) {
         error_propagate(errp, local_err);
         return -1;
@@ -1156,7 +1156,7 @@ static void object_release_link_property(struct uc_struct *uc, Object *obj, cons
     if ((prop->flags & OBJ_PROP_LINK_UNREF_ON_RELEASE) && *prop->child) {
         object_unref(uc, *prop->child);
     }
-    free(prop);
+    g_free(prop);
 }
 
 void object_property_add_link(Object *obj, const char *name,
@@ -1185,14 +1185,14 @@ void object_property_add_link(Object *obj, const char *name,
                              &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        free(prop);
+        g_free(prop);
         goto out;
     }
 
     op->resolve = object_resolve_link_property;
 
 out:
-    free(full_type);
+    g_free(full_type);
 }
 
 gchar *object_get_canonical_path_component(Object *obj)
@@ -1227,8 +1227,8 @@ gchar *object_get_canonical_path(Object *obj)
 
         if (path) {
             newpath = g_strdup_printf("%s/%s", component, path);
-            free(component);
-            free(path);
+            g_free(component);
+            g_free(path);
             path = newpath;
         } else {
             path = component;
@@ -1238,7 +1238,7 @@ gchar *object_get_canonical_path(Object *obj)
     }
 
     newpath = g_strdup_printf("/%s", path ? path : "");
-    free(path);
+    g_free(path);
 
     return newpath;
 }
@@ -1361,7 +1361,7 @@ static void property_get_str(struct uc_struct *uc, Object *obj, Visitor *v, void
     value = prop->get(uc, obj, errp);
     if (value) {
         visit_type_str(v, &value, name, errp);
-        free(value);
+        g_free(value);
     }
 }
 
@@ -1379,7 +1379,7 @@ static int property_set_str(struct uc_struct *uc, Object *obj, Visitor *v, void 
     }
 
     prop->set(uc, obj, value, errp);
-    free(value);
+    g_free(value);
 
     return 0;
 }
@@ -1388,7 +1388,7 @@ static void property_release_str(struct uc_struct *uc, Object *obj, const char *
                                  void *opaque)
 {
     StringProperty *prop = opaque;
-    free(prop);
+    g_free(prop);
 }
 
 void object_property_add_str(Object *obj, const char *name,
@@ -1409,7 +1409,7 @@ void object_property_add_str(Object *obj, const char *name,
                         prop, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        free(prop);
+        g_free(prop);
     }
 }
 
@@ -1449,7 +1449,7 @@ static void property_release_bool(struct uc_struct *uc, Object *obj, const char 
                                   void *opaque)
 {
     BoolProperty *prop = opaque;
-    free(prop);
+    g_free(prop);
 }
 
 void object_property_add_bool(struct uc_struct *uc, Object *obj, const char *name,
@@ -1470,7 +1470,7 @@ void object_property_add_bool(struct uc_struct *uc, Object *obj, const char *nam
                         prop, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        free(prop);
+        g_free(prop);
     }
 }
 
@@ -1574,7 +1574,7 @@ static void property_release_alias(struct uc_struct *uc, Object *obj, const char
 {
     AliasProperty *prop = opaque;
 
-    free(prop);
+    g_free(prop);
 }
 
 void object_property_add_alias(Object *obj, const char *name,
@@ -1610,7 +1610,7 @@ void object_property_add_alias(Object *obj, const char *name,
                              prop, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        free(prop);
+        g_free(prop);
         goto out;
     }
     op->resolve = property_resolve_alias;
@@ -1620,7 +1620,7 @@ void object_property_add_alias(Object *obj, const char *name,
                                     &error_abort);
 
 out:
-    free(prop_type);
+    g_free(prop_type);
 }
 
 void object_property_set_description(Object *obj, const char *name,
@@ -1633,7 +1633,7 @@ void object_property_set_description(Object *obj, const char *name,
         return;
     }
 
-    free(op->description);
+    g_free(op->description);
     op->description = g_strdup(description);
 }
 

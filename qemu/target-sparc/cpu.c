@@ -100,7 +100,7 @@ static int cpu_sparc_register(struct uc_struct *uc, SPARCCPU *cpu, const char *c
     Error *err = NULL;
 
     if (cpu_sparc_find_by_name(def, name) < 0) {
-        free(s);
+        g_free(s);
         return -1;
     }
 
@@ -109,7 +109,7 @@ static int cpu_sparc_register(struct uc_struct *uc, SPARCCPU *cpu, const char *c
 
     featurestr = strtok(NULL, ",");
     cc->parse_features(CPU(cpu), featurestr, &err);
-    free(s);
+    g_free(s);
     if (err) {
         //error_report("%s", error_get_pretty(err));
         error_free(err);
@@ -821,7 +821,7 @@ static void sparc_cpu_uninitfn(struct uc_struct *uc, Object *obj, void *opaque)
     SPARCCPU *cpu = SPARC_CPU(uc, obj);
     CPUSPARCState *env = &cpu->env;
 
-    free(env->def);
+    g_free(env->def);
 }
 
 static void sparc_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)

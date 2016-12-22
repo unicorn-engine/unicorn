@@ -64,5 +64,5 @@ QBool *qobject_to_qbool(const QObject *obj)
 static void qbool_destroy_obj(QObject *obj)
 {
     assert(obj != NULL);
-    free(qobject_to_qbool(obj));
+    g_free(qobject_to_qbool(obj));
 }
