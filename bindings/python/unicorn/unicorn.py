@@ -20,6 +20,10 @@ if _python2:
 _lib = { 'darwin': 'libunicorn.dylib',
          'win32': 'unicorn.dll',
          'cygwin': 'cygunicorn.dll',
+         'freebsd9': 'libunicorn.so',
+         'freebsd10': 'libunicorn.so',
+         'freebsd11': 'libunicorn.so',
+         'freebsd12': 'libunicorn.so',
          'linux': 'libunicorn.so',
          'linux2': 'libunicorn.so' }
 
