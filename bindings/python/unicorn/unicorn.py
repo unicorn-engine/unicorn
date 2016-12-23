@@ -20,10 +20,6 @@ if _python2:
 _lib = { 'darwin': 'libunicorn.dylib',
          'win32': 'unicorn.dll',
          'cygwin': 'cygunicorn.dll',
-         'freebsd9': 'libunicorn.so',
-         'freebsd10': 'libunicorn.so',
-         'freebsd11': 'libunicorn.so',
-         'freebsd12': 'libunicorn.so',
          'linux': 'libunicorn.so',
          'linux2': 'libunicorn.so' }
 
@@ -66,7 +62,7 @@ def _load_lib(path):
         if sys.platform in ('win32', 'cygwin'):
             _load_win_support(path)
 
-        lib_file = os.path.join(path, _lib[sys.platform])
+        lib_file = os.path.join(path, _lib.get(sys.platform, 'libunicorn.so'))
         #print('Trying to load shared library', lib_file)
         dll = ctypes.cdll.LoadLibrary(lib_file)
         #print('SUCCESS')
