@@ -15,7 +15,7 @@ V ?= 0
 CFLAGS += -Wall -Werror -I../include
 
 LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm
-ifneq ($(UNAME_S), Darwin)
+ifeq ($(UNAME_S), Linux)
 LDFLAGS += -lrt
 endif
 
