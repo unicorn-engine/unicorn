@@ -512,8 +512,7 @@ gpointer g_hash_table_find (GHashTable      *hash_table,
  * See g_hash_table_find() for performance caveats for linear
  * order searches in contrast to g_hash_table_lookup().
  **/
-void
-g_hash_table_foreach (GHashTable *hash_table,
+void g_hash_table_foreach (GHashTable *hash_table,
                       GHFunc      func,
                       gpointer    user_data)
 {
