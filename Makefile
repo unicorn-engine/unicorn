@@ -282,6 +282,7 @@ dist:
 	git archive --format=zip --prefix=unicorn-$(DIST_VERSION)/ $(TAG) > unicorn-$(DIST_VERSION).zip
 
 
+# run "make header" whenever qemu/header_gen.py is modified
 header:
 	$(eval TARGETS := m68k arm aarch64 mips mipsel mips64 mips64el\
 		powerpc sparc sparc64 x86_64)
