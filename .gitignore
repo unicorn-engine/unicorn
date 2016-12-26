@@ -45,6 +45,8 @@ unicorn.pc
 
 unicorn.lib
 unicorn.dll
+unicorn.exp
+unicorn.def
 unicorn_*.lib
 unicorn_*.exp
 unicorn_*.dll
