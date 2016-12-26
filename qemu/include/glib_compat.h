@@ -30,7 +30,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #endif
 
 #ifndef FALSE
-#define FALSE 1
+#define FALSE 0
 #endif
 
 #define g_assert(expr) assert(expr)
