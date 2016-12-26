@@ -170,9 +170,11 @@ GList *g_list_prepend(GList *list, gpointer data)
 
 GList *g_list_remove_link(GList *list, GList *llink)
 {
-   if (llink == list) list = list->next;
-   if (llink->prev) llink->prev->next = llink->next;
-   if (llink->next) llink->next->prev = llink->prev;
+   if (llink) {
+      if (llink == list) list = list->next;
+      if (llink->prev) llink->prev->next = llink->next;
+      if (llink->next) llink->next->prev = llink->prev;
+   }
    return list;
 }
 
@@ -201,8 +203,7 @@ GList *g_list_sort(GList *list, GCompareFunc compare)
    if ((*compare)(i->data, j->data) <= 0) {
       list = i;
       i = i->next;
-   }
-   else {
+   } else {
       list = j;
       j = j->next;
    }
@@ -211,8 +212,7 @@ GList *g_list_sort(GList *list, GCompareFunc compare)
       if ((*compare)(i->data, j->data) <= 0) {
          it->next = i;
          i = i->next;
-      }
-      else {
+      } else {
          it->next = j;
          j = j->next;
       }
@@ -234,8 +234,7 @@ GSList *g_slist_append(GSList *list, gpointer data)
       while (list->next) list = list->next;
       list->next = (GSList*)g_malloc(sizeof(GSList));
       list = list->next;
-   }
-   else {
+   } else {
       head = list = (GSList*)g_malloc(sizeof(GSList));
    }
    list->data = data;
@@ -292,8 +291,7 @@ GSList *g_slist_sort(GSList *list, GCompareFunc compare)
    if ((*compare)(i->data, j->data) <= 0) {
       list = i;
       i = i->next;
-   }
-   else {
+   } else {
       list = j;
       j = j->next;
    }
@@ -302,8 +300,7 @@ GSList *g_slist_sort(GSList *list, GCompareFunc compare)
       if ((*compare)(i->data, j->data) <= 0) {
          it->next = i;
          i = i->next;
-      }
-      else {
+      } else {
          it->next = j;
          j = j->next;
       }
@@ -320,8 +317,8 @@ GSList *g_slist_sort(GSList *list, GCompareFunc compare)
 /* Hash table */
 
 typedef struct _KeyValue {
-   void *key;
-   void *value;
+   gpointer key;
+   gpointer value;
 } KeyValue;
 
 struct _GHashTable {
@@ -329,9 +326,9 @@ struct _GHashTable {
    GEqualFunc key_equal_func;
    GDestroyNotify key_destroy_func;
    GDestroyNotify value_destroy_func;
-   uint32_t refcount;
-   uint32_t size;
-   uint32_t num_entries;
+   volatile gint refcount;
+   gint size;
+   guint num_entries;
    GSList **buckets;
 };
 
@@ -345,7 +342,7 @@ void g_hash_table_destroy(GHashTable *hash_table)
 gpointer g_hash_table_find(GHashTable *hash_table, GHRFunc predicate, gpointer user_data)
 {
    if (hash_table == NULL) return NULL;
-   int i;
+   guint i;
    for (i = 0; i < hash_table->size; i++) {
       GSList *lp;
       for (lp = hash_table->buckets[i]; lp; lp = lp->next) {
@@ -359,7 +356,7 @@ gpointer g_hash_table_find(GHashTable *hash_table, GHRFunc predicate, gpointer u
 void g_hash_table_foreach(GHashTable *hash_table, GHFunc func, gpointer user_data)
 {
    if (hash_table == NULL) return;
-   int i;
+   guint i;
    for (i = 0; i < hash_table->size; i++) {
       GSList *lp;
       for (lp = hash_table->buckets[i]; lp; lp = lp->next) {
@@ -374,7 +371,7 @@ gboolean g_hash_table_insert(GHashTable *hash_table, gpointer key, gpointer valu
    if (hash_table == NULL) return TRUE;
    GSList *lp;
    guint hash = (*hash_table->hash_func)(key);
-   int bnum = hash % hash_table->size;
+   guint bnum = hash % hash_table->size;
    for (lp = hash_table->buckets[bnum]; lp; lp = lp->next) {
       KeyValue *kv = (KeyValue*)(lp->data);
       int match = hash_table->key_equal_func ? (*hash_table->key_equal_func)(kv->key, key) : (kv->key == key);
@@ -399,7 +396,7 @@ gpointer g_hash_table_lookup(GHashTable *hash_table, gconstpointer key)
    if (hash_table == NULL) return NULL;
    GSList *lp;
    guint hash = (*hash_table->hash_func)(key);
-   int bnum = hash % hash_table->size;
+   guint bnum = hash % hash_table->size;
    for (lp = hash_table->buckets[bnum]; lp; lp = lp->next) {
       KeyValue *kv = (KeyValue*)(lp->data);
       int match = hash_table->key_equal_func ? (*hash_table->key_equal_func)(kv->key, key) : (kv->key == key);
@@ -433,7 +430,7 @@ GHashTable *g_hash_table_new_full(GHashFunc hash_func, GEqualFunc key_equal_func
 void g_hash_table_remove_all(GHashTable *hash_table)
 {
    if (hash_table == NULL) return;
-   int i;
+   guint i;
    for (i = 0; i < hash_table->size; i++) {
       GSList *lp;
       for (lp = hash_table->buckets[i]; lp; lp = lp->next) {
@@ -453,7 +450,7 @@ gboolean g_hash_table_remove(GHashTable *hash_table, gconstpointer key)
    GSList *lp, *prev = NULL;
    if (hash_table == NULL) return FALSE;
    guint hash = (*hash_table->hash_func)(key);
-   int bnum = hash % hash_table->size;
+   guint bnum = hash % hash_table->size;
    for (lp = hash_table->buckets[bnum]; lp; lp = lp->next) {
       KeyValue *kv = (KeyValue*)(lp->data);
       int match = hash_table->key_equal_func ? (*hash_table->key_equal_func)(kv->key, key) : (kv->key == key);
@@ -463,8 +460,7 @@ gboolean g_hash_table_remove(GHashTable *hash_table, gconstpointer key)
          free(kv);
          if (prev == NULL) {
             hash_table->buckets[bnum] = lp->next;
-         }
-         else {
+         } else {
             prev->next = lp->next;
          }
          free(lp);
@@ -478,6 +474,7 @@ gboolean g_hash_table_remove(GHashTable *hash_table, gconstpointer key)
 void g_hash_table_unref(GHashTable *hash_table)
 {
    if (hash_table == NULL) return;
+   if (hash_table->refcount == 0) return;
    hash_table->refcount--;
    if (hash_table->refcount == 0) {
       free(hash_table->buckets);
@@ -525,8 +522,7 @@ gpointer g_malloc0(size_t size)
 gpointer g_try_malloc0(size_t size)
 {
    if (size == 0) return NULL;
-   void *res = calloc(size, 1);
-   return res;
+   return calloc(size, 1);
 }
 
 gpointer g_realloc(gpointer ptr, size_t size)
@@ -642,8 +638,7 @@ char **g_strsplit(const char *string, const char *delimiter, int max_tokens)
    if (string == NULL || *string == 0) {
       res = (char**)g_malloc(sizeof(char*));
       *res = NULL;
-   }
-   else {
+   } else {
       uint32_t ntokens, i, max = (uint32_t) max_tokens;
       if (max == 0) max--;
       int dlen = strlen(delimiter);
@@ -660,8 +655,7 @@ char **g_strsplit(const char *string, const char *delimiter, int max_tokens)
          if (i == (ntokens - 1)) {
             /* last piece special handling */
             res[i] = strdup(b);
-         }
-         else {
+         } else {
             p = strstr(b, delimiter);
             len = p - b;
             res[i] = (char*)g_malloc(len + 1);
