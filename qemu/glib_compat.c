@@ -27,32 +27,16 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "glib_compat.h"
 
-#ifdef _WIN32
-   #ifdef _WIN64
-      #define __HAVE_64_BIT_PTRS
-   #else
-      #define __HAVE_32_BIT_PTRS
-   #endif
-#else
-   #ifdef _WIN64
-      #define __HAVE_64_BIT_PTRS
-   #endif
+#undef __HAVE_64_BIT_PTRS
+
+#ifdef _WIN64
+    #define __HAVE_64_BIT_PTRS
 #endif
 
 #ifdef __GNUC__
-   #ifdef __x86_64__
-      #define __HAVE_64_BIT_PTRS
-   #else
-      #ifdef __ppc64__
-         #define __HAVE_64_BIT_PTRS
-      #else
-         #ifdef __aarch64__
-            #define __HAVE_64_BIT_PTRS
-         #else
-            #define __HAVE_32_BIT_PTRS
-         #endif
-      #endif
-   #endif
+#if defined(__x86_64__) || defined(__ppc64__) || defined(__aarch64__)
+    #define __HAVE_64_BIT_PTRS
+#endif
 #endif
 
 /* All functions below added to eliminate GLIB dependency */
@@ -65,7 +49,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
    This may be marginally better than what glib does in their direct_hash
    but someone with some chops in this space should fix if it needs improving
 */
-guint g_direct_hash(const void *v)
+guint g_direct_hash(gconstpointer v)
 {
 #ifdef __HAVE_64_BIT_PTRS
    uint64_t hash = (uint64_t)v;
@@ -79,16 +63,11 @@ guint g_direct_hash(const void *v)
 #endif
 }
 
-int g_direct_equal(const void *v1, const void *v2)
-{
-   return v1 == v2;
-}
-
 /*
    djb2+ string hashing
    see: http://www.cse.yorku.ca/~oz/hash.html
 */
-guint g_str_hash(const void *v)
+guint g_str_hash(gconstpointer v)
 {
    const char *s = (const char*)v;
    guint hash = 5381;
@@ -99,7 +78,7 @@ guint g_str_hash(const void *v)
    return hash;
 }
 
-int g_str_equal(const void *v1, const void *v2)
+gboolean g_str_equal(gconstpointer v1, gconstpointer v2)
 {
    return strcmp((const char*)v1, (const char*)v2) == 0;
 }
@@ -108,7 +87,7 @@ int g_str_equal(const void *v1, const void *v2)
   Bob Jenkins integer hash algorithm
   see: http://burtleburtle.net/bob/hash/integer.html
 */
-guint g_int_hash(const void *v)
+guint g_int_hash(gconstpointer v)
 {
    guint hash = *(const guint*)v;
    hash = (hash + 0x7ed55d16) + (hash << 12);
@@ -120,7 +99,7 @@ guint g_int_hash(const void *v)
    return hash;
 }
 
-int g_int_equal(const void *v1, const void *v2)
+gboolean g_int_equal(gconstpointer v1, gconstpointer v2)
 {
    return *(const int*)v1 == *(const int*)v2;
 }
@@ -134,7 +113,7 @@ GList *g_list_first(GList *list)
    return list;
 }
 
-void g_list_foreach(GList *list, GFunc func, void* user_data)
+void g_list_foreach(GList *list, GFunc func, gpointer user_data)
 {
    GList *lp;
    for (lp = list; lp; lp = lp->next) {
@@ -156,7 +135,7 @@ void g_list_free(GList *list)
    }
 }
 
-GList *g_list_insert_sorted(GList *list, void* data, GCompareFunc compare)
+GList *g_list_insert_sorted(GList *list, gpointer data, GCompareFunc compare)
 {
    GList *i;
    GList *n = (GList*)g_malloc(sizeof(GList));
@@ -180,7 +159,7 @@ GList *g_list_insert_sorted(GList *list, void* data, GCompareFunc compare)
    return list;
 }
 
-GList *g_list_prepend(GList *list, void* data)
+GList *g_list_prepend(GList *list, gpointer data)
 {
    GList *n = (GList*)g_malloc(sizeof(GList));
    n->next = list;
@@ -248,7 +227,7 @@ GList *g_list_sort(GList *list, GCompareFunc compare)
 
 /* Singly-linked list */
 
-GSList *g_slist_append(GSList *list, void* data)
+GSList *g_slist_append(GSList *list, gpointer data)
 {
    GSList *head = list;
    if (list) {
@@ -264,7 +243,7 @@ GSList *g_slist_append(GSList *list, void* data)
    return head;   
 }
 
-void g_slist_foreach(GSList *list, GFunc func, void* user_data)
+void g_slist_foreach(GSList *list, GFunc func, gpointer user_data)
 {
    GSList *lp;
    for (lp = list; lp; lp = lp->next) {
@@ -281,17 +260,7 @@ void g_slist_free(GSList *list)
    }
 }
 
-void g_slist_free_full(GSList *list, GDestroyNotify free_func)
-{
-   GSList *lp, *next;
-   for (lp = list; lp; lp = next) {
-      next = lp->next;
-      if (free_func) (*free_func)(lp->data);
-      free(lp);
-   }
-}
-
-GSList *g_slist_prepend(GSList *list, void* data)
+GSList *g_slist_prepend(GSList *list, gpointer data)
 {
    GSList *head = (GSList*)g_malloc(sizeof(GSList));
    head->next = list;
@@ -345,34 +314,6 @@ GSList *g_slist_sort(GSList *list, GCompareFunc compare)
    return list;
 }
 
-GSList *g_slist_find_custom(GSList *list, const void *data, GCompareFunc func)
-{
-   GSList *lp;
-   for (lp = list; lp; lp = lp->next) {
-      if ((*func)(lp->data, data) == 0) return lp;
-   }
-   return NULL;
-}
-
-GSList *g_slist_remove(GSList *list, const void *data)
-{
-   GSList *lp, *prev = NULL;
-   for (lp = list; lp; lp = lp->next) {
-      if (lp->data == data) {
-         if (prev == NULL) {
-            list = lp->next;
-         }
-         else {
-            prev->next = lp->next;
-         }
-         free(lp);
-         break;
-      }
-      prev = lp;
-   }
-   return list;
-}
-
 /* END of g_slist related functions */
 
 
@@ -401,7 +342,7 @@ void g_hash_table_destroy(GHashTable *hash_table)
    g_hash_table_unref(hash_table);
 }
 
-void* g_hash_table_find(GHashTable *hash_table, GHRFunc predicate, void* user_data)
+gpointer g_hash_table_find(GHashTable *hash_table, GHRFunc predicate, gpointer user_data)
 {
    if (hash_table == NULL) return NULL;
    int i;
@@ -415,7 +356,7 @@ void* g_hash_table_find(GHashTable *hash_table, GHRFunc predicate, void* user_da
    return NULL;
 }
 
-void g_hash_table_foreach(GHashTable *hash_table, GHFunc func, void* user_data)
+void g_hash_table_foreach(GHashTable *hash_table, GHFunc func, gpointer user_data)
 {
    if (hash_table == NULL) return;
    int i;
@@ -428,9 +369,9 @@ void g_hash_table_foreach(GHashTable *hash_table, GHFunc func, void* user_data)
    }
 }
 
-int g_hash_table_insert(GHashTable *hash_table, void* key, void* value)
+gboolean g_hash_table_insert(GHashTable *hash_table, gpointer key, gpointer value)
 {
-   if (hash_table == NULL) return 1;
+   if (hash_table == NULL) return TRUE;
    GSList *lp;
    guint hash = (*hash_table->hash_func)(key);
    int bnum = hash % hash_table->size;
@@ -440,7 +381,7 @@ int g_hash_table_insert(GHashTable *hash_table, void* key, void* value)
       if (match) {
          /* replace */
          kv->value = value;
-         return 0;
+         return FALSE;
       }
    }
    /* new key */
@@ -450,10 +391,10 @@ int g_hash_table_insert(GHashTable *hash_table, void* key, void* value)
    hash_table->buckets[bnum] = g_slist_prepend(hash_table->buckets[bnum], pair);
    hash_table->num_entries++;
    /* grow and rehash at num_entries / size == ??? */
-   return 1;
+   return TRUE;
 }
 
-void* g_hash_table_lookup(GHashTable *hash_table, const void* key)
+gpointer g_hash_table_lookup(GHashTable *hash_table, gconstpointer key)
 {
    if (hash_table == NULL) return NULL;
    GSList *lp;
@@ -507,10 +448,10 @@ void g_hash_table_remove_all(GHashTable *hash_table)
    hash_table->num_entries = 0;
 }
 
-int g_hash_table_remove(GHashTable *hash_table, const void* key)
+gboolean g_hash_table_remove(GHashTable *hash_table, gconstpointer key)
 {
    GSList *lp, *prev = NULL;
-   if (hash_table == NULL) return 0;
+   if (hash_table == NULL) return FALSE;
    guint hash = (*hash_table->hash_func)(key);
    int bnum = hash % hash_table->size;
    for (lp = hash_table->buckets[bnum]; lp; lp = lp->next) {
@@ -527,11 +468,11 @@ int g_hash_table_remove(GHashTable *hash_table, const void* key)
             prev->next = lp->next;
          }
          free(lp);
-         return 1;
+         return TRUE;
       }
       prev = lp;
    }
-   return 0;
+   return FALSE;
 }
 
 void g_hash_table_unref(GHashTable *hash_table)
@@ -556,17 +497,16 @@ guint g_hash_table_size(GHashTable *hash_table)
    return hash_table ? hash_table->num_entries : 0;
 }
 
-
 /* END of g_hash_table related functions */
 
 /* general g_XXX substitutes */
 
-void g_free(void *ptr)
+void g_free(gpointer ptr)
 {
    free(ptr);
 }
 
-void *g_malloc(size_t size)
+gpointer g_malloc(size_t size)
 {
    if (size == 0) return NULL;
    void *res = malloc(size);
@@ -574,7 +514,7 @@ void *g_malloc(size_t size)
    return res;
 }
 
-void *g_malloc0(size_t size)
+gpointer g_malloc0(size_t size)
 {
    if (size == 0) return NULL;
    void *res = calloc(size, 1);
@@ -582,14 +522,14 @@ void *g_malloc0(size_t size)
    return res;
 }
 
-void *g_try_malloc0(size_t size)
+gpointer g_try_malloc0(size_t size)
 {
    if (size == 0) return NULL;
    void *res = calloc(size, 1);
    return res;
 }
 
-void *g_realloc(void *ptr, size_t size)
+gpointer g_realloc(gpointer ptr, size_t size)
 {
    if (size == 0) {
       free(ptr);
@@ -641,7 +581,7 @@ void g_strfreev(char **str_array)
    free(str_array);
 }
 
-void *g_memdup(const void *mem, size_t byte_size)
+gpointer g_memdup(gconstpointer mem, size_t byte_size)
 {
    if (mem) {
       void *res = g_malloc(byte_size);
@@ -651,21 +591,21 @@ void *g_memdup(const void *mem, size_t byte_size)
    return NULL; 
 }
 
-void *g_new_(size_t sz, size_t n_structs)
+gpointer g_new_(size_t sz, size_t n_structs)
 {
    size_t need = sz * n_structs;
    if ((need / sz) != n_structs) return NULL;
    return g_malloc(need);
 }
 
-void *g_new0_(size_t sz, size_t n_structs)
+gpointer g_new0_(size_t sz, size_t n_structs)
 {
    size_t need = sz * n_structs;
    if ((need / sz) != n_structs) return NULL;
    return g_malloc0(need);
 }
 
-void *g_renew_(size_t sz, void *mem, size_t n_structs)
+gpointer g_renew_(size_t sz, gpointer mem, size_t n_structs)
 {
    size_t need = sz * n_structs;
    if ((need / sz) != n_structs) return NULL;

@@ -13,8 +13,13 @@ AR_EXT = a
 V ?= 0
 
 CFLAGS += -Wall -Werror -I../include
+
 LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm
-LDLIBS += -lrt -lpthread -lunicorn -lm
+ifeq ($(UNAME_S), Linux)
+LDFLAGS += -lrt
+endif
+
+LDLIBS += -lpthread -lunicorn -lm
 
 ifneq ($(CROSS),)
 CC = $(CROSS)gcc
