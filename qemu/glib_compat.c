@@ -24,11 +24,13 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <limits.h>
 
 #include "glib_compat.h"
 
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #define GPOINTER_TO_UINT(p) ((guint) (gulong) (p))
+#define G_MAXINT    INT_MAX
 
 /* All functions below added to eliminate GLIB dependency */
 
@@ -1312,7 +1314,25 @@ gpointer g_renew_(size_t sz, gpointer mem, size_t n_structs)
    return g_realloc(mem, need);
 }
 
-char *g_strconcat (const char *string1, ...)
+/**
+ * g_strconcat:
+ * @string1: the first string to add, which must not be %NULL
+ * @Varargs: a %NULL-terminated list of strings to append to the string
+ *
+ * Concatenates all of the given strings into one long string.
+ * The returned string should be freed with g_free() when no longer needed.
+ *
+ * Note that this function is usually not the right function to use to
+ * assemble a translated message from pieces, since proper translation
+ * often requires the pieces to be reordered.
+ *
+ * <warning><para>The variable argument list <emphasis>must</emphasis> end
+ * with %NULL. If you forget the %NULL, g_strconcat() will start appending
+ * random memory junk to your string.</para></warning>
+ *
+ * Returns: a newly-allocated string containing all the string arguments
+ */
+gchar* g_strconcat (const gchar *string1, ...)
 {
    va_list ap;
    char *res;
@@ -1336,64 +1356,76 @@ char *g_strconcat (const char *string1, ...)
    return res;
 }
 
-char **g_strsplit(const char *string, const char *delimiter, int max_tokens)
+/**
+ * g_strsplit:
+ * @string: a string to split.
+ * @delimiter: a string which specifies the places at which to split the string.
+ *     The delimiter is not included in any of the resulting strings, unless
+ *     @max_tokens is reached.
+ * @max_tokens: the maximum number of pieces to split @string into. If this is
+ *              less than 1, the string is split completely.
+ *
+ * Splits a string into a maximum of @max_tokens pieces, using the given
+ * @delimiter. If @max_tokens is reached, the remainder of @string is appended
+ * to the last token.
+ *
+ * As a special case, the result of splitting the empty string "" is an empty
+ * vector, not a vector containing a single string. The reason for this
+ * special case is that being able to represent a empty vector is typically
+ * more useful than consistent handling of empty elements. If you do need
+ * to represent empty elements, you'll need to check for the empty string
+ * before calling g_strsplit().
+ *
+ * Return value: a newly-allocated %NULL-terminated array of strings. Use
+ *    g_strfreev() to free it.
+ **/
+gchar** g_strsplit (const gchar *string,
+            const gchar *delimiter,
+            gint         max_tokens)
 {
-   char **res;
-   if (string == NULL || *string == 0) {
-      res = (char**)g_malloc(sizeof(char*));
-      *res = NULL;
-   } else {
-      uint32_t ntokens, i, max = (uint32_t) max_tokens;
-      if (max == 0) max--;
-      int dlen = strlen(delimiter);
-      const char *p = string, *b;
-      for (ntokens = 1; ntokens < max; ntokens++) {
-         p = strstr(p, delimiter);
-         if (p == NULL) break;
-         p += dlen;
-      }
-      res = (char**)g_new_(sizeof(char*), ntokens + 1);
-      p = string;
-      for (b = p, i = 0; i < ntokens; b = p, i++) {
-         int len;
-         if (i == (ntokens - 1)) {
-            /* last piece special handling */
-            res[i] = strdup(b);
-         } else {
-            p = strstr(b, delimiter);
-            len = p - b;
-            res[i] = (char*)g_malloc(len + 1);
-            memcpy(res[i], b, len);
-            res[i][len] = 0;
-            p += dlen;
-         }
-      }
-      res[ntokens] = NULL;      
-   }
-   return res;
+  GSList *string_list = NULL, *slist;
+  gchar **str_array, *s;
+  guint n = 0;
+  const gchar *remainder;
+
+  if (string == NULL) return NULL;
+  if (delimiter == NULL) return NULL;
+  if (delimiter[0] == '\0') return NULL;
+
+  if (max_tokens < 1)
+    max_tokens = G_MAXINT;
+
+  remainder = string;
+  s = strstr (remainder, delimiter);
+  if (s)
+    {
+      gsize delimiter_len = strlen (delimiter);
+
+      while (--max_tokens && s)
+        {
+          gsize len;
+
+          len = s - remainder;
+          string_list = g_slist_prepend (string_list,
+                                         g_strndup (remainder, len));
+          n++;
+          remainder = s + delimiter_len;
+          s = strstr (remainder, delimiter);
+        }
+    }
+  if (*string)
+    {
+      n++;
+      string_list = g_slist_prepend (string_list, g_strdup (remainder));
+    }
+
+  str_array = g_new (gchar*, n + 1);
+
+  str_array[n--] = NULL;
+  for (slist = string_list; slist; slist = slist->next)
+    str_array[n--] = slist->data;
+
+  g_slist_free (string_list);
+
+  return str_array;
 }
-
-#ifdef _WIN32
-
-#include <windows.h>
-
-char *g_win32_error_message(int error)
-{
-   char *msg;
-   char *winMsg = NULL;
-   if (error == 0) {
-      return (char*)g_malloc0(1);
-   }
-   
-   FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                 NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&msg, 0, NULL);
-
-   /* give the caller something they can just free */   
-   msg = strdup(winMsg);
-   /* Free the allocated message. */
-   HeapFree(GetProcessHeap(), 0, winMsg);
-   
-   return msg;   
-}
-
-#endif

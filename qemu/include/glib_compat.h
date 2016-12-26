@@ -45,6 +45,7 @@ typedef unsigned int guint;
 typedef char gchar;
 typedef int gboolean;
 typedef unsigned long gulong;
+typedef unsigned long gsize;
 
 typedef gint (*GCompareDataFunc)(gconstpointer a,
                 gconstpointer b,
@@ -121,16 +122,14 @@ gpointer g_memdup(gconstpointer mem, size_t byte_size);
 gpointer g_new_(size_t sz, size_t n_structs);
 gpointer g_new0_(size_t sz, size_t n_structs);
 gpointer g_renew_(size_t sz, gpointer mem, size_t n_structs);
-char *g_strconcat(const char *string1, ...);
+gchar* g_strconcat (const gchar *string1, ...);
+gchar** g_strsplit (const gchar *string,
+            const gchar *delimiter,
+            gint         max_tokens);
 
-char **g_strsplit(const char *string, const char *delimiter, int max_tokens);
 
 #define g_new(struct_type, n_structs) ((struct_type*)g_new_(sizeof(struct_type), n_structs))
 #define g_new0(struct_type, n_structs) ((struct_type*)g_new0_(sizeof(struct_type), n_structs))
 #define g_renew(struct_type, mem, n_structs) ((struct_type*)g_renew_(sizeof(struct_type), mem, n_structs))
-
-#ifdef _WIN32
-char *g_win32_error_message(int error);
-#endif
 
 #endif
