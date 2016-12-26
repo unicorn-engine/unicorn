@@ -44,11 +44,13 @@ typedef unsigned int guint;
 typedef char gchar;
 typedef int gboolean;
 
+typedef gint (*GCompareDataFunc)(gconstpointer a,
+                gconstpointer b,
+                gpointer user_data);
 typedef void (*GFunc)(gpointer data, gpointer user_data);
 typedef gint (*GCompareFunc)(gconstpointer v1, gconstpointer v2);
 typedef void (*GDestroyNotify)(gpointer data);
 
-guint g_direct_hash(gconstpointer v);
 guint g_str_hash(gconstpointer v);
 gboolean g_str_equal(gconstpointer v1, gconstpointer v2);
 guint g_int_hash(gconstpointer v);

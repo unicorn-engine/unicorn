@@ -178,49 +178,99 @@ GList *g_list_remove_link(GList *list, GList *llink)
    return list;
 }
 
-GList *g_list_sort(GList *list, GCompareFunc compare)
+// code copied from glib/glist.c, version 2.28.0
+static GList *g_list_sort_merge(GList *l1,
+		   GList     *l2,
+		   GFunc     compare_func,
+		   gpointer  user_data)
 {
-   GList *i, *it, *j;
-   /* base case for singletons or empty lists */
-   if (list == NULL || list->next == NULL) return list;
-   i = list;
-   j = i->next;
-   /* i walks half as fast as j, ends up in middle */
-   while (j) {
-      j = j->next;
-      if (j) {
-         i = i->next;
-         j = j->next;
-      }
-   }
-   /* split the list midway */
-   j = i->next;
-   j->prev = NULL;  /* make j the head of its own list */
-   i->next = NULL;
-   /* will never have NULL return from either call below */
-   i = g_list_sort(list, compare);
-   j = g_list_sort(j, compare);
-   if ((*compare)(i->data, j->data) <= 0) {
-      list = i;
-      i = i->next;
-   } else {
-      list = j;
-      j = j->next;
-   }
-   it = list;
-   while (i && j) {
-      if ((*compare)(i->data, j->data) <= 0) {
-         it->next = i;
-         i = i->next;
-      } else {
-         it->next = j;
-         j = j->next;
-      }
-      it = it->next;
-   }
-   if (i) it->next = i;
-   else it->next = j;
-   return list;
+  GList list, *l, *lprev;
+  gint cmp;
+
+  l = &list;
+  lprev = NULL;
+
+  while (l1 && l2)
+    {
+      cmp = ((GCompareDataFunc) compare_func) (l1->data, l2->data, user_data);
+
+      if (cmp <= 0)
+        {
+	  l->next = l1;
+	  l1 = l1->next;
+        }
+      else
+	{
+	  l->next = l2;
+	  l2 = l2->next;
+        }
+      l = l->next;
+      l->prev = lprev;
+      lprev = l;
+    }
+  l->next = l1 ? l1 : l2;
+  l->next->prev = l;
+
+  return list.next;
+}
+
+static GList *g_list_sort_real(GList *list,
+		  GFunc     compare_func,
+		  gpointer  user_data)
+{
+  GList *l1, *l2;
+
+  if (!list)
+    return NULL;
+  if (!list->next)
+    return list;
+
+  l1 = list;
+  l2 = list->next;
+
+  while ((l2 = l2->next) != NULL)
+    {
+      if ((l2 = l2->next) == NULL)
+	break;
+      l1 = l1->next;
+    }
+  l2 = l1->next;
+  l1->next = NULL;
+
+  return g_list_sort_merge (g_list_sort_real (list, compare_func, user_data),
+			    g_list_sort_real (l2, compare_func, user_data),
+			    compare_func,
+			    user_data);
+}
+
+/**
+ * g_list_sort:
+ * @list: a #GList
+ * @compare_func: the comparison function used to sort the #GList.
+ *     This function is passed the data from 2 elements of the #GList
+ *     and should return 0 if they are equal, a negative value if the
+ *     first element comes before the second, or a positive value if
+ *     the first element comes after the second.
+ *
+ * Sorts a #GList using the given comparison function.
+ *
+ * Returns: the start of the sorted #GList
+ */
+/**
+ * GCompareFunc:
+ * @a: a value.
+ * @b: a value to compare with.
+ * @Returns: negative value if @a &lt; @b; zero if @a = @b; positive
+ *           value if @a > @b.
+ *
+ * Specifies the type of a comparison function used to compare two
+ * values.  The function should return a negative integer if the first
+ * value comes before the second, 0 if they are equal, or a positive
+ * integer if the first value comes after the second.
+ **/
+GList *g_list_sort (GList *list, GCompareFunc  compare_func)
+{
+    return g_list_sort_real (list, (GFunc) compare_func, NULL);
 }
 
 /* END of g_list related functions */
@@ -267,48 +317,82 @@ GSList *g_slist_prepend(GSList *list, gpointer data)
    return head;   
 }
 
-GSList *g_slist_sort(GSList *list, GCompareFunc compare)
+static GSList *g_slist_sort_merge (GSList *l1,
+                    GSList *l2,
+                    GFunc compare_func,
+                    gpointer user_data)
 {
-   GSList *i, *it, *j;
-   /* base case for singletons or empty lists */
-   if (list == NULL || list->next == NULL) return list;
-   i = list;
-   j = i->next;
-   /* i walks half as fast as j, ends up in middle */
-   while (j) {
-      j = j->next;
-      if (j) {
-         i = i->next;
-         j = j->next;
-      }
-   }
-   /* split the list midway */
-   j = i->next;
-   i->next = NULL;
-   /* will never have NULL return from either call below */
-   i = g_slist_sort(list, compare);
-   j = g_slist_sort(j, compare);
-   if ((*compare)(i->data, j->data) <= 0) {
-      list = i;
-      i = i->next;
-   } else {
-      list = j;
-      j = j->next;
-   }
-   it = list;
-   while (i && j) {
-      if ((*compare)(i->data, j->data) <= 0) {
-         it->next = i;
-         i = i->next;
-      } else {
-         it->next = j;
-         j = j->next;
-      }
-      it = it->next;
-   }
-   if (i) it->next = i;
-   else it->next = j;
-   return list;
+  GSList list, *l;
+  gint cmp;
+
+  l=&list;
+
+  while (l1 && l2)
+    {
+      cmp = ((GCompareDataFunc) compare_func) (l1->data, l2->data, user_data);
+
+      if (cmp <= 0)
+        {
+          l=l->next=l1;
+          l1=l1->next;
+        }
+      else
+        {
+          l=l->next=l2;
+          l2=l2->next;
+        }
+    }
+  l->next= l1 ? l1 : l2;
+
+  return list.next;
+}
+
+static GSList *g_slist_sort_real (GSList *list,
+                   GFunc compare_func,
+                   gpointer user_data)
+{
+  GSList *l1, *l2;
+
+  if (!list)
+    return NULL;
+  if (!list->next)
+    return list;
+
+  l1 = list;
+  l2 = list->next;
+
+  while ((l2 = l2->next) != NULL)
+    {
+      if ((l2 = l2->next) == NULL)
+        break;
+      l1=l1->next;
+    }
+  l2 = l1->next;
+  l1->next = NULL;
+
+  return g_slist_sort_merge (g_slist_sort_real (list, compare_func, user_data),
+                             g_slist_sort_real (l2, compare_func, user_data),
+                             compare_func,
+                             user_data);
+}
+
+/**
+ * g_slist_sort:
+ * @list: a #GSList
+ * @compare_func: the comparison function used to sort the #GSList.
+ *     This function is passed the data from 2 elements of the #GSList
+ *     and should return 0 if they are equal, a negative value if the
+ *     first element comes before the second, or a positive value if
+ *     the first element comes after the second.
+ *
+ * Sorts a #GSList using the given comparison function.
+ *
+ * Returns: the start of the sorted #GSList
+ */
+GSList *g_slist_sort (GSList *list,
+              GCompareFunc  compare_func)
+{
+  return g_slist_sort_real (list, (GFunc) compare_func, NULL);
 }
 
 /* END of g_slist related functions */
