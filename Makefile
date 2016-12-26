@@ -207,7 +207,7 @@ qemu/config-host.h-timestamp:
 
 unicorn: $(LIBRARY) $(ARCHIVE)
 
-$(LIBRARY): qemu/config-host.h-timestamp uc.o list.o
+$(LIBRARY): qemu/config-host.h-timestamp
 ifeq ($(UNICORN_SHARED),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(LIBRARY))
@@ -219,7 +219,7 @@ else
 endif
 endif
 
-$(ARCHIVE): qemu/config-host.h-timestamp uc.o list.o
+$(ARCHIVE): qemu/config-host.h-timestamp
 ifeq ($(UNICORN_STATIC),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(ARCHIVE))
