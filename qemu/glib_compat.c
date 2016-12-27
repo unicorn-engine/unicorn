@@ -17,6 +17,9 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
+// Part of this code was lifted from glib-2.28.0.
+// Glib license is available in COPYING_GLIB file in root directory.
+
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
