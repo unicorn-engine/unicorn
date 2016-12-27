@@ -119,10 +119,12 @@ UNICORN_CFLAGS := $(UNICORN_CFLAGS:-fPIC=)
 # mingw?
 else ifneq ($(filter MINGW%,$(UNAME_S)),)
 EXT = dll
-AR_EXT = lib
+AR_EXT = a
 BIN_EXT = .exe
 UNICORN_QEMU_FLAGS += --disable-stack-protector
 UNICORN_CFLAGS := $(UNICORN_CFLAGS:-fPIC=)
+$(LIBNAME)_LDFLAGS += -Wl,--output-def,unicorn.def
+DO_WINDOWS_EXPORT = 1
 
 # Linux, Darwin
 else
@@ -217,6 +219,13 @@ else
 	$(CC) $(CFLAGS) -shared $(UC_TARGET_OBJ) uc.o list.o -o $(LIBRARY) $($(LIBNAME)_LDFLAGS)
 	-ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
 endif
+ifeq ($(DO_WINDOWS_EXPORT),1)
+ifneq ($(filter MINGW32%,$(UNAME_S)),)
+	cmd /c "windows_export.bat x86"
+else
+	cmd /c "windows_export.bat x64"
+endif
+endif
 endif
 
 $(ARCHIVE): qemu/config-host.h-timestamp
@@ -298,7 +307,7 @@ uninstall:
 clean:
 	$(MAKE) -C qemu clean
 	rm -rf *.d *.o
-	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll cyg$(LIBNAME)*.dll
+	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll $(LIBNAME)*.exp cyg$(LIBNAME)*.dll
 	$(MAKE) -C samples clean
 	$(MAKE) -C tests/unit clean
 

@@ -43,7 +43,7 @@ AR_EXT = a
 else ifneq ($(filter MINGW%,$(UNAME_S)),)
 CFLAGS := $(CFLAGS:-fPIC=)
 BIN_EXT = .exe
-AR_EXT = lib
+AR_EXT = a
 endif
 
 ifeq ($(UNICORN_STATIC),yes)
