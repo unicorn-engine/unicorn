@@ -19,8 +19,11 @@
 
 static int tosa_init(struct uc_struct *uc, MachineState *machine)
 {
-    //cpu_arm_init(uc, "pxa255");
-    uc->cpu = (CPUState *)cpu_arm_init(uc, "cortex-a15"); // FIXME
+    if (uc->mode & UC_MODE_MCLASS) {
+        uc->cpu = (CPUState *)cpu_arm_init(uc, "cortex-m3");
+    } else {
+        uc->cpu = (CPUState *)cpu_arm_init(uc, "cortex-a15");
+    }
 
     return 0;
 }

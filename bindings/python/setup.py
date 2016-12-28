@@ -43,7 +43,7 @@ if SYSTEM == 'darwin':
     STATIC_LIBRARY_FILE = 'libunicorn.a'
 elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
-    STATIC_LIBRARY_FILE = None
+    STATIC_LIBRARY_FILE = "unicorn.lib"
 else:
     LIBRARY_FILE = "libunicorn.so"
     STATIC_LIBRARY_FILE = 'libunicorn.a'
@@ -147,7 +147,11 @@ def build_libraries():
     subprocess.call(cmd, env=new_env)
 
     shutil.copy(LIBRARY_FILE, LIBS_DIR)
-    if STATIC_LIBRARY_FILE: shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+    try:
+        # static library may fail to build on windows if user doesn't have visual studio 12 installed. this is fine.
+        shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+    except:
+        pass
     os.chdir(cwd)
 
 
