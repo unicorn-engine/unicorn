@@ -81,7 +81,7 @@ typedef struct PageDesc {
     /* in order to optimize self modifying code, we count the number
        of lookups we do to a given page to use a bitmap */
     unsigned int code_write_count;
-    unsigned long *code_bitmap;
+    uint8_t *code_bitmap;
 #if defined(CONFIG_USER_ONLY)
     unsigned long flags;
 #endif
@@ -1033,7 +1033,7 @@ void tb_phys_invalidate(struct uc_struct *uc,
     tcg_ctx->tb_ctx.tb_phys_invalidate_count++;
 }
 
-static inline void set_bits(unsigned long *tab, int start, int len)
+static inline void set_bits(uint8_t *tab, int start, int len)
 {
     int end, mask, end1;
 
