@@ -144,6 +144,7 @@ static inline bool _hook_exists_bounded(struct list_item *cur, uint64_t addr)
 struct uc_struct {
     uc_arch arch;
     uc_mode mode;
+    bool lock_at_vm_start;
     QemuMutex qemu_global_mutex; // qemu/cpus.c
     QemuCond qemu_cpu_cond; // qemu/cpus.c
     QemuCond *tcg_halt_cond; // qemu/cpus.c
