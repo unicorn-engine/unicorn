@@ -41,6 +41,7 @@ typedef void* gpointer;
 typedef const void *gconstpointer;
 typedef int gint;
 typedef uint32_t guint32;
+typedef uint64_t guint64;
 typedef unsigned int guint;
 typedef char gchar;
 typedef int gboolean;
