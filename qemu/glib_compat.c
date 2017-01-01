@@ -32,7 +32,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include "glib_compat.h"
 
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
-#define GPOINTER_TO_UINT(p) ((guint) (gulong) (p))
+#ifndef _WIN64
+#define GPOINTER_TO_UINT(p) ((guint) (p))
+#else
+#define GPOINTER_TO_UINT(p) ((guint) (guint64) (p))
+#endif
 #define G_MAXINT    INT_MAX
 
 /* All functions below added to eliminate GLIB dependency */
