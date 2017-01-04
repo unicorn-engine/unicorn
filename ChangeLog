@@ -1,6 +1,14 @@
 This file details the changelog of Unicorn Engine.
 
 ----------------------------------
+[Version 1.0-rc2]: Janyary 4th, 2017
+
+- Remove glib & pkconfig dependency.
+- Python: fix an issue to restore support for FreeBSD (and other *BSD Unix).
+- ARM: support MCLASS cpu (Cortex-M3).
+- Windows: export a static lib that can be used outside of Mingw
+
+----------------------------------
 [Version 1.0-rc1]: December 22nd, 2016
 
 - Lots of bugfixes in all architectures.
