@@ -209,17 +209,6 @@ const char *qemu_get_version(void);
 void fips_set_state(bool requested);
 bool fips_get_state(void);
 
-/* Return a dynamically allocated pathname denoting a file or directory that is
- * appropriate for storing local state.
- *
- * @relative_pathname need not start with a directory separator; one will be
- * added automatically.
- *
- * The caller is responsible for releasing the value returned with g_free()
- * after use.
- */
-char *qemu_get_local_state_pathname(const char *relative_pathname);
-
 /* Get the saved exec dir.
  * Caller needs to release the returned string by g_free() */
 char *qemu_get_exec_dir(void);

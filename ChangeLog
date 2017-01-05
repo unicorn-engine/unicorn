@@ -1,6 +1,26 @@
 This file details the changelog of Unicorn Engine.
 
 ----------------------------------
+[Version 1.0-rc2]: Janyary 4th, 2017
+
+- Remove glib & pkconfig dependency.
+- Python: fix an issue to restore support for FreeBSD (and other *BSD Unix).
+- ARM: support MCLASS cpu (Cortex-M3).
+- Windows: export a static lib that can be used outside of Mingw
+
+----------------------------------
+[Version 1.0-rc1]: December 22nd, 2016
+
+- Lots of bugfixes in all architectures.
+- Better support for ARM Thumb.
+- Fix many memory leaking issues.
+- New bindings: Haskell, MSVC.
+- Better support for Python3.
+- New APIs: uc_query, uc_reg_write_batch, uc_reg_read_batch, uc_mem_map_ptr, uc_mem_regions, uc_context_alloc, uc_context_save & uc_context_restore.
+- New memory hook type: UC_HOOK_MEM_READ_AFTER.
+- Add new version macros UC_VERSION_{MAJOR, MINOR, EXTRA}
+
+----------------------------------
 [Version 0.9]: October 15th, 2015
 
 - Initial public release.

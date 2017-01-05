@@ -3,9 +3,6 @@
 # Unicorn Engine
 # By Nguyen Anh Quynh <aquynh@gmail.com>, 2015
 
-# Note: to cross-compile to Windows on Linux, Mingw-glib2 is required.
-# See README on how to install Mingw-glib2.
-
 MAKE_JOBS=$((${MAKE_JOBS}+0))
 [ ${MAKE_JOBS} -lt 1 ] && \
   MAKE_JOBS=4
@@ -42,7 +39,6 @@ build_cross() {
   CC=$CROSS-gcc \
   AR=$CROSS-gcc-ar \
   RANLIB=$CROSS-gcc-ranlib \
-  GLIB="-L/usr/$CROSS/lib/ -lglib-2.0" \
   ${MAKE}
 }
 
@@ -106,6 +102,7 @@ case "$1" in
   "install" ) install;;
   "uninstall" ) uninstall;;
   "macos-universal" ) MACOS_UNIVERSAL=yes ${MAKE};;
+  "macos-universal-no" ) MACOS_UNIVERSAL=no ${MAKE};;
   "cross-win32" ) build_cross i686-w64-mingw32;;
   "cross-win64" ) build_cross x86_64-w64-mingw32;;
   "cross-android" ) CROSS=arm-linux-androideabi ${MAKE};;

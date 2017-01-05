@@ -15,7 +15,6 @@
 #include "qapi/visitor.h"
 #include "qapi-visit.h"
 #include "qapi/string-input-visitor.h"
-#include "qapi/string-output-visitor.h"
 #include "qapi/qmp/qerror.h"
 
 /* TODO: replace QObject with a simpler visitor to avoid a dependency
@@ -953,48 +952,6 @@ int64_t object_property_get_int(struct uc_struct *uc, Object *obj, const char *n
     return retval;
 }
 
-int object_property_get_enum(struct uc_struct *uc, Object *obj, const char *name,
-                             const char *strings[], Error **errp)
-{
-    StringOutputVisitor *sov;
-    StringInputVisitor *siv;
-    char *str;
-    int ret;
-
-    sov = string_output_visitor_new(false);
-    object_property_get(uc, obj, string_output_get_visitor(sov), name, errp);
-    str = string_output_get_string(sov);
-    siv = string_input_visitor_new(str);
-    string_output_visitor_cleanup(sov);
-    visit_type_enum(string_input_get_visitor(siv),
-                    &ret, strings, NULL, name, errp);
-
-    g_free(str);
-    string_input_visitor_cleanup(siv);
-
-    return ret;
-}
-
-void object_property_get_uint16List(struct uc_struct *uc, Object *obj, const char *name,
-                                    uint16List **list, Error **errp)
-{
-    StringOutputVisitor *ov;
-    StringInputVisitor *iv;
-    char *str;
-
-    ov = string_output_visitor_new(false);
-    object_property_get(uc, obj, string_output_get_visitor(ov),
-                        name, errp);
-    str = string_output_get_string(ov);
-    iv = string_input_visitor_new(str);
-    visit_type_uint16List(string_input_get_visitor(iv),
-                          list, NULL, errp);
-
-    g_free(str);
-    string_output_visitor_cleanup(ov);
-    string_input_visitor_cleanup(iv);
-}
-
 void object_property_parse(struct uc_struct *uc, Object *obj, const char *string,
                            const char *name, Error **errp)
 {
@@ -1003,27 +960,6 @@ void object_property_parse(struct uc_struct *uc, Object *obj, const char *string
     object_property_set(uc, obj, string_input_get_visitor(mi), name, errp);
 
     string_input_visitor_cleanup(mi);
-}
-
-char *object_property_print(struct uc_struct *uc, Object *obj, const char *name, bool human,
-                            Error **errp)
-{
-    StringOutputVisitor *mo;
-    char *string = NULL;
-    Error *local_err = NULL;
-
-    mo = string_output_visitor_new(human);
-    object_property_get(uc, obj, string_output_get_visitor(mo), name, &local_err);
-    if (local_err) {
-        error_propagate(errp, local_err);
-        goto out;
-    }
-
-    string = string_output_get_string(mo);
-
-out:
-    string_output_visitor_cleanup(mo);
-    return string;
 }
 
 const char *object_property_get_type(Object *obj, const char *name, Error **errp)

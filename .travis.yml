@@ -2,8 +2,7 @@ language: c
 sudo: false
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" && "$MACOS_UNIVERSAL" != "yes" ]]; then brew install glib cmocka; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" && "$MACOS_UNIVERSAL" == "yes" ]]; then brew install glib --universal cmocka; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install cmocka; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./install-cmocka-linux.sh; fi
 script:
   - make && make -C bindings/go && make -C bindings/go test && make test
@@ -13,14 +12,6 @@ compiler:
 os:
   - linux
   - osx
-matrix:
-  include:
-  - os: osx
-    compiler: clang
-    env: MACOS_UNIVERSAL=yes
-  - os: osx
-    compiler: gcc
-    env: MACOS_UNIVERSAL=yes
 addons:
   apt:
     packages:

@@ -9,7 +9,13 @@ SAMPLE := $(SAMPLE:sample_batch_reg=)
 SAMPLE := $(SAMPLE:sample_x86_32_gdt_and_seg_regs=)
 SAMPLE := $(SAMPLE:shellcode=)
 
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S), Linux)
+ENV_VARS = LD_PRELOAD=librt.so LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../
+else
 ENV_VARS = LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../
+endif
+
 
 .PHONY: build install python c clean check test
 

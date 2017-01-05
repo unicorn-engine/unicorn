@@ -134,17 +134,17 @@ When running the samples they will need to be able to load the unicorn dlls.
 
 The unicorn dlls required for 32bit apps are:
 	libgcc_s_dw2-1.dll
-	libglib-2.0-0.dll
 	libiconv-2.dll
 	libintl-8.dll
+    libpcre-1.dll
 	libwinpthread-1.dll
 	unicorn.dll
 
 The unicorn dlls required for 64bit apps are:
 	libgcc_s_seh-1.dll
-	libglib-2.0-0.dll
 	libiconv-2.dll
 	libintl-8.dll
+    libpcre-1.dll
 	libwinpthread-1.dll
 	unicorn.dll
 

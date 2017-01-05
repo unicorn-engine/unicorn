@@ -13,7 +13,12 @@ AR_EXT = a
 V ?= 0
 
 CFLAGS += -Wall -Werror -I../include
+
 LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm
+ifeq ($(UNAME_S), Linux)
+LDFLAGS += -lrt
+endif
+
 LDLIBS += -lpthread -lunicorn -lm
 
 ifneq ($(CROSS),)
@@ -38,7 +43,7 @@ AR_EXT = a
 else ifneq ($(filter MINGW%,$(UNAME_S)),)
 CFLAGS := $(CFLAGS:-fPIC=)
 BIN_EXT = .exe
-AR_EXT = lib
+AR_EXT = a
 endif
 
 ifeq ($(UNICORN_STATIC),yes)

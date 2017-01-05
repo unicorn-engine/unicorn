@@ -1,8 +1,8 @@
 # Appveyor configuration file for CI build of Unicorn Engine on Windows (under Cygwin)
 environment:
     CYG_MIRROR: http://cygwin.mirror.constant.com
-    CYG_PACKAGES: make,gcc-core,clang,pkg-config,libpcre-devel,libglib2.0-devel,cmake,python-setuptools,ruby,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core
-    MSYS_PACKAGES: mingw-w64-x86_64-glib2 mingw-w64-i686-glib2 cmake
+    CYG_PACKAGES: make,gcc-core,clang,pkg-config,libpcre-devel,cmake,python-setuptools,ruby,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core
+    MSYS_PACKAGES: cmake
     matrix:
         - MSYSTEM: MINGW64
           BASH: C:\msys64\usr\bin\bash

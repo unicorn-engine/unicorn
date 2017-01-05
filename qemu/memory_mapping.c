@@ -13,7 +13,7 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
-#include <glib.h>
+#include "glib_compat.h"
 
 #include "cpu.h"
 #include "exec/cpu-all.h"

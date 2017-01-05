@@ -98,6 +98,9 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, i
             ARM_CPU(uc, mycpu)->env.vfp.regs[regid - UC_ARM_REG_D0] = *(float64 *)value;
         else {
             switch(regid) {
+                case UC_ARM_REG_CPSR:
+                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, ~0);
+                    break;
                 //case UC_ARM_REG_SP:
                 case UC_ARM_REG_R13:
                     ARM_CPU(uc, mycpu)->env.regs[13] = *(uint32_t *)value;

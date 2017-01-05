@@ -17,7 +17,6 @@ from distutils.command.sdist import sdist
 from setuptools.command.bdist_egg import bdist_egg
 
 SYSTEM = sys.platform
-VERSION = '1.0.0'
 
 # sys.maxint is 2**31 - 1 on both 32 and 64 bit mingw
 IS_64BITS = platform.architecture()[0] == '64bit'
@@ -28,7 +27,6 @@ ALL_WINDOWS_DLLS = (
     "libiconv-2.dll",
     "libpcre-1.dll",
     "libintl-8.dll",
-    "libglib-2.0-0.dll",
 )
 
 # are we building from the repository or from a source distribution?
@@ -38,12 +36,42 @@ HEADERS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'include')
 SRC_DIR = os.path.join(ROOT_DIR, 'src')
 BUILD_DIR = SRC_DIR if os.path.exists(SRC_DIR) else os.path.join(ROOT_DIR, '../..')
 
+# Parse version from pkgconfig.mk
+VERSION_DATA = {}
+with open(os.path.join(BUILD_DIR, 'pkgconfig.mk')) as fp:
+    lines = fp.readlines()
+    for line in lines:
+        line = line.strip()
+        if len(line) == 0:
+            continue
+        if line.startswith('#'):
+            continue
+        if '=' not in line:
+            continue
+
+        k, v = line.split('=', 1)
+        k = k.strip()
+        v = v.strip()
+        if len(k) == 0 or len(v) == 0:
+            continue
+        VERSION_DATA[k] = v
+
+if 'PKG_MAJOR' not in VERSION_DATA or \
+        'PKG_MINOR' not in VERSION_DATA or \
+        'PKG_EXTRA' not in VERSION_DATA:
+    raise Exception("Malformed pkgconfig.mk")
+
+if 'PKG_TAG' in VERSION_DATA:
+    VERSION = '{PKG_MAJOR}.{PKG_MINOR}.{PKG_EXTRA}.{PKG_TAG}'.format(**VERSION_DATA)
+else:
+    VERSION = '{PKG_MAJOR}.{PKG_MINOR}.{PKG_EXTRA}'.format(**VERSION_DATA)
+
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
     STATIC_LIBRARY_FILE = 'libunicorn.a'
 elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
-    STATIC_LIBRARY_FILE = None
+    STATIC_LIBRARY_FILE = "unicorn.lib"
 else:
     LIBRARY_FILE = "libunicorn.so"
     STATIC_LIBRARY_FILE = 'libunicorn.a'
@@ -80,6 +108,7 @@ def copy_sources():
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../RELEASE_NOTES")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../make.sh")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../CMakeLists.txt")))
+    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../pkgconfig.mk")))
 
     for filename in src:
         outpath = os.path.join(SRC_DIR, os.path.basename(filename))
@@ -122,8 +151,10 @@ def build_libraries():
 
     # check if a prebuilt library exists
     # if so, use it instead of building
-    if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)):
+    if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)) \
+            and os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE)):
         shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE), LIBS_DIR)
+        shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE), LIBS_DIR)
         return
 
     # otherwise, build!!
@@ -147,7 +178,14 @@ def build_libraries():
     subprocess.call(cmd, env=new_env)
 
     shutil.copy(LIBRARY_FILE, LIBS_DIR)
-    if STATIC_LIBRARY_FILE: shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+    try:
+        # static library may fail to build on windows if user doesn't have visual studio installed. this is fine.
+        shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+    except:
+        print('Warning: Could not build static library file! This build is not appropriate for a binary distribution')
+        # enforce this
+        if 'upload' in sys.argv:
+            sys.exit(1)
     os.chdir(cwd)
 
 
