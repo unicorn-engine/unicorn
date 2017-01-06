@@ -67,11 +67,11 @@ public class SampleNetworkAuditing {
          if (intno != 0x80) {
             return;
          }
-         long eax = toInt(uc.reg_read(Unicorn.UC_X86_REG_EAX, 4));
-         long ebx = toInt(uc.reg_read(Unicorn.UC_X86_REG_EBX, 4));
-         long ecx = toInt(uc.reg_read(Unicorn.UC_X86_REG_ECX, 4));
-         long edx = toInt(uc.reg_read(Unicorn.UC_X86_REG_EDX, 4));
-         long eip = toInt(uc.reg_read(Unicorn.UC_X86_REG_EIP, 4));
+         Long eax = (Long)uc.reg_read(Unicorn.UC_X86_REG_EAX);
+         Long ebx = (Long)uc.reg_read(Unicorn.UC_X86_REG_EBX);
+         Long ecx = (Long)uc.reg_read(Unicorn.UC_X86_REG_ECX);
+         Long edx = (Long)uc.reg_read(Unicorn.UC_X86_REG_EDX);
+         Long eip = (Long)uc.reg_read(Unicorn.UC_X86_REG_EIP);
 
           // System.out.printf(">>> INTERRUPT %d\n", toInt(eax));
    
@@ -112,8 +112,8 @@ public class SampleNetworkAuditing {
             long mode = edx;
             String filename = read_string(uc, filename_addr);
             
-            int dummy_fd = get_id();
-            uc.reg_write(Unicorn.UC_X86_REG_EAX, toBytes(dummy_fd));
+            Long dummy_fd = new Long(get_id());
+            uc.reg_write(Unicorn.UC_X86_REG_EAX, dummy_fd);
             
             String msg = String.format("open file (filename=%s flags=%d mode=%d) with fd(%d)", filename, flags, mode, dummy_fd);
             
@@ -133,8 +133,8 @@ public class SampleNetworkAuditing {
          }
          else if (eax == 102) { // sys_socketcall
             // ref: http://www.skyfree.org/linux/kernel_network/socket.html
-            long call = toInt(uc.reg_read(Unicorn.UC_X86_REG_EBX, 4));
-            long args = toInt(uc.reg_read(Unicorn.UC_X86_REG_ECX, 4));
+            Long call = (Long)uc.reg_read(Unicorn.UC_X86_REG_EBX);
+            Long args = (Long)uc.reg_read(Unicorn.UC_X86_REG_ECX);
             
             // int sys_socketcall(int call, unsigned long *args)
             if (call == 1) { // sys_socket
@@ -144,8 +144,8 @@ public class SampleNetworkAuditing {
                long sock_type = toInt(uc.mem_read(args + SIZE_REG, SIZE_REG));
                long protocol = toInt(uc.mem_read(args + SIZE_REG * 2, SIZE_REG));
                
-               int dummy_fd = get_id();
-               uc.reg_write(Unicorn.UC_X86_REG_EAX, toBytes(dummy_fd));
+               Long dummy_fd = new Long(get_id());
+               uc.reg_write(Unicorn.UC_X86_REG_EAX, dummy_fd.intValue());
                
                if (family == 2) {  // AF_INET            
                   String msg = String.format("create socket (%s, %s) with fd(%d)", ADDR_FAMILY.get(family), SOCKET_TYPES.get(sock_type), dummy_fd);
@@ -401,7 +401,7 @@ public class SampleNetworkAuditing {
          mu.mem_write(ADDRESS, code);
          
          // initialize stack
-         mu.reg_write(Unicorn.UC_X86_REG_ESP, toBytes(ADDRESS + 0x200000));
+         mu.reg_write(Unicorn.UC_X86_REG_ESP, new Long(ADDRESS + 0x200000));
          
          // handle interrupt ourself
          mu.hook_add(new MyInterruptHook(), null);
