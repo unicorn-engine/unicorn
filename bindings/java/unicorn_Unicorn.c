@@ -438,69 +438,6 @@ JNIEXPORT jbyteArray JNICALL Java_unicorn_Unicorn_reg_1read
 
 /*
  * Class:     unicorn_Unicorn
- * Method:    reg_write_batch
- * Signature: ([I[J)V
- */
-JNIEXPORT void JNICALL Java_unicorn_Unicorn_reg_1write_1batch
-  (JNIEnv *env, jobject self, jintArray ids, jlongArray vals) {
-   uc_engine *eng = getEngine(env, self);
-   jint *regids = (*env)->GetIntArrayElements(env, ids, NULL);
-   jlong *regvals = (*env)->GetLongArrayElements(env, vals, NULL);
-   jsize size = (*env)->GetArrayLength(env, ids);
-   void **vptrs;
-   jsize i;
-   if (size != (*env)->GetArrayLength(env, vals)) {
-      //arrays are not the same size
-      throwException(env, UC_ERR_ARG);
-   }
-   vptrs = (void**)malloc(size * sizeof(void*));
-   for (i = 0; i < size; i++) {
-      vptrs[i] = &regvals[i];
-   }
-   uc_err err = uc_reg_write_batch(eng, regids, vptrs, size);
-   free(vptrs);
-   if (err != UC_ERR_OK) {
-      throwException(env, err);
-   }
-   (*env)->ReleaseIntArrayElements(env, ids, regids, JNI_ABORT);
-   (*env)->ReleaseLongArrayElements(env, vals, regvals, JNI_ABORT);
-}
-
-/*
- * Class:     unicorn_Unicorn
- * Method:    reg_read_batch
- * Signature: ([I)[J
- */
-JNIEXPORT jlongArray JNICALL Java_unicorn_Unicorn_reg_1read_1batch
-  (JNIEnv *env, jobject self, jintArray ids) {
-   uc_engine *eng = getEngine(env, self);
-
-   jint *regids = (*env)->GetIntArrayElements(env, ids, NULL);
-   jsize size = (*env)->GetArrayLength(env, ids);
-
-   jlongArray vals = (*env)->NewLongArray(env, size);
-   jlong *regvals = (*env)->GetLongArrayElements(env, vals, NULL);
-
-   void **vptrs;
-   jsize i;
-
-   vptrs = (void**)malloc(size * sizeof(void*));
-   for (i = 0; i < size; i++) {
-      vptrs[i] = &regvals[i];
-   }
-   uc_err err = uc_reg_read_batch(eng, regids, vptrs, size);
-   free(vptrs);
-
-   if (err != UC_ERR_OK) {
-      throwException(env, err);
-   }
-   (*env)->ReleaseLongArrayElements(env, vals, regvals, 0);
-   (*env)->ReleaseIntArrayElements(env, ids, regids, JNI_ABORT);
-   return vals;
-}
-
-/*
- * Class:     unicorn_Unicorn
  * Method:    mem_write
  * Signature: (J[B)V
  */

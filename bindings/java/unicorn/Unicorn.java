@@ -471,7 +471,14 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param regids  Array of register IDs to be written.
  * @param vals  Array of register values to be written.
  */
-   public native void reg_write_batch(int regids[], long vals[]) throws UnicornException;
+   public void reg_write_batch(int regids[], Object vals[]) throws UnicornException {
+      if (regids.length != vals.length) {
+         throw new UnicornException(strerror(UC_ERR_ARG));
+      }
+      for (int i = 0; i < regids.length; i++) {
+         reg_write(regids[i], vals[i]);
+      }
+   }
 
 /**
  * Batch read register values.
@@ -479,7 +486,13 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param regids  Array of register IDs to be read.
  * @return Array containing the requested register values.
  */
-   public native long[] reg_read_batch(int regids[]) throws UnicornException;
+   public Object[] reg_read_batch(int regids[]) throws UnicornException {
+      Object[] vals = new Object[regids.length];
+      for (int i = 0; i < regids.length; i++) {
+         vals[i] = reg_read(regids[i]);
+      }
+      return vals;
+   }
 
 /**
  * Write to memory.
