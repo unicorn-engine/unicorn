@@ -69,9 +69,9 @@ public class Sample_sparc {
       
    static void test_sparc()
    {
-       byte[] g1 = toBytes(0x1230);     // G1 register
-       byte[] g2 = toBytes(0x6789);     // G2 register
-       byte[] g3 = toBytes(0x5555);     // G3 register
+       Long g1 = new Long(0x1230);     // G1 register
+       Long g2 = new Long(0x6789);     // G2 register
+       Long g3 = new Long(0x5555);     // G3 register
    
        System.out.print("Emulate SPARC code\n");
    
@@ -102,8 +102,8 @@ public class Sample_sparc {
        // now print out some registers
        System.out.print(">>> Emulation done. Below is the CPU context\n");
    
-       g3 = u.reg_read(Unicorn.UC_SPARC_REG_G3, 4);
-       System.out.print(String.format(">>> G3 = 0x%x\n", toInt(g3)));
+       g3 = (Long)u.reg_read(Unicorn.UC_SPARC_REG_G3);
+       System.out.print(String.format(">>> G3 = 0x%x\n", g3.intValue()));
    
        u.close();
    }

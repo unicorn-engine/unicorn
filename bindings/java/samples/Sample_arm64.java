@@ -69,9 +69,9 @@ public class Sample_arm64 {
    static void test_arm64()
    {
    
-       byte[] x11 = toBytes(0x1234);     // X11 register
-       byte[] x13 = toBytes(0x6789);     // X13 register
-       byte[] x15 = toBytes(0x3333);     // X15 register
+       Long x11 = new Long(0x1234);     // X11 register
+       Long x13 = new Long(0x6789);     // X13 register
+       Long x15 = new Long(0x3333);     // X15 register
    
        System.out.print("Emulate ARM64 code\n");
    
@@ -102,8 +102,8 @@ public class Sample_arm64 {
        // now print out some registers
        System.out.print(">>> Emulation done. Below is the CPU context\n");
    
-       x11 = u.reg_read(Unicorn.UC_ARM64_REG_X11, 8);
-       System.out.print(String.format(">>> X11 = 0x%x\n", toInt(x11)));
+       x11 = (Long)u.reg_read(Unicorn.UC_ARM64_REG_X11);
+       System.out.print(String.format(">>> X11 = 0x%x\n", x11.longValue()));
    
        u.close();
    }

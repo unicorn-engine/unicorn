@@ -19,11 +19,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 */
 
-package unicorn;  
+package unicorn;
 
 import java.util.*;
 
-public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, SparcConst, MipsConst, X86Const { 
+public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, SparcConst, MipsConst, X86Const {
 
    private long eng;
    private int arch;
@@ -55,24 +55,24 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       }
    }
 
-   private ArrayList<Tuple> blockList = new ArrayList<Tuple>();     
-   private ArrayList<Tuple> intrList = new ArrayList<Tuple>();      
-   private ArrayList<Tuple> codeList = new ArrayList<Tuple>();      
-   private ArrayList<Tuple> readList = new ArrayList<Tuple>();      
-   private ArrayList<Tuple> writeList = new ArrayList<Tuple>();     
-   private ArrayList<Tuple> inList = new ArrayList<Tuple>();        
-   private ArrayList<Tuple> outList = new ArrayList<Tuple>();       
-   private ArrayList<Tuple> syscallList = new ArrayList<Tuple>();   
-   
+   private ArrayList<Tuple> blockList = new ArrayList<Tuple>();
+   private ArrayList<Tuple> intrList = new ArrayList<Tuple>();
+   private ArrayList<Tuple> codeList = new ArrayList<Tuple>();
+   private ArrayList<Tuple> readList = new ArrayList<Tuple>();
+   private ArrayList<Tuple> writeList = new ArrayList<Tuple>();
+   private ArrayList<Tuple> inList = new ArrayList<Tuple>();
+   private ArrayList<Tuple> outList = new ArrayList<Tuple>();
+   private ArrayList<Tuple> syscallList = new ArrayList<Tuple>();
+
    private Hashtable<Integer, ArrayList<Tuple> > eventMemLists = new Hashtable<Integer, ArrayList<Tuple> >();
-   
+
    private ArrayList<ArrayList<Tuple>> allLists = new ArrayList<ArrayList<Tuple>>();
 
    private static Hashtable<Integer,Integer> eventMemMap = new Hashtable<Integer,Integer>();
    private static Hashtable<Long,Unicorn> unicorns = new Hashtable<Long,Unicorn>();
 
-   //required to load native method implementations   
-   static { 
+   //required to load native method implementations
+   static {
       System.loadLibrary("unicorn_java");    //loads unicorn.dll  or libunicorn.so
       eventMemMap.put(UC_HOOK_MEM_READ_UNMAPPED, UC_MEM_READ_UNMAPPED);
       eventMemMap.put(UC_HOOK_MEM_WRITE_UNMAPPED, UC_MEM_WRITE_UNMAPPED);
@@ -80,12 +80,16 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       eventMemMap.put(UC_HOOK_MEM_READ_PROT, UC_MEM_READ_PROT);
       eventMemMap.put(UC_HOOK_MEM_WRITE_PROT, UC_MEM_WRITE_PROT);
       eventMemMap.put(UC_HOOK_MEM_FETCH_PROT, UC_MEM_FETCH_PROT);
-   } 
+      eventMemMap.put(UC_HOOK_MEM_READ, UC_MEM_READ);
+      eventMemMap.put(UC_HOOK_MEM_WRITE, UC_MEM_WRITE);
+      eventMemMap.put(UC_HOOK_MEM_FETCH, UC_MEM_FETCH);
+      eventMemMap.put(UC_HOOK_MEM_READ_AFTER, UC_MEM_READ_AFTER);
+   }
 
 /**
  * Invoke all UC_HOOK_BLOCK callbacks registered for a specific Unicorn.
  * This function gets invoked from the native C callback registered for
- * for UC_HOOK_BLOCK 
+ * for UC_HOOK_BLOCK
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address The address of the instruction being executed
@@ -105,7 +109,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 /**
  * Invoke all UC_HOOK_INTR callbacks registered for a specific Unicorn.
  * This function gets invoked from the native C callback registered for
- * for UC_HOOK_INTR 
+ * for UC_HOOK_INTR
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  intno   The interrupt number
@@ -124,7 +128,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 /**
  * Invoke all UC_HOOK_CODE callbacks registered for a specific Unicorn.
  * This function gets invoked from the native C callback registered for
- * for UC_HOOK_CODE 
+ * for UC_HOOK_CODE
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address The address of the instruction being executed
@@ -142,7 +146,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    }
 
 /**
- * Invoke all UC_HOOK_MEM_XXX_UNMAPPED andor UC_HOOK_MEM_XXX_PROT callbacks registered
+ * Invoke all UC_HOOK_MEM_XXX_UNMAPPED and/or UC_HOOK_MEM_XXX_PROT callbacks registered
  * for a specific Unicorn.
  * This function gets invoked from the native C callback registered for
  * for UC_HOOK_MEM_XXX_UNMAPPED or UC_HOOK_MEM_XXX_PROT
@@ -173,7 +177,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 /**
  * Invoke all UC_HOOK_MEM_READ callbacks registered for a specific Unicorn.
  * This function gets invoked from the native C callback registered for
- * for UC_HOOK_MEM_READ 
+ * for UC_HOOK_MEM_READ
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address Address of instruction being executed
@@ -193,7 +197,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 /**
  * Invoke all UC_HOOK_MEM_WRITE callbacks registered for a specific Unicorn.
  * This function gets invoked from the native C callback registered for
- * for UC_HOOK_MEM_WRITE 
+ * for UC_HOOK_MEM_WRITE
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address Address of instruction being executed
@@ -215,7 +219,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * Invoke all UC_HOOK_INSN callbacks registered for a specific Unicorn.
  * This is specifically for the x86 IN instruction.
  * This function gets invoked from the native C callback registered for
- * for UC_HOOK_INSN 
+ * for UC_HOOK_INSN
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  port    I/O Port number
@@ -239,7 +243,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * Invoke all UC_HOOK_INSN callbacks registered for a specific Unicorn.
  * This is specifically for the x86 OUT instruction.
  * This function gets invoked from the native C callback registered for
- * for UC_HOOK_INSN 
+ * for UC_HOOK_INSN
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  port    I/O Port number
@@ -261,7 +265,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * Invoke all UC_HOOK_INSN callbacks registered for a specific Unicorn.
  * This is specifically for the x86 SYSCALL and SYSENTER instruction.
  * This function gets invoked from the native C callback registered for
- * for UC_HOOK_INSN 
+ * for UC_HOOK_INSN
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @see         hook_add, unicorn.SyscallHook
@@ -277,7 +281,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       }
    }
 
-/** 
+/**
  * Write to register.
  *
  * @param  regid  Register ID that is to be modified.
@@ -285,7 +289,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  */
    private native void reg_write_num(int regid, Number value) throws UnicornException;
 
-/** 
+/**
  * Write to register.
  *
  * @param  regid  Register ID that is to be modified.
@@ -310,15 +314,15 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    private native Number reg_read_mmr(int regid) throws UnicornException;
 
 /**
- * Native access to uc_open 
+ * Native access to uc_open
  *
  * @param  arch  Architecture type (UC_ARCH_*)
  * @param  mode  Hardware mode. This is combined of UC_MODE_*
  */
    private native long open(int arch, int mode) throws UnicornException;
-   
+
 /**
- * Create a new Unicorn object 
+ * Create a new Unicorn object
  *
  * @param  arch  Architecture type (UC_ARCH_*)
  * @param  mode  Hardware mode. This is combined of UC_MODE_*
@@ -340,9 +344,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       allLists.add(outList);
       allLists.add(syscallList);
    }
-   
+
 /**
- * Perform native cleanup tasks associated with a Unicorn object 
+ * Perform native cleanup tasks associated with a Unicorn object
  *
  */
    protected void finalize() {
@@ -369,17 +373,17 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    public native static boolean arch_supported(int arch);
 
 /**
- * Close the underlying uc_engine* eng associated with this Unicorn object 
+ * Close the underlying uc_engine* eng associated with this Unicorn object
  *
  */
    public native void close() throws UnicornException;
-   
+
 /**
  * Query internal status of engine.
  *
  * @param   type     query type. See UC_QUERY_*
  * @param   result   save the internal status queried
- * 
+ *
  * @return: error code. see UC_ERR_*
  * @see     unicorn.UnicornConst
  */
@@ -403,7 +407,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  */
    public native static String strerror(int code);
 
-/** 
+/**
  * Write to register.
  *
  * @deprecated use reg_write(int regid, Object value) instead
@@ -413,7 +417,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 @Deprecated
    public native void reg_write(int regid, byte[] value) throws UnicornException;
 
-/** 
+/**
  * Write to register.
  *
  * @param  regid  Register ID that is to be modified.
@@ -437,7 +441,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 /**
  * Read register value.
  *
- * @deprecated use Object reg_write(int regid) instead
+ * @deprecated use Object reg_read(int regid) instead
  * @param regid  Register ID that is to be retrieved.
  * @param regsz  Size of the register being retrieved.
  * @return Byte array containing the requested register value.
@@ -461,7 +465,36 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       }
    }
 
-/** 
+/**
+ * Batch write register values. regids.length == vals.length or UC_ERR_ARG
+ *
+ * @param regids  Array of register IDs to be written.
+ * @param vals  Array of register values to be written.
+ */
+   public void reg_write_batch(int regids[], Object vals[]) throws UnicornException {
+      if (regids.length != vals.length) {
+         throw new UnicornException(strerror(UC_ERR_ARG));
+      }
+      for (int i = 0; i < regids.length; i++) {
+         reg_write(regids[i], vals[i]);
+      }
+   }
+
+/**
+ * Batch read register values.
+ *
+ * @param regids  Array of register IDs to be read.
+ * @return Array containing the requested register values.
+ */
+   public Object[] reg_read_batch(int regids[]) throws UnicornException {
+      Object[] vals = new Object[regids.length];
+      for (int i = 0; i < regids.length; i++) {
+         vals[i] = reg_read(regids[i]);
+      }
+      return vals;
+   }
+
+/**
  * Write to memory.
  *
  * @param  address  Start addres of the memory region to be written.
@@ -590,7 +623,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       }
       readList.add(new Tuple(callback, user_data));
    }
-   
+
 /**
  * Hook registration for UC_HOOK_MEM_WRITE hooks. The registered callback function will be
  * invoked whenever a memory write is performed within the address range begin <= write_addr <= end. For
@@ -607,7 +640,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       }
       writeList.add(new Tuple(callback, user_data));
    }
-   
+
 /**
  * Hook registration for UC_HOOK_MEM_WRITE | UC_HOOK_MEM_WRITE hooks. The registered callback function will be
  * invoked whenever a memory write or read is performed within the address range begin <= addr <= end. For
@@ -622,7 +655,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       hook_add((ReadHook)callback, begin, end, user_data);
       hook_add((WriteHook)callback, begin, end, user_data);
    }
-   
+
 /**
  * Hook registration for UC_HOOK_MEM_XXX_UNMAPPED and UC_HOOK_MEM_XXX_PROT hooks.
  * The registered callback function will be invoked whenever a read or write is
@@ -653,7 +686,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    }
 
 /**
- * Hook registration for UC_HOOK_INSN hooks (x86 IN instruction only). The registered callback 
+ * Hook registration for UC_HOOK_INSN hooks (x86 IN instruction only). The registered callback
  * function will be invoked whenever an x86 IN instruction is executed.
  *
  * @param callback Implementation of a InHook interface
@@ -665,9 +698,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       }
       inList.add(new Tuple(callback, user_data));
    }
-   
+
 /**
- * Hook registration for UC_HOOK_INSN hooks (x86 OUT instruction only). The registered callback 
+ * Hook registration for UC_HOOK_INSN hooks (x86 OUT instruction only). The registered callback
  * function will be invoked whenever an x86 OUT instruction is executed.
  *
  * @param callback Implementation of a OutHook interface
@@ -681,7 +714,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    }
 
 /**
- * Hook registration for UC_HOOK_INSN hooks (x86 SYSCALL/SYSENTER instruction only). The registered callback 
+ * Hook registration for UC_HOOK_INSN hooks (x86 SYSCALL/SYSENTER instruction only). The registered callback
  * function will be invoked whenever an x86 SYSCALL or SYSENTER instruction is executed.
  *
  * @param callback Implementation of a SyscallHook interface
@@ -747,10 +780,45 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 /**
  * Retrieve all memory regions mapped by mem_map() and mem_map_ptr()
  * NOTE: memory regions may be split by mem_unmap()
- * 
+ *
  * @return  list of mapped regions.
 */
    public native MemRegion[] mem_regions() throws UnicornException;
+
+/**
+ * Allocate a region that can be used with uc_context_{save,restore} to perform
+ * quick save/rollback of the CPU context, which includes registers and some
+ * internal metadata. Contexts may not be shared across engine instances with
+ * differing arches or modes.
+ *
+ * @return context handle for use with save/restore.
+*/
+   public native long context_alloc();
+
+/**
+ * Free the resource allocated by context_alloc.
+ *
+ * @param context handle previously returned by context_alloc.
+*/
+   public native void context_free(long context);
+
+/**
+ * Save a copy of the internal CPU context.
+ * This API should be used to efficiently make or update a saved copy of the
+ * internal CPU state.
+ *
+ * @param context handle previously returned by context_alloc.
+*/
+   public native void context_save(long context);
+
+/**
+ * Restore the current CPU context from a saved copy.
+ * This API should be used to roll the CPU context back to a previous
+ * state saved by uc_context_save().
+ *
+ * @param context handle previously returned by context_alloc.
+*/
+   public native void context_restore(long context);
 
 }
 
