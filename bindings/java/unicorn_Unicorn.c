@@ -83,7 +83,7 @@ static void cb_hookblock(uc_engine *eng, uint64_t address, uint32_t size, void *
 static void cb_hookintr(uc_engine *eng, uint32_t intno, void *user_data) {
    JNIEnv *env;
    (*cachedJVM)->AttachCurrentThread(cachedJVM, (void **)&env, NULL);
-   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");   
+   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");
    if ((*env)->ExceptionCheck(env)) {
       return;
    }
@@ -99,7 +99,7 @@ static uint32_t cb_insn_in(uc_engine *eng, uint32_t port, int size, void *user_d
    JNIEnv *env;
    uint32_t res = 0;
    (*cachedJVM)->AttachCurrentThread(cachedJVM, (void **)&env, NULL);
-   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");   
+   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");
    if ((*env)->ExceptionCheck(env)) {
       return 0;
    }
@@ -115,7 +115,7 @@ static uint32_t cb_insn_in(uc_engine *eng, uint32_t port, int size, void *user_d
 static void cb_insn_out(uc_engine *eng, uint32_t port, int size, uint32_t value, void *user_data) {
    JNIEnv *env;
    (*cachedJVM)->AttachCurrentThread(cachedJVM, (void **)&env, NULL);
-   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");   
+   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");
    if ((*env)->ExceptionCheck(env)) {
       return;
    }
@@ -127,7 +127,7 @@ static void cb_insn_out(uc_engine *eng, uint32_t port, int size, uint32_t value,
 static void cb_insn_syscall(uc_engine *eng, void *user_data) {
    JNIEnv *env;
    (*cachedJVM)->AttachCurrentThread(cachedJVM, (void **)&env, NULL);
-   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");   
+   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");
    if ((*env)->ExceptionCheck(env)) {
       return;
    }
@@ -145,7 +145,7 @@ static void cb_hookmem(uc_engine *eng, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data) {
    JNIEnv *env;
    (*cachedJVM)->AttachCurrentThread(cachedJVM, (void **)&env, NULL);
-   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");   
+   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");
    if ((*env)->ExceptionCheck(env)) {
       return;
    }
@@ -171,7 +171,7 @@ static bool cb_eventmem(uc_engine *eng, uc_mem_type type,
                         uint64_t address, int size, int64_t value, void *user_data) {
    JNIEnv *env;
    (*cachedJVM)->AttachCurrentThread(cachedJVM, (void **)&env, NULL);
-   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");   
+   jclass clz = (*env)->FindClass(env, "unicorn/Unicorn");
    if ((*env)->ExceptionCheck(env)) {
       return false;
    }
@@ -359,7 +359,7 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_close
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }
-   //We also need to ReleaseByteArrayElements for any regions that 
+   //We also need to ReleaseByteArrayElements for any regions that
    //were mapped with uc_mem_map_ptr
 }
 
@@ -398,7 +398,7 @@ JNIEXPORT jint JNICALL Java_unicorn_Unicorn_errno
 JNIEXPORT jstring JNICALL Java_unicorn_Unicorn_strerror
   (JNIEnv *env, jclass clz, jint code) {
    const char *err = uc_strerror((int)code);
-   jstring s = (*env)->NewStringUTF(env, err);   
+   jstring s = (*env)->NewStringUTF(env, err);
    return s;
 }
 
@@ -434,6 +434,69 @@ JNIEXPORT jbyteArray JNICALL Java_unicorn_Unicorn_reg_1read
    }
    (*env)->ReleaseByteArrayElements(env, regval, array, 0);
    return regval;
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    reg_write_batch
+ * Signature: ([I[J)V
+ */
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_reg_1write_1batch
+  (JNIEnv *env, jobject self, jintArray ids, jlongArray vals) {
+   uc_engine *eng = getEngine(env, self);
+   jint *regids = (*env)->GetIntArrayElements(env, ids, NULL);
+   jlong *regvals = (*env)->GetLongArrayElements(env, vals, NULL);
+   jsize size = (*env)->GetArrayLength(env, ids);
+   void **vptrs;
+   jsize i;
+   if (size != (*env)->GetArrayLength(env, vals)) {
+      //arrays are not the same size
+      throwException(env, UC_ERR_ARG);
+   }
+   vptrs = (void**)malloc(size * sizeof(void*));
+   for (i = 0; i < size; i++) {
+      vptrs[i] = &regvals[i];
+   }
+   uc_err err = uc_reg_write_batch(eng, regids, vptrs, size);
+   free(vptrs);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+   (*env)->ReleaseIntArrayElements(env, ids, regids, JNI_ABORT);
+   (*env)->ReleaseLongArrayElements(env, vals, regvals, JNI_ABORT);
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    reg_read_batch
+ * Signature: ([I)[J
+ */
+JNIEXPORT jlongArray JNICALL Java_unicorn_Unicorn_reg_1read_1batch
+  (JNIEnv *env, jobject self, jintArray ids) {
+   uc_engine *eng = getEngine(env, self);
+
+   jint *regids = (*env)->GetIntArrayElements(env, ids, NULL);
+   jsize size = (*env)->GetArrayLength(env, ids);
+
+   jlongArray vals = (*env)->NewLongArray(env, size);
+   jlong *regvals = (*env)->GetLongArrayElements(env, vals, NULL);
+
+   void **vptrs;
+   jsize i;
+
+   vptrs = (void**)malloc(size * sizeof(void*));
+   for (i = 0; i < size; i++) {
+      vptrs[i] = &regvals[i];
+   }
+   uc_err err = uc_reg_read_batch(eng, regids, vptrs, size);
+   free(vptrs);
+
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+   (*env)->ReleaseLongArrayElements(env, vals, regvals, 0);
+   (*env)->ReleaseIntArrayElements(env, ids, regids, JNI_ABORT);
+   return vals;
 }
 
 /*
@@ -616,9 +679,9 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_registerHook__JIJJ
 JNIEXPORT void JNICALL Java_unicorn_Unicorn_hook_1del
   (JNIEnv *env, jobject self, jlong hh) {
    uc_engine *eng = getEngine(env, self);
-   
+
    //**** TODO remove hook from any internal hook tables as well
-   
+
    uc_err err = uc_hook_del(eng, (uc_hook)hh);
    if (err != UC_ERR_OK) {
       throwException(env, err);
@@ -719,6 +782,63 @@ JNIEXPORT jobjectArray JNICALL Java_unicorn_Unicorn_mem_1regions
       (*env)->SetObjectArrayElement(env, result, (jsize)i, mr);
    }
    free(regions);
-   
+
    return result;
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    context_alloc
+ * Signature: ()J
+ */
+JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_context_1alloc
+  (JNIEnv *env, jobject self) {
+   uc_engine *eng = getEngine(env, self);
+   uc_context *ctx;
+   uc_err err = uc_context_alloc(eng, &ctx);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+   return (jlong)(uint64_t)ctx;
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    context_free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_context_1free
+  (JNIEnv *env, jobject self, jlong ctx) {
+   uc_err err = uc_context_free((uc_context*)ctx);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    context_save
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_context_1save
+  (JNIEnv *env, jobject self, jlong ctx) {
+   uc_engine *eng = getEngine(env, self);
+   uc_err err = uc_context_save(eng, (uc_context*)ctx);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+}
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    context_restore
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_context_1restore
+  (JNIEnv *env, jobject self, jlong ctx) {
+   uc_engine *eng = getEngine(env, self);
+   uc_err err = uc_context_restore(eng, (uc_context*)ctx);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
 }
