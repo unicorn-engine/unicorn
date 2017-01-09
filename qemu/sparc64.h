@@ -1960,19 +1960,6 @@
 #define iwmmxt_store_reg iwmmxt_store_reg_sparc64
 #define __jit_debug_descriptor __jit_debug_descriptor_sparc64
 #define __jit_debug_register_code __jit_debug_register_code_sparc64
-#define json_lexer json_lexer_sparc64
-#define json_lexer_destroy json_lexer_destroy_sparc64
-#define json_lexer_feed json_lexer_feed_sparc64
-#define json_lexer_feed_char json_lexer_feed_char_sparc64
-#define json_lexer_flush json_lexer_flush_sparc64
-#define json_lexer_init json_lexer_init_sparc64
-#define json_message_parser_destroy json_message_parser_destroy_sparc64
-#define json_message_parser_feed json_message_parser_feed_sparc64
-#define json_message_parser_flush json_message_parser_flush_sparc64
-#define json_message_parser_init json_message_parser_init_sparc64
-#define json_message_process_token json_message_process_token_sparc64
-#define json_parser_parse json_parser_parse_sparc64
-#define json_parser_parse_err json_parser_parse_err_sparc64
 #define kvm_to_cpreg_id kvm_to_cpreg_id_sparc64
 #define last_ram_offset last_ram_offset_sparc64
 #define ldl_be_p ldl_be_p_sparc64
@@ -2115,7 +2102,6 @@
 #define mktimegm mktimegm_sparc64
 #define module_call_init module_call_init_sparc64
 #define module_load module_load_sparc64
-#define mod_utf8_codepoint mod_utf8_codepoint_sparc64
 #define mpidr_cp_reginfo mpidr_cp_reginfo_sparc64
 #define mpidr_read mpidr_read_sparc64
 #define msr_mask msr_mask_sparc64
@@ -2229,7 +2215,6 @@
 #define parse_array parse_array_sparc64
 #define parse_error parse_error_sparc64
 #define parse_escape parse_escape_sparc64
-#define parse_json parse_json_sparc64
 #define parse_keyword parse_keyword_sparc64
 #define parse_literal parse_literal_sparc64
 #define parse_object parse_object_sparc64
@@ -2538,12 +2523,6 @@
 #define qmp_output_visitor_cleanup qmp_output_visitor_cleanup_sparc64
 #define qmp_output_visitor_new qmp_output_visitor_new_sparc64
 #define qobject_decref qobject_decref_sparc64
-#define qobject_from_json qobject_from_json_sparc64
-#define qobject_from_jsonf qobject_from_jsonf_sparc64
-#define qobject_from_jsonv qobject_from_jsonv_sparc64
-#define qobject_incref qobject_incref_sparc64
-#define qobject_to_json qobject_to_json_sparc64
-#define qobject_to_json_pretty qobject_to_json_pretty_sparc64
 #define qobject_to_qbool qobject_to_qbool_sparc64
 #define qobject_to_qdict qobject_to_qdict_sparc64
 #define qobject_to_qfloat qobject_to_qfloat_sparc64
@@ -3021,9 +3000,6 @@
 #define tlb_set_dirty1 tlb_set_dirty1_sparc64
 #define tlb_unprotect_code_phys tlb_unprotect_code_phys_sparc64
 #define tlb_vaddr_to_host tlb_vaddr_to_host_sparc64
-#define to_json to_json_sparc64
-#define to_json_dict_iter to_json_dict_iter_sparc64
-#define to_json_list_iter to_json_list_iter_sparc64
 #define token_get_type token_get_type_sparc64
 #define token_get_value token_get_value_sparc64
 #define token_is_escape token_is_escape_sparc64
@@ -3104,7 +3080,6 @@
 #define vmsa_ttbcr_reset vmsa_ttbcr_reset_sparc64
 #define vmsa_ttbcr_write vmsa_ttbcr_write_sparc64
 #define vmsa_ttbr_write vmsa_ttbr_write_sparc64
-#define wchar_to_utf8 wchar_to_utf8_sparc64
 #define write_cpustate_to_list write_cpustate_to_list_sparc64
 #define write_list_to_cpustate write_list_to_cpustate_sparc64
 #define write_raw_cp_reg write_raw_cp_reg_sparc64

@@ -1960,19 +1960,6 @@
 #define iwmmxt_store_reg iwmmxt_store_reg_aarch64
 #define __jit_debug_descriptor __jit_debug_descriptor_aarch64
 #define __jit_debug_register_code __jit_debug_register_code_aarch64
-#define json_lexer json_lexer_aarch64
-#define json_lexer_destroy json_lexer_destroy_aarch64
-#define json_lexer_feed json_lexer_feed_aarch64
-#define json_lexer_feed_char json_lexer_feed_char_aarch64
-#define json_lexer_flush json_lexer_flush_aarch64
-#define json_lexer_init json_lexer_init_aarch64
-#define json_message_parser_destroy json_message_parser_destroy_aarch64
-#define json_message_parser_feed json_message_parser_feed_aarch64
-#define json_message_parser_flush json_message_parser_flush_aarch64
-#define json_message_parser_init json_message_parser_init_aarch64
-#define json_message_process_token json_message_process_token_aarch64
-#define json_parser_parse json_parser_parse_aarch64
-#define json_parser_parse_err json_parser_parse_err_aarch64
 #define kvm_to_cpreg_id kvm_to_cpreg_id_aarch64
 #define last_ram_offset last_ram_offset_aarch64
 #define ldl_be_p ldl_be_p_aarch64
@@ -2115,7 +2102,6 @@
 #define mktimegm mktimegm_aarch64
 #define module_call_init module_call_init_aarch64
 #define module_load module_load_aarch64
-#define mod_utf8_codepoint mod_utf8_codepoint_aarch64
 #define mpidr_cp_reginfo mpidr_cp_reginfo_aarch64
 #define mpidr_read mpidr_read_aarch64
 #define msr_mask msr_mask_aarch64
@@ -2229,7 +2215,6 @@
 #define parse_array parse_array_aarch64
 #define parse_error parse_error_aarch64
 #define parse_escape parse_escape_aarch64
-#define parse_json parse_json_aarch64
 #define parse_keyword parse_keyword_aarch64
 #define parse_literal parse_literal_aarch64
 #define parse_object parse_object_aarch64
@@ -2538,12 +2523,6 @@
 #define qmp_output_visitor_cleanup qmp_output_visitor_cleanup_aarch64
 #define qmp_output_visitor_new qmp_output_visitor_new_aarch64
 #define qobject_decref qobject_decref_aarch64
-#define qobject_from_json qobject_from_json_aarch64
-#define qobject_from_jsonf qobject_from_jsonf_aarch64
-#define qobject_from_jsonv qobject_from_jsonv_aarch64
-#define qobject_incref qobject_incref_aarch64
-#define qobject_to_json qobject_to_json_aarch64
-#define qobject_to_json_pretty qobject_to_json_pretty_aarch64
 #define qobject_to_qbool qobject_to_qbool_aarch64
 #define qobject_to_qdict qobject_to_qdict_aarch64
 #define qobject_to_qfloat qobject_to_qfloat_aarch64
@@ -3021,9 +3000,6 @@
 #define tlb_set_dirty1 tlb_set_dirty1_aarch64
 #define tlb_unprotect_code_phys tlb_unprotect_code_phys_aarch64
 #define tlb_vaddr_to_host tlb_vaddr_to_host_aarch64
-#define to_json to_json_aarch64
-#define to_json_dict_iter to_json_dict_iter_aarch64
-#define to_json_list_iter to_json_list_iter_aarch64
 #define token_get_type token_get_type_aarch64
 #define token_get_value token_get_value_aarch64
 #define token_is_escape token_is_escape_aarch64
@@ -3104,7 +3080,6 @@
 #define vmsa_ttbcr_reset vmsa_ttbcr_reset_aarch64
 #define vmsa_ttbcr_write vmsa_ttbcr_write_aarch64
 #define vmsa_ttbr_write vmsa_ttbr_write_aarch64
-#define wchar_to_utf8 wchar_to_utf8_aarch64
 #define write_cpustate_to_list write_cpustate_to_list_aarch64
 #define write_list_to_cpustate write_list_to_cpustate_aarch64
 #define write_raw_cp_reg write_raw_cp_reg_aarch64
