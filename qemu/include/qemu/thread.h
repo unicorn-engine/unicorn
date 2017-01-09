@@ -40,18 +40,6 @@ void qemu_cond_signal(QemuCond *cond);
 void qemu_cond_broadcast(QemuCond *cond);
 void qemu_cond_wait(QemuCond *cond, QemuMutex *mutex);
 
-void qemu_sem_init(QemuSemaphore *sem, int init);
-void qemu_sem_post(QemuSemaphore *sem);
-void qemu_sem_wait(QemuSemaphore *sem);
-int qemu_sem_timedwait(QemuSemaphore *sem, int ms);
-void qemu_sem_destroy(QemuSemaphore *sem);
-
-void qemu_event_init(QemuEvent *ev, bool init);
-void qemu_event_set(QemuEvent *ev);
-void qemu_event_reset(QemuEvent *ev);
-void qemu_event_wait(QemuEvent *ev);
-void qemu_event_destroy(QemuEvent *ev);
-
 struct uc_struct;
 // return -1 on error, 0 on success
 int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *name,

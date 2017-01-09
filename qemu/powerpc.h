@@ -2413,12 +2413,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_powerpc
 #define qemu_clock_ptr qemu_clock_ptr_powerpc
 #define qemu_clocks qemu_clocks_powerpc
-#define qemu_daemon qemu_daemon_powerpc
-#define qemu_event_destroy qemu_event_destroy_powerpc
-#define qemu_event_init qemu_event_init_powerpc
-#define qemu_event_reset qemu_event_reset_powerpc
-#define qemu_event_set qemu_event_set_powerpc
-#define qemu_event_wait qemu_event_wait_powerpc
 #define qemu_fdatasync qemu_fdatasync_powerpc
 #define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_powerpc
 #define qemu_get_cpu qemu_get_cpu_powerpc
@@ -2438,7 +2432,6 @@
 #define qemu_loglevel_mask qemu_loglevel_mask_powerpc
 #define qemu_log_vprintf qemu_log_vprintf_powerpc
 #define qemu_mutex_lock_ramlist qemu_mutex_lock_ramlist_powerpc
-#define qemu_mutex_trylock qemu_mutex_trylock_powerpc
 #define qemu_mutex_unlock_ramlist qemu_mutex_unlock_ramlist_powerpc
 #define qemu_oom_check qemu_oom_check_powerpc
 #define qemu_opt_del qemu_opt_del_powerpc
@@ -2497,11 +2490,6 @@
 #define qemu_ram_setup_dump qemu_ram_setup_dump_powerpc
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_powerpc
 #define qemu_real_host_page_size qemu_real_host_page_size_powerpc
-#define qemu_sem_destroy qemu_sem_destroy_powerpc
-#define qemu_sem_init qemu_sem_init_powerpc
-#define qemu_sem_post qemu_sem_post_powerpc
-#define qemu_sem_timedwait qemu_sem_timedwait_powerpc
-#define qemu_sem_wait qemu_sem_wait_powerpc
 #define qemu_set_cloexec qemu_set_cloexec_powerpc
 #define qemu_set_tty_echo qemu_set_tty_echo_powerpc
 #define qemu_st_helpers qemu_st_helpers_powerpc

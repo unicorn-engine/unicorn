@@ -2413,12 +2413,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_mipsel
 #define qemu_clock_ptr qemu_clock_ptr_mipsel
 #define qemu_clocks qemu_clocks_mipsel
-#define qemu_daemon qemu_daemon_mipsel
-#define qemu_event_destroy qemu_event_destroy_mipsel
-#define qemu_event_init qemu_event_init_mipsel
-#define qemu_event_reset qemu_event_reset_mipsel
-#define qemu_event_set qemu_event_set_mipsel
-#define qemu_event_wait qemu_event_wait_mipsel
 #define qemu_fdatasync qemu_fdatasync_mipsel
 #define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_mipsel
 #define qemu_get_cpu qemu_get_cpu_mipsel
@@ -2438,7 +2432,6 @@
 #define qemu_loglevel_mask qemu_loglevel_mask_mipsel
 #define qemu_log_vprintf qemu_log_vprintf_mipsel
 #define qemu_mutex_lock_ramlist qemu_mutex_lock_ramlist_mipsel
-#define qemu_mutex_trylock qemu_mutex_trylock_mipsel
 #define qemu_mutex_unlock_ramlist qemu_mutex_unlock_ramlist_mipsel
 #define qemu_oom_check qemu_oom_check_mipsel
 #define qemu_opt_del qemu_opt_del_mipsel
@@ -2497,11 +2490,6 @@
 #define qemu_ram_setup_dump qemu_ram_setup_dump_mipsel
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_mipsel
 #define qemu_real_host_page_size qemu_real_host_page_size_mipsel
-#define qemu_sem_destroy qemu_sem_destroy_mipsel
-#define qemu_sem_init qemu_sem_init_mipsel
-#define qemu_sem_post qemu_sem_post_mipsel
-#define qemu_sem_timedwait qemu_sem_timedwait_mipsel
-#define qemu_sem_wait qemu_sem_wait_mipsel
 #define qemu_set_cloexec qemu_set_cloexec_mipsel
 #define qemu_set_tty_echo qemu_set_tty_echo_mipsel
 #define qemu_st_helpers qemu_st_helpers_mipsel

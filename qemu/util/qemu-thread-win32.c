@@ -53,18 +53,6 @@ void qemu_mutex_lock(QemuMutex *mutex)
     mutex->owner = GetCurrentThreadId();
 }
 
-int qemu_mutex_trylock(QemuMutex *mutex)
-{
-    int owned;
-
-    owned = TryEnterCriticalSection(&mutex->lock);
-    if (owned) {
-        assert(mutex->owner == 0);
-        mutex->owner = GetCurrentThreadId();
-    }
-    return !owned;
-}
-
 void qemu_mutex_unlock(QemuMutex *mutex)
 {
     assert(mutex->owner == GetCurrentThreadId());
@@ -157,103 +145,6 @@ void qemu_cond_broadcast(QemuCond *cond)
      * that the last waiter must send us a wake-up.
      */
     WaitForSingleObject(cond->continue_event, INFINITE);
-}
-
-void qemu_cond_wait(QemuCond *cond, QemuMutex *mutex)
-{
-    /*
-     * This access is protected under the mutex.
-     */
-    cond->waiters++;
-
-    /*
-     * Unlock external mutex and wait for signal.
-     * NOTE: we've held mutex locked long enough to increment
-     * waiters count above, so there's no problem with
-     * leaving mutex unlocked before we wait on semaphore.
-     */
-    qemu_mutex_unlock(mutex);
-    WaitForSingleObject(cond->sema, INFINITE);
-
-    /* Now waiters must rendez-vous with the signaling thread and
-     * let it continue.  For cond_broadcast this has heavy contention
-     * and triggers thundering herd.  So goes life.
-     *
-     * Decrease waiters count.  The mutex is not taken, so we have
-     * to do this atomically.
-     *
-     * All waiters contend for the mutex at the end of this function
-     * until the signaling thread relinquishes it.  To ensure
-     * each waiter consumes exactly one slice of the semaphore,
-     * the signaling thread stops until it is told by the last
-     * waiter that it can go on.
-     */
-    if (InterlockedDecrement(&cond->waiters) == cond->target) {
-        SetEvent(cond->continue_event);
-    }
-
-    qemu_mutex_lock(mutex);
-}
-
-void qemu_sem_init(QemuSemaphore *sem, int init)
-{
-    /* Manual reset.  */
-    sem->sema = CreateSemaphore(NULL, init, LONG_MAX, NULL);
-}
-
-void qemu_sem_destroy(QemuSemaphore *sem)
-{
-    CloseHandle(sem->sema);
-}
-
-void qemu_sem_post(QemuSemaphore *sem)
-{
-    ReleaseSemaphore(sem->sema, 1, NULL);
-}
-
-int qemu_sem_timedwait(QemuSemaphore *sem, int ms)
-{
-    int rc = WaitForSingleObject(sem->sema, ms);
-    if (rc == WAIT_OBJECT_0) {
-        return 0;
-    }
-    if (rc != WAIT_TIMEOUT) {
-        error_exit(GetLastError(), __func__);
-    }
-    return -1;
-}
-
-void qemu_sem_wait(QemuSemaphore *sem)
-{
-    if (WaitForSingleObject(sem->sema, INFINITE) != WAIT_OBJECT_0) {
-        error_exit(GetLastError(), __func__);
-    }
-}
-
-void qemu_event_init(QemuEvent *ev, bool init)
-{
-    /* Manual reset.  */
-    ev->event = CreateEvent(NULL, TRUE, init, NULL);
-}
-
-void qemu_event_destroy(QemuEvent *ev)
-{
-    CloseHandle(ev->event);
-}
-
-void qemu_event_set(QemuEvent *ev)
-{
-    SetEvent(ev->event);
-}
-
-void qemu_event_reset(QemuEvent *ev)
-{
-    ResetEvent(ev->event);
-}
-
-void qemu_event_wait(QemuEvent *ev)
-{
-    WaitForSingleObject(ev->event, INFINITE);
 }
 
 struct QemuThreadData {

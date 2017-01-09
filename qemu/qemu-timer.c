@@ -29,9 +29,6 @@
 #include "hw/hw.h"
 
 #include "qemu/timer.h"
-#ifdef CONFIG_POSIX
-#include <pthread.h>
-#endif
 
 #ifdef CONFIG_PPOLL
 #include <poll.h>

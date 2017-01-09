@@ -2413,12 +2413,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_x86_64
 #define qemu_clock_ptr qemu_clock_ptr_x86_64
 #define qemu_clocks qemu_clocks_x86_64
-#define qemu_daemon qemu_daemon_x86_64
-#define qemu_event_destroy qemu_event_destroy_x86_64
-#define qemu_event_init qemu_event_init_x86_64
-#define qemu_event_reset qemu_event_reset_x86_64
-#define qemu_event_set qemu_event_set_x86_64
-#define qemu_event_wait qemu_event_wait_x86_64
 #define qemu_fdatasync qemu_fdatasync_x86_64
 #define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_x86_64
 #define qemu_get_cpu qemu_get_cpu_x86_64
@@ -2438,7 +2432,6 @@
 #define qemu_loglevel_mask qemu_loglevel_mask_x86_64
 #define qemu_log_vprintf qemu_log_vprintf_x86_64
 #define qemu_mutex_lock_ramlist qemu_mutex_lock_ramlist_x86_64
-#define qemu_mutex_trylock qemu_mutex_trylock_x86_64
 #define qemu_mutex_unlock_ramlist qemu_mutex_unlock_ramlist_x86_64
 #define qemu_oom_check qemu_oom_check_x86_64
 #define qemu_opt_del qemu_opt_del_x86_64
@@ -2497,11 +2490,6 @@
 #define qemu_ram_setup_dump qemu_ram_setup_dump_x86_64
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_x86_64
 #define qemu_real_host_page_size qemu_real_host_page_size_x86_64
-#define qemu_sem_destroy qemu_sem_destroy_x86_64
-#define qemu_sem_init qemu_sem_init_x86_64
-#define qemu_sem_post qemu_sem_post_x86_64
-#define qemu_sem_timedwait qemu_sem_timedwait_x86_64
-#define qemu_sem_wait qemu_sem_wait_x86_64
 #define qemu_set_cloexec qemu_set_cloexec_x86_64
 #define qemu_set_tty_echo qemu_set_tty_echo_x86_64
 #define qemu_st_helpers qemu_st_helpers_x86_64

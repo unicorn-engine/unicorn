@@ -2413,12 +2413,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_sparc
 #define qemu_clock_ptr qemu_clock_ptr_sparc
 #define qemu_clocks qemu_clocks_sparc
-#define qemu_daemon qemu_daemon_sparc
-#define qemu_event_destroy qemu_event_destroy_sparc
-#define qemu_event_init qemu_event_init_sparc
-#define qemu_event_reset qemu_event_reset_sparc
-#define qemu_event_set qemu_event_set_sparc
-#define qemu_event_wait qemu_event_wait_sparc
 #define qemu_fdatasync qemu_fdatasync_sparc
 #define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_sparc
 #define qemu_get_cpu qemu_get_cpu_sparc
@@ -2438,7 +2432,6 @@
 #define qemu_loglevel_mask qemu_loglevel_mask_sparc
 #define qemu_log_vprintf qemu_log_vprintf_sparc
 #define qemu_mutex_lock_ramlist qemu_mutex_lock_ramlist_sparc
-#define qemu_mutex_trylock qemu_mutex_trylock_sparc
 #define qemu_mutex_unlock_ramlist qemu_mutex_unlock_ramlist_sparc
 #define qemu_oom_check qemu_oom_check_sparc
 #define qemu_opt_del qemu_opt_del_sparc
@@ -2497,11 +2490,6 @@
 #define qemu_ram_setup_dump qemu_ram_setup_dump_sparc
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_sparc
 #define qemu_real_host_page_size qemu_real_host_page_size_sparc
-#define qemu_sem_destroy qemu_sem_destroy_sparc
-#define qemu_sem_init qemu_sem_init_sparc
-#define qemu_sem_post qemu_sem_post_sparc
-#define qemu_sem_timedwait qemu_sem_timedwait_sparc
-#define qemu_sem_wait qemu_sem_wait_sparc
 #define qemu_set_cloexec qemu_set_cloexec_sparc
 #define qemu_set_tty_echo qemu_set_tty_echo_sparc
 #define qemu_st_helpers qemu_st_helpers_sparc
