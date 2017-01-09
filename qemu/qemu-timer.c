@@ -70,9 +70,6 @@ struct QEMUTimerList {
     QLIST_ENTRY(QEMUTimerList) list;
     QEMUTimerListNotifyCB *notify_cb;
     void *notify_opaque;
-
-    /* lightweight method to mark the end of timerlist's running */
-    QemuEvent timers_done_ev;
 };
 
 /**

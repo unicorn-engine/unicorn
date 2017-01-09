@@ -292,7 +292,6 @@ uc_err uc_close(uc_engine *uc)
     // Cleanup CPU.
     g_free(uc->cpu->tcg_as_listener);
     g_free(uc->cpu->thread);
-    g_free(uc->cpu->halt_cond);
 
     // Cleanup all objects.
     OBJECT(uc->machine_state->accelerator)->ref = 1;
@@ -314,9 +313,6 @@ uc_err uc_close(uc_engine *uc)
     // Thread relateds.
     if (uc->qemu_thread_data)
         free(uc->qemu_thread_data);
-
-    qemu_mutex_destroy(&uc->qemu_global_mutex);
-    qemu_cond_destroy(&uc->qemu_cpu_cond);
 
     // Other auxilaries.
     free(uc->l1_map);

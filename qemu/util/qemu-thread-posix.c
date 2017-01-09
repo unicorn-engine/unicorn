@@ -74,42 +74,6 @@ void qemu_mutex_unlock(QemuMutex *mutex)
         error_exit(err, __func__);
 }
 
-void qemu_cond_init(QemuCond *cond)
-{
-    int err;
-
-    err = pthread_cond_init(&cond->cond, NULL);
-    if (err)
-        error_exit(err, __func__);
-}
-
-void qemu_cond_destroy(QemuCond *cond)
-{
-    int err;
-
-    err = pthread_cond_destroy(&cond->cond);
-    if (err)
-        error_exit(err, __func__);
-}
-
-void qemu_cond_signal(QemuCond *cond)
-{
-    int err;
-
-    err = pthread_cond_signal(&cond->cond);
-    if (err)
-        error_exit(err, __func__);
-}
-
-void qemu_cond_broadcast(QemuCond *cond)
-{
-    int err;
-
-    err = pthread_cond_broadcast(&cond->cond);
-    if (err)
-        error_exit(err, __func__);
-}
-
 int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *name,
                        void *(*start_routine)(void*),
                        void *arg, int mode)
