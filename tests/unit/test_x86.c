@@ -800,7 +800,7 @@ static void test_i386_reg_save(void **state)
     assert_int_equal(eax, 2);
 
     // clean up;
-    uc_context_free(saved_context);
+    uc_mem_free(saved_context);
     uc_assert_success(uc_close(uc));
 }
 /******************************************************************************/

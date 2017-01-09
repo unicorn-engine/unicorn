@@ -17,7 +17,7 @@ func (u *uc) ContextSave(reuse Context) (Context, error) {
 	if err := errReturn(C.uc_context_alloc(u.handle, ctx)); err != nil {
 		return nil, err
 	}
-	runtime.SetFinalizer(ctx, func(p Context) { C.uc_context_free(*p) })
+	runtime.SetFinalizer(ctx, func(p Context) { C.uc_mem_free(*p) })
 	if err := errReturn(C.uc_context_save(u.handle, *ctx)); err != nil {
 	}
 	return ctx, nil

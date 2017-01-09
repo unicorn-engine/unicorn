@@ -642,7 +642,7 @@ uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t per
 
  @uc: handle returned by uc_open()
  @regions: pointer to an array of uc_mem_region struct. This is allocated by
-   Unicorn, and must be freed by user later
+   Unicorn, and must be freed by user later with uc_mem_free()
  @count: pointer to number of struct uc_mem_region contained in @regions
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
@@ -660,6 +660,7 @@ uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count);
  @uc: handle returned by uc_open()
  @context: pointer to a uc_engine*. This will be updated with the pointer to
    the new context on successful return of this function.
+   Later, this allocated memory must be freed with uc_mem_free().
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
@@ -668,15 +669,16 @@ UNICORN_EXPORT
 uc_err uc_context_alloc(uc_engine *uc, uc_context **context);
 
 /*
- Free the resource allocated by uc_context_alloc.
+ Free the memory allocated by uc_context_alloc & uc_mem_regions.
 
- @context: handle returned by uc_context_alloc()
+ @mem: memory allocated by uc_context_alloc (returned in *context), or
+       by uc_mem_regions (returned in *regions)
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_context_free(uc_context *context);
+uc_err uc_mem_free(void *mem);
 
 /*
  Save a copy of the internal CPU context.

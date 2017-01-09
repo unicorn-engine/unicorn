@@ -28,10 +28,10 @@
 static void free_table(gpointer key, gpointer value, gpointer data)
 {
     TypeInfo *ti = (TypeInfo*) value;
-    g_free((void*) ti->class);
-    g_free((void*) ti->name);
-    g_free((void*) ti->parent);
-    g_free((void*) ti);
+    g_free((void *) ti->class);
+    g_free((void *) ti->name);
+    g_free((void *) ti->parent);
+    g_free((void *) ti);
 }
 
 UNICORN_EXPORT
@@ -1193,9 +1193,9 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 }
 
 UNICORN_EXPORT
-uc_err uc_context_free(uc_context *context)
+uc_err uc_mem_free(void *mem)
 {
-    free(context);
+    g_free(mem);
     return UC_ERR_OK;
 }
 

@@ -126,7 +126,7 @@ _setup_prototype(_uc, "uc_mem_unmap", ucerr, uc_engine, ctypes.c_uint64, ctypes.
 _setup_prototype(_uc, "uc_mem_protect", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_uint32)
 _setup_prototype(_uc, "uc_query", ucerr, uc_engine, ctypes.c_uint32, ctypes.POINTER(ctypes.c_size_t))
 _setup_prototype(_uc, "uc_context_alloc", ucerr, uc_engine, ctypes.POINTER(uc_context))
-_setup_prototype(_uc, "uc_context_free", ucerr, uc_context)
+_setup_prototype(_uc, "uc_mem_free", ucerr, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_context_save", ucerr, uc_engine, uc_context)
 _setup_prototype(_uc, "uc_context_restore", ucerr, uc_engine, uc_context)
 
@@ -496,7 +496,7 @@ class SavedContext(object):
         self.pointer = pointer
 
     def __del__(self):
-        status = _uc.uc_context_free(self.pointer)
+        status = _uc.uc_mem_free(self.pointer)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
