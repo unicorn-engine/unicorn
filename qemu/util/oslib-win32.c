@@ -115,21 +115,6 @@ struct tm *localtime_r(const time_t *timep, struct tm *result)
     return p;
 }
 
-/*
-int inet_aton(const char *cp, struct in_addr *ia)
-{
-    uint32_t addr = inet_addr(cp);
-    if (addr == 0xffffffff) {
-        return 0;
-    }
-    ia->s_addr = addr;
-    return 1;
-}*/
-
-void qemu_set_cloexec(int fd)
-{
-}
-
 /* Offset between 1/1/1601 and 1/1/1970 in 100 nanosec units */
 #define _W32_FT_OFFSET (116444736000000000ULL)
 
@@ -148,25 +133,6 @@ int qemu_gettimeofday(qemu_timeval *tp)
   /* Always return 0 as per Open Group Base Specifications Issue 6.
      Do not set errno on error.  */
   return 0;
-}
-
-void qemu_set_tty_echo(int fd, bool echo)
-{
-    HANDLE handle = (HANDLE)_get_osfhandle(fd);
-    DWORD dwMode = 0;
-
-    if (handle == INVALID_HANDLE_VALUE) {
-        return;
-    }
-
-    GetConsoleMode(handle, &dwMode);
-
-    if (echo) {
-        SetConsoleMode(handle, dwMode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
-    } else {
-        SetConsoleMode(handle,
-                       dwMode & ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT));
-    }
 }
 
 size_t getpagesize(void)
