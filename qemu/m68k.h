@@ -82,12 +82,6 @@
 #define addrrange_make addrrange_make_m68k
 #define addrrange_shift addrrange_shift_m68k
 #define adjust_endianness adjust_endianness_m68k
-#define AES_cbc_encrypt AES_cbc_encrypt_m68k
-#define AES_decrypt AES_decrypt_m68k
-#define AES_encrypt AES_encrypt_m68k
-#define AES_imc AES_imc_m68k
-#define AES_set_decrypt_key AES_set_decrypt_key_m68k
-#define AES_set_encrypt_key AES_set_encrypt_key_m68k
 #define all_helpers all_helpers_m68k
 #define alloc_code_gen_buffer alloc_code_gen_buffer_m68k
 #define alloc_entry alloc_entry_m68k
@@ -157,7 +151,6 @@
 #define ats_write ats_write_m68k
 #define bad_mode_switch bad_mode_switch_m68k
 #define bank_number bank_number_m68k
-#define bitmap_find_next_zero_area bitmap_find_next_zero_area_m68k
 #define bitmap_zero_extend bitmap_zero_extend_m68k
 #define bp_wp_matches bp_wp_matches_m68k
 #define breakpoint_invalidate breakpoint_invalidate_m68k
@@ -394,13 +387,11 @@
 #define extractFloatx80Exp extractFloatx80Exp_m68k
 #define extractFloatx80Frac extractFloatx80Frac_m68k
 #define extractFloatx80Sign extractFloatx80Sign_m68k
-#define fcntl_setfl fcntl_setfl_m68k
 #define fcse_write fcse_write_m68k
 #define find_better_copy find_better_copy_m68k
 #define find_default_machine find_default_machine_m68k
 #define find_desc_by_name find_desc_by_name_m68k
 #define find_first_bit find_first_bit_m68k
-#define find_last_bit find_last_bit_m68k
 #define find_paging_enabled_cpu find_paging_enabled_cpu_m68k
 #define find_ram_block find_ram_block_m68k
 #define find_ram_offset find_ram_offset_m68k
@@ -1951,7 +1942,6 @@
 #define io_writew io_writew_m68k
 #define is_a64 is_a64_m68k
 #define is_help_option is_help_option_m68k
-#define is_power_of_2 is_power_of_2_m68k
 #define isr_read isr_read_m68k
 #define is_valid_option_list is_valid_option_list_m68k
 #define iwmmxt_load_creg iwmmxt_load_creg_m68k
@@ -2099,7 +2089,6 @@
 #define memory_region_write_accessor memory_region_write_accessor_m68k
 #define memory_region_wrong_endianness memory_region_wrong_endianness_m68k
 #define memory_try_enable_merging memory_try_enable_merging_m68k
-#define mktimegm mktimegm_m68k
 #define module_call_init module_call_init_m68k
 #define module_load module_load_m68k
 #define mpidr_cp_reginfo mpidr_cp_reginfo_m68k
@@ -2235,8 +2224,6 @@
 #define parse_type_number parse_type_number_m68k
 #define parse_type_size parse_type_size_m68k
 #define parse_type_str parse_type_str_m68k
-#define parse_uint parse_uint_m68k
-#define parse_uint_full parse_uint_full_m68k
 #define parse_value parse_value_m68k
 #define par_write par_write_m68k
 #define patch_reloc patch_reloc_m68k
@@ -2273,7 +2260,6 @@
 #define pmsav5_insn_ap_write pmsav5_insn_ap_write_m68k
 #define pmuserenr_write pmuserenr_write_m68k
 #define pmxevtyper_write pmxevtyper_write_m68k
-#define pow2floor pow2floor_m68k
 #define print_type_bool print_type_bool_m68k
 #define print_type_int print_type_int_m68k
 #define print_type_number print_type_number_m68k
@@ -2398,7 +2384,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_m68k
 #define qemu_clock_ptr qemu_clock_ptr_m68k
 #define qemu_clocks qemu_clocks_m68k
-#define qemu_fdatasync qemu_fdatasync_m68k
 #define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_m68k
 #define qemu_get_cpu qemu_get_cpu_m68k
 #define qemu_get_guest_memory_mapping qemu_get_guest_memory_mapping_m68k
@@ -2453,8 +2438,6 @@
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_m68k
 #define qemu_real_host_page_size qemu_real_host_page_size_m68k
 #define qemu_st_helpers qemu_st_helpers_m68k
-#define qemu_strnlen qemu_strnlen_m68k
-#define qemu_strsep qemu_strsep_m68k
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_m68k
 #define qemu_try_memalign qemu_try_memalign_m68k
 #define qentry_destroy qentry_destroy_m68k
@@ -2609,15 +2592,6 @@
 #define shortShift192Left shortShift192Left_m68k
 #define simple_mpu_ap_bits simple_mpu_ap_bits_m68k
 #define size_code_gen_buffer size_code_gen_buffer_m68k
-#define slow_bitmap_and slow_bitmap_and_m68k
-#define slow_bitmap_andnot slow_bitmap_andnot_m68k
-#define slow_bitmap_complement slow_bitmap_complement_m68k
-#define slow_bitmap_empty slow_bitmap_empty_m68k
-#define slow_bitmap_equal slow_bitmap_equal_m68k
-#define slow_bitmap_full slow_bitmap_full_m68k
-#define slow_bitmap_intersects slow_bitmap_intersects_m68k
-#define slow_bitmap_or slow_bitmap_or_m68k
-#define slow_bitmap_xor slow_bitmap_xor_m68k
 #define softmmu_lock_user softmmu_lock_user_m68k
 #define softmmu_lock_user_string softmmu_lock_user_string_m68k
 #define softmmu_tget32 softmmu_tget32_m68k
@@ -2654,9 +2628,7 @@
 #define string_input_get_visitor string_input_get_visitor_m68k
 #define string_input_visitor_cleanup string_input_visitor_cleanup_m68k
 #define string_input_visitor_new string_input_visitor_new_m68k
-#define stristart stristart_m68k
 #define strongarm_cp_reginfo strongarm_cp_reginfo_m68k
-#define strpadcpy strpadcpy_m68k
 #define strstart strstart_m68k
 #define strtosz strtosz_m68k
 #define strtosz_suffix strtosz_suffix_m68k
@@ -3032,8 +3004,6 @@
 #define uint64_to_float128 uint64_to_float128_m68k
 #define uint64_to_float32 uint64_to_float32_m68k
 #define uint64_to_float64 uint64_to_float64_m68k
-#define uleb128_decode_small uleb128_decode_small_m68k
-#define uleb128_encode_small uleb128_encode_small_m68k
 #define unassigned_io_ops unassigned_io_ops_m68k
 #define unassigned_io_read unassigned_io_read_m68k
 #define unassigned_io_write unassigned_io_write_m68k

@@ -82,12 +82,6 @@
 #define addrrange_make addrrange_make_mips64
 #define addrrange_shift addrrange_shift_mips64
 #define adjust_endianness adjust_endianness_mips64
-#define AES_cbc_encrypt AES_cbc_encrypt_mips64
-#define AES_decrypt AES_decrypt_mips64
-#define AES_encrypt AES_encrypt_mips64
-#define AES_imc AES_imc_mips64
-#define AES_set_decrypt_key AES_set_decrypt_key_mips64
-#define AES_set_encrypt_key AES_set_encrypt_key_mips64
 #define all_helpers all_helpers_mips64
 #define alloc_code_gen_buffer alloc_code_gen_buffer_mips64
 #define alloc_entry alloc_entry_mips64
@@ -157,7 +151,6 @@
 #define ats_write ats_write_mips64
 #define bad_mode_switch bad_mode_switch_mips64
 #define bank_number bank_number_mips64
-#define bitmap_find_next_zero_area bitmap_find_next_zero_area_mips64
 #define bitmap_zero_extend bitmap_zero_extend_mips64
 #define bp_wp_matches bp_wp_matches_mips64
 #define breakpoint_invalidate breakpoint_invalidate_mips64
@@ -394,13 +387,11 @@
 #define extractFloatx80Exp extractFloatx80Exp_mips64
 #define extractFloatx80Frac extractFloatx80Frac_mips64
 #define extractFloatx80Sign extractFloatx80Sign_mips64
-#define fcntl_setfl fcntl_setfl_mips64
 #define fcse_write fcse_write_mips64
 #define find_better_copy find_better_copy_mips64
 #define find_default_machine find_default_machine_mips64
 #define find_desc_by_name find_desc_by_name_mips64
 #define find_first_bit find_first_bit_mips64
-#define find_last_bit find_last_bit_mips64
 #define find_paging_enabled_cpu find_paging_enabled_cpu_mips64
 #define find_ram_block find_ram_block_mips64
 #define find_ram_offset find_ram_offset_mips64
@@ -1951,7 +1942,6 @@
 #define io_writew io_writew_mips64
 #define is_a64 is_a64_mips64
 #define is_help_option is_help_option_mips64
-#define is_power_of_2 is_power_of_2_mips64
 #define isr_read isr_read_mips64
 #define is_valid_option_list is_valid_option_list_mips64
 #define iwmmxt_load_creg iwmmxt_load_creg_mips64
@@ -2099,7 +2089,6 @@
 #define memory_region_write_accessor memory_region_write_accessor_mips64
 #define memory_region_wrong_endianness memory_region_wrong_endianness_mips64
 #define memory_try_enable_merging memory_try_enable_merging_mips64
-#define mktimegm mktimegm_mips64
 #define module_call_init module_call_init_mips64
 #define module_load module_load_mips64
 #define mpidr_cp_reginfo mpidr_cp_reginfo_mips64
@@ -2235,8 +2224,6 @@
 #define parse_type_number parse_type_number_mips64
 #define parse_type_size parse_type_size_mips64
 #define parse_type_str parse_type_str_mips64
-#define parse_uint parse_uint_mips64
-#define parse_uint_full parse_uint_full_mips64
 #define parse_value parse_value_mips64
 #define par_write par_write_mips64
 #define patch_reloc patch_reloc_mips64
@@ -2273,7 +2260,6 @@
 #define pmsav5_insn_ap_write pmsav5_insn_ap_write_mips64
 #define pmuserenr_write pmuserenr_write_mips64
 #define pmxevtyper_write pmxevtyper_write_mips64
-#define pow2floor pow2floor_mips64
 #define print_type_bool print_type_bool_mips64
 #define print_type_int print_type_int_mips64
 #define print_type_number print_type_number_mips64
@@ -2398,7 +2384,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_mips64
 #define qemu_clock_ptr qemu_clock_ptr_mips64
 #define qemu_clocks qemu_clocks_mips64
-#define qemu_fdatasync qemu_fdatasync_mips64
 #define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_mips64
 #define qemu_get_cpu qemu_get_cpu_mips64
 #define qemu_get_guest_memory_mapping qemu_get_guest_memory_mapping_mips64
@@ -2453,8 +2438,6 @@
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_mips64
 #define qemu_real_host_page_size qemu_real_host_page_size_mips64
 #define qemu_st_helpers qemu_st_helpers_mips64
-#define qemu_strnlen qemu_strnlen_mips64
-#define qemu_strsep qemu_strsep_mips64
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_mips64
 #define qemu_try_memalign qemu_try_memalign_mips64
 #define qentry_destroy qentry_destroy_mips64
@@ -2609,15 +2592,6 @@
 #define shortShift192Left shortShift192Left_mips64
 #define simple_mpu_ap_bits simple_mpu_ap_bits_mips64
 #define size_code_gen_buffer size_code_gen_buffer_mips64
-#define slow_bitmap_and slow_bitmap_and_mips64
-#define slow_bitmap_andnot slow_bitmap_andnot_mips64
-#define slow_bitmap_complement slow_bitmap_complement_mips64
-#define slow_bitmap_empty slow_bitmap_empty_mips64
-#define slow_bitmap_equal slow_bitmap_equal_mips64
-#define slow_bitmap_full slow_bitmap_full_mips64
-#define slow_bitmap_intersects slow_bitmap_intersects_mips64
-#define slow_bitmap_or slow_bitmap_or_mips64
-#define slow_bitmap_xor slow_bitmap_xor_mips64
 #define softmmu_lock_user softmmu_lock_user_mips64
 #define softmmu_lock_user_string softmmu_lock_user_string_mips64
 #define softmmu_tget32 softmmu_tget32_mips64
@@ -2654,9 +2628,7 @@
 #define string_input_get_visitor string_input_get_visitor_mips64
 #define string_input_visitor_cleanup string_input_visitor_cleanup_mips64
 #define string_input_visitor_new string_input_visitor_new_mips64
-#define stristart stristart_mips64
 #define strongarm_cp_reginfo strongarm_cp_reginfo_mips64
-#define strpadcpy strpadcpy_mips64
 #define strstart strstart_mips64
 #define strtosz strtosz_mips64
 #define strtosz_suffix strtosz_suffix_mips64
@@ -3032,8 +3004,6 @@
 #define uint64_to_float128 uint64_to_float128_mips64
 #define uint64_to_float32 uint64_to_float32_mips64
 #define uint64_to_float64 uint64_to_float64_mips64
-#define uleb128_decode_small uleb128_decode_small_mips64
-#define uleb128_encode_small uleb128_encode_small_mips64
 #define unassigned_io_ops unassigned_io_ops_mips64
 #define unassigned_io_read unassigned_io_read_mips64
 #define unassigned_io_write unassigned_io_write_mips64

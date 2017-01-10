@@ -5,7 +5,6 @@ util-obj-y += module.o
 util-obj-y += bitmap.o bitops.o
 util-obj-y += error.o
 util-obj-y += aes.o
-util-obj-y += qemu-option.o
 util-obj-y += crc32c.o
 util-obj-y += host-utils.o
 util-obj-y += getauxval.o

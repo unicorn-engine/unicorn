@@ -82,12 +82,6 @@
 #define addrrange_make addrrange_make_aarch64
 #define addrrange_shift addrrange_shift_aarch64
 #define adjust_endianness adjust_endianness_aarch64
-#define AES_cbc_encrypt AES_cbc_encrypt_aarch64
-#define AES_decrypt AES_decrypt_aarch64
-#define AES_encrypt AES_encrypt_aarch64
-#define AES_imc AES_imc_aarch64
-#define AES_set_decrypt_key AES_set_decrypt_key_aarch64
-#define AES_set_encrypt_key AES_set_encrypt_key_aarch64
 #define all_helpers all_helpers_aarch64
 #define alloc_code_gen_buffer alloc_code_gen_buffer_aarch64
 #define alloc_entry alloc_entry_aarch64
@@ -157,7 +151,6 @@
 #define ats_write ats_write_aarch64
 #define bad_mode_switch bad_mode_switch_aarch64
 #define bank_number bank_number_aarch64
-#define bitmap_find_next_zero_area bitmap_find_next_zero_area_aarch64
 #define bitmap_zero_extend bitmap_zero_extend_aarch64
 #define bp_wp_matches bp_wp_matches_aarch64
 #define breakpoint_invalidate breakpoint_invalidate_aarch64
@@ -394,13 +387,11 @@
 #define extractFloatx80Exp extractFloatx80Exp_aarch64
 #define extractFloatx80Frac extractFloatx80Frac_aarch64
 #define extractFloatx80Sign extractFloatx80Sign_aarch64
-#define fcntl_setfl fcntl_setfl_aarch64
 #define fcse_write fcse_write_aarch64
 #define find_better_copy find_better_copy_aarch64
 #define find_default_machine find_default_machine_aarch64
 #define find_desc_by_name find_desc_by_name_aarch64
 #define find_first_bit find_first_bit_aarch64
-#define find_last_bit find_last_bit_aarch64
 #define find_paging_enabled_cpu find_paging_enabled_cpu_aarch64
 #define find_ram_block find_ram_block_aarch64
 #define find_ram_offset find_ram_offset_aarch64
@@ -1951,7 +1942,6 @@
 #define io_writew io_writew_aarch64
 #define is_a64 is_a64_aarch64
 #define is_help_option is_help_option_aarch64
-#define is_power_of_2 is_power_of_2_aarch64
 #define isr_read isr_read_aarch64
 #define is_valid_option_list is_valid_option_list_aarch64
 #define iwmmxt_load_creg iwmmxt_load_creg_aarch64
@@ -2099,7 +2089,6 @@
 #define memory_region_write_accessor memory_region_write_accessor_aarch64
 #define memory_region_wrong_endianness memory_region_wrong_endianness_aarch64
 #define memory_try_enable_merging memory_try_enable_merging_aarch64
-#define mktimegm mktimegm_aarch64
 #define module_call_init module_call_init_aarch64
 #define module_load module_load_aarch64
 #define mpidr_cp_reginfo mpidr_cp_reginfo_aarch64
@@ -2235,8 +2224,6 @@
 #define parse_type_number parse_type_number_aarch64
 #define parse_type_size parse_type_size_aarch64
 #define parse_type_str parse_type_str_aarch64
-#define parse_uint parse_uint_aarch64
-#define parse_uint_full parse_uint_full_aarch64
 #define parse_value parse_value_aarch64
 #define par_write par_write_aarch64
 #define patch_reloc patch_reloc_aarch64
@@ -2273,7 +2260,6 @@
 #define pmsav5_insn_ap_write pmsav5_insn_ap_write_aarch64
 #define pmuserenr_write pmuserenr_write_aarch64
 #define pmxevtyper_write pmxevtyper_write_aarch64
-#define pow2floor pow2floor_aarch64
 #define print_type_bool print_type_bool_aarch64
 #define print_type_int print_type_int_aarch64
 #define print_type_number print_type_number_aarch64
@@ -2398,7 +2384,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_aarch64
 #define qemu_clock_ptr qemu_clock_ptr_aarch64
 #define qemu_clocks qemu_clocks_aarch64
-#define qemu_fdatasync qemu_fdatasync_aarch64
 #define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_aarch64
 #define qemu_get_cpu qemu_get_cpu_aarch64
 #define qemu_get_guest_memory_mapping qemu_get_guest_memory_mapping_aarch64
@@ -2453,8 +2438,6 @@
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_aarch64
 #define qemu_real_host_page_size qemu_real_host_page_size_aarch64
 #define qemu_st_helpers qemu_st_helpers_aarch64
-#define qemu_strnlen qemu_strnlen_aarch64
-#define qemu_strsep qemu_strsep_aarch64
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_aarch64
 #define qemu_try_memalign qemu_try_memalign_aarch64
 #define qentry_destroy qentry_destroy_aarch64
@@ -2609,15 +2592,6 @@
 #define shortShift192Left shortShift192Left_aarch64
 #define simple_mpu_ap_bits simple_mpu_ap_bits_aarch64
 #define size_code_gen_buffer size_code_gen_buffer_aarch64
-#define slow_bitmap_and slow_bitmap_and_aarch64
-#define slow_bitmap_andnot slow_bitmap_andnot_aarch64
-#define slow_bitmap_complement slow_bitmap_complement_aarch64
-#define slow_bitmap_empty slow_bitmap_empty_aarch64
-#define slow_bitmap_equal slow_bitmap_equal_aarch64
-#define slow_bitmap_full slow_bitmap_full_aarch64
-#define slow_bitmap_intersects slow_bitmap_intersects_aarch64
-#define slow_bitmap_or slow_bitmap_or_aarch64
-#define slow_bitmap_xor slow_bitmap_xor_aarch64
 #define softmmu_lock_user softmmu_lock_user_aarch64
 #define softmmu_lock_user_string softmmu_lock_user_string_aarch64
 #define softmmu_tget32 softmmu_tget32_aarch64
@@ -2654,9 +2628,7 @@
 #define string_input_get_visitor string_input_get_visitor_aarch64
 #define string_input_visitor_cleanup string_input_visitor_cleanup_aarch64
 #define string_input_visitor_new string_input_visitor_new_aarch64
-#define stristart stristart_aarch64
 #define strongarm_cp_reginfo strongarm_cp_reginfo_aarch64
-#define strpadcpy strpadcpy_aarch64
 #define strstart strstart_aarch64
 #define strtosz strtosz_aarch64
 #define strtosz_suffix strtosz_suffix_aarch64
@@ -3032,8 +3004,6 @@
 #define uint64_to_float128 uint64_to_float128_aarch64
 #define uint64_to_float32 uint64_to_float32_aarch64
 #define uint64_to_float64 uint64_to_float64_aarch64
-#define uleb128_decode_small uleb128_decode_small_aarch64
-#define uleb128_encode_small uleb128_encode_small_aarch64
 #define unassigned_io_ops unassigned_io_ops_aarch64
 #define unassigned_io_read unassigned_io_read_aarch64
 #define unassigned_io_write unassigned_io_write_aarch64

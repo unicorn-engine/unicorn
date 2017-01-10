@@ -82,12 +82,6 @@
 #define addrrange_make addrrange_make_arm
 #define addrrange_shift addrrange_shift_arm
 #define adjust_endianness adjust_endianness_arm
-#define AES_cbc_encrypt AES_cbc_encrypt_arm
-#define AES_decrypt AES_decrypt_arm
-#define AES_encrypt AES_encrypt_arm
-#define AES_imc AES_imc_arm
-#define AES_set_decrypt_key AES_set_decrypt_key_arm
-#define AES_set_encrypt_key AES_set_encrypt_key_arm
 #define all_helpers all_helpers_arm
 #define alloc_code_gen_buffer alloc_code_gen_buffer_arm
 #define alloc_entry alloc_entry_arm
@@ -157,7 +151,6 @@
 #define ats_write ats_write_arm
 #define bad_mode_switch bad_mode_switch_arm
 #define bank_number bank_number_arm
-#define bitmap_find_next_zero_area bitmap_find_next_zero_area_arm
 #define bitmap_zero_extend bitmap_zero_extend_arm
 #define bp_wp_matches bp_wp_matches_arm
 #define breakpoint_invalidate breakpoint_invalidate_arm
@@ -394,13 +387,11 @@
 #define extractFloatx80Exp extractFloatx80Exp_arm
 #define extractFloatx80Frac extractFloatx80Frac_arm
 #define extractFloatx80Sign extractFloatx80Sign_arm
-#define fcntl_setfl fcntl_setfl_arm
 #define fcse_write fcse_write_arm
 #define find_better_copy find_better_copy_arm
 #define find_default_machine find_default_machine_arm
 #define find_desc_by_name find_desc_by_name_arm
 #define find_first_bit find_first_bit_arm
-#define find_last_bit find_last_bit_arm
 #define find_paging_enabled_cpu find_paging_enabled_cpu_arm
 #define find_ram_block find_ram_block_arm
 #define find_ram_offset find_ram_offset_arm
@@ -1951,7 +1942,6 @@
 #define io_writew io_writew_arm
 #define is_a64 is_a64_arm
 #define is_help_option is_help_option_arm
-#define is_power_of_2 is_power_of_2_arm
 #define isr_read isr_read_arm
 #define is_valid_option_list is_valid_option_list_arm
 #define iwmmxt_load_creg iwmmxt_load_creg_arm
@@ -2099,7 +2089,6 @@
 #define memory_region_write_accessor memory_region_write_accessor_arm
 #define memory_region_wrong_endianness memory_region_wrong_endianness_arm
 #define memory_try_enable_merging memory_try_enable_merging_arm
-#define mktimegm mktimegm_arm
 #define module_call_init module_call_init_arm
 #define module_load module_load_arm
 #define mpidr_cp_reginfo mpidr_cp_reginfo_arm
@@ -2235,8 +2224,6 @@
 #define parse_type_number parse_type_number_arm
 #define parse_type_size parse_type_size_arm
 #define parse_type_str parse_type_str_arm
-#define parse_uint parse_uint_arm
-#define parse_uint_full parse_uint_full_arm
 #define parse_value parse_value_arm
 #define par_write par_write_arm
 #define patch_reloc patch_reloc_arm
@@ -2273,7 +2260,6 @@
 #define pmsav5_insn_ap_write pmsav5_insn_ap_write_arm
 #define pmuserenr_write pmuserenr_write_arm
 #define pmxevtyper_write pmxevtyper_write_arm
-#define pow2floor pow2floor_arm
 #define print_type_bool print_type_bool_arm
 #define print_type_int print_type_int_arm
 #define print_type_number print_type_number_arm
@@ -2398,7 +2384,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_arm
 #define qemu_clock_ptr qemu_clock_ptr_arm
 #define qemu_clocks qemu_clocks_arm
-#define qemu_fdatasync qemu_fdatasync_arm
 #define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_arm
 #define qemu_get_cpu qemu_get_cpu_arm
 #define qemu_get_guest_memory_mapping qemu_get_guest_memory_mapping_arm
@@ -2453,8 +2438,6 @@
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_arm
 #define qemu_real_host_page_size qemu_real_host_page_size_arm
 #define qemu_st_helpers qemu_st_helpers_arm
-#define qemu_strnlen qemu_strnlen_arm
-#define qemu_strsep qemu_strsep_arm
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_arm
 #define qemu_try_memalign qemu_try_memalign_arm
 #define qentry_destroy qentry_destroy_arm
@@ -2609,15 +2592,6 @@
 #define shortShift192Left shortShift192Left_arm
 #define simple_mpu_ap_bits simple_mpu_ap_bits_arm
 #define size_code_gen_buffer size_code_gen_buffer_arm
-#define slow_bitmap_and slow_bitmap_and_arm
-#define slow_bitmap_andnot slow_bitmap_andnot_arm
-#define slow_bitmap_complement slow_bitmap_complement_arm
-#define slow_bitmap_empty slow_bitmap_empty_arm
-#define slow_bitmap_equal slow_bitmap_equal_arm
-#define slow_bitmap_full slow_bitmap_full_arm
-#define slow_bitmap_intersects slow_bitmap_intersects_arm
-#define slow_bitmap_or slow_bitmap_or_arm
-#define slow_bitmap_xor slow_bitmap_xor_arm
 #define softmmu_lock_user softmmu_lock_user_arm
 #define softmmu_lock_user_string softmmu_lock_user_string_arm
 #define softmmu_tget32 softmmu_tget32_arm
@@ -2654,9 +2628,7 @@
 #define string_input_get_visitor string_input_get_visitor_arm
 #define string_input_visitor_cleanup string_input_visitor_cleanup_arm
 #define string_input_visitor_new string_input_visitor_new_arm
-#define stristart stristart_arm
 #define strongarm_cp_reginfo strongarm_cp_reginfo_arm
-#define strpadcpy strpadcpy_arm
 #define strstart strstart_arm
 #define strtosz strtosz_arm
 #define strtosz_suffix strtosz_suffix_arm
@@ -3032,8 +3004,6 @@
 #define uint64_to_float128 uint64_to_float128_arm
 #define uint64_to_float32 uint64_to_float32_arm
 #define uint64_to_float64 uint64_to_float64_arm
-#define uleb128_decode_small uleb128_decode_small_arm
-#define uleb128_encode_small uleb128_encode_small_arm
 #define unassigned_io_ops unassigned_io_ops_arm
 #define unassigned_io_read unassigned_io_read_arm
 #define unassigned_io_write unassigned_io_write_arm

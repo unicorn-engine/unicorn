@@ -82,12 +82,6 @@
 #define addrrange_make addrrange_make_powerpc
 #define addrrange_shift addrrange_shift_powerpc
 #define adjust_endianness adjust_endianness_powerpc
-#define AES_cbc_encrypt AES_cbc_encrypt_powerpc
-#define AES_decrypt AES_decrypt_powerpc
-#define AES_encrypt AES_encrypt_powerpc
-#define AES_imc AES_imc_powerpc
-#define AES_set_decrypt_key AES_set_decrypt_key_powerpc
-#define AES_set_encrypt_key AES_set_encrypt_key_powerpc
 #define all_helpers all_helpers_powerpc
 #define alloc_code_gen_buffer alloc_code_gen_buffer_powerpc
 #define alloc_entry alloc_entry_powerpc
@@ -157,7 +151,6 @@
 #define ats_write ats_write_powerpc
 #define bad_mode_switch bad_mode_switch_powerpc
 #define bank_number bank_number_powerpc
-#define bitmap_find_next_zero_area bitmap_find_next_zero_area_powerpc
 #define bitmap_zero_extend bitmap_zero_extend_powerpc
 #define bp_wp_matches bp_wp_matches_powerpc
 #define breakpoint_invalidate breakpoint_invalidate_powerpc
@@ -394,13 +387,11 @@
 #define extractFloatx80Exp extractFloatx80Exp_powerpc
 #define extractFloatx80Frac extractFloatx80Frac_powerpc
 #define extractFloatx80Sign extractFloatx80Sign_powerpc
-#define fcntl_setfl fcntl_setfl_powerpc
 #define fcse_write fcse_write_powerpc
 #define find_better_copy find_better_copy_powerpc
 #define find_default_machine find_default_machine_powerpc
 #define find_desc_by_name find_desc_by_name_powerpc
 #define find_first_bit find_first_bit_powerpc
-#define find_last_bit find_last_bit_powerpc
 #define find_paging_enabled_cpu find_paging_enabled_cpu_powerpc
 #define find_ram_block find_ram_block_powerpc
 #define find_ram_offset find_ram_offset_powerpc
@@ -1951,7 +1942,6 @@
 #define io_writew io_writew_powerpc
 #define is_a64 is_a64_powerpc
 #define is_help_option is_help_option_powerpc
-#define is_power_of_2 is_power_of_2_powerpc
 #define isr_read isr_read_powerpc
 #define is_valid_option_list is_valid_option_list_powerpc
 #define iwmmxt_load_creg iwmmxt_load_creg_powerpc
@@ -2099,7 +2089,6 @@
 #define memory_region_write_accessor memory_region_write_accessor_powerpc
 #define memory_region_wrong_endianness memory_region_wrong_endianness_powerpc
 #define memory_try_enable_merging memory_try_enable_merging_powerpc
-#define mktimegm mktimegm_powerpc
 #define module_call_init module_call_init_powerpc
 #define module_load module_load_powerpc
 #define mpidr_cp_reginfo mpidr_cp_reginfo_powerpc
@@ -2235,8 +2224,6 @@
 #define parse_type_number parse_type_number_powerpc
 #define parse_type_size parse_type_size_powerpc
 #define parse_type_str parse_type_str_powerpc
-#define parse_uint parse_uint_powerpc
-#define parse_uint_full parse_uint_full_powerpc
 #define parse_value parse_value_powerpc
 #define par_write par_write_powerpc
 #define patch_reloc patch_reloc_powerpc
@@ -2273,7 +2260,6 @@
 #define pmsav5_insn_ap_write pmsav5_insn_ap_write_powerpc
 #define pmuserenr_write pmuserenr_write_powerpc
 #define pmxevtyper_write pmxevtyper_write_powerpc
-#define pow2floor pow2floor_powerpc
 #define print_type_bool print_type_bool_powerpc
 #define print_type_int print_type_int_powerpc
 #define print_type_number print_type_number_powerpc
@@ -2398,7 +2384,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_powerpc
 #define qemu_clock_ptr qemu_clock_ptr_powerpc
 #define qemu_clocks qemu_clocks_powerpc
-#define qemu_fdatasync qemu_fdatasync_powerpc
 #define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_powerpc
 #define qemu_get_cpu qemu_get_cpu_powerpc
 #define qemu_get_guest_memory_mapping qemu_get_guest_memory_mapping_powerpc
@@ -2453,8 +2438,6 @@
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_powerpc
 #define qemu_real_host_page_size qemu_real_host_page_size_powerpc
 #define qemu_st_helpers qemu_st_helpers_powerpc
-#define qemu_strnlen qemu_strnlen_powerpc
-#define qemu_strsep qemu_strsep_powerpc
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_powerpc
 #define qemu_try_memalign qemu_try_memalign_powerpc
 #define qentry_destroy qentry_destroy_powerpc
@@ -2609,15 +2592,6 @@
 #define shortShift192Left shortShift192Left_powerpc
 #define simple_mpu_ap_bits simple_mpu_ap_bits_powerpc
 #define size_code_gen_buffer size_code_gen_buffer_powerpc
-#define slow_bitmap_and slow_bitmap_and_powerpc
-#define slow_bitmap_andnot slow_bitmap_andnot_powerpc
-#define slow_bitmap_complement slow_bitmap_complement_powerpc
-#define slow_bitmap_empty slow_bitmap_empty_powerpc
-#define slow_bitmap_equal slow_bitmap_equal_powerpc
-#define slow_bitmap_full slow_bitmap_full_powerpc
-#define slow_bitmap_intersects slow_bitmap_intersects_powerpc
-#define slow_bitmap_or slow_bitmap_or_powerpc
-#define slow_bitmap_xor slow_bitmap_xor_powerpc
 #define softmmu_lock_user softmmu_lock_user_powerpc
 #define softmmu_lock_user_string softmmu_lock_user_string_powerpc
 #define softmmu_tget32 softmmu_tget32_powerpc
@@ -2654,9 +2628,7 @@
 #define string_input_get_visitor string_input_get_visitor_powerpc
 #define string_input_visitor_cleanup string_input_visitor_cleanup_powerpc
 #define string_input_visitor_new string_input_visitor_new_powerpc
-#define stristart stristart_powerpc
 #define strongarm_cp_reginfo strongarm_cp_reginfo_powerpc
-#define strpadcpy strpadcpy_powerpc
 #define strstart strstart_powerpc
 #define strtosz strtosz_powerpc
 #define strtosz_suffix strtosz_suffix_powerpc
@@ -3032,8 +3004,6 @@
 #define uint64_to_float128 uint64_to_float128_powerpc
 #define uint64_to_float32 uint64_to_float32_powerpc
 #define uint64_to_float64 uint64_to_float64_powerpc
-#define uleb128_decode_small uleb128_decode_small_powerpc
-#define uleb128_encode_small uleb128_encode_small_powerpc
 #define unassigned_io_ops unassigned_io_ops_powerpc
 #define unassigned_io_read unassigned_io_read_powerpc
 #define unassigned_io_write unassigned_io_write_powerpc

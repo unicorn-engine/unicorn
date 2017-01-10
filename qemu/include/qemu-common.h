@@ -93,15 +93,7 @@ int qemu_ftruncate64(int, int64_t);
 #if !defined(ftruncate)
 # define ftruncate qemu_ftruncate64
 #endif
-
-static inline char *realpath(const char *path, char *resolved_path)
-{
-    _fullpath(resolved_path, path, _MAX_PATH);
-    return resolved_path;
-}
 #endif
-
-void cpu_ticks_init(void);
 
 #include "qemu/osdep.h"
 #include "qemu/bswap.h"
@@ -111,49 +103,11 @@ void cpu_ticks_init(void);
 #include "cpu.h"
 #endif /* !defined(NEED_CPU_H) */
 
-/* main function, renamed */
-#if defined(CONFIG_COCOA)
-int qemu_main(int argc, char **argv, char **envp);
-#endif
-
-void qemu_get_timedate(struct tm *tm, int offset);
-int qemu_timedate_diff(struct tm *tm);
-
-/**
- * is_help_option:
- * @s: string to test
- *
- * Check whether @s is one of the standard strings which indicate
- * that the user is asking for a list of the valid values for a
- * command option like -cpu or -M. The current accepted strings
- * are 'help' and '?'. '?' is deprecated (it is a shell wildcard
- * which makes it annoying to use in a reliable way) but provided
- * for backwards compatibility.
- *
- * Returns: true if @s is a request for a list.
- */
-static inline bool is_help_option(const char *s)
-{
-    return !strcmp(s, "?") || !strcmp(s, "help");
-}
-
 /* cutils.c */
 void pstrcpy(char *buf, int buf_size, const char *str);
-void strpadcpy(char *buf, int buf_size, const char *str, char pad);
 char *pstrcat(char *buf, int buf_size, const char *s);
 int strstart(const char *str, const char *val, const char **ptr);
-int stristart(const char *str, const char *val, const char **ptr);
-int qemu_strnlen(const char *s, int max_len);
-char *qemu_strsep(char **input, const char *delim);
-time_t mktimegm(struct tm *tm);
 int qemu_fls(int i);
-int qemu_fdatasync(int fd);
-int fcntl_setfl(int fd, int flag);
-int qemu_parse_fd(const char *param);
-
-int parse_uint(const char *s, unsigned long long *value, char **endptr,
-               int base);
-int parse_uint_full(const char *s, unsigned long long *value, int base);
 
 /*
  * strtosz() suffixes used to specify the default treatment of an
@@ -177,13 +131,6 @@ int64_t strtosz_suffix_unit(const char *nptr, char **end,
 /* used to print char* safely */
 #define STR_OR_NULL(str) ((str) ? (str) : "null")
 
-/* id.c */
-bool id_wellformed(const char *id);
-
-/* path.c */
-void init_paths(const char *prefix);
-const char *path(const char *pathname);
-
 #define qemu_isalnum(c)		isalnum((unsigned char)(c))
 #define qemu_isalpha(c)		isalpha((unsigned char)(c))
 #define qemu_iscntrl(c)		iscntrl((unsigned char)(c))
@@ -201,19 +148,6 @@ const char *path(const char *pathname);
 #define qemu_toascii(c)		toascii((unsigned char)(c))
 
 void *qemu_oom_check(void *ptr);
-
-ssize_t qemu_write_full(int fd, const void *buf, size_t count)
-    QEMU_WARN_UNUSED_RESULT;
-ssize_t qemu_send_full(int fd, const void *buf, size_t count, int flags)
-    QEMU_WARN_UNUSED_RESULT;
-ssize_t qemu_recv_full(int fd, void *buf, size_t count, int flags)
-    QEMU_WARN_UNUSED_RESULT;
-
-#ifndef _WIN32
-int qemu_pipe(int pipefd[2]);
-/* like openpty() but also makes it raw; return master fd */
-int qemu_openpty_raw(int *aslave, char *pty_name);
-#endif
 
 #ifdef _WIN32
 /* MinGW needs type casts for the 'buf' and 'optval' arguments. */
@@ -241,26 +175,6 @@ bool tcg_enabled(struct uc_struct *uc);
 
 struct uc_struct;
 void cpu_exec_init_all(struct uc_struct *uc);
-
-/* work queue */
-struct qemu_work_item {
-    struct qemu_work_item *next;
-    void (*func)(void *data);
-    void *data;
-    int done;
-    bool free;
-};
-
-/* Convert a byte between binary and BCD.  */
-static inline uint8_t to_bcd(uint8_t val)
-{
-    return ((val / 10) << 4) | (val % 10);
-}
-
-static inline uint8_t from_bcd(uint8_t val)
-{
-    return ((val >> 4) * 10) + (val & 0x0f);
-}
 
 /* compute with 96 bit intermediate result: (a*b)/c */
 static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
@@ -292,36 +206,7 @@ static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
 /* Round number up to multiple */
 #define QEMU_ALIGN_UP(n, m) QEMU_ALIGN_DOWN((n) + (m) - 1, (m))
 
-static inline bool is_power_of_2(uint64_t value)
-{
-    if (!value) {
-        return 0;
-    }
-
-    return !(value & (value - 1));
-}
-
-/* round down to the nearest power of 2*/
-int64_t pow2floor(int64_t value);
-
 #include "qemu/module.h"
-
-/*
- * Implementation of ULEB128 (http://en.wikipedia.org/wiki/LEB128)
- * Input is limited to 14-bit numbers
- */
-
-int uleb128_encode_small(uint8_t *out, uint32_t n);
-int uleb128_decode_small(const uint8_t *in, uint32_t *n);
-
-/* unicode.c */
-int mod_utf8_codepoint(const char *s, size_t n, char **end);
-
-/*
- * Hexdump a buffer to a file. An optional string prefix is added to every line
- */
-
-void qemu_hexdump(const char *buf, FILE *fp, const char *prefix, size_t size);
 
 /* vector definitions */
 #ifdef __ALTIVEC__

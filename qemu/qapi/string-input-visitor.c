@@ -221,28 +221,6 @@ error:
               "an int64 value or range");
 }
 
-static void parse_type_size(Visitor *v, uint64_t *obj, const char *name,
-                            Error **errp)
-{
-    StringInputVisitor *siv = DO_UPCAST(StringInputVisitor, visitor, v);
-    Error *err = NULL;
-    uint64_t val;
-
-    if (siv->string) {
-        parse_option_size(name, siv->string, &val, &err);
-    } else {
-        error_set(errp, QERR_INVALID_PARAMETER_TYPE, name ? name : "null",
-                  "size");
-        return;
-    }
-    if (err) {
-        error_propagate(errp, err);
-        return;
-    }
-
-    *obj = val;
-}
-
 static void parse_type_bool(Visitor *v, bool *obj, const char *name,
                             Error **errp)
 {
@@ -332,7 +310,7 @@ StringInputVisitor *string_input_visitor_new(const char *str)
 
     v->visitor.type_enum = input_type_enum;
     v->visitor.type_int = parse_type_int;
-    v->visitor.type_size = parse_type_size;
+    v->visitor.type_size = NULL;
     v->visitor.type_bool = parse_type_bool;
     v->visitor.type_str = parse_type_str;
     v->visitor.type_number = parse_type_number;
