@@ -718,7 +718,7 @@ JNIEXPORT jobjectArray JNICALL Java_unicorn_Unicorn_mem_1regions
       jobject mr = (*env)->NewObject(env, clz, cons, regions[i].begin, regions[i].end, regions[i].perms);
       (*env)->SetObjectArrayElement(env, result, (jsize)i, mr);
    }
-   free(regions);
+   uc_free(regions);
 
    return result;
 }
@@ -741,12 +741,12 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_context_1alloc
 
 /*
  * Class:     unicorn_Unicorn
- * Method:    context_free
+ * Method:    free
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_unicorn_Unicorn_context_1free
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_free
   (JNIEnv *env, jobject self, jlong ctx) {
-   uc_err err = uc_context_free((uc_context*)ctx);
+   uc_err err = uc_free((void *)ctx);
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }

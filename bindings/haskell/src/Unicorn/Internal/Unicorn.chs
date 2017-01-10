@@ -117,7 +117,7 @@ instance Storable MemoryRegion where
 
 -- | Opaque storage for CPU context, used with the context functions.
 {# pointer *uc_context as Context
-   foreign finalizer uc_context_free_wrapper as contextFree
+   foreign finalizer uc_free_wrapper as memFree
    newtype
 #}
 
@@ -125,11 +125,11 @@ instance Storable MemoryRegion where
 {# pointer *uc_context as ContextPtr -> Context #}
 
 -- | Make a CPU context out of a context pointer. The returned CPU context will
--- automatically call 'uc_context_free' when it goes out of scope.
+-- automatically call 'uc_free' when it goes out of scope.
 mkContext :: ContextPtr
           -> IO Context
 mkContext ptr =
-    liftM Context (newForeignPtr contextFree ptr)
+    liftM Context (newForeignPtr memFree ptr)
 
 -------------------------------------------------------------------------------
 -- Emulator control

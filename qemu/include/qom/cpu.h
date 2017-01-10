@@ -26,7 +26,6 @@
 #include "exec/hwaddr.h"
 #include "qemu/queue.h"
 #include "qemu/thread.h"
-#include "qemu/tls.h"
 #include "qemu/typedefs.h"
 
 typedef int (*WriteCoreDumpFunction)(const void *buf, size_t size,
@@ -69,9 +68,6 @@ typedef void (*CPUUnassignedAccess)(CPUState *cpu, hwaddr addr,
                                     unsigned size);
 
 struct TranslationBlock;
-
-//DECLARE_TLS(CPUState *, current_cpu);
-//#define current_cpu tls_var(current_cpu)
 
 /**
  * CPUClass:
@@ -222,7 +218,6 @@ struct CPUState {
     int thread_id;
     uint32_t host_tid;
     bool running;
-    struct QemuCond *halt_cond;
     struct qemu_work_item *queued_work_first, *queued_work_last;
     bool thread_kicked;
     bool created;

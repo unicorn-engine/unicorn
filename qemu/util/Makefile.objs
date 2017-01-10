@@ -1,11 +1,10 @@
-util-obj-y = cutils.o unicode.o qemu-timer-common.o
+util-obj-y = cutils.o qemu-timer-common.o
 util-obj-$(CONFIG_WIN32) += oslib-win32.o qemu-thread-win32.o
 util-obj-$(CONFIG_POSIX) += oslib-posix.o qemu-thread-posix.o
 util-obj-y += module.o
 util-obj-y += bitmap.o bitops.o
 util-obj-y += error.o
 util-obj-y += aes.o
-util-obj-y += qemu-option.o
 util-obj-y += crc32c.o
 util-obj-y += host-utils.o
 util-obj-y += getauxval.o

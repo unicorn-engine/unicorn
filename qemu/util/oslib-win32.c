@@ -62,7 +62,7 @@ void *qemu_memalign(size_t alignment, size_t size)
 {
     return qemu_oom_check(qemu_try_memalign(alignment, size));
 }
-
+ 
 void *qemu_anon_ram_alloc(size_t size, uint64_t *align)
 {
     void *ptr;
@@ -88,84 +88,6 @@ void qemu_anon_ram_free(void *ptr, size_t size)
     // trace_qemu_anon_ram_free(ptr, size);
     if (ptr) {
         VirtualFree(ptr, 0, MEM_RELEASE);
-    }
-}
-
-/* FIXME: add proper locking */
-struct tm *gmtime_r(const time_t *timep, struct tm *result)
-{
-    struct tm *p = gmtime(timep);
-    memset(result, 0, sizeof(*result));
-    if (p) {
-        *result = *p;
-        p = result;
-    }
-    return p;
-}
-
-/* FIXME: add proper locking */
-struct tm *localtime_r(const time_t *timep, struct tm *result)
-{
-    struct tm *p = localtime(timep);
-    memset(result, 0, sizeof(*result));
-    if (p) {
-        *result = *p;
-        p = result;
-    }
-    return p;
-}
-
-/*
-int inet_aton(const char *cp, struct in_addr *ia)
-{
-    uint32_t addr = inet_addr(cp);
-    if (addr == 0xffffffff) {
-        return 0;
-    }
-    ia->s_addr = addr;
-    return 1;
-}*/
-
-void qemu_set_cloexec(int fd)
-{
-}
-
-/* Offset between 1/1/1601 and 1/1/1970 in 100 nanosec units */
-#define _W32_FT_OFFSET (116444736000000000ULL)
-
-int qemu_gettimeofday(qemu_timeval *tp)
-{
-  union {
-    unsigned long long ns100; /*time since 1 Jan 1601 in 100ns units */
-    FILETIME ft;
-  }  _now;
-
-  if(tp) {
-      GetSystemTimeAsFileTime (&_now.ft);
-      tp->tv_usec=(long)((_now.ns100 / 10ULL) % 1000000ULL );
-      tp->tv_sec= (long)((_now.ns100 - _W32_FT_OFFSET) / 10000000ULL);
-  }
-  /* Always return 0 as per Open Group Base Specifications Issue 6.
-     Do not set errno on error.  */
-  return 0;
-}
-
-void qemu_set_tty_echo(int fd, bool echo)
-{
-    HANDLE handle = (HANDLE)_get_osfhandle(fd);
-    DWORD dwMode = 0;
-
-    if (handle == INVALID_HANDLE_VALUE) {
-        return;
-    }
-
-    GetConsoleMode(handle, &dwMode);
-
-    if (echo) {
-        SetConsoleMode(handle, dwMode | ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT);
-    } else {
-        SetConsoleMode(handle,
-                       dwMode & ~(ENABLE_ECHO_INPUT | ENABLE_LINE_INPUT));
     }
 }
 

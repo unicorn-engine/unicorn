@@ -29,9 +29,6 @@
 #include "hw/hw.h"
 
 #include "qemu/timer.h"
-#ifdef CONFIG_POSIX
-#include <pthread.h>
-#endif
 
 #ifdef CONFIG_PPOLL
 #include <poll.h>
@@ -73,9 +70,6 @@ struct QEMUTimerList {
     QLIST_ENTRY(QEMUTimerList) list;
     QEMUTimerListNotifyCB *notify_cb;
     void *notify_opaque;
-
-    /* lightweight method to mark the end of timerlist's running */
-    QemuEvent timers_done_ev;
 };
 
 /**
