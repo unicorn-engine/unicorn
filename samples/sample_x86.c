@@ -759,9 +759,9 @@ static void test_i386_context_save(void)
     printf(">>> EAX = 0x%x\n", r_eax);
 
     // free the CPU context
-    err = uc_mem_free(context);
+    err = uc_free(context);
     if (err) {
-        printf("Failed on uc_mem_free() with error returned: %u\n", err);
+        printf("Failed on uc_free() with error returned: %u\n", err);
         return;
     }
 

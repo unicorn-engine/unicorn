@@ -32,7 +32,7 @@ int main(int argc, char **argv, char **envp) {
                     starts[i], regions[i].begin);
          }
       }
-      uc_mem_free(regions);
+      uc_free(regions);
    }
    
    uc_close(uc);

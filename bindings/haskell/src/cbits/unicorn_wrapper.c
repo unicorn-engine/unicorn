@@ -7,6 +7,6 @@ void uc_close_wrapper(uc_engine *uc) {
 void uc_close_dummy(uc_engine *uc) {
 }
 
-void uc_mem_free_wrapper(void *mem) {
-    uc_mem_free(mem);
+void uc_free_wrapper(void *mem) {
+    uc_free(mem);
 }

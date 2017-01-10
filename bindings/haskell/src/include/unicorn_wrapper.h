@@ -14,8 +14,8 @@ void uc_close_wrapper(uc_engine *uc);
 void uc_close_dummy(uc_engine *uc);
 
 /*
- * Wrap Unicorn's uc_mem_free function and ignore the returned error code.
+ * Wrap Unicorn's uc_free function and ignore the returned error code.
  */
-void uc_mem_free_wrapper(void *context);
+void uc_free_wrapper(void *context);
 
 #endif

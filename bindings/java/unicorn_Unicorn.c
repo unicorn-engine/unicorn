@@ -746,7 +746,7 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_context_1alloc
  */
 JNIEXPORT void JNICALL Java_unicorn_Unicorn_context_1free
   (JNIEnv *env, jobject self, jlong ctx) {
-   uc_err err = uc_mem_free((void *)ctx);
+   uc_err err = uc_free((void *)ctx);
    if (err != UC_ERR_OK) {
       throwException(env, err);
    }
