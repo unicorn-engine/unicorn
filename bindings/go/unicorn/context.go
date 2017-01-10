@@ -2,6 +2,7 @@ package unicorn
 
 import (
 	"runtime"
+	"unsafe"
 )
 
 // #include <unicorn/unicorn.h>
@@ -17,7 +18,7 @@ func (u *uc) ContextSave(reuse Context) (Context, error) {
 	if err := errReturn(C.uc_context_alloc(u.handle, ctx)); err != nil {
 		return nil, err
 	}
-	runtime.SetFinalizer(ctx, func(p Context) { C.uc_free(*p) })
+	runtime.SetFinalizer(ctx, func(p Context) { C.uc_free(unsafe.Pointer(*p)) })
 	if err := errReturn(C.uc_context_save(u.handle, *ctx)); err != nil {
 	}
 	return ctx, nil
