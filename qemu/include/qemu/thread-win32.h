@@ -7,20 +7,6 @@ struct QemuMutex {
     LONG owner;
 };
 
-struct QemuCond {
-    LONG waiters, target;
-    HANDLE sema;
-    HANDLE continue_event;
-};
-
-struct QemuSemaphore {
-    HANDLE sema;
-};
-
-struct QemuEvent {
-    HANDLE event;
-};
-
 typedef struct QemuThreadData QemuThreadData;
 struct QemuThread {
     QemuThreadData *data;

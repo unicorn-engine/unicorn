@@ -42,19 +42,6 @@ void cpu_resume(CPUState *cpu)
 {
     cpu->stop = false;
     cpu->stopped = false;
-    qemu_cpu_kick(cpu);
-}
-
-void qemu_cpu_kick(CPUState *cpu)
-{
-    qemu_cond_broadcast(cpu->halt_cond);
-}
-
-
-void qemu_init_cpu_loop(struct uc_struct* uc)
-{
-    qemu_cond_init(&uc->qemu_cpu_cond);
-    qemu_mutex_init(&uc->qemu_global_mutex);
 }
 
 void cpu_stop_current(struct uc_struct *uc)
@@ -121,8 +108,6 @@ int machine_initialize(struct uc_struct *uc)
 
     machine_class->max_cpus = 1;
     configure_accelerator(current_machine);
-
-    qemu_init_cpu_loop(uc);
 
     current_machine->cpu_model = NULL;
 

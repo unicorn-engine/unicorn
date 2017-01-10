@@ -26,15 +26,6 @@
  * THE SOFTWARE.
  */
 
-/* The following block of code temporarily renames the daemon() function so the
-   compiler does not see the warning associated with it in stdlib.h on OSX */
-#ifdef __APPLE__
-#define daemon qemu_fake_daemon_function
-#include <stdlib.h>
-#undef daemon
-extern int daemon(int, int);
-#endif
-
 #if defined(__linux__) && (defined(__x86_64__) || defined(__arm__))
    /* Use 2 MiB alignment so transparent hugepages can be used by KVM.
       Valgrind does not support alignments larger than 1 MiB,
@@ -68,11 +59,6 @@ extern int daemon(int, int);
 #ifdef __FreeBSD__
 #include <sys/sysctl.h>
 #endif
-
-int qemu_daemon(int nochdir, int noclose)
-{
-    return daemon(nochdir, noclose);
-}
 
 void *qemu_oom_check(void *ptr)
 {
@@ -150,48 +136,4 @@ void qemu_anon_ram_free(void *ptr, size_t size)
     if (ptr) {
         munmap(ptr, size);
     }
-}
-
-void qemu_set_cloexec(int fd)
-{
-    int f;
-    f = fcntl(fd, F_GETFD);
-    fcntl(fd, F_SETFD, f | FD_CLOEXEC);
-}
-
-/*
- * Creates a pipe with FD_CLOEXEC set on both file descriptors
- */
-int qemu_pipe(int pipefd[2])
-{
-    int ret;
-
-#ifdef CONFIG_PIPE2
-    ret = pipe2(pipefd, O_CLOEXEC);
-    if (ret != -1 || errno != ENOSYS) {
-        return ret;
-    }
-#endif
-    ret = pipe(pipefd);
-    if (ret == 0) {
-        qemu_set_cloexec(pipefd[0]);
-        qemu_set_cloexec(pipefd[1]);
-    }
-
-    return ret;
-}
-
-void qemu_set_tty_echo(int fd, bool echo)
-{
-    struct termios tty;
-
-    tcgetattr(fd, &tty);
-
-    if (echo) {
-        tty.c_lflag |= ECHO | ECHONL | ICANON | IEXTEN;
-    } else {
-        tty.c_lflag &= ~(ECHO | ECHONL | ICANON | IEXTEN);
-    }
-
-    tcsetattr(fd, TCSANOW, &tty);
 }

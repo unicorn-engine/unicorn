@@ -90,38 +90,6 @@ compile_prog() {
   do_cc $QEMU_CFLAGS $local_cflags -o $TMPE $TMPC $LDFLAGS $local_ldflags
 }
 
-do_libtool() {
-    local mode=$1
-    shift
-    # Run the compiler, capturing its output to the log.
-    echo $libtool $mode --tag=CC $cc "$@" >> config.log
-    $libtool $mode --tag=CC $cc "$@" >> config.log 2>&1 || return $?
-    # Test passed. If this is an --enable-werror build, rerun
-    # the test with -Werror and bail out if it fails. This
-    # makes warning-generating-errors in configure test code
-    # obvious to developers.
-    if test "$werror" != "yes"; then
-        return 0
-    fi
-    # Don't bother rerunning the compile if we were already using -Werror
-    case "$*" in
-        *-Werror*)
-           return 0
-        ;;
-    esac
-    echo $libtool $mode --tag=CC $cc -Werror "$@" >> config.log
-    $libtool $mode --tag=CC $cc -Werror "$@" >> config.log 2>&1 && return $?
-    error_exit "configure test passed without -Werror but failed with -Werror." \
-        "This is probably a bug in the configure script. The failing command" \
-        "will be at the bottom of config.log." \
-        "You can run configure with --disable-werror to bypass this check."
-}
-
-libtool_prog() {
-    do_libtool --mode=compile $QEMU_CFLAGS -c -fPIE -DPIE -o $TMPO $TMPC || return $?
-    do_libtool --mode=link $LDFLAGS -o $TMPA $TMPL -rpath /usr/local/lib
-}
-
 # symbolically link $1 to $2.  Portable version of "ln -sf".
 symlink() {
   rm -rf "$2"
@@ -168,7 +136,6 @@ path_of() {
 # default parameters
 source_path=`dirname "$0"`
 cpu=""
-interp_prefix="/usr/gnemul/qemu-%M"
 static="no"
 cross_prefix=""
 host_cc="cc"
@@ -201,15 +168,6 @@ mingw32="no"
 EXESUF=""
 DSOSUF=".so"
 LDFLAGS_SHARED="-shared"
-prefix="/usr/local"
-mandir="\${prefix}/share/man"
-qemu_docdir="\${prefix}/share/doc/qemu"
-bindir="\${prefix}/bin"
-libdir="\${prefix}/lib"
-libexecdir="\${prefix}/libexec"
-includedir="\${prefix}/include"
-sysconfdir="\${prefix}/etc"
-local_statedir="\${prefix}/var"
 confsuffix="/qemu"
 bsd="no"
 linux="no"
@@ -219,14 +177,11 @@ aix="no"
 pkgversion=""
 pie=""
 zero_malloc=""
-win_sdk="no"
 
 # parse CC options first
 for opt do
   optarg=`expr "x$opt" : 'x[^=]*=\(.*\)'`
   case "$opt" in
-  --cross-prefix=*) cross_prefix="$optarg"
-  ;;
   --cc=*) CC="$optarg"
   ;;
   --source-path=*) source_path="$optarg"
@@ -264,10 +219,8 @@ as="${AS-${cross_prefix}as}"
 cpp="${CPP-$cc -E}"
 objcopy="${OBJCOPY-${cross_prefix}objcopy}"
 ld="${LD-${cross_prefix}ld}"
-libtool="${LIBTOOL-${cross_prefix}libtool}"
 nm="${NM-${cross_prefix}nm}"
 strip="${STRIP-${cross_prefix}strip}"
-windres="${WINDRES-${cross_prefix}windres}"
 
 # If the user hasn't specified ARFLAGS, default to 'rv', just as make does.
 ARFLAGS="${ARFLAGS-rv}"
@@ -472,7 +425,6 @@ Darwin)
 SunOS)
   solaris="yes"
   make="${MAKE-gmake}"
-  install="${INSTALL-ginstall}"
   ld="gld"
   needs_libsunmath="no"
   solarisrev=`uname -r | cut -f2 -d.`
@@ -514,7 +466,6 @@ Haiku)
 esac
 
 : ${make=${MAKE-make}}
-: ${install=${INSTALL-install}}
 : ${python=${PYTHON-python}}
 
 # Default objcc to clang if available, otherwise use CC
@@ -537,12 +488,6 @@ EOF
   if compile_prog "" "-liberty" ; then
     LIBS="-liberty $LIBS"
   fi
-  prefix="c:/Program Files/QEMU"
-  mandir="\${prefix}"
-  qemu_docdir="\${prefix}"
-  bindir="\${prefix}"
-  sysconfdir="\${prefix}"
-  local_statedir=
   confsuffix=""
 fi
 
@@ -555,13 +500,7 @@ for opt do
   ;;
   --version|-V) exec cat $source_path/VERSION
   ;;
-  --prefix=*) prefix="$optarg"
-  ;;
-  --interp-prefix=*) interp_prefix="$optarg"
-  ;;
   --source-path=*)
-  ;;
-  --cross-prefix=*)
   ;;
   --cc=*)
   ;;
@@ -570,8 +509,6 @@ for opt do
   --objcc=*) objcc="$optarg"
   ;;
   --make=*) make="$optarg"
-  ;;
-  --install=*) install="$optarg"
   ;;
   --python=*) python="$optarg"
   ;;
@@ -590,32 +527,6 @@ for opt do
   --static)
     static="yes"
     LDFLAGS="-static $LDFLAGS"
-  ;;
-  --mandir=*) mandir="$optarg"
-  ;;
-  --bindir=*) bindir="$optarg"
-  ;;
-  --libdir=*) libdir="$optarg"
-  ;;
-  --libexecdir=*) libexecdir="$optarg"
-  ;;
-  --includedir=*) includedir="$optarg"
-  ;;
-  --with-confsuffix=*) confsuffix="$optarg"
-  ;;
-  --docdir=*) qemu_docdir="$optarg"
-  ;;
-  --sysconfdir=*) sysconfdir="$optarg"
-  ;;
-  --localstatedir=*) local_statedir="$optarg"
-  ;;
-  --sbindir=*|--sharedstatedir=*|\
-  --oldincludedir=*|--datarootdir=*|--infodir=*|\
-  --htmldir=*|--dvidir=*|--pdfdir=*|--psdir=*)
-    # These switches are silently ignored, for compatibility with
-    # autoconf-generated configure scripts. This allows QEMU's
-    # configure to be used by RPM and similar macros that set
-    # lots of directory switches by default.
   ;;
   --enable-debug-tcg) debug_tcg="yes"
   ;;
@@ -642,12 +553,6 @@ for opt do
   --disable-stack-protector) stack_protector="no"
   ;;
   --with-pkgversion=*) pkgversion=" ($optarg)"
-  ;;
-  --with-win-sdk) win_sdk=""
-  ;;
-  --with-win-sdk=*) win_sdk="$optarg"
-  ;;
-  --without-win-sdk) win_sdk="no"
   ;;
   *)
       echo "ERROR: unknown option $opt"
@@ -742,16 +647,12 @@ Options: [defaults in brackets after descriptions]
 
 Standard options:
   --help                   print this message
-  --prefix=PREFIX          install in PREFIX [$prefix]
-  --interp-prefix=PREFIX   where to find shared libraries, etc.
-                           use %M for cpu name [$interp_prefix]
   --target-list=LIST       set target list (default: build everything)
 $(echo Available targets: $default_target_list | \
   fold -s -w 53 | sed -e 's/^/                           /')
 
 Advanced options (experts only):
   --source-path=PATH       path of source code [$source_path]
-  --cross-prefix=PREFIX    use PREFIX for compile tools [$cross_prefix]
   --cc=CC                  use C compiler CC [$cc]
   --host-cc=CC             use C compiler CC [$host_cc] for code run at
                            build time
@@ -759,16 +660,8 @@ Advanced options (experts only):
   --extra-cflags=CFLAGS    append extra C compiler flags QEMU_CFLAGS
   --extra-ldflags=LDFLAGS  append extra linker flags LDFLAGS
   --make=MAKE              use specified make [$make]
-  --install=INSTALL        use specified install [$install]
   --python=PYTHON          use specified python [$python]
   --static                 enable static build [$static]
-  --mandir=PATH            install man pages in PATH
-  --docdir=PATH            install documentation in PATH$confsuffix
-  --bindir=PATH            install binaries in PATH
-  --libdir=PATH            install libraries in PATH
-  --sysconfdir=PATH        install config in PATH$confsuffix
-  --localstatedir=PATH     install local state in PATH (set at runtime on win32)
-  --with-confsuffix=SUFFIX suffix for QEMU data inside datadir/libdir/sysconfdir [$confsuffix]
   --enable-debug-tcg       enable TCG debugging
   --disable-debug-tcg      disable TCG debugging (default)
   --enable-debug-info      enable debugging information (default)
@@ -842,7 +735,6 @@ if test "$stack_protector" != "no"; then
     if do_cc $QEMU_CFLAGS -Werror $flag -c -o $TMPO $TMPC &&
        compile_prog "-Werror $flag" ""; then
       QEMU_CFLAGS="$QEMU_CFLAGS $flag"
-      LIBTOOLFLAGS="$LIBTOOLFLAGS -Wc,$flag"
       sp_on=1
       break
     fi
@@ -923,32 +815,6 @@ EOF
   fi
 fi
 
-# check for broken gcc and libtool in RHEL5
-if test -n "$libtool" -a "$pie" != "no" ; then
-  cat > $TMPC <<EOF
-
-void *f(unsigned char *buf, int len);
-void *g(unsigned char *buf, int len);
-
-void *
-f(unsigned char *buf, int len)
-{
-    return (void*)0L;
-}
-
-void *
-g(unsigned char *buf, int len)
-{
-    return f(buf, len);
-}
-
-EOF
-  if ! libtool_prog; then
-    echo "Disabling libtool due to broken toolchain support"
-    libtool=
-  fi
-fi
-
 ##########################################
 # __sync_fetch_and_and requires at least -march=i486. Many toolchains
 # use i686 as default anyway, but for those that don't, an explicit
@@ -978,18 +844,6 @@ fi
 # Solaris specific configure tool chain decisions
 
 if test "$solaris" = "yes" ; then
-  if has $install; then
-    :
-  else
-    error_exit "Solaris install program not found. Use --install=/usr/ucb/install or" \
-        "install fileutils from www.blastwave.org using pkg-get -i fileutils" \
-        "to get ginstall which is used by default (which lives in /opt/csw/bin)"
-  fi
-  if test "`path_of $install`" = "/usr/sbin/install" ; then
-    error_exit "Solaris /usr/sbin/install is not an appropriate install program." \
-        "try ginstall from the GNU fileutils available from www.blastwave.org" \
-        "using pkg-get -i fileutils, or use --install=/usr/ucb/install"
-  fi
   if has ar; then
     :
   else
@@ -1057,21 +911,6 @@ if compile_object ; then
     fi
 else
     echo big/little test failed
-fi
-
-##########################################
-# libtool probe
-
-if ! has $libtool; then
-    libtool=
-fi
-
-# MacOSX ships with a libtool which isn't the GNU one; weed this
-# out by checking whether libtool supports the --version switch
-if test -n "$libtool"; then
-  if ! "$libtool" --version >/dev/null 2>&1; then
-    libtool=
-  fi
 fi
 
 ##########################################
@@ -1418,24 +1257,6 @@ if test "$mingw32" = "yes" ; then
     done
 fi
 
-qemu_confdir=$sysconfdir$confsuffix
-qemu_moddir=$libdir$confsuffix
-
-echo "Install prefix    $prefix"
-echo "binary directory  `eval echo $bindir`"
-echo "library directory `eval echo $libdir`"
-echo "module directory  `eval echo $qemu_moddir`"
-echo "libexec directory `eval echo $libexecdir`"
-echo "include directory `eval echo $includedir`"
-echo "config directory  `eval echo $sysconfdir`"
-if test "$mingw32" = "no" ; then
-echo "local state directory   `eval echo $local_statedir`"
-echo "Manual directory  `eval echo $mandir`"
-echo "ELF interp prefix $interp_prefix"
-else
-echo "local state directory   queried at runtime"
-echo "Windows SDK       $win_sdk"
-fi
 echo "Source path       $source_path"
 echo "C compiler        $cc"
 echo "Host C compiler   $host_cc"
@@ -1445,7 +1266,6 @@ echo "CFLAGS            $CFLAGS"
 echo "QEMU_CFLAGS       $QEMU_CFLAGS"
 echo "LDFLAGS           $LDFLAGS"
 echo "make              $make"
-echo "install           $install"
 echo "python            $python"
 echo "host CPU          $cpu"
 echo "host big endian   $bigendian"
@@ -1465,21 +1285,6 @@ echo "# Automatically generated by configure - do not modify" > $config_host_mak
 echo >> $config_host_mak
 
 echo all: >> $config_host_mak
-echo "prefix=$prefix" >> $config_host_mak
-echo "bindir=$bindir" >> $config_host_mak
-echo "libdir=$libdir" >> $config_host_mak
-echo "libexecdir=$libexecdir" >> $config_host_mak
-echo "includedir=$includedir" >> $config_host_mak
-echo "mandir=$mandir" >> $config_host_mak
-echo "sysconfdir=$sysconfdir" >> $config_host_mak
-echo "qemu_confdir=$qemu_confdir" >> $config_host_mak
-echo "qemu_datadir=$qemu_datadir" >> $config_host_mak
-echo "qemu_docdir=$qemu_docdir" >> $config_host_mak
-echo "qemu_moddir=$qemu_moddir" >> $config_host_mak
-if test "$mingw32" = "no" ; then
-  echo "qemu_localstatedir=$local_statedir" >> $config_host_mak
-fi
-echo "qemu_helperdir=$libexecdir" >> $config_host_mak
 echo "extra_cflags=$EXTRA_CFLAGS" >> $config_host_mak
 echo "extra_ldflags=$EXTRA_LDFLAGS" >> $config_host_mak
 echo "libs_softmmu=$libs_softmmu" >> $config_host_mak
@@ -1624,16 +1429,6 @@ fi
 QEMU_INCLUDES="-I\$(SRC_PATH)/tcg $QEMU_INCLUDES"
 
 echo "MAKE=$make" >> $config_host_mak
-echo "INSTALL=$install" >> $config_host_mak
-echo "INSTALL_DIR=$install -d -m 0755" >> $config_host_mak
-echo "INSTALL_DATA=$install -c -m 0644" >> $config_host_mak
-if test -n "$libtool"; then
-  echo "INSTALL_PROG=\$(LIBTOOL) --mode=install $install -c -m 0755" >> $config_host_mak
-  echo "INSTALL_LIB=\$(LIBTOOL) --mode=install $install -c -m 0644" >> $config_host_mak
-else
-  echo "INSTALL_PROG=$install -c -m 0755" >> $config_host_mak
-  echo "INSTALL_LIB=$install -c -m 0644" >> $config_host_mak
-fi
 echo "PYTHON=$python" >> $config_host_mak
 echo "CC=$cc" >> $config_host_mak
 echo "CC_I386=$cc_i386" >> $config_host_mak
@@ -1646,8 +1441,6 @@ echo "CPP=$cpp" >> $config_host_mak
 echo "OBJCOPY=$objcopy" >> $config_host_mak
 echo "LD=$ld" >> $config_host_mak
 echo "NM=$nm" >> $config_host_mak
-echo "WINDRES=$windres" >> $config_host_mak
-echo "LIBTOOL=$libtool" >> $config_host_mak
 echo "CFLAGS=$CFLAGS" >> $config_host_mak
 echo "CFLAGS_NOPIE=$CFLAGS_NOPIE" >> $config_host_mak
 echo "QEMU_CFLAGS=$QEMU_CFLAGS" >> $config_host_mak
@@ -1659,7 +1452,6 @@ else
 fi
 echo "LDFLAGS=$LDFLAGS" >> $config_host_mak
 echo "LDFLAGS_NOPIE=$LDFLAGS_NOPIE" >> $config_host_mak
-echo "LIBTOOLFLAGS=$LIBTOOLFLAGS" >> $config_host_mak
 echo "LIBS+=$LIBS" >> $config_host_mak
 echo "EXESUF=$EXESUF" >> $config_host_mak
 echo "DSOSUF=$DSOSUF" >> $config_host_mak
@@ -1693,7 +1485,6 @@ mkdir -p $target_dir
 echo "# Automatically generated by configure - do not modify" > $config_target_mak
 
 bflt="no"
-interp_prefix1=`echo "$interp_prefix" | sed "s/%M/$target_name/g"`
 
 TARGET_ARCH="$target_name"
 TARGET_BASE_ARCH=""

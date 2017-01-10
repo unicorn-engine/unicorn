@@ -25,7 +25,6 @@
 #include "sysemu/cpus.h"
 #include "topology.h"
 
-#include "qemu/option.h"
 #include "qapi/qmp/qerror.h"
 
 #include "qapi-types.h"

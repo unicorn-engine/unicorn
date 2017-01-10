@@ -40,10 +40,10 @@ public class Sample_arm {
    static void test_arm()
    {
    
-       byte[] r0 = {0x34, 0x12, 0, 0};     // R0 register
-       byte[] r2 = {(byte)0x89, 0x67, 0, 0};     // R1 register
-       byte[] r3 = {0x33, 0x33, 0, 0};     // R2 register
-       byte[] r1;     // R1 register
+       Long r0 = new Long(0x1234); // R0 register
+       Long r2 = new Long(0x6789); // R1 register
+       Long r3 = new Long(0x3333); // R2 register
+       Long r1;     // R1 register
    
        System.out.print("Emulate ARM code\n");
    
@@ -74,10 +74,10 @@ public class Sample_arm {
        // now print out some registers
        System.out.print(">>> Emulation done. Below is the CPU context\n");
    
-       r0 = u.reg_read(Unicorn.UC_ARM_REG_R0, 4);
-       r1 = u.reg_read(Unicorn.UC_ARM_REG_R1, 4);
-       System.out.print(String.format(">>> R0 = 0x%x\n", toInt(r0)));
-       System.out.print(String.format(">>> R1 = 0x%x\n", toInt(r1)));
+       r0 = (Long)u.reg_read(Unicorn.UC_ARM_REG_R0);
+       r1 = (Long)u.reg_read(Unicorn.UC_ARM_REG_R1);
+       System.out.print(String.format(">>> R0 = 0x%x\n", r0.intValue()));
+       System.out.print(String.format(">>> R1 = 0x%x\n", r1.intValue()));
    
        u.close();
    }
@@ -85,7 +85,7 @@ public class Sample_arm {
    static void test_thumb()
    {
    
-       byte[] sp = {0x34, 0x12, 0, 0};     // R0 register
+       Long sp = new Long(0x1234); // R0 register
    
        System.out.print("Emulate THUMB code\n");
    
@@ -114,8 +114,8 @@ public class Sample_arm {
        // now print out some registers
        System.out.print(">>> Emulation done. Below is the CPU context\n");
    
-       sp = u.reg_read(Unicorn.UC_ARM_REG_SP, 4);
-       System.out.print(String.format(">>> SP = 0x%x\n", toInt(sp)));
+       sp = (Long)u.reg_read(Unicorn.UC_ARM_REG_SP);
+       System.out.print(String.format(">>> SP = 0x%x\n", sp.intValue()));
    
        u.close();
    }

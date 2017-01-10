@@ -101,7 +101,6 @@ typedef signed int              int_fast16_t;
 
 #define qemu_printf printf
 
-int qemu_daemon(int nochdir, int noclose);
 void *qemu_try_memalign(size_t alignment, size_t size);
 void *qemu_memalign(size_t alignment, size_t size);
 void *qemu_anon_ram_alloc(size_t size, uint64_t *align);
@@ -169,11 +168,6 @@ void qemu_anon_ram_free(void *ptr, size_t size);
 
 #endif
 
-int qemu_madvise(void *addr, size_t len, int advice);
-
-int qemu_open(const char *name, int flags, ...);
-int qemu_close(int fd);
-
 #if defined(__HAIKU__) && defined(__i386__)
 #define FMT_pid "%ld"
 #elif defined(WIN64)
@@ -181,8 +175,6 @@ int qemu_close(int fd);
 #else
 #define FMT_pid "%d"
 #endif
-
-int qemu_create_pidfile(const char *filename);
 
 #ifdef _WIN32
 static inline void qemu_timersub(const struct timeval *val1,

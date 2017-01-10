@@ -90,16 +90,13 @@ int qemu_init_vcpu(CPUState *cpu)
     return 0;
 }
 
-
 static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
 {
     CPUState *cpu = uc->cpu;
 
     //qemu_tcg_init_cpu_signals();
 
-    qemu_mutex_lock(&uc->qemu_global_mutex);
     cpu->created = true;
-    qemu_cond_signal(&uc->qemu_cpu_cond);
 
     while (1) {
         if (tcg_exec_all(uc))
@@ -107,28 +104,13 @@ static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
     }
 
     cpu->created = false;
-    qemu_cond_destroy(cpu->halt_cond);
-    g_free(cpu->halt_cond);
-    cpu->halt_cond = NULL;
 
-    qemu_mutex_unlock(&uc->qemu_global_mutex);
     return NULL;
 }
 
-
-
 static int qemu_tcg_init_vcpu(CPUState *cpu)
 {
-    struct uc_struct *uc = cpu->uc;
-
     tcg_cpu_address_space_init(cpu, cpu->as);
-
-    /* share a single thread for all cpus with TCG */
-    if (!cpu->halt_cond) {
-        cpu->halt_cond = g_malloc0(sizeof(QemuCond));
-        qemu_cond_init(cpu->halt_cond);
-    }
-    uc->tcg_halt_cond = cpu->halt_cond;
 
     return 0;
 }
