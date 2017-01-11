@@ -178,6 +178,7 @@ func (u *uc) MemRegions() ([]*MemRegion, error) {
 			Prot:  int(v.perms),
 		}
 	}
+	C.uc_free(unsafe.Pointer(regions))
 	return ret, nil
 }
 
