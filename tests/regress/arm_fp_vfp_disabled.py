@@ -38,7 +38,7 @@ class FpVfpDisabled(regress.RegressTest):
         uc.mem_map(address, mem_size)
         uc.mem_write(address, code_bytes)
         uc.reg_write(UC_ARM_REG_SP, address + mem_size)
-        uc.emu_start(address, address + len(code_bytes))
+        uc.emu_start(address + 1, address + len(code_bytes))
 
 if __name__ == '__main__':
     regress.main()
