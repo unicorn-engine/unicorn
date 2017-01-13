@@ -21,3 +21,7 @@ uc_mem_map_ptr
 uc_mem_unmap
 uc_mem_protect
 uc_mem_regions
+uc_context_alloc
+uc_context_restore
+uc_context_save
+uc_free
