@@ -50,9 +50,11 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28)
+        if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28) {
             *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_X0];
-        else {
+        } else if (regid >= UC_ARM64_REG_W0 && regid <= UC_ARM64_REG_W30) {
+            *(int32_t *)value = READ_DWORD(ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_W0]);
+        } else {
             switch(regid) {
                 default: break;
                 case UC_ARM64_REG_X29:
@@ -82,9 +84,11 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28)
+        if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28) {
             ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_X0] = *(uint64_t *)value;
-        else {
+        } else if (regid >= UC_ARM64_REG_W0 && regid <= UC_ARM64_REG_W30) {
+            WRITE_DWORD(ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_W0], *(uint32_t *)value);
+        } else {
             switch(regid) {
                 default: break;
                 case UC_ARM64_REG_X29:
