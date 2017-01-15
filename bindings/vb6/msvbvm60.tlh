@@ -1,0 +1,84 @@
+﻿// Created by Microsoft (R) C/C++ Compiler Version 15.00.21022.08 (2358e5d7).
+//
+// d:\projects\col\col\debug\msvbvm60.tlh
+//
+// C++ source equivalent of Win32 type library C:\\windows\system32\msvbvm60.dll
+// compiler-generated file created 03/21/16 at 11:45:20 - DO NOT EDIT!
+
+#pragma once
+#pragma pack(push, 8)
+
+#include <comdef.h>
+
+//
+// Forward references and typedefs
+//
+
+struct __declspec(uuid("000204ef-0000-0000-c000-000000000046"))
+/* LIBID */ __VBA;
+
+struct __declspec(uuid("a4c46780-499f-101b-bb78-00aa00383cbb"))
+/* dual interface */ _Collection;
+struct /* coclass */ Collection;
+
+//
+// Smart pointer typedef declarations
+//
+
+ 
+_COM_SMARTPTR_TYPEDEF(_Collection, __uuidof(_Collection));
+
+//
+// Type library items
+//
+
+struct __declspec(uuid("a4c46780-499f-101b-bb78-00aa00383cbb"))
+_Collection : IDispatch
+{
+    //
+    // Wrapper methods for error-handling
+    //
+
+    _variant_t Item (
+        VARIANT * Index );
+    HRESULT Add (
+        VARIANT * Item,
+        VARIANT * Key = &vtMissing,
+        VARIANT * Before = &vtMissing,
+        VARIANT * After = &vtMissing );
+    long Count ( );
+    HRESULT Remove (
+        VARIANT * Index );
+    IUnknownPtr _NewEnum ( );
+
+    //
+    // Raw methods provided by interface
+    //
+
+      virtual HRESULT __stdcall raw_Item (
+        /*[in]*/ VARIANT * Index,
+        /*[out,retval]*/ VARIANT * pvarRet ) = 0;
+      virtual HRESULT __stdcall raw_Add (
+        /*[in]*/ VARIANT * Item,
+        /*[in]*/ VARIANT * Key = &vtMissing,
+        /*[in]*/ VARIANT * Before = &vtMissing,
+        /*[in]*/ VARIANT * After = &vtMissing ) = 0;
+      virtual HRESULT __stdcall raw_Count (
+        /*[out,retval]*/ long * pi4 ) = 0;
+      virtual HRESULT __stdcall raw_Remove (
+        /*[in]*/ VARIANT * Index ) = 0;
+      virtual HRESULT __stdcall raw__NewEnum (
+        /*[out,retval]*/ IUnknown * * ppunk ) = 0;
+};
+
+struct __declspec(uuid("a4c4671c-499f-101b-bb78-00aa00383cbb"))
+Collection;
+    // [ default ] interface _Collection
+
+//
+// Wrapper method implementations
+//
+
+#include "msvbvm60.tli"
+
+#pragma pack(pop)

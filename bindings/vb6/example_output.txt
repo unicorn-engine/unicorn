@@ -1,0 +1,54 @@
+ucvbshim.dll loaded @10000000
+Unicorn version: 1.0
+Disassembler available: True
+Unicorn x86 32bit engine handle: 853FD8
+starts at: 01000000  41                       inc ecx
+readMem: 4141414141414242CC890DAAAAAAAA414A
+start values ECX = 3 EDX = 15
+beginning emulation..
+> 01000000  41                       inc ecx
+> 01000001  41                       inc ecx
+> 01000002  41                       inc ecx
+> 01000003  41                       inc ecx
+changing eip to skip last inc ecx's and saving context...
+> 01000006  42                       inc edx
+> 01000007  42                       inc edx
+> 01000008  CC                       int3 
+Interrupt: 3
+> 01000009  89 0D AA AA AA AA        mov [0xaaaaaaaa],ecx
+Invalid mem access address: AAAAAAAA size: 4 type: Unmapped memory is written to
+Quit emulation due to WRITE on unmapped memory: uc_emu_start()
+ECX:  6 =? 6
+EDX: 17 =? 17
+EFL 4 P 
+Initilizing sharedMemory with: aabbccddeeff0011223344556677889900
+Wrote 0x41 to sharedMemory + 1
+readByte = 41
+emu read of sharedMemory: AA41CCDDEEFF0011223344556677889900000000
+sanity checking host mem: AA41CCDDEEFF0011223344556677889900000000
+Enumerating memory regions...
+Addr: 1000000 Size: 200000 Perm: All (7)
+Addr: 2000 Size: 1000 Perm: Read Write (3)
+Addr: 4000 Size: 1000 Perm: All (7)
+trying to restore context..
+eax=0  ecx=6  edx=F  ebx=0  esp=0  ebp=0  esi=0  edi=0  eip=1000003  eflags=0   EFL 0 
+beginning emulation..
+> 01000003  41                       inc ecx
+> 01000004  41                       inc ecx
+> 01000005  41                       inc ecx
+> 01000006  42                       inc edx
+> 01000007  42                       inc edx
+> 01000008  CC                       int3 
+Interrupt: 3
+> 01000009  89 0D AA AA AA AA        mov [0xaaaaaaaa],ecx
+Invalid mem access address: AAAAAAAA size: 4 type: Unmapped memory is written to
+Quit emulation due to WRITE on unmapped memory: uc_emu_start()
+eax=0  ecx=9  edx=11  ebx=0  esp=0  ebp=0  esi=0  edi=0  eip=1000009  eflags=4   EFL 4 P 
+releasing saved context..
+Changed permissions on second alloc to ALL
+redumping memory regions to check...
+Addr: 1000000 Size: 200000 Perm: All (7)
+Addr: 2000 Size: 1000 Perm: All (7)
+Addr: 4000 Size: 1000 Perm: All (7)
+Successfully unmapped new alloc
+Mem allocs count now: 2
