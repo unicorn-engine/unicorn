@@ -87,7 +87,7 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
         if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28) {
             ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_X0] = *(uint64_t *)value;
         } else if (regid >= UC_ARM64_REG_W0 && regid <= UC_ARM64_REG_W30) {
-            WRITE_DWORD_TO_QWORD(ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_W0], *(uint32_t *)value);
+            WRITE_DWORD(ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_W0], *(uint32_t *)value);
         } else {
             switch(regid) {
                 default: break;
