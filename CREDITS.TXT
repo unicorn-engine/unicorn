@@ -65,3 +65,5 @@ practicalswift: Various cool bugs found by fuzzing
 farmdve: Memory leaking fix
 Andrew Dutcher: uc_context_{save, restore} API.
 Stephen Groat: improved CI setup.
+David Zimmer: VB6 binding.
+
