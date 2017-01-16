@@ -80,6 +80,10 @@ typedef uc_err (*uc_mem_map_ptr_t)(uc_engine *uc, uint64_t address, size_t size,
 typedef uc_err (*uc_mem_unmap_t)(uc_engine *uc, uint64_t address, size_t size);
 typedef uc_err (*uc_mem_protect_t)(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
 typedef uc_err (*uc_mem_regions_t)(uc_engine *uc, uc_mem_region **regions, uint32_t *count);
+typedef uc_err (*uc_context_alloc_t)(uc_engine *uc, uc_context **context);
+typedef uc_err (*uc_context_save_t)(uc_engine *uc, uc_context *context);
+typedef uc_err (*uc_context_restore_t)(uc_engine *uc, uc_context *context);
+typedef uc_err (*uc_free_t)(void *mem);
 
 
 static uc_version_t gp_uc_version = NULL;
@@ -104,7 +108,10 @@ static uc_mem_map_ptr_t gp_uc_mem_map_ptr = NULL;
 static uc_mem_unmap_t gp_uc_mem_unmap = NULL;
 static uc_mem_protect_t gp_uc_mem_protect = NULL;
 static uc_mem_regions_t gp_uc_mem_regions = NULL;
-
+static uc_context_alloc_t gp_uc_context_alloc = NULL;
+static uc_context_save_t gp_uc_context_save = NULL;
+static uc_context_restore_t gp_uc_context_restore = NULL;
+static uc_free_t gp_uc_free = NULL;
 
 bool uc_dyn_load(const char* path, int flags)
 {
@@ -146,6 +153,14 @@ bool uc_dyn_load(const char* path, int flags)
     gp_uc_mem_unmap = (uc_mem_unmap_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_unmap");
     gp_uc_mem_protect = (uc_mem_protect_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_protect");
     gp_uc_mem_regions = (uc_mem_regions_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_regions");
+    gp_uc_context_alloc = (uc_context_alloc_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_alloc");
+	gp_uc_context_save = (uc_context_save_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_save");
+	gp_uc_context_restore = (uc_context_restore_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_restore");
+	gp_uc_free = (uc_free_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_free");
+
+	//support old compiled dlls
+	if(gp_uc_free==0) gp_uc_free = (uc_free_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_free"); 
+
     return true;
 }
 
@@ -179,6 +194,11 @@ bool uc_dyn_free(void)
     gp_uc_mem_unmap = NULL;
     gp_uc_mem_protect = NULL;
     gp_uc_mem_regions = NULL;
+	gp_uc_context_alloc = NULL;
+	gp_uc_context_save = NULL;
+	gp_uc_context_restore = NULL;
+	gp_uc_free = NULL;
+
     return true;
 }
 
@@ -328,5 +348,24 @@ uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
 {
     return gp_uc_mem_regions(uc, regions, count);
 }
+
+uc_err uc_context_alloc(uc_engine *uc, uc_context **context){
+	return gp_uc_context_alloc(uc,context);
+}
+
+uc_err uc_context_save(uc_engine *uc, uc_context *context)
+{
+	return gp_uc_context_save(uc,context);
+}
+
+uc_err uc_context_restore(uc_engine *uc, uc_context *context){
+	return gp_uc_context_restore(uc,context);
+}
+
+uc_err uc_free(void *mem){
+	return gp_uc_free(mem);
+}
+
+
 
 #endif // DYNLOAD

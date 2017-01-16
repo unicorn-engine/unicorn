@@ -1,0 +1,11 @@
+*.frm eol=crlf
+*.bas eol=crlf
+*.cls eol=crlf
+*.ctl eol=crlf
+*.vbp eol=crlf
+*.txt eol=crlf
+*.cpp eol=crlf
+*.tli eol=crlf
+*.tlh eol=crlf
+*.vcproj eol=crlf
+*.sln eol=crlf
