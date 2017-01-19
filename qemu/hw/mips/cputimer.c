@@ -129,38 +129,3 @@ void cpu_mips_stop_count(CPUMIPSState *env)
     env->CP0_Count += (uint32_t)muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL),
                                          TIMER_FREQ, get_ticks_per_sec());
 }
-
-#if 0
-static void mips_timer_cb (void *opaque)
-{
-    CPUMIPSState *env;
-
-    env = opaque;
-#if 0
-    qemu_log("%s\n", __func__);
-#endif
-
-    if (env->CP0_Cause & (1 << CP0Ca_DC))
-        return;
-
-    /* ??? This callback should occur when the counter is exactly equal to
-       the comparator value.  Offset the count by one to avoid immediately
-       retriggering the callback before any virtual time has passed.  */
-    env->CP0_Count++;
-    cpu_mips_timer_expire(env);
-    env->CP0_Count--;
-}
-#endif
-
-void cpu_mips_clock_init (CPUMIPSState *env)
-{
-#if 0
-    /*
-     * If we're in KVM mode, don't create the periodic timer, that is handled in
-     * kernel.
-     */
-    if (!kvm_enabled()) {
-        env->timer = timer_new_ns(QEMU_CLOCK_VIRTUAL, &mips_timer_cb, env);
-    }
-#endif
-}

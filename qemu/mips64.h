@@ -3066,9 +3066,7 @@
 #define cpu_mips_store_compare cpu_mips_store_compare_mips64
 #define cpu_mips_start_count cpu_mips_start_count_mips64
 #define cpu_mips_stop_count cpu_mips_stop_count_mips64
-#define cpu_mips_clock_init cpu_mips_clock_init_mips64
 #define mips_machine_init mips_machine_init_mips64
-#define cpu_mips_irq_init_cpu cpu_mips_irq_init_cpu_mips64
 #define cpu_mips_kseg0_to_phys cpu_mips_kseg0_to_phys_mips64
 #define cpu_mips_phys_to_kseg0 cpu_mips_phys_to_kseg0_mips64
 #define cpu_mips_kvm_um_phys_to_kseg0 cpu_mips_kvm_um_phys_to_kseg0_mips64
