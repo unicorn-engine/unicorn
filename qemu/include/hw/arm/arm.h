@@ -12,15 +12,9 @@
 #define ARM_MISC_H 1
 
 #include "exec/memory.h"
-#include "hw/irq.h"
 
 void tosa_machine_init(struct uc_struct *uc);
 void machvirt_machine_init(struct uc_struct *uc);   // ARM64
-
-/* armv7m.c */
-qemu_irq *armv7m_init(MemoryRegion *system_memory,
-                      int flash_size, int sram_size,
-                      const char *kernel_filename, const char *cpu_model);
 
 /* arm_boot.c */
 struct arm_boot_info {
