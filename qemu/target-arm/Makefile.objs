@@ -1,4 +1,3 @@
-obj-y += arm-semi.o
 obj-y += translate.o op_helper.o helper.o cpu.o
 obj-y += neon_helper.o iwmmxt_helper.o
 obj-$(CONFIG_SOFTMMU) += psci.o
