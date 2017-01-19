@@ -1156,23 +1156,12 @@ if test "$linux" = "yes" ; then
   echo "CONFIG_LINUX=y" >> $config_host_mak
 fi
 
-if test "$darwin" = "yes" ; then
-  echo "CONFIG_DARWIN=y" >> $config_host_mak
-fi
-
-if test "$aix" = "yes" ; then
-  echo "CONFIG_AIX=y" >> $config_host_mak
-fi
-
 if test "$solaris" = "yes" ; then
   echo "CONFIG_SOLARIS=y" >> $config_host_mak
   echo "CONFIG_SOLARIS_VERSION=$solarisrev" >> $config_host_mak
   if test "$needs_libsunmath" = "yes" ; then
     echo "CONFIG_NEEDS_LIBSUNMATH=y" >> $config_host_mak
   fi
-fi
-if test "$haiku" = "yes" ; then
-  echo "CONFIG_HAIKU=y" >> $config_host_mak
 fi
 if test "$static" = "yes" ; then
   echo "CONFIG_STATIC=y" >> $config_host_mak
