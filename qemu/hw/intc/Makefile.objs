@@ -1,3 +1,1 @@
-#common-obj-$(CONFIG_IOAPIC) += ioapic_common.o
-#obj-$(CONFIG_IOAPIC) += ioapic.o
 obj-$(CONFIG_APIC) += apic.o apic_common.o
