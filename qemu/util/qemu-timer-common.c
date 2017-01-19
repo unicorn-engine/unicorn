@@ -30,7 +30,7 @@
 
 int64_t clock_freq;
 
-static void __attribute__((constructor)) init_get_clock(void)
+INITIALIZER(init_get_clock)
 {
     LARGE_INTEGER freq;
     int ret;
@@ -46,7 +46,7 @@ static void __attribute__((constructor)) init_get_clock(void)
 
 int use_rt_clock;
 
-static void __attribute__((constructor)) init_get_clock(void)
+INITIALIZER(init_get_clock)
 {
     use_rt_clock = 0;
 #ifdef CLOCK_MONOTONIC

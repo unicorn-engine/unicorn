@@ -205,10 +205,20 @@ static void apic_class_init(struct uc_struct *uc, ObjectClass *klass, void *data
 }
 
 static const TypeInfo apic_info = {
-    .name          = "apic",
-    .instance_size = sizeof(APICCommonState),
-    .parent        = TYPE_APIC_COMMON,
-    .class_init    = apic_class_init,
+    "apic",
+	TYPE_APIC_COMMON,
+
+	0,
+    sizeof(APICCommonState),
+    NULL,
+
+	NULL,
+	NULL,
+	NULL,
+
+	NULL,
+
+	apic_class_init,
 };
 
 void apic_register_types(struct uc_struct *uc)

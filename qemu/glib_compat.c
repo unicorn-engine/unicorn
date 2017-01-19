@@ -1217,16 +1217,18 @@ void g_free(gpointer ptr)
 
 gpointer g_malloc(size_t size)
 {
-   if (size == 0) return NULL;
-   void *res = malloc(size);
+   void *res;
+	if (size == 0) return NULL;
+   res = malloc(size);
    if (res == NULL) exit(1);
    return res;
 }
 
 gpointer g_malloc0(size_t size)
 {
+   void *res;
    if (size == 0) return NULL;
-   void *res = calloc(size, 1);
+   res = calloc(size, 1);
    if (res == NULL) exit(1);
    return res;
 }
@@ -1239,18 +1241,23 @@ gpointer g_try_malloc0(size_t size)
 
 gpointer g_realloc(gpointer ptr, size_t size)
 {
+   void *res;
    if (size == 0) {
       free(ptr);
       return NULL;
    }
-   void *res = realloc(ptr, size);
+   res = realloc(ptr, size);
    if (res == NULL) exit(1);
    return res;
 }
 
 char *g_strdup(const char *str)
 {
-   return str ? strdup(str) : NULL;
+#ifdef _MSC_VER
+	return str ? _strdup(str) : NULL;
+#else
+	return str ? strdup(str) : NULL;
+#endif
 }
 
 char *g_strdup_printf(const char *format, ...)
@@ -1266,7 +1273,17 @@ char *g_strdup_printf(const char *format, ...)
 char *g_strdup_vprintf(const char *format, va_list ap)
 {
    char *str_res = NULL;
+#ifdef _MSC_VER
+   int len = _vscprintf(format, ap);
+   if( len < 0 )
+	   return NULL;
+   str_res = (char *)malloc(len+1);
+   if(str_res==NULL)
+	   return NULL;
+   vsnprintf(str_res, len+1, format, ap);
+#else
    vasprintf(&str_res, format, ap);
+#endif
    return str_res;
 }
 

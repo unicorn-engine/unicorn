@@ -124,7 +124,7 @@ int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, 
     return 0;
 }
 
-__attribute__ ((visibility ("default")))
+DEFAULT_VISIBILITY
 #ifdef TARGET_MIPS64
 #ifdef TARGET_WORDS_BIGENDIAN
   void mips64_uc_init(struct uc_struct* uc)

@@ -1,4 +1,9 @@
-/* This is a hand made version for MSVC support */
+/*
+This is a hand made version for MSVC native support
+It seems that most of these are not used by any source files.
+The only one that I can see being used is: CONFIG_CPUID_H
+*/
+
 #define CONFIG_QEMU_CONFDIR "c:/Program Files/QEMU"
 #define CONFIG_QEMU_DATADIR ""
 #define CONFIG_QEMU_DOCDIR "c:/Program Files/QEMU"

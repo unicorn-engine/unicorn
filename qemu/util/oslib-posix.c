@@ -39,8 +39,7 @@
 #endif
 #define HUGETLBFS_MAGIC       0x958458f6
 
-#include <termios.h>
-#include <unistd.h>
+#include "platform.h"
 
 #include "config-host.h"
 #include "sysemu/sysemu.h"

@@ -97,12 +97,12 @@ void do_smm_enter(X86CPU *cpu)
     }
     stq_phys(cs->as, sm_state + 0x7f78, env->eip);
     stl_phys(cs->as, sm_state + 0x7f70, cpu_compute_eflags(env));
-    stl_phys(cs->as, sm_state + 0x7f68, env->dr[6]);
-    stl_phys(cs->as, sm_state + 0x7f60, env->dr[7]);
+    stl_phys(cs->as, sm_state + 0x7f68, (uint32_t)env->dr[6]);
+    stl_phys(cs->as, sm_state + 0x7f60, (uint32_t)env->dr[7]);
 
-    stl_phys(cs->as, sm_state + 0x7f48, env->cr[4]);
-    stl_phys(cs->as, sm_state + 0x7f50, env->cr[3]);
-    stl_phys(cs->as, sm_state + 0x7f58, env->cr[0]);
+    stl_phys(cs->as, sm_state + 0x7f48, (uint32_t)env->cr[4]);
+    stl_phys(cs->as, sm_state + 0x7f50, (uint32_t)env->cr[3]);
+    stl_phys(cs->as, sm_state + 0x7f58, (uint32_t)env->cr[0]);
 
     stl_phys(cs->as, sm_state + 0x7efc, SMM_REVISION_ID);
     stl_phys(cs->as, sm_state + 0x7f00, env->smbase);

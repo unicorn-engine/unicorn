@@ -1945,7 +1945,7 @@ static inline int pcmp_elen(CPUX86State *env, int reg, uint32_t ctrl)
 
     /* Presence of REX.W is indicated by a bit higher than 7 set */
     if (ctrl >> 8) {
-        val = abs1((int64_t)env->regs[reg]);
+        val = abs1((int)env->regs[reg]);
     } else {
         val = abs1((int32_t)env->regs[reg]);
     }

@@ -128,13 +128,13 @@ struct APICCommonState {
     hwaddr vapic_paddr; /* note: persistence via kvmvapic */
 };
 
-typedef struct VAPICState {
+QEMU_PACK( typedef struct VAPICState {
     uint8_t tpr;
     uint8_t isr;
     uint8_t zero;
     uint8_t irr;
     uint8_t enabled;
-} QEMU_PACKED VAPICState;
+}) VAPICState;
 
 extern bool apic_report_tpr_access;
 

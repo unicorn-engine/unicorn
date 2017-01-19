@@ -24,7 +24,7 @@
 #endif
 
 #include "config.h"
-#include <inttypes.h>
+#include "platform.h"
 #include "qemu/osdep.h"
 #include "qemu/queue.h"
 #ifndef CONFIG_USER_ONLY
@@ -96,7 +96,7 @@ typedef struct CPUTLBEntry {
     /* padding to get a power of two size */
     uint8_t dummy[(1 << CPU_TLB_ENTRY_BITS) -
                   (sizeof(target_ulong) * 3 +
-                   ((-sizeof(target_ulong) * 3) & (sizeof(uintptr_t) - 1)) +
+                   (((-(int)sizeof(target_ulong)) * 3) & (sizeof(uintptr_t) - 1)) +
                    sizeof(uintptr_t))];
 } CPUTLBEntry;
 

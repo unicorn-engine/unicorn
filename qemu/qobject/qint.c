@@ -17,8 +17,8 @@
 static void qint_destroy_obj(QObject *obj);
 
 static const QType qint_type = {
-    .code = QTYPE_QINT,
-    .destroy = qint_destroy_obj,
+    QTYPE_QINT,
+    qint_destroy_obj,
 };
 
 /**

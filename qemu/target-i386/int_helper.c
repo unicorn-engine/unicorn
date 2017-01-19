@@ -121,7 +121,7 @@ void helper_divl_EAX(CPUX86State *env, target_ulong t0)
     uint64_t num, q;
 
     num = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
-    den = t0;
+    den = (unsigned int)t0;
     if (den == 0) {
         raise_exception(env, EXCP00_DIVZ);
     }
@@ -140,7 +140,7 @@ void helper_idivl_EAX(CPUX86State *env, target_ulong t0)
     int64_t num, q;
 
     num = ((uint32_t)env->regs[R_EAX]) | ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
-    den = t0;
+    den = (int)t0;
     if (den == 0) {
         raise_exception(env, EXCP00_DIVZ);
     }
@@ -362,14 +362,14 @@ static int idiv64(uint64_t *plow, uint64_t *phigh, int64_t b)
         if (*plow > (1ULL << 63)) {
             return 1;
         }
-        *plow = -*plow;
+        *plow = 0-*plow;
     } else {
         if (*plow >= (1ULL << 63)) {
             return 1;
         }
     }
     if (sa) {
-        *phigh = -*phigh;
+        *phigh = 0-*phigh;
     }
     return 0;
 }

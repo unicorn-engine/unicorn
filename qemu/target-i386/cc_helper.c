@@ -218,7 +218,7 @@ target_ulong helper_cc_compute_all(target_ulong dst, target_ulong src1,
 
 uint32_t cpu_cc_compute_all(CPUX86State *env, int op)
 {
-    return helper_cc_compute_all(CC_DST, CC_SRC, CC_SRC2, op);
+    return (uint32_t)helper_cc_compute_all(CC_DST, CC_SRC, CC_SRC2, op);
 }
 
 target_ulong helper_cc_compute_c(target_ulong dst, target_ulong src1,
@@ -323,7 +323,7 @@ target_ulong helper_cc_compute_c(target_ulong dst, target_ulong src1,
 void helper_write_eflags(CPUX86State *env, target_ulong t0,
                          uint32_t update_mask)
 {
-    cpu_load_eflags(env, t0, update_mask);
+    cpu_load_eflags(env, (int)t0, update_mask);
 }
 
 target_ulong helper_read_eflags(CPUX86State *env)

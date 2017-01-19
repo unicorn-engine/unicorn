@@ -747,7 +747,7 @@ static inline void tcg_gen_mov_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg)
 
 static inline void tcg_gen_movi_i64(TCGContext *s, TCGv_i64 ret, int64_t arg)
 {
-    tcg_gen_movi_i32(s, TCGV_LOW(ret), arg);
+    tcg_gen_movi_i32(s, TCGV_LOW(ret), (int32_t)arg);
     tcg_gen_movi_i32(s, TCGV_HIGH(ret), arg >> 32);
 }
 
@@ -863,7 +863,7 @@ static inline void tcg_gen_and_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, T
 
 static inline void tcg_gen_andi_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, int64_t arg2)
 {
-    tcg_gen_andi_i32(s, TCGV_LOW(ret), TCGV_LOW(arg1), arg2);
+    tcg_gen_andi_i32(s, TCGV_LOW(ret), TCGV_LOW(arg1), (uint32_t)arg2);
     tcg_gen_andi_i32(s, TCGV_HIGH(ret), TCGV_HIGH(arg1), arg2 >> 32);
 }
 
@@ -875,7 +875,7 @@ static inline void tcg_gen_or_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, TC
 
 static inline void tcg_gen_ori_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, int64_t arg2)
 {
-    tcg_gen_ori_i32(s, TCGV_LOW(ret), TCGV_LOW(arg1), arg2);
+    tcg_gen_ori_i32(s, TCGV_LOW(ret), TCGV_LOW(arg1), (uint32_t)arg2);
     tcg_gen_ori_i32(s, TCGV_HIGH(ret), TCGV_HIGH(arg1), arg2 >> 32);
 }
 
@@ -887,7 +887,7 @@ static inline void tcg_gen_xor_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, T
 
 static inline void tcg_gen_xori_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, int64_t arg2)
 {
-    tcg_gen_xori_i32(s, TCGV_LOW(ret), TCGV_LOW(arg1), arg2);
+    tcg_gen_xori_i32(s, TCGV_LOW(ret), TCGV_LOW(arg1), (int32_t)arg2);
     tcg_gen_xori_i32(s, TCGV_HIGH(ret), TCGV_HIGH(arg1), arg2 >> 32);
 }
 
@@ -900,7 +900,7 @@ static inline void tcg_gen_shl_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, T
 
 static inline void tcg_gen_shli_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, int64_t arg2)
 {
-    tcg_gen_shifti_i64(s, ret, arg1, arg2, 0, 0);
+    tcg_gen_shifti_i64(s, ret, arg1, (int)arg2, 0, 0);
 }
 
 static inline void tcg_gen_shr_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64 arg2)
@@ -910,7 +910,7 @@ static inline void tcg_gen_shr_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, T
 
 static inline void tcg_gen_shri_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, int64_t arg2)
 {
-    tcg_gen_shifti_i64(s, ret, arg1, arg2, 1, 0);
+    tcg_gen_shifti_i64(s, ret, arg1, (int)arg2, 1, 0);
 }
 
 static inline void tcg_gen_sar_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64 arg2)
@@ -920,7 +920,7 @@ static inline void tcg_gen_sar_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, T
 
 static inline void tcg_gen_sari_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, int64_t arg2)
 {
-    tcg_gen_shifti_i64(s, ret, arg1, arg2, 1, 1);
+    tcg_gen_shifti_i64(s, ret, arg1, (int)arg2, 1, 1);
 }
 
 static inline void tcg_gen_brcond_i64(TCGContext *s, TCGCond cond, TCGv_i64 arg1,

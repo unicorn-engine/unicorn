@@ -5,7 +5,7 @@
 
 #include "unicorn_test.h"
 #include <stdio.h>
-#include <inttypes.h>
+#include "platform.h"
 
 uint64_t trunc_page(uint64_t addr)
 {

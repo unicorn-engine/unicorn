@@ -1,6 +1,5 @@
-#include <stdint.h>
+#include "platform.h"
 #include <string.h>
-#include <inttypes.h>
 
 #include "unicorn_test.h"
 

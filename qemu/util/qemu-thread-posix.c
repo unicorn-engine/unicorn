@@ -15,11 +15,9 @@
 #include <errno.h>
 #include <time.h>
 #include <signal.h>
-#include <stdint.h>
+#include "platform.h"
 #include <string.h>
 #include <limits.h>
-#include <unistd.h>
-#include <sys/time.h>
 #ifdef __linux__
 #include <sys/syscall.h>
 #include <linux/futex.h>

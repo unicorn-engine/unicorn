@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
+#include "platform.h"
 
 // GCC SPARC toolchain has a default macro called "sparc" which breaks
 // compilation

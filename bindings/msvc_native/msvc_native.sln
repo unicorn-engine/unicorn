@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "unicorn", "unicorn\unicorn.vcxproj", "{B6EFD6D7-C2D4-4FBB-B363-2E08CE09CC96}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "x86_64-softmmu", "x86_64-softmmu\x86_64-softmmu.vcxproj", "{17077E86-AE7C-41AF-86ED-2BAC03B019BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -9,10 +9,10 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B6EFD6D7-C2D4-4FBB-B363-2E08CE09CC96}.Debug|Win32.ActiveCfg = Debug|Win32
-		{B6EFD6D7-C2D4-4FBB-B363-2E08CE09CC96}.Debug|Win32.Build.0 = Debug|Win32
-		{B6EFD6D7-C2D4-4FBB-B363-2E08CE09CC96}.Release|Win32.ActiveCfg = Release|Win32
-		{B6EFD6D7-C2D4-4FBB-B363-2E08CE09CC96}.Release|Win32.Build.0 = Release|Win32
+		{17077E86-AE7C-41AF-86ED-2BAC03B019BC}.Debug|Win32.ActiveCfg = Debug|Win32
+		{17077E86-AE7C-41AF-86ED-2BAC03B019BC}.Debug|Win32.Build.0 = Debug|Win32
+		{17077E86-AE7C-41AF-86ED-2BAC03B019BC}.Release|Win32.ActiveCfg = Release|Win32
+		{17077E86-AE7C-41AF-86ED-2BAC03B019BC}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

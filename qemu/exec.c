@@ -247,9 +247,11 @@ static void phys_page_compact(PhysPageEntry *lp, Node *nodes, unsigned long *com
     }
 }
 
-static void phys_page_compact_all(AddressSpaceDispatch *d, int nodes_nb)
+static void phys_page_compact_all(AddressSpaceDispatch *d, const int nodes_nb)
 {
-    DECLARE_BITMAP(compacted, nodes_nb);
+    //DECLARE_BITMAP(compacted, nodes_nb);
+    // this isnt actually used
+    unsigned int* compacted = NULL;
 
     if (d->phys_map.skip) {
         phys_page_compact(&d->phys_map, d->map.nodes, compacted);
@@ -634,10 +636,11 @@ void cpu_single_step(CPUState *cpu, int enabled)
 {
 #if defined(TARGET_HAS_ICE)
     if (cpu->singlestep_enabled != enabled) {
+		CPUArchState *env;
         cpu->singlestep_enabled = enabled;
         /* must flush all the translated code to avoid inconsistencies */
         /* XXX: only flush what is necessary */
-        CPUArchState *env = cpu->env_ptr;
+        env = cpu->env_ptr;
         tb_flush(env);
     }
 #endif
@@ -836,11 +839,8 @@ static void register_subpage(struct uc_struct* uc,
         & TARGET_PAGE_MASK;
     MemoryRegionSection *existing = phys_page_find(d->phys_map, base,
             d->map.nodes, d->map.sections);
-    MemoryRegionSection subsection = {
-        .offset_within_address_space = base,
-        .size = int128_make64(TARGET_PAGE_SIZE),
-    };
     hwaddr start, end;
+    MemoryRegionSection subsection = MemoryRegionSection_make(NULL, NULL, 0, int128_make64(TARGET_PAGE_SIZE), base, false);
 
     assert(existing->mr->subpage || existing->mr == &uc->io_mem_unassigned);
 
@@ -1227,10 +1227,10 @@ void *qemu_get_ram_ptr(struct uc_struct *uc, ram_addr_t addr)
  * but takes a size argument */
 static void *qemu_ram_ptr_length(struct uc_struct *uc, ram_addr_t addr, hwaddr *size)
 {
+    RAMBlock *block;
     if (*size == 0) {
         return NULL;
     }
-    RAMBlock *block;
 
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
         if (addr - block->offset < block->length) {
@@ -1337,10 +1337,12 @@ static bool subpage_accepts(void *opaque, hwaddr addr,
 }
 
 static const MemoryRegionOps subpage_ops = {
-    .read = subpage_read,
-    .write = subpage_write,
-    .valid.accepts = subpage_accepts,
-    .endianness = DEVICE_NATIVE_ENDIAN,
+    subpage_read,
+    subpage_write,
+    DEVICE_NATIVE_ENDIAN,
+    {
+		0, 0, false, subpage_accepts,
+	},
 };
 
 static int subpage_register (subpage_t *mmio, uint32_t start, uint32_t end,
@@ -1398,9 +1400,12 @@ static bool notdirty_mem_accepts(void *opaque, hwaddr addr,
 }
 
 static const MemoryRegionOps notdirty_mem_ops = {
-    .write = notdirty_mem_write,
-    .valid.accepts = notdirty_mem_accepts,
-    .endianness = DEVICE_NATIVE_ENDIAN,
+    NULL,
+	notdirty_mem_write,
+    DEVICE_NATIVE_ENDIAN,
+	{
+		0, 0, false, notdirty_mem_accepts,
+	},
 };
 
 static void io_mem_init(struct uc_struct* uc)
@@ -1437,14 +1442,14 @@ static subpage_t *subpage_init(AddressSpace *as, hwaddr base)
 static uint16_t dummy_section(PhysPageMap *map, AddressSpace *as,
         MemoryRegion *mr)
 {
-    assert(as);
-    MemoryRegionSection section = {
-        .address_space = as,
-        .mr = mr,
-        .offset_within_address_space = 0,
-        .offset_within_region = 0,
-        .size = int128_2_64(),
-    };
+    MemoryRegionSection section = MemoryRegionSection_make(
+        mr, as, 0,
+		int128_2_64(),
+		false,
+		0
+    );
+    
+	assert(as);
 
     return phys_section_add(map, &section);
 }
@@ -1465,7 +1470,7 @@ static void mem_begin(MemoryListener *listener)
     AddressSpace *as = container_of(listener, AddressSpace, dispatch_listener);
     AddressSpaceDispatch *d = g_new0(AddressSpaceDispatch, 1);
     uint16_t n;
-
+	PhysPageEntry ppe = { 1, PHYS_MAP_NODE_NIL };
     struct uc_struct *uc = as->uc;
 
     n = dummy_section(&d->map, as, &uc->io_mem_unassigned);
@@ -1477,7 +1482,7 @@ static void mem_begin(MemoryListener *listener)
     // n = dummy_section(&d->map, as, &uc->io_mem_watch);
     // assert(n == PHYS_SECTION_WATCH);
 
-    d->phys_map  = (PhysPageEntry) { .ptr = PHYS_MAP_NODE_NIL, .skip = 1 };
+    d->phys_map = ppe;
     d->as = as;
     as->next_dispatch = d;
 }
@@ -1510,14 +1515,17 @@ static void tcg_commit(MemoryListener *listener)
 
 void address_space_init_dispatch(AddressSpace *as)
 {
-    as->dispatch = NULL;
-    as->dispatch_listener = (MemoryListener) {
-        .begin = mem_begin,
-        .commit = mem_commit,
-        .region_add = mem_add,
-        .region_nop = mem_add,
-        .priority = 0,
+    MemoryListener ml = {
+        mem_begin,
+        mem_commit,
+        mem_add,
+		NULL,
+        mem_add,
+		NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+        0,
     };
+	as->dispatch = NULL;
+    as->dispatch_listener = ml;
     memory_listener_register(as->uc, &as->dispatch_listener, as);
 }
 
@@ -1632,7 +1640,7 @@ static int memory_access_size(MemoryRegion *mr, unsigned l, hwaddr addr)
 
     /* Bound the maximum access by the alignment of the address.  */
     if (!mr->ops->impl.unaligned) {
-        unsigned align_size_max = addr & -addr;
+        unsigned align_size_max = addr & (0-addr);
         if (align_size_max != 0 && align_size_max < access_size_max) {
             access_size_max = align_size_max;
         }
@@ -1804,7 +1812,7 @@ static inline void cpu_physical_memory_write_rom_internal(AddressSpace *as,
 }
 
 /* used for ROM loading : can write in RAM and ROM */
-__attribute__ ((visibility ("default")))
+DEFAULT_VISIBILITY
 void cpu_physical_memory_write_rom(AddressSpace *as, hwaddr addr,
         const uint8_t *buf, int len)
 {
@@ -1953,7 +1961,7 @@ void *cpu_physical_memory_map(AddressSpace *as, hwaddr addr,
 void cpu_physical_memory_unmap(AddressSpace *as, void *buffer, hwaddr len,
         int is_write, hwaddr access_len)
 {
-    return address_space_unmap(as, buffer, len, is_write, access_len);
+    address_space_unmap(as, buffer, len, is_write, access_len);
 }
 
 /* warning: addr must be aligned */

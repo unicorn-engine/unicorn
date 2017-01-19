@@ -18,8 +18,8 @@
 static void qfloat_destroy_obj(QObject *obj);
 
 static const QType qfloat_type = {
-    .code = QTYPE_QFLOAT,
-    .destroy = qfloat_destroy_obj,
+    QTYPE_QFLOAT,
+    qfloat_destroy_obj,
 };
 
 /**

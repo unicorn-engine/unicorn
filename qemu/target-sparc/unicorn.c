@@ -135,7 +135,7 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     return 0;
 }
 
-__attribute__ ((visibility ("default")))
+DEFAULT_VISIBILITY
 void sparc_uc_init(struct uc_struct* uc)
 {
     register_accel_types(uc);

@@ -26,6 +26,7 @@
 #ifndef QEMU_OS_WIN32_H
 #define QEMU_OS_WIN32_H
 
+#include <winsock2.h>
 #include <windows.h>
 #include <setjmp.h>
 

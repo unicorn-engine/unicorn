@@ -365,7 +365,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;UNICORN_HAS_X86;UNICORN_HAS_ARM;UNICORN_HAS_M68K;UNICORN_HAS_ARM64;UNICORN_HAS_MIPS;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>../../..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg;</AdditionalIncludeDirectories>
     </ClCompile>
@@ -382,8 +382,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;;inline=__inline;__func__=__FUNCTION__</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;;inline=__inline;__func__=__FUNCTION__;UNICORN_HAS_X86;UNICORN_HAS_ARM;UNICORN_HAS_M68K;UNICORN_HAS_ARM64;UNICORN_HAS_MIPS;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>../../..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg;</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

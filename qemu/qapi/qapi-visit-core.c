@@ -114,7 +114,7 @@ void visit_type_uint8(Visitor *v, uint8_t *obj, const char *name, Error **errp)
                       "uint8_t");
             return;
         }
-        *obj = value;
+        *obj = (uint8_t)value;
     }
 }
 
@@ -132,7 +132,7 @@ void visit_type_uint16(Visitor *v, uint16_t *obj, const char *name, Error **errp
                       "uint16_t");
             return;
         }
-        *obj = value;
+        *obj = (uint16_t)value;
     }
 }
 
@@ -150,7 +150,7 @@ void visit_type_uint32(Visitor *v, uint32_t *obj, const char *name, Error **errp
                       "uint32_t");
             return;
         }
-        *obj = value;
+        *obj = (uint32_t)value;
     }
 }
 
@@ -181,7 +181,7 @@ void visit_type_int8(Visitor *v, int8_t *obj, const char *name, Error **errp)
                       "int8_t");
             return;
         }
-        *obj = value;
+        *obj = (int8_t)value;
     }
 }
 
@@ -199,7 +199,7 @@ void visit_type_int16(Visitor *v, int16_t *obj, const char *name, Error **errp)
                       "int16_t");
             return;
         }
-        *obj = value;
+        *obj = (int16_t)value;
     }
 }
 
@@ -217,7 +217,7 @@ void visit_type_int32(Visitor *v, int32_t *obj, const char *name, Error **errp)
                       "int32_t");
             return;
         }
-        *obj = value;
+        *obj = (int32_t)value;
     }
 }
 
@@ -309,5 +309,5 @@ void input_type_enum(Visitor *v, int *obj, const char *strings[],
     }
 
     g_free(enum_str);
-    *obj = value;
+    *obj = (int)value;
 }

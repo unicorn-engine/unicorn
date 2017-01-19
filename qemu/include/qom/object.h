@@ -15,8 +15,7 @@
 #define QEMU_OBJECT_H
 
 #include "glib_compat.h"
-#include <stdint.h>
-#include <stdbool.h>
+#include "platform.h"
 #include "qemu/queue.h"
 #include "qapi/error.h"
 

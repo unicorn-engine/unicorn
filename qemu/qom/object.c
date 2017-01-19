@@ -217,7 +217,7 @@ static void type_initialize_interface(struct uc_struct *uc, TypeImpl *ti, TypeIm
                                       TypeImpl *parent_type)
 {
     InterfaceClass *new_iface;
-    TypeInfo info = { };
+    TypeInfo info = { 0 };
     TypeImpl *iface_impl;
 
     info.parent = parent_type->name;
@@ -252,9 +252,9 @@ static void type_initialize(struct uc_struct *uc, TypeImpl *ti)
 
     parent = type_get_parent(uc, ti);
     if (parent) {
-        type_initialize(uc, parent);
         GSList *e;
         int i;
+        type_initialize(uc, parent);
 
         g_assert(parent->class_size <= ti->class_size);
         memcpy(ti->class, parent->class, parent->class_size);
@@ -1645,16 +1645,45 @@ static void object_instance_init(struct uc_struct *uc, Object *obj, void *opaque
 void register_types_object(struct uc_struct *uc)
 {
     static TypeInfo interface_info = {
-        .name = TYPE_INTERFACE,
-        .class_size = sizeof(InterfaceClass),
-        .abstract = true,
+        TYPE_INTERFACE,	// name
+		NULL,
+
+        sizeof(InterfaceClass),	// class_size
+		0,
+		NULL,
+
+		NULL,
+		NULL,
+		NULL,
+
+		NULL,
+
+		NULL,
+		NULL,
+		NULL,
+
+        true,	// abstract
     };
 
     static TypeInfo object_info = {
-        .name = TYPE_OBJECT,
-        .instance_size = sizeof(Object),
-        .instance_init = object_instance_init,
-        .abstract = true,
+        TYPE_OBJECT,
+		NULL,
+
+        0,
+		sizeof(Object),
+        NULL,
+
+		object_instance_init,
+        NULL,
+		NULL,
+
+		NULL,
+
+		NULL,
+		NULL,
+		NULL,
+
+		true,
     };
 
     uc->type_interface = type_register_internal(uc, &interface_info);

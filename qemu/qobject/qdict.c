@@ -22,8 +22,8 @@
 static void qdict_destroy_obj(QObject *obj);
 
 static const QType qdict_type = {
-    .code = QTYPE_QDICT,
-    .destroy = qdict_destroy_obj,
+    QTYPE_QDICT,
+    qdict_destroy_obj,
 };
 
 /**
@@ -213,7 +213,7 @@ double qdict_get_double(const QDict *qdict, const char *key)
     case QTYPE_QFLOAT:
         return qfloat_get_double(qobject_to_qfloat(obj));
     case QTYPE_QINT:
-        return qint_get_int(qobject_to_qint(obj));
+        return (double)qint_get_int(qobject_to_qint(obj));
     default:
         abort();
     }
@@ -662,7 +662,7 @@ void qdict_array_split(QDict *src, QList **dst)
             qdict_del(src, indexstr);
         }
 
-        qlist_append_obj(*dst, subqobj ?: QOBJECT(subqdict));
+        qlist_append_obj(*dst, (subqobj!=NULL) ? subqobj : QOBJECT(subqdict));
     }
 }
 

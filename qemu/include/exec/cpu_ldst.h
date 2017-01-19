@@ -391,7 +391,7 @@ static inline void *tlb_vaddr_to_host(CPUArchState *env, target_ulong addr,
         return NULL;
     }
 
-    haddr = addr + env->tlb_table[mmu_idx][index].addend;
+    haddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][index].addend);
     return (void *)haddr;
 }
 

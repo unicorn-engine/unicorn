@@ -38,8 +38,8 @@
 
 // posix specific includes
 #else // _MSC_VER
-#include <unistd.h>
-#include <inttypes.h>
+#include "platform.h"
+#include "platform.h"
 #include <unicorn/unicorn.h>
 #endif // _MSC_VER
 

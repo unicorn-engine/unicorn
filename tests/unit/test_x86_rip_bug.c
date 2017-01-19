@@ -1,5 +1,5 @@
-#include <unistd.h>
-#include <inttypes.h>
+#include "platform.h"
+#include "platform.h"
 #include <unicorn/unicorn.h>
 
 #include "unicorn_test.h"

@@ -25,6 +25,7 @@ void free_code_gen_buffer(struct uc_struct *uc);
 /** Freeing common resources */
 static void release_common(void *t)
 {
+    TCGPool *po, *to;
     TCGContext *s = (TCGContext *)t;
 #if TCG_TARGET_REG_BITS == 32
     int i;
@@ -36,7 +37,6 @@ static void release_common(void *t)
     g_free(def->sorted_args);
     g_free(s->tcg_op_defs);
 
-    TCGPool *po, *to;
     for (po = s->pool_first; po; po = to) {
         to = po->next;
         g_free(po);

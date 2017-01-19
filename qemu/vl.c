@@ -75,7 +75,7 @@ MachineClass *find_default_machine(struct uc_struct *uc, int arch)
     return mc;
 }
 
-__attribute__ ((visibility ("default")))
+DEFAULT_VISIBILITY
 int machine_initialize(struct uc_struct *uc)
 {
     MachineClass *machine_class;
@@ -142,12 +142,11 @@ void qemu_register_machine(struct uc_struct *uc, QEMUMachine *m, const char *typ
         void (*init)(struct uc_struct *uc, ObjectClass *oc, void *data))
 {
     char *name = g_strconcat(m->name, TYPE_MACHINE_SUFFIX, NULL);
-    TypeInfo ti = {
-        .name       = name,
-        .parent     = type_machine,
-        .class_init = init,
-        .class_data = (void *)m,
-    };
+    TypeInfo ti = {0};
+    ti.name       = name;
+    ti.parent     = type_machine;
+    ti.class_init = init;
+    ti.class_data = (void *)m;
 
     if (init == NULL)
         ti.class_init = machine_class_init;

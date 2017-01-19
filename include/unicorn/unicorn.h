@@ -8,16 +8,7 @@
 extern "C" {
 #endif
 
-#include <stdint.h>
-#ifdef _MSC_VER
-#ifndef __cplusplus
-typedef unsigned char bool;
-#define false 0
-#define true 1
-#endif
-#else
-#include <stdbool.h>
-#endif
+#include "platform.h"
 #include <stdarg.h>
 #if defined(UNICORN_HAS_OSXKERNEL)
 #include <libkern/libkern.h>
@@ -37,6 +28,12 @@ typedef size_t uc_hook;
 #include "arm64.h"
 #include "mips.h"
 #include "sparc.h"
+
+#ifdef __GNUC__
+#define DEFAULT_VISIBILITY __attribute__((visibility("default")))
+#else
+#define DEFAULT_VISIBILITY
+#endif
 
 #ifdef _MSC_VER
 #pragma warning(disable:4201)

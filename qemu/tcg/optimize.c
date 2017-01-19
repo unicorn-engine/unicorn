@@ -105,13 +105,13 @@ static TCGArg find_better_copy(TCGContext *s, TCGArg temp)
     TCGArg i;
 
     /* If this is already a global, we can't do better. */
-    if (temp < s->nb_globals) {
+    if (temp < (unsigned int)s->nb_globals) {
         return temp;
     }
 
     /* Search for a global first. */
     for (i = temps[temp].next_copy ; i != temp ; i = temps[i].next_copy) {
-        if (i < s->nb_globals) {
+        if (i < (unsigned int)s->nb_globals) {
             return i;
         }
     }
@@ -257,19 +257,19 @@ static TCGArg do_constant_folding_2(TCGOpcode op, TCGArg x, TCGArg y)
         return ror32(x, y & 31);
 
     case INDEX_op_rotr_i64:
-        return ror64(x, y & 63);
+        return (TCGArg)ror64(x, y & 63);
 
     case INDEX_op_rotl_i32:
         return rol32(x, y & 31);
 
     case INDEX_op_rotl_i64:
-        return rol64(x, y & 63);
+        return (TCGArg)rol64(x, y & 63);
 
     CASE_OP_32_64(not):
         return ~x;
 
     CASE_OP_32_64(neg):
-        return -x;
+        return 0-x;
 
     CASE_OP_32_64(andc):
         return x & ~y;
@@ -311,29 +311,29 @@ static TCGArg do_constant_folding_2(TCGOpcode op, TCGArg x, TCGArg y)
 
     case INDEX_op_muluh_i64:
         mulu64(&l64, &h64, x, y);
-        return h64;
+        return (TCGArg)h64;
     case INDEX_op_mulsh_i64:
         muls64(&l64, &h64, x, y);
-        return h64;
+        return (TCGArg)h64;
 
     case INDEX_op_div_i32:
         /* Avoid crashing on divide by zero, otherwise undefined.  */
-        return (int32_t)x / ((int32_t)y ? : 1);
+        return (int32_t)x / ((int32_t)y ? (int32_t)y : 1);
     case INDEX_op_divu_i32:
-        return (uint32_t)x / ((uint32_t)y ? : 1);
+        return (uint32_t)x / ((uint32_t)y ? (uint32_t)y : 1);
     case INDEX_op_div_i64:
-        return (int64_t)x / ((int64_t)y ? : 1);
+        return (int64_t)x / ((int64_t)y ? (int64_t)y : 1);
     case INDEX_op_divu_i64:
-        return (uint64_t)x / ((uint64_t)y ? : 1);
+        return (uint64_t)x / ((uint64_t)y ? (uint64_t)y : 1);
 
     case INDEX_op_rem_i32:
-        return (int32_t)x % ((int32_t)y ? : 1);
+        return (int32_t)x % ((int32_t)y ? (int32_t)y : 1);
     case INDEX_op_remu_i32:
-        return (uint32_t)x % ((uint32_t)y ? : 1);
+        return (uint32_t)x % ((uint32_t)y ? (uint32_t)y : 1);
     case INDEX_op_rem_i64:
-        return (int64_t)x % ((int64_t)y ? : 1);
+        return (int64_t)x % ((int64_t)y ? (int64_t)y : 1);
     case INDEX_op_remu_i64:
-        return (uint64_t)x % ((uint64_t)y ? : 1);
+        return (uint64_t)x % ((uint64_t)y ? (uint64_t)y : 1);
 
     default:
         fprintf(stderr,
@@ -867,11 +867,11 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
 
         CASE_OP_32_64(neg):
             /* Set to 1 all bits to the left of the rightmost.  */
-            mask = -(temps[args[1]].mask & -temps[args[1]].mask);
+            mask = 0-(temps[args[1]].mask & (0-temps[args[1]].mask));
             break;
 
         CASE_OP_32_64(deposit):
-            mask = deposit64(temps[args[1]].mask, args[3], args[4],
+            mask = (tcg_target_ulong)deposit64(temps[args[1]].mask, args[3], args[4],
                              temps[args[2]].mask);
             break;
 
@@ -1088,7 +1088,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
         CASE_OP_32_64(deposit):
             if (temps[args[1]].state == TCG_TEMP_CONST
                 && temps[args[2]].state == TCG_TEMP_CONST) {
-                tmp = deposit64(temps[args[1]].val, args[3], args[4],
+                tmp = (TCGArg)deposit64(temps[args[1]].val, args[3], args[4],
                                 temps[args[2]].val);
                 tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], tmp);
                 gen_args += 2;

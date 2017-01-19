@@ -27,18 +27,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include <stdbool.h>
+#include "platform.h"
 #include <string.h>
-#include <strings.h>
-#include <inttypes.h>
 #include <limits.h>
 #include <time.h>
 #include <ctype.h>
 #include <errno.h>
-#include <unistd.h>
 #include <fcntl.h>
 #include <sys/stat.h>
-#include <sys/time.h>
 #include <assert.h>
 #include <signal.h>
 #include "glib_compat.h"
@@ -195,7 +191,7 @@ static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
     rl = (uint64_t)u.l.low * (uint64_t)b;
     rh = (uint64_t)u.l.high * (uint64_t)b;
     rh += (rl >> 32);
-    res.l.high = rh / c;
+    res.l.high = (uint32_t)(rh / c);
     res.l.low = (((rh % c) << 32) + (rl & 0xffffffff)) / c;
     return res.ll;
 }
@@ -233,6 +229,25 @@ static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
 #define VECTYPE        unsigned long
 #define SPLAT(p)       (*(p) * (~0UL / 255))
 #define ALL_EQ(v1, v2) ((v1) == (v2))
+#endif
+
+// support for calling functions before main code is executed.
+#if defined(_MSC_VER)
+    #pragma section(".CRT$XCU",read)
+    #define INITIALIZER2_(f,p) \
+        static void f(void); \
+        __declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f; \
+        __pragma(comment(linker,"/include:" p #f "_")) \
+        static void f(void)
+    #ifdef _WIN64
+        #define INITIALIZER(f) INITIALIZER2_(f,"")
+    #else
+        #define INITIALIZER(f) INITIALIZER2_(f,"_")
+    #endif
+#else
+    #define INITIALIZER(f) \
+        static void f(void) __attribute__((constructor)); \
+        static void f(void)
 #endif
 
 #endif

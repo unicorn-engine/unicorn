@@ -21,10 +21,9 @@
 #include <sys/stat.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <unistd.h>
+#include "platform.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <sys/time.h>
 #include <time.h>
 
 #include "cpu.h"

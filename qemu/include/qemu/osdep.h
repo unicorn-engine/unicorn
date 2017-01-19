@@ -4,8 +4,7 @@
 #include "config-host.h"
 #include <stdarg.h>
 #include <stddef.h>
-#include <stdbool.h>
-#include <stdint.h>
+#include "platform.h"
 #include <sys/types.h>
 #ifdef __OpenBSD__
 #include <sys/signal.h>
@@ -18,7 +17,7 @@
 #define WEXITSTATUS(x) (x)
 #endif
 
-#include <sys/time.h>
+#include "platform.h"
 
 #if defined(CONFIG_SOLARIS) && CONFIG_SOLARIS_VERSION < 10
 /* [u]int_fast*_t not in <sys/int_types.h> */
@@ -44,15 +43,19 @@ typedef signed int              int_fast16_t;
 #endif
 
 #ifndef container_of
+#ifndef _MSC_VER
 #define container_of(ptr, type, member) ({                      \
         const typeof(((type *) 0)->member) *__mptr = (ptr);     \
         (type *) ((char *) __mptr - offsetof(type, member));})
+#else
+#define container_of(ptr, type, member) ((type *)((char *)(ptr) -offsetof(type,member)))
+#endif
 #endif
 
 /* Convert from a base type to a parent type, with compile time checking.  */
 #ifdef __GNUC__
 #define DO_UPCAST(type, field, dev) ( __extension__ ( { \
-    char __attribute__((unused)) offset_must_be_zero[ \
+    char QEMU_UNUSED_VAR offset_must_be_zero[ \
         -offsetof(type, field)]; \
     container_of(dev, type, field);}))
 #else

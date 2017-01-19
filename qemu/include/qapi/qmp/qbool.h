@@ -14,7 +14,7 @@
 #ifndef QBOOL_H
 #define QBOOL_H
 
-#include <stdint.h>
+#include "platform.h"
 #include "qapi/qmp/qobject.h"
 
 typedef struct QBool {

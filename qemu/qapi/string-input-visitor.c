@@ -16,6 +16,7 @@
 #include "qapi/qmp/qerror.h"
 #include "qemu/queue.h"
 #include "qemu/range.h"
+#include <stdlib.h>	// strtoll
 
 
 struct StringInputVisitor
@@ -148,7 +149,7 @@ next_list(Visitor *v, GenericList **list, Error **errp)
         return NULL;
     }
 
-    if (siv->cur < r->begin || siv->cur >= r->end) {
+    if ((uint64_t)siv->cur < r->begin || (uint64_t)siv->cur >= r->end) {
         siv->cur_range = g_list_next(siv->cur_range);
         if (!siv->cur_range) {
             return NULL;
