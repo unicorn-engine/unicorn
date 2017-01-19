@@ -14,7 +14,6 @@
 #include "hw/hw.h"
 #include "hw/mips/mips.h"
 #include "hw/mips/cpudevs.h"
-#include "hw/mips/bios.h"
 #include "sysemu/sysemu.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
