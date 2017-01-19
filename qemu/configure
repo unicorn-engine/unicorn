@@ -1262,8 +1262,7 @@ case "$target_name" in
   target_bigendian=yes
   ;;
 esac
-target_softmmu="no"
-target_user_only="no"
+target_softmmu="yes"
 case "$target" in
   ${target_name}-softmmu)
     target_softmmu="yes"
@@ -1407,14 +1406,6 @@ if test "$target_bigendian" = "yes" ; then
 fi
 if test "$target_softmmu" = "yes" ; then
   echo "CONFIG_SOFTMMU=y" >> $config_target_mak
-fi
-if test "$target_user_only" = "yes" ; then
-  echo "CONFIG_USER_ONLY=y" >> $config_target_mak
-  echo "CONFIG_QEMU_INTERP_PREFIX=\"$interp_prefix1\"" >> $config_target_mak
-fi
-list=""
-if test "$target_user_only" = "yes" -a "$bflt" = "yes"; then
-  echo "TARGET_HAS_BFLT=y" >> $config_target_mak
 fi
 
 # generate QEMU_CFLAGS/LDFLAGS for targets
