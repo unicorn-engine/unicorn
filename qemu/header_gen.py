@@ -3078,7 +3078,6 @@ mips_symbols = (
     'cpu_mips_clock_init',
     'mips_machine_init',
     'cpu_mips_irq_init_cpu',
-    'cpu_mips_soft_irq',
     'cpu_mips_kseg0_to_phys',
     'cpu_mips_phys_to_kseg0',
     'cpu_mips_kvm_um_phys_to_kseg0',

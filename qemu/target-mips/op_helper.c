@@ -1478,7 +1478,6 @@ static void mtc0_cause(CPUMIPSState *cpu, target_ulong arg1)
 {
     uint32_t mask = 0x00C00300;
     uint32_t old = cpu->CP0_Cause;
-    int i;
 
     if (cpu->insn_flags & ISA_MIPS32R2) {
         mask |= 1 << CP0Ca_DC;
@@ -1497,12 +1496,15 @@ static void mtc0_cause(CPUMIPSState *cpu, target_ulong arg1)
         }
     }
 
+#if 0
+    int i;
     /* Set/reset software interrupts */
     for (i = 0 ; i < 2 ; i++) {
         if ((old ^ cpu->CP0_Cause) & (1 << (CP0Ca_IP + i))) {
             cpu_mips_soft_irq(cpu, i, cpu->CP0_Cause & (1 << (CP0Ca_IP + i)));
         }
     }
+#endif
 }
 
 void helper_mtc0_cause(CPUMIPSState *env, target_ulong arg1)
