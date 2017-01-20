@@ -961,7 +961,7 @@ typedef struct CCPrepare {
     bool no_setcond;
 } CCPrepare;
 
-CCPrepare ccprepare_setup(TCGCond cond,
+static inline CCPrepare ccprepare_make(TCGCond cond,
 						  TCGv reg, TCGv reg2,
 						  target_ulong imm, target_ulong mask,
 						  bool use_reg2, bool no_setcond)
@@ -1000,38 +1000,38 @@ static CCPrepare gen_prepare_eflags_c(DisasContext *s, TCGv reg)
 		t1 = gen_ext_tl(tcg_ctx, cpu_tmp0, cpu_cc_src, size, false);
 		t0 = gen_ext_tl(tcg_ctx, reg, cpu_cc_dst, size, false);
 	add_sub:
-		return ccprepare_setup(TCG_COND_LTU,  t0,t1,  0,-1,  true,false);
+		return ccprepare_make(TCG_COND_LTU,  t0,t1,  0,-1,  true,false);
 
 	case CC_OP_LOGICB: case CC_OP_LOGICW: case CC_OP_LOGICL: case CC_OP_LOGICQ:
     case CC_OP_CLR:
-		return ccprepare_setup(TCG_COND_NEVER,  0,0,  0,-1,  false,false);
+		return ccprepare_make(TCG_COND_NEVER,  0,0,  0,-1,  false,false);
 
 	case CC_OP_INCB: case CC_OP_INCW: case CC_OP_INCL: case CC_OP_INCQ:
 	case CC_OP_DECB: case CC_OP_DECW: case CC_OP_DECL: case CC_OP_DECQ:
-		return ccprepare_setup(TCG_COND_NE,  cpu_cc_src,0,  0,-1,  false,true );
+		return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,-1,  false,true );
 
 	case CC_OP_SHLB: case CC_OP_SHLW: case CC_OP_SHLL: case CC_OP_SHLQ:
         /* (CC_SRC >> (DATA_BITS - 1)) & 1 */
 			size = s->cc_op - CC_OP_SHLB;
         shift = (8 << size) - 1;
-        return ccprepare_setup(TCG_COND_NE,  cpu_cc_src,0,  0,(target_ulong)(1 << shift),  false,false);
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,(target_ulong)(1 << shift),  false,false);
 
 	case CC_OP_MULB: case CC_OP_MULW: case CC_OP_MULL: case CC_OP_MULQ:
-        return ccprepare_setup(TCG_COND_NE,  cpu_cc_src,0,  0,-1,  false,false );
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,-1,  false,false );
 
 	case CC_OP_BMILGB: case CC_OP_BMILGW: case CC_OP_BMILGL: case CC_OP_BMILGQ:
 		size = s->cc_op - CC_OP_BMILGB;
         t0 = gen_ext_tl(tcg_ctx, reg, cpu_cc_src, size, false);
-        return ccprepare_setup(TCG_COND_EQ,  t0,0,  0,-1,  false,false);
+        return ccprepare_make(TCG_COND_EQ,  t0,0,  0,-1,  false,false);
 
     case CC_OP_ADCX:
     case CC_OP_ADCOX:
-        return ccprepare_setup(TCG_COND_NE,  cpu_cc_dst,0,  0,-1,  false,true);
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_dst,0,  0,-1,  false,true);
 
     case CC_OP_EFLAGS:
 	case CC_OP_SARB: case CC_OP_SARW: case CC_OP_SARL: case CC_OP_SARQ:
         /* CC_SRC & 1 */
-		return ccprepare_setup(TCG_COND_NE,  cpu_cc_src,0,  0,CC_C,  false,false);
+		return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_C,  false,false);
 
     default:
 		/* The need to compute only C from CC_OP_DYNAMIC is important
@@ -1039,7 +1039,7 @@ static CCPrepare gen_prepare_eflags_c(DisasContext *s, TCGv reg)
 		gen_update_cc_op(s);
 		gen_helper_cc_compute_c(tcg_ctx, reg, cpu_cc_dst, cpu_cc_src,
 								cpu_cc_src2, cpu_cc_op);
-		return ccprepare_setup(TCG_COND_NE,  reg,0,  0,-1,  false,true);
+		return ccprepare_make(TCG_COND_NE,  reg,0,  0,-1,  false,true);
     }
 }
 
@@ -1050,7 +1050,7 @@ static CCPrepare gen_prepare_eflags_p(DisasContext *s, TCGv reg)
     TCGv cpu_cc_src = *(TCGv *)tcg_ctx->cpu_cc_src;
 
     gen_compute_eflags(s);
-    return ccprepare_setup(TCG_COND_NE,  cpu_cc_src,0,  0,CC_P,  false,false);
+    return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_P,  false,false);
 }
 
 /* compute eflags.S to reg */
@@ -1068,14 +1068,14 @@ static CCPrepare gen_prepare_eflags_s(DisasContext *s, TCGv reg)
     case CC_OP_ADCX:
     case CC_OP_ADOX:
     case CC_OP_ADCOX:
-		return ccprepare_setup(TCG_COND_NE,  cpu_cc_src,0,  0,CC_S,  false,false);
+		return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_S,  false,false);
     case CC_OP_CLR:
-		return ccprepare_setup(TCG_COND_NEVER,  0,0,  0,-1,  false,false);
+		return ccprepare_make(TCG_COND_NEVER,  0,0,  0,-1,  false,false);
     default:
         {
             TCGMemOp size = (s->cc_op - CC_OP_ADDB) & 3;
             TCGv t0 = gen_ext_tl(tcg_ctx, reg, cpu_cc_dst, size, true);
-			return ccprepare_setup(TCG_COND_LT,  t0,0,  0,-1,  false,false);
+			return ccprepare_make(TCG_COND_LT,  t0,0,  0,-1,  false,false);
         }
     }
 }
@@ -1090,12 +1090,12 @@ static CCPrepare gen_prepare_eflags_o(DisasContext *s, TCGv reg)
     switch (s->cc_op) {
     case CC_OP_ADOX:
     case CC_OP_ADCOX:
-        return ccprepare_setup(TCG_COND_NE,  cpu_cc_src2,0,  0,-1,  false,true);
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src2,0,  0,-1,  false,true);
     case CC_OP_CLR:
-		return ccprepare_setup(TCG_COND_NEVER,  0,0,  0,-1,  false,false);
+		return ccprepare_make(TCG_COND_NEVER,  0,0,  0,-1,  false,false);
     default:
 		gen_compute_eflags(s);
-        return ccprepare_setup(TCG_COND_NE,  cpu_cc_src,0,  0,CC_O,  false,false );
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_O,  false,false );
     }
 }
 
@@ -1114,14 +1114,14 @@ static CCPrepare gen_prepare_eflags_z(DisasContext *s, TCGv reg)
     case CC_OP_ADCX:
     case CC_OP_ADOX:
     case CC_OP_ADCOX:
-		return ccprepare_setup(TCG_COND_NE,  cpu_cc_src,0,  0,CC_Z,  false,false);
+		return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_Z,  false,false);
     case CC_OP_CLR:
-		return ccprepare_setup(TCG_COND_ALWAYS,  0,0,  0,-1,  false,false);
+		return ccprepare_make(TCG_COND_ALWAYS,  0,0,  0,-1,  false,false);
     default:
 		{
             TCGMemOp size = (s->cc_op - CC_OP_ADDB) & 3;
             TCGv t0 = gen_ext_tl(tcg_ctx, reg, cpu_cc_dst, size, false);
-            return ccprepare_setup(TCG_COND_EQ,  t0,0,  0,-1,  false,false);
+            return ccprepare_make(TCG_COND_EQ,  t0,0,  0,-1,  false,false);
 		}
     }
 }
@@ -1155,7 +1155,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             tcg_gen_mov_tl(tcg_ctx, cpu_tmp4, cpu_cc_srcT);
             gen_extu(tcg_ctx, size, cpu_tmp4);
             t0 = gen_ext_tl(tcg_ctx, cpu_tmp0, cpu_cc_src, size, false);
-			cc = ccprepare_setup(TCG_COND_LEU,  cpu_tmp4,t0,  0,-1,  true,false);
+			cc = ccprepare_make(TCG_COND_LEU,  cpu_tmp4,t0,  0,-1,  true,false);
             break;
 
         case JCC_L:
@@ -1167,7 +1167,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             tcg_gen_mov_tl(tcg_ctx, cpu_tmp4, cpu_cc_srcT);
             gen_exts(tcg_ctx, size, cpu_tmp4);
             t0 = gen_ext_tl(tcg_ctx, cpu_tmp0, cpu_cc_src, size, true);
-			cc = ccprepare_setup(cond,  cpu_tmp4,t0,  0,-1,  true,false);
+			cc = ccprepare_make(cond,  cpu_tmp4,t0,  0,-1,  true,false);
             break;
 
         default:
@@ -1190,7 +1190,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             break;
         case JCC_BE:
             gen_compute_eflags(s);
-            cc = ccprepare_setup(TCG_COND_NE,  cpu_cc_src,0,  0,CC_Z | CC_C,  false,false);
+            cc = ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_Z | CC_C,  false,false);
             break;
         case JCC_S:
             cc = gen_prepare_eflags_s(s, reg);
@@ -1205,7 +1205,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             }
             tcg_gen_shri_tl(tcg_ctx, reg, cpu_cc_src, 4); /* CC_O -> CC_S */
             tcg_gen_xor_tl(tcg_ctx, reg, reg, cpu_cc_src);
-            cc = ccprepare_setup(TCG_COND_NE,  reg,0,  0,CC_S,  false,false);
+            cc = ccprepare_make(TCG_COND_NE,  reg,0,  0,CC_S,  false,false);
             break;
         default:
         case JCC_LE:
@@ -1215,7 +1215,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             }
             tcg_gen_shri_tl(tcg_ctx, reg, cpu_cc_src, 4); /* CC_O -> CC_S */
             tcg_gen_xor_tl(tcg_ctx, reg, reg, cpu_cc_src);
-            cc = ccprepare_setup(TCG_COND_NE,  reg,0,  0,CC_S | CC_Z,  false,false);
+            cc = ccprepare_make(TCG_COND_NE,  reg,0,  0,CC_S | CC_Z,  false,false);
             break;
         }
         break;

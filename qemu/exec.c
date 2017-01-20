@@ -247,11 +247,11 @@ static void phys_page_compact(PhysPageEntry *lp, Node *nodes, unsigned long *com
     }
 }
 
-static void phys_page_compact_all(AddressSpaceDispatch *d, const int nodes_nb)
+static void phys_page_compact_all(AddressSpaceDispatch *d, int nodes_nb)
 {
     //DECLARE_BITMAP(compacted, nodes_nb);
     // this isnt actually used
-    unsigned int* compacted = NULL;
+    unsigned long* compacted = NULL;
 
     if (d->phys_map.skip) {
         phys_page_compact(&d->phys_map, d->map.nodes, compacted);

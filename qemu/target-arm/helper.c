@@ -5664,6 +5664,7 @@ static bool round_to_inf(float_status *fpst, bool sign_bit)
     }
 
     g_assert_not_reached();
+    return false;
 }
 
 float32 HELPER(recpe_f32)(float32 input, void *fpstp)

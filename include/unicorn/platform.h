@@ -108,7 +108,7 @@ typedef _W64 unsigned int  uintptr_t;
 
 
 // handle inttypes.h compatibility
-#if defined(UNICORN_HAS_OSXKERNEL) || (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2013)) || defined(_KERNEL_MODE)
+//#if defined(UNICORN_HAS_OSXKERNEL) || (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2013)) || defined(_KERNEL_MODE)
 // this system does not have inttypes.h
 
 #if (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2013)) || defined(_KERNEL_MODE)
@@ -163,7 +163,7 @@ typedef _W64 unsigned int  uintptr_t;
 #include <inttypes.h>
 #endif // #if defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2013) || defined(_KERNEL_MODE)
 
-#endif // #if defined(UNICORN_HAS_OSXKERNEL) || (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2013)) || defined(_KERNEL_MODE)
+//#endif // #if defined(UNICORN_HAS_OSXKERNEL) || (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2013)) || defined(_KERNEL_MODE)
 
 
 
