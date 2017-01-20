@@ -222,7 +222,7 @@ static void usleep(const int64_t &t) {
 
 
 // termios.h compatibility
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) || defined(_WIN32)
 // TODO: termios stuff here ...
 #else
 #include <termios.h>
