@@ -4,7 +4,6 @@
 #include <inttypes.h>
 #include <stdbool.h>
 
-typedef struct QemuMutex QemuMutex;
 typedef struct QemuThread QemuThread;
 
 #ifdef _WIN32
@@ -15,11 +14,6 @@ typedef struct QemuThread QemuThread;
 
 #define QEMU_THREAD_JOINABLE 0
 #define QEMU_THREAD_DETACHED 1
-
-void qemu_mutex_init(QemuMutex *mutex);
-void qemu_mutex_destroy(QemuMutex *mutex);
-void qemu_mutex_lock(QemuMutex *mutex);
-void qemu_mutex_unlock(QemuMutex *mutex);
 
 struct uc_struct;
 // return -1 on error, 0 on success

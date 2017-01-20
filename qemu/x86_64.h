@@ -2381,7 +2381,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_x86_64
 #define qemu_clock_ptr qemu_clock_ptr_x86_64
 #define qemu_clocks qemu_clocks_x86_64
-#define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_x86_64
 #define qemu_get_cpu qemu_get_cpu_x86_64
 #define qemu_get_guest_memory_mapping qemu_get_guest_memory_mapping_x86_64
 #define qemu_get_guest_simple_memory_mapping qemu_get_guest_simple_memory_mapping_x86_64

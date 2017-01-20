@@ -906,20 +906,6 @@ static void mem_add(MemoryListener *listener, MemoryRegionSection *section)
     }
 }
 
-void qemu_flush_coalesced_mmio_buffer(void)
-{
-}
-
-void qemu_mutex_lock_ramlist(struct uc_struct *uc)
-{
-    qemu_mutex_lock(&uc->ram_list.mutex);
-}
-
-void qemu_mutex_unlock_ramlist(struct uc_struct *uc)
-{
-    qemu_mutex_unlock(&uc->ram_list.mutex);
-}
-
 #ifdef __linux__
 
 #include <sys/vfs.h>
@@ -1012,8 +998,6 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
 
     old_ram_size = last_ram_offset(uc) >> TARGET_PAGE_BITS;
 
-    /* This assumes the iothread lock is taken here too.  */
-    qemu_mutex_lock_ramlist(uc);
     new_block->offset = find_ram_offset(uc, new_block->length);
 
     if (!new_block->host) {
@@ -1023,7 +1007,6 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
             error_setg_errno(errp, errno,
                     "cannot set up guest memory '%s'",
                     memory_region_name(new_block->mr));
-            qemu_mutex_unlock_ramlist(uc);
             return -1;
         }
         memory_try_enable_merging(new_block->host, new_block->length);
@@ -1043,7 +1026,6 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
     uc->ram_list.mru_block = NULL;
 
     uc->ram_list.version++;
-    qemu_mutex_unlock_ramlist(uc);
 
     new_ram_size = last_ram_offset(uc) >> TARGET_PAGE_BITS;
 
@@ -1102,8 +1084,6 @@ void qemu_ram_free_from_ptr(struct uc_struct *uc, ram_addr_t addr)
 {
     RAMBlock *block;
 
-    /* This assumes the iothread lock is taken here too.  */
-    qemu_mutex_lock_ramlist(uc);
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
         if (addr == block->offset) {
             QTAILQ_REMOVE(&uc->ram_list.blocks, block, next);
@@ -1113,15 +1093,12 @@ void qemu_ram_free_from_ptr(struct uc_struct *uc, ram_addr_t addr)
             break;
         }
     }
-    qemu_mutex_unlock_ramlist(uc);
 }
 
 void qemu_ram_free(struct uc_struct *uc, ram_addr_t addr)
 {
     RAMBlock *block;
 
-    /* This assumes the iothread lock is taken here too.  */
-    qemu_mutex_lock_ramlist(uc);
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
         if (addr == block->offset) {
             QTAILQ_REMOVE(&uc->ram_list.blocks, block, next);
@@ -1141,8 +1118,6 @@ void qemu_ram_free(struct uc_struct *uc, ram_addr_t addr)
             break;
         }
     }
-    qemu_mutex_unlock_ramlist(uc);
-
 }
 
 #ifndef _WIN32
@@ -1555,7 +1530,6 @@ static void memory_map_init(struct uc_struct *uc)
 void cpu_exec_init_all(struct uc_struct *uc)
 {
 #if !defined(CONFIG_USER_ONLY)
-    qemu_mutex_init(&uc->ram_list.mutex);
     memory_map_init(uc);
 #endif
     io_mem_init(uc);

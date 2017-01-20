@@ -2387,7 +2387,6 @@ symbols = (
     'qemu_clock_get_us',
     'qemu_clock_ptr',
     'qemu_clocks',
-    'qemu_flush_coalesced_mmio_buffer',
     'qemu_get_cpu',
     'qemu_get_guest_memory_mapping',
     'qemu_get_guest_simple_memory_mapping',

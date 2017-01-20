@@ -30,36 +30,6 @@ static void error_exit(int err, const char *msg)
     //abort();
 }
 
-void qemu_mutex_init(QemuMutex *mutex)
-{
-    mutex->owner = 0;
-    InitializeCriticalSection(&mutex->lock);
-}
-
-void qemu_mutex_destroy(QemuMutex *mutex)
-{
-    assert(mutex->owner == 0);
-    DeleteCriticalSection(&mutex->lock);
-}
-
-void qemu_mutex_lock(QemuMutex *mutex)
-{
-    EnterCriticalSection(&mutex->lock);
-
-    /* Win32 CRITICAL_SECTIONs are recursive.  Assert that we're not
-     * using them as such.
-     */
-    assert(mutex->owner == 0);
-    mutex->owner = GetCurrentThreadId();
-}
-
-void qemu_mutex_unlock(QemuMutex *mutex)
-{
-    assert(mutex->owner == GetCurrentThreadId());
-    mutex->owner = 0;
-    LeaveCriticalSection(&mutex->lock);
-}
-
 struct QemuThreadData {
     /* Passed to win32_start_routine.  */
     void             *(*start_routine)(void *);

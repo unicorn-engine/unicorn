@@ -64,7 +64,6 @@ static QEMUClock qemu_clocks[QEMU_CLOCK_MAX];
 
 struct QEMUTimerList {
     QEMUClock *clock;
-    QemuMutex active_timers_lock;
     QEMUTimer *active_timers;
     QLIST_ENTRY(QEMUTimerList) list;
     QEMUTimerListNotifyCB *notify_cb;
@@ -87,16 +86,6 @@ static inline QEMUClock *qemu_clock_ptr(QEMUClockType type)
 static bool timer_expired_ns(QEMUTimer *timer_head, int64_t current_time)
 {
     return timer_head && (timer_head->expire_time <= current_time);
-}
-
-void timerlist_free(QEMUTimerList *timer_list)
-{
-    assert(!timerlist_has_timers(timer_list));
-    if (timer_list->clock) {
-        QLIST_REMOVE(timer_list, list);
-    }
-    qemu_mutex_destroy(&timer_list->active_timers_lock);
-    g_free(timer_list);
 }
 
 bool timerlist_has_timers(QEMUTimerList *timer_list)
@@ -172,9 +161,7 @@ void timer_del(QEMUTimer *ts)
 {
     QEMUTimerList *timer_list = ts->timer_list;
 
-    qemu_mutex_lock(&timer_list->active_timers_lock);
     timer_del_locked(timer_list, ts);
-    qemu_mutex_unlock(&timer_list->active_timers_lock);
 }
 
 /* modify the current timer so that it will be fired when current_time
@@ -184,10 +171,8 @@ void timer_mod_ns(QEMUTimer *ts, int64_t expire_time)
     QEMUTimerList *timer_list = ts->timer_list;
     bool rearm;
 
-    qemu_mutex_lock(&timer_list->active_timers_lock);
     timer_del_locked(timer_list, ts);
     rearm = timer_mod_ns_locked(timer_list, ts, expire_time);
-    qemu_mutex_unlock(&timer_list->active_timers_lock);
 
     if (rearm) {
         timerlist_rearm(timer_list);

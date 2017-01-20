@@ -41,11 +41,9 @@ typedef struct {
 } BounceBuffer;
 
 typedef struct RAMList {
-    QemuMutex mutex;
     /* Protected by the iothread lock.  */
     unsigned long *dirty_memory[DIRTY_MEMORY_NUM];
     RAMBlock *mru_block;
-    /* Protected by the ramlist lock.  */
     QTAILQ_HEAD(, RAMBlock) blocks;
     uint32_t version;
 } RAMList;

@@ -188,7 +188,6 @@ struct uc_struct {
     unsigned memory_region_transaction_depth;
     bool memory_region_update_pending;
     bool ioeventfd_update_pending;
-    QemuMutex flat_view_mutex;
     QTAILQ_HEAD(memory_listeners, MemoryListener) memory_listeners;
     QTAILQ_HEAD(, AddressSpace) address_spaces;
     MachineState *machine_state;

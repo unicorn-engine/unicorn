@@ -2381,7 +2381,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_mips
 #define qemu_clock_ptr qemu_clock_ptr_mips
 #define qemu_clocks qemu_clocks_mips
-#define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_mips
 #define qemu_get_cpu qemu_get_cpu_mips
 #define qemu_get_guest_memory_mapping qemu_get_guest_memory_mapping_mips
 #define qemu_get_guest_simple_memory_mapping qemu_get_guest_simple_memory_mapping_mips

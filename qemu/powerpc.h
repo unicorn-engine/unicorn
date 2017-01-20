@@ -2381,7 +2381,6 @@
 #define qemu_clock_get_us qemu_clock_get_us_powerpc
 #define qemu_clock_ptr qemu_clock_ptr_powerpc
 #define qemu_clocks qemu_clocks_powerpc
-#define qemu_flush_coalesced_mmio_buffer qemu_flush_coalesced_mmio_buffer_powerpc
 #define qemu_get_cpu qemu_get_cpu_powerpc
 #define qemu_get_guest_memory_mapping qemu_get_guest_memory_mapping_powerpc
 #define qemu_get_guest_simple_memory_mapping qemu_get_guest_simple_memory_mapping_powerpc

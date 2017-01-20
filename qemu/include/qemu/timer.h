@@ -124,14 +124,6 @@ QEMUTimerList *timerlist_new(QEMUClockType type,
                              QEMUTimerListNotifyCB *cb, void *opaque);
 
 /**
- * timerlist_free:
- * @timer_list: the timer list to free
- *
- * Frees a timer_list. It must have no active timers.
- */
-void timerlist_free(QEMUTimerList *timer_list);
-
-/**
  * timerlist_has_timers:
  * @timer_list: the timer list to operate on
  *
