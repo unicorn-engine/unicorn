@@ -167,14 +167,14 @@ static void test_query_page_size(void **state)
     assert_int_equal(4096, page_size);
 }
 
-void write(uc_engine* uc, uint64_t addr, uint64_t len){
+void mem_write(uc_engine* uc, uint64_t addr, uint64_t len){
   uint8_t* buff = alloca(len);
   memset(buff,0,len);
   uc_mem_write(uc, addr, buff, len);
 
 }
 
-void read(uc_engine* uc, uint64_t addr, uint64_t len){
+void mem_read(uc_engine* uc, uint64_t addr, uint64_t len){
   uint8_t* buff = alloca(len);
   uc_mem_read(uc, addr, buff, len);
 }
