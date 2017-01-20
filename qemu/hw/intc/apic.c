@@ -178,11 +178,13 @@ static void apic_pre_save(APICCommonState *s)
 
 static void apic_post_load(APICCommonState *s)
 {
+#if 0
     if (s->timer_expiry != -1) {
         timer_mod(s->timer, s->timer_expiry);
     } else {
         timer_del(s->timer);
     }
+#endif
 }
 
 static int apic_realize(struct uc_struct *uc, DeviceState *dev, Error **errp)

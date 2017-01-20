@@ -31,47 +31,6 @@ static void error_exit(int err, const char *msg)
     abort();
 }
 
-void qemu_mutex_init(QemuMutex *mutex)
-{
-    int err;
-    pthread_mutexattr_t mutexattr;
-
-    pthread_mutexattr_init(&mutexattr);
-    pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_ERRORCHECK);
-    err = pthread_mutex_init(&mutex->lock, &mutexattr);
-    pthread_mutexattr_destroy(&mutexattr);
-    if (err)
-        error_exit(err, __func__);
-}
-
-void qemu_mutex_destroy(QemuMutex *mutex)
-{
-    int err;
-
-    err = pthread_mutex_destroy(&mutex->lock);
-    if (err)
-        error_exit(err, __func__);
-}
-
-
-void qemu_mutex_lock(QemuMutex *mutex)
-{
-    int err;
-
-    err = pthread_mutex_lock(&mutex->lock);
-    if (err)
-        error_exit(err, __func__);
-}
-
-void qemu_mutex_unlock(QemuMutex *mutex)
-{
-    int err;
-
-    err = pthread_mutex_unlock(&mutex->lock);
-    if (err)
-        error_exit(err, __func__);
-}
-
 int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *name,
                        void *(*start_routine)(void*),
                        void *arg, int mode)

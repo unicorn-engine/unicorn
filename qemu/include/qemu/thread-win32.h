@@ -2,11 +2,6 @@
 #define __QEMU_THREAD_WIN32_H 1
 #include "windows.h"
 
-struct QemuMutex {
-    CRITICAL_SECTION lock;
-    LONG owner;
-};
-
 typedef struct QemuThreadData QemuThreadData;
 struct QemuThread {
     QemuThreadData *data;

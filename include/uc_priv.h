@@ -179,7 +179,6 @@ struct uc_struct {
     RAMList ram_list;   // qemu/exec.c
     BounceBuffer bounce;    // qemu/cpu-exec.c
     volatile sig_atomic_t exit_request; // qemu/cpu-exec.c
-    spinlock_t x86_global_cpu_lock; // for X86 arch only
     bool global_dirty_log;  // qemu/memory.c
     /* This is a multi-level map on the virtual address space.
        The bottom level has pointers to PageDesc.  */
@@ -191,7 +190,6 @@ struct uc_struct {
     unsigned memory_region_transaction_depth;
     bool memory_region_update_pending;
     bool ioeventfd_update_pending;
-    QemuMutex flat_view_mutex;
     QTAILQ_HEAD(memory_listeners, MemoryListener) memory_listeners;
     QTAILQ_HEAD(, AddressSpace) address_spaces;
     MachineState *machine_state;
