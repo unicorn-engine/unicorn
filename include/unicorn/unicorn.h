@@ -8,6 +8,10 @@
 extern "C" {
 #endif
 
+#ifdef _MSC_VER
+#pragma comment(lib, "unicorn.lib")
+#endif
+
 #include "platform.h"
 #include <stdarg.h>
 #if defined(UNICORN_HAS_OSXKERNEL)
