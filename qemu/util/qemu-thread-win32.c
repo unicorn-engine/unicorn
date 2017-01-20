@@ -49,11 +49,13 @@ static unsigned __stdcall win32_start_routine(void *arg)
     void *(*start_routine)(void *) = data->start_routine;
     void *thread_arg = data->arg;
 
+#if 0
     if (data->mode == QEMU_THREAD_DETACHED) {
         data->uc->qemu_thread_data = NULL;
         g_free(data);
-        data = NULL;
     }
+#endif
+
     qemu_thread_exit(data->uc, start_routine(thread_arg));
     abort();
 }
@@ -99,7 +101,7 @@ void *qemu_thread_join(QemuThread *thread)
     DeleteCriticalSection(&data->cs);
     data->uc->qemu_thread_data = NULL;
     g_free(data);
-    data = NULL;
+
     return ret;
 }
 
