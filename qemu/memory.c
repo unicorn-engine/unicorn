@@ -1359,23 +1359,6 @@ bool memory_region_is_iommu(MemoryRegion *mr)
     return mr->iommu_ops;
 }
 
-void memory_region_register_iommu_notifier(MemoryRegion *mr, Notifier *n)
-{
-    //notifier_list_add(&mr->iommu_notify, n);
-}
-
-void memory_region_unregister_iommu_notifier(Notifier *n)
-{
-    //notifier_remove(n);
-}
-
-void memory_region_notify_iommu(MemoryRegion *mr,
-                                IOMMUTLBEntry entry)
-{
-    assert(memory_region_is_iommu(mr));
-    //notifier_list_notify(&mr->iommu_notify, &entry);
-}
-
 void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
 {
     if (mr->readonly != readonly) {

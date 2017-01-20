@@ -47,7 +47,6 @@ typedef struct QEMUClock {
     /* We rely on BQL to protect the timerlists */
     QLIST_HEAD(, QEMUTimerList) timerlists;
 
-    NotifierList reset_notifiers;
     int64_t last;
 
     QEMUClockType type;
