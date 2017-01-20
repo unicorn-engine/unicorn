@@ -32,8 +32,6 @@
 #include <stdlib.h>
 #include "config-host.h"
 #include "sysemu/sysemu.h"
-// #include "trace.h"
-//#include "qemu/sockets.h"
 
 /* this must come after including "trace.h" */
 #include <shlobj.h>

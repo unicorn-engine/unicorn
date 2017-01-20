@@ -19,10 +19,8 @@
  */
 
 #include "cpu.h"
-#include "kvm_mips.h"
 #include "qemu-common.h"
 #include "hw/mips/mips.h"
-
 
 
 static void mips_cpu_set_pc(CPUState *cs, vaddr value)

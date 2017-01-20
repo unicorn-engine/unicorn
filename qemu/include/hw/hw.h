@@ -9,7 +9,6 @@
 #endif
 
 #include "exec/ioport.h"
-#include "hw/irq.h"
 #include "qemu/log.h"
 
 #ifdef NEED_CPU_H

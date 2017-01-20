@@ -5,7 +5,6 @@
 #include "qemu/typedefs.h"
 #include "qemu/bitmap.h"
 #include "qom/object.h"
-#include "hw/irq.h"
 #include "qapi/error.h"
 
 enum {
@@ -132,7 +131,6 @@ typedef struct NamedGPIOList NamedGPIOList;
 
 struct NamedGPIOList {
     char *name;
-    qemu_irq *in;
     int num_in;
     int num_out;
     QLIST_ENTRY(NamedGPIOList) node;
@@ -260,29 +258,12 @@ void qdev_unplug(DeviceState *dev, Error **errp);
 void qdev_machine_creation_done(void);
 bool qdev_machine_modified(void);
 
-qemu_irq qdev_get_gpio_in(DeviceState *dev, int n);
-qemu_irq qdev_get_gpio_in_named(DeviceState *dev, const char *name, int n);
-
-void qdev_connect_gpio_out(DeviceState *dev, int n, qemu_irq pin);
-void qdev_connect_gpio_out_named(DeviceState *dev, const char *name, int n,
-                                 qemu_irq pin);
-qemu_irq qdev_get_gpio_out_connector(DeviceState *dev, const char *name, int n);
-qemu_irq qdev_intercept_gpio_out(DeviceState *dev, qemu_irq icpt,
-                                 const char *name, int n);
-
 BusState *qdev_get_child_bus(DeviceState *dev, const char *name);
 
 /*** Device API.  ***/
 
 /* Register device properties.  */
 /* GPIO inputs also double as IRQ sinks.  */
-void qdev_init_gpio_in(DeviceState *dev, qemu_irq_handler handler, int n);
-void qdev_init_gpio_out(DeviceState *dev, qemu_irq *pins, int n);
-void qdev_init_gpio_in_named(DeviceState *dev, qemu_irq_handler handler,
-                             const char *name, int n);
-void qdev_init_gpio_out_named(DeviceState *dev, qemu_irq *pins,
-                              const char *name, int n);
-
 void qdev_pass_gpios(DeviceState *dev, DeviceState *container,
                      const char *name);
 

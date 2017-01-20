@@ -174,9 +174,7 @@ linux="no"
 solaris="no"
 softmmu="yes"
 aix="no"
-pkgversion=""
 pie=""
-zero_malloc=""
 
 # parse CC options first
 for opt do
@@ -551,8 +549,6 @@ for opt do
   --enable-stack-protector) stack_protector="yes"
   ;;
   --disable-stack-protector) stack_protector="no"
-  ;;
-  --with-pkgversion=*) pkgversion=" ($optarg)"
   ;;
   *)
       echo "ERROR: unknown option $opt"
@@ -953,99 +949,6 @@ if test "$mingw32" != yes -a "$pthread" = no; then
       "Make sure to have the pthread libs and headers installed."
 fi
 
-# check for pthread_setname_np
-pthread_setname_np=no
-cat > $TMPC << EOF
-#include <pthread.h>
-
-static void *f(void *p) { return NULL; }
-int main(void)
-{
-    pthread_t thread;
-    pthread_create(&thread, 0, f, 0);
-    pthread_setname_np(thread, "QEMU");
-    return 0;
-}
-EOF
-if compile_prog "" "$pthread_lib" ; then
-  pthread_setname_np=yes
-fi
-
-# check if pipe2 is there
-pipe2=no
-cat > $TMPC << EOF
-#include <unistd.h>
-#include <fcntl.h>
-
-int main(void)
-{
-    int pipefd[2];
-    return pipe2(pipefd, O_CLOEXEC);
-}
-EOF
-if compile_prog "" "" ; then
-  pipe2=yes
-fi
-
-##########################################
-# signalfd probe
-signalfd="no"
-cat > $TMPC << EOF
-#include <unistd.h>
-#include <sys/syscall.h>
-#include <signal.h>
-int main(void) { return syscall(SYS_signalfd, -1, NULL, _NSIG / 8); }
-EOF
-
-if compile_prog "" "" ; then
-  signalfd=yes
-fi
-
-# check if eventfd is supported
-eventfd=no
-cat > $TMPC << EOF
-#include <sys/eventfd.h>
-
-int main(void)
-{
-    return eventfd(0, EFD_NONBLOCK | EFD_CLOEXEC);
-}
-EOF
-if compile_prog "" "" ; then
-  eventfd=yes
-fi
-
-# check for ppoll support
-ppoll=no
-cat > $TMPC << EOF
-#include <poll.h>
-
-int main(void)
-{
-    struct pollfd pfd = { .fd = 0, .events = 0, .revents = 0 };
-    ppoll(&pfd, 1, 0, 0);
-    return 0;
-}
-EOF
-if compile_prog "" "" ; then
-  ppoll=yes
-fi
-
-# check for prctl(PR_SET_TIMERSLACK , ... ) support
-prctl_pr_set_timerslack=no
-cat > $TMPC << EOF
-#include <sys/prctl.h>
-
-int main(void)
-{
-    prctl(PR_SET_TIMERSLACK, 1, 0, 0, 0);
-    return 0;
-}
-EOF
-if compile_prog "" "" ; then
-  prctl_pr_set_timerslack=yes
-fi
-
 # Search for bswap_32 function
 byteswap_h=no
 cat > $TMPC << EOF
@@ -1110,46 +1013,6 @@ if test "$darwin" != "yes" -a "$mingw32" != "yes" -a "$solaris" != yes -a \
 fi
 
 ########################################
-# check if we have linux/magic.h
-
-linux_magic_h=no
-cat > $TMPC << EOF
-#include <linux/magic.h>
-int main(void) {
-  return 0;
-}
-EOF
-if compile_prog "" "" ; then
-    linux_magic_h=yes
-fi
-
-########################################
-# check whether we can disable warning option with a pragma (this is needed
-# to silence warnings in the headers of some versions of external libraries).
-# This test has to be compiled with -Werror as otherwise an unknown pragma is
-# only a warning.
-#
-# If we can't selectively disable warning in the code, disable -Werror so that
-# the build doesn't fail anyway.
-
-pragma_disable_unused_but_set=no
-cat > $TMPC << EOF
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-#pragma GCC diagnostic ignored "-Wstrict-prototypes"
-#pragma GCC diagnostic pop
-
-int main(void) {
-    return 0;
-}
-EOF
-if compile_prog "-Werror" "" ; then
-    pragma_diagnostic_available=yes
-else
-    werror=no
-fi
-
-########################################
 # check if we have valgrind/valgrind.h
 
 valgrind_h=no
@@ -1161,21 +1024,6 @@ int main(void) {
 EOF
 if compile_prog "" "" ; then
     valgrind_h=yes
-fi
-
-########################################
-# check if environ is declared
-
-has_environ=no
-cat > $TMPC << EOF
-#include <unistd.h>
-int main(void) {
-    environ = 0;
-    return 0;
-}
-EOF
-if compile_prog "" "" ; then
-    has_environ=yes
 fi
 
 ########################################
@@ -1224,17 +1072,6 @@ int main (void) {
 EOF
 if compile_prog "" "" ; then
     int128=yes
-fi
-
-##########################################
-# Disable zero malloc errors for official releases unless explicitly told to
-# enable/disable
-if test -z "$zero_malloc" ; then
-    if test "$z_version" = "50" ; then
-	zero_malloc="no"
-    else
-	zero_malloc="yes"
-    fi
 fi
 
 # Now we've finished running tests it's OK to add -Werror to the compiler flags
@@ -1319,14 +1156,6 @@ if test "$linux" = "yes" ; then
   echo "CONFIG_LINUX=y" >> $config_host_mak
 fi
 
-if test "$darwin" = "yes" ; then
-  echo "CONFIG_DARWIN=y" >> $config_host_mak
-fi
-
-if test "$aix" = "yes" ; then
-  echo "CONFIG_AIX=y" >> $config_host_mak
-fi
-
 if test "$solaris" = "yes" ; then
   echo "CONFIG_SOLARIS=y" >> $config_host_mak
   echo "CONFIG_SOLARIS_VERSION=$solarisrev" >> $config_host_mak
@@ -1334,37 +1163,16 @@ if test "$solaris" = "yes" ; then
     echo "CONFIG_NEEDS_LIBSUNMATH=y" >> $config_host_mak
   fi
 fi
-if test "$haiku" = "yes" ; then
-  echo "CONFIG_HAIKU=y" >> $config_host_mak
-fi
 if test "$static" = "yes" ; then
   echo "CONFIG_STATIC=y" >> $config_host_mak
 fi
-qemu_version=`head $source_path/VERSION`
-echo "VERSION=$qemu_version" >>$config_host_mak
-echo "PKGVERSION=$pkgversion" >>$config_host_mak
 echo "SRC_PATH=$source_path" >> $config_host_mak
 echo "TARGET_DIRS=$target_list" >> $config_host_mak
-if test "$pipe2" = "yes" ; then
-  echo "CONFIG_PIPE2=y" >> $config_host_mak
-fi
-if test "$eventfd" = "yes" ; then
-  echo "CONFIG_EVENTFD=y" >> $config_host_mak
-fi
-if test "$ppoll" = "yes" ; then
-  echo "CONFIG_PPOLL=y" >> $config_host_mak
-fi
-if test "$prctl_pr_set_timerslack" = "yes" ; then
-  echo "CONFIG_PRCTL_PR_SET_TIMERSLACK=y" >> $config_host_mak
-fi
 if test "$byteswap_h" = "yes" ; then
   echo "CONFIG_BYTESWAP_H=y" >> $config_host_mak
 fi
 if test "$bswap_h" = "yes" ; then
   echo "CONFIG_MACHINE_BSWAP_H=y" >> $config_host_mak
-fi
-if test "$signalfd" = "yes" ; then
-  echo "CONFIG_SIGNALFD=y" >> $config_host_mak
 fi
 if test "$tcg_interpreter" = "yes" ; then
   echo "CONFIG_TCG_INTERPRETER=y" >> $config_host_mak
@@ -1375,24 +1183,8 @@ if [ "$bsd" = "yes" ] ; then
   echo "CONFIG_BSD=y" >> $config_host_mak
 fi
 
-if test "$zero_malloc" = "yes" ; then
-  echo "CONFIG_ZERO_MALLOC=y" >> $config_host_mak
-fi
-
-if test "$linux_magic_h" = "yes" ; then
-  echo "CONFIG_LINUX_MAGIC_H=y" >> $config_host_mak
-fi
-
-if test "$pragma_diagnostic_available" = "yes" ; then
-  echo "CONFIG_PRAGMA_DIAGNOSTIC_AVAILABLE=y" >> $config_host_mak
-fi
-
 if test "$valgrind_h" = "yes" ; then
   echo "CONFIG_VALGRIND_H=y" >> $config_host_mak
-fi
-
-if test "$has_environ" = "yes" ; then
-  echo "CONFIG_HAS_ENVIRON=y" >> $config_host_mak
 fi
 
 if test "$cpuid_h" = "yes" ; then
@@ -1401,16 +1193,6 @@ fi
 
 if test "$int128" = "yes" ; then
   echo "CONFIG_INT128=y" >> $config_host_mak
-fi
-
-# Hold two types of flag:
-#   CONFIG_THREAD_SETNAME_BYTHREAD  - we've got a way of setting the name on
-#                                     a thread we have a handle to
-#   CONFIG_PTHREAD_SETNAME_NP       - A way of doing it on a particular
-#                                     platform
-if test "$pthread_setname_np" = "yes" ; then
-  echo "CONFIG_THREAD_SETNAME_BYTHREAD=y" >> $config_host_mak
-  echo "CONFIG_PTHREAD_SETNAME_NP=y" >> $config_host_mak
 fi
 
 if test "$tcg_interpreter" = "yes"; then
@@ -1469,8 +1251,7 @@ case "$target_name" in
   target_bigendian=yes
   ;;
 esac
-target_softmmu="no"
-target_user_only="no"
+target_softmmu="yes"
 case "$target" in
   ${target_name}-softmmu)
     target_softmmu="yes"
@@ -1614,14 +1395,6 @@ if test "$target_bigendian" = "yes" ; then
 fi
 if test "$target_softmmu" = "yes" ; then
   echo "CONFIG_SOFTMMU=y" >> $config_target_mak
-fi
-if test "$target_user_only" = "yes" ; then
-  echo "CONFIG_USER_ONLY=y" >> $config_target_mak
-  echo "CONFIG_QEMU_INTERP_PREFIX=\"$interp_prefix1\"" >> $config_target_mak
-fi
-list=""
-if test "$target_user_only" = "yes" -a "$bflt" = "yes"; then
-  echo "TARGET_HAS_BFLT=y" >> $config_target_mak
 fi
 
 # generate QEMU_CFLAGS/LDFLAGS for targets
