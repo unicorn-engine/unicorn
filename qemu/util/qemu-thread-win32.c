@@ -97,7 +97,9 @@ void *qemu_thread_join(QemuThread *thread)
     ret = data->ret;
     assert(data->mode != QEMU_THREAD_DETACHED);
     DeleteCriticalSection(&data->cs);
+    data->uc->qemu_thread_data = NULL;
     g_free(data);
+    data = NULL;
     return ret;
 }
 
