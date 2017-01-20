@@ -55,21 +55,6 @@ typedef struct QEMUClock {
 
 static QEMUClock qemu_clocks[QEMU_CLOCK_MAX];
 
-/* A QEMUTimerList is a list of timers attached to a clock. More
- * than one QEMUTimerList can be attached to each clock, for instance
- * used by different AioContexts / threads. Each clock also has
- * a list of the QEMUTimerLists associated with it, in order that
- * reenabling the clock can call all the notifiers.
- */
-
-struct QEMUTimerList {
-    QEMUClock *clock;
-    QEMUTimer *active_timers;
-    QLIST_ENTRY(QEMUTimerList) list;
-    QEMUTimerListNotifyCB *notify_cb;
-    void *notify_opaque;
-};
-
 /**
  * qemu_clock_ptr:
  * @type: type of clock
@@ -81,117 +66,6 @@ struct QEMUTimerList {
 static inline QEMUClock *qemu_clock_ptr(QEMUClockType type)
 {
     return &qemu_clocks[type];
-}
-
-static bool timer_expired_ns(QEMUTimer *timer_head, int64_t current_time)
-{
-    return timer_head && (timer_head->expire_time <= current_time);
-}
-
-bool timerlist_has_timers(QEMUTimerList *timer_list)
-{
-    return !!timer_list->active_timers;
-}
-
-void timerlist_notify(QEMUTimerList *timer_list)
-{
-    if (timer_list->notify_cb) {
-        timer_list->notify_cb(timer_list->notify_opaque);
-    }
-}
-
-void timer_init(QEMUTimer *ts,
-                QEMUTimerList *timer_list, int scale,
-                QEMUTimerCB *cb, void *opaque)
-{
-    ts->timer_list = timer_list;
-    ts->cb = cb;
-    ts->opaque = opaque;
-    ts->scale = scale;
-    ts->expire_time = -1;
-}
-
-static void timer_del_locked(QEMUTimerList *timer_list, QEMUTimer *ts)
-{
-    QEMUTimer **pt, *t;
-
-    ts->expire_time = -1;
-    pt = &timer_list->active_timers;
-    for(;;) {
-        t = *pt;
-        if (!t)
-            break;
-        if (t == ts) {
-            *pt = t->next;
-            break;
-        }
-        pt = &t->next;
-    }
-}
-
-static bool timer_mod_ns_locked(QEMUTimerList *timer_list,
-                                QEMUTimer *ts, int64_t expire_time)
-{
-    QEMUTimer **pt, *t;
-
-    /* add the timer in the sorted list */
-    pt = &timer_list->active_timers;
-    for (;;) {
-        t = *pt;
-        if (!timer_expired_ns(t, expire_time)) {
-            break;
-        }
-        pt = &t->next;
-    }
-    ts->expire_time = MAX(expire_time, 0);
-    ts->next = *pt;
-    *pt = ts;
-
-    return pt == &timer_list->active_timers;
-}
-
-static void timerlist_rearm(QEMUTimerList *timer_list)
-{
-    /* Interrupt execution to force deadline recalculation.  */
-    timerlist_notify(timer_list);
-}
-
-/* stop a timer, but do not dealloc it */
-void timer_del(QEMUTimer *ts)
-{
-    QEMUTimerList *timer_list = ts->timer_list;
-
-    timer_del_locked(timer_list, ts);
-}
-
-/* modify the current timer so that it will be fired when current_time
-   >= expire_time. The corresponding callback will be called. */
-void timer_mod_ns(QEMUTimer *ts, int64_t expire_time)
-{
-    QEMUTimerList *timer_list = ts->timer_list;
-    bool rearm;
-
-    timer_del_locked(timer_list, ts);
-    rearm = timer_mod_ns_locked(timer_list, ts, expire_time);
-
-    if (rearm) {
-        timerlist_rearm(timer_list);
-    }
-}
-
-void timer_mod(QEMUTimer *ts, int64_t expire_time)
-{
-    timer_mod_ns(ts, expire_time * ts->scale);
-}
-
-bool timer_pending(QEMUTimer *ts)
-{
-    return ts->expire_time >= 0;
-}
-
-uint64_t timer_expire_time_ns(QEMUTimer *ts)
-{
-    return timer_pending(ts) ? ts->expire_time : -1;
 }
 
 /* return the host CPU cycle counter and handle stop/restart */
