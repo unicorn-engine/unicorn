@@ -312,7 +312,7 @@ uc_err uc_close(uc_engine *uc)
 
     // Thread relateds.
     if (uc->qemu_thread_data)
-        free(uc->qemu_thread_data);
+        g_free(uc->qemu_thread_data);
 
     // Other auxilaries.
     free(uc->l1_map);
