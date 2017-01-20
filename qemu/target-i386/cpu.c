@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "platform.h"
+#include "unicorn/platform.h"
 
 #include "cpu.h"
 #include "sysemu/cpus.h"

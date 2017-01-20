@@ -14,7 +14,7 @@
 
 #include "qemu/compiler.h"
 #include "qapi-types.h"
-#include "platform.h"
+#include "unicorn/platform.h"
 
 /**
  * A class representing internal errors within QEMU.  An error has a ErrorClass

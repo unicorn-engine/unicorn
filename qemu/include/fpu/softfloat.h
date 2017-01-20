@@ -42,7 +42,7 @@ these four paragraphs for those parts of this code that are retained.
 #include <sunmath.h>
 #endif
 
-#include "platform.h"
+#include "unicorn/platform.h"
 #include "config-host.h"
 #include "qemu/osdep.h"
 

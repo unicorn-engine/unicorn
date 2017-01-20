@@ -2,7 +2,7 @@
 #define INT128_H
 
 //#include <assert.h>
-#include "platform.h"
+#include "unicorn/platform.h"
 
 typedef struct Int128 Int128;
 

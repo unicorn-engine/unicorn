@@ -1,4 +1,4 @@
-#include "platform.h"
+#include "unicorn/platform.h"
 #include <stdio.h>
 #include <string.h>
 #include <unicorn/unicorn.h>

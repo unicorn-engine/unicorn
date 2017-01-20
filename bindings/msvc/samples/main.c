@@ -22,7 +22,7 @@
 
 // posix specific
 #else // _MSC_VER
-#include "platform.h"
+#include "unicorn/platform.h"
 #include <unicorn/unicorn.h>
 #endif // _MSC_VER
 

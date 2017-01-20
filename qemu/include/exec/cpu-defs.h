@@ -24,7 +24,7 @@
 #endif
 
 #include "config.h"
-#include "platform.h"
+#include "unicorn/platform.h"
 #include "qemu/osdep.h"
 #include "qemu/queue.h"
 #ifndef CONFIG_USER_ONLY

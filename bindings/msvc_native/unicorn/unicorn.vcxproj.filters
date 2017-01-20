@@ -493,8 +493,6 @@
     <ClInclude Include="..\..\..\include\unicorn\sparc.h" />
     <ClInclude Include="..\..\..\include\unicorn\unicorn.h" />
     <ClInclude Include="..\..\..\include\unicorn\x86.h" />
-    <ClInclude Include="..\..\..\include\platform.h">
-      <Filter>priv</Filter>
-    </ClInclude>
+    <ClInclude Include="..\..\..\include\unicorn\platform.h" />
   </ItemGroup>
 </Project>

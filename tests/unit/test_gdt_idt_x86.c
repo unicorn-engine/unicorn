@@ -1,9 +1,9 @@
 #include <unicorn/unicorn.h>
-#include "platform.h"
+#include "unicorn/platform.h"
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include "platform.h"
+#include "unicorn/platform.h"
 
 /**
  * Assert that err matches expect

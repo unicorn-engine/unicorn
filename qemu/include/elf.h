@@ -1,7 +1,7 @@
 #ifndef _QEMU_ELF_H
 #define _QEMU_ELF_H
 
-#include "platform.h"
+#include "unicorn/platform.h"
 
 /* 32-bit ELF base types. */
 typedef uint32_t Elf32_Addr;

@@ -1,5 +1,5 @@
-#include "platform.h"
-#include "platform.h"
+#include "unicorn/platform.h"
+#include "unicorn/platform.h"
 #include <unicorn/unicorn.h>
 
 #include "unicorn_test.h"

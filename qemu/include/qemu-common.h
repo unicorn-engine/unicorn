@@ -27,7 +27,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include "platform.h"
+#include "unicorn/platform.h"
 #include <string.h>
 #include <limits.h>
 #include <time.h>

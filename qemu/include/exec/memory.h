@@ -19,7 +19,7 @@
 #define DIRTY_MEMORY_CODE      0
 #define DIRTY_MEMORY_NUM       1        /* num of dirty bits */
 
-#include "platform.h"
+#include "unicorn/platform.h"
 #include "qemu-common.h"
 #include "exec/cpu-common.h"
 #ifndef CONFIG_USER_ONLY

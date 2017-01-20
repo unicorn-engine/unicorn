@@ -13,7 +13,7 @@
 #ifndef QINT_H
 #define QINT_H
 
-#include "platform.h"
+#include "unicorn/platform.h"
 #include "qapi/qmp/qobject.h"
 
 typedef struct QInt {

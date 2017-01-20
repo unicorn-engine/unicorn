@@ -8,7 +8,7 @@
 extern "C" {
 #endif
 
-#include "platform.h"
+#include "unicorn/platform.h"
 
 // Memory-Management Register for instructions IDTR, GDTR, LDTR, TR.
 // Borrow from SegmentCache in qemu/target-i386/cpu.h

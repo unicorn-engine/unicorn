@@ -12,7 +12,7 @@
 #ifndef BITOPS_H
 #define BITOPS_H
 
-#include "platform.h"
+#include "unicorn/platform.h"
 #include <assert.h>
 
 #include "host-utils.h"

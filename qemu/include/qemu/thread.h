@@ -1,7 +1,7 @@
 #ifndef __QEMU_THREAD_H
 #define __QEMU_THREAD_H 1
 
-#include "platform.h"
+#include "unicorn/platform.h"
 
 typedef struct QemuThread QemuThread;
 

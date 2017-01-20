@@ -63,13 +63,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\list.h" />
-    <ClInclude Include="..\..\..\include\platform.h" />
     <ClInclude Include="..\..\..\include\qemu.h" />
     <ClInclude Include="..\..\..\include\uc_priv.h" />
     <ClInclude Include="..\..\..\include\unicorn\arm.h" />
     <ClInclude Include="..\..\..\include\unicorn\arm64.h" />
     <ClInclude Include="..\..\..\include\unicorn\m68k.h" />
     <ClInclude Include="..\..\..\include\unicorn\mips.h" />
+    <ClInclude Include="..\..\..\include\unicorn\platform.h" />
     <ClInclude Include="..\..\..\include\unicorn\sparc.h" />
     <ClInclude Include="..\..\..\include\unicorn\unicorn.h" />
     <ClInclude Include="..\..\..\include\unicorn\x86.h" />

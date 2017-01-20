@@ -4,7 +4,7 @@
 #include "config-host.h"
 #include <stdarg.h>
 #include <stddef.h>
-#include "platform.h"
+#include "unicorn/platform.h"
 #include <sys/types.h>
 #ifdef __OpenBSD__
 #include <sys/signal.h>
@@ -17,7 +17,7 @@
 #define WEXITSTATUS(x) (x)
 #endif
 
-#include "platform.h"
+#include "unicorn/platform.h"
 
 #if defined(CONFIG_SOLARIS) && CONFIG_SOLARIS_VERSION < 10
 /* [u]int_fast*_t not in <sys/int_types.h> */

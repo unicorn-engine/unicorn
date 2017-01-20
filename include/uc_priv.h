@@ -4,7 +4,7 @@
 #ifndef UC_PRIV_H
 #define UC_PRIV_H
 
-#include "platform.h"
+#include "unicorn/platform.h"
 #include <stdio.h>
 
 #include "qemu.h"

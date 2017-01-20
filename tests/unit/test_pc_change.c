@@ -1,6 +1,6 @@
 // Test PC change during the callback. by Nguyen Anh Quynh, 2016
 #include "unicorn_test.h"
-#include "platform.h"
+#include "unicorn/platform.h"
 
 #define OK(x)   uc_assert_success(x)
 

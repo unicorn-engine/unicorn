@@ -24,7 +24,7 @@
  */
 
 #include <stdlib.h>
-#include "platform.h"
+#include "unicorn/platform.h"
 #include "qemu/host-utils.h"
 
 #ifndef CONFIG_INT128
