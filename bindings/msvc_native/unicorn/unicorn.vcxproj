@@ -24,8 +24,6 @@
     <ClCompile Include="..\..\..\qemu\glib_compat.c" />
     <ClCompile Include="..\..\..\qemu\hw\core\machine.c" />
     <ClCompile Include="..\..\..\qemu\hw\core\qdev.c" />
-    <ClCompile Include="..\..\..\qemu\qapi-types.c" />
-    <ClCompile Include="..\..\..\qemu\qapi-visit.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qapi-dealloc-visitor.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qapi-visit-core.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qmp-input-visitor.c" />
@@ -60,6 +58,8 @@
     <ClCompile Include="..\..\..\qemu\util\qemu-timer-common.c" />
     <ClCompile Include="..\..\..\qemu\vl.c" />
     <ClCompile Include="..\..\..\uc.c" />
+    <ClCompile Include="qapi-types.c" />
+    <ClCompile Include="qapi-visit.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\list.h" />
@@ -164,9 +164,9 @@
     <ClInclude Include="..\..\..\qemu\include\sysemu\memory_mapping.h" />
     <ClInclude Include="..\..\..\qemu\include\sysemu\os-win32.h" />
     <ClInclude Include="..\..\..\qemu\include\sysemu\sysemu.h" />
-    <ClInclude Include="..\..\..\qemu\qapi-types.h" />
-    <ClInclude Include="..\..\..\qemu\qapi-visit.h" />
     <ClInclude Include="..\..\..\qemu\vl.h" />
+    <ClInclude Include="qapi-types.h" />
+    <ClInclude Include="qapi-visit.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B6EFD6D7-C2D4-4FBB-B363-2E08CE09CC96}</ProjectGuid>

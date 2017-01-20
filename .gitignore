@@ -24,8 +24,8 @@ sparc-softmmu/
 sparc64-softmmu/
 m68k-softmmu/
 
-qapi-types.h
-qapi-visit.h
+qemu/qapi-types.h
+qemu/qapi-visit.h
 x86_64-softmmu/
 tags
 qemu/config-host.ld

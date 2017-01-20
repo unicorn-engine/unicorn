@@ -81,12 +81,6 @@
     <ClCompile Include="..\..\..\qemu\glib_compat.c">
       <Filter>qemu</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\qapi-types.c">
-      <Filter>qemu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\qapi-visit.c">
-      <Filter>qemu</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\qemu\qemu-log.c">
       <Filter>qemu</Filter>
     </ClCompile>
@@ -193,6 +187,12 @@
       <Filter>qemu\util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\uc.c" />
+    <ClCompile Include="qapi-types.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="qapi-visit.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\list.h">
@@ -203,12 +203,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\include\uc_priv.h">
       <Filter>priv</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\qapi-types.h">
-      <Filter>qemu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\qapi-visit.h">
-      <Filter>qemu</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\vl.h">
       <Filter>qemu</Filter>
@@ -494,5 +488,11 @@
     <ClInclude Include="..\..\..\include\unicorn\unicorn.h" />
     <ClInclude Include="..\..\..\include\unicorn\x86.h" />
     <ClInclude Include="..\..\..\include\unicorn\platform.h" />
+    <ClInclude Include="qapi-types.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="qapi-visit.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
