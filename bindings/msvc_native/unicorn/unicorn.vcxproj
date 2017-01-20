@@ -5,39 +5,25 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\list.c" />
     <ClCompile Include="..\..\..\qemu\accel.c" />
-    <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
-    <ClCompile Include="..\..\..\qemu\cpus.c" />
-    <ClCompile Include="..\..\..\qemu\cputlb.c" />
-    <ClCompile Include="..\..\..\qemu\exec.c" />
-    <ClCompile Include="..\..\..\qemu\fpu\softfloat.c" />
     <ClCompile Include="..\..\..\qemu\glib_compat.c" />
-    <ClCompile Include="..\..\..\qemu\hw\arm\tosa.c" />
-    <ClCompile Include="..\..\..\qemu\hw\arm\virt.c" />
     <ClCompile Include="..\..\..\qemu\hw\core\machine.c" />
     <ClCompile Include="..\..\..\qemu\hw\core\qdev.c" />
-    <ClCompile Include="..\..\..\qemu\hw\i386\pc.c" />
-    <ClCompile Include="..\..\..\qemu\hw\i386\pc_piix.c" />
-    <ClCompile Include="..\..\..\qemu\hw\intc\apic.c" />
-    <ClCompile Include="..\..\..\qemu\hw\intc\apic_common.c" />
-    <ClCompile Include="..\..\..\qemu\hw\m68k\dummy_m68k.c" />
-    <ClCompile Include="..\..\..\qemu\hw\mips\addr.c" />
-    <ClCompile Include="..\..\..\qemu\hw\mips\cputimer.c" />
-    <ClCompile Include="..\..\..\qemu\hw\mips\mips_int.c" />
-    <ClCompile Include="..\..\..\qemu\hw\mips\mips_r4k.c" />
-    <ClCompile Include="..\..\..\qemu\hw\sparc64\sun4u.c" />
-    <ClCompile Include="..\..\..\qemu\hw\sparc\leon3.c" />
-    <ClCompile Include="..\..\..\qemu\hw\sparc\sun4m.c" />
-    <ClCompile Include="..\..\..\qemu\ioport.c" />
-    <ClCompile Include="..\..\..\qemu\memory.c" />
-    <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
     <ClCompile Include="..\..\..\qemu\qapi-types.c" />
     <ClCompile Include="..\..\..\qemu\qapi-visit.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qapi-dealloc-visitor.c" />
@@ -58,77 +44,7 @@
     <ClCompile Include="..\..\..\qemu\qom\cpu.c" />
     <ClCompile Include="..\..\..\qemu\qom\object.c" />
     <ClCompile Include="..\..\..\qemu\qom\qom-qobject.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\arm-semi.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\cpu.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\cpu64.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\crypto_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\helper-a64.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\iwmmxt_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\kvm-stub.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\neon_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\op_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\psci.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\translate-a64.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\translate.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\unicorn_aarch64.c" />
-    <ClCompile Include="..\..\..\qemu\target-arm\unicorn_arm.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\arch_memory_mapping.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\cc_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\cpu.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\excp_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\fpu_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\int_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\mem_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\misc_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\seg_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\smm_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\svm_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\translate.c" />
-    <ClCompile Include="..\..\..\qemu\target-i386\unicorn.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\cpu.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\m68k-semi.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\op_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\translate.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\unicorn.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\cpu.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\dsp_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\lmi_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\msa_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\op_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\translate.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\translate_init.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\unicorn.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\cc_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\cpu.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\fop_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\gdbstub.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\int32_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\int64_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\ldst_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\machine.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\mmu_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\translate.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\unicorn.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\unicorn64.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\vis_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\win_helper.c" />
     <ClCompile Include="..\..\..\qemu\tcg-runtime.c" />
-    <ClCompile Include="..\..\..\qemu\tcg\aarch64\tcg-target.c" />
-    <ClCompile Include="..\..\..\qemu\tcg\arm\tcg-target.c" />
-    <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c" />
-    <ClCompile Include="..\..\..\qemu\tcg\ia64\tcg-target.c" />
-    <ClCompile Include="..\..\..\qemu\tcg\mips\tcg-target.c" />
-    <ClCompile Include="..\..\..\qemu\tcg\optimize.c" />
-    <ClCompile Include="..\..\..\qemu\tcg\ppc\tcg-target.c" />
-    <ClCompile Include="..\..\..\qemu\tcg\s390\tcg-target.c" />
-    <ClCompile Include="..\..\..\qemu\tcg\sparc\tcg-target.c" />
-    <ClCompile Include="..\..\..\qemu\tcg\tcg.c" />
-    <ClCompile Include="..\..\..\qemu\translate-all.c" />
     <ClCompile Include="..\..\..\qemu\util\aes.c" />
     <ClCompile Include="..\..\..\qemu\util\bitmap.c" />
     <ClCompile Include="..\..\..\qemu\util\bitops.c" />
@@ -157,13 +73,6 @@
     <ClInclude Include="..\..\..\include\unicorn\sparc.h" />
     <ClInclude Include="..\..\..\include\unicorn\unicorn.h" />
     <ClInclude Include="..\..\..\include\unicorn\x86.h" />
-    <ClInclude Include="..\..\..\qemu\aarch64-softmmu\config-target.h" />
-    <ClInclude Include="..\..\..\qemu\aarch64.h" />
-    <ClInclude Include="..\..\..\qemu\arm-softmmu\config-target.h" />
-    <ClInclude Include="..\..\..\qemu\arm.h" />
-    <ClInclude Include="..\..\..\qemu\config-host.h" />
-    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h" />
-    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h" />
     <ClInclude Include="..\..\..\qemu\include\config.h" />
     <ClInclude Include="..\..\..\qemu\include\elf.h" />
     <ClInclude Include="..\..\..\qemu\include\exec\address-spaces.h" />
@@ -255,79 +164,9 @@
     <ClInclude Include="..\..\..\qemu\include\sysemu\memory_mapping.h" />
     <ClInclude Include="..\..\..\qemu\include\sysemu\os-win32.h" />
     <ClInclude Include="..\..\..\qemu\include\sysemu\sysemu.h" />
-    <ClInclude Include="..\..\..\qemu\m68k-softmmu\config-target.h" />
-    <ClInclude Include="..\..\..\qemu\m68k.h" />
-    <ClInclude Include="..\..\..\qemu\mips-softmmu\config-target.h" />
-    <ClInclude Include="..\..\..\qemu\mips.h" />
-    <ClInclude Include="..\..\..\qemu\mips64-softmmu\config-target.h" />
-    <ClInclude Include="..\..\..\qemu\mips64.h" />
-    <ClInclude Include="..\..\..\qemu\mips64el-softmmu\config-target.h" />
-    <ClInclude Include="..\..\..\qemu\mips64el.h" />
-    <ClInclude Include="..\..\..\qemu\mipsel-softmmu\config-target.h" />
-    <ClInclude Include="..\..\..\qemu\mipsel.h" />
-    <ClInclude Include="..\..\..\qemu\powerpc.h" />
     <ClInclude Include="..\..\..\qemu\qapi-types.h" />
     <ClInclude Include="..\..\..\qemu\qapi-visit.h" />
-    <ClInclude Include="..\..\..\qemu\softmmu_template.h" />
-    <ClInclude Include="..\..\..\qemu\sparc-softmmu\config-target.h" />
-    <ClInclude Include="..\..\..\qemu\sparc.h" />
-    <ClInclude Include="..\..\..\qemu\sparc64-softmmu\config-target.h" />
-    <ClInclude Include="..\..\..\qemu\sparc64.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\arm_ldst.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\cpu-qom.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\cpu.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\helper-a64.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\helper.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\internals.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\kvm-consts.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\kvm_arm.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\op_addsub.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\translate.h" />
-    <ClInclude Include="..\..\..\qemu\target-arm\unicorn.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\cc_helper_template.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\cpu-qom.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\cpu.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\helper.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\ops_sse.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\ops_sse_header.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\shift_helper_template.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\svm.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\topology.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\unicorn.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\cpu-qom.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\cpu.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\helper.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\m68k-qreg.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\unicorn.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\cpu-qom.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\cpu.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\helper.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\kvm_mips.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\mips-defs.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\unicorn.h" />
-    <ClInclude Include="..\..\..\qemu\target-sparc\cpu-qom.h" />
-    <ClInclude Include="..\..\..\qemu\target-sparc\cpu.h" />
-    <ClInclude Include="..\..\..\qemu\target-sparc\helper.h" />
-    <ClInclude Include="..\..\..\qemu\target-sparc\unicorn.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\aarch64\tcg-target.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\arm\tcg-target.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\ia64\tcg-target.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\mips\tcg-target.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\ppc\tcg-target.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\s390\tcg-target.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\sparc\tcg-target.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
-    <ClInclude Include="..\..\..\qemu\translate-all.h" />
-    <ClInclude Include="..\..\..\qemu\unicorn_common.h" />
     <ClInclude Include="..\..\..\qemu\vl.h" />
-    <ClInclude Include="..\..\..\qemu\x86_64-softmmu\config-target.h" />
-    <ClInclude Include="..\..\..\qemu\x86_64.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B6EFD6D7-C2D4-4FBB-B363-2E08CE09CC96}</ProjectGuid>
@@ -341,7 +180,20 @@
     <PlatformToolset>v110_xp</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v110_xp</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v110_xp</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v110_xp</PlatformToolset>
@@ -354,7 +206,13 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -365,9 +223,28 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;UNICORN_HAS_X86;UNICORN_HAS_ARM;UNICORN_HAS_M68K;UNICORN_HAS_ARM64;UNICORN_HAS_MIPS;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_X86</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>false</ExceptionHandling>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_X86</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -382,9 +259,32 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;;inline=__inline;__func__=__FUNCTION__;UNICORN_HAS_X86;UNICORN_HAS_ARM;UNICORN_HAS_M68K;UNICORN_HAS_ARM64;UNICORN_HAS_MIPS;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_X86</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>false</ExceptionHandling>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_X86</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
+      <ExceptionHandling>false</ExceptionHandling>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

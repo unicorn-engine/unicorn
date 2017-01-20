@@ -400,7 +400,7 @@ static void flatview_destroy(FlatView *view)
 
 static void flatview_ref(FlatView *view)
 {
-    atomic_inc(&view->ref);
+	atomic_inc(&view->ref);
 }
 
 static void flatview_unref(FlatView *view)

@@ -263,3 +263,11 @@ config-host.h is bindings/msvc_native/config-host.h
 :: Other things
 
 * GNU seems to rely on __i386__ or __x86_64__ defined if the host is 32bit or 64bit respectively.
+  So when building 32bit libs in msvc we define __i386__.
+  And when building 64bit libs in msvc we define __x86_64__.
+
+* There is a tcg-target.c for each target that is included into tcg.c.
+  It is NOT built separately as part of the *.c files built for the project.
+
+
+

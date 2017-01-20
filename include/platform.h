@@ -195,11 +195,16 @@ static int gettimeofday(struct timeval* t, void* timezone)
 // TODO: add unistd stuff here ...
 
 static int usleep(uint32_t t) {
+	int ret, err_code;
 	long value = t; // time in microseconds
 	struct timeval tv;
+	FD_SET dummy_set;
+	FD_ZERO(&dummy_set);
 	tv.tv_sec = value / 1000000;
 	tv.tv_usec = value % 1000000;
-	return select(0, NULL, NULL, NULL, &tv)==0 ? 0 : -1;
+	ret = select(0, &dummy_set, NULL, NULL, &tv);
+	err_code =  WSAGetLastError();
+	return ret==0 ? 0 : -1;
 }
 /*
 #include <chrono>

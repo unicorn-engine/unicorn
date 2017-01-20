@@ -558,6 +558,9 @@ static inline int64_t cpu_get_real_ticks(void)
 
 static inline int64_t cpu_get_real_ticks(void)
 {
+#ifdef _MSC_VER
+	return __rdtsc();
+#else
     uint32_t low,high;
     int64_t val;
     asm volatile("rdtsc" : "=a" (low), "=d" (high));
@@ -565,6 +568,7 @@ static inline int64_t cpu_get_real_ticks(void)
     val <<= 32;
     val |= low;
     return val;
+#endif
 }
 
 #elif defined(__hppa__)

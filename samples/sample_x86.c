@@ -3,6 +3,14 @@
 
 /* Sample code to demonstrate how to emulate X86 code */
 
+#include "platform.h"
+#include <unicorn/unicorn.h>
+
+#pragma comment(lib, "ws2_32.lib")
+#pragma comment(lib, "unicorn.lib")
+#pragma comment(lib, "x86_64-softmmu.lib")
+
+/*
 // windows specific
 #ifdef _MSC_VER
 #include <io.h>
@@ -25,6 +33,7 @@
 #include "platform.h"
 #include <unicorn/unicorn.h>
 #endif // _MSC_VER
+*/
 
 // common includes
 #include <string.h>
@@ -1005,7 +1014,7 @@ int main(int argc, char **argv, char **envp)
             test_x86_16();
         }
         else if (!strcmp(argv[1], "-32")) {
-            test_i386();
+			test_i386();
             test_i386_map_ptr();
             test_i386_inout();
             test_i386_context_save();

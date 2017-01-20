@@ -977,7 +977,16 @@ typedef struct CPUX86State {
     uint8_t nmi_injected;
     uint8_t nmi_pending;
 
-    CPU_COMMON
+#if NB_MMU_MODES == 0
+#error NB_MMU_MODES is zero
+#endif
+#if CPU_TLB_SIZE == 0
+#error CPU_TLB_SIZE is zero
+#endif
+#if CPU_VTLB_SIZE == 0
+#error CPU_VTLB_SIZE is zero
+#endif
+	CPU_COMMON
 
     /* Fields from here on are preserved across CPU reset. */
 

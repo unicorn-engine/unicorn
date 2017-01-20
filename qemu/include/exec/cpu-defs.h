@@ -94,10 +94,14 @@ typedef struct CPUTLBEntry {
        use the corresponding iotlb value.  */
     uintptr_t addend;
     /* padding to get a power of two size */
-    uint8_t dummy[(1 << CPU_TLB_ENTRY_BITS) -
+#if defined(_MSC_VER) && defined(_WIN64)
+	// dummy would be size 0 which isnt supported by msvc, so we remove it
+#else
+	uint8_t dummy[(1 << CPU_TLB_ENTRY_BITS) -
                   (sizeof(target_ulong) * 3 +
                    (((-(int)sizeof(target_ulong)) * 3) & (sizeof(uintptr_t) - 1)) +
                    sizeof(uintptr_t))];
+#endif
 } CPUTLBEntry;
 
 QEMU_BUILD_BUG_ON(sizeof(CPUTLBEntry) != (1 << CPU_TLB_ENTRY_BITS));
