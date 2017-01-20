@@ -2597,8 +2597,6 @@
 #define softmmu_unlock_user softmmu_unlock_user_sparc
 #define sort_constraints sort_constraints_sparc
 #define sp_el0_access sp_el0_access_sparc
-#define spin_lock spin_lock_sparc
-#define spin_unlock spin_unlock_sparc
 #define spsel_read spsel_read_sparc
 #define spsel_write spsel_write_sparc
 #define start_list start_list_sparc

@@ -27,12 +27,10 @@
 
 void helper_lock(CPUX86State *env)
 {
-    spin_lock(&x86_env_get_cpu(env)->parent_obj.uc->x86_global_cpu_lock);
 }
 
 void helper_unlock(CPUX86State *env)
 {
-    spin_unlock(&x86_env_get_cpu(env)->parent_obj.uc->x86_global_cpu_lock);
 }
 
 void helper_cmpxchg8b(CPUX86State *env, target_ulong a0)

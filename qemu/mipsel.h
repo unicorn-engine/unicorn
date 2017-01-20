@@ -2597,8 +2597,6 @@
 #define softmmu_unlock_user softmmu_unlock_user_mipsel
 #define sort_constraints sort_constraints_mipsel
 #define sp_el0_access sp_el0_access_mipsel
-#define spin_lock spin_lock_mipsel
-#define spin_unlock spin_unlock_mipsel
 #define spsel_read spsel_read_mipsel
 #define spsel_write spsel_write_mipsel
 #define start_list start_list_mipsel

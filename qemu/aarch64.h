@@ -2597,8 +2597,6 @@
 #define softmmu_unlock_user softmmu_unlock_user_aarch64
 #define sort_constraints sort_constraints_aarch64
 #define sp_el0_access sp_el0_access_aarch64
-#define spin_lock spin_lock_aarch64
-#define spin_unlock spin_unlock_aarch64
 #define spsel_read spsel_read_aarch64
 #define spsel_write spsel_write_aarch64
 #define start_list start_list_aarch64

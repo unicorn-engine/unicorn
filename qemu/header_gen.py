@@ -2603,8 +2603,6 @@ symbols = (
     'softmmu_unlock_user',
     'sort_constraints',
     'sp_el0_access',
-    'spin_lock',
-    'spin_unlock',
     'spsel_read',
     'spsel_write',
     'start_list',

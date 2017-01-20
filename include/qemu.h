@@ -14,7 +14,6 @@ struct uc_struct;
 
 #include "qemu/thread.h"
 #include "include/qom/cpu.h"
-#include "exec/spinlock.h"
 
 #include "vl.h"
 

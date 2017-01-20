@@ -2597,8 +2597,6 @@
 #define softmmu_unlock_user softmmu_unlock_user_m68k
 #define sort_constraints sort_constraints_m68k
 #define sp_el0_access sp_el0_access_m68k
-#define spin_lock spin_lock_m68k
-#define spin_unlock spin_unlock_m68k
 #define spsel_read spsel_read_m68k
 #define spsel_write spsel_write_m68k
 #define start_list start_list_m68k

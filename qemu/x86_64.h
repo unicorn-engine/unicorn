@@ -2597,8 +2597,6 @@
 #define softmmu_unlock_user softmmu_unlock_user_x86_64
 #define sort_constraints sort_constraints_x86_64
 #define sp_el0_access sp_el0_access_x86_64
-#define spin_lock spin_lock_x86_64
-#define spin_unlock spin_unlock_x86_64
 #define spsel_read spsel_read_x86_64
 #define spsel_write spsel_write_x86_64
 #define start_list start_list_x86_64

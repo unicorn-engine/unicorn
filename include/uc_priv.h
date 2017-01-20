@@ -177,7 +177,6 @@ struct uc_struct {
     RAMList ram_list;   // qemu/exec.c
     BounceBuffer bounce;    // qemu/cpu-exec.c
     volatile sig_atomic_t exit_request; // qemu/cpu-exec.c
-    spinlock_t x86_global_cpu_lock; // for X86 arch only
     bool global_dirty_log;  // qemu/memory.c
     /* This is a multi-level map on the virtual address space.
        The bottom level has pointers to PageDesc.  */

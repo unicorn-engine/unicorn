@@ -2597,8 +2597,6 @@
 #define softmmu_unlock_user softmmu_unlock_user_powerpc
 #define sort_constraints sort_constraints_powerpc
 #define sp_el0_access sp_el0_access_powerpc
-#define spin_lock spin_lock_powerpc
-#define spin_unlock spin_unlock_powerpc
 #define spsel_read spsel_read_powerpc
 #define spsel_write spsel_write_powerpc
 #define start_list start_list_powerpc
