@@ -1,9 +1,16 @@
 
 
+*** TODO: this file needs work ***
+
+
+
+
 Unicorn-Engine MSVC Native Port Notes
 
 These notes are to help myself and others with the upkeep of the msvc native port
 of unicorn-engine.
+
+
 
 
 :: CPU specific libraries
@@ -46,34 +53,22 @@ there is a "config-target.h-timestamp" inside each ???-softmmu dir.
 
 
 
-* are the following files required? it looks like they might be used by target specific stuff:
-	gen_all_header.sh	(not called)
-	header_gen.py		(can be called by Makefile in unicorn root, but is it ever called)
-	qemu/aarch64.h
-	qemu/arm.h
-	qemu/m68k.h
-	qemu/mips.h
-	qemu/mipsel.h
-	qemu/mips64.h
-	qemu/mips64el.h
-	qemu/sparc.h
-	qemu/sparc64.h
-	qemu/x86_64.h
+:: Other things
+
+* GNU seems to rely on __i386__ or __x86_64__ defined if the host is 32bit or 64bit respectively.
+  So when building 32bit libs in msvc we define __i386__.
+  And when building 64bit libs in msvc we define __x86_64__.
+
+* There is a tcg-target.c for each target that is included into tcg.c.
+  It is NOT built separately as part of the *.c files built for the project.
 
 
 
 
-might have to make intermediate libs, one or each target
+:: Info from makefiles
 
-* make intermediate libs for every ???-softmmu.
-
-* each intermediate lib has makefiles:
-	qemu/x86_64-softmmu/Makefile
-	qemu/config-host.mak
-	qemu/x86_64-softmmu/config-target.mak
-	qemu/x86_64-softmmu/config-devices.mak
-	qemu/Makefile.objs
-
+This info is compiled here together to help with deciding on the build settings to use.
+It may or may not be of use to anyone else once this builds ok :)
 
 QEMU_INCLUDES=-I$(SRC_PATH)/tcg -I$(SRC_PATH)/tcg/$(ARCH) -I. -I$(SRC_PATH) -I$(SRC_PATH)/include
 QEMU_CFLAGS=-m32 -D__USE_MINGW_ANSI_STDIO=1 -DWIN32_LEAN_AND_MEAN -DWINVER=0x501 -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wstrict-prototypes -Wredundant-decls -Wall -Wundef -Wwrite-strings -Wmissing-prototypes -fno-strict-aliasing -fno-common -DUNICORN_HAS_X86 -DUNICORN_HAS_ARM -DUNICORN_HAS_M68K -DUNICORN_HAS_ARM64 -DUNICORN_HAS_MIPS -DUNICORN_HAS_MIPSEL -DUNICORN_HAS_MIPS64 -DUNICORN_HAS_MIPS64EL -DUNICORN_HAS_SPARC -fPIC 
@@ -240,34 +235,6 @@ QEMU_CFLAGS+=-include x86_64.h
 		CONFIG_USB_SERIAL=y
 		CONFIG_USB_NETWORK=y
 		CONFIG_USB_BLUETOOTH=y
-
-
-
-
-
-
-
-
-compiler.h is in "qemu/include/qemu/compiler.h"
-it includes "config-host.h"
-
-config.h is in "qemu/include/config.h"
-it includes "config-host.h"
-
-config-host.h is bindings/msvc_native/config-host.h
-
-
-
-
-
-:: Other things
-
-* GNU seems to rely on __i386__ or __x86_64__ defined if the host is 32bit or 64bit respectively.
-  So when building 32bit libs in msvc we define __i386__.
-  And when building 64bit libs in msvc we define __x86_64__.
-
-* There is a tcg-target.c for each target that is included into tcg.c.
-  It is NOT built separately as part of the *.c files built for the project.
 
 
 
