@@ -1357,7 +1357,6 @@ static void notdirty_mem_write(struct uc_struct* uc, void *opaque, hwaddr ram_ad
     default:
         abort();
     }
-    cpu_physical_memory_set_dirty_range_nocode(uc, ram_addr, size);
     /* we remove the notdirty callback only if the code has been
        flushed */
     if (!cpu_physical_memory_is_clean(uc, ram_addr)) {
@@ -1590,7 +1589,6 @@ static void invalidate_and_set_dirty(struct uc_struct *uc, hwaddr addr,
 {
     if (cpu_physical_memory_range_includes_clean(uc, addr, length)) {
         tb_invalidate_phys_range(uc, addr, addr + length, 0);
-        cpu_physical_memory_set_dirty_range_nocode(uc, addr, length);
     }
 }
 

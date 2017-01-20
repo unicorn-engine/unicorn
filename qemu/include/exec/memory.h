@@ -16,10 +16,8 @@
 
 #ifndef CONFIG_USER_ONLY
 
-#define DIRTY_MEMORY_VGA       0
-#define DIRTY_MEMORY_CODE      1
-#define DIRTY_MEMORY_MIGRATION 2
-#define DIRTY_MEMORY_NUM       3        /* num of dirty bits */
+#define DIRTY_MEMORY_CODE      0
+#define DIRTY_MEMORY_NUM       1        /* num of dirty bits */
 
 #include <stdint.h>
 #include <stdbool.h>

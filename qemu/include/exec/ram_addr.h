@@ -70,21 +70,13 @@ static inline bool cpu_physical_memory_get_dirty_flag(struct uc_struct *uc, ram_
 
 static inline bool cpu_physical_memory_is_clean(struct uc_struct *uc, ram_addr_t addr)
 {
-    bool vga = cpu_physical_memory_get_dirty_flag(uc, addr, DIRTY_MEMORY_VGA);
-    bool code = cpu_physical_memory_get_dirty_flag(uc, addr, DIRTY_MEMORY_CODE);
-    bool migration =
-        cpu_physical_memory_get_dirty_flag(uc, addr, DIRTY_MEMORY_MIGRATION);
-    return !(vga && code && migration);
+    return !cpu_physical_memory_get_dirty_flag(uc, addr, DIRTY_MEMORY_CODE);
 }
 
 static inline bool cpu_physical_memory_range_includes_clean(struct uc_struct *uc, ram_addr_t start,
                                                             ram_addr_t length)
 {
-    bool vga = cpu_physical_memory_get_clean(uc, start, length, DIRTY_MEMORY_VGA);
-    bool code = cpu_physical_memory_get_clean(uc, start, length, DIRTY_MEMORY_CODE);
-    bool migration =
-        cpu_physical_memory_get_clean(uc, start, length, DIRTY_MEMORY_MIGRATION);
-    return vga || code || migration;
+    return cpu_physical_memory_get_clean(uc, start, length, DIRTY_MEMORY_CODE);
 }
 
 static inline void cpu_physical_memory_set_dirty_flag(struct uc_struct *uc, ram_addr_t addr,
@@ -94,17 +86,6 @@ static inline void cpu_physical_memory_set_dirty_flag(struct uc_struct *uc, ram_
     set_bit(addr >> TARGET_PAGE_BITS, uc->ram_list.dirty_memory[client]);
 }
 
-static inline void cpu_physical_memory_set_dirty_range_nocode(struct uc_struct *uc, ram_addr_t start,
-                                                              ram_addr_t length)
-{
-    unsigned long end, page;
-
-    end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
-    page = start >> TARGET_PAGE_BITS;
-    bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_MIGRATION], page, end - page);
-    bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_VGA], page, end - page);
-}
-
 static inline void cpu_physical_memory_set_dirty_range(struct uc_struct *uc, ram_addr_t start,
                                                        ram_addr_t length)
 {
@@ -112,8 +93,6 @@ static inline void cpu_physical_memory_set_dirty_range(struct uc_struct *uc, ram
 
     end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
     page = start >> TARGET_PAGE_BITS;
-    bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_MIGRATION], page, end - page);
-    bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_VGA], page, end - page);
     bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE], page, end - page);
 }
 
@@ -139,9 +118,6 @@ static inline void cpu_physical_memory_set_dirty_lebitmap(struct uc_struct *uc, 
         for (k = 0; k < nr; k++) {
             if (bitmap[k]) {
                 unsigned long temp = leul_to_cpu(bitmap[k]);
-
-                uc->ram_list.dirty_memory[DIRTY_MEMORY_MIGRATION][page + k] |= temp;
-                uc->ram_list.dirty_memory[DIRTY_MEMORY_VGA][page + k] |= temp;
                 uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE][page + k] |= temp;
             }
         }
