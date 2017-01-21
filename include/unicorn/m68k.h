@@ -8,8 +8,6 @@
 extern "C" {
 #endif
 
-#include "unicorn/platform.h"
-
 #ifdef _MSC_VER
 #pragma warning(disable:4201)
 #endif
