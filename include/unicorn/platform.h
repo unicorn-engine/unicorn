@@ -1,7 +1,7 @@
 /*
-    This file is primarily to support header files that are missing in MSVC and other non-standard compilers.
+ This file is to support header files that are missing in MSVC and
+ other non-standard compilers.
 */
-
 #ifndef UNICORN_PLATFORM_H
 #define UNICORN_PLATFORM_H
 
@@ -26,8 +26,6 @@ MSVC++ 5.0  _MSC_VER == 1100
 #define MSC_VER_VS2013	1800
 #define MSC_VER_VS2015	1900
 
-
-
 // handle stdbool.h compatibility
 #if !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(__MINGW64__) && (defined (WIN32) || defined (WIN64) || defined (_WIN32) || defined (_WIN64))
 // MSVC
@@ -50,14 +48,6 @@ typedef unsigned char bool;
 // not MSVC -> C99 is supported
 #include <stdbool.h>
 #endif  // !defined(__CYGWIN__) && !defined(__MINGW32__) && !defined(__MINGW64__) && (defined (WIN32) || defined (WIN64) || defined (_WIN32) || defined (_WIN64))
-
-
-
-
-// handle stdint.h compatibility
-#if defined(_WIN32_WCE) && (_WIN32_WCE < 0x800)
-#include "windowsce/stdint.h"
-#endif  // defined(_WIN32_WCE) && (_WIN32_WCE < 0x800)
 
 #if (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2010)) || defined(_KERNEL_MODE)
 // this system does not have stdint.h
@@ -100,18 +90,13 @@ typedef _W64 unsigned int  uintptr_t;
 #define UINT16_MAX       0xffffui16
 #define UINT32_MAX       0xffffffffui32
 #define UINT64_MAX       0xffffffffffffffffui64
-#else
+#else // this system has stdint.h
 #include <stdint.h>
 #endif  // (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2010)) || defined(_KERNEL_MODE)
 
-
-
-
 // handle inttypes.h compatibility
-//#if defined(UNICORN_HAS_OSXKERNEL) || (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2013)) || defined(_KERNEL_MODE)
-// this system does not have inttypes.h
-
 #if (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2013)) || defined(_KERNEL_MODE)
+// this system does not have inttypes.h
 
 #define __PRI_8_LENGTH_MODIFIER__ "hh"
 #define __PRI_64_LENGTH_MODIFIER__ "ll"
@@ -163,11 +148,6 @@ typedef _W64 unsigned int  uintptr_t;
 #include <inttypes.h>
 #endif // #if defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2013) || defined(_KERNEL_MODE)
 
-//#endif // #if defined(UNICORN_HAS_OSXKERNEL) || (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2013)) || defined(_KERNEL_MODE)
-
-
-
-
 // sys/time.h compatibility
 #if defined(_MSC_VER)
 #include <sys/timeb.h>
@@ -182,19 +162,16 @@ static int gettimeofday(struct timeval* t, void* timezone)
     t->tv_usec = 1000*timebuffer.millitm;
     return 0;
 }
-
 #else
 #include <sys/time.h>
 #endif
-
-
-
 
 // unistd.h compatibility
 #if defined(_MSC_VER)
 // TODO: add unistd stuff here ...
 
-static int usleep(uint32_t t) {
+static int usleep(uint32_t t)
+{
     int ret, err_code;
     long value = t; // time in microseconds
     struct timeval tv;
@@ -209,7 +186,8 @@ static int usleep(uint32_t t) {
 /*
 #include <chrono>
 #include <thread>
-static void usleep(const int64_t &t) {
+static void usleep(const int64_t &t)
+{
     std::this_thread::sleep_for(std::chrono::microseconds(t));
 }
 */
@@ -217,29 +195,6 @@ static void usleep(const int64_t &t) {
 #else
 #include <unistd.h>
 #endif
-
-
-
-
-// termios.h compatibility
-#if defined(_MSC_VER) || defined(_WIN32)
-// TODO: termios stuff here ...
-#else
-#include <termios.h>
-#endif
-
-
-
-
-// strings.h compatibility
-#if defined(_MSC_VER)
-// TODO: strings stuff here ...
-#else
-#include <strings.h>
-#endif
-
-
-
 
 // misc support
 #if defined(_MSC_VER)
@@ -250,8 +205,6 @@ static void usleep(const int64_t &t) {
 #define strtoll		_strtoi64
 #endif
 #endif
-
-
 
 
 #endif // UNICORN_PLATFORM_H
