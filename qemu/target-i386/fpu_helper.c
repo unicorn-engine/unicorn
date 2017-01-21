@@ -489,42 +489,58 @@ void helper_fabs_ST0(CPUX86State *env)
 
 void helper_fld1_ST0(CPUX86State *env)
 {
-    ST0 = floatx80_one;
+    //ST0 = floatx80_one;
+    floatx80 one = { 0x8000000000000000LL, 0x3fff };
+    ST0 = one;
 }
 
 void helper_fldl2t_ST0(CPUX86State *env)
 {
-    ST0 = floatx80_l2t;
+    //ST0 = floatx80_l2t;
+    floatx80 l2t = { 0xd49a784bcd1b8afeLL, 0x4000 };
+    ST0 = l2t;
 }
 
 void helper_fldl2e_ST0(CPUX86State *env)
 {
-    ST0 = floatx80_l2e;
+    //ST0 = floatx80_l2e;
+    floatx80 l2e = { 0xb8aa3b295c17f0bcLL, 0x3fff };
+    ST0 = l2e;
 }
 
 void helper_fldpi_ST0(CPUX86State *env)
 {
-    ST0 = floatx80_pi;
+    //ST0 = floatx80_pi;
+    floatx80 pi = { 0xc90fdaa22168c235LL, 0x4000 };
+    ST0 = pi;
 }
 
 void helper_fldlg2_ST0(CPUX86State *env)
 {
-    ST0 = floatx80_lg2;
+    //ST0 = floatx80_lg2;
+    floatx80 lg2 = { 0x9a209a84fbcff799LL, 0x3ffd };
+    ST0 = lg2;
 }
 
 void helper_fldln2_ST0(CPUX86State *env)
 {
-    ST0 = floatx80_ln2;
+    //ST0 = floatx80_ln2;
+    floatx80 ln2 = { 0xb17217f7d1cf79acLL, 0x3ffe };
+    ST0 = ln2;
 }
 
 void helper_fldz_ST0(CPUX86State *env)
 {
-    ST0 = floatx80_zero;
+    //ST0 = floatx80_zero;
+    floatx80 zero = { 0x0000000000000000LL, 0x0000 };
+    ST0 = zero;
 }
 
 void helper_fldz_FT0(CPUX86State *env)
 {
-    FT0 = floatx80_zero;
+    //FT0 = floatx80_zero;
+    floatx80 zero = { 0x0000000000000000LL, 0x0000 };
+    ST0 = zero;
 }
 
 uint32_t helper_fnstsw(CPUX86State *env)
@@ -686,10 +702,11 @@ void helper_fptan(CPUX86State *env)
     if ((fptemp > MAXTAN) || (fptemp < -MAXTAN)) {
         env->fpus |= 0x400;
     } else {
+        floatx80 one = { 0x8000000000000000LL, 0x3fff };
         fptemp = tan(fptemp);
         ST0 = double_to_floatx80(env, fptemp);
         fpush(env);
-        ST0 = floatx80_one;
+        ST0 = one;
         env->fpus &= ~0x400; /* C2 <-- 0 */
         /* the above code is for |arg| < 2**52 only */
     }
@@ -713,7 +730,9 @@ void helper_fxtract(CPUX86State *env)
 
     if (floatx80_is_zero(ST0)) {
         /* Easy way to generate -inf and raising division by 0 exception */
-        ST0 = floatx80_div(floatx80_chs(floatx80_one), floatx80_zero,
+        floatx80 zero = { 0x0000000000000000LL, 0x0000 };
+        floatx80 one  = { 0x8000000000000000LL, 0x3fff };
+        ST0 = floatx80_div(floatx80_chs(one), zero,
                            &env->fp_status);
         fpush(env);
         ST0 = temp.d;
@@ -740,7 +759,8 @@ void helper_fprem1(CPUX86State *env)
     st1 = floatx80_to_double(env, ST1);
 
     if (isinf(st0) || isnan(st0) || isnan(st1) || (st1 == 0.0)) {
-        ST0 = double_to_floatx80(env, 0.0 / 0.0); /* NaN */
+       
+        ST0 = double_to_floatx80(env, NAN); /* NaN */
         env->fpus &= ~0x4700; /* (C3,C2,C1,C0) <-- 0000 */
         return;
     }
@@ -799,7 +819,7 @@ void helper_fprem(CPUX86State *env)
     st1 = floatx80_to_double(env, ST1);
 
     if (isinf(st0) || isnan(st0) || isnan(st1) || (st1 == 0.0)) {
-        ST0 = double_to_floatx80(env, 0.0 / 0.0); /* NaN */
+        ST0 = double_to_floatx80(env, NAN); /* NaN */
         env->fpus &= ~0x4700; /* (C3,C2,C1,C0) <-- 0000 */
         return;
     }
@@ -992,7 +1012,7 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
         cpu_stl_data(env, ptr, env->fpuc);
         cpu_stl_data(env, ptr + 4, fpus);
         cpu_stl_data(env, ptr + 8, fptag);
-        cpu_stl_data(env, ptr + 12, env->fpip); /* fpip */
+        cpu_stl_data(env, ptr + 12, (uint32_t)env->fpip); /* fpip */
         cpu_stl_data(env, ptr + 20, 0); /* fpcs */
         cpu_stl_data(env, ptr + 24, 0); /* fpoo */
         cpu_stl_data(env, ptr + 28, 0); /* fpos */
@@ -1001,7 +1021,7 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
         cpu_stl_data(env, ptr, env->fpuc);
         cpu_stl_data(env, ptr + 4, fpus);
         cpu_stl_data(env, ptr + 8, fptag);
-        cpu_stl_data(env, ptr + 12, env->fpip); /* fpip */
+        cpu_stl_data(env, ptr + 12, (uint32_t)env->fpip); /* fpip */
         cpu_stl_data(env, ptr + 16, 0); /* fpcs */
         cpu_stl_data(env, ptr + 20, 0); /* fpoo */
         cpu_stl_data(env, ptr + 24, 0); /* fpos */
@@ -1010,7 +1030,7 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
         cpu_stw_data(env, ptr, env->fpuc);
         cpu_stw_data(env, ptr + 2, fpus);
         cpu_stw_data(env, ptr + 4, fptag);
-        cpu_stw_data(env, ptr + 6, env->fpip);
+        cpu_stw_data(env, ptr + 6, (uint32_t)env->fpip);
         cpu_stw_data(env, ptr + 8, 0);
         cpu_stw_data(env, ptr + 10, 0);
         cpu_stw_data(env, ptr + 12, 0);

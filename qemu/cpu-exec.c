@@ -129,6 +129,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
 #else
                     bool catched = false;
                     // Unicorn: call registered interrupt callbacks
+                    HOOK_FOREACH_VAR_DECLARE;
                     HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
                         ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
                         catched = true;
@@ -365,7 +366,7 @@ static TranslationBlock *tb_find_slow(CPUArchState *env, target_ulong pc,
     }
 not_found:
     /* if no translated code available, then translate it now */
-    tb = tb_gen_code(cpu, pc, cs_base, flags, 0);   // qq
+    tb = tb_gen_code(cpu, pc, cs_base, (int)flags, 0);   // qq
 
 found:
     /* Move the last found TB to the head of the list */

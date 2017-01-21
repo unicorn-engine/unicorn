@@ -486,33 +486,27 @@ void helper_svm_check_intercept_param(CPUX86State *env, uint32_t type,
     if (likely(!(env->hflags & HF_SVMI_MASK))) {
         return;
     }
-    switch (type) {
-    case SVM_EXIT_READ_CR0 ... SVM_EXIT_READ_CR0 + 8:
+    if( (int32_t)type >= SVM_EXIT_READ_CR0 && type <= SVM_EXIT_READ_CR0 + 8 ) {
         if (env->intercept_cr_read & (1 << (type - SVM_EXIT_READ_CR0))) {
             helper_vmexit(env, type, param);
         }
-        break;
-    case SVM_EXIT_WRITE_CR0 ... SVM_EXIT_WRITE_CR0 + 8:
+    } else if( type >= SVM_EXIT_WRITE_CR0 && type <= SVM_EXIT_WRITE_CR0 + 8 ) {
         if (env->intercept_cr_write & (1 << (type - SVM_EXIT_WRITE_CR0))) {
             helper_vmexit(env, type, param);
         }
-        break;
-    case SVM_EXIT_READ_DR0 ... SVM_EXIT_READ_DR0 + 7:
+    } else if( type >= SVM_EXIT_READ_DR0 && type <= SVM_EXIT_READ_DR0 + 7 ) {
         if (env->intercept_dr_read & (1 << (type - SVM_EXIT_READ_DR0))) {
             helper_vmexit(env, type, param);
         }
-        break;
-    case SVM_EXIT_WRITE_DR0 ... SVM_EXIT_WRITE_DR0 + 7:
+    } else if( type >= SVM_EXIT_WRITE_DR0 && type <= SVM_EXIT_WRITE_DR0 + 7 ) {
         if (env->intercept_dr_write & (1 << (type - SVM_EXIT_WRITE_DR0))) {
             helper_vmexit(env, type, param);
         }
-        break;
-    case SVM_EXIT_EXCP_BASE ... SVM_EXIT_EXCP_BASE + 31:
+    } else if( type >= SVM_EXIT_EXCP_BASE && type <= SVM_EXIT_EXCP_BASE + 31 ) {
         if (env->intercept_exceptions & (1 << (type - SVM_EXIT_EXCP_BASE))) {
             helper_vmexit(env, type, param);
         }
-        break;
-    case SVM_EXIT_MSR:
+    } else if( type == SVM_EXIT_MSR ) {
         if (env->intercept & (1ULL << (SVM_EXIT_MSR - SVM_EXIT_INTR))) {
             /* FIXME: this should be read in at vmrun (faster this way?) */
             uint64_t addr = ldq_phys(cs->as, env->vm_vmcb +
@@ -520,37 +514,31 @@ void helper_svm_check_intercept_param(CPUX86State *env, uint32_t type,
                                               control.msrpm_base_pa));
             uint32_t t0, t1;
 
-            switch ((uint32_t)env->regs[R_ECX]) {
-            case 0 ... 0x1fff:
+            uint32_t ecx = (uint32_t)env->regs[R_ECX];
+            if( (int32_t)ecx >= 0 && ecx <= 0x1fff ) {
                 t0 = (env->regs[R_ECX] * 2) % 8;
                 t1 = (env->regs[R_ECX] * 2) / 8;
-                break;
-            case 0xc0000000 ... 0xc0001fff:
+            } else if( ecx >= 0xc0000000 && ecx <= 0xc0001fff ) {
                 t0 = (8192 + env->regs[R_ECX] - 0xc0000000) * 2;
                 t1 = (t0 / 8);
                 t0 %= 8;
-                break;
-            case 0xc0010000 ... 0xc0011fff:
+            } else if( ecx >= 0xc0010000 && ecx <= 0xc0011fff ) {
                 t0 = (16384 + env->regs[R_ECX] - 0xc0010000) * 2;
                 t1 = (t0 / 8);
                 t0 %= 8;
-                break;
-            default:
+            } else {
                 helper_vmexit(env, type, param);
                 t0 = 0;
                 t1 = 0;
-                break;
             }
             if (ldub_phys(cs->as, addr + t1) & ((1 << param) << t0)) {
                 helper_vmexit(env, type, param);
             }
         }
-        break;
-    default:
+    } else {
         if (env->intercept & (1ULL << (type - SVM_EXIT_INTR))) {
             helper_vmexit(env, type, param);
         }
-        break;
     }
 }
 

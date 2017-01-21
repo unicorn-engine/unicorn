@@ -235,7 +235,7 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
         addend = 0;
     } else {
         /* TLB_MMIO for rom/romd handled below */
-        addend = (uintptr_t)memory_region_get_ram_ptr(section->mr) + xlat;
+        addend = (uintptr_t)((char*)memory_region_get_ram_ptr(section->mr) + xlat);
     }
 
     code_address = address;
@@ -251,7 +251,7 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
 
     /* refill the tlb */
     env->iotlb[mmu_idx][index] = iotlb - vaddr;
-    te->addend = addend - vaddr;
+    te->addend = (uintptr_t)(addend - vaddr);
     if (prot & PAGE_READ) {
         te->addr_read = address;
     } else {
@@ -269,8 +269,8 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
             /* Write access calls the I/O callback.  */
             te->addr_write = address | TLB_MMIO;
         } else if (memory_region_is_ram(section->mr)
-                   && cpu_physical_memory_is_clean(cpu->uc, section->mr->ram_addr
-                                                   + xlat)) {
+                   && cpu_physical_memory_is_clean(cpu->uc, (ram_addr_t)(section->mr->ram_addr
+                                                   + xlat))) {
             te->addr_write = address | TLB_NOTDIRTY;
         } else {
             te->addr_write = address;

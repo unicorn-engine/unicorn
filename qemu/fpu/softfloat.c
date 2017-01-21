@@ -129,7 +129,7 @@ static int32 roundAndPackInt32( flag zSign, uint64_t absZ STATUS_PARAM)
     roundBits = absZ & 0x7F;
     absZ = ( absZ + roundIncrement )>>7;
     absZ &= ~ ( ( ( roundBits ^ 0x40 ) == 0 ) & roundNearestEven );
-    z = absZ;
+    z = (int32_t)absZ;
     if ( zSign ) z = - z;
     if ( ( absZ>>32 ) || ( z && ( ( z < 0 ) ^ zSign ) ) ) {
         float_raise( float_flag_invalid STATUS_VAR);
@@ -786,7 +786,7 @@ static floatx80
     }
     if ( roundBits ) STATUS(float_exception_flags) |= float_flag_inexact;
     zSig0 += roundIncrement;
-    if ( zSig0 < roundIncrement ) {
+    if ( zSig0 < (uint64_t)roundIncrement ) {
         ++zExp;
         zSig0 = LIT64( 0x8000000000000000 );
     }
@@ -1289,7 +1289,7 @@ float32 int64_to_float32(int64_t a STATUS_PARAM)
     absA = zSign ? - a : a;
     shiftCount = countLeadingZeros64( absA ) - 40;
     if ( 0 <= shiftCount ) {
-        return packFloat32( zSign, 0x95 - shiftCount, absA<<shiftCount );
+        return packFloat32( zSign, 0x95 - shiftCount, (uint32_t)(absA<<shiftCount) );
     }
     else {
         shiftCount += 7;
@@ -1299,7 +1299,7 @@ float32 int64_to_float32(int64_t a STATUS_PARAM)
         else {
             absA <<= shiftCount;
         }
-        return roundAndPackFloat32( zSign, 0x9C - shiftCount, absA STATUS_VAR );
+        return roundAndPackFloat32( zSign, 0x9C - shiftCount, (uint32_t)absA STATUS_VAR );
     }
 
 }
@@ -1311,7 +1311,7 @@ float32 uint64_to_float32(uint64_t a STATUS_PARAM)
     if ( a == 0 ) return float32_zero;
     shiftCount = countLeadingZeros64( a ) - 40;
     if ( 0 <= shiftCount ) {
-        return packFloat32(0, 0x95 - shiftCount, a<<shiftCount);
+        return packFloat32(0, 0x95 - shiftCount, (uint32_t)(a<<shiftCount));
     }
     else {
         shiftCount += 7;
@@ -1321,7 +1321,7 @@ float32 uint64_to_float32(uint64_t a STATUS_PARAM)
         else {
             a <<= shiftCount;
         }
-        return roundAndPackFloat32(0, 0x9C - shiftCount, a STATUS_VAR);
+        return roundAndPackFloat32(0, 0x9C - shiftCount, (uint32_t)a STATUS_VAR);
     }
 }
 
@@ -1415,7 +1415,8 @@ float128 int64_to_float128(int64_t a STATUS_PARAM)
 float128 uint64_to_float128(uint64_t a STATUS_PARAM)
 {
     if (a == 0) {
-        return float128_zero;
+        float128 zero = {0};
+        return zero;
     }
     return normalizeRoundAndPackFloat128(0, 0x406E, a, 0 STATUS_VAR);
 }
@@ -1639,9 +1640,10 @@ uint64 float32_to_uint64(float32 a STATUS_PARAM)
 
 uint64 float32_to_uint64_round_to_zero(float32 a STATUS_PARAM)
 {
+    int64_t v;
     signed char current_rounding_mode = STATUS(float_rounding_mode);
     set_float_rounding_mode(float_round_to_zero STATUS_VAR);
-    int64_t v = float32_to_uint64(a STATUS_VAR);
+    v = float32_to_uint64(a STATUS_VAR);
     set_float_rounding_mode(current_rounding_mode STATUS_VAR);
     return v;
 }
@@ -2116,7 +2118,7 @@ float32 float32_mul( float32 a, float32 b STATUS_PARAM )
     aSig = ( aSig | 0x00800000 )<<7;
     bSig = ( bSig | 0x00800000 )<<8;
     shift64RightJamming( ( (uint64_t) aSig ) * bSig, 32, &zSig64 );
-    zSig = zSig64;
+    zSig = (uint32_t)zSig64;
     if ( 0 <= (int32_t) ( zSig<<1 ) ) {
         zSig <<= 1;
         --zExp;
@@ -2265,13 +2267,13 @@ float32 float32_rem( float32 a, float32 b STATUS_PARAM )
         while ( 0 < expDiff ) {
             q64 = estimateDiv128To64( aSig64, 0, bSig64 );
             q64 = ( 2 < q64 ) ? q64 - 2 : 0;
-            aSig64 = - ( ( bSig * q64 )<<38 );
+            aSig64 = 0- ( ( bSig * q64 )<<38 );
             expDiff -= 62;
         }
         expDiff += 64;
         q64 = estimateDiv128To64( aSig64, 0, bSig64 );
         q64 = ( 2 < q64 ) ? q64 - 2 : 0;
-        q = q64>>( 64 - expDiff );
+        q = (uint32_t)(q64>>( 64 - expDiff ));
         bSig <<= 6;
         aSig = ( ( aSig64>>33 )<<( expDiff - 1 ) ) - bSig * q;
     }
@@ -2285,7 +2287,7 @@ float32 float32_rem( float32 a, float32 b STATUS_PARAM )
         aSig = alternateASig;
     }
     zSign = ( (int32_t) aSig < 0 );
-    if ( zSign ) aSig = - aSig;
+    if ( zSign ) aSig = 0- aSig;
     return normalizeRoundAndPackFloat32( aSign ^ zSign, bExp, aSig STATUS_VAR );
 
 }
@@ -2438,7 +2440,7 @@ float32 float32_muladd(float32 a, float32 b, float32 c, int flags STATUS_PARAM)
         if (!cSig) {
             /* Throw out the special case of c being an exact zero now */
             shift64RightJamming(pSig64, 32, &pSig64);
-            pSig = pSig64;
+            pSig = (uint32_t)pSig64;
             if (flags & float_muladd_halve_result) {
                 pExp--;
             }
@@ -2511,7 +2513,7 @@ float32 float32_muladd(float32 a, float32 b, float32 c, int flags STATUS_PARAM)
     }
 
     shift64RightJamming(zSig64, 32, &zSig64);
-    return roundAndPackFloat32(zSign, zExp, zSig64 STATUS_VAR);
+    return roundAndPackFloat32(zSign, zExp, (uint32_t)zSig64 STATUS_VAR);
 }
 
 
@@ -2693,7 +2695,7 @@ float32 float32_log2( float32 a STATUS_PARAM )
     }
 
     if ( zSign )
-        zSig = -zSig;
+        zSig = 0-zSig;
 
     return normalizeRoundAndPackFloat32( zSign, 0x85, zSig STATUS_VAR );
 }
@@ -2971,7 +2973,7 @@ int32 float64_to_int32_round_to_zero( float64 a STATUS_PARAM )
     shiftCount = 0x433 - aExp;
     savedASig = aSig;
     aSig >>= shiftCount;
-    z = aSig;
+    z = (int32_t)aSig;
     if ( aSign ) z = - z;
     if ( ( z < 0 ) ^ aSign ) {
  invalid:
@@ -3021,7 +3023,7 @@ int_fast16_t float64_to_int16_round_to_zero(float64 a STATUS_PARAM)
     shiftCount = 0x433 - aExp;
     savedASig = aSig;
     aSig >>= shiftCount;
-    z = aSig;
+    z = (int32)aSig;
     if ( aSign ) {
         z = - z;
     }
@@ -3155,7 +3157,7 @@ float32 float64_to_float32( float64 a STATUS_PARAM )
         return packFloat32( aSign, 0xFF, 0 );
     }
     shift64RightJamming( aSig, 22, &aSig );
-    zSig = aSig;
+    zSig = (uint32_t)aSig;
     if ( aExp || zSig ) {
         zSig |= 0x40000000;
         aExp -= 0x381;
@@ -3435,7 +3437,7 @@ float16 float64_to_float16(float64 a, flag ieee STATUS_PARAM)
         return packFloat16(aSign, 0x1f, 0);
     }
     shift64RightJamming(aSig, 29, &aSig);
-    zSig = aSig;
+    zSig = (uint32_t)aSig;
     if (aExp == 0 && zSig == 0) {
         return packFloat16(aSign, 0, 0);
     }
@@ -3995,7 +3997,7 @@ float64 float64_rem( float64 a, float64 b STATUS_PARAM )
     while ( 0 < expDiff ) {
         q = estimateDiv128To64( aSig, 0, bSig );
         q = ( 2 < q ) ? q - 2 : 0;
-        aSig = - ( ( bSig>>2 ) * q );
+        aSig = 0- ( ( bSig>>2 ) * q );
         expDiff -= 62;
     }
     expDiff += 64;
@@ -4020,7 +4022,7 @@ float64 float64_rem( float64 a, float64 b STATUS_PARAM )
         aSig = alternateASig;
     }
     zSign = ( (int64_t) aSig < 0 );
-    if ( zSign ) aSig = - aSig;
+    if ( zSign ) aSig = 0- aSig;
     return normalizeRoundAndPackFloat64( aSign ^ zSign, bExp, aSig STATUS_VAR );
 
 }
@@ -4305,7 +4307,7 @@ float64 float64_sqrt( float64 a STATUS_PARAM )
     }
     zExp = ( ( aExp - 0x3FF )>>1 ) + 0x3FE;
     aSig |= LIT64( 0x0010000000000000 );
-    zSig = estimateSqrt32( aExp, aSig>>21 );
+    zSig = estimateSqrt32( aExp, (uint32_t)(aSig>>21) );
     aSig <<= 9 - ( aExp & 1 );
     zSig = estimateDiv128To64( aSig, 0, zSig<<32 ) + ( zSig<<30 );
     if ( ( zSig & 0x1FF ) <= 5 ) {
@@ -4366,7 +4368,7 @@ float64 float64_log2( float64 a STATUS_PARAM )
     }
 
     if ( zSign )
-        zSig = -zSig;
+        zSig = 0-zSig;
     return normalizeRoundAndPackFloat64( zSign, 0x408, zSig STATUS_VAR );
 }
 
@@ -4652,7 +4654,7 @@ int32 floatx80_to_int32_round_to_zero( floatx80 a STATUS_PARAM )
     shiftCount = 0x403E - aExp;
     savedASig = aSig;
     aSig >>= shiftCount;
-    z = aSig;
+    z = (int32_t)aSig;
     if ( aSign ) z = - z;
     if ( ( z < 0 ) ^ aSign ) {
  invalid:
@@ -4786,7 +4788,7 @@ float32 floatx80_to_float32( floatx80 a STATUS_PARAM )
     }
     shift64RightJamming( aSig, 33, &aSig );
     if ( aExp || aSig ) aExp -= 0x3F81;
-    return roundAndPackFloat32( aSign, aExp, aSig STATUS_VAR );
+    return roundAndPackFloat32( aSign, aExp, (uint32_t)aSig STATUS_VAR );
 
 }
 
@@ -5771,7 +5773,7 @@ int32 float128_to_int32_round_to_zero( float128 a STATUS_PARAM )
     shiftCount = 0x402F - aExp;
     savedASig = aSig0;
     aSig0 >>= shiftCount;
-    z = aSig0;
+    z = (int32_t)aSig0;
     if ( aSign ) z = - z;
     if ( ( z < 0 ) ^ aSign ) {
  invalid:
@@ -5915,7 +5917,7 @@ float32 float128_to_float32( float128 a STATUS_PARAM )
     }
     aSig0 |= ( aSig1 != 0 );
     shift64RightJamming( aSig0, 18, &aSig0 );
-    zSig = aSig0;
+    zSig = (uint32_t)aSig0;
     if ( aExp || zSig ) {
         zSig |= 0x40000000;
         aExp -= 0x3F81;
@@ -6636,7 +6638,7 @@ float128 float128_sqrt( float128 a STATUS_PARAM )
     }
     zExp = ( ( aExp - 0x3FFF )>>1 ) + 0x3FFE;
     aSig0 |= LIT64( 0x0001000000000000 );
-    zSig0 = estimateSqrt32( aExp, aSig0>>17 );
+    zSig0 = estimateSqrt32( aExp, (uint32_t)(aSig0>>17) );
     shortShift128Left( aSig0, aSig1, 13 - ( aExp & 1 ), &aSig0, &aSig1 );
     zSig0 = estimateDiv128To64( aSig0, aSig1, zSig0<<32 ) + ( zSig0<<30 );
     doubleZSig0 = zSig0<<1;
@@ -6929,7 +6931,7 @@ uint32 float32_to_uint32( float32 a STATUS_PARAM )
     } else if (v > 0xffffffff) {
         res = 0xffffffff;
     } else {
-        return v;
+        return (uint32)v;
     }
     set_float_exception_flags(old_exc_flags STATUS_VAR);
     float_raise(float_flag_invalid STATUS_VAR);
@@ -6948,7 +6950,7 @@ uint32 float32_to_uint32_round_to_zero( float32 a STATUS_PARAM )
     } else if (v > 0xffffffff) {
         res = 0xffffffff;
     } else {
-        return v;
+        return (uint32)v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid STATUS_VAR);
@@ -7007,7 +7009,7 @@ uint_fast16_t float32_to_uint16_round_to_zero(float32 a STATUS_PARAM)
     } else if (v > 0xffff) {
         res = 0xffff;
     } else {
-        return v;
+        return (uint_fast16_t)v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid STATUS_VAR);
@@ -7024,7 +7026,7 @@ uint32 float64_to_uint32( float64 a STATUS_PARAM )
     if (v > 0xffffffff) {
         res = 0xffffffff;
     } else {
-        return v;
+        return (uint32)v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid STATUS_VAR);
@@ -7041,7 +7043,7 @@ uint32 float64_to_uint32_round_to_zero( float64 a STATUS_PARAM )
     if (v > 0xffffffff) {
         res = 0xffffffff;
     } else {
-        return v;
+        return (uint32)v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid STATUS_VAR);
@@ -7060,7 +7062,7 @@ int_fast16_t float64_to_int16(float64 a STATUS_PARAM)
     } else if (v > 0x7fff) {
         res = 0x7fff;
     } else {
-        return v;
+        return (int_fast16_t)v;
     }
 
     set_float_exception_flags(old_exc_flags, status);
@@ -7080,7 +7082,7 @@ uint_fast16_t float64_to_uint16(float64 a STATUS_PARAM)
     } else if (v > 0xffff) {
         res = 0xffff;
     } else {
-        return v;
+        return (uint_fast16_t)v;
     }
 
     set_float_exception_flags(old_exc_flags, status);
@@ -7100,7 +7102,7 @@ uint_fast16_t float64_to_uint16_round_to_zero(float64 a STATUS_PARAM)
     } else if (v > 0xffff) {
         res = 0xffff;
     } else {
-        return v;
+        return (uint_fast16_t)v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid STATUS_VAR);
@@ -7156,9 +7158,10 @@ uint64_t float64_to_uint64(float64 a STATUS_PARAM)
 
 uint64_t float64_to_uint64_round_to_zero (float64 a STATUS_PARAM)
 {
+    int64_t v;
     signed char current_rounding_mode = STATUS(float_rounding_mode);
     set_float_rounding_mode(float_round_to_zero STATUS_VAR);
-    int64_t v = float64_to_uint64(a STATUS_VAR);
+    v = float64_to_uint64(a STATUS_VAR);
     set_float_rounding_mode(current_rounding_mode STATUS_VAR);
     return v;
 }

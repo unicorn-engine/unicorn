@@ -176,7 +176,7 @@ static inline int64_t get_clock(void)
 {
     LARGE_INTEGER ti;
     QueryPerformanceCounter(&ti);
-    return muldiv64(ti.QuadPart, get_ticks_per_sec(), clock_freq);
+    return muldiv64(ti.QuadPart, (uint32_t)get_ticks_per_sec(), (uint32_t)clock_freq);
 }
 
 #else
@@ -228,15 +228,22 @@ static inline int64_t cpu_get_real_ticks(void)
 
 static inline int64_t cpu_get_real_ticks(void)
 {
+#ifdef _MSC_VER
+    return __rdtsc();
+#else
     int64_t val;
     asm volatile ("rdtsc" : "=A" (val));
     return val;
+#endif
 }
 
 #elif defined(__x86_64__)
 
 static inline int64_t cpu_get_real_ticks(void)
 {
+#ifdef _MSC_VER
+    return __rdtsc();
+#else
     uint32_t low,high;
     int64_t val;
     asm volatile("rdtsc" : "=a" (low), "=d" (high));
@@ -244,6 +251,7 @@ static inline int64_t cpu_get_real_ticks(void)
     val <<= 32;
     val |= low;
     return val;
+#endif
 }
 
 #elif defined(__hppa__)

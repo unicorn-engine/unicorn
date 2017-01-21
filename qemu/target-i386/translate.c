@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
+#include "unicorn/platform.h"
 #include <signal.h>
 
 #include "qemu/host-utils.h"
@@ -173,6 +173,71 @@ enum {
 
 /* Bit set if the global variable is live after setting CC_OP to X.  */
 static const uint8_t cc_op_live[CC_OP_NB] = {
+#ifdef _MSC_VER
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_DYNAMIC, /* must use dynamic code to get cc_op */
+    USES_CC_SRC, // CC_OP_EFLAGS,  /* all cc are explicitly computed, CC_SRC = flags */
+
+    USES_CC_DST | USES_CC_SRC, // CC_OP_MULB, /* modify all flags, C, O = (CC_SRC != 0) */
+    USES_CC_DST | USES_CC_SRC, // CC_OP_MULW,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_MULL,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_MULQ,
+
+    USES_CC_DST | USES_CC_SRC, // CC_OP_ADDB, /* modify all flags, CC_DST = res, CC_SRC = src1 */
+    USES_CC_DST | USES_CC_SRC, // CC_OP_ADDW,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_ADDL,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_ADDQ,
+
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_ADCB, /* modify all flags, CC_DST = res, CC_SRC = src1 */
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_ADCW,
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_ADCL,
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_ADCQ,
+
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRCT, // CC_OP_SUBB, /* modify all flags, CC_DST = res, CC_SRC = src1 */
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRCT, // CC_OP_SUBW,
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRCT, // CC_OP_SUBL,
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRCT, // CC_OP_SUBQ,
+
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_SBBB, /* modify all flags, CC_DST = res, CC_SRC = src1 */
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_SBBW,
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_SBBL,
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_SBBQ,
+
+    USES_CC_DST, // CC_OP_LOGICB, /* modify all flags, CC_DST = res */
+    USES_CC_DST, // CC_OP_LOGICW,
+    USES_CC_DST, // CC_OP_LOGICL,
+    USES_CC_DST, // CC_OP_LOGICQ,
+
+    USES_CC_DST | USES_CC_SRC, // CC_OP_INCB, /* modify all flags except, CC_DST = res, CC_SRC = C */
+    USES_CC_DST | USES_CC_SRC, // CC_OP_INCW,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_INCL,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_INCQ,
+
+    USES_CC_DST | USES_CC_SRC, // CC_OP_DECB, /* modify all flags except, CC_DST = res, CC_SRC = C  */
+    USES_CC_DST | USES_CC_SRC, // CC_OP_DECW,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_DECL,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_DECQ,
+
+    USES_CC_DST | USES_CC_SRC, // CC_OP_SHLB, /* modify all flags, CC_DST = res, CC_SRC.msb = C */
+    USES_CC_DST | USES_CC_SRC, // CC_OP_SHLW,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_SHLL,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_SHLQ,
+
+    USES_CC_DST | USES_CC_SRC, // CC_OP_SARB, /* modify all flags, CC_DST = res, CC_SRC.lsb = C */
+    USES_CC_DST | USES_CC_SRC, // CC_OP_SARW,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_SARL,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_SARQ,
+
+    USES_CC_DST | USES_CC_SRC, // CC_OP_BMILGB, /* Z,S via CC_DST, C = SRC==0; O=0; P,A undefined */
+    USES_CC_DST | USES_CC_SRC, // CC_OP_BMILGW,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_BMILGL,
+    USES_CC_DST | USES_CC_SRC, // CC_OP_BMILGQ,
+
+    USES_CC_DST | USES_CC_SRC, // CC_OP_ADCX, /* CC_DST = C, CC_SRC = rest.  */
+    USES_CC_SRC | USES_CC_SRC2, // CC_OP_ADOX, /* CC_DST = O, CC_SRC = rest.  */
+    USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_ADCOX, /* CC_DST = C, CC_SRC2 = O, CC_SRC = rest.  */
+
+    0, // CC_OP_CLR, /* Z set, all other flags clear.  */
+#else
     [CC_OP_DYNAMIC] = USES_CC_DST | USES_CC_SRC | USES_CC_SRC2,
     [CC_OP_EFLAGS] = USES_CC_SRC,
     [CC_OP_MULB ... CC_OP_MULQ] = USES_CC_DST | USES_CC_SRC,
@@ -190,6 +255,7 @@ static const uint8_t cc_op_live[CC_OP_NB] = {
     [CC_OP_ADOX] = USES_CC_SRC | USES_CC_SRC2,
     [CC_OP_ADCOX] = USES_CC_DST | USES_CC_SRC | USES_CC_SRC2,
     [CC_OP_CLR] = 0,
+#endif
 };
 
 static inline void gen_jmp_im(DisasContext *s, target_ulong pc);
@@ -250,7 +316,7 @@ static void gen_update_cc_op(DisasContext *s)
 
 static void fpu_update_ip(CPUX86State *env, target_ulong pc)
 {
-	env->fpip = pc;
+    env->fpip = pc;
 }
 
 #ifdef TARGET_X86_64
@@ -895,6 +961,15 @@ typedef struct CCPrepare {
     bool no_setcond;
 } CCPrepare;
 
+static inline CCPrepare ccprepare_make(TCGCond cond,
+                          TCGv reg, TCGv reg2,
+                          target_ulong imm, target_ulong mask,
+                          bool use_reg2, bool no_setcond)
+{
+    CCPrepare cc = { cond, reg, reg2, imm, mask, use_reg2, no_setcond };
+    return cc;
+}
+
 /* compute eflags.C to reg */
 static CCPrepare gen_prepare_eflags_c(DisasContext *s, TCGv reg)
 {
@@ -909,7 +984,7 @@ static CCPrepare gen_prepare_eflags_c(DisasContext *s, TCGv reg)
     TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
 
     switch (s->cc_op) {
-    case CC_OP_SUBB ... CC_OP_SUBQ:
+    case CC_OP_SUBB: case CC_OP_SUBW: case CC_OP_SUBL: case CC_OP_SUBQ:
         /* (DATA_TYPE)CC_SRCT < (DATA_TYPE)CC_SRC */
         size = s->cc_op - CC_OP_SUBB;
         t1 = gen_ext_tl(tcg_ctx, cpu_tmp0, cpu_cc_src, size, false);
@@ -919,59 +994,52 @@ static CCPrepare gen_prepare_eflags_c(DisasContext *s, TCGv reg)
         gen_extu(tcg_ctx, size, t0);
         goto add_sub;
 
-    case CC_OP_ADDB ... CC_OP_ADDQ:
+    case CC_OP_ADDB: case CC_OP_ADDW: case CC_OP_ADDL: case CC_OP_ADDQ:
         /* (DATA_TYPE)CC_DST < (DATA_TYPE)CC_SRC */
         size = s->cc_op - CC_OP_ADDB;
         t1 = gen_ext_tl(tcg_ctx, cpu_tmp0, cpu_cc_src, size, false);
         t0 = gen_ext_tl(tcg_ctx, reg, cpu_cc_dst, size, false);
     add_sub:
-        return (CCPrepare) { .cond = TCG_COND_LTU, .reg = t0,
-                             .reg2 = t1, .mask = -1, .use_reg2 = true };
+        return ccprepare_make(TCG_COND_LTU,  t0,t1,  0,-1,  true,false);
 
-    case CC_OP_LOGICB ... CC_OP_LOGICQ:
+    case CC_OP_LOGICB: case CC_OP_LOGICW: case CC_OP_LOGICL: case CC_OP_LOGICQ:
     case CC_OP_CLR:
-        return (CCPrepare) { .cond = TCG_COND_NEVER, .mask = -1 };
+        return ccprepare_make(TCG_COND_NEVER,  0,0,  0,-1,  false,false);
 
-    case CC_OP_INCB ... CC_OP_INCQ:
-    case CC_OP_DECB ... CC_OP_DECQ:
-        return (CCPrepare) { .cond = TCG_COND_NE, .reg = cpu_cc_src,
-                             .mask = -1, .no_setcond = true };
+    case CC_OP_INCB: case CC_OP_INCW: case CC_OP_INCL: case CC_OP_INCQ:
+    case CC_OP_DECB: case CC_OP_DECW: case CC_OP_DECL: case CC_OP_DECQ:
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,-1,  false,true );
 
-    case CC_OP_SHLB ... CC_OP_SHLQ:
+    case CC_OP_SHLB: case CC_OP_SHLW: case CC_OP_SHLL: case CC_OP_SHLQ:
         /* (CC_SRC >> (DATA_BITS - 1)) & 1 */
-        size = s->cc_op - CC_OP_SHLB;
+            size = s->cc_op - CC_OP_SHLB;
         shift = (8 << size) - 1;
-        return (CCPrepare) { .cond = TCG_COND_NE, .reg = cpu_cc_src,
-                             .mask = (target_ulong)1 << shift };
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,(target_ulong)(1 << shift),  false,false);
 
-    case CC_OP_MULB ... CC_OP_MULQ:
-        return (CCPrepare) { .cond = TCG_COND_NE,
-                             .reg = cpu_cc_src, .mask = -1 };
+    case CC_OP_MULB: case CC_OP_MULW: case CC_OP_MULL: case CC_OP_MULQ:
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,-1,  false,false );
 
-    case CC_OP_BMILGB ... CC_OP_BMILGQ:
+    case CC_OP_BMILGB: case CC_OP_BMILGW: case CC_OP_BMILGL: case CC_OP_BMILGQ:
         size = s->cc_op - CC_OP_BMILGB;
         t0 = gen_ext_tl(tcg_ctx, reg, cpu_cc_src, size, false);
-        return (CCPrepare) { .cond = TCG_COND_EQ, .reg = t0, .mask = -1 };
+        return ccprepare_make(TCG_COND_EQ,  t0,0,  0,-1,  false,false);
 
     case CC_OP_ADCX:
     case CC_OP_ADCOX:
-        return (CCPrepare) { .cond = TCG_COND_NE, .reg = cpu_cc_dst,
-                             .mask = -1, .no_setcond = true };
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_dst,0,  0,-1,  false,true);
 
     case CC_OP_EFLAGS:
-    case CC_OP_SARB ... CC_OP_SARQ:
+    case CC_OP_SARB: case CC_OP_SARW: case CC_OP_SARL: case CC_OP_SARQ:
         /* CC_SRC & 1 */
-        return (CCPrepare) { .cond = TCG_COND_NE,
-                             .reg = cpu_cc_src, .mask = CC_C };
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_C,  false,false);
 
     default:
-       /* The need to compute only C from CC_OP_DYNAMIC is important
-          in efficiently implementing e.g. INC at the start of a TB.  */
-       gen_update_cc_op(s);
-       gen_helper_cc_compute_c(tcg_ctx, reg, cpu_cc_dst, cpu_cc_src,
-                               cpu_cc_src2, cpu_cc_op);
-       return (CCPrepare) { .cond = TCG_COND_NE, .reg = reg,
-                            .mask = -1, .no_setcond = true };
+        /* The need to compute only C from CC_OP_DYNAMIC is important
+            in efficiently implementing e.g. INC at the start of a TB.  */
+        gen_update_cc_op(s);
+        gen_helper_cc_compute_c(tcg_ctx, reg, cpu_cc_dst, cpu_cc_src,
+                                cpu_cc_src2, cpu_cc_op);
+        return ccprepare_make(TCG_COND_NE,  reg,0,  0,-1,  false,true);
     }
 }
 
@@ -982,8 +1050,7 @@ static CCPrepare gen_prepare_eflags_p(DisasContext *s, TCGv reg)
     TCGv cpu_cc_src = *(TCGv *)tcg_ctx->cpu_cc_src;
 
     gen_compute_eflags(s);
-    return (CCPrepare) { .cond = TCG_COND_NE, .reg = cpu_cc_src,
-                         .mask = CC_P };
+    return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_P,  false,false);
 }
 
 /* compute eflags.S to reg */
@@ -1001,15 +1068,14 @@ static CCPrepare gen_prepare_eflags_s(DisasContext *s, TCGv reg)
     case CC_OP_ADCX:
     case CC_OP_ADOX:
     case CC_OP_ADCOX:
-        return (CCPrepare) { .cond = TCG_COND_NE, .reg = cpu_cc_src,
-                             .mask = CC_S };
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_S,  false,false);
     case CC_OP_CLR:
-        return (CCPrepare) { .cond = TCG_COND_NEVER, .mask = -1 };
+        return ccprepare_make(TCG_COND_NEVER,  0,0,  0,-1,  false,false);
     default:
         {
             TCGMemOp size = (s->cc_op - CC_OP_ADDB) & 3;
             TCGv t0 = gen_ext_tl(tcg_ctx, reg, cpu_cc_dst, size, true);
-            return (CCPrepare) { .cond = TCG_COND_LT, .reg = t0, .mask = -1 };
+            return ccprepare_make(TCG_COND_LT,  t0,0,  0,-1,  false,false);
         }
     }
 }
@@ -1024,14 +1090,12 @@ static CCPrepare gen_prepare_eflags_o(DisasContext *s, TCGv reg)
     switch (s->cc_op) {
     case CC_OP_ADOX:
     case CC_OP_ADCOX:
-        return (CCPrepare) { .cond = TCG_COND_NE, .reg = cpu_cc_src2,
-                             .mask = -1, .no_setcond = true };
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src2,0,  0,-1,  false,true);
     case CC_OP_CLR:
-        return (CCPrepare) { .cond = TCG_COND_NEVER, .mask = -1 };
+        return ccprepare_make(TCG_COND_NEVER,  0,0,  0,-1,  false,false);
     default:
         gen_compute_eflags(s);
-        return (CCPrepare) { .cond = TCG_COND_NE, .reg = cpu_cc_src,
-                             .mask = CC_O };
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_O,  false,false );
     }
 }
 
@@ -1050,15 +1114,14 @@ static CCPrepare gen_prepare_eflags_z(DisasContext *s, TCGv reg)
     case CC_OP_ADCX:
     case CC_OP_ADOX:
     case CC_OP_ADCOX:
-        return (CCPrepare) { .cond = TCG_COND_NE, .reg = cpu_cc_src,
-                             .mask = CC_Z };
+        return ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_Z,  false,false);
     case CC_OP_CLR:
-        return (CCPrepare) { .cond = TCG_COND_ALWAYS, .mask = -1 };
+        return ccprepare_make(TCG_COND_ALWAYS,  0,0,  0,-1,  false,false);
     default:
         {
             TCGMemOp size = (s->cc_op - CC_OP_ADDB) & 3;
             TCGv t0 = gen_ext_tl(tcg_ctx, reg, cpu_cc_dst, size, false);
-            return (CCPrepare) { .cond = TCG_COND_EQ, .reg = t0, .mask = -1 };
+            return ccprepare_make(TCG_COND_EQ,  t0,0,  0,-1,  false,false);
         }
     }
 }
@@ -1081,7 +1144,10 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
     jcc_op = (b >> 1) & 7;
 
     switch (s->cc_op) {
-    case CC_OP_SUBB ... CC_OP_SUBQ:
+    case CC_OP_SUBB:
+    case CC_OP_SUBW:
+    case CC_OP_SUBL:
+    case CC_OP_SUBQ:
         /* We optimize relational operators for the cmp/jcc case.  */
         size = s->cc_op - CC_OP_SUBB;
         switch (jcc_op) {
@@ -1089,8 +1155,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             tcg_gen_mov_tl(tcg_ctx, cpu_tmp4, cpu_cc_srcT);
             gen_extu(tcg_ctx, size, cpu_tmp4);
             t0 = gen_ext_tl(tcg_ctx, cpu_tmp0, cpu_cc_src, size, false);
-            cc = (CCPrepare) { .cond = TCG_COND_LEU, .reg = cpu_tmp4,
-                               .reg2 = t0, .mask = -1, .use_reg2 = true };
+            cc = ccprepare_make(TCG_COND_LEU,  cpu_tmp4,t0,  0,-1,  true,false);
             break;
 
         case JCC_L:
@@ -1102,8 +1167,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             tcg_gen_mov_tl(tcg_ctx, cpu_tmp4, cpu_cc_srcT);
             gen_exts(tcg_ctx, size, cpu_tmp4);
             t0 = gen_ext_tl(tcg_ctx, cpu_tmp0, cpu_cc_src, size, true);
-            cc = (CCPrepare) { .cond = cond, .reg = cpu_tmp4,
-                               .reg2 = t0, .mask = -1, .use_reg2 = true };
+            cc = ccprepare_make(cond,  cpu_tmp4,t0,  0,-1,  true,false);
             break;
 
         default:
@@ -1126,8 +1190,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             break;
         case JCC_BE:
             gen_compute_eflags(s);
-            cc = (CCPrepare) { .cond = TCG_COND_NE, .reg = cpu_cc_src,
-                               .mask = CC_Z | CC_C };
+            cc = ccprepare_make(TCG_COND_NE,  cpu_cc_src,0,  0,CC_Z | CC_C,  false,false);
             break;
         case JCC_S:
             cc = gen_prepare_eflags_s(s, reg);
@@ -1142,8 +1205,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             }
             tcg_gen_shri_tl(tcg_ctx, reg, cpu_cc_src, 4); /* CC_O -> CC_S */
             tcg_gen_xor_tl(tcg_ctx, reg, reg, cpu_cc_src);
-            cc = (CCPrepare) { .cond = TCG_COND_NE, .reg = reg,
-                               .mask = CC_S };
+            cc = ccprepare_make(TCG_COND_NE,  reg,0,  0,CC_S,  false,false);
             break;
         default:
         case JCC_LE:
@@ -1153,8 +1215,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             }
             tcg_gen_shri_tl(tcg_ctx, reg, cpu_cc_src, 4); /* CC_O -> CC_S */
             tcg_gen_xor_tl(tcg_ctx, reg, reg, cpu_cc_src);
-            cc = (CCPrepare) { .cond = TCG_COND_NE, .reg = reg,
-                               .mask = CC_S | CC_Z };
+            cc = ccprepare_make(TCG_COND_NE,  reg,0,  0,CC_S | CC_Z,  false,false);
             break;
         }
         break;
@@ -2956,140 +3017,199 @@ typedef void (*SSEFunc_0_eppt)(TCGContext *s, TCGv_ptr env, TCGv_ptr reg_a, TCGv
                      gen_helper_ ## x ## ss, gen_helper_ ## x ## sd, }
 
 static const SSEFunc_0_epp sse_op_table1[256][4] = {
+    // filler: 0x00 - 0x0e
+    {0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},{0},
+    
     /* 3DNow! extensions */
-    [0x0e] = { SSE_DUMMY }, /* femms */
-    [0x0f] = { SSE_DUMMY }, /* pf... */
+    { SSE_DUMMY }, /* femms */
+    { SSE_DUMMY }, /* pf. . . */
+
     /* pure SSE operations */
-    [0x10] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movups, movupd, movss, movsd */
-    [0x11] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movups, movupd, movss, movsd */
-    [0x12] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movlps, movlpd, movsldup, movddup */
-    [0x13] = { SSE_SPECIAL, SSE_SPECIAL },  /* movlps, movlpd */
-    [0x14] = { gen_helper_punpckldq_xmm, gen_helper_punpcklqdq_xmm },
-    [0x15] = { gen_helper_punpckhdq_xmm, gen_helper_punpckhqdq_xmm },
-    [0x16] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL },  /* movhps, movhpd, movshdup */
-    [0x17] = { SSE_SPECIAL, SSE_SPECIAL },  /* movhps, movhpd */
-
-    [0x28] = { SSE_SPECIAL, SSE_SPECIAL },  /* movaps, movapd */
-    [0x29] = { SSE_SPECIAL, SSE_SPECIAL },  /* movaps, movapd */
-    [0x2a] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* cvtpi2ps, cvtpi2pd, cvtsi2ss, cvtsi2sd */
-    [0x2b] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movntps, movntpd, movntss, movntsd */
-    [0x2c] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* cvttps2pi, cvttpd2pi, cvttsd2si, cvttss2si */
-    [0x2d] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* cvtps2pi, cvtpd2pi, cvtsd2si, cvtss2si */
-    [0x2e] = { gen_helper_ucomiss, gen_helper_ucomisd },
-    [0x2f] = { gen_helper_comiss, gen_helper_comisd },
-    [0x50] = { SSE_SPECIAL, SSE_SPECIAL }, /* movmskps, movmskpd */
-    [0x51] = SSE_FOP(sqrt),
-    [0x52] = { gen_helper_rsqrtps, NULL, gen_helper_rsqrtss, NULL },
-    [0x53] = { gen_helper_rcpps, NULL, gen_helper_rcpss, NULL },
-    [0x54] = { gen_helper_pand_xmm, gen_helper_pand_xmm }, /* andps, andpd */
-    [0x55] = { gen_helper_pandn_xmm, gen_helper_pandn_xmm }, /* andnps, andnpd */
-    [0x56] = { gen_helper_por_xmm, gen_helper_por_xmm }, /* orps, orpd */
-    [0x57] = { gen_helper_pxor_xmm, gen_helper_pxor_xmm }, /* xorps, xorpd */
-    [0x58] = SSE_FOP(add),
-    [0x59] = SSE_FOP(mul),
-    [0x5a] = { gen_helper_cvtps2pd, gen_helper_cvtpd2ps,
-               gen_helper_cvtss2sd, gen_helper_cvtsd2ss },
-    [0x5b] = { gen_helper_cvtdq2ps, gen_helper_cvtps2dq, gen_helper_cvttps2dq },
-    [0x5c] = SSE_FOP(sub),
-    [0x5d] = SSE_FOP(min),
-    [0x5e] = SSE_FOP(div),
-    [0x5f] = SSE_FOP(max),
-
-    [0xc2] = SSE_FOP(cmpeq),
-    [0xc6] = { (SSEFunc_0_epp)gen_helper_shufps,
-               (SSEFunc_0_epp)gen_helper_shufpd }, /* XXX: casts */
-
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movups, movupd, movss, movsd */
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movups, movupd, movss, movsd */
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movlps, movlpd, movsldup, movddup */
+    { SSE_SPECIAL, SSE_SPECIAL },  /* movlps, movlpd */
+    { gen_helper_punpckldq_xmm, gen_helper_punpcklqdq_xmm },
+    { gen_helper_punpckhdq_xmm, gen_helper_punpckhqdq_xmm },
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL },  /* movhps, movhpd, movshdup */
+    { SSE_SPECIAL, SSE_SPECIAL },  /* movhps, movhpd */
+    
+    // filler: 0x18 - 0x27
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    
+    /* pure SSE operations */
+    { SSE_SPECIAL, SSE_SPECIAL },  /* movaps, movapd */
+    { SSE_SPECIAL, SSE_SPECIAL },  /* movaps, movapd */
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* cvtpi2ps, cvtpi2pd, cvtsi2ss, cvtsi2sd */
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movntps, movntpd, movntss, movntsd */
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* cvttps2pi, cvttpd2pi, cvttsd2si, cvttss2si */
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* cvtps2pi, cvtpd2pi, cvtsd2si, cvtss2si */
+    { gen_helper_ucomiss, gen_helper_ucomisd },
+    { gen_helper_comiss, gen_helper_comisd },
+    
+    // filler: 0x30 - 0x37
+    {0},{0},{0},{0},{0},{0},{0},{0},
+    
     /* SSSE3, SSE4, MOVBE, CRC32, BMI1, BMI2, ADX.  */
-    [0x38] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL },
-    [0x3a] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL },
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL },
+    {0},	// filler: 0x39
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL },
+    
+    // filler: 0x3b - 0x4f
+    {0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    
+    /* pure SSE operations */
+    { SSE_SPECIAL, SSE_SPECIAL }, /* movmskps, movmskpd */
+    SSE_FOP(sqrt),
+    { gen_helper_rsqrtps, NULL, gen_helper_rsqrtss, NULL },
+    { gen_helper_rcpps, NULL, gen_helper_rcpss, NULL },
+    { gen_helper_pand_xmm, gen_helper_pand_xmm }, /* andps, andpd */
+    { gen_helper_pandn_xmm, gen_helper_pandn_xmm }, /* andnps, andnpd */
+    { gen_helper_por_xmm, gen_helper_por_xmm }, /* orps, orpd */
+    { gen_helper_pxor_xmm, gen_helper_pxor_xmm }, /* xorps, xorpd */
+    SSE_FOP(add),
+    SSE_FOP(mul),
+    { gen_helper_cvtps2pd, gen_helper_cvtpd2ps,
+      gen_helper_cvtss2sd, gen_helper_cvtsd2ss },
+    { gen_helper_cvtdq2ps, gen_helper_cvtps2dq, gen_helper_cvttps2dq },
+    SSE_FOP(sub),
+    SSE_FOP(min),
+    SSE_FOP(div),
+    SSE_FOP(max),
 
     /* MMX ops and their SSE extensions */
-    [0x60] = MMX_OP2(punpcklbw),
-    [0x61] = MMX_OP2(punpcklwd),
-    [0x62] = MMX_OP2(punpckldq),
-    [0x63] = MMX_OP2(packsswb),
-    [0x64] = MMX_OP2(pcmpgtb),
-    [0x65] = MMX_OP2(pcmpgtw),
-    [0x66] = MMX_OP2(pcmpgtl),
-    [0x67] = MMX_OP2(packuswb),
-    [0x68] = MMX_OP2(punpckhbw),
-    [0x69] = MMX_OP2(punpckhwd),
-    [0x6a] = MMX_OP2(punpckhdq),
-    [0x6b] = MMX_OP2(packssdw),
-    [0x6c] = { NULL, gen_helper_punpcklqdq_xmm },
-    [0x6d] = { NULL, gen_helper_punpckhqdq_xmm },
-    [0x6e] = { SSE_SPECIAL, SSE_SPECIAL }, /* movd mm, ea */
-    [0x6f] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movq, movdqa, , movqdu */
-    [0x70] = { (SSEFunc_0_epp)gen_helper_pshufw_mmx,
-               (SSEFunc_0_epp)gen_helper_pshufd_xmm,
-               (SSEFunc_0_epp)gen_helper_pshufhw_xmm,
-               (SSEFunc_0_epp)gen_helper_pshuflw_xmm }, /* XXX: casts */
-    [0x71] = { SSE_SPECIAL, SSE_SPECIAL }, /* shiftw */
-    [0x72] = { SSE_SPECIAL, SSE_SPECIAL }, /* shiftd */
-    [0x73] = { SSE_SPECIAL, SSE_SPECIAL }, /* shiftq */
-    [0x74] = MMX_OP2(pcmpeqb),
-    [0x75] = MMX_OP2(pcmpeqw),
-    [0x76] = MMX_OP2(pcmpeql),
-    [0x77] = { SSE_DUMMY }, /* emms */
-    [0x78] = { NULL, SSE_SPECIAL, NULL, SSE_SPECIAL }, /* extrq_i, insertq_i */
-    [0x79] = { NULL, gen_helper_extrq_r, NULL, gen_helper_insertq_r },
-    [0x7c] = { NULL, gen_helper_haddpd, NULL, gen_helper_haddps },
-    [0x7d] = { NULL, gen_helper_hsubpd, NULL, gen_helper_hsubps },
-    [0x7e] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movd, movd, , movq */
-    [0x7f] = { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movq, movdqa, movdqu */
-    [0xc4] = { SSE_SPECIAL, SSE_SPECIAL }, /* pinsrw */
-    [0xc5] = { SSE_SPECIAL, SSE_SPECIAL }, /* pextrw */
-    [0xd0] = { NULL, gen_helper_addsubpd, NULL, gen_helper_addsubps },
-    [0xd1] = MMX_OP2(psrlw),
-    [0xd2] = MMX_OP2(psrld),
-    [0xd3] = MMX_OP2(psrlq),
-    [0xd4] = MMX_OP2(paddq),
-    [0xd5] = MMX_OP2(pmullw),
-    [0xd6] = { NULL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL },
-    [0xd7] = { SSE_SPECIAL, SSE_SPECIAL }, /* pmovmskb */
-    [0xd8] = MMX_OP2(psubusb),
-    [0xd9] = MMX_OP2(psubusw),
-    [0xda] = MMX_OP2(pminub),
-    [0xdb] = MMX_OP2(pand),
-    [0xdc] = MMX_OP2(paddusb),
-    [0xdd] = MMX_OP2(paddusw),
-    [0xde] = MMX_OP2(pmaxub),
-    [0xdf] = MMX_OP2(pandn),
-    [0xe0] = MMX_OP2(pavgb),
-    [0xe1] = MMX_OP2(psraw),
-    [0xe2] = MMX_OP2(psrad),
-    [0xe3] = MMX_OP2(pavgw),
-    [0xe4] = MMX_OP2(pmulhuw),
-    [0xe5] = MMX_OP2(pmulhw),
-    [0xe6] = { NULL, gen_helper_cvttpd2dq, gen_helper_cvtdq2pd, gen_helper_cvtpd2dq },
-    [0xe7] = { SSE_SPECIAL , SSE_SPECIAL },  /* movntq, movntq */
-    [0xe8] = MMX_OP2(psubsb),
-    [0xe9] = MMX_OP2(psubsw),
-    [0xea] = MMX_OP2(pminsw),
-    [0xeb] = MMX_OP2(por),
-    [0xec] = MMX_OP2(paddsb),
-    [0xed] = MMX_OP2(paddsw),
-    [0xee] = MMX_OP2(pmaxsw),
-    [0xef] = MMX_OP2(pxor),
-    [0xf0] = { NULL, NULL, NULL, SSE_SPECIAL }, /* lddqu */
-    [0xf1] = MMX_OP2(psllw),
-    [0xf2] = MMX_OP2(pslld),
-    [0xf3] = MMX_OP2(psllq),
-    [0xf4] = MMX_OP2(pmuludq),
-    [0xf5] = MMX_OP2(pmaddwd),
-    [0xf6] = MMX_OP2(psadbw),
-    [0xf7] = { (SSEFunc_0_epp)gen_helper_maskmov_mmx,
-               (SSEFunc_0_epp)gen_helper_maskmov_xmm }, /* XXX: casts */
-    [0xf8] = MMX_OP2(psubb),
-    [0xf9] = MMX_OP2(psubw),
-    [0xfa] = MMX_OP2(psubl),
-    [0xfb] = MMX_OP2(psubq),
-    [0xfc] = MMX_OP2(paddb),
-    [0xfd] = MMX_OP2(paddw),
-    [0xfe] = MMX_OP2(paddl),
+    MMX_OP2(punpcklbw),
+    MMX_OP2(punpcklwd),
+    MMX_OP2(punpckldq),
+    MMX_OP2(packsswb),
+    MMX_OP2(pcmpgtb),
+    MMX_OP2(pcmpgtw),
+    MMX_OP2(pcmpgtl),
+    MMX_OP2(packuswb),
+    MMX_OP2(punpckhbw),
+    MMX_OP2(punpckhwd),
+    MMX_OP2(punpckhdq),
+    MMX_OP2(packssdw),
+    { NULL, gen_helper_punpcklqdq_xmm },
+    { NULL, gen_helper_punpckhqdq_xmm },
+    { SSE_SPECIAL, SSE_SPECIAL }, /* movd mm, ea */
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movq, movdqa, , movqdu */
+    { (SSEFunc_0_epp)gen_helper_pshufw_mmx,
+      (SSEFunc_0_epp)gen_helper_pshufd_xmm,
+      (SSEFunc_0_epp)gen_helper_pshufhw_xmm,
+      (SSEFunc_0_epp)gen_helper_pshuflw_xmm }, /* XXX: casts */
+    { SSE_SPECIAL, SSE_SPECIAL }, /* shiftw */
+    { SSE_SPECIAL, SSE_SPECIAL }, /* shiftd */
+    { SSE_SPECIAL, SSE_SPECIAL }, /* shiftq */
+    MMX_OP2(pcmpeqb),
+    MMX_OP2(pcmpeqw),
+    MMX_OP2(pcmpeql),
+    { SSE_DUMMY }, /* emms */
+    { NULL, SSE_SPECIAL, NULL, SSE_SPECIAL }, /* extrq_i, insertq_i */
+    { NULL, gen_helper_extrq_r, NULL, gen_helper_insertq_r },
+    {0},{0}, // filler: 0x7a - 0x7b
+    { NULL, gen_helper_haddpd, NULL, gen_helper_haddps },
+    { NULL, gen_helper_hsubpd, NULL, gen_helper_hsubps },
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movd, movd, , movq */
+    { SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL }, /* movq, movdqa, movdqu */
+    
+    // filler: 0x80 - 0xc1
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},
+    
+    SSE_FOP(cmpeq),
+
+    // filler: 0xc3
+    {0},
+
+    /* MMX ops and their SSE extensions */
+    { SSE_SPECIAL, SSE_SPECIAL }, /* pinsrw */
+    { SSE_SPECIAL, SSE_SPECIAL }, /* pextrw */
+    
+    { (SSEFunc_0_epp)gen_helper_shufps,
+      (SSEFunc_0_epp)gen_helper_shufpd }, /* XXX: casts */
+
+    // filler: 0xc7 - 0xcf
+    {0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    
+    /* MMX ops and their SSE extensions */
+    { NULL, gen_helper_addsubpd, NULL, gen_helper_addsubps },
+    MMX_OP2(psrlw),
+    MMX_OP2(psrld),
+    MMX_OP2(psrlq),
+    MMX_OP2(paddq),
+    MMX_OP2(pmullw),
+    { NULL, SSE_SPECIAL, SSE_SPECIAL, SSE_SPECIAL },
+    { SSE_SPECIAL, SSE_SPECIAL }, /* pmovmskb */
+    MMX_OP2(psubusb),
+    MMX_OP2(psubusw),
+    MMX_OP2(pminub),
+    MMX_OP2(pand),
+    MMX_OP2(paddusb),
+    MMX_OP2(paddusw),
+    MMX_OP2(pmaxub),
+    MMX_OP2(pandn),
+    MMX_OP2(pavgb),
+    MMX_OP2(psraw),
+    MMX_OP2(psrad),
+    MMX_OP2(pavgw),
+    MMX_OP2(pmulhuw),
+    MMX_OP2(pmulhw),
+    { NULL, gen_helper_cvttpd2dq, gen_helper_cvtdq2pd, gen_helper_cvtpd2dq },
+    { SSE_SPECIAL , SSE_SPECIAL },  /* movntq, movntq */
+    MMX_OP2(psubsb),
+    MMX_OP2(psubsw),
+    MMX_OP2(pminsw),
+    MMX_OP2(por),
+    MMX_OP2(paddsb),
+    MMX_OP2(paddsw),
+    MMX_OP2(pmaxsw),
+    MMX_OP2(pxor),
+    { NULL, NULL, NULL, SSE_SPECIAL }, /* lddqu */
+    MMX_OP2(psllw),
+    MMX_OP2(pslld),
+    MMX_OP2(psllq),
+    MMX_OP2(pmuludq),
+    MMX_OP2(pmaddwd),
+    MMX_OP2(psadbw),
+    { (SSEFunc_0_epp)gen_helper_maskmov_mmx,
+      (SSEFunc_0_epp)gen_helper_maskmov_xmm }, /* XXX: casts */
+    MMX_OP2(psubb),
+    MMX_OP2(psubw),
+    MMX_OP2(psubl),
+    MMX_OP2(psubq),
+    MMX_OP2(paddb),
+    MMX_OP2(paddw),
+    MMX_OP2(paddl),
+
+    // filler: 0xff
+    {0},
 };
 
 static const SSEFunc_0_epp sse_op_table2[3 * 8][2] = {
+#ifdef _MSC_VER
+    {0},{0},
+    MMX_OP2(psrlw),
+    {0},
+    MMX_OP2(psraw),
+    {0},
+    MMX_OP2(psllw),
+    {0},{0},{0},
+    MMX_OP2(psrld),
+    {0},
+    MMX_OP2(psrad),
+    {0},
+    MMX_OP2(pslld),
+    {0},{0},{0},
+    MMX_OP2(psrlq),
+    { NULL, gen_helper_psrldq_xmm },
+    {0},{0},
+    MMX_OP2(psllq),
+    { NULL, gen_helper_pslldq_xmm },
+#else
     [0 + 2] = MMX_OP2(psrlw),
     [0 + 4] = MMX_OP2(psraw),
     [0 + 6] = MMX_OP2(psllw),
@@ -3100,6 +3220,7 @@ static const SSEFunc_0_epp sse_op_table2[3 * 8][2] = {
     [16 + 3] = { NULL, gen_helper_psrldq_xmm },
     [16 + 6] = MMX_OP2(psllq),
     [16 + 7] = { NULL, gen_helper_pslldq_xmm },
+#endif
 };
 
 static const SSEFunc_0_epi sse_op_table3ai[] = {
@@ -3142,6 +3263,64 @@ static const SSEFunc_0_epp sse_op_table4[8][4] = {
 };
 
 static const SSEFunc_0_epp sse_op_table5[256] = {
+#ifdef _MSC_VER
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},      // filler: 0x00 - 0x0b
+    gen_helper_pi2fw,
+    gen_helper_pi2fd,
+    {0},{0}, {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0}, // filler: 0x0e - 0x01b
+    gen_helper_pf2iw,
+    gen_helper_pf2id,
+    // filler: 0x1e - 0x89
+    {0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},
+    gen_helper_pfnacc,
+    {0},{0},{0},    // filler: 0x8b - 0x8d
+    gen_helper_pfpnacc,
+    {0},            // filler: 0x8f
+    gen_helper_pfcmpge,
+    {0},{0},{0},    // filler: 0x91 - 0x93
+    gen_helper_pfmin,
+    {0},            // filler: 0x95
+    gen_helper_pfrcp,
+    gen_helper_pfrsqrt,
+    {0},{0},        // filler: 0x98 - 0x99
+    gen_helper_pfsub,
+    {0},{0},{0},    // filler: 0x9b - 0x9d
+    gen_helper_pfadd,
+    {0},            // filler: 0x9f
+    gen_helper_pfcmpgt,
+    {0},{0},{0},    // filler: 0xa1 - 0xa3
+    gen_helper_pfmax,
+    {0},            // filler: 0xa5
+    gen_helper_movq, /* pfrcpit1; no need to actually increase precision */
+    gen_helper_movq, /* pfrsqit1 */
+    {0},{0},        // filler: 0xa8 - 0xa9
+    gen_helper_pfsubr,
+    {0},{0},{0},    // filler: 0xab - 0xad
+    gen_helper_pfacc,
+    {0},            // filler: 0xaf
+    gen_helper_pfcmpeq,
+    {0},{0},{0},    // filler: 0xb1 - 0xb3
+    gen_helper_pfmul,
+    {0},            // filler: 0xb5
+    gen_helper_movq, /* pfrcpit2 */
+    gen_helper_pmulhrw_mmx,
+    {0},{0},{0},    // filler: 0xb8 - 0xba
+    gen_helper_pswapd,
+    {0},{0},{0},    // filler: 0xbc - 0xbe
+    gen_helper_pavgb_mmx, /* pavgusb */
+    // filler: 0xc0 - 0xff
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+    {0},{0},{0},{0},{0},{0},{0},{0}, {0},{0},{0},{0},{0},{0},{0},{0},
+#else
     [0x0c] = gen_helper_pi2fw,
     [0x0d] = gen_helper_pi2fd,
     [0x1c] = gen_helper_pf2iw,
@@ -3166,6 +3345,7 @@ static const SSEFunc_0_epp sse_op_table5[256] = {
     [0xb7] = gen_helper_pmulhrw_mmx,
     [0xbb] = gen_helper_pswapd,
     [0xbf] = gen_helper_pavgb_mmx /* pavgusb */
+#endif
 };
 
 struct SSEOpHelper_epp {
@@ -3187,60 +3367,130 @@ struct SSEOpHelper_eppi {
 #define AESNI_OP(x) { { NULL, gen_helper_ ## x ## _xmm }, CPUID_EXT_AES }
 
 static const struct SSEOpHelper_epp sse_op_table6[256] = {
-    [0x00] = SSSE3_OP(pshufb),
-    [0x01] = SSSE3_OP(phaddw),
-    [0x02] = SSSE3_OP(phaddd),
-    [0x03] = SSSE3_OP(phaddsw),
-    [0x04] = SSSE3_OP(pmaddubsw),
-    [0x05] = SSSE3_OP(phsubw),
-    [0x06] = SSSE3_OP(phsubd),
-    [0x07] = SSSE3_OP(phsubsw),
-    [0x08] = SSSE3_OP(psignb),
-    [0x09] = SSSE3_OP(psignw),
-    [0x0a] = SSSE3_OP(psignd),
-    [0x0b] = SSSE3_OP(pmulhrsw),
-    [0x10] = SSE41_OP(pblendvb),
-    [0x14] = SSE41_OP(blendvps),
-    [0x15] = SSE41_OP(blendvpd),
-    [0x17] = SSE41_OP(ptest),
-    [0x1c] = SSSE3_OP(pabsb),
-    [0x1d] = SSSE3_OP(pabsw),
-    [0x1e] = SSSE3_OP(pabsd),
-    [0x20] = SSE41_OP(pmovsxbw),
-    [0x21] = SSE41_OP(pmovsxbd),
-    [0x22] = SSE41_OP(pmovsxbq),
-    [0x23] = SSE41_OP(pmovsxwd),
-    [0x24] = SSE41_OP(pmovsxwq),
-    [0x25] = SSE41_OP(pmovsxdq),
-    [0x28] = SSE41_OP(pmuldq),
-    [0x29] = SSE41_OP(pcmpeqq),
-    [0x2a] = SSE41_SPECIAL, /* movntqda */
-    [0x2b] = SSE41_OP(packusdw),
-    [0x30] = SSE41_OP(pmovzxbw),
-    [0x31] = SSE41_OP(pmovzxbd),
-    [0x32] = SSE41_OP(pmovzxbq),
-    [0x33] = SSE41_OP(pmovzxwd),
-    [0x34] = SSE41_OP(pmovzxwq),
-    [0x35] = SSE41_OP(pmovzxdq),
-    [0x37] = SSE42_OP(pcmpgtq),
-    [0x38] = SSE41_OP(pminsb),
-    [0x39] = SSE41_OP(pminsd),
-    [0x3a] = SSE41_OP(pminuw),
-    [0x3b] = SSE41_OP(pminud),
-    [0x3c] = SSE41_OP(pmaxsb),
-    [0x3d] = SSE41_OP(pmaxsd),
-    [0x3e] = SSE41_OP(pmaxuw),
-    [0x3f] = SSE41_OP(pmaxud),
-    [0x40] = SSE41_OP(pmulld),
-    [0x41] = SSE41_OP(phminposuw),
-    [0xdb] = AESNI_OP(aesimc),
-    [0xdc] = AESNI_OP(aesenc),
-    [0xdd] = AESNI_OP(aesenclast),
-    [0xde] = AESNI_OP(aesdec),
-    [0xdf] = AESNI_OP(aesdeclast),
+    SSSE3_OP(pshufb),
+    SSSE3_OP(phaddw),
+    SSSE3_OP(phaddd),
+    SSSE3_OP(phaddsw),
+    SSSE3_OP(pmaddubsw),
+    SSSE3_OP(phsubw),
+    SSSE3_OP(phsubd),
+    SSSE3_OP(phsubsw),
+    SSSE3_OP(psignb),
+    SSSE3_OP(psignw),
+    SSSE3_OP(psignd),
+    SSSE3_OP(pmulhrsw),
+    {{0},0},{{0},0},{{0},0},{{0},0}, // filler: 0x0c - 0x0f
+    SSE41_OP(pblendvb),
+    {{0},0},{{0},0},{{0},0},     // filler: 0x11 - 0x13
+    SSE41_OP(blendvps),
+    SSE41_OP(blendvpd),
+    {{0},0},             // filler: 0x16
+    SSE41_OP(ptest),
+    {{0},0},{{0},0},{{0},0},{{0},0}, // filler: 0x18 - 0x1b
+    SSSE3_OP(pabsb),
+    SSSE3_OP(pabsw),
+    SSSE3_OP(pabsd),
+    {{0},0},             // filler: 0x1f
+    SSE41_OP(pmovsxbw),
+    SSE41_OP(pmovsxbd),
+    SSE41_OP(pmovsxbq),
+    SSE41_OP(pmovsxwd),
+    SSE41_OP(pmovsxwq),
+    SSE41_OP(pmovsxdq),
+    {{0},0},{{0},0},         // filler: 0x26 - 0x27
+    SSE41_OP(pmuldq),
+    SSE41_OP(pcmpeqq),
+    SSE41_SPECIAL, /* movntqda */
+    SSE41_OP(packusdw),
+    {{0},0},{{0},0},{{0},0},{{0},0}, // filler: 0x2c - 0x2f
+    SSE41_OP(pmovzxbw),
+    SSE41_OP(pmovzxbd),
+    SSE41_OP(pmovzxbq),
+    SSE41_OP(pmovzxwd),
+    SSE41_OP(pmovzxwq),
+    SSE41_OP(pmovzxdq),
+    {{0},0},             // filler: 0x36
+    SSE42_OP(pcmpgtq),
+    SSE41_OP(pminsb),
+    SSE41_OP(pminsd),
+    SSE41_OP(pminuw),
+    SSE41_OP(pminud),
+    SSE41_OP(pmaxsb),
+    SSE41_OP(pmaxsd),
+    SSE41_OP(pmaxuw),
+    SSE41_OP(pmaxud),
+    SSE41_OP(pmulld),
+    SSE41_OP(phminposuw),
+    // filler: 0x42 - 0xda
+                    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},
+    AESNI_OP(aesimc),
+    AESNI_OP(aesenc),
+    AESNI_OP(aesenclast),
+    AESNI_OP(aesdec),
+    AESNI_OP(aesdeclast),
+    // filler: 0xe0 - 0xff
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
 };
 
 static const struct SSEOpHelper_eppi sse_op_table7[256] = {
+#ifdef _MSC_VER
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, // filler: 0x00 - 0x07
+    SSE41_OP(roundps),
+    SSE41_OP(roundpd),
+    SSE41_OP(roundss),
+    SSE41_OP(roundsd),
+    SSE41_OP(blendps),
+    SSE41_OP(blendpd),
+    SSE41_OP(pblendw),
+    SSSE3_OP(palignr),
+    {{0},0},{{0},0},{{0},0},{{0},0}, // filler: 0x10 - 0x13
+    SSE41_SPECIAL, /* pextrb */
+    SSE41_SPECIAL, /* pextrw */
+    SSE41_SPECIAL, /* pextrd/pextrq */
+    SSE41_SPECIAL, /* extractps */
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, // filler: 0x18 - 0x1f
+    SSE41_SPECIAL, /* pinsrb */
+    SSE41_SPECIAL, /* insertps */
+    SSE41_SPECIAL, /* pinsrd/pinsrq */
+    // filler: 0x23 - 0x3f
+                            {{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    SSE41_OP(dpps),
+    SSE41_OP(dppd),
+    SSE41_OP(mpsadbw),
+    {{0},0}, // filler: 0x43
+    PCLMULQDQ_OP(pclmulqdq),
+    // filler: 0x45 - 0x5f
+                                            {{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    SSE42_OP(pcmpestrm),
+    SSE42_OP(pcmpestri),
+    SSE42_OP(pcmpistrm),
+    SSE42_OP(pcmpistri),
+    // filler: 0x64 - 0xde
+                                    {{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    AESNI_OP(aeskeygenassist),
+    // filler: 0xe0 - 0xff
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+    {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0}, {{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},{{0},0},
+#else
     [0x08] = SSE41_OP(roundps),
     [0x09] = SSE41_OP(roundpd),
     [0x0a] = SSE41_OP(roundss),
@@ -3265,6 +3515,7 @@ static const struct SSEOpHelper_eppi sse_op_table7[256] = {
     [0x62] = SSE42_OP(pcmpistrm),
     [0x63] = SSE42_OP(pcmpistri),
     [0xdf] = AESNI_OP(aeskeygenassist),
+#endif
 };
 
 static void gen_sse(CPUX86State *env, DisasContext *s, int b,
@@ -4598,26 +4849,25 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                 gen_lea_modrm(env, s, modrm);
                 op2_offset = offsetof(CPUX86State,xmm_t0);
 
-                switch (b) {
-                case 0x50 ... 0x5a:
-                case 0x5c ... 0x5f:
-                case 0xc2:
+                if( (b >= 0x50 && b <= 0x5a) ||
+                    (b >= 0x5c && b <= 0x5f) ||
+                    b == 0xc2 )
+                {
                     /* Most sse scalar operations.  */
                     if (b1 == 2) {
                         sz = 2;
                     } else if (b1 == 3) {
                         sz = 3;
                     }
-                    break;
-
-                case 0x2e:  /* ucomis[sd] */
-                case 0x2f:  /* comis[sd] */
+                }
+                else if( b == 0x2e ||	/* ucomis[sd] */
+                         b == 0x2f )	/* comis[sd] */
+                {
                     if (b1 == 0) {
                         sz = 2;
                     } else {
                         sz = 3;
                     }
-                    break;
                 }
 
                 switch (sz) {
@@ -4842,7 +5092,22 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         prefixes |= PREFIX_ADR;
         goto next_byte;
 #ifdef TARGET_X86_64
-    case 0x40 ... 0x4f:
+    case 0x40:
+    case 0x41:
+    case 0x42:
+    case 0x43:
+    case 0x44:
+    case 0x45:
+    case 0x46:
+    case 0x47:
+    case 0x48:
+    case 0x49:
+    case 0x4a:
+    case 0x4b:
+    case 0x4c:
+    case 0x4d:
+    case 0x4e:
+    case 0x4f:
         if (CODE64(s)) {
             /* REX prefix */
             rex_w = (b >> 3) & 1;
@@ -4955,14 +5220,14 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
 
         /**************************/
         /* arith & logic */
-    case 0x00 ... 0x05:
-    case 0x08 ... 0x0d:
-    case 0x10 ... 0x15:
-    case 0x18 ... 0x1d:
-    case 0x20 ... 0x25:
-    case 0x28 ... 0x2d:
-    case 0x30 ... 0x35:
-    case 0x38 ... 0x3d:
+    case 0x00: case 0x01: case 0x02: case 0x03: case 0x04: case 0x05:	//case 0x00 ... 0x05:
+    case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d:	//case 0x08 ... 0x0d:
+    case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15:	//case 0x10 ... 0x15:
+    case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d:	//case 0x18 ... 0x1d:
+    case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25:	//case 0x20 ... 0x25:
+    case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d:	//case 0x28 ... 0x2d:
+    case 0x30: case 0x31: case 0x32: case 0x33: case 0x34: case 0x35:	//case 0x30 ... 0x35:
+    case 0x38: case 0x39: case 0x3a: case 0x3b: case 0x3c: case 0x3d:	//case 0x38 ... 0x3d:
         {
             int op, f, val;
             op = (b >> 3) & 7;
@@ -5061,11 +5326,13 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
 
         /**************************/
         /* inc, dec, and other misc arith */
-    case 0x40 ... 0x47: /* inc Gv */
+    case 0x40: case 0x41: case 0x42: case 0x43:
+    case 0x44: case 0x45: case 0x46: case 0x47: //case 0x40 ... 0x47: /* inc Gv */
         ot = dflag;
         gen_inc(s, ot, OR_EAX + (b & 7), 1);
         break;
-    case 0x48 ... 0x4f: /* dec Gv */
+    case 0x48: case 0x49: case 0x4a: case 0x4b:
+    case 0x4c: case 0x4d: case 0x4e: case 0x4f: //case 0x48 ... 0x4f: /* dec Gv */
         ot = dflag;
         gen_inc(s, ot, OR_EAX + (b & 7), -1);
         break;
@@ -5606,11 +5873,13 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
 
         /**************************/
         /* push/pop */
-    case 0x50 ... 0x57: /* push */
+    case 0x50: case 0x51: case 0x52: case 0x53:
+    case 0x54: case 0x55: case 0x56: case 0x57: //case 0x50 ... 0x57: /* push */
         gen_op_mov_v_reg(tcg_ctx, MO_32, *cpu_T[0], (b & 7) | REX_B(s));
         gen_push_v(s, *cpu_T[0]);
         break;
-    case 0x58 ... 0x5f: /* pop */
+    case 0x58: case 0x59: case 0x5a: case 0x5b:
+    case 0x5c: case 0x5d: case 0x5e: case 0x5f: //case 0x58 ... 0x5f: /* pop */
         ot = gen_pop_T0(s);
         /* NOTE: order is important for pop %sp */
         gen_pop_update(s, ot);
@@ -5894,12 +6163,14 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         gen_op_ld_v(s, MO_8, *cpu_T[0], cpu_A0);
         gen_op_mov_reg_v(tcg_ctx, MO_8, R_EAX, *cpu_T[0]);
         break;
-    case 0xb0 ... 0xb7: /* mov R, Ib */
+    case 0xb0: case 0xb1: case 0xb2: case 0xb3:
+    case 0xb4: case 0xb5: case 0xb6: case 0xb7: //case 0xb0 ... 0xb7: /* mov R, Ib */
         val = insn_get(env, s, MO_8);
         tcg_gen_movi_tl(tcg_ctx, *cpu_T[0], val);
         gen_op_mov_reg_v(tcg_ctx, MO_8, (b & 7) | REX_B(s), *cpu_T[0]);
         break;
-    case 0xb8 ... 0xbf: /* mov R, Iv */
+    case 0xb8: case 0xb9: case 0xba: case 0xbb:
+    case 0xbc: case 0xbd: case 0xbe: case 0xbf: //case 0xb8 ... 0xbf: /* mov R, Iv */
 #ifdef TARGET_X86_64
         if (dflag == MO_64) {
             uint64_t tmp;
@@ -5920,7 +6191,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         }
         break;
 
-    case 0x91 ... 0x97: /* xchg R, EAX */
+    case 0x91: case 0x92: case 0x93:
+    case 0x94: case 0x95: case 0x96: case 0x97: //case 0x91 ... 0x97: /* xchg R, EAX */
     do_xchg_reg_eax:
         ot = dflag;
         reg = (b & 7) | REX_B(s);
@@ -5995,7 +6267,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     case 0xc1:
         /* shift Ev,Ib */
         shift = 2;
-    grp2:
+    grp2_label:
         {
             ot = mo_b_d(b, dflag);
             modrm = cpu_ldub_code(env, s->pc++);
@@ -6027,12 +6299,12 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     case 0xd1:
         /* shift Ev,1 */
         shift = 1;
-        goto grp2;
+        goto grp2_label;
     case 0xd2:
     case 0xd3:
         /* shift Ev,cl */
         shift = 0;
-        goto grp2;
+        goto grp2_label;
 
     case 0x1a4: /* shld imm */
         op = 0;
@@ -6074,7 +6346,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
 
         /************************/
         /* floats */
-    case 0xd8 ... 0xdf:
+    case 0xd8: case 0xd9: case 0xda: case 0xdb:
+    case 0xdc: case 0xdd: case 0xde: case 0xdf: //case 0xd8 ... 0xdf:
         if (s->flags & (HF_EM_MASK | HF_TS_MASK)) {
             /* if CR0.EM or CR0.TS are set, generate an FPU exception */
             /* XXX: what to do if illegal op ? */
@@ -6088,12 +6361,12 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         if (mod != 3) {
             /* memory op */
             gen_lea_modrm(env, s, modrm);
-            switch(op) {
-            case 0x00 ... 0x07: /* fxxxs */
-            case 0x10 ... 0x17: /* fixxxl */
-            case 0x20 ... 0x27: /* fxxxl */
-            case 0x30 ... 0x37: /* fixxx */
-                {
+            
+            if( (op >= 0x00 && op <= 0x07) || /* fxxxs */
+                (op >= 0x10 && op <= 0x17) || /* fixxxl */
+                (op >= 0x20 && op <= 0x27) || /* fxxxl */
+                (op >= 0x30 && op <= 0x37) )  /* fixxx */
+            {
                     int op1;
                     op1 = op & 7;
 
@@ -6127,14 +6400,14 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                         gen_helper_fpop(tcg_ctx, cpu_env);
                     }
                     fpu_update_ip(env, pc_start);
-                }
-                break;
-            case 0x08: /* flds */
-            case 0x0a: /* fsts */
-            case 0x0b: /* fstps */
-            case 0x18 ... 0x1b: /* fildl, fisttpl, fistl, fistpl */
-            case 0x28 ... 0x2b: /* fldl, fisttpll, fstl, fstpl */
-            case 0x38 ... 0x3b: /* filds, fisttps, fists, fistps */
+            }
+            else if((op == 0x08) || /* flds */
+                    (op == 0x0a) || /* fsts */
+                    (op == 0x0b) || /* fstps */
+                    (op >= 0x18 && op <= 0x1b) || /* fildl, fisttpl, fistl, fistpl */
+                    (op >= 0x28 && op <= 0x2b) || /* fldl, fisttpll, fstl, fstpl */
+                    (op >= 0x38 && op <= 0x3b) )  /* filds, fisttps, fists, fistps */
+            {
                 switch(op & 7) {
                 case 0:
                     switch(op >> 4) {
@@ -6212,80 +6485,94 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                     break;
                 }
                 fpu_update_ip(env, pc_start);
-                break;
-            case 0x0c: /* fldenv mem */
+            }
+            else if(op == 0x0c) /* fldenv mem */
+            {
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fldenv(tcg_ctx, cpu_env, cpu_A0, tcg_const_i32(tcg_ctx, dflag - 1));
-                break;
-            case 0x0d: /* fldcw mem */
+            }
+            else if(op == 0x0d) /* fldcw mem */
+            {
                 tcg_gen_qemu_ld_i32(s->uc, cpu_tmp2_i32, cpu_A0,
                                     s->mem_index, MO_LEUW);
                 gen_helper_fldcw(tcg_ctx, cpu_env, cpu_tmp2_i32);
-                break;
-            case 0x0e: /* fnstenv mem */
+            }
+            else if(op == 0x0e) /* fnstenv mem */
+            {
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fstenv(tcg_ctx, cpu_env, cpu_A0, tcg_const_i32(tcg_ctx, dflag - 1));
-                break;
-            case 0x0f: /* fnstcw mem */
+            }
+            else if(op == 0x0f) /* fnstcw mem */
+            {
                 gen_helper_fnstcw(tcg_ctx, cpu_tmp2_i32, cpu_env);
                 tcg_gen_qemu_st_i32(s->uc, cpu_tmp2_i32, cpu_A0,
                                     s->mem_index, MO_LEUW);
-                break;
-            case 0x1d: /* fldt mem */
+            }
+            else if(op == 0x1d) /* fldt mem */
+            {
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fldt_ST0(tcg_ctx, cpu_env, cpu_A0);
                 fpu_update_ip(env, pc_start);
-                break;
-            case 0x1f: /* fstpt mem */
+            }
+            else if(op == 0x1f) /* fstpt mem */
+            {
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fstt_ST0(tcg_ctx, cpu_env, cpu_A0);
                 gen_helper_fpop(tcg_ctx, cpu_env);
                 fpu_update_ip(env, pc_start);
-                break;
-            case 0x2c: /* frstor mem */
+            }
+            else if(op == 0x2c) /* frstor mem */
+            {
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_frstor(tcg_ctx, cpu_env, cpu_A0, tcg_const_i32(tcg_ctx, dflag - 1));
-                break;
-            case 0x2e: /* fnsave mem */
+            }
+            else if(op == 0x2e) /* fnsave mem */
+            {
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fsave(tcg_ctx, cpu_env, cpu_A0, tcg_const_i32(tcg_ctx, dflag - 1));
-                break;
-            case 0x2f: /* fnstsw mem */
+            }
+            else if(op == 0x2f) /* fnstsw mem */
+            {
                 gen_helper_fnstsw(tcg_ctx, cpu_tmp2_i32, cpu_env);
                 tcg_gen_qemu_st_i32(s->uc, cpu_tmp2_i32, cpu_A0,
                                     s->mem_index, MO_LEUW);
-                break;
-            case 0x3c: /* fbld */
+            }
+            else if(op == 0x3c) /* fbld */
+            {
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fbld_ST0(tcg_ctx, cpu_env, cpu_A0);
                 fpu_update_ip(env, pc_start);
-                break;
-            case 0x3e: /* fbstp */
+            }
+            else if(op == 0x3e) /* fbstp */
+            {
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 gen_helper_fbst_ST0(tcg_ctx, cpu_env, cpu_A0);
                 gen_helper_fpop(tcg_ctx, cpu_env);
                 fpu_update_ip(env, pc_start);
-                break;
-            case 0x3d: /* fildll */
+            }
+            else if(op == 0x3d) /* fildll */
+            {
                 tcg_gen_qemu_ld_i64(s->uc, cpu_tmp1_i64, cpu_A0, s->mem_index, MO_LEQ);
                 gen_helper_fildll_ST0(tcg_ctx, cpu_env, cpu_tmp1_i64);
                 fpu_update_ip(env, pc_start);
-                break;
-            case 0x3f: /* fistpll */
+            }
+            else if(op == 0x3f) /* fistpll */
+            {
                 gen_helper_fistll_ST0(tcg_ctx, cpu_tmp1_i64, cpu_env);
                 tcg_gen_qemu_st_i64(s->uc, cpu_tmp1_i64, cpu_A0, s->mem_index, MO_LEQ);
                 gen_helper_fpop(tcg_ctx, cpu_env);
                 fpu_update_ip(env, pc_start);
-                break;
-            default:
+            }
+            else
+            {
                 goto illegal_op;
             }
         } else {
@@ -6428,9 +6715,9 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                     break;
                 }
                 break;
-            case 0x00: case 0x01: case 0x04 ... 0x07: /* fxxx st, sti */
-            case 0x20: case 0x21: case 0x24 ... 0x27: /* fxxx sti, st */
-            case 0x30: case 0x31: case 0x34 ... 0x37: /* fxxxp sti, st */
+            case 0x00: case 0x01: case 0x04: case 0x05: case 0x06: case 0x07: /* fxxx st, sti */
+            case 0x20: case 0x21: case 0x24: case 0x25: case 0x26: case 0x27: /* fxxx sti, st */
+            case 0x30: case 0x31: case 0x34: case 0x35: case 0x36: case 0x37: /* fxxxp sti, st */
                 {
                     int op1;
 
@@ -6574,8 +6861,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                 gen_helper_fpop(tcg_ctx, cpu_env);
                 set_cc_op(s, CC_OP_EFLAGS);
                 break;
-            case 0x10 ... 0x13: /* fcmovxx */
-            case 0x18 ... 0x1b:
+            case 0x10: case 0x11: case 0x12: case 0x13: /* fcmovxx */
+            case 0x18: case 0x19: case 0x1a: case 0x1b:
                 {
                     int op1, l1;
                     static const uint8_t fcmov_cc[8] = {
@@ -6867,10 +7154,14 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         }
         gen_jmp(s, tval);
         break;
-    case 0x70 ... 0x7f: /* jcc Jb */
+    //case 0x70 ... 0x7f: /* jcc Jb */
+    case 0x70: case 0x71: case 0x72: case 0x73: case 0x74: case 0x75: case 0x76: case 0x77:
+    case 0x78: case 0x79: case 0x7a: case 0x7b: case 0x7c: case 0x7d: case 0x7e: case 0x7f:
         tval = (int8_t)insn_get(env, s, MO_8);
         goto do_jcc;
-    case 0x180 ... 0x18f: /* jcc Jv */
+    //case 0x180 ... 0x18f: /* jcc Jv */
+    case 0x180: case 0x181: case 0x182: case 0x183: case 0x184: case 0x185: case 0x186: case 0x187:
+    case 0x188: case 0x189: case 0x18a: case 0x18b: case 0x18c: case 0x18d: case 0x18e: case 0x18f:
         if (dflag != MO_16) {
             tval = (int32_t)insn_get(env, s, MO_32);
         } else {
@@ -6885,12 +7176,16 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         gen_jcc(s, b, tval, next_eip);
         break;
 
-    case 0x190 ... 0x19f: /* setcc Gv */
+    //case 0x190 ... 0x19f: /* setcc Gv */
+    case 0x190: case 0x191: case 0x192: case 0x193: case 0x194: case 0x195: case 0x196: case 0x197:
+    case 0x198: case 0x199: case 0x19a: case 0x19b: case 0x19c: case 0x19d: case 0x19e: case 0x19f:
         modrm = cpu_ldub_code(env, s->pc++);
         gen_setcc1(s, b, *cpu_T[0]);
         gen_ldst_modrm(env, s, modrm, MO_8, OR_TMP0, 1);
         break;
-    case 0x140 ... 0x14f: /* cmov Gv, Ev */
+    //case 0x140 ... 0x14f: /* cmov Gv, Ev */
+    case 0x140: case 0x141: case 0x142: case 0x143: case 0x144: case 0x145: case 0x146: case 0x147:
+    case 0x148: case 0x149: case 0x14a: case 0x14b: case 0x14c: case 0x14d: case 0x14e: case 0x14f:
         if (!(s->cpuid_features & CPUID_CMOV)) {
             goto illegal_op;
         }
@@ -7094,17 +7389,17 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
            C is the result of the test, Z is unchanged, and the others
            are all undefined.  */
         switch (s->cc_op) {
-        case CC_OP_MULB ... CC_OP_MULQ:
-        case CC_OP_ADDB ... CC_OP_ADDQ:
-        case CC_OP_ADCB ... CC_OP_ADCQ:
-        case CC_OP_SUBB ... CC_OP_SUBQ:
-        case CC_OP_SBBB ... CC_OP_SBBQ:
-        case CC_OP_LOGICB ... CC_OP_LOGICQ:
-        case CC_OP_INCB ... CC_OP_INCQ:
-        case CC_OP_DECB ... CC_OP_DECQ:
-        case CC_OP_SHLB ... CC_OP_SHLQ:
-        case CC_OP_SARB ... CC_OP_SARQ:
-        case CC_OP_BMILGB ... CC_OP_BMILGQ:
+        case CC_OP_MULB: case CC_OP_MULW: case CC_OP_MULL: case CC_OP_MULQ:	//case CC_OP_MULB ... CC_OP_MULQ:
+        case CC_OP_ADDB: case CC_OP_ADDW: case CC_OP_ADDL: case CC_OP_ADDQ:	//case CC_OP_ADDB ... CC_OP_ADDQ:
+        case CC_OP_ADCB: case CC_OP_ADCW: case CC_OP_ADCL: case CC_OP_ADCQ:	//case CC_OP_ADCB ... CC_OP_ADCQ:
+        case CC_OP_SUBB: case CC_OP_SUBW: case CC_OP_SUBL: case CC_OP_SUBQ:	//case CC_OP_SUBB ... CC_OP_SUBQ:
+        case CC_OP_SBBB: case CC_OP_SBBW: case CC_OP_SBBL: case CC_OP_SBBQ: //case CC_OP_SBBB ... CC_OP_SBBQ:
+        case CC_OP_LOGICB: case CC_OP_LOGICW: case CC_OP_LOGICL: case CC_OP_LOGICQ: //case CC_OP_LOGICB ... CC_OP_LOGICQ:
+        case CC_OP_INCB: case CC_OP_INCW: case CC_OP_INCL: case CC_OP_INCQ: //case CC_OP_INCB ... CC_OP_INCQ:
+        case CC_OP_DECB: case CC_OP_DECW: case CC_OP_DECL: case CC_OP_DECQ: //case CC_OP_DECB ... CC_OP_DECQ:
+        case CC_OP_SHLB: case CC_OP_SHLW: case CC_OP_SHLL: case CC_OP_SHLQ: //case CC_OP_SHLB ... CC_OP_SHLQ:
+        case CC_OP_SARB: case CC_OP_SARW: case CC_OP_SARL: case CC_OP_SARQ: //case CC_OP_SARB ... CC_OP_SARQ:
+        case CC_OP_BMILGB: case CC_OP_BMILGW: case CC_OP_BMILGL: case CC_OP_BMILGQ: //case CC_OP_BMILGB ... CC_OP_BMILGQ:
             /* Z was going to be computed from the non-zero status of CC_DST.
                We can get that same Z value (and the new C value) by leaving
                CC_DST alone, setting CC_SRC, and using a CC_OP_SAR of the
@@ -7337,7 +7632,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             gen_helper_boundl(tcg_ctx, cpu_env, cpu_A0, cpu_tmp2_i32);
         }
         break;
-    case 0x1c8 ... 0x1cf: /* bswap reg */
+    case 0x1c8: case 0x1c9: case 0x1ca: case 0x1cb:
+    case 0x1cc: case 0x1cd: case 0x1ce: case 0x1cf: /* bswap reg */
         reg = (b & 7) | REX_B(s);
 #ifdef TARGET_X86_64
         if (dflag == MO_64) {
@@ -7942,7 +8238,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             break;
         }
         break;
-    case 0x119 ... 0x11f: /* nop (multi byte) */
+    //case 0x119 ... 0x11f: /* nop (multi byte) */
+    case 0x119: case 0x11a: case 0x11b: case 0x11c: case 0x11d: case 0x11e: case 0x11f:
         modrm = cpu_ldub_code(env, s->pc++);
         gen_nop_modrm(env, s, modrm);
         break;
@@ -8159,17 +8456,30 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
 
         set_cc_op(s, CC_OP_EFLAGS);
         break;
-    case 0x10e ... 0x10f:
+    case 0x10e: case 0x10f:
         /* 3DNow! instructions, ignore prefixes */
         s->prefix &= ~(PREFIX_REPZ | PREFIX_REPNZ | PREFIX_DATA);
-    case 0x110 ... 0x117:
-    case 0x128 ... 0x12f:
-    case 0x138 ... 0x13a:
-    case 0x150 ... 0x179:
-    case 0x17c ... 0x17f:
+    case 0x110: case 0x111: case 0x112: case 0x113: case 0x114: case 0x115: case 0x116: case 0x117: //case 0x110 ... 0x117:
+    case 0x128: case 0x129: case 0x12a: case 0x12b: case 0x12c: case 0x12d: case 0x12e: case 0x12f: //case 0x128 ... 0x12f:
+    case 0x138: case 0x139: case 0x13a: 
+    // case 0x150 ... 0x179:
+    case 0x150: case 0x151: case 0x152: case 0x153: case 0x154: case 0x155: case 0x156: case 0x157:
+    case 0x158: case 0x159: case 0x15a: case 0x15b: case 0x15c: case 0x15d: case 0x15e: case 0x15f:
+    case 0x160: case 0x161: case 0x162: case 0x163: case 0x164: case 0x165: case 0x166: case 0x167:
+    case 0x168: case 0x169: case 0x16a: case 0x16b: case 0x16c: case 0x16d: case 0x16e: case 0x16f:
+    case 0x170: case 0x171: case 0x172: case 0x173: case 0x174: case 0x175: case 0x176: case 0x177:
+    case 0x178: case 0x179:
+    // case 0x17c ... 0x17f:
+    case 0x17c: case 0x17d: case 0x17e: case 0x17f:
     case 0x1c2:
-    case 0x1c4 ... 0x1c6:
-    case 0x1d0 ... 0x1fe:
+    case 0x1c4: case 0x1c5: case 0x1c6:
+    //case 0x1d0 ... 0x1fe:
+    case 0x1d0: case 0x1d1: case 0x1d2: case 0x1d3: case 0x1d4: case 0x1d5: case 0x1d6: case 0x1d7:
+    case 0x1d8: case 0x1d9: case 0x1da: case 0x1db: case 0x1dc: case 0x1dd: case 0x1de: case 0x1df:
+    case 0x1e0: case 0x1e1: case 0x1e2: case 0x1e3: case 0x1e4: case 0x1e5: case 0x1e6: case 0x1e7:
+    case 0x1e8: case 0x1e9: case 0x1ea: case 0x1eb: case 0x1ec: case 0x1ed: case 0x1ee: case 0x1ef:
+    case 0x1f0: case 0x1f1: case 0x1f2: case 0x1f3: case 0x1f4: case 0x1f5: case 0x1f6: case 0x1f7:
+    case 0x1f8: case 0x1f9: case 0x1fa: case 0x1fb: case 0x1fc: case 0x1fd: case 0x1fe:
         gen_sse(env, s, b, pc_start, rex_r);
         break;
     default:
@@ -8214,31 +8524,31 @@ void optimize_flags_init(struct uc_struct *uc)
 {
     static const char reg_names[CPU_NB_REGS][4] = {
 #ifdef TARGET_X86_64
-        [R_EAX] = "rax",
-        [R_EBX] = "rbx",
-        [R_ECX] = "rcx",
-        [R_EDX] = "rdx",
-        [R_ESI] = "rsi",
-        [R_EDI] = "rdi",
-        [R_EBP] = "rbp",
-        [R_ESP] = "rsp",
-        [8]  = "r8",
-        [9]  = "r9",
-        [10] = "r10",
-        [11] = "r11",
-        [12] = "r12",
-        [13] = "r13",
-        [14] = "r14",
-        [15] = "r15",
+        "rax",
+        "rcx",
+        "rdx",
+        "rbx",
+        "rsp",
+        "rbp",
+        "rsi",
+        "rdi",
+        "r8",
+        "r9",
+        "r10",
+        "r11",
+        "r12",
+        "r13",
+        "r14",
+        "r15",
 #else
-        [R_EAX] = "eax",
-        [R_EBX] = "ebx",
-        [R_ECX] = "ecx",
-        [R_EDX] = "edx",
-        [R_ESI] = "esi",
-        [R_EDI] = "edi",
-        [R_EBP] = "ebp",
-        [R_ESP] = "esp",
+        "eax",
+        "ecx",
+        "edx",
+        "ebx",
+        "esp",
+        "ebp",
+        "esi",
+        "edi",
 #endif
     };
     int i;

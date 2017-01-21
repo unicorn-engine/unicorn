@@ -190,9 +190,9 @@ GList *g_list_remove_link(GList *list, GList *llink)
 
 // code copied from glib/glist.c, version 2.28.0
 static GList *g_list_sort_merge(GList *l1,
-		   GList     *l2,
-		   GFunc     compare_func,
-		   gpointer  user_data)
+           GList     *l2,
+           GFunc     compare_func,
+           gpointer  user_data)
 {
   GList list, *l, *lprev;
   gint cmp;
@@ -206,13 +206,13 @@ static GList *g_list_sort_merge(GList *l1,
 
       if (cmp <= 0)
         {
-	  l->next = l1;
-	  l1 = l1->next;
+      l->next = l1;
+      l1 = l1->next;
         }
       else
-	{
-	  l->next = l2;
-	  l2 = l2->next;
+    {
+      l->next = l2;
+      l2 = l2->next;
         }
       l = l->next;
       l->prev = lprev;
@@ -225,8 +225,8 @@ static GList *g_list_sort_merge(GList *l1,
 }
 
 static GList *g_list_sort_real(GList *list,
-		  GFunc     compare_func,
-		  gpointer  user_data)
+          GFunc     compare_func,
+          gpointer  user_data)
 {
   GList *l1, *l2;
 
@@ -241,16 +241,16 @@ static GList *g_list_sort_real(GList *list,
   while ((l2 = l2->next) != NULL)
     {
       if ((l2 = l2->next) == NULL)
-	break;
+    break;
       l1 = l1->next;
     }
   l2 = l1->next;
   l1->next = NULL;
 
   return g_list_sort_merge (g_list_sort_real (list, compare_func, user_data),
-			    g_list_sort_real (l2, compare_func, user_data),
-			    compare_func,
-			    user_data);
+                g_list_sort_real (l2, compare_func, user_data),
+                compare_func,
+                user_data);
 }
 
 /**
@@ -1217,16 +1217,18 @@ void g_free(gpointer ptr)
 
 gpointer g_malloc(size_t size)
 {
-   if (size == 0) return NULL;
-   void *res = malloc(size);
+   void *res;
+    if (size == 0) return NULL;
+   res = malloc(size);
    if (res == NULL) exit(1);
    return res;
 }
 
 gpointer g_malloc0(size_t size)
 {
+   void *res;
    if (size == 0) return NULL;
-   void *res = calloc(size, 1);
+   res = calloc(size, 1);
    if (res == NULL) exit(1);
    return res;
 }
@@ -1239,18 +1241,23 @@ gpointer g_try_malloc0(size_t size)
 
 gpointer g_realloc(gpointer ptr, size_t size)
 {
+   void *res;
    if (size == 0) {
       free(ptr);
       return NULL;
    }
-   void *res = realloc(ptr, size);
+   res = realloc(ptr, size);
    if (res == NULL) exit(1);
    return res;
 }
 
 char *g_strdup(const char *str)
 {
-   return str ? strdup(str) : NULL;
+#ifdef _MSC_VER
+    return str ? _strdup(str) : NULL;
+#else
+    return str ? strdup(str) : NULL;
+#endif
 }
 
 char *g_strdup_printf(const char *format, ...)
@@ -1266,7 +1273,17 @@ char *g_strdup_printf(const char *format, ...)
 char *g_strdup_vprintf(const char *format, va_list ap)
 {
    char *str_res = NULL;
+#ifdef _MSC_VER
+   int len = _vscprintf(format, ap);
+   if( len < 0 )
+       return NULL;
+   str_res = (char *)malloc(len+1);
+   if(str_res==NULL)
+       return NULL;
+   vsnprintf(str_res, len+1, format, ap);
+#else
    vasprintf(&str_res, format, ap);
+#endif
    return str_res;
 }
 

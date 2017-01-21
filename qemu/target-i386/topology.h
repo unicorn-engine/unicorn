@@ -38,7 +38,7 @@
  *  CPUID Fn8000_0008_ECX[ApicIdCoreIdSize[3:0]] is set to apicid_core_width().
  */
 
-#include <stdint.h>
+#include "unicorn/platform.h"
 #include <string.h>
 
 #include "qemu/bitops.h"

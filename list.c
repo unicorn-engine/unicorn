@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <stdint.h>
+#include "unicorn/platform.h"
 #include "list.h"
 
 // simple linked list implementation

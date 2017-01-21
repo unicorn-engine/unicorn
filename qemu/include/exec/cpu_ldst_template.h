@@ -78,7 +78,7 @@ glue(glue(cpu_ld, USUFFIX), MEMSUFFIX)(CPUArchState *env, target_ulong ptr)
                  (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
         res = glue(glue(helper_ld, SUFFIX), MMUSUFFIX)(env, addr, mmu_idx);
     } else {
-        uintptr_t hostaddr = addr + env->tlb_table[mmu_idx][page_index].addend;
+        uintptr_t hostaddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][page_index].addend);
         res = glue(glue(ld, USUFFIX), _raw)(hostaddr);
     }
     return res;
@@ -100,7 +100,7 @@ glue(glue(cpu_lds, SUFFIX), MEMSUFFIX)(CPUArchState *env, target_ulong ptr)
         res = (DATA_STYPE)glue(glue(helper_ld, SUFFIX),
                                MMUSUFFIX)(env, addr, mmu_idx);
     } else {
-        uintptr_t hostaddr = addr + env->tlb_table[mmu_idx][page_index].addend;
+        uintptr_t hostaddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][page_index].addend);
         res = glue(glue(lds, SUFFIX), _raw)(hostaddr);
     }
     return res;
@@ -126,7 +126,7 @@ glue(glue(cpu_st, SUFFIX), MEMSUFFIX)(CPUArchState *env, target_ulong ptr,
                  (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
         glue(glue(helper_st, SUFFIX), MMUSUFFIX)(env, addr, v, mmu_idx);
     } else {
-        uintptr_t hostaddr = addr + env->tlb_table[mmu_idx][page_index].addend;
+        uintptr_t hostaddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][page_index].addend);
         glue(glue(st, SUFFIX), _raw)(hostaddr, v);
     }
 }

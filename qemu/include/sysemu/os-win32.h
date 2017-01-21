@@ -26,6 +26,7 @@
 #ifndef QEMU_OS_WIN32_H
 #define QEMU_OS_WIN32_H
 
+#include <winsock2.h>
 #include <windows.h>
 #include <setjmp.h>
 
@@ -55,7 +56,7 @@
 # define EWOULDBLOCK  WSAEWOULDBLOCK
 #endif
 
-#if defined(_WIN64)
+#if defined(_WIN64) && !defined(_MSC_VER)
 /* On w64, setjmp is implemented by _setjmp which needs a second parameter.
  * If this parameter is NULL, longjump does no stack unwinding.
  * That is what we need for QEMU. Passing the value of register rsp (default)

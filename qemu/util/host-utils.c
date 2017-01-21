@@ -24,7 +24,7 @@
  */
 
 #include <stdlib.h>
-#include <stdint.h>
+#include "unicorn/platform.h"
 #include "qemu/host-utils.h"
 
 #ifndef CONFIG_INT128
@@ -54,10 +54,10 @@ static inline void mul64(uint64_t *plow, uint64_t *phigh,
     rh.ll = (uint64_t)a0.l.high * b0.l.high;
 
     c = (uint64_t)rl.l.high + rm.l.low + rn.l.low;
-    rl.l.high = c;
+    rl.l.high = (uint32_t)c;
     c >>= 32;
     c = c + rm.l.high + rn.l.high + rh.l.low;
-    rh.l.low = c;
+    rh.l.low = (uint32_t)c;
     rh.l.high += (uint32_t)(c >> 32);
 
     *plow = rl.ll;

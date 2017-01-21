@@ -122,11 +122,11 @@ int64_t strtosz_suffix_unit(const char *nptr, char **end,
         mul_required = 1;
     }
     c = *endptr;
-    mul = suffix_mul(c, unit);
+    mul = (double)suffix_mul(c, unit);
     if (mul >= 0) {
         endptr++;
     } else {
-        mul = suffix_mul(default_suffix, unit);
+        mul = (double)suffix_mul(default_suffix, unit);
         assert(mul >= 0);
     }
     if (mul == 1 && mul_required) {
@@ -136,7 +136,7 @@ int64_t strtosz_suffix_unit(const char *nptr, char **end,
         retval = -ERANGE;
         goto fail;
     }
-    retval = val * mul;
+    retval = (int64_t)(val * mul);
 
 fail:
     if (end) {

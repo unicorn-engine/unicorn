@@ -1,5 +1,5 @@
 #include "unicorn_test.h"
-#include <inttypes.h>
+#include "unicorn/platform.h"
 
 /*
     Two tests here for software paging

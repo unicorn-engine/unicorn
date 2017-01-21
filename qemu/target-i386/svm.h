@@ -130,93 +130,93 @@
 
 #define SVM_CR0_SELECTIVE_MASK (1 << 3 | 1) /* TS and MP */
 
-struct QEMU_PACKED vmcb_control_area {
-	uint16_t intercept_cr_read;
-	uint16_t intercept_cr_write;
-	uint16_t intercept_dr_read;
-	uint16_t intercept_dr_write;
-	uint32_t intercept_exceptions;
-	uint64_t intercept;
-	uint8_t reserved_1[44];
-	uint64_t iopm_base_pa;
-	uint64_t msrpm_base_pa;
-	uint64_t tsc_offset;
-	uint32_t asid;
-	uint8_t tlb_ctl;
-	uint8_t reserved_2[3];
-	uint32_t int_ctl;
-	uint32_t int_vector;
-	uint32_t int_state;
-	uint8_t reserved_3[4];
-	uint64_t exit_code;
-	uint64_t exit_info_1;
-	uint64_t exit_info_2;
-	uint32_t exit_int_info;
-	uint32_t exit_int_info_err;
-	uint64_t nested_ctl;
-	uint8_t reserved_4[16];
-	uint32_t event_inj;
-	uint32_t event_inj_err;
-	uint64_t nested_cr3;
-	uint64_t lbr_ctl;
-	uint8_t reserved_5[832];
-};
+QEMU_PACK( struct vmcb_control_area {
+    uint16_t intercept_cr_read;
+    uint16_t intercept_cr_write;
+    uint16_t intercept_dr_read;
+    uint16_t intercept_dr_write;
+    uint32_t intercept_exceptions;
+    uint64_t intercept;
+    uint8_t reserved_1[44];
+    uint64_t iopm_base_pa;
+    uint64_t msrpm_base_pa;
+    uint64_t tsc_offset;
+    uint32_t asid;
+    uint8_t tlb_ctl;
+    uint8_t reserved_2[3];
+    uint32_t int_ctl;
+    uint32_t int_vector;
+    uint32_t int_state;
+    uint8_t reserved_3[4];
+    uint64_t exit_code;
+    uint64_t exit_info_1;
+    uint64_t exit_info_2;
+    uint32_t exit_int_info;
+    uint32_t exit_int_info_err;
+    uint64_t nested_ctl;
+    uint8_t reserved_4[16];
+    uint32_t event_inj;
+    uint32_t event_inj_err;
+    uint64_t nested_cr3;
+    uint64_t lbr_ctl;
+    uint8_t reserved_5[832];
+});
 
-struct QEMU_PACKED vmcb_seg {
-	uint16_t selector;
-	uint16_t attrib;
-	uint32_t limit;
-	uint64_t base;
-};
+QEMU_PACK( struct vmcb_seg {
+    uint16_t selector;
+    uint16_t attrib;
+    uint32_t limit;
+    uint64_t base;
+});
 
-struct QEMU_PACKED vmcb_save_area {
-	struct vmcb_seg es;
-	struct vmcb_seg cs;
-	struct vmcb_seg ss;
-	struct vmcb_seg ds;
-	struct vmcb_seg fs;
-	struct vmcb_seg gs;
-	struct vmcb_seg gdtr;
-	struct vmcb_seg ldtr;
-	struct vmcb_seg idtr;
-	struct vmcb_seg tr;
-	uint8_t reserved_1[43];
-	uint8_t cpl;
-	uint8_t reserved_2[4];
-	uint64_t efer;
-	uint8_t reserved_3[112];
-	uint64_t cr4;
-	uint64_t cr3;
-	uint64_t cr0;
-	uint64_t dr7;
-	uint64_t dr6;
-	uint64_t rflags;
-	uint64_t rip;
-	uint8_t reserved_4[88];
-	uint64_t rsp;
-	uint8_t reserved_5[24];
-	uint64_t rax;
-	uint64_t star;
-	uint64_t lstar;
-	uint64_t cstar;
-	uint64_t sfmask;
-	uint64_t kernel_gs_base;
-	uint64_t sysenter_cs;
-	uint64_t sysenter_esp;
-	uint64_t sysenter_eip;
-	uint64_t cr2;
-	uint8_t reserved_6[32];
-	uint64_t g_pat;
-	uint64_t dbgctl;
-	uint64_t br_from;
-	uint64_t br_to;
-	uint64_t last_excp_from;
-	uint64_t last_excp_to;
-};
+QEMU_PACK( struct vmcb_save_area {
+    struct vmcb_seg es;
+    struct vmcb_seg cs;
+    struct vmcb_seg ss;
+    struct vmcb_seg ds;
+    struct vmcb_seg fs;
+    struct vmcb_seg gs;
+    struct vmcb_seg gdtr;
+    struct vmcb_seg ldtr;
+    struct vmcb_seg idtr;
+    struct vmcb_seg tr;
+    uint8_t reserved_1[43];
+    uint8_t cpl;
+    uint8_t reserved_2[4];
+    uint64_t efer;
+    uint8_t reserved_3[112];
+    uint64_t cr4;
+    uint64_t cr3;
+    uint64_t cr0;
+    uint64_t dr7;
+    uint64_t dr6;
+    uint64_t rflags;
+    uint64_t rip;
+    uint8_t reserved_4[88];
+    uint64_t rsp;
+    uint8_t reserved_5[24];
+    uint64_t rax;
+    uint64_t star;
+    uint64_t lstar;
+    uint64_t cstar;
+    uint64_t sfmask;
+    uint64_t kernel_gs_base;
+    uint64_t sysenter_cs;
+    uint64_t sysenter_esp;
+    uint64_t sysenter_eip;
+    uint64_t cr2;
+    uint8_t reserved_6[32];
+    uint64_t g_pat;
+    uint64_t dbgctl;
+    uint64_t br_from;
+    uint64_t br_to;
+    uint64_t last_excp_from;
+    uint64_t last_excp_to;
+});
 
-struct QEMU_PACKED vmcb {
-	struct vmcb_control_area control;
-	struct vmcb_save_area save;
-};
+QEMU_PACK( struct vmcb {
+    struct vmcb_control_area control;
+    struct vmcb_save_area save;
+});
 
 #endif

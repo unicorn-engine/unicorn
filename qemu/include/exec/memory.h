@@ -19,8 +19,7 @@
 #define DIRTY_MEMORY_CODE      0
 #define DIRTY_MEMORY_NUM       1        /* num of dirty bits */
 
-#include <stdint.h>
-#include <stdbool.h>
+#include "unicorn/platform.h"
 #include "qemu-common.h"
 #include "exec/cpu-common.h"
 #ifndef CONFIG_USER_ONLY
@@ -238,6 +237,19 @@ struct MemoryRegionSection {
     hwaddr offset_within_address_space;
     bool readonly;
 };
+
+static inline MemoryRegionSection MemoryRegionSection_make(MemoryRegion *mr, AddressSpace *address_space,
+    hwaddr offset_within_region, Int128 size, hwaddr offset_within_address_space, bool readonly)
+{
+    MemoryRegionSection section;
+    section.mr = mr;
+    section.address_space = address_space;
+    section.offset_within_region = offset_within_region;
+    section.size = size;
+    section.offset_within_address_space = offset_within_address_space;
+    section.readonly = readonly;
+    return section;
+}
 
 /**
  * memory_region_init: Initialize a memory region

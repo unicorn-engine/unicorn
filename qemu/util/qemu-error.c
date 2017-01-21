@@ -11,6 +11,8 @@
  */
 
 #include <stdio.h>
+#include <stdarg.h>
+#include <string.h>
 
 static const char *progname;
 
@@ -42,6 +44,14 @@ static void error_print_loc(void)
  * Prepend the current location and append a newline.
  * It's wrong to call this in a QMP monitor.  Use qerror_report() there.
  */
+#ifdef _MSC_VER
+void error_vreport(const char *fmt, va_list ap)
+{
+    error_print_loc();
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+}
+#else
 void error_vreport(const char *fmt, va_list ap)
 {
     GTimeVal tv;
@@ -51,6 +61,7 @@ void error_vreport(const char *fmt, va_list ap)
     error_vprintf(fmt, ap);
     error_printf("\n");
 }
+#endif
 
 /*
  * Print an error message to current monitor if we have one, else to stderr.

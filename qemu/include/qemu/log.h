@@ -2,8 +2,7 @@
 #define QEMU_LOG_H
 
 #include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
+#include "unicorn/platform.h"
 #include "qemu/compiler.h"
 #include "qom/cpu.h"
 

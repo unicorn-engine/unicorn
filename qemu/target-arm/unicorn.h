@@ -13,10 +13,10 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 void arm_reg_reset(struct uc_struct *uc);
 void arm64_reg_reset(struct uc_struct *uc);
 
-__attribute__ ((visibility ("default")))
+DEFAULT_VISIBILITY
 void arm_uc_init(struct uc_struct* uc);
 
-__attribute__ ((visibility ("default")))
+DEFAULT_VISIBILITY
 void arm64_uc_init(struct uc_struct* uc);
 
 extern const int ARM_REGS_STORAGE_SIZE;

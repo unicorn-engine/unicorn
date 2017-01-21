@@ -2,7 +2,7 @@
 #define BSWAP_H
 
 #include "config-host.h"
-#include <inttypes.h>
+#include "unicorn/platform.h"
 #include <limits.h>
 #include <string.h>
 #include "fpu/softfloat.h"

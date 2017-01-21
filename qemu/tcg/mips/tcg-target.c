@@ -1150,7 +1150,7 @@ static void tcg_out_qemu_ld_direct(TCGContext *s, TCGReg datalo, TCGReg datahi,
 
 static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, bool is_64)
 {
-    TCGReg addr_regl, addr_regh __attribute__((unused));
+    TCGReg addr_regl, addr_regh QEMU_UNUSED_VAR;
     TCGReg data_regl, data_regh;
     TCGMemOp opc;
 #if defined(CONFIG_SOFTMMU)
@@ -1279,7 +1279,7 @@ static void tcg_out_addsub2(TCGContext *s, TCGReg rl, TCGReg rh, TCGReg al,
 
 static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, bool is_64)
 {
-    TCGReg addr_regl, addr_regh __attribute__((unused));
+    TCGReg addr_regl, addr_regh QEMU_UNUSED_VAR;
     TCGReg data_regl, data_regh, base;
     TCGMemOp opc;
 #if defined(CONFIG_SOFTMMU)

@@ -377,8 +377,7 @@ fdecl.write(mcgen('''
 #ifndef %(guard)s
 #define %(guard)s
 
-#include <stdbool.h>
-#include <stdint.h>
+#include "unicorn/platform.h"
 
 ''',
                   guard=guardname(h_file)))

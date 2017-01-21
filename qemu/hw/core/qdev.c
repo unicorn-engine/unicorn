@@ -280,16 +280,24 @@ Object *qdev_get_machine(struct uc_struct *uc)
 }
 
 static const TypeInfo device_type_info = {
-    .name = TYPE_DEVICE,
-    .parent = TYPE_OBJECT,
-    .instance_size = sizeof(DeviceState),
-    .instance_init = device_initfn,
-    .instance_post_init = device_post_init,
-    .instance_finalize = device_finalize,
-    .class_base_init = device_class_base_init,
-    .class_init = device_class_init,
-    .abstract = true,
-    .class_size = sizeof(DeviceClass),
+    TYPE_DEVICE,
+    TYPE_OBJECT,
+    
+    sizeof(DeviceClass),
+    sizeof(DeviceState),
+    NULL,
+    
+    device_initfn,
+    device_post_init,
+    device_finalize,
+    
+    NULL,
+
+    device_class_init,
+    device_class_base_init,
+    NULL,
+    
+    true,
 };
 
 static void qbus_initfn(struct uc_struct *uc, Object *obj, void *opaque)
@@ -309,14 +317,24 @@ static void qbus_finalize(struct uc_struct *uc, Object *obj, void *opaque)
 }
 
 static const TypeInfo bus_info = {
-    .name = TYPE_BUS,
-    .parent = TYPE_OBJECT,
-    .instance_size = sizeof(BusState),
-    .abstract = true,
-    .class_size = sizeof(BusClass),
-    .instance_init = qbus_initfn,
-    .instance_finalize = qbus_finalize,
-    .class_init = bus_class_init,
+    TYPE_BUS,
+    TYPE_OBJECT,
+    
+    sizeof(BusClass),
+    sizeof(BusState),
+    NULL,
+    
+    qbus_initfn,
+    NULL,
+    qbus_finalize,
+    
+    NULL,
+
+    bus_class_init,
+    NULL,
+    NULL,
+    
+    true,
 };
 
 void qdev_register_types(struct uc_struct *uc)

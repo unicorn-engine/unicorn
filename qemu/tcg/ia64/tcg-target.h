@@ -27,7 +27,7 @@
 
 #define TCG_TARGET_INSN_UNIT_SIZE 16
 typedef struct {
-    uint64_t lo __attribute__((aligned(16)));
+    uint64_t QEMU_ALIGN(16, lo);
     uint64_t hi;
 } tcg_insn_unit;
 

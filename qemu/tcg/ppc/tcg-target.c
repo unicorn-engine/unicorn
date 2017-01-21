@@ -1576,7 +1576,7 @@ static void tcg_out_qemu_st_slow_path(TCGContext *s, TCGLabelQemuLdst *lb)
 static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, bool is_64)
 {
     TCGReg datalo, datahi, addrlo, rbase;
-    TCGReg addrhi __attribute__((unused));
+    TCGReg addrhi QEMU_UNUSED_VAR;
     TCGMemOp opc, s_bits;
 #ifdef CONFIG_SOFTMMU
     int mem_index;
@@ -1649,7 +1649,7 @@ static void tcg_out_qemu_ld(TCGContext *s, const TCGArg *args, bool is_64)
 static void tcg_out_qemu_st(TCGContext *s, const TCGArg *args, bool is_64)
 {
     TCGReg datalo, datahi, addrlo, rbase;
-    TCGReg addrhi __attribute__((unused));
+    TCGReg addrhi QEMU_UNUSED_VAR;
     TCGMemOp opc, s_bits;
 #ifdef CONFIG_SOFTMMU
     int mem_index;
@@ -2603,14 +2603,14 @@ void flush_icache_range(uintptr_t start, uintptr_t stop)
 #if defined _AIX
 #include <sys/systemcfg.h>
 
-static void __attribute__((constructor)) tcg_cache_init(void)
+INITIALIZER(tcg_cache_init)
 {
     icache_bsize = _system_configuration.icache_line;
     dcache_bsize = _system_configuration.dcache_line;
 }
 
 #elif defined __linux__
-static void __attribute__((constructor)) tcg_cache_init(void)
+INITIALIZER(tcg_cache_init)
 {
     unsigned long dsize = qemu_getauxval(AT_DCACHEBSIZE);
     unsigned long isize = qemu_getauxval(AT_ICACHEBSIZE);
@@ -2633,7 +2633,7 @@ static void __attribute__((constructor)) tcg_cache_init(void)
 #include <sys/types.h>
 #include <sys/sysctl.h>
 
-static void __attribute__((constructor)) tcg_cache_init(void)
+INITIALIZER(tcg_cache_init)
 {
     size_t len;
     unsigned cacheline;
@@ -2656,7 +2656,7 @@ static void __attribute__((constructor)) tcg_cache_init(void)
 #include <sys/types.h>
 #include <sys/sysctl.h>
 
-static void __attribute__((constructor)) tcg_cache_init(void)
+INITIALIZER(tcg_cache_init)
 {
     size_t len = 4;
     unsigned cacheline;

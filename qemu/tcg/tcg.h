@@ -28,6 +28,7 @@
 #include "qemu-common.h"
 #include "qemu/bitops.h"
 #include "tcg-target.h"
+#include "exec/exec-all.h"
 
 #include "uc_priv.h"
 
@@ -180,7 +181,7 @@ typedef struct TCGLabel {
 typedef struct TCGPool {
     struct TCGPool *next;
     int size;
-    uint8_t data[0] __attribute__ ((aligned));
+    uint8_t QEMU_ALIGN(8, data[0]);
 } TCGPool;
 
 #define TCG_POOL_CHUNK_SIZE 32768
@@ -853,7 +854,7 @@ TCGv_i64 tcg_const_local_i64(TCGContext *s, int64_t val);
 
 static inline ptrdiff_t tcg_ptr_byte_diff(void *a, void *b)
 {
-    return a - b;
+    return (char*)a - (char*)b;
 }
 
 /**

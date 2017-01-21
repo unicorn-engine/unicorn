@@ -15,9 +15,10 @@
 #include <assert.h>
 
 static const TypeInfo container_info = {
-    .name          = "container",
-    .instance_size = sizeof(Object),
-    .parent        = TYPE_OBJECT,
+    "container",
+    TYPE_OBJECT,
+    0,
+    sizeof(Object),
 };
 
 void container_register_types(struct uc_struct *uc)

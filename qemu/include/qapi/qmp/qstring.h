@@ -13,7 +13,7 @@
 #ifndef QSTRING_H
 #define QSTRING_H
 
-#include <stdint.h>
+#include "unicorn/platform.h"
 #include "qapi/qmp/qobject.h"
 
 typedef struct QString {

@@ -69,7 +69,8 @@ static void patch_reloc(tcg_insn_unit *code_ptr, int type,
 
 /* The CIE and FDE header definitions will be common to all hosts.  */
 typedef struct {
-    uint32_t len __attribute__((aligned((sizeof(void *)))));
+    //uint32_t QEMU_ALIGN(sizeof(void *), len);
+    uint32_t QEMU_ALIGN(8, len);
     uint32_t id;
     uint8_t version;
     char augmentation[1];
@@ -78,17 +79,18 @@ typedef struct {
     uint8_t return_column;
 } DebugFrameCIE;
 
-typedef struct QEMU_PACKED {
-    uint32_t len __attribute__((aligned((sizeof(void *)))));
+QEMU_PACK( typedef struct {
+//  uint32_t QEMU_ALIGN(sizeof(void *), len);
+    uint32_t QEMU_ALIGN(8, len);
     uint32_t cie_offset;
     uintptr_t func_start;
     uintptr_t func_len;
-} DebugFrameFDEHeader;
+}) DebugFrameFDEHeader;
 
-typedef struct QEMU_PACKED {
+QEMU_PACK( typedef struct {
     DebugFrameCIE cie;
     DebugFrameFDEHeader fde;
-} DebugFrameHeader;
+}) DebugFrameHeader;
 
 /* Forward declarations for functions declared and used in tcg-target.c. */
 static int target_parse_constraint(TCGArgConstraint *ct, const char **pct_str);
@@ -115,12 +117,12 @@ TCGOpDef tcg_op_defs_org[] = {
 };
 
 #if TCG_TARGET_INSN_UNIT_SIZE == 1
-static __attribute__((unused)) inline void tcg_out8(TCGContext *s, uint8_t v)
+static QEMU_UNUSED_FUNC inline void tcg_out8(TCGContext *s, uint8_t v)
 {
     *s->code_ptr++ = v;
 }
 
-static __attribute__((unused)) inline void tcg_patch8(tcg_insn_unit *p,
+static QEMU_UNUSED_FUNC inline void tcg_patch8(tcg_insn_unit *p,
                                                       uint8_t v)
 {
     *p = v;
@@ -128,10 +130,10 @@ static __attribute__((unused)) inline void tcg_patch8(tcg_insn_unit *p,
 #endif
 
 #if TCG_TARGET_INSN_UNIT_SIZE <= 2
-static __attribute__((unused)) inline void tcg_out16(TCGContext *s, uint16_t v)
+static QEMU_UNUSED_FUNC inline void tcg_out16(TCGContext *s, uint16_t v)
 {
     if (TCG_TARGET_INSN_UNIT_SIZE == 2) {
-        *s->code_ptr++ = v;
+        *s->code_ptr++ = (tcg_insn_unit)v;
     } else {
         tcg_insn_unit *p = s->code_ptr;
         memcpy(p, &v, sizeof(v));
@@ -139,11 +141,11 @@ static __attribute__((unused)) inline void tcg_out16(TCGContext *s, uint16_t v)
     }
 }
 
-static __attribute__((unused)) inline void tcg_patch16(tcg_insn_unit *p,
+static QEMU_UNUSED_FUNC inline void tcg_patch16(tcg_insn_unit *p,
                                                        uint16_t v)
 {
     if (TCG_TARGET_INSN_UNIT_SIZE == 2) {
-        *p = v;
+        *p = (tcg_insn_unit)v;
     } else {
         memcpy(p, &v, sizeof(v));
     }
@@ -151,7 +153,7 @@ static __attribute__((unused)) inline void tcg_patch16(tcg_insn_unit *p,
 #endif
 
 #if TCG_TARGET_INSN_UNIT_SIZE <= 4
-static __attribute__((unused)) inline void tcg_out32(TCGContext *s, uint32_t v)
+static QEMU_UNUSED_FUNC inline void tcg_out32(TCGContext *s, uint32_t v)
 {
     if (TCG_TARGET_INSN_UNIT_SIZE == 4) {
         *s->code_ptr++ = v;
@@ -162,7 +164,7 @@ static __attribute__((unused)) inline void tcg_out32(TCGContext *s, uint32_t v)
     }
 }
 
-static __attribute__((unused)) inline void tcg_patch32(tcg_insn_unit *p,
+static QEMU_UNUSED_FUNC inline void tcg_patch32(tcg_insn_unit *p,
                                                        uint32_t v)
 {
     if (TCG_TARGET_INSN_UNIT_SIZE == 4) {
@@ -174,10 +176,10 @@ static __attribute__((unused)) inline void tcg_patch32(tcg_insn_unit *p,
 #endif
 
 #if TCG_TARGET_INSN_UNIT_SIZE <= 8
-static __attribute__((unused)) inline void tcg_out64(TCGContext *s, uint64_t v)
+static QEMU_UNUSED_FUNC inline void tcg_out64(TCGContext *s, uint64_t v)
 {
     if (TCG_TARGET_INSN_UNIT_SIZE == 8) {
-        *s->code_ptr++ = v;
+        *s->code_ptr++ = (tcg_insn_unit)v;
     } else {
         tcg_insn_unit *p = s->code_ptr;
         memcpy(p, &v, sizeof(v));
@@ -185,11 +187,11 @@ static __attribute__((unused)) inline void tcg_out64(TCGContext *s, uint64_t v)
     }
 }
 
-static __attribute__((unused)) inline void tcg_patch64(tcg_insn_unit *p,
+static QEMU_UNUSED_FUNC inline void tcg_patch64(tcg_insn_unit *p,
                                                        uint64_t v)
 {
     if (TCG_TARGET_INSN_UNIT_SIZE == 8) {
-        *p = v;
+        *p = (tcg_insn_unit)v;
     } else {
         memcpy(p, &v, sizeof(v));
     }
@@ -486,7 +488,7 @@ static inline int tcg_global_mem_new_internal(TCGContext *s, TCGType type, int r
 #endif
         pstrcpy(buf, sizeof(buf), name);
         pstrcat(buf, sizeof(buf), "_0");
-        ts->name = strdup(buf);
+        ts->name = g_strdup(buf);
         ts++;
 
         ts->base_type = type;
@@ -501,7 +503,7 @@ static inline int tcg_global_mem_new_internal(TCGContext *s, TCGType type, int r
 #endif
         pstrcpy(buf, sizeof(buf), name);
         pstrcat(buf, sizeof(buf), "_1");
-        ts->name = strdup(buf);
+        ts->name = g_strdup(buf);
 
         s->nb_globals += 2;
     } else
@@ -1097,6 +1099,24 @@ static inline const char *tcg_find_helper(TCGContext *s, uintptr_t val)
 
 static const char * const cond_name[] =
 {
+#ifdef _MSC_VER
+    "never",	// TCG_COND_NEVER
+    "always",	// TCG_COND_ALWAYS
+    "lt",		// TCG_COND_LT
+    "ge",		// TCG_COND_GE
+    "ltu",		// TCG_COND_LTU
+    "geu",		// TCG_COND_GEU
+    NULL,		// n/a
+    NULL,		// n/a
+    "eq",		// TCG_COND_EQ
+    "ne",		// TCG_COND_NE
+    "le",		// TCG_COND_LE
+    "gt",		// TCG_COND_GT
+    "leu",		// TCG_COND_LEU
+    "gtu",		// TCG_COND_GTU
+    NULL,		// n/a
+    NULL,		// n/a
+#else
     [TCG_COND_NEVER] = "never",
     [TCG_COND_ALWAYS] = "always",
     [TCG_COND_EQ] = "eq",
@@ -1109,10 +1129,48 @@ static const char * const cond_name[] =
     [TCG_COND_GEU] = "geu",
     [TCG_COND_LEU] = "leu",
     [TCG_COND_GTU] = "gtu"
+#endif
 };
 
 static const char * const ldst_name[] =
 {
+#ifdef _MSC_VER
+    "ub",	// MO_UB
+#  ifdef HOST_WORDS_BIGENDIAN
+    "beuw",		// MO_BEUW
+    "beul",		// MO_BEUL
+    "beq",		// MO_BEQ
+    "sb",		// MO_SB
+    "besw",		// MO_BESW
+    "besl",		// MO_BESL
+    NULL,		// n/a
+    NULL,		// n/a
+    "leuw",		// MO_LEUW
+    "leul",		// MO_LEUL
+    "leq",		// MO_LEQ
+    NULL,		// n/a
+    "lesw",		// MO_LESW
+    "lesl",		// MO_LESL
+    NULL,		// n/a
+#  else // !HOST_WORDS_BIGENDIAN
+    "leuw",		// MO_LEUW
+    "leul",		// MO_LEUL
+    "leq",		// MO_LEQ
+    "sb",		// MO_SB
+    "lesw",		// MO_LESW
+    "lesl",		// MO_LESL
+    NULL,		// n/a
+    NULL,		// n/a
+    "beuw",		// MO_BEUW
+    "beul",		// MO_BEUL
+    "beq",		// MO_BEQ
+    NULL,		// n/a
+    "besw",		// MO_BESW
+    "besl",		// MO_BESL
+    NULL,		// n/a
+#  endif // HOST_WORDS_BIGENDIAN
+
+#else //_MSC_VER
     [MO_UB]   = "ub",
     [MO_SB]   = "sb",
     [MO_LEUW] = "leuw",
@@ -1125,6 +1183,7 @@ static const char * const ldst_name[] =
     [MO_BEUL] = "beul",
     [MO_BESL] = "besl",
     [MO_BEQ]  = "beq",
+#endif // _MSC_VER
 };
 
 void tcg_dump_ops(TCGContext *s)
@@ -1921,7 +1980,7 @@ static inline void temp_sync(TCGContext *s, int temp, TCGRegSet allocated_regs)
     if (!ts->fixed_reg) {
         switch(ts->val_type) {
         case TEMP_VAL_CONST:
-            ts->reg = tcg_reg_alloc(s, s->tcg_target_available_regs[ts->type],
+            ts->reg = tcg_reg_alloc(s, (TCGRegSet)s->tcg_target_available_regs[ts->type],
                                     allocated_regs);
             ts->val_type = TEMP_VAL_REG;
             s->reg_to_temp[ts->reg] = temp;
@@ -2061,7 +2120,7 @@ static void tcg_reg_alloc_mov(TCGContext *s, const TCGOpDef *def,
        we don't have to reload SOURCE the next time it is used. */
     if (((NEED_SYNC_ARG(0) || ots->fixed_reg) && ts->val_type != TEMP_VAL_REG)
         || ts->val_type == TEMP_VAL_MEM) {
-        ts->reg = tcg_reg_alloc(s, s->tcg_target_available_regs[itype],
+        ts->reg = tcg_reg_alloc(s, (TCGRegSet)s->tcg_target_available_regs[itype],
                                 allocated_regs);
         if (ts->val_type == TEMP_VAL_MEM) {
             tcg_out_ld(s, itype, ts->reg, ts->mem_reg, ts->mem_offset);
@@ -2111,7 +2170,7 @@ static void tcg_reg_alloc_mov(TCGContext *s, const TCGOpDef *def,
                 /* When allocating a new register, make sure to not spill the
                    input one. */
                 tcg_regset_set_reg(allocated_regs, ts->reg);
-                ots->reg = tcg_reg_alloc(s, s->tcg_target_available_regs[otype],
+                ots->reg = tcg_reg_alloc(s, (TCGRegSet)s->tcg_target_available_regs[otype],
                                          allocated_regs);
             }
             tcg_out_mov(s, otype, ots->reg, ts->reg);
@@ -2316,6 +2375,10 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def,
     flags = args[nb_oargs + nb_iargs + 1];
 
     nb_regs = ARRAY_SIZE(tcg_target_call_iarg_regs);
+#if TCG_TARGET_REG_BITS == 32
+    // do this because msvc cannot have arrays with 0 entries.
+    nb_regs = 0;
+#endif
     if (nb_regs > nb_params) {
         nb_regs = nb_params;
     }
@@ -2342,13 +2405,13 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def,
             if (ts->val_type == TEMP_VAL_REG) {
                 tcg_out_st(s, ts->type, ts->reg, TCG_REG_CALL_STACK, stack_offset);
             } else if (ts->val_type == TEMP_VAL_MEM) {
-                reg = tcg_reg_alloc(s, s->tcg_target_available_regs[ts->type],
+                reg = tcg_reg_alloc(s, (TCGRegSet)s->tcg_target_available_regs[ts->type],
                                     s->reserved_regs);
                 /* XXX: not correct if reading values from the stack */
                 tcg_out_ld(s, ts->type, reg, ts->mem_reg, ts->mem_offset);
                 tcg_out_st(s, ts->type, reg, TCG_REG_CALL_STACK, stack_offset);
             } else if (ts->val_type == TEMP_VAL_CONST) {
-                reg = tcg_reg_alloc(s, s->tcg_target_available_regs[ts->type],
+                reg = tcg_reg_alloc(s, (TCGRegSet)s->tcg_target_available_regs[ts->type],
                                     s->reserved_regs);
                 /* XXX: sign extend may be needed on some targets */
                 tcg_out_movi(s, ts->type, reg, ts->val);
@@ -2572,7 +2635,7 @@ static inline int tcg_gen_code_common(TCGContext *s,
         }
         args += def->nb_args;
     next:
-        if (search_pc >= 0 && search_pc < tcg_current_code_size(s)) {
+        if (search_pc >= 0 && (size_t)search_pc < tcg_current_code_size(s)) {
             return op_index;
         }
         op_index++;

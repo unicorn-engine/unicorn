@@ -1,4 +1,4 @@
-#include <inttypes.h>
+#include "unicorn/platform.h"
 #include <unicorn/unicorn.h>
 
 static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *user_data) {

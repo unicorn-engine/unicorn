@@ -21,7 +21,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-#include <stdint.h>
+#include "unicorn/platform.h"
 #include "qemu/host-utils.h"
 
 /* This file is compiled once, and thus we can't include the standard

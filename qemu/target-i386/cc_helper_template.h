@@ -141,7 +141,7 @@ static int glue(compute_all_inc, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1)
     int cf, pf, af, zf, sf, of;
     DATA_TYPE src2;
 
-    cf = src1;
+    cf = (int)src1;
     src1 = dst - 1;
     src2 = 1;
     pf = parity_table[(uint8_t)dst];
@@ -157,7 +157,7 @@ static int glue(compute_all_dec, SUFFIX)(DATA_TYPE dst, DATA_TYPE src1)
     int cf, pf, af, zf, sf, of;
     DATA_TYPE src2;
 
-    cf = src1;
+    cf = (int)src1;
     src1 = dst + 1;
     src2 = 1;
     pf = parity_table[(uint8_t)dst];

@@ -46,19 +46,14 @@ static int pc_init_pci(struct uc_struct *uc, MachineState *machine)
     return pc_init1(uc, machine);
 }
 
-#define PC_I440FX_MACHINE_OPTIONS \
-    PC_DEFAULT_MACHINE_OPTIONS, \
-    .family = "pc_piix"
-
-#define PC_I440FX_2_2_MACHINE_OPTIONS                           \
-    PC_I440FX_MACHINE_OPTIONS
-
 static QEMUMachine pc_i440fx_machine_v2_2 = {
-    PC_I440FX_2_2_MACHINE_OPTIONS,
-    .name = "pc-i440fx-2.2",
-    .init = pc_init_pci,
-    .is_default = 1,
-    .arch = UC_ARCH_X86,    // X86
+    "pc_piix",
+    "pc-i440fx-2.2",
+    pc_init_pci,
+    NULL,
+    255,
+    1,
+    UC_ARCH_X86,    // X86
 };
 
 static void pc_generic_machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)

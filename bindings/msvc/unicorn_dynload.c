@@ -154,12 +154,12 @@ bool uc_dyn_load(const char* path, int flags)
     gp_uc_mem_protect = (uc_mem_protect_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_protect");
     gp_uc_mem_regions = (uc_mem_regions_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_mem_regions");
     gp_uc_context_alloc = (uc_context_alloc_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_alloc");
-	gp_uc_context_save = (uc_context_save_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_save");
-	gp_uc_context_restore = (uc_context_restore_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_restore");
-	gp_uc_free = (uc_free_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_free");
+    gp_uc_context_save = (uc_context_save_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_save");
+    gp_uc_context_restore = (uc_context_restore_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_restore");
+    gp_uc_free = (uc_free_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_free");
 
-	//support old compiled dlls
-	if(gp_uc_free==0) gp_uc_free = (uc_free_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_free"); 
+    //support old compiled dlls
+    if(gp_uc_free==0) gp_uc_free = (uc_free_t)DYNLOAD_GETFUNC(g_dyn_handle, "uc_context_free"); 
 
     return true;
 }
@@ -194,10 +194,10 @@ bool uc_dyn_free(void)
     gp_uc_mem_unmap = NULL;
     gp_uc_mem_protect = NULL;
     gp_uc_mem_regions = NULL;
-	gp_uc_context_alloc = NULL;
-	gp_uc_context_save = NULL;
-	gp_uc_context_restore = NULL;
-	gp_uc_free = NULL;
+    gp_uc_context_alloc = NULL;
+    gp_uc_context_save = NULL;
+    gp_uc_context_restore = NULL;
+    gp_uc_free = NULL;
 
     return true;
 }
@@ -350,20 +350,20 @@ uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
 }
 
 uc_err uc_context_alloc(uc_engine *uc, uc_context **context){
-	return gp_uc_context_alloc(uc,context);
+    return gp_uc_context_alloc(uc,context);
 }
 
 uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
-	return gp_uc_context_save(uc,context);
+    return gp_uc_context_save(uc,context);
 }
 
 uc_err uc_context_restore(uc_engine *uc, uc_context *context){
-	return gp_uc_context_restore(uc,context);
+    return gp_uc_context_restore(uc,context);
 }
 
 uc_err uc_free(void *mem){
-	return gp_uc_free(mem);
+    return gp_uc_free(mem);
 }
 
 

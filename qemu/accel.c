@@ -48,18 +48,25 @@ static int tcg_init(MachineState *ms)
 }
 
 static const TypeInfo accel_type = {
-    .name = TYPE_ACCEL,
-    .parent = TYPE_OBJECT,
-    .class_size = sizeof(AccelClass),
-    .instance_size = sizeof(AccelState),
+    TYPE_ACCEL,
+    TYPE_OBJECT,
+    sizeof(AccelClass),
+    sizeof(AccelState),
 };
 
 #define TYPE_TCG_ACCEL ACCEL_CLASS_NAME("tcg")
 
 static const TypeInfo tcg_accel_type = {
-    .name = TYPE_TCG_ACCEL,
-    .parent = TYPE_ACCEL,
-    .class_init = tcg_accel_class_init,
+    TYPE_TCG_ACCEL,
+    TYPE_ACCEL,
+    0,
+    0,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    tcg_accel_class_init,
 };
 
 

@@ -7,7 +7,7 @@
 #include "unicorn_test.h"
 #include <stdio.h>
 #include <string.h>
-#include <inttypes.h>
+#include "unicorn/platform.h"
 
 /* Called before every test to set up a new instance */
 static int setup(void **state)

@@ -4,7 +4,7 @@
 #ifndef UC_PRIV_H
 #define UC_PRIV_H
 
-#include <stdint.h>
+#include "unicorn/platform.h"
 #include <stdio.h>
 
 #include "qemu.h"
@@ -110,9 +110,11 @@ enum uc_hook_idx {
     UC_HOOK_MAX,
 };
 
+#define HOOK_FOREACH_VAR_DECLARE                          \
+    struct list_item *cur
+
 // for loop macro to loop over hook lists
 #define HOOK_FOREACH(uc, hh, idx)                         \
-    struct list_item *cur;                                \
     for (                                                 \
         cur = (uc)->hook[idx##_IDX].head;                 \
         cur != NULL && ((hh) = (struct hook *)cur->data)  \

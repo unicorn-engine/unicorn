@@ -20,11 +20,11 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #include <unicorn/unicorn.h>
-#include <inttypes.h>
+#include "unicorn/platform.h"
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-#include <unistd.h>
+#include "unicorn/platform.h"
 
 #pragma pack(push, 1)
 struct SegmentDescriptor {

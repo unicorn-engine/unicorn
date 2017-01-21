@@ -150,7 +150,7 @@ static inline int clz64(uint64_t val)
         val >>= 32;
     }
 
-    return cnt + clz32(val);
+    return cnt + clz32((uint32_t)val);
 #endif
 }
 
@@ -240,7 +240,7 @@ static inline int ctz64(uint64_t val)
         val >>= 32;
     }
 
-    return cnt + ctz32(val);
+    return cnt + ctz32((uint32_t)val);
 #endif
 }
 
@@ -357,7 +357,7 @@ static inline int ctpop64(uint64_t val)
     val = (val & 0x0000ffff0000ffffULL) + ((val >> 16) & 0x0000ffff0000ffffULL);
     val = (val & 0x00000000ffffffffULL) + ((val >> 32) & 0x00000000ffffffffULL);
 
-    return val;
+    return (int)val;
 #endif
 }
 
@@ -377,6 +377,15 @@ static inline int ctpop64(uint64_t val)
 # define ctpopl ctpop64
 #else
 # error Unknown sizeof long
+#endif
+
+#ifdef _MSC_VER
+#include <float.h>
+#if defined(_WIN64)
+#define isnan	_isnanf
+#else
+#define isnan	_isnan
+#endif
 #endif
 
 #endif

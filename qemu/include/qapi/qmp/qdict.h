@@ -16,8 +16,7 @@
 #include "qapi/qmp/qobject.h"
 #include "qapi/qmp/qlist.h"
 #include "qemu/queue.h"
-#include <stdbool.h>
-#include <stdint.h>
+#include "unicorn/platform.h"
 
 #define QDICT_BUCKET_MAX 512
 

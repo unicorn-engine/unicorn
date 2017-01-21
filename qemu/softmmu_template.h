@@ -1,26 +1,14 @@
-/*
- *  Software MMU support
- *
- * Generate helpers used by TCG for qemu_ld/st ops and code load
- * functions.
- *
- * Included from target op helpers and exec.c.
- *
- *  Copyright (c) 2003 Fabrice Bellard
- *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2 of the License, or (at your option) any later version.
- *
- * This library is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * Lesser General Public License for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License along with this library; if not, see <http://www.gnu.org/licenses/>.
- */
+/* *  Software MMU support * * Generate helpers used by TCG for qemu_ld/st ops
+and code load * functions. * * Included from target op helpers and exec.c. * *
+Copyright (c) 2003 Fabrice Bellard * * This library is free software; you can
+redistribute it and/or * modify it under the terms of the GNU Lesser General
+Public * License as published by the Free Software Foundation; either * version
+2 of the License, or (at your option) any later version. * * This library is
+distributed in the hope that it will be useful, * but WITHOUT ANY WARRANTY;
+without even the implied warranty of * MERCHANTABILITY or FITNESS FOR A
+PARTICULAR PURPOSE.  See the GNU * Lesser General Public License for more
+details. * * You should have received a copy of the GNU Lesser General Public *
+License along with this library; if not, see <http://www.gnu.org/licenses/>. */
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
 #include "qemu/timer.h"
@@ -120,8 +108,7 @@
 #endif
 
 /* macro to check the victim tlb */
-#define VICTIM_TLB_HIT(ty)                                                    \
-({                                                                            \
+#define VICTIM_TLB_HIT(ty)                                              \
     /* we are about to do a page table walk. our last hope is the             \
      * victim tlb. try to refill from the victim tlb before walking the       \
      * page table. */                                                         \
@@ -141,8 +128,20 @@
         }                                                                     \
     }                                                                         \
     /* return true when there is a vtlb hit, i.e. vidx >=0 */                 \
-    vidx >= 0;                                                                \
-})
+    return (vidx >= 0)
+
+#ifndef victim_tlb_hit_funcs
+#define victim_tlb_hit_funcs
+static inline bool victim_tlb_hit_read(CPUArchState *env, target_ulong addr, int mmu_idx, int index)
+{
+    VICTIM_TLB_HIT(ADDR_READ);
+}
+
+static inline bool victim_tlb_hit_write(CPUArchState *env, target_ulong addr, int mmu_idx, int index)
+{
+    VICTIM_TLB_HIT(addr_write);
+}
+#endif // victim_tlb_hit_funcs
 
 #ifndef SOFTMMU_CODE_ACCESS
 static inline DATA_TYPE glue(io_read, SUFFIX)(CPUArchState *env,
@@ -163,12 +162,12 @@ static inline DATA_TYPE glue(io_read, SUFFIX)(CPUArchState *env,
 
     cpu->mem_io_vaddr = addr;
     io_mem_read(mr, physaddr, &val, 1 << SHIFT);
-    return val;
+    return (DATA_TYPE)val;
 }
 #endif
 
 #ifdef SOFTMMU_CODE_ACCESS
-static __attribute__((unused))
+static QEMU_UNUSED_FUNC
 #endif
 WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
                             uintptr_t retaddr)
@@ -180,6 +179,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     int error_code;
     struct hook *hook;
     bool handled;
+    HOOK_FOREACH_VAR_DECLARE;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
@@ -293,7 +293,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             return 0;
         }
 #endif
-        if (!VICTIM_TLB_HIT(ADDR_READ)) {
+        if (!victim_tlb_hit_read(env, addr, mmu_idx, index)) {
             tlb_fill(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
                      mmu_idx, retaddr);
         }
@@ -373,7 +373,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 #endif
 
-    haddr = addr + env->tlb_table[mmu_idx][index].addend;
+    haddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][index].addend);
 #if DATA_SIZE == 1
     res = glue(glue(ld, LSUFFIX), _p)((uint8_t *)haddr);
 #else
@@ -395,7 +395,7 @@ _out:
 
 #if DATA_SIZE > 1
 #ifdef SOFTMMU_CODE_ACCESS
-static __attribute__((unused))
+static QEMU_UNUSED_FUNC
 #endif
 WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
                             uintptr_t retaddr)
@@ -407,6 +407,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     int error_code;
     struct hook *hook;
     bool handled;
+    HOOK_FOREACH_VAR_DECLARE;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
@@ -520,7 +521,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             return 0;
         }
 #endif
-        if (!VICTIM_TLB_HIT(ADDR_READ)) {
+        if (!victim_tlb_hit_read(env, addr, mmu_idx, index)) {
             tlb_fill(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
                      mmu_idx, retaddr);
         }
@@ -599,7 +600,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     }
 #endif
 
-    haddr = addr + env->tlb_table[mmu_idx][index].addend;
+    haddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][index].addend);
     res = glue(glue(ld, LSUFFIX), _be_p)((uint8_t *)haddr);
 
 _out:
@@ -671,6 +672,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     uintptr_t haddr;
     struct hook *hook;
     bool handled;
+    HOOK_FOREACH_VAR_DECLARE;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
@@ -742,7 +744,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
             return;
         }
 #endif
-        if (!VICTIM_TLB_HIT(addr_write)) {
+        if (!victim_tlb_hit_write(env, addr, mmu_idx, index)) {
             tlb_fill(ENV_GET_CPU(env), addr, MMU_DATA_STORE, mmu_idx, retaddr);
         }
         tlb_addr = env->tlb_table[mmu_idx][index].addr_write;
@@ -789,7 +791,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
          * previous page from the TLB cache.  */
         for (i = DATA_SIZE - 1; i >= 0; i--) {
             /* Little-endian extract.  */
-            uint8_t val8 = val >> (i * 8);
+            uint8_t val8 = (uint8_t)(val >> (i * 8));
             /* Note the adjustment at the beginning of the function.
                Undo that for the recursion.  */
             glue(helper_ret_stb, MMUSUFFIX)(env, addr + i, val8,
@@ -812,7 +814,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     }
 #endif
 
-    haddr = addr + env->tlb_table[mmu_idx][index].addend;
+    haddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][index].addend);
 #if DATA_SIZE == 1
     glue(glue(st, SUFFIX), _p)((uint8_t *)haddr, val);
 #else
@@ -829,6 +831,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     uintptr_t haddr;
     struct hook *hook;
     bool handled;
+    HOOK_FOREACH_VAR_DECLARE;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
@@ -900,7 +903,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
             return;
         }
 #endif
-        if (!VICTIM_TLB_HIT(addr_write)) {
+        if (!victim_tlb_hit_write(env, addr, mmu_idx, index)) {
             tlb_fill(ENV_GET_CPU(env), addr, MMU_DATA_STORE, mmu_idx, retaddr);
         }
         tlb_addr = env->tlb_table[mmu_idx][index].addr_write;
@@ -947,7 +950,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
          * previous page from the TLB cache.  */
         for (i = DATA_SIZE - 1; i >= 0; i--) {
             /* Big-endian extract.  */
-            uint8_t val8 = val >> (((DATA_SIZE - 1) * 8) - (i * 8));
+            uint8_t val8 = (uint8_t)(val >> (((DATA_SIZE - 1) * 8) - (i * 8)));
             /* Note the adjustment at the beginning of the function.
                Undo that for the recursion.  */
             glue(helper_ret_stb, MMUSUFFIX)(env, addr + i, val8,
@@ -970,7 +973,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     }
 #endif
 
-    haddr = addr + env->tlb_table[mmu_idx][index].addend;
+    haddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][index].addend);
     glue(glue(st, SUFFIX), _be_p)((uint8_t *)haddr, val);
 }
 #endif /* DATA_SIZE > 1 */

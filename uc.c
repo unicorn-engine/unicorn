@@ -268,6 +268,14 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         if (uc->reg_reset)
             uc->reg_reset(uc);
 
+        // init winsock sockets so we can use select() for usleep() implementation
+#ifdef _MSC_VER
+        {
+            WSADATA wsa_data;
+            WSAStartup(0x202, &wsa_data);
+        }
+#endif
+
         return UC_ERR_OK;
     } else {
         return UC_ERR_ARCH;
@@ -347,6 +355,13 @@ uc_err uc_close(uc_engine *uc)
     memset(uc, 0, sizeof(*uc));
     free(uc);
 
+    // free winsock sockets - used so we can use select() for usleep() implementation
+#ifdef _MSC_VER
+        {
+            WSACleanup();
+        }
+#endif
+    
     return UC_ERR_OK;
 }
 
@@ -398,7 +413,7 @@ static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
     while(count < size) {
         MemoryRegion *mr = memory_mapping(uc, address);
         if (mr) {
-            len = MIN(size - count, mr->end - address);
+            len = (size_t)MIN(size - count, mr->end - address);
             count += len;
             address += len;
         } else  // this address is not mapped in yet
@@ -426,7 +441,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     while(count < size) {
         MemoryRegion *mr = memory_mapping(uc, address);
         if (mr) {
-            len = MIN(size - count, mr->end - address);
+            len = (size_t)MIN(size - count, mr->end - address);
             if (uc->read_mem(&uc->as, address, bytes, len) == false)
                 break;
             count += len;
@@ -464,7 +479,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
                 // but this is not the program accessing memory, so temporarily mark writable
                 uc->readonly_mem(mr, false);
 
-            len = MIN(size - count, mr->end - address);
+            len = (size_t)MIN(size - count, mr->end - address);
             if (uc->write_mem(&uc->as, address, bytes, len) == false)
                 break;
 
@@ -496,7 +511,7 @@ static void *_timeout_fn(void *arg)
         // perhaps emulation is even done before timeout?
         if (uc->emulation_done)
             break;
-    } while(get_clock() - current_time < uc->timeout);
+    } while((uint64_t)(get_clock() - current_time) < uc->timeout);
 
     // timeout before emulation is done?
     if (!uc->emulation_done) {
@@ -744,9 +759,9 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t per
 // Generally used in prepartion for splitting a MemoryRegion.
 static uint8_t *copy_region(struct uc_struct *uc, MemoryRegion *mr)
 {
-    uint8_t *block = (uint8_t *)g_malloc0(int128_get64(mr->size));
+    uint8_t *block = (uint8_t *)g_malloc0((size_t)int128_get64(mr->size));
     if (block != NULL) {
-        uc_err err = uc_mem_read(uc, mr->addr, block, int128_get64(mr->size));
+        uc_err err = uc_mem_read(uc, mr->addr, block, (size_t)int128_get64(mr->size));
         if (err != UC_ERR_OK) {
             free(block);
             block = NULL;
@@ -804,7 +819,7 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr, uint64_t addres
     end = mr->end;
 
     // unmap this region first, then do split it later
-    if (uc_mem_unmap(uc, mr->addr, int128_get64(mr->size)) != UC_ERR_OK)
+    if (uc_mem_unmap(uc, mr->addr, (size_t)int128_get64(mr->size)) != UC_ERR_OK)
         goto error;
 
     /* overlapping cases
@@ -895,7 +910,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size, uint3
     count = 0;
     while(count < size) {
         mr = memory_mapping(uc, addr);
-        len = MIN(size - count, mr->end - addr);
+        len = (size_t)MIN(size - count, mr->end - addr);
         if (!split_region(uc, mr, addr, len, false))
             return UC_ERR_NOMEM;
 
@@ -952,7 +967,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
     count = 0;
     while(count < size) {
         mr = memory_mapping(uc, addr);
-        len = MIN(size - count, mr->end - addr);
+        len = (size_t)MIN(size - count, mr->end - addr);
         if (!split_region(uc, mr, addr, len, true))
             return UC_ERR_NOMEM;
 
@@ -1095,7 +1110,7 @@ void helper_uc_tracecode(int32_t size, uc_hook_type type, void *handle, int64_t 
 
     while (cur != NULL && !uc->stop_request) {
         hook = (struct hook *)cur->data;
-        if (HOOK_BOUND_CHECK(hook, address)) {
+        if (HOOK_BOUND_CHECK(hook, (uint64_t)address)) {
             ((uc_cb_hookcode_t)hook->callback)(uc, address, size, hook->user_data);
         }
         cur = cur->next;

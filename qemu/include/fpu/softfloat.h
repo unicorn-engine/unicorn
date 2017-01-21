@@ -42,7 +42,7 @@ these four paragraphs for those parts of this code that are retained.
 #include <sunmath.h>
 #endif
 
-#include <inttypes.h>
+#include "unicorn/platform.h"
 #include "config-host.h"
 #include "qemu/osdep.h"
 
@@ -125,7 +125,7 @@ typedef struct {
     uint16_t high;
 } floatx80;
 #define make_floatx80(exp, mant) ((floatx80) { mant, exp })
-#define make_floatx80_init(exp, mant) { .low = mant, .high = exp }
+#define make_floatx80_init(exp, mant) { mant, exp }
 typedef struct {
 #ifdef HOST_WORDS_BIGENDIAN
     uint64_t high, low;
@@ -133,8 +133,13 @@ typedef struct {
     uint64_t low, high;
 #endif
 } float128;
-#define make_float128(high_, low_) ((float128) { .high = high_, .low = low_ })
-#define make_float128_init(high_, low_) { .high = high_, .low = low_ }
+#ifdef HOST_WORDS_BIGENDIAN
+#define make_float128(high_, low_) ((float128) { high_, low_ })
+#define make_float128_init(high_, low_) { high_, low_ }
+#else
+#define make_float128(high_, low_) ((float128) { low_, high_ })
+#define make_float128_init(high_, low_) { low_, high_ }
+#endif
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE floating-point underflow tininess-detection mode.

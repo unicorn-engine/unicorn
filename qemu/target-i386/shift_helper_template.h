@@ -55,7 +55,7 @@ target_ulong glue(helper_rcl, SUFFIX)(CPUX86State *env, target_ulong t0,
     count = rclb_table[count];
 #endif
     if (count) {
-        eflags = env->cc_src;
+        eflags = (int)env->cc_src;
         t0 &= DATA_MASK;
         src = t0;
         res = (t0 << count) | ((target_ulong)(eflags & CC_C) << (count - 1));
@@ -84,7 +84,7 @@ target_ulong glue(helper_rcr, SUFFIX)(CPUX86State *env, target_ulong t0,
     count = rclb_table[count];
 #endif
     if (count) {
-        eflags = env->cc_src;
+        eflags = (int)env->cc_src;
         t0 &= DATA_MASK;
         src = t0;
         res = (t0 >> count) |

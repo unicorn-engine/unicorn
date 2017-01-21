@@ -163,11 +163,13 @@ void apic_init_reset(struct uc_struct *uc, DeviceState *dev)
 
 void apic_designate_bsp(struct uc_struct *uc, DeviceState *dev)
 {
+    APICCommonState *s;
+    
     if (dev == NULL) {
         return;
     }
 
-    APICCommonState *s = APIC_COMMON(uc, dev);
+    s = APIC_COMMON(uc, dev);
     s->apicbase |= MSR_IA32_APICBASE_BSP;
 }
 
@@ -241,20 +243,32 @@ static void apic_common_class_init(struct uc_struct *uc, ObjectClass *klass, voi
      * x86_cpu_apic_create()
      */
     dc->cannot_instantiate_with_device_add_yet = true;
-	//printf("... init apic common class\n");
+    //printf("... init apic common class\n");
 }
 
 static const TypeInfo apic_common_type = {
-    .name = TYPE_APIC_COMMON,
-    .parent = TYPE_DEVICE,
-    .instance_size = sizeof(APICCommonState),
-    .class_size = sizeof(APICCommonClass),
-    .class_init = apic_common_class_init,
-    .abstract = true,
+    TYPE_APIC_COMMON,
+    TYPE_DEVICE,
+    
+    sizeof(APICCommonClass),
+    sizeof(APICCommonState),
+    NULL,
+
+    NULL,
+    NULL,
+    NULL,
+    
+    NULL,
+
+    apic_common_class_init,
+    NULL,
+    NULL,
+    
+    true,
 };
 
 void apic_common_register_types(struct uc_struct *uc)
 {
-	//printf("... register apic common\n");
+    //printf("... register apic common\n");
     type_register_static(uc, &apic_common_type);
 }

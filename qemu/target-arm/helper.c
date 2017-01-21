@@ -4110,13 +4110,13 @@ static int get_phys_addr_v5(CPUARMState *env, uint32_t address, int access_type,
         *page_size = 1024 * 1024;
     } else {
         /* Lookup l2 entry.  */
-	if (type == 1) {
-	    /* Coarse pagetable.  */
-	    table = (desc & 0xfffffc00) | ((address >> 10) & 0x3fc);
-	} else {
-	    /* Fine pagetable.  */
-	    table = (desc & 0xfffff000) | ((address >> 8) & 0xffc);
-	}
+    if (type == 1) {
+        /* Coarse pagetable.  */
+        table = (desc & 0xfffffc00) | ((address >> 10) & 0x3fc);
+    } else {
+        /* Fine pagetable.  */
+        table = (desc & 0xfffff000) | ((address >> 8) & 0xffc);
+    }
         desc = ldl_phys(cs->as, table);
         switch (desc & 3) {
         case 0: /* Page translation fault.  */
@@ -4133,17 +4133,17 @@ static int get_phys_addr_v5(CPUARMState *env, uint32_t address, int access_type,
             *page_size = 0x1000;
             break;
         case 3: /* 1k page.  */
-	    if (type == 1) {
-		if (arm_feature(env, ARM_FEATURE_XSCALE)) {
-		    phys_addr = (desc & 0xfffff000) | (address & 0xfff);
-		} else {
-		    /* Page translation fault.  */
-		    code = 7;
-		    goto do_fault;
-		}
-	    } else {
-		phys_addr = (desc & 0xfffffc00) | (address & 0x3ff);
-	    }
+        if (type == 1) {
+        if (arm_feature(env, ARM_FEATURE_XSCALE)) {
+            phys_addr = (desc & 0xfffff000) | (address & 0xfff);
+        } else {
+            /* Page translation fault.  */
+            code = 7;
+            goto do_fault;
+        }
+        } else {
+        phys_addr = (desc & 0xfffffc00) | (address & 0x3ff);
+        }
             ap = (desc >> 4) & 3;
             *page_size = 0x400;
             break;
@@ -4516,18 +4516,18 @@ static int get_phys_addr_mpu(CPUARMState *env, uint32_t address,
 
     *phys_ptr = address;
     for (n = 7; n >= 0; n--) {
-	base = env->cp15.c6_region[n];
-	if ((base & 1) == 0)
-	    continue;
-	mask = 1 << ((base >> 1) & 0x1f);
-	/* Keep this shift separate from the above to avoid an
-	   (undefined) << 32.  */
-	mask = (mask << 1) - 1;
-	if (((base ^ address) & ~mask) == 0)
-	    break;
+    base = env->cp15.c6_region[n];
+    if ((base & 1) == 0)
+        continue;
+    mask = 1 << ((base >> 1) & 0x1f);
+    /* Keep this shift separate from the above to avoid an
+       (undefined) << 32.  */
+    mask = (mask << 1) - 1;
+    if (((base ^ address) & ~mask) == 0)
+        break;
     }
     if (n < 0)
-	return 2;
+    return 2;
 
     if (access_type == 2) {
         mask = env->cp15.pmsav5_insn_ap;
@@ -4537,31 +4537,31 @@ static int get_phys_addr_mpu(CPUARMState *env, uint32_t address,
     mask = (mask >> (n * 4)) & 0xf;
     switch (mask) {
     case 0:
-	return 1;
+    return 1;
     case 1:
-	if (is_user)
-	  return 1;
-	*prot = PAGE_READ | PAGE_WRITE;
-	break;
+    if (is_user)
+      return 1;
+    *prot = PAGE_READ | PAGE_WRITE;
+    break;
     case 2:
-	*prot = PAGE_READ;
-	if (!is_user)
-	    *prot |= PAGE_WRITE;
-	break;
+    *prot = PAGE_READ;
+    if (!is_user)
+        *prot |= PAGE_WRITE;
+    break;
     case 3:
-	*prot = PAGE_READ | PAGE_WRITE;
-	break;
+    *prot = PAGE_READ | PAGE_WRITE;
+    break;
     case 5:
-	if (is_user)
-	    return 1;
-	*prot = PAGE_READ;
-	break;
+    if (is_user)
+        return 1;
+    *prot = PAGE_READ;
+    break;
     case 6:
-	*prot = PAGE_READ;
-	break;
+    *prot = PAGE_READ;
+    break;
     default:
-	/* Bad permission.  */
-	return 1;
+    /* Bad permission.  */
+    return 1;
     }
     *prot |= PAGE_EXEC;
     return 0;
@@ -4607,8 +4607,8 @@ static inline int get_phys_addr(CPUARMState *env, target_ulong address,
         return 0;
     } else if (arm_feature(env, ARM_FEATURE_MPU)) {
         *page_size = TARGET_PAGE_SIZE;
-	return get_phys_addr_mpu(env, address, access_type, is_user, phys_ptr,
-				 prot);
+    return get_phys_addr_mpu(env, address, access_type, is_user, phys_ptr,
+                 prot);
     } else if (extended_addresses_enabled(env)) {
         return get_phys_addr_lpae(env, address, access_type, is_user, phys_ptr,
                                   prot, page_size);
@@ -5664,6 +5664,7 @@ static bool round_to_inf(float_status *fpst, bool sign_bit)
     }
 
     g_assert_not_reached();
+    return false;
 }
 
 float32 HELPER(recpe_f32)(float32 input, void *fpstp)

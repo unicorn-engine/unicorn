@@ -1,7 +1,7 @@
 #ifndef UC_LLIST_H
 #define UC_LLIST_H
 
-#include <stdbool.h>
+#include "unicorn/platform.h"
 
 struct list_item {
     struct list_item *next;

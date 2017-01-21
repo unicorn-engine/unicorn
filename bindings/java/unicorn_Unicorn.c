@@ -20,7 +20,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #include <sys/types.h>
-#include <stdint.h>
+#include "unicorn/platform.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -334,7 +334,7 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_open
  */
 JNIEXPORT jint JNICALL Java_unicorn_Unicorn_version
   (JNIEnv *env, jclass clz) {
-  	return (jint)uc_version(NULL, NULL);
+    return (jint)uc_version(NULL, NULL);
 }
 
 /*
@@ -344,7 +344,7 @@ JNIEXPORT jint JNICALL Java_unicorn_Unicorn_version
  */
 JNIEXPORT jboolean JNICALL Java_unicorn_Unicorn_arch_1supported
   (JNIEnv *env, jclass clz, jint arch) {
-  	return (jboolean)(uc_arch_supported((uc_arch)arch) != 0);
+    return (jboolean)(uc_arch_supported((uc_arch)arch) != 0);
 }
 
 /*

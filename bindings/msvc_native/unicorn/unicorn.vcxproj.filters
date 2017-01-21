@@ -1,0 +1,498 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="qemu">
+      <UniqueIdentifier>{13755027-3a13-46c3-9468-ed380fcef603}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="priv">
+      <UniqueIdentifier>{4f904f9f-fd99-4ebe-8db7-2ee2c644c6e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\util">
+      <UniqueIdentifier>{1f3288bd-38e9-49c1-ae30-6ac4bc1b86c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\hw">
+      <UniqueIdentifier>{d98a987f-6e81-4454-9bb4-f79d49d1d8fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\qapi">
+      <UniqueIdentifier>{9b261303-0cae-4e60-8bc9-c63cd6abd5bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\qobject">
+      <UniqueIdentifier>{4078dd72-489d-48e6-a7c7-e27149f9513d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\qom">
+      <UniqueIdentifier>{9264dcdf-55d8-4416-9b53-7962937b4db5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\hw\core">
+      <UniqueIdentifier>{973f87b6-2729-473f-bda6-d61d8c799a77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include">
+      <UniqueIdentifier>{235236d2-79fa-48f5-b496-cb79a9290f6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\exec">
+      <UniqueIdentifier>{4bb86c12-fd75-40be-9891-e4a84ca60703}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\fpu">
+      <UniqueIdentifier>{b210c6e7-454a-400c-84c4-d2a10d96db1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw">
+      <UniqueIdentifier>{8bdec3ae-c802-4443-a6f4-e26bd030a1cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\arm">
+      <UniqueIdentifier>{e7cfa963-4fb5-4c9a-a264-402decbea01d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\cpu">
+      <UniqueIdentifier>{1890ac05-1098-492d-bc0d-50b6e8dd7fc0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\i386">
+      <UniqueIdentifier>{76e19a4b-1143-456a-900c-9ce6c9c0d267}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\m68k">
+      <UniqueIdentifier>{0e879645-49d7-4d24-9736-f85d69acceda}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\mips">
+      <UniqueIdentifier>{9ecedd1d-44a7-40d1-ad99-f06e49b39aa8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\sparc">
+      <UniqueIdentifier>{50ff932c-1464-4742-af74-fc9b42e4ef3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\qapi">
+      <UniqueIdentifier>{ea61989d-dc0a-4146-87a0-63e5131d5302}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\qapi\qmp">
+      <UniqueIdentifier>{044502cd-501d-40eb-86d0-4c8db24104c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\qemu">
+      <UniqueIdentifier>{b1debb6d-f445-4f95-9778-d6b926541606}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\qom">
+      <UniqueIdentifier>{c5faa816-aae6-41b7-ac8d-40a9783786e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\sysemu">
+      <UniqueIdentifier>{62c5db3f-0d6d-4a3a-92b7-0cd602058a62}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\list.c">
+      <Filter>priv</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\accel.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\glib_compat.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qemu-log.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qemu-timer.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\tcg-runtime.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\vl.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\hw\core\machine.c">
+      <Filter>qemu\hw\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\hw\core\qdev.c">
+      <Filter>qemu\hw\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qapi\qapi-dealloc-visitor.c">
+      <Filter>qemu\qapi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qapi\qapi-visit-core.c">
+      <Filter>qemu\qapi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qapi\qmp-input-visitor.c">
+      <Filter>qemu\qapi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qapi\qmp-output-visitor.c">
+      <Filter>qemu\qapi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qapi\string-input-visitor.c">
+      <Filter>qemu\qapi</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qbool.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qdict.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qerror.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qfloat.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qint.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qlist.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qstring.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qom\container.c">
+      <Filter>qemu\qom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qom\cpu.c">
+      <Filter>qemu\qom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qom\object.c">
+      <Filter>qemu\qom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qom\qom-qobject.c">
+      <Filter>qemu\qom</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\aes.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\bitmap.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\bitops.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\crc32c.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\cutils.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\error.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\getauxval.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\host-utils.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\module.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\oslib-win32.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\qemu-error.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\qemu-thread-win32.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\qemu-timer-common.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\uc.c" />
+    <ClCompile Include="qapi-types.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="qapi-visit.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\include\list.h">
+      <Filter>priv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\qemu.h">
+      <Filter>priv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\uc_priv.h">
+      <Filter>priv</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\vl.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\config.h">
+      <Filter>qemu\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\elf.h">
+      <Filter>qemu\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\glib_compat.h">
+      <Filter>qemu\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu-common.h">
+      <Filter>qemu\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\address-spaces.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\cpu-all.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\cpu-common.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\cpu-defs.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\cpu_ldst.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\cpu_ldst_template.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\cputlb.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\exec-all.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\gen-icount.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\helper-gen.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\helper-head.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\helper-proto.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\helper-tcg.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\hwaddr.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\ioport.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\memory-internal.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\memory.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\poison.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\ram_addr.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\softmmu-semi.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\spinlock.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\fpu\softfloat.h">
+      <Filter>qemu\include\fpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\boards.h">
+      <Filter>qemu\include\hw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\hw.h">
+      <Filter>qemu\include\hw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\irq.h">
+      <Filter>qemu\include\hw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\qdev-core.h">
+      <Filter>qemu\include\hw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\qdev.h">
+      <Filter>qemu\include\hw</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\arm\arm.h">
+      <Filter>qemu\include\hw\arm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\cpu\icc_bus.h">
+      <Filter>qemu\include\hw\cpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\i386\apic.h">
+      <Filter>qemu\include\hw\i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\i386\apic_internal.h">
+      <Filter>qemu\include\hw\i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\i386\pc.h">
+      <Filter>qemu\include\hw\i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\m68k\m68k.h">
+      <Filter>qemu\include\hw\m68k</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\m68k\mcf.h">
+      <Filter>qemu\include\hw\m68k</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\mips\bios.h">
+      <Filter>qemu\include\hw\mips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\mips\cpudevs.h">
+      <Filter>qemu\include\hw\mips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\mips\mips.h">
+      <Filter>qemu\include\hw\mips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\sparc\grlib.h">
+      <Filter>qemu\include\hw\sparc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\sparc\sparc.h">
+      <Filter>qemu\include\hw\sparc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\sparc\sparc32_dma.h">
+      <Filter>qemu\include\hw\sparc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\hw\sparc\sun4m.h">
+      <Filter>qemu\include\hw\sparc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\dealloc-visitor.h">
+      <Filter>qemu\include\qapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\error.h">
+      <Filter>qemu\include\qapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\opts-visitor.h">
+      <Filter>qemu\include\qapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp-input-visitor.h">
+      <Filter>qemu\include\qapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp-output-visitor.h">
+      <Filter>qemu\include\qapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\string-input-visitor.h">
+      <Filter>qemu\include\qapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\visitor-impl.h">
+      <Filter>qemu\include\qapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\visitor.h">
+      <Filter>qemu\include\qapi</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qbool.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qdict.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qerror.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qfloat.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qint.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qjson.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qlist.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qobject.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qstring.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\types.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\aes.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\atomic.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\bitmap.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\bitops.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\bswap.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\compiler.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\crc32c.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\host-utils.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\int128.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\log.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\module.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\notify.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\osdep.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\queue.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\range.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\thread-posix.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\thread-win32.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\thread.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\timer.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qemu\typedefs.h">
+      <Filter>qemu\include\qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qom\cpu.h">
+      <Filter>qemu\include\qom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qom\object.h">
+      <Filter>qemu\include\qom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qom\qom-qobject.h">
+      <Filter>qemu\include\qom</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\sysemu\accel.h">
+      <Filter>qemu\include\sysemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\sysemu\cpus.h">
+      <Filter>qemu\include\sysemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\sysemu\memory_mapping.h">
+      <Filter>qemu\include\sysemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\sysemu\os-win32.h">
+      <Filter>qemu\include\sysemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\sysemu\sysemu.h">
+      <Filter>qemu\include\sysemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\include\unicorn\arm.h" />
+    <ClInclude Include="..\..\..\include\unicorn\arm64.h" />
+    <ClInclude Include="..\..\..\include\unicorn\m68k.h" />
+    <ClInclude Include="..\..\..\include\unicorn\mips.h" />
+    <ClInclude Include="..\..\..\include\unicorn\sparc.h" />
+    <ClInclude Include="..\..\..\include\unicorn\unicorn.h" />
+    <ClInclude Include="..\..\..\include\unicorn\x86.h" />
+    <ClInclude Include="..\..\..\include\unicorn\platform.h" />
+    <ClInclude Include="qapi-types.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="qapi-visit.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>

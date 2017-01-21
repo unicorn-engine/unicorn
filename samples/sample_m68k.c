@@ -21,8 +21,8 @@
 
 // posix specific
 #else // _MSC_VER
-#include <unistd.h>
-#include <inttypes.h>
+#include "unicorn/platform.h"
+#include "unicorn/platform.h"
 #include <unicorn/unicorn.h>
 #endif // _MSC_VER
 
@@ -160,7 +160,7 @@ static void test_m68k(void)
 
 int main(int argc, char **argv, char **envp)
 {
-	// dynamically load shared library
+    // dynamically load shared library
 #ifdef DYNLOAD
     if (!uc_dyn_load(NULL, 0)) {
         printf("Error dynamically loading shared library.\n");
@@ -171,7 +171,7 @@ int main(int argc, char **argv, char **envp)
     }
 #endif
     
-	test_m68k();
+    test_m68k();
 
     // dynamically free shared library
 #ifdef DYNLOAD

@@ -12,7 +12,7 @@
 #ifndef BITOPS_H
 #define BITOPS_H
 
-#include <stdint.h>
+#include "unicorn/platform.h"
 #include <assert.h>
 
 #include "host-utils.h"
@@ -32,10 +32,10 @@
  */
 static inline void set_bit(long nr, unsigned long *addr)
 {
-	unsigned long mask = BIT_MASK(nr);
+    unsigned long mask = BIT_MASK(nr);
         unsigned long *p = addr + BIT_WORD(nr);
 
-	*p  |= mask;
+    *p  |= mask;
 }
 
 /**
@@ -45,10 +45,10 @@ static inline void set_bit(long nr, unsigned long *addr)
  */
 static inline void clear_bit(long nr, unsigned long *addr)
 {
-	unsigned long mask = BIT_MASK(nr);
+    unsigned long mask = BIT_MASK(nr);
         unsigned long *p = addr + BIT_WORD(nr);
 
-	*p &= ~mask;
+    *p &= ~mask;
 }
 
 /**
@@ -58,10 +58,10 @@ static inline void clear_bit(long nr, unsigned long *addr)
  */
 static inline void change_bit(long nr, unsigned long *addr)
 {
-	unsigned long mask = BIT_MASK(nr);
+    unsigned long mask = BIT_MASK(nr);
         unsigned long *p = addr + BIT_WORD(nr);
 
-	*p ^= mask;
+    *p ^= mask;
 }
 
 /**
@@ -71,12 +71,12 @@ static inline void change_bit(long nr, unsigned long *addr)
  */
 static inline int test_and_set_bit(long nr, unsigned long *addr)
 {
-	unsigned long mask = BIT_MASK(nr);
+    unsigned long mask = BIT_MASK(nr);
         unsigned long *p = addr + BIT_WORD(nr);
-	unsigned long old = *p;
+    unsigned long old = *p;
 
-	*p = old | mask;
-	return (old & mask) != 0;
+    *p = old | mask;
+    return (old & mask) != 0;
 }
 
 /**
@@ -86,12 +86,12 @@ static inline int test_and_set_bit(long nr, unsigned long *addr)
  */
 static inline int test_and_clear_bit(long nr, unsigned long *addr)
 {
-	unsigned long mask = BIT_MASK(nr);
+    unsigned long mask = BIT_MASK(nr);
         unsigned long *p = addr + BIT_WORD(nr);
-	unsigned long old = *p;
+    unsigned long old = *p;
 
-	*p = old & ~mask;
-	return (old & mask) != 0;
+    *p = old & ~mask;
+    return (old & mask) != 0;
 }
 
 /**
@@ -101,12 +101,12 @@ static inline int test_and_clear_bit(long nr, unsigned long *addr)
  */
 static inline int test_and_change_bit(long nr, unsigned long *addr)
 {
-	unsigned long mask = BIT_MASK(nr);
+    unsigned long mask = BIT_MASK(nr);
         unsigned long *p = addr + BIT_WORD(nr);
-	unsigned long old = *p;
+    unsigned long old = *p;
 
-	*p = old ^ mask;
-	return (old & mask) != 0;
+    *p = old ^ mask;
+    return (old & mask) != 0;
 }
 
 /**
@@ -116,7 +116,7 @@ static inline int test_and_change_bit(long nr, unsigned long *addr)
  */
 static inline int test_bit(long nr, const unsigned long *addr)
 {
-	return 1UL & (addr[BIT_WORD(nr)] >> (nr & (BITS_PER_LONG-1)));
+    return 1UL & (addr[BIT_WORD(nr)] >> (nr & (BITS_PER_LONG-1)));
 }
 
 /**
@@ -126,7 +126,7 @@ static inline int test_bit(long nr, const unsigned long *addr)
  * @size: The bitmap size in bits
  */
 unsigned long find_next_bit(const unsigned long *addr,
-				   unsigned long size, unsigned long offset);
+                   unsigned long size, unsigned long offset);
 
 /**
  * find_next_zero_bit - find the next cleared bit in a memory region

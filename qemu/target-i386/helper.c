@@ -1002,7 +1002,7 @@ bool check_hw_breakpoints(CPUX86State *env, bool force_dr6_update)
             break;
         }
         if (bp_match || wp_match) {
-            dr6 |= 1 << reg;
+            dr6 |= 1ULL << reg;
             if (hw_breakpoint_enabled(env->dr[7], reg)) {
                 hit_enabled = true;
             }
@@ -1083,7 +1083,7 @@ int cpu_x86_get_descr_debug(CPUX86State *env, unsigned int selector,
         dt = &env->gdt;
     index = selector & ~7;
     ptr = dt->base + index;
-    if ((index + 7) > dt->limit
+    if ((uint32_t)(index + 7) > dt->limit
         || cpu_memory_rw_debug(cs, ptr, (uint8_t *)&e1, sizeof(e1), 0) != 0
         || cpu_memory_rw_debug(cs, ptr+4, (uint8_t *)&e2, sizeof(e2), 0) != 0)
         return 0;

@@ -427,6 +427,7 @@ static inline int opsize_bytes(int opsize)
     case OS_DOUBLE: return 8;
     default:
         g_assert_not_reached();
+        return 0;
     }
 }
 

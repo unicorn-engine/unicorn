@@ -149,16 +149,30 @@ static void pc_machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *d
 }
 
 static const TypeInfo pc_machine_info = {
-    .name = TYPE_PC_MACHINE,
-    .parent = TYPE_MACHINE,
-    .abstract = true,
-    .instance_size = sizeof(PCMachineState),
-    .instance_init = pc_machine_initfn,
-    .class_size = sizeof(PCMachineClass),
-    .class_init = pc_machine_class_init,
-    .interfaces = (InterfaceInfo[]) {
-         { }
-    },
+   TYPE_PC_MACHINE,
+    TYPE_MACHINE,
+    
+    sizeof(PCMachineClass),
+    sizeof(PCMachineState),
+    NULL,
+
+    pc_machine_initfn,
+    NULL,
+    NULL,
+
+    NULL,
+    
+    pc_machine_class_init,
+    NULL,
+    NULL,
+
+    true,
+    
+    NULL,
+    NULL,
+    
+    // should this be added somehow?
+    //.interfaces = (InterfaceInfo[]) { { } },
 };
 
 void pc_machine_register_types(struct uc_struct *uc)

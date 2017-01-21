@@ -1,5 +1,4 @@
-#include <inttypes.h>
-#include <stdint.h>
+#include "unicorn/platform.h"
 #include <stdio.h>
 #include <string.h>
 #include <unicorn/unicorn.h>

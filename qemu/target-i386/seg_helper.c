@@ -947,6 +947,7 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
 {
     // Unicorn: call registered syscall hooks
     struct hook *hook;
+    HOOK_FOREACH_VAR_DECLARE;
     HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
         if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
@@ -956,7 +957,7 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
 
     env->eip += next_eip_addend;
     return;
-
+/*
     int selector;
 
     if (!(env->efer & MSR_EFER_SCE)) {
@@ -1005,6 +1006,7 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
                                DESC_W_MASK | DESC_A_MASK);
         env->eip = (uint32_t)env->star;
     }
+*/
 }
 #endif
 #endif
@@ -2307,6 +2309,7 @@ void helper_sysenter(CPUX86State *env, int next_eip_addend)
 {
     // Unicorn: call registered SYSENTER hooks
     struct hook *hook;
+    HOOK_FOREACH_VAR_DECLARE;
     HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
         if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
