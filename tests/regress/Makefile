@@ -1,9 +1,9 @@
 CFLAGS += -Wall -Werror -I../../include
-LDLIBS += -L../../ -lpthread -lm -lunicorn
+LDLIBS += -L../../ -lm -lunicorn
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Linux)
-LDLIBS += -lrt
+LDLIBS += -lrt -pthread
 endif
 
 EXECUTE_VARS = LD_LIBRARY_PATH=../../cmocka/src:../../ DYLD_LIBRARY_PATH=../../

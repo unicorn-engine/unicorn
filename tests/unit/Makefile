@@ -1,13 +1,13 @@
 CFLAGS += -Wall -Werror -Wno-unused-function -g
 CFLAGS += -L ../../ -I ../../include
 CFLAGS += -L ../../cmocka/src -I ../../cmocka/include
-LDLIBS += -lcmocka -lunicorn
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Linux)
-LDLIBS += -lrt
+LDLIBS += -lrt -pthread
 endif
 
+LDLIBS += -lcmocka -lunicorn
 
 EXECUTE_VARS = LD_LIBRARY_PATH=../../cmocka/src:../../ DYLD_LIBRARY_PATH=../../
 
