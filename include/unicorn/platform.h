@@ -1,5 +1,5 @@
 /*
-	This file is primarily to support header files that are missing in MSVC and other non-standard compilers.
+    This file is primarily to support header files that are missing in MSVC and other non-standard compilers.
 */
 
 #ifndef UNICORN_PLATFORM_H
@@ -176,11 +176,11 @@ typedef _W64 unsigned int  uintptr_t;
 
 static int gettimeofday(struct timeval* t, void* timezone)
 {
-	struct _timeb timebuffer;
-	_ftime( &timebuffer );
-	t->tv_sec = (long)timebuffer.time;
-	t->tv_usec = 1000*timebuffer.millitm;
-	return 0;
+    struct _timeb timebuffer;
+    _ftime( &timebuffer );
+    t->tv_sec = (long)timebuffer.time;
+    t->tv_usec = 1000*timebuffer.millitm;
+    return 0;
 }
 
 #else
@@ -195,22 +195,22 @@ static int gettimeofday(struct timeval* t, void* timezone)
 // TODO: add unistd stuff here ...
 
 static int usleep(uint32_t t) {
-	int ret, err_code;
-	long value = t; // time in microseconds
-	struct timeval tv;
-	FD_SET dummy_set;
-	FD_ZERO(&dummy_set);
-	tv.tv_sec = value / 1000000;
-	tv.tv_usec = value % 1000000;
-	ret = select(0, &dummy_set, NULL, NULL, &tv);
-	err_code =  WSAGetLastError();
-	return ret==0 ? 0 : -1;
+    int ret, err_code;
+    long value = t; // time in microseconds
+    struct timeval tv;
+    FD_SET dummy_set;
+    FD_ZERO(&dummy_set);
+    tv.tv_sec = value / 1000000;
+    tv.tv_usec = value % 1000000;
+    ret = select(0, &dummy_set, NULL, NULL, &tv);
+    err_code =  WSAGetLastError();
+    return ret==0 ? 0 : -1;
 }
 /*
 #include <chrono>
 #include <thread>
 static void usleep(const int64_t &t) {
-	std::this_thread::sleep_for(std::chrono::microseconds(t));
+    std::this_thread::sleep_for(std::chrono::microseconds(t));
 }
 */
 

@@ -203,28 +203,28 @@ static void apic_class_init(struct uc_struct *uc, ObjectClass *klass, void *data
     k->vapic_base_update = apic_vapic_base_update;
     k->pre_save = apic_pre_save;
     k->post_load = apic_post_load;
-	//printf("... init apic class\n");
+    //printf("... init apic class\n");
 }
 
 static const TypeInfo apic_info = {
     "apic",
-	TYPE_APIC_COMMON,
+    TYPE_APIC_COMMON,
 
-	0,
+    0,
     sizeof(APICCommonState),
     NULL,
 
-	NULL,
-	NULL,
-	NULL,
+    NULL,
+    NULL,
+    NULL,
 
-	NULL,
+    NULL,
 
-	apic_class_init,
+    apic_class_init,
 };
 
 void apic_register_types(struct uc_struct *uc)
 {
-	//printf("... register apic types\n");
+    //printf("... register apic types\n");
     type_register_static(uc, &apic_info);
 }

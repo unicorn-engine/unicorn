@@ -78,12 +78,12 @@ static const int tcg_target_call_iarg_regs[] = {
     TCG_REG_R9,
 #else
     /* 32 bit mode uses stack based calling convention (GCC default).
-	We add a dummy value here for MSVC compatibility for the error:
-	"error C2466: cannot allocate an array of constant size 0"
-	The "tcg_target_call_iarg_regs" array is not accessed when
-	TCG_TARGET_REG_BITS == 32
-	*/
-	0,
+    We add a dummy value here for MSVC compatibility for the error:
+    "error C2466: cannot allocate an array of constant size 0"
+    The "tcg_target_call_iarg_regs" array is not accessed when
+    TCG_TARGET_REG_BITS == 32
+    */
+    0,
 #endif
 };
 
@@ -411,24 +411,24 @@ static inline int tcg_target_const_match(tcg_target_long val, TCGType type,
 
 static const uint8_t tcg_cond_to_jcc[] = {
 #ifdef _MSC_VER
-	0,			// TCG_COND_NEVER
-	0,			// TCG_COND_ALWAYS
-	JCC_JL,		// TCG_COND_LT
-	JCC_JGE,	// TCG_COND_GE
-	JCC_JB,		// TCG_COND_LTU
-	JCC_JAE,	// TCG_COND_GEU
-	0,			// n/a
-	0,			// n/a
-	JCC_JE,		// TCG_COND_EQ
-	JCC_JNE,	// TCG_COND_NE
-	JCC_JLE,	// TCG_COND_LE
-	JCC_JG,		// TCG_COND_GT
-	JCC_JBE,	// TCG_COND_LEU
-	JCC_JA,		// TCG_COND_GTU
-	0,			// n/a
-	0,			// n/a
+    0,			// TCG_COND_NEVER
+    0,			// TCG_COND_ALWAYS
+    JCC_JL,		// TCG_COND_LT
+    JCC_JGE,	// TCG_COND_GE
+    JCC_JB,		// TCG_COND_LTU
+    JCC_JAE,	// TCG_COND_GEU
+    0,			// n/a
+    0,			// n/a
+    JCC_JE,		// TCG_COND_EQ
+    JCC_JNE,	// TCG_COND_NE
+    JCC_JLE,	// TCG_COND_LE
+    JCC_JG,		// TCG_COND_GT
+    JCC_JBE,	// TCG_COND_LEU
+    JCC_JA,		// TCG_COND_GTU
+    0,			// n/a
+    0,			// n/a
 #else
-	[TCG_COND_EQ] = JCC_JE,
+    [TCG_COND_EQ] = JCC_JE,
     [TCG_COND_NE] = JCC_JNE,
     [TCG_COND_LT] = JCC_JL,
     [TCG_COND_GE] = JCC_JGE,
@@ -1155,43 +1155,43 @@ static void tcg_out_jmp(TCGContext *s, tcg_insn_unit *dest)
  */
 static void * const qemu_ld_helpers[16] = {
 #ifdef _MSC_VER
-	helper_ret_ldub_mmu,	// MO_UB
+    helper_ret_ldub_mmu,	// MO_UB
 #  ifdef HOST_WORDS_BIGENDIAN
-	helper_be_lduw_mmu,		// MO_BEUW
-	helper_be_ldul_mmu,		// MO_BEUL
-	helper_be_ldq_mmu,		// MO_BEQ
-	0,		// MO_SB
-	0,		// MO_BESW
-	0,		// MO_BESL
-	0,		// n/a
-	0,		// n/a
-	helper_le_lduw_mmu,		// MO_LEUW
-	helper_le_ldul_mmu,		// MO_LEUL
-	helper_le_ldq_mmu,		// MO_LEQ
-	0,		// n/a
-	0,		// MO_LESW
-	0,		// MO_LESL
-	0,		// n/a
+    helper_be_lduw_mmu,		// MO_BEUW
+    helper_be_ldul_mmu,		// MO_BEUL
+    helper_be_ldq_mmu,		// MO_BEQ
+    0,		// MO_SB
+    0,		// MO_BESW
+    0,		// MO_BESL
+    0,		// n/a
+    0,		// n/a
+    helper_le_lduw_mmu,		// MO_LEUW
+    helper_le_ldul_mmu,		// MO_LEUL
+    helper_le_ldq_mmu,		// MO_LEQ
+    0,		// n/a
+    0,		// MO_LESW
+    0,		// MO_LESL
+    0,		// n/a
 #  else // !HOST_WORDS_BIGENDIAN
-	helper_le_lduw_mmu,		// MO_LEUW
-	helper_le_ldul_mmu,		// MO_LEUL
-	helper_le_ldq_mmu,		// MO_LEQ
-	0,		// MO_SB
-	0,		// MO_LESW
-	0,		// MO_LESL
-	0,		// n/a
-	0,		// n/a
-	helper_be_lduw_mmu,		// MO_BEUW
-	helper_be_ldul_mmu,		// MO_BEUL
-	helper_be_ldq_mmu,		// MO_BEQ
-	0,		// n/a
-	0,		// MO_BESW
-	0,		// MO_BESL
-	0,		// n/a
+    helper_le_lduw_mmu,		// MO_LEUW
+    helper_le_ldul_mmu,		// MO_LEUL
+    helper_le_ldq_mmu,		// MO_LEQ
+    0,		// MO_SB
+    0,		// MO_LESW
+    0,		// MO_LESL
+    0,		// n/a
+    0,		// n/a
+    helper_be_lduw_mmu,		// MO_BEUW
+    helper_be_ldul_mmu,		// MO_BEUL
+    helper_be_ldq_mmu,		// MO_BEQ
+    0,		// n/a
+    0,		// MO_BESW
+    0,		// MO_BESL
+    0,		// n/a
 #  endif // HOST_WORDS_BIGENDIAN
 
 #else //_MSC_VER
-	[MO_UB]   = helper_ret_ldub_mmu,
+    [MO_UB]   = helper_ret_ldub_mmu,
     [MO_LEUW] = helper_le_lduw_mmu,
     [MO_LEUL] = helper_le_ldul_mmu,
     [MO_LEQ]  = helper_le_ldq_mmu,
@@ -1206,39 +1206,39 @@ static void * const qemu_ld_helpers[16] = {
  */
 static void * const qemu_st_helpers[16] = {
 #ifdef _MSC_VER
-	helper_ret_stb_mmu,		// MO_UB
+    helper_ret_stb_mmu,		// MO_UB
 #  ifdef HOST_WORDS_BIGENDIAN
-	helper_be_stw_mmu,		// MO_BEUW
-	helper_be_stl_mmu,		// MO_BEUL
-	helper_be_stq_mmu,		// MO_BEQ
-	0,		// MO_SB
-	0,		// MO_BESW
-	0,		// MO_BESL
-	0,		// n/a
-	0,		// n/a
-	helper_le_stw_mmu,		// MO_LEUW
-	helper_le_stl_mmu,		// MO_LEUL
-	helper_le_stq_mmu,		// MO_LEQ
-	0,		// n/a
-	0,		// MO_LESW
-	0,		// MO_LESL
-	0,		// n/a
+    helper_be_stw_mmu,		// MO_BEUW
+    helper_be_stl_mmu,		// MO_BEUL
+    helper_be_stq_mmu,		// MO_BEQ
+    0,		// MO_SB
+    0,		// MO_BESW
+    0,		// MO_BESL
+    0,		// n/a
+    0,		// n/a
+    helper_le_stw_mmu,		// MO_LEUW
+    helper_le_stl_mmu,		// MO_LEUL
+    helper_le_stq_mmu,		// MO_LEQ
+    0,		// n/a
+    0,		// MO_LESW
+    0,		// MO_LESL
+    0,		// n/a
 #  else // !HOST_WORDS_BIGENDIAN
-	helper_le_stw_mmu,		// MO_LEUW
-	helper_le_stl_mmu,		// MO_LEUL
-	helper_le_stq_mmu,		// MO_LEQ
-	0,		// MO_SB
-	0,		// MO_LESW
-	0,		// MO_LESL
-	0,		// n/a
-	0,		// n/a
-	helper_be_stw_mmu,		// MO_BEUW
-	helper_be_stl_mmu,		// MO_BEUL
-	helper_be_stq_mmu,		// MO_BEQ
-	0,		// n/a
-	0,		// MO_BESW
-	0,		// MO_BESL
-	0,		// n/a
+    helper_le_stw_mmu,		// MO_LEUW
+    helper_le_stl_mmu,		// MO_LEUL
+    helper_le_stq_mmu,		// MO_LEQ
+    0,		// MO_SB
+    0,		// MO_LESW
+    0,		// MO_LESL
+    0,		// n/a
+    0,		// n/a
+    helper_be_stw_mmu,		// MO_BEUW
+    helper_be_stl_mmu,		// MO_BEUL
+    helper_be_stq_mmu,		// MO_BEQ
+    0,		// n/a
+    0,		// MO_BESW
+    0,		// MO_BESL
+    0,		// n/a
 #  endif // HOST_WORDS_BIGENDIAN
 
 #else //_MSC_VER
@@ -2356,8 +2356,8 @@ static void tcg_target_qemu_prologue(TCGContext *s)
     tcg_out_addi(s, TCG_REG_ESP, -stack_addend);
     /* jmp *tb.  */
     tcg_out_modrm_offset(s, OPC_GRP5, EXT5_JMPN_Ev, TCG_REG_ESP,
-		         (ARRAY_SIZE(tcg_target_callee_save_regs) + 2) * 4
-			 + stack_addend);
+                 (ARRAY_SIZE(tcg_target_callee_save_regs) + 2) * 4
+             + stack_addend);
 #else
     tcg_out_mov(s, TCG_TYPE_PTR, TCG_AREG0, tcg_target_call_iarg_regs[0]);
     tcg_out_addi(s, TCG_REG_ESP, -stack_addend);
@@ -2387,12 +2387,12 @@ static void tcg_target_init(TCGContext *s)
 {
 #ifdef CONFIG_CPUID_H
     unsigned a, b, c, d;
-	int max;
+    int max;
 
 #ifdef _MSC_VER
     int cpu_info[4];
     __cpuid(cpu_info, 0);
-	max = cpu_info[0];
+    max = cpu_info[0];
 #else
     max = __get_cpuid_max(0, 0);
 #endif

@@ -424,7 +424,7 @@ uint64_t HELPER(crc32_64)(uint64_t acc, uint64_t val, uint32_t bytes)
 
     /* zlib crc32 converts the accumulator and output to one's complement.  */
     // return crc32(acc ^ 0xffffffff, buf, bytes) ^ 0xffffffff;
-	return 0;	// FIXME
+    return 0;	// FIXME
 }
 
 uint64_t HELPER(crc32c_64)(uint64_t acc, uint64_t val, uint32_t bytes)

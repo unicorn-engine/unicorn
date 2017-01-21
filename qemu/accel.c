@@ -59,13 +59,13 @@ static const TypeInfo accel_type = {
 static const TypeInfo tcg_accel_type = {
     TYPE_TCG_ACCEL,
     TYPE_ACCEL,
-	0,
-	0,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
-	NULL,
+    0,
+    0,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
     tcg_accel_class_init,
 };
 

@@ -636,7 +636,7 @@ void cpu_single_step(CPUState *cpu, int enabled)
 {
 #if defined(TARGET_HAS_ICE)
     if (cpu->singlestep_enabled != enabled) {
-		CPUArchState *env;
+        CPUArchState *env;
         cpu->singlestep_enabled = enabled;
         /* must flush all the translated code to avoid inconsistencies */
         /* XXX: only flush what is necessary */
@@ -1316,8 +1316,8 @@ static const MemoryRegionOps subpage_ops = {
     subpage_write,
     DEVICE_NATIVE_ENDIAN,
     {
-		0, 0, false, subpage_accepts,
-	},
+        0, 0, false, subpage_accepts,
+    },
 };
 
 static int subpage_register (subpage_t *mmio, uint32_t start, uint32_t end,
@@ -1375,11 +1375,11 @@ static bool notdirty_mem_accepts(void *opaque, hwaddr addr,
 
 static const MemoryRegionOps notdirty_mem_ops = {
     NULL,
-	notdirty_mem_write,
+    notdirty_mem_write,
     DEVICE_NATIVE_ENDIAN,
-	{
-		0, 0, false, notdirty_mem_accepts,
-	},
+    {
+        0, 0, false, notdirty_mem_accepts,
+    },
 };
 
 static void io_mem_init(struct uc_struct* uc)
@@ -1418,12 +1418,12 @@ static uint16_t dummy_section(PhysPageMap *map, AddressSpace *as,
 {
     MemoryRegionSection section = MemoryRegionSection_make(
         mr, as, 0,
-		int128_2_64(),
-		false,
-		0
+        int128_2_64(),
+        false,
+        0
     );
     
-	assert(as);
+    assert(as);
 
     return phys_section_add(map, &section);
 }
@@ -1444,7 +1444,7 @@ static void mem_begin(MemoryListener *listener)
     AddressSpace *as = container_of(listener, AddressSpace, dispatch_listener);
     AddressSpaceDispatch *d = g_new0(AddressSpaceDispatch, 1);
     uint16_t n;
-	PhysPageEntry ppe = { 1, PHYS_MAP_NODE_NIL };
+    PhysPageEntry ppe = { 1, PHYS_MAP_NODE_NIL };
     struct uc_struct *uc = as->uc;
 
     n = dummy_section(&d->map, as, &uc->io_mem_unassigned);
@@ -1493,12 +1493,12 @@ void address_space_init_dispatch(AddressSpace *as)
         mem_begin,
         mem_commit,
         mem_add,
-		NULL,
+        NULL,
         mem_add,
-		NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
+        NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
         0,
     };
-	as->dispatch = NULL;
+    as->dispatch = NULL;
     as->dispatch_listener = ml;
     memory_listener_register(as->uc, &as->dispatch_listener, as);
 }

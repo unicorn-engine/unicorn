@@ -152,12 +152,12 @@ extern bool use_vis3_instructions;
 #include <windows.h>
 static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
-	FlushInstructionCache(GetCurrentProcess(), (const void*)start, stop-start);
+    FlushInstructionCache(GetCurrentProcess(), (const void*)start, stop-start);
 }
 #else
 static inline void flush_icache_range(uintptr_t start, uintptr_t stop)
 {
-	uintptr_t p;
+    uintptr_t p;
     for (p = start & -8; p < ((stop + 7) & -8); p += 8) {
         __asm__ __volatile__("flush\t%0" : : "r" (p));
     }

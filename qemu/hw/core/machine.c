@@ -26,19 +26,19 @@ static const TypeInfo machine_info = {
     
     sizeof(MachineClass),
     sizeof(MachineState),
-	NULL,
+    NULL,
 
     machine_initfn,
-	NULL,
+    NULL,
     machine_finalize,
-	
-	NULL,
+    
+    NULL,
 
-	NULL,
-	NULL,
-	NULL,
+    NULL,
+    NULL,
+    NULL,
 
-	true,
+    true,
 };
 
 void machine_register_types(struct uc_struct *uc)

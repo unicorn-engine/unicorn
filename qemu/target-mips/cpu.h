@@ -763,7 +763,7 @@ int mips_cpu_handle_mmu_fault(CPUState *cpu, vaddr address, int rw,
 #if !defined(CONFIG_USER_ONLY)
 void r4k_invalidate_tlb (CPUMIPSState *env, int idx, int use_extra);
 hwaddr cpu_mips_translate_address (CPUMIPSState *env, target_ulong address,
-		                               int rw);
+                                       int rw);
 #endif
 target_ulong exception_resume_pc (CPUMIPSState *env);
 

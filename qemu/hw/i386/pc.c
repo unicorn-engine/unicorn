@@ -154,25 +154,25 @@ static const TypeInfo pc_machine_info = {
     
     sizeof(PCMachineClass),
     sizeof(PCMachineState),
-	NULL,
+    NULL,
 
     pc_machine_initfn,
-	NULL,
-	NULL,
+    NULL,
+    NULL,
 
-	NULL,
-	
-    pc_machine_class_init,
-	NULL,
-	NULL,
-
-	true,
+    NULL,
     
-	NULL,
-	NULL,
-	
-	// should this be added somehow?
-	//.interfaces = (InterfaceInfo[]) { { } },
+    pc_machine_class_init,
+    NULL,
+    NULL,
+
+    true,
+    
+    NULL,
+    NULL,
+    
+    // should this be added somehow?
+    //.interfaces = (InterfaceInfo[]) { { } },
 };
 
 void pc_machine_register_types(struct uc_struct *uc)

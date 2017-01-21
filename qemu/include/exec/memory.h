@@ -241,14 +241,14 @@ struct MemoryRegionSection {
 static inline MemoryRegionSection MemoryRegionSection_make(MemoryRegion *mr, AddressSpace *address_space,
     hwaddr offset_within_region, Int128 size, hwaddr offset_within_address_space, bool readonly)
 {
-	MemoryRegionSection section;
-	section.mr = mr;
-	section.address_space = address_space;
-	section.offset_within_region = offset_within_region;
-	section.size = size;
-	section.offset_within_address_space = offset_within_address_space;
-	section.readonly = readonly;
-	return section;
+    MemoryRegionSection section;
+    section.mr = mr;
+    section.address_space = address_space;
+    section.offset_within_region = offset_within_region;
+    section.size = size;
+    section.offset_within_address_space = offset_within_address_space;
+    section.readonly = readonly;
+    return section;
 }
 
 /**

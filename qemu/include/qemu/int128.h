@@ -13,7 +13,7 @@ struct Int128 {
 
 static inline Int128 int128_make64(uint64_t a)
 {
-	Int128 i128 = { a, 0 };
+    Int128 i128 = { a, 0 };
     return i128;
 }
 
@@ -35,19 +35,19 @@ static inline Int128 int128_one(void)
 
 static inline Int128 int128_2_64(void)
 {
-	Int128 i128 = { 0, 1 };
+    Int128 i128 = { 0, 1 };
     return i128;
 }
 
 static inline Int128 int128_exts64(int64_t a)
 {
-	Int128 i128 = { a, (a < 0) ? -1 : 0 };
+    Int128 i128 = { a, (a < 0) ? -1 : 0 };
     return i128;
 }
 
 static inline Int128 int128_and(Int128 a, Int128 b)
 {
-	Int128 i128 = { a.lo & b.lo, a.hi & b.hi };
+    Int128 i128 = { a.lo & b.lo, a.hi & b.hi };
     return i128;
 }
 
@@ -59,11 +59,11 @@ static inline Int128 int128_rshift(Int128 a, int n)
     }
     h = a.hi >> (n & 63);
     if (n >= 64) {
-		Int128 i128 = { h, h >> 63 };
-		return i128;
+        Int128 i128 = { h, h >> 63 };
+        return i128;
     } else {
-		Int128 i128 = { (a.lo >> n) | ((uint64_t)a.hi << (64 - n)), h };
-		return i128;
+        Int128 i128 = { (a.lo >> n) | ((uint64_t)a.hi << (64 - n)), h };
+        return i128;
     }
 }
 
@@ -77,21 +77,21 @@ static inline Int128 int128_add(Int128 a, Int128 b)
      *
      * So the carry is lo < a.lo.
      */
-	Int128 i128 = { lo, (uint64_t)a.hi + b.hi + (lo < a.lo) };
-	return i128;
+    Int128 i128 = { lo, (uint64_t)a.hi + b.hi + (lo < a.lo) };
+    return i128;
 }
 
 static inline Int128 int128_neg(Int128 a)
 {
     uint64_t lo = 0-a.lo;
-	Int128 i128 = { lo, ~(uint64_t)a.hi + !lo };
-	return i128;
+    Int128 i128 = { lo, ~(uint64_t)a.hi + !lo };
+    return i128;
 }
 
 static inline Int128 int128_sub(Int128 a, Int128 b)
 {
-	Int128 i128 = { a.lo - b.lo, (uint64_t)a.hi - b.hi - (a.lo < b.lo) };
-	return i128;
+    Int128 i128 = { a.lo - b.lo, (uint64_t)a.hi - b.hi - (a.lo < b.lo) };
+    return i128;
 }
 
 static inline bool int128_nonneg(Int128 a)

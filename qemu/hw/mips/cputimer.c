@@ -50,7 +50,7 @@ static void cpu_mips_timer_update(CPUMIPSState *env)
 
     now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
     wait = env->CP0_Compare - env->CP0_Count -
-	    (uint32_t)muldiv64(now, TIMER_FREQ, get_ticks_per_sec());
+        (uint32_t)muldiv64(now, TIMER_FREQ, get_ticks_per_sec());
     next = now + muldiv64(wait, get_ticks_per_sec(), TIMER_FREQ);
     timer_mod(env->timer, next);
 #endif

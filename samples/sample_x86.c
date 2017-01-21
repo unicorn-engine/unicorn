@@ -972,7 +972,7 @@ int main(int argc, char **argv, char **envp)
             test_x86_16();
         }
         else if (!strcmp(argv[1], "-32")) {
-			test_i386();
+            test_i386();
             test_i386_map_ptr();
             test_i386_inout();
             test_i386_context_save();

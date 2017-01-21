@@ -284,20 +284,20 @@ static const TypeInfo device_type_info = {
     TYPE_OBJECT,
     
     sizeof(DeviceClass),
-	sizeof(DeviceState),
+    sizeof(DeviceState),
     NULL,
-	
-	device_initfn,
+    
+    device_initfn,
     device_post_init,
     device_finalize,
     
-	NULL,
+    NULL,
 
     device_class_init,
-	device_class_base_init,
-	NULL,
+    device_class_base_init,
+    NULL,
     
-	true,
+    true,
 };
 
 static void qbus_initfn(struct uc_struct *uc, Object *obj, void *opaque)
@@ -321,20 +321,20 @@ static const TypeInfo bus_info = {
     TYPE_OBJECT,
     
     sizeof(BusClass),
-	sizeof(BusState),
+    sizeof(BusState),
     NULL,
-	
+    
     qbus_initfn,
     NULL,
-	qbus_finalize,
-	
-	NULL,
+    qbus_finalize,
+    
+    NULL,
 
     bus_class_init,
-	NULL,
-	NULL,
-	
-	true,
+    NULL,
+    NULL,
+    
+    true,
 };
 
 void qdev_register_types(struct uc_struct *uc)

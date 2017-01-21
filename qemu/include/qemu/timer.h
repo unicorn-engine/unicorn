@@ -229,7 +229,7 @@ static inline int64_t cpu_get_real_ticks(void)
 static inline int64_t cpu_get_real_ticks(void)
 {
 #ifdef _MSC_VER
-	return __rdtsc();
+    return __rdtsc();
 #else
     int64_t val;
     asm volatile ("rdtsc" : "=A" (val));
@@ -242,7 +242,7 @@ static inline int64_t cpu_get_real_ticks(void)
 static inline int64_t cpu_get_real_ticks(void)
 {
 #ifdef _MSC_VER
-	return __rdtsc();
+    return __rdtsc();
 #else
     uint32_t low,high;
     int64_t val;

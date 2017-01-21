@@ -140,9 +140,9 @@ struct AddrRange {
 static AddrRange addrrange_make(Int128 start, Int128 size)
 {
     AddrRange ar;
-	ar.start = start;
-	ar.size = size;
-	return ar;
+    ar.start = start;
+    ar.size = size;
+    return ar;
 }
 
 static bool addrrange_equal(AddrRange r1, AddrRange r2)
@@ -243,9 +243,9 @@ static bool memory_listener_match(MemoryListener *listener,
 
 /* No need to ref/unref .mr, the FlatRange keeps it alive.  */
 #define MEMORY_LISTENER_UPDATE_REGION(fr, as, dir, callback)            \
-	do { MemoryRegionSection _mrs = MemoryRegionSection_make((fr)->mr, as, (fr)->offset_in_region,	\
-			(fr)->addr.size, int128_get64((fr)->addr.start), (fr)->readonly);	\
-	  MEMORY_LISTENER_CALL(callback, dir, &_mrs); } while(0);
+    do { MemoryRegionSection _mrs = MemoryRegionSection_make((fr)->mr, as, (fr)->offset_in_region,	\
+            (fr)->addr.size, int128_get64((fr)->addr.start), (fr)->readonly);	\
+      MEMORY_LISTENER_CALL(callback, dir, &_mrs); } while(0);
 
 /*
     MEMORY_LISTENER_CALL(callback, dir, (&(MemoryRegionSection) {       \
@@ -272,12 +272,12 @@ struct MemoryRegionIoeventfd {
 
 static MemoryRegionIoeventfd MemoryRegionIoeventfd_make(AddrRange addr, bool match_data, uint64_t data, EventNotifier *e)
 {
-	MemoryRegionIoeventfd mrfd;
-	mrfd.addr = addr;
+    MemoryRegionIoeventfd mrfd;
+    mrfd.addr = addr;
     mrfd.match_data = match_data;
     mrfd.data = data;
     mrfd.e = e;
-	return mrfd;
+    return mrfd;
 }
 
 static bool memory_region_ioeventfd_before(MemoryRegionIoeventfd a,
@@ -392,7 +392,7 @@ static void flatview_destroy(FlatView *view)
 
 static void flatview_ref(FlatView *view)
 {
-	atomic_inc(&view->ref);
+    atomic_inc(&view->ref);
 }
 
 static void flatview_unref(FlatView *view)
@@ -1093,12 +1093,12 @@ static bool unassigned_mem_accepts(void *opaque, hwaddr addr,
 }
 
 const MemoryRegionOps unassigned_mem_ops = {
-	NULL,
-	NULL,
+    NULL,
+    NULL,
     
     DEVICE_NATIVE_ENDIAN,
-	
-	{0,0,false,unassigned_mem_accepts},
+    
+    {0,0,false,unassigned_mem_accepts},
 };
 
 bool memory_region_access_valid(MemoryRegion *mr,
@@ -1473,7 +1473,7 @@ void memory_region_add_eventfd(MemoryRegion *mr,
                                EventNotifier *e)
 {
     MemoryRegionIoeventfd mrfd = MemoryRegionIoeventfd_make(
-		addrrange_make(int128_make64(addr), int128_make64(size)),
+        addrrange_make(int128_make64(addr), int128_make64(size)),
         match_data, data, e);
     unsigned i;
 
@@ -1502,7 +1502,7 @@ void memory_region_del_eventfd(MemoryRegion *mr,
                                EventNotifier *e)
 {
     MemoryRegionIoeventfd mrfd = MemoryRegionIoeventfd_make(
-		addrrange_make(int128_make64(addr), int128_make64(size)),
+        addrrange_make(int128_make64(addr), int128_make64(size)),
         match_data, data, e);
     unsigned i;
 
@@ -1876,13 +1876,13 @@ static const TypeInfo memory_region_info = {
     TYPE_MEMORY_REGION,
     TYPE_OBJECT,
     
-	0,
-	sizeof(MemoryRegion),
-	NULL,
+    0,
+    sizeof(MemoryRegion),
+    NULL,
 
     memory_region_initfn,
     NULL,
-	memory_region_finalize,
+    memory_region_finalize,
 };
 
 void memory_register_types(struct uc_struct *uc)

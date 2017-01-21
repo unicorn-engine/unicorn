@@ -70,7 +70,7 @@ static void patch_reloc(tcg_insn_unit *code_ptr, int type,
 /* The CIE and FDE header definitions will be common to all hosts.  */
 typedef struct {
     //uint32_t QEMU_ALIGN(sizeof(void *), len);
-	uint32_t QEMU_ALIGN(8, len);
+    uint32_t QEMU_ALIGN(8, len);
     uint32_t id;
     uint8_t version;
     char augmentation[1];
@@ -81,7 +81,7 @@ typedef struct {
 
 QEMU_PACK( typedef struct {
 //  uint32_t QEMU_ALIGN(sizeof(void *), len);
-	uint32_t QEMU_ALIGN(8, len);
+    uint32_t QEMU_ALIGN(8, len);
     uint32_t cie_offset;
     uintptr_t func_start;
     uintptr_t func_len;
@@ -1100,22 +1100,22 @@ static inline const char *tcg_find_helper(TCGContext *s, uintptr_t val)
 static const char * const cond_name[] =
 {
 #ifdef _MSC_VER
-	"never",	// TCG_COND_NEVER
-	"always",	// TCG_COND_ALWAYS
-	"lt",		// TCG_COND_LT
-	"ge",		// TCG_COND_GE
-	"ltu",		// TCG_COND_LTU
-	"geu",		// TCG_COND_GEU
-	NULL,		// n/a
-	NULL,		// n/a
-	"eq",		// TCG_COND_EQ
-	"ne",		// TCG_COND_NE
-	"le",		// TCG_COND_LE
-	"gt",		// TCG_COND_GT
-	"leu",		// TCG_COND_LEU
-	"gtu",		// TCG_COND_GTU
-	NULL,		// n/a
-	NULL,		// n/a
+    "never",	// TCG_COND_NEVER
+    "always",	// TCG_COND_ALWAYS
+    "lt",		// TCG_COND_LT
+    "ge",		// TCG_COND_GE
+    "ltu",		// TCG_COND_LTU
+    "geu",		// TCG_COND_GEU
+    NULL,		// n/a
+    NULL,		// n/a
+    "eq",		// TCG_COND_EQ
+    "ne",		// TCG_COND_NE
+    "le",		// TCG_COND_LE
+    "gt",		// TCG_COND_GT
+    "leu",		// TCG_COND_LEU
+    "gtu",		// TCG_COND_GTU
+    NULL,		// n/a
+    NULL,		// n/a
 #else
     [TCG_COND_NEVER] = "never",
     [TCG_COND_ALWAYS] = "always",
@@ -1135,43 +1135,43 @@ static const char * const cond_name[] =
 static const char * const ldst_name[] =
 {
 #ifdef _MSC_VER
-	"ub",	// MO_UB
+    "ub",	// MO_UB
 #  ifdef HOST_WORDS_BIGENDIAN
-	"beuw",		// MO_BEUW
-	"beul",		// MO_BEUL
-	"beq",		// MO_BEQ
-	"sb",		// MO_SB
-	"besw",		// MO_BESW
-	"besl",		// MO_BESL
-	NULL,		// n/a
-	NULL,		// n/a
-	"leuw",		// MO_LEUW
-	"leul",		// MO_LEUL
-	"leq",		// MO_LEQ
-	NULL,		// n/a
-	"lesw",		// MO_LESW
-	"lesl",		// MO_LESL
-	NULL,		// n/a
+    "beuw",		// MO_BEUW
+    "beul",		// MO_BEUL
+    "beq",		// MO_BEQ
+    "sb",		// MO_SB
+    "besw",		// MO_BESW
+    "besl",		// MO_BESL
+    NULL,		// n/a
+    NULL,		// n/a
+    "leuw",		// MO_LEUW
+    "leul",		// MO_LEUL
+    "leq",		// MO_LEQ
+    NULL,		// n/a
+    "lesw",		// MO_LESW
+    "lesl",		// MO_LESL
+    NULL,		// n/a
 #  else // !HOST_WORDS_BIGENDIAN
-	"leuw",		// MO_LEUW
-	"leul",		// MO_LEUL
-	"leq",		// MO_LEQ
-	"sb",		// MO_SB
-	"lesw",		// MO_LESW
-	"lesl",		// MO_LESL
-	NULL,		// n/a
-	NULL,		// n/a
-	"beuw",		// MO_BEUW
-	"beul",		// MO_BEUL
-	"beq",		// MO_BEQ
-	NULL,		// n/a
-	"besw",		// MO_BESW
-	"besl",		// MO_BESL
-	NULL,		// n/a
+    "leuw",		// MO_LEUW
+    "leul",		// MO_LEUL
+    "leq",		// MO_LEQ
+    "sb",		// MO_SB
+    "lesw",		// MO_LESW
+    "lesl",		// MO_LESL
+    NULL,		// n/a
+    NULL,		// n/a
+    "beuw",		// MO_BEUW
+    "beul",		// MO_BEUL
+    "beq",		// MO_BEQ
+    NULL,		// n/a
+    "besw",		// MO_BESW
+    "besl",		// MO_BESL
+    NULL,		// n/a
 #  endif // HOST_WORDS_BIGENDIAN
 
 #else //_MSC_VER
-	[MO_UB]   = "ub",
+    [MO_UB]   = "ub",
     [MO_SB]   = "sb",
     [MO_LEUW] = "leuw",
     [MO_LESW] = "lesw",
@@ -2376,10 +2376,10 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def,
 
     nb_regs = ARRAY_SIZE(tcg_target_call_iarg_regs);
 #if TCG_TARGET_REG_BITS == 32
-	// do this because msvc cannot have arrays with 0 entries.
-	nb_regs = 0;
+    // do this because msvc cannot have arrays with 0 entries.
+    nb_regs = 0;
 #endif
-	if (nb_regs > nb_params) {
+    if (nb_regs > nb_params) {
         nb_regs = nb_params;
     }
 

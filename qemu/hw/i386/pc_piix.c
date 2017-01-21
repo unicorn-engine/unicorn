@@ -47,12 +47,12 @@ static int pc_init_pci(struct uc_struct *uc, MachineState *machine)
 }
 
 static QEMUMachine pc_i440fx_machine_v2_2 = {
-	"pc_piix",
+    "pc_piix",
     "pc-i440fx-2.2",
     pc_init_pci,
     NULL,
-	255,
-	1,
+    255,
+    1,
     UC_ARCH_X86,    // X86
 };
 

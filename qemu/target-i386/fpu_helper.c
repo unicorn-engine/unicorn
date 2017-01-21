@@ -490,56 +490,56 @@ void helper_fabs_ST0(CPUX86State *env)
 void helper_fld1_ST0(CPUX86State *env)
 {
     //ST0 = floatx80_one;
-	floatx80 one = { 0x8000000000000000LL, 0x3fff };
-	ST0 = one;
+    floatx80 one = { 0x8000000000000000LL, 0x3fff };
+    ST0 = one;
 }
 
 void helper_fldl2t_ST0(CPUX86State *env)
 {
     //ST0 = floatx80_l2t;
-	floatx80 l2t = { 0xd49a784bcd1b8afeLL, 0x4000 };
+    floatx80 l2t = { 0xd49a784bcd1b8afeLL, 0x4000 };
     ST0 = l2t;
 }
 
 void helper_fldl2e_ST0(CPUX86State *env)
 {
     //ST0 = floatx80_l2e;
-	floatx80 l2e = { 0xb8aa3b295c17f0bcLL, 0x3fff };
+    floatx80 l2e = { 0xb8aa3b295c17f0bcLL, 0x3fff };
     ST0 = l2e;
 }
 
 void helper_fldpi_ST0(CPUX86State *env)
 {
     //ST0 = floatx80_pi;
-	floatx80 pi = { 0xc90fdaa22168c235LL, 0x4000 };
+    floatx80 pi = { 0xc90fdaa22168c235LL, 0x4000 };
     ST0 = pi;
 }
 
 void helper_fldlg2_ST0(CPUX86State *env)
 {
     //ST0 = floatx80_lg2;
-	floatx80 lg2 = { 0x9a209a84fbcff799LL, 0x3ffd };
+    floatx80 lg2 = { 0x9a209a84fbcff799LL, 0x3ffd };
     ST0 = lg2;
 }
 
 void helper_fldln2_ST0(CPUX86State *env)
 {
     //ST0 = floatx80_ln2;
-	floatx80 ln2 = { 0xb17217f7d1cf79acLL, 0x3ffe };
+    floatx80 ln2 = { 0xb17217f7d1cf79acLL, 0x3ffe };
     ST0 = ln2;
 }
 
 void helper_fldz_ST0(CPUX86State *env)
 {
     //ST0 = floatx80_zero;
-	floatx80 zero = { 0x0000000000000000LL, 0x0000 };
+    floatx80 zero = { 0x0000000000000000LL, 0x0000 };
     ST0 = zero;
 }
 
 void helper_fldz_FT0(CPUX86State *env)
 {
     //FT0 = floatx80_zero;
-	floatx80 zero = { 0x0000000000000000LL, 0x0000 };
+    floatx80 zero = { 0x0000000000000000LL, 0x0000 };
     ST0 = zero;
 }
 
@@ -702,8 +702,8 @@ void helper_fptan(CPUX86State *env)
     if ((fptemp > MAXTAN) || (fptemp < -MAXTAN)) {
         env->fpus |= 0x400;
     } else {
-		floatx80 one = { 0x8000000000000000LL, 0x3fff };
-		fptemp = tan(fptemp);
+        floatx80 one = { 0x8000000000000000LL, 0x3fff };
+        fptemp = tan(fptemp);
         ST0 = double_to_floatx80(env, fptemp);
         fpush(env);
         ST0 = one;
@@ -730,8 +730,8 @@ void helper_fxtract(CPUX86State *env)
 
     if (floatx80_is_zero(ST0)) {
         /* Easy way to generate -inf and raising division by 0 exception */
-		floatx80 zero = { 0x0000000000000000LL, 0x0000 };
-		floatx80 one  = { 0x8000000000000000LL, 0x3fff };
+        floatx80 zero = { 0x0000000000000000LL, 0x0000 };
+        floatx80 one  = { 0x8000000000000000LL, 0x3fff };
         ST0 = floatx80_div(floatx80_chs(one), zero,
                            &env->fp_status);
         fpush(env);
@@ -760,7 +760,7 @@ void helper_fprem1(CPUX86State *env)
 
     if (isinf(st0) || isnan(st0) || isnan(st1) || (st1 == 0.0)) {
        
-		ST0 = double_to_floatx80(env, NAN); /* NaN */
+        ST0 = double_to_floatx80(env, NAN); /* NaN */
         env->fpus &= ~0x4700; /* (C3,C2,C1,C0) <-- 0000 */
         return;
     }

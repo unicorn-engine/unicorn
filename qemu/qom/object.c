@@ -1646,44 +1646,44 @@ void register_types_object(struct uc_struct *uc)
 {
     static TypeInfo interface_info = {
         TYPE_INTERFACE,	// name
-		NULL,
+        NULL,
 
         sizeof(InterfaceClass),	// class_size
-		0,
-		NULL,
+        0,
+        NULL,
 
-		NULL,
-		NULL,
-		NULL,
+        NULL,
+        NULL,
+        NULL,
 
-		NULL,
+        NULL,
 
-		NULL,
-		NULL,
-		NULL,
+        NULL,
+        NULL,
+        NULL,
 
         true,	// abstract
     };
 
     static TypeInfo object_info = {
         TYPE_OBJECT,
-		NULL,
+        NULL,
 
         0,
-		sizeof(Object),
+        sizeof(Object),
         NULL,
 
-		object_instance_init,
+        object_instance_init,
         NULL,
-		NULL,
+        NULL,
 
-		NULL,
+        NULL,
 
-		NULL,
-		NULL,
-		NULL,
+        NULL,
+        NULL,
+        NULL,
 
-		true,
+        true,
     };
 
     uc->type_interface = type_register_internal(uc, &interface_info);

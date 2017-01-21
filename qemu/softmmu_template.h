@@ -134,12 +134,12 @@ License along with this library; if not, see <http://www.gnu.org/licenses/>. */
 #define victim_tlb_hit_funcs
 static inline bool victim_tlb_hit_read(CPUArchState *env, target_ulong addr, int mmu_idx, int index)
 {
-	VICTIM_TLB_HIT(ADDR_READ);
+    VICTIM_TLB_HIT(ADDR_READ);
 }
 
 static inline bool victim_tlb_hit_write(CPUArchState *env, target_ulong addr, int mmu_idx, int index)
 {
-	VICTIM_TLB_HIT(addr_write);
+    VICTIM_TLB_HIT(addr_write);
 }
 #endif // victim_tlb_hit_funcs
 
@@ -179,7 +179,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     int error_code;
     struct hook *hook;
     bool handled;
-	HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH_VAR_DECLARE;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
@@ -293,7 +293,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
             return 0;
         }
 #endif
-		if (!victim_tlb_hit_read(env, addr, mmu_idx, index)) {
+        if (!victim_tlb_hit_read(env, addr, mmu_idx, index)) {
             tlb_fill(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
                      mmu_idx, retaddr);
         }
@@ -407,7 +407,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     int error_code;
     struct hook *hook;
     bool handled;
-	HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH_VAR_DECLARE;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
@@ -672,7 +672,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     uintptr_t haddr;
     struct hook *hook;
     bool handled;
-	HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH_VAR_DECLARE;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
@@ -831,7 +831,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     uintptr_t haddr;
     struct hook *hook;
     bool handled;
-	HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH_VAR_DECLARE;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);

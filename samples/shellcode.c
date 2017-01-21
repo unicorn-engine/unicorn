@@ -157,7 +157,7 @@ static void test_i386(void)
 
 int main(int argc, char **argv, char **envp)
 {
-	// dynamically load shared library
+    // dynamically load shared library
 #ifdef DYNLOAD
     if (!uc_dyn_load(NULL, 0)) {
         printf("Error dynamically loading shared library.\n");

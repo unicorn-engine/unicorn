@@ -17,7 +17,7 @@
 static const TypeInfo container_info = {
     "container",
     TYPE_OBJECT,
-	0,
+    0,
     sizeof(Object),
 };
 

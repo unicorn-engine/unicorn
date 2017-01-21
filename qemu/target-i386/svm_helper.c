@@ -490,23 +490,23 @@ void helper_svm_check_intercept_param(CPUX86State *env, uint32_t type,
         if (env->intercept_cr_read & (1 << (type - SVM_EXIT_READ_CR0))) {
             helper_vmexit(env, type, param);
         }
-	} else if( type >= SVM_EXIT_WRITE_CR0 && type <= SVM_EXIT_WRITE_CR0 + 8 ) {
+    } else if( type >= SVM_EXIT_WRITE_CR0 && type <= SVM_EXIT_WRITE_CR0 + 8 ) {
         if (env->intercept_cr_write & (1 << (type - SVM_EXIT_WRITE_CR0))) {
             helper_vmexit(env, type, param);
         }
-	} else if( type >= SVM_EXIT_READ_DR0 && type <= SVM_EXIT_READ_DR0 + 7 ) {
+    } else if( type >= SVM_EXIT_READ_DR0 && type <= SVM_EXIT_READ_DR0 + 7 ) {
         if (env->intercept_dr_read & (1 << (type - SVM_EXIT_READ_DR0))) {
             helper_vmexit(env, type, param);
         }
-	} else if( type >= SVM_EXIT_WRITE_DR0 && type <= SVM_EXIT_WRITE_DR0 + 7 ) {
+    } else if( type >= SVM_EXIT_WRITE_DR0 && type <= SVM_EXIT_WRITE_DR0 + 7 ) {
         if (env->intercept_dr_write & (1 << (type - SVM_EXIT_WRITE_DR0))) {
             helper_vmexit(env, type, param);
         }
-	} else if( type >= SVM_EXIT_EXCP_BASE && type <= SVM_EXIT_EXCP_BASE + 31 ) {
+    } else if( type >= SVM_EXIT_EXCP_BASE && type <= SVM_EXIT_EXCP_BASE + 31 ) {
         if (env->intercept_exceptions & (1 << (type - SVM_EXIT_EXCP_BASE))) {
             helper_vmexit(env, type, param);
         }
-	} else if( type == SVM_EXIT_MSR ) {
+    } else if( type == SVM_EXIT_MSR ) {
         if (env->intercept & (1ULL << (SVM_EXIT_MSR - SVM_EXIT_INTR))) {
             /* FIXME: this should be read in at vmrun (faster this way?) */
             uint64_t addr = ldq_phys(cs->as, env->vm_vmcb +
@@ -515,10 +515,10 @@ void helper_svm_check_intercept_param(CPUX86State *env, uint32_t type,
             uint32_t t0, t1;
 
             uint32_t ecx = (uint32_t)env->regs[R_ECX];
-			if( (int32_t)ecx >= 0 && ecx <= 0x1fff ) {
+            if( (int32_t)ecx >= 0 && ecx <= 0x1fff ) {
                 t0 = (env->regs[R_ECX] * 2) % 8;
                 t1 = (env->regs[R_ECX] * 2) / 8;
-			} else if( ecx >= 0xc0000000 && ecx <= 0xc0001fff ) {
+            } else if( ecx >= 0xc0000000 && ecx <= 0xc0001fff ) {
                 t0 = (8192 + env->regs[R_ECX] - 0xc0000000) * 2;
                 t1 = (t0 / 8);
                 t0 %= 8;
@@ -526,7 +526,7 @@ void helper_svm_check_intercept_param(CPUX86State *env, uint32_t type,
                 t0 = (16384 + env->regs[R_ECX] - 0xc0010000) * 2;
                 t1 = (t0 / 8);
                 t0 %= 8;
-			} else {
+            } else {
                 helper_vmexit(env, type, param);
                 t0 = 0;
                 t1 = 0;
@@ -535,11 +535,11 @@ void helper_svm_check_intercept_param(CPUX86State *env, uint32_t type,
                 helper_vmexit(env, type, param);
             }
         }
-	} else {
+    } else {
         if (env->intercept & (1ULL << (type - SVM_EXIT_INTR))) {
             helper_vmexit(env, type, param);
         }
-	}
+    }
 }
 
 void cpu_svm_check_intercept_param(CPUX86State *env, uint32_t type,

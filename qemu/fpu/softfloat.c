@@ -1415,7 +1415,7 @@ float128 int64_to_float128(int64_t a STATUS_PARAM)
 float128 uint64_to_float128(uint64_t a STATUS_PARAM)
 {
     if (a == 0) {
-		float128 zero = {0};
+        float128 zero = {0};
         return zero;
     }
     return normalizeRoundAndPackFloat128(0, 0x406E, a, 0 STATUS_VAR);
@@ -1641,7 +1641,7 @@ uint64 float32_to_uint64(float32 a STATUS_PARAM)
 uint64 float32_to_uint64_round_to_zero(float32 a STATUS_PARAM)
 {
     int64_t v;
-	signed char current_rounding_mode = STATUS(float_rounding_mode);
+    signed char current_rounding_mode = STATUS(float_rounding_mode);
     set_float_rounding_mode(float_round_to_zero STATUS_VAR);
     v = float32_to_uint64(a STATUS_VAR);
     set_float_rounding_mode(current_rounding_mode STATUS_VAR);
@@ -7159,7 +7159,7 @@ uint64_t float64_to_uint64(float64 a STATUS_PARAM)
 uint64_t float64_to_uint64_round_to_zero (float64 a STATUS_PARAM)
 {
     int64_t v;
-	signed char current_rounding_mode = STATUS(float_rounding_mode);
+    signed char current_rounding_mode = STATUS(float_rounding_mode);
     set_float_rounding_mode(float_round_to_zero STATUS_VAR);
     v = float64_to_uint64(a STATUS_VAR);
     set_float_rounding_mode(current_rounding_mode STATUS_VAR);
