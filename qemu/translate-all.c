@@ -288,14 +288,14 @@ bool cpu_restore_state(CPUState *cpu, uintptr_t retaddr)
 }
 
 #ifdef _WIN32
-static inline void map_exec(void *addr, long size)
+static inline QEMU_UNUSED_FUNC void map_exec(void *addr, long size)
 {
     DWORD old_protect;
     VirtualProtect(addr, size,
                    PAGE_EXECUTE_READWRITE, &old_protect);
 }
 #else
-static inline void map_exec(void *addr, long size)
+static inline QEMU_UNUSED_FUNC void map_exec(void *addr, long size)
 {
     unsigned long start, end, page_size;
 

@@ -486,7 +486,7 @@ void helper_svm_check_intercept_param(CPUX86State *env, uint32_t type,
     if (likely(!(env->hflags & HF_SVMI_MASK))) {
         return;
     }
-    if( type >= SVM_EXIT_READ_CR0 && type <= SVM_EXIT_READ_CR0 + 8 ) {
+    if( (int32_t)type >= SVM_EXIT_READ_CR0 && type <= SVM_EXIT_READ_CR0 + 8 ) {
         if (env->intercept_cr_read & (1 << (type - SVM_EXIT_READ_CR0))) {
             helper_vmexit(env, type, param);
         }
@@ -515,7 +515,7 @@ void helper_svm_check_intercept_param(CPUX86State *env, uint32_t type,
             uint32_t t0, t1;
 
             uint32_t ecx = (uint32_t)env->regs[R_ECX];
-			if( ecx >= 0 && ecx <= 0x1fff ) {
+			if( (int32_t)ecx >= 0 && ecx <= 0x1fff ) {
                 t0 = (env->regs[R_ECX] * 2) % 8;
                 t1 = (env->regs[R_ECX] * 2) / 8;
 			} else if( ecx >= 0xc0000000 && ecx <= 0xc0001fff ) {

@@ -281,7 +281,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_X86</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
@@ -306,7 +306,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_X86</PreprocessorDefinitions>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>

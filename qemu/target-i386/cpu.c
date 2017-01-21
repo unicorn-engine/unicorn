@@ -1562,8 +1562,9 @@ static void x86_cpu_get_feature_words(struct uc_struct *uc, Object *obj, Visitor
     uint32_t *array = (uint32_t *)opaque;
     FeatureWord w;
     Error *err = NULL;
-    X86CPUFeatureWordInfo word_infos[FEATURE_WORDS] = { 0 };
-    X86CPUFeatureWordInfoList list_entries[FEATURE_WORDS] = { 0 };
+	// These all get setup below, so no need to initialise them here.
+	X86CPUFeatureWordInfo word_infos[FEATURE_WORDS];
+    X86CPUFeatureWordInfoList list_entries[FEATURE_WORDS];
     X86CPUFeatureWordInfoList *list = NULL;
 
     for (w = 0; w < FEATURE_WORDS; w++) {
