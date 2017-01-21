@@ -199,8 +199,10 @@ static void usleep(const int64_t &t)
 // misc support
 #if defined(_MSC_VER)
 #define va_copy(d,s) ((d) = (s))
-#define snprintf	_snprintf
 #define strcasecmp	_stricmp
+#if (_MSC_VER < MSC_VER_VS2015)
+#define snprintf	_snprintf
+#endif
 #if (_MSC_VER <= MSC_VER_VS2013)
 #define strtoll		_strtoi64
 #endif

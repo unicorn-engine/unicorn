@@ -4,6 +4,7 @@
 #define COMPILER_H
 
 #include "config-host.h"
+#include "unicorn/platform.h"
 
 #ifdef _MSC_VER
 // MSVC support
@@ -13,7 +14,10 @@
 
 #include <math.h>
 #include <float.h>
+
+#if _MSC_VER < MSC_VER_VS2013
 #define isinf(x) (!_finite(x))
+#endif
 
 static double rint( double x )
 {
