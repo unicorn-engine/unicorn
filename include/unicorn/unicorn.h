@@ -12,8 +12,9 @@ extern "C" {
 #pragma comment(lib, "unicorn.lib")
 #endif
 
-#include "unicorn/platform.h"
+#include "platform.h"
 #include <stdarg.h>
+
 #if defined(UNICORN_HAS_OSXKERNEL)
 #include <libkern/libkern.h>
 #else
