@@ -168,7 +168,6 @@ mingw32="no"
 EXESUF=""
 DSOSUF=".so"
 LDFLAGS_SHARED="-shared"
-confsuffix="/qemu"
 bsd="no"
 linux="no"
 solaris="no"
@@ -372,9 +371,6 @@ fi
 
 # OS specific
 
-# host *BSD for user mode
-HOST_VARIANT_DIR=""
-
 case $targetos in
 CYGWIN*)
   linux="yes"
@@ -390,22 +386,18 @@ FreeBSD)
   make="${MAKE-gmake}"
   # needed for kinfo_getvmmap(3) in libutil.h
   LIBS="-lutil $LIBS"
-  HOST_VARIANT_DIR="freebsd"
 ;;
 DragonFly)
   bsd="yes"
   make="${MAKE-gmake}"
-  HOST_VARIANT_DIR="dragonfly"
 ;;
 NetBSD)
   bsd="yes"
   make="${MAKE-gmake}"
-  HOST_VARIANT_DIR="netbsd"
 ;;
 OpenBSD)
   bsd="yes"
   make="${MAKE-gmake}"
-  HOST_VARIANT_DIR="openbsd"
 ;;
 Darwin)
   bsd="yes"
@@ -418,7 +410,6 @@ Darwin)
   # Disable attempts to use ObjectiveC features in os/object.h since they
   # won't work when we're compiling with gcc as a C compiler.
   QEMU_CFLAGS="-DOS_OBJECT_USE_OBJC=0 $QEMU_CFLAGS"
-  HOST_VARIANT_DIR="darwin"
 ;;
 SunOS)
   solaris="yes"
@@ -486,7 +477,6 @@ EOF
   if compile_prog "" "-liberty" ; then
     LIBS="-liberty $LIBS"
   fi
-  confsuffix=""
 fi
 
 werror=""
@@ -1269,7 +1259,6 @@ bflt="no"
 
 TARGET_ARCH="$target_name"
 TARGET_BASE_ARCH=""
-TARGET_ABI_DIR=""
 
 case "$target_name" in
   i386)
@@ -1325,21 +1314,17 @@ case "$target_name" in
   ;;
   ppcemb)
     TARGET_BASE_ARCH=ppc
-    TARGET_ABI_DIR=ppc
   ;;
   ppc64)
     TARGET_BASE_ARCH=ppc
-    TARGET_ABI_DIR=ppc
   ;;
   ppc64le)
     TARGET_ARCH=ppc64
     TARGET_BASE_ARCH=ppc
-    TARGET_ABI_DIR=ppc
   ;;
   ppc64abi32)
     TARGET_ARCH=ppc64
     TARGET_BASE_ARCH=ppc
-    TARGET_ABI_DIR=ppc
     echo "TARGET_ABI32=y" >> $config_target_mak
   ;;
   sh4|sh4eb)
@@ -1354,7 +1339,6 @@ case "$target_name" in
   sparc32plus)
     TARGET_ARCH=sparc64
     TARGET_BASE_ARCH=sparc
-    TARGET_ABI_DIR=sparc
     echo "TARGET_ABI32=y" >> $config_target_mak
   ;;
   s390x)
@@ -1383,13 +1367,6 @@ target_arch_name="`upper $TARGET_ARCH`"
 echo "TARGET_$target_arch_name=y" >> $config_target_mak
 echo "TARGET_NAME=$target_name" >> $config_target_mak
 echo "TARGET_BASE_ARCH=$TARGET_BASE_ARCH" >> $config_target_mak
-if [ "$TARGET_ABI_DIR" = "" ]; then
-  TARGET_ABI_DIR=$TARGET_ARCH
-fi
-echo "TARGET_ABI_DIR=$TARGET_ABI_DIR" >> $config_target_mak
-if [ "$HOST_VARIANT_DIR" != "" ]; then
-    echo "HOST_VARIANT_DIR=$HOST_VARIANT_DIR" >> $config_target_mak
-fi
 if test "$target_bigendian" = "yes" ; then
   echo "TARGET_WORDS_BIGENDIAN=y" >> $config_target_mak
 fi
@@ -1401,10 +1378,6 @@ fi
 
 cflags=""
 ldflags=""
-
-if test "$tcg_interpreter" = "yes" ; then
-  echo "CONFIG_TCI_DIS=y"  >> $config_target_mak
-fi
 
 case "$ARCH" in
 alpha)
