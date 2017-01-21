@@ -36,7 +36,6 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <assert.h>
-#include <signal.h>
 #include "glib_compat.h"
 
 #ifdef _WIN32
