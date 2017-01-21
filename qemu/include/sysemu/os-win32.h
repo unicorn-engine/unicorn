@@ -72,9 +72,6 @@
 #define sigsetjmp(env, savemask) setjmp(env)
 #define siglongjmp(env, val) longjmp(env, val)
 
-/* Declaration of ffs() is missing in MinGW's strings.h. */
-int ffs(int i);
-
 size_t getpagesize(void);
 
 #if !defined(EPROTONOSUPPORT)
