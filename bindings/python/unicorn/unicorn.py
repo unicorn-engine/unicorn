@@ -30,9 +30,6 @@ _all_windows_dlls = (
     "libwinpthread-1.dll",
     "libgcc_s_seh-1.dll",
     "libgcc_s_dw2-1.dll",
-    "libiconv-2.dll",
-    "libpcre-1.dll",
-    "libintl-8.dll",
 )
 
 _loaded_windows_dlls = set()
