@@ -13,20 +13,21 @@
 
 qemu/config-all-devices.mak
 
-i386-softmmu/
-arm-softmmu/
-aarch64-softmmu/
-mips-softmmu/
-mips64-softmmu/
-mipsel-softmmu/
-mips64el-softmmu/
-sparc-softmmu/
-sparc64-softmmu/
-m68k-softmmu/
+qemu/aarch64-softmmu/
+qemu/arm-softmmu/
+qemu/m68k-softmmu/
+qemu/mips64el-softmmu/
+qemu/mips64-softmmu/
+qemu/mipsel-softmmu/
+qemu/mips-softmmu/
+qemu/sparc64-softmmu/
+qemu/sparc-softmmu/
+qemu/x86_64-softmmu/
 
 qemu/qapi-types.h
 qemu/qapi-visit.h
-x86_64-softmmu/
+qemu/qapi-types.c
+qemu/qapi-visit.c
 tags
 qemu/config-host.ld
 qemu/config.log
@@ -34,8 +35,6 @@ qemu/config.status
 qemu/config-host.h
 qemu/config-host.h-timestamp
 qemu/config-host.mak
-qemu/qapi-types.c
-qemu/qapi-visit.c
 
 libunicorn*.dll
 libunicorn*.so
