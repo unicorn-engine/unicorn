@@ -24,9 +24,6 @@ IS_64BITS = platform.architecture()[0] == '64bit'
 ALL_WINDOWS_DLLS = (
     "libwinpthread-1.dll",
     "libgcc_s_seh-1.dll" if IS_64BITS else "libgcc_s_dw2-1.dll",
-    "libiconv-2.dll",
-    "libpcre-1.dll",
-    "libintl-8.dll",
 )
 
 # are we building from the repository or from a source distribution?

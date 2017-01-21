@@ -67,9 +67,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     struct hook *hook;
 
 
-    /* This must be volatile so it is not trashed by longjmp() */
-    volatile bool have_tb_lock = false;
-
     if (cpu->halted) {
         if (!cpu_has_work(cpu)) {
             return EXCP_HALTED;
@@ -208,8 +205,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     cpu->exception_index = EXCP_INTERRUPT;
                     cpu_loop_exit(cpu);
                 }
-                spin_lock(&tcg_ctx->tb_ctx.tb_lock);
-                have_tb_lock = true;
                 tb = tb_find_fast(env);	// qq
                 if (!tb) {   // invalid TB due to invalid code?
                     uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
@@ -232,8 +227,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     tb_add_jump((TranslationBlock *)(next_tb & ~TB_EXIT_MASK),
                             next_tb & TB_EXIT_MASK, tb);
                 }
-                have_tb_lock = false;
-                spin_unlock(&tcg_ctx->tb_ctx.tb_lock);
 
                 /* cpu_interrupt might be called while translating the
                    TB, but before it is linked into a potentially
@@ -275,10 +268,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
 #ifdef TARGET_I386
             x86_cpu = X86_CPU(uc, cpu);
 #endif
-            if (have_tb_lock) {
-                spin_unlock(&tcg_ctx->tb_ctx.tb_lock);
-                have_tb_lock = false;
-            }
         }
     } /* for(;;) */
 

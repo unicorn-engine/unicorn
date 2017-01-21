@@ -3,10 +3,6 @@
 #include "pthread.h"
 #include <semaphore.h>
 
-struct QemuMutex {
-    pthread_mutex_t lock;
-};
-
 struct QemuThread {
     pthread_t thread;
 };

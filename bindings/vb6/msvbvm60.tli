@@ -1,0 +1,46 @@
+﻿// Created by Microsoft (R) C/C++ Compiler Version 15.00.21022.08 (2358e5d7).
+//
+// d:\projects\col\col\debug\msvbvm60.tli
+//
+// Wrapper implementations for Win32 type library C:\\windows\system32\msvbvm60.dll
+// compiler-generated file created 03/21/16 at 11:45:20 - DO NOT EDIT!
+
+#pragma once
+
+//
+// interface _Collection wrapper method implementations
+//
+
+inline _variant_t _Collection::Item ( VARIANT * Index ) {
+    VARIANT _result;
+    VariantInit(&_result);
+    HRESULT _hr = raw_Item(Index, &_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _variant_t(_result, false);
+}
+
+inline HRESULT _Collection::Add ( VARIANT * Item, VARIANT * Key, VARIANT * Before, VARIANT * After ) {
+    HRESULT _hr = raw_Add(Item, Key, Before, After);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline long _Collection::Count ( ) {
+    long _result = 0;
+    HRESULT _hr = raw_Count(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _result;
+}
+
+inline HRESULT _Collection::Remove ( VARIANT * Index ) {
+    HRESULT _hr = raw_Remove(Index);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return _hr;
+}
+
+inline IUnknownPtr _Collection::_NewEnum ( ) {
+    IUnknown * _result = 0;
+    HRESULT _hr = raw__NewEnum(&_result);
+    if (FAILED(_hr)) _com_issue_errorex(_hr, this, __uuidof(this));
+    return IUnknownPtr(_result, false);
+}

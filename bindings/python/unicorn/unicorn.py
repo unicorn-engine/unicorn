@@ -7,6 +7,7 @@ import pkg_resources
 import inspect
 import os.path
 import sys
+import weakref
 
 from . import x86_const, unicorn_const as uc
 
@@ -29,9 +30,6 @@ _all_windows_dlls = (
     "libwinpthread-1.dll",
     "libgcc_s_seh-1.dll",
     "libgcc_s_dw2-1.dll",
-    "libiconv-2.dll",
-    "libpcre-1.dll",
-    "libintl-8.dll",
 )
 
 _loaded_windows_dlls = set()
@@ -211,8 +209,27 @@ class uc_x86_xmm(ctypes.Structure):
         ("high_qword", ctypes.c_uint64),
     ]
 
+# Subclassing ref to allow property assignment.
+class UcRef(weakref.ref):
+    pass
+
+# This class tracks Uc instance destruction and releases handles.
+class UcCleanupManager(object):
+    def __init__(self):
+        self._refs = {}
+
+    def register(self, uc):
+        ref = UcRef(uc, self._finalizer)
+        ref._uch = uc._uch
+        self._refs[id(ref)] = ref
+
+    def _finalizer(self, ref):
+        del self._refs[id(ref)]
+        Uc.release_handle(ref._uch)
 
 class Uc(object):
+    _cleanup = UcCleanupManager()
+
     def __init__(self, arch, mode):
         # verify version compatibility with the core before doing anything
         (major, minor, _combined) = uc_version()
@@ -231,13 +248,13 @@ class Uc(object):
         self._callbacks = {}
         self._ctype_cbs = {}
         self._callback_count = 0
+        self._cleanup.register(self)
 
-    # destructor to be called automatically when object is destroyed.
-    def __del__(self):
-        if self._uch:
+    @staticmethod
+    def release_handle(uch):
+        if uch:
             try:
-                status = _uc.uc_close(self._uch)
-                self._uch = None
+                status = _uc.uc_close(uch)
                 if status != uc.UC_ERR_OK:
                     raise UcError(status)
             except:  # _uc might be pulled from under our feet

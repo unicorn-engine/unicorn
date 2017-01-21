@@ -796,11 +796,12 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
    public native long context_alloc();
 
 /**
- * Free the resource allocated by context_alloc.
+ * Free a resource allocated within Unicorn. Use for handles
+ * allocated by context_alloc.
  *
- * @param context handle previously returned by context_alloc.
+ * @param Previously allocated Unicorn object handle.
 */
-   public native void context_free(long context);
+   public native void free(long handle);
 
 /**
  * Save a copy of the internal CPU context.

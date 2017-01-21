@@ -29,7 +29,6 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <string.h>
-#include <strings.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <time.h>
@@ -40,7 +39,6 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <assert.h>
-#include <signal.h>
 #include "glib_compat.h"
 
 #ifdef _WIN32

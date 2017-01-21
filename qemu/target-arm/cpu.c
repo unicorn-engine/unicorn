@@ -24,7 +24,6 @@
 #include "qapi/qmp/qerror.h"
 #include "hw/arm/arm.h"
 #include "sysemu/sysemu.h"
-#include "kvm_arm.h"
 
 #include "uc_priv.h"
 

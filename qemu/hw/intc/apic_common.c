@@ -152,7 +152,7 @@ void apic_init_reset(struct uc_struct *uc, DeviceState *dev)
     s->wait_for_sipi = !cpu_is_bsp(s->cpu);
 
     if (s->timer) {
-        timer_del(s->timer);
+        // timer_del(s->timer);
     }
     s->timer_expiry = -1;
 

@@ -501,7 +501,6 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until, uint64_t time
 /*
  Stop emulation (which was started by uc_emu_start() API.
  This is typically called from callback functions registered via tracing APIs.
- NOTE: for now, this will stop the execution only after the current block.
 
  @uc: handle returned by uc_open()
 

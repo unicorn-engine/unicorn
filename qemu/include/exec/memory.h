@@ -16,10 +16,8 @@
 
 #ifndef CONFIG_USER_ONLY
 
-#define DIRTY_MEMORY_VGA       0
-#define DIRTY_MEMORY_CODE      1
-#define DIRTY_MEMORY_MIGRATION 2
-#define DIRTY_MEMORY_NUM       3        /* num of dirty bits */
+#define DIRTY_MEMORY_CODE      0
+#define DIRTY_MEMORY_NUM       1        /* num of dirty bits */
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -30,7 +28,6 @@
 #endif
 #include "qemu/queue.h"
 #include "qemu/int128.h"
-#include "qemu/notify.h"
 #include "qapi/error.h"
 #include "qom/object.h"
 
@@ -168,7 +165,6 @@ struct MemoryRegion {
     uint8_t dirty_log_mask;
     unsigned ioeventfd_nb;
     MemoryRegionIoeventfd *ioeventfds;
-    NotifierList iommu_notify;
     struct uc_struct *uc;
     uint32_t perms;   //all perms, partially redundant with readonly
     uint64_t end;
@@ -485,25 +481,6 @@ bool memory_region_is_iommu(MemoryRegion *mr);
  */
 void memory_region_notify_iommu(MemoryRegion *mr,
                                 IOMMUTLBEntry entry);
-
-/**
- * memory_region_register_iommu_notifier: register a notifier for changes to
- * IOMMU translation entries.
- *
- * @mr: the memory region to observe
- * @n: the notifier to be added; the notifier receives a pointer to an
- *     #IOMMUTLBEntry as the opaque value; the pointer ceases to be
- *     valid on exit from the notifier.
- */
-void memory_region_register_iommu_notifier(MemoryRegion *mr, Notifier *n);
-
-/**
- * memory_region_unregister_iommu_notifier: unregister a notifier for
- * changes to IOMMU translation entries.
- *
- * @n: the notifier to be removed.
- */
-void memory_region_unregister_iommu_notifier(Notifier *n);
 
 /**
  * memory_region_name: get a memory region's name

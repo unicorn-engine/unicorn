@@ -23,7 +23,6 @@ CONFIG_SOFTMMU := $(if $(filter %-softmmu,$(TARGET_DIRS)),y)
 CONFIG_USER_ONLY := $(if $(filter %-user,$(TARGET_DIRS)),y)
 CONFIG_ALL=y
 -include config-all-devices.mak
--include config-all-disas.mak
 
 include $(SRC_PATH)/rules.mak
 config-host.mak: $(SRC_PATH)/configure

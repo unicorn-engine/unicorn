@@ -122,16 +122,8 @@ int memory_free(struct uc_struct *uc)
     return 0;
 }
 
-/* flat_view_mutex is taken around reading as->current_map; the critical
- * section is extremely short, so I'm using a single mutex for every AS.
- * We could also RCU for the read-side.
- *
- * The BQL is taken around transaction commits, hence both locks are taken
- * while writing to as->current_map (with the BQL taken outside).
- */
 static void memory_init(struct uc_struct *uc)
 {
-    qemu_mutex_init(&uc->flat_view_mutex);
 }
 
 typedef struct AddrRange AddrRange;
@@ -484,9 +476,6 @@ static void memory_region_read_accessor(MemoryRegion *mr,
 {
     uint64_t tmp;
 
-    if (mr->flush_coalesced_mmio) {
-        qemu_flush_coalesced_mmio_buffer();
-    }
     tmp = mr->ops->read(mr->uc, mr->opaque, addr, size);
     *value |= (tmp & mask) << shift;
 }
@@ -513,9 +502,6 @@ static void memory_region_write_accessor(MemoryRegion *mr,
 {
     uint64_t tmp;
 
-    if (mr->flush_coalesced_mmio) {
-        qemu_flush_coalesced_mmio_buffer();
-    }
     tmp = (*value >> shift) & mask;
     mr->ops->write(mr->uc, mr->opaque, addr, tmp, size);
 }
@@ -732,10 +718,8 @@ static FlatView *address_space_get_flatview(AddressSpace *as)
 {
     FlatView *view;
 
-    qemu_mutex_lock(&as->uc->flat_view_mutex);
     view = as->current_map;
     flatview_ref(view);
-    qemu_mutex_unlock(&as->uc->flat_view_mutex);
     return view;
 }
 
@@ -845,10 +829,8 @@ static void address_space_update_topology(AddressSpace *as)
     address_space_update_topology_pass(as, old_view, new_view, false);
     address_space_update_topology_pass(as, old_view, new_view, true);
 
-    qemu_mutex_lock(&as->uc->flat_view_mutex);
     flatview_unref(as->current_map);
     as->current_map = new_view;
-    qemu_mutex_unlock(&as->uc->flat_view_mutex);
 
     /* Note that all the old MemoryRegions are still alive up to this
      * point.  This relieves most MemoryListeners from the need to
@@ -863,7 +845,6 @@ static void address_space_update_topology(AddressSpace *as)
 
 void memory_region_transaction_begin(struct uc_struct *uc)
 {
-    qemu_flush_coalesced_mmio_buffer();
     ++uc->memory_region_transaction_depth;
 }
 
@@ -1359,23 +1340,6 @@ bool memory_region_is_iommu(MemoryRegion *mr)
     return mr->iommu_ops;
 }
 
-void memory_region_register_iommu_notifier(MemoryRegion *mr, Notifier *n)
-{
-    //notifier_list_add(&mr->iommu_notify, n);
-}
-
-void memory_region_unregister_iommu_notifier(Notifier *n)
-{
-    //notifier_remove(n);
-}
-
-void memory_region_notify_iommu(MemoryRegion *mr,
-                                IOMMUTLBEntry entry)
-{
-    assert(memory_region_is_iommu(mr));
-    //notifier_list_notify(&mr->iommu_notify, &entry);
-}
-
 void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
 {
     if (mr->readonly != readonly) {
@@ -1476,7 +1440,6 @@ void memory_region_clear_coalescing(MemoryRegion *mr)
     CoalescedMemoryRange *cmr;
     bool updated = false;
 
-    qemu_flush_coalesced_mmio_buffer();
     mr->flush_coalesced_mmio = false;
 
     while (!QTAILQ_EMPTY(&mr->coalesced)) {
