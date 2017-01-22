@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
-#include "unicorn/platform.h"
+#include "unicorn/unicorn.h"
 
 #define RIP_NEXT_TO_THE_SELFMODIFY_OPCODE (1)
 

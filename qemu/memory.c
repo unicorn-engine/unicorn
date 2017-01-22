@@ -1095,9 +1095,9 @@ static bool unassigned_mem_accepts(void *opaque, hwaddr addr,
 const MemoryRegionOps unassigned_mem_ops = {
     NULL,
     NULL,
-    
+
     DEVICE_NATIVE_ENDIAN,
-    
+
     {0,0,false,unassigned_mem_accepts},
 };
 
@@ -1875,7 +1875,7 @@ typedef QTAILQ_HEAD(queue, MemoryRegionList) MemoryRegionListHead;
 static const TypeInfo memory_region_info = {
     TYPE_MEMORY_REGION,
     TYPE_OBJECT,
-    
+
     0,
     sizeof(MemoryRegion),
     NULL,

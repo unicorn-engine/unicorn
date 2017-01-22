@@ -22,8 +22,6 @@
 
 // posix specific
 #else // _MSC_VER
-#include "unicorn/platform.h"
-#include "unicorn/platform.h"
 #include <unicorn/unicorn.h>
 #include "pthread.h"
 #endif // _MSC_VER

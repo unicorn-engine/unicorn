@@ -3,6 +3,27 @@
 
 /* Sample code to demonstrate how to emulate ARM code */
 
+<<<<<<< HEAD
+=======
+// windows specific
+#ifdef _MSC_VER
+#include <io.h>
+#include <windows.h>
+#define PRIx64 "llX"
+#ifdef DYNLOAD
+#include "unicorn_dynload.h"
+#else // DYNLOAD
+#include <unicorn/unicorn.h>
+#ifdef _WIN64
+#pragma comment(lib, "unicorn_staload64.lib")
+#else // _WIN64
+#pragma comment(lib, "unicorn_staload.lib")
+#endif // _WIN64
+#endif // DYNLOAD
+
+// posix specific
+#else // _MSC_VER
+>>>>>>> unicorn-engine/msvc
 #include <unicorn/unicorn.h>
 #include <string.h>
 

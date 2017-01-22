@@ -1,7 +1,5 @@
 #define __STDC_FORMAT_MACROS
-#include "unicorn/platform.h"
 #include <string.h>
-#include "unicorn/platform.h"
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>

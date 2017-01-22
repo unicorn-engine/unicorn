@@ -260,21 +260,21 @@ static void cpu_class_init(struct uc_struct *uc, ObjectClass *klass, void *data)
 static const TypeInfo cpu_type_info = {
     TYPE_CPU,
     TYPE_DEVICE,
-    
+
     sizeof(CPUClass),
     sizeof(CPUState),
     NULL,
-    
+
     cpu_common_initfn,
     NULL,
     NULL,
-    
+
     NULL,
-    
+
     cpu_class_init,
     NULL,
     NULL,
-    
+
     true,
 };
 

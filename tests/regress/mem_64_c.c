@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include "unicorn/platform.h"
 #include <unicorn/unicorn.h>
 
 uint64_t starts[] = {0x10000000, 0x110004000ll};

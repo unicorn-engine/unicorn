@@ -282,21 +282,21 @@ Object *qdev_get_machine(struct uc_struct *uc)
 static const TypeInfo device_type_info = {
     TYPE_DEVICE,
     TYPE_OBJECT,
-    
+
     sizeof(DeviceClass),
     sizeof(DeviceState),
     NULL,
-    
+
     device_initfn,
     device_post_init,
     device_finalize,
-    
+
     NULL,
 
     device_class_init,
     device_class_base_init,
     NULL,
-    
+
     true,
 };
 
@@ -319,21 +319,21 @@ static void qbus_finalize(struct uc_struct *uc, Object *obj, void *opaque)
 static const TypeInfo bus_info = {
     TYPE_BUS,
     TYPE_OBJECT,
-    
+
     sizeof(BusClass),
     sizeof(BusState),
     NULL,
-    
+
     qbus_initfn,
     NULL,
     qbus_finalize,
-    
+
     NULL,
 
     bus_class_init,
     NULL,
     NULL,
-    
+
     true,
 };
 

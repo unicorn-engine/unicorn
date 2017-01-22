@@ -1,5 +1,5 @@
 #include "unicorn_test.h"
-#include "unicorn/platform.h"
+#include "unicorn/unicorn.h"
 
 #define OK(x)   uc_assert_success(x)
 
