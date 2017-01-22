@@ -175,18 +175,6 @@ static void nvram_init(M48t59State *nvram, uint8_t *macaddr,
 
 static DeviceState *slavio_intctl;
 
-void sun4m_pic_info(Monitor *mon, const QDict *qdict)
-{
-    if (slavio_intctl)
-        slavio_pic_info(mon, slavio_intctl);
-}
-
-void sun4m_irq_info(Monitor *mon, const QDict *qdict)
-{
-    if (slavio_intctl)
-        slavio_irq_info(mon, slavio_intctl);
-}
-
 void cpu_check_irqs(CPUSPARCState *env)
 {
     CPUState *cs;

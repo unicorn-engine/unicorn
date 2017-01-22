@@ -24,15 +24,4 @@ static inline void sparc_iommu_memory_write(void *opaque,
     sparc_iommu_memory_rw(opaque, addr, buf, len, 1);
 }
 
-/* slavio_intctl.c */
-void slavio_pic_info(Monitor *mon, DeviceState *dev);
-void slavio_irq_info(Monitor *mon, DeviceState *dev);
-
-/* sun4m.c */
-void sun4m_pic_info(Monitor *mon, const QDict *qdict);
-void sun4m_irq_info(Monitor *mon, const QDict *qdict);
-
-/* sparc32_dma.c */
-#include "hw/sparc/sparc32_dma.h"
-
 #endif
