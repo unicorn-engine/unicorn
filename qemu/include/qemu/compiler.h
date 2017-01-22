@@ -17,7 +17,13 @@
 
 #if _MSC_VER < MSC_VER_VS2013
 #define isinf(x) (!_finite(x))
+#if defined(_WIN64)
+#define isnan	_isnanf
+#else
+#define isnan	_isnan
 #endif
+#endif
+
 
 static double rint( double x )
 {
