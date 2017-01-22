@@ -138,7 +138,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;__i386__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-      <AdditionalIncludeDirectories>../../msvc_native;..;.;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-i386;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-i386;../../../include</AdditionalIncludeDirectories>
       <ForcedIncludeFiles>x86_64.h</ForcedIncludeFiles>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <ExceptionHandling>false</ExceptionHandling>
