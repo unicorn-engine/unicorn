@@ -379,13 +379,4 @@ static inline int ctpop64(uint64_t val)
 # error Unknown sizeof long
 #endif
 
-#ifdef _MSC_VER
-#include <float.h>
-#if defined(_WIN64)
-#define isnan	_isnanf
-#else
-#define isnan	_isnan
-#endif
-#endif
-
 #endif
