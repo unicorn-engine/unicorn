@@ -7,9 +7,12 @@
 *.so
 *.so.*
 *.exe
+<<<<<<< Updated upstream
 *.dll
 *.class
 *.jar
+=======
+>>>>>>> Stashed changes
 
 qemu/config-all-devices.mak
 
