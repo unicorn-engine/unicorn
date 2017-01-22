@@ -146,14 +146,22 @@ static void mips_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data
 void mips_cpu_register_types(void *opaque)
 {
     const TypeInfo mips_cpu_type_info = {
-        .name = TYPE_MIPS_CPU,
-        .parent = TYPE_CPU,
-        .instance_userdata = opaque,
-        .instance_size = sizeof(MIPSCPU),
-        .instance_init = mips_cpu_initfn,
-        .abstract = false,
-        .class_size = sizeof(MIPSCPUClass),
-        .class_init = mips_cpu_class_init,
+        TYPE_MIPS_CPU,
+        TYPE_CPU,
+        
+        sizeof(MIPSCPUClass),
+        sizeof(MIPSCPU),
+		opaque,
+        
+		mips_cpu_initfn,
+		NULL,
+		NULL,
+
+        mips_cpu_class_init,
+		NULL,
+		NULL,
+
+        false,
     };
 
     type_register_static(opaque, &mips_cpu_type_info);

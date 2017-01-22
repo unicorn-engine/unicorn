@@ -131,5 +131,34 @@
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
       <Filter>tcg\i386</Filter>
     </ClInclude>
+    <ClInclude Include="config-target.h" />
+    <ClInclude Include="..\config-host.h" />
+    <ClInclude Include="..\..\..\qemu\target-i386\cc_helper_template.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\cpu.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\helper.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\ops_sse.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\ops_sse_header.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\shift_helper_template.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\svm.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\topology.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\unicorn.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

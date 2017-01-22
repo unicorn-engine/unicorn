@@ -42,10 +42,11 @@ static void mips_set_pc(struct uc_struct *uc, uint64_t address)
 void mips_release(void *ctx);
 void mips_release(void *ctx)
 {
-    int i;
+    MIPSCPU* cpu;
+	int i;
     TCGContext *tcg_ctx = (TCGContext *) ctx;
     release_common(ctx);
-    MIPSCPU* cpu = MIPS_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
+    cpu = MIPS_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
     g_free(cpu->env.tlb);
     g_free(cpu->env.mvp);
 
@@ -68,8 +69,9 @@ void mips_release(void *ctx)
 
 void mips_reg_reset(struct uc_struct *uc)
 {
-    (void)uc;
-    CPUArchState *env = uc->cpu->env_ptr;
+    CPUArchState *env;
+	(void)uc;
+    env = uc->cpu->env_ptr;
     memset(env->active_tc.gpr, 0, sizeof(env->active_tc.gpr));
 
     env->active_tc.PC = 0;

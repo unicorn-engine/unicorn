@@ -1,7 +1,8 @@
-#include "unicorn/platform.h"
-#include <stdio.h>
-#include <string.h>
+
 #include <unicorn/unicorn.h>
+#include <string.h>
+#include <stdio.h>
+
 
 int syscall_abi[] = {
     UC_X86_REG_RAX, UC_X86_REG_RDI, UC_X86_REG_RSI, UC_X86_REG_RDX,

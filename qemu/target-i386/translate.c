@@ -1144,10 +1144,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
     jcc_op = (b >> 1) & 7;
 
     switch (s->cc_op) {
-    case CC_OP_SUBB:
-    case CC_OP_SUBW:
-    case CC_OP_SUBL:
-    case CC_OP_SUBQ:
+    case CC_OP_SUBB: case CC_OP_SUBW: case CC_OP_SUBL: case CC_OP_SUBQ:
         /* We optimize relational operators for the cmp/jcc case.  */
         size = s->cc_op - CC_OP_SUBB;
         switch (jcc_op) {

@@ -58,7 +58,16 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h" />
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h" />
+    <ClInclude Include="..\..\..\qemu\target-i386\cc_helper_template.h" />
     <ClInclude Include="..\..\..\qemu\target-i386\cpu-qom.h" />
+    <ClInclude Include="..\..\..\qemu\target-i386\cpu.h" />
+    <ClInclude Include="..\..\..\qemu\target-i386\helper.h" />
+    <ClInclude Include="..\..\..\qemu\target-i386\ops_sse.h" />
+    <ClInclude Include="..\..\..\qemu\target-i386\ops_sse_header.h" />
+    <ClInclude Include="..\..\..\qemu\target-i386\shift_helper_template.h" />
+    <ClInclude Include="..\..\..\qemu\target-i386\svm.h" />
+    <ClInclude Include="..\..\..\qemu\target-i386\topology.h" />
+    <ClInclude Include="..\..\..\qemu\target-i386\unicorn.h" />
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h" />
@@ -67,6 +76,8 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
     <ClInclude Include="..\..\..\qemu\x86_64.h" />
+    <ClInclude Include="..\config-host.h" />
+    <ClInclude Include="config-target.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{17077E86-AE7C-41AF-86ED-2BAC03B019BC}</ProjectGuid>

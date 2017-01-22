@@ -20,30 +20,7 @@
 
 #define __STDC_FORMAT_MACROS
 
-// windows specific includes
-#ifdef _MSC_VER
-#include <io.h>
-#include <windows.h>
-#define PRIx64 "llX"
-#ifdef DYNLOAD
-#include "unicorn_dynload.h"
-#else // DYNLOAD
 #include <unicorn/unicorn.h>
-#ifdef _WIN64
-#pragma comment(lib, "unicorn_staload64.lib")
-#else // _WIN64
-#pragma comment(lib, "unicorn_staload.lib")
-#endif // _WIN64
-#endif // DYNLOAD
-
-// posix specific includes
-#else // _MSC_VER
-#include "unicorn/platform.h"
-#include "unicorn/platform.h"
-#include <unicorn/unicorn.h>
-#endif // _MSC_VER
-
-// common includes
 #include <string.h>
 #include <stdlib.h>
 #include <string.h>

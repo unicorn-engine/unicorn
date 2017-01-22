@@ -20,12 +20,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #include <unicorn/unicorn.h>
-#include "unicorn/platform.h"
-#include <assert.h>
 #include <string.h>
+#include <assert.h>
 #include <stdlib.h>
-#include "unicorn/platform.h"
-
+#
 #pragma pack(push, 1)
 struct SegmentDescriptor {
    union {
@@ -164,8 +162,9 @@ static void gdt_demo()
     uc_err err;
     uint8_t buf[128];
     uc_x86_mmr gdtr;
-
-    /*
+    int i;
+    
+	/*
        bits 32
 
        push dword 0x01234567
@@ -183,7 +182,7 @@ static void gdt_demo()
 
     struct SegmentDescriptor *gdt = (struct SegmentDescriptor*)calloc(31, sizeof(struct SegmentDescriptor));
 
-    int r_esp = stack_address + 0x1000;     // initial esp
+    int r_esp = (int)stack_address + 0x1000;     // initial esp
     int r_cs = 0x73;
     int r_ss = 0x88;      //ring 0
     int r_ds = 0x7b;
@@ -267,7 +266,6 @@ static void gdt_demo()
     err = uc_mem_read(uc, r_esp - 8, buf, 8);
     uc_assert_success(err);
 
-    int i;
     for (i = 0; i < 8; i++) {
         fprintf(stderr, "%02x", buf[i]);
     }

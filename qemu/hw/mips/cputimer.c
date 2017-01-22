@@ -34,7 +34,7 @@ uint32_t cpu_mips_get_random (CPUMIPSState *env)
     uint32_t idx;
     /* Don't return same value twice, so get another value */
     do {
-        lfsr = (lfsr >> 1) ^ (-(lfsr & 1u) & 0xd0000001u);
+        lfsr = (lfsr >> 1) ^ ((0-(lfsr & 1u)) & 0xd0000001u);
         idx = lfsr % (env->tlb->nb_tlb - env->CP0_Wired) + env->CP0_Wired;
     } while (idx == prev_idx);
     prev_idx = idx;

@@ -494,5 +494,8 @@
     <ClInclude Include="qapi-visit.h">
       <Filter>qemu</Filter>
     </ClInclude>
+    <ClInclude Include="..\config-host.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
