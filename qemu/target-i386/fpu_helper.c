@@ -759,7 +759,6 @@ void helper_fprem1(CPUX86State *env)
     st1 = floatx80_to_double(env, ST1);
 
     if (isinf(st0) || isnan(st0) || isnan(st1) || (st1 == 0.0)) {
-       
         ST0 = double_to_floatx80(env, NAN); /* NaN */
         env->fpus &= ~0x4700; /* (C3,C2,C1,C0) <-- 0000 */
         return;

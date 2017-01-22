@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include "unicorn/platform.h"
 
 #include <unicorn/unicorn.h>
 

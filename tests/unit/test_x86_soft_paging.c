@@ -1,5 +1,5 @@
 #include "unicorn_test.h"
-#include "unicorn/platform.h"
+#include "unicorn/unicorn.h"
 
 /*
     Two tests here for software paging

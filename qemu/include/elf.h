@@ -1,5 +1,5 @@
-#ifndef _QEMU_ELF_H
-#define _QEMU_ELF_H
+#ifndef QEMU_ELF_H
+#define QEMU_ELF_H
 
 /*
  * i386 ELF relocation types
@@ -537,4 +537,4 @@
 #define R_IA64_DTPREL64LSB	0xb7	/* @dtprel(sym + add), data8 LSB */
 #define R_IA64_LTOFF_DTPREL22	0xba	/* @ltoff(@dtprel(s+a)), imm22 */
 
-#endif /* _QEMU_ELF_H */
+#endif /* QEMU_ELF_H */

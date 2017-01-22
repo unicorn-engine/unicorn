@@ -1842,7 +1842,7 @@ static void x86_register_cpudef_type(struct uc_struct *uc, X86CPUDefinition *def
     TypeInfo ti = {
         typename,
         TYPE_X86_CPU,
-        
+
         0,
         0,
         NULL,
@@ -1850,9 +1850,9 @@ static void x86_register_cpudef_type(struct uc_struct *uc, X86CPUDefinition *def
         NULL,
         NULL,
         NULL,
-        
+
         def,
-        
+
         x86_cpu_cpudef_class_init,
     };
 
@@ -2604,21 +2604,21 @@ void x86_cpu_register_types(void *opaque)
     const TypeInfo x86_cpu_type_info = {
         TYPE_X86_CPU,
         TYPE_CPU,
-        
+
         sizeof(X86CPUClass),
         sizeof(X86CPU),
         opaque,
-        
+
         x86_cpu_initfn,
         NULL,
         NULL,
-        
+
         NULL,
 
         x86_cpu_common_class_init,
         NULL,
         NULL,
-        
+
         true,
     };
 

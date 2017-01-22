@@ -1,8 +1,6 @@
 #include <sys/types.h>
-#include "unicorn/platform.h"
 #include <stdlib.h>
 #include <string.h>
-#include "unicorn/platform.h"
 
 #include <unicorn/unicorn.h>
 

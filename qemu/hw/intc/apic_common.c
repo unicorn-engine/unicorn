@@ -164,7 +164,7 @@ void apic_init_reset(struct uc_struct *uc, DeviceState *dev)
 void apic_designate_bsp(struct uc_struct *uc, DeviceState *dev)
 {
     APICCommonState *s;
-    
+
     if (dev == NULL) {
         return;
     }
@@ -249,7 +249,7 @@ static void apic_common_class_init(struct uc_struct *uc, ObjectClass *klass, voi
 static const TypeInfo apic_common_type = {
     TYPE_APIC_COMMON,
     TYPE_DEVICE,
-    
+
     sizeof(APICCommonClass),
     sizeof(APICCommonState),
     NULL,
@@ -257,13 +257,13 @@ static const TypeInfo apic_common_type = {
     NULL,
     NULL,
     NULL,
-    
+
     NULL,
 
     apic_common_class_init,
     NULL,
     NULL,
-    
+
     true,
 };
 

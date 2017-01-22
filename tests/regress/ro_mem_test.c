@@ -18,9 +18,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 */
 
-#include "unicorn/platform.h"
 #include <string.h>
-#include "unicorn/platform.h"
 
 #include <unicorn/unicorn.h>
 

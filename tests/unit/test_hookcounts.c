@@ -4,7 +4,7 @@
 // emulation by counts of instruction code
 //
 #include "unicorn_test.h"
-#include "unicorn/platform.h"
+#include "unicorn/unicorn.h"
 
 #define DEBUG 1
 

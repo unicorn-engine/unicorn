@@ -27,8 +27,6 @@ but that the code hook is just not occurring.
 
 // posix specific
 #else // _MSC_VER
-#include "unicorn/platform.h"
-#include "unicorn/platform.h"
 #include <unicorn/unicorn.h>
 #endif // _MSC_VER
 

@@ -23,7 +23,7 @@ static void machine_finalize(struct uc_struct *uc, Object *obj, void *opaque)
 static const TypeInfo machine_info = {
     TYPE_MACHINE,
     TYPE_OBJECT,
-    
+
     sizeof(MachineClass),
     sizeof(MachineState),
     NULL,
@@ -31,7 +31,7 @@ static const TypeInfo machine_info = {
     machine_initfn,
     NULL,
     machine_finalize,
-    
+
     NULL,
 
     NULL,
