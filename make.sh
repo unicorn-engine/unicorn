@@ -48,7 +48,7 @@ build_linux32() {
   LDFLAGS=-m32 \
   LDFLAGS_STATIC=-m32 \
   LIBRARY_PATH="/usr/lib/i386-linux-gnu" \
-  UNICORN_QEMU_FLAGS="--cpu=i386" \
+  UNICORN_QEMU_FLAGS="--cpu=i386 ${UNICORN_QEMU_FLAGS}" \
   ${MAKE}
 }
 
