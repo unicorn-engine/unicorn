@@ -81,6 +81,7 @@ uninstall() {
 }
 
 msvc_update_genfiles() {
+  ${MAKE}
   cp qemu/qapi-types.h  msvc/unicorn/qapi-types.h
   cp qemu/qapi-visit.h  msvc/unicorn/qapi-visit.h
   cp qemu/qapi-types.c  msvc/unicorn/unicorn/qapi-types.c
