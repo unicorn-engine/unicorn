@@ -23,9 +23,7 @@
 #include <stdbool.h>
 #include "qemu-common.h"
 #include "exec/cpu-common.h"
-#ifndef CONFIG_USER_ONLY
 #include "exec/hwaddr.h"
-#endif
 #include "qemu/queue.h"
 #include "qemu/int128.h"
 #include "qapi/error.h"
