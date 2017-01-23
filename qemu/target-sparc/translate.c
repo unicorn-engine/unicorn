@@ -2833,14 +2833,14 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 switch(rs1) {
                 case 0: /* rdy */
 #ifndef TARGET_SPARC64
-                case 0x01 ... 0x0e: /* undefined in the SPARCv8
-                                       manual, rdy on the microSPARC
-                                       II */
-                case 0x0f:          /* stbar in the SPARCv8 manual,
-                                       rdy on the microSPARC II */
-                case 0x10 ... 0x1f: /* implementation-dependent in the
-                                       SPARCv8 manual, rdy on the
-                                       microSPARC II */
+                /* undefined in the SPARCv8 manual, rdy on the microSPARC II */
+                case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
+                case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: 
+                /* stbar in the SPARCv8 manual, rdy on the microSPARC II */
+                case 0x0f:
+                /* implementation-dependent in the SPARCv8 manual, rdy on the microSPARC II */
+                case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
+                case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f: 
                     /* Read Asr17 */
                     if (rs1 == 0x11 && dc->def->features & CPU_FEATURE_ASR17) {
                         TCGv t = gen_dest_gpr(dc, rd);
@@ -3747,14 +3747,13 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_y, cpu_tmp0, 0xffffffff);
                                 break;
 #ifndef TARGET_SPARC64
-                            case 0x01 ... 0x0f: /* undefined in the
-                                                   SPARCv8 manual, nop
-                                                   on the microSPARC
-                                                   II */
-                            case 0x10 ... 0x1f: /* implementation-dependent
-                                                   in the SPARCv8
-                                                   manual, nop on the
-                                                   microSPARC II */
+                            /* undefined in the SPARCv8 manual, nop on the microSPARC II */
+                            case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
+                            case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f: 
+                            
+                            /* implementation-dependent in the SPARCv8 manual, nop on the microSPARC II */
+                            case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
+                            case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f: 
                                 if ((rd == 0x13) && (dc->def->features &
                                                      CPU_FEATURE_POWERDOWN)) {
                                     /* LEON3 power-down */

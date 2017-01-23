@@ -50,11 +50,13 @@ static int sun4u_init(struct uc_struct *uc, MachineState *machine)
 void sun4u_machine_init(struct uc_struct *uc)
 {
     static QEMUMachine sun4u_machine = {
-        .name = "sun4u",
-        .init = sun4u_init,
-        .max_cpus = 1, // XXX for now
-        .is_default = 1,
-        .arch = UC_ARCH_SPARC,
+        NULL,
+        "sun4u",
+        sun4u_init,
+        NULL,
+        1, // XXX for now
+        1,
+        UC_ARCH_SPARC,
     };
 
     qemu_register_machine(uc, &sun4u_machine, TYPE_MACHINE, NULL);

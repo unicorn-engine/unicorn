@@ -558,7 +558,9 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr, int asi, int size,
             break;
         }
         break;
-    case 0x21 ... 0x2f: /* MMU passthrough, 0x100000000 to 0xfffffffff */
+    /* MMU passthrough, 0x100000000 to 0xfffffffff */
+    case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
+    case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
         switch (size) {
         case 1:
             ret = ldub_phys(cs->as, (hwaddr)addr
@@ -964,7 +966,9 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, uint64_t val, int asi,
             }
         }
         break;
-    case 0x21 ... 0x2f: /* MMU passthrough, 0x100000000 to 0xfffffffff */
+    /* MMU passthrough, 0x100000000 to 0xfffffffff */
+    case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
+    case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
         {
             switch (size) {
             case 1:
@@ -1052,17 +1056,18 @@ static inline int is_translating_asi(int asi)
     /* Ultrasparc IIi translating asi
        - note this list is defined by cpu implementation
     */
-    switch (asi) {
-    case 0x04 ... 0x11:
-    case 0x16 ... 0x19:
-    case 0x1E ... 0x1F:
-    case 0x24 ... 0x2C:
-    case 0x70 ... 0x73:
-    case 0x78 ... 0x79:
-    case 0x80 ... 0xFF:
+    if( (asi >= 0x04 && asi <= 0x11) ||
+        (asi >= 0x16 && asi <= 0x19) ||
+        (asi >= 0x1E && asi <= 0x1F) ||
+        (asi >= 0x24 && asi <= 0x2C) ||
+        (asi >= 0x70 && asi <= 0x73) ||
+        (asi >= 0x78 && asi <= 0x79) ||
+        (asi >= 0x80 && asi <= 0xFF) )
+    {
         return 1;
-
-    default:
+    }
+    else
+    {
         return 0;
     }
 #else
@@ -1303,7 +1308,7 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr, int asi, int size,
             mmu_idx = (asi & 1) ? MMU_USER_SECONDARY_IDX : MMU_USER_IDX;
         }
 
-        if (cpu_get_phys_page_nofault(env, addr, mmu_idx) == -1ULL) {
+        if (cpu_get_phys_page_nofault(env, addr, mmu_idx) == (0-1ULL)) {
 #ifdef DEBUG_ASI
             dump_asi("read ", last_addr, asi, size, ret);
 #endif

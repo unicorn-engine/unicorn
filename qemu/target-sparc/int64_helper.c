@@ -63,9 +63,9 @@ void sparc_cpu_do_interrupt(CPUState *cs)
         break;
     case TT_TFAULT:
     case TT_DFAULT:
-    case TT_TMISS ... TT_TMISS + 3:
-    case TT_DMISS ... TT_DMISS + 3:
-    case TT_DPROT ... TT_DPROT + 3:
+    case TT_TMISS: case TT_TMISS+1: case TT_TMISS+2: case TT_TMISS+3:
+    case TT_DMISS: case TT_DMISS+1: case TT_DMISS+2: case TT_DMISS+3:
+    case TT_DPROT: case TT_DPROT+1: case TT_DPROT+2: case TT_DPROT+3:
         cpu_change_pstate(env, PS_PEF | PS_PRIV | PS_MG);
         break;
     default:

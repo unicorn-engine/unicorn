@@ -18,6 +18,51 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
+    <ClCompile Include="..\..\..\qemu\cpus.c" />
+    <ClCompile Include="..\..\..\qemu\cputlb.c" />
+    <ClCompile Include="..\..\..\qemu\exec.c" />
+    <ClCompile Include="..\..\..\qemu\fpu\softfloat.c" />
+    <ClCompile Include="..\..\..\qemu\hw\sparc64\sun4u.c" />
+    <ClCompile Include="..\..\..\qemu\ioport.c" />
+    <ClCompile Include="..\..\..\qemu\memory.c" />
+    <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\cc_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\cpu.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\fop_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\int64_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\ldst_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\mmu_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\translate.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\unicorn64.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\vis_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-sparc\win_helper.c" />
+    <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\tcg\optimize.c" />
+    <ClCompile Include="..\..\..\qemu\tcg\tcg.c" />
+    <ClCompile Include="..\..\..\qemu\translate-all.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h" />
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h" />
+    <ClInclude Include="..\..\..\qemu\sparc64.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
+    <ClInclude Include="..\config-host.h" />
+    <ClInclude Include="..\mips-softmmu\config-target.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{8804AD29-E398-480C-AC0F-98EC1B7A51CB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
