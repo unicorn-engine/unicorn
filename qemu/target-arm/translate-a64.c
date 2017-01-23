@@ -1679,7 +1679,7 @@ static void gen_load_exclusive(DisasContext *s, int rt, int rt2,
         TCGv_i64 hitmp = tcg_temp_new_i64(tcg_ctx);
 
         g_assert(size >= 2);
-        tcg_gen_addi_i64(tcg_ctx, addr2, addr, 1 << size);
+        tcg_gen_addi_i64(tcg_ctx, addr2, addr, 1ULL << size);
         tcg_gen_qemu_ld_i64(s->uc, hitmp, addr2, get_mem_index(s), memop);
         tcg_temp_free_i64(tcg_ctx, addr2);
         tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_exclusive_high, hitmp);
@@ -1740,7 +1740,7 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
         TCGv_i64 addrhi = tcg_temp_new_i64(tcg_ctx);
         TCGv_i64 tmphi = tcg_temp_new_i64(tcg_ctx);
 
-        tcg_gen_addi_i64(tcg_ctx, addrhi, addr, 1 << size);
+        tcg_gen_addi_i64(tcg_ctx, addrhi, addr, 1ULL << size);
         tcg_gen_qemu_ld_i64(s->uc, tmphi, addrhi, get_mem_index(s), MO_TE + size);
         tcg_gen_brcond_i64(tcg_ctx, TCG_COND_NE, tmphi, tcg_ctx->cpu_exclusive_high, fail_label);
 
@@ -1753,7 +1753,7 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
     if (is_pair) {
         TCGv_i64 addrhi = tcg_temp_new_i64(tcg_ctx);
 
-        tcg_gen_addi_i64(tcg_ctx, addrhi, addr, 1 << size);
+        tcg_gen_addi_i64(tcg_ctx, addrhi, addr, 1ULL << size);
         tcg_gen_qemu_st_i64(s->uc, cpu_reg(s, rt2), addrhi,
                             get_mem_index(s), MO_TE + size);
         tcg_temp_free_i64(tcg_ctx, addrhi);
@@ -1832,7 +1832,7 @@ static void disas_ldst_excl(DisasContext *s, uint32_t insn)
         }
         if (is_pair) {
             TCGv_i64 tcg_rt2 = cpu_reg(s, rt);
-            tcg_gen_addi_i64(tcg_ctx, tcg_addr, tcg_addr, 1 << size);
+            tcg_gen_addi_i64(tcg_ctx, tcg_addr, tcg_addr, 1ULL << size);
             if (is_store) {
                 do_gpr_st(s, tcg_rt2, tcg_addr, size);
             } else {
@@ -2015,7 +2015,7 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
             do_gpr_st(s, tcg_rt, tcg_addr, size);
         }
     }
-    tcg_gen_addi_i64(tcg_ctx, tcg_addr, tcg_addr, 1 << size);
+    tcg_gen_addi_i64(tcg_ctx, tcg_addr, tcg_addr, 1ULL << size);
     if (is_vector) {
         if (is_load) {
             do_fp_ld(s, rt2, tcg_addr, size);
@@ -2033,9 +2033,9 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
 
     if (wback) {
         if (postindex) {
-            tcg_gen_addi_i64(tcg_ctx, tcg_addr, tcg_addr, offset - (1 << size));
+            tcg_gen_addi_i64(tcg_ctx, tcg_addr, tcg_addr, offset - (1ULL << size));
         } else {
-            tcg_gen_subi_i64(tcg_ctx, tcg_addr, tcg_addr, 1 << size);
+            tcg_gen_subi_i64(tcg_ctx, tcg_addr, tcg_addr, 1ULL << size);
         }
         tcg_gen_mov_i64(tcg_ctx, cpu_reg_sp(s, rn), tcg_addr);
     }
@@ -4449,9 +4449,9 @@ static void disas_fp_1src(DisasContext *s, uint32_t insn)
         handle_fp_fcvt(s, opcode, rd, rn, dtype, type);
         break;
     }
-    case 0x0 ... 0x3:
-    case 0x8 ... 0xc:
-    case 0xe ... 0xf:
+    case 0x0: case 0x1: case 0x2: case 0x3:
+    case 0x8: case 0x9: case 0xa: case 0xb: case 0xc:
+    case 0xe: case 0xf:
         /* 32-to-32 and 64-to-64 ops */
         switch (type) {
         case 0:
@@ -5920,7 +5920,7 @@ static void disas_simd_mod_imm(DisasContext *s, uint32_t insn)
             int i;
             imm = 0;
             for (i = 0; i < 8; i++) {
-                if ((abcdefgh) & (1 << i)) {
+                if ((abcdefgh) & (1ULL << i)) {
                     imm |= 0xffULL << (i * 8);
                 }
             }
@@ -7940,8 +7940,8 @@ static void disas_simd_scalar_two_reg_misc(DisasContext *s, uint32_t insn)
         }
         handle_2misc_narrow(s, true, opcode, u, false, size, rn, rd);
         return;
-    case 0xc ... 0xf:
-    case 0x16 ... 0x1d:
+    case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+    case 0x16: case 0x17: case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d:
     case 0x1f:
         /* Floating point: U, size[1] and opcode indicate operation;
          * size[0] indicates single or double precision.
@@ -9523,7 +9523,10 @@ static void disas_simd_three_reg_same(DisasContext *s, uint32_t insn)
         handle_simd_3same_pair(s, is_q, u, opcode, size, rn, rm, rd);
         break;
     }
-    case 0x18 ... 0x31:
+    case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f:
+    case 0x20: case 0x21: case 0x22: case 0x23: case 0x24: case 0x25: case 0x26: case 0x27:
+    case 0x28: case 0x29: case 0x2a: case 0x2b: case 0x2c: case 0x2d: case 0x2e: case 0x2f:
+    case 0x30: case 0x31:
         /* floating point ops, sz[1] and U are part of opcode */
         disas_simd_3same_float(s, insn);
         break;
@@ -9866,8 +9869,8 @@ static void disas_simd_two_reg_misc(DisasContext *s, uint32_t insn)
             return;
         }
         break;
-    case 0xc ... 0xf:
-    case 0x16 ... 0x1d:
+    case 0x0c: case 0x0d: case 0x0e: case 0x0f:
+    case 0x16: case 0x17: case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d:
     case 0x1f:
     {
         /* Floating point: U, size[1] and opcode indicate operation;

@@ -43,21 +43,22 @@ static inline bool excp_is_internal(int excp)
  * precisely correspond to architectural exceptions.
  */
 static const char * const excnames[] = {
-    [EXCP_UDEF] = "Undefined Instruction",
-    [EXCP_SWI] = "SVC",
-    [EXCP_PREFETCH_ABORT] = "Prefetch Abort",
-    [EXCP_DATA_ABORT] = "Data Abort",
-    [EXCP_IRQ] = "IRQ",
-    [EXCP_FIQ] = "FIQ",
-    [EXCP_BKPT] = "Breakpoint",
-    [EXCP_EXCEPTION_EXIT] = "QEMU v7M exception exit",
-    [EXCP_KERNEL_TRAP] = "QEMU intercept of kernel commpage",
-    [EXCP_STREX] = "QEMU intercept of STREX",
-    [EXCP_HVC] = "Hypervisor Call",
-    [EXCP_HYP_TRAP] = "Hypervisor Trap",
-    [EXCP_SMC] = "Secure Monitor Call",
-    [EXCP_VIRQ] = "Virtual IRQ",
-    [EXCP_VFIQ] = "Virtual FIQ",
+    NULL,
+    "Undefined Instruction",
+    "SVC",
+    "Prefetch Abort",
+    "Data Abort",
+    "IRQ",
+    "FIQ",
+    "Breakpoint",
+    "QEMU v7M exception exit",
+     "QEMU intercept of kernel commpage",
+    "QEMU intercept of STREX",
+    "Hypervisor Call",
+    "Hypervisor Trap",
+    "Secure Monitor Call",
+    "Virtual IRQ",
+    "Virtual FIQ",
 };
 
 static inline void arm_log_exception(int idx)
@@ -86,9 +87,10 @@ static inline void arm_log_exception(int idx)
 static inline unsigned int aarch64_banked_spsr_index(unsigned int el)
 {
     static const unsigned int map[4] = {
-        [1] = 0, /* EL1.  */
-        [2] = 6, /* EL2.  */
-        [3] = 7, /* EL3.  */
+        0,
+        0, /* EL1.  */
+        6, /* EL2.  */
+        7, /* EL3.  */
     };
     assert(el >= 1 && el <= 3);
     return map[el];

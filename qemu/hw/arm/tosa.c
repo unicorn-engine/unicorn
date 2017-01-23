@@ -30,12 +30,11 @@ static int tosa_init(struct uc_struct *uc, MachineState *machine)
 
 void tosa_machine_init(struct uc_struct *uc)
 {
-    static QEMUMachine tosapda_machine = {
-        .name = "tosa",
-        .init = tosa_init,
-        .is_default = 1,
-        .arch = UC_ARCH_ARM,
-    };
+    static QEMUMachine tosapda_machine = { 0 };
+    tosapda_machine.name = "tosa",
+    tosapda_machine.init = tosa_init,
+    tosapda_machine.is_default = 1,
+    tosapda_machine.arch = UC_ARCH_ARM,
 
     qemu_register_machine(uc, &tosapda_machine, TYPE_MACHINE, NULL);
 }

@@ -19,7 +19,57 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\qemu\arm.h" />
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h" />
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\arm_ldst.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\cpu-qom.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\cpu.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\helper.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\internals.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\kvm-consts.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\op_addsub.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\translate.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\unicorn.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
+    <ClInclude Include="..\config-host.h" />
     <ClInclude Include="config-target.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
+    <ClCompile Include="..\..\..\qemu\cpus.c" />
+    <ClCompile Include="..\..\..\qemu\cputlb.c" />
+    <ClCompile Include="..\..\..\qemu\exec.c" />
+    <ClCompile Include="..\..\..\qemu\fpu\softfloat.c" />
+    <ClCompile Include="..\..\..\qemu\hw\arm\tosa.c" />
+    <ClCompile Include="..\..\..\qemu\hw\arm\virt.c" />
+    <ClCompile Include="..\..\..\qemu\ioport.c" />
+    <ClCompile Include="..\..\..\qemu\memory.c" />
+    <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\cpu.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\crypto_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\iwmmxt_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\neon_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\op_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\psci.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\translate.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\unicorn_arm.c" />
+    <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\tcg\optimize.c" />
+    <ClCompile Include="..\..\..\qemu\tcg\tcg.c" />
+    <ClCompile Include="..\..\..\qemu\translate-all.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F67EB1EA-DCFA-4758-A2AA-4B570BA78036}</ProjectGuid>

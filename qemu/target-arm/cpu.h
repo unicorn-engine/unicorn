@@ -1146,7 +1146,7 @@ struct ARMCPRegInfo {
 #define CPREG_FIELD64(env, ri) \
     (*(uint64_t *)((char *)(env) + (ri)->fieldoffset))
 
-#define REGINFO_SENTINEL { .type = ARM_CP_SENTINEL }
+#define REGINFO_SENTINEL { NULL, 0,0,0,0,0,0, 0, ARM_CP_SENTINEL, 0, NULL, 0,0,0,0,0,0,0,0, }
 
 void define_arm_cp_regs_with_opaque(ARMCPU *cpu,
                                     const ARMCPRegInfo *regs, void *opaque);
