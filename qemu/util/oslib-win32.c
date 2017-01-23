@@ -34,7 +34,11 @@
 #include "sysemu/sysemu.h"
 
 /* this must come after including "trace.h" */
+/* The pragmas are to fix this issue: https://connect.microsoft.com/VisualStudio/feedback/details/976983 */
+#pragma warning(push)
+#pragma warning(disable : 4091)
 #include <shlobj.h>
+#pragma warning(pop)
 
 void *qemu_oom_check(void *ptr)
 {
