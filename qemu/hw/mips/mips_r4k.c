@@ -45,11 +45,11 @@ void mips_machine_init(struct uc_struct *uc)
 {
     static QEMUMachine mips_machine = {
         NULL,
-		"mips",
+        "mips",
         mips_r4k_init,
         NULL,
-		0,
-		1,
+        0,
+        1,
         UC_ARCH_MIPS,
     };
 

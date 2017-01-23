@@ -164,7 +164,7 @@ static void gdt_demo()
     uc_x86_mmr gdtr;
     int i;
     
-	/*
+    /*
        bits 32
 
        push dword 0x01234567

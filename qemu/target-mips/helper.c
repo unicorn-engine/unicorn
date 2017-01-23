@@ -382,8 +382,8 @@ static const char * const excp_names[EXCP_LAST + 1] = {
     "debug single step",
     "debug interrupt",
     "debug data break load",
-	"debug data break store",
-	"non-maskable interrupt",
+    "debug data break store",
+    "non-maskable interrupt",
     "machine check",
     "interrupt",
     "deferred watchpoint",
@@ -413,7 +413,7 @@ static const char * const excp_names[EXCP_LAST + 1] = {
     "DSP disabled",
     "MSA disabled",
     "MSA floating point",
-	"TLB execute-inhibit",
+    "TLB execute-inhibit",
     "TLB read-inhibit",
 };
 

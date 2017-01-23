@@ -151,15 +151,17 @@ void mips_cpu_register_types(void *opaque)
         
         sizeof(MIPSCPUClass),
         sizeof(MIPSCPU),
-		opaque,
+        opaque,
         
-		mips_cpu_initfn,
-		NULL,
-		NULL,
+        mips_cpu_initfn,
+        NULL,
+        NULL,
+
+        NULL,
 
         mips_cpu_class_init,
-		NULL,
-		NULL,
+        NULL,
+        NULL,
 
         false,
     };
