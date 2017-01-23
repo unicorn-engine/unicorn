@@ -237,7 +237,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
@@ -249,7 +249,7 @@
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;aarch64-softmmu.lib;arm-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
     </Lib>
     <PreBuildEvent>
       <Command>..\prebuild_script.bat</Command>
@@ -261,7 +261,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
@@ -273,7 +273,7 @@
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;aarch64-softmmu.lib;arm-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
     </Lib>
     <PreBuildEvent>
       <Command>..\prebuild_script.bat</Command>
@@ -287,7 +287,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
@@ -301,7 +301,7 @@
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;aarch64-softmmu.lib;arm-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
     </Lib>
     <PreBuildEvent>
       <Command>..\prebuild_script.bat</Command>
@@ -315,7 +315,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
@@ -329,7 +329,7 @@
     </Link>
     <Lib>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>ws2_32.lib;aarch64-softmmu.lib;arm-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
     </Lib>
     <PreBuildEvent>
       <Command>..\prebuild_script.bat</Command>

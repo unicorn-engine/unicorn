@@ -198,6 +198,12 @@ static void usleep(const int64_t &t)
 
 // misc support
 #if defined(_MSC_VER)
+#ifdef  _WIN64
+typedef signed __int64    ssize_t;
+#else
+typedef _W64 signed int   ssize_t;
+#endif
+
 #define va_copy(d,s) ((d) = (s))
 #define strcasecmp	_stricmp
 #if (_MSC_VER < MSC_VER_VS2015)

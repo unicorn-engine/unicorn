@@ -1568,7 +1568,7 @@ static inline int gen_iwmmxt_address(DisasContext *s, uint32_t insn,
         if (insn & (1 << 23))
             tcg_gen_addi_i32(tcg_ctx, tmp, tmp, offset);
         else
-            tcg_gen_addi_i32(tcg_ctx, tmp, tmp, -offset);
+            tcg_gen_addi_i32(tcg_ctx, tmp, tmp, 0-offset);
         tcg_gen_mov_i32(tcg_ctx, dest, tmp);
         if (insn & (1 << 21))
             store_reg(s, rd, tmp);
@@ -1580,7 +1580,7 @@ static inline int gen_iwmmxt_address(DisasContext *s, uint32_t insn,
         if (insn & (1 << 23))
             tcg_gen_addi_i32(tcg_ctx, tmp, tmp, offset);
         else
-            tcg_gen_addi_i32(tcg_ctx, tmp, tmp, -offset);
+            tcg_gen_addi_i32(tcg_ctx, tmp, tmp, 0-offset);
         store_reg(s, rd, tmp);
     } else if (!(insn & (1 << 23)))
         return 1;
@@ -2688,9 +2688,20 @@ static int disas_dsp_insn(DisasContext *s, uint32_t insn)
     return 1;
 }
 
-#define VFP_REG_SHR(x, n) (((n) > 0) ? (x) >> (n) : (x) << -(n))
-#define VFP_SREG(insn, bigbit, smallbit) \
-  ((VFP_REG_SHR(insn, bigbit - 1) & 0x1e) | (((insn) >> (smallbit)) & 1))
+// this causes "warning C4293: shift count negative or too big, undefined behavior"
+// on msvc, so is replaced with separate versions for the shift to perform.
+//#define VFP_REG_SHR(x, n) (((n) > 0) ? (x) >> (n) : (x) << -(n))
+//#define VFP_SREG(insn, bigbit, smallbit) \
+//  ((VFP_REG_SHR(insn, bigbit - 1) & 0x1e) | (((insn) >> (smallbit)) & 1))
+
+#define VFP_REG_SHR_NEG(insn, n) ((insn) << -(n))
+#define VFP_SREG_NEG(insn, bigbit, smallbit) \
+  ((VFP_REG_SHR_NEG(insn, bigbit - 1) & 0x1e) | (((insn) >> (smallbit)) & 1))
+
+#define VFP_REG_SHR_POS(x, n) ((insn) >> (n))
+#define VFP_SREG_POS(insn, bigbit, smallbit) \
+  ((VFP_REG_SHR_POS(insn, bigbit - 1) & 0x1e) | (((insn) >> (smallbit)) & 1))
+
 #define VFP_DREG(reg, insn, bigbit, smallbit) do { \
     if (arm_dc_feature(s, ARM_FEATURE_VFP3)) { \
         reg = (((insn) >> (bigbit)) & 0x0f) \
@@ -2701,11 +2712,11 @@ static int disas_dsp_insn(DisasContext *s, uint32_t insn)
         reg = ((insn) >> (bigbit)) & 0x0f; \
     }} while (0)
 
-#define VFP_SREG_D(insn) VFP_SREG(insn, 12, 22)
+#define VFP_SREG_D(insn) VFP_SREG_POS(insn, 12, 22)
 #define VFP_DREG_D(reg, insn) VFP_DREG(reg, insn, 12, 22)
-#define VFP_SREG_N(insn) VFP_SREG(insn, 16,  7)
+#define VFP_SREG_N(insn) VFP_SREG_POS(insn, 16,  7)
 #define VFP_DREG_N(reg, insn) VFP_DREG(reg, insn, 16,  7)
-#define VFP_SREG_M(insn) VFP_SREG(insn,  0,  5)
+#define VFP_SREG_M(insn) VFP_SREG_NEG(insn,  0,  5)
 #define VFP_DREG_M(reg, insn) VFP_DREG(reg, insn,  0,  5)
 
 /* Move between integer and VFP cores.  */
@@ -3913,7 +3924,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                 /* Single load/store */
                 offset = (insn & 0xff) << 2;
                 if ((insn & (1 << 23)) == 0)
-                    offset = -offset;
+                    offset = 0-offset;
                 if (s->thumb && rn == 15) {
                     /* This is actually UNPREDICTABLE */
                     addr = tcg_temp_new_i32(tcg_ctx);
@@ -3961,7 +3972,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                     addr = load_reg(s, rn);
                 }
                 if (insn & (1 << 24)) /* pre-decrement */
-                    tcg_gen_addi_i32(tcg_ctx, addr, addr, -((insn & 0xff) << 2));
+                    tcg_gen_addi_i32(tcg_ctx, addr, addr, 0-((insn & 0xff) << 2));
 
                 if (dp)
                     offset = 8;
@@ -3982,7 +3993,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                 if (w) {
                     /* writeback */
                     if (insn & (1 << 24))
-                        offset = -offset * n;
+                        offset = (0-offset) * n;
                     else if (dp && (insn & 1))
                         offset = 4;
                     else
@@ -4976,38 +4987,38 @@ static void gen_neon_narrow_op(DisasContext *s, int op, int u, int size,
 #define NEON_3R_FLOAT_MISC 31 /* float VRECPS, VRSQRTS, VMAXNM/MINNM */
 
 static const uint8_t neon_3r_sizes[] = {
-    [NEON_3R_VHADD] = 0x7,
-    [NEON_3R_VQADD] = 0xf,
-    [NEON_3R_VRHADD] = 0x7,
-    [NEON_3R_LOGIC] = 0xf, /* size field encodes op type */
-    [NEON_3R_VHSUB] = 0x7,
-    [NEON_3R_VQSUB] = 0xf,
-    [NEON_3R_VCGT] = 0x7,
-    [NEON_3R_VCGE] = 0x7,
-    [NEON_3R_VSHL] = 0xf,
-    [NEON_3R_VQSHL] = 0xf,
-    [NEON_3R_VRSHL] = 0xf,
-    [NEON_3R_VQRSHL] = 0xf,
-    [NEON_3R_VMAX] = 0x7,
-    [NEON_3R_VMIN] = 0x7,
-    [NEON_3R_VABD] = 0x7,
-    [NEON_3R_VABA] = 0x7,
-    [NEON_3R_VADD_VSUB] = 0xf,
-    [NEON_3R_VTST_VCEQ] = 0x7,
-    [NEON_3R_VML] = 0x7,
-    [NEON_3R_VMUL] = 0x7,
-    [NEON_3R_VPMAX] = 0x7,
-    [NEON_3R_VPMIN] = 0x7,
-    [NEON_3R_VQDMULH_VQRDMULH] = 0x6,
-    [NEON_3R_VPADD] = 0x7,
-    [NEON_3R_SHA] = 0xf, /* size field encodes op type */
-    [NEON_3R_VFM] = 0x5, /* size bit 1 encodes op */
-    [NEON_3R_FLOAT_ARITH] = 0x5, /* size bit 1 encodes op */
-    [NEON_3R_FLOAT_MULTIPLY] = 0x5, /* size bit 1 encodes op */
-    [NEON_3R_FLOAT_CMP] = 0x5, /* size bit 1 encodes op */
-    [NEON_3R_FLOAT_ACMP] = 0x5, /* size bit 1 encodes op */
-    [NEON_3R_FLOAT_MINMAX] = 0x5, /* size bit 1 encodes op */
-    [NEON_3R_FLOAT_MISC] = 0x5, /* size bit 1 encodes op */
+    /*NEON_3R_VHADD*/ 0x7,
+    /*NEON_3R_VQADD*/ 0xf,
+    /*NEON_3R_VRHADD*/ 0x7,
+    /*NEON_3R_LOGIC*/ 0xf, /* size field encodes op type */
+    /*NEON_3R_VHSUB*/ 0x7,
+    /*NEON_3R_VQSUB*/ 0xf,
+    /*NEON_3R_VCGT*/ 0x7,
+    /*NEON_3R_VCGE*/ 0x7,
+    /*NEON_3R_VSHL*/ 0xf,
+    /*NEON_3R_VQSHL*/ 0xf,
+    /*NEON_3R_VRSHL*/ 0xf,
+    /*NEON_3R_VQRSHL*/ 0xf,
+    /*NEON_3R_VMAX*/ 0x7,
+    /*NEON_3R_VMIN*/ 0x7,
+    /*NEON_3R_VABD*/ 0x7,
+    /*NEON_3R_VABA*/ 0x7,
+    /*NEON_3R_VADD_VSUB*/ 0xf,
+    /*NEON_3R_VTST_VCEQ*/ 0x7,
+    /*NEON_3R_VML*/ 0x7,
+    /*NEON_3R_VMUL*/ 0x7,
+    /*NEON_3R_VPMAX*/ 0x7,
+    /*NEON_3R_VPMIN*/ 0x7,
+    /*NEON_3R_VQDMULH_VQRDMULH*/ 0x6,
+    /*NEON_3R_VPADD*/ 0x7,
+    /*NEON_3R_SHA*/ 0xf, /* size field encodes op type */
+    /*NEON_3R_VFM*/ 0x5, /* size bit 1 encodes op */
+    /*NEON_3R_FLOAT_ARITH*/ 0x5, /* size bit 1 encodes op */
+    /*NEON_3R_FLOAT_MULTIPLY*/ 0x5, /* size bit 1 encodes op */
+    /*NEON_3R_FLOAT_CMP*/ 0x5, /* size bit 1 encodes op */
+    /*NEON_3R_FLOAT_ACMP*/ 0x5, /* size bit 1 encodes op */
+    /*NEON_3R_FLOAT_MINMAX*/ 0x5, /* size bit 1 encodes op */
+    /*NEON_3R_FLOAT_MISC*/ 0x5, /* size bit 1 encodes op */
 };
 
 /* Symbolic constants for op fields for Neon 2-register miscellaneous.
@@ -5092,68 +5103,70 @@ static int neon_2rm_is_float_op(int op)
  * op values will have no bits set they always UNDEF.
  */
 static const uint8_t neon_2rm_sizes[] = {
-    [NEON_2RM_VREV64] = 0x7,
-    [NEON_2RM_VREV32] = 0x3,
-    [NEON_2RM_VREV16] = 0x1,
-    [NEON_2RM_VPADDL] = 0x7,
-    [NEON_2RM_VPADDL_U] = 0x7,
-    [NEON_2RM_AESE] = 0x1,
-    [NEON_2RM_AESMC] = 0x1,
-    [NEON_2RM_VCLS] = 0x7,
-    [NEON_2RM_VCLZ] = 0x7,
-    [NEON_2RM_VCNT] = 0x1,
-    [NEON_2RM_VMVN] = 0x1,
-    [NEON_2RM_VPADAL] = 0x7,
-    [NEON_2RM_VPADAL_U] = 0x7,
-    [NEON_2RM_VQABS] = 0x7,
-    [NEON_2RM_VQNEG] = 0x7,
-    [NEON_2RM_VCGT0] = 0x7,
-    [NEON_2RM_VCGE0] = 0x7,
-    [NEON_2RM_VCEQ0] = 0x7,
-    [NEON_2RM_VCLE0] = 0x7,
-    [NEON_2RM_VCLT0] = 0x7,
-    [NEON_2RM_SHA1H] = 0x4,
-    [NEON_2RM_VABS] = 0x7,
-    [NEON_2RM_VNEG] = 0x7,
-    [NEON_2RM_VCGT0_F] = 0x4,
-    [NEON_2RM_VCGE0_F] = 0x4,
-    [NEON_2RM_VCEQ0_F] = 0x4,
-    [NEON_2RM_VCLE0_F] = 0x4,
-    [NEON_2RM_VCLT0_F] = 0x4,
-    [NEON_2RM_VABS_F] = 0x4,
-    [NEON_2RM_VNEG_F] = 0x4,
-    [NEON_2RM_VSWP] = 0x1,
-    [NEON_2RM_VTRN] = 0x7,
-    [NEON_2RM_VUZP] = 0x7,
-    [NEON_2RM_VZIP] = 0x7,
-    [NEON_2RM_VMOVN] = 0x7,
-    [NEON_2RM_VQMOVN] = 0x7,
-    [NEON_2RM_VSHLL] = 0x7,
-    [NEON_2RM_SHA1SU1] = 0x4,
-    [NEON_2RM_VRINTN] = 0x4,
-    [NEON_2RM_VRINTX] = 0x4,
-    [NEON_2RM_VRINTA] = 0x4,
-    [NEON_2RM_VRINTZ] = 0x4,
-    [NEON_2RM_VCVT_F16_F32] = 0x2,
-    [NEON_2RM_VRINTM] = 0x4,
-    [NEON_2RM_VCVT_F32_F16] = 0x2,
-    [NEON_2RM_VRINTP] = 0x4,
-    [NEON_2RM_VCVTAU] = 0x4,
-    [NEON_2RM_VCVTAS] = 0x4,
-    [NEON_2RM_VCVTNU] = 0x4,
-    [NEON_2RM_VCVTNS] = 0x4,
-    [NEON_2RM_VCVTPU] = 0x4,
-    [NEON_2RM_VCVTPS] = 0x4,
-    [NEON_2RM_VCVTMU] = 0x4,
-    [NEON_2RM_VCVTMS] = 0x4,
-    [NEON_2RM_VRECPE] = 0x4,
-    [NEON_2RM_VRSQRTE] = 0x4,
-    [NEON_2RM_VRECPE_F] = 0x4,
-    [NEON_2RM_VRSQRTE_F] = 0x4,
-    [NEON_2RM_VCVT_FS] = 0x4,
-    [NEON_2RM_VCVT_FU] = 0x4,
-    [NEON_2RM_VCVT_SF] = 0x4,
-    [NEON_2RM_VCVT_UF] = 0x4,
+    /*NEON_2RM_VREV64*/ 0x7,
+    /*NEON_2RM_VREV32*/ 0x3,
+    /*NEON_2RM_VREV16*/ 0x1,
+    0,
+    /*NEON_2RM_VPADDL*/ 0x7,
+    /*NEON_2RM_VPADDL_U*/ 0x7,
+    /*NEON_2RM_AESE*/ 0x1,
+    /*NEON_2RM_AESMC*/ 0x1,
+    /*NEON_2RM_VCLS*/ 0x7,
+    /*NEON_2RM_VCLZ*/ 0x7,
+    /*NEON_2RM_VCNT*/ 0x1,
+    /*NEON_2RM_VMVN*/ 0x1,
+    /*NEON_2RM_VPADAL*/ 0x7,
+    /*NEON_2RM_VPADAL_U*/ 0x7,
+    /*NEON_2RM_VQABS*/ 0x7,
+    /*NEON_2RM_VQNEG*/ 0x7,
+    /*NEON_2RM_VCGT0*/ 0x7,
+    /*NEON_2RM_VCGE0*/ 0x7,
+    /*NEON_2RM_VCEQ0*/ 0x7,
+    /*NEON_2RM_VCLE0*/ 0x7,
+    /*NEON_2RM_VCLT0*/ 0x7,
+    /*NEON_2RM_SHA1H*/ 0x4,
+    /*NEON_2RM_VABS*/ 0x7,
+    /*NEON_2RM_VNEG*/ 0x7,
+    /*NEON_2RM_VCGT0_F*/ 0x4,
+    /*NEON_2RM_VCGE0_F*/ 0x4,
+    /*NEON_2RM_VCEQ0_F*/ 0x4,
+    /*NEON_2RM_VCLE0_F*/ 0x4,
+    /*NEON_2RM_VCLT0_F*/ 0x4,
+    0,
+    /*NEON_2RM_VABS_F*/ 0x4,
+    /*NEON_2RM_VNEG_F*/ 0x4,
+    /*NEON_2RM_VSWP*/ 0x1,
+    /*NEON_2RM_VTRN*/ 0x7,
+    /*NEON_2RM_VUZP*/ 0x7,
+    /*NEON_2RM_VZIP*/ 0x7,
+    /*NEON_2RM_VMOVN*/ 0x7,
+    /*NEON_2RM_VQMOVN*/ 0x7,
+    /*NEON_2RM_VSHLL*/ 0x7,
+    /*NEON_2RM_SHA1SU1*/ 0x4,
+    /*NEON_2RM_VRINTN*/ 0x4,
+    /*NEON_2RM_VRINTX*/ 0x4,
+    /*NEON_2RM_VRINTA*/ 0x4,
+    /*NEON_2RM_VRINTZ*/ 0x4,
+    /*NEON_2RM_VCVT_F16_F32*/ 0x2,
+    /*NEON_2RM_VRINTM*/ 0x4,
+    /*NEON_2RM_VCVT_F32_F16*/ 0x2,
+    /*NEON_2RM_VRINTP*/ 0x4,
+    /*NEON_2RM_VCVTAU*/ 0x4,
+    /*NEON_2RM_VCVTAS*/ 0x4,
+    /*NEON_2RM_VCVTNU*/ 0x4,
+    /*NEON_2RM_VCVTNS*/ 0x4,
+    /*NEON_2RM_VCVTPU*/ 0x4,
+    /*NEON_2RM_VCVTPS*/ 0x4,
+    /*NEON_2RM_VCVTMU*/ 0x4,
+    /*NEON_2RM_VCVTMS*/ 0x4,
+    /*NEON_2RM_VRECPE*/ 0x4,
+    /*NEON_2RM_VRSQRTE*/ 0x4,
+    /*NEON_2RM_VRECPE_F*/ 0x4,
+    /*NEON_2RM_VRSQRTE_F*/ 0x4,
+    /*NEON_2RM_VCVT_FS*/ 0x4,
+    /*NEON_2RM_VCVT_FU*/ 0x4,
+    /*NEON_2RM_VCVT_SF*/ 0x4,
+    /*NEON_2RM_VCVT_UF*/ 0x4,
 };
 
 /* Translate a NEON data processing instruction.  Return nonzero if the
@@ -5803,8 +5816,8 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             tcg_gen_add_i64(tcg_ctx, tcg_ctx->cpu_V0, tcg_ctx->cpu_V0, tcg_ctx->cpu_V1);
                         } else if (op == 4 || (op == 5 && u)) {
                             /* Insert */
-                            neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rd + pass);
                             uint64_t mask;
+                            neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rd + pass);
                             if (shift < -63 || shift > 63) {
                                 mask = 0;
                             } else {
@@ -9283,7 +9296,7 @@ static int disas_thumb2_insn(CPUARMState *env, DisasContext *s, uint16_t insn_hw
                 }
                 offset = (insn & 0xff) * 4;
                 if ((insn & (1 << 23)) == 0)
-                    offset = -offset;
+                    offset = 0-offset;
                 if (insn & (1 << 24)) {
                     tcg_gen_addi_i32(tcg_ctx, addr, addr, offset);
                     offset = 0;
@@ -9465,7 +9478,7 @@ static int disas_thumb2_insn(CPUARMState *env, DisasContext *s, uint16_t insn_hw
                         offset += 4;
                 }
                 if (insn & (1 << 24)) {
-                    tcg_gen_addi_i32(tcg_ctx, addr, addr, -offset);
+                    tcg_gen_addi_i32(tcg_ctx, addr, addr, 0-offset);
                 }
 
                 TCGV_UNUSED_I32(loaded_var);
@@ -9498,7 +9511,7 @@ static int disas_thumb2_insn(CPUARMState *env, DisasContext *s, uint16_t insn_hw
                 if (insn & (1 << 21)) {
                     /* Base register writeback.  */
                     if (insn & (1 << 24)) {
-                        tcg_gen_addi_i32(tcg_ctx, addr, addr, -offset);
+                        tcg_gen_addi_i32(tcg_ctx, addr, addr, 0-offset);
                     }
                     /* Fault if writeback register is in register list.  */
                     if (insn & (1 << rn))
@@ -10287,21 +10300,21 @@ static int disas_thumb2_insn(CPUARMState *env, DisasContext *s, uint16_t insn_hw
                     tcg_temp_free_i32(tcg_ctx, tmp);
                     break;
                 case 0xc: /* Negative offset.  */
-                    tcg_gen_addi_i32(tcg_ctx, addr, addr, -imm);
+                    tcg_gen_addi_i32(tcg_ctx, addr, addr, 0-imm);
                     break;
                 case 0xe: /* User privilege.  */
                     tcg_gen_addi_i32(tcg_ctx, addr, addr, imm);
                     memidx = MMU_USER_IDX;
                     break;
                 case 0x9: /* Post-decrement.  */
-                    imm = -imm;
+                    imm = 0-imm;
                     /* Fall through.  */
                 case 0xb: /* Post-increment.  */
                     postinc = 1;
                     writeback = 1;
                     break;
                 case 0xd: /* Pre-decrement.  */
-                    imm = -imm;
+                    imm = 0-imm;
                     /* Fall through.  */
                 case 0xf: /* Pre-increment.  */
                     tcg_gen_addi_i32(tcg_ctx, addr, addr, imm);

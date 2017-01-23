@@ -22,11 +22,13 @@ void arm_release(void* ctx);
 
 void arm_release(void* ctx)
 {
+    ARMCPU* cpu;
+    struct uc_struct* uc;
     TCGContext *s = (TCGContext *) ctx;
 
     g_free(s->tb_ctx.tbs);
-    struct uc_struct* uc = s->uc;
-    ARMCPU* cpu = (ARMCPU*) uc->cpu;
+    uc = s->uc;
+    cpu = (ARMCPU*) uc->cpu;
     g_free(cpu->cpreg_indexes);
     g_free(cpu->cpreg_values);
     g_free(cpu->cpreg_vmstate_indexes);
@@ -37,8 +39,8 @@ void arm_release(void* ctx)
 
 void arm_reg_reset(struct uc_struct *uc)
 {
-    (void)uc;
     CPUArchState *env;
+    (void)uc;
 
     env = uc->cpu->env_ptr;
     memset(env->regs, 0, sizeof(env->regs));

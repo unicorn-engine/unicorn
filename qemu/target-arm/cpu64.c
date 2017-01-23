@@ -38,48 +38,35 @@ static uint64_t a57_l2ctlr_read(CPUARMState *env, const ARMCPRegInfo *ri)
 
 static const ARMCPRegInfo cortexa57_cp_reginfo[] = {
 #ifndef CONFIG_USER_ONLY
-    { .name = "L2CTLR_EL1", .state = ARM_CP_STATE_AA64,
-      .opc0 = 3, .opc1 = 1, .crn = 11, .crm = 0, .opc2 = 2,
-      .access = PL1_RW, .readfn = a57_l2ctlr_read,
-      .writefn = arm_cp_write_ignore },
-    { .name = "L2CTLR",
-      .cp = 15, .opc1 = 1, .crn = 9, .crm = 0, .opc2 = 2,
-      .access = PL1_RW, .readfn = a57_l2ctlr_read,
-      .writefn = arm_cp_write_ignore },
+    { "L2CTLR_EL1", 0, 11,0, 3,1,2, ARM_CP_STATE_AA64,
+      0, PL1_RW, NULL, 0, 0,
+      NULL, a57_l2ctlr_read, arm_cp_write_ignore, },
+    { "L2CTLR", 15, 9,0, 0,1,2, 0,
+      0, PL1_RW, NULL, 0, 0,
+      NULL, a57_l2ctlr_read, arm_cp_write_ignore, },
 #endif
-    { .name = "L2ECTLR_EL1", .state = ARM_CP_STATE_AA64,
-      .opc0 = 3, .opc1 = 1, .crn = 11, .crm = 0, .opc2 = 3,
-      .access = PL1_RW, .type = ARM_CP_CONST, .resetvalue = 0 },
-    { .name = "L2ECTLR",
-      .cp = 15, .opc1 = 1, .crn = 9, .crm = 0, .opc2 = 3,
-      .access = PL1_RW, .type = ARM_CP_CONST, .resetvalue = 0 },
-    { .name = "L2ACTLR", .state = ARM_CP_STATE_BOTH,
-      .opc0 = 3, .opc1 = 1, .crn = 15, .crm = 0, .opc2 = 0,
-      .access = PL1_RW, .type = ARM_CP_CONST, .resetvalue = 0 },
-    { .name = "CPUACTLR_EL1", .state = ARM_CP_STATE_AA64,
-      .opc0 = 3, .opc1 = 1, .crn = 15, .crm = 2, .opc2 = 0,
-      .access = PL1_RW, .type = ARM_CP_CONST, .resetvalue = 0 },
-    { .name = "CPUACTLR",
-      .cp = 15, .opc1 = 0, .crm = 15,
-      .access = PL1_RW, .type = ARM_CP_CONST | ARM_CP_64BIT, .resetvalue = 0 },
-    { .name = "CPUECTLR_EL1", .state = ARM_CP_STATE_AA64,
-      .opc0 = 3, .opc1 = 1, .crn = 15, .crm = 2, .opc2 = 1,
-      .access = PL1_RW, .type = ARM_CP_CONST, .resetvalue = 0 },
-    { .name = "CPUECTLR",
-      .cp = 15, .opc1 = 1, .crm = 15,
-      .access = PL1_RW, .type = ARM_CP_CONST | ARM_CP_64BIT, .resetvalue = 0 },
-    { .name = "CPUMERRSR_EL1", .state = ARM_CP_STATE_AA64,
-      .opc0 = 3, .opc1 = 1, .crn = 15, .crm = 2, .opc2 = 2,
-      .access = PL1_RW, .type = ARM_CP_CONST, .resetvalue = 0 },
-    { .name = "CPUMERRSR",
-      .cp = 15, .opc1 = 2, .crm = 15,
-      .access = PL1_RW, .type = ARM_CP_CONST | ARM_CP_64BIT, .resetvalue = 0 },
-    { .name = "L2MERRSR_EL1", .state = ARM_CP_STATE_AA64,
-      .opc0 = 3, .opc1 = 1, .crn = 15, .crm = 2, .opc2 = 3,
-      .access = PL1_RW, .type = ARM_CP_CONST, .resetvalue = 0 },
-    { .name = "L2MERRSR",
-      .cp = 15, .opc1 = 3, .crm = 15,
-      .access = PL1_RW, .type = ARM_CP_CONST | ARM_CP_64BIT, .resetvalue = 0 },
+    { "L2ECTLR_EL1", 0,11,0, 3,1,3, ARM_CP_STATE_AA64,
+      ARM_CP_CONST, PL1_RW, NULL, 0, },
+    { "L2ECTLR", 15,9,0, 0,1,3, 0,
+      ARM_CP_CONST, PL1_RW, NULL, 0, },
+    { "L2ACTLR", 0,15,0, 3,1,0, ARM_CP_STATE_BOTH,
+      ARM_CP_CONST, PL1_RW, NULL, 0 },
+    { "CPUACTLR_EL1", 0,15,2, 3,1,0, ARM_CP_STATE_AA64,
+      ARM_CP_CONST, PL1_RW, NULL, 0 },
+    { "CPUACTLR", 15,0,15, 0,0,0, 0,
+      ARM_CP_CONST | ARM_CP_64BIT, PL1_RW, NULL, 0, },
+    { "CPUECTLR_EL1", 0,15,2, 3,1,1, ARM_CP_STATE_AA64,
+      ARM_CP_CONST, PL1_RW, NULL, 0, },
+    { "CPUECTLR", 15,0,15, 0,1,0, 0,
+      ARM_CP_CONST | ARM_CP_64BIT, PL1_RW, NULL, 0, },
+    { "CPUMERRSR_EL1", 0,15,2, 3,1,2, ARM_CP_STATE_AA64,
+      ARM_CP_CONST, PL1_RW, NULL, 0 },
+    { "CPUMERRSR", 15,0,15, 0,2,0, 0,
+      ARM_CP_CONST | ARM_CP_64BIT, PL1_RW, NULL, 0 },
+    { "L2MERRSR_EL1", 0,15,2, 3,1,3, ARM_CP_STATE_AA64,
+      ARM_CP_CONST, PL1_RW, NULL, 0 },
+    { "L2MERRSR", 15,0,15, 0,3,0, 0,
+      ARM_CP_CONST | ARM_CP_64BIT, PL1_RW, NULL, 0 },
     REGINFO_SENTINEL
 };
 
@@ -159,11 +146,11 @@ typedef struct ARMCPUInfo {
 } ARMCPUInfo;
 
 static const ARMCPUInfo aarch64_cpus[] = {
-    { .name = "cortex-a57",         .initfn = aarch64_a57_initfn },
+    { "cortex-a57",  aarch64_a57_initfn },
 #ifdef CONFIG_USER_ONLY
-    { .name = "any",         .initfn = aarch64_any_initfn },
+    { "any",         aarch64_any_initfn },
 #endif
-    { .name = NULL }
+    { NULL }
 };
 
 static void aarch64_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
@@ -202,13 +189,12 @@ static void aarch64_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *
 
 static void aarch64_cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)
 {
-    TypeInfo type_info = {
-        .parent = TYPE_AARCH64_CPU,
-        .instance_size = sizeof(ARMCPU),
-        .instance_init = info->initfn,
-        .class_size = sizeof(ARMCPUClass),
-        .class_init = info->class_init,
-    };
+    TypeInfo type_info = { 0 };
+    type_info.parent = TYPE_AARCH64_CPU;
+    type_info.instance_size = sizeof(ARMCPU);
+    type_info.instance_init = info->initfn;
+    type_info.class_size = sizeof(ARMCPUClass);
+    type_info.class_init = info->class_init;
 
     type_info.name = g_strdup_printf("%s-" TYPE_ARM_CPU, info->name);
     type_register(uc, &type_info);
@@ -217,18 +203,17 @@ static void aarch64_cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)
 
 void aarch64_cpu_register_types(void *opaque)
 {
-    static const TypeInfo aarch64_cpu_type_info = {
-        .name = TYPE_AARCH64_CPU,
-        .parent = TYPE_ARM_CPU,
-        .instance_size = sizeof(ARMCPU),
-        .instance_init = aarch64_cpu_initfn,
-        .instance_finalize = aarch64_cpu_finalizefn,
-        .abstract = true,
-        .class_size = sizeof(AArch64CPUClass),
-        .class_init = aarch64_cpu_class_init,
-    };
-
     const ARMCPUInfo *info = aarch64_cpus;
+
+    static TypeInfo aarch64_cpu_type_info = { 0 };
+    aarch64_cpu_type_info.name = TYPE_AARCH64_CPU;
+    aarch64_cpu_type_info.parent = TYPE_ARM_CPU;
+    aarch64_cpu_type_info.instance_size = sizeof(ARMCPU);
+    aarch64_cpu_type_info.instance_init = aarch64_cpu_initfn;
+    aarch64_cpu_type_info.instance_finalize = aarch64_cpu_finalizefn;
+    aarch64_cpu_type_info.abstract = true;
+    aarch64_cpu_type_info.class_size = sizeof(AArch64CPUClass);
+    aarch64_cpu_type_info.class_init = aarch64_cpu_class_init;
 
     type_register_static(opaque, &aarch64_cpu_type_info);
 
