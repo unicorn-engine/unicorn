@@ -60,7 +60,7 @@ void m68k_tcg_init(struct uc_struct *uc)
     // tcg_ctx->QREG_FP_RESULT = tcg_global_mem_new_i64(tcg_ctx, TCG_AREG0, offsetof(CPUM68KState, fp_result), "FP_RESULT");
 
     tcg_ctx->cpu_halted = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0,
-                                        -offsetof(M68kCPU, env) +
+                                        0-offsetof(M68kCPU, env) +
                                         offsetof(CPUState, halted), "HALTED");
 
     tcg_ctx->cpu_env = tcg_global_reg_new_ptr(tcg_ctx, TCG_AREG0, "env");

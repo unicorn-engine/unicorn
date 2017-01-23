@@ -18,6 +18,9 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="config-target.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F67EB1EA-DCFA-4758-A2AA-4B570BA78036}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>

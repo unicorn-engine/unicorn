@@ -106,8 +106,20 @@
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
       <Filter>tcg\i386</Filter>
     </ClInclude>
-    <ClInclude Include="..\mips-softmmu\config-target.h" />
     <ClInclude Include="..\config-host.h" />
     <ClInclude Include="..\..\..\qemu\sparc64.h" />
+    <ClInclude Include="..\..\..\qemu\target-sparc\cpu.h">
+      <Filter>target-sparc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-sparc\cpu-qom.h">
+      <Filter>target-sparc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-sparc\helper.h">
+      <Filter>target-sparc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-sparc\unicorn.h">
+      <Filter>target-sparc</Filter>
+    </ClInclude>
+    <ClInclude Include="config-target.h" />
   </ItemGroup>
 </Project>

@@ -140,10 +140,10 @@ typedef struct M68kCPUInfo {
 } M68kCPUInfo;
 
 static const M68kCPUInfo m68k_cpus[] = {
-    { .name = "m5206", .instance_init = m5206_cpu_initfn },
-    { .name = "m5208", .instance_init = m5208_cpu_initfn },
-    { .name = "cfv4e", .instance_init = cfv4e_cpu_initfn },
-    { .name = "any",   .instance_init = any_cpu_initfn },
+    { "m5206", m5206_cpu_initfn },
+    { "m5208", m5208_cpu_initfn },
+    { "cfv4e", cfv4e_cpu_initfn },
+    { "any",   any_cpu_initfn },
 };
 
 static int m68k_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
@@ -201,10 +201,9 @@ static void m68k_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data
 
 static void register_cpu_type(void *opaque, const M68kCPUInfo *info)
 {
-    TypeInfo type_info = {
-        .parent = TYPE_M68K_CPU,
-        .instance_init = info->instance_init,
-    };
+    TypeInfo type_info = {0};
+    type_info.parent = TYPE_M68K_CPU,
+    type_info.instance_init = info->instance_init,
 
     type_info.name = g_strdup_printf("%s-" TYPE_M68K_CPU, info->name);
     type_register(opaque, &type_info);
@@ -213,15 +212,25 @@ static void register_cpu_type(void *opaque, const M68kCPUInfo *info)
 
 void m68k_cpu_register_types(void *opaque)
 {
-    TypeInfo m68k_cpu_type_info = {
-        .name = TYPE_M68K_CPU,
-        .parent = TYPE_CPU,
-        .instance_userdata = opaque,
-        .instance_size = sizeof(M68kCPU),
-        .instance_init = m68k_cpu_initfn,
-        .abstract = true,
-        .class_size = sizeof(M68kCPUClass),
-        .class_init = m68k_cpu_class_init,
+    const TypeInfo m68k_cpu_type_info = {
+        TYPE_M68K_CPU,
+        TYPE_CPU,
+        
+        sizeof(M68kCPUClass),
+        sizeof(M68kCPU),
+        opaque,
+        
+        m68k_cpu_initfn,
+        NULL,
+        NULL,
+
+        NULL,
+
+        m68k_cpu_class_init,
+        NULL,
+        NULL,
+
+        true,
     };
 
     int i;

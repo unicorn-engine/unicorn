@@ -20,8 +20,11 @@ static void m68k_set_pc(struct uc_struct *uc, uint64_t address)
 void m68k_release(void* ctx);
 void m68k_release(void* ctx)
 {
+    TCGContext *tcg_ctx;
+    int i;
+    
     release_common(ctx);
-    TCGContext *tcg_ctx = (TCGContext *) ctx;
+    tcg_ctx = (TCGContext *) ctx;
     g_free(tcg_ctx->tb_ctx.tbs);
     g_free(tcg_ctx->QREG_PC);
     g_free(tcg_ctx->QREG_SR);
@@ -33,7 +36,6 @@ void m68k_release(void* ctx)
     g_free(tcg_ctx->QREG_DIV2);
     g_free(tcg_ctx->QREG_MACSR);
     g_free(tcg_ctx->QREG_MAC_MASK);
-    int i;
     for (i = 0; i < 8; i++) {
         g_free(tcg_ctx->cpu_dregs[i]);
         g_free(tcg_ctx->cpu_aregs[i]);

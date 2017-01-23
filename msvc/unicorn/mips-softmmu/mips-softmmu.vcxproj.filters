@@ -81,7 +81,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\qemu\mips.h" />
     <ClInclude Include="..\config-host.h" />
-    <ClInclude Include="config-target.h" />
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h">
       <Filter>fpu</Filter>
     </ClInclude>
@@ -124,5 +123,6 @@
     <ClInclude Include="..\..\..\qemu\target-mips\unicorn.h">
       <Filter>target-mips</Filter>
     </ClInclude>
+    <ClInclude Include="config-target.h" />
   </ItemGroup>
 </Project>
