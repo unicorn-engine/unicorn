@@ -131,7 +131,6 @@
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
       <Filter>tcg\i386</Filter>
     </ClInclude>
-    <ClInclude Include="config-target.h" />
     <ClInclude Include="..\config-host.h" />
     <ClInclude Include="..\..\..\qemu\target-i386\cc_helper_template.h">
       <Filter>target-i386</Filter>
@@ -160,5 +159,6 @@
     <ClInclude Include="..\..\..\qemu\target-i386\unicorn.h">
       <Filter>target-i386</Filter>
     </ClInclude>
+    <ClInclude Include="config-target.h" />
   </ItemGroup>
 </Project>

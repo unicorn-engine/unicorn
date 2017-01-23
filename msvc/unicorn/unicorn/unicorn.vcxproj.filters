@@ -488,13 +488,13 @@
     <ClInclude Include="..\..\..\include\unicorn\unicorn.h" />
     <ClInclude Include="..\..\..\include\unicorn\x86.h" />
     <ClInclude Include="..\..\..\include\unicorn\platform.h" />
-    <ClInclude Include="qapi-types.h">
-      <Filter>qemu</Filter>
-    </ClInclude>
-    <ClInclude Include="qapi-visit.h">
-      <Filter>qemu</Filter>
-    </ClInclude>
     <ClInclude Include="..\config-host.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi-visit.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi-types.h">
       <Filter>qemu</Filter>
     </ClInclude>
   </ItemGroup>

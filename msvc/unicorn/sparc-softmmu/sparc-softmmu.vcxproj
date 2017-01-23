@@ -60,7 +60,11 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
     <ClInclude Include="..\config-host.h" />
-    <ClInclude Include="..\mips-softmmu\config-target.h" />
+    <ClInclude Include="..\..\..\qemu\target-sparc\cpu-qom.h" />
+    <ClInclude Include="..\..\..\qemu\target-sparc\cpu.h" />
+    <ClInclude Include="..\..\..\qemu\target-sparc\helper.h" />
+    <ClInclude Include="..\..\..\qemu\target-sparc\unicorn.h" />
+    <ClInclude Include="config-target.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{698C2D54-475C-446F-B879-F629BBEF75FE}</ProjectGuid>
