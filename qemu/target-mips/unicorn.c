@@ -43,7 +43,7 @@ void mips_release(void *ctx);
 void mips_release(void *ctx)
 {
     MIPSCPU* cpu;
-	int i;
+    int i;
     TCGContext *tcg_ctx = (TCGContext *) ctx;
     release_common(ctx);
     cpu = MIPS_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
@@ -70,7 +70,7 @@ void mips_release(void *ctx)
 void mips_reg_reset(struct uc_struct *uc)
 {
     CPUArchState *env;
-	(void)uc;
+    (void)uc;
     env = uc->cpu->env_ptr;
     memset(env->active_tc.gpr, 0, sizeof(env->active_tc.gpr));
 

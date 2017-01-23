@@ -104,7 +104,7 @@ typedef struct CPUTLBEntry {
 # endif
 
 #define DUMMY_SIZE	(1 << CPU_TLB_ENTRY_BITS) - \
-					(TARGET_ULONG_SIZE * 3 + \
+                    (TARGET_ULONG_SIZE * 3 + \
                    ((-TARGET_ULONG_SIZE * 3) & (UINTPTR_SIZE - 1)) + \
                    UINTPTR_SIZE)
 

@@ -571,7 +571,7 @@ struct CPUMIPSState {
     uint32_t CP0_TCStatus_rw_bitmask; /* Read/write bits in CP0_TCStatus */
     int insn_flags; /* Supported instruction set */
 
-	CPU_COMMON
+    CPU_COMMON
 
     /* Fields from here on are preserved across CPU reset. */
     CPUMIPSMVPContext *mvp;
