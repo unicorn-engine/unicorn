@@ -52,42 +52,26 @@ int main(int argc, char *argv[])
     err = uc_mem_map(uc, ADDRESS, SIZE, UC_PROT_ALL);
     if(err != UC_ERR_OK) {
         printf("Failed to map memory %s\n", uc_strerror(err));
-<<<<<<< Updated upstream
         return 1;
-=======
-        return 2;
->>>>>>> Stashed changes
     }
 
     err = uc_mem_write(uc, ADDRESS, CODE32, sizeof(CODE32) - 1);
     if(err != UC_ERR_OK) {
         printf("Failed to write to memory %s\n", uc_strerror(err));
-<<<<<<< Updated upstream
         return 1;
-=======
-        return 3;
->>>>>>> Stashed changes
     }
 
 loop:
     err = uc_mem_map(uc, stkval, STACK_SIZE, UC_PROT_ALL);
     if(err != UC_ERR_OK) {
         printf("Failed to map memory %s\n", uc_strerror(err));
-<<<<<<< Updated upstream
         return 1;
-=======
-        return 4;
->>>>>>> Stashed changes
     }
 
     err = uc_mem_write(uc, ESP, &val, sizeof(val));
     if(err != UC_ERR_OK) {
         printf("Failed to write to memory %s\n", uc_strerror(err));
-<<<<<<< Updated upstream
         return 1;
-=======
-        return 5;
->>>>>>> Stashed changes
     }
 
 
@@ -101,11 +85,7 @@ loop:
         printf("Failed on uc_emu_start() with error returned %u: %s\n", err, uc_strerror(err));
 
         uc_close(uc);
-<<<<<<< Updated upstream
         return 1;
-=======
-        return 6;
->>>>>>> Stashed changes
     }
 
     uc_reg_read(uc, UC_X86_REG_EAX, &EAX);

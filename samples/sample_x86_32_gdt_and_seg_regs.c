@@ -20,18 +20,10 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
 #include <unicorn/unicorn.h>
-<<<<<<< HEAD
-=======
-#include <assert.h>
->>>>>>> unicorn-engine/msvc
 #include <string.h>
 #include <assert.h>
 #include <stdlib.h>
-<<<<<<< HEAD
-#
-=======
 
->>>>>>> unicorn-engine/msvc
 #pragma pack(push, 1)
 struct SegmentDescriptor {
    union {

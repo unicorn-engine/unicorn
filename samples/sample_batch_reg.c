@@ -1,9 +1,3 @@
-<<<<<<< HEAD
-
-=======
-#include <stdio.h>
-#include <string.h>
->>>>>>> unicorn-engine/msvc
 #include <unicorn/unicorn.h>
 #include <string.h>
 #include <stdio.h>
