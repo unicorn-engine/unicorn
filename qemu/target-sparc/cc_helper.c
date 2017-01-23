@@ -438,35 +438,35 @@ typedef struct CCTable {
 
 static const CCTable icc_table[CC_OP_NB] = {
     /* CC_OP_DYNAMIC should never happen */
-    [CC_OP_DYNAMIC] = { compute_null, compute_null },
-    [CC_OP_FLAGS] = { compute_all_flags, compute_C_flags },
-    [CC_OP_DIV] = { compute_all_div, compute_C_div },
-    [CC_OP_ADD] = { compute_all_add, compute_C_add },
-    [CC_OP_ADDX] = { compute_all_addx, compute_C_addx },
-    [CC_OP_TADD] = { compute_all_tadd, compute_C_add },
-    [CC_OP_TADDTV] = { compute_all_taddtv, compute_C_add },
-    [CC_OP_SUB] = { compute_all_sub, compute_C_sub },
-    [CC_OP_SUBX] = { compute_all_subx, compute_C_subx },
-    [CC_OP_TSUB] = { compute_all_tsub, compute_C_sub },
-    [CC_OP_TSUBTV] = { compute_all_tsubtv, compute_C_sub },
-    [CC_OP_LOGIC] = { compute_all_logic, compute_C_logic },
+    { compute_null, compute_null },
+    { compute_all_flags, compute_C_flags },
+    { compute_all_div, compute_C_div },
+    { compute_all_add, compute_C_add },
+    { compute_all_addx, compute_C_addx },
+    { compute_all_tadd, compute_C_add },
+    { compute_all_taddtv, compute_C_add },
+    { compute_all_sub, compute_C_sub },
+    { compute_all_subx, compute_C_subx },
+    { compute_all_tsub, compute_C_sub },
+    { compute_all_tsubtv, compute_C_sub },
+    { compute_all_logic, compute_C_logic },
 };
 
 #ifdef TARGET_SPARC64
 static const CCTable xcc_table[CC_OP_NB] = {
     /* CC_OP_DYNAMIC should never happen */
-    [CC_OP_DYNAMIC] = { compute_null, compute_null },
-    [CC_OP_FLAGS] = { compute_all_flags_xcc, compute_C_flags_xcc },
-    [CC_OP_DIV] = { compute_all_logic_xcc, compute_C_logic },
-    [CC_OP_ADD] = { compute_all_add_xcc, compute_C_add_xcc },
-    [CC_OP_ADDX] = { compute_all_addx_xcc, compute_C_addx_xcc },
-    [CC_OP_TADD] = { compute_all_add_xcc, compute_C_add_xcc },
-    [CC_OP_TADDTV] = { compute_all_add_xcc, compute_C_add_xcc },
-    [CC_OP_SUB] = { compute_all_sub_xcc, compute_C_sub_xcc },
-    [CC_OP_SUBX] = { compute_all_subx_xcc, compute_C_subx_xcc },
-    [CC_OP_TSUB] = { compute_all_sub_xcc, compute_C_sub_xcc },
-    [CC_OP_TSUBTV] = { compute_all_sub_xcc, compute_C_sub_xcc },
-    [CC_OP_LOGIC] = { compute_all_logic_xcc, compute_C_logic },
+    { compute_null, compute_null },
+    { compute_all_flags_xcc, compute_C_flags_xcc },
+    { compute_all_logic_xcc, compute_C_logic },
+    { compute_all_add_xcc, compute_C_add_xcc },
+    { compute_all_addx_xcc, compute_C_addx_xcc },
+    { compute_all_add_xcc, compute_C_add_xcc },
+    { compute_all_add_xcc, compute_C_add_xcc },
+    { compute_all_sub_xcc, compute_C_sub_xcc },
+    { compute_all_subx_xcc, compute_C_subx_xcc },
+    { compute_all_sub_xcc, compute_C_sub_xcc },
+    { compute_all_sub_xcc, compute_C_sub_xcc },
+    { compute_all_logic_xcc, compute_C_logic },
 };
 #endif
 
