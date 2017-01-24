@@ -168,8 +168,9 @@ static int gettimeofday(struct timeval* t, void* timezone)
 
 // unistd.h compatibility
 #if defined(_MSC_VER)
-// TODO: add unistd stuff here ...
 
+// horrible kludge requiring winsock to get microsecond sleep resolution.
+// if this is removed then all winsock references can also be removed.
 static int usleep(uint32_t t)
 {
     int ret, err_code;
@@ -183,14 +184,6 @@ static int usleep(uint32_t t)
     err_code =  WSAGetLastError();
     return ret==0 ? 0 : -1;
 }
-/*
-#include <chrono>
-#include <thread>
-static void usleep(const int64_t &t)
-{
-    std::this_thread::sleep_for(std::chrono::microseconds(t));
-}
-*/
 
 #else
 #include <unistd.h>

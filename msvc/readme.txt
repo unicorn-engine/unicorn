@@ -1,18 +1,67 @@
 
 
 
-TODO: fix mips translate.c file where case OPC_DALIGN ... OPC_DALIGN_END: has many in between cases!!!
-
-
-*** TODO: this file needs work ***
-
-
-
-
 Unicorn-Engine MSVC Native Port Notes
+
+Zak Escano  -  January 2017
 
 These notes are to help myself and others with the upkeep of the msvc native port
 of unicorn-engine.
+
+
+
+
+:: Build settings
+
+Visual Studio Version:   Visual Studio 2012  v11.061219.00 Update 5
+Platform Toolset:        Visual Studio 2012 - Windows XP (v110_xp)
+Character Set:           Use Multi-Byte Character Set
+Runtime Library Debug:   Multi-threaded Debug (/MTd)
+Runtime Library Release: Multi-threaded (/MT)
+Precompiled Header:      Not Using Precompiled Headers
+Additional Options:      /wd4018 /wd4244 /wd4267 
+
+
+
+
+:: Winsock inclusion
+
+One of the hacks done for this was to implement usleep() in windows using a
+sockets select() function. This then forces the inclusion of winsock stuff
+that would otherwise not be required.
+
+usleep() is only used in the second thread that is executed in order to
+timeout code that would otherwise continue to execute. So if this is ever
+changed to no longer require the usleep() calls, the winsock related code
+can be removed entirely.
+
+
+
+
+:: Changes porting unicorn from GNU/GCC to MSVC.
+
+There were many many many changes to make this also build in MSVC
+while still retaining the ability to build in GNU/GCC.
+Most were due to either GCC specific things or MSVC lack of decent
+standard C support especially in VS2012. Also some were for
+posix/platform specific stuff that is not present in windows.
+
+Some of the more common changes were:
+
+* Compatibility for GCC style __attribute__'s.
+
+* Change GCC switch case ranges to specify every case individually, ie:
+  "case 1 ... 3:" changes to "case 1: case 2: case 3:"
+
+* Change GCC struct member initialisation to the more generic
+  initialisation of all members in order, ie:
+  { .value = 1, .stuff = 2 } to { 1, 2 }
+
+* Remove GCC style macro return values which MSVC does not support, ie:
+  #define RETURN_ONE(x)  ({ some stuff; (void)1; })
+
+* Compatibility for posix headers that are missing in windows, ie:
+  stdbool.h, stdint.h, sys/time.h, unistd.h
 
 
 
@@ -45,26 +94,17 @@ For each supported CPU type
 
 
 
-* cpu specific config
-there is a "config-target.h" inside each ???-softmmu dir.
-there is a "config-target.h-timestamp" inside each ???-softmmu dir.
-"config-target.h" is only included in "qemu/include/config.h".
-
-"config-target.mak" looks like target specific makefile stuff. (very simple)
-"qemu/configure" appears to generate these
-"qemu/Makefile.target" appears to be used as the template for "qemu/????-softmmu/Makefile"
-
-
-
 
 :: Other things
 
-* GNU seems to rely on __i386__ or __x86_64__ defined if the host is 32bit or 64bit respectively.
+* The Qemu code for GNU/GCC seems to rely on __i386__ or __x86_64__ defined if
+  the host is 32bit or 64bit respectively.
   So when building 32bit libs in msvc we define __i386__.
   And when building 64bit libs in msvc we define __x86_64__.
 
 * There is a tcg-target.c for each target that is included into tcg.c.
-  It is NOT built separately as part of the *.c files built for the project.
+  This is done using "#include tcg-target.c"
+  It is NOT built separately as part of the *.c files for the project.
 
 
 
@@ -72,7 +112,7 @@ there is a "config-target.h-timestamp" inside each ???-softmmu dir.
 :: Info from makefiles
 
 This info is compiled here together to help with deciding on the build settings to use.
-It may or may not be of use to anyone else once this builds ok :)
+It may or may not be of use to anyone in the future once this all builds ok :)
 
 QEMU_INCLUDES=-I$(SRC_PATH)/tcg -I$(SRC_PATH)/tcg/$(ARCH) -I. -I$(SRC_PATH) -I$(SRC_PATH)/include
 QEMU_CFLAGS=-m32 -D__USE_MINGW_ANSI_STDIO=1 -DWIN32_LEAN_AND_MEAN -DWINVER=0x501 -D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -Wstrict-prototypes -Wredundant-decls -Wall -Wundef -Wwrite-strings -Wmissing-prototypes -fno-strict-aliasing -fno-common -DUNICORN_HAS_X86 -DUNICORN_HAS_ARM -DUNICORN_HAS_M68K -DUNICORN_HAS_ARM64 -DUNICORN_HAS_MIPS -DUNICORN_HAS_MIPSEL -DUNICORN_HAS_MIPS64 -DUNICORN_HAS_MIPS64EL -DUNICORN_HAS_SPARC -fPIC 
