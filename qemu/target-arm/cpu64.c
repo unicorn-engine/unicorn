@@ -38,10 +38,10 @@ static uint64_t a57_l2ctlr_read(CPUARMState *env, const ARMCPRegInfo *ri)
 
 static const ARMCPRegInfo cortexa57_cp_reginfo[] = {
 #ifndef CONFIG_USER_ONLY
-    { "L2CTLR_EL1", 0, 11,0, 3,1,2, ARM_CP_STATE_AA64,
+    { "L2CTLR_EL1", 0,11,0, 3,1,2, ARM_CP_STATE_AA64,
       0, PL1_RW, NULL, 0, 0,
       NULL, a57_l2ctlr_read, arm_cp_write_ignore, },
-    { "L2CTLR", 15, 9,0, 0,1,2, 0,
+    { "L2CTLR", 15,9,0, 0,1,2, 0,
       0, PL1_RW, NULL, 0, 0,
       NULL, a57_l2ctlr_read, arm_cp_write_ignore, },
 #endif
