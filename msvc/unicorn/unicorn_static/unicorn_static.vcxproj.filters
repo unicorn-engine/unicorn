@@ -1,7 +1,77 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="dllmain.cpp" />
+    <Filter Include="qemu">
+      <UniqueIdentifier>{13755027-3a13-46c3-9468-ed380fcef603}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="priv">
+      <UniqueIdentifier>{4f904f9f-fd99-4ebe-8db7-2ee2c644c6e4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\util">
+      <UniqueIdentifier>{1f3288bd-38e9-49c1-ae30-6ac4bc1b86c4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\hw">
+      <UniqueIdentifier>{d98a987f-6e81-4454-9bb4-f79d49d1d8fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\qapi">
+      <UniqueIdentifier>{9b261303-0cae-4e60-8bc9-c63cd6abd5bc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\qobject">
+      <UniqueIdentifier>{4078dd72-489d-48e6-a7c7-e27149f9513d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\qom">
+      <UniqueIdentifier>{9264dcdf-55d8-4416-9b53-7962937b4db5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\hw\core">
+      <UniqueIdentifier>{973f87b6-2729-473f-bda6-d61d8c799a77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include">
+      <UniqueIdentifier>{235236d2-79fa-48f5-b496-cb79a9290f6b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\exec">
+      <UniqueIdentifier>{4bb86c12-fd75-40be-9891-e4a84ca60703}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\fpu">
+      <UniqueIdentifier>{b210c6e7-454a-400c-84c4-d2a10d96db1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw">
+      <UniqueIdentifier>{8bdec3ae-c802-4443-a6f4-e26bd030a1cf}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\arm">
+      <UniqueIdentifier>{e7cfa963-4fb5-4c9a-a264-402decbea01d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\cpu">
+      <UniqueIdentifier>{1890ac05-1098-492d-bc0d-50b6e8dd7fc0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\i386">
+      <UniqueIdentifier>{76e19a4b-1143-456a-900c-9ce6c9c0d267}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\m68k">
+      <UniqueIdentifier>{0e879645-49d7-4d24-9736-f85d69acceda}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\mips">
+      <UniqueIdentifier>{9ecedd1d-44a7-40d1-ad99-f06e49b39aa8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\hw\sparc">
+      <UniqueIdentifier>{50ff932c-1464-4742-af74-fc9b42e4ef3a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\qapi">
+      <UniqueIdentifier>{ea61989d-dc0a-4146-87a0-63e5131d5302}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\qapi\qmp">
+      <UniqueIdentifier>{044502cd-501d-40eb-86d0-4c8db24104c7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\qemu">
+      <UniqueIdentifier>{b1debb6d-f445-4f95-9778-d6b926541606}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\qom">
+      <UniqueIdentifier>{c5faa816-aae6-41b7-ac8d-40a9783786e0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="qemu\include\sysemu">
+      <UniqueIdentifier>{62c5db3f-0d6d-4a3a-92b7-0cd602058a62}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="..\..\..\list.c">
       <Filter>priv</Filter>
     </ClCompile>
@@ -22,45 +92,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\vl.c">
       <Filter>qemu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\aes.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\bitmap.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\bitops.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\crc32c.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\cutils.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\error.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\getauxval.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\host-utils.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\module.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\oslib-win32.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\qemu-error.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\qemu-thread-win32.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\qemu-timer-common.c">
-      <Filter>qemu\util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\hw\core\machine.c">
       <Filter>qemu\hw\core</Filter>
@@ -116,84 +147,52 @@
     <ClCompile Include="..\..\..\qemu\qom\qom-qobject.c">
       <Filter>qemu\qom</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\uc.c" />
-    <ClCompile Include="..\qapi-types.c">
-      <Filter>qemu</Filter>
+    <ClCompile Include="..\..\..\qemu\util\aes.c">
+      <Filter>qemu\util</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\bitmap.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\bitops.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\crc32c.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\cutils.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\error.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\getauxval.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\host-utils.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\module.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\oslib-win32.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\qemu-error.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\qemu-thread-win32.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\qemu-timer-common.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\uc.c" />
     <ClCompile Include="..\qapi-visit.c">
       <Filter>qemu</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="priv">
-      <UniqueIdentifier>{1d58ccd1-7ea5-40e0-ba38-304ac34bf08e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu">
-      <UniqueIdentifier>{438f79b0-21e5-4a21-8e61-271b88a3130d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\util">
-      <UniqueIdentifier>{88e75519-13ca-431e-8b6d-d915d5e12231}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\hw">
-      <UniqueIdentifier>{669d34d7-8f38-47ac-ac1b-1f485bc9d6eb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\hw\core">
-      <UniqueIdentifier>{2182308b-b1c8-4ac4-a779-c9d86c3cf97d}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\qapi">
-      <UniqueIdentifier>{70273f5a-23c0-4274-acc8-0c398ec327e7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\qobject">
-      <UniqueIdentifier>{b84e89c5-c18f-4505-a2b9-b6cacbf97d1a}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\qom">
-      <UniqueIdentifier>{c0e7454f-a22a-4410-87e9-bd8668a2fc5b}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include">
-      <UniqueIdentifier>{0d15a173-37a6-4507-a128-de4316618e68}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\exec">
-      <UniqueIdentifier>{fcbdd971-b481-4edc-a96a-3cdaeeadf2e9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\fpu">
-      <UniqueIdentifier>{01269629-99a8-41ee-9595-b1c745b1a044}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\hw">
-      <UniqueIdentifier>{e1755d99-2324-43b4-9896-2400610e0b31}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\hw\arm">
-      <UniqueIdentifier>{daf8ad72-5390-43b2-8c7b-082ce1084aed}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\hw\cpu">
-      <UniqueIdentifier>{da199412-30ad-4c72-9a5a-a7b280c00021}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\hw\i386">
-      <UniqueIdentifier>{5f01eb28-ffe0-4371-a677-32ded26a33e2}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\hw\m68k">
-      <UniqueIdentifier>{dfebfef7-1435-4d09-89f6-94fb929f3488}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\hw\mips">
-      <UniqueIdentifier>{969bee88-382e-4c05-9205-074f24bdaf82}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\hw\sparc">
-      <UniqueIdentifier>{7195ce60-b300-4dbe-8072-3e812167a036}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\qapi">
-      <UniqueIdentifier>{0f13072a-571c-4c81-bef3-513758b38832}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\qapi\qmp">
-      <UniqueIdentifier>{0ae19983-bbd0-448f-a319-574d45f59dfe}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\qemu">
-      <UniqueIdentifier>{5653dd50-a557-4573-8f43-7ef26d0d4190}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\qom">
-      <UniqueIdentifier>{36443fca-61fc-4f64-a872-2ddd3d823cb9}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="qemu\include\sysemu">
-      <UniqueIdentifier>{5e47a1c2-85ab-48d6-921e-8915438c2cbf}</UniqueIdentifier>
-    </Filter>
+    <ClCompile Include="..\qapi-types.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\list.h">
@@ -206,15 +205,6 @@
       <Filter>priv</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\vl.h">
-      <Filter>qemu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\config-host.h">
-      <Filter>qemu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\qapi-types.h">
-      <Filter>qemu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\qapi-visit.h">
       <Filter>qemu</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\config.h">
@@ -241,13 +231,13 @@
     <ClInclude Include="..\..\..\qemu\include\exec\cpu-defs.h">
       <Filter>qemu\include\exec</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\exec\cputlb.h">
-      <Filter>qemu\include\exec</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\exec\cpu_ldst.h">
       <Filter>qemu\include\exec</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\exec\cpu_ldst_template.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\cputlb.h">
       <Filter>qemu\include\exec</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\exec\exec-all.h">
@@ -494,9 +484,18 @@
     <ClInclude Include="..\..\..\include\unicorn\arm64.h" />
     <ClInclude Include="..\..\..\include\unicorn\m68k.h" />
     <ClInclude Include="..\..\..\include\unicorn\mips.h" />
-    <ClInclude Include="..\..\..\include\unicorn\platform.h" />
     <ClInclude Include="..\..\..\include\unicorn\sparc.h" />
     <ClInclude Include="..\..\..\include\unicorn\unicorn.h" />
     <ClInclude Include="..\..\..\include\unicorn\x86.h" />
+    <ClInclude Include="..\..\..\include\unicorn\platform.h" />
+    <ClInclude Include="..\config-host.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi-visit.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi-types.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
