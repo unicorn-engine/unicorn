@@ -1,4 +1,8 @@
-We also show steps to cross-compile Unicorn for Microsoft Windows.
+To build Unicorn on Windows natively using Visual Studio, see docs under "msvc"
+directory in root directory.
+
+The rest of this manual shows how to cross-compile Unicorn for Windows using
+either MingW or Msys2.
 
 To compile for Linux, Mac OS X and Unix-based OS, see [COMPILE-NIX.md](COMPILE-NIX.md)
 

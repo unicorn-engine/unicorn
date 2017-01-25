@@ -151,7 +151,6 @@ mkdir $(SolutionDir)distro\$(Platform)
 copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)distro\$(Platform)\
 copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).lib $(SolutionDir)distro\$(Platform)\
 
-copy $(SolutionDir)..\include\*.h $(SolutionDir)distro\include\
 copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
 </Command>
     </PostBuildEvent>
@@ -186,7 +185,6 @@ mkdir $(SolutionDir)distro\$(Platform)
 copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)distro\$(Platform)\
 copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).lib $(SolutionDir)distro\$(Platform)\
 
-copy $(SolutionDir)..\include\*.h $(SolutionDir)distro\include\
 copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
 </Command>
     </PostBuildEvent>
