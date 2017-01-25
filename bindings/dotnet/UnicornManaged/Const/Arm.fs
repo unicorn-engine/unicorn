@@ -120,7 +120,10 @@ module Arm =
     let UC_ARM_REG_S29 = 108
     let UC_ARM_REG_S30 = 109
     let UC_ARM_REG_S31 = 110
-    let UC_ARM_REG_ENDING = 111
+    let UC_ARM_REG_C1_C0_2 = 111
+    let UC_ARM_REG_C13_C0_2 = 112
+    let UC_ARM_REG_C13_C0_3 = 113
+    let UC_ARM_REG_ENDING = 114
 
     // alias registers
     let UC_ARM_REG_R13 = 12

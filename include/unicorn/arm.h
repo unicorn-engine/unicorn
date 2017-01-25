@@ -24,9 +24,6 @@ typedef enum uc_arm_reg {
 	UC_ARM_REG_FPSCR_NZCV,
 	UC_ARM_REG_FPSID,
 	UC_ARM_REG_ITSTATE,
-	UC_ARM_REG_C1_C0_2,
-	UC_ARM_REG_C13_C0_2,
-	UC_ARM_REG_C13_C0_3,
 	UC_ARM_REG_LR,
 	UC_ARM_REG_PC,
 	UC_ARM_REG_SP,
@@ -128,6 +125,10 @@ typedef enum uc_arm_reg {
 	UC_ARM_REG_S29,
 	UC_ARM_REG_S30,
 	UC_ARM_REG_S31,
+
+	UC_ARM_REG_C1_C0_2,
+	UC_ARM_REG_C13_C0_2,
+	UC_ARM_REG_C13_C0_3,
 
 	UC_ARM_REG_ENDING,		// <-- mark the end of the list or registers
 
