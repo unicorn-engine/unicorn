@@ -177,12 +177,18 @@ static int gettimeofday(struct timeval* t, void* timezone)
 // unistd.h compatibility
 #if defined(_MSC_VER)
 
-// Note: The current resolution for this is 20ms
+// Note: The minimum sleep time is 20ms.
+// Times less than 20ms will be rounded up to 20ms.
+// Times above 20ms will be rounded up to the next 1ms.
 static int usleep(uint32_t us)
 {
 	// resolution is 20ms (20,000us)
-	const uint32_t resolution_us = 20*1000;
-	uint32_t ms = ((us + resolution_us - 1 ) / resolution_us) * (resolution_us/1000);
+	const uint32_t min_us = 20*1000;
+	uint32_t ms;
+	if( us <= min_us )
+		ms = min_us / 1000;
+	else
+		ms = (us/1000) + ((us%1000)?1:0);
 	Sleep(ms);
 	return 0;
 }

@@ -487,6 +487,8 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size);
  @until: address where emulation stops (i.e when this address is hit)
  @timeout: duration to emulate the code (in microseconds). When this value is 0,
         we will emulate the code in infinite time, until the code is finished.
+        In MSVC builds times less than 20ms will be rounded up to 20ms,
+        and times above 20ms will be rounded up to the next 1ms.
  @count: the number of instructions to be emulated. When this value is 0,
         we will emulate all the code available, until the code is finished.
 
