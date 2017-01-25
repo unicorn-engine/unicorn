@@ -268,14 +268,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         if (uc->reg_reset)
             uc->reg_reset(uc);
 
-        // init winsock sockets so we can use select() for usleep() implementation
-#ifdef _MSC_VER
-        {
-            WSADATA wsa_data;
-            WSAStartup(0x202, &wsa_data);
-        }
-#endif
-
         return UC_ERR_OK;
     } else {
         return UC_ERR_ARCH;
@@ -354,13 +346,6 @@ uc_err uc_close(uc_engine *uc)
     // finally, free uc itself.
     memset(uc, 0, sizeof(*uc));
     free(uc);
-
-    // free winsock sockets - used so we can use select() for usleep() implementation
-#ifdef _MSC_VER
-        {
-            WSACleanup();
-        }
-#endif
     
     return UC_ERR_OK;
 }
@@ -500,14 +485,17 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
         return UC_ERR_WRITE_UNMAPPED;
 }
 
-#define TIMEOUT_STEP 2    // microseconds
 static void *_timeout_fn(void *arg)
 {
     struct uc_struct *uc = arg;
     int64_t current_time = get_clock();
 
     do {
-        usleep(TIMEOUT_STEP);
+#ifdef _MSC_VER
+		usleep(20*1000);
+#else
+		usleep(2);
+#endif
         // perhaps emulation is even done before timeout?
         if (uc->emulation_done)
             break;
