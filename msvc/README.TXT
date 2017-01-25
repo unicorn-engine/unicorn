@@ -1,15 +1,9 @@
-
-
-
 Unicorn-Engine MSVC Native Port Notes
 
 Zak Escano  -  January 2017
 
 These notes are to help myself and others with the upkeep of the msvc native port
 of unicorn-engine.
-
-
-
 
 :: Build settings
 
@@ -22,8 +16,6 @@ Precompiled Header:      Not Using Precompiled Headers
 Additional Options:      /wd4018 /wd4244 /wd4267 
 
 
-
-
 :: Winsock inclusion
 
 One of the hacks done for this was to implement usleep() in windows using a
@@ -34,8 +26,6 @@ usleep() is only used in the second thread that is executed in order to
 timeout code that would otherwise continue to execute. So if this is ever
 changed to no longer require the usleep() calls, the winsock related code
 can be removed entirely.
-
-
 
 
 :: Changes porting unicorn from GNU/GCC to MSVC.
@@ -64,8 +54,6 @@ Some of the more common changes were:
   stdbool.h, stdint.h, sys/time.h, unistd.h
 
 
-
-
 :: CPU specific libraries
 
 The gnu/gcc way of building the qemu portion of unicorn-engine involves makefile magic
@@ -85,14 +73,11 @@ The way I handle this in MSVC is to build a seperate cpu specific library, conta
 this set of repeatedly used sourcecode files, for each supported cpu type.
 These cpu specific libraries are then linked together to build the unicorn library.
 
-
 For each supported CPU type
 
 * Each CPU specific lib has a "forced include" file specified at:
 	Configuration Properties -> C/C++ -> Advanced -> Forced Include File
 	so for x86-64 this is "the file "x86_64.h" which is a generated file.
-
-
 
 
 :: Other things
@@ -105,8 +90,6 @@ For each supported CPU type
 * There is a tcg-target.c for each target that is included into tcg.c.
   This is done using "#include tcg-target.c"
   It is NOT built separately as part of the *.c files for the project.
-
-
 
 
 :: Info from makefiles
