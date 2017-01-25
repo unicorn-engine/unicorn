@@ -16,18 +16,6 @@ Precompiled Header:      Not Using Precompiled Headers
 Additional Options:      /wd4018 /wd4244 /wd4267 
 
 
-:: Winsock inclusion
-
-One of the hacks done for this was to implement usleep() in windows using a
-sockets select() function. This then forces the inclusion of winsock stuff
-that would otherwise not be required.
-
-usleep() is only used in the second thread that is executed in order to
-timeout code that would otherwise continue to execute. So if this is ever
-changed to no longer require the usleep() calls, the winsock related code
-can be removed entirely.
-
-
 :: Changes porting unicorn from GNU/GCC to MSVC.
 
 There were many many many changes to make this also build in MSVC

@@ -151,8 +151,16 @@ typedef _W64 unsigned int  uintptr_t;
 // sys/time.h compatibility
 #if defined(_MSC_VER)
 #include <sys/timeb.h>
-#include <winsock2.h>
 #include <windows.h>
+
+// timeval is defined in winsock.h and winsock2.h
+// FD_ZERO is defined in both of these just above struct timeval.
+#if !defined(FD_ZERO)
+struct timeval {
+    long tv_sec;
+    long tv_usec;
+};
+#endif
 
 static int gettimeofday(struct timeval* t, void* timezone)
 {
@@ -169,20 +177,20 @@ static int gettimeofday(struct timeval* t, void* timezone)
 // unistd.h compatibility
 #if defined(_MSC_VER)
 
-// horrible kludge requiring winsock to get microsecond sleep resolution.
-// if this is removed then all winsock references can also be removed.
-static int usleep(uint32_t t)
+// Note: The minimum sleep time is 20ms.
+// Times less than 20ms will be rounded up to 20ms.
+// Times above 20ms will be rounded up to the next 1ms.
+static int usleep(uint32_t us)
 {
-    int ret, err_code;
-    long value = t; // time in microseconds
-    struct timeval tv;
-    FD_SET dummy_set;
-    FD_ZERO(&dummy_set);
-    tv.tv_sec = value / 1000000;
-    tv.tv_usec = value % 1000000;
-    ret = select(0, &dummy_set, NULL, NULL, &tv);
-    err_code =  WSAGetLastError();
-    return ret==0 ? 0 : -1;
+	// resolution is 20ms (20,000us)
+	const uint32_t min_us = 20*1000;
+	uint32_t ms;
+	if( us <= min_us )
+		ms = min_us / 1000;
+	else
+		ms = (us/1000) + ((us%1000)?1:0);
+	Sleep(ms);
+	return 0;
 }
 
 #else
