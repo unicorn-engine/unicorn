@@ -182,7 +182,7 @@ static int usleep(uint32_t us)
 {
 	// resolution is 20ms (20,000us)
 	uint32_t resolution_us = 20*1000;
-	uint32_t ms = (us + resolution_us- 1 ) / resolution_us;
+	uint32_t ms = ((us + resolution_us - 1 ) / resolution_us) * resolution_us;
 	Sleep(ms);
 	return 0;
 }
