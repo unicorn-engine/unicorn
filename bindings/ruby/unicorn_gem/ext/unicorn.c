@@ -26,12 +26,14 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 VALUE UnicornModule = Qnil;
 VALUE UcClass = Qnil;
 VALUE UcError = Qnil;
+VALUE SavedContext = Qnil;
 
 
 void Init_unicorn() {
     rb_require("unicorn/unicorn_const");
     UnicornModule = rb_define_module("Unicorn");
     UcError = rb_define_class_under(UnicornModule, "UcError", rb_eStandardError);
+    SavedContext = rb_define_class_under(UnicornModule, "SavedContext", rb_cObject);
 
     UcClass = rb_define_class_under(UnicornModule, "Uc", rb_cObject);
     rb_define_method(UcClass, "initialize", m_uc_initialize, 2);
@@ -47,6 +49,9 @@ void Init_unicorn() {
     rb_define_method(UcClass, "hook_add", m_uc_hook_add, -1);
     rb_define_method(UcClass, "hook_del", m_uc_hook_del, 1);
     rb_define_method(UcClass, "query", m_uc_hook_del, 1);
+    rb_define_method(UcClass, "context_save", m_uc_context_save, 0);
+    rb_define_method(UcClass, "context_update", m_uc_context_update, 1);
+    rb_define_method(UcClass, "contest_restore", m_uc_context_restore, 1);
 }
 
 VALUE m_uc_initialize(VALUE self, VALUE arch, VALUE mode) {
@@ -421,4 +426,54 @@ VALUE m_uc_query(VALUE self, VALUE query_mode){
       rb_raise(UcError, "%s", uc_strerror(err));
     }
     return INT2NUM(result);
+}
+
+VALUE m_uc_context_save(VALUE self){
+    uc_err err;
+    uc_engine *_uc;
+    Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
+
+    uc_context *_context;
+    err = uc_context_alloc(_uc, &_context);
+    if (err != UC_ERR_OK) {
+      rb_raise(UcError, "%s", uc_strerror(err));
+    }
+
+    err = uc_context_save(_uc, _context);
+    if (err != UC_ERR_OK) {
+      rb_raise(UcError, "%s", uc_strerror(err));
+    }
+
+    VALUE sc = Data_Wrap_Struct(SavedContext, 0, uc_free, _context);
+    return sc;
+}
+
+VALUE m_uc_context_update(VALUE self, VALUE context){
+    uc_err err;
+    uc_engine *_uc;
+    Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
+
+    uc_context *_context;
+    Data_Get_Struct(context, uc_context, _context);
+
+    err = uc_context_save(_uc, _context);
+    if (err != UC_ERR_OK) {
+      rb_raise(UcError, "%s", uc_strerror(err));
+    }
+    return Qnil;
+}
+
+VALUE m_uc_context_restore(VALUE self, VALUE context){
+    uc_err err;
+    uc_engine *_uc;
+    Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
+
+    uc_context *_context;
+    Data_Get_Struct(context, uc_context, _context);
+
+    err = uc_context_restore(_uc, _context);
+    if (err != UC_ERR_OK) {
+      rb_raise(UcError, "%s", uc_strerror(err));
+    }
+    return Qnil;
 }
