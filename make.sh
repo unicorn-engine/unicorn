@@ -80,6 +80,10 @@ uninstall() {
   fi
 }
 
+[ -z "${UNAME}" ] && UNAME=$(uname)
+[ -z "${MAKE}" ] && MAKE=make
+#[ -n "${MAKE_JOBS}" ] && MAKE="$MAKE -j${MAKE_JOBS}"
+
 if [ "$UNAME" = SunOS ]; then
   [ -z "${MAKE}" ] && MAKE=gmake
   INSTALL_BIN=ginstall
@@ -91,9 +95,6 @@ if [ -n "`echo "$UNAME" | grep BSD`" ]; then
   PREFIX="${PREFIX-/usr/local}"
 fi
 
-[ -z "${UNAME}" ] && UNAME=$(uname)
-[ -z "${MAKE}" ] && MAKE=make
-#[ -n "${MAKE_JOBS}" ] && MAKE="$MAKE -j${MAKE_JOBS}"
 export CC INSTALL_BIN PREFIX PKGCFGDIR LIBDIRARCH LIBARCHS CFLAGS LDFLAGS
 
 case "$1" in
