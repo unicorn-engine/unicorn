@@ -169,20 +169,24 @@ static int gettimeofday(struct timeval* t, void* timezone)
 // unistd.h compatibility
 #if defined(_MSC_VER)
 
-// horrible kludge requiring winsock to get microsecond sleep resolution.
-// if this is removed then all winsock references can also be removed.
-static int usleep(uint32_t t)
+static int usleep(uint32_t usec)
 {
-    int ret, err_code;
-    long value = t; // time in microseconds
-    struct timeval tv;
-    FD_SET dummy_set;
-    FD_ZERO(&dummy_set);
-    tv.tv_sec = value / 1000000;
-    tv.tv_usec = value % 1000000;
-    ret = select(0, &dummy_set, NULL, NULL, &tv);
-    err_code =  WSAGetLastError();
-    return ret==0 ? 0 : -1;
+	HANDLE timer;
+	LARGE_INTEGER due;
+
+	timer = CreateWaitableTimer(NULL, TRUE, NULL);
+	if (!timer)
+		return -1;
+
+	due.QuadPart = (-((int64_t) usec)) * 10LL;
+	if (!SetWaitableTimer(timer, &due, 0, NULL, NULL, 0)) {
+		CloseHandle(timer);
+		return -1;
+	}
+	WaitForSingleObject(timer, INFINITE);
+	CloseHandle(timer);
+
+	return 0;
 }
 
 #else

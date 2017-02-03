@@ -268,14 +268,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         if (uc->reg_reset)
             uc->reg_reset(uc);
 
-        // init winsock sockets so we can use select() for usleep() implementation
-#ifdef _MSC_VER
-        {
-            WSADATA wsa_data;
-            WSAStartup(0x202, &wsa_data);
-        }
-#endif
-
         return UC_ERR_OK;
     } else {
         return UC_ERR_ARCH;
