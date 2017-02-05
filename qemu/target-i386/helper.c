@@ -1045,7 +1045,6 @@ void breakpoint_handler(CPUState *cs)
 }
 
 typedef struct MCEInjectionParams {
-    Monitor *mon;
     X86CPU *cpu;
     int bank;
     uint64_t status;

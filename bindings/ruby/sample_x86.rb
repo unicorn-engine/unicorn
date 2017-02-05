@@ -258,7 +258,7 @@ def test_i386_invalid_mem_write()
 
         r_ecx = mu.reg_read(UC_X86_REG_ECX)
         r_edx = mu.reg_read(UC_X86_REG_EDX)
-        puts ">>> ECX = 0x%x" % r_ecx 
+        puts ">>> ECX = 0x%x" % r_ecx
         puts ">>> EDX = 0x%x" % r_edx
 
         begin
@@ -280,6 +280,47 @@ def test_i386_invalid_mem_write()
     rescue UcError => e
         puts "ERROR: %s" % e
     end
+end
+
+def test_i386_context_save()
+
+    puts("Save/restore CPU context in opaque blob")
+    address = 0
+    code = '\x40'  # inc eax
+    begin
+        # Initialize emulator
+        mu = Uc.new UC_ARCH_X86, UC_MODE_32
+
+        # map 8KB memory for this emulation
+        mu.mem_map(address, 8 * 1024, UC_PROT_ALL)
+
+        # write machine code to be emulated to memory
+        mu.mem_write(address, code)
+
+        # set eax to 1
+        mu.reg_write(UC_X86_REG_EAX, 1)
+
+        puts(">>> Running emulation for the first time")
+        mu.emu_start(address, address+1)
+
+        puts(">>> Emulation done. Below is the CPU context")
+        puts(">>> EAX = 0x%x" %(mu.reg_read(UC_X86_REG_EAX)))
+        puts(">>> Saving CPU context")
+        saved_context = mu.context_save()
+
+        puts(">>> Running emulation for the second time")
+        mu.emu_start(address, address+1)
+        puts(">>> Emulation done. Below is the CPU context")
+        puts(">>> EAX = 0x%x" %(mu.reg_read(UC_X86_REG_EAX)))
+
+        puts(">>> CPU context restored. Below is the CPU context")
+        mu.context_restore(saved_context)
+        puts(">>> EAX = 0x%x" %(mu.reg_read(UC_X86_REG_EAX)))
+
+    rescue UcError => e
+        puts("ERROR: %s" % e)
+    end
+
 end
 
 # Test X86 32 bit with IN/OUT instruction
@@ -499,6 +540,8 @@ puts("=" * 20)
 test_i386_invalid_mem_read()
 puts("=" * 20)
 test_i386_invalid_mem_write()
+puts("=" * 20)
+test_i386_context_save()
 puts("=" * 20)
 test_i386_inout()
 puts("=" * 20)
