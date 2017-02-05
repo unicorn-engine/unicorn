@@ -694,18 +694,23 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                 switch(regid) {
                     default: break;
                     case UC_X86_REG_ES:
+                        X86_CPU(uc, mycpu)->env.segs[R_ES].base = *(uint16_t *)value << 4;
                         X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_SS:
+                        X86_CPU(uc, mycpu)->env.segs[R_SS].base = *(uint16_t *)value << 4;
                         X86_CPU(uc, mycpu)->env.segs[R_SS].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_DS:
+                        X86_CPU(uc, mycpu)->env.segs[R_DS].base = *(uint16_t *)value << 4;
                         X86_CPU(uc, mycpu)->env.segs[R_DS].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_FS:
+                        X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint16_t *)value << 4;
                         X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_GS:
+                        X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint16_t *)value << 4;
                         X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
                         continue;
                 }
