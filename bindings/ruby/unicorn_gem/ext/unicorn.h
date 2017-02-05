@@ -31,3 +31,6 @@ VALUE m_uc_mem_protect(VALUE self, VALUE address, VALUE size, VALUE perms);
 VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self);
 VALUE m_uc_hook_del(VALUE self, VALUE hook);
 VALUE m_uc_query(VALUE self, VALUE query_mode);
+VALUE m_uc_context_save(VALUE self);
+VALUE m_uc_context_update(VALUE self, VALUE context);
+VALUE m_uc_context_restore(VALUE self, VALUE context);

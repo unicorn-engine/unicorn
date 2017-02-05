@@ -1,7 +1,23 @@
 This file details the changelog of Unicorn Engine.
 
 ----------------------------------
-[Version 1.0-rc2]: Janyary 4th, 2017
+[Version 1.0-rc3]: January 25th, 2017
+
+- Rename API uc_context_free() to uc_free().
+- ARM:
+    - uc_reg_write() now can modify CPSR register.
+	- Add some ARM coproc registers.
+- ARM64: uc_reg_read|write() now handles W0-W31 registers.
+- Windows: fix a double free bug in uc_close().
+- New VB6 binding.
+- Java: update to support new APIs from v1.0-rc1.
+- Python:
+    - Fix memory leaking that prevents UC instances from being GC.
+    - Remove some dependencies leftover from glib time.
+	- Add new method mem_regions() (linked to uc_mem_regions() API)
+
+----------------------------------
+[Version 1.0-rc2]: January 4th, 2017
 
 - Remove glib & pkconfig dependency.
 - Python: fix an issue to restore support for FreeBSD (and other *BSD Unix).
