@@ -19,8 +19,9 @@
 
 /* Compiler barrier */
 #ifdef _MSC_VER
-// TODO: fix me!!!
-#define barrier()   //{ __asm volatile("" ::: "memory"); (void)0; }
+void _ReadWriteBarrier(void);
+#pragma intrinsic(_ReadWriteBarrier)
+#define barrier()   do { _ReadWriteBarrier(); } while (0)
 #else
 #define barrier()   ({ asm volatile("" ::: "memory"); (void)0; })
 #endif
