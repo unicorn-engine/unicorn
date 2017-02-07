@@ -11,6 +11,10 @@
 #include <unicorn/x86.h>  /* needed for uc_x86_mmr */
 #include "uc_priv.h"
 
+static void load_seg_16_helper(CPUX86State *env, int seg, uint32_t selector)
+{
+    cpu_x86_load_seg_cache(env, seg, selector, (selector << 4), 0xffff, 0);
+}
 
 const int X86_REGS_STORAGE_SIZE = offsetof(CPUX86State, tlb_table);
 
@@ -694,24 +698,19 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                 switch(regid) {
                     default: break;
                     case UC_X86_REG_ES:
-                        X86_CPU(uc, mycpu)->env.segs[R_ES].base = *(uint16_t *)value << 4;
-                        X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
+                        load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_ES, *(uint16_t *)value);
                         continue;
                     case UC_X86_REG_SS:
-                        X86_CPU(uc, mycpu)->env.segs[R_SS].base = *(uint16_t *)value << 4;
-                        X86_CPU(uc, mycpu)->env.segs[R_SS].selector = *(uint16_t *)value;
+                        load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_SS, *(uint16_t *)value);
                         continue;
                     case UC_X86_REG_DS:
-                        X86_CPU(uc, mycpu)->env.segs[R_DS].base = *(uint16_t *)value << 4;
-                        X86_CPU(uc, mycpu)->env.segs[R_DS].selector = *(uint16_t *)value;
+                        load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_DS, *(uint16_t *)value);
                         continue;
                     case UC_X86_REG_FS:
-                        X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint16_t *)value << 4;
-                        X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
+                        load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
                         continue;
                     case UC_X86_REG_GS:
-                        X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint16_t *)value << 4;
-                        X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
+                        load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
                         continue;
                 }
                 // fall-thru
