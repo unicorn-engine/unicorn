@@ -712,28 +712,18 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                     default: break;
                     case UC_X86_REG_ES:
                         load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_ES, *(uint16_t *)value);
-                        //X86_CPU(uc, mycpu)->env.segs[R_ES].base = *(uint16_t *)value << 4;
-                        //X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_SS:
                         load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_SS, *(uint16_t *)value);
-                        //X86_CPU(uc, mycpu)->env.segs[R_SS].base = *(uint16_t *)value << 4;
-                        //X86_CPU(uc, mycpu)->env.segs[R_SS].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_DS:
                         load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_DS, *(uint16_t *)value);
-                        //X86_CPU(uc, mycpu)->env.segs[R_DS].base = *(uint16_t *)value << 4;
-                        //X86_CPU(uc, mycpu)->env.segs[R_DS].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_FS:
                         load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
-                        //X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint16_t *)value << 4;
-                        //X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_GS:
                         load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
-                        //X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint16_t *)value << 4;
-                        //X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
                         continue;
                 }
                 // fall-thru
