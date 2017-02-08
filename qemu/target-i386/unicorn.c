@@ -11,9 +11,10 @@
 #include <unicorn/x86.h>  /* needed for uc_x86_mmr */
 #include "uc_priv.h"
 
+#define X86_NON_CS_FLAGS (DESC_P_MASK | DESC_S_MASK | DESC_W_MASK | DESC_A_MASK)
 static void load_seg_16_helper(CPUX86State *env, int seg, uint32_t selector)
 {
-    cpu_x86_load_seg_cache(env, seg, selector, (selector << 4), 0xffff, 0);
+    cpu_x86_load_seg_cache(env, seg, selector, (selector << 4), 0xffff, X86_NON_CS_FLAGS);
 }
 
 const int X86_REGS_STORAGE_SIZE = offsetof(CPUX86State, tlb_table);
@@ -130,6 +131,18 @@ void x86_reg_reset(struct uc_struct *uc)
         case UC_MODE_16:
             env->hflags = 0;
             env->cr[0] = 0;
+            //undo the damage done by the memset of env->segs above
+            //for R_CS, not quite the same as x86_cpu_reset
+            cpu_x86_load_seg_cache(env, R_CS, 0, 0, 0xffff,
+                                   DESC_P_MASK | DESC_S_MASK | DESC_CS_MASK |
+                                   DESC_R_MASK | DESC_A_MASK);
+            //remainder yields same state as x86_cpu_reset
+            load_seg_16_helper(env, R_DS, 0);
+            load_seg_16_helper(env, R_ES, 0);
+            load_seg_16_helper(env, R_SS, 0);
+            load_seg_16_helper(env, R_FS, 0);
+            load_seg_16_helper(env, R_GS, 0);
+
             break;
         case UC_MODE_32:
             env->hflags |= HF_CS32_MASK | HF_SS32_MASK | HF_OSFXSR_MASK;
@@ -699,18 +712,28 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                     default: break;
                     case UC_X86_REG_ES:
                         load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_ES, *(uint16_t *)value);
+                        //X86_CPU(uc, mycpu)->env.segs[R_ES].base = *(uint16_t *)value << 4;
+                        //X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_SS:
                         load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_SS, *(uint16_t *)value);
+                        //X86_CPU(uc, mycpu)->env.segs[R_SS].base = *(uint16_t *)value << 4;
+                        //X86_CPU(uc, mycpu)->env.segs[R_SS].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_DS:
                         load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_DS, *(uint16_t *)value);
+                        //X86_CPU(uc, mycpu)->env.segs[R_DS].base = *(uint16_t *)value << 4;
+                        //X86_CPU(uc, mycpu)->env.segs[R_DS].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_FS:
                         load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
+                        //X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint16_t *)value << 4;
+                        //X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
                         continue;
                     case UC_X86_REG_GS:
                         load_seg_16_helper(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
+                        //X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint16_t *)value << 4;
+                        //X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
                         continue;
                 }
                 // fall-thru
