@@ -154,7 +154,8 @@ mkContext ptr =
    , `Word64'
    , `Word64'
    , `Int'
-   , `Int'} -> `Error'
+   , `Int'
+   } -> `Error'
 #}
 
 {# fun uc_emu_stop as ^
@@ -166,19 +167,19 @@ mkContext ptr =
 -- Register operations
 -------------------------------------------------------------------------------
 
-{# fun uc_reg_write as ^
+{# fun uc_reg_write_wrapper as ucRegWrite
    `Reg r' =>
    { `Engine'
    , enumToNum `r'
-   , castPtr `Ptr Int64'
+   , withIntegral* `Int64'
    } -> `Error'
 #}
 
-{# fun uc_reg_read as ^
+{# fun uc_reg_read_wrapper as ucRegRead
    `Reg r' =>
    { `Engine'
    , enumToNum `r'
-   , allocaInt64ToVoid- `Int64' castPtrAndPeek*
+   , alloca- `Int64' castPtrAndPeek*
    } -> `Error'
 #}
 
@@ -197,7 +198,8 @@ mkContext ptr =
    { `Engine'
    , `Word64'
    , castPtr `Ptr Word8'
-   , `Int'} -> `Error'
+   , `Int'
+   } -> `Error'
 #}
 
 {# fun uc_mem_map as ^
@@ -205,7 +207,8 @@ mkContext ptr =
    , `Word64'
    , `Int'
    , combineEnums `[MemoryPermission]'
-   } -> `Error' #}
+   } -> `Error'
+#}
 
 {# fun uc_mem_unmap as ^
    { `Engine'
@@ -296,13 +299,16 @@ expandMemPerms perms =
         checkRWE _ [] =
             []
 
-allocaInt64ToVoid :: (Ptr () -> IO b)
-                  -> IO b
-allocaInt64ToVoid f =
-    alloca $ \(ptr :: Ptr Int64) -> poke ptr 0 >> f (castPtr ptr)
+withIntegral :: (Integral a, Num b, Storable b)
+             => a
+             -> (Ptr b -> IO c)
+             -> IO c
+withIntegral =
+    with . fromIntegral
 
-withByteStringLen :: ByteString
-                  -> ((Ptr (), CULong) -> IO a)
-                  -> IO a
+withByteStringLen :: Integral a
+                  => ByteString
+                  -> ((Ptr (), a) -> IO b)
+                  -> IO b
 withByteStringLen bs f =
     useAsCStringLen bs $ \(ptr, len) -> f (castPtr ptr, fromIntegral len)
