@@ -25,6 +25,8 @@ module Unicorn
       -- * Register operations
     , regWrite
     , regRead
+    , regWriteBatch
+    , regReadBatch
 
       -- * Memory operations
     , MemoryPermission(..)
@@ -162,6 +164,39 @@ regRead uc reg = do
         right val
     else
         left err
+
+-- | Write multiple register values.
+regWriteBatch :: Reg r
+              => Engine         -- ^ 'Unicorn' engine handle
+              -> [r]            -- ^ List of registers to write to
+              -> [Int64]        -- ^ List of values to write to the registers
+              -> Emulator ()    -- ^ An 'Error' on failure
+regWriteBatch uc regs vals = do
+    err <- lift $ ucRegWriteBatch uc regs vals (length regs)
+    if err == ErrOk then
+        right ()
+    else
+        left err
+
+-- | Read multiple register values.
+regReadBatch ::  Reg r
+             => Engine              -- ^ 'Unicorn' engine handle
+             -> [r]                 -- ^ List of registers to read from
+             -> Emulator [Int64]    -- ^ A list of register values on success,
+                                    -- or an 'Error' on failure
+regReadBatch uc regs = do
+    -- Allocate an array of the given size
+    let size = length regs
+    result <- lift . allocaArray size $ \array -> do
+        err <- ucRegReadBatch uc regs array size
+        if err == ErrOk then
+            -- If ucRegReadBatch completed successfully, pack the contents of
+            -- the array into a list and return it
+            liftM Right (peekArray size array)
+        else
+            -- Otherwise return the error
+            return $ Left err
+    hoistEither result
 
 -------------------------------------------------------------------------------
 -- Memory operations

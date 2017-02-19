@@ -19,6 +19,8 @@ void uc_close_dummy(uc_engine *uc);
  */
 uc_err uc_reg_write_wrapper(uc_engine *uc, int regid, const int64_t *value);
 uc_err uc_reg_read_wrapper(uc_engine *uc, int regid, int64_t *value);
+uc_err uc_reg_write_batch_wrapper(uc_engine *uc, int *regs, int64_t *vals, int count);
+uc_err uc_reg_read_batch_wrapper(uc_engine *uc, int *regs, int64_t *vals, int count);
 
 /*
  * Wrap Unicorn's uc_free function and ignore the returned error code.

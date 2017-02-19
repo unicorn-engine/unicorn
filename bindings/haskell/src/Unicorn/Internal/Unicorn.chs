@@ -28,6 +28,8 @@ module Unicorn.Internal.Unicorn
     , ucEmuStop
     , ucRegWrite
     , ucRegRead
+    , ucRegWriteBatch
+    , ucRegReadBatch
     , ucMemWrite
     , ucMemRead
     , ucMemMap
@@ -183,6 +185,24 @@ mkContext ptr =
    } -> `Error'
 #}
 
+{# fun uc_reg_write_batch_wrapper as ucRegWriteBatch
+   `Reg r' =>
+   { `Engine'
+   , withEnums* `[r]'
+   , integralListToArray* `[Int64]'
+   , `Int'
+   } -> `Error'
+#}
+
+{# fun uc_reg_read_batch_wrapper as ucRegReadBatch
+   `Reg r' =>
+   { `Engine'
+   , withEnums* `[r]'
+   , castPtr `Ptr Int64'
+   , `Int'
+   } -> `Error'
+#}
+
 -------------------------------------------------------------------------------
 -- Memory operations
 -------------------------------------------------------------------------------
@@ -312,3 +332,19 @@ withByteStringLen :: Integral a
                   -> IO b
 withByteStringLen bs f =
     useAsCStringLen bs $ \(ptr, len) -> f (castPtr ptr, fromIntegral len)
+
+withEnums :: Enum a
+          => [a]
+          -> (Ptr b -> IO c)
+          -> IO c
+withEnums l f =
+    let ints :: [CInt] = map enumToNum l in
+    withArray ints $ \ptr -> f (castPtr ptr)
+
+integralListToArray :: (Integral a, Storable b, Num b)
+                    => [a]
+                    -> (Ptr b -> IO c)
+                    -> IO c
+integralListToArray l f =
+    let l' = map fromIntegral l in
+    withArray l' $ \array -> f array
