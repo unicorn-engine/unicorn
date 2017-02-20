@@ -208,7 +208,7 @@ typedef enum uc_mem_type {
 typedef enum uc_hook_type {
     // Hook all interrupt/syscall events
     UC_HOOK_INTR = 1 << 0,
-    // Hook a particular instruction
+    // Hook a particular instruction - only a very small subset of instructions supported here
     UC_HOOK_INSN = 1 << 1,
     // Hook a range of code
     UC_HOOK_CODE = 1 << 2,
