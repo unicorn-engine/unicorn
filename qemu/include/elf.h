@@ -116,6 +116,22 @@
 #define R_SPARC_5		44
 #define R_SPARC_6		45
 
+
+/* Bits present in AT_HWCAP for ARM.  */
+#define HWCAP_ARM_IDIVA         (1 << 17)
+
+/* Bits present in AT_HWCAP for s390.  */
+#define HWCAP_S390_STFLE        4
+
+/* Bits present in AT_HWCAP for Sparc.  */
+#define HWCAP_SPARC_VIS3        0x00020000
+
+/* Symbolic values for the entries in the auxiliary table
+  put on the initial stack */
+#define AT_PLATFORM 15  /* string identifying CPU for optimizations */
+#define AT_HWCAP  16    /* arch dependent hints at CPU capabilities */
+
+
 /*
  * 68k ELF relocation types
  */
