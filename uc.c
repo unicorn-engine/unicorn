@@ -1143,7 +1143,7 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
     }
 
     switch(uc->arch) {
-#if UNICORN_HAS_ARM
+#ifdef UNICORN_HAS_ARM
         case UC_ARCH_ARM:
             return uc->query(uc, type, result);
 #endif
