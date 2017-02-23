@@ -428,6 +428,8 @@ static inline int opsize_bytes(int opsize)
     default:
         g_assert_not_reached();
     }
+
+    return 0;
 }
 
 /* Assign value to a register.  If the width is less than the register width
