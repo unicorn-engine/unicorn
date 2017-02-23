@@ -1,6 +1,15 @@
 This file details the changelog of Unicorn Engine.
 
 ----------------------------------
+[Version 1.0]: February 23th, 2017
+
+- Fix build script for BSD host.
+- Fix building Unicorn on Arm/PPC/Sparc/S390 hosts.
+- X86:
+    - Fix 16bit address computation.
+	- Fix initial state of segment registers.
+
+----------------------------------
 [Version 1.0-rc3]: January 25th, 2017
 
 - Rename API uc_context_free() to uc_free().
