@@ -1489,15 +1489,14 @@ static void tcg_commit(MemoryListener *listener)
 
 void address_space_init_dispatch(AddressSpace *as)
 {
-    MemoryListener ml = {
-        mem_begin,
-        mem_commit,
-        mem_add,
-        NULL,
-        mem_add,
-        NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,
-        0,
-    };
+    MemoryListener ml;
+
+    ml.begin = mem_begin;
+    ml.commit = mem_commit;
+    ml.region_add = mem_add;
+    ml.region_nop = mem_add;
+    ml.priority = 0;
+
     as->dispatch = NULL;
     as->dispatch_listener = ml;
     memory_listener_register(as->uc, &as->dispatch_listener, as);
