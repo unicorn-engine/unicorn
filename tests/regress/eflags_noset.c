@@ -34,17 +34,20 @@ uint32_t realEflags()
     "pushf\n\t"
     "pop %0\n\t"
     "popf"
-#else
+    : "=r"(val)
+    : "r"(i)
+    : "%0");
+#elif defined(__x86_64__)
     __asm__("pushfq\n\t"
     "pushq %0\n\t"
     "popfq\n\t" 
     "pushfq\n\t"
     "popq %0\n\t"
     "popfq"
-#endif
     : "=r"(val)
     : "r"(i)
     : "%0"); 
+#endif
 
     printf("Real system eflags: 0x%08"PRIX3264"\n", val);
 
