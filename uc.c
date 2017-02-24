@@ -130,7 +130,6 @@ bool uc_arch_supported(uc_arch arch)
 #ifdef UNICORN_HAS_X86
         case UC_ARCH_X86:   return true;
 #endif
-
         /* Invalid or disabled arch */
         default:            return false;
     }
@@ -535,11 +534,12 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     switch(uc->arch) {
         default:
             break;
-
+#ifdef UNICORN_HAS_M68K
         case UC_ARCH_M68K:
             uc_reg_write(uc, UC_M68K_REG_PC, &begin);
             break;
-
+#endif
+#ifdef UNICORN_HAS_X86
         case UC_ARCH_X86:
             switch(uc->mode) {
                 default:
@@ -555,24 +555,29 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
                     break;
             }
             break;
-
+#endif
+#ifdef UNICORN_HAS_ARM
         case UC_ARCH_ARM:
             uc_reg_write(uc, UC_ARM_REG_R15, &begin);
             break;
-
+#endif
+#ifdef UNICORN_HAS_ARM64
         case UC_ARCH_ARM64:
             uc_reg_write(uc, UC_ARM64_REG_PC, &begin);
             break;
-
+#endif
+#ifdef UNICORN_HAS_MIPS
         case UC_ARCH_MIPS:
             // TODO: MIPS32/MIPS64/BIGENDIAN etc
             uc_reg_write(uc, UC_MIPS_REG_PC, &begin);
             break;
-
+#endif
+#ifdef UNICORN_HAS_SPARC
         case UC_ARCH_SPARC:
             // TODO: Sparc/Sparc64
             uc_reg_write(uc, UC_SPARC_REG_PC, &begin);
             break;
+#endif
     }
 
     uc->stop_request = false;
@@ -1138,8 +1143,10 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
     }
 
     switch(uc->arch) {
+#ifdef UNICORN_HAS_ARM
         case UC_ARCH_ARM:
             return uc->query(uc, type, result);
+#endif
         default:
             return UC_ERR_ARG;
     }

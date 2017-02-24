@@ -307,7 +307,7 @@ uninstall:
 clean:
 	$(MAKE) -C qemu clean
 	rm -rf *.d *.o
-	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll $(LIBNAME)*.exp cyg$(LIBNAME)*.dll
+	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll $(LIBNAME)*.a $(LIBNAME)*.def $(LIBNAME)*.exp cyg$(LIBNAME)*.dll
 	$(MAKE) -C samples clean
 	$(MAKE) -C tests/unit clean
 

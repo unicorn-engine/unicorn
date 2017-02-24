@@ -30,9 +30,6 @@ _all_windows_dlls = (
     "libwinpthread-1.dll",
     "libgcc_s_seh-1.dll",
     "libgcc_s_dw2-1.dll",
-    "libiconv-2.dll",
-    "libpcre-1.dll",
-    "libintl-8.dll",
 )
 
 _loaded_windows_dlls = set()
@@ -108,6 +105,14 @@ uc_engine = ctypes.c_void_p
 uc_context = ctypes.c_void_p
 uc_hook_h = ctypes.c_size_t
 
+class _uc_mem_region(ctypes.Structure):
+    _fields_ = [
+        ("begin", ctypes.c_uint64),
+        ("end",   ctypes.c_uint64),
+        ("perms", ctypes.c_uint32),
+    ]
+
+
 _setup_prototype(_uc, "uc_version", ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 _setup_prototype(_uc, "uc_arch_supported", ctypes.c_bool, ctypes.c_int)
 _setup_prototype(_uc, "uc_open", ucerr, ctypes.c_uint, ctypes.c_uint, ctypes.POINTER(uc_engine))
@@ -130,6 +135,7 @@ _setup_prototype(_uc, "uc_context_alloc", ucerr, uc_engine, ctypes.POINTER(uc_co
 _setup_prototype(_uc, "uc_free", ucerr, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_context_save", ucerr, uc_engine, uc_context)
 _setup_prototype(_uc, "uc_context_restore", ucerr, uc_engine, uc_context)
+_setup_prototype(_uc, "uc_mem_regions", ucerr, uc_engine, ctypes.POINTER(ctypes.POINTER(_uc_mem_region)), ctypes.POINTER(ctypes.c_uint32))
 
 # uc_hook_add is special due to variable number of arguments
 _uc.uc_hook_add = _uc.uc_hook_add
@@ -510,6 +516,21 @@ class Uc(object):
         status = _uc.uc_context_restore(self._uch, context.pointer)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
+
+    # this returns a generator of regions in the form (begin, end, perms)
+    def mem_regions(self):
+        regions = ctypes.POINTER(_uc_mem_region)()
+        count = ctypes.c_uint32()
+        status = _uc.uc_mem_regions(self._uch, ctypes.byref(regions), ctypes.byref(count))
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+
+        try:
+            for i in range(count.value):
+                yield (regions[i].begin, regions[i].end, regions[i].perms)
+        finally:
+            _uc.uc_free(regions)
+
 
 class SavedContext(object):
     def __init__(self, pointer):

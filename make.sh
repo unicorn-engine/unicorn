@@ -48,7 +48,7 @@ build_linux32() {
   LDFLAGS=-m32 \
   LDFLAGS_STATIC=-m32 \
   LIBRARY_PATH="/usr/lib/i386-linux-gnu" \
-  UNICORN_QEMU_FLAGS="--cpu=i386" \
+  UNICORN_QEMU_FLAGS="--cpu=i386 ${UNICORN_QEMU_FLAGS}" \
   ${MAKE}
 }
 
@@ -99,6 +99,11 @@ msvc_update_genfiles() {
   cp qemu/x86_64-softmmu/config-target.h   msvc/unicorn/x86_64-softmmu/config-target.h
 }
 
+[ -z "${UNAME}" ] && UNAME=$(uname)
+[ -z "${MAKE}" ] && MAKE=make
+#[ -n "${MAKE_JOBS}" ] && MAKE="$MAKE -j${MAKE_JOBS}"
+
+
 if [ "$UNAME" = SunOS ]; then
   [ -z "${MAKE}" ] && MAKE=gmake
   INSTALL_BIN=ginstall
@@ -110,9 +115,6 @@ if [ -n "`echo "$UNAME" | grep BSD`" ]; then
   PREFIX="${PREFIX-/usr/local}"
 fi
 
-[ -z "${UNAME}" ] && UNAME=$(uname)
-[ -z "${MAKE}" ] && MAKE=make
-#[ -n "${MAKE_JOBS}" ] && MAKE="$MAKE -j${MAKE_JOBS}"
 export CC INSTALL_BIN PREFIX PKGCFGDIR LIBDIRARCH LIBARCHS CFLAGS LDFLAGS
 
 case "$1" in
