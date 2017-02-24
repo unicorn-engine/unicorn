@@ -357,11 +357,11 @@ class Uc(object):
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-    # read from MSR
+    # read from MSR - X86 only
     def msr_read(self, msr_id):
         return self.reg_read(x86_const.UC_X86_REG_MSR, msr_id)
 
-    # write to MSR
+    # write to MSR - X86 only
     def msr_write(self, msr_id, value):
         return self.reg_write(x86_const.UC_X86_REG_MSR, (msr_id, value))
  

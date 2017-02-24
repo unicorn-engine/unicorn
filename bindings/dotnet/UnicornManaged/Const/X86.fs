@@ -257,7 +257,8 @@ module X86 =
     let UC_X86_REG_TR = 245
     let UC_X86_REG_FPCW = 246
     let UC_X86_REG_FPTAG = 247
-    let UC_X86_REG_ENDING = 248
+    let UC_X86_REG_MSR = 248
+    let UC_X86_REG_ENDING = 249
 
     // X86 instructions
 
