@@ -1489,7 +1489,7 @@ static void tcg_commit(MemoryListener *listener)
 
 void address_space_init_dispatch(AddressSpace *as)
 {
-    MemoryListener ml;
+    MemoryListener ml = { 0 };
 
     ml.begin = mem_begin;
     ml.commit = mem_commit;
