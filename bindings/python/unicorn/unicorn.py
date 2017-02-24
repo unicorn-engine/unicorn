@@ -202,6 +202,11 @@ class uc_x86_mmr(ctypes.Structure):
         ("flags", ctypes.c_uint32),     # not used by GDTR and IDTR
     ]
 
+class uc_x86_msr(ctypes.Structure):
+    _fields_ = [
+        ("rid", ctypes.c_uint32),
+        ("value", ctypes.c_uint64),
+    ]
 
 class uc_x86_float80(ctypes.Structure):
     """Float80"""
@@ -282,7 +287,7 @@ class Uc(object):
             raise UcError(status)
 
     # return the value of a register
-    def reg_read(self, reg_id):
+    def reg_read(self, reg_id, opt=None):
         if self._arch == uc.UC_ARCH_X86:
             if reg_id in [x86_const.UC_X86_REG_IDTR, x86_const.UC_X86_REG_GDTR, x86_const.UC_X86_REG_LDTR, x86_const.UC_X86_REG_TR]:
                 reg = uc_x86_mmr()
@@ -302,6 +307,15 @@ class Uc(object):
                 if status != uc.UC_ERR_OK:
                     raise UcError(status)
                 return reg.low_qword | (reg.high_qword << 64)
+            if reg_id is x86_const.UC_X86_REG_MSR:
+                if opt is None:
+                    raise UcError(uc.UC_ERR_ARG)
+                reg = uc_x86_msr()
+                reg.rid = opt
+                status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
+                if status != uc.UC_ERR_OK:
+                    raise UcError(status)
+                return reg.value
 
         # read to 64bit number to be safe
         reg = ctypes.c_uint64(0)
@@ -330,6 +344,10 @@ class Uc(object):
                 reg = uc_x86_xmm()
                 reg.low_qword = value & 0xffffffffffffffff
                 reg.high_qword = value >> 64
+            if reg_id is x86_const.UC_X86_REG_MSR:
+                reg = uc_x86_msr()
+                reg.rid = value[0]
+                reg.value = value[1]
 
         if reg is None:
             # convert to 64bit number to be safe
@@ -339,6 +357,14 @@ class Uc(object):
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
+    # read from MSR
+    def msr_read(self, msr_id):
+        return self.reg_read(x86_const.UC_X86_REG_MSR, msr_id)
+
+    # write to MSR
+    def msr_write(self, msr_id, value):
+        return self.reg_write(x86_const.UC_X86_REG_MSR, (msr_id, value))
+ 
     # read data from memory
     def mem_read(self, address, size):
         data = ctypes.create_string_buffer(size)

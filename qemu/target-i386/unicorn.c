@@ -17,6 +17,10 @@ static void load_seg_16_helper(CPUX86State *env, int seg, uint32_t selector)
     cpu_x86_load_seg_cache(env, seg, selector, (selector << 4), 0xffff, X86_NON_CS_FLAGS);
 }
 
+
+extern void helper_wrmsr(CPUX86State *env);
+extern void helper_rdmsr(CPUX86State *env);
+
 const int X86_REGS_STORAGE_SIZE = offsetof(CPUX86State, tlb_table);
 
 static void x86_set_pc(struct uc_struct *uc, uint64_t address)
@@ -154,6 +158,49 @@ void x86_reg_reset(struct uc_struct *uc)
             cpu_x86_update_cr0(env, CR0_PE_MASK); // protected mode
             break;
     }
+}
+
+static int x86_msr_read(struct uc_struct *uc, uc_x86_msr *msr) 
+{
+    CPUX86State *env = (CPUX86State *)uc->cpu->env_ptr;
+    uint64_t ecx = env->regs[R_ECX];
+    uint64_t eax = env->regs[R_EAX];
+    uint64_t edx = env->regs[R_EDX];
+
+    env->regs[R_ECX] = msr->rid;
+    helper_rdmsr(env);
+
+    msr->value = ((uint32_t)env->regs[R_EAX]) |
+    	((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
+
+    env->regs[R_EAX] = eax;
+    env->regs[R_ECX] = ecx;
+    env->regs[R_EDX] = edx;
+
+    /* The implementation doesn't throw exception or return an error if there is one, so
+     * we will return 0.  */
+    return 0;
+}
+
+static int x86_msr_write(struct uc_struct *uc, uc_x86_msr *msr)
+{
+    CPUX86State *env = (CPUX86State *)uc->cpu->env_ptr;
+    uint64_t ecx = env->regs[R_ECX];
+    uint64_t eax = env->regs[R_EAX];
+    uint64_t edx = env->regs[R_EDX];
+
+    env->regs[R_ECX] = msr->rid;
+    env->regs[R_EAX] = (unsigned int)msr->value;
+    env->regs[R_EDX] = (unsigned int)(msr->value >> 32);
+    helper_wrmsr(env);
+
+    env->regs[R_ECX] = ecx;
+    env->regs[R_EAX] = eax;
+    env->regs[R_EDX] = edx;
+
+    /* The implementation doesn't throw exception or return an error if there is one, so
+     * we will return 0.  */
+    return 0;
 }
 
 int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
@@ -375,6 +422,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                         ((uc_x86_mmr *)value)->base = (uint32_t)X86_CPU(uc, mycpu)->env.tr.base;
                         ((uc_x86_mmr *)value)->selector = (uint16_t)X86_CPU(uc, mycpu)->env.tr.selector;
                         ((uc_x86_mmr *)value)->flags = X86_CPU(uc, mycpu)->env.tr.flags;
+                        break;
+                    case UC_X86_REG_MSR:
+                        x86_msr_read(uc, (uc_x86_msr *)value);
                         break;
                 }
                 break;
@@ -644,6 +694,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                         ((uc_x86_mmr *)value)->selector = (uint16_t)X86_CPU(uc, mycpu)->env.tr.selector;
                         ((uc_x86_mmr *)value)->flags = X86_CPU(uc, mycpu)->env.tr.flags;
                         break;
+                    case UC_X86_REG_MSR:
+                        x86_msr_read(uc, (uc_x86_msr *)value);
+                        break;
                 }
                 break;
 #endif
@@ -862,6 +915,9 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         X86_CPU(uc, mycpu)->env.tr.base = (uint32_t)((uc_x86_mmr *)value)->base;
                         X86_CPU(uc, mycpu)->env.tr.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
                         X86_CPU(uc, mycpu)->env.tr.flags = ((uc_x86_mmr *)value)->flags;
+                        break;
+                    case UC_X86_REG_MSR:
+                        x86_msr_write(uc, (uc_x86_msr *)value);
                         break;
                 }
                 break;
@@ -1141,6 +1197,9 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         X86_CPU(uc, mycpu)->env.tr.selector = (uint16_t)((uc_x86_mmr *)value)->selector;
                         X86_CPU(uc, mycpu)->env.tr.flags = ((uc_x86_mmr *)value)->flags;
                         break;
+                    case UC_X86_REG_MSR:
+                        x86_msr_write(uc, (uc_x86_msr *)value);
+                        break;
                 }
                 break;
 #endif
@@ -1185,3 +1244,5 @@ void x86_uc_init(struct uc_struct* uc)
     uc->stop_interrupt = x86_stop_interrupt;
     uc_common_init(uc);
 }
+
+/* vim: set ts=4 sts=4 sw=4 et:  */
