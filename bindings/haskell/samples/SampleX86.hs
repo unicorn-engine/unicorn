@@ -98,7 +98,7 @@ hookCode :: CodeHook ()
 hookCode uc addr size _ = do
     runEmulator $ do
         emuPutStrLn $ ">>> Tracing instruction at 0x" ++ showHex addr ++
-                      ", instruction size = 0x" ++ (maybe "0" showHex size)
+                      ", instruction size = 0x" ++ maybe "0" showHex size
 
         eflags <- regRead uc X86.Eflags
         emuPutStrLn $ ">>> --- EFLAGS is 0x" ++ showHex eflags
