@@ -126,11 +126,15 @@
 /* Bits present in AT_HWCAP for Sparc.  */
 #define HWCAP_SPARC_VIS3        0x00020000
 
+/* Bits present in AT_HWCAP for PowerPC.  */
+#define PPC_FEATURE_ARCH_2_06           0x00000100
+
 /* Symbolic values for the entries in the auxiliary table
   put on the initial stack */
 #define AT_PLATFORM 15  /* string identifying CPU for optimizations */
 #define AT_HWCAP  16    /* arch dependent hints at CPU capabilities */
-
+#define AT_DCACHEBSIZE   19  /* data cache block size */
+#define AT_ICACHEBSIZE 20  /* instruction cache block size */
 
 /*
  * 68k ELF relocation types
