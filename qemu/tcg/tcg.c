@@ -740,7 +740,7 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
             } else {
                 tcg_gen_ext32u_i64(s, temp, orig);
             }
-            args[i] = GET_TCGV_I64(s, temp);
+            args[i] = GET_TCGV_I64(temp);
         }
     }
 #endif /* TCG_TARGET_EXTEND_ARGS */
