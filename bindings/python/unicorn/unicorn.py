@@ -9,7 +9,7 @@ import os.path
 import sys
 import weakref
 
-from . import x86_const, unicorn_const as uc
+from . import x86_const, arm64_const, unicorn_const as uc
 
 if not hasattr(sys.modules[__name__], "__file__"):
     __file__ = inspect.getfile(inspect.currentframe())
@@ -223,6 +223,9 @@ class uc_x86_xmm(ctypes.Structure):
         ("high_qword", ctypes.c_uint64),
     ]
 
+class uc_arm64_neon128(uc_x86_xmm):
+    pass
+
 # Subclassing ref to allow property assignment.
 class UcRef(weakref.ref):
     pass
@@ -317,6 +320,14 @@ class Uc(object):
                     raise UcError(status)
                 return reg.value
 
+        if self._arch == uc.UC_ARCH_ARM64:
+            if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+                reg = uc_arm64_neon128()
+                status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
+                if status != uc.UC_ERR_OK:
+                    raise UcError(status)
+                return reg.low_qword | (reg.high_qword << 64)
+
         # read to 64bit number to be safe
         reg = ctypes.c_uint64(0)
         status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
@@ -349,6 +360,12 @@ class Uc(object):
                 reg.rid = value[0]
                 reg.value = value[1]
 
+        if self._arch == uc.UC_ARCH_ARM64:
+            if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+                reg = uc_arm64_neon128()
+                reg.low_qword = value & 0xffffffffffffffff
+                reg.high_qword = value >> 64
+
         if reg is None:
             # convert to 64bit number to be safe
             reg = ctypes.c_uint64(value)
@@ -364,7 +381,7 @@ class Uc(object):
     # write to MSR - X86 only
     def msr_write(self, msr_id, value):
         return self.reg_write(x86_const.UC_X86_REG_MSR, (msr_id, value))
- 
+
     # read data from memory
     def mem_read(self, address, size):
         data = ctypes.create_string_buffer(size)

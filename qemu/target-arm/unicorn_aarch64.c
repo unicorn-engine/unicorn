@@ -50,10 +50,27 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
+        // V & Q registers are the same
+        if (regid >= UC_ARM64_REG_V0 && regid <= UC_ARM64_REG_V31) {
+            regid += UC_ARM64_REG_Q0 - UC_ARM64_REG_V0;
+        }
         if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28) {
             *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_X0];
         } else if (regid >= UC_ARM64_REG_W0 && regid <= UC_ARM64_REG_W30) {
             *(int32_t *)value = READ_DWORD(ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_W0]);
+        } else if (regid >= UC_ARM64_REG_Q0 && regid <= UC_ARM64_REG_Q31) {
+            float64 *dst = (float64*) value;
+            uint32_t reg_index = 2*(regid - UC_ARM64_REG_Q0);
+            dst[0] = ARM_CPU(uc, mycpu)->env.vfp.regs[reg_index];
+            dst[1] = ARM_CPU(uc, mycpu)->env.vfp.regs[reg_index+1];
+        } else if (regid >= UC_ARM64_REG_D0 && regid <= UC_ARM64_REG_D31) {
+            *(float64*)value = ARM_CPU(uc, mycpu)->env.vfp.regs[2*(regid - UC_ARM64_REG_D0)];
+        } else if (regid >= UC_ARM64_REG_S0 && regid <= UC_ARM64_REG_S31) {
+            *(int32_t*)value = READ_DWORD(ARM_CPU(uc, mycpu)->env.vfp.regs[2*(regid - UC_ARM64_REG_S0)]);
+        } else if (regid >= UC_ARM64_REG_H0 && regid <= UC_ARM64_REG_H31) {
+            *(int16_t*)value = READ_WORD(ARM_CPU(uc, mycpu)->env.vfp.regs[2*(regid - UC_ARM64_REG_H0)]);
+        } else if (regid >= UC_ARM64_REG_B0 && regid <= UC_ARM64_REG_B31) {
+            *(int8_t*)value = READ_BYTE_L(ARM_CPU(uc, mycpu)->env.vfp.regs[2*(regid - UC_ARM64_REG_B0)]);
         } else {
             switch(regid) {
                 default: break;
@@ -84,10 +101,26 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
+        if (regid >= UC_ARM64_REG_V0 && regid <= UC_ARM64_REG_V31) {
+            regid += UC_ARM64_REG_Q0 - UC_ARM64_REG_V0;
+        }
         if (regid >= UC_ARM64_REG_X0 && regid <= UC_ARM64_REG_X28) {
             ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_X0] = *(uint64_t *)value;
         } else if (regid >= UC_ARM64_REG_W0 && regid <= UC_ARM64_REG_W30) {
             WRITE_DWORD(ARM_CPU(uc, mycpu)->env.xregs[regid - UC_ARM64_REG_W0], *(uint32_t *)value);
+        } else if (regid >= UC_ARM64_REG_Q0 && regid <= UC_ARM64_REG_Q31) {
+            float64 *src = (float64*) value;
+            uint32_t reg_index = 2*(regid - UC_ARM64_REG_Q0);
+            ARM_CPU(uc, mycpu)->env.vfp.regs[reg_index] = src[0];
+            ARM_CPU(uc, mycpu)->env.vfp.regs[reg_index+1] = src[1];
+        } else if (regid >= UC_ARM64_REG_D0 && regid <= UC_ARM64_REG_D31) {
+            ARM_CPU(uc, mycpu)->env.vfp.regs[2*(regid - UC_ARM64_REG_D0)] = * (float64*) value;
+        } else if (regid >= UC_ARM64_REG_S0 && regid <= UC_ARM64_REG_S31) {
+            WRITE_DWORD(ARM_CPU(uc, mycpu)->env.vfp.regs[2*(regid - UC_ARM64_REG_S0)], *(int32_t*) value);
+        } else if (regid >= UC_ARM64_REG_H0 && regid <= UC_ARM64_REG_H31) {
+            WRITE_WORD(ARM_CPU(uc, mycpu)->env.vfp.regs[2*(regid - UC_ARM64_REG_H0)], *(int16_t*) value);
+        } else if (regid >= UC_ARM64_REG_B0 && regid <= UC_ARM64_REG_B31) {
+            WRITE_BYTE_L(ARM_CPU(uc, mycpu)->env.vfp.regs[2*(regid - UC_ARM64_REG_B0)], *(int8_t*) value);
         } else {
             switch(regid) {
                 default: break;
