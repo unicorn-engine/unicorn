@@ -223,8 +223,12 @@ class uc_x86_xmm(ctypes.Structure):
         ("high_qword", ctypes.c_uint64),
     ]
 
-class uc_arm64_neon128(uc_x86_xmm):
-    pass
+class uc_arm64_neon128(ctypes.Structure):
+    """128-bit neon register"""
+    _fields_ = [
+        ("low_qword", ctypes.c_uint64),
+        ("high_qword", ctypes.c_uint64),
+    ]
 
 # Subclassing ref to allow property assignment.
 class UcRef(weakref.ref):
