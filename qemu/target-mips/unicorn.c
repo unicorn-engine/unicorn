@@ -13,11 +13,15 @@
 #ifdef TARGET_WORDS_BIGENDIAN
 #ifdef TARGET_MIPS64
 const int MIPS64_REGS_STORAGE_SIZE = offsetof(CPUMIPSState, tlb_table);
-typedef uint64_t mipsreg_t;
 #else // MIPS32
 const int MIPS_REGS_STORAGE_SIZE = offsetof(CPUMIPSState, tlb_table);
-typedef uint32_t mipsreg_t;
 #endif
+#endif
+
+#ifdef TARGET_MIPS64
+typedef uint64_t mipsreg_t;
+#else
+typedef uint32_t mipsreg_t;
 #endif
 
 static uint64_t mips_mem_redirect(uint64_t address)
