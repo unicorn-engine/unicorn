@@ -13,8 +13,10 @@
 #ifdef TARGET_WORDS_BIGENDIAN
 #ifdef TARGET_MIPS64
 const int MIPS64_REGS_STORAGE_SIZE = offsetof(CPUMIPSState, tlb_table);
+typedef uint64_t mipsreg_t;
 #else // MIPS32
 const int MIPS_REGS_STORAGE_SIZE = offsetof(CPUMIPSState, tlb_table);
+typedef uint32_t mipsreg_t;
 #endif
 #endif
 
@@ -89,7 +91,7 @@ int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int cou
             switch(regid) {
                 default: break;
                 case UC_MIPS_REG_PC:
-                         *(int32_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.PC;
+                         *(mipsreg_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.PC;
                          break;
             }
         }
@@ -107,12 +109,12 @@ int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, 
         unsigned int regid = regs[i];
         const void *value = vals[i];
         if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
-            MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0] = *(uint32_t *)value;
+            MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0] = *(mipsreg_t *)value;
         else {
             switch(regid) {
                 default: break;
                 case UC_MIPS_REG_PC:
-                         MIPS_CPU(uc, mycpu)->env.active_tc.PC = *(uint32_t *)value;
+                         MIPS_CPU(uc, mycpu)->env.active_tc.PC = *(mipsreg_t *)value;
                          // force to quit execution and flush TB
                          uc->quit_request = true;
                          uc_emu_stop(uc);
