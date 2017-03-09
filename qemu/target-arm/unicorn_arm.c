@@ -62,6 +62,9 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
             *(float64 *)value = ARM_CPU(uc, mycpu)->env.vfp.regs[regid - UC_ARM_REG_D0];
         else {
             switch(regid) {
+                case UC_ARM_REG_APSR:
+                    *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env) & CPSR_NZCV;
+                    break;
                 case UC_ARM_REG_CPSR:
                     *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env);
                     break;
@@ -107,6 +110,9 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, i
             ARM_CPU(uc, mycpu)->env.vfp.regs[regid - UC_ARM_REG_D0] = *(float64 *)value;
         else {
             switch(regid) {
+                case UC_ARM_REG_APSR:
+                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, CPSR_NZCV);
+                    break;
                 case UC_ARM_REG_CPSR:
                     cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, ~0);
                     break;
