@@ -314,7 +314,7 @@ marshalMemoryHook memoryHook =
             maybeValue = case memAccess of
                              MemRead  -> Nothing
                              MemWrite -> Just $ fromIntegral value
-                             _        -> undefined  -- XX Handle this?
+                             _        -> error "Invalid memory access"
         memoryHook uc memAccess address (fromIntegral size) maybeValue userData
 
 -- | Callback function for hooking memory reads.
@@ -390,7 +390,7 @@ marshalMemoryEventHook eventMemoryHook =
                              MemReadProt      -> Nothing
                              MemWriteUnmapped -> Just $ fromIntegral value
                              MemWriteProt     -> Just $ fromIntegral value
-                             _                -> undefined  -- XX Handle this?
+                             _                -> error "Invalid memory access"
         res <- eventMemoryHook uc memAccess address (fromIntegral size)
                                maybeValue userData
         return $ boolToInt res

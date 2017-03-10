@@ -23,26 +23,32 @@ typedef uint64_t puint;
 uint32_t realEflags()
 {
     puint val = 0;
-    puint i = 0xFFFFFEFF; //attempt to set ALL bits except trap flag.
 
 #if defined(__i386__)
+    puint i = 0xFFFFFEFF; //attempt to set ALL bits except trap flag.
+
     __asm__("pushf\n\t"
     "push %0\n\t"
     "popf\n\t" 
     "pushf\n\t"
     "pop %0\n\t"
     "popf"
-#else
+    : "=r"(val)
+    : "r"(i)
+    : "%0");
+#elif defined(__x86_64__)
+    puint i = 0xFFFFFEFF; //attempt to set ALL bits except trap flag.
+
     __asm__("pushfq\n\t"
     "pushq %0\n\t"
     "popfq\n\t" 
     "pushfq\n\t"
     "popq %0\n\t"
     "popfq"
-#endif
     : "=r"(val)
     : "r"(i)
     : "%0"); 
+#endif
 
     printf("Real system eflags: 0x%08"PRIX3264"\n", val);
 
@@ -51,7 +57,7 @@ uint32_t realEflags()
 
 static void VM_exec()
 {
-
+#if defined(__i386__) || defined(__x86_64__)
     uc_engine *uc;
     uc_err err;
     unsigned int r_eax, eflags, r_esp, realflags = 0;
@@ -110,6 +116,7 @@ static void VM_exec()
     realflags = realEflags();
 
     assert(r_eax == realflags);
+#endif
 }
 
 int main(int argc, char *argv[])

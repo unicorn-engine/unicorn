@@ -380,13 +380,11 @@ uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
     return uc_reg_read_batch(uc, &regid, &value, 1);
 }
 
-
 UNICORN_EXPORT
 uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
 {
     return uc_reg_write_batch(uc, &regid, (void *const *)&value, 1);
 }
-
 
 // check if a memory area is mapped
 // this is complicated because an area can overlap adjacent blocks

@@ -9,6 +9,13 @@ include pkgconfig.mk	# package version
 
 LIBNAME = unicorn
 UNAME_S := $(shell uname -s)
+# SMP_MFLAGS is used for controlling the amount of parallelism used
+# in external 'make' invocations. If the user doesn't override it, it
+# does "-j4". That is, it uses 4 job threads. If you want to use more or less,
+# pass in a different -jX, with X being the number of threads.
+# For example, to completely disable parallel building, pass "-j1".
+# If you want to use 16 job threads, use "-j16".
+SMP_MFLAGS := -j4
 
 GENOBJ = $(shell find qemu/$(1) -name "*.o" 2>/dev/null) 
 
@@ -204,7 +211,7 @@ qemu/config-host.h-timestamp:
 	cd qemu && \
 	./configure --cc="${CC}" --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
 	printf "$(UNICORN_ARCHS)" > config.log
-	$(MAKE) -C qemu -j 4
+	$(MAKE) -C qemu $(SMP_MFLAGS)
 	$(eval UC_TARGET_OBJ += $$(wildcard qemu/util/*.o) $$(wildcard qemu/*.o) $$(wildcard qemu/qom/*.o) $$(wildcard qemu/hw/core/*.o) $$(wildcard qemu/qapi/*.o) $$(wildcard qemu/qobject/*.o))
 
 unicorn: $(LIBRARY) $(ARCHIVE)

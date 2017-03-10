@@ -717,8 +717,8 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
             int is_64bit = sizemask & (1 << (i+1)*2);
             if (is_64bit) {
                 TCGv_i64 orig = MAKE_TCGV_I64(args[i]);
-                TCGv_i32 h = tcg_temp_new_i32();
-                TCGv_i32 l = tcg_temp_new_i32();
+                TCGv_i32 h = tcg_temp_new_i32(s);
+                TCGv_i32 l = tcg_temp_new_i32(s);
                 tcg_gen_extr_i64_i32(l, h, orig);
                 split_args[real_args++] = GET_TCGV_I32(h);
                 split_args[real_args++] = GET_TCGV_I32(l);
@@ -738,9 +738,9 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
             TCGv_i64 temp = tcg_temp_new_i64(s);
             TCGv_i64 orig = MAKE_TCGV_I64(args[i]);
             if (is_signed) {
-                tcg_gen_ext32s_i64(temp, orig);
+                tcg_gen_ext32s_i64(s, temp, orig);
             } else {
-                tcg_gen_ext32u_i64(temp, orig);
+                tcg_gen_ext32u_i64(s, temp, orig);
             }
             args[i] = GET_TCGV_I64(temp);
         }
@@ -834,8 +834,8 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
         if (is_64bit) {
             TCGv_i32 h = MAKE_TCGV_I32(args[real_args++]);
             TCGv_i32 l = MAKE_TCGV_I32(args[real_args++]);
-            tcg_temp_free_i32(h);
-            tcg_temp_free_i32(l);
+            tcg_temp_free_i32(s, h);
+            tcg_temp_free_i32(s, l);
         } else {
             real_args++;
         }
@@ -845,15 +845,15 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
            Note that describing these as TCGv_i64 eliminates an unnecessary
            zero-extension that tcg_gen_concat_i32_i64 would create.  */
         tcg_gen_concat32_i64(MAKE_TCGV_I64(ret), retl, reth);
-        tcg_temp_free_i64(retl);
-        tcg_temp_free_i64(reth);
+        tcg_temp_free_i64(s, retl);
+        tcg_temp_free_i64(s, reth);
     }
 #elif defined(TCG_TARGET_EXTEND_ARGS) && TCG_TARGET_REG_BITS == 64
     for (i = 0; i < nargs; ++i) {
         int is_64bit = sizemask & (1 << (i+1)*2);
         if (!is_64bit) {
             TCGv_i64 temp = MAKE_TCGV_I64(args[i]);
-            tcg_temp_free_i64(temp);
+            tcg_temp_free_i64(s, temp);
         }
     }
 #endif /* TCG_TARGET_EXTEND_ARGS */

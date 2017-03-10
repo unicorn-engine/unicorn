@@ -9,7 +9,7 @@ import os.path
 import sys
 import weakref
 
-from . import x86_const, unicorn_const as uc
+from . import x86_const, arm64_const, unicorn_const as uc
 
 if not hasattr(sys.modules[__name__], "__file__"):
     __file__ = inspect.getfile(inspect.currentframe())
@@ -202,6 +202,11 @@ class uc_x86_mmr(ctypes.Structure):
         ("flags", ctypes.c_uint32),     # not used by GDTR and IDTR
     ]
 
+class uc_x86_msr(ctypes.Structure):
+    _fields_ = [
+        ("rid", ctypes.c_uint32),
+        ("value", ctypes.c_uint64),
+    ]
 
 class uc_x86_float80(ctypes.Structure):
     """Float80"""
@@ -213,6 +218,13 @@ class uc_x86_float80(ctypes.Structure):
 
 class uc_x86_xmm(ctypes.Structure):
     """128-bit xmm register"""
+    _fields_ = [
+        ("low_qword", ctypes.c_uint64),
+        ("high_qword", ctypes.c_uint64),
+    ]
+
+class uc_arm64_neon128(ctypes.Structure):
+    """128-bit neon register"""
     _fields_ = [
         ("low_qword", ctypes.c_uint64),
         ("high_qword", ctypes.c_uint64),
@@ -282,7 +294,7 @@ class Uc(object):
             raise UcError(status)
 
     # return the value of a register
-    def reg_read(self, reg_id):
+    def reg_read(self, reg_id, opt=None):
         if self._arch == uc.UC_ARCH_X86:
             if reg_id in [x86_const.UC_X86_REG_IDTR, x86_const.UC_X86_REG_GDTR, x86_const.UC_X86_REG_LDTR, x86_const.UC_X86_REG_TR]:
                 reg = uc_x86_mmr()
@@ -298,6 +310,23 @@ class Uc(object):
                 return reg.mantissa, reg.exponent
             if reg_id in range(x86_const.UC_X86_REG_XMM0, x86_const.UC_X86_REG_XMM0+8):
                 reg = uc_x86_xmm()
+                status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
+                if status != uc.UC_ERR_OK:
+                    raise UcError(status)
+                return reg.low_qword | (reg.high_qword << 64)
+            if reg_id is x86_const.UC_X86_REG_MSR:
+                if opt is None:
+                    raise UcError(uc.UC_ERR_ARG)
+                reg = uc_x86_msr()
+                reg.rid = opt
+                status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
+                if status != uc.UC_ERR_OK:
+                    raise UcError(status)
+                return reg.value
+
+        if self._arch == uc.UC_ARCH_ARM64:
+            if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+                reg = uc_arm64_neon128()
                 status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
                 if status != uc.UC_ERR_OK:
                     raise UcError(status)
@@ -330,6 +359,16 @@ class Uc(object):
                 reg = uc_x86_xmm()
                 reg.low_qword = value & 0xffffffffffffffff
                 reg.high_qword = value >> 64
+            if reg_id is x86_const.UC_X86_REG_MSR:
+                reg = uc_x86_msr()
+                reg.rid = value[0]
+                reg.value = value[1]
+
+        if self._arch == uc.UC_ARCH_ARM64:
+            if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+                reg = uc_arm64_neon128()
+                reg.low_qword = value & 0xffffffffffffffff
+                reg.high_qword = value >> 64
 
         if reg is None:
             # convert to 64bit number to be safe
@@ -338,6 +377,14 @@ class Uc(object):
         status = _uc.uc_reg_write(self._uch, reg_id, ctypes.byref(reg))
         if status != uc.UC_ERR_OK:
             raise UcError(status)
+
+    # read from MSR - X86 only
+    def msr_read(self, msr_id):
+        return self.reg_read(x86_const.UC_X86_REG_MSR, msr_id)
+
+    # write to MSR - X86 only
+    def msr_write(self, msr_id, value):
+        return self.reg_write(x86_const.UC_X86_REG_MSR, (msr_id, value))
 
     # read data from memory
     def mem_read(self, address, size):

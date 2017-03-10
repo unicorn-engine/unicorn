@@ -1,5 +1,6 @@
 !*.c
 
+arm_enable_vfp
 map_crash
 sigill
 sigill2

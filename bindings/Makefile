@@ -42,7 +42,7 @@ python:
 	$(ENV_VARS) python python/$(@:%.txt=%) > $@
 
 %.py.test: %.c.txt %.py.txt
-	$(DIFF) $(@:%.py.test=%.c.txt) $(@:%.py.test=%.py.txt)
+	$(DIFF) -u $(@:%.py.test=%.c.txt) $(@:%.py.test=%.py.txt)
 
 clean:
 #	rm -rf *.txt

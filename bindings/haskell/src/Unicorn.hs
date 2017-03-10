@@ -25,6 +25,8 @@ module Unicorn
       -- * Register operations
     , regWrite
     , regRead
+    , regWriteBatch
+    , regReadBatch
 
       -- * Memory operations
     , MemoryPermission(..)
@@ -140,13 +142,11 @@ stop uc = do
 -- | Write to register.
 regWrite :: Reg r
          => Engine      -- ^ 'Unicorn' engine handle
-         -> r           -- ^ Register ID to write to
+         -> r           -- ^ Register to write to
          -> Int64       -- ^ Value to write to register
          -> Emulator () -- ^ An 'Error' on failure
-regWrite uc regId value = do
-    err <- lift . alloca $ \ptr -> do
-        poke ptr value
-        ucRegWrite uc regId ptr
+regWrite uc reg value = do
+    err <- lift $ ucRegWrite uc reg value
     if err == ErrOk then
         right ()
     else
@@ -155,15 +155,48 @@ regWrite uc regId value = do
 -- | Read register value.
 regRead :: Reg r
         => Engine           -- ^ 'Unicorn' engine handle
-        -> r                -- ^ Register ID to read from
+        -> r                -- ^ Register to read from
         -> Emulator Int64   -- ^ The value read from the register on success,
                             -- or an 'Error' on failure
-regRead uc regId = do
-    (err, val) <- lift $ ucRegRead uc regId
+regRead uc reg = do
+    (err, val) <- lift $ ucRegRead uc reg
     if err == ErrOk then
         right val
     else
         left err
+
+-- | Write multiple register values.
+regWriteBatch :: Reg r
+              => Engine         -- ^ 'Unicorn' engine handle
+              -> [r]            -- ^ List of registers to write to
+              -> [Int64]        -- ^ List of values to write to the registers
+              -> Emulator ()    -- ^ An 'Error' on failure
+regWriteBatch uc regs vals = do
+    err <- lift $ ucRegWriteBatch uc regs vals (length regs)
+    if err == ErrOk then
+        right ()
+    else
+        left err
+
+-- | Read multiple register values.
+regReadBatch ::  Reg r
+             => Engine              -- ^ 'Unicorn' engine handle
+             -> [r]                 -- ^ List of registers to read from
+             -> Emulator [Int64]    -- ^ A list of register values on success,
+                                    -- or an 'Error' on failure
+regReadBatch uc regs = do
+    -- Allocate an array of the given size
+    let size = length regs
+    result <- lift . allocaArray size $ \array -> do
+        err <- ucRegReadBatch uc regs array size
+        if err == ErrOk then
+            -- If ucRegReadBatch completed successfully, pack the contents of
+            -- the array into a list and return it
+            liftM Right (peekArray size array)
+        else
+            -- Otherwise return the error
+            return $ Left err
+    hoistEither result
 
 -------------------------------------------------------------------------------
 -- Memory operations
@@ -190,12 +223,12 @@ memRead :: Engine                       -- ^ 'Unicorn' engine handle
                                         -- an 'Error' on failure
 memRead uc address size = do
     -- Allocate an array of the given size
-    result <- lift . allocaArray size $ \ptr -> do
-        err <- ucMemRead uc address ptr size
+    result <- lift . allocaArray size $ \array -> do
+        err <- ucMemRead uc address array size
         if err == ErrOk then
             -- If ucMemRead completed successfully, pack the contents of the
             -- array into a ByteString and return it
-            liftM (Right . pack) (peekArray size ptr)
+            liftM (Right . pack) (peekArray size array)
         else
             -- Otherwise return the error
             return $ Left err
