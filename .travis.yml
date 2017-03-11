@@ -12,6 +12,14 @@ compiler:
 os:
   - linux
   - osx
+matrix:
+  include:
+    - os: linux
+      dist: trusty
+      compiler: gcc
+    - os: linux
+      dist: trusty
+      compiler: clang
 addons:
   apt:
     packages:
