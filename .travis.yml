@@ -3,7 +3,7 @@ sudo: false
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install cmocka; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./install-cmocka-linux.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then env && ./install-cmocka-linux.sh; fi
 script:
   - make && make -C bindings/go && make -C bindings/go test && make test
 compiler:
@@ -17,9 +17,11 @@ matrix:
     - os: linux
       dist: trusty
       compiler: gcc
+      addons.apt.packages: libcmocka-dev
     - os: linux
       dist: trusty
       compiler: clang
+      addons.apt.packages: libcmocka-dev
 addons:
   apt:
     packages:
