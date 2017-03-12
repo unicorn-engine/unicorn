@@ -26,6 +26,9 @@ matrix:
     - os: osx
       script: brew install --HEAD unicorn
       compiler: clang
+  allow_failures:
+    - os: osx
+      script: brew install --HEAD unicorn
 addons:
   apt:
     packages:
