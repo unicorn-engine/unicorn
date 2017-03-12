@@ -21,7 +21,11 @@ matrix:
       dist: trusty
       compiler: clang
     - os: osx
-      script: brew install --head unicorn
+      script: brew install --HEAD unicorn
+      compiler: gcc
+    - os: osx
+      script: brew install --HEAD unicorn
+      compiler: clang
 addons:
   apt:
     packages:
