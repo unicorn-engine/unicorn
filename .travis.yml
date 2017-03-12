@@ -20,6 +20,15 @@ matrix:
     - os: linux
       dist: trusty
       compiler: clang
+    - os: osx
+      script: brew install --HEAD unicorn
+      compiler: gcc
+    - os: osx
+      script: brew install --HEAD unicorn
+      compiler: clang
+  allow_failures:
+    - os: osx
+      script: brew install --HEAD unicorn
 addons:
   apt:
     packages:
