@@ -21,14 +21,14 @@ matrix:
       dist: trusty
       compiler: clang
     - os: osx
-      script: brew install --HEAD unicorn
+      script: brew install --HEAD unicorn && brew test unicorn
       compiler: gcc
     - os: osx
-      script: brew install --HEAD unicorn
+      script: brew install --HEAD unicorn && brew test unicorn
       compiler: clang
   allow_failures:
     - os: osx
-      script: brew install --HEAD unicorn
+      script: brew install --HEAD unicorn && brew test unicorn
 addons:
   apt:
     packages:
