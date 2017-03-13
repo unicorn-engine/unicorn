@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-# Sample code for ARM of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
-# Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
+# Sample code for ARM big endian of Unicorn. zhangwm <rustydaar@gmail.com>
 
 from __future__ import print_function
 from unicorn import *
