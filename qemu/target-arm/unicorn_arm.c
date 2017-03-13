@@ -9,8 +9,9 @@
 #include "unicorn_common.h"
 #include "uc_priv.h"
 
-
+#ifndef TARGET_WORDS_BIGENDIAN
 const int ARM_REGS_STORAGE_SIZE = offsetof(CPUARMState, tlb_table);
+#endif
 
 static void arm_set_pc(struct uc_struct *uc, uint64_t address)
 {
@@ -181,7 +182,11 @@ static uc_err arm_query(struct uc_struct *uc, uc_query_type type, size_t *result
     }
 }
 
+#ifdef TARGET_WORDS_BIGENDIAN
+void armeb_uc_init(struct uc_struct* uc)
+#else
 void arm_uc_init(struct uc_struct* uc)
+#endif
 {
     register_accel_types(uc);
     arm_cpu_register_types(uc);

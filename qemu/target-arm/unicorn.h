@@ -15,6 +15,7 @@ void arm64_reg_reset(struct uc_struct *uc);
 
 __attribute__ ((visibility ("default")))
 void arm_uc_init(struct uc_struct* uc);
+void armeb_uc_init(struct uc_struct* uc);
 
 __attribute__ ((visibility ("default")))
 void arm64_uc_init(struct uc_struct* uc);

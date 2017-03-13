@@ -188,12 +188,15 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 #endif
 #ifdef UNICORN_HAS_ARM
             case UC_ARCH_ARM:
-                if ((mode & ~UC_MODE_ARM_MASK) ||
-                        (mode & UC_MODE_BIG_ENDIAN)) {
+                if ((mode & ~UC_MODE_ARM_MASK)) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
-                uc->init_arch = arm_uc_init;
+                if (mode & UC_MODE_BIG_ENDIAN) {
+                    uc->init_arch = armeb_uc_init;
+                } else {
+                    uc->init_arch = arm_uc_init;
+                }
 
                 if (mode & UC_MODE_THUMB)
                     uc->thumb = 1;
