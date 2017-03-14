@@ -7,6 +7,7 @@
 import sys
 
 symbols = (
+    'arm_release',
     'aarch64_tb_set_jmp_target',
     'ppc_tb_set_jmp_target',
     'use_idiv_instructions_rt',
