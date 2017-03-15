@@ -15,6 +15,7 @@ qemu/config-all-devices.mak
 
 i386-softmmu/
 arm-softmmu/
+armeb-softmmu/
 aarch64-softmmu/
 mips-softmmu/
 mips64-softmmu/
