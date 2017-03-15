@@ -3025,6 +3025,10 @@ symbols = (
     'xscale_cp_reginfo'
 )
 
+arm_symbols = (
+    'ARM_REGS_STORAGE_SIZE',
+)
+
 mips_symbols = (
     'cpu_mips_exec',
     'cpu_mips_get_random',
@@ -3931,7 +3935,9 @@ mips_symbols = (
     'mips_reg_write',
     'mips_tcg_init',
     'mips_cpu_list',
-    'mips_release'
+    'mips_release',
+    'MIPS64_REGS_STORAGE_SIZE',
+    'MIPS_REGS_STORAGE_SIZE'
 )
 
 sparc_symbols = (
@@ -4017,6 +4023,10 @@ if __name__ == '__main__':
   print("#define UNICORN_AUTOGEN_%s_H" %arch.upper())
 
   for s in symbols:
+      print("#define %s %s_%s" %(s, s, arch))
+
+  if 'arm' in arch:
+    for s in arm_symbols:
       print("#define %s %s_%s" %(s, s, arch))
 
   if 'mips' in arch:

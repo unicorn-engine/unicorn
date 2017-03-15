@@ -1168,13 +1168,26 @@ static size_t cpu_context_size(uc_arch arch, uc_mode mode)
         case UC_ARCH_X86:   return X86_REGS_STORAGE_SIZE;
 #endif
 #ifdef UNICORN_HAS_ARM
-        case UC_ARCH_ARM:   return ARM_REGS_STORAGE_SIZE;
+        case UC_ARCH_ARM:   return mode & UC_MODE_BIG_ENDIAN ? ARM_REGS_STORAGE_SIZE_armeb : ARM_REGS_STORAGE_SIZE_arm;
 #endif
 #ifdef UNICORN_HAS_ARM64
         case UC_ARCH_ARM64: return ARM64_REGS_STORAGE_SIZE;
 #endif
 #ifdef UNICORN_HAS_MIPS
-        case UC_ARCH_MIPS:  return mode & UC_MODE_MIPS64 ? MIPS64_REGS_STORAGE_SIZE : MIPS_REGS_STORAGE_SIZE;
+        case UC_ARCH_MIPS:
+            if (mode & UC_MODE_MIPS64) {
+                if (mode & UC_MODE_BIG_ENDIAN) {
+                    return MIPS64_REGS_STORAGE_SIZE_mips64;
+                } else {
+                    return MIPS64_REGS_STORAGE_SIZE_mips64el;
+                }
+            } else {
+                if (mode & UC_MODE_BIG_ENDIAN) {
+                    return MIPS_REGS_STORAGE_SIZE_mips;
+                } else {
+                    return MIPS_REGS_STORAGE_SIZE_mipsel;
+                }
+            }
 #endif
 #ifdef UNICORN_HAS_SPARC
         case UC_ARCH_SPARC: return mode & UC_MODE_SPARC64 ? SPARC64_REGS_STORAGE_SIZE : SPARC_REGS_STORAGE_SIZE;
