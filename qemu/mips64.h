@@ -3923,4 +3923,6 @@
 #define mips_tcg_init mips_tcg_init_mips64
 #define mips_cpu_list mips_cpu_list_mips64
 #define mips_release mips_release_mips64
+#define MIPS64_REGS_STORAGE_SIZE MIPS64_REGS_STORAGE_SIZE_mips64
+#define MIPS_REGS_STORAGE_SIZE MIPS_REGS_STORAGE_SIZE_mips64
 #endif

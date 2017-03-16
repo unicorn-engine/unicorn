@@ -9,9 +9,7 @@
 #include "unicorn_common.h"
 #include "uc_priv.h"
 
-#ifndef TARGET_WORDS_BIGENDIAN
 const int ARM_REGS_STORAGE_SIZE = offsetof(CPUARMState, tlb_table);
-#endif
 
 static void arm_set_pc(struct uc_struct *uc, uint64_t address)
 {
