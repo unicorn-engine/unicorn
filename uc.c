@@ -856,6 +856,7 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr, uint64_t addres
             goto error;
     }
 
+    free(backup);
     return true;
 
 error:
