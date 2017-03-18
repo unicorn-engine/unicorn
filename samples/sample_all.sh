@@ -25,6 +25,7 @@ fi
 if test -e $DIR/sample_arm; then
   echo "=========================="
   $DIR/sample_arm
+  $DIR/sample_armeb
 fi
 if test -e $DIR/sample_arm64; then
   echo "=========================="
