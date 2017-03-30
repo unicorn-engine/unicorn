@@ -9,13 +9,10 @@
 #include "unicorn_common.h"
 #include "uc_priv.h"
 
-// prevent the lines from being compiled twice
-#ifdef TARGET_WORDS_BIGENDIAN
 #ifdef TARGET_MIPS64
 const int MIPS64_REGS_STORAGE_SIZE = offsetof(CPUMIPSState, tlb_table);
 #else // MIPS32
 const int MIPS_REGS_STORAGE_SIZE = offsetof(CPUMIPSState, tlb_table);
-#endif
 #endif
 
 #ifdef TARGET_MIPS64

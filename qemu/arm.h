@@ -1,6 +1,7 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_ARM_H
 #define UNICORN_AUTOGEN_ARM_H
+#define arm_release arm_release_arm
 #define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_arm
 #define ppc_tb_set_jmp_target ppc_tb_set_jmp_target_arm
 #define use_idiv_instructions_rt use_idiv_instructions_rt_arm
@@ -3016,4 +3017,5 @@
 #define xpsr_write xpsr_write_arm
 #define xscale_cpar_write xscale_cpar_write_arm
 #define xscale_cp_reginfo xscale_cp_reginfo_arm
+#define ARM_REGS_STORAGE_SIZE ARM_REGS_STORAGE_SIZE_arm
 #endif

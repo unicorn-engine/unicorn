@@ -1,6 +1,7 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_MIPS_H
 #define UNICORN_AUTOGEN_MIPS_H
+#define arm_release arm_release_mips
 #define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_mips
 #define ppc_tb_set_jmp_target ppc_tb_set_jmp_target_mips
 #define use_idiv_instructions_rt use_idiv_instructions_rt_mips
@@ -3922,4 +3923,6 @@
 #define mips_tcg_init mips_tcg_init_mips
 #define mips_cpu_list mips_cpu_list_mips
 #define mips_release mips_release_mips
+#define MIPS64_REGS_STORAGE_SIZE MIPS64_REGS_STORAGE_SIZE_mips
+#define MIPS_REGS_STORAGE_SIZE MIPS_REGS_STORAGE_SIZE_mips
 #endif

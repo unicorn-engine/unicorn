@@ -64,6 +64,7 @@ UNICORN_ARCHS := $(shell if [ -e ../config.log ]; then cat ../config.log;\
 SOURCES =
 ifneq (,$(findstring arm,$(UNICORN_ARCHS)))
 SOURCES += sample_arm.c
+SOURCES += sample_armeb.c
 endif
 ifneq (,$(findstring aarch64,$(UNICORN_ARCHS)))
 SOURCES += sample_arm64.c

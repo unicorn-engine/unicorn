@@ -15,11 +15,13 @@ void arm64_reg_reset(struct uc_struct *uc);
 
 DEFAULT_VISIBILITY
 void arm_uc_init(struct uc_struct* uc);
+void armeb_uc_init(struct uc_struct* uc);
 
 DEFAULT_VISIBILITY
 void arm64_uc_init(struct uc_struct* uc);
 
-extern const int ARM_REGS_STORAGE_SIZE;
+extern const int ARM_REGS_STORAGE_SIZE_arm;
+extern const int ARM_REGS_STORAGE_SIZE_armeb;
 extern const int ARM64_REGS_STORAGE_SIZE;
 
 #endif

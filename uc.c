@@ -188,12 +188,15 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 #endif
 #ifdef UNICORN_HAS_ARM
             case UC_ARCH_ARM:
-                if ((mode & ~UC_MODE_ARM_MASK) ||
-                        (mode & UC_MODE_BIG_ENDIAN)) {
+                if ((mode & ~UC_MODE_ARM_MASK)) {
                     free(uc);
                     return UC_ERR_MODE;
                 }
-                uc->init_arch = arm_uc_init;
+                if (mode & UC_MODE_BIG_ENDIAN) {
+                    uc->init_arch = armeb_uc_init;
+                } else {
+                    uc->init_arch = arm_uc_init;
+                }
 
                 if (mode & UC_MODE_THUMB)
                     uc->thumb = 1;
@@ -853,6 +856,7 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr, uint64_t addres
             goto error;
     }
 
+    free(backup);
     return true;
 
 error:
@@ -1165,13 +1169,26 @@ static size_t cpu_context_size(uc_arch arch, uc_mode mode)
         case UC_ARCH_X86:   return X86_REGS_STORAGE_SIZE;
 #endif
 #ifdef UNICORN_HAS_ARM
-        case UC_ARCH_ARM:   return ARM_REGS_STORAGE_SIZE;
+        case UC_ARCH_ARM:   return mode & UC_MODE_BIG_ENDIAN ? ARM_REGS_STORAGE_SIZE_armeb : ARM_REGS_STORAGE_SIZE_arm;
 #endif
 #ifdef UNICORN_HAS_ARM64
         case UC_ARCH_ARM64: return ARM64_REGS_STORAGE_SIZE;
 #endif
 #ifdef UNICORN_HAS_MIPS
-        case UC_ARCH_MIPS:  return mode & UC_MODE_MIPS64 ? MIPS64_REGS_STORAGE_SIZE : MIPS_REGS_STORAGE_SIZE;
+        case UC_ARCH_MIPS:
+            if (mode & UC_MODE_MIPS64) {
+                if (mode & UC_MODE_BIG_ENDIAN) {
+                    return MIPS64_REGS_STORAGE_SIZE_mips64;
+                } else {
+                    return MIPS64_REGS_STORAGE_SIZE_mips64el;
+                }
+            } else {
+                if (mode & UC_MODE_BIG_ENDIAN) {
+                    return MIPS_REGS_STORAGE_SIZE_mips;
+                } else {
+                    return MIPS_REGS_STORAGE_SIZE_mipsel;
+                }
+            }
 #endif
 #ifdef UNICORN_HAS_SPARC
         case UC_ARCH_SPARC: return mode & UC_MODE_SPARC64 ? SPARC64_REGS_STORAGE_SIZE : SPARC_REGS_STORAGE_SIZE;
