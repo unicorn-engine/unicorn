@@ -33,7 +33,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #ifndef _WIN64
-#define GPOINTER_TO_UINT(p) ((guint) (p))
+#define GPOINTER_TO_UINT(p) ((guint)(uintptr_t)(p))
 #else
 #define GPOINTER_TO_UINT(p) ((guint) (guint64) (p))
 #endif
