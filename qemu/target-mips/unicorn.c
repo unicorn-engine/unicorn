@@ -87,7 +87,7 @@ int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int cou
         unsigned int regid = regs[i];
         void *value = vals[i];
         if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
-            *(int32_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0];
+            *(mipsreg_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0];
         else {
             switch(regid) {
                 default: break;
