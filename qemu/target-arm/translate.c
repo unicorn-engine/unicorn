@@ -10409,7 +10409,7 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
 
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(s->uc, UC_HOOK_CODE, s->pc)) {
-        // determine instruction size (Thumb or Thumb2)
+        // determine instruction size (Thumb/Thumb2)
         switch(insn & 0xf800) {
             // Thumb2: 32-bit
             case 0xe800:
