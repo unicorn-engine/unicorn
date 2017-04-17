@@ -82,7 +82,7 @@ _path_list = [pkg_resources.resource_filename(__name__, 'lib'),
               '',
               distutils.sysconfig.get_python_lib(),
               "/usr/local/lib/" if sys.platform == 'darwin' else '/usr/lib64',
-              os.environ['PATH']]
+              os.getenv('PATH','')]
 
 #print(_path_list)
 #print("-" * 80)
