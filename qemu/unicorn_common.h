@@ -43,6 +43,8 @@ static void release_common(void *t)
     }
     tcg_pool_reset(s);
     g_hash_table_destroy(s->helpers);
+    g_free(uc->tcg_cpu_thread);
+    g_free(uc->tcg_halt_cond);
 
     // TODO(danghvu): these function is not available outside qemu
     // so we keep them here instead of outside uc_close.
