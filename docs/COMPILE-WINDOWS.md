@@ -82,7 +82,7 @@ For each option, refer to docs/README for more details.
 
 To compile with MinGW, install MSYS2 as instructed in the first section.
 
-Note: After MSYS2 is installed, you will have 3 shortcuts to open the command prompt: "MSYS2 MSYS", "MSYS2 MingGW-32 bit" and "MSYS2 MinGW 64-bit". Use the MinGW shortcut so that compilation succeeds.
+Note: After MSYS2 is installed, you will have 3 shortcuts to open the command prompt: "MSYS2 MSYS", "MSYS2 MinGW-32 bit" and "MSYS2 MinGW 64-bit". Use the MinGW shortcut so that compilation succeeds.
 
 Then, build Unicorn with the next steps:
 
