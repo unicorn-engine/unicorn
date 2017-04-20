@@ -1,13 +1,13 @@
 This file details the changelog of Unicorn Engine.
 
 ----------------------------------
-[Version 1.0.1]: April, 2017
+[Version 1.0.1]: April 20th, 2017
 
 - Properly handle selected-architecture build.
 - Fix compilation issues on PPC & S390x.
 - Fix a memory leak on uc_mem_protect().
-- Support ARM big-endian.
 - ARM:
+    - Support big-endian mode.
     - Correct instruction size of Thumb/Thumb2 code.
     - Support read/write APSR register.
 - ARM64:
