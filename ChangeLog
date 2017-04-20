@@ -1,6 +1,24 @@
 This file details the changelog of Unicorn Engine.
 
 ----------------------------------
+[Version 1.0.1]: April 20th, 2017
+
+- Properly handle selected-architecture build.
+- Fix compilation issues on PPC & S390x.
+- Fix a memory leak on uc_mem_protect().
+- ARM:
+    - Support big-endian mode.
+    - Correct instruction size of Thumb/Thumb2 code.
+    - Support read/write APSR register.
+- ARM64:
+    - Support read/write NEON registers.
+    - Support read/write NZCV registers.
+- Mips: Support read/write Mips64 registers.
+- X86: Support read/write MSR.
+- Haskell binding: update to the latest API.
+- Python: allow not having PATH setup.
+
+----------------------------------
 [Version 1.0]: February 23rd, 2017
 
 - Fix build script for BSD host.

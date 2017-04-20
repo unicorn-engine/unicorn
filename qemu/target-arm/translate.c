@@ -10418,14 +10418,27 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
         }
     }
 
+    insn = arm_lduw_code(env, s->pc, s->bswap_code);
+
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(s->uc, UC_HOOK_CODE, s->pc)) {
-        gen_uc_tracecode(tcg_ctx, 2, UC_HOOK_CODE_IDX, s->uc, s->pc);
+        // determine instruction size (Thumb/Thumb2)
+        switch(insn & 0xf800) {
+            // Thumb2: 32-bit
+            case 0xe800:
+            case 0xf000:
+            case 0xf800:
+                gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, s->uc, s->pc);
+                break;
+            // Thumb: 16-bit
+            default:
+                gen_uc_tracecode(tcg_ctx, 2, UC_HOOK_CODE_IDX, s->uc, s->pc);
+                break;
+        }
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
 
-    insn = arm_lduw_code(env, s->pc, s->bswap_code);
     s->pc += 2;
 
     switch (insn >> 12) {

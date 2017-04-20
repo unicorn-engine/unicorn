@@ -60,8 +60,6 @@ typedef int (*uc_args_int_uc_t)(struct uc_struct*);
 
 typedef bool (*uc_args_tcg_enable_t)(struct uc_struct*);
 
-typedef void (*uc_minit_t)(struct uc_struct*, ram_addr_t);
-
 typedef void (*uc_args_uc_long_t)(struct uc_struct*, unsigned long);
 
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
