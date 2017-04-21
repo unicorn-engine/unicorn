@@ -21,7 +21,6 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h" />
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h" />
-    <ClInclude Include="..\..\..\qemu\mips64el.h" />
     <ClInclude Include="..\..\..\qemu\target-mips\cpu-qom.h" />
     <ClInclude Include="..\..\..\qemu\target-mips\cpu.h" />
     <ClInclude Include="..\..\..\qemu\target-mips\helper.h" />
@@ -34,6 +33,7 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
+    <ClInclude Include="..\..\..\qemu\mips64el.h" />
     <ClInclude Include="..\config-host.h" />
     <ClInclude Include="config-target.h" />
   </ItemGroup>

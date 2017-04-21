@@ -1,8 +1,26 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClInclude Include="..\..\..\qemu\mips64.h" />
-    <ClInclude Include="..\config-host.h" />
+    <Filter Include="fpu">
+      <UniqueIdentifier>{d5143bfc-0d98-4c10-aa97-eddbc37aca5e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hw">
+      <UniqueIdentifier>{c27c2a6c-adb5-4f4a-ae2d-778d1aff259e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hw\mips">
+      <UniqueIdentifier>{39b8b5d5-ffa1-4eb6-ab78-2edb05e49e84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="target-mips">
+      <UniqueIdentifier>{a4e58c5f-5143-4c18-b291-2f472259d6d9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tcg">
+      <UniqueIdentifier>{bbe2ce8b-4fcd-496e-9f45-6f65ada00d84}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tcg\i386">
+      <UniqueIdentifier>{3c66ada6-0f5f-40f5-a62c-c6dee6596791}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h">
       <Filter>fpu</Filter>
     </ClInclude>
@@ -45,6 +63,8 @@
     <ClInclude Include="..\..\..\qemu\target-mips\unicorn.h">
       <Filter>target-mips</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\qemu\mips64.h" />
+    <ClInclude Include="..\config-host.h" />
     <ClInclude Include="config-target.h" />
   </ItemGroup>
   <ItemGroup>
@@ -104,25 +124,5 @@
     <ClCompile Include="..\..\..\qemu\target-mips\unicorn.c">
       <Filter>target-mips</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="fpu">
-      <UniqueIdentifier>{d5143bfc-0d98-4c10-aa97-eddbc37aca5e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="hw">
-      <UniqueIdentifier>{c27c2a6c-adb5-4f4a-ae2d-778d1aff259e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="hw\mips">
-      <UniqueIdentifier>{39b8b5d5-ffa1-4eb6-ab78-2edb05e49e84}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="tcg">
-      <UniqueIdentifier>{bbe2ce8b-4fcd-496e-9f45-6f65ada00d84}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="tcg\i386">
-      <UniqueIdentifier>{3c66ada6-0f5f-40f5-a62c-c6dee6596791}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="target-mips">
-      <UniqueIdentifier>{a4e58c5f-5143-4c18-b291-2f472259d6d9}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
 </Project>
