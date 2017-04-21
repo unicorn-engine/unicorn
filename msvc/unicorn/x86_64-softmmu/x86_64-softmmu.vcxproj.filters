@@ -24,6 +24,68 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h">
+      <Filter>fpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h">
+      <Filter>fpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\cpu-qom.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
+      <Filter>tcg\i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\cc_helper_template.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\cpu.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\helper.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\ops_sse.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\ops_sse_header.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\shift_helper_template.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\svm.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\topology.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-i386\unicorn.h">
+      <Filter>target-i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\x86_64.h" />
+    <ClInclude Include="..\config-host.h" />
+    <ClInclude Include="config-target.h" />
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
     <ClCompile Include="..\..\..\qemu\cpus.c" />
     <ClCompile Include="..\..\..\qemu\cputlb.c" />
@@ -98,67 +160,5 @@
     <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c">
       <Filter>tcg\i386</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h">
-      <Filter>fpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h">
-      <Filter>fpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-i386\cpu-qom.h">
-      <Filter>target-i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\x86_64.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
-      <Filter>tcg\i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\config-host.h" />
-    <ClInclude Include="..\..\..\qemu\target-i386\cc_helper_template.h">
-      <Filter>target-i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-i386\cpu.h">
-      <Filter>target-i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-i386\helper.h">
-      <Filter>target-i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-i386\ops_sse.h">
-      <Filter>target-i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-i386\ops_sse_header.h">
-      <Filter>target-i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-i386\shift_helper_template.h">
-      <Filter>target-i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-i386\svm.h">
-      <Filter>target-i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-i386\topology.h">
-      <Filter>target-i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-i386\unicorn.h">
-      <Filter>target-i386</Filter>
-    </ClInclude>
-    <ClInclude Include="config-target.h" />
   </ItemGroup>
 </Project>

@@ -7,18 +7,65 @@
     <Filter Include="hw">
       <UniqueIdentifier>{14f99bfc-becf-403c-9100-1612ab30a848}</UniqueIdentifier>
     </Filter>
-    <Filter Include="tcg">
-      <UniqueIdentifier>{63d2e327-f759-4757-a44b-90513ce433f7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="tcg\i386">
-      <UniqueIdentifier>{574ebec7-47db-49de-8f59-3365337e42a7}</UniqueIdentifier>
-    </Filter>
     <Filter Include="hw\m68k">
       <UniqueIdentifier>{484590c4-abd5-4db4-8b06-b34087856c27}</UniqueIdentifier>
     </Filter>
     <Filter Include="target-m68k">
       <UniqueIdentifier>{476366de-d432-4ce4-8e04-64aa34326aa0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="tcg">
+      <UniqueIdentifier>{63d2e327-f759-4757-a44b-90513ce433f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tcg\i386">
+      <UniqueIdentifier>{574ebec7-47db-49de-8f59-3365337e42a7}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h">
+      <Filter>fpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h">
+      <Filter>fpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
+      <Filter>tcg\i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-m68k\cpu.h">
+      <Filter>target-m68k</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-m68k\cpu-qom.h">
+      <Filter>target-m68k</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-m68k\helper.h">
+      <Filter>target-m68k</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-m68k\m68k-qreg.h">
+      <Filter>target-m68k</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-m68k\unicorn.h">
+      <Filter>target-m68k</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\m68k.h" />
+    <ClInclude Include="..\config-host.h" />
+    <ClInclude Include="config-target.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\qemu\fpu\softfloat.c">
@@ -59,52 +106,5 @@
     <ClCompile Include="..\..\..\qemu\target-m68k\unicorn.c">
       <Filter>target-m68k</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h">
-      <Filter>fpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h">
-      <Filter>fpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
-      <Filter>tcg\i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\config-host.h" />
-    <ClInclude Include="..\..\..\qemu\m68k.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\cpu.h">
-      <Filter>target-m68k</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-m68k\cpu-qom.h">
-      <Filter>target-m68k</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-m68k\helper.h">
-      <Filter>target-m68k</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-m68k\m68k-qreg.h">
-      <Filter>target-m68k</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-m68k\unicorn.h">
-      <Filter>target-m68k</Filter>
-    </ClInclude>
-    <ClInclude Include="config-target.h" />
   </ItemGroup>
 </Project>

@@ -19,7 +19,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\qemu\arm.h" />
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h" />
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h" />
     <ClInclude Include="..\..\..\qemu\target-arm\arm_ldst.h" />
@@ -38,6 +37,7 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
+    <ClInclude Include="..\..\..\qemu\arm.h" />
     <ClInclude Include="..\config-host.h" />
     <ClInclude Include="config-target.h" />
   </ItemGroup>

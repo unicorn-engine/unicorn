@@ -8,6 +8,7 @@ del ..\..\qemu\config-host.h 2> null
 
 del ..\..\qemu\aarch-softmmu\config-target.h 2> null
 del ..\..\qemu\arm-softmmu\config-target.h 2> null
+del ..\..\qemu\armeb-softmmu\config-target.h 2> null
 del ..\..\qemu\m68k-softmmu\config-target.h 2> null
 del ..\..\qemu\mips64el-softmmu\config-target.h 2> null
 del ..\..\qemu\mips64-softmmu\config-target.h 2> null

@@ -7,6 +7,9 @@
     <Filter Include="hw">
       <UniqueIdentifier>{19efec2a-ac41-4941-9dfc-4937f91829b4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="hw\mips">
+      <UniqueIdentifier>{0784e023-e00c-4034-adc4-9b1ad07d2eb7}</UniqueIdentifier>
+    </Filter>
     <Filter Include="target-mips">
       <UniqueIdentifier>{d60f24b3-d409-40d8-b7d2-f3e71960841a}</UniqueIdentifier>
     </Filter>
@@ -16,9 +19,53 @@
     <Filter Include="tcg\i386">
       <UniqueIdentifier>{65e8fb9c-fe61-4100-9f0e-1eab5babb4d3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="hw\mips">
-      <UniqueIdentifier>{0784e023-e00c-4034-adc4-9b1ad07d2eb7}</UniqueIdentifier>
-    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h">
+      <Filter>fpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h">
+      <Filter>fpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
+      <Filter>tcg\i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-mips\cpu.h">
+      <Filter>target-mips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-mips\cpu-qom.h">
+      <Filter>target-mips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-mips\helper.h">
+      <Filter>target-mips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-mips\mips-defs.h">
+      <Filter>target-mips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-mips\unicorn.h">
+      <Filter>target-mips</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\mips.h" />
+    <ClInclude Include="..\config-host.h" />
+    <ClInclude Include="config-target.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
@@ -77,52 +124,5 @@
     <ClCompile Include="..\..\..\qemu\target-mips\unicorn.c">
       <Filter>target-mips</Filter>
     </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\qemu\mips.h" />
-    <ClInclude Include="..\config-host.h" />
-    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h">
-      <Filter>fpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h">
-      <Filter>fpu</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
-      <Filter>tcg\i386</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-mips\cpu.h">
-      <Filter>target-mips</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-mips\cpu-qom.h">
-      <Filter>target-mips</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-mips\helper.h">
-      <Filter>target-mips</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-mips\mips-defs.h">
-      <Filter>target-mips</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-mips\unicorn.h">
-      <Filter>target-mips</Filter>
-    </ClInclude>
-    <ClInclude Include="config-target.h" />
   </ItemGroup>
 </Project>

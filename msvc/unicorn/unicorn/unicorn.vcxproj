@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -99,7 +99,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;arm-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -117,7 +117,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;arm-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -140,7 +140,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;arm-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -175,7 +175,7 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;arm-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>

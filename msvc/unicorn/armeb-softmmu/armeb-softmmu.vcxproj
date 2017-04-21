@@ -21,11 +21,15 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h" />
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\cpu-qom.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\cpu.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\helper.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\mips-defs.h" />
-    <ClInclude Include="..\..\..\qemu\target-mips\unicorn.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\arm_ldst.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\cpu-qom.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\cpu.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\helper.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\internals.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\kvm-consts.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\op_addsub.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\translate.h" />
+    <ClInclude Include="..\..\..\qemu\target-arm\unicorn.h" />
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h" />
@@ -33,7 +37,7 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
-    <ClInclude Include="..\..\..\qemu\mips.h" />
+    <ClInclude Include="..\..\..\qemu\armeb.h" />
     <ClInclude Include="..\config-host.h" />
     <ClInclude Include="config-target.h" />
   </ItemGroup>
@@ -43,30 +47,24 @@
     <ClCompile Include="..\..\..\qemu\cputlb.c" />
     <ClCompile Include="..\..\..\qemu\exec.c" />
     <ClCompile Include="..\..\..\qemu\fpu\softfloat.c" />
-    <ClCompile Include="..\..\..\qemu\hw\mips\addr.c" />
-    <ClCompile Include="..\..\..\qemu\hw\mips\cputimer.c" />
-    <ClCompile Include="..\..\..\qemu\hw\mips\mips_r4k.c" />
+    <ClCompile Include="..\..\..\qemu\hw\arm\tosa.c" />
+    <ClCompile Include="..\..\..\qemu\hw\arm\virt.c" />
     <ClCompile Include="..\..\..\qemu\ioport.c" />
     <ClCompile Include="..\..\..\qemu\memory.c" />
     <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\cpu.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\dsp_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\lmi_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\msa_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\op_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\translate.c" />
-    <ClCompile Include="..\..\..\qemu\target-mips\translate_init.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-mips\unicorn.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\cpu.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\crypto_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\iwmmxt_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\neon_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\op_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\psci.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\translate.c" />
+    <ClCompile Include="..\..\..\qemu\target-arm\unicorn_arm.c" />
     <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\optimize.c" />
@@ -74,9 +72,9 @@
     <ClCompile Include="..\..\..\qemu\translate-all.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{63050112-E486-4396-B5E4-303C3BC12D39}</ProjectGuid>
+    <ProjectGuid>{740F3007-7BF0-4C0C-8FA5-2587C794EF31}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>mipssoftmmu</RootNamespace>
+    <RootNamespace>armebsoftmmu</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -142,11 +140,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;__i386__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-mips;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-arm;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
-      <ForcedIncludeFiles>mips.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>armeb.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -163,11 +161,11 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;__x86_64__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-mips;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-arm;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
-      <ForcedIncludeFiles>mips.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>armeb.h</ForcedIncludeFiles>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -186,11 +184,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;__i386__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-mips;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-arm;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
-      <ForcedIncludeFiles>mips.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>armeb.h</ForcedIncludeFiles>
       <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>
@@ -212,11 +210,11 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;__x86_64__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-mips;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-arm;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
-      <ForcedIncludeFiles>mips.h</ForcedIncludeFiles>
+      <ForcedIncludeFiles>armeb.h</ForcedIncludeFiles>
       <DebugInformationFormat>None</DebugInformationFormat>
     </ClCompile>
     <Link>

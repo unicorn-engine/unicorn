@@ -84,8 +84,8 @@ msvc_update_genfiles() {
   ${MAKE}
   cp qemu/qapi-types.h  msvc/unicorn/qapi-types.h
   cp qemu/qapi-visit.h  msvc/unicorn/qapi-visit.h
-  cp qemu/qapi-types.c  msvc/unicorn/unicorn/qapi-types.c
-  cp qemu/qapi-visit.c  msvc/unicorn/unicorn/qapi-visit.c
+  cp qemu/qapi-types.c  msvc/unicorn/qapi-types.c
+  cp qemu/qapi-visit.c  msvc/unicorn/qapi-visit.c
   cp qemu/config-host.h msvc/unicorn/config-host.h
   cp qemu/aarch64-softmmu/config-target.h  msvc/unicorn/aarch64-softmmu/config-target.h
   cp qemu/arm-softmmu/config-target.h      msvc/unicorn/arm-softmmu/config-target.h
@@ -97,7 +97,6 @@ msvc_update_genfiles() {
   cp qemu/mips-softmmu/config-target.h     msvc/unicorn/mips-softmmu/config-target.h
   cp qemu/sparc64-softmmu/config-target.h  msvc/unicorn/sparc64-softmmu/config-target.h
   cp qemu/sparc-softmmu/config-target.h    msvc/unicorn/sparc-softmmu/config-target.h
-  cp qemu/i386-softmmu/config-target.h   msvc/unicorn/i386-softmmu/config-target.h
   cp qemu/x86_64-softmmu/config-target.h   msvc/unicorn/x86_64-softmmu/config-target.h
 }
 
