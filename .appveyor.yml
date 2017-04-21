@@ -1,4 +1,4 @@
-# Appveyor configuration file for CI build of Unicorn Engine on Windows (under Cygwin)
+# Appveyor configuration file for CI build of Unicorn Engine on Windows
 environment:
     CYG_MIRROR: http://cygwin.mirror.constant.com
     CYG_PACKAGES: make,gcc-core,clang,pkg-config,libpcre-devel,cmake,python-setuptools,ruby,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core
@@ -53,6 +53,5 @@ build_script:
 #    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 # Test cygwin only
-#
 test_script:
     - if defined CYG_ROOT (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && ./install-cmocka-linux.sh && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER:$APPVEYOR_BUILD_FOLDER/cmocka/src && make test")
