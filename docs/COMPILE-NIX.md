@@ -61,9 +61,14 @@ To build Unicorn on *nix (such as MacOSX, Linux, *BSD, Solaris):
 
         $ sudo ./make.sh install
 
-  For FreeBSD/OpenBSD, where sudo is unavailable, run:
+  For OpenBSD, where sudo is unavailable, run:
 
         $ su; ./make.sh install
+        
+  On FreeBSD, system's `make` is different from GNU make, so you need to install it.
+  
+        # pkg install gmake
+        $ gmake
 
   Users are then required to enter root password to copy Unicorn into machine
   system directories.
