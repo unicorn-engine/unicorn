@@ -344,11 +344,12 @@ UNICORN_EXPORT
 uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **uc);
 
 /*
- Close UC instance: MUST do to release the handle when it is not used anymore.
- NOTE: this must be called only when there is no longer usage of Unicorn.
- The reason is the this API releases some cached memory, thus access to any
- Unicorn API after uc_close() might crash your application.
- After this, @uc is invalid, and nolonger usable.
+ Close a Unicorn engine instance.
+ NOTE: this must be called only when there is no longer any
+ usage of @uc. This API releases some of @uc's cached memory, thus
+ any use of the Unicorn API with @uc after it has been closed may
+ crash your application. After this, @uc is invalid, and is no
+ longer usable.
 
  @uc: pointer to a handle returned by uc_open()
 
