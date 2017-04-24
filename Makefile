@@ -39,8 +39,11 @@ ifneq (,$(findstring m68k,$(UNICORN_ARCHS)))
 endif
 ifneq (,$(findstring aarch64,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(call GENOBJ,aarch64-softmmu)
+	UC_TARGET_OBJ += $(call GENOBJ,aarch64eb-softmmu)
 	UNICORN_CFLAGS += -DUNICORN_HAS_ARM64
+	UNICORN_CFLAGS += -DUNICORN_HAS_ARM64EB
 	UNICORN_TARGETS += aarch64-softmmu,
+	UNICORN_TARGETS += aarch64eb-softmmu,
 endif
 ifneq (,$(findstring mips,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(call GENOBJ,mips-softmmu)
@@ -300,7 +303,7 @@ dist:
 
 # run "make header" whenever qemu/header_gen.py is modified
 header:
-	$(eval TARGETS := m68k arm armeb aarch64 mips mipsel mips64 mips64el\
+	$(eval TARGETS := m68k arm armeb aarch64 aarch64eb mips mipsel mips64 mips64el\
 		powerpc sparc sparc64 x86_64)
 	$(foreach var,$(TARGETS),\
 		$(shell python qemu/header_gen.py $(var) > qemu/$(var).h;))
