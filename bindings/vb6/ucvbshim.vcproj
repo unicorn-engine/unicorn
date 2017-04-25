@@ -183,10 +183,6 @@
 				RelativePath=".\main.cpp"
 				>
 			</File>
-			<File
-				RelativePath="..\msvc\unicorn_dynload.c"
-				>
-			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
@@ -195,10 +191,6 @@
 			>
 			<File
 				RelativePath="..\..\include\unicorn\unicorn.h"
-				>
-			</File>
-			<File
-				RelativePath="..\msvc\unicorn_dynload.h"
 				>
 			</File>
 			<File

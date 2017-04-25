@@ -24,12 +24,7 @@
 #error vb6 is 32bit only
 #endif
 
-#ifdef DYNLOAD
-#include "./../msvc/unicorn_dynload.h"
-#else  
-#include <unicorn.h>
-#pragma comment(lib, "unicorn_staload.lib")
-#endif  
+#include <unicorn/unicorn.h>
 
 
 //if you compile with VS2008 you will need to add stdint.h and inttypes.h to your compiler include directory
