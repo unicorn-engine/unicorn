@@ -34,7 +34,7 @@ static void test_arm64(void)
     int64_t x13 = 0x6789;     // X13 register
     int64_t x15 = 0x3333;     // X15 register
 
-    printf("Emulate ARM64 code\n");
+    printf("Emulate ARM64 Big-Endian code\n");
 
     // Initialize emulator in ARM mode
     err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM + UC_MODE_BIG_ENDIAN, &uc);
