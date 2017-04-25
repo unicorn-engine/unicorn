@@ -9,7 +9,7 @@ public interface UnicornConst {
    public static final int UC_VERSION_MAJOR = 1;
 
    public static final int UC_VERSION_MINOR = 0;
-   public static final int UC_VERSION_EXTRA = 1;
+   public static final int UC_VERSION_EXTRA = 2;
    public static final int UC_SECOND_SCALE = 1000000;
    public static final int UC_MILISECOND_SCALE = 1000;
    public static final int UC_ARCH_ARM = 1;
