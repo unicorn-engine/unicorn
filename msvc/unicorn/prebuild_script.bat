@@ -7,6 +7,7 @@ del ..\..\qemu\qapi-visit.c 2> null
 del ..\..\qemu\config-host.h 2> null
 
 del ..\..\qemu\aarch-softmmu\config-target.h 2> null
+del ..\..\qemu\aarcheb-softmmu\config-target.h 2> null
 del ..\..\qemu\arm-softmmu\config-target.h 2> null
 del ..\..\qemu\armeb-softmmu\config-target.h 2> null
 del ..\..\qemu\m68k-softmmu\config-target.h 2> null

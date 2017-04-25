@@ -88,6 +88,7 @@ msvc_update_genfiles() {
   cp qemu/qapi-visit.c  msvc/unicorn/qapi-visit.c
   cp qemu/config-host.h msvc/unicorn/config-host.h
   cp qemu/aarch64-softmmu/config-target.h  msvc/unicorn/aarch64-softmmu/config-target.h
+  cp qemu/aarch64eb-softmmu/config-target.h  msvc/unicorn/aarch64eb-softmmu/config-target.h
   cp qemu/arm-softmmu/config-target.h      msvc/unicorn/arm-softmmu/config-target.h
   cp qemu/armeb-softmmu/config-target.h    msvc/unicorn/armeb-softmmu/config-target.h
   cp qemu/m68k-softmmu/config-target.h     msvc/unicorn/m68k-softmmu/config-target.h
