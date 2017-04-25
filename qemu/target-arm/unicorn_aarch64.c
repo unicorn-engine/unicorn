@@ -155,7 +155,11 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
 }
 
 DEFAULT_VISIBILITY
+#ifdef TARGET_WORDS_BIGENDIAN
+void arm64eb_uc_init(struct uc_struct* uc)
+#else
 void arm64_uc_init(struct uc_struct* uc)
+#endif
 {
     register_accel_types(uc);
     arm_cpu_register_types(uc);

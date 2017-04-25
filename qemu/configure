@@ -351,7 +351,7 @@ case "$cpu" in
   armv*b|armv*l|arm)
     cpu="arm"
   ;;
-  aarch64)
+  aarch64|aarch64eb)
     cpu="aarch64"
   ;;
   mips*)
@@ -1237,7 +1237,7 @@ target_name=`echo $target | cut -d '-' -f 1`
 target_bigendian="no"
 
 case "$target_name" in
-  armeb|lm32|m68k|microblaze|mips|mipsn32|mips64|moxie|or32|ppc|ppcemb|ppc64|ppc64abi32|s390x|sh4eb|sparc|sparc64|sparc32plus|xtensaeb)
+  aarch64eb|armeb|lm32|m68k|microblaze|mips|mipsn32|mips64|moxie|or32|ppc|ppcemb|ppc64|ppc64abi32|s390x|sh4eb|sparc|sparc64|sparc32plus|xtensaeb)
   target_bigendian=yes
   ;;
 esac
@@ -1272,8 +1272,9 @@ case "$target_name" in
     TARGET_ARCH=arm
     bflt="yes"
   ;;
-  aarch64)
+  aarch64|aarch64eb)
     TARGET_BASE_ARCH=arm
+    TARGET_ARCH=aarch64
     bflt="yes"
   ;;
   cris)
