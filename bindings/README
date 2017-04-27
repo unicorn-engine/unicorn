@@ -1,4 +1,4 @@
-This directory contains bindings & test code for Python, Java, Go, .NET and MSVC.
+This directory contains bindings & test code for Python, Java, Go and .NET.
 See <language>/README or <language>/README.TXT or <language>/README.md for how to install each binding.
 
 The following bindings are contributed by community.
@@ -6,7 +6,6 @@ The following bindings are contributed by community.
 - Java binding: by Chris Eagle.
 - Go binding: by Ryan Hileman.
 - .NET binding: by Antonio Parata.
-- MSVC binding: by Zak Escano
 - Ruby binding: by Sascha Schirra
 - Haskell binding: by Adrian Herrera.
 - VB6 binding: David Zimmer.
