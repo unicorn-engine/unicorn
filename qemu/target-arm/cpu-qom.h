@@ -26,8 +26,7 @@
 
 #define ARM_CPU_CLASS(uc, klass) \
     OBJECT_CLASS_CHECK(uc, ARMCPUClass, (klass), TYPE_ARM_CPU)
-#define ARM_CPU(uc, obj) \
-    OBJECT_CHECK(uc, ARMCPU, (obj), TYPE_ARM_CPU)
+#define ARM_CPU(uc, obj) ((ARMCPU *)obj)
 #define ARM_CPU_GET_CLASS(uc, obj) \
     OBJECT_GET_CLASS(uc, ARMCPUClass, (obj), TYPE_ARM_CPU)
 
