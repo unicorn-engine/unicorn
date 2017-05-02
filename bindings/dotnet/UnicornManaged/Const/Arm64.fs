@@ -272,7 +272,8 @@ module Arm64 =
 
     // pseudo registers
     let UC_ARM64_REG_PC = 260
-    let UC_ARM64_REG_ENDING = 261
+    let UC_ARM64_REG_CPACR_EL1 = 261
+    let UC_ARM64_REG_ENDING = 262
 
     // alias registers
     let UC_ARM64_REG_IP1 = 215

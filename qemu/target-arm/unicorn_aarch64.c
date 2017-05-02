@@ -76,6 +76,9 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
         } else {
             switch(regid) {
                 default: break;
+                case UC_ARM64_REG_CPACR_EL1:
+                    *(uint32_t *)value = ARM_CPU(uc, mycpu)->env.cp15.c1_coproc;
+                    break;
                 case UC_ARM64_REG_X29:
                          *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[29];
                          break;
@@ -129,6 +132,9 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
         } else {
             switch(regid) {
                 default: break;
+                case UC_ARM64_REG_CPACR_EL1:
+                    ARM_CPU(uc, mycpu)->env.cp15.c1_coproc = *(uint32_t *)value;
+                    break;
                 case UC_ARM64_REG_X29:
                          ARM_CPU(uc, mycpu)->env.xregs[29] = *(uint64_t *)value;
                          break;
