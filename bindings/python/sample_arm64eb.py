@@ -9,7 +9,7 @@ from unicorn.arm64_const import *
 
 
 # code to be emulated
-ARM64_CODE = b"\x8b\x0f\x01\xab" #add x11, x13, x15
+ARM64_CODE = b"\xab\x01\x0f\x8b" #add x11, x13, x15
 
 # memory address where emulation starts
 ADDRESS    = 0x10000

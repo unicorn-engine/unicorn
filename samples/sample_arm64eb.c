@@ -9,7 +9,7 @@
 
 
 // code to be emulated
-#define ARM_CODE "\x8b\x0f\x01\xab" // add x11, x13, x15
+#define ARM_CODE "\xab\x01\x0f\x8b" // add x11, x13, x15
 
 // memory address where emulation starts
 #define ADDRESS 0x10000
