@@ -7,9 +7,8 @@
 #include <unicorn/unicorn.h>
 #include <string.h>
 
-
 // code to be emulated
-#define ARM_CODE "\xab\x01\x0f\x8b" // add x11, x13, x15
+#define ARM_CODE "\xab\x05\x00\xb8\xaf\x05\x40\x38" // str x11, [x13]; ldrb x15, [x13]
 
 // memory address where emulation starts
 #define ADDRESS 0x10000
@@ -30,9 +29,9 @@ static void test_arm64(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    int64_t x11 = 0x1234;     // X11 register
-    int64_t x13 = 0x6789;     // X13 register
-    int64_t x15 = 0x3333;     // X15 register
+    int64_t x11 = 0x12345678;        // X11 register
+    int64_t x13 = 0x10000 + 0x8;     // X13 register
+    int64_t x15 = 0x33;              // X15 register
 
     printf("Emulate ARM64 code\n");
 
@@ -70,9 +69,10 @@ static void test_arm64(void)
 
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
+    printf(">>> As big endian, X15 should be 0x12:\n");
 
-    uc_reg_read(uc, UC_ARM64_REG_X11, &x11);
-    printf(">>> X11 = 0x%" PRIx64 "\n", x11);
+    uc_reg_read(uc, UC_ARM64_REG_X15, &x15);
+    printf(">>> X15 = 0x%" PRIx64 "\n", x15);
 
     uc_close(uc);
 }
