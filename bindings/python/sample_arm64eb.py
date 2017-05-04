@@ -9,7 +9,7 @@ from unicorn.arm64_const import *
 
 
 # code to be emulated
-ARM64_CODE = b"\x8b\x0f\x01\xab" #add x11, x13, x15
+ARM64_CODE = b"\xab\x05\x00\xb8\xaf\x05\x40\x38" # str x11, [x13]; ldrb x15, [x13]
 
 # memory address where emulation starts
 ADDRESS    = 0x10000
@@ -39,26 +39,27 @@ def test_arm64():
         mu.mem_write(ADDRESS, ARM64_CODE)
 
         # initialize machine registers
-        mu.reg_write(UC_ARM64_REG_X11, 0x1234)
-        mu.reg_write(UC_ARM64_REG_X13, 0x6789)
-        mu.reg_write(UC_ARM64_REG_X15, 0x3333)
+        mu.reg_write(UC_ARM64_REG_X11, 0x12345678)
+        mu.reg_write(UC_ARM64_REG_X13, 0x10008)
+        mu.reg_write(UC_ARM64_REG_X15, 0x33)
 
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
 
         # tracing all instructions with customized callback
-        mu.hook_add(UC_HOOK_CODE, hook_code)
+        mu.hook_add(UC_HOOK_CODE, hook_code, begin=ADDRESS, end=ADDRESS)
 
         # emulate machine code in infinite time
         mu.emu_start(ADDRESS, ADDRESS + len(ARM64_CODE))
 
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
+	print(">>> As big endian, X15 should be 0x12:");
 
         x11 = mu.reg_read(UC_ARM64_REG_X11)
         x13 = mu.reg_read(UC_ARM64_REG_X13)
         x15 = mu.reg_read(UC_ARM64_REG_X15)
-        print(">>> X11 = 0x%x" %x11)
+        print(">>> X15 = 0x%x" %x15)
 
     except UcError as e:
         print("ERROR: %s" % e)

@@ -11059,7 +11059,11 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
 
     dc->aarch64 = 1;
     dc->thumb = 0;
+#if defined(TARGET_WORDS_BIGENDIAN)
+    dc->bswap_code = 1;
+#else
     dc->bswap_code = 0;
+#endif
     dc->condexec_mask = 0;
     dc->condexec_cond = 0;
 #if !defined(CONFIG_USER_ONLY)
