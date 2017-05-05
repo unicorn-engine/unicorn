@@ -223,6 +223,15 @@ class uc_x86_xmm(ctypes.Structure):
         ("high_qword", ctypes.c_uint64),
     ]
 
+class uc_x86_ymm(ctypes.Structure):
+    """256-bit ymm register"""
+    _fields_ = [
+        ("first_qword", ctypes.c_uint64),
+        ("second_qword", ctypes.c_uint64),
+        ("third_qword", ctypes.c_uint64),
+        ("fourth_qword", ctypes.c_uint64),
+    ]
+
 class uc_arm64_neon128(ctypes.Structure):
     """128-bit neon register"""
     _fields_ = [
@@ -314,6 +323,12 @@ class Uc(object):
                 if status != uc.UC_ERR_OK:
                     raise UcError(status)
                 return reg.low_qword | (reg.high_qword << 64)
+            if reg_id in range(x86_const.UC_X86_REG_YMM0, x86_const.UC_X86_REG_YMM0+8):
+                reg = uc_x86_ymm()
+                status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
+                if status != uc.UC_ERR_OK:
+                    raise UcError(status)
+                return reg.first_qword | (reg.second_qword << 64) | (reg.third_qword << 128) | (reg.fourth_qword << 192)
             if reg_id is x86_const.UC_X86_REG_MSR:
                 if opt is None:
                     raise UcError(uc.UC_ERR_ARG)
@@ -359,6 +374,12 @@ class Uc(object):
                 reg = uc_x86_xmm()
                 reg.low_qword = value & 0xffffffffffffffff
                 reg.high_qword = value >> 64
+            if reg_id in range(x86_const.UC_X86_REG_YMM0, x86_const.UC_X86_REG_YMM0+8):
+                reg = uc_x86_ymm()
+                reg.first_qword = value & 0xffffffffffffffff
+                reg.second_qword = (value >> 64) & 0xffffffffffffffff
+                reg.third_qword = (value >> 128) & 0xffffffffffffffff
+                reg.fourth_qword = value >> 192
             if reg_id is x86_const.UC_X86_REG_MSR:
                 reg = uc_x86_msr()
                 reg.rid = value[0]
