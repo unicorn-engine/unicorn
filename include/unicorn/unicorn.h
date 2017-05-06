@@ -275,12 +275,15 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
   @return: return true to continue, or false to stop program (due to invalid memory).
            NOTE: returning true to continue execution will only work if if the accessed
            memory is made accessible with the correct permissions during the hook.
+           
            In the event of a UC_MEM_READ_UNMAPPED or UC_MEM_WRITE_UNMAPPED callback,
            the memory should be uc_mem_map()-ed with the correct permissions, and the
            instruction will then read or write to the address as it was supposed to.
+           
            In the event of a UC_MEM_FETCH_UNMAPPED callback, the memory can be mapped
-           in as executable, in which case execution will resume from the fetched address,
-           or the instruction pointer can be written to in order to resume execution elsewhere.
+           in as executable, in which case execution will resume from the fetched address.
+           The instruction pointer may be written to in order to change where execution resumes,
+           but the fetch must succeed if execution is to resume.
 */
 typedef bool (*uc_cb_eventmem_t)(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data);
