@@ -59,6 +59,7 @@ type Unicorn interface {
 
 	ContextSave(reuse Context) (Context, error)
 	ContextRestore(Context) error
+	Handle() *C.uc_engine
 }
 
 type uc struct {
@@ -225,4 +226,8 @@ func (u *uc) Query(queryType int) (uint64, error) {
 	var ret C.size_t
 	ucerr := C.uc_query(u.handle, C.uc_query_type(queryType), &ret)
 	return uint64(ret), errReturn(ucerr)
+}
+
+func (u *uc) Handle() *C.uc_engine {
+	return u.handle
 }
