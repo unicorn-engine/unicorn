@@ -251,7 +251,7 @@ typedef enum uc_hook_type {
 #define UC_HOOK_MEM_VALID (UC_HOOK_MEM_READ + UC_HOOK_MEM_WRITE + UC_HOOK_MEM_FETCH)
 
 /*
-  Callback function for hooking memory (UC_MEM_READ, UC_MEM_WRITE & UC_MEM_FETCH)
+  Callback function for hooking memory (READ, WRITE, and FETCH)
 
   @type: this memory is being READ, or WRITE
   @address: address where the code is being executed
@@ -263,8 +263,7 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data);
 
 /*
-  Callback function for handling invalid memory access events (UC_MEM_*_UNMAPPED and
-    UC_MEM_*PROT events)
+  Callback function for handling invalid memory access events (UNMAPPED and PROT events)
 
   @type: this memory is being READ, or WRITE
   @address: address where the code is being executed
@@ -536,7 +535,7 @@ uc_err uc_emu_stop(uc_engine *uc);
    NOTE 2: if @begin > @end, callback is called whenever this hook type is triggered
  @...: variable arguments (depending on @type)
    NOTE 1: if @type = UC_HOOK_INSN, this is the instruction ID (ex: UC_X86_INS_OUT)
-   NOTE 2: on x86, only UC_X86_INS_IN, UC_X86_INS_OUT, and UC_X86_INS_SYSCALL are supported. 
+   NOTE 2: on x86, only In, Out, and Syscall are supported. 
 	Attempting to hook other instructions will fail with UC_ERR_HOOK
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
