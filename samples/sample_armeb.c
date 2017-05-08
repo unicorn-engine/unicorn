@@ -35,7 +35,7 @@ static void test_arm(void)
     int r3 = 0x3333;     // R2 register
     int r1;     // R1 register
 
-    printf("Emulate ARM code\n");
+    printf("Emulate ARM Big-Endian code\n");
 
     // Initialize emulator in ARM mode
     err = uc_open(UC_ARCH_ARM, UC_MODE_ARM + UC_MODE_BIG_ENDIAN, &uc);

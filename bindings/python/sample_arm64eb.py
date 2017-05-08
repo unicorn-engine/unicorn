@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # Sample code for ARM64 of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
+# AARCH64 Python sample ported by zhangwm <rustydaar@gmail.com>
 
 from __future__ import print_function
 from unicorn import *
@@ -26,10 +27,10 @@ def hook_code(uc, address, size, user_data):
 
 # Test ARM64
 def test_arm64():
-    print("Emulate ARM64 code")
+    print("Emulate ARM64 Big-Endian code")
     try:
         # Initialize emulator in ARM mode
-        mu = Uc(UC_ARCH_ARM64, UC_MODE_ARM)
+        mu = Uc(UC_ARCH_ARM64, UC_MODE_ARM | UC_MODE_BIG_ENDIAN)
 
         # map 2MB memory for this emulation
         mu.mem_map(ADDRESS, 2 * 1024 * 1024)
@@ -53,7 +54,7 @@ def test_arm64():
 
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
-	print(">>> As little endian, X15 should be 0x78:");
+	print(">>> As big endian, X15 should be 0x12:");
 
         x11 = mu.reg_read(UC_ARM64_REG_X11)
         x13 = mu.reg_read(UC_ARM64_REG_X13)

@@ -280,6 +280,8 @@ typedef enum uc_arm64_reg {
     //> pseudo registers
     UC_ARM64_REG_PC,			// program counter register
 
+    UC_ARM64_REG_CPACR_EL1,
+
     UC_ARM64_REG_ENDING,		// <-- mark the end of the list of registers
 
     //> alias registers

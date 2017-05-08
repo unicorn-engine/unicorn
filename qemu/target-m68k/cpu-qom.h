@@ -26,8 +26,7 @@
 
 #define M68K_CPU_CLASS(uc, klass) \
     OBJECT_CLASS_CHECK(uc, M68kCPUClass, (klass), TYPE_M68K_CPU)
-#define M68K_CPU(uc, obj) \
-    OBJECT_CHECK(uc, M68kCPU, (obj), TYPE_M68K_CPU)
+#define M68K_CPU(uc, obj) ((M68kCPU *)obj)
 #define M68K_CPU_GET_CLASS(uc, obj) \
     OBJECT_GET_CLASS(uc, M68kCPUClass, (obj), TYPE_M68K_CPU)
 

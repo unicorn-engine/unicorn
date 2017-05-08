@@ -68,6 +68,7 @@ SOURCES += sample_armeb.c
 endif
 ifneq (,$(findstring aarch64,$(UNICORN_ARCHS)))
 SOURCES += sample_arm64.c
+SOURCES += sample_arm64eb.c
 endif
 ifneq (,$(findstring mips,$(UNICORN_ARCHS)))
 SOURCES += sample_mips.c

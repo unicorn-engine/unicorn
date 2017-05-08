@@ -283,6 +283,24 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                     dst[1] = reg->_d[1];
                     continue;
                 }
+            case UC_X86_REG_YMM0:
+            case UC_X86_REG_YMM1:
+            case UC_X86_REG_YMM2:
+            case UC_X86_REG_YMM3:
+            case UC_X86_REG_YMM4:
+            case UC_X86_REG_YMM5:
+            case UC_X86_REG_YMM6:
+            case UC_X86_REG_YMM7:
+                {
+                    float64 *dst = (float64*)value;
+                    XMMReg *lo_reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_YMM0];
+                    XMMReg *hi_reg = &X86_CPU(uc, mycpu)->env.ymmh_regs[regid - UC_X86_REG_YMM0];
+                    dst[0] = lo_reg->_d[0];
+                    dst[1] = lo_reg->_d[1];
+                    dst[2] = hi_reg->_d[0];
+                    dst[3] = hi_reg->_d[1];
+                    continue;
+                }
         }
 
         switch(uc->mode) {
@@ -802,6 +820,24 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                     XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
                     reg->_d[0] = src[0];
                     reg->_d[1] = src[1];
+                    continue;
+                }
+            case UC_X86_REG_YMM0:
+            case UC_X86_REG_YMM1:
+            case UC_X86_REG_YMM2:
+            case UC_X86_REG_YMM3:
+            case UC_X86_REG_YMM4:
+            case UC_X86_REG_YMM5:
+            case UC_X86_REG_YMM6:
+            case UC_X86_REG_YMM7:
+                {
+                    float64 *src = (float64*)value;
+                    XMMReg *lo_reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_YMM0];
+                    XMMReg *hi_reg = &X86_CPU(uc, mycpu)->env.ymmh_regs[regid - UC_X86_REG_YMM0];
+                    lo_reg->_d[0] = src[0];
+                    lo_reg->_d[1] = src[1];
+                    hi_reg->_d[0] = src[2];
+                    hi_reg->_d[1] = src[3];
                     continue;
                 }
         }

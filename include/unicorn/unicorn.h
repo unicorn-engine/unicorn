@@ -273,6 +273,17 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
   @user_data: user data passed to tracing APIs
 
   @return: return true to continue, or false to stop program (due to invalid memory).
+           NOTE: returning true to continue execution will only work if if the accessed
+           memory is made accessible with the correct permissions during the hook.
+           
+           In the event of a UC_MEM_READ_UNMAPPED or UC_MEM_WRITE_UNMAPPED callback,
+           the memory should be uc_mem_map()-ed with the correct permissions, and the
+           instruction will then read or write to the address as it was supposed to.
+           
+           In the event of a UC_MEM_FETCH_UNMAPPED callback, the memory can be mapped
+           in as executable, in which case execution will resume from the fetched address.
+           The instruction pointer may be written to in order to change where execution resumes,
+           but the fetch must succeed if execution is to resume.
 */
 typedef bool (*uc_cb_eventmem_t)(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data);
@@ -344,11 +355,12 @@ UNICORN_EXPORT
 uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **uc);
 
 /*
- Close UC instance: MUST do to release the handle when it is not used anymore.
- NOTE: this must be called only when there is no longer usage of Unicorn.
- The reason is the this API releases some cached memory, thus access to any
- Unicorn API after uc_close() might crash your application.
- After this, @uc is invalid, and nolonger usable.
+ Close a Unicorn engine instance.
+ NOTE: this must be called only when there is no longer any
+ usage of @uc. This API releases some of @uc's cached memory, thus
+ any use of the Unicorn API with @uc after it has been closed may
+ crash your application. After this, @uc is invalid, and is no
+ longer usable.
 
  @uc: pointer to a handle returned by uc_open()
 

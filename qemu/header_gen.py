@@ -3029,6 +3029,46 @@ arm_symbols = (
     'ARM_REGS_STORAGE_SIZE',
 )
 
+aarch64_symbols = (
+    'ARM64_REGS_STORAGE_SIZE',
+    'arm64_release',
+    'arm64_reg_reset',
+    'arm64_reg_read',
+    'arm64_reg_write',
+    'gen_a64_set_pc_im',
+    'aarch64_cpu_register_types',
+    'helper_udiv64',
+    'helper_sdiv64',
+    'helper_cls64',
+    'helper_cls32',
+    'helper_rbit64',
+    'helper_vfp_cmps_a64',
+    'helper_vfp_cmpes_a64',
+    'helper_vfp_cmpd_a64',
+    'helper_vfp_cmped_a64',
+    'helper_vfp_mulxs',
+    'helper_vfp_mulxd',
+    'helper_simd_tbl',
+    'helper_neon_ceq_f64',
+    'helper_neon_cge_f64',
+    'helper_neon_cgt_f64',
+    'helper_recpsf_f32',
+    'helper_recpsf_f64',
+    'helper_rsqrtsf_f32',
+    'helper_rsqrtsf_f64',
+    'helper_neon_addlp_s8',
+    'helper_neon_addlp_u8',
+    'helper_neon_addlp_s16',
+    'helper_neon_addlp_u16',
+    'helper_frecpx_f32',
+    'helper_frecpx_f64',
+    'helper_fcvtx_f64_to_f32',
+    'helper_crc32_64',
+    'helper_crc32c_64',
+    'aarch64_cpu_do_interrupt',
+
+)
+
 mips_symbols = (
     'cpu_mips_exec',
     'cpu_mips_get_random',
@@ -4027,6 +4067,10 @@ if __name__ == '__main__':
 
   if 'arm' in arch:
     for s in arm_symbols:
+      print("#define %s %s_%s" %(s, s, arch))
+
+  if 'aarch64' in arch:
+    for s in aarch64_symbols:
       print("#define %s %s_%s" %(s, s, arch))
 
   if 'mips' in arch:

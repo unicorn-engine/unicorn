@@ -30,8 +30,7 @@
 
 #define MIPS_CPU_CLASS(uc, klass) \
     OBJECT_CLASS_CHECK(uc, MIPSCPUClass, (klass), TYPE_MIPS_CPU)
-#define MIPS_CPU(uc, obj) \
-    OBJECT_CHECK(uc, MIPSCPU, (obj), TYPE_MIPS_CPU)
+#define MIPS_CPU(uc, obj) ((MIPSCPU *)obj)
 #define MIPS_CPU_GET_CLASS(uc, obj) \
     OBJECT_GET_CLASS(uc, MIPSCPUClass, (obj), TYPE_MIPS_CPU)
 

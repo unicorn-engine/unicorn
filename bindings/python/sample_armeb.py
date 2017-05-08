@@ -25,7 +25,7 @@ def hook_code(uc, address, size, user_data):
 
 # Test ARM
 def test_arm():
-    print("Emulate ARM code")
+    print("Emulate ARM Big-Endian code")
     try:
         # Initialize emulator in ARM mode
         mu = Uc(UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_BIG_ENDIAN)

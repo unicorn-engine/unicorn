@@ -30,6 +30,7 @@ fi
 if test -e $DIR/sample_arm64; then
   echo "=========================="
   $DIR/sample_arm64
+  $DIR/sample_arm64eb
 fi
 if test -e $DIR/sample_mips; then
   echo "=========================="

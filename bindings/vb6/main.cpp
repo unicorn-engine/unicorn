@@ -24,13 +24,8 @@
 #error vb6 is 32bit only
 #endif
 
-#ifdef DYNLOAD
-#include "./../msvc/unicorn_dynload.h"
-#else  
-#include <unicorn.h>
-#pragma comment(lib, "unicorn_staload.lib")
-#endif  
-
+#include <unicorn/unicorn.h>
+#pragma comment(lib, "unicorn.lib")
 
 //if you compile with VS2008 you will need to add stdint.h and inttypes.h to your compiler include directory
 //you can find examples here: https://github.com/dzzie/VS_LIBEMU/tree/master/libemu/include
@@ -173,11 +168,11 @@ uc_err __stdcall ucs_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callba
 
 unsigned int __stdcall ucs_dynload(char *path){
 #pragma EXPORT
-    #ifdef DYNLOAD
+    /*#ifdef DYNLOAD
 		return uc_dyn_load(path, 0);
-	#else
+	#else*/
 		return 1;
-	#endif	
+	//#endif	
 }
 
 unsigned int __stdcall ucs_version(unsigned int *major, unsigned int *minor){

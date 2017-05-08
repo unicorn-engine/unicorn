@@ -1,11 +1,11 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh, 2015 */
+/* modify from arm64 sample zhangwm, 2017 */
 
-/* Sample code to demonstrate how to emulate ARM64 code */
+/* Sample code to demonstrate how to emulate ARM64EB code */
 
 #include <unicorn/unicorn.h>
 #include <string.h>
-
 
 // code to be emulated
 #define ARM_CODE "\xab\x05\x00\xb8\xaf\x05\x40\x38" // str x11, [x13]; ldrb x15, [x13]
@@ -33,10 +33,10 @@ static void test_arm64(void)
     int64_t x13 = 0x10000 + 0x8;     // X13 register
     int64_t x15 = 0x33;              // X15 register
 
-    printf("Emulate ARM64 code\n");
+    printf("Emulate ARM64 Big-Endian code\n");
 
     // Initialize emulator in ARM mode
-    err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc);
+    err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM + UC_MODE_BIG_ENDIAN, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
                 err, uc_strerror(err));
@@ -69,7 +69,7 @@ static void test_arm64(void)
 
     // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
-    printf(">>> As little endian, X15 should be 0x78:\n");
+    printf(">>> As big endian, X15 should be 0x12:\n");
 
     uc_reg_read(uc, UC_ARM64_REG_X15, &x15);
     printf(">>> X15 = 0x%" PRIx64 "\n", x15);
