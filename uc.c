@@ -1084,6 +1084,7 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
         if (list_remove(&uc->hook[i], (void *)hook)) {
             if (--hook->refs == 0) {
                 free(hook);
+                break;
             }
         }
     }
