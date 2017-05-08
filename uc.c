@@ -1038,9 +1038,9 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 
 
 #ifdef UNICORN_HAS_X86
-		//for x86 we can only hook IN and OUT
+		//for x86 we can only hook IN, OUT, and UC_X86_INS_SYSCALL
 		if (uc->arch == UC_ARCH_X86) {
-			if (hook->insn != UC_X86_INS_IN && hook->insn != UC_X86_INS_OUT) {
+			if (hook->insn != UC_X86_INS_IN && hook->insn != UC_X86_INS_OUT && hook->insn != UC_X86_INS_SYSCALL) {
 				free(hook);
 				return UC_ERR_HOOK;
 			}

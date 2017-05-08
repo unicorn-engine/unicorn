@@ -536,8 +536,8 @@ uc_err uc_emu_stop(uc_engine *uc);
    NOTE 2: if @begin > @end, callback is called whenever this hook type is triggered
  @...: variable arguments (depending on @type)
    NOTE 1: if @type = UC_HOOK_INSN, this is the instruction ID (ex: UC_X86_INS_OUT)
-   NOTE 2: on x86, only UC_X86_INS_IN and UC_X86_INS_OUT are supported. Attempting to 
-	hook other instructions will fail with UC_ERR_HOOK
+   NOTE 2: on x86, only UC_X86_INS_IN, UC_X86_INS_OUT, and UC_X86_INS_SYSCALL are supported. 
+	Attempting to hook other instructions will fail with UC_ERR_HOOK
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
