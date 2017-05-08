@@ -1036,6 +1036,16 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         hook->insn = va_arg(valist, int);
         va_end(valist);
 
+
+#ifdef UNICORN_HAS_X86
+		//for x86 we can only hook IN and OUT
+		if (uc->arch == UC_ARCH_X86) {
+			if (hook->insn != UC_X86_INS_IN && hook->insn != UC_X86_INS_OUT) {
+				free(hook);
+				return UC_ERR_HOOK;
+			}
+		}
+#endif
         if (list_append(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
             free(hook);
             return UC_ERR_NOMEM;
