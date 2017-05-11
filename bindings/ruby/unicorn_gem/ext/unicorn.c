@@ -48,7 +48,7 @@ void Init_unicorn() {
     rb_define_method(UcClass, "mem_protect", m_uc_mem_protect, 3);
     rb_define_method(UcClass, "hook_add", m_uc_hook_add, -1);
     rb_define_method(UcClass, "hook_del", m_uc_hook_del, 1);
-    rb_define_method(UcClass, "query", m_uc_hook_del, 1);
+    rb_define_method(UcClass, "query", m_uc_query, 1);
     rb_define_method(UcClass, "context_save", m_uc_context_save, 0);
     rb_define_method(UcClass, "context_update", m_uc_context_update, 1);
     rb_define_method(UcClass, "contest_restore", m_uc_context_restore, 1);
@@ -223,7 +223,7 @@ VALUE m_uc_mem_map(int argc, VALUE* argv, VALUE self){
 VALUE m_uc_mem_unmap(VALUE self, VALUE address, VALUE size){
     uc_err err;
     uc_engine *_uc;
-    _uc = (uc_engine*) NUM2ULL(rb_iv_get(self, "@uch"));
+    Data_Get_Struct(rb_iv_get(self, "@uch"), uc_engine, _uc);
     err = uc_mem_unmap(_uc, NUM2ULL(address), NUM2UINT(size));
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
