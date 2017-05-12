@@ -172,7 +172,7 @@ struct uc_struct {
     // TODO: remove current_cpu, as it's a flag for something else ("cpu running"?)
     CPUState *cpu, *current_cpu;
 
-	uc_insn_hook_validate insn_hook_validate;
+    uc_insn_hook_validate insn_hook_validate;
 
     MemoryRegion *system_memory;    // qemu/exec.c
     MemoryRegion io_mem_rom;    // qemu/exec.c
