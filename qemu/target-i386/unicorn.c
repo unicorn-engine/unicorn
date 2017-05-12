@@ -1335,6 +1335,17 @@ static bool x86_stop_interrupt(int intno)
 
 void pc_machine_init(struct uc_struct *uc);
 
+static bool x86_insn_hook_validate(uint32_t insn_enum)
+{
+	//for x86 we can only hook IN, OUT, and SYSCALL
+	if (insn_enum != UC_X86_INS_IN
+		&&	insn_enum != UC_X86_INS_OUT
+		&&	insn_enum != UC_X86_INS_SYSCALL) {
+		return UC_ERR_HOOK;
+	}
+	return UC_ERR_OK;
+}
+
 DEFAULT_VISIBILITY
 void x86_uc_init(struct uc_struct* uc)
 {
@@ -1350,6 +1361,7 @@ void x86_uc_init(struct uc_struct* uc)
     uc->release = x86_release;
     uc->set_pc = x86_set_pc;
     uc->stop_interrupt = x86_stop_interrupt;
+	uc->insn_hook_validate = x86_insn_hook_validate;
     uc_common_init(uc);
 }
 
