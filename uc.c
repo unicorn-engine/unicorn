@@ -1037,7 +1037,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         va_end(valist);
 
         if (uc->insn_hook_validate) {
-            if (uc->insn_hook_validate(hook->insn)) {
+            if (! uc->insn_hook_validate(hook->insn)) {
                 free(hook);
                 return UC_ERR_HOOK;
             }
