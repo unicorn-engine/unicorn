@@ -268,7 +268,12 @@ const (
 // pseudo registers
 	ARM64_REG_PC = 260
 	ARM64_REG_CPACR_EL1 = 261
-	ARM64_REG_ENDING = 262
+
+// thread registers
+	ARM64_REG_TPIDR_EL0 = 262
+	ARM64_REG_TPIDRRO_EL0 = 263
+	ARM64_REG_TPIDR_EL1 = 264
+	ARM64_REG_ENDING = 265
 
 // alias registers
 	ARM64_REG_IP1 = 215
