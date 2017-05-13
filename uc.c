@@ -1036,6 +1036,13 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         hook->insn = va_arg(valist, int);
         va_end(valist);
 
+        if (uc->insn_hook_validate) {
+            if (! uc->insn_hook_validate(hook->insn)) {
+                free(hook);
+                return UC_ERR_HOOK;
+            }
+        }
+
         if (list_append(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
             free(hook);
             return UC_ERR_NOMEM;
