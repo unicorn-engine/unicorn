@@ -270,7 +270,12 @@ public interface Arm64Const {
 // pseudo registers
    public static final int UC_ARM64_REG_PC = 260;
    public static final int UC_ARM64_REG_CPACR_EL1 = 261;
-   public static final int UC_ARM64_REG_ENDING = 262;
+
+// thread registers
+   public static final int UC_ARM64_REG_TPIDR_EL0 = 262;
+   public static final int UC_ARM64_REG_TPIDRRO_EL0 = 263;
+   public static final int UC_ARM64_REG_TPIDR_EL1 = 264;
+   public static final int UC_ARM64_REG_ENDING = 265;
 
 // alias registers
    public static final int UC_ARM64_REG_IP1 = 215;

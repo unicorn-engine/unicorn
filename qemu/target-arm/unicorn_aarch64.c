@@ -79,21 +79,30 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
                 case UC_ARM64_REG_CPACR_EL1:
                     *(uint32_t *)value = ARM_CPU(uc, mycpu)->env.cp15.c1_coproc;
                     break;
+                case UC_ARM64_REG_TPIDR_EL0:
+                    *(int64_t *)value = ARM_CPU(uc, mycpu)->env.cp15.tpidr_el0;
+                    break;
+                case UC_ARM64_REG_TPIDRRO_EL0:
+                    *(int64_t *)value = ARM_CPU(uc, mycpu)->env.cp15.tpidrro_el0;
+                    break;
+                case UC_ARM64_REG_TPIDR_EL1:
+                    *(int64_t *)value = ARM_CPU(uc, mycpu)->env.cp15.tpidr_el1;
+                    break;
                 case UC_ARM64_REG_X29:
-                         *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[29];
-                         break;
+                    *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[29];
+                    break;
                 case UC_ARM64_REG_X30:
-                         *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[30];
-                         break;
+                    *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[30];
+                    break;
                 case UC_ARM64_REG_PC:
-                         *(uint64_t *)value = ARM_CPU(uc, mycpu)->env.pc;
-                         break;
+                    *(uint64_t *)value = ARM_CPU(uc, mycpu)->env.pc;
+                    break;
                 case UC_ARM64_REG_SP:
-                         *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[31];
-                         break;
+                    *(int64_t *)value = ARM_CPU(uc, mycpu)->env.xregs[31];
+                    break;
                 case UC_ARM64_REG_NZCV:
-                         *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env) & CPSR_NZCV;
-                         break;
+                    *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env) & CPSR_NZCV;
+                    break;
             }
         }
     }
@@ -135,24 +144,33 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
                 case UC_ARM64_REG_CPACR_EL1:
                     ARM_CPU(uc, mycpu)->env.cp15.c1_coproc = *(uint32_t *)value;
                     break;
+                case UC_ARM64_REG_TPIDR_EL0:
+                    ARM_CPU(uc, mycpu)->env.cp15.tpidr_el0 = *(uint64_t *)value;
+                    break;
+                case UC_ARM64_REG_TPIDRRO_EL0:
+                    ARM_CPU(uc, mycpu)->env.cp15.tpidrro_el0 = *(uint64_t *)value;
+                    break;
+                case UC_ARM64_REG_TPIDR_EL1:
+                    ARM_CPU(uc, mycpu)->env.cp15.tpidr_el1 = *(uint64_t *)value;
+                    break;
                 case UC_ARM64_REG_X29:
-                         ARM_CPU(uc, mycpu)->env.xregs[29] = *(uint64_t *)value;
-                         break;
+                    ARM_CPU(uc, mycpu)->env.xregs[29] = *(uint64_t *)value;
+                    break;
                 case UC_ARM64_REG_X30:
-                         ARM_CPU(uc, mycpu)->env.xregs[30] = *(uint64_t *)value;
-                         break;
+                    ARM_CPU(uc, mycpu)->env.xregs[30] = *(uint64_t *)value;
+                    break;
                 case UC_ARM64_REG_PC:
-                         ARM_CPU(uc, mycpu)->env.pc = *(uint64_t *)value;
-                         // force to quit execution and flush TB
-                         uc->quit_request = true;
-                         uc_emu_stop(uc);
-                         break;
+                    ARM_CPU(uc, mycpu)->env.pc = *(uint64_t *)value;
+                    // force to quit execution and flush TB
+                    uc->quit_request = true;
+                    uc_emu_stop(uc);
+                    break;
                 case UC_ARM64_REG_SP:
-                         ARM_CPU(uc, mycpu)->env.xregs[31] = *(uint64_t *)value;
-                         break;
+                    ARM_CPU(uc, mycpu)->env.xregs[31] = *(uint64_t *)value;
+                    break;
                 case UC_ARM64_REG_NZCV:
-                         cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *) value, CPSR_NZCV);
-                         break;
+                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *) value, CPSR_NZCV);
+                    break;
             }
         }
     }

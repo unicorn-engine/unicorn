@@ -268,7 +268,12 @@ module Unicorn
 # pseudo registers
 	UC_ARM64_REG_PC = 260
 	UC_ARM64_REG_CPACR_EL1 = 261
-	UC_ARM64_REG_ENDING = 262
+
+# thread registers
+	UC_ARM64_REG_TPIDR_EL0 = 262
+	UC_ARM64_REG_TPIDRRO_EL0 = 263
+	UC_ARM64_REG_TPIDR_EL1 = 264
+	UC_ARM64_REG_ENDING = 265
 
 # alias registers
 	UC_ARM64_REG_IP1 = 215
