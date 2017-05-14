@@ -72,7 +72,8 @@ VALUE m_uc_initialize(VALUE self, VALUE arch, VALUE mode) {
 
     VALUE uc = Data_Wrap_Struct(UcClass, 0, uc_close, _uc);
     rb_iv_set(self, "@uch", uc);
-
+    rb_iv_set(self, "@hooks", rb_ary_new());
+    
     return self;
 }
 
@@ -335,6 +336,13 @@ static void cb_hook_intr(uc_engine *uc, uint64_t address, uint32_t size, int64_t
     rb_funcall(cb, rb_intern("call"), 5, rUc, ULL2NUM(address), UINT2NUM(size), LL2NUM(value), ud);
 }
 
+static void mark_hook(void *p){
+    struct hook *hook = (struct hook *)p;
+    rb_gc_mark(hook->cb);
+    rb_gc_mark(hook->ud);
+    rb_gc_mark(hook->rUc); // just for completeness sake even though this should already be marked
+}
+
 VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
     VALUE hook_type;
     VALUE callback;
@@ -343,7 +351,8 @@ VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
     VALUE end;
     VALUE arg1;
     uc_engine *_uc;
-    Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
+    Data_Get_Struct(rb_iv_get(self, "@uch"), uc_engine, _uc);
+    
     rb_scan_args(argc, argv, "24",&hook_type, &callback, &user_data, &begin, &end, &arg1);
     if (NIL_P(begin))
         begin = ULL2NUM(1);
@@ -363,13 +372,11 @@ VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
     hook->cb = callback;
     hook->ud = user_data;
     hook->rUc = self;
-
-    // If I could, I would just mark the Hook object we wind up creating from this,
-    // but noooo, adding VALUEs as GC roots would be too easy. I have to add pointers
-    // to values as GC roots instead.
-    rb_gc_register_address(&hook->cb);
-    rb_gc_register_address(&hook->ud);
-    rb_gc_register_address(&hook->rUc);
+    VALUE r_hook;
+    VALUE hooks_list;
+    r_hook = Data_Wrap_Struct(Hook, mark_hook, free, hook);
+    hooks_list = rb_iv_get(self, "@hooks");
+    rb_ary_push(hooks_list, r_hook);
     
     uint32_t htype = NUM2UINT(hook_type);
     if(htype == UC_HOOK_INSN){
@@ -424,10 +431,8 @@ VALUE m_uc_hook_del(VALUE self, VALUE hook){
     struct hook *h;
     Data_Get_Struct(hook, struct hook, h);
     err = uc_hook_del(_uc, h->trace);
-    rb_gc_register_address(&h->cb);
-    rb_gc_register_address(&h->ud);
-    rb_gc_register_address(&h->rUc);
-    // someone should free that hook struct but not us because the VM still has a reference to it
+    
+    rb_ary_delete(rb_iv_get(self, "@hooks"), hook);
 
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
