@@ -54,7 +54,7 @@ def test_arm64():
 
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
-	print(">>> As big endian, X15 should be 0x12:");
+        print(">>> As big endian, X15 should be 0x12:")
 
         x11 = mu.reg_read(UC_ARM64_REG_X11)
         x13 = mu.reg_read(UC_ARM64_REG_X13)
