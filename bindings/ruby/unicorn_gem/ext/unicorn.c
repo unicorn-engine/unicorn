@@ -420,8 +420,7 @@ VALUE m_uc_hook_add(int argc, VALUE* argv, VALUE self){
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
     }
-    // ruby isn't allowed to free this because Unicorn keeps a reference to it
-    return Data_Wrap_Struct(Hook, 0, 0, hook);
+    return r_hook;
 }
 
 VALUE m_uc_hook_del(VALUE self, VALUE hook){
