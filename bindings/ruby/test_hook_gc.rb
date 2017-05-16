@@ -1,19 +1,21 @@
 #!/usr/bin/env ruby
 require 'unicorn'
 require 'unicorn/x86_const'
+require 'weakref'
 
 include Unicorn
 
-X86_CODE32 = "\x41\x4a" # INC ecx; DEC edx
+X86_CODE32 = "\x41" # INC ecx; DEC edx
 
 # memory address where emulation starts
 ADDRESS = 0x1000000
 
 # callback for tracing instructions
 hook_code = Proc.new do |uc, address, size, user_data|
-    puts("proc was not collected, test passed")
-    exit 0
+    puts("proc was run")
 end
+
+hook_code_weak = WeakRef.new hook_code
 
 begin
     # Initialize emulator in X86-32bit mode
@@ -38,8 +40,7 @@ begin
     # emulate machine code in infinite time
     mu.emu_start(ADDRESS, ADDRESS + X86_CODE32.bytesize)
 
-    puts("we should not reach this point. the hook is supposed to exit")
-    exit 1
+    mu = nil # erase reference to Uc because apparently it doesn't go out of scope after this?
 rescue UcError => e
     puts("ERROR: %s" % e)
     exit 1
@@ -47,3 +48,13 @@ rescue NoMethodError => e
     puts("proc was garbage collected and we tried to invoke `call` on something strange")
     exit 1
 end
+
+GC.start()
+
+if hook_code_weak.weakref_alive?() then
+  puts("proc was not garbage collected")
+  exit 1
+end
+
+puts "test passed"
+exit 0
