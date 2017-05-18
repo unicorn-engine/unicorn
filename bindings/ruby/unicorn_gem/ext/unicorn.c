@@ -324,7 +324,7 @@ static void cb_hook_insn_syscall(uc_engine *uc, void *user_data){
     rb_funcall(cb, rb_intern("call"), 2, rUc, ud);
 }
 
-static void cb_hook_intr(uc_engine *uc, uint64_t address, uint32_t size, int64_t value, void *user_data){
+static void cb_hook_intr(uc_engine *uc, uint32_t intno, void *user_data){
     struct hook *hook = (struct hook *)user_data;
     VALUE cb;
     VALUE ud;
@@ -333,7 +333,7 @@ static void cb_hook_intr(uc_engine *uc, uint64_t address, uint32_t size, int64_t
     cb = hook->cb;
     ud = hook->ud;
     rUc = hook->rUc;
-    rb_funcall(cb, rb_intern("call"), 5, rUc, ULL2NUM(address), UINT2NUM(size), LL2NUM(value), ud);
+    rb_funcall(cb, rb_intern("call"), 3, rUc, ULL2NUM(intno), ud);
 }
 
 static void mark_hook(void *p){
