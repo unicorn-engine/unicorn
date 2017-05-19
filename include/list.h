@@ -14,6 +14,8 @@ struct list {
 
 struct list *list_new(void);
 void list_clear(struct list *list);
+void *list_add(struct list *list, void *data, bool front);
+void *list_insert(struct list *list, void *data);
 void *list_append(struct list *list, void *data);
 bool list_remove(struct list *list, void *data);
 

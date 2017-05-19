@@ -22,7 +22,29 @@ void list_clear(struct list *list)
     list->tail = NULL;
 }
 
-// returns generated linked list node, or NULL on failure
+
+// dispatches to insert/append based on the value of front
+void *list_add(struct list *list, void *data, bool front) {
+    if (front) {
+        return list_insert(list, data);
+    } else {
+        return list_append(list, data);
+    }
+}
+
+// insert to front of list. returns new node, or NULL on failure.
+void *list_insert(struct list *list, void *data) {
+    struct list_item *item = malloc(sizeof(struct list_item));
+    if (item == NULL) {
+        return NULL;
+    }
+    item->next = list->head;
+    item->data = data;
+    list->head = item;
+    return item;
+}
+
+// append to end of list. returns new node, or NULL on failure.
 void *list_append(struct list *list, void *data)
 {
     struct list_item *item = malloc(sizeof(struct list_item));
