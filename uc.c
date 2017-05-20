@@ -1155,6 +1155,11 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
         return UC_ERR_OK;
     }
 
+    if (type == UC_QUERY_ARCH) {
+        *result = uc->arch;
+        return UC_ERR_OK;
+    }
+
     switch(uc->arch) {
 #ifdef UNICORN_HAS_ARM
         case UC_ARCH_ARM:

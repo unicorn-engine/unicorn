@@ -305,6 +305,7 @@ typedef enum uc_query_type {
     // Dynamically query current hardware mode.
     UC_QUERY_MODE = 1,
     UC_QUERY_PAGE_SIZE,
+    UC_QUERY_ARCH,
 } uc_query_type;
 
 // Opaque storage for CPU context, used with uc_context_*()

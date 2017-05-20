@@ -101,6 +101,7 @@ module Common =
     let UC_HOOK_MEM_VALID = 7168
     let UC_QUERY_MODE = 1
     let UC_QUERY_PAGE_SIZE = 2
+    let UC_QUERY_ARCH = 3
 
     let UC_PROT_NONE = 0
     let UC_PROT_READ = 1
