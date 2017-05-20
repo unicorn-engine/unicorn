@@ -282,6 +282,8 @@ typedef enum uc_arm64_reg {
 
     UC_ARM64_REG_CPACR_EL1,
 
+    UC_ARM64_REG_ESR,			// exception syndrome register
+
     //> thread registers
     UC_ARM64_REG_TPIDR_EL0,
     UC_ARM64_REG_TPIDRRO_EL0,

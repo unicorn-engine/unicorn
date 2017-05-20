@@ -79,6 +79,9 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
                 case UC_ARM64_REG_CPACR_EL1:
                     *(uint32_t *)value = ARM_CPU(uc, mycpu)->env.cp15.c1_coproc;
                     break;
+	        case UC_ARM64_REG_ESR:
+                    *(uint32_t *)value = ARM_CPU(uc, mycpu)->env.exception.syndrome;
+                    break;
                 case UC_ARM64_REG_TPIDR_EL0:
                     *(int64_t *)value = ARM_CPU(uc, mycpu)->env.cp15.tpidr_el0;
                     break;
