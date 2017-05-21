@@ -121,35 +121,39 @@ VALUE m_uc_reg_read(VALUE self, VALUE reg_id){
 
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
-    switch(tmp_reg){
-        case UC_X86_REG_GDTR:
-        case UC_X86_REG_IDTR:
-        case UC_X86_REG_LDTR:
-        case UC_X86_REG_TR:
-            mmr.selector = 0;
-            mmr.base = 0;
-            mmr.limit = 0;
-            mmr.flags = 0;
-            err = uc_reg_read(_uc, tmp_reg, &mmr);
 
-            if (err != UC_ERR_OK) {
-              rb_raise(UcError, "%s", uc_strerror(err));
-            }
-            VALUE mmr_ary = rb_ary_new();
-            reg_value = mmr.selector;
-            rb_ary_store(mmr_ary, 0, UINT2NUM(reg_value));
-            rb_ary_store(mmr_ary, 1, ULL2NUM(mmr.base));
-            rb_ary_store(mmr_ary, 2, UINT2NUM(mmr.limit));
-            rb_ary_store(mmr_ary, 3, UINT2NUM(mmr.flags));
-            return mmr_ary;
-        default:
-            err = uc_reg_read(_uc, tmp_reg, &reg_value);
-            if (err != UC_ERR_OK) {
-              rb_raise(UcError, "%s", uc_strerror(err));
-            }
-            return ULL2NUM(reg_value);
+    uc_arch arch;
+    uc_query(_uc, UC_QUERY_ARCH, &arch);
+
+    if(arch == UC_ARCH_X86) {
+        switch(tmp_reg){
+            case UC_X86_REG_GDTR:
+            case UC_X86_REG_IDTR:
+            case UC_X86_REG_LDTR:
+            case UC_X86_REG_TR:
+                mmr.selector = 0;
+                mmr.base = 0;
+                mmr.limit = 0;
+                mmr.flags = 0;
+                err = uc_reg_read(_uc, tmp_reg, &mmr);
+
+                if (err != UC_ERR_OK) {
+                  rb_raise(UcError, "%s", uc_strerror(err));
+                }
+                VALUE mmr_ary = rb_ary_new();
+                reg_value = mmr.selector;
+                rb_ary_store(mmr_ary, 0, UINT2NUM(reg_value));
+                rb_ary_store(mmr_ary, 1, ULL2NUM(mmr.base));
+                rb_ary_store(mmr_ary, 2, UINT2NUM(mmr.limit));
+                rb_ary_store(mmr_ary, 3, UINT2NUM(mmr.flags));
+                return mmr_ary;
+        }
     }
-
+    err = uc_reg_read(_uc, tmp_reg, &reg_value);
+    if (err != UC_ERR_OK) {
+      rb_raise(UcError, "%s", uc_strerror(err));
+    }
+    return ULL2NUM(reg_value);
 }
 
 VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
