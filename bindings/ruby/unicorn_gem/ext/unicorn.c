@@ -140,6 +140,23 @@ VALUE m_uc_reg_read(VALUE self, VALUE reg_id){
                 return mmr_ary;
         }
     }
+    if(arch == UC_ARCH_ARM64) {
+        // V & Q registers are the same
+        if(tmp_reg >= UC_ARM64_REG_V0 && tmp_reg <= UC_ARM64_REG_V31) {
+            tmp_reg += UC_ARM64_REG_Q0 - UC_ARM64_REG_V0;
+        }
+        if(tmp_reg >= UC_ARM64_REG_Q0 && tmp_reg <= UC_ARM64_REG_Q31) {
+            uint64_t neon128_value[2];
+            err = uc_reg_read(_uc, tmp_reg, &neon128_value);
+            if (err != UC_ERR_OK) {
+              rb_raise(UcError, "%s", uc_strerror(err));
+            }
+            VALUE float128_ary = rb_ary_new();
+            rb_ary_store(float128_ary, 0, ULL2NUM(neon128_value[0]));
+            rb_ary_store(float128_ary, 1, ULL2NUM(neon128_value[1]));
+            return float128_ary;
+        }
+    }
     err = uc_reg_read(_uc, tmp_reg, &reg_value);
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
@@ -174,7 +191,25 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
                 if (err != UC_ERR_OK) {
                   rb_raise(UcError, "%s", uc_strerror(err));
                 }
-                return;
+                return Qnil;
+        }
+    }
+    if(arch == UC_ARCH_ARM64) {
+        // V & Q registers are the same
+        if(tmp_reg >= UC_ARM64_REG_V0 && tmp_reg <= UC_ARM64_REG_V31) {
+            tmp_reg += UC_ARM64_REG_Q0 - UC_ARM64_REG_V0;
+        }
+        if(tmp_reg >= UC_ARM64_REG_Q0 && tmp_reg <= UC_ARM64_REG_Q31) {
+            Check_Type(reg_value, T_ARRAY);
+
+            uint64_t neon128_value[2];
+            neon128_value[0] = NUM2ULL(rb_ary_entry(reg_value, 0));
+            neon128_value[1] = NUM2ULL(rb_ary_entry(reg_value, 1));
+            err = uc_reg_write(_uc, NUM2INT(reg_id), &neon128_value);
+            if (err != UC_ERR_OK) {
+              rb_raise(UcError, "%s", uc_strerror(err));
+            }
+            return Qnil;
         }
     }
     
