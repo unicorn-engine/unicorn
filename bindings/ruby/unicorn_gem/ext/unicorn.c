@@ -59,7 +59,7 @@ void Init_unicorn() {
     rb_define_method(UcClass, "query", m_uc_query, 1);
     rb_define_method(UcClass, "context_save", m_uc_context_save, 0);
     rb_define_method(UcClass, "context_update", m_uc_context_update, 1);
-    rb_define_method(UcClass, "contest_restore", m_uc_context_restore, 1);
+    rb_define_method(UcClass, "context_restore", m_uc_context_restore, 1);
 }
 
 VALUE m_uc_initialize(VALUE self, VALUE arch, VALUE mode) {
