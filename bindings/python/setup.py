@@ -92,8 +92,12 @@ def copy_sources():
     shutil.copytree(os.path.join(ROOT_DIR, '../../include'), os.path.join(SRC_DIR, 'include/'))
     # make -> configure -> clean -> clean tests fails unless tests is present
     shutil.copytree(os.path.join(ROOT_DIR, '../../tests'), os.path.join(SRC_DIR, 'tests/'))
-    # remove site-specific configuration file
-    os.remove(os.path.join(SRC_DIR, 'qemu/config-host.mak'))
+    try:
+        # remove site-specific configuration file
+        # might not exist
+        os.remove(os.path.join(SRC_DIR, 'qemu/config-host.mak'))
+    except OSError:
+        pass
 
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.[ch]")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.mk")))
