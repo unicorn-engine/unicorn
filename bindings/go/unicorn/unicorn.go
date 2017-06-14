@@ -52,6 +52,7 @@ type Unicorn interface {
 	Start(begin, until uint64) error
 	StartWithOptions(begin, until uint64, options *UcOptions) error
 	Stop() error
+	HookAddEx(htype int, cb interface{}, front bool, begin, end uint64, extra ...int) (Hook, error)
 	HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int) (Hook, error)
 	HookDel(hook Hook) error
 	Query(queryType int) (uint64, error)

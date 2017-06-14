@@ -1008,14 +1008,18 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
     return NULL;
 }
 
-UNICORN_EXPORT
-uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
+uc_err uc_hook_add_ex(uc_engine *uc, uc_hook *hh, int type, void *callback, bool front,
         void *user_data, uint64_t begin, uint64_t end, ...)
 {
     int ret = UC_ERR_OK;
     int i = 0;
+    struct hook *hook = NULL;
+    
+    if (callback == NULL) {
+        return UC_ERR_ARG;
+    }
 
-    struct hook *hook = calloc(1, sizeof(struct hook));
+    hook = calloc(1, sizeof(struct hook));
     if (hook == NULL) {
         return UC_ERR_NOMEM;
     }
@@ -1035,7 +1039,6 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         va_start(valist, end);
         hook->insn = va_arg(valist, int);
         va_end(valist);
-
         if (uc->insn_hook_validate) {
             if (! uc->insn_hook_validate(hook->insn)) {
                 free(hook);
@@ -1043,7 +1046,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
             }
         }
 
-        if (list_append(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
+        if (list_add(&uc->hook[UC_HOOK_INSN_IDX], hook, front) == NULL) {
             free(hook);
             return UC_ERR_NOMEM;
         }
@@ -1056,7 +1059,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         if ((type >> i) & 1) {
             // TODO: invalid hook error?
             if (i < UC_HOOK_MAX) {
-                if (list_append(&uc->hook[i], hook) == NULL) {
+                if (list_add(&uc->hook[i], hook, front) == NULL) {
                     if (hook->refs == 0) {
                         free(hook);
                     }
@@ -1075,6 +1078,20 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
     }
 
     return ret;
+}
+
+UNICORN_EXPORT
+uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
+        void *user_data, uint64_t begin, uint64_t end, ...)
+{
+    int insn = 0;
+    if (type & UC_HOOK_INSN) {
+        va_list valist;
+        va_start(valist, end);
+        insn = va_arg(valist, int);
+        va_end(valist);
+    }
+    return uc_hook_add_ex(uc, hh, type, callback, false, user_data, begin, end, insn);
 }
 
 UNICORN_EXPORT
@@ -1103,7 +1120,7 @@ void helper_uc_tracecode(int32_t size, uc_hook_type type, void *handle, int64_t 
 void helper_uc_tracecode(int32_t size, uc_hook_type type, void *handle, int64_t address)
 {
     struct uc_struct *uc = handle;
-    struct list_item *cur = uc->hook[type].head;
+    struct list_item *next, *cur = uc->hook[type].head;
     struct hook *hook;
 
     // sync PC in CPUArchState with address
@@ -1113,10 +1130,12 @@ void helper_uc_tracecode(int32_t size, uc_hook_type type, void *handle, int64_t 
 
     while (cur != NULL && !uc->stop_request) {
         hook = (struct hook *)cur->data;
+        // fetch ahead so the hook can remove itself safely
+        next = cur->next;
         if (HOOK_BOUND_CHECK(hook, (uint64_t)address)) {
             ((uc_cb_hookcode_t)hook->callback)(uc, address, size, hook->user_data);
         }
-        cur = cur->next;
+        cur = next;
     }
 }
 

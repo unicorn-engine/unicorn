@@ -98,7 +98,7 @@ func hookX86Syscall(handle unsafe.Pointer, user unsafe.Pointer) {
 	hook.Callback.(func(Unicorn))(hook.Uc)
 }
 
-func (u *uc) HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int) (Hook, error) {
+func (u *uc) HookAddEx(htype int, cb interface{}, front bool, begin, end uint64, extra ...int) (Hook, error) {
 	var callback unsafe.Pointer
 	var insn C.int
 	var insnMode bool
@@ -135,13 +135,17 @@ func (u *uc) HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int)
 	data := &HookData{u, cb}
 	uptr := hookMap.insert(data)
 	if insnMode {
-		C.uc_hook_add_insn(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end), insn)
+		C.uc_hook_add_insn(u.handle, &h2, C.uc_hook_type(htype), callback, C.bool(front), C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end), insn)
 	} else {
-		C.uc_hook_add_wrap(u.handle, &h2, C.uc_hook_type(htype), callback, C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end))
+		C.uc_hook_add_wrap(u.handle, &h2, C.uc_hook_type(htype), callback, C.bool(front), C.uintptr_t(uptr), C.uint64_t(begin), C.uint64_t(end))
 	}
 	// TODO: could move Hook and uptr onto HookData and just return it
 	u.hooks[Hook(h2)] = uptr
 	return Hook(h2), nil
+}
+
+func (u *uc) HookAdd(htype int, cb interface{}, begin, end uint64, extra ...int) (Hook, error) {
+	return u.HookAddEx(htype, cb, false, begin, end, extra...)
 }
 
 func (u *uc) HookDel(hook Hook) error {

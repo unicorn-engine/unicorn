@@ -1,16 +1,14 @@
 #include <unicorn/unicorn.h>
 #include "_cgo_export.h"
 
-uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
-                void *user_data, uint64_t begin, uint64_t end, ...);
+uc_err uc_hook_add_ex(uc_engine *uc, uc_hook *hh, int type, void *callback, bool front, void *user_data, uint64_t begin, uint64_t end, ...);
 
-
-uc_err uc_hook_add_wrap(uc_engine *handle, uc_hook *h2, uc_hook_type type, void *callback, uintptr_t user, uint64_t begin, uint64_t end) {
-    return uc_hook_add(handle, h2, type, callback, (void *)user, begin, end);
+uc_err uc_hook_add_wrap(uc_engine *handle, uc_hook *h2, uc_hook_type type, void *callback, bool front, uintptr_t user, uint64_t begin, uint64_t end) {
+    return uc_hook_add_ex(handle, h2, type, callback, front, (void *)user, begin, end);
 }
 
-uc_err uc_hook_add_insn(uc_engine *handle, uc_hook *h2, uc_hook_type type, void *callback, uintptr_t user, uint64_t begin, uint64_t end, int insn) {
-    return uc_hook_add(handle, h2, type, callback, (void *)user, begin, end, insn);
+uc_err uc_hook_add_insn(uc_engine *handle, uc_hook *h2, uc_hook_type type, void *callback, bool front, uintptr_t user, uint64_t begin, uint64_t end, int insn) {
+    return uc_hook_add_ex(handle, h2, type, callback, front, (void *)user, begin, end, insn);
 }
 
 void hookCode_cgo(uc_engine *handle, uint64_t addr, uint32_t size, uintptr_t user) {

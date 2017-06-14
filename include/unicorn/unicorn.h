@@ -544,6 +544,16 @@ uc_err uc_emu_stop(uc_engine *uc);
    for detailed error).
 */
 UNICORN_EXPORT
+uc_err uc_hook_add_ex(uc_engine *uc, uc_hook *hh, int type, void *callback, bool front,
+        void *user_data, uint64_t begin, uint64_t end, ...);
+
+/*
+ Register callback for a hook event.
+ The callback will be run when the hook event is hit.
+
+ Just wraps uc_hook_add_ex() with front=false for legacy reasons.
+ */
+UNICORN_EXPORT
 uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         void *user_data, uint64_t begin, uint64_t end, ...);
 
