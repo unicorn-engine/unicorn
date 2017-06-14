@@ -745,6 +745,64 @@ static void test_i386_context_save(void)
     uc_close(uc);
 }
 
+static void test_i386_invalid_c6c7(void)
+{
+    uc_engine *uc;
+    uc_err err;
+    uint8_t codebuf[16] = { 0 };
+    uint8_t opcodes[] = { 0xc6, 0xc7 };
+    bool valid_masks[4][8] = {
+        { true, false, false, false, false, false, false, false },
+        { true, false, false, false, false, false, false, false },
+        { true, false, false, false, false, false, false, false },
+        { true, false, false, false, false, false, false, true  },
+    };
+    int i, j, k;
+
+    printf("===================================\n");
+    printf("Emulate i386 C6/C7 opcodes\n");
+
+    // Initialize emulator in X86-32bit mode
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        return;
+    }
+
+    // map 2MB memory for this emulation
+    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+
+    for (i = 0; i < 2; ++i) {
+        // set opcode
+        codebuf[0] = opcodes[i];
+
+        for (j = 0; j < 4; ++j) {
+            for (k = 0; k < 8; ++k) {
+                // set Mod bits
+                codebuf[1]  = (uint8_t) (j << 6);
+                // set Reg bits
+                codebuf[1] |= (uint8_t) (k << 3);
+
+                // perform validation
+                if (uc_mem_write(uc, ADDRESS, codebuf, sizeof(codebuf))) {
+                    printf("Failed to write emulation code to memory, quit!\n");
+                    return;
+                }
+                err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(codebuf), 0, 0);
+                if ((err != UC_ERR_INSN_INVALID) ^ valid_masks[j][k]) {
+                    printf("Unexpected uc_emu_start() error returned %u: %s\n",
+                           err, uc_strerror(err));
+                    return;
+                }
+            }
+        }
+    }
+
+    printf(">>> Emulation done.\n");
+
+    uc_close(uc);
+}
+
 static void test_x86_64(void)
 {
     uc_engine *uc;
@@ -981,6 +1039,7 @@ int main(int argc, char **argv, char **envp)
             test_i386_invalid_mem_read();
             test_i386_invalid_mem_write();
             test_i386_jump_invalid();
+            test_i386_invalid_c6c7();
         }
         else if (!strcmp(argv[1], "-64")) {
             test_x86_64();
@@ -1001,10 +1060,11 @@ int main(int argc, char **argv, char **envp)
         test_i386_invalid_mem_read();
         test_i386_invalid_mem_write();
         test_i386_jump_invalid();
+        test_i386_invalid_c6c7();
         test_x86_64();
         test_x86_64_syscall();
 
     }
-    
+
     return 0;
 }
