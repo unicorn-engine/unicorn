@@ -745,6 +745,7 @@ static void test_i386_context_save(void)
     uc_close(uc);
 }
 
+#if 0
 static void test_i386_invalid_c6c7(void)
 {
     uc_engine *uc;
@@ -802,6 +803,7 @@ static void test_i386_invalid_c6c7(void)
 
     uc_close(uc);
 }
+#endif
 
 static void test_x86_64(void)
 {
@@ -1039,7 +1041,7 @@ int main(int argc, char **argv, char **envp)
             test_i386_invalid_mem_read();
             test_i386_invalid_mem_write();
             test_i386_jump_invalid();
-            test_i386_invalid_c6c7();
+            //test_i386_invalid_c6c7();
         }
         else if (!strcmp(argv[1], "-64")) {
             test_x86_64();
@@ -1060,7 +1062,7 @@ int main(int argc, char **argv, char **envp)
         test_i386_invalid_mem_read();
         test_i386_invalid_mem_write();
         test_i386_jump_invalid();
-        test_i386_invalid_c6c7();
+        //test_i386_invalid_c6c7();
         test_x86_64();
         test_x86_64_syscall();
 
