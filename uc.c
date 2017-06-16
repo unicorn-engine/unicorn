@@ -594,11 +594,12 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     }
     // set up count hook to count instructions.
     if (count > 0 && uc->count_hook == 0) {
+        uc_err err;
         // callback to count instructions must be run before everything else,
         // so instead of appending, we must insert the hook at the begin
         // of the hook list
         uc->hook_insert = 1;
-        uc_err err = uc_hook_add(uc, &uc->count_hook, UC_HOOK_CODE, hook_count_cb, NULL, 1, 0);
+        err = uc_hook_add(uc, &uc->count_hook, UC_HOOK_CODE, hook_count_cb, NULL, 1, 0);
         // restore to append mode for uc_hook_add()
         uc->hook_insert = 0;
         if (err != UC_ERR_OK) {
