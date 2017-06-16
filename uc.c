@@ -594,7 +594,13 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     }
     // set up count hook to count instructions.
     if (count > 0 && uc->count_hook == 0) {
+        // callback to count instructions must be run before everything else,
+        // so instead of appending, we must insert the hook at the begin
+        // of the hook list
+        uc->hook_insert = 1;
         uc_err err = uc_hook_add(uc, &uc->count_hook, UC_HOOK_CODE, hook_count_cb, NULL, 1, 0);
+        // restore to append mode for uc_hook_add()
+        uc->hook_insert = 0;
         if (err != UC_ERR_OK) {
             return err;
         }
@@ -1043,9 +1049,16 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
             }
         }
 
-        if (list_append(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
-            free(hook);
-            return UC_ERR_NOMEM;
+        if (uc->hook_insert) {
+            if (list_insert(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
+                free(hook);
+                return UC_ERR_NOMEM;
+            }
+        } else {
+            if (list_append(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
+                free(hook);
+                return UC_ERR_NOMEM;
+            }
         }
 
         hook->refs++;
@@ -1056,11 +1069,20 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         if ((type >> i) & 1) {
             // TODO: invalid hook error?
             if (i < UC_HOOK_MAX) {
-                if (list_append(&uc->hook[i], hook) == NULL) {
-                    if (hook->refs == 0) {
-                        free(hook);
+                if (uc->hook_insert) {
+                    if (list_insert(&uc->hook[i], hook) == NULL) {
+                        if (hook->refs == 0) {
+                            free(hook);
+                        }
+                        return UC_ERR_NOMEM;
                     }
-                    return UC_ERR_NOMEM;
+                } else {
+                    if (list_append(&uc->hook[i], hook) == NULL) {
+                        if (hook->refs == 0) {
+                            free(hook);
+                        }
+                        return UC_ERR_NOMEM;
+                    }
                 }
                 hook->refs++;
             }
