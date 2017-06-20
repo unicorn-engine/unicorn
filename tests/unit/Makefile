@@ -6,7 +6,7 @@ ASFLAGS += --32
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Linux)
 LDLIBS += -lrt -pthread
-ifeq ($(UNAME_S), Darwin)
+else ifeq ($(UNAME_S), Darwin)
 ASFLAGS = -arch i386
 endif
 
