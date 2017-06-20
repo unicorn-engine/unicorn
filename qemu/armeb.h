@@ -13,6 +13,7 @@
 #define phys_mem_clean phys_mem_clean_armeb
 #define tb_cleanup tb_cleanup_armeb
 #define memory_map memory_map_armeb
+#define memory_map_io memory_map_io_armeb
 #define memory_map_ptr memory_map_ptr_armeb
 #define memory_unmap memory_unmap_armeb
 #define memory_free memory_free_armeb
