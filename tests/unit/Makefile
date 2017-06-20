@@ -2,11 +2,13 @@ CFLAGS += -Wall -Werror -Wno-unused-function -g
 CFLAGS += -L ../../ -I ../../include
 CFLAGS += -L ../../cmocka/src -I ../../cmocka/include
 ASFLAGS += --32
+OBJCOPY = objcopy
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Linux)
 LDLIBS += -lrt -pthread
 else ifeq ($(UNAME_S), Darwin)
+OBJCOPY = gobjcopy
 ASFLAGS = -arch i386
 endif
 
@@ -35,7 +37,7 @@ clean:
 	rm -rf ${TEST_BINS} ${ALL_TESTS}
 
 %.bin: %.o
-	objcopy -O binary $^ $@
+	${OBJCOPY} -O binary $^ $@
 
 .PHONY: test
 test: all 
