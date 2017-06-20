@@ -9,4 +9,4 @@ if [[ ! -z $MSYSTEM ]]; then
 cp src/cmocka.so src/cmocka.dll
 fi
 # cmocka does not include headers in build
-cp -R /tmp/cmocka-1.1.0/include/ .
+cp -R /tmp/cmocka-1.1.1/include/ .
