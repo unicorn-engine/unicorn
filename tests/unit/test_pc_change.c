@@ -1,6 +1,7 @@
 // Test PC change during the callback. by Nguyen Anh Quynh, 2016
 #include "unicorn_test.h"
 #include "unicorn/unicorn.h"
+#include "sys/stat.h"
 
 #define OK(x)   uc_assert_success(x)
 
@@ -54,21 +55,12 @@ static void test_pc_change(void **state)
     uc_engine *uc = *state;
     uc_hook trace1;
     int32_t r_ecx = 3, r_edx = 15;
+    struct stat info;
+    char *code = read_file("pc_change.bin", &info);
 
 #define BASEADDR    0x1000000
 
     uint64_t address = BASEADDR;
-    const uint8_t code[] = {
-        0x41,           // inc ECX @0x1000000
-        0x41,           // inc ECX
-        0x41,           // inc ECX
-        0x41,           // inc ECX @0x1000003
-        0x41,           // inc ECX
-        0x41,           // inc ECX
-
-        0x42,           // inc EDX @0x1000006
-        0x42,           // inc EDX
-    };
 
 #undef BASEADDR
 
@@ -76,7 +68,7 @@ static void test_pc_change(void **state)
     OK(uc_mem_map(uc, address, 2 * 1024 * 1024, UC_PROT_ALL));
 
     // write machine code to be emulated to memory
-    OK(uc_mem_write(uc, address, code, sizeof(code)));
+    OK(uc_mem_write(uc, address, code, info.st_size));
 
     uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx);
     uc_reg_write(uc, UC_X86_REG_EDX, &r_edx);
@@ -93,6 +85,7 @@ static void test_pc_change(void **state)
     printf("ECX = %u, EDX = %u\n", r_ecx, r_edx);
     assert_int_equal(r_ecx, 6);
     assert_int_equal(r_edx, 17);
+    free(code);
 }
 
 int main(void)

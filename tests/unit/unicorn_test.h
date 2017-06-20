@@ -6,6 +6,7 @@
 #include <setjmp.h>
 #include <cmocka.h>
 #include <unicorn/unicorn.h>
+#include <sys/stat.h>
 
 /**
  * Assert that err matches expect
@@ -38,5 +39,12 @@ do {                                                                \
     }                                                               \
 } while (0)
 
+char * read_file(const char *filename, struct stat *info) {
+    stat(filename, info);
+    char *code = malloc(info->st_size);
+    FILE *fp = fopen(filename, "r");
+    fread(code, info->st_size, 1, fp);
+    return code;
+}
 
 #endif /* UNICORN_TEST_H */
