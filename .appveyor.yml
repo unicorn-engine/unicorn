@@ -2,7 +2,7 @@
 environment:
     CYG_MIRROR: http://cygwin.mirror.constant.com
     CYG_PACKAGES: make,gcc-core,clang,pkg-config,libpcre-devel,cmake,python-setuptools,ruby,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core
-    MSYS_PACKAGES: mingw-w64-x86_64-cmocka mingw-w64-i686-cmocka cmake
+    MSYS_PACKAGES: mingw-w64-cmocka cmake
     matrix:
         - MSYSTEM: MINGW64
           BASH: C:\msys64\usr\bin\bash
