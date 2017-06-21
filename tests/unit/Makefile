@@ -38,6 +38,7 @@ clean:
 
 %.bin: %.o
 	${OBJCOPY} -O binary $^ $@
+	hexdump -C $@
 
 .PHONY: test
 test: all 
