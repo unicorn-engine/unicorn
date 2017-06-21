@@ -110,8 +110,8 @@ static void test_high_address_read_values(void **state)
     if(rax != 0x4242424242424242) {
         fail_msg("wrong memory read from code %"PRIx64, rax);
     }
-    
-    free(code)
+
+    free(code);
 }
 
 
