@@ -77,7 +77,7 @@ static void test_pc_change(void **state)
     // trace all instructions
     OK(uc_hook_add(uc, &trace1, UC_HOOK_CODE, test_code_hook, NULL, 1, 0));
 
-    OK(uc_emu_start(uc, address, address+sizeof(code), 0, 0));
+    OK(uc_emu_start(uc, address, address+info.st_size, 0, 0));
 
     uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx);
     uc_reg_read(uc, UC_X86_REG_EDX, &r_edx);
