@@ -2,7 +2,7 @@
 environment:
     CYG_MIRROR: http://cygwin.mirror.constant.com
     CYG_PACKAGES: make,gcc-core,clang,pkg-config,libpcre-devel,cmake,python-setuptools,ruby,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core
-    MSYS_PACKAGES: mingw-w64-cmocka cmake
+    MSYS_PACKAGES: cmake
     matrix:
         - MSYSTEM: MINGW64
           BASH: C:\msys64\usr\bin\bash
@@ -55,4 +55,7 @@ build_script:
 # Test cygwin only
 test_script:
     - if defined CYG_ROOT (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && ./install-cmocka-linux.sh && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER:$APPVEYOR_BUILD_FOLDER/cmocka/src && make test")
-    - if defined MSYSTEM (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER && make test")
+    - if defined MSYSTEM (%BASH% -lc "wget https://ci.appveyor.com/api/buildjobs/o53k9pkp6w464jy8/artifacts/artifacts%2Fmingw-w64-i686-cmocka-1.1.1-1-any.pkg.tar.xz")
+    - if defined MSYSTEM (%BASH% -lc "wget https://ci.appveyor.com/api/buildjobs/o53k9pkp6w464jy8/artifacts/artifacts%2Fmingw-w64-x86_64-cmocka-1.1.1-1-any.pkg.tar.xz")
+    - if defined MSYSTEM (%BASH% -lc "pacman -U *.pkg.tar.xz")
+    - if defined MSYSTEM (%BASH -lc "cd $APPVEYOR_BUILD_FOLDER && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER && make test")
