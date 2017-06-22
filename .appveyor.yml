@@ -55,4 +55,4 @@ build_script:
 # Test cygwin only
 test_script:
     - if defined CYG_ROOT (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && ./install-cmocka-linux.sh && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER:$APPVEYOR_BUILD_FOLDER/cmocka/src && make test")
-    - if defined MSYSTEM (%BASH -lc "cd $APPVEYOR_BUILD_FOLDER && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER && make test")
+    - if defined MSYSTEM (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER && make test")
