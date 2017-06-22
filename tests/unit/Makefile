@@ -1,4 +1,5 @@
 CFLAGS += -Wall -Werror -Wno-unused-function -g
+CFLAGS += -D__USE_MINGW_ANSI_STDIO=1
 CFLAGS += -L ../../ -I ../../include
 CFLAGS += -L ../../cmocka/src -I ../../cmocka/include
 
