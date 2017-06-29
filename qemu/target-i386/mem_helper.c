@@ -114,8 +114,9 @@ void tlb_fill(CPUState *cs, target_ulong addr, int is_write, int mmu_idx,
               uintptr_t retaddr)
 {
     int ret;
+    CPUClass *cc = CPU_GET_CLASS(cs->uc, cs);
 
-    ret = x86_cpu_handle_mmu_fault(cs, addr, is_write, mmu_idx);
+    ret = cc->handle_mmu_fault(cs, addr, is_write, mmu_idx);
     if (ret) {
         X86CPU *cpu = X86_CPU(cs->uc, cs);
         CPUX86State *env = &cpu->env;

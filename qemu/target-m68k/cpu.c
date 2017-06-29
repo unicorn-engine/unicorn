@@ -190,9 +190,8 @@ static void m68k_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data
     cc->do_interrupt = m68k_cpu_do_interrupt;
     cc->cpu_exec_interrupt = m68k_cpu_exec_interrupt;
     cc->set_pc = m68k_cpu_set_pc;
-#ifdef CONFIG_USER_ONLY
     cc->handle_mmu_fault = m68k_cpu_handle_mmu_fault;
-#else
+#ifndef CONFIG_USER_ONLY
     cc->get_phys_page_debug = m68k_cpu_get_phys_page_debug;
 #endif
     cc->cpu_exec_enter = m68k_cpu_exec_enter;
@@ -215,11 +214,11 @@ void m68k_cpu_register_types(void *opaque)
     const TypeInfo m68k_cpu_type_info = {
         TYPE_M68K_CPU,
         TYPE_CPU,
-        
+
         sizeof(M68kCPUClass),
         sizeof(M68kCPU),
         opaque,
-        
+
         m68k_cpu_initfn,
         NULL,
         NULL,
