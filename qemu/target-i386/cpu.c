@@ -2586,9 +2586,8 @@ static void x86_cpu_common_class_init(struct uc_struct *uc, ObjectClass *oc, voi
     cc->synchronize_from_tb = x86_cpu_synchronize_from_tb;
     cc->get_arch_id = x86_cpu_get_arch_id;
     cc->get_paging_enabled = x86_cpu_get_paging_enabled;
-#ifdef CONFIG_USER_ONLY
     cc->handle_mmu_fault = x86_cpu_handle_mmu_fault;
-#else
+#ifndef CONFIG_USER_ONLY
     cc->get_memory_mapping = x86_cpu_get_memory_mapping;
     cc->get_phys_page_debug = x86_cpu_get_phys_page_debug;
 #endif

@@ -1062,9 +1062,8 @@ static void arm_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
     cc->cpu_exec_interrupt = arm_cpu_exec_interrupt;
     //cc->dump_state = arm_cpu_dump_state;
     cc->set_pc = arm_cpu_set_pc;
-#ifdef CONFIG_USER_ONLY
     cc->handle_mmu_fault = arm_cpu_handle_mmu_fault;
-#else
+#ifndef CONFIG_USER_ONLY
     cc->do_interrupt = arm_cpu_do_interrupt;
     cc->get_phys_page_debug = arm_cpu_get_phys_page_debug;
 #endif
@@ -1088,7 +1087,7 @@ static void cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)
 void arm_cpu_register_types(void *opaque)
 {
     const ARMCPUInfo *info = arm_cpus;
-    
+
     TypeInfo arm_cpu_type_info = { 0 };
     arm_cpu_type_info.name = TYPE_ARM_CPU,
     arm_cpu_type_info.parent = TYPE_CPU,
