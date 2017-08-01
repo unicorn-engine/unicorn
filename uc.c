@@ -953,7 +953,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
 
     // size must be multiple of uc->target_page_size
     if ((size & uc->target_page_align) != 0)
-        return UC_ERR_MAP;
+        return UC_ERR_ARG;
 
     if (uc->mem_redirect) {
         address = uc->mem_redirect(address);
