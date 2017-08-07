@@ -84,7 +84,7 @@ static void test_idt_gdt_i386(/*void **state*/)
     assert(ldt.base == 0xfedcba98);
     assert(ldt.limit == 0x11111111);
     assert(ldt.selector == 0x3333);
-    assert(ldt.flags = 0x55555555);
+    assert(ldt.flags == 0x55555555);
 
     //userspace can only set tr selector, remainder are loaded from 
     //GDT/LDT, but we allow all to emulator user
@@ -92,7 +92,7 @@ static void test_idt_gdt_i386(/*void **state*/)
     assert(tr.base == 0x22222222);
     assert(tr.limit == 0x33333333);
     assert(tr.selector == 0x4444);
-    assert(tr.flags = 0x66666666);
+    assert(tr.flags == 0x66666666);
 
     // read from memory
     err = uc_mem_read(uc, r_esp, buf, 6);
