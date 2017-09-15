@@ -251,11 +251,26 @@ class UcCleanupManager(object):
     def register(self, uc):
         ref = UcRef(uc, self._finalizer)
         ref._uch = uc._uch
+        ref._class = uc.__class__
         self._refs[id(ref)] = ref
 
     def _finalizer(self, ref):
+        # note: this method must be completely self-contained and cannot have any references
+        # to anything else in this module.
+        #
+        # This is because it may be called late in the Python interpreter's shutdown phase, at
+        # which point the module's variables may already have been deinitialized and set to None.
+        #
+        # Not respecting that can lead to errors such as:
+        #     Exception AttributeError:
+        #       "'NoneType' object has no attribute 'release_handle'"
+        #       in <bound method UcCleanupManager._finalizer of
+        #       <unicorn.unicorn.UcCleanupManager object at 0x7f0bb83e4310>> ignored
+        #
+        # For that reason, we do not try to access the `Uc` class directly here but instead use
+        # the saved `._class` reference.
         del self._refs[id(ref)]
-        Uc.release_handle(ref._uch)
+        ref._class.release_handle(ref._uch)
 
 class Uc(object):
     _cleanup = UcCleanupManager()
