@@ -2,7 +2,7 @@
 require 'unicornengine'
 require 'unicornengine/x86_const'
 
-include Unicorn
+include UnicornEngine
 
 X86_CODE32 = "\x41\x4a" # INC ecx; DEC edx
 X86_CODE32_LOOP = "\x41\x4a\xeb\xfe" # INC ecx; DEC edx; JMP self-loop

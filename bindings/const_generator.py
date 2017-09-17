@@ -25,7 +25,7 @@ template = {
             'comment_close': '',
         },
     'ruby': {
-            'header': "# For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [%s_const.rb]\n\nmodule Unicorn\n",
+            'header': "# For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [%s_const.rb]\n\nmodule UnicornEngine\n",
             'footer': "end",
             'line_format': '\tUC_%s = %s\n',
             'out_file': './ruby/unicorn_gem/lib/unicornengine/%s_const.rb',

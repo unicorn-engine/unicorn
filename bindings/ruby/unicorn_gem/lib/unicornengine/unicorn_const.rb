@@ -1,6 +1,6 @@
 # For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [unicorn_const.rb]
 
-module Unicorn
+module UnicornEngine
 	UC_API_MAJOR = 1
 
 	UC_API_MINOR = 0

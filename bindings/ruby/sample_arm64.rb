@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 # Sample code for ARM64 of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Ruby sample ported by Sascha Schirra <sashs82@gmail.com>
-require 'unicorn'
-require 'unicorn/arm64_const'
+require 'unicornengine'
+require 'unicornengine/arm64_const'
 
-include Unicorn
+include UnicornEngine
 
 # code to be emulated
 ARM64_CODE = "\xab\x01\x0f\x8b" #add x11, x13, x15

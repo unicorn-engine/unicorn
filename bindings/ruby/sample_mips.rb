@@ -1,10 +1,10 @@
 #!/usr/bin/env ruby
 # Sample code for MIPS of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Ruby sample ported by Sascha Schirra <sashs82@gmail.com>
-require 'unicorn'
-require 'unicorn/mips_const'
+require 'unicornengine'
+require 'unicornengine/mips_const'
 
-include Unicorn
+include UnicornEngine
 
 # code to be emulated
 MIPS_CODE_EB = "\x34\x21\x34\x56" # ori $at, $at, 0x3456;

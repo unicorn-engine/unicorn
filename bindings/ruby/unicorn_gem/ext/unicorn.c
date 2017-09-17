@@ -39,7 +39,7 @@ struct hook {
 
 void Init_unicornengine() {
     rb_require("unicornengine/unicorn_const");
-    UnicornModule = rb_define_module("Unicorn");
+    UnicornModule = rb_define_module("UnicornEngine");
     UcError = rb_define_class_under(UnicornModule, "UcError", rb_eStandardError);
     SavedContext = rb_define_class_under(UnicornModule, "SavedContext", rb_cObject);
     Hook = rb_define_class_under(UnicornModule, "Hook", rb_cObject);

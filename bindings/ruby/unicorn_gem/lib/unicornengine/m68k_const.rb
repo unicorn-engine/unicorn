@@ -1,6 +1,6 @@
 # For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [m68k_const.rb]
 
-module Unicorn
+module UnicornEngine
 
 # M68K registers
 
