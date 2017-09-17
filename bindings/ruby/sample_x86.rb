@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
-require 'unicorn'
-require 'unicorn/x86_const'
+require 'unicornengine'
+require 'unicornengine/x86_const'
 
 include Unicorn
 
