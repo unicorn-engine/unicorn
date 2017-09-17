@@ -22,6 +22,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 #include <unicorn/unicorn.h>
 #include <unicorn/x86.h>
 #include "unicorn.h"
+#include "types.h"
 
 VALUE UnicornModule = Qnil;
 VALUE UcClass = Qnil;
@@ -118,6 +119,7 @@ VALUE m_uc_reg_read(VALUE self, VALUE reg_id){
     int64_t reg_value = 0;
     VALUE to_ret;
     uc_x86_mmr mmr;
+    uc_x86_float80 float80;
 
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
@@ -147,6 +149,30 @@ VALUE m_uc_reg_read(VALUE self, VALUE reg_id){
                 rb_ary_store(mmr_ary, 2, UINT2NUM(mmr.limit));
                 rb_ary_store(mmr_ary, 3, UINT2NUM(mmr.flags));
                 return mmr_ary;
+
+            case UC_X86_REG_FP0:
+            case UC_X86_REG_FP1:
+            case UC_X86_REG_FP2:
+            case UC_X86_REG_FP3:
+            case UC_X86_REG_FP4:
+            case UC_X86_REG_FP5:
+            case UC_X86_REG_FP6:
+            case UC_X86_REG_FP7:
+                float80.mantissa = 0;
+                float80.exponent = 0;
+
+                err = uc_reg_read(_uc, tmp_reg, &float80);
+
+                if (err != UC_ERR_OK) {
+                    rb_raise(UcError, "%s", uc_strerror(err));
+                }
+
+                VALUE float80_ary = rb_ary_new();
+
+                rb_ary_store(float80_ary, 0, ULL2NUM(float80.mantissa));
+                rb_ary_store(float80_ary, 1, UINT2NUM(float80.exponent));
+
+                return float80_ary;
         }
     }
     if(arch == UC_ARCH_ARM64) {
@@ -177,6 +203,7 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
     uc_err err;
     int32_t tmp_reg = NUM2INT(reg_id);
     uc_x86_mmr mmr;
+    uc_x86_float80 float80;
     int64_t tmp;
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
@@ -200,6 +227,27 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
                 if (err != UC_ERR_OK) {
                   rb_raise(UcError, "%s", uc_strerror(err));
                 }
+                return Qnil;
+
+            case UC_X86_REG_FP0:
+            case UC_X86_REG_FP1:
+            case UC_X86_REG_FP2:
+            case UC_X86_REG_FP3:
+            case UC_X86_REG_FP4:
+            case UC_X86_REG_FP5:
+            case UC_X86_REG_FP6:
+            case UC_X86_REG_FP7:
+                Check_Type(reg_value, T_ARRAY);
+
+                float80.mantissa = NUM2ULL(rb_ary_entry(reg_value,0));
+                float80.exponent = NUM2USHORT(rb_ary_entry(reg_value,1));
+
+                err = uc_reg_write(_uc, tmp_reg, &float80);
+
+                if (err != UC_ERR_OK) {
+                  rb_raise(UcError, "%s", uc_strerror(err));
+                }
+
                 return Qnil;
         }
     }
