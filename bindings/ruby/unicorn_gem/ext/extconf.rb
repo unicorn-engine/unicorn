@@ -1,6 +1,6 @@
 require 'mkmf'
 
-extension_name = 'unicornengine'
+extension_name = 'unicorn_engine'
 
 dir_config(extension_name)
 have_library('unicorn')

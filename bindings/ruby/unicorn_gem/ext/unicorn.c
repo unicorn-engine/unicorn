@@ -30,15 +30,9 @@ VALUE UcError = Qnil;
 VALUE SavedContext = Qnil;
 VALUE Hook = Qnil;
 
-struct hook {
-  uc_hook trace;
-  VALUE cb;
-  VALUE ud;
-  VALUE rUc;
-};
 
-void Init_unicornengine() {
-    rb_require("unicornengine/unicorn_const");
+void Init_unicorn_engine() {
+    rb_require("unicorn_engine/unicorn_const");
     UnicornModule = rb_define_module("UnicornEngine");
     UcError = rb_define_class_under(UnicornModule, "UcError", rb_eStandardError);
     SavedContext = rb_define_class_under(UnicornModule, "SavedContext", rb_cObject);

@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # Sample code for SPARC of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Ruby sample ported by Sascha Schirra <sashs82@gmail.com>
-require 'unicornengine'
-require 'unicornengine/sparc_const'
+require 'unicorn_engine'
+require 'unicorn_engine/sparc_const'
 
 include UnicornEngine
 

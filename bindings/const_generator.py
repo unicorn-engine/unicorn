@@ -28,7 +28,7 @@ template = {
             'header': "# For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [%s_const.rb]\n\nmodule UnicornEngine\n",
             'footer': "end",
             'line_format': '\tUC_%s = %s\n',
-            'out_file': './ruby/unicorn_gem/lib/unicornengine/%s_const.rb',
+            'out_file': './ruby/unicorn_gem/lib/unicorn_engine/%s_const.rb',
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
             'arm64.h': 'arm64',

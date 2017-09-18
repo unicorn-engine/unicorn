@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
-require 'unicornengine'
-require 'unicornengine/arm_const'
+require 'unicorn_engine'
+require 'unicorn_engine/arm_const'
 
 include UnicornEngine
 

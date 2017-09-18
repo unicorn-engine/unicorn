@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
 # Sample code for ARM64 of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Ruby sample ported by Sascha Schirra <sashs82@gmail.com>
-require 'unicornengine'
-require 'unicornengine/arm64_const'
+require 'unicorn_engine'
+require 'unicorn_engine/arm64_const'
 
 include UnicornEngine
 
