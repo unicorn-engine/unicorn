@@ -1,6 +1,6 @@
 # For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [arm64_const.rb]
 
-module Unicorn
+module UnicornEngine
 
 # ARM64 registers
 
