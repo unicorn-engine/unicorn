@@ -8,6 +8,11 @@ from source.
 	This will build the core C library, package it with the python bindings, 
 	and install it to your system.
 
+    If you want to prevent the build of the native library during the python installation,
+    set the environment variable LIBUNICORN_PATH. You may also set this to a directory
+    containing libunicorn.so if you wish to use a verison of the native library other than
+    the globally installed one.
+
 
 2. Installing on Windows:
 
