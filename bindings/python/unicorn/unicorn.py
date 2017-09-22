@@ -71,13 +71,15 @@ def _load_lib(path):
 _uc = None
 
 # Loading attempts, in order
+# - user-provided environment variable
 # - pkg_resources can get us the path to the local libraries
 # - we can get the path to the local libraries by parsing our filename
 # - global load
 # - python's lib directory
 # - last-gasp attempt at some hardcoded paths on darwin and linux
 
-_path_list = [pkg_resources.resource_filename(__name__, 'lib'),
+_path_list = [os.getenv('LIBUNICORN_PATH', None),
+              pkg_resources.resource_filename(__name__, 'lib'),
               os.path.join(os.path.split(__file__)[0], 'lib'),
               '',
               distutils.sysconfig.get_python_lib(),
@@ -88,6 +90,7 @@ _path_list = [pkg_resources.resource_filename(__name__, 'lib'),
 #print("-" * 80)
 
 for _path in _path_list:
+    if _path is None: continue
     _uc = _load_lib(_path)
     if _uc is not None: break
 else:

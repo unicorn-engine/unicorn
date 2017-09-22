@@ -65,13 +65,13 @@ else:
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
-    STATIC_LIBRARY_FILE = 'libunicorn.a'
+    STATIC_LIBRARY_FILE = None
 elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
     STATIC_LIBRARY_FILE = "unicorn.lib"
 else:
     LIBRARY_FILE = "libunicorn.so"
-    STATIC_LIBRARY_FILE = 'libunicorn.a'
+    STATIC_LIBRARY_FILE = None
 
 def clean_bins():
     shutil.rmtree(LIBS_DIR, ignore_errors=True)
@@ -153,9 +153,11 @@ def build_libraries():
     # check if a prebuilt library exists
     # if so, use it instead of building
     if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)) \
-            and os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE)):
+            and (STATIC_LIBRARY_FILE is None \
+            or os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE))):
         shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE), LIBS_DIR)
-        shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE), LIBS_DIR)
+        if STATIC_LIBRARY_FILE is not None:
+            shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE), LIBS_DIR)
         return
 
     # otherwise, build!!
@@ -181,7 +183,8 @@ def build_libraries():
     shutil.copy(LIBRARY_FILE, LIBS_DIR)
     try:
         # static library may fail to build on windows if user doesn't have visual studio installed. this is fine.
-        shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+        if STATIC_LIBRARY_FILE is not None:
+            shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
     except:
         print('Warning: Could not build static library file! This build is not appropriate for a binary distribution')
         # enforce this
@@ -198,8 +201,11 @@ class custom_sdist(sdist):
 
 class custom_build(build):
     def run(self):
-        log.info("Building C extensions")
-        build_libraries()
+        if 'LIBUNICORN_PATH' in os.environ:
+            log.info("Skipping building C extensions since LIBUNICORN_PATH is set")
+        else:
+            log.info("Building C extensions")
+            build_libraries()
         return build.run(self)
 
 class custom_bdist_egg(bdist_egg):
