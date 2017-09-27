@@ -34,7 +34,7 @@ S_PRIV_2 = 0x2
 S_PRIV_1 = 0x1
 S_PRIV_0 = 0x0
 
-CODE = '6548330C2518000000'.decode('hex')  # x86-64: xor ecx, qword ptr gs:[0x18]
+CODE = '6548330C2518000000'.decode('hex')  # x86-64: xor rcx, qword ptr gs:[0x18]
 
 
 def create_selector(idx, flags):
