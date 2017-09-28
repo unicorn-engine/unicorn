@@ -117,7 +117,6 @@ class TestGetSetMSR(regress.RegressTest):
 
     def test_gs(self):
         uc = Uc(UC_ARCH_X86, UC_MODE_64)
-        uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED, hook_mem_read)
 
         uc.mem_map(SEGMENT_ADDR, SEGMENT_SIZE)
         uc.mem_map(CODE_ADDR, CODE_SIZE)
@@ -136,7 +135,6 @@ class TestGetSetMSR(regress.RegressTest):
 
     def test_fs(self):
         uc = Uc(UC_ARCH_X86, UC_MODE_64)
-        uc.hook_add(UC_HOOK_MEM_READ_UNMAPPED, hook_mem_read)
 
         uc.mem_map(SEGMENT_ADDR, SEGMENT_SIZE)
         uc.mem_map(CODE_ADDR, CODE_SIZE)
