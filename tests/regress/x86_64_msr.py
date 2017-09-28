@@ -129,7 +129,7 @@ class TestGetSetMSR(regress.RegressTest):
         set_gs(uc, SEGMENT_ADDR)
         self.assertEqual(SEGMENT_ADDR, get_gs(uc))
 
-        uc.emu_start(CODE_ADDR, CODE_ADDR+len(CODE))
+        uc.emu_start(CODE_ADDR, CODE_ADDR+len(code))
 
         self.assertEqual(uc.reg_read(UC_X86_REG_RCX), 0x4141414141414141)
 
@@ -147,7 +147,7 @@ class TestGetSetMSR(regress.RegressTest):
         set_fs(uc, SEGMENT_ADDR)
         self.assertEqual(SEGMENT_ADDR, get_fs(uc))
 
-        uc.emu_start(CODE_ADDR, CODE_ADDR+len(CODE))
+        uc.emu_start(CODE_ADDR, CODE_ADDR+len(code))
 
         self.assertEqual(uc.reg_read(UC_X86_REG_RCX), 0x4141414141414141)
 
