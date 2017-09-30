@@ -1,7 +1,7 @@
 language: c
 sudo: false
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install cmocka crosstool-ng; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew tap Homebrew/bundle && brew bundle; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./install-cmocka-linux.sh; fi
 script:
   - make && make -C bindings/go && make -C bindings/go test && make test
