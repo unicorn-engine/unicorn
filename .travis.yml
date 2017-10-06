@@ -13,16 +13,12 @@ os:
   - osx
 matrix:
   include:
-    - os: linux
-      dist: trusty
-      compiler: gcc
-    - os: linux
-      dist: trusty
-      compiler: clang
-    - os: osx
+    - if: branch = master
+      os: osx
       script: brew install --HEAD unicorn && brew test unicorn
       compiler: gcc
-    - os: osx
+    - if: branch = master
+      os: osx
       script: brew install --HEAD unicorn && brew test unicorn
       compiler: clang
   allow_failures:
