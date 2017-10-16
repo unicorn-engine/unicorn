@@ -5,7 +5,7 @@
 # Use bundle install && rake to install gem and test
 install: gen_const
 	cd unicorn_gem && rake build
-	cd unicorn_gem && gem install --local pkg/unicorn_engine-1.0.0.gem
+	cd unicorn_gem && gem install --local pkg/unicorn-engine-1.0.0.gem
 
 gen_const:
 	cd .. && python const_generator.py ruby
