@@ -4,7 +4,7 @@ $LOAD_PATH.unshift(lib) unless $LOAD_PATH.include?(lib)
 require 'unicorn_engine/version'
 
 Gem::Specification.new do |spec|
-  spec.name          = "unicorn_engine"
+  spec.name          = "unicorn-engine"
   spec.version       = Unicorn::VERSION
   spec.authors       = ["Sascha Schirra"]
   spec.email         = ["sashs@scoding.de"]
