@@ -2,7 +2,7 @@ language: c
 sudo: false
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update && brew bundle; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./install-cmocka-linux.sh; fi
+  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then curl https://nixos.org/nix/install | sh && . ~/.nix-profile/etc/profile.d/nix.sh && nix-env -i cmocka; fi
 script:
   - make && make -C bindings/go && make -C bindings/go test && make test
 compiler:
