@@ -291,8 +291,8 @@ typedef enum uc_arm64_reg {
 
     //> alias registers
 
-    UC_ARM64_REG_IP1 = UC_ARM64_REG_X16,
-    UC_ARM64_REG_IP0 = UC_ARM64_REG_X17,
+    UC_ARM64_REG_IP0 = UC_ARM64_REG_X16,
+    UC_ARM64_REG_IP1 = UC_ARM64_REG_X17,
     UC_ARM64_REG_FP = UC_ARM64_REG_X29,
     UC_ARM64_REG_LR = UC_ARM64_REG_X30,
 } uc_arm64_reg;
