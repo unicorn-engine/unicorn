@@ -27,4 +27,5 @@ matrix:
 addons:
   apt:
     packages:
-    # mingw-w64 packages too old in precise
+      - python3
+      # mingw-w64 packages too old in precise
