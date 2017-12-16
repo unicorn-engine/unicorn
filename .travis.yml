@@ -28,4 +28,5 @@ addons:
   apt:
     packages:
       - python3
+      - python3-pkg-resources
       # mingw-w64 packages too old in precise
