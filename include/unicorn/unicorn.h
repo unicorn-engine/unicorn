@@ -1,5 +1,8 @@
 /* Unicorn Emulator Engine */
-/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
+/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015-2017 */
+/* This file is released under LGPL2.
+   See COPYING.LGPL2 in root directory for more details
+*/
 
 #ifndef UNICORN_ENGINE_H
 #define UNICORN_ENGINE_H

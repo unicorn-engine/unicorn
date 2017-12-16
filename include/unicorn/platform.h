@@ -1,3 +1,7 @@
+/* This file is released under LGPL2.
+   See COPYING.LGPL2 in root directory for more details
+*/
+
 /*
  This file is to support header files that are missing in MSVC and
  other non-standard compilers.
