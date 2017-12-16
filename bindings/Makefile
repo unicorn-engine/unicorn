@@ -39,7 +39,7 @@ python:
 %.c.txt: c
 	$(ENV_VARS) ../samples/$(@:%.c.txt=%) > $@
 %.py.txt: python
-	$(ENV_VARS) python python/$(@:%.txt=%) > $@
+	$(ENV_VARS) python3 python/$(@:%.txt=%) > $@
 
 %.py.test: %.c.txt %.py.txt
 	$(DIFF) -u $(@:%.py.test=%.c.txt) $(@:%.py.test=%.py.txt)
