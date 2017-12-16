@@ -13,7 +13,7 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Linux)
 ENV_VARS = LD_PRELOAD=librt.so LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../
 else
-ENV_VARS = LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../
+ENV_VARS = LIBUNICORN_PATH=$(TRAVIS_BUILD_DIR)
 endif
 
 
