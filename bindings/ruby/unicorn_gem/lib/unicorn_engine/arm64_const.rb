@@ -276,8 +276,8 @@ module UnicornEngine
 	UC_ARM64_REG_ENDING = 265
 
 # alias registers
-	UC_ARM64_REG_IP1 = 215
-	UC_ARM64_REG_IP0 = 216
+	UC_ARM64_REG_IP0 = 215
+	UC_ARM64_REG_IP1 = 216
 	UC_ARM64_REG_FP = 1
 	UC_ARM64_REG_LR = 2
 end

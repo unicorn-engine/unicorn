@@ -278,8 +278,8 @@ public interface Arm64Const {
    public static final int UC_ARM64_REG_ENDING = 265;
 
 // alias registers
-   public static final int UC_ARM64_REG_IP1 = 215;
-   public static final int UC_ARM64_REG_IP0 = 216;
+   public static final int UC_ARM64_REG_IP0 = 215;
+   public static final int UC_ARM64_REG_IP1 = 216;
    public static final int UC_ARM64_REG_FP = 1;
    public static final int UC_ARM64_REG_LR = 2;
 
