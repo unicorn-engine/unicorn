@@ -29,16 +29,14 @@
 
 static void arm_cpu_set_pc(CPUState *cs, vaddr value)
 {
-    CPUARMState *env = cs->env_ptr;
-    ARMCPU *cpu = ARM_CPU(env->uc, cs);
+    ARMCPU *cpu = ARM_CPU(NULL, cs);
 
     cpu->env.regs[15] = value;
 }
 
 static bool arm_cpu_has_work(CPUState *cs)
 {
-    CPUARMState *env = cs->env_ptr;
-    ARMCPU *cpu = ARM_CPU(env->uc, cs);
+    ARMCPU *cpu = ARM_CPU(NULL, cs);
 
     return !cpu->powered_off
         && cs->interrupt_request &
