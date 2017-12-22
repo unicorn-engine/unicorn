@@ -20,3 +20,6 @@ More bindings created & maintained externally by community are available as foll
 
 - UnicornEngine: Perl binding (by Vikas Naresh Kumar)
     https://metacpan.org/pod/UnicornEngine
+
+- Unicorn.CR: Crystal binding (by Benoit Côté-Jodoin)
+    https://github.com/Becojo/unicorn.cr
