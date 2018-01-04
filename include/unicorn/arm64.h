@@ -284,6 +284,7 @@ typedef enum uc_arm64_reg {
     UC_ARM64_REG_PC,			// program counter register
 
     UC_ARM64_REG_CPACR_EL1,
+    UC_ARM64_REG_ESR,
 
     //> thread registers
     UC_ARM64_REG_TPIDR_EL0,
