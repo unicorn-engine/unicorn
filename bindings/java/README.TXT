@@ -32,3 +32,6 @@ The samples directory contains some sample code to show how to use Unicorn API.
 - SampleNetworkAuditing.java
   Unicorn sample for auditing network connection and file handling in shellcode.
 
+To uninstall Java binding for Unicorn:
+
+   $ sudo make uninstall
