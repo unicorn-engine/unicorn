@@ -106,6 +106,9 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
                 case UC_ARM64_REG_NZCV:
                     *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env) & CPSR_NZCV;
                     break;
+                case UC_ARM64_REG_PSTATE:
+                    *(uint32_t *)value = pstate_read(&ARM_CPU(uc, mycpu)->env);
+                    break;
             }
         }
     }
@@ -173,6 +176,9 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
                     break;
                 case UC_ARM64_REG_NZCV:
                     cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *) value, CPSR_NZCV);
+                    break;
+                case UC_ARM64_REG_PSTATE:
+                    pstate_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value);
                     break;
             }
         }
