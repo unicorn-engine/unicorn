@@ -10912,6 +10912,62 @@ static void disas_crypto_two_reg_sha(DisasContext *s, uint32_t insn)
     tcg_temp_free_i32(tcg_ctx, tcg_rn_regno);
 }
 
+/* Crypto four-register
+ *  31               23 22 21 20  16 15  14  10 9    5 4    0
+ * ---------------------------------------------------
+ * | 1 1 0 0 1 1 1 0 0 | Op0 |  Rm  | 0 |  Ra  |  Rn  |  Rd  |
+ * ---------------------------------------------------
+ */
+static void disas_crypto_four_reg(DisasContext *s, uint32_t insn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int op0 = extract32(insn, 21, 2);
+    int rm = extract32(insn, 16, 5);
+    int ra = extract32(insn, 10, 5);
+    int rn = extract32(insn, 5, 5);
+    int rd = extract32(insn, 0, 5);
+    TCGv_i64 tcg_op1, tcg_op2, tcg_op3, tcg_res[2];
+    int pass;
+
+    if (op0 > 1 || !arm_dc_feature(s, ARM_FEATURE_V8_SHA3)) {
+        unallocated_encoding(s);
+        return;
+    }
+
+    if (!fp_access_check(s)) {
+        return;
+    }
+
+    tcg_op1 = tcg_temp_new_i64(tcg_ctx);
+    tcg_op2 = tcg_temp_new_i64(tcg_ctx);
+    tcg_op3 = tcg_temp_new_i64(tcg_ctx);
+    tcg_res[0] = tcg_temp_new_i64(tcg_ctx);
+    tcg_res[1] = tcg_temp_new_i64(tcg_ctx);
+
+    for (pass = 0; pass < 2; pass++) {
+        read_vec_element(s, tcg_op1, rn, pass, MO_64);
+        read_vec_element(s, tcg_op2, rm, pass, MO_64);
+        read_vec_element(s, tcg_op3, ra, pass, MO_64);
+
+        if (op0 == 0) {
+            /* EOR3 */
+            tcg_gen_xor_i64(tcg_ctx, tcg_res[pass], tcg_op2, tcg_op3);
+        } else {
+            /* BCAX */
+            tcg_gen_andc_i64(tcg_ctx, tcg_res[pass], tcg_op2, tcg_op3);
+        }
+        tcg_gen_xor_i64(tcg_ctx, tcg_res[pass], tcg_res[pass], tcg_op1);
+    }
+    write_vec_element(s, tcg_res[0], rd, 0, MO_64);
+    write_vec_element(s, tcg_res[1], rd, 1, MO_64);
+
+    tcg_temp_free(tcg_ctx, tcg_op1);
+    tcg_temp_free(tcg_ctx, tcg_op2);
+    tcg_temp_free(tcg_ctx, tcg_op3);
+    tcg_temp_free(tcg_ctx, tcg_res[0]);
+    tcg_temp_free(tcg_ctx, tcg_res[1]);
+}
+
 /* C3.6 Data processing - SIMD, inc Crypto
  *
  * As the decode gets a little complex we are using a table based
@@ -10941,6 +10997,7 @@ static const AArch64DecodeTable data_proc_simd[] = {
     { 0x4e280800, 0xff3e0c00, disas_crypto_aes },
     { 0x5e000000, 0xff208c00, disas_crypto_three_reg_sha },
     { 0x5e280800, 0xff3e0c00, disas_crypto_two_reg_sha },
+    { 0xce000000, 0xff808000, disas_crypto_four_reg },
     { 0x00000000, 0x00000000, NULL }
 };
 
