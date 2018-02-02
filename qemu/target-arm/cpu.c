@@ -348,6 +348,11 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         } else {
             set_feature(env, ARM_FEATURE_V6);
         }
+
+        /* Always define VBAR for V7 CPUs even if it doesn't exist in
+         * non-EL3 configs. This is needed by some legacy boards.
+         */
+        set_feature(env, ARM_FEATURE_VBAR);
     }
     if (arm_feature(env, ARM_FEATURE_V6K)) {
         set_feature(env, ARM_FEATURE_V6);
@@ -389,6 +394,10 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
 
     if (cpu->reset_hivecs) {
             cpu->reset_sctlr |= (1 << 13);
+    }
+
+    if (arm_feature(env, ARM_FEATURE_EL3)) {
+        set_feature(env, ARM_FEATURE_VBAR);
     }
 
     register_cp_regs_for_features(cpu);

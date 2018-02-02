@@ -751,9 +751,6 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
     { "PMINTENCLR", 15,9,14, 0,0,2, 0,
       ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c9_pminten),
       NULL, NULL, pmintenclr_write, },
-    { "VBAR", 0,12,0, 3,0,0, ARM_CP_STATE_BOTH,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[1]),
-      NULL, NULL, vbar_write, },
     { "SCR", 15,1,1, 0,0,0, 0,
       0, PL1_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.scr_el3),
       NULL, NULL, scr_write },
@@ -2706,6 +2703,16 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             }
             define_one_arm_cp_reg(cpu, &cbar);
         }
+    }
+
+    if (arm_feature(env, ARM_FEATURE_VBAR)) {
+        ARMCPRegInfo vbar_cp_reginfo[] = {
+            { "VBAR", 0,12,0, 3,0,0, ARM_CP_STATE_BOTH,
+              0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[1]),
+              NULL, NULL, vbar_write, },
+            REGINFO_SENTINEL
+        };
+        define_arm_cp_regs(cpu, vbar_cp_reginfo);
     }
 
     /* Generic registers whose values depend on the implementation */
