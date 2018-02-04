@@ -248,11 +248,13 @@ static void gen_rev16(DisasContext *s, TCGv_i32 var)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i32 tmp = tcg_temp_new_i32(tcg_ctx);
+    TCGv_i32 mask = tcg_const_i32(tcg_ctx, 0x00ff00ff);
     tcg_gen_shri_i32(tcg_ctx, tmp, var, 8);
-    tcg_gen_andi_i32(tcg_ctx, tmp, tmp, 0x00ff00ff);
+    tcg_gen_and_i32(tcg_ctx, tmp, tmp, mask);
+    tcg_gen_and_i32(tcg_ctx, var, var, mask);
     tcg_gen_shli_i32(tcg_ctx, var, var, 8);
-    tcg_gen_andi_i32(tcg_ctx, var, var, 0xff00ff00);
     tcg_gen_or_i32(tcg_ctx, var, var, tmp);
+    tcg_temp_free_i32(tcg_ctx, mask);
     tcg_temp_free_i32(tcg_ctx, tmp);
 }
 
