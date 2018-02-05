@@ -339,7 +339,7 @@ ARCH=
 # Normalise host CPU name and set ARCH.
 # Note that this case should only have supported host CPUs, not guests.
 case "$cpu" in
-  ia64|ppc|ppc64|s390|s390x|sparc64|x32)
+  ppc|ppc64|s390|s390x|sparc64|x32)
     cpu="$cpu"
   ;;
   i386|i486|i586|i686|i86pc|BePC)
