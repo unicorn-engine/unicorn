@@ -1786,7 +1786,6 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
  */
 static void disas_ldst_excl(DisasContext *s, uint32_t insn)
 {
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int rt = extract32(insn, 0, 5);
     int rn = extract32(insn, 5, 5);
     int rt2 = extract32(insn, 10, 5);
