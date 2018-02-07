@@ -1537,6 +1537,33 @@ static inline void cpu_get_tb_cpu_state(CPUARMState *env, target_ulong *pc,
     *cs_base = 0;
 }
 
+/**
+ * aa32_vfp_dreg:
+ * Return a pointer to the Dn register within env in 32-bit mode.
+ */
+static inline uint64_t *aa32_vfp_dreg(CPUARMState *env, unsigned regno)
+{
+    return &env->vfp.regs[regno];
+}
+
+/**
+ * aa32_vfp_qreg:
+ * Return a pointer to the Qn register within env in 32-bit mode.
+ */
+static inline uint64_t *aa32_vfp_qreg(CPUARMState *env, unsigned regno)
+{
+    return &env->vfp.regs[2 * regno];
+}
+
+/**
+ * aa64_vfp_qreg:
+ * Return a pointer to the Qn register within env in 64-bit mode.
+ */
+static inline uint64_t *aa64_vfp_qreg(CPUARMState *env, unsigned regno)
+{
+    return &env->vfp.regs[2 * regno];
+}
+
 #include "exec/exec-all.h"
 
 static inline void cpu_pc_from_tb(CPUARMState *env, TranslationBlock *tb)
