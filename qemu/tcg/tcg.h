@@ -433,7 +433,7 @@ typedef struct TCGTemp {
     int val_type;
     int reg;
     tcg_target_long val;
-    int mem_reg;
+    struct TCGTemp *mem_base;
     intptr_t mem_offset;
     unsigned int fixed_reg:1;
     unsigned int mem_coherent:1;
@@ -616,7 +616,7 @@ struct TCGContext {
     intptr_t current_frame_offset;
     intptr_t frame_start;
     intptr_t frame_end;
-    int frame_reg;
+    TCGTemp *frame_temp;
 
     tcg_insn_unit *code_ptr;
     TCGTemp temps[TCG_MAX_TEMPS]; /* globals first, temps after */
