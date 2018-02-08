@@ -830,9 +830,6 @@ void tcg_add_target_add_op_defs(TCGContext *s, const TCGTargetOpDef *tdefs);
 void tcg_gen_callN(TCGContext *s, void *func,
                    TCGArg ret, int nargs, TCGArg *args);
 
-void tcg_gen_shifti_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1,
-                        int c, int right, int arith);
-
 TCGArg *tcg_optimize(TCGContext *s, uint16_t *tcg_opc_ptr, TCGArg *args,
                      TCGOpDef *tcg_op_def);
 
@@ -1024,8 +1021,6 @@ void helper_be_stq_mmu(CPUArchState *env, target_ulong addr, uint64_t val,
 # define helper_ret_stl_mmu   helper_le_stl_mmu
 # define helper_ret_stq_mmu   helper_le_stq_mmu
 #endif
-
-void check_exit_request(TCGContext *tcg_ctx);
 
 #endif /* CONFIG_SOFTMMU */
 
