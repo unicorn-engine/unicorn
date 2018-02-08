@@ -8556,23 +8556,23 @@ void optimize_flags_init(struct uc_struct *uc)
     TCGContext *tcg_ctx = uc->tcg_ctx;
 
     tcg_ctx->cpu_env = tcg_global_reg_new_ptr(uc->tcg_ctx, TCG_AREG0, "env");
-    tcg_ctx->cpu_cc_op = tcg_global_mem_new_i32(uc->tcg_ctx, TCG_AREG0,
+    tcg_ctx->cpu_cc_op = tcg_global_mem_new_i32(uc->tcg_ctx, tcg_ctx->cpu_env,
                                        offsetof(CPUX86State, cc_op), "cc_op");
     tcg_ctx->cpu_cc_dst = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_cc_dst) = tcg_global_mem_new(uc->tcg_ctx, TCG_AREG0,
+    *((TCGv *)tcg_ctx->cpu_cc_dst) = tcg_global_mem_new(uc->tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUX86State, cc_dst), "cc_dst");
 
     tcg_ctx->cpu_cc_src = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_cc_src) = tcg_global_mem_new(uc->tcg_ctx, TCG_AREG0,
+    *((TCGv *)tcg_ctx->cpu_cc_src) = tcg_global_mem_new(uc->tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUX86State, cc_src), "cc_src");
 
     tcg_ctx->cpu_cc_src2 = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_cc_src2) = tcg_global_mem_new(uc->tcg_ctx, TCG_AREG0,
+    *((TCGv *)tcg_ctx->cpu_cc_src2) = tcg_global_mem_new(uc->tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUX86State, cc_src2), "cc_src2");
 
     for (i = 0; i < CPU_NB_REGS; ++i) {
         tcg_ctx->cpu_regs[i] = g_malloc0(sizeof(TCGv));
-        *((TCGv *)tcg_ctx->cpu_regs[i]) = tcg_global_mem_new(uc->tcg_ctx, TCG_AREG0,
+        *((TCGv *)tcg_ctx->cpu_regs[i]) = tcg_global_mem_new(uc->tcg_ctx, tcg_ctx->cpu_env,
                 offsetof(CPUX86State, regs[i]),
                 reg_names[i]);
     }

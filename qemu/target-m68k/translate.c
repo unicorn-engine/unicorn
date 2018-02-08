@@ -49,21 +49,21 @@ void m68k_tcg_init(struct uc_struct *uc)
     char *p;
     int i;
 
-#define DEFO32(name,  offset) if (!uc->init_tcg) { tcg_ctx->QREG_##name = g_malloc0(sizeof(TCGv));} *((TCGv *)tcg_ctx->QREG_##name) = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0, offsetof(CPUM68KState, offset), #name);
-#define DEFO64(name,  offset) tcg_ctx->QREG_##name = tcg_global_mem_new_i64(tcg_ctx, TCG_AREG0, offsetof(CPUM68KState, offset), #name);
+    tcg_ctx->cpu_env = tcg_global_reg_new_ptr(tcg_ctx, TCG_AREG0, "env");
+
+#define DEFO32(name,  offset) if (!uc->init_tcg) { tcg_ctx->QREG_##name = g_malloc0(sizeof(TCGv));} *((TCGv *)tcg_ctx->QREG_##name) = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUM68KState, offset), #name);
+#define DEFO64(name,  offset) tcg_ctx->QREG_##name = tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUM68KState, offset), #name);
 #define DEFF64(name,  offset) DEFO64(name, offset)
 #include "qregs.def"
 #undef DEFO32
 #undef DEFO64
 #undef DEFF64
 
-    // tcg_ctx->QREG_FP_RESULT = tcg_global_mem_new_i64(tcg_ctx, TCG_AREG0, offsetof(CPUM68KState, fp_result), "FP_RESULT");
+    // tcg_ctx->QREG_FP_RESULT = tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUM68KState, fp_result), "FP_RESULT");
 
-    tcg_ctx->cpu_halted = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0,
+    tcg_ctx->cpu_halted = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env,
                                         0-offsetof(M68kCPU, env) +
                                         offsetof(CPUState, halted), "HALTED");
-
-    tcg_ctx->cpu_env = tcg_global_reg_new_ptr(tcg_ctx, TCG_AREG0, "env");
 
     p = tcg_ctx->cpu_reg_names;
 
@@ -71,35 +71,35 @@ void m68k_tcg_init(struct uc_struct *uc)
         sprintf(p, "D%d", i);
         if (!uc->init_tcg)
             tcg_ctx->cpu_dregs[i] = g_malloc0(sizeof(TCGv));
-        *((TCGv *)tcg_ctx->cpu_dregs[i]) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+        *((TCGv *)tcg_ctx->cpu_dregs[i]) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                 offsetof(CPUM68KState, dregs[i]), p);
         p += 3;
         sprintf(p, "A%d", i);
         if (!uc->init_tcg)
             tcg_ctx->cpu_aregs[i] = g_malloc0(sizeof(TCGv));
-        *((TCGv *)tcg_ctx->cpu_aregs[i]) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+        *((TCGv *)tcg_ctx->cpu_aregs[i]) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                 offsetof(CPUM68KState, aregs[i]), p);
         p += 3;
         sprintf(p, "F%d", i);
-        tcg_ctx->cpu_fregs[i] = tcg_global_mem_new_i64(tcg_ctx, TCG_AREG0,
+        tcg_ctx->cpu_fregs[i] = tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env,
                 offsetof(CPUM68KState, fregs[i]), p);
         p += 3;
     }
 
     for (i = 0; i < 4; i++) {
         sprintf(p, "ACC%d", i);
-        tcg_ctx->cpu_macc[i] = tcg_global_mem_new_i64(tcg_ctx, TCG_AREG0,
+        tcg_ctx->cpu_macc[i] = tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env,
                                          offsetof(CPUM68KState, macc[i]), p);
         p += 5;
     }
 
     if (!uc->init_tcg)
         tcg_ctx->NULL_QREG = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->NULL_QREG) = tcg_global_mem_new(tcg_ctx, TCG_AREG0, -4, "NULL");
+    *((TCGv *)tcg_ctx->NULL_QREG) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, -4, "NULL");
 
     if (!uc->init_tcg)
         tcg_ctx->store_dummy = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->store_dummy) = tcg_global_mem_new(tcg_ctx, TCG_AREG0, -8, "NULL");
+    *((TCGv *)tcg_ctx->store_dummy) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, -8, "NULL");
 
     uc->init_tcg = true;
 }

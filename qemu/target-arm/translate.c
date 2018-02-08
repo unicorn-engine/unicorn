@@ -77,23 +77,23 @@ void arm_translate_init(struct uc_struct *uc)
     tcg_ctx->cpu_env = tcg_global_reg_new_ptr(uc->tcg_ctx, TCG_AREG0, "env");
 
     for (i = 0; i < 16; i++) {
-        tcg_ctx->cpu_R[i] = tcg_global_mem_new_i32(uc->tcg_ctx, TCG_AREG0,
+        tcg_ctx->cpu_R[i] = tcg_global_mem_new_i32(uc->tcg_ctx, tcg_ctx->cpu_env,
                                           offsetof(CPUARMState, regs[i]),
                                           regnames[i]);
     }
-    tcg_ctx->cpu_CF = tcg_global_mem_new_i32(uc->tcg_ctx, TCG_AREG0, offsetof(CPUARMState, CF), "CF");
-    tcg_ctx->cpu_NF = tcg_global_mem_new_i32(uc->tcg_ctx, TCG_AREG0, offsetof(CPUARMState, NF), "NF");
-    tcg_ctx->cpu_VF = tcg_global_mem_new_i32(uc->tcg_ctx, TCG_AREG0, offsetof(CPUARMState, VF), "VF");
-    tcg_ctx->cpu_ZF = tcg_global_mem_new_i32(uc->tcg_ctx, TCG_AREG0, offsetof(CPUARMState, ZF), "ZF");
+    tcg_ctx->cpu_CF = tcg_global_mem_new_i32(uc->tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUARMState, CF), "CF");
+    tcg_ctx->cpu_NF = tcg_global_mem_new_i32(uc->tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUARMState, NF), "NF");
+    tcg_ctx->cpu_VF = tcg_global_mem_new_i32(uc->tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUARMState, VF), "VF");
+    tcg_ctx->cpu_ZF = tcg_global_mem_new_i32(uc->tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUARMState, ZF), "ZF");
 
-    tcg_ctx->cpu_exclusive_addr = tcg_global_mem_new_i64(uc->tcg_ctx, TCG_AREG0,
+    tcg_ctx->cpu_exclusive_addr = tcg_global_mem_new_i64(uc->tcg_ctx, tcg_ctx->cpu_env,
         offsetof(CPUARMState, exclusive_addr), "exclusive_addr");
-    tcg_ctx->cpu_exclusive_val = tcg_global_mem_new_i64(uc->tcg_ctx, TCG_AREG0,
+    tcg_ctx->cpu_exclusive_val = tcg_global_mem_new_i64(uc->tcg_ctx, tcg_ctx->cpu_env,
         offsetof(CPUARMState, exclusive_val), "exclusive_val");
 #ifdef CONFIG_USER_ONLY
-    cpu_exclusive_test = tcg_global_mem_new_i64(uc->tcg_ctx, TCG_AREG0,
+    cpu_exclusive_test = tcg_global_mem_new_i64(uc->tcg_ctx, tcg_ctx->cpu_env,
         offsetof(CPUARMState, exclusive_test), "exclusive_test");
-    cpu_exclusive_info = tcg_global_mem_new_i32(uc->tcg_ctx, TCG_AREG0,
+    cpu_exclusive_info = tcg_global_mem_new_i32(uc->tcg_ctx, tcg_ctx->cpu_env,
         offsetof(CPUARMState, exclusive_info), "exclusive_info");
 #endif
 

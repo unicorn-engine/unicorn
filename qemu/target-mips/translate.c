@@ -19480,7 +19480,7 @@ void mips_tcg_init(struct uc_struct *uc)
     if (!uc->init_tcg) {
         for (i = 0; i < 32; i++) {
             tcg_ctx->cpu_gpr[i] = g_malloc0(sizeof(TCGv));
-            *((TCGv *)tcg_ctx->cpu_gpr[i]) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+            *((TCGv *)tcg_ctx->cpu_gpr[i]) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                     offsetof(CPUMIPSState, active_tc.gpr[i]),
                     regnames[i]);
         }
@@ -19492,28 +19492,28 @@ void mips_tcg_init(struct uc_struct *uc)
     for (i = 0; i < 32; i++) {
         int off = offsetof(CPUMIPSState, active_fpu.fpr[i].wr.d[0]);
         tcg_ctx->msa_wr_d[i * 2] =
-                tcg_global_mem_new_i64(tcg_ctx, TCG_AREG0, off, msaregnames[i * 2]);
+                tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env, off, msaregnames[i * 2]);
         /* The scalar floating-point unit (FPU) registers are mapped on
          * the MSA vector registers. */
         tcg_ctx->fpu_f64[i] = tcg_ctx->msa_wr_d[i * 2];
         off = offsetof(CPUMIPSState, active_fpu.fpr[i].wr.d[1]);
         tcg_ctx->msa_wr_d[i * 2 + 1] =
-                tcg_global_mem_new_i64(tcg_ctx, TCG_AREG0, off, msaregnames[i * 2 + 1]);
+                tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env, off, msaregnames[i * 2 + 1]);
     }
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_PC = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_PC) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+    *((TCGv *)tcg_ctx->cpu_PC) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                 offsetof(CPUMIPSState, active_tc.PC), "PC");
 
     if (!uc->init_tcg) {
         for (i = 0; i < MIPS_DSP_ACC; i++) {
             tcg_ctx->cpu_HI[i] = g_malloc0(sizeof(TCGv));
-            *((TCGv *)tcg_ctx->cpu_HI[i]) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+            *((TCGv *)tcg_ctx->cpu_HI[i]) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                     offsetof(CPUMIPSState, active_tc.HI[i]),
                     regnames_HI[i]);
             tcg_ctx->cpu_LO[i] = g_malloc0(sizeof(TCGv));
-            *((TCGv *)tcg_ctx->cpu_LO[i]) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+            *((TCGv *)tcg_ctx->cpu_LO[i]) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                     offsetof(CPUMIPSState, active_tc.LO[i]),
                     regnames_LO[i]);
         }
@@ -19521,27 +19521,27 @@ void mips_tcg_init(struct uc_struct *uc)
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_dspctrl = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_dspctrl) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+    *((TCGv *)tcg_ctx->cpu_dspctrl) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                      offsetof(CPUMIPSState, active_tc.DSPControl),
                                      "DSPControl");
 
     if (!uc->init_tcg)
         tcg_ctx->bcond = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->bcond) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+    *((TCGv *)tcg_ctx->bcond) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                offsetof(CPUMIPSState, bcond), "bcond");
 
     if (!uc->init_tcg)
         tcg_ctx->btarget = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->btarget) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+    *((TCGv *)tcg_ctx->btarget) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                  offsetof(CPUMIPSState, btarget), "btarget");
 
-    tcg_ctx->hflags = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0,
+    tcg_ctx->hflags = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env,
                                     offsetof(CPUMIPSState, hflags), "hflags");
 
-    //tcg_ctx->fpu_fcr0 = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0,
+    //tcg_ctx->fpu_fcr0 = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env,
     //                                  offsetof(CPUMIPSState, active_fpu.fcr0),
     //                                  "fcr0");
-    tcg_ctx->fpu_fcr31 = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0,
+    tcg_ctx->fpu_fcr31 = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env,
                                        offsetof(CPUMIPSState, active_fpu.fcr31),
                                        "fcr31");
     uc->init_tcg = true;

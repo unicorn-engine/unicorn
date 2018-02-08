@@ -5562,136 +5562,136 @@ void gen_intermediate_code_init(CPUSPARCState *env)
 
     /* init various static tables */
     tcg_ctx->cpu_env = tcg_global_reg_new_ptr(tcg_ctx, TCG_AREG0, "env");
-    tcg_ctx->cpu_regwptr = tcg_global_mem_new_ptr(tcg_ctx, TCG_AREG0,
+    tcg_ctx->cpu_regwptr = tcg_global_mem_new_ptr(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, regwptr),
             "regwptr");
 #ifdef TARGET_SPARC64
-    tcg_ctx->cpu_xcc = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, xcc),
+    tcg_ctx->cpu_xcc = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, xcc),
             "xcc");
-    tcg_ctx->cpu_asi = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, asi),
+    tcg_ctx->cpu_asi = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, asi),
             "asi");
-    tcg_ctx->cpu_fprs = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, fprs),
+    tcg_ctx->cpu_fprs = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, fprs),
             "fprs");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_gsr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_gsr = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, gsr),
+    *(TCGv *)tcg_ctx->cpu_gsr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, gsr),
             "gsr");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_tick_cmpr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_tick_cmpr = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+    *(TCGv *)tcg_ctx->cpu_tick_cmpr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, tick_cmpr),
             "tick_cmpr");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_stick_cmpr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_stick_cmpr = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+    *(TCGv *)tcg_ctx->cpu_stick_cmpr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, stick_cmpr),
             "stick_cmpr");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_hstick_cmpr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_hstick_cmpr = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+    *(TCGv *)tcg_ctx->cpu_hstick_cmpr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, hstick_cmpr),
             "hstick_cmpr");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_hintp = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_hintp = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, hintp),
+    *(TCGv *)tcg_ctx->cpu_hintp = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, hintp),
             "hintp");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_htba = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_htba = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, htba),
+    *(TCGv *)tcg_ctx->cpu_htba = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, htba),
             "htba");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_hver = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_hver = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, hver),
+    *(TCGv *)tcg_ctx->cpu_hver = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, hver),
             "hver");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_ssr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_ssr = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+    *(TCGv *)tcg_ctx->cpu_ssr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, ssr), "ssr");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_ver = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_ver = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+    *(TCGv *)tcg_ctx->cpu_ver = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, version), "ver");
 
-    tcg_ctx->cpu_softint = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0,
+    tcg_ctx->cpu_softint = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, softint),
             "softint");
 #else
     if (!uc->init_tcg)
         tcg_ctx->cpu_wim = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_wim = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, wim),
+    *(TCGv *)tcg_ctx->cpu_wim = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, wim),
             "wim");
 #endif
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_cond = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_cond = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, cond),
+    *(TCGv *)tcg_ctx->cpu_cond = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cond),
             "cond");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_cc_src = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_cc_src) = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, cc_src),
+    *((TCGv *)tcg_ctx->cpu_cc_src) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cc_src),
             "cc_src");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_cc_src2 = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_cc_src2) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+    *((TCGv *)tcg_ctx->cpu_cc_src2) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, cc_src2),
             "cc_src2");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_cc_dst = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_cc_dst = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, cc_dst),
+    *(TCGv *)tcg_ctx->cpu_cc_dst = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cc_dst),
             "cc_dst");
 
-    tcg_ctx->cpu_cc_op = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, cc_op),
+    tcg_ctx->cpu_cc_op = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cc_op),
             "cc_op");
-    tcg_ctx->cpu_psr = tcg_global_mem_new_i32(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, psr),
+    tcg_ctx->cpu_psr = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, psr),
             "psr");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_fsr = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_fsr) = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, fsr),
+    *((TCGv *)tcg_ctx->cpu_fsr) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, fsr),
             "fsr");
 
     if (!uc->init_tcg)
         tcg_ctx->sparc_cpu_pc = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->sparc_cpu_pc = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, pc),
+    *(TCGv *)tcg_ctx->sparc_cpu_pc = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, pc),
             "pc");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_npc = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_npc = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, npc),
+    *(TCGv *)tcg_ctx->cpu_npc = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, npc),
             "npc");
 
     if (!uc->init_tcg)
         tcg_ctx->cpu_y = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_y = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, y), "y");
+    *(TCGv *)tcg_ctx->cpu_y = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, y), "y");
 #ifndef CONFIG_USER_ONLY
     if (!uc->init_tcg)
         tcg_ctx->cpu_tbr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_tbr = tcg_global_mem_new(tcg_ctx, TCG_AREG0, offsetof(CPUSPARCState, tbr),
+    *(TCGv *)tcg_ctx->cpu_tbr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, tbr),
             "tbr");
 #endif
     if (!uc->init_tcg) {
         for (i = 0; i < 8; i++) {
             tcg_ctx->cpu_gregs[i] = g_malloc0(sizeof(TCGv));
-            *((TCGv *)tcg_ctx->cpu_gregs[i]) = tcg_global_mem_new(tcg_ctx, TCG_AREG0,
+            *((TCGv *)tcg_ctx->cpu_gregs[i]) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                     offsetof(CPUSPARCState, gregs[i]),
                     gregnames[i]);
         }
     }
 
     for (i = 0; i < TARGET_DPREGS; i++) {
-        tcg_ctx->cpu_fpr[i] = tcg_global_mem_new_i64(tcg_ctx, TCG_AREG0,
+        tcg_ctx->cpu_fpr[i] = tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env,
                 offsetof(CPUSPARCState, fpr[i]),
                 fregnames[i]);
     }
