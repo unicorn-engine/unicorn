@@ -5003,7 +5003,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     TCGv cpu_tmp4 = *(TCGv *)tcg_ctx->cpu_tmp4;
     TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
     TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
-    TCGArg *save_opparam_ptr = tcg_ctx->gen_opparam_ptr;
+    TCGArg* save_opparam_ptr = tcg_ctx->gen_opparam_buf + tcg_ctx->gen_op_buf[tcg_ctx->gen_last_op_idx].args;
     bool cc_op_dirty = s->cc_op_dirty;
     bool changed_cc_op = false;
 
@@ -8702,8 +8702,9 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     // Unicorn: trace this block on request
     // Only hook this block if the previous block was not truncated due to space
     if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+        int arg_i = tcg_ctx->gen_op_buf[tcg_ctx->gen_last_op_idx].args;
         env->uc->block_addr = pc_start;
-        env->uc->size_arg = tcg_ctx->gen_opparam_buf - tcg_ctx->gen_opparam_ptr + 1;
+        env->uc->size_arg = arg_i + 1;
         gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     } else {
         env->uc->size_arg = -1;

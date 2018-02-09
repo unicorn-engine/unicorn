@@ -10,8 +10,9 @@
 
 static inline void gen_tb_start(TCGContext *tcg_ctx)
 {
-    // TCGv_i32 count;
+    //TCGv_i32 count, flag, imm;
     TCGv_i32 flag;
+    //int i;
 
     tcg_ctx->exitreq_label = gen_new_label(tcg_ctx);
     flag = tcg_temp_new_i32(tcg_ctx);
@@ -21,21 +22,31 @@ static inline void gen_tb_start(TCGContext *tcg_ctx)
     tcg_temp_free_i32(tcg_ctx, flag);
 
 #if 0
-    if (!use_icount)
+    if (!(s->tb->cflags & CF_USE_ICOUNT)) {
         return;
+    }
 
-    icount_label = gen_new_label();
-    count = tcg_temp_local_new_i32();
-    tcg_gen_ld_i32(count, cpu_env,
+    icount_label = gen_new_label(tcg_ctx);
+    count = tcg_temp_local_new_i32(tcg_ctx);
+    tcg_gen_ld_i32(tcg_ctx, count, cpu_env,
                    -ENV_OFFSET + offsetof(CPUState, icount_decr.u32));
-    /* This is a horrid hack to allow fixing up the value later.  */
-    icount_arg = tcg_ctx.gen_opparam_ptr + 1;
-    tcg_gen_subi_i32(count, count, 0xdeadbeef);
+    imm = tcg_temp_new_i32(tcg_ctx);
+    tcg_gen_movi_i32(tcg_ctx, imm, 0xdeadbeef);
 
-    tcg_gen_brcondi_i32(TCG_COND_LT, count, 0, icount_label);
-    tcg_gen_st16_i32(count, cpu_env,
+
+    /* This is a horrid hack to allow fixing up the value later.  */
+    i = *tcg_ctx->gen_last_op_idx;
+    i = *tcg_ctx->gen_op_buf[i].args;
+    icount_arg = &tcg_ctx->gen_opparam_buf[i + 1];
+
+    tcg_gen_sub_i32(tcg_ctx, count, count, imm);
+    tcg_temp_free_i32(tcg_ctx, imm);
+
+
+    tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_LT, count, 0, icount_label);
+    tcg_gen_st16_i32(tcg_ctx, count, cpu_env,
                      -ENV_OFFSET + offsetof(CPUState, icount_decr.u16.low));
-    tcg_temp_free_i32(count);
+    tcg_temp_free_i32(tcg_ctx, count);
 #endif
 }
 
@@ -52,7 +63,8 @@ static inline void gen_tb_end(TCGContext *tcg_ctx, TranslationBlock *tb, int num
     }
 #endif
 
-    *tcg_ctx->gen_opc_ptr = INDEX_op_end;
+     /* Terminate the linked list.  */
+    tcg_ctx->gen_op_buf[tcg_ctx->gen_last_op_idx].next = -1;
 }
 
 #if 0

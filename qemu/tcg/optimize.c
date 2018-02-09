@@ -152,14 +152,14 @@ static bool temps_are_copies(TCGContext *s, TCGArg arg1, TCGArg arg2)
     return false;
 }
 
-static void tcg_opt_gen_mov(TCGContext *s, int op_index, TCGArg *gen_args,
+static void tcg_opt_gen_mov(TCGContext *s, TCGOp *op, TCGArg *args,
                             TCGOpcode old_op, TCGArg dst, TCGArg src)
 {
     struct tcg_temp_info *temps = s->temps2;
     TCGOpcode new_op = op_to_mov(s, old_op);
     tcg_target_ulong mask;
 
-    s->gen_opc_buf[op_index] = new_op;
+    op->opc = new_op;
 
     reset_temp(s, dst);
     mask = temps[src].mask;
@@ -184,18 +184,18 @@ static void tcg_opt_gen_mov(TCGContext *s, int op_index, TCGArg *gen_args,
         temps[src].next_copy = dst;
     }
 
-    gen_args[0] = dst;
-    gen_args[1] = src;
+    args[0] = dst;
+    args[1] = src;
 }
 
-static void tcg_opt_gen_movi(TCGContext *s, int op_index, TCGArg *gen_args,
+static void tcg_opt_gen_movi(TCGContext *s, TCGOp *op, TCGArg *args,
                              TCGOpcode old_op, TCGArg dst, TCGArg val)
 {
     struct tcg_temp_info *temps = s->temps2;
     TCGOpcode new_op = op_to_movi(s, old_op);
     tcg_target_ulong mask;
 
-    s->gen_opc_buf[op_index] = new_op;
+    op->opc = new_op;
 
     reset_temp(s, dst);
     temps[dst].state = TCG_TEMP_CONST;
@@ -207,8 +207,8 @@ static void tcg_opt_gen_movi(TCGContext *s, int op_index, TCGArg *gen_args,
     }
     temps[dst].mask = mask;
 
-    gen_args[0] = dst;
-    gen_args[1] = val;
+    args[0] = dst;
+    args[1] = val;
 }
 
 static TCGArg do_constant_folding_2(TCGOpcode op, TCGArg x, TCGArg y)
@@ -533,12 +533,10 @@ static bool swap_commutative2(TCGContext *s, TCGArg *p1, TCGArg *p2)
 }
 
 /* Propagate constants and copies, fold constant expressions. */
-static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
-                                    TCGArg *args, TCGOpDef *tcg_op_defs)
+static void tcg_constant_folding(TCGContext *s)
 {
     struct tcg_temp_info *temps = s->temps2;
-    int nb_ops, op_index, nb_temps, nb_globals;
-    TCGArg *gen_args;
+    int oi, oi_next, nb_temps, nb_globals;
 
     /* Array VALS has an element for each temp.
        If this temp holds a constant then its value is kept in VALS' element.
@@ -549,24 +547,23 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
     nb_globals = s->nb_globals;
     reset_all_temps(s, nb_temps);
 
-    nb_ops = tcg_opc_ptr - s->gen_opc_buf;
-    gen_args = args;
-    for (op_index = 0; op_index < nb_ops; op_index++) {
-        TCGOpcode op = s->gen_opc_buf[op_index];
-        const TCGOpDef *def = &tcg_op_defs[op];
+    for (oi = s->gen_first_op_idx; oi >= 0; oi = oi_next) {
         tcg_target_ulong mask, partmask, affected;
-        int nb_oargs, nb_iargs, nb_args, i;
+        int nb_oargs, nb_iargs, i;
         TCGArg tmp;
 
-        if (op == INDEX_op_call) {
-            *gen_args++ = tmp = *args++;
-            nb_oargs = tmp >> 16;
-            nb_iargs = tmp & 0xffff;
-            nb_args = nb_oargs + nb_iargs + def->nb_cargs;
+        TCGOp * const op = &s->gen_op_buf[oi];
+        TCGArg * const args = &s->gen_opparam_buf[op->args];
+        TCGOpcode opc = op->opc;
+        const TCGOpDef *def = &s->tcg_op_defs[opc];
+
+        oi_next = op->next;
+        if (opc == INDEX_op_call) {
+            nb_oargs = op->callo;
+            nb_iargs = op->calli;
         } else {
             nb_oargs = def->nb_oargs;
             nb_iargs = def->nb_iargs;
-            nb_args = def->nb_args;
         }
 
         /* Do copy propagation */
@@ -577,7 +574,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
         }
 
         /* For commutative operations make constant second argument */
-        switch (op) {
+        switch (opc) {
         CASE_OP_32_64(add):
         CASE_OP_32_64(mul):
         CASE_OP_32_64(and):
@@ -635,7 +632,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
 
         /* Simplify expressions for "shift/rot r, 0, a => movi r, 0",
            and "sub r, 0, a => neg r, a" case.  */
-        switch (op) {
+        switch (opc) {
         CASE_OP_32_64(shl):
         CASE_OP_32_64(shr):
         CASE_OP_32_64(sar):
@@ -643,9 +640,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
         CASE_OP_32_64(rotr):
             if (temps[args[1]].state == TCG_TEMP_CONST
                 && temps[args[1]].val == 0) {
-                tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], 0);
-                args += 3;
-                gen_args += 2;
+                tcg_opt_gen_movi(s, op, args, opc, args[0], 0);
                 continue;
             }
             break;
@@ -658,7 +653,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                     /* Proceed with possible constant folding. */
                     break;
                 }
-                if (op == INDEX_op_sub_i32) {
+                if (opc == INDEX_op_sub_i32) {
                     neg_op = INDEX_op_neg_i32;
                     have_neg = TCG_TARGET_HAS_neg_i32;
                 } else {
@@ -670,12 +665,9 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                 }
                 if (temps[args[1]].state == TCG_TEMP_CONST
                     && temps[args[1]].val == 0) {
-                    s->gen_opc_buf[op_index] = neg_op;
+                    op->opc = neg_op;
                     reset_temp(s, args[0]);
-                    gen_args[0] = args[0];
-                    gen_args[1] = args[2];
-                    args += 3;
-                    gen_args += 2;
+                    args[1] = args[2];
                     continue;
                 }
             }
@@ -729,12 +721,9 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                 if (!have_not) {
                     break;
                 }
-                s->gen_opc_buf[op_index] = not_op;
+                op->opc = not_op;
                 reset_temp(s, args[0]);
-                gen_args[0] = args[0];
-                gen_args[1] = args[i];
-                args += 3;
-                gen_args += 2;
+                args[1] = args[i];
                 continue;
             }
         default:
@@ -742,7 +731,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
         }
 
         /* Simplify expression for "op r, a, const => mov r, a" cases */
-        switch (op) {
+        switch (opc) {
         CASE_OP_32_64(add):
         CASE_OP_32_64(sub):
         CASE_OP_32_64(shl):
@@ -770,12 +759,10 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
             break;
         do_mov3:
             if (temps_are_copies(s, args[0], args[1])) {
-                s->gen_opc_buf[op_index] = INDEX_op_nop;
+                op->opc = INDEX_op_nop;
             } else {
-                tcg_opt_gen_mov(s, op_index, gen_args, op, args[0], args[1]);
-                gen_args += 2;
+                tcg_opt_gen_mov(s, op, args, opc, args[0], args[1]);
             }
-            args += 3;
             continue;
         default:
             break;
@@ -785,7 +772,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
            output argument is supported. */
         mask = -1;
         affected = -1;
-        switch (op) {
+        switch (opc) {
         CASE_OP_32_64(ext8s):
             if ((temps[args[1]].mask & 0x80) != 0) {
                 break;
@@ -924,38 +911,31 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
 
         if (partmask == 0) {
             assert(nb_oargs == 1);
-            tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], 0);
-            args += nb_args;
-            gen_args += 2;
+            tcg_opt_gen_movi(s, op, args, opc, args[0], 0);
             continue;
         }
         if (affected == 0) {
             assert(nb_oargs == 1);
             if (temps_are_copies(s, args[0], args[1])) {
-                s->gen_opc_buf[op_index] = INDEX_op_nop;
+                op->opc = INDEX_op_nop;
             } else if (temps[args[1]].state != TCG_TEMP_CONST) {
-                tcg_opt_gen_mov(s, op_index, gen_args, op, args[0], args[1]);
-                gen_args += 2;
+                tcg_opt_gen_mov(s, op, args, opc, args[0], args[1]);
             } else {
-                tcg_opt_gen_movi(s, op_index, gen_args, op,
+                tcg_opt_gen_movi(s, op, args, opc,
                                  args[0], temps[args[1]].val);
-                gen_args += 2;
             }
-            args += nb_args;
             continue;
         }
 
         /* Simplify expression for "op r, a, 0 => movi r, 0" cases */
-        switch (op) {
+        switch (opc) {
         CASE_OP_32_64(and):
         CASE_OP_32_64(mul):
         CASE_OP_32_64(muluh):
         CASE_OP_32_64(mulsh):
             if ((temps[args[2]].state == TCG_TEMP_CONST
                 && temps[args[2]].val == 0)) {
-                tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], 0);
-                args += 3;
-                gen_args += 2;
+                tcg_opt_gen_movi(s, op, args, opc, args[0], 0);
                 continue;
             }
             break;
@@ -964,18 +944,15 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
         }
 
         /* Simplify expression for "op r, a, a => mov r, a" cases */
-        switch (op) {
+        switch (opc) {
         CASE_OP_32_64(or):
         CASE_OP_32_64(and):
             if (temps_are_copies(s, args[1], args[2])) {
                 if (temps_are_copies(s, args[0], args[1])) {
-                    s->gen_opc_buf[op_index] = INDEX_op_nop;
+                    op->opc = INDEX_op_nop;
                 } else {
-                    tcg_opt_gen_mov(s, op_index, gen_args, op,
-                                    args[0], args[1]);
-                    gen_args += 2;
+                    tcg_opt_gen_mov(s, op, args, opc, args[0], args[1]);
                 }
-                args += 3;
                 continue;
             }
             break;
@@ -984,14 +961,12 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
         }
 
         /* Simplify expression for "op r, a, a => movi r, 0" cases */
-        switch (op) {
+        switch (opc) {
         CASE_OP_32_64(andc):
         CASE_OP_32_64(sub):
         CASE_OP_32_64(xor):
             if (temps_are_copies(s, args[1], args[2])) {
-                tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], 0);
-                gen_args += 2;
-                args += 3;
+                tcg_opt_gen_movi(s, op, args, opc, args[0], 0);
                 continue;
             }
             break;
@@ -1002,17 +977,14 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
         /* Propagate constants through copy operations and do constant
            folding.  Constants will be substituted to arguments by register
            allocator where needed and possible.  Also detect copies. */
-        switch (op) {
+        switch (opc) {
         CASE_OP_32_64(mov):
             if (temps_are_copies(s, args[0], args[1])) {
-                args += 2;
-                s->gen_opc_buf[op_index] = INDEX_op_nop;
+                op->opc = INDEX_op_nop;
                 break;
             }
             if (temps[args[1]].state != TCG_TEMP_CONST) {
-                tcg_opt_gen_mov(s, op_index, gen_args, op, args[0], args[1]);
-                gen_args += 2;
-                args += 2;
+                tcg_opt_gen_mov(s, op, args, opc, args[0], args[1]);
                 break;
             }
             /* Source argument is constant.  Rewrite the operation and
@@ -1020,9 +992,7 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
             args[1] = temps[args[1]].val;
             /* fallthrough */
         CASE_OP_32_64(movi):
-            tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], args[1]);
-            gen_args += 2;
-            args += 2;
+            tcg_opt_gen_movi(s, op, args, opc, args[0], args[1]);
             break;
 
         CASE_OP_32_64(not):
@@ -1034,20 +1004,16 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
         case INDEX_op_ext32s_i64:
         case INDEX_op_ext32u_i64:
             if (temps[args[1]].state == TCG_TEMP_CONST) {
-                tmp = do_constant_folding(s, op, temps[args[1]].val, 0);
-                tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], tmp);
-                gen_args += 2;
-                args += 2;
+                tmp = do_constant_folding(s, opc, temps[args[1]].val, 0);
+                tcg_opt_gen_movi(s, op, args, opc, args[0], tmp);
                 break;
             }
             goto do_default;
 
         case INDEX_op_trunc_shr_i32:
             if (temps[args[1]].state == TCG_TEMP_CONST) {
-                tmp = do_constant_folding(s, op, temps[args[1]].val, args[2]);
-                tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], tmp);
-                gen_args += 2;
-                args += 3;
+                tmp = do_constant_folding(s, opc, temps[args[1]].val, args[2]);
+                tcg_opt_gen_movi(s, op, args, opc, args[0], tmp);
                 break;
             }
             goto do_default;
@@ -1076,11 +1042,9 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
         CASE_OP_32_64(remu):
             if (temps[args[1]].state == TCG_TEMP_CONST
                 && temps[args[2]].state == TCG_TEMP_CONST) {
-                tmp = do_constant_folding(s, op, temps[args[1]].val,
+                tmp = do_constant_folding(s, opc, temps[args[1]].val,
                                           temps[args[2]].val);
-                tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], tmp);
-                gen_args += 2;
-                args += 3;
+                tcg_opt_gen_movi(s, op, args, opc, args[0], tmp);
                 break;
             }
             goto do_default;
@@ -1090,54 +1054,44 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                 && temps[args[2]].state == TCG_TEMP_CONST) {
                 tmp = (TCGArg)deposit64(temps[args[1]].val, args[3], args[4],
                                 temps[args[2]].val);
-                tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], tmp);
-                gen_args += 2;
-                args += 5;
+                tcg_opt_gen_movi(s, op, args, opc, args[0], tmp);
                 break;
             }
             goto do_default;
 
         CASE_OP_32_64(setcond):
-            tmp = do_constant_folding_cond(s, op, args[1], args[2], args[3]);
+            tmp = do_constant_folding_cond(s, opc, args[1], args[2], args[3]);
             if (tmp != 2) {
-                tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], tmp);
-                gen_args += 2;
-                args += 4;
+                tcg_opt_gen_movi(s, op, args, opc, args[0], tmp);
                 break;
             }
             goto do_default;
 
         CASE_OP_32_64(brcond):
-            tmp = do_constant_folding_cond(s, op, args[0], args[1], args[2]);
+            tmp = do_constant_folding_cond(s, opc, args[0], args[1], args[2]);
             if (tmp != 2) {
                 if (tmp) {
                     reset_all_temps(s, nb_temps);
-                    s->gen_opc_buf[op_index] = INDEX_op_br;
-                    gen_args[0] = args[3];
-                    gen_args += 1;
+                    op->opc = INDEX_op_br;
+                    args[0] = args[3];
                 } else {
-                    s->gen_opc_buf[op_index] = INDEX_op_nop;
+                    op->opc = INDEX_op_nop;
                 }
-                args += 4;
                 break;
             }
             goto do_default;
 
         CASE_OP_32_64(movcond):
-            tmp = do_constant_folding_cond(s, op, args[1], args[2], args[5]);
+            tmp = do_constant_folding_cond(s, opc, args[1], args[2], args[5]);
             if (tmp != 2) {
                 if (temps_are_copies(s, args[0], args[4-tmp])) {
-                    s->gen_opc_buf[op_index] = INDEX_op_nop;
+                    op->opc = INDEX_op_nop;
                 } else if (temps[args[4-tmp]].state == TCG_TEMP_CONST) {
-                    tcg_opt_gen_movi(s, op_index, gen_args, op,
+                    tcg_opt_gen_movi(s, op, args, opc,
                                      args[0], temps[args[4-tmp]].val);
-                    gen_args += 2;
                 } else {
-                    tcg_opt_gen_mov(s, op_index, gen_args, op,
-                                    args[0], args[4-tmp]);
-                    gen_args += 2;
+                    tcg_opt_gen_mov(s, op, args, opc, args[0], args[4-tmp]);
                 }
-                args += 6;
                 break;
             }
             goto do_default;
@@ -1155,24 +1109,31 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                 uint64_t a = ((uint64_t)ah << 32) | al;
                 uint64_t b = ((uint64_t)bh << 32) | bl;
                 TCGArg rl, rh;
+                TCGOp *op2;
+                TCGArg *args2;
 
-                if (op == INDEX_op_add2_i32) {
+                if (opc == INDEX_op_add2_i32) {
                     a += b;
                 } else {
                     a -= b;
                 }
 
                 /* We emit the extra nop when we emit the add2/sub2.  */
-                assert(s->gen_opc_buf[op_index + 1] == INDEX_op_nop);
+                op2 = &s->gen_op_buf[oi_next];
+                assert(op2->opc == INDEX_op_nop);
+
+                /* But we still have to allocate args for the op.  */
+                op2->args = s->gen_next_parm_idx;
+                s->gen_next_parm_idx += 2;
+                args2 = &s->gen_opparam_buf[op2->args];
 
                 rl = args[0];
                 rh = args[1];
-                tcg_opt_gen_movi(s, op_index, &gen_args[0],
-                                 op, rl, (uint32_t)a);
-                tcg_opt_gen_movi(s, ++op_index, &gen_args[2],
-                                 op, rh, (uint32_t)(a >> 32));
-                gen_args += 4;
-                args += 6;
+                tcg_opt_gen_movi(s, op, args, opc, rl, (uint32_t)a);
+                tcg_opt_gen_movi(s, op2, args2, opc, rh, (uint32_t)(a >> 32));
+
+                /* We've done all we need to do with the movi.  Skip it.  */
+                oi_next = op2->next;
                 break;
             }
             goto do_default;
@@ -1184,18 +1145,25 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                 uint32_t b = temps[args[3]].val;
                 uint64_t r = (uint64_t)a * b;
                 TCGArg rl, rh;
+                TCGOp *op2;
+                TCGArg *args2;
 
                 /* We emit the extra nop when we emit the mulu2.  */
-                assert(s->gen_opc_buf[op_index + 1] == INDEX_op_nop);
+                op2 = &s->gen_op_buf[oi_next];
+                assert(op2->opc == INDEX_op_nop);
+
+                /* But we still have to allocate args for the op.  */
+                op2->args = s->gen_next_parm_idx;
+                s->gen_next_parm_idx += 2;
+                args2 = &s->gen_opparam_buf[op2->args];
 
                 rl = args[0];
                 rh = args[1];
-                tcg_opt_gen_movi(s, op_index, &gen_args[0],
-                                 op, rl, (uint32_t)r);
-                tcg_opt_gen_movi(s, ++op_index, &gen_args[2],
-                                 op, rh, (uint32_t)(r >> 32));
-                gen_args += 4;
-                args += 4;
+                tcg_opt_gen_movi(s, op, args, opc, rl, (uint32_t)r);
+                tcg_opt_gen_movi(s, op2, args2, opc, rh, (uint32_t)(r >> 32));
+
+                /* We've done all we need to do with the movi.  Skip it.  */
+                oi_next = op2->next;
                 break;
             }
             goto do_default;
@@ -1206,12 +1174,11 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                 if (tmp) {
             do_brcond_true:
                     reset_all_temps(s, nb_temps);
-                    s->gen_opc_buf[op_index] = INDEX_op_br;
-                    gen_args[0] = args[5];
-                    gen_args += 1;
+                    op->opc = INDEX_op_br;
+                    args[0] = args[5];
                 } else {
             do_brcond_false:
-                    s->gen_opc_buf[op_index] = INDEX_op_nop;
+                    op->opc = INDEX_op_nop;
                 }
             } else if ((args[4] == TCG_COND_LT || args[4] == TCG_COND_GE)
                        && temps[args[2]].state == TCG_TEMP_CONST
@@ -1222,12 +1189,11 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                    vs the high word of the input.  */
             do_brcond_high:
                 reset_all_temps(s, nb_temps);
-                s->gen_opc_buf[op_index] = INDEX_op_brcond_i32;
-                gen_args[0] = args[1];
-                gen_args[1] = args[3];
-                gen_args[2] = args[4];
-                gen_args[3] = args[5];
-                gen_args += 4;
+                op->opc = INDEX_op_brcond_i32;
+                args[0] = args[1];
+                args[1] = args[3];
+                args[2] = args[4];
+                args[3] = args[5];
             } else if (args[4] == TCG_COND_EQ) {
                 /* Simplify EQ comparisons where one of the pairs
                    can be simplified.  */
@@ -1247,12 +1213,10 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                 }
             do_brcond_low:
                 reset_all_temps(s, nb_temps);
-                s->gen_opc_buf[op_index] = INDEX_op_brcond_i32;
-                gen_args[0] = args[0];
-                gen_args[1] = args[2];
-                gen_args[2] = args[4];
-                gen_args[3] = args[5];
-                gen_args += 4;
+                op->opc = INDEX_op_brcond_i32;
+                args[1] = args[2];
+                args[2] = args[4];
+                args[3] = args[5];
             } else if (args[4] == TCG_COND_NE) {
                 /* Simplify NE comparisons where one of the pairs
                    can be simplified.  */
@@ -1274,15 +1238,13 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
             } else {
                 goto do_default;
             }
-            args += 6;
             break;
 
         case INDEX_op_setcond2_i32:
             tmp = do_constant_folding_cond2(s, &args[1], &args[3], args[5]);
             if (tmp != 2) {
             do_setcond_const:
-                tcg_opt_gen_movi(s, op_index, gen_args, op, args[0], tmp);
-                gen_args += 2;
+                tcg_opt_gen_movi(s, op, args, opc, args[0], tmp);
             } else if ((args[5] == TCG_COND_LT || args[5] == TCG_COND_GE)
                        && temps[args[3]].state == TCG_TEMP_CONST
                        && temps[args[4]].state == TCG_TEMP_CONST
@@ -1291,14 +1253,12 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                 /* Simplify LT/GE comparisons vs zero to a single compare
                    vs the high word of the input.  */
             do_setcond_high:
-                s->gen_opc_buf[op_index] = INDEX_op_setcond_i32;
                 reset_temp(s, args[0]);
                 temps[args[0]].mask = 1;
-                gen_args[0] = args[0];
-                gen_args[1] = args[2];
-                gen_args[2] = args[4];
-                gen_args[3] = args[5];
-                gen_args += 4;
+                op->opc = INDEX_op_setcond_i32;
+                args[1] = args[2];
+                args[2] = args[4];
+                args[3] = args[5];
             } else if (args[5] == TCG_COND_EQ) {
                 /* Simplify EQ comparisons where one of the pairs
                    can be simplified.  */
@@ -1319,12 +1279,9 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
             do_setcond_low:
                 reset_temp(s, args[0]);
                 temps[args[0]].mask = 1;
-                s->gen_opc_buf[op_index] = INDEX_op_setcond_i32;
-                gen_args[0] = args[0];
-                gen_args[1] = args[1];
-                gen_args[2] = args[3];
-                gen_args[3] = args[5];
-                gen_args += 4;
+                op->opc = INDEX_op_setcond_i32;
+                args[2] = args[3];
+                args[3] = args[5];
             } else if (args[5] == TCG_COND_NE) {
                 /* Simplify NE comparisons where one of the pairs
                    can be simplified.  */
@@ -1346,7 +1303,6 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
             } else {
                 goto do_default;
             }
-            args += 6;
             break;
 
         case INDEX_op_call:
@@ -1378,22 +1334,12 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
                     }
                 }
             }
-            for (i = 0; i < nb_args; i++) {
-                gen_args[i] = args[i];
-            }
-            args += nb_args;
-            gen_args += nb_args;
             break;
         }
     }
-
-    return gen_args;
 }
 
-TCGArg *tcg_optimize(TCGContext *s, uint16_t *tcg_opc_ptr,
-        TCGArg *args, TCGOpDef *tcg_op_defs)
+void tcg_optimize(TCGContext *s)
 {
-    TCGArg *res;
-    res = tcg_constant_folding(s, tcg_opc_ptr, args, tcg_op_defs);
-    return res;
+    tcg_constant_folding(s);
 }
