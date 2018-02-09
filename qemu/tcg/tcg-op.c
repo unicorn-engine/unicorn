@@ -287,9 +287,13 @@ void tcg_gen_brcond_i32(TCGContext *s, TCGCond cond, TCGv_i32 arg1, TCGv_i32 arg
 
 void tcg_gen_brcondi_i32(TCGContext *s, TCGCond cond, TCGv_i32 arg1, int32_t arg2, TCGLabel *l)
 {
-    TCGv_i32 t0 = tcg_const_i32(s, arg2);
-    tcg_gen_brcond_i32(s, cond, arg1, t0, l);
-    tcg_temp_free_i32(s, t0);
+    if (cond == TCG_COND_ALWAYS) {
+        tcg_gen_br(s, l);
+    } else if (cond != TCG_COND_NEVER) {
+        TCGv_i32 t0 = tcg_const_i32(s, arg2);
+        tcg_gen_brcond_i32(s, cond, arg1, t0, l);
+        tcg_temp_free_i32(s, t0);
+    }
 }
 
 void tcg_gen_setcond_i32(TCGContext *s, TCGCond cond, TCGv_i32 ret,
@@ -547,7 +551,11 @@ void tcg_gen_deposit_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 ar
 void tcg_gen_movcond_i32(TCGContext *s, TCGCond cond, TCGv_i32 ret, TCGv_i32 c1,
                          TCGv_i32 c2, TCGv_i32 v1, TCGv_i32 v2)
 {
-    if (TCG_TARGET_HAS_movcond_i32) {
+    if (cond == TCG_COND_ALWAYS) {
+        tcg_gen_mov_i32(s, ret, v1);
+    } else if (cond == TCG_COND_NEVER) {
+        tcg_gen_mov_i32(s, ret, v2);
+    } else if (TCG_TARGET_HAS_movcond_i32) {
         tcg_gen_op6i_i32(s, INDEX_op_movcond_i32, ret, c1, c2, v1, v2, cond);
     } else {
         TCGv_i32 t0 = tcg_temp_new_i32(s);
@@ -1591,7 +1599,11 @@ void tcg_gen_deposit_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64 ar
 void tcg_gen_movcond_i64(TCGContext *s, TCGCond cond, TCGv_i64 ret, TCGv_i64 c1,
                          TCGv_i64 c2, TCGv_i64 v1, TCGv_i64 v2)
 {
-    if (TCG_TARGET_REG_BITS == 32) {
+    if (cond == TCG_COND_ALWAYS) {
+        tcg_gen_mov_i64(s, ret, v1);
+    } else if (cond == TCG_COND_NEVER) {
+        tcg_gen_mov_i64(s, ret, v2);
+    } else if (TCG_TARGET_REG_BITS == 32) {
         TCGv_i32 t0 = tcg_temp_new_i32(s);
         TCGv_i32 t1 = tcg_temp_new_i32(s);
         tcg_gen_op6i_i32(s, INDEX_op_setcond2_i32, t0,
