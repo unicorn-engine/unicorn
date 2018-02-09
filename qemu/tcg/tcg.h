@@ -451,7 +451,6 @@ typedef struct TCGTempSet {
     unsigned long l[BITS_TO_LONGS(TCG_MAX_TEMPS)];
 } TCGTempSet;
 
-
 /* pool based memory allocation */
 
 void *tcg_malloc_internal(TCGContext *s, int size);
@@ -780,6 +779,18 @@ struct TCGContext {
 
     int exitreq_label;  // gen_tb_start()
 };
+
+/* The number of opcodes emitted so far.  */
+static inline int tcg_op_buf_count(TCGContext *tcg_ctx)
+{
+    return tcg_ctx->gen_opc_ptr - tcg_ctx->gen_opc_buf;
+}
+
+/* Test for whether to terminate the TB for using too many opcodes.  */
+static inline bool tcg_op_buf_full(TCGContext *tcg_ctx)
+{
+    return tcg_op_buf_count(tcg_ctx) >= OPC_MAX_SIZE;
+}
 
 typedef struct TCGTargetOpDef {
     TCGOpcode op;

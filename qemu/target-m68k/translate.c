@@ -3066,7 +3066,6 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
     CPUState *cs = CPU(cpu);
     CPUM68KState *env = &cpu->env;
     DisasContext dc1, *dc = &dc1;
-    uint16_t *gen_opc_end;
     CPUBreakpoint *bp;
     int j, lj;
     target_ulong pc_start;
@@ -3081,8 +3080,6 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
 
     dc->tb = tb;
     dc->uc = env->uc;
-
-    gen_opc_end = tcg_ctx->gen_opc_buf + OPC_MAX_SIZE;
 
     dc->env = env;
     dc->is_jmp = DISAS_NEXT;
@@ -3133,7 +3130,7 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
                 break;
         }
         if (search_pc) {
-            j = tcg_ctx->gen_opc_ptr - tcg_ctx->gen_opc_buf;
+            j = tcg_op_buf_count(tcg_ctx);
             if (lj < j) {
                 lj++;
                 while (lj < j)
@@ -3148,13 +3145,13 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
         dc->insn_pc = dc->pc;
         disas_m68k_insn(env, dc);
         num_insns++;
-    } while (!dc->is_jmp && tcg_ctx->gen_opc_ptr < gen_opc_end &&
+    } while (!dc->is_jmp && !tcg_op_buf_full(tcg_ctx) &&
             !cs->singlestep_enabled &&
             (pc_offset) < (TARGET_PAGE_SIZE - 32) &&
             num_insns < max_insns);
 
     /* if too long translation, save this info */
-    if (tcg_ctx->gen_opc_ptr >= gen_opc_end || num_insns >= max_insns)
+    if (tcg_op_buf_full(tcg_ctx) || num_insns >= max_insns)
         block_full = true;
 
     //if (tb->cflags & CF_LAST_IO)
@@ -3189,7 +3186,7 @@ done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
 
     if (search_pc) {
-        j = tcg_ctx->gen_opc_ptr - tcg_ctx->gen_opc_buf;
+        j = tcg_op_buf_count(tcg_ctx);
         lj++;
         while (lj <= j)
             tcg_ctx->gen_opc_instr_start[lj++] = 0;

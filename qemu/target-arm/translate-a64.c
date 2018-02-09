@@ -11083,7 +11083,6 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     CPUARMState *env = &cpu->env;
     DisasContext dc1, *dc = &dc1;
     CPUBreakpoint *bp;
-    uint16_t *gen_opc_end;
     int j, lj;
     target_ulong pc_start;
     target_ulong next_page_start;
@@ -11096,8 +11095,6 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
 
     dc->uc = env->uc;
     dc->tb = tb;
-
-    gen_opc_end = tcg_ctx->gen_opc_buf + OPC_MAX_SIZE;
 
     dc->is_jmp = DISAS_NEXT;
     dc->pc = pc_start;
@@ -11191,7 +11188,7 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
         }
 
         if (search_pc) {
-            j = tcg_ctx->gen_opc_ptr - tcg_ctx->gen_opc_buf;
+            j = tcg_op_buf_count(tcg_ctx);
             if (lj < j) {
                 lj++;
                 while (lj < j) {
@@ -11241,14 +11238,14 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
          * ensures prefetch aborts occur at the right place.
          */
         num_insns++;
-    } while (!dc->is_jmp && tcg_ctx->gen_opc_ptr < gen_opc_end &&
+    } while (!dc->is_jmp && !tcg_op_buf_full(tcg_ctx) &&
              !cs->singlestep_enabled &&
              !dc->ss_active &&
              dc->pc < next_page_start &&
              num_insns < max_insns);
 
     /* if too long translation, save this info */
-    if (tcg_ctx->gen_opc_ptr >= gen_opc_end || num_insns >= max_insns) {
+    if (tcg_op_buf_full(tcg_ctx) || num_insns >= max_insns) {
         block_full = true;
     }
 
@@ -11308,7 +11305,7 @@ done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
 
     if (search_pc) {
-        j = tcg_ctx->gen_opc_ptr - tcg_ctx->gen_opc_buf;
+        j = tcg_op_buf_count(tcg_ctx);
         lj++;
         while (lj <= j) {
             tcg_ctx->gen_opc_instr_start[lj++] = 0;

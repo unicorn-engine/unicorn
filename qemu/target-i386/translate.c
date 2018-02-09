@@ -8591,7 +8591,6 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     DisasContext dc1, *dc = &dc1;
     target_ulong pc_ptr;
-    uint16_t *gen_opc_end;
     CPUBreakpoint *bp;
     int j, lj;
     uint64_t flags;
@@ -8694,8 +8693,6 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
         goto done_generating;
     }
 
-    gen_opc_end = tcg_ctx->gen_opc_buf + OPC_MAX_SIZE;
-
     dc->is_jmp = DISAS_NEXT;
     lj = -1;
     max_insns = tb->cflags & CF_COUNT_MASK;
@@ -8724,7 +8721,7 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
             }
         }
         if (search_pc) {
-            j = tcg_ctx->gen_opc_ptr - tcg_ctx->gen_opc_buf;
+            j = tcg_op_buf_count(tcg_ctx);
             if (lj < j) {
                 lj++;
                 while (lj < j)
@@ -8757,7 +8754,7 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
             break;
         }
         /* if too long translation, stop generation too */
-        if (tcg_ctx->gen_opc_ptr >= gen_opc_end ||
+        if (tcg_op_buf_full(tcg_ctx) ||
             (pc_ptr - pc_start) >= (TARGET_PAGE_SIZE - 32) ||
             num_insns >= max_insns) {
             gen_jmp_im(dc, pc_ptr - dc->cs_base);
@@ -8773,7 +8770,7 @@ done_generating:
 
     /* we don't forget to fill the last values */
     if (search_pc) {
-        j = tcg_ctx->gen_opc_ptr - tcg_ctx->gen_opc_buf;
+        j = tcg_op_buf_count(tcg_ctx);
         lj++;
         while (lj <= j)
             tcg_ctx->gen_opc_instr_start[lj++] = 0;
