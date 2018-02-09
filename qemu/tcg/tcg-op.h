@@ -259,16 +259,14 @@ static inline void tcg_gen_op6ii_i64(TCGContext *s, TCGOpcode opc, TCGv_i64 a1,
 
 /* Generic ops.  */
 
-int gen_new_label(TCGContext *s);
-
-static inline void gen_set_label(TCGContext *s, int n)
+static inline void gen_set_label(TCGContext *s, TCGLabel *l)
 {
-    tcg_gen_op1(s, INDEX_op_set_label, n);
+    tcg_gen_op1(s, INDEX_op_set_label, label_arg(s, l));
 }
 
-static inline void tcg_gen_br(TCGContext *s, int label)
+static inline void tcg_gen_br(TCGContext *s, TCGLabel *l)
 {
-    tcg_gen_op1(s, INDEX_op_br, label);
+    tcg_gen_op1(s, INDEX_op_br, label_arg(s, l));
 }
 
 /* Helper calls. */
@@ -300,8 +298,8 @@ void tcg_gen_rotr_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2)
 void tcg_gen_rotri_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1, unsigned arg2);
 void tcg_gen_deposit_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2,
                          unsigned int ofs, unsigned int len);
-void tcg_gen_brcond_i32(TCGContext *s, TCGCond cond, TCGv_i32 arg1, TCGv_i32 arg2, int label);
-void tcg_gen_brcondi_i32(TCGContext *s, TCGCond cond, TCGv_i32 arg1, int32_t arg2, int label);
+void tcg_gen_brcond_i32(TCGContext *s, TCGCond cond, TCGv_i32 arg1, TCGv_i32 arg2, TCGLabel *l);
+void tcg_gen_brcondi_i32(TCGContext *s, TCGCond cond, TCGv_i32 arg1, int32_t arg2, TCGLabel *l);
 void tcg_gen_setcond_i32(TCGContext *s, TCGCond cond, TCGv_i32 ret,
                          TCGv_i32 arg1, TCGv_i32 arg2);
 void tcg_gen_setcondi_i32(TCGContext *s, TCGCond cond, TCGv_i32 ret,
@@ -468,8 +466,8 @@ void tcg_gen_rotr_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64 arg2)
 void tcg_gen_rotri_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, unsigned arg2);
 void tcg_gen_deposit_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64 arg2,
                          unsigned int ofs, unsigned int len);
-void tcg_gen_brcond_i64(TCGContext *s, TCGCond cond, TCGv_i64 arg1, TCGv_i64 arg2, int label);
-void tcg_gen_brcondi_i64(TCGContext *s, TCGCond cond, TCGv_i64 arg1, int64_t arg2, int label);
+void tcg_gen_brcond_i64(TCGContext *s, TCGCond cond, TCGv_i64 arg1, TCGv_i64 arg2, TCGLabel *l);
+void tcg_gen_brcondi_i64(TCGContext *s, TCGCond cond, TCGv_i64 arg1, int64_t arg2, TCGLabel *l);
 void tcg_gen_setcond_i64(TCGContext *s, TCGCond cond, TCGv_i64 ret,
                          TCGv_i64 arg1, TCGv_i64 arg2);
 void tcg_gen_setcondi_i64(TCGContext *s, TCGCond cond, TCGv_i64 ret,

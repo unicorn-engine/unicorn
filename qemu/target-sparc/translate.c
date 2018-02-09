@@ -1012,9 +1012,7 @@ static inline void gen_branch2(DisasContext *dc, target_ulong pc1,
                                target_ulong pc2, TCGv r_cond)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    int l1;
-
-    l1 = gen_new_label(tcg_ctx);
+    TCGLabel *l1 = gen_new_label(tcg_ctx);
 
     tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, r_cond, 0, l1);
 
@@ -1028,9 +1026,7 @@ static inline void gen_branch_a(DisasContext *dc, target_ulong pc1,
                                 target_ulong pc2, TCGv r_cond)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    int l1;
-
-    l1 = gen_new_label(tcg_ctx);
+    TCGLabel *l1 = gen_new_label(tcg_ctx);
 
     tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, r_cond, 0, l1);
 
@@ -2752,7 +2748,8 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
             if (xop == 0x3a) {  /* generate trap */
                 int cond = GET_FIELD(insn, 3, 6);
                 TCGv_i32 trap;
-                int l1 = -1, mask;
+                TCGLabel *l1 = NULL;
+                int mask;
 
                 if (cond == 0) {
                     /* Trap never.  */

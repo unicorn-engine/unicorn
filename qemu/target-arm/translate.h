@@ -9,7 +9,7 @@ typedef struct DisasContext {
     /* Nonzero if this instruction has been conditionally skipped.  */
     int condjmp;
     /* The label that will be jumped to when the instruction is skipped.  */
-    int condlabel;
+    TCGLabel *condlabel;
     /* Thumb-2 conditional execution bits.  */
     int condexec_mask;
     int condexec_cond;
@@ -111,6 +111,6 @@ static inline void gen_a64_set_pc_im(uint64_t val)
 }
 #endif
 
-void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, int label);
+void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, TCGLabel *label);
 
 #endif /* TARGET_ARM_TRANSLATE_H */

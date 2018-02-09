@@ -739,10 +739,10 @@ static void gen_thumb2_parallel_addsub(DisasContext *s, int op1, int op2, TCGv_i
  * generate a conditional branch based on ARM condition code cc.
  * This is common between ARM and Aarch64 targets.
  */
-void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, int label)
+void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, TCGLabel *label)
 {
     TCGv_i32 tmp;
-    int inv;
+    TCGLabel *inv;
 
     switch (cc) {
     case 0: /* eq: Z */
@@ -7543,8 +7543,8 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i32 tmp;
     TCGv_i64 val64, extaddr;
-    int done_label;
-    int fail_label;
+    TCGLabel *done_label;
+    TCGLabel *fail_label;
 
     /* if (env->exclusive_addr == addr && env->exclusive_val == [addr]) {
          [addr] = {Rt};

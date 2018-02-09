@@ -802,7 +802,7 @@ struct TCGContext {
     void *cpu_hintp, *cpu_htba, *cpu_hver, *cpu_ssr, *cpu_ver;
     void *cpu_wim;
 
-    int exitreq_label;  // gen_tb_start()
+    TCGLabel *exitreq_label;  // gen_tb_start()
 };
 
 /* The number of opcodes emitted so far.  */
@@ -891,6 +891,36 @@ TCGv_i32 tcg_const_i32(TCGContext *s, int32_t val);
 TCGv_i64 tcg_const_i64(TCGContext *s, int64_t val);
 TCGv_i32 tcg_const_local_i32(TCGContext *s, int32_t val);
 TCGv_i64 tcg_const_local_i64(TCGContext *s, int64_t val);
+
+TCGLabel *gen_new_label(TCGContext* s);
+
+/**
+ * label_arg
+ * @l: label
+ *
+ * Encode a label for storage in the TCG opcode stream.
+ */
+
+static inline TCGArg label_arg(TCGContext *tcg_ctx, TCGLabel *l)
+{
+    ptrdiff_t idx = l - tcg_ctx->labels;
+    tcg_debug_assert(idx >= 0 && idx < tcg_ctx->nb_labels);
+    return idx;
+}
+
+/**
+ * arg_label
+ * @i: value
+ *
+ * The opposite of label_arg.  Retrieve a label from the
+ * encoding of the TCG opcode stream.
+ */
+
+static inline TCGLabel *arg_label(TCGContext *tcg_ctx, TCGArg idx)
+{
+    tcg_debug_assert(idx < tcg_ctx->nb_labels);
+    return &tcg_ctx->labels[idx];
+}
 
 /**
  * tcg_ptr_byte_diff

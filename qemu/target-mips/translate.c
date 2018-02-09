@@ -2005,8 +2005,8 @@ static inline void op_st_##insn(DisasContext *s, TCGv arg1, TCGv arg2, int rt, D
 {                                                                            \
     TCGContext *tcg_ctx = s->uc->tcg_ctx; \
     TCGv t0 = tcg_temp_new(tcg_ctx);                                                \
-    int l1 = gen_new_label(tcg_ctx);                                                \
-    int l2 = gen_new_label(tcg_ctx);                                                \
+    TCGLabel *l1 = gen_new_label(tcg_ctx);                                                \
+    TCGLabel *l2 = gen_new_label(tcg_ctx);                                                \
                                                                              \
     tcg_gen_andi_tl(tcg_ctx, t0, arg2, almask);                                       \
     tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, t0, 0, l1);                              \
@@ -2436,7 +2436,7 @@ static void gen_arith_imm(DisasContext *ctx, uint32_t opc,
             TCGv t0 = tcg_temp_local_new(tcg_ctx);
             TCGv t1 = tcg_temp_new(tcg_ctx);
             TCGv t2 = tcg_temp_new(tcg_ctx);
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
 
             gen_load_gpr(ctx, t1, rs);
             tcg_gen_addi_tl(tcg_ctx, t0, t1, uimm);
@@ -2472,7 +2472,7 @@ static void gen_arith_imm(DisasContext *ctx, uint32_t opc,
             TCGv t0 = tcg_temp_local_new(tcg_ctx);
             TCGv t1 = tcg_temp_new(tcg_ctx);
             TCGv t2 = tcg_temp_new(tcg_ctx);
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
 
             gen_load_gpr(ctx, t1, rs);
             tcg_gen_addi_tl(tcg_ctx, t0, t1, uimm);
@@ -2710,7 +2710,7 @@ static void gen_arith(DisasContext *ctx, uint32_t opc,
             TCGv t0 = tcg_temp_local_new(tcg_ctx);
             TCGv t1 = tcg_temp_new(tcg_ctx);
             TCGv t2 = tcg_temp_new(tcg_ctx);
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
 
             gen_load_gpr(ctx, t1, rs);
             gen_load_gpr(ctx, t2, rt);
@@ -2748,7 +2748,7 @@ static void gen_arith(DisasContext *ctx, uint32_t opc,
             TCGv t0 = tcg_temp_local_new(tcg_ctx);
             TCGv t1 = tcg_temp_new(tcg_ctx);
             TCGv t2 = tcg_temp_new(tcg_ctx);
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
 
             gen_load_gpr(ctx, t1, rs);
             gen_load_gpr(ctx, t2, rt);
@@ -2788,7 +2788,7 @@ static void gen_arith(DisasContext *ctx, uint32_t opc,
             TCGv t0 = tcg_temp_local_new(tcg_ctx);
             TCGv t1 = tcg_temp_new(tcg_ctx);
             TCGv t2 = tcg_temp_new(tcg_ctx);
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
 
             gen_load_gpr(ctx, t1, rs);
             gen_load_gpr(ctx, t2, rt);
@@ -2824,7 +2824,7 @@ static void gen_arith(DisasContext *ctx, uint32_t opc,
             TCGv t0 = tcg_temp_local_new(tcg_ctx);
             TCGv t1 = tcg_temp_new(tcg_ctx);
             TCGv t2 = tcg_temp_new(tcg_ctx);
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
 
             gen_load_gpr(ctx, t1, rs);
             gen_load_gpr(ctx, t2, rt);
@@ -3887,9 +3887,9 @@ static void gen_loongson_integer(DisasContext *ctx, uint32_t opc,
     case OPC_DIV_G_2E:
     case OPC_DIV_G_2F:
         {
-            int l1 = gen_new_label(tcg_ctx);
-            int l2 = gen_new_label(tcg_ctx);
-            int l3 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l2 = gen_new_label(tcg_ctx);
+            TCGLabel *l3 = gen_new_label(tcg_ctx);
             tcg_gen_ext32s_tl(tcg_ctx, t0, t0);
             tcg_gen_ext32s_tl(tcg_ctx, t1, t1);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t1, 0, l1);
@@ -3910,8 +3910,8 @@ static void gen_loongson_integer(DisasContext *ctx, uint32_t opc,
     case OPC_DIVU_G_2E:
     case OPC_DIVU_G_2F:
         {
-            int l1 = gen_new_label(tcg_ctx);
-            int l2 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l2 = gen_new_label(tcg_ctx);
             tcg_gen_ext32u_tl(tcg_ctx, t0, t0);
             tcg_gen_ext32u_tl(tcg_ctx, t1, t1);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t1, 0, l1);
@@ -3927,9 +3927,9 @@ static void gen_loongson_integer(DisasContext *ctx, uint32_t opc,
     case OPC_MOD_G_2E:
     case OPC_MOD_G_2F:
         {
-            int l1 = gen_new_label(tcg_ctx);
-            int l2 = gen_new_label(tcg_ctx);
-            int l3 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l2 = gen_new_label(tcg_ctx);
+            TCGLabel *l3 = gen_new_label(tcg_ctx);
             tcg_gen_ext32u_tl(tcg_ctx, t0, t0);
             tcg_gen_ext32u_tl(tcg_ctx, t1, t1);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, t1, 0, l1);
@@ -3948,8 +3948,8 @@ static void gen_loongson_integer(DisasContext *ctx, uint32_t opc,
     case OPC_MODU_G_2E:
     case OPC_MODU_G_2F:
         {
-            int l1 = gen_new_label(tcg_ctx);
-            int l2 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l2 = gen_new_label(tcg_ctx);
             tcg_gen_ext32u_tl(tcg_ctx, t0, t0);
             tcg_gen_ext32u_tl(tcg_ctx, t1, t1);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t1, 0, l1);
@@ -3976,9 +3976,9 @@ static void gen_loongson_integer(DisasContext *ctx, uint32_t opc,
     case OPC_DDIV_G_2E:
     case OPC_DDIV_G_2F:
         {
-            int l1 = gen_new_label(tcg_ctx);
-            int l2 = gen_new_label(tcg_ctx);
-            int l3 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l2 = gen_new_label(tcg_ctx);
+            TCGLabel *l3 = gen_new_label(tcg_ctx);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t1, 0, l1);
             tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[rd], 0);
             tcg_gen_br(tcg_ctx, l3);
@@ -3996,8 +3996,8 @@ static void gen_loongson_integer(DisasContext *ctx, uint32_t opc,
     case OPC_DDIVU_G_2E:
     case OPC_DDIVU_G_2F:
         {
-            int l1 = gen_new_label(tcg_ctx);
-            int l2 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l2 = gen_new_label(tcg_ctx);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t1, 0, l1);
             tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[rd], 0);
             tcg_gen_br(tcg_ctx, l2);
@@ -4010,9 +4010,9 @@ static void gen_loongson_integer(DisasContext *ctx, uint32_t opc,
     case OPC_DMOD_G_2E:
     case OPC_DMOD_G_2F:
         {
-            int l1 = gen_new_label(tcg_ctx);
-            int l2 = gen_new_label(tcg_ctx);
-            int l3 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l2 = gen_new_label(tcg_ctx);
+            TCGLabel *l3 = gen_new_label(tcg_ctx);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, t1, 0, l1);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t0, -1LL << 63, l2);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t1, -1LL, l2);
@@ -4028,8 +4028,8 @@ static void gen_loongson_integer(DisasContext *ctx, uint32_t opc,
     case OPC_DMODU_G_2E:
     case OPC_DMODU_G_2F:
         {
-            int l1 = gen_new_label(tcg_ctx);
-            int l2 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l2 = gen_new_label(tcg_ctx);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t1, 0, l1);
             tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[rd], 0);
             tcg_gen_br(tcg_ctx, l2);
@@ -4246,7 +4246,7 @@ static void gen_loongson_multimedia(DisasContext *ctx, int rd, int rs, int rt)
     case OPC_DADD_CP2:
         {
             TCGv_i64 t2 = tcg_temp_new_i64(tcg_ctx);
-            int lab = gen_new_label(tcg_ctx);
+            TCGLabel *lab = gen_new_label(tcg_ctx);
 
             tcg_gen_mov_i64(tcg_ctx, t2, t0);
             tcg_gen_add_i64(tcg_ctx, t0, t1, t2);
@@ -4269,7 +4269,7 @@ static void gen_loongson_multimedia(DisasContext *ctx, int rd, int rs, int rt)
     case OPC_DSUB_CP2:
         {
             TCGv_i64 t2 = tcg_temp_new_i64(tcg_ctx);
-            int lab = gen_new_label(tcg_ctx);
+            TCGLabel *lab = gen_new_label(tcg_ctx);
 
             tcg_gen_mov_i64(tcg_ctx, t2, t0);
             tcg_gen_sub_i64(tcg_ctx, t0, t1, t2);
@@ -4381,7 +4381,7 @@ static void gen_trap (DisasContext *ctx, uint32_t opc,
             break;
         }
     } else {
-        int l1 = gen_new_label(tcg_ctx);
+        TCGLabel *l1 = gen_new_label(tcg_ctx);
 
         switch (opc) {
         case OPC_TEQ:
@@ -8489,7 +8489,7 @@ static void gen_movci (DisasContext *ctx, int rd, int rs, int cc, int tf)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv **cpu_gpr = (TCGv **)tcg_ctx->cpu_gpr;
-    int l1;
+    TCGLabel *l1;
     TCGCond cond;
     TCGv_i32 t0;
 
@@ -8521,7 +8521,7 @@ static inline void gen_movcf_s (DisasContext *ctx, int fs, int fd, int cc, int t
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     int cond;
     TCGv_i32 t0 = tcg_temp_new_i32(tcg_ctx);
-    int l1 = gen_new_label(tcg_ctx);
+    TCGLabel *l1 = gen_new_label(tcg_ctx);
 
     if (tf)
         cond = TCG_COND_EQ;
@@ -8542,7 +8542,7 @@ static inline void gen_movcf_d (DisasContext *ctx, int fs, int fd, int cc, int t
     int cond;
     TCGv_i32 t0 = tcg_temp_new_i32(tcg_ctx);
     TCGv_i64 fp0;
-    int l1 = gen_new_label(tcg_ctx);
+    TCGLabel *l1 = gen_new_label(tcg_ctx);
 
     if (tf)
         cond = TCG_COND_EQ;
@@ -8565,8 +8565,8 @@ static inline void gen_movcf_ps(DisasContext *ctx, int fs, int fd,
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     int cond;
     TCGv_i32 t0 = tcg_temp_new_i32(tcg_ctx);
-    int l1 = gen_new_label(tcg_ctx);
-    int l2 = gen_new_label(tcg_ctx);
+    TCGLabel *l1 = gen_new_label(tcg_ctx);
+    TCGLabel *l2 = gen_new_label(tcg_ctx);
 
     if (tf)
         cond = TCG_COND_EQ;
@@ -8935,7 +8935,7 @@ static void gen_farith (DisasContext *ctx, enum fopcode op1,
     case OPC_MOVZ_S:
         check_insn_opc_removed(ctx, ISA_MIPS32R6);
         {
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
             TCGv_i32 fp0;
 
             if (ft != 0) {
@@ -8952,7 +8952,7 @@ static void gen_farith (DisasContext *ctx, enum fopcode op1,
     case OPC_MOVN_S:
         check_insn_opc_removed(ctx, ISA_MIPS32R6);
         {
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
             TCGv_i32 fp0;
 
             if (ft != 0) {
@@ -9480,7 +9480,7 @@ static void gen_farith (DisasContext *ctx, enum fopcode op1,
     case OPC_MOVZ_D:
         check_insn_opc_removed(ctx, ISA_MIPS32R6);
         {
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
             TCGv_i64 fp0;
 
             if (ft != 0) {
@@ -9497,7 +9497,7 @@ static void gen_farith (DisasContext *ctx, enum fopcode op1,
     case OPC_MOVN_D:
         check_insn_opc_removed(ctx, ISA_MIPS32R6);
         {
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
             TCGv_i64 fp0;
 
             if (ft != 0) {
@@ -9918,7 +9918,7 @@ static void gen_farith (DisasContext *ctx, enum fopcode op1,
     case OPC_MOVZ_PS:
         check_cp1_64bitmode(ctx);
         {
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
             TCGv_i64 fp0;
 
             if (ft != 0)
@@ -9934,7 +9934,7 @@ static void gen_farith (DisasContext *ctx, enum fopcode op1,
     case OPC_MOVN_PS:
         check_cp1_64bitmode(ctx);
         {
-            int l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
             TCGv_i64 fp0;
 
             if (ft != 0) {
@@ -10281,8 +10281,8 @@ static void gen_flt3_arith (DisasContext *ctx, uint32_t opc,
             TCGv t0 = tcg_temp_local_new(tcg_ctx);
             TCGv_i32 fp = tcg_temp_new_i32(tcg_ctx);
             TCGv_i32 fph = tcg_temp_new_i32(tcg_ctx);
-            int l1 = gen_new_label(tcg_ctx);
-            int l2 = gen_new_label(tcg_ctx);
+            TCGLabel *l1 = gen_new_label(tcg_ctx);
+            TCGLabel *l2 = gen_new_label(tcg_ctx);
 
             gen_load_gpr(ctx, t0, fr);
             tcg_gen_andi_tl(tcg_ctx, t0, t0, 0x7);
@@ -10633,7 +10633,7 @@ static void gen_branch(DisasContext *ctx, int insn_bytes)
             /* Conditional branch */
             MIPS_DEBUG("conditional branch");
             {
-                int l1 = gen_new_label(tcg_ctx);
+                TCGLabel *l1 = gen_new_label(tcg_ctx);
 
                 tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->bcond, 0, l1);
                 gen_goto_tb(ctx, 1, ctx->pc + insn_bytes);
@@ -16048,7 +16048,7 @@ static void gen_compute_compact_branch(DisasContext *ctx, uint32_t opc,
         gen_branch(ctx, 4);
     } else {
         /* Conditional compact branch */
-        int fs = gen_new_label(tcg_ctx);
+        TCGLabel *fs = gen_new_label(tcg_ctx);
         save_cpu_state(ctx, 0);
 
         switch (opc) {
@@ -18530,7 +18530,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
 
     /* Handle blikely not taken case */
     if ((ctx->hflags & MIPS_HFLAG_BMASK_BASE) == MIPS_HFLAG_BL) {
-        int l1 = gen_new_label(tcg_ctx);
+        TCGLabel *l1 = gen_new_label(tcg_ctx);
 
         MIPS_DEBUG("blikely condition (" TARGET_FMT_lx ")", ctx->pc + 4);
         tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->bcond, 0, l1);
