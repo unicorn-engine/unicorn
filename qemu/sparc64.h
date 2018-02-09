@@ -2870,6 +2870,7 @@
 #define tcg_malloc tcg_malloc_sparc64
 #define tcg_malloc_internal tcg_malloc_internal_sparc64
 #define tcg_op_defs_org tcg_op_defs_org_sparc64
+#define tcg_op_remove tcg_op_remove_sparc64
 #define tcg_opt_gen_mov tcg_opt_gen_mov_sparc64
 #define tcg_opt_gen_movi tcg_opt_gen_movi_sparc64
 #define tcg_optimize tcg_optimize_sparc64

@@ -2870,6 +2870,7 @@
 #define tcg_malloc tcg_malloc_powerpc
 #define tcg_malloc_internal tcg_malloc_internal_powerpc
 #define tcg_op_defs_org tcg_op_defs_org_powerpc
+#define tcg_op_remove tcg_op_remove_powerpc
 #define tcg_opt_gen_mov tcg_opt_gen_mov_powerpc
 #define tcg_opt_gen_movi tcg_opt_gen_movi_powerpc
 #define tcg_optimize tcg_optimize_powerpc

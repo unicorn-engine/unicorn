@@ -759,7 +759,7 @@ static void tcg_constant_folding(TCGContext *s)
             break;
         do_mov3:
             if (temps_are_copies(s, args[0], args[1])) {
-                op->opc = INDEX_op_nop;
+                tcg_op_remove(s, op);
             } else {
                 tcg_opt_gen_mov(s, op, args, opc, args[0], args[1]);
             }
@@ -917,7 +917,7 @@ static void tcg_constant_folding(TCGContext *s)
         if (affected == 0) {
             assert(nb_oargs == 1);
             if (temps_are_copies(s, args[0], args[1])) {
-                op->opc = INDEX_op_nop;
+                tcg_op_remove(s, op);
             } else if (temps[args[1]].state != TCG_TEMP_CONST) {
                 tcg_opt_gen_mov(s, op, args, opc, args[0], args[1]);
             } else {
@@ -949,7 +949,7 @@ static void tcg_constant_folding(TCGContext *s)
         CASE_OP_32_64(and):
             if (temps_are_copies(s, args[1], args[2])) {
                 if (temps_are_copies(s, args[0], args[1])) {
-                    op->opc = INDEX_op_nop;
+                    tcg_op_remove(s, op);
                 } else {
                     tcg_opt_gen_mov(s, op, args, opc, args[0], args[1]);
                 }
@@ -980,7 +980,7 @@ static void tcg_constant_folding(TCGContext *s)
         switch (opc) {
         CASE_OP_32_64(mov):
             if (temps_are_copies(s, args[0], args[1])) {
-                op->opc = INDEX_op_nop;
+                tcg_op_remove(s, op);
                 break;
             }
             if (temps[args[1]].state != TCG_TEMP_CONST) {
@@ -1075,7 +1075,7 @@ static void tcg_constant_folding(TCGContext *s)
                     op->opc = INDEX_op_br;
                     args[0] = args[3];
                 } else {
-                    op->opc = INDEX_op_nop;
+                    tcg_op_remove(s, op);
                 }
                 break;
             }
@@ -1085,7 +1085,7 @@ static void tcg_constant_folding(TCGContext *s)
             tmp = do_constant_folding_cond(s, opc, args[1], args[2], args[5]);
             if (tmp != 2) {
                 if (temps_are_copies(s, args[0], args[4-tmp])) {
-                    op->opc = INDEX_op_nop;
+                    tcg_op_remove(s, op);
                 } else if (temps[args[4-tmp]].state == TCG_TEMP_CONST) {
                     tcg_opt_gen_movi(s, op, args, opc,
                                      args[0], temps[args[4-tmp]].val);
@@ -1178,7 +1178,7 @@ static void tcg_constant_folding(TCGContext *s)
                     args[0] = args[5];
                 } else {
             do_brcond_false:
-                    op->opc = INDEX_op_nop;
+                    tcg_op_remove(s, op);
                 }
             } else if ((args[4] == TCG_COND_LT || args[4] == TCG_COND_GE)
                        && temps[args[2]].state == TCG_TEMP_CONST

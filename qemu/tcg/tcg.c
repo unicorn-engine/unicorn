@@ -1286,6 +1286,33 @@ void tcg_add_target_add_op_defs(TCGContext *s, const TCGTargetOpDef *tdefs)
 #endif
 }
 
+void tcg_op_remove(TCGContext *s, TCGOp *op)
+{
+    int next = op->next;
+    int prev = op->prev;
+    TCGOp opp = {0};
+
+    if (next >= 0) {
+        s->gen_op_buf[next].prev = prev;
+    } else {
+        s->gen_last_op_idx = prev;
+    }
+    if (prev >= 0) {
+        s->gen_op_buf[prev].next = next;
+    } else {
+        s->gen_first_op_idx = next;
+    }
+
+    opp.opc = INDEX_op_nop;
+    opp.next = -1;
+    opp.prev = -1;
+    *op = opp;
+
+#ifdef CONFIG_PROFILER
+    s->del_op_count++;
+#endif
+}
+
 #ifdef USE_LIVENESS_ANALYSIS
 
 /* liveness analysis: end of function: all temps are dead, and globals

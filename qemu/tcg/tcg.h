@@ -866,6 +866,7 @@ void tcg_add_target_add_op_defs(TCGContext *s, const TCGTargetOpDef *tdefs);
 void tcg_gen_callN(TCGContext *s, void *func,
                    TCGArg ret, int nargs, TCGArg *args);
 
+void tcg_op_remove(TCGContext *s, TCGOp *op);
 void tcg_optimize(TCGContext *s);
 
 static inline void *tcg_malloc(TCGContext *s, int size)
