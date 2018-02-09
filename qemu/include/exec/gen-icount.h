@@ -51,6 +51,8 @@ static inline void gen_tb_end(TCGContext *tcg_ctx, TranslationBlock *tb, int num
         tcg_gen_exit_tb((uintptr_t)tb + TB_EXIT_ICOUNT_EXPIRED);
     }
 #endif
+
+    *tcg_ctx->gen_opc_ptr = INDEX_op_end;
 }
 
 #if 0

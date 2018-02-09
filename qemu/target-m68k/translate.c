@@ -3187,7 +3187,6 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
 
 done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
-    *tcg_ctx->gen_opc_ptr = INDEX_op_end;
 
     if (search_pc) {
         j = tcg_ctx->gen_opc_ptr - tcg_ctx->gen_opc_buf;
