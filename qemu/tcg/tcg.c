@@ -1290,7 +1290,6 @@ void tcg_op_remove(TCGContext *s, TCGOp *op)
 {
     int next = op->next;
     int prev = op->prev;
-    TCGOp opp = {0};
 
     if (next >= 0) {
         s->gen_op_buf[next].prev = prev;
@@ -1303,10 +1302,7 @@ void tcg_op_remove(TCGContext *s, TCGOp *op)
         s->gen_first_op_idx = next;
     }
 
-    opp.opc = INDEX_op_nop;
-    opp.next = -1;
-    opp.prev = -1;
-    *op = opp;
+    memset(op, -1, sizeof(*op));
 
 #ifdef CONFIG_PROFILER
     s->del_op_count++;
@@ -1445,8 +1441,6 @@ static void tcg_liveness_analysis(TCGContext *s)
             }
             break;
         case INDEX_op_debug_insn_start:
-        case INDEX_op_nop:
-        case INDEX_op_end:
             break;
         case INDEX_op_discard:
             /* mark the temporary as dead */
@@ -1549,10 +1543,7 @@ static void tcg_liveness_analysis(TCGContext *s)
                     }
                 }
             do_remove:
-                op->opc = INDEX_op_nop;
-#ifdef CONFIG_PROFILER
-                s->del_op_count++;
-#endif
+                tcg_op_remove(s, op);
             } else {
             do_not_remove:
                 /* output args are dead */
@@ -2323,7 +2314,7 @@ static void dump_op_count(void)
 {
     int i;
 
-    for(i = INDEX_op_end; i < NB_OPS; i++) {
+    for(i = 0; i < NB_OPS; i++) {
         qemu_log("%s %" PRId64 "\n", s->tcg_op_defs[i].name, tcg_table_op_count[i]);
     }
 }
@@ -2400,7 +2391,6 @@ static inline int tcg_gen_code_common(TCGContext *s,
             tcg_reg_alloc_movi(s, args, dead_args, sync_args);
             break;
         case INDEX_op_debug_insn_start:
-        case INDEX_op_nop:
             break;
         case INDEX_op_discard:
             temp_dead(s, args[0]);
