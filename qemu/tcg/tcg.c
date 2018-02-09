@@ -238,15 +238,10 @@ static void tcg_out_label(TCGContext *s, TCGLabel *l, tcg_insn_unit *ptr)
 
 TCGLabel *gen_new_label(TCGContext *s)
 {
-    int idx;
-    TCGLabel *l;
-
-    if (s->nb_labels >= TCG_MAX_LABELS)
-        tcg_abort();
-    idx = s->nb_labels++;
-    l = &s->labels[idx];
-    l->has_value = 0;
-    l->u.first_reloc = NULL;
+    TCGLabel *l = tcg_malloc(s, sizeof(TCGLabel));
+    TCGLabel ltmp = {0};
+    ltmp.id = s->nb_labels++;
+    *l = ltmp;
     return l;
 }
 
@@ -1125,12 +1120,20 @@ void tcg_dump_ops(TCGContext *s)
                 i = 0;
                 break;
             }
-            for (; i < nb_cargs; i++) {
-                if (k != 0) {
-                    printf(",");
-                }
-
-                printf("$0x%" TCG_PRIlx, args[k++]);
+            switch (c) {
+            case INDEX_op_set_label:
+            case INDEX_op_br:
+            case INDEX_op_brcond_i32:
+            case INDEX_op_brcond_i64:
+            case INDEX_op_brcond2_i32:
+                qemu_log("%s$L%d", k ? "," : "", arg_label(s, args[k])->id);
+                i++, k++;
+                break;
+            default:
+                break;
+            }
+            for (; i < nb_cargs; i++, k++) {
+                qemu_log("%s$0x%" TCG_PRIlx, k ? "," : "", args[k]);
             }
         }
         printf("\n");
