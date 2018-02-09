@@ -2774,7 +2774,6 @@
 #define tcg_gen_nor_i64 tcg_gen_nor_i64_aarch64eb
 #define tcg_gen_not_i32 tcg_gen_not_i32_aarch64eb
 #define tcg_gen_not_i64 tcg_gen_not_i64_aarch64eb
-#define tcg_gen_op0 tcg_gen_op0_aarch64eb
 #define tcg_gen_op1 tcg_gen_op1_aarch64eb
 #define tcg_gen_op2 tcg_gen_op2_aarch64eb
 #define tcg_gen_op3 tcg_gen_op3_aarch64eb

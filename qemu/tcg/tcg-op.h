@@ -27,7 +27,6 @@
 #include "exec/helper-gen.h"
 
 /* Basic output routines.  Not for general consumption.  */
-void tcg_gen_op0(TCGContext *, TCGOpcode);
 void tcg_gen_op1(TCGContext *, TCGOpcode, TCGArg);
 void tcg_gen_op2(TCGContext *, TCGOpcode, TCGArg, TCGArg);
 void tcg_gen_op3(TCGContext *, TCGOpcode, TCGArg, TCGArg, TCGArg);

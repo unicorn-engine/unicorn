@@ -58,11 +58,6 @@ static void tcg_emit_op(TCGContext *ctx, TCGOpcode opc, int args)
     ctx->gen_op_buf[oi] = op;
 }
 
-void tcg_gen_op0(TCGContext *ctx, TCGOpcode opc)
-{
-    tcg_emit_op(ctx, opc, -1);
-}
-
 void tcg_gen_op1(TCGContext *ctx, TCGOpcode opc, TCGArg a1)
 {
     int pi = ctx->gen_next_parm_idx;
@@ -572,8 +567,6 @@ void tcg_gen_add2_i32(TCGContext *s, TCGv_i32 rl, TCGv_i32 rh, TCGv_i32 al,
 {
     if (TCG_TARGET_HAS_add2_i32) {
         tcg_gen_op6_i32(s, INDEX_op_add2_i32, rl, rh, al, ah, bl, bh);
-        /* Allow the optimizer room to replace add2 with two moves.  */
-        tcg_gen_op0(s, INDEX_op_nop);
     } else {
         TCGv_i64 t0 = tcg_temp_new_i64(s);
         TCGv_i64 t1 = tcg_temp_new_i64(s);
@@ -591,8 +584,6 @@ void tcg_gen_sub2_i32(TCGContext *s, TCGv_i32 rl, TCGv_i32 rh, TCGv_i32 al,
 {
     if (TCG_TARGET_HAS_sub2_i32) {
         tcg_gen_op6_i32(s, INDEX_op_sub2_i32, rl, rh, al, ah, bl, bh);
-        /* Allow the optimizer room to replace sub2 with two moves.  */
-        tcg_gen_op0(s, INDEX_op_nop);
     } else {
         TCGv_i64 t0 = tcg_temp_new_i64(s);
         TCGv_i64 t1 = tcg_temp_new_i64(s);
@@ -609,8 +600,6 @@ void tcg_gen_mulu2_i32(TCGContext *s, TCGv_i32 rl, TCGv_i32 rh, TCGv_i32 arg1, T
 {
     if (TCG_TARGET_HAS_mulu2_i32) {
         tcg_gen_op4_i32(s, INDEX_op_mulu2_i32, rl, rh, arg1, arg2);
-        /* Allow the optimizer room to replace mulu2 with two moves.  */
-        tcg_gen_op0(s, INDEX_op_nop);
     } else if (TCG_TARGET_HAS_muluh_i32) {
         TCGv_i32 t = tcg_temp_new_i32(s);
         tcg_gen_op3_i32(s, INDEX_op_mul_i32, t, arg1, arg2);
@@ -633,8 +622,6 @@ void tcg_gen_muls2_i32(TCGContext *s, TCGv_i32 rl, TCGv_i32 rh, TCGv_i32 arg1, T
 {
     if (TCG_TARGET_HAS_muls2_i32) {
         tcg_gen_op4_i32(s, INDEX_op_muls2_i32, rl, rh, arg1, arg2);
-        /* Allow the optimizer room to replace muls2 with two moves.  */
-        tcg_gen_op0(s, INDEX_op_nop);
     } else if (TCG_TARGET_HAS_mulsh_i32) {
         TCGv_i32 t = tcg_temp_new_i32(s);
         tcg_gen_op3_i32(s, INDEX_op_mul_i32, t, arg1, arg2);
@@ -1649,8 +1636,6 @@ void tcg_gen_add2_i64(TCGContext *s, TCGv_i64 rl, TCGv_i64 rh, TCGv_i64 al,
 {
     if (TCG_TARGET_HAS_add2_i64) {
         tcg_gen_op6_i64(s, INDEX_op_add2_i64, rl, rh, al, ah, bl, bh);
-        /* Allow the optimizer room to replace add2 with two moves.  */
-        tcg_gen_op0(s, INDEX_op_nop);
     } else {
         TCGv_i64 t0 = tcg_temp_new_i64(s);
         TCGv_i64 t1 = tcg_temp_new_i64(s);
@@ -1669,8 +1654,6 @@ void tcg_gen_sub2_i64(TCGContext *s, TCGv_i64 rl, TCGv_i64 rh, TCGv_i64 al,
 {
     if (TCG_TARGET_HAS_sub2_i64) {
         tcg_gen_op6_i64(s, INDEX_op_sub2_i64, rl, rh, al, ah, bl, bh);
-        /* Allow the optimizer room to replace sub2 with two moves.  */
-        tcg_gen_op0(s, INDEX_op_nop);
     } else {
         TCGv_i64 t0 = tcg_temp_new_i64(s);
         TCGv_i64 t1 = tcg_temp_new_i64(s);
@@ -1688,8 +1671,6 @@ void tcg_gen_mulu2_i64(TCGContext *s, TCGv_i64 rl, TCGv_i64 rh, TCGv_i64 arg1, T
 {
     if (TCG_TARGET_HAS_mulu2_i64) {
         tcg_gen_op4_i64(s, INDEX_op_mulu2_i64, rl, rh, arg1, arg2);
-        /* Allow the optimizer room to replace mulu2 with two moves.  */
-        tcg_gen_op0(s, INDEX_op_nop);
     } else if (TCG_TARGET_HAS_muluh_i64) {
         TCGv_i64 t = tcg_temp_new_i64(s);
         tcg_gen_op3_i64(s, INDEX_op_mul_i64, t, arg1, arg2);
@@ -1709,8 +1690,6 @@ void tcg_gen_muls2_i64(TCGContext *s, TCGv_i64 rl, TCGv_i64 rh, TCGv_i64 arg1, T
 {
     if (TCG_TARGET_HAS_muls2_i64) {
         tcg_gen_op4_i64(s, INDEX_op_muls2_i64, rl, rh, arg1, arg2);
-        /* Allow the optimizer room to replace muls2 with two moves.  */
-        tcg_gen_op0(s, INDEX_op_nop);
     } else if (TCG_TARGET_HAS_mulsh_i64) {
         TCGv_i64 t = tcg_temp_new_i64(s);
         tcg_gen_op3_i64(s, INDEX_op_mul_i64, t, arg1, arg2);

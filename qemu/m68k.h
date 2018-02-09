@@ -2774,7 +2774,6 @@
 #define tcg_gen_nor_i64 tcg_gen_nor_i64_m68k
 #define tcg_gen_not_i32 tcg_gen_not_i32_m68k
 #define tcg_gen_not_i64 tcg_gen_not_i64_m68k
-#define tcg_gen_op0 tcg_gen_op0_m68k
 #define tcg_gen_op1 tcg_gen_op1_m68k
 #define tcg_gen_op2 tcg_gen_op2_m68k
 #define tcg_gen_op3 tcg_gen_op3_m68k

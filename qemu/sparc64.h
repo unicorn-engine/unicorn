@@ -2774,7 +2774,6 @@
 #define tcg_gen_nor_i64 tcg_gen_nor_i64_sparc64
 #define tcg_gen_not_i32 tcg_gen_not_i32_sparc64
 #define tcg_gen_not_i64 tcg_gen_not_i64_sparc64
-#define tcg_gen_op0 tcg_gen_op0_sparc64
 #define tcg_gen_op1 tcg_gen_op1_sparc64
 #define tcg_gen_op2 tcg_gen_op2_sparc64
 #define tcg_gen_op3 tcg_gen_op3_sparc64

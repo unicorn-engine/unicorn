@@ -2774,7 +2774,6 @@
 #define tcg_gen_nor_i64 tcg_gen_nor_i64_mips64el
 #define tcg_gen_not_i32 tcg_gen_not_i32_mips64el
 #define tcg_gen_not_i64 tcg_gen_not_i64_mips64el
-#define tcg_gen_op0 tcg_gen_op0_mips64el
 #define tcg_gen_op1 tcg_gen_op1_mips64el
 #define tcg_gen_op2 tcg_gen_op2_mips64el
 #define tcg_gen_op3 tcg_gen_op3_mips64el
