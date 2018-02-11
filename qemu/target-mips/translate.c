@@ -14058,8 +14058,8 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool *ins
             rs = rs_rt_enc[enc_rs];
             rt = rs_rt_enc[enc_rt];
 
-            gen_arith_imm(ctx, OPC_ADDIU, rd, rs, 0);
-            gen_arith_imm(ctx, OPC_ADDIU, re, rt, 0);
+            gen_arith(ctx, OPC_ADDU, rd, rs, 0);
+            gen_arith(ctx, OPC_ADDU, re, rt, 0);
         }
         break;
     case LBU16:
@@ -14140,7 +14140,7 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool *ins
             int rd = uMIPS_RD5(ctx->opcode);
             int rs = uMIPS_RS5(ctx->opcode);
 
-            gen_arith_imm(ctx, OPC_ADDIU, rd, rs, 0);
+            gen_arith(ctx, OPC_ADDU, rd, rs, 0);
         }
         break;
     case ANDI16:
