@@ -1874,15 +1874,14 @@ static inline TCGMemOp tcg_canonicalize_memop(TCGMemOp op, bool is64, bool st)
 static void gen_ldst_i32(TCGContext *s, TCGOpcode opc, TCGv_i32 val, TCGv addr,
                          TCGMemOp memop, TCGArg idx)
 {
+    TCGMemOpIdx oi = make_memop_idx(memop, idx);
 #if TARGET_LONG_BITS == 32
-    tcg_gen_op4ii_i32(s, opc, val, addr, memop, idx);
+    tcg_gen_op3i_i32(s, opc, val, addr, oi);
 #else
     if (TCG_TARGET_REG_BITS == 32) {
-        tcg_gen_op5ii_i32(s, opc, val, TCGV_LOW(addr), TCGV_HIGH(addr),
-                          memop, idx);
+        tcg_gen_op4i_i32(s, opc, val, TCGV_LOW(addr), TCGV_HIGH(addr), oi);
     } else {
-        tcg_gen_op4(s, opc, GET_TCGV_I32(val), GET_TCGV_I64(addr),
-                    memop, idx);
+        tcg_gen_op3(s, opc, GET_TCGV_I32(val), GET_TCGV_I64(addr), oi);
     }
 #endif
 }
@@ -1890,20 +1889,19 @@ static void gen_ldst_i32(TCGContext *s, TCGOpcode opc, TCGv_i32 val, TCGv addr,
 static void gen_ldst_i64(TCGContext *s, TCGOpcode opc, TCGv_i64 val, TCGv addr,
                          TCGMemOp memop, TCGArg idx)
 {
+    TCGMemOpIdx oi = make_memop_idx(memop, idx);
 #if TARGET_LONG_BITS == 32
     if (TCG_TARGET_REG_BITS == 32) {
-        tcg_gen_op5ii_i32(s, opc, TCGV_LOW(val), TCGV_HIGH(val),
-                          addr, memop, idx);
+        tcg_gen_op4i_i32(s, opc, TCGV_LOW(val), TCGV_HIGH(val), addr, oi);
     } else {
-        tcg_gen_op4(s, opc, GET_TCGV_I64(val), GET_TCGV_I32(addr),
-                    memop, idx);
+        tcg_gen_op3(s, opc, GET_TCGV_I64(val), GET_TCGV_I32(addr), oi);
     }
 #else
     if (TCG_TARGET_REG_BITS == 32) {
-        tcg_gen_op6ii_i32(s, opc, TCGV_LOW(val), TCGV_HIGH(val),
-                          TCGV_LOW(addr), TCGV_HIGH(addr), memop, idx);
+        tcg_gen_op5i_i32(s, opc, TCGV_LOW(val), TCGV_HIGH(val),
+                         TCGV_LOW(addr), TCGV_HIGH(addr), oi);
     } else {
-        tcg_gen_op4ii_i64(s, opc, val, addr, memop, idx);
+        tcg_gen_op3i_i64(s, opc, val, addr, oi);
     }
 #endif
 }
