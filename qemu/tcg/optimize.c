@@ -187,6 +187,11 @@ static bool temps_are_copies(TCGContext *s, TCGArg arg1, TCGArg arg2)
 static void tcg_opt_gen_mov(TCGContext *s, TCGOp *op, TCGArg *args,
                             TCGArg dst, TCGArg src)
 {
+    if (temps_are_copies(dst, src)) {
+        tcg_op_remove(s, op);
+        return;
+    }
+
     struct tcg_temp_info *temps = s->temps2;
     TCGOpcode new_op = op_to_mov(s, op->opc);
     tcg_target_ulong mask;
@@ -790,11 +795,7 @@ static void tcg_constant_folding(TCGContext *s)
             }
             break;
         do_mov3:
-            if (temps_are_copies(s, args[0], args[1])) {
-                tcg_op_remove(s, op);
-            } else {
-                tcg_opt_gen_mov(s, op, args, args[0], args[1]);
-            }
+            tcg_opt_gen_mov(s, op, args, args[0], args[1]);
             continue;
         default:
             break;
@@ -949,9 +950,7 @@ static void tcg_constant_folding(TCGContext *s)
         }
         if (affected == 0) {
             assert(nb_oargs == 1);
-            if (temps_are_copies(s, args[0], args[1])) {
-                tcg_op_remove(s, op);
-            } else if (temps[args[1]].state != TCG_TEMP_CONST) {
+            if (temps[args[1]].state != TCG_TEMP_CONST) {
                 tcg_opt_gen_mov(s, op, args, args[0], args[1]);
             } else {
                 tcg_opt_gen_movi(s, op, args,
@@ -981,9 +980,7 @@ static void tcg_constant_folding(TCGContext *s)
         CASE_OP_32_64(or):
         CASE_OP_32_64(and):
             if (temps_are_copies(s, args[1], args[2])) {
-                if (temps_are_copies(s, args[0], args[1])) {
-                    tcg_op_remove(s, op);
-                } else if (temps[args[1]].state != TCG_TEMP_CONST) {
+                if (temps[args[1]].state != TCG_TEMP_CONST) {
                     tcg_opt_gen_mov(s, op, args, args[0], args[1]);
                 } else {
                     tcg_opt_gen_movi(s, op, args,
@@ -1015,10 +1012,6 @@ static void tcg_constant_folding(TCGContext *s)
            allocator where needed and possible.  Also detect copies. */
         switch (opc) {
         CASE_OP_32_64(mov):
-            if (temps_are_copies(s, args[0], args[1])) {
-                tcg_op_remove(s, op);
-                break;
-            }
             if (temps[args[1]].state != TCG_TEMP_CONST) {
                 tcg_opt_gen_mov(s, op, args, args[0], args[1]);
                 break;
@@ -1120,9 +1113,7 @@ static void tcg_constant_folding(TCGContext *s)
         CASE_OP_32_64(movcond):
             tmp = do_constant_folding_cond(s, opc, args[1], args[2], args[5]);
             if (tmp != 2) {
-                if (temps_are_copies(s, args[0], args[4-tmp])) {
-                    tcg_op_remove(s, op);
-                } else if (temps[args[4-tmp]].state == TCG_TEMP_CONST) {
+                if (temps[args[4-tmp]].state == TCG_TEMP_CONST) {
                     tcg_opt_gen_movi(s, op, args,
                                      args[0], temps[args[4-tmp]].val);
                 } else {
