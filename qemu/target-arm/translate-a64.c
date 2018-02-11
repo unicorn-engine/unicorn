@@ -3011,7 +3011,28 @@ static void disas_bitfield(DisasContext *s, uint32_t insn)
     tcg_rd = cpu_reg(s, rd);
     tcg_tmp = read_cpu_reg(s, rn, sf);
 
-    /* OPTME: probably worth recognizing common cases of ext{8,16,32}{u,s} */
+    /* Recognize the common aliases.  */
+    if (opc == 0) { /* SBFM */
+        if (ri == 0) {
+            if (si == 7) { /* SXTB */
+                tcg_gen_ext8s_i64(tcg_ctx, tcg_rd, tcg_tmp);
+                goto done;
+            } else if (si == 15) { /* SXTH */
+                tcg_gen_ext16s_i64(tcg_ctx, tcg_rd, tcg_tmp);
+                goto done;
+            } else if (si == 31) { /* SXTW */
+                tcg_gen_ext32s_i64(tcg_ctx, tcg_rd, tcg_tmp);
+                goto done;
+            }
+        }
+        if (si == 63 || (si == 31 && ri <= si)) { /* ASR */
+            if (si == 31) {
+                tcg_gen_ext32s_i64(tcg_ctx, tcg_tmp, tcg_tmp);
+            }
+            tcg_gen_sari_i64(tcg_ctx, tcg_rd, tcg_tmp, ri);
+            goto done;
+        }
+    }
 
     if (opc != 1) { /* SBFM or UBFM */
         tcg_gen_movi_i64(tcg_ctx, tcg_rd, 0);
@@ -3036,6 +3057,7 @@ static void disas_bitfield(DisasContext *s, uint32_t insn)
         tcg_gen_sari_i64(tcg_ctx, tcg_rd, tcg_rd, 64 - (pos + len));
     }
 
+done:
     if (!sf) { /* zero extend final result */
         tcg_gen_ext32u_i64(tcg_ctx, tcg_rd, tcg_rd);
     }
