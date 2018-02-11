@@ -18896,6 +18896,7 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
     case OPC_SWL:
     case OPC_SWR:
         check_insn_opc_removed(ctx, ISA_MIPS32R6);
+        /* fall through */
     case OPC_SB: case OPC_SH:
     case OPC_SW:
          gen_st(ctx, op, rt, rs, imm);
@@ -18984,6 +18985,7 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
         case OPC_PS_FMT:
             check_cp1_enabled(ctx);
             check_insn_opc_removed(ctx, ISA_MIPS32R6);
+            /* fall through */
         case OPC_S_FMT:
         case OPC_D_FMT:
             check_cp1_enabled(ctx);
@@ -19166,6 +19168,7 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
     case OPC_LDL: case OPC_LDR:
     case OPC_LLD:
         check_insn_opc_removed(ctx, ISA_MIPS32R6);
+        /* fall through */
     case OPC_LWU:
     case OPC_LD:
         check_insn(ctx, ISA_MIPS3);
@@ -19174,6 +19177,7 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
         break;
     case OPC_SDL: case OPC_SDR:
         check_insn_opc_removed(ctx, ISA_MIPS32R6);
+        /* fall through */
     case OPC_SD:
         check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
