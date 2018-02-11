@@ -700,17 +700,53 @@ static inline void tcg_gen_concat32_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 lo
 #error must include QEMU headers
 #endif
 
-/* debug info: write the PC of the corresponding QEMU CPU instruction */
-static inline void tcg_gen_insn_start(TCGContext *s, uint64_t pc)
+#if TARGET_INSN_START_WORDS == 1
+# if TARGET_LONG_BITS <= TCG_TARGET_REG_BITS
+static inline void tcg_gen_insn_start(TCGContext *tcg_ctx, target_ulong pc)
 {
-    /* XXX: must really use a 32 bit size for TCGArg in all cases */
-#if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
-    tcg_gen_op2ii(s, INDEX_op_insn_start,
-                  (uint32_t)(pc), (uint32_t)(pc >> 32));
-#else
-    tcg_gen_op1i(s, INDEX_op_insn_start, pc);
-#endif
+    tcg_gen_op1(tcg_ctx, INDEX_op_insn_start, pc);
 }
+# else
+static inline void tcg_gen_insn_start(TCGContext *tcg_ctx, target_ulong pc)
+{
+    tcg_gen_op2(tcg_ctx, INDEX_op_insn_start,
+                (uint32_t)pc, (uint32_t)(pc >> 32));
+}
+# endif
+#elif TARGET_INSN_START_WORDS == 2
+# if TARGET_LONG_BITS <= TCG_TARGET_REG_BITS
+static inline void tcg_gen_insn_start(TCGContext *tcg_ctx, target_ulong pc, target_ulong a1)
+{
+    tcg_gen_op2(tcg_ctx, INDEX_op_insn_start, pc, a1);
+}
+# else
+static inline void tcg_gen_insn_start(TCGContext *tcg_ctx, target_ulong pc, target_ulong a1)
+{
+    tcg_gen_op4(tcg_ctx, INDEX_op_insn_start,
+                (uint32_t)pc, (uint32_t)(pc >> 32),
+                (uint32_t)a1, (uint32_t)(a1 >> 32));
+}
+# endif
+#elif TARGET_INSN_START_WORDS == 3
+# if TARGET_LONG_BITS <= TCG_TARGET_REG_BITS
+static inline void tcg_gen_insn_start(TCGContext *tcg_ctx, target_ulong pc, target_ulong a1,
+                                      target_ulong a2)
+{
+    tcg_gen_op3(tcg_ctx, INDEX_op_insn_start, pc, a1, a2);
+}
+# else
+static inline void tcg_gen_insn_start(TCGContect *tcg_ctx, target_ulong pc, target_ulong a1,
+                                      target_ulong a2)
+{
+    tcg_gen_op6(tcg_ctx, INDEX_op_insn_start,
+                (uint32_t)pc, (uint32_t)(pc >> 32),
+                (uint32_t)a1, (uint32_t)(a1 >> 32),
+                (uint32_t)a2, (uint32_t)(a2 >> 32));
+}
+# endif
+#else
+# error "Unhandled number of operands to insn_start"
+#endif
 
 static inline void tcg_gen_exit_tb(TCGContext *s, uintptr_t val)
 {

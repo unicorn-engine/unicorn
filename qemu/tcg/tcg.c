@@ -1035,16 +1035,18 @@ void tcg_dump_ops(TCGContext *s)
         args = &s->gen_opparam_buf[op->args];
 
         if (c == INDEX_op_insn_start) {
-            uint64_t pc;
+            printf("%s ----", oi != s->gen_first_op_idx ? "\n" : "");
+
+            for (i = 0; i < TARGET_INSN_START_WORDS; ++i) {
+                target_ulong a;
+
 #if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
-            pc = ((uint64_t)args[1] << 32) | args[0];
+                a = ((target_ulong)args[i * 2 + 1] << 32) | args[i * 2];
 #else
-            pc = args[0];
+                a = args[i];
 #endif
-            if (oi != s->gen_first_op_idx) {
-                printf("\n");
+                printf(" " TARGET_FMT_lx, a);
             }
-            printf(" ---- 0x%" PRIx64, pc);
         } else if (c == INDEX_op_call) {
             /* variable number of arguments */
             nb_oargs = op->callo;
