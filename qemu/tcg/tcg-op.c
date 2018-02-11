@@ -1771,9 +1771,8 @@ void tcg_gen_extu_i32_i64(TCGContext *s, TCGv_i64 ret, TCGv_i32 arg)
         tcg_gen_mov_i32(s, TCGV_LOW(ret), arg);
         tcg_gen_movi_i32(s, TCGV_HIGH(ret), 0);
     } else {
-        /* Note: we assume the target supports move between
-           32 and 64 bit registers.  */
-        tcg_gen_ext32u_i64(s, ret, MAKE_TCGV_I64(GET_TCGV_I32(arg)));
+        tcg_gen_op2(s, INDEX_op_extu_i32_i64,
+                    GET_TCGV_I64(ret), GET_TCGV_I32(arg));
     }
 }
 
@@ -1783,9 +1782,8 @@ void tcg_gen_ext_i32_i64(TCGContext *s, TCGv_i64 ret, TCGv_i32 arg)
         tcg_gen_mov_i32(s, TCGV_LOW(ret), arg);
         tcg_gen_sari_i32(s, TCGV_HIGH(ret), TCGV_LOW(ret), 31);
     } else {
-        /* Note: we assume the target supports move between
-           32 and 64 bit registers.  */
-        tcg_gen_ext32s_i64(s, ret, MAKE_TCGV_I64(GET_TCGV_I32(arg)));
+        tcg_gen_op2(s, INDEX_op_ext_i32_i64,
+                    GET_TCGV_I64(ret), GET_TCGV_I32(arg));
     }
 }
 
