@@ -11196,7 +11196,7 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
         break;
 #if defined(TARGET_MIPS64)
     case M16_OPC_LD:
-            check_mips_64(ctx);
+        check_mips_64(ctx);
         gen_ld(ctx, OPC_LD, ry, rx, offset);
         break;
 #endif
@@ -18515,7 +18515,7 @@ static void hook_insn(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patc
     }
 }
 
-static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch, int *insn_patch_offset)
+static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch, int *insn_patch_offset)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 #if defined(TARGET_MIPS64)
@@ -18684,7 +18684,8 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
                     save_cpu_state(ctx, 1);
                     gen_helper_di(tcg_ctx, t0, tcg_ctx->cpu_env);
                     gen_store_gpr(tcg_ctx, t0, rt);
-                    /* Stop translation as we may have switched the execution mode */
+                    /* Stop translation as we may have switched
+                       the execution mode */
                     ctx->bstate = BS_STOP;
                     break;
                 case OPC_EI:
@@ -18692,7 +18693,8 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
                     save_cpu_state(ctx, 1);
                     gen_helper_ei(tcg_ctx, t0, tcg_ctx->cpu_env);
                     gen_store_gpr(tcg_ctx, t0, rt);
-                    /* Stop translation as we may have switched the execution mode */
+                    /* Stop translation as we may have switched
+                       the execution mode */
                     ctx->bstate = BS_STOP;
                     break;
                 default:            /* Invalid */
@@ -18899,8 +18901,8 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
         case OPC_S_FMT:
         case OPC_D_FMT:
             check_cp1_enabled(ctx);
-            gen_farith(ctx, ctx->opcode & FOP(0x3f, 0x1f), rt, rd, sa,
-                       (imm >> 8) & 0x7);
+            gen_farith(ctx, ctx->opcode & FOP(0x3f, 0x1f),
+                       rt, rd, sa, (imm >> 8) & 0x7);
             break;
         case OPC_W_FMT:
         case OPC_L_FMT:

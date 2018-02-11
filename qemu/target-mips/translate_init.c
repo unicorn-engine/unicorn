@@ -861,33 +861,33 @@ static const mips_def_t mips_defs[] =
         MMU_TYPE_R4000,
     },
     {
-      "Loongson-2F",
-      0x6303,
-      /*64KB I-cache and d-cache. 4 way with 32 bit cache line size*/
-      (0x1<<17) | (0x1<<16) | (0x1<<11) | (0x1<<8) | (0x1<<5) |
+        "Loongson-2F",
+        0x6303,
+        /*64KB I-cache and d-cache. 4 way with 32 bit cache line size*/
+        (0x1<<17) | (0x1<<16) | (0x1<<11) | (0x1<<8) | (0x1<<5) |
                      (0x1<<4) | (0x1<<1),
-      /* Note: Config1 is only used internally, Loongson-2F has only Config0. */
-      (1 << CP0C1_FP) | (47 << CP0C1_MMU),
-      0,
-      0,
-      0,0,
-      0,0,
-      0,
-      0,
-      0,
-      0,
-      16,
-      2,
-      0xF5D0FF1F,   /*bit5:7 not writable*/
-      0,
-      0,
-      (0x5 << FCR0_PRID) | (0x1 << FCR0_REV),
-      0,
-      40,
-      40,
-      0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
-      CPU_LOONGSON2F,
-      MMU_TYPE_R4000,
+        /* Note: Config1 is only used internally, Loongson-2F has only Config0. */
+        (1 << CP0C1_FP) | (47 << CP0C1_MMU),
+        0,
+        0,
+        0,0,
+        0,0,
+        0,
+        0,
+        0,
+        0,
+        16,
+        2,
+        0xF5D0FF1F,   /*bit5:7 not writable*/
+        0,
+        0,
+        (0x5 << FCR0_PRID) | (0x1 << FCR0_REV),
+        0,
+        40,
+        40,
+        0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
+        CPU_LOONGSON2F,
+        MMU_TYPE_R4000,
     },
     {
         /* A generic CPU providing MIPS64 ASE DSP 2 features.
