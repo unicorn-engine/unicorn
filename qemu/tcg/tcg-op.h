@@ -701,14 +701,14 @@ static inline void tcg_gen_concat32_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 lo
 #endif
 
 /* debug info: write the PC of the corresponding QEMU CPU instruction */
-static inline void tcg_gen_debug_insn_start(TCGContext *s, uint64_t pc)
+static inline void tcg_gen_insn_start(TCGContext *s, uint64_t pc)
 {
     /* XXX: must really use a 32 bit size for TCGArg in all cases */
 #if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
-    tcg_gen_op2ii(s, INDEX_op_debug_insn_start,
+    tcg_gen_op2ii(s, INDEX_op_insn_start,
                   (uint32_t)(pc), (uint32_t)(pc >> 32));
 #else
-    tcg_gen_op1i(s, INDEX_op_debug_insn_start, pc);
+    tcg_gen_op1i(s, INDEX_op_insn_start, pc);
 #endif
 }
 

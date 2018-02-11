@@ -2719,7 +2719,6 @@
 #define tcg_gen_code_common tcg_gen_code_common_arm
 #define tcg_gen_code_search_pc tcg_gen_code_search_pc_arm
 #define tcg_gen_concat_i32_i64 tcg_gen_concat_i32_i64_arm
-#define tcg_gen_debug_insn_start tcg_gen_debug_insn_start_arm
 #define tcg_gen_deposit_i32 tcg_gen_deposit_i32_arm
 #define tcg_gen_deposit_i64 tcg_gen_deposit_i64_arm
 #define tcg_gen_discard_i64 tcg_gen_discard_i64_arm
@@ -2747,6 +2746,7 @@
 #define tcg_gen_extrl_i64_i32 tcg_gen_extrl_i64_i32_arm
 #define tcg_gen_extu_i32_i64 tcg_gen_extu_i32_i64_arm
 #define tcg_gen_goto_tb tcg_gen_goto_tb_arm
+#define tcg_gen_insn_start tcg_gen_insn_start_arm
 #define tcg_gen_ld16s_i64 tcg_gen_ld16s_i64_arm
 #define tcg_gen_ld16u_i64 tcg_gen_ld16u_i64_arm
 #define tcg_gen_ld32s_i64 tcg_gen_ld32s_i64_arm
