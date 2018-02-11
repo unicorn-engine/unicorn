@@ -35,13 +35,27 @@
         glue(glue(case INDEX_op_, x), _i32):    \
         glue(glue(case INDEX_op_, x), _i64)
 
+static inline bool temp_is_const(TCGContext *s, TCGArg arg)
+{
+    struct tcg_temp_info *temps = s->temps2;
+
+    return temps[arg].state == TCG_TEMP_CONST;
+}
+
+static inline bool temp_is_copy(TCGContext *s, TCGArg arg)
+{
+    struct tcg_temp_info *temps = s->temps2;
+
+    return temps[arg].state == TCG_TEMP_COPY;
+}
+
 /* Reset TEMP's state to TCG_TEMP_UNDEF.  If TEMP only had one copy, remove
    the copy flag from the left temp.  */
 static void reset_temp(TCGContext *s, TCGArg temp)
 {
     struct tcg_temp_info *temps = s->temps2;
 
-    if (temps[temp].state == TCG_TEMP_COPY) {
+    if (temp_is_copy(s, temp)) {
         if (temps[temp].prev_copy == temps[temp].next_copy) {
             temps[temps[temp].next_copy].state = TCG_TEMP_UNDEF;
         } else {
@@ -178,8 +192,7 @@ static bool temps_are_copies(TCGContext *s, TCGArg arg1, TCGArg arg2)
         return true;
     }
 
-    if (temps[arg1].state != TCG_TEMP_COPY
-        || temps[arg2].state != TCG_TEMP_COPY) {
+    if (!temp_is_copy(s, arg1) || !temp_is_copy(s, arg2)) {
         return false;
     }
 
@@ -226,7 +239,7 @@ static void tcg_opt_gen_mov(TCGContext *s, TCGOp *op, TCGArg *args,
 
     struct tcg_temp_info *temps = s->temps2;
 
-    if (temps[src].state == TCG_TEMP_CONST) {
+    if (temp_is_const(s, src)) {
         tcg_opt_gen_movi(s, op, args, dst, temps[src].val);
         return;
     }
@@ -244,10 +257,10 @@ static void tcg_opt_gen_mov(TCGContext *s, TCGOp *op, TCGArg *args,
     }
     temps[dst].mask = mask;
 
-    assert(temps[src].state != TCG_TEMP_CONST);
+    assert(!temp_is_const(s, src));
 
     if (s->temps[src].type == s->temps[dst].type) {
-        if (temps[src].state != TCG_TEMP_COPY) {
+        if (!temp_is_copy(s, src)) {
             temps[src].state = TCG_TEMP_COPY;
             temps[src].next_copy = src;
             temps[src].prev_copy = src;
@@ -486,7 +499,7 @@ static TCGArg do_constant_folding_cond(TCGContext *s, TCGOpcode op, TCGArg x,
 {
     struct tcg_temp_info *temps = s->temps2;
 
-    if (temps[x].state == TCG_TEMP_CONST && temps[y].state == TCG_TEMP_CONST) {
+    if (temp_is_const(s, x) && temp_is_const(s, y)) {
         switch (op_bits(s, op)) {
         case 32:
             return do_constant_folding_cond_32(temps[x].val, temps[y].val, c);
@@ -497,7 +510,7 @@ static TCGArg do_constant_folding_cond(TCGContext *s, TCGOpcode op, TCGArg x,
         }
     } else if (temps_are_copies(s, x, y)) {
         return do_constant_folding_cond_eq(c);
-    } else if (temps[y].state == TCG_TEMP_CONST && temps[y].val == 0) {
+    } else if (temp_is_const(s, y) && temps[y].val == 0) {
         switch (c) {
         case TCG_COND_LTU:
             return 0;
@@ -520,12 +533,10 @@ static TCGArg do_constant_folding_cond2(TCGContext *s, TCGArg *p1, TCGArg *p2, T
     TCGArg al = p1[0], ah = p1[1];
     TCGArg bl = p2[0], bh = p2[1];
 
-    if (temps[bl].state == TCG_TEMP_CONST
-        && temps[bh].state == TCG_TEMP_CONST) {
+    if (temp_is_const(s, bl) && temp_is_const(s, bh)) {
         uint64_t b = ((uint64_t)temps[bh].val << 32) | (uint32_t)temps[bl].val;
 
-        if (temps[al].state == TCG_TEMP_CONST
-            && temps[ah].state == TCG_TEMP_CONST) {
+        if (temp_is_const(s, al) && temp_is_const(s, ah)) {
             uint64_t a;
             a = ((uint64_t)temps[ah].val << 32) | (uint32_t)temps[al].val;
             return do_constant_folding_cond_64(a, b, c);
@@ -553,8 +564,8 @@ static bool swap_commutative(TCGContext *s, TCGArg dest, TCGArg *p1, TCGArg *p2)
     TCGArg a1 = *p1, a2 = *p2;
     int sum = 0;
 
-    sum += temps[a1].state == TCG_TEMP_CONST;
-    sum -= temps[a2].state == TCG_TEMP_CONST;
+    sum += temp_is_const(s, a1);
+    sum -= temp_is_const(s, a2);
 
     /* Prefer the constant in second argument, and then the form
        op a, a, b, which is better handled on non-RISC hosts. */
@@ -571,10 +582,10 @@ static bool swap_commutative2(TCGContext *s, TCGArg *p1, TCGArg *p2)
     struct tcg_temp_info *temps = s->temps2;
     int sum = 0;
 
-    sum += temps[p1[0]].state == TCG_TEMP_CONST;
-    sum += temps[p1[1]].state == TCG_TEMP_CONST;
-    sum -= temps[p2[0]].state == TCG_TEMP_CONST;
-    sum -= temps[p2[1]].state == TCG_TEMP_CONST;
+    sum += temp_is_const(s, p1[0]);
+    sum += temp_is_const(s, p1[1]);
+    sum -= temp_is_const(s, p2[0]);
+    sum -= temp_is_const(s, p2[1]);
     if (sum > 0) {
         TCGArg t;
         t = p1[0], p1[0] = p2[0], p2[0] = t;
@@ -632,7 +643,7 @@ void tcg_optimize(TCGContext *s)
 
         /* Do copy propagation */
         for (i = nb_oargs; i < nb_oargs + nb_iargs; i++) {
-            if (temps[args[i]].state == TCG_TEMP_COPY) {
+            if (temp_is_copy(s, args[i])) {
                 args[i] = find_better_copy(s, args[i]);
             }
         }
@@ -702,8 +713,7 @@ void tcg_optimize(TCGContext *s)
         CASE_OP_32_64(sar):
         CASE_OP_32_64(rotl):
         CASE_OP_32_64(rotr):
-            if (temps[args[1]].state == TCG_TEMP_CONST
-                && temps[args[1]].val == 0) {
+            if (temp_is_const(s, args[1]) && temps[args[1]].val == 0) {
                 tcg_opt_gen_movi(s, op, args, args[0], 0);
                 continue;
             }
@@ -727,8 +737,7 @@ void tcg_optimize(TCGContext *s)
                 if (!have_neg) {
                     break;
                 }
-                if (temps[args[1]].state == TCG_TEMP_CONST
-                    && temps[args[1]].val == 0) {
+                if (temp_is_const(s, args[2]) && temps[args[1]].val == 0) {
                     op->opc = neg_op;
                     reset_temp(s, args[0]);
                     args[1] = args[2];
@@ -738,34 +747,30 @@ void tcg_optimize(TCGContext *s)
             break;
         CASE_OP_32_64(xor):
         CASE_OP_32_64(nand):
-            if (temps[args[1]].state != TCG_TEMP_CONST
-                && temps[args[2]].state == TCG_TEMP_CONST
-                && temps[args[2]].val == -1) {
+            if (!temp_is_const(s, args[1])
+                && temp_is_const(s, args[2]) && temps[args[2]].val == -1) {
                 i = 1;
                 goto try_not;
             }
             break;
         CASE_OP_32_64(nor):
-            if (temps[args[1]].state != TCG_TEMP_CONST
-                && temps[args[2]].state == TCG_TEMP_CONST
-                && temps[args[2]].val == 0) {
+            if (!temp_is_const(s, args[1])
+                && temp_is_const(s, args[2]) && temps[args[2]].val == 0) {
                 i = 1;
                 goto try_not;
             }
             break;
         CASE_OP_32_64(andc):
-            if (temps[args[2]].state != TCG_TEMP_CONST
-                && temps[args[1]].state == TCG_TEMP_CONST
-                && temps[args[1]].val == -1) {
+            if (!temp_is_const(s, args[2])
+                && temp_is_const(s, args[1]) && temps[args[1]].val == -1) {
                 i = 2;
                 goto try_not;
             }
             break;
         CASE_OP_32_64(orc):
         CASE_OP_32_64(eqv):
-            if (temps[args[2]].state != TCG_TEMP_CONST
-                && temps[args[1]].state == TCG_TEMP_CONST
-                && temps[args[1]].val == 0) {
+            if (!temp_is_const(s, args[2])
+                && temp_is_const(s, args[1]) && temps[args[1]].val == 0) {
                 i = 2;
                 goto try_not;
             }
@@ -806,9 +811,8 @@ void tcg_optimize(TCGContext *s)
         CASE_OP_32_64(or):
         CASE_OP_32_64(xor):
         CASE_OP_32_64(andc):
-            if (temps[args[1]].state != TCG_TEMP_CONST
-                && temps[args[2]].state == TCG_TEMP_CONST
-                && temps[args[2]].val == 0) {
+            if (!temp_is_const(s, args[1])
+                && temp_is_const(s, args[2]) && temps[args[2]].val == 0) {
                 tcg_opt_gen_mov(s, op, args, args[0], args[1]);
                 continue;
             }
@@ -816,9 +820,8 @@ void tcg_optimize(TCGContext *s)
         CASE_OP_32_64(and):
         CASE_OP_32_64(orc):
         CASE_OP_32_64(eqv):
-            if (temps[args[1]].state != TCG_TEMP_CONST
-                && temps[args[2]].state == TCG_TEMP_CONST
-                && temps[args[2]].val == -1) {
+            if (!temp_is_const(s, args[1])
+                && temp_is_const(s, args[2]) && temps[args[2]].val == -1) {
                 tcg_opt_gen_mov(s, op, args, args[0], args[1]);
                 continue;
             }
@@ -856,7 +859,7 @@ void tcg_optimize(TCGContext *s)
 
         CASE_OP_32_64(and):
             mask = temps[args[2]].mask;
-            if (temps[args[2]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[2])) {
         and_const:
                 affected = temps[args[1]].mask & ~mask;
             }
@@ -866,7 +869,7 @@ void tcg_optimize(TCGContext *s)
         CASE_OP_32_64(andc):
             /* Known-zeros does not imply known-ones.  Therefore unless
                args[2] is constant, we can't infer anything from it.  */
-            if (temps[args[2]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[2])) {
                 mask = ~temps[args[2]].mask;
                 goto and_const;
             }
@@ -875,26 +878,26 @@ void tcg_optimize(TCGContext *s)
             break;
 
         case INDEX_op_sar_i32:
-            if (temps[args[2]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[2])) {
                 tmp = temps[args[2]].val & 31;
                 mask = (int32_t)temps[args[1]].mask >> tmp;
             }
             break;
         case INDEX_op_sar_i64:
-            if (temps[args[2]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[2])) {
                 tmp = temps[args[2]].val & 63;
                 mask = (int64_t)temps[args[1]].mask >> tmp;
             }
             break;
 
         case INDEX_op_shr_i32:
-            if (temps[args[2]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[2])) {
                 tmp = temps[args[2]].val & 31;
                 mask = (uint32_t)temps[args[1]].mask >> tmp;
             }
             break;
         case INDEX_op_shr_i64:
-            if (temps[args[2]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[2])) {
                 tmp = temps[args[2]].val & 63;
                 mask = (uint64_t)temps[args[1]].mask >> tmp;
             }
@@ -905,7 +908,7 @@ void tcg_optimize(TCGContext *s)
             break;
 
         CASE_OP_32_64(shl):
-            if (temps[args[2]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[2])) {
                 tmp = temps[args[2]].val & (TCG_TARGET_REG_BITS - 1);
                 mask = temps[args[1]].mask << tmp;
             }
@@ -986,8 +989,7 @@ void tcg_optimize(TCGContext *s)
         CASE_OP_32_64(mul):
         CASE_OP_32_64(muluh):
         CASE_OP_32_64(mulsh):
-            if ((temps[args[2]].state == TCG_TEMP_CONST
-                && temps[args[2]].val == 0)) {
+            if ((temp_is_const(s, args[2]) && temps[args[2]].val == 0)) {
                 tcg_opt_gen_movi(s, op, args, args[0], 0);
                 continue;
             }
@@ -1042,7 +1044,7 @@ void tcg_optimize(TCGContext *s)
         CASE_OP_32_64(ext16u):
         case INDEX_op_ext32s_i64:
         case INDEX_op_ext32u_i64:
-            if (temps[args[1]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[1])) {
                 tmp = do_constant_folding(s, opc, temps[args[1]].val, 0);
                 tcg_opt_gen_movi(s, op, args, args[0], tmp);
                 break;
@@ -1050,7 +1052,7 @@ void tcg_optimize(TCGContext *s)
             goto do_default;
 
         case INDEX_op_trunc_shr_i32:
-            if (temps[args[1]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[1])) {
                 tmp = do_constant_folding(s, opc, temps[args[1]].val, args[2]);
                 tcg_opt_gen_movi(s, op, args, args[0], tmp);
                 break;
@@ -1079,8 +1081,7 @@ void tcg_optimize(TCGContext *s)
         CASE_OP_32_64(divu):
         CASE_OP_32_64(rem):
         CASE_OP_32_64(remu):
-            if (temps[args[1]].state == TCG_TEMP_CONST
-                && temps[args[2]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[1]) && temp_is_const(s, args[2])) {
                 tmp = do_constant_folding(s, opc, temps[args[1]].val,
                                           temps[args[2]].val);
                 tcg_opt_gen_movi(s, op, args, args[0], tmp);
@@ -1089,8 +1090,7 @@ void tcg_optimize(TCGContext *s)
             goto do_default;
 
         CASE_OP_32_64(deposit):
-            if (temps[args[1]].state == TCG_TEMP_CONST
-                && temps[args[2]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[1]) && temp_is_const(s, args[2])) {
                 tmp = (TCGArg)deposit64(temps[args[1]].val, args[3], args[4],
                                 temps[args[2]].val);
                 tcg_opt_gen_movi(s, op, args, args[0], tmp);
@@ -1130,10 +1130,8 @@ void tcg_optimize(TCGContext *s)
 
         case INDEX_op_add2_i32:
         case INDEX_op_sub2_i32:
-            if (temps[args[2]].state == TCG_TEMP_CONST
-                && temps[args[3]].state == TCG_TEMP_CONST
-                && temps[args[4]].state == TCG_TEMP_CONST
-                && temps[args[5]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[2]) && temp_is_const(s, args[3])
+                && temp_is_const(s, args[4]) && temp_is_const(s, args[5])) {
                 uint32_t al = temps[args[2]].val;
                 uint32_t ah = temps[args[3]].val;
                 uint32_t bl = temps[args[4]].val;
@@ -1162,8 +1160,7 @@ void tcg_optimize(TCGContext *s)
             goto do_default;
 
         case INDEX_op_mulu2_i32:
-            if (temps[args[2]].state == TCG_TEMP_CONST
-                && temps[args[3]].state == TCG_TEMP_CONST) {
+            if (temp_is_const(s, args[2]) && temp_is_const(s, args[3])) {
                 uint32_t a = temps[args[2]].val;
                 uint32_t b = temps[args[3]].val;
                 uint64_t r = (uint64_t)a * b;
@@ -1195,10 +1192,8 @@ void tcg_optimize(TCGContext *s)
                     tcg_op_remove(s, op);
                 }
             } else if ((args[4] == TCG_COND_LT || args[4] == TCG_COND_GE)
-                       && temps[args[2]].state == TCG_TEMP_CONST
-                       && temps[args[3]].state == TCG_TEMP_CONST
-                       && temps[args[2]].val == 0
-                       && temps[args[3]].val == 0) {
+                       && temp_is_const(s, args[2]) && temps[args[2]].val == 0
+                       && temp_is_const(s, args[3]) && temps[args[3]].val == 0) {
                 /* Simplify LT/GE comparisons vs zero to a single compare
                    vs the high word of the input.  */
             do_brcond_high:
@@ -1260,10 +1255,8 @@ void tcg_optimize(TCGContext *s)
             do_setcond_const:
                 tcg_opt_gen_movi(s, op, args, args[0], tmp);
             } else if ((args[5] == TCG_COND_LT || args[5] == TCG_COND_GE)
-                       && temps[args[3]].state == TCG_TEMP_CONST
-                       && temps[args[4]].state == TCG_TEMP_CONST
-                       && temps[args[3]].val == 0
-                       && temps[args[4]].val == 0) {
+                       && temp_is_const(s, args[3]) && temps[args[3]].val == 0
+                       && temp_is_const(s, args[4]) && temps[args[4]].val == 0) {
                 /* Simplify LT/GE comparisons vs zero to a single compare
                    vs the high word of the input.  */
             do_setcond_high:
