@@ -390,7 +390,7 @@ static TCGArg do_constant_folding(TCGContext *s, TCGOpcode op, TCGArg x, TCGArg 
 {
     TCGArg res = do_constant_folding_2(op, x, y);
     if (op_bits(s, op) == 32) {
-        res &= 0xffffffff;
+        res = (int32_t)res;
     }
     return res;
 }
@@ -1132,8 +1132,8 @@ void tcg_optimize(TCGContext *s)
 
                 rl = args[0];
                 rh = args[1];
-                tcg_opt_gen_movi(s, op, args, rl, (uint32_t)a);
-                tcg_opt_gen_movi(s, op2, args2, rh, (uint32_t)(a >> 32));
+                tcg_opt_gen_movi(s, op, args, rl, (int32_t)a);
+                tcg_opt_gen_movi(s, op2, args2, rh, (int32_t)(a >> 32));
 
                 /* We've done all we need to do with the movi.  Skip it.  */
                 oi_next = op2->next;
@@ -1153,8 +1153,8 @@ void tcg_optimize(TCGContext *s)
 
                 rl = args[0];
                 rh = args[1];
-                tcg_opt_gen_movi(s, op, args, rl, (uint32_t)r);
-                tcg_opt_gen_movi(s, op2, args2, rh, (uint32_t)(r >> 32));
+                tcg_opt_gen_movi(s, op, args, rl, (int32_t)r);
+                tcg_opt_gen_movi(s, op2, args2, rh, (int32_t)(r >> 32));
 
                 /* We've done all we need to do with the movi.  Skip it.  */
                 oi_next = op2->next;
