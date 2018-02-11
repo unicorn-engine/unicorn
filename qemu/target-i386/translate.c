@@ -5018,10 +5018,6 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         return s->pc;
     }
 
-    if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT))) {
-        tcg_gen_insn_start(tcg_ctx, pc_start);
-    }
-
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, pc_start)) {
         if (s->last_cc_op != s->cc_op) {
@@ -8733,8 +8729,11 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
             tcg_ctx->gen_opc_instr_start[lj] = 1;
             // tcg_ctx->gen_opc_icount[lj] = num_insns;
         }
-        //if (num_insns + 1 == max_insns && (tb->cflags & CF_LAST_IO))
+        tcg_gen_insn_start(tcg_ctx, pc_start);
+
+        //if (num_insns + 1 == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();
+        //}
 
         // Unicorn: save current PC address to sync EIP
         dc->prev_pc = pc_ptr;

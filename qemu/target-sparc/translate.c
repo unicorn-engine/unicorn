@@ -2622,10 +2622,6 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
     TCGv_i64 cpu_src1_64, cpu_src2_64, cpu_dst_64;
     target_long simm;
 
-    if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT))) {
-        tcg_gen_insn_start(tcg_ctx, dc->pc);
-    }
-
     // Unicorn: trace this instruction on request
     if (hook_insn && HOOK_EXISTS_BOUNDED(dc->uc, UC_HOOK_CODE, dc->pc)) {
         gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, dc->uc, dc->pc);
@@ -5446,8 +5442,12 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
                 tcg_ctx->gen_opc_icount[lj] = num_insns;
             }
         }
-        //if (num_insns + 1 == max_insns && (tb->cflags & CF_LAST_IO))
+        tcg_gen_insn_start(tcg_ctx, dc->pc);
+
+        //if (num_insns + 1 == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();
+        //}
+
         // Unicorn: end address tells us to stop emulation
         if (dc->pc == dc->uc->addr_end) {
             save_state(dc);

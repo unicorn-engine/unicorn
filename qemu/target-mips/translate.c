@@ -18547,10 +18547,6 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
         hook_insn(env, ctx, insn_need_patch, insn_patch_offset, 1);
     }
 
-    if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT))) {
-        tcg_gen_insn_start(tcg_ctx, ctx->pc);
-    }
-
     op = MASK_OP_MAJOR(ctx->opcode);
     rs = (ctx->opcode >> 21) & 0x1f;
     rt = (ctx->opcode >> 16) & 0x1f;
@@ -19259,8 +19255,11 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             tcg_ctx->gen_opc_instr_start[lj] = 1;
             tcg_ctx->gen_opc_icount[lj] = num_insns;
         }
-        //if (num_insns + 1 == max_insns && (tb->cflags & CF_LAST_IO))
+        tcg_gen_insn_start(tcg_ctx, ctx->pc);
+
+        //if (num_insns + 1 == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();
+        //}
 
         // Unicorn: end address tells us to stop emulation
         if (ctx.pc == ctx.uc->addr_end) {
