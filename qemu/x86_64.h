@@ -2740,6 +2740,8 @@
 #define tcg_gen_ext_i32_i64 tcg_gen_ext_i32_i64_x86_64
 #define tcg_gen_extr32_i64 tcg_gen_extr32_i64_x86_64
 #define tcg_gen_extr_i64_i32 tcg_gen_extr_i64_i32_x86_64
+#define tcg_gen_extrh_i64_i32 tcg_gen_extrh_i64_i32_x86_64
+#define tcg_gen_extrl_i64_i32 tcg_gen_extrl_i64_i32_x86_64
 #define tcg_gen_extu_i32_i64 tcg_gen_extu_i32_i64_x86_64
 #define tcg_gen_goto_tb tcg_gen_goto_tb_x86_64
 #define tcg_gen_ld16s_i64 tcg_gen_ld16s_i64_x86_64
@@ -2845,7 +2847,6 @@
 #define tcg_gen_subi_i32 tcg_gen_subi_i32_x86_64
 #define tcg_gen_subi_i64 tcg_gen_subi_i64_x86_64
 #define tcg_gen_trunc_i64_i32 tcg_gen_trunc_i64_i32_x86_64
-#define tcg_gen_trunc_shr_i64_i32 tcg_gen_trunc_shr_i64_i32_x86_64
 #define tcg_gen_xor_i32 tcg_gen_xor_i32_x86_64
 #define tcg_gen_xor_i64 tcg_gen_xor_i64_x86_64
 #define tcg_gen_xori_i32 tcg_gen_xori_i32_x86_64
