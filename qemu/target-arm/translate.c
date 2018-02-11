@@ -11477,7 +11477,8 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
             tcg_ctx->gen_opc_instr_start[lj] = 1;
             //tcg_ctx->gen_opc_icount[lj] = num_insns;
         }
-        tcg_gen_insn_start(tcg_ctx, dc->pc);
+        tcg_gen_insn_start(tcg_ctx, dc->pc,
+                           (dc->condexec_cond << 4) | (dc->condexec_mask >> 1));
         num_insns++;
 
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
