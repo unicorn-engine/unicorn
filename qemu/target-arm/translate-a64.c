@@ -162,6 +162,31 @@ void gen_a64_set_pc_im(DisasContext *s, uint64_t val)
     tcg_gen_movi_i64(tcg_ctx, tcg_ctx->cpu_pc, val);
 }
 
+typedef struct DisasCompare64 {
+    TCGCond cond;
+    TCGv_i64 value;
+} DisasCompare64;
+
+static void a64_test_cc(TCGContext *tcg_ctx, DisasCompare64 *c64, int cc)
+{
+    DisasCompare c32;
+
+    arm_test_cc(tcg_ctx, &c32, cc);
+
+    /* Sign-extend the 32-bit value so that the GE/LT comparisons work
+       * properly.  The NE/EQ comparisons are also fine with this choice.  */
+    c64->cond = c32.cond;
+    c64->value = tcg_temp_new_i64(tcg_ctx);
+    tcg_gen_ext_i32_i64(tcg_ctx, c64->value, c32.value);
+
+    arm_free_cc(tcg_ctx, &c32);
+}
+
+static void a64_free_cc(TCGContext *tcg_ctx, DisasCompare64 *c64)
+{
+    tcg_temp_free_i64(tcg_ctx, c64->value);
+}
+
 static void gen_exception_internal(DisasContext *s, int excp)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -3609,7 +3634,8 @@ static void disas_cond_select(DisasContext *s, uint32_t insn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     unsigned int sf, else_inv, rm, cond, else_inc, rn, rd;
-    TCGv_i64 tcg_rd, tcg_src;
+    TCGv_i64 tcg_rd, zero;
+    DisasCompare64 c;
 
     if (extract32(insn, 29, 1) || extract32(insn, 11, 1)) {
         /* S == 1 or op2<1> == 1 */
@@ -3624,48 +3650,38 @@ static void disas_cond_select(DisasContext *s, uint32_t insn)
     rn = extract32(insn, 5, 5);
     rd = extract32(insn, 0, 5);
 
-    if (rd == 31) {
-        /* silly no-op write; until we use movcond we must special-case
-         * this to avoid a dead temporary across basic blocks.
-         */
-        return;
-    }
-
     tcg_rd = cpu_reg(s, rd);
 
-    if (cond >= 0x0e) { /* condition "always" */
-        tcg_src = read_cpu_reg(s, rn, sf);
-        tcg_gen_mov_i64(tcg_ctx, tcg_rd, tcg_src);
-    } else {
-        /* OPTME: we could use movcond here, at the cost of duplicating
-         * a lot of the arm_gen_test_cc() logic.
-         */
-        TCGLabel *label_match = gen_new_label(tcg_ctx);
-        TCGLabel *label_continue = gen_new_label(tcg_ctx);
+    a64_test_cc(tcg_ctx, &c, cond);
+    zero = tcg_const_i64(tcg_ctx, 0);
 
-        arm_gen_test_cc(tcg_ctx, cond, label_match);
-        /* nomatch: */
-        tcg_src = cpu_reg(s, rm);
+
+    if (rn == 31 && rm == 31 && (else_inc ^ else_inv)) {
+        /* CSET & CSETM.  */
+        tcg_gen_setcond_i64(tcg_ctx, tcg_invert_cond(c.cond), tcg_rd, c.value, zero);
+        if (else_inv) {
+            tcg_gen_neg_i64(tcg_ctx, tcg_rd, tcg_rd);
+        }
+    } else {
+        TCGv_i64 t_true = cpu_reg(s, rn);
+        TCGv_i64 t_false = read_cpu_reg(s, rm, 1);
 
         if (else_inv && else_inc) {
-            tcg_gen_neg_i64(tcg_ctx, tcg_rd, tcg_src);
+            tcg_gen_neg_i64(tcg_ctx, t_false, t_false);
         } else if (else_inv) {
-            tcg_gen_not_i64(tcg_ctx, tcg_rd, tcg_src);
+            tcg_gen_not_i64(tcg_ctx, t_false, t_false);
         } else if (else_inc) {
-            tcg_gen_addi_i64(tcg_ctx, tcg_rd, tcg_src, 1);
-        } else {
-            tcg_gen_mov_i64(tcg_ctx, tcg_rd, tcg_src);
+            tcg_gen_addi_i64(tcg_ctx, t_false, t_false, 1);
         }
-        if (!sf) {
-            tcg_gen_ext32u_i64(tcg_ctx, tcg_rd, tcg_rd);
-        }
-        tcg_gen_br(tcg_ctx, label_continue);
-        /* match: */
-        gen_set_label(tcg_ctx, label_match);
-        tcg_src = read_cpu_reg(s, rn, sf);
-        tcg_gen_mov_i64(tcg_ctx, tcg_rd, tcg_src);
-        /* continue: */
-        gen_set_label(tcg_ctx, label_continue);
+
+        tcg_gen_movcond_i64(tcg_ctx, c.cond, tcg_rd, c.value, zero, t_true, t_false);
+    }
+
+    tcg_temp_free_i64(tcg_ctx, zero);
+    a64_free_cc(tcg_ctx, &c);
+
+    if (!sf) {
+        tcg_gen_ext32u_i64(tcg_ctx, tcg_rd, tcg_rd);
     }
 }
 
