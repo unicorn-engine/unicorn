@@ -694,11 +694,6 @@ static inline void tcg_gen_concat32_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 lo
     tcg_gen_deposit_i64(s, ret, lo, hi, 32, 32);
 }
 
-static inline void tcg_gen_trunc_i64_i32(TCGContext *s, TCGv_i32 ret, TCGv_i64 arg)
-{
-    tcg_gen_extrl_i64_i32(s, ret, arg);
-}
-
 /* QEMU specific operations.  */
 
 #ifndef TARGET_LONG_BITS
@@ -856,7 +851,7 @@ void check_exit_request(TCGContext *tcg_ctx);
 #define tcg_gen_divu_tl tcg_gen_divu_i64
 #define tcg_gen_remu_tl tcg_gen_remu_i64
 #define tcg_gen_discard_tl tcg_gen_discard_i64
-#define tcg_gen_trunc_tl_i32 tcg_gen_trunc_i64_i32
+#define tcg_gen_trunc_tl_i32 tcg_gen_extrl_i64_i32
 #define tcg_gen_trunc_i64_tl tcg_gen_mov_i64
 #define tcg_gen_extu_i32_tl tcg_gen_extu_i32_i64
 #define tcg_gen_ext_i32_tl tcg_gen_ext_i32_i64
@@ -935,7 +930,7 @@ void check_exit_request(TCGContext *tcg_ctx);
 #define tcg_gen_remu_tl tcg_gen_remu_i32
 #define tcg_gen_discard_tl tcg_gen_discard_i32
 #define tcg_gen_trunc_tl_i32 tcg_gen_mov_i32
-#define tcg_gen_trunc_i64_tl tcg_gen_trunc_i64_i32
+#define tcg_gen_trunc_i64_tl tcg_gen_extrl_i64_i32
 #define tcg_gen_extu_i32_tl tcg_gen_mov_i32
 #define tcg_gen_ext_i32_tl tcg_gen_mov_i32
 #define tcg_gen_extu_tl_i64 tcg_gen_extu_i32_i64

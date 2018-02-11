@@ -1551,7 +1551,7 @@ static inline void gen_store_srsgpr (DisasContext *s, int from, int to)
 static void gen_load_fpr32(DisasContext *s, TCGv_i32 t, int reg)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    tcg_gen_trunc_i64_i32(tcg_ctx, t, tcg_ctx->fpu_f64[reg]);
+    tcg_gen_extrl_i64_i32(tcg_ctx, t, tcg_ctx->fpu_f64[reg]);
 }
 
 static void gen_store_fpr32(DisasContext *s, TCGv_i32 t, int reg)
@@ -1569,7 +1569,7 @@ static void gen_load_fpr32h(DisasContext *ctx, TCGv_i32 t, int reg)
     if (ctx->hflags & MIPS_HFLAG_F64) {
         TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
         tcg_gen_shri_i64(tcg_ctx, t64, tcg_ctx->fpu_f64[reg], 32);
-        tcg_gen_trunc_i64_i32(tcg_ctx, t, t64);
+        tcg_gen_extrl_i64_i32(tcg_ctx, t, t64);
         tcg_temp_free_i64(tcg_ctx, t64);
     } else {
         gen_load_fpr32(ctx, t, reg | 1);

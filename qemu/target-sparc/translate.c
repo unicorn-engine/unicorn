@@ -140,7 +140,7 @@ static TCGv_i32 gen_load_fpr_F(DisasContext *dc, unsigned int src)
         TCGv_i64 t = tcg_temp_new_i64(tcg_ctx);
 
         tcg_gen_shri_i64(tcg_ctx, t, tcg_ctx->cpu_fpr[src / 2], 32);
-        tcg_gen_trunc_i64_i32(tcg_ctx, ret, t);
+        tcg_gen_extrl_i64_i32(tcg_ctx, ret, t);
         tcg_temp_free_i64(tcg_ctx, t);
 
         return ret;
@@ -394,8 +394,8 @@ static TCGv_i32 gen_add32_carry32(DisasContext *dc)
 #if TARGET_LONG_BITS == 64
     cc_src1_32 = tcg_temp_new_i32(tcg_ctx);
     cc_src2_32 = tcg_temp_new_i32(tcg_ctx);
-    tcg_gen_trunc_i64_i32(tcg_ctx, cc_src1_32, *(TCGv *)tcg_ctx->cpu_cc_dst);
-    tcg_gen_trunc_i64_i32(tcg_ctx, cc_src2_32, *(TCGv *)tcg_ctx->cpu_cc_src);
+    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src1_32, *(TCGv *)tcg_ctx->cpu_cc_dst);
+    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src2_32, *(TCGv *)tcg_ctx->cpu_cc_src);
 #else
     cc_src1_32 = *(TCGv *)tcg_ctx->cpu_cc_dst;
     cc_src2_32 = *(TCGv *)tcg_ctx->cpu_cc_src;
@@ -421,8 +421,8 @@ static TCGv_i32 gen_sub32_carry32(DisasContext *dc)
 #if TARGET_LONG_BITS == 64
     cc_src1_32 = tcg_temp_new_i32(tcg_ctx);
     cc_src2_32 = tcg_temp_new_i32(tcg_ctx);
-    tcg_gen_trunc_i64_i32(tcg_ctx, cc_src1_32, *(TCGv *)tcg_ctx->cpu_cc_src);
-    tcg_gen_trunc_i64_i32(tcg_ctx, cc_src2_32, *(TCGv *)tcg_ctx->cpu_cc_src2);
+    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src1_32, *(TCGv *)tcg_ctx->cpu_cc_src);
+    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src2_32, *(TCGv *)tcg_ctx->cpu_cc_src2);
 #else
     cc_src1_32 = *(TCGv *)tcg_ctx->cpu_cc_src;
     cc_src2_32 = *(TCGv *)tcg_ctx->cpu_cc_src2;
@@ -2390,11 +2390,11 @@ static void gen_fmovs(DisasContext *dc, DisasCompare *cmp, int rd, int rs)
        the later.  */
     c32 = tcg_temp_new_i32(tcg_ctx);
     if (cmp->is_bool) {
-        tcg_gen_trunc_i64_i32(tcg_ctx, c32, cmp->c1);
+        tcg_gen_extrl_i64_i32(tcg_ctx, c32, cmp->c1);
     } else {
         TCGv_i64 c64 = tcg_temp_new_i64(tcg_ctx);
         tcg_gen_setcond_i64(tcg_ctx, cmp->cond, c64, cmp->c1, cmp->c2);
-        tcg_gen_trunc_i64_i32(tcg_ctx, c32, c64);
+        tcg_gen_extrl_i64_i32(tcg_ctx, c32, c64);
         tcg_temp_free_i64(tcg_ctx, c64);
     }
 
