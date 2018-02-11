@@ -736,81 +736,104 @@ static void gen_thumb2_parallel_addsub(DisasContext *s, int op1, int op2, TCGv_i
 #undef PAS_OP
 
 /*
- * generate a conditional branch based on ARM condition code cc.
+ * Generate a conditional based on ARM condition code cc.
  * This is common between ARM and Aarch64 targets.
  */
-void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, TCGLabel *label)
+void arm_test_cc(TCGContext *tcg_ctx, DisasCompare *cmp, int cc)
 {
-    TCGv_i32 tmp;
-    TCGLabel *inv;
+    TCGv_i32 value;
+    TCGCond cond;
+    bool global = true;
 
     switch (cc) {
     case 0: /* eq: Z */
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_ZF, 0, label);
-        break;
     case 1: /* ne: !Z */
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_NE, tcg_ctx->cpu_ZF, 0, label);
+        cond = TCG_COND_EQ;
+        value = tcg_ctx->cpu_ZF;
         break;
+
     case 2: /* cs: C */
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_NE, tcg_ctx->cpu_CF, 0, label);
-        break;
     case 3: /* cc: !C */
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_CF, 0, label);
+        cond = TCG_COND_NE;
+        value = tcg_ctx->cpu_CF;
         break;
+
     case 4: /* mi: N */
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_LT, tcg_ctx->cpu_NF, 0, label);
-        break;
     case 5: /* pl: !N */
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_GE, tcg_ctx->cpu_NF, 0, label);
+        cond = TCG_COND_LT;
+        value = tcg_ctx->cpu_NF;
         break;
+
     case 6: /* vs: V */
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_LT, tcg_ctx->cpu_VF, 0, label);
-        break;
     case 7: /* vc: !V */
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_GE, tcg_ctx->cpu_VF, 0, label);
+        cond = TCG_COND_LT;
+        value = tcg_ctx->cpu_VF;
         break;
+
     case 8: /* hi: C && !Z */
-        inv = gen_new_label(tcg_ctx);
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_CF, 0, inv);
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_NE, tcg_ctx->cpu_ZF, 0, label);
-        gen_set_label(tcg_ctx, inv);
+    case 9: /* ls: !C || Z -> !(C && !Z) */
+        cond = TCG_COND_NE;
+        value = tcg_temp_new_i32(tcg_ctx);
+        global = false;
+        /* CF is 1 for C, so -CF is an all-bits-set mask for C;
+           ZF is non-zero for !Z; so AND the two subexpressions.  */
+        tcg_gen_neg_i32(tcg_ctx, value, tcg_ctx->cpu_CF);
+        tcg_gen_and_i32(tcg_ctx, value, value, tcg_ctx->cpu_ZF);
         break;
-    case 9: /* ls: !C || Z */
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_CF, 0, label);
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_ZF, 0, label);
-        break;
+
     case 10: /* ge: N == V -> N ^ V == 0 */
-        tmp = tcg_temp_new_i32(tcg_ctx);
-        tcg_gen_xor_i32(tcg_ctx, tmp, tcg_ctx->cpu_VF, tcg_ctx->cpu_NF);
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_GE, tmp, 0, label);
-        tcg_temp_free_i32(tcg_ctx, tmp);
-        break;
     case 11: /* lt: N != V -> N ^ V != 0 */
-        tmp = tcg_temp_new_i32(tcg_ctx);
-        tcg_gen_xor_i32(tcg_ctx, tmp, tcg_ctx->cpu_VF, tcg_ctx->cpu_NF);
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_LT, tmp, 0, label);
-        tcg_temp_free_i32(tcg_ctx, tmp);
+        /* Since we're only interested in the sign bit, == 0 is >= 0.  */
+        cond = TCG_COND_GE;
+        value = tcg_temp_new_i32(tcg_ctx);
+        global = false;
+        tcg_gen_xor_i32(tcg_ctx, value, tcg_ctx->cpu_VF, tcg_ctx->cpu_NF);
         break;
+
     case 12: /* gt: !Z && N == V */
-        inv = gen_new_label(tcg_ctx);
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_ZF, 0, inv);
-        tmp = tcg_temp_new_i32(tcg_ctx);
-        tcg_gen_xor_i32(tcg_ctx, tmp, tcg_ctx->cpu_VF, tcg_ctx->cpu_NF);
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_GE, tmp, 0, label);
-        tcg_temp_free_i32(tcg_ctx, tmp);
-        gen_set_label(tcg_ctx, inv);
-        break;
     case 13: /* le: Z || N != V */
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_ZF, 0, label);
-        tmp = tcg_temp_new_i32(tcg_ctx);
-        tcg_gen_xor_i32(tcg_ctx, tmp, tcg_ctx->cpu_VF, tcg_ctx->cpu_NF);
-        tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_LT, tmp, 0, label);
-        tcg_temp_free_i32(tcg_ctx, tmp);
+        cond = TCG_COND_NE;
+        value = tcg_temp_new_i32(tcg_ctx);
+        global = false;
+        /* (N == V) is equal to the sign bit of ~(NF ^ VF).  Propagate
+         * the sign bit then AND with ZF to yield the result.  */
+        tcg_gen_xor_i32(tcg_ctx, value, tcg_ctx->cpu_VF, tcg_ctx->cpu_NF);
+        tcg_gen_sari_i32(tcg_ctx, value, value, 31);
+        tcg_gen_andc_i32(tcg_ctx, value, tcg_ctx->cpu_ZF, value);
         break;
+
     default:
         fprintf(stderr, "Bad condition code 0x%x\n", cc);
         abort();
     }
+
+    if (cc & 1) {
+        cond = tcg_invert_cond(cond);
+    }
+
+    cmp->cond = cond;
+    cmp->value = value;
+    cmp->value_global = global;
+}
+
+void arm_free_cc(TCGContext *tcg_ctx, DisasCompare *cmp)
+{
+    if (!cmp->value_global) {
+        tcg_temp_free_i32(tcg_ctx, cmp->value);
+    }
+}
+
+void arm_jump_cc(TCGContext *tcg_ctx, DisasCompare *cmp, TCGLabel *label)
+{
+    tcg_gen_brcondi_i32(tcg_ctx, cmp->cond, cmp->value, 0, label);
+}
+
+void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, TCGLabel *label)
+{
+    DisasCompare cmp;
+    arm_test_cc(tcg_ctx, &cmp, cc);
+    arm_jump_cc(tcg_ctx, &cmp, label);
+    arm_free_cc(tcg_ctx, &cmp);
 }
 
 static const uint8_t table_logic_cc[16] = {

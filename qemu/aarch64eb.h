@@ -120,6 +120,7 @@
 #define arm_excp_target_el arm_excp_target_el_aarch64eb
 #define arm_excp_unmasked arm_excp_unmasked_aarch64eb
 #define arm_feature arm_feature_aarch64eb
+#define arm_free_cc arm_free_cc_aarch64eb
 #define arm_generate_debug_exceptions arm_generate_debug_exceptions_aarch64eb
 #define gen_intermediate_code gen_intermediate_code_aarch64eb
 #define gen_intermediate_code_pc gen_intermediate_code_pc_aarch64eb
@@ -130,6 +131,7 @@
 #define arm_is_psci_call arm_is_psci_call_aarch64eb
 #define arm_is_secure arm_is_secure_aarch64eb
 #define arm_is_secure_below_el3 arm_is_secure_below_el3_aarch64eb
+#define arm_jump_cc arm_jump_cc_aarch64eb
 #define arm_ldl_code arm_ldl_code_aarch64eb
 #define arm_lduw_code arm_lduw_code_aarch64eb
 #define arm_log_exception arm_log_exception_aarch64eb
@@ -139,6 +141,7 @@
 #define restore_state_to_opc restore_state_to_opc_aarch64eb
 #define arm_rmode_to_sf arm_rmode_to_sf_aarch64eb
 #define arm_singlestep_active arm_singlestep_active_aarch64eb
+#define arm_test_cc arm_test_cc_aarch64eb
 #define tlb_fill tlb_fill_aarch64eb
 #define tlb_flush tlb_flush_aarch64eb
 #define tlb_flush_page tlb_flush_page_aarch64eb

@@ -62,6 +62,11 @@ typedef struct DisasContext {
     struct uc_struct *uc;
 } DisasContext;
 
+typedef struct DisasCompare {
+    TCGCond cond;
+    TCGv_i32 value;
+    bool value_global;
+} DisasCompare;
 
 static inline int arm_dc_feature(DisasContext *dc, int feature)
 {
@@ -111,6 +116,9 @@ static inline void gen_a64_set_pc_im(uint64_t val)
 }
 #endif
 
+void arm_test_cc(TCGContext *tcg_ctx, DisasCompare *cmp, int cc);
+void arm_free_cc(TCGContext *tcg_ctx, DisasCompare *cmp);
+void arm_jump_cc(TCGContext *tcg_ctx, DisasCompare *cmp, TCGLabel *label);
 void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, TCGLabel *label);
 
 #endif /* TARGET_ARM_TRANSLATE_H */
