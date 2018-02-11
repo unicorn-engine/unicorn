@@ -654,9 +654,9 @@ static void arm_v7m_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
 
 static const ARMCPRegInfo cortexa8_cp_reginfo[] = {
     { "L2LOCKDOWN", 15,9,0, 0,1,0, 0,
-      ARM_CP_CONST, PL1_RW,  NULL, 0, },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0, },
     { "L2AUXCR",    15,9,0, 0,1,2, 0,
-      ARM_CP_CONST, PL1_RW,  NULL, 0, },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0, },
     REGINFO_SENTINEL
 };
 
@@ -703,24 +703,24 @@ static const ARMCPRegInfo cortexa9_cp_reginfo[] = {
      * default to 0 and set by private hook
      */
     { "A9_PWRCTL", 15,15,0, 0,0,0, 0,
-      0,            PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c15_power_control) },
+      0,            PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c15_power_control) },
     { "A9_DIAG",   15,15,0, 0,0,1, 0,
-      0,            PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c15_diagnostic) },
+      0,            PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c15_diagnostic) },
     { "A9_PWRDIAG",15,15,0, 0,0,2, 0,
-      0,            PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c15_power_diagnostic) },
+      0,            PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c15_power_diagnostic) },
     { "NEONBUSY",  15,15,1, 0,0,0, 0,
-      ARM_CP_CONST, PL1_RW, NULL, 0,  },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0,  },
     /* TLB lockdown control */
     { "TLB_LOCKR", 15,15,4, 0,5,2, 0,
-      ARM_CP_NOP,   PL1_W,  NULL, 0 },
+      ARM_CP_NOP,   PL1_W,  0, NULL, 0 },
     { "TLB_LOCKW", 15,15,4, 0,5,4, 0,
-      ARM_CP_NOP,   PL1_W,  NULL, 0, },
+      ARM_CP_NOP,   PL1_W,  0, NULL, 0, },
     { "TLB_VA",    15,15,5, 0,5,2, 0,
-      ARM_CP_CONST, PL1_RW, NULL, 0,  },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0,  },
     { "TLB_PA",    15,15,6, 0,5,2, 0,
-      ARM_CP_CONST, PL1_RW, NULL, 0 },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0 },
     { "TLB_ATTR",  15,15,7, 0,5,2, 0,
-      ARM_CP_CONST, PL1_RW, NULL, 0,  },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0,  },
     REGINFO_SENTINEL
 };
 
@@ -779,11 +779,11 @@ static uint64_t a15_l2ctlr_read(CPUARMState *env, const ARMCPRegInfo *ri)
 static const ARMCPRegInfo cortexa15_cp_reginfo[] = {
 #ifndef CONFIG_USER_ONLY
     { "L2CTLR",  15,9,0, 0,1,2, 0,
-      0,            PL1_RW, NULL, 0, 0,
+      0,            PL1_RW, 0, NULL, 0, 0, {0, 0},
 	  NULL, a15_l2ctlr_read, arm_cp_write_ignore, },
 #endif
     { "L2ECTLR", 15,9,0, 0,1,3, 0,
-      ARM_CP_CONST, PL1_RW, NULL, 0 },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0 },
     REGINFO_SENTINEL
 };
 

@@ -315,10 +315,10 @@ static void tlbimvaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
 
 static const ARMCPRegInfo cp_reginfo[] = {
     { "FCSEIDR",   15,13,0, 0,0,0, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c13_fcse),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c13_fcse), {0, 0},
       NULL, NULL, fcse_write, NULL, raw_write, NULL, },
     { "CONTEXTIDR", 0,13,0,  3,0,1, ARM_CP_STATE_BOTH,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.contextidr_el1),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.contextidr_el1), {0, 0},
       NULL, NULL, contextidr_write, NULL, raw_write, NULL, },
     REGINFO_SENTINEL
 };
@@ -329,7 +329,7 @@ static const ARMCPRegInfo not_v8_cp_reginfo[] = {
      */
     /* MMU Domain access control / MPU write buffer control */
     { "DACR", 15,3,CP_ANY, 0,CP_ANY,CP_ANY, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c3),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c3), {0, 0},
       NULL, NULL, dacr_write, NULL, raw_write, NULL, },
     /* ??? This covers not just the impdef TLB lockdown registers but also
      * some v7VMSA registers relating to TEX remap, so it is overly broad.
@@ -362,33 +362,33 @@ static const ARMCPRegInfo not_v7_cp_reginfo[] = {
      * OMAPCP will override this space.
      */
     { "DLOCKDOWN", 15,9,0, 0,0,0, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c9_data), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_data), },
     { "ILOCKDOWN", 15,9,0, 0,0,1, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c9_insn), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_insn), },
     /* v6 doesn't have the cache ID registers but Linux reads them anyway */
     { "DUMMY", 15,0,0, 0,1,CP_ANY, 0,
-      ARM_CP_CONST | ARM_CP_NO_MIGRATE, PL1_R, NULL, 0 },
+      ARM_CP_CONST | ARM_CP_NO_MIGRATE, PL1_R, 0, NULL, 0 },
     /* We don't implement pre-v7 debug but most CPUs had at least a DBGDIDR;
      * implementing it as RAZ means the "debug architecture version" bits
      * will read as a reserved value, which should cause Linux to not try
      * to use the debug hardware.
      */
     { "DBGDIDR", 14,0,0, 0,0,0, 0,
-      ARM_CP_CONST, PL0_R, NULL, 0 },
+      ARM_CP_CONST, PL0_R, 0, NULL, 0 },
     /* MMU TLB control. Note that the wildcarding means we cover not just
      * the unified TLB ops but also the dside/iside/inner-shareable variants.
      */
     { "TLBIALL", 15,8,CP_ANY, 0,CP_ANY,0, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiall_write, },
     { "TLBIMVA", 15,8,CP_ANY, 0,CP_ANY,1, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimva_write, },
     { "TLBIASID", 15,8,CP_ANY, 0,CP_ANY,2, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiasid_write, },
     { "TLBIMVAA", 15,8,CP_ANY, 0,CP_ANY,3, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimvaa_write, },
     REGINFO_SENTINEL
 };
@@ -438,14 +438,14 @@ static const ARMCPRegInfo v6_cp_reginfo[] = {
     { "DMB", 15,7,10, 0,0,5, 0,
       ARM_CP_NOP, PL0_W, },
     { "IFAR", 15,6,0, 0,0,2, 0,
-      0, PL1_RW, NULL, 0, offsetofhigh32(CPUARMState, cp15.far_el[1]), },
+      0, PL1_RW, 0, NULL, 0, offsetofhigh32(CPUARMState, cp15.far_el[1]), },
     /* Watchpoint Fault Address Register : should actually only be present
      * for 1136, 1176, 11MPCore.
      */
     { "WFAR", 15,6,0, 0,0,1, 0,
-      ARM_CP_CONST, PL1_RW, NULL, 0, },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0, },
     { "CPACR", 0,1,0, 3,0,2, ARM_CP_STATE_BOTH, 
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c1_coproc),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c1_coproc), {0, 0},
       NULL, NULL, cpacr_write },
     REGINFO_SENTINEL
 };
@@ -700,129 +700,129 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
      * or PL0_RO as appropriate and then check PMUSERENR in the helper fn.
      */
     { "PMCNTENSET", 15,9,12, 0,0,1, 0,
-      ARM_CP_NO_MIGRATE, PL0_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.c9_pmcnten),
+      ARM_CP_NO_MIGRATE, PL0_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c9_pmcnten), {0, 0},
       pmreg_access, NULL, pmcntenset_write, NULL, raw_write },
     { "PMCNTENSET_EL0", 0,9,12, 3,3,1, ARM_CP_STATE_AA64,
-      0, PL0_RW, NULL, 0, offsetof(CPUARMState, cp15.c9_pmcnten),
+      0, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmcnten), {0, 0},
       pmreg_access, NULL, pmcntenset_write, NULL, raw_write },
     { "PMCNTENCLR", 15,9,12, 0,0,2, 0,
-      ARM_CP_NO_MIGRATE, PL0_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.c9_pmcnten),
+      ARM_CP_NO_MIGRATE, PL0_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c9_pmcnten), {0, 0},
       pmreg_access, NULL, pmcntenclr_write, },
     { "PMCNTENCLR_EL0", 0,9,12, 3,3,2, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL0_RW, NULL, 0, offsetof(CPUARMState, cp15.c9_pmcnten),
+      ARM_CP_NO_MIGRATE, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmcnten), {0, 0},
       pmreg_access, NULL, pmcntenclr_write },
     { "PMOVSR", 15,9,12, 0,0,3, 0,
-      0, PL0_RW, NULL, 0, offsetof(CPUARMState, cp15.c9_pmovsr),
+      0, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmovsr), {0, 0},
       pmreg_access, NULL, pmovsr_write, NULL, raw_write },
     /* Unimplemented so WI. */
     { "PMSWINC", 15,9,12, 0,0,4, 0,
-      ARM_CP_NOP, PL0_W, NULL, 0, 0,
+      ARM_CP_NOP, PL0_W, 0, NULL, 0, 0, {0, 0},
       pmreg_access, },
     /* Since we don't implement any events, writing to PMSELR is UNPREDICTABLE.
      * We choose to RAZ/WI.
      */
     { "PMSELR", 15,9,12, 0,0,5, 0,
-      ARM_CP_CONST, PL0_RW, NULL, 0, 0,
+      ARM_CP_CONST, PL0_RW, 0, NULL, 0, 0, {0, 0},
       pmreg_access },
 #ifndef CONFIG_USER_ONLY
     { "PMCCNTR", 15,9,13, 0,0,0, 0,
-      ARM_CP_IO, PL0_RW, NULL, 0, 0,
+      ARM_CP_IO, PL0_RW, 0, NULL, 0, 0, {0, 0},
       pmreg_access, pmccntr_read, pmccntr_write32, },
     { "PMCCNTR_EL0", 0,9,13, 3,3,0, ARM_CP_STATE_AA64,
-      ARM_CP_IO, PL0_RW, NULL, 0, 0,
+      ARM_CP_IO, PL0_RW, 0, NULL, 0, 0, {0, 0},
       pmreg_access, pmccntr_read, pmccntr_write, },
 #endif
     { "PMCCFILTR_EL0", 0,14,15, 3,3,7, ARM_CP_STATE_AA64,
-      ARM_CP_IO, PL0_RW, NULL, 0, offsetof(CPUARMState, cp15.pmccfiltr_el0),
+      ARM_CP_IO, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.pmccfiltr_el0), {0, 0},
       pmreg_access, NULL, pmccfiltr_write, },
     { "PMXEVTYPER", 15,9,13, 0,0,1, 0,
-      0, PL0_RW, NULL, 0, offsetof(CPUARMState, cp15.c9_pmxevtyper),
+      0, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmxevtyper), {0, 0},
       pmreg_access, NULL, pmxevtyper_write, NULL, raw_write },
     /* Unimplemented, RAZ/WI. */
     { "PMXEVCNTR", 15,9,13, 0,0,2, 0,
-      ARM_CP_CONST, PL0_RW, NULL, 0, 0,
+      ARM_CP_CONST, PL0_RW, 0, NULL, 0, 0, {0, 0},
       pmreg_access },
     { "PMUSERENR", 15,9,14, 0,0,0, 0,
-      0, PL0_R | PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c9_pmuserenr),
+      0, PL0_R | PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmuserenr), {0, 0},
       NULL, NULL, pmuserenr_write, NULL, raw_write },
     { "PMINTENSET", 15,9,14, 0,0,1, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c9_pminten),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pminten), {0, 0},
       NULL, NULL, pmintenset_write, NULL, raw_write },
     { "PMINTENCLR", 15,9,14, 0,0,2, 0,
-      ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c9_pminten),
+      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pminten), {0, 0},
       NULL, NULL, pmintenclr_write, },
     { "SCR", 15,1,1, 0,0,0, 0,
-      0, PL1_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.scr_el3),
+      0, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.scr_el3), {0, 0},
       NULL, NULL, scr_write },
     { "CCSIDR", 0,0,0, 3,1,0, ARM_CP_STATE_BOTH,
-      ARM_CP_NO_MIGRATE, PL1_R, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_R, 0, NULL, 0, 0, {0, 0},
       NULL, ccsidr_read, },
     { "CSSELR", 0,0,0, 3,2,0, ARM_CP_STATE_BOTH,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c0_cssel),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c0_cssel), {0, 0},
       NULL, NULL, csselr_write, },
     /* Auxiliary ID register: this actually has an IMPDEF value but for now
      * just RAZ for all cores:
      */
     { "AIDR", 0,0,0, 3,1,7, ARM_CP_STATE_BOTH,
-      ARM_CP_CONST, PL1_R, NULL, 0 },
+      ARM_CP_CONST, PL1_R, 0, NULL, 0 },
     /* Auxiliary fault status registers: these also are IMPDEF, and we
      * choose to RAZ/WI for all cores.
      */
     { "AFSR0_EL1", 0,5,1, 3,0,0, ARM_CP_STATE_BOTH,
-      ARM_CP_CONST, PL1_RW, NULL, 0 },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0 },
     { "AFSR1_EL1", 0,5,1, 3,0,1, ARM_CP_STATE_BOTH,
-      ARM_CP_CONST, PL1_RW, NULL, 0 },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0 },
     /* MAIR can just read-as-written because we don't implement caches
      * and so don't need to care about memory attributes.
      */
     { "MAIR_EL1", 0,10,2, 3,0,0, ARM_CP_STATE_AA64,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.mair_el1), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mair_el1), },
     /* For non-long-descriptor page tables these are PRRR and NMRR;
      * regardless they still act as reads-as-written for QEMU.
      * The override is necessary because of the overly-broad TLB_LOCKDOWN
      * definition.
      */
     { "MAIR0", 15,10,2, 0,0,0, ARM_CP_STATE_AA32,
-      ARM_CP_OVERRIDE, PL1_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.mair_el1),
+      ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.mair_el1), {0, 0},
       NULL, NULL, NULL, NULL, NULL, arm_cp_reset_ignore },
     { "MAIR1", 15,10,2, 0,0,1, ARM_CP_STATE_AA32,
-      ARM_CP_OVERRIDE, PL1_RW, NULL, 0, offsetofhigh32(CPUARMState, cp15.mair_el1),
+      ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0, offsetofhigh32(CPUARMState, cp15.mair_el1), {0, 0},
       NULL, NULL, NULL, NULL, NULL, arm_cp_reset_ignore },
     { "ISR_EL1", 0,12,1, 3,0,0, ARM_CP_STATE_BOTH,
-      ARM_CP_NO_MIGRATE, PL1_R, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_R, 0, NULL, 0, 0, {0, 0},
       NULL, isr_read },
     /* 32 bit ITLB invalidates */
     { "ITLBIALL", 15,8,5, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiall_write },
     { "ITLBIMVA", 15,8,5, 0,0,1, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimva_write },
     { "ITLBIASID", 15,8,5, 0,0,2, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiasid_write },
     /* 32 bit DTLB invalidates */
     { "DTLBIALL", 15,8,6, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiall_write },
     { "DTLBIMVA", 15,8,6, 0,0,1, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimva_write },
     { "DTLBIASID", 15,8,6, 0,0,2, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiasid_write },
     /* 32 bit TLB invalidates */
     { "TLBIALL", 15,8,7, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiall_write },
     { "TLBIMVA", 15,8,7, 0,0,1, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimva_write },
     { "TLBIASID", 15,8,7, 0,0,2, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiasid_write },
     { "TLBIMVAA", 15,8,7, 0,0,3, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimvaa_write },
     REGINFO_SENTINEL
 };
@@ -830,16 +830,16 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
 static const ARMCPRegInfo v7mp_cp_reginfo[] = {
     /* 32 bit TLB invalidates, Inner Shareable */
     { "TLBIALLIS", 15,8,3, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiall_is_write },
     { "TLBIMVAIS", 15,8,3, 0,0,1, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimva_is_write },
     { "TLBIASIDIS", 15,8,3, 0,0,2, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiasid_is_write },
     { "TLBIMVAAIS", 15,8,3, 0,0,3, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimvaa_is_write },
     REGINFO_SENTINEL
 };
@@ -861,27 +861,27 @@ static CPAccessResult teehbr_access(CPUARMState *env, const ARMCPRegInfo *ri)
 
 static const ARMCPRegInfo t2ee_cp_reginfo[] = {
     { "TEECR", 14,0,0, 0,6,0, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, teecr),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, teecr), {0, 0},
       NULL, NULL, teecr_write },
     { "TEEHBR", 14,1,0, 0,6,0, 0,
-      0, PL0_RW, NULL, 0, offsetof(CPUARMState, teehbr),
+      0, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, teehbr), {0, 0},
       teehbr_access, },
     REGINFO_SENTINEL
 };
 
 static const ARMCPRegInfo v6k_cp_reginfo[] = {
     { "TPIDR_EL0", 0,13,0, 3,3,2, ARM_CP_STATE_AA64,
-      0, PL0_RW, NULL, 0, offsetof(CPUARMState, cp15.tpidr_el0), },
+      0, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidr_el0), },
     { "TPIDRURW", 15,13,0, 0,0,2, 0,
-      0, PL0_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.tpidr_el0),
+      0, PL0_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.tpidr_el0), {0, 0},
       NULL, NULL, NULL, NULL, NULL, arm_cp_reset_ignore },
     { "TPIDRRO_EL0", 0,13,0, 3,3,3, ARM_CP_STATE_AA64,
-      0, PL0_R|PL1_W, NULL, 0, offsetof(CPUARMState, cp15.tpidrro_el0) },
+      0, PL0_R|PL1_W, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidrro_el0) },
     { "TPIDRURO", 15,13,0, 0,0,3, 0,
-      0, PL0_R|PL1_W, NULL, 0, offsetoflow32(CPUARMState, cp15.tpidrro_el0),
+      0, PL0_R|PL1_W, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.tpidrro_el0), {0, 0},
       NULL, NULL, NULL, NULL, NULL, arm_cp_reset_ignore },
     { "TPIDR_EL1", 0,13,0, 3,0,4, ARM_CP_STATE_BOTH,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.tpidr_el1), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidr_el1), },
     REGINFO_SENTINEL
 };
 
@@ -1061,65 +1061,65 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
      * Our reset value matches the fixed frequency we implement the timer at.
      */
     { "CNTFRQ", 15,14,0, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE, PL1_RW | PL0_R, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_cntfrq),
+      ARM_CP_NO_MIGRATE, PL1_RW | PL0_R, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_cntfrq), {0, 0},
       gt_cntfrq_access, NULL,NULL, NULL,NULL, arm_cp_reset_ignore, },
     { "CNTFRQ_EL0", 0,14,0, 3,3,0, ARM_CP_STATE_AA64,
-      0, PL1_RW | PL0_R, NULL, (1000 * 1000 * 1000) / GTIMER_SCALE, offsetof(CPUARMState, cp15.c14_cntfrq),
+      0, PL1_RW | PL0_R, 0, NULL, (1000 * 1000 * 1000) / GTIMER_SCALE, offsetof(CPUARMState, cp15.c14_cntfrq), {0, 0},
       gt_cntfrq_access, },
     /* overall control: mostly access permissions */
     { "CNTKCTL", 0,14,1, 3,0,0, ARM_CP_STATE_BOTH,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c14_cntkctl), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_cntkctl), },
     /* per-timer control */
     { "CNTP_CTL", 15,14,2, 0,0,1, 0,
-      ARM_CP_IO | ARM_CP_NO_MIGRATE, PL1_RW | PL0_R, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_timer[GTIMER_PHYS].ctl),
+      ARM_CP_IO | ARM_CP_NO_MIGRATE, PL1_RW | PL0_R, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_timer[GTIMER_PHYS].ctl), {0, 0},
       gt_ptimer_access, NULL, gt_ctl_write, NULL,raw_write, arm_cp_reset_ignore, },
     { "CNTP_CTL_EL0", 0,14,2, 3,3,1, ARM_CP_STATE_AA64,
-      ARM_CP_IO, PL1_RW | PL0_R, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].ctl),
+      ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].ctl), {0, 0},
       gt_ptimer_access, NULL,gt_ctl_write, NULL,raw_write, },
     { "CNTV_CTL", 15,14,3, 0,0,1, 0,
-      ARM_CP_IO | ARM_CP_NO_MIGRATE, PL1_RW | PL0_R, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_timer[GTIMER_VIRT].ctl),
+      ARM_CP_IO | ARM_CP_NO_MIGRATE, PL1_RW | PL0_R, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_timer[GTIMER_VIRT].ctl), {0, 0},
       gt_vtimer_access, NULL,gt_ctl_write, NULL,raw_write, arm_cp_reset_ignore, },
     { "CNTV_CTL_EL0", 0,14,3, 3,3,1, ARM_CP_STATE_AA64,
-      ARM_CP_IO, PL1_RW | PL0_R, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_VIRT].ctl),
+      ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_VIRT].ctl), {0, 0},
       gt_vtimer_access, NULL,gt_ctl_write, NULL,raw_write, },
     /* TimerValue views: a 32 bit downcounting view of the underlying state */
     { "CNTP_TVAL", 15,14,2, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL1_RW | PL0_R, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, 0, {0, 0},
       gt_ptimer_access, gt_tval_read, gt_tval_write, },
     { "CNTP_TVAL_EL0", 0,14,2, 3,3,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL1_RW | PL0_R, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, 0, {0, 0},
       NULL, gt_tval_read, gt_tval_write, },
     { "CNTV_TVAL", 15,14,3, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL1_RW | PL0_R, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, 0, {0, 0},
       gt_vtimer_access, gt_tval_read, gt_tval_write, },
     { "CNTV_TVAL_EL0", 0,14,3, 3,3,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL1_RW | PL0_R, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, 0, {0, 0},
       NULL, gt_tval_read, gt_tval_write, },
     /* The counter itself */
     { "CNTPCT", 15,0,14, 0,0, 0, 0,
-      ARM_CP_64BIT | ARM_CP_NO_MIGRATE | ARM_CP_IO, PL0_R, NULL, 0, 0,
+      ARM_CP_64BIT | ARM_CP_NO_MIGRATE | ARM_CP_IO, PL0_R, 0, NULL, 0, 0, {0, 0},
       gt_pct_access, gt_cnt_read,NULL, NULL,NULL, arm_cp_reset_ignore, },
     { "CNTPCT_EL0", 0,14,0, 3,3,1, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL0_R, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL0_R, 0, NULL, 0, 0, {0, 0},
       gt_pct_access, gt_cnt_read, NULL, NULL, NULL, gt_cnt_reset, },
     { "CNTVCT", 15,0,14, 0,1,0, 0,
-      ARM_CP_64BIT | ARM_CP_NO_MIGRATE | ARM_CP_IO, PL0_R, NULL, 0, 0,
+      ARM_CP_64BIT | ARM_CP_NO_MIGRATE | ARM_CP_IO, PL0_R, 0, NULL, 0, 0, {0, 0},
       gt_vct_access, gt_cnt_read,NULL, NULL,NULL, arm_cp_reset_ignore, },
     { "CNTVCT_EL0", 0,14,0, 3,3,2, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL0_R, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE | ARM_CP_IO, PL0_R, 0, NULL, 0, 0, {0, 0},
       gt_vct_access, gt_cnt_read, NULL, NULL,NULL, gt_cnt_reset, },
     /* Comparison value, indicating when the timer goes off */
     { "CNTP_CVAL", 15, 0,14, 0,2, 0, 0,
-      ARM_CP_64BIT | ARM_CP_IO | ARM_CP_NO_MIGRATE, PL1_RW | PL0_R, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].cval),
+      ARM_CP_64BIT | ARM_CP_IO | ARM_CP_NO_MIGRATE, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].cval), {0, 0},
       gt_ptimer_access, NULL, gt_cval_write, NULL, raw_write, arm_cp_reset_ignore, },
     { "CNTP_CVAL_EL0", 0,14,2, 3,3,2, ARM_CP_STATE_AA64,
-      ARM_CP_IO, PL1_RW | PL0_R, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].cval),
+      ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].cval), {0, 0},
       gt_vtimer_access, NULL, gt_cval_write, NULL, raw_write, },
     { "CNTV_CVAL", 15, 0,14, 0,3,0, 0,
-      ARM_CP_64BIT | ARM_CP_IO | ARM_CP_NO_MIGRATE, PL1_RW | PL0_R, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_VIRT].cval),
+      ARM_CP_64BIT | ARM_CP_IO | ARM_CP_NO_MIGRATE, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_VIRT].cval), {0, 0},
       gt_vtimer_access, NULL, gt_cval_write, NULL, raw_write, arm_cp_reset_ignore, },
     { "CNTV_CVAL_EL0", 0,14,3, 3,3,2, ARM_CP_STATE_AA64,
-      ARM_CP_IO, PL1_RW | PL0_R, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_VIRT].cval),
+      ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_VIRT].cval), {0, 0},
       gt_vtimer_access, NULL, gt_cval_write, NULL, raw_write, },
     REGINFO_SENTINEL
 };
@@ -1214,11 +1214,11 @@ static void ats_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 
 static const ARMCPRegInfo vapa_cp_reginfo[] = {
     { "PAR", 15,7,4, 0,0,0, 0,
-      0, PL1_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.par_el1),
+      0, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.par_el1), {0, 0},
       NULL, NULL, par_write },
 #ifndef CONFIG_USER_ONLY
     { "ATS", 15,7,8, 0,0,CP_ANY, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       ats_access, NULL, ats_write },
 #endif
     REGINFO_SENTINEL
@@ -1278,36 +1278,36 @@ static uint64_t pmsav5_insn_ap_read(CPUARMState *env, const ARMCPRegInfo *ri)
 
 static const ARMCPRegInfo pmsav5_cp_reginfo[] = {
     { "DATA_AP", 15,5,0, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.pmsav5_data_ap),
+      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.pmsav5_data_ap), {0, 0},
       NULL, pmsav5_data_ap_read, pmsav5_data_ap_write, },
     { "INSN_AP", 15,5,0, 0,0,1, 0,
-      ARM_CP_NO_MIGRATE,PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.pmsav5_insn_ap),
+      ARM_CP_NO_MIGRATE,PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.pmsav5_insn_ap), {0, 0},
       NULL, pmsav5_insn_ap_read, pmsav5_insn_ap_write, },
     { "DATA_EXT_AP", 15,5,0, 0,0,2, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.pmsav5_data_ap), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.pmsav5_data_ap), },
     { "INSN_EXT_AP", 15,5,0, 0,0,3, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.pmsav5_insn_ap), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.pmsav5_insn_ap), },
     { "DCACHE_CFG", 15,2,0, 0,0,0, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c2_data), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c2_data), },
     { "ICACHE_CFG", 15,2,0, 0,0,1, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c2_insn), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c2_insn), },
     /* Protection region base and size registers */
     { "946_PRBS0", 15,6,0, 0,0,CP_ANY, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c6_region[0]) },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c6_region[0]) },
     { "946_PRBS1", 15,6,1, 0,0,CP_ANY, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c6_region[1]) },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c6_region[1]) },
     { "946_PRBS2", 15,6,2, 0,0,CP_ANY, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c6_region[2]) },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c6_region[2]) },
     { "946_PRBS3", 15,6,3, 0,0,CP_ANY, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c6_region[3]) },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c6_region[3]) },
     { "946_PRBS4", 15,6,4, 0,0,CP_ANY, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c6_region[4]) },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c6_region[4]) },
     { "946_PRBS5", 15,6,5, 0,0,CP_ANY, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c6_region[5]) },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c6_region[5]) },
     { "946_PRBS6", 15,6,6, 0,0,CP_ANY, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c6_region[6]) },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c6_region[6]) },
     { "946_PRBS7", 15,6,7, 0,0,CP_ANY, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c6_region[7]) },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c6_region[7]) },
     REGINFO_SENTINEL
 };
 
@@ -1389,27 +1389,27 @@ static void vmsa_ttbr_write(CPUARMState *env, const ARMCPRegInfo *ri,
 
 static const ARMCPRegInfo vmsa_cp_reginfo[] = {
     { "DFSR", 15,5,0, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.esr_el[1]),
+      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.esr_el[1]), {0, 0},
       NULL,NULL,NULL,NULL,NULL, arm_cp_reset_ignore, },
     { "IFSR", 15,5,0, 0,0,1, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.ifsr_el2), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ifsr_el2), },
     { "ESR_EL1", 0,5,2, 3,0,0, ARM_CP_STATE_AA64,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.esr_el[1]), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.esr_el[1]), },
     { "TTBR0_EL1", 0,2,0, 3,0,0, ARM_CP_STATE_BOTH,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el1),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el1), {0, 0},
       NULL, NULL, vmsa_ttbr_write, },
     { "TTBR1_EL1", 0,2,0, 3,0,1, ARM_CP_STATE_BOTH,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.ttbr1_el1),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr1_el1), {0, 0},
       NULL, NULL, vmsa_ttbr_write, },
     { "TCR_EL1", 0,2,0, 3,0,2, ARM_CP_STATE_AA64,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c2_control),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c2_control), {0, 0},
       NULL, NULL,vmsa_tcr_el1_write, NULL,raw_write, vmsa_ttbcr_reset, },
     { "TTBCR", 15,2,0, 0,0,2, 0,
-      ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.c2_control),
+      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c2_control), {0, 0},
       NULL, NULL, vmsa_ttbcr_write, NULL, vmsa_ttbcr_raw_write, arm_cp_reset_ignore, },
     /* 64-bit FAR; this entry also gives us the AArch32 DFAR */
     { "FAR_EL1", 0,6,0, 3,0,0, ARM_CP_STATE_BOTH,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.far_el[1]), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.far_el[1]), },
     REGINFO_SENTINEL
 };
 
@@ -1447,21 +1447,21 @@ static void omap_cachemaint_write(CPUARMState *env, const ARMCPRegInfo *ri,
 
 static const ARMCPRegInfo omap_cp_reginfo[] = {
     { "DFSR", 15,5,CP_ANY, 0,CP_ANY,CP_ANY, 0,
-      ARM_CP_OVERRIDE, PL1_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.esr_el[1]), },
+      ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.esr_el[1]), },
     { "", 15,15,0, 0,0,0, 0,
-      ARM_CP_NOP, PL1_RW, NULL, 0, 0, },
+      ARM_CP_NOP, PL1_RW, 0, NULL, 0, 0, },
     { "TICONFIG", 15,15,1, 0,0,0, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c15_ticonfig),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c15_ticonfig), {0, 0},
       NULL, NULL, omap_ticonfig_write },
     { "IMAX", 15,15,2, 0,0,0, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c15_i_max), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c15_i_max), },
     { "IMIN", 15,15,3, 0,0,0, 0,
-      0, PL1_RW, NULL, 0xff0, offsetof(CPUARMState, cp15.c15_i_min) },
+      0, PL1_RW, 0, NULL, 0xff0, offsetof(CPUARMState, cp15.c15_i_min) },
     { "THREADID", 15,15,4, 0,0,0, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c15_threadid), 
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c15_threadid), {0, 0},
       NULL, NULL, omap_threadid_write },
     { "TI925T_STATUS", 15,15,8, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, 0, {0, 0},
       NULL, arm_cp_read_zero, omap_wfi_write, },
     /* TODO: Peripheral port remap register:
      * On OMAP2 mcr p15, 0, rn, c15, c2, 4 sets up the interrupt controller
@@ -1469,10 +1469,10 @@ static const ARMCPRegInfo omap_cp_reginfo[] = {
      * when MMU is off.
      */
     { "OMAP_CACHEMAINT", 15,7,CP_ANY, 0,0,CP_ANY, 0,
-      ARM_CP_OVERRIDE | ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_OVERRIDE | ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, omap_cachemaint_write },
     { "C9", 15,9,CP_ANY, 0,CP_ANY,CP_ANY, 0,
-      ARM_CP_CONST | ARM_CP_OVERRIDE, PL1_RW, NULL, 0, 0, },
+      ARM_CP_CONST | ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0, 0, },
     REGINFO_SENTINEL
 };
 
@@ -1484,10 +1484,10 @@ static void xscale_cpar_write(CPUARMState *env, const ARMCPRegInfo *ri,
 
 static const ARMCPRegInfo xscale_cp_reginfo[] = {
     { "XSCALE_CPAR", 15,15,1, 0,0,0, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c15_cpar),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c15_cpar), {0, 0},
       NULL, NULL, xscale_cpar_write, },
     { "XSCALE_AUXCR", 15,1,0, 0,0,1, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c1_xscaleauxcr), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c1_xscaleauxcr), },
     /* XScale specific cache-lockdown: since we have no cache we NOP these
      * and hope the guest does not really rely on cache behaviour.
      */
@@ -1509,21 +1509,21 @@ static const ARMCPRegInfo dummy_c15_cp_reginfo[] = {
      * implementing the correct behaviour for all cores.
      */
     { "C15_IMPDEF", 15,15,CP_ANY, 0,CP_ANY,CP_ANY, 0,
-      ARM_CP_CONST | ARM_CP_NO_MIGRATE | ARM_CP_OVERRIDE, PL1_RW, NULL, 0 },
+      ARM_CP_CONST | ARM_CP_NO_MIGRATE | ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0 },
     REGINFO_SENTINEL
 };
 
 static const ARMCPRegInfo cache_dirty_status_cp_reginfo[] = {
     /* Cache status: RAZ because we have no cache so it's always clean */
     { "CDSR", 15,7,10, 0,0,6, 0,
-      ARM_CP_CONST | ARM_CP_NO_MIGRATE, PL1_R, NULL, 0 },
+      ARM_CP_CONST | ARM_CP_NO_MIGRATE, PL1_R, 0, NULL, 0 },
     REGINFO_SENTINEL
 };
 
 static const ARMCPRegInfo cache_block_ops_cp_reginfo[] = {
     /* We never have a a block transfer operation in progress */
     { "BXSR", 15,7,12, 0,0,4, 0,
-      ARM_CP_CONST | ARM_CP_NO_MIGRATE, PL0_R, NULL, 0 },
+      ARM_CP_CONST | ARM_CP_NO_MIGRATE, PL0_R, 0, NULL, 0 },
     /* The cache ops themselves: these all NOP for QEMU */
     { "IICR", 15, 0,5, 0,0, 0, 0,
       ARM_CP_NOP|ARM_CP_64BIT, PL1_W },
@@ -1545,16 +1545,16 @@ static const ARMCPRegInfo cache_test_clean_cp_reginfo[] = {
      * to indicate that there are no dirty cache lines.
      */
     { "TC_DCACHE", 15,7,10, 0,0,3, 0,
-      ARM_CP_CONST | ARM_CP_NO_MIGRATE, PL0_R, NULL, (1 << 30) },
+      ARM_CP_CONST | ARM_CP_NO_MIGRATE, PL0_R, 0, NULL, (1 << 30) },
     { "TCI_DCACHE", 15,7,14, 0,0,3, 0,
-      ARM_CP_CONST | ARM_CP_NO_MIGRATE, PL0_R, NULL, (1 << 30) },
+      ARM_CP_CONST | ARM_CP_NO_MIGRATE, PL0_R, 0, NULL, (1 << 30) },
     REGINFO_SENTINEL
 };
 
 static const ARMCPRegInfo strongarm_cp_reginfo[] = {
     /* Ignore ReadBuffer accesses */
     { "C9_READBUFFER", 15,9,CP_ANY, 0,CP_ANY,CP_ANY, 0,
-      ARM_CP_CONST | ARM_CP_OVERRIDE | ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, },
+      ARM_CP_CONST | ARM_CP_OVERRIDE | ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, },
     REGINFO_SENTINEL
 };
 
@@ -1579,7 +1579,7 @@ static uint64_t mpidr_read(CPUARMState *env, const ARMCPRegInfo *ri)
 
 static const ARMCPRegInfo mpidr_cp_reginfo[] = {
     { "MPIDR", 0,0,0, 3,0,5, ARM_CP_STATE_BOTH,
-      ARM_CP_NO_MIGRATE, PL1_R, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_R, 0, NULL, 0, 0, {0, 0},
       NULL, mpidr_read, },
     REGINFO_SENTINEL
 };
@@ -1589,17 +1589,17 @@ static const ARMCPRegInfo lpae_cp_reginfo[] = {
      * broadly specified TLB_LOCKDOWN entry in the generic cp_reginfo.
      */
     { "AMAIR0", 0,10,3, 3,0,0, ARM_CP_STATE_BOTH,
-      ARM_CP_CONST | ARM_CP_OVERRIDE, PL1_RW, NULL, 0 },
+      ARM_CP_CONST | ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0 },
     /* AMAIR1 is mapped to AMAIR_EL1[63:32] */
     { "AMAIR1", 15,10,3, 0,0,1, 0,
-      ARM_CP_CONST | ARM_CP_OVERRIDE, PL1_RW, NULL, 0 },
+      ARM_CP_CONST | ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0 },
     { "PAR", 15, 0,7, 0,0, 0, 0,
-      ARM_CP_64BIT, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.par_el1), },
+      ARM_CP_64BIT, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.par_el1), },
     { "TTBR0", 15, 0,2, 0,0, 0, 0,
-      ARM_CP_64BIT | ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el1),
+      ARM_CP_64BIT | ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el1), {0, 0},
       NULL, NULL, vmsa_ttbr_write, NULL,NULL, arm_cp_reset_ignore },
     { "TTBR1", 15, 0,2, 0,1, 0, 0,
-      ARM_CP_64BIT | ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.ttbr1_el1),
+      ARM_CP_64BIT | ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr1_el1), {0, 0},
       NULL, NULL, vmsa_ttbr_write, NULL,NULL, arm_cp_reset_ignore },
     REGINFO_SENTINEL
 };
@@ -1763,19 +1763,19 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     { "NZCV", 0,4,2, 3,3,0, ARM_CP_STATE_AA64,
       ARM_CP_NZCV, PL0_RW,  },
     { "DAIF", 0,4,2, 3,3,1, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL0_RW, NULL, 0, offsetof(CPUARMState, daif),
+      ARM_CP_NO_MIGRATE, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, daif), {0, 0},
       aa64_daif_access, NULL, aa64_daif_write, NULL,NULL, arm_cp_reset_ignore },
     { "FPCR", 0,4,4, 3,3,0, ARM_CP_STATE_AA64,
-      0, PL0_RW, NULL, 0, 0,
+      0, PL0_RW, 0, NULL, 0, 0, {0, 0},
       NULL, aa64_fpcr_read, aa64_fpcr_write },
     { "FPSR", 0,4,4, 3,3,1, ARM_CP_STATE_AA64,
-      0, PL0_RW, NULL, 0, 0,
+      0, PL0_RW, 0, NULL, 0, 0, {0, 0},
       NULL, aa64_fpsr_read, aa64_fpsr_write },
     { "DCZID_EL0", 0,0,0, 3,3,7, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL0_R, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL0_R, 0, NULL, 0, 0, {0, 0},
       NULL, aa64_dczid_read },
     { "DC_ZVA", 0,7,4, 1,3,1, ARM_CP_STATE_AA64,
-      ARM_CP_DC_ZVA, PL0_W, NULL, 0, 0,
+      ARM_CP_DC_ZVA, PL0_W, 0, NULL, 0, 0, {0, 0},
 #ifndef CONFIG_USER_ONLY
       /* Avoid overhead of an access check that always passes in user-mode */
       aa64_zva_access,
@@ -1789,89 +1789,89 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     { "IC_IALLU", 0,7,5, 1,0,0, ARM_CP_STATE_AA64,
       ARM_CP_NOP, PL1_W, },
     { "IC_IVAU", 0,7,5, 1,3,1, ARM_CP_STATE_AA64,
-      ARM_CP_NOP, PL0_W, NULL, 0, 0,
+      ARM_CP_NOP, PL0_W, 0, NULL, 0, 0, {0, 0},
       aa64_cacheop_access },
     { "DC_IVAC", 0,7,6, 1,0,1, ARM_CP_STATE_AA64,
       ARM_CP_NOP, PL1_W, },
     { "DC_ISW", 0,7,6, 1,0,2, ARM_CP_STATE_AA64,
       ARM_CP_NOP, PL1_W, },
     { "DC_CVAC", 0,7,10, 1,3,1, ARM_CP_STATE_AA64,
-      ARM_CP_NOP, PL0_W, NULL, 0, 0,
+      ARM_CP_NOP, PL0_W, 0, NULL, 0, 0, {0, 0},
       aa64_cacheop_access },
     { "DC_CSW", 0,7,10, 1,0,2, ARM_CP_STATE_AA64,
       ARM_CP_NOP, PL1_W, },
     { "DC_CVAU", 0,7,11, 1,3,1, ARM_CP_STATE_AA64,
-      ARM_CP_NOP, PL0_W, NULL, 0, 0,
+      ARM_CP_NOP, PL0_W, 0, NULL, 0, 0, {0, 0},
       aa64_cacheop_access },
     { "DC_CIVAC", 0,7,14, 1,3,1, ARM_CP_STATE_AA64,
-      ARM_CP_NOP, PL0_W,  NULL, 0, 0,
+      ARM_CP_NOP, PL0_W, 0, NULL, 0, 0, {0, 0},
       aa64_cacheop_access },
     { "DC_CISW", 0,7,14, 1,0,2, ARM_CP_STATE_AA64,
       ARM_CP_NOP, PL1_W,  },
     /* TLBI operations */
     { "TLBI_VMALLE1IS", 0,8,3, 1,0,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiall_is_write },
     { "TLBI_VAE1IS", 0,8,3, 1,0,1, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_va_is_write },
     { "TLBI_ASIDE1IS", 0,8,3, 1,0,2, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_asid_is_write },
     { "TLBI_VAAE1IS", 0,8,3, 1,0,3, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_vaa_is_write },
     { "TLBI_VALE1IS", 0,8,3, 1,0,5, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_va_is_write },
     { "TLBI_VAALE1IS", 0,8,3, 1,0,7, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_vaa_is_write },
     { "TLBI_VMALLE1", 0,8,7, 1,0,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiall_write },
     { "TLBI_VAE1", 0,8,7, 1,0,1, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_va_write },
     { "TLBI_ASIDE1", 0,8,7, 1,0,2, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_asid_write },
     { "TLBI_VAAE1", 0,8,7, 1,0,3, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_vaa_write },
     { "TLBI_VALE1", 0,8,7, 1,0,5, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_va_write },
     { "TLBI_VAALE1", 0,8,7, 1,0,7, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_vaa_write },
 #ifndef CONFIG_USER_ONLY
     /* 64 bit address translation operations */
     { "AT_S1E1R", 0,7,8, 1,0,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, ats_write },
     { "AT_S1E1W", 0,7,8, 1,0,1, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, ats_write },
     { "AT_S1E0R", 0,7,8, 1,0,2, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, ats_write },
     { "AT_S1E0W", 0,7,8, 1,0,3, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, ats_write },
 #endif
     /* TLB invalidate last level of translation table walk */
     { "TLBIMVALIS", 15,8,3, 0,0,5, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimva_is_write },
     { "TLBIMVAALIS", 15,8,3, 0,0,7, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimvaa_is_write },
     { "TLBIMVAL", 15,8,7, 0,0,5, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimva_write },
     { "TLBIMVAAL", 15,8,7, 0,0,7, 0,
-      ARM_CP_NO_MIGRATE, PL1_W, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimvaa_write },
     /* 32 bit cache operations */
     { "ICIALLUIS", 15,7,1, 0,0,0, 0,
@@ -1902,21 +1902,21 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
       ARM_CP_NOP, PL1_W },
     /* MMU Domain access control / MPU write buffer control */
     { "DACR", 15,3,0, 0,0,0, 0,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.c3),
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c3), {0, 0},
       NULL, NULL,dacr_write, NULL,raw_write, },
     { "ELR_EL1", 0,4,0, 3,0,1, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, offsetof(CPUARMState, elr_el[1]) },
+      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[1]) },
     { "SPSR_EL1", 0,4,0, 3,0,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, offsetof(CPUARMState, banked_spsr[0]) },
+      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[0]) },
     /* We rely on the access checks not allowing the guest to write to the
      * state field when SPSel indicates that it's being used as the stack
      * pointer.
      */
     { "SP_EL0", 0,4,1, 3,0,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, offsetof(CPUARMState, sp_el[0]),
+      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, sp_el[0]), {0, 0},
       sp_el0_access, },
     { "SPSel", 0,4,2, 3,0,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL1_RW, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, 0, {0, 0},
       NULL, spsel_read, spsel_write },
     REGINFO_SENTINEL
 };
@@ -1924,10 +1924,10 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
 /* Used to describe the behaviour of EL2 regs when EL2 does not exist.  */
 static const ARMCPRegInfo v8_el3_no_el2_cp_reginfo[] = {
     { "VBAR_EL2", 0,12,0, 3,4,0, ARM_CP_STATE_AA64,
-      0, PL2_RW, NULL, 0, 0,
+      0, PL2_RW, 0, NULL, 0, 0, {0, 0},
       NULL, arm_cp_read_zero, arm_cp_write_ignore },
     { "HCR_EL2", 0,1,1, 3,4,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL2_RW, NULL, 0, 0,
+      ARM_CP_NO_MIGRATE, PL2_RW, 0, NULL, 0, 0, {0, 0},
       NULL, arm_cp_read_zero, arm_cp_write_ignore },
     REGINFO_SENTINEL
 };
@@ -1959,36 +1959,36 @@ static void hcr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 
 static const ARMCPRegInfo v8_el2_cp_reginfo[] = {
     { "HCR_EL2", 0,1,1, 3,4,0, ARM_CP_STATE_AA64,
-      0, PL2_RW, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2),
+      0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2), {0, 0},
       NULL, NULL, hcr_write },
     { "ELR_EL2", 0,4,0, 3,4,1, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL2_RW, NULL, 0, offsetof(CPUARMState, elr_el[2]) },
+      ARM_CP_NO_MIGRATE, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[2]) },
     { "ESR_EL2", 0,5,2, 3,4,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL2_RW, NULL, 0, offsetof(CPUARMState, cp15.esr_el[2]) },
+      ARM_CP_NO_MIGRATE, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.esr_el[2]) },
     { "FAR_EL2", 0,6,0, 3,4,0, ARM_CP_STATE_AA64,
-      0, PL2_RW, NULL, 0, offsetof(CPUARMState, cp15.far_el[2]) },
+      0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.far_el[2]) },
     { "SPSR_EL2", 0,4,0, 3,4,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL2_RW, NULL, 0, offsetof(CPUARMState, banked_spsr[6]) },
+      ARM_CP_NO_MIGRATE, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[6]) },
     { "VBAR_EL2", 0,12,0, 3,4,0, ARM_CP_STATE_AA64,
-      0, PL2_RW, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[2]),
+      0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[2]), {0, 0},
       NULL, NULL, vbar_write, },
     REGINFO_SENTINEL
 };
 
 static const ARMCPRegInfo v8_el3_cp_reginfo[] = {
     { "ELR_EL3", 0,4,0, 3,6,1, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL3_RW, NULL, 0, offsetof(CPUARMState, elr_el[3]) },
+      ARM_CP_NO_MIGRATE, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[3]) },
     { "ESR_EL3", 0,5,2, 3,6,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL3_RW, NULL, 0, offsetof(CPUARMState, cp15.esr_el[3]) },
+      ARM_CP_NO_MIGRATE, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.esr_el[3]) },
     { "FAR_EL3", 0,6,0, 3,6,0, ARM_CP_STATE_AA64,
-      0, PL3_RW, NULL, 0, offsetof(CPUARMState, cp15.far_el[3]) },
+      0, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.far_el[3]) },
     { "SPSR_EL3", 0,4,0, 3,6,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL3_RW, NULL, 0, offsetof(CPUARMState, banked_spsr[7]) },
+      ARM_CP_NO_MIGRATE, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[7]) },
     { "VBAR_EL3", 0,12,0, 3,6,0, ARM_CP_STATE_AA64,
-      0, PL3_RW, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[3]),
+      0, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[3]), {0, 0},
       NULL, NULL, vbar_write, },
     { "SCR_EL3", 0,1,1, 3,6,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL3_RW, NULL, 0, offsetof(CPUARMState, cp15.scr_el3),
+      ARM_CP_NO_MIGRATE, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.scr_el3), {0, 0},
       NULL, NULL, scr_write },
     REGINFO_SENTINEL
 };
@@ -2030,19 +2030,19 @@ static const ARMCPRegInfo debug_cp_reginfo[] = {
      * accessor.
      */
     { "DBGDRAR", 14,1,0, 0,0,0, 0,
-      ARM_CP_CONST, PL0_R, NULL, 0 },
+      ARM_CP_CONST, PL0_R, 0, NULL, 0 },
     { "MDRAR_EL1", 0,1,0, 2,0,0, ARM_CP_STATE_AA64,
-      ARM_CP_CONST, PL1_R, NULL, 0 },
+      ARM_CP_CONST, PL1_R, 0, NULL, 0 },
     { "DBGDSAR", 14,2,0, 0,0,0, 0,
-      ARM_CP_CONST, PL0_R, NULL, 0 },
+      ARM_CP_CONST, PL0_R, 0, NULL, 0 },
     /* Monitor debug system control register; the 32-bit alias is DBGDSCRext. */
     { "MDSCR_EL1", 14,0,2, 2,0,2, ARM_CP_STATE_BOTH,
-      0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.mdscr_el1), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mdscr_el1), },
     /* MDCCSR_EL0, aka DBGDSCRint. This is a read-only mirror of MDSCR_EL1.
      * We don't implement the configurable EL0 access.
      */
     { "MDCCSR_EL0", 14,0,1, 2,0,0, ARM_CP_STATE_BOTH,
-      ARM_CP_NO_MIGRATE, PL1_R, NULL, 0, offsetof(CPUARMState, cp15.mdscr_el1),
+      ARM_CP_NO_MIGRATE, PL1_R, 0, NULL, 0, offsetof(CPUARMState, cp15.mdscr_el1), {0, 0},
       NULL,NULL,NULL,NULL,NULL, arm_cp_reset_ignore },
     /* We define a dummy WI OSLAR_EL1, because Linux writes to it. */
     { "OSLAR_EL1", 14,1,0, 2,0,4, ARM_CP_STATE_BOTH,
@@ -2061,9 +2061,9 @@ static const ARMCPRegInfo debug_cp_reginfo[] = {
 static const ARMCPRegInfo debug_lpae_cp_reginfo[] = {
     /* 64 bit access versions of the (dummy) debug registers */
     { "DBGDRAR", 14, 0,1, 0,0, 0, 0,
-      ARM_CP_CONST|ARM_CP_64BIT, PL0_R, NULL, 0 },
+      ARM_CP_CONST|ARM_CP_64BIT, PL0_R, 0, NULL, 0 },
     { "DBGDSAR", 14, 0,2, 0,0, 0, 0,
-      ARM_CP_CONST|ARM_CP_64BIT, PL0_R, NULL, 0 },
+      ARM_CP_CONST|ARM_CP_64BIT, PL0_R, 0, NULL, 0 },
     REGINFO_SENTINEL
 };
 
@@ -2319,7 +2319,7 @@ static void define_debug_regs(ARMCPU *cpu)
     int wrps, brps, ctx_cmps;
     ARMCPRegInfo dbgdidr = {
         "DBGDIDR", 14,0,0, 0,0,0, 0,
-        ARM_CP_CONST, PL0_R, NULL, cpu->dbgdidr,
+        ARM_CP_CONST, PL0_R, 0, NULL, cpu->dbgdidr,
     };
 
     /* Note that all these register fields hold "number of Xs minus 1". */
@@ -2349,11 +2349,11 @@ static void define_debug_regs(ARMCPU *cpu)
     for (i = 0; i < brps + 1; i++) {
         ARMCPRegInfo dbgregs[] = {
             { "DBGBVR", 14,0,i, 2,0,4,ARM_CP_STATE_BOTH,
-              0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.dbgbvr[i]),
+              0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.dbgbvr[i]), {0, 0},
               NULL, NULL,dbgbvr_write, NULL,raw_write
             },
             { "DBGBCR", 14,0,i, 2,0,5, ARM_CP_STATE_BOTH,
-              0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.dbgbcr[i]),
+              0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.dbgbcr[i]), {0, 0},
               NULL, NULL,dbgbcr_write, NULL,raw_write
             },
             REGINFO_SENTINEL
@@ -2364,11 +2364,11 @@ static void define_debug_regs(ARMCPU *cpu)
     for (i = 0; i < wrps + 1; i++) {
         ARMCPRegInfo dbgregs[] = {
             { "DBGWVR", 14,0,i, 2,0,6, ARM_CP_STATE_BOTH,
-              0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.dbgwvr[i]),
+              0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.dbgwvr[i]), {0, 0},
               NULL, NULL,dbgwvr_write, NULL,raw_write
             },
             { "DBGWCR", 14,0,i, 2,0,7, ARM_CP_STATE_BOTH,
-              0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.dbgwcr[i]),
+              0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.dbgwcr[i]), {0, 0},
               NULL, NULL,dbgwcr_write, NULL,raw_write
             },
             REGINFO_SENTINEL
@@ -2398,38 +2398,38 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         /* The ID registers all have impdef reset values */
         ARMCPRegInfo v6_idregs[] = {
             { "ID_PFR0", 0,0,1, 3,0,0, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_pfr0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_pfr0 },
             { "ID_PFR1", 0,0,1, 3,0,1, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_pfr1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_pfr1 },
             { "ID_DFR0", 0,0,1, 3,0,2, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_dfr0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_dfr0 },
             { "ID_AFR0", 0,0,1, 3,0,3, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_afr0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_afr0 },
             { "ID_MMFR0", 0,0,1, 3,0,4, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_mmfr0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_mmfr0 },
             { "ID_MMFR1", 0,0,1, 3,0,5, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_mmfr1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_mmfr1 },
             { "ID_MMFR2", 0,0,1, 3,0,6, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_mmfr2 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_mmfr2 },
             { "ID_MMFR3", 0,0,1, 3,0,7, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_mmfr3 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_mmfr3 },
             { "ID_ISAR0", 0,0,2, 3,0,0, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_isar0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar0 },
             { "ID_ISAR1", 0,0,2, 3,0,1, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_isar1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar1 },
             { "ID_ISAR2", 0,0,2, 3,0,2, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_isar2 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar2 },
             { "ID_ISAR3", 0,0,2, 3,0,3, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_isar3 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar3 },
             { "ID_ISAR4", 0,0,2, 3,0,4, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_isar4 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar4 },
             { "ID_ISAR5", 0,0,2, 3,0,5, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_isar5 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar5 },
             /* 6..7 are as yet unallocated and must RAZ */
             { "ID_ISAR6", 15,0,2, 0,0,6, 0,
-              ARM_CP_CONST, PL1_R, NULL, 0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
             { "ID_ISAR7", 15,0,2, 0,0,7, 0,
-              ARM_CP_CONST, PL1_R, NULL, 0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
             REGINFO_SENTINEL
         };
         define_arm_cp_regs(cpu, v6_idregs);
@@ -2446,7 +2446,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
     if (arm_feature(env, ARM_FEATURE_V7)) {
         ARMCPRegInfo clidr = {
             "CLIDR", 0,0,0, 3,1,1, ARM_CP_STATE_BOTH,
-            ARM_CP_CONST, PL1_R, NULL, cpu->clidr
+            ARM_CP_CONST, PL1_R, 0, NULL, cpu->clidr
         };
         /* v7 performance monitor control register: same implementor
          * field as main ID register, and we implement only the cycle
@@ -2455,12 +2455,12 @@ void register_cp_regs_for_features(ARMCPU *cpu)
 #ifndef CONFIG_USER_ONLY
         ARMCPRegInfo pmcr = {
             "PMCR", 15,9,12, 0,0,0, 0,
-            ARM_CP_IO | ARM_CP_NO_MIGRATE, PL0_RW, NULL, 0, offsetoflow32(CPUARMState, cp15.c9_pmcr),
+            ARM_CP_IO | ARM_CP_NO_MIGRATE, PL0_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c9_pmcr), {0, 0},
             pmreg_access, NULL,pmcr_write, NULL,raw_write,
         };
         ARMCPRegInfo pmcr64 = {
             "PMCR_EL0", 0,9,12, 3,3,0, ARM_CP_STATE_AA64,
-            ARM_CP_IO, PL0_RW, NULL, cpu->midr & 0xff000000, offsetof(CPUARMState, cp15.c9_pmcr),
+            ARM_CP_IO, PL0_RW, 0, NULL, cpu->midr & 0xff000000, offsetof(CPUARMState, cp15.c9_pmcr), {0, 0},
             pmreg_access, NULL,pmcr_write, NULL,raw_write,
         };
         define_one_arm_cp_reg(cpu, &pmcr);
@@ -2476,11 +2476,11 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         /* AArch64 ID registers, which all have impdef reset values */
         ARMCPRegInfo v8_idregs[] = {
             { "ID_AA64PFR0_EL1", 0,0,4, 3,0,0, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_aa64pfr0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64pfr0 },
             { "ID_AA64PFR1_EL1", 0,0,4, 3,0,1, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_aa64pfr1},
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64pfr1},
             { "ID_AA64DFR0_EL1", 0,0,5, 3,0,0, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL,
+              ARM_CP_CONST, PL1_R, 0, NULL,
               /* We mask out the PMUVer field, because we don't currently
                * implement the PMU. Not advertising it prevents the guest
                * from trying to use it and getting UNDEFs on registers we
@@ -2488,30 +2488,30 @@ void register_cp_regs_for_features(ARMCPU *cpu)
                */
               cpu->id_aa64dfr0 & ~0xf00 },
             { "ID_AA64DFR1_EL1", 0,0,5, 3,0,1, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_aa64dfr1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64dfr1 },
             { "ID_AA64AFR0_EL1", 0,0,5, 3,0,4, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_aa64afr0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64afr0 },
             { "ID_AA64AFR1_EL1", 0,0,5, 3,0,5, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_aa64afr1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64afr1 },
             { "ID_AA64ISAR0_EL1", 0,0,6, 3,0,0, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_aa64isar0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64isar0 },
             { "ID_AA64ISAR1_EL1", 0,0,6, 3,0,1, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_aa64isar1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64isar1 },
             { "ID_AA64MMFR0_EL1", 0,0,7, 3,0,0, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_aa64mmfr0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64mmfr0 },
             { "ID_AA64MMFR1_EL1", 0,0,7, 3,0,1, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->id_aa64mmfr1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64mmfr1 },
             { "MVFR0_EL1", 0,0,3, 3,0,0, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->mvfr0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->mvfr0 },
             { "MVFR1_EL1", 0,0,3, 3,0,1, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->mvfr1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->mvfr1 },
             { "MVFR2_EL1", 0,0,3, 3,0,2, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, NULL, cpu->mvfr2 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->mvfr2 },
             REGINFO_SENTINEL
         };
         ARMCPRegInfo rvbar = {
             "RVBAR_EL1", 0,12,0, 3,0,2, ARM_CP_STATE_AA64,
-            ARM_CP_CONST, PL1_R, NULL, cpu->rvbar
+            ARM_CP_CONST, PL1_R, 0, NULL, cpu->rvbar
         };
         define_one_arm_cp_reg(cpu, &rvbar);
         define_arm_cp_regs(cpu, v8_idregs);
@@ -2590,24 +2590,24 @@ void register_cp_regs_for_features(ARMCPU *cpu)
              * and friends override accordingly.
              */
             { "MIDR", 15,0,0, 0,0,CP_ANY, 0,
-              ARM_CP_OVERRIDE, PL1_R, NULL, cpu->midr, offsetof(CPUARMState, cp15.c0_cpuid),
+              ARM_CP_OVERRIDE, PL1_R, 0, NULL, cpu->midr, offsetof(CPUARMState, cp15.c0_cpuid), {0, 0},
               NULL, NULL,arm_cp_write_ignore, NULL,raw_write, },
             /* crn = 0 op1 = 0 crm = 3..7 : currently unassigned; we RAZ. */
             { "DUMMY",
               15,0,3, 0,0,CP_ANY, 0,
-              ARM_CP_CONST, PL1_R, NULL, 0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
             { "DUMMY",
               15,0,4, 0,0,CP_ANY, 0,
-              ARM_CP_CONST, PL1_R, NULL, 0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
             { "DUMMY",
               15,0,5, 0,0,CP_ANY, 0,
-              ARM_CP_CONST, PL1_R, NULL, 0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
             { "DUMMY",
               15,0,6, 0,0,CP_ANY, 0,
-              ARM_CP_CONST, PL1_R, NULL, 0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
             { "DUMMY",
               15,0,7, 0,0,CP_ANY, 0,
-              ARM_CP_CONST, PL1_R, NULL, 0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
             REGINFO_SENTINEL
         };
         ARMCPRegInfo id_v8_midr_cp_reginfo[] = {
@@ -2616,23 +2616,23 @@ void register_cp_regs_for_features(ARMCPU *cpu)
              * (strictly speaking IMPDEF) alias of the MIDR, REVIDR.
              */
             { "MIDR_EL1", 0,0,0, 3,0,0, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->midr },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->midr },
             { "REVIDR_EL1", 0,0,0, 3,0,6, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, NULL, cpu->midr },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->midr },
             REGINFO_SENTINEL
         };
         ARMCPRegInfo id_cp_reginfo[] = {
             /* These are common to v8 and pre-v8 */
             { "CTR", 15,0,0, 0,0,1, 0,
-              ARM_CP_CONST, PL1_R, NULL, cpu->ctr },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->ctr },
             { "CTR_EL0", 0,0,0, 3,3,1, ARM_CP_STATE_AA64,
-             ARM_CP_CONST, PL0_R, NULL, cpu->ctr, 0,
+             ARM_CP_CONST, PL0_R, 0, NULL, cpu->ctr, 0, {0, 0},
              ctr_el0_access, },
             /* TCMTR and TLBTR exist in v8 but have no 64-bit versions */
             { "TCMTR", 15,0,0, 0,0,2, 0,
-              ARM_CP_CONST, PL1_R, NULL, 0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
             { "TLBTR", 15,0,0, 0,0,3, 0,
-              ARM_CP_CONST, PL1_R, NULL, 0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
             REGINFO_SENTINEL
         };
         ARMCPRegInfo crn0_wi_reginfo = {
@@ -2671,7 +2671,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
     if (arm_feature(env, ARM_FEATURE_AUXCR)) {
         ARMCPRegInfo auxcr = {
             "ACTLR_EL1", 0,1,0, 3,0,1, ARM_CP_STATE_BOTH,
-            ARM_CP_CONST, PL1_RW, NULL, cpu->reset_auxcr
+            ARM_CP_CONST, PL1_RW, 0, NULL, cpu->reset_auxcr
         };
         define_one_arm_cp_reg(cpu, &auxcr);
     }
@@ -2683,9 +2683,9 @@ void register_cp_regs_for_features(ARMCPU *cpu)
                 | extract64(cpu->reset_cbar, 32, 12);
             ARMCPRegInfo cbar_reginfo[] = {
                 { "CBAR", 15,15,0, 0,4,0, 0,
-                  ARM_CP_CONST, PL1_R, NULL, cpu->reset_cbar },
+                  ARM_CP_CONST, PL1_R, 0, NULL, cpu->reset_cbar },
                 { "CBAR_EL1", 0,15,3, 3,1,0, ARM_CP_STATE_AA64,
-                  ARM_CP_CONST, PL1_R, NULL, cbar32 },
+                  ARM_CP_CONST, PL1_R, 0, NULL, cbar32 },
                 REGINFO_SENTINEL
             };
             /* We don't implement a r/w 64 bit CBAR currently */
@@ -2694,7 +2694,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         } else {
             ARMCPRegInfo cbar = {
                 "CBAR", 15,15,0, 0,4,0, 0,
-                0, PL1_R|PL3_W, NULL, cpu->reset_cbar, offsetof(CPUARMState, cp15.c15_config_base_address)
+                0, PL1_R|PL3_W, 0, NULL, cpu->reset_cbar, offsetof(CPUARMState, cp15.c15_config_base_address)
             };
             if (arm_feature(env, ARM_FEATURE_CBAR_RO)) {
                 cbar.access = PL1_R;
@@ -2708,7 +2708,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
     if (arm_feature(env, ARM_FEATURE_VBAR)) {
         ARMCPRegInfo vbar_cp_reginfo[] = {
             { "VBAR", 0,12,0, 3,0,0, ARM_CP_STATE_BOTH,
-              0, PL1_RW, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[1]),
+              0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[1]), {0, 0},
               NULL, NULL, vbar_write, },
             REGINFO_SENTINEL
         };
@@ -2719,7 +2719,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
     {
         ARMCPRegInfo sctlr = {
             "SCTLR", 0,1,0, 3,0,0, ARM_CP_STATE_BOTH,
-            0, PL1_RW, NULL, cpu->reset_sctlr, offsetof(CPUARMState, cp15.c1_sys),
+            0, PL1_RW, 0, NULL, cpu->reset_sctlr, offsetof(CPUARMState, cp15.c1_sys), {0, 0},
             NULL, NULL,sctlr_write, NULL,raw_write,
         };
         if (arm_feature(env, ARM_FEATURE_XSCALE)) {
