@@ -751,9 +751,6 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
     { "PMINTENCLR", 15,9,14, 0,0,2, 0,
       ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pminten), {0, 0},
       NULL, NULL, pmintenclr_write, },
-    { "SCR", 15,1,1, 0,0,0, 0,
-      0, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.scr_el3), {0, 0},
-      NULL, NULL, scr_write },
     { "CCSIDR", 0,0,0, 3,1,0, ARM_CP_STATE_BOTH,
       ARM_CP_NO_MIGRATE, PL1_R, 0, NULL, 0, 0, {0, 0},
       NULL, ccsidr_read, },
@@ -1987,9 +1984,16 @@ static const ARMCPRegInfo v8_el3_cp_reginfo[] = {
     { "VBAR_EL3", 0,12,0, 3,6,0, ARM_CP_STATE_AA64,
       0, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[3]), {0, 0},
       NULL, NULL, vbar_write, },
+    REGINFO_SENTINEL
+};
+
+static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "SCR_EL3", 0,1,1, 3,6,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_MIGRATE, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.scr_el3), {0, 0},
+      0, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.scr_el3), {0, 0},
       NULL, NULL, scr_write },
+    { "SCR", 15,1,1, 0,0,0, 0,
+      ARM_CP_NO_MIGRATE, PL3_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.scr_el3), {0, 0},
+      NULL, NULL, scr_write, NULL, NULL, arm_cp_reset_ignore },
     REGINFO_SENTINEL
 };
 
@@ -2528,7 +2532,10 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         }
     }
     if (arm_feature(env, ARM_FEATURE_EL3)) {
-        define_arm_cp_regs(cpu, v8_el3_cp_reginfo);
+        if (arm_feature(env, ARM_FEATURE_V8)) {
+            define_arm_cp_regs(cpu, v8_el3_cp_reginfo);
+        }
+        define_arm_cp_regs(cpu, el3_cp_reginfo);
     }
     if (arm_feature(env, ARM_FEATURE_MPU)) {
         /* These are the MPU registers prior to PMSAv6. Any new
