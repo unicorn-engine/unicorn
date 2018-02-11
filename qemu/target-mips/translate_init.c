@@ -408,7 +408,7 @@ static const mips_def_t mips_defs[] =
                        (1 << CP0C1_CA),
         MIPS_CONFIG2,
         MIPS_CONFIG3 | (1 << CP0C3_DSP2P) | (1 << CP0C3_DSPP) |
-                       (0 << CP0C3_VInt),
+                       (1 << CP0C3_VInt),
         0,0,
         0,0,
         0,
