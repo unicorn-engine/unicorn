@@ -2802,7 +2802,7 @@ void arm_cpu_list(FILE *f, fprintf_function cpu_fprintf)
 }
 
 static void add_cpreg_to_hashtable(ARMCPU *cpu, const ARMCPRegInfo *r,
-                                   void *opaque, int state,
+                                   void *opaque, int state, int secstate,
                                    int crm, int opc1, int opc2)
 {
     /* Private utility function for define_one_arm_cp_reg_with_opaque():
@@ -2811,6 +2811,7 @@ static void add_cpreg_to_hashtable(ARMCPU *cpu, const ARMCPRegInfo *r,
     uint32_t *key = g_new(uint32_t, 1);
     ARMCPRegInfo *r2 = g_memdup(r, sizeof(ARMCPRegInfo));
     int is64 = (r->type & ARM_CP_64BIT) ? 1 : 0;
+    int ns = (r->secure & ARM_CP_SECSTATE_NS) ? 1 : 0;
     if (r->state == ARM_CP_STATE_BOTH && state == ARM_CP_STATE_AA32) {
         /* The AArch32 view of a shared register sees the lower 32 bits
          * of a 64 bit backing field. It is not migratable as the AArch64
@@ -2842,7 +2843,7 @@ static void add_cpreg_to_hashtable(ARMCPU *cpu, const ARMCPRegInfo *r,
         *key = ENCODE_AA64_CP_REG(r2->cp, r2->crn, crm,
                                   r2->opc0, opc1, opc2);
     } else {
-        *key = ENCODE_CP_REG(r2->cp, is64, r2->crn, crm, opc1, opc2);
+        *key = ENCODE_CP_REG(r2->cp, is64, ns, r2->crn, crm, opc1, opc2);
     }
     if (opaque) {
         r2->opaque = opaque;
@@ -2992,7 +2993,7 @@ void define_one_arm_cp_reg_with_opaque(ARMCPU *cpu,
                         continue;
                     }
                     add_cpreg_to_hashtable(cpu, r, opaque, state,
-                                           crm, opc1, opc2);
+                                           ARM_CP_SECSTATE_NS, crm, opc1, opc2);
                 }
             }
         }
