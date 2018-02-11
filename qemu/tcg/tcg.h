@@ -744,6 +744,7 @@ struct TCGContext {
 
     /* qemu/tcg/optimize.c */
     struct tcg_temp_info temps2[TCG_MAX_TEMPS];
+    TCGTempSet temps2_used;
 
     /* qemu/target-m68k/translate.c */
     TCGv_i32 cpu_halted;
