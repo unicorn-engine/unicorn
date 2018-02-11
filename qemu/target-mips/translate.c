@@ -10819,6 +10819,7 @@ static void gen_mips16_save (DisasContext *ctx,
     TCGv **cpu_gpr = (TCGv **)tcg_ctx->cpu_gpr;
     TCGv t0 = tcg_temp_new(tcg_ctx);
     TCGv t1 = tcg_temp_new(tcg_ctx);
+    TCGv t2 = tcg_temp_new(tcg_ctx);
     int args, astatic;
 
     switch (aregs) {
@@ -10876,9 +10877,9 @@ static void gen_mips16_save (DisasContext *ctx,
 
     gen_load_gpr(ctx, t0, 29);
 
-#define DECR_AND_STORE(reg) do {                                 \
-        tcg_gen_subi_tl(tcg_ctx, t0, t0, 4);                              \
-        gen_load_gpr(ctx, t1, reg);                                   \
+#define DECR_AND_STORE(reg) do {                                    \
+        tcg_gen_movi_tl(tcg_ctx, t2, -4);                               \
+        gen_op_addr_add(ctx, t0, t0, t2);                           \
         tcg_gen_qemu_st_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_TEUL); \
     } while (0)
 
@@ -10961,9 +10962,11 @@ static void gen_mips16_save (DisasContext *ctx,
     }
 #undef DECR_AND_STORE
 
-    tcg_gen_subi_tl(tcg_ctx, *cpu_gpr[29], *cpu_gpr[29], framesize);
+    tcg_gen_movi_tl(tcg_ctx, t2, -framesize);
+    gen_op_addr_add(ctx, *cpu_gpr[29], *cpu_gpr[29], t2);
     tcg_temp_free(tcg_ctx, t0);
     tcg_temp_free(tcg_ctx, t1);
+    tcg_temp_free(tcg_ctx, t2);
 }
 
 static void gen_mips16_restore (DisasContext *ctx,
