@@ -577,7 +577,7 @@ static bool swap_commutative2(TCGContext *s, TCGArg *p1, TCGArg *p2)
 }
 
 /* Propagate constants and copies, fold constant expressions. */
-static void tcg_constant_folding(TCGContext *s)
+void tcg_optimize(TCGContext *s)
 {
     struct tcg_temp_info *temps = s->temps2;
     int oi, oi_next, nb_temps, nb_globals;
@@ -1331,9 +1331,4 @@ static void tcg_constant_folding(TCGContext *s)
             break;
         }
     }
-}
-
-void tcg_optimize(TCGContext *s)
-{
-    tcg_constant_folding(s);
 }
