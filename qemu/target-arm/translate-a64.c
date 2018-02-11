@@ -3571,8 +3571,9 @@ static void disas_cc(DisasContext *s, uint32_t insn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     unsigned int sf, op, y, cond, rn, nzcv, is_imm;
-    TCGLabel *label_continue = NULL;
+    TCGv_i32 tcg_t0, tcg_t1, tcg_t2;
     TCGv_i64 tcg_tmp, tcg_y, tcg_rn;
+    DisasCompare c;
 
     if (!extract32(insn, 29, 1)) {
         unallocated_encoding(s);
@@ -3590,19 +3591,13 @@ static void disas_cc(DisasContext *s, uint32_t insn)
     rn = extract32(insn, 5, 5);
     nzcv = extract32(insn, 0, 4);
 
-    if (cond < 0x0e) { /* not always */
-        TCGLabel *label_match = gen_new_label(tcg_ctx);
-        label_continue = gen_new_label(tcg_ctx);
-        arm_gen_test_cc(tcg_ctx, cond, label_match);
-        /* nomatch: */
-        tcg_tmp = tcg_temp_new_i64(tcg_ctx);
-        tcg_gen_movi_i64(tcg_ctx, tcg_tmp, nzcv << 28);
-        gen_set_nzcv(tcg_ctx, tcg_tmp);
-        tcg_temp_free_i64(tcg_ctx, tcg_tmp);
-        tcg_gen_br(tcg_ctx, label_continue);
-        gen_set_label(tcg_ctx, label_match);
-    }
-    /* match, or condition is always */
+    /* Set T0 = !COND.  */
+    tcg_t0 = tcg_temp_new_i32(tcg_ctx);
+    arm_test_cc(tcg_ctx, &c, cond);
+    tcg_gen_setcondi_i32(tcg_ctx, tcg_invert_cond(c.cond), tcg_t0, c.value, 0);
+    arm_free_cc(tcg_ctx, &c);
+
+    /* Load the arguments for the new comparison.  */
     if (is_imm) {
         tcg_y = new_tmp_a64(s);
         tcg_gen_movi_i64(tcg_ctx, tcg_y, y);
@@ -3611,6 +3606,7 @@ static void disas_cc(DisasContext *s, uint32_t insn)
     }
     tcg_rn = cpu_reg(s, rn);
 
+    /* Set the flags for the new comparison.  */
     tcg_tmp = tcg_temp_new_i64(tcg_ctx);
     if (op) {
         gen_sub_CC(s, sf, tcg_tmp, tcg_rn, tcg_y);
@@ -3619,8 +3615,51 @@ static void disas_cc(DisasContext *s, uint32_t insn)
     }
     tcg_temp_free_i64(tcg_ctx, tcg_tmp);
 
-    if (cond < 0x0e) { /* continue */
-        gen_set_label(tcg_ctx, label_continue);
+    /* If COND was false, force the flags to #nzcv.  Compute two masks
+     * to help with this: T1 = (COND ? 0 : -1), T2 = (COND ? -1 : 0).
+     * For tcg hosts that support ANDC, we can make do with just T1.
+     * In either case, allow the tcg optimizer to delete any unused mask.
+     */
+    tcg_t1 = tcg_temp_new_i32(tcg_ctx);
+    tcg_t2 = tcg_temp_new_i32(tcg_ctx);
+    tcg_gen_neg_i32(tcg_ctx, tcg_t1, tcg_t0);
+    tcg_gen_subi_i32(tcg_ctx, tcg_t2, tcg_t0, 1);
+
+    if (nzcv & 8) { /* N */
+        tcg_gen_or_i32(tcg_ctx, tcg_ctx->cpu_NF, tcg_ctx->cpu_NF, tcg_t1);
+    } else {
+        if (TCG_TARGET_HAS_andc_i32) {
+            tcg_gen_andc_i32(tcg_ctx, tcg_ctx->cpu_NF, tcg_ctx->cpu_NF, tcg_t1);
+        } else {
+            tcg_gen_and_i32(tcg_ctx, tcg_ctx->cpu_NF, tcg_ctx->cpu_NF, tcg_t2);
+        }
+    }
+    if (nzcv & 4) { /* Z */
+        if (TCG_TARGET_HAS_andc_i32) {
+            tcg_gen_andc_i32(tcg_ctx, tcg_ctx->cpu_ZF, tcg_ctx->cpu_ZF, tcg_t1);
+        } else {
+            tcg_gen_and_i32(tcg_ctx, tcg_ctx->cpu_ZF, tcg_ctx->cpu_ZF, tcg_t2);
+        }
+    } else {
+        tcg_gen_or_i32(tcg_ctx, tcg_ctx->cpu_ZF, tcg_ctx->cpu_ZF, tcg_t0);
+    }
+    if (nzcv & 2) { /* C */
+        tcg_gen_or_i32(tcg_ctx, tcg_ctx->cpu_CF, tcg_ctx->cpu_CF, tcg_t0);
+    } else {
+        if (TCG_TARGET_HAS_andc_i32) {
+            tcg_gen_andc_i32(tcg_ctx, tcg_ctx->cpu_CF, tcg_ctx->cpu_CF, tcg_t1);
+        } else {
+            tcg_gen_and_i32(tcg_ctx, tcg_ctx->cpu_CF, tcg_ctx->cpu_CF, tcg_t2);
+        }
+    }
+    if (nzcv & 1) { /* V */
+        tcg_gen_or_i32(tcg_ctx, tcg_ctx->cpu_VF, tcg_ctx->cpu_VF, tcg_t1);
+    } else {
+        if (TCG_TARGET_HAS_andc_i32) {
+            tcg_gen_andc_i32(tcg_ctx, tcg_ctx->cpu_VF, tcg_ctx->cpu_VF, tcg_t1);
+        } else {
+            tcg_gen_and_i32(tcg_ctx, tcg_ctx->cpu_VF, tcg_ctx->cpu_VF, tcg_t2);
+        }
     }
 }
 
