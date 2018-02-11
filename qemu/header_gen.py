@@ -3593,6 +3593,7 @@ mips_symbols = (
     'helper_mftc0_configx',
     'helper_mtc0_config0',
     'helper_mtc0_config2',
+    'helper_mtc0_config3',
     'helper_mtc0_config4',
     'helper_mtc0_config5',
     'helper_mtc0_lladdr',

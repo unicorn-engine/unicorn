@@ -5912,8 +5912,10 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             ctx->bstate = BS_STOP;
             break;
         case 3:
-            /* ignored, read only */
+            gen_helper_mtc0_config3(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config3";
+            /* Stop translation as we may have switched the execution mode */
+            ctx->bstate = BS_STOP;
             break;
         case 4:
             gen_helper_mtc0_config4(tcg_ctx, tcg_ctx->cpu_env, arg);
@@ -7165,8 +7167,10 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             ctx->bstate = BS_STOP;
             break;
         case 3:
-            /* ignored */
+            gen_helper_mtc0_config3(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config3";
+            /* Stop translation as we may have switched the execution mode */
+            ctx->bstate = BS_STOP;
             break;
         case 4:
             /* currently ignored */

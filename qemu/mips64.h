@@ -3540,6 +3540,7 @@
 #define helper_mftc0_configx helper_mftc0_configx_mips64
 #define helper_mtc0_config0 helper_mtc0_config0_mips64
 #define helper_mtc0_config2 helper_mtc0_config2_mips64
+#define helper_mtc0_config3 helper_mtc0_config3_mips64
 #define helper_mtc0_config4 helper_mtc0_config4_mips64
 #define helper_mtc0_config5 helper_mtc0_config5_mips64
 #define helper_mtc0_lladdr helper_mtc0_lladdr_mips64
