@@ -2852,7 +2852,6 @@ symbols = (
     'tcg_gen_subfi_i64',
     'tcg_gen_subi_i32',
     'tcg_gen_subi_i64',
-    'tcg_gen_trunc_i64_i32',
     'tcg_gen_xor_i32',
     'tcg_gen_xor_i64',
     'tcg_gen_xori_i32',

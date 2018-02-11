@@ -16711,7 +16711,7 @@ static void decode_opc_special3_r6(CPUMIPSState *env, DisasContext *ctx)
 #if defined(TARGET_MIPS64)
                     tcg_gen_ext32s_i64(tcg_ctx, *cpu_gpr[rd], t2);
 #else
-                    tcg_gen_trunc_i64_i32(tcg_ctx, *cpu_gpr[rd], t2);
+                    tcg_gen_extrl_i64_i32(tcg_ctx, *cpu_gpr[rd], t2);
 #endif
                     tcg_temp_free_i64(tcg_ctx, t2);
                     tcg_temp_free(tcg_ctx, t1);
