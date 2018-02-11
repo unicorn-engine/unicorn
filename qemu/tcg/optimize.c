@@ -39,31 +39,26 @@ static inline bool temp_is_const(TCGContext *s, TCGArg arg)
 {
     struct tcg_temp_info *temps = s->temps2;
 
-    return temps[arg].state == TCG_TEMP_CONST;
+    return temps[arg].is_const;
 }
 
 static inline bool temp_is_copy(TCGContext *s, TCGArg arg)
 {
     struct tcg_temp_info *temps = s->temps2;
 
-    return temps[arg].state == TCG_TEMP_COPY;
+    return temps[arg].next_copy != arg;
 }
 
-/* Reset TEMP's state to TCG_TEMP_UNDEF.  If TEMP only had one copy, remove
-   the copy flag from the left temp.  */
+/* Reset TEMP's state, possibly removing the temp for the list of copies.  */
 static void reset_temp(TCGContext *s, TCGArg temp)
 {
     struct tcg_temp_info *temps = s->temps2;
 
-    if (temp_is_copy(s, temp)) {
-        if (temps[temp].prev_copy == temps[temp].next_copy) {
-            temps[temps[temp].next_copy].state = TCG_TEMP_UNDEF;
-        } else {
-            temps[temps[temp].next_copy].prev_copy = temps[temp].prev_copy;
-            temps[temps[temp].prev_copy].next_copy = temps[temp].next_copy;
-        }
-    }
-    temps[temp].state = TCG_TEMP_UNDEF;
+    temps[temps[temp].next_copy].prev_copy = temps[temp].prev_copy;
+    temps[temps[temp].prev_copy].next_copy = temps[temp].next_copy;
+    temps[temp].next_copy = temp;
+    temps[temp].prev_copy = temp;
+    temps[temp].is_const = false;
     temps[temp].mask = -1;
 }
 
@@ -81,7 +76,9 @@ static void init_temp_info(TCGContext *s, TCGArg temp)
     TCGTempSet *temps_used = &s->temps2_used;
 
     if (!test_bit(temp, temps_used->l)) {
-        temps[temp].state = TCG_TEMP_UNDEF;
+        temps[temp].next_copy = temp;
+        temps[temp].prev_copy = temp;
+        temps[temp].is_const = false;
         temps[temp].mask = -1;
         set_bit(temp, temps_used->l);
     }
@@ -216,7 +213,7 @@ static void tcg_opt_gen_movi(TCGContext *s, TCGOp *op, TCGArg *args,
 
     reset_temp(s, dst);
 
-    temps[dst].state = TCG_TEMP_CONST;
+    temps[dst].is_const = true;
     temps[dst].val = val;
     mask = val;
     if (TCG_TARGET_REG_BITS > 32 && new_op == INDEX_op_movi_i32) {
@@ -260,16 +257,11 @@ static void tcg_opt_gen_mov(TCGContext *s, TCGOp *op, TCGArg *args,
     assert(!temp_is_const(s, src));
 
     if (s->temps[src].type == s->temps[dst].type) {
-        if (!temp_is_copy(s, src)) {
-            temps[src].state = TCG_TEMP_COPY;
-            temps[src].next_copy = src;
-            temps[src].prev_copy = src;
-        }
-        temps[dst].state = TCG_TEMP_COPY;
         temps[dst].next_copy = temps[src].next_copy;
         temps[dst].prev_copy = src;
         temps[temps[dst].next_copy].prev_copy = dst;
         temps[src].next_copy = dst;
+        temps[dst].is_const = false;
     }
 
     args[0] = dst;
@@ -560,7 +552,6 @@ static TCGArg do_constant_folding_cond2(TCGContext *s, TCGArg *p1, TCGArg *p2, T
 
 static bool swap_commutative(TCGContext *s, TCGArg dest, TCGArg *p1, TCGArg *p2)
 {
-    struct tcg_temp_info *temps = s->temps2;
     TCGArg a1 = *p1, a2 = *p2;
     int sum = 0;
 
@@ -579,7 +570,6 @@ static bool swap_commutative(TCGContext *s, TCGArg dest, TCGArg *p1, TCGArg *p2)
 
 static bool swap_commutative2(TCGContext *s, TCGArg *p1, TCGArg *p2)
 {
-    struct tcg_temp_info *temps = s->temps2;
     int sum = 0;
 
     sum += temp_is_const(s, p1[0]);
@@ -723,7 +713,7 @@ void tcg_optimize(TCGContext *s)
                 TCGOpcode neg_op;
                 bool have_neg;
 
-                if (temps[args[2]].state == TCG_TEMP_CONST) {
+                if (temp_is_const(s, args[2])) {
                     /* Proceed with possible constant folding. */
                     break;
                 }
@@ -737,7 +727,7 @@ void tcg_optimize(TCGContext *s)
                 if (!have_neg) {
                     break;
                 }
-                if (temp_is_const(s, args[2]) && temps[args[1]].val == 0) {
+                if (temp_is_const(s, args[1]) && temps[args[1]].val == 0) {
                     op->opc = neg_op;
                     reset_temp(s, args[0]);
                     args[1] = args[2];

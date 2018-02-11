@@ -604,14 +604,8 @@ typedef struct TCGOpDef {
 #endif
 } TCGOpDef;
 
-typedef enum {
-    TCG_TEMP_UNDEF = 0,
-    TCG_TEMP_CONST,
-    TCG_TEMP_COPY,
-} tcg_temp_state;
-
 struct tcg_temp_info {
-    tcg_temp_state state;
+    bool is_const;
     uint16_t prev_copy;
     uint16_t next_copy;
     tcg_target_ulong val;
