@@ -4207,21 +4207,6 @@ static void disas_fp_ccomp(DisasContext *s, uint32_t insn)
     }
 }
 
-/* copy src FP register to dst FP register; type specifies single or double */
-static void gen_mov_fp2fp(DisasContext *s, int type, int dst, int src)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    if (type) {
-        TCGv_i64 v = read_fp_dreg(s, src);
-        write_fp_dreg(s, dst, v);
-        tcg_temp_free_i64(tcg_ctx, v);
-    } else {
-        TCGv_i32 v = read_fp_sreg(s, src);
-        write_fp_sreg(s, dst, v);
-        tcg_temp_free_i32(tcg_ctx, v);
-    }
-}
-
 /* C3.6.24 Floating point conditional select
  *   31  30  29 28       24 23  22  21 20  16 15  12 11 10 9    5 4    0
  * +---+---+---+-----------+------+---+------+------+-----+------+------+
@@ -4232,7 +4217,8 @@ static void disas_fp_csel(DisasContext *s, uint32_t insn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     unsigned int mos, type, rm, cond, rn, rd;
-    TCGLabel *label_continue = NULL;
+    TCGv_i64 t_true, t_false, t_zero;
+    DisasCompare64 c;
 
     mos = extract32(insn, 29, 3);
     type = extract32(insn, 22, 2); /* 0 = single, 1 = double */
@@ -4250,21 +4236,23 @@ static void disas_fp_csel(DisasContext *s, uint32_t insn)
         return;
     }
 
-    if (cond < 0x0e) { /* not always */
-        TCGLabel *label_match = gen_new_label(tcg_ctx);
-        label_continue = gen_new_label(tcg_ctx);
-        arm_gen_test_cc(tcg_ctx, cond, label_match);
-        /* nomatch: */
-        gen_mov_fp2fp(s, type, rd, rm);
-        tcg_gen_br(tcg_ctx, label_continue);
-        gen_set_label(tcg_ctx, label_match);
-    }
+    /* Zero extend sreg inputs to 64 bits now.  */
+    t_true = tcg_temp_new_i64(tcg_ctx);
+    t_false = tcg_temp_new_i64(tcg_ctx);
+    read_vec_element(s, t_true, rn, 0, type ? MO_64 : MO_32);
+    read_vec_element(s, t_false, rm, 0, type ? MO_64 : MO_32);
 
-    gen_mov_fp2fp(s, type, rd, rn);
+    a64_test_cc(tcg_ctx, &c, cond);
+    t_zero = tcg_const_i64(tcg_ctx, 0);
+    tcg_gen_movcond_i64(tcg_ctx, c.cond, t_true, c.value, t_zero, t_true, t_false);
+    tcg_temp_free_i64(tcg_ctx, t_zero);
+    tcg_temp_free_i64(tcg_ctx, t_false);
+    a64_free_cc(tcg_ctx, &c);
 
-    if (cond < 0x0e) { /* continue */
-        gen_set_label(tcg_ctx, label_continue);
-    }
+    /* Note that sregs write back zeros to the high bits,
+       and we've already done the zero-extension.  */
+    write_fp_dreg(s, rd, t_true);
+    tcg_temp_free_i64(tcg_ctx, t_true);
 }
 
 /* C3.6.25 Floating-point data-processing (1 source) - single precision */
