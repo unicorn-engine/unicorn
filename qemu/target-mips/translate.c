@@ -2409,7 +2409,14 @@ static void gen_cop1_ldst(DisasContext *ctx, uint32_t op, int rt,
 {
     if (ctx->CP0_Config1 & (1 << CP0C1_FP)) {
         check_cp1_enabled(ctx);
-        gen_flt_ldst(ctx, op, rt, rs, imm);
+        switch (op) {
+        case OPC_LDC1:
+        case OPC_SDC1:
+            check_insn(ctx, ISA_MIPS2);
+            /* Fallthrough */
+        default:
+            gen_flt_ldst(ctx, op, rt, rs, imm);
+        }
     } else {
         generate_exception_err(ctx, EXCP_CpU, 1);
     }
@@ -11092,26 +11099,32 @@ static void decode_i64_mips16 (DisasContext *ctx,
 {
     switch (funct) {
     case I64_LDSP:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         offset = extended ? offset : offset << 3;
         gen_ld(ctx, OPC_LD, ry, 29, offset);
         break;
     case I64_SDSP:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         offset = extended ? offset : offset << 3;
         gen_st(ctx, OPC_SD, ry, 29, offset);
         break;
     case I64_SDRASP:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         offset = extended ? offset : (ctx->opcode & 0xff) << 3;
         gen_st(ctx, OPC_SD, 31, 29, offset);
         break;
     case I64_DADJSP:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         offset = extended ? offset : ((int8_t)ctx->opcode) << 3;
         gen_arith_imm(ctx, OPC_DADDIU, 29, 29, offset);
         break;
     case I64_LDPC:
+        check_insn(ctx, ISA_MIPS3);
+        check_mips_64(ctx);
         if (extended && (ctx->hflags & MIPS_HFLAG_BMASK)) {
             generate_exception(ctx, EXCP_RI);
         } else {
@@ -11120,16 +11133,19 @@ static void decode_i64_mips16 (DisasContext *ctx,
         }
         break;
     case I64_DADDIU5:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         offset = extended ? offset : ((int8_t)(offset << 3)) >> 3;
         gen_arith_imm(ctx, OPC_DADDIU, ry, ry, offset);
         break;
     case I64_DADDIUPC:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         offset = extended ? offset : offset << 2;
         gen_addiupc(ctx, ry, offset, 1, extended);
         break;
     case I64_DADDIUSP:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         offset = extended ? offset : offset << 2;
         gen_arith_imm(ctx, OPC_DADDIU, ry, 29, offset);
@@ -11200,6 +11216,7 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
         break;
 #if defined(TARGET_MIPS64)
     case M16_OPC_LD:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         gen_ld(ctx, OPC_LD, ry, rx, offset);
         break;
@@ -11244,6 +11261,7 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
             gen_arith_imm(ctx, OPC_ADDIU, 29, 29, imm);
             break;
         case I8_SVRS:
+            check_insn(ctx, ISA_MIPS32);
             {
                 int xsregs = (ctx->opcode >> 24) & 0x7;
                 int aregs = (ctx->opcode >> 16) & 0xf;
@@ -11277,6 +11295,8 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
         break;
 #if defined(TARGET_MIPS64)
     case M16_OPC_SD:
+        check_insn(ctx, ISA_MIPS3);
+        check_mips_64(ctx);
         gen_st(ctx, OPC_SD, ry, rx, offset);
         break;
 #endif
@@ -11303,6 +11323,8 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
         break;
 #if defined(TARGET_MIPS64)
     case M16_OPC_LWU:
+        check_insn(ctx, ISA_MIPS3);
+        check_mips_64(ctx);
         gen_ld(ctx, OPC_LWU, ry, rx, offset);
         break;
 #endif
@@ -11402,6 +11424,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
             break;
         case 0x1:
 #if defined(TARGET_MIPS64)
+            check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
             gen_shift_imm(ctx, OPC_DSLL, rx, ry, sa);
 #else
@@ -11418,6 +11441,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
         break;
 #if defined(TARGET_MIPS64)
     case M16_OPC_LD:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         gen_ld(ctx, OPC_LD, ry, rx, offset << 3);
         break;
@@ -11428,6 +11452,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
 
             if ((ctx->opcode >> 4) & 1) {
 #if defined(TARGET_MIPS64)
+                check_insn(ctx, ISA_MIPS3);
                 check_mips_64(ctx);
                 gen_arith_imm(ctx, OPC_DADDIU, ry, rx, imm);
 #else
@@ -11479,6 +11504,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
                               ((int8_t)ctx->opcode) << 3);
                 break;
             case I8_SVRS:
+                check_insn(ctx, ISA_MIPS32);
                 {
                     int do_ra = ctx->opcode & (1 << 6);
                     int do_s0 = ctx->opcode & (1 << 5);
@@ -11534,6 +11560,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
         break;
 #if defined(TARGET_MIPS64)
     case M16_OPC_SD:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         gen_st(ctx, OPC_SD, ry, rx, offset << 3);
         break;
@@ -11561,6 +11588,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
         break;
 #if defined (TARGET_MIPS64)
     case M16_OPC_LWU:
+        check_insn(ctx, ISA_MIPS3);
         check_mips_64(ctx);
         gen_ld(ctx, OPC_LWU, ry, rx, offset << 2);
         break;
@@ -11592,10 +11620,12 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
 #if defined(TARGET_MIPS64)
             case RRR_DADDU:
                 mips32_op = OPC_DADDU;
+                check_insn(ctx, ISA_MIPS3);
                 check_mips_64(ctx);
                 break;
             case RRR_DSUBU:
                 mips32_op = OPC_DSUBU;
+                check_insn(ctx, ISA_MIPS3);
                 check_mips_64(ctx);
                 break;
 #endif
@@ -11616,6 +11646,10 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
                 int nd = (ctx->opcode >> 7) & 0x1;
                 int link = (ctx->opcode >> 6) & 0x1;
                 int ra = (ctx->opcode >> 5) & 0x1;
+
+                if (nd) {
+                    check_insn(ctx, ISA_MIPS32);
+                }
 
                 if (link) {
                     op = OPC_JALR;
@@ -11658,6 +11692,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
             break;
 #if defined (TARGET_MIPS64)
         case RR_DSRL:
+            check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
             gen_shift_imm(ctx, OPC_DSRL, ry, ry, sa);
             break;
@@ -11684,6 +11719,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
             gen_HILO(ctx, OPC_MFHI, 0, rx);
             break;
         case RR_CNVT:
+            check_insn(ctx, ISA_MIPS32);
             switch (cnvt_op) {
             case RR_RY_CNVT_ZEB:
                 tcg_gen_ext8u_tl(tcg_ctx, *cpu_gpr[rx], *cpu_gpr[rx]);
@@ -11699,10 +11735,12 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
                 break;
 #if defined (TARGET_MIPS64)
             case RR_RY_CNVT_ZEW:
+                check_insn(ctx, ISA_MIPS64);
                 check_mips_64(ctx);
                 tcg_gen_ext32u_tl(tcg_ctx, *cpu_gpr[rx], *cpu_gpr[rx]);
                 break;
             case RR_RY_CNVT_SEW:
+                check_insn(ctx, ISA_MIPS64);
                 check_mips_64(ctx);
                 tcg_gen_ext32s_tl(tcg_ctx, *cpu_gpr[rx], *cpu_gpr[rx]);
                 break;
@@ -11717,18 +11755,22 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
             break;
 #if defined (TARGET_MIPS64)
         case RR_DSRA:
+            check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
             gen_shift_imm(ctx, OPC_DSRA, ry, ry, sa);
             break;
         case RR_DSLLV:
+            check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
             gen_shift(ctx, OPC_DSLLV, ry, rx, ry);
             break;
         case RR_DSRLV:
+            check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
             gen_shift(ctx, OPC_DSRLV, ry, rx, ry);
             break;
         case RR_DSRAV:
+            check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
             gen_shift(ctx, OPC_DSRAV, ry, rx, ry);
             break;
@@ -11747,18 +11789,22 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
             break;
 #if defined (TARGET_MIPS64)
         case RR_DMULT:
+            check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
             gen_muldiv(ctx, OPC_DMULT, 0, rx, ry);
             break;
         case RR_DMULTU:
+            check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
             gen_muldiv(ctx, OPC_DMULTU, 0, rx, ry);
             break;
         case RR_DDIV:
+            check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
             gen_muldiv(ctx, OPC_DDIV, 0, rx, ry);
             break;
         case RR_DDIVU:
+            check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
             gen_muldiv(ctx, OPC_DDIVU, 0, rx, ry);
             break;
@@ -13328,20 +13374,26 @@ static void decode_micromips32_opc (CPUMIPSState *env, DisasContext *ctx,
             /* COP2: Not implemented. */
             generate_exception_err(ctx, EXCP_CpU, 2);
             break;
-        case LWP:
-        case SWP:
 #ifdef TARGET_MIPS64
         case LDP:
         case SDP:
+            check_insn(ctx, ISA_MIPS3);
+            check_mips_64(ctx);
+            /* Fallthrough */
 #endif
+        case LWP:
+        case SWP:
             gen_ldst_pair(ctx, minor, rt, rs, SIMM(ctx->opcode, 0, 12));
             break;
-        case LWM32:
-        case SWM32:
 #ifdef TARGET_MIPS64
         case LDM:
         case SDM:
+            check_insn(ctx, ISA_MIPS3);
+            check_mips_64(ctx);
+            /* Fallthrough */
 #endif
+        case LWM32:
+        case SWM32:
             gen_ldst_multiple(ctx, minor, rt, rs, SIMM(ctx->opcode, 0, 12));
             break;
         default:
@@ -13765,21 +13817,33 @@ static void decode_micromips32_opc (CPUMIPSState *env, DisasContext *ctx,
             goto do_st_lr;
 #if defined(TARGET_MIPS64)
         case LDL:
+            check_insn(ctx, ISA_MIPS3);
+            check_mips_64(ctx);
             mips32_op = OPC_LDL;
             goto do_ld_lr;
         case SDL:
+            check_insn(ctx, ISA_MIPS3);
+            check_mips_64(ctx);
             mips32_op = OPC_SDL;
             goto do_st_lr;
         case LDR:
+            check_insn(ctx, ISA_MIPS3);
+            check_mips_64(ctx);
             mips32_op = OPC_LDR;
             goto do_ld_lr;
         case SDR:
+            check_insn(ctx, ISA_MIPS3);
+            check_mips_64(ctx);
             mips32_op = OPC_SDR;
             goto do_st_lr;
         case LWU:
+            check_insn(ctx, ISA_MIPS3);
+            check_mips_64(ctx);
             mips32_op = OPC_LWU;
             goto do_ld_lr;
         case LLD:
+            check_insn(ctx, ISA_MIPS3);
+            check_mips_64(ctx);
             mips32_op = OPC_LLD;
             goto do_ld_lr;
 #endif
@@ -13797,6 +13861,8 @@ static void decode_micromips32_opc (CPUMIPSState *env, DisasContext *ctx,
             break;
 #if defined(TARGET_MIPS64)
         case SCD:
+            check_insn(ctx, ISA_MIPS3);
+            check_mips_64(ctx);
             gen_st_cond(ctx, OPC_SCD, rt, rs, SIMM(ctx->opcode, 0, 12));
             break;
 #endif
@@ -13906,9 +13972,13 @@ static void decode_micromips32_opc (CPUMIPSState *env, DisasContext *ctx,
         goto do_ld;
 #ifdef TARGET_MIPS64
     case LD32:
+        check_insn(ctx, ISA_MIPS3);
+        check_mips_64(ctx);
         mips32_op = OPC_LD;
         goto do_ld;
     case SD32:
+        check_insn(ctx, ISA_MIPS3);
+        check_mips_64(ctx);
         mips32_op = OPC_SD;
         goto do_st;
 #endif
@@ -16469,6 +16539,7 @@ static void decode_opc_special(CPUMIPSState *env, DisasContext *ctx)
         break;
     case OPC_TGE: case OPC_TGEU: case OPC_TLT: case OPC_TLTU: case OPC_TEQ:
     case OPC_TNE:
+        check_insn(ctx, ISA_MIPS2);
         gen_trap(ctx, op1, rs, rt, -1);
         break;
     case OPC_LSA: /* OPC_PMON */
@@ -16493,6 +16564,7 @@ static void decode_opc_special(CPUMIPSState *env, DisasContext *ctx)
         generate_exception(ctx, EXCP_BREAK);
         break;
     case OPC_SYNC:
+        check_insn(ctx, ISA_MIPS2);
         /* Treat as NOP. */
         break;
 
@@ -18574,7 +18646,9 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
         case OPC_BGEZL:
         case OPC_BLTZALL:
         case OPC_BGEZALL:
+            check_insn(ctx, ISA_MIPS2);
             check_insn_opc_removed(ctx, ISA_MIPS32R6);
+            /* Fallthrough */
         case OPC_BLTZ:
         case OPC_BGEZ:
             gen_compute_branch(ctx, op1, 4, rs, -1, imm << 2, 4);
@@ -18594,6 +18668,7 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
             break;
         case OPC_TGEI: case OPC_TGEIU: case OPC_TLTI: case OPC_TLTIU: case OPC_TEQI: /* REGIMM traps */
         case OPC_TNEI:
+            check_insn(ctx, ISA_MIPS2);
             check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_trap(ctx, op1, rs, -1, imm);
             break;
@@ -18800,15 +18875,20 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
         break;
     case OPC_BEQL:
     case OPC_BNEL:
-         check_insn_opc_removed(ctx, ISA_MIPS32R6);
+        check_insn(ctx, ISA_MIPS2);
+        check_insn_opc_removed(ctx, ISA_MIPS32R6);
+        /* Fallthrough */
     case OPC_BEQ:
     case OPC_BNE:
          gen_compute_branch(ctx, op, 4, rs, rt, imm << 2, 4);
          break;
-    case OPC_LWL: /* Load and stores */
+    case OPC_LL: /* Load and stores */
+        check_insn(ctx, ISA_MIPS2);
+        /* Fallthrough */
+    case OPC_LWL:
     case OPC_LWR:
-    case OPC_LL:
         check_insn_opc_removed(ctx, ISA_MIPS32R6);
+         /* Fallthrough */
     case OPC_LB: case OPC_LH:
     case OPC_LW: case OPC_LBU: case OPC_LHU:
          gen_ld(ctx, op, rt, rs, imm);
@@ -18821,9 +18901,10 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
          gen_st(ctx, op, rt, rs, imm);
          break;
     case OPC_SC:
-         check_insn_opc_removed(ctx, ISA_MIPS32R6);
-         gen_st_cond(ctx, op, rt, rs, imm);
-         break;
+        check_insn(ctx, ISA_MIPS2);
+        check_insn_opc_removed(ctx, ISA_MIPS32R6);
+        gen_st_cond(ctx, op, rt, rs, imm);
+        break;
     case OPC_CACHE:
         check_insn_opc_removed(ctx, ISA_MIPS32R6);
         check_cp0_enabled(ctx);
@@ -18864,6 +18945,7 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
         case OPC_DMTC1:
             check_cp1_enabled(ctx);
             check_insn(ctx, ISA_MIPS3);
+            check_mips_64(ctx);
             gen_cp1(ctx, op1, rt, rd);
             break;
 #endif
@@ -19036,18 +19118,24 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
             check_cp1_enabled(ctx);
             op1 = MASK_CP3(ctx->opcode);
             switch (op1) {
+            case OPC_LUXC1:
+            case OPC_SUXC1:
+                check_insn(ctx, ISA_MIPS5 | ISA_MIPS32R2);
+                /* Fallthrough */
             case OPC_LWXC1:
             case OPC_LDXC1:
-            case OPC_LUXC1:
             case OPC_SWXC1:
             case OPC_SDXC1:
-            case OPC_SUXC1:
+                check_insn(ctx, ISA_MIPS4 | ISA_MIPS32R2);
                 gen_flt3_ldst(ctx, op1, sa, rd, rs, rt);
                 break;
             case OPC_PREFX:
+                check_insn(ctx, ISA_MIPS4 | ISA_MIPS32R2);
                 /* Treat as NOP. */
                 break;
             case OPC_ALNV_PS:
+                check_insn(ctx, ISA_MIPS5 | ISA_MIPS32R2);
+                /* Fallthrough */
             case OPC_MADD_S:
             case OPC_MADD_D:
             case OPC_MADD_PS:
@@ -19060,6 +19148,7 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
             case OPC_NMSUB_S:
             case OPC_NMSUB_D:
             case OPC_NMSUB_PS:
+                check_insn(ctx, ISA_MIPS4 | ISA_MIPS32R2);
                 gen_flt3_arith(ctx, op1, sa, rs, rd, rt);
                 break;
             default:
