@@ -1883,13 +1883,10 @@ static inline void gen_r6_cmp_ ## fmt(DisasContext * ctx, int n,        \
                                       int ft, int fs, int fd)           \
 {                                                                       \
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx; \
-    TCGv_i ## bits fp0 = tcg_temp_new_i ## bits(tcg_ctx);                      \
-    TCGv_i ## bits fp1 = tcg_temp_new_i ## bits(tcg_ctx);                      \
-    switch (ifmt) {                                                     \
-    default: break; \
-    case FMT_D:                                                         \
+    TCGv_i ## bits fp0 = tcg_temp_new_i ## bits(tcg_ctx);               \
+    TCGv_i ## bits fp1 = tcg_temp_new_i ## bits(tcg_ctx);               \
+    if (ifmt == FMT_D) {                                                \
         check_cp1_registers(ctx, fs | ft | fd);                         \
-        break;                                                          \
     }                                                                   \
     gen_ldcmp_fpr ## bits(ctx, fp0, fs);                                \
     gen_ldcmp_fpr ## bits(ctx, fp1, ft);                                \
