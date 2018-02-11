@@ -3083,6 +3083,7 @@
 #define xpsr_write xpsr_write_sparc
 #define xscale_cpar_write xscale_cpar_write_sparc
 #define xscale_cp_reginfo xscale_cp_reginfo_sparc
+#define target_el_table target_el_table_sparc
 #define cpu_sparc_exec cpu_sparc_exec_sparc
 #define helper_compute_psr helper_compute_psr_sparc
 #define helper_compute_C_icc helper_compute_C_icc_sparc

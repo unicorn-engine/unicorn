@@ -3083,4 +3083,5 @@
 #define xpsr_write xpsr_write_powerpc
 #define xscale_cpar_write xscale_cpar_write_powerpc
 #define xscale_cp_reginfo xscale_cp_reginfo_powerpc
+#define target_el_table target_el_table_powerpc
 #endif

@@ -3083,4 +3083,5 @@
 #define xpsr_write xpsr_write_x86_64
 #define xscale_cpar_write xscale_cpar_write_x86_64
 #define xscale_cp_reginfo xscale_cp_reginfo_x86_64
+#define target_el_table target_el_table_x86_64
 #endif

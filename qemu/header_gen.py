@@ -2648,6 +2648,7 @@ symbols = (
     'system_bus_info',
     't2ee_cp_reginfo',
     'table_logic_cc',
+    'target_el_table',
     'target_parse_constraint',
     'target_words_bigendian',
     'tb_add_jump',
@@ -3088,7 +3089,7 @@ symbols = (
     'xpsr_read',
     'xpsr_write',
     'xscale_cpar_write',
-    'xscale_cp_reginfo'
+    'xscale_cp_reginfo',
 )
 
 arm_symbols = (

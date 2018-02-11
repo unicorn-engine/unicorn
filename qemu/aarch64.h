@@ -3083,6 +3083,7 @@
 #define xpsr_write xpsr_write_aarch64
 #define xscale_cpar_write xscale_cpar_write_aarch64
 #define xscale_cp_reginfo xscale_cp_reginfo_aarch64
+#define target_el_table target_el_table_aarch64
 #define ARM64_REGS_STORAGE_SIZE ARM64_REGS_STORAGE_SIZE_aarch64
 #define arm64_release arm64_release_aarch64
 #define arm64_reg_reset arm64_reg_reset_aarch64

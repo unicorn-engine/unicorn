@@ -3083,4 +3083,5 @@
 #define xpsr_write xpsr_write_m68k
 #define xscale_cpar_write xscale_cpar_write_m68k
 #define xscale_cp_reginfo xscale_cp_reginfo_m68k
+#define target_el_table target_el_table_m68k
 #endif

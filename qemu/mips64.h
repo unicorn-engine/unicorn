@@ -3083,6 +3083,7 @@
 #define xpsr_write xpsr_write_mips64
 #define xscale_cpar_write xscale_cpar_write_mips64
 #define xscale_cp_reginfo xscale_cp_reginfo_mips64
+#define target_el_table target_el_table_mips64
 #define cpu_mips_exec cpu_mips_exec_mips64
 #define cpu_mips_get_random cpu_mips_get_random_mips64
 #define cpu_mips_get_count cpu_mips_get_count_mips64
