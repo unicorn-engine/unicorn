@@ -1114,10 +1114,19 @@ void tcg_dump_ops(TCGContext *s)
                     TCGMemOp op = get_memop(oi);
                     unsigned ix = get_mmuidx(oi);
 
-                    if (op < ARRAY_SIZE(ldst_name) && ldst_name[op]) {
+                    if (op & ~(MO_AMASK | MO_BSWAP | MO_SSIZE)) {
                         printf(",%s,%u", ldst_name[op], ix);
                     } else {
-                        printf(",$0x%x,%u", op, ix);
+                        const char *s_al = "", *s_op;
+                        if (op & MO_AMASK) {
+                            if ((op & MO_AMASK) == MO_ALIGN) {
+                                s_al = "al+";
+                            } else {
+                                s_al = "un+";
+                            }
+                        }
+                        s_op = ldst_name[op & (MO_BSWAP | MO_SSIZE)];
+                        printf(",%s%s,%u", s_al, s_op, ix);
                     }
                     i = 1;
                 }
