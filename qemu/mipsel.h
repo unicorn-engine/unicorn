@@ -2186,7 +2186,6 @@
 #define page_flush_tb_1 page_flush_tb_1_mipsel
 #define page_init page_init_mipsel
 #define page_size_init page_size_init_mipsel
-#define par par_mipsel
 #define parse_array parse_array_mipsel
 #define parse_error parse_error_mipsel
 #define parse_escape parse_escape_mipsel
@@ -2642,6 +2641,7 @@
 #define system_bus_info system_bus_info_mipsel
 #define t2ee_cp_reginfo t2ee_cp_reginfo_mipsel
 #define table_logic_cc table_logic_cc_mipsel
+#define target_el_table target_el_table_mipsel
 #define target_parse_constraint target_parse_constraint_mipsel
 #define target_words_bigendian target_words_bigendian_mipsel
 #define tb_add_jump tb_add_jump_mipsel
@@ -3083,7 +3083,6 @@
 #define xpsr_write xpsr_write_mipsel
 #define xscale_cpar_write xscale_cpar_write_mipsel
 #define xscale_cp_reginfo xscale_cp_reginfo_mipsel
-#define target_el_table target_el_table_mipsel
 #define cpu_mips_exec cpu_mips_exec_mipsel
 #define cpu_mips_get_random cpu_mips_get_random_mipsel
 #define cpu_mips_get_count cpu_mips_get_count_mipsel

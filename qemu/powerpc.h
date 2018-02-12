@@ -2186,7 +2186,6 @@
 #define page_flush_tb_1 page_flush_tb_1_powerpc
 #define page_init page_init_powerpc
 #define page_size_init page_size_init_powerpc
-#define par par_powerpc
 #define parse_array parse_array_powerpc
 #define parse_error parse_error_powerpc
 #define parse_escape parse_escape_powerpc
@@ -2642,6 +2641,7 @@
 #define system_bus_info system_bus_info_powerpc
 #define t2ee_cp_reginfo t2ee_cp_reginfo_powerpc
 #define table_logic_cc table_logic_cc_powerpc
+#define target_el_table target_el_table_powerpc
 #define target_parse_constraint target_parse_constraint_powerpc
 #define target_words_bigendian target_words_bigendian_powerpc
 #define tb_add_jump tb_add_jump_powerpc
@@ -3083,5 +3083,4 @@
 #define xpsr_write xpsr_write_powerpc
 #define xscale_cpar_write xscale_cpar_write_powerpc
 #define xscale_cp_reginfo xscale_cp_reginfo_powerpc
-#define target_el_table target_el_table_powerpc
 #endif

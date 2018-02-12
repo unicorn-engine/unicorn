@@ -2186,7 +2186,6 @@
 #define page_flush_tb_1 page_flush_tb_1_sparc
 #define page_init page_init_sparc
 #define page_size_init page_size_init_sparc
-#define par par_sparc
 #define parse_array parse_array_sparc
 #define parse_error parse_error_sparc
 #define parse_escape parse_escape_sparc
@@ -2642,6 +2641,7 @@
 #define system_bus_info system_bus_info_sparc
 #define t2ee_cp_reginfo t2ee_cp_reginfo_sparc
 #define table_logic_cc table_logic_cc_sparc
+#define target_el_table target_el_table_sparc
 #define target_parse_constraint target_parse_constraint_sparc
 #define target_words_bigendian target_words_bigendian_sparc
 #define tb_add_jump tb_add_jump_sparc
@@ -3083,7 +3083,6 @@
 #define xpsr_write xpsr_write_sparc
 #define xscale_cpar_write xscale_cpar_write_sparc
 #define xscale_cp_reginfo xscale_cp_reginfo_sparc
-#define target_el_table target_el_table_sparc
 #define cpu_sparc_exec cpu_sparc_exec_sparc
 #define helper_compute_psr helper_compute_psr_sparc
 #define helper_compute_C_icc helper_compute_C_icc_sparc

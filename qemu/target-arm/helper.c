@@ -1181,6 +1181,7 @@ static void ats_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
     int prot;
     int ret, is_user = ri->opc2 & 2;
     int access_type = ri->opc2 & 1;
+    uint64_t par64;
 
     ret = get_phys_addr(env, value, access_type, is_user,
                         &phys_addr, &prot, &page_size);
@@ -1189,7 +1190,7 @@ static void ats_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
          * translation table format, but with WnR always clear.
          * Convert it to a 64-bit PAR.
          */
-        uint64_t par64 = (1 << 11); /* LPAE bit always set */
+        par64 = (1 << 11); /* LPAE bit always set */
         if (ret == 0) {
             par64 |= phys_addr & ~0xfffULL;
             /* We don't set the ATTR or SH fields in the PAR. */
@@ -1201,7 +1202,6 @@ static void ats_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
              * fault.
              */
         }
-        env->cp15.par_el1 = par64;
     } else {
         /* ret is a DFSR/IFSR value for the short descriptor
          * translation table format (with WnR always clear).
@@ -1211,22 +1211,24 @@ static void ats_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
             /* We do not set any attribute bits in the PAR */
             if (page_size == (1 << 24)
                 && arm_feature(env, ARM_FEATURE_V7)) {
-                env->cp15.par_el1 = (phys_addr & 0xff000000) | 1 << 1;
+                par64 = (phys_addr & 0xff000000) | 1 << 1;
             } else {
-                env->cp15.par_el1 = phys_addr & 0xfffff000;
+                par64 = phys_addr & 0xfffff000;
             }
         } else {
-            env->cp15.par_el1 = ((ret & (1 << 10)) >> 5) |
-                ((ret & (1 << 12)) >> 6) |
+            par64 = ((ret & (1 << 10)) >> 5) | ((ret & (1 << 12)) >> 6) |
                 ((ret & 0xf) << 1) | 1;
         }
     }
+
+    A32_BANKED_CURRENT_REG_SET(env, par, par64);
 }
 #endif
 
 static const ARMCPRegInfo vapa_cp_reginfo[] = {
     { "PAR", 15,7,4, 0,0,0, 0,
-      0, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.par_el1), {0, 0},
+      0, PL1_RW, 0, NULL, 0, 0,
+      { offsetoflow32(CPUARMState, cp15.par_s), offsetoflow32(CPUARMState, cp15.par_ns) },
       NULL, NULL, par_write },
 #ifndef CONFIG_USER_ONLY
     { "ATS", 15,7,8, 0,0,CP_ANY, 0,
@@ -1621,7 +1623,8 @@ static const ARMCPRegInfo lpae_cp_reginfo[] = {
     { "AMAIR1", 15,10,3, 0,0,1, 0,
       ARM_CP_CONST | ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0 },
     { "PAR", 15, 0,7, 0,0, 0, 0,
-      ARM_CP_64BIT, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.par_el1), },
+      ARM_CP_64BIT, PL1_RW, 0, NULL, 0, 0,
+      { offsetof(CPUARMState, cp15.par_s), offsetof(CPUARMState, cp15.par_ns) } },
     { "TTBR0", 15, 0,2, 0,0, 0, 0,
       ARM_CP_64BIT | ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, 0,
       { offsetof(CPUARMState, cp15.ttbr0_s), offsetof(CPUARMState, cp15.ttbr0_ns) },

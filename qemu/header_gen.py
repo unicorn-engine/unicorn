@@ -2192,7 +2192,6 @@ symbols = (
     'page_flush_tb_1',
     'page_init',
     'page_size_init',
-    'par',
     'parse_array',
     'parse_error',
     'parse_escape',

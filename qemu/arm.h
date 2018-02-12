@@ -2186,7 +2186,6 @@
 #define page_flush_tb_1 page_flush_tb_1_arm
 #define page_init page_init_arm
 #define page_size_init page_size_init_arm
-#define par par_arm
 #define parse_array parse_array_arm
 #define parse_error parse_error_arm
 #define parse_escape parse_escape_arm
@@ -2642,6 +2641,7 @@
 #define system_bus_info system_bus_info_arm
 #define t2ee_cp_reginfo t2ee_cp_reginfo_arm
 #define table_logic_cc table_logic_cc_arm
+#define target_el_table target_el_table_arm
 #define target_parse_constraint target_parse_constraint_arm
 #define target_words_bigendian target_words_bigendian_arm
 #define tb_add_jump tb_add_jump_arm
@@ -3083,6 +3083,5 @@
 #define xpsr_write xpsr_write_arm
 #define xscale_cpar_write xscale_cpar_write_arm
 #define xscale_cp_reginfo xscale_cp_reginfo_arm
-#define target_el_table target_el_table_arm
 #define ARM_REGS_STORAGE_SIZE ARM_REGS_STORAGE_SIZE_arm
 #endif
