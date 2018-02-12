@@ -2108,7 +2108,7 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     { "ELR_EL1", 0,4,0, 3,0,1, ARM_CP_STATE_AA64,
       ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[1]) },
     { "SPSR_EL1", 0,4,0, 3,0,0, ARM_CP_STATE_AA64,
-      ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[0]) },
+      ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[1]) },
     /* We rely on the access checks not allowing the guest to write to the
      * state field when SPSel indicates that it's being used as the stack
      * pointer.
