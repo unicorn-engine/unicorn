@@ -1408,7 +1408,8 @@ static void vmsa_ttbr_write(CPUARMState *env, const ARMCPRegInfo *ri,
 
 static const ARMCPRegInfo vmsa_cp_reginfo[] = {
     { "DFSR", 15,5,0, 0,0,0, 0,
-      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.esr_el[1]), {0, 0},
+      ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, 0,
+      { offsetoflow32(CPUARMState, cp15.dfsr_s), offsetoflow32(CPUARMState, cp15.dfsr_ns) },
       NULL,NULL,NULL,NULL,NULL, arm_cp_reset_ignore, },
     { "IFSR", 15,5,0, 0,0,1, 0,
       0, PL1_RW, 0, NULL, 0, 0,
@@ -3837,11 +3838,11 @@ void arm_cpu_do_interrupt(CPUState *cs)
         offset = 4;
         break;
     case EXCP_DATA_ABORT:
-        env->cp15.esr_el[1] = env->exception.fsr;
+        A32_BANKED_CURRENT_REG_SET(env, dfsr, env->exception.fsr);
         env->cp15.far_el[1] = deposit64(env->cp15.far_el[1], 0, 32,
                                         env->exception.vaddress);
         qemu_log_mask(CPU_LOG_INT, "...with DFSR 0x%x DFAR 0x%x\n",
-                      (uint32_t)env->cp15.esr_el[1],
+                      env->exception.fsr,
                       (uint32_t)env->exception.vaddress);
         new_mode = ARM_CPU_MODE_ABT;
         addr = 0x10;
