@@ -1994,6 +1994,12 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "SCR", 15,1,1, 0,0,0, 0,
       ARM_CP_NO_MIGRATE, PL3_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.scr_el3), {0, 0},
       NULL, NULL, scr_write, NULL, NULL, arm_cp_reset_ignore },
+    { "SDER32_EL3", 0,1,1, 3,6,1, ARM_CP_STATE_AA64,0,
+      PL3_RW, 0, NULL, 0,
+      offsetof(CPUARMState, cp15.sder) },
+    { "SDER", 15,1,1, 0,0,1, 0,0,
+      PL3_RW, 0, NULL, 0,
+      offsetoflow32(CPUARMState, cp15.sder) },
       /* TODO: Implement NSACR trapping of secure EL1 accesses to EL3 */
     { "NSACR", 15,1,1, 0,0,2, 0,0,
       PL3_W | PL1_R, 0, NULL, 0,
