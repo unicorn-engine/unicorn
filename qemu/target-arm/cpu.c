@@ -499,7 +499,7 @@ static void arm1026_initfn(struct uc_struct *uc, Object *obj, void *opaque)
         ifar.opc1 = 0;
         ifar.opc2 = 1;
         ifar.access = PL1_RW;
-        ifar.fieldoffset = offsetofhigh32(CPUARMState, cp15.far_el[1]);
+        ifar.fieldoffset = offsetof(CPUARMState, cp15.ifar_ns),
         ifar.resetvalue = 0;
         define_one_arm_cp_reg(cpu, &ifar);
     }
