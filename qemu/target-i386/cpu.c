@@ -2377,6 +2377,11 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     CPUX86State *env = &cpu->env;
     Error *local_err = NULL;
 
+    if (cpu->apic_id < 0) {
+        error_setg(errp, "apic-id property was not initialized properly");
+        return -1;
+    }
+
     if (env->features[FEAT_7_0_EBX] && env->cpuid_level < 7) {
         env->cpuid_level = 7;
     }
@@ -2504,7 +2509,7 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
                         NULL, NULL, (void *)cpu->filtered_features, NULL);
 
     cpu->hyperv_spinlock_attempts = HYPERV_SPINLOCK_NEVER_RETRY;
-    cpu->apic_id = x86_cpu_apic_id_from_index(cs->cpu_index);
+    cpu->apic_id = -1;
 
     x86_cpu_load_def(cpu, xcc->cpu_def, &error_abort);
 
