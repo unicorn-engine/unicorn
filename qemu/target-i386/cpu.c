@@ -1891,14 +1891,6 @@ void x86_cpudef_setup(void)
     }
 }
 
-static void get_cpuid_vendor(CPUX86State *env, uint32_t *ebx,
-                             uint32_t *ecx, uint32_t *edx)
-{
-    *ebx = env->cpuid_vendor1;
-    *edx = env->cpuid_vendor2;
-    *ecx = env->cpuid_vendor3;
-}
-
 void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
                    uint32_t *eax, uint32_t *ebx,
                    uint32_t *ecx, uint32_t *edx)
@@ -1932,7 +1924,9 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
     switch(index) {
     case 0:
         *eax = env->cpuid_level;
-        get_cpuid_vendor(env, ebx, ecx, edx);
+        *ebx = env->cpuid_vendor1;
+        *edx = env->cpuid_vendor2;
+        *ecx = env->cpuid_vendor3;
         break;
     case 1:
         *eax = env->cpuid_version;
@@ -2074,11 +2068,9 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
          * So dont set it here for Intel to make Linux guests happy.
          */
         if (cs->nr_cores * cs->nr_threads > 1) {
-            uint32_t tebx, tecx, tedx;
-            get_cpuid_vendor(env, &tebx, &tecx, &tedx);
-            if (tebx != CPUID_VENDOR_INTEL_1 ||
-                tedx != CPUID_VENDOR_INTEL_2 ||
-                tecx != CPUID_VENDOR_INTEL_3) {
+            if (env->cpuid_vendor1 != CPUID_VENDOR_INTEL_1 ||
+                env->cpuid_vendor2 != CPUID_VENDOR_INTEL_2 ||
+                env->cpuid_vendor3 != CPUID_VENDOR_INTEL_3) {
                 *ecx |= 1 << 1;    /* CmpLegacy bit */
             }
         }
