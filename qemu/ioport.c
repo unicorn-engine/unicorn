@@ -57,9 +57,25 @@ static void unassigned_io_write(struct uc_struct* uc, void *opaque, hwaddr addr,
 {
 }
 
+static MemTxResult unassigned_io_read_with_attrs(struct uc_struct* uc, void *opaque, hwaddr addr,
+                                                 uint64_t *data, unsigned size, MemTxAttrs attrs)
+{
+    return MEMTX_OK;
+}
+
+static MemTxResult unassigned_write_with_attrs(struct uc_struct* uc, void *opaque,
+                                               hwaddr addr, uint64_t data, unsigned size,
+                                               MemTxAttrs attrs)
+{
+    return MEMTX_OK;
+}
+
+
 const MemoryRegionOps unassigned_io_ops = {
     unassigned_io_read,
     unassigned_io_write,
+    unassigned_io_read_with_attrs,
+    unassigned_write_with_attrs,
     DEVICE_NATIVE_ENDIAN,
 };
 

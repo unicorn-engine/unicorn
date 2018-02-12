@@ -1315,6 +1315,8 @@ static bool subpage_accepts(void *opaque, hwaddr addr,
 static const MemoryRegionOps subpage_ops = {
     subpage_read,
     subpage_write,
+    NULL,
+    NULL,
     DEVICE_NATIVE_ENDIAN,
     {
         0, 0, false, subpage_accepts,
@@ -1377,6 +1379,8 @@ static bool notdirty_mem_accepts(void *opaque, hwaddr addr,
 static const MemoryRegionOps notdirty_mem_ops = {
     NULL,
     notdirty_mem_write,
+    NULL,
+    NULL,
     DEVICE_NATIVE_ENDIAN,
     {
         0, 0, false, notdirty_mem_accepts,

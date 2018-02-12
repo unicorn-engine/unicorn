@@ -23,6 +23,7 @@
 #include "qemu-common.h"
 #include "exec/cpu-common.h"
 #include "exec/hwaddr.h"
+#include "exec/memattrs.h"
 #include "qemu/queue.h"
 #include "qemu/int128.h"
 #include "qapi/error.h"
@@ -61,6 +62,16 @@ struct IOMMUTLBEntry {
     IOMMUAccessFlags perm;
 };
 
+/* New-style MMIO accessors can indicate that the transaction failed.
+ * A zero (MEMTX_OK) response means success; anything else is a failure
+ * of some kind. The memory subsystem will bitwise-OR together results
+ * if it is synthesizing an operation from multiple smaller accesses.
+ */
+#define MEMTX_OK 0
+#define MEMTX_ERROR             (1U << 0) /* device returned an error */
+#define MEMTX_DECODE_ERROR      (1U << 1) /* nothing at that address */
+typedef uint32_t MemTxResult;
+
 /*
  * Memory region callbacks
  */
@@ -76,6 +87,17 @@ struct MemoryRegionOps {
                   hwaddr addr,
                   uint64_t data,
                   unsigned size);
+
+    MemTxResult (*read_with_attrs)(struct uc_struct* uc, void *opaque,
+                                   hwaddr addr,
+                                   uint64_t *data,
+                                   unsigned size,
+                                   MemTxAttrs attrs);
+    MemTxResult (*write_with_attrs)(struct uc_struct* uc, void *opaque,
+                                    hwaddr addr,
+                                    uint64_t data,
+                                    unsigned size,
+                                    MemTxAttrs attrs);
 
     enum device_endian endianness;
     /* Guest-visible constraints: */
