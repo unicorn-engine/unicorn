@@ -1513,7 +1513,7 @@ static void x86_cpuid_get_apic_id(struct uc_struct *uc, Object *obj, Visitor *v,
                                   const char *name, Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
-    int64_t value = cpu->env.cpuid_apic_id;
+    int64_t value = cpu->apic_id;
 
     visit_type_int(v, &value, name, errp);
 }
@@ -1546,11 +1546,11 @@ static int x86_cpuid_set_apic_id(struct uc_struct *uc, Object *obj, Visitor *v, 
         return -1;
     }
 
-    if ((value != cpu->env.cpuid_apic_id) && cpu_exists(uc, value)) {
+    if ((value != cpu->apic_id) && cpu_exists(uc, value)) {
         error_setg(errp, "CPU with APIC ID %" PRIi64 " exists", value);
         return -1;
     }
-    cpu->env.cpuid_apic_id = (uint32_t)value;
+    cpu->apic_id = (uint32_t)value;
 
     return 0;
 }
@@ -1928,7 +1928,8 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         break;
     case 1:
         *eax = env->cpuid_version;
-        *ebx = (env->cpuid_apic_id << 24) | 8 << 8; /* CLFLUSH size in quad words, Linux wants it. */
+        *ebx = (cpu->apic_id << 24) |
+               8 << 8; /* CLFLUSH size in quad words, Linux wants it. */
         *ecx = env->features[FEAT_1_ECX];
         *edx = env->features[FEAT_1_EDX];
         if (cs->nr_cores * cs->nr_threads > 1) {
@@ -2326,7 +2327,7 @@ static void x86_cpu_apic_create(X86CPU *cpu, Error **errp)
 
     object_property_add_child(OBJECT(cpu), "apic",
                               OBJECT(cpu->apic_state), NULL);
-    //qdev_prop_set_uint8(cpu->apic_state, "id", env->cpuid_apic_id);
+    //qdev_prop_set_uint8(cpu->apic_state, "id", cpu->apic_id);
     /* TODO: convert to link<> */
     apic = APIC_COMMON(cpu->apic_state);
     apic->cpu = cpu;
@@ -2493,7 +2494,7 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
                         NULL, NULL, (void *)cpu->filtered_features, NULL);
 
     cpu->hyperv_spinlock_attempts = HYPERV_SPINLOCK_NEVER_RETRY;
-    env->cpuid_apic_id = x86_cpu_apic_id_from_index(cs->cpu_index);
+    cpu->apic_id = x86_cpu_apic_id_from_index(cs->cpu_index);
 
     x86_cpu_load_def(cpu, xcc->cpu_def, &error_abort);
 
@@ -2505,9 +2506,8 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 static int64_t x86_cpu_get_arch_id(CPUState *cs)
 {
     X86CPU *cpu = X86_CPU(cs->uc, cs);
-    CPUX86State *env = &cpu->env;
 
-    return env->cpuid_apic_id;
+    return cpu->apic_id;
 }
 
 static bool x86_cpu_get_paging_enabled(const CPUState *cs)
