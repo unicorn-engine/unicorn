@@ -1484,7 +1484,7 @@ static void tcg_commit(MemoryListener *listener)
     /* since each CPU stores ram addresses in its TLB cache, we must
        reset the modified entries */
     /* XXX: slow ! */
-    tlb_flush(uc->cpu, 1);
+    cpu_reload_memory_map(uc->cpu);
 }
 
 void address_space_init_dispatch(AddressSpace *as)

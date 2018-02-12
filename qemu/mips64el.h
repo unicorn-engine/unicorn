@@ -24,6 +24,7 @@
 #define tcg_exec_init tcg_exec_init_mips64el
 #define memory_register_types memory_register_types_mips64el
 #define cpu_exec_init_all cpu_exec_init_all_mips64el
+#define cpu_reload_memory_map cpu_reload_memory_map_mips64el
 #define vm_start vm_start_mips64el
 #define resume_all_vcpus resume_all_vcpus_mips64el
 #define a15_l2ctlr_read a15_l2ctlr_read_mips64el

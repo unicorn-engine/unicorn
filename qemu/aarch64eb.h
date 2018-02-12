@@ -24,6 +24,7 @@
 #define tcg_exec_init tcg_exec_init_aarch64eb
 #define memory_register_types memory_register_types_aarch64eb
 #define cpu_exec_init_all cpu_exec_init_all_aarch64eb
+#define cpu_reload_memory_map cpu_reload_memory_map_aarch64eb
 #define vm_start vm_start_aarch64eb
 #define resume_all_vcpus resume_all_vcpus_aarch64eb
 #define a15_l2ctlr_read a15_l2ctlr_read_aarch64eb

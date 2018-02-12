@@ -24,6 +24,7 @@
 #define tcg_exec_init tcg_exec_init_mips
 #define memory_register_types memory_register_types_mips
 #define cpu_exec_init_all cpu_exec_init_all_mips
+#define cpu_reload_memory_map cpu_reload_memory_map_mips
 #define vm_start vm_start_mips
 #define resume_all_vcpus resume_all_vcpus_mips
 #define a15_l2ctlr_read a15_l2ctlr_read_mips

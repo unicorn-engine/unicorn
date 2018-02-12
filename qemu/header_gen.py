@@ -30,6 +30,7 @@ symbols = (
     'tcg_exec_init',
     'memory_register_types',
     'cpu_exec_init_all',
+    'cpu_reload_memory_map',
     'vm_start',
     'resume_all_vcpus',
     'a15_l2ctlr_read',
