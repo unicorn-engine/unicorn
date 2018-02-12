@@ -2,6 +2,8 @@
 #ifndef UNICORN_AUTOGEN_MIPS64EL_H
 #define UNICORN_AUTOGEN_MIPS64EL_H
 #define arm_release arm_release_mips64el
+#define aarch64_sync_32_to_64 aarch64_sync_32_to_64_mips64el
+#define aarch64_sync_64_to_32 aarch64_sync_64_to_32_mips64el
 #define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_mips64el
 #define ppc_tb_set_jmp_target ppc_tb_set_jmp_target_mips64el
 #define use_idiv_instructions_rt use_idiv_instructions_rt_mips64el

@@ -2,6 +2,8 @@
 #ifndef UNICORN_AUTOGEN_MIPSEL_H
 #define UNICORN_AUTOGEN_MIPSEL_H
 #define arm_release arm_release_mipsel
+#define aarch64_sync_32_to_64 aarch64_sync_32_to_64_mipsel
+#define aarch64_sync_64_to_32 aarch64_sync_64_to_32_mipsel
 #define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_mipsel
 #define ppc_tb_set_jmp_target ppc_tb_set_jmp_target_mipsel
 #define use_idiv_instructions_rt use_idiv_instructions_rt_mipsel

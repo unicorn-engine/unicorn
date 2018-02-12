@@ -2,6 +2,8 @@
 #ifndef UNICORN_AUTOGEN_POWERPC_H
 #define UNICORN_AUTOGEN_POWERPC_H
 #define arm_release arm_release_powerpc
+#define aarch64_sync_32_to_64 aarch64_sync_32_to_64_powerpc
+#define aarch64_sync_64_to_32 aarch64_sync_64_to_32_powerpc
 #define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_powerpc
 #define ppc_tb_set_jmp_target ppc_tb_set_jmp_target_powerpc
 #define use_idiv_instructions_rt use_idiv_instructions_rt_powerpc

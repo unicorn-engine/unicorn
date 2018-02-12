@@ -2,6 +2,8 @@
 #ifndef UNICORN_AUTOGEN_ARMEB_H
 #define UNICORN_AUTOGEN_ARMEB_H
 #define arm_release arm_release_armeb
+#define aarch64_sync_32_to_64 aarch64_sync_32_to_64_armeb
+#define aarch64_sync_64_to_32 aarch64_sync_64_to_32_armeb
 #define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_armeb
 #define ppc_tb_set_jmp_target ppc_tb_set_jmp_target_armeb
 #define use_idiv_instructions_rt use_idiv_instructions_rt_armeb

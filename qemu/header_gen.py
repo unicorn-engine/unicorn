@@ -8,6 +8,8 @@ import sys
 
 symbols = (
     'arm_release',
+    'aarch64_sync_32_to_64',
+    'aarch64_sync_64_to_32',
     'aarch64_tb_set_jmp_target',
     'ppc_tb_set_jmp_target',
     'use_idiv_instructions_rt',

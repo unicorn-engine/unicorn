@@ -2,6 +2,8 @@
 #ifndef UNICORN_AUTOGEN_X86_64_H
 #define UNICORN_AUTOGEN_X86_64_H
 #define arm_release arm_release_x86_64
+#define aarch64_sync_32_to_64 aarch64_sync_32_to_64_x86_64
+#define aarch64_sync_64_to_32 aarch64_sync_64_to_32_x86_64
 #define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_x86_64
 #define ppc_tb_set_jmp_target ppc_tb_set_jmp_target_x86_64
 #define use_idiv_instructions_rt use_idiv_instructions_rt_x86_64
