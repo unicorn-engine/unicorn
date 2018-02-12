@@ -334,7 +334,8 @@ static const ARMCPRegInfo not_v8_cp_reginfo[] = {
      */
     /* MMU Domain access control / MPU write buffer control */
     { "DACR", 15,3,CP_ANY, 0,CP_ANY,CP_ANY, 0,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c3), {0, 0},
+      0, PL1_RW, 0, NULL, 0, 0,
+      { offsetoflow32(CPUARMState, cp15.dacr_s), offsetoflow32(CPUARMState, cp15.dacr_ns) },
       NULL, NULL, dacr_write, NULL, raw_write, NULL, },
     /* ??? This covers not just the impdef TLB lockdown registers but also
      * some v7VMSA registers relating to TEX remap, so it is overly broad.
@@ -1943,7 +1944,8 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
       ARM_CP_NOP, PL1_W },
     /* MMU Domain access control / MPU write buffer control */
     { "DACR", 15,3,0, 0,0,0, 0,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c3), {0, 0},
+      0, PL1_RW, 0, NULL, 0, 0,
+      { offsetoflow32(CPUARMState, cp15.dacr_s), offsetoflow32(CPUARMState, cp15.dacr_ns) },
       NULL, NULL,dacr_write, NULL,raw_write, },
     { "ELR_EL1", 0,4,0, 3,0,1, ARM_CP_STATE_AA64,
       ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[1]) },
@@ -2002,6 +2004,9 @@ static const ARMCPRegInfo v8_el2_cp_reginfo[] = {
     { "HCR_EL2", 0,1,1, 3,4,0, ARM_CP_STATE_AA64,
       0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2), {0, 0},
       NULL, NULL, hcr_write },
+    { "DACR32_EL2", 0,3,0, 3,4,0, ARM_CP_STATE_AA64,0,
+       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.dacr32_el2), {0, 0},
+       NULL, NULL, dacr_write, NULL, raw_write },
     { "ELR_EL2", 0,4,0, 3,4,1, ARM_CP_STATE_AA64,
       ARM_CP_NO_MIGRATE, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[2]) },
     { "ESR_EL2", 0,5,2, 3,4,0, ARM_CP_STATE_AA64,
@@ -4020,7 +4025,7 @@ static int get_phys_addr_v5(CPUARMState *env, uint32_t address, int access_type,
     desc = ldl_phys(cs->as, table);
     type = (desc & 3);
     domain = (desc >> 5) & 0x0f;
-    domain_prot = (env->cp15.c3 >> (domain * 2)) & 3;
+    domain_prot = (A32_BANKED_CURRENT_REG_GET(env, dacr) >> (domain * 2)) & 3;
     if (type == 0) {
         /* Section translation fault.  */
         code = 5;
@@ -4132,7 +4137,7 @@ static int get_phys_addr_v6(CPUARMState *env, uint32_t address, int access_type,
         /* Page or Section.  */
         domain = (desc >> 5) & 0x0f;
     }
-    domain_prot = (env->cp15.c3 >> (domain * 2)) & 3;
+    domain_prot = (A32_BANKED_CURRENT_REG_GET(env, dacr) >> (domain * 2)) & 3;
     if (domain_prot == 0 || domain_prot == 2) {
         if (type != 1) {
             code = 9; /* Section domain fault.  */
