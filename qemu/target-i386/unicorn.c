@@ -89,10 +89,7 @@ void x86_reg_reset(struct uc_struct *uc)
     memset(&env->xmm_t0, 0, sizeof(env->xmm_t0));
     memset(&env->mmx_t0, 0, sizeof(env->mmx_t0));
 
-    memset(env->ymmh_regs, 0, sizeof(env->ymmh_regs));
-
     memset(env->opmask_regs, 0, sizeof(env->opmask_regs));
-    memset(env->zmmh_regs, 0, sizeof(env->zmmh_regs));
 
     /* sysenter registers */
     env->sysenter_cs = 0;
@@ -120,7 +117,6 @@ void x86_reg_reset(struct uc_struct *uc)
     memset(env->msr_gp_evtsel, 0, sizeof(env->msr_gp_evtsel));
 
 #ifdef TARGET_X86_64
-    memset(env->hi16_zmm_regs, 0, sizeof(env->hi16_zmm_regs));
     env->lstar = 0;
     env->cstar = 0;
     env->fmask = 0;
@@ -280,8 +276,8 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                 {
                     float64 *dst = (float64*)value;
                     XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
-                    dst[0] = reg->_d[0];
-                    dst[1] = reg->_d[1];
+                    dst[0] = reg->XMM_D(0);
+                    dst[1] = reg->XMM_D(1);
                     continue;
                 }
             case UC_X86_REG_YMM0:
@@ -294,12 +290,11 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
             case UC_X86_REG_YMM7:
                 {
                     float64 *dst = (float64*)value;
-                    XMMReg *lo_reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_YMM0];
-                    XMMReg *hi_reg = &X86_CPU(uc, mycpu)->env.ymmh_regs[regid - UC_X86_REG_YMM0];
-                    dst[0] = lo_reg->_d[0];
-                    dst[1] = lo_reg->_d[1];
-                    dst[2] = hi_reg->_d[0];
-                    dst[3] = hi_reg->_d[1];
+                    XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
+                    dst[0] = reg->XMM_D(0);
+                    dst[1] = reg->XMM_D(1);
+                    dst[2] = reg->XMM_D(2);
+                    dst[3] = reg->XMM_D(3);
                     continue;
                 }
         }
@@ -819,8 +814,8 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                 {
                     float64 *src = (float64*)value;
                     XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
-                    reg->_d[0] = src[0];
-                    reg->_d[1] = src[1];
+                    reg->XMM_D(0) = src[0];
+                    reg->XMM_D(1) = src[1];
                     continue;
                 }
             case UC_X86_REG_YMM0:
@@ -833,12 +828,11 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
             case UC_X86_REG_YMM7:
                 {
                     float64 *src = (float64*)value;
-                    XMMReg *lo_reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_YMM0];
-                    XMMReg *hi_reg = &X86_CPU(uc, mycpu)->env.ymmh_regs[regid - UC_X86_REG_YMM0];
-                    lo_reg->_d[0] = src[0];
-                    lo_reg->_d[1] = src[1];
-                    hi_reg->_d[0] = src[2];
-                    hi_reg->_d[1] = src[3];
+                    XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
+                    reg->XMM_D(4) = src[0];
+                    reg->XMM_D(5) = src[1];
+                    reg->XMM_D(6) = src[2];
+                    reg->XMM_D(7) = src[3];
                     continue;
                 }
         }
