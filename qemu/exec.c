@@ -1249,8 +1249,8 @@ found:
     return block->mr;
 }
 
-static uint64_t subpage_read(struct uc_struct* uc, void *opaque, hwaddr addr,
-        unsigned len)
+static MemTxResult subpage_read(struct uc_struct* uc, void *opaque, hwaddr addr,
+                                uint64_t *data, unsigned len, MemTxAttrs attrs)
 {
     subpage_t *subpage = opaque;
     uint8_t buf[4];
@@ -1259,21 +1259,29 @@ static uint64_t subpage_read(struct uc_struct* uc, void *opaque, hwaddr addr,
     printf("%s: subpage %p len %u addr " TARGET_FMT_plx "\n", __func__,
             subpage, len, addr);
 #endif
-    address_space_read(subpage->as, addr + subpage->base, buf, len);
+    if (address_space_read(subpage->as, addr + subpage->base, buf, len)) {
+        return MEMTX_DECODE_ERROR;
+    }
     switch (len) {
-        case 1:
-            return ldub_p(buf);
-        case 2:
-            return lduw_p(buf);
-        case 4:
-            return ldl_p(buf);
-        default:
-            abort();
+    case 1:
+        *data = ldub_p(buf);
+        return MEMTX_OK;
+    case 2:
+        *data = lduw_p(buf);
+        return MEMTX_OK;
+    case 4:
+        *data = ldl_p(buf);
+        return MEMTX_OK;
+    case 8:
+        *data = ldq_p(buf);
+        return MEMTX_OK;
+    default:
+        abort();
     }
 }
 
-static void subpage_write(struct uc_struct* uc, void *opaque, hwaddr addr,
-        uint64_t value, unsigned len)
+static MemTxResult subpage_write(struct uc_struct* uc, void *opaque, hwaddr addr,
+                                 uint64_t value, unsigned len, MemTxAttrs attrs)
 {
     subpage_t *subpage = opaque;
     uint8_t buf[4];
@@ -1284,19 +1292,25 @@ static void subpage_write(struct uc_struct* uc, void *opaque, hwaddr addr,
             __func__, subpage, len, addr, value);
 #endif
     switch (len) {
-        case 1:
-            stb_p(buf, value);
-            break;
-        case 2:
-            stw_p(buf, value);
-            break;
-        case 4:
-            stl_p(buf, value);
-            break;
-        default:
-            abort();
+    case 1:
+        stb_p(buf, value);
+        break;
+    case 2:
+        stw_p(buf, value);
+        break;
+    case 4:
+        stl_p(buf, value);
+        break;
+    case 8:
+        stq_p(buf, value);
+        break;
+    default:
+        abort();
     }
-    address_space_write(subpage->as, addr + subpage->base, buf, len);
+    if (address_space_write(subpage->as, addr + subpage->base, buf, len)) {
+        return MEMTX_DECODE_ERROR;
+    }
+    return MEMTX_OK;
 }
 
 static bool subpage_accepts(void *opaque, hwaddr addr,
@@ -1313,10 +1327,10 @@ static bool subpage_accepts(void *opaque, hwaddr addr,
 }
 
 static const MemoryRegionOps subpage_ops = {
+    NULL,
+    NULL,
     subpage_read,
     subpage_write,
-    NULL,
-    NULL,
     DEVICE_NATIVE_ENDIAN,
     {
         0, 0, false, subpage_accepts,
