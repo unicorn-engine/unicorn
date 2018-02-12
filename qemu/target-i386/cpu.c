@@ -23,7 +23,6 @@
 
 #include "cpu.h"
 #include "sysemu/cpus.h"
-#include "topology.h"
 
 #include "qapi/qmp/qerror.h"
 
@@ -2430,37 +2429,6 @@ out:
     }
 
     return 0;
-}
-
-/* Enables contiguous-apic-ID mode, for compatibility */
-static bool compat_apic_id_mode;
-
-void enable_compat_apic_id_mode(void)
-{
-    compat_apic_id_mode = true;
-}
-
-/* Calculates initial APIC ID for a specific CPU index
- *
- * Currently we need to be able to calculate the APIC ID from the CPU index
- * alone (without requiring a CPU object), as the QEMU<->Seabios interfaces have
- * no concept of "CPU index", and the NUMA tables on fw_cfg need the APIC ID of
- * all CPUs up to max_cpus.
- */
-uint32_t x86_cpu_apic_id_from_index(unsigned int cpu_index)
-{
-    uint32_t correct_id;
-
-    correct_id = x86_apicid_from_cpu_idx(smp_cores, smp_threads, cpu_index);
-    if (compat_apic_id_mode) {
-        if (cpu_index != correct_id) {
-            //error_report("APIC IDs set in compatibility mode, "
-            //        "CPU topology won't match the configuration");
-        }
-        return cpu_index;
-    } else {
-        return correct_id;
-    }
 }
 
 static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
