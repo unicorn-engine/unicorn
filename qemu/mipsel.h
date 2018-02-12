@@ -149,6 +149,7 @@
 #define tlb_flush tlb_flush_mipsel
 #define tlb_flush_page tlb_flush_page_mipsel
 #define tlb_set_page tlb_set_page_mipsel
+#define tlb_set_page_with_attrs tlb_set_page_with_attrs_mipsel
 #define arm_translate_init arm_translate_init_mipsel
 #define arm_v7m_class_init arm_v7m_class_init_mipsel
 #define arm_v7m_cpu_do_interrupt arm_v7m_cpu_do_interrupt_mipsel

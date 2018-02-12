@@ -149,6 +149,7 @@
 #define tlb_flush tlb_flush_mips64
 #define tlb_flush_page tlb_flush_page_mips64
 #define tlb_set_page tlb_set_page_mips64
+#define tlb_set_page_with_attrs tlb_set_page_with_attrs_mips64
 #define arm_translate_init arm_translate_init_mips64
 #define arm_v7m_class_init arm_v7m_class_init_mips64
 #define arm_v7m_cpu_do_interrupt arm_v7m_cpu_do_interrupt_mips64

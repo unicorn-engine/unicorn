@@ -155,6 +155,7 @@ symbols = (
     'tlb_flush',
     'tlb_flush_page',
     'tlb_set_page',
+    'tlb_set_page_with_attrs',
     'arm_translate_init',
     'arm_v7m_class_init',
     'arm_v7m_cpu_do_interrupt',
