@@ -1812,20 +1812,18 @@ CPUX86State *cpu_x86_init_user(struct uc_struct *uc, const char *cpu_model)
 
     cpu = cpu_x86_create(uc, cpu_model, &error);
     if (error) {
-        goto out;
+        goto error;
     }
 
     object_property_set_bool(uc, OBJECT(cpu), true, "realized", &error);
-
-out:
-    if (error) {
-        error_free(error);
-        if (cpu != NULL) {
-            object_unref(uc, OBJECT(cpu));
-        }
-        return NULL;
-    }
     return &cpu->env;
+
+error:
+    error_free(error);
+    if (cpu != NULL) {
+        object_unref(uc, OBJECT(cpu));
+    }
+    return NULL;
 }
 
 static void x86_cpu_cpudef_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
