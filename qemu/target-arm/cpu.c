@@ -272,6 +272,29 @@ static bool arm_v7m_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 }
 #endif
 
+static bool arm_cpu_is_big_endian(CPUState *cs)
+{
+    ARMCPU *cpu = ARM_CPU(NULL, cs);
+    CPUARMState *env = &cpu->env;
+    int cur_el;
+
+    // UNICORN: Commented out
+    //cpu_synchronize_state(cs);
+
+    /* In 32bit guest endianness is determined by looking at CPSR's E bit */
+    if (!is_a64(env)) {
+        return (env->uncached_cpsr & CPSR_E) ? 1 : 0;
+    }
+
+    cur_el = arm_current_el(env);
+
+    if (cur_el == 0) {
+        return (env->cp15.sctlr_el[1] & SCTLR_E0E) != 0;
+    }
+
+    return (env->cp15.sctlr_el[cur_el] & SCTLR_EE) != 0;
+}
+
 static inline void set_feature(CPUARMState *env, int feature)
 {
     env->features |= 1ULL << feature;
@@ -1117,6 +1140,9 @@ static void arm_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
 #else
     cc->do_interrupt = arm_cpu_do_interrupt;
     cc->get_phys_page_debug = arm_cpu_get_phys_page_debug;
+    // UNICORN: Commented out
+    //cc->vmsd = &vmstate_arm_cpu;
+    //cc->virtio_is_big_endian = arm_cpu_is_big_endian;
 #endif
     cc->debug_excp_handler = arm_debug_excp_handler;
 }
