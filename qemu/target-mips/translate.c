@@ -18567,12 +18567,14 @@ static void gen_msa(CPUMIPSState *env, DisasContext *ctx)
             case OPC_LD_H:
             case OPC_LD_W:
             case OPC_LD_D:
+                save_cpu_state(ctx, 1);
                 gen_helper_msa_ld_df(tcg_ctx, tcg_ctx->cpu_env, tdf, twd, trs, ts10);
                 break;
             case OPC_ST_B:
             case OPC_ST_H:
             case OPC_ST_W:
             case OPC_ST_D:
+                save_cpu_state(ctx, 1);
                 gen_helper_msa_st_df(tcg_ctx, tcg_ctx->cpu_env, tdf, twd, trs, ts10);
                 break;
             }
