@@ -660,7 +660,14 @@ static void scr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 static uint64_t ccsidr_read(CPUARMState *env, const ARMCPRegInfo *ri)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
-    return cpu->ccsidr[env->cp15.c0_cssel];
+
+    /* Acquire the CSSELR index from the bank corresponding to the CCSIDR
+     * bank
+     */
+    uint32_t index = A32_BANKED_REG_GET(env, csselr,
+                                        ri->secure & ARM_CP_SECSTATE_S);
+
+    return cpu->ccsidr[index];
 }
 
 static void csselr_write(CPUARMState *env, const ARMCPRegInfo *ri,
@@ -755,7 +762,8 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
       ARM_CP_NO_MIGRATE, PL1_R, 0, NULL, 0, 0, {0, 0},
       NULL, ccsidr_read, },
     { "CSSELR", 0,0,0, 3,2,0, ARM_CP_STATE_BOTH,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c0_cssel), {0, 0},
+      0, PL1_RW, 0, NULL, 0, 0,
+      { offsetof(CPUARMState, cp15.csselr_s), offsetof(CPUARMState, cp15.csselr_ns) },
       NULL, NULL, csselr_write, },
     /* Auxiliary ID register: this actually has an IMPDEF value but for now
      * just RAZ for all cores:
