@@ -1805,7 +1805,7 @@ out:
     return cpu;
 }
 
-X86CPU *cpu_x86_init_user(struct uc_struct *uc, const char *cpu_model)
+CPUX86State *cpu_x86_init_user(struct uc_struct *uc, const char *cpu_model)
 {
     Error *error = NULL;
     X86CPU *cpu;
@@ -1822,10 +1822,10 @@ out:
         error_free(error);
         if (cpu != NULL) {
             object_unref(uc, OBJECT(cpu));
-            cpu = NULL;
         }
+        return NULL;
     }
-    return cpu;
+    return &cpu->env;
 }
 
 static void x86_cpu_cpudef_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
