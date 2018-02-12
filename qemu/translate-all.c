@@ -1357,8 +1357,6 @@ static inline void tb_alloc_page(struct uc_struct *uc, TranslationBlock *tb,
     p->first_tb = (TranslationBlock *)((uintptr_t)tb | n);
     invalidate_page_bitmap(p);
 
-#if defined(TARGET_HAS_SMC) || 1
-
 #if defined(CONFIG_USER_ONLY)
     if (p->flags & PAGE_WRITE) {
         target_ulong addr;
@@ -1394,8 +1392,6 @@ static inline void tb_alloc_page(struct uc_struct *uc, TranslationBlock *tb,
         tlb_protect_code(uc, page_addr);
     }
 #endif
-
-#endif /* TARGET_HAS_SMC */
 }
 
 void tb_invalidate_phys_page_fast(struct uc_struct* uc, tb_page_addr_t start, int len)
