@@ -1254,13 +1254,16 @@ static MemTxResult subpage_read(struct uc_struct* uc, void *opaque, hwaddr addr,
 {
     subpage_t *subpage = opaque;
     uint8_t buf[4];
+    MemTxResult res;
 
 #if defined(DEBUG_SUBPAGE)
     printf("%s: subpage %p len %u addr " TARGET_FMT_plx "\n", __func__,
             subpage, len, addr);
 #endif
-    if (address_space_read(subpage->as, addr + subpage->base, buf, len)) {
-        return MEMTX_DECODE_ERROR;
+    res = address_space_read(subpage->as, addr + subpage->base,
+                             attrs, buf, len);
+    if (res) {
+        return res;
     }
     switch (len) {
     case 1:
@@ -1307,10 +1310,8 @@ static MemTxResult subpage_write(struct uc_struct* uc, void *opaque, hwaddr addr
     default:
         abort();
     }
-    if (address_space_write(subpage->as, addr + subpage->base, buf, len)) {
-        return MEMTX_DECODE_ERROR;
-    }
-    return MEMTX_OK;
+    return address_space_write(subpage->as, addr + subpage->base,
+                               attrs, buf, len);
 }
 
 static bool subpage_accepts(void *opaque, hwaddr addr,
@@ -1649,8 +1650,8 @@ static int memory_access_size(MemoryRegion *mr, unsigned l, hwaddr addr)
     return l;
 }
 
-bool address_space_rw(AddressSpace *as, hwaddr addr, uint8_t *buf,
-        int len, bool is_write)
+MemTxResult address_space_rw(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
+                             uint8_t *buf, int len, bool is_write)
 {
     hwaddr l;
     uint8_t *ptr;
@@ -1658,7 +1659,6 @@ bool address_space_rw(AddressSpace *as, hwaddr addr, uint8_t *buf,
     hwaddr addr1;
     MemoryRegion *mr;
     MemTxResult result = MEMTX_OK;
-    MemTxAttrs attrs = MEMTXATTRS_UNSPECIFIED;
 
     while (len > 0) {
         l = len;
@@ -1760,22 +1760,24 @@ bool address_space_rw(AddressSpace *as, hwaddr addr, uint8_t *buf,
     return result;
 }
 
-bool address_space_write(AddressSpace *as, hwaddr addr,
-        const uint8_t *buf, int len)
+MemTxResult address_space_write(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
+                                const uint8_t *buf, int len)
 {
-    return address_space_rw(as, addr, (uint8_t *)buf, len, true);
+    return address_space_rw(as, addr, attrs, (uint8_t *)buf, len, true);
 }
 
-bool address_space_read(AddressSpace *as, hwaddr addr, uint8_t *buf, int len)
+MemTxResult address_space_read(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
+                               uint8_t *buf, int len)
 {
-    return address_space_rw(as, addr, buf, len, false);
+    return address_space_rw(as, addr, attrs, buf, len, false);
 }
 
 
 bool cpu_physical_memory_rw(AddressSpace *as, hwaddr addr, uint8_t *buf,
-        int len, int is_write)
+                            int len, int is_write)
 {
-    return address_space_rw(as, addr, buf, len, is_write);
+    return address_space_rw(as, addr, MEMTXATTRS_UNSPECIFIED,
+                            buf, len, is_write) == MEMTX_OK;
 }
 
 enum write_rom_type {
@@ -1901,7 +1903,8 @@ void *address_space_map(AddressSpace *as,
         memory_region_ref(mr);
         as->uc->bounce.mr = mr;
         if (!is_write) {
-            address_space_read(as, addr, as->uc->bounce.buffer, l);
+            address_space_read(as, addr, MEMTXATTRS_UNSPECIFIED,
+                               as->uc->bounce.buffer, l);
         }
 
         *plen = l;
@@ -1951,7 +1954,8 @@ void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
         return;
     }
     if (is_write) {
-        address_space_write(as, as->uc->bounce.addr, as->uc->bounce.buffer, access_len);
+        address_space_write(as, as->uc->bounce.addr, MEMTXATTRS_UNSPECIFIED,
+                            as->uc->bounce.buffer, access_len);
     }
     qemu_vfree(as->uc->bounce.buffer);
     as->uc->bounce.buffer = NULL;
@@ -2094,7 +2098,7 @@ uint64_t ldq_be_phys(AddressSpace *as, hwaddr addr)
 uint32_t ldub_phys(AddressSpace *as, hwaddr addr)
 {
     uint8_t val;
-    address_space_rw(as, addr, &val, 1, 0);
+    address_space_rw(as, addr, MEMTXATTRS_UNSPECIFIED, &val, 1, 0);
     return val;
 }
 
@@ -2242,7 +2246,7 @@ void stl_be_phys(AddressSpace *as, hwaddr addr, uint32_t val)
 void stb_phys(AddressSpace *as, hwaddr addr, uint32_t val)
 {
     uint8_t v = val;
-    address_space_rw(as, addr, &v, 1, 1);
+    address_space_rw(as, addr, MEMTXATTRS_UNSPECIFIED, &v, 1, 1);
 }
 
 /* warning: addr must be aligned */
@@ -2306,19 +2310,19 @@ void stw_be_phys(AddressSpace *as, hwaddr addr, uint32_t val)
 void stq_phys(AddressSpace *as, hwaddr addr, uint64_t val)
 {
     val = tswap64(val);
-    address_space_rw(as, addr, (void *) &val, 8, 1);
+    address_space_rw(as, addr, MEMTXATTRS_UNSPECIFIED, (void *) &val, 8, 1);
 }
 
 void stq_le_phys(AddressSpace *as, hwaddr addr, uint64_t val)
 {
     val = cpu_to_le64(val);
-    address_space_rw(as, addr, (void *) &val, 8, 1);
+    address_space_rw(as, addr, MEMTXATTRS_UNSPECIFIED, (void *) &val, 8, 1);
 }
 
 void stq_be_phys(AddressSpace *as, hwaddr addr, uint64_t val)
 {
     val = cpu_to_be64(val);
-    address_space_rw(as, addr, (void *) &val, 8, 1);
+    address_space_rw(as, addr, MEMTXATTRS_UNSPECIFIED, (void *) &val, 8, 1);
 }
 
 /* virtual memory access for debug (includes writing to ROM) */
@@ -2342,7 +2346,8 @@ int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
         if (is_write) {
             cpu_physical_memory_write_rom(cpu->as, phys_addr, buf, l);
         } else {
-            address_space_rw(cpu->as, phys_addr, buf, l, 0);
+            address_space_rw(cpu->as, phys_addr, MEMTXATTRS_UNSPECIFIED,
+                             buf, l, 0);
         }
         len -= l;
         buf += l;
