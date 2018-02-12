@@ -410,6 +410,18 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
             cpu->reset_sctlr |= (1 << 13);
     }
 
+    if (!cpu->has_el3) {
+        /* If the has_el3 CPU property is disabled then we need to disable the
+         * feature.
+         */
+        unset_feature(env, ARM_FEATURE_EL3);
+
+        /* Disable the security extension feature bits in the processor feature
+         * register as well.  This is id_pfr1[7:4].
+         */
+        cpu->id_pfr1 &= ~0xf0;
+    }
+
     if (arm_feature(env, ARM_FEATURE_EL3)) {
         set_feature(env, ARM_FEATURE_VBAR);
     }
