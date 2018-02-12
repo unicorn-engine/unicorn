@@ -319,11 +319,31 @@ static void tlbimvaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
 }
 
 static const ARMCPRegInfo cp_reginfo[] = {
-    { "FCSEIDR",   15,13,0, 0,0,0, 0,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c13_fcse), {0, 0},
-      NULL, NULL, fcse_write, NULL, raw_write, NULL, },
-    { "CONTEXTIDR", 0,13,0,  3,0,1, ARM_CP_STATE_BOTH,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.contextidr_el1), {0, 0},
+    /* Define the secure and non-secure FCSE identifier CP registers
+     * separately because there is no secure bank in V8 (no _EL3).  This allows
+     * the secure register to be properly reset and migrated. There is also no
+     * v8 EL1 version of the register so the non-secure instance stands alone.
+     */
+    { "FCSEIDR(NS)", 15,13,0, 0,0,0, 0,0,
+      PL1_RW, ARM_CP_SECSTATE_NS, NULL, 0,
+      offsetof(CPUARMState, cp15.fcseidr_ns), {0, 0},
+      NULL, NULL, fcse_write, NULL, raw_write, },
+    { "FCSEIDR(S)", 15,13,0, 0,0,0, 0,0,
+      PL1_RW, ARM_CP_SECSTATE_S, NULL, 0,
+      offsetof(CPUARMState, cp15.fcseidr_s), {0, 0},
+      NULL, NULL, fcse_write, NULL, raw_write, },
+    /* Define the secure and non-secure context identifier CP registers
+     * separately because there is no secure bank in V8 (no _EL3).  This allows
+     * the secure register to be properly reset and migrated.  In the
+     * non-secure case, the 32-bit register will have reset and migration
+     * disabled during registration as it is handled by the 64-bit instance.
+     */
+    { "CONTEXTIDR_EL1", 0,13,0, 3,0,1, ARM_CP_STATE_BOTH,
+      0, PL1_RW, ARM_CP_SECSTATE_NS, NULL, 0, offsetof(CPUARMState, cp15.contextidr_el[1]), {0, 0},
+      NULL, NULL, contextidr_write, NULL, raw_write, NULL, },
+    { "CONTEXTIDR(S)", 15,13,0, 0,0,1, ARM_CP_STATE_AA32,0,
+      PL1_RW, ARM_CP_SECSTATE_S, NULL, 0,
+      offsetof(CPUARMState, cp15.contextidr_s), {0, 0},
       NULL, NULL, contextidr_write, NULL, raw_write, NULL, },
     REGINFO_SENTINEL
 };
@@ -883,17 +903,22 @@ static const ARMCPRegInfo t2ee_cp_reginfo[] = {
 
 static const ARMCPRegInfo v6k_cp_reginfo[] = {
     { "TPIDR_EL0", 0,13,0, 3,3,2, ARM_CP_STATE_AA64,
-      0, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidr_el0), },
+      0, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidr_el[0]), },
     { "TPIDRURW", 15,13,0, 0,0,2, 0,
-      0, PL0_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.tpidr_el0), {0, 0},
+      0, PL0_RW, 0, NULL, 0, 0,
+      { offsetoflow32(CPUARMState, cp15.tpidrurw_s), offsetoflow32(CPUARMState, cp15.tpidrurw_ns) },
       NULL, NULL, NULL, NULL, NULL, arm_cp_reset_ignore },
     { "TPIDRRO_EL0", 0,13,0, 3,3,3, ARM_CP_STATE_AA64,
-      0, PL0_R|PL1_W, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidrro_el0) },
+      0, PL0_R|PL1_W, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidrro_el[0]) },
     { "TPIDRURO", 15,13,0, 0,0,3, 0,
-      0, PL0_R|PL1_W, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.tpidrro_el0), {0, 0},
+      0, PL0_R|PL1_W, 0, NULL, 0, 0,
+      {offsetoflow32(CPUARMState, cp15.tpidruro_s), offsetoflow32(CPUARMState, cp15.tpidruro_ns) },
       NULL, NULL, NULL, NULL, NULL, arm_cp_reset_ignore },
-    { "TPIDR_EL1", 0,13,0, 3,0,4, ARM_CP_STATE_BOTH,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidr_el1), },
+    { "TPIDR_EL1", 0,13,0, 3,0,4, ARM_CP_STATE_AA64,
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidr_el[1]) },
+    { "TPIDRPRW", 15,13,0, 0,0,4, 0,0,
+      PL1_RW, 0, NULL, 0,0,
+      { offsetoflow32(CPUARMState, cp15.tpidrprw_s), offsetoflow32(CPUARMState, cp15.tpidrprw_ns)} },
     REGINFO_SENTINEL
 };
 
@@ -4548,8 +4573,9 @@ static inline int get_phys_addr(CPUARMState *env, target_ulong address,
     uint32_t sctlr = A32_BANKED_CURRENT_REG_GET(env, sctlr);
 
     /* Fast Context Switch Extension.  */
-    if (address < 0x02000000)
-        address += env->cp15.c13_fcse;
+    if (address < 0x02000000) {
+        address += A32_BANKED_CURRENT_REG_GET(env, fcseidr);
+    }
 
     if ((sctlr & SCTLR_M) == 0) {
         /* MMU/MPU disabled.  */
