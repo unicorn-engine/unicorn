@@ -1411,7 +1411,8 @@ static const ARMCPRegInfo vmsa_cp_reginfo[] = {
       ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.esr_el[1]), {0, 0},
       NULL,NULL,NULL,NULL,NULL, arm_cp_reset_ignore, },
     { "IFSR", 15,5,0, 0,0,1, 0,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ifsr_el2), },
+      0, PL1_RW, 0, NULL, 0, 0,
+      { offsetoflow32(CPUARMState, cp15.ifsr_s), offsetoflow32(CPUARMState, cp15.ifsr_ns) }},
     { "ESR_EL1", 0,5,2, 3,0,0, ARM_CP_STATE_AA64,
       0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.esr_el[1]), },
     { "TTBR0_EL1", 0,2,0, 3,0,0, ARM_CP_STATE_BOTH,
@@ -2011,6 +2012,8 @@ static const ARMCPRegInfo v8_el2_cp_reginfo[] = {
       ARM_CP_NO_MIGRATE, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[2]) },
     { "ESR_EL2", 0,5,2, 3,4,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_MIGRATE, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.esr_el[2]) },
+    { "IFSR32_EL2", 0,5,0, 3,4,1, ARM_CP_STATE_AA64,0,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ifsr32_el2) },
     { "FAR_EL2", 0,6,0, 3,4,0, ARM_CP_STATE_AA64,
       0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.far_el[2]) },
     { "SPSR_EL2", 0,4,0, 3,4,0, ARM_CP_STATE_AA64,
@@ -3823,11 +3826,11 @@ void arm_cpu_do_interrupt(CPUState *cs)
         env->exception.fsr = 2;
         /* Fall through to prefetch abort.  */
     case EXCP_PREFETCH_ABORT:
-        env->cp15.ifsr_el2 = env->exception.fsr;
+        A32_BANKED_CURRENT_REG_SET(env, ifsr, env->exception.fsr);
         env->cp15.far_el[1] = deposit64(env->cp15.far_el[1], 32, 32,
                                         env->exception.vaddress);
         qemu_log_mask(CPU_LOG_INT, "...with IFSR 0x%x IFAR 0x%x\n",
-                      env->cp15.ifsr_el2, (uint32_t)env->exception.vaddress);
+                      env->exception.fsr, (uint32_t)env->exception.vaddress);
         new_mode = ARM_CPU_MODE_ABT;
         addr = 0x0c;
         mask = CPSR_A | CPSR_I;
