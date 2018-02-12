@@ -1615,7 +1615,7 @@ void object_property_add_alias(Object *obj, const char *name,
     }
     op->resolve = property_resolve_alias;
 
-    object_property_set_description(obj, name,
+    object_property_set_description(obj, op->name,
                                     target_prop->description,
                                     &error_abort);
 
