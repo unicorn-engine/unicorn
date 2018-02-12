@@ -10614,15 +10614,27 @@ static void gen_rdhwr(DisasContext *ctx, int rt, int rd)
     tcg_temp_free(tcg_ctx, t0);
 }
 
+static inline void clear_branch_hflags(DisasContext *ctx)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    ctx->hflags &= ~MIPS_HFLAG_BMASK;
+    if (ctx->bstate == BS_NONE) {
+        save_cpu_state(ctx, 0);
+    } else {
+        /* it is not safe to save ctx->hflags as hflags may be changed
+           in execution time by the instruction in delay / forbidden slot. */
+        tcg_gen_andi_i32(tcg_ctx, tcg_ctx->hflags, tcg_ctx->hflags, ~MIPS_HFLAG_BMASK);
+    }
+}
+
 static void gen_branch(DisasContext *ctx, int insn_bytes)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     if (ctx->hflags & MIPS_HFLAG_BMASK) {
         int proc_hflags = ctx->hflags & MIPS_HFLAG_BMASK;
         /* Branches completion */
-        ctx->hflags &= ~MIPS_HFLAG_BMASK;
+        clear_branch_hflags(ctx);
         ctx->bstate = BS_BRANCH;
-        save_cpu_state(ctx, 0);
         /* FIXME: Need to clear can_do_io.  */
         switch (proc_hflags & MIPS_HFLAG_BMASK_BASE) {
         case MIPS_HFLAG_FBNSLOT:
@@ -10680,8 +10692,8 @@ static void gen_branch(DisasContext *ctx, int insn_bytes)
             tcg_gen_exit_tb(tcg_ctx, 0);
             break;
         default:
-            MIPS_DEBUG("unknown branch");
-            break;
+            fprintf(stderr, "unknown branch 0x%x\n", proc_hflags);
+            abort();
         }
     }
 }
