@@ -2601,7 +2601,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             REGINFO_SENTINEL
         };
         ARMCPRegInfo rvbar = {
-            "RVBAR_EL1", 0,12,0, 3,0,2, ARM_CP_STATE_AA64,
+            "RVBAR_EL1", 0,12,0, 3,0,1, ARM_CP_STATE_AA64,
             ARM_CP_CONST, PL1_R, 0, NULL, cpu->rvbar
         };
         define_one_arm_cp_reg(cpu, &rvbar);
