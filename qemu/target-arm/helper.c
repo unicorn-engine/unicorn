@@ -1228,13 +1228,13 @@ static CPAccessResult ats_access(CPUARMState *env, const ARMCPRegInfo *ri)
     return CP_ACCESS_OK;
 }
 
-static void ats_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
+static uint64_t do_ats_write(CPUARMState *env, uint64_t value,
+                             int access_type, int is_user)
 {
     hwaddr phys_addr;
     target_ulong page_size;
     int prot;
-    int ret, is_user = ri->opc2 & 2;
-    int access_type = ri->opc2 & 1;
+    int ret;
     uint64_t par64;
 
     ret = get_phys_addr(env, value, access_type, is_user,
@@ -1274,8 +1274,27 @@ static void ats_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
                 ((ret & 0xf) << 1) | 1;
         }
     }
+    return par64;
+}
+
+static void ats_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
+{
+    int is_user = ri->opc2 & 2;
+    int access_type = ri->opc2 & 1;
+    uint64_t par64;
+
+    par64 = do_ats_write(env, value, access_type, is_user);
 
     A32_BANKED_CURRENT_REG_SET(env, par, par64);
+}
+
+static void ats_write64(CPUARMState *env, const ARMCPRegInfo *ri,
+                        uint64_t value)
+{
+    int is_user = ri->opc2 & 2;
+    int access_type = ri->opc2 & 1;
+
+    env->cp15.par_el[1] = do_ats_write(env, value, access_type, is_user);
 }
 #endif
 
@@ -1953,16 +1972,16 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     /* 64 bit address translation operations */
     { "AT_S1E1R", 0,7,8, 1,0,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
-      NULL, NULL, ats_write },
+      NULL, NULL, ats_write64 },
     { "AT_S1E1W", 0,7,8, 1,0,1, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
-      NULL, NULL, ats_write },
+      NULL, NULL, ats_write64 },
     { "AT_S1E0R", 0,7,8, 1,0,2, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
-      NULL, NULL, ats_write },
+      NULL, NULL, ats_write64 },
     { "AT_S1E0W", 0,7,8, 1,0,3, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
-      NULL, NULL, ats_write },
+      NULL, NULL, ats_write64 },
 #endif
     /* TLB invalidate last level of translation table walk */
     { "TLBIMVALIS", 15,8,3, 0,0,5, 0,
