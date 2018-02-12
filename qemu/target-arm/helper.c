@@ -1997,6 +1997,8 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     { "SP_EL0", 0,4,1, 3,0,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, sp_el[0]), {0, 0},
       sp_el0_access, },
+    { "SP_EL1", 0,4,1, 3,4,0, ARM_CP_STATE_AA64, ARM_CP_NO_MIGRATE,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, sp_el[1]) },
     { "SPSel", 0,4,2, 3,0,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, 0, {0, 0},
       NULL, spsel_read, spsel_write },
@@ -2059,6 +2061,8 @@ static const ARMCPRegInfo v8_el2_cp_reginfo[] = {
     { "VBAR_EL2", 0,12,0, 3,4,0, ARM_CP_STATE_AA64,
       0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[2]), {0, 0},
       NULL, NULL, vbar_write, },
+    { "SP_EL2", 0,4,1, 3,6,0, ARM_CP_STATE_AA64, ARM_CP_NO_MIGRATE,
+      PL3_RW, 0, NULL, 0, offsetof(CPUARMState, sp_el[2]) },
     REGINFO_SENTINEL
 };
 
