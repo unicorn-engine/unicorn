@@ -808,17 +808,23 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
      * and so don't need to care about memory attributes.
      */
     { "MAIR_EL1", 0,10,2, 3,0,0, ARM_CP_STATE_AA64,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mair_el1), },
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mair_el[1]), },
     /* For non-long-descriptor page tables these are PRRR and NMRR;
      * regardless they still act as reads-as-written for QEMU.
      * The override is necessary because of the overly-broad TLB_LOCKDOWN
      * definition.
      */
+     /* MAIR0/1 are defined separately from their 64-bit counterpart which
+      * allows them to assign the correct fieldoffset based on the endianness
+      * handled in the field definitions.
+      */
     { "MAIR0", 15,10,2, 0,0,0, ARM_CP_STATE_AA32,
-      ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.mair_el1), {0, 0},
+      ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0, 0,
+      { offsetof(CPUARMState, cp15.mair0_s), offsetof(CPUARMState, cp15.mair0_ns) },
       NULL, NULL, NULL, NULL, NULL, arm_cp_reset_ignore },
     { "MAIR1", 15,10,2, 0,0,1, ARM_CP_STATE_AA32,
-      ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0, offsetofhigh32(CPUARMState, cp15.mair_el1), {0, 0},
+      ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0, 0,
+      { offsetof(CPUARMState, cp15.mair1_s), offsetof(CPUARMState, cp15.mair1_ns) },
       NULL, NULL, NULL, NULL, NULL, arm_cp_reset_ignore },
     { "ISR_EL1", 0,12,1, 3,0,0, ARM_CP_STATE_BOTH,
       ARM_CP_NO_MIGRATE, PL1_R, 0, NULL, 0, 0, {0, 0},
