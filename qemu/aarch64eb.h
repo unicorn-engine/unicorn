@@ -1932,8 +1932,6 @@
 #define int64_to_floatx80 int64_to_floatx80_aarch64eb
 #define invalidate_and_set_dirty invalidate_and_set_dirty_aarch64eb
 #define invalidate_page_bitmap invalidate_page_bitmap_aarch64eb
-#define io_mem_read io_mem_read_aarch64eb
-#define io_mem_write io_mem_write_aarch64eb
 #define io_readb io_readb_aarch64eb
 #define io_readl io_readl_aarch64eb
 #define io_readq io_readq_aarch64eb

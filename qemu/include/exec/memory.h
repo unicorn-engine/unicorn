@@ -752,6 +752,37 @@ void memory_listener_register(struct uc_struct* uc, MemoryListener *listener, Ad
 void memory_listener_unregister(struct uc_struct* uc, MemoryListener *listener);
 
 /**
+ * memory_region_dispatch_read: perform a read directly to the specified
+ * MemoryRegion.
+ *
+ * @mr: #MemoryRegion to access
+ * @addr: address within that region
+ * @pval: pointer to uint64_t which the data is written to
+ * @size: size of the access in bytes
+ * @attrs: memory transaction attributes to use for the access
+ */
+MemTxResult memory_region_dispatch_read(MemoryRegion *mr,
+                                        hwaddr addr,
+                                        uint64_t *pval,
+                                        unsigned size,
+                                        MemTxAttrs attrs);
+/**
+ * memory_region_dispatch_write: perform a write directly to the specified
+ * MemoryRegion.
+ *
+ * @mr: #MemoryRegion to access
+ * @addr: address within that region
+ * @data: data to write
+ * @size: size of the access in bytes
+ * @attrs: memory transaction attributes to use for the access
+ */
+MemTxResult memory_region_dispatch_write(MemoryRegion *mr,
+                                         hwaddr addr,
+                                         uint64_t data,
+                                         unsigned size,
+                                         MemTxAttrs attrs);
+
+/**
  * address_space_init: initializes an address space
  *
  * @as: an uninitialized #AddressSpace

@@ -1932,8 +1932,6 @@
 #define int64_to_floatx80 int64_to_floatx80_sparc
 #define invalidate_and_set_dirty invalidate_and_set_dirty_sparc
 #define invalidate_page_bitmap invalidate_page_bitmap_sparc
-#define io_mem_read io_mem_read_sparc
-#define io_mem_write io_mem_write_sparc
 #define io_readb io_readb_sparc
 #define io_readl io_readl_sparc
 #define io_readq io_readq_sparc

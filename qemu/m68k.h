@@ -1932,8 +1932,6 @@
 #define int64_to_floatx80 int64_to_floatx80_m68k
 #define invalidate_and_set_dirty invalidate_and_set_dirty_m68k
 #define invalidate_page_bitmap invalidate_page_bitmap_m68k
-#define io_mem_read io_mem_read_m68k
-#define io_mem_write io_mem_write_m68k
 #define io_readb io_readb_m68k
 #define io_readl io_readl_m68k
 #define io_readq io_readq_m68k

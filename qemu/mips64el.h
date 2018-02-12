@@ -1932,8 +1932,6 @@
 #define int64_to_floatx80 int64_to_floatx80_mips64el
 #define invalidate_and_set_dirty invalidate_and_set_dirty_mips64el
 #define invalidate_page_bitmap invalidate_page_bitmap_mips64el
-#define io_mem_read io_mem_read_mips64el
-#define io_mem_write io_mem_write_mips64el
 #define io_readb io_readb_mips64el
 #define io_readl io_readl_mips64el
 #define io_readq io_readq_mips64el

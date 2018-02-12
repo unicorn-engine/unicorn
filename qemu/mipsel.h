@@ -1932,8 +1932,6 @@
 #define int64_to_floatx80 int64_to_floatx80_mipsel
 #define invalidate_and_set_dirty invalidate_and_set_dirty_mipsel
 #define invalidate_page_bitmap invalidate_page_bitmap_mipsel
-#define io_mem_read io_mem_read_mipsel
-#define io_mem_write io_mem_write_mipsel
 #define io_readb io_readb_mipsel
 #define io_readl io_readl_mipsel
 #define io_readq io_readq_mipsel

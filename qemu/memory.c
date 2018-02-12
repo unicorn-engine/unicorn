@@ -1076,11 +1076,11 @@ static MemTxResult memory_region_dispatch_read1(MemoryRegion *mr,
     }
 }
 
-static MemTxResult memory_region_dispatch_read(MemoryRegion *mr,
-                                               hwaddr addr,
-                                               uint64_t *pval,
-                                               unsigned size,
-                                               MemTxAttrs attrs)
+MemTxResult memory_region_dispatch_read(MemoryRegion *mr,
+                                        hwaddr addr,
+                                        uint64_t *pval,
+                                        unsigned size,
+                                        MemTxAttrs attrs)
 {
     MemTxResult r;
 
@@ -1094,11 +1094,11 @@ static MemTxResult memory_region_dispatch_read(MemoryRegion *mr,
     return r;
 }
 
-static MemTxResult memory_region_dispatch_write(MemoryRegion *mr,
-                                                hwaddr addr,
-                                                uint64_t data,
-                                                unsigned size,
-                                                MemTxAttrs attrs)
+MemTxResult memory_region_dispatch_write(MemoryRegion *mr,
+                                         hwaddr addr,
+                                         uint64_t data,
+                                         unsigned size,
+                                         MemTxAttrs attrs)
 {
     if (!memory_region_access_valid(mr, addr, size, true)) {
         unassigned_mem_write(mr->uc, addr, data, size);
@@ -1656,19 +1656,6 @@ void address_space_destroy(AddressSpace *as)
 
     flatview_unref(as->current_map);
     g_free(as->name);
-}
-
-bool io_mem_read(MemoryRegion *mr, hwaddr addr, uint64_t *pval, unsigned size)
-{
-    return memory_region_dispatch_read(mr, addr, pval, size,
-                                       MEMTXATTRS_UNSPECIFIED);
-}
-
-bool io_mem_write(MemoryRegion *mr, hwaddr addr,
-                  uint64_t val, unsigned size)
-{
-    return memory_region_dispatch_write(mr, addr, val, size,
-                                        MEMTXATTRS_UNSPECIFIED);
 }
 
 typedef struct MemoryRegionList MemoryRegionList;

@@ -1932,8 +1932,6 @@
 #define int64_to_floatx80 int64_to_floatx80_arm
 #define invalidate_and_set_dirty invalidate_and_set_dirty_arm
 #define invalidate_page_bitmap invalidate_page_bitmap_arm
-#define io_mem_read io_mem_read_arm
-#define io_mem_write io_mem_write_arm
 #define io_readb io_readb_arm
 #define io_readl io_readl_arm
 #define io_readq io_readq_arm

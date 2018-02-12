@@ -1932,8 +1932,6 @@
 #define int64_to_floatx80 int64_to_floatx80_powerpc
 #define invalidate_and_set_dirty invalidate_and_set_dirty_powerpc
 #define invalidate_page_bitmap invalidate_page_bitmap_powerpc
-#define io_mem_read io_mem_read_powerpc
-#define io_mem_write io_mem_write_powerpc
 #define io_readb io_readb_powerpc
 #define io_readl io_readl_powerpc
 #define io_readq io_readq_powerpc

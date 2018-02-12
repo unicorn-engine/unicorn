@@ -1938,8 +1938,6 @@ symbols = (
     'int64_to_floatx80',
     'invalidate_and_set_dirty',
     'invalidate_page_bitmap',
-    'io_mem_read',
-    'io_mem_write',
     'io_readb',
     'io_readl',
     'io_readq',
