@@ -161,7 +161,7 @@ void apic_init_reset(struct uc_struct *uc, DeviceState *dev)
     }
 }
 
-void apic_designate_bsp(struct uc_struct *uc, DeviceState *dev)
+void apic_designate_bsp(struct uc_struct *uc, DeviceState *dev, bool bsp)
 {
     APICCommonState *s;
 
@@ -170,7 +170,11 @@ void apic_designate_bsp(struct uc_struct *uc, DeviceState *dev)
     }
 
     s = APIC_COMMON(uc, dev);
-    s->apicbase |= MSR_IA32_APICBASE_BSP;
+    if (bsp) {
+        s->apicbase |= MSR_IA32_APICBASE_BSP;
+    } else {
+        s->apicbase &= ~MSR_IA32_APICBASE_BSP;
+    }
 }
 
 static void apic_reset_common(struct uc_struct *uc, DeviceState *dev)

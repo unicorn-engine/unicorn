@@ -2289,9 +2289,7 @@ static void x86_cpu_reset(CPUState *s)
 
 #if !defined(CONFIG_USER_ONLY)
     /* We hard-wire the BSP to the first CPU. */
-    if (s->cpu_index == 0) {
-        apic_designate_bsp(env->uc, cpu->apic_state);
-    }
+    apic_designate_bsp(env->uc, cpu->apic_state, s->cpu_index == 0);
 
     s->halted = !cpu_is_bsp(cpu);
 #endif
