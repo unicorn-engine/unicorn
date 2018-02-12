@@ -1401,10 +1401,12 @@ static const ARMCPRegInfo vmsa_cp_reginfo[] = {
     { "ESR_EL1", 0,5,2, 3,0,0, ARM_CP_STATE_AA64,
       0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.esr_el[1]), },
     { "TTBR0_EL1", 0,2,0, 3,0,0, ARM_CP_STATE_BOTH,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el1), {0, 0},
+      0, PL1_RW, 0, NULL, 0, 0,
+      { offsetof(CPUARMState, cp15.ttbr0_s), offsetof(CPUARMState, cp15.ttbr0_ns) },
       NULL, NULL, vmsa_ttbr_write, },
     { "TTBR1_EL1", 0,2,0, 3,0,1, ARM_CP_STATE_BOTH,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr1_el1), {0, 0},
+      0, PL1_RW, 0, NULL, 0, 0,
+      { offsetof(CPUARMState, cp15.ttbr1_s), offsetof(CPUARMState, cp15.ttbr1_ns) },
       NULL, NULL, vmsa_ttbr_write, },
     { "TCR_EL1", 0,2,0, 3,0,2, ARM_CP_STATE_AA64,
       0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c2_control), {0, 0},
@@ -1601,10 +1603,12 @@ static const ARMCPRegInfo lpae_cp_reginfo[] = {
     { "PAR", 15, 0,7, 0,0, 0, 0,
       ARM_CP_64BIT, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.par_el1), },
     { "TTBR0", 15, 0,2, 0,0, 0, 0,
-      ARM_CP_64BIT | ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el1), {0, 0},
+      ARM_CP_64BIT | ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, 0,
+      { offsetof(CPUARMState, cp15.ttbr0_s), offsetof(CPUARMState, cp15.ttbr0_ns) },
       NULL, NULL, vmsa_ttbr_write, NULL,NULL, arm_cp_reset_ignore },
     { "TTBR1", 15, 0,2, 0,1, 0, 0,
-      ARM_CP_64BIT | ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr1_el1), {0, 0},
+      ARM_CP_64BIT | ARM_CP_NO_MIGRATE, PL1_RW, 0, NULL, 0, 0,
+      { offsetof(CPUARMState, cp15.ttbr1_s), offsetof(CPUARMState, cp15.ttbr1_ns) },
       NULL, NULL, vmsa_ttbr_write, NULL,NULL, arm_cp_reset_ignore },
     REGINFO_SENTINEL
 };
@@ -2002,6 +2006,9 @@ static const ARMCPRegInfo v8_el3_cp_reginfo[] = {
     { "SCTLR_EL3", 0,1,0, 3,6,0, ARM_CP_STATE_AA64,0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sctlr_el[3]), {0, 0},
       NULL, NULL, sctlr_write, NULL, raw_write, },
+    { "TTBR0_EL3", 0,2,0, 3,6,0, ARM_CP_STATE_AA64,0,
+      PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el[3]), {0, 0},
+      NULL, NULL, vmsa_ttbr_write },
     { "ELR_EL3", 0,4,0, 3,6,1, ARM_CP_STATE_AA64,
       ARM_CP_NO_MIGRATE, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[3]) },
     { "ESR_EL3", 0,5,2, 3,6,0, ARM_CP_STATE_AA64,
@@ -3948,18 +3955,23 @@ static inline int check_ap(CPUARMState *env, int ap, int domain_prot,
 static bool get_level1_table_address(CPUARMState *env, uint32_t *table,
                                          uint32_t address)
 {
+    /* We only get here if EL1 is running in AArch32. If EL3 is running in
+     * AArch32 there is a secure and non-secure instance of the translation
+     * table registers.
+     */
     if (address & env->cp15.c2_mask) {
         if ((env->cp15.c2_control & TTBCR_PD1)) {
             /* Translation table walk disabled for TTBR1 */
             return false;
         }
-        *table = env->cp15.ttbr1_el1 & 0xffffc000;
+        *table = A32_BANKED_CURRENT_REG_GET(env, ttbr1) & 0xffffc000;
     } else {
         if ((env->cp15.c2_control & TTBCR_PD0)) {
             /* Translation table walk disabled for TTBR0 */
             return false;
         }
-        *table = env->cp15.ttbr0_el1 & env->cp15.c2_base_mask;
+        *table = A32_BANKED_CURRENT_REG_GET(env, ttbr0) &
+                 env->cp15.c2_base_mask;
     }
     *table |= (address >> 18) & 0x3ffc;
     return true;
@@ -4266,7 +4278,7 @@ static int get_phys_addr_lpae(CPUARMState *env, target_ulong address,
      * we will always flush the TLB any time the ASID is changed).
      */
     if (ttbr_select == 0) {
-        ttbr = env->cp15.ttbr0_el1;
+        ttbr = A32_BANKED_CURRENT_REG_GET(env, ttbr0);
         epd = extract32(env->cp15.c2_control, 7, 1);
         tsz = t0sz;
 
@@ -4278,7 +4290,7 @@ static int get_phys_addr_lpae(CPUARMState *env, target_ulong address,
             granule_sz = 11;
         }
     } else {
-        ttbr = env->cp15.ttbr1_el1;
+        ttbr = A32_BANKED_CURRENT_REG_GET(env, ttbr1);
         epd = extract32(env->cp15.c2_control, 23, 1);
         tsz = t1sz;
 
