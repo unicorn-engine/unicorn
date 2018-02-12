@@ -2600,16 +2600,28 @@ void register_cp_regs_for_features(ARMCPU *cpu)
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->mvfr2 },
             REGINFO_SENTINEL
         };
-        ARMCPRegInfo rvbar = {
-            "RVBAR_EL1", 0,12,0, 3,0,1, ARM_CP_STATE_AA64,
-            ARM_CP_CONST, PL1_R, 0, NULL, cpu->rvbar
-        };
-        define_one_arm_cp_reg(cpu, &rvbar);
+        /* RVBAR_EL1 is only implemented if EL1 is the highest EL */
+        if (!arm_feature(env, ARM_FEATURE_EL3) &&
+            !arm_feature(env, ARM_FEATURE_EL2)) {
+            ARMCPRegInfo rvbar = {
+                "RVBAR_EL1", 0,12,0, 3,0,1, ARM_CP_STATE_AA64,
+                ARM_CP_CONST, PL1_R, 0, NULL, cpu->rvbar
+            };
+            define_one_arm_cp_reg(cpu, &rvbar);
+        }
         define_arm_cp_regs(cpu, v8_idregs);
         define_arm_cp_regs(cpu, v8_cp_reginfo);
     }
     if (arm_feature(env, ARM_FEATURE_EL2)) {
         define_arm_cp_regs(cpu, v8_el2_cp_reginfo);
+        /* RVBAR_EL2 is only implemented if EL2 is the highest EL */
+        if (!arm_feature(env, ARM_FEATURE_EL3)) {
+            ARMCPRegInfo rvbar = {
+                "RVBAR_EL2", 0,12,0, 3,4,1, ARM_CP_STATE_AA64,
+                ARM_CP_CONST, PL2_R, 0, NULL, cpu->rvbar
+            };
+            define_one_arm_cp_reg(cpu, &rvbar);
+        }
     } else {
         /* If EL2 is missing but higher ELs are enabled, we need to
          * register the no_el2 reginfos.
@@ -2620,6 +2632,11 @@ void register_cp_regs_for_features(ARMCPU *cpu)
     }
     if (arm_feature(env, ARM_FEATURE_EL3)) {
         define_arm_cp_regs(cpu, el3_cp_reginfo);
+        ARMCPRegInfo rvbar = {
+            "RVBAR_EL3", 0,12,0, 3,6,1, ARM_CP_STATE_AA64,
+            ARM_CP_CONST, PL3_R, 0, NULL, cpu->rvbar
+        };
+        define_one_arm_cp_reg(cpu, &rvbar);
     }
     if (arm_feature(env, ARM_FEATURE_MPU)) {
         /* These are the MPU registers prior to PMSAv6. Any new
