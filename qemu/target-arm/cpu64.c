@@ -28,6 +28,11 @@ static inline void set_feature(CPUARMState *env, int feature)
     env->features |= 1ULL << feature;
 }
 
+static inline QEMU_UNUSED_FUNC void unset_feature(CPUARMState *env, int feature)
+{
+    env->features &= ~(1ULL << feature);
+}
+
 #ifndef CONFIG_USER_ONLY
 static uint64_t a57_l2ctlr_read(CPUARMState *env, const ARMCPRegInfo *ri)
 {
@@ -153,6 +158,13 @@ static const ARMCPUInfo aarch64_cpus[] = {
 #endif
     { NULL }
 };
+
+static QEMU_UNUSED_FUNC bool aarch64_cpu_get_aarch64(Object *obj, Error **errp)
+{
+    ARMCPU *cpu = ARM_CPU(NULL, obj);
+
+    return arm_feature(&cpu->env, ARM_FEATURE_AARCH64);
+}
 
 static void aarch64_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {

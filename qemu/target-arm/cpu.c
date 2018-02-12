@@ -272,7 +272,7 @@ static bool arm_v7m_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 }
 #endif
 
-static bool arm_cpu_is_big_endian(CPUState *cs)
+static QEMU_UNUSED_FUNC bool arm_cpu_is_big_endian(CPUState *cs)
 {
     ARMCPU *cpu = ARM_CPU(NULL, cs);
     CPUARMState *env = &cpu->env;
