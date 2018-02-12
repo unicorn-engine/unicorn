@@ -270,6 +270,11 @@ static inline void set_feature(CPUARMState *env, int feature)
     env->features |= 1ULL << feature;
 }
 
+static inline void unset_feature(CPUARMState *env, int feature)
+{
+    env->features &= ~(1ULL << feature);
+}
+
 static void arm_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
     CPUState *cs = CPU(obj);
