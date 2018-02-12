@@ -1805,7 +1805,7 @@ out:
     return cpu;
 }
 
-X86CPU *cpu_x86_init(struct uc_struct *uc, const char *cpu_model)
+X86CPU *cpu_x86_init_user(struct uc_struct *uc, const char *cpu_model)
 {
     Error *error = NULL;
     X86CPU *cpu;
