@@ -1109,7 +1109,7 @@ static void disas_uncond_b_imm(DisasContext *s, uint32_t insn)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     uint64_t addr = s->pc + sextract32(insn, 0, 26) * 4 - 4;
 
-    if (insn & (1 << 31)) {
+    if (insn & (1U << 31)) {
         /* C5.6.26 BL Branch with link */
         tcg_gen_movi_i64(tcg_ctx, cpu_reg(s, 30), s->pc);
     }
@@ -1308,7 +1308,7 @@ static void gen_get_nzcv(TCGContext *tcg_ctx, TCGv_i64 tcg_rt)
     TCGv_i32 nzcv = tcg_temp_new_i32(tcg_ctx);
 
     /* build bit 31, N */
-    tcg_gen_andi_i32(tcg_ctx, nzcv, tcg_ctx->cpu_NF, (1 << 31));
+    tcg_gen_andi_i32(tcg_ctx, nzcv, tcg_ctx->cpu_NF, (1U << 31));
     /* build bit 30, Z */
     tcg_gen_setcondi_i32(tcg_ctx, TCG_COND_EQ, tmp, tcg_ctx->cpu_ZF, 0);
     tcg_gen_deposit_i32(tcg_ctx, nzcv, nzcv, tmp, 30, 1);
@@ -1333,7 +1333,7 @@ static void gen_set_nzcv(TCGContext *tcg_ctx, TCGv_i64 tcg_rt)
     tcg_gen_extrl_i64_i32(tcg_ctx, nzcv, tcg_rt);
 
     /* bit 31, N */
-    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_NF, nzcv, (1 << 31));
+    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_NF, nzcv, (1U << 31));
     /* bit 30, Z */
     tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_ZF, nzcv, (1 << 30));
     tcg_gen_setcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_ZF, tcg_ctx->cpu_ZF, 0);
