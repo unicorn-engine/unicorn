@@ -2778,7 +2778,8 @@ void register_cp_regs_for_features(ARMCPU *cpu)
     if (arm_feature(env, ARM_FEATURE_VBAR)) {
         ARMCPRegInfo vbar_cp_reginfo[] = {
             { "VBAR", 0,12,0, 3,0,0, ARM_CP_STATE_BOTH,
-              0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[1]), {0, 0},
+              0, PL1_RW, 0, NULL, 0, 0,
+              { offsetof(CPUARMState, cp15.vbar_s), offsetof(CPUARMState, cp15.vbar_ns) },
               NULL, NULL, vbar_write, },
             REGINFO_SENTINEL
         };
@@ -3898,7 +3899,7 @@ void arm_cpu_do_interrupt(CPUState *cs)
          * This register is only followed in non-monitor mode, and is banked.
          * Note: only bits 31:5 are valid.
          */
-        addr += env->cp15.vbar_el[1];
+        addr += A32_BANKED_CURRENT_REG_GET(env, vbar);
     }
 
     if ((env->uncached_cpsr & CPSR_M) == ARM_CPU_MODE_MON) {
