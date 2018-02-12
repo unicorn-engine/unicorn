@@ -21,6 +21,8 @@
 
 #include "tcg.h"
 #include "sysemu/sysemu.h"
+#include "exec/address-spaces.h"
+#include "exec/memory-internal.h"
 
 #include "uc_priv.h"
 
@@ -289,6 +291,9 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
 void cpu_reload_memory_map(CPUState *cpu)
 {
     /* The TLB is protected by the iothread lock.  */
+    /* The CPU and TLB are protected by the iothread lock.  */
+    AddressSpaceDispatch *d = cpu->as->dispatch;
+    cpu->memory_dispatch = d;
     tlb_flush(cpu, 1);
 }
 

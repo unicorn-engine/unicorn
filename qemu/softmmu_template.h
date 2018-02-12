@@ -163,7 +163,7 @@ static inline DATA_TYPE glue(io_read, SUFFIX)(CPUArchState *env,
 {
     uint64_t val;
     CPUState *cpu = ENV_GET_CPU(env);
-    MemoryRegion *mr = iotlb_to_region(cpu->as, physaddr);
+    MemoryRegion *mr = iotlb_to_region(cpu, physaddr);
 
     physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
     cpu->mem_io_pc = retaddr;
@@ -663,7 +663,7 @@ static inline void glue(io_write, SUFFIX)(CPUArchState *env,
                                           uintptr_t retaddr)
 {
     CPUState *cpu = ENV_GET_CPU(env);
-    MemoryRegion *mr = iotlb_to_region(cpu->as, physaddr);
+    MemoryRegion *mr = iotlb_to_region(cpu, physaddr);
 
     physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
     if (mr != &(cpu->uc->io_mem_rom) && mr != &(cpu->uc->io_mem_notdirty)

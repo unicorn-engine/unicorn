@@ -230,6 +230,7 @@ struct CPUState {
     sigjmp_buf jmp_env;
 
     AddressSpace *as;
+    struct AddressSpaceDispatch *memory_dispatch;
     MemoryListener *tcg_as_listener;
 
     void *env_ptr; /* CPUArchState */
