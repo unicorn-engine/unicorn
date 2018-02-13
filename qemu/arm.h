@@ -141,7 +141,6 @@
 #define arm_debug_target_el arm_debug_target_el_arm
 #define arm_el_is_aa64 arm_el_is_aa64_arm
 #define arm_env_get_cpu arm_env_get_cpu_arm
-#define arm_excp_target_el arm_excp_target_el_arm
 #define arm_excp_unmasked arm_excp_unmasked_arm
 #define arm_feature arm_feature_arm
 #define arm_free_cc arm_free_cc_arm
@@ -159,6 +158,7 @@
 #define arm_ldl_code arm_ldl_code_arm
 #define arm_lduw_code arm_lduw_code_arm
 #define arm_log_exception arm_log_exception_arm
+#define arm_phys_excp_target_el arm_phys_excp_target_el_arm
 #define arm_reg_read arm_reg_read_arm
 #define arm_reg_reset arm_reg_reset_arm
 #define arm_reg_write arm_reg_write_arm

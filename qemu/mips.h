@@ -141,7 +141,6 @@
 #define arm_debug_target_el arm_debug_target_el_mips
 #define arm_el_is_aa64 arm_el_is_aa64_mips
 #define arm_env_get_cpu arm_env_get_cpu_mips
-#define arm_excp_target_el arm_excp_target_el_mips
 #define arm_excp_unmasked arm_excp_unmasked_mips
 #define arm_feature arm_feature_mips
 #define arm_free_cc arm_free_cc_mips
@@ -159,6 +158,7 @@
 #define arm_ldl_code arm_ldl_code_mips
 #define arm_lduw_code arm_lduw_code_mips
 #define arm_log_exception arm_log_exception_mips
+#define arm_phys_excp_target_el arm_phys_excp_target_el_mips
 #define arm_reg_read arm_reg_read_mips
 #define arm_reg_reset arm_reg_reset_mips
 #define arm_reg_write arm_reg_write_mips
