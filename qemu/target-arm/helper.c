@@ -2186,6 +2186,10 @@ static const ARMCPRegInfo v8_el3_no_el2_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0 },
     { "TPIDR_EL2", 0,13,0, 3,4,2, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
+    { "TTBR0_EL2", 0,2,0, 3,4,0, ARM_CP_STATE_AA64, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
+    { "HTTBR", 15,0,2, 0,4,0, 0, ARM_CP_64BIT | ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
     REGINFO_SENTINEL
 };
 
@@ -2251,6 +2255,10 @@ static const ARMCPRegInfo v8_el2_cp_reginfo[] = {
       NULL, NULL, sctlr_write, NULL, raw_write },
     { "TPIDR_EL2", 0,13,0, 3,4,2, ARM_CP_STATE_BOTH, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidr_el[2]) },
+    { "TTBR0_EL2", 0,2,0, 3,4,0, ARM_CP_STATE_AA64, 0,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el[2]) },
+    { "HTTBR", 15,0,2, 0,4,0, 0, ARM_CP_64BIT | ARM_CP_ALIAS,
+      .access = PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el[2]) },
     REGINFO_SENTINEL
 };
 
