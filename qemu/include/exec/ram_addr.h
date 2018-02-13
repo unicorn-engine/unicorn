@@ -125,10 +125,13 @@ static inline void cpu_physical_memory_set_dirty_lebitmap(struct uc_struct *uc, 
         for (k = 0; k < nr; k++) {
             if (bitmap[k]) {
                 unsigned long temp = leul_to_cpu(bitmap[k]);
-                uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE][page + k] |= temp;
+                if (tcg_enabled(uc)) {
+                    uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE][page + k] |= temp;
+                }
             }
         }
     } else {
+        uint8_t clients = tcg_enabled(uc) ? DIRTY_CLIENTS_ALL : DIRTY_CLIENTS_NOCODE;
         /*
          * bitmap-traveling is faster than memory-traveling (for addr...)
          * especially when most of the memory is not dirty.
@@ -143,8 +146,7 @@ static inline void cpu_physical_memory_set_dirty_lebitmap(struct uc_struct *uc, 
                     addr = page_number * TARGET_PAGE_SIZE;
                     ram_addr = start + addr;
                     cpu_physical_memory_set_dirty_range(uc, ram_addr,
-                                       TARGET_PAGE_SIZE * hpratio,
-                                       DIRTY_CLIENTS_ALL);
+                                       TARGET_PAGE_SIZE * hpratio, clients);
                 } while (c != 0);
             }
         }
