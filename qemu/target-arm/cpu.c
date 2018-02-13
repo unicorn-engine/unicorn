@@ -730,6 +730,16 @@ static void cortex_m3_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->midr = 0x410fc231;
 }
 
+static void cortex_m4_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    ARMCPU *cpu = ARM_CPU(uc, obj);
+
+    set_feature(&cpu->env, ARM_FEATURE_V7);
+    set_feature(&cpu->env, ARM_FEATURE_M);
+    set_feature(&cpu->env, ARM_FEATURE_THUMB_DSP);
+    cpu->midr = 0x410fc240; /* r0p0 */
+}
+
 static void arm_v7m_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
     CPUClass *cc = CPU_CLASS(uc, oc);
@@ -1128,6 +1138,7 @@ static const ARMCPUInfo arm_cpus[] = {
     { "arm1176",     arm1176_initfn },
     { "arm11mpcore", arm11mpcore_initfn },
     { "cortex-m3",   cortex_m3_initfn, arm_v7m_class_init },
+    { "cortex-m4",   cortex_m4_initfn, arm_v7m_class_init },
     { "cortex-a8",   cortex_a8_initfn },
     { "cortex-a9",   cortex_a9_initfn },
     { "cortex-a15",  cortex_a15_initfn },
