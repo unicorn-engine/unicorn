@@ -808,7 +808,7 @@ void object_property_get(struct uc_struct *uc, Object *obj, Visitor *v, const ch
     }
 
     if (!prop->get) {
-        error_set(errp, QERR_PERMISSION_DENIED);
+        error_setg(errp, QERR_PERMISSION_DENIED);
     } else {
         prop->get(uc, obj, v, prop->opaque, name, errp);
     }
@@ -823,10 +823,10 @@ void object_property_set(struct uc_struct *uc, Object *obj, Visitor *v, const ch
     }
 
     if (!prop->set) {
-        error_set(errp, QERR_PERMISSION_DENIED);
+        error_setg(errp, QERR_PERMISSION_DENIED);
     } else {
         if (prop->set(uc, obj, v, prop->opaque, name, errp))
-            error_set(errp, QERR_UNDEFINED_ERROR);
+            error_setg(errp, QERR_UNDEFINED_ERROR);
     }
 }
 
@@ -851,7 +851,7 @@ char *object_property_get_str(struct uc_struct *uc, Object *obj, const char *nam
     }
     qstring = qobject_to_qstring(ret);
     if (!qstring) {
-        error_set(errp, QERR_INVALID_PARAMETER_TYPE, name, "string");
+        error_setg(errp, QERR_INVALID_PARAMETER_TYPE, name, "string");
         retval = NULL;
     } else {
         retval = g_strdup(qstring_get_str(qstring));
@@ -912,7 +912,7 @@ bool object_property_get_bool(struct uc_struct *uc, Object *obj, const char *nam
     }
     qbool = qobject_to_qbool(ret);
     if (!qbool) {
-        error_set(errp, QERR_INVALID_PARAMETER_TYPE, name, "boolean");
+        error_setg(errp, QERR_INVALID_PARAMETER_TYPE, name, "boolean");
         retval = false;
     } else {
         retval = qbool_get_bool(qbool);
@@ -943,7 +943,7 @@ int64_t object_property_get_int(struct uc_struct *uc, Object *obj, const char *n
     }
     qint = qobject_to_qint(ret);
     if (!qint) {
-        error_set(errp, QERR_INVALID_PARAMETER_TYPE, name, "int");
+        error_setg(errp, QERR_INVALID_PARAMETER_TYPE, name, "int");
         retval = -1;
     } else {
         retval = qint_get_int(qint);
@@ -1096,7 +1096,7 @@ static Object *object_resolve_link(struct uc_struct *uc, Object *obj, const char
     } else if (!target) {
         target = object_resolve_path(uc, path, &ambiguous);
         if (target || ambiguous) {
-            error_set(errp, QERR_INVALID_PARAMETER_TYPE, name, target_type);
+            error_setg(errp, QERR_INVALID_PARAMETER_TYPE, name, target_type);
         } else {
             error_set(errp, ERROR_CLASS_DEVICE_NOT_FOUND,
                       "Device '%s' not found", path);

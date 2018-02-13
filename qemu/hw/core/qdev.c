@@ -163,7 +163,7 @@ static int device_set_realized(struct uc_struct *uc, Object *obj, bool value, Er
     Error *local_err = NULL;
 
     if (dev->hotplugged && !dc->hotpluggable) {
-        error_set(errp, QERR_DEVICE_NO_HOTPLUG, object_get_typename(obj));
+        error_setg(errp, QERR_DEVICE_NO_HOTPLUG, object_get_typename(obj));
         return -1;
     }
 
