@@ -2264,7 +2264,10 @@ static const ARMCPRegInfo v8_el2_cp_reginfo[] = {
     { "TTBR0_EL2", 0,2,0, 3,4,0, ARM_CP_STATE_AA64, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el[2]) },
     { "HTTBR", 15,0,2, 0,4,0, 0, ARM_CP_64BIT | ARM_CP_ALIAS,
-      .access = PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el[2]) },
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el[2]) },
+    { "TLBI_ALLE2", 0,8,7, 1,4,0, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiall_write },
     REGINFO_SENTINEL
 };
 
