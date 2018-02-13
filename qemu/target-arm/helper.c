@@ -1165,7 +1165,7 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
      */
     { "CNTFRQ", 15,14,0, 0,0,0, 0,
       ARM_CP_ALIAS, PL1_RW | PL0_R, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_cntfrq), {0, 0},
-      gt_cntfrq_access, NULL,NULL, NULL,NULL, arm_cp_reset_ignore, },
+      gt_cntfrq_access, NULL, NULL, NULL, NULL, NULL },
     { "CNTFRQ_EL0", 0,14,0, 3,3,0, ARM_CP_STATE_AA64,
       0, PL1_RW | PL0_R, 0, NULL, (1000 * 1000 * 1000) / GTIMER_SCALE, offsetof(CPUARMState, cp15.c14_cntfrq), {0, 0},
       gt_cntfrq_access, },
@@ -1175,13 +1175,13 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
     /* per-timer control */
     { "CNTP_CTL", 15,14,2, 0,0,1, 0,
       ARM_CP_IO | ARM_CP_ALIAS, PL1_RW | PL0_R, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_timer[GTIMER_PHYS].ctl), {0, 0},
-      gt_ptimer_access, NULL, gt_ctl_write, NULL,raw_write, arm_cp_reset_ignore, },
+      gt_ptimer_access, NULL, gt_ctl_write, NULL, raw_write, NULL },
     { "CNTP_CTL_EL0", 0,14,2, 3,3,1, ARM_CP_STATE_AA64,
       ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].ctl), {0, 0},
       gt_ptimer_access, NULL,gt_ctl_write, NULL,raw_write, },
     { "CNTV_CTL", 15,14,3, 0,0,1, 0,
       ARM_CP_IO | ARM_CP_ALIAS, PL1_RW | PL0_R, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_timer[GTIMER_VIRT].ctl), {0, 0},
-      gt_vtimer_access, NULL,gt_ctl_write, NULL,raw_write, arm_cp_reset_ignore, },
+      gt_vtimer_access, NULL, gt_ctl_write, NULL, raw_write, NULL },
     { "CNTV_CTL_EL0", 0,14,3, 3,3,1, ARM_CP_STATE_AA64,
       ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_VIRT].ctl), {0, 0},
       gt_vtimer_access, NULL,gt_ctl_write, NULL,raw_write, },
@@ -1214,13 +1214,13 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
     /* Comparison value, indicating when the timer goes off */
     { "CNTP_CVAL", 15, 0,14, 0,2, 0, 0,
       ARM_CP_64BIT | ARM_CP_IO | ARM_CP_ALIAS, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].cval), {0, 0},
-      gt_ptimer_access, NULL, gt_cval_write, NULL, raw_write, arm_cp_reset_ignore, },
+      gt_ptimer_access, NULL, gt_cval_write, NULL, raw_write, NULL },
     { "CNTP_CVAL_EL0", 0,14,2, 3,3,2, ARM_CP_STATE_AA64,
       ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].cval), {0, 0},
       gt_ptimer_access, NULL, gt_cval_write, NULL, raw_write, },
     { "CNTV_CVAL", 15, 0,14, 0,3,0, 0,
       ARM_CP_64BIT | ARM_CP_IO | ARM_CP_ALIAS, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_VIRT].cval), {0, 0},
-      gt_vtimer_access, NULL, gt_cval_write, NULL, raw_write, arm_cp_reset_ignore, },
+      gt_vtimer_access, NULL, gt_cval_write, NULL, raw_write, NULL },
     { "CNTV_CVAL_EL0", 0,14,3, 3,3,2, ARM_CP_STATE_AA64,
       ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_VIRT].cval), {0, 0},
       gt_vtimer_access, NULL, gt_cval_write, NULL, raw_write, },
@@ -1608,7 +1608,7 @@ static const ARMCPRegInfo vmsa_pmsa_cp_reginfo[] = {
     { "DFSR", 15,5,0, 0,0,0, 0,
       ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, 0,
       { offsetoflow32(CPUARMState, cp15.dfsr_s), offsetoflow32(CPUARMState, cp15.dfsr_ns) },
-      NULL,NULL,NULL,NULL,NULL, arm_cp_reset_ignore, },
+      NULL, NULL, NULL, NULL, NULL, NULL },
     { "IFSR", 15,5,0, 0,0,1, 0,
       0, PL1_RW, 0, NULL, 0, 0,
       { offsetoflow32(CPUARMState, cp15.ifsr_s), offsetoflow32(CPUARMState, cp15.ifsr_ns) }},
@@ -1637,7 +1637,7 @@ static const ARMCPRegInfo vmsa_cp_reginfo[] = {
     { "TTBCR", 15,2,0, 0,0,2, 0,
       ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, 0,
       { offsetoflow32(CPUARMState, cp15.tcr_el[3]), offsetoflow32(CPUARMState, cp15.tcr_el[1]) },
-      NULL, NULL, vmsa_ttbcr_write, NULL, vmsa_ttbcr_raw_write, arm_cp_reset_ignore, },
+      NULL, NULL, vmsa_ttbcr_write, NULL, vmsa_ttbcr_raw_write, NULL },
     REGINFO_SENTINEL
 };
 
@@ -1824,11 +1824,11 @@ static const ARMCPRegInfo lpae_cp_reginfo[] = {
     { "TTBR0", 15, 0,2, 0,0, 0, 0,
       ARM_CP_64BIT | ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, 0,
       { offsetof(CPUARMState, cp15.ttbr0_s), offsetof(CPUARMState, cp15.ttbr0_ns) },
-      NULL, NULL, vmsa_ttbr_write, NULL,NULL, arm_cp_reset_ignore },
+      NULL, NULL, vmsa_ttbr_write, NULL, NULL, NULL },
     { "TTBR1", 15, 0,2, 0,1, 0, 0,
       ARM_CP_64BIT | ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, 0,
       { offsetof(CPUARMState, cp15.ttbr1_s), offsetof(CPUARMState, cp15.ttbr1_ns) },
-      NULL, NULL, vmsa_ttbr_write, NULL,NULL, arm_cp_reset_ignore },
+      NULL, NULL, vmsa_ttbr_write, NULL, NULL, NULL },
     REGINFO_SENTINEL
 };
 
@@ -2287,7 +2287,7 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
       NULL, NULL, scr_write },
     { "SCR", 15,1,1, 0,0,0, 0,ARM_CP_ALIAS,
       PL3_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.scr_el3), {0, 0},
-      NULL, NULL, scr_write, NULL, NULL, arm_cp_reset_ignore },
+      NULL, NULL, scr_write, NULL, NULL, NULL },
     { "SDER32_EL3", 0,1,1, 3,6,1, ARM_CP_STATE_AA64,0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sder) },
     { "SDER", 15,1,1, 0,0,1, 0,0,
@@ -2356,7 +2356,7 @@ static const ARMCPRegInfo debug_cp_reginfo[] = {
      */
     { "MDCCSR_EL0", 14,0,1, 2,0,0, ARM_CP_STATE_BOTH,
       ARM_CP_ALIAS, PL1_R, 0, NULL, 0, offsetof(CPUARMState, cp15.mdscr_el1), {0, 0},
-      NULL,NULL,NULL,NULL,NULL, arm_cp_reset_ignore },
+      NULL, NULL, NULL, NULL, NULL, NULL },
     /* We define a dummy WI OSLAR_EL1, because Linux writes to it. */
     { "OSLAR_EL1", 14,1,0, 2,0,4, ARM_CP_STATE_BOTH,
       ARM_CP_NOP, PL1_W, },
@@ -3181,14 +3181,12 @@ static void add_cpreg_to_hashtable(ARMCPU *cpu, const ARMCPRegInfo *r,
             if ((r->state == ARM_CP_STATE_BOTH && ns) ||
                 (arm_feature(&cpu->env, ARM_FEATURE_V8) && !ns)) {
                 r2->type |= ARM_CP_ALIAS;
-                r2->resetfn = arm_cp_reset_ignore;
             }
         } else if ((secstate != r->secure) && !ns) {
             /* The register is not banked so we only want to allow migration of
              * the non-secure instance.
              */
             r2->type |= ARM_CP_ALIAS;
-            r2->resetfn = arm_cp_reset_ignore;
         }
 
         if (r->state == ARM_CP_STATE_BOTH) {
