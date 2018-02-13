@@ -29,6 +29,7 @@
 
 //#define DEBUG_UNASSIGNED
 
+#define RAM_ADDR_INVALID (~(ram_addr_t)0)
 
 // Unicorn engine
 MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms)
@@ -949,6 +950,7 @@ static void memory_region_initfn(struct uc_struct *uc, Object *obj, void *opaque
     ObjectProperty *op;
 
     mr->ops = &unassigned_mem_ops;
+    mr->ram_addr = RAM_ADDR_INVALID;
     mr->enabled = true;
     mr->romd_mode = true;
     mr->destructor = memory_region_destructor_none;
@@ -1143,7 +1145,6 @@ void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
     mr->ops = ops;
     mr->opaque = opaque;
     mr->terminates = true;
-    mr->ram_addr = ~(ram_addr_t)0;
 }
 
 void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
@@ -1328,7 +1329,7 @@ int memory_region_get_fd(MemoryRegion *mr)
         return memory_region_get_fd(mr->alias);
     }
 
-    assert(mr->terminates);
+    assert(mr->ram_addr != RAM_ADDR_INVALID);
 
     return qemu_get_ram_fd(mr->uc, mr->ram_addr & TARGET_PAGE_MASK);
 }
@@ -1347,6 +1348,7 @@ void *memory_region_get_ram_ptr(MemoryRegion *mr)
 bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,
                                         hwaddr size, unsigned client)
 {
+    assert(mr->ram_addr != RAM_ADDR_INVALID);
     return cpu_physical_memory_test_and_clear_dirty(mr->uc, mr->ram_addr + addr,
                                                     size, client);
 }
