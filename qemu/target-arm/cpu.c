@@ -489,6 +489,16 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         unset_feature(env, ARM_FEATURE_MPU);
     }
 
+    if (arm_feature(env, ARM_FEATURE_MPU) &&
+        arm_feature(env, ARM_FEATURE_V7)) {
+        uint32_t nr = cpu->pmsav7_dregion;
+
+        if (nr > 0xff) {
+            error_setg(errp, "PMSAv7 MPU #regions invalid %" PRIu32 "\n", nr);
+            return -1;
+        }
+    }
+
     if (arm_feature(env, ARM_FEATURE_EL3)) {
         set_feature(env, ARM_FEATURE_VBAR);
     }

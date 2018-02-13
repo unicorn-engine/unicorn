@@ -2970,6 +2970,11 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             "TLBTR", 15,0,0, 0,0,3, 0,
             ARM_CP_CONST, PL1_R, 0, NULL, 0,
         };
+        /* MPUIR is specific to PMSA V6+ */
+        ARMCPRegInfo id_mpuir_reginfo = {
+              "MPUIR", 15,0,0, 0,0,4, 0,ARM_CP_CONST,
+              PL1_R, 0, NULL, cpu->pmsav7_dregion << 8
+        };
         ARMCPRegInfo crn0_wi_reginfo = {
             "CRN0_WI", 15,0,CP_ANY, 0,CP_ANY,CP_ANY, 0,
             ARM_CP_NOP | ARM_CP_OVERRIDE, PL1_W,
@@ -2991,6 +2996,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
                 r->access = PL1_RW;
             }
             id_tlbtr_reginfo.access = PL1_RW;
+            id_tlbtr_reginfo.access = PL1_RW;
         }
         if (arm_feature(env, ARM_FEATURE_V8)) {
             define_arm_cp_regs(cpu, id_v8_midr_cp_reginfo);
@@ -3000,6 +3006,8 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         define_arm_cp_regs(cpu, id_cp_reginfo);
         if (!arm_feature(env, ARM_FEATURE_MPU)) {
             define_one_arm_cp_reg(cpu, &id_tlbtr_reginfo);
+        } else if (arm_feature(env, ARM_FEATURE_V7)) {
+            define_one_arm_cp_reg(cpu, &id_mpuir_reginfo);
         }
     }
 
