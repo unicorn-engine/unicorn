@@ -739,7 +739,7 @@ static const mips_def_t mips_defs[] =
                        (3 << CP0C4_IE) | (1 << CP0C4_M),
         0,
         0,
-        (1 << CP0C5_SBRI),
+        (1 << CP0C5_SBRI) | (1 << CP0C5_FRE) | (1 << CP0C5_UFE),
         0,
         0,
         0,
@@ -749,9 +749,9 @@ static const mips_def_t mips_defs[] =
         0x30D8FFFF,
         0,
         0,
-        (1 << FCR0_F64) | (1 << FCR0_L) | (1 << FCR0_W) |
-                    (1 << FCR0_D) | (1 << FCR0_S) | (0x00 << FCR0_PRID) |
-                    (0x0 << FCR0_REV),
+        (1 << FCR0_FREP) | (1 << FCR0_F64) | (1 << FCR0_L) |
+            (1 << FCR0_W) | (1 << FCR0_D) | (1 << FCR0_S) |
+            (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
         0,
         42,
         /* The architectural limit is 59, but we have hardcoded 36 bit

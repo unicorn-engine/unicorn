@@ -1548,20 +1548,22 @@ static inline void gen_store_srsgpr (DisasContext *s, int from, int to)
 }
 
 /* Tests */
-static inline void gen_save_pc(target_ulong pc)
+static inline void gen_save_pc(DisasContext *ctx, target_ulong pc)
 {
-    tcg_gen_movi_tl(cpu_PC, pc);
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    tcg_gen_movi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_PC, pc);
 }
 
 static inline void save_cpu_state(DisasContext *ctx, int do_save_pc)
 {
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     LOG_DISAS("hflags %08x saved %08x\n", ctx->hflags, ctx->saved_hflags);
     if (do_save_pc && ctx->pc != ctx->saved_pc) {
-        gen_save_pc(ctx->pc);
+        gen_save_pc(ctx, ctx->pc);
         ctx->saved_pc = ctx->pc;
     }
     if (ctx->hflags != ctx->saved_hflags) {
-        tcg_gen_movi_i32(hflags, ctx->hflags);
+        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->hflags, ctx->hflags);
         ctx->saved_hflags = ctx->hflags;
         switch (ctx->hflags & MIPS_HFLAG_BMASK_BASE) {
         case MIPS_HFLAG_BR:
@@ -1569,7 +1571,7 @@ static inline void save_cpu_state(DisasContext *ctx, int do_save_pc)
         case MIPS_HFLAG_BC:
         case MIPS_HFLAG_BL:
         case MIPS_HFLAG_B:
-            tcg_gen_movi_tl(btarget, ctx->btarget);
+            tcg_gen_movi_tl(tcg_ctx, *(TCGv *)tcg_ctx->btarget, ctx->btarget);
             break;
         }
     }
@@ -1591,31 +1593,41 @@ static inline void restore_cpu_state(CPUMIPSState *env, DisasContext *ctx)
 
 static inline void generate_exception_err(DisasContext *ctx, int excp, int err)
 {
-    TCGv_i32 texcp = tcg_const_i32(excp);
-    TCGv_i32 terr = tcg_const_i32(err);
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv_i32 texcp = tcg_const_i32(tcg_ctx, excp);
+    TCGv_i32 terr = tcg_const_i32(tcg_ctx, err);
     save_cpu_state(ctx, 1);
-    gen_helper_raise_exception_err(cpu_env, texcp, terr);
-    tcg_temp_free_i32(terr);
-    tcg_temp_free_i32(texcp);
+    gen_helper_raise_exception_err(tcg_ctx, tcg_ctx->cpu_env, texcp, terr);
+    tcg_temp_free_i32(tcg_ctx, terr);
+    tcg_temp_free_i32(tcg_ctx, texcp);
 }
 
 static inline void generate_exception(DisasContext *ctx, int excp)
 {
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     save_cpu_state(ctx, 1);
-    gen_helper_0e0i(raise_exception, excp);
+    gen_helper_0e0i(tcg_ctx, raise_exception, excp);
 }
 
 /* Floating point register moves. */
-static void gen_load_fpr32(DisasContext *s, TCGv_i32 t, int reg)
+static void gen_load_fpr32(DisasContext *ctx, TCGv_i32 t, int reg)
 {
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+
+    if (ctx->hflags & MIPS_HFLAG_FRE) {
+        generate_exception(ctx, EXCP_RI);
+    }
     tcg_gen_extrl_i64_i32(tcg_ctx, t, tcg_ctx->fpu_f64[reg]);
 }
 
-static void gen_store_fpr32(DisasContext *s, TCGv_i32 t, int reg)
+static void gen_store_fpr32(DisasContext *ctx, TCGv_i32 t, int reg)
 {
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv_i64 t64;
+    if (ctx->hflags & MIPS_HFLAG_FRE) {
+        generate_exception(ctx, EXCP_RI);
+    }
+    t64 = tcg_temp_new_i64(tcg_ctx);
     tcg_gen_extu_i32_i64(tcg_ctx, t64, t);
     tcg_gen_deposit_i64(tcg_ctx, tcg_ctx->fpu_f64[reg], tcg_ctx->fpu_f64[reg], t64, 0, 32);
     tcg_temp_free_i64(tcg_ctx, t64);
@@ -8523,7 +8535,8 @@ static void gen_movci (DisasContext *ctx, int rd, int rs, int cc, int tf)
     gen_set_label(tcg_ctx, l1);
 }
 
-static inline void gen_movcf_s (DisasContext *ctx, int fs, int fd, int cc, int tf)
+static inline void gen_movcf_s(DisasContext *ctx, int fs, int fd, int cc,
+                               int tf)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     int cond;
