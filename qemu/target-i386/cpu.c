@@ -35,6 +35,7 @@
 #include "sysemu/sysemu.h"
 #include "hw/cpu/icc_bus.h"
 #ifndef CONFIG_USER_ONLY
+#include "exec/address-spaces.h"
 #include "hw/i386/apic_internal.h"
 #endif
 
@@ -2368,6 +2369,18 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
 #endif
 
     mce_init(cpu);
+
+#ifndef CONFIG_USER_ONLY
+    if (tcg_enabled(uc)) {
+        cpu->cpu_as_root = g_new(MemoryRegion, 1);
+        cs->as = g_new(AddressSpace, 1);
+        memory_region_init_alias(uc, cpu->cpu_as_root, OBJECT(cpu), "memory",
+                                 get_system_memory(uc), 0, ~0ull);
+        memory_region_set_enabled(cpu->cpu_as_root, true);
+        address_space_init(uc, cs->as, cpu->cpu_as_root, "CPU");
+    }
+#endif
+
     if (qemu_init_vcpu(cs))
         return -1;
 
