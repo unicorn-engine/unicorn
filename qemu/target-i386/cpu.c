@@ -1706,7 +1706,7 @@ static void x86_cpu_load_def(X86CPU *cpu, X86CPUDefinition *def, Error **errp)
     object_property_set_int(env->uc, OBJECT(cpu), def->model, "model", errp);
     object_property_set_int(env->uc, OBJECT(cpu), def->stepping, "stepping", errp);
     object_property_set_int(env->uc, OBJECT(cpu), def->xlevel, "xlevel", errp);
-    env->cpuid_xlevel2 = def->xlevel2;
+    object_property_set_int(env->uc, OBJECT(cpu), def->xlevel2, "xlevel2", errp);
     cpu->cache_info_passthrough = def->cache_info_passthrough;
     object_property_set_str(env->uc, OBJECT(cpu), def->model_id, "model-id", errp);
     for (w = 0; w < FEATURE_WORDS; w++) {
