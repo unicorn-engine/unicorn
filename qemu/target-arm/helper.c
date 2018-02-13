@@ -1603,7 +1603,7 @@ static void vmsa_ttbr_write(CPUARMState *env, const ARMCPRegInfo *ri,
     raw_write(env, ri, value);
 }
 
-static const ARMCPRegInfo vmsa_cp_reginfo[] = {
+static const ARMCPRegInfo vmsa_pmsa_cp_reginfo[] = {
     { "DFSR", 15,5,0, 0,0,0, 0,
       ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, 0,
       { offsetoflow32(CPUARMState, cp15.dfsr_s), offsetoflow32(CPUARMState, cp15.dfsr_ns) },
@@ -1611,6 +1611,15 @@ static const ARMCPRegInfo vmsa_cp_reginfo[] = {
     { "IFSR", 15,5,0, 0,0,1, 0,
       0, PL1_RW, 0, NULL, 0, 0,
       { offsetoflow32(CPUARMState, cp15.ifsr_s), offsetoflow32(CPUARMState, cp15.ifsr_ns) }},
+    { "FAR_EL1", 0,6,0, 3,0,0, ARM_CP_STATE_AA64,
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.far_el[1]), },
+    { "DFAR", 15,6,0, 0,0,0, 0,0,
+      PL1_RW, 0, NULL, 0, 0,
+      { offsetof(CPUARMState, cp15.dfar_s), offsetof(CPUARMState, cp15.dfar_ns) } },
+    REGINFO_SENTINEL
+};
+
+static const ARMCPRegInfo vmsa_cp_reginfo[] = {
     { "ESR_EL1", 0,5,2, 3,0,0, ARM_CP_STATE_AA64,
       0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.esr_el[1]), },
     { "TTBR0_EL1", 0,2,0, 3,0,0, ARM_CP_STATE_BOTH,
@@ -1628,11 +1637,6 @@ static const ARMCPRegInfo vmsa_cp_reginfo[] = {
       ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, 0,
       { offsetoflow32(CPUARMState, cp15.tcr_el[3]), offsetoflow32(CPUARMState, cp15.tcr_el[1]) },
       NULL, NULL, vmsa_ttbcr_write, NULL, vmsa_ttbcr_raw_write, arm_cp_reset_ignore, },
-    { "FAR_EL1", 0,6,0, 3,0,0, ARM_CP_STATE_AA64,
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.far_el[1]), },
-    { "DFAR", 15,6,0, 0,0,0, 0,0,
-      PL1_RW, 0, NULL, 0, 0,
-      { offsetof(CPUARMState, cp15.dfar_s), offsetof(CPUARMState, cp15.dfar_ns) } },
     REGINFO_SENTINEL
 };
 
@@ -2863,6 +2867,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         assert(!arm_feature(env, ARM_FEATURE_V6));
         define_arm_cp_regs(cpu, pmsav5_cp_reginfo);
     } else {
+        define_arm_cp_regs(cpu, vmsa_pmsa_cp_reginfo);
         define_arm_cp_regs(cpu, vmsa_cp_reginfo);
     }
     if (arm_feature(env, ARM_FEATURE_THUMB2EE)) {
