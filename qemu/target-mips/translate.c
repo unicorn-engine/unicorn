@@ -11955,11 +11955,7 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
              *      when in debug mode...
              */
             check_insn(ctx, ISA_MIPS32);
-            if (!(ctx->hflags & MIPS_HFLAG_DM)) {
-                generate_exception(ctx, EXCP_DBp);
-            } else {
-                generate_exception(ctx, EXCP_DBp);
-            }
+            generate_exception(ctx, EXCP_DBp);
             break;
         case RR_SLT:
             gen_slt(ctx, OPC_SLT, 24, rx, ry);
@@ -12811,11 +12807,7 @@ static void gen_pool16c_insn(DisasContext *ctx)
          *      when in debug mode...
          */
         check_insn(ctx, ISA_MIPS32);
-        if (!(ctx->hflags & MIPS_HFLAG_DM)) {
-            generate_exception(ctx, EXCP_DBp);
-        } else {
-            generate_exception(ctx, EXCP_DBp);
-        }
+        generate_exception(ctx, EXCP_DBp);
         break;
     case JRADDIUSP + 0:
     case JRADDIUSP + 1:
@@ -13184,11 +13176,7 @@ static void gen_pool32axf (CPUMIPSState *env, DisasContext *ctx, int rt, int rs)
             break;
         case SDBBP:
             check_insn(ctx, ISA_MIPS32);
-            if (!(ctx->hflags & MIPS_HFLAG_DM)) {
-                generate_exception(ctx, EXCP_DBp);
-            } else {
-                generate_exception(ctx, EXCP_DBp);
-            }
+            generate_exception(ctx, EXCP_DBp);
             break;
         default:
             goto pool32axf_invalid;
@@ -16988,11 +16976,7 @@ static void decode_opc_special2_legacy(CPUMIPSState *env, DisasContext *ctx)
          *      when in debug mode...
          */
         check_insn(ctx, ISA_MIPS32);
-        if (!(ctx->hflags & MIPS_HFLAG_DM)) {
-            generate_exception(ctx, EXCP_DBp);
-        } else {
-            generate_exception(ctx, EXCP_DBp);
-        }
+        generate_exception(ctx, EXCP_DBp);
         /* Treat as NOP. */
         break;
 #if defined(TARGET_MIPS64)
