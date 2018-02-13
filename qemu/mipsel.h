@@ -1,6 +1,27 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_MIPSEL_H
 #define UNICORN_AUTOGEN_MIPSEL_H
+#define address_space_ldub address_space_ldub_mipsel
+#define address_space_lduw address_space_lduw_mipsel
+#define address_space_lduw_le address_space_lduw_le_mipsel
+#define address_space_lduw_be address_space_lduw_be_mipsel
+#define address_space_ldl address_space_ldl_mipsel
+#define address_space_ldl_le address_space_ldl_le_mipsel
+#define address_space_ldl_be address_space_ldl_be_mipsel
+#define address_space_ldq address_space_ldq_mipsel
+#define address_space_ldq_le address_space_ldq_le_mipsel
+#define address_space_ldq_be address_space_ldq_be_mipsel
+#define address_space_stb address_space_stb_mipsel
+#define address_space_stw address_space_stw_mipsel
+#define address_space_stw_le address_space_stw_le_mipsel
+#define address_space_stw_be address_space_stw_be_mipsel
+#define address_space_stl address_space_stl_mipsel
+#define address_space_stl_le address_space_stl_le_mipsel
+#define address_space_stl_notdirty address_space_stl_notdirty_mipsel
+#define address_space_stl_be address_space_stl_be_mipsel
+#define address_space_stq address_space_stq_mipsel
+#define address_space_stq_le address_space_stq_le_mipsel
+#define address_space_stq_be address_space_stq_be_mipsel
 #define arm_release arm_release_mipsel
 #define aarch64_sync_32_to_64 aarch64_sync_32_to_64_mipsel
 #define aarch64_sync_64_to_32 aarch64_sync_64_to_32_mipsel

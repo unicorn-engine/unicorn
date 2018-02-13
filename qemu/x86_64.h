@@ -1,6 +1,27 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_X86_64_H
 #define UNICORN_AUTOGEN_X86_64_H
+#define address_space_ldub address_space_ldub_x86_64
+#define address_space_lduw address_space_lduw_x86_64
+#define address_space_lduw_le address_space_lduw_le_x86_64
+#define address_space_lduw_be address_space_lduw_be_x86_64
+#define address_space_ldl address_space_ldl_x86_64
+#define address_space_ldl_le address_space_ldl_le_x86_64
+#define address_space_ldl_be address_space_ldl_be_x86_64
+#define address_space_ldq address_space_ldq_x86_64
+#define address_space_ldq_le address_space_ldq_le_x86_64
+#define address_space_ldq_be address_space_ldq_be_x86_64
+#define address_space_stb address_space_stb_x86_64
+#define address_space_stw address_space_stw_x86_64
+#define address_space_stw_le address_space_stw_le_x86_64
+#define address_space_stw_be address_space_stw_be_x86_64
+#define address_space_stl address_space_stl_x86_64
+#define address_space_stl_le address_space_stl_le_x86_64
+#define address_space_stl_notdirty address_space_stl_notdirty_x86_64
+#define address_space_stl_be address_space_stl_be_x86_64
+#define address_space_stq address_space_stq_x86_64
+#define address_space_stq_le address_space_stq_le_x86_64
+#define address_space_stq_be address_space_stq_be_x86_64
 #define arm_release arm_release_x86_64
 #define aarch64_sync_32_to_64 aarch64_sync_32_to_64_x86_64
 #define aarch64_sync_64_to_32 aarch64_sync_64_to_32_x86_64

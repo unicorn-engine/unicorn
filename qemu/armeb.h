@@ -1,6 +1,27 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_ARMEB_H
 #define UNICORN_AUTOGEN_ARMEB_H
+#define address_space_ldub address_space_ldub_armeb
+#define address_space_lduw address_space_lduw_armeb
+#define address_space_lduw_le address_space_lduw_le_armeb
+#define address_space_lduw_be address_space_lduw_be_armeb
+#define address_space_ldl address_space_ldl_armeb
+#define address_space_ldl_le address_space_ldl_le_armeb
+#define address_space_ldl_be address_space_ldl_be_armeb
+#define address_space_ldq address_space_ldq_armeb
+#define address_space_ldq_le address_space_ldq_le_armeb
+#define address_space_ldq_be address_space_ldq_be_armeb
+#define address_space_stb address_space_stb_armeb
+#define address_space_stw address_space_stw_armeb
+#define address_space_stw_le address_space_stw_le_armeb
+#define address_space_stw_be address_space_stw_be_armeb
+#define address_space_stl address_space_stl_armeb
+#define address_space_stl_le address_space_stl_le_armeb
+#define address_space_stl_notdirty address_space_stl_notdirty_armeb
+#define address_space_stl_be address_space_stl_be_armeb
+#define address_space_stq address_space_stq_armeb
+#define address_space_stq_le address_space_stq_le_armeb
+#define address_space_stq_be address_space_stq_be_armeb
 #define arm_release arm_release_armeb
 #define aarch64_sync_32_to_64 aarch64_sync_32_to_64_armeb
 #define aarch64_sync_64_to_32 aarch64_sync_64_to_32_armeb
