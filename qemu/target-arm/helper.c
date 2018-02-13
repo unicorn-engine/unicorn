@@ -2955,9 +2955,11 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             /* TCMTR and TLBTR exist in v8 but have no 64-bit versions */
             { "TCMTR", 15,0,0, 0,0,2, 0,
               ARM_CP_CONST, PL1_R, 0, NULL, 0 },
-            { "TLBTR", 15,0,0, 0,0,3, 0,
-              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
             REGINFO_SENTINEL
+        };
+        ARMCPRegInfo id_tlbtr_reginfo = {
+            "TLBTR", 15,0,0, 0,0,3, 0,
+            ARM_CP_CONST, PL1_R, 0, NULL, 0,
         };
         ARMCPRegInfo crn0_wi_reginfo = {
             "CRN0_WI", 15,0,CP_ANY, 0,CP_ANY,CP_ANY, 0,
@@ -2979,6 +2981,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             for (r = id_cp_reginfo; r->type != ARM_CP_SENTINEL; r++) {
                 r->access = PL1_RW;
             }
+            id_tlbtr_reginfo.access = PL1_RW;
         }
         if (arm_feature(env, ARM_FEATURE_V8)) {
             define_arm_cp_regs(cpu, id_v8_midr_cp_reginfo);
@@ -2986,6 +2989,9 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             define_arm_cp_regs(cpu, id_pre_v8_midr_cp_reginfo);
         }
         define_arm_cp_regs(cpu, id_cp_reginfo);
+        if (!arm_feature(env, ARM_FEATURE_MPU)) {
+            define_one_arm_cp_reg(cpu, &id_tlbtr_reginfo);
+        }
     }
 
     if (arm_feature(env, ARM_FEATURE_MPIDR)) {
