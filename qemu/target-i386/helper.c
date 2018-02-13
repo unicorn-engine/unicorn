@@ -783,7 +783,8 @@ do_check_protect_pse36:
     paddr = vaddr;
     //printf(">>> map address %"PRIx64" to %"PRIx64"\n", vaddr, paddr);
 
-    tlb_set_page(cs, vaddr, paddr, prot, mmu_idx, page_size);
+    tlb_set_page_with_attrs(cs, vaddr, paddr, cpu_get_mem_attrs(env),
+                            prot, mmu_idx, page_size);
     return 0;
  do_fault_rsvd:
     error_code |= PG_ERROR_RSVD_MASK;
