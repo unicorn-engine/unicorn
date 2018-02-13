@@ -2268,6 +2268,12 @@ static const ARMCPRegInfo v8_el2_cp_reginfo[] = {
     { "TLBI_ALLE2", 0,8,7, 1,4,0, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
       PL2_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiall_write },
+    { "TLBI_VAE2", 0,8,7, 1,4,1, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_vaa_write },
+    { "TLBI_VAE2IS", 0,8,3, 1,4,1, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_vaa_write },
     REGINFO_SENTINEL
 };
 
