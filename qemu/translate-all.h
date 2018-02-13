@@ -22,6 +22,14 @@
 /* translate-all.c */
 void tb_check_watchpoint(CPUState *cpu);
 void tb_invalidate_phys_page_fast(struct uc_struct* uc, tb_page_addr_t start, int len);
+void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end,
+                                   int is_cpu_write_access);
+void tb_invalidate_phys_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end,
+                              int is_cpu_write_access);
 void tb_cleanup(struct uc_struct *uc);
+
+#ifdef CONFIG_USER_ONLY
+int page_unprotect(target_ulong address, uintptr_t pc, void *puc);
+#endif
 
 #endif /* TRANSLATE_ALL_H */
