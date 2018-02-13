@@ -500,10 +500,10 @@ static const mips_def_t mips_defs[] =
                        (0 << CP0C1_DS) | (3 << CP0C1_DL) | (1 << CP0C1_DA) |
                        (1 << CP0C1_CA),
         MIPS_CONFIG2,
-        MIPS_CONFIG3 | (1U << CP0C3_M) | (1 << CP0C3_MSAP),
+        MIPS_CONFIG3 | (1U << CP0C3_M) | (1 << CP0C3_MSAP) | (1 << CP0C3_LPA),
         MIPS_CONFIG4 | (1U << CP0C4_M),
         0,
-        MIPS_CONFIG5 | (1 << CP0C5_UFR),
+        MIPS_CONFIG5 | (1 << CP0C5_UFR) | (1 << CP0C5_LLB) | (1 << CP0C5_MVH),
         (0 << CP0C5_M) | (1 << CP0C5_K) |
                                   (1 << CP0C5_CV) | (0 << CP0C5_EVA) |
                                   (1 << CP0C5_MSAEn) | (1 << CP0C5_UFR) |
@@ -522,8 +522,9 @@ static const mips_def_t mips_defs[] =
                     (0x93 << FCR0_PRID),
         0,
         32,
-        32,
-        0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
+        40,
+        0,0, 0,0, 0,0, 0,0, 0,0,
+        (1 << CP0PG_ELPA), 0,
         CPU_MIPS32R5 | ASE_MIPS16 | ASE_MSA,
         MMU_TYPE_R4000,
     },
@@ -731,7 +732,8 @@ static const mips_def_t mips_defs[] =
                        (0 << CP0C1_PC) | (1 << CP0C1_WR) | (1 << CP0C1_EP),
         MIPS_CONFIG2,
         MIPS_CONFIG3 | (1 << CP0C3_RXI) | (1 << CP0C3_BP) |
-                       (1 << CP0C3_BI) | (1 << CP0C3_ULRI) | (1U << CP0C3_M),
+                       (1 << CP0C3_BI) | (1 << CP0C3_ULRI) | (1 << CP0C3_LPA) |
+                       (1U << CP0C3_M),
         MIPS_CONFIG4 | (0xfc << CP0C4_KScrExist) |
                        (3 << CP0C4_IE) | (1 << CP0C4_M),
         0,
@@ -751,11 +753,11 @@ static const mips_def_t mips_defs[] =
             (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
         0,
         42,
-        36,
+        48,
         0,0, 0,0, 0,0, 0,0, 0,0,
+        (1 << CP0PG_ELPA),
         (1 << CP0PG_IEC) | (1 << CP0PG_XIE) |
                          (1U << CP0PG_RIE),
-        0,
         CPU_MIPS64R6,
         MMU_TYPE_R4000,
     },
