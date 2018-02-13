@@ -92,7 +92,7 @@ static inline void cpu_physical_memory_set_dirty_flag(struct uc_struct *uc, ram_
                                                       unsigned client)
 {
     assert(client < DIRTY_MEMORY_NUM);
-    set_bit(addr >> TARGET_PAGE_BITS, uc->ram_list.dirty_memory[client]);
+    set_bit_atomic(addr >> TARGET_PAGE_BITS, uc->ram_list.dirty_memory[client]);
 }
 
 static inline void cpu_physical_memory_set_dirty_range(struct uc_struct *uc, ram_addr_t start,
@@ -100,11 +100,12 @@ static inline void cpu_physical_memory_set_dirty_range(struct uc_struct *uc, ram
                                                        uint8_t mask)
 {
     unsigned long end, page;
+    unsigned long **d = uc->ram_list.dirty_memory;
 
     end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
     page = start >> TARGET_PAGE_BITS;
     if (unlikely(mask & (1 << DIRTY_MEMORY_CODE))) {
-        bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE], page, end - page);
+        bitmap_set_atomic(d[DIRTY_MEMORY_CODE], page, end - page);
     }
 
 }
@@ -131,8 +132,10 @@ static inline void cpu_physical_memory_set_dirty_lebitmap(struct uc_struct *uc, 
         for (k = 0; k < nr; k++) {
             if (bitmap[k]) {
                 unsigned long temp = leul_to_cpu(bitmap[k]);
+                unsigned long **d = uc->ram_list.dirty_memory;
+
                 if (tcg_enabled(uc)) {
-                    uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE][page + k] |= temp;
+                    atomic_or(&d[DIRTY_MEMORY_CODE][page + k], temp);
                 }
             }
         }
