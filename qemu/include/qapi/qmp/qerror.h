@@ -13,24 +13,10 @@
 #define QERROR_H
 
 #include "qapi/qmp/qstring.h"
-#include "qapi/error.h"
-#include "qapi-types.h"
-#include <stdarg.h>
-
-typedef struct QError {
-    QObject_HEAD;
-    char *err_msg;
-    ErrorClass err_class;
-} QError;
-
-QString *qerror_human(const QError *qerror);
-void qerror_report(ErrorClass err_class, const char *fmt, ...) GCC_FMT_ATTR(2, 3);
-void qerror_report_err(Error *err);
 
 /*
- * QError class list
- * Please keep the definitions in alphabetical order.
- * Use scripts/check-qerror.sh to check.
+ * These macros will go away, please don't use in new code, and do not
+ * add new ones!
  */
 #define QERR_BASE_NOT_FOUND \
     "Base '%s' not found"
