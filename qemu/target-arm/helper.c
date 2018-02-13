@@ -1162,7 +1162,7 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
       gt_vtimer_access, gt_tval_read, gt_tval_write, },
     { "CNTV_TVAL_EL0", 0,14,3, 3,3,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW | ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, 0, {0, 0},
-      NULL, gt_tval_read, gt_tval_write, },
+      gt_vtimer_access, gt_tval_read, gt_tval_write, },
     /* The counter itself */
     { "CNTPCT", 15,0,14, 0,0, 0, 0,
       ARM_CP_64BIT | ARM_CP_NO_RAW | ARM_CP_IO, PL0_R, 0, NULL, 0, 0, {0, 0},
