@@ -3018,7 +3018,7 @@
 #define tlb_reset_dirty_range_all tlb_reset_dirty_range_all_m68k
 #define tlb_set_dirty tlb_set_dirty_m68k
 #define tlb_set_dirty1 tlb_set_dirty1_m68k
-#define tlb_unprotect_code_phys tlb_unprotect_code_phys_m68k
+#define tlb_unprotect_code tlb_unprotect_code_m68k
 #define tlb_vaddr_to_host tlb_vaddr_to_host_m68k
 #define token_get_type token_get_type_m68k
 #define token_get_value token_get_value_m68k

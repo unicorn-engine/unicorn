@@ -3024,7 +3024,7 @@ symbols = (
     'tlb_reset_dirty_range_all',
     'tlb_set_dirty',
     'tlb_set_dirty1',
-    'tlb_unprotect_code_phys',
+    'tlb_unprotect_code',
     'tlb_vaddr_to_host',
     'token_get_type',
     'token_get_value',

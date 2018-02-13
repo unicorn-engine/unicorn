@@ -3018,7 +3018,7 @@
 #define tlb_reset_dirty_range_all tlb_reset_dirty_range_all_aarch64eb
 #define tlb_set_dirty tlb_set_dirty_aarch64eb
 #define tlb_set_dirty1 tlb_set_dirty1_aarch64eb
-#define tlb_unprotect_code_phys tlb_unprotect_code_phys_aarch64eb
+#define tlb_unprotect_code tlb_unprotect_code_aarch64eb
 #define tlb_vaddr_to_host tlb_vaddr_to_host_aarch64eb
 #define token_get_type token_get_type_aarch64eb
 #define token_get_value token_get_value_aarch64eb

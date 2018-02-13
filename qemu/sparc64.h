@@ -3018,7 +3018,7 @@
 #define tlb_reset_dirty_range_all tlb_reset_dirty_range_all_sparc64
 #define tlb_set_dirty tlb_set_dirty_sparc64
 #define tlb_set_dirty1 tlb_set_dirty1_sparc64
-#define tlb_unprotect_code_phys tlb_unprotect_code_phys_sparc64
+#define tlb_unprotect_code tlb_unprotect_code_sparc64
 #define tlb_vaddr_to_host tlb_vaddr_to_host_sparc64
 #define token_get_type token_get_type_sparc64
 #define token_get_value token_get_value_sparc64
