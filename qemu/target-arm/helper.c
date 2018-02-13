@@ -2937,11 +2937,13 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             REGINFO_SENTINEL
         };
         ARMCPRegInfo id_v8_midr_cp_reginfo[] = {
-            /* v8 MIDR -- the wildcard isn't necessary, and nor is the
-             * variable-MIDR TI925 behaviour.
-             */
             { "MIDR_EL1", 0,0,0, 3,0,0, ARM_CP_STATE_BOTH,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->midr },
+            /* crn = 0 op1 = 0 crm = 0 op2 = 4,7 : AArch32 aliases of MIDR */
+            { "MIDR", 15,0,0, 0,0,4, 0, ARM_CP_ALIAS | ARM_CP_CONST,
+              PL1_R, 0, NULL, cpu->midr },
+            { "MIDR", 15,0,0, 0,0,7, 0, ARM_CP_ALIAS | ARM_CP_CONST,
+              PL1_R, 0, NULL, cpu->midr },
             { "REVIDR_EL1", 0,0,0, 3,0,6, ARM_CP_STATE_BOTH,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->revidr },
             REGINFO_SENTINEL
