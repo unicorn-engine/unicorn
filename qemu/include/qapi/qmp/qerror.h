@@ -12,8 +12,6 @@
 #ifndef QERROR_H
 #define QERROR_H
 
-#include "qapi/qmp/qstring.h"
-
 /*
  * These macros will go away, please don't use in new code, and do not
  * add new ones!
