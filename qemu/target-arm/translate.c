@@ -11691,6 +11691,10 @@ tb_end:
             break;
         case DISAS_WFI:
             gen_helper_wfi(tcg_ctx, tcg_ctx->cpu_env);
+            /* The helper doesn't necessarily throw an exception, but we
+             * must go back to the main loop to check for interrupts anyway.
+             */
+            tcg_gen_exit_tb(tcg_ctx, 0);
             break;
         case DISAS_WFE:
             gen_helper_wfe(tcg_ctx, tcg_ctx->cpu_env);

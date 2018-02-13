@@ -11406,6 +11406,10 @@ tb_end:
              */
             gen_a64_set_pc_im(dc, dc->pc);
             gen_helper_wfi(tcg_ctx, tcg_ctx->cpu_env);
+            /* The helper doesn't necessarily throw an exception, but we
+             * must go back to the main loop to check for interrupts anyway.
+             */
+            tcg_gen_exit_tb(tcg_ctx, 0);
             break;
         }
     }
