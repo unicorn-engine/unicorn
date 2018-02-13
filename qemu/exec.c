@@ -1891,7 +1891,7 @@ void *address_space_map(AddressSpace *as,
     l = len;
     mr = address_space_translate(as, addr, &xlat, &l, is_write);
     if (!memory_access_is_direct(mr, is_write)) {
-        if (as->uc->bounce.buffer) {
+        if (atomic_xchg(&as->uc->bounce.in_use, true)) {
             return NULL;
         }
         /* Avoid unbounded allocations */
@@ -1960,6 +1960,7 @@ void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
     qemu_vfree(as->uc->bounce.buffer);
     as->uc->bounce.buffer = NULL;
     memory_region_unref(as->uc->bounce.mr);
+    atomic_mb_set(&as->uc->bounce.in_use, false);
 }
 
 void *cpu_physical_memory_map(AddressSpace *as, hwaddr addr,

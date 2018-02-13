@@ -38,6 +38,7 @@ typedef struct {
     void *buffer;
     hwaddr addr;
     hwaddr len;
+    bool in_use;
 } BounceBuffer;
 
 typedef struct RAMList {
