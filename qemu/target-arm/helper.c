@@ -380,10 +380,16 @@ static const ARMCPRegInfo not_v8_cp_reginfo[] = {
       0, PL1_RW, 0, NULL, 0, 0,
       { offsetoflow32(CPUARMState, cp15.dacr_s), offsetoflow32(CPUARMState, cp15.dacr_ns) },
       NULL, NULL, dacr_write, NULL, raw_write, NULL, },
-    /* ??? This covers not just the impdef TLB lockdown registers but also
-     * some v7VMSA registers relating to TEX remap, so it is overly broad.
+    /* ARMv7 allocates a range of implementation defined TLB LOCKDOWN regs.
+     * For v6 and v5, these mappings are overly broad.
      */
-    { "TLB_LOCKDOWN", 15,10,CP_ANY, 0,CP_ANY,CP_ANY, 0,
+    { "TLB_LOCKDOWN", 15,10,0, 0,CP_ANY,CP_ANY, 0,
+      ARM_CP_NOP, PL1_RW,  },
+    { "TLB_LOCKDOWN", 15,10,1, 0,CP_ANY,CP_ANY, 0,
+      ARM_CP_NOP, PL1_RW,  },
+    { "TLB_LOCKDOWN", 15,10,4, 0,CP_ANY,CP_ANY, 0,
+      ARM_CP_NOP, PL1_RW,  },
+    { "TLB_LOCKDOWN", 15,10,8, 0,CP_ANY,CP_ANY, 0,
       ARM_CP_NOP, PL1_RW,  },
     /* Cache maintenance ops; some of this space may be overridden later. */
     { "CACHEMAINT", 15,7,CP_ANY, 0,0,CP_ANY, 0,
@@ -439,6 +445,10 @@ static const ARMCPRegInfo not_v7_cp_reginfo[] = {
     { "TLBIMVAA", 15,8,CP_ANY, 0,CP_ANY,3, 0,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimvaa_write, },
+    { "PRRR", 15,10,2, 0,0,0, 0, ARM_CP_NOP,
+      PL1_RW },
+    { "NMRR", 15,10,2, 0,0,1, 0, ARM_CP_NOP,
+      PL1_RW },
     REGINFO_SENTINEL
 };
 
@@ -863,19 +873,17 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
       0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mair_el[1]), },
     /* For non-long-descriptor page tables these are PRRR and NMRR;
      * regardless they still act as reads-as-written for QEMU.
-     * The override is necessary because of the overly-broad TLB_LOCKDOWN
-     * definition.
      */
      /* MAIR0/1 are defined separately from their 64-bit counterpart which
       * allows them to assign the correct fieldoffset based on the endianness
       * handled in the field definitions.
       */
-    { "MAIR0", 15,10,2, 0,0,0, ARM_CP_STATE_AA32,
-      ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0, 0,
+    { "MAIR0", 15,10,2, 0,0,0, ARM_CP_STATE_AA32, 0,
+      PL1_RW, 0, NULL, 0, 0,
       { offsetof(CPUARMState, cp15.mair0_s), offsetof(CPUARMState, cp15.mair0_ns) },
       NULL, NULL, NULL, NULL, NULL, arm_cp_reset_ignore },
-    { "MAIR1", 15,10,2, 0,0,1, ARM_CP_STATE_AA32,
-      ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0, 0,
+    { "MAIR1", 15,10,2, 0,0,1, ARM_CP_STATE_AA32, 0,
+      PL1_RW, 0, NULL, 0, 0,
       { offsetof(CPUARMState, cp15.mair1_s), offsetof(CPUARMState, cp15.mair1_ns) },
       NULL, NULL, NULL, NULL, NULL, arm_cp_reset_ignore },
     { "ISR_EL1", 0,12,1, 3,0,0, ARM_CP_STATE_BOTH,
@@ -1800,14 +1808,12 @@ static const ARMCPRegInfo mpidr_cp_reginfo[] = {
 };
 
 static const ARMCPRegInfo lpae_cp_reginfo[] = {
-    /* NOP AMAIR0/1: the override is because these clash with the rather
-     * broadly specified TLB_LOCKDOWN entry in the generic cp_reginfo.
-     */
+    /* NOP AMAIR0/1 */
     { "AMAIR0", 0,10,3, 3,0,0, ARM_CP_STATE_BOTH,
-      ARM_CP_CONST | ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0 },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0 },
     /* AMAIR1 is mapped to AMAIR_EL1[63:32] */
     { "AMAIR1", 15,10,3, 0,0,1, 0,
-      ARM_CP_CONST | ARM_CP_OVERRIDE, PL1_RW, 0, NULL, 0 },
+      ARM_CP_CONST, PL1_RW, 0, NULL, 0 },
     { "PAR", 15, 0,7, 0,0, 0, 0,
       ARM_CP_64BIT, PL1_RW, 0, NULL, 0, 0,
       { offsetof(CPUARMState, cp15.par_s), offsetof(CPUARMState, cp15.par_ns) } },
