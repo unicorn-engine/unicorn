@@ -20,7 +20,6 @@
 #define TRANSLATE_ALL_H
 
 /* translate-all.c */
-void cpu_unlink_tb(CPUState *cpu);
 void tb_check_watchpoint(CPUState *cpu);
 void tb_invalidate_phys_page_fast(struct uc_struct* uc, tb_page_addr_t start, int len);
 void tb_cleanup(struct uc_struct *uc);
