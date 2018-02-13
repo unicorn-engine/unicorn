@@ -1032,7 +1032,9 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
                         old_ram_size, new_ram_size);
         }
     }
-    cpu_physical_memory_set_dirty_range(uc, new_block->offset, new_block->length);
+    cpu_physical_memory_set_dirty_range(uc, new_block->offset,
+                                        new_block->length,
+                                        DIRTY_CLIENTS_ALL);
 
     qemu_ram_setup_dump(new_block->host, new_block->length);
     //qemu_madvise(new_block->host, new_block->length, QEMU_MADV_HUGEPAGE);

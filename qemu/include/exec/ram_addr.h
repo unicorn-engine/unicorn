@@ -32,6 +32,9 @@ void *qemu_get_ram_ptr(struct uc_struct *uc, ram_addr_t addr);
 void qemu_ram_free(struct uc_struct *c, ram_addr_t addr);
 void qemu_ram_free_from_ptr(struct uc_struct *uc, ram_addr_t addr);
 
+#define DIRTY_CLIENTS_ALL     ((1 << DIRTY_MEMORY_NUM) - 1)
+#define DIRTY_CLIENTS_NOCODE  (DIRTY_CLIENTS_ALL & ~(1 << DIRTY_MEMORY_CODE))
+
 static inline bool cpu_physical_memory_get_dirty(struct uc_struct *uc, ram_addr_t start,
                                                  ram_addr_t length,
                                                  unsigned client)
@@ -47,7 +50,7 @@ static inline bool cpu_physical_memory_get_dirty(struct uc_struct *uc, ram_addr_
     return next < end;
 }
 
-static inline bool cpu_physical_memory_get_clean(struct uc_struct *uc, ram_addr_t start,
+static inline bool cpu_physical_memory_all_dirty(struct uc_struct *uc, ram_addr_t start,
                                                  ram_addr_t length,
                                                  unsigned client)
 {
@@ -59,7 +62,7 @@ static inline bool cpu_physical_memory_get_clean(struct uc_struct *uc, ram_addr_
     page = start >> TARGET_PAGE_BITS;
     next = find_next_zero_bit(uc->ram_list.dirty_memory[client], end, page);
 
-    return next < end;
+    return next >= end;
 }
 
 static inline bool cpu_physical_memory_get_dirty_flag(struct uc_struct *uc, ram_addr_t addr,
@@ -76,7 +79,7 @@ static inline bool cpu_physical_memory_is_clean(struct uc_struct *uc, ram_addr_t
 static inline bool cpu_physical_memory_range_includes_clean(struct uc_struct *uc, ram_addr_t start,
                                                             ram_addr_t length)
 {
-    return cpu_physical_memory_get_clean(uc, start, length, DIRTY_MEMORY_CODE);
+    return !cpu_physical_memory_all_dirty(uc, start, length, DIRTY_MEMORY_CODE);
 }
 
 static inline void cpu_physical_memory_set_dirty_flag(struct uc_struct *uc, ram_addr_t addr,
@@ -87,13 +90,17 @@ static inline void cpu_physical_memory_set_dirty_flag(struct uc_struct *uc, ram_
 }
 
 static inline void cpu_physical_memory_set_dirty_range(struct uc_struct *uc, ram_addr_t start,
-                                                       ram_addr_t length)
+                                                       ram_addr_t length,
+                                                       uint8_t mask)
 {
     unsigned long end, page;
 
     end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
     page = start >> TARGET_PAGE_BITS;
-    bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE], page, end - page);
+    if (unlikely(mask & (1 << DIRTY_MEMORY_CODE))) {
+        bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE], page, end - page);
+    }
+
 }
 
 #if !defined(_WIN32)
@@ -136,7 +143,8 @@ static inline void cpu_physical_memory_set_dirty_lebitmap(struct uc_struct *uc, 
                     addr = page_number * TARGET_PAGE_SIZE;
                     ram_addr = start + addr;
                     cpu_physical_memory_set_dirty_range(uc, ram_addr,
-                                       TARGET_PAGE_SIZE * hpratio);
+                                       TARGET_PAGE_SIZE * hpratio,
+                                       DIRTY_CLIENTS_ALL);
                 } while (c != 0);
             }
         }
