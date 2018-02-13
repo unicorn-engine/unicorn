@@ -485,6 +485,10 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         cpu->id_aa64pfr0 &= ~0xf000;
     }
 
+    if (!cpu->has_mpu) {
+        unset_feature(env, ARM_FEATURE_MPU);
+    }
+
     if (arm_feature(env, ARM_FEATURE_EL3)) {
         set_feature(env, ARM_FEATURE_VBAR);
     }
