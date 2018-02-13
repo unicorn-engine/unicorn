@@ -1361,42 +1361,6 @@ static int x86_cpuid_version_set_stepping(struct uc_struct *uc, Object *obj, Vis
     return 0;
 }
 
-static void x86_cpuid_get_level(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                const char *name, Error **errp)
-{
-    X86CPU *cpu = X86_CPU(uc, obj);
-
-    visit_type_uint32(v, &cpu->env.cpuid_level, name, errp);
-}
-
-static int x86_cpuid_set_level(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                const char *name, Error **errp)
-{
-    X86CPU *cpu = X86_CPU(uc, obj);
-
-    visit_type_uint32(v, &cpu->env.cpuid_level, name, errp);
-
-    return 0;
-}
-
-static void x86_cpuid_get_xlevel(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                 const char *name, Error **errp)
-{
-    X86CPU *cpu = X86_CPU(uc, obj);
-
-    visit_type_uint32(v, &cpu->env.cpuid_xlevel, name, errp);
-}
-
-static int x86_cpuid_set_xlevel(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                 const char *name, Error **errp)
-{
-    X86CPU *cpu = X86_CPU(uc, obj);
-
-    visit_type_uint32(v, &cpu->env.cpuid_xlevel, name, errp);
-
-    return 0;
-}
-
 static char *x86_cpuid_get_vendor(struct uc_struct *uc, Object *obj, Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
@@ -2449,12 +2413,6 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     object_property_add(obj, "stepping", "int",
                         x86_cpuid_version_get_stepping,
                         x86_cpuid_version_set_stepping, NULL, NULL, NULL);
-    object_property_add(obj, "level", "int",
-                        x86_cpuid_get_level,
-                        x86_cpuid_set_level, NULL, NULL, NULL);
-    object_property_add(obj, "xlevel", "int",
-                        x86_cpuid_get_xlevel,
-                        x86_cpuid_set_xlevel, NULL, NULL, NULL);
     object_property_add_str(obj, "vendor",
                             x86_cpuid_get_vendor,
                             x86_cpuid_set_vendor, NULL);
