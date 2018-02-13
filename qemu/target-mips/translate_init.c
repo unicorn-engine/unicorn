@@ -712,9 +712,6 @@ static const mips_def_t mips_defs[] =
                     (1 << FCR0_S) | (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
         0,
         42,
-        /* The architectural limit is 59, but we have hardcoded 36 bit
-           in some places...
-        59, */ /* the architectural limit */
         36,
         0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
         CPU_MIPS64R2 | ASE_MIPS3D,
@@ -754,9 +751,6 @@ static const mips_def_t mips_defs[] =
             (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
         0,
         42,
-        /* The architectural limit is 59, but we have hardcoded 36 bit
-           in some places...
-        59, */ /* the architectural limit */
         36,
         0,0, 0,0, 0,0, 0,0, 0,0,
         (1 << CP0PG_IEC) | (1 << CP0PG_XIE) |
