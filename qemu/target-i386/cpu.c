@@ -628,7 +628,6 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_8000_0001_EDX
-            (PPRO_FEATURES & CPUID_EXT2_AMD_ALIASES) |
             CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX,
         // FEAT_8000_0001_ECX
             CPUID_EXT3_LAHF_LM | CPUID_EXT3_SVM |
@@ -652,7 +651,6 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_8000_0001_EDX
-            (PPRO_FEATURES & CPUID_EXT2_AMD_ALIASES) |
             CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX |
             CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT | CPUID_EXT2_MMXEXT |
             CPUID_EXT2_FFXSR | CPUID_EXT2_PDPE1GB | CPUID_EXT2_RDTSCP,
@@ -718,7 +716,6 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         /* Missing: CPUID_EXT2_PDPE1GB, CPUID_EXT2_RDTSCP */
         // FEAT_8000_0001_EDX
-            (PPRO_FEATURES & CPUID_EXT2_AMD_ALIASES) |
             CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX,
         /* Missing: CPUID_EXT3_LAHF_LM, CPUID_EXT3_CMP_LEG, CPUID_EXT3_EXTAPIC,
                     CPUID_EXT3_CR8LEG, CPUID_EXT3_ABM, CPUID_EXT3_SSE4A,
@@ -755,7 +752,6 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_8000_0001_EDX
-            PPRO_FEATURES & CPUID_EXT2_AMD_ALIASES,
         // FEAT_8000_0001_ECX
             0,
         },
@@ -837,7 +833,6 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_8000_0001_EDX
-            (PPRO_FEATURES & CPUID_EXT2_AMD_ALIASES) |
             CPUID_EXT2_MMXEXT | CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT,
         },
     },
@@ -862,7 +857,6 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_8000_0001_EDX
-            (PPRO_FEATURES & CPUID_EXT2_AMD_ALIASES) |
             CPUID_EXT2_NX,
         // FEAT_8000_0001_ECX
             CPUID_EXT3_LAHF_LM,
