@@ -476,6 +476,33 @@ static void cpacr_write(CPUARMState *env, const ARMCPRegInfo *ri,
     env->cp15.cpacr_el1 = value;
 }
 
+static CPAccessResult cpacr_access(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    if (arm_feature(env, ARM_FEATURE_V8)) {
+        /* Check if CPACR accesses are to be trapped to EL2 */
+        if (arm_current_el(env) == 1 &&
+            (env->cp15.cptr_el[2] & CPTR_TCPAC) && !arm_is_secure(env)) {
+            return CP_ACCESS_TRAP_EL2;
+        /* Check if CPACR accesses are to be trapped to EL3 */
+        } else if (arm_current_el(env) < 3 &&
+                   (env->cp15.cptr_el[3] & CPTR_TCPAC)) {
+            return CP_ACCESS_TRAP_EL3;
+        }
+    }
+
+    return CP_ACCESS_OK;
+}
+
+static CPAccessResult cptr_access(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    /* Check if CPTR accesses are set to trap to EL3 */
+    if (arm_current_el(env) == 2 && (env->cp15.cptr_el[3] & CPTR_TCPAC)) {
+        return CP_ACCESS_TRAP_EL3;
+    }
+
+    return CP_ACCESS_OK;
+}
+
 static const ARMCPRegInfo v6_cp_reginfo[] = {
     /* prefetch by MVA in v6, NOP in v7 */
     { "MVA_prefetch", 15,7,13, 0,0,1, 0,
@@ -494,9 +521,9 @@ static const ARMCPRegInfo v6_cp_reginfo[] = {
      */
     { "WFAR", 15,6,0, 0,0,1, 0,
       ARM_CP_CONST, PL1_RW, 0, NULL, 0, },
-    { "CPACR", 0,1,0, 3,0,2, ARM_CP_STATE_BOTH, 
+    { "CPACR", 0,1,0, 3,0,2, ARM_CP_STATE_BOTH,
       0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.cpacr_el1), {0, 0},
-      NULL, NULL, cpacr_write },
+      cpacr_access, NULL, cpacr_write },
     REGINFO_SENTINEL
 };
 
@@ -2141,6 +2168,8 @@ static const ARMCPRegInfo v8_el3_no_el2_cp_reginfo[] = {
     { "HCR_EL2", 0,1,1, 3,4,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW, PL2_RW, 0, NULL, 0, 0, {0, 0},
       NULL, arm_cp_read_zero, arm_cp_write_ignore },
+    { "CPTR_EL2", 0,1,1, 3,4,2, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
     REGINFO_SENTINEL
 };
 
@@ -2191,6 +2220,9 @@ static const ARMCPRegInfo v8_el2_cp_reginfo[] = {
       NULL, NULL, vbar_write, },
     { "SP_EL2", 0,4,1, 3,6,0, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, sp_el[2]) },
+    { "CPTR_EL2", 0,1,1, 3,4,2, ARM_CP_STATE_BOTH, 0,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.cptr_el[2]), {0, 0},
+      cptr_access },
     REGINFO_SENTINEL
 };
 
@@ -2231,6 +2263,9 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "VBAR_EL3", 0,12,0, 3,6,0, ARM_CP_STATE_AA64,
       0, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[3]), {0, 0},
       NULL, NULL, vbar_write, },
+    { "CPTR_EL3", 0,1,1, 3,6,2, ARM_CP_STATE_AA64, 0,
+      PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.cptr_el[3]), {0, 0},
+      cptr_access },
     REGINFO_SENTINEL
 };
 
