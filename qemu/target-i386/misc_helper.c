@@ -24,34 +24,67 @@
 
 #include "uc_priv.h"
 
-void helper_outb(void *handle, uint32_t port, uint32_t data)
+void helper_outb(CPUX86State *env, uint32_t port, uint32_t data)
 {
-    cpu_outb(handle, port, data & 0xff);
+#ifdef CONFIG_USER_ONLY
+    fprintf(stderr, "outb: port=0x%04x, data=%02x\n", port, data);
+#else
+    address_space_stb(&env->uc->as, port, data,
+                      cpu_get_mem_attrs(env), NULL);
+#endif
 }
 
-target_ulong helper_inb(void *handle, uint32_t port)
+target_ulong helper_inb(CPUX86State *env, uint32_t port)
 {
-    return cpu_inb(handle, port);
+#ifdef CONFIG_USER_ONLY
+    fprintf(stderr, "inb: port=0x%04x\n", port);
+    return 0;
+#else
+    return address_space_ldub(&env->uc->as, port,
+                              cpu_get_mem_attrs(env), NULL);
+#endif
 }
 
-void helper_outw(void *handle, uint32_t port, uint32_t data)
+void helper_outw(CPUX86State *env, uint32_t port, uint32_t data)
 {
-    cpu_outw(handle, port, data & 0xffff);
+#ifdef CONFIG_USER_ONLY
+    fprintf(stderr, "outw: port=0x%04x, data=%04x\n", port, data);
+#else
+    address_space_stw(&env->uc->as, port, data,
+                      cpu_get_mem_attrs(env), NULL);
+#endif
 }
 
-target_ulong helper_inw(void *handle, uint32_t port)
+target_ulong helper_inw(CPUX86State *env, uint32_t port)
 {
-    return cpu_inw(handle, port);
+#ifdef CONFIG_USER_ONLY
+    fprintf(stderr, "inw: port=0x%04x\n", port);
+    return 0;
+#else
+    return address_space_lduw(&env->uc->as, port,
+                              cpu_get_mem_attrs(env), NULL);
+#endif
 }
 
-void helper_outl(void *handle, uint32_t port, uint32_t data)
+void helper_outl(CPUX86State *env, uint32_t port, uint32_t data)
 {
-    cpu_outl(handle, port, data);
+#ifdef CONFIG_USER_ONLY
+    fprintf(stderr, "outw: port=0x%04x, data=%08x\n", port, data);
+#else
+    address_space_stl(&env->uc->as, port, data,
+                      cpu_get_mem_attrs(env), NULL);
+#endif
 }
 
-target_ulong helper_inl(void *handle, uint32_t port)
+target_ulong helper_inl(CPUX86State *env, uint32_t port)
 {
-    return cpu_inl(handle, port);
+#ifdef CONFIG_USER_ONLY
+    fprintf(stderr, "inl: port=0x%04x\n", port);
+    return 0;
+#else
+    return address_space_ldl(&env->uc->as, port,
+                             cpu_get_mem_attrs(env), NULL);
+#endif
 }
 
 void helper_into(CPUX86State *env, int next_eip_addend)

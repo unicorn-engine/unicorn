@@ -760,13 +760,13 @@ static void gen_helper_in_func(TCGContext *s, TCGMemOp ot, TCGv v, TCGv_i32 n)
 {
     switch (ot) {
     case MO_8:
-        gen_helper_inb(s, v, tcg_const_ptr(s, s->uc), n);
+        gen_helper_inb(s, v, s->cpu_env, n);
         break;
     case MO_16:
-        gen_helper_inw(s, v, tcg_const_ptr(s, s->uc), n);
+        gen_helper_inw(s, v, s->cpu_env, n);
         break;
     case MO_32:
-        gen_helper_inl(s, v, tcg_const_ptr(s, s->uc), n);
+        gen_helper_inl(s, v, s->cpu_env, n);
         break;
     default:
         tcg_abort();
@@ -777,13 +777,13 @@ static void gen_helper_out_func(TCGContext *s, TCGMemOp ot, TCGv_i32 v, TCGv_i32
 {
     switch (ot) {
     case MO_8:
-        gen_helper_outb(s, tcg_const_ptr(s, s->uc), v, n);
+        gen_helper_outb(s, s->cpu_env, v, n);
         break;
     case MO_16:
-        gen_helper_outw(s, tcg_const_ptr(s, s->uc), v, n);
+        gen_helper_outw(s, s->cpu_env, v, n);
         break;
     case MO_32:
-        gen_helper_outl(s, tcg_const_ptr(s, s->uc), v, n);
+        gen_helper_outl(s, s->cpu_env, v, n);
         break;
     default:
         tcg_abort();
