@@ -63,8 +63,8 @@ static void do_rte(CPUM68KState *env)
     env->pc = cpu_ldl_kernel(env, sp + 4);
     sp |= (fmt >> 28) & 3;
     env->sr = fmt & 0xffff;
-    m68k_switch_sp(env);
     env->aregs[7] = sp + 8;
+    m68k_switch_sp(env);
 }
 
 static void do_interrupt_all(CPUM68KState *env, int is_hw)
@@ -99,10 +99,7 @@ static void do_interrupt_all(CPUM68KState *env, int is_hw)
 
     vector = cs->exception_index << 2;
 
-    sp = env->aregs[7];
-
     fmt |= 0x40000000;
-    fmt |= (sp & 3) << 28;
     fmt |= vector << 16;
     fmt |= env->sr;
 
@@ -112,6 +109,8 @@ static void do_interrupt_all(CPUM68KState *env, int is_hw)
         env->sr &= ~SR_M;
     }
     m68k_switch_sp(env);
+    sp = env->aregs[7];
+    fmt |= (sp & 3) << 28;
 
     /* ??? This could cause MMU faults.  */
     sp &= ~3;
