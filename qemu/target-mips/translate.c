@@ -5029,10 +5029,10 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_EntryLo0));
 #if defined(TARGET_MIPS64)
             if (ctx->rxi) {
+                /* Move RI/XI fields to bits 31:30 */
                 TCGv tmp = tcg_temp_new(tcg_ctx);
-                tcg_gen_andi_tl(tcg_ctx, tmp, arg, (3ull << CP0EnLo_XI));
-                tcg_gen_shri_tl(tcg_ctx, tmp, tmp, 32);
-                tcg_gen_or_tl(tcg_ctx, arg, arg, tmp);
+                tcg_gen_shri_tl(tcg_ctx, tmp, arg, CP0EnLo_XI);
+                tcg_gen_deposit_tl(tcg_ctx, arg, arg, tmp, 30, 2);
                 tcg_temp_free(tcg_ctx, tmp);
             }
 #endif
@@ -5084,10 +5084,10 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_EntryLo1));
 #if defined(TARGET_MIPS64)
             if (ctx->rxi) {
+                /* Move RI/XI fields to bits 31:30 */
                 TCGv tmp = tcg_temp_new(tcg_ctx);
-                tcg_gen_andi_tl(tcg_ctx, tmp, arg, (3ull << CP0EnLo_XI));
-                tcg_gen_shri_tl(tcg_ctx, tmp, tmp, 32);
-                tcg_gen_or_tl(tcg_ctx, arg, arg, tmp);
+                tcg_gen_shri_tl(tcg_ctx, tmp, arg, CP0EnLo_XI);
+                tcg_gen_deposit_tl(tcg_ctx, arg, arg, tmp, 30, 2);
                 tcg_temp_free(tcg_ctx, tmp);
             }
 #endif
