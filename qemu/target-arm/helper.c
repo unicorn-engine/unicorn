@@ -1485,6 +1485,77 @@ static uint64_t pmsav5_insn_ap_read(CPUARMState *env, const ARMCPRegInfo *ri)
     return simple_mpu_ap_bits(env->cp15.pmsav5_insn_ap);
 }
 
+static uint64_t pmsav7_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    uint32_t *u32p = *(uint32_t **)raw_ptr(env, ri);
+
+    if (!u32p) {
+        return 0;
+    }
+
+    u32p += env->cp15.c6_rgnr;
+    return *u32p;
+}
+
+static void pmsav7_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                         uint64_t value)
+{
+    ARMCPU *cpu = arm_env_get_cpu(env);
+    uint32_t *u32p = *(uint32_t **)raw_ptr(env, ri);
+
+    if (!u32p) {
+        return;
+    }
+
+    u32p += env->cp15.c6_rgnr;
+    tlb_flush(CPU(cpu), 1); /* Mappings may have changed - purge! */
+    *u32p = value;
+}
+
+static void pmsav7_reset(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    ARMCPU *cpu = arm_env_get_cpu(env);
+    uint32_t *u32p = *(uint32_t **)raw_ptr(env, ri);
+
+    if (!u32p) {
+        return;
+    }
+
+    memset(u32p, 0, sizeof(*u32p) * cpu->pmsav7_dregion);
+}
+
+static void pmsav7_rgnr_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                              uint64_t value)
+{
+    ARMCPU *cpu = arm_env_get_cpu(env);
+    uint32_t nrgs = cpu->pmsav7_dregion;
+
+    if (value >= nrgs) {
+        qemu_log_mask(LOG_GUEST_ERROR,
+                      "PMSAv7 RGNR write >= # supported regions, %" PRIu32
+                      " > %" PRIu32 "\n", (uint32_t)value, nrgs);
+        return;
+    }
+
+    raw_write(env, ri, value);
+}
+
+static const ARMCPRegInfo pmsav7_cp_reginfo[] = {
+    { "DRBAR", 15,6,1, 0,0,0, 0,ARM_CP_NO_RAW,
+      PL1_RW, 0, NULL, 0, offsetof(CPUARMState, pmsav7.drbar), {0, 0},
+      NULL, pmsav7_read, pmsav7_write, NULL, NULL, pmsav7_reset },
+    { "DRSR", 15,6,1, 0,0,2, 0,ARM_CP_NO_RAW,
+      PL1_RW, 0, NULL, 0, offsetof(CPUARMState, pmsav7.drsr), {0, 0},
+      NULL, pmsav7_read, pmsav7_write, NULL, NULL, pmsav7_reset },
+    { "DRACR", 15,6,1, 0,0,4, 0,ARM_CP_NO_RAW,
+      PL1_RW, 0, NULL, 0, offsetof(CPUARMState, pmsav7.dracr), {0, 0},
+      NULL, pmsav7_read, pmsav7_write, NULL, NULL, pmsav7_reset },
+    { "RGNR", 15,6,2, 0,0,0, 0,0,
+      PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c6_rgnr), {0, 0},
+      NULL, NULL, pmsav7_rgnr_write },
+    REGINFO_SENTINEL
+};
+
 static const ARMCPRegInfo pmsav5_cp_reginfo[] = {
     { "DATA_AP", 15,5,0, 0,0,0, 0,
       ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.pmsav5_data_ap), {0, 0},
@@ -2862,13 +2933,14 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         define_one_arm_cp_reg(cpu, &rvbar);
     }
     if (arm_feature(env, ARM_FEATURE_MPU)) {
-        /* These are the MPU registers prior to PMSAv6. Any new
-         * PMSA core later than the ARM946 will require that we
-         * implement the PMSAv6 or PMSAv7 registers, which are
-         * completely different.
-         */
-        assert(!arm_feature(env, ARM_FEATURE_V6));
-        define_arm_cp_regs(cpu, pmsav5_cp_reginfo);
+        if (arm_feature(env, ARM_FEATURE_V6)) {
+            /* PMSAv6 not implemented */
+            assert(arm_feature(env, ARM_FEATURE_V7));
+            define_arm_cp_regs(cpu, vmsa_pmsa_cp_reginfo);
+            define_arm_cp_regs(cpu, pmsav7_cp_reginfo);
+        } else {
+            define_arm_cp_regs(cpu, pmsav5_cp_reginfo);
+        }
     } else {
         define_arm_cp_regs(cpu, vmsa_pmsa_cp_reginfo);
         define_arm_cp_regs(cpu, vmsa_cp_reginfo);
