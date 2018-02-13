@@ -473,7 +473,7 @@ static void cpacr_write(CPUARMState *env, const ARMCPRegInfo *ri,
         }
         value &= mask;
     }
-    env->cp15.c1_coproc = value;
+    env->cp15.cpacr_el1 = value;
 }
 
 static const ARMCPRegInfo v6_cp_reginfo[] = {
@@ -495,7 +495,7 @@ static const ARMCPRegInfo v6_cp_reginfo[] = {
     { "WFAR", 15,6,0, 0,0,1, 0,
       ARM_CP_CONST, PL1_RW, 0, NULL, 0, },
     { "CPACR", 0,1,0, 3,0,2, ARM_CP_STATE_BOTH, 
-      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c1_coproc), {0, 0},
+      0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.cpacr_el1), {0, 0},
       NULL, NULL, cpacr_write },
     REGINFO_SENTINEL
 };

@@ -77,7 +77,7 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
             switch(regid) {
                 default: break;
                 case UC_ARM64_REG_CPACR_EL1:
-                    *(uint32_t *)value = ARM_CPU(uc, mycpu)->env.cp15.c1_coproc;
+                    *(uint32_t *)value = ARM_CPU(uc, mycpu)->env.cp15.cpacr_el1;
                     break;
                 case UC_ARM64_REG_ESR:
                     *(uint32_t *)value = ARM_CPU(uc, mycpu)->env.exception.syndrome;
@@ -154,7 +154,7 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
             switch(regid) {
                 default: break;
                 case UC_ARM64_REG_CPACR_EL1:
-                    ARM_CPU(uc, mycpu)->env.cp15.c1_coproc = *(uint32_t *)value;
+                    ARM_CPU(uc, mycpu)->env.cp15.cpacr_el1 = *(uint32_t *)value;
                     break;
                 case UC_ARM64_REG_TPIDR_EL0:
                     ARM_CPU(uc, mycpu)->env.cp15.tpidr_el[0] = *(uint64_t *)value;
