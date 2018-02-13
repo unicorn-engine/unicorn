@@ -1118,6 +1118,23 @@ static const ARMCPUInfo arm_cpus[] = {
     { NULL }
 };
 
+#ifdef CONFIG_USER_ONLY
+static int arm_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int rw,
+                                    int mmu_idx)
+{
+    ARMCPU *cpu = ARM_CPU(NULL, cs);
+    CPUARMState *env = &cpu->env;
+
+    env->exception.vaddress = address;
+    if (rw == 2) {
+        cs->exception_index = EXCP_PREFETCH_ABORT;
+    } else {
+        cs->exception_index = EXCP_DATA_ABORT;
+    }
+    return 1;
+}
+#endif
+
 static void arm_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
     ARMCPUClass *acc = ARM_CPU_CLASS(uc, oc);

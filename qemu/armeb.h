@@ -23,6 +23,7 @@
 #define address_space_stq_le address_space_stq_le_armeb
 #define address_space_stq_be address_space_stq_be_armeb
 #define arm_release arm_release_armeb
+#define arm_tlb_fill arm_tlb_fill_armeb
 #define aarch64_sync_32_to_64 aarch64_sync_32_to_64_armeb
 #define aarch64_sync_64_to_32 aarch64_sync_64_to_32_armeb
 #define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_armeb
@@ -123,7 +124,6 @@
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_armeb
 #define arm_cpu_finalizefn arm_cpu_finalizefn_armeb
 #define arm_cpu_get_phys_page_debug arm_cpu_get_phys_page_debug_armeb
-#define arm_cpu_handle_mmu_fault arm_cpu_handle_mmu_fault_armeb
 #define arm_cpu_initfn arm_cpu_initfn_armeb
 #define arm_cpu_list arm_cpu_list_armeb
 #define cpu_loop_exit cpu_loop_exit_armeb
