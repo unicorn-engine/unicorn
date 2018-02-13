@@ -3104,7 +3104,16 @@
 #define write_list_to_cpustate write_list_to_cpustate_m68k
 #define write_raw_cp_reg write_raw_cp_reg_m68k
 #define X86CPURegister32_lookup X86CPURegister32_lookup_m68k
+#define x86_ldub_phys x86_ldub_phys_m68k
+#define x86_lduw_phys x86_lduw_phys_m68k
+#define x86_ldl_phys x86_ldl_phys_m68k
+#define x86_ldq_phys x86_ldq_phys_m68k
 #define x86_op_defs x86_op_defs_m68k
+#define x86_stb_phys x86_stb_phys_m68k
+#define x86_stl_phys_notdirty x86_stl_phys_notdirty_m68k
+#define x86_stw_phys x86_stw_phys_m68k
+#define x86_stl_phys x86_stl_phys_m68k
+#define x86_stq_phys x86_stq_phys_m68k
 #define xpsr_read xpsr_read_m68k
 #define xpsr_write xpsr_write_m68k
 #define xscale_cpar_write xscale_cpar_write_m68k

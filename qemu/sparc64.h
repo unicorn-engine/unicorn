@@ -3104,7 +3104,16 @@
 #define write_list_to_cpustate write_list_to_cpustate_sparc64
 #define write_raw_cp_reg write_raw_cp_reg_sparc64
 #define X86CPURegister32_lookup X86CPURegister32_lookup_sparc64
+#define x86_ldub_phys x86_ldub_phys_sparc64
+#define x86_lduw_phys x86_lduw_phys_sparc64
+#define x86_ldl_phys x86_ldl_phys_sparc64
+#define x86_ldq_phys x86_ldq_phys_sparc64
 #define x86_op_defs x86_op_defs_sparc64
+#define x86_stb_phys x86_stb_phys_sparc64
+#define x86_stl_phys_notdirty x86_stl_phys_notdirty_sparc64
+#define x86_stw_phys x86_stw_phys_sparc64
+#define x86_stl_phys x86_stl_phys_sparc64
+#define x86_stq_phys x86_stq_phys_sparc64
 #define xpsr_read xpsr_read_sparc64
 #define xpsr_write xpsr_write_sparc64
 #define xscale_cpar_write xscale_cpar_write_sparc64

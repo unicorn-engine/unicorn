@@ -3104,7 +3104,16 @@
 #define write_list_to_cpustate write_list_to_cpustate_mips
 #define write_raw_cp_reg write_raw_cp_reg_mips
 #define X86CPURegister32_lookup X86CPURegister32_lookup_mips
+#define x86_ldub_phys x86_ldub_phys_mips
+#define x86_lduw_phys x86_lduw_phys_mips
+#define x86_ldl_phys x86_ldl_phys_mips
+#define x86_ldq_phys x86_ldq_phys_mips
 #define x86_op_defs x86_op_defs_mips
+#define x86_stb_phys x86_stb_phys_mips
+#define x86_stl_phys_notdirty x86_stl_phys_notdirty_mips
+#define x86_stw_phys x86_stw_phys_mips
+#define x86_stl_phys x86_stl_phys_mips
+#define x86_stq_phys x86_stq_phys_mips
 #define xpsr_read xpsr_read_mips
 #define xpsr_write xpsr_write_mips
 #define xscale_cpar_write xscale_cpar_write_mips
