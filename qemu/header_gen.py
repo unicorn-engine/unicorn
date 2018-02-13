@@ -2061,6 +2061,7 @@ symbols = (
     'memory_region_get_addr',
     'memory_region_get_alignment',
     'memory_region_get_container',
+    'memory_region_get_dirty_log_mask',
     'memory_region_get_fd',
     'memory_region_get_may_overlap',
     'memory_region_get_priority',
