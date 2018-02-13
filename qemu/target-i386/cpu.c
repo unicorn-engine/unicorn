@@ -2481,7 +2481,9 @@ static bool x86_cpu_has_work(CPUState *cs)
            (cs->interrupt_request & (CPU_INTERRUPT_NMI |
                                      CPU_INTERRUPT_INIT |
                                      CPU_INTERRUPT_SIPI |
-                                     CPU_INTERRUPT_MCE));
+                                     CPU_INTERRUPT_MCE)) ||
+           ((cs->interrupt_request & CPU_INTERRUPT_SMI) &&
+            !(env->hflags & HF_SMM_MASK));
 }
 
 static void x86_cpu_common_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
