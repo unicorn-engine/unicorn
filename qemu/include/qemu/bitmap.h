@@ -27,6 +27,7 @@
  * Otherwise many inlines will generate horrible code.
  *
  * bitmap_set(dst, pos, nbits)			Set specified bit area
+ * bitmap_set_atomic(dst, pos, nbits)   Set specified bit area with atomic ops
  * bitmap_clear(dst, pos, nbits)		Clear specified bit area
  */
 
@@ -47,6 +48,7 @@
         unsigned long name[BITS_TO_LONGS(bits)]
 
 void bitmap_set(unsigned long *map, long i, long len);
+void bitmap_set_atomic(unsigned long *map, long i, long len);
 void bitmap_clear(unsigned long *map, long start, long nr);
 
 static inline unsigned long *bitmap_zero_extend(unsigned long *old,
