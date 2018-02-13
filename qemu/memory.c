@@ -1344,6 +1344,13 @@ void *memory_region_get_ram_ptr(MemoryRegion *mr)
     return qemu_get_ram_ptr(mr->uc, mr->ram_addr & TARGET_PAGE_MASK);
 }
 
+bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,
+                                        hwaddr size, unsigned client)
+{
+    return cpu_physical_memory_test_and_clear_dirty(mr->uc, mr->ram_addr + addr,
+                                                    size, client);
+}
+
 static void memory_region_update_container_subregions(MemoryRegion *subregion)
 {
     hwaddr offset = subregion->addr;

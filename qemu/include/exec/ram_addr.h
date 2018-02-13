@@ -163,20 +163,17 @@ static inline void cpu_physical_memory_set_dirty_lebitmap(struct uc_struct *uc, 
 }
 #endif /* not _WIN32 */
 
+bool cpu_physical_memory_test_and_clear_dirty(struct uc_struct *uc,
+                                              ram_addr_t start,
+                                              ram_addr_t length,
+                                              unsigned client);
+
 static inline void cpu_physical_memory_clear_dirty_range(struct uc_struct *uc, ram_addr_t start,
                                                          ram_addr_t length,
                                                          unsigned client)
 {
-    unsigned long end, page;
-
-    assert(client < DIRTY_MEMORY_NUM);
-    end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
-    page = start >> TARGET_PAGE_BITS;
-    bitmap_clear(uc->ram_list.dirty_memory[client], page, end - page);
+    cpu_physical_memory_test_and_clear_dirty(uc, start, length, DIRTY_MEMORY_CODE);
 }
-
-void cpu_physical_memory_reset_dirty(struct uc_struct *uc,
-    ram_addr_t start, ram_addr_t length, unsigned client);
 
 #endif
 #endif

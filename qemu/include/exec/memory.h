@@ -560,6 +560,23 @@ int memory_region_get_fd(MemoryRegion *mr);
 void *memory_region_get_ram_ptr(MemoryRegion *mr);
 
 /**
+ * memory_region_test_and_clear_dirty: Check whether a range of bytes is dirty
+ *                                     for a specified client. It clears them.
+ *
+ * Checks whether a range of bytes has been written to since the last
+ * call to memory_region_reset_dirty() with the same @client.  Dirty logging
+ * must be enabled.
+ *
+ * @mr: the memory region being queried.
+ * @addr: the address (relative to the start of the region) being queried.
+ * @size: the size of the range being queried.
+ * @client: the user of the logging information; %DIRTY_MEMORY_MIGRATION or
+ *          %DIRTY_MEMORY_VGA.
+ */
+bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,
+                                        hwaddr size, unsigned client);
+
+/**
  * memory_region_set_readonly: Turn a memory region read-only (or read-write)
  *
  * Allows a memory region to be marked as read-only (turning it into a ROM).

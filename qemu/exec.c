@@ -714,16 +714,28 @@ static void tlb_reset_dirty_range_all(struct uc_struct* uc,
 }
 
 /* Note: start and end must be within the same ram block.  */
-void cpu_physical_memory_reset_dirty(struct uc_struct* uc,
-    ram_addr_t start, ram_addr_t length, unsigned client)
+bool cpu_physical_memory_test_and_clear_dirty(struct uc_struct *uc,
+                                              ram_addr_t start,
+                                              ram_addr_t length,
+                                              unsigned client)
 {
-    if (length == 0)
-        return;
-    cpu_physical_memory_clear_dirty_range(uc, start, length, client);
+    unsigned long end, page;
+    bool dirty;
 
-    if (tcg_enabled(uc)) {
+    if (length == 0) {
+        return false;
+    }
+
+    end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
+    page = start >> TARGET_PAGE_BITS;
+    dirty = bitmap_test_and_clear_atomic(uc->ram_list.dirty_memory[client],
+                                         page, end - page);
+
+    if (dirty && tcg_enabled(uc)) {
         tlb_reset_dirty_range_all(uc, start, length);
     }
+
+    return dirty;
 }
 
 hwaddr memory_region_section_get_iotlb(CPUState *cpu,
