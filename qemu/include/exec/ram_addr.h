@@ -77,9 +77,15 @@ static inline bool cpu_physical_memory_is_clean(struct uc_struct *uc, ram_addr_t
 }
 
 static inline bool cpu_physical_memory_range_includes_clean(struct uc_struct *uc, ram_addr_t start,
-                                                            ram_addr_t length)
+                                                            ram_addr_t length, uint8_t mask)
 {
-    return !cpu_physical_memory_all_dirty(uc, start, length, DIRTY_MEMORY_CODE);
+    uint8_t ret = 0;
+
+    if (mask & (1 << DIRTY_MEMORY_CODE) &&
+        !cpu_physical_memory_all_dirty(uc, start, length, DIRTY_MEMORY_CODE)) {
+        ret |= (1 << DIRTY_MEMORY_CODE);
+    }
+    return ret;
 }
 
 static inline void cpu_physical_memory_set_dirty_flag(struct uc_struct *uc, ram_addr_t addr,

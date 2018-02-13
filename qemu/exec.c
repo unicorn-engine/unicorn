@@ -1609,12 +1609,20 @@ int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
 
 #else
 
-static void invalidate_and_set_dirty(struct uc_struct *uc, hwaddr addr,
-        hwaddr length)
+static void invalidate_and_set_dirty(MemoryRegion *mr, hwaddr addr,
+                                     hwaddr length)
 {
-    if (cpu_physical_memory_range_includes_clean(uc, addr, length)) {
-        tb_invalidate_phys_range(uc, addr, addr + length);
+    uint8_t dirty_log_mask = memory_region_get_dirty_log_mask(mr);
+
+    if (dirty_log_mask) {
+        dirty_log_mask =
+            cpu_physical_memory_range_includes_clean(mr->uc, addr, length, dirty_log_mask);
     }
+    if (dirty_log_mask & (1 << DIRTY_MEMORY_CODE)) {
+        tb_invalidate_phys_range(mr->uc, addr, addr + length);
+        dirty_log_mask &= ~(1 << DIRTY_MEMORY_CODE);
+    }
+    cpu_physical_memory_set_dirty_range(mr->uc, addr, length, dirty_log_mask);
 }
 
 static int memory_access_size(MemoryRegion *mr, unsigned l, hwaddr addr)
@@ -1703,7 +1711,7 @@ MemTxResult address_space_rw(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
                 /* RAM case */
                 ptr = qemu_get_ram_ptr(as->uc, addr1);
                 memcpy(ptr, buf, l);
-                invalidate_and_set_dirty(as->uc, addr1, l);
+                invalidate_and_set_dirty(mr, addr1, l);
             }
         } else {
             if (!memory_access_is_direct(mr, is_write)) {
@@ -1803,7 +1811,7 @@ static inline void cpu_physical_memory_write_rom_internal(AddressSpace *as,
             switch (type) {
                 case WRITE_DATA:
                     memcpy(ptr, buf, l);
-                    invalidate_and_set_dirty(as->uc, addr1, l);
+                    invalidate_and_set_dirty(mr, addr1, l);
                     break;
                 case FLUSH_CACHE:
                     flush_icache_range((uintptr_t)ptr, (uintptr_t)ptr + l);
@@ -1944,7 +1952,7 @@ void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
         mr = qemu_ram_addr_from_host(as->uc, buffer, &addr1);
         assert(mr != NULL);
         if (is_write) {
-            invalidate_and_set_dirty(as->uc, addr1, access_len);
+            invalidate_and_set_dirty(mr, addr1, access_len);
         }
         memory_region_unref(mr);
         return;
@@ -2325,7 +2333,7 @@ static inline void address_space_stl_internal(AddressSpace *as,
             stl_p(ptr, val);
             break;
         }
-        invalidate_and_set_dirty(mr->uc, addr1, 4);
+        invalidate_and_set_dirty(mr, addr1, 4);
         r = MEMTX_OK;
     }
     if (result) {
@@ -2427,7 +2435,7 @@ static inline void address_space_stw_internal(AddressSpace *as,
             stw_p(ptr, val);
             break;
         }
-        invalidate_and_set_dirty(as->uc, addr1, 2);
+        invalidate_and_set_dirty(mr, addr1, 2);
         r = MEMTX_OK;
     }
     if (result) {
