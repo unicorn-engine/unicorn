@@ -5402,6 +5402,15 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
         goto done_generating;
     }
 
+	// Verify code exec barrier if set
+	if (env->uc->code_exec_barrier_start || env->uc->code_exec_barrier_end) {
+		if (pc_start < env->uc->code_exec_barrier_start || pc_start >= env->uc->code_exec_barrier_end) {
+			gen_tb_start(tcg_ctx);
+			gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
+			goto done_generating;
+		}
+	}
+
     max_insns = tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0)
         max_insns = CF_COUNT_MASK;
@@ -5413,6 +5422,16 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
         gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
         goto done_generating;
     }
+
+	// Verify code exec barrier if set
+	if (env->uc->code_exec_barrier_start || env->uc->code_exec_barrier_end) {
+		if (tb->pc < env->uc->code_exec_barrier_start || tb->pc >= env->uc->code_exec_barrier_end) {
+			gen_tb_start(tcg_ctx);
+			save_state(dc);
+			gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
+			goto done_generating;
+		}
+	}
 
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
@@ -5459,6 +5478,14 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
             gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
             break;
         } else {
+			// Verify code exec barrier if set
+			if (dc->uc->code_exec_barrier_start || dc->uc->code_exec_barrier_end) {
+				if (dc->pc < dc->uc->code_exec_barrier_start || dc->pc >= dc->uc->code_exec_barrier_end) {
+					save_state(dc);
+					gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
+					break;
+				}
+			}
             last_pc = dc->pc;
             insn = cpu_ldl_code(env, dc->pc);
         }

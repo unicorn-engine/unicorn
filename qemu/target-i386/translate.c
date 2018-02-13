@@ -5019,6 +5019,18 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         return s->pc;
     }
 
+    // Verify code exec barrier if set
+    if (s->uc->code_exec_barrier_start || s->uc->code_exec_barrier_end) {
+        if (s->pc < s->uc->code_exec_barrier_start || s->pc >= s->uc->code_exec_barrier_end) {
+            // imitate the HLT instruction
+            gen_update_cc_op(s);
+            gen_jmp_im(s, pc_start - s->cs_base);
+            gen_helper_hlt(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
+            s->is_jmp = DISAS_TB_JUMP;
+            return s->pc;
+        }
+    }
+
     if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT))) {
         tcg_gen_debug_insn_start(tcg_ctx, pc_start);
     }
@@ -8692,6 +8704,18 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
         gen_helper_hlt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
         dc->is_jmp = DISAS_TB_JUMP;
         goto done_generating;
+    }
+
+    // check valid range and stop the emulation if outside
+    if (env->uc->code_exec_barrier_start || env->uc->code_exec_barrier_end) {
+        if (tb->pc < env->uc->code_exec_barrier_start || tb->pc >= env->uc->code_exec_barrier_end) {
+            // imitate the HLT instruction
+            gen_tb_start(tcg_ctx);
+            gen_jmp_im(dc, tb->pc - tb->cs_base);
+            gen_helper_hlt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
+            dc->is_jmp = DISAS_TB_JUMP;
+            goto done_generating;
+        }
     }
 
     gen_opc_end = tcg_ctx->gen_opc_buf + OPC_MAX_SIZE;

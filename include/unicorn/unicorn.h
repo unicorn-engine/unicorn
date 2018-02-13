@@ -498,6 +498,21 @@ UNICORN_EXPORT
 uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size);
 
 /*
+Set the barrier for a valid code exec range.
+
+@uc: handle returned by uc_open()
+@barrier_start: starting memory address of the barrier
+@barrier_end: ending memory address of the barrier
+
+NOTE: @barrier_start and @barrier_end == 0 means no barrier
+
+@return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_code_barrier(uc_engine *uc, uint64_t barrier_start, uint64_t barrier_end);
+
+/*
  Emulate machine code in a specific duration of time.
 
  @uc: handle returned by uc_open()

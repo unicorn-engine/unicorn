@@ -10982,6 +10982,15 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
         return;
     }
 
+	// Verify code exec barrier if set
+    if (s->uc->code_exec_barrier_start || s->uc->code_exec_barrier_end) {
+        if (s->pc < s->uc->code_exec_barrier_start || s->pc >= s->uc->code_exec_barrier_end) {
+            // imitate WFI instruction to halt emulation
+            s->is_jmp = DISAS_WFI;
+            return;
+        }
+    }
+
     insn = arm_ldl_code(env, s->pc, s->bswap_code);
     s->insn = insn;
     s->pc += 4;
@@ -11114,6 +11123,16 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
         gen_tb_start(tcg_ctx);
         dc->is_jmp = DISAS_WFI;
         goto tb_end;
+    }
+
+    // Verify code exec barrier if set
+    if (env->uc->code_exec_barrier_start || env->uc->code_exec_barrier_end) {
+        if (tb->pc < env->uc->code_exec_barrier_start || tb->pc >= env->uc->code_exec_barrier_end) {
+            // imitate WFI instruction to halt emulation
+            gen_tb_start(tcg_ctx);
+            dc->is_jmp = DISAS_WFI;
+            goto tb_end;
+        }
     }
 
     // Unicorn: trace this block on request

@@ -10411,6 +10411,15 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
         return;
     }
 
+	// Verify code exec barrier if set
+    if (s->uc->code_exec_barrier_start || s->uc->code_exec_barrier_end) {
+        if (s->pc < s->uc->code_exec_barrier_start || s->pc >= s->uc->code_exec_barrier_end) {
+            // imitate WFI instruction to halt emulation
+            s->is_jmp = DISAS_WFI;
+            return;
+        }
+    }
+
     if (s->condexec_mask) {
         cond = s->condexec_cond;
         if (cond != 0x0e) {     /* Skip conditional when condition is AL. */
@@ -11255,6 +11264,16 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
         goto tb_end;
     }
 
+    // Verify code exec barrier if set
+    if (env->uc->code_exec_barrier_start || env->uc->code_exec_barrier_end) {
+        if (tb->pc < env->uc->code_exec_barrier_start || tb->pc >= env->uc->code_exec_barrier_end) {
+            // imitate WFI instruction to halt emulation
+            gen_tb_start(tcg_ctx);
+            dc->is_jmp = DISAS_WFI;
+            goto tb_end;
+        }
+    }
+
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
@@ -11394,9 +11413,18 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
                 // imitate WFI instruction to halt emulation
                 dc->is_jmp = DISAS_WFI;
             } else {
-                insn = arm_ldl_code(env, dc->pc, dc->bswap_code);
-                dc->pc += 4;
-                disas_arm_insn(dc, insn);
+				// Verify code exec barrier if set
+				if (dc->uc->code_exec_barrier_start || dc->uc->code_exec_barrier_end) {
+					if (dc->pc < dc->uc->code_exec_barrier_start || dc->pc >= dc->uc->code_exec_barrier_end) {
+						// imitate WFI instruction to halt emulation
+						dc->is_jmp = DISAS_WFI;
+					}
+				}
+				else {
+					insn = arm_ldl_code(env, dc->pc, dc->bswap_code);
+					dc->pc += 4;
+					disas_arm_insn(dc, insn);
+				}
             }
         }
 

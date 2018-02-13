@@ -355,6 +355,18 @@ uc_err uc_close(uc_engine *uc)
     return UC_ERR_OK;
 }
 
+UNICORN_EXPORT
+uc_err uc_code_barrier(uc_engine *uc, uint64_t barrier_start, uint64_t barrier_end) 
+{
+	if (barrier_end < barrier_start) {
+		return -1; // FIXME: need a proper uc_err
+	}
+
+	uc->code_exec_barrier_start = barrier_start;
+	uc->code_exec_barrier_end = barrier_end;
+
+	return UC_ERR_OK;
+}
 
 UNICORN_EXPORT
 uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)

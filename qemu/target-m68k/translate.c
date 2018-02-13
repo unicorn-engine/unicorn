@@ -3045,6 +3045,14 @@ static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
         return;
     }
 
+	// Verify code exec barrier if set
+	if (s->uc->code_exec_barrier_start || s->uc->code_exec_barrier_end) {
+		if (s->pc < s->uc->code_exec_barrier_start || s->pc >= s->uc->code_exec_barrier_end) {
+			gen_exception(s, s->pc, EXCP_HLT);
+			return;
+		}
+	}
+
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, s->pc)) {
         gen_uc_tracecode(tcg_ctx, 2, UC_HOOK_CODE_IDX, env->uc, s->pc);
@@ -3105,6 +3113,15 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
         gen_exception(dc, dc->pc, EXCP_HLT);
         goto done_generating;
     }
+
+	// Verify code exec barrier if set
+	if (env->uc->code_exec_barrier_start || env->uc->code_exec_barrier_end) {
+		if (tb->pc < env->uc->code_exec_barrier_start || tb->pc >= env->uc->code_exec_barrier_end) {
+			gen_tb_start(tcg_ctx);
+			gen_exception(dc, dc->pc, EXCP_HLT);
+			goto done_generating;
+		}
+	}
 
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
