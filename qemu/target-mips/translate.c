@@ -4892,6 +4892,15 @@ static void gen_bshfl (DisasContext *ctx, uint32_t op2, int rt, int rd)
 
 #ifndef CONFIG_USER_ONLY
 /* CP0 (MMU and control) */
+static inline void gen_move_low32(TCGContext *s, TCGv ret, TCGv_i64 arg)
+{
+#if defined(TARGET_MIPS64)
+    tcg_gen_ext32s_tl(s, ret, arg);
+#else
+    tcg_gen_trunc_i64_tl(s, ret, arg);
+#endif
+}
+
 static inline void gen_mfc0_load32 (DisasContext *ctx, TCGv arg, target_ulong off)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
@@ -5026,17 +5035,21 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
     case 2:
         switch (sel) {
         case 0:
-            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_EntryLo0));
+            {
+                TCGv_i64 tmp = tcg_temp_new_i64(tcg_ctx);
+                tcg_gen_ld_i64(tcg_ctx, tmp, tcg_ctx->cpu_env,
+                               offsetof(CPUMIPSState, CP0_EntryLo0));
+
 #if defined(TARGET_MIPS64)
-            if (ctx->rxi) {
-                /* Move RI/XI fields to bits 31:30 */
-                TCGv tmp = tcg_temp_new(tcg_ctx);
-                tcg_gen_shri_tl(tcg_ctx, tmp, arg, CP0EnLo_XI);
-                tcg_gen_deposit_tl(tcg_ctx, arg, arg, tmp, 30, 2);
-                tcg_temp_free(tcg_ctx, tmp);
-            }
+                if (ctx->rxi) {
+                    /* Move RI/XI fields to bits 31:30 */
+                    tcg_gen_shri_tl(tcg_ctx, arg, tmp, CP0EnLo_XI);
+                    tcg_gen_deposit_tl(tcg_ctx, tmp, tmp, arg, 30, 2);
+                }
 #endif
-            tcg_gen_ext32s_tl(tcg_ctx, arg, arg);
+                gen_move_low32(tcg_ctx, arg, tmp);
+                tcg_temp_free_i64(tcg_ctx, tmp);
+            }
             rn = "EntryLo0";
             break;
         case 1:
@@ -5081,17 +5094,20 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
     case 3:
         switch (sel) {
         case 0:
-            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_EntryLo1));
+            {
+                TCGv_i64 tmp = tcg_temp_new_i64(tcg_ctx);
+                tcg_gen_ld_i64(tcg_ctx, tmp, tcg_ctx->cpu_env,
+                               offsetof(CPUMIPSState, CP0_EntryLo1));
 #if defined(TARGET_MIPS64)
-            if (ctx->rxi) {
-                /* Move RI/XI fields to bits 31:30 */
-                TCGv tmp = tcg_temp_new(tcg_ctx);
-                tcg_gen_shri_tl(tcg_ctx, tmp, arg, CP0EnLo_XI);
-                tcg_gen_deposit_tl(tcg_ctx, arg, arg, tmp, 30, 2);
-                tcg_temp_free(tcg_ctx, tmp);
-            }
+                if (ctx->rxi) {
+                    /* Move RI/XI fields to bits 31:30 */
+                    tcg_gen_shri_tl(tcg_ctx, arg, tmp, CP0EnLo_XI);
+                    tcg_gen_deposit_tl(tcg_ctx, tmp, tmp, arg, 30, 2);
+                }
 #endif
-            tcg_gen_ext32s_tl(tcg_ctx, arg, arg);
+                gen_move_low32(tcg_ctx, arg, tmp);
+                tcg_temp_free_i64(tcg_ctx, tmp);
+            }
             rn = "EntryLo1";
             break;
         default:
@@ -5500,7 +5516,12 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 2:
         case 4:
         case 6:
-            gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_TagLo));
+            {
+                TCGv_i64 tmp = tcg_temp_new_i64(tcg_ctx);
+                tcg_gen_ld_i64(tcg_ctx, tmp, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_TagLo));
+                gen_move_low32(tcg_ctx, arg, tmp);
+                tcg_temp_free_i64(tcg_ctx, tmp);
+            }
             rn = "TagLo";
             break;
         case 1:
@@ -19772,7 +19793,7 @@ void cpu_state_reset(CPUMIPSState *env)
     }
 #endif
     env->PABITS = env->cpu_model->PABITS;
-    env->PAMask = (target_ulong)((1ULL << env->cpu_model->PABITS) - 1);
+    env->PAMask = (1ULL << env->cpu_model->PABITS) - 1;
     env->CP0_SRSConf0_rw_bitmask = env->cpu_model->CP0_SRSConf0_rw_bitmask;
     env->CP0_SRSConf0 = env->cpu_model->CP0_SRSConf0;
     env->CP0_SRSConf1_rw_bitmask = env->cpu_model->CP0_SRSConf1_rw_bitmask;
