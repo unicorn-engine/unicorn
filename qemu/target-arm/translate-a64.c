@@ -214,13 +214,16 @@ static void gen_exception_internal(DisasContext *s, int excp)
     tcg_temp_free_i32(tcg_ctx, tcg_excp);
 }
 
-static void gen_exception(DisasContext *s, int excp, uint32_t syndrome)
+static void gen_exception(DisasContext *s, int excp, uint32_t syndrome, uint32_t target_el)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i32 tcg_excp = tcg_const_i32(tcg_ctx, excp);
     TCGv_i32 tcg_syn = tcg_const_i32(tcg_ctx, syndrome);
+    TCGv_i32 tcg_el = tcg_const_i32(tcg_ctx, target_el);
 
-    gen_helper_exception_with_syndrome(tcg_ctx, tcg_ctx->cpu_env, tcg_excp, tcg_syn);
+    gen_helper_exception_with_syndrome(tcg_ctx, tcg_ctx->cpu_env, tcg_excp,
+                                       tcg_syn, tcg_el);
+    tcg_temp_free_i32(tcg_ctx, tcg_el);
     tcg_temp_free_i32(tcg_ctx, tcg_syn);
     tcg_temp_free_i32(tcg_ctx, tcg_excp);
 }
@@ -233,10 +236,10 @@ static void gen_exception_internal_insn(DisasContext *s, int offset, int excp)
 }
 
 static void gen_exception_insn(DisasContext *s, int offset, int excp,
-                               uint32_t syndrome)
+                               uint32_t syndrome, uint32_t target_el)
 {
     gen_a64_set_pc_im(s, s->pc - offset);
-    gen_exception(s, excp, syndrome);
+    gen_exception(s, excp, syndrome, target_el);
     s->is_jmp = DISAS_EXC;
 }
 
@@ -264,7 +267,8 @@ static void gen_step_complete_exception(DisasContext *s)
      * of the exception, and our syndrome information is always correct.
      */
     gen_ss_advance(s);
-    gen_exception(s, EXCP_UDEF, syn_swstep(s->ss_same_el, 1, s->is_ldex));
+    gen_exception(s, EXCP_UDEF, syn_swstep(s->ss_same_el, 1, s->is_ldex),
+                  default_exception_el(s));
     s->is_jmp = DISAS_EXC;
 }
 
@@ -312,7 +316,8 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
 static void unallocated_encoding(DisasContext *s)
 {
     /* Unallocated and reserved encodings are uncategorized */
-    gen_exception_insn(s, 4, EXCP_UDEF, syn_uncategorized());
+    gen_exception_insn(s, 4, EXCP_UDEF, syn_uncategorized(),
+                       default_exception_el(s));
 }
 
 #define unsupported_encoding(s, insn)                                    \
@@ -1002,7 +1007,8 @@ static inline bool fp_access_check(DisasContext *s)
         return true;
     }
 
-    gen_exception_insn(s, 4, EXCP_UDEF, syn_fp_access_trap(1, 0xe, false));
+    gen_exception_insn(s, 4, EXCP_UDEF, syn_fp_access_trap(1, 0xe, false),
+                       default_exception_el(s));
     return false;
 }
 
@@ -1529,7 +1535,8 @@ static void disas_exc(DisasContext *s, uint32_t insn)
         switch (op2_ll) {
         case 1:
             gen_ss_advance(s);
-            gen_exception_insn(s, 0, EXCP_SWI, syn_aa64_svc(imm16));
+            gen_exception_insn(s, 0, EXCP_SWI, syn_aa64_svc(imm16),
+                               default_exception_el(s));
             break;
         case 2:
             if (s->current_el == 0) {
@@ -1542,7 +1549,7 @@ static void disas_exc(DisasContext *s, uint32_t insn)
             gen_a64_set_pc_im(s, s->pc - 4);
             gen_helper_pre_hvc(tcg_ctx, tcg_ctx->cpu_env);
             gen_ss_advance(s);
-            gen_exception_insn(s, 0, EXCP_HVC, syn_aa64_hvc(imm16));
+            gen_exception_insn(s, 0, EXCP_HVC, syn_aa64_hvc(imm16), 2);
             break;
         case 3:
             if (s->current_el == 0) {
@@ -1554,7 +1561,7 @@ static void disas_exc(DisasContext *s, uint32_t insn)
             gen_helper_pre_smc(tcg_ctx, tcg_ctx->cpu_env, tmp);
             tcg_temp_free_i32(tcg_ctx, tmp);
             gen_ss_advance(s);
-            gen_exception_insn(s, 0, EXCP_SMC, syn_aa64_smc(imm16));
+            gen_exception_insn(s, 0, EXCP_SMC, syn_aa64_smc(imm16), 3);
             break;
         default:
             unallocated_encoding(s);
@@ -1567,7 +1574,8 @@ static void disas_exc(DisasContext *s, uint32_t insn)
             break;
         }
         /* BRK */
-        gen_exception_insn(s, 4, EXCP_BKPT, syn_aa64_bkpt(imm16));
+        gen_exception_insn(s, 4, EXCP_BKPT, syn_aa64_bkpt(imm16),
+                           default_exception_el(s));
         break;
     case 2:
         if (op2_ll != 0) {
@@ -11203,6 +11211,7 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     dc->condjmp = 0;
 
     dc->aarch64 = 1;
+    dc->el3_is_aa64 = arm_el_is_aa64(env, 3);
     dc->thumb = 0;
 #if defined(TARGET_WORDS_BIGENDIAN)
     dc->bswap_code = 1;
@@ -11320,7 +11329,8 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
              * bits should be zero.
              */
             assert(num_insns == 1);
-            gen_exception(dc, EXCP_UDEF, syn_swstep(dc->ss_same_el, 0, 0));
+            gen_exception(dc, EXCP_UDEF, syn_swstep(dc->ss_same_el, 0, 0),
+                          default_exception_el(dc));
             dc->is_jmp = DISAS_EXC;
             break;
         }

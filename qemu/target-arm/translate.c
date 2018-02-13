@@ -210,13 +210,17 @@ static void gen_exception_internal(DisasContext *s, int excp)
     tcg_temp_free_i32(tcg_ctx, tcg_excp);
 }
 
-static void gen_exception(DisasContext *s, int excp, uint32_t syndrome)  // qq
+static void gen_exception(DisasContext *s, int excp, uint32_t syndrome, uint32_t target_el)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i32 tcg_excp = tcg_const_i32(tcg_ctx, excp);
     TCGv_i32 tcg_syn = tcg_const_i32(tcg_ctx, syndrome);
+    TCGv_i32 tcg_el = tcg_const_i32(tcg_ctx, target_el);
 
-    gen_helper_exception_with_syndrome(tcg_ctx, tcg_ctx->cpu_env, tcg_excp, tcg_syn);
+    gen_helper_exception_with_syndrome(tcg_ctx, tcg_ctx->cpu_env, tcg_excp,
+                                       tcg_syn, tcg_el);
+
+    tcg_temp_free_i32(tcg_ctx, tcg_el);
     tcg_temp_free_i32(tcg_ctx, tcg_syn);
     tcg_temp_free_i32(tcg_ctx, tcg_excp);
 }
@@ -245,7 +249,8 @@ static void gen_step_complete_exception(DisasContext *s)
      * of the exception, and our syndrome information is always correct.
      */
     gen_ss_advance(s);
-    gen_exception(s, EXCP_UDEF, syn_swstep(s->ss_same_el, 1, s->is_ldex));
+    gen_exception(s, EXCP_UDEF, syn_swstep(s->ss_same_el, 1, s->is_ldex),
+                  default_exception_el(s));
     s->is_jmp = DISAS_EXC;
 }
 
@@ -1081,11 +1086,12 @@ static void gen_exception_internal_insn(DisasContext *s, int offset, int excp)
     s->is_jmp = DISAS_JUMP;
 }
 
-static void gen_exception_insn(DisasContext *s, int offset, int excp, int syn)
+static void gen_exception_insn(DisasContext *s, int offset, int excp,
+                               int syn, uint32_t target_el)
 {
     gen_set_condexec(s);
     gen_set_pc_im(s, s->pc - offset);
-    gen_exception(s, excp, syn);   // qq
+    gen_exception(s, excp, syn, target_el);
     s->is_jmp = DISAS_JUMP;
 }
 
@@ -3175,7 +3181,8 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
      */
     if (!s->cpacr_fpen) {
         gen_exception_insn(s, 4, EXCP_UDEF,
-                           syn_fp_access_trap(1, 0xe, s->thumb));
+                           syn_fp_access_trap(1, 0xe, s->thumb),
+                           default_exception_el(s));
         return 0;
     }
 
@@ -4503,7 +4510,8 @@ static int disas_neon_ls_insn(DisasContext *s, uint32_t insn)
      */
     if (!s->cpacr_fpen) {
         gen_exception_insn(s, 4, EXCP_UDEF,
-                           syn_fp_access_trap(1, 0xe, s->thumb));
+                           syn_fp_access_trap(1, 0xe, s->thumb),
+                           default_exception_el(s));
         return 0;
     }
 
@@ -5256,7 +5264,8 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
      */
     if (!s->cpacr_fpen) {
         gen_exception_insn(s, 4, EXCP_UDEF,
-                           syn_fp_access_trap(1, 0xe, s->thumb));
+                           syn_fp_access_trap(1, 0xe, s->thumb),
+                           default_exception_el(s));
         return 0;
     }
 
@@ -8131,7 +8140,8 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
                 /* bkpt */
                 ARCH(5);
                 gen_exception_insn(s, 4, EXCP_BKPT,
-                                   syn_aa32_bkpt(imm16, false));
+                                   syn_aa32_bkpt(imm16, false),
+                                   default_exception_el(s));
                 break;
             case 2:
                 /* Hypervisor call (v7) */
@@ -9200,7 +9210,8 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
             break;
         default:
         illegal_op:
-            gen_exception_insn(s, 4, EXCP_UDEF, syn_uncategorized());
+            gen_exception_insn(s, 4, EXCP_UDEF, syn_uncategorized(),
+                               default_exception_el(s));
             break;
         }
     }
@@ -11159,7 +11170,8 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
         {
             int imm8 = extract32(insn, 0, 8);
             ARCH(5);
-            gen_exception_insn(s, 2, EXCP_BKPT, syn_aa32_bkpt(imm8, true));
+            gen_exception_insn(s, 2, EXCP_BKPT, syn_aa32_bkpt(imm8, true),
+                               default_exception_el(s));
             break;
         }
 
@@ -11315,11 +11327,13 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
 
     return;
 undef32:
-    gen_exception_insn(s, 4, EXCP_UDEF, syn_uncategorized());
+    gen_exception_insn(s, 4, EXCP_UDEF, syn_uncategorized(),
+                       default_exception_el(s));
     return;
 illegal_op:
 undef:
-    gen_exception_insn(s, 2, EXCP_UDEF, syn_uncategorized());
+    gen_exception_insn(s, 2, EXCP_UDEF, syn_uncategorized(),
+                       default_exception_el(s));
 }
 
 /* generate intermediate code in gen_opc_buf and gen_opparam_buf for
@@ -11363,6 +11377,7 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
     dc->condjmp = 0;
 
     dc->aarch64 = 0;
+    dc->el3_is_aa64 = arm_el_is_aa64(env, 3);
     dc->thumb = ARM_TBFLAG_THUMB(tb->flags);    // qq
     dc->bswap_code = ARM_TBFLAG_BSWAP_CODE(tb->flags);
     dc->condexec_mask = (ARM_TBFLAG_CONDEXEC(tb->flags) & 0xf) << 1;
@@ -11543,7 +11558,8 @@ static inline void gen_intermediate_code_internal(ARMCPU *cpu,
              * bits should be zero.
              */
             assert(num_insns == 1);
-            gen_exception(dc, EXCP_UDEF, syn_swstep(dc->ss_same_el, 0, 0));
+            gen_exception(dc, EXCP_UDEF, syn_swstep(dc->ss_same_el, 0, 0),
+                          default_exception_el(dc));
             goto done_generating;
         }
 
@@ -11616,13 +11632,14 @@ tb_end:
             gen_set_condexec(dc);
             if (dc->is_jmp == DISAS_SWI) {
                 gen_ss_advance(dc);
-                gen_exception(dc, EXCP_SWI, syn_aa32_svc(dc->svc_imm, dc->thumb));
+                gen_exception(dc, EXCP_SWI, syn_aa32_svc(dc->svc_imm, dc->thumb),
+                              default_exception_el(dc));
             } else if (dc->is_jmp == DISAS_HVC) {
                 gen_ss_advance(dc);
-                gen_exception(dc, EXCP_HVC, syn_aa32_hvc(dc->svc_imm));
+                gen_exception(dc, EXCP_HVC, syn_aa32_hvc(dc->svc_imm), 2);
             } else if (dc->is_jmp == DISAS_SMC) {
                 gen_ss_advance(dc);
-                gen_exception(dc, EXCP_SMC, syn_aa32_smc());
+                gen_exception(dc, EXCP_SMC, syn_aa32_smc(), 3);
             } else if (dc->ss_active) {
                 gen_step_complete_exception(dc);
             } else {
@@ -11637,13 +11654,14 @@ tb_end:
         gen_set_condexec(dc);
         if (dc->is_jmp == DISAS_SWI && !dc->condjmp) {
             gen_ss_advance(dc);
-            gen_exception(dc, EXCP_SWI, syn_aa32_svc(dc->svc_imm, dc->thumb));
+            gen_exception(dc, EXCP_SWI, syn_aa32_svc(dc->svc_imm, dc->thumb),
+                          default_exception_el(dc));
         } else if (dc->is_jmp == DISAS_HVC && !dc->condjmp) {
             gen_ss_advance(dc);
-            gen_exception(dc, EXCP_HVC, syn_aa32_hvc(dc->svc_imm));
+            gen_exception(dc, EXCP_HVC, syn_aa32_hvc(dc->svc_imm), 2);
         } else if (dc->is_jmp == DISAS_SMC && !dc->condjmp) {
             gen_ss_advance(dc);
-            gen_exception(dc, EXCP_SMC, syn_aa32_smc());
+            gen_exception(dc, EXCP_SMC, syn_aa32_smc(), 3);
         } else if (dc->ss_active) {
             gen_step_complete_exception(dc);
         } else {
@@ -11681,13 +11699,14 @@ tb_end:
             gen_helper_wfe(tcg_ctx, tcg_ctx->cpu_env);
             break;
         case DISAS_SWI:
-            gen_exception(dc, EXCP_SWI, syn_aa32_svc(dc->svc_imm, dc->thumb));
+            gen_exception(dc, EXCP_SWI, syn_aa32_svc(dc->svc_imm, dc->thumb),
+                          default_exception_el(dc));
             break;
         case DISAS_HVC:
-            gen_exception(dc, EXCP_HVC, syn_aa32_hvc(dc->svc_imm));
+            gen_exception(dc, EXCP_HVC, syn_aa32_hvc(dc->svc_imm), 2);
             break;
         case DISAS_SMC:
-            gen_exception(dc, EXCP_SMC, syn_aa32_smc());
+            gen_exception(dc, EXCP_SMC, syn_aa32_smc(), 3);
             break;
         }
         if (dc->condjmp) {
