@@ -191,15 +191,6 @@ static void apic_reset_common(struct uc_struct *uc, DeviceState *dev)
     info->vapic_base_update(s);
 
     apic_init_reset(uc, dev);
-
-    if (bsp) {
-        /*
-         * LINT0 delivery mode on CPU #0 is set to ExtInt at initialization
-         * time typically by BIOS, so PIC interrupt can be delivered to the
-         * processor when local APIC is enabled.
-         */
-        s->lvt[APIC_LVT_LINT0] = 0x700;
-    }
 }
 
 static int apic_common_realize(struct uc_struct *uc, DeviceState *dev, Error **errp)
