@@ -1611,7 +1611,7 @@ static void invalidate_and_set_dirty(struct uc_struct *uc, hwaddr addr,
         hwaddr length)
 {
     if (cpu_physical_memory_range_includes_clean(uc, addr, length)) {
-        tb_invalidate_phys_range(uc, addr, addr + length, 0);
+        tb_invalidate_phys_range(uc, addr, addr + length);
     }
 }
 

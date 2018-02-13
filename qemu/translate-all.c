@@ -1135,11 +1135,10 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
  * access: the virtual CPU will exit the current TB if code is modified inside
  * this TB.
  */
-void tb_invalidate_phys_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end,
-                              int is_cpu_write_access)
+void tb_invalidate_phys_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end)
 {
     while (start < end) {
-        tb_invalidate_phys_page_range(uc, start, end, is_cpu_write_access);
+        tb_invalidate_phys_page_range(uc, start, end, 0);
         start &= TARGET_PAGE_MASK;
         start += TARGET_PAGE_SIZE;
     }
