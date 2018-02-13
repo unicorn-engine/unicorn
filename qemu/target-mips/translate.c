@@ -18577,32 +18577,39 @@ static void gen_msa(CPUMIPSState *env, DisasContext *ctx)
             uint8_t wd = (ctx->opcode >> 6) & 0x1f;
             uint8_t df = (ctx->opcode >> 0) & 0x3;
 
-            TCGv_i32 tdf = tcg_const_i32(tcg_ctx, df);
             TCGv_i32 twd = tcg_const_i32(tcg_ctx, wd);
-            TCGv_i32 trs = tcg_const_i32(tcg_ctx, rs);
-            TCGv_i32 ts10 = tcg_const_i32(tcg_ctx, s10);
+            TCGv taddr = tcg_temp_new(tcg_ctx);
+            gen_base_offset_addr(ctx, taddr, rs, s10 << df);
 
             switch (MASK_MSA_MINOR(opcode)) {
             case OPC_LD_B:
+                gen_helper_msa_ld_b(tcg_ctx, tcg_ctx->cpu_env, twd, taddr);
+                break;
             case OPC_LD_H:
+                gen_helper_msa_ld_h(tcg_ctx, tcg_ctx->cpu_env, twd, taddr);
+                break;
             case OPC_LD_W:
+                gen_helper_msa_ld_w(tcg_ctx, tcg_ctx->cpu_env, twd, taddr);
+                break;
             case OPC_LD_D:
-                save_cpu_state(ctx, 1);
-                gen_helper_msa_ld_df(tcg_ctx, tcg_ctx->cpu_env, tdf, twd, trs, ts10);
+                gen_helper_msa_ld_d(tcg_ctx, tcg_ctx->cpu_env, twd, taddr);
                 break;
             case OPC_ST_B:
+                gen_helper_msa_st_b(tcg_ctx, tcg_ctx->cpu_env, twd, taddr);
+                break;
             case OPC_ST_H:
+                gen_helper_msa_st_h(tcg_ctx, tcg_ctx->cpu_env, twd, taddr);
+                break;
             case OPC_ST_W:
+                gen_helper_msa_st_w(tcg_ctx, tcg_ctx->cpu_env, twd, taddr);
+                break;
             case OPC_ST_D:
-                save_cpu_state(ctx, 1);
-                gen_helper_msa_st_df(tcg_ctx, tcg_ctx->cpu_env, tdf, twd, trs, ts10);
+                gen_helper_msa_st_d(tcg_ctx, tcg_ctx->cpu_env, twd, taddr);
                 break;
             }
 
             tcg_temp_free_i32(tcg_ctx, twd);
-            tcg_temp_free_i32(tcg_ctx, tdf);
-            tcg_temp_free_i32(tcg_ctx, trs);
-            tcg_temp_free_i32(tcg_ctx, ts10);
+            tcg_temp_free(tcg_ctx, taddr);
         }
         break;
     default:

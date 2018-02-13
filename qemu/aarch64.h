@@ -382,6 +382,7 @@
 #define _edata _edata_aarch64
 #define _end _end_aarch64
 #define end_list end_list_aarch64
+#define ensure_writable_pages ensure_writable_pages_aarch64
 #define eq128 eq128_aarch64
 #define ErrorClass_lookup ErrorClass_lookup_aarch64
 #define error_copy error_copy_aarch64
@@ -1533,6 +1534,14 @@
 #define helper_le_stl_mmu helper_le_stl_mmu_aarch64
 #define helper_le_stq_mmu helper_le_stq_mmu_aarch64
 #define helper_le_stw_mmu helper_le_stw_mmu_aarch64
+#define helper_msa_ld_b helper_msa_ld_b_aarch64
+#define helper_msa_ld_d helper_msa_ld_d_aarch64
+#define helper_msa_ld_h helper_msa_ld_h_aarch64
+#define helper_msa_ld_w helper_msa_ld_w_aarch64
+#define helper_msa_st_b helper_msa_st_b_aarch64
+#define helper_msa_st_d helper_msa_st_d_aarch64
+#define helper_msa_st_h helper_msa_st_h_aarch64
+#define helper_msa_st_w helper_msa_st_w_aarch64
 #define helper_msr_i_pstate helper_msr_i_pstate_aarch64
 #define helper_neon_abd_f32 helper_neon_abd_f32_aarch64
 #define helper_neon_abdl_s16 helper_neon_abdl_s16_aarch64

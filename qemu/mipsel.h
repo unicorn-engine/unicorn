@@ -382,6 +382,7 @@
 #define _edata _edata_mipsel
 #define _end _end_mipsel
 #define end_list end_list_mipsel
+#define ensure_writable_pages ensure_writable_pages_mipsel
 #define eq128 eq128_mipsel
 #define ErrorClass_lookup ErrorClass_lookup_mipsel
 #define error_copy error_copy_mipsel
@@ -1533,6 +1534,14 @@
 #define helper_le_stl_mmu helper_le_stl_mmu_mipsel
 #define helper_le_stq_mmu helper_le_stq_mmu_mipsel
 #define helper_le_stw_mmu helper_le_stw_mmu_mipsel
+#define helper_msa_ld_b helper_msa_ld_b_mipsel
+#define helper_msa_ld_d helper_msa_ld_d_mipsel
+#define helper_msa_ld_h helper_msa_ld_h_mipsel
+#define helper_msa_ld_w helper_msa_ld_w_mipsel
+#define helper_msa_st_b helper_msa_st_b_mipsel
+#define helper_msa_st_d helper_msa_st_d_mipsel
+#define helper_msa_st_h helper_msa_st_h_mipsel
+#define helper_msa_st_w helper_msa_st_w_mipsel
 #define helper_msr_i_pstate helper_msr_i_pstate_mipsel
 #define helper_neon_abd_f32 helper_neon_abd_f32_mipsel
 #define helper_neon_abdl_s16 helper_neon_abdl_s16_mipsel

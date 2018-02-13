@@ -382,6 +382,7 @@
 #define _edata _edata_mips64el
 #define _end _end_mips64el
 #define end_list end_list_mips64el
+#define ensure_writable_pages ensure_writable_pages_mips64el
 #define eq128 eq128_mips64el
 #define ErrorClass_lookup ErrorClass_lookup_mips64el
 #define error_copy error_copy_mips64el
@@ -1533,6 +1534,14 @@
 #define helper_le_stl_mmu helper_le_stl_mmu_mips64el
 #define helper_le_stq_mmu helper_le_stq_mmu_mips64el
 #define helper_le_stw_mmu helper_le_stw_mmu_mips64el
+#define helper_msa_ld_b helper_msa_ld_b_mips64el
+#define helper_msa_ld_d helper_msa_ld_d_mips64el
+#define helper_msa_ld_h helper_msa_ld_h_mips64el
+#define helper_msa_ld_w helper_msa_ld_w_mips64el
+#define helper_msa_st_b helper_msa_st_b_mips64el
+#define helper_msa_st_d helper_msa_st_d_mips64el
+#define helper_msa_st_h helper_msa_st_h_mips64el
+#define helper_msa_st_w helper_msa_st_w_mips64el
 #define helper_msr_i_pstate helper_msr_i_pstate_mips64el
 #define helper_neon_abd_f32 helper_neon_abd_f32_mips64el
 #define helper_neon_abdl_s16 helper_neon_abdl_s16_mips64el

@@ -382,6 +382,7 @@
 #define _edata _edata_m68k
 #define _end _end_m68k
 #define end_list end_list_m68k
+#define ensure_writable_pages ensure_writable_pages_m68k
 #define eq128 eq128_m68k
 #define ErrorClass_lookup ErrorClass_lookup_m68k
 #define error_copy error_copy_m68k
@@ -1533,6 +1534,14 @@
 #define helper_le_stl_mmu helper_le_stl_mmu_m68k
 #define helper_le_stq_mmu helper_le_stq_mmu_m68k
 #define helper_le_stw_mmu helper_le_stw_mmu_m68k
+#define helper_msa_ld_b helper_msa_ld_b_m68k
+#define helper_msa_ld_d helper_msa_ld_d_m68k
+#define helper_msa_ld_h helper_msa_ld_h_m68k
+#define helper_msa_ld_w helper_msa_ld_w_m68k
+#define helper_msa_st_b helper_msa_st_b_m68k
+#define helper_msa_st_d helper_msa_st_d_m68k
+#define helper_msa_st_h helper_msa_st_h_m68k
+#define helper_msa_st_w helper_msa_st_w_m68k
 #define helper_msr_i_pstate helper_msr_i_pstate_m68k
 #define helper_neon_abd_f32 helper_neon_abd_f32_m68k
 #define helper_neon_abdl_s16 helper_neon_abdl_s16_m68k
