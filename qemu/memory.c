@@ -234,10 +234,10 @@ static bool memory_listener_match(MemoryListener *listener,
     } while (0)
 
 /* No need to ref/unref .mr, the FlatRange keeps it alive.  */
-#define MEMORY_LISTENER_UPDATE_REGION(fr, as, dir, callback)            \
+#define MEMORY_LISTENER_UPDATE_REGION(fr, as, dir, callback, _args...)  \
     do { MemoryRegionSection _mrs = MemoryRegionSection_make((fr)->mr, as, (fr)->offset_in_region,	\
             (fr)->addr.size, int128_get64((fr)->addr.start), (fr)->readonly);	\
-      MEMORY_LISTENER_CALL(callback, dir, &_mrs); } while(0);
+      MEMORY_LISTENER_CALL(callback, dir, &_mrs, ##_args); } while(0);
 
 /*
     MEMORY_LISTENER_CALL(callback, dir, (&(MemoryRegionSection) {       \
@@ -728,10 +728,15 @@ static void address_space_update_topology_pass(AddressSpace *as,
 
             if (adding) {
                 MEMORY_LISTENER_UPDATE_REGION(frnew, as, Forward, region_nop);
-                if (frold->dirty_log_mask && !frnew->dirty_log_mask) {
-                    MEMORY_LISTENER_UPDATE_REGION(frnew, as, Reverse, log_stop);
-                } else if (frnew->dirty_log_mask && !frold->dirty_log_mask) {
-                    MEMORY_LISTENER_UPDATE_REGION(frnew, as, Forward, log_start);
+                if (frnew->dirty_log_mask & ~frold->dirty_log_mask) {
+                    MEMORY_LISTENER_UPDATE_REGION(frnew, as, Forward, log_start,
+                                                  frold->dirty_log_mask,
+                                                  frnew->dirty_log_mask);
+                }
+                if (frold->dirty_log_mask & ~frnew->dirty_log_mask) {
+                    MEMORY_LISTENER_UPDATE_REGION(frnew, as, Reverse, log_stop,
+                                                  frold->dirty_log_mask,
+                                                  frnew->dirty_log_mask);
                 }
             }
 
