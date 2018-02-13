@@ -1162,6 +1162,7 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
     mr->ram_addr = qemu_ram_alloc(size, mr, errp);
+    mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
 }
 
 void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
@@ -1174,6 +1175,7 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
     mr->ram = true;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram_from_ptr;
+    mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
 
     /* qemu_ram_alloc_from_ptr cannot fail with ptr != NULL.  */
     assert(ptr != NULL);
