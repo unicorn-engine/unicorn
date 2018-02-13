@@ -2182,6 +2182,8 @@ static const ARMCPRegInfo v8_el3_no_el2_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0 },
     { "TCR_EL2", 0,2,0, 3,4,2, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
+    { "SCTLR_EL2", 0,1,0, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
     REGINFO_SENTINEL
 };
 
@@ -2242,6 +2244,9 @@ static const ARMCPRegInfo v8_el2_cp_reginfo[] = {
     { "TCR_EL2", 0,2,0, 3,4,2, ARM_CP_STATE_BOTH, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tcr_el[2]), {0, 0},
       NULL, NULL, vmsa_tcr_el1_write, NULL, raw_write, vmsa_ttbcr_reset },
+    { "SCTLR_EL2", 0,1,0, 3,4,0, ARM_CP_STATE_BOTH, 0,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sctlr_el[2]), {0, 0},
+      NULL, NULL, sctlr_write, NULL, raw_write },
     REGINFO_SENTINEL
 };
 
