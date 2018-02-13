@@ -767,6 +767,41 @@ static void arm_v7m_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
     cc->cpu_exec_interrupt = arm_v7m_cpu_exec_interrupt;
 }
 
+static const ARMCPRegInfo cortexr5_cp_reginfo[] = {
+    /* Dummy the TCM region regs for the moment */
+    { "ATCM", 15,9,1, 0,0,0, 0,ARM_CP_CONST, PL1_RW },
+    { "BTCM", 15,9,1, 0,0,1, 0,ARM_CP_CONST, PL1_RW },
+    REGINFO_SENTINEL
+};
+
+static void cortex_r5_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    ARMCPU *cpu = ARM_CPU(uc, obj);
+
+    set_feature(&cpu->env, ARM_FEATURE_V7);
+    set_feature(&cpu->env, ARM_FEATURE_THUMB_DIV);
+    set_feature(&cpu->env, ARM_FEATURE_ARM_DIV);
+    set_feature(&cpu->env, ARM_FEATURE_V7MP);
+    set_feature(&cpu->env, ARM_FEATURE_MPU);
+    cpu->midr = 0x411fc153; /* r1p3 */
+    cpu->id_pfr0 = 0x0131;
+    cpu->id_pfr1 = 0x001;
+    cpu->id_dfr0 = 0x010400;
+    cpu->id_afr0 = 0x0;
+    cpu->id_mmfr0 = 0x0210030;
+    cpu->id_mmfr1 = 0x00000000;
+    cpu->id_mmfr2 = 0x01200000;
+    cpu->id_mmfr3 = 0x0211;
+    cpu->id_isar0 = 0x2101111;
+    cpu->id_isar1 = 0x13112111;
+    cpu->id_isar2 = 0x21232141;
+    cpu->id_isar3 = 0x01112131;
+    cpu->id_isar4 = 0x0010142;
+    cpu->id_isar5 = 0x0;
+    cpu->mp_is_up = true;
+    define_arm_cp_regs(cpu, cortexr5_cp_reginfo);
+}
+
 static const ARMCPRegInfo cortexa8_cp_reginfo[] = {
     { "L2LOCKDOWN", 15,9,0, 0,1,0, 0,
       ARM_CP_CONST, PL1_RW, 0, NULL, 0, },
@@ -1155,6 +1190,7 @@ static const ARMCPUInfo arm_cpus[] = {
     { "arm11mpcore", arm11mpcore_initfn },
     { "cortex-m3",   cortex_m3_initfn, arm_v7m_class_init },
     { "cortex-m4",   cortex_m4_initfn, arm_v7m_class_init },
+    { "cortex-r5",   cortex_r5_initfn },
     { "cortex-a8",   cortex_a8_initfn },
     { "cortex-a9",   cortex_a9_initfn },
     { "cortex-a15",  cortex_a15_initfn },
