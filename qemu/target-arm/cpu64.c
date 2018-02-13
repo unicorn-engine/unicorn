@@ -93,6 +93,7 @@ static void aarch64_a57_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     set_feature(&cpu->env, ARM_FEATURE_PMU);
     cpu->kvm_target = QEMU_KVM_ARM_TARGET_CORTEX_A57;
     cpu->midr = 0x411fd070;
+    cpu->revidr = 0x00000000;
     cpu->reset_fpsid = 0x41034070;
     cpu->mvfr0 = 0x10110222;
     cpu->mvfr1 = 0x12111111;
@@ -143,6 +144,7 @@ static void aarch64_a53_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     set_feature(&cpu->env, ARM_FEATURE_V8_PMULL);
     set_feature(&cpu->env, ARM_FEATURE_CRC);
     cpu->midr = 0x410fd034;
+    cpu->revidr = 0x00000000;
     cpu->reset_fpsid = 0x41034070;
     cpu->mvfr0 = 0x10110222;
     cpu->mvfr1 = 0x12111111;
