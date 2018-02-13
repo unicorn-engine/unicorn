@@ -2046,22 +2046,28 @@ DISAS_INSN(move_to_sr)
 
 DISAS_INSN(move_from_usp)
 {
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
     if (IS_USER(s)) {
         gen_exception(s, s->pc - 2, EXCP_PRIVILEGE);
         return;
     }
-    /* TODO: Implement USP.  */
-    gen_exception(s, s->pc - 2, EXCP_ILLEGAL);
+
+    tcg_gen_ld_i32(tcg_ctx, AREG(insn, 0), tcg_ctx->cpu_env,
+                   offsetof(CPUM68KState, sp[M68K_USP]));
 }
 
 DISAS_INSN(move_to_usp)
 {
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
     if (IS_USER(s)) {
         gen_exception(s, s->pc - 2, EXCP_PRIVILEGE);
         return;
     }
-    /* TODO: Implement USP.  */
-    gen_exception(s, s->pc - 2, EXCP_ILLEGAL);
+
+    tcg_gen_st_i32(tcg_ctx, AREG(insn, 0), tcg_ctx->cpu_env,
+                   offsetof(CPUM68KState, sp[M68K_USP]));
 }
 
 DISAS_INSN(halt)
