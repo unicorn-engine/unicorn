@@ -3683,6 +3683,7 @@ mips_symbols = (
     'helper_di',
     'helper_ei',
     'helper_eret',
+    'helper_eretnc',
     'helper_deret',
     'helper_rdhwr_cpunum',
     'helper_rdhwr_synci_step',

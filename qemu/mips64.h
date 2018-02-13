@@ -3630,6 +3630,7 @@
 #define helper_di helper_di_mips64
 #define helper_ei helper_ei_mips64
 #define helper_eret helper_eret_mips64
+#define helper_eretnc helper_eretnc_mips64
 #define helper_deret helper_deret_mips64
 #define helper_rdhwr_cpunum helper_rdhwr_cpunum_mips64
 #define helper_rdhwr_synci_step helper_rdhwr_synci_step_mips64
