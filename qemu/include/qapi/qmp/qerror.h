@@ -77,9 +77,6 @@ void qerror_report_err(Error *err);
 #define QERR_DEVICE_NOT_ENCRYPTED \
     ERROR_CLASS_GENERIC_ERROR, "Device '%s' is not encrypted"
 
-#define QERR_DEVICE_NOT_FOUND \
-    ERROR_CLASS_DEVICE_NOT_FOUND, "Device '%s' not found"
-
 #define QERR_FD_NOT_FOUND \
     ERROR_CLASS_GENERIC_ERROR, "File descriptor named '%s' not found"
 
