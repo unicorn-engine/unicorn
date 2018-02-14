@@ -28,6 +28,9 @@
 #define TARGET_LONG_BITS 32
 #endif
 
+/* Maximum instruction code size */
+#define TARGET_MAX_INSN_SIZE 16
+
 /* support for self modifying code even if the modified instruction is
    close to the modifying instruction */
 #define TARGET_HAS_PRECISE_SMC
