@@ -668,7 +668,7 @@ struct X86CPUDefinition {
 static X86CPUDefinition builtin_x86_defs[] = {
     {
         "qemu64",
-        4, 0x8000000A, 0,
+        0xd, 0x8000000A, 0,
         CPUID_VENDOR_AMD,
         6, 6, 3,
         {
@@ -753,7 +753,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "kvm64",
-        5, 0x80000008, 0,
+        0xd, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         15, 6, 1,
         {
@@ -864,7 +864,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "pentium3",
-        2, 0, 0,
+        3, 0, 0,
         CPUID_VENDOR_INTEL,
         6, 7, 3,
         {
@@ -891,8 +891,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "n270",
-        /* original is on level 10 */
-        5, 0x8000000A, 0,
+        10, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 28, 2,
         {
@@ -918,7 +917,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Conroe",
-        4, 0x8000000A, 0,
+        10, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 15, 3,
         {
@@ -941,7 +940,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Penryn",
-        4, 0x8000000A, 0,
+        10, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 23, 3,
         {
@@ -965,7 +964,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Nehalem",
-        4, 0x8000000A, 0,
+        11, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 26, 3,
         {
@@ -989,7 +988,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Westmere",
-        11, 0x8000000A, 0,
+        11, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 44, 1,
         {
@@ -1026,7 +1025,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "SandyBridge",
-        0xd, 0x8000000A, 0,
+        0xd, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 42, 1,
         {
@@ -1066,7 +1065,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "IvyBridge",
-        0xd, 0x8000000A, 0,
+        0xd, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 58, 9,
         {
@@ -1107,7 +1106,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Haswell-noTSX",
-        0xd, 0x8000000A, 0,
+        0xd, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 60, 1,
         {
@@ -1150,7 +1149,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Haswell",
-        0xd, 0x8000000A, 0,
+        0xd, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 60, 1,
         {
@@ -1194,7 +1193,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Broadwell-noTSX",
-        0xd, 0x8000000A, 0,
+        0xd, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 61, 2,
         {
@@ -1239,7 +1238,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Broadwell",
-        0xd, 0x8000000A, 0,
+        0xd, 0x80000008, 0,
         CPUID_VENDOR_INTEL,
         6, 61, 2,
         {
