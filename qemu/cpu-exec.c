@@ -28,10 +28,10 @@
 #include "uc_priv.h"
 
 static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr);
-static TranslationBlock *tb_find_slow(CPUArchState *env, target_ulong pc,
-        target_ulong cs_base, uint64_t flags);
-static TranslationBlock *tb_find_fast(CPUArchState *env);
-static void cpu_handle_debug_exception(CPUArchState *env);
+static TranslationBlock *tb_find_slow(CPUState *cpu, target_ulong pc,
+                                      target_ulong cs_base, uint64_t flags);
+static TranslationBlock *tb_find_fast(CPUState *cpu);
+static void cpu_handle_debug_exception(CPUState *cpu);
 
 void cpu_loop_exit(CPUState *cpu)
 {
@@ -55,9 +55,9 @@ void cpu_resume_from_signal(CPUState *cpu, void *puc)
 
 /* main execution loop */
 
-int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
+int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 {
-    CPUState *cpu = ENV_GET_CPU(env);
+    CPUArchState *env = cpu->env_ptr;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     CPUClass *cc = CPU_GET_CLASS(uc, cpu);
 #ifdef TARGET_I386
@@ -116,7 +116,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     /* exit request from the cpu execution loop */
                     ret = cpu->exception_index;
                     if (ret == EXCP_DEBUG) {
-                        cpu_handle_debug_exception(env);
+                        cpu_handle_debug_exception(cpu);
                     }
                     break;
                 } else {
@@ -211,7 +211,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     cpu->exception_index = EXCP_INTERRUPT;
                     cpu_loop_exit(cpu);
                 }
-                tb = tb_find_fast(env);	// qq
+                tb = tb_find_fast(cpu); // UNICORN
                 if (!tb) {   // invalid TB due to invalid code?
                     uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
                     ret = EXCP_HLT;
@@ -243,7 +243,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                 if (likely(!cpu->exit_request)) {
                     tc_ptr = tb->tc_ptr;
                     /* execute the generated code */
-                    next_tb = cpu_tb_exec(cpu, tc_ptr);	// qq
+                    next_tb = cpu_tb_exec(cpu, tc_ptr); // UNICORN
 
                     switch (next_tb & TB_EXIT_MASK) {
                         case TB_EXIT_REQUESTED:
@@ -335,10 +335,12 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
     return next_tb;
 }
 
-static TranslationBlock *tb_find_slow(CPUArchState *env, target_ulong pc,
-        target_ulong cs_base, uint64_t flags)   // qq
+static TranslationBlock *tb_find_slow(CPUState *cpu,
+                                      target_ulong pc,
+                                      target_ulong cs_base,
+                                      uint64_t flags)
 {
-    CPUState *cpu = ENV_GET_CPU(env);
+    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TranslationBlock *tb, **ptb1;
     unsigned int h;
@@ -394,9 +396,9 @@ found:
     return tb;
 }
 
-static TranslationBlock *tb_find_fast(CPUArchState *env)    // qq
+static TranslationBlock *tb_find_fast(CPUState *cpu)
 {
-    CPUState *cpu = ENV_GET_CPU(env);
+    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
     TranslationBlock *tb;
     target_ulong cs_base, pc;
     int flags;
@@ -408,15 +410,14 @@ static TranslationBlock *tb_find_fast(CPUArchState *env)    // qq
     tb = cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)];
     if (unlikely(!tb || tb->pc != pc || tb->cs_base != cs_base ||
                 tb->flags != flags)) {
-        tb = tb_find_slow(env, pc, cs_base, flags); // qq
+        tb = tb_find_slow(cpu, pc, cs_base, flags); // qq
     }
     return tb;
 }
 
-static void cpu_handle_debug_exception(CPUArchState *env)
+static void cpu_handle_debug_exception(CPUState *cpu)
 {
-    CPUState *cpu = ENV_GET_CPU(env);
-    CPUClass *cc = CPU_GET_CLASS(env->uc, cpu);
+    CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
     CPUWatchpoint *wp;
 
     if (!cpu->watchpoint_hit) {

@@ -121,7 +121,7 @@ typedef struct CPUM68KState {
 
 void m68k_tcg_init(struct uc_struct *uc);
 M68kCPU *cpu_m68k_init(struct uc_struct *uc, const char *cpu_model);
-int cpu_m68k_exec(struct uc_struct *uc, CPUM68KState *s);
+int cpu_m68k_exec(struct uc_struct *uc, CPUState *cpu);
 /* you can call this signal handler from your SIGBUS and SIGSEGV
    signal handlers to inform the virtual CPU of exceptions. non zero
    is returned if the signal was handled by the virtual CPU.  */

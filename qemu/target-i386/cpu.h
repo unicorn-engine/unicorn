@@ -980,7 +980,7 @@ typedef struct CPUX86State {
 #include "cpu-qom.h"
 
 X86CPU *cpu_x86_create(struct uc_struct *uc, const char *cpu_model, Error **errp);
-int cpu_x86_exec(struct uc_struct *uc, CPUX86State *s);
+int cpu_x86_exec(struct uc_struct *uc, CPUState *cpu);
 void x86_cpudef_setup(void);
 int cpu_x86_support_mca_broadcast(CPUX86State *env);
 

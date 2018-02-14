@@ -542,7 +542,7 @@ int sparc_cpu_memory_rw_debug(CPUState *cpu, vaddr addr,
 void gen_intermediate_code_init(CPUSPARCState *env);
 
 /* cpu-exec.c */
-int cpu_sparc_exec(struct uc_struct *uc, CPUSPARCState *s);
+int cpu_sparc_exec(struct uc_struct *uc, CPUState *cpu);
 
 /* win_helper.c */
 target_ulong cpu_get_psr(CPUSPARCState *env1);

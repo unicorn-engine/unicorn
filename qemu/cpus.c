@@ -117,8 +117,7 @@ static int qemu_tcg_init_vcpu(CPUState *cpu)
 
 static int tcg_cpu_exec(struct uc_struct *uc, CPUState *cpu)
 {
-    CPUArchState *env = cpu->env_ptr;
-    return cpu_exec(uc, env);
+    return cpu_exec(uc, cpu);
 }
 
 static bool tcg_exec_all(struct uc_struct* uc)
