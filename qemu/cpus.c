@@ -36,7 +36,7 @@
 
 static bool cpu_can_run(CPUState *cpu);
 static void cpu_handle_guest_debug(CPUState *cpu);
-static int tcg_cpu_exec(struct uc_struct *uc, CPUArchState *env);
+static int tcg_cpu_exec(struct uc_struct *uc, CPUState *cpu);
 static bool tcg_exec_all(struct uc_struct* uc);
 static int qemu_tcg_init_vcpu(CPUState *cpu);
 static void *qemu_tcg_cpu_loop(struct uc_struct *uc);
@@ -115,8 +115,9 @@ static int qemu_tcg_init_vcpu(CPUState *cpu)
     return 0;
 }
 
-static int tcg_cpu_exec(struct uc_struct *uc, CPUArchState *env)
+static int tcg_cpu_exec(struct uc_struct *uc, CPUState *cpu)
 {
+    CPUArchState *env = cpu->env_ptr;
     return cpu_exec(uc, env);
 }
 
@@ -132,7 +133,7 @@ static bool tcg_exec_all(struct uc_struct* uc)
         //                  (cpu->singlestep_enabled & SSTEP_NOTIMER) == 0);
         if (cpu_can_run(cpu)) {
             uc->quit_request = false;
-            r = tcg_cpu_exec(uc, env);
+            r = tcg_cpu_exec(uc, cpu);
 
             // quit current TB but continue emulating?
             if (uc->quit_request) {
