@@ -115,7 +115,6 @@ typedef struct DisasContext {
     uint32_t fpcr;
     struct TranslationBlock *tb;
     int singlestep_enabled;
-    int is_mem;
     TCGv_i64 mactmp;
     int done_mac;
 
@@ -164,7 +163,6 @@ static inline TCGv gen_load(DisasContext * s, int opsize, TCGv addr, int sign)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv tmp;
     int index = IS_USER(s);
-    s->is_mem = 1;
     tmp = tcg_temp_new_i32(tcg_ctx);
     switch(opsize) {
     case OS_BYTE:
@@ -194,7 +192,6 @@ static inline TCGv_i64 gen_load64(DisasContext * s, TCGv addr)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i64 tmp;
     int index = IS_USER(s);
-    s->is_mem = 1;
     tmp = tcg_temp_new_i64(tcg_ctx);
     tcg_gen_qemu_ldf64(s->uc, tmp, addr, index);
     return tmp;
@@ -204,7 +201,6 @@ static inline TCGv_i64 gen_load64(DisasContext * s, TCGv addr)
 static inline void gen_store(DisasContext *s, int opsize, TCGv addr, TCGv val)
 {
     int index = IS_USER(s);
-    s->is_mem = 1;
     switch(opsize) {
     case OS_BYTE:
         tcg_gen_qemu_st8(s->uc, val, addr, index);
@@ -224,7 +220,6 @@ static inline void gen_store(DisasContext *s, int opsize, TCGv addr, TCGv val)
 static inline void gen_store64(DisasContext *s, TCGv addr, TCGv_i64 val)
 {
     int index = IS_USER(s);
-    s->is_mem = 1;
     tcg_gen_qemu_stf64(s->uc, val, addr, index);
 }
 
@@ -2291,7 +2286,6 @@ DISAS_INSN(fpu)
             mask = 0x80;
             for (i = 0; i < 8; i++) {
                 if (ext & mask) {
-                    s->is_mem = 1;
                     dest = FREG(i, 0);
                     if (ext & (1 << 13)) {
                         /* store */
@@ -3090,7 +3084,6 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
     dc->singlestep_enabled = cs->singlestep_enabled;
     dc->fpcr = env->fpcr;
     dc->user = (env->sr & SR_S) == 0;
-    dc->is_mem = 0;
     dc->done_mac = 0;
     lj = -1;
     num_insns = 0;
