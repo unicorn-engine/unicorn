@@ -2149,6 +2149,9 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
         break;
     case OPC_LDL:
         t1 = tcg_temp_new(tcg_ctx);
+        /* Do a byte access to possibly trigger a page
+           fault with the unaligned address.  */
+        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_UB);
         tcg_gen_andi_tl(tcg_ctx, t1, t0, 7);
 #ifndef TARGET_WORDS_BIGENDIAN
         tcg_gen_xori_tl(tcg_ctx, t1, t1, 7);
@@ -2170,6 +2173,9 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
         break;
     case OPC_LDR:
         t1 = tcg_temp_new(tcg_ctx);
+        /* Do a byte access to possibly trigger a page
+           fault with the unaligned address.  */
+        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_UB);
         tcg_gen_andi_tl(tcg_ctx, t1, t0, 7);
 #ifdef TARGET_WORDS_BIGENDIAN
         tcg_gen_xori_tl(tcg_ctx, t1, t1, 7);
@@ -2236,6 +2242,9 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
         break;
     case OPC_LWL:
         t1 = tcg_temp_new(tcg_ctx);
+        /* Do a byte access to possibly trigger a page
+           fault with the unaligned address.  */
+        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_UB);
         tcg_gen_andi_tl(tcg_ctx, t1, t0, 3);
 #ifndef TARGET_WORDS_BIGENDIAN
         tcg_gen_xori_tl(tcg_ctx, t1, t1, 3);
@@ -2258,6 +2267,9 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
         break;
     case OPC_LWR:
         t1 = tcg_temp_new(tcg_ctx);
+        /* Do a byte access to possibly trigger a page
+           fault with the unaligned address.  */
+        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_UB);
         tcg_gen_andi_tl(tcg_ctx, t1, t0, 3);
 #ifdef TARGET_WORDS_BIGENDIAN
         tcg_gen_xori_tl(tcg_ctx, t1, t1, 3);
