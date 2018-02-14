@@ -2369,7 +2369,8 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "MVBAR", 15,12,0, 0,0,1, 0,0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mvbar), {0, 0},
       NULL, NULL, vbar_write },
-    { "SCTLR_EL3", 0,1,0, 3,6,0, ARM_CP_STATE_AA64,0,
+    { "SCTLR_EL3", 0,1,0, 3,6,0, ARM_CP_STATE_AA64,
+      ARM_CP_ALIAS, /* reset handled by AArch32 view */
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sctlr_el[3]), {0, 0},
       NULL, NULL, sctlr_write, NULL, raw_write, },
     { "TTBR0_EL3", 0,2,0, 3,6,0, ARM_CP_STATE_AA64,0,
