@@ -13500,8 +13500,7 @@ static void gen_pool32fxf(DisasContext *ctx, int rt, int rs)
     }
 }
 
-static void decode_micromips32_opc (CPUMIPSState *env, DisasContext *ctx,
-                                    uint16_t insn_hw1)
+static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
 {
     int32_t offset;
     uint16_t insn;
@@ -14554,7 +14553,7 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool *ins
         generate_exception(ctx, EXCP_RI);
         break;
     default:
-        decode_micromips32_opc (env, ctx, op);
+        decode_micromips32_opc(env, ctx);
         return 4;
     }
 
