@@ -13358,15 +13358,19 @@ static void gen_pool32axf (CPUMIPSState *env, DisasContext *ctx, int rt, int rs)
             gen_bshfl(ctx, OPC_WSBH, rs, rt);
             break;
         case MULT:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_MULT;
             goto do_mul;
         case MULTU:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_MULTU;
             goto do_mul;
         case DIV:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_DIV;
             goto do_div;
         case DIVU:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_DIVU;
             goto do_div;
         do_div:
@@ -13374,15 +13378,19 @@ static void gen_pool32axf (CPUMIPSState *env, DisasContext *ctx, int rt, int rs)
             gen_muldiv(ctx, mips32_op, 0, rs, rt);
             break;
         case MADD:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_MADD;
             goto do_mul;
         case MADDU:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_MADDU;
             goto do_mul;
         case MSUB:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_MSUB;
             goto do_mul;
         case MSUBU:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_MSUBU;
         do_mul:
             check_insn(ctx, ISA_MIPS32);
@@ -13415,6 +13423,7 @@ static void gen_pool32axf (CPUMIPSState *env, DisasContext *ctx, int rt, int rs)
             break;
         case JALRS:
         case JALRS_HB:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch(ctx, OPC_JALR, 4, rs, rt, 0, 2);
             ctx->hflags |= MIPS_HFLAG_BDS_STRICT;
             break;
@@ -13543,6 +13552,7 @@ static void gen_pool32axf (CPUMIPSState *env, DisasContext *ctx, int rt, int rs)
         }
         break;
     case 0x35:
+        check_insn_opc_removed(ctx, ISA_MIPS32R6);
         switch (minor) {
         case MFHI32:
             gen_HILO(ctx, OPC_MFHI, 0, rs);
@@ -13815,6 +13825,7 @@ static void gen_pool32fxf(DisasContext *ctx, int rt, int rs)
     case COND_FLOAT_MOV(MOVT, 5):
     case COND_FLOAT_MOV(MOVT, 6):
     case COND_FLOAT_MOV(MOVT, 7):
+        check_insn_opc_removed(ctx, ISA_MIPS32R6);
         gen_movci(ctx, rt, rs, (ctx->opcode >> 13) & 0x7, 1);
         break;
     case COND_FLOAT_MOV(MOVF, 0):
@@ -13825,6 +13836,7 @@ static void gen_pool32fxf(DisasContext *ctx, int rt, int rs)
     case COND_FLOAT_MOV(MOVF, 5):
     case COND_FLOAT_MOV(MOVF, 6):
     case COND_FLOAT_MOV(MOVF, 7):
+        check_insn_opc_removed(ctx, ISA_MIPS32R6);
         gen_movci(ctx, rt, rs, (ctx->opcode >> 13) & 0x7, 0);
         break;
     default:
@@ -13895,6 +13907,7 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
                 mips32_op = OPC_SUBU;
                 goto do_arith;
             case MUL:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_MUL;
             do_arith:
                 gen_arith(ctx, mips32_op, rd, rs, rt);
@@ -14026,47 +14039,61 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
             check_cp1_enabled(ctx);
             switch (minor) {
             case ALNV_PS:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_ALNV_PS;
                 goto do_madd;
             case MADD_S:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_MADD_S;
                 goto do_madd;
             case MADD_D:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_MADD_D;
                 goto do_madd;
             case MADD_PS:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_MADD_PS;
                 goto do_madd;
             case MSUB_S:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_MSUB_S;
                 goto do_madd;
             case MSUB_D:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_MSUB_D;
                 goto do_madd;
             case MSUB_PS:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_MSUB_PS;
                 goto do_madd;
             case NMADD_S:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_NMADD_S;
                 goto do_madd;
             case NMADD_D:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_NMADD_D;
                 goto do_madd;
             case NMADD_PS:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_NMADD_PS;
                 goto do_madd;
             case NMSUB_S:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_NMSUB_S;
                 goto do_madd;
             case NMSUB_D:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_NMSUB_D;
                 goto do_madd;
             case NMSUB_PS:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 mips32_op = OPC_NMSUB_PS;
             do_madd:
                 gen_flt3_arith(ctx, mips32_op, rd, rr, rs, rt);
                 break;
             case CABS_COND_FMT:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 cond = (ctx->opcode >> 6) & 0xf;
                 cc = (ctx->opcode >> 13) & 0x7;
                 fmt = (ctx->opcode >> 10) & 0x3;
@@ -14085,6 +14112,7 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
                 }
                 break;
             case C_COND_FMT:
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 cond = (ctx->opcode >> 6) & 0xf;
                 cc = (ctx->opcode >> 13) & 0x7;
                 fmt = (ctx->opcode >> 10) & 0x3;
@@ -14121,6 +14149,7 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
                     mips32_op = OPC_PUU_PS;
                     goto do_ps;
                 case CVT_PS_S:
+                    check_insn_opc_removed(ctx, ISA_MIPS32R6);
                     mips32_op = OPC_CVT_PS_S;
                 do_ps:
                     gen_farith(ctx, mips32_op, rt, rs, rd, 0);
@@ -14133,21 +14162,27 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
                 /* [LS][WDU]XC1 */
                 switch ((ctx->opcode >> 6) & 0x7) {
                 case LWXC1:
+                    check_insn_opc_removed(ctx, ISA_MIPS32R6);
                     mips32_op = OPC_LWXC1;
                     goto do_ldst_cp1;
                 case SWXC1:
+                    check_insn_opc_removed(ctx, ISA_MIPS32R6);
                     mips32_op = OPC_SWXC1;
                     goto do_ldst_cp1;
                 case LDXC1:
+                    check_insn_opc_removed(ctx, ISA_MIPS32R6);
                     mips32_op = OPC_LDXC1;
                     goto do_ldst_cp1;
                 case SDXC1:
+                    check_insn_opc_removed(ctx, ISA_MIPS32R6);
                     mips32_op = OPC_SDXC1;
                     goto do_ldst_cp1;
                 case LUXC1:
+                    check_insn_opc_removed(ctx, ISA_MIPS32R6);
                     mips32_op = OPC_LUXC1;
                     goto do_ldst_cp1;
                 case SUXC1:
+                    check_insn_opc_removed(ctx, ISA_MIPS32R6);
                     mips32_op = OPC_SUXC1;
                 do_ldst_cp1:
                     gen_flt3_ldst(ctx, mips32_op, rd, rd, rt, rs);
@@ -14158,6 +14193,7 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
                 break;
             case 0x18:
                 /* 3D insns */
+                check_insn_opc_removed(ctx, ISA_MIPS32R6);
                 fmt = (ctx->opcode >> 9) & 0x3;
                 switch ((ctx->opcode >> 6) & 0x7) {
                 case RSQRT2_FMT:
@@ -14240,6 +14276,7 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
                     }
                     break;
                 case PREFX:
+                    check_insn_opc_removed(ctx, ISA_MIPS32R6);
                     break;
                 default:
                     goto pool32f_invalid;
@@ -14316,31 +14353,39 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
         minor = (ctx->opcode >> 21) & 0x1f;
         switch (minor) {
         case BLTZ:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch(ctx, OPC_BLTZ, 4, rs, -1, imm << 1, 4);
             break;
         case BLTZAL:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch(ctx, OPC_BLTZAL, 4, rs, -1, imm << 1, 4);
             ctx->hflags |= MIPS_HFLAG_BDS_STRICT;
             break;
         case BLTZALS:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch(ctx, OPC_BLTZAL, 4, rs, -1, imm << 1, 2);
             ctx->hflags |= MIPS_HFLAG_BDS_STRICT;
             break;
         case BGEZ:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch(ctx, OPC_BGEZ, 4, rs, -1, imm << 1, 4);
             break;
         case BGEZAL:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch(ctx, OPC_BGEZAL, 4, rs, -1, imm << 1, 4);
             ctx->hflags |= MIPS_HFLAG_BDS_STRICT;
             break;
         case BGEZALS:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch(ctx, OPC_BGEZAL, 4, rs, -1, imm << 1, 2);
             ctx->hflags |= MIPS_HFLAG_BDS_STRICT;
             break;
         case BLEZ:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch(ctx, OPC_BLEZ, 4, rs, -1, imm << 1, 4);
             break;
         case BGTZ:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch(ctx, OPC_BGTZ, 4, rs, -1, imm << 1, 4);
             break;
 
@@ -14352,15 +14397,18 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
             mips32_op = OPC_TGEI;
             goto do_trapi;
         case TLTIU:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_TLTIU;
             goto do_trapi;
         case TGEIU:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_TGEIU;
             goto do_trapi;
         case TNEI:
             mips32_op = OPC_TNEI;
             goto do_trapi;
         case TEQI:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_TEQI;
         do_trapi:
             gen_trap(ctx, mips32_op, rs, -1, imm);
@@ -14368,6 +14416,7 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
 
         case BNEZC:
         case BEQZC:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch(ctx, minor == BNEZC ? OPC_BNE : OPC_BEQ,
                                4, rs, 0, imm << 1, 0);
             /* Compact branches don't have a delay slot, so just let
@@ -14375,28 +14424,35 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
                target. */
             break;
         case LUI:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_logic_imm(ctx, OPC_LUI, rs, 0, imm);
             break;
         case SYNCI:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             /* Break the TB to be able to sync copied instructions
                immediately */
             ctx->bstate = BS_STOP;
             break;
         case BC2F:
         case BC2T:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             /* COP2: Not implemented. */
             generate_exception_err(ctx, EXCP_CpU, 2);
             break;
         case BC1F:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = (ctx->opcode & (1 << 16)) ? OPC_BC1FANY2 : OPC_BC1F;
             goto do_cp1branch;
         case BC1T:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = (ctx->opcode & (1 << 16)) ? OPC_BC1TANY2 : OPC_BC1T;
             goto do_cp1branch;
         case BC1ANY4F:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_BC1FANY4;
             goto do_cp1mips3d;
         case BC1ANY4T:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_BC1TANY4;
         do_cp1mips3d:
             check_cop1x(ctx);
@@ -14425,36 +14481,44 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
         minor = (ctx->opcode >> 12) & 0xf;
         switch (minor) {
         case LWL:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_LWL;
             goto do_ld_lr;
         case SWL:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_SWL;
             goto do_st_lr;
         case LWR:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_LWR;
             goto do_ld_lr;
         case SWR:
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_SWR;
             goto do_st_lr;
 #if defined(TARGET_MIPS64)
         case LDL:
             check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_LDL;
             goto do_ld_lr;
         case SDL:
             check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_SDL;
             goto do_st_lr;
         case LDR:
             check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_LDR;
             goto do_ld_lr;
         case SDR:
             check_insn(ctx, ISA_MIPS3);
             check_mips_64(ctx);
+            check_insn_opc_removed(ctx, ISA_MIPS32R6);
             mips32_op = OPC_SDR;
             goto do_st_lr;
         case LWU:
@@ -14528,6 +14592,7 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
         gen_slt_imm(ctx, mips32_op, rt, rs, imm);
         break;
     case JALX32:
+        check_insn_opc_removed(ctx, ISA_MIPS32R6);
         offset = (int32_t)(ctx->opcode & 0x3FFFFFF) << 2;
         gen_compute_branch(ctx, OPC_JALX, 4, rt, rs, offset, 4);
         ctx->hflags |= MIPS_HFLAG_BDS_STRICT;
@@ -14544,10 +14609,12 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
         gen_compute_branch(ctx, OPC_BNE, 4, rt, rs, imm << 1, 4);
         break;
     case J32:
+        check_insn_opc_removed(ctx, ISA_MIPS32R6);
         gen_compute_branch(ctx, OPC_J, 4, rt, rs,
                            (int32_t)(ctx->opcode & 0x3FFFFFF) << 1, 4);
         break;
     case JAL32:
+        check_insn_opc_removed(ctx, ISA_MIPS32R6);
         gen_compute_branch(ctx, OPC_JAL, 4, rt, rs,
                            (int32_t)(ctx->opcode & 0x3FFFFFF) << 1, 4);
         ctx->hflags |= MIPS_HFLAG_BDS_STRICT;
@@ -14736,6 +14803,7 @@ static int decode_micromips_opc (CPUMIPSState *env, DisasContext *ctx, bool *ins
         }
         break;
     case POOL16F:
+        check_insn_opc_removed(ctx, ISA_MIPS32R6);
         if (ctx->opcode & 1) {
             generate_exception(ctx, EXCP_RI);
         } else {
