@@ -411,9 +411,6 @@ void cpu_exec_init(CPUArchState *env, void *opaque)
     env->uc = uc;
 
     cpu->cpu_index = 0;
-    QTAILQ_INIT(&cpu->breakpoints);
-    QTAILQ_INIT(&cpu->watchpoints);
-
     cpu->as = &uc->as;
 
     // TODO: assert uc does not already have a cpu?

@@ -226,6 +226,10 @@ static int cpu_common_realizefn(struct uc_struct *uc, DeviceState *dev, Error **
 
 static void cpu_common_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
+    CPUState *cpu = CPU(obj);
+
+    QTAILQ_INIT(&cpu->breakpoints);
+    QTAILQ_INIT(&cpu->watchpoints);
 }
 
 static int64_t cpu_common_get_arch_id(CPUState *cpu)
