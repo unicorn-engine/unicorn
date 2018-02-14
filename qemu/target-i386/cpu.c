@@ -252,6 +252,16 @@ static const char *cpuid_xsave_feature_name[] = {
     NULL, NULL, NULL, NULL,
 };
 
+static const char *cpuid_6_feature_name[] = {
+    NULL, NULL, "arat", NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
 
 #define I486_FEATURES (CPUID_FP87 | CPUID_VME | CPUID_PSE)
 #define PENTIUM_FEATURES (I486_FEATURES | CPUID_DE | CPUID_TSC | \
@@ -308,6 +318,7 @@ static const char *cpuid_xsave_feature_name[] = {
           CPUID_7_0_EBX_ERMS, CPUID_7_0_EBX_INVPCID, CPUID_7_0_EBX_RTM,
           CPUID_7_0_EBX_RDSEED */
 #define TCG_APM_FEATURES 0
+#define TCG_6_EAX_FEATURES CPUID_6_EAX_ARAT
 
 
 typedef struct FeatureWordInfo {
@@ -392,6 +403,14 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         0,
         0,
     },
+    // FEAT_ARAT
+    {
+        cpuid_6_feature_name,
+        6,
+        false, 0,
+        R_EAX,
+        TCG_6_EAX_FEATURES,
+    }
 #else
     [FEAT_1_EDX] = {
         .feat_names = feature_name,
@@ -438,6 +457,11 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         .cpuid_needs_ecx = true, .cpuid_ecx = 1,
         .cpuid_reg = R_EAX,
         .tcg_features = 0,
+    },
+    [FEAT_6_EAX] = {
+        .feat_names = cpuid_6_feature_name,
+        .cpuid_eax = 6, .cpuid_reg = R_EAX,
+        .tcg_features = TCG_6_EAX_FEATURES,
     },
 #endif
 };
@@ -985,6 +1009,18 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX,
         // FEAT_8000_0001_ECX
             CPUID_EXT3_LAHF_LM,
+        // FEAT_8000_0007_EDX
+            0,
+        // FEAT_C000_0001_EDX
+            0,
+        // FEAT_KVM
+            0,
+        // FEAT_SVM
+            0,
+        // FEAT_XSAVE
+            0,
+        // FEAT_ARAT
+            CPUID_6_EAX_ARAT,
         },
         "Westmere E56xx/L56xx/X56xx (Nehalem-C)",
     },
@@ -1023,6 +1059,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_XSAVE
             CPUID_XSAVE_XSAVEOPT,
+        // FEAT_ARAT
+            CPUID_6_EAX_ARAT,
         },
         "Intel Xeon E312xx (Sandy Bridge)",
     },
@@ -1060,6 +1098,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_XSAVE
             CPUID_XSAVE_XSAVEOPT,
+        // FEAT_ARAT
+            CPUID_6_EAX_ARAT,
         },
         "Intel Xeon E3-12xx v2 (Ivy Bridge)",
     },
@@ -1102,6 +1142,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_XSAVE
             CPUID_XSAVE_XSAVEOPT,
+        // FEAT_ARAT
+            CPUID_6_EAX_ARAT,
         },
         "Intel Core Processor (Haswell)",
     },
@@ -1145,6 +1187,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_XSAVE
             CPUID_XSAVE_XSAVEOPT,
+        // FEAT_ARAT
+            CPUID_6_EAX_ARAT,
         },
         "Intel Core Processor (Broadwell)",
     },
@@ -2077,7 +2121,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         break;
     case 6:
         /* Thermal and Power Leaf */
-        *eax = 0;
+        *eax = env->features[FEAT_6_EAX];
         *ebx = 0;
         *ecx = 0;
         *edx = 0;
