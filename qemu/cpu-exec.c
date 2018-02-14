@@ -282,7 +282,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     // Unicorn: flush JIT cache to because emulation might stop in
     // the middle of translation, thus generate incomplete code.
     // TODO: optimize this for better performance
-    tb_flush(env);
+    tb_flush(cpu);
 
     /* fail safe : never use current_cpu outside cpu_exec() */
     uc->current_cpu = NULL;

@@ -184,7 +184,7 @@ struct TBContext {
 };
 
 void tb_free(struct uc_struct *uc, TranslationBlock *tb);
-void tb_flush(CPUArchState *env);
+void tb_flush(CPUState *cpu);
 void tb_phys_invalidate(struct uc_struct *uc,
     TranslationBlock *tb, tb_page_addr_t page_addr);
 
