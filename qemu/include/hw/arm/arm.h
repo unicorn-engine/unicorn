@@ -12,6 +12,7 @@
 #define ARM_MISC_H
 
 #include "exec/memory.h"
+#include "cpu.h"
 
 void tosa_machine_init(struct uc_struct *uc);
 void machvirt_machine_init(struct uc_struct *uc);   // ARM64
