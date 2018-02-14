@@ -953,6 +953,7 @@ static void memory_region_initfn(struct uc_struct *uc, Object *obj, void *opaque
     mr->ram_addr = RAM_ADDR_INVALID;
     mr->enabled = true;
     mr->romd_mode = true;
+    mr->global_locking = true;
     mr->destructor = memory_region_destructor_none;
     QTAILQ_INIT(&mr->subregions);
 
@@ -1311,6 +1312,16 @@ void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
         mr->uc->memory_region_update_pending |= mr->enabled;
         memory_region_transaction_commit(mr->uc);
     }
+}
+
+void memory_region_set_global_locking(MemoryRegion *mr)
+{
+    mr->global_locking = true;
+}
+
+void memory_region_clear_global_locking(MemoryRegion *mr)
+{
+    mr->global_locking = false;
 }
 
 void memory_region_rom_device_set_romd(MemoryRegion *mr, bool romd_mode)

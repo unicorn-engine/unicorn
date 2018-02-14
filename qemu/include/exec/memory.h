@@ -169,6 +169,7 @@ struct MemoryRegion {
     bool enabled;
     bool rom_device;
     bool warning_printed; /* For reservations */
+    bool global_locking;
     MemoryRegion *alias;
     hwaddr alias_offset;
     int32_t priority;
@@ -586,6 +587,31 @@ bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,
  * @readonly: whether rhe region is to be ROM or RAM.
  */
 void memory_region_set_readonly(MemoryRegion *mr, bool readonly);
+
+/**
+ * memory_region_set_global_locking: Declares the access processing requires
+ *                                   QEMU's global lock.
+ *
+ * When this is invoked, accesses to the memory region will be processed while
+ * holding the global lock of QEMU. This is the default behavior of memory
+ * regions.
+ *
+ * @mr: the memory region to be updated.
+ */
+void memory_region_set_global_locking(MemoryRegion *mr);
+
+/**
+ * memory_region_clear_global_locking: Declares that access processing does
+ *                                     not depend on the QEMU global lock.
+ *
+ * By clearing this property, accesses to the memory region will be processed
+ * outside of QEMU's global lock (unless the lock is held on when issuing the
+ * access request). In this case, the device model implementing the access
+ * handlers is responsible for synchronization of concurrency.
+ *
+ * @mr: the memory region to be updated.
+ */
+void memory_region_clear_global_locking(MemoryRegion *mr);
 
 /**
  * memory_region_rom_device_set_romd: enable/disable ROMD mode
