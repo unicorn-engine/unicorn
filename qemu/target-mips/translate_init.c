@@ -528,6 +528,51 @@ static const mips_def_t mips_defs[] =
         CPU_MIPS32R5 | ASE_MIPS16 | ASE_MSA,
         MMU_TYPE_R4000,
     },
+    {
+        /* A generic CPU supporting MIPS32 Release 6 ISA.
+           FIXME: Support IEEE 754-2008 FP.
+                  Eventually this should be replaced by a real CPU model. */
+        "mips32r6-generic",
+        0x00010000,
+        MIPS_CONFIG0 | (0x2 << CP0C0_AR) | (MMU_TYPE_R4000 << CP0C0_MT),
+        MIPS_CONFIG1 | (1 << CP0C1_FP) | (31 << CP0C1_MMU) |
+                       (2 << CP0C1_IS) | (4 << CP0C1_IL) | (3 << CP0C1_IA) |
+                       (2 << CP0C1_DS) | (4 << CP0C1_DL) | (3 << CP0C1_DA) |
+                       (0 << CP0C1_PC) | (1 << CP0C1_WR) | (1 << CP0C1_EP),
+        MIPS_CONFIG2,
+        MIPS_CONFIG3 | (1 << CP0C3_BP) | (1 << CP0C3_BI) |
+                       (2 << CP0C3_ISA) | (1 << CP0C3_ULRI) |
+                       (1 << CP0C3_RXI) | (1U << CP0C3_M),
+        MIPS_CONFIG4 | (0xfc << CP0C4_KScrExist) |
+                       (3 << CP0C4_IE) | (1U << CP0C4_M),
+        0,
+        MIPS_CONFIG5 | (1 << CP0C5_LLB),
+        (1 << CP0C5_SBRI) | (1 << CP0C5_FRE) | (1 << CP0C5_UFE),
+        0,
+        0,
+        0,
+        0,
+        32,
+        2,
+        0x3058FF1F,
+        0,
+        0,
+        (1 << FCR0_FREP) | (1 << FCR0_F64) | (1 << FCR0_L) |
+                           (1 << FCR0_W) | (1 << FCR0_D) | (1 << FCR0_S) |
+                           (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
+        0,
+        32,
+        32,
+        0,0,
+        0,0,
+        0,0,
+        0,0,
+        0,0,
+        0,
+        (1 << CP0PG_IEC) | (1 << CP0PG_XIE) | (1U << CP0PG_RIE),
+        CPU_MIPS32R6 | ASE_MICROMIPS,
+        MMU_TYPE_R4000,
+    },
 #if defined(TARGET_MIPS64)
     {
         "R4000",
