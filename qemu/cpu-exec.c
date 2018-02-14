@@ -23,6 +23,7 @@
 #include "sysemu/sysemu.h"
 #include "exec/address-spaces.h"
 #include "exec/memory-internal.h"
+#include "exec/tb-hash.h"
 
 #include "uc_priv.h"
 
