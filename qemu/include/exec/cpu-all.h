@@ -215,6 +215,8 @@ extern unsigned long reserved_va;
 #define TARGET_PAGE_ALIGN(addr) (((addr) + TARGET_PAGE_SIZE - 1) & TARGET_PAGE_MASK)
 
 #define HOST_PAGE_ALIGN(addr) (((addr) + qemu_host_page_size - 1) & qemu_host_page_mask)
+#define REAL_HOST_PAGE_ALIGN(addr) (((addr) + qemu_real_host_page_size - 1) & \
+                                    qemu_real_host_page_mask)
 
 /* same as PROT_xxx */
 #define PAGE_READ      0x0001
