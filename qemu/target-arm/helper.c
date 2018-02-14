@@ -2131,7 +2131,7 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
       NULL, NULL, tlbiall_write },
     { "TLBI_ALLE1IS", 0,8,3, 1,4,4, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
       PL2_W, 0, NULL, 0, 0, {0, 0},
-      NULL, NULL, tlbiall_write },
+      NULL, NULL, tlbiall_is_write },
     { "TLBI_VMALLE1IS", 0,8,3, 1,0,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiall_is_write },
