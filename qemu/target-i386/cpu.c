@@ -241,6 +241,18 @@ static const char *cpuid_apm_edx_feature_name[] = {
     NULL, NULL, NULL, NULL,
 };
 
+static const char *cpuid_xsave_feature_name[] = {
+    "xsaveopt", "xsavec", "xgetbv1", "xsaves",
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
+
 #define I486_FEATURES (CPUID_FP87 | CPUID_VME | CPUID_PSE)
 #define PENTIUM_FEATURES (I486_FEATURES | CPUID_DE | CPUID_TSC | \
           CPUID_MSR | CPUID_MCE | CPUID_CX8 | CPUID_MMX | CPUID_APIC)
@@ -371,6 +383,15 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
     {0},
     // FEAT_SVM
     {0},
+    // FEAT_XSAVE
+    {
+        cpuid_xsave_feature_name,
+        0xd,
+        true,1,
+        R_EAX,
+        0,
+        0,
+    },
 #else
     [FEAT_1_EDX] = {
         .feat_names = feature_name,
@@ -410,6 +431,13 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         .cpuid_reg = R_EDX,
         .tcg_features = TCG_APM_FEATURES,
         .unmigratable_flags = CPUID_APM_INVTSC,
+    },
+    [FEAT_XSAVE] = {
+        .feat_names = cpuid_xsave_feature_name,
+        .cpuid_eax = 0xd,
+        .cpuid_needs_ecx = true, .cpuid_ecx = 1,
+        .cpuid_reg = R_EAX,
+        .tcg_features = 0,
     },
 #endif
 };
@@ -985,6 +1013,16 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT2_SYSCALL,
         // FEAT_8000_0001_ECX
             CPUID_EXT3_LAHF_LM,
+        // FEAT_8000_0007_EDX
+            0,
+        // FEAT_C000_0001_EDX
+            0,
+        // FEAT_KVM
+            0,
+        // FEAT_SVM
+            0,
+        // FEAT_XSAVE
+            CPUID_XSAVE_XSAVEOPT,
         },
         "Intel Xeon E312xx (Sandy Bridge)",
     },
@@ -1017,6 +1055,16 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT2_SYSCALL,
         // FEAT_8000_0001_ECX
             CPUID_EXT3_LAHF_LM,
+        // FEAT_8000_0007_EDX
+            0,
+        // FEAT_C000_0001_EDX
+            0,
+        // FEAT_KVM
+            0,
+        // FEAT_SVM
+            0,
+        // FEAT_XSAVE
+            CPUID_XSAVE_XSAVEOPT,
         },
         "Intel Core Processor (Haswell)",
     },
@@ -1050,6 +1098,16 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT2_SYSCALL,
         // FEAT_8000_0001_ECX
             CPUID_EXT3_LAHF_LM | CPUID_EXT3_3DNOWPREFETCH,
+        // FEAT_8000_0007_EDX
+            0,
+        // FEAT_C000_0001_EDX
+            0,
+        // FEAT_KVM
+            0,
+        // FEAT_SVM
+            0,
+        // FEAT_XSAVE
+            CPUID_XSAVE_XSAVEOPT,
         },
         "Intel Core Processor (Broadwell)",
     },
