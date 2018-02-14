@@ -179,9 +179,6 @@ typedef struct CPUIOTLBEntry {
 
 #endif
 
-
-#define CPU_TEMP_BUF_NLONGS 128
-
 // Unicorn engine
 // @invalid_addr: invalid memory access address
 // @invalid_error: error code for memory access (1 = READ, 2 = WRITE)
