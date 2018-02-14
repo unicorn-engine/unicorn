@@ -2639,6 +2639,8 @@ void helper_msa_fexdo_df(CPUMIPSState *env, uint32_t df, uint32_t wd,
     wr_t *pwt = &(env->active_fpu.fpr[wt].wr);
     uint32_t i;
 
+    clear_msacsr_cause(env);
+
     switch (df) {
     case DF_WORD:
         for (i = 0; i < DF_ELEMENTS(DF_WORD); i++) {
@@ -3189,6 +3191,8 @@ void helper_msa_fexupl_df(CPUMIPSState *env, uint32_t df, uint32_t wd,
     wr_t *pws = &(env->active_fpu.fpr[ws].wr);
     uint32_t i;
 
+    clear_msacsr_cause(env);
+
     switch (df) {
     case DF_WORD:
         for (i = 0; i < DF_ELEMENTS(DF_WORD); i++) {
@@ -3220,6 +3224,8 @@ void helper_msa_fexupr_df(CPUMIPSState *env, uint32_t df, uint32_t wd,
     wr_t *pwd = &(env->active_fpu.fpr[wd].wr);
     wr_t *pws = &(env->active_fpu.fpr[ws].wr);
     uint32_t i;
+
+    clear_msacsr_cause(env);
 
     switch (df) {
     case DF_WORD:
