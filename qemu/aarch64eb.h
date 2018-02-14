@@ -1137,6 +1137,7 @@
 #define gen_helper_vfp_ultos gen_helper_vfp_ultos_aarch64eb
 #define gen_helper_wfe gen_helper_wfe_aarch64eb
 #define gen_helper_wfi gen_helper_wfi_aarch64eb
+#define gen_helper_yield gen_helper_yield_aarch64eb
 #define gen_hvc gen_hvc_aarch64eb
 #define gen_intermediate_code_internal gen_intermediate_code_internal_aarch64eb
 #define gen_intermediate_code_internal_a64 gen_intermediate_code_internal_a64_aarch64eb
@@ -1923,6 +1924,7 @@
 #define helper_vfp_uqtos helper_vfp_uqtos_aarch64eb
 #define helper_wfe helper_wfe_aarch64eb
 #define helper_wfi helper_wfi_aarch64eb
+#define helper_yield helper_yield_aarch64eb
 #define hex2decimal hex2decimal_aarch64eb
 #define hw_breakpoint_update hw_breakpoint_update_aarch64eb
 #define hw_breakpoint_update_all hw_breakpoint_update_all_aarch64eb

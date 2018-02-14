@@ -110,6 +110,7 @@ static inline int default_exception_el(DisasContext *s)
 #define DISAS_WFE 7
 #define DISAS_HVC 8
 #define DISAS_SMC 9
+#define DISAS_YIELD 10
 
 #ifdef TARGET_AARCH64
 void a64_translate_init(struct uc_struct *uc);

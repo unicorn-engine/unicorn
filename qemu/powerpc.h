@@ -1137,6 +1137,7 @@
 #define gen_helper_vfp_ultos gen_helper_vfp_ultos_powerpc
 #define gen_helper_wfe gen_helper_wfe_powerpc
 #define gen_helper_wfi gen_helper_wfi_powerpc
+#define gen_helper_yield gen_helper_yield_powerpc
 #define gen_hvc gen_hvc_powerpc
 #define gen_intermediate_code_internal gen_intermediate_code_internal_powerpc
 #define gen_intermediate_code_internal_a64 gen_intermediate_code_internal_a64_powerpc
@@ -1923,6 +1924,7 @@
 #define helper_vfp_uqtos helper_vfp_uqtos_powerpc
 #define helper_wfe helper_wfe_powerpc
 #define helper_wfi helper_wfi_powerpc
+#define helper_yield helper_yield_powerpc
 #define hex2decimal hex2decimal_powerpc
 #define hw_breakpoint_update hw_breakpoint_update_powerpc
 #define hw_breakpoint_update_all hw_breakpoint_update_all_powerpc

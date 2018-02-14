@@ -1234,6 +1234,8 @@ static void handle_hint(DisasContext *s, uint32_t insn,
         s->is_jmp = DISAS_WFI;
         return;
     case 1: /* YIELD */
+        s->is_jmp = DISAS_YIELD;
+        return;
     case 2: /* WFE */
         s->is_jmp = DISAS_WFE;
         return;
@@ -11399,6 +11401,10 @@ tb_end:
         case DISAS_WFE:
             gen_a64_set_pc_im(dc, dc->pc);
             gen_helper_wfe(tcg_ctx, tcg_ctx->cpu_env);
+            break;
+        case DISAS_YIELD:
+            gen_a64_set_pc_im(dc, dc->pc);
+            gen_helper_yield(tcg_ctx, tcg_ctx->cpu_env);
             break;
         case DISAS_WFI:
             /* This is a special case because we don't want to just halt the CPU

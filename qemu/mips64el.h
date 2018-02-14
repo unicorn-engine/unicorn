@@ -1137,6 +1137,7 @@
 #define gen_helper_vfp_ultos gen_helper_vfp_ultos_mips64el
 #define gen_helper_wfe gen_helper_wfe_mips64el
 #define gen_helper_wfi gen_helper_wfi_mips64el
+#define gen_helper_yield gen_helper_yield_mips64el
 #define gen_hvc gen_hvc_mips64el
 #define gen_intermediate_code_internal gen_intermediate_code_internal_mips64el
 #define gen_intermediate_code_internal_a64 gen_intermediate_code_internal_a64_mips64el
@@ -1923,6 +1924,7 @@
 #define helper_vfp_uqtos helper_vfp_uqtos_mips64el
 #define helper_wfe helper_wfe_mips64el
 #define helper_wfi helper_wfi_mips64el
+#define helper_yield helper_yield_mips64el
 #define hex2decimal hex2decimal_mips64el
 #define hw_breakpoint_update hw_breakpoint_update_mips64el
 #define hw_breakpoint_update_all hw_breakpoint_update_all_mips64el
