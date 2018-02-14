@@ -1814,8 +1814,8 @@ static inline void cpu_physical_memory_write_rom_internal(AddressSpace *as,
         mr = address_space_translate(as, addr, &addr1, &l, true);
 
         if (!(memory_region_is_ram(mr) ||
-                    memory_region_is_romd(mr))) {
-            /* do nothing */
+              memory_region_is_romd(mr))) {
+            l = memory_access_size(mr, l, addr1);
         } else {
             addr1 += memory_region_get_ram_addr(mr);
             /* ROM/RAM case */
