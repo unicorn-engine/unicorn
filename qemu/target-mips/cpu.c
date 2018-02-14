@@ -110,7 +110,7 @@ static void mips_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     CPUMIPSState *env = &cpu->env;
 
     cs->env_ptr = env;
-    cpu_exec_init(env, opaque);
+    cpu_exec_init(cs, opaque);
 
     if (tcg_enabled(uc)) {
         mips_tcg_init(uc);

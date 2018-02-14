@@ -849,7 +849,7 @@ static void sparc_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     CPUSPARCState *env = &cpu->env;
 
     cs->env_ptr = env;
-    cpu_exec_init(env, opaque);
+    cpu_exec_init(cs, opaque);
 
     if (tcg_enabled(uc)) {
         gen_intermediate_code_init(env);

@@ -402,10 +402,10 @@ void tcg_cpu_address_space_init(CPUState *cpu, AddressSpace *as)
 }
 #endif
 
-void cpu_exec_init(CPUArchState *env, void *opaque)
+void cpu_exec_init(CPUState *cpu, void *opaque)
 {
     struct uc_struct *uc = opaque;
-    CPUState *cpu = ENV_GET_CPU(env);
+    CPUArchState *env = cpu->env_ptr;
 
     cpu->uc = uc;
     env->uc = uc;
@@ -627,7 +627,6 @@ void cpu_single_step(CPUState *cpu, int enabled)
 {
 #if defined(TARGET_HAS_ICE)
     if (cpu->singlestep_enabled != enabled) {
-        CPUArchState *env;
         cpu->singlestep_enabled = enabled;
         /* must flush all the translated code to avoid inconsistencies */
         /* XXX: only flush what is necessary */

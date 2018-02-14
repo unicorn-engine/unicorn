@@ -2409,7 +2409,7 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     CPUX86State *env = &cpu->env;
 
     cs->env_ptr = env;
-    cpu_exec_init(env, opaque);
+    cpu_exec_init(cs, opaque);
 
     object_property_add(obj, "family", "int",
                         x86_cpuid_version_get_family,
