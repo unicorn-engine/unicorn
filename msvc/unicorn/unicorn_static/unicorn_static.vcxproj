@@ -22,6 +22,7 @@
     <ClCompile Include="..\..\..\list.c" />
     <ClCompile Include="..\..\..\qemu\accel.c" />
     <ClCompile Include="..\..\..\qemu\glib_compat.c" />
+    <ClCompile Include="..\..\..\qemu\crypto\aes.c" />
     <ClCompile Include="..\..\..\qemu\crypto\init.c" />
     <ClCompile Include="..\..\..\qemu\crypto\hash.c" />
     <ClCompile Include="..\..\..\qemu\hw\core\machine.c" />
@@ -45,7 +46,6 @@
     <ClCompile Include="..\..\..\qemu\qom\object.c" />
     <ClCompile Include="..\..\..\qemu\qom\qom-qobject.c" />
     <ClCompile Include="..\..\..\qemu\tcg-runtime.c" />
-    <ClCompile Include="..\..\..\qemu\util\aes.c" />
     <ClCompile Include="..\..\..\qemu\util\bitmap.c" />
     <ClCompile Include="..\..\..\qemu\util\bitops.c" />
     <ClCompile Include="..\..\..\qemu\util\crc32c.c" />
@@ -100,6 +100,7 @@
     <ClInclude Include="..\..\..\qemu\include\exec\spinlock.h" />
     <ClInclude Include="..\..\..\qemu\include\fpu\softfloat.h" />
     <ClInclude Include="..\..\..\qemu\include\glib_compat.h" />
+    <ClInclude Include="..\..\..\qemu\include\crypto\aes.h" />
     <ClInclude Include="..\..\..\qemu\include\crypto\init.h" />
     <ClInclude Include="..\..\..\qemu\include\crypto\hash.h" />
     <ClInclude Include="..\..\..\qemu\include\hw\arm\arm.h" />
@@ -140,7 +141,6 @@
     <ClInclude Include="..\..\..\qemu\include\qapi\visitor-impl.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\visitor.h" />
     <ClInclude Include="..\..\..\qemu\include\qemu-common.h" />
-    <ClInclude Include="..\..\..\qemu\include\qemu\aes.h" />
     <ClInclude Include="..\..\..\qemu\include\qemu\atomic.h" />
     <ClInclude Include="..\..\..\qemu\include\qemu\bitmap.h" />
     <ClInclude Include="..\..\..\qemu\include\qemu\bitops.h" />

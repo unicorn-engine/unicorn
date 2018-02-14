@@ -147,9 +147,6 @@
     <ClCompile Include="..\..\..\qemu\qom\qom-qobject.c">
       <Filter>qemu\qom</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\aes.c">
-      <Filter>qemu\util</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\qemu\util\bitmap.c">
       <Filter>qemu\util</Filter>
     </ClCompile>
@@ -395,9 +392,6 @@
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\types.h">
       <Filter>qemu\include\qapi\qmp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qemu\aes.h">
-      <Filter>qemu\include\qemu</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qemu\atomic.h">
       <Filter>qemu\include\qemu</Filter>
