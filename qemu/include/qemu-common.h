@@ -216,6 +216,7 @@ static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
 #define VECTYPE        __vector unsigned char
 #define SPLAT(p)       vec_splat(vec_ld(0, p), 0)
 #define ALL_EQ(v1, v2) vec_all_eq(v1, v2)
+#define VEC_OR(v1, v2) ((v1) | (v2))
 /* altivec.h may redefine the bool macro as vector type.
  * Reset it to POSIX semantics. */
 #define bool _Bool
@@ -224,10 +225,12 @@ static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
 #define VECTYPE        __m128i
 #define SPLAT(p)       _mm_set1_epi8(*(p))
 #define ALL_EQ(v1, v2) (_mm_movemask_epi8(_mm_cmpeq_epi8(v1, v2)) == 0xFFFF)
+#define VEC_OR(v1, v2) (_mm_or_si128(v1, v2))
 #else
 #define VECTYPE        unsigned long
 #define SPLAT(p)       (*(p) * (~0UL / 255))
 #define ALL_EQ(v1, v2) ((v1) == (v2))
+#define VEC_OR(v1, v2) ((v1) | (v2))
 #endif
 
 // support for calling functions before main code is executed.
