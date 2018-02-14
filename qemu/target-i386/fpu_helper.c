@@ -240,7 +240,7 @@ int32_t helper_fist_ST0(CPUX86State *env)
 {
     int32_t val;
 
-    val = floatx80_to_int32(ST0, &env->fp_status);
+    val = floatx80_to_int64(ST0, &env->fp_status);
     if (val != (int16_t)val) {
         val = -32768;
     }
