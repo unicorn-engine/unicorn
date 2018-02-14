@@ -2366,6 +2366,14 @@
 #define qbus_finalize qbus_finalize_mipsel
 #define qbus_initfn qbus_initfn_mipsel
 #define qbus_realize qbus_realize_mipsel
+#define qcrypto_hash_base64 qcrypto_hash_base64_mipsel
+#define qcrypto_hash_base64v qcrypto_hash_base64v_mipsel
+#define qcrypto_hash_bytes qcrypto_hash_bytes_mipsel
+#define qcrypto_hash_bytesv qcrypto_hash_bytesv_mipsel
+#define qcrypto_hash_digest qcrypto_hash_digest_mipsel
+#define qcrypto_hash_digestv qcrypto_hash_digestv_mipsel
+#define qcrypto_hash_supports qcrypto_hash_supports_mipsel
+#define qcrypto_init qcrypto_init_mipsel
 #define qdev_create qdev_create_mipsel
 #define qdev_get_type qdev_get_type_mipsel
 #define qdev_register_types qdev_register_types_mipsel

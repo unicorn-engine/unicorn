@@ -30,6 +30,7 @@
 #include "sysemu/cpus.h"
 #include "vl.h"
 #include "uc_priv.h"
+#include "crypto/init.h"
 
 #define DEFAULT_RAM_SIZE 128
 
@@ -80,6 +81,7 @@ int machine_initialize(struct uc_struct *uc)
 {
     MachineClass *machine_class;
     MachineState *current_machine;
+    Error *err = NULL;
 
     module_call_init(uc, MODULE_INIT_QOM);
     register_types_object(uc);
@@ -87,6 +89,13 @@ int machine_initialize(struct uc_struct *uc)
     container_register_types(uc);
     cpu_register_types(uc);
     qdev_register_types(uc);
+
+    // Init crypto
+    if (qcrypto_init(&err) < 0) {
+        //fprintf(stderr, "Cannot initialize crypto: %s\n",
+        //        error_get_pretty(err));
+        return -1;
+    }
 
     // Initialize arch specific.
     uc->init_arch(uc);

@@ -2366,6 +2366,14 @@
 #define qbus_finalize qbus_finalize_m68k
 #define qbus_initfn qbus_initfn_m68k
 #define qbus_realize qbus_realize_m68k
+#define qcrypto_hash_base64 qcrypto_hash_base64_m68k
+#define qcrypto_hash_base64v qcrypto_hash_base64v_m68k
+#define qcrypto_hash_bytes qcrypto_hash_bytes_m68k
+#define qcrypto_hash_bytesv qcrypto_hash_bytesv_m68k
+#define qcrypto_hash_digest qcrypto_hash_digest_m68k
+#define qcrypto_hash_digestv qcrypto_hash_digestv_m68k
+#define qcrypto_hash_supports qcrypto_hash_supports_m68k
+#define qcrypto_init qcrypto_init_m68k
 #define qdev_create qdev_create_m68k
 #define qdev_get_type qdev_get_type_m68k
 #define qdev_register_types qdev_register_types_m68k

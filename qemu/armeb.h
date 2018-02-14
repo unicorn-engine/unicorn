@@ -2366,6 +2366,14 @@
 #define qbus_finalize qbus_finalize_armeb
 #define qbus_initfn qbus_initfn_armeb
 #define qbus_realize qbus_realize_armeb
+#define qcrypto_hash_base64 qcrypto_hash_base64_armeb
+#define qcrypto_hash_base64v qcrypto_hash_base64v_armeb
+#define qcrypto_hash_bytes qcrypto_hash_bytes_armeb
+#define qcrypto_hash_bytesv qcrypto_hash_bytesv_armeb
+#define qcrypto_hash_digest qcrypto_hash_digest_armeb
+#define qcrypto_hash_digestv qcrypto_hash_digestv_armeb
+#define qcrypto_hash_supports qcrypto_hash_supports_armeb
+#define qcrypto_init qcrypto_init_armeb
 #define qdev_create qdev_create_armeb
 #define qdev_get_type qdev_get_type_armeb
 #define qdev_register_types qdev_register_types_armeb

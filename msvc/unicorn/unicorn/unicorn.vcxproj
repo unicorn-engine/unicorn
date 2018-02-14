@@ -195,6 +195,8 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClCompile Include="..\..\..\list.c" />
     <ClCompile Include="..\..\..\qemu\accel.c" />
     <ClCompile Include="..\..\..\qemu\glib_compat.c" />
+    <ClCompile Include="..\..\..\qemu\crypto\init.c" />
+    <ClCompile Include="..\..\..\qemu\crypto\hash.c" />
     <ClCompile Include="..\..\..\qemu\hw\core\machine.c" />
     <ClCompile Include="..\..\..\qemu\hw\core\qdev.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qapi-dealloc-visitor.c" />
@@ -285,6 +287,8 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClInclude Include="..\..\..\qemu\include\exec\spinlock.h" />
     <ClInclude Include="..\..\..\qemu\include\fpu\softfloat.h" />
     <ClInclude Include="..\..\..\qemu\include\glib_compat.h" />
+    <ClInclude Include="..\..\..\qemu\include\crypto\init.h" />
+    <ClInclude Include="..\..\..\qemu\include\crypto\hash.h" />
     <ClInclude Include="..\..\..\qemu\include\hw\arm\arm.h" />
     <ClInclude Include="..\..\..\qemu\include\hw\boards.h" />
     <ClInclude Include="..\..\..\qemu\include\hw\cpu\icc_bus.h" />

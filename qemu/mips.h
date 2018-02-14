@@ -2366,6 +2366,14 @@
 #define qbus_finalize qbus_finalize_mips
 #define qbus_initfn qbus_initfn_mips
 #define qbus_realize qbus_realize_mips
+#define qcrypto_hash_base64 qcrypto_hash_base64_mips
+#define qcrypto_hash_base64v qcrypto_hash_base64v_mips
+#define qcrypto_hash_bytes qcrypto_hash_bytes_mips
+#define qcrypto_hash_bytesv qcrypto_hash_bytesv_mips
+#define qcrypto_hash_digest qcrypto_hash_digest_mips
+#define qcrypto_hash_digestv qcrypto_hash_digestv_mips
+#define qcrypto_hash_supports qcrypto_hash_supports_mips
+#define qcrypto_init qcrypto_init_mips
 #define qdev_create qdev_create_mips
 #define qdev_get_type qdev_get_type_mips
 #define qdev_register_types qdev_register_types_mips

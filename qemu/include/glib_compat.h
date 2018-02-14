@@ -44,6 +44,7 @@ typedef uint32_t guint32;
 typedef uint64_t guint64;
 typedef unsigned int guint;
 typedef char gchar;
+typedef unsigned char guchar;
 typedef int gboolean;
 typedef unsigned long gulong;
 typedef unsigned long gsize;
@@ -128,6 +129,12 @@ gchar** g_strsplit (const gchar *string,
             const gchar *delimiter,
             gint         max_tokens);
 
+/* replacement for base64 dependency */
+gsize g_base64_encode_close(gboolean break_lines, gchar *out,
+                            gint *state, gint *save);
+gchar *g_base64_encode(const guchar *data, gsize len);
+guchar *g_base64_decode(const gchar *text, gsize *out_len);
+guchar *g_base64_decode_inplace(gchar *text, gsize *out_len);
 
 #define g_new(struct_type, n_structs) ((struct_type*)g_new_(sizeof(struct_type), n_structs))
 #define g_new0(struct_type, n_structs) ((struct_type*)g_new0_(sizeof(struct_type), n_structs))

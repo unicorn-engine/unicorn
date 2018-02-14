@@ -2366,6 +2366,14 @@
 #define qbus_finalize qbus_finalize_aarch64
 #define qbus_initfn qbus_initfn_aarch64
 #define qbus_realize qbus_realize_aarch64
+#define qcrypto_hash_base64 qcrypto_hash_base64_aarch64
+#define qcrypto_hash_base64v qcrypto_hash_base64v_aarch64
+#define qcrypto_hash_bytes qcrypto_hash_bytes_aarch64
+#define qcrypto_hash_bytesv qcrypto_hash_bytesv_aarch64
+#define qcrypto_hash_digest qcrypto_hash_digest_aarch64
+#define qcrypto_hash_digestv qcrypto_hash_digestv_aarch64
+#define qcrypto_hash_supports qcrypto_hash_supports_aarch64
+#define qcrypto_init qcrypto_init_aarch64
 #define qdev_create qdev_create_aarch64
 #define qdev_get_type qdev_get_type_aarch64
 #define qdev_register_types qdev_register_types_aarch64
