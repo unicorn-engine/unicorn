@@ -2255,6 +2255,15 @@ static void tlbi_aa64_alle2_write(CPUARMState *env, const ARMCPRegInfo *ri,
     tlb_flush_by_mmuidx(cs, ARMMMUIdx_S1E2, -1);
 }
 
+static void tlbi_aa64_alle3_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                                  uint64_t value)
+{
+    ARMCPU *cpu = arm_env_get_cpu(env);
+    CPUState *cs = CPU(cpu);
+
+    tlb_flush_by_mmuidx(cs, ARMMMUIdx_S1E3, -1);
+}
+
 static void tlbi_aa64_alle1is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                                     uint64_t value)
 {
@@ -2289,6 +2298,18 @@ static void tlbi_aa64_alle2is_write(CPUARMState *env, const ARMCPRegInfo *ri,
 
     CPU_FOREACH(other_cs) {
         tlb_flush_by_mmuidx(other_cs, ARMMMUIdx_S1E2, -1);
+    }
+*/
+}
+
+static void tlbi_aa64_alle3is_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                                    uint64_t value)
+{
+/* UNICORN: TODO: issue #642
+    CPUState *other_cs;
+
+    CPU_FOREACH(other_cs) {
+        tlb_flush_by_mmuidx(other_cs, ARMMMUIdx_S1E3, -1);
     }
 */
 }
@@ -2328,6 +2349,20 @@ static void tlbi_aa64_vae2_write(CPUARMState *env, const ARMCPRegInfo *ri,
     tlb_flush_page_by_mmuidx(cs, pageaddr, ARMMMUIdx_S1E2, -1);
 }
 
+static void tlbi_aa64_vae3_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                                 uint64_t value)
+{
+    /* Invalidate by VA, EL3
+     * Currently handles both VAE3 and VALE3, since we don't support
+     * flush-last-level-only.
+     */
+    ARMCPU *cpu = arm_env_get_cpu(env);
+    CPUState *cs = CPU(cpu);
+    uint64_t pageaddr = sextract64(value << 12, 0, 56);
+
+    tlb_flush_page_by_mmuidx(cs, pageaddr, ARMMMUIdx_S1E3, -1);
+}
+
 static void tlbi_aa64_vae1is_write(CPUARMState *env, const ARMCPRegInfo *ri,
                                    uint64_t value)
 {
@@ -2357,6 +2392,19 @@ static void tlbi_aa64_vae2is_write(CPUARMState *env, const ARMCPRegInfo *ri,
 
     CPU_FOREACH(other_cs) {
         tlb_flush_page_by_mmuidx(other_cs, pageaddr, ARMMMUIdx_S1E2, -1);
+    }
+*/
+}
+
+static void tlbi_aa64_vae3is_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                                   uint64_t value)
+{
+/* UNICORN: TODO: issue #642
+    CPUState *other_cs;
+    uint64_t pageaddr = sextract64(value << 12, 0, 56);
+
+    CPU_FOREACH(other_cs) {
+        tlb_flush_page_by_mmuidx(other_cs, pageaddr, ARMMMUIdx_S1E3, -1);
     }
 */
 }
@@ -2512,12 +2560,18 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     { "TLBI_VAALE1", 0,8,7, 1,0,7, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_vae1_write },
+    { "TLBI_VMALLS12E1IS", 0,8,3, 1,4,6, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_alle1is_write },
     { "TLBI_ALLE1IS", 0,8,3, 1,4,4, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
       PL2_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_alle1is_write },
     { "TLBI_ALLE1", 0,8,7, 1,4,4, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
       PL2_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_alle1_write },
+    { "TLBI_VMALLS12E1", 0,8,7, 1,4,6, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_alle1is_write },
 #ifndef CONFIG_USER_ONLY
     /* 64 bit address translation operations */
     { "AT_S1E1R", 0,7,8, 1,0,0, ARM_CP_STATE_AA64,
@@ -2857,6 +2911,24 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
       PL3_RW, 0, NULL, 0 },
     { "AFSR1_EL3", 0,5,1, 3,6,1, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL3_RW, 0, NULL, 0 },
+    { "TLBI_ALLE3IS", 0,8,3, 1,6,0, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL3_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_alle3is_write },
+    { "TLBI_VAE3IS", 0,8,3, 1,6,1, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL3_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_vae3is_write },
+    { "TLBI_VALE3IS", 0,8,3, 1,6,5, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL3_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_vae3is_write },
+    { "TLBI_ALLE3", 0,8,7, 1,6,0, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL3_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_alle3_write },
+    { "TLBI_VAE3", 0,8,7, 1,6,1, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL3_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_vae3_write },
+    { "TLBI_VALE3", 0,8,7, 1,6,5, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL3_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_vae3_write },
     REGINFO_SENTINEL
 };
 
