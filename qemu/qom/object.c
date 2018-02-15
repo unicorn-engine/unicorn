@@ -1359,12 +1359,16 @@ static void property_get_str(struct uc_struct *uc, Object *obj, Visitor *v, void
 {
     StringProperty *prop = opaque;
     char *value;
+    Error *err = NULL;
 
-    value = prop->get(uc, obj, errp);
-    if (value) {
-        visit_type_str(v, &value, name, errp);
-        g_free(value);
+    value = prop->get(uc, obj, &err);
+    if (err) {
+        error_propagate(errp, err);
+        return;
     }
+
+    visit_type_str(v, &value, name, errp);
+    g_free(value);
 }
 
 static int property_set_str(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
