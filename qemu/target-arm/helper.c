@@ -1467,12 +1467,17 @@ static void par_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 static CPAccessResult ats_access(CPUARMState *env, const ARMCPRegInfo *ri)
 {
     if (ri->opc2 & 4) {
-        /* Other states are only available with TrustZone; in
-         * a non-TZ implementation these registers don't exist
-         * at all, which is an Uncategorized trap. This underdecoding
-         * is safe because the reginfo is NO_RAW.
+        /* The ATS12NSO* operations must trap to EL3 if executed in
+         * Secure EL1 (which can only happen if EL3 is AArch64).
+         * They are simply UNDEF if executed from NS EL1.
+         * They function normally from EL2 or EL3.
          */
-        return CP_ACCESS_TRAP_UNCATEGORIZED;
+        if (arm_current_el(env) == 1) {
+            if (arm_is_secure_below_el3(env)) {
+                return CP_ACCESS_TRAP_UNCATEGORIZED_EL3;
+            }
+            return CP_ACCESS_TRAP_UNCATEGORIZED;
+        }
     }
     return CP_ACCESS_OK;
 }
@@ -1646,6 +1651,7 @@ static const ARMCPRegInfo vapa_cp_reginfo[] = {
       { offsetoflow32(CPUARMState, cp15.par_s), offsetoflow32(CPUARMState, cp15.par_ns) },
       NULL, NULL, par_write },
 #ifndef CONFIG_USER_ONLY
+    /* This underdecoding is safe because the reginfo is NO_RAW. */
     { "ATS", 15,7,8, 0,0,CP_ANY, 0,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
       ats_access, NULL, ats_write },
