@@ -127,6 +127,7 @@
 #define arm_cpu_initfn arm_cpu_initfn_mips64
 #define arm_cpu_list arm_cpu_list_mips64
 #define cpu_loop_exit cpu_loop_exit_mips64
+#define cpu_loop_exit_restore cpu_loop_exit_restore_mips64
 #define arm_cpu_post_init arm_cpu_post_init_mips64
 #define arm_cpu_realizefn arm_cpu_realizefn_mips64
 #define arm_cpu_register_gdb_regs_for_features arm_cpu_register_gdb_regs_for_features_mips64

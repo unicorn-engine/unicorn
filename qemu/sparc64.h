@@ -127,6 +127,7 @@
 #define arm_cpu_initfn arm_cpu_initfn_sparc64
 #define arm_cpu_list arm_cpu_list_sparc64
 #define cpu_loop_exit cpu_loop_exit_sparc64
+#define cpu_loop_exit_restore cpu_loop_exit_restore_sparc64
 #define arm_cpu_post_init arm_cpu_post_init_sparc64
 #define arm_cpu_realizefn arm_cpu_realizefn_sparc64
 #define arm_cpu_register_gdb_regs_for_features arm_cpu_register_gdb_regs_for_features_sparc64

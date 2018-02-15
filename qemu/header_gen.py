@@ -133,6 +133,7 @@ symbols = (
     'arm_cpu_initfn',
     'arm_cpu_list',
     'cpu_loop_exit',
+    'cpu_loop_exit_restore',
     'arm_cpu_post_init',
     'arm_cpu_realizefn',
     'arm_cpu_register_gdb_regs_for_features',
