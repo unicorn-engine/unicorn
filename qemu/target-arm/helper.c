@@ -2148,7 +2148,7 @@ static uint64_t midr_read(CPUARMState *env, const ARMCPRegInfo *ri)
     return raw_read(env, ri);
 }
 
-static uint64_t mpidr_read(CPUARMState *env, const ARMCPRegInfo *ri)
+static uint64_t mpidr_read_val(CPUARMState *env)
 {
     ARMCPU *cpu = ARM_CPU(env->uc, arm_env_get_cpu(env));
     uint64_t mpidr = cpu->mp_affinity;
@@ -2164,6 +2164,11 @@ static uint64_t mpidr_read(CPUARMState *env, const ARMCPRegInfo *ri)
         }
     }
     return mpidr;
+}
+
+static uint64_t mpidr_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    return mpidr_read_val(env);
 }
 
 static const ARMCPRegInfo mpidr_cp_reginfo[] = {
