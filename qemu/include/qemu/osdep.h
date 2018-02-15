@@ -100,8 +100,6 @@ typedef signed int              int_fast16_t;
 #define inline always_inline
 #endif
 
-#define qemu_printf printf
-
 void *qemu_try_memalign(size_t alignment, size_t size);
 void *qemu_memalign(size_t alignment, size_t size);
 void *qemu_anon_ram_alloc(size_t size, uint64_t *align);
