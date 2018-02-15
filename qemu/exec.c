@@ -1382,8 +1382,7 @@ static void notdirty_mem_write(struct uc_struct* uc, void *opaque, hwaddr ram_ad
     /* we remove the notdirty callback only if the code has been
        flushed */
     if (!cpu_physical_memory_is_clean(uc, ram_addr)) {
-        CPUArchState *env = uc->current_cpu->env_ptr;
-        tlb_set_dirty(env, uc->current_cpu->mem_io_vaddr);
+        tlb_set_dirty(uc->current_cpu, uc->current_cpu->mem_io_vaddr);
     }
 }
 

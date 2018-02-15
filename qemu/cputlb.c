@@ -159,8 +159,9 @@ void cpu_tlb_reset_dirty_all(struct uc_struct *uc,
 
 /* update the TLB corresponding to virtual page vaddr
    so that it is no longer dirty */
-void tlb_set_dirty(CPUArchState *env, target_ulong vaddr)
+void tlb_set_dirty(CPUState *cpu, target_ulong vaddr)
 {
+    CPUArchState *env = cpu->env_ptr;
     int i;
     int mmu_idx;
 
