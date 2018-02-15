@@ -2448,6 +2448,8 @@
 #define qemu_ram_setup_dump qemu_ram_setup_dump_sparc64
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_sparc64
 #define qemu_real_host_page_size qemu_real_host_page_size_sparc64
+#define qemu_strnlen qemu_strnlen_sparc64
+#define qemu_strsep qemu_strsep_sparc64
 #define qemu_st_helpers qemu_st_helpers_sparc64
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_sparc64
 #define qemu_try_memalign qemu_try_memalign_sparc64
@@ -2637,7 +2639,9 @@
 #define string_input_get_visitor string_input_get_visitor_sparc64
 #define string_input_visitor_cleanup string_input_visitor_cleanup_sparc64
 #define string_input_visitor_new string_input_visitor_new_sparc64
+#define stristart stristart_sparc64
 #define strongarm_cp_reginfo strongarm_cp_reginfo_sparc64
+#define strpadcpy strpadcpy_sparc64
 #define strstart strstart_sparc64
 #define strtosz strtosz_sparc64
 #define strtosz_suffix strtosz_suffix_sparc64

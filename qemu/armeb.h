@@ -2448,6 +2448,8 @@
 #define qemu_ram_setup_dump qemu_ram_setup_dump_armeb
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_armeb
 #define qemu_real_host_page_size qemu_real_host_page_size_armeb
+#define qemu_strnlen qemu_strnlen_armeb
+#define qemu_strsep qemu_strsep_armeb
 #define qemu_st_helpers qemu_st_helpers_armeb
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_armeb
 #define qemu_try_memalign qemu_try_memalign_armeb
@@ -2637,7 +2639,9 @@
 #define string_input_get_visitor string_input_get_visitor_armeb
 #define string_input_visitor_cleanup string_input_visitor_cleanup_armeb
 #define string_input_visitor_new string_input_visitor_new_armeb
+#define stristart stristart_armeb
 #define strongarm_cp_reginfo strongarm_cp_reginfo_armeb
+#define strpadcpy strpadcpy_armeb
 #define strstart strstart_armeb
 #define strtosz strtosz_armeb
 #define strtosz_suffix strtosz_suffix_armeb

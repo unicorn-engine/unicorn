@@ -2448,6 +2448,8 @@
 #define qemu_ram_setup_dump qemu_ram_setup_dump_mips
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_mips
 #define qemu_real_host_page_size qemu_real_host_page_size_mips
+#define qemu_strnlen qemu_strnlen_mips
+#define qemu_strsep qemu_strsep_mips
 #define qemu_st_helpers qemu_st_helpers_mips
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_mips
 #define qemu_try_memalign qemu_try_memalign_mips
@@ -2637,7 +2639,9 @@
 #define string_input_get_visitor string_input_get_visitor_mips
 #define string_input_visitor_cleanup string_input_visitor_cleanup_mips
 #define string_input_visitor_new string_input_visitor_new_mips
+#define stristart stristart_mips
 #define strongarm_cp_reginfo strongarm_cp_reginfo_mips
+#define strpadcpy strpadcpy_mips
 #define strstart strstart_mips
 #define strtosz strtosz_mips
 #define strtosz_suffix strtosz_suffix_mips

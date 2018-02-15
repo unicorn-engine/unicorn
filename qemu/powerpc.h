@@ -2448,6 +2448,8 @@
 #define qemu_ram_setup_dump qemu_ram_setup_dump_powerpc
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_powerpc
 #define qemu_real_host_page_size qemu_real_host_page_size_powerpc
+#define qemu_strnlen qemu_strnlen_powerpc
+#define qemu_strsep qemu_strsep_powerpc
 #define qemu_st_helpers qemu_st_helpers_powerpc
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_powerpc
 #define qemu_try_memalign qemu_try_memalign_powerpc
@@ -2637,7 +2639,9 @@
 #define string_input_get_visitor string_input_get_visitor_powerpc
 #define string_input_visitor_cleanup string_input_visitor_cleanup_powerpc
 #define string_input_visitor_new string_input_visitor_new_powerpc
+#define stristart stristart_powerpc
 #define strongarm_cp_reginfo strongarm_cp_reginfo_powerpc
+#define strpadcpy strpadcpy_powerpc
 #define strstart strstart_powerpc
 #define strtosz strtosz_powerpc
 #define strtosz_suffix strtosz_suffix_powerpc

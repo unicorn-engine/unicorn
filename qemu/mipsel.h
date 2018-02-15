@@ -2448,6 +2448,8 @@
 #define qemu_ram_setup_dump qemu_ram_setup_dump_mipsel
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_mipsel
 #define qemu_real_host_page_size qemu_real_host_page_size_mipsel
+#define qemu_strnlen qemu_strnlen_mipsel
+#define qemu_strsep qemu_strsep_mipsel
 #define qemu_st_helpers qemu_st_helpers_mipsel
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_mipsel
 #define qemu_try_memalign qemu_try_memalign_mipsel
@@ -2637,7 +2639,9 @@
 #define string_input_get_visitor string_input_get_visitor_mipsel
 #define string_input_visitor_cleanup string_input_visitor_cleanup_mipsel
 #define string_input_visitor_new string_input_visitor_new_mipsel
+#define stristart stristart_mipsel
 #define strongarm_cp_reginfo strongarm_cp_reginfo_mipsel
+#define strpadcpy strpadcpy_mipsel
 #define strstart strstart_mipsel
 #define strtosz strtosz_mipsel
 #define strtosz_suffix strtosz_suffix_mipsel

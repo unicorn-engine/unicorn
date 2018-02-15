@@ -2448,6 +2448,8 @@
 #define qemu_ram_setup_dump qemu_ram_setup_dump_m68k
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_m68k
 #define qemu_real_host_page_size qemu_real_host_page_size_m68k
+#define qemu_strnlen qemu_strnlen_m68k
+#define qemu_strsep qemu_strsep_m68k
 #define qemu_st_helpers qemu_st_helpers_m68k
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_m68k
 #define qemu_try_memalign qemu_try_memalign_m68k
@@ -2637,7 +2639,9 @@
 #define string_input_get_visitor string_input_get_visitor_m68k
 #define string_input_visitor_cleanup string_input_visitor_cleanup_m68k
 #define string_input_visitor_new string_input_visitor_new_m68k
+#define stristart stristart_m68k
 #define strongarm_cp_reginfo strongarm_cp_reginfo_m68k
+#define strpadcpy strpadcpy_m68k
 #define strstart strstart_m68k
 #define strtosz strtosz_m68k
 #define strtosz_suffix strtosz_suffix_m68k

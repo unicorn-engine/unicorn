@@ -77,6 +77,56 @@ int strstart(const char *str, const char *val, const char **ptr)
     return 1;
 }
 
+int stristart(const char *str, const char *val, const char **ptr)
+{
+    const char *p, *q;
+    p = str;
+    q = val;
+    while (*q != '\0') {
+        if (qemu_toupper(*p) != qemu_toupper(*q))
+            return 0;
+        p++;
+        q++;
+    }
+    if (ptr)
+        *ptr = p;
+    return 1;
+}
+
+/* XXX: use host strnlen if available ? */
+int qemu_strnlen(const char *s, int max_len)
+{
+    int i;
+
+    for(i = 0; i < max_len; i++) {
+        if (s[i] == '\0') {
+            break;
+        }
+    }
+    return i;
+}
+
+char *qemu_strsep(char **input, const char *delim)
+{
+    char *result = *input;
+    if (result != NULL) {
+        char *p;
+
+        for (p = result; *p != '\0'; p++) {
+            if (strchr(delim, *p)) {
+                break;
+            }
+        }
+        if (*p == '\0') {
+            *input = NULL;
+        } else {
+            *p = '\0';
+            *input = p + 1;
+        }
+    }
+    return result;
+}
+
 int qemu_fls(int i)
 {
     return 32 - clz32(i);
