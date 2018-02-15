@@ -2168,6 +2168,13 @@ static uint64_t mpidr_read_val(CPUARMState *env)
 
 static uint64_t mpidr_read(CPUARMState *env, const ARMCPRegInfo *ri)
 {
+    unsigned int cur_el = arm_current_el(env);
+    bool secure = arm_is_secure(env);
+
+    if (arm_feature(env, ARM_FEATURE_EL2) && !secure && cur_el == 1) {
+        return env->cp15.vmpidr_el2;
+    }
+
     return mpidr_read_val(env);
 }
 
@@ -3578,12 +3585,18 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         define_arm_cp_regs(cpu, v8_cp_reginfo);
     }
     if (arm_feature(env, ARM_FEATURE_EL2)) {
+        uint64_t vmpidr_def = mpidr_read_val(env);
         ARMCPRegInfo vpidr_regs[] = {
             { "VPIDR", 15,0,0, 0,4,0, ARM_CP_STATE_AA32, 0,
               PL2_RW, 0, NULL, cpu->midr, offsetof(CPUARMState, cp15.vpidr_el2), {0, 0},
               access_el3_aa32ns },
             { "VPIDR_EL2", 0,0,0, 3,4,0, ARM_CP_STATE_AA64, 0,
               PL2_RW, 0, NULL, cpu->midr, offsetof(CPUARMState, cp15.vpidr_el2) },
+            { "VMPIDR", 15,0,0, 0,4,5, ARM_CP_STATE_AA32, 0,
+              PL2_RW, 0, NULL, vmpidr_def, offsetof(CPUARMState, cp15.vmpidr_el2), {0, 0},
+              access_el3_aa32ns },
+            { "VMPIDR_EL2", 0,0,0, 3,4,5, ARM_CP_STATE_AA64, 0,
+              PL2_RW, 0, NULL, vmpidr_def, offsetof(CPUARMState, cp15.vmpidr_el2) },
             REGINFO_SENTINEL
         };
         define_arm_cp_regs(cpu, vpidr_regs);
@@ -3601,13 +3614,16 @@ void register_cp_regs_for_features(ARMCPU *cpu)
          * register the no_el2 reginfos.
          */
         if (arm_feature(env, ARM_FEATURE_EL3)) {
-            /* When EL3 exists but not EL2, VPIDR takes the value
-             * of MIDR_EL1.
+            /* When EL3 exists but not EL2, VPIDR and VMPIDR take the value
+             * of MIDR_EL1 and MPIDR_EL1.
              */
             ARMCPRegInfo vpidr_regs[] = {
                 { "VPIDR_EL2", 0,0,0, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
                   PL2_RW, 0, NULL, cpu->midr, offsetof(CPUARMState, cp15.vpidr_el2), {0, 0},
                   access_el3_aa32ns_aa64any },
+                { "VMPIDR_EL2", 0,0,0, 3,4,5, ARM_CP_STATE_BOTH, ARM_CP_NO_RAW,
+                  PL2_RW, 0, NULL, 0, 0, {0, 0},
+                  access_el3_aa32ns_aa64any, mpidr_read, arm_cp_write_ignore },
                 REGINFO_SENTINEL
             };
             define_arm_cp_regs(cpu, vpidr_regs);
