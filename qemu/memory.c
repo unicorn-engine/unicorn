@@ -1215,8 +1215,22 @@ static void memory_region_finalize(struct uc_struct *uc, Object *obj, void *opaq
 {
     MemoryRegion *mr = MEMORY_REGION(uc, obj);
 
-    assert(QTAILQ_EMPTY(&mr->subregions));
-    // assert(memory_region_transaction_depth == 0);
+    assert(!mr->container);
+
+    /* We know the region is not visible in any address space (it
+     * does not have a container and cannot be a root either because
+     * it has no references, so we can blindly clear mr->enabled.
+     * memory_region_set_enabled instead could trigger a transaction
+     * and cause an infinite loop.
+     */
+    mr->enabled = false;
+    memory_region_transaction_begin(uc);
+    while (!QTAILQ_EMPTY(&mr->subregions)) {
+        MemoryRegion *subregion = QTAILQ_FIRST(&mr->subregions);
+        memory_region_del_subregion(mr, subregion);
+    }
+    memory_region_transaction_commit(uc);
+
     mr->destructor(mr);
     g_free((char *)mr->name);
 }
