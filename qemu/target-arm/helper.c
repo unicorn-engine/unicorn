@@ -1940,6 +1940,20 @@ static void vmsa_ttbr_write(CPUARMState *env, const ARMCPRegInfo *ri,
     raw_write(env, ri, value);
 }
 
+static void vttbr_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                        uint64_t value)
+{
+    ARMCPU *cpu = arm_env_get_cpu(env);
+    CPUState *cs = CPU(cpu);
+
+    /* Accesses to VTTBR may change the VMID so we must flush the TLB.  */
+    if (raw_read(env, ri) != value) {
+        tlb_flush_by_mmuidx(cs, ARMMMUIdx_S12NSE1, ARMMMUIdx_S12NSE0,
+                            ARMMMUIdx_S2NS, -1);
+        raw_write(env, ri, value);
+    }
+}
+
 static const ARMCPRegInfo vmsa_pmsa_cp_reginfo[] = {
     { "DFSR", 15,5,0, 0,0,0, 0,
       ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, 0,
@@ -2781,6 +2795,11 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
     { "VTCR_EL2", 0,2,1, 3,4,2, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0, 0, {0, 0},
       access_el3_aa32ns_aa64any },
+    { "VTTBR", 15,0,2, 0,6,0, ARM_CP_STATE_AA32, ARM_CP_CONST | ARM_CP_64BIT,
+      PL2_RW, 0, NULL, 0, 0, {0, 0},
+      access_el3_aa32ns },
+    { "VTTBR_EL2", 0,2,1, 3,4,0, ARM_CP_STATE_AA64, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
     { "SCTLR_EL2", 0,1,0, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
     { "TPIDR_EL2", 0,13,0, 3,4,2, ARM_CP_STATE_BOTH, ARM_CP_CONST,
@@ -2877,6 +2896,12 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
       access_el3_aa32ns },
     { "VTCR_EL2", 0,2,1, 3,4,2, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vtcr_el2) },
+    { "VTTBR", 15,0,2, 0,6,0, ARM_CP_STATE_AA32, ARM_CP_64BIT | ARM_CP_ALIAS,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vttbr_el2), {0, 0},
+      access_el3_aa32ns, NULL, vttbr_write },
+    { "VTTBR_EL2", 0,2,1, 3,4,0, ARM_CP_STATE_AA64, 0,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vttbr_el2), {0, 0},
+      NULL, NULL, vttbr_write },
     { "SCTLR_EL2", 0,1,0, 3,4,0, ARM_CP_STATE_BOTH, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sctlr_el[2]), {0, 0},
       NULL, NULL, sctlr_write, NULL, raw_write },
@@ -5169,8 +5194,7 @@ static inline uint64_t regime_ttbr(CPUARMState *env, ARMMMUIdx mmu_idx,
                                    int ttbrn)
 {
     if (mmu_idx == ARMMMUIdx_S2NS) {
-        /* TODO: return VTTBR_EL2 */
-        g_assert_not_reached();
+        return env->cp15.vttbr_el2;
     }
     if (ttbrn == 0) {
         return env->cp15.ttbr0_el[regime_el(env, mmu_idx)];
