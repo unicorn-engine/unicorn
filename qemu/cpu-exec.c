@@ -90,7 +90,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     uc->current_cpu = cpu;
     atomic_mb_set(&uc->tcg_current_cpu, cpu);
 
-    if (unlikely(uc->exit_request)) {
+    if (unlikely(atomic_mb_read(&uc->exit_request))) {
         cpu->exit_request = 1;
     }
 
