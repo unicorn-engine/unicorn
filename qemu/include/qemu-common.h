@@ -77,17 +77,6 @@
 # error Unknown pointer size
 #endif
 
-#ifdef _WIN32
-#define fsync _commit
-#if !defined(lseek)
-# define lseek _lseeki64
-#endif
-int qemu_ftruncate64(int, int64_t);
-#if !defined(ftruncate)
-# define ftruncate qemu_ftruncate64
-#endif
-#endif
-
 #include "qemu/osdep.h"
 #include "qemu/bswap.h"
 
