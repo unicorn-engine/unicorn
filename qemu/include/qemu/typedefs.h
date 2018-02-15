@@ -50,6 +50,8 @@ typedef struct ISABus ISABus;
 typedef struct ISADevice ISADevice;
 typedef struct SMBusDevice SMBusDevice;
 typedef struct PCIHostState PCIHostState;
+typedef struct PCMachineState PCMachineState;
+typedef struct PCMachineClass PCMachineClass;
 typedef struct PCIExpressHost PCIExpressHost;
 typedef struct PCIBus PCIBus;
 typedef struct PCIDevice PCIDevice;

@@ -1,6 +1,7 @@
 #ifndef HW_PC_H
 #define HW_PC_H
 
+#include "qemu/typedefs.h"
 #include "hw/boards.h"
 
 /**
@@ -22,9 +23,6 @@ struct PCMachineClass {
     /*< private >*/
     MachineClass parent_class;
 };
-
-typedef struct PCMachineState PCMachineState;
-typedef struct PCMachineClass PCMachineClass;
 
 #define TYPE_PC_MACHINE "generic-pc-machine"
 #define PC_MACHINE(uc, obj) \
