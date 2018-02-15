@@ -43,9 +43,8 @@ void error_set_errno(Error **errp, int os_error, ErrorClass err_class,
  */
 void error_setg(Error **errp, const char *fmt, ...)
     GCC_FMT_ATTR(2, 3);
-#define error_setg_errno(errp, os_error, fmt, ...) \
-    error_set_errno(errp, os_error, ERROR_CLASS_GENERIC_ERROR, \
-                    fmt, ## __VA_ARGS__)
+void error_setg_errno(Error **errp, int os_error, const char *fmt, ...)
+    GCC_FMT_ATTR(3, 4);
 
 /**
  * Helper for open() errors
