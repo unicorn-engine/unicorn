@@ -391,7 +391,7 @@
 #define error_exit error_exit_arm
 #define error_get_class error_get_class_arm
 #define error_get_pretty error_get_pretty_arm
-#define error_setg_file_open error_setg_file_open_arm
+#define error_setg_file_open_internal error_setg_file_open_internal_arm
 #define estimateDiv128To64 estimateDiv128To64_arm
 #define estimateSqrt32 estimateSqrt32_arm
 #define excnames excnames_arm

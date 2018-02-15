@@ -391,7 +391,7 @@
 #define error_exit error_exit_aarch64
 #define error_get_class error_get_class_aarch64
 #define error_get_pretty error_get_pretty_aarch64
-#define error_setg_file_open error_setg_file_open_aarch64
+#define error_setg_file_open_internal error_setg_file_open_internal_aarch64
 #define estimateDiv128To64 estimateDiv128To64_aarch64
 #define estimateSqrt32 estimateSqrt32_aarch64
 #define excnames excnames_aarch64

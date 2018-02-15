@@ -391,7 +391,7 @@
 #define error_exit error_exit_mipsel
 #define error_get_class error_get_class_mipsel
 #define error_get_pretty error_get_pretty_mipsel
-#define error_setg_file_open error_setg_file_open_mipsel
+#define error_setg_file_open_internal error_setg_file_open_internal_mipsel
 #define estimateDiv128To64 estimateDiv128To64_mipsel
 #define estimateSqrt32 estimateSqrt32_mipsel
 #define excnames excnames_mipsel

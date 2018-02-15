@@ -391,7 +391,7 @@
 #define error_exit error_exit_armeb
 #define error_get_class error_get_class_armeb
 #define error_get_pretty error_get_pretty_armeb
-#define error_setg_file_open error_setg_file_open_armeb
+#define error_setg_file_open_internal error_setg_file_open_internal_armeb
 #define estimateDiv128To64 estimateDiv128To64_armeb
 #define estimateSqrt32 estimateSqrt32_armeb
 #define excnames excnames_armeb

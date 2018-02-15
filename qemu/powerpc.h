@@ -391,7 +391,7 @@
 #define error_exit error_exit_powerpc
 #define error_get_class error_get_class_powerpc
 #define error_get_pretty error_get_pretty_powerpc
-#define error_setg_file_open error_setg_file_open_powerpc
+#define error_setg_file_open_internal error_setg_file_open_internal_powerpc
 #define estimateDiv128To64 estimateDiv128To64_powerpc
 #define estimateSqrt32 estimateSqrt32_powerpc
 #define excnames excnames_powerpc

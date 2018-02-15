@@ -391,7 +391,7 @@
 #define error_exit error_exit_sparc64
 #define error_get_class error_get_class_sparc64
 #define error_get_pretty error_get_pretty_sparc64
-#define error_setg_file_open error_setg_file_open_sparc64
+#define error_setg_file_open_internal error_setg_file_open_internal_sparc64
 #define estimateDiv128To64 estimateDiv128To64_sparc64
 #define estimateSqrt32 estimateSqrt32_sparc64
 #define excnames excnames_sparc64

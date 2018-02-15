@@ -391,7 +391,7 @@
 #define error_exit error_exit_mips
 #define error_get_class error_get_class_mips
 #define error_get_pretty error_get_pretty_mips
-#define error_setg_file_open error_setg_file_open_mips
+#define error_setg_file_open_internal error_setg_file_open_internal_mips
 #define estimateDiv128To64 estimateDiv128To64_mips
 #define estimateSqrt32 estimateSqrt32_mips
 #define excnames excnames_mips

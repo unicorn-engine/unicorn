@@ -397,7 +397,7 @@ symbols = (
     'error_exit',
     'error_get_class',
     'error_get_pretty',
-    'error_setg_file_open',
+    'error_setg_file_open_internal',
     'estimateDiv128To64',
     'estimateSqrt32',
     'excnames',
