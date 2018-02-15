@@ -1236,6 +1236,34 @@ static void gt_cntvoff_write(CPUARMState *env, const ARMCPRegInfo *ri,
     gt_recalc_timer(cpu, GTIMER_VIRT);
 }
 
+static void gt_hyp_timer_reset(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    gt_timer_reset(env, ri, GTIMER_HYP);
+}
+
+static void gt_hyp_cval_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                              uint64_t value)
+{
+    gt_cval_write(env, ri, GTIMER_HYP, value);
+}
+
+static uint64_t gt_hyp_tval_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    return gt_tval_read(env, ri, GTIMER_HYP);
+}
+
+static void gt_hyp_tval_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                              uint64_t value)
+{
+    gt_tval_write(env, ri, GTIMER_HYP, value);
+}
+
+static void gt_hyp_ctl_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                              uint64_t value)
+{
+    gt_ctl_write(env, ri, GTIMER_HYP, value);
+}
+
 void arm_gt_ptimer_cb(void *opaque)
 {
     ARMCPU *cpu = opaque;
@@ -1248,6 +1276,13 @@ void arm_gt_vtimer_cb(void *opaque)
     ARMCPU *cpu = opaque;
 
     gt_recalc_timer(cpu, GTIMER_VIRT);
+}
+
+void arm_gt_htimer_cb(void *opaque)
+{
+    ARMCPU *cpu = opaque;
+
+    gt_recalc_timer(cpu, GTIMER_HYP);
 }
 
 static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
@@ -2369,6 +2404,14 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0 },
     { "CNTVOFF", 15,0,14, 0,4,0, ARM_CP_64BIT | ARM_CP_CONST, 0,
       PL2_RW, 0, NULL, 0 },
+    { "CNTHP_CVAL_EL2", 0,14,2, 3,4,2, ARM_CP_STATE_AA64, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
+    { "CNTHP_CVAL", 15,0,14, 0,6,0, 0, ARM_CP_64BIT | ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
+    { "CNTHP_TVAL_EL2", 0,14,2, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
+    { "CNTHP_CTL_EL2", 0,14,2, 3,4,1, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
     REGINFO_SENTINEL
 };
 
@@ -2460,6 +2503,18 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "CNTVOFF", 15,0,14, 0,4,0, 0, ARM_CP_64BIT | ARM_CP_ALIAS | ARM_CP_IO,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.cntvoff_el2), {0, 0},
       NULL, NULL, gt_cntvoff_write },
+    { "CNTHP_CVAL_EL2", 0,14,2, 3,4,2, ARM_CP_STATE_AA64, ARM_CP_IO,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_HYP].cval), {0, 0},
+      NULL, NULL, gt_hyp_cval_write, NULL, raw_write },
+    { "CNTHP_CVAL", .15,0,14, 0,6,0, 0, ARM_CP_64BIT | ARM_CP_IO,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_HYP].cval), {0, 0},
+      NULL, NULL, gt_hyp_cval_write, NULL, raw_write },
+    { "CNTHP_TVAL_EL2", 0,14,2, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_IO,
+      PL2_RW, 0, NULL, 0, 0, {0, 0},
+      NULL, gt_hyp_tval_read, gt_hyp_tval_write, NULL, NULL, gt_hyp_timer_reset },
+    { "CNTHP_CTL_EL2", 0,14,2, 3,4,1, ARM_CP_STATE_BOTH, ARM_CP_IO,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_HYP].ctl), {0, 0},
+      NULL, NULL, gt_hyp_ctl_write, NULL, raw_write },
 #endif
     REGINFO_SENTINEL
 };

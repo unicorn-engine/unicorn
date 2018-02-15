@@ -150,6 +150,7 @@
 #define arm_gen_test_cc arm_gen_test_cc_sparc
 #define arm_gt_ptimer_cb arm_gt_ptimer_cb_sparc
 #define arm_gt_vtimer_cb arm_gt_vtimer_cb_sparc
+#define arm_gt_htimer_cb arm_gt_htimer_cb_sparc
 #define arm_handle_psci_call arm_handle_psci_call_sparc
 #define arm_is_psci_call arm_is_psci_call_sparc
 #define arm_is_secure arm_is_secure_sparc

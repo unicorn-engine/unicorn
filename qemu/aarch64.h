@@ -150,6 +150,7 @@
 #define arm_gen_test_cc arm_gen_test_cc_aarch64
 #define arm_gt_ptimer_cb arm_gt_ptimer_cb_aarch64
 #define arm_gt_vtimer_cb arm_gt_vtimer_cb_aarch64
+#define arm_gt_htimer_cb arm_gt_htimer_cb_aarch64
 #define arm_handle_psci_call arm_handle_psci_call_aarch64
 #define arm_is_psci_call arm_is_psci_call_aarch64
 #define arm_is_secure arm_is_secure_aarch64
