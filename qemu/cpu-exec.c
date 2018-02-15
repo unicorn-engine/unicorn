@@ -236,16 +236,12 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                             next_tb & TB_EXIT_MASK, tb);
                 }
 
-                /* cpu_interrupt might be called while translating the
-                   TB, but before it is linked into a potentially
-                   infinite loop and becomes env->current_tb. Avoid
-                   starting execution if there is a pending interrupt. */
-                cpu->current_tb = tb;
-                barrier();
                 if (likely(!cpu->exit_request)) {
                     tc_ptr = tb->tc_ptr;
+                    cpu->current_tb = tb;
                     /* execute the generated code */
                     next_tb = cpu_tb_exec(cpu, tc_ptr); // UNICORN
+                    cpu->current_tb = NULL;
 
                     switch (next_tb & TB_EXIT_MASK) {
                         case TB_EXIT_REQUESTED:
@@ -263,7 +259,6 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                             break;
                     }
                 }
-                cpu->current_tb = NULL;
                 /* reset soft MMU for next block (it can currently
                    only be set by a memory fault) */
             } /* for(;;) */
