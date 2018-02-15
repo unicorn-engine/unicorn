@@ -367,7 +367,7 @@ static void arm_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
      */
     Aff1 = cs->cpu_index / ARM_CPUS_PER_CLUSTER;
     Aff0 = cs->cpu_index % ARM_CPUS_PER_CLUSTER;
-    cpu->mp_affinity = (Aff1 << 8) | Aff0;
+    cpu->mp_affinity = (Aff1 << ARM_AFF1_SHIFT) | Aff0;
 
 #if 0
 #ifndef CONFIG_USER_ONLY
