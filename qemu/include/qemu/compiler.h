@@ -154,10 +154,8 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define inline always_inline
 #endif
 
-#define cat(x,y) x ## y
-#define cat2(x,y) cat(x,y)
 #define QEMU_BUILD_BUG_ON(x) \
-    typedef char cat2(qemu_build_bug_on__,__LINE__)[(x)?-1:1] __attribute__((unused));
+    typedef char glue(qemu_build_bug_on__,__LINE__)[(x)?-1:1] __attribute__((unused));
 
 #if defined __GNUC__
 # if !QEMU_GNUC_PREREQ(4, 4)
