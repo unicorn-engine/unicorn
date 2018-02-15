@@ -3,6 +3,7 @@
 
 #include "qemu/typedefs.h"
 #include "qemu-common.h"
+#include "qemu/host-utils.h"
 
 /* timers */
 
