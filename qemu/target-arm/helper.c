@@ -3366,11 +3366,16 @@ void register_cp_regs_for_features(ARMCPU *cpu)
     }
 
     if (arm_feature(env, ARM_FEATURE_AUXCR)) {
-        ARMCPRegInfo auxcr = {
-            "ACTLR_EL1", 0,1,0, 3,0,1, ARM_CP_STATE_BOTH,
-            ARM_CP_CONST, PL1_RW, 0, NULL, cpu->reset_auxcr
+        ARMCPRegInfo auxcr_reginfo[] = {
+            { "ACTLR_EL1", 0,1,0, 3,0,1, ARM_CP_STATE_BOTH,
+              ARM_CP_CONST, PL1_RW, 0, NULL, cpu->reset_auxcr },
+            { "ACTLR_EL2",0,1,0, 3,4,1, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+              PL2_RW, 0, NULL, 0 },
+            { "ACTLR_EL3", 0,1,0, 3,6,1, ARM_CP_STATE_AA64, ARM_CP_CONST,
+              PL3_RW, 0, NULL, 0 },
+            REGINFO_SENTINEL
         };
-        define_one_arm_cp_reg(cpu, &auxcr);
+        define_arm_cp_regs(cpu, auxcr_reginfo);
     }
 
     if (arm_feature(env, ARM_FEATURE_CBAR)) {
