@@ -174,15 +174,22 @@ struct uc_struct {
 
     uc_insn_hook_validate insn_hook_validate;
 
-    MemoryRegion *system_memory;    // qemu/exec.c
-    MemoryRegion io_mem_rom;    // qemu/exec.c
-    MemoryRegion io_mem_notdirty;   // qemu/exec.c
-    MemoryRegion io_mem_unassigned; // qemu/exec.c
-    MemoryRegion io_mem_watch;  // qemu/exec.c
-    RAMList ram_list;   // qemu/exec.c
-    BounceBuffer bounce;    // qemu/cpu-exec.c
-    volatile sig_atomic_t exit_request; // qemu/cpu-exec.c
-    bool global_dirty_log;  // qemu/memory.c
+    // qemu/exec.c
+    MemoryRegion *system_memory;
+    MemoryRegion io_mem_rom;
+    MemoryRegion io_mem_notdirty;
+    MemoryRegion io_mem_unassigned;
+    MemoryRegion io_mem_watch;
+    RAMList ram_list;
+
+    // qemu/cpu-exec.c
+    BounceBuffer bounce;
+    volatile sig_atomic_t exit_request;
+    CPUState *tcg_current_cpu;
+
+    // qemu/memory.c
+    bool global_dirty_log;
+
     /* This is a multi-level map on the virtual address space.
        The bottom level has pointers to PageDesc.  */
     void **l1_map;  // qemu/translate-all.c
