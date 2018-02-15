@@ -486,4 +486,54 @@ static inline uint64_t revbit64(uint64_t x)
 # error Unknown sizeof long
 #endif
 
+static inline bool is_power_of_2(uint64_t value)
+{
+    if (!value) {
+        return false;
+    }
+
+    return !(value & (value - 1));
+}
+
+/**
+ * Return @value rounded down to the nearest power of two or zero.
+ */
+static inline uint64_t pow2floor(uint64_t value)
+{
+    if (!value) {
+        /* Avoid undefined shift by 64 */
+        return 0;
+    }
+    return 0x8000000000000000ull >> clz64(value);
+}
+
+/*
+ * Return @value rounded up to the nearest power of two modulo 2^64.
+ * This is *zero* for @value > 2^63, so be careful.
+ */
+static inline uint64_t pow2ceil(uint64_t value)
+{
+    int n = clz64(value - 1);
+
+    if (!n) {
+        /*
+         * @value - 1 has no leading zeroes, thus @value - 1 >= 2^63
+         * Therefore, either @value == 0 or @value > 2^63.
+         * If it's 0, return 1, else return 0.
+         */
+        return !value;
+    }
+    return 0x8000000000000000ull >> (n - 1);
+}
+
+static inline uint32_t pow2roundup32(uint32_t x)
+{
+    x |= (x >> 1);
+    x |= (x >> 2);
+    x |= (x >> 4);
+    x |= (x >> 8);
+    x |= (x >> 16);
+    return x + 1;
+}
+
 #endif
