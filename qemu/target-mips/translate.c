@@ -13371,10 +13371,15 @@ static void gen_pool16c_r6_insn(DisasContext *ctx)
             break;
         case R6_SDBBP16:
             /* SDBBP16 */
-            if (ctx->hflags & MIPS_HFLAG_SBRI) {
-                generate_exception(ctx, EXCP_RI);
-            } else {
-                generate_exception(ctx, EXCP_DBp);
+            // UNICORN: Commented out
+            /*if (is_uhi(extract32(ctx->opcode, 6, 4))) {
+                gen_helper_do_semihosting(cpu_env);
+            } else*/ {
+                if (ctx->hflags & MIPS_HFLAG_SBRI) {
+                    generate_exception(ctx, EXCP_RI);
+                } else {
+                    generate_exception(ctx, EXCP_DBp);
+                }
             }
             break;
         }
