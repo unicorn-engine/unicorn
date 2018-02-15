@@ -244,19 +244,23 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                     cpu->current_tb = NULL;
 
                     switch (next_tb & TB_EXIT_MASK) {
-                        case TB_EXIT_REQUESTED:
-                            /* Something asked us to stop executing
-                             * chained TBs; just continue round the main
-                             * loop. Whatever requested the exit will also
-                             * have set something else (eg exit_request or
-                             * interrupt_request) which we will handle
-                             * next time around the loop.
-                             */
-                            tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
-                            next_tb = 0;
-                            break;
-                        default:
-                            break;
+                    case TB_EXIT_REQUESTED:
+                        /* Something asked us to stop executing
+                         * chained TBs; just continue round the main
+                         * loop. Whatever requested the exit will also
+                         * have set something else (eg exit_request or
+                         * interrupt_request) which we will handle
+                         * next time around the loop.  But we need to
+                         * ensure the tcg_exit_req read in generated code
+                         * comes before the next read of cpu->exit_request
+                         * or cpu->interrupt_request.
+                         */
+                        smp_rmb();
+                        tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
+                        next_tb = 0;
+                        break;
+                    default:
+                        break;
                     }
                 }
                 /* reset soft MMU for next block (it can currently
