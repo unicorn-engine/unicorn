@@ -31,10 +31,11 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
+#include "qemu-common.h"
 #include "hw/arm/arm.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
-
 
 static int machvirt_init(struct uc_struct *uc, MachineState *machine)
 {

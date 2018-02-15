@@ -15,6 +15,8 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
+#include "qemu-common.h"
 #include "exec/memory.h"
 #include "exec/address-spaces.h"
 #include "exec/ioport.h"
