@@ -3501,6 +3501,7 @@
 #define helper_wrdsp helper_wrdsp_mips64el
 #define cpu_rddsp cpu_rddsp_mips64el
 #define helper_rddsp helper_rddsp_mips64el
+#define helper_raise_exception_debug helper_raise_exception_debug_mips64el
 #define helper_raise_exception_err helper_raise_exception_err_mips64el
 #define helper_clo helper_clo_mips64el
 #define helper_clz helper_clz_mips64el

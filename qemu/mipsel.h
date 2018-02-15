@@ -3501,6 +3501,7 @@
 #define helper_wrdsp helper_wrdsp_mipsel
 #define cpu_rddsp cpu_rddsp_mipsel
 #define helper_rddsp helper_rddsp_mipsel
+#define helper_raise_exception_debug helper_raise_exception_debug_mipsel
 #define helper_raise_exception_err helper_raise_exception_err_mipsel
 #define helper_clo helper_clo_mipsel
 #define helper_clz helper_clz_mipsel

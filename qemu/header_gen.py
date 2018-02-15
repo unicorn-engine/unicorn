@@ -3554,6 +3554,7 @@ mips_symbols = (
     'helper_wrdsp',
     'cpu_rddsp',
     'helper_rddsp',
+    'helper_raise_exception_debug',
     'helper_raise_exception_err',
     'helper_clo',
     'helper_clz',
