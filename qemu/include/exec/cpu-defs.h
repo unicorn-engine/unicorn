@@ -105,36 +105,18 @@ typedef struct CPUTLBEntry {
        bit 3                      : indicates that the entry is invalid
        bit 2..0                   : zero
     */
-    target_ulong addr_read;
-    target_ulong addr_write;
-    target_ulong addr_code;
-    /* Addend to virtual address to get host address.  IO accesses
-       use the corresponding iotlb value.  */
-    uintptr_t addend;
-    /* padding to get a power of two size */
-
-#ifdef _MSC_VER
-# define TARGET_ULONG_SIZE	(TARGET_LONG_BITS/8)
-# ifdef _WIN64
-#  define UINTPTR_SIZE		8
-# else
-#  define UINTPTR_SIZE		4
-# endif
-
-#define DUMMY_SIZE	(1 << CPU_TLB_ENTRY_BITS) - \
-                    (TARGET_ULONG_SIZE * 3 + \
-                   ((-TARGET_ULONG_SIZE * 3) & (UINTPTR_SIZE - 1)) + \
-                   UINTPTR_SIZE)
-
-#if DUMMY_SIZE > 0
-    uint8_t dummy[DUMMY_SIZE];
-#endif
-#else // _MSC_VER
-    uint8_t dummy[(1 << CPU_TLB_ENTRY_BITS) -
-                  (sizeof(target_ulong) * 3 +
-                   ((-sizeof(target_ulong) * 3) & (sizeof(uintptr_t) - 1)) +
-                   sizeof(uintptr_t))];
-#endif // _MSC_VER
+    union {
+        struct {
+            target_ulong addr_read;
+            target_ulong addr_write;
+            target_ulong addr_code;
+            /* Addend to virtual address to get host address.  IO accesses
+               use the corresponding iotlb value.  */
+            uintptr_t addend;
+        };
+        /* padding to get a power of two size */
+        uint8_t dummy[1 << CPU_TLB_ENTRY_BITS];
+    };
 } CPUTLBEntry;
 
 QEMU_BUILD_BUG_ON(sizeof(CPUTLBEntry) != (1 << CPU_TLB_ENTRY_BITS));
