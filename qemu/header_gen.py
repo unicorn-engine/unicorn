@@ -2162,6 +2162,7 @@ symbols = (
     'not_v7_cp_reginfo',
     'not_v8_cp_reginfo',
     'object_child_foreach',
+    'object_child_foreach_recursive',
     'object_class_foreach',
     'object_class_foreach_tramp',
     'object_class_get_list',

@@ -2156,6 +2156,7 @@
 #define not_v7_cp_reginfo not_v7_cp_reginfo_x86_64
 #define not_v8_cp_reginfo not_v8_cp_reginfo_x86_64
 #define object_child_foreach object_child_foreach_x86_64
+#define object_child_foreach_recursive object_child_foreach_recursive_x86_64
 #define object_class_foreach object_class_foreach_x86_64
 #define object_class_foreach_tramp object_class_foreach_tramp_x86_64
 #define object_class_get_list object_class_get_list_x86_64
@@ -2582,10 +2583,6 @@
 #define save_globals save_globals_x86_64
 #define scr_write scr_write_x86_64
 #define sctlr_write sctlr_write_x86_64
-#define semihosting_get_target semihosting_get_target_x86_64
-#define semihosting_get_arg semihosting_get_arg_x86_64
-#define semihosting_get_argc semihosting_get_argc_x86_64
-#define semihosting_get_cmdline semihosting_get_cmdline_x86_64
 #define set_bit set_bit_x86_64
 #define set_bits set_bits_x86_64
 #define set_default_nan_mode set_default_nan_mode_x86_64

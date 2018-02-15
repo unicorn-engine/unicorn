@@ -2156,6 +2156,7 @@
 #define not_v7_cp_reginfo not_v7_cp_reginfo_mips64
 #define not_v8_cp_reginfo not_v8_cp_reginfo_mips64
 #define object_child_foreach object_child_foreach_mips64
+#define object_child_foreach_recursive object_child_foreach_recursive_mips64
 #define object_class_foreach object_class_foreach_mips64
 #define object_class_foreach_tramp object_class_foreach_tramp_mips64
 #define object_class_get_list object_class_get_list_mips64
@@ -2582,10 +2583,6 @@
 #define save_globals save_globals_mips64
 #define scr_write scr_write_mips64
 #define sctlr_write sctlr_write_mips64
-#define semihosting_get_target semihosting_get_target_mips64
-#define semihosting_get_arg semihosting_get_arg_mips64
-#define semihosting_get_argc semihosting_get_argc_mips64
-#define semihosting_get_cmdline semihosting_get_cmdline_mips64
 #define set_bit set_bit_mips64
 #define set_bits set_bits_mips64
 #define set_default_nan_mode set_default_nan_mode_mips64

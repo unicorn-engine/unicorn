@@ -2156,6 +2156,7 @@
 #define not_v7_cp_reginfo not_v7_cp_reginfo_powerpc
 #define not_v8_cp_reginfo not_v8_cp_reginfo_powerpc
 #define object_child_foreach object_child_foreach_powerpc
+#define object_child_foreach_recursive object_child_foreach_recursive_powerpc
 #define object_class_foreach object_class_foreach_powerpc
 #define object_class_foreach_tramp object_class_foreach_tramp_powerpc
 #define object_class_get_list object_class_get_list_powerpc
@@ -2582,10 +2583,6 @@
 #define save_globals save_globals_powerpc
 #define scr_write scr_write_powerpc
 #define sctlr_write sctlr_write_powerpc
-#define semihosting_get_target semihosting_get_target_powerpc
-#define semihosting_get_arg semihosting_get_arg_powerpc
-#define semihosting_get_argc semihosting_get_argc_powerpc
-#define semihosting_get_cmdline semihosting_get_cmdline_powerpc
 #define set_bit set_bit_powerpc
 #define set_bits set_bits_powerpc
 #define set_default_nan_mode set_default_nan_mode_powerpc

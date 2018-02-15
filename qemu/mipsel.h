@@ -2156,6 +2156,7 @@
 #define not_v7_cp_reginfo not_v7_cp_reginfo_mipsel
 #define not_v8_cp_reginfo not_v8_cp_reginfo_mipsel
 #define object_child_foreach object_child_foreach_mipsel
+#define object_child_foreach_recursive object_child_foreach_recursive_mipsel
 #define object_class_foreach object_class_foreach_mipsel
 #define object_class_foreach_tramp object_class_foreach_tramp_mipsel
 #define object_class_get_list object_class_get_list_mipsel
@@ -2582,10 +2583,6 @@
 #define save_globals save_globals_mipsel
 #define scr_write scr_write_mipsel
 #define sctlr_write sctlr_write_mipsel
-#define semihosting_get_target semihosting_get_target_mipsel
-#define semihosting_get_arg semihosting_get_arg_mipsel
-#define semihosting_get_argc semihosting_get_argc_mipsel
-#define semihosting_get_cmdline semihosting_get_cmdline_mipsel
 #define set_bit set_bit_mipsel
 #define set_bits set_bits_mipsel
 #define set_default_nan_mode set_default_nan_mode_mipsel

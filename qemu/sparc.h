@@ -2156,6 +2156,7 @@
 #define not_v7_cp_reginfo not_v7_cp_reginfo_sparc
 #define not_v8_cp_reginfo not_v8_cp_reginfo_sparc
 #define object_child_foreach object_child_foreach_sparc
+#define object_child_foreach_recursive object_child_foreach_recursive_sparc
 #define object_class_foreach object_class_foreach_sparc
 #define object_class_foreach_tramp object_class_foreach_tramp_sparc
 #define object_class_get_list object_class_get_list_sparc
@@ -2582,10 +2583,6 @@
 #define save_globals save_globals_sparc
 #define scr_write scr_write_sparc
 #define sctlr_write sctlr_write_sparc
-#define semihosting_get_target semihosting_get_target_sparc
-#define semihosting_get_arg semihosting_get_arg_sparc
-#define semihosting_get_argc semihosting_get_argc_sparc
-#define semihosting_get_cmdline semihosting_get_cmdline_sparc
 #define set_bit set_bit_sparc
 #define set_bits set_bits_sparc
 #define set_default_nan_mode set_default_nan_mode_sparc
