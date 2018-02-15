@@ -234,7 +234,7 @@ static inline CPUM68KState *cpu_init(struct uc_struct *uc, const char *cpu_model
 #define MMU_MODE0_SUFFIX _kernel
 #define MMU_MODE1_SUFFIX _user
 #define MMU_USER_IDX 1
-static inline int cpu_mmu_index (CPUM68KState *env)
+static inline int cpu_mmu_index (CPUM68KState *env, bool ifetch)
 {
     return (env->sr & SR_S) == 0 ? 1 : 0;
 }

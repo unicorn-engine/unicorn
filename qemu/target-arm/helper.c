@@ -6276,7 +6276,7 @@ hwaddr arm_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
     uint32_t fsr;
     MemTxAttrs attrs = {0};
 
-    ret = get_phys_addr(env, addr, 0, cpu_mmu_index(env), &phys_addr,
+    ret = get_phys_addr(env, addr, 0, cpu_mmu_index(env, false), &phys_addr,
                         &attrs, &prot, &page_size, &fsr);
 
     if (ret) {
@@ -6452,7 +6452,7 @@ void HELPER(dc_zva)(CPUARMState *env, uint64_t vaddr_in)
         void *hostaddr[maxidx];
 #endif
         int try, i;
-        unsigned mmu_idx = cpu_mmu_index(env);
+        unsigned mmu_idx = cpu_mmu_index(env, false);
         TCGMemOpIdx oi = make_memop_idx(MO_UB, mmu_idx);
 
         for (try = 0; try < 2; try++) {

@@ -8621,7 +8621,7 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     /* select memory access functions */
     dc->mem_index = 0;
     if (flags & HF_SOFTMMU_MASK) {
-        dc->mem_index = cpu_mmu_index(env);
+        dc->mem_index = cpu_mmu_index(env, false);
     }
     dc->cpuid_features = env->features[FEAT_1_EDX];
     dc->cpuid_ext_features = env->features[FEAT_1_ECX];

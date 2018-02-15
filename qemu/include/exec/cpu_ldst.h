@@ -409,7 +409,7 @@ uint64_t helper_ldq_cmmu(CPUArchState *env, target_ulong addr, int mmu_idx);
 #endif /* (NB_MMU_MODES > 12) */
 
 /* these access are slower, they must be as rare as possible */
-#define CPU_MMU_INDEX (cpu_mmu_index(env))
+#define CPU_MMU_INDEX (cpu_mmu_index(env, false))
 #define MEMSUFFIX _data
 #define DATA_SIZE 1
 #include "exec/cpu_ldst_template.h"
@@ -437,7 +437,7 @@ uint64_t helper_ldq_cmmu(CPUArchState *env, target_ulong addr, int mmu_idx);
 #define stl(p, v) stl_data(p, v)
 #define stq(p, v) stq_data(p, v)
 
-#define CPU_MMU_INDEX (cpu_mmu_index(env))
+#define CPU_MMU_INDEX (cpu_mmu_index(env, true))
 #define MEMSUFFIX _code
 #define SOFTMMU_CODE_ACCESS
 
