@@ -1541,16 +1541,6 @@ void tb_check_watchpoint(CPUState *cpu)
 }
 
 #ifndef CONFIG_USER_ONLY
-/* mask must never be zero, except for A20 change call */
-static void tcg_handle_interrupt(CPUState *cpu, int mask)
-{
-    cpu->interrupt_request |= mask;
-
-    cpu->tcg_exit_req = 1;
-}
-
-CPUInterruptHandler cpu_interrupt_handler = tcg_handle_interrupt;
-
 /* in deterministic execution mode, instructions doing device I/Os
    must be at the end of the TB */
 void cpu_io_recompile(CPUState *cpu, uintptr_t retaddr)
