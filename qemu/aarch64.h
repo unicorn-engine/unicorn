@@ -3026,7 +3026,9 @@
 #define thumb2_logic_op thumb2_logic_op_aarch64
 #define ti925t_initfn ti925t_initfn_aarch64
 #define tlb_add_large_page tlb_add_large_page_aarch64
+#define tlb_flush_by_mmuidx tlb_flush_by_mmuidx_aarch64
 #define tlb_flush_entry tlb_flush_entry_aarch64
+#define tlb_flush_page_by_mmuidx tlb_flush_page_by_mmuidx_aarch64
 #define tlbi_aa64_asid_is_write tlbi_aa64_asid_is_write_aarch64
 #define tlbi_aa64_asid_write tlbi_aa64_asid_write_aarch64
 #define tlbi_aa64_vaa_is_write tlbi_aa64_vaa_is_write_aarch64

@@ -120,21 +120,6 @@ void tlb_flush_page(CPUState *cpu, target_ulong addr)
     tb_flush_jmp_cache(cpu, addr);
 }
 
-/* update the TLBs so that writes to code in the virtual page 'addr'
-   can be detected */
-void tlb_protect_code(struct uc_struct *uc, ram_addr_t ram_addr)
-{
-    cpu_physical_memory_test_and_clear_dirty(uc, ram_addr, TARGET_PAGE_SIZE,
-                                             DIRTY_MEMORY_CODE);
-}
-
-/* update the TLB so that writes in physical page 'phys_addr' are no longer
-   tested for self modifying code */
-void tlb_unprotect_code(CPUState *cpu, ram_addr_t ram_addr)
-{
-    cpu_physical_memory_set_dirty_flag(cpu->uc, ram_addr, DIRTY_MEMORY_CODE);
-}
-
 void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry, uintptr_t start,
                            uintptr_t length)
 {
@@ -382,8 +367,48 @@ static bool tlb_is_dirty_ram(CPUTLBEntry *tlbe)
     return (tlbe->addr_write & (TLB_INVALID_MASK|TLB_MMIO|TLB_NOTDIRTY)) == 0;
 }
 
+static inline void v_tlb_flush_by_mmuidx(CPUState *cpu, va_list argp)
+{
+    CPUArchState *env = cpu->env_ptr;
 
-static void tlb_flush_entry(CPUTLBEntry *tlb_entry, target_ulong addr)
+#if defined(DEBUG_TLB)
+    printf("tlb_flush_by_mmuidx:");
+#endif
+    /* must reset current TB so that interrupts cannot modify the
+       links while we are modifying them */
+    cpu->current_tb = NULL;
+
+    for (;;) {
+        int mmu_idx = va_arg(argp, int);
+
+        if (mmu_idx < 0) {
+            break;
+        }
+
+#if defined(DEBUG_TLB)
+        printf(" %d", mmu_idx);
+#endif
+
+        memset(env->tlb_table[mmu_idx], -1, sizeof(env->tlb_table[0]));
+        memset(env->tlb_v_table[mmu_idx], -1, sizeof(env->tlb_v_table[0]));
+    }
+
+#if defined(DEBUG_TLB)
+    printf("\n");
+#endif
+
+    memset(cpu->tb_jmp_cache, 0, sizeof(cpu->tb_jmp_cache));
+}
+
+void tlb_flush_by_mmuidx(CPUState *cpu, ...)
+{
+    va_list argp;
+    va_start(argp, cpu);
+    v_tlb_flush_by_mmuidx(cpu, argp);
+    va_end(argp);
+}
+
+static inline void tlb_flush_entry(CPUTLBEntry *tlb_entry, target_ulong addr)
 {
     if (addr == (tlb_entry->addr_read &
                  (TARGET_PAGE_MASK | TLB_INVALID_MASK)) ||
@@ -395,6 +420,76 @@ static void tlb_flush_entry(CPUTLBEntry *tlb_entry, target_ulong addr)
     }
 }
 
+void tlb_flush_page_by_mmuidx(CPUState *cpu, target_ulong addr, ...)
+{
+    CPUArchState *env = cpu->env_ptr;
+    int i, k;
+    va_list argp;
+
+    va_start(argp, addr);
+
+#if defined(DEBUG_TLB)
+    printf("tlb_flush_page_by_mmu_idx: " TARGET_FMT_lx, addr);
+#endif
+    /* Check if we need to flush due to large pages.  */
+    if ((addr & env->tlb_flush_mask) == env->tlb_flush_addr) {
+#if defined(DEBUG_TLB)
+        printf(" forced full flush ("
+               TARGET_FMT_lx "/" TARGET_FMT_lx ")\n",
+               env->tlb_flush_addr, env->tlb_flush_mask);
+#endif
+        v_tlb_flush_by_mmuidx(cpu, argp);
+        va_end(argp);
+        return;
+    }
+    /* must reset current TB so that interrupts cannot modify the
+       links while we are modifying them */
+    cpu->current_tb = NULL;
+
+    addr &= TARGET_PAGE_MASK;
+    i = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+
+    for (;;) {
+        int mmu_idx = va_arg(argp, int);
+
+        if (mmu_idx < 0) {
+            break;
+        }
+
+#if defined(DEBUG_TLB)
+        printf(" %d", mmu_idx);
+#endif
+
+        tlb_flush_entry(&env->tlb_table[mmu_idx][i], addr);
+
+        /* check whether there are vltb entries that need to be flushed */
+        for (k = 0; k < CPU_VTLB_SIZE; k++) {
+            tlb_flush_entry(&env->tlb_v_table[mmu_idx][k], addr);
+        }
+    }
+    va_end(argp);
+
+#if defined(DEBUG_TLB)
+    printf("\n");
+#endif
+
+    tb_flush_jmp_cache(cpu, addr);
+}
+
+/* update the TLBs so that writes to code in the virtual page 'addr'
+   can be detected */
+void tlb_protect_code(struct uc_struct *uc, ram_addr_t ram_addr)
+{
+    cpu_physical_memory_test_and_clear_dirty(uc, ram_addr, TARGET_PAGE_SIZE,
+                                             DIRTY_MEMORY_CODE);
+}
+
+/* update the TLB so that writes in physical page 'phys_addr' are no longer
+   tested for self modifying code */
+void tlb_unprotect_code(CPUState *cpu, ram_addr_t ram_addr)
+{
+    cpu_physical_memory_set_dirty_flag(cpu->uc, ram_addr, DIRTY_MEMORY_CODE);
+}
 
 #define MMUSUFFIX _mmu
 

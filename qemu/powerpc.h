@@ -3026,7 +3026,9 @@
 #define thumb2_logic_op thumb2_logic_op_powerpc
 #define ti925t_initfn ti925t_initfn_powerpc
 #define tlb_add_large_page tlb_add_large_page_powerpc
+#define tlb_flush_by_mmuidx tlb_flush_by_mmuidx_powerpc
 #define tlb_flush_entry tlb_flush_entry_powerpc
+#define tlb_flush_page_by_mmuidx tlb_flush_page_by_mmuidx_powerpc
 #define tlbi_aa64_asid_is_write tlbi_aa64_asid_is_write_powerpc
 #define tlbi_aa64_asid_write tlbi_aa64_asid_write_powerpc
 #define tlbi_aa64_vaa_is_write tlbi_aa64_vaa_is_write_powerpc
