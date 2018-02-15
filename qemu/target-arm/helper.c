@@ -1001,22 +1001,40 @@ static CPAccessResult gt_cntfrq_access(CPUARMState *env, const ARMCPRegInfo *ri)
 
 static CPAccessResult gt_counter_access(CPUARMState *env, int timeridx)
 {
+    unsigned int cur_el = arm_current_el(env);
+    bool secure = arm_is_secure(env);
+
     /* CNT[PV]CT: not visible from PL0 if ELO[PV]CTEN is zero */
-    if (arm_current_el(env) == 0 &&
+    if (cur_el == 0 &&
         !extract32(env->cp15.c14_cntkctl, timeridx, 1)) {
         return CP_ACCESS_TRAP;
+    }
+
+    if (arm_feature(env, ARM_FEATURE_EL2) &&
+        timeridx == GTIMER_PHYS && !secure && cur_el < 2 &&
+        !extract32(env->cp15.cnthctl_el2, 0, 1)) {
+        return CP_ACCESS_TRAP_EL2;
     }
     return CP_ACCESS_OK;
 }
 
 static CPAccessResult gt_timer_access(CPUARMState *env, int timeridx)
 {
+    unsigned int cur_el = arm_current_el(env);
+    bool secure = arm_is_secure(env);
+
     /* CNT[PV]_CVAL, CNT[PV]_CTL, CNT[PV]_TVAL: not visible from PL0 if
      * EL0[PV]TEN is zero.
      */
-    if (arm_current_el(env) == 0 &&
+    if (cur_el == 0 &&
         !extract32(env->cp15.c14_cntkctl, 9 - timeridx, 1)) {
         return CP_ACCESS_TRAP;
+    }
+
+    if (arm_feature(env, ARM_FEATURE_EL2) &&
+        timeridx == GTIMER_PHYS && !secure && cur_el < 2 &&
+        !extract32(env->cp15.cnthctl_el2, 1, 1)) {
+        return CP_ACCESS_TRAP_EL2;
     }
     return CP_ACCESS_OK;
 }
@@ -2289,6 +2307,8 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0 },
     { "HTTBR", 15,0,2, 0,4,0, 0, ARM_CP_64BIT | ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
+    { "CNTHCTL_EL2", 0,14,1, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
     { "CNTVOFF_EL2", 0,14,0, 3,4,3, ARM_CP_STATE_AA64, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
     { "CNTVOFF", 15,0,14, 0,4,0, ARM_CP_64BIT | ARM_CP_CONST, 0,
@@ -2372,6 +2392,12 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
       PL2_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_vaa_write },
 #ifndef CONFIG_USER_ONLY
+      /* ARMv7 requires bit 0 and 1 to reset to 1. ARMv8 defines the
+       * reset values as IMPDEF. We choose to reset to 3 to comply with
+       * both ARMv7 and ARMv8.
+       */
+    { "CNTHCTL_EL2", 0,14,1, 3,4,0, ARM_CP_STATE_BOTH, 0,
+      PL2_RW, 0, NULL, 3, offsetof(CPUARMState, cp15.cnthctl_el2) },
     { "CNTVOFF_EL2", 0,140,0, 3,4,3, ARM_CP_STATE_AA64, ARM_CP_IO,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.cntvoff_el2), {0, 0},
       NULL, NULL, gt_cntvoff_write },
