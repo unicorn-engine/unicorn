@@ -1108,7 +1108,7 @@ static void gt_recalc_timer(ARMCPU *cpu, int timeridx)
     }
 }
 
-static void gt_cnt_reset(CPUARMState *env, const ARMCPRegInfo *ri)
+static void gt_timer_reset(CPUARMState *env, const ARMCPRegInfo *ri)
 {
 }
 
@@ -1227,26 +1227,26 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
       gt_ptimer_access, gt_tval_read, gt_tval_write, },
     { "CNTP_TVAL_EL0", 0,14,2, 3,3,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW | ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, 0, {0, 0},
-      gt_ptimer_access, gt_tval_read, gt_tval_write, },
+      gt_ptimer_access, gt_tval_read, gt_tval_write, NULL, NULL, gt_timer_reset },
     { "CNTV_TVAL", 15,14,3, 0,0,0, 0,
       ARM_CP_NO_RAW | ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, 0, {0, 0},
       gt_vtimer_access, gt_tval_read, gt_tval_write, },
     { "CNTV_TVAL_EL0", 0,14,3, 3,3,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW | ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, 0, {0, 0},
-      gt_vtimer_access, gt_tval_read, gt_tval_write, },
+      gt_vtimer_access, gt_tval_read, gt_tval_write, NULL, NULL, gt_timer_reset },
     /* The counter itself */
     { "CNTPCT", 15,0,14, 0,0, 0, 0,
       ARM_CP_64BIT | ARM_CP_NO_RAW | ARM_CP_IO, PL0_R, 0, NULL, 0, 0, {0, 0},
       gt_pct_access, gt_cnt_read,NULL, NULL,NULL, arm_cp_reset_ignore, },
     { "CNTPCT_EL0", 0,14,0, 3,3,1, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW | ARM_CP_IO, PL0_R, 0, NULL, 0, 0, {0, 0},
-      gt_pct_access, gt_cnt_read, NULL, NULL, NULL, gt_cnt_reset, },
+      gt_pct_access, gt_cnt_read, NULL, NULL, NULL, NULL },
     { "CNTVCT", 15,0,14, 0,1,0, 0,
       ARM_CP_64BIT | ARM_CP_NO_RAW | ARM_CP_IO, PL0_R, 0, NULL, 0, 0, {0, 0},
       gt_vct_access, gt_virt_cnt_read, NULL, NULL, NULL, arm_cp_reset_ignore, },
     { "CNTVCT_EL0", 0,14,0, 3,3,2, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW | ARM_CP_IO, PL0_R, 0, NULL, 0, 0, {0, 0},
-      gt_vct_access, gt_virt_cnt_read, NULL, NULL, NULL, gt_cnt_reset, },
+      gt_vct_access, gt_virt_cnt_read, NULL, NULL, NULL, NULL },
     /* Comparison value, indicating when the timer goes off */
     { "CNTP_CVAL", 15, 0,14, 0,2, 0, 0,
       ARM_CP_64BIT | ARM_CP_IO | ARM_CP_ALIAS, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].cval), {0, 0},
