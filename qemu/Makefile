@@ -106,6 +106,8 @@ dummy := $(call unnest-vars,, \
                 util-obj-y \
                 block-obj-y \
                 block-obj-m \
+                crypto-obj-y \
+                crypto-aes-obj-y \
                 common-obj-y \
                 common-obj-m)
 
@@ -118,6 +120,7 @@ SUBDIR_RULES=$(patsubst %,subdir-%, $(TARGET_DIRS))
 SOFTMMU_SUBDIR_RULES=$(filter %-softmmu,$(SUBDIR_RULES))
 
 $(SOFTMMU_SUBDIR_RULES): $(block-obj-y)
+$(SOFTMMU_SUBDIR_RULES): $(crypto-obj-y)
 $(SOFTMMU_SUBDIR_RULES): config-all-devices.mak
 
 subdir-%:
