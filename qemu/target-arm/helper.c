@@ -2281,6 +2281,18 @@ static void tlbi_aa64_alle1is_write(CPUARMState *env, const ARMCPRegInfo *ri,
 */
 }
 
+static void tlbi_aa64_alle2is_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                                    uint64_t value)
+{
+/* UNICORN: TODO: issue #642
+    CPUState *other_cs;
+
+    CPU_FOREACH(other_cs) {
+        tlb_flush_by_mmuidx(other_cs, ARMMMUIdx_S1E2, -1);
+    }
+*/
+}
+
 static void tlbi_aa64_vae1_write(CPUARMState *env, const ARMCPRegInfo *ri,
                                  uint64_t value)
 {
@@ -2734,7 +2746,16 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "TLBI_VAE2", 0,8,7, 1,4,1, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
       PL2_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_vae2_write },
+    { "TLBI_VALE2", 0,8,7, 1,4,5, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_vae2_write },
+    { "TLBI_ALLE2IS", 0,8,3, 1,4,0, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_alle2is_write },
     { "TLBI_VAE2IS", 0,8,3, 1,4,1, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbi_aa64_vae2is_write },
+    { "TLBI_VALE2IS", 0,8,3, 1,4,5, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
       PL2_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_vae2is_write },
 #ifndef CONFIG_USER_ONLY
