@@ -1061,6 +1061,32 @@ static CPAccessResult gt_vtimer_access(CPUARMState *env, const ARMCPRegInfo *ri)
     return gt_timer_access(env, GTIMER_VIRT);
 }
 
+static CPAccessResult gt_stimer_access(CPUARMState *env,
+                                       const ARMCPRegInfo *ri)
+{
+    /* The AArch64 register view of the secure physical timer is
+     * always accessible from EL3, and configurably accessible from
+     * Secure EL1.
+     */
+    switch (arm_current_el(env)) {
+    case 1:
+        if (!arm_is_secure(env)) {
+            return CP_ACCESS_TRAP;
+        }
+        if (!(env->cp15.scr_el3 & SCR_ST)) {
+            return CP_ACCESS_TRAP_EL3;
+        }
+        return CP_ACCESS_OK;
+    case 0:
+    case 2:
+        return CP_ACCESS_TRAP;
+    case 3:
+        return CP_ACCESS_OK;
+    default:
+        g_assert_not_reached();
+    }
+}
+
 static uint64_t gt_get_countervalue(CPUARMState *env)
 {
     return qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL) / GTIMER_SCALE;
@@ -1264,6 +1290,34 @@ static void gt_hyp_ctl_write(CPUARMState *env, const ARMCPRegInfo *ri,
     gt_ctl_write(env, ri, GTIMER_HYP, value);
 }
 
+static void gt_sec_timer_reset(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    gt_timer_reset(env, ri, GTIMER_SEC);
+}
+
+static void gt_sec_cval_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                              uint64_t value)
+{
+    gt_cval_write(env, ri, GTIMER_SEC, value);
+}
+
+static uint64_t gt_sec_tval_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    return gt_tval_read(env, ri, GTIMER_SEC);
+}
+
+static void gt_sec_tval_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                              uint64_t value)
+{
+    gt_tval_write(env, ri, GTIMER_SEC, value);
+}
+
+static void gt_sec_ctl_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                              uint64_t value)
+{
+    gt_ctl_write(env, ri, GTIMER_SEC, value);
+}
+
 void arm_gt_ptimer_cb(void *opaque)
 {
     ARMCPU *cpu = opaque;
@@ -1283,6 +1337,13 @@ void arm_gt_htimer_cb(void *opaque)
     ARMCPU *cpu = opaque;
 
     gt_recalc_timer(cpu, GTIMER_HYP);
+}
+
+void arm_gt_stimer_cb(void *opaque)
+{
+    ARMCPU *cpu = opaque;
+
+    gt_recalc_timer(cpu, GTIMER_SEC);
 }
 
 static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
@@ -1351,6 +1412,19 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
     { "CNTV_CVAL_EL0", 0,14,3, 3,3,2, ARM_CP_STATE_AA64,
       ARM_CP_IO, PL1_RW | PL0_R, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_VIRT].cval), {0, 0},
       gt_vtimer_access, NULL, gt_virt_cval_write, NULL, raw_write, },
+    /* Secure timer -- this is actually restricted to only EL3
+     * and configurably Secure-EL1 via the accessfn.
+     */
+    { "CNTPS_TVAL_EL1", 0,14,2, 3,7,0, ARM_CP_STATE_AA64, ARM_CP_NO_RAW | ARM_CP_IO,
+      PL1_RW, 0, NULL, 0, 0, {0, 0},
+      gt_stimer_access, gt_sec_tval_read, gt_sec_tval_write,
+      NULL, NULL, gt_sec_timer_reset },
+    { "CNTPS_CTL_EL1", 0,14,2, 3,7,1, ARM_CP_STATE_AA64, ARM_CP_IO,
+      PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_SEC].ctl), {0, 0},
+      gt_stimer_access, NULL, gt_sec_ctl_write, NULL, raw_write },
+    { "CNTPS_CVAL_EL1", 0,14,2, 3,7,2, ARM_CP_STATE_AA64, ARM_CP_IO,
+      PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_SEC].cval), {0, 0},
+      gt_stimer_access, NULL, gt_sec_cval_write, NULL, raw_write },
     REGINFO_SENTINEL
 };
 

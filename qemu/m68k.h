@@ -151,6 +151,7 @@
 #define arm_gt_ptimer_cb arm_gt_ptimer_cb_m68k
 #define arm_gt_vtimer_cb arm_gt_vtimer_cb_m68k
 #define arm_gt_htimer_cb arm_gt_htimer_cb_m68k
+#define arm_gt_stimer_cb arm_gt_stimer_cb_m68k
 #define arm_handle_psci_call arm_handle_psci_call_m68k
 #define arm_is_psci_call arm_is_psci_call_m68k
 #define arm_is_secure arm_is_secure_m68k

@@ -157,6 +157,7 @@ symbols = (
     'arm_gt_ptimer_cb',
     'arm_gt_vtimer_cb',
     'arm_gt_htimer_cb',
+    'arm_gt_stimer_cb',
     'arm_handle_psci_call',
     'arm_is_psci_call',
     'arm_is_secure',
