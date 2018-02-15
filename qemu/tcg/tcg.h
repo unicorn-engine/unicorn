@@ -831,6 +831,10 @@ static inline bool tcg_op_buf_full(TCGContext *tcg_ctx)
     return tcg_op_buf_count(tcg_ctx) >= OPC_MAX_SIZE;
 }
 
+// UNICORN: Added
+#define TCG_OP_DEFS_TABLE_SIZE 124
+extern const TCGOpDef tcg_op_defs_org[TCG_OP_DEFS_TABLE_SIZE];
+
 typedef struct TCGTargetOpDef {
     TCGOpcode op;
     const char *args_ct_str[TCG_MAX_OP_ARGS];

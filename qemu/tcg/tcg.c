@@ -109,13 +109,6 @@ static int tcg_target_const_match(tcg_target_long val, TCGType type,
 static void tcg_out_tb_init(TCGContext *s);
 static void tcg_out_tb_finalize(TCGContext *s);
 
-
-TCGOpDef tcg_op_defs_org[] = {
-#define DEF(s, oargs, iargs, cargs, flags) { #s, oargs, iargs, cargs, iargs + oargs + cargs, flags },
-#include "tcg-opc.h"
-#undef DEF
-};
-
 #if TCG_TARGET_INSN_UNIT_SIZE == 1
 static QEMU_UNUSED_FUNC inline void tcg_out8(TCGContext *s, uint8_t v)
 {
@@ -1281,7 +1274,7 @@ void tcg_add_target_add_op_defs(TCGContext *s, const TCGTargetOpDef *tdefs)
 
 #if defined(CONFIG_DEBUG_TCG)
     i = 0;
-    for (op = 0; op < ARRAY_SIZE(s->tcg_op_defs); op++) {
+    for (op = 0; op < tcg_op_defs_org_max; op++) {
         const TCGOpDef *def = &s->tcg_op_defs[op];
         if (def->flags & TCG_OPF_NOT_PRESENT) {
             /* Wrong entry in op definitions? */
