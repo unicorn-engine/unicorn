@@ -871,6 +871,8 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
      */
     { "MAIR_EL1", 0,10,2, 3,0,0, ARM_CP_STATE_AA64,
       0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mair_el[1]), },
+    { "MAIR_EL3", 0,10,2, 3,6,0, ARM_CP_STATE_AA64, 0,
+      PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mair_el[3]) },
     /* For non-long-descriptor page tables these are PRRR and NMRR;
      * regardless they still act as reads-as-written for QEMU.
      */
@@ -2589,7 +2591,7 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "CNTHP_CVAL_EL2", 0,14,2, 3,4,2, ARM_CP_STATE_AA64, ARM_CP_IO,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_HYP].cval), {0, 0},
       NULL, NULL, gt_hyp_cval_write, NULL, raw_write },
-    { "CNTHP_CVAL", .15,0,14, 0,6,0, 0, ARM_CP_64BIT | ARM_CP_IO,
+    { "CNTHP_CVAL", 15,0,14, 0,6,0, 0, ARM_CP_64BIT | ARM_CP_IO,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_HYP].cval), {0, 0},
       NULL, NULL, gt_hyp_cval_write, NULL, raw_write },
     { "CNTHP_TVAL_EL2", 0,14,2, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_IO,
@@ -2643,6 +2645,8 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "CPTR_EL3", 0,1,1, 3,6,2, ARM_CP_STATE_AA64, 0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.cptr_el[3]), {0, 0},
       cptr_access },
+    { "TPIDR_EL3", 0,13,0, 3,6,2, ARM_CP_STATE_AA64, 0,
+      PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tpidr_el[3]) },
     REGINFO_SENTINEL
 };
 
