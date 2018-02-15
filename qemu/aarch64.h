@@ -2582,6 +2582,11 @@
 #define save_globals save_globals_aarch64
 #define scr_write scr_write_aarch64
 #define sctlr_write sctlr_write_aarch64
+#define semihosting_enabled semihosting_enabled_aarch64
+#define semihosting_get_target semihosting_get_target_aarch64
+#define semihosting_get_arg semihosting_get_arg_aarch64
+#define semihosting_get_argc semihosting_get_argc_aarch64
+#define semihosting_get_cmdline semihosting_get_cmdline_aarch64
 #define set_bit set_bit_aarch64
 #define set_bits set_bits_aarch64
 #define set_default_nan_mode set_default_nan_mode_aarch64

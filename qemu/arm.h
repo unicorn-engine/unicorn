@@ -2582,6 +2582,11 @@
 #define save_globals save_globals_arm
 #define scr_write scr_write_arm
 #define sctlr_write sctlr_write_arm
+#define semihosting_enabled semihosting_enabled_arm
+#define semihosting_get_target semihosting_get_target_arm
+#define semihosting_get_arg semihosting_get_arg_arm
+#define semihosting_get_argc semihosting_get_argc_arm
+#define semihosting_get_cmdline semihosting_get_cmdline_arm
 #define set_bit set_bit_arm
 #define set_bits set_bits_arm
 #define set_default_nan_mode set_default_nan_mode_arm

@@ -2582,6 +2582,11 @@
 #define save_globals save_globals_mips64el
 #define scr_write scr_write_mips64el
 #define sctlr_write sctlr_write_mips64el
+#define semihosting_enabled semihosting_enabled_mips64el
+#define semihosting_get_target semihosting_get_target_mips64el
+#define semihosting_get_arg semihosting_get_arg_mips64el
+#define semihosting_get_argc semihosting_get_argc_mips64el
+#define semihosting_get_cmdline semihosting_get_cmdline_mips64el
 #define set_bit set_bit_mips64el
 #define set_bits set_bits_mips64el
 #define set_default_nan_mode set_default_nan_mode_mips64el

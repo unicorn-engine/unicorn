@@ -2582,6 +2582,11 @@
 #define save_globals save_globals_armeb
 #define scr_write scr_write_armeb
 #define sctlr_write sctlr_write_armeb
+#define semihosting_enabled semihosting_enabled_armeb
+#define semihosting_get_target semihosting_get_target_armeb
+#define semihosting_get_arg semihosting_get_arg_armeb
+#define semihosting_get_argc semihosting_get_argc_armeb
+#define semihosting_get_cmdline semihosting_get_cmdline_armeb
 #define set_bit set_bit_armeb
 #define set_bits set_bits_armeb
 #define set_default_nan_mode set_default_nan_mode_armeb

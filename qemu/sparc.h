@@ -2582,6 +2582,11 @@
 #define save_globals save_globals_sparc
 #define scr_write scr_write_sparc
 #define sctlr_write sctlr_write_sparc
+#define semihosting_enabled semihosting_enabled_sparc
+#define semihosting_get_target semihosting_get_target_sparc
+#define semihosting_get_arg semihosting_get_arg_sparc
+#define semihosting_get_argc semihosting_get_argc_sparc
+#define semihosting_get_cmdline semihosting_get_cmdline_sparc
 #define set_bit set_bit_sparc
 #define set_bits set_bits_sparc
 #define set_default_nan_mode set_default_nan_mode_sparc

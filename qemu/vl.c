@@ -30,6 +30,7 @@
 #include "sysemu/cpus.h"
 #include "vl.h"
 #include "uc_priv.h"
+#include "exec/semihost.h"
 #include "crypto/init.h"
 
 #define DEFAULT_RAM_SIZE 128
@@ -54,6 +55,34 @@ void cpu_stop_current(struct uc_struct *uc)
     }
 }
 
+/***********************************************************/
+/* Semihosting */
+
+bool semihosting_enabled(void)
+{
+    // UNICORN: Always return false
+    return false;
+}
+
+SemihostingTarget semihosting_get_target(void)
+{
+    return SEMIHOSTING_TARGET_AUTO;
+}
+
+const char *semihosting_get_arg(int i)
+{
+    return NULL;
+}
+
+int semihosting_get_argc(void)
+{
+    return 0;
+}
+
+const char *semihosting_get_cmdline(void)
+{
+    return NULL;
+}
 
 /***********************************************************/
 /* machine registration */

@@ -32,7 +32,7 @@
 
 #include "exec/helper-proto.h"
 #include "exec/helper-gen.h"
-
+#include "exec/semihost.h"
 #include "exec/gen-icount.h"
 
 #ifdef CONFIG_USER_ONLY

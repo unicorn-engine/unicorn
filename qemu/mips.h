@@ -2582,6 +2582,11 @@
 #define save_globals save_globals_mips
 #define scr_write scr_write_mips
 #define sctlr_write sctlr_write_mips
+#define semihosting_enabled semihosting_enabled_mips
+#define semihosting_get_target semihosting_get_target_mips
+#define semihosting_get_arg semihosting_get_arg_mips
+#define semihosting_get_argc semihosting_get_argc_mips
+#define semihosting_get_cmdline semihosting_get_cmdline_mips
 #define set_bit set_bit_mips
 #define set_bits set_bits_mips
 #define set_default_nan_mode set_default_nan_mode_mips

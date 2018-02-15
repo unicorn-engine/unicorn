@@ -2582,6 +2582,11 @@
 #define save_globals save_globals_powerpc
 #define scr_write scr_write_powerpc
 #define sctlr_write sctlr_write_powerpc
+#define semihosting_enabled semihosting_enabled_powerpc
+#define semihosting_get_target semihosting_get_target_powerpc
+#define semihosting_get_arg semihosting_get_arg_powerpc
+#define semihosting_get_argc semihosting_get_argc_powerpc
+#define semihosting_get_cmdline semihosting_get_cmdline_powerpc
 #define set_bit set_bit_powerpc
 #define set_bits set_bits_powerpc
 #define set_default_nan_mode set_default_nan_mode_powerpc
