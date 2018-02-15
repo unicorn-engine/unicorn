@@ -127,11 +127,6 @@ char *qemu_strsep(char **input, const char *delim)
     return result;
 }
 
-int qemu_fls(int i)
-{
-    return 32 - clz32(i);
-}
-
 static int64_t suffix_mul(char suffix, int64_t unit)
 {
     switch (qemu_toupper(suffix)) {
