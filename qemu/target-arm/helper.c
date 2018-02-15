@@ -2363,12 +2363,6 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     { "DC_CISW", 0,7,14, 1,0,2, ARM_CP_STATE_AA64,
       ARM_CP_NOP, PL1_W,  },
     /* TLBI operations */
-    { "TLBI_ALLE1", 0,8,7, 1,4,4, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
-      PL2_W, 0, NULL, 0, 0, {0, 0},
-      NULL, NULL, tlbiall_write },
-    { "TLBI_ALLE1IS", 0,8,3, 1,4,4, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
-      PL2_W, 0, NULL, 0, 0, {0, 0},
-      NULL, NULL, tlbiall_is_write },
     { "TLBI_VMALLE1IS", 0,8,3, 1,0,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbiall_is_write },
@@ -2405,6 +2399,12 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     { "TLBI_VAALE1", 0,8,7, 1,0,7, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_vaa_write },
+    { "TLBI_ALLE1IS", 0,8,3, 1,4,4, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiall_is_write },
+    { "TLBI_ALLE1", 0,8,7, 1,4,4, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiall_write },
 #ifndef CONFIG_USER_ONLY
     /* 64 bit address translation operations */
     { "AT_S1E1R", 0,7,8, 1,0,0, ARM_CP_STATE_AA64,
