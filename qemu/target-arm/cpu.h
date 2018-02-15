@@ -228,6 +228,7 @@ typedef struct CPUARMState {
         };
         /* MMU translation table base control. */
         TCR tcr_el[4];
+        TCR vtcr_el2; /* Virtualization Translation Control.  */
         uint32_t c2_data; /* MPU data cachable bits.  */
         uint32_t c2_insn; /* MPU instruction cachable bits.  */
         union { /* MMU domain access control register

@@ -235,6 +235,34 @@ void init_cpreg_list(ARMCPU *cpu)
     g_list_free(keys);
 }
 
+/*
+ * Some registers are not accessible if EL3.NS=0 and EL3 is using AArch32 but
+ * they are accessible when EL3 is using AArch64 regardless of EL3.NS.
+ *
+ * access_el3_aa32ns: Used to check AArch32 register views.
+ * access_el3_aa32ns_aa64any: Used to check both AArch32/64 register views.
+ */
+static CPAccessResult access_el3_aa32ns(CPUARMState *env,
+                                        const ARMCPRegInfo *ri)
+{
+    bool secure = arm_is_secure_below_el3(env);
+
+    assert(!arm_el_is_aa64(env, 3));
+    if (secure) {
+        return CP_ACCESS_TRAP_UNCATEGORIZED;
+    }
+    return CP_ACCESS_OK;
+}
+
+static CPAccessResult access_el3_aa32ns_aa64any(CPUARMState *env,
+                                                const ARMCPRegInfo *ri)
+{
+    if (!arm_el_is_aa64(env, 3)) {
+        return access_el3_aa32ns(env, ri);
+    }
+    return CP_ACCESS_OK;
+}
+
 static void dacr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
@@ -2750,6 +2778,9 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0 },
     { "TCR_EL2", 0,2,0, 3,4,2, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
+    { "VTCR_EL2", 0,2,1, 3,4,2, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0, 0, {0, 0},
+      access_el3_aa32ns_aa64any },
     { "SCTLR_EL2", 0,1,0, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
     { "TPIDR_EL2", 0,13,0, 3,4,2, ARM_CP_STATE_BOTH, ARM_CP_CONST,
@@ -2841,6 +2872,11 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "TCR_EL2", 0,2,0, 3,4,2, ARM_CP_STATE_BOTH, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tcr_el[2]), {0, 0},
       NULL, NULL, vmsa_tcr_el1_write, NULL, raw_write, vmsa_ttbcr_reset },
+    { "VTCR", 15,2,1, 0,4,2, ARM_CP_STATE_AA32, 0,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vtcr_el2), {0, 0},
+      access_el3_aa32ns },
+    { "VTCR_EL2", 0,2,1, 3,4,2, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vtcr_el2) },
     { "SCTLR_EL2", 0,1,0, 3,4,0, ARM_CP_STATE_BOTH, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sctlr_el[2]), {0, 0},
       NULL, NULL, sctlr_write, NULL, raw_write },
@@ -5123,8 +5159,7 @@ static inline bool regime_translation_disabled(CPUARMState *env,
 static inline TCR *regime_tcr(CPUARMState *env, ARMMMUIdx mmu_idx)
 {
     if (mmu_idx == ARMMMUIdx_S2NS) {
-        /* TODO: return VTCR_EL2 */
-        g_assert_not_reached();
+        return &env->cp15.vtcr_el2;
     }
     return &env->cp15.tcr_el[regime_el(env, mmu_idx)];
 }
