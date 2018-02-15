@@ -2582,7 +2582,6 @@
 #define save_globals save_globals_sparc64
 #define scr_write scr_write_sparc64
 #define sctlr_write sctlr_write_sparc64
-#define semihosting_enabled semihosting_enabled_sparc64
 #define semihosting_get_target semihosting_get_target_sparc64
 #define semihosting_get_arg semihosting_get_arg_sparc64
 #define semihosting_get_argc semihosting_get_argc_sparc64

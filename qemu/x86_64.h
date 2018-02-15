@@ -2582,7 +2582,6 @@
 #define save_globals save_globals_x86_64
 #define scr_write scr_write_x86_64
 #define sctlr_write sctlr_write_x86_64
-#define semihosting_enabled semihosting_enabled_x86_64
 #define semihosting_get_target semihosting_get_target_x86_64
 #define semihosting_get_arg semihosting_get_arg_x86_64
 #define semihosting_get_argc semihosting_get_argc_x86_64

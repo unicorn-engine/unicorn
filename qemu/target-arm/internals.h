@@ -36,6 +36,7 @@ static inline bool excp_is_internal(int excp)
         || excp == EXCP_HALTED
         || excp == EXCP_EXCEPTION_EXIT
         || excp == EXCP_KERNEL_TRAP
+        || excp == EXCP_SEMIHOST
         || excp == EXCP_STREX;
 }
 
@@ -59,6 +60,7 @@ static const char * const excnames[] = {
     "Secure Monitor Call",
     "Virtual IRQ",
     "Virtual FIQ",
+    "Semihosting call",
 };
 
 static inline void arm_log_exception(int idx)

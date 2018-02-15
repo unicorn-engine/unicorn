@@ -2582,7 +2582,6 @@
 #define save_globals save_globals_arm
 #define scr_write scr_write_arm
 #define sctlr_write sctlr_write_arm
-#define semihosting_enabled semihosting_enabled_arm
 #define semihosting_get_target semihosting_get_target_arm
 #define semihosting_get_arg semihosting_get_arg_arm
 #define semihosting_get_argc semihosting_get_argc_arm

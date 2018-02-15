@@ -2582,7 +2582,6 @@
 #define save_globals save_globals_armeb
 #define scr_write scr_write_armeb
 #define sctlr_write sctlr_write_armeb
-#define semihosting_enabled semihosting_enabled_armeb
 #define semihosting_get_target semihosting_get_target_armeb
 #define semihosting_get_arg semihosting_get_arg_armeb
 #define semihosting_get_argc semihosting_get_argc_armeb

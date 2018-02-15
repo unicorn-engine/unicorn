@@ -2582,7 +2582,6 @@
 #define save_globals save_globals_powerpc
 #define scr_write scr_write_powerpc
 #define sctlr_write sctlr_write_powerpc
-#define semihosting_enabled semihosting_enabled_powerpc
 #define semihosting_get_target semihosting_get_target_powerpc
 #define semihosting_get_arg semihosting_get_arg_powerpc
 #define semihosting_get_argc semihosting_get_argc_powerpc

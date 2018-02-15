@@ -2582,7 +2582,6 @@
 #define save_globals save_globals_mipsel
 #define scr_write scr_write_mipsel
 #define sctlr_write sctlr_write_mipsel
-#define semihosting_enabled semihosting_enabled_mipsel
 #define semihosting_get_target semihosting_get_target_mipsel
 #define semihosting_get_arg semihosting_get_arg_mipsel
 #define semihosting_get_argc semihosting_get_argc_mipsel
