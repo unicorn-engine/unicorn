@@ -46,6 +46,9 @@
 #include "exec/ram_addr.h"
 
 #include "qemu/range.h"
+#ifndef _WIN32
+#include "qemu/mmap-alloc.h"
+#endif
 
 #include "uc_priv.h"
 
