@@ -243,7 +243,6 @@
 #define cptype_valid cptype_valid_armeb
 #define cpu_abort cpu_abort_armeb
 #define cpu_arm_exec cpu_arm_exec_armeb
-#define cpu_arm_gen_code cpu_arm_gen_code_armeb
 #define cpu_arm_init cpu_arm_init_armeb
 #define cpu_breakpoint_insert cpu_breakpoint_insert_armeb
 #define cpu_breakpoint_remove cpu_breakpoint_remove_armeb

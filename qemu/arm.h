@@ -243,7 +243,6 @@
 #define cptype_valid cptype_valid_arm
 #define cpu_abort cpu_abort_arm
 #define cpu_arm_exec cpu_arm_exec_arm
-#define cpu_arm_gen_code cpu_arm_gen_code_arm
 #define cpu_arm_init cpu_arm_init_arm
 #define cpu_breakpoint_insert cpu_breakpoint_insert_arm
 #define cpu_breakpoint_remove cpu_breakpoint_remove_arm

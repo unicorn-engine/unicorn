@@ -249,7 +249,6 @@ symbols = (
     'cptype_valid',
     'cpu_abort',
     'cpu_arm_exec',
-    'cpu_arm_gen_code',
     'cpu_arm_init',
     'cpu_breakpoint_insert',
     'cpu_breakpoint_remove',

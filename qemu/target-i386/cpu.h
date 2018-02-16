@@ -1196,7 +1196,6 @@ CPUX86State *cpu_x86_init_user(struct uc_struct *uc, const char *cpu_model);
 
 #ifdef TARGET_I386
 #define cpu_exec cpu_x86_exec
-#define cpu_gen_code cpu_x86_gen_code
 #define cpu_signal_handler cpu_x86_signal_handler
 #define cpudef_setup x86_cpudef_setup
 #endif

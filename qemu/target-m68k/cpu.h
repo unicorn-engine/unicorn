@@ -224,7 +224,6 @@ static inline CPUM68KState *cpu_init(struct uc_struct *uc, const char *cpu_model
 }
 
 #define cpu_exec cpu_m68k_exec
-#define cpu_gen_code cpu_m68k_gen_code
 #define cpu_signal_handler cpu_m68k_signal_handler
 #define cpu_list m68k_cpu_list
 
