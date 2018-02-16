@@ -11319,11 +11319,18 @@ void gen_intermediate_code_a64(ARMCPU *cpu, TranslationBlock *tb)
         if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
             QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
                 if (bp->pc == dc->pc) {
-                    gen_exception_internal_insn(dc, 0, EXCP_DEBUG);
-                    /* Advance PC so that clearing the breakpoint will
-                       invalidate this TB.  */
-                    dc->pc += 2;
-                    goto done_generating;
+                    if (bp->flags & BP_CPU) {
+                        gen_helper_check_breakpoints(tcg_ctx, tcg_ctx->cpu_env);
+                        /* End the TB early; it likely won't be executed */
+                        dc->is_jmp = DISAS_UPDATE;
+                    } else {
+                        gen_exception_internal_insn(dc, 0, EXCP_DEBUG);
+                        /* Advance PC so that clearing the breakpoint will
+                           invalidate this TB.  */
+                        dc->pc += 4;
+                        goto done_generating;
+                    }
+                    break;
                 }
             }
         }

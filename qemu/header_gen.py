@@ -673,6 +673,7 @@ symbols = (
     'gen_helper_access_check_cp_reg',
     'gen_helper_add_saturate',
     'gen_helper_add_setq',
+    'gen_helper_check_breakpoints',
     'gen_helper_clear_pstate_ss',
     'gen_helper_clz32',
     'gen_helper_clz64',
