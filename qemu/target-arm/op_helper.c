@@ -894,6 +894,13 @@ void arm_debug_excp_handler(CPUState *cs)
             }
         }
     } else {
+        /* Unicorn: commented out
+        uint64_t pc = is_a64(env) ? env->pc : env->regs[15];
+
+        if (cpu_breakpoint_test(cs, pc, BP_GDB)) {
+            return;
+        }*/
+
         if (check_breakpoints(cpu)) {
             bool same_el = (arm_debug_target_el(env) == arm_current_el(env));
             if (extended_addresses_enabled(env)) {
