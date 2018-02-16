@@ -2369,14 +2369,6 @@
 #define qbus_finalize qbus_finalize_sparc
 #define qbus_initfn qbus_initfn_sparc
 #define qbus_realize qbus_realize_sparc
-#define qcrypto_hash_base64 qcrypto_hash_base64_sparc
-#define qcrypto_hash_base64v qcrypto_hash_base64v_sparc
-#define qcrypto_hash_bytes qcrypto_hash_bytes_sparc
-#define qcrypto_hash_bytesv qcrypto_hash_bytesv_sparc
-#define qcrypto_hash_digest qcrypto_hash_digest_sparc
-#define qcrypto_hash_digestv qcrypto_hash_digestv_sparc
-#define qcrypto_hash_supports qcrypto_hash_supports_sparc
-#define qcrypto_init qcrypto_init_sparc
 #define qdev_create qdev_create_sparc
 #define qdev_get_type qdev_get_type_sparc
 #define qdev_register_types qdev_register_types_sparc

@@ -1,5 +1,3 @@
-crypto-obj-y = init.o
-crypto-obj-y += hash.o
 crypto-obj-y += aes.o
 
 # Let the userspace emulators avoid linking gnutls/etc

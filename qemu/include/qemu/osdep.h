@@ -132,13 +132,6 @@ void qemu_anon_ram_free(void *ptr, size_t size);
 #define FMT_pid "%d"
 #endif
 
-#ifndef CONFIG_IOVEC
-struct iovec {
-    void *iov_base;
-    size_t iov_len;
-};
-#endif
-
 /**
  * qemu_getauxval:
  * @type: the auxiliary vector key to lookup
