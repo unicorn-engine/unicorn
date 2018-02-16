@@ -156,75 +156,7 @@ void tb_cleanup(struct uc_struct *uc)
     tb_clean_internal(uc, V_L1_SHIFT / V_L2_BITS, lp);
 }
 
-/* return non zero if the very first instruction is invalid so that
-   the virtual CPU can trigger an exception.
-
-   '*gen_code_size_ptr' contains the size of the generated code (host
-   code).
-*/
-static int cpu_gen_code(CPUArchState *env, TranslationBlock *tb, int *gen_code_size_ptr)    // qq
-{
-    TCGContext *s = env->uc->tcg_ctx;
-    tcg_insn_unit *gen_code_buf;
-    int gen_code_size;
-#ifdef CONFIG_PROFILER
-    int64_t ti;
-#endif
-
-#ifdef CONFIG_PROFILER
-    s->tb_count1++; /* includes aborted translations because of
-                       exceptions */
-    ti = profile_getclock();
-#endif
-    tcg_func_start(s);
-
-    gen_intermediate_code(env, tb);
-
-    // Unicorn: when tracing block, patch block size operand for callback
-    if (env->uc->size_arg != -1 && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, tb->pc)) {
-        if (env->uc->block_full)    // block size is unknown
-            *(s->gen_opparam_buf + env->uc->size_arg) = 0;
-        else
-            *(s->gen_opparam_buf + env->uc->size_arg) = tb->size;
-    }
-
-    /* generate machine code */
-    gen_code_buf = tb->tc_ptr;
-    tb->tb_next_offset[0] = 0xffff;
-    tb->tb_next_offset[1] = 0xffff;
-    s->tb_next_offset = tb->tb_next_offset;
-#ifdef USE_DIRECT_JUMP
-    s->tb_jmp_offset = tb->tb_jmp_offset;
-    s->tb_next = NULL;
-#else
-    s->tb_jmp_offset = NULL;
-    s->tb_next = tb->tb_next;
-#endif
-
-#ifdef CONFIG_PROFILER
-    s->tb_count++;
-    s->interm_time += profile_getclock() - ti;
-    s->code_time -= profile_getclock();
-#endif
-    gen_code_size = tcg_gen_code(s, gen_code_buf);
-    //printf(">>> code size = %u: ", gen_code_size);
-    //int i;
-    //for (i = 0; i < gen_code_size; i++) {
-    //    printf(" %02x", gen_code_buf[i]);
-    //}
-    //printf("\n");
-    *gen_code_size_ptr = gen_code_size;
-#ifdef CONFIG_PROFILER
-    s->code_time += profile_getclock();
-    s->code_in_len += tb->size;
-    s->code_out_len += gen_code_size;
-#endif
-
-    return 0;
-}
-
-/* The cpu state corresponding to 'searched_pc' is restored.
- */
+/* The cpu state corresponding to 'searched_pc' is restored.  */
 static int cpu_restore_state_from_tb(CPUState *cpu, TranslationBlock *tb,
                                      uintptr_t searched_pc)
 {
@@ -1097,7 +1029,11 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     TranslationBlock *tb;
     tb_page_addr_t phys_pc, phys_page2;
-    int code_gen_size;
+    tcg_insn_unit *gen_code_buf;
+    int gen_code_size;
+#ifdef CONFIG_PROFILER
+    int64_t ti;
+#endif
 
     phys_pc = get_page_addr_code(env, pc);
     /* UNICORN: Commented out
@@ -1113,13 +1049,71 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
         /* Don't forget to invalidate previous TB info.  */
         tcg_ctx->tb_ctx.tb_invalidated_flag = 1;
     }
-    tb->tc_ptr = tcg_ctx->code_gen_ptr;
+    gen_code_buf = tcg_ctx->code_gen_ptr;
+    tb->tc_ptr = gen_code_buf;
     tb->cs_base = cs_base;
     tb->flags = flags;
     tb->cflags = cflags;
-    cpu_gen_code(env, tb, &code_gen_size);  // qq
-    tcg_ctx->code_gen_ptr = (void *)(((uintptr_t)tcg_ctx->code_gen_ptr +
-            code_gen_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
+
+#ifdef CONFIG_PROFILER
+    tcg_ctx->tb_count1++; /* includes aborted translations because of
+                       exceptions */
+    ti = profile_getclock();
+#endif
+
+    tcg_func_start(tcg_ctx);
+
+    gen_intermediate_code(env, tb);
+
+    // Unicorn: when tracing block, patch block size operand for callback
+    if (env->uc->size_arg != -1 && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, tb->pc)) {
+        if (env->uc->block_full)    // block size is unknown
+            *(tcg_ctx->gen_opparam_buf + env->uc->size_arg) = 0;
+        else
+            *(tcg_ctx->gen_opparam_buf + env->uc->size_arg) = tb->size;
+    }
+
+    // UNICORN: Commented out
+    //trace_translate_block(tb, tb->pc, tb->tc_ptr);
+
+    /* generate machine code */
+    tb->tb_next_offset[0] = 0xffff;
+    tb->tb_next_offset[1] = 0xffff;
+    tcg_ctx->tb_next_offset = tb->tb_next_offset;
+#ifdef USE_DIRECT_JUMP
+    tcg_ctx->tb_jmp_offset = tb->tb_jmp_offset;
+    tcg_ctx->tb_next = NULL;
+#else
+    tcg_ctx->tb_jmp_offset = NULL;
+    tcg_ctx->tb_next = tb->tb_next;
+#endif
+
+#ifdef CONFIG_PROFILER
+    tcg_ctx->tb_count++;
+    tcg_ctx->interm_time += profile_getclock() - ti;
+    tcg_ctx->code_time -= profile_getclock();
+#endif
+
+    gen_code_size = tcg_gen_code(tcg_ctx, gen_code_buf);
+
+#ifdef CONFIG_PROFILER
+    tcg_ctx.code_time += profile_getclock();
+    tcg_ctx.code_in_len += tb->size;
+    tcg_ctx.code_out_len += gen_code_size;
+#endif
+
+/* UNICORN: Commented out
+#ifdef DEBUG_DISAS
+    if (qemu_loglevel_mask(CPU_LOG_TB_OUT_ASM)) {
+        qemu_log("OUT: [size=%d]\n", gen_code_size);
+        log_disas(tb->tc_ptr, gen_code_size);
+        qemu_log("\n");
+        qemu_log_flush();
+    }
+#endif*/
+
+    tcg_ctx->code_gen_ptr = (void *)(((uintptr_t)gen_code_buf +
+            gen_code_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
 
     phys_page2 = -1;
     /* check next page if needed */
