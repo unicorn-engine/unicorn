@@ -804,7 +804,6 @@ struct TCGContext {
     TCGv_i64 cpu_fpr[32];   // TARGET_DPREGS = 32 for Sparc64, 16 for Sparc
 
     target_ulong gen_opc_npc[OPC_BUF_SIZE];
-    target_ulong gen_opc_jump_pc[2];
 
     // void *cpu_cc_src, *cpu_cc_src2, *cpu_cc_dst;
     void *cpu_fsr, *sparc_cpu_pc, *cpu_npc, *cpu_gregs[8];
