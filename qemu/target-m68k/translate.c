@@ -3184,6 +3184,5 @@ done_generating:
 void restore_state_to_opc(CPUM68KState *env, TranslationBlock *tb,
                           target_ulong *data)
 {
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
     env->pc = data[0];
 }
