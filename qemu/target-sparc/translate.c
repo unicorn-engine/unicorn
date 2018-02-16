@@ -5707,12 +5707,13 @@ void gen_intermediate_code_init(CPUSPARCState *env)
     uc->init_tcg = true;
 }
 
-void restore_state_to_opc(CPUSPARCState *env, TranslationBlock *tb, int pc_pos)
+void restore_state_to_opc(CPUSPARCState *env, TranslationBlock *tb,
+                          target_ulong *data)
 {
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    target_ulong pc, npc;
-    env->pc = pc = tcg_ctx->gen_opc_pc[pc_pos];
-    npc = tcg_ctx->gen_opc_npc[pc_pos];
+    target_ulong pc = data[0];
+    target_ulong npc = data[1];
+
+    env->pc = pc;
     if (npc == DYNAMIC_PC) {
         /* dynamic NPC: already stored */
     } else if (npc & JUMP_PC) {

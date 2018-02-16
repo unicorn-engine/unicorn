@@ -712,6 +712,8 @@ struct TCGContext {
     uint16_t gen_opc_icount[OPC_BUF_SIZE];
     uint8_t gen_opc_instr_start[OPC_BUF_SIZE];
 
+    target_ulong gen_opc_data[TARGET_INSN_START_WORDS];
+
     // Unicorn engine variables
     struct uc_struct *uc;
     /* qemu/target-i386/translate.c: global register indexes */

@@ -8789,12 +8789,12 @@ void gen_intermediate_code_pc(CPUX86State *env, TranslationBlock *tb)
             x86_env_get_cpu(env), tb, true);
 }
 
-void restore_state_to_opc(CPUX86State *env, TranslationBlock *tb, int pc_pos)
+void restore_state_to_opc(CPUX86State *env, TranslationBlock *tb,
+                          target_ulong *data)
 {
-    int cc_op;
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    env->eip = tcg_ctx->gen_opc_pc[pc_pos] - tb->cs_base;
-    cc_op = tcg_ctx->gen_opc_cc_op[pc_pos];
-    if (cc_op != CC_OP_DYNAMIC)
+    int cc_op = data[1];
+    env->eip = data[0] - tb->cs_base;
+    if (cc_op != CC_OP_DYNAMIC) {
         env->cc_op = cc_op;
+    }
 }

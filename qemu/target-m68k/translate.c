@@ -3213,8 +3213,9 @@ void gen_intermediate_code_pc(CPUM68KState *env, TranslationBlock *tb)
     gen_intermediate_code_internal(m68k_env_get_cpu(env), tb, true);
 }
 
-void restore_state_to_opc(CPUM68KState *env, TranslationBlock *tb, int pc_pos)
+void restore_state_to_opc(CPUM68KState *env, TranslationBlock *tb,
+                          target_ulong *data)
 {
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    env->pc = tcg_ctx->gen_opc_pc[pc_pos];
+    env->pc = data[0];
 }

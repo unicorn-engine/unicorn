@@ -11852,14 +11852,14 @@ void arm_cpu_dump_state(CPUState *cs, FILE *f, fprintf_function cpu_fprintf,
 }
 #endif
 
-void restore_state_to_opc(CPUARMState *env, TranslationBlock *tb, int pc_pos)
+void restore_state_to_opc(CPUARMState *env, TranslationBlock *tb,
+                          target_ulong *data)
 {
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
     if (is_a64(env)) {
-        env->pc = tcg_ctx->gen_opc_pc[pc_pos];
+        env->pc = data[0];
         env->condexec_bits = 0;
     } else {
-        env->regs[15] = tcg_ctx->gen_opc_pc[pc_pos];
-        env->condexec_bits = tcg_ctx->gen_opc_condexec_bits[pc_pos];
+        env->regs[15] = data[0];
+        env->condexec_bits = data[1];
     }
 }
