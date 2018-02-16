@@ -62,12 +62,10 @@
 #define APIC_LVT_DELIV_MOD_SHIFT        8
 
 #define APIC_LVT_TIMER_TSCDEADLINE      (2 << APIC_LVT_TIMER_SHIFT)
-#define APIC_LVT_TIMER_PERIODIC         (1<<17)
-#define APIC_LVT_MASKED                 (1<<16)
-#define APIC_LVT_LEVEL_TRIGGER          (1<<15)
-#define APIC_LVT_REMOTE_IRR             (1<<14)
-#define APIC_INPUT_POLARITY             (1<<13)
-#define APIC_SEND_PENDING               (1<<12)
+#define APIC_LVT_TIMER_PERIODIC         (1 << APIC_LVT_TIMER_SHIFT)
+#define APIC_LVT_MASKED                 (1 << APIC_LVT_MASKED_SHIFT)
+#define APIC_LVT_LEVEL_TRIGGER          (1 << APIC_LVT_LEVEL_TRIGGER_SHIFT)
+#define APIC_LVT_REMOTE_IRR             (1 << APIC_LVT_REMOTE_IRR_SHIFT)
 #define APIC_LVT_INT_POLARITY           (1 << APIC_LVT_INT_POLARITY_SHIFT)
 #define APIC_LVT_DELIV_STS              (1 << APIC_LVT_DELIV_STS_SHIFT)
 #define APIC_LVT_DELIV_MOD              (7 << APIC_LVT_DELIV_MOD_SHIFT)
