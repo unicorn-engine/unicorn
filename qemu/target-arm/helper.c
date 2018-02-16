@@ -545,8 +545,13 @@ static const ARMCPRegInfo v6_cp_reginfo[] = {
     /* prefetch by MVA in v6, NOP in v7 */
     { "MVA_prefetch", 15,7,13, 0,0,1, 0,
       ARM_CP_NOP, PL1_W, },
-    { "ISB", 15,7,5, 0,0,4, 0,
-      ARM_CP_NOP, PL0_W, },
+    /* We need to break the TB after ISB to execute self-modifying code
+     * correctly and also to take any pending interrupts immediately.
+     * So use arm_cp_write_ignore() function instead of ARM_CP_NOP flag.
+     */
+    { "ISB", 15,7,5, 0,0,4, 0, ARM_CP_NO_RAW,
+      PL0_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, arm_cp_write_ignore },
     { "DSB", 15,7,10, 0,0,4, 0,
       ARM_CP_NOP, PL0_W, },
     { "DMB", 15,7,10, 0,0,5, 0,
