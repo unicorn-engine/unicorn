@@ -211,6 +211,7 @@ static target_long decode_sleb128(uint8_t **pp)
 
 static int encode_search(TCGContext *tcg_ctx, TranslationBlock *tb, uint8_t *block)
 {
+    uint8_t *highwater = tcg_ctx->code_gen_highwater;
     uint8_t *p = block;
     int i, j, n;
 
@@ -229,6 +230,14 @@ static int encode_search(TCGContext *tcg_ctx, TranslationBlock *tb, uint8_t *blo
         }
         prev = (i == 0 ? 0 : tcg_ctx->gen_insn_end_off[i - 1]);
         p = encode_sleb128(p, tcg_ctx->gen_insn_end_off[i] - prev);
+
+        /* Test for (pending) buffer overflow.  The assumption is that any
+           one row beginning below the high water mark cannot overrun
+           the buffer completely.  Thus we can test for overflow after
+           encoding a row without having to check during encoding.  */
+        if (unlikely(p > highwater)) {
+            return -1;
+        }
     }
 
     return p - block;
@@ -827,9 +836,7 @@ static TranslationBlock *tb_alloc(struct uc_struct *uc, target_ulong pc)
     TranslationBlock *tb;
     TCGContext *tcg_ctx = uc->tcg_ctx;
 
-    if (tcg_ctx->tb_ctx.nb_tbs >= tcg_ctx->code_gen_max_blocks ||
-        (size_t)(((char*)tcg_ctx->code_gen_ptr - (char*)tcg_ctx->code_gen_buffer)) >=
-         tcg_ctx->code_gen_buffer_max_size) {
+    if (tcg_ctx->tb_ctx.nb_tbs >= tcg_ctx->code_gen_max_blocks) {
         return NULL;
     }
     tb = &tcg_ctx->tb_ctx.tbs[tcg_ctx->tb_ctx.nb_tbs++];
@@ -1171,11 +1178,13 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
         cflags |= CF_USE_ICOUNT;
     }*/
     tb = tb_alloc(env->uc, pc);
-    if (!tb) {
+    if (unlikely(!tb)) {
+ buffer_overflow:
         /* flush must be done */
         tb_flush(cpu);
         /* cannot fail at this point */
         tb = tb_alloc(env->uc, pc);
+        assert(tb != NULL);
         /* Don't forget to invalidate previous TB info.  */
         tcg_ctx->tb_ctx.tb_invalidated_flag = 1;
     }
@@ -1224,8 +1233,19 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     tcg_ctx->code_time -= profile_getclock();
 #endif
 
+    /* ??? Overflow could be handled better here.  In particular, we
+       don't need to re-do gen_intermediate_code, nor should we re-do
+       the tcg optimization currently hidden inside tcg_gen_code.  All
+       that should be required is to flush the TBs, allocate a new TB,
+       re-initialize it per above, and re-do the actual code generation.  */
     gen_code_size = tcg_gen_code(tcg_ctx, gen_code_buf);
+    if (unlikely(gen_code_size < 0)) {
+        goto buffer_overflow;
+    }
     search_size = encode_search(tcg_ctx, tb, (void *)gen_code_buf + gen_code_size);
+    if (unlikely(search_size < 0)) {
+        goto buffer_overflow;
+    }
 
 #ifdef CONFIG_PROFILER
     tcg_ctx.code_time += profile_getclock();
@@ -1785,8 +1805,8 @@ void dump_exec_info(FILE *f, fprintf_function cpu_fprintf)
     /* XXX: avoid using doubles ? */
     cpu_fprintf(f, "Translation buffer state:\n");
     cpu_fprintf(f, "gen code size       %td/%zd\n",
-                tcg_ctx.code_gen_ptr - tcg_ctx.code_gen_buffer,
-                tcg_ctx.code_gen_buffer_max_size);
+                tcg_ctx->code_gen_ptr - tcg_ctx->code_gen_buffer,
+                tcg_ctx->code_gen_highwater - tcg_ctx->code_gen_buffer);
     cpu_fprintf(f, "TB count            %d/%d\n",
             tcg_ctx.tb_ctx.nb_tbs, tcg_ctx.code_gen_max_blocks);
     cpu_fprintf(f, "TB avg target size  %d max=%d bytes\n",
