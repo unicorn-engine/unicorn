@@ -597,8 +597,18 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 void free_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
-    if (tcg_ctx->code_gen_buffer)
-        munmap(tcg_ctx->code_gen_buffer, tcg_ctx->code_gen_buffer_size);
+
+    // Unicorn: Free the prologue rather than the buffer directly, as the prologue
+    //          has the starting address of the same memory block that the code
+    //          buffer is within. As the prologue is generated at the beginning of
+    //          the memory block, the code buffer itself has the size of the prologue
+    //          decremented from it. If the buffer was freed, then the address would
+    //          be off by whatever size the prologue data is.
+    //
+    //          See tcg_prologue_init in tcg.c for more info.
+    //
+    if (tcg_ctx->code_gen_prologue)
+        munmap(tcg_ctx->code_gen_prologue, tcg_ctx->code_gen_buffer_size);
 }
 
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
@@ -676,8 +686,18 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 void free_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
-    if (tcg_ctx->code_gen_buffer)
-        g_free(tcg_ctx->code_gen_buffer);
+
+    // Unicorn: Free the prologue rather than the buffer directly, as the prologue
+    //          has the starting address of the same memory block that the code
+    //          buffer is within. As the prologue is generated at the beginning of
+    //          the memory block, the code buffer itself has the size of the prologue
+    //          decremented from it. If the buffer was freed, then the address would
+    //          be off by whatever size the prologue data is.
+    //
+    //          See tcg_prologue_init in tcg.c for more info.
+    //
+    if (tcg_ctx->code_gen_prologue)
+        g_free(tcg_ctx->code_gen_prologue);
 }
 
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
@@ -721,24 +741,16 @@ static inline void code_gen_alloc(struct uc_struct *uc, size_t tb_size)
         exit(1);
     }
 
-    //qemu_madvise(tcg_ctx.code_gen_buffer, tcg_ctx.code_gen_buffer_size,
-    //        QEMU_MADV_HUGEPAGE);
+    // Unicorn: Commented out
+    //qemu_madvise(tcg_ctx->code_gen_buffer, tcg_ctx->code_gen_buffer_size,
+    //             QEMU_MADV_HUGEPAGE);
 
-    /* Steal room for the prologue at the end of the buffer.  This ensures
-       (via the MAX_CODE_GEN_BUFFER_SIZE limits above) that direct branches
-       from TB's to the prologue are going to be in range.  It also means
-       that we don't need to mark (additional) portions of the data segment
-       as executable.  */
-    tcg_ctx->code_gen_prologue = (char*)tcg_ctx->code_gen_buffer +
-            tcg_ctx->code_gen_buffer_size - 1024;
-    tcg_ctx->code_gen_buffer_size -= 1024;
-
-    tcg_ctx->code_gen_buffer_max_size = tcg_ctx->code_gen_buffer_size -
-        (TCG_MAX_OP_SIZE * OPC_BUF_SIZE);
-    tcg_ctx->code_gen_max_blocks = tcg_ctx->code_gen_buffer_size /
-            CODE_GEN_AVG_BLOCK_SIZE;
-    tcg_ctx->tb_ctx.tbs =
-            g_malloc(tcg_ctx->code_gen_max_blocks * sizeof(TranslationBlock));
+    /* Estimate a good size for the number of TBs we can support.  We
+       still haven't deducted the prologue from the buffer size here,
+       but that's minimal and won't affect the estimate much.  */
+    tcg_ctx->code_gen_max_blocks
+        = tcg_ctx->code_gen_buffer_size / CODE_GEN_AVG_BLOCK_SIZE;
+    tcg_ctx->tb_ctx.tbs = g_new(TranslationBlock, tcg_ctx->code_gen_max_blocks);
 }
 
 /* Must be called before using the QEMU cpus. 'tb_size' is the size
@@ -751,7 +763,6 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
     cpu_gen_init(uc);
     code_gen_alloc(uc, tb_size);
     tcg_ctx = uc->tcg_ctx;
-    tcg_ctx->code_gen_ptr = tcg_ctx->code_gen_buffer;
     tcg_ctx->uc = uc;
     page_init();
 #if !defined(CONFIG_USER_ONLY) || !defined(CONFIG_USE_GUEST_BASE)
