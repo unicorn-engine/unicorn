@@ -8665,8 +8665,12 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     dc->is_jmp = DISAS_NEXT;
     lj = -1;
     max_insns = tb->cflags & CF_COUNT_MASK;
-    if (max_insns == 0)
+    if (max_insns == 0) {
         max_insns = CF_COUNT_MASK;
+    }
+    if (max_insns > TCG_MAX_INSNS) {
+        max_insns = TCG_MAX_INSNS;
+    }
 
     // Unicorn: trace this block on request
     // Only hook this block if the previous block was not truncated due to space

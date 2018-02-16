@@ -19744,8 +19744,12 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
 
     num_insns = 0;
     max_insns = tb->cflags & CF_COUNT_MASK;
-    if (max_insns == 0)
+    if (max_insns == 0) {
         max_insns = CF_COUNT_MASK;
+    }
+    if (max_insns > TCG_MAX_INSNS) {
+        max_insns = TCG_MAX_INSNS;
+    }
     LOG_DISAS("\ntb %p idx %d hflags %04x\n", tb, ctx.mem_idx, ctx.hflags);
 
     // Unicorn: early check to see if the address of this block is the until address
