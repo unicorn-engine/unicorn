@@ -93,6 +93,9 @@
     <ClCompile Include="..\..\..\qemu\tcg\tcg.c">
       <Filter>tcg</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\tcg\tcg-common.c">
+      <Filter>tcg</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c">
       <Filter>tcg\i386</Filter>
     </ClCompile>
@@ -124,5 +127,6 @@
       <Filter>target-mips</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\translate-all.c" />
+    <ClCompile Include="..\..\..\qemu\translate-common.c" />
   </ItemGroup>
 </Project>

@@ -94,6 +94,7 @@
     <ClCompile Include="..\..\..\qemu\memory.c" />
     <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
     <ClCompile Include="..\..\..\qemu\translate-all.c" />
+    <ClCompile Include="..\..\..\qemu\translate-common.c" />
     <ClCompile Include="..\..\..\qemu\fpu\softfloat.c">
       <Filter>fpu</Filter>
     </ClCompile>
@@ -110,6 +111,9 @@
       <Filter>hw\intc</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\target-i386\arch_memory_mapping.c">
+      <Filter>target-i386</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-i386\bpt_helper.c">
       <Filter>target-i386</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\target-i386\cc_helper.c">
@@ -152,6 +156,9 @@
       <Filter>target-i386</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\tcg.c">
+      <Filter>tcg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\tcg\tcg-common.c">
       <Filter>tcg</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\optimize.c">

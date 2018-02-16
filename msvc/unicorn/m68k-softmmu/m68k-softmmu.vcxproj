@@ -54,7 +54,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\optimize.c" />
     <ClCompile Include="..\..\..\qemu\tcg\tcg.c" />
+    <ClCompile Include="..\..\..\qemu\tcg\tcg-common.c" />
     <ClCompile Include="..\..\..\qemu\translate-all.c" />
+    <ClCompile Include="..\..\..\qemu\translate-common.c" />
     <ClCompile Include="..\..\..\qemu\hw\m68k\dummy_m68k.c" />
     <ClCompile Include="..\..\..\qemu\target-m68k\cpu.c" />
     <ClCompile Include="..\..\..\qemu\target-m68k\helper.c" />

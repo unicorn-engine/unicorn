@@ -71,7 +71,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\optimize.c" />
     <ClCompile Include="..\..\..\qemu\tcg\tcg.c" />
+    <ClCompile Include="..\..\..\qemu\tcg\tcg-common.c" />
     <ClCompile Include="..\..\..\qemu\translate-all.c" />
+    <ClCompile Include="..\..\..\qemu\translate-common.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{63050112-E486-4396-B5E4-303C3BC12D39}</ProjectGuid>

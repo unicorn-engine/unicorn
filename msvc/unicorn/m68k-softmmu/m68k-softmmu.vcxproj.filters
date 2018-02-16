@@ -77,6 +77,9 @@
     <ClCompile Include="..\..\..\qemu\tcg\tcg.c">
       <Filter>tcg</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\tcg\tcg-common.c">
+      <Filter>tcg</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c">
       <Filter>tcg\i386</Filter>
     </ClCompile>
@@ -88,6 +91,7 @@
     <ClCompile Include="..\..\..\qemu\memory.c" />
     <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
     <ClCompile Include="..\..\..\qemu\translate-all.c" />
+    <ClCompile Include="..\..\..\qemu\translate-common.c" />
     <ClCompile Include="..\..\..\qemu\hw\m68k\dummy_m68k.c">
       <Filter>hw\m68k</Filter>
     </ClCompile>
