@@ -8284,18 +8284,20 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                 ot = MO_64;
             else
                 ot = MO_32;
-            /* XXX: do it dynamically with CR4.DE bit */
-            if (reg == 4 || reg == 5 || reg >= 8)
+            if (reg >= 8) {
                 goto illegal_op;
+            }
             if (b & 2) {
                 gen_svm_check_intercept(s, pc_start, SVM_EXIT_WRITE_DR0 + reg);
                 gen_op_mov_v_reg(tcg_ctx, ot, *cpu_T[0], rm);
-                gen_helper_movl_drN_T0(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, reg), *cpu_T[0]);
+                tcg_gen_movi_i32(tcg_ctx, cpu_tmp2_i32, reg);
+                gen_helper_set_dr(tcg_ctx, tcg_ctx->cpu_env, cpu_tmp2_i32, *cpu_T[0]);
                 gen_jmp_im(s, s->pc - s->cs_base);
                 gen_eob(s);
             } else {
                 gen_svm_check_intercept(s, pc_start, SVM_EXIT_READ_DR0 + reg);
-                tcg_gen_ld_tl(tcg_ctx, *cpu_T[0], cpu_env, offsetof(CPUX86State,dr[reg]));
+                tcg_gen_movi_i32(tcg_ctx, cpu_tmp2_i32, reg);
+                gen_helper_get_dr(tcg_ctx, *cpu_T[0], tcg_ctx->cpu_env, cpu_tmp2_i32);
                 gen_op_mov_reg_v(tcg_ctx, ot, rm, *cpu_T[0]);
             }
         }
