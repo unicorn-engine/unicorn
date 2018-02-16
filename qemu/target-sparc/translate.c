@@ -1022,18 +1022,20 @@ static inline void gen_branch2(DisasContext *dc, target_ulong pc1,
     gen_goto_tb(dc, 1, pc2, pc2 + 4);
 }
 
-static inline void gen_branch_a(DisasContext *dc, target_ulong pc1,
-                                target_ulong pc2, TCGv r_cond)
+static void gen_branch_a(DisasContext *dc, target_ulong pc1)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGLabel *l1 = gen_new_label(tcg_ctx);
+    target_ulong npc = dc->npc;
 
-    tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, r_cond, 0, l1);
+    tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, *(TCGv *)tcg_ctx->cpu_cond, 0, l1);
 
-    gen_goto_tb(dc, 0, pc2, pc1);
+    gen_goto_tb(dc, 0, npc, pc1);
 
     gen_set_label(tcg_ctx, l1);
-    gen_goto_tb(dc, 1, pc2 + 4, pc2 + 8);
+    gen_goto_tb(dc, 1, npc + 4, npc + 8);
+
+    dc->is_br = 1;
 }
 
 static inline void gen_generic_branch(DisasContext *dc)
@@ -1477,8 +1479,7 @@ static void do_branch(DisasContext *dc, int32_t offset, uint32_t insn, int cc)
         flush_cond(dc);
         gen_cond(dc, *(TCGv *)tcg_ctx->cpu_cond, cc, cond);
         if (a) {
-            gen_branch_a(dc, target, dc->npc, *(TCGv *)tcg_ctx->cpu_cond);
-            dc->is_br = 1;
+            gen_branch_a(dc, target);
         } else {
             dc->pc = dc->npc;
             dc->jump_pc[0] = target;
@@ -1527,8 +1528,7 @@ static void do_fbranch(DisasContext *dc, int32_t offset, uint32_t insn, int cc)
         flush_cond(dc);
         gen_fcond(dc, *(TCGv *)tcg_ctx->cpu_cond, cc, cond);
         if (a) {
-            gen_branch_a(dc, target, dc->npc, *(TCGv *)tcg_ctx->cpu_cond);
-            dc->is_br = 1;
+            gen_branch_a(dc, target);
         } else {
             dc->pc = dc->npc;
             dc->jump_pc[0] = target;
@@ -1557,8 +1557,7 @@ static void do_branch_reg(DisasContext *dc, int32_t offset, uint32_t insn,
     flush_cond(dc);
     gen_cond_reg(dc, *(TCGv *)tcg_ctx->cpu_cond, cond, r_reg);
     if (a) {
-        gen_branch_a(dc, target, dc->npc, *(TCGv *)tcg_ctx->cpu_cond);
-        dc->is_br = 1;
+        gen_branch_a(dc, target);
     } else {
         dc->pc = dc->npc;
         dc->jump_pc[0] = target;
