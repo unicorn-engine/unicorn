@@ -735,7 +735,7 @@ static inline void tcg_gen_insn_start(TCGContext *tcg_ctx, target_ulong pc, targ
     tcg_gen_op3(tcg_ctx, INDEX_op_insn_start, pc, a1, a2);
 }
 # else
-static inline void tcg_gen_insn_start(TCGContect *tcg_ctx, target_ulong pc, target_ulong a1,
+static inline void tcg_gen_insn_start(TCGContext *tcg_ctx, target_ulong pc, target_ulong a1,
                                       target_ulong a2)
 {
     tcg_gen_op6(tcg_ctx, INDEX_op_insn_start,

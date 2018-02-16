@@ -19722,6 +19722,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     ctx.CP0_Config1 = env->CP0_Config1;
     ctx.tb = tb;
     ctx.bstate = BS_NONE;
+    ctx.btarget = 0;
     ctx.kscrexist = (env->CP0_Config4 >> CP0C4_KScrExist) & 0xff;
     ctx.rxi = (env->CP0_Config3 >> CP0C3_RXI) & 1;
     ctx.ie = (env->CP0_Config4 >> CP0C4_IE) & 3;
@@ -19798,7 +19799,7 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             tcg_ctx->gen_opc_instr_start[lj] = 1;
             tcg_ctx->gen_opc_icount[lj] = num_insns;
         }
-        tcg_gen_insn_start(tcg_ctx, ctx.pc);
+        tcg_gen_insn_start(tcg_ctx, ctx.pc, ctx.hflags & MIPS_HFLAG_BMASK, ctx.btarget);
         num_insns++;
 
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
