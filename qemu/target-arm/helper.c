@@ -2851,6 +2851,8 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0 },
     { "CNTHP_CTL_EL2", 0,14,2, 3,4,1, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
+    { "MDCR_EL2", 0,1,1, 3,4,1, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
     REGINFO_SENTINEL
 };
 
@@ -3005,6 +3007,13 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_HYP].ctl), {0, 0},
       NULL, NULL, gt_hyp_ctl_write, NULL, raw_write },
 #endif
+    /* The only field of MDCR_EL2 that has a defined architectural reset value
+     * is MDCR_EL2.HPMN which should reset to the value of PMCR_EL0.N; but we
+     * don't impelment any PMU event counters, so using zero as a reset
+     * value for MDCR_EL2 is okay
+     */
+    { "MDCR_EL2", 0,1,1, 3,4,1, ARM_CP_STATE_BOTH, 0,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mdcr_el2), },
     REGINFO_SENTINEL
 };
 
