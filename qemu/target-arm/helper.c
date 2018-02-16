@@ -3089,6 +3089,23 @@ static CPAccessResult ctr_el0_access(CPUARMState *env, const ARMCPRegInfo *ri)
     return CP_ACCESS_OK;
 }
 
+static void oslar_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                        uint64_t value)
+{
+    /* Writes to OSLAR_EL1 may update the OS lock status, which can be
+     * read via a bit in OSLSR_EL1.
+     */
+    int oslock;
+
+    if (ri->state == ARM_CP_STATE_AA32) {
+        oslock = (value == 0xC5ACCE55);
+    } else {
+        oslock = value & 1;
+    }
+
+    env->cp15.oslsr_el1 = deposit32(env->cp15.oslsr_el1, 1, 1, oslock);
+}
+
 static const ARMCPRegInfo debug_cp_reginfo[] = {
     /* DBGDRAR, DBGDSAR: always RAZ since we don't implement memory mapped
      * debug components. The AArch64 version of DBGDRAR is named MDRAR_EL1;
@@ -3111,9 +3128,11 @@ static const ARMCPRegInfo debug_cp_reginfo[] = {
     { "MDCCSR_EL0", 14,0,1, 2,0,0, ARM_CP_STATE_BOTH,
       ARM_CP_ALIAS, PL1_R, 0, NULL, 0, offsetof(CPUARMState, cp15.mdscr_el1), {0, 0},
       NULL, NULL, NULL, NULL, NULL, NULL },
-    /* We define a dummy WI OSLAR_EL1, because Linux writes to it. */
-    { "OSLAR_EL1", 14,1,0, 2,0,4, ARM_CP_STATE_BOTH,
-      ARM_CP_NOP, PL1_W, },
+    { "OSLAR_EL1", 14,1,0, 2,0,4, ARM_CP_STATE_BOTH, ARM_CP_NO_RAW,
+      PL1_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, oslar_write },
+    { "OSLSR_EL1", 14,1,1, 2,0,4, ARM_CP_STATE_BOTH, 0,
+      PL1_R, 0, NULL, 10, offsetof(CPUARMState, cp15.oslsr_el1) },
     /* Dummy OSDLR_EL1: 32-bit Linux will read this */
     { "OSDLR_EL1", 14,1,3, 2,0,4, ARM_CP_STATE_BOTH,
       ARM_CP_NOP, PL1_RW, },
