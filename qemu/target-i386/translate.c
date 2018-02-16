@@ -1364,6 +1364,20 @@ static inline void gen_cmps(DisasContext *s, TCGMemOp ot)
     gen_op_add_reg_T0(tcg_ctx, s->aflag, R_EDI);
 }
 
+static void gen_bpt_io(DisasContext *s, TCGv_i32 t_port, int ot)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (s->flags & HF_IOBPT_MASK) {
+        TCGv_i32 t_size = tcg_const_i32(tcg_ctx, 1 << ot);
+        TCGv t_next = tcg_const_tl(tcg_ctx, s->pc - s->cs_base);
+
+        gen_helper_bpt_io(tcg_ctx, tcg_ctx->cpu_env, t_port, t_size, t_next);
+        tcg_temp_free_i32(tcg_ctx, t_size);
+        tcg_temp_free(tcg_ctx, t_next);
+    }
+}
+
 static inline void gen_ins(DisasContext *s, TCGMemOp ot)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -1383,6 +1397,7 @@ static inline void gen_ins(DisasContext *s, TCGMemOp ot)
     gen_op_st_v(s, ot, *cpu_T[0], cpu_A0);
     gen_op_movl_T0_Dshift(tcg_ctx, ot);
     gen_op_add_reg_T0(tcg_ctx, s->aflag, R_EDI);
+    gen_bpt_io(s, cpu_tmp2_i32, ot);
 }
 
 static inline void gen_outs(DisasContext *s, TCGMemOp ot)
@@ -1404,6 +1419,7 @@ static inline void gen_outs(DisasContext *s, TCGMemOp ot)
 
     gen_op_movl_T0_Dshift(tcg_ctx, ot);
     gen_op_add_reg_T0(tcg_ctx, s->aflag, R_ESI);
+    gen_bpt_io(s, cpu_tmp2_i32, ot);
 }
 
 /* same method as Valgrind : we generate jumps to current or next
@@ -6952,6 +6968,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         tcg_gen_movi_i32(tcg_ctx, cpu_tmp2_i32, val);
         gen_helper_in_func(tcg_ctx, ot, *cpu_T[1], cpu_tmp2_i32);
         gen_op_mov_reg_v(tcg_ctx, ot, R_EAX, *cpu_T[1]);
+        gen_bpt_io(s, cpu_tmp2_i32, ot);
         break;
     case 0xe6:
     case 0xe7:
@@ -6965,6 +6982,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         tcg_gen_movi_i32(tcg_ctx, cpu_tmp2_i32, val);
         tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp3_i32, *cpu_T[1]);
         gen_helper_out_func(tcg_ctx, ot, cpu_tmp2_i32, cpu_tmp3_i32);
+        gen_bpt_io(s, cpu_tmp2_i32, ot);
         break;
     case 0xec:
     case 0xed:
@@ -6975,6 +6993,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp2_i32, *cpu_T[0]);
         gen_helper_in_func(tcg_ctx, ot, *cpu_T[1], cpu_tmp2_i32);
         gen_op_mov_reg_v(tcg_ctx, ot, R_EAX, *cpu_T[1]);
+        gen_bpt_io(s, cpu_tmp2_i32, ot);
         break;
     case 0xee:
     case 0xef:
@@ -6987,6 +7006,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp2_i32, *cpu_T[0]);
         tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp3_i32, *cpu_T[1]);
         gen_helper_out_func(tcg_ctx, ot, cpu_tmp2_i32, cpu_tmp3_i32);
+        gen_bpt_io(s, cpu_tmp2_i32, ot);
         break;
 
         /************************/
