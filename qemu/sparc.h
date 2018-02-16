@@ -147,7 +147,6 @@
 #define arm_free_cc arm_free_cc_sparc
 #define arm_generate_debug_exceptions arm_generate_debug_exceptions_sparc
 #define gen_intermediate_code gen_intermediate_code_sparc
-#define gen_intermediate_code_pc gen_intermediate_code_pc_sparc
 #define arm_gen_test_cc arm_gen_test_cc_sparc
 #define arm_gt_ptimer_cb arm_gt_ptimer_cb_sparc
 #define arm_gt_vtimer_cb arm_gt_vtimer_cb_sparc
@@ -1141,8 +1140,8 @@
 #define gen_helper_wfi gen_helper_wfi_sparc
 #define gen_helper_yield gen_helper_yield_sparc
 #define gen_hvc gen_hvc_sparc
-#define gen_intermediate_code_internal gen_intermediate_code_internal_sparc
-#define gen_intermediate_code_internal_a64 gen_intermediate_code_internal_a64_sparc
+#define gen_intermediate_code gen_intermediate_code_sparc
+#define gen_intermediate_code_a64 gen_intermediate_code_a64_sparc
 #define gen_iwmmxt_address gen_iwmmxt_address_sparc
 #define gen_iwmmxt_shift gen_iwmmxt_shift_sparc
 #define gen_jmp gen_jmp_sparc

@@ -11205,15 +11205,12 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
     free_tmp_a64(s);
 }
 
-void gen_intermediate_code_internal_a64(ARMCPU *cpu,
-                                        TranslationBlock *tb,
-                                        bool search_pc)
+void gen_intermediate_code_a64(ARMCPU *cpu, TranslationBlock *tb)
 {
     CPUState *cs = CPU(cpu);
     CPUARMState *env = &cpu->env;
     DisasContext dc1, *dc = &dc1;
     CPUBreakpoint *bp;
-    int j, lj;
     target_ulong pc_start;
     target_ulong next_page_start;
     int num_insns;
@@ -11279,7 +11276,6 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     init_tmp_a64_array(dc);
 
     next_page_start = (pc_start & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE;
-    lj = -1;
     num_insns = 0;
     max_insns = tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0) {
@@ -11326,18 +11322,6 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
             }
         }
 
-        if (search_pc) {
-            j = tcg_op_buf_count(tcg_ctx);
-            if (lj < j) {
-                lj++;
-                while (lj < j) {
-                    tcg_ctx->gen_opc_instr_start[lj++] = 0;
-                }
-            }
-            tcg_ctx->gen_opc_pc[lj] = dc->pc;
-            tcg_ctx->gen_opc_instr_start[lj] = 1;
-            //tcg_ctx->gen_opc_icount[lj] = num_insns;
-        }
         tcg_gen_insn_start(tcg_ctx, dc->pc, 0);
         num_insns++;
 
@@ -11449,16 +11433,8 @@ tb_end:
 done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
 
-    if (search_pc) {
-        j = tcg_op_buf_count(tcg_ctx);
-        lj++;
-        while (lj <= j) {
-            tcg_ctx->gen_opc_instr_start[lj++] = 0;
-        }
-    } else {
-        tb->size = dc->pc - pc_start;
-        tb->icount = num_insns;
-    }
+    tb->size = dc->pc - pc_start;
+    tb->icount = num_insns;
 
     env->uc->block_full = block_full;
 }

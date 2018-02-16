@@ -147,7 +147,6 @@
 #define arm_free_cc arm_free_cc_aarch64eb
 #define arm_generate_debug_exceptions arm_generate_debug_exceptions_aarch64eb
 #define gen_intermediate_code gen_intermediate_code_aarch64eb
-#define gen_intermediate_code_pc gen_intermediate_code_pc_aarch64eb
 #define arm_gen_test_cc arm_gen_test_cc_aarch64eb
 #define arm_gt_ptimer_cb arm_gt_ptimer_cb_aarch64eb
 #define arm_gt_vtimer_cb arm_gt_vtimer_cb_aarch64eb
@@ -1141,8 +1140,8 @@
 #define gen_helper_wfi gen_helper_wfi_aarch64eb
 #define gen_helper_yield gen_helper_yield_aarch64eb
 #define gen_hvc gen_hvc_aarch64eb
-#define gen_intermediate_code_internal gen_intermediate_code_internal_aarch64eb
-#define gen_intermediate_code_internal_a64 gen_intermediate_code_internal_a64_aarch64eb
+#define gen_intermediate_code gen_intermediate_code_aarch64eb
+#define gen_intermediate_code_a64 gen_intermediate_code_a64_aarch64eb
 #define gen_iwmmxt_address gen_iwmmxt_address_aarch64eb
 #define gen_iwmmxt_shift gen_iwmmxt_shift_aarch64eb
 #define gen_jmp gen_jmp_aarch64eb

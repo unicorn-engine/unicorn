@@ -115,18 +115,14 @@ static inline int default_exception_el(DisasContext *s)
 
 #ifdef TARGET_AARCH64
 void a64_translate_init(struct uc_struct *uc);
-void gen_intermediate_code_internal_a64(ARMCPU *cpu,
-                                        TranslationBlock *tb,
-                                        bool search_pc);
+void gen_intermediate_code_a64(ARMCPU *cpu, TranslationBlock *tb);
 void gen_a64_set_pc_im(DisasContext *s, uint64_t val);
 #else
 static inline void a64_translate_init(struct uc_struct *uc)
 {
 }
 
-static inline void gen_intermediate_code_internal_a64(ARMCPU *cpu,
-                                                      TranslationBlock *tb,
-                                                      bool search_pc)
+static inline void gen_intermediate_code_a64(ARMCPU *cpu, TranslationBlock *tb)
 {
 }
 

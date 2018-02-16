@@ -5357,16 +5357,13 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
     }
 }
 
-static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
-                                                  TranslationBlock *tb,
-                                                  bool spc)
+void gen_intermediate_code(CPUSPARCState * env, TranslationBlock * tb)
 {
+    SPARCCPU *cpu = sparc_env_get_cpu(env);
     CPUState *cs = CPU(cpu);
-    CPUSPARCState *env = &cpu->env;
     target_ulong pc_start, last_pc;
     DisasContext dc1, *dc = &dc1;
     CPUBreakpoint *bp;
-    int j, lj = -1;
     int num_insns = 0;
     int max_insns;
     unsigned int insn;
@@ -5386,7 +5383,6 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
     dc->fpu_enabled = tb_fpu_enabled(tb->flags);
     dc->address_mask_32bit = tb_am_enabled(tb->flags);
     dc->singlestep = (cs->singlestep_enabled); // || singlestep);
-
 
     // early check to see if the address of this block is the until address
     if (pc_start == env->uc->addr_end) {
@@ -5433,23 +5429,6 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
                     dc->is_br = 1;
                     goto exit_gen_loop;
                 }
-            }
-        }
-        if (spc) {
-            qemu_log("Search PC...\n");
-            j = tcg_op_buf_count(tcg_ctx);
-            if (lj < j) {
-                lj++;
-                while (lj < j)
-                    tcg_ctx->gen_opc_instr_start[lj++] = 0;
-                tcg_ctx->gen_opc_pc[lj] = dc->pc;
-                tcg_ctx->gen_opc_npc[lj] = dc->npc;
-                if (dc->npc & JUMP_PC) {
-                    assert(dc->jump_pc[1] == dc->pc + 4);
-                    tcg_ctx->gen_opc_npc[lj] = dc->jump_pc[0] | JUMP_PC;
-                }
-                tcg_ctx->gen_opc_instr_start[lj] = 1;
-                tcg_ctx->gen_opc_icount[lj] = num_insns;
             }
         }
         if (dc->npc & JUMP_PC) {
@@ -5520,30 +5499,10 @@ static inline void gen_intermediate_code_internal(SPARCCPU *cpu,
 done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
 
-    if (spc) {
-        j = tcg_op_buf_count(tcg_ctx);
-        lj++;
-        while (lj <= j)
-            tcg_ctx->gen_opc_instr_start[lj++] = 0;
-#if 0
-        log_page_dump();
-#endif
-    } else {
-        tb->size = last_pc + 4 - pc_start;
-        tb->icount = num_insns;
-    }
+    tb->size = last_pc + 4 - pc_start;
+    tb->icount = num_insns;
 
     env->uc->block_full = block_full;
-}
-
-void gen_intermediate_code(CPUSPARCState * env, TranslationBlock * tb)
-{
-    gen_intermediate_code_internal(sparc_env_get_cpu(env), tb, false);
-}
-
-void gen_intermediate_code_pc(CPUSPARCState * env, TranslationBlock * tb)
-{
-    gen_intermediate_code_internal(sparc_env_get_cpu(env), tb, true);
 }
 
 void gen_intermediate_code_init(CPUSPARCState *env)

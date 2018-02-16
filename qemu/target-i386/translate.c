@@ -8537,20 +8537,15 @@ void optimize_flags_init(struct uc_struct *uc)
 }
 
 /* generate intermediate code in gen_opc_buf and gen_opparam_buf for
-   basic block 'tb'. If search_pc is TRUE, also generate PC
-   information for each intermediate instruction. */
-static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
-                                                  X86CPU *cpu,
-                                                  TranslationBlock *tb,
-                                                  bool search_pc)
+   basic block 'tb'.  */
+void gen_intermediate_code(CPUX86State *env, TranslationBlock *tb)
 {
+    X86CPU *cpu = x86_env_get_cpu(env);
     CPUState *cs = CPU(cpu);
-    CPUX86State *env = &cpu->env;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     DisasContext dc1, *dc = &dc1;
     target_ulong pc_ptr;
     CPUBreakpoint *bp;
-    int j, lj;
     uint64_t flags;
     target_ulong pc_start;
     target_ulong cs_base;
@@ -8663,7 +8658,6 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     }
 
     dc->is_jmp = DISAS_NEXT;
-    lj = -1;
     max_insns = tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0) {
         max_insns = CF_COUNT_MASK;
@@ -8693,18 +8687,6 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
                     goto done_generating;
                 }
             }
-        }
-        if (search_pc) {
-            j = tcg_op_buf_count(tcg_ctx);
-            if (lj < j) {
-                lj++;
-                while (lj < j)
-                    tcg_ctx->gen_opc_instr_start[lj++] = 0;
-            }
-            tcg_ctx->gen_opc_pc[lj] = pc_ptr;
-            gen_opc_cc_op[lj] = dc->cc_op;
-            tcg_ctx->gen_opc_instr_start[lj] = 1;
-            // tcg_ctx->gen_opc_icount[lj] = num_insns;
         }
         tcg_gen_insn_start(tcg_ctx, pc_start, dc->cc_op);
         num_insns++;
@@ -8760,33 +8742,10 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
 done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
 
-    /* we don't forget to fill the last values */
-    if (search_pc) {
-        j = tcg_op_buf_count(tcg_ctx);
-        lj++;
-        while (lj <= j)
-            tcg_ctx->gen_opc_instr_start[lj++] = 0;
-    }
-
-    if (!search_pc) {
-        tb->size = pc_ptr - pc_start;
-    }
+    tb->size = pc_ptr - pc_start;
+    tb->icount = num_insns;
 
     env->uc->block_full = block_full;
-}
-
-void gen_intermediate_code(CPUX86State *env, TranslationBlock *tb)
-{
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    gen_intermediate_code_internal(tcg_ctx->gen_opc_cc_op,
-            x86_env_get_cpu(env), tb, false);
-}
-
-void gen_intermediate_code_pc(CPUX86State *env, TranslationBlock *tb)
-{
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    gen_intermediate_code_internal(tcg_ctx->gen_opc_cc_op,
-            x86_env_get_cpu(env), tb, true);
 }
 
 void restore_state_to_opc(CPUX86State *env, TranslationBlock *tb,

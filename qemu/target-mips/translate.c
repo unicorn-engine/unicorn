@@ -19694,17 +19694,14 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
     }
 }
 
-static inline void
-gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
-                               bool search_pc)
+void gen_intermediate_code(CPUMIPSState *env, struct TranslationBlock *tb)
 {
+    MIPSCPU *cpu = mips_env_get_cpu(env);
     CPUState *cs = CPU(cpu);
-    CPUMIPSState *env = &cpu->env;
     DisasContext ctx;
     target_ulong pc_start;
     target_ulong next_page_start;
     CPUBreakpoint *bp;
-    int j, lj = -1;
     int num_insns;
     int max_insns;
     int insn_bytes;
@@ -19712,9 +19709,6 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     int save_opparam_idx = -1;
     bool block_full = false;
-
-    if (search_pc)
-        qemu_log("search pc %d\n", search_pc);
 
     pc_start = tb->pc;
     next_page_start = (pc_start & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE;
@@ -19794,22 +19788,10 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             }
         }
 
-        if (search_pc) {
-            j = tcg_op_buf_count(tcg_ctx);
-            if (lj < j) {
-                lj++;
-                while (lj < j)
-                    tcg_ctx->gen_opc_instr_start[lj++] = 0;
-            }
-            tcg_ctx->gen_opc_pc[lj] = ctx.pc;
-            tcg_ctx->gen_opc_hflags[lj] = ctx.hflags & MIPS_HFLAG_BMASK;
-            tcg_ctx->gen_opc_btarget[lj] = ctx.btarget;
-            tcg_ctx->gen_opc_instr_start[lj] = 1;
-            tcg_ctx->gen_opc_icount[lj] = num_insns;
-        }
         tcg_gen_insn_start(tcg_ctx, ctx.pc, ctx.hflags & MIPS_HFLAG_BMASK, ctx.btarget);
         num_insns++;
 
+        // Unicorn: Commented out
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();
         //}
@@ -19931,27 +19913,10 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
 done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
 
-    if (search_pc) {
-        j = tcg_op_buf_count(tcg_ctx);
-        lj++;
-        while (lj <= j)
-            tcg_ctx->gen_opc_instr_start[lj++] = 0;
-    } else {
-        tb->size = ctx.pc - pc_start;
-        tb->icount = num_insns;
-    }
+    tb->size = ctx.pc - pc_start;
+    tb->icount = num_insns;
 
     env->uc->block_full = block_full;
-}
-
-void gen_intermediate_code (CPUMIPSState *env, struct TranslationBlock *tb)
-{
-    gen_intermediate_code_internal(mips_env_get_cpu(env), tb, false);
-}
-
-void gen_intermediate_code_pc (CPUMIPSState *env, struct TranslationBlock *tb)
-{
-    gen_intermediate_code_internal(mips_env_get_cpu(env), tb, true);
 }
 
 #if 0

@@ -3054,15 +3054,12 @@ static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
 }
 
 /* generate intermediate code for basic block 'tb'.  */
-static inline void
-gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
-                               bool search_pc)
+void gen_intermediate_code(CPUM68KState *env, TranslationBlock *tb)
 {
+    M68kCPU *cpu = m68k_env_get_cpu(env);
     CPUState *cs = CPU(cpu);
-    CPUM68KState *env = &cpu->env;
     DisasContext dc1, *dc = &dc1;
     CPUBreakpoint *bp;
-    int j, lj;
     target_ulong pc_start;
     int pc_offset;
     int num_insns;
@@ -3084,7 +3081,6 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
     dc->fpcr = env->fpcr;
     dc->user = (env->sr & SR_S) == 0;
     dc->done_mac = 0;
-    lj = -1;
     num_insns = 0;
     max_insns = tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0) {
@@ -3127,20 +3123,10 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
             if (dc->is_jmp)
                 break;
         }
-        if (search_pc) {
-            j = tcg_op_buf_count(tcg_ctx);
-            if (lj < j) {
-                lj++;
-                while (lj < j)
-                    tcg_ctx->gen_opc_instr_start[lj++] = 0;
-            }
-            tcg_ctx->gen_opc_pc[lj] = dc->pc;
-            tcg_ctx->gen_opc_instr_start[lj] = 1;
-            //tcg_ctx.gen_opc_icount[lj] = num_insns;
-        }
         tcg_gen_insn_start(tcg_ctx, dc->pc);
         num_insns++;
 
+        // UNICORN: Commented out
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();
         //}
@@ -3156,8 +3142,10 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
     if (tcg_op_buf_full(tcg_ctx) || num_insns >= max_insns)
         block_full = true;
 
-    //if (tb->cflags & CF_LAST_IO)
+    // UNICORN: Commented out
+    //if (tb->cflags & CF_LAST_IO) {
     //    gen_io_end();
+    //}
     if (unlikely(cs->singlestep_enabled)) {
         /* Make sure the pc is updated, and raise a debug exception.  */
         if (!dc->is_jmp) {
@@ -3187,30 +3175,10 @@ gen_intermediate_code_internal(M68kCPU *cpu, TranslationBlock *tb,
 done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
 
-    if (search_pc) {
-        j = tcg_op_buf_count(tcg_ctx);
-        lj++;
-        while (lj <= j)
-            tcg_ctx->gen_opc_instr_start[lj++] = 0;
-    } else {
-        tb->size = dc->pc - pc_start;
-        //tb->icount = num_insns;
-    }
-
-    //optimize_flags();
-    //expand_target_qops();
+    tb->size = dc->pc - pc_start;
+    tb->icount = num_insns;
 
     env->uc->block_full = block_full;
-}
-
-void gen_intermediate_code(CPUM68KState *env, TranslationBlock *tb)
-{
-    gen_intermediate_code_internal(m68k_env_get_cpu(env), tb, false);
-}
-
-void gen_intermediate_code_pc(CPUM68KState *env, TranslationBlock *tb)
-{
-    gen_intermediate_code_internal(m68k_env_get_cpu(env), tb, true);
 }
 
 void restore_state_to_opc(CPUM68KState *env, TranslationBlock *tb,

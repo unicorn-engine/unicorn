@@ -72,7 +72,6 @@ typedef struct TranslationBlock TranslationBlock;
 #include "qemu/log.h"
 
 void gen_intermediate_code(CPUArchState *env, struct TranslationBlock *tb);
-void gen_intermediate_code_pc(CPUArchState *env, struct TranslationBlock *tb);
 void restore_state_to_opc(CPUArchState *env, struct TranslationBlock *tb,
                           target_ulong *data);
 bool cpu_restore_state(CPUState *cpu, uintptr_t searched_pc);

@@ -723,7 +723,6 @@ struct TCGContext {
     TCGv_i32 cpu_cc_op;
     void *cpu_regs[16]; // 16 GRP for X86-64
     int x86_64_hregs;   // qemu/target-i386/translate.c
-    uint8_t gen_opc_cc_op[OPC_BUF_SIZE];    // qemu/target-i386/translate.c
 
     /* qemu/target-i386/translate.c: global TCGv vars */
     void *cpu_A0;
@@ -770,7 +769,6 @@ struct TCGContext {
     void *store_dummy;
 
     /* qemu/target-arm/translate.c */
-    uint32_t gen_opc_condexec_bits[OPC_BUF_SIZE];
     TCGv_i64 cpu_V0, cpu_V1, cpu_M0;
     /* We reuse the same 64-bit temporaries for efficiency.  */
     TCGv_i32 cpu_R[16];
@@ -796,9 +794,6 @@ struct TCGContext {
     TCGv_i64 fpu_f64[32];
     TCGv_i64 msa_wr_d[64];
 
-    uint32_t gen_opc_hflags[OPC_BUF_SIZE];
-    target_ulong gen_opc_btarget[OPC_BUF_SIZE];
-
     /* qemu/target-sparc/translate.c */
     /* global register indexes */
     TCGv_ptr cpu_regwptr;
@@ -807,8 +802,6 @@ struct TCGContext {
     TCGv_i32 cpu_softint;
     /* Floating point registers */
     TCGv_i64 cpu_fpr[32];   // TARGET_DPREGS = 32 for Sparc64, 16 for Sparc
-
-    target_ulong gen_opc_npc[OPC_BUF_SIZE];
 
     // void *cpu_cc_src, *cpu_cc_src2, *cpu_cc_dst;
     void *cpu_fsr, *sparc_cpu_pc, *cpu_npc, *cpu_gregs[8];
