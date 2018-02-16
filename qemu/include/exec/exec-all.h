@@ -198,6 +198,7 @@ struct TranslationBlock {
 #define CF_USE_ICOUNT  0x20000
 
     void *tc_ptr;    /* pointer to the translated code */
+    uint8_t *tc_search;  /* pointer to search data */
     /* next matching tb for physical address. */
     struct TranslationBlock *phys_hash_next;
     /* first and second physical page containing code. The lower bit
