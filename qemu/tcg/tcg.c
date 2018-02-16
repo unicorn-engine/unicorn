@@ -2331,11 +2331,27 @@ static void dump_op_count(void)
 #endif
 
 
-static inline int tcg_gen_code_common(TCGContext *s,
-                                      tcg_insn_unit *gen_code_buf,
-                                      long search_pc)
+int tcg_gen_code(TCGContext *s, tcg_insn_unit *gen_code_buf)
 {
     int i, oi, oi_next, num_insns;
+
+#ifdef CONFIG_PROFILER
+    {
+        int n;
+
+        n = s->gen_last_op_idx + 1;
+        s->op_count += n;
+        if (n > s->op_count_max) {
+            s->op_count_max = n;
+        }
+
+        n = s->nb_temps;
+        s->temp_count += n;
+        if (n > s->temp_count_max) {
+            s->temp_count_max = n;
+        }
+    }
+#endif
 
 #ifdef DEBUG_DISAS
     if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP))) {
@@ -2438,9 +2454,6 @@ static inline int tcg_gen_code_common(TCGContext *s,
             tcg_reg_alloc_op(s, def, opc, args, dead_args, sync_args);
             break;
         }
-        if (search_pc >= 0 && (size_t)search_pc < tcg_current_code_size(s)) {
-            return oi;
-        }
 #ifndef NDEBUG
         check_regs(s);
 #endif
@@ -2451,50 +2464,11 @@ static inline int tcg_gen_code_common(TCGContext *s,
 
     /* Generate TB finalization at the end of block */
     tcg_out_tb_finalize(s);
-    return -1;
-}
-
-int tcg_gen_code(TCGContext *s, tcg_insn_unit *gen_code_buf)    // qq
-{
-#ifdef CONFIG_PROFILER
-    {
-        int n;
-
-        n = s->gen_last_op_idx + 1;
-        s->op_count += n;
-        if (n > s->op_count_max) {
-            s->op_count_max = n;
-        }
-
-        n = s->nb_temps;
-        s->temp_count += n;
-        if (s->nb_temps > s->temp_count_max) {
-            s->temp_count_max = n;
-        }
-    }
-#endif
-
-    //printf("====== before gen code\n");
-    //tcg_dump_ops(s);
-    tcg_gen_code_common(s, gen_code_buf, -1);   // qq
-
-    //printf("====== after gen code\n");
-    //tcg_dump_ops(s);
 
     /* flush instruction cache */
     flush_icache_range((uintptr_t)s->code_buf, (uintptr_t)s->code_ptr);
 
     return tcg_current_code_size(s);
-}
-
-/* Return the index of the micro operation such as the pc after is <
-   offset bytes from the start of the TB.  The contents of gen_code_buf must
-   not be changed, though writing the same values is ok.
-   Return -1 if not found. */
-int tcg_gen_code_search_pc(TCGContext *s, tcg_insn_unit *gen_code_buf,
-                           long offset)
-{
-    return tcg_gen_code_common(s, gen_code_buf, offset);
 }
 
 #ifdef CONFIG_PROFILER

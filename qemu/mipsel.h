@@ -2761,8 +2761,6 @@
 #define tcg_gen_bswap64_i64 tcg_gen_bswap64_i64_mipsel
 #define tcg_gen_callN tcg_gen_callN_mipsel
 #define tcg_gen_code tcg_gen_code_mipsel
-#define tcg_gen_code_common tcg_gen_code_common_mipsel
-#define tcg_gen_code_search_pc tcg_gen_code_search_pc_mipsel
 #define tcg_gen_concat_i32_i64 tcg_gen_concat_i32_i64_mipsel
 #define tcg_gen_deposit_i32 tcg_gen_deposit_i32_mipsel
 #define tcg_gen_deposit_i64 tcg_gen_deposit_i64_mipsel

@@ -2767,8 +2767,6 @@ symbols = (
     'tcg_gen_bswap64_i64',
     'tcg_gen_callN',
     'tcg_gen_code',
-    'tcg_gen_code_common',
-    'tcg_gen_code_search_pc',
     'tcg_gen_concat_i32_i64',
     'tcg_gen_deposit_i32',
     'tcg_gen_deposit_i64',
