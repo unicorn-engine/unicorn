@@ -34,8 +34,6 @@
 
 #define TARGET_HAS_ICE 1
 
-#define ELF_MACHINE	EM_68K
-
 #define EXCP_ACCESS         2   /* Access (MMU) error.  */
 #define EXCP_ADDRESS        3   /* Address error.  */
 #define EXCP_ILLEGAL        4   /* Illegal instruction.  */
