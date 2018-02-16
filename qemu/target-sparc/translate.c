@@ -1038,6 +1038,33 @@ static void gen_branch_a(DisasContext *dc, target_ulong pc1)
     dc->is_br = 1;
 }
 
+static void gen_branch_n(DisasContext *dc, target_ulong pc1)
+{
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+    target_ulong npc = dc->npc;
+
+    if (likely(npc != DYNAMIC_PC)) {
+        dc->pc = npc;
+        dc->jump_pc[0] = pc1;
+        dc->jump_pc[1] = npc + 4;
+        dc->npc = JUMP_PC;
+    } else {
+        TCGv t, z;
+
+        tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->sparc_cpu_pc, *(TCGv *)tcg_ctx->cpu_npc);
+
+        tcg_gen_addi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_npc, *(TCGv *)tcg_ctx->cpu_npc, 4);
+        t = tcg_const_tl(tcg_ctx, pc1);
+        z = tcg_const_tl(tcg_ctx, 0);
+        tcg_gen_movcond_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->cpu_npc, *(TCGv *)tcg_ctx->cpu_cond, z, t, *(TCGv *)tcg_ctx->cpu_npc);
+        tcg_temp_free(tcg_ctx, t);
+        tcg_temp_free(tcg_ctx, z);
+
+        dc->pc = DYNAMIC_PC;
+    }
+}
+
+
 static inline void gen_generic_branch(DisasContext *dc)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
@@ -1481,15 +1508,7 @@ static void do_branch(DisasContext *dc, int32_t offset, uint32_t insn, int cc)
         if (a) {
             gen_branch_a(dc, target);
         } else {
-            dc->pc = dc->npc;
-            dc->jump_pc[0] = target;
-            if (unlikely(dc->npc == DYNAMIC_PC)) {
-                dc->jump_pc[1] = DYNAMIC_PC;
-                tcg_gen_addi_tl(tcg_ctx, *(TCGv *)tcg_ctx->sparc_cpu_pc, *(TCGv *)tcg_ctx->cpu_npc, 4);
-            } else {
-                dc->jump_pc[1] = dc->npc + 4;
-                dc->npc = JUMP_PC;
-            }
+            gen_branch_n(dc, target);
         }
     }
 }
@@ -1530,15 +1549,7 @@ static void do_fbranch(DisasContext *dc, int32_t offset, uint32_t insn, int cc)
         if (a) {
             gen_branch_a(dc, target);
         } else {
-            dc->pc = dc->npc;
-            dc->jump_pc[0] = target;
-            if (unlikely(dc->npc == DYNAMIC_PC)) {
-                dc->jump_pc[1] = DYNAMIC_PC;
-                tcg_gen_addi_tl(tcg_ctx, *(TCGv *)tcg_ctx->sparc_cpu_pc, *(TCGv *)tcg_ctx->cpu_npc, 4);
-            } else {
-                dc->jump_pc[1] = dc->npc + 4;
-                dc->npc = JUMP_PC;
-            }
+            gen_branch_n(dc, target);
         }
     }
 }
@@ -1559,15 +1570,7 @@ static void do_branch_reg(DisasContext *dc, int32_t offset, uint32_t insn,
     if (a) {
         gen_branch_a(dc, target);
     } else {
-        dc->pc = dc->npc;
-        dc->jump_pc[0] = target;
-        if (unlikely(dc->npc == DYNAMIC_PC)) {
-            dc->jump_pc[1] = DYNAMIC_PC;
-            tcg_gen_addi_tl(tcg_ctx, *(TCGv *)tcg_ctx->sparc_cpu_pc, *(TCGv *)tcg_ctx->cpu_npc, 4);
-        } else {
-            dc->jump_pc[1] = dc->npc + 4;
-            dc->npc = JUMP_PC;
-        }
+        gen_branch_n(dc, target);
     }
 }
 
