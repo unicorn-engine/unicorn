@@ -6,8 +6,6 @@
 #define ALIGNED_ONLY
 #define TARGET_HAS_ICE 1
 
-#define ELF_MACHINE	EM_MIPS
-
 #define CPUArchState struct CPUMIPSState
 
 #include "config.h"
