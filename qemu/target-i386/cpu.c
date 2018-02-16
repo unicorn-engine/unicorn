@@ -1131,7 +1131,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
             CPUID_EXT2_SYSCALL,
         // FEAT_8000_0001_ECX
-            CPUID_EXT3_LAHF_LM,
+            CPUID_EXT3_ABM | CPUID_EXT3_LAHF_LM,
         // FEAT_8000_0007_EDX
             0,
         // FEAT_C000_0001_EDX
@@ -1175,7 +1175,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
             CPUID_EXT2_SYSCALL,
         // FEAT_8000_0001_ECX
-            CPUID_EXT3_LAHF_LM,
+            CPUID_EXT3_ABM | CPUID_EXT3_LAHF_LM,
         // FEAT_8000_0007_EDX
             0,
         // FEAT_C000_0001_EDX
@@ -1220,7 +1220,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
             CPUID_EXT2_SYSCALL,
         // FEAT_8000_0001_ECX
-            CPUID_EXT3_LAHF_LM | CPUID_EXT3_3DNOWPREFETCH,
+            CPUID_EXT3_ABM | CPUID_EXT3_LAHF_LM | CPUID_EXT3_3DNOWPREFETCH,
         // FEAT_8000_0007_EDX
             0,
         // FEAT_C000_0001_EDX
@@ -1265,7 +1265,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
             CPUID_EXT2_SYSCALL,
         // FEAT_8000_0001_ECX
-            CPUID_EXT3_LAHF_LM | CPUID_EXT3_3DNOWPREFETCH,
+            CPUID_EXT3_ABM | CPUID_EXT3_LAHF_LM | CPUID_EXT3_3DNOWPREFETCH,
         // FEAT_8000_0007_EDX
             0,
         // FEAT_C000_0001_EDX
