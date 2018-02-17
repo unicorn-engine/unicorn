@@ -320,6 +320,7 @@ enum {
     OPC_TLTIU    = (0x0B << 16) | OPC_REGIMM,
     OPC_TEQI     = (0x0C << 16) | OPC_REGIMM,
     OPC_TNEI     = (0x0E << 16) | OPC_REGIMM,
+    OPC_SIGRIE   = (0x17 << 16) | OPC_REGIMM,
     OPC_SYNCI    = (0x1F << 16) | OPC_REGIMM,
 
     OPC_DAHI     = (0x06 << 16) | OPC_REGIMM,
@@ -12139,7 +12140,8 @@ enum {
     LSA = 0x0f,
     ALIGN = 0x1f,
     EXT = 0x2c,
-    POOL32AXF = 0x3c
+    POOL32AXF = 0x3c,
+    SIGRIE = 0x3f
 };
 
 /* POOL32AXF encoding of minor opcode field extension */
@@ -13763,6 +13765,10 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
             break;
         case BREAK32:
             generate_exception_end(ctx, EXCP_BREAK);
+            break;
+        case SIGRIE:
+            check_insn(ctx, ISA_MIPS32R6);
+            generate_exception_end(ctx, EXCP_RI);
             break;
         default:
         pool32a_invalid:
@@ -19137,6 +19143,10 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
             check_insn(ctx, ISA_MIPS2);
             check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_trap(ctx, op1, rs, -1, imm);
+            break;
+        case OPC_SIGRIE:
+            check_insn(ctx, ISA_MIPS32R6);
+            generate_exception_end(ctx, EXCP_RI);
             break;
         case OPC_SYNCI:
             check_insn(ctx, ISA_MIPS32R2);
