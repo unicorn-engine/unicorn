@@ -199,7 +199,7 @@ static bool type_is_ancestor(struct uc_struct *uc, TypeImpl *type, TypeImpl *tar
 {
     assert(target_type);
 
-    /* Check if typename is a direct ancestor of type */
+    /* Check if target_type is a direct ancestor of type */
     while (type) {
         if (type == target_type) {
             return true;
