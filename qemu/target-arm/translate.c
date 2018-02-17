@@ -897,7 +897,7 @@ static inline void gen_bx_im(DisasContext *s, uint32_t addr)
     TCGv_i32 tmp;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
-    s->is_jmp = DISAS_UPDATE;
+    s->is_jmp = DISAS_JUMP;
     if (s->thumb != (addr & 1)) {
         tmp = tcg_temp_new_i32(tcg_ctx);
         tcg_gen_movi_i32(tcg_ctx, tmp, addr & 1);
@@ -912,7 +912,7 @@ static inline void gen_bx(DisasContext *s, TCGv_i32 var)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
-    s->is_jmp = DISAS_UPDATE;
+    s->is_jmp = DISAS_JUMP;
     tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_R[15], var, ~1);
     tcg_gen_andi_i32(tcg_ctx, var, var, 1);
     store_cpu_field(tcg_ctx, var, thumb);
@@ -1100,7 +1100,7 @@ static inline void gen_lookup_tb(DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_R[15], s->pc & ~1);
-    s->is_jmp = DISAS_UPDATE;
+    s->is_jmp = DISAS_JUMP;
 }
 
 static inline void gen_add_data_offset(DisasContext *s, unsigned int insn,
@@ -4205,7 +4205,7 @@ static void gen_exception_return(DisasContext *s, TCGv_i32 pc)
     tmp = load_cpu_field(s->uc, spsr);
     gen_set_cpsr(s, tmp, CPSR_ERET_MASK);
     tcg_temp_free_i32(tcg_ctx, tmp);
-    s->is_jmp = DISAS_UPDATE;
+    s->is_jmp = DISAS_JUMP;
 }
 
 /* Generate a v6 exception return.  Marks both values as dead.  */
@@ -4215,7 +4215,7 @@ static void gen_rfe(DisasContext *s, TCGv_i32 pc, TCGv_i32 cpsr)
     gen_set_cpsr(s, cpsr, CPSR_ERET_MASK);
     tcg_temp_free_i32(tcg_ctx, cpsr);
     store_reg(s, 15, pc);
-    s->is_jmp = DISAS_UPDATE;
+    s->is_jmp = DISAS_JUMP;
 }
 
 static void gen_nop_hint(DisasContext *s, int val)
@@ -9175,7 +9175,7 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
                     tmp = load_cpu_field(s->uc, spsr);
                     gen_set_cpsr(s, tmp, CPSR_ERET_MASK);
                     tcg_temp_free_i32(tcg_ctx, tmp);
-                    s->is_jmp = DISAS_UPDATE;
+                    s->is_jmp = DISAS_JUMP;
                 }
             }
             break;
@@ -11549,7 +11549,7 @@ void gen_intermediate_code(CPUARMState *env, TranslationBlock *tb)
             /* We always get here via a jump, so know we are not in a
                conditional execution block.  */
             gen_exception_internal(dc, EXCP_KERNEL_TRAP);
-            dc->is_jmp = DISAS_UPDATE;
+            dc->is_jmp = DISAS_EXC;
             break;
         }
 #else
@@ -11557,7 +11557,7 @@ void gen_intermediate_code(CPUARMState *env, TranslationBlock *tb)
             /* We always get here via a jump, so know we are not in a
                conditional execution block.  */
             gen_exception_internal(dc, EXCP_EXCEPTION_EXIT);
-            dc->is_jmp = DISAS_UPDATE;
+            dc->is_jmp = DISAS_EXC;
             break;
         }
 #endif
@@ -11705,7 +11705,8 @@ tb_end:
             }
             gen_set_label(tcg_ctx, dc->condlabel);
         }
-        if (dc->condjmp || !dc->is_jmp) {
+        if (dc->condjmp || dc->is_jmp == DISAS_NEXT ||
+            dc->is_jmp == DISAS_UPDATE) {
             gen_set_pc_im(dc, dc->pc);
             dc->condjmp = 0;
         }
@@ -11741,9 +11742,11 @@ tb_end:
         case DISAS_NEXT:
             gen_goto_tb(dc, 1, dc->pc);
             break;
-        default:
-        case DISAS_JUMP:
         case DISAS_UPDATE:
+            gen_set_pc_im(dc, dc->pc);
+            /* fall through */
+        case DISAS_JUMP:
+        default:
             /* indicate that the hash table must be used to find the next TB */
             tcg_gen_exit_tb(tcg_ctx, 0);
             break;
