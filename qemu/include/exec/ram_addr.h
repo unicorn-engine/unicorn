@@ -26,11 +26,18 @@
 ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
                                    MemoryRegion *mr, Error **errp);
 ram_addr_t qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr, Error **errp);
+ram_addr_t qemu_ram_alloc_resizeable(ram_addr_t size, ram_addr_t max_size,
+                                     void (*resized)(const char*,
+                                                     uint64_t length,
+                                                     void *host),
+                                     MemoryRegion *mr, Error **errp);
 int qemu_get_ram_fd(struct uc_struct *uc, ram_addr_t addr);
 void *qemu_get_ram_block_host_ptr(struct uc_struct *uc, ram_addr_t addr);
 void *qemu_get_ram_ptr(struct uc_struct *uc, ram_addr_t addr);
 void qemu_ram_free(struct uc_struct *c, ram_addr_t addr);
 void qemu_ram_free_from_ptr(struct uc_struct *uc, ram_addr_t addr);
+
+int qemu_ram_resize(struct uc_struct *c, ram_addr_t base, ram_addr_t newsize, Error **errp);
 
 #define DIRTY_CLIENTS_ALL     ((1 << DIRTY_MEMORY_NUM) - 1)
 #define DIRTY_CLIENTS_NOCODE  (DIRTY_CLIENTS_ALL & ~(1 << DIRTY_MEMORY_CODE))
@@ -169,8 +176,7 @@ bool cpu_physical_memory_test_and_clear_dirty(struct uc_struct *uc,
                                               unsigned client);
 
 static inline void cpu_physical_memory_clear_dirty_range(struct uc_struct *uc, ram_addr_t start,
-                                                         ram_addr_t length,
-                                                         unsigned client)
+                                                         ram_addr_t length)
 {
     cpu_physical_memory_test_and_clear_dirty(uc, start, length, DIRTY_MEMORY_CODE);
 }

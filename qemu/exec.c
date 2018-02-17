@@ -62,6 +62,11 @@
 /* RAM is mmap-ed with MAP_SHARED */
 #define RAM_SHARED     (1 << 1)
 
+/* Only a portion of RAM (used_length) is actually used, and migrated.
+ * This used_length size can change across reboots.
+ */
+#define RAM_RESIZEABLE (1 << 2)
+
 #endif
 
 #if !defined(CONFIG_USER_ONLY)
@@ -677,11 +682,11 @@ static RAMBlock *qemu_get_ram_block(struct uc_struct *uc, ram_addr_t addr)
 
     /* The list is protected by the iothread lock here.  */
     block = uc->ram_list.mru_block;
-    if (block && addr - block->offset < block->length) {
+    if (block && addr - block->offset < block->max_length) {
         goto found;
     }
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
-        if (addr - block->offset < block->length) {
+        if (addr - block->offset < block->max_length) {
             goto found;
         }
     }
@@ -706,7 +711,7 @@ static void tlb_reset_dirty_range_all(struct uc_struct* uc,
 
     block = qemu_get_ram_block(uc, start);
     assert(block == qemu_get_ram_block(uc, end - 1));
-    start1 = (uintptr_t)block->host + (start - block->offset);
+    start1 = (uintptr_t)ramblock_ptr(block, start - block->offset);
     cpu_tlb_reset_dirty_all(uc, start1, length);
 }
 
@@ -931,7 +936,7 @@ static ram_addr_t find_ram_offset(struct uc_struct *uc, ram_addr_t size)
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
         ram_addr_t end, next = RAM_ADDR_MAX;
 
-        end = block->offset + block->length;
+        end = block->offset + block->max_length;
 
         QTAILQ_FOREACH(next_block, &uc->ram_list.blocks, next) {
             if (next_block->offset >= end) {
@@ -959,7 +964,7 @@ ram_addr_t last_ram_offset(struct uc_struct *uc)
     ram_addr_t last = 0;
 
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next)
-        last = MAX(last, block->offset + block->length);
+        last = MAX(last, block->offset + block->max_length);
 
     return last;
 }
@@ -995,6 +1000,50 @@ static int memory_try_enable_merging(void *addr, size_t len)
     return 0;
 }
 
+/* Only legal before guest might have detected the memory size: e.g. on
+ * incoming migration, or right after reset.
+ *
+ * As memory core doesn't know how is memory accessed, it is up to
+ * resize callback to update device state and/or add assertions to detect
+ * misuse, if necessary.
+ */
+int qemu_ram_resize(struct uc_struct *uc, ram_addr_t base, ram_addr_t newsize, Error **errp)
+{
+    RAMBlock *block = find_ram_block(uc, base);
+
+    assert(block);
+
+    if (block->used_length == newsize) {
+        return 0;
+    }
+
+    if (!(block->flags & RAM_RESIZEABLE)) {
+        error_setg_errno(errp, EINVAL,
+                         "Length mismatch: %s: 0x" RAM_ADDR_FMT
+                         " in != 0x" RAM_ADDR_FMT, block->idstr,
+                         newsize, block->used_length);
+        return -EINVAL;
+    }
+
+    if (block->max_length < newsize) {
+        error_setg_errno(errp, EINVAL,
+                         "Length too large: %s: 0x" RAM_ADDR_FMT
+                         " > 0x" RAM_ADDR_FMT, block->idstr,
+                         newsize, block->max_length);
+        return -EINVAL;
+    }
+
+    cpu_physical_memory_clear_dirty_range(uc, block->offset, block->used_length);
+    block->used_length = newsize;
+    cpu_physical_memory_set_dirty_range(uc, block->offset, block->used_length,
+                                        DIRTY_CLIENTS_ALL);
+    memory_region_set_size(block->mr, newsize);
+    if (block->resized) {
+        block->resized(block->idstr, newsize, block->host);
+    }
+    return 0;
+}
+
 static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **errp)
 {
     RAMBlock *block;
@@ -1002,23 +1051,23 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
 
     old_ram_size = last_ram_offset(uc) >> TARGET_PAGE_BITS;
 
-    new_block->offset = find_ram_offset(uc, new_block->length);
+    new_block->offset = find_ram_offset(uc, new_block->max_length);
 
     if (!new_block->host) {
-        new_block->host = phys_mem_alloc(new_block->length,
-                &new_block->mr->align);
+        new_block->host = phys_mem_alloc(new_block->max_length,
+                                         &new_block->mr->align);
         if (!new_block->host) {
             error_setg_errno(errp, errno,
-                    "cannot set up guest memory '%s'",
-                    memory_region_name(new_block->mr));
+                             "cannot set up guest memory '%s'",
+                             memory_region_name(new_block->mr));
             return -1;
         }
-        memory_try_enable_merging(new_block->host, new_block->length);
+        memory_try_enable_merging(new_block->host, new_block->max_length);
     }
 
     /* Keep the list sorted from biggest to smallest block.  */
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
-        if (block->length < new_block->length) {
+        if (block->max_length < new_block->max_length) {
             break;
         }
     }
@@ -1042,35 +1091,47 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
         }
     }
     cpu_physical_memory_set_dirty_range(uc, new_block->offset,
-                                        new_block->length,
+                                        new_block->used_length,
                                         DIRTY_CLIENTS_ALL);
 
-    qemu_ram_setup_dump(new_block->host, new_block->length);
-    //qemu_madvise(new_block->host, new_block->length, QEMU_MADV_HUGEPAGE);
-    //qemu_madvise(new_block->host, new_block->length, QEMU_MADV_DONTFORK);
+    qemu_ram_setup_dump(new_block->host, new_block->max_length);
+    //qemu_madvise(new_block->host, new_block->max_length, QEMU_MADV_HUGEPAGE);
+    //qemu_madvise(new_block->host, new_block->max_length, QEMU_MADV_DONTFORK);
 
     return new_block->offset;
 }
 
 // return -1 on error
-ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
-        MemoryRegion *mr, Error **errp)
+static
+ram_addr_t qemu_ram_alloc_internal(ram_addr_t size, ram_addr_t max_size,
+                                   void (*resized)(const char*,
+                                                   uint64_t length,
+                                                   void *host),
+                                   void *host, bool resizeable,
+                                   MemoryRegion *mr, Error **errp)
 {
     RAMBlock *new_block;
     ram_addr_t addr;
     Error *local_err = NULL;
 
     size = TARGET_PAGE_ALIGN(size);
+    max_size = TARGET_PAGE_ALIGN(max_size);
     new_block = g_malloc0(sizeof(*new_block));
-    if (new_block == NULL)
+    if (new_block == NULL) {
         return -1;
-
+    }
     new_block->mr = mr;
-    new_block->length = size;
+    new_block->resized = resized;
+    new_block->used_length = size;
+    new_block->max_length = max_size;
+    assert(max_size >= size);
     new_block->fd = -1;
     new_block->host = host;
     if (host) {
         new_block->flags |= RAM_PREALLOC;
+    }
+    if (resizeable) {
+        new_block->flags |= RAM_RESIZEABLE;
     }
     addr = ram_block_add(mr->uc, new_block, &local_err);
     if (local_err) {
@@ -1081,9 +1142,24 @@ ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
     return addr;
 }
 
+ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
+                                   MemoryRegion *mr, Error **errp)
+{
+    return qemu_ram_alloc_internal(size, size, NULL, host, false, mr, errp);
+}
+
 ram_addr_t qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr, Error **errp)
 {
-    return qemu_ram_alloc_from_ptr(size, NULL, mr, errp);
+    return qemu_ram_alloc_internal(size, size, NULL, NULL, false, mr, errp);
+}
+
+ram_addr_t qemu_ram_alloc_resizeable(ram_addr_t size, ram_addr_t maxsz,
+                                     void (*resized)(const char*,
+                                                     uint64_t length,
+                                                     void *host),
+                                     MemoryRegion *mr, Error **errp)
+{
+    return qemu_ram_alloc_internal(size, maxsz, resized, NULL, true, mr, errp);
 }
 
 void qemu_ram_free_from_ptr(struct uc_struct *uc, ram_addr_t addr)
@@ -1114,11 +1190,11 @@ void qemu_ram_free(struct uc_struct *uc, ram_addr_t addr)
                 ;
 #ifndef _WIN32
             } else if (block->fd >= 0) {
-                munmap(block->host, block->length);
+                munmap(block->host, block->max_length);
                 close(block->fd);
 #endif
             } else {
-                qemu_anon_ram_free(block->host, block->length);
+                qemu_anon_ram_free(block->host, block->max_length);
             }
             g_free(block);
             break;
@@ -1136,8 +1212,8 @@ void qemu_ram_remap(struct uc_struct *uc, ram_addr_t addr, ram_addr_t length)
 
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
         offset = addr - block->offset;
-        if (offset < block->length) {
-            vaddr = block->host + offset;
+        if (offset < block->max_length) {
+            vaddr = ramblock_ptr(block, offset);
             if (block->flags & RAM_PREALLOC) {
                 ;
             } else {
@@ -1214,10 +1290,10 @@ static void *qemu_ram_ptr_length(struct uc_struct *uc, ram_addr_t addr, hwaddr *
     }
 
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
-        if (addr - block->offset < block->length) {
-            if (addr - block->offset + *size > block->length)
-                *size = block->length - addr + block->offset;
-            return block->host + (addr - block->offset);
+        if (addr - block->offset < block->max_length) {
+            if (addr - block->offset + *size > block->max_length)
+                *size = block->max_length - addr + block->offset;
+            return ramblock_ptr(block, addr - block->offset);
         }
     }
 
@@ -1233,7 +1309,7 @@ MemoryRegion *qemu_ram_addr_from_host(struct uc_struct *uc, void *ptr, ram_addr_
     uint8_t *host = ptr;
 
     block = uc->ram_list.mru_block;
-    if (block && block->host && host - block->host < block->length) {
+    if (block && block->host && host - block->host < block->max_length) {
         goto found;
     }
 
@@ -1242,7 +1318,7 @@ MemoryRegion *qemu_ram_addr_from_host(struct uc_struct *uc, void *ptr, ram_addr_
         if (block->host == NULL) {
             continue;
         }
-        if (host - block->host < block->length) {
+        if (host - block->host < block->max_length) {
             goto found;
         }
     }
@@ -2596,7 +2672,7 @@ void qemu_ram_foreach_block(struct uc_struct *uc, RAMBlockIterFunc func, void *o
     RAMBlock *block;
 
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
-        func(block->host, block->offset, block->length, opaque);
+        func(block->host, block->offset, block->used_length, opaque);
     }
 }
 #endif

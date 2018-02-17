@@ -19,11 +19,14 @@ struct uc_struct;
 
 // This two struct is originally from qemu/include/exec/cpu-all.h
 // Temporarily moved here since there is circular inclusion.
-typedef struct RAMBlock {
+typedef struct RAMBlock RAMBlock;
+struct RAMBlock {
     struct MemoryRegion *mr;
     uint8_t *host;
     ram_addr_t offset;
-    ram_addr_t length;
+    ram_addr_t used_length;
+    ram_addr_t max_length;
+    void (*resized)(const char*, uint64_t length, void *host);
     uint32_t flags;
     char idstr[256];
     /* Reads can take either the iothread or the ramlist lock.
@@ -31,7 +34,14 @@ typedef struct RAMBlock {
      */
     QTAILQ_ENTRY(RAMBlock) next;
     int fd;
-} RAMBlock;
+};
+
+static inline void *ramblock_ptr(RAMBlock *block, ram_addr_t offset)
+{
+    assert(offset < block->used_length);
+    assert(block->host);
+    return (char *)block->host + offset;
+}
 
 typedef struct {
     MemoryRegion *mr;

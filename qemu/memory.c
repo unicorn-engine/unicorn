@@ -1186,6 +1186,25 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
     mr->ram_addr = qemu_ram_alloc_from_ptr(size, ptr, mr, &error_abort);
 }
 
+void memory_region_init_resizeable_ram(struct uc_struct *uc,
+                                       MemoryRegion *mr,
+                                       Object *owner,
+                                       const char *name,
+                                       uint64_t size,
+                                       uint64_t max_size,
+                                       void (*resized)(const char*,
+                                                       uint64_t length,
+                                                       void *host),
+                                       Error **errp)
+{
+    memory_region_init(uc, mr, owner, name, size);
+    mr->ram = true;
+    mr->terminates = true;
+    mr->destructor = memory_region_destructor_ram;
+    mr->ram_addr = qemu_ram_alloc_resizeable(size, max_size, resized, mr, errp);
+    mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
+}
+
 void memory_region_set_skip_dump(MemoryRegion *mr)
 {
     mr->skip_dump = true;
