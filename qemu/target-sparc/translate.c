@@ -5363,7 +5363,6 @@ void gen_intermediate_code(CPUSPARCState * env, TranslationBlock * tb)
     CPUState *cs = CPU(cpu);
     target_ulong pc_start, last_pc;
     DisasContext dc1, *dc = &dc1;
-    CPUBreakpoint *bp;
     int num_insns = 0;
     int max_insns;
     unsigned int insn;
@@ -5419,18 +5418,6 @@ void gen_intermediate_code(CPUSPARCState * env, TranslationBlock * tb)
 
     gen_tb_start(tcg_ctx);
     do {
-        if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
-            QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
-                if (bp->pc == dc->pc) {
-                    if (dc->pc != pc_start)
-                        save_state(dc);
-                    gen_helper_debug(tcg_ctx, tcg_ctx->cpu_env);
-                    tcg_gen_exit_tb(tcg_ctx, 0);
-                    dc->is_br = 1;
-                    goto exit_gen_loop;
-                }
-            }
-        }
         if (dc->npc & JUMP_PC) {
             assert(dc->jump_pc[1] == dc->pc + 4);
             tcg_gen_insn_start(tcg_ctx, dc->pc, dc->jump_pc[0] | JUMP_PC);
@@ -5438,6 +5425,16 @@ void gen_intermediate_code(CPUSPARCState * env, TranslationBlock * tb)
             tcg_gen_insn_start(tcg_ctx, dc->pc, dc->npc);
         }
         num_insns++;
+
+        if (unlikely(cpu_breakpoint_test(cs, dc->pc, BP_ANY))) {
+            if (dc->pc != pc_start) {
+                save_state(dc);
+            }
+            gen_helper_debug(tcg_ctx, tcg_ctx->cpu_env);
+            tcg_gen_exit_tb(tcg_ctx, 0);
+            dc->is_br = 1;
+            goto exit_gen_loop;
+        }
 
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();

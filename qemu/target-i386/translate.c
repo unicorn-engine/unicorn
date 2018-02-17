@@ -8567,7 +8567,6 @@ void gen_intermediate_code(CPUX86State *env, TranslationBlock *tb)
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     DisasContext dc1, *dc = &dc1;
     target_ulong pc_ptr;
-    CPUBreakpoint *bp;
     uint64_t flags;
     target_ulong pc_start;
     target_ulong cs_base;
@@ -8701,18 +8700,17 @@ void gen_intermediate_code(CPUX86State *env, TranslationBlock *tb)
 
     gen_tb_start(tcg_ctx);
     for(;;) {
-        if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
-            QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
-                if (bp->pc == pc_ptr &&
-                    !((bp->flags & BP_CPU) && (tb->flags & HF_RF_MASK))) {
-                    gen_debug(dc, pc_ptr - dc->cs_base);
-                    goto done_generating;
-                }
-            }
-        }
         tcg_gen_insn_start(tcg_ctx, pc_start, dc->cc_op);
         num_insns++;
 
+        /* If RF is set, suppress an internally generated breakpoint.  */
+        if (unlikely(cpu_breakpoint_test(cs, pc_ptr,
+                                         tb->flags & HF_RF_MASK
+                                         ? BP_GDB : BP_ANY))) {
+            gen_debug(dc, pc_ptr - dc->cs_base);
+            goto done_generating;
+        }
+        // Unicorn: commented out
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();
         //}

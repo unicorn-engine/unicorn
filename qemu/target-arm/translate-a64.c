@@ -11216,7 +11216,6 @@ void gen_intermediate_code_a64(ARMCPU *cpu, TranslationBlock *tb)
     CPUState *cs = CPU(cpu);
     CPUARMState *env = &cpu->env;
     DisasContext dc1, *dc = &dc1;
-    CPUBreakpoint *bp;
     target_ulong pc_start;
     target_ulong next_page_start;
     int num_insns;
@@ -11316,27 +11315,21 @@ void gen_intermediate_code_a64(ARMCPU *cpu, TranslationBlock *tb)
     gen_tb_start(tcg_ctx);
 
     do {
+        tcg_gen_insn_start(tcg_ctx, dc->pc, 0);
+        num_insns++;
+
         if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
+            CPUBreakpoint *bp;
             QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
                 if (bp->pc == dc->pc) {
-                    if (bp->flags & BP_CPU) {
-                        gen_helper_check_breakpoints(tcg_ctx, tcg_ctx->cpu_env);
-                        /* End the TB early; it likely won't be executed */
-                        dc->is_jmp = DISAS_UPDATE;
-                    } else {
-                        gen_exception_internal_insn(dc, 0, EXCP_DEBUG);
-                        /* Advance PC so that clearing the breakpoint will
-                           invalidate this TB.  */
-                        dc->pc += 4;
-                        goto done_generating;
-                    }
-                    break;
+                    gen_exception_internal_insn(dc, 0, EXCP_DEBUG);
+                    /* Advance PC so that clearing the breakpoint will
+                       invalidate this TB.  */
+                    dc->pc += 2;
+                    goto done_generating;
                 }
             }
         }
-
-        tcg_gen_insn_start(tcg_ctx, dc->pc, 0);
-        num_insns++;
 
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();

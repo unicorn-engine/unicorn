@@ -19701,7 +19701,6 @@ void gen_intermediate_code(CPUMIPSState *env, struct TranslationBlock *tb)
     DisasContext ctx;
     target_ulong pc_start;
     target_ulong next_page_start;
-    CPUBreakpoint *bp;
     int num_insns;
     int max_insns;
     int insn_bytes;
@@ -19773,23 +19772,18 @@ void gen_intermediate_code(CPUMIPSState *env, struct TranslationBlock *tb)
 
     gen_tb_start(tcg_ctx);
     while (ctx.bstate == BS_NONE) {
-        // printf(">>> mips pc = %x\n", ctx.pc);
-        if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
-            QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
-                if (bp->pc == ctx.pc) {
-                    save_cpu_state(&ctx, 1);
-                    ctx.bstate = BS_BRANCH;
-                    gen_helper_raise_exception_debug(tcg_ctx, tcg_ctx->cpu_env);
-                    /* Include the breakpoint location or the tb won't
-                     * be flushed when it must be.  */
-                    ctx.pc += 4;
-                    goto done_generating;
-                }
-            }
-        }
-
         tcg_gen_insn_start(tcg_ctx, ctx.pc, ctx.hflags & MIPS_HFLAG_BMASK, ctx.btarget);
         num_insns++;
+
+        if (unlikely(cpu_breakpoint_test(cs, ctx.pc, BP_ANY))) {
+            save_cpu_state(&ctx, 1);
+            ctx.bstate = BS_BRANCH;
+            gen_helper_raise_exception_debug(tcg_ctx, tcg_ctx->cpu_env);
+            /* Include the breakpoint location or the tb won't
+             * be flushed when it must be.  */
+            ctx.pc += 4;
+            goto done_generating;
+        }
 
         // Unicorn: Commented out
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {

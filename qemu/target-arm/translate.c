@@ -11386,7 +11386,6 @@ void gen_intermediate_code(CPUARMState *env, TranslationBlock *tb)
     ARMCPU *cpu = arm_env_get_cpu(env);
     CPUState *cs = CPU(cpu);
     DisasContext dc1, *dc = &dc1;
-    CPUBreakpoint *bp;
     target_ulong pc_start;
     target_ulong next_page_start;
     int num_insns;
@@ -11541,7 +11540,9 @@ void gen_intermediate_code(CPUARMState *env, TranslationBlock *tb)
         store_cpu_field(tcg_ctx, tmp, condexec_bits);
       }
     do {
-        //printf(">>> arm pc = %x\n", dc->pc);
+        tcg_gen_insn_start(tcg_ctx, dc->pc,
+                           (dc->condexec_cond << 4) | (dc->condexec_mask >> 1));
+        num_insns++;
 #ifdef CONFIG_USER_ONLY
         /* Intercept jump to the magic kernel page.  */
         if (dc->pc >= 0xffff0000) {
@@ -11562,6 +11563,7 @@ void gen_intermediate_code(CPUARMState *env, TranslationBlock *tb)
 #endif
 
         if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
+            CPUBreakpoint *bp;
             QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
                 if (bp->pc == dc->pc) {
                     if (bp->flags & BP_CPU) {
@@ -11581,10 +11583,6 @@ void gen_intermediate_code(CPUARMState *env, TranslationBlock *tb)
                 }
             }
         }
-
-        tcg_gen_insn_start(tcg_ctx, dc->pc,
-                           (dc->condexec_cond << 4) | (dc->condexec_mask >> 1));
-        num_insns++;
 
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();
