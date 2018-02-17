@@ -683,7 +683,7 @@ static RAMBlock *qemu_get_ram_block(struct uc_struct *uc, ram_addr_t addr)
     /* The list is protected by the iothread lock here.  */
     block = uc->ram_list.mru_block;
     if (block && addr - block->offset < block->max_length) {
-        goto found;
+        return block;
     }
     QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
         if (addr - block->offset < block->max_length) {
