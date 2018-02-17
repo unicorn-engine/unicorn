@@ -1561,10 +1561,10 @@ static void memory_map_init(struct uc_struct *uc)
 
 void cpu_exec_init_all(struct uc_struct *uc)
 {
+    io_mem_init(uc);
 #if !defined(CONFIG_USER_ONLY)
     memory_map_init(uc);
 #endif
-    io_mem_init(uc);
 }
 
 MemoryRegion *get_system_memory(struct uc_struct *uc)
