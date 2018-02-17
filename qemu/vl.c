@@ -124,8 +124,8 @@ int machine_initialize(struct uc_struct *uc)
     // this will auto initialize all register objects above.
     machine_class = find_default_machine(uc, uc->arch);
     if (machine_class == NULL) {
-        //fprintf(stderr, "No machine specified, and there is no default.\n"
-        //        "Use -machine help to list supported machines!\n");
+        // error_report("No machine specified, and there is no default.");
+        // error_printf("Use -machine help to list supported machines!\n");
         return -2;
     }
 
