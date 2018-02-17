@@ -5425,6 +5425,7 @@ void gen_intermediate_code(CPUSPARCState * env, TranslationBlock * tb)
             tcg_gen_insn_start(tcg_ctx, dc->pc, dc->npc);
         }
         num_insns++;
+        last_pc = dc->pc;
 
         if (unlikely(cpu_breakpoint_test(cs, dc->pc, BP_ANY))) {
             if (dc->pc != pc_start) {
@@ -5446,7 +5447,6 @@ void gen_intermediate_code(CPUSPARCState * env, TranslationBlock * tb)
             gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
             break;
         } else {
-            last_pc = dc->pc;
             insn = cpu_ldl_code(env, dc->pc);
         }
 

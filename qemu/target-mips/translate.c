@@ -19779,8 +19779,10 @@ void gen_intermediate_code(CPUMIPSState *env, struct TranslationBlock *tb)
             save_cpu_state(&ctx, 1);
             ctx.bstate = BS_BRANCH;
             gen_helper_raise_exception_debug(tcg_ctx, tcg_ctx->cpu_env);
-            /* Include the breakpoint location or the tb won't
-             * be flushed when it must be.  */
+            /* The address covered by the breakpoint must be included in
+               [tb->pc, tb->pc + tb->size) in order to for it to be
+               properly cleared -- thus we increment the PC here so that
+               the logic setting tb->size below does the right thing.  */
             ctx.pc += 4;
             goto done_generating;
         }
