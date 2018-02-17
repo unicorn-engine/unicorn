@@ -33,14 +33,6 @@
 
 #include "uc_priv.h"
 
-//#define DEBUG_IOPORT
-
-#ifdef DEBUG_IOPORT
-#  define LOG_IOPORT(...) qemu_log_mask(CPU_LOG_IOPORT, ## __VA_ARGS__)
-#else
-#  define LOG_IOPORT(...) do { } while (0)
-#endif
-
 typedef struct MemoryRegionPortioList {
     MemoryRegion mr;
     void *portio_opaque;
@@ -81,7 +73,8 @@ const MemoryRegionOps unassigned_io_ops = {
 
 void cpu_outb(struct uc_struct *uc, pio_addr_t addr, uint8_t val)
 {
-    //LOG_IOPORT("outb: %04"FMT_pioaddr" %02"PRIx8"\n", addr, val);
+    // Unicorn: commented out
+    //trace_cpu_out(addr, 'b', val);
     // Unicorn: call registered OUT callbacks
     struct hook *hook;
     HOOK_FOREACH_VAR_DECLARE;
@@ -93,7 +86,8 @@ void cpu_outb(struct uc_struct *uc, pio_addr_t addr, uint8_t val)
 
 void cpu_outw(struct uc_struct *uc, pio_addr_t addr, uint16_t val)
 {
-    //LOG_IOPORT("outw: %04"FMT_pioaddr" %04"PRIx16"\n", addr, val);
+    // Unicorn: commented out
+    //trace_cpu_out(addr, 'w', val);
     // Unicorn: call registered OUT callbacks
     struct hook *hook;
     HOOK_FOREACH_VAR_DECLARE;
@@ -105,7 +99,8 @@ void cpu_outw(struct uc_struct *uc, pio_addr_t addr, uint16_t val)
 
 void cpu_outl(struct uc_struct *uc, pio_addr_t addr, uint32_t val)
 {
-    //LOG_IOPORT("outl: %04"FMT_pioaddr" %08"PRIx32"\n", addr, val);
+    // Unicorn: commented out
+    //trace_cpu_out(addr, 'l', val);
     // Unicorn: call registered OUT callbacks
     struct hook *hook;
     HOOK_FOREACH_VAR_DECLARE;
@@ -117,7 +112,8 @@ void cpu_outl(struct uc_struct *uc, pio_addr_t addr, uint32_t val)
 
 uint8_t cpu_inb(struct uc_struct *uc, pio_addr_t addr)
 {
-    //LOG_IOPORT("inb : %04"FMT_pioaddr" %02"PRIx8"\n", addr, val);
+    // Unicorn: commented out
+    //trace_cpu_in(addr, 'b', val);
     // Unicorn: call registered IN callbacks
     struct hook *hook;
     HOOK_FOREACH_VAR_DECLARE;
@@ -131,7 +127,8 @@ uint8_t cpu_inb(struct uc_struct *uc, pio_addr_t addr)
 
 uint16_t cpu_inw(struct uc_struct *uc, pio_addr_t addr)
 {
-    //LOG_IOPORT("inw : %04"FMT_pioaddr" %04"PRIx16"\n", addr, val);
+    // Unicorn: commented out
+    //trace_cpu_in(addr, 'w', val);
     // Unicorn: call registered IN callbacks
     struct hook *hook;
     HOOK_FOREACH_VAR_DECLARE;
@@ -145,7 +142,8 @@ uint16_t cpu_inw(struct uc_struct *uc, pio_addr_t addr)
 
 uint32_t cpu_inl(struct uc_struct *uc, pio_addr_t addr)
 {
-    //LOG_IOPORT("inl : %04"FMT_pioaddr" %08"PRIx32"\n", addr, val);
+    // Unicorn: commented out
+    //trace_cpu_in(addr, 'l', val);
     // Unicorn: call registered IN callbacks
     struct hook *hook;
     HOOK_FOREACH_VAR_DECLARE;
