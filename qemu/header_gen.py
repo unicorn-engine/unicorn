@@ -2115,6 +2115,7 @@ symbols = (
     'memory_region_set_enabled',
     'memory_region_set_global_locking',
     'memory_region_set_readonly',
+    'memory_region_set_size',
     'memory_region_set_skip_dump',
     'memory_region_size',
     'memory_region_test_and_clear_dirty',
