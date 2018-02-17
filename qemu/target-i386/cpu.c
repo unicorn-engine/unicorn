@@ -226,8 +226,8 @@ static const char *ext4_feature_name[] = {
 static const char *cpuid_7_0_ebx_feature_name[] = {
     "fsgsbase", "tsc_adjust", NULL, "bmi1", "hle", "avx2", NULL, "smep",
     "bmi2", "erms", "invpcid", "rtm", NULL, NULL, "mpx", NULL,
-    "avx512f", NULL, "rdseed", "adx", "smap", NULL, NULL, NULL,
-    NULL, NULL, "avx512pf", "avx512er", "avx512cd", NULL, NULL, NULL,
+    "avx512f", NULL, "rdseed", "adx", "smap", NULL, "pcommit", "clflushopt",
+    "clwb", NULL, "avx512pf", "avx512er", "avx512cd", NULL, NULL, NULL,
 };
 
 static const char *cpuid_apm_edx_feature_name[] = {
@@ -787,7 +787,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_1_EDX
             PPRO_FEATURES,
         // FEAT_1_ECX
-            CPUID_EXT_SSE3,
+            CPUID_EXT_SSSE3,
         },
     },
     {
