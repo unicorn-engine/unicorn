@@ -2789,7 +2789,7 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     { "ELR_EL1", 0,4,0, 3,0,1, ARM_CP_STATE_AA64,
       ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[1]) },
     { "SPSR_EL1", 0,4,0, 3,0,0, ARM_CP_STATE_AA64,
-      ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[1]) },
+      ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_SVC]) },
     /* We rely on the access checks not allowing the guest to write to the
      * state field when SPSel indicates that it's being used as the stack
      * pointer.
@@ -2908,15 +2908,15 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "FAR_EL2", 0,6,0, 3,4,0, ARM_CP_STATE_AA64,
       0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.far_el[2]) },
     { "SPSR_EL2", 0,4,0, 3,4,0, ARM_CP_STATE_AA64,
-      ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[6]) },
+      ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_HYP]) },
     { "SPSR_IRQ", 0,4,3, 3,4,0, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
-      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[4]) },
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_IRQ]) },
     { "SPSR_ABT", 0,4,3, 3,4,1, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
-      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[2]) },
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_ABT]) },
     { "SPSR_UND", 0,4,3, 3,4,2, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
-      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[3]) },
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_UND]) },
     { "SPSR_FIQ", 0,4,3, 3,4,3, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
-      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[5]) },
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_FIQ]) },
     { "VBAR_EL2", 0,12,0, 3,4,0, ARM_CP_STATE_AA64,
       0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[2]), {0, 0},
       NULL, NULL, vbar_write, },
@@ -3075,7 +3075,7 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "FAR_EL3", 0,6,0, 3,6,0, ARM_CP_STATE_AA64,
       0, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.far_el[3]) },
     { "SPSR_EL3", 0,4,0, 3,6,0, ARM_CP_STATE_AA64,
-      ARM_CP_ALIAS, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[7]) },
+      ARM_CP_ALIAS, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_MON]) },
     { "VBAR_EL3", 0,12,0, 3,6,0, ARM_CP_STATE_AA64,
       0, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[3]), {0, 0},
       NULL, NULL, vbar_write, },
@@ -4528,21 +4528,21 @@ int bank_number(int mode)
     default:
     case ARM_CPU_MODE_USR:
     case ARM_CPU_MODE_SYS:
-        return 0;
+        return BANK_USRSYS;
     case ARM_CPU_MODE_SVC:
-        return 1;
+        return BANK_SVC;
     case ARM_CPU_MODE_ABT:
-        return 2;
+        return BANK_ABT;
     case ARM_CPU_MODE_UND:
-        return 3;
+        return BANK_UND;
     case ARM_CPU_MODE_IRQ:
-        return 4;
+        return BANK_IRQ;
     case ARM_CPU_MODE_FIQ:
-        return 5;
+        return BANK_FIQ;
     case ARM_CPU_MODE_HYP:
-        return 6;
+        return BANK_HYP;
     case ARM_CPU_MODE_MON:
-        return 7;
+        return BANK_MON;
     }
     g_assert_not_reached();
 }
