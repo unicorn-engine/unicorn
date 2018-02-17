@@ -7340,6 +7340,7 @@ static int disas_coproc_insn(DisasContext *s, uint32_t insn)
                 break;
             }
 
+            gen_set_condexec(s);
             gen_set_pc_im(s, s->pc - 4);
             tmpptr = tcg_const_ptr(tcg_ctx, ri);
             tcg_syn = tcg_const_i32(tcg_ctx, syndrome);
