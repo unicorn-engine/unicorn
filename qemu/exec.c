@@ -1357,6 +1357,27 @@ found:
     return block;
 }
 
+/*
+ * Finds the named RAMBlock
+ *
+ * name: The name of RAMBlock to find
+ *
+ * Returns: RAMBlock (or NULL if not found)
+ */
+RAMBlock *qemu_ram_block_by_name(struct uc_struct* uc, const char *name)
+{
+    RAMBlock *block;
+
+    // Unicorn: Changed from QLIST_FOREACH_RCU to QTAILQ_FOREACH
+    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+        if (!strcmp(name, block->idstr)) {
+            return block;
+        }
+    }
+
+    return NULL;
+}
+
 /* Some of the softmmu routines need to translate from a host pointer
    (typically a TLB entry) back to a ram offset.  */
 MemoryRegion *qemu_ram_addr_from_host(struct uc_struct* uc, void *ptr, ram_addr_t *ram_addr)

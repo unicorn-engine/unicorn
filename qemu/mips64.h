@@ -2436,6 +2436,7 @@
 #define qemu_ram_alloc qemu_ram_alloc_mips64
 #define qemu_ram_alloc_from_ptr qemu_ram_alloc_from_ptr_mips64
 #define qemu_ram_alloc_resizeable qemu_ram_alloc_resizeable_mips64
+#define qemu_ram_block_by_name qemu_ram_block_by_name_mips64
 #define qemu_ram_block_from_host qemu_ram_block_from_host_mips64
 #define qemu_ram_foreach_block qemu_ram_foreach_block_mips64
 #define qemu_ram_free qemu_ram_free_mips64

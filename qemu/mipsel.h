@@ -2436,6 +2436,7 @@
 #define qemu_ram_alloc qemu_ram_alloc_mipsel
 #define qemu_ram_alloc_from_ptr qemu_ram_alloc_from_ptr_mipsel
 #define qemu_ram_alloc_resizeable qemu_ram_alloc_resizeable_mipsel
+#define qemu_ram_block_by_name qemu_ram_block_by_name_mipsel
 #define qemu_ram_block_from_host qemu_ram_block_from_host_mipsel
 #define qemu_ram_foreach_block qemu_ram_foreach_block_mipsel
 #define qemu_ram_free qemu_ram_free_mipsel
