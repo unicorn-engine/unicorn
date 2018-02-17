@@ -911,14 +911,18 @@ void arm_debug_excp_handler(CPUState *cs)
             }
         }
     } else {
-        // Unicorn: commented out
-        //uint64_t pc = is_a64(env) ? env->pc : env->regs[15];
+        uint64_t pc = is_a64(env) ? env->pc : env->regs[15];
         bool same_el = (arm_debug_target_el(env) == arm_current_el(env));
 
-        // Unicorn: commented out
-        //if (cpu_breakpoint_test(cs, pc, BP_GDB)) {
-        //    return;
-        //}
+        /* (1) GDB breakpoints should be handled first.
+         * (2) Do not raise a CPU exception if no CPU breakpoint has fired,
+         * since singlestep is also done by generating a debug internal
+         * exception.
+         */
+        if (cpu_breakpoint_test(cs, pc, BP_GDB)
+            || !cpu_breakpoint_test(cs, pc, BP_CPU)) {
+            return;
+        }
 
         if (extended_addresses_enabled(env)) {
             env->exception.fsr = (1 << 9) | 0x22;
