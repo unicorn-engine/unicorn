@@ -19,7 +19,6 @@ struct uc_struct;
 
 // This two struct is originally from qemu/include/exec/cpu-all.h
 // Temporarily moved here since there is circular inclusion.
-typedef struct RAMBlock RAMBlock;
 struct RAMBlock {
     struct MemoryRegion *mr;
     uint8_t *host;

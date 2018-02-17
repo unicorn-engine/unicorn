@@ -986,6 +986,11 @@ static RAMBlock *find_ram_block(struct uc_struct *uc, ram_addr_t addr)
     return NULL;
 }
 
+const char *qemu_ram_get_idstr(RAMBlock *rb)
+{
+    return rb->idstr;
+}
+
 void qemu_ram_unset_idstr(struct uc_struct *uc, ram_addr_t addr)
 {
     RAMBlock *block = find_ram_block(uc, addr);
@@ -1301,9 +1306,27 @@ static void *qemu_ram_ptr_length(struct uc_struct *uc, ram_addr_t addr, hwaddr *
     abort();
 }
 
-/* Some of the softmmu routines need to translate from a host pointer
-   (typically a TLB entry) back to a ram offset.  */
-MemoryRegion *qemu_ram_addr_from_host(struct uc_struct *uc, void *ptr, ram_addr_t *ram_addr)
+/*
+ * Translates a host ptr back to a RAMBlock, a ram_addr and an offset
+ * in that RAMBlock.
+ *
+ * ptr: Host pointer to look up
+ * round_offset: If true round the result offset down to a page boundary
+ * *ram_addr: set to result ram_addr
+ * *offset: set to result offset within the RAMBlock
+ *
+ * Returns: RAMBlock (or NULL if not found)
+ *
+ *
+ * By the time this function returns, the returned pointer is not protected
+ * by RCU anymore.  If the caller is not within an RCU critical section and
+ * does not hold the iothread lock, it must have other means of protecting the
+ * pointer, such as a reference to the region that includes the incoming
+ * ram_addr_t.
+ */
+RAMBlock *qemu_ram_block_from_host(struct uc_struct* uc, void *ptr, bool round_offset,
+                                   ram_addr_t *ram_addr,
+                                   ram_addr_t *offset)
 {
     RAMBlock *block;
     uint8_t *host = ptr;
@@ -1326,7 +1349,27 @@ MemoryRegion *qemu_ram_addr_from_host(struct uc_struct *uc, void *ptr, ram_addr_
     return NULL;
 
 found:
-    *ram_addr = block->offset + (host - block->host);
+    *offset = (host - block->host);
+    if (round_offset) {
+        *offset &= TARGET_PAGE_MASK;
+    }
+    *ram_addr = block->offset + *offset;
+    return block;
+}
+
+/* Some of the softmmu routines need to translate from a host pointer
+   (typically a TLB entry) back to a ram offset.  */
+MemoryRegion *qemu_ram_addr_from_host(struct uc_struct* uc, void *ptr, ram_addr_t *ram_addr)
+{
+    RAMBlock *block;
+    ram_addr_t offset; /* Not used */
+
+    block = qemu_ram_block_from_host(uc, ptr, false, ram_addr, &offset);
+
+    if (!block) {
+        return NULL;
+    }
+
     return block->mr;
 }
 
