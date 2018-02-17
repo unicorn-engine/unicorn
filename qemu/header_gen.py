@@ -3701,6 +3701,8 @@ mips_symbols = (
     'helper_rdhwr_synci_step',
     'helper_rdhwr_cc',
     'helper_rdhwr_ccres',
+    'helper_rdhwr_performance',
+    'helper_rdhwr_xnp',
     'helper_pmon',
     'helper_wait',
     'mips_cpu_do_unaligned_access',

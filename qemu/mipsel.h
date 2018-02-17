@@ -3648,6 +3648,8 @@
 #define helper_rdhwr_synci_step helper_rdhwr_synci_step_mipsel
 #define helper_rdhwr_cc helper_rdhwr_cc_mipsel
 #define helper_rdhwr_ccres helper_rdhwr_ccres_mipsel
+#define helper_rdhwr_performance helper_rdhwr_performance_mipsel
+#define helper_rdhwr_xnp helper_rdhwr_xnp_mipsel
 #define helper_pmon helper_pmon_mipsel
 #define helper_wait helper_wait_mipsel
 #define mips_cpu_do_unaligned_access mips_cpu_do_unaligned_access_mipsel

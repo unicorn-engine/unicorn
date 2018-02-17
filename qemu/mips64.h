@@ -3648,6 +3648,8 @@
 #define helper_rdhwr_synci_step helper_rdhwr_synci_step_mips64
 #define helper_rdhwr_cc helper_rdhwr_cc_mips64
 #define helper_rdhwr_ccres helper_rdhwr_ccres_mips64
+#define helper_rdhwr_performance helper_rdhwr_performance_mips64
+#define helper_rdhwr_xnp helper_rdhwr_xnp_mips64
 #define helper_pmon helper_pmon_mips64
 #define helper_wait helper_wait_mips64
 #define mips_cpu_do_unaligned_access mips_cpu_do_unaligned_access_mips64
