@@ -2853,6 +2853,9 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0 },
     { "MDCR_EL2", 0,1,1, 3,4,1, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
+    { "HPFAR_EL2", 0,6,0, 3,4,4, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0, 0, {0, 0},
+      access_el3_aa32ns_aa64any },
     REGINFO_SENTINEL
 };
 
@@ -3022,6 +3025,11 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
      */
     { "MDCR_EL2", 0,1,1, 3,4,1, ARM_CP_STATE_BOTH, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mdcr_el2), },
+    { "HPFAR", 15,6,0, 0,4,4, ARM_CP_STATE_AA32, 0,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hpfar_el2), {0, 0}, 
+      access_el3_aa32ns },
+    { "HPFAR_EL2", 0,6,0, 3,4,4, ARM_CP_STATE_AA64, 0,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hpfar_el2) },
     REGINFO_SENTINEL
 };
 
