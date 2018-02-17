@@ -677,7 +677,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_MTRR | CPUID_CLFLUSH | CPUID_MCA |
             CPUID_PSE36,
         // FEAT_1_ECX
-            CPUID_EXT_SSE3 | CPUID_EXT_CX16 | CPUID_EXT_POPCNT,
+            CPUID_EXT_SSE3 | CPUID_EXT_CX16,
         // FEAT_7_0_EBX
             0,
         // FEAT_8000_0001_EDX
@@ -787,7 +787,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_1_EDX
             PPRO_FEATURES,
         // FEAT_1_ECX
-            CPUID_EXT_SSE3 | CPUID_EXT_POPCNT,
+            CPUID_EXT_SSE3,
         },
     },
     {
