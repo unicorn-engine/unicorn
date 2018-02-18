@@ -374,10 +374,6 @@ struct CPUTimer
 
 typedef struct CPUTimer CPUTimer;
 
-struct QEMUFile;
-void cpu_put_timer(struct QEMUFile *f, CPUTimer *s);
-void cpu_get_timer(struct QEMUFile *f, CPUTimer *s);
-
 typedef struct CPUSPARCState CPUSPARCState;
 
 struct CPUSPARCState {
@@ -608,8 +604,6 @@ static inline CPUSPARCState *cpu_init(struct uc_struct *uc, const char *cpu_mode
 #define cpu_exec cpu_sparc_exec
 #define cpu_signal_handler cpu_sparc_signal_handler
 #define cpu_list sparc_cpu_list
-
-#define CPU_SAVE_VERSION 7
 
 /* MMU modes definitions */
 #if defined (TARGET_SPARC64)
