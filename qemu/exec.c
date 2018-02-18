@@ -1113,9 +1113,15 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
                                         new_block->used_length,
                                         DIRTY_CLIENTS_ALL);
 
-    qemu_ram_setup_dump(new_block->host, new_block->max_length);
-    //qemu_madvise(new_block->host, new_block->max_length, QEMU_MADV_HUGEPAGE);
-    //qemu_madvise(new_block->host, new_block->max_length, QEMU_MADV_DONTFORK);
+    if (new_block->host) {
+        qemu_ram_setup_dump(new_block->host, new_block->max_length);
+        // Unicorn: commented out
+        //qemu_madvise(new_block->host, new_block->max_length, QEMU_MADV_HUGEPAGE);
+        //qemu_madvise(new_block->host, new_block->max_length, QEMU_MADV_DONTFORK);
+        //if (kvm_enabled()) {
+        //    kvm_setup_guest_memory(new_block->host, new_block->max_length);
+        //}
+    }
 
     return new_block->offset;
 }
