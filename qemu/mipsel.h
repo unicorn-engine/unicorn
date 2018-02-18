@@ -24,7 +24,7 @@
 #define address_space_stq_be address_space_stq_be_mipsel
 #define arm_release arm_release_mipsel
 #define arm_tlb_fill arm_tlb_fill_mipsel
-#define arm_regime_using_lpae_format arm_regime_using_lpae_format_mipsel
+#define arm_s1_regime_using_lpae_format arm_s1_regime_using_lpae_format_mipsel
 #define arm_cpu_do_unaligned_access arm_cpu_do_unaligned_access_mipsel
 #define aarch64_sync_32_to_64 aarch64_sync_32_to_64_mipsel
 #define aarch64_sync_64_to_32 aarch64_sync_64_to_32_mipsel

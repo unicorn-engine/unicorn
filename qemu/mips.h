@@ -24,7 +24,7 @@
 #define address_space_stq_be address_space_stq_be_mips
 #define arm_release arm_release_mips
 #define arm_tlb_fill arm_tlb_fill_mips
-#define arm_regime_using_lpae_format arm_regime_using_lpae_format_mips
+#define arm_s1_regime_using_lpae_format arm_s1_regime_using_lpae_format_mips
 #define arm_cpu_do_unaligned_access arm_cpu_do_unaligned_access_mips
 #define aarch64_sync_32_to_64 aarch64_sync_32_to_64_mips
 #define aarch64_sync_64_to_32 aarch64_sync_64_to_32_mips

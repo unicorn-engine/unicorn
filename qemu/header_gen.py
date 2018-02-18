@@ -30,7 +30,7 @@ symbols = (
     'address_space_stq_be',
     'arm_release',
     'arm_tlb_fill',
-    'arm_regime_using_lpae_format',
+    'arm_s1_regime_using_lpae_format',
     'arm_cpu_do_unaligned_access',
     'aarch64_sync_32_to_64',
     'aarch64_sync_64_to_32',
