@@ -91,6 +91,7 @@
 #define address_space_get_flatview address_space_get_flatview_arm
 #define address_space_init address_space_init_arm
 #define address_space_init_dispatch address_space_init_dispatch_arm
+#define address_space_init_shareable address_space_init_shareable_arm
 #define address_space_lookup_region address_space_lookup_region_arm
 #define address_space_map address_space_map_arm
 #define address_space_read address_space_read_arm

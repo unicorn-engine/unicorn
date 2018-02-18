@@ -91,6 +91,7 @@
 #define address_space_get_flatview address_space_get_flatview_x86_64
 #define address_space_init address_space_init_x86_64
 #define address_space_init_dispatch address_space_init_dispatch_x86_64
+#define address_space_init_shareable address_space_init_shareable_x86_64
 #define address_space_lookup_region address_space_lookup_region_x86_64
 #define address_space_map address_space_map_x86_64
 #define address_space_read address_space_read_x86_64

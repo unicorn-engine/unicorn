@@ -1679,8 +1679,10 @@ void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *ro
     }
 
     memory_region_transaction_begin(uc);
+    as->ref_count = 1;
     as->uc = uc;
     as->root = root;
+    as->malloced = false;
     as->current_map = g_new(FlatView, 1);
     flatview_init(as->current_map);
     QTAILQ_INSERT_TAIL(&uc->address_spaces, as, address_spaces_link);
@@ -1690,9 +1692,53 @@ void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *ro
     memory_region_transaction_commit(uc);
 }
 
-void address_space_destroy(AddressSpace *as)
+static void do_address_space_destroy(AddressSpace *as)
 {
     MemoryListener *listener;
+    bool do_free = as->malloced;
+
+    address_space_destroy_dispatch(as);
+
+    // TODO(danghvu): why assert fail here?
+    //QTAILQ_FOREACH(listener, &as->uc->memory_listeners, link) {
+    //    assert(listener->address_space_filter != as);
+    //}
+
+    flatview_unref(as->current_map);
+    g_free(as->name);
+    // Unicorn: commented out
+    //g_free(as->ioeventfds);
+    memory_region_unref(as->root);
+    if (do_free) {
+        g_free(as);
+    }
+}
+
+AddressSpace *address_space_init_shareable(struct uc_struct *uc, MemoryRegion *root, const char *name)
+{
+    AddressSpace *as;
+
+    QTAILQ_FOREACH(as, &uc->address_spaces, address_spaces_link) {
+        if (root == as->root && as->malloced) {
+            as->ref_count++;
+            return as;
+        }
+    }
+
+    as = g_malloc0(sizeof *as);
+    address_space_init(uc, as, root, name);
+    as->malloced = true;
+    return as;
+}
+
+void address_space_destroy(AddressSpace *as)
+{
+    MemoryRegion *root = as->root;
+
+    as->ref_count--;
+    if (as->ref_count) {
+        return;
+    }
 
     /* Flush out anything from MemoryListeners listening in on this */
     memory_region_transaction_begin(as->uc);
@@ -1701,15 +1747,15 @@ void address_space_destroy(AddressSpace *as)
     QTAILQ_REMOVE(&as->uc->address_spaces, as, address_spaces_link);
     address_space_unregister(as);
 
-    address_space_destroy_dispatch(as);
+    /* At this point, as->dispatch and as->current_map are dummy
+     * entries that the guest should never use.  Wait for the old
+     * values to expire before freeing the data.
+     */
+    as->root = root;
+    do_address_space_destroy(as);
 
-    // TODO(danghvu): why assert fail here?
-    QTAILQ_FOREACH(listener, &as->uc->memory_listeners, link) {
-        // assert(listener->address_space_filter != as);
-    }
-
-    flatview_unref(as->current_map);
-    g_free(as->name);
+    // Unicorn: Commented out and call it directly
+    // call_rcu(as, do_address_space_destroy, rcu);
 }
 
 typedef struct MemoryRegionList MemoryRegionList;

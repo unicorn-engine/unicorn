@@ -91,6 +91,7 @@
 #define address_space_get_flatview address_space_get_flatview_mipsel
 #define address_space_init address_space_init_mipsel
 #define address_space_init_dispatch address_space_init_dispatch_mipsel
+#define address_space_init_shareable address_space_init_shareable_mipsel
 #define address_space_lookup_region address_space_lookup_region_mipsel
 #define address_space_map address_space_map_mipsel
 #define address_space_read address_space_read_mipsel
