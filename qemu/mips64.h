@@ -94,6 +94,7 @@
 #define address_space_map address_space_map_mips64
 #define address_space_read address_space_read_mips64
 #define address_space_read_continue address_space_read_continue_mips64
+#define address_space_read_full address_space_read_full_mips64
 #define address_space_rw address_space_rw_mips64
 #define address_space_translate address_space_translate_mips64
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_mips64
@@ -2040,7 +2041,6 @@
 #define mem_add mem_add_mips64
 #define mem_begin mem_begin_mips64
 #define mem_commit mem_commit_mips64
-#define memory_access_is_direct memory_access_is_direct_mips64
 #define memory_access_size memory_access_size_mips64
 #define memory_init memory_init_mips64
 #define memory_listener_match memory_listener_match_mips64

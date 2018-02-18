@@ -94,6 +94,7 @@
 #define address_space_map address_space_map_mipsel
 #define address_space_read address_space_read_mipsel
 #define address_space_read_continue address_space_read_continue_mipsel
+#define address_space_read_full address_space_read_full_mipsel
 #define address_space_rw address_space_rw_mipsel
 #define address_space_translate address_space_translate_mipsel
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_mipsel
@@ -2040,7 +2041,6 @@
 #define mem_add mem_add_mipsel
 #define mem_begin mem_begin_mipsel
 #define mem_commit mem_commit_mipsel
-#define memory_access_is_direct memory_access_is_direct_mipsel
 #define memory_access_size memory_access_size_mipsel
 #define memory_init memory_init_mipsel
 #define memory_listener_match memory_listener_match_mipsel

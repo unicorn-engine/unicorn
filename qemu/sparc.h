@@ -94,6 +94,7 @@
 #define address_space_map address_space_map_sparc
 #define address_space_read address_space_read_sparc
 #define address_space_read_continue address_space_read_continue_sparc
+#define address_space_read_full address_space_read_full_sparc
 #define address_space_rw address_space_rw_sparc
 #define address_space_translate address_space_translate_sparc
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_sparc
@@ -2040,7 +2041,6 @@
 #define mem_add mem_add_sparc
 #define mem_begin mem_begin_sparc
 #define mem_commit mem_commit_sparc
-#define memory_access_is_direct memory_access_is_direct_sparc
 #define memory_access_size memory_access_size_sparc
 #define memory_init memory_init_sparc
 #define memory_listener_match memory_listener_match_sparc

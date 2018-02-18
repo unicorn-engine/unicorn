@@ -33,7 +33,6 @@ ram_addr_t qemu_ram_alloc_resizeable(ram_addr_t size, ram_addr_t max_size,
                                      MemoryRegion *mr, Error **errp);
 int qemu_get_ram_fd(struct uc_struct *uc, ram_addr_t addr);
 void *qemu_get_ram_block_host_ptr(struct uc_struct *uc, ram_addr_t addr);
-void *qemu_get_ram_ptr(struct uc_struct *uc, ram_addr_t addr);
 void qemu_ram_free(struct uc_struct *c, ram_addr_t addr);
 
 int qemu_ram_resize(struct uc_struct *c, ram_addr_t base, ram_addr_t newsize, Error **errp);

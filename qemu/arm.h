@@ -94,6 +94,7 @@
 #define address_space_map address_space_map_arm
 #define address_space_read address_space_read_arm
 #define address_space_read_continue address_space_read_continue_arm
+#define address_space_read_full address_space_read_full_arm
 #define address_space_rw address_space_rw_arm
 #define address_space_translate address_space_translate_arm
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_arm
@@ -2040,7 +2041,6 @@
 #define mem_add mem_add_arm
 #define mem_begin mem_begin_arm
 #define mem_commit mem_commit_arm
-#define memory_access_is_direct memory_access_is_direct_arm
 #define memory_access_size memory_access_size_arm
 #define memory_init memory_init_arm
 #define memory_listener_match memory_listener_match_arm

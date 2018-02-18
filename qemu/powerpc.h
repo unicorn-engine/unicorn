@@ -94,6 +94,7 @@
 #define address_space_map address_space_map_powerpc
 #define address_space_read address_space_read_powerpc
 #define address_space_read_continue address_space_read_continue_powerpc
+#define address_space_read_full address_space_read_full_powerpc
 #define address_space_rw address_space_rw_powerpc
 #define address_space_translate address_space_translate_powerpc
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_powerpc
@@ -2040,7 +2041,6 @@
 #define mem_add mem_add_powerpc
 #define mem_begin mem_begin_powerpc
 #define mem_commit mem_commit_powerpc
-#define memory_access_is_direct memory_access_is_direct_powerpc
 #define memory_access_size memory_access_size_powerpc
 #define memory_init memory_init_powerpc
 #define memory_listener_match memory_listener_match_powerpc
