@@ -822,11 +822,6 @@ static void memory_region_destructor_alias(MemoryRegion *mr)
     memory_region_unref(mr->alias);
 }
 
-static void memory_region_destructor_ram_from_ptr(MemoryRegion *mr)
-{
-    qemu_ram_free(mr->uc, mr->ram_addr);
-}
-
 static bool memory_region_need_escape(char c)
 {
     return c == '/' || c == '[' || c == '\\' || c == ']';
@@ -1178,7 +1173,7 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
     mr->terminates = true;
-    mr->destructor = memory_region_destructor_ram_from_ptr;
+    mr->destructor = memory_region_destructor_ram;
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
 
     /* qemu_ram_alloc_from_ptr cannot fail with ptr != NULL.  */
