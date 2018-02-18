@@ -47,6 +47,7 @@
 #define tcg_enabled tcg_enabled_aarch64eb
 #define tcg_exec_init tcg_exec_init_aarch64eb
 #define memory_register_types memory_register_types_aarch64eb
+#define cpu_address_space_init cpu_address_space_init_aarch64eb
 #define cpu_exec_init_all cpu_exec_init_all_aarch64eb
 #define cpu_reload_memory_map cpu_reload_memory_map_aarch64eb
 #define vm_start vm_start_aarch64eb
@@ -2733,7 +2734,6 @@
 #define tcg_const_local_i32 tcg_const_local_i32_aarch64eb
 #define tcg_const_local_i64 tcg_const_local_i64_aarch64eb
 #define tcg_context_init tcg_context_init_aarch64eb
-#define tcg_cpu_address_space_init tcg_cpu_address_space_init_aarch64eb
 #define tcg_cpu_exec tcg_cpu_exec_aarch64eb
 #define tcg_current_code_size tcg_current_code_size_aarch64eb
 #define tcg_dump_info tcg_dump_info_aarch64eb

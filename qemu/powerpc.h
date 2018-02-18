@@ -47,6 +47,7 @@
 #define tcg_enabled tcg_enabled_powerpc
 #define tcg_exec_init tcg_exec_init_powerpc
 #define memory_register_types memory_register_types_powerpc
+#define cpu_address_space_init cpu_address_space_init_powerpc
 #define cpu_exec_init_all cpu_exec_init_all_powerpc
 #define cpu_reload_memory_map cpu_reload_memory_map_powerpc
 #define vm_start vm_start_powerpc
@@ -2733,7 +2734,6 @@
 #define tcg_const_local_i32 tcg_const_local_i32_powerpc
 #define tcg_const_local_i64 tcg_const_local_i64_powerpc
 #define tcg_context_init tcg_context_init_powerpc
-#define tcg_cpu_address_space_init tcg_cpu_address_space_init_powerpc
 #define tcg_cpu_exec tcg_cpu_exec_powerpc
 #define tcg_current_code_size tcg_current_code_size_powerpc
 #define tcg_dump_info tcg_dump_info_powerpc

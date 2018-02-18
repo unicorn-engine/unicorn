@@ -383,18 +383,28 @@ CPUState *qemu_get_cpu(struct uc_struct *uc, int index)
 }
 
 #if !defined(CONFIG_USER_ONLY)
-void tcg_cpu_address_space_init(CPUState *cpu, AddressSpace *as)
+void cpu_address_space_init(CPUState *cpu, AddressSpace *as, int asidx)
 {
+    if (asidx == 0) {
+        /* address space 0 gets the convenience alias */
+        cpu->as = as;
+    }
+
     /* We only support one address space per cpu at the moment.  */
     assert(cpu->as == as);
 
-    if (cpu->tcg_as_listener) {
-        memory_listener_unregister(as->uc, cpu->tcg_as_listener);
-    } else {
-        cpu->tcg_as_listener = g_new0(MemoryListener, 1);
+    if (cpu->cpu_ases) {
+         /* We've already registered the listener for our only AS */
+         return;
     }
-    cpu->tcg_as_listener->commit = tcg_commit;
-    memory_listener_register(as->uc, cpu->tcg_as_listener, as);
+
+    cpu->cpu_ases = g_new0(CPUAddressSpace, 1);
+    cpu->cpu_ases[0].cpu = cpu;
+    cpu->cpu_ases[0].as = as;
+    if (tcg_enabled(as->uc)) {
+        cpu->cpu_ases[0].tcg_as_listener.commit = tcg_commit;
+        memory_listener_register(as->uc, &cpu->cpu_ases[0].tcg_as_listener, as);
+    }
 }
 #endif
 
@@ -403,11 +413,10 @@ void cpu_exec_init(CPUState *cpu, void *opaque)
     struct uc_struct *uc = opaque;
     CPUArchState *env = cpu->env_ptr;
 
+    cpu->cpu_index = 0;
+    cpu->as = NULL;
     cpu->uc = uc;
     env->uc = uc;
-
-    cpu->cpu_index = 0;
-    cpu->as = &uc->as;
 
     // TODO: assert uc does not already have a cpu?
     uc->cpu = cpu;

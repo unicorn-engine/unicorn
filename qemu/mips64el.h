@@ -47,6 +47,7 @@
 #define tcg_enabled tcg_enabled_mips64el
 #define tcg_exec_init tcg_exec_init_mips64el
 #define memory_register_types memory_register_types_mips64el
+#define cpu_address_space_init cpu_address_space_init_mips64el
 #define cpu_exec_init_all cpu_exec_init_all_mips64el
 #define cpu_reload_memory_map cpu_reload_memory_map_mips64el
 #define vm_start vm_start_mips64el
@@ -2733,7 +2734,6 @@
 #define tcg_const_local_i32 tcg_const_local_i32_mips64el
 #define tcg_const_local_i64 tcg_const_local_i64_mips64el
 #define tcg_context_init tcg_context_init_mips64el
-#define tcg_cpu_address_space_init tcg_cpu_address_space_init_mips64el
 #define tcg_cpu_exec tcg_cpu_exec_mips64el
 #define tcg_current_code_size tcg_current_code_size_mips64el
 #define tcg_dump_info tcg_dump_info_mips64el

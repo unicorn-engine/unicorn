@@ -2601,12 +2601,14 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
 
 #ifndef CONFIG_USER_ONLY
     if (tcg_enabled(uc)) {
+        AddressSpace *newas = g_new(AddressSpace, 1);
+
         cpu->cpu_as_root = g_new(MemoryRegion, 1);
-        cs->as = g_new(AddressSpace, 1);
         memory_region_init_alias(uc, cpu->cpu_as_root, OBJECT(cpu), "memory",
                                  get_system_memory(uc), 0, ~0ull);
         memory_region_set_enabled(cpu->cpu_as_root, true);
-        address_space_init(uc, cs->as, cpu->cpu_as_root, "CPU");
+        address_space_init(uc, newas, cpu->cpu_as_root, "CPU");
+        cpu_address_space_init(cs, newas, 0);
     }
 #endif
 

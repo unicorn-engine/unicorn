@@ -110,7 +110,12 @@ static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
 
 static int qemu_tcg_init_vcpu(CPUState *cpu)
 {
-    tcg_cpu_address_space_init(cpu, cpu->as);
+    if (!cpu->as) {
+        /* If the target cpu hasn't set up any address spaces itself,
+         * give it the default one.
+         */
+        cpu_address_space_init(cpu, &cpu->uc->as, 0);
+    }
 
     return 0;
 }

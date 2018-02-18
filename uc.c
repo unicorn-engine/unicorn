@@ -293,7 +293,7 @@ uc_err uc_close(uc_engine *uc)
     g_free(uc->tcg_ctx);
 
     // Cleanup CPU.
-    g_free(uc->cpu->tcg_as_listener);
+    g_free(uc->cpu->cpu_ases);
     g_free(uc->cpu->thread);
 
     // Cleanup all objects.

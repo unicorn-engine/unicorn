@@ -47,6 +47,7 @@
 #define tcg_enabled tcg_enabled_x86_64
 #define tcg_exec_init tcg_exec_init_x86_64
 #define memory_register_types memory_register_types_x86_64
+#define cpu_address_space_init cpu_address_space_init_x86_64
 #define cpu_exec_init_all cpu_exec_init_all_x86_64
 #define cpu_reload_memory_map cpu_reload_memory_map_x86_64
 #define vm_start vm_start_x86_64
@@ -2733,7 +2734,6 @@
 #define tcg_const_local_i32 tcg_const_local_i32_x86_64
 #define tcg_const_local_i64 tcg_const_local_i64_x86_64
 #define tcg_context_init tcg_context_init_x86_64
-#define tcg_cpu_address_space_init tcg_cpu_address_space_init_x86_64
 #define tcg_cpu_exec tcg_cpu_exec_x86_64
 #define tcg_current_code_size tcg_current_code_size_x86_64
 #define tcg_dump_info tcg_dump_info_x86_64

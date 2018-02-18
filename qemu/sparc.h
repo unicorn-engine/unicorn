@@ -47,6 +47,7 @@
 #define tcg_enabled tcg_enabled_sparc
 #define tcg_exec_init tcg_exec_init_sparc
 #define memory_register_types memory_register_types_sparc
+#define cpu_address_space_init cpu_address_space_init_sparc
 #define cpu_exec_init_all cpu_exec_init_all_sparc
 #define cpu_reload_memory_map cpu_reload_memory_map_sparc
 #define vm_start vm_start_sparc
@@ -2733,7 +2734,6 @@
 #define tcg_const_local_i32 tcg_const_local_i32_sparc
 #define tcg_const_local_i64 tcg_const_local_i64_sparc
 #define tcg_context_init tcg_context_init_sparc
-#define tcg_cpu_address_space_init tcg_cpu_address_space_init_sparc
 #define tcg_cpu_exec tcg_cpu_exec_sparc
 #define tcg_current_code_size tcg_current_code_size_sparc
 #define tcg_dump_info tcg_dump_info_sparc

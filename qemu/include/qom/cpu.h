@@ -24,6 +24,7 @@
 #include <setjmp.h>
 #include "hw/qdev-core.h"
 #include "exec/hwaddr.h"
+#include "exec/memory.h"
 #include "qemu/queue.h"
 #include "qemu/thread.h"
 #include "qemu/typedefs.h"
@@ -171,6 +172,21 @@ struct kvm_run;
 #define TB_JMP_CACHE_BITS 12
 #define TB_JMP_CACHE_SIZE (1 << TB_JMP_CACHE_BITS)
 
+// Unicorn: Moved CPUAddressSpace here from exec.c
+/**
+ * CPUAddressSpace: all the information a CPU needs about an AddressSpace
+ * @cpu: the CPU whose AddressSpace this is
+ * @as: the AddressSpace itself
+ * @memory_dispatch: its dispatch pointer (cached, RCU protected)
+ * @tcg_as_listener: listener for tracking changes to the AddressSpace
+ */
+struct CPUAddressSpace {
+    CPUState *cpu;
+    AddressSpace *as;
+    struct AddressSpaceDispatch *memory_dispatch;
+    MemoryListener tcg_as_listener;
+};
+
 /**
  * CPUState:
  * @cpu_index: CPU index (informative).
@@ -231,9 +247,10 @@ struct CPUState {
     int64_t icount_extra;
     sigjmp_buf jmp_env;
 
+    CPUAddressSpace *cpu_ases;
+    int num_ases;
     AddressSpace *as;
     struct AddressSpaceDispatch *memory_dispatch;
-    MemoryListener *tcg_as_listener;
 
     void *env_ptr; /* CPUArchState */
     struct TranslationBlock *current_tb;
