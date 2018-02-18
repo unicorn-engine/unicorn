@@ -697,7 +697,7 @@ static RAMBlock *qemu_get_ram_block(struct uc_struct *uc, ram_addr_t addr)
     if (block && addr - block->offset < block->max_length) {
         return block;
     }
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
         if (addr - block->offset < block->max_length) {
             goto found;
         }
@@ -944,15 +944,16 @@ static ram_addr_t find_ram_offset(struct uc_struct *uc, ram_addr_t size)
 
     assert(size != 0); /* it would hand out same offset multiple times */
 
-    if (QTAILQ_EMPTY(&uc->ram_list.blocks))
+    if (QLIST_EMPTY(&uc->ram_list.blocks)) {
         return 0;
+    }
 
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
         ram_addr_t end, next = RAM_ADDR_MAX;
 
         end = block->offset + block->max_length;
 
-        QTAILQ_FOREACH(next_block, &uc->ram_list.blocks, next) {
+        QLIST_FOREACH(next_block, &uc->ram_list.blocks, next) {
             if (next_block->offset >= end) {
                 next = MIN(next, next_block->offset);
             }
@@ -977,9 +978,9 @@ ram_addr_t last_ram_offset(struct uc_struct *uc)
     RAMBlock *block;
     ram_addr_t last = 0;
 
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next)
+    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
         last = MAX(last, block->offset + block->max_length);
-
+    }
     return last;
 }
 
@@ -991,7 +992,7 @@ static RAMBlock *find_ram_block(struct uc_struct *uc, ram_addr_t addr)
 {
     RAMBlock *block;
 
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
         if (block->offset == addr) {
             return block;
         }
@@ -1066,6 +1067,7 @@ int qemu_ram_resize(struct uc_struct *uc, ram_addr_t base, ram_addr_t newsize, E
 static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **errp)
 {
     RAMBlock *block;
+    RAMBlock *last_block = NULL;
     ram_addr_t old_ram_size, new_ram_size;
 
     old_ram_size = last_ram_offset(uc) >> TARGET_PAGE_BITS;
@@ -1084,16 +1086,22 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
         memory_try_enable_merging(new_block->host, new_block->max_length);
     }
 
-    /* Keep the list sorted from biggest to smallest block.  */
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+    /* Keep the list sorted from biggest to smallest block.  Unlike QTAILQ,
+     * QLIST (which has an RCU-friendly variant) does not have insertion at
+     * tail, so save the last element in last_block.
+     */
+    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
+        last_block = block;
         if (block->max_length < new_block->max_length) {
             break;
         }
     }
     if (block) {
-        QTAILQ_INSERT_BEFORE(block, new_block, next);
-    } else {
-        QTAILQ_INSERT_TAIL(&uc->ram_list.blocks, new_block, next);
+        QLIST_INSERT_BEFORE(block, new_block, next);
+    } else if (last_block) {
+        QLIST_INSERT_AFTER(last_block, new_block, next);
+    } else { /* list is empty */
+        QLIST_INSERT_HEAD(&uc->ram_list.blocks, new_block, next);
     }
     uc->ram_list.mru_block = NULL;
 
@@ -1191,9 +1199,9 @@ void qemu_ram_free(struct uc_struct *uc, ram_addr_t addr)
 {
     RAMBlock *block;
 
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
         if (addr == block->offset) {
-            QTAILQ_REMOVE(&uc->ram_list.blocks, block, next);
+            QLIST_REMOVE(block, next);
             uc->ram_list.mru_block = NULL;
             uc->ram_list.version++;
             if (block->flags & RAM_PREALLOC) {
@@ -1220,7 +1228,7 @@ void qemu_ram_remap(struct uc_struct *uc, ram_addr_t addr, ram_addr_t length)
     int flags;
     void *area, *vaddr;
 
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
         offset = addr - block->offset;
         if (offset < block->max_length) {
             vaddr = ramblock_ptr(block, offset);
@@ -1350,7 +1358,7 @@ RAMBlock *qemu_ram_block_from_host(struct uc_struct* uc, void *ptr, bool round_o
         goto found;
     }
 
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
         /* This case append when the block is not mapped. */
         if (block->host == NULL) {
             continue;
@@ -1382,8 +1390,8 @@ RAMBlock *qemu_ram_block_by_name(struct uc_struct* uc, const char *name)
 {
     RAMBlock *block;
 
-    // Unicorn: Changed from QLIST_FOREACH_RCU to QTAILQ_FOREACH
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+    // Unicorn: Changed from QLIST_FOREACH_RCU to QLIST_FOREACH
+    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
         if (!strcmp(name, block->idstr)) {
             return block;
         }
@@ -2852,7 +2860,7 @@ void qemu_ram_foreach_block(struct uc_struct *uc, RAMBlockIterFunc func, void *o
 {
     RAMBlock *block;
 
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
         func(block->host, block->offset, block->used_length, opaque);
     }
 }

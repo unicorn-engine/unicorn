@@ -152,9 +152,8 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         uc->arch = arch;
         uc->mode = mode;
 
-        // uc->ram_list = { .blocks = QTAILQ_HEAD_INITIALIZER(ram_list.blocks) };
-        uc->ram_list.blocks.tqh_first = NULL;
-        uc->ram_list.blocks.tqh_last = &(uc->ram_list.blocks.tqh_first);
+        // uc->ram_list = { .blocks = QLIST_HEAD_INITIALIZER(ram_list.blocks) };
+        uc->ram_list.blocks.lh_first = NULL;
 
         uc->memory_listeners.tqh_first = NULL;
         uc->memory_listeners.tqh_last = &uc->memory_listeners.tqh_first;
