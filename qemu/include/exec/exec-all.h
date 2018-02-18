@@ -82,7 +82,6 @@ void QEMU_NORETURN cpu_loop_exit(CPUState *cpu);
 void QEMU_NORETURN cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc);
 
 #if !defined(CONFIG_USER_ONLY)
-void cpu_reload_memory_map(CPUState *cpu);
 /**
  * cpu_address_space_init:
  * @cpu: CPU to add this address space to

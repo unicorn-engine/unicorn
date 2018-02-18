@@ -49,7 +49,6 @@
 #define memory_register_types memory_register_types_sparc
 #define cpu_address_space_init cpu_address_space_init_sparc
 #define cpu_exec_init_all cpu_exec_init_all_sparc
-#define cpu_reload_memory_map cpu_reload_memory_map_sparc
 #define vm_start vm_start_sparc
 #define resume_all_vcpus resume_all_vcpus_sparc
 #define a15_l2ctlr_read a15_l2ctlr_read_sparc

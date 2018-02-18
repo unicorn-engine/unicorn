@@ -49,7 +49,6 @@
 #define memory_register_types memory_register_types_arm
 #define cpu_address_space_init cpu_address_space_init_arm
 #define cpu_exec_init_all cpu_exec_init_all_arm
-#define cpu_reload_memory_map cpu_reload_memory_map_arm
 #define vm_start vm_start_arm
 #define resume_all_vcpus resume_all_vcpus_arm
 #define a15_l2ctlr_read a15_l2ctlr_read_arm

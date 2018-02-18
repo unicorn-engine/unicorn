@@ -49,7 +49,6 @@
 #define memory_register_types memory_register_types_m68k
 #define cpu_address_space_init cpu_address_space_init_m68k
 #define cpu_exec_init_all cpu_exec_init_all_m68k
-#define cpu_reload_memory_map cpu_reload_memory_map_m68k
 #define vm_start vm_start_m68k
 #define resume_all_vcpus resume_all_vcpus_m68k
 #define a15_l2ctlr_read a15_l2ctlr_read_m68k

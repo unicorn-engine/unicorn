@@ -55,7 +55,6 @@ symbols = (
     'memory_register_types',
     'cpu_address_space_init',
     'cpu_exec_init_all',
-    'cpu_reload_memory_map',
     'vm_start',
     'resume_all_vcpus',
     'a15_l2ctlr_read',

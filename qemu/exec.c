@@ -361,12 +361,13 @@ MemoryRegion *address_space_translate(AddressSpace *as, hwaddr addr,
 }
 
 MemoryRegionSection *
-address_space_translate_for_iotlb(CPUState *cpu, hwaddr addr,
+address_space_translate_for_iotlb(CPUState *cpu, int asidx, hwaddr addr,
                                   hwaddr *xlat, hwaddr *plen)
 {
     MemoryRegionSection *section;
-    section = address_space_translate_internal(cpu->memory_dispatch,
-                                               addr, xlat, plen, false);
+    AddressSpaceDispatch *d = cpu->cpu_ases[asidx].memory_dispatch;
+
+    section = address_space_translate_internal(d, addr, xlat, plen, false);
 
     assert(!section->mr->iommu_ops);
     return section;
@@ -1593,7 +1594,9 @@ static uint16_t dummy_section(PhysPageMap *map, AddressSpace *as,
 
 MemoryRegion *iotlb_to_region(CPUState *cpu, hwaddr index)
 {
-    MemoryRegionSection *sections = cpu->memory_dispatch->map.sections;
+    CPUAddressSpace *cpuas = &cpu->cpu_ases[0];
+    AddressSpaceDispatch *d = cpuas->memory_dispatch;
+    MemoryRegionSection *sections = d->map.sections;
 
     return sections[index & ~TARGET_PAGE_MASK].mr;
 }
@@ -1644,12 +1647,20 @@ static void mem_commit(MemoryListener *listener)
 
 static void tcg_commit(MemoryListener *listener)
 {
-    struct uc_struct* uc = listener->address_space_filter->uc;
+    CPUAddressSpace *cpuas;
+    AddressSpaceDispatch *d;
 
     /* since each CPU stores ram addresses in its TLB cache, we must
        reset the modified entries */
-    /* XXX: slow ! */
-    cpu_reload_memory_map(uc->cpu);
+    cpuas = container_of(listener, CPUAddressSpace, tcg_as_listener);
+
+    /* The CPU and TLB are protected by the iothread lock.
+     * We reload the dispatch pointer now because cpu_reloading_memory_map()
+     * may have split the RCU critical section.
+     */
+    d = cpuas->as->dispatch;
+    cpuas->memory_dispatch = d;
+    tlb_flush(cpuas->cpu, 1);
 }
 
 void address_space_init_dispatch(AddressSpace *as)

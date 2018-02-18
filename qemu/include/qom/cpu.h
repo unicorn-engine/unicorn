@@ -264,7 +264,6 @@ struct CPUState {
     CPUAddressSpace *cpu_ases;
     int num_ases;
     AddressSpace *as;
-    struct AddressSpaceDispatch *memory_dispatch;
 
     void *env_ptr; /* CPUArchState */
     struct TranslationBlock *current_tb;

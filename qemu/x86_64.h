@@ -49,7 +49,6 @@
 #define memory_register_types memory_register_types_x86_64
 #define cpu_address_space_init cpu_address_space_init_x86_64
 #define cpu_exec_init_all cpu_exec_init_all_x86_64
-#define cpu_reload_memory_map cpu_reload_memory_map_x86_64
 #define vm_start vm_start_x86_64
 #define resume_all_vcpus resume_all_vcpus_x86_64
 #define a15_l2ctlr_read a15_l2ctlr_read_x86_64
