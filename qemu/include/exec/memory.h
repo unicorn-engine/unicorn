@@ -149,26 +149,31 @@ struct MemoryRegionIOMMUOps {
 
 struct MemoryRegion {
     Object parent_obj;
+
     /* All fields are private - violators will be prosecuted */
-    const MemoryRegionOps *ops;
+    /* The following fields should fit in a cache line */
+    bool romd_mode;
+    bool ram;
+    bool subpage;
+    bool readonly; /* For RAM regions */
+    bool rom_device;
+    bool flush_coalesced_mmio;
+    bool global_locking;
+    uint8_t dirty_log_mask;
+    ram_addr_t ram_addr;
     const MemoryRegionIOMMUOps *iommu_ops;
+
+    const MemoryRegionOps *ops;
     void *opaque;
     MemoryRegion *container;
     Int128 size;
     hwaddr addr;
     void (*destructor)(MemoryRegion *mr);
-    ram_addr_t ram_addr;
     uint64_t align;
-    bool subpage;
     bool terminates;
-    bool romd_mode;
-    bool ram;
     bool skip_dump;
-    bool readonly; /* For RAM regions */
     bool enabled;
-    bool rom_device;
     bool warning_printed; /* For reservations */
-    bool global_locking;
     MemoryRegion *alias;
     hwaddr alias_offset;
     int32_t priority;
@@ -176,7 +181,6 @@ struct MemoryRegion {
     QTAILQ_HEAD(subregions, MemoryRegion) subregions;
     QTAILQ_ENTRY(MemoryRegion) subregions_link;
     const char *name;
-    uint8_t dirty_log_mask;
     struct uc_struct *uc;
     uint32_t perms;   //all perms, partially redundant with readonly
     uint64_t end;
