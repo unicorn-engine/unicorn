@@ -1422,7 +1422,7 @@ static MemTxResult subpage_read(struct uc_struct* uc, void *opaque, hwaddr addr,
                                 uint64_t *data, unsigned len, MemTxAttrs attrs)
 {
     subpage_t *subpage = opaque;
-    uint8_t buf[4];
+    uint8_t buf[8];
     MemTxResult res;
 
 #if defined(DEBUG_SUBPAGE)
@@ -1456,7 +1456,7 @@ static MemTxResult subpage_write(struct uc_struct* uc, void *opaque, hwaddr addr
                                  uint64_t value, unsigned len, MemTxAttrs attrs)
 {
     subpage_t *subpage = opaque;
-    uint8_t buf[4];
+    uint8_t buf[8];
 
 #if defined(DEBUG_SUBPAGE)
     printf("%s: subpage %p len %u addr " TARGET_FMT_plx
@@ -1503,8 +1503,11 @@ static const MemoryRegionOps subpage_ops = {
     subpage_write,
     DEVICE_NATIVE_ENDIAN,
     {
-        0, 0, false, subpage_accepts,
+        1, 8, false, subpage_accepts,
     },
+    {
+        1, 8, false,
+    }
 };
 
 static int subpage_register (subpage_t *mmio, uint32_t start, uint32_t end,
