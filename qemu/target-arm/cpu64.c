@@ -18,6 +18,7 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>
  */
 
+#include "qemu/osdep.h"
 #include "cpu.h"
 #include "qemu-common.h"
 #include "hw/arm/arm.h"

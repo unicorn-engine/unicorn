@@ -1,3 +1,4 @@
+#include "qemu/osdep.h"
 /*
  * iwMMXt micro operations for XScale.
  *
