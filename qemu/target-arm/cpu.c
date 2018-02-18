@@ -1282,6 +1282,7 @@ static void arm_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
     cc->handle_mmu_fault = arm_cpu_handle_mmu_fault;
 #else
     cc->do_interrupt = arm_cpu_do_interrupt;
+    cc->do_unaligned_access = arm_cpu_do_unaligned_access;
     cc->get_phys_page_debug = arm_cpu_get_phys_page_debug;
     // UNICORN: Commented out
     //cc->vmsd = &vmstate_arm_cpu;
