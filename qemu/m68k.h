@@ -2442,7 +2442,6 @@
 #define qemu_ram_block_from_host qemu_ram_block_from_host_m68k
 #define qemu_ram_foreach_block qemu_ram_foreach_block_m68k
 #define qemu_ram_free qemu_ram_free_m68k
-#define qemu_ram_free_from_ptr qemu_ram_free_from_ptr_m68k
 #define qemu_ram_get_idstr qemu_ram_get_idstr_m68k
 #define qemu_ram_ptr_length qemu_ram_ptr_length_m68k
 #define qemu_ram_remap qemu_ram_remap_m68k

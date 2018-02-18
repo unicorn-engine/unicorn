@@ -2442,7 +2442,6 @@
 #define qemu_ram_block_from_host qemu_ram_block_from_host_mips64
 #define qemu_ram_foreach_block qemu_ram_foreach_block_mips64
 #define qemu_ram_free qemu_ram_free_mips64
-#define qemu_ram_free_from_ptr qemu_ram_free_from_ptr_mips64
 #define qemu_ram_get_idstr qemu_ram_get_idstr_mips64
 #define qemu_ram_ptr_length qemu_ram_ptr_length_mips64
 #define qemu_ram_remap qemu_ram_remap_mips64

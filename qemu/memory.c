@@ -824,7 +824,7 @@ static void memory_region_destructor_alias(MemoryRegion *mr)
 
 static void memory_region_destructor_ram_from_ptr(MemoryRegion *mr)
 {
-    qemu_ram_free_from_ptr(mr->uc, mr->ram_addr);
+    qemu_ram_free(mr->uc, mr->ram_addr);
 }
 
 static bool memory_region_need_escape(char c)
