@@ -119,9 +119,9 @@ typedef struct PageDesc {
 #define V_L1_SHIFT (L1_MAP_ADDR_SPACE_BITS - TARGET_PAGE_BITS - V_L1_BITS)
 
 static uintptr_t qemu_real_host_page_size;
+static intptr_t qemu_real_host_page_mask;
 static uintptr_t qemu_host_page_size;
-static uintptr_t qemu_host_page_mask;
-
+static intptr_t qemu_host_page_mask;
 
 static void tb_link_page(struct uc_struct *uc, TranslationBlock *tb,
     tb_page_addr_t phys_pc, tb_page_addr_t phys_page2);
@@ -317,13 +317,14 @@ static void page_size_init(void)
     /* NOTE: we can always suppose that qemu_host_page_size >=
        TARGET_PAGE_SIZE */
     qemu_real_host_page_size = getpagesize();
+    qemu_real_host_page_mask = -(intptr_t)qemu_real_host_page_size;
     if (qemu_host_page_size == 0) {
         qemu_host_page_size = qemu_real_host_page_size;
     }
     if (qemu_host_page_size < TARGET_PAGE_SIZE) {
         qemu_host_page_size = TARGET_PAGE_SIZE;
     }
-    qemu_host_page_mask = ~(qemu_host_page_size - 1);
+    qemu_host_page_mask = -(intptr_t)qemu_host_page_size;
 }
 
 static void page_init(void)
