@@ -328,11 +328,10 @@ address_space_translate_internal(AddressSpaceDispatch *d, hwaddr addr, hwaddr *x
 
 static inline bool memory_access_is_direct(MemoryRegion *mr, bool is_write)
 {
-    if (memory_region_is_ram(mr)) {
-        return !(is_write && mr->readonly);
-    }
-    if (memory_region_is_romd(mr)) {
-        return !is_write;
+    if (is_write) {
+        return memory_region_is_ram(mr) && !mr->readonly;
+    } else {
+        return memory_region_is_ram(mr) || memory_region_is_romd(mr);
     }
 
     return false;
@@ -1796,8 +1795,8 @@ static int memory_access_size(MemoryRegion *mr, unsigned l, hwaddr addr)
     return l;
 }
 
-MemTxResult address_space_rw(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
-                             uint8_t *buf, int len, bool is_write)
+MemTxResult address_space_write(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
+                                const uint8_t *buf, int len)
 {
     hwaddr l;
     uint8_t *ptr;
@@ -1805,119 +1804,159 @@ MemTxResult address_space_rw(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
     hwaddr addr1;
     MemoryRegion *mr;
     MemTxResult result = MEMTX_OK;
+    // Unicorn: commented out
+    //bool release_lock = false;
 
+    // Unicorn: commented out
+    //rcu_read_lock();
     while (len > 0) {
         l = len;
 
-        mr = address_space_translate(as, addr, &addr1, &l, is_write);
+        mr = address_space_translate(as, addr, &addr1, &l, true);
         if (!mr)
             return true;
 
-        if (is_write) {
-            if (!memory_access_is_direct(mr, is_write)) {
-                l = memory_access_size(mr, l, addr1);
-                /* XXX: could force current_cpu to NULL to avoid
-                   potential bugs */
-                switch (l) {
-                    case 8:
-                        /* 64 bit write access */
-                        val = ldq_p(buf);
-                        result |= memory_region_dispatch_write(mr, addr1, val, 8,
-                                                               attrs);
-                        break;
-                    case 4:
-                        /* 32 bit write access */
-                        val = ldl_p(buf);
-                        result |= memory_region_dispatch_write(mr, addr1, val, 4,
-                                                               attrs);
-
-                        break;
-                    case 2:
-                        /* 16 bit write access */
-                        val = lduw_p(buf);
-                        result |= memory_region_dispatch_write(mr, addr1, val, 2,
-                                                               attrs);
-                        break;
-                    case 1:
-                        /* 8 bit write access */
-                        val = ldub_p(buf);
-                        result |= memory_region_dispatch_write(mr, addr1, val, 1,
-                                                               attrs);
-
-                        break;
-                    default:
-                        abort();
-                }
-            } else {
-                addr1 += memory_region_get_ram_addr(mr);
-                /* RAM case */
-                ptr = qemu_get_ram_ptr(as->uc, addr1);
-                memcpy(ptr, buf, l);
-                invalidate_and_set_dirty(mr, addr1, l);
+        if (!memory_access_is_direct(mr, true)) {
+            // Unicorn: commented out
+            //release_lock |= prepare_mmio_access(mr);
+            l = memory_access_size(mr, l, addr1);
+            /* XXX: could force current_cpu to NULL to avoid
+               potential bugs */
+            switch (l) {
+            case 8:
+                /* 64 bit write access */
+                val = ldq_p(buf);
+                result |= memory_region_dispatch_write(mr, addr1, val, 8,
+                                                       attrs);
+                break;
+            case 4:
+                /* 32 bit write access */
+                val = ldl_p(buf);
+                result |= memory_region_dispatch_write(mr, addr1, val, 4,
+                                                       attrs);
+                break;
+            case 2:
+                /* 16 bit write access */
+                val = lduw_p(buf);
+                result |= memory_region_dispatch_write(mr, addr1, val, 2,
+                                                       attrs);
+                break;
+            case 1:
+                /* 8 bit write access */
+                val = ldub_p(buf);
+                result |= memory_region_dispatch_write(mr, addr1, val, 1,
+                                                       attrs);
+                break;
+            default:
+                abort();
             }
         } else {
-            if (!memory_access_is_direct(mr, is_write)) {
-                /* I/O case */
-                l = memory_access_size(mr, l, addr1);
-
-                switch (l) {
-                    case 8:
-                        /* 64 bit read access */
-                        result |= memory_region_dispatch_read(mr, addr1, &val, 8,
-                                                              attrs);
-
-                        stq_p(buf, val);
-                        break;
-                    case 4:
-                        /* 32 bit read access */
-                        result |= memory_region_dispatch_read(mr, addr1, &val, 4,
-                                                              attrs);
-
-                        stl_p(buf, val);
-                        break;
-                    case 2:
-                        /* 16 bit read access */
-                        result |= memory_region_dispatch_read(mr, addr1, &val, 2,
-                                                              attrs);
-
-                        stw_p(buf, val);
-                        break;
-                    case 1:
-                        /* 8 bit read access */
-                        result |= memory_region_dispatch_read(mr, addr1, &val, 1,
-                                                              attrs);
-
-                        stb_p(buf, val);
-                        break;
-                    default:
-                        abort();
-                }
-            } else {
-                /* RAM case */
-                ptr = qemu_get_ram_ptr(as->uc, mr->ram_addr + addr1);
-                memcpy(buf, ptr, l);
-            }
+            addr1 += memory_region_get_ram_addr(mr);
+            /* RAM case */
+            ptr = qemu_get_ram_ptr(mr->uc, addr1);
+            memcpy(ptr, buf, l);
+            invalidate_and_set_dirty(mr, addr1, l);
         }
+
+        /* Unicorn: commented out
+        if (release_lock) {
+            qemu_mutex_unlock_iothread();
+            release_lock = false;
+        }*/
+
         len -= l;
         buf += l;
         addr += l;
     }
+    // Unicorn: commented out
+    //rcu_read_unlock();
 
     return result;
-}
-
-MemTxResult address_space_write(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
-                                const uint8_t *buf, int len)
-{
-    return address_space_rw(as, addr, attrs, (uint8_t *)buf, len, true);
 }
 
 MemTxResult address_space_read(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
                                uint8_t *buf, int len)
 {
-    return address_space_rw(as, addr, attrs, buf, len, false);
+    hwaddr l;
+    uint8_t *ptr;
+    uint64_t val;
+    hwaddr addr1;
+    MemoryRegion *mr;
+    MemTxResult result = MEMTX_OK;
+    // Unicorn: commented out
+    //bool release_lock = false;
+
+    // Unicorn: commented out
+    //rcu_read_lock();
+    while (len > 0) {
+        l = len;
+        mr = address_space_translate(as, addr, &addr1, &l, false);
+
+        if (!memory_access_is_direct(mr, false)) {
+            /* I/O case */
+            // Unicorn: commented out
+            //release_lock |= prepare_mmio_access(mr);
+            l = memory_access_size(mr, l, addr1);
+            switch (l) {
+            case 8:
+                /* 64 bit read access */
+                result |= memory_region_dispatch_read(mr, addr1, &val, 8,
+                                                      attrs);
+                stq_p(buf, val);
+                break;
+            case 4:
+                /* 32 bit read access */
+                result |= memory_region_dispatch_read(mr, addr1, &val, 4,
+                                                      attrs);
+                stl_p(buf, val);
+                break;
+            case 2:
+                /* 16 bit read access */
+                result |= memory_region_dispatch_read(mr, addr1, &val, 2,
+                                                      attrs);
+                stw_p(buf, val);
+                break;
+            case 1:
+                /* 8 bit read access */
+                result |= memory_region_dispatch_read(mr, addr1, &val, 1,
+                                                      attrs);
+                stb_p(buf, val);
+                break;
+            default:
+                abort();
+            }
+        } else {
+            /* RAM case */
+            ptr = qemu_get_ram_ptr(mr->uc, mr->ram_addr + addr1);
+            memcpy(buf, ptr, l);
+        }
+
+        /* Unicorn: Commented out
+        if (release_lock) {
+            qemu_mutex_unlock_iothread();
+            release_lock = false;
+        }*/
+
+        len -= l;
+        buf += l;
+        addr += l;
+    }
+
+    // Unicorn: commented out
+    //rcu_read_unlock();
+
+    return result;
 }
 
+MemTxResult address_space_rw(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
+                             uint8_t *buf, int len, bool is_write)
+{
+    if (is_write) {
+        return address_space_write(as, addr, attrs, (uint8_t *)buf, len);
+    } else {
+        return address_space_read(as, addr, attrs, (uint8_t *)buf, len);
+    }
+}
 
 bool cpu_physical_memory_rw(AddressSpace *as, hwaddr addr, uint8_t *buf,
                             int len, int is_write)
