@@ -1105,6 +1105,8 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
     }
     uc->ram_list.mru_block = NULL;
 
+    /* Write list before version */
+    smp_wmb();
     uc->ram_list.version++;
 
     new_ram_size = last_ram_offset(uc) >> TARGET_PAGE_BITS;
