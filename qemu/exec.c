@@ -412,6 +412,12 @@ void cpu_address_space_init(CPUState *cpu, AddressSpace *as, int asidx)
         memory_listener_register(as->uc, &newas->tcg_as_listener, as);
     }
 }
+
+AddressSpace *cpu_get_address_space(CPUState *cpu, int asidx)
+{
+    /* Return the AddressSpace corresponding to the specified index */
+    return cpu->cpu_ases[asidx].as;
+}
 #endif
 
 void cpu_exec_init(CPUState *cpu, void *opaque)

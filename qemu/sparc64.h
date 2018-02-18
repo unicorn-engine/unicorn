@@ -49,6 +49,7 @@
 #define memory_register_types memory_register_types_sparc64
 #define cpu_address_space_init cpu_address_space_init_sparc64
 #define cpu_exec_init_all cpu_exec_init_all_sparc64
+#define cpu_get_address_space cpu_get_address_space_sparc64
 #define vm_start vm_start_sparc64
 #define resume_all_vcpus resume_all_vcpus_sparc64
 #define a15_l2ctlr_read a15_l2ctlr_read_sparc64

@@ -49,6 +49,7 @@
 #define memory_register_types memory_register_types_mips
 #define cpu_address_space_init cpu_address_space_init_mips
 #define cpu_exec_init_all cpu_exec_init_all_mips
+#define cpu_get_address_space cpu_get_address_space_mips
 #define vm_start vm_start_mips
 #define resume_all_vcpus resume_all_vcpus_mips
 #define a15_l2ctlr_read a15_l2ctlr_read_mips

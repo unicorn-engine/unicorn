@@ -49,6 +49,7 @@
 #define memory_register_types memory_register_types_powerpc
 #define cpu_address_space_init cpu_address_space_init_powerpc
 #define cpu_exec_init_all cpu_exec_init_all_powerpc
+#define cpu_get_address_space cpu_get_address_space_powerpc
 #define vm_start vm_start_powerpc
 #define resume_all_vcpus resume_all_vcpus_powerpc
 #define a15_l2ctlr_read a15_l2ctlr_read_powerpc
