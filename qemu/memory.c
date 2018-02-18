@@ -1294,11 +1294,6 @@ const char *memory_region_name(const MemoryRegion *mr)
     return mr->name;
 }
 
-bool memory_region_is_ram(MemoryRegion *mr)
-{
-    return mr->ram;
-}
-
 bool memory_region_is_skip_dump(MemoryRegion *mr)
 {
     return mr->skip_dump;
@@ -1312,16 +1307,6 @@ uint8_t memory_region_get_dirty_log_mask(MemoryRegion *mr)
 bool memory_region_is_logging(MemoryRegion *mr, uint8_t client)
 {
     return memory_region_get_dirty_log_mask(mr) & (1 << client);
-}
-
-bool memory_region_is_rom(MemoryRegion *mr)
-{
-    return mr->ram && mr->readonly;
-}
-
-bool memory_region_is_iommu(MemoryRegion *mr)
-{
-    return mr->iommu_ops != 0;
 }
 
 void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
@@ -1536,11 +1521,6 @@ void memory_region_set_alias_offset(MemoryRegion *mr, hwaddr offset)
     mr->alias_offset = offset;
     mr->uc->memory_region_update_pending |= mr->enabled;
     memory_region_transaction_commit(mr->uc);
-}
-
-ram_addr_t memory_region_get_ram_addr(MemoryRegion *mr)
-{
-    return mr->ram_addr;
 }
 
 uint64_t memory_region_get_alignment(const MemoryRegion *mr)
