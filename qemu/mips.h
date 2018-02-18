@@ -93,6 +93,7 @@
 #define address_space_lookup_region address_space_lookup_region_mips
 #define address_space_map address_space_map_mips
 #define address_space_read address_space_read_mips
+#define address_space_read_continue address_space_read_continue_mips
 #define address_space_rw address_space_rw_mips
 #define address_space_translate address_space_translate_mips
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_mips

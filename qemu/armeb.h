@@ -93,6 +93,7 @@
 #define address_space_lookup_region address_space_lookup_region_armeb
 #define address_space_map address_space_map_armeb
 #define address_space_read address_space_read_armeb
+#define address_space_read_continue address_space_read_continue_armeb
 #define address_space_rw address_space_rw_armeb
 #define address_space_translate address_space_translate_armeb
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_armeb

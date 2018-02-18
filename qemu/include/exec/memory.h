@@ -1077,13 +1077,18 @@ void *address_space_map(AddressSpace *as, hwaddr addr,
 void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
                          int is_write, hwaddr access_len);
 
-
 void memory_register_types(struct uc_struct *uc);
 
 MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms);
 MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms, void *ptr);
 void memory_unmap(struct uc_struct *uc, MemoryRegion *mr);
 int memory_free(struct uc_struct *uc);
+
+/* Internal functions, part of the implementation of address_space_read.  */
+MemTxResult address_space_read_continue(AddressSpace *as, hwaddr addr,
+                                        MemTxAttrs attrs, uint8_t *buf,
+                                        int len, hwaddr addr1, hwaddr l,
+                    MemoryRegion *mr);
 
 #endif
 

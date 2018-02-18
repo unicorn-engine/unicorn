@@ -99,6 +99,7 @@ symbols = (
     'address_space_lookup_region',
     'address_space_map',
     'address_space_read',
+    'address_space_read_continue',
     'address_space_rw',
     'address_space_translate',
     'address_space_translate_for_iotlb',
