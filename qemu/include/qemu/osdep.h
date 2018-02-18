@@ -61,6 +61,8 @@
 #include "sysemu/os-win32.h"
 #endif
 
+#include "glib_compat.h"
+
 #if defined(CONFIG_SOLARIS) && CONFIG_SOLARIS_VERSION < 10
 /* [u]int_fast*_t not in <sys/int_types.h> */
 typedef unsigned char           uint_fast8_t;

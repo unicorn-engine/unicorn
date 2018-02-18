@@ -24,7 +24,6 @@
 #define TFR(expr) do { if ((expr) != -1) break; } while (errno == EINTR)
 
 #include "unicorn/platform.h"
-#include "glib_compat.h"
 
 /* HOST_LONG_BITS is the size of a native pointer in bits. */
 #if UINTPTR_MAX == UINT32_MAX
