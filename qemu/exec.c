@@ -385,25 +385,30 @@ CPUState *qemu_get_cpu(struct uc_struct *uc, int index)
 #if !defined(CONFIG_USER_ONLY)
 void cpu_address_space_init(CPUState *cpu, AddressSpace *as, int asidx)
 {
+    CPUAddressSpace *newas;
+
+    /* Target code should have set num_ases before calling us */
+    assert(asidx < cpu->num_ases);
+
     if (asidx == 0) {
         /* address space 0 gets the convenience alias */
         cpu->as = as;
     }
 
-    /* We only support one address space per cpu at the moment.  */
-    assert(cpu->as == as);
+    /* KVM cannot currently support multiple address spaces. */
+    // Unicorn: commented out
+    //assert(asidx == 0 || !kvm_enabled());
 
-    if (cpu->cpu_ases) {
-         /* We've already registered the listener for our only AS */
-         return;
+    if (!cpu->cpu_ases) {
+        cpu->cpu_ases = g_new0(CPUAddressSpace, cpu->num_ases);
     }
 
-    cpu->cpu_ases = g_new0(CPUAddressSpace, 1);
-    cpu->cpu_ases[0].cpu = cpu;
-    cpu->cpu_ases[0].as = as;
+    newas = &cpu->cpu_ases[asidx];
+    newas->cpu = cpu;
+    newas->as = as;
     if (tcg_enabled(as->uc)) {
-        cpu->cpu_ases[0].tcg_as_listener.commit = tcg_commit;
-        memory_listener_register(as->uc, &cpu->cpu_ases[0].tcg_as_listener, as);
+        newas->tcg_as_listener.commit = tcg_commit;
+        memory_listener_register(as->uc, &newas->tcg_as_listener, as);
     }
 }
 #endif
@@ -413,8 +418,9 @@ void cpu_exec_init(CPUState *cpu, void *opaque)
     struct uc_struct *uc = opaque;
     CPUArchState *env = cpu->env_ptr;
 
-    cpu->cpu_index = 0;
     cpu->as = NULL;
+    cpu->cpu_index = 0;
+    cpu->num_ases = 0;
     cpu->uc = uc;
     env->uc = uc;
 

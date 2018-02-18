@@ -209,6 +209,11 @@ struct CPUAddressSpace {
  * This allows a single read-compare-cbranch-write sequence to test
  * for both decrementer underflow and exceptions.
  * @can_do_io: Nonzero if memory-mapped IO is safe.
+ * @cpu_ases: Pointer to array of CPUAddressSpaces (which define the
+ *            AddressSpaces this CPU has)
+ * @num_ases: number of CPUAddressSpaces in @cpu_ases
+ * @as: Pointer to the first AddressSpace, for the convenience of targets which
+ *      only have a single AddressSpace
  * @env_ptr: Pointer to subclass-specific CPUArchState field.
  * @current_tb: Currently executing TB.
  * @next_cpu: Next CPU sharing TB cache.

@@ -114,6 +114,7 @@ static int qemu_tcg_init_vcpu(CPUState *cpu)
         /* If the target cpu hasn't set up any address spaces itself,
          * give it the default one.
          */
+        cpu->num_ases = 1;
         cpu_address_space_init(cpu, &cpu->uc->as, 0);
     }
 

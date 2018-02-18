@@ -2607,6 +2607,7 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         memory_region_init_alias(uc, cpu->cpu_as_root, OBJECT(cpu), "memory",
                                  get_system_memory(uc), 0, ~0ull);
         memory_region_set_enabled(cpu->cpu_as_root, true);
+        cs->num_ases = 1;
         address_space_init(uc, newas, cpu->cpu_as_root, "CPU");
         cpu_address_space_init(cs, newas, 0);
     }
