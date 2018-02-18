@@ -73,7 +73,7 @@
 #define sigsetjmp(env, savemask) setjmp(env)
 #define siglongjmp(env, val) longjmp(env, val)
 
-size_t getpagesize(void);
+int getpagesize(void);
 
 #if !defined(EPROTONOSUPPORT)
 # define EPROTONOSUPPORT EINVAL
