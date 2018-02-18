@@ -1282,7 +1282,7 @@ void *qemu_get_ram_block_host_ptr(struct uc_struct *uc, ram_addr_t addr)
 {
     RAMBlock *block = qemu_get_ram_block(uc, addr);
 
-    return block->host;
+    return ramblock_ptr(block, 0);
 }
 
 /* Return a host pointer to ram allocated with qemu_ram_alloc.
@@ -1297,7 +1297,7 @@ void *qemu_get_ram_ptr(struct uc_struct *uc, ram_addr_t addr)
 {
     RAMBlock *block = qemu_get_ram_block(uc, addr);
 
-    return block->host + (addr - block->offset);
+    return ramblock_ptr(block, addr - block->offset);
 }
 
 /* Return a host pointer to guest's ram. Similar to qemu_get_ram_ptr
