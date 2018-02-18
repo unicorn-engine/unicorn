@@ -93,6 +93,10 @@ struct TranslationBlock;
  * #TranslationBlock.
  * @handle_mmu_fault: Callback for handling an MMU fault.
  * @get_phys_page_debug: Callback for obtaining a physical address.
+ * @get_phys_page_attrs_debug: Callback for obtaining a physical address and the
+ *       associated memory transaction attributes to use for the access.
+ *       CPUs which use memory transaction attributes should implement this
+ *       instead of get_phys_page_debug.
  * @debug_excp_handler: Callback for handling debug exceptions.
  * @vmsd: State description for migration.
  * @cpu_exec_enter: Callback for cpu_exec preparation.
@@ -131,6 +135,8 @@ typedef struct CPUClass {
     int (*handle_mmu_fault)(CPUState *cpu, vaddr address, int rw,
                             int mmu_index);
     hwaddr (*get_phys_page_debug)(CPUState *cpu, vaddr addr);
+    hwaddr (*get_phys_page_attrs_debug)(CPUState *cpu, vaddr addr,
+                                        MemTxAttrs *attrs);
     void (*debug_excp_handler)(CPUState *cpu);
 
     const struct VMStateDescription *vmsd;
@@ -400,6 +406,31 @@ void cpu_dump_statistics(CPUState *cpu, FILE *f, fprintf_function cpu_fprintf,
 
 #ifndef CONFIG_USER_ONLY
 /**
+ * cpu_get_phys_page_attrs_debug:
+ * @cpu: The CPU to obtain the physical page address for.
+ * @addr: The virtual address.
+ * @attrs: Updated on return with the memory transaction attributes to use
+ *         for this access.
+ *
+ * Obtains the physical page corresponding to a virtual one, together
+ * with the corresponding memory transaction attributes to use for the access.
+ * Use it only for debugging because no protection checks are done.
+ *
+ * Returns: Corresponding physical page address or -1 if no page found.
+ */
+static inline hwaddr cpu_get_phys_page_attrs_debug(CPUState *cpu, vaddr addr,
+                                                   MemTxAttrs *attrs)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
+
+    if (cc->get_phys_page_attrs_debug) {
+        return cc->get_phys_page_attrs_debug(cpu, addr, attrs);
+    }
+    /* Fallback for CPUs which don't implement the _attrs_ hook */
+    *attrs = MEMTXATTRS_UNSPECIFIED;
+    return cc->get_phys_page_debug(cpu, addr);
+}
+/**
  * cpu_get_phys_page_debug:
  * @cpu: The CPU to obtain the physical page address for.
  * @addr: The virtual address.
@@ -411,9 +442,9 @@ void cpu_dump_statistics(CPUState *cpu, FILE *f, fprintf_function cpu_fprintf,
  */
 static inline hwaddr cpu_get_phys_page_debug(CPUState *cpu, vaddr addr)
 {
-    CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
+    MemTxAttrs attrs = {0};
 
-    return cc->get_phys_page_debug(cpu, addr);
+    return cpu_get_phys_page_attrs_debug(cpu, addr, &attrs);
 }
 #endif
 
