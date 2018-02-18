@@ -39,8 +39,8 @@ static void error_print_loc(void)
 
 /*
  * Print an error message to current monitor if we have one, else to stderr.
- * Format arguments like vsprintf().  The result should not contain
- * newlines.
+ * Format arguments like vsprintf().  The resulting message should be
+ * a single phrase, with no newline or trailing punctuation.
  * Prepend the current location and append a newline.
  * It's wrong to call this in a QMP monitor.  Use qerror_report() there.
  */
@@ -65,8 +65,8 @@ void error_vreport(const char *fmt, va_list ap)
 
 /*
  * Print an error message to current monitor if we have one, else to stderr.
- * Format arguments like sprintf().  The result should not contain
- * newlines.
+ * Format arguments like sprintf().  The resulting message should be a
+ * single phrase, with no newline or trailing punctuation.
  * Prepend the current location and append a newline.
  * It's wrong to call this in a QMP monitor.  Use qerror_report() there.
  */

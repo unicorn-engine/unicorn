@@ -18,6 +18,16 @@
  * Create an error:
  *     error_setg(&err, "situation normal, all fouled up");
  *
+ * Create an error and add additional explanation:
+ *     error_setg(&err, "invalid quark");
+ *     error_append_hint(&err, "Valid quarks are up, down, strange, "
+ *                       "charm, top, bottom.\n");
+ *
+ * Do *not* contract this to
+ *     error_setg(&err, "invalid quark\n"
+ *                "Valid quarks are up, down, strange, charm, top, bottom.");
+ *
+ *
  * Report an error to stderr:
  *     error_report_err(err);
  * This frees the error object.
@@ -26,6 +36,7 @@
  *     const char *msg = error_get_pretty(err);
  *     do with msg what needs to be done...
  *     error_free(err);
+ * Note that this loses hints added with error_append_hint().
  *
  * Handle an error without reporting it (just for completeness):
  *     error_free(err);
@@ -128,6 +139,8 @@ void error_set_errno(Error **errp, int os_error, ErrorClass err_class,
  * If @errp is anything else, *@errp must be NULL.
  * The new error's class is ERROR_CLASS_GENERIC_ERROR, and its
  * human-readable error message is made from printf-style @fmt, ...
+ * The resulting message should be a single phrase, with no newline or
+ * trailing punctuation.
  */
 #define error_setg(errp, fmt, ...)                              \
     error_setg_internal((errp), __FILE__, __LINE__, __func__,   \
