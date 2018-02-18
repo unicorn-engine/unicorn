@@ -3210,6 +3210,7 @@
 #define cpu_set_cwp cpu_set_cwp_sparc64
 #define cpu_get_psr cpu_get_psr_sparc64
 #define cpu_put_psr cpu_put_psr_sparc64
+#define cpu_put_psr_raw cpu_put_psr_raw_sparc64
 #define cpu_cwp_inc cpu_cwp_inc_sparc64
 #define cpu_cwp_dec cpu_cwp_dec_sparc64
 #define helper_save helper_save_sparc64

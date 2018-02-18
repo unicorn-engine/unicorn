@@ -4179,6 +4179,7 @@ sparc_symbols = (
     'cpu_set_cwp',
     'cpu_get_psr',
     'cpu_put_psr',
+    'cpu_put_psr_raw',
     'cpu_cwp_inc',
     'cpu_cwp_dec',
     'helper_save',
