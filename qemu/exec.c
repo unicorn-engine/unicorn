@@ -1277,20 +1277,29 @@ void *qemu_get_ram_ptr(struct uc_struct *uc, ram_addr_t addr)
 static void *qemu_ram_ptr_length(struct uc_struct *uc, ram_addr_t addr, hwaddr *size)
 {
     RAMBlock *block;
+    ram_addr_t offset_inside_block;
     if (*size == 0) {
         return NULL;
     }
 
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
-        if (addr - block->offset < block->max_length) {
-            if (addr - block->offset + *size > block->max_length)
-                *size = block->max_length - addr + block->offset;
-            return ramblock_ptr(block, addr - block->offset);
-        }
-    }
+    block = qemu_get_ram_block(uc, addr);
+    offset_inside_block = addr - block->offset;
+    *size = MIN(*size, block->max_length - offset_inside_block);
 
-    fprintf(stderr, "Bad ram offset %" PRIx64 "\n", (uint64_t)addr);
-    abort();
+    // Unicorn: Commented out
+    //if (xen_enabled() && block->host == NULL) {
+    //    /* We need to check if the requested address is in the RAM
+    //     * because we don't want to map the entire memory in QEMU.
+    //     * In that case just map the requested area.
+    //     */
+    //    if (block->offset == 0) {
+    //        return xen_map_cache(addr, *size, 1);
+    //    }
+    //
+    //    block->host = xen_map_cache(block->offset, block->max_length, 1);
+    //}
+
+    return ramblock_ptr(block, offset_inside_block);
 }
 
 /*
