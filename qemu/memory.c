@@ -1694,7 +1694,8 @@ void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *ro
 
 static void do_address_space_destroy(AddressSpace *as)
 {
-    MemoryListener *listener;
+    // Unicorn: commented out
+    //MemoryListener *listener;
     bool do_free = as->malloced;
 
     address_space_destroy_dispatch(as);
