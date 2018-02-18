@@ -406,7 +406,7 @@ extern uintptr_t tci_tb_ptr;
 void phys_mem_set_alloc(void *(*alloc)(size_t, uint64_t *align));
 
 struct MemoryRegion *iotlb_to_region(CPUState *cpu,
-                                     hwaddr index);
+                                     hwaddr index, MemTxAttrs attrs);
 
 void tlb_fill(CPUState *cpu, target_ulong addr, int is_write, int mmu_idx,
                    uintptr_t retaddr);
