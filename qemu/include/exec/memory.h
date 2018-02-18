@@ -162,6 +162,7 @@ struct MemoryRegion {
     uint8_t dirty_log_mask;
     ram_addr_t ram_addr;
     const MemoryRegionIOMMUOps *iommu_ops;
+    Object *owner;
 
     const MemoryRegionOps *ops;
     void *opaque;
