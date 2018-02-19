@@ -5094,29 +5094,6 @@ static void arm_cpu_do_interrupt_aarch32_(CPUState *cs)
             offset = 4;
         break;
     case EXCP_SWI:
-#if 0
-        if (semihosting_enabled) {
-            /* Check for semihosting interrupt.  */
-            if (env->thumb) {
-                mask = arm_lduw_code(env, env->regs[15] - 2, env->bswap_code)
-                    & 0xff;
-            } else {
-                mask = arm_ldl_code(env, env->regs[15] - 4, env->bswap_code)
-                    & 0xffffff;
-            }
-            /* Only intercept calls from privileged modes, to provide some
-               semblance of security.  */
-            if (((mask == 0x123456 && !env->thumb)
-                    || (mask == 0xab && env->thumb))
-                  && (env->uncached_cpsr & CPSR_M) != ARM_CPU_MODE_USR) {
-                qemu_log_mask(CPU_LOG_INT,
-                              "...handling as semihosting call 0x%x\n",
-                              env->regs[0]);
-                env->regs[0] = do_arm_semihosting(env);
-                return;
-            }
-        }
-#endif
         new_mode = ARM_CPU_MODE_SVC;
         addr = 0x08;
         mask = CPSR_I;
@@ -5124,21 +5101,6 @@ static void arm_cpu_do_interrupt_aarch32_(CPUState *cs)
         offset = 0;
         break;
     case EXCP_BKPT:
-#if 0
-        /* See if this is a semihosting syscall.  */
-        if (env->thumb && semihosting_enabled) {
-            mask = arm_lduw_code(env, env->regs[15], env->bswap_code) & 0xff;
-            if (mask == 0xab
-                  && (env->uncached_cpsr & CPSR_M) != ARM_CPU_MODE_USR) {
-                env->regs[15] += 2;
-                qemu_log_mask(CPU_LOG_INT,
-                              "...handling as semihosting call 0x%x\n",
-                              env->regs[0]);
-                env->regs[0] = do_arm_semihosting(env);
-                return;
-            }
-        }
-#endif
         env->exception.fsr = 2;
         /* Fall through to prefetch abort.  */
     case EXCP_PREFETCH_ABORT:
@@ -5316,6 +5278,83 @@ static void arm_cpu_do_interrupt_aarch64_(CPUState *cs)
                   new_el, env->pc, pstate_read(env));
 }
 
+static inline bool check_for_semihosting(CPUState *cs)
+{
+    return false;
+
+// Unicorn: ifdefd out
+#if 0
+    /* Check whether this exception is a semihosting call; if so
+     * then handle it and return true; otherwise return false.
+     */
+    ARMCPU *cpu = ARM_CPU(cs);
+    CPUARMState *env = &cpu->env;
+
+    if (is_a64(env)) {
+        if (cs->exception_index == EXCP_SEMIHOST) {
+            /* This is always the 64-bit semihosting exception.
+             * The "is this usermode" and "is semihosting enabled"
+             * checks have been done at translate time.
+             */
+            qemu_log_mask(CPU_LOG_INT,
+                          "...handling as semihosting call 0x%" PRIx64 "\n",
+                          env->xregs[0]);
+            env->xregs[0] = do_arm_semihosting(env);
+            return true;
+        }
+        return false;
+    } else {
+        uint32_t imm;
+
+         /* Only intercept calls from privileged modes, to provide some
+          * semblance of security.
+          */
+        if (!semihosting_enabled() ||
+            ((env->uncached_cpsr & CPSR_M) == ARM_CPU_MODE_USR)) {
+            return false;
+        }
+
+        switch (cs->exception_index) {
+        case EXCP_SWI:
+            /* Check for semihosting interrupt. */
+            if (env->thumb) {
+                imm = arm_lduw_code(env, env->regs[15] - 2, env->bswap_code)
+                    & 0xff;
+                if (imm == 0xab) {
+                    break;
+                }
+            } else {
+                imm = arm_ldl_code(env, env->regs[15] - 4, env->bswap_code)
+                    & 0xffffff;
+                if (imm == 0x123456) {
+                    break;
+                }
+            }
+            return false;
+        case EXCP_BKPT:
+            /* See if this is a semihosting syscall. */
+            if (env->thumb) {
+                imm = arm_lduw_code(env, env->regs[15], env->bswap_code)
+                    & 0xff;
+                if (imm == 0xab) {
+                    env->regs[15] += 2;
+                    break;
+                }
+            }
+            return false;
+        default:
+            return false;
+        }
+
+        qemu_log_mask(CPU_LOG_INT,
+                      "...handling as semihosting call 0x%x\n",
+                      env->regs[0]);
+        env->regs[0] = do_arm_semihosting(env);
+        return true;
+    }
+#endif
+}
+
 /* Handle a CPU exception for A and R profile CPUs.
  * Do any appropriate logging, handle PSCI calls, and then hand off
  * to the AArch64-entry or AArch32-entry function depending on the
@@ -5345,12 +5384,16 @@ void arm_cpu_do_interrupt(CPUState *cs)
         return;
     }
 
-    /* Temporary special case for EXCP_SEMIHOST, which is used only
-     * for 64-bit semihosting calls -- as this is an internal exception
-     * it has no specified target level and arm_el_is_aa64() would
-     * assert because new_el could be 0.
+    /* Semihosting semantics depend on the register width of the
+     * code that caused the exception, not the target exception level,
+     * so must be handled here.
      */
-    if (cs->exception_index == EXCP_SEMIHOST || arm_el_is_aa64(env, new_el)) {
+    if (check_for_semihosting(cs)) {
+        return;
+    }
+
+    assert(!excp_is_internal(cs->exception_index));
+    if (arm_el_is_aa64(env, new_el)) {
         arm_cpu_do_interrupt_aarch64_(cs);
     } else {
         arm_cpu_do_interrupt_aarch32_(cs);
