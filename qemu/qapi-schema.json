@@ -31,7 +31,7 @@
 #
 # Since: 1.5
 ##
-{ 'type': 'X86CPUFeatureWordInfo',
+{ 'struct': 'X86CPUFeatureWordInfo',
   'data': { 'cpuid-input-eax': 'int',
             '*cpuid-input-ecx': 'int',
             'cpuid-register': 'X86CPURegister32',
