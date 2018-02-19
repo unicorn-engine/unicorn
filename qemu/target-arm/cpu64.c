@@ -247,9 +247,6 @@ static void aarch64_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *
 {
     CPUClass *cc = CPU_CLASS(uc, oc);
 
-#if !defined(CONFIG_USER_ONLY)
-    cc->do_interrupt = aarch64_cpu_do_interrupt;
-#endif
     cc->cpu_exec_interrupt = arm_cpu_exec_interrupt;
     cc->set_pc = aarch64_cpu_set_pc;
 }

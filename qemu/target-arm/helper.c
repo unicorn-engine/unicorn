@@ -5046,8 +5046,8 @@ void aarch64_sync_64_to_32(CPUARMState *env)
     env->regs[15] = env->pc;
 }
 
-/* Handle a CPU exception.  */
-void arm_cpu_do_interrupt(CPUState *cs)
+// Unicorn: underscore appended to prevent silly clashing with defines
+static void arm_cpu_do_interrupt_aarch32_(CPUState *cs)
 {
     CPUARMState *env = cs->env_ptr;
     ARMCPU *cpu = ARM_CPU(env->uc, cs);
@@ -5056,16 +5056,6 @@ void arm_cpu_do_interrupt(CPUState *cs)
     int new_mode;
     uint32_t offset;
     uint32_t moe;
-
-    assert(!IS_M(env));
-
-    arm_log_exception(cs->exception_index);
-
-    if (arm_is_psci_call(cpu, cs->exception_index)) {
-        arm_handle_psci_call(cpu);
-        qemu_log_mask(CPU_LOG_INT, "...handled as PSCI call\n");
-        return;
-    }
 
     /* If this is a debug exception we must update the DBGDSCR.MOE bits */
     switch (env->exception.syndrome >> ARM_EL_EC_SHIFT) {
@@ -5242,11 +5232,11 @@ void arm_cpu_do_interrupt(CPUState *cs)
     }
     env->regs[14] = env->regs[15] + offset;
     env->regs[15] = addr;
-    cs->interrupt_request |= CPU_INTERRUPT_EXITTB;
 }
 
-/* Handle a CPU exception.  */
-void aarch64_cpu_do_interrupt(CPUState *cs)
+/* Handle exception entry to a target EL which is using AArch64 */
+// Unicorn: underscore appended to prevent silly clashing with defines
+static void arm_cpu_do_interrupt_aarch64_(CPUState *cs)
 {
     CPUARMState *env = cs->env_ptr;
     ARMCPU *cpu = ARM_CPU(env->uc, cs);
@@ -5262,21 +5252,6 @@ void aarch64_cpu_do_interrupt(CPUState *cs)
         }
     } else if (pstate_read(env) & PSTATE_SP) {
         addr += 0x200;
-    }
-
-    arm_log_exception(cs->exception_index);
-    qemu_log_mask(CPU_LOG_INT, "...from EL%d to EL%d\n", arm_current_el(env),
-                  new_el);
-    if (qemu_loglevel_mask(CPU_LOG_INT)
-        && !excp_is_internal(cs->exception_index)) {
-        qemu_log_mask(CPU_LOG_INT, "...with ESR 0x%" PRIx32 "\n",
-                      env->exception.syndrome);
-    }
-
-    if (arm_is_psci_call(cpu, cs->exception_index)) {
-        arm_handle_psci_call(cpu);
-        qemu_log_mask(CPU_LOG_INT, "...handled as PSCI call\n");
-        return;
     }
 
     switch (cs->exception_index) {
@@ -5336,7 +5311,55 @@ void aarch64_cpu_do_interrupt(CPUState *cs)
     aarch64_restore_sp(env, new_el);
 
     env->pc = addr;
+
+    qemu_log_mask(CPU_LOG_INT, "...to EL%d PC 0x%" PRIx64 " PSTATE 0x%x\n",
+                  new_el, env->pc, pstate_read(env));
+}
+
+/* Handle a CPU exception for A and R profile CPUs.
+ * Do any appropriate logging, handle PSCI calls, and then hand off
+ * to the AArch64-entry or AArch32-entry function depending on the
+ * target exception level's register width.
+ */
+void arm_cpu_do_interrupt(CPUState *cs)
+{
+    ARMCPU *cpu = ARM_CPU(cs->uc, cs);
+    CPUARMState *env = &cpu->env;
+    unsigned int new_el = env->exception.target_el;
+
+    assert(!IS_M(env));
+
+    arm_log_exception(cs->exception_index);
+    qemu_log_mask(CPU_LOG_INT, "...from EL%d to EL%d\n", arm_current_el(env),
+                  new_el);
+    if (qemu_loglevel_mask(CPU_LOG_INT)
+        && !excp_is_internal(cs->exception_index)) {
+        qemu_log_mask(CPU_LOG_INT, "...with ESR %x/0x%" PRIx32 "\n",
+                      env->exception.syndrome >> ARM_EL_EC_SHIFT,
+                      env->exception.syndrome);
+    }
+
+    if (arm_is_psci_call(cpu, cs->exception_index)) {
+        arm_handle_psci_call(cpu);
+        qemu_log_mask(CPU_LOG_INT, "...handled as PSCI call\n");
+        return;
+    }
+
+    /* Temporary special case for EXCP_SEMIHOST, which is used only
+     * for 64-bit semihosting calls -- as this is an internal exception
+     * it has no specified target level and arm_el_is_aa64() would
+     * assert because new_el could be 0.
+     */
+    if (cs->exception_index == EXCP_SEMIHOST || arm_el_is_aa64(env, new_el)) {
+        arm_cpu_do_interrupt_aarch64_(cs);
+    } else {
+        arm_cpu_do_interrupt_aarch32_(cs);
+    }
+
+    // Unicorn: commented out
+    //if (!kvm_enabled()) {
     cs->interrupt_request |= CPU_INTERRUPT_EXITTB;
+    //}
 }
 
 /* Return the exception level which controls this address translation regime */
