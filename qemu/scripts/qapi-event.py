@@ -47,7 +47,7 @@ def generate_event_implement(api_name, event_name, params):
 %(api_name)s
 {
     QDict *qmp;
-    Error *local_err = NULL;
+    Error *err = NULL;
     QMPEventFuncEmit emit;
 """,
                 api_name = api_name)
@@ -82,8 +82,8 @@ def generate_event_implement(api_name, event_name, params):
     g_assert(v);
 
     /* Fake visit, as if all members are under a structure */
-    visit_start_struct(v, NULL, "", "%(event_name)s", 0, &local_err);
-    if (local_err) {
+    visit_start_struct(v, NULL, "", "%(event_name)s", 0, &err);
+    if (err) {
         goto clean;
     }
 
@@ -104,8 +104,8 @@ def generate_event_implement(api_name, event_name, params):
                 var_type = ""
 
             ret += mcgen("""
-    visit_type_%(type)s(v, %(var_type)s&%(var)s, "%(name)s", &local_err);
-    if (local_err) {
+    visit_type_%(type)s(v, %(var_type)s&%(var)s, "%(name)s", &err);
+    if (err) {
         goto clean;
     }
 """,
@@ -122,8 +122,8 @@ def generate_event_implement(api_name, event_name, params):
 
         ret += mcgen("""
 
-    visit_end_struct(v, &local_err);
-    if (local_err) {
+    visit_end_struct(v, &err);
+    if (err) {
         goto clean;
     }
 
@@ -135,7 +135,7 @@ def generate_event_implement(api_name, event_name, params):
 
     # step 4: call qmp event api
     ret += mcgen("""
-    emit(%(event_enum_value)s, qmp, &local_err);
+    emit(%(event_enum_value)s, qmp, &err);
 
 """,
                  event_enum_value = c_enum_const(event_enum_name, event_name))
@@ -147,7 +147,7 @@ def generate_event_implement(api_name, event_name, params):
     qmp_output_visitor_cleanup(qov);
 """)
     ret += mcgen("""
-    error_propagate(errp, local_err);
+    error_propagate(errp, err);
     QDECREF(qmp);
 }
 """)
