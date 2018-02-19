@@ -139,7 +139,7 @@ typedef enum %(name)s
 
     i = 0
     for value in enum_values:
-        enum_full_value = generate_enum_full_value(name, value)
+        enum_full_value = c_enum_const(name, value)
         enum_decl += mcgen('''
     %(enum_full_value)s = %(i)d,
 ''',
