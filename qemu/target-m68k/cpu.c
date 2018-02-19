@@ -18,6 +18,7 @@
  * <http://www.gnu.org/licenses/lgpl-2.1.html>
  */
 
+#include "qemu/osdep.h"
 #include "hw/m68k/m68k.h"
 #include "cpu.h"
 #include "qemu-common.h"
