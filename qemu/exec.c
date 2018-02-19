@@ -1630,7 +1630,8 @@ MemoryRegion *iotlb_to_region(CPUState *cpu, hwaddr index, MemTxAttrs attrs)
 {
     int asidx = cpu_asidx_from_attrs(cpu, attrs);
     CPUAddressSpace *cpuas = &cpu->cpu_ases[asidx];
-    AddressSpaceDispatch *d = cpuas->memory_dispatch;
+    // Unicorn: uses atomic_read instead of atomic_rcu_read
+    AddressSpaceDispatch *d = atomic_read(&cpuas->memory_dispatch);
     MemoryRegionSection *sections = d->map.sections;
 
     return sections[index & ~TARGET_PAGE_MASK].mr;
@@ -1693,7 +1694,8 @@ static void tcg_commit(MemoryListener *listener)
      * We reload the dispatch pointer now because cpu_reloading_memory_map()
      * may have split the RCU critical section.
      */
-    d = cpuas->as->dispatch;
+    // Unicorn: uses atomic_read instead of atomic_rcu_read
+    d = atomic_read(&cpuas->as->dispatch);
     cpuas->memory_dispatch = d;
     tlb_flush(cpuas->cpu, 1);
 }
