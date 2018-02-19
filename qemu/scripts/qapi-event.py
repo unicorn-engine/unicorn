@@ -84,7 +84,7 @@ def generate_event_implement(api_name, event_name, params):
     /* Fake visit, as if all members are under a structure */
     visit_start_struct(v, NULL, "", "%(event_name)s", 0, &err);
     if (err) {
-        goto clean;
+        goto out;
     }
 
 """,
@@ -106,7 +106,7 @@ def generate_event_implement(api_name, event_name, params):
             ret += mcgen("""
     visit_type_%(type)s(v, %(var_type)s&%(var)s, "%(name)s", &err);
     if (err) {
-        goto clean;
+        goto out;
     }
 """,
                          var_type = var_type,
@@ -124,7 +124,7 @@ def generate_event_implement(api_name, event_name, params):
 
     visit_end_struct(v, &err);
     if (err) {
-        goto clean;
+        goto out;
     }
 
     obj = qmp_output_get_qobject(qov);
@@ -143,7 +143,7 @@ def generate_event_implement(api_name, event_name, params):
     # step 5: clean up
     if params and params.members:
         ret += mcgen("""
- clean:
+ out:
     qmp_output_visitor_cleanup(qov);
 """)
     ret += mcgen("""
