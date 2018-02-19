@@ -2592,6 +2592,17 @@ static void sctlr_write(CPUARMState *env, const ARMCPRegInfo *ri,
     tlb_flush(CPU(cpu), 1);
 }
 
+static CPAccessResult fpexc32_access(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    if ((env->cp15.cptr_el[2] & CPTR_TFP) && arm_current_el(env) == 2) {
+        return CP_ACCESS_TRAP_EL2;
+    }
+    if (env->cp15.cptr_el[3] & CPTR_TFP) {
+        return CP_ACCESS_TRAP_EL3;
+    }
+    return CP_ACCESS_OK;
+}
+
 static const ARMCPRegInfo v8_cp_reginfo[] = {
     /* Minimal set of EL0-visible registers. This will need to be expanded
      * significantly for system emulation of AArch64 CPUs.
@@ -2803,6 +2814,9 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     { "SPSel", 0,4,2, 3,0,0, ARM_CP_STATE_AA64,
       ARM_CP_NO_RAW, PL1_RW, 0, NULL, 0, 0, {0, 0},
       NULL, spsel_read, spsel_write },
+    { "FPEXC32_EL2", 0,5,3, 3,4,0, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, vfp.xregs[ARM_VFP_FPEXC]), {0, 0},
+      fpexc32_access },
     REGINFO_SENTINEL
 };
 
