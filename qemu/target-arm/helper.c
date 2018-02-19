@@ -5210,7 +5210,7 @@ static void arm_cpu_do_interrupt_aarch64_(CPUState *cs)
         /* Entry vector offset depends on whether the implemented EL
          * immediately lower than the target level is using AArch32 or AArch64
          */
-        bool is_aa64;
+        bool is_aa64 = false;
 
         switch (new_el) {
         case 3:
