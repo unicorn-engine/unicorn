@@ -22,6 +22,7 @@
  * THE SOFTWARE.
  */
 
+#include "qemu/osdep.h"
 #include "tcg/tcg.h"
 
 const TCGOpDef tcg_op_defs_org[TCG_OP_DEFS_TABLE_SIZE] = {

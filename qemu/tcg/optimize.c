@@ -23,10 +23,7 @@
  * THE SOFTWARE.
  */
 
-#include "config.h"
-
-#include <stdlib.h>
-#include <stdio.h>
+#include "qemu/osdep.h"
 
 #include "qemu-common.h"
 #include "tcg-op.h"
