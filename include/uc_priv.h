@@ -22,7 +22,7 @@
 
 #define ARR_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
-#define READ_QWORD(x) ((uint64)x)
+#define READ_QWORD(x) ((uint64_t)x)
 #define READ_DWORD(x) (x & 0xffffffff)
 #define READ_WORD(x) (x & 0xffff)
 #define READ_BYTE_H(x) ((x & 0xffff) >> 8)
