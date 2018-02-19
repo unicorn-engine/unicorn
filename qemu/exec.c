@@ -1033,6 +1033,8 @@ int qemu_ram_resize(struct uc_struct *uc, ram_addr_t base, ram_addr_t newsize, E
 
     assert(block);
 
+    newsize = TARGET_PAGE_ALIGN(newsize);
+
     if (block->used_length == newsize) {
         return 0;
     }
