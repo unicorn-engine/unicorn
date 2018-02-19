@@ -174,7 +174,7 @@ out:
     error_propagate(errp, err);
 }
 ''',
-                name=name)
+                name=type_name(name))
 
 def generate_visit_enum(name, members):
     return mcgen('''
@@ -184,7 +184,7 @@ void visit_type_%(name)s(Visitor *m, %(name)s *obj, const char *name, Error **er
     visit_type_enum(m, (int *)obj, %(name)s_lookup, "%(name)s", name, errp);
 }
 ''',
-                 name=name)
+                 name=c_name(name))
 
 def generate_visit_alternate(name, members):
     ret = mcgen('''
@@ -366,7 +366,7 @@ def generate_enum_declaration(name, members):
     ret = mcgen('''
 void visit_type_%(name)sList(Visitor *m, %(name)sList **obj, const char *name, Error **errp);
 ''',
-                name=name)
+                name=c_name(name))
 
     return ret
 
@@ -375,7 +375,7 @@ def generate_decl_enum(name, members):
 
 void visit_type_%(name)s(Visitor *m, %(name)s *obj, const char *name, Error **errp);
 ''',
-                name=name)
+                 name=c_name(name))
 
 try:
     opts, args = getopt.gnu_getopt(sys.argv[1:], "chbp:i:o:",
