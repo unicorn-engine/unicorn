@@ -18,6 +18,16 @@ import re
 implicit_structs_seen = set()
 struct_fields_seen = set()
 
+def gen_visit_decl(name, scalar=False):
+    c_type = c_name(name) + ' *'
+    if not scalar:
+        c_type += '*'
+    return mcgen('''
+void visit_type_%(c_name)s(Visitor *m, %(c_type)sobj, const char *name, Error **errp);
+''',
+                 c_name=c_name(name), c_type=c_type)
+
+
 def gen_visit_implicit_struct(typ):
     if typ in implicit_structs_seen:
         return ''
@@ -115,8 +125,17 @@ out:
     return ret
 
 
-def gen_visit_struct_body(name):
-    ret = mcgen('''
+def gen_visit_struct(name, base, members):
+    ret = gen_visit_struct_fields(name, base, members)
+
+    # FIXME: if *obj is NULL on entry, and visit_start_struct() assigns to
+    # *obj, but then visit_type_FOO_fields() fails, we should clean up *obj
+    # rather than leaving it non-NULL. As currently written, the caller must
+    # call qapi_free_FOO() to avoid a memory leak of the partial FOO.
+    ret += mcgen('''
+
+void visit_type_%(c_name)s(Visitor *m, %(c_name)s **obj, const char *name, Error **errp)
+{
     Error *err = NULL;
 
     visit_start_struct(m, (void **)obj, "%(name)s", name, sizeof(%(c_name)s), &err);
@@ -128,24 +147,9 @@ def gen_visit_struct_body(name):
         visit_end_struct(m, &err);
     }
     error_propagate(errp, err);
-''',
-                name=name, c_name=c_name(name))
-    return ret
-
-def gen_visit_struct(name, base, members):
-    ret = gen_visit_struct_fields(name, base, members)
-    ret += mcgen('''
-
-void visit_type_%(c_name)s(Visitor *m, %(c_name)s **obj, const char *name, Error **errp)
-{
-''',
-                 c_name=c_name(name))
-
-    ret += gen_visit_struct_body(name)
-
-    ret += mcgen('''
 }
-''')
+''',
+                 name=name, c_name=c_name(name))
     return ret
 
 
@@ -335,17 +339,6 @@ out:
 ''')
 
     return ret
-
-
-def gen_visit_decl(name, scalar=False):
-    c_type = c_name(name) + ' *'
-    if not scalar:
-        c_type += '*'
-    return mcgen('''
-
-void visit_type_%(c_name)s(Visitor *m, %(c_type)sobj, const char *name, Error **errp);
-''',
-                 c_name=c_name(name), c_type=c_type)
 
 
 class QAPISchemaGenVisitVisitor(QAPISchemaVisitor):
