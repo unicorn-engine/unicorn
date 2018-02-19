@@ -418,6 +418,7 @@ void visit_type_X86CPUFeatureWordInfo(Visitor *m, X86CPUFeatureWordInfo **obj, c
     Error *err = NULL;
 
     visit_start_struct(m, (void **)obj, "X86CPUFeatureWordInfo", name, sizeof(X86CPUFeatureWordInfo), &err);
+
     if (!err) {
         if (*obj) {
             visit_type_X86CPUFeatureWordInfo_fields(m, obj, errp);
