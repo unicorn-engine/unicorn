@@ -23,6 +23,7 @@
  */
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
 #include "hw/i386/pc.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
