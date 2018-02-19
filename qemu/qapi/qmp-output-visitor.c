@@ -134,8 +134,7 @@ static void qmp_output_start_list(Visitor *v, const char *name, Error **errp)
     qmp_output_push(qov, list);
 }
 
-static GenericList *qmp_output_next_list(Visitor *v, GenericList **listp,
-                                         Error **errp)
+static GenericList *qmp_output_next_list(Visitor *v, GenericList **listp)
 {
     GenericList *list = *listp;
     QmpOutputVisitor *qov = to_qov(v);
@@ -150,7 +149,7 @@ static GenericList *qmp_output_next_list(Visitor *v, GenericList **listp,
     return list ? list->next : NULL;
 }
 
-static void qmp_output_end_list(Visitor *v, Error **errp)
+static void qmp_output_end_list(Visitor *v)
 {
     QmpOutputVisitor *qov = to_qov(v);
     qmp_output_pop(qov);

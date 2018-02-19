@@ -1,7 +1,7 @@
 /*
  * String parsing visitor
  *
- * Copyright Red Hat, Inc. 2012
+ * Copyright Red Hat, Inc. 2012-2016
  *
  * Author: Paolo Bonzini <pbonzini@redhat.com>
  *
@@ -140,7 +140,7 @@ start_list(Visitor *v, const char *name, Error **errp)
 }
 
 static GenericList *
-next_list(Visitor *v, GenericList **list, Error **errp)
+next_list(Visitor *v, GenericList **list)
 {
     StringInputVisitor *siv = to_siv(v);
     GenericList **link;
@@ -179,7 +179,7 @@ next_list(Visitor *v, GenericList **list, Error **errp)
 }
 
 static void
-end_list(Visitor *v, Error **errp)
+end_list(Visitor *v)
 {
     StringInputVisitor *siv = to_siv(v);
     siv->head = true;

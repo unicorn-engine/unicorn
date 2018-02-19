@@ -35,10 +35,10 @@ void visit_start_struct(Visitor *v, void **obj, const char *kind,
 void visit_end_struct(Visitor *v, Error **errp);
 void visit_start_implicit_struct(Visitor *v, void **obj, size_t size,
                                  Error **errp);
-void visit_end_implicit_struct(Visitor *v, Error **errp);
+void visit_end_implicit_struct(Visitor *v);
 void visit_start_list(Visitor *v, const char *name, Error **errp);
-GenericList *visit_next_list(Visitor *v, GenericList **list, Error **errp);
-void visit_end_list(Visitor *v, Error **errp);
+GenericList *visit_next_list(Visitor *v, GenericList **list);
+void visit_end_list(Visitor *v);
 void visit_optional(Visitor *v, bool *present, const char *name,
                     Error **errp);
 void visit_get_next_type(Visitor *v, int *obj, const int *qtypes,

@@ -154,7 +154,7 @@ static void qmp_input_start_implicit_struct(Visitor *v, void **obj,
     }
 }
 
-static void qmp_input_end_implicit_struct(Visitor *v, Error **errp)
+static void qmp_input_end_implicit_struct(Visitor *v)
 {
 }
 
@@ -172,8 +172,7 @@ static void qmp_input_start_list(Visitor *v, const char *name, Error **errp)
     qmp_input_push(qiv, qobj, errp);
 }
 
-static GenericList *qmp_input_next_list(Visitor *v, GenericList **list,
-                                        Error **errp)
+static GenericList *qmp_input_next_list(Visitor *v, GenericList **list)
 {
     QmpInputVisitor *qiv = to_qiv(v);
     GenericList *entry;
@@ -202,7 +201,7 @@ static GenericList *qmp_input_next_list(Visitor *v, GenericList **list,
     return entry;
 }
 
-static void qmp_input_end_list(Visitor *v, Error **errp)
+static void qmp_input_end_list(Visitor *v)
 {
     QmpInputVisitor *qiv = to_qiv(v);
 

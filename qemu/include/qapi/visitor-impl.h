@@ -1,7 +1,7 @@
 /*
  * Core Definitions for QAPI Visitor implementations
  *
- * Copyright (C) 2012 Red Hat, Inc.
+ * Copyright (C) 2012-2016 Red Hat, Inc.
  *
  * Author: Paolo Bonizni <pbonzini@redhat.com>
  *
@@ -24,11 +24,11 @@ struct Visitor
 
     void (*start_implicit_struct)(Visitor *v, void **obj, size_t size,
                                   Error **errp);
-    void (*end_implicit_struct)(Visitor *v, Error **errp);
+    void (*end_implicit_struct)(Visitor *v);
 
     void (*start_list)(Visitor *v, const char *name, Error **errp);
-    GenericList *(*next_list)(Visitor *v, GenericList **list, Error **errp);
-    void (*end_list)(Visitor *v, Error **errp);
+    GenericList *(*next_list)(Visitor *v, GenericList **list);
+    void (*end_list)(Visitor *v);
 
     void (*type_enum)(Visitor *v, int *obj, const char *strings[],
                       const char *kind, const char *name, Error **errp);

@@ -36,7 +36,7 @@ static void visit_type_implicit_%(c_type)s(Visitor *m, %(c_type)s **obj, Error *
     visit_start_implicit_struct(m, (void **)obj, sizeof(%(c_type)s), &err);
     if (!err) {
         visit_type_%(c_type)s_fields(m, obj, errp);
-        visit_end_implicit_struct(m, &err);
+        visit_end_implicit_struct(m);
     }
     error_propagate(errp, err);
 }
@@ -212,7 +212,7 @@ void visit_type_%(name)sList(Visitor *m, %(name)sList **obj, const char *name, E
     }
 
     for (prev = (GenericList **)obj;
-         !err && (i = visit_next_list(m, prev, &err)) != NULL;
+         !err && (i = visit_next_list(m, prev)) != NULL;
          prev = &i) {
         %(name)sList *native_i = (%(name)sList *)i;
         visit_type_%(name)s(m, &native_i->value, NULL, &err);
@@ -220,7 +220,7 @@ void visit_type_%(name)sList(Visitor *m, %(name)sList **obj, const char *name, E
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(m, &err);
+    visit_end_list(m);
 out:
     error_propagate(errp, err);
 }
@@ -283,7 +283,7 @@ void visit_type_%(name)s(Visitor *m, %(name)s **obj, const char *name, Error **e
 out_end:
     error_propagate(errp, err);
     err = NULL;
-    visit_end_implicit_struct(m, &err);
+    visit_end_implicit_struct(m);
 out:
     error_propagate(errp, err);
 }
