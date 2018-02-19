@@ -108,7 +108,6 @@ def generate_enum_lookup(name, values):
 const char * const %(name)s_lookup[] = {
 ''',
                 name=c_name(name))
-    i = 0
     for value in values:
         ret += mcgen('''
     "%(value)s",
