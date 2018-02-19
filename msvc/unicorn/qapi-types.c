@@ -40,7 +40,7 @@ const char *const X86CPURegister32_lookup[] = {
     NULL,
 };
 
-void qapi_free_ErrorClassList(ErrorClassList *obj)
+void qapi_free_DummyForceArrays(DummyForceArrays *obj)
 {
     QapiDeallocVisitor *qdv;
     Visitor *v;
@@ -51,7 +51,7 @@ void qapi_free_ErrorClassList(ErrorClassList *obj)
 
     qdv = qapi_dealloc_visitor_new();
     v = qapi_dealloc_get_visitor(qdv);
-    visit_type_ErrorClassList(v, &obj, NULL, NULL);
+    visit_type_DummyForceArrays(v, &obj, NULL, NULL);
     qapi_dealloc_visitor_cleanup(qdv);
 }
 
@@ -82,21 +82,6 @@ void qapi_free_X86CPUFeatureWordInfoList(X86CPUFeatureWordInfoList *obj)
     qdv = qapi_dealloc_visitor_new();
     v = qapi_dealloc_get_visitor(qdv);
     visit_type_X86CPUFeatureWordInfoList(v, &obj, NULL, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
-}
-
-void qapi_free_X86CPURegister32List(X86CPURegister32List *obj)
-{
-    QapiDeallocVisitor *qdv;
-    Visitor *v;
-
-    if (!obj) {
-        return;
-    }
-
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
-    visit_type_X86CPURegister32List(v, &obj, NULL, NULL);
     qapi_dealloc_visitor_cleanup(qdv);
 }
 

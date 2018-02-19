@@ -166,6 +166,8 @@ void qapi_free_uint8List(uint8List *obj);
 #endif /* QAPI_TYPES_BUILTIN */
 
 
+typedef struct DummyForceArrays DummyForceArrays;
+
 typedef enum ErrorClass {
     ERROR_CLASS_GENERIC_ERROR = 0,
     ERROR_CLASS_COMMAND_NOT_FOUND = 1,
@@ -176,8 +178,6 @@ typedef enum ErrorClass {
     ERROR_CLASS_MAX = 6,
 } ErrorClass;
 extern const char *const ErrorClass_lookup[];
-
-typedef struct ErrorClassList ErrorClassList;
 
 typedef struct X86CPUFeatureWordInfo X86CPUFeatureWordInfo;
 
@@ -195,16 +195,10 @@ typedef enum X86CPURegister32 {
     X86_CPU_REGISTER32_MAX = 8,
 } X86CPURegister32;
 extern const char *const X86CPURegister32_lookup[];
-
-typedef struct X86CPURegister32List X86CPURegister32List;
-struct ErrorClassList {
-    union {
-        ErrorClass value;
-        uint64_t padding;
-    };
-    struct ErrorClassList *next;
+struct DummyForceArrays {
+    X86CPUFeatureWordInfoList *unused;
 };
-void qapi_free_ErrorClassList(ErrorClassList *obj);
+void qapi_free_DummyForceArrays(DummyForceArrays *obj);
 struct X86CPUFeatureWordInfo {
     int64_t cpuid_input_eax;
     bool has_cpuid_input_ecx;
@@ -221,13 +215,5 @@ struct X86CPUFeatureWordInfoList {
     struct X86CPUFeatureWordInfoList *next;
 };
 void qapi_free_X86CPUFeatureWordInfoList(X86CPUFeatureWordInfoList *obj);
-struct X86CPURegister32List {
-    union {
-        X86CPURegister32 value;
-        uint64_t padding;
-    };
-    struct X86CPURegister32List *next;
-};
-void qapi_free_X86CPURegister32List(X86CPURegister32List *obj);
 
 #endif

@@ -16,33 +16,37 @@
 #include "qemu-common.h"
 #include "qapi-visit.h"
 
-void visit_type_ErrorClass(Visitor *v, ErrorClass *obj, const char *name, Error **errp)
-{
-    visit_type_enum(v, (int *)obj, ErrorClass_lookup, "ErrorClass", name, errp);
-}
-
-void visit_type_ErrorClassList(Visitor *v, ErrorClassList **obj, const char *name, Error **errp)
+static void visit_type_DummyForceArrays_fields(Visitor *v, DummyForceArrays **obj, Error **errp)
 {
     Error *err = NULL;
-    GenericList *i, **prev;
 
-    visit_start_list(v, name, &err);
+    visit_type_X86CPUFeatureWordInfoList(v, &(*obj)->unused, "unused", &err);
     if (err) {
         goto out;
     }
 
-    for (prev = (GenericList **)obj;
-         !err && (i = visit_next_list(v, prev)) != NULL;
-         prev = &i) {
-        ErrorClassList *native_i = (ErrorClassList *)i;
-        visit_type_ErrorClass(v, &native_i->value, NULL, &err);
-    }
-
-    error_propagate(errp, err);
-    err = NULL;
-    visit_end_list(v);
 out:
     error_propagate(errp, err);
+}
+
+void visit_type_DummyForceArrays(Visitor *v, DummyForceArrays **obj, const char *name, Error **errp)
+{
+    Error *err = NULL;
+
+    visit_start_struct(v, (void **)obj, "DummyForceArrays", name, sizeof(DummyForceArrays), &err);
+
+    if (!err) {
+        if (*obj) {
+            visit_type_DummyForceArrays_fields(v, obj, errp);
+        }
+        visit_end_struct(v, &err);
+    }
+    error_propagate(errp, err);
+}
+
+void visit_type_ErrorClass(Visitor *v, ErrorClass *obj, const char *name, Error **errp)
+{
+    visit_type_enum(v, (int *)obj, ErrorClass_lookup, "ErrorClass", name, errp);
 }
 
 static void visit_type_X86CPUFeatureWordInfo_fields(Visitor *v, X86CPUFeatureWordInfo **obj, Error **errp)
@@ -118,30 +122,6 @@ out:
 void visit_type_X86CPURegister32(Visitor *v, X86CPURegister32 *obj, const char *name, Error **errp)
 {
     visit_type_enum(v, (int *)obj, X86CPURegister32_lookup, "X86CPURegister32", name, errp);
-}
-
-void visit_type_X86CPURegister32List(Visitor *v, X86CPURegister32List **obj, const char *name, Error **errp)
-{
-    Error *err = NULL;
-    GenericList *i, **prev;
-
-    visit_start_list(v, name, &err);
-    if (err) {
-        goto out;
-    }
-
-    for (prev = (GenericList **)obj;
-         !err && (i = visit_next_list(v, prev)) != NULL;
-         prev = &i) {
-        X86CPURegister32List *native_i = (X86CPURegister32List *)i;
-        visit_type_X86CPURegister32(v, &native_i->value, NULL, &err);
-    }
-
-    error_propagate(errp, err);
-    err = NULL;
-    visit_end_list(v);
-out:
-    error_propagate(errp, err);
 }
 
 void visit_type_anyList(Visitor *v, anyList **obj, const char *name, Error **errp)
