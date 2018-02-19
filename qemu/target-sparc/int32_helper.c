@@ -17,9 +17,9 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "qemu/osdep.h"
 #include "cpu.h"
 #include "sysemu/sysemu.h"
-
 
 void sparc_cpu_do_interrupt(CPUState *cs)
 {
