@@ -1506,6 +1506,9 @@ const char *const %(name)s_lookup[] = {
 ''',
                      index = index, value = value)
 
+    # Unicorn: We don't use C99 [ARRAY_INDICING] = Thing because
+    # MSVC is still in the stone-age with this part of C compiler
+    # support.
     max_index = c_enum_const(name, 'MAX', prefix)
     ret += mcgen('''
     NULL,
