@@ -1063,10 +1063,6 @@ def close_output(fdef, fdecl):
     fdecl.write('''
 #endif
 ''')
-
-    fdecl.flush()
     fdecl.close()
-
-    fdef.flush()
     fdef.close()
 
