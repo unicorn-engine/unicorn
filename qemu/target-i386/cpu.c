@@ -2677,8 +2677,9 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     x86_cpu_load_def(cpu, xcc->cpu_def, &error_abort);
 
     /* init various static tables used in TCG mode */
-    if (tcg_enabled(env->uc))
-        optimize_flags_init(env->uc);
+    if (tcg_enabled(env->uc)) {
+        tcg_x86_init(env->uc);
+    }
 }
 
 static int64_t x86_cpu_get_arch_id(CPUState *cs)

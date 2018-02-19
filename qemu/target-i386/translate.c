@@ -8524,7 +8524,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     return s->pc;
 }
 
-void optimize_flags_init(struct uc_struct *uc)
+void tcg_x86_init(struct uc_struct *uc)
 {
     static const char reg_names[CPU_NB_REGS][4] = {
 #ifdef TARGET_X86_64
