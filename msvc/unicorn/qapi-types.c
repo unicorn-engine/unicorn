@@ -45,7 +45,7 @@ const char *X86CPURegister32_lookup[] = {
 #define QAPI_TYPES_BUILTIN_CLEANUP_DEF_H
 
 
-void qapi_free_strList(strList *obj)
+void qapi_free_int32List(int32List *obj)
 {
     QapiDeallocVisitor *md;
     Visitor *v;
@@ -56,67 +56,7 @@ void qapi_free_strList(strList *obj)
 
     md = qapi_dealloc_visitor_new();
     v = qapi_dealloc_get_visitor(md);
-    visit_type_strList(v, &obj, NULL, NULL);
-    qapi_dealloc_visitor_cleanup(md);
-}
-
-void qapi_free_intList(intList *obj)
-{
-    QapiDeallocVisitor *md;
-    Visitor *v;
-
-    if (!obj) {
-        return;
-    }
-
-    md = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(md);
-    visit_type_intList(v, &obj, NULL, NULL);
-    qapi_dealloc_visitor_cleanup(md);
-}
-
-void qapi_free_numberList(numberList *obj)
-{
-    QapiDeallocVisitor *md;
-    Visitor *v;
-
-    if (!obj) {
-        return;
-    }
-
-    md = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(md);
-    visit_type_numberList(v, &obj, NULL, NULL);
-    qapi_dealloc_visitor_cleanup(md);
-}
-
-void qapi_free_boolList(boolList *obj)
-{
-    QapiDeallocVisitor *md;
-    Visitor *v;
-
-    if (!obj) {
-        return;
-    }
-
-    md = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(md);
-    visit_type_boolList(v, &obj, NULL, NULL);
-    qapi_dealloc_visitor_cleanup(md);
-}
-
-void qapi_free_int8List(int8List *obj)
-{
-    QapiDeallocVisitor *md;
-    Visitor *v;
-
-    if (!obj) {
-        return;
-    }
-
-    md = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(md);
-    visit_type_int8List(v, &obj, NULL, NULL);
+    visit_type_int32List(v, &obj, NULL, NULL);
     qapi_dealloc_visitor_cleanup(md);
 }
 
@@ -135,7 +75,7 @@ void qapi_free_int16List(int16List *obj)
     qapi_dealloc_visitor_cleanup(md);
 }
 
-void qapi_free_int32List(int32List *obj)
+void qapi_free_intList(intList *obj)
 {
     QapiDeallocVisitor *md;
     Visitor *v;
@@ -146,22 +86,7 @@ void qapi_free_int32List(int32List *obj)
 
     md = qapi_dealloc_visitor_new();
     v = qapi_dealloc_get_visitor(md);
-    visit_type_int32List(v, &obj, NULL, NULL);
-    qapi_dealloc_visitor_cleanup(md);
-}
-
-void qapi_free_int64List(int64List *obj)
-{
-    QapiDeallocVisitor *md;
-    Visitor *v;
-
-    if (!obj) {
-        return;
-    }
-
-    md = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(md);
-    visit_type_int64List(v, &obj, NULL, NULL);
+    visit_type_intList(v, &obj, NULL, NULL);
     qapi_dealloc_visitor_cleanup(md);
 }
 
@@ -180,7 +105,7 @@ void qapi_free_uint8List(uint8List *obj)
     qapi_dealloc_visitor_cleanup(md);
 }
 
-void qapi_free_uint16List(uint16List *obj)
+void qapi_free_numberList(numberList *obj)
 {
     QapiDeallocVisitor *md;
     Visitor *v;
@@ -191,11 +116,11 @@ void qapi_free_uint16List(uint16List *obj)
 
     md = qapi_dealloc_visitor_new();
     v = qapi_dealloc_get_visitor(md);
-    visit_type_uint16List(v, &obj, NULL, NULL);
+    visit_type_numberList(v, &obj, NULL, NULL);
     qapi_dealloc_visitor_cleanup(md);
 }
 
-void qapi_free_uint32List(uint32List *obj)
+void qapi_free_int8List(int8List *obj)
 {
     QapiDeallocVisitor *md;
     Visitor *v;
@@ -206,7 +131,7 @@ void qapi_free_uint32List(uint32List *obj)
 
     md = qapi_dealloc_visitor_new();
     v = qapi_dealloc_get_visitor(md);
-    visit_type_uint32List(v, &obj, NULL, NULL);
+    visit_type_int8List(v, &obj, NULL, NULL);
     qapi_dealloc_visitor_cleanup(md);
 }
 
@@ -222,6 +147,81 @@ void qapi_free_uint64List(uint64List *obj)
     md = qapi_dealloc_visitor_new();
     v = qapi_dealloc_get_visitor(md);
     visit_type_uint64List(v, &obj, NULL, NULL);
+    qapi_dealloc_visitor_cleanup(md);
+}
+
+void qapi_free_uint16List(uint16List *obj)
+{
+    QapiDeallocVisitor *md;
+    Visitor *v;
+
+    if (!obj) {
+        return;
+    }
+
+    md = qapi_dealloc_visitor_new();
+    v = qapi_dealloc_get_visitor(md);
+    visit_type_uint16List(v, &obj, NULL, NULL);
+    qapi_dealloc_visitor_cleanup(md);
+}
+
+void qapi_free_boolList(boolList *obj)
+{
+    QapiDeallocVisitor *md;
+    Visitor *v;
+
+    if (!obj) {
+        return;
+    }
+
+    md = qapi_dealloc_visitor_new();
+    v = qapi_dealloc_get_visitor(md);
+    visit_type_boolList(v, &obj, NULL, NULL);
+    qapi_dealloc_visitor_cleanup(md);
+}
+
+void qapi_free_strList(strList *obj)
+{
+    QapiDeallocVisitor *md;
+    Visitor *v;
+
+    if (!obj) {
+        return;
+    }
+
+    md = qapi_dealloc_visitor_new();
+    v = qapi_dealloc_get_visitor(md);
+    visit_type_strList(v, &obj, NULL, NULL);
+    qapi_dealloc_visitor_cleanup(md);
+}
+
+void qapi_free_int64List(int64List *obj)
+{
+    QapiDeallocVisitor *md;
+    Visitor *v;
+
+    if (!obj) {
+        return;
+    }
+
+    md = qapi_dealloc_visitor_new();
+    v = qapi_dealloc_get_visitor(md);
+    visit_type_int64List(v, &obj, NULL, NULL);
+    qapi_dealloc_visitor_cleanup(md);
+}
+
+void qapi_free_uint32List(uint32List *obj)
+{
+    QapiDeallocVisitor *md;
+    Visitor *v;
+
+    if (!obj) {
+        return;
+    }
+
+    md = qapi_dealloc_visitor_new();
+    v = qapi_dealloc_get_visitor(md);
+    visit_type_uint32List(v, &obj, NULL, NULL);
     qapi_dealloc_visitor_cleanup(md);
 }
 

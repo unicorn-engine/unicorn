@@ -23,18 +23,18 @@
 #ifndef QAPI_VISIT_BUILTIN_VISITOR_DECL_H
 #define QAPI_VISIT_BUILTIN_VISITOR_DECL_H
 
-void visit_type_strList(Visitor *m, strList **obj, const char *name, Error **errp);
-void visit_type_intList(Visitor *m, intList **obj, const char *name, Error **errp);
-void visit_type_numberList(Visitor *m, numberList **obj, const char *name, Error **errp);
-void visit_type_boolList(Visitor *m, boolList **obj, const char *name, Error **errp);
-void visit_type_int8List(Visitor *m, int8List **obj, const char *name, Error **errp);
-void visit_type_int16List(Visitor *m, int16List **obj, const char *name, Error **errp);
 void visit_type_int32List(Visitor *m, int32List **obj, const char *name, Error **errp);
-void visit_type_int64List(Visitor *m, int64List **obj, const char *name, Error **errp);
+void visit_type_int16List(Visitor *m, int16List **obj, const char *name, Error **errp);
+void visit_type_intList(Visitor *m, intList **obj, const char *name, Error **errp);
 void visit_type_uint8List(Visitor *m, uint8List **obj, const char *name, Error **errp);
-void visit_type_uint16List(Visitor *m, uint16List **obj, const char *name, Error **errp);
-void visit_type_uint32List(Visitor *m, uint32List **obj, const char *name, Error **errp);
+void visit_type_numberList(Visitor *m, numberList **obj, const char *name, Error **errp);
+void visit_type_int8List(Visitor *m, int8List **obj, const char *name, Error **errp);
 void visit_type_uint64List(Visitor *m, uint64List **obj, const char *name, Error **errp);
+void visit_type_uint16List(Visitor *m, uint16List **obj, const char *name, Error **errp);
+void visit_type_boolList(Visitor *m, boolList **obj, const char *name, Error **errp);
+void visit_type_strList(Visitor *m, strList **obj, const char *name, Error **errp);
+void visit_type_int64List(Visitor *m, int64List **obj, const char *name, Error **errp);
+void visit_type_uint32List(Visitor *m, uint32List **obj, const char *name, Error **errp);
 
 #endif /* QAPI_VISIT_BUILTIN_VISITOR_DECL_H */
 

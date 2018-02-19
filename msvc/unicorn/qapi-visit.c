@@ -16,7 +16,7 @@
 #include "qemu-common.h"
 #include "qapi-visit.h"
 
-void visit_type_strList(Visitor *m, strList **obj, const char *name, Error **errp)
+void visit_type_int32List(Visitor *m, int32List **obj, const char *name, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -29,104 +29,8 @@ void visit_type_strList(Visitor *m, strList **obj, const char *name, Error **err
     for (prev = (GenericList **)obj;
          !err && (i = visit_next_list(m, prev)) != NULL;
          prev = &i) {
-        strList *native_i = (strList *)i;
-        visit_type_str(m, &native_i->value, NULL, &err);
-    }
-
-    error_propagate(errp, err);
-    err = NULL;
-    visit_end_list(m);
-out:
-    error_propagate(errp, err);
-}
-
-void visit_type_intList(Visitor *m, intList **obj, const char *name, Error **errp)
-{
-    Error *err = NULL;
-    GenericList *i, **prev;
-
-    visit_start_list(m, name, &err);
-    if (err) {
-        goto out;
-    }
-
-    for (prev = (GenericList **)obj;
-         !err && (i = visit_next_list(m, prev)) != NULL;
-         prev = &i) {
-        intList *native_i = (intList *)i;
-        visit_type_int(m, &native_i->value, NULL, &err);
-    }
-
-    error_propagate(errp, err);
-    err = NULL;
-    visit_end_list(m);
-out:
-    error_propagate(errp, err);
-}
-
-void visit_type_numberList(Visitor *m, numberList **obj, const char *name, Error **errp)
-{
-    Error *err = NULL;
-    GenericList *i, **prev;
-
-    visit_start_list(m, name, &err);
-    if (err) {
-        goto out;
-    }
-
-    for (prev = (GenericList **)obj;
-         !err && (i = visit_next_list(m, prev)) != NULL;
-         prev = &i) {
-        numberList *native_i = (numberList *)i;
-        visit_type_number(m, &native_i->value, NULL, &err);
-    }
-
-    error_propagate(errp, err);
-    err = NULL;
-    visit_end_list(m);
-out:
-    error_propagate(errp, err);
-}
-
-void visit_type_boolList(Visitor *m, boolList **obj, const char *name, Error **errp)
-{
-    Error *err = NULL;
-    GenericList *i, **prev;
-
-    visit_start_list(m, name, &err);
-    if (err) {
-        goto out;
-    }
-
-    for (prev = (GenericList **)obj;
-         !err && (i = visit_next_list(m, prev)) != NULL;
-         prev = &i) {
-        boolList *native_i = (boolList *)i;
-        visit_type_bool(m, &native_i->value, NULL, &err);
-    }
-
-    error_propagate(errp, err);
-    err = NULL;
-    visit_end_list(m);
-out:
-    error_propagate(errp, err);
-}
-
-void visit_type_int8List(Visitor *m, int8List **obj, const char *name, Error **errp)
-{
-    Error *err = NULL;
-    GenericList *i, **prev;
-
-    visit_start_list(m, name, &err);
-    if (err) {
-        goto out;
-    }
-
-    for (prev = (GenericList **)obj;
-         !err && (i = visit_next_list(m, prev)) != NULL;
-         prev = &i) {
-        int8List *native_i = (int8List *)i;
-        visit_type_int8(m, &native_i->value, NULL, &err);
+        int32List *native_i = (int32List *)i;
+        visit_type_int32(m, &native_i->value, NULL, &err);
     }
 
     error_propagate(errp, err);
@@ -160,7 +64,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_int32List(Visitor *m, int32List **obj, const char *name, Error **errp)
+void visit_type_intList(Visitor *m, intList **obj, const char *name, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -173,32 +77,8 @@ void visit_type_int32List(Visitor *m, int32List **obj, const char *name, Error *
     for (prev = (GenericList **)obj;
          !err && (i = visit_next_list(m, prev)) != NULL;
          prev = &i) {
-        int32List *native_i = (int32List *)i;
-        visit_type_int32(m, &native_i->value, NULL, &err);
-    }
-
-    error_propagate(errp, err);
-    err = NULL;
-    visit_end_list(m);
-out:
-    error_propagate(errp, err);
-}
-
-void visit_type_int64List(Visitor *m, int64List **obj, const char *name, Error **errp)
-{
-    Error *err = NULL;
-    GenericList *i, **prev;
-
-    visit_start_list(m, name, &err);
-    if (err) {
-        goto out;
-    }
-
-    for (prev = (GenericList **)obj;
-         !err && (i = visit_next_list(m, prev)) != NULL;
-         prev = &i) {
-        int64List *native_i = (int64List *)i;
-        visit_type_int64(m, &native_i->value, NULL, &err);
+        intList *native_i = (intList *)i;
+        visit_type_int(m, &native_i->value, NULL, &err);
     }
 
     error_propagate(errp, err);
@@ -232,7 +112,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_uint16List(Visitor *m, uint16List **obj, const char *name, Error **errp)
+void visit_type_numberList(Visitor *m, numberList **obj, const char *name, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -245,8 +125,8 @@ void visit_type_uint16List(Visitor *m, uint16List **obj, const char *name, Error
     for (prev = (GenericList **)obj;
          !err && (i = visit_next_list(m, prev)) != NULL;
          prev = &i) {
-        uint16List *native_i = (uint16List *)i;
-        visit_type_uint16(m, &native_i->value, NULL, &err);
+        numberList *native_i = (numberList *)i;
+        visit_type_number(m, &native_i->value, NULL, &err);
     }
 
     error_propagate(errp, err);
@@ -256,7 +136,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_uint32List(Visitor *m, uint32List **obj, const char *name, Error **errp)
+void visit_type_int8List(Visitor *m, int8List **obj, const char *name, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -269,8 +149,8 @@ void visit_type_uint32List(Visitor *m, uint32List **obj, const char *name, Error
     for (prev = (GenericList **)obj;
          !err && (i = visit_next_list(m, prev)) != NULL;
          prev = &i) {
-        uint32List *native_i = (uint32List *)i;
-        visit_type_uint32(m, &native_i->value, NULL, &err);
+        int8List *native_i = (int8List *)i;
+        visit_type_int8(m, &native_i->value, NULL, &err);
     }
 
     error_propagate(errp, err);
@@ -295,6 +175,126 @@ void visit_type_uint64List(Visitor *m, uint64List **obj, const char *name, Error
          prev = &i) {
         uint64List *native_i = (uint64List *)i;
         visit_type_uint64(m, &native_i->value, NULL, &err);
+    }
+
+    error_propagate(errp, err);
+    err = NULL;
+    visit_end_list(m);
+out:
+    error_propagate(errp, err);
+}
+
+void visit_type_uint16List(Visitor *m, uint16List **obj, const char *name, Error **errp)
+{
+    Error *err = NULL;
+    GenericList *i, **prev;
+
+    visit_start_list(m, name, &err);
+    if (err) {
+        goto out;
+    }
+
+    for (prev = (GenericList **)obj;
+         !err && (i = visit_next_list(m, prev)) != NULL;
+         prev = &i) {
+        uint16List *native_i = (uint16List *)i;
+        visit_type_uint16(m, &native_i->value, NULL, &err);
+    }
+
+    error_propagate(errp, err);
+    err = NULL;
+    visit_end_list(m);
+out:
+    error_propagate(errp, err);
+}
+
+void visit_type_boolList(Visitor *m, boolList **obj, const char *name, Error **errp)
+{
+    Error *err = NULL;
+    GenericList *i, **prev;
+
+    visit_start_list(m, name, &err);
+    if (err) {
+        goto out;
+    }
+
+    for (prev = (GenericList **)obj;
+         !err && (i = visit_next_list(m, prev)) != NULL;
+         prev = &i) {
+        boolList *native_i = (boolList *)i;
+        visit_type_bool(m, &native_i->value, NULL, &err);
+    }
+
+    error_propagate(errp, err);
+    err = NULL;
+    visit_end_list(m);
+out:
+    error_propagate(errp, err);
+}
+
+void visit_type_strList(Visitor *m, strList **obj, const char *name, Error **errp)
+{
+    Error *err = NULL;
+    GenericList *i, **prev;
+
+    visit_start_list(m, name, &err);
+    if (err) {
+        goto out;
+    }
+
+    for (prev = (GenericList **)obj;
+         !err && (i = visit_next_list(m, prev)) != NULL;
+         prev = &i) {
+        strList *native_i = (strList *)i;
+        visit_type_str(m, &native_i->value, NULL, &err);
+    }
+
+    error_propagate(errp, err);
+    err = NULL;
+    visit_end_list(m);
+out:
+    error_propagate(errp, err);
+}
+
+void visit_type_int64List(Visitor *m, int64List **obj, const char *name, Error **errp)
+{
+    Error *err = NULL;
+    GenericList *i, **prev;
+
+    visit_start_list(m, name, &err);
+    if (err) {
+        goto out;
+    }
+
+    for (prev = (GenericList **)obj;
+         !err && (i = visit_next_list(m, prev)) != NULL;
+         prev = &i) {
+        int64List *native_i = (int64List *)i;
+        visit_type_int64(m, &native_i->value, NULL, &err);
+    }
+
+    error_propagate(errp, err);
+    err = NULL;
+    visit_end_list(m);
+out:
+    error_propagate(errp, err);
+}
+
+void visit_type_uint32List(Visitor *m, uint32List **obj, const char *name, Error **errp)
+{
+    Error *err = NULL;
+    GenericList *i, **prev;
+
+    visit_start_list(m, name, &err);
+    if (err) {
+        goto out;
+    }
+
+    for (prev = (GenericList **)obj;
+         !err && (i = visit_next_list(m, prev)) != NULL;
+         prev = &i) {
+        uint32List *native_i = (uint32List *)i;
+        visit_type_uint32(m, &native_i->value, NULL, &err);
     }
 
     error_propagate(errp, err);
