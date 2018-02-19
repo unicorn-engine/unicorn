@@ -129,7 +129,7 @@
 #define arm_cpu_do_interrupt arm_cpu_do_interrupt_mips64
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_mips64
 #define arm_cpu_finalizefn arm_cpu_finalizefn_mips64
-#define arm_cpu_get_phys_page_debug arm_cpu_get_phys_page_debug_mips64
+#define arm_cpu_get_phys_page_attrs_debug arm_cpu_get_phys_page_attrs_debug_mips64
 #define arm_cpu_initfn arm_cpu_initfn_mips64
 #define arm_cpu_list arm_cpu_list_mips64
 #define cpu_loop_exit cpu_loop_exit_mips64

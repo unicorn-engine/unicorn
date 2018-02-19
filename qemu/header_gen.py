@@ -135,7 +135,7 @@ symbols = (
     'arm_cpu_do_interrupt',
     'arm_cpu_exec_interrupt',
     'arm_cpu_finalizefn',
-    'arm_cpu_get_phys_page_debug',
+    'arm_cpu_get_phys_page_attrs_debug',
     'arm_cpu_initfn',
     'arm_cpu_list',
     'cpu_loop_exit',

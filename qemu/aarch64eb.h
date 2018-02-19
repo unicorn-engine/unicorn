@@ -129,7 +129,7 @@
 #define arm_cpu_do_interrupt arm_cpu_do_interrupt_aarch64eb
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_aarch64eb
 #define arm_cpu_finalizefn arm_cpu_finalizefn_aarch64eb
-#define arm_cpu_get_phys_page_debug arm_cpu_get_phys_page_debug_aarch64eb
+#define arm_cpu_get_phys_page_attrs_debug arm_cpu_get_phys_page_attrs_debug_aarch64eb
 #define arm_cpu_initfn arm_cpu_initfn_aarch64eb
 #define arm_cpu_list arm_cpu_list_aarch64eb
 #define cpu_loop_exit cpu_loop_exit_aarch64eb

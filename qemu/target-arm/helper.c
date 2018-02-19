@@ -6690,7 +6690,8 @@ bool arm_tlb_fill(CPUState *cs, vaddr address,
     return ret;
 }
 
-hwaddr arm_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
+hwaddr arm_cpu_get_phys_page_attrs_debug(CPUState *cs, vaddr addr,
+                                         MemTxAttrs *attrs)
 {
     ARMCPU *cpu = ARM_CPU(NULL, cs);
     CPUARMState *env = &cpu->env;
@@ -6699,16 +6700,14 @@ hwaddr arm_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
     int prot;
     bool ret;
     uint32_t fsr;
-    MemTxAttrs attrs = {0};
     ARMMMUFaultInfo fi = {0};
 
     ret = get_phys_addr(env, addr, 0, cpu_mmu_index(env, false), &phys_addr,
-                        &attrs, &prot, &page_size, &fsr, &fi);
+                        attrs, &prot, &page_size, &fsr, &fi);
 
     if (ret) {
         return -1;
     }
-
     return phys_addr;
 }
 

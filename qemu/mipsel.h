@@ -129,7 +129,7 @@
 #define arm_cpu_do_interrupt arm_cpu_do_interrupt_mipsel
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_mipsel
 #define arm_cpu_finalizefn arm_cpu_finalizefn_mipsel
-#define arm_cpu_get_phys_page_debug arm_cpu_get_phys_page_debug_mipsel
+#define arm_cpu_get_phys_page_attrs_debug arm_cpu_get_phys_page_attrs_debug_mipsel
 #define arm_cpu_initfn arm_cpu_initfn_mipsel
 #define arm_cpu_list arm_cpu_list_mipsel
 #define cpu_loop_exit cpu_loop_exit_mipsel
