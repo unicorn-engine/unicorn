@@ -10,6 +10,7 @@
  * See the COPYING file in the top-level directory.
  */
 
+#include "qemu/osdep.h"
 #include "qom/object.h"
 #include "qemu-common.h"
 #include "qapi/visitor.h"
