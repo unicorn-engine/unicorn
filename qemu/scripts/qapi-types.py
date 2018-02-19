@@ -99,7 +99,7 @@ struct %(name)s {
 
     return ret
 
-def generate_enum_lookup(name, values):
+def generate_enum_lookup(name, values, prefix=None):
     ret = mcgen('''
 const char *const %(name)s_lookup[] = {
 ''',
@@ -116,7 +116,7 @@ const char *const %(name)s_lookup[] = {
 ''')
     return ret
 
-def generate_enum(name, values):
+def generate_enum(name, values, prefix=None):
     name = c_name(name)
     lookup_decl = mcgen('''
 extern const char *const %(name)s_lookup[];
@@ -133,7 +133,7 @@ typedef enum %(name)s {
 
     i = 0
     for value in enum_values:
-        enum_full_value = c_enum_const(name, value)
+        enum_full_value = c_enum_const(name, value, prefix)
         enum_decl += mcgen('''
     %(enum_full_value)s = %(i)d,
 ''',
@@ -338,9 +338,11 @@ for expr in exprs:
     if expr.has_key('struct'):
         ret += generate_fwd_struct(expr['struct'])
     elif expr.has_key('enum'):
-        ret += generate_enum(expr['enum'], expr['data'])
+        ret += generate_enum(expr['enum'], expr['data'],
+                             expr.get('prefix'))
         ret += generate_fwd_enum_struct(expr['enum'])
-        fdef.write(generate_enum_lookup(expr['enum'], expr['data']))
+        fdef.write(generate_enum_lookup(expr['enum'], expr['data'],
+                                        expr.get('prefix')))
     elif expr.has_key('union'):
         ret += generate_fwd_struct(expr['union'])
         enum_define = discriminator_find_enum_define(expr)
