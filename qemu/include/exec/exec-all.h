@@ -457,6 +457,7 @@ static inline bool cpu_can_do_io(CPUState *cpu)
     return true;
 }
 
-void phys_mem_clean(struct uc_struct* uc);
+// Unicorn: Used for freeing
+void phys_mem_clean(AddressSpace *as);
 
 #endif

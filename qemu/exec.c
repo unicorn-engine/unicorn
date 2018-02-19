@@ -1645,9 +1645,9 @@ MemoryRegion *iotlb_to_region(CPUState *cpu, hwaddr index, MemTxAttrs attrs)
     return sections[index & ~TARGET_PAGE_MASK].mr;
 }
 
-void phys_mem_clean(struct uc_struct* uc)
+void phys_mem_clean(AddressSpace *as)
 {
-    AddressSpaceDispatch* d = uc->as.next_dispatch;
+    AddressSpaceDispatch* d = as->next_dispatch;
     g_free(d->map.sections);
 }
 

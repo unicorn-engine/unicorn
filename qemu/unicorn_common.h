@@ -27,9 +27,7 @@ static void release_common(void *t)
 {
     TCGPool *po, *to;
     TCGContext *s = (TCGContext *)t;
-#if TCG_TARGET_REG_BITS == 32
     int i;
-#endif
 
     // Clean TCG.
     TCGOpDef* def = &s->tcg_op_defs[0];
@@ -46,8 +44,11 @@ static void release_common(void *t)
 
     // TODO(danghvu): these function is not available outside qemu
     // so we keep them here instead of outside uc_close.
-    phys_mem_clean(s->uc);
-    address_space_destroy(&(s->uc->as));
+    for (i = 0; i < s->uc->cpu->num_ases; i++) {
+        AddressSpace *as = s->uc->cpu->cpu_ases[i].as;
+        phys_mem_clean(as);
+        address_space_destroy(as);
+    }
     memory_free(s->uc);
     tb_cleanup(s->uc);
     free_code_gen_buffer(s->uc);

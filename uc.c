@@ -429,7 +429,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
         MemoryRegion *mr = memory_mapping(uc, address);
         if (mr) {
             len = (size_t)MIN(size - count, mr->end - address);
-            if (uc->read_mem(&uc->as, address, bytes, len) == false)
+            if (uc->read_mem(uc->cpu->as, address, bytes, len) == false)
                 break;
             count += len;
             address += len;
@@ -467,7 +467,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
                 uc->readonly_mem(mr, false);
 
             len = (size_t)MIN(size - count, mr->end - address);
-            if (uc->write_mem(&uc->as, address, bytes, len) == false)
+            if (uc->write_mem(uc->cpu->as, address, bytes, len) == false)
                 break;
 
             if (!(operms & UC_PROT_WRITE)) // write protected
