@@ -160,6 +160,30 @@ out:
     error_propagate(errp, err);
 }
 
+void visit_type_sizeList(Visitor *m, sizeList **obj, const char *name, Error **errp)
+{
+    Error *err = NULL;
+    GenericList *i, **prev;
+
+    visit_start_list(m, name, &err);
+    if (err) {
+        goto out;
+    }
+
+    for (prev = (GenericList **)obj;
+         !err && (i = visit_next_list(m, prev)) != NULL;
+         prev = &i) {
+        sizeList *native_i = (sizeList *)i;
+        visit_type_size(m, &native_i->value, NULL, &err);
+    }
+
+    error_propagate(errp, err);
+    err = NULL;
+    visit_end_list(m);
+out:
+    error_propagate(errp, err);
+}
+
 void visit_type_uint64List(Visitor *m, uint64List **obj, const char *name, Error **errp)
 {
     Error *err = NULL;

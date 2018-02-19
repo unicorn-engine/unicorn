@@ -29,6 +29,7 @@ void visit_type_intList(Visitor *m, intList **obj, const char *name, Error **err
 void visit_type_uint8List(Visitor *m, uint8List **obj, const char *name, Error **errp);
 void visit_type_numberList(Visitor *m, numberList **obj, const char *name, Error **errp);
 void visit_type_int8List(Visitor *m, int8List **obj, const char *name, Error **errp);
+void visit_type_sizeList(Visitor *m, sizeList **obj, const char *name, Error **errp);
 void visit_type_uint64List(Visitor *m, uint64List **obj, const char *name, Error **errp);
 void visit_type_uint16List(Visitor *m, uint16List **obj, const char *name, Error **errp);
 void visit_type_boolList(Visitor *m, boolList **obj, const char *name, Error **errp);

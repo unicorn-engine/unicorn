@@ -77,6 +77,15 @@ typedef struct int8List
     struct int8List *next;
 } int8List;
 
+typedef struct sizeList
+{
+    union {
+        uint64_t value;
+        uint64_t padding;
+    };
+    struct sizeList *next;
+} sizeList;
+
 typedef struct uint64List
 {
     union {
@@ -199,6 +208,7 @@ void qapi_free_intList(intList *obj);
 void qapi_free_uint8List(uint8List *obj);
 void qapi_free_numberList(numberList *obj);
 void qapi_free_int8List(int8List *obj);
+void qapi_free_sizeList(sizeList *obj);
 void qapi_free_uint64List(uint64List *obj);
 void qapi_free_uint16List(uint16List *obj);
 void qapi_free_boolList(boolList *obj);

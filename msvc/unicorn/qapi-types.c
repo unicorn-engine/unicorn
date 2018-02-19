@@ -135,6 +135,21 @@ void qapi_free_int8List(int8List *obj)
     qapi_dealloc_visitor_cleanup(md);
 }
 
+void qapi_free_sizeList(sizeList *obj)
+{
+    QapiDeallocVisitor *md;
+    Visitor *v;
+
+    if (!obj) {
+        return;
+    }
+
+    md = qapi_dealloc_visitor_new();
+    v = qapi_dealloc_get_visitor(md);
+    visit_type_sizeList(v, &obj, NULL, NULL);
+    qapi_dealloc_visitor_cleanup(md);
+}
+
 void qapi_free_uint64List(uint64List *obj)
 {
     QapiDeallocVisitor *md;
