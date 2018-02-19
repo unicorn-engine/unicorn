@@ -25,7 +25,7 @@
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
 /* Needed early for CONFIG_BSD etc. */
-#include "config-host.h"
+#include "qemu/osdep.h"
 #include "sysemu/sysemu.h"
 #include "sysemu/cpus.h"
 #include "qemu/thread.h"

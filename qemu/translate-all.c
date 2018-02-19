@@ -22,16 +22,10 @@
 #include <winsock2.h>
 #include <windows.h>
 #else
-#include <sys/types.h>
 #include <sys/mman.h>
 #endif
-#include <stdarg.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "qemu/osdep.h"
 #include "unicorn/platform.h"
-
-#include "config.h"
 
 #include "qemu-common.h"
 #define NO_CPU_IO_DEFS

@@ -19,6 +19,7 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
 #include "tcg.h"
 #include "sysemu/sysemu.h"
 #include "exec/address-spaces.h"

@@ -19,7 +19,7 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
-#include "config.h"
+#include "qemu/osdep.h"
 #include "cpu.h"
 #include "exec/exec-all.h"
 #include "exec/memory.h"

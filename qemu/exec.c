@@ -18,9 +18,8 @@
  */
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
-#include "config.h"
+#include "qemu/osdep.h"
 #ifndef _WIN32
-#include <sys/types.h>
 #include <sys/mman.h>
 #endif
 
@@ -29,7 +28,6 @@
 #include "tcg.h"
 #include "hw/hw.h"
 #include "hw/qdev.h"
-#include "qemu/osdep.h"
 #include "sysemu/sysemu.h"
 #include "qemu/timer.h"
 #include "exec/memory.h"
