@@ -183,17 +183,17 @@ def gen_type_cleanup(name):
 
 void qapi_free_%(c_name)s(%(c_name)s *obj)
 {
-    QapiDeallocVisitor *md;
+    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    md = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(md);
+    qdv = qapi_dealloc_visitor_new();
+    v = qapi_dealloc_get_visitor(qdv);
     visit_type_%(c_name)s(v, &obj, NULL, NULL);
-    qapi_dealloc_visitor_cleanup(md);
+    qapi_dealloc_visitor_cleanup(qdv);
 }
 ''',
                 c_name=c_name(name))
@@ -288,7 +288,7 @@ c_comment = '''
  *  Anthony Liguori   <aliguori@us.ibm.com>
  *  Michael Roth      <mdroth@linux.vnet.ibm.com>
  *
- * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
+ * This work is lifcensed under the terms of the GNU LGPL, version 2.1 or later.
  * See the COPYING.LIB file in the top-level directory.
  *
  */
