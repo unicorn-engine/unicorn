@@ -1242,7 +1242,6 @@ void qemu_ram_remap(struct uc_struct *uc, ram_addr_t addr, ram_addr_t length)
                 ;
             } else {
                 flags = MAP_FIXED;
-                munmap(vaddr, length);
                 if (block->fd >= 0) {
                     flags |= (block->flags & RAM_SHARED ?
                             MAP_SHARED : MAP_PRIVATE);
