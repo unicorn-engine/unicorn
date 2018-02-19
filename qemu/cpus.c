@@ -84,8 +84,17 @@ int qemu_init_vcpu(CPUState *cpu)
     cpu->nr_threads = smp_threads;
     cpu->stopped = true;
 
-    if (tcg_enabled(cpu->uc))
+    if (!cpu->as) {
+        /* If the target cpu hasn't set up any address spaces itself,
+         * give it the default one.
+         */
+        cpu->num_ases = 1;
+        cpu_address_space_init(cpu, &cpu->uc->as, 0);
+    }
+
+    if (tcg_enabled(cpu->uc)) {
         return qemu_tcg_init_vcpu(cpu);
+    }
 
     return 0;
 }
@@ -110,14 +119,6 @@ static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
 
 static int qemu_tcg_init_vcpu(CPUState *cpu)
 {
-    if (!cpu->as) {
-        /* If the target cpu hasn't set up any address spaces itself,
-         * give it the default one.
-         */
-        cpu->num_ases = 1;
-        cpu_address_space_init(cpu, &cpu->uc->as, 0);
-    }
-
     return 0;
 }
 
