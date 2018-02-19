@@ -349,7 +349,6 @@ MemoryRegion *address_space_translate(AddressSpace *as, hwaddr addr,
     IOMMUTLBEntry iotlb;
     MemoryRegionSection *section;
     MemoryRegion *mr;
-    hwaddr len = *plen;
 
     for (;;) {
         section = address_space_translate_internal(as->dispatch, addr, &addr, plen, true);
@@ -364,7 +363,7 @@ MemoryRegion *address_space_translate(AddressSpace *as, hwaddr addr,
         iotlb = mr->iommu_ops->translate(mr, addr, is_write);
         addr = ((iotlb.translated_addr & ~iotlb.addr_mask)
                 | (addr & iotlb.addr_mask));
-        len = MIN(len, (addr | iotlb.addr_mask) - addr + 1);
+        *plen = MIN(*plen, (addr | iotlb.addr_mask) - addr + 1);
         if (!(iotlb.perm & (1 << is_write))) {
             mr = &as->uc->io_mem_unassigned;
             break;
@@ -373,7 +372,6 @@ MemoryRegion *address_space_translate(AddressSpace *as, hwaddr addr,
         as = iotlb.target_as;
     }
 
-    *plen = len;
     *xlat = addr;
     return mr;
 }
