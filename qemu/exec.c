@@ -1205,6 +1205,21 @@ ram_addr_t qemu_ram_alloc_resizeable(ram_addr_t size, ram_addr_t maxsz,
     return qemu_ram_alloc_internal(size, maxsz, resized, NULL, true, mr, errp);
 }
 
+static void reclaim_ramblock(RAMBlock *block)
+{
+    if (block->flags & RAM_PREALLOC) {
+        ;
+#ifndef _WIN32
+    } else if (block->fd >= 0) {
+        munmap(block->host, block->max_length);
+        close(block->fd);
+#endif
+    } else {
+        qemu_anon_ram_free(block->host, block->max_length);
+    }
+    g_free(block);
+}
+
 void qemu_ram_free(struct uc_struct *uc, ram_addr_t addr)
 {
     RAMBlock *block;
@@ -1213,18 +1228,11 @@ void qemu_ram_free(struct uc_struct *uc, ram_addr_t addr)
         if (addr == block->offset) {
             QLIST_REMOVE(block, next);
             uc->ram_list.mru_block = NULL;
+             /* Write list before version */
+            smp_wmb();
             uc->ram_list.version++;
-            if (block->flags & RAM_PREALLOC) {
-                ;
-#ifndef _WIN32
-            } else if (block->fd >= 0) {
-                munmap(block->host, block->max_length);
-                close(block->fd);
-#endif
-            } else {
-                qemu_anon_ram_free(block->host, block->max_length);
-            }
-            g_free(block);
+            // Unicorn: call directly instead of via call_rcu
+            reclaim_ramblock(block);
             break;
         }
     }
