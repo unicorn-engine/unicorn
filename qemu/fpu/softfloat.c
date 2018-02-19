@@ -146,9 +146,9 @@ static inline flag extractFloat16Sign(float16 a)
 
 static int32_t roundAndPackInt32( flag zSign, uint64_t absZ, float_status *status)
 {
-    int8 roundingMode;
+    int8_t roundingMode;
     flag roundNearestEven;
-    int8 roundIncrement, roundBits;
+    int8_t roundIncrement, roundBits;
     int32_t z;
 
     roundingMode = status->float_rounding_mode;
@@ -198,7 +198,7 @@ static int32_t roundAndPackInt32( flag zSign, uint64_t absZ, float_status *statu
 
 static int64_t roundAndPackInt64( flag zSign, uint64_t absZ0, uint64_t absZ1, float_status *status)
 {
-    int8 roundingMode;
+    int8_t roundingMode;
     flag roundNearestEven, increment;
     int64_t z;
 
@@ -253,7 +253,7 @@ static int64_t roundAndPackInt64( flag zSign, uint64_t absZ0, uint64_t absZ1, fl
 static int64_t roundAndPackUint64(flag zSign, uint64_t absZ0,
                                   uint64_t absZ1, float_status *status)
 {
-    int8 roundingMode;
+    int8_t roundingMode;
     flag roundNearestEven, increment;
 
     roundingMode = status->float_rounding_mode;
@@ -353,7 +353,7 @@ float32 float32_squash_input_denormal(float32 a, float_status *status)
 static void
  normalizeFloat32Subnormal(uint32_t aSig, int_fast16_t *zExpPtr, uint32_t *zSigPtr)
 {
-    int8 shiftCount;
+    int8_t shiftCount;
 
     shiftCount = countLeadingZeros32( aSig ) - 8;
     *zSigPtr = aSig<<shiftCount;
@@ -404,9 +404,9 @@ static inline float32 packFloat32(flag zSign, int_fast16_t zExp, uint32_t zSig)
 
 static float32 roundAndPackFloat32(flag zSign, int_fast16_t zExp, uint32_t zSig, float_status *status)
 {
-    int8 roundingMode;
+    int8_t roundingMode;
     flag roundNearestEven;
-    int8 roundIncrement, roundBits;
+    int8_t roundIncrement, roundBits;
     flag isTiny;
 
     roundingMode = status->float_rounding_mode;
@@ -475,7 +475,7 @@ static float32 roundAndPackFloat32(flag zSign, int_fast16_t zExp, uint32_t zSig,
 static float32
  normalizeRoundAndPackFloat32(flag zSign, int_fast16_t zExp, uint32_t zSig, float_status *status)
 {
-    int8 shiftCount;
+    int8_t shiftCount;
 
     shiftCount = countLeadingZeros32( zSig ) - 1;
     return roundAndPackFloat32( zSign, zExp - shiftCount, zSig<<shiftCount, status);
@@ -540,7 +540,7 @@ float64 float64_squash_input_denormal(float64 a, float_status *status)
 static void
  normalizeFloat64Subnormal(uint64_t aSig, int_fast16_t *zExpPtr, uint64_t *zSigPtr)
 {
-    int8 shiftCount;
+    int8_t shiftCount;
 
     shiftCount = countLeadingZeros64( aSig ) - 11;
     *zSigPtr = aSig<<shiftCount;
@@ -591,7 +591,7 @@ static inline float64 packFloat64(flag zSign, int_fast16_t zExp, uint64_t zSig)
 
 static float64 roundAndPackFloat64(flag zSign, int_fast16_t zExp, uint64_t zSig, float_status *status)
 {
-    int8 roundingMode;
+    int8_t roundingMode;
     flag roundNearestEven;
     int_fast16_t roundIncrement, roundBits;
     flag isTiny;
@@ -661,7 +661,7 @@ static float64 roundAndPackFloat64(flag zSign, int_fast16_t zExp, uint64_t zSig,
 static float64
  normalizeRoundAndPackFloat64(flag zSign, int_fast16_t zExp, uint64_t zSig, float_status *status)
 {
-    int8 shiftCount;
+    int8_t shiftCount;
 
     shiftCount = countLeadingZeros64( zSig ) - 1;
     return roundAndPackFloat64( zSign, zExp - shiftCount, zSig<<shiftCount, status);
@@ -714,7 +714,7 @@ static inline flag extractFloatx80Sign( floatx80 a )
 static void
  normalizeFloatx80Subnormal( uint64_t aSig, int32_t *zExpPtr, uint64_t *zSigPtr )
 {
-    int8 shiftCount;
+    int8_t shiftCount;
 
     shiftCount = countLeadingZeros64( aSig );
     *zSigPtr = aSig<<shiftCount;
@@ -763,10 +763,10 @@ static inline floatx80 packFloatx80( flag zSign, int32_t zExp, uint64_t zSig )
 
 static floatx80
  roundAndPackFloatx80(
-     int8 roundingPrecision, flag zSign, int32_t zExp, uint64_t zSig0, uint64_t zSig1
+     int8_t roundingPrecision, flag zSign, int32_t zExp, uint64_t zSig0, uint64_t zSig1
 , float_status *status)
 {
-    int8 roundingMode;
+    int8_t roundingMode;
     flag roundNearestEven, increment, isTiny;
     int64_t roundIncrement, roundMask, roundBits;
 
@@ -950,10 +950,10 @@ static floatx80
 
 static floatx80
  normalizeRoundAndPackFloatx80(
-     int8 roundingPrecision, flag zSign, int32_t zExp, uint64_t zSig0, uint64_t zSig1
+     int8_t roundingPrecision, flag zSign, int32_t zExp, uint64_t zSig0, uint64_t zSig1
 , float_status *status)
 {
-    int8 shiftCount;
+    int8_t shiftCount;
 
     if ( zSig0 == 0 ) {
         zSig0 = zSig1;
@@ -1034,7 +1034,7 @@ static void
      uint64_t *zSig1Ptr
  )
 {
-    int8 shiftCount;
+    int8_t shiftCount;
 
     if ( aSig0 == 0 ) {
         shiftCount = countLeadingZeros64( aSig1 ) - 15;
@@ -1105,7 +1105,7 @@ static float128
  roundAndPackFloat128(
      flag zSign, int32_t zExp, uint64_t zSig0, uint64_t zSig1, uint64_t zSig2, float_status *status)
 {
-    int8 roundingMode;
+    int8_t roundingMode;
     flag roundNearestEven, increment, isTiny;
 
     roundingMode = status->float_rounding_mode;
@@ -1220,7 +1220,7 @@ static float128
  normalizeRoundAndPackFloat128(
      flag zSign, int32_t zExp, uint64_t zSig0, uint64_t zSig1, float_status *status)
 {
-    int8 shiftCount;
+    int8_t shiftCount;
     uint64_t zSig2;
 
     if ( zSig0 == 0 ) {
@@ -1269,7 +1269,7 @@ float64 int32_to_float64(int32_t a, float_status *status)
 {
     flag zSign;
     uint32_t absA;
-    int8 shiftCount;
+    int8_t shiftCount;
     uint64_t zSig;
 
     if ( a == 0 ) return float64_zero;
@@ -1292,7 +1292,7 @@ floatx80 int32_to_floatx80(int32_t a, float_status *status)
 {
     flag zSign;
     uint32_t absA;
-    int8 shiftCount;
+    int8_t shiftCount;
     uint64_t zSig;
 
     if ( a == 0 ) return packFloatx80( 0, 0, 0 );
@@ -1314,7 +1314,7 @@ float128 int32_to_float128(int32_t a, float_status *status)
 {
     flag zSign;
     uint32_t absA;
-    int8 shiftCount;
+    int8_t shiftCount;
     uint64_t zSig0;
 
     if ( a == 0 ) return packFloat128( 0, 0, 0, 0 );
@@ -1336,7 +1336,7 @@ float32 int64_to_float32(int64_t a, float_status *status)
 {
     flag zSign;
     uint64_t absA;
-    int8 shiftCount;
+    int8_t shiftCount;
 
     if ( a == 0 ) return float32_zero;
     zSign = ( a < 0 );
@@ -1388,7 +1388,7 @@ floatx80 int64_to_floatx80(int64_t a, float_status *status)
 {
     flag zSign;
     uint64_t absA;
-    int8 shiftCount;
+    int8_t shiftCount;
 
     if ( a == 0 ) return packFloatx80( 0, 0, 0 );
     zSign = ( a < 0 );
@@ -1408,7 +1408,7 @@ float128 int64_to_float128(int64_t a, float_status *status)
 {
     flag zSign;
     uint64_t absA;
-    int8 shiftCount;
+    int8_t shiftCount;
     int32_t zExp;
     uint64_t zSig0, zSig1;
 
