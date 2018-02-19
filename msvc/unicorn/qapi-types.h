@@ -16,11 +16,22 @@
 #ifndef QAPI_TYPES_H
 #define QAPI_TYPES_H
 
+#include "qapi/qmp/qobject.h"
 #include "unicorn/platform.h"
 
 #ifndef QAPI_TYPES_BUILTIN
 #define QAPI_TYPES_BUILTIN
 
+
+typedef struct anyList anyList;
+struct anyList {
+    union {
+        QObject *value;
+        uint64_t padding;
+    };
+    struct anyList *next;
+};
+void qapi_free_anyList(anyList *obj);
 
 typedef struct boolList boolList;
 struct boolList {

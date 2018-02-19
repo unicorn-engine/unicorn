@@ -100,6 +100,21 @@ void qapi_free_X86CPURegister32List(X86CPURegister32List *obj)
     qapi_dealloc_visitor_cleanup(md);
 }
 
+void qapi_free_anyList(anyList *obj)
+{
+    QapiDeallocVisitor *md;
+    Visitor *v;
+
+    if (!obj) {
+        return;
+    }
+
+    md = qapi_dealloc_visitor_new();
+    v = qapi_dealloc_get_visitor(md);
+    visit_type_anyList(v, &obj, NULL, NULL);
+    qapi_dealloc_visitor_cleanup(md);
+}
+
 void qapi_free_boolList(boolList *obj)
 {
     QapiDeallocVisitor *md;

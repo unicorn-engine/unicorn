@@ -319,6 +319,7 @@ fdef.write(mcgen('''
                  prefix=prefix))
 
 fdecl.write(mcgen('''
+#include "qapi/qmp/qobject.h"
 #include "unicorn/platform.h"
 '''))
 
