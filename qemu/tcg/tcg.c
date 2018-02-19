@@ -107,7 +107,7 @@ static void tcg_out_call(TCGContext *s, tcg_insn_unit *target);
 static int tcg_target_const_match(tcg_target_long val, TCGType type,
                                   const TCGArgConstraint *arg_ct);
 static void tcg_out_tb_init(TCGContext *s);
-static void tcg_out_tb_finalize(TCGContext *s);
+static bool tcg_out_tb_finalize(TCGContext *s);
 
 #if TCG_TARGET_INSN_UNIT_SIZE == 1
 static QEMU_UNUSED_FUNC inline void tcg_out8(TCGContext *s, uint8_t v)
@@ -2497,7 +2497,9 @@ int tcg_gen_code(TCGContext *s, tcg_insn_unit *gen_code_buf)
     s->gen_insn_end_off[num_insns] = tcg_current_code_size(s);
 
     /* Generate TB finalization at the end of block */
-    tcg_out_tb_finalize(s);
+    if (!tcg_out_tb_finalize(s)) {
+        return -1;
+    }
 
     /* flush instruction cache */
     flush_icache_range((uintptr_t)s->code_buf, (uintptr_t)s->code_ptr);
