@@ -21,11 +21,10 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include "qemu/osdep.h"
 #include "qemu-common.h"
 #include "qemu/host-utils.h"
 #include <math.h>
-#include <limits.h>
-#include <errno.h>
 
 void strpadcpy(char *buf, int buf_size, const char *str, char pad)
 {

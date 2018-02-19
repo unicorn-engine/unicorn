@@ -10,7 +10,7 @@
  * See the COPYING file in the top-level directory.
  */
 
-#include <stdio.h>
+#include "qemu/osdep.h"
 #include <stdarg.h>
 #include <string.h>
 

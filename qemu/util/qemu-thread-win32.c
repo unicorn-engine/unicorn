@@ -10,11 +10,10 @@
  * See the COPYING file in the top-level directory.
  *
  */
+#include "qemu/osdep.h"
 #include "qemu-common.h"
 #include "qemu/thread.h"
 #include <process.h>
-#include <assert.h>
-#include <limits.h>
 
 #include "uc_priv.h"
 

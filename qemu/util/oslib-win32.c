@@ -26,11 +26,10 @@
  * THE SOFTWARE.
  *
  */
+#include "qemu/osdep.h"
 #include <winsock2.h>
 #include <windows.h>
 
-#include <stdlib.h>
-#include "config-host.h"
 #include "sysemu/sysemu.h"
 
 /* this must come after including "trace.h" */

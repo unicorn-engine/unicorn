@@ -39,8 +39,8 @@
 #endif
 #define HUGETLBFS_MAGIC       0x958458f6
 
+#include "qemu/osdep.h"
 #include "unicorn/platform.h"
-#include "config-host.h"
 #include "sysemu/sysemu.h"
 #include <sys/mman.h>
 #include <libgen.h>

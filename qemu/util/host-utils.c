@@ -23,7 +23,7 @@
  * THE SOFTWARE.
  */
 
-#include <stdlib.h>
+#include "qemu/osdep.h"
 #include "unicorn/platform.h"
 #include "qemu/host-utils.h"
 
