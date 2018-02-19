@@ -420,6 +420,24 @@ static void arm_cpu_post_init(struct uc_struct *uc, Object *obj)
         //qdev_property_add_static(DEVICE(obj), &arm_cpu_rvbar_property,
         //                         &error_abort);
     }
+
+    if (arm_feature(&cpu->env, ARM_FEATURE_EL3)) {
+        /* Add the has_el3 state CPU property only if EL3 is allowed.  This will
+         * prevent "has_el3" from existing on CPUs which cannot support EL3.
+         */
+        //qdev_property_add_static(DEVICE(obj), &arm_cpu_has_el3_property,
+        //                         &error_abort);
+
+#ifndef CONFIG_USER_ONLY
+        /* Unicorn: commented out
+        object_property_add_link(obj, "secure-memory",
+                                 TYPE_MEMORY_REGION,
+                                 (Object **)&cpu->secure_memory,
+                                 qdev_prop_allow_set_link_before_realize,
+                                 OBJ_PROP_LINK_UNREF_ON_RELEASE,
+                                 &error_abort);*/
+#endif
+    }
 }
 
 static void arm_cpu_finalizefn(struct uc_struct *uc, Object *obj, void *opaque)
@@ -538,6 +556,31 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
 
     register_cp_regs_for_features(cpu);
     arm_cpu_register_gdb_regs_for_features(cpu);
+
+#ifndef CONFIG_USER_ONLY
+    if (cpu->has_el3) {
+        cs->num_ases = 2;
+    } else {
+        cs->num_ases = 1;
+    }
+
+    if (cpu->has_el3) {
+        AddressSpace *as;
+
+        if (!cpu->secure_memory) {
+            cpu->secure_memory = cs->memory;
+        }
+        as = address_space_init_shareable(uc,
+                                          cpu->secure_memory,
+                                          "cpu-secure-memory");
+        cpu_address_space_init(cs, as, ARMASIdx_S);
+    }
+    cpu_address_space_init(cs,
+                           address_space_init_shareable(uc,
+                                                        cs->memory,
+                                                        "cpu-memory"),
+                           ARMASIdx_NS);
+#endif
 
     init_cpreg_list(cpu);
 
