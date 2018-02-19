@@ -957,14 +957,8 @@ def mcgen(code, **kwds):
         code = code[1:]
     return cgen(code, **kwds)
 
-def basename(filename):
-    return filename.split("/")[-1]
-
 def guardname(filename):
-    guard = basename(filename).rsplit(".", 1)[0]
-    for substr in [".", " ", "-"]:
-        guard = guard.replace(substr, "_")
-    return guard.upper() + '_H'
+    return c_name(filename, protect=False).upper()
 
 def guardstart(name):
     return mcgen('''
@@ -1034,6 +1028,7 @@ def parse_command_line(extra_options = "", extra_long_options = []):
 
 def open_output(output_dir, do_c, do_h, prefix, c_file, h_file,
                 c_comment, h_comment):
+    guard = guardname(prefix + h_file)
     c_file = output_dir + prefix + c_file
     h_file = output_dir + prefix + h_file
 
@@ -1066,7 +1061,7 @@ def open_output(output_dir, do_c, do_h, prefix, c_file, h_file,
 #define %(guard)s
 
 ''',
-                      comment = h_comment, guard = guardname(h_file)))
+                      comment = h_comment, guard = guard))
 
     return (fdef, fdecl)
 
