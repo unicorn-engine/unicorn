@@ -429,7 +429,7 @@ static inline void tcg_temp_alloc(TCGContext *s, int n)
 }
 
 static int tcg_global_reg_new_internal(TCGContext *s, TCGType type,
-                                       int reg, const char *name)
+                                       TCGReg reg, const char *name)
 {
     TCGTemp *ts;
     int idx;
@@ -450,7 +450,7 @@ static int tcg_global_reg_new_internal(TCGContext *s, TCGType type,
     return idx;
 }
 
-void tcg_set_frame(TCGContext *s, int reg, intptr_t start, intptr_t size)
+void tcg_set_frame(TCGContext *s, TCGReg reg, intptr_t start, intptr_t size)
 {
     int idx;
     s->frame_start = start;
@@ -459,7 +459,7 @@ void tcg_set_frame(TCGContext *s, int reg, intptr_t start, intptr_t size)
     s->frame_temp = &s->temps[idx];
 }
 
-TCGv_i32 tcg_global_reg_new_i32(TCGContext *s, int reg, const char *name)
+TCGv_i32 tcg_global_reg_new_i32(TCGContext *s, TCGReg reg, const char *name)
 {
     int idx;
 
@@ -471,7 +471,7 @@ TCGv_i32 tcg_global_reg_new_i32(TCGContext *s, int reg, const char *name)
     return MAKE_TCGV_I32(idx);
 }
 
-TCGv_i64 tcg_global_reg_new_i64(TCGContext *s, int reg, const char *name)
+TCGv_i64 tcg_global_reg_new_i64(TCGContext *s, TCGReg reg, const char *name)
 {
     int idx;
 
@@ -1688,7 +1688,8 @@ static void dump_regs(TCGContext *s)
 
 static void check_regs(TCGContext *s)
 {
-    int reg, k;
+    TCGReg reg;
+    int k;
     TCGTemp *ts;
     char buf[64];
 
@@ -1741,7 +1742,7 @@ static void temp_allocate_frame(TCGContext *s, int temp)
 }
 
 /* sync register 'reg' by saving it to the corresponding temporary */
-static inline void tcg_reg_sync(TCGContext *s, int reg)
+static inline void tcg_reg_sync(TCGContext *s, TCGReg reg)
 {
     TCGTemp *ts;
     int temp;
@@ -1759,7 +1760,7 @@ static inline void tcg_reg_sync(TCGContext *s, int reg)
 }
 
 /* free register 'reg' by spilling the corresponding temporary if necessary */
-static void tcg_reg_free(TCGContext *s, int reg)
+static void tcg_reg_free(TCGContext *s, TCGReg reg)
 {
     int temp;
 
@@ -1772,9 +1773,10 @@ static void tcg_reg_free(TCGContext *s, int reg)
 }
 
 /* Allocate a register belonging to reg1 & ~reg2 */
-static int tcg_reg_alloc(TCGContext *s, TCGRegSet reg1, TCGRegSet reg2)
+static TCGReg tcg_reg_alloc(TCGContext *s, TCGRegSet reg1, TCGRegSet reg2)
 {
-    int i, reg;
+    int i;
+    TCGReg reg;
     TCGRegSet reg_ct;
 
     tcg_regset_andnot(reg_ct, reg1, reg2);
@@ -2036,7 +2038,8 @@ static void tcg_reg_alloc_op(TCGContext *s,
                              uint8_t sync_args)
 {
     TCGRegSet allocated_regs;
-    int i, k, nb_iargs, nb_oargs, reg;
+    int i, k, nb_iargs, nb_oargs;
+    TCGReg reg;
     TCGArg arg;
     const TCGArgConstraint *arg_ct;
     TCGTemp *ts;
@@ -2202,7 +2205,8 @@ static void tcg_reg_alloc_call(TCGContext *s, int nb_oargs, int nb_iargs,
                                const TCGArg * const args, uint16_t dead_args,
                                uint8_t sync_args)
 {
-    int flags, nb_regs, i, reg;
+    int flags, nb_regs, i;
+    TCGReg reg;
     TCGArg arg;
     TCGTemp *ts;
     intptr_t stack_offset;
