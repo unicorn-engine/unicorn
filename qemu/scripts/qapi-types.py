@@ -13,24 +13,26 @@
 
 from qapi import *
 
+
 def gen_fwd_object_or_array(name):
     return mcgen('''
 
-typedef struct %(name)s %(name)s;
+typedef struct %(c_name)s %(c_name)s;
 ''',
-                 name=c_name(name))
+                 c_name=c_name(name))
 
 def gen_array(name, element_type):
     return mcgen('''
-struct %(name)s {
+struct %(c_name)s {
     union {
         %(c_type)s value;
         uint64_t padding;
     };
-    struct %(name)s *next;
+    struct %(c_name)s *next;
 };
 ''',
-                 name=c_name(name), c_type=element_type.c_type())
+                 c_name=c_name(name), c_type=element_type.c_type())
+
 
 def gen_struct_field(name, typ, optional):
     ret = ''
@@ -46,7 +48,8 @@ def gen_struct_field(name, typ, optional):
                  c_type=typ.c_type(), c_name=c_name(name))
     return ret
 
-def generate_struct_fields(members):
+
+def gen_struct_fields(members):
     ret = ''
 
     for memb in members:
@@ -55,18 +58,19 @@ def generate_struct_fields(members):
 
 def gen_struct(name, base, members):
     ret = mcgen('''
-struct %(name)s {
+struct %(c_name)s {
 ''',
-                name=c_name(name))
+                c_name=c_name(name))
 
     if base:
         ret += gen_struct_field('base', base, False)
 
-    ret += generate_struct_fields(members)
+    ret += gen_struct_fields(members)
 
     # Make sure that all structs have at least one field; this avoids
-    # potential issues with attempting to malloc space for zero-length structs
-    # in C, and also incompatibility with C++ (where an empty struct is size 1).
+    # potential issues with attempting to malloc space for zero-length
+    # structs in C, and also incompatibility with C++ (where an empty
+    # struct is size 1).
     if not base and not members:
         ret += mcgen('''
     char qapi_dummy_field_for_empty_struct;
@@ -78,37 +82,6 @@ struct %(name)s {
 
     return ret
 
-def generate_enum(name, values, prefix=None):
-    name = c_name(name)
-    lookup_decl = mcgen('''
-extern const char *const %(name)s_lookup[];
-''',
-                name=name)
-
-    enum_decl = mcgen('''
-typedef enum %(name)s {
-''',
-                name=name)
-
-    # append automatically generated _MAX value
-    enum_values = values + [ 'MAX' ]
-
-    i = 0
-    for value in enum_values:
-        enum_full_value = c_enum_const(name, value, prefix)
-        enum_decl += mcgen('''
-    %(enum_full_value)s = %(i)d,
-''',
-                     enum_full_value = enum_full_value,
-                     i=i)
-        i += 1
-
-    enum_decl += mcgen('''
-} %(name)s;
-''',
-                 name=name)
-
-    return enum_decl + lookup_decl
 
 def gen_alternate_qtypes_decl(name):
     return mcgen('''
@@ -117,12 +90,13 @@ extern const int %(c_name)s_qtypes[];
 ''',
                  c_name=c_name(name))
 
+
 def gen_alternate_qtypes(name, variants):
     ret = mcgen('''
 
-const int %(name)s_qtypes[QTYPE_MAX] = {
+const int %(c_name)s_qtypes[QTYPE_MAX] = {
 ''',
-                name=c_name(name))
+                c_name=c_name(name))
 
     for var in variants.variants:
         qtype = var.type.alternate_qtype()
@@ -131,6 +105,7 @@ const int %(name)s_qtypes[QTYPE_MAX] = {
         ret += mcgen('''
     [%(qtype)s] = %(enum_const)s,
 ''',
+                     qtype=qtype,
                      enum_const=c_enum_const(variants.tag_member.type.name,
                                              var.name))
 
@@ -142,26 +117,24 @@ const int %(name)s_qtypes[QTYPE_MAX] = {
 
 
 def gen_union(name, base, variants):
-    name = c_name(name)
-
     ret = mcgen('''
-struct %(name)s {
+struct %(c_name)s {
 ''',
-                name=name)
+                c_name=c_name(name))
     if base:
         ret += mcgen('''
     /* Members inherited from %(c_name)s: */
 ''',
                      c_name=c_name(base.name))
-        ret += generate_struct_fields(base.members)
+        ret += gen_struct_fields(base.members)
         ret += mcgen('''
     /* Own members: */
 ''')
     else:
         ret += mcgen('''
-    %(discriminator_type_name)s kind;
+    %(c_type)s kind;
 ''',
-                     discriminator_type_name=c_name(variants.tag_member.type.name))
+                     c_type=c_name(variants.tag_member.type.name))
 
     # FIXME: What purpose does data serve, besides preventing a union that
     # has a branch named 'data'? We use it in qapi-visit.py to decide
@@ -196,17 +169,19 @@ struct %(name)s {
 
     return ret
 
-def generate_type_cleanup_decl(name):
+
+def gen_type_cleanup_decl(name):
     ret = mcgen('''
-void qapi_free_%(name)s(%(name)s *obj);
+void qapi_free_%(c_name)s(%(c_name)s *obj);
 ''',
-                name=c_name(name))
+                c_name=c_name(name))
     return ret
 
-def generate_type_cleanup(name):
+
+def gen_type_cleanup(name):
     ret = mcgen('''
 
-void qapi_free_%(name)s(%(name)s *obj)
+void qapi_free_%(c_name)s(%(c_name)s *obj)
 {
     QapiDeallocVisitor *md;
     Visitor *v;
@@ -217,11 +192,11 @@ void qapi_free_%(name)s(%(name)s *obj)
 
     md = qapi_dealloc_visitor_new();
     v = qapi_dealloc_get_visitor(md);
-    visit_type_%(name)s(v, &obj, NULL, NULL);
+    visit_type_%(c_name)s(v, &obj, NULL, NULL);
     qapi_dealloc_visitor_cleanup(md);
 }
 ''',
-                name=c_name(name))
+                c_name=c_name(name))
     return ret
 
 
@@ -254,20 +229,20 @@ class QAPISchemaGenTypeVisitor(QAPISchemaVisitor):
         self._btin = None
 
     def _gen_type_cleanup(self, name):
-        self.decl += generate_type_cleanup_decl(name)
-        self.defn += generate_type_cleanup(name)
+        self.decl += gen_type_cleanup_decl(name)
+        self.defn += gen_type_cleanup(name)
 
     def visit_enum_type(self, name, info, values, prefix):
-        self._fwdecl += generate_enum(name, values, prefix)
-        self._fwdefn += generate_enum_lookup(name, values, prefix)
+        self._fwdecl += gen_enum(name, values, prefix)
+        self._fwdefn += gen_enum_lookup(name, values, prefix)
 
     def visit_array_type(self, name, info, element_type):
         if isinstance(element_type, QAPISchemaBuiltinType):
             self._btin += gen_fwd_object_or_array(name)
             self._btin += gen_array(name, element_type)
-            self._btin += generate_type_cleanup_decl(name)
+            self._btin += gen_type_cleanup_decl(name)
             if do_builtins:
-                self.defn += generate_type_cleanup(name)
+                self.defn += gen_type_cleanup(name)
         else:
             self._fwdecl += gen_fwd_object_or_array(name)
             self.decl += gen_array(name, element_type)

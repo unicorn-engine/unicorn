@@ -154,6 +154,7 @@ void qapi_free_uint8List(uint8List *obj);
 
 #endif /* QAPI_TYPES_BUILTIN */
 
+
 typedef enum ErrorClass {
     ERROR_CLASS_GENERIC_ERROR = 0,
     ERROR_CLASS_COMMAND_NOT_FOUND = 1,
@@ -170,6 +171,7 @@ typedef struct ErrorClassList ErrorClassList;
 typedef struct X86CPUFeatureWordInfo X86CPUFeatureWordInfo;
 
 typedef struct X86CPUFeatureWordInfoList X86CPUFeatureWordInfoList;
+
 typedef enum X86CPURegister32 {
     X86_CPU_REGISTER32_EAX = 0,
     X86_CPU_REGISTER32_EBX = 1,
