@@ -25,6 +25,7 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
 #include "sysemu/accel.h"
 #include "hw/boards.h"
 #include "qemu-common.h"

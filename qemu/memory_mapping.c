@@ -13,6 +13,7 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
 #include "glib_compat.h"
 
 #include "qemu-common.h"

@@ -18,6 +18,7 @@
  */
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
 #ifdef _WIN32
 #include <winsock2.h>
 #include <windows.h>

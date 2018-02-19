@@ -24,6 +24,7 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
 #include "sysemu/sysemu.h"
 
 #include "hw/hw.h"
