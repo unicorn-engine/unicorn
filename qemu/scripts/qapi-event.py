@@ -13,68 +13,52 @@
 
 from qapi import *
 
-def _generate_event_api_name(event_name, params):
-    api_name = "void qapi_event_send_%s(" % c_name(event_name).lower();
-    l = len(api_name)
-
-    if params:
-        for m in params.members:
-            if m.optional:
-                api_name += "bool has_%s,\n" % c_name(m.name)
-                api_name += "".ljust(l)
-
-            api_name += "%s %s,\n" % (m.type.c_type(is_param=True),
-                                      c_name(m.name))
-            api_name += "".ljust(l)
-
-    api_name += "Error **errp)"
-    return api_name;
+ def gen_event_send_proto(name, arg_type):
+     return 'void qapi_event_send_%(c_name)s(%(param)s)' % {
+         'c_name': c_name(name.lower()),
+         'param': gen_params(arg_type, 'Error **errp')}
 
 
-# Following are the core functions that generate C APIs to emit event.
-
-def generate_event_declaration(api_name):
+def gen_event_send_decl(name, arg_type):
     return mcgen('''
 
-%(api_name)s;
+%(proto)s;
 ''',
-                 api_name = api_name)
+                 proto=gen_event_send_proto(name, arg_type))
 
-def generate_event_implement(api_name, event_name, params):
-    # step 1: declare any variables
-    ret = mcgen("""
 
-%(api_name)s
+def gen_event_send(name, arg_type):
+    ret = mcgen('''
+
+%(proto)s
 {
     QDict *qmp;
     Error *err = NULL;
     QMPEventFuncEmit emit;
-""",
-                api_name = api_name)
+''',
+                proto=gen_event_send_proto(name, arg_type))
 
-    if params and params.members:
-        ret += mcgen("""
+    if arg_type and arg_type.members:
+        ret += mcgen('''
     QmpOutputVisitor *qov;
     Visitor *v;
     QObject *obj;
 
-""")
+''')
 
-    # step 2: check emit function, create a dict
-    ret += mcgen("""
+    ret += mcgen('''
     emit = qmp_event_get_func_emit();
     if (!emit) {
         return;
     }
 
-    qmp = qmp_event_build_dict("%(event_name)s");
+    qmp = qmp_event_build_dict("%(name)s");
 
-""",
-                 event_name = event_name)
+''',
+                 name=name)
 
-    # step 3: visit the params if params != None
-    if params and params.members:
-        ret += mcgen("""
+    if arg_type and arg_type.members:
+        ret += mcgen('''
     qov = qmp_output_visitor_new();
     g_assert(qov);
 
@@ -82,46 +66,41 @@ def generate_event_implement(api_name, event_name, params):
     g_assert(v);
 
     /* Fake visit, as if all members are under a structure */
-    visit_start_struct(v, NULL, "", "%(event_name)s", 0, &err);
-    if (err) {
-        goto out;
-    }
+    visit_start_struct(v, NULL, "", "%(name)s", 0, &err);
+''',
+                     name=name)
+        ret += gen_err_check()
 
-""",
-                event_name = event_name)
-
-        for memb in params.members:
+        for memb in arg_type.members:
             if memb.optional:
-                ret += mcgen("""
-    if (has_%(var)s) {
-""",
-                             var=c_name(memb.name))
+                ret += mcgen('''
+    if (has_%(c_name)s) {
+''',
+                             c_name=c_name(memb.name))
                 push_indent()
 
+            # Ugly: need to cast away the const
             if memb.type.name == "str":
-                var_type = "(char **)"
+                cast = '(char **)'
             else:
-                var_type = ""
+                cast = ''
 
-            ret += mcgen("""
-    visit_type_%(type)s(v, %(var_type)s&%(var)s, "%(name)s", &err);
-    if (err) {
-        goto out;
-    }
-""",
-                         var_type = var_type,
-                         var=c_name(memb.name),
-                         type=memb.type.c_name(),
+            ret += mcgen('''
+    visit_type_%(c_type)s(v, %(cast)s&%(c_name)s, "%(name)s", &err);
+''',
+                         cast=cast,
+                         c_name=c_name(memb.name),
+                         c_type=memb.type.c_name(),
                          name=memb.name)
+            ret += gen_err_check()
 
             if memb.optional:
                 pop_indent()
-                ret += mcgen("""
+                ret += mcgen('''
     }
-""")
+''')
 
-        ret += mcgen("""
-
+        ret += mcgen('''
     visit_end_struct(v, &err);
     if (err) {
         goto out;
@@ -131,27 +110,24 @@ def generate_event_implement(api_name, event_name, params):
     g_assert(obj != NULL);
 
     qdict_put_obj(qmp, "data", obj);
-""")
+''')
 
-    # step 4: call qmp event api
-    ret += mcgen("""
-    emit(%(event_enum_value)s, qmp, &err);
+    ret += mcgen('''
+    emit(%(c_enum)s, qmp, &err);
 
-""",
-                 event_enum_value = c_enum_const(event_enum_name, event_name))
+''',
+                 c_enum=c_enum_const(event_enum_name, name))
 
-    # step 5: clean up
-    if params and params.members:
-        ret += mcgen("""
- out:
+    if arg_type and arg_type.members:
+        ret += mcgen('''
+out:
     qmp_output_visitor_cleanup(qov);
-""")
-    ret += mcgen("""
+''')
+    ret += mcgen('''
     error_propagate(errp, err);
     QDECREF(qmp);
 }
-""")
-
+''')
     return ret
 
 
@@ -167,14 +143,13 @@ class QAPISchemaGenEventVisitor(QAPISchemaVisitor):
         self._event_names = []
 
     def visit_end(self):
-        self.decl += generate_enum(event_enum_name, self._event_names)
-        self.defn += generate_enum_lookup(event_enum_name, self._event_names)
-        self._event_names = None
+        self.decl += gen_enum(event_enum_name, self._event_names)
+        self.defn += gen_enum_lookup(event_enum_name, self._event_names)
+        self._event_names = None;
 
     def visit_event(self, name, info, arg_type):
-        api_name = _generate_event_api_name(name, arg_type)
-        self.decl += generate_event_declaration(api_name)
-        self.defn += generate_event_implement(api_name, name, arg_type)
+        self.decl += gen_event_send_decl(name, arg_type)
+        self.defn += gen_event_send(name, arg_type)
         self._event_names.append(name)
 
 (input_file, output_dir, do_c, do_h, prefix, dummy) = parse_command_line()
