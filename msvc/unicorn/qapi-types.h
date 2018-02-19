@@ -18,7 +18,6 @@
 
 #include "unicorn/platform.h"
 
-
 #ifndef QAPI_TYPES_BUILTIN_STRUCT_DECL_H
 #define QAPI_TYPES_BUILTIN_STRUCT_DECL_H
 
