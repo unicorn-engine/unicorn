@@ -18,133 +18,143 @@
 
 #include "unicorn/platform.h"
 
-#ifndef QAPI_TYPES_BUILTIN_STRUCT_DECL_H
-#define QAPI_TYPES_BUILTIN_STRUCT_DECL_H
+#ifndef QAPI_TYPES_BUILTIN
+#define QAPI_TYPES_BUILTIN
 
 
-typedef struct int32List
-{
-    union {
-        int32_t value;
-        uint64_t padding;
-    };
-    struct int32List *next;
-} int32List;
-
-typedef struct int16List
-{
-    union {
-        int16_t value;
-        uint64_t padding;
-    };
-    struct int16List *next;
-} int16List;
-
-typedef struct intList
-{
-    union {
-        int64_t value;
-        uint64_t padding;
-    };
-    struct intList *next;
-} intList;
-
-typedef struct uint8List
-{
-    union {
-        uint8_t value;
-        uint64_t padding;
-    };
-    struct uint8List *next;
-} uint8List;
-
-typedef struct numberList
-{
-    union {
-        double value;
-        uint64_t padding;
-    };
-    struct numberList *next;
-} numberList;
-
-typedef struct int8List
-{
-    union {
-        int8_t value;
-        uint64_t padding;
-    };
-    struct int8List *next;
-} int8List;
-
-typedef struct sizeList
-{
-    union {
-        uint64_t value;
-        uint64_t padding;
-    };
-    struct sizeList *next;
-} sizeList;
-
-typedef struct uint64List
-{
-    union {
-        uint64_t value;
-        uint64_t padding;
-    };
-    struct uint64List *next;
-} uint64List;
-
-typedef struct uint16List
-{
-    union {
-        uint16_t value;
-        uint64_t padding;
-    };
-    struct uint16List *next;
-} uint16List;
-
-typedef struct boolList
-{
+typedef struct boolList boolList;
+struct boolList {
     union {
         bool value;
         uint64_t padding;
     };
     struct boolList *next;
-} boolList;
+};
+void qapi_free_boolList(boolList *obj);
 
-typedef struct strList
-{
+typedef struct int16List int16List;
+struct int16List {
     union {
-        char *value;
+        int16_t value;
         uint64_t padding;
     };
-    struct strList *next;
-} strList;
+    struct int16List *next;
+};
+void qapi_free_int16List(int16List *obj);
 
-typedef struct int64List
-{
+typedef struct int32List int32List;
+struct int32List {
+    union {
+        int32_t value;
+        uint64_t padding;
+    };
+    struct int32List *next;
+};
+void qapi_free_int32List(int32List *obj);
+
+typedef struct int64List int64List;
+struct int64List {
     union {
         int64_t value;
         uint64_t padding;
     };
     struct int64List *next;
-} int64List;
+};
+void qapi_free_int64List(int64List *obj);
 
-typedef struct uint32List
-{
+typedef struct int8List int8List;
+struct int8List {
+    union {
+        int8_t value;
+        uint64_t padding;
+    };
+    struct int8List *next;
+};
+void qapi_free_int8List(int8List *obj);
+
+typedef struct intList intList;
+struct intList {
+    union {
+        int64_t value;
+        uint64_t padding;
+    };
+    struct intList *next;
+};
+void qapi_free_intList(intList *obj);
+
+typedef struct numberList numberList;
+struct numberList {
+    union {
+        double value;
+        uint64_t padding;
+    };
+    struct numberList *next;
+};
+void qapi_free_numberList(numberList *obj);
+
+typedef struct sizeList sizeList;
+struct sizeList {
+    union {
+        uint64_t value;
+        uint64_t padding;
+    };
+    struct sizeList *next;
+};
+void qapi_free_sizeList(sizeList *obj);
+
+typedef struct strList strList;
+struct strList {
+    union {
+        char *value;
+        uint64_t padding;
+    };
+    struct strList *next;
+};
+void qapi_free_strList(strList *obj);
+
+typedef struct uint16List uint16List;
+struct uint16List {
+    union {
+        uint16_t value;
+        uint64_t padding;
+    };
+    struct uint16List *next;
+};
+void qapi_free_uint16List(uint16List *obj);
+
+typedef struct uint32List uint32List;
+struct uint32List {
     union {
         uint32_t value;
         uint64_t padding;
     };
     struct uint32List *next;
-} uint32List;
+};
+void qapi_free_uint32List(uint32List *obj);
 
-#endif /* QAPI_TYPES_BUILTIN_STRUCT_DECL_H */
+typedef struct uint64List uint64List;
+struct uint64List {
+    union {
+        uint64_t value;
+        uint64_t padding;
+    };
+    struct uint64List *next;
+};
+void qapi_free_uint64List(uint64List *obj);
 
+typedef struct uint8List uint8List;
+struct uint8List {
+    union {
+        uint8_t value;
+        uint64_t padding;
+    };
+    struct uint8List *next;
+};
+void qapi_free_uint8List(uint8List *obj);
 
-extern const char *ErrorClass_lookup[];
-typedef enum ErrorClass
-{
+#endif /* QAPI_TYPES_BUILTIN */
+
+typedef enum ErrorClass {
     ERROR_CLASS_GENERIC_ERROR = 0,
     ERROR_CLASS_COMMAND_NOT_FOUND = 1,
     ERROR_CLASS_DEVICE_ENCRYPTED = 2,
@@ -153,19 +163,14 @@ typedef enum ErrorClass
     ERROR_CLASS_KVM_MISSING_CAP = 5,
     ERROR_CLASS_MAX = 6,
 } ErrorClass;
+extern const char *const ErrorClass_lookup[];
 
-typedef struct ErrorClassList
-{
-    union {
-        ErrorClass value;
-        uint64_t padding;
-    };
-    struct ErrorClassList *next;
-} ErrorClassList;
+typedef struct ErrorClassList ErrorClassList;
 
-extern const char *X86CPURegister32_lookup[];
-typedef enum X86CPURegister32
-{
+typedef struct X86CPUFeatureWordInfo X86CPUFeatureWordInfo;
+
+typedef struct X86CPUFeatureWordInfoList X86CPUFeatureWordInfoList;
+typedef enum X86CPURegister32 {
     X86_CPU_REGISTER32_EAX = 0,
     X86_CPU_REGISTER32_EBX = 1,
     X86_CPU_REGISTER32_ECX = 2,
@@ -176,62 +181,40 @@ typedef enum X86CPURegister32
     X86_CPU_REGISTER32_EDI = 7,
     X86_CPU_REGISTER32_MAX = 8,
 } X86CPURegister32;
+extern const char *const X86CPURegister32_lookup[];
 
-typedef struct X86CPURegister32List
-{
+typedef struct X86CPURegister32List X86CPURegister32List;
+struct ErrorClassList {
     union {
-        X86CPURegister32 value;
+        ErrorClass value;
         uint64_t padding;
     };
-    struct X86CPURegister32List *next;
-} X86CPURegister32List;
-
-
-typedef struct X86CPUFeatureWordInfo X86CPUFeatureWordInfo;
-
-typedef struct X86CPUFeatureWordInfoList
-{
-    union {
-        X86CPUFeatureWordInfo *value;
-        uint64_t padding;
-    };
-    struct X86CPUFeatureWordInfoList *next;
-} X86CPUFeatureWordInfoList;
-
-#ifndef QAPI_TYPES_BUILTIN_CLEANUP_DECL_H
-#define QAPI_TYPES_BUILTIN_CLEANUP_DECL_H
-
-void qapi_free_int32List(int32List *obj);
-void qapi_free_int16List(int16List *obj);
-void qapi_free_intList(intList *obj);
-void qapi_free_uint8List(uint8List *obj);
-void qapi_free_numberList(numberList *obj);
-void qapi_free_int8List(int8List *obj);
-void qapi_free_sizeList(sizeList *obj);
-void qapi_free_uint64List(uint64List *obj);
-void qapi_free_uint16List(uint16List *obj);
-void qapi_free_boolList(boolList *obj);
-void qapi_free_strList(strList *obj);
-void qapi_free_int64List(int64List *obj);
-void qapi_free_uint32List(uint32List *obj);
-
-#endif /* QAPI_TYPES_BUILTIN_CLEANUP_DECL_H */
-
-
+    struct ErrorClassList *next;
+};
 void qapi_free_ErrorClassList(ErrorClassList *obj);
-
-void qapi_free_X86CPURegister32List(X86CPURegister32List *obj);
-
-struct X86CPUFeatureWordInfo
-{
+struct X86CPUFeatureWordInfo {
     int64_t cpuid_input_eax;
     bool has_cpuid_input_ecx;
     int64_t cpuid_input_ecx;
     X86CPURegister32 cpuid_register;
     int64_t features;
 };
-
-void qapi_free_X86CPUFeatureWordInfoList(X86CPUFeatureWordInfoList *obj);
 void qapi_free_X86CPUFeatureWordInfo(X86CPUFeatureWordInfo *obj);
+struct X86CPUFeatureWordInfoList {
+    union {
+        X86CPUFeatureWordInfo *value;
+        uint64_t padding;
+    };
+    struct X86CPUFeatureWordInfoList *next;
+};
+void qapi_free_X86CPUFeatureWordInfoList(X86CPUFeatureWordInfoList *obj);
+struct X86CPURegister32List {
+    union {
+        X86CPURegister32 value;
+        uint64_t padding;
+    };
+    struct X86CPURegister32List *next;
+};
+void qapi_free_X86CPURegister32List(X86CPURegister32List *obj);
 
 #endif

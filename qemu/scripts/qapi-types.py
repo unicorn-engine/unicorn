@@ -78,23 +78,6 @@ struct %(name)s {
 
     return ret
 
-def generate_enum_lookup(name, values, prefix=None):
-    ret = mcgen('''
-const char *const %(name)s_lookup[] = {
-''',
-                name=c_name(name))
-    for value in values:
-        ret += mcgen('''
-    "%(value)s",
-''',
-                     value=value)
-
-    ret += mcgen('''
-    NULL,
-};
-''')
-    return ret
-
 def generate_enum(name, values, prefix=None):
     name = c_name(name)
     lookup_decl = mcgen('''
