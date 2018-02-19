@@ -44,6 +44,8 @@ static void release_common(void *t)
 
     // TODO(danghvu): these function is not available outside qemu
     // so we keep them here instead of outside uc_close.
+    phys_mem_clean(&s->uc->as);
+    address_space_destroy(&s->uc->as);
     for (i = 0; i < s->uc->cpu->num_ases; i++) {
         AddressSpace *as = s->uc->cpu->cpu_ases[i].as;
         phys_mem_clean(as);

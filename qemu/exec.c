@@ -451,6 +451,25 @@ void cpu_exec_init(CPUState *cpu, void *opaque)
 
     // TODO: assert uc does not already have a cpu?
     uc->cpu = cpu;
+
+#ifndef CONFIG_USER_ONLY
+
+    // Unicorn: commented out
+    /* This is a softmmu CPU object, so create a property for it
+     * so users can wire up its memory. (This can't go in qom/cpu.c
+     * because that file is compiled only once for both user-mode
+     * and system builds.) The default if no link is set up is to use
+     * the system address space.
+     */
+    /*object_property_add_link(OBJECT(cpu), "memory", TYPE_MEMORY_REGION,
+                             (Object **)&cpu->memory,
+                             qdev_prop_allow_set_link_before_realize,
+                             OBJ_PROP_LINK_UNREF_ON_RELEASE,
+                             &error_abort);*/
+    cpu->memory = uc->system_memory;
+    // Unicorn: commented out
+    /*object_ref(OBJECT(cpu->memory)); */
+#endif
 }
 
 #if defined(CONFIG_USER_ONLY)
