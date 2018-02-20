@@ -46,10 +46,10 @@ typedef enum {
     QTYPE_QBOOL,
     QTYPE_QERROR,
     QTYPE_MAX,
-} qtype_code;
+} QType;
 
 typedef struct QObject {
-    qtype_code type;
+    QType type;
     size_t refcnt;
 } QObject;
 
@@ -69,7 +69,7 @@ typedef struct QObject {
     qobject_decref(obj ? QOBJECT(obj) : NULL)
 
 /* Initialize an object to default values */
-static inline void qobject_init(QObject *obj, qtype_code type)
+static inline void qobject_init(QObject *obj, QType type)
 {
     assert(QTYPE_NONE < type && type < QTYPE_MAX);
     obj->refcnt = 1;
@@ -105,7 +105,7 @@ static inline void qobject_decref(QObject *obj)
 /**
  * qobject_type(): Return the QObject's type
  */
-static inline qtype_code qobject_type(const QObject *obj)
+static inline QType qobject_type(const QObject *obj)
 {
     assert(QTYPE_NONE < obj->type && obj->type < QTYPE_MAX);
     return obj->type;
