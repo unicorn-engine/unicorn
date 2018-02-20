@@ -271,6 +271,24 @@ static CPAccessResult access_el3_aa32ns_aa64any(CPUARMState *env,
     return CP_ACCESS_OK;
 }
 
+/* Some secure-only AArch32 registers trap to EL3 if used from
+ * Secure EL1 (but are just ordinary UNDEF in other non-EL3 contexts).
+ * Note that an access from Secure EL1 can only happen if EL3 is AArch64.
+ * We assume that the .access field is set to PL1_RW.
+ */
+static CPAccessResult access_trap_aa32s_el1(CPUARMState *env,
+                                            const ARMCPRegInfo *ri)
+{
+    if (arm_current_el(env) == 3) {
+        return CP_ACCESS_OK;
+    }
+    if (arm_is_secure_below_el3(env)) {
+        return CP_ACCESS_TRAP_EL3;
+    }
+    /* This will be EL1 NS and EL2 NS, which just UNDEF */
+    return CP_ACCESS_TRAP_UNCATEGORIZED;
+}
+
 static void dacr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
@@ -3063,6 +3081,11 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "SCR", 15,1,1, 0,0,0, 0,ARM_CP_ALIAS,
       PL3_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.scr_el3), {0, 0},
       NULL, NULL, scr_write, NULL, NULL, NULL },
+    { "MDCR_EL3", 0,1,3, 3,6,1, ARM_CP_STATE_AA64, 0,
+      PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mdcr_el3) },
+    { "SDCR", 15,1,3, 0,0,1, 0, ARM_CP_ALIAS,
+      PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.mdcr_el3), {0, 0},
+      access_trap_aa32s_el1 },
     { "SDER32_EL3", 0,1,1, 3,6,1, ARM_CP_STATE_AA64,0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sder) },
     { "SDER", 15,1,1, 0,0,1, 0,0,
