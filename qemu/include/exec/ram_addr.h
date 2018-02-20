@@ -108,6 +108,10 @@ static inline void cpu_physical_memory_set_dirty_range(struct uc_struct *uc, ram
     unsigned long end, page;
     unsigned long **d = uc->ram_list.dirty_memory;
 
+    if (!mask && !xen_enabled()) {
+        return;
+    }
+
     end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
     page = start >> TARGET_PAGE_BITS;
     if (unlikely(mask & (1 << DIRTY_MEMORY_CODE))) {
