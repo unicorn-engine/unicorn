@@ -558,9 +558,9 @@ static inline void gen_jmp_im(DisasContext *s, target_ulong pc)
 /* Compute SEG:REG into A0.  SEG is selected from the override segment
    (OVR_SEG) and the default segment (DEF_SEG).  OVR_SEG may be -1 to
    indicate no override.  */
-static void gen_lea_v_seg(DisasContext *s, TCGv a0, int def_seg, int ovr_seg)
+static void gen_lea_v_seg(DisasContext *s, TCGMemOp aflag, TCGv a0,
+                          int def_seg, int ovr_seg)
 {
-    TCGMemOp aflag = s->aflag;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
 
@@ -624,7 +624,7 @@ static inline void gen_string_movl_A0_ESI(DisasContext *s)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
 
-    gen_lea_v_seg(s, *cpu_regs[R_ESI], R_DS, s->override);
+    gen_lea_v_seg(s, s->aflag, *cpu_regs[R_ESI], R_DS, s->override);
 }
 
 static inline void gen_string_movl_A0_EDI(DisasContext *s)
@@ -632,7 +632,7 @@ static inline void gen_string_movl_A0_EDI(DisasContext *s)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
 
-    gen_lea_v_seg(s, *cpu_regs[R_EDI], R_ES, -1);
+    gen_lea_v_seg(s, s->aflag, *cpu_regs[R_EDI], R_ES, -1);
 }
 
 static inline void gen_op_movl_T0_Dshift(TCGContext *s, TCGMemOp ot)
@@ -2247,7 +2247,7 @@ static void gen_lea_modrm(CPUX86State *env, DisasContext *s, int modrm)
         tcg_abort();
     }
 
-    gen_lea_v_seg(s, sum, def_seg, ovr_seg);
+    gen_lea_v_seg(s, s->aflag, sum, def_seg, ovr_seg);
 }
 
 static void gen_nop_modrm(CPUX86State *env, DisasContext *s, int modrm)
@@ -2313,7 +2313,7 @@ static void gen_add_A0_ds_seg(DisasContext *s)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
 
-    gen_lea_v_seg(s, cpu_A0, R_DS, s->override);
+    gen_lea_v_seg(s, s->aflag, cpu_A0, R_DS, s->override);
 }
 
 /* generate modrm memory load or store of 'reg'. TMP0 is used if reg ==
@@ -2563,21 +2563,12 @@ static void gen_push_v(DisasContext *s, TCGv val)
 
     tcg_gen_subi_tl(tcg_ctx, cpu_A0, *cpu_regs[R_ESP], size);
 
-    if (CODE64(s)) {
-        /* No special handling.  */
-    } else if (s->ss32) {
+    if (!CODE64(s)) {
         if (s->addseg) {
             new_esp = cpu_tmp4;
             tcg_gen_mov_tl(tcg_ctx, new_esp, cpu_A0);
-            gen_op_addl_A0_seg(s, R_SS);
-        } else {
-            tcg_gen_ext32u_tl(tcg_ctx, cpu_A0, cpu_A0);
         }
-    } else {
-        new_esp = cpu_tmp4;
-        tcg_gen_ext16u_tl(tcg_ctx, cpu_A0, cpu_A0);
-        tcg_gen_mov_tl(tcg_ctx, new_esp, cpu_A0);
-        gen_op_addl_A0_seg(s, R_SS);
+        gen_lea_v_seg(s, a_ot, cpu_A0, R_SS, -1);
     }
 
     gen_op_st_v(s, d_ot, val, cpu_A0);
@@ -2591,42 +2582,25 @@ static TCGMemOp gen_pop_T0(DisasContext *s)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
     TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
-    TCGv addr = cpu_A0;
     TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
 
-    if (CODE64(s)) {
-        addr = *cpu_regs[R_ESP];
-    } else if (!s->ss32) {
-        tcg_gen_ext16u_tl(tcg_ctx, cpu_A0, *cpu_regs[R_ESP]);
-        gen_op_addl_A0_seg(s, R_SS);
-    } else if (s->addseg) {
-        tcg_gen_mov_tl(tcg_ctx, cpu_A0, *cpu_regs[R_ESP]);
-        gen_op_addl_A0_seg(s, R_SS);
-    } else {
-        tcg_gen_ext32u_tl(tcg_ctx, cpu_A0, *cpu_regs[R_ESP]);
-    }
+    gen_lea_v_seg(s, mo_stacksize(s), *cpu_regs[R_ESP], R_SS, -1);
+    gen_op_ld_v(s, d_ot, *cpu_T[0], cpu_A0);
 
-    gen_op_ld_v(s, d_ot, *cpu_T[0], addr);
     return d_ot;
 }
 
-static void gen_pop_update(DisasContext *s, TCGMemOp ot)
+static inline void gen_pop_update(DisasContext *s, TCGMemOp ot)
 {
     gen_stack_update(s, 1 << ot);
 }
 
-static void gen_stack_A0(DisasContext *s)
+static inline void gen_stack_A0(DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
+    TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
 
-    gen_op_movl_A0_reg(tcg_ctx, R_ESP);
-    if (!s->ss32)
-        tcg_gen_ext16u_tl(tcg_ctx, cpu_A0, cpu_A0);
-    tcg_gen_mov_tl(tcg_ctx, *cpu_T[1], cpu_A0);
-    if (s->addseg)
-        gen_op_addl_A0_seg(s, R_SS);
+    gen_lea_v_seg(s, s->ss32 ? MO_32 : MO_16, *cpu_regs[R_ESP], R_SS, -1);
 }
 
 /* NOTE: wrap around in 16 bit not fully handled */
