@@ -28,9 +28,12 @@
  *                "Valid quarks are up, down, strange, charm, top, bottom.");
  *
  *
- * Report an error to stderr:
+ * Report an error to the current monitor if we have one, else stderr:
  *     error_report_err(err);
  * This frees the error object.
+ *
+ * Likewise, but with additional text prepended:
+ *     error_reportf_err(err, "Could not frobnicate '%s': ", name);
  *
  * Report an error somewhere else:
  *     const char *msg = error_get_pretty(err);
@@ -155,6 +158,9 @@ void error_set_errno(Error **errp, int os_error, ErrorClass err_class,
  * human-readable error message is made from printf-style @fmt, ...
  * The resulting message should be a single phrase, with no newline or
  * trailing punctuation.
+ * Please don't error_setg(&error_fatal, ...), use error_report() and
+ * exit(), because that's more obvious.
+ * Likewise, don't error_setg(&error_abort, ...), use assert().
  */
 #define error_setg(errp, fmt, ...)                              \
     error_setg_internal((errp), __FILE__, __LINE__, __func__,   \
@@ -190,6 +196,8 @@ void error_setg_errno_internal(Error **errp,
  * the error object.
  * Else, move the error object from @local_err to *@dst_errp.
  * On return, @local_err is invalid.
+ * Please don't error_propagate(&error_fatal, ...), use
+ * error_report_err() and exit(), because that's more obvious.
  */
 void error_propagate(Error **dst_errp, Error *local_err);
 
@@ -228,7 +236,8 @@ void error_set_internal(Error **errp,
     GCC_FMT_ATTR(6, 7);
 
 /*
- * Pass to error_setg() & friends to abort() on error.
+ * Special error destination to abort on error.
+ * See error_setg() and error_propagate() for details.
  */
 extern Error *error_abort;
 
