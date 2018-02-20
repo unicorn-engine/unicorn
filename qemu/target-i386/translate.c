@@ -2598,53 +2598,48 @@ static inline void gen_stack_A0(DisasContext *s)
     gen_lea_v_seg(s, s->ss32 ? MO_32 : MO_16, *cpu_regs[R_ESP], R_SS, -1);
 }
 
-/* NOTE: wrap around in 16 bit not fully handled */
 static void gen_pusha(DisasContext *s)
 {
+    TCGMemOp s_ot = s->ss32 ? MO_32 : MO_16;
+    TCGMemOp d_ot = s->dflag;
+    int size = 1 << d_ot;
     int i;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
+    TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
 
-    gen_op_movl_A0_reg(tcg_ctx, R_ESP);
-    gen_op_addl_A0_im(tcg_ctx, -(8 << s->dflag));
-    if (!s->ss32)
-        tcg_gen_ext16u_tl(tcg_ctx, cpu_A0, cpu_A0);
-    tcg_gen_mov_tl(tcg_ctx, *cpu_T[1], cpu_A0);
-    if (s->addseg)
-        gen_op_addl_A0_seg(s, R_SS);
-    for(i = 0;i < 8; i++) {
-        gen_op_mov_v_reg(tcg_ctx, MO_32, *cpu_T[0], 7 - i);
-        gen_op_st_v(s, s->dflag, *cpu_T[0], cpu_A0);
-        gen_op_addl_A0_im(tcg_ctx, 1 << s->dflag);
+    for (i = 0; i < 8; i++) {
+        tcg_gen_addi_tl(tcg_ctx, cpu_A0, *cpu_regs[R_ESP], (i - 8) * size);
+        gen_lea_v_seg(s, s_ot, cpu_A0, R_SS, -1);
+        gen_op_st_v(s, d_ot, *cpu_regs[7 - i], cpu_A0);
     }
-    gen_op_mov_reg_v(tcg_ctx, MO_16 + s->ss32, R_ESP, *cpu_T[1]);
+
+    gen_stack_update(s, -8 * size);
 }
 
-/* NOTE: wrap around in 16 bit not fully handled */
 static void gen_popa(DisasContext *s)
 {
+    TCGMemOp s_ot = s->ss32 ? MO_32 : MO_16;
+    TCGMemOp d_ot = s->dflag;
+    int size = 1 << d_ot;
     int i;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
     TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
+    TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
 
-    gen_op_movl_A0_reg(tcg_ctx, R_ESP);
-    if (!s->ss32)
-        tcg_gen_ext16u_tl(tcg_ctx, cpu_A0, cpu_A0);
-    tcg_gen_mov_tl(tcg_ctx, *cpu_T[1], cpu_A0);
-    tcg_gen_addi_tl(tcg_ctx, *cpu_T[1], *cpu_T[1], 8 << s->dflag);
-    if (s->addseg)
-        gen_op_addl_A0_seg(s, R_SS);
-    for(i = 0;i < 8; i++) {
+    for (i = 0; i < 8; i++) {
         /* ESP is not reloaded */
-        if (i != 3) {
-            gen_op_ld_v(s, s->dflag, *cpu_T[0], cpu_A0);
-            gen_op_mov_reg_v(tcg_ctx, s->dflag, 7 - i, *cpu_T[0]);
+        if (7 - i == R_ESP) {
+            continue;
         }
-        gen_op_addl_A0_im(tcg_ctx, 1 << s->dflag);
+        tcg_gen_addi_tl(tcg_ctx, cpu_A0, *cpu_regs[R_ESP], i * size);
+        gen_lea_v_seg(s, s_ot, cpu_A0, R_SS, -1);
+        gen_op_ld_v(s, d_ot, *cpu_T[0], cpu_A0);
+        gen_op_mov_reg_v(tcg_ctx, d_ot, 7 - i, *cpu_T[0]);
     }
-    gen_op_mov_reg_v(tcg_ctx, MO_16 + s->ss32, R_ESP, *cpu_T[1]);
+
+    gen_stack_update(s, 8 * size);
 }
 
 static void gen_enter(DisasContext *s, int esp_addend, int level)
