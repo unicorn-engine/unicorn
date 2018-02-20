@@ -64,6 +64,9 @@
  * Call a function aborting on errors:
  *     foo(arg, &error_abort);
  *
+ * Call a function treating errors as fatal:
+ *     foo(arg, &error_fatal);
+ *
  * Receive an error and pass it on to the caller:
  *     Error *err = NULL;
  *     foo(arg, &err);
@@ -240,5 +243,11 @@ void error_set_internal(Error **errp,
  * See error_setg() and error_propagate() for details.
  */
 extern Error *error_abort;
+
+/*
+ * Special error destination to exit(1) on error.
+ * See error_setg() and error_propagate() for details.
+ */
+extern Error *error_fatal;
 
 #endif
