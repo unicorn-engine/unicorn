@@ -297,8 +297,7 @@ static void parse_type_number(Visitor *v, double *obj, const char *name,
     *obj = val;
 }
 
-static void parse_optional(Visitor *v, bool *present, const char *name,
-                           Error **errp)
+static void parse_optional(Visitor *v, bool *present, const char *name)
 {
     StringInputVisitor *siv = to_siv(v);
 

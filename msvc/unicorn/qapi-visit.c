@@ -62,10 +62,7 @@ static void visit_type_X86CPUFeatureWordInfo_fields(Visitor *v, X86CPUFeatureWor
     if (err) {
         goto out;
     }
-    visit_optional(v, &(*obj)->has_cpuid_input_ecx, "cpuid-input-ecx", &err);
-    if (err) {
-        goto out;
-    }
+    visit_optional(v, &(*obj)->has_cpuid_input_ecx, "cpuid-input-ecx");
     if ((*obj)->has_cpuid_input_ecx) {
         visit_type_int(v, &(*obj)->cpuid_input_ecx, "cpuid-input-ecx", &err);
         if (err) {
