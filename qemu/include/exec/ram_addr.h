@@ -22,6 +22,7 @@
 #include "uc_priv.h"
 
 #ifndef CONFIG_USER_ONLY
+#include "hw/xen/xen.h"
 
 ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
                                    MemoryRegion *mr, Error **errp);
