@@ -23,6 +23,7 @@
 #ifndef QAPI_VISIT_BUILTIN
 #define QAPI_VISIT_BUILTIN
 
+void visit_type_QType(Visitor *v, QType *obj, const char *name, Error **errp);
 void visit_type_anyList(Visitor *v, anyList **obj, const char *name, Error **errp);
 void visit_type_boolList(Visitor *v, boolList **obj, const char *name, Error **errp);
 void visit_type_int16List(Visitor *v, int16List **obj, const char *name, Error **errp);
@@ -41,7 +42,7 @@ void visit_type_uint8List(Visitor *v, uint8List **obj, const char *name, Error *
 #endif /* QAPI_VISIT_BUILTIN */
 
 void visit_type_DummyForceArrays(Visitor *v, DummyForceArrays **obj, const char *name, Error **errp);
-void visit_type_ErrorClass(Visitor *v, ErrorClass *obj, const char *name, Error **errp);
+void visit_type_QapiErrorClass(Visitor *v, QapiErrorClass *obj, const char *name, Error **errp);
 void visit_type_X86CPUFeatureWordInfo(Visitor *v, X86CPUFeatureWordInfo **obj, const char *name, Error **errp);
 void visit_type_X86CPUFeatureWordInfoList(Visitor *v, X86CPUFeatureWordInfoList **obj, const char *name, Error **errp);
 void visit_type_X86CPURegister32(Visitor *v, X86CPURegister32 *obj, const char *name, Error **errp);

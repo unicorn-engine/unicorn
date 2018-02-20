@@ -34,24 +34,12 @@
 
 #include <stddef.h>
 #include <assert.h>
+#include "qapi-types.h"
 
-typedef enum {
-    QTYPE_NONE,
-    QTYPE_QNULL,
-    QTYPE_QINT,
-    QTYPE_QSTRING,
-    QTYPE_QDICT,
-    QTYPE_QLIST,
-    QTYPE_QFLOAT,
-    QTYPE_QBOOL,
-    QTYPE_QERROR,
-    QTYPE_MAX,
-} QType;
-
-typedef struct QObject {
+struct QObject {
     QType type;
     size_t refcnt;
-} QObject;
+};
 
 /* Objects definitions must include this */
 #define QObject_HEAD  \
@@ -71,7 +59,7 @@ typedef struct QObject {
 /* Initialize an object to default values */
 static inline void qobject_init(QObject *obj, QType type)
 {
-    assert(QTYPE_NONE < type && type < QTYPE_MAX);
+    assert(QTYPE_NONE < type && type < QTYPE__MAX);
     obj->refcnt = 1;
     obj->type = type;
 }
@@ -107,7 +95,7 @@ static inline void qobject_decref(QObject *obj)
  */
 static inline QType qobject_type(const QObject *obj)
 {
-    assert(QTYPE_NONE < obj->type && obj->type < QTYPE_MAX);
+    assert(QTYPE_NONE < obj->type && obj->type < QTYPE__MAX);
     return obj->type;
 }
 

@@ -44,9 +44,14 @@ void visit_type_DummyForceArrays(Visitor *v, DummyForceArrays **obj, const char 
     error_propagate(errp, err);
 }
 
-void visit_type_ErrorClass(Visitor *v, ErrorClass *obj, const char *name, Error **errp)
+void visit_type_QType(Visitor *v, QType *obj, const char *name, Error **errp)
 {
-    visit_type_enum(v, (int *)obj, ErrorClass_lookup, "ErrorClass", name, errp);
+    visit_type_enum(v, (int *)obj, QType_lookup, "QType", name, errp);
+}
+
+void visit_type_QapiErrorClass(Visitor *v, QapiErrorClass *obj, const char *name, Error **errp)
+{
+    visit_type_enum(v, (int *)obj, QapiErrorClass_lookup, "QapiErrorClass", name, errp);
 }
 
 static void visit_type_X86CPUFeatureWordInfo_fields(Visitor *v, X86CPUFeatureWordInfo **obj, Error **errp)

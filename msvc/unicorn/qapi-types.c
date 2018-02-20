@@ -18,7 +18,7 @@
 #include "qapi-types.h"
 #include "qapi-visit.h"
 
-const char *const ErrorClass_lookup[] = {
+const char *const QapiErrorClass_lookup[] = {
     "GenericError",
     "CommandNotFound",
     "DeviceEncrypted",
@@ -54,6 +54,18 @@ void qapi_free_DummyForceArrays(DummyForceArrays *obj)
     visit_type_DummyForceArrays(v, &obj, NULL, NULL);
     qapi_dealloc_visitor_cleanup(qdv);
 }
+
+const char *const QType_lookup[] = {
+    "none",
+    "qnull",
+    "qint",
+    "qstring",
+    "qdict",
+    "qlist",
+    "qfloat",
+    "qbool",
+    NULL,
+};
 
 void qapi_free_X86CPUFeatureWordInfo(X86CPUFeatureWordInfo *obj)
 {

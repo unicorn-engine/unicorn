@@ -16,12 +16,25 @@
 #ifndef QAPI_TYPES_H
 #define QAPI_TYPES_H
 
-#include "qapi/qmp/qobject.h"
+#include "qemu/typedefs.h"
 #include "unicorn/platform.h"
 
 #ifndef QAPI_TYPES_BUILTIN
 #define QAPI_TYPES_BUILTIN
 
+
+typedef enum QType {
+    QTYPE_NONE = 0,
+    QTYPE_QNULL = 1,
+    QTYPE_QINT = 2,
+    QTYPE_QSTRING = 3,
+    QTYPE_QDICT = 4,
+    QTYPE_QLIST = 5,
+    QTYPE_QFLOAT = 6,
+    QTYPE_QBOOL = 7,
+    QTYPE__MAX = 8,
+} QType;
+extern const char *const QType_lookup[];
 
 typedef struct anyList anyList;
 struct anyList {
@@ -168,16 +181,16 @@ void qapi_free_uint8List(uint8List *obj);
 
 typedef struct DummyForceArrays DummyForceArrays;
 
-typedef enum ErrorClass {
-    ERROR_CLASS_GENERIC_ERROR = 0,
-    ERROR_CLASS_COMMAND_NOT_FOUND = 1,
-    ERROR_CLASS_DEVICE_ENCRYPTED = 2,
-    ERROR_CLASS_DEVICE_NOT_ACTIVE = 3,
-    ERROR_CLASS_DEVICE_NOT_FOUND = 4,
-    ERROR_CLASS_KVM_MISSING_CAP = 5,
-    ERROR_CLASS_MAX = 6,
-} ErrorClass;
-extern const char *const ErrorClass_lookup[];
+typedef enum QapiErrorClass {
+    QAPI_ERROR_CLASS_GENERICERROR = 0,
+    QAPI_ERROR_CLASS_COMMANDNOTFOUND = 1,
+    QAPI_ERROR_CLASS_DEVICEENCRYPTED = 2,
+    QAPI_ERROR_CLASS_DEVICENOTACTIVE = 3,
+    QAPI_ERROR_CLASS_DEVICENOTFOUND = 4,
+    QAPI_ERROR_CLASS_KVMMISSINGCAP = 5,
+    QAPI_ERROR_CLASS__MAX = 6,
+} QapiErrorClass;
+extern const char *const QapiErrorClass_lookup[];
 
 typedef struct X86CPUFeatureWordInfo X86CPUFeatureWordInfo;
 
@@ -192,13 +205,15 @@ typedef enum X86CPURegister32 {
     X86_CPU_REGISTER32_EBP = 5,
     X86_CPU_REGISTER32_ESI = 6,
     X86_CPU_REGISTER32_EDI = 7,
-    X86_CPU_REGISTER32_MAX = 8,
+    X86_CPU_REGISTER32__MAX = 8,
 } X86CPURegister32;
 extern const char *const X86CPURegister32_lookup[];
+
 struct DummyForceArrays {
     X86CPUFeatureWordInfoList *unused;
 };
 void qapi_free_DummyForceArrays(DummyForceArrays *obj);
+
 struct X86CPUFeatureWordInfo {
     int64_t cpuid_input_eax;
     bool has_cpuid_input_ecx;

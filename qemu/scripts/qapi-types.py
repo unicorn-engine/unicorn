@@ -111,7 +111,7 @@ extern const int %(c_name)s_qtypes[];
 def gen_alternate_qtypes(name, variants):
     ret = mcgen('''
 
-const int %(c_name)s_qtypes[QTYPE_MAX] = {
+const int %(c_name)s_qtypes[QTYPE__MAX] = {
 ''',
                 c_name=c_name(name))
 
@@ -232,8 +232,15 @@ class QAPISchemaGenTypeVisitor(QAPISchemaVisitor):
         self.defn += gen_type_cleanup(name)
 
     def visit_enum_type(self, name, info, values, prefix):
-        self._fwdecl += gen_enum(name, values, prefix)
-        self._fwdefn += gen_enum_lookup(name, values, prefix)
+        # Special case for our lone builtin enum type
+        # TODO use something cleaner than existence of info
+        if not info:
+            self._btin += gen_enum(name, values, prefix)
+            if do_builtins:
+                self.defn += gen_enum_lookup(name, values, prefix)
+        else:
+            self._fwdecl += gen_enum(name, values, prefix)
+            self._fwdefn += gen_enum_lookup(name, values, prefix)
 
     def visit_array_type(self, name, info, element_type):
         if isinstance(element_type, QAPISchemaBuiltinType):
@@ -314,8 +321,9 @@ fdef.write(mcgen('''
 ''',
                  prefix=prefix))
 
+# To avoid circular headers, use only typedefs.h here, not qobject.h
 fdecl.write(mcgen('''
-#include "qapi/qmp/qobject.h"
+#include "qemu/typedefs.h"
 #include "unicorn/platform.h"
 '''))
 

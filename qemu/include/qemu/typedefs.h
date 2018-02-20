@@ -66,6 +66,7 @@ typedef struct QEMUSizedBuffer QEMUSizedBuffer;
 typedef struct QEMUTimer QEMUTimer;
 typedef struct QEMUTimerListGroup QEMUTimerListGroup;
 typedef struct QemuConsole QemuConsole;
+typedef struct QObject QObject;
 typedef struct RAMBlock RAMBlock;
 typedef struct Range Range;
 typedef struct SHPCDevice SHPCDevice;
