@@ -3096,6 +3096,25 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
     REGINFO_SENTINEL
 };
 
+static CPAccessResult nsacr_access(CPUARMState *env, const ARMCPRegInfo *ri,
+                                   bool isread)
+{
+    /* The NSACR is RW at EL3, and RO for NS EL1 and NS EL2.
+     * At Secure EL1 it traps to EL3.
+     */
+    if (arm_current_el(env) == 3) {
+        return CP_ACCESS_OK;
+    }
+    if (arm_is_secure_below_el3(env)) {
+        return CP_ACCESS_TRAP_EL3;
+    }
+    /* Accesses from EL1 NS and EL2 NS are UNDEF for write but allow reads. */
+    if (isread) {
+        return CP_ACCESS_OK;
+    }
+    return CP_ACCESS_TRAP_UNCATEGORIZED;
+}
+
 static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "SCR_EL3", 0,1,1, 3,6,0, ARM_CP_STATE_AA64,0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.scr_el3), {0, 0},
@@ -3112,9 +3131,6 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sder) },
     { "SDER", 15,1,1, 0,0,1, 0,0,
       PL3_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.sder) },
-      /* TODO: Implement NSACR trapping of secure EL1 accesses to EL3 */
-    { "NSACR", 15,1,1, 0,0,2, 0,0,
-      PL3_W | PL1_R, 0, NULL, 0, offsetof(CPUARMState, cp15.nsacr) },
     { "MVBAR", 15,12,0, 0,0,1, 0,0,
       PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mvbar), {0, 0},
       access_trap_aa32s_el1, NULL, vbar_write },
@@ -3756,6 +3772,39 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         };
         define_one_arm_cp_reg(cpu, &rvbar);
     }
+    /* The behaviour of NSACR is sufficiently various that we don't
+     * try to describe it in a single reginfo:
+     *  if EL3 is 64 bit, then trap to EL3 from S EL1,
+     *     reads as constant 0xc00 from NS EL1 and NS EL2
+     *  if EL3 is 32 bit, then RW at EL3, RO at NS EL1 and NS EL2
+     *  if v7 without EL3, register doesn't exist
+     *  if v8 without EL3, reads as constant 0xc00 from NS EL1 and NS EL2
+     */
+    if (arm_feature(env, ARM_FEATURE_EL3)) {
+        if (arm_feature(env, ARM_FEATURE_AARCH64)) {
+            ARMCPRegInfo nsacr = {
+                "NSACR", 15,1,1, 0,0,2, 0, ARM_CP_CONST,
+                PL1_RW, 0, NULL, 0xc00, 0, {0, 0},
+                nsacr_access
+            };
+            define_one_arm_cp_reg(cpu, &nsacr);
+        } else {
+            ARMCPRegInfo nsacr = {
+                "NSACR", 15,1,1, 0,0,2, 0,0,
+                PL3_RW | PL1_R, 0, NULL, 0, offsetof(CPUARMState, cp15.nsacr)
+            };
+            define_one_arm_cp_reg(cpu, &nsacr);
+        }
+    } else {
+        if (arm_feature(env, ARM_FEATURE_V8)) {
+            ARMCPRegInfo nsacr = {
+                "NSACR", 15,1,1, 0,0,2, 0, ARM_CP_CONST,
+                PL1_R, 0, NULL, 0xc00
+            };
+            define_one_arm_cp_reg(cpu, &nsacr);
+        }
+    }
+
     if (arm_feature(env, ARM_FEATURE_MPU)) {
         if (arm_feature(env, ARM_FEATURE_V6)) {
             /* PMSAv6 not implemented */
