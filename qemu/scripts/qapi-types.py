@@ -199,7 +199,6 @@ class QAPISchemaGenTypeVisitor(QAPISchemaVisitor):
         self.decl = None
         self.defn = None
         self._fwdecl = None
-        self._fwdefn = None
         self._btin = None
 
     def visit_begin(self, schema):
@@ -212,8 +211,6 @@ class QAPISchemaGenTypeVisitor(QAPISchemaVisitor):
     def visit_end(self):
         self.decl = self._fwdecl + self.decl
         self._fwdecl = None
-        self.defn = self._fwdefn + self.defn
-        self._fwdefn = None
         # To avoid header dependency hell, we always generate
         # declarations for built-in types in our header files and
         # simply guard them.  See also do_builtins (command line
@@ -240,7 +237,7 @@ class QAPISchemaGenTypeVisitor(QAPISchemaVisitor):
                 self.defn += gen_enum_lookup(name, values, prefix)
         else:
             self._fwdecl += gen_enum(name, values, prefix)
-            self._fwdefn += gen_enum_lookup(name, values, prefix)
+            self.defn += gen_enum_lookup(name, values, prefix)
 
     def visit_array_type(self, name, info, element_type):
         if isinstance(element_type, QAPISchemaBuiltinType):
