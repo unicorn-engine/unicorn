@@ -328,6 +328,24 @@ static CPAccessResult access_tdra(CPUARMState *env, const ARMCPRegInfo *ri,
     return CP_ACCESS_OK;
 }
 
+/* Check for traps to general debug registers, which are controlled
+ * by MDCR_EL2.TDA for EL2 and MDCR_EL3.TDA for EL3.
+ */
+static CPAccessResult access_tda(CPUARMState *env, const ARMCPRegInfo *ri,
+                                  bool isread)
+{
+    int el = arm_current_el(env);
+
+    if (el < 2 && (env->cp15.mdcr_el2 & MDCR_TDA)
+        && !arm_is_secure_below_el3(env)) {
+        return CP_ACCESS_TRAP_EL2;
+    }
+    if (el < 3 && (env->cp15.mdcr_el3 & MDCR_TDA)) {
+        return CP_ACCESS_TRAP_EL3;
+    }
+    return CP_ACCESS_OK;
+}
+
 static void dacr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
@@ -2987,7 +3005,8 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
     { "CNTHP_CTL_EL2", 0,14,2, 3,4,1, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
     { "MDCR_EL2", 0,1,1, 3,4,1, ARM_CP_STATE_BOTH, ARM_CP_CONST,
-      PL2_RW, 0, NULL, 0 },
+      PL2_RW, 0, NULL, 0, 0, {0, 0},
+      access_tda },
     { "HPFAR_EL2", 0,6,0, 3,4,4, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0, 0, {0, 0},
       access_el3_aa32ns_aa64any },
@@ -3299,7 +3318,7 @@ static const ARMCPRegInfo debug_cp_reginfo[] = {
      */
     { "MDCCSR_EL0", 14,0,1, 2,0,0, ARM_CP_STATE_BOTH,
       ARM_CP_ALIAS, PL1_R, 0, NULL, 0, offsetof(CPUARMState, cp15.mdscr_el1), {0, 0},
-      NULL, NULL, NULL, NULL, NULL, NULL },
+      access_tda, NULL, NULL, NULL, NULL, NULL },
     { "OSLAR_EL1", 14,1,0, 2,0,4, ARM_CP_STATE_BOTH, ARM_CP_NO_RAW,
       PL1_W, 0, NULL, 0, 0, {0, 0},
       access_tdosa, NULL, oslar_write },
@@ -3314,7 +3333,8 @@ static const ARMCPRegInfo debug_cp_reginfo[] = {
      * implement vector catch debug events yet.
      */
     { "DBGVCR", 14,0,7, 0,0,0, 0,
-      ARM_CP_NOP, PL1_RW, },
+      ARM_CP_NOP, PL1_RW, 0, NULL, 0, 0, {0, 0},
+      access_tda },
     REGINFO_SENTINEL
 };
 
@@ -3579,7 +3599,8 @@ static void define_debug_regs(ARMCPU *cpu)
     int wrps, brps, ctx_cmps;
     ARMCPRegInfo dbgdidr = {
         "DBGDIDR", 14,0,0, 0,0,0, 0,
-        ARM_CP_CONST, PL0_R, 0, NULL, cpu->dbgdidr,
+        ARM_CP_CONST, PL0_R, 0, NULL, cpu->dbgdidr, 0, {0, 0},
+        access_tda
     };
 
     /* Note that all these register fields hold "number of Xs minus 1". */
@@ -3610,11 +3631,11 @@ static void define_debug_regs(ARMCPU *cpu)
         ARMCPRegInfo dbgregs[] = {
             { "DBGBVR", 14,0,i, 2,0,4,ARM_CP_STATE_BOTH,
               0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.dbgbvr[i]), {0, 0},
-              NULL, NULL,dbgbvr_write, NULL,raw_write
+              access_tda, NULL,dbgbvr_write, NULL,raw_write
             },
             { "DBGBCR", 14,0,i, 2,0,5, ARM_CP_STATE_BOTH,
               0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.dbgbcr[i]), {0, 0},
-              NULL, NULL,dbgbcr_write, NULL,raw_write
+              access_tda, NULL,dbgbcr_write, NULL,raw_write
             },
             REGINFO_SENTINEL
         };
@@ -3625,11 +3646,11 @@ static void define_debug_regs(ARMCPU *cpu)
         ARMCPRegInfo dbgregs[] = {
             { "DBGWVR", 14,0,i, 2,0,6, ARM_CP_STATE_BOTH,
               0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.dbgwvr[i]), {0, 0},
-              NULL, NULL,dbgwvr_write, NULL,raw_write
+              access_tda, NULL,dbgwvr_write, NULL,raw_write
             },
             { "DBGWCR", 14,0,i, 2,0,7, ARM_CP_STATE_BOTH,
               0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.dbgwcr[i]), {0, 0},
-              NULL, NULL,dbgwcr_write, NULL,raw_write
+              access_tda, NULL,dbgwcr_write, NULL,raw_write
             },
             REGINFO_SENTINEL
         };
