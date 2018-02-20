@@ -1544,7 +1544,7 @@ static void x86_cpuid_version_get_family(struct uc_struct *uc, Object *obj, Visi
     if (value == 0xf) {
         value += (env->cpuid_version >> 20) & 0xff;
     }
-    visit_type_int(v, &value, name, errp);
+    visit_type_int(v, name, &value, errp);
 }
 
 static int x86_cpuid_version_set_family(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
@@ -1557,7 +1557,7 @@ static int x86_cpuid_version_set_family(struct uc_struct *uc, Object *obj, Visit
     Error *local_err = NULL;
     int64_t value;
 
-    visit_type_int(v, &value, name, &local_err);
+    visit_type_int(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
         return -1;
@@ -1587,7 +1587,7 @@ static void x86_cpuid_version_get_model(struct uc_struct *uc, Object *obj, Visit
 
     value = (env->cpuid_version >> 4) & 0xf;
     value |= ((env->cpuid_version >> 16) & 0xf) << 4;
-    visit_type_int(v, &value, name, errp);
+    visit_type_int(v, name, &value, errp);
 }
 
 static int x86_cpuid_version_set_model(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
@@ -1600,7 +1600,7 @@ static int x86_cpuid_version_set_model(struct uc_struct *uc, Object *obj, Visito
     Error *local_err = NULL;
     int64_t value;
 
-    visit_type_int(v, &value, name, &local_err);
+    visit_type_int(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
         return -1;
@@ -1626,7 +1626,7 @@ static void x86_cpuid_version_get_stepping(struct uc_struct *uc, Object *obj, Vi
     int64_t value;
 
     value = env->cpuid_version & 0xf;
-    visit_type_int(v, &value, name, errp);
+    visit_type_int(v, name, &value, errp);
 }
 
 static int x86_cpuid_version_set_stepping(struct uc_struct *uc, Object *obj, Visitor *v,
@@ -1640,7 +1640,7 @@ static int x86_cpuid_version_set_stepping(struct uc_struct *uc, Object *obj, Vis
     Error *local_err = NULL;
     int64_t value;
 
-    visit_type_int(v, &value, name, &local_err);
+    visit_type_int(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
         return -1;
@@ -1740,7 +1740,7 @@ static void x86_cpuid_get_tsc_freq(struct uc_struct *uc, Object *obj, Visitor *v
     int64_t value;
 
     value = cpu->env.tsc_khz * 1000;
-    visit_type_int(v, &value, name, errp);
+    visit_type_int(v, name, &value, errp);
 }
 
 static int x86_cpuid_set_tsc_freq(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
@@ -1752,7 +1752,7 @@ static int x86_cpuid_set_tsc_freq(struct uc_struct *uc, Object *obj, Visitor *v,
     Error *local_err = NULL;
     int64_t value;
 
-    visit_type_int(v, &value, name, &local_err);
+    visit_type_int(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
         return -1;
@@ -1774,7 +1774,7 @@ static void x86_cpuid_get_apic_id(struct uc_struct *uc, Object *obj, Visitor *v,
     X86CPU *cpu = X86_CPU(uc, obj);
     int64_t value = cpu->apic_id;
 
-    visit_type_int(v, &value, name, errp);
+    visit_type_int(v, name, &value, errp);
 }
 
 static int x86_cpuid_set_apic_id(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
@@ -1793,7 +1793,7 @@ static int x86_cpuid_set_apic_id(struct uc_struct *uc, Object *obj, Visitor *v, 
         return -1;
     }
 
-    visit_type_int(v, &value, name, &error);
+    visit_type_int(v, name, &value, &error);
     if (error) {
         error_propagate(errp, error);
         return -1;
@@ -1841,7 +1841,7 @@ static void x86_cpu_get_feature_words(struct uc_struct *uc, Object *obj, Visitor
         list = &list_entries[w];
     }
 
-    visit_type_X86CPUFeatureWordInfoList(v, &list, "feature-words", &err);
+    visit_type_X86CPUFeatureWordInfoList(v, "feature-words", &list, &err);
     error_propagate(errp, err);
 }
 

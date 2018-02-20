@@ -892,7 +892,7 @@ static void memory_region_get_addr(struct uc_struct *uc, Object *obj, Visitor *v
     MemoryRegion *mr = MEMORY_REGION(uc, obj);
     uint64_t value = mr->addr;
 
-    visit_type_uint64(v, &value, name, errp);
+    visit_type_uint64(v, name, &value, errp);
 }
 
 static void memory_region_get_container(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
@@ -904,7 +904,7 @@ static void memory_region_get_container(struct uc_struct *uc, Object *obj, Visit
     if (mr->container) {
         path = object_get_canonical_path(OBJECT(mr->container));
     }
-    visit_type_str(v, &path, name, errp);
+    visit_type_str(v, name, &path, errp);
     if (mr->container) {
         g_free(path);
     }
@@ -924,7 +924,7 @@ static void memory_region_get_priority(struct uc_struct *uc, Object *obj, Visito
     MemoryRegion *mr = MEMORY_REGION(uc, obj);
     int32_t value = mr->priority;
 
-    visit_type_int32(v, &value, name, errp);
+    visit_type_int32(v, name, &value, errp);
 }
 
 static bool memory_region_get_may_overlap(struct uc_struct *uc, Object *obj, Error **errp)
@@ -940,7 +940,7 @@ static void memory_region_get_size(struct uc_struct *uc, Object *obj, Visitor *v
     MemoryRegion *mr = MEMORY_REGION(uc, obj);
     uint64_t value = memory_region_size(mr);
 
-    visit_type_uint64(v, &value, name, errp);
+    visit_type_uint64(v, name, &value, errp);
 }
 
 static void memory_region_initfn(struct uc_struct *uc, Object *obj, void *opaque)

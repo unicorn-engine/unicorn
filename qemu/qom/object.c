@@ -1036,7 +1036,7 @@ static void object_get_child_property(struct uc_struct *uc, Object *obj, Visitor
     gchar *path;
 
     path = object_get_canonical_path(child);
-    visit_type_str(v, &path, name, errp);
+    visit_type_str(v, name, &path, errp);
     g_free(path);
 }
 
@@ -1107,11 +1107,11 @@ static void object_get_link_property(struct uc_struct *uc, Object *obj, Visitor 
 
     if (*child) {
         path = object_get_canonical_path(*child);
-        visit_type_str(v, &path, name, errp);
+        visit_type_str(v, name, &path, errp);
         g_free(path);
     } else {
         path = (gchar *)"";
-        visit_type_str(v, &path, name, errp);
+        visit_type_str(v, name, &path, errp);
     }
 }
 
@@ -1165,7 +1165,7 @@ static int object_set_link_property(struct uc_struct *uc, Object *obj, Visitor *
     Object *new_target = NULL;
     char *path = NULL;
 
-    visit_type_str(v, &path, name, &local_err);
+    visit_type_str(v, name, &path, &local_err);
 
     if (!local_err && strcmp(path, "") != 0) {
         new_target = object_resolve_link(uc, obj, name, path, &local_err);
@@ -1414,7 +1414,7 @@ static void property_get_str(struct uc_struct *uc, Object *obj, Visitor *v, void
         return;
     }
 
-    visit_type_str(v, &value, name, errp);
+    visit_type_str(v, name, &value, errp);
     g_free(value);
 }
 
@@ -1425,7 +1425,7 @@ static int property_set_str(struct uc_struct *uc, Object *obj, Visitor *v, void 
     char *value;
     Error *local_err = NULL;
 
-    visit_type_str(v, &value, name, &local_err);
+    visit_type_str(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
         return -1;
@@ -1479,7 +1479,7 @@ static void property_get_bool(struct uc_struct *uc, Object *obj, Visitor *v, voi
     bool value;
 
     value = prop->get(uc, obj, errp);
-    visit_type_bool(v, &value, name, errp);
+    visit_type_bool(v, name, &value, errp);
 }
 
 static int property_set_bool(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
@@ -1489,7 +1489,7 @@ static int property_set_bool(struct uc_struct *uc, Object *obj, Visitor *v, void
     bool value;
     Error *local_err = NULL;
 
-    visit_type_bool(v, &value, name, &local_err);
+    visit_type_bool(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
         return -1;
@@ -1537,7 +1537,7 @@ static void property_get_uint8_ptr(struct uc_struct *uc, Object *obj, Visitor *v
                                    Error **errp)
 {
     uint8_t value = *(uint8_t *)opaque;
-    visit_type_uint8(v, &value, name, errp);
+    visit_type_uint8(v, name, &value, errp);
 }
 
 static void property_get_uint16_ptr(struct uc_struct *uc, Object *obj, Visitor *v,
@@ -1545,7 +1545,7 @@ static void property_get_uint16_ptr(struct uc_struct *uc, Object *obj, Visitor *
                                    Error **errp)
 {
     uint16_t value = *(uint16_t *)opaque;
-    visit_type_uint16(v, &value, name, errp);
+    visit_type_uint16(v, name, &value, errp);
 }
 
 static void property_get_uint32_ptr(struct uc_struct *uc, Object *obj, Visitor *v,
@@ -1553,7 +1553,7 @@ static void property_get_uint32_ptr(struct uc_struct *uc, Object *obj, Visitor *
                                    Error **errp)
 {
     uint32_t value = *(uint32_t *)opaque;
-    visit_type_uint32(v, &value, name, errp);
+    visit_type_uint32(v, name, &value, errp);
 }
 
 static void property_get_uint64_ptr(struct uc_struct *uc, Object *obj, Visitor *v,
@@ -1561,7 +1561,7 @@ static void property_get_uint64_ptr(struct uc_struct *uc, Object *obj, Visitor *
                                    Error **errp)
 {
     uint64_t value = *(uint64_t *)opaque;
-    visit_type_uint64(v, &value, name, errp);
+    visit_type_uint64(v, name, &value, errp);
 }
 
 void object_property_add_uint8_ptr(Object *obj, const char *name,
