@@ -985,12 +985,13 @@ class QAPISchemaObjectType(QAPISchemaType):
             self.base.check(schema)
             for m in self.base.members:
                 m.check_clash(seen)
+        self.members = seen.values()
         for m in self.local_members:
             m.check(schema)
             m.check_clash(seen)
         if self.variants:
             self.variants.check(schema, seen)
-        self.members = seen.values()
+            assert self.variants.tag_member in self.members
 
     def is_implicit(self):
         # See QAPISchema._make_implicit_object_type()
@@ -1050,10 +1051,8 @@ class QAPISchemaObjectTypeVariants(object):
         self.variants = variants
 
     def check(self, schema, seen):
-        if self.tag_name:    # flat union
+        if not self.tag_member:    # flat union
             self.tag_member = seen[self.tag_name]
-        if seen:
-            assert self.tag_member in seen.itervalues()
         assert isinstance(self.tag_member.type, QAPISchemaEnumType)
         for v in self.variants:
             v.check(schema, self.tag_member.type)
