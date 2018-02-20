@@ -8112,8 +8112,44 @@ case 0x101:
             break;
         }
         break;
-    //case 0x119 ... 0x11f: /* nop (multi byte) */
-    case 0x119: case 0x11a: case 0x11b: case 0x11c: case 0x11d: case 0x11e: case 0x11f:
+    case 0x11b:
+        modrm = cpu_ldub_code(env, s->pc++);
+        if (s->flags & HF_MPX_EN_MASK) {
+            mod = (modrm >> 6) & 3;
+            reg = ((modrm >> 3) & 7) | rex_r;
+            if (mod != 3 && (prefixes & PREFIX_REPZ)) {
+                /* bndmk */
+                if (reg >= 4
+                    || (prefixes & PREFIX_LOCK)
+                    || s->aflag == MO_16) {
+                    goto illegal_op;
+                }
+                AddressParts a = gen_lea_modrm_0(env, s, modrm);
+                if (a.base >= 0) {
+                    tcg_gen_extu_tl_i64(tcg_ctx, tcg_ctx->cpu_bndl[reg], tcg_ctx->cpu_regs[a.base]);
+                    if (!CODE64(s)) {
+                        tcg_gen_ext32u_i64(tcg_ctx, tcg_ctx->cpu_bndl[reg], tcg_ctx->cpu_bndl[reg]);
+                    }
+                } else if (a.base == -1) {
+                    /* no base register has lower bound of 0 */
+                    tcg_gen_movi_i64(tcg_ctx, tcg_ctx->cpu_bndl[reg], 0);
+                } else {
+                    /* rip-relative generates #ud */
+                    goto illegal_op;
+                }
+                tcg_gen_not_tl(tcg_ctx, cpu_A0, gen_lea_modrm_1(s, a));
+                if (!CODE64(s)) {
+                    tcg_gen_ext32u_tl(tcg_ctx, cpu_A0, cpu_A0);
+                }
+                tcg_gen_extu_tl_i64(tcg_ctx, tcg_ctx->cpu_bndu[reg], cpu_A0);
+                /* bnd registers are now in-use */
+                gen_set_hflag(s, HF_MPX_IU_MASK);
+                break;
+            }
+        }
+        gen_nop_modrm(env, s, modrm);
+        break;
+    case 0x119: case 0x11a: case 0x11c: case 0x11d: case 0x11e: case 0x11f: /* nop (multi byte) */
         modrm = cpu_ldub_code(env, s->pc++);
         gen_nop_modrm(env, s, modrm);
         break;
@@ -8514,6 +8550,12 @@ void tcg_x86_init(struct uc_struct *uc)
         "fs_base",
         "gs_base",
     };
+    static const char bnd_regl_names[4][8] = {
+        "bnd0_lb", "bnd1_lb", "bnd2_lb", "bnd3_lb"
+    };
+    static const char bnd_regu_names[4][8] = {
+        "bnd0_ub", "bnd1_ub", "bnd2_ub", "bnd3_ub"
+    };
     int i;
     TCGContext *tcg_ctx = uc->tcg_ctx;
 
@@ -8545,6 +8587,17 @@ void tcg_x86_init(struct uc_struct *uc)
             = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                  offsetof(CPUX86State, segs[i].base),
                                  seg_base_names[i]);
+    }
+
+    for (i = 0; i < 4; ++i) {
+        cpu_bndl[i]
+            = tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env,
+                                     offsetof(CPUX86State, bnd_regs[i].lb),
+                                     bnd_regl_names[i]);
+        cpu_bndu[i]
+            = tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env,
+                                     offsetof(CPUX86State, bnd_regs[i].ub),
+                                     bnd_regu_names[i]);
     }
 }
 
