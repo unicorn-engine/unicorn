@@ -1409,16 +1409,18 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
          * runtime; this may result in an exception.
          */
         TCGv_ptr tmpptr;
-        TCGv_i32 tcg_syn;
+        TCGv_i32 tcg_syn, tcg_isread;
         uint32_t syndrome;
 
         gen_a64_set_pc_im(s, s->pc - 4);
         tmpptr = tcg_const_ptr(tcg_ctx, ri);
         syndrome = syn_aa64_sysregtrap(op0, op1, op2, crn, crm, rt, isread);
         tcg_syn = tcg_const_i32(tcg_ctx, syndrome);
-        gen_helper_access_check_cp_reg(tcg_ctx, tcg_ctx->cpu_env, tmpptr, tcg_syn);
+        tcg_isread = tcg_const_i32(tcg_ctx, isread);
+        gen_helper_access_check_cp_reg(tcg_ctx, tcg_ctx->cpu_env, tmpptr, tcg_syn, tcg_isread);
         tcg_temp_free_ptr(tcg_ctx, tmpptr);
         tcg_temp_free_i32(tcg_ctx, tcg_syn);
+        tcg_temp_free_i32(tcg_ctx, tcg_isread);
     }
 
     /* Handle special cases first */
