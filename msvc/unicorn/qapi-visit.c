@@ -52,12 +52,16 @@ out:
 
 void visit_type_QType(Visitor *v, QType *obj, const char *name, Error **errp)
 {
-    visit_type_enum(v, (int *)obj, QType_lookup, "QType", name, errp);
+    int value = *obj;
+    visit_type_enum(v, &value, QType_lookup, "QType", name, errp);
+    *obj = value;
 }
 
 void visit_type_QapiErrorClass(Visitor *v, QapiErrorClass *obj, const char *name, Error **errp)
 {
-    visit_type_enum(v, (int *)obj, QapiErrorClass_lookup, "QapiErrorClass", name, errp);
+    int value = *obj;
+    visit_type_enum(v, &value, QapiErrorClass_lookup, "QapiErrorClass", name, errp);
+    *obj = value;
 }
 
 static void visit_type_X86CPUFeatureWordInfo_fields(Visitor *v, X86CPUFeatureWordInfo **obj, Error **errp)
@@ -134,7 +138,9 @@ out:
 
 void visit_type_X86CPURegister32(Visitor *v, X86CPURegister32 *obj, const char *name, Error **errp)
 {
-    visit_type_enum(v, (int *)obj, X86CPURegister32_lookup, "X86CPURegister32", name, errp);
+    int value = *obj;
+    visit_type_enum(v, &value, X86CPURegister32_lookup, "X86CPURegister32", name, errp);
+    *obj = value;
 }
 
 void visit_type_anyList(Visitor *v, anyList **obj, const char *name, Error **errp)
