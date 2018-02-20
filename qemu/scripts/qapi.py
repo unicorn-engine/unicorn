@@ -920,7 +920,7 @@ class QAPISchemaEnumType(QAPISchemaType):
         return c_name(self.name)
 
     def c_null(self):
-        return c_enum_const(self.name, (self.values + ['MAX'])[0],
+        return c_enum_const(self.name, (self.values + ['_MAX'])[0],
                             self.prefix)
 
     def json_type(self):
@@ -1570,7 +1570,7 @@ const char *const %(c_name)s_lookup[] = {
     # Unicorn: We don't use C99 [ARRAY_INDICING] = Thing because
     # MSVC is still in the stone-age with this part of C compiler
     # support.
-    max_index = c_enum_const(name, 'MAX', prefix)
+    max_index = c_enum_const(name, '_MAX', prefix)
     ret += mcgen('''
     NULL,
 };
@@ -1581,7 +1581,7 @@ const char *const %(c_name)s_lookup[] = {
 
 def gen_enum(name, values, prefix=None):
     # append automatically generated _MAX value
-    enum_values = values + ['MAX']
+    enum_values = values + ['_MAX']
     ret = mcgen('''
 
 typedef enum %(c_name)s {
