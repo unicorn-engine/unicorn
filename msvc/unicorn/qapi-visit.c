@@ -16,11 +16,11 @@
 #include "qemu-common.h"
 #include "qapi-visit.h"
 
-static void visit_type_DummyForceArrays_fields(Visitor *v, DummyForceArrays **obj, Error **errp)
+static void visit_type_DummyForceArrays_fields(Visitor *v, DummyForceArrays *obj, Error **errp)
 {
     Error *err = NULL;
 
-    visit_type_X86CPUFeatureWordInfoList(v, "unused", &(*obj)->unused, &err);
+    visit_type_X86CPUFeatureWordInfoList(v, "unused", &obj->unused, &err);
     if (err) {
         goto out;
     }
@@ -34,14 +34,13 @@ void visit_type_DummyForceArrays(Visitor *v, const char *name, DummyForceArrays 
     Error *err = NULL;
 
     visit_start_struct(v, name, (void **)obj, sizeof(DummyForceArrays), &err);
-
     if (err) {
         goto out;
     }
     if (!*obj) {
         goto out_obj;
     }
-    visit_type_DummyForceArrays_fields(v, obj, &err);
+    visit_type_DummyForceArrays_fields(v, *obj, &err);
     error_propagate(errp, err);
     err = NULL;
 out_obj:
@@ -64,25 +63,25 @@ void visit_type_QapiErrorClass(Visitor *v, const char *name, QapiErrorClass *obj
     *obj = value;
 }
 
-static void visit_type_X86CPUFeatureWordInfo_fields(Visitor *v, X86CPUFeatureWordInfo **obj, Error **errp)
+static void visit_type_X86CPUFeatureWordInfo_fields(Visitor *v, X86CPUFeatureWordInfo *obj, Error **errp)
 {
     Error *err = NULL;
 
-    visit_type_int(v, "cpuid-input-eax", &(*obj)->cpuid_input_eax, &err);
+    visit_type_int(v, "cpuid-input-eax", &obj->cpuid_input_eax, &err);
     if (err) {
         goto out;
     }
-    if (visit_optional(v, "cpuid-input-ecx", &(*obj)->has_cpuid_input_ecx)) {
-        visit_type_int(v, "cpuid-input-ecx", &(*obj)->cpuid_input_ecx, &err);
+    if (visit_optional(v, "cpuid-input-ecx", &obj->has_cpuid_input_ecx)) {
+        visit_type_int(v, "cpuid-input-ecx", &obj->cpuid_input_ecx, &err);
         if (err) {
             goto out;
         }
     }
-    visit_type_X86CPURegister32(v, "cpuid-register", &(*obj)->cpuid_register, &err);
+    visit_type_X86CPURegister32(v, "cpuid-register", &obj->cpuid_register, &err);
     if (err) {
         goto out;
     }
-    visit_type_int(v, "features", &(*obj)->features, &err);
+    visit_type_int(v, "features", &obj->features, &err);
     if (err) {
         goto out;
     }
@@ -96,14 +95,13 @@ void visit_type_X86CPUFeatureWordInfo(Visitor *v, const char *name, X86CPUFeatur
     Error *err = NULL;
 
     visit_start_struct(v, name, (void **)obj, sizeof(X86CPUFeatureWordInfo), &err);
-
     if (err) {
         goto out;
     }
     if (!*obj) {
         goto out_obj;
     }
-    visit_type_X86CPUFeatureWordInfo_fields(v, obj, &err);
+    visit_type_X86CPUFeatureWordInfo_fields(v, *obj, &err);
     error_propagate(errp, err);
     err = NULL;
 out_obj:
