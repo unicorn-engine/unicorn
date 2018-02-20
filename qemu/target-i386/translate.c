@@ -2099,21 +2099,15 @@ static void gen_shifti(DisasContext *s, int op, TCGMemOp ot, int d, int c)
 static void gen_lea_modrm(CPUX86State *env, DisasContext *s, int modrm)
 {
     target_long disp;
-    int havesib;
-    int base;
-    int index;
-    int scale;
-    int mod, rm, code, override, must_add_seg;
+    int havesib, base, index, scale;
+    int mod, rm, code, def_seg, ovr_seg;
     TCGv sum;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
     TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
 
-    override = s->override;
-    must_add_seg = s->addseg;
-    if (override >= 0)
-        must_add_seg = 1;
+    def_seg = R_DS;
+    ovr_seg = s->override;
     mod = (modrm >> 6) & 3;
     rm = modrm & 7;
 
@@ -2183,61 +2177,34 @@ static void gen_lea_modrm(CPUX86State *env, DisasContext *s, int modrm)
         }
         if (TCGV_IS_UNUSED(sum)) {
             tcg_gen_movi_tl(tcg_ctx, cpu_A0, disp);
-        } else {
+            sum = cpu_A0;
+        } else if (disp != 0) {
             tcg_gen_addi_tl(tcg_ctx, cpu_A0, sum, disp);
+            sum = cpu_A0;
         }
 
-        if (must_add_seg) {
-            if (override < 0) {
-                if (base == R_EBP || base == R_ESP) {
-                    override = R_SS;
-                } else {
-                    override = R_DS;
-                }
-            }
-
-            tcg_gen_ld_tl(tcg_ctx, cpu_tmp0, tcg_ctx->cpu_env,
-                          offsetof(CPUX86State, segs[override].base));
-            if (CODE64(s)) {
-                if (s->aflag == MO_32) {
-                    tcg_gen_ext32u_tl(tcg_ctx, cpu_A0, cpu_A0);
-                }
-                tcg_gen_add_tl(tcg_ctx, cpu_A0, cpu_A0, cpu_tmp0);
-                return;
-            }
-
-            tcg_gen_add_tl(tcg_ctx, cpu_A0, cpu_A0, cpu_tmp0);
-        }
-
-        if (s->aflag == MO_32) {
-            tcg_gen_ext32u_tl(tcg_ctx, cpu_A0, cpu_A0);
+        if (base == R_EBP || base == R_ESP) {
+            def_seg = R_SS;
         }
         break;
 
     case MO_16:
-        switch (mod) {
-        case 0:
+        sum = cpu_A0;
+        if (mod == 0) {
             if (rm == 6) {
                 disp = cpu_lduw_code(env, s->pc);
                 s->pc += 2;
                 tcg_gen_movi_tl(tcg_ctx, cpu_A0, disp);
-                rm = 0; /* avoid SS override */
-                goto no_rm;
-            } else {
-                disp = 0;
+                break;
             }
-            break;
-        case 1:
+            disp = 0;
+        } else if (mod == 1) {
             disp = (int8_t)cpu_ldub_code(env, s->pc++);
-            break;
-        default:
-        case 2:
+        } else {
             disp = (int16_t)cpu_lduw_code(env, s->pc);
             s->pc += 2;
-            break;
         }
 
-        sum = cpu_A0;
         switch (rm) {
         case 0:
             tcg_gen_add_tl(tcg_ctx, cpu_A0, *cpu_regs[R_EBX], *cpu_regs[R_ESI]);
@@ -2247,9 +2214,11 @@ static void gen_lea_modrm(CPUX86State *env, DisasContext *s, int modrm)
             break;
         case 2:
             tcg_gen_add_tl(tcg_ctx, cpu_A0, *cpu_regs[R_EBP], *cpu_regs[R_ESI]);
+            def_seg = R_SS;
             break;
         case 3:
             tcg_gen_add_tl(tcg_ctx, cpu_A0, *cpu_regs[R_EBP], *cpu_regs[R_EDI]);
+            def_seg = R_SS;
             break;
         case 4:
             sum = *cpu_regs[R_ESI];
@@ -2259,6 +2228,7 @@ static void gen_lea_modrm(CPUX86State *env, DisasContext *s, int modrm)
             break;
         case 6:
             sum = *cpu_regs[R_EBP];
+            def_seg = R_SS;
             break;
         default:
         case 7:
@@ -2267,22 +2237,17 @@ static void gen_lea_modrm(CPUX86State *env, DisasContext *s, int modrm)
         }
         tcg_gen_addi_tl(tcg_ctx, cpu_A0, sum, disp);
         tcg_gen_ext16u_tl(tcg_ctx, cpu_A0, cpu_A0);
-    no_rm:
-        if (must_add_seg) {
-            if (override < 0) {
-                if (rm == 2 || rm == 3 || rm == 6) {
-                    override = R_SS;
-                } else {
-                    override = R_DS;
-                }
-            }
-            gen_op_addl_A0_seg(s, override);
+        if (disp != 0) {
+            tcg_gen_addi_tl(tcg_ctx, cpu_A0, sum, disp);
+            sum = cpu_A0;
         }
         break;
 
     default:
         tcg_abort();
     }
+
+    gen_lea_v_seg(s, sum, def_seg, ovr_seg);
 }
 
 static void gen_nop_modrm(CPUX86State *env, DisasContext *s, int modrm)
