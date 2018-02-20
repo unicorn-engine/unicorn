@@ -34,18 +34,18 @@ struct %(c_name)s {
                  c_name=c_name(name), c_type=element_type.c_type())
 
 
-def gen_struct_field(name, typ, optional):
+def gen_struct_field(member):
     ret = ''
 
-    if optional:
+    if member.optional:
         ret += mcgen('''
     bool has_%(c_name)s;
 ''',
-                     c_name=c_name(name))
+                     c_name=c_name(member.name))
     ret += mcgen('''
     %(c_type)s %(c_name)s;
 ''',
-                 c_type=typ.c_type(), c_name=c_name(name))
+                 c_type=member.type.c_type(), c_name=c_name(member.name))
     return ret
 
 
@@ -58,13 +58,13 @@ def gen_struct_fields(local_members, base=None):
 ''',
                      c_name=base.c_name())
         for memb in base.members:
-            ret += gen_struct_field(memb.name, memb.type, memb.optional)
+            ret += gen_struct_field(memb)
         ret += mcgen('''
     /* Own members: */
 ''')
 
     for memb in local_members:
-        ret += gen_struct_field(memb.name, memb.type, memb.optional)
+        ret += gen_struct_field(memb)
     return ret
 
 def gen_struct(name, base, members):
