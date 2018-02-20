@@ -49,7 +49,7 @@ def gen_struct_field(member):
     return ret
 
 
-def gen_struct_fields(local_members, base=None):
+def gen_struct_fields(local_members, base):
     ret = ''
 
     if base:
@@ -67,7 +67,7 @@ def gen_struct_fields(local_members, base=None):
         ret += gen_struct_field(memb)
     return ret
 
-def gen_struct(name, base, members):
+def gen_object(name, base, members, variants):
     ret = mcgen('''
 struct %(c_name)s {
 ''',
@@ -75,11 +75,14 @@ struct %(c_name)s {
 
     ret += gen_struct_fields(members, base)
 
+    if variants:
+        ret += gen_variants(variants)
+
     # Make sure that all structs have at least one field; this avoids
     # potential issues with attempting to malloc space for zero-length
     # structs in C, and also incompatibility with C++ (where an empty
     # struct is size 1).
-    if not (base and base.members) and not members:
+    if not (base and base.members) and not members and not variants:
         ret += mcgen('''
     char qapi_dummy_field_for_empty_struct;
 ''')
@@ -137,18 +140,7 @@ const int %(c_name)s_qtypes[QTYPE_MAX] = {
     return ret
 
 
-def gen_union(name, base, variants):
-    ret = mcgen('''
-struct %(c_name)s {
-''',
-                c_name=c_name(name))
-    if base:
-        ret += gen_struct_fields([], base)
-    else:
-        ret += gen_struct_field(variants.tag_member.name,
-                                variants.tag_member.type,
-                                False)
-
+def gen_variants(variants):
     # FIXME: What purpose does data serve, besides preventing a union that
     # has a branch named 'data'? We use it in qapi-visit.py to decide
     # whether to bypass the switch statement if visiting the discriminator
@@ -157,11 +149,11 @@ struct %(c_name)s {
     # should not be any data leaks even without a data pointer.  Or, if
     # 'data' is merely added to guarantee we don't have an empty union,
     # shouldn't we enforce that at .json parse time?
-    ret += mcgen('''
+    ret = mcgen('''
     union { /* union tag is @%(c_name)s */
         void *data;
 ''',
-                 c_name=c_name(variants.tag_member.name))
+                c_name=c_name(variants.tag_member.name))
 
     for var in variants.variants:
         # Ugly special case for simple union TODO get rid of it
@@ -174,7 +166,6 @@ struct %(c_name)s {
 
     ret += mcgen('''
     } u;
-};
 ''')
 
     return ret
@@ -265,14 +256,7 @@ class QAPISchemaGenTypeVisitor(QAPISchemaVisitor):
 
     def visit_object_type(self, name, info, base, members, variants):
         self._fwdecl += gen_fwd_object_or_array(name)
-        if variants:
-            if members:
-                # Members other than variants.tag_member not implemented
-                assert len(members) == 1
-                assert members[0] == variants.tag_member
-            self.decl += gen_union(name, base, variants)
-        else:
-            self.decl += gen_struct(name, base, members)
+        self.decl += gen_object(name, base, members, variants)
         if base:
             self.decl += gen_upcast(name, base)
         self._gen_type_cleanup(name)
@@ -280,7 +264,7 @@ class QAPISchemaGenTypeVisitor(QAPISchemaVisitor):
     def visit_alternate_type(self, name, info, variants):
         self._fwdecl += gen_fwd_object_or_array(name)
         self._fwdefn += gen_alternate_qtypes(name, variants)
-        self.decl += gen_union(name, None, variants)
+        self.decl += gen_object(name, None, [variants.tag_member], variants)
         self.decl += gen_alternate_qtypes_decl(name)
         self._gen_type_cleanup(name)
 
