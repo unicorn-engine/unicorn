@@ -211,6 +211,7 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClCompile Include="..\..\..\qemu\qobject\qfloat.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qint.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qlist.c" />
+    <ClCompile Include="..\..\..\qemu\qobject\qnull.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qstring.c" />
     <ClCompile Include="..\..\..\qemu\qom\container.c" />
     <ClCompile Include="..\..\..\qemu\qom\cpu.c" />
