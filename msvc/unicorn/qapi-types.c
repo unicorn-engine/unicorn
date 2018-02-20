@@ -18,28 +18,6 @@
 #include "qapi-types.h"
 #include "qapi-visit.h"
 
-const char *const QapiErrorClass_lookup[] = {
-    "GenericError",
-    "CommandNotFound",
-    "DeviceEncrypted",
-    "DeviceNotActive",
-    "DeviceNotFound",
-    "KVMMissingCap",
-    NULL,
-};
-
-const char *const X86CPURegister32_lookup[] = {
-    "EAX",
-    "EBX",
-    "ECX",
-    "EDX",
-    "ESP",
-    "EBP",
-    "ESI",
-    "EDI",
-    NULL,
-};
-
 void qapi_free_DummyForceArrays(DummyForceArrays *obj)
 {
     QapiDeallocVisitor *qdv;
@@ -64,6 +42,16 @@ const char *const QType_lookup[] = {
     "qlist",
     "qfloat",
     "qbool",
+    NULL,
+};
+
+const char *const QapiErrorClass_lookup[] = {
+    "GenericError",
+    "CommandNotFound",
+    "DeviceEncrypted",
+    "DeviceNotActive",
+    "DeviceNotFound",
+    "KVMMissingCap",
     NULL,
 };
 
@@ -96,6 +84,18 @@ void qapi_free_X86CPUFeatureWordInfoList(X86CPUFeatureWordInfoList *obj)
     visit_type_X86CPUFeatureWordInfoList(v, &obj, NULL, NULL);
     qapi_dealloc_visitor_cleanup(qdv);
 }
+
+const char *const X86CPURegister32_lookup[] = {
+    "EAX",
+    "EBX",
+    "ECX",
+    "EDX",
+    "ESP",
+    "EBP",
+    "ESI",
+    "EDI",
+    NULL,
+};
 
 void qapi_free_anyList(anyList *obj)
 {
