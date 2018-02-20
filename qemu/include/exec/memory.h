@@ -16,9 +16,6 @@
 
 #ifndef CONFIG_USER_ONLY
 
-#define DIRTY_MEMORY_CODE      0
-#define DIRTY_MEMORY_NUM       1        /* num of dirty bits */
-
 #include "unicorn/platform.h"
 #include "exec/cpu-common.h"
 #include "exec/hwaddr.h"

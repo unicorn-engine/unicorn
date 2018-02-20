@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include "qemu.h"
+#include "exec/ramlist.h"
 #include "unicorn/unicorn.h"
 #include "list.h"
 

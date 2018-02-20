@@ -17,7 +17,7 @@ struct uc_struct;
 
 #include "vl.h"
 
-// These two structs are originally from qemu/include/exec/cpu-all.h
+// This struct was originally from qemu/include/exec/cpu-all.h
 // Temporarily moved here since there is circular inclusion.
 
 typedef struct {
@@ -27,13 +27,5 @@ typedef struct {
     hwaddr len;
     bool in_use;
 } BounceBuffer;
-
-typedef struct RAMList {
-    /* Protected by the iothread lock.  */
-    unsigned long *dirty_memory[DIRTY_MEMORY_NUM];
-    RAMBlock *mru_block;
-    QLIST_HEAD(, RAMBlock) blocks;
-    uint32_t version;
-} RAMList;
 
 #endif

@@ -23,6 +23,7 @@
 
 #ifndef CONFIG_USER_ONLY
 #include "hw/xen/xen.h"
+#include "exec/ramlist.h"
 
 struct RAMBlock {
     struct MemoryRegion *mr;
