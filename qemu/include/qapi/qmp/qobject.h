@@ -48,15 +48,8 @@ typedef enum {
     QTYPE_MAX,
 } qtype_code;
 
-struct QObject;
-
-typedef struct QType {
-    qtype_code code;
-    void (*destroy)(struct QObject *);
-} QType;
-
 typedef struct QObject {
-    const QType *type;
+    qtype_code type;
     size_t refcnt;
 } QObject;
 
@@ -76,9 +69,12 @@ typedef struct QObject {
     qobject_decref(obj ? QOBJECT(obj) : NULL)
 
 /* Initialize an object to default values */
-#define QOBJECT_INIT(obj, qtype_type)   \
-    obj->base.refcnt = 1;               \
-    obj->base.type   = qtype_type
+static inline void qobject_init(QObject *obj, qtype_code type)
+{
+    assert(QTYPE_NONE < type && type < QTYPE_MAX);
+    obj->refcnt = 1;
+    obj->type = type;
+}
 
 /**
  * qobject_incref(): Increment QObject's reference count
@@ -90,6 +86,11 @@ static inline void qobject_incref(QObject *obj)
 }
 
 /**
+ * qobject_destroy(): Free resources used by the object
+ */
+void qobject_destroy(QObject *obj);
+
+/**
  * qobject_decref(): Decrement QObject's reference count, deallocate
  * when it reaches zero
  */
@@ -97,9 +98,7 @@ static inline void qobject_decref(QObject *obj)
 {
     assert(!obj || obj->refcnt);
     if (obj && --obj->refcnt == 0) {
-        assert(obj->type != NULL);
-        assert(obj->type->destroy != NULL);
-        obj->type->destroy(obj);
+        qobject_destroy(obj);
     }
 }
 
@@ -108,8 +107,8 @@ static inline void qobject_decref(QObject *obj)
  */
 static inline qtype_code qobject_type(const QObject *obj)
 {
-    assert(obj->type != NULL);
-    return obj->type->code;
+    assert(QTYPE_NONE < obj->type && obj->type < QTYPE_MAX);
+    return obj->type;
 }
 
 extern QObject qnull_;

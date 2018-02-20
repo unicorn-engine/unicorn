@@ -15,13 +15,6 @@
 #include "qapi/qmp/qstring.h"
 #include "qemu-common.h"
 
-static void qstring_destroy_obj(QObject *obj);
-
-static const QType qstring_type = {
-    QTYPE_QSTRING,
-    qstring_destroy_obj,
-};
-
 /**
  * qstring_new(): Create a new empty QString
  *
@@ -50,6 +43,7 @@ QString *qstring_from_substr(const char *str, int start, int end)
     QString *qstring;
 
     qstring = g_malloc(sizeof(*qstring));
+    qobject_init(QOBJECT(qstring), QTYPE_QSTRING);
 
     qstring->length = end - start + 1;
     qstring->capacity = qstring->length;
@@ -57,8 +51,6 @@ QString *qstring_from_substr(const char *str, int start, int end)
     qstring->string = g_malloc(qstring->capacity + 1);
     memcpy(qstring->string, str + start, qstring->length);
     qstring->string[qstring->length] = 0;
-
-    QOBJECT_INIT(qstring, &qstring_type);
 
     return qstring;
 }
@@ -139,7 +131,7 @@ const char *qstring_get_str(const QString *qstring)
  * qstring_destroy_obj(): Free all memory allocated by a QString
  * object
  */
-static void qstring_destroy_obj(QObject *obj)
+void qstring_destroy_obj(QObject *obj)
 {
     QString *qs;
 

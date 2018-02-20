@@ -135,6 +135,9 @@
     <ClCompile Include="..\..\..\qemu\qobject\qnull.c">
       <Filter>qemu\qobject</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qobject.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\qobject\qstring.c">
       <Filter>qemu\qobject</Filter>
     </ClCompile>
