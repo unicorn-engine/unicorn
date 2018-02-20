@@ -291,22 +291,17 @@ struct uc_struct;
  * ObjectPropertyAccessor:
  * @obj: the object that owns the property
  * @v: the visitor that contains the property data
- * @opaque: the object property opaque
  * @name: the name of the property
+ * @opaque: the object property opaque
  * @errp: a pointer to an Error that is filled if getting/setting fails.
  *
  * Called when trying to get/set a property.
  */
 typedef void (ObjectPropertyAccessor)(struct uc_struct *uc, Object *obj,
                                       Visitor *v,
-                                      void *opaque,
                                       const char *name,
+                                      void *opaque,
                                       Error **errp);
-typedef int (ObjectPropertySetAccessor)(struct uc_struct *uc, Object *obj,
-                                        Visitor *v,
-                                        void *opaque,
-                                        const char *name,
-                                        Error **errp);
 
 /**
  * ObjectPropertyResolve:
@@ -345,7 +340,7 @@ typedef struct ObjectProperty
     gchar *type;
     gchar *description;
     ObjectPropertyAccessor *get;
-    ObjectPropertySetAccessor *set;
+    ObjectPropertyAccessor *set;
     ObjectPropertyResolve *resolve;
     ObjectPropertyRelease *release;
     void *opaque;
@@ -802,7 +797,7 @@ void object_unref(struct uc_struct *uc, Object *obj);
 ObjectProperty *object_property_add(Object *obj, const char *name,
                                     const char *type,
                                     ObjectPropertyAccessor *get,
-                                    ObjectPropertySetAccessor *set,
+                                    ObjectPropertyAccessor *set,
                                     ObjectPropertyRelease *release,
                                     void *opaque, Error **errp);
 

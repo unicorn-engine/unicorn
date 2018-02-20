@@ -1533,8 +1533,10 @@ static void report_unavailable_features(FeatureWord w, uint32_t mask)
     }
 }
 
-static void x86_cpuid_version_get_family(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                         const char *name, Error **errp)
+static void x86_cpuid_version_get_family(struct uc_struct *uc,
+                                         Object *obj, Visitor *v,
+                                         const char *name, void *opaque,
+                                         Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     CPUX86State *env = &cpu->env;
@@ -1547,8 +1549,10 @@ static void x86_cpuid_version_get_family(struct uc_struct *uc, Object *obj, Visi
     visit_type_int(v, name, &value, errp);
 }
 
-static int x86_cpuid_version_set_family(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                         const char *name, Error **errp)
+static void x86_cpuid_version_set_family(struct uc_struct *uc,
+                                         Object *obj, Visitor *v,
+                                         const char *name, void *opaque,
+                                         Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     CPUX86State *env = &cpu->env;
@@ -1560,12 +1564,12 @@ static int x86_cpuid_version_set_family(struct uc_struct *uc, Object *obj, Visit
     visit_type_int(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        return -1;
+        return;
     }
     if (value < min || value > max) {
         error_setg(errp, QERR_PROPERTY_VALUE_OUT_OF_RANGE, "",
                    name ? name : "null", value, min, max);
-        return -1;
+        return;
     }
 
     env->cpuid_version &= ~0xff00f00;
@@ -1574,12 +1578,12 @@ static int x86_cpuid_version_set_family(struct uc_struct *uc, Object *obj, Visit
     } else {
         env->cpuid_version |= value << 8;
     }
-
-    return 0;
 }
 
-static void x86_cpuid_version_get_model(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                        const char *name, Error **errp)
+static void x86_cpuid_version_get_model(struct uc_struct *uc,
+                                        Object *obj, Visitor *v,
+                                        const char *name, void *opaque,
+                                        Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     CPUX86State *env = &cpu->env;
@@ -1590,8 +1594,10 @@ static void x86_cpuid_version_get_model(struct uc_struct *uc, Object *obj, Visit
     visit_type_int(v, name, &value, errp);
 }
 
-static int x86_cpuid_version_set_model(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                        const char *name, Error **errp)
+static void x86_cpuid_version_set_model(struct uc_struct *uc,
+                                        Object *obj, Visitor *v,
+                                        const char *name, void *opaque,
+                                        Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     CPUX86State *env = &cpu->env;
@@ -1603,22 +1609,21 @@ static int x86_cpuid_version_set_model(struct uc_struct *uc, Object *obj, Visito
     visit_type_int(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        return -1;
+        return;
     }
     if (value < min || value > max) {
         error_setg(errp, QERR_PROPERTY_VALUE_OUT_OF_RANGE, "",
                    name ? name : "null", value, min, max);
-        return -1;
+        return;
     }
 
     env->cpuid_version &= ~0xf00f0;
     env->cpuid_version |= ((value & 0xf) << 4) | ((value >> 4) << 16);
-
-    return 0;
 }
 
-static void x86_cpuid_version_get_stepping(struct uc_struct *uc, Object *obj, Visitor *v,
-                                           void *opaque, const char *name,
+static void x86_cpuid_version_get_stepping(struct uc_struct *uc,
+                                           Object *obj, Visitor *v,
+                                           const char *name, void *opaque,
                                            Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
@@ -1629,8 +1634,9 @@ static void x86_cpuid_version_get_stepping(struct uc_struct *uc, Object *obj, Vi
     visit_type_int(v, name, &value, errp);
 }
 
-static int x86_cpuid_version_set_stepping(struct uc_struct *uc, Object *obj, Visitor *v,
-                                           void *opaque, const char *name,
+static void x86_cpuid_version_set_stepping(struct uc_struct *uc,
+                                           Object *obj, Visitor *v,
+                                           const char *name, void *opaque,
                                            Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
@@ -1643,18 +1649,16 @@ static int x86_cpuid_version_set_stepping(struct uc_struct *uc, Object *obj, Vis
     visit_type_int(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        return -1;
+        return;
     }
     if (value < min || value > max) {
         error_setg(errp, QERR_PROPERTY_VALUE_OUT_OF_RANGE, "",
                    name ? name : "null", value, min, max);
-        return -1;
+        return;
     }
 
     env->cpuid_version &= ~0xf;
     env->cpuid_version |= value & 0xf;
-
-    return 0;
 }
 
 static char *x86_cpuid_get_vendor(struct uc_struct *uc, Object *obj, Error **errp)
@@ -1669,8 +1673,8 @@ static char *x86_cpuid_get_vendor(struct uc_struct *uc, Object *obj, Error **err
     return value;
 }
 
-static int x86_cpuid_set_vendor(struct uc_struct *uc, Object *obj, const char *value,
-                                 Error **errp)
+static int x86_cpuid_set_vendor(struct uc_struct *uc, Object *obj,
+                                const char *value, Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     CPUX86State *env = &cpu->env;
@@ -1709,8 +1713,8 @@ static char *x86_cpuid_get_model_id(struct uc_struct *uc, Object *obj, Error **e
     return value;
 }
 
-static int x86_cpuid_set_model_id(struct uc_struct *uc, Object *obj, const char *model_id,
-                                   Error **errp)
+static int x86_cpuid_set_model_id(struct uc_struct *uc, Object *obj,
+                                  const char *model_id, Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     CPUX86State *env = &cpu->env;
@@ -1733,8 +1737,10 @@ static int x86_cpuid_set_model_id(struct uc_struct *uc, Object *obj, const char 
     return 0;
 }
 
-static void x86_cpuid_get_tsc_freq(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                   const char *name, Error **errp)
+static void x86_cpuid_get_tsc_freq(struct uc_struct *uc,
+                                   Object *obj, Visitor *v,
+                                   const char *name, void *opaque,
+                                   Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     int64_t value;
@@ -1743,8 +1749,10 @@ static void x86_cpuid_get_tsc_freq(struct uc_struct *uc, Object *obj, Visitor *v
     visit_type_int(v, name, &value, errp);
 }
 
-static int x86_cpuid_set_tsc_freq(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                   const char *name, Error **errp)
+static void x86_cpuid_set_tsc_freq(struct uc_struct *uc,
+                                   Object *obj, Visitor *v,
+                                   const char *name, void *opaque,
+                                   Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     const int64_t min = 0;
@@ -1755,21 +1763,21 @@ static int x86_cpuid_set_tsc_freq(struct uc_struct *uc, Object *obj, Visitor *v,
     visit_type_int(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        return -1;
+        return;
     }
     if (value < min || value > max) {
         error_setg(errp, QERR_PROPERTY_VALUE_OUT_OF_RANGE, "",
                    name ? name : "null", value, min, max);
-        return -1;
+        return;
     }
 
     cpu->env.tsc_khz = (int)(value / 1000);
-
-    return 0;
 }
 
-static void x86_cpuid_get_apic_id(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                  const char *name, Error **errp)
+static void x86_cpuid_get_apic_id(struct uc_struct *uc,
+                                  Object *obj, Visitor *v,
+                                  const char *name, void *opaque,
+                                  Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     int64_t value = cpu->apic_id;
@@ -1777,8 +1785,10 @@ static void x86_cpuid_get_apic_id(struct uc_struct *uc, Object *obj, Visitor *v,
     visit_type_int(v, name, &value, errp);
 }
 
-static int x86_cpuid_set_apic_id(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                  const char *name, Error **errp)
+static void x86_cpuid_set_apic_id(struct uc_struct *uc,
+                                  Object *obj, Visitor *v,
+                                  const char *name, void *opaque,
+                                  Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     DeviceState *dev = DEVICE(uc, obj);
@@ -1790,33 +1800,33 @@ static int x86_cpuid_set_apic_id(struct uc_struct *uc, Object *obj, Visitor *v, 
     if (dev->realized) {
         error_setg(errp, "Attempt to set property '%s' on '%s' after "
                    "it was realized", name, object_get_typename(obj));
-        return -1;
+        return;
     }
 
     visit_type_int(v, name, &value, &error);
     if (error) {
         error_propagate(errp, error);
-        return -1;
+        return;
     }
     if (value < min || value > max) {
         error_setg(errp, "Property %s.%s doesn't take value %" PRId64
                    " (minimum: %" PRId64 ", maximum: %" PRId64 ")" ,
                    object_get_typename(obj), name, value, min, max);
-        return -1;
+        return;
     }
 
     if ((value != cpu->apic_id) && cpu_exists(uc, value)) {
         error_setg(errp, "CPU with APIC ID %" PRIi64 " exists", value);
-        return -1;
+        return;
     }
     cpu->apic_id = (uint32_t)value;
-
-    return 0;
 }
 
 /* Generic getter for "feature-words" and "filtered-features" properties */
-static void x86_cpu_get_feature_words(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                      const char *name, Error **errp)
+static void x86_cpu_get_feature_words(struct uc_struct *uc,
+                                      Object *obj, Visitor *v,
+                                      const char *name, void *opaque,
+                                      Error **errp)
 {
     uint32_t *array = (uint32_t *)opaque;
     FeatureWord w;

@@ -738,7 +738,7 @@ void object_unref(struct uc_struct *uc, Object *obj)
 ObjectProperty *
 object_property_add(Object *obj, const char *name, const char *type,
                     ObjectPropertyAccessor *get,
-                    ObjectPropertySetAccessor *set,
+                    ObjectPropertyAccessor *set,
                     ObjectPropertyRelease *release,
                     void *opaque, Error **errp)
 {
@@ -857,7 +857,7 @@ void object_property_get(struct uc_struct *uc, Object *obj, Visitor *v, const ch
     if (!prop->get) {
         error_setg(errp, QERR_PERMISSION_DENIED);
     } else {
-        prop->get(uc, obj, v, prop->opaque, name, errp);
+        prop->get(uc, obj, v, name, prop->opaque, errp);
     }
 }
 
@@ -872,8 +872,7 @@ void object_property_set(struct uc_struct *uc, Object *obj, Visitor *v, const ch
     if (!prop->set) {
         error_setg(errp, QERR_PERMISSION_DENIED);
     } else {
-        if (prop->set(uc, obj, v, prop->opaque, name, errp))
-            error_setg(errp, QERR_UNDEFINED_ERROR);
+        prop->set(uc, obj, v, name, prop->opaque, errp);
     }
 }
 
@@ -1029,8 +1028,8 @@ Object *object_get_root(struct uc_struct *uc)
     return uc->root;
 }
 
-static void object_get_child_property(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                      const char *name, Error **errp)
+static void object_get_child_property(struct uc_struct *uc, Object *obj, Visitor *v,
+                                      const char *name, void *opaque, Error **errp)
 {
     Object *child = opaque;
     gchar *path;
@@ -1098,8 +1097,10 @@ typedef struct {
     ObjectPropertyLinkFlags flags;
 } LinkProperty;
 
-static void object_get_link_property(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                     const char *name, Error **errp)
+static void object_get_link_property(struct uc_struct *uc,
+                                     Object *obj, Visitor *v,
+                                     const char *name, void *opaque,
+                                     Error **errp)
 {
     LinkProperty *lprop = opaque;
     Object **child = lprop->child;
@@ -1155,8 +1156,10 @@ static Object *object_resolve_link(struct uc_struct *uc, Object *obj, const char
     return target;
 }
 
-static int object_set_link_property(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                     const char *name, Error **errp)
+static void object_set_link_property(struct uc_struct *uc,
+                                     Object *obj, Visitor *v,
+                                     const char *name, void *opaque,
+                                     Error **errp)
 {
     Error *local_err = NULL;
     LinkProperty *prop = opaque;
@@ -1174,20 +1177,18 @@ static int object_set_link_property(struct uc_struct *uc, Object *obj, Visitor *
     g_free(path);
     if (local_err) {
         error_propagate(errp, local_err);
-        return -1;
+        return;
     }
 
     prop->check(obj, name, new_target, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        return -1;
+        return;
     }
 
     object_ref(new_target);
     *child = new_target;
     object_unref(uc, old_target);
-
-    return 0;
 }
 
 static Object *object_resolve_link_property(struct uc_struct *uc, Object *parent, void *opaque, const gchar *part)
@@ -1401,8 +1402,10 @@ typedef struct StringProperty
     int (*set)(struct uc_struct *uc, Object *, const char *, Error **);
 } StringProperty;
 
-static void property_get_str(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                             const char *name, Error **errp)
+static void property_get_str(struct uc_struct *uc,
+                             Object *obj, Visitor *v,
+                             const char *name, void *opaque,
+                             Error **errp)
 {
     StringProperty *prop = opaque;
     char *value;
@@ -1418,8 +1421,10 @@ static void property_get_str(struct uc_struct *uc, Object *obj, Visitor *v, void
     g_free(value);
 }
 
-static int property_set_str(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                             const char *name, Error **errp)
+static void property_set_str(struct uc_struct *uc,
+                             Object *obj, Visitor *v,
+                             const char *name, void *opaque,
+                             Error **errp)
 {
     StringProperty *prop = opaque;
     char *value;
@@ -1428,13 +1433,11 @@ static int property_set_str(struct uc_struct *uc, Object *obj, Visitor *v, void 
     visit_type_str(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        return -1;
+        return;
     }
 
     prop->set(uc, obj, value, errp);
     g_free(value);
-
-    return 0;
 }
 
 static void property_release_str(struct uc_struct *uc, Object *obj, const char *name,
@@ -1472,8 +1475,10 @@ typedef struct BoolProperty
     int (*set)(struct uc_struct *uc, Object *, bool, Error **);
 } BoolProperty;
 
-static void property_get_bool(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                              const char *name, Error **errp)
+static void property_get_bool(struct uc_struct *uc,
+                              Object *obj, Visitor *v,
+                              const char *name, void *opaque,
+                              Error **errp)
 {
     BoolProperty *prop = opaque;
     bool value;
@@ -1482,8 +1487,10 @@ static void property_get_bool(struct uc_struct *uc, Object *obj, Visitor *v, voi
     visit_type_bool(v, name, &value, errp);
 }
 
-static int property_set_bool(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                              const char *name, Error **errp)
+static void property_set_bool(struct uc_struct *uc,
+                              Object *obj, Visitor *v,
+                              const char *name, void *opaque,
+                              Error **errp)
 {
     BoolProperty *prop = opaque;
     bool value;
@@ -1492,14 +1499,14 @@ static int property_set_bool(struct uc_struct *uc, Object *obj, Visitor *v, void
     visit_type_bool(v, name, &value, &local_err);
     if (local_err) {
         error_propagate(errp, local_err);
-        return -1;
+        return;
     }
 
-    return prop->set(uc, obj, value, errp);
+    prop->set(uc, obj, value, errp);
 }
 
-static void property_release_bool(struct uc_struct *uc, Object *obj, const char *name,
-                                  void *opaque)
+static void property_release_bool(struct uc_struct *uc, Object *obj,
+                                  const char *name, void *opaque)
 {
     BoolProperty *prop = opaque;
     g_free(prop);
@@ -1533,7 +1540,7 @@ static char *qdev_get_type(struct uc_struct *uc, Object *obj, Error **errp)
 }
 
 static void property_get_uint8_ptr(struct uc_struct *uc, Object *obj, Visitor *v,
-                                   void *opaque, const char *name,
+                                   const char *name, void *opaque,
                                    Error **errp)
 {
     uint8_t value = *(uint8_t *)opaque;
@@ -1541,24 +1548,24 @@ static void property_get_uint8_ptr(struct uc_struct *uc, Object *obj, Visitor *v
 }
 
 static void property_get_uint16_ptr(struct uc_struct *uc, Object *obj, Visitor *v,
-                                   void *opaque, const char *name,
-                                   Error **errp)
+                                    const char *name, void *opaque,
+                                    Error **errp)
 {
     uint16_t value = *(uint16_t *)opaque;
     visit_type_uint16(v, name, &value, errp);
 }
 
 static void property_get_uint32_ptr(struct uc_struct *uc, Object *obj, Visitor *v,
-                                   void *opaque, const char *name,
-                                   Error **errp)
+                                    const char *name, void *opaque,
+                                    Error **errp)
 {
     uint32_t value = *(uint32_t *)opaque;
     visit_type_uint32(v, name, &value, errp);
 }
 
 static void property_get_uint64_ptr(struct uc_struct *uc, Object *obj, Visitor *v,
-                                   void *opaque, const char *name,
-                                   Error **errp)
+                                    const char *name, void *opaque,
+                                    Error **errp)
 {
     uint64_t value = *(uint64_t *)opaque;
     visit_type_uint64(v, name, &value, errp);
@@ -1597,22 +1604,24 @@ typedef struct {
     char *target_name;
 } AliasProperty;
 
-static void property_get_alias(struct uc_struct *uc, Object *obj, struct Visitor *v, void *opaque,
-                               const char *name, Error **errp)
+static void property_get_alias(struct uc_struct *uc,
+                               Object *obj, struct Visitor *v,
+                               const char *name, void *opaque,
+                               Error **errp)
 {
     AliasProperty *prop = opaque;
 
     object_property_get(uc, prop->target_obj, v, prop->target_name, errp);
 }
 
-static int property_set_alias(struct uc_struct *uc, Object *obj, struct Visitor *v, void *opaque,
-                               const char *name, Error **errp)
+static void property_set_alias(struct uc_struct *uc,
+                               Object *obj, struct Visitor *v,
+                               const char *name, void *opaque,
+                               Error **errp)
 {
     AliasProperty *prop = opaque;
 
     object_property_set(uc, prop->target_obj, v, prop->target_name, errp);
-
-    return 0;
 }
 
 static Object *property_resolve_alias(struct uc_struct *uc, Object *obj, void *opaque,

@@ -20,7 +20,7 @@ static void visit_type_DummyForceArrays_fields(Visitor *v, DummyForceArrays **ob
 {
     Error *err = NULL;
 
-    visit_type_X86CPUFeatureWordInfoList(v, &(*obj)->unused, "unused", &err);
+    visit_type_X86CPUFeatureWordInfoList(v, "unused", &(*obj)->unused, &err);
     if (err) {
         goto out;
     }
@@ -29,11 +29,11 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_DummyForceArrays(Visitor *v, DummyForceArrays **obj, const char *name, Error **errp)
+void visit_type_DummyForceArrays(Visitor *v, const char *name, DummyForceArrays **obj, Error **errp)
 {
     Error *err = NULL;
 
-    visit_start_struct(v, (void **)obj, "DummyForceArrays", name, sizeof(DummyForceArrays), &err);
+    visit_start_struct(v, name, (void **)obj, "DummyForceArrays", sizeof(DummyForceArrays), &err);
 
     if (err) {
         goto out;
@@ -50,17 +50,17 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_QType(Visitor *v, QType *obj, const char *name, Error **errp)
+void visit_type_QType(Visitor *v, const char *name, QType *obj, Error **errp)
 {
     int value = *obj;
-    visit_type_enum(v, &value, QType_lookup, "QType", name, errp);
+    visit_type_enum(v, name, &value, QType_lookup, "QType", errp);
     *obj = value;
 }
 
-void visit_type_QapiErrorClass(Visitor *v, QapiErrorClass *obj, const char *name, Error **errp)
+void visit_type_QapiErrorClass(Visitor *v, const char *name, QapiErrorClass *obj, Error **errp)
 {
     int value = *obj;
-    visit_type_enum(v, &value, QapiErrorClass_lookup, "QapiErrorClass", name, errp);
+    visit_type_enum(v, name, &value, QapiErrorClass_lookup, "QapiErrorClass", errp);
     *obj = value;
 }
 
@@ -68,21 +68,21 @@ static void visit_type_X86CPUFeatureWordInfo_fields(Visitor *v, X86CPUFeatureWor
 {
     Error *err = NULL;
 
-    visit_type_int(v, &(*obj)->cpuid_input_eax, "cpuid-input-eax", &err);
+    visit_type_int(v, "cpuid-input-eax", &(*obj)->cpuid_input_eax, &err);
     if (err) {
         goto out;
     }
-    if (visit_optional(v, &(*obj)->has_cpuid_input_ecx, "cpuid-input-ecx")) {
-        visit_type_int(v, &(*obj)->cpuid_input_ecx, "cpuid-input-ecx", &err);
+    if (visit_optional(v, "cpuid-input-ecx", &(*obj)->has_cpuid_input_ecx)) {
+        visit_type_int(v, "cpuid-input-ecx", &(*obj)->cpuid_input_ecx, &err);
         if (err) {
             goto out;
         }
     }
-    visit_type_X86CPURegister32(v, &(*obj)->cpuid_register, "cpuid-register", &err);
+    visit_type_X86CPURegister32(v, "cpuid-register", &(*obj)->cpuid_register, &err);
     if (err) {
         goto out;
     }
-    visit_type_int(v, &(*obj)->features, "features", &err);
+    visit_type_int(v, "features", &(*obj)->features, &err);
     if (err) {
         goto out;
     }
@@ -91,11 +91,11 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_X86CPUFeatureWordInfo(Visitor *v, X86CPUFeatureWordInfo **obj, const char *name, Error **errp)
+void visit_type_X86CPUFeatureWordInfo(Visitor *v, const char *name, X86CPUFeatureWordInfo **obj, Error **errp)
 {
     Error *err = NULL;
 
-    visit_start_struct(v, (void **)obj, "X86CPUFeatureWordInfo", name, sizeof(X86CPUFeatureWordInfo), &err);
+    visit_start_struct(v, name, (void **)obj, "X86CPUFeatureWordInfo", sizeof(X86CPUFeatureWordInfo), &err);
 
     if (err) {
         goto out;
@@ -112,7 +112,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_X86CPUFeatureWordInfoList(Visitor *v, X86CPUFeatureWordInfoList **obj, const char *name, Error **errp)
+void visit_type_X86CPUFeatureWordInfoList(Visitor *v, const char *name, X86CPUFeatureWordInfoList **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -126,7 +126,7 @@ void visit_type_X86CPUFeatureWordInfoList(Visitor *v, X86CPUFeatureWordInfoList 
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         X86CPUFeatureWordInfoList *native_i = (X86CPUFeatureWordInfoList *)i;
-        visit_type_X86CPUFeatureWordInfo(v, &native_i->value, NULL, &err);
+        visit_type_X86CPUFeatureWordInfo(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -136,14 +136,14 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_X86CPURegister32(Visitor *v, X86CPURegister32 *obj, const char *name, Error **errp)
+void visit_type_X86CPURegister32(Visitor *v, const char *name, X86CPURegister32 *obj, Error **errp)
 {
     int value = *obj;
-    visit_type_enum(v, &value, X86CPURegister32_lookup, "X86CPURegister32", name, errp);
+    visit_type_enum(v, name, &value, X86CPURegister32_lookup, "X86CPURegister32", errp);
     *obj = value;
 }
 
-void visit_type_anyList(Visitor *v, anyList **obj, const char *name, Error **errp)
+void visit_type_anyList(Visitor *v, const char *name, anyList **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -157,7 +157,7 @@ void visit_type_anyList(Visitor *v, anyList **obj, const char *name, Error **err
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         anyList *native_i = (anyList *)i;
-        visit_type_any(v, &native_i->value, NULL, &err);
+        visit_type_any(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -167,7 +167,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_boolList(Visitor *v, boolList **obj, const char *name, Error **errp)
+void visit_type_boolList(Visitor *v, const char *name, boolList **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -181,7 +181,7 @@ void visit_type_boolList(Visitor *v, boolList **obj, const char *name, Error **e
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         boolList *native_i = (boolList *)i;
-        visit_type_bool(v, &native_i->value, NULL, &err);
+        visit_type_bool(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -191,7 +191,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_int16List(Visitor *v, int16List **obj, const char *name, Error **errp)
+void visit_type_int16List(Visitor *v, const char *name, int16List **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -205,7 +205,7 @@ void visit_type_int16List(Visitor *v, int16List **obj, const char *name, Error *
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         int16List *native_i = (int16List *)i;
-        visit_type_int16(v, &native_i->value, NULL, &err);
+        visit_type_int16(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -215,7 +215,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_int32List(Visitor *v, int32List **obj, const char *name, Error **errp)
+void visit_type_int32List(Visitor *v, const char *name, int32List **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -229,7 +229,7 @@ void visit_type_int32List(Visitor *v, int32List **obj, const char *name, Error *
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         int32List *native_i = (int32List *)i;
-        visit_type_int32(v, &native_i->value, NULL, &err);
+        visit_type_int32(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -239,7 +239,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_int64List(Visitor *v, int64List **obj, const char *name, Error **errp)
+void visit_type_int64List(Visitor *v, const char *name, int64List **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -253,7 +253,7 @@ void visit_type_int64List(Visitor *v, int64List **obj, const char *name, Error *
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         int64List *native_i = (int64List *)i;
-        visit_type_int64(v, &native_i->value, NULL, &err);
+        visit_type_int64(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -263,7 +263,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_int8List(Visitor *v, int8List **obj, const char *name, Error **errp)
+void visit_type_int8List(Visitor *v, const char *name, int8List **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -277,7 +277,7 @@ void visit_type_int8List(Visitor *v, int8List **obj, const char *name, Error **e
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         int8List *native_i = (int8List *)i;
-        visit_type_int8(v, &native_i->value, NULL, &err);
+        visit_type_int8(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -287,7 +287,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_intList(Visitor *v, intList **obj, const char *name, Error **errp)
+void visit_type_intList(Visitor *v, const char *name, intList **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -301,7 +301,7 @@ void visit_type_intList(Visitor *v, intList **obj, const char *name, Error **err
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         intList *native_i = (intList *)i;
-        visit_type_int(v, &native_i->value, NULL, &err);
+        visit_type_int(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -311,7 +311,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_numberList(Visitor *v, numberList **obj, const char *name, Error **errp)
+void visit_type_numberList(Visitor *v, const char *name, numberList **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -325,7 +325,7 @@ void visit_type_numberList(Visitor *v, numberList **obj, const char *name, Error
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         numberList *native_i = (numberList *)i;
-        visit_type_number(v, &native_i->value, NULL, &err);
+        visit_type_number(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -335,7 +335,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_sizeList(Visitor *v, sizeList **obj, const char *name, Error **errp)
+void visit_type_sizeList(Visitor *v, const char *name, sizeList **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -349,7 +349,7 @@ void visit_type_sizeList(Visitor *v, sizeList **obj, const char *name, Error **e
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         sizeList *native_i = (sizeList *)i;
-        visit_type_size(v, &native_i->value, NULL, &err);
+        visit_type_size(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -359,7 +359,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_strList(Visitor *v, strList **obj, const char *name, Error **errp)
+void visit_type_strList(Visitor *v, const char *name, strList **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -373,7 +373,7 @@ void visit_type_strList(Visitor *v, strList **obj, const char *name, Error **err
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         strList *native_i = (strList *)i;
-        visit_type_str(v, &native_i->value, NULL, &err);
+        visit_type_str(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -383,7 +383,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_uint16List(Visitor *v, uint16List **obj, const char *name, Error **errp)
+void visit_type_uint16List(Visitor *v, const char *name, uint16List **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -397,7 +397,7 @@ void visit_type_uint16List(Visitor *v, uint16List **obj, const char *name, Error
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         uint16List *native_i = (uint16List *)i;
-        visit_type_uint16(v, &native_i->value, NULL, &err);
+        visit_type_uint16(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -407,7 +407,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_uint32List(Visitor *v, uint32List **obj, const char *name, Error **errp)
+void visit_type_uint32List(Visitor *v, const char *name, uint32List **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -421,7 +421,7 @@ void visit_type_uint32List(Visitor *v, uint32List **obj, const char *name, Error
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         uint32List *native_i = (uint32List *)i;
-        visit_type_uint32(v, &native_i->value, NULL, &err);
+        visit_type_uint32(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -431,7 +431,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_uint64List(Visitor *v, uint64List **obj, const char *name, Error **errp)
+void visit_type_uint64List(Visitor *v, const char *name, uint64List **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -445,7 +445,7 @@ void visit_type_uint64List(Visitor *v, uint64List **obj, const char *name, Error
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         uint64List *native_i = (uint64List *)i;
-        visit_type_uint64(v, &native_i->value, NULL, &err);
+        visit_type_uint64(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);
@@ -455,7 +455,7 @@ out:
     error_propagate(errp, err);
 }
 
-void visit_type_uint8List(Visitor *v, uint8List **obj, const char *name, Error **errp)
+void visit_type_uint8List(Visitor *v, const char *name, uint8List **obj, Error **errp)
 {
     Error *err = NULL;
     GenericList *i, **prev;
@@ -469,7 +469,7 @@ void visit_type_uint8List(Visitor *v, uint8List **obj, const char *name, Error *
          !err && (i = visit_next_list(v, prev)) != NULL;
          prev = &i) {
         uint8List *native_i = (uint8List *)i;
-        visit_type_uint8(v, &native_i->value, NULL, &err);
+        visit_type_uint8(v, NULL, &native_i->value, &err);
     }
 
     error_propagate(errp, err);

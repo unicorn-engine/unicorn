@@ -886,8 +886,10 @@ void memory_region_init(struct uc_struct *uc, MemoryRegion *mr,
     }
 }
 
-static void memory_region_get_addr(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                   const char *name, Error **errp)
+static void memory_region_get_addr(struct uc_struct *uc,
+                                   Object *obj, Visitor *v,
+                                   const char *name, void *opaque,
+                                   Error **errp)
 {
     MemoryRegion *mr = MEMORY_REGION(uc, obj);
     uint64_t value = mr->addr;
@@ -895,8 +897,10 @@ static void memory_region_get_addr(struct uc_struct *uc, Object *obj, Visitor *v
     visit_type_uint64(v, name, &value, errp);
 }
 
-static void memory_region_get_container(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                        const char *name, Error **errp)
+static void memory_region_get_container(struct uc_struct *uc,
+                                        Object *obj, Visitor *v,
+                                        const char *name, void *opaque,
+                                        Error **errp)
 {
     MemoryRegion *mr = MEMORY_REGION(uc, obj);
     gchar *path = (gchar *)"";
@@ -918,8 +922,10 @@ static Object *memory_region_resolve_container(struct uc_struct *uc, Object *obj
     return OBJECT(mr->container);
 }
 
-static void memory_region_get_priority(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                       const char *name, Error **errp)
+static void memory_region_get_priority(struct uc_struct *uc,
+                                       Object *obj, Visitor *v,
+                                       const char *name, void *opaque,
+                                       Error **errp)
 {
     MemoryRegion *mr = MEMORY_REGION(uc, obj);
     int32_t value = mr->priority;
@@ -934,8 +940,10 @@ static bool memory_region_get_may_overlap(struct uc_struct *uc, Object *obj, Err
     return mr->may_overlap;
 }
 
-static void memory_region_get_size(struct uc_struct *uc, Object *obj, Visitor *v, void *opaque,
-                                   const char *name, Error **errp)
+static void memory_region_get_size(struct uc_struct *uc,
+                                   Object *obj, Visitor *v,
+                                   const char *name, void *opaque,
+                                   Error **errp)
 {
     MemoryRegion *mr = MEMORY_REGION(uc, obj);
     uint64_t value = memory_region_size(mr);
