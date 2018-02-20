@@ -441,34 +441,15 @@ static inline void gen_op_mov_v_reg(TCGContext *s, TCGMemOp ot, TCGv t0, int reg
     }
 }
 
-static inline void gen_op_addl_A0_im(TCGContext *s, int32_t val)
-{
-    TCGv cpu_A0 = *(TCGv *)s->cpu_A0;
-
-    tcg_gen_addi_tl(s, cpu_A0, cpu_A0, val);
-#ifdef TARGET_X86_64
-    tcg_gen_andi_tl(s, cpu_A0, cpu_A0, 0xffffffff);
-#endif
-}
-
-#ifdef TARGET_X86_64
-static inline void gen_op_addq_A0_im(TCGContext *s, int64_t val)
-{
-    TCGv cpu_A0 = *(TCGv *)s->cpu_A0;
-
-    tcg_gen_addi_tl(s, cpu_A0, cpu_A0, val);
-}
-#endif
-
 static void gen_add_A0_im(DisasContext *s, int val)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-#ifdef TARGET_X86_64
-    if (CODE64(s))
-        gen_op_addq_A0_im(tcg_ctx, val);
-    else
-#endif
-        gen_op_addl_A0_im(tcg_ctx, val);
+    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+
+    tcg_gen_addi_tl(tcg_ctx, cpu_A0, cpu_A0, val);
+    if (!CODE64(s)) {
+        tcg_gen_ext32u_tl(tcg_ctx, cpu_A0, cpu_A0);
+    }
 }
 
 static inline void gen_op_jmp_v(TCGContext *s, TCGv dest)
@@ -6872,7 +6853,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                exception */
             gen_op_jmp_v(tcg_ctx, *cpu_T[0]);
             /* pop selector */
-            gen_op_addl_A0_im(tcg_ctx, 1 << dflag);
+            gen_add_A0_im(s, 1 << dflag);
             gen_op_ld_v(s, dflag, *cpu_T[0], cpu_A0);
             gen_op_movl_seg_T0_vm(tcg_ctx, R_CS);
             /* add stack offset */
