@@ -8581,6 +8581,54 @@ case 0x101:
             gen_nop_modrm(env, s, modrm);
             break;
 
+        case 0xc0:
+        case 0xc1:
+        case 0xc2:
+        case 0xc3:
+        case 0xc4:
+        case 0xc5:
+        case 0xc6:
+        case 0xc7: /* rdfsbase (f3 0f ae /0) */
+        case 0xc8: /* rdgsbase (f3 0f ae /1) */
+        case 0xd0:
+        case 0xd1:
+        case 0xd2:
+        case 0xd3:
+        case 0xd4:
+        case 0xd5:
+        case 0xd6:
+        case 0xd7: /* wrfsbase (f3 0f ae /2) */
+        case 0xd8: /* wrgsbase (f3 0f ae /3) */
+            if (CODE64(s)
+                && (prefixes & PREFIX_REPZ)
+                && !(prefixes & PREFIX_LOCK)
+                && (s->cpuid_7_0_ebx_features & CPUID_7_0_EBX_FSGSBASE)) {
+                TCGv base, treg, src, dst;
+
+                /* Preserve hflags bits by testing CR4 at runtime.  */
+                tcg_gen_movi_i32(tcg_ctx, cpu_tmp2_i32, CR4_FSGSBASE_MASK);
+                gen_helper_cr4_testbit(tcg_ctx, cpu_env, cpu_tmp2_i32);
+
+                base = *cpu_seg_base[modrm & 8 ? R_GS : R_FS];
+                treg = *cpu_regs[(modrm & 7) | REX_B(s)];
+
+                if (modrm & 0x10) {
+                    /* wr*base */
+                    dst = base, src = treg;
+                } else {
+                    /* rd*base */
+                    dst = treg, src = base;
+                }
+
+                if (s->dflag == MO_32) {
+                    tcg_gen_ext32u_tl(tcg_ctx, dst, src);
+                } else {
+                    tcg_gen_mov_tl(tcg_ctx, dst, src);
+                }
+                break;
+            }
+            goto illegal_op;
+
         case 0xf8: /* sfence / pcommit */
             if (prefixes & PREFIX_DATA) {
                 /* pcommit */
@@ -8591,9 +8639,29 @@ case 0x101:
                 break;
             }
             /* fallthru */
-        case 0xf9 ... 0xff: /* sfence */
-        case 0xe8 ... 0xef: /* lfence */
-        case 0xf0 ... 0xf7: /* mfence */
+        case 0xf9:
+        case 0xfa:
+        case 0xfb:
+        case 0xfc:
+        case 0xfd:
+        case 0xfe:
+        case 0xff: /* sfence */
+        case 0xe8:
+        case 0xe9:
+        case 0xea:
+        case 0xeb:
+        case 0xec:
+        case 0xed:
+        case 0xee:
+        case 0xef: /* lfence */
+        case 0xf0:
+        case 0xf1:
+        case 0xf2:
+        case 0xf3:
+        case 0xf4:
+        case 0xf5:
+        case 0xf6:
+        case 0xf7: /* mfence */
             if (!(s->cpuid_features & CPUID_SSE2)
                 || (prefixes & PREFIX_LOCK)) {
                 goto illegal_op;
