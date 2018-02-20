@@ -7735,6 +7735,36 @@ case 0x101:
             gen_op_st_v(s, CODE64(s) + MO_32, cpu_T0, cpu_A0);
             break;
 
+        case 0xd0: /* xgetbv */
+            if ((s->cpuid_ext_features & CPUID_EXT_XSAVE) == 0
+                || (s->prefix & (PREFIX_LOCK | PREFIX_DATA
+                                 | PREFIX_REPZ | PREFIX_REPNZ))) {
+                goto illegal_op;
+            }
+            tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp2_i32, *cpu_regs[R_ECX]);
+            gen_helper_xgetbv(tcg_ctx, cpu_tmp1_i64, cpu_env, cpu_tmp2_i32);
+            tcg_gen_extr_i64_tl(tcg_ctx, *cpu_regs[R_EAX], *cpu_regs[R_EDX], cpu_tmp1_i64);
+            break;
+
+        case 0xd1: /* xsetbv */
+            if ((s->cpuid_ext_features & CPUID_EXT_XSAVE) == 0
+                || (s->prefix & (PREFIX_LOCK | PREFIX_DATA
+                                 | PREFIX_REPZ | PREFIX_REPNZ))) {
+                goto illegal_op;
+            }
+            if (s->cpl != 0) {
+                gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
+                break;
+            }
+            tcg_gen_concat_tl_i64(tcg_ctx, cpu_tmp1_i64, *cpu_regs[R_EAX],
+                                  *cpu_regs[R_EDX]);
+            tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp2_i32, *cpu_regs[R_ECX]);
+            gen_helper_xsetbv(tcg_ctx, cpu_env, cpu_tmp2_i32, cpu_tmp1_i64);
+            /* End TB because translation flags may change.  */
+            gen_jmp_im(s, s->pc - pc_start);
+            gen_eob(s);
+            break;
+
         case 0xd8: /* VMRUN */
             if (!(s->flags & HF_SVME_MASK) || !s->pe) {
                 goto illegal_op;
@@ -8241,6 +8271,30 @@ case 0x101:
             gen_lea_modrm(env, s, modrm);
             tcg_gen_ld32u_tl(tcg_ctx, cpu_T0, cpu_env, offsetof(CPUX86State, mxcsr));
             gen_op_st_v(s, MO_32, cpu_T0, cpu_A0);
+            break;
+
+        CASE_MEM_OP(4): /* xsave */
+            if ((s->cpuid_ext_features & CPUID_EXT_XSAVE) == 0
+                || (prefixes & (PREFIX_LOCK | PREFIX_DATA
+                                | PREFIX_REPZ | PREFIX_REPNZ))) {
+                goto illegal_op;
+            }
+            gen_lea_modrm(env, s, modrm);
+            tcg_gen_concat_tl_i64(tcg_ctx, cpu_tmp1_i64, *cpu_regs[R_EAX],
+                                  *cpu_regs[R_EDX]);
+            gen_helper_xsave(tcg_ctx, cpu_env, cpu_A0, cpu_tmp1_i64);
+            break;
+
+        CASE_MEM_OP(5): /* xrstor */
+            if ((s->cpuid_ext_features & CPUID_EXT_XSAVE) == 0
+                || (prefixes & (PREFIX_LOCK | PREFIX_DATA
+                                | PREFIX_REPZ | PREFIX_REPNZ))) {
+                goto illegal_op;
+            }
+            gen_lea_modrm(env, s, modrm);
+            tcg_gen_concat_tl_i64(tcg_ctx, cpu_tmp1_i64, *cpu_regs[R_EAX],
+                                  *cpu_regs[R_EDX]);
+            gen_helper_xrstor(tcg_ctx, cpu_env, cpu_A0, cpu_tmp1_i64);
             break;
 
         CASE_MEM_OP(6): /* clwb */
