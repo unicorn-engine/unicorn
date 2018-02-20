@@ -34,46 +34,39 @@ struct %(c_name)s {
                  c_name=c_name(name), c_type=element_type.c_type())
 
 
-def gen_struct_field(member):
+def gen_struct_fields(members):
     ret = ''
 
-    if member.optional:
-        ret += mcgen('''
+    for memb in members:
+        if memb.optional:
+            ret += mcgen('''
     bool has_%(c_name)s;
 ''',
-                     c_name=c_name(member.name))
-    ret += mcgen('''
+                         c_name=c_name(memb.name))
+        ret += mcgen('''
     %(c_type)s %(c_name)s;
 ''',
-                 c_type=member.type.c_type(), c_name=c_name(member.name))
+                     c_type=memb.type.c_type(), c_name=c_name(memb.name))
     return ret
 
 
-def gen_struct_fields(local_members, base):
-    ret = ''
+def gen_object(name, base, members, variants):
+    ret = mcgen('''
+
+struct %(c_name)s {
+''',
+                c_name=c_name(name))
 
     if base:
         ret += mcgen('''
     /* Members inherited from %(c_name)s: */
 ''',
                      c_name=base.c_name())
-        for memb in base.members:
-            ret += gen_struct_field(memb)
+        ret += gen_struct_fields(base.members)
         ret += mcgen('''
     /* Own members: */
 ''')
-
-    for memb in local_members:
-        ret += gen_struct_field(memb)
-    return ret
-
-def gen_object(name, base, members, variants):
-    ret = mcgen('''
-struct %(c_name)s {
-''',
-                c_name=c_name(name))
-
-    ret += gen_struct_fields(members, base)
+    ret += gen_struct_fields(members)
 
     if variants:
         ret += gen_variants(variants)
