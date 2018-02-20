@@ -292,6 +292,24 @@ static CPAccessResult access_trap_aa32s_el1(CPUARMState *env,
     return CP_ACCESS_TRAP_UNCATEGORIZED;
 }
 
+/* Check for traps to "powerdown debug" registers, which are controlled
+ * by MDCR.TDOSA
+ */
+static CPAccessResult access_tdosa(CPUARMState *env, const ARMCPRegInfo *ri,
+                                   bool isread)
+{
+    int el = arm_current_el(env);
+
+    if (el < 2 && (env->cp15.mdcr_el2 & MDCR_TDOSA)
+        && !arm_is_secure_below_el3(env)) {
+        return CP_ACCESS_TRAP_EL2;
+    }
+    if (el < 3 && (env->cp15.mdcr_el3 & MDCR_TDOSA)) {
+        return CP_ACCESS_TRAP_EL3;
+    }
+    return CP_ACCESS_OK;
+}
+
 static void dacr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
@@ -3263,12 +3281,14 @@ static const ARMCPRegInfo debug_cp_reginfo[] = {
       NULL, NULL, NULL, NULL, NULL, NULL },
     { "OSLAR_EL1", 14,1,0, 2,0,4, ARM_CP_STATE_BOTH, ARM_CP_NO_RAW,
       PL1_W, 0, NULL, 0, 0, {0, 0},
-      NULL, NULL, oslar_write },
+      access_tdosa, NULL, oslar_write },
     { "OSLSR_EL1", 14,1,1, 2,0,4, ARM_CP_STATE_BOTH, 0,
-      PL1_R, 0, NULL, 10, offsetof(CPUARMState, cp15.oslsr_el1) },
+      PL1_R, 0, NULL, 10, offsetof(CPUARMState, cp15.oslsr_el1), {0, 0},
+      access_tdosa },
     /* Dummy OSDLR_EL1: 32-bit Linux will read this */
     { "OSDLR_EL1", 14,1,3, 2,0,4, ARM_CP_STATE_BOTH,
-      ARM_CP_NOP, PL1_RW, },
+      ARM_CP_NOP, PL1_RW, 0, NULL, 0, 0, {0, 0},
+      access_tdosa },
     /* Dummy DBGVCR: Linux wants to clear this on startup, but we don't
      * implement vector catch debug events yet.
      */
