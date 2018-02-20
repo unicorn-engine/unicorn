@@ -1343,6 +1343,7 @@ static void arm_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
     //cc->virtio_is_big_endian = arm_cpu_is_big_endian;
 #endif
     cc->debug_excp_handler = arm_debug_excp_handler;
+    cc->debug_check_watchpoint = arm_debug_check_watchpoint;
 }
 
 static void cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)

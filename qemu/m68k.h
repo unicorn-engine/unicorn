@@ -144,6 +144,7 @@
 #define arm_cp_write_ignore arm_cp_write_ignore_m68k
 #define arm_current_el arm_current_el_m68k
 #define arm_dc_feature arm_dc_feature_m68k
+#define arm_debug_check_watchpoint arm_debug_check_watchpoint_m68k
 #define arm_debug_excp_handler arm_debug_excp_handler_m68k
 #define arm_debug_target_el arm_debug_target_el_m68k
 #define arm_el_is_aa64 arm_el_is_aa64_m68k
