@@ -8112,6 +8112,47 @@ case 0x101:
             break;
         }
         break;
+    case 0x11a:
+        modrm = cpu_ldub_code(env, s->pc++);
+        if (s->flags & HF_MPX_EN_MASK) {
+            mod = (modrm >> 6) & 3;
+            reg = ((modrm >> 3) & 7) | rex_r;
+            if (prefixes & PREFIX_DATA) {
+                /* bndmov -- from reg/mem */
+                if (reg >= 4 || s->aflag == MO_16) {
+                    goto illegal_op;
+                }
+                if (mod == 3) {
+                    int reg2 = (modrm & 7) | REX_B(s);
+                    if (reg2 >= 4 || (prefixes & PREFIX_LOCK)) {
+                        goto illegal_op;
+                    }
+                    if (s->flags & HF_MPX_IU_MASK) {
+                        tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_bndl[reg], tcg_ctx->cpu_bndl[reg2]);
+                        tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_bndu[reg], tcg_ctx->cpu_bndu[reg2]);
+                    }
+                } else {
+                    gen_lea_modrm(env, s, modrm);
+                    if (CODE64(s)) {
+                        tcg_gen_qemu_ld_i64(s->uc, tcg_ctx->cpu_bndl[reg], cpu_A0,
+                                            s->mem_index, MO_LEQ);
+                        tcg_gen_addi_tl(tcg_ctx, cpu_A0, cpu_A0, 8);
+                        tcg_gen_qemu_ld_i64(s->uc, tcg_ctx->cpu_bndu[reg], cpu_A0,
+                                            s->mem_index, MO_LEQ);
+                    } else {
+                        tcg_gen_qemu_ld_i64(s->uc, tcg_ctx->cpu_bndl[reg], cpu_A0,
+                                            s->mem_index, MO_LEUL);
+                        tcg_gen_addi_tl(tcg_ctx, cpu_A0, cpu_A0, 4);
+                        tcg_gen_qemu_ld_i64(s->uc, tcg_ctx->cpu_bndu[reg], cpu_A0,
+                                            s->mem_index, MO_LEUL);
+                    }
+                    /* bnd registers are now in-use */
+                    gen_set_hflag(s, HF_MPX_IU_MASK);
+                }
+            }
+        }
+        gen_nop_modrm(env, s, modrm);
+        break;
     case 0x11b:
         modrm = cpu_ldub_code(env, s->pc++);
         if (s->flags & HF_MPX_EN_MASK) {
@@ -8145,11 +8186,41 @@ case 0x101:
                 /* bnd registers are now in-use */
                 gen_set_hflag(s, HF_MPX_IU_MASK);
                 break;
+            } else if (prefixes & PREFIX_DATA) {
+                /* bndmov -- to reg/mem */
+                if (reg >= 4 || s->aflag == MO_16) {
+                    goto illegal_op;
+                }
+                if (mod == 3) {
+                    int reg2 = (modrm & 7) | REX_B(s);
+                    if (reg2 >= 4 || (prefixes & PREFIX_LOCK)) {
+                        goto illegal_op;
+                    }
+                    if (s->flags & HF_MPX_IU_MASK) {
+                        tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_bndl[reg2], tcg_ctx->cpu_bndl[reg]);
+                        tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_bndu[reg2], tcg_ctx->cpu_bndu[reg]);
+                    }
+                } else {
+                    gen_lea_modrm(env, s, modrm);
+                    if (CODE64(s)) {
+                        tcg_gen_qemu_st_i64(s->uc, tcg_ctx->cpu_bndl[reg], cpu_A0,
+                                            s->mem_index, MO_LEQ);
+                        tcg_gen_addi_tl(tcg_ctx, cpu_A0, cpu_A0, 8);
+                        tcg_gen_qemu_st_i64(s->uc, tcg_ctx->cpu_bndu[reg], cpu_A0,
+                                            s->mem_index, MO_LEQ);
+                    } else {
+                        tcg_gen_qemu_st_i64(s->uc, tcg_ctx->cpu_bndl[reg], cpu_A0,
+                                            s->mem_index, MO_LEUL);
+                        tcg_gen_addi_tl(tcg_ctx, cpu_A0, cpu_A0, 4);
+                        tcg_gen_qemu_st_i64(s->uc, tcg_ctx->cpu_bndu[reg], cpu_A0,
+                                            s->mem_index, MO_LEUL);
+                    }
+                }
             }
         }
         gen_nop_modrm(env, s, modrm);
         break;
-    case 0x119: case 0x11a: case 0x11c: case 0x11d: case 0x11e: case 0x11f: /* nop (multi byte) */
+    case 0x119: case 0x11c: case 0x11d: case 0x11e: case 0x11f: /* nop (multi byte) */
         modrm = cpu_ldub_code(env, s->pc++);
         gen_nop_modrm(env, s, modrm);
         break;
@@ -8590,11 +8661,11 @@ void tcg_x86_init(struct uc_struct *uc)
     }
 
     for (i = 0; i < 4; ++i) {
-        cpu_bndl[i]
+        tcg_ctx->cpu_bndl[i]
             = tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env,
                                      offsetof(CPUX86State, bnd_regs[i].lb),
                                      bnd_regl_names[i]);
-        cpu_bndu[i]
+        tcg_ctx->cpu_bndu[i]
             = tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env,
                                      offsetof(CPUX86State, bnd_regs[i].ub),
                                      bnd_regu_names[i]);
