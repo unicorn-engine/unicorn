@@ -2715,16 +2715,44 @@ static void gen_debug(DisasContext *s, target_ulong cur_eip)
     s->is_jmp = DISAS_TB_JUMP;
 }
 
+static void gen_set_hflag(DisasContext *s, uint32_t mask)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr cpu_env = tcg_ctx->cpu_env;
+
+    if ((s->flags & mask) == 0) {
+        TCGv_i32 t = tcg_temp_new_i32(tcg_ctx);
+        tcg_gen_ld_i32(tcg_ctx, t, cpu_env, offsetof(CPUX86State, hflags));
+        tcg_gen_ori_i32(tcg_ctx, t, t, mask);
+        tcg_gen_st_i32(tcg_ctx, t, cpu_env, offsetof(CPUX86State, hflags));
+        tcg_temp_free_i32(tcg_ctx, t);
+        s->flags |= mask;
+    }
+}
+
+static void gen_reset_hflag(DisasContext *s, uint32_t mask)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr cpu_env = tcg_ctx->cpu_env;
+
+    if (s->flags & mask) {
+        TCGv_i32 t = tcg_temp_new_i32(tcg_ctx);
+        tcg_gen_ld_i32(tcg_ctx, t, cpu_env, offsetof(CPUX86State, hflags));
+        tcg_gen_andi_i32(tcg_ctx, t, t, ~mask);
+        tcg_gen_st_i32(tcg_ctx, t, cpu_env, offsetof(CPUX86State, hflags));
+        tcg_temp_free_i32(tcg_ctx, t);
+        s->flags &= ~mask;
+    }
+}
+
 /* generate a generic end of block. Trace exception is also generated
    if needed */
 static void gen_eob(DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
-    gen_update_cc_op(s);    // qq
-    if (s->tb->flags & HF_INHIBIT_IRQ_MASK) {
-        gen_helper_reset_inhibit_irq(tcg_ctx, tcg_ctx->cpu_env);
-    }
+    gen_update_cc_op(s);
+    gen_reset_hflag(s, HF_INHIBIT_IRQ_MASK);
     if (s->tb->flags & HF_RF_MASK) {
         gen_helper_reset_rf(tcg_ctx, tcg_ctx->cpu_env);
     }
@@ -5784,8 +5812,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             /* if reg == SS, inhibit interrupts/trace. */
             /* If several instructions disable interrupts, only the
                _first_ does it */
-            if (!(s->tb->flags & HF_INHIBIT_IRQ_MASK))
-                gen_helper_set_inhibit_irq(tcg_ctx, cpu_env);
+            gen_set_hflag(s, HF_INHIBIT_IRQ_MASK);
             s->tf = 0;
         }
         if (s->is_jmp) {
@@ -5858,8 +5885,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             /* if reg == SS, inhibit interrupts/trace */
             /* If several instructions disable interrupts, only the
                _first_ does it */
-            if (!(s->tb->flags & HF_INHIBIT_IRQ_MASK))
-                gen_helper_set_inhibit_irq(tcg_ctx, cpu_env);
+            gen_set_hflag(s, HF_INHIBIT_IRQ_MASK);
             s->tf = 0;
         }
         if (s->is_jmp) {
@@ -7416,8 +7442,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                 /* interruptions are enabled only the first insn after sti */
                 /* If several instructions disable interrupts, only the
                    _first_ does it */
-                if (!(s->tb->flags & HF_INHIBIT_IRQ_MASK))
-                    gen_helper_set_inhibit_irq(tcg_ctx, cpu_env);
+                gen_set_hflag(s, HF_INHIBIT_IRQ_MASK);
                 /* give a chance to handle pending irqs */
                 gen_jmp_im(s, s->pc - s->cs_base);
                 gen_eob(s);
