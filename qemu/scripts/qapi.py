@@ -637,8 +637,8 @@ def check_alternate(expr, expr_info):
     for (key, value) in members.items():
         check_name(expr_info, "Member of alternate '%s'" % name, key)
 
-        # Check for conflicts in the generated enum
-        c_key = camel_to_upper(key)
+        # Check for conflicts in the branch names
+        c_key = c_name(key)
         if c_key in values:
             raise QAPIExprError(expr_info,
                                 "Alternate '%s' member '%s' clashes with '%s'"
@@ -1095,8 +1095,11 @@ class QAPISchemaObjectTypeVariants(object):
         assert isinstance(self.tag_member.type, QAPISchemaEnumType)
         for v in self.variants:
             v.check(schema)
-            assert v.name in self.tag_member.type.values
-            if isinstance(v.type, QAPISchemaObjectType):
+            # Union names must match enum values; alternate names are
+            # checked separately. Use 'seen' to tell the two apart.
+            if seen:
+                assert v.name in self.tag_member.type.values
+                assert isinstance(v.type, QAPISchemaObjectType)
                 v.type.check(schema)
 
     def check_clash(self, schema, info, seen):
@@ -1136,6 +1139,11 @@ class QAPISchemaAlternateType(QAPISchemaType):
     def check(self, schema):
         self.variants.tag_member.check(schema)
         self.variants.check(schema, {})
+        # Alternate branch names have no relation to the tag enum values;
+        # so we have to check for potential name collisions ourselves.
+        seen = {}
+        for v in self.variants.variants:
+            v.check_clash(self.info, seen)
 
     def json_type(self):
         return 'value'
@@ -1343,7 +1351,7 @@ class QAPISchema(object):
         data = expr['data']
         variants = [self._make_variant(key, value)
                     for (key, value) in data.iteritems()]
-        tag_member = self._make_implicit_tag(name, info, variants)
+        tag_member = QAPISchemaObjectTypeMember('type', 'QType', False)
         self._def_entity(
             QAPISchemaAlternateType(name, info,
                                     QAPISchemaObjectTypeVariants(None,

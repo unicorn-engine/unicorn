@@ -17,6 +17,7 @@
 #define QAPI_VISIT_H
 
 #include "qapi/visitor.h"
+#include "qapi/qmp/qerror.h"
 #include "qapi-types.h"
 
 
