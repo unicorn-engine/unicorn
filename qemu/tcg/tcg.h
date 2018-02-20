@@ -728,7 +728,8 @@ struct TCGContext {
     void *cpu_cc_dst, *cpu_cc_src, *cpu_cc_src2, *cpu_cc_srcT;
 
     /* qemu/target-i386/translate.c: local temps */
-    void *cpu_T[2];
+    void *cpu_T0; // Actually a TCGv
+    void *cpu_T1; // Actually a TCGv
 
     /* qemu/target-i386/translate.c: local register indexes (only used inside old micro ops) */
     void *cpu_tmp0, *cpu_tmp4;
