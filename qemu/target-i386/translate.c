@@ -441,14 +441,6 @@ static inline void gen_op_mov_v_reg(TCGContext *s, TCGMemOp ot, TCGv t0, int reg
     }
 }
 
-static inline void gen_op_movl_A0_reg(TCGContext *s, int reg)
-{
-    TCGv cpu_A0 = *(TCGv *)s->cpu_A0;
-    TCGv **cpu_regs = (TCGv **)s->cpu_regs;
-
-    tcg_gen_mov_tl(s, cpu_A0, *cpu_regs[reg]);
-}
-
 static inline void gen_op_addl_A0_im(TCGContext *s, int32_t val)
 {
     TCGv cpu_A0 = *(TCGv *)s->cpu_A0;
@@ -501,21 +493,6 @@ static inline void gen_op_add_reg_T0(TCGContext *s, TCGMemOp size, int reg)
 
     tcg_gen_add_tl(s, cpu_tmp0, *cpu_regs[reg], *cpu_T[0]);
     gen_op_mov_reg_v(s, size, reg, cpu_tmp0);
-}
-
-static inline void gen_op_addl_A0_seg(DisasContext *s, int reg)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv **cpu_seg_base = (TCGv **)tcg_ctx->cpu_seg_base;
-
-    if (CODE64(s)) {
-        tcg_gen_ext32u_tl(tcg_ctx, cpu_A0, cpu_A0);
-        tcg_gen_add_tl(tcg_ctx, cpu_A0, cpu_A0, *cpu_seg_base[reg]);
-    } else {
-        tcg_gen_add_tl(tcg_ctx, cpu_A0, cpu_A0, *cpu_seg_base[reg]);
-        tcg_gen_ext32u_tl(tcg_ctx, cpu_A0, cpu_A0);
-    }
 }
 
 static inline void gen_op_ld_v(DisasContext *s, int idx, TCGv t0, TCGv a0)
@@ -2644,54 +2621,47 @@ static void gen_popa(DisasContext *s)
 
 static void gen_enter(DisasContext *s, int esp_addend, int level)
 {
-    TCGMemOp ot = mo_pushpop(s, s->dflag);
-    int opsize = 1 << ot;
+    TCGMemOp d_ot = mo_pushpop(s, s->dflag);
+    TCGMemOp a_ot = CODE64(s) ? MO_64 : s->ss32 ? MO_32 : MO_16;
+    int size = 1 << d_ot;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
     TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
+    TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
 
-    level &= 0x1f;
-#ifdef TARGET_X86_64
-    if (CODE64(s)) {
-        gen_op_movl_A0_reg(tcg_ctx, R_ESP);
-        gen_op_addq_A0_im(tcg_ctx, -opsize);
-        tcg_gen_mov_tl(tcg_ctx, *cpu_T[1], cpu_A0);
+    /* Push BP; compute FrameTemp into T1.  */
+    tcg_gen_subi_tl(tcg_ctx, *cpu_T[1], *cpu_regs[R_ESP], size);
+    gen_lea_v_seg(s, a_ot, *cpu_T[1], R_SS, -1);
+    gen_op_st_v(s, d_ot, *cpu_regs[R_EBP], cpu_A0);
 
-        /* push bp */
-        gen_op_mov_v_reg(tcg_ctx, MO_32, *cpu_T[0], R_EBP);
-        gen_op_st_v(s, ot, *cpu_T[0], cpu_A0);
-        if (level) {
-            /* XXX: must save state */
-            gen_helper_enter64_level(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, level),
-                                     tcg_const_i32(tcg_ctx, (ot == MO_64)),
-                                     *cpu_T[1]);
+    level &= 31;
+    if (level != 0) {
+        int i;
+
+        /* Copy level-1 pointers from the previous frame.  */
+        for (i = 1; i < level; ++i) {
+            tcg_gen_subi_tl(tcg_ctx, cpu_A0, *cpu_regs[R_EBP], size * i);
+            gen_lea_v_seg(s, a_ot, cpu_A0, R_SS, -1);
+            gen_op_ld_v(s, d_ot, cpu_tmp0, cpu_A0);
+
+            tcg_gen_subi_tl(tcg_ctx, cpu_A0, *cpu_T[1], size * i);
+            gen_lea_v_seg(s, a_ot, cpu_A0, R_SS, -1);
+            gen_op_st_v(s, d_ot, cpu_tmp0, cpu_A0);
         }
-        gen_op_mov_reg_v(tcg_ctx, ot, R_EBP, *cpu_T[1]);
-        tcg_gen_addi_tl(tcg_ctx, *cpu_T[1], *cpu_T[1], -esp_addend + (-opsize * level));
-        gen_op_mov_reg_v(tcg_ctx, MO_64, R_ESP, *cpu_T[1]);
-    } else
-#endif
-    {
-        gen_op_movl_A0_reg(tcg_ctx, R_ESP);
-        gen_op_addl_A0_im(tcg_ctx, -opsize);
-        if (!s->ss32)
-            tcg_gen_ext16u_tl(tcg_ctx, cpu_A0, cpu_A0);
-        tcg_gen_mov_tl(tcg_ctx, *cpu_T[1], cpu_A0);
-        if (s->addseg)
-            gen_op_addl_A0_seg(s, R_SS);
-        /* push bp */
-        gen_op_mov_v_reg(tcg_ctx, MO_32, *cpu_T[0], R_EBP);
-        gen_op_st_v(s, ot, *cpu_T[0], cpu_A0);
-        if (level) {
-            /* XXX: must save state */
-            gen_helper_enter_level(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, level),
-                                   tcg_const_i32(tcg_ctx, s->dflag - 1),
-                                   *cpu_T[1]);
-        }
-        gen_op_mov_reg_v(tcg_ctx, ot, R_EBP, *cpu_T[1]);
-        tcg_gen_addi_tl(tcg_ctx, *cpu_T[1], *cpu_T[1], -esp_addend + (-opsize * level));
-        gen_op_mov_reg_v(tcg_ctx, MO_16 + s->ss32, R_ESP, *cpu_T[1]);
+
+        /* Push the current FrameTemp as the last level.  */
+        tcg_gen_subi_tl(tcg_ctx, cpu_A0, *cpu_T[1], size * level);
+        gen_lea_v_seg(s, a_ot, cpu_A0, R_SS, -1);
+        gen_op_st_v(s, d_ot, *cpu_T[1], cpu_A0);
     }
+
+    /* Copy the FrameTemp value to EBP.  */
+    gen_op_mov_reg_v(tcg_ctx, a_ot, R_EBP, *cpu_T[1]);
+
+    /* Compute the final value of ESP.  */
+    tcg_gen_subi_tl(tcg_ctx, *cpu_T[1], *cpu_T[1], esp_addend + size * level);
+    gen_op_mov_reg_v(tcg_ctx, a_ot, R_ESP, *cpu_T[1]);
 }
 
 static void gen_exception(DisasContext *s, int trapno, target_ulong cur_eip)
