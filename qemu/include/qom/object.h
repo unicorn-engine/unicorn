@@ -17,9 +17,8 @@
 #include "glib_compat.h"
 #include "unicorn/platform.h"
 #include "qemu/queue.h"
+#include "qemu/typedefs.h"
 #include "qapi/error.h"
-
-struct Visitor;
 
 struct TypeImpl;
 typedef struct TypeImpl *Type;
@@ -299,15 +298,15 @@ struct uc_struct;
  * Called when trying to get/set a property.
  */
 typedef void (ObjectPropertyAccessor)(struct uc_struct *uc, Object *obj,
-                                      struct Visitor *v,
+                                      Visitor *v,
                                       void *opaque,
                                       const char *name,
                                       Error **errp);
 typedef int (ObjectPropertySetAccessor)(struct uc_struct *uc, Object *obj,
-                                      struct Visitor *v,
-                                      void *opaque,
-                                      const char *name,
-                                      Error **errp);
+                                        Visitor *v,
+                                        void *opaque,
+                                        const char *name,
+                                        Error **errp);
 
 /**
  * ObjectPropertyResolve:
@@ -883,7 +882,7 @@ void object_unparent(struct uc_struct *uc, Object *obj);
  *
  * Reads a property from a object.
  */
-void object_property_get(struct uc_struct *uc, Object *obj, struct Visitor *v, const char *name,
+void object_property_get(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
                          Error **errp);
 
 /**
@@ -991,7 +990,7 @@ int64_t object_property_get_int(struct uc_struct *uc, Object *obj, const char *n
  *
  * Writes a property to a object.
  */
-void object_property_set(struct uc_struct *uc, Object *obj, struct Visitor *v, const char *name,
+void object_property_set(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
                          Error **errp);
 
 /**
