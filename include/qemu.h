@@ -17,30 +17,8 @@ struct uc_struct;
 
 #include "vl.h"
 
-// This two struct is originally from qemu/include/exec/cpu-all.h
+// These two structs are originally from qemu/include/exec/cpu-all.h
 // Temporarily moved here since there is circular inclusion.
-struct RAMBlock {
-    struct MemoryRegion *mr;
-    uint8_t *host;
-    ram_addr_t offset;
-    ram_addr_t used_length;
-    ram_addr_t max_length;
-    void (*resized)(const char*, uint64_t length, void *host);
-    uint32_t flags;
-    char idstr[256];
-    /* Reads can take either the iothread or the ramlist lock.
-     * Writes must take both locks.
-     */
-    QLIST_ENTRY(RAMBlock) next;
-    int fd;
-};
-
-static inline void *ramblock_ptr(RAMBlock *block, ram_addr_t offset)
-{
-    assert(offset < block->used_length);
-    assert(block->host);
-    return (char *)block->host + offset;
-}
 
 typedef struct {
     MemoryRegion *mr;

@@ -24,6 +24,34 @@
 #ifndef CONFIG_USER_ONLY
 #include "hw/xen/xen.h"
 
+struct RAMBlock {
+    struct MemoryRegion *mr;
+    uint8_t *host;
+    ram_addr_t offset;
+    ram_addr_t used_length;
+    ram_addr_t max_length;
+    void (*resized)(const char*, uint64_t length, void *host);
+    uint32_t flags;
+    char idstr[256];
+    /* Reads can take either the iothread or the ramlist lock.
+     * Writes must take both locks.
+     */
+    QLIST_ENTRY(RAMBlock) next;
+    int fd;
+};
+
+static inline bool offset_in_ramblock(RAMBlock *b, ram_addr_t offset)
+{
+    return (b && b->host && offset < b->used_length) ? true : false;
+}
+
+static inline void *ramblock_ptr(RAMBlock *block, ram_addr_t offset)
+{
+    assert(offset < block->used_length);
+    assert(block->host);
+    return (char *)block->host + offset;
+}
+
 ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
                                    MemoryRegion *mr, Error **errp);
 ram_addr_t qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr, Error **errp);
