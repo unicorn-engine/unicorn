@@ -3789,6 +3789,18 @@ void register_cp_regs_for_features(ARMCPU *cpu)
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->mvfr1 },
             { "MVFR2_EL1", 0,0,3, 3,0,2, ARM_CP_STATE_AA64,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->mvfr2 },
+            { "PMCEID0", 15,9,12, 0,0,6, ARM_CP_STATE_AA32, ARM_CP_CONST,
+              PL0_R, 0, NULL, cpu->pmceid0, 0, {0, 0},
+              pmreg_access },
+            { "PMCEID0_EL0", 0,9,12, 3,3,6, ARM_CP_STATE_AA64, ARM_CP_CONST,
+              PL0_R, 0, NULL, cpu->pmceid0, 0, {0, 0},
+              pmreg_access },
+            { "PMCEID1", 15,9,12, 0,0,7, ARM_CP_STATE_AA32, ARM_CP_CONST,
+              PL0_R, 0, NULL, cpu->pmceid1, 0, {0, 0},
+              pmreg_access },
+            { "PMCEID1_EL0", 0,9,12, 3,3,7, ARM_CP_STATE_AA64, ARM_CP_CONST,
+              PL0_R, 0, NULL, cpu->pmceid1, 0, {0, 0},
+              pmreg_access },
             REGINFO_SENTINEL
         };
         /* RVBAR_EL1 is only implemented if EL1 is the highest EL */
