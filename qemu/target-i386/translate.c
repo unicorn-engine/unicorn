@@ -2256,6 +2256,25 @@ static void gen_nop_modrm(CPUX86State *env, DisasContext *s, int modrm)
     (void)gen_lea_modrm_0(env, s, modrm);
 }
 
+/* Used for BNDCL, BNDCU, BNDCN.  */
+static void gen_bndck(CPUX86State *env, DisasContext *s, int modrm,
+                      TCGCond cond, TCGv_i64 bndv)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i64 cpu_tmp1_i64 = tcg_ctx->cpu_tmp1_i64;
+    TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
+
+    TCGv ea = gen_lea_modrm_1(s, gen_lea_modrm_0(env, s, modrm));
+
+    tcg_gen_extu_tl_i64(tcg_ctx, cpu_tmp1_i64, ea);
+    if (!CODE64(s)) {
+        tcg_gen_ext32u_i64(tcg_ctx, cpu_tmp1_i64, cpu_tmp1_i64);
+    }
+    tcg_gen_setcond_i64(tcg_ctx, cond, cpu_tmp1_i64, cpu_tmp1_i64, bndv);
+    tcg_gen_extrl_i64_i32(tcg_ctx, cpu_tmp2_i32, cpu_tmp1_i64);
+    gen_helper_bndck(tcg_ctx, tcg_ctx->cpu_env, cpu_tmp2_i32);
+}
+
 /* used for LEA and MOV AX, mem */
 static void gen_add_A0_ds_seg(DisasContext *s)
 {
@@ -8117,7 +8136,26 @@ case 0x101:
         if (s->flags & HF_MPX_EN_MASK) {
             mod = (modrm >> 6) & 3;
             reg = ((modrm >> 3) & 7) | rex_r;
-            if (prefixes & PREFIX_DATA) {
+            if (prefixes & PREFIX_REPZ) {
+                /* bndcl */
+                if (reg >= 4
+                    || (prefixes & PREFIX_LOCK)
+                    || s->aflag == MO_16) {
+                    goto illegal_op;
+                }
+                gen_bndck(env, s, modrm, TCG_COND_LTU, tcg_ctx->cpu_bndl[reg]);
+            } else if (prefixes & PREFIX_REPNZ) {
+                /* bndcu */
+                if (reg >= 4
+                    || (prefixes & PREFIX_LOCK)
+                    || s->aflag == MO_16) {
+                    goto illegal_op;
+                }
+                TCGv_i64 notu = tcg_temp_new_i64(tcg_ctx);
+                tcg_gen_not_i64(tcg_ctx, notu, tcg_ctx->cpu_bndu[reg]);
+                gen_bndck(env, s, modrm, TCG_COND_GTU, notu);
+                tcg_temp_free_i64(tcg_ctx, notu);
+            } else if (prefixes & PREFIX_DATA) {
                 /* bndmov -- from reg/mem */
                 if (reg >= 4 || s->aflag == MO_16) {
                     goto illegal_op;
@@ -8186,6 +8224,14 @@ case 0x101:
                 /* bnd registers are now in-use */
                 gen_set_hflag(s, HF_MPX_IU_MASK);
                 break;
+            } else if (prefixes & PREFIX_REPNZ) {
+                /* bndcn */
+                if (reg >= 4
+                    || (prefixes & PREFIX_LOCK)
+                    || s->aflag == MO_16) {
+                    goto illegal_op;
+                }
+                gen_bndck(env, s, modrm, TCG_COND_GTU, tcg_ctx->cpu_bndu[reg]);
             } else if (prefixes & PREFIX_DATA) {
                 /* bndmov -- to reg/mem */
                 if (reg >= 4 || s->aflag == MO_16) {
