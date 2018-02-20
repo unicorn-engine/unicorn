@@ -119,7 +119,7 @@ void visit_type_%(c_name)s(Visitor *v, const char *name, %(c_name)s **obj, Error
 {
     Error *err = NULL;
 
-    visit_start_struct(v, name, (void **)obj, "%(name)s", sizeof(%(c_name)s), &err);
+    visit_start_struct(v, name, (void **)obj, sizeof(%(c_name)s), &err);
 
     if (err) {
         goto out;
@@ -136,7 +136,7 @@ out:
     error_propagate(errp, err);
 }
 ''',
-                 name=name, c_name=c_name(name))
+                 c_name=c_name(name))
     return ret
 
 
@@ -180,11 +180,11 @@ def gen_visit_enum(name):
 void visit_type_%(c_name)s(Visitor *v, const char *name, %(c_name)s *obj, Error **errp)
 {
     int value = *obj;
-    visit_type_enum(v, name, &value, %(c_name)s_lookup, "%(name)s", errp);
+    visit_type_enum(v, name, &value, %(c_name)s_lookup, errp);
     *obj = value;
 }
 ''',
-                 c_name=c_name(name), name=name)
+                 c_name=c_name(name))
 
 
 def gen_visit_alternate(name, variants):
@@ -256,7 +256,7 @@ void visit_type_%(c_name)s(Visitor *v, const char *name, %(c_name)s **obj, Error
 {
     Error *err = NULL;
 
-    visit_start_struct(v, name, (void **)obj, "%(name)s", sizeof(%(c_name)s), &err);
+    visit_start_struct(v, name, (void **)obj, sizeof(%(c_name)s), &err);
     if (err) {
         goto out;
     }
@@ -264,7 +264,7 @@ void visit_type_%(c_name)s(Visitor *v, const char *name, %(c_name)s **obj, Error
         goto out_obj;
     }
 ''',
-                 c_name=c_name(name), name=name)
+                 c_name=c_name(name))
 
     if base:
         ret += mcgen('''

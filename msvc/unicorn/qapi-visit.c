@@ -33,7 +33,7 @@ void visit_type_DummyForceArrays(Visitor *v, const char *name, DummyForceArrays 
 {
     Error *err = NULL;
 
-    visit_start_struct(v, name, (void **)obj, "DummyForceArrays", sizeof(DummyForceArrays), &err);
+    visit_start_struct(v, name, (void **)obj, sizeof(DummyForceArrays), &err);
 
     if (err) {
         goto out;
@@ -53,14 +53,14 @@ out:
 void visit_type_QType(Visitor *v, const char *name, QType *obj, Error **errp)
 {
     int value = *obj;
-    visit_type_enum(v, name, &value, QType_lookup, "QType", errp);
+    visit_type_enum(v, name, &value, QType_lookup, errp);
     *obj = value;
 }
 
 void visit_type_QapiErrorClass(Visitor *v, const char *name, QapiErrorClass *obj, Error **errp)
 {
     int value = *obj;
-    visit_type_enum(v, name, &value, QapiErrorClass_lookup, "QapiErrorClass", errp);
+    visit_type_enum(v, name, &value, QapiErrorClass_lookup, errp);
     *obj = value;
 }
 
@@ -95,7 +95,7 @@ void visit_type_X86CPUFeatureWordInfo(Visitor *v, const char *name, X86CPUFeatur
 {
     Error *err = NULL;
 
-    visit_start_struct(v, name, (void **)obj, "X86CPUFeatureWordInfo", sizeof(X86CPUFeatureWordInfo), &err);
+    visit_start_struct(v, name, (void **)obj, sizeof(X86CPUFeatureWordInfo), &err);
 
     if (err) {
         goto out;
@@ -139,7 +139,7 @@ out:
 void visit_type_X86CPURegister32(Visitor *v, const char *name, X86CPURegister32 *obj, Error **errp)
 {
     int value = *obj;
-    visit_type_enum(v, name, &value, X86CPURegister32_lookup, "X86CPURegister32", errp);
+    visit_type_enum(v, name, &value, X86CPURegister32_lookup, errp);
     *obj = value;
 }
 
