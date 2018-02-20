@@ -65,6 +65,7 @@
     <ClCompile Include="..\..\..\qemu\target-i386\int_helper.c" />
     <ClCompile Include="..\..\..\qemu\target-i386\mem_helper.c" />
     <ClCompile Include="..\..\..\qemu\target-i386\misc_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-i386\mpx_helper.c" />
     <ClCompile Include="..\..\..\qemu\target-i386\seg_helper.c" />
     <ClCompile Include="..\..\..\qemu\target-i386\smm_helper.c" />
     <ClCompile Include="..\..\..\qemu\target-i386\svm_helper.c" />

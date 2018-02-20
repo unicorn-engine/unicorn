@@ -140,6 +140,9 @@
     <ClCompile Include="..\..\..\qemu\target-i386\misc_helper.c">
       <Filter>target-i386</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-i386\mpx_helper.c">
+      <Filter>target-i386</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\target-i386\seg_helper.c">
       <Filter>target-i386</Filter>
     </ClCompile>

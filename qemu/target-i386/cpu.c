@@ -324,7 +324,7 @@ static const char *cpuid_6_feature_name[] = {
 #define TCG_7_0_EBX_FEATURES (CPUID_7_0_EBX_SMEP | CPUID_7_0_EBX_SMAP | \
           CPUID_7_0_EBX_BMI1 | CPUID_7_0_EBX_BMI2 | CPUID_7_0_EBX_ADX | \
           CPUID_7_0_EBX_PCOMMIT | CPUID_7_0_EBX_CLFLUSHOPT |            \
-          CPUID_7_0_EBX_CLWB)
+          CPUID_7_0_EBX_CLWB | CPUID_7_0_EBX_MPX)
           /* missing:
           CPUID_7_0_EBX_FSGSBASE, CPUID_7_0_EBX_HLE, CPUID_7_0_EBX_AVX2,
           CPUID_7_0_EBX_ERMS, CPUID_7_0_EBX_INVPCID, CPUID_7_0_EBX_RTM,
@@ -518,10 +518,60 @@ static const X86RegisterInfo32 x86_reg_info_32[CPU_NB_REGS32] = {
 };
 #undef REGISTER
 
-typedef struct ExtSaveArea {
-    uint32_t feature, bits;
-    uint32_t offset, size;
-} ExtSaveArea;
+    const ExtSaveArea x86_ext_save_areas[] = {
+    // XSTATE_FP_BIT
+    {
+        0, 0,
+        0, 0
+    },
+    // XSTATE_SSE_BIT
+    {
+        0, 0,
+        0, 0,
+    },
+    // XSTATE_YMM_BIT
+    {
+        FEAT_1_ECX, CPUID_EXT_AVX,
+        0x240,
+        0x100,
+    },
+    // XSTATE_BNDREGS_BIT
+    {
+        FEAT_7_0_EBX, CPUID_7_0_EBX_MPX,
+        0x3c0,
+        0x40,
+    },
+    // XSTATE_BNDCSR_BIT
+    {
+        FEAT_7_0_EBX, CPUID_7_0_EBX_MPX,
+        0x400,
+        0x40,
+    },
+    // XSTATE_OPMASK_BIT
+    {
+        FEAT_7_0_EBX, CPUID_7_0_EBX_AVX512F,
+        0x440,
+        0x40,
+    },
+    // XSTATE_ZMM_Hi256_BIT
+    {
+        FEAT_7_0_EBX, CPUID_7_0_EBX_AVX512F,
+        0x480,
+        0x200,
+    },
+    // XSTATE_Hi16_ZMM_BIT
+    {
+        FEAT_7_0_EBX, CPUID_7_0_EBX_AVX512F,
+        0x680,
+        0x400,
+    },
+    // XSTATE_PKRU_BIT
+    {
+        FEAT_7_0_ECX, .bits = CPUID_7_0_ECX_PKU,
+        0xA80,
+        0x8,
+    },
+};
 
 const char *get_register_name_32(unsigned int reg)
 {
@@ -2333,11 +2383,53 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         *edx = 0;
         break;
     case 0xD: {
+        uint64_t ena_mask;
+        int i;
+
         /* Processor Extended State */
         *eax = 0;
         *ebx = 0;
         *ecx = 0;
         *edx = 0;
+        if (!(env->features[FEAT_1_ECX] & CPUID_EXT_XSAVE)) {
+            break;
+        }
+
+        //if (kvm_enabled()) {
+            // Unicorn: commented out
+            //ena_mask = kvm_arch_get_supported_cpuid(s, 0xd, 0, R_EDX);
+            //ena_mask <<= 32;
+            //ena_mask |= kvm_arch_get_supported_cpuid(s, 0xd, 0, R_EAX);
+        //} else {
+            ena_mask = -1;
+        //}
+
+        if (count == 0) {
+            *ecx = 0x240;
+            for (i = 2; i < ARRAY_SIZE(x86_ext_save_areas); i++) {
+                const ExtSaveArea *esa = &x86_ext_save_areas[i];
+                if ((env->features[esa->feature] & esa->bits) == esa->bits
+                    && ((ena_mask >> i) & 1) != 0) {
+                    if (i < 32) {
+                        *eax |= 1u << i;
+                    } else {
+                        *edx |= 1u << (i - 32);
+                    }
+                    *ecx = MAX(*ecx, esa->offset + esa->size);
+                }
+            }
+            *eax |= ena_mask & (XSTATE_FP | XSTATE_SSE);
+            *ebx = *ecx;
+        } else if (count == 1) {
+            *eax = env->features[FEAT_XSAVE];
+        } else if (count < ARRAY_SIZE(x86_ext_save_areas)) {
+            const ExtSaveArea *esa = &x86_ext_save_areas[count];
+            if ((env->features[esa->feature] & esa->bits) == esa->bits
+                && ((ena_mask >> count) & 1) != 0) {
+                *eax = esa->size;
+                *ebx = esa->offset;
+            }
+        }
         break;
     }
     case 0x80000000:
