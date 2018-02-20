@@ -178,6 +178,14 @@ static bool cpu_common_has_work(CPUState *cs)
     return false;
 }
 
+static bool cpu_common_debug_check_watchpoint(CPUState *cpu, CPUWatchpoint *wp)
+{
+    /* If no extra check is required, QEMU watchpoint match can be considered
+     * as an architectural match.
+     */
+    return true;
+}
+
 ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename, const char *cpu_model)
 {
     CPUClass *cc = CPU_CLASS(uc, object_class_by_name(uc, typename));
@@ -255,6 +263,7 @@ static void cpu_class_init(struct uc_struct *uc, ObjectClass *klass, void *data)
     k->get_paging_enabled = cpu_common_get_paging_enabled;
     k->get_memory_mapping = cpu_common_get_memory_mapping;
     k->debug_excp_handler = cpu_common_noop;
+    k->debug_check_watchpoint = cpu_common_debug_check_watchpoint;
     k->cpu_exec_enter = cpu_common_noop;
     k->cpu_exec_exit = cpu_common_noop;
     k->cpu_exec_interrupt = cpu_common_exec_interrupt;
