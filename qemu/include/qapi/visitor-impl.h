@@ -62,7 +62,6 @@ struct Visitor
     void (*type_int16)(Visitor *v, int16_t *obj, const char *name, Error **errp);
     void (*type_int32)(Visitor *v, int32_t *obj, const char *name, Error **errp);
     bool (*start_union)(Visitor *v, bool data_present, Error **errp);
-    void (*end_union)(Visitor *v, bool data_present, Error **errp);
 };
 
 void input_type_enum(Visitor *v, int *obj, const char * const strings[],

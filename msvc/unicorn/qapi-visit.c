@@ -35,12 +35,18 @@ void visit_type_DummyForceArrays(Visitor *v, DummyForceArrays **obj, const char 
 
     visit_start_struct(v, (void **)obj, "DummyForceArrays", name, sizeof(DummyForceArrays), &err);
 
-    if (!err) {
-        if (*obj) {
-            visit_type_DummyForceArrays_fields(v, obj, errp);
-        }
-        visit_end_struct(v, &err);
+    if (err) {
+        goto out;
     }
+    if (!*obj) {
+        goto out_obj;
+    }
+    visit_type_DummyForceArrays_fields(v, obj, &err);
+    error_propagate(errp, err);
+    err = NULL;
+out_obj:
+    visit_end_struct(v, &err);
+out:
     error_propagate(errp, err);
 }
 
@@ -87,12 +93,18 @@ void visit_type_X86CPUFeatureWordInfo(Visitor *v, X86CPUFeatureWordInfo **obj, c
 
     visit_start_struct(v, (void **)obj, "X86CPUFeatureWordInfo", name, sizeof(X86CPUFeatureWordInfo), &err);
 
-    if (!err) {
-        if (*obj) {
-            visit_type_X86CPUFeatureWordInfo_fields(v, obj, errp);
-        }
-        visit_end_struct(v, &err);
+    if (err) {
+        goto out;
     }
+    if (!*obj) {
+        goto out_obj;
+    }
+    visit_type_X86CPUFeatureWordInfo_fields(v, obj, &err);
+    error_propagate(errp, err);
+    err = NULL;
+out_obj:
+    visit_end_struct(v, &err);
+out:
     error_propagate(errp, err);
 }
 
