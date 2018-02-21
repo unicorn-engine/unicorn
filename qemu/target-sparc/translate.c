@@ -2940,7 +2940,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     // gen_op_rdhtstate();
                     break;
                 case 3: // hintp
-                    tcg_gen_mov_tl(tcg_ctx, cpu_dst, *(TCGv *)tcg_ctx->cpu_hintp);
+                    tcg_gen_mov_tl(tcg_ctx, cpu_dst, tcg_ctx->cpu_hintp);
                     break;
                 case 5: // htba
                     tcg_gen_mov_tl(tcg_ctx, cpu_dst, *(TCGv *)tcg_ctx->cpu_htba);
@@ -4059,7 +4059,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 // XXX gen_op_wrhtstate();
                                 break;
                             case 3: // hintp
-                                tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_hintp, cpu_tmp0);
+                                tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_hintp, cpu_tmp0);
                                 break;
                             case 5: // htba
                                 tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_htba, cpu_tmp0);
@@ -5548,8 +5548,7 @@ void gen_intermediate_code_init(CPUSPARCState *env)
             offsetof(CPUSPARCState, hstick_cmpr),
             "hstick_cmpr");
 
-    tcg_ctx->cpu_hintp = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_hintp = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, hintp),
+    tcg_ctx->cpu_hintp = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, hintp),
             "hintp");
 
     tcg_ctx->cpu_htba = g_malloc0(sizeof(TCGv));

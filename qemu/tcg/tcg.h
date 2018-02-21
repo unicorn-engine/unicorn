@@ -843,7 +843,7 @@ struct TCGContext {
     TCGv cpu_tick_cmpr;
     TCGv cpu_stick_cmpr;
     TCGv cpu_hstick_cmpr;
-    void *cpu_hintp;
+    TCGv cpu_hintp;
     void *cpu_htba;
     void *cpu_hver;
     void *cpu_ssr;
