@@ -1290,7 +1290,6 @@ void qemu_ram_remap(struct uc_struct *uc, ram_addr_t addr, ram_addr_t length)
                 memory_try_enable_merging(vaddr, length);
                 qemu_ram_setup_dump(vaddr, length);
             }
-            return;
         }
     }
 }
