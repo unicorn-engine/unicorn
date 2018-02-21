@@ -360,10 +360,10 @@ static inline void gen_op_addi_cc(DisasContext *dc, TCGv dst, TCGv src1, target_
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
-    tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, src1);
-    tcg_gen_movi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src2, src2);
-    tcg_gen_addi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, *(TCGv *)tcg_ctx->cpu_cc_src, src2);
-    tcg_gen_mov_tl(tcg_ctx, dst, *(TCGv *)tcg_ctx->cpu_cc_dst);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src, src1);
+    tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_cc_src2, src2);
+    tcg_gen_addi_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, tcg_ctx->cpu_cc_src, src2);
+    tcg_gen_mov_tl(tcg_ctx, dst, tcg_ctx->cpu_cc_dst);
 }
 #endif
 
@@ -371,10 +371,10 @@ static inline void gen_op_add_cc(DisasContext *dc, TCGv dst, TCGv src1, TCGv src
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
-    tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, src1);
-    tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src2, src2);
-    tcg_gen_add_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, *(TCGv *)tcg_ctx->cpu_cc_src, *(TCGv *)tcg_ctx->cpu_cc_src2);
-    tcg_gen_mov_tl(tcg_ctx, dst, *(TCGv *)tcg_ctx->cpu_cc_dst);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src, src1);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src2, src2);
+    tcg_gen_add_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, tcg_ctx->cpu_cc_src, tcg_ctx->cpu_cc_src2);
+    tcg_gen_mov_tl(tcg_ctx, dst, tcg_ctx->cpu_cc_dst);
 }
 
 static TCGv_i32 gen_add32_carry32(DisasContext *dc)
@@ -386,11 +386,11 @@ static TCGv_i32 gen_add32_carry32(DisasContext *dc)
 #if TARGET_LONG_BITS == 64
     cc_src1_32 = tcg_temp_new_i32(tcg_ctx);
     cc_src2_32 = tcg_temp_new_i32(tcg_ctx);
-    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src1_32, *(TCGv *)tcg_ctx->cpu_cc_dst);
-    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src2_32, *(TCGv *)tcg_ctx->cpu_cc_src);
+    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src1_32, tcg_ctx->cpu_cc_dst);
+    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src2_32, tcg_ctx->cpu_cc_src);
 #else
-    cc_src1_32 = *(TCGv *)tcg_ctx->cpu_cc_dst;
-    cc_src2_32 = *(TCGv *)tcg_ctx->cpu_cc_src;
+    cc_src1_32 = tcg_ctx->cpu_cc_dst;
+    cc_src2_32 = tcg_ctx->cpu_cc_src;
 #endif
 
     carry_32 = tcg_temp_new_i32(tcg_ctx);
@@ -413,11 +413,11 @@ static TCGv_i32 gen_sub32_carry32(DisasContext *dc)
 #if TARGET_LONG_BITS == 64
     cc_src1_32 = tcg_temp_new_i32(tcg_ctx);
     cc_src2_32 = tcg_temp_new_i32(tcg_ctx);
-    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src1_32, *(TCGv *)tcg_ctx->cpu_cc_src);
-    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src2_32, *(TCGv *)tcg_ctx->cpu_cc_src2);
+    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src1_32, tcg_ctx->cpu_cc_src);
+    tcg_gen_extrl_i64_i32(tcg_ctx, cc_src2_32, tcg_ctx->cpu_cc_src2);
 #else
-    cc_src1_32 = *(TCGv *)tcg_ctx->cpu_cc_src;
-    cc_src2_32 = *(TCGv *)tcg_ctx->cpu_cc_src2;
+    cc_src1_32 = tcg_ctx->cpu_cc_src;
+    cc_src2_32 = tcg_ctx->cpu_cc_src2;
 #endif
 
     carry_32 = tcg_temp_new_i32(tcg_ctx);
@@ -458,7 +458,7 @@ static void gen_op_addx_int(DisasContext *dc, TCGv dst, TCGv src1,
                Ideally we'd combine this operation with the add that
                generated the carry in the first place.  */
             carry = tcg_temp_new(tcg_ctx);
-            tcg_gen_add2_tl(tcg_ctx, carry, dst, *(TCGv *)tcg_ctx->cpu_cc_src, src1, *(TCGv *)tcg_ctx->cpu_cc_src2, src2);
+            tcg_gen_add2_tl(tcg_ctx, carry, dst, tcg_ctx->cpu_cc_src, src1, tcg_ctx->cpu_cc_src2, src2);
             tcg_temp_free(tcg_ctx, carry);
             goto add_done;
         }
@@ -495,9 +495,9 @@ static void gen_op_addx_int(DisasContext *dc, TCGv dst, TCGv src1,
 
  add_done:
     if (update_cc) {
-        tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, src1);
-        tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src2, src2);
-        tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, dst);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src, src1);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src2, src2);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, dst);
         tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_ADDX);
         dc->cc_op = CC_OP_ADDX;
     }
@@ -507,28 +507,28 @@ static void gen_op_addx_int(DisasContext *dc, TCGv dst, TCGv src1,
 static inline void gen_op_subi_cc(DisasContext *dc, TCGv dst, TCGv src1, target_long src2)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, src1);
-    tcg_gen_movi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src2, src2);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src, src1);
+    tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_cc_src2, src2);
     if (src2 == 0) {
-        tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, src1);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, src1);
         tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_LOGIC);
         dc->cc_op = CC_OP_LOGIC;
     } else {
-        tcg_gen_subi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, *(TCGv *)tcg_ctx->cpu_cc_src, src2);
+        tcg_gen_subi_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, tcg_ctx->cpu_cc_src, src2);
         tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_SUB);
         dc->cc_op = CC_OP_SUB;
     }
-    tcg_gen_mov_tl(tcg_ctx, dst, *(TCGv *)tcg_ctx->cpu_cc_dst);
+    tcg_gen_mov_tl(tcg_ctx, dst, tcg_ctx->cpu_cc_dst);
 }
 #endif
 
 static inline void gen_op_sub_cc(DisasContext *dc, TCGv dst, TCGv src1, TCGv src2)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, src1);
-    tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src2, src2);
-    tcg_gen_sub_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, *(TCGv *)tcg_ctx->cpu_cc_src, *(TCGv *)tcg_ctx->cpu_cc_src2);
-    tcg_gen_mov_tl(tcg_ctx, dst, *(TCGv *)tcg_ctx->cpu_cc_dst);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src, src1);
+    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src2, src2);
+    tcg_gen_sub_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, tcg_ctx->cpu_cc_src, tcg_ctx->cpu_cc_src2);
+    tcg_gen_mov_tl(tcg_ctx, dst, tcg_ctx->cpu_cc_dst);
 }
 
 static void gen_op_subx_int(DisasContext *dc, TCGv dst, TCGv src1,
@@ -564,7 +564,7 @@ static void gen_op_subx_int(DisasContext *dc, TCGv dst, TCGv src1,
                Ideally we'd combine this operation with the add that
                generated the carry in the first place.  */
             carry = tcg_temp_new(tcg_ctx);
-            tcg_gen_sub2_tl(tcg_ctx, carry, dst, *(TCGv *)tcg_ctx->cpu_cc_src, src1, *(TCGv *)tcg_ctx->cpu_cc_src2, src2);
+            tcg_gen_sub2_tl(tcg_ctx, carry, dst, tcg_ctx->cpu_cc_src, src1, tcg_ctx->cpu_cc_src2, src2);
             tcg_temp_free(tcg_ctx, carry);
             goto sub_done;
         }
@@ -595,9 +595,9 @@ static void gen_op_subx_int(DisasContext *dc, TCGv dst, TCGv src1,
 
  sub_done:
     if (update_cc) {
-        tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, src1);
-        tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src2, src2);
-        tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, dst);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src, src1);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src2, src2);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, dst);
         tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_SUBX);
         dc->cc_op = CC_OP_SUBX;
     }
@@ -616,16 +616,16 @@ static inline void gen_op_mulscc(DisasContext *dc, TCGv dst, TCGv src1, TCGv src
         T1 = 0;
     */
     zero = tcg_const_tl(tcg_ctx, 0);
-    tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, src1, 0xffffffff);
+    tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_cc_src, src1, 0xffffffff);
     tcg_gen_andi_tl(tcg_ctx, r_temp, tcg_ctx->cpu_y, 0x1);
-    tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src2, src2, 0xffffffff);
-    tcg_gen_movcond_tl(tcg_ctx, TCG_COND_EQ, *(TCGv *)tcg_ctx->cpu_cc_src2, r_temp, zero,
-                       zero, *(TCGv *)tcg_ctx->cpu_cc_src2);
+    tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_cc_src2, src2, 0xffffffff);
+    tcg_gen_movcond_tl(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_cc_src2, r_temp, zero,
+                       zero, tcg_ctx->cpu_cc_src2);
     tcg_temp_free(tcg_ctx, zero);
 
     // b2 = T0 & 1;
     // env->y = (b2 << 31) | (env->y >> 1);
-    tcg_gen_andi_tl(tcg_ctx, r_temp, *(TCGv *)tcg_ctx->cpu_cc_src, 0x1);
+    tcg_gen_andi_tl(tcg_ctx, r_temp, tcg_ctx->cpu_cc_src, 0x1);
     tcg_gen_shli_tl(tcg_ctx, r_temp, r_temp, 31);
     tcg_gen_shri_tl(tcg_ctx, t0, tcg_ctx->cpu_y, 1);
     tcg_gen_andi_tl(tcg_ctx, t0, t0, 0x7fffffff);
@@ -641,13 +641,13 @@ static inline void gen_op_mulscc(DisasContext *dc, TCGv dst, TCGv src1, TCGv src
     // T0 = (b1 << 31) | (T0 >> 1);
     // src1 = T0;
     tcg_gen_shli_tl(tcg_ctx, t0, t0, 31);
-    tcg_gen_shri_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, *(TCGv *)tcg_ctx->cpu_cc_src, 1);
-    tcg_gen_or_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, *(TCGv *)tcg_ctx->cpu_cc_src, t0);
+    tcg_gen_shri_tl(tcg_ctx, tcg_ctx->cpu_cc_src, tcg_ctx->cpu_cc_src, 1);
+    tcg_gen_or_tl(tcg_ctx, tcg_ctx->cpu_cc_src, tcg_ctx->cpu_cc_src, t0);
     tcg_temp_free(tcg_ctx, t0);
 
-    tcg_gen_add_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, *(TCGv *)tcg_ctx->cpu_cc_src, *(TCGv *)tcg_ctx->cpu_cc_src2);
+    tcg_gen_add_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, tcg_ctx->cpu_cc_src, tcg_ctx->cpu_cc_src2);
 
-    tcg_gen_mov_tl(tcg_ctx, dst, *(TCGv *)tcg_ctx->cpu_cc_dst);
+    tcg_gen_mov_tl(tcg_ctx, dst, tcg_ctx->cpu_cc_dst);
 }
 
 static inline void gen_op_multiply(DisasContext *dc, TCGv dst, TCGv src1, TCGv src2, int sign_ext)
@@ -1205,12 +1205,12 @@ static void gen_compare(DisasContext *dc, DisasCompare *cmp, bool xcc, unsigned 
         if (!xcc) {
             cmp->g1 = false;
             cmp->c1 = tcg_temp_new(tcg_ctx);
-            tcg_gen_ext32s_tl(tcg_ctx, cmp->c1, *(TCGv *)tcg_ctx->cpu_cc_dst);
+            tcg_gen_ext32s_tl(tcg_ctx, cmp->c1, tcg_ctx->cpu_cc_dst);
             break;
         }
 #endif
         cmp->g1 = true;
-        cmp->c1 = *(TCGv *)tcg_ctx->cpu_cc_dst;
+        cmp->c1 = tcg_ctx->cpu_cc_dst;
         break;
 
     case CC_OP_SUB:
@@ -1234,14 +1234,14 @@ static void gen_compare(DisasContext *dc, DisasCompare *cmp, bool xcc, unsigned 
                 cmp->g1 = cmp->g2 = false;
                 cmp->c1 = tcg_temp_new(tcg_ctx);
                 cmp->c2 = tcg_temp_new(tcg_ctx);
-                tcg_gen_ext32s_tl(tcg_ctx, cmp->c1, *(TCGv *)tcg_ctx->cpu_cc_src);
-                tcg_gen_ext32s_tl(tcg_ctx, cmp->c2, *(TCGv *)tcg_ctx->cpu_cc_src2);
+                tcg_gen_ext32s_tl(tcg_ctx, cmp->c1, tcg_ctx->cpu_cc_src);
+                tcg_gen_ext32s_tl(tcg_ctx, cmp->c2, tcg_ctx->cpu_cc_src2);
                 break;
             }
 #endif
             cmp->g1 = cmp->g2 = true;
-            cmp->c1 = *(TCGv *)tcg_ctx->cpu_cc_src;
-            cmp->c2 = *(TCGv *)tcg_ctx->cpu_cc_src2;
+            cmp->c1 = tcg_ctx->cpu_cc_src;
+            cmp->c2 = tcg_ctx->cpu_cc_src2;
             break;
         }
         break;
@@ -2467,9 +2467,9 @@ static void gen_edge(DisasContext *dc, TCGv dst, TCGv s1, TCGv s2,
     int shift, imask, omask;
 
     if (cc) {
-        tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, s1);
-        tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src2, s2);
-        tcg_gen_sub_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, s1, s2);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src, s1);
+        tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src2, s2);
+        tcg_gen_sub_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, s1, s2);
         tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_SUB);
         dc->cc_op = CC_OP_SUB;
     }
@@ -3543,7 +3543,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     case 0x1: /* and */
                         tcg_gen_and_tl(tcg_ctx, cpu_dst, cpu_src1, cpu_src2);
                         if (xop & 0x10) {
-                            tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, cpu_dst);
+                            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, cpu_dst);
                             tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_LOGIC);
                             dc->cc_op = CC_OP_LOGIC;
                         }
@@ -3551,7 +3551,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     case 0x2: /* or */
                         tcg_gen_or_tl(tcg_ctx, cpu_dst, cpu_src1, cpu_src2);
                         if (xop & 0x10) {
-                            tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, cpu_dst);
+                            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, cpu_dst);
                             tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_LOGIC);
                             dc->cc_op = CC_OP_LOGIC;
                         }
@@ -3559,7 +3559,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     case 0x3: /* xor */
                         tcg_gen_xor_tl(tcg_ctx, cpu_dst, cpu_src1, cpu_src2);
                         if (xop & 0x10) {
-                            tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, cpu_dst);
+                            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, cpu_dst);
                             tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_LOGIC);
                             dc->cc_op = CC_OP_LOGIC;
                         }
@@ -3576,7 +3576,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     case 0x5: /* andn */
                         tcg_gen_andc_tl(tcg_ctx, cpu_dst, cpu_src1, cpu_src2);
                         if (xop & 0x10) {
-                            tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, cpu_dst);
+                            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, cpu_dst);
                             tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_LOGIC);
                             dc->cc_op = CC_OP_LOGIC;
                         }
@@ -3584,7 +3584,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     case 0x6: /* orn */
                         tcg_gen_orc_tl(tcg_ctx, cpu_dst, cpu_src1, cpu_src2);
                         if (xop & 0x10) {
-                            tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, cpu_dst);
+                            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, cpu_dst);
                             tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_LOGIC);
                             dc->cc_op = CC_OP_LOGIC;
                         }
@@ -3592,7 +3592,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     case 0x7: /* xorn */
                         tcg_gen_eqv_tl(tcg_ctx, cpu_dst, cpu_src1, cpu_src2);
                         if (xop & 0x10) {
-                            tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, cpu_dst);
+                            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, cpu_dst);
                             tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_LOGIC);
                             dc->cc_op = CC_OP_LOGIC;
                         }
@@ -3610,7 +3610,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                         CHECK_IU_FEATURE(dc, MUL);
                         gen_op_umul(dc, cpu_dst, cpu_src1, cpu_src2);
                         if (xop & 0x10) {
-                            tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, cpu_dst);
+                            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, cpu_dst);
                             tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_LOGIC);
                             dc->cc_op = CC_OP_LOGIC;
                         }
@@ -3619,7 +3619,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                         CHECK_IU_FEATURE(dc, MUL);
                         gen_op_smul(dc, cpu_dst, cpu_src1, cpu_src2);
                         if (xop & 0x10) {
-                            tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_dst, cpu_dst);
+                            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, cpu_dst);
                             tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_cc_op, CC_OP_LOGIC);
                             dc->cc_op = CC_OP_LOGIC;
                         }
@@ -5573,17 +5573,14 @@ void gen_intermediate_code_init(CPUSPARCState *env)
     tcg_ctx->cpu_cond = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cond),
             "cond");
 
-    tcg_ctx->cpu_cc_src = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_cc_src) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cc_src),
+    tcg_ctx->cpu_cc_src = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cc_src),
             "cc_src");
 
-    tcg_ctx->cpu_cc_src2 = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_cc_src2) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+    tcg_ctx->cpu_cc_src2 = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, cc_src2),
             "cc_src2");
 
-    tcg_ctx->cpu_cc_dst = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_cc_dst = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cc_dst),
+    tcg_ctx->cpu_cc_dst = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cc_dst),
             "cc_dst");
 
     tcg_ctx->cpu_cc_op = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cc_op),
