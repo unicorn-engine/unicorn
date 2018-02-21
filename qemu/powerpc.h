@@ -681,6 +681,7 @@
 #define gen_helper_clz_arm gen_helper_clz_arm_powerpc
 #define gen_helper_cpsr_read gen_helper_cpsr_read_powerpc
 #define gen_helper_cpsr_write gen_helper_cpsr_write_powerpc
+#define gen_helper_cpsr_write_eret gen_helper_cpsr_write_eret_powerpc
 #define gen_helper_crc32_arm gen_helper_crc32_arm_powerpc
 #define gen_helper_crc32c gen_helper_crc32c_powerpc
 #define gen_helper_crypto_aese gen_helper_crypto_aese_powerpc
@@ -1400,6 +1401,7 @@
 #define helper_clz_arm helper_clz_arm_powerpc
 #define helper_cpsr_read helper_cpsr_read_powerpc
 #define helper_cpsr_write helper_cpsr_write_powerpc
+#define helper_cpsr_write_eret helper_cpsr_write_eret_powerpc
 #define helper_crc32_arm helper_crc32_arm_powerpc
 #define helper_crc32c helper_crc32c_powerpc
 #define helper_crypto_aese helper_crypto_aese_powerpc

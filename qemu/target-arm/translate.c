@@ -4203,7 +4203,7 @@ static void gen_exception_return(DisasContext *s, TCGv_i32 pc)
     TCGv_i32 tmp;
     store_reg(s, 15, pc);
     tmp = load_cpu_field(s->uc, spsr);
-    gen_set_cpsr(s, tmp, CPSR_ERET_MASK);
+    gen_helper_cpsr_write_eret(tcg_ctx, tcg_ctx->cpu_env, tmp);
     tcg_temp_free_i32(tcg_ctx, tmp);
     s->is_jmp = DISAS_JUMP;
 }
@@ -4212,7 +4212,7 @@ static void gen_exception_return(DisasContext *s, TCGv_i32 pc)
 static void gen_rfe(DisasContext *s, TCGv_i32 pc, TCGv_i32 cpsr)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    gen_set_cpsr(s, cpsr, CPSR_ERET_MASK);
+    gen_helper_cpsr_write_eret(tcg_ctx, tcg_ctx->cpu_env, cpsr);
     tcg_temp_free_i32(tcg_ctx, cpsr);
     store_reg(s, 15, pc);
     s->is_jmp = DISAS_JUMP;
@@ -9233,7 +9233,7 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
                 if (exc_return) {
                     /* Restore CPSR from SPSR.  */
                     tmp = load_cpu_field(s->uc, spsr);
-                    gen_set_cpsr(s, tmp, CPSR_ERET_MASK);
+                    gen_helper_cpsr_write_eret(tcg_ctx, tcg_ctx->cpu_env, tmp);
                     tcg_temp_free_i32(tcg_ctx, tmp);
                     s->is_jmp = DISAS_JUMP;
                 }
