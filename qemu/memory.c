@@ -1566,23 +1566,16 @@ static FlatRange *flatview_lookup(FlatView *view, AddrRange addr)
                    sizeof(FlatRange), cmp_flatrange_addr);
 }
 
-bool memory_region_present(MemoryRegion *container, hwaddr addr)
-{
-    MemoryRegion *mr = memory_region_find(container, addr, 1).mr;
-    if (!mr || (mr == container)) {
-        return false;
-    }
-    memory_region_unref(mr);
-    return true;
-}
-
 bool memory_region_is_mapped(MemoryRegion *mr)
 {
     return mr->container ? true : false;
 }
 
-MemoryRegionSection memory_region_find(MemoryRegion *mr,
-                                       hwaddr addr, uint64_t size)
+/* Same as memory_region_find, but it does not add a reference to the
+ * returned region.  It must be called from an RCU critical section.
+ */
+static MemoryRegionSection memory_region_find_rcu(MemoryRegion *mr,
+                                                  hwaddr addr, uint64_t size)
 {
     MemoryRegionSection ret = { NULL };
     MemoryRegion *root;
@@ -1603,10 +1596,10 @@ MemoryRegionSection memory_region_find(MemoryRegion *mr,
     }
     range = addrrange_make(int128_make64(addr), int128_make64(size));
 
-    view = address_space_get_flatview(as);
+    // Unicorn: Uses atomic_read instead of atomic_rcu_read
+    view = atomic_read(&as->current_map);
     fr = flatview_lookup(view, range);
     if (!fr) {
-        flatview_unref(view);
         return ret;
     }
 
@@ -1623,10 +1616,34 @@ MemoryRegionSection memory_region_find(MemoryRegion *mr,
     ret.size = range.size;
     ret.offset_within_address_space = int128_get64(range.start);
     ret.readonly = fr->readonly;
-    memory_region_ref(ret.mr);
-
-    flatview_unref(view);
     return ret;
+}
+
+MemoryRegionSection memory_region_find(MemoryRegion *mr,
+                                       hwaddr addr, uint64_t size)
+{
+    MemoryRegionSection ret;
+    // Unicorn: commented out
+    //rcu_read_lock();
+    ret = memory_region_find_rcu(mr, addr, size);
+    if (ret.mr) {
+        memory_region_ref(ret.mr);
+    }
+    // Unicorn: commented out
+    //rcu_read_unlock();
+    return ret;
+}
+
+bool memory_region_present(MemoryRegion *container, hwaddr addr)
+{
+    MemoryRegion *mr;
+
+    // Unicorn: commented out
+    //rcu_read_lock();
+    mr = memory_region_find_rcu(container, addr, 1).mr;
+    // Unicorn: commented out
+    //rcu_read_unlock();
+    return mr && mr != container;
 }
 
 static void listener_add_address_space(MemoryListener *listener,
