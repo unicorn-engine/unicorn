@@ -7102,7 +7102,7 @@ uint32_t float32_to_uint32(float32 a, float_status *status)
     } else if (v > 0xffffffff) {
         res = 0xffffffff;
     } else {
-        return (uint32_t)v;
+        return v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid, status);
@@ -7121,7 +7121,7 @@ uint32_t float32_to_uint32_round_to_zero(float32 a, float_status *status)
     } else if (v > 0xffffffff) {
         res = 0xffffffff;
     } else {
-        return (uint32_t)v;
+        return v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid, status);
@@ -7180,7 +7180,7 @@ uint16_t float32_to_uint16_round_to_zero(float32 a, float_status *status)
     } else if (v > 0xffff) {
         res = 0xffff;
     } else {
-        return (uint_fast16_t)v;
+        return v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid, status);
@@ -7197,7 +7197,7 @@ uint32_t float64_to_uint32(float64 a, float_status *status)
     if (v > 0xffffffff) {
         res = 0xffffffff;
     } else {
-        return (uint32_t)v;
+        return v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid, status);
@@ -7214,7 +7214,7 @@ uint32_t float64_to_uint32_round_to_zero(float64 a, float_status *status)
     if (v > 0xffffffff) {
         res = 0xffffffff;
     } else {
-        return (uint32_t)v;
+        return v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid, status);
@@ -7233,7 +7233,7 @@ int16_t float64_to_int16(float64 a, float_status *status)
     } else if (v > 0x7fff) {
         res = 0x7fff;
     } else {
-        return (int_fast16_t)v;
+        return v;
     }
 
     set_float_exception_flags(old_exc_flags, status);
@@ -7253,7 +7253,7 @@ uint16_t float64_to_uint16(float64 a, float_status *status)
     } else if (v > 0xffff) {
         res = 0xffff;
     } else {
-        return (uint_fast16_t)v;
+        return v;
     }
 
     set_float_exception_flags(old_exc_flags, status);
@@ -7273,7 +7273,7 @@ uint16_t float64_to_uint16_round_to_zero(float64 a, float_status *status)
     } else if (v > 0xffff) {
         res = 0xffff;
     } else {
-        return (uint_fast16_t)v;
+        return v;
     }
     set_float_exception_flags(old_exc_flags, status);
     float_raise(float_flag_invalid, status);
