@@ -1185,7 +1185,7 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
 
     /* qemu_ram_alloc_from_ptr cannot fail with ptr != NULL.  */
     assert(ptr != NULL);
-    mr->ram_block = qemu_ram_alloc_from_ptr(size, ptr, mr, &error_abort);
+    mr->ram_block = qemu_ram_alloc_from_ptr(size, ptr, mr, &error_fatal);
 }
 
 void memory_region_init_resizeable_ram(struct uc_struct *uc,
