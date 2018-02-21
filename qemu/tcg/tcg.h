@@ -813,7 +813,7 @@ struct TCGContext {
     /* qemu/target-mips/translate.c */
     /* global register indices */
     void *cpu_gpr[32], *cpu_PC;
-    void *cpu_HI[4], *cpu_LO[4];    // MIPS_DSP_ACC = 4 in qemu/target-mips/cpu.h
+    TCGv cpu_HI[4], cpu_LO[4];    // MIPS_DSP_ACC = 4 in qemu/target-mips/cpu.h
     void *cpu_dspctrl, *btarget, *bcond;
     TCGv_i32 hflags;
     TCGv_i32 fpu_fcr31;

@@ -53,11 +53,6 @@ void mips_release(void *ctx)
     g_free(cpu->env.tlb);
     g_free(cpu->env.mvp);
 
-    for (i = 0; i < MIPS_DSP_ACC; i++) {
-        g_free(tcg_ctx->cpu_HI[i]);
-        g_free(tcg_ctx->cpu_LO[i]);
-    }
-
     for (i = 0; i < 32; i++) {
         g_free(tcg_ctx->cpu_gpr[i]);
     }
