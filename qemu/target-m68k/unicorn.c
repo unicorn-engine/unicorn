@@ -24,7 +24,6 @@ void m68k_release(void* ctx)
 
     release_common(ctx);
     g_free(tcg_ctx->tb_ctx.tbs);
-    g_free(tcg_ctx->store_dummy);
 }
 
 void m68k_reg_reset(struct uc_struct *uc)

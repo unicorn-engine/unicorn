@@ -91,10 +91,7 @@ void m68k_tcg_init(struct uc_struct *uc)
     }
 
     tcg_ctx->NULL_QREG = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, -4, "NULL");
-
-    if (!uc->init_tcg)
-        tcg_ctx->store_dummy = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->store_dummy) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, -8, "NULL");
+    tcg_ctx->store_dummy = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, -8, "NULL");
 
     uc->init_tcg = true;
 }
@@ -232,7 +229,7 @@ static TCGv gen_ldst(DisasContext *s, int opsize, TCGv addr, TCGv val,
     if (what == EA_STORE) {
         TCGContext *tcg_ctx = s->uc->tcg_ctx;
         gen_store(s, opsize, addr, val);
-        return *(TCGv *)tcg_ctx->store_dummy;
+        return tcg_ctx->store_dummy;
     } else {
         return gen_load(s, opsize, addr, what == EA_LOADS);
     }
@@ -576,7 +573,7 @@ static TCGv gen_ea(CPUM68KState *env, DisasContext *s, uint16_t insn,
         reg = DREG(insn, 0);
         if (what == EA_STORE) {
             gen_partset_reg(s, opsize, reg, val);
-            return *(TCGv *)tcg_ctx->store_dummy;
+            return tcg_ctx->store_dummy;
         } else {
             return gen_extend(s, reg, opsize, what == EA_LOADS);
         }
@@ -584,7 +581,7 @@ static TCGv gen_ea(CPUM68KState *env, DisasContext *s, uint16_t insn,
         reg = AREG(insn, 0);
         if (what == EA_STORE) {
             tcg_gen_mov_i32(tcg_ctx, reg, val);
-            return *(TCGv *)tcg_ctx->store_dummy;
+            return tcg_ctx->store_dummy;
         } else {
             return gen_extend(s, reg, opsize, what == EA_LOADS);
         }

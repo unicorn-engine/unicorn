@@ -792,7 +792,7 @@ struct TCGContext {
     TCGv NULL_QREG;
     void *opcode_table[65536];
     /* Used to distinguish stores from bad addressing modes.  */
-    void *store_dummy;
+    TCGv store_dummy;
 
     /* qemu/target-arm/translate.c */
     TCGv_i64 cpu_V0, cpu_V1, cpu_M0;
