@@ -747,7 +747,7 @@ struct TCGContext {
     TCGv cpu_T1;
 
     /* qemu/target-i386/translate.c: local register indexes (only used inside old micro ops) */
-    void *cpu_tmp0, *cpu_tmp4;
+    TCGv cpu_tmp0, cpu_tmp4;
     TCGv_ptr cpu_ptr0, cpu_ptr1;
     TCGv_i32 cpu_tmp2_i32, cpu_tmp3_i32;
     TCGv_i64 cpu_tmp1_i64;

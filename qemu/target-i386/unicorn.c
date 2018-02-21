@@ -37,9 +37,6 @@ void x86_release(void *ctx)
     release_common(ctx);
 
     // arch specific
-    g_free(s->cpu_tmp0);
-    g_free(s->cpu_tmp4);
-
     g_free(s->tb_ctx.tbs);
 }
 
