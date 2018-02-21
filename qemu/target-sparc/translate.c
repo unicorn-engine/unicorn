@@ -1886,7 +1886,7 @@ static inline void gen_gsr_fop_DDD(DisasContext *dc, int rd, int rs1, int rs2,
     src2 = gen_load_fpr_D(dc, rs2);
     dst = gen_dest_fpr_D(dc, rd);
 
-    gen(tcg_ctx, dst, *(TCGv *)tcg_ctx->cpu_gsr, src1, src2);
+    gen(tcg_ctx, dst, tcg_ctx->cpu_gsr, src1, src2);
 
     gen_store_fpr_D(dc, rd, dst);
 }
@@ -2572,7 +2572,7 @@ static void gen_alignaddr(DisasContext *dc, TCGv dst, TCGv s1, TCGv s2, bool lef
     if (left) {
         tcg_gen_neg_tl(tcg_ctx, tmp, tmp);
     }
-    tcg_gen_deposit_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_gsr, *(TCGv *)tcg_ctx->cpu_gsr, tmp, 0, 3);
+    tcg_gen_deposit_tl(tcg_ctx, tcg_ctx->cpu_gsr, tcg_ctx->cpu_gsr, tmp, 0, 3);
 
     tcg_temp_free(tcg_ctx, tmp);
 }
@@ -2886,7 +2886,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     if (gen_trap_ifnofpu(dc)) {
                         goto jmp_insn;
                     }
-                    gen_store_gpr(dc, rd, *(TCGv *)tcg_ctx->cpu_gsr);
+                    gen_store_gpr(dc, rd, tcg_ctx->cpu_gsr);
                     break;
                 case 0x16: /* Softint */
                     tcg_gen_ext_i32_tl(tcg_ctx, cpu_dst, tcg_ctx->cpu_softint);
@@ -3783,7 +3783,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 if (gen_trap_ifnofpu(dc)) {
                                     goto jmp_insn;
                                 }
-                                tcg_gen_xor_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_gsr, cpu_src1, cpu_src2);
+                                tcg_gen_xor_tl(tcg_ctx, tcg_ctx->cpu_gsr, cpu_src1, cpu_src2);
                                 break;
                             case 0x14: /* Softint set */
                                 if (!supervisor(dc))
@@ -4294,7 +4294,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     cpu_src1 = gen_load_gpr(dc, rs1);
                     cpu_src2 = gen_load_gpr(dc, rs2);
                     tcg_gen_add_tl(tcg_ctx, cpu_dst, cpu_src1, cpu_src2);
-                    tcg_gen_deposit_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_gsr, *(TCGv *)tcg_ctx->cpu_gsr, cpu_dst, 32, 32);
+                    tcg_gen_deposit_tl(tcg_ctx, tcg_ctx->cpu_gsr, tcg_ctx->cpu_gsr, cpu_dst, 32, 32);
                     gen_store_gpr(dc, rd, cpu_dst);
                     break;
                 case 0x020: /* VIS I fcmple16 */
@@ -4389,14 +4389,14 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     CHECK_FPU_FEATURE(dc, VIS1);
                     cpu_src1_64 = gen_load_fpr_D(dc, rs2);
                     cpu_dst_32 = gen_dest_fpr_F(dc);
-                    gen_helper_fpack16(tcg_ctx, cpu_dst_32, *(TCGv *)tcg_ctx->cpu_gsr, cpu_src1_64);
+                    gen_helper_fpack16(tcg_ctx, cpu_dst_32, tcg_ctx->cpu_gsr, cpu_src1_64);
                     gen_store_fpr_F(dc, rd, cpu_dst_32);
                     break;
                 case 0x03d: /* VIS I fpackfix */
                     CHECK_FPU_FEATURE(dc, VIS1);
                     cpu_src1_64 = gen_load_fpr_D(dc, rs2);
                     cpu_dst_32 = gen_dest_fpr_F(dc);
-                    gen_helper_fpackfix(tcg_ctx, cpu_dst_32, *(TCGv *)tcg_ctx->cpu_gsr, cpu_src1_64);
+                    gen_helper_fpackfix(tcg_ctx, cpu_dst_32, tcg_ctx->cpu_gsr, cpu_src1_64);
                     gen_store_fpr_F(dc, rd, cpu_dst_32);
                     break;
                 case 0x03e: /* VIS I pdist */
@@ -5533,8 +5533,7 @@ void gen_intermediate_code_init(CPUSPARCState *env)
     tcg_ctx->cpu_fprs = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, fprs),
             "fprs");
 
-    tcg_ctx->cpu_gsr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_gsr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, gsr),
+    tcg_ctx->cpu_gsr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, gsr),
             "gsr");
 
     tcg_ctx->cpu_tick_cmpr = g_malloc0(sizeof(TCGv));
