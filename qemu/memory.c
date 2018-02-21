@@ -819,11 +819,6 @@ static void memory_region_destructor_ram(MemoryRegion *mr)
     qemu_ram_free(mr->uc, memory_region_get_ram_addr(mr));
 }
 
-static void memory_region_destructor_alias(MemoryRegion *mr)
-{
-    memory_region_unref(mr->alias);
-}
-
 static bool memory_region_need_escape(char c)
 {
     return c == '/' || c == '[' || c == '\\' || c == ']';
@@ -1226,8 +1221,6 @@ void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
                               uint64_t size)
 {
     memory_region_init(uc, mr, owner, name, size);
-    memory_region_ref(orig);
-    mr->destructor = memory_region_destructor_alias;
     mr->alias = orig;
     mr->alias_offset = offset;
 }
