@@ -1174,6 +1174,7 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
     ram_block = qemu_ram_alloc(size, mr, errp);
+    mr->ram_block = ram_block;
     mr->ram_addr = ram_block->offset;
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
 }
@@ -1194,6 +1195,7 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
     /* qemu_ram_alloc_from_ptr cannot fail with ptr != NULL.  */
     assert(ptr != NULL);
     ram_block = qemu_ram_alloc_from_ptr(size, ptr, mr, &error_abort);
+    mr->ram_block = ram_block;
     mr->ram_addr = ram_block->offset;
 }
 
@@ -1215,6 +1217,7 @@ void memory_region_init_resizeable_ram(struct uc_struct *uc,
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
     ram_block = qemu_ram_alloc_resizeable(size, max_size, resized, mr, errp);
+    mr->ram_block = ram_block;
     mr->ram_addr = ram_block->offset;
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
 }
