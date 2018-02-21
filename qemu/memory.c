@@ -39,9 +39,10 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
     memory_region_init_ram(uc, ram, NULL, "pc.ram", size, perms, &error_abort);
-    if (ram->ram_addr == -1)
+    if (ram->ram_block == NULL) {
         // out of memory
         return NULL;
+    }
 
     memory_region_add_subregion(get_system_memory(uc), begin, ram);
 
@@ -57,9 +58,10 @@ MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, ui
 
     memory_region_init_ram_ptr(uc, ram, NULL, "pc.ram", size, ptr);
     ram->perms = perms;
-    if (ram->ram_addr == -1)
+    if (ram->ram_block == NULL) {
         // out of memory
         return NULL;
+    }
 
     memory_region_add_subregion(get_system_memory(uc), begin, ram);
 
@@ -814,7 +816,7 @@ static void memory_region_destructor_none(MemoryRegion *mr)
 
 static void memory_region_destructor_ram(MemoryRegion *mr)
 {
-    qemu_ram_free(mr->uc, mr->ram_addr);
+    qemu_ram_free(mr->uc, memory_region_get_ram_addr(mr));
 }
 
 static void memory_region_destructor_alias(MemoryRegion *mr)
@@ -958,7 +960,6 @@ static void memory_region_initfn(struct uc_struct *uc, Object *obj, void *opaque
     ObjectProperty *op;
 
     mr->ops = &unassigned_mem_ops;
-    mr->ram_addr = RAM_ADDR_INVALID;
     mr->enabled = true;
     mr->romd_mode = true;
     mr->global_locking = true;
@@ -1163,8 +1164,6 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
                             uint32_t perms,
                             Error **errp)
 {
-    RAMBlock *ram_block;
-
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
     if (!(perms & UC_PROT_WRITE)) {
@@ -1173,9 +1172,7 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
     mr->perms = perms;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
-    ram_block = qemu_ram_alloc(size, mr, errp);
-    mr->ram_block = ram_block;
-    mr->ram_addr = ram_block->offset;
+    mr->ram_block = qemu_ram_alloc(size, mr, errp);
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
 }
 
@@ -1185,7 +1182,6 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
                                 uint64_t size,
                                 void *ptr)
 {
-    RAMBlock *ram_block;
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
     mr->terminates = true;
@@ -1194,9 +1190,7 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
 
     /* qemu_ram_alloc_from_ptr cannot fail with ptr != NULL.  */
     assert(ptr != NULL);
-    ram_block = qemu_ram_alloc_from_ptr(size, ptr, mr, &error_abort);
-    mr->ram_block = ram_block;
-    mr->ram_addr = ram_block->offset;
+    mr->ram_block = qemu_ram_alloc_from_ptr(size, ptr, mr, &error_abort);
 }
 
 void memory_region_init_resizeable_ram(struct uc_struct *uc,
@@ -1210,15 +1204,12 @@ void memory_region_init_resizeable_ram(struct uc_struct *uc,
                                                        void *host),
                                        Error **errp)
 {
-    RAMBlock *ram_block;
-
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
-    ram_block = qemu_ram_alloc_resizeable(size, max_size, resized, mr, errp);
-    mr->ram_block = ram_block;
-    mr->ram_addr = ram_block->offset;
+    mr->ram_block = qemu_ram_alloc_resizeable(size, max_size, resized,
+                                              mr, errp);
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
 }
 
@@ -1371,9 +1362,9 @@ int memory_region_get_fd(MemoryRegion *mr)
         return memory_region_get_fd(mr->alias);
     }
 
-    assert(mr->ram_addr != RAM_ADDR_INVALID);
+    assert(mr->ram_block);
 
-    return qemu_get_ram_fd(mr->uc, mr->ram_addr & TARGET_PAGE_MASK);
+    return qemu_get_ram_fd(mr->uc, memory_region_get_ram_addr(mr) & TARGET_PAGE_MASK);
 }
 
 void *memory_region_get_ram_ptr(MemoryRegion *mr)
@@ -1388,8 +1379,9 @@ void *memory_region_get_ram_ptr(MemoryRegion *mr)
         mr = mr->alias;
     }
 
-    assert(mr->ram_addr != RAM_ADDR_INVALID);
-    ptr = qemu_get_ram_ptr(mr->uc, mr->ram_block, mr->ram_addr & TARGET_PAGE_MASK);
+    assert(mr->ram_block);
+    ptr = qemu_get_ram_ptr(mr->uc, mr->ram_block,
+                           memory_region_get_ram_addr(mr) & TARGET_PAGE_MASK);
     // Unicorn: commented out
     //rcu_read_unlock();
 
@@ -1404,9 +1396,9 @@ ram_addr_t memory_region_get_ram_addr(MemoryRegion *mr)
 bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,
                                         hwaddr size, unsigned client)
 {
-    assert(mr->ram_addr != RAM_ADDR_INVALID);
-    return cpu_physical_memory_test_and_clear_dirty(mr->uc, mr->ram_addr + addr,
-                                                    size, client);
+    assert(mr->ram_block);
+    return cpu_physical_memory_test_and_clear_dirty(mr->uc,
+                memory_region_get_ram_addr(mr) + addr, size, client);
 }
 
 static void memory_region_update_container_subregions(MemoryRegion *subregion)
