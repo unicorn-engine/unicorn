@@ -67,7 +67,7 @@ struct TypeImpl
 };
 
 struct ObjectPropertyIterator {
-    ObjectProperty *next;
+    GHashTableIter iter;
 };
 
 static GHashTable *type_table_get(struct uc_struct *uc)
@@ -325,6 +325,16 @@ static void object_post_init_with_type(struct uc_struct *uc, Object *obj, TypeIm
     }
 }
 
+static void object_property_free(gpointer data)
+{
+    ObjectProperty *prop = data;
+
+    g_free(prop->name);
+    g_free(prop->type);
+    g_free(prop->description);
+    g_free(prop);
+}
+
 static void object_initialize_with_type(struct uc_struct *uc, void *data, size_t size, TypeImpl *type)
 {
     Object *obj = data;
@@ -339,7 +349,8 @@ static void object_initialize_with_type(struct uc_struct *uc, void *data, size_t
     memset(obj, 0, type->instance_size);
     obj->class = type->class;
     object_ref(obj);
-    QTAILQ_INIT(&obj->properties);
+    obj->properties = g_hash_table_new_full(g_str_hash, g_str_equal,
+                                            NULL, object_property_free);
     object_init_with_type(uc, obj, type);
     object_post_init_with_type(uc, obj, type);
 }
@@ -358,29 +369,51 @@ static inline bool object_property_is_child(ObjectProperty *prop)
 
 static void object_property_del_all(struct uc_struct *uc, Object *obj)
 {
-    while (!QTAILQ_EMPTY(&obj->properties)) {
-        ObjectProperty *prop = QTAILQ_FIRST(&obj->properties);
+    ObjectProperty *prop;
+    GHashTableIter iter;
+    gpointer key, value;
+    bool released;
 
-        QTAILQ_REMOVE(&obj->properties, prop, node);
-
-        if (prop->release) {
-            prop->release(uc, obj, prop->name, prop->opaque);
+    do {
+        released = false;
+        g_hash_table_iter_init(&iter, obj->properties);
+        while (g_hash_table_iter_next(&iter, &key, &value)) {
+            prop = value;
+            if (prop->release) {
+                prop->release(uc, obj, prop->name, prop->opaque);
+                prop->release = NULL;
+                released = true;
+                break;
+            }
+            g_hash_table_iter_remove(&iter);
         }
+    } while (released);
 
-        g_free(prop->name);
-        g_free(prop->type);
-        g_free(prop->description);
-        g_free(prop);
-    }
+    g_hash_table_unref(obj->properties);
 }
 
 void object_property_del_child(struct uc_struct *uc, Object *obj, Object *child, Error **errp)
 {
     ObjectProperty *prop;
+    GHashTableIter iter;
+    gpointer key, value;
 
-    QTAILQ_FOREACH(prop, &obj->properties, node) {
+    g_hash_table_iter_init(&iter, obj->properties);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+        prop = value;
         if (object_property_is_child(prop) && prop->opaque == child) {
-            object_property_del(uc, obj, prop->name, errp);
+            if (prop->release) {
+                prop->release(uc, obj, prop->name, prop->opaque);
+                prop->release = NULL;
+            }
+            break;
+        }
+    }
+    g_hash_table_iter_init(&iter, obj->properties);
+    while (g_hash_table_iter_next(&iter, &key, &value)) {
+        prop = value;
+        if (object_property_is_child(prop) && prop->opaque == child) {
+            g_hash_table_iter_remove(&iter);
             break;
         }
     }
@@ -665,10 +698,12 @@ static int do_object_child_foreach(Object *obj,
                                    int (*fn)(Object *child, void *opaque),
                                    void *opaque, bool recurse)
 {
-    ObjectProperty *prop, *next;
+    GHashTableIter iter;
+    ObjectProperty *prop;
     int ret = 0;
 
-    QTAILQ_FOREACH_SAFE(prop, &obj->properties, node, next) {
+    g_hash_table_iter_init(&iter, obj->properties);
+    while (g_hash_table_iter_next(&iter, NULL, (gpointer *)&prop)) {
         if (object_property_is_child(prop)) {
             Object *child = prop->opaque;
 
@@ -765,13 +800,11 @@ object_property_add(Object *obj, const char *name, const char *type,
         return ret;
     }
 
-    QTAILQ_FOREACH(prop, &obj->properties, node) {
-        if (strcmp(prop->name, name) == 0) {
-            error_setg(errp, "attempt to add duplicate property '%s'"
+    if (g_hash_table_lookup(obj->properties, name) != NULL) {
+        error_setg(errp, "attempt to add duplicate property '%s'"
                        " to object (type '%s')", name,
                        object_get_typename(obj));
-            return NULL;
-        }
+        return NULL;
     }
 
     prop = g_malloc0(sizeof(*prop));
@@ -784,7 +817,7 @@ object_property_add(Object *obj, const char *name, const char *type,
     prop->release = release;
     prop->opaque = opaque;
 
-    QTAILQ_INSERT_TAIL(&obj->properties, prop, node);
+    g_hash_table_insert(obj->properties, prop->name, prop);
     return prop;
 }
 
@@ -793,10 +826,9 @@ ObjectProperty *object_property_find(Object *obj, const char *name,
 {
     ObjectProperty *prop;
 
-    QTAILQ_FOREACH(prop, &obj->properties, node) {
-        if (strcmp(prop->name, name) == 0) {
-            return prop;
-        }
+    prop = g_hash_table_lookup(obj->properties, name);
+    if (prop) {
+        return prop;
     }
 
     error_setg(errp, "Property '.%s' not found", name);
@@ -806,7 +838,7 @@ ObjectProperty *object_property_find(Object *obj, const char *name,
 ObjectPropertyIterator *object_property_iter_init(Object *obj)
 {
     ObjectPropertyIterator *ret = g_new0(ObjectPropertyIterator, 1);
-    ret->next = QTAILQ_FIRST(&obj->properties);
+    g_hash_table_iter_init(&ret->iter, obj->properties);
     return ret;
 }
 
@@ -820,17 +852,19 @@ void object_property_iter_free(ObjectPropertyIterator *iter)
 
 ObjectProperty *object_property_iter_next(ObjectPropertyIterator *iter)
 {
-    ObjectProperty *ret = iter->next;
-    if (ret) {
-        iter->next = QTAILQ_NEXT(iter->next, node);
+    gpointer key, val;
+    if (!g_hash_table_iter_next(&iter->iter, &key, &val)) {
+        return NULL;
     }
-    return ret;
+    return val;
 }
 
 void object_property_del(struct uc_struct *uc, Object *obj, const char *name, Error **errp)
 {
-    ObjectProperty *prop = object_property_find(obj, name, errp);
-    if (prop == NULL) {
+    ObjectProperty *prop = g_hash_table_lookup(obj->properties, name);
+
+    if (!prop) {
+        error_setg(errp, "Property '.%s' not found", name);
         return;
     }
 
@@ -838,12 +872,7 @@ void object_property_del(struct uc_struct *uc, Object *obj, const char *name, Er
         prop->release(uc, obj, name, prop->opaque);
     }
 
-    QTAILQ_REMOVE(&obj->properties, prop, node);
-
-    g_free(prop->name);
-    g_free(prop->type);
-    g_free(prop->description);
-    g_free(prop);
+    g_hash_table_remove(obj->properties, name);
 }
 
 void object_property_get(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
@@ -1248,11 +1277,13 @@ out:
 gchar *object_get_canonical_path_component(Object *obj)
 {
     ObjectProperty *prop = NULL;
+    GHashTableIter iter;
 
     g_assert(obj);
     g_assert(obj->parent != NULL);
 
-    QTAILQ_FOREACH(prop, &obj->parent->properties, node) {
+    g_hash_table_iter_init(&iter, obj->parent->properties);
+    while (g_hash_table_iter_next(&iter, NULL, (gpointer *)&prop)) {
         if (!object_property_is_child(prop)) {
             continue;
         }
@@ -1336,11 +1367,13 @@ static Object *object_resolve_partial_path(struct uc_struct *uc, Object *parent,
                                               bool *ambiguous)
 {
     Object *obj;
+    GHashTableIter iter;
     ObjectProperty *prop;
 
     obj = object_resolve_abs_path(uc, parent, parts, typename, 0);
 
-    QTAILQ_FOREACH(prop, &parent->properties, node) {
+    g_hash_table_iter_init(&iter, parent->properties);
+    while (g_hash_table_iter_next(&iter, NULL, (gpointer *)&prop)) {
         Object *found;
 
         if (!object_property_is_child(prop)) {
