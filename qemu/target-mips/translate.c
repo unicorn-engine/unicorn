@@ -20090,9 +20090,7 @@ void mips_tcg_init(struct uc_struct *uc)
                 tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env, off, msaregnames[i * 2 + 1]);
     }
 
-    if (!uc->init_tcg)
-        tcg_ctx->cpu_PC = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_PC) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+    tcg_ctx->cpu_PC = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                 offsetof(CPUMIPSState, active_tc.PC), "PC");
 
     for (i = 0; i < MIPS_DSP_ACC; i++) {

@@ -57,7 +57,6 @@ void mips_release(void *ctx)
         g_free(tcg_ctx->cpu_gpr[i]);
     }
 
-    g_free(tcg_ctx->cpu_PC);
     g_free(tcg_ctx->tb_ctx.tbs);
 }
 
