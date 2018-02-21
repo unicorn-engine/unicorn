@@ -1324,24 +1324,32 @@ void *qemu_get_ram_block_host_ptr(struct uc_struct *uc, ram_addr_t addr)
    It should not be used for general purpose DMA.
    Use cpu_physical_memory_map/cpu_physical_memory_rw instead.
    */
-void *qemu_get_ram_ptr(struct uc_struct *uc, ram_addr_t addr)
+void *qemu_get_ram_ptr(struct uc_struct *uc, RAMBlock *ram_block,
+                       ram_addr_t addr)
 {
-    RAMBlock *block = qemu_get_ram_block(uc, addr);
+    RAMBlock *block = ram_block;
+
+    if (block == NULL) {
+        block = qemu_get_ram_block(uc, addr);
+    }
 
     return ramblock_ptr(block, addr - block->offset);
 }
 
 /* Return a host pointer to guest's ram. Similar to qemu_get_ram_ptr
  * but takes a size argument */
-static void *qemu_ram_ptr_length(struct uc_struct *uc, ram_addr_t addr, hwaddr *size)
+static void *qemu_ram_ptr_length(struct uc_struct *uc, RAMBlock *ram_block,
+                                 ram_addr_t addr, hwaddr *size)
 {
-    RAMBlock *block;
+    RAMBlock *block = ram_block;
     ram_addr_t offset_inside_block;
     if (*size == 0) {
         return NULL;
     }
 
-    block = qemu_get_ram_block(uc, addr);
+    if (block == NULL) {
+        block = qemu_get_ram_block(uc, addr);
+    }
     offset_inside_block = addr - block->offset;
     *size = MIN(*size, block->max_length - offset_inside_block);
 
@@ -1569,13 +1577,13 @@ static void notdirty_mem_write(struct uc_struct* uc, void *opaque, hwaddr ram_ad
     }
     switch (size) {
     case 1:
-        stb_p(qemu_get_ram_ptr(uc, ram_addr), val);
+        stb_p(qemu_get_ram_ptr(uc, NULL, ram_addr), val);
         break;
     case 2:
-        stw_p(qemu_get_ram_ptr(uc, ram_addr), val);
+        stw_p(qemu_get_ram_ptr(uc, NULL, ram_addr), val);
         break;
     case 4:
-        stl_p(qemu_get_ram_ptr(uc, ram_addr), val);
+        stl_p(qemu_get_ram_ptr(uc, NULL, ram_addr), val);
         break;
     default:
         abort();
@@ -1924,7 +1932,7 @@ static MemTxResult address_space_write_continue(AddressSpace *as, hwaddr addr,
         } else {
             addr1 += memory_region_get_ram_addr(mr);
             /* RAM case */
-            ptr = qemu_get_ram_ptr(mr->uc, addr1);
+            ptr = qemu_get_ram_ptr(mr->uc, mr->ram_block, addr1);
             memcpy(ptr, buf, l);
             invalidate_and_set_dirty(mr, addr1, l);
         }
@@ -2021,7 +2029,7 @@ MemTxResult address_space_read_continue(AddressSpace *as, hwaddr addr,
             }
         } else {
             /* RAM case */
-            ptr = qemu_get_ram_ptr(mr->uc, mr->ram_addr + addr1);
+            ptr = qemu_get_ram_ptr(mr->uc, mr->ram_block, mr->ram_addr + addr1);
             memcpy(buf, ptr, l);
         }
 
@@ -2107,7 +2115,7 @@ static inline void cpu_physical_memory_write_rom_internal(AddressSpace *as,
         } else {
             addr1 += memory_region_get_ram_addr(mr);
             /* ROM/RAM case */
-            ptr = qemu_get_ram_ptr(as->uc, addr1);
+            ptr = qemu_get_ram_ptr(mr->uc, mr->ram_block, addr1);
             switch (type) {
                 case WRITE_DATA:
                     memcpy(ptr, buf, l);
@@ -2235,7 +2243,7 @@ void *address_space_map(AddressSpace *as,
 
     memory_region_ref(mr);
     *plen = done;
-    return qemu_ram_ptr_length(as->uc, raddr + base, plen);
+    return qemu_ram_ptr_length(as->uc, mr->ram_block, raddr + base, plen);
 }
 
 /* Unmaps a memory region previously mapped by address_space_map().
@@ -2308,9 +2316,10 @@ static inline uint32_t address_space_ldl_internal(AddressSpace *as, hwaddr addr,
 #endif
     } else {
         /* RAM case */
-        ptr = qemu_get_ram_ptr(as->uc, (memory_region_get_ram_addr(mr)
-                    & TARGET_PAGE_MASK)
-                + addr1);
+        ptr = qemu_get_ram_ptr(as->uc, mr->ram_block,
+                               (memory_region_get_ram_addr(mr)
+                               & TARGET_PAGE_MASK)
+                               + addr1);
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
             val = ldl_le_p(ptr);
@@ -2395,9 +2404,10 @@ static inline uint64_t address_space_ldq_internal(AddressSpace *as, hwaddr addr,
 #endif
     } else {
         /* RAM case */
-        ptr = qemu_get_ram_ptr(as->uc, (memory_region_get_ram_addr(mr)
-                    & TARGET_PAGE_MASK)
-                + addr1);
+        ptr = qemu_get_ram_ptr(as->uc, mr->ram_block,
+                               (memory_region_get_ram_addr(mr)
+                               & TARGET_PAGE_MASK)
+                               + addr1);
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
             val = ldq_le_p(ptr);
@@ -2502,9 +2512,10 @@ static inline uint32_t address_space_lduw_internal(AddressSpace *as,
 #endif
     } else {
         /* RAM case */
-        ptr = qemu_get_ram_ptr(as->uc, (memory_region_get_ram_addr(mr)
-                    & TARGET_PAGE_MASK)
-                + addr1);
+        ptr = qemu_get_ram_ptr(as->uc, mr->ram_block,
+                               (memory_region_get_ram_addr(mr)
+                               & TARGET_PAGE_MASK)
+                               + addr1);
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
             val = lduw_le_p(ptr);
@@ -2578,7 +2589,7 @@ void address_space_stl_notdirty(AddressSpace *as, hwaddr addr, uint32_t val,
         r = memory_region_dispatch_write(mr, addr1, val, 4, attrs);
     } else {
         addr1 += memory_region_get_ram_addr(mr) & TARGET_PAGE_MASK;
-        ptr = qemu_get_ram_ptr(as->uc, addr1);
+        ptr = qemu_get_ram_ptr(as->uc, mr->ram_block, addr1);
         stl_p(ptr, val);
         r = MEMTX_OK;
     }
@@ -2621,7 +2632,7 @@ static inline void address_space_stl_internal(AddressSpace *as,
     } else {
         /* RAM case */
         addr1 += memory_region_get_ram_addr(mr) & TARGET_PAGE_MASK;
-        ptr = qemu_get_ram_ptr(as->uc, addr1);
+        ptr = qemu_get_ram_ptr(as->uc, mr->ram_block, addr1);
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
             stl_le_p(ptr, val);
@@ -2723,7 +2734,7 @@ static inline void address_space_stw_internal(AddressSpace *as,
     } else {
         /* RAM case */
         addr1 += memory_region_get_ram_addr(mr) & TARGET_PAGE_MASK;
-        ptr = qemu_get_ram_ptr(as->uc, addr1);
+        ptr = qemu_get_ram_ptr(as->uc, mr->ram_block, addr1);
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
             stw_le_p(ptr, val);

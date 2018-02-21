@@ -1373,7 +1373,7 @@ void *memory_region_get_ram_ptr(MemoryRegion *mr)
 
     assert(mr->terminates);
 
-    return qemu_get_ram_ptr(mr->uc, mr->ram_addr & TARGET_PAGE_MASK);
+    return qemu_get_ram_ptr(mr->uc, mr->ram_block, mr->ram_addr & TARGET_PAGE_MASK);
 }
 
 bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,
