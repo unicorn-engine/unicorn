@@ -834,7 +834,7 @@ struct TCGContext {
 
     TCGv cpu_fsr;
     TCGv sparc_cpu_pc;
-    void *cpu_npc;
+    TCGv cpu_npc;
     void *cpu_regs_sparc[32];
     TCGv cpu_y;
     TCGv cpu_tbr;
