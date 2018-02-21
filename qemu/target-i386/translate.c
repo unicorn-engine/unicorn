@@ -451,7 +451,7 @@ static inline void gen_op_mov_v_reg(TCGContext *s, TCGMemOp ot, TCGv t0, int reg
 static void gen_add_A0_im(DisasContext *s, int val)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
 
     tcg_gen_addi_tl(tcg_ctx, cpu_A0, cpu_A0, val);
     if (!CODE64(s)) {
@@ -476,7 +476,7 @@ static inline void gen_op_add_reg_im(TCGContext *s, TCGMemOp size, int reg, int3
 static inline void gen_op_add_reg_T0(TCGContext *s, TCGMemOp size, int reg)
 {
     TCGv cpu_tmp0 = *(TCGv *)s->cpu_tmp0;
-    TCGv cpu_T0 = *(TCGv *)s->cpu_T0;
+    TCGv cpu_T0 = s->cpu_T0;
     TCGv *cpu_regs = s->cpu_regs;
 
     tcg_gen_add_tl(s, cpu_tmp0, cpu_regs[reg], cpu_T0);
@@ -500,8 +500,8 @@ static inline void gen_op_st_v(DisasContext *s, int idx, TCGv t0, TCGv a0)
 static inline void gen_op_st_rm_T0_A0(DisasContext *s, int idx, int d)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
 
     if (d == OR_TMP0) {
         gen_op_st_v(s, idx, cpu_T0, cpu_A0);
@@ -526,7 +526,7 @@ static void gen_lea_v_seg(DisasContext *s, TCGMemOp aflag, TCGv a0,
                           int def_seg, int ovr_seg)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
 
     switch (aflag) {
 #ifdef TARGET_X86_64
@@ -598,7 +598,7 @@ static inline void gen_string_movl_A0_EDI(DisasContext *s)
 
 static inline void gen_op_movl_T0_Dshift(TCGContext *s, TCGMemOp ot)
 {
-    TCGv cpu_T0 = *(TCGv *)s->cpu_T0;
+    TCGv cpu_T0 = s->cpu_T0;
 
     tcg_gen_ld32s_tl(s, cpu_T0, s->cpu_env, offsetof(CPUX86State, df));
     tcg_gen_shli_tl(s, cpu_T0, cpu_T0, ot);
@@ -705,7 +705,7 @@ static void gen_check_io(DisasContext *s, TCGMemOp ot, target_ulong cur_eip,
     target_ulong next_eip;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
 
     // Unicorn: allow all I/O instructions
     return;
@@ -741,8 +741,8 @@ static void gen_check_io(DisasContext *s, TCGMemOp ot, target_ulong cur_eip,
 static inline void gen_movs(DisasContext *s, TCGMemOp ot)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
 
     gen_string_movl_A0_ESI(s);
     gen_op_ld_v(s, ot, cpu_T0, cpu_A0);
@@ -756,7 +756,7 @@ static inline void gen_movs(DisasContext *s, TCGMemOp ot)
 static void gen_op_update1_cc(TCGContext *s)
 {
     TCGv cpu_cc_dst = *(TCGv *)s->cpu_cc_dst;
-    TCGv cpu_T0 = *(TCGv *)s->cpu_T0;
+    TCGv cpu_T0 = s->cpu_T0;
 
     tcg_gen_mov_tl(s, cpu_cc_dst, cpu_T0);
 }
@@ -765,8 +765,8 @@ static void gen_op_update2_cc(TCGContext *s)
 {
     TCGv cpu_cc_dst = *(TCGv *)s->cpu_cc_dst;
     TCGv cpu_cc_src = *(TCGv *)s->cpu_cc_src;
-    TCGv cpu_T0 = *(TCGv *)s->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)s->cpu_T1;
+    TCGv cpu_T0 = s->cpu_T0;
+    TCGv cpu_T1 = s->cpu_T1;
 
     tcg_gen_mov_tl(s, cpu_cc_src, cpu_T1);
     tcg_gen_mov_tl(s, cpu_cc_dst, cpu_T0);
@@ -777,8 +777,8 @@ static void gen_op_update3_cc(TCGContext *s, TCGv reg)
     TCGv cpu_cc_dst = *(TCGv *)s->cpu_cc_dst;
     TCGv cpu_cc_src = *(TCGv *)s->cpu_cc_src;
     TCGv cpu_cc_src2 = *(TCGv *)s->cpu_cc_src2;
-    TCGv cpu_T0 = *(TCGv *)s->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)s->cpu_T1;
+    TCGv cpu_T0 = s->cpu_T0;
+    TCGv cpu_T1 = s->cpu_T1;
 
     tcg_gen_mov_tl(s, cpu_cc_src2, reg);
     tcg_gen_mov_tl(s, cpu_cc_src, cpu_T1);
@@ -788,8 +788,8 @@ static void gen_op_update3_cc(TCGContext *s, TCGv reg)
 static inline void gen_op_testl_T0_T1_cc(TCGContext *s)
 {
     TCGv cpu_cc_dst = *(TCGv *)s->cpu_cc_dst;
-    TCGv cpu_T0 = *(TCGv *)s->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)s->cpu_T1;
+    TCGv cpu_T0 = s->cpu_T0;
+    TCGv cpu_T1 = s->cpu_T1;
 
     tcg_gen_and_tl(s, cpu_cc_dst, cpu_T0, cpu_T1);
 }
@@ -799,7 +799,7 @@ static void gen_op_update_neg_cc(TCGContext *s)
     TCGv cpu_cc_dst = *(TCGv *)s->cpu_cc_dst;
     TCGv cpu_cc_src = *(TCGv *)s->cpu_cc_src;
     TCGv cpu_cc_srcT = *(TCGv *)s->cpu_cc_srcT;
-    TCGv cpu_T0 = *(TCGv *)s->cpu_T0;
+    TCGv cpu_T0 = s->cpu_T0;
 
     tcg_gen_mov_tl(s, cpu_cc_dst, cpu_T0);
     tcg_gen_neg_tl(s, cpu_cc_src, cpu_T0);
@@ -1170,7 +1170,7 @@ static inline void gen_compute_eflags_c(DisasContext *s, TCGv reg)
 static inline void gen_jcc1_noeob(DisasContext *s, int b, TCGLabel *l1)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
     CCPrepare cc = gen_prepare_cc(s, b, cpu_T0);
 
     if (cc.mask != -1) {
@@ -1190,7 +1190,7 @@ static inline void gen_jcc1_noeob(DisasContext *s, int b, TCGLabel *l1)
 static inline void gen_jcc1(DisasContext *s, int b, TCGLabel *l1)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
     CCPrepare cc = gen_prepare_cc(s, b, cpu_T0);
 
     gen_update_cc_op(s);
@@ -1224,8 +1224,8 @@ static TCGLabel *gen_jz_ecx_string(DisasContext *s, target_ulong next_eip)
 static inline void gen_stos(DisasContext *s, TCGMemOp ot)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
 
     gen_op_mov_v_reg(tcg_ctx, MO_32, cpu_T0, R_EAX);
     gen_string_movl_A0_EDI(s);
@@ -1237,8 +1237,8 @@ static inline void gen_stos(DisasContext *s, TCGMemOp ot)
 static inline void gen_lods(DisasContext *s, TCGMemOp ot)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
 
     gen_string_movl_A0_ESI(s);
     gen_op_ld_v(s, ot, cpu_T0, cpu_A0);
@@ -1250,8 +1250,8 @@ static inline void gen_lods(DisasContext *s, TCGMemOp ot)
 static inline void gen_scas(DisasContext *s, TCGMemOp ot)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
 
     gen_string_movl_A0_EDI(s);
     gen_op_ld_v(s, ot, cpu_T1, cpu_A0);
@@ -1263,8 +1263,8 @@ static inline void gen_scas(DisasContext *s, TCGMemOp ot)
 static inline void gen_cmps(DisasContext *s, TCGMemOp ot)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
 
     gen_string_movl_A0_EDI(s);
     gen_op_ld_v(s, ot, cpu_T1, cpu_A0);
@@ -1293,8 +1293,8 @@ static inline void gen_ins(DisasContext *s, TCGMemOp ot)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
     gen_string_movl_A0_EDI(s);
@@ -1316,8 +1316,8 @@ static inline void gen_outs(DisasContext *s, TCGMemOp ot)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
     TCGv_i32 cpu_tmp3_i32 = tcg_ctx->cpu_tmp3_i32;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
     gen_string_movl_A0_ESI(s);
@@ -1437,13 +1437,13 @@ static void gen_helper_fp_arith_STN_ST0(TCGContext *s, int op, int opreg)
 static void gen_op(DisasContext *s, int op, TCGMemOp ot, int d)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_cc_dst = *(TCGv *)tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src = *(TCGv *)tcg_ctx->cpu_cc_src;
     TCGv cpu_cc_srcT = *(TCGv *)tcg_ctx->cpu_cc_srcT;
     TCGv cpu_tmp4 = *(TCGv *)tcg_ctx->cpu_tmp4;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
 
     if (d != OR_TMP0) {
         gen_op_mov_v_reg(tcg_ctx, ot, cpu_T0, d);
@@ -1512,10 +1512,10 @@ static void gen_op(DisasContext *s, int op, TCGMemOp ot, int d)
 static void gen_inc(DisasContext *s, TCGMemOp ot, int d, int c)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_cc_dst = *(TCGv *)tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src = *(TCGv *)tcg_ctx->cpu_cc_src;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
 
     if (d != OR_TMP0) {
         gen_op_mov_v_reg(tcg_ctx, ot, cpu_T0, d);
@@ -1590,10 +1590,10 @@ static void gen_shift_rm_T1(DisasContext *s, TCGMemOp ot, int op1,
 {
     target_ulong mask = (ot == MO_64 ? 0x3f : 0x1f);
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
 
     /* load */
     if (op1 == OR_TMP0) {
@@ -1631,11 +1631,11 @@ static void gen_shift_rm_im(DisasContext *s, TCGMemOp ot, int op1, int op2,
 {
     int mask = (ot == MO_64 ? 0x3f : 0x1f);
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_cc_dst = *(TCGv *)tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src = *(TCGv *)tcg_ctx->cpu_cc_src;
     TCGv cpu_tmp4 = *(TCGv *)tcg_ctx->cpu_tmp4;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
 
     /* load */
     if (op1 == OR_TMP0)
@@ -1680,11 +1680,11 @@ static void gen_rot_rm_T1(DisasContext *s, TCGMemOp ot, int op1, int is_right)
     TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
     TCGv_i32 cpu_tmp3_i32 = tcg_ctx->cpu_tmp3_i32;
     TCGv_i32 cpu_cc_op = tcg_ctx->cpu_cc_op;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_cc_dst = *(TCGv *)tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src2 = *(TCGv *)tcg_ctx->cpu_cc_src2;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
 
     /* load */
     if (op1 == OR_TMP0) {
@@ -1772,11 +1772,11 @@ static void gen_rot_rm_im(DisasContext *s, TCGMemOp ot, int op1, int op2,
     int mask = (ot == MO_64 ? 0x3f : 0x1f);
     int shift;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_cc_dst = *(TCGv *)tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src2 = *(TCGv *)tcg_ctx->cpu_cc_src2;
     TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
 
 #ifdef TARGET_X86_64
     TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
@@ -1858,9 +1858,9 @@ static void gen_rotc_rm_T1(DisasContext *s, TCGMemOp ot, int op1,
                            int is_right)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
 
     gen_compute_eflags(s);
     assert(s->cc_op == CC_OP_EFLAGS);
@@ -1921,11 +1921,11 @@ static void gen_shiftd_rm_T1(DisasContext *s, TCGMemOp ot, int op1,
     target_ulong mask = (ot == MO_64 ? 63 : 31);
     TCGv count;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
     TCGv cpu_tmp4 = *(TCGv *)tcg_ctx->cpu_tmp4;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
 
     /* load */
     if (op1 == OR_TMP0) {
@@ -2005,7 +2005,7 @@ static void gen_shiftd_rm_T1(DisasContext *s, TCGMemOp ot, int op1,
 static void gen_shift(DisasContext *s1, int op, TCGMemOp ot, int d, int s)
 {
     TCGContext *tcg_ctx = s1->uc->tcg_ctx;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
 
     if (s != OR_TMP1)
         gen_op_mov_v_reg(tcg_ctx, ot, cpu_T1, s);
@@ -2038,7 +2038,7 @@ static void gen_shift(DisasContext *s1, int op, TCGMemOp ot, int d, int s)
 static void gen_shifti(DisasContext *s, int op, TCGMemOp ot, int d, int c)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
 
     switch(op) {
     case OP_ROL:
@@ -2214,7 +2214,7 @@ static AddressParts gen_lea_modrm_0(CPUX86State *env, DisasContext *s,
 static TCGv gen_lea_modrm_1(DisasContext *s, AddressParts a)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
     TCGv ea;
     TCGV_UNUSED(ea);
@@ -2279,7 +2279,7 @@ static void gen_bndck(CPUX86State *env, DisasContext *s, int modrm,
 static void gen_add_A0_ds_seg(DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
 
     gen_lea_v_seg(s, s->aflag, cpu_A0, R_DS, s->override);
 }
@@ -2291,8 +2291,8 @@ static void gen_ldst_modrm(CPUX86State *env, DisasContext *s, int modrm,
 {
     int mod, rm;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
 
 
     mod = (modrm >> 6) & 3;
@@ -2413,8 +2413,8 @@ static void gen_cmovcc1(CPUX86State *env, DisasContext *s, TCGMemOp ot, int b,
 {
     CCPrepare cc;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
     gen_ldst_modrm(env, s, modrm, ot, OR_TMP0, 0);
@@ -2443,7 +2443,7 @@ static void gen_cmovcc1(CPUX86State *env, DisasContext *s, TCGMemOp ot, int b,
 
 static inline void gen_op_movl_T0_seg(TCGContext *s, int seg_reg)
 {
-    TCGv cpu_T0 = *(TCGv *)s->cpu_T0;
+    TCGv cpu_T0 = s->cpu_T0;
 
     tcg_gen_ld32u_tl(s, cpu_T0, s->cpu_env,
                      offsetof(CPUX86State,segs[seg_reg].selector));
@@ -2451,7 +2451,7 @@ static inline void gen_op_movl_T0_seg(TCGContext *s, int seg_reg)
 
 static inline void gen_op_movl_seg_T0_vm(TCGContext *s, int seg_reg)
 {
-    TCGv cpu_T0 = *(TCGv *)s->cpu_T0;
+    TCGv cpu_T0 = s->cpu_T0;
     TCGv *cpu_seg_base = s->cpu_seg_base;
 
     tcg_gen_ext16u_tl(s, cpu_T0, cpu_T0);
@@ -2466,7 +2466,7 @@ static void gen_movl_seg_T0(DisasContext *s, int seg_reg)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
 
     if (s->pe && !s->vm86) {
         tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp2_i32, cpu_T0);
@@ -2524,7 +2524,7 @@ static void gen_push_v(DisasContext *s, TCGv val)
     TCGMemOp a_ot = mo_stacksize(s);
     int size = 1 << d_ot;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_tmp4 = *(TCGv *)tcg_ctx->cpu_tmp4;
     TCGv new_esp = cpu_A0;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
@@ -2548,8 +2548,8 @@ static TCGMemOp gen_pop_T0(DisasContext *s)
 {
     TCGMemOp d_ot = mo_pushpop(s, s->dflag);
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
     gen_lea_v_seg(s, mo_stacksize(s), cpu_regs[R_ESP], R_SS, -1);
@@ -2578,7 +2578,7 @@ static void gen_pusha(DisasContext *s)
     int size = 1 << d_ot;
     int i;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
     for (i = 0; i < 8; i++) {
@@ -2597,8 +2597,8 @@ static void gen_popa(DisasContext *s)
     int size = 1 << d_ot;
     int i;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
     for (i = 0; i < 8; i++) {
@@ -2621,9 +2621,9 @@ static void gen_enter(DisasContext *s, int esp_addend, int level)
     TCGMemOp a_ot = CODE64(s) ? MO_64 : s->ss32 ? MO_32 : MO_16;
     int size = 1 << d_ot;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
     /* Push BP; compute FrameTemp into T1.  */
@@ -2665,9 +2665,9 @@ static void gen_leave(DisasContext *s)
     TCGMemOp d_ot = mo_pushpop(s, s->dflag);
     TCGMemOp a_ot = mo_stacksize(s);
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
     gen_lea_v_seg(s, a_ot, cpu_regs[R_EBP], R_SS, -1);
@@ -2805,7 +2805,7 @@ static inline void gen_ldq_env_A0(DisasContext *s, int offset)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i64 cpu_tmp1_i64 = tcg_ctx->cpu_tmp1_i64;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
 
     tcg_gen_qemu_ld_i64(s->uc, cpu_tmp1_i64, cpu_A0, s->mem_index, MO_LEQ);
     tcg_gen_st_i64(tcg_ctx, cpu_tmp1_i64, tcg_ctx->cpu_env, offset);
@@ -2815,7 +2815,7 @@ static inline void gen_stq_env_A0(DisasContext *s, int offset)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i64 cpu_tmp1_i64 = tcg_ctx->cpu_tmp1_i64;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
 
     tcg_gen_ld_i64(tcg_ctx, cpu_tmp1_i64, tcg_ctx->cpu_env, offset);
     tcg_gen_qemu_st_i64(s->uc, cpu_tmp1_i64, cpu_A0, s->mem_index, MO_LEQ);
@@ -2826,7 +2826,7 @@ static inline void gen_ldo_env_A0(DisasContext *s, int offset)
     int mem_index = s->mem_index;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i64 cpu_tmp1_i64 = tcg_ctx->cpu_tmp1_i64;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
 
     tcg_gen_qemu_ld_i64(s->uc, cpu_tmp1_i64, cpu_A0, mem_index, MO_LEQ);
@@ -2841,7 +2841,7 @@ static inline void gen_sto_env_A0(DisasContext *s, int offset)
     int mem_index = s->mem_index;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i64 cpu_tmp1_i64 = tcg_ctx->cpu_tmp1_i64;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
 
     tcg_gen_ld_i64(tcg_ctx, cpu_tmp1_i64, tcg_ctx->cpu_env, offset + offsetof(ZMMReg, ZMM_Q(0)));
@@ -3420,13 +3420,13 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
     TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
     TCGv_i32 cpu_tmp3_i32 = tcg_ctx->cpu_tmp3_i32;
     TCGv_i64 cpu_tmp1_i64 = tcg_ctx->cpu_tmp1_i64;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_cc_dst = *(TCGv *)tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src = *(TCGv *)tcg_ctx->cpu_cc_src;
     TCGv cpu_cc_src2 = *(TCGv *)tcg_ctx->cpu_cc_src2;
     TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
     b &= 0xff;
@@ -4847,7 +4847,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
 // Unicorn: sync EFLAGS on demand
 static void sync_eflags(DisasContext *s, TCGContext *tcg_ctx)
 {
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
     TCGv_ptr cpu_env = tcg_ctx->cpu_env;
 
     gen_update_cc_op(s);
@@ -4858,7 +4858,7 @@ static void sync_eflags(DisasContext *s, TCGContext *tcg_ctx)
 /*
 static void restore_eflags(DisasContext *s, TCGContext *tcg_ctx)
 {
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
     TCGv_ptr cpu_env = tcg_ctx->cpu_env;
 
     tcg_gen_ld_tl(tcg_ctx, cpu_T0, cpu_env, offsetof(CPUX86State, eflags));
@@ -4890,8 +4890,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     TCGv cpu_cc_srcT = *(TCGv *)tcg_ctx->cpu_cc_srcT;
     TCGv cpu_tmp0 = *(TCGv *)tcg_ctx->cpu_tmp0;
     TCGv cpu_tmp4 = *(TCGv *)tcg_ctx->cpu_tmp4;
-    TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
-    TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
+    TCGv cpu_T0 = tcg_ctx->cpu_T0;
+    TCGv cpu_T1 = tcg_ctx->cpu_T1;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
     TCGv *cpu_seg_base = tcg_ctx->cpu_seg_base;
     TCGArg* save_opparam_ptr = tcg_ctx->gen_opparam_buf + tcg_ctx->gen_op_buf[tcg_ctx->gen_last_op_idx].args;
@@ -8939,13 +8939,8 @@ void gen_intermediate_code(CPUX86State *env, TranslationBlock *tb)
         printf("ERROR addseg\n");
 #endif
 
-    if (!env->uc->init_tcg)
-        tcg_ctx->cpu_T0 = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_T0) = tcg_temp_new(tcg_ctx);
-
-    if (!env->uc->init_tcg)
-        tcg_ctx->cpu_T1 = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_T1) = tcg_temp_new(tcg_ctx);
+    tcg_ctx->cpu_T0 = tcg_temp_new(tcg_ctx);
+    tcg_ctx->cpu_T1 = tcg_temp_new(tcg_ctx);
 
     tcg_ctx->cpu_A0 = tcg_temp_new(tcg_ctx);
 
