@@ -311,6 +311,7 @@ typedef tcg_target_ulong TCGArg;
 typedef struct TCGv_i32_d *TCGv_i32;
 typedef struct TCGv_i64_d *TCGv_i64;
 typedef struct TCGv_ptr_d *TCGv_ptr;
+typedef TCGv_ptr TCGv_env;
 
 static inline TCGv_i32 QEMU_ARTIFICIAL MAKE_TCGV_I32(intptr_t i)
 {
@@ -719,7 +720,7 @@ struct TCGContext {
     // Unicorn engine variables
     struct uc_struct *uc;
     /* qemu/target-i386/translate.c: global register indexes */
-    TCGv_ptr cpu_env;
+    TCGv_env cpu_env;
     TCGv_i32 cpu_cc_op;
     void *cpu_regs[16]; // 16 GRP for X86-64
     void *cpu_seg_base[6]; // Actually an array of TCGv

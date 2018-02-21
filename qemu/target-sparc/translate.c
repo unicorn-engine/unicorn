@@ -2432,7 +2432,7 @@ static void gen_fmovq(DisasContext *dc, DisasCompare *cmp, int rd, int rs)
     gen_update_fprs_dirty(dc, qd);
 }
 
-static inline void gen_load_trap_state_at_tl(DisasContext *dc, TCGv_ptr r_tsptr, TCGv_ptr cpu_env)
+static inline void gen_load_trap_state_at_tl(DisasContext *dc, TCGv_ptr r_tsptr, TCGv_env cpu_env)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv_i32 r_tl = tcg_temp_new_i32(tcg_ctx);
