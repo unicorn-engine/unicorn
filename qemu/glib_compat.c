@@ -1206,6 +1206,108 @@ guint g_hash_table_size(GHashTable *hash_table)
   return hash_table->nnodes;
 }
 
+typedef struct
+{
+  GHashTable  *hash_table;
+  gpointer     dummy1;
+  gpointer     dummy2;
+  int          position;
+  gboolean     dummy3;
+  int          version;
+} RealIter;
+
+#define HASH_IS_UNUSED(h_) ((h_) == UNUSED_HASH_VALUE)
+#define HASH_IS_TOMBSTONE(h_) ((h_) == TOMBSTONE_HASH_VALUE)
+#define HASH_IS_REAL(h_) ((h_) >= 2)
+
+void g_hash_table_iter_init(GHashTableIter *iter, GHashTable *hash_table)
+{
+  RealIter *ri = (RealIter *) iter;
+
+  if (iter == NULL) {
+    return;
+  }
+  if (hash_table == NULL) {
+    return;
+  }
+
+  ri->hash_table = hash_table;
+  ri->position = -1;
+}
+
+gboolean g_hash_table_iter_next(GHashTableIter *iter, gpointer *key, gpointer *value)
+{
+  RealIter *ri = (RealIter *) iter;
+  GHashNode *node;
+  gint position;
+
+  if (iter == NULL)
+  {
+    return FALSE;
+  }
+  if (ri->position >= ri->hash_table->size)
+  {
+    return FALSE;
+  }
+
+  position = ri->position;
+
+  do
+  {
+    position++;
+    if (position >= ri->hash_table->size)
+    {
+      ri->position = position;
+      return FALSE;
+    }
+
+    node = &ri->hash_table->nodes [position];
+  }
+  while (node->key_hash <= 1);
+
+  if (key != NULL)
+    *key = node->key;
+  if (value != NULL)
+    *value = node->value;
+
+  ri->position = position;
+  return TRUE;
+}
+
+GHashTable *g_hash_table_iter_get_hash_table(GHashTableIter *iter)
+{
+  if (iter == NULL) {
+    return NULL;
+  }
+
+  return ((RealIter *) iter)->hash_table;
+}
+
+static void iter_remove_or_steal(RealIter *ri, gboolean notify)
+{
+  if (ri == NULL) {
+    return;
+  }
+  if (ri->position < 0) {
+    return;
+  }
+  if (ri->position >= ri->hash_table->size) {
+    return;
+  }
+
+g_hash_table_remove_node (ri->hash_table, &ri->hash_table->nodes[ri->position], notify);
+}
+
+void g_hash_table_iter_remove(GHashTableIter *iter)
+{
+  iter_remove_or_steal((RealIter *) iter, TRUE);
+}
+
+void g_hash_table_iter_steal(GHashTableIter *iter)
+{
+  iter_remove_or_steal((RealIter *) iter, FALSE);
+}
+
 /* END of g_hash_table related functions */
 
 /* general g_XXX substitutes */
