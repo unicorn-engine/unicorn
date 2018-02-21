@@ -1348,49 +1348,49 @@ static void gen_fcompare(DisasContext *dc, DisasCompare *cmp, unsigned int cc, u
         gen_op_eval_bn(dc, r_dst);
         break;
     case 0x1:
-        gen_op_eval_fbne(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbne(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0x2:
-        gen_op_eval_fblg(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fblg(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0x3:
-        gen_op_eval_fbul(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbul(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0x4:
-        gen_op_eval_fbl(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbl(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0x5:
-        gen_op_eval_fbug(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbug(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0x6:
-        gen_op_eval_fbg(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbg(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0x7:
-        gen_op_eval_fbu(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbu(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0x8:
         gen_op_eval_ba(dc, r_dst);
         break;
     case 0x9:
-        gen_op_eval_fbe(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbe(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0xa:
-        gen_op_eval_fbue(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbue(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0xb:
-        gen_op_eval_fbge(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbge(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0xc:
-        gen_op_eval_fbuge(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbuge(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0xd:
-        gen_op_eval_fble(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fble(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0xe:
-        gen_op_eval_fbule(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbule(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     case 0xf:
-        gen_op_eval_fbo(dc, r_dst, *(TCGv *)tcg_ctx->cpu_fsr, offset);
+        gen_op_eval_fbo(dc, r_dst, tcg_ctx->cpu_fsr, offset);
         break;
     }
 }
@@ -1724,8 +1724,8 @@ static inline void gen_op_fpexception_im(DisasContext *dc, int fsr_flags)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv_i32 r_const;
 
-    tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_fsr, *(TCGv *)tcg_ctx->cpu_fsr, FSR_FTT_NMASK);
-    tcg_gen_ori_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_fsr, *(TCGv *)tcg_ctx->cpu_fsr, fsr_flags);
+    tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_fsr, FSR_FTT_NMASK);
+    tcg_gen_ori_tl(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_fsr, fsr_flags);
     r_const = tcg_const_i32(tcg_ctx, TT_FP_EXCP);
     gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, r_const);
     tcg_temp_free_i32(tcg_ctx, r_const);
@@ -1752,7 +1752,7 @@ static int gen_trap_ifnofpu(DisasContext *dc)
 static inline void gen_op_clear_ieee_excp_and_FTT(DisasContext *dc)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_fsr, *(TCGv *)tcg_ctx->cpu_fsr, FSR_FTT_CEXC_NMASK);
+    tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_fsr, FSR_FTT_CEXC_NMASK);
 }
 
 static inline void gen_fop_FF(DisasContext *dc, int rd, int rs,
@@ -5600,8 +5600,7 @@ void gen_intermediate_code_init(CPUSPARCState *env)
     tcg_ctx->cpu_psr = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, psr),
             "psr");
 
-    tcg_ctx->cpu_fsr = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_fsr) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, fsr),
+    tcg_ctx->cpu_fsr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, fsr),
             "fsr");
 
     tcg_ctx->sparc_cpu_pc = g_malloc0(sizeof(TCGv));
