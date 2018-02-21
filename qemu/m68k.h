@@ -2084,6 +2084,7 @@
 #define memory_region_get_fd memory_region_get_fd_m68k
 #define memory_region_get_may_overlap memory_region_get_may_overlap_m68k
 #define memory_region_get_priority memory_region_get_priority_m68k
+#define memory_region_get_ram_addr memory_region_get_ram_addr_m68k
 #define memory_region_get_ram_ptr memory_region_get_ram_ptr_m68k
 #define memory_region_get_size memory_region_get_size_m68k
 #define memory_region_info memory_region_info_m68k

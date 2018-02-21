@@ -2090,6 +2090,7 @@ symbols = (
     'memory_region_get_fd',
     'memory_region_get_may_overlap',
     'memory_region_get_priority',
+    'memory_region_get_ram_addr',
     'memory_region_get_ram_ptr',
     'memory_region_get_size',
     'memory_region_info',

@@ -1396,6 +1396,11 @@ void *memory_region_get_ram_ptr(MemoryRegion *mr)
     return ptr + offset;
 }
 
+ram_addr_t memory_region_get_ram_addr(MemoryRegion *mr)
+{
+    return mr->ram_block ? mr->ram_block->offset : RAM_ADDR_INVALID;
+}
+
 bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,
                                         hwaddr size, unsigned client)
 {
