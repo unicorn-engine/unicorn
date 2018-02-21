@@ -181,7 +181,7 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
                     ARM_CPU(uc, mycpu)->env.xregs[31] = *(uint64_t *)value;
                     break;
                 case UC_ARM64_REG_NZCV:
-                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *) value, CPSR_NZCV);
+                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *) value, CPSR_NZCV, CPSRWriteRaw);
                     break;
                 case UC_ARM64_REG_PSTATE:
                     pstate_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value);

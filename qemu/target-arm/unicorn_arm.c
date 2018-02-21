@@ -112,10 +112,10 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, i
         else {
             switch(regid) {
                 case UC_ARM_REG_APSR:
-                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, CPSR_NZCV);
+                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, CPSR_NZCV, CPSRWriteRaw);
                     break;
                 case UC_ARM_REG_CPSR:
-                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, ~0);
+                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, ~0, CPSRWriteRaw);
                     break;
                 //case UC_ARM_REG_SP:
                 case UC_ARM_REG_R13:
