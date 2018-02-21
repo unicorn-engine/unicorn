@@ -3205,7 +3205,7 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "CNTHP_CVAL", 15,0,14, 0,6,0, 0, ARM_CP_64BIT | ARM_CP_IO,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_HYP].cval), {0, 0},
       NULL, NULL, gt_hyp_cval_write, NULL, raw_write },
-    { "CNTHP_TVAL_EL2", 0,14,2, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_IO,
+    { "CNTHP_TVAL_EL2", 0,14,2, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_NO_RAW | ARM_CP_IO,
       PL2_RW, 0, NULL, 0, 0, {0, 0},
       NULL, gt_hyp_tval_read, gt_hyp_tval_write, NULL, NULL, gt_hyp_timer_reset },
     { "CNTHP_CTL_EL2", 0,14,2, 3,4,1, ARM_CP_STATE_BOTH, ARM_CP_IO,
