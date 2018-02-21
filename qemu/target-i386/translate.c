@@ -4884,7 +4884,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
     TCGv_i32 cpu_tmp3_i32 = tcg_ctx->cpu_tmp3_i32;
     TCGv_i64 cpu_tmp1_i64 = tcg_ctx->cpu_tmp1_i64;
-    TCGv cpu_A0 = *(TCGv *)tcg_ctx->cpu_A0;
+    TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv cpu_cc_dst = *(TCGv *)tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src = *(TCGv *)tcg_ctx->cpu_cc_src;
     TCGv cpu_cc_srcT = *(TCGv *)tcg_ctx->cpu_cc_srcT;
@@ -8947,9 +8947,7 @@ void gen_intermediate_code(CPUX86State *env, TranslationBlock *tb)
         tcg_ctx->cpu_T1 = g_malloc0(sizeof(TCGv));
     *((TCGv *)tcg_ctx->cpu_T1) = tcg_temp_new(tcg_ctx);
 
-    if (!env->uc->init_tcg)
-        tcg_ctx->cpu_A0 = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_A0) = tcg_temp_new(tcg_ctx);
+    tcg_ctx->cpu_A0 = tcg_temp_new(tcg_ctx);
 
     if (!env->uc->init_tcg)
         tcg_ctx->cpu_tmp0 = g_malloc0(sizeof(TCGv));
