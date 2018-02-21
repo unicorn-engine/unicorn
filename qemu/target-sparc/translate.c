@@ -260,11 +260,11 @@ static inline void gen_address_mask(DisasContext *dc, TCGv addr)
 static inline TCGv gen_load_gpr(DisasContext *dc, int reg)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs_sparc;
+    TCGv *cpu_regs = tcg_ctx->cpu_regs_sparc;
 
     if (reg > 0) {
         assert(reg < 32);
-        return *cpu_regs[reg];
+        return cpu_regs[reg];
     } else {
         TCGv t = get_temp_tl(dc);
         tcg_gen_movi_tl(tcg_ctx, t, 0);
@@ -277,9 +277,9 @@ static inline void gen_store_gpr(DisasContext *dc, int reg, TCGv v)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
     if (reg > 0) {
-        TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs_sparc;
+        TCGv *cpu_regs = tcg_ctx->cpu_regs_sparc;
         assert(reg < 32);
-        tcg_gen_mov_tl(tcg_ctx, *cpu_regs[reg], v);
+        tcg_gen_mov_tl(tcg_ctx, cpu_regs[reg], v);
     }
 }
 
@@ -287,9 +287,9 @@ static inline TCGv gen_dest_gpr(DisasContext *dc, int reg)
 {
     if (reg > 0) {
         TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-        TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs_sparc;
+        TCGv *cpu_regs = tcg_ctx->cpu_regs_sparc;
         assert(reg < 32);
-        return *cpu_regs[reg];
+        return cpu_regs[reg];
     } else {
         return get_temp_tl(dc);
     }
@@ -5605,14 +5605,12 @@ void gen_intermediate_code_init(CPUSPARCState *env)
 
     TCGV_UNUSED(tcg_ctx->cpu_regs[0]);
     for (i = 1; i < 8; ++i) {
-        tcg_ctx->cpu_regs_sparc[i] = g_malloc0(sizeof(TCGv));
         tcg_ctx->cpu_regs_sparc[i] = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                                         offsetof(CPUSPARCState, gregs[i]),
                                                         gregnames[i]);
     }
 
     for (i = 8; i < 32; ++i) {
-        tcg_ctx->cpu_regs_sparc[i] = g_malloc0(sizeof(TCGv));
         tcg_ctx->cpu_regs_sparc[i] = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_regwptr,
                                                        (i - 8) * sizeof(target_ulong),
                                                        gregnames[i]);

@@ -31,18 +31,8 @@ static void sparc_set_pc(struct uc_struct *uc, uint64_t address)
 void sparc_release(void *ctx);
 void sparc_release(void *ctx)
 {
-    int i;
     TCGContext *tcg_ctx = (TCGContext *) ctx;
     release_common(ctx);
-
-    for (i = 0; i < 32; i++) {
-      g_free(tcg_ctx->cpu_regs_sparc[i]);
-    }
-    for (i = 0; i < 32; i++) {
-        g_free(tcg_ctx->cpu_gpr[i]);
-    }
-
-    g_free(tcg_ctx->cpu_PC);
     g_free(tcg_ctx->tb_ctx.tbs);
 }
 
