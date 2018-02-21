@@ -1087,7 +1087,7 @@ int qemu_ram_resize(struct uc_struct *uc, ram_addr_t base, ram_addr_t newsize, E
     return 0;
 }
 
-static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **errp)
+static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **errp)
 {
     RAMBlock *block;
     RAMBlock *last_block = NULL;
@@ -1104,7 +1104,6 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
             error_setg_errno(errp, errno,
                              "cannot set up guest memory '%s'",
                              memory_region_name(new_block->mr));
-            return -1;
         }
         memory_try_enable_merging(new_block->host, new_block->max_length);
     }
@@ -1155,13 +1154,10 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error
         //    kvm_setup_guest_memory(new_block->host, new_block->max_length);
         //}
     }
-
-    return new_block->offset;
 }
 
-// return -1 on error
 static
-ram_addr_t qemu_ram_alloc_internal(ram_addr_t size, ram_addr_t max_size,
+RAMBlock *qemu_ram_alloc_internal(ram_addr_t size, ram_addr_t max_size,
                                    void (*resized)(const char*,
                                                    uint64_t length,
                                                    void *host),
@@ -1169,14 +1165,13 @@ ram_addr_t qemu_ram_alloc_internal(ram_addr_t size, ram_addr_t max_size,
                                    MemoryRegion *mr, Error **errp)
 {
     RAMBlock *new_block;
-    ram_addr_t addr;
     Error *local_err = NULL;
 
     size = TARGET_PAGE_ALIGN(size);
     max_size = TARGET_PAGE_ALIGN(max_size);
     new_block = g_malloc0(sizeof(*new_block));
     if (new_block == NULL) {
-        return -1;
+        return NULL;
     }
     new_block->mr = mr;
     new_block->resized = resized;
@@ -1191,32 +1186,32 @@ ram_addr_t qemu_ram_alloc_internal(ram_addr_t size, ram_addr_t max_size,
     if (resizeable) {
         new_block->flags |= RAM_RESIZEABLE;
     }
-    addr = ram_block_add(mr->uc, new_block, &local_err);
+    ram_block_add(mr->uc, new_block, &local_err);
     if (local_err) {
         g_free(new_block);
         error_propagate(errp, local_err);
-        return -1;
+        return NULL;
     }
     mr->ram_block = new_block;
-    return addr;
+    return new_block;
 }
 
-ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
-                                   MemoryRegion *mr, Error **errp)
+RAMBlock *qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
+                                  MemoryRegion *mr, Error **errp)
 {
     return qemu_ram_alloc_internal(size, size, NULL, host, false, mr, errp);
 }
 
-ram_addr_t qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr, Error **errp)
+RAMBlock *qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr, Error **errp)
 {
     return qemu_ram_alloc_internal(size, size, NULL, NULL, false, mr, errp);
 }
 
-ram_addr_t qemu_ram_alloc_resizeable(ram_addr_t size, ram_addr_t maxsz,
-                                     void (*resized)(const char*,
-                                                     uint64_t length,
-                                                     void *host),
-                                     MemoryRegion *mr, Error **errp)
+RAMBlock *qemu_ram_alloc_resizeable(ram_addr_t size, ram_addr_t maxsz,
+                                    void (*resized)(const char*,
+                                                    uint64_t length,
+                                                    void *host),
+                                    MemoryRegion *mr, Error **errp)
 {
     return qemu_ram_alloc_internal(size, maxsz, resized, NULL, true, mr, errp);
 }

@@ -1163,6 +1163,8 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
                             uint32_t perms,
                             Error **errp)
 {
+    RAMBlock *ram_block;
+
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
     if (!(perms & UC_PROT_WRITE)) {
@@ -1171,7 +1173,8 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
     mr->perms = perms;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
-    mr->ram_addr = qemu_ram_alloc(size, mr, errp);
+    ram_block = qemu_ram_alloc(size, mr, errp);
+    mr->ram_addr = ram_block->offset;
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
 }
 
@@ -1181,6 +1184,7 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
                                 uint64_t size,
                                 void *ptr)
 {
+    RAMBlock *ram_block;
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
     mr->terminates = true;
@@ -1189,7 +1193,8 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
 
     /* qemu_ram_alloc_from_ptr cannot fail with ptr != NULL.  */
     assert(ptr != NULL);
-    mr->ram_addr = qemu_ram_alloc_from_ptr(size, ptr, mr, &error_abort);
+    ram_block = qemu_ram_alloc_from_ptr(size, ptr, mr, &error_abort);
+    mr->ram_addr = ram_block->offset;
 }
 
 void memory_region_init_resizeable_ram(struct uc_struct *uc,
@@ -1203,11 +1208,14 @@ void memory_region_init_resizeable_ram(struct uc_struct *uc,
                                                        void *host),
                                        Error **errp)
 {
+    RAMBlock *ram_block;
+
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
-    mr->ram_addr = qemu_ram_alloc_resizeable(size, max_size, resized, mr, errp);
+    ram_block = qemu_ram_alloc_resizeable(size, max_size, resized, mr, errp);
+    mr->ram_addr = ram_block->offset;
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
 }
 
@@ -1367,13 +1375,22 @@ int memory_region_get_fd(MemoryRegion *mr)
 
 void *memory_region_get_ram_ptr(MemoryRegion *mr)
 {
-    if (mr->alias) {
-        return (char*)memory_region_get_ram_ptr(mr->alias) + mr->alias_offset;
+    void *ptr;
+    uint64_t offset = 0;
+
+    // Unicorn: commented out
+    // rcu_read_lock();
+    while (mr->alias) {
+        offset += mr->alias_offset;
+        mr = mr->alias;
     }
 
-    assert(mr->terminates);
+    assert(mr->ram_addr != RAM_ADDR_INVALID);
+    ptr = qemu_get_ram_ptr(mr->uc, mr->ram_block, mr->ram_addr & TARGET_PAGE_MASK);
+    // Unicorn: commented out
+    //rcu_read_unlock();
 
-    return qemu_get_ram_ptr(mr->uc, mr->ram_block, mr->ram_addr & TARGET_PAGE_MASK);
+    return ptr + offset;
 }
 
 bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,

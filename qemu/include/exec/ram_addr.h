@@ -53,14 +53,14 @@ static inline void *ramblock_ptr(RAMBlock *block, ram_addr_t offset)
     return (char *)block->host + offset;
 }
 
-ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
-                                   MemoryRegion *mr, Error **errp);
-ram_addr_t qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr, Error **errp);
-ram_addr_t qemu_ram_alloc_resizeable(ram_addr_t size, ram_addr_t max_size,
-                                     void (*resized)(const char*,
-                                                     uint64_t length,
-                                                     void *host),
-                                     MemoryRegion *mr, Error **errp);
+RAMBlock *qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
+                                  MemoryRegion *mr, Error **errp);
+RAMBlock *qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr, Error **errp);
+RAMBlock *qemu_ram_alloc_resizeable(ram_addr_t size, ram_addr_t max_size,
+                                    void (*resized)(const char*,
+                                                    uint64_t length,
+                                                    void *host),
+                                    MemoryRegion *mr, Error **errp);
 int qemu_get_ram_fd(struct uc_struct *uc, ram_addr_t addr);
 void *qemu_get_ram_block_host_ptr(struct uc_struct *uc, ram_addr_t addr);
 void qemu_ram_free(struct uc_struct *c, ram_addr_t addr);
