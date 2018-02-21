@@ -779,9 +779,17 @@ struct TCGContext {
     TCGv_i64 cpu_fregs[8];
     TCGv_i64 cpu_macc[4];
     TCGv_i64 QREG_FP_RESULT;
-    void *QREG_PC, *QREG_SR, *QREG_CC_OP, *QREG_CC_DEST, *QREG_CC_SRC;
-    void *QREG_CC_X, *QREG_DIV1, *QREG_DIV2, *QREG_MACSR, *QREG_MAC_MASK;
-    void *NULL_QREG;
+    TCGv QREG_PC;
+    TCGv QREG_SR;
+    TCGv QREG_CC_OP;
+    TCGv QREG_CC_DEST;
+    TCGv QREG_CC_SRC;
+    TCGv QREG_CC_X;
+    TCGv QREG_DIV1;
+    TCGv QREG_DIV2;
+    TCGv QREG_MACSR;
+    TCGv QREG_MAC_MASK;
+    TCGv NULL_QREG;
     void *opcode_table[65536];
     /* Used to distinguish stores from bad addressing modes.  */
     void *store_dummy;
