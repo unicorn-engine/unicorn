@@ -2733,6 +2733,12 @@ static CPAccessResult fpexc32_access(CPUARMState *env, const ARMCPRegInfo *ri,
     return CP_ACCESS_OK;
 }
 
+static void sdcr_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                       uint64_t value)
+{
+    env->cp15.mdcr_el3 = value & SDCR_VALID_MASK;
+}
+
 static const ARMCPRegInfo v8_cp_reginfo[] = {
     /* Minimal set of EL0-visible registers. This will need to be expanded
      * significantly for system emulation of AArch64 CPUs.
@@ -2960,6 +2966,11 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_UND]) },
     { "SPSR_FIQ", 0,4,3, 3,4,3, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_FIQ]) },
+    { "MDCR_EL3", 0,1,3, 3,6,1, ARM_CP_STATE_AA64, 0,
+      PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mdcr_el3) },
+    { "SDCR", 15,1,3, 0,0,1, 0, ARM_CP_ALIAS,
+      PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.mdcr_el3), {0, 0},
+      access_trap_aa32s_el1, NULL, sdcr_write },
     REGINFO_SENTINEL
 };
 
@@ -3213,11 +3224,6 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "SCR", 15,1,1, 0,0,0, 0,ARM_CP_ALIAS,
       PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.scr_el3), {0, 0},
       access_trap_aa32s_el1, NULL, scr_write, NULL, NULL, NULL },
-    { "MDCR_EL3", 0,1,3, 3,6,1, ARM_CP_STATE_AA64, 0,
-      PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mdcr_el3) },
-    { "SDCR", 15,1,3, 0,0,1, 0, ARM_CP_ALIAS,
-      PL1_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.mdcr_el3), {0, 0},
-      access_trap_aa32s_el1 },
     { "SDER32_EL3", 0,1,1, 3,6,1, ARM_CP_STATE_AA64,0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sder) },
     { "SDER", 15,1,1, 0,0,1, 0,0,
