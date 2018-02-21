@@ -61,7 +61,8 @@
 
 #include "elf.h"
 
-/* Forward declarations for functions declared in tcg-target.c and used here. */
+/* Forward declarations for functions declared in tcg-target.inc.c and
+   used here. */
 static void tcg_target_init(TCGContext *s);
 static void tcg_target_qemu_prologue(TCGContext *s);
 static void patch_reloc(tcg_insn_unit *code_ptr, int type,
@@ -92,7 +93,7 @@ QEMU_PACK( typedef struct {
     DebugFrameFDEHeader fde;
 }) DebugFrameHeader;
 
-/* Forward declarations for functions declared and used in tcg-target.c. */
+/* Forward declarations for functions declared and used in tcg-target.inc.c. */
 static int target_parse_constraint(TCGArgConstraint *ct, const char **pct_str);
 static void tcg_out_ld(TCGContext *s, TCGType type, TCGReg ret, TCGReg arg1,
                        intptr_t arg2);
@@ -238,7 +239,7 @@ TCGLabel *gen_new_label(TCGContext *s)
     return l;
 }
 
-#include "tcg-target.c"
+#include "tcg-target.inc.c"
 
 /* pool based memory allocation */
 void *tcg_malloc_internal(TCGContext *s, int size)
