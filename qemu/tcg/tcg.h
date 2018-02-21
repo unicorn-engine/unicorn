@@ -751,6 +751,9 @@ struct TCGContext {
     /* qemu/tcg/tcg.c */
     uint64_t tcg_target_call_clobber_regs;
     uint64_t tcg_target_available_regs[2];
+    // Unicorn: Use a large array size to get around needing a file static
+    //          Initially was using: ARRAY_SIZE(tcg_target_reg_alloc_order) as the size
+    int indirect_reg_alloc_order[50];
     TCGOpDef *tcg_op_defs;
 
     /* qemu/tcg/optimize.c */
