@@ -3076,7 +3076,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     goto illegal_insn;
                 }
 #else
-                tcg_gen_ext_i32_tl(tcg_ctx, cpu_tmp0, *(TCGv *)tcg_ctx->cpu_wim);
+                tcg_gen_ext_i32_tl(tcg_ctx, cpu_tmp0, tcg_ctx->cpu_wim);
 #endif
                 gen_store_gpr(dc, rd, cpu_tmp0);
                 break;
@@ -4027,9 +4027,9 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 goto illegal_insn;
                             }
 #else
-                            tcg_gen_trunc_tl_i32(tcg_ctx, *(TCGv *)tcg_ctx->cpu_wim, cpu_tmp0);
+                            tcg_gen_trunc_tl_i32(tcg_ctx, tcg_ctx->cpu_wim, cpu_tmp0);
                             if (dc->def->nwindows != 32) {
-                                tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_wim, *(TCGv *)tcg_ctx->cpu_wim,
+                                tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_wim, tcg_ctx->cpu_wim,
                                                 (1 << dc->def->nwindows) - 1);
                             }
 #endif
@@ -5567,8 +5567,7 @@ void gen_intermediate_code_init(CPUSPARCState *env)
             offsetof(CPUSPARCState, softint),
             "softint");
 #else
-    tcg_ctx->cpu_wim = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_wim = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, wim),
+    tcg_ctx->cpu_wim = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, wim),
             "wim");
 #endif
     tcg_ctx->cpu_cond = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cond),

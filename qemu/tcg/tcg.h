@@ -848,7 +848,7 @@ struct TCGContext {
     TCGv cpu_hver;
     TCGv cpu_ssr;
     TCGv cpu_ver;
-    void *cpu_wim;
+    TCGv cpu_wim;
 
     TCGLabel *exitreq_label;  // gen_tb_start()
 };
