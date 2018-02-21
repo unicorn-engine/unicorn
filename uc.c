@@ -28,6 +28,7 @@
 static void free_table(gpointer key, gpointer value, gpointer data)
 {
     TypeInfo *ti = (TypeInfo*) value;
+    g_hash_table_destroy(ti->class->properties);
     g_free((void *) ti->class);
     g_free((void *) ti->name);
     g_free((void *) ti->parent);

@@ -381,6 +381,8 @@ struct ObjectClass
     const char *class_cast_cache[OBJECT_CLASS_CAST_CACHE];
 
     ObjectUnparent *unparent;
+
+    GHashTable *properties;
 };
 
 /**
@@ -792,7 +794,8 @@ void object_unref(struct uc_struct *uc, Object *obj);
  * Returns: The #ObjectProperty; this can be used to set the @resolve
  * callback for child and link properties.
  */
-ObjectProperty *object_property_add(Object *obj, const char *name,
+ObjectProperty *object_property_add(struct uc_struct *uc, Object *obj,
+                                    const char *name,
                                     const char *type,
                                     ObjectPropertyAccessor *get,
                                     ObjectPropertyAccessor *set,
@@ -800,6 +803,14 @@ ObjectProperty *object_property_add(Object *obj, const char *name,
                                     void *opaque, Error **errp);
 
 void object_property_del(struct uc_struct *uc, Object *obj, const char *name, Error **errp);
+
+ObjectProperty *object_class_property_add(struct uc_struct *uc, ObjectClass *klass, const char *name,
+                                          const char *type,
+                                          ObjectPropertyAccessor *get,
+                                          ObjectPropertyAccessor *set,
+                                          ObjectPropertyRelease *release,
+                                          void *opaque, Error **errp);
+
 
 void object_property_del_child(struct uc_struct *uc, Object *obj, Object *child, Error **errp);
 
@@ -811,8 +822,10 @@ void object_property_del_child(struct uc_struct *uc, Object *obj, Object *child,
  *
  * Look up a property for an object and return its #ObjectProperty if found.
  */
-ObjectProperty *object_property_find(Object *obj, const char *name,
-                                     Error **errp);
+ObjectProperty *object_property_find(struct uc_struct *uc, Object *obj,
+                                     const char *name, Error **errp);
+ObjectProperty *object_class_property_find(struct uc_struct *uc, ObjectClass *klass,
+                                           const char *name, Error **errp);
 
 typedef struct ObjectPropertyIterator ObjectPropertyIterator;
 
@@ -821,7 +834,7 @@ typedef struct ObjectPropertyIterator ObjectPropertyIterator;
  * @obj: the object
  *
  * Initializes an iterator for traversing all properties
- * registered against an object instance.
+ * registered against an object instance, its class and all parent classes.
  *
  * It is forbidden to modify the property list while iterating,
  * whether removing or adding properties.
@@ -861,7 +874,7 @@ void object_property_iter_free(ObjectPropertyIterator *iter);
  * Returns: the next property, or %NULL when all properties
  * have been traversed.
  */
-ObjectProperty *object_property_iter_next(ObjectPropertyIterator *iter);
+ObjectProperty *object_property_iter_next(struct uc_struct *uc, ObjectPropertyIterator *iter);
 
 void object_unparent(struct uc_struct *uc, Object *obj);
 
@@ -875,8 +888,8 @@ void object_unparent(struct uc_struct *uc, Object *obj);
  *
  * Reads a property from a object.
  */
-void object_property_get(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
-                         Error **errp);
+void object_property_get(struct uc_struct *uc, Object *obj, Visitor *v,
+                         const char *name, Error **errp);
 
 /**
  * object_property_set_str:
@@ -886,8 +899,9 @@ void object_property_get(struct uc_struct *uc, Object *obj, Visitor *v, const ch
  *
  * Writes a string value to a property.
  */
-void object_property_set_str(struct uc_struct *uc, Object *obj, const char *value,
-                             const char *name, Error **errp);
+void object_property_set_str(struct uc_struct *uc, Object *obj,
+                             const char *value, const char *name,
+                             Error **errp);
 
 /**
  * object_property_get_str:
@@ -899,8 +913,8 @@ void object_property_set_str(struct uc_struct *uc, Object *obj, const char *valu
  * an error occurs (including when the property value is not a string).
  * The caller should free the string.
  */
-char *object_property_get_str(struct uc_struct *uc, Object *obj, const char *name,
-                              Error **errp);
+char *object_property_get_str(struct uc_struct *uc, Object *obj,
+                              const char *name, Error **errp);
 
 /**
  * object_property_set_link:
@@ -923,8 +937,8 @@ void object_property_set_link(struct uc_struct *uc, Object *obj, Object *value,
  * or NULL if an error occurs (including when the property value is not a
  * string or not a valid object path).
  */
-Object *object_property_get_link(struct uc_struct *uc, Object *obj, const char *name,
-                                 Error **errp);
+Object *object_property_get_link(struct uc_struct *uc, Object *obj,
+                                 const char *name, Error **errp);
 
 /**
  * object_property_set_bool:
@@ -946,8 +960,8 @@ void object_property_set_bool(struct uc_struct *uc, Object *obj, bool value,
  * Returns: the value of the property, converted to a boolean, or NULL if
  * an error occurs (including when the property value is not a bool).
  */
-bool object_property_get_bool(struct uc_struct *uc, Object *obj, const char *name,
-                              Error **errp);
+bool object_property_get_bool(struct uc_struct *uc, Object *obj,
+                              const char *name, Error **errp);
 
 /**
  * object_property_set_int:
@@ -969,8 +983,8 @@ void object_property_set_int(struct uc_struct *uc, Object *obj, int64_t value,
  * Returns: the value of the property, converted to an integer, or negative if
  * an error occurs (including when the property value is not an integer).
  */
-int64_t object_property_get_int(struct uc_struct *uc, Object *obj, const char *name,
-                                Error **errp);
+int64_t object_property_get_int(struct uc_struct *uc, Object *obj,
+                                const char *name, Error **errp);
 
 /**
  * object_property_set:
@@ -983,8 +997,8 @@ int64_t object_property_get_int(struct uc_struct *uc, Object *obj, const char *n
  *
  * Writes a property to a object.
  */
-void object_property_set(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
-                         Error **errp);
+void object_property_set(struct uc_struct *uc, Object *obj, Visitor *v,
+                         const char *name, Error **errp);
 
 /**
  * object_property_parse:
@@ -995,8 +1009,9 @@ void object_property_set(struct uc_struct *uc, Object *obj, Visitor *v, const ch
  *
  * Parses a string and writes the result into a property of an object.
  */
-void object_property_parse(struct uc_struct *uc, Object *obj, const char *string,
-                           const char *name, Error **errp);
+void object_property_parse(struct uc_struct *uc, Object *obj,
+                           const char *string, const char *name,
+                           Error **errp);
 
 /**
  * object_property_get_type:
@@ -1006,8 +1021,8 @@ void object_property_parse(struct uc_struct *uc, Object *obj, const char *string
  *
  * Returns:  The type name of the property.
  */
-const char *object_property_get_type(Object *obj, const char *name,
-                                     Error **errp);
+const char *object_property_get_type(struct uc_struct *uc, Object *obj,
+                                     const char *name, Error **errp);
 
 /**
  * object_get_root:
@@ -1055,7 +1070,8 @@ gchar *object_get_canonical_path(Object *obj);
  *
  * Returns: The matched object or NULL on path lookup failure.
  */
-Object *object_resolve_path(struct uc_struct *uc, const char *path, bool *ambiguous);
+Object *object_resolve_path(struct uc_struct *uc, const char *path,
+                            bool *ambiguous);
 
 /**
  * object_resolve_path_type:
@@ -1075,7 +1091,9 @@ Object *object_resolve_path(struct uc_struct *uc, const char *path, bool *ambigu
  *
  * Returns: The matched object or NULL on path lookup failure.
  */
-Object *object_resolve_path_type(struct uc_struct *uc, const char *path, const char *typename,
+Object *object_resolve_path_type(struct uc_struct *uc,
+                                 const char *path,
+                                 const char *typename,
                                  bool *ambiguous);
 
 /**
@@ -1088,7 +1106,9 @@ Object *object_resolve_path_type(struct uc_struct *uc, const char *path, const c
  *
  * Returns: The resolved object or NULL on path lookup failure.
  */
-Object *object_resolve_path_component(struct uc_struct *uc, Object *parent, const gchar *part);
+Object *object_resolve_path_component(struct uc_struct *uc,
+                                      Object *parent,
+                                      const gchar *part);
 
 /**
  * object_property_add_child:
@@ -1107,8 +1127,9 @@ Object *object_resolve_path_component(struct uc_struct *uc, Object *parent, cons
  * canonical path. It can be retrieved using object_property_get_str().
  * The child object itself can be retrieved using object_property_get_link().
  */
-void object_property_add_child(Object *obj, const char *name,
-                               Object *child, Error **errp);
+void object_property_add_child(struct uc_struct *uc, Object *obj,
+                               const char *name, Object *child,
+                               Error **errp);
 
 typedef enum {
     /* Unref the link pointer when the property is deleted */
@@ -1153,7 +1174,7 @@ void object_property_allow_set_link(Object *, const char *,
  * <code>@flags</code> <code>OBJ_PROP_LINK_UNREF_ON_RELEASE</code> bit is set,
  * the reference count is decremented when the property is deleted.
  */
-void object_property_add_link(Object *obj, const char *name,
+void object_property_add_link(struct uc_struct *uc, Object *obj, const char *name,
                               const char *type, Object **child,
                               void (*check)(Object *obj, const char *name,
                                             Object *val, Error **errp),
@@ -1172,10 +1193,16 @@ void object_property_add_link(Object *obj, const char *name,
  * Add a string property using getters/setters.  This function will add a
  * property of type 'string'.
  */
-void object_property_add_str(Object *obj, const char *name,
+void object_property_add_str(struct uc_struct *uc, Object *obj, const char *name,
                              char *(*get)(struct uc_struct *uc, Object *, Error **),
                              int (*set)(struct uc_struct *uc, Object *, const char *, Error **),
                              Error **errp);
+void object_class_property_add_str(struct uc_struct *uc, ObjectClass *klass,
+                                   const char *name,
+                                   char *(*get)(struct uc_struct *uc, Object *, Error **),
+                                   int (*set)(struct uc_struct *uc, Object *, const char *,
+                                              Error **),
+                                   Error **errp);
 
 /**
  * object_property_add_bool:
@@ -1192,6 +1219,10 @@ void object_property_add_bool(struct uc_struct *uc, Object *obj, const char *nam
                               bool (*get)(struct uc_struct *uc, Object *, Error **),
                               int (*set)(struct uc_struct *uc, Object *, bool, Error **),
                               Error **errp);
+void object_class_property_add_bool(struct uc_struct *uc, ObjectClass *klass, const char *name,
+                                    bool (*get)(struct uc_struct *, Object *, Error **),
+                                    int (*set)(struct uc_struct *, Object *, bool, Error **),
+                                    Error **errp);
 
 /**
  * object_property_add_uint8_ptr:
@@ -1203,8 +1234,12 @@ void object_property_add_bool(struct uc_struct *uc, Object *obj, const char *nam
  * Add an integer property in memory.  This function will add a
  * property of type 'uint8'.
  */
-void object_property_add_uint8_ptr(Object *obj, const char *name,
-                                   const uint8_t *v, Error **errp);
+void object_property_add_uint8_ptr(struct uc_struct *uc, Object *obj,
+                                   const char *name, const uint8_t *v,
+                                   Error **errp);
+void object_class_property_add_uint8_ptr(struct uc_struct *uc, ObjectClass *klass,
+                                         const char *name, const uint8_t *v,
+                                         Error **errp);
 
 /**
  * object_property_add_uint16_ptr:
@@ -1216,8 +1251,12 @@ void object_property_add_uint8_ptr(Object *obj, const char *name,
  * Add an integer property in memory.  This function will add a
  * property of type 'uint16'.
  */
-void object_property_add_uint16_ptr(Object *obj, const char *name,
-                                    const uint16_t *v, Error **errp);
+void object_property_add_uint16_ptr(struct uc_struct *uc, Object *obj,
+                                    const char *name, const uint16_t *v,
+                                    Error **errp);
+void object_class_property_add_uint16_ptr(struct uc_struct *uc, ObjectClass *klass,
+                                          const char *name, const uint16_t *v,
+                                          Error **errp);
 
 /**
  * object_property_add_uint32_ptr:
@@ -1229,8 +1268,12 @@ void object_property_add_uint16_ptr(Object *obj, const char *name,
  * Add an integer property in memory.  This function will add a
  * property of type 'uint32'.
  */
-void object_property_add_uint32_ptr(Object *obj, const char *name,
-                                    const uint32_t *v, Error **errp);
+void object_property_add_uint32_ptr(struct uc_struct *uc, Object *obj,
+                                    const char *name, const uint32_t *v,
+                                    Error **errp);
+void object_class_property_add_uint32_ptr(struct uc_struct *uc, ObjectClass *klass,
+                                          const char *name, const uint32_t *v,
+                                          Error **errp);
 
 /**
  * object_property_add_uint64_ptr:
@@ -1242,8 +1285,12 @@ void object_property_add_uint32_ptr(Object *obj, const char *name,
  * Add an integer property in memory.  This function will add a
  * property of type 'uint64'.
  */
-void object_property_add_uint64_ptr(Object *obj, const char *name,
-                                    const uint64_t *v, Error **Errp);
+void object_property_add_uint64_ptr(struct uc_struct *uc, Object *obj,
+                                    const char *name, const uint64_t *v,
+                                    Error **Errp);
+void object_class_property_add_uint64_ptr(struct uc_struct *uc, ObjectClass *klass,
+                                          const char *name, const uint64_t *v,
+                                          Error **Errp);
 
 /**
  * object_property_add_alias:
@@ -1261,7 +1308,7 @@ void object_property_add_uint64_ptr(Object *obj, const char *name,
  * object this will be the case.  For aliases to other objects the caller is
  * responsible for taking a reference.
  */
-void object_property_add_alias(Object *obj, const char *name,
+void object_property_add_alias(struct uc_struct *uc, Object *obj, const char *name,
                                Object *target_obj, const char *target_name,
                                Error **errp);
 
@@ -1275,8 +1322,12 @@ void object_property_add_alias(Object *obj, const char *name,
  * Set an object property's description.
  *
  */
-void object_property_set_description(Object *obj, const char *name,
-                                     const char *description, Error **errp);
+void object_property_set_description(struct uc_struct *uc, Object *obj,
+                                     const char *name, const char *description,
+                                     Error **errp);
+void object_class_property_set_description(struct uc_struct *uc, ObjectClass *klass,
+                                           const char *name, const char *description,
+                                           Error **errp);
 
 /**
  * object_child_foreach:

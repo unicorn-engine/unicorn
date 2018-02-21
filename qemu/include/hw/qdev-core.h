@@ -333,7 +333,7 @@ const char *qdev_fw_name(DeviceState *dev);
 Object *qdev_get_machine(struct uc_struct *);
 
 /* FIXME: make this a link<> */
-void qdev_set_parent_bus(DeviceState *dev, BusState *bus);
+void qdev_set_parent_bus(struct uc_struct *uc, DeviceState *dev, BusState *bus);
 
 extern int qdev_hotplug;
 

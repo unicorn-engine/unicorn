@@ -40,7 +40,7 @@ Object *container_get(struct uc_struct *uc, Object *root, const char *path)
         child = object_resolve_path_component(uc, obj, parts[i]);
         if (!child) {
             child = object_new(uc, "container");
-            object_property_add_child(obj, parts[i], child, NULL);
+            object_property_add_child(uc, obj, parts[i], child, NULL);
         }
     }
 

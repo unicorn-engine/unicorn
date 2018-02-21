@@ -30,7 +30,7 @@
 #include "qapi/qmp/qerror.h"
 
 
-static void bus_add_child(BusState *bus, DeviceState *child)
+static void bus_add_child(struct uc_struct *uc, BusState *bus, DeviceState *child)
 {
     char name[32];
     BusChild *kid = g_malloc0(sizeof(*kid));
@@ -43,7 +43,7 @@ static void bus_add_child(BusState *bus, DeviceState *child)
 
     /* This transfers ownership of kid->child to the property.  */
     snprintf(name, sizeof(name), "child[%d]", kid->index);
-    object_property_add_link(OBJECT(bus), name,
+    object_property_add_link(uc, OBJECT(bus), name,
                              object_get_typename(OBJECT(child)),
                              (Object **)&kid->child,
                              NULL, /* read-only property */
@@ -51,11 +51,11 @@ static void bus_add_child(BusState *bus, DeviceState *child)
                              NULL);
 }
 
-void qdev_set_parent_bus(DeviceState *dev, BusState *bus)
+void qdev_set_parent_bus(struct uc_struct *uc, DeviceState *dev, BusState *bus)
 {
     dev->parent_bus = bus;
     object_ref(OBJECT(bus));
-    bus_add_child(bus, dev);
+    bus_add_child(uc, bus, dev);
 }
 
 /* Create a new device.  This only initializes the device state structure

@@ -877,7 +877,7 @@ void memory_region_init(struct uc_struct *uc, MemoryRegion *mr,
             uc->owner = owner;
         }
 
-        object_property_add_child(owner, name_array, OBJECT(mr), &error_abort);
+        object_property_add_child(uc, owner, name_array, OBJECT(mr), &error_abort);
         object_unref(uc, OBJECT(mr));
         g_free(name_array);
         g_free(escaped_name);
@@ -961,18 +961,18 @@ static void memory_region_initfn(struct uc_struct *uc, Object *obj, void *opaque
     mr->destructor = memory_region_destructor_none;
     QTAILQ_INIT(&mr->subregions);
 
-    op = object_property_add(OBJECT(mr), "container",
+    op = object_property_add(mr->uc, OBJECT(mr), "container",
                              "link<" TYPE_MEMORY_REGION ">",
                              memory_region_get_container,
                              NULL, /* memory_region_set_container */
                              NULL, NULL, &error_abort);
     op->resolve = memory_region_resolve_container;
 
-    object_property_add(OBJECT(mr), "addr", "uint64",
+    object_property_add(mr->uc, OBJECT(mr), "addr", "uint64",
                         memory_region_get_addr,
                         NULL, /* memory_region_set_addr */
                         NULL, NULL, &error_abort);
-    object_property_add(OBJECT(mr), "priority", "uint32",
+    object_property_add(mr->uc, OBJECT(mr), "priority", "uint32",
                         memory_region_get_priority,
                         NULL, /* memory_region_set_priority */
                         NULL, NULL, &error_abort);
@@ -980,7 +980,7 @@ static void memory_region_initfn(struct uc_struct *uc, Object *obj, void *opaque
                              memory_region_get_may_overlap,
                              NULL, /* memory_region_set_may_overlap */
                              &error_abort);
-    object_property_add(OBJECT(mr), "size", "uint64",
+    object_property_add(mr->uc, OBJECT(mr), "size", "uint64",
                         memory_region_get_size,
                         NULL, /* memory_region_set_size, */
                         NULL, NULL, &error_abort);
