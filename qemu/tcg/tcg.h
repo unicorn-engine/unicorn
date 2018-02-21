@@ -737,7 +737,10 @@ struct TCGContext {
 
     /* qemu/target-i386/translate.c: global TCGv vars */
     TCGv cpu_A0;
-    void *cpu_cc_dst, *cpu_cc_src, *cpu_cc_src2, *cpu_cc_srcT;
+    TCGv cpu_cc_dst;
+    TCGv cpu_cc_src;
+    TCGv cpu_cc_src2;
+    TCGv cpu_cc_srcT;
 
     /* qemu/target-i386/translate.c: local temps */
     TCGv cpu_T0;
