@@ -46,17 +46,11 @@ void mips_release(void *ctx);
 void mips_release(void *ctx)
 {
     MIPSCPU* cpu;
-    int i;
     TCGContext *tcg_ctx = (TCGContext *) ctx;
     release_common(ctx);
     cpu = MIPS_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
     g_free(cpu->env.tlb);
     g_free(cpu->env.mvp);
-
-    for (i = 0; i < 32; i++) {
-        g_free(tcg_ctx->cpu_gpr[i]);
-    }
-
     g_free(tcg_ctx->tb_ctx.tbs);
 }
 
