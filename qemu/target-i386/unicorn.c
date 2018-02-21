@@ -32,7 +32,6 @@ void x86_release(void *ctx);
 
 void x86_release(void *ctx)
 {
-    int i;
     TCGContext *s = (TCGContext *) ctx;
 
     release_common(ctx);
@@ -47,10 +46,6 @@ void x86_release(void *ctx)
     g_free(s->cpu_cc_dst);
     g_free(s->cpu_cc_src);
     g_free(s->cpu_cc_src2);
-
-    for (i = 0; i < CPU_NB_REGS; ++i) {
-        g_free(s->cpu_regs[i]);
-    }
 
     g_free(s->tb_ctx.tbs);
 }
