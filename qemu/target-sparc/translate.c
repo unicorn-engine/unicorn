@@ -2893,7 +2893,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     gen_store_gpr(dc, rd, cpu_dst);
                     break;
                 case 0x17: /* Tick compare */
-                    gen_store_gpr(dc, rd, *(TCGv *)tcg_ctx->cpu_tick_cmpr);
+                    gen_store_gpr(dc, rd, tcg_ctx->cpu_tick_cmpr);
                     break;
                 case 0x18: /* System tick */
                     {
@@ -3811,13 +3811,13 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 {
                                     TCGv_ptr r_tickptr;
 
-                                    tcg_gen_xor_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_tick_cmpr, cpu_src1,
+                                    tcg_gen_xor_tl(tcg_ctx, tcg_ctx->cpu_tick_cmpr, cpu_src1,
                                                    cpu_src2);
                                     r_tickptr = tcg_temp_new_ptr(tcg_ctx);
                                     tcg_gen_ld_ptr(tcg_ctx, r_tickptr, tcg_ctx->cpu_env,
                                                    offsetof(CPUSPARCState, tick));
                                     gen_helper_tick_set_limit(tcg_ctx, r_tickptr,
-                                                              *(TCGv *)tcg_ctx->cpu_tick_cmpr);
+                                                              tcg_ctx->cpu_tick_cmpr);
                                     tcg_temp_free_ptr(tcg_ctx, r_tickptr);
                                 }
                                 break;
@@ -5536,8 +5536,7 @@ void gen_intermediate_code_init(CPUSPARCState *env)
     tcg_ctx->cpu_gsr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, gsr),
             "gsr");
 
-    tcg_ctx->cpu_tick_cmpr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_tick_cmpr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+    tcg_ctx->cpu_tick_cmpr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, tick_cmpr),
             "tick_cmpr");
 

@@ -840,8 +840,14 @@ struct TCGContext {
     TCGv cpu_tbr;
     TCGv cpu_cond;
     TCGv cpu_gsr;
-    void *cpu_tick_cmpr, *cpu_stick_cmpr, *cpu_hstick_cmpr;
-    void *cpu_hintp, *cpu_htba, *cpu_hver, *cpu_ssr, *cpu_ver;
+    TCGv cpu_tick_cmpr;
+    void *cpu_stick_cmpr;
+    void *cpu_hstick_cmpr;
+    void *cpu_hintp;
+    void *cpu_htba;
+    void *cpu_hver;
+    void *cpu_ssr;
+    void *cpu_ver;
     void *cpu_wim;
 
     TCGLabel *exitreq_label;  // gen_tb_start()
