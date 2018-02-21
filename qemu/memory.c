@@ -1147,7 +1147,7 @@ void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
                            uint64_t size)
 {
     memory_region_init(uc, mr, owner, name, size);
-    mr->ops = ops;
+    mr->ops = ops ? ops : &unassigned_mem_ops;
     mr->opaque = opaque;
     mr->terminates = true;
 }
@@ -1223,14 +1223,6 @@ void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
     memory_region_init(uc, mr, owner, name, size);
     mr->alias = orig;
     mr->alias_offset = offset;
-}
-
-void memory_region_init_reservation(struct uc_struct *uc, MemoryRegion *mr,
-                                    Object *owner,
-                                    const char *name,
-                                    uint64_t size)
-{
-    memory_region_init_io(uc, mr, owner, &unassigned_mem_ops, mr, name, size);
 }
 
 static void memory_region_finalize(struct uc_struct *uc, Object *obj, void *opaque)
