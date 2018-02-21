@@ -58,10 +58,6 @@ void mips_release(void *ctx)
     }
 
     g_free(tcg_ctx->cpu_PC);
-    g_free(tcg_ctx->btarget);
-    g_free(tcg_ctx->bcond);
-    g_free(tcg_ctx->cpu_dspctrl);
-
     g_free(tcg_ctx->tb_ctx.tbs);
 }
 

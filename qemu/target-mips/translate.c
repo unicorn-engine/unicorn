@@ -1580,7 +1580,7 @@ static inline void save_cpu_state(DisasContext *ctx, int do_save_pc)
         case MIPS_HFLAG_BC:
         case MIPS_HFLAG_BL:
         case MIPS_HFLAG_B:
-            tcg_gen_movi_tl(tcg_ctx, *(TCGv *)tcg_ctx->btarget, ctx->btarget);
+            tcg_gen_movi_tl(tcg_ctx, tcg_ctx->btarget, ctx->btarget);
             break;
         }
     }
@@ -4325,9 +4325,9 @@ static void gen_compute_branch (DisasContext *ctx, uint32_t opc,
     case OPC_BPOSGE32:
 #if defined(TARGET_MIPS64)
     case OPC_BPOSGE64:
-        tcg_gen_andi_tl(tcg_ctx, t0, *(TCGv *)tcg_ctx->cpu_dspctrl, 0x7F);
+        tcg_gen_andi_tl(tcg_ctx, t0, tcg_ctx->cpu_dspctrl, 0x7F);
 #else
-        tcg_gen_andi_tl(tcg_ctx, t0, *(TCGv *)tcg_ctx->cpu_dspctrl, 0x3F);
+        tcg_gen_andi_tl(tcg_ctx, t0, tcg_ctx->cpu_dspctrl, 0x3F);
 #endif
         bcond_compute = 1;
         btgt = ctx->pc + insn_bytes + offset;
@@ -4348,7 +4348,7 @@ static void gen_compute_branch (DisasContext *ctx, uint32_t opc,
             generate_exception_end(ctx, EXCP_RI);
             goto out;
         }
-        gen_load_gpr(ctx, *(TCGv *)tcg_ctx->btarget, rs);
+        gen_load_gpr(ctx, tcg_ctx->btarget, rs);
         break;
     default:
         MIPS_INVAL("branch/jump");
@@ -4421,65 +4421,65 @@ static void gen_compute_branch (DisasContext *ctx, uint32_t opc,
     } else {
         switch (opc) {
         case OPC_BEQ:
-            tcg_gen_setcond_tl(tcg_ctx, TCG_COND_EQ, *(TCGv *)tcg_ctx->bcond, t0, t1);
+            tcg_gen_setcond_tl(tcg_ctx, TCG_COND_EQ, tcg_ctx->bcond, t0, t1);
             goto not_likely;
         case OPC_BEQL:
-            tcg_gen_setcond_tl(tcg_ctx, TCG_COND_EQ, *(TCGv *)tcg_ctx->bcond, t0, t1);
+            tcg_gen_setcond_tl(tcg_ctx, TCG_COND_EQ, tcg_ctx->bcond, t0, t1);
             goto likely;
         case OPC_BNE:
-            tcg_gen_setcond_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->bcond, t0, t1);
+            tcg_gen_setcond_tl(tcg_ctx, TCG_COND_NE, tcg_ctx->bcond, t0, t1);
             goto not_likely;
         case OPC_BNEL:
-            tcg_gen_setcond_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->bcond, t0, t1);
+            tcg_gen_setcond_tl(tcg_ctx, TCG_COND_NE, tcg_ctx->bcond, t0, t1);
             goto likely;
         case OPC_BGEZ:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, tcg_ctx->bcond, t0, 0);
             goto not_likely;
         case OPC_BGEZL:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, tcg_ctx->bcond, t0, 0);
             goto likely;
         case OPC_BGEZAL:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, tcg_ctx->bcond, t0, 0);
             blink = 31;
             goto not_likely;
         case OPC_BGEZALL:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, tcg_ctx->bcond, t0, 0);
             blink = 31;
             goto likely;
         case OPC_BGTZ:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GT, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GT, tcg_ctx->bcond, t0, 0);
             goto not_likely;
         case OPC_BGTZL:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GT, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GT, tcg_ctx->bcond, t0, 0);
             goto likely;
         case OPC_BLEZ:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LE, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LE, tcg_ctx->bcond, t0, 0);
             goto not_likely;
         case OPC_BLEZL:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LE, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LE, tcg_ctx->bcond, t0, 0);
             goto likely;
         case OPC_BLTZ:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LT, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LT, tcg_ctx->bcond, t0, 0);
             goto not_likely;
         case OPC_BLTZL:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LT, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LT, tcg_ctx->bcond, t0, 0);
             goto likely;
         case OPC_BPOSGE32:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, *(TCGv *)tcg_ctx->bcond, t0, 32);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, tcg_ctx->bcond, t0, 32);
             goto not_likely;
 #if defined(TARGET_MIPS64)
         case OPC_BPOSGE64:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, *(TCGv *)tcg_ctx->bcond, t0, 64);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_GE, tcg_ctx->bcond, t0, 64);
             goto not_likely;
 #endif
         case OPC_BLTZAL:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LT, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LT, tcg_ctx->bcond, t0, 0);
             blink = 31;
         not_likely:
             ctx->hflags |= MIPS_HFLAG_BC;
             break;
         case OPC_BLTZALL:
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LT, *(TCGv *)tcg_ctx->bcond, t0, 0);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_LT, tcg_ctx->bcond, t0, 0);
             blink = 31;
         likely:
             ctx->hflags |= MIPS_HFLAG_BL;
@@ -8198,23 +8198,23 @@ static void gen_compute_branch1(DisasContext *ctx, uint32_t op,
         tcg_gen_shri_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, get_fp_bit(cc));
         tcg_gen_not_i32(tcg_ctx, t0, t0);
         tcg_gen_andi_i32(tcg_ctx, t0, t0, 1);
-        tcg_gen_extu_i32_tl(tcg_ctx, *(TCGv *)tcg_ctx->bcond, t0);
+        tcg_gen_extu_i32_tl(tcg_ctx, tcg_ctx->bcond, t0);
         goto not_likely;
     case OPC_BC1FL:
         tcg_gen_shri_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, get_fp_bit(cc));
         tcg_gen_not_i32(tcg_ctx, t0, t0);
         tcg_gen_andi_i32(tcg_ctx, t0, t0, 1);
-        tcg_gen_extu_i32_tl(tcg_ctx, *(TCGv *)tcg_ctx->bcond, t0);
+        tcg_gen_extu_i32_tl(tcg_ctx, tcg_ctx->bcond, t0);
         goto likely;
     case OPC_BC1T:
         tcg_gen_shri_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, get_fp_bit(cc));
         tcg_gen_andi_i32(tcg_ctx, t0, t0, 1);
-        tcg_gen_extu_i32_tl(tcg_ctx, *(TCGv *)tcg_ctx->bcond, t0);
+        tcg_gen_extu_i32_tl(tcg_ctx, tcg_ctx->bcond, t0);
         goto not_likely;
     case OPC_BC1TL:
         tcg_gen_shri_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, get_fp_bit(cc));
         tcg_gen_andi_i32(tcg_ctx, t0, t0, 1);
-        tcg_gen_extu_i32_tl(tcg_ctx, *(TCGv *)tcg_ctx->bcond, t0);
+        tcg_gen_extu_i32_tl(tcg_ctx, tcg_ctx->bcond, t0);
     likely:
         ctx->hflags |= MIPS_HFLAG_BL;
         break;
@@ -8226,7 +8226,7 @@ static void gen_compute_branch1(DisasContext *ctx, uint32_t op,
             tcg_gen_nand_i32(tcg_ctx, t0, t0, t1);
             tcg_temp_free_i32(tcg_ctx, t1);
             tcg_gen_andi_i32(tcg_ctx, t0, t0, 1);
-            tcg_gen_extu_i32_tl(tcg_ctx, *(TCGv *)tcg_ctx->bcond, t0);
+            tcg_gen_extu_i32_tl(tcg_ctx, tcg_ctx->bcond, t0);
         }
         goto not_likely;
     case OPC_BC1TANY2:
@@ -8237,7 +8237,7 @@ static void gen_compute_branch1(DisasContext *ctx, uint32_t op,
             tcg_gen_or_i32(tcg_ctx, t0, t0, t1);
             tcg_temp_free_i32(tcg_ctx, t1);
             tcg_gen_andi_i32(tcg_ctx, t0, t0, 1);
-            tcg_gen_extu_i32_tl(tcg_ctx, *(TCGv *)tcg_ctx->bcond, t0);
+            tcg_gen_extu_i32_tl(tcg_ctx, tcg_ctx->bcond, t0);
         }
         goto not_likely;
     case OPC_BC1FANY4:
@@ -8252,7 +8252,7 @@ static void gen_compute_branch1(DisasContext *ctx, uint32_t op,
             tcg_gen_nand_i32(tcg_ctx, t0, t0, t1);
             tcg_temp_free_i32(tcg_ctx, t1);
             tcg_gen_andi_i32(tcg_ctx, t0, t0, 1);
-            tcg_gen_extu_i32_tl(tcg_ctx, *(TCGv *)tcg_ctx->bcond, t0);
+            tcg_gen_extu_i32_tl(tcg_ctx, tcg_ctx->bcond, t0);
         }
         goto not_likely;
     case OPC_BC1TANY4:
@@ -8267,7 +8267,7 @@ static void gen_compute_branch1(DisasContext *ctx, uint32_t op,
             tcg_gen_or_i32(tcg_ctx, t0, t0, t1);
             tcg_temp_free_i32(tcg_ctx, t1);
             tcg_gen_andi_i32(tcg_ctx, t0, t0, 1);
-            tcg_gen_extu_i32_tl(tcg_ctx, *(TCGv *)tcg_ctx->bcond, t0);
+            tcg_gen_extu_i32_tl(tcg_ctx, tcg_ctx->bcond, t0);
         }
     not_likely:
         ctx->hflags |= MIPS_HFLAG_BC;
@@ -8321,7 +8321,7 @@ static void gen_compute_branch1_r6(DisasContext *ctx, uint32_t op,
         goto out;
     }
 
-    tcg_gen_trunc_i64_tl(tcg_ctx, *(TCGv *)tcg_ctx->bcond, t0);
+    tcg_gen_trunc_i64_tl(tcg_ctx, tcg_ctx->bcond, t0);
 
     ctx->btarget = btarget;
 
@@ -10602,7 +10602,7 @@ static void gen_branch(DisasContext *ctx, int insn_bytes)
             {
                 TCGLabel *l1 = gen_new_label(tcg_ctx);
 
-                tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->bcond, 0, l1);
+                tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, tcg_ctx->bcond, 0, l1);
                 gen_goto_tb(ctx, 1, ctx->pc + insn_bytes);
                 gen_set_label(tcg_ctx, l1);
                 gen_goto_tb(ctx, 0, ctx->btarget);
@@ -10614,7 +10614,7 @@ static void gen_branch(DisasContext *ctx, int insn_bytes)
                 TCGv t0 = tcg_temp_new(tcg_ctx);
                 TCGv_i32 t1 = tcg_temp_new_i32(tcg_ctx);
 
-                tcg_gen_andi_tl(tcg_ctx, t0, *(TCGv *)tcg_ctx->btarget, 0x1);
+                tcg_gen_andi_tl(tcg_ctx, t0, tcg_ctx->btarget, 0x1);
                 tcg_gen_trunc_tl_i32(tcg_ctx, t1, t0);
                 tcg_temp_free(tcg_ctx, t0);
                 tcg_gen_andi_i32(tcg_ctx, tcg_ctx->hflags, tcg_ctx->hflags, ~(uint32_t)MIPS_HFLAG_M16);
@@ -10710,7 +10710,7 @@ static void gen_compute_compact_branch(DisasContext *ctx, uint32_t opc,
 
             gen_load_gpr(ctx, tbase, rt);
             tcg_gen_movi_tl(tcg_ctx, toffset, offset);
-            gen_op_addr_add(ctx, *(TCGv *)tcg_ctx->btarget, tbase, toffset);
+            gen_op_addr_add(ctx, tcg_ctx->btarget, tbase, toffset);
             tcg_temp_free(tcg_ctx, tbase);
             tcg_temp_free(tcg_ctx, toffset);
         }
@@ -16390,25 +16390,25 @@ static void gen_mipsdsp_add_cmp_pick(DisasContext *ctx,
             check_dspr2(ctx);
             gen_helper_cmpgu_eq_qb(tcg_ctx, t1, v1_t, v2_t);
             tcg_gen_mov_tl(tcg_ctx, *cpu_gpr[ret], t1);
-            tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_dspctrl, *(TCGv *)tcg_ctx->cpu_dspctrl, 0xF0FFFFFF);
+            tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_dspctrl, tcg_ctx->cpu_dspctrl, 0xF0FFFFFF);
             tcg_gen_shli_tl(tcg_ctx, t1, t1, 24);
-            tcg_gen_or_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_dspctrl, *(TCGv *)tcg_ctx->cpu_dspctrl, t1);
+            tcg_gen_or_tl(tcg_ctx, tcg_ctx->cpu_dspctrl, tcg_ctx->cpu_dspctrl, t1);
             break;
         case OPC_CMPGDU_LT_QB:
             check_dspr2(ctx);
             gen_helper_cmpgu_lt_qb(tcg_ctx, t1, v1_t, v2_t);
             tcg_gen_mov_tl(tcg_ctx, *cpu_gpr[ret], t1);
-            tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_dspctrl, *(TCGv *)tcg_ctx->cpu_dspctrl, 0xF0FFFFFF);
+            tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_dspctrl, tcg_ctx->cpu_dspctrl, 0xF0FFFFFF);
             tcg_gen_shli_tl(tcg_ctx, t1, t1, 24);
-            tcg_gen_or_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_dspctrl, *(TCGv *)tcg_ctx->cpu_dspctrl, t1);
+            tcg_gen_or_tl(tcg_ctx, tcg_ctx->cpu_dspctrl, tcg_ctx->cpu_dspctrl, t1);
             break;
         case OPC_CMPGDU_LE_QB:
             check_dspr2(ctx);
             gen_helper_cmpgu_le_qb(tcg_ctx, t1, v1_t, v2_t);
             tcg_gen_mov_tl(tcg_ctx, *cpu_gpr[ret], t1);
-            tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_dspctrl, *(TCGv *)tcg_ctx->cpu_dspctrl, 0xF0FFFFFF);
+            tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_dspctrl, tcg_ctx->cpu_dspctrl, 0xF0FFFFFF);
             tcg_gen_shli_tl(tcg_ctx, t1, t1, 24);
-            tcg_gen_or_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_dspctrl, *(TCGv *)tcg_ctx->cpu_dspctrl, t1);
+            tcg_gen_or_tl(tcg_ctx, tcg_ctx->cpu_dspctrl, tcg_ctx->cpu_dspctrl, t1);
             break;
         case OPC_CMP_EQ_PH:
             check_dsp(ctx);
@@ -18066,7 +18066,7 @@ static void gen_msa_branch(CPUMIPSState *env, DisasContext *ctx, uint32_t op1)
             tcg_gen_or_i64(tcg_ctx, t0, tcg_ctx->msa_wr_d[wt<<1], tcg_ctx->msa_wr_d[(wt<<1)+1]);
             tcg_gen_setcondi_i64(tcg_ctx, (op1 == OPC_BZ_V) ?
                     TCG_COND_EQ : TCG_COND_NE, t0, t0, 0);
-            tcg_gen_trunc_i64_tl(tcg_ctx, *(TCGv *)tcg_ctx->bcond, t0);
+            tcg_gen_trunc_i64_tl(tcg_ctx, tcg_ctx->bcond, t0);
             tcg_temp_free_i64(tcg_ctx, t0);
         }
         break;
@@ -18074,14 +18074,14 @@ static void gen_msa_branch(CPUMIPSState *env, DisasContext *ctx, uint32_t op1)
     case OPC_BZ_H:
     case OPC_BZ_W:
     case OPC_BZ_D:
-        gen_check_zero_element(env, *(TCGv *)tcg_ctx->bcond, df, wt);
+        gen_check_zero_element(env, tcg_ctx->bcond, df, wt);
         break;
     case OPC_BNZ_B:
     case OPC_BNZ_H:
     case OPC_BNZ_W:
     case OPC_BNZ_D:
-        gen_check_zero_element(env, *(TCGv *)tcg_ctx->bcond, df, wt);
-        tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, *(TCGv *)tcg_ctx->bcond, *(TCGv *)tcg_ctx->bcond, 0);
+        gen_check_zero_element(env, tcg_ctx->bcond, df, wt);
+        tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, tcg_ctx->bcond, tcg_ctx->bcond, 0);
         break;
     }
 
@@ -19139,7 +19139,7 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
     if ((ctx->hflags & MIPS_HFLAG_BMASK_BASE) == MIPS_HFLAG_BL) {
         TCGLabel *l1 = gen_new_label(tcg_ctx);
 
-        tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->bcond, 0, l1);
+        tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, tcg_ctx->bcond, 0, l1);
         tcg_gen_movi_i32(tcg_ctx, tcg_ctx->hflags, ctx->hflags & ~MIPS_HFLAG_BMASK);
         gen_goto_tb(ctx, 1, ctx->pc + 4);
         gen_set_label(tcg_ctx, l1);
@@ -20104,20 +20104,14 @@ void mips_tcg_init(struct uc_struct *uc)
                 regnames_LO[i]);
     }
 
-    if (!uc->init_tcg)
-        tcg_ctx->cpu_dspctrl = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->cpu_dspctrl) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+    tcg_ctx->cpu_dspctrl = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                      offsetof(CPUMIPSState, active_tc.DSPControl),
                                      "DSPControl");
 
-    if (!uc->init_tcg)
-        tcg_ctx->bcond = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->bcond) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+    tcg_ctx->bcond = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                offsetof(CPUMIPSState, bcond), "bcond");
 
-    if (!uc->init_tcg)
-        tcg_ctx->btarget = g_malloc0(sizeof(TCGv));
-    *((TCGv *)tcg_ctx->btarget) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+    tcg_ctx->btarget = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                  offsetof(CPUMIPSState, btarget), "btarget");
 
     tcg_ctx->hflags = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env,
