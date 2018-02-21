@@ -11175,7 +11175,7 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
         return;
     }
 
-    insn = arm_ldl_code(env, s->pc, s->bswap_code);
+    insn = arm_ldl_code(env, s->pc, s->sctlr_b);
     s->insn = insn;
     s->pc += 4;
 
@@ -11250,11 +11250,7 @@ void gen_intermediate_code_a64(ARMCPU *cpu, TranslationBlock *tb)
     dc->secure_routed_to_el3 = arm_feature(env, ARM_FEATURE_EL3) &&
                                !arm_el_is_aa64(env, 3);
     dc->thumb = 0;
-#if defined(TARGET_WORDS_BIGENDIAN)
-    dc->bswap_code = 1;
-#else
-    dc->bswap_code = 0;
-#endif
+    dc->sctlr_b = 0;
     dc->condexec_mask = 0;
     dc->condexec_cond = 0;
     dc->mmu_idx = ARM_TBFLAG_MMUIDX(tb->flags);
