@@ -3066,7 +3066,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     CHECK_IU_FEATURE(dc, HYPV);
                     if (!hypervisor(dc))
                         goto priv_insn;
-                    tcg_gen_mov_tl(tcg_ctx, cpu_tmp0, *(TCGv *)tcg_ctx->cpu_ssr);
+                    tcg_gen_mov_tl(tcg_ctx, cpu_tmp0, tcg_ctx->cpu_ssr);
                     break;
                 case 31: // ver
                     tcg_gen_mov_tl(tcg_ctx, cpu_tmp0, *(TCGv *)tcg_ctx->cpu_ver);
@@ -4021,7 +4021,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 CHECK_IU_FEATURE(dc, HYPV);
                                 if (!hypervisor(dc))
                                     goto priv_insn;
-                                tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_ssr, cpu_tmp0);
+                                tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_ssr, cpu_tmp0);
                                 break;
                             default:
                                 goto illegal_insn;
@@ -5557,8 +5557,7 @@ void gen_intermediate_code_init(CPUSPARCState *env)
     tcg_ctx->cpu_hver = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, hver),
             "hver");
 
-    tcg_ctx->cpu_ssr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_ssr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+    tcg_ctx->cpu_ssr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, ssr), "ssr");
 
     tcg_ctx->cpu_ver = g_malloc0(sizeof(TCGv));

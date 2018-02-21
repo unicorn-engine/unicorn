@@ -846,7 +846,7 @@ struct TCGContext {
     TCGv cpu_hintp;
     TCGv cpu_htba;
     TCGv cpu_hver;
-    void *cpu_ssr;
+    TCGv cpu_ssr;
     void *cpu_ver;
     void *cpu_wim;
 
