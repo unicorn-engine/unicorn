@@ -811,7 +811,8 @@ struct TCGContext {
     TCGv_i64 cpu_fpr[32];   // TARGET_DPREGS = 32 for Sparc64, 16 for Sparc
 
     // void *cpu_cc_src, *cpu_cc_src2, *cpu_cc_dst;
-    void *cpu_fsr, *sparc_cpu_pc, *cpu_npc, *cpu_gregs[8];
+    void *cpu_fsr, *sparc_cpu_pc, *cpu_npc;
+    void *cpu_regs_sparc[32];
     void *cpu_y;
     void *cpu_tbr;
     void *cpu_cond;
