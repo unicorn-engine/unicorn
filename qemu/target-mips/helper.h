@@ -178,6 +178,10 @@ DEF_HELPER_1(dvpe, tl, env)
 DEF_HELPER_1(evpe, tl, env)
 #endif /* !CONFIG_USER_ONLY */
 
+/* R6 Multi-threading */
+DEF_HELPER_1(dvp, tl, env)
+DEF_HELPER_1(evp, tl, env)
+
 /* microMIPS functions */
 DEF_HELPER_4(lwm, void, env, tl, tl, i32)
 DEF_HELPER_4(swm, void, env, tl, tl, i32)

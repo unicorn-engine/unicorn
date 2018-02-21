@@ -890,6 +890,8 @@ enum {
     OPC_EVPE     = 0x01 | (1 << 5) | OPC_MFMC0,
     OPC_DI       = (0 << 5) | (0x0C << 11) | OPC_MFMC0,
     OPC_EI       = (1 << 5) | (0x0C << 11) | OPC_MFMC0,
+    OPC_DVP      = 0x04 | (0 << 3) | (1 << 5) | (0 << 11) | OPC_MFMC0,
+    OPC_EVP      = 0x04 | (0 << 3) | (0 << 5) | (0 << 11) | OPC_MFMC0,
 };
 
 /* Coprocessor 0 (with rs == C0) */
@@ -1414,6 +1416,7 @@ typedef struct DisasContext {
     bool mvh;
     int CP0_LLAddr_shift;
     bool ps;
+    bool vp;
     // Unicorn engine
     struct uc_struct *uc;
 } DisasContext;
@@ -5022,6 +5025,11 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_helper_mfc0_mvpconf1(tcg_ctx, arg, tcg_ctx->cpu_env);
             rn = "MVPConf1";
             break;
+        case 4:
+            CP0_CHECK(ctx->vp);
+            gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_VPControl));
+            rn = "VPControl";
+            break;
         default:
             goto cp0_unimplemented;
         }
@@ -5149,6 +5157,11 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
                 tcg_temp_free_i64(tcg_ctx, tmp);
             }
             rn = "EntryLo1";
+            break;
+        case 1:
+            CP0_CHECK(ctx->vp);
+            gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_GlobalNumber));
+            rn = "GlobalNumber";
             break;
         default:
             goto cp0_unimplemented;
@@ -5672,6 +5685,11 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             /* ignored */
             rn = "MVPConf1";
             break;
+        case 4:
+            CP0_CHECK(ctx->vp);
+            /* ignored */
+            rn = "VPControl";
+            break;
         default:
             goto cp0_unimplemented;
         }
@@ -5773,6 +5791,11 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 0:
             gen_helper_mtc0_entrylo1(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "EntryLo1";
+            break;
+        case 1:
+            CP0_CHECK(ctx->vp);
+            /* ignored */
+            rn = "GlobalNumber";
             break;
         default:
             goto cp0_unimplemented;
@@ -6309,6 +6332,11 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_helper_mfc0_mvpconf1(tcg_ctx, arg, tcg_ctx->cpu_env);
             rn = "MVPConf1";
             break;
+        case 4:
+            CP0_CHECK(ctx->vp);
+            gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_VPControl));
+            rn = "VPControl";
+            break;
         default:
             goto cp0_unimplemented;
         }
@@ -6409,6 +6437,11 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 0:
             tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_EntryLo1));
             rn = "EntryLo1";
+            break;
+        case 1:
+            CP0_CHECK(ctx->vp);
+            gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_GlobalNumber));
+            rn = "GlobalNumber";
             break;
         default:
             goto cp0_unimplemented;
@@ -6917,6 +6950,11 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             /* ignored */
             rn = "MVPConf1";
             break;
+        case 4:
+            CP0_CHECK(ctx->vp);
+            /* ignored */
+            rn = "VPControl";
+            break;
         default:
             goto cp0_unimplemented;
         }
@@ -7016,6 +7054,11 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 0:
             gen_helper_dmtc0_entrylo1(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "EntryLo1";
+            break;
+        case 1:
+            CP0_CHECK(ctx->vp);
+            /* ignored */
+            rn = "GlobalNumber";
             break;
         default:
             goto cp0_unimplemented;
@@ -19242,6 +19285,20 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
                     gen_helper_evpe(tcg_ctx, t0, tcg_ctx->cpu_env);
                     gen_store_gpr(tcg_ctx, t0, rt);
                     break;
+                case OPC_DVP:
+                    check_insn(ctx, ISA_MIPS32R6);
+                    if (ctx->vp) {
+                        gen_helper_dvp(tcg_ctx, t0, tcg_ctx->cpu_env);
+                        gen_store_gpr(tcg_ctx, t0, rt);
+                    }
+                    break;
+                case OPC_EVP:
+                    check_insn(ctx, ISA_MIPS32R6);
+                    if (ctx->vp) {
+                        gen_helper_evp(tcg_ctx, t0, tcg_ctx->cpu_env);
+                        gen_store_gpr(tcg_ctx, t0, rt);
+                    }
+                    break;
                 case OPC_DI:
                     check_insn(ctx, ISA_MIPS32R2);
                     save_cpu_state(ctx, 1);
@@ -19773,6 +19830,7 @@ void gen_intermediate_code(CPUMIPSState *env, struct TranslationBlock *tb)
     ctx.ulri = (env->CP0_Config3 >> CP0C3_ULRI) & 1;
     ctx.ps = ((env->active_fpu.fcr0 >> FCR0_PS) & 1) ||
              (env->insn_flags & (INSN_LOONGSON2E | INSN_LOONGSON2F));
+    ctx.vp = (env->CP0_Config5 >> CP0C5_VP) & 1;
     restore_cpu_state(env, &ctx);
 #ifdef CONFIG_USER_ONLY
         ctx.mem_idx = MIPS_HFLAG_UM;
@@ -20196,6 +20254,7 @@ void cpu_state_reset(CPUMIPSState *env)
     env->CP0_Random = env->tlb->nb_tlb - 1;
     env->tlb->tlb_in_use = env->tlb->nb_tlb;
     env->CP0_Wired = 0;
+    env->CP0_GlobalNumber = (cs->cpu_index & 0xFF) << CP0GN_VPId;
     env->CP0_EBase = (cs->cpu_index & 0x3FF);
     env->CP0_EBase |= 0x80000000;
     env->CP0_Status = (1 << CP0St_BEV) | (1 << CP0St_ERL);

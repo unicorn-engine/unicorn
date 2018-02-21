@@ -3629,6 +3629,8 @@
 #define helper_mttdsp helper_mttdsp_mips64
 #define helper_dmt helper_dmt_mips64
 #define helper_emt helper_emt_mips64
+#define helper_evp helper_evp_mips64
+#define helper_dvp helper_dvp_mips64
 #define helper_dvpe helper_dvpe_mips64
 #define helper_evpe helper_evpe_mips64
 #define helper_fork helper_fork_mips64

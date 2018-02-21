@@ -3682,6 +3682,8 @@ mips_symbols = (
     'helper_mttdsp',
     'helper_dmt',
     'helper_emt',
+    'helper_evp',
+    'helper_dvp',
     'helper_dvpe',
     'helper_evpe',
     'helper_fork',

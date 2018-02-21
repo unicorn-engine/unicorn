@@ -3629,6 +3629,8 @@
 #define helper_mttdsp helper_mttdsp_mipsel
 #define helper_dmt helper_dmt_mipsel
 #define helper_emt helper_emt_mipsel
+#define helper_evp helper_evp_mipsel
+#define helper_dvp helper_dvp_mipsel
 #define helper_dvpe helper_dvpe_mipsel
 #define helper_evpe helper_evpe_mipsel
 #define helper_fork helper_fork_mipsel
