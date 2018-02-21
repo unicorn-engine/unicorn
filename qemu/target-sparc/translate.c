@@ -2908,7 +2908,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     }
                     break;
                 case 0x19: /* System tick compare */
-                    gen_store_gpr(dc, rd, *(TCGv *)tcg_ctx->cpu_stick_cmpr);
+                    gen_store_gpr(dc, rd, tcg_ctx->cpu_stick_cmpr);
                     break;
                 case 0x10: /* Performance Control */
                 case 0x11: /* Performance Instrumentation Counter */
@@ -2949,7 +2949,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     tcg_gen_mov_tl(tcg_ctx, cpu_dst, *(TCGv *)tcg_ctx->cpu_hver);
                     break;
                 case 31: // hstick_cmpr
-                    tcg_gen_mov_tl(tcg_ctx, cpu_dst, *(TCGv *)tcg_ctx->cpu_hstick_cmpr);
+                    tcg_gen_mov_tl(tcg_ctx, cpu_dst, tcg_ctx->cpu_hstick_cmpr);
                     break;
                 default:
                     goto illegal_insn;
@@ -3847,13 +3847,13 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 {
                                     TCGv_ptr r_tickptr;
 
-                                    tcg_gen_xor_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_stick_cmpr, cpu_src1,
+                                    tcg_gen_xor_tl(tcg_ctx, tcg_ctx->cpu_stick_cmpr, cpu_src1,
                                                    cpu_src2);
                                     r_tickptr = tcg_temp_new_ptr(tcg_ctx);
                                     tcg_gen_ld_ptr(tcg_ctx, r_tickptr, tcg_ctx->cpu_env,
                                                    offsetof(CPUSPARCState, stick));
                                     gen_helper_tick_set_limit(tcg_ctx, r_tickptr,
-                                                              *(TCGv *)tcg_ctx->cpu_stick_cmpr);
+                                                              tcg_ctx->cpu_stick_cmpr);
                                     tcg_temp_free_ptr(tcg_ctx, r_tickptr);
                                 }
                                 break;
@@ -4068,12 +4068,12 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 {
                                     TCGv_ptr r_tickptr;
 
-                                    tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_hstick_cmpr, cpu_tmp0);
+                                    tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_hstick_cmpr, cpu_tmp0);
                                     r_tickptr = tcg_temp_new_ptr(tcg_ctx);
                                     tcg_gen_ld_ptr(tcg_ctx, r_tickptr, tcg_ctx->cpu_env,
                                                    offsetof(CPUSPARCState, hstick));
                                     gen_helper_tick_set_limit(tcg_ctx, r_tickptr,
-                                                              *(TCGv *)tcg_ctx->cpu_hstick_cmpr);
+                                                              tcg_ctx->cpu_hstick_cmpr);
                                     tcg_temp_free_ptr(tcg_ctx, r_tickptr);
                                 }
                                 break;
@@ -5540,13 +5540,11 @@ void gen_intermediate_code_init(CPUSPARCState *env)
             offsetof(CPUSPARCState, tick_cmpr),
             "tick_cmpr");
 
-    tcg_ctx->cpu_stick_cmpr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_stick_cmpr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+    tcg_ctx->cpu_stick_cmpr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, stick_cmpr),
             "stick_cmpr");
 
-    tcg_ctx->cpu_hstick_cmpr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_hstick_cmpr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+    tcg_ctx->cpu_hstick_cmpr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, hstick_cmpr),
             "hstick_cmpr");
 
