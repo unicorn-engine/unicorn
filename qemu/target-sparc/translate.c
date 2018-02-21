@@ -1020,7 +1020,7 @@ static void gen_branch_a(DisasContext *dc, target_ulong pc1)
     TCGLabel *l1 = gen_new_label(tcg_ctx);
     target_ulong npc = dc->npc;
 
-    tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, *(TCGv *)tcg_ctx->cpu_cond, 0, l1);
+    tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_cond, 0, l1);
 
     gen_goto_tb(dc, 0, npc, pc1);
 
@@ -1048,7 +1048,7 @@ static void gen_branch_n(DisasContext *dc, target_ulong pc1)
         tcg_gen_addi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_npc, *(TCGv *)tcg_ctx->cpu_npc, 4);
         t = tcg_const_tl(tcg_ctx, pc1);
         z = tcg_const_tl(tcg_ctx, 0);
-        tcg_gen_movcond_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->cpu_npc, *(TCGv *)tcg_ctx->cpu_cond, z, t, *(TCGv *)tcg_ctx->cpu_npc);
+        tcg_gen_movcond_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->cpu_npc, tcg_ctx->cpu_cond, z, t, *(TCGv *)tcg_ctx->cpu_npc);
         tcg_temp_free(tcg_ctx, t);
         tcg_temp_free(tcg_ctx, z);
 
@@ -1064,7 +1064,7 @@ static inline void gen_generic_branch(DisasContext *dc)
     TCGv npc1 = tcg_const_tl(tcg_ctx, dc->jump_pc[1]);
     TCGv zero = tcg_const_tl(tcg_ctx, 0);
 
-    tcg_gen_movcond_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->cpu_npc, *(TCGv *)tcg_ctx->cpu_cond, zero, npc0, npc1);
+    tcg_gen_movcond_tl(tcg_ctx, TCG_COND_NE, *(TCGv *)tcg_ctx->cpu_npc, tcg_ctx->cpu_cond, zero, npc0, npc1);
 
     tcg_temp_free(tcg_ctx, npc0);
     tcg_temp_free(tcg_ctx, npc1);
@@ -1496,7 +1496,7 @@ static void do_branch(DisasContext *dc, int32_t offset, uint32_t insn, int cc)
         }
     } else {
         flush_cond(dc);
-        gen_cond(dc, *(TCGv *)tcg_ctx->cpu_cond, cc, cond);
+        gen_cond(dc, tcg_ctx->cpu_cond, cc, cond);
         if (a) {
             gen_branch_a(dc, target);
         } else {
@@ -1537,7 +1537,7 @@ static void do_fbranch(DisasContext *dc, int32_t offset, uint32_t insn, int cc)
         }
     } else {
         flush_cond(dc);
-        gen_fcond(dc, *(TCGv *)tcg_ctx->cpu_cond, cc, cond);
+        gen_fcond(dc, tcg_ctx->cpu_cond, cc, cond);
         if (a) {
             gen_branch_a(dc, target);
         } else {
@@ -1558,7 +1558,7 @@ static void do_branch_reg(DisasContext *dc, int32_t offset, uint32_t insn,
         target &= 0xffffffffULL;
     }
     flush_cond(dc);
-    gen_cond_reg(dc, *(TCGv *)tcg_ctx->cpu_cond, cond, r_reg);
+    gen_cond_reg(dc, tcg_ctx->cpu_cond, cond, r_reg);
     if (a) {
         gen_branch_a(dc, target);
     } else {
@@ -5269,7 +5269,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
         gen_op_next_insn(dc);
     } else if (dc->npc == JUMP_PC) {
         /* we can do a static jump */
-        gen_branch2(dc, dc->jump_pc[0], dc->jump_pc[1], *(TCGv *)tcg_ctx->cpu_cond);
+        gen_branch2(dc, dc->jump_pc[0], dc->jump_pc[1], tcg_ctx->cpu_cond);
         dc->is_br = 1;
     } else {
         dc->pc = dc->npc;
@@ -5580,8 +5580,7 @@ void gen_intermediate_code_init(CPUSPARCState *env)
     *(TCGv *)tcg_ctx->cpu_wim = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, wim),
             "wim");
 #endif
-    tcg_ctx->cpu_cond = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_cond = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cond),
+    tcg_ctx->cpu_cond = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, cond),
             "cond");
 
     tcg_ctx->cpu_cc_src = g_malloc0(sizeof(TCGv));

@@ -35,7 +35,6 @@ void sparc_release(void *ctx)
     TCGContext *tcg_ctx = (TCGContext *) ctx;
     release_common(ctx);
     g_free(tcg_ctx->cpu_wim);
-    g_free(tcg_ctx->cpu_cond);
     g_free(tcg_ctx->cpu_cc_src);
     g_free(tcg_ctx->cpu_cc_src2);
     g_free(tcg_ctx->cpu_cc_dst);
