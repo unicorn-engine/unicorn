@@ -1039,6 +1039,7 @@
 #define gen_helper_set_r13_banked gen_helper_set_r13_banked_armeb
 #define gen_helper_set_rmode gen_helper_set_rmode_armeb
 #define gen_helper_set_user_reg gen_helper_set_user_reg_armeb
+#define gen_helper_setend gen_helper_setend_armeb
 #define gen_helper_shadd16 gen_helper_shadd16_armeb
 #define gen_helper_shadd8 gen_helper_shadd8_armeb
 #define gen_helper_shaddsubx gen_helper_shaddsubx_armeb
@@ -1808,6 +1809,7 @@
 #define helper_set_r13_banked helper_set_r13_banked_armeb
 #define helper_set_rmode helper_set_rmode_armeb
 #define helper_set_user_reg helper_set_user_reg_armeb
+#define helper_setend helper_setend_armeb
 #define helper_shadd16 helper_shadd16_armeb
 #define helper_shadd8 helper_shadd8_armeb
 #define helper_shaddsubx helper_shaddsubx_armeb
