@@ -36,11 +36,11 @@
 #define tcg_gen_qemu_ldf64 tcg_gen_qemu_ld64
 #define tcg_gen_qemu_stf64 tcg_gen_qemu_st64
 
-#define DREG(insn, pos) *((TCGv *)tcg_ctx->cpu_dregs[((insn) >> (pos)) & 7])
-#define AREG(insn, pos) *((TCGv *)tcg_ctx->cpu_aregs[((insn) >> (pos)) & 7])
+#define DREG(insn, pos) tcg_ctx->cpu_dregs[((insn) >> (pos)) & 7]
+#define AREG(insn, pos) tcg_ctx->cpu_aregs[((insn) >> (pos)) & 7]
 #define FREG(insn, pos) tcg_ctx->cpu_fregs[((insn) >> (pos)) & 7]
 #define MACREG(acc) tcg_ctx->cpu_macc[acc]
-#define QREG_SP *((TCGv *)tcg_ctx->cpu_aregs[7])
+#define QREG_SP tcg_ctx->cpu_aregs[7]
 
 #define IS_NULL_QREG(t) (TCGV_EQUAL(t, tcg_ctx->NULL_QREG))
 
@@ -70,15 +70,11 @@ void m68k_tcg_init(struct uc_struct *uc)
 
     for (i = 0; i < 8; i++) {
         sprintf(p, "D%d", i);
-        if (!uc->init_tcg)
-            tcg_ctx->cpu_dregs[i] = g_malloc0(sizeof(TCGv));
-        *((TCGv *)tcg_ctx->cpu_dregs[i]) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+        tcg_ctx->cpu_dregs[i] = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                 offsetof(CPUM68KState, dregs[i]), p);
         p += 3;
         sprintf(p, "A%d", i);
-        if (!uc->init_tcg)
-            tcg_ctx->cpu_aregs[i] = g_malloc0(sizeof(TCGv));
-        *((TCGv *)tcg_ctx->cpu_aregs[i]) = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
+        tcg_ctx->cpu_aregs[i] = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                 offsetof(CPUM68KState, aregs[i]), p);
         p += 3;
         sprintf(p, "F%d", i);
