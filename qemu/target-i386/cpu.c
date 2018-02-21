@@ -2418,7 +2418,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
                     *ecx = MAX(*ecx, esa->offset + esa->size);
                 }
             }
-            *eax |= ena_mask & (XSTATE_FP | XSTATE_SSE);
+            *eax |= ena_mask & (XSTATE_FP_MASK | XSTATE_SSE_MASK);
             *ebx = *ecx;
         } else if (count == 1) {
             *eax = env->features[FEAT_XSAVE];
@@ -2652,15 +2652,15 @@ static void x86_cpu_reset(CPUState *s)
     cpu_watchpoint_remove_all(s, BP_CPU);
 
     cr4 = 0;
-    xcr0 = XSTATE_FP;
+    xcr0 = XSTATE_FP_MASK;
 
 #ifdef CONFIG_USER_ONLY
     /* Enable all the features for user-mode.  */
     if (env->features[FEAT_1_EDX] & CPUID_SSE) {
-        xcr0 |= XSTATE_SSE;
+        xcr0 |= XSTATE_SSE_MASK;
     }
     if (env->features[FEAT_7_0_EBX] & CPUID_7_0_EBX_MPX) {
-        xcr0 |= XSTATE_BNDREGS | XSTATE_BNDCSR;
+        xcr0 |= XSTATE_BNDREGS_MASK | XSTATE_BNDCSR_MASK;
     }
     if (env->features[FEAT_1_ECX] & CPUID_EXT_XSAVE) {
         cr4 |= CR4_OSFXSR_MASK | CR4_OSXSAVE_MASK;
