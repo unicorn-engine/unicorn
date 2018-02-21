@@ -3020,7 +3020,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     }
                     break;
                 case 5: // tba
-                    tcg_gen_mov_tl(tcg_ctx, cpu_tmp0, *(TCGv *)tcg_ctx->cpu_tbr);
+                    tcg_gen_mov_tl(tcg_ctx, cpu_tmp0, tcg_ctx->cpu_tbr);
                     break;
                 case 6: // pstate
                     tcg_gen_ld32s_tl(tcg_ctx, cpu_tmp0, tcg_ctx->cpu_env,
@@ -3087,7 +3087,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
 #else
                 if (!supervisor(dc))
                     goto priv_insn;
-                gen_store_gpr(dc, rd, *(TCGv *)tcg_ctx->cpu_tbr);
+                gen_store_gpr(dc, rd, tcg_ctx->cpu_tbr);
 #endif
                 break;
 #endif
@@ -3968,7 +3968,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 }
                                 break;
                             case 5: // tba
-                                tcg_gen_mov_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_tbr, cpu_tmp0);
+                                tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_tbr, cpu_tmp0);
                                 break;
                             case 6: // pstate
                                 save_state(dc);
@@ -4040,7 +4040,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
 #ifndef TARGET_SPARC64
                             if (!supervisor(dc))
                                 goto priv_insn;
-                            tcg_gen_xor_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_tbr, cpu_src1, cpu_src2);
+                            tcg_gen_xor_tl(tcg_ctx, tcg_ctx->cpu_tbr, cpu_src1, cpu_src2);
 #else
                             CHECK_IU_FEATURE(dc, HYPV);
                             if (!hypervisor(dc))
@@ -5616,8 +5616,7 @@ void gen_intermediate_code_init(CPUSPARCState *env)
 
     tcg_ctx->cpu_y = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, y), "y");
 #ifndef CONFIG_USER_ONLY
-    tcg_ctx->cpu_tbr = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_tbr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, tbr),
+    tcg_ctx->cpu_tbr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, tbr),
             "tbr");
 #endif
 

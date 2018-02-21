@@ -836,7 +836,7 @@ struct TCGContext {
     void *cpu_fsr, *sparc_cpu_pc, *cpu_npc;
     void *cpu_regs_sparc[32];
     TCGv cpu_y;
-    void *cpu_tbr;
+    TCGv cpu_tbr;
     void *cpu_cond;
     void *cpu_gsr;
     void *cpu_tick_cmpr, *cpu_stick_cmpr, *cpu_hstick_cmpr;
