@@ -617,7 +617,7 @@ static inline void gen_op_mulscc(DisasContext *dc, TCGv dst, TCGv src1, TCGv src
     */
     zero = tcg_const_tl(tcg_ctx, 0);
     tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src, src1, 0xffffffff);
-    tcg_gen_andi_tl(tcg_ctx, r_temp, *(TCGv *)tcg_ctx->cpu_y, 0x1);
+    tcg_gen_andi_tl(tcg_ctx, r_temp, tcg_ctx->cpu_y, 0x1);
     tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_cc_src2, src2, 0xffffffff);
     tcg_gen_movcond_tl(tcg_ctx, TCG_COND_EQ, *(TCGv *)tcg_ctx->cpu_cc_src2, r_temp, zero,
                        zero, *(TCGv *)tcg_ctx->cpu_cc_src2);
@@ -627,10 +627,10 @@ static inline void gen_op_mulscc(DisasContext *dc, TCGv dst, TCGv src1, TCGv src
     // env->y = (b2 << 31) | (env->y >> 1);
     tcg_gen_andi_tl(tcg_ctx, r_temp, *(TCGv *)tcg_ctx->cpu_cc_src, 0x1);
     tcg_gen_shli_tl(tcg_ctx, r_temp, r_temp, 31);
-    tcg_gen_shri_tl(tcg_ctx, t0, *(TCGv *)tcg_ctx->cpu_y, 1);
+    tcg_gen_shri_tl(tcg_ctx, t0, tcg_ctx->cpu_y, 1);
     tcg_gen_andi_tl(tcg_ctx, t0, t0, 0x7fffffff);
     tcg_gen_or_tl(tcg_ctx, t0, t0, r_temp);
-    tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_y, t0, 0xffffffff);
+    tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_y, t0, 0xffffffff);
 
     // b1 = N ^ V;
     gen_mov_reg_N(dc, t0, tcg_ctx->cpu_psr);
@@ -655,9 +655,9 @@ static inline void gen_op_multiply(DisasContext *dc, TCGv dst, TCGv src1, TCGv s
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 #if TARGET_LONG_BITS == 32
     if (sign_ext) {
-        tcg_gen_muls2_tl(tcg_ctx, dst, *(TCGv *)tcg_ctx->cpu_y, src1, src2);
+        tcg_gen_muls2_tl(tcg_ctx, dst, tcg_ctx->cpu_y, src1, src2);
     } else {
-        tcg_gen_mulu2_tl(tcg_ctx, dst, *(TCGv *)tcg_ctx->cpu_y, src1, src2);
+        tcg_gen_mulu2_tl(tcg_ctx, dst, tcg_ctx->cpu_y, src1, src2);
     }
 #else
     TCGv t0 = tcg_temp_new_i64(tcg_ctx);
@@ -675,7 +675,7 @@ static inline void gen_op_multiply(DisasContext *dc, TCGv dst, TCGv src1, TCGv s
     tcg_temp_free(tcg_ctx, t0);
     tcg_temp_free(tcg_ctx, t1);
 
-    tcg_gen_shri_i64(tcg_ctx, *(TCGv *)tcg_ctx->cpu_y, dst, 32);
+    tcg_gen_shri_i64(tcg_ctx, tcg_ctx->cpu_y, dst, 32);
 #endif
 }
 
@@ -2841,7 +2841,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                         break;
                     }
 #endif
-                    gen_store_gpr(dc, rd, *(TCGv *)tcg_ctx->cpu_y);
+                    gen_store_gpr(dc, rd, tcg_ctx->cpu_y);
                     break;
 #ifdef TARGET_SPARC64
                 case 0x2: /* V9 rdccr */
@@ -3735,7 +3735,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                             switch(rd) {
                             case 0: /* wry */
                                 tcg_gen_xor_tl(tcg_ctx, cpu_tmp0, cpu_src1, cpu_src2);
-                                tcg_gen_andi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_y, cpu_tmp0, 0xffffffff);
+                                tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_y, cpu_tmp0, 0xffffffff);
                                 break;
 #ifndef TARGET_SPARC64
                             /* undefined in the SPARCv8 manual, nop on the microSPARC II */
@@ -5614,8 +5614,7 @@ void gen_intermediate_code_init(CPUSPARCState *env)
     *(TCGv *)tcg_ctx->cpu_npc = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, npc),
             "npc");
 
-    tcg_ctx->cpu_y = g_malloc0(sizeof(TCGv));
-    *(TCGv *)tcg_ctx->cpu_y = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, y), "y");
+    tcg_ctx->cpu_y = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, y), "y");
 #ifndef CONFIG_USER_ONLY
     tcg_ctx->cpu_tbr = g_malloc0(sizeof(TCGv));
     *(TCGv *)tcg_ctx->cpu_tbr = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, tbr),

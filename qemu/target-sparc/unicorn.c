@@ -42,7 +42,6 @@ void sparc_release(void *ctx)
     g_free(tcg_ctx->cpu_fsr);
     g_free(tcg_ctx->sparc_cpu_pc);
     g_free(tcg_ctx->cpu_npc);
-    g_free(tcg_ctx->cpu_y);
     g_free(tcg_ctx->cpu_tbr);
 
     for (i = 0; i < 32; i++) {
