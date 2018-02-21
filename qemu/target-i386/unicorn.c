@@ -52,10 +52,6 @@ void x86_release(void *ctx)
         g_free(s->cpu_regs[i]);
     }
 
-    for (i = 0; i < 6; ++i) {
-        g_free(s->cpu_seg_base[i]);
-    }
-
     g_free(s->tb_ctx.tbs);
 }
 

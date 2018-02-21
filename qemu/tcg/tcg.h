@@ -730,7 +730,7 @@ struct TCGContext {
     TCGv_env cpu_env;
     TCGv_i32 cpu_cc_op;
     void *cpu_regs[16]; // 16 GRP for X86-64
-    void *cpu_seg_base[6]; // Actually an array of TCGv
+    TCGv cpu_seg_base[6];
     TCGv_i64 cpu_bndl[4];
     TCGv_i64 cpu_bndu[4];
     int x86_64_hregs;   // qemu/target-i386/translate.c

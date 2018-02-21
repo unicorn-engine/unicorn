@@ -565,8 +565,8 @@ static void gen_lea_v_seg(DisasContext *s, TCGMemOp aflag, TCGv a0,
     }
 
     if (ovr_seg >= 0) {
-        TCGv **cpu_seg_base = (TCGv **)tcg_ctx->cpu_seg_base;
-        TCGv seg = *cpu_seg_base[ovr_seg];
+        TCGv *cpu_seg_base = tcg_ctx->cpu_seg_base;
+        TCGv seg = cpu_seg_base[ovr_seg];
 
         if (aflag == MO_64) {
             tcg_gen_add_tl(tcg_ctx, cpu_A0, a0, seg);
@@ -2452,12 +2452,12 @@ static inline void gen_op_movl_T0_seg(TCGContext *s, int seg_reg)
 static inline void gen_op_movl_seg_T0_vm(TCGContext *s, int seg_reg)
 {
     TCGv cpu_T0 = *(TCGv *)s->cpu_T0;
-    TCGv **cpu_seg_base = (TCGv **)s->cpu_seg_base;
+    TCGv *cpu_seg_base = s->cpu_seg_base;
 
     tcg_gen_ext16u_tl(s, cpu_T0, cpu_T0);
     tcg_gen_st32_tl(s, cpu_T0, s->cpu_env,
                     offsetof(CPUX86State,segs[seg_reg].selector));
-    tcg_gen_shli_tl(s, *cpu_seg_base[seg_reg], cpu_T0, 4);
+    tcg_gen_shli_tl(s, cpu_seg_base[seg_reg], cpu_T0, 4);
 }
 
 /* move T0 to seg_reg and compute if the CPU state may change. Never
@@ -4893,7 +4893,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     TCGv cpu_T0 = *(TCGv *)tcg_ctx->cpu_T0;
     TCGv cpu_T1 = *(TCGv *)tcg_ctx->cpu_T1;
     TCGv **cpu_regs = (TCGv **)tcg_ctx->cpu_regs;
-    TCGv **cpu_seg_base = (TCGv **)tcg_ctx->cpu_seg_base;
+    TCGv *cpu_seg_base = tcg_ctx->cpu_seg_base;
     TCGArg* save_opparam_ptr = tcg_ctx->gen_opparam_buf + tcg_ctx->gen_op_buf[tcg_ctx->gen_last_op_idx].args;
     bool cc_op_dirty = s->cc_op_dirty;
     bool changed_cc_op = false;
@@ -7992,8 +7992,8 @@ case 0x101:
                 if (s->cpl != 0) {
                     gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
                 } else {
-                    tcg_gen_mov_tl(tcg_ctx, cpu_T0, *cpu_seg_base[R_GS]);
-                    tcg_gen_ld_tl(tcg_ctx, *cpu_seg_base[R_GS], cpu_env,
+                    tcg_gen_mov_tl(tcg_ctx, cpu_T0, cpu_seg_base[R_GS]);
+                    tcg_gen_ld_tl(tcg_ctx, cpu_seg_base[R_GS], cpu_env,
                                   offsetof(CPUX86State, kernelgsbase));
                     tcg_gen_st_tl(tcg_ctx, cpu_T0, cpu_env,
                                   offsetof(CPUX86State, kernelgsbase));
@@ -8609,7 +8609,7 @@ case 0x101:
                 tcg_gen_movi_i32(tcg_ctx, cpu_tmp2_i32, CR4_FSGSBASE_MASK);
                 gen_helper_cr4_testbit(tcg_ctx, cpu_env, cpu_tmp2_i32);
 
-                base = *cpu_seg_base[modrm & 8 ? R_GS : R_FS];
+                base = cpu_seg_base[modrm & 8 ? R_GS : R_FS];
                 treg = *cpu_regs[(modrm & 7) | REX_B(s)];
 
                 if (modrm & 0x10) {
@@ -8847,8 +8847,7 @@ void tcg_x86_init(struct uc_struct *uc)
     }
 
     for (i = 0; i < 6; ++i) {
-        tcg_ctx->cpu_seg_base[i] = g_malloc0(sizeof(TCGv));
-        *((TCGv *)tcg_ctx->cpu_seg_base[i])
+        tcg_ctx->cpu_seg_base[i]
             = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                  offsetof(CPUX86State, segs[i].base),
                                  seg_base_names[i]);
