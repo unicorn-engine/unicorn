@@ -346,6 +346,24 @@ static CPAccessResult access_tda(CPUARMState *env, const ARMCPRegInfo *ri,
     return CP_ACCESS_OK;
 }
 
+/* Check for traps to performance monitor registers, which are controlled
+ * by MDCR_EL2.TPM for EL2 and MDCR_EL3.TPM for EL3.
+ */
+static CPAccessResult access_tpm(CPUARMState *env, const ARMCPRegInfo *ri,
+                                 bool isread)
+{
+    int el = arm_current_el(env);
+
+    if (el < 2 && (env->cp15.mdcr_el2 & MDCR_TPM)
+        && !arm_is_secure_below_el3(env)) {
+        return CP_ACCESS_TRAP_EL2;
+    }
+    if (el < 3 && (env->cp15.mdcr_el3 & MDCR_TPM)) {
+        return CP_ACCESS_TRAP_EL3;
+    }
+    return CP_ACCESS_OK;
+}
+
 static void dacr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
@@ -659,11 +677,22 @@ static CPAccessResult pmreg_access(CPUARMState *env, const ARMCPRegInfo *ri,
                                    bool isread)
 {
     /* Performance monitor registers user accessibility is controlled
-     * by PMUSERENR.
+     * by PMUSERENR. MDCR_EL2.TPM and MDCR_EL3.TPM allow configurable
+     * trapping to EL2 or EL3 for other accesses.
      */
-    if (arm_current_el(env) == 0 && !env->cp15.c9_pmuserenr) {
+    int el = arm_current_el(env);
+
+    if (el == 0 && !env->cp15.c9_pmuserenr) {
         return CP_ACCESS_TRAP;
     }
+    if (el < 2 && (env->cp15.mdcr_el2 & MDCR_TPM)
+        && !arm_is_secure_below_el3(env)) {
+        return CP_ACCESS_TRAP_EL2;
+    }
+    if (el < 3 && (env->cp15.mdcr_el3 & MDCR_TPM)) {
+        return CP_ACCESS_TRAP_EL3;
+    }
+
     return CP_ACCESS_OK;
 }
 
@@ -962,19 +991,19 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
       pmreg_access },
     { "PMUSERENR", 15,9,14, 0,0,0, 0,
       0, PL0_R | PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmuserenr), {0, 0},
-      NULL, NULL, pmuserenr_write, NULL, raw_write },
+      access_tpm, NULL, pmuserenr_write, NULL, raw_write },
     { "PMUSERENR_EL0", 0,9,14,3,3,0, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
       PL0_R | PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmuserenr), {0, 0},
-      NULL, NULL, pmuserenr_write, NULL, raw_write },
+      access_tpm, NULL, pmuserenr_write, NULL, raw_write },
     { "PMINTENSET", 15,9,14, 0,0,1, 0,
       0, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pminten), {0, 0},
-      NULL, NULL, pmintenset_write, NULL, raw_write },
+      access_tpm, NULL, pmintenset_write, NULL, raw_write },
     { "PMINTENCLR", 15,9,14, 0,0,2, 0,
       ARM_CP_ALIAS, PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pminten), {0, 0},
-      NULL, NULL, pmintenclr_write, },
+      access_tpm, NULL, pmintenclr_write, },
     { "PMINTENCLR_EL1", 0,9,14, 3,0,2, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
       PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pminten), {0, 0},
-      NULL, NULL, pmintenclr_write },
+      access_tpm, NULL, pmintenclr_write },
     { "VBAR", 0,12,0, 3,0,0, ARM_CP_STATE_BOTH, 0,
       PL1_RW, 0, NULL, 0, 0,
       { offsetof(CPUARMState, cp15.vbar_s), offsetof(CPUARMState, cp15.vbar_ns) },
