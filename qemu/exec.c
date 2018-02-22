@@ -1125,6 +1125,7 @@ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **err
             error_setg_errno(errp, errno,
                              "cannot set up guest memory '%s'",
                              memory_region_name(new_block->mr));
+            return;
         }
         memory_try_enable_merging(new_block->host, new_block->max_length);
     }
