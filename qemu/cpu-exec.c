@@ -284,9 +284,9 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
     uint8_t *tb_ptr = itb->tc_ptr;
 
     // Unicorn: commented out
-    //qemu_log_mask(CPU_LOG_EXEC, "Trace %p [" TARGET_FMT_lx "] %s\n",
-    //              itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
-
+    //qemu_log_mask_and_addr(CPU_LOG_EXEC, itb->pc,
+    //                       "Trace %p [" TARGET_FMT_lx "] %s\n",
+    //                       itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
     next_tb = tcg_qemu_tb_exec(env, tb_ptr);
 
     if ((next_tb & TB_EXIT_MASK) > TB_EXIT_IDX1) {
@@ -297,10 +297,10 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
         CPUClass *cc = CPU_GET_CLASS(env->uc, cpu);
         TranslationBlock *tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
         // Unicorn: commented out
-        //qemu_log_mask(CPU_LOG_EXEC,
-        //              "Stopped execution of TB chain before %p ["
-        //              TARGET_FMT_lx "] %s\n",
-        //              itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
+        //qemu_log_mask_and_addr(CPU_LOG_EXEC, itb->pc,
+        //                       "Stopped execution of TB chain before %p ["
+        //                       TARGET_FMT_lx "] %s\n",
+        //                       itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
         if (cc->synchronize_from_tb) {
             // avoid sync twice when helper_uc_tracecode() already did this.
             if (env->uc->emu_counter <= env->uc->emu_count &&
