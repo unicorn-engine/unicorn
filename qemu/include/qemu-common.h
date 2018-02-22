@@ -222,12 +222,6 @@ bool tcg_enabled(struct uc_struct *uc);
 struct uc_struct;
 void cpu_exec_init_all(struct uc_struct *uc);
 
-/* Round number down to multiple */
-#define QEMU_ALIGN_DOWN(n, m) ((n) / (m) * (m))
-
-/* Round number up to multiple */
-#define QEMU_ALIGN_UP(n, m) QEMU_ALIGN_DOWN((n) + (m) - 1, (m))
-
 #include "qemu/module.h"
 
 /* vector definitions */
