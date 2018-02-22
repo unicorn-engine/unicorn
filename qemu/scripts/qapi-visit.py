@@ -298,8 +298,6 @@ class QAPISchemaGenVisitVisitor(QAPISchemaVisitor):
         if name == 'q_empty':
             return
         self.decl += gen_visit_members_decl(name)
-        self.decl += gen_visit_decl(name)
-        self.defn += gen_visit_object(name, base, members, variants)
         self.defn += gen_visit_object_members(name, base, members, variants)
         # TODO Worth changing the visitor signature, so we could
         # directly use rather than repeat type.is_implicit()?
