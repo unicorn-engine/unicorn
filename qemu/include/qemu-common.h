@@ -24,16 +24,6 @@
 #define TFR(expr) do { if ((expr) != -1) break; } while (errno == EINTR)
 
 #include "unicorn/platform.h"
-
-/* HOST_LONG_BITS is the size of a native pointer in bits. */
-#if UINTPTR_MAX == UINT32_MAX
-# define HOST_LONG_BITS 32
-#elif UINTPTR_MAX == UINT64_MAX
-# define HOST_LONG_BITS 64
-#else
-# error Unknown pointer size
-#endif
-
 #include "qemu/bswap.h"
 
 /* FIXME: Remove NEED_CPU_H.  */
