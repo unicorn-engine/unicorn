@@ -2651,8 +2651,6 @@
 #define strongarm_cp_reginfo strongarm_cp_reginfo_arm
 #define strpadcpy strpadcpy_arm
 #define strstart strstart_arm
-#define strtosz strtosz_arm
-#define strtosz_suffix strtosz_suffix_arm
 #define stw_be_p stw_be_p_arm
 #define stw_be_phys stw_be_phys_arm
 #define stw_he_p stw_he_p_arm

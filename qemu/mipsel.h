@@ -2651,8 +2651,6 @@
 #define strongarm_cp_reginfo strongarm_cp_reginfo_mipsel
 #define strpadcpy strpadcpy_mipsel
 #define strstart strstart_mipsel
-#define strtosz strtosz_mipsel
-#define strtosz_suffix strtosz_suffix_mipsel
 #define stw_be_p stw_be_p_mipsel
 #define stw_be_phys stw_be_phys_mipsel
 #define stw_he_p stw_he_p_mipsel

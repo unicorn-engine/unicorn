@@ -2651,8 +2651,6 @@
 #define strongarm_cp_reginfo strongarm_cp_reginfo_sparc64
 #define strpadcpy strpadcpy_sparc64
 #define strstart strstart_sparc64
-#define strtosz strtosz_sparc64
-#define strtosz_suffix strtosz_suffix_sparc64
 #define stw_be_p stw_be_p_sparc64
 #define stw_be_phys stw_be_phys_sparc64
 #define stw_he_p stw_he_p_sparc64

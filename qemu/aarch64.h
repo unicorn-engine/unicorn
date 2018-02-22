@@ -2651,8 +2651,6 @@
 #define strongarm_cp_reginfo strongarm_cp_reginfo_aarch64
 #define strpadcpy strpadcpy_aarch64
 #define strstart strstart_aarch64
-#define strtosz strtosz_aarch64
-#define strtosz_suffix strtosz_suffix_aarch64
 #define stw_be_p stw_be_p_aarch64
 #define stw_be_phys stw_be_phys_aarch64
 #define stw_he_p stw_he_p_aarch64

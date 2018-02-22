@@ -129,19 +129,19 @@ char *qemu_strsep(char **input, const char *delim)
 static int64_t suffix_mul(char suffix, int64_t unit)
 {
     switch (qemu_toupper(suffix)) {
-    case STRTOSZ_DEFSUFFIX_B:
+    case QEMU_STRTOSZ_DEFSUFFIX_B:
         return 1;
-    case STRTOSZ_DEFSUFFIX_KB:
+    case QEMU_STRTOSZ_DEFSUFFIX_KB:
         return unit;
-    case STRTOSZ_DEFSUFFIX_MB:
+    case QEMU_STRTOSZ_DEFSUFFIX_MB:
         return unit * unit;
-    case STRTOSZ_DEFSUFFIX_GB:
+    case QEMU_STRTOSZ_DEFSUFFIX_GB:
         return unit * unit * unit;
-    case STRTOSZ_DEFSUFFIX_TB:
+    case QEMU_STRTOSZ_DEFSUFFIX_TB:
         return unit * unit * unit * unit;
-    case STRTOSZ_DEFSUFFIX_PB:
+    case QEMU_STRTOSZ_DEFSUFFIX_PB:
         return unit * unit * unit * unit * unit;
-    case STRTOSZ_DEFSUFFIX_EB:
+    case QEMU_STRTOSZ_DEFSUFFIX_EB:
         return unit * unit * unit * unit * unit * unit;
     }
     return -1;
@@ -153,8 +153,8 @@ static int64_t suffix_mul(char suffix, int64_t unit)
  * in *end, if not NULL. Return -ERANGE on overflow, Return -EINVAL on
  * other error.
  */
-int64_t strtosz_suffix_unit(const char *nptr, char **end,
-                            const char default_suffix, int64_t unit)
+int64_t qemu_strtosz_suffix_unit(const char *nptr, char **end,
+                                 const char default_suffix, int64_t unit)
 {
     int64_t retval = -EINVAL;
     char *endptr;
@@ -196,12 +196,13 @@ fail:
     return retval;
 }
 
-int64_t strtosz_suffix(const char *nptr, char **end, const char default_suffix)
+int64_t qemu_strtosz_suffix(const char *nptr, char **end,
+                            const char default_suffix)
 {
-    return strtosz_suffix_unit(nptr, end, default_suffix, 1024);
+    return qemu_strtosz_suffix_unit(nptr, end, default_suffix, 1024);
 }
 
-int64_t strtosz(const char *nptr, char **end)
+int64_t qemu_strtosz(const char *nptr, char **end)
 {
-    return strtosz_suffix(nptr, end, STRTOSZ_DEFSUFFIX_MB);
+    return qemu_strtosz_suffix(nptr, end, QEMU_STRTOSZ_DEFSUFFIX_MB);
 }

@@ -2657,8 +2657,6 @@ symbols = (
     'strongarm_cp_reginfo',
     'strpadcpy',
     'strstart',
-    'strtosz',
-    'strtosz_suffix',
     'stw_be_p',
     'stw_be_phys',
     'stw_he_p',

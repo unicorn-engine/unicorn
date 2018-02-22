@@ -2651,8 +2651,6 @@
 #define strongarm_cp_reginfo strongarm_cp_reginfo_armeb
 #define strpadcpy strpadcpy_armeb
 #define strstart strstart_armeb
-#define strtosz strtosz_armeb
-#define strtosz_suffix strtosz_suffix_armeb
 #define stw_be_p stw_be_p_armeb
 #define stw_be_phys stw_be_phys_armeb
 #define stw_he_p stw_he_p_armeb

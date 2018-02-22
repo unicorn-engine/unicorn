@@ -2651,8 +2651,6 @@
 #define strongarm_cp_reginfo strongarm_cp_reginfo_mips64el
 #define strpadcpy strpadcpy_mips64el
 #define strstart strstart_mips64el
-#define strtosz strtosz_mips64el
-#define strtosz_suffix strtosz_suffix_mips64el
 #define stw_be_p stw_be_p_mips64el
 #define stw_be_phys stw_be_phys_mips64el
 #define stw_he_p stw_he_p_mips64el

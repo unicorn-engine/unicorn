@@ -2651,8 +2651,6 @@
 #define strongarm_cp_reginfo strongarm_cp_reginfo_m68k
 #define strpadcpy strpadcpy_m68k
 #define strstart strstart_m68k
-#define strtosz strtosz_m68k
-#define strtosz_suffix strtosz_suffix_m68k
 #define stw_be_p stw_be_p_m68k
 #define stw_be_phys stw_be_phys_m68k
 #define stw_he_p stw_he_p_m68k

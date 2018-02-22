@@ -2651,8 +2651,6 @@
 #define strongarm_cp_reginfo strongarm_cp_reginfo_powerpc
 #define strpadcpy strpadcpy_powerpc
 #define strstart strstart_powerpc
-#define strtosz strtosz_powerpc
-#define strtosz_suffix strtosz_suffix_powerpc
 #define stw_be_p stw_be_p_powerpc
 #define stw_be_phys stw_be_phys_powerpc
 #define stw_he_p stw_he_p_powerpc
