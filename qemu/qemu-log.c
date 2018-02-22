@@ -34,3 +34,17 @@ void qemu_log(const char *fmt, ...)
     }
     va_end(ap);
 }
+
+/* Returns true if addr is in our debug filter or no filter defined
+ */
+bool qemu_log_in_addr_range(uint64_t addr)
+{
+    // Unicorn: stubbed
+    return true;
+}
+
+
+void qemu_set_dfilter_ranges(const char *filter_spec)
+{
+    // Unicorn: stubbed
+}

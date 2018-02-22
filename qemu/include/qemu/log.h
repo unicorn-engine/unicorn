@@ -123,4 +123,7 @@ static inline void qemu_log_close(void)
     }
 }
 
+void qemu_set_dfilter_ranges(const char *ranges);
+bool qemu_log_in_addr_range(uint64_t addr);
+
 #endif
