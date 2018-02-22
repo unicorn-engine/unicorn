@@ -112,11 +112,6 @@
 #include "qapi-types.h"
 #include "unicorn/platform.h"
 
-/**
- * Opaque error object.
- */
-typedef struct Error Error;
-
 /*
  * Overall category of an error.
  * Based on the qapi type QapiErrorClass, but reproduced here for nicer

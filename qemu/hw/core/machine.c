@@ -10,7 +10,9 @@
  * See the COPYING file in the top-level directory.
  */
 
+#include "qemu/osdep.h"
 #include "hw/boards.h"
+#include "qapi/error.h"
 
 static void machine_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {

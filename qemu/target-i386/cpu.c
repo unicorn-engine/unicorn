@@ -18,6 +18,7 @@
  */
 
 #include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "unicorn/platform.h"
 
 #include "cpu.h"

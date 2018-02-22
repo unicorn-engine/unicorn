@@ -40,6 +40,7 @@
 #define HUGETLBFS_MAGIC       0x958458f6
 
 #include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "unicorn/platform.h"
 #include "sysemu/sysemu.h"
 #include <sys/mman.h>

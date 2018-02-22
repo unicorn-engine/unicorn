@@ -27,6 +27,7 @@
  *
  */
 #include "qemu/osdep.h"
+#include "qapi/error.h"
 #include <winsock2.h>
 #include <windows.h>
 

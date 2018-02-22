@@ -19,6 +19,7 @@
  */
 
 #include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "hw/m68k/m68k.h"
 #include "cpu.h"
 #include "qemu-common.h"

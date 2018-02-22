@@ -25,6 +25,8 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "hw/hw.h"
 #include "hw/sparc/sparc.h"
 #include "qemu/timer.h"
