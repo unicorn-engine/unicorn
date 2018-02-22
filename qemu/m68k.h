@@ -1357,7 +1357,6 @@
 #define get_phys_addr_v5 get_phys_addr_v5_m68k
 #define get_phys_addr_v6 get_phys_addr_v6_m68k
 #define get_system_memory get_system_memory_m68k
-#define get_ticks_per_sec get_ticks_per_sec_m68k
 #define g_list_insert_sorted_merged g_list_insert_sorted_merged_m68k
 #define _GLOBAL_OFFSET_TABLE_ _GLOBAL_OFFSET_TABLE__m68k
 #define gt_cntfrq_access gt_cntfrq_access_m68k

@@ -1357,7 +1357,6 @@
 #define get_phys_addr_v5 get_phys_addr_v5_armeb
 #define get_phys_addr_v6 get_phys_addr_v6_armeb
 #define get_system_memory get_system_memory_armeb
-#define get_ticks_per_sec get_ticks_per_sec_armeb
 #define g_list_insert_sorted_merged g_list_insert_sorted_merged_armeb
 #define _GLOBAL_OFFSET_TABLE_ _GLOBAL_OFFSET_TABLE__armeb
 #define gt_cntfrq_access gt_cntfrq_access_armeb

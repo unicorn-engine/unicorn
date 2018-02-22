@@ -5,6 +5,8 @@
 #include "qemu-common.h"
 #include "qemu/host-utils.h"
 
+#define NANOSECONDS_PER_SECOND 1000000000LL
+
 /* timers */
 
 #define SCALE_MS 1000000
@@ -149,11 +151,6 @@ void cpu_enable_ticks(void);
 /* Caller must hold BQL */
 void cpu_disable_ticks(void);
 
-static inline int64_t get_ticks_per_sec(void)
-{
-    return 1000000000LL;
-}
-
 /*
  * Low level clock functions
  */
@@ -177,7 +174,7 @@ static inline int64_t get_clock(void)
 {
     LARGE_INTEGER ti;
     QueryPerformanceCounter(&ti);
-    return muldiv64(ti.QuadPart, (uint32_t)get_ticks_per_sec(), (uint32_t)clock_freq);
+    return muldiv64(ti.QuadPart, (uint32_t)NANOSECONDS_PER_SECOND, (uint32_t)clock_freq);
 }
 
 #else

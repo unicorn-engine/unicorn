@@ -1357,7 +1357,6 @@
 #define get_phys_addr_v5 get_phys_addr_v5_sparc64
 #define get_phys_addr_v6 get_phys_addr_v6_sparc64
 #define get_system_memory get_system_memory_sparc64
-#define get_ticks_per_sec get_ticks_per_sec_sparc64
 #define g_list_insert_sorted_merged g_list_insert_sorted_merged_sparc64
 #define _GLOBAL_OFFSET_TABLE_ _GLOBAL_OFFSET_TABLE__sparc64
 #define gt_cntfrq_access gt_cntfrq_access_sparc64

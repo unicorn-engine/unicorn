@@ -50,8 +50,8 @@ static void cpu_mips_timer_update(CPUMIPSState *env)
 
     now = qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL);
     wait = env->CP0_Compare - env->CP0_Count -
-        (uint32_t)muldiv64(now, TIMER_FREQ, get_ticks_per_sec());
-    next = now + muldiv64(wait, get_ticks_per_sec(), TIMER_FREQ);
+        (uint32_t)muldiv64(now, TIMER_FREQ, NANOSECONDS_PER_SECOND);
+    next = now + muldiv64(wait, NANOSECONDS_PER_SECOND, TIMER_FREQ);
     timer_mod(env->timer, next);
 #endif
 }
@@ -83,7 +83,7 @@ uint32_t cpu_mips_get_count (CPUMIPSState *env)
         //}
 
         return env->CP0_Count +
-            (uint32_t)muldiv64(now, TIMER_FREQ, get_ticks_per_sec());
+            (uint32_t)muldiv64(now, TIMER_FREQ, NANOSECONDS_PER_SECOND);
     }
 }
 
@@ -101,7 +101,7 @@ void cpu_mips_store_count (CPUMIPSState *env, uint32_t count)
         /* Store new count register */
         env->CP0_Count =
             count - (uint32_t)muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL),
-                                       TIMER_FREQ, get_ticks_per_sec());
+                                       TIMER_FREQ, NANOSECONDS_PER_SECOND);
         /* Update timer timer */
         cpu_mips_timer_update(env);
     }
@@ -127,5 +127,5 @@ void cpu_mips_stop_count(CPUMIPSState *env)
 {
     /* Store the current value */
     env->CP0_Count += (uint32_t)muldiv64(qemu_clock_get_ns(QEMU_CLOCK_VIRTUAL),
-                                         TIMER_FREQ, get_ticks_per_sec());
+                                         TIMER_FREQ, NANOSECONDS_PER_SECOND);
 }

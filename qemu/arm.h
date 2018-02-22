@@ -1357,7 +1357,6 @@
 #define get_phys_addr_v5 get_phys_addr_v5_arm
 #define get_phys_addr_v6 get_phys_addr_v6_arm
 #define get_system_memory get_system_memory_arm
-#define get_ticks_per_sec get_ticks_per_sec_arm
 #define g_list_insert_sorted_merged g_list_insert_sorted_merged_arm
 #define _GLOBAL_OFFSET_TABLE_ _GLOBAL_OFFSET_TABLE__arm
 #define gt_cntfrq_access gt_cntfrq_access_arm

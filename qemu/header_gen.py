@@ -1363,7 +1363,6 @@ symbols = (
     'get_phys_addr_v5',
     'get_phys_addr_v6',
     'get_system_memory',
-    'get_ticks_per_sec',
     'g_list_insert_sorted_merged',
     '_GLOBAL_OFFSET_TABLE_',
     'gt_cntfrq_access',
