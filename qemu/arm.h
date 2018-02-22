@@ -805,6 +805,8 @@
 #define gen_helper_iwmmxt_unpacklul gen_helper_iwmmxt_unpacklul_arm
 #define gen_helper_iwmmxt_unpackluw gen_helper_iwmmxt_unpackluw_arm
 #define gen_helper_iwmmxt_unpacklw gen_helper_iwmmxt_unpacklw_arm
+#define gen_helper_mrs_banked gen_helper_mrs_banked_arm
+#define gen_helper_msr_banked gen_helper_msr_banked_arm
 #define gen_helper_neon_abd_f32 gen_helper_neon_abd_f32_arm
 #define gen_helper_neon_abdl_s16 gen_helper_neon_abdl_s16_arm
 #define gen_helper_neon_abdl_s32 gen_helper_neon_abdl_s32_arm
@@ -1547,6 +1549,7 @@
 #define helper_le_stl_mmu helper_le_stl_mmu_arm
 #define helper_le_stq_mmu helper_le_stq_mmu_arm
 #define helper_le_stw_mmu helper_le_stw_mmu_arm
+#define helper_mrs_banked helper_mrs_banked_arm
 #define helper_msa_ld_b helper_msa_ld_b_arm
 #define helper_msa_ld_d helper_msa_ld_d_arm
 #define helper_msa_ld_h helper_msa_ld_h_arm
@@ -1555,6 +1558,7 @@
 #define helper_msa_st_d helper_msa_st_d_arm
 #define helper_msa_st_h helper_msa_st_h_arm
 #define helper_msa_st_w helper_msa_st_w_arm
+#define helper_msr_banked helper_msr_banked_arm
 #define helper_msr_i_pstate helper_msr_i_pstate_arm
 #define helper_neon_abd_f32 helper_neon_abd_f32_arm
 #define helper_neon_abdl_s16 helper_neon_abdl_s16_arm

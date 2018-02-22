@@ -805,6 +805,8 @@
 #define gen_helper_iwmmxt_unpacklul gen_helper_iwmmxt_unpacklul_sparc64
 #define gen_helper_iwmmxt_unpackluw gen_helper_iwmmxt_unpackluw_sparc64
 #define gen_helper_iwmmxt_unpacklw gen_helper_iwmmxt_unpacklw_sparc64
+#define gen_helper_mrs_banked gen_helper_mrs_banked_sparc64
+#define gen_helper_msr_banked gen_helper_msr_banked_sparc64
 #define gen_helper_neon_abd_f32 gen_helper_neon_abd_f32_sparc64
 #define gen_helper_neon_abdl_s16 gen_helper_neon_abdl_s16_sparc64
 #define gen_helper_neon_abdl_s32 gen_helper_neon_abdl_s32_sparc64
@@ -1547,6 +1549,7 @@
 #define helper_le_stl_mmu helper_le_stl_mmu_sparc64
 #define helper_le_stq_mmu helper_le_stq_mmu_sparc64
 #define helper_le_stw_mmu helper_le_stw_mmu_sparc64
+#define helper_mrs_banked helper_mrs_banked_sparc64
 #define helper_msa_ld_b helper_msa_ld_b_sparc64
 #define helper_msa_ld_d helper_msa_ld_d_sparc64
 #define helper_msa_ld_h helper_msa_ld_h_sparc64
@@ -1555,6 +1558,7 @@
 #define helper_msa_st_d helper_msa_st_d_sparc64
 #define helper_msa_st_h helper_msa_st_h_sparc64
 #define helper_msa_st_w helper_msa_st_w_sparc64
+#define helper_msr_banked helper_msr_banked_sparc64
 #define helper_msr_i_pstate helper_msr_i_pstate_sparc64
 #define helper_neon_abd_f32 helper_neon_abd_f32_sparc64
 #define helper_neon_abdl_s16 helper_neon_abdl_s16_sparc64
