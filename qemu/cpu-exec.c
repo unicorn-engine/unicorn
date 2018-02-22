@@ -27,7 +27,7 @@
 
 #include "uc_priv.h"
 
-static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr);
+static tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb);
 static TranslationBlock *tb_find_slow(CPUState *cpu, target_ulong pc,
                                       target_ulong cs_base, uint64_t flags);
 static TranslationBlock *tb_find_fast(CPUState *cpu);
@@ -45,7 +45,6 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 #endif
     int ret, interrupt_request;
     TranslationBlock *tb;
-    uint8_t *tc_ptr;
     uintptr_t next_tb;
     struct hook *hook;
 
@@ -209,10 +208,9 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                 }
 
                 if (likely(!cpu->exit_request)) {
-                    tc_ptr = tb->tc_ptr;
                     cpu->current_tb = tb;
                     /* execute the generated code */
-                    next_tb = cpu_tb_exec(cpu, tc_ptr); // UNICORN
+                    next_tb = cpu_tb_exec(cpu, tb);
                     cpu->current_tb = NULL;
 
                     switch (next_tb & TB_EXIT_MASK) {
@@ -278,11 +276,16 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 }
 
 /* Execute a TB, and fix up the CPU state afterwards if necessary */
-static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
+static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
 {
     CPUArchState *env = cpu->env_ptr;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     uintptr_t next_tb;
+    uint8_t *tb_ptr = itb->tc_ptr;
+
+    // Unicorn: commented out
+    //qemu_log_mask(CPU_LOG_EXEC, "Trace %p [" TARGET_FMT_lx "] %s\n",
+    //              itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
 
     next_tb = tcg_qemu_tb_exec(env, tb_ptr);
 
@@ -293,6 +296,11 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
          */
         CPUClass *cc = CPU_GET_CLASS(env->uc, cpu);
         TranslationBlock *tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
+        // Unicorn: commented out
+        //qemu_log_mask(CPU_LOG_EXEC,
+        //              "Stopped execution of TB chain before %p ["
+        //              TARGET_FMT_lx "] %s\n",
+        //              itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
         if (cc->synchronize_from_tb) {
             // avoid sync twice when helper_uc_tracecode() already did this.
             if (env->uc->emu_counter <= env->uc->emu_count &&
