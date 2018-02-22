@@ -84,6 +84,7 @@ struct mips_def_t {
     int32_t CP0_TCStatus_rw_bitmask;
     int32_t CP0_SRSCtl;
     int32_t CP1_fcr0;
+    int32_t CP1_fcr31;
     int32_t MSAIR;
     int32_t SEGBITS;
     int32_t PABITS;
@@ -128,7 +129,8 @@ static const mips_def_t mips_defs[] =
         0x1278FF17,
         0,
         0,
-        0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         32,
         32,
@@ -152,7 +154,7 @@ static const mips_def_t mips_defs[] =
         0,0,
         0,
         0,
-        
+
         0,
         4,
         32,
@@ -161,7 +163,8 @@ static const mips_def_t mips_defs[] =
         0,
 
         0,
-        0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         32,
         32,
@@ -190,7 +193,8 @@ static const mips_def_t mips_defs[] =
         0x1278FF17,
         0,
         0,
-        0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         32,
         32,
@@ -219,7 +223,8 @@ static const mips_def_t mips_defs[] =
         0x1258FF17,
         0,
         0,
-        0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         32,
         32,
@@ -249,7 +254,8 @@ static const mips_def_t mips_defs[] =
         0x1278FF17,
         0,
         0,
-        0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         32,
         32,
@@ -279,7 +285,8 @@ static const mips_def_t mips_defs[] =
         0x1258FF17,
         0,
         0,
-        0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         32,
         32,
@@ -310,6 +317,8 @@ static const mips_def_t mips_defs[] =
         0x1278FF1F,
         0,
         0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         32,
         32,
@@ -342,6 +351,7 @@ static const mips_def_t mips_defs[] =
         0,
         (1 << FCR0_F64) | (1 << FCR0_L) | (1 << FCR0_W) |
                     (1 << FCR0_D) | (1 << FCR0_S) | (0x93 << FCR0_PRID),
+        0,
         0,
         32,
         32,
@@ -378,6 +388,7 @@ static const mips_def_t mips_defs[] =
         32,
         (1 << FCR0_F64) | (1 << FCR0_L) | (1 << FCR0_W) |
                     (1 << FCR0_D) | (1 << FCR0_S) | (0x95 << FCR0_PRID),
+        0,
         0x3fffffff,
         (1U << CP0SRSC0_M) | (0x3fe << CP0SRSC0_SRS3) |
                     (0x3fe << CP0SRSC0_SRS2) | (0x3fe << CP0SRSC0_SRS1),
@@ -423,6 +434,7 @@ static const mips_def_t mips_defs[] =
         (1 << FCR0_F64) | (1 << FCR0_L) | (1 << FCR0_W) |
                     (1 << FCR0_D) | (1 << FCR0_S) | (0x93 << FCR0_PRID),
         0,
+        0,
         32,
         32,
         0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
@@ -450,7 +462,8 @@ static const mips_def_t mips_defs[] =
         0x1258FF17,
         0,
         0,
-        0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         32,
         32,
@@ -480,7 +493,8 @@ static const mips_def_t mips_defs[] =
         0x1278FF17,
         0,
         0,
-        0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         32,
         32,
@@ -523,9 +537,10 @@ static const mips_def_t mips_defs[] =
         0x3C68FF1F,
         0,
         0,
-        (1 << FCR0_FREP) | (1 << FCR0_UFRP) | (1 << FCR0_F64) |
-                           (1 << FCR0_L) | (1 << FCR0_W) | (1 << FCR0_D) |
-                           (1 << FCR0_S) | (0x03 << FCR0_PRID),
+        (1 << FCR0_FREP) | (1 << FCR0_UFRP) | (1 << FCR0_HAS2008) |
+                           (1 << FCR0_F64) | (1 << FCR0_L) | (1 << FCR0_W) |
+                           (1 << FCR0_D) | (1 << FCR0_S) | (0x03 << FCR0_PRID),
+        (1 << FCR31_ABS2008) | (1 << FCR31_NAN2008),
         0,
         32,
         40,
@@ -564,9 +579,10 @@ static const mips_def_t mips_defs[] =
         0x3058FF1F,
         0,
         0,
-        (1 << FCR0_FREP) | (1 << FCR0_F64) | (1 << FCR0_L) |
+        (1 << FCR0_FREP) | (1 << FCR0_F64) | (1 << FCR0_HAS2008) | (1 << FCR0_L) |
                            (1 << FCR0_W) | (1 << FCR0_D) | (1 << FCR0_S) |
                            (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
+        (1 << FCR31_ABS2008) | (1 << FCR31_NAN2008),
         0,
         32,
         32,
@@ -604,6 +620,7 @@ static const mips_def_t mips_defs[] =
         /* The R4000 has a full 64bit FPU but doesn't use the fcr0 bits. */
         (0x5 << FCR0_PRID) | (0x0 << FCR0_REV),
         0,
+        0,
         40,
         36,
         0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
@@ -631,6 +648,7 @@ static const mips_def_t mips_defs[] =
         0,
         /* The VR5432 has a full 64bit FPU but doesn't use the fcr0 bits. */
         (0x54 << FCR0_PRID) | (0x0 << FCR0_REV),
+        0,
         0,
         40,
         32,
@@ -660,7 +678,8 @@ static const mips_def_t mips_defs[] =
         0x12F8FFFF,
         0,
         0,
-        0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         42,
         36,
@@ -683,7 +702,7 @@ static const mips_def_t mips_defs[] =
         0,0,
         0,
         0,
-        
+
         0,
         4,
         32,
@@ -694,6 +713,7 @@ static const mips_def_t mips_defs[] =
         /* The 5Kf has F64 / L / W but doesn't use the fcr0 bits. */
         (1 << FCR0_D) | (1 << FCR0_S) |
                     (0x81 << FCR0_PRID) | (0x0 << FCR0_REV),
+        0,
         0,
         42,
         36,
@@ -730,6 +750,7 @@ static const mips_def_t mips_defs[] =
                     (1 << FCR0_D) | (1 << FCR0_S) |
                     (0x82 << FCR0_PRID) | (0x0 << FCR0_REV),
         0,
+        0,
         40,
         36,
         0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
@@ -763,6 +784,7 @@ static const mips_def_t mips_defs[] =
         (1 << FCR0_F64) | (1 << FCR0_3D) | (1 << FCR0_PS) |
                     (1 << FCR0_L) | (1 << FCR0_W) | (1 << FCR0_D) |
                     (1 << FCR0_S) | (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
+        0,
         0,
         42,
         36,
@@ -802,9 +824,10 @@ static const mips_def_t mips_defs[] =
         0x30D8FFFF,
         0,
         0,
-        (1 << FCR0_FREP) | (1 << FCR0_F64) | (1 << FCR0_L) |
-            (1 << FCR0_W) | (1 << FCR0_D) | (1 << FCR0_S) |
-            (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
+        (1 << FCR0_FREP) | (1 << FCR0_HAS2008) | (1 << FCR0_F64) |
+            (1 << FCR0_L) | (1 << FCR0_W) | (1 << FCR0_D) |
+            (1 << FCR0_S) | (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
+        (1 << FCR31_ABS2008) | (1 << FCR31_NAN2008),
         0,
         48,
         48,
@@ -839,7 +862,8 @@ static const mips_def_t mips_defs[] =
         0x12F8FFFF,
         0,
         0,
-        0,
+        0, // CP1_fcr0
+        0, // CP1_fcr31
         0,
         42,
         36,
@@ -875,6 +899,7 @@ static const mips_def_t mips_defs[] =
                     (1 << FCR0_D) | (1 << FCR0_S) |
                     (0x89 << FCR0_PRID) | (0x0 << FCR0_REV),
         0,
+        0,
         42,
         36,
         0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
@@ -904,6 +929,7 @@ static const mips_def_t mips_defs[] =
         0,
         (0x5 << FCR0_PRID) | (0x1 << FCR0_REV),
         0,
+        0,
         40,
         40,
         0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
@@ -932,6 +958,7 @@ static const mips_def_t mips_defs[] =
         0,
         0,
         (0x5 << FCR0_PRID) | (0x1 << FCR0_REV),
+        0,
         0,
         40,
         40,
@@ -968,6 +995,7 @@ static const mips_def_t mips_defs[] =
                     (1 << FCR0_L) | (1 << FCR0_W) | (1 << FCR0_D) |
                     (1 << FCR0_S) | (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
         0,
+        0,
         42,
         /* The architectural limit is 59, but we have hardcoded 36 bit
            in some places...
@@ -977,7 +1005,6 @@ static const mips_def_t mips_defs[] =
         CPU_MIPS64R2 | ASE_DSP | ASE_DSPR2,
         MMU_TYPE_R4000,
     },
-    
 #endif
 };
 
