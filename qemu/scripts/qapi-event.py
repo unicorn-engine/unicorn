@@ -39,6 +39,7 @@ def gen_event_send(name, arg_type):
                 proto=gen_event_send_proto(name, arg_type))
 
     if arg_type and arg_type.members:
+        assert not arg_type.variants
         ret += mcgen('''
     QmpOutputVisitor *qov;
     Visitor *v;
