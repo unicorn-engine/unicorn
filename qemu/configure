@@ -1403,7 +1403,7 @@ cat <<EOD >config.status
 EOD
 printf "exec" >>config.status
 printf " '%s'" "$0" "$@" >>config.status
-echo >>config.status
+echo ' "$@"' >>config.status
 chmod +x config.status
 
 rm -r "$TMPDIR1"
