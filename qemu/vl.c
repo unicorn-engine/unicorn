@@ -25,6 +25,8 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
+#include "qemu/cutils.h"
 #include "hw/boards.h"  // MachineClass
 #include "sysemu/sysemu.h"
 #include "sysemu/cpus.h"

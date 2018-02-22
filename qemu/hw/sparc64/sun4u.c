@@ -31,6 +31,7 @@
 #include "sysemu/sysemu.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
+#include "qemu/cutils.h"
 
 
 /* Sun4u hardware initialisation */

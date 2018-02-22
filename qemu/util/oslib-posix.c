@@ -47,6 +47,7 @@
 #include <libgen.h>
 #include <setjmp.h>
 #include <sys/signal.h>
+#include "qemu/cutils.h"
 
 #ifdef CONFIG_LINUX
 #if !defined(__CYGWIN__)

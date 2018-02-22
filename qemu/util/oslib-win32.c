@@ -30,6 +30,7 @@
 #include "qapi/error.h"
 #include <winsock2.h>
 #include <windows.h>
+#include "qemu/cutils.h"
 
 #include "sysemu/sysemu.h"
 
