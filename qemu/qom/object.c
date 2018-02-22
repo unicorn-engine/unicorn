@@ -66,11 +66,6 @@ struct TypeImpl
     InterfaceImpl interfaces[MAX_INTERFACES];
 };
 
-struct ObjectPropertyIterator {
-    ObjectClass *nextclass;
-    GHashTableIter iter;
-};
-
 static GHashTable *type_table_get(struct uc_struct *uc)
 {
     if (uc->type_table == NULL) {
@@ -79,7 +74,6 @@ static GHashTable *type_table_get(struct uc_struct *uc)
 
     return uc->type_table;
 }
-
 
 static void type_table_add(struct uc_struct *uc, TypeImpl *ti)
 {
@@ -883,20 +877,11 @@ ObjectProperty *object_property_find(struct uc_struct *uc, Object *obj,
     return NULL;
 }
 
-ObjectPropertyIterator *object_property_iter_init(Object *obj)
+void object_property_iter_init(ObjectPropertyIterator *iter,
+                               Object *obj)
 {
-    ObjectPropertyIterator *ret = g_new0(ObjectPropertyIterator, 1);
-    g_hash_table_iter_init(&ret->iter, obj->properties);
-    ret->nextclass = object_get_class(obj);
-    return ret;
-}
-
-void object_property_iter_free(ObjectPropertyIterator *iter)
-{
-    if (!iter) {
-        return;
-    }
-    g_free(iter);
+    g_hash_table_iter_init(&iter->iter, obj->properties);
+    iter->nextclass = object_get_class(obj);
 }
 
 ObjectProperty *object_property_iter_next(struct uc_struct *uc, ObjectPropertyIterator *iter)
