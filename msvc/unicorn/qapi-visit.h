@@ -42,8 +42,12 @@ void visit_type_uint8List(Visitor *v, const char *name, uint8List **obj, Error *
 
 #endif /* QAPI_VISIT_BUILTIN */
 
+
+void visit_type_DummyForceArrays_members(Visitor *v, DummyForceArrays *obj, Error **errp);
 void visit_type_DummyForceArrays(Visitor *v, const char *name, DummyForceArrays **obj, Error **errp);
 void visit_type_QapiErrorClass(Visitor *v, const char *name, QapiErrorClass *obj, Error **errp);
+
+void visit_type_X86CPUFeatureWordInfo_members(Visitor *v, X86CPUFeatureWordInfo *obj, Error **errp);
 void visit_type_X86CPUFeatureWordInfo(Visitor *v, const char *name, X86CPUFeatureWordInfo **obj, Error **errp);
 void visit_type_X86CPUFeatureWordInfoList(Visitor *v, const char *name, X86CPUFeatureWordInfoList **obj, Error **errp);
 void visit_type_X86CPURegister32(Visitor *v, const char *name, X86CPURegister32 *obj, Error **errp);

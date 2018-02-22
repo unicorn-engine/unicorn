@@ -16,7 +16,7 @@
 #include "qemu-common.h"
 #include "qapi-visit.h"
 
-static void visit_type_DummyForceArrays_members(Visitor *v, DummyForceArrays *obj, Error **errp)
+void visit_type_DummyForceArrays_members(Visitor *v, DummyForceArrays *obj, Error **errp)
 {
     Error *err = NULL;
 
@@ -63,7 +63,7 @@ void visit_type_QapiErrorClass(Visitor *v, const char *name, QapiErrorClass *obj
     *obj = value;
 }
 
-static void visit_type_X86CPUFeatureWordInfo_members(Visitor *v, X86CPUFeatureWordInfo *obj, Error **errp)
+void visit_type_X86CPUFeatureWordInfo_members(Visitor *v, X86CPUFeatureWordInfo *obj, Error **errp)
 {
     Error *err = NULL;
 
