@@ -2433,9 +2433,7 @@
 #define qemu_host_page_size qemu_host_page_size_powerpc
 #define qemu_init_vcpu qemu_init_vcpu_powerpc
 #define qemu_ld_helpers qemu_ld_helpers_powerpc
-#define qemu_log_close qemu_log_close_powerpc
 #define qemu_log_enabled qemu_log_enabled_powerpc
-#define qemu_log_flush qemu_log_flush_powerpc
 #define qemu_loglevel_mask qemu_loglevel_mask_powerpc
 #define qemu_log_vprintf qemu_log_vprintf_powerpc
 #define qemu_oom_check qemu_oom_check_powerpc

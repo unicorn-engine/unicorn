@@ -2433,9 +2433,7 @@
 #define qemu_host_page_size qemu_host_page_size_m68k
 #define qemu_init_vcpu qemu_init_vcpu_m68k
 #define qemu_ld_helpers qemu_ld_helpers_m68k
-#define qemu_log_close qemu_log_close_m68k
 #define qemu_log_enabled qemu_log_enabled_m68k
-#define qemu_log_flush qemu_log_flush_m68k
 #define qemu_loglevel_mask qemu_loglevel_mask_m68k
 #define qemu_log_vprintf qemu_log_vprintf_m68k
 #define qemu_oom_check qemu_oom_check_m68k

@@ -35,6 +35,23 @@ void qemu_log(const char *fmt, ...)
     va_end(ap);
 }
 
+/* fflush() the log file */
+void qemu_log_flush(void)
+{
+    fflush(qemu_logfile);
+}
+
+/* Close the log file */
+void qemu_log_close(void)
+{
+    if (qemu_logfile) {
+        if (qemu_logfile != stderr) {
+            fclose(qemu_logfile);
+        }
+        qemu_logfile = NULL;
+    }
+}
+
 /* Returns true if addr is in our debug filter or no filter defined
  */
 bool qemu_log_in_addr_range(uint64_t addr)

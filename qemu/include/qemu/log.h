@@ -121,24 +121,12 @@ static inline void log_cpu_state_mask(int mask, CPUState *cpu, int flags)
     }
 }
 
-/* fflush() the log file */
-static inline void qemu_log_flush(void)
-{
-    fflush(qemu_logfile);
-}
-
-/* Close the log file */
-static inline void qemu_log_close(void)
-{
-    if (qemu_logfile) {
-        if (qemu_logfile != stderr) {
-            fclose(qemu_logfile);
-        }
-        qemu_logfile = NULL;
-    }
-}
-
 void qemu_set_dfilter_ranges(const char *ranges);
 bool qemu_log_in_addr_range(uint64_t addr);
+
+/* fflush() the log file */
+void qemu_log_flush(void);
+/* Close the log file */
+void qemu_log_close(void);
 
 #endif
