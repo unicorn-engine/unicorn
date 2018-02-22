@@ -1417,6 +1417,7 @@ typedef struct DisasContext {
     int CP0_LLAddr_shift;
     bool ps;
     bool vp;
+    bool cmgcr;
     // Unicorn engine
     struct uc_struct *uc;
 } DisasContext;
@@ -5372,6 +5373,13 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_EBase));
             rn = "EBase";
             break;
+        case 3:
+            check_insn(ctx, ISA_MIPS32R2);
+            CP0_CHECK(ctx->cmgcr);
+            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_CMGCRBase));
+            tcg_gen_ext32s_tl(tcg_ctx, arg, arg);
+            rn = "CMGCRBase";
+            break;
         default:
             goto cp0_unimplemented;
        }
@@ -6000,6 +6008,12 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             check_insn(ctx, ISA_MIPS32R2);
             gen_helper_mtc0_ebase(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "EBase";
+            break;
+        case 3:
+            check_insn(ctx, ISA_MIPS32R2);
+            CP0_CHECK(ctx->cmgcr);
+            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_CMGCRBase));
+            rn = "CMGCRBase";
             break;
         default:
             goto cp0_unimplemented;
@@ -19825,6 +19839,10 @@ void gen_intermediate_code(CPUMIPSState *env, struct TranslationBlock *tb)
     ctx.ie = (env->CP0_Config4 >> CP0C4_IE) & 3;
     ctx.bi = (env->CP0_Config3 >> CP0C3_BI) & 1;
     ctx.bp = (env->CP0_Config3 >> CP0C3_BP) & 1;
+    ctx.PAMask = env->PAMask;
+    ctx.mvh = (env->CP0_Config5 >> CP0C5_MVH) & 1;
+    ctx.CP0_LLAddr_shift = env->CP0_LLAddr_shift;
+    ctx.cmgcr = (env->CP0_Config3 >> CP0C3_CMGCR) & 1;
     /* Restore delay slot state from the tb context.  */
     ctx.hflags = (uint32_t)tb->flags; /* FIXME: maybe use 64 bits here? */
     ctx.ulri = (env->CP0_Config3 >> CP0C3_ULRI) & 1;
@@ -20241,6 +20259,9 @@ void cpu_state_reset(CPUMIPSState *env)
     env->CP0_GlobalNumber = (cs->cpu_index & 0xFF) << CP0GN_VPId;
     env->CP0_EBase = (cs->cpu_index & 0x3FF);
     env->CP0_EBase |= 0x80000000;
+    if (env->CP0_Config3 & (1 << CP0C3_CMGCR)) {
+        env->CP0_CMGCRBase = 0x1fbf8000 >> 4;
+    }
     env->CP0_Status = (1 << CP0St_BEV) | (1 << CP0St_ERL);
     /* vectored interrupts not implemented, timer on int 7,
        no performance counters. */
