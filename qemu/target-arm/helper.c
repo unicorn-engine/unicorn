@@ -3260,10 +3260,6 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "MVBAR", 15,12,0, 0,0,1, 0,0,
       PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mvbar), {0, 0},
       access_trap_aa32s_el1, NULL, vbar_write },
-    { "SCTLR_EL3", 0,1,0, 3,6,0, ARM_CP_STATE_AA64,
-      ARM_CP_ALIAS, /* reset handled by AArch32 view */
-      PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sctlr_el[3]), {0, 0},
-      NULL, NULL, sctlr_write, NULL, raw_write, },
     { "TTBR0_EL3", 0,2,0, 3,6,0, ARM_CP_STATE_AA64,0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el[3]), {0, 0},
       NULL, NULL, vmsa_ttbr_write },
@@ -3969,11 +3965,15 @@ void register_cp_regs_for_features(ARMCPU *cpu)
     }
     if (arm_feature(env, ARM_FEATURE_EL3)) {
         define_arm_cp_regs(cpu, el3_cp_reginfo);
-        ARMCPRegInfo rvbar = {
-            "RVBAR_EL3", 0,12,0, 3,6,1, ARM_CP_STATE_AA64,
-            ARM_CP_CONST, PL3_R, 0, NULL, cpu->rvbar
+        ARMCPRegInfo el3_regs[] = {
+            { "RVBAR_EL3", 0,12,0, 3,6,1, ARM_CP_STATE_AA64,
+                ARM_CP_CONST, PL3_R, 0, NULL, cpu->rvbar },
+            { "SCTLR_EL3", 0,1,0, 3,6,0, ARM_CP_STATE_AA64, 0,
+              PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.sctlr_el[3]), {0, 0},
+              NULL, NULL, sctlr_write, NULL, raw_write, },
         };
-        define_one_arm_cp_reg(cpu, &rvbar);
+
+        define_arm_cp_regs(cpu, el3_regs);
     }
     /* The behaviour of NSACR is sufficiently various that we don't
      * try to describe it in a single reginfo:
