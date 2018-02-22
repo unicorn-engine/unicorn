@@ -2379,7 +2379,7 @@ static void dump_op_count(void)
 #endif
 
 
-int tcg_gen_code(TCGContext *s, tcg_insn_unit *gen_code_buf)
+int tcg_gen_code(TCGContext *s, TranslationBlock *tb)
 {
     int i, oi, oi_next, num_insns;
 
@@ -2438,8 +2438,8 @@ int tcg_gen_code(TCGContext *s, tcg_insn_unit *gen_code_buf)
 
     tcg_reg_alloc_start(s);
 
-    s->code_buf = gen_code_buf;
-    s->code_ptr = gen_code_buf;
+    s->code_buf = tb->tc_ptr;
+    s->code_ptr = tb->tc_ptr;
 
     tcg_out_tb_init(s);
 
