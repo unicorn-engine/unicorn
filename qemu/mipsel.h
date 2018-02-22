@@ -3550,6 +3550,8 @@
 #define helper_mftc0_cause helper_mftc0_cause_mipsel
 #define helper_mftc0_status helper_mftc0_status_mipsel
 #define helper_mfc0_lladdr helper_mfc0_lladdr_mipsel
+#define helper_mfc0_maar helper_mfc0_maar_mipsel
+#define helper_mfhc0_maar helper_mfhc0_maar_mipsel
 #define helper_mfc0_watchlo helper_mfc0_watchlo_mipsel
 #define helper_mfc0_watchhi helper_mfc0_watchhi_mipsel
 #define helper_mfc0_debug helper_mfc0_debug_mipsel
@@ -3612,6 +3614,9 @@
 #define helper_mtc0_config4 helper_mtc0_config4_mipsel
 #define helper_mtc0_config5 helper_mtc0_config5_mipsel
 #define helper_mtc0_lladdr helper_mtc0_lladdr_mipsel
+#define helper_mtc0_maar helper_mtc0_maar_mipsel
+#define helper_mthc0_maar helper_mthc0_maar_mipsel
+#define helper_mtc0_maari helper_mtc0_maari_mipsel
 #define helper_mtc0_watchlo helper_mtc0_watchlo_mipsel
 #define helper_mtc0_watchhi helper_mtc0_watchhi_mipsel
 #define helper_mtc0_xcontext helper_mtc0_xcontext_mipsel
@@ -4054,6 +4059,7 @@
 #define helper_dmfc0_tcschedule helper_dmfc0_tcschedule_mipsel
 #define helper_dmfc0_tcschefback helper_dmfc0_tcschefback_mipsel
 #define helper_dmfc0_lladdr helper_dmfc0_lladdr_mipsel
+#define helper_dmfc0_maar helper_dmfc0_maar_mipsel
 #define helper_dmfc0_watchlo helper_dmfc0_watchlo_mipsel
 #define helper_dmtc0_entrylo0 helper_dmtc0_entrylo0_mipsel
 #define helper_dmtc0_entrylo1 helper_dmtc0_entrylo1_mipsel

@@ -3550,6 +3550,8 @@
 #define helper_mftc0_cause helper_mftc0_cause_mips64
 #define helper_mftc0_status helper_mftc0_status_mips64
 #define helper_mfc0_lladdr helper_mfc0_lladdr_mips64
+#define helper_mfc0_maar helper_mfc0_maar_mips64
+#define helper_mfhc0_maar helper_mfhc0_maar_mips64
 #define helper_mfc0_watchlo helper_mfc0_watchlo_mips64
 #define helper_mfc0_watchhi helper_mfc0_watchhi_mips64
 #define helper_mfc0_debug helper_mfc0_debug_mips64
@@ -3612,6 +3614,9 @@
 #define helper_mtc0_config4 helper_mtc0_config4_mips64
 #define helper_mtc0_config5 helper_mtc0_config5_mips64
 #define helper_mtc0_lladdr helper_mtc0_lladdr_mips64
+#define helper_mtc0_maar helper_mtc0_maar_mips64
+#define helper_mthc0_maar helper_mthc0_maar_mips64
+#define helper_mtc0_maari helper_mtc0_maari_mips64
 #define helper_mtc0_watchlo helper_mtc0_watchlo_mips64
 #define helper_mtc0_watchhi helper_mtc0_watchhi_mips64
 #define helper_mtc0_xcontext helper_mtc0_xcontext_mips64
@@ -4054,6 +4059,7 @@
 #define helper_dmfc0_tcschedule helper_dmfc0_tcschedule_mips64
 #define helper_dmfc0_tcschefback helper_dmfc0_tcschefback_mips64
 #define helper_dmfc0_lladdr helper_dmfc0_lladdr_mips64
+#define helper_dmfc0_maar helper_dmfc0_maar_mips64
 #define helper_dmfc0_watchlo helper_dmfc0_watchlo_mips64
 #define helper_dmtc0_entrylo0 helper_dmtc0_entrylo0_mips64
 #define helper_dmtc0_entrylo1 helper_dmtc0_entrylo1_mips64
