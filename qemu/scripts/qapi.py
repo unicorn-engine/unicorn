@@ -66,7 +66,6 @@ returns_whitelist = [
 case_whitelist = [
     # From QMP:
     'ACPISlotType',         # DIMM, visible through query-acpi-ospm-status
-    'CpuInfoBase',          # CPU, visible through query-cpu
     'CpuInfoMIPS',          # PC, visible through query-cpu
     'CpuInfoTricore',       # PC, visible through query-cpu
     'InputAxis',            # TODO: drop when x-input-send-event is fixed
@@ -74,6 +73,7 @@ case_whitelist = [
     'QapiErrorClass',       # all members, visible through errors
     'UuidInfo',             # UUID, visible through query-uuid
     'X86CPURegister32',     # all members, visible indirectly through qom-get
+    'q_obj_CpuInfo-base',   # CPU, visible through query-cpu
 ]
 
 enum_types = []
