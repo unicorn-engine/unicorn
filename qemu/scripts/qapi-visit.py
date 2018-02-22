@@ -35,7 +35,7 @@ def gen_visit_members_decl(typ):
     object_members_seen.add(typ.name)
     return mcgen('''
 
-static void visit_type_%(c_type)s_fields(Visitor *v, %(c_type)s *obj, Error **errp);
+static void visit_type_%(c_type)s_members(Visitor *v, %(c_type)s *obj, Error **errp);
 ''',
                  c_type=typ.c_name())
 
@@ -54,7 +54,7 @@ def gen_visit_object_members(name, base, members, variants):
     object_members_seen.add(name)
     ret += mcgen('''
 
-static void visit_type_%(c_name)s_fields(Visitor *v, %(c_name)s *obj, Error **errp)
+static void visit_type_%(c_name)s_members(Visitor *v, %(c_name)s *obj, Error **errp)
 {
     Error *err = NULL;
 
@@ -63,7 +63,7 @@ static void visit_type_%(c_name)s_fields(Visitor *v, %(c_name)s *obj, Error **er
 
     if base:
         ret += mcgen('''
-    visit_type_%(c_type)s_fields(v, (%(c_type)s *)obj, &err);
+    visit_type_%(c_type)s_members(v, (%(c_type)s *)obj, &err);
 ''',
                      c_type=base.c_name())
         ret += gen_err_check()
@@ -93,7 +93,7 @@ static void visit_type_%(c_name)s_fields(Visitor *v, %(c_name)s *obj, Error **er
                              c_name=c_name(var.name))
             else:
                 ret += mcgen('''
-        visit_type_%(c_type)s_fields(v, &obj->u.%(c_name)s, &err);
+        visit_type_%(c_type)s_members(v, &obj->u.%(c_name)s, &err);
 ''',
                              c_type=var.type.c_name(),
                              c_name=c_name(var.name))
@@ -206,7 +206,7 @@ void visit_type_%(c_name)s(Visitor *v, const char *name, %(c_name)s **obj, Error
         if (err) {
             break;
         }
-        visit_type_%(c_type)s_fields(v, &(*obj)->u.%(c_name)s, &err);
+        visit_type_%(c_type)s_members(v, &(*obj)->u.%(c_name)s, &err);
         error_propagate(errp, err);
         err = NULL;
         visit_end_struct(v, &err);
@@ -261,7 +261,7 @@ void visit_type_%(c_name)s(Visitor *v, const char *name, %(c_name)s **obj, Error
     if (!*obj) {
         goto out_obj;
     }
-    visit_type_%(c_name)s_fields(v, *obj, &err);
+    visit_type_%(c_name)s_members(v, *obj, &err);
     error_propagate(errp, err);
     err = NULL;
 out_obj:
