@@ -3127,11 +3127,15 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "TCR_EL2", 0,2,0, 3,4,2, ARM_CP_STATE_BOTH, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tcr_el[2]), {0, 0},
       NULL, NULL, vmsa_tcr_el1_write, NULL, raw_write, vmsa_ttbcr_reset },
-    { "VTCR", 15,2,1, 0,4,2, ARM_CP_STATE_AA32, 0,
+    { "VTCR", 15,2,1, 0,4,2, ARM_CP_STATE_AA32, ARM_CP_ALIAS,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vtcr_el2), {0, 0},
       access_el3_aa32ns },
-    { "VTCR_EL2", 0,2,1, 3,4,2, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
-      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vtcr_el2) },
+    { "VTCR_EL2", 0,2,1, 3,4,2, ARM_CP_STATE_AA64, 0,
+      PL2_RW, 0, NULL, 0,
+      /* no .writefn needed as this can't cause an ASID change;
+       * no .raw_writefn or .resetfn needed as we never use mask/base_mask
+       */
+      offsetof(CPUARMState, cp15.vtcr_el2) },
     { "VTTBR", 15,0,2, 0,6,0, ARM_CP_STATE_AA32, ARM_CP_64BIT | ARM_CP_ALIAS,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vttbr_el2), {0, 0},
       access_el3_aa32ns, NULL, vttbr_write },
