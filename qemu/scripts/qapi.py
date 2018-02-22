@@ -827,8 +827,18 @@ class QAPISchemaVisitor(object):
 
 
 class QAPISchemaType(QAPISchemaEntity):
-    def c_type(self, is_param=False, is_unboxed=False):
-        return c_name(self.name) + pointer_suffix
+    # Return the C type for common use.
+    # For the types we commonly box, this is a pointer type.
+    def c_type(self):
+        pass
+
+    # Return the C type to be used in a parameter list.
+    def c_param_type(self):
+        return self.c_type()
+
+    # Return the C type to be used where we suppress boxing.
+    def c_unboxed_type(self):
+        return self.c_type()
 
     def c_null(self):
         return 'NULL'
@@ -860,8 +870,11 @@ class QAPISchemaBuiltinType(QAPISchemaType):
     def c_name(self):
         return self.name
 
-    def c_type(self, is_param=False, is_unboxed=False):
-        if is_param and self.name == 'str':
+    def c_type(self):
+        return self._c_type_name
+
+    def c_param_type(self):
+        if self.name == 'str':
             return 'const ' + self._c_type_name
         return self._c_type_name
 
@@ -894,7 +907,7 @@ class QAPISchemaEnumType(QAPISchemaType):
         # See QAPISchema._make_implicit_enum_type()
         return self.name.endswith('Kind')
 
-    def c_type(self, is_param=False, is_unboxed=False):
+    def c_type(self):
         return c_name(self.name)
 
     def member_names(self):
@@ -925,6 +938,9 @@ class QAPISchemaArrayType(QAPISchemaType):
 
     def is_implicit(self):
         return True
+
+    def c_type(self):
+        return c_name(self.name) + pointer_suffix
 
     def json_type(self):
         return 'array'
@@ -991,11 +1007,13 @@ class QAPISchemaObjectType(QAPISchemaType):
         assert not self.is_implicit()
         return QAPISchemaType.c_name(self)
 
-    def c_type(self, is_param=False, is_unboxed=False):
+    def c_type(self):
         assert not self.is_implicit()
-        if is_unboxed:
-            return c_name(self.name)
         return c_name(self.name) + pointer_suffix
+
+    def c_unboxed_type(self):
+        assert not self.is_implicit()
+        return c_name(self.name)
 
     def json_type(self):
         return 'object'
@@ -1142,6 +1160,9 @@ class QAPISchemaAlternateType(QAPISchemaType):
         seen = {}
         for v in self.variants.variants:
             v.check_clash(self.info, seen)
+
+    def c_type(self):
+        return c_name(self.name) + pointer_suffix
 
     def json_type(self):
         return 'value'
@@ -1633,7 +1654,7 @@ def gen_params(arg_type, extra):
         sep = ', '
         if memb.optional:
             ret += 'bool has_%s, ' % c_name(memb.name)
-        ret += '%s %s' % (memb.type.c_type(is_param=True), c_name(memb.name))
+        ret += '%s %s' % (memb.type.c_param_type(), c_name(memb.name))
     if extra:
         ret += sep + extra
     return ret
