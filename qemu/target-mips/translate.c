@@ -4843,14 +4843,19 @@ static inline void gen_mtc0_store32 (DisasContext *ctx, TCGv arg, target_ulong o
     tcg_temp_free_i32(tcg_ctx, t0);
 }
 
+#define CP0_CHECK(c)                            \
+    do {                                        \
+        if (!(c)) {                             \
+            goto cp0_unimplemented;             \
+        }                                       \
+    } while (0)
+
 static void gen_mfhc0(DisasContext *ctx, TCGv arg, int reg, int sel)
 {
     TCGContext *s = ctx->uc->tcg_ctx;
     const char *rn = "invalid";
 
-    if (!(ctx->hflags & MIPS_HFLAG_ELPA)) {
-        goto mfhc0_read_zero;
-    }
+    CP0_CHECK(ctx->hflags & MIPS_HFLAG_ELPA);
 
     switch (reg) {
     case 2:
@@ -4860,7 +4865,7 @@ static void gen_mfhc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             rn = "EntryLo0";
             break;
         default:
-            goto mfhc0_read_zero;
+            goto cp0_unimplemented;
         }
         break;
     case 3:
@@ -4870,7 +4875,7 @@ static void gen_mfhc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             rn = "EntryLo1";
             break;
         default:
-            goto mfhc0_read_zero;
+            goto cp0_unimplemented;
         }
         break;
     case 17:
@@ -4881,7 +4886,7 @@ static void gen_mfhc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             rn = "LLAddr";
             break;
         default:
-            goto mfhc0_read_zero;
+            goto cp0_unimplemented;
         }
         break;
     case 28:
@@ -4894,18 +4899,18 @@ static void gen_mfhc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             rn = "TagLo";
             break;
         default:
-            goto mfhc0_read_zero;
+            goto cp0_unimplemented;
         }
         break;
     default:
-        goto mfhc0_read_zero;
+        goto cp0_unimplemented;
     }
 
     (void)rn; /* avoid a compiler warning */
     LOG_DISAS("mfhc0 %s (reg %d sel %d)\n", rn, reg, sel);
     return;
 
-mfhc0_read_zero:
+cp0_unimplemented:
     LOG_DISAS("mfhc0 %s (reg %d sel %d)\n", rn, reg, sel);
     tcg_gen_movi_tl(s, arg, 0);
 }
@@ -4916,9 +4921,7 @@ static void gen_mthc0(DisasContext *ctx, TCGv arg, int reg, int sel)
     const char *rn = "invalid";
     uint64_t mask = ctx->PAMask >> 36;
 
-    if (!(ctx->hflags & MIPS_HFLAG_ELPA)) {
-        goto mthc0_nop;
-    }
+    CP0_CHECK(ctx->hflags & MIPS_HFLAG_ELPA);
 
     switch (reg) {
     case 2:
@@ -4929,7 +4932,7 @@ static void gen_mthc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             rn = "EntryLo0";
             break;
         default:
-            goto mthc0_nop;
+            goto cp0_unimplemented;
         }
         break;
     case 3:
@@ -4940,7 +4943,7 @@ static void gen_mthc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             rn = "EntryLo1";
             break;
         default:
-            goto mthc0_nop;
+            goto cp0_unimplemented;
         }
         break;
     case 17:
@@ -4953,7 +4956,7 @@ static void gen_mthc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             rn = "LLAddr";
             break;
         default:
-            goto mthc0_nop;
+            goto cp0_unimplemented;
         }
         break;
     case 28:
@@ -4967,15 +4970,15 @@ static void gen_mthc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             rn = "TagLo";
             break;
         default:
-            goto mthc0_nop;
+            goto cp0_unimplemented;
         }
         break;
     default:
-        goto mthc0_nop;
+        goto cp0_unimplemented;
     }
 
     (void)rn; /* avoid a compiler warning */
-mthc0_nop:
+cp0_unimplemented:
     LOG_DISAS("mthc0 %s (reg %d sel %d)\n", rn, reg, sel);
 }
 
@@ -4988,13 +4991,6 @@ static inline void gen_mfc0_unimplemented(DisasContext *ctx, TCGv arg)
         tcg_gen_movi_tl(tcg_ctx, arg, ~0);
     }
 }
-
-#define CP0_CHECK(c)                            \
-    do {                                        \
-        if (!(c)) {                             \
-            goto cp0_unimplemented;             \
-        }                                       \
-    } while (0)
 
 static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
 {
