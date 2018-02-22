@@ -1004,7 +1004,6 @@ class QAPISchemaObjectType(QAPISchemaType):
         return self.name[0] == ':'
 
     def c_name(self):
-        assert not self.is_implicit()
         return QAPISchemaType.c_name(self)
 
     def c_type(self):
@@ -1012,7 +1011,6 @@ class QAPISchemaObjectType(QAPISchemaType):
         return c_name(self.name) + pointer_suffix
 
     def c_unboxed_type(self):
-        assert not self.is_implicit()
         return c_name(self.name)
 
     def json_type(self):
