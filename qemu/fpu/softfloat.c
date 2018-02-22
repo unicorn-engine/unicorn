@@ -439,7 +439,7 @@ static float32 roundAndPackFloat32(flag zSign, int zExp, uint32_t zSig, float_st
         }
         if ( zExp < 0 ) {
             if (status->flush_to_zero) {
-                float_raise(float_flag_output_denormal, status);
+                float_raise((int8_t)float_flag_output_denormal, status);
                 return packFloat32(zSign, 0, 0);
             }
             isTiny =
@@ -625,7 +625,7 @@ static float64 roundAndPackFloat64(flag zSign, int zExp, uint64_t zSig, float_st
         }
         if ( zExp < 0 ) {
             if (status->flush_to_zero) {
-                float_raise(float_flag_output_denormal, status);
+                float_raise((int8_t)float_flag_output_denormal, status);
                 return packFloat64(zSign, 0, 0);
             }
             isTiny =
@@ -809,7 +809,7 @@ static floatx80
         }
         if ( zExp <= 0 ) {
             if (status->flush_to_zero) {
-                float_raise(float_flag_output_denormal, status);
+                float_raise((int8_t)float_flag_output_denormal, status);
                 return packFloatx80(zSign, 0, 0);
             }
             isTiny =
@@ -1155,7 +1155,7 @@ static float128
         }
         if ( zExp < 0 ) {
             if (status->flush_to_zero) {
-                float_raise(float_flag_output_denormal, status);
+                float_raise((int8_t)float_flag_output_denormal, status);
                 return packFloat128(zSign, 0, 0, 0);
             }
             isTiny =
@@ -2022,7 +2022,7 @@ static float32 addFloat32Sigs(float32 a, float32 b, flag zSign, float_status *st
         if ( aExp == 0 ) {
             if (status->flush_to_zero) {
                 if (aSig | bSig) {
-                    float_raise(float_flag_output_denormal, status);
+                    float_raise((int8_t)float_flag_output_denormal, status);
                 }
                 return packFloat32(zSign, 0, 0);
             }
@@ -2504,7 +2504,7 @@ float32 float32_muladd(float32 a, float32 b, float32 c, int flags, float_status 
             }
             /* Exact zero plus a denorm */
             if (status->flush_to_zero) {
-                float_raise(float_flag_output_denormal, status);
+                float_raise((int8_t)float_flag_output_denormal, status);
                 return packFloat32(cSign ^ signflip, 0, 0);
             }
         }
@@ -3808,7 +3808,7 @@ static float64 addFloat64Sigs(float64 a, float64 b, flag zSign, float_status *st
         if ( aExp == 0 ) {
             if (status->flush_to_zero) {
                 if (aSig | bSig) {
-                    float_raise(float_flag_output_denormal, status);
+                    float_raise((int8_t)float_flag_output_denormal, status);
                 }
                 return packFloat64(zSign, 0, 0);
             }
@@ -4282,7 +4282,7 @@ float64 float64_muladd(float64 a, float64 b, float64 c, int flags, float_status 
             }
             /* Exact zero plus a denorm */
             if (status->flush_to_zero) {
-                float_raise(float_flag_output_denormal, status);
+                float_raise((int8_t)float_flag_output_denormal, status);
                 return packFloat64(cSign ^ signflip, 0, 0);
             }
         }
@@ -6365,7 +6365,7 @@ static float128 addFloat128Sigs(float128 a, float128 b, flag zSign, float_status
         if ( aExp == 0 ) {
             if (status->flush_to_zero) {
                 if (zSig0 | zSig1) {
-                    float_raise(float_flag_output_denormal, status);
+                    float_raise((int8_t)float_flag_output_denormal, status);
                 }
                 return packFloat128(zSign, 0, 0, 0);
             }
