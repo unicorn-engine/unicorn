@@ -772,8 +772,9 @@ bool cpu_physical_memory_test_and_clear_dirty(struct uc_struct *uc,
                                               ram_addr_t length,
                                               unsigned client)
 {
+    DirtyMemoryBlocks *blocks;
     unsigned long end, page;
-    bool dirty;
+    bool dirty = false;
 
     if (length == 0) {
         return false;
@@ -781,8 +782,25 @@ bool cpu_physical_memory_test_and_clear_dirty(struct uc_struct *uc,
 
     end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
     page = start >> TARGET_PAGE_BITS;
-    dirty = bitmap_test_and_clear_atomic(uc->ram_list.dirty_memory[client],
-                                         page, end - page);
+
+    // Unicorn: commented out
+    //rcu_read_lock();
+
+    // Unicorn: atomic_read instead of atomic_rcu_read used
+    blocks = atomic_read(&uc->ram_list.dirty_memory[client]);
+
+    while (page < end) {
+        unsigned long idx = page / DIRTY_MEMORY_BLOCK_SIZE;
+        unsigned long offset = page % DIRTY_MEMORY_BLOCK_SIZE;
+        unsigned long num = MIN(end - page, DIRTY_MEMORY_BLOCK_SIZE - offset);
+
+        dirty |= bitmap_test_and_clear_atomic(blocks->blocks[idx],
+                                              offset, num);
+        page += num;
+    }
+
+    // Unicorn: commented out
+    //rcu_read_unlock();
 
     if (dirty && tcg_enabled(uc)) {
         tlb_reset_dirty_range_all(uc, start, length);
@@ -1109,6 +1127,51 @@ int qemu_ram_resize(struct uc_struct *uc, ram_addr_t base, ram_addr_t newsize, E
     return 0;
 }
 
+/* Called with ram_list.mutex held */
+static void dirty_memory_extend(struct uc_struct *uc,
+                                ram_addr_t old_ram_size,
+                                ram_addr_t new_ram_size)
+{
+    ram_addr_t old_num_blocks = DIV_ROUND_UP(old_ram_size,
+                                             DIRTY_MEMORY_BLOCK_SIZE);
+    ram_addr_t new_num_blocks = DIV_ROUND_UP(new_ram_size,
+                                             DIRTY_MEMORY_BLOCK_SIZE);
+    int i;
+
+    /* Only need to extend if block count increased */
+    if (new_num_blocks <= old_num_blocks) {
+        return;
+    }
+
+    for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
+        DirtyMemoryBlocks *old_blocks;
+        DirtyMemoryBlocks *new_blocks;
+        int j;
+
+        // Unicorn: atomic_read used instead of atomic_rcu_read
+        old_blocks = atomic_read(&uc->ram_list.dirty_memory[i]);
+        new_blocks = g_malloc(sizeof(*new_blocks) +
+                              sizeof(new_blocks->blocks[0]) * new_num_blocks);
+        // Unicorn: unicorn-specific variable to make memory handling less painful.
+        new_blocks->num_blocks = new_num_blocks;
+
+        if (old_num_blocks) {
+            memcpy(new_blocks->blocks, old_blocks->blocks,
+                   old_num_blocks * sizeof(old_blocks->blocks[0]));
+        }
+
+        for (j = old_num_blocks; j < new_num_blocks; j++) {
+            new_blocks->blocks[j] = bitmap_new(DIRTY_MEMORY_BLOCK_SIZE);
+        }
+
+        // Unicorn: atomic_set used instead of atomic_rcu_set
+        atomic_set(&uc->ram_list.dirty_memory[i], new_blocks);
+
+        // Unicorn: g_free used instead of g_free_rcu
+        g_free(old_blocks);
+    }
+}
+
 static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **errp)
 {
     RAMBlock *block;
@@ -1131,6 +1194,13 @@ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **err
         memory_try_enable_merging(new_block->host, new_block->max_length);
     }
 
+    new_ram_size = MAX(old_ram_size,
+              (new_block->offset + new_block->max_length) >> TARGET_PAGE_BITS);
+    if (new_ram_size > old_ram_size) {
+        // Unicorn: commented out
+        //migration_bitmap_extend(old_ram_size, new_ram_size);
+        dirty_memory_extend(uc, old_ram_size, new_ram_size);
+    }
     /* Keep the list sorted from biggest to smallest block.  Unlike QTAILQ,
      * QLIST (which has an RCU-friendly variant) does not have insertion at
      * tail, so save the last element in last_block.
@@ -1154,16 +1224,6 @@ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **err
     smp_wmb();
     uc->ram_list.version++;
 
-    new_ram_size = last_ram_offset(uc) >> TARGET_PAGE_BITS;
-
-    if (new_ram_size > old_ram_size) {
-        int i;
-        for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
-            uc->ram_list.dirty_memory[i] =
-                bitmap_zero_extend(uc->ram_list.dirty_memory[i],
-                        old_ram_size, new_ram_size);
-        }
-    }
     cpu_physical_memory_set_dirty_range(uc, new_block->offset,
                                         new_block->used_length,
                                         DIRTY_CLIENTS_ALL);

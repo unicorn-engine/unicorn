@@ -279,6 +279,22 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
     }
 }
 
+static void ramlist_free_dirty_memory(struct uc_struct *uc)
+{
+    int i;
+    DirtyMemoryBlocks** blocks = uc->ram_list.dirty_memory;
+
+    for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
+        DirtyMemoryBlocks* block = uc->ram_list.dirty_memory[i];
+        int j;
+
+        for (j = 0; j < block->num_blocks; j++) {
+            free(block->blocks[j]);
+        }
+
+        free(blocks[i]);
+    }
+}
 
 UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc)
@@ -327,9 +343,7 @@ uc_err uc_close(uc_engine *uc)
     g_hash_table_foreach(uc->type_table, free_table, uc);
     g_hash_table_destroy(uc->type_table);
 
-    for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
-        free(uc->ram_list.dirty_memory[i]);
-    }
+    ramlist_free_dirty_memory(uc);
 
     // free hooks and hook lists
     for (i = 0; i < UC_HOOK_MAX; i++) {
