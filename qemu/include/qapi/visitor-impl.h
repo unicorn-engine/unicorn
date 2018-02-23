@@ -38,7 +38,7 @@ struct Visitor
     void (*end_implicit_struct)(Visitor *v);
 
     void (*start_list)(Visitor *v, const char *name, Error **errp);
-    GenericList *(*next_list)(Visitor *v, GenericList **list);
+    GenericList *(*next_list)(Visitor *v, GenericList **list, size_t size);
     void (*end_list)(Visitor *v);
 
     /* May be NULL; only needed for input visitors. */

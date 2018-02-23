@@ -28,11 +28,8 @@ typedef struct %(c_name)s %(c_name)s;
 def gen_array(name, element_type):
     return mcgen('''
 struct %(c_name)s {
-    union {
-        %(c_type)s value;
-        uint64_t padding;
-    };
-    struct %(c_name)s *next;
+    %(c_name)s *next;
+    %(c_type)s value;
 };
 ''',
                  c_name=c_name(name), c_type=element_type.c_type())
