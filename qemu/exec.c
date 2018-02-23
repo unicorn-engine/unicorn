@@ -38,7 +38,6 @@
 #endif
 #include "exec/cpu-all.h"
 
-#include "exec/cputlb.h"
 #include "translate-all.h"
 
 #include "exec/memory-internal.h"
