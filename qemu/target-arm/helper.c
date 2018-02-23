@@ -5357,7 +5357,6 @@ void aarch64_sync_64_to_32(CPUARMState *env)
 static void arm_cpu_do_interrupt_aarch32_(CPUState *cs)
 {
     CPUARMState *env = cs->env_ptr;
-    ARMCPU *cpu = ARM_CPU(env->uc, cs);
     uint32_t addr;
     uint32_t mask;
     int new_mode;
@@ -5513,7 +5512,6 @@ static void arm_cpu_do_interrupt_aarch32_(CPUState *cs)
 static void arm_cpu_do_interrupt_aarch64_(CPUState *cs)
 {
     CPUARMState *env = cs->env_ptr;
-    ARMCPU *cpu = ARM_CPU(env->uc, cs);
     unsigned int new_el = env->exception.target_el;
     target_ulong addr = env->cp15.vbar_el[new_el];
     unsigned int new_mode = aarch64_pstate_mode(new_el, true);
