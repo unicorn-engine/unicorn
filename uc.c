@@ -296,13 +296,31 @@ static void ramlist_free_dirty_memory(struct uc_struct *uc)
     }
 }
 
+static void free_hooks(uc_engine *uc)
+{
+    struct list_item *cur;
+    struct hook *hook;
+    int i;
+
+    // free hooks and hook lists
+    for (i = 0; i < UC_HOOK_MAX; i++) {
+        cur = uc->hook[i].head;
+        // hook can be in more than one list
+        // so we refcount to know when to free
+        while (cur) {
+            hook = (struct hook *)cur->data;
+            if (--hook->refs == 0) {
+                free(hook);
+            }
+            cur = cur->next;
+        }
+        list_clear(&uc->hook[i]);
+    }
+}
+
 UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc)
 {
-    int i;
-    struct list_item *cur;
-    struct hook *hook;
-
     // Cleanup internally.
     if (uc->release)
         uc->release(uc->tcg_ctx);
@@ -344,22 +362,7 @@ uc_err uc_close(uc_engine *uc)
     g_hash_table_destroy(uc->type_table);
 
     ramlist_free_dirty_memory(uc);
-
-    // free hooks and hook lists
-    for (i = 0; i < UC_HOOK_MAX; i++) {
-        cur = uc->hook[i].head;
-        // hook can be in more than one list
-        // so we refcount to know when to free
-        while (cur) {
-            hook = (struct hook *)cur->data;
-            if (--hook->refs == 0) {
-                free(hook);
-            }
-            cur = cur->next;
-        }
-        list_clear(&uc->hook[i]);
-    }
-
+    free_hooks(uc);
     free(uc->mapped_blocks);
 
     // finally, free uc itself.
