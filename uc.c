@@ -285,7 +285,7 @@ static void ramlist_free_dirty_memory(struct uc_struct *uc)
     DirtyMemoryBlocks** blocks = uc->ram_list.dirty_memory;
 
     for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
-        DirtyMemoryBlocks* block = uc->ram_list.dirty_memory[i];
+        DirtyMemoryBlocks* block = blocks[i];
         int j;
 
         for (j = 0; j < block->num_blocks; j++) {
