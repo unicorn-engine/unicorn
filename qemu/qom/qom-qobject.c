@@ -22,6 +22,7 @@ void object_property_set_qobject(struct uc_struct *uc, Object *obj, QObject *val
                                  const char *name, Error **errp)
 {
     QmpInputVisitor *qiv;
+    /* TODO: Should we reject, rather than ignore, excess input? */
     qiv = qmp_input_visitor_new(value, false);
     object_property_set(uc, obj, qmp_input_get_visitor(qiv), name, errp);
 
