@@ -8714,6 +8714,11 @@ case 0x101:
         case 0xfd:
         case 0xfe:
         case 0xff: /* sfence */
+            if (!(s->cpuid_features & CPUID_SSE)
+                || (prefixes & PREFIX_LOCK)) {
+                goto illegal_op;
+            }
+            break;
         case 0xe8:
         case 0xe9:
         case 0xea:
