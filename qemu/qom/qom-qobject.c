@@ -22,7 +22,7 @@ void object_property_set_qobject(struct uc_struct *uc, Object *obj, QObject *val
                                  const char *name, Error **errp)
 {
     QmpInputVisitor *qiv;
-    qiv = qmp_input_visitor_new(value);
+    qiv = qmp_input_visitor_new(value, false);
     object_property_set(uc, obj, qmp_input_get_visitor(qiv), name, errp);
 
     qmp_input_visitor_cleanup(qiv);
