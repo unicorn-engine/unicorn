@@ -76,6 +76,7 @@ static inline bool cpu_physical_memory_get_dirty(struct uc_struct *uc, ram_addr_
 {
     DirtyMemoryBlocks *blocks;
     unsigned long end, page;
+    unsigned long idx, offset, base;
     bool dirty = false;
 
     assert(client < DIRTY_MEMORY_NUM);
@@ -89,17 +90,22 @@ static inline bool cpu_physical_memory_get_dirty(struct uc_struct *uc, ram_addr_
     // Unicorn: atomic_read used instead of atomic_rcu_read
     blocks = atomic_read(&uc->ram_list.dirty_memory[client]);
 
+    idx = page / DIRTY_MEMORY_BLOCK_SIZE;
+    offset = page % DIRTY_MEMORY_BLOCK_SIZE;
+    base = page - offset;
     while (page < end) {
-        unsigned long idx = page / DIRTY_MEMORY_BLOCK_SIZE;
-        unsigned long offset = page % DIRTY_MEMORY_BLOCK_SIZE;
-        unsigned long num = MIN(end - page, DIRTY_MEMORY_BLOCK_SIZE - offset);
-
-        if (find_next_bit(blocks->blocks[idx], offset, num) < num) {
+        unsigned long next = MIN(end, base + DIRTY_MEMORY_BLOCK_SIZE);
+        unsigned long num = next - base;
+        unsigned long found = find_next_bit(blocks->blocks[idx], num, offset);
+        if (found < num) {
             dirty = true;
             break;
         }
 
-        page += num;
+        page = next;
+        idx++;
+        offset = 0;
+        base += DIRTY_MEMORY_BLOCK_SIZE;
     }
 
     // Unicorn: commented out
@@ -115,6 +121,7 @@ static inline bool cpu_physical_memory_all_dirty(struct uc_struct *uc, ram_addr_
 {
     DirtyMemoryBlocks *blocks;
     unsigned long end, page;
+    unsigned long idx, offset, base;
     bool dirty = true;
 
     assert(client < DIRTY_MEMORY_NUM);
@@ -128,17 +135,22 @@ static inline bool cpu_physical_memory_all_dirty(struct uc_struct *uc, ram_addr_
     // Unicorn: atomic_read used instead of atomic_rcu_read
     blocks = atomic_read(&uc->ram_list.dirty_memory[client]);
 
+    idx = page / DIRTY_MEMORY_BLOCK_SIZE;
+    offset = page % DIRTY_MEMORY_BLOCK_SIZE;
+    base = page - offset;
     while (page < end) {
-        unsigned long idx = page / DIRTY_MEMORY_BLOCK_SIZE;
-        unsigned long offset = page % DIRTY_MEMORY_BLOCK_SIZE;
-        unsigned long num = MIN(end - page, DIRTY_MEMORY_BLOCK_SIZE - offset);
-
-        if (find_next_zero_bit(blocks->blocks[idx], offset, num) < num) {
+        unsigned long next = MIN(end, base + DIRTY_MEMORY_BLOCK_SIZE);
+        unsigned long num = next - base;
+        unsigned long found = find_next_zero_bit(blocks->blocks[idx], num, offset);
+        if (found < num) {
             dirty = false;
             break;
         }
 
-        page += num;
+        page = next;
+        idx++;
+        offset = 0;
+        base += DIRTY_MEMORY_BLOCK_SIZE;
     }
 
     // Unicorn: commented out
@@ -200,6 +212,7 @@ static inline void cpu_physical_memory_set_dirty_range(struct uc_struct *uc, ram
 {
     DirtyMemoryBlocks *blocks[DIRTY_MEMORY_NUM];
     unsigned long end, page;
+    unsigned long idx, offset, base;
     int i;
 
     if (!mask && !xen_enabled()) {
@@ -217,17 +230,21 @@ static inline void cpu_physical_memory_set_dirty_range(struct uc_struct *uc, ram
         blocks[i] = atomic_read(&uc->ram_list.dirty_memory[i]);
     }
 
+    idx = page / DIRTY_MEMORY_BLOCK_SIZE;
+    offset = page % DIRTY_MEMORY_BLOCK_SIZE;
+    base = page - offset;
     while (page < end) {
-        unsigned long idx = page / DIRTY_MEMORY_BLOCK_SIZE;
-        unsigned long offset = page % DIRTY_MEMORY_BLOCK_SIZE;
-        unsigned long num = MIN(end - page, DIRTY_MEMORY_BLOCK_SIZE - offset);
+        unsigned long next = MIN(end, base + DIRTY_MEMORY_BLOCK_SIZE);
 
         if (unlikely(mask & (1 << DIRTY_MEMORY_CODE))) {
             bitmap_set_atomic(blocks[DIRTY_MEMORY_CODE]->blocks[idx],
-                              offset, num);
+                              offset, next - page);
         }
 
-        page += num;
+        page = next;
+        idx++;
+        offset = 0;
+        base += DIRTY_MEMORY_BLOCK_SIZE;
     }
 
     // Unicorn: commented out
