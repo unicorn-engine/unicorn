@@ -33,17 +33,19 @@ struct Visitor
                          size_t size, Error **errp);
     void (*end_struct)(Visitor *v, Error **errp);
 
-    void (*start_implicit_struct)(Visitor *v, void **obj, size_t size,
-                                  Error **errp);
-    void (*end_implicit_struct)(Visitor *v);
-
     void (*start_list)(Visitor *v, const char *name, Error **errp);
     GenericList *(*next_list)(Visitor *v, GenericList **list, size_t size);
     void (*end_list)(Visitor *v);
 
+    /* Optional, needed for input and dealloc visitors.  */
+    void (*start_alternate)(Visitor *v, const char *name,
+                            GenericAlternate **obj, size_t size,
+                            bool promote_int, Error **errp);
+
+    /* Optional, needed for dealloc visitor.  */
+    void (*end_alternate)(Visitor *v);
+
     /* May be NULL; only needed for input visitors. */
-    void (*get_next_type)(Visitor *v, const char *name, QType *type,
-                          bool promote_int, Error **errp);
     void (*type_int64)(Visitor *v, const char *name, int64_t *obj,
                        Error **errp);
     /* Must be set. */
