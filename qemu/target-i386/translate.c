@@ -7856,7 +7856,7 @@ case 0x101:
             tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp2_i32, cpu_regs[R_ECX]);
             gen_helper_xsetbv(tcg_ctx, cpu_env, cpu_tmp2_i32, cpu_tmp1_i64);
             /* End TB because translation flags may change.  */
-            gen_jmp_im(s, s->pc - pc_start);
+            gen_jmp_im(s, s->pc - s->cs_base);
             gen_eob(s);
             break;
 
