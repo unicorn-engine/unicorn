@@ -460,12 +460,6 @@ bool memory_region_is_unassigned(struct uc_struct* uc, MemoryRegion *mr);
 
 #endif
 
-/* vl.c */
-extern int singlestep;
-
-/* cpu-exec.c */
-extern volatile sig_atomic_t exit_request;
-
 /**
  * cpu_can_do_io:
  * @cpu: The CPU for which to check IO.
