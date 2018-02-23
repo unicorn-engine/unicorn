@@ -152,10 +152,8 @@ void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry, uintptr_t start,
     }
 }
 
-void cpu_tlb_reset_dirty_all(struct uc_struct *uc,
-    ram_addr_t start1, ram_addr_t length)
+void tlb_reset_dirty(CPUState *cpu, ram_addr_t start1, ram_addr_t length)
 {
-    CPUState *cpu = uc->cpu;
     CPUArchState *env;
 
     int mmu_idx;

@@ -751,7 +751,7 @@ found:
 }
 
 static void tlb_reset_dirty_range_all(struct uc_struct* uc,
-    ram_addr_t start, ram_addr_t length)
+                                      ram_addr_t start, ram_addr_t length)
 {
     ram_addr_t start1;
     RAMBlock *block;
@@ -763,7 +763,7 @@ static void tlb_reset_dirty_range_all(struct uc_struct* uc,
     block = qemu_get_ram_block(uc, start);
     assert(block == qemu_get_ram_block(uc, end - 1));
     start1 = (uintptr_t)ramblock_ptr(block, start - block->offset);
-    cpu_tlb_reset_dirty_all(uc, start1, length);
+    tlb_reset_dirty(uc->cpu, start1, length);
 }
 
 /* Note: start and end must be within the same ram block.  */

@@ -314,7 +314,6 @@
 #define cpu_restore_state_from_tb cpu_restore_state_from_tb_mipsel
 #define cpu_single_step cpu_single_step_mipsel
 #define cpu_tb_exec cpu_tb_exec_mipsel
-#define cpu_tlb_reset_dirty_all cpu_tlb_reset_dirty_all_mipsel
 #define cpu_to_be64 cpu_to_be64_mipsel
 #define cpu_to_le32 cpu_to_le32_mipsel
 #define cpu_to_le64 cpu_to_le64_mipsel
@@ -3046,10 +3045,9 @@
 #define tlbimva_write tlbimva_write_mipsel
 #define tlb_is_dirty_ram tlb_is_dirty_ram_mipsel
 #define tlb_protect_code tlb_protect_code_mipsel
+#define tlb_reset_dirty tlb_reset_dirty_mipsel
 #define tlb_reset_dirty_range tlb_reset_dirty_range_mipsel
-#define tlb_reset_dirty_range_all tlb_reset_dirty_range_all_mipsel
 #define tlb_set_dirty tlb_set_dirty_mipsel
-#define tlb_set_dirty1 tlb_set_dirty1_mipsel
 #define tlb_unprotect_code tlb_unprotect_code_mipsel
 #define tlb_vaddr_to_host tlb_vaddr_to_host_mipsel
 #define token_get_type token_get_type_mipsel

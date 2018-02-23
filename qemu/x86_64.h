@@ -314,7 +314,6 @@
 #define cpu_restore_state_from_tb cpu_restore_state_from_tb_x86_64
 #define cpu_single_step cpu_single_step_x86_64
 #define cpu_tb_exec cpu_tb_exec_x86_64
-#define cpu_tlb_reset_dirty_all cpu_tlb_reset_dirty_all_x86_64
 #define cpu_to_be64 cpu_to_be64_x86_64
 #define cpu_to_le32 cpu_to_le32_x86_64
 #define cpu_to_le64 cpu_to_le64_x86_64
@@ -3046,10 +3045,9 @@
 #define tlbimva_write tlbimva_write_x86_64
 #define tlb_is_dirty_ram tlb_is_dirty_ram_x86_64
 #define tlb_protect_code tlb_protect_code_x86_64
+#define tlb_reset_dirty tlb_reset_dirty_x86_64
 #define tlb_reset_dirty_range tlb_reset_dirty_range_x86_64
-#define tlb_reset_dirty_range_all tlb_reset_dirty_range_all_x86_64
 #define tlb_set_dirty tlb_set_dirty_x86_64
-#define tlb_set_dirty1 tlb_set_dirty1_x86_64
 #define tlb_unprotect_code tlb_unprotect_code_x86_64
 #define tlb_vaddr_to_host tlb_vaddr_to_host_x86_64
 #define token_get_type token_get_type_x86_64

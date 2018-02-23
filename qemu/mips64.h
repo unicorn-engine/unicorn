@@ -314,7 +314,6 @@
 #define cpu_restore_state_from_tb cpu_restore_state_from_tb_mips64
 #define cpu_single_step cpu_single_step_mips64
 #define cpu_tb_exec cpu_tb_exec_mips64
-#define cpu_tlb_reset_dirty_all cpu_tlb_reset_dirty_all_mips64
 #define cpu_to_be64 cpu_to_be64_mips64
 #define cpu_to_le32 cpu_to_le32_mips64
 #define cpu_to_le64 cpu_to_le64_mips64
@@ -3046,10 +3045,9 @@
 #define tlbimva_write tlbimva_write_mips64
 #define tlb_is_dirty_ram tlb_is_dirty_ram_mips64
 #define tlb_protect_code tlb_protect_code_mips64
+#define tlb_reset_dirty tlb_reset_dirty_mips64
 #define tlb_reset_dirty_range tlb_reset_dirty_range_mips64
-#define tlb_reset_dirty_range_all tlb_reset_dirty_range_all_mips64
 #define tlb_set_dirty tlb_set_dirty_mips64
-#define tlb_set_dirty1 tlb_set_dirty1_mips64
 #define tlb_unprotect_code tlb_unprotect_code_mips64
 #define tlb_vaddr_to_host tlb_vaddr_to_host_mips64
 #define token_get_type token_get_type_mips64
