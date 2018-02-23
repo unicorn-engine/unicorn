@@ -28,6 +28,7 @@ typedef struct StackObject
 
     GHashTable *h;           /* If obj is dict: unvisited keys */
     const QListEntry *entry; /* If obj is list: unvisited tail */
+    bool first;              /* If obj is list: next_list() not yet called? */
 } StackObject;
 
 struct QmpInputVisitor
@@ -79,7 +80,11 @@ static QObject *qmp_input_get_object(QmpInputVisitor *qiv,
     } else {
         assert(qobject_type(qobj) == QTYPE_QLIST);
         assert(!name);
+        assert(!tos->first);
         ret = qlist_entry_obj(tos->entry);
+        if (consume) {
+            tos->entry = qlist_next(tos->entry);
+        }
     }
 
     return ret;
@@ -103,13 +108,16 @@ static void qmp_input_push(QmpInputVisitor *qiv, QObject *obj, Error **errp)
     }
 
     tos->obj = obj;
-    tos->entry = NULL;
-    tos->h = NULL;
+    assert(!tos->h);
+    assert(!tos->entry);
 
     if (qiv->strict && qobject_type(obj) == QTYPE_QDICT) {
         h = g_hash_table_new(g_str_hash, g_str_equal);
         qdict_iter(qobject_to_qdict(obj), qdict_add_key, h);
         tos->h = h;
+    } else if (qobject_type(obj) == QTYPE_QLIST) {
+        tos->entry = qlist_first(qobject_to_qlist(obj));
+        tos->first = true;
     }
 
     qiv->nb_stack++;
@@ -124,10 +132,11 @@ static gboolean always_true(gpointer key, gpointer val, gpointer user_pkey)
 
 static void qmp_input_pop(QmpInputVisitor *qiv, Error **errp)
 {
+    StackObject *tos = &qiv->stack[qiv->nb_stack - 1];
     assert(qiv->nb_stack > 0);
 
     if (qiv->strict) {
-        GHashTable * const top_ht = qiv->stack[qiv->nb_stack - 1].h;
+        GHashTable *const top_ht = tos->h;
         if (top_ht) {
             if (g_hash_table_size(top_ht)) {
                 const char *key;
@@ -136,6 +145,7 @@ static void qmp_input_pop(QmpInputVisitor *qiv, Error **errp)
             }
             g_hash_table_unref(top_ht);
         }
+        tos->h = NULL;
     }
 
     qiv->nb_stack--;
@@ -207,23 +217,15 @@ static GenericList *qmp_input_next_list(Visitor *v, GenericList **list,
     QmpInputVisitor *qiv = to_qiv(v);
     GenericList *entry;
     StackObject *so = &qiv->stack[qiv->nb_stack - 1];
-    bool first;
 
-    if (so->entry == NULL) {
-        so->entry = qlist_first(qobject_to_qlist(so->obj));
-        first = true;
-    } else {
-        so->entry = qlist_next(so->entry);
-        first = false;
-    }
-
-    if (so->entry == NULL) {
+    if (!so->entry) {
         return NULL;
     }
 
     entry = g_malloc0(size);
-    if (first) {
+    if (so->first) {
         *list = entry;
+        so->first = false;
     } else {
         (*list)->next = entry;
     }
