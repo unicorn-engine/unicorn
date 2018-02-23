@@ -169,11 +169,6 @@ static void qapi_dealloc_type_size(Visitor *v, const char *name, uint64_t *obj,
 {
 }
 
-static void qapi_dealloc_type_enum(Visitor *v, const char *name, int *obj,
-                                   const char * const strings[], Error **errp)
-{
-}
-
 Visitor *qapi_dealloc_get_visitor(QapiDeallocVisitor *v)
 {
     return &v->visitor;
@@ -190,6 +185,7 @@ QapiDeallocVisitor *qapi_dealloc_visitor_new(void)
 
     v = g_malloc0(sizeof(*v));
 
+    v->visitor.type = VISITOR_DEALLOC;
     v->visitor.start_struct = qapi_dealloc_start_struct;
     v->visitor.end_struct = qapi_dealloc_end_struct;
     v->visitor.start_implicit_struct = qapi_dealloc_start_implicit_struct;
@@ -197,7 +193,6 @@ QapiDeallocVisitor *qapi_dealloc_visitor_new(void)
     v->visitor.start_list = qapi_dealloc_start_list;
     v->visitor.next_list = qapi_dealloc_next_list;
     v->visitor.end_list = qapi_dealloc_end_list;
-    v->visitor.type_enum = qapi_dealloc_type_enum;
     v->visitor.type_int64 = qapi_dealloc_type_int64;
     v->visitor.type_uint64 = qapi_dealloc_type_uint64;
     v->visitor.type_bool = qapi_dealloc_type_bool;

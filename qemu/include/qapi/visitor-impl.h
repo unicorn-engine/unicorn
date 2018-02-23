@@ -15,6 +15,17 @@
 #include "qapi/error.h"
 #include "qapi/visitor.h"
 
+/*
+ * There are three classes of visitors; setting the class determines
+ * how QAPI enums are visited, as well as what additional restrictions
+ * can be asserted.
+ */
+typedef enum VisitorType {
+    VISITOR_INPUT,
+    VISITOR_OUTPUT,
+    VISITOR_DEALLOC,
+} VisitorType;
+
 struct Visitor
 {
     /* Must be set */
@@ -30,12 +41,9 @@ struct Visitor
     GenericList *(*next_list)(Visitor *v, GenericList **list);
     void (*end_list)(Visitor *v);
 
-    void (*type_enum)(Visitor *v, const char *name, int *obj,
-                      const char *const strings[], Error **errp);
     /* May be NULL; only needed for input visitors. */
     void (*get_next_type)(Visitor *v, const char *name, QType *type,
                           bool promote_int, Error **errp);
-    /* Must be set. */
     void (*type_int64)(Visitor *v, const char *name, int64_t *obj,
                        Error **errp);
     /* Must be set. */
@@ -54,11 +62,9 @@ struct Visitor
 
     /* May be NULL; most useful for input visitors. */
     void (*optional)(Visitor *v, const char *name, bool *present);
-};
 
-void input_type_enum(Visitor *v, const char *name, int *obj,
-                     const char *const strings[], Error **errp);
-void output_type_enum(Visitor *v, const char *name, int *obj,
-                     const char *const strings[], Error **errp);
+    /* Must be set */
+    VisitorType type;
+};
 
 #endif
