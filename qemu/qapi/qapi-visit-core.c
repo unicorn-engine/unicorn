@@ -24,7 +24,13 @@
 void visit_start_struct(Visitor *v, const char *name, void **obj,
                         size_t size, Error **errp)
 {
-    v->start_struct(v, name, obj, size, errp);
+    Error *err = NULL;
+
+    v->start_struct(v, name, obj, size, &err);
+    if (obj && v->type == VISITOR_INPUT) {
+        assert(!err != !*obj);
+    }
+    error_propagate(errp, err);
 }
 
 void visit_end_struct(Visitor *v, Error **errp)
@@ -192,7 +198,14 @@ void visit_type_bool(Visitor *v, const char *name, bool *obj, Error **errp)
 
 void visit_type_str(Visitor *v, const char *name, char **obj, Error **errp)
 {
-    v->type_str(v, name, obj, errp);
+    Error *err = NULL;
+
+    assert(obj);
+    v->type_str(v, name, obj, &err);
+    if (v->type == VISITOR_INPUT) {
+        assert(!err != !*obj);
+    }
+    error_propagate(errp, err);
 }
 
 void visit_type_number(Visitor *v, const char *name, double *obj,
@@ -203,7 +216,14 @@ void visit_type_number(Visitor *v, const char *name, double *obj,
 
 void visit_type_any(Visitor *v, const char *name, QObject **obj, Error **errp)
 {
-    v->type_any(v, name, obj, errp);
+    Error *err = NULL;
+
+    assert(obj);
+    v->type_any(v, name, obj, &err);
+    if (v->type == VISITOR_INPUT) {
+        assert(!err != !*obj);
+    }
+    error_propagate(errp, err);
 }
 
 static void output_type_enum(Visitor *v, const char *name, int *obj,
