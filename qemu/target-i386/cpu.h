@@ -1211,7 +1211,6 @@ void x86_cpu_exec_exit(CPUState *cpu);
 
 X86CPU *cpu_x86_create(struct uc_struct *uc, const char *cpu_model, Error **errp);
 int cpu_x86_exec(struct uc_struct *uc, CPUState *cpu);
-void x86_cpudef_setup(void);
 int cpu_x86_support_mca_broadcast(CPUX86State *env);
 
 int cpu_get_pic_interrupt(CPUX86State *s);
@@ -1391,7 +1390,6 @@ CPUX86State *cpu_x86_init_user(struct uc_struct *uc, const char *cpu_model);
 #ifdef TARGET_I386
 #define cpu_exec cpu_x86_exec
 #define cpu_signal_handler cpu_x86_signal_handler
-#define cpudef_setup x86_cpudef_setup
 #endif
 
 /* MMU modes definitions */
