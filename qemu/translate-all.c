@@ -1548,9 +1548,13 @@ void tb_invalidate_phys_page_fast(struct uc_struct* uc, tb_page_addr_t start, in
     }
 }
 #else
-static void tb_invalidate_phys_page(struct uc_struct *uc, tb_page_addr_t addr,
-                                    uintptr_t pc, void *puc,
-                                    bool locked)
+/* Called with mmap_lock held. If pc is not 0 then it indicates the
+ * host PC of the faulting store instruction that caused this invalidate.
+ * Returns true if the caller needs to abort execution of the current
+ * TB (because it was modified by this store and the guest CPU has
+ * precise-SMC semantics).
+ */
+static bool tb_invalidate_phys_page(tb_page_addr_t addr, uintptr_t pc)
 {
     TranslationBlock *tb;
     PageDesc *p;
@@ -1568,7 +1572,7 @@ static void tb_invalidate_phys_page(struct uc_struct *uc, tb_page_addr_t addr,
     addr &= TARGET_PAGE_MASK;
     p = page_find(addr >> TARGET_PAGE_BITS);
     if (!p) {
-        return;
+        return false;
     }
     tb = p->first_tb;
 #ifdef TARGET_HAS_PRECISE_SMC
@@ -1607,12 +1611,10 @@ static void tb_invalidate_phys_page(struct uc_struct *uc, tb_page_addr_t addr,
            modifying the memory. It will ensure that it cannot modify
            itself */
         tb_gen_code(cpu, current_pc, current_cs_base, current_flags, 1);
-        if (locked) {
-            mmap_unlock();
-        }
-        cpu_resume_from_signal(cpu, puc);
+        return true;
     }
 #endif
+    return false;
 }
 #endif
 
@@ -2005,7 +2007,7 @@ static void page_set_flags(struct uc_struct *uc, target_ulong start, target_ulon
         if (!(p->flags & PAGE_WRITE) &&
             (flags & PAGE_WRITE) &&
             p->first_tb) {
-            tb_invalidate_phys_page(addr, 0, NULL, false);
+            tb_invalidate_phys_page(addr, 0);
         }
         p->flags = flags;
     }
@@ -2099,7 +2101,10 @@ static int page_unprotect(target_ulong address, uintptr_t pc, void *puc)
 
             /* and since the content will be modified, we must invalidate
                the corresponding translated code. */
-            tb_invalidate_phys_page(addr, pc, puc, true);
+            if (tb_invalidate_phys_page(addr, pc)) {
+                mmap_unlock();
+                cpu_resume_from_signal(current_cpu, puc);
+            }
 #ifdef DEBUG_TB_CHECK
             tb_invalidate_check(addr);
 #endif
