@@ -134,7 +134,7 @@ path_of() {
 }
 
 # default parameters
-source_path=`dirname "$0"`
+source_path=$(dirname "$0")
 cpu=""
 static="no"
 cross_prefix=""
@@ -177,7 +177,7 @@ pie=""
 
 # parse CC options first
 for opt do
-  optarg=`expr "x$opt" : 'x[^=]*=\(.*\)'`
+  optarg=$(expr "x$opt" : 'x[^=]*=\(.*\)')
   case "$opt" in
   --cc=*) CC="$optarg"
   ;;
@@ -237,7 +237,7 @@ else
 fi
 
 # make source path absolute
-source_path=`cd "$source_path"; pwd`
+source_path=$(cd "$source_path"; pwd)
 
 # running configure in the source tree?
 # we know that's the case if configure is there.
@@ -268,7 +268,7 @@ elif check_define __sun__ ; then
 elif check_define __HAIKU__ ; then
   targetos='Haiku'
 else
-  targetos=`uname -s`
+  targetos=$(uname -s)
 fi
 
 # Some host OSes need non-standard checks for which CPU to use.
@@ -286,7 +286,7 @@ Darwin)
   fi
   ;;
 SunOS)
-  # `uname -m` returns i86pc even on an x86_64 box, so default based on isainfo
+  # $(uname -m) returns i86pc even on an x86_64 box, so default based on isainfo
   if test -z "$cpu" && test "$(isainfo -k)" = "amd64"; then
     cpu="x86_64"
   fi
@@ -332,7 +332,7 @@ elif check_define __aarch64__ ; then
 elif check_define __hppa__ ; then
   cpu="hppa"
 else
-  cpu=`uname -m`
+  cpu=$(uname -m)
 fi
 
 ARCH=
@@ -416,7 +416,7 @@ SunOS)
   make="${MAKE-gmake}"
   ld="gld"
   needs_libsunmath="no"
-  solarisrev=`uname -r | cut -f2 -d.`
+  solarisrev=$(uname -r | cut -f2 -d.)
   if [ "$cpu" = "i386" -o "$cpu" = "x86_64" ] ; then
     if test "$solarisrev" -le 9 ; then
       if test -f /opt/SUNWspro/prod/lib/libsunmath.so.1; then
@@ -482,7 +482,7 @@ fi
 werror=""
 
 for opt do
-  optarg=`expr "x$opt" : 'x[^=]*=\(.*\)'`
+  optarg=$(expr "x$opt" : 'x[^=]*=\(.*\)')
   case "$opt" in
   --help|-h) show_help=yes
   ;;
@@ -667,7 +667,7 @@ fi
 
 # Consult white-list to determine whether to enable werror
 # by default.  Only enable by default for git builds
-z_version=`cut -f3 -d. $source_path/VERSION`
+z_version=$(cut -f3 -d. $source_path/VERSION)
 
 if test -z "$werror" ; then
     if test -d "$source_path/.git" -a \
@@ -844,7 +844,7 @@ fi
 if test -z "${target_list+xxx}" ; then
     target_list="$default_target_list"
 else
-    target_list=`echo "$target_list" | sed -e 's/,/ /g'`
+    target_list=$(echo "$target_list" | sed -e 's/,/ /g')
 fi
 
 # Check that we recognised the target name; this allows a more
@@ -1129,7 +1129,7 @@ if test "$bigendian" = "yes" ; then
 fi
 if test "$mingw32" = "yes" ; then
   echo "CONFIG_WIN32=y" >> $config_host_mak
-  rc_version=`cat $source_path/VERSION`
+  rc_version=$(cat $source_path/VERSION)
   version_major=${rc_version%%.*}
   rc_version=${rc_version#*.}
   version_minor=${rc_version%%.*}
@@ -1233,7 +1233,7 @@ echo "TRANSLATE_OPT_CFLAGS=$TRANSLATE_OPT_CFLAGS" >> $config_host_mak
 for target in $target_list; do
 target_dir="$target"
 config_target_mak=$target_dir/config-target.mak
-target_name=`echo $target | cut -d '-' -f 1`
+target_name=$(echo $target | cut -d '-' -f 1)
 target_bigendian="no"
 
 case "$target_name" in
@@ -1364,7 +1364,7 @@ upper() {
     echo "$@"| LC_ALL=C tr '[a-z]' '[A-Z]'
 }
 
-target_arch_name="`upper $TARGET_ARCH`"
+target_arch_name="$(upper $TARGET_ARCH)"
 echo "TARGET_$target_arch_name=y" >> $config_target_mak
 echo "TARGET_NAME=$target_name" >> $config_target_mak
 echo "TARGET_BASE_ARCH=$TARGET_BASE_ARCH" >> $config_target_mak
