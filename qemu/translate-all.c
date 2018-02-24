@@ -491,10 +491,8 @@ static inline PageDesc *page_find(struct uc_struct *uc, tb_page_addr_t index)
   (DEFAULT_CODE_GEN_BUFFER_SIZE_1 < MAX_CODE_GEN_BUFFER_SIZE \
    ? DEFAULT_CODE_GEN_BUFFER_SIZE_1 : MAX_CODE_GEN_BUFFER_SIZE)
 
-static inline size_t size_code_gen_buffer(struct uc_struct *uc, size_t tb_size)
+static inline size_t size_code_gen_buffer(size_t tb_size)
 {
-    TCGContext *tcg_ctx = uc->tcg_ctx;
-
     /* Size the buffer.  */
     if (tb_size == 0) {
 #ifdef USE_STATIC_CODE_GEN_BUFFER
@@ -780,7 +778,7 @@ static inline void code_gen_alloc(struct uc_struct *uc, size_t tb_size)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
 
-    tcg_ctx->code_gen_buffer_size = size_code_gen_buffer(uc, tb_size);
+    tcg_ctx->code_gen_buffer_size = size_code_gen_buffer(tb_size);
     tcg_ctx->code_gen_buffer = alloc_code_gen_buffer(uc);
     if (tcg_ctx->code_gen_buffer == NULL) {
         fprintf(stderr, "Could not allocate dynamic translator buffer\n");
