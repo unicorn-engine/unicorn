@@ -315,6 +315,39 @@ static inline void cpu_handle_interrupt(CPUState *cpu,
     }
 }
 
+static inline void cpu_loop_exec_tb(CPUState *cpu, TranslationBlock *tb,
+                                    TranslationBlock **last_tb, int *tb_exit)
+{
+    uintptr_t ret;
+
+    if (unlikely(cpu->exit_request)) {
+        return;
+    }
+
+    /* execute the generated code */
+    ret = cpu_tb_exec(cpu, tb);
+    *last_tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
+    *tb_exit = ret & TB_EXIT_MASK;
+    switch (*tb_exit) {
+    case TB_EXIT_REQUESTED:
+        /* Something asked us to stop executing
+         * chained TBs; just continue round the main
+         * loop. Whatever requested the exit will also
+         * have set something else (eg exit_request or
+         * interrupt_request) which we will handle
+         * next time around the loop.  But we need to
+         * ensure the tcg_exit_req read in generated code
+         * comes before the next read of cpu->exit_request
+         * or cpu->interrupt_request.
+         */
+        smp_rmb();
+        *last_tb = NULL;
+        break;
+    default:
+        break;
+    }
+}
+
 /* main execution loop */
 
 int cpu_exec(struct uc_struct *uc, CPUState *cpu)
@@ -325,8 +358,6 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     X86CPU *x86_cpu = X86_CPU(uc, cpu);
 #endif
     int ret;
-    TranslationBlock *tb, *last_tb;
-    int tb_exit = 0;
 
     if (cpu_handle_halt(cpu)) {
         return EXCP_HALTED;
@@ -344,6 +375,9 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     env->invalid_error = UC_ERR_OK;
 
     for(;;) {
+        TranslationBlock *tb, *last_tb;
+        int tb_exit = 0;
+
         /* prepare setjmp context for exception handling */
         if (sigsetjmp(cpu->jmp_env, 0) == 0) {
             if (uc->stop_request || uc->invalid_error) {
@@ -365,31 +399,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                     ret = EXCP_HLT;
                     break;
                 }
-                if (likely(!cpu->exit_request)) {
-                    uintptr_t ret;
-                    /* execute the generated code */
-                    ret = cpu_tb_exec(cpu, tb);
-                    last_tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
-                    tb_exit = ret & TB_EXIT_MASK;
-                    switch (tb_exit) {
-                    case TB_EXIT_REQUESTED:
-                        /* Something asked us to stop executing
-                         * chained TBs; just continue round the main
-                         * loop. Whatever requested the exit will also
-                         * have set something else (eg exit_request or
-                         * interrupt_request) which we will handle
-                         * next time around the loop.  But we need to
-                         * ensure the tcg_exit_req read in generated code
-                         * comes before the next read of cpu->exit_request
-                         * or cpu->interrupt_request.
-                         */
-                        smp_rmb();
-                        last_tb = NULL;
-                        break;
-                    default:
-                        break;
-                    }
-                }
+                cpu_loop_exec_tb(cpu, tb, &last_tb, &tb_exit);
             } /* for(;;) */
         } else {
 #if defined(__clang__) || !QEMU_GNUC_PREREQ(4, 6)
