@@ -589,6 +589,31 @@ const char *get_register_name_32(unsigned int reg)
 #include <intrin.h>
 #endif
 
+/*
+ * Returns the set of feature flags that are supported and migratable by
+ * QEMU, for a given FeatureWord.
+ */
+static uint32_t x86_cpu_get_migratable_flags(FeatureWord w)
+{
+    FeatureWordInfo *wi = &feature_word_info[w];
+    uint32_t r = 0;
+    int i;
+
+    for (i = 0; i < 32; i++) {
+        uint32_t f = 1U << i;
+        /* If the feature name is unknown, it is not supported by QEMU yet */
+        if (!wi->feat_names[i]) {
+            continue;
+        }
+        /* Skip features known to QEMU, but explicitly marked as unmigratable */
+        if (wi->unmigratable_flags & f) {
+            continue;
+        }
+        r |= f;
+    }
+    return r;
+}
+
 void host_cpuid(uint32_t function, uint32_t count,
                 uint32_t *eax, uint32_t *ebx, uint32_t *ecx, uint32_t *edx)
 {
@@ -1626,7 +1651,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
 };
 
-static uint32_t x86_cpu_get_supported_feature_word(struct uc_struct *uc, FeatureWord w);
+static uint32_t x86_cpu_get_supported_feature_word(struct uc_struct *uc,
+                                                   FeatureWord w, bool migratable);
 
 static void report_unavailable_features(FeatureWord w, uint32_t mask)
 {
@@ -1986,22 +2012,20 @@ static void x86_cpu_parse_featurestr(CPUState *cs, char *features,
 {
     X86CPU *cpu = X86_CPU(cs->uc, cs);
     char *featurestr; /* Single 'key=value" string being parsed */
-    FeatureWord w;
-    /* Features to be added */
-    FeatureWordArray plus_features = { 0 };
-    /* Features to be removed */
-    FeatureWordArray minus_features = { 0 };
-    CPUX86State *env = &cpu->env;
     Error *local_err = NULL;
+
+    // Unicorn: added for consistent zeroing out
+    memset(cpu->plus_features, 0, sizeof(cpu->plus_features));
+    memset(cpu->minus_features, 0, sizeof(cpu->minus_features));
 
     featurestr = features ? strtok(features, ",") : NULL;
 
     while (featurestr) {
         char *val;
         if (featurestr[0] == '+') {
-            add_flagname_to_bitmaps(featurestr + 1, plus_features, &local_err);
+            add_flagname_to_bitmaps(featurestr + 1, cpu->plus_features, &local_err);
         } else if (featurestr[0] == '-') {
-            add_flagname_to_bitmaps(featurestr + 1, minus_features, &local_err);
+            add_flagname_to_bitmaps(featurestr + 1, cpu->minus_features, &local_err);
         } else if ((val = strchr(featurestr, '='))) {
             *val = 0; val++;
             feat2prop(featurestr);
@@ -2030,29 +2054,23 @@ static void x86_cpu_parse_featurestr(CPUState *cs, char *features,
         }
         featurestr = strtok(NULL, ",");
     }
-
-    if (cpu->host_features) {
-        for (w = 0; w < FEATURE_WORDS; w++) {
-            env->features[w] =
-                x86_cpu_get_supported_feature_word(env->uc, w);
-        }
-    }
-
-    for (w = 0; w < FEATURE_WORDS; w++) {
-        env->features[w] |= plus_features[w];
-        env->features[w] &= ~minus_features[w];
-    }
 }
 
-static uint32_t x86_cpu_get_supported_feature_word(struct uc_struct *uc, FeatureWord w)
+static uint32_t x86_cpu_get_supported_feature_word(struct uc_struct *uc,
+                                                   FeatureWord w, bool migratable_only)
 {
     FeatureWordInfo *wi = &feature_word_info[w];
+    uint32_t r;
 
     if (tcg_enabled(uc)) {
-        return wi->tcg_features;
+        r = wi->tcg_features;
     } else {
         return ~0;
     }
+    if (migratable_only) {
+        r &= x86_cpu_get_migratable_flags(w);
+    }
+    return r;
 }
 
 /*
@@ -2067,7 +2085,7 @@ static int x86_cpu_filter_features(X86CPU *cpu)
     int rv = 0;
 
     for (w = 0; w < FEATURE_WORDS; w++) {
-        uint32_t host_feat = x86_cpu_get_supported_feature_word(env->uc, w);
+        uint32_t host_feat = x86_cpu_get_supported_feature_word(env->uc, w, cpu->migratable);
         uint32_t requested_features = env->features[w];
         env->features[w] &= host_feat;
         cpu->filtered_features[w] = requested_features & ~env->features[w];
@@ -2814,6 +2832,7 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     X86CPUClass *xcc = X86_CPU_GET_CLASS(uc, dev);
     CPUX86State *env = &cpu->env;
     Error *local_err = NULL;
+    FeatureWord w;
 
     if (cpu->apic_id < 0) {
         error_setg(errp, "apic-id property was not initialized properly");
@@ -2822,6 +2841,23 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
 
     if (env->features[FEAT_7_0_EBX] && env->cpuid_level < 7) {
         env->cpuid_level = 7;
+    }
+
+    /*TODO: cpu->host_features incorrectly overwrites features
+     * set using "feat=on|off". Once we fix this, we can convert
+     * plus_features & minus_features to global properties
+     * inside x86_cpu_parse_featurestr() too.
+     */
+    if (cpu->host_features) {
+        for (w = 0; w < FEATURE_WORDS; w++) {
+            env->features[w] =
+                x86_cpu_get_supported_feature_word(uc, w, cpu->migratable);
+        }
+    }
+
+    for (w = 0; w < FEATURE_WORDS; w++) {
+        cpu->env.features[w] |= cpu->plus_features[w];
+        cpu->env.features[w] &= ~cpu->minus_features[w];
     }
 
     /* On AMD CPUs, some CPUID[8000_0001].EDX bits must match the bits on

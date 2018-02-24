@@ -1172,6 +1172,11 @@ typedef struct X86CPU {
        user */
     struct DeviceState *apic_state;
     struct MemoryRegion *cpu_as_root;
+
+    /* Features to be added */
+    FeatureWordArray plus_features;
+    /* Features to be removed */
+    FeatureWordArray minus_features;
 } X86CPU;
 
 static inline X86CPU *x86_env_get_cpu(CPUX86State *env)
