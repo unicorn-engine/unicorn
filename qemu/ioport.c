@@ -74,7 +74,7 @@ const MemoryRegionOps unassigned_io_ops = {
     DEVICE_NATIVE_ENDIAN,
 };
 
-void cpu_outb(struct uc_struct *uc, pio_addr_t addr, uint8_t val)
+void cpu_outb(struct uc_struct *uc, uint32_t addr, uint8_t val)
 {
     // Unicorn: commented out
     //trace_cpu_out(addr, 'b', val);
@@ -87,7 +87,7 @@ void cpu_outb(struct uc_struct *uc, pio_addr_t addr, uint8_t val)
     }
 }
 
-void cpu_outw(struct uc_struct *uc, pio_addr_t addr, uint16_t val)
+void cpu_outw(struct uc_struct *uc, uint32_t addr, uint16_t val)
 {
     // Unicorn: commented out
     //trace_cpu_out(addr, 'w', val);
@@ -100,7 +100,7 @@ void cpu_outw(struct uc_struct *uc, pio_addr_t addr, uint16_t val)
     }
 }
 
-void cpu_outl(struct uc_struct *uc, pio_addr_t addr, uint32_t val)
+void cpu_outl(struct uc_struct *uc, uint32_t addr, uint32_t val)
 {
     // Unicorn: commented out
     //trace_cpu_out(addr, 'l', val);
@@ -113,7 +113,7 @@ void cpu_outl(struct uc_struct *uc, pio_addr_t addr, uint32_t val)
     }
 }
 
-uint8_t cpu_inb(struct uc_struct *uc, pio_addr_t addr)
+uint8_t cpu_inb(struct uc_struct *uc, uint32_t addr)
 {
     // Unicorn: commented out
     //trace_cpu_in(addr, 'b', val);
@@ -128,7 +128,7 @@ uint8_t cpu_inb(struct uc_struct *uc, pio_addr_t addr)
     return 0;
 }
 
-uint16_t cpu_inw(struct uc_struct *uc, pio_addr_t addr)
+uint16_t cpu_inw(struct uc_struct *uc, uint32_t addr)
 {
     // Unicorn: commented out
     //trace_cpu_in(addr, 'w', val);
@@ -143,7 +143,7 @@ uint16_t cpu_inw(struct uc_struct *uc, pio_addr_t addr)
     return 0;
 }
 
-uint32_t cpu_inl(struct uc_struct *uc, pio_addr_t addr)
+uint32_t cpu_inl(struct uc_struct *uc, uint32_t addr)
 {
     // Unicorn: commented out
     //trace_cpu_in(addr, 'l', val);
