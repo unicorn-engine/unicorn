@@ -281,27 +281,31 @@ static inline void cpu_handle_interrupt(CPUState *cpu,
             cpu_loop_exit(cpu);
         }
 #if defined(TARGET_I386)
-        if (interrupt_request & CPU_INTERRUPT_INIT) {
+        else if (interrupt_request & CPU_INTERRUPT_INIT) {
             cpu_svm_check_intercept_param(env, SVM_EXIT_INIT, 0);
             do_cpu_init(x86_cpu);
             cpu->exception_index = EXCP_HALTED;
             cpu_loop_exit(cpu);
         }
 #else
-        if (interrupt_request & CPU_INTERRUPT_RESET) {
+        else if (interrupt_request & CPU_INTERRUPT_RESET) {
             cpu_reset(cpu);
         }
 #endif
-        /* The target hook has 3 exit conditions:
-           False when the interrupt isn't processed,
-           True when it is, and we should restart on a new TB,
-           and via longjmp via cpu_loop_exit.  */
-        if (cc->cpu_exec_interrupt(cpu, interrupt_request)) {
-            *last_tb = NULL;
+        else {
+            /* The target hook has 3 exit conditions:
+               False when the interrupt isn't processed,
+               True when it is, and we should restart on a new TB,
+               and via longjmp via cpu_loop_exit.  */
+            if (cc->cpu_exec_interrupt(cpu, interrupt_request)) {
+                *last_tb = NULL;
+            }
+            /* The target hook may have updated the 'cpu->interrupt_request';
+             * reload the 'interrupt_request' value */
+            interrupt_request = cpu->interrupt_request;
         }
-        /* Don't use the cached interrupt_request value,
-           do_interrupt may have updated the EXITTB flag. */
-        if (cpu->interrupt_request & CPU_INTERRUPT_EXITTB) {
+
+        if (interrupt_request & CPU_INTERRUPT_EXITTB) {
             cpu->interrupt_request &= ~CPU_INTERRUPT_EXITTB;
             /* ensure that no TB jump will be modified as
                the program flow was changed */
