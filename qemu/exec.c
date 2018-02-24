@@ -1433,7 +1433,6 @@ static void *qemu_ram_ptr_length(struct uc_struct *uc, RAMBlock *ram_block,
  * ram_addr_t.
  */
 RAMBlock *qemu_ram_block_from_host(struct uc_struct* uc, void *ptr, bool round_offset,
-                                   ram_addr_t *ram_addr,
                                    ram_addr_t *offset)
 {
     RAMBlock *block;
@@ -1461,7 +1460,6 @@ found:
     if (round_offset) {
         *offset &= TARGET_PAGE_MASK;
     }
-    *ram_addr = block->offset + *offset;
     return block;
 }
 
@@ -1491,10 +1489,10 @@ RAMBlock *qemu_ram_block_by_name(struct uc_struct* uc, const char *name)
 MemoryRegion *qemu_ram_addr_from_host(struct uc_struct* uc, void *ptr, ram_addr_t *ram_addr)
 {
     RAMBlock *block;
-    ram_addr_t offset; /* Not used */
+    ram_addr_t offset;
 
-    block = qemu_ram_block_from_host(uc, ptr, false, ram_addr, &offset);
-
+    block = qemu_ram_block_from_host(uc, ptr, false, &offset);
+    *ram_addr = block->offset + offset;
     if (!block) {
         return NULL;
     }
