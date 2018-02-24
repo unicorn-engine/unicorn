@@ -24,7 +24,6 @@
 #define TFR(expr) do { if ((expr) != -1) break; } while (errno == EINTR)
 
 #include "unicorn/platform.h"
-#include "qemu/bswap.h"
 
 /* FIXME: Remove NEED_CPU_H.  */
 #ifdef NEED_CPU_H
