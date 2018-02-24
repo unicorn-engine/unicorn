@@ -35,6 +35,7 @@
 #include "hw/hw.h"
 
 #include "sysemu/sysemu.h"
+#include "topology.h"
 #include "hw/cpu/icc_bus.h"
 #ifndef CONFIG_USER_ONLY
 #include "exec/address-spaces.h"
@@ -2422,6 +2423,36 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         *ebx = 0;
         *ecx = 0;
         *edx = 0;
+        break;
+    case 0xB:
+        /* Extended Topology Enumeration Leaf */
+        if (!cpu->enable_cpuid_0xb) {
+                *eax = *ebx = *ecx = *edx = 0;
+                break;
+        }
+
+        *ecx = count & 0xff;
+        *edx = cpu->apic_id;
+
+        switch (count) {
+        case 0:
+            *eax = apicid_core_offset(smp_cores, smp_threads);
+            *ebx = smp_threads;
+            *ecx |= CPUID_TOPOLOGY_LEVEL_SMT;
+            break;
+        case 1:
+            *eax = apicid_pkg_offset(smp_cores, smp_threads);
+            *ebx = smp_cores * smp_threads;
+            *ecx |= CPUID_TOPOLOGY_LEVEL_CORE;
+            break;
+        default:
+            *eax = 0;
+            *ebx = 0;
+            *ecx |= CPUID_TOPOLOGY_LEVEL_INVALID;
+        }
+
+        assert(!(*eax & ~0x1f));
+        *ebx &= 0xffff; /* The count doesn't need to be reliable. */
         break;
     case 0xD: {
         uint64_t ena_mask;
