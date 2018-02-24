@@ -6,9 +6,9 @@
 #error Cannot include hw/hw.h from user emulation
 #endif
 
-#include "qemu-common.h"
 #include "exec/cpu-common.h"
-#include "exec/ioport.h"
+#include "qom/object.h"
+#include "exec/memory.h"
 
 #ifdef NEED_CPU_H
 #if TARGET_LONG_BITS == 64
