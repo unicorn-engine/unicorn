@@ -2018,41 +2018,59 @@ static void x86_cpu_parse_featurestr(CPUState *cs, char *features,
     memset(cpu->plus_features, 0, sizeof(cpu->plus_features));
     memset(cpu->minus_features, 0, sizeof(cpu->minus_features));
 
-    featurestr = features ? strtok(features, ",") : NULL;
+    if (!features) {
+        return;
+    }
 
-    while (featurestr) {
-        char *val;
+    for (featurestr = strtok(features, ",");
+         featurestr  && !local_err;
+         featurestr = strtok(NULL, ",")) {
+        const char *name;
+        const char *val = NULL;
+        char *eq = NULL;
+
+        /* Compatibility syntax: */
         if (featurestr[0] == '+') {
             add_flagname_to_bitmaps(featurestr + 1, cpu->plus_features, &local_err);
+            continue;
         } else if (featurestr[0] == '-') {
             add_flagname_to_bitmaps(featurestr + 1, cpu->minus_features, &local_err);
-        } else if ((val = strchr(featurestr, '='))) {
-            *val = 0; val++;
-            feat2prop(featurestr);
-            if (!strcmp(featurestr, "tsc-freq")) {
-                int64_t tsc_freq;
-                char *err;
-                char num[32];
+            continue;
+        }
 
-                tsc_freq = qemu_strtosz_suffix_unit(val, &err,
-                                                    QEMU_STRTOSZ_DEFSUFFIX_B, 1000);
-                if (tsc_freq < 0 || *err) {
-                    error_setg(errp, "bad numerical value %s", val);
-                    return;
-                }
-                snprintf(num, sizeof(num), "%" PRId64, tsc_freq);
-                object_property_parse(cs->uc, OBJECT(cpu), num, "tsc-frequency",
-                                      &local_err);
-            }
+        eq = strchr(featurestr, '=');
+        if (eq) {
+            *eq++ = 0;
+            val = eq;
         } else {
-            feat2prop(featurestr);
-            object_property_parse(cs->uc, OBJECT(cpu), "on", featurestr, &local_err);
+            val = "on";
         }
-        if (local_err) {
-            error_propagate(errp, local_err);
-            return;
+
+        feat2prop(featurestr);
+        name = featurestr;
+
+        /* Special case: */
+        if (!strcmp(name, "tsc-freq")) {
+            int64_t tsc_freq;
+            char *err;
+            char num[32];
+
+            tsc_freq = qemu_strtosz_suffix_unit(val, &err,
+                                           QEMU_STRTOSZ_DEFSUFFIX_B, 1000);
+            if (tsc_freq < 0 || *err) {
+                error_setg(errp, "bad numerical value %s", val);
+                return;
+            }
+            snprintf(num, sizeof(num), "%" PRId64, tsc_freq);
+            val = num;
+            name = "tsc-frequency";
         }
-        featurestr = strtok(NULL, ",");
+
+        object_property_parse(cs->uc, OBJECT(cpu), val, name, &local_err);
+    }
+
+    if (local_err) {
+        error_propagate(errp, local_err);
     }
 }
 
