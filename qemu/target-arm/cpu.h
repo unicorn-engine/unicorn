@@ -2129,7 +2129,7 @@ static inline bool arm_cpu_data_is_big_endian(CPUARMState *env)
 }
 
 static inline void cpu_get_tb_cpu_state(CPUARMState *env, target_ulong *pc,
-                                        target_ulong *cs_base, int *flags)
+                                        target_ulong *cs_base, uint32_t *flags)
 {
     if (is_a64(env)) {
         *pc = env->pc;

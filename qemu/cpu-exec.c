@@ -388,7 +388,7 @@ static TranslationBlock *tb_find_fast(CPUState *cpu)
     CPUArchState *env = (CPUArchState *)cpu->env_ptr;
     TranslationBlock *tb;
     target_ulong cs_base, pc;
-    int flags;
+    uint32_t flags;
 
     /* we record a subset of the CPU state. It will
        always be the same before a given translated block

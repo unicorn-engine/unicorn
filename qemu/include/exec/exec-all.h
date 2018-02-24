@@ -74,7 +74,8 @@ void QEMU_NORETURN cpu_resume_from_signal(CPUState *cpu, void *puc);
 
 void QEMU_NORETURN cpu_io_recompile(CPUState *cpu, uintptr_t retaddr);
 TranslationBlock *tb_gen_code(CPUState *cpu,
-                              target_ulong pc, target_ulong cs_base, int flags,
+                              target_ulong pc, target_ulong cs_base,
+                              uint32_t flags,
                               int cflags);
 void cpu_exec_init(CPUState *env, void *opaque);
 
@@ -235,7 +236,7 @@ static inline void tlb_flush_by_mmuidx(CPUState *cpu, ...)
 struct TranslationBlock {
     target_ulong pc;   /* simulated PC corresponding to this block (EIP + CS base) */
     target_ulong cs_base; /* CS base for this block */
-    uint64_t flags; /* flags defining in which context the code was generated */
+    uint32_t flags; /* flags defining in which context the code was generated */
     uint16_t size;      /* size of target code for this block (1 <=
                            size <= TARGET_PAGE_SIZE) */
     uint16_t icount;

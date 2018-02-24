@@ -1159,7 +1159,7 @@ static void build_page_bitmap(PageDesc *p)
 
 TranslationBlock *tb_gen_code(CPUState *cpu,
                               target_ulong pc, target_ulong cs_base,
-                              int flags, int cflags)    // qq
+                              uint32_t flags, int cflags)
 {
     CPUArchState *env = cpu->env_ptr;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
@@ -1320,7 +1320,7 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
     int current_tb_modified = 0;
     target_ulong current_pc = 0;
     target_ulong current_cs_base = 0;
-    int current_flags = 0;
+    uint32_t current_flags = 0;
 #endif /* TARGET_HAS_PRECISE_SMC */
 
     p = page_find(uc, start >> TARGET_PAGE_BITS);
@@ -1427,7 +1427,7 @@ static void tb_invalidate_phys_page(struct uc_struct *uc, tb_page_addr_t addr,
     int current_tb_modified = 0;
     target_ulong current_pc = 0;
     target_ulong current_cs_base = 0;
-    int current_flags = 0;
+    uint32_t current_flags = 0;
 #endif
 
     addr &= TARGET_PAGE_MASK;
@@ -1686,7 +1686,7 @@ void tb_check_watchpoint(CPUState *cpu)
         CPUArchState *env = cpu->env_ptr;
         target_ulong pc, cs_base;
         tb_page_addr_t addr;
-        int flags;
+        uint32_t flags;
 
         cpu_get_tb_cpu_state(env, &pc, &cs_base, &flags);
         addr = get_page_addr_code(env, pc);
@@ -1706,7 +1706,7 @@ void cpu_io_recompile(CPUState *cpu, uintptr_t retaddr)
     TranslationBlock *tb;
     uint32_t n, cflags;
     target_ulong pc, cs_base;
-    uint64_t flags;
+    uint32_t flags;
 
     tb = tb_find_pc(env->uc, retaddr);
     if (!tb) {
