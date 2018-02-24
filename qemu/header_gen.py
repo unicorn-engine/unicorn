@@ -2431,8 +2431,6 @@ symbols = (
     'qemu_get_guest_memory_mapping',
     'qemu_get_guest_simple_memory_mapping',
     'qemu_get_ram_block',
-    'qemu_get_ram_block_host_ptr',
-    'qemu_get_ram_fd',
     'qemu_get_ram_ptr',
     'qemu_host_page_mask',
     'qemu_host_page_size',

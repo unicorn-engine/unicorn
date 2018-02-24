@@ -1331,13 +1331,17 @@ void memory_region_rom_device_set_romd(MemoryRegion *mr, bool romd_mode)
 
 int memory_region_get_fd(MemoryRegion *mr)
 {
-    if (mr->alias) {
-        return memory_region_get_fd(mr->alias);
+    int fd;
+
+    // Unicorn: commented out
+    //rcu_read_lock();
+    while (mr->alias) {
+        mr = mr->alias;
     }
+    fd = mr->ram_block->fd;
+    //rcu_read_unlock();
 
-    assert(mr->ram_block);
-
-    return qemu_get_ram_fd(mr->uc, memory_region_get_ram_addr(mr) & TARGET_PAGE_MASK);
+    return fd;
 }
 
 void *memory_region_get_ram_ptr(MemoryRegion *mr)
