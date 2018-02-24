@@ -2785,6 +2785,10 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         goto out;
     }
 
+    if (tcg_enabled(env->uc)) {
+        tcg_x86_init(env->uc);
+    }
+
 #ifndef CONFIG_USER_ONLY
     //qemu_register_reset(x86_cpu_machine_reset_cb, cpu);
 
@@ -2874,11 +2878,6 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->apic_id = -1;
 
     x86_cpu_load_def(cpu, xcc->cpu_def, &error_abort);
-
-    /* init various static tables used in TCG mode */
-    if (tcg_enabled(env->uc)) {
-        tcg_x86_init(env->uc);
-    }
 }
 
 static int64_t x86_cpu_get_arch_id(CPUState *cs)
