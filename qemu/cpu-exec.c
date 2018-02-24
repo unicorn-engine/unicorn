@@ -27,13 +27,168 @@
 
 #include "uc_priv.h"
 
-static tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb);
-static TranslationBlock *tb_find_slow(CPUState *cpu, target_ulong pc,
-                                      target_ulong cs_base, uint64_t flags);
-static TranslationBlock *tb_find_fast(CPUState *cpu,
-                                      TranslationBlock **last_tb,
-                                      int tb_exit);
-static void cpu_handle_debug_exception(CPUState *cpu);
+/* Execute a TB, and fix up the CPU state afterwards if necessary */
+static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
+{
+    CPUArchState *env = cpu->env_ptr;
+    TCGContext *tcg_ctx = env->uc->tcg_ctx;
+    uintptr_t ret;
+    TranslationBlock *last_tb;
+    int tb_exit;
+    uint8_t *tb_ptr = itb->tc_ptr;
+
+    // Unicorn: commented out
+    //qemu_log_mask_and_addr(CPU_LOG_EXEC, itb->pc,
+    //                       "Trace %p [" TARGET_FMT_lx "] %s\n",
+    //                       itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
+    ret = tcg_qemu_tb_exec(env, tb_ptr);
+    last_tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
+    tb_exit = ret & TB_EXIT_MASK;
+    //trace_exec_tb_exit(last_tb, tb_exit);
+
+    if (tb_exit > TB_EXIT_IDX1) {
+        /* We didn't start executing this TB (eg because the instruction
+         * counter hit zero); we must restore the guest PC to the address
+         * of the start of the TB.
+         */
+        CPUClass *cc = CPU_GET_CLASS(env->uc, cpu);
+        // Unicorn: commented out
+        //qemu_log_mask_and_addr(CPU_LOG_EXEC, last_tb->pc,
+        //                       "Stopped execution of TB chain before %p ["
+        //                       TARGET_FMT_lx "] %s\n",
+        //                       last_tb->tc_ptr, last_tb->pc,
+        //                       lookup_symbol(last_tb->pc));
+        if (cc->synchronize_from_tb) {
+            // avoid sync twice when helper_uc_tracecode() already did this.
+            if (env->uc->emu_counter <= env->uc->emu_count &&
+                    !env->uc->stop_request && !env->uc->quit_request) {
+                cc->synchronize_from_tb(cpu, last_tb);
+            }
+        } else {
+            assert(cc->set_pc);
+            // avoid sync twice when helper_uc_tracecode() already did this.
+            if (env->uc->emu_counter <= env->uc->emu_count && !env->uc->quit_request) {
+                cc->set_pc(cpu, last_tb->pc);
+            }
+        }
+    }
+    if (tb_exit == TB_EXIT_REQUESTED) {
+        /* We were asked to stop executing TBs (probably a pending
+         * interrupt. We've now stopped, so clear the flag.
+         */
+        cpu->tcg_exit_req = 0;
+    }
+    return ret;
+}
+
+static TranslationBlock *tb_find_slow(CPUState *cpu,
+                                      target_ulong pc,
+                                      target_ulong cs_base,
+                                      uint64_t flags)
+{
+    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
+    TCGContext *tcg_ctx = env->uc->tcg_ctx;
+    TranslationBlock *tb, **ptb1;
+    unsigned int h;
+    tb_page_addr_t phys_pc, phys_page1;
+    target_ulong virt_page2;
+
+    /* find translated block using physical mappings */
+    phys_pc = get_page_addr_code(env, pc);  // qq
+    if (phys_pc == -1) { // invalid code?
+        return NULL;
+    }
+    phys_page1 = phys_pc & TARGET_PAGE_MASK;
+    h = tb_phys_hash_func(phys_pc);
+    ptb1 = &tcg_ctx->tb_ctx.tb_phys_hash[h];
+    for(;;) {
+        tb = *ptb1;
+        if (!tb)
+            goto not_found;
+        if (tb->pc == pc &&
+                tb->page_addr[0] == phys_page1 &&
+                tb->cs_base == cs_base &&
+                tb->flags == flags) {
+            /* check next page if needed */
+            if (tb->page_addr[1] != -1) {
+                tb_page_addr_t phys_page2;
+
+                virt_page2 = (pc & TARGET_PAGE_MASK) +
+                    TARGET_PAGE_SIZE;
+                phys_page2 = get_page_addr_code(env, virt_page2);
+                if (tb->page_addr[1] == phys_page2)
+                    goto found;
+            } else {
+                goto found;
+            }
+        }
+        ptb1 = &tb->phys_hash_next;
+    }
+not_found:
+    /* if no translated code available, then translate it now */
+    tb = tb_gen_code(cpu, pc, cs_base, (int)flags, 0);   // qq
+
+found:
+    /* Move the last found TB to the head of the list */
+    if (likely(*ptb1)) {
+        *ptb1 = tb->phys_hash_next;
+        tb->phys_hash_next = tcg_ctx->tb_ctx.tb_phys_hash[h];
+        tcg_ctx->tb_ctx.tb_phys_hash[h] = tb;
+    }
+    /* we add the TB in the virtual pc hash table */
+    cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)] = tb;
+    return tb;
+}
+
+static inline TranslationBlock *tb_find_fast(CPUState *cpu,
+                                             TranslationBlock **last_tb,
+                                             int tb_exit)
+{
+    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
+    TranslationBlock *tb;
+    target_ulong cs_base, pc;
+    uint32_t flags;
+
+    /* we record a subset of the CPU state. It will
+       always be the same before a given translated block
+       is executed. */
+    cpu_get_tb_cpu_state(env, &pc, &cs_base, &flags);
+    // Unicorn: commented out
+    //tb_lock();
+    tb = cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)];
+    if (unlikely(!tb || tb->pc != pc || tb->cs_base != cs_base ||
+                tb->flags != flags)) {
+        tb = tb_find_slow(cpu, pc, cs_base, flags); // qq
+    }
+    if (cpu->tb_flushed) {
+        /* Ensure that no TB jump will be modified as the
+         * translation buffer has been flushed.
+         */
+        *last_tb = NULL;
+        cpu->tb_flushed = false;
+    }
+    /* See if we can patch the calling TB. */
+    if (*last_tb && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
+        tb_add_jump(*last_tb, tb_exit, tb);
+    }
+    // Unicorn: commented out
+    //tb_unlock();
+    return tb;
+}
+
+static void cpu_handle_debug_exception(CPUState *cpu)
+{
+    CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
+    CPUWatchpoint *wp;
+
+    if (!cpu->watchpoint_hit) {
+        QTAILQ_FOREACH(wp, &cpu->watchpoints, entry) {
+            wp->flags &= ~BP_WATCHPOINT_HIT;
+        }
+    }
+
+    cc->debug_excp_handler(cpu);
+}
 
 /* main execution loop */
 
@@ -76,7 +231,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 
             /* if an exception is pending, we execute it here */
             if (cpu->exception_index >= 0) {
-                //printf(">>> GOT INTERRUPT. exception idx = %x\n", cpu->exception_index);	// qq
+                //printf(">>> GOT INTERRUPT. exception idx = %x\n", cpu->exception_index);  // qq
                 if (uc->stop_interrupt && uc->stop_interrupt(cpu->exception_index)) {
                     cpu->halted = 1;
                     uc->invalid_error = UC_ERR_INSN_INVALID;
@@ -253,167 +408,4 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     /* Does not need atomic_mb_set because a spurious wakeup is okay.  */
     atomic_set(&uc->tcg_current_cpu, NULL);
     return ret;
-}
-
-/* Execute a TB, and fix up the CPU state afterwards if necessary */
-static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
-{
-    CPUArchState *env = cpu->env_ptr;
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    uintptr_t ret;
-    TranslationBlock *last_tb;
-    int tb_exit;
-    uint8_t *tb_ptr = itb->tc_ptr;
-
-    // Unicorn: commented out
-    //qemu_log_mask_and_addr(CPU_LOG_EXEC, itb->pc,
-    //                       "Trace %p [" TARGET_FMT_lx "] %s\n",
-    //                       itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
-    ret = tcg_qemu_tb_exec(env, tb_ptr);
-    last_tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
-    tb_exit = ret & TB_EXIT_MASK;
-    //trace_exec_tb_exit(last_tb, tb_exit);
-
-    if (tb_exit > TB_EXIT_IDX1) {
-        /* We didn't start executing this TB (eg because the instruction
-         * counter hit zero); we must restore the guest PC to the address
-         * of the start of the TB.
-         */
-        CPUClass *cc = CPU_GET_CLASS(env->uc, cpu);
-        // Unicorn: commented out
-        //qemu_log_mask_and_addr(CPU_LOG_EXEC, last_tb->pc,
-        //                       "Stopped execution of TB chain before %p ["
-        //                       TARGET_FMT_lx "] %s\n",
-        //                       last_tb->tc_ptr, last_tb->pc,
-        //                       lookup_symbol(last_tb->pc));
-        if (cc->synchronize_from_tb) {
-            // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count &&
-                    !env->uc->stop_request && !env->uc->quit_request) {
-                cc->synchronize_from_tb(cpu, last_tb);
-            }
-        } else {
-            assert(cc->set_pc);
-            // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count && !env->uc->quit_request) {
-                cc->set_pc(cpu, last_tb->pc);
-            }
-        }
-    }
-    if (tb_exit == TB_EXIT_REQUESTED) {
-        /* We were asked to stop executing TBs (probably a pending
-         * interrupt. We've now stopped, so clear the flag.
-         */
-        cpu->tcg_exit_req = 0;
-    }
-    return ret;
-}
-
-static TranslationBlock *tb_find_slow(CPUState *cpu,
-                                      target_ulong pc,
-                                      target_ulong cs_base,
-                                      uint64_t flags)
-{
-    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    TranslationBlock *tb, **ptb1;
-    unsigned int h;
-    tb_page_addr_t phys_pc, phys_page1;
-    target_ulong virt_page2;
-
-    /* find translated block using physical mappings */
-    phys_pc = get_page_addr_code(env, pc);  // qq
-    if (phys_pc == -1) { // invalid code?
-        return NULL;
-    }
-    phys_page1 = phys_pc & TARGET_PAGE_MASK;
-    h = tb_phys_hash_func(phys_pc);
-    ptb1 = &tcg_ctx->tb_ctx.tb_phys_hash[h];
-    for(;;) {
-        tb = *ptb1;
-        if (!tb)
-            goto not_found;
-        if (tb->pc == pc &&
-                tb->page_addr[0] == phys_page1 &&
-                tb->cs_base == cs_base &&
-                tb->flags == flags) {
-            /* check next page if needed */
-            if (tb->page_addr[1] != -1) {
-                tb_page_addr_t phys_page2;
-
-                virt_page2 = (pc & TARGET_PAGE_MASK) +
-                    TARGET_PAGE_SIZE;
-                phys_page2 = get_page_addr_code(env, virt_page2);
-                if (tb->page_addr[1] == phys_page2)
-                    goto found;
-            } else {
-                goto found;
-            }
-        }
-        ptb1 = &tb->phys_hash_next;
-    }
-not_found:
-    /* if no translated code available, then translate it now */
-    tb = tb_gen_code(cpu, pc, cs_base, (int)flags, 0);   // qq
-
-found:
-    /* Move the last found TB to the head of the list */
-    if (likely(*ptb1)) {
-        *ptb1 = tb->phys_hash_next;
-        tb->phys_hash_next = tcg_ctx->tb_ctx.tb_phys_hash[h];
-        tcg_ctx->tb_ctx.tb_phys_hash[h] = tb;
-    }
-    /* we add the TB in the virtual pc hash table */
-    cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)] = tb;
-    return tb;
-}
-
-static inline TranslationBlock *tb_find_fast(CPUState *cpu,
-                                             TranslationBlock **last_tb,
-                                             int tb_exit)
-{
-    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
-    TranslationBlock *tb;
-    target_ulong cs_base, pc;
-    uint32_t flags;
-
-    /* we record a subset of the CPU state. It will
-       always be the same before a given translated block
-       is executed. */
-    cpu_get_tb_cpu_state(env, &pc, &cs_base, &flags);
-    // Unicorn: commented out
-    //tb_lock();
-    tb = cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)];
-    if (unlikely(!tb || tb->pc != pc || tb->cs_base != cs_base ||
-                tb->flags != flags)) {
-        tb = tb_find_slow(cpu, pc, cs_base, flags); // qq
-    }
-    if (cpu->tb_flushed) {
-        /* Ensure that no TB jump will be modified as the
-         * translation buffer has been flushed.
-         */
-        *last_tb = NULL;
-        cpu->tb_flushed = false;
-    }
-    /* See if we can patch the calling TB. */
-    if (*last_tb && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
-        tb_add_jump(*last_tb, tb_exit, tb);
-    }
-    // Unicorn: commented out
-    //tb_unlock();
-    return tb;
-}
-
-static void cpu_handle_debug_exception(CPUState *cpu)
-{
-    CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
-    CPUWatchpoint *wp;
-
-    if (!cpu->watchpoint_hit) {
-        QTAILQ_FOREACH(wp, &cpu->watchpoints, entry) {
-            wp->flags &= ~BP_WATCHPOINT_HIT;
-        }
-    }
-
-    cc->debug_excp_handler(cpu);
 }
