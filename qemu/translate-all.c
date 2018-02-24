@@ -1662,8 +1662,7 @@ void tb_invalidate_phys_addr(AddressSpace *as, hwaddr addr)
           || memory_region_is_romd(mr))) {
         return;
     }
-    ram_addr = (ram_addr_t)((memory_region_get_ram_addr(mr) & TARGET_PAGE_MASK)
-        + addr);
+    ram_addr = memory_region_get_ram_addr(mr) + addr;
     tb_invalidate_phys_page_range(as->uc, ram_addr, ram_addr + 1, 0);
 }
 #endif /* !defined(CONFIG_USER_ONLY) */

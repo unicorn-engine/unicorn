@@ -2377,9 +2377,8 @@ static inline uint32_t address_space_ldl_internal(AddressSpace *as, hwaddr addr,
     } else {
         /* RAM case */
         ptr = qemu_get_ram_ptr(as->uc, mr->ram_block,
-                               (memory_region_get_ram_addr(mr)
-                               & TARGET_PAGE_MASK)
-                               + addr1);
+                               memory_region_get_ram_addr(mr) + addr1);
+
         switch (endian) {
         case DEVICE_LITTLE_ENDIAN:
             val = ldl_le_p(ptr);

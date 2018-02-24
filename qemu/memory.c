@@ -1353,8 +1353,7 @@ void *memory_region_get_ram_ptr(MemoryRegion *mr)
     }
 
     assert(mr->ram_block);
-    ptr = qemu_get_ram_ptr(mr->uc, mr->ram_block,
-                           memory_region_get_ram_addr(mr) & TARGET_PAGE_MASK);
+    ptr = qemu_get_ram_ptr(mr->uc, mr->ram_block, memory_region_get_ram_addr(mr));
     // Unicorn: commented out
     //rcu_read_unlock();
 
