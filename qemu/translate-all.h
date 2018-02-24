@@ -28,7 +28,7 @@ void tb_invalidate_phys_range(struct uc_struct *uc, tb_page_addr_t start, tb_pag
 void tb_cleanup(struct uc_struct *uc);
 
 #ifdef CONFIG_USER_ONLY
-int page_unprotect(target_ulong address, uintptr_t pc, void *puc);
+int page_unprotect(target_ulong address, uintptr_t pc);
 #endif
 
 #endif /* TRANSLATE_ALL_H */

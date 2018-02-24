@@ -26,11 +26,8 @@
 /* exit the current TB from a signal handler. The host registers are
    restored in a state compatible with the CPU emulator
    */
-#if defined(CONFIG_SOFTMMU)
-
 void cpu_resume_from_signal(CPUState *cpu, void *puc)
 {
-#endif
     /* XXX: restore cpu registers saved in host registers */
 
     cpu->exception_index = -1;
