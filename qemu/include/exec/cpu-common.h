@@ -52,8 +52,8 @@ MemoryRegion *qemu_ram_addr_from_host(struct uc_struct* uc, void *ptr, ram_addr_
 RAMBlock *qemu_ram_block_by_name(struct uc_struct* uc, const char *name);
 RAMBlock *qemu_ram_block_from_host(struct uc_struct* uc, void *ptr, bool round_offset,
                                    ram_addr_t *ram_addr, ram_addr_t *offset);
-void qemu_ram_set_idstr(struct uc_struct *uc, ram_addr_t addr, const char *name, DeviceState *dev);
-void qemu_ram_unset_idstr(struct uc_struct *uc, ram_addr_t addr);
+void qemu_ram_set_idstr(struct uc_struct *uc, RAMBlock *block, const char *name, DeviceState *dev);
+void qemu_ram_unset_idstr(struct uc_struct *uc, RAMBlock *block);
 const char *qemu_ram_get_idstr(RAMBlock *rb);
 
 bool cpu_physical_memory_rw(AddressSpace *as, hwaddr addr, uint8_t *buf,

@@ -1049,28 +1049,13 @@ static void qemu_ram_setup_dump(void *addr, ram_addr_t size)
 {
 }
 
-static RAMBlock *find_ram_block(struct uc_struct *uc, ram_addr_t addr)
-{
-    RAMBlock *block;
-
-    QLIST_FOREACH(block, &uc->ram_list.blocks, next) {
-        if (block->offset == addr) {
-            return block;
-        }
-    }
-
-    return NULL;
-}
-
 const char *qemu_ram_get_idstr(RAMBlock *rb)
 {
     return rb->idstr;
 }
 
-void qemu_ram_unset_idstr(struct uc_struct *uc, ram_addr_t addr)
+void qemu_ram_unset_idstr(struct uc_struct *uc, RAMBlock *block)
 {
-    RAMBlock *block = find_ram_block(uc, addr);
-
     if (block) {
         memset(block->idstr, 0, sizeof(block->idstr));
     }
@@ -1088,10 +1073,8 @@ static int memory_try_enable_merging(void *addr, size_t len)
  * resize callback to update device state and/or add assertions to detect
  * misuse, if necessary.
  */
-int qemu_ram_resize(struct uc_struct *uc, ram_addr_t base, ram_addr_t newsize, Error **errp)
+int qemu_ram_resize(struct uc_struct *uc, RAMBlock *block, ram_addr_t newsize, Error **errp)
 {
-    RAMBlock *block = find_ram_block(uc, base);
-
     assert(block);
 
     newsize = TARGET_PAGE_ALIGN(newsize);
