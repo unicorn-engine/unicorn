@@ -71,10 +71,9 @@ static const TypeInfo tcg_accel_type = {
 };
 
 
-int configure_accelerator(MachineState *ms)
+void configure_accelerator(MachineState *ms)
 {
     int ret;
-    bool accel_initialised = false;
     AccelClass *acc;
 
     acc = accel_find(ms->uc, "tcg");
@@ -83,11 +82,7 @@ int configure_accelerator(MachineState *ms)
         fprintf(stderr, "failed to initialize %s: %s\n",
                 acc->name,
                 strerror(-ret));
-    } else {
-        accel_initialised = true;
     }
-
-    return !accel_initialised;
 }
 
 void register_accel_types(struct uc_struct *uc)
