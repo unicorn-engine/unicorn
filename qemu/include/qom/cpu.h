@@ -225,7 +225,6 @@ struct CPUAddressSpace {
  * @as: Pointer to the first AddressSpace, for the convenience of targets which
  *      only have a single AddressSpace
  * @env_ptr: Pointer to subclass-specific CPUArchState field.
- * @current_tb: Currently executing TB.
  * @next_cpu: Next CPU sharing TB cache.
  * @opaque: User data.
  * @mem_io_pc: Host Program Counter at which the memory was accessed.
@@ -269,7 +268,6 @@ struct CPUState {
     MemoryRegion *memory;
 
     void *env_ptr; /* CPUArchState */
-    struct TranslationBlock *current_tb;
     struct TranslationBlock *tb_jmp_cache[TB_JMP_CACHE_SIZE];
     QTAILQ_ENTRY(CPUState) node;
 

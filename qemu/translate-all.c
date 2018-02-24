@@ -297,7 +297,6 @@ bool cpu_restore_state(CPUState *cpu, uintptr_t retaddr)
         cpu_restore_state_from_tb(cpu, tb, retaddr);
         if (tb->cflags & CF_NOCACHE) {
             /* one-shot translation, invalidate it immediately */
-            cpu->current_tb = NULL;
             tb_phys_invalidate(cpu->uc, tb, -1);
             tb_free(cpu->uc, tb);
         }
@@ -1417,7 +1416,7 @@ void tb_invalidate_phys_range(struct uc_struct *uc, tb_page_addr_t start, tb_pag
 void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end,
                                    int is_cpu_write_access)
 {
-    TranslationBlock *tb, *tb_next, *saved_tb;
+    TranslationBlock *tb, *tb_next;
     CPUState *cpu = uc->current_cpu;
 #if defined(TARGET_HAS_PRECISE_SMC)
     CPUArchState *env = NULL;
@@ -1487,20 +1486,7 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
                                      &current_flags);
             }
 #endif /* TARGET_HAS_PRECISE_SMC */
-            /* we need to do that to handle the case where a signal
-               occurs while doing tb_phys_invalidate() */
-            saved_tb = NULL;
-            if (cpu != NULL) {
-                saved_tb = cpu->current_tb;
-                cpu->current_tb = NULL;
-            }
             tb_phys_invalidate(uc, tb, -1);
-            if (cpu != NULL) {
-                cpu->current_tb = saved_tb;
-                if (cpu->interrupt_request && cpu->current_tb) {
-                    cpu_interrupt(cpu, cpu->interrupt_request);
-                }
-            }
         }
         tb = tb_next;
     }
@@ -1516,7 +1502,6 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
         /* we generate a block containing just the instruction
            modifying the memory. It will ensure that it cannot modify
            itself */
-        cpu->current_tb = NULL;
         tb_gen_code(cpu, current_pc, current_cs_base, current_flags, 1);
         cpu_resume_from_signal(cpu, NULL);
     }
@@ -1620,7 +1605,6 @@ static void tb_invalidate_phys_page(struct uc_struct *uc, tb_page_addr_t addr,
         /* we generate a block containing just the instruction
            modifying the memory. It will ensure that it cannot modify
            itself */
-        cpu->current_tb = NULL;
         tb_gen_code(cpu, current_pc, current_cs_base, current_flags, 1);
         if (locked) {
             mmap_unlock();

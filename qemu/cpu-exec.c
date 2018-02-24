@@ -192,10 +192,8 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                 }
                 if (likely(!cpu->exit_request)) {
                     uintptr_t ret;
-                    cpu->current_tb = tb;
                     /* execute the generated code */
                     ret = cpu_tb_exec(cpu, tb);
-                    cpu->current_tb = NULL;
                     last_tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
                     tb_exit = ret & TB_EXIT_MASK;
                     switch (tb_exit) {

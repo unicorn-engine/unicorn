@@ -38,7 +38,6 @@ void cpu_resume_from_signal(CPUState *cpu, void *puc)
 
 void cpu_loop_exit(CPUState *cpu)
 {
-    cpu->current_tb = NULL;
     siglongjmp(cpu->jmp_env, 1);
 }
 
@@ -47,6 +46,5 @@ void cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc)
     if (pc) {
         cpu_restore_state(cpu, pc);
     }
-    cpu->current_tb = NULL;
     siglongjmp(cpu->jmp_env, 1);
 }
