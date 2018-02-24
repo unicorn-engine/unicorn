@@ -3278,9 +3278,11 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
     { "TCR_EL3", 0,2,0, 3,6,2, ARM_CP_STATE_AA64,0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tcr_el[3]), {0, 0},
       /* no .writefn needed as this can't cause an ASID change;
-       * no .raw_writefn or .resetfn needed as we never use mask/base_mask
+       * we must provide a .raw_writefn and .resetfn because we handle
+       * reset and migration for the AArch32 TTBCR(S), which might be
+       * using mask and base_mask.
        */
-      NULL, NULL, NULL, NULL, NULL, NULL },
+      NULL, NULL, NULL, NULL, vmsa_ttbcr_raw_write, vmsa_ttbcr_reset },
     { "ELR_EL3", 0,4,0, 3,6,1, ARM_CP_STATE_AA64,
       ARM_CP_ALIAS, PL3_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[3]) },
     { "ESR_EL3", 0,5,2, 3,6,0, ARM_CP_STATE_AA64, 0,
