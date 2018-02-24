@@ -301,6 +301,9 @@
     <ClInclude Include="..\..\..\qemu\include\exec\tb-hash.h">
       <Filter>qemu\include\exec</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\tb-hash-xx.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\fpu\softfloat.h">
       <Filter>qemu\include\fpu</Filter>
     </ClInclude>
