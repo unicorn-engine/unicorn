@@ -6533,7 +6533,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
     target_ulong page_size;
     uint32_t attrs;
     int32_t stride = 9;
-    int32_t va_size;
+    int32_t addrsize;
     int inputsize;
     int32_t tbi = 0;
     TCR *tcr = regime_tcr(env, mmu_idx);
@@ -6541,6 +6541,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
     uint32_t el = regime_el(env, mmu_idx);
     bool ttbr1_valid = true;
     uint64_t descaddrmask;
+    bool aarch64 = arm_el_is_aa64(env, el);
 
     /* TODO:
      * This code does not handle the different format TCR for VTCR_EL2.
@@ -6548,9 +6549,9 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
      * Attribute and permission bit handling should also be checked when adding
      * support for those page table walks.
      */
-    if (arm_el_is_aa64(env, el)) {
+    if (aarch64) {
         level = 0;
-        va_size = 64;
+        addrsize = 64;
         if (el > 1) {
             if (mmu_idx != ARMMMUIdx_S2NS) {
                 tbi = extract64(tcr->raw_tcr, 20, 1);
@@ -6572,7 +6573,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
         }
     } else {
         level = 1;
-        va_size = 32;
+        addrsize = 32;
         /* There is no TTBR1 for EL2 */
         if (el == 2) {
             ttbr1_valid = false;
@@ -6584,7 +6585,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
      * This is a Non-secure PL0/1 stage 1 translation, so controlled by
      * TTBCR/TTBR0/TTBR1 in accordance with ARM ARM DDI0406C table B-32:
      */
-    if (va_size == 64) {
+    if (aarch64) {
         /* AArch64 translation.  */
         t0sz = extract32(tcr->raw_tcr, 0, 6);
         t0sz = MIN(t0sz, 39);
@@ -6596,7 +6597,12 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
         /* AArch32 stage 2 translation.  */
         bool sext = extract32(tcr->raw_tcr, 4, 1);
         bool sign = extract32(tcr->raw_tcr, 3, 1);
-        t0sz = sextract32(tcr->raw_tcr, 0, 4);
+        /* Address size is 40-bit for a stage 2 translation,
+         * and t0sz can be negative (from -8 to 7),
+         * so we need to adjust it to use the TTBR selecting logic below.
+         */
+        addrsize = 40;
+        t0sz = sextract32(tcr->raw_tcr, 0, 4) + 8;
 
         /* If the sign-extend bit is not the same as t0sz[3], the result
          * is unpredictable. Flag this as a guest error.  */
@@ -6606,15 +6612,15 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
         }
     }
     t1sz = extract32(tcr->raw_tcr, 16, 6);
-    if (va_size == 64) {
+    if (aarch64) {
         t1sz = MIN(t1sz, 39);
         t1sz = MAX(t1sz, 16);
     }
-    if (t0sz && !extract64(address, va_size - t0sz, t0sz - tbi)) {
+    if (t0sz && !extract64(address, addrsize - t0sz, t0sz - tbi)) {
         /* there is a ttbr0 region and we are in it (high bits all zero) */
         ttbr_select = 0;
     } else if (ttbr1_valid && t1sz &&
-               !extract64(~address, va_size - t1sz, t1sz - tbi)) {
+               !extract64(~address, addrsize - t1sz, t1sz - tbi)) {
         /* there is a ttbr1 region and we are in it (high bits all one) */
         ttbr_select = 1;
     } else if (!t0sz) {
@@ -6641,7 +6647,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
         if (el < 2) {
             epd = extract32(tcr->raw_tcr, 7, 1);
         }
-        inputsize = va_size - t0sz;
+        inputsize = addrsize - t0sz;
 
         tg = extract32(tcr->raw_tcr, 14, 2);
         if (tg == 1) { /* 64KB pages */
@@ -6656,7 +6662,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
 
         ttbr = regime_ttbr(env, mmu_idx, 1);
         epd = extract32(tcr->raw_tcr, 23, 1);
-        inputsize = va_size - t1sz;
+        inputsize = addrsize - t1sz;
 
         tg = extract32(tcr->raw_tcr, 30, 2);
         if (tg == 3)  { /* 64KB pages */
@@ -6668,7 +6674,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
     }
 
     /* Here we should have set up all the parameters for the translation:
-     * va_size, inputsize, ttbr, epd, stride, tbi
+     * inputsize, ttbr, epd, stride, tbi
      */
 
     if (epd) {
@@ -6699,7 +6705,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
         uint32_t startlevel;
         bool ok;
 
-        if (va_size == 32 || stride == 9) {
+        if (!aarch64 || stride == 9) {
             /* AArch32 or 4KB pages */
             startlevel = 2 - sl0;
         } else {
@@ -6708,7 +6714,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
         }
 
         /* Check that the starting level is valid. */
-        ok = check_s2_mmu_setup(cpu, va_size == 64, startlevel,
+        ok = check_s2_mmu_setup(cpu, aarch64, startlevel,
                                 inputsize, stride);
         if (!ok) {
             fault_type = translation_fault;
@@ -6729,7 +6735,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
      * up to bit 39 for AArch32, because we don't need other bits in that case
      * to construct next descriptor address (anyway they should be all zeroes).
      */
-    descaddrmask = ((1ull << (va_size == 64 ? 48 : 40)) - 1) &
+    descaddrmask = ((1ull << (aarch64 ? 48 : 40)) - 1) &
                    ~indexmask_grainsize;
 
     /* Secure accesses start with the page table in secure memory and
@@ -6811,7 +6817,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
     } else {
         ns = extract32(attrs, 3, 1);
         pxn = extract32(attrs, 11, 1);
-        *prot = get_S1prot(env, mmu_idx, va_size == 64, ap, ns, xn, pxn);
+        *prot = get_S1prot(env, mmu_idx, aarch64, ap, ns, xn, pxn);
     }
 
     fault_type = permission_fault;
