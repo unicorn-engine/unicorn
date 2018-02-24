@@ -144,6 +144,9 @@
 /* Round number up to multiple */
 #define QEMU_ALIGN_UP(n, m) QEMU_ALIGN_DOWN((n) + (m) - 1, (m))
 
+/* Check if n is a multiple of m */
+#define QEMU_IS_ALIGNED(n, m) (((n) % (m)) == 0)
+
 #ifndef ROUND_UP
 #define ROUND_UP(n,d) (((n) + (d) - 1) & -(d))
 #endif
