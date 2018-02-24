@@ -4155,7 +4155,8 @@ static inline void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
     TranslationBlock *tb;
 
     tb = s->tb;
-    if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)) {
+    if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK) ||
+        ((s->pc - 1) & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)) {
         tcg_gen_goto_tb(tcg_ctx, n);
         gen_set_pc_im(s, dest);
         tcg_gen_exit_tb(tcg_ctx, (uintptr_t)tb + n);

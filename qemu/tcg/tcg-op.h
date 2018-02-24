@@ -753,6 +753,16 @@ static inline void tcg_gen_exit_tb(TCGContext *s, uintptr_t val)
     tcg_gen_op1i(s, INDEX_op_exit_tb, val);
 }
 
+/**
+ * tcg_gen_goto_tb() - output goto_tb TCG operation
+ * @idx: Direct jump slot index (0 or 1)
+ *
+ * See tcg/README for more info about this TCG operation.
+ *
+ * NOTE: Direct jumps with goto_tb are only safe within the pages this TB
+ * resides in because we don't take care of direct jumps when address mapping
+ * changes, e.g. in tlb_flush().
+ */
 void tcg_gen_goto_tb(TCGContext *s, unsigned idx);
 
 #if TARGET_LONG_BITS == 32
