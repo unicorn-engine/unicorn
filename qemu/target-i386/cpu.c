@@ -1991,7 +1991,6 @@ static void x86_cpu_parse_featurestr(CPUState *cs, char *features,
     FeatureWordArray plus_features = { 0 };
     /* Features to be removed */
     FeatureWordArray minus_features = { 0 };
-    uint32_t numvalue;
     CPUX86State *env = &cpu->env;
     Error *local_err = NULL;
 
@@ -2006,21 +2005,7 @@ static void x86_cpu_parse_featurestr(CPUState *cs, char *features,
         } else if ((val = strchr(featurestr, '='))) {
             *val = 0; val++;
             feat2prop(featurestr);
-            if (!strcmp(featurestr, "xlevel")) {
-                char *err;
-                char num[32];
-
-                numvalue = strtoul(val, &err, 0);
-                if (!*val || *err) {
-                    error_setg(errp, "bad numerical value %s", val);
-                    return;
-                }
-                if (numvalue < 0x80000000) {
-                    numvalue += 0x80000000;
-                }
-                snprintf(num, sizeof(num), "%" PRIu32, numvalue);
-                object_property_parse(cs->uc, OBJECT(cpu), num, featurestr, &local_err);
-            } else if (!strcmp(featurestr, "tsc-freq")) {
+            if (!strcmp(featurestr, "tsc-freq")) {
                 int64_t tsc_freq;
                 char *err;
                 char num[32];
@@ -2034,22 +2019,6 @@ static void x86_cpu_parse_featurestr(CPUState *cs, char *features,
                 snprintf(num, sizeof(num), "%" PRId64, tsc_freq);
                 object_property_parse(cs->uc, OBJECT(cpu), num, "tsc-frequency",
                                       &local_err);
-            } else if (!strcmp(featurestr, "hv-spinlocks")) {
-                char *err;
-                const int min = 0xFFF;
-                char num[32];
-                numvalue = strtoul(val, &err, 0);
-                if (!*val || *err) {
-                    error_setg(errp, "bad numerical value %s", val);
-                    return;
-                }
-                if (numvalue < (uint32_t)min) {
-                    numvalue = min;
-                }
-                snprintf(num, sizeof(num), "%" PRId32, numvalue);
-                object_property_parse(cs->uc, OBJECT(cpu), num, featurestr, &local_err);
-            } else {
-                object_property_parse(cs->uc, OBJECT(cpu), val, featurestr, &local_err);
             }
         } else {
             feat2prop(featurestr);
