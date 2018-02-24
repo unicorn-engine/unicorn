@@ -354,9 +354,6 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 {
     CPUArchState *env = cpu->env_ptr;
     CPUClass *cc = CPU_GET_CLASS(uc, cpu);
-#ifdef TARGET_I386
-    X86CPU *x86_cpu = X86_CPU(uc, cpu);
-#endif
     int ret;
 
     if (cpu_handle_halt(cpu)) {
@@ -410,17 +407,10 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
             cpu = uc->current_cpu;
             env = cpu->env_ptr;
             cc = CPU_GET_CLASS(uc, cpu);
-#ifdef TARGET_I386
-            x86_cpu = X86_CPU(uc, cpu);
-#endif
 #else /* buggy compiler */
             /* Assert that the compiler does not smash local variables. */
             g_assert(cpu == current_cpu);
             g_assert(cc == CPU_GET_CLASS(cpu));
-#ifdef TARGET_I386
-            g_assert(x86_cpu == X86_CPU(cpu));
-            g_assert(env == &x86_cpu->env);
-#endif
 #endif /* buggy compiler */
             cpu->can_do_io = 1;
         }
