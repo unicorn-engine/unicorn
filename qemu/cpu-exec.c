@@ -30,7 +30,9 @@
 static tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb);
 static TranslationBlock *tb_find_slow(CPUState *cpu, target_ulong pc,
                                       target_ulong cs_base, uint64_t flags);
-static TranslationBlock *tb_find_fast(CPUState *cpu);
+static TranslationBlock *tb_find_fast(CPUState *cpu,
+                                      TranslationBlock **last_tb,
+                                      int tb_exit);
 static void cpu_handle_debug_exception(CPUState *cpu);
 
 /* main execution loop */
@@ -182,24 +184,12 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                     cpu->exception_index = EXCP_INTERRUPT;
                     cpu_loop_exit(cpu);
                 }
-                tb = tb_find_fast(cpu); // UNICORN
+                tb = tb_find_fast(cpu, &last_tb, tb_exit);
                 if (!tb) {   // invalid TB due to invalid code?
                     uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
                     ret = EXCP_HLT;
                     break;
                 }
-                if (cpu->tb_flushed) {
-                    /* Ensure that no TB jump will be modified as the
-                     * translation buffer has been flushed.
-                     */
-                    last_tb = NULL;
-                    cpu->tb_flushed = false;
-                }
-                /* See if we can patch the calling TB. */
-                if (last_tb && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
-                    tb_add_jump(last_tb, tb_exit, tb);
-                }
-
                 if (likely(!cpu->exit_request)) {
                     uintptr_t ret;
                     cpu->current_tb = tb;
@@ -382,7 +372,9 @@ found:
     return tb;
 }
 
-static TranslationBlock *tb_find_fast(CPUState *cpu)
+static inline TranslationBlock *tb_find_fast(CPUState *cpu,
+                                             TranslationBlock **last_tb,
+                                             int tb_exit)
 {
     CPUArchState *env = (CPUArchState *)cpu->env_ptr;
     TranslationBlock *tb;
@@ -393,11 +385,26 @@ static TranslationBlock *tb_find_fast(CPUState *cpu)
        always be the same before a given translated block
        is executed. */
     cpu_get_tb_cpu_state(env, &pc, &cs_base, &flags);
+    // Unicorn: commented out
+    //tb_lock();
     tb = cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)];
     if (unlikely(!tb || tb->pc != pc || tb->cs_base != cs_base ||
                 tb->flags != flags)) {
         tb = tb_find_slow(cpu, pc, cs_base, flags); // qq
     }
+    if (cpu->tb_flushed) {
+        /* Ensure that no TB jump will be modified as the
+         * translation buffer has been flushed.
+         */
+        *last_tb = NULL;
+        cpu->tb_flushed = false;
+    }
+    /* See if we can patch the calling TB. */
+    if (*last_tb && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
+        tb_add_jump(*last_tb, tb_exit, tb);
+    }
+    // Unicorn: commented out
+    //tb_unlock();
     return tb;
 }
 
