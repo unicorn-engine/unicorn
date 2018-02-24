@@ -2426,7 +2426,6 @@
 #define qemu_get_guest_memory_mapping qemu_get_guest_memory_mapping_x86_64
 #define qemu_get_guest_simple_memory_mapping qemu_get_guest_simple_memory_mapping_x86_64
 #define qemu_get_ram_block qemu_get_ram_block_x86_64
-#define qemu_get_ram_ptr qemu_get_ram_ptr_x86_64
 #define qemu_host_page_mask qemu_host_page_mask_x86_64
 #define qemu_host_page_size qemu_host_page_size_x86_64
 #define qemu_init_vcpu qemu_init_vcpu_x86_64
@@ -2434,6 +2433,7 @@
 #define qemu_log_enabled qemu_log_enabled_x86_64
 #define qemu_loglevel_mask qemu_loglevel_mask_x86_64
 #define qemu_log_vprintf qemu_log_vprintf_x86_64
+#define qemu_map_ram_ptr qemu_map_ram_ptr_x86_64
 #define qemu_oom_check qemu_oom_check_x86_64
 #define qemu_parse_fd qemu_parse_fd_x86_64
 #define qemu_ram_addr_from_host qemu_ram_addr_from_host_x86_64

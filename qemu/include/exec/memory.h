@@ -1110,7 +1110,7 @@ MemTxResult address_space_read_continue(AddressSpace *as, hwaddr addr,
 
 MemTxResult address_space_read_full(AddressSpace *as, hwaddr addr,
                                     MemTxAttrs attrs, uint8_t *buf, int len);
-void *qemu_get_ram_ptr(struct uc_struct *uc, RAMBlock *ram_block,
+void *qemu_map_ram_ptr(struct uc_struct *uc, RAMBlock *ram_block,
                        ram_addr_t addr);
 
 static inline bool memory_access_is_direct(MemoryRegion *mr, bool is_write)
@@ -1151,8 +1151,7 @@ MemTxResult address_space_read(AddressSpace *as, hwaddr addr, MemTxAttrs attrs,
             l = len;
             mr = address_space_translate(as, addr, &addr1, &l, false);
             if (len == l && memory_access_is_direct(mr, false)) {
-                addr1 += memory_region_get_ram_addr(mr);
-                ptr = qemu_get_ram_ptr(mr->uc, mr->ram_block, addr1);
+                ptr = qemu_map_ram_ptr(mr->uc, mr->ram_block, addr1);
                 memcpy(buf, ptr, len);
             } else {
                 result = address_space_read_continue(as, addr, attrs, buf, len,

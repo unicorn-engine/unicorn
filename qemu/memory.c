@@ -1357,11 +1357,11 @@ void *memory_region_get_ram_ptr(MemoryRegion *mr)
     }
 
     assert(mr->ram_block);
-    ptr = qemu_get_ram_ptr(mr->uc, mr->ram_block, memory_region_get_ram_addr(mr));
+    ptr = qemu_map_ram_ptr(mr->uc, mr->ram_block, offset);
     // Unicorn: commented out
     //rcu_read_unlock();
 
-    return ptr + offset;
+    return ptr;
 }
 
 MemoryRegion *memory_region_from_host(struct uc_struct *uc, void *ptr, ram_addr_t *offset)
