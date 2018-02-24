@@ -132,13 +132,10 @@
 #define arm_cpu_get_phys_page_attrs_debug arm_cpu_get_phys_page_attrs_debug_mipsel
 #define arm_cpu_initfn arm_cpu_initfn_mipsel
 #define arm_cpu_list arm_cpu_list_mipsel
-#define cpu_loop_exit cpu_loop_exit_mipsel
-#define cpu_loop_exit_restore cpu_loop_exit_restore_mipsel
 #define arm_cpu_post_init arm_cpu_post_init_mipsel
 #define arm_cpu_realizefn arm_cpu_realizefn_mipsel
 #define arm_cpu_register_gdb_regs_for_features arm_cpu_register_gdb_regs_for_features_mipsel
 #define arm_cpu_register_types arm_cpu_register_types_mipsel
-#define cpu_resume_from_signal cpu_resume_from_signal_mipsel
 #define arm_cpus arm_cpus_mipsel
 #define arm_cpu_set_pc arm_cpu_set_pc_mipsel
 #define arm_cp_write_ignore arm_cp_write_ignore_mipsel
@@ -287,6 +284,9 @@
 #define cpu_ldl_code cpu_ldl_code_mipsel
 #define cpu_ldub_code cpu_ldub_code_mipsel
 #define cpu_lduw_code cpu_lduw_code_mipsel
+#define cpu_loop_exit cpu_loop_exit_mipsel
+#define cpu_loop_exit_noexc cpu_loop_exit_noexc_mipsel
+#define cpu_loop_exit_restore cpu_loop_exit_restore_mipsel
 #define cpu_memory_rw_debug cpu_memory_rw_debug_mipsel
 #define cpu_mmu_index cpu_mmu_index_mipsel
 #define cpu_outb cpu_outb_mipsel

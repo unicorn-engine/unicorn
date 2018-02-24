@@ -132,13 +132,10 @@
 #define arm_cpu_get_phys_page_attrs_debug arm_cpu_get_phys_page_attrs_debug_mips
 #define arm_cpu_initfn arm_cpu_initfn_mips
 #define arm_cpu_list arm_cpu_list_mips
-#define cpu_loop_exit cpu_loop_exit_mips
-#define cpu_loop_exit_restore cpu_loop_exit_restore_mips
 #define arm_cpu_post_init arm_cpu_post_init_mips
 #define arm_cpu_realizefn arm_cpu_realizefn_mips
 #define arm_cpu_register_gdb_regs_for_features arm_cpu_register_gdb_regs_for_features_mips
 #define arm_cpu_register_types arm_cpu_register_types_mips
-#define cpu_resume_from_signal cpu_resume_from_signal_mips
 #define arm_cpus arm_cpus_mips
 #define arm_cpu_set_pc arm_cpu_set_pc_mips
 #define arm_cp_write_ignore arm_cp_write_ignore_mips
@@ -287,6 +284,9 @@
 #define cpu_ldl_code cpu_ldl_code_mips
 #define cpu_ldub_code cpu_ldub_code_mips
 #define cpu_lduw_code cpu_lduw_code_mips
+#define cpu_loop_exit cpu_loop_exit_mips
+#define cpu_loop_exit_noexc cpu_loop_exit_noexc_mips
+#define cpu_loop_exit_restore cpu_loop_exit_restore_mips
 #define cpu_memory_rw_debug cpu_memory_rw_debug_mips
 #define cpu_mmu_index cpu_mmu_index_mips
 #define cpu_outb cpu_outb_mips

@@ -23,10 +23,8 @@
 #include "exec/exec-all.h"
 #include "exec/memory-internal.h"
 
-/* exit the current TB from a signal handler. The host registers are
-   restored in a state compatible with the CPU emulator
-   */
-void cpu_resume_from_signal(CPUState *cpu, void *puc)
+/* exit the current TB, but without causing any exception to be raised */
+void cpu_loop_exit_noexc(CPUState *cpu)
 {
     /* XXX: restore cpu registers saved in host registers */
 
