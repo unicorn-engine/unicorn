@@ -52,7 +52,7 @@ GENERATED_SOURCES += qapi-types.c qapi-visit.c
 Makefile: ;
 configure: ;
 
-.PHONY: all clean cscope distclean install recurse-all
+.PHONY: all clean cscope distclean install recurse-all FORCE
 
 $(call set-vpath, $(SRC_PATH))
 
