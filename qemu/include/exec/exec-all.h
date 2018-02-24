@@ -21,6 +21,7 @@
 #define _EXEC_ALL_H_
 
 #include "qemu-common.h"
+#include "exec/tb-context.h"
 
 /* allow to see translation results - the slowdown should be negligible, so we leave it */
 #define DEBUG_DISAS
@@ -39,29 +40,6 @@ typedef ram_addr_t tb_page_addr_t;
 #define DISAS_JUMP    1 /* only pc was modified dynamically */
 #define DISAS_UPDATE  2 /* cpu state was modified dynamically */
 #define DISAS_TB_JUMP 3 /* only pc was modified statically */
-
-struct TranslationBlock;
-typedef struct TranslationBlock TranslationBlock;
-
-/* XXX: make safe guess about sizes */
-#define MAX_OP_PER_INSTR 266
-
-#if HOST_LONG_BITS == 32
-#define MAX_OPC_PARAM_PER_ARG 2
-#else
-#define MAX_OPC_PARAM_PER_ARG 1
-#endif
-#define MAX_OPC_PARAM_IARGS 5
-#define MAX_OPC_PARAM_OARGS 1
-#define MAX_OPC_PARAM_ARGS (MAX_OPC_PARAM_IARGS + MAX_OPC_PARAM_OARGS)
-
-/* A Call op needs up to 4 + 2N parameters on 32-bit archs,
- * and up to 4 + N parameters on 64-bit archs
- * (N = number of input arguments + output arguments).  */
-#define MAX_OPC_PARAM (4 + (MAX_OPC_PARAM_PER_ARG * MAX_OPC_PARAM_ARGS))
-#define OPC_MAX_SIZE (OPC_BUF_SIZE - MAX_OP_PER_INSTR)
-
-#define OPPARAM_BUF_SIZE (OPC_BUF_SIZE * MAX_OPC_PARAM)
 
 #include "qemu/log.h"
 
@@ -212,9 +190,6 @@ static inline void tlb_flush_by_mmuidx(CPUState *cpu, ...)
 
 #define CODE_GEN_ALIGN           16 /* must be >= of the size of a icache line */
 
-#define CODE_GEN_PHYS_HASH_BITS     15
-#define CODE_GEN_PHYS_HASH_SIZE     (1 << CODE_GEN_PHYS_HASH_BITS)
-
 /* Estimated block size for TB allocation.  */
 /* ??? The following is based on a 2015 survey of x86_64 host output.
    Better would seem to be some sort of dynamically sized TB array,
@@ -284,19 +259,6 @@ struct TranslationBlock {
      */
     uintptr_t jmp_list_next[2];
     uintptr_t jmp_list_first;
-};
-
-typedef struct TBContext TBContext;
-
-struct TBContext {
-
-    TranslationBlock *tbs;
-    TranslationBlock *tb_phys_hash[CODE_GEN_PHYS_HASH_SIZE];
-    int nb_tbs;
-
-    /* statistics */
-    int tb_flush_count;
-    int tb_phys_invalidate_count;
 };
 
 void tb_free(struct uc_struct *uc, TranslationBlock *tb);

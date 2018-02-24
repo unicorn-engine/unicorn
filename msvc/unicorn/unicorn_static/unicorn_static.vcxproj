@@ -99,6 +99,8 @@
     <ClInclude Include="..\..\..\qemu\include\exec\ram_addr.h" />
     <ClInclude Include="..\..\..\qemu\include\exec\softmmu-semi.h" />
     <ClInclude Include="..\..\..\qemu\include\exec\spinlock.h" />
+    <ClInclude Include="..\..\..\qemu\include\exec\tb-context.h" />
+    <ClInclude Include="..\..\..\qemu\include\exec\tb-hash.h" />
     <ClInclude Include="..\..\..\qemu\include\fpu\softfloat.h" />
     <ClInclude Include="..\..\..\qemu\include\glib_compat.h" />
     <ClInclude Include="..\..\..\qemu\include\crypto\aes.h" />
