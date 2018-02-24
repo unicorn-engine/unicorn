@@ -1,11 +1,12 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 
+#include "qemu/osdep.h"
+#include "cpu.h"
 #include "hw/boards.h"
 #include "hw/arm/arm.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
-#include "cpu.h"
 #include "unicorn_common.h"
 #include "uc_priv.h"
 

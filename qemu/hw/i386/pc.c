@@ -24,6 +24,7 @@
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
 #include "qemu/osdep.h"
+#include "cpu.h"
 #include "hw/hw.h"
 #include "hw/i386/pc.h"
 #include "sysemu/cpus.h"

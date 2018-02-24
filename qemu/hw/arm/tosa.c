@@ -13,11 +13,11 @@
 
 #include "qemu/osdep.h"
 #include "qapi/error.h"
+#include "cpu.h"
 #include "hw/hw.h"
 #include "hw/arm/arm.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
-
 
 static int tosa_init(struct uc_struct *uc, MachineState *machine)
 {

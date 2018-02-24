@@ -1,14 +1,14 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 
+#include "qemu/osdep.h"
+#include "cpu.h"
 #include "hw/boards.h"
 #include "hw/sparc/sparc.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
-#include "cpu.h"
 #include "unicorn_common.h"
 #include "uc_priv.h"
-
 
 const int SPARC_REGS_STORAGE_SIZE = offsetof(CPUSPARCState, tlb_table);
 

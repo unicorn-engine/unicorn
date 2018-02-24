@@ -3160,6 +3160,7 @@
 #define mips_cpu_register_types mips_cpu_register_types_mips
 #define cpu_mips_init cpu_mips_init_mips
 #define cpu_state_reset cpu_state_reset_mips
+#define do_raise_exception_err do_raise_exception_err_mips
 #define helper_msa_andi_b helper_msa_andi_b_mips
 #define helper_msa_ori_b helper_msa_ori_b_mips
 #define helper_msa_nori_b helper_msa_nori_b_mips

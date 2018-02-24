@@ -26,6 +26,8 @@
 
 /* Needed early for CONFIG_BSD etc. */
 #include "qemu/osdep.h"
+#include "qemu-common.h"
+#include "cpu.h"
 #include "sysemu/sysemu.h"
 #include "sysemu/cpus.h"
 #include "qemu/thread.h"

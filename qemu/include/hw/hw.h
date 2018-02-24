@@ -2,12 +2,12 @@
 #ifndef QEMU_HW_H
 #define QEMU_HW_H
 
-#include "qemu-common.h"
-
-#if !defined(CONFIG_USER_ONLY) && !defined(NEED_CPU_H)
-#include "exec/cpu-common.h"
+#ifdef CONFIG_USER_ONLY
+#error Cannot include hw/hw.h from user emulation
 #endif
 
+#include "qemu-common.h"
+#include "exec/cpu-common.h"
 #include "exec/ioport.h"
 #include "qemu/log.h"
 

@@ -16,6 +16,8 @@
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
 #include "qemu/osdep.h"
+#include "qemu-common.h"
+#include "cpu.h"
 #include "qapi/error.h"
 #include "qemu-common.h"
 #include "exec/memory.h"

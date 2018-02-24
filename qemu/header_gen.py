@@ -3213,6 +3213,7 @@ mips_symbols = (
     'mips_cpu_register_types',
     'cpu_mips_init',
     'cpu_state_reset',
+    'do_raise_exception_err',
     'helper_msa_andi_b',
     'helper_msa_ori_b',
     'helper_msa_nori_b',

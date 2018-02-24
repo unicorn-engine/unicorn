@@ -7,6 +7,7 @@
 #include "sysemu/accel.h"
 #include "hw/qdev.h"
 #include "qom/object.h"
+#include "qom/cpu.h"
 #include "uc_priv.h"
 
 typedef int QEMUMachineInitFunc(struct uc_struct *uc, MachineState *ms);

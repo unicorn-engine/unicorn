@@ -9,11 +9,12 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
+#include "cpu.h"
 #include "hw/hw.h"
 #include "hw/m68k/m68k.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
-
 
 /* Board init.  */
 static int dummy_m68k_init(struct uc_struct *uc, MachineState *machine)

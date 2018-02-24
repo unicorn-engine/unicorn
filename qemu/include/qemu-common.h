@@ -25,11 +25,6 @@
 
 #include "unicorn/platform.h"
 
-/* FIXME: Remove NEED_CPU_H.  */
-#ifdef NEED_CPU_H
-#include "cpu.h"
-#endif /* !defined(NEED_CPU_H) */
-
 #define qemu_isalnum(c)		isalnum((unsigned char)(c))
 #define qemu_isalpha(c)		isalpha((unsigned char)(c))
 #define qemu_iscntrl(c)		iscntrl((unsigned char)(c))

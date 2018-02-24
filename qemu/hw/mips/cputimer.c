@@ -20,6 +20,8 @@
  * THE SOFTWARE.
  */
 
+#include "qemu/osdep.h"
+#include "cpu.h"
 #include "hw/hw.h"
 #include "hw/mips/cpudevs.h"
 #include "qemu/timer.h"
