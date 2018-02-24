@@ -803,7 +803,7 @@ typedef struct BNDCSReg {
 #define MMX_Q(n) _q_MMXReg[n]
 
 typedef union {
-    floatx80 QEMU_ALIGN(16, d);
+    floatx80 QEMU_ALIGNED(16, d);
     MMXReg mmx;
 } FPReg;
 

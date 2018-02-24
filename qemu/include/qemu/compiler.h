@@ -52,7 +52,7 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define QEMU_ARTIFICIAL
 #define QEMU_PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
 
-#define QEMU_ALIGN(A, B) __declspec(align(A)) B
+#define QEMU_ALIGNED(A, B) __declspec(align(A)) B
 
 #define cat(x,y) x ## y
 #define cat2(x,y) cat(x,y)
@@ -101,7 +101,7 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 # define QEMU_PACK( __Declaration__ ) __Declaration__ __attribute__((packed))
 #endif
 
-#define QEMU_ALIGN(A, B) B __attribute__((aligned(A)))
+#define QEMU_ALIGNED(A, B) B __attribute__((aligned(A)))
 
 #ifndef glue
 #define xglue(x, y) x ## y

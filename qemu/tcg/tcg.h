@@ -214,7 +214,7 @@ typedef struct TCGLabel {
 typedef struct TCGPool {
     struct TCGPool *next;
     int size;
-    uint8_t QEMU_ALIGN(8, data[0]);
+    uint8_t QEMU_ALIGNED(8, data[0]);
 } TCGPool;
 
 #define TCG_POOL_CHUNK_SIZE 32768

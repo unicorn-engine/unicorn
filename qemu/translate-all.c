@@ -544,7 +544,7 @@ static inline void *split_cross_256mb(struct uc_struct *uc, void *buf1, size_t s
 #endif
 
 #ifdef USE_STATIC_CODE_GEN_BUFFER
-static uint8_t QEMU_ALIGN(CODE_GEN_ALIGN, static_code_gen_buffer[DEFAULT_CODE_GEN_BUFFER_SIZE]);
+static uint8_t QEMU_ALIGNED(CODE_GEN_ALIGN, static_code_gen_buffer[DEFAULT_CODE_GEN_BUFFER_SIZE]);
 
 void free_code_gen_buffer(struct uc_struct *uc)
 {
