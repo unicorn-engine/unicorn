@@ -3149,10 +3149,13 @@
 #define cpu_mips_exec cpu_mips_exec_mips
 #define cpu_mips_get_random cpu_mips_get_random_mips
 #define cpu_mips_get_count cpu_mips_get_count_mips
+#define cpu_mips_store_cause cpu_mips_store_cause_mips
 #define cpu_mips_store_count cpu_mips_store_count_mips
 #define cpu_mips_store_compare cpu_mips_store_compare_mips
+#define cpu_mips_store_status cpu_mips_store_status_mips
 #define cpu_mips_start_count cpu_mips_start_count_mips
 #define cpu_mips_stop_count cpu_mips_stop_count_mips
+#define cpu_mips_tlb_flush cpu_mips_tlb_flush_mips
 #define mips_machine_init mips_machine_init_mips
 #define cpu_mips_kseg0_to_phys cpu_mips_kseg0_to_phys_mips
 #define cpu_mips_phys_to_kseg0 cpu_mips_phys_to_kseg0_mips
@@ -4068,4 +4071,5 @@
 #define mips_release mips_release_mips
 #define MIPS64_REGS_STORAGE_SIZE MIPS64_REGS_STORAGE_SIZE_mips
 #define MIPS_REGS_STORAGE_SIZE MIPS_REGS_STORAGE_SIZE_mips
+#define sync_c0_status sync_c0_status_mips
 #endif

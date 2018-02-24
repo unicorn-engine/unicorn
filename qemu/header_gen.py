@@ -3202,10 +3202,13 @@ mips_symbols = (
     'cpu_mips_exec',
     'cpu_mips_get_random',
     'cpu_mips_get_count',
+    'cpu_mips_store_cause',
     'cpu_mips_store_count',
     'cpu_mips_store_compare',
+    'cpu_mips_store_status',
     'cpu_mips_start_count',
     'cpu_mips_stop_count',
+    'cpu_mips_tlb_flush',
     'mips_machine_init',
     'cpu_mips_kseg0_to_phys',
     'cpu_mips_phys_to_kseg0',
@@ -4120,7 +4123,8 @@ mips_symbols = (
     'mips_cpu_list',
     'mips_release',
     'MIPS64_REGS_STORAGE_SIZE',
-    'MIPS_REGS_STORAGE_SIZE'
+    'MIPS_REGS_STORAGE_SIZE',
+    'sync_c0_status',
 )
 
 sparc_symbols = (
