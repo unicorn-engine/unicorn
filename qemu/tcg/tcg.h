@@ -853,6 +853,12 @@ struct TCGContext {
     TCGLabel *exitreq_label;  // gen_tb_start()
 };
 
+static inline void tcg_set_insn_param(TCGContext *tcg_ctx, int op_idx, int arg, TCGArg v)
+{
+    int op_argi = tcg_ctx->gen_op_buf[op_idx].args;
+    tcg_ctx->gen_opparam_buf[op_argi + arg] = v;
+}
+
 /* The number of opcodes emitted so far.  */
 static inline int tcg_op_buf_count(TCGContext *tcg_ctx)
 {
