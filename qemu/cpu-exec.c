@@ -282,6 +282,8 @@ static inline void cpu_handle_interrupt(CPUState *cpu,
         }
 #if defined(TARGET_I386)
         else if (interrupt_request & CPU_INTERRUPT_INIT) {
+            X86CPU *x86_cpu = X86_CPU(cpu->uc, cpu);
+            CPUArchState *env = &x86_cpu->env;
             cpu_svm_check_intercept_param(env, SVM_EXIT_INIT, 0);
             do_cpu_init(x86_cpu);
             cpu->exception_index = EXCP_HALTED;
