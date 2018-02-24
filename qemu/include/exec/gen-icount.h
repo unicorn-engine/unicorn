@@ -5,7 +5,7 @@
 
 /* Helpers for instruction counting code generation.  */
 
-//static TCGArg *icount_arg;
+//static int icount_start_insn_idx
 //static TCGLabel *icount_label;
 //static TCGLabel *exitreq_label;
 
@@ -13,7 +13,6 @@ static inline void gen_tb_start(TCGContext *tcg_ctx)
 {
     //TCGv_i32 count, flag, imm;
     TCGv_i32 flag;
-    //int i;
 
     tcg_ctx->exitreq_label = gen_new_label(tcg_ctx);
     flag = tcg_temp_new_i32(tcg_ctx);
@@ -32,17 +31,14 @@ static inline void gen_tb_start(TCGContext *tcg_ctx)
     tcg_gen_ld_i32(tcg_ctx, count, cpu_env,
                    -ENV_OFFSET + offsetof(CPUState, icount_decr.u32));
     imm = tcg_temp_new_i32(tcg_ctx);
+    /* We emit a movi with a dummy immediate argument. Keep the insn index
+     * of the movi so that we later (when we know the actual insn count)
+     * can update the immediate argument with the actual insn count.  */
+    icount_start_insn_idx = tcg_op_buf_count(tcg_ctx);
     tcg_gen_movi_i32(tcg_ctx, imm, 0xdeadbeef);
-
-
-    /* This is a horrid hack to allow fixing up the value later.  */
-    i = *tcg_ctx->gen_last_op_idx;
-    i = *tcg_ctx->gen_op_buf[i].args;
-    icount_arg = &tcg_ctx->gen_opparam_buf[i + 1];
 
     tcg_gen_sub_i32(tcg_ctx, count, count, imm);
     tcg_temp_free_i32(tcg_ctx, imm);
-
 
     tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_LT, count, 0, icount_label);
     tcg_gen_st16_i32(tcg_ctx, count, cpu_env,
@@ -58,7 +54,9 @@ static inline void gen_tb_end(TCGContext *tcg_ctx, TranslationBlock *tb, int num
 
 #if 0
     if (use_icount) {
-        *icount_arg = num_insns;
+        /* Update the num_insn immediate parameter now that we know
+         * the actual insn count.  */
+        tcg_set_insn_param(tcg_ctx, icount_start_insn_idx, 1, num_insns);
         gen_set_label(icount_label);
         tcg_gen_exit_tb((uintptr_t)tb + TB_EXIT_ICOUNT_EXPIRED);
     }
