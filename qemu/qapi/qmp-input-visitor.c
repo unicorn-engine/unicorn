@@ -130,9 +130,11 @@ static gboolean always_true(gpointer key, gpointer val, gpointer user_pkey)
     return TRUE;
 }
 
-static void qmp_input_pop(QmpInputVisitor *qiv, Error **errp)
+static void qmp_input_check_struct(Visitor *v, Error **errp)
 {
+    QmpInputVisitor *qiv = to_qiv(v);
     StackObject *tos = &qiv->stack[qiv->nb_stack - 1];
+
     assert(qiv->nb_stack > 0);
 
     if (qiv->strict) {
@@ -143,6 +145,20 @@ static void qmp_input_pop(QmpInputVisitor *qiv, Error **errp)
                 g_hash_table_find(top_ht, always_true, (gpointer)&key);
                 error_setg(errp, QERR_QMP_EXTRA_MEMBER, key);
             }
+        }
+    }
+}
+
+static void qmp_input_pop(Visitor *v)
+{
+    QmpInputVisitor *qiv = to_qiv(v);
+    StackObject *tos = &qiv->stack[qiv->nb_stack - 1];
+
+    assert(qiv->nb_stack > 0);
+
+    if (qiv->strict) {
+        GHashTable * const top_ht = qiv->stack[qiv->nb_stack - 1].h;
+        if (top_ht) {
             g_hash_table_unref(top_ht);
         }
         tos->h = NULL;
@@ -176,13 +192,6 @@ static void qmp_input_start_struct(Visitor *v, const char *name, void **obj,
     if (obj) {
         *obj = g_malloc0(size);
     }
-}
-
-static void qmp_input_end_struct(Visitor *v, Error **errp)
-{
-    QmpInputVisitor *qiv = to_qiv(v);
-
-    qmp_input_pop(qiv, &error_abort);
 }
 
 static void qmp_input_start_list(Visitor *v, const char *name, Error **errp)
@@ -219,13 +228,6 @@ static GenericList *qmp_input_next_list(Visitor *v, GenericList **list,
     }
 
     return entry;
-}
-
-static void qmp_input_end_list(Visitor *v)
-{
-    QmpInputVisitor *qiv = to_qiv(v);
-
-    qmp_input_pop(qiv, &error_abort);
 }
 
 static void qmp_input_start_alternate(Visitor *v, const char *name,
@@ -386,11 +388,12 @@ QmpInputVisitor *qmp_input_visitor_new(QObject *obj, bool strict)
 
     v->visitor.type = VISITOR_INPUT;
     v->visitor.start_struct = qmp_input_start_struct;
-    v->visitor.end_struct = qmp_input_end_struct;
+    v->visitor.check_struct = qmp_input_check_struct;
+    v->visitor.end_struct = qmp_input_pop;
     v->visitor.start_alternate = qmp_input_start_alternate;
     v->visitor.start_list = qmp_input_start_list;
     v->visitor.next_list = qmp_input_next_list;
-    v->visitor.end_list = qmp_input_end_list;
+    v->visitor.end_list = qmp_input_pop;
     v->visitor.type_int64 = qmp_input_type_int64;
     v->visitor.type_uint64 = qmp_input_type_uint64;
     v->visitor.type_bool = qmp_input_type_bool;
