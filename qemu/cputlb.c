@@ -62,7 +62,7 @@
 
 static void tlb_flush_entry(CPUTLBEntry *tlb_entry, target_ulong addr);
 static bool tlb_is_dirty_ram(CPUTLBEntry *tlbe);
-static bool qemu_ram_addr_from_host_nofail(struct uc_struct *uc, void *ptr, ram_addr_t *addr);
+static ram_addr_t qemu_ram_addr_from_host_nofail(struct uc_struct *uc, void *ptr);
 static void tlb_add_large_page(CPUArchState *env, target_ulong vaddr,
                                target_ulong size);
 static void tlb_set_dirty1(CPUTLBEntry *tlb_entry, target_ulong vaddr);
@@ -307,7 +307,7 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
         cpu_ldub_code(env1, addr);
         //check for NX related error from softmmu
         if (env1->invalid_error == UC_ERR_FETCH_PROT) {
-            return -1;
+            return RAM_ADDR_INVALID;
         }
     }
     iotlbentry = &env1->iotlb[mmu_idx][page_index];
@@ -323,26 +323,31 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
             //          TARGET_FMT_lx "\n", addr);    // qq
             env1->invalid_addr = addr;
             env1->invalid_error = UC_ERR_FETCH_UNMAPPED;
-            return -1;
+            return RAM_ADDR_INVALID;
         }
     }
     p = (void *)((uintptr_t)addr + env1->tlb_table[mmu_idx][page_index].addend);
-    if (!qemu_ram_addr_from_host_nofail(cpu->uc, p, &ram_addr)) {
+    ram_addr = qemu_ram_addr_from_host_nofail(cpu->uc, p);
+    if (ram_addr == RAM_ADDR_INVALID) {
         env1->invalid_addr = addr;
         env1->invalid_error = UC_ERR_FETCH_UNMAPPED;
-        return -1;
-    } else
+        return RAM_ADDR_INVALID;
+    } else {
         return ram_addr;
+    }
 }
 
-static bool qemu_ram_addr_from_host_nofail(struct uc_struct *uc, void *ptr, ram_addr_t *ram_addr)
+static ram_addr_t qemu_ram_addr_from_host_nofail(struct uc_struct *uc, void *ptr)
 {
-    if (qemu_ram_addr_from_host(uc, ptr, ram_addr) == NULL) {
+    ram_addr_t ram_addr;
+
+    ram_addr = qemu_ram_addr_from_host(uc, ptr);
+    if (ram_addr == RAM_ADDR_INVALID) {
         // fprintf(stderr, "Bad ram pointer %p\n", ptr);
-        return false;
+        return RAM_ADDR_INVALID;
     }
 
-    return true;
+    return ram_addr;
 }
 
 static void tlb_set_dirty1(CPUTLBEntry *tlb_entry, target_ulong vaddr)

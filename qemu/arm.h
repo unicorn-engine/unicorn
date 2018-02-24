@@ -2079,6 +2079,7 @@
 #define memory_region_escape_name memory_region_escape_name_arm
 #define memory_region_finalize memory_region_finalize_arm
 #define memory_region_find memory_region_find_arm
+#define memory_region_from_host memory_region_from_host_arm
 #define memory_region_get_addr memory_region_get_addr_arm
 #define memory_region_get_alignment memory_region_get_alignment_arm
 #define memory_region_get_container memory_region_get_container_arm

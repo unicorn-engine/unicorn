@@ -2079,6 +2079,7 @@
 #define memory_region_escape_name memory_region_escape_name_m68k
 #define memory_region_finalize memory_region_finalize_m68k
 #define memory_region_find memory_region_find_m68k
+#define memory_region_from_host memory_region_from_host_m68k
 #define memory_region_get_addr memory_region_get_addr_m68k
 #define memory_region_get_alignment memory_region_get_alignment_m68k
 #define memory_region_get_container memory_region_get_container_m68k

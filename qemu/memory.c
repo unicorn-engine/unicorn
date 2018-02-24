@@ -1364,6 +1364,18 @@ void *memory_region_get_ram_ptr(MemoryRegion *mr)
     return ptr + offset;
 }
 
+MemoryRegion *memory_region_from_host(struct uc_struct *uc, void *ptr, ram_addr_t *offset)
+{
+    RAMBlock *block;
+
+    block = qemu_ram_block_from_host(uc, ptr, false, offset);
+    if (!block) {
+        return NULL;
+    }
+
+    return block->mr;
+}
+
 ram_addr_t memory_region_get_ram_addr(MemoryRegion *mr)
 {
     return mr->ram_block ? mr->ram_block->offset : RAM_ADDR_INVALID;

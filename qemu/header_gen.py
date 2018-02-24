@@ -2085,6 +2085,7 @@ symbols = (
     'memory_region_escape_name',
     'memory_region_finalize',
     'memory_region_find',
+    'memory_region_from_host',
     'memory_region_get_addr',
     'memory_region_get_alignment',
     'memory_region_get_container',
