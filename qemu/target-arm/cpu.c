@@ -23,6 +23,7 @@
 #include "cpu.h"
 #include "internals.h"
 #include "qemu-common.h"
+#include "exec/exec-all.h"
 #include "qapi/qmp/qerror.h"
 #include "hw/arm/arm.h"
 #include "sysemu/sysemu.h"

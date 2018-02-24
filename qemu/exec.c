@@ -26,6 +26,7 @@
 
 #include "qemu/cutils.h"
 #include "cpu.h"
+#include "exec/exec-all.h"
 #include "tcg.h"
 #include "hw/hw.h"
 #include "hw/qdev.h"

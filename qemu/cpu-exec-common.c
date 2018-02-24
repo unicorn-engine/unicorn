@@ -20,6 +20,7 @@
 #include "qemu/osdep.h"
 #include "cpu.h"
 #include "sysemu/cpus.h"
+#include "exec/exec-all.h"
 #include "exec/memory-internal.h"
 
 /* exit the current TB from a signal handler. The host registers are

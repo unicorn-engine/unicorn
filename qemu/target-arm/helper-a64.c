@@ -21,6 +21,7 @@
 #include "cpu.h"
 #include "exec/helper-proto.h"
 #include "qemu/host-utils.h"
+#include "qemu/log.h"
 #include "sysemu/sysemu.h"
 #include "qemu/bitops.h"
 #include "internals.h"

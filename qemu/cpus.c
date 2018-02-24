@@ -29,8 +29,10 @@
 #include "qemu-common.h"
 #include "cpu.h"
 #include "sysemu/sysemu.h"
-#include "sysemu/cpus.h"
+#include "exec/exec-all.h"
+
 #include "qemu/thread.h"
+#include "sysemu/cpus.h"
 
 #include "exec/address-spaces.h"	// debug, can be removed later
 

@@ -31,6 +31,7 @@
 #include "qemu-common.h"
 #define NO_CPU_IO_DEFS
 #include "cpu.h"
+#include "exec/exec-all.h"
 #include "tcg.h"
 #if defined(CONFIG_USER_ONLY)
 #include "qemu.h"

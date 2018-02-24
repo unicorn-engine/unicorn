@@ -23,6 +23,7 @@
 #include "unicorn/platform.h"
 
 #include "cpu.h"
+#include "exec/exec-all.h"
 #include "sysemu/cpus.h"
 
 #include "qapi/qmp/qerror.h"

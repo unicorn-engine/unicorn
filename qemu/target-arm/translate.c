@@ -24,6 +24,7 @@
 
 #include "cpu.h"
 #include "internals.h"
+#include "exec/exec-all.h"
 #include "tcg-op.h"
 #include "qemu/log.h"
 #include "qemu/bitops.h"

@@ -30,6 +30,7 @@
 
 #include "exec/memory-internal.h"
 #include "exec/ram_addr.h"
+#include "exec/exec-all.h"
 #include "tcg/tcg.h"
 
 #include "uc_priv.h"

@@ -20,6 +20,7 @@
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "cpu.h"
+#include "exec/exec-all.h"
 #include "hw/sparc/sparc.h"
 
 //#define DEBUG_FEATURES

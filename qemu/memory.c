@@ -16,17 +16,17 @@
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
 #include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "qemu-common.h"
 #include "cpu.h"
 #include "qapi/error.h"
-#include "qemu-common.h"
+#include "exec/exec-all.h"
 #include "exec/memory.h"
 #include "exec/address-spaces.h"
 #include "exec/ioport.h"
 #include "qapi/visitor.h"
 #include "qemu/bitops.h"
 #include "qom/object.h"
-#include <assert.h>
 
 #include "exec/memory-internal.h"
 #include "exec/ram_addr.h"
