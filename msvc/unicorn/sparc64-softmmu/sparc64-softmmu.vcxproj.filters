@@ -122,6 +122,7 @@
     <ClCompile Include="..\..\..\qemu\cputlb.c" />
     <ClCompile Include="..\..\..\qemu\cpus.c" />
     <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
+    <ClCompile Include="..\..\..\qemu\cpu-exec-common.c" />
     <ClCompile Include="..\..\..\qemu\hw\sparc64\sun4u.c">
       <Filter>hw\sparc64</Filter>
     </ClCompile>

@@ -81,6 +81,7 @@
       <Filter>tcg\i386</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
+    <ClCompile Include="..\..\..\qemu\cpu-exec-common.c" />
     <ClCompile Include="..\..\..\qemu\cpus.c" />
     <ClCompile Include="..\..\..\qemu\cputlb.c" />
     <ClCompile Include="..\..\..\qemu\exec.c" />
