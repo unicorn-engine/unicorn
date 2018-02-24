@@ -38,7 +38,6 @@ static void cpu_handle_debug_exception(CPUState *cpu);
 int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 {
     CPUArchState *env = cpu->env_ptr;
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
     CPUClass *cc = CPU_GET_CLASS(uc, cpu);
 #ifdef TARGET_I386
     X86CPU *x86_cpu = X86_CPU(uc, cpu);
@@ -130,6 +129,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
             }
 
             last_tb = NULL; /* forget the last executed TB after exception */
+            cpu->tb_flushed = false; /* reset before first TB lookup */
             for(;;) {
                 interrupt_request = cpu->interrupt_request;
 
@@ -188,14 +188,12 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                     ret = EXCP_HLT;
                     break;
                 }
-                /* Note: we do it here to avoid a gcc bug on Mac OS X when
-                   doing it in tb_find_slow */
-                if (tcg_ctx->tb_ctx.tb_invalidated_flag) {
-                    /* as some TB could have been invalidated because
-                       of memory exceptions while generating the code, we
-                       must recompute the hash index here */
+                if (cpu->tb_flushed) {
+                    /* Ensure that no TB jump will be modified as the
+                     * translation buffer has been flushed.
+                     */
                     last_tb = NULL;
-                    tcg_ctx->tb_ctx.tb_invalidated_flag = 0;
+                    cpu->tb_flushed = false;
                 }
                 /* See if we can patch the calling TB. */
                 if (last_tb && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
@@ -336,8 +334,6 @@ static TranslationBlock *tb_find_slow(CPUState *cpu,
     unsigned int h;
     tb_page_addr_t phys_pc, phys_page1;
     target_ulong virt_page2;
-
-    tcg_ctx->tb_ctx.tb_invalidated_flag = 0;
 
     /* find translated block using physical mappings */
     phys_pc = get_page_addr_code(env, pc);  // qq

@@ -256,6 +256,7 @@ struct CPUState {
     bool stop;
     bool stopped;
     bool crash_occurred;
+    bool tb_flushed;
     volatile sig_atomic_t exit_request;
     uint32_t interrupt_request;
     int singlestep_enabled;

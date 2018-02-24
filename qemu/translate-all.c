@@ -919,6 +919,7 @@ void tb_flush(CPUState *cpu)
     tcg_ctx->tb_ctx.nb_tbs = 0;
 
     memset(cpu->tb_jmp_cache, 0, sizeof(cpu->tb_jmp_cache));
+    cpu->tb_flushed = true;
 
     memset(tcg_ctx->tb_ctx.tb_phys_hash, 0, sizeof(tcg_ctx->tb_ctx.tb_phys_hash));
     page_flush_tb(uc);
@@ -1088,8 +1089,6 @@ void tb_phys_invalidate(struct uc_struct *uc,
         tb_page_remove(&p->first_tb, tb);
         invalidate_page_bitmap(p);
     }
-
-    tcg_ctx->tb_ctx.tb_invalidated_flag = 1;
 
     /* remove the TB from the hash list */
     h = tb_jmp_cache_hash_func(tb->pc);
@@ -1279,8 +1278,6 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
         /* cannot fail at this point */
         tb = tb_alloc(env->uc, pc);
         assert(tb != NULL);
-        /* Don't forget to invalidate previous TB info.  */
-        tcg_ctx->tb_ctx.tb_invalidated_flag = 1;
     }
     gen_code_buf = tcg_ctx->code_gen_ptr;
     tb->tc_ptr = gen_code_buf;
