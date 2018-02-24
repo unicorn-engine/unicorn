@@ -195,6 +195,14 @@ static size_t type_object_get_size(struct uc_struct *uc, TypeImpl *ti)
     return 0;
 }
 
+size_t object_type_get_instance_size(struct uc_struct *uc, const char *typename)
+{
+    TypeImpl *type = type_get_by_name(uc, typename);
+
+    g_assert(type != NULL);
+    return type_object_get_size(uc, type);
+}
+
 static bool type_is_ancestor(struct uc_struct *uc, TypeImpl *type, TypeImpl *target_type)
 {
     assert(target_type);

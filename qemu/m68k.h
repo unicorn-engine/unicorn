@@ -2217,6 +2217,7 @@
 #define object_resolve_path_component object_resolve_path_component_m68k
 #define object_resolve_path_type object_resolve_path_type_m68k
 #define object_set_link_property object_set_link_property_m68k
+#define object_type_get_instance_size object_type_get_instance_size_m68k
 #define object_unparent object_unparent_m68k
 #define omap_cachemaint_write omap_cachemaint_write_m68k
 #define omap_cp_reginfo omap_cp_reginfo_m68k

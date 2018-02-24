@@ -2217,6 +2217,7 @@
 #define object_resolve_path_component object_resolve_path_component_mips
 #define object_resolve_path_type object_resolve_path_type_mips
 #define object_set_link_property object_set_link_property_mips
+#define object_type_get_instance_size object_type_get_instance_size_mips
 #define object_unparent object_unparent_mips
 #define omap_cachemaint_write omap_cachemaint_write_mips
 #define omap_cp_reginfo omap_cp_reginfo_mips

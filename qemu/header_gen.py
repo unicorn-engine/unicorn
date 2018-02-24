@@ -2223,6 +2223,7 @@ symbols = (
     'object_resolve_path_component',
     'object_resolve_path_type',
     'object_set_link_property',
+    'object_type_get_instance_size',
     'object_unparent',
     'omap_cachemaint_write',
     'omap_cp_reginfo',

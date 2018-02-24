@@ -1376,6 +1376,14 @@ int object_child_foreach_recursive(Object *obj,
  */
 Object *container_get(struct uc_struct *uc, Object *root, const char *path);
 
+/**
+ * object_type_get_instance_size:
+ * @typename: Name of the Type whose instance_size is required
+ *
+ * Returns the instance_size of the given @typename.
+ */
+size_t object_type_get_instance_size(struct uc_struct *uc, const char *typename);
+
 void container_register_types(struct uc_struct *uc);
 
 void register_types_object(struct uc_struct *uc);

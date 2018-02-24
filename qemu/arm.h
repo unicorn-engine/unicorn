@@ -2217,6 +2217,7 @@
 #define object_resolve_path_component object_resolve_path_component_arm
 #define object_resolve_path_type object_resolve_path_type_arm
 #define object_set_link_property object_set_link_property_arm
+#define object_type_get_instance_size object_type_get_instance_size_arm
 #define object_unparent object_unparent_arm
 #define omap_cachemaint_write omap_cachemaint_write_arm
 #define omap_cp_reginfo omap_cp_reginfo_arm
