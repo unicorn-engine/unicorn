@@ -83,60 +83,97 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
     return ret;
 }
 
+static TranslationBlock *tb_find_physical(CPUState *cpu,
+                                          target_ulong pc,
+                                          target_ulong cs_base,
+                                          uint32_t flags)
+{
+    TCGContext *tcg_ctx = cpu->uc->tcg_ctx;
+    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
+    TranslationBlock *tb, **tb_hash_head, **ptb1;
+    uint32_t h;
+    tb_page_addr_t phys_pc, phys_page1;
+
+    /* find translated block using physical mappings */
+    phys_pc = get_page_addr_code(env, pc);
+    phys_page1 = phys_pc & TARGET_PAGE_MASK;
+    h = tb_hash_func(phys_pc, pc, flags);
+
+    /* Start at head of the hash entry */
+    ptb1 = tb_hash_head = &tcg_ctx->tb_ctx.tb_phys_hash[h];
+    tb = *ptb1;
+
+    while (tb) {
+        if (tb->pc == pc &&
+            tb->page_addr[0] == phys_page1 &&
+            tb->cs_base == cs_base &&
+            tb->flags == flags) {
+
+            if (tb->page_addr[1] == -1) {
+                /* done, we have a match */
+                break;
+            } else {
+                /* check next page if needed */
+                target_ulong virt_page2 = (pc & TARGET_PAGE_MASK) +
+                                          TARGET_PAGE_SIZE;
+                tb_page_addr_t phys_page2 = get_page_addr_code(env, virt_page2);
+
+                if (tb->page_addr[1] == phys_page2) {
+                    break;
+                }
+            }
+        }
+
+        ptb1 = &tb->phys_hash_next;
+        tb = *ptb1;
+    }
+
+    if (tb) {
+        /* Move the TB to the head of the list */
+        *ptb1 = tb->phys_hash_next;
+        tb->phys_hash_next = *tb_hash_head;
+        *tb_hash_head = tb;
+    }
+    return tb;
+}
+
 static TranslationBlock *tb_find_slow(CPUState *cpu,
                                       target_ulong pc,
                                       target_ulong cs_base,
-                                      uint64_t flags)
+                                      uint32_t flags)
 {
-    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    TranslationBlock *tb, **ptb1;
-    unsigned int h;
-    tb_page_addr_t phys_pc, phys_page1;
-    target_ulong virt_page2;
+    TranslationBlock *tb;
 
-    /* find translated block using physical mappings */
-    phys_pc = get_page_addr_code(env, pc);  // qq
-    if (phys_pc == -1) { // invalid code?
-        return NULL;
+    tb = tb_find_physical(cpu, pc, cs_base, flags);
+    if (tb) {
+        goto found;
     }
-    phys_page1 = phys_pc & TARGET_PAGE_MASK;
-    h = tb_phys_hash_func(phys_pc);
-    ptb1 = &tcg_ctx->tb_ctx.tb_phys_hash[h];
-    for(;;) {
-        tb = *ptb1;
-        if (!tb)
-            goto not_found;
-        if (tb->pc == pc &&
-                tb->page_addr[0] == phys_page1 &&
-                tb->cs_base == cs_base &&
-                tb->flags == flags) {
-            /* check next page if needed */
-            if (tb->page_addr[1] != -1) {
-                tb_page_addr_t phys_page2;
 
-                virt_page2 = (pc & TARGET_PAGE_MASK) +
-                    TARGET_PAGE_SIZE;
-                phys_page2 = get_page_addr_code(env, virt_page2);
-                if (tb->page_addr[1] == phys_page2)
-                    goto found;
-            } else {
-                goto found;
-            }
-        }
-        ptb1 = &tb->phys_hash_next;
+#ifdef CONFIG_USER_ONLY
+    /* mmap_lock is needed by tb_gen_code, and mmap_lock must be
+     * taken outside tb_lock.  Since we're momentarily dropping
+     * tb_lock, there's a chance that our desired tb has been
+     * translated.
+     */
+    // Unicorn: commented out
+    //tb_unlock();
+    mmap_lock();
+    //tb_lock();
+    tb = tb_find_physical(cpu, pc, cs_base, flags);
+    if (tb) {
+        mmap_unlock();
+        goto found;
     }
-not_found:
+#endif
+
     /* if no translated code available, then translate it now */
-    tb = tb_gen_code(cpu, pc, cs_base, (int)flags, 0);   // qq
+    tb = tb_gen_code(cpu, pc, cs_base, flags, 0);
+
+#ifdef CONFIG_USER_ONLY
+    mmap_unlock();
+#endif
 
 found:
-    /* Move the last found TB to the head of the list */
-    if (likely(*ptb1)) {
-        *ptb1 = tb->phys_hash_next;
-        tb->phys_hash_next = tcg_ctx->tb_ctx.tb_phys_hash[h];
-        tcg_ctx->tb_ctx.tb_phys_hash[h] = tb;
-    }
     /* we add the TB in the virtual pc hash table */
     cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)] = tb;
     return tb;
@@ -160,7 +197,7 @@ static inline TranslationBlock *tb_find_fast(CPUState *cpu,
     tb = cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)];
     if (unlikely(!tb || tb->pc != pc || tb->cs_base != cs_base ||
                 tb->flags != flags)) {
-        tb = tb_find_slow(cpu, pc, cs_base, flags); // qq
+        tb = tb_find_slow(cpu, pc, cs_base, flags);
     }
     if (cpu->tb_flushed) {
         /* Ensure that no TB jump will be modified as the

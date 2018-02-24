@@ -1070,12 +1070,12 @@ void tb_phys_invalidate(struct uc_struct *uc,
     TCGContext *tcg_ctx = uc->tcg_ctx;
     CPUState *cpu = uc->cpu;
     PageDesc *p;
-    unsigned int h;
+    uint32_t h;
     tb_page_addr_t phys_pc;
 
     /* remove the TB from the hash list */
     phys_pc = tb->page_addr[0] + (tb->pc & ~TARGET_PAGE_MASK);
-    h = tb_phys_hash_func(phys_pc);
+    h = tb_hash_func(phys_pc, tb->pc, tb->flags);
     tb_hash_remove(&tcg_ctx->tb_ctx.tb_phys_hash[h], tb);
 
     /* remove the TB from the page list */
@@ -1220,19 +1220,19 @@ static inline void tb_alloc_page(struct uc_struct *uc, TranslationBlock *tb,
 }
 
 /* add a new TB and link it to the physical page tables. phys_page2 is
-   (-1) to indicate that only one page contains the TB. */
+ *  (-1) to indicate that only one page contains the TB.
+ *
+ * Called with mmap_lock held for user-mode emulation.
+ */
 static void tb_link_page(struct uc_struct *uc,
     TranslationBlock *tb, tb_page_addr_t phys_pc, tb_page_addr_t phys_page2)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
-    unsigned int h;
+    uint32_t h;
     TranslationBlock **ptb;
 
-    /* Grab the mmap lock to stop another thread invalidating this TB
-       before we are done.  */
-    mmap_lock();
-    /* add in the physical hash table */
-    h = tb_phys_hash_func(phys_pc);
+    /* add in the hash table */
+    h = tb_hash_func(phys_pc, tb->pc, tb->flags);
     ptb = &tcg_ctx->tb_ctx.tb_phys_hash[h];
     tb->phys_hash_next = *ptb;
     *ptb = tb;
@@ -1248,7 +1248,6 @@ static void tb_link_page(struct uc_struct *uc,
 #ifdef DEBUG_TB_CHECK
     tb_page_check();
 #endif
-    mmap_unlock();
 }
 
 TranslationBlock *tb_gen_code(CPUState *cpu,
