@@ -176,6 +176,19 @@ static inline TranslationBlock *tb_find_fast(CPUState *cpu,
     return tb;
 }
 
+static inline bool cpu_handle_halt(CPUState *cpu)
+{
+    if (cpu->halted) {
+        if (!cpu_has_work(cpu)) {
+            return true;
+        }
+
+        cpu->halted = 0;
+    }
+
+    return false;
+}
+
 static void cpu_handle_debug_exception(CPUState *cpu)
 {
     CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
@@ -204,12 +217,8 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     int tb_exit = 0;
     struct hook *hook;
 
-    if (cpu->halted) {
-        if (!cpu_has_work(cpu)) {
-            return EXCP_HALTED;
-        }
-
-        cpu->halted = 0;
+    if (cpu_handle_halt(cpu)) {
+        return EXCP_HALTED;
     }
 
     uc->current_cpu = cpu;
