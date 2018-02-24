@@ -934,13 +934,6 @@ static void memory_region_get_priority(struct uc_struct *uc,
     visit_type_int32(v, name, &value, errp);
 }
 
-static bool memory_region_get_may_overlap(struct uc_struct *uc, Object *obj, Error **errp)
-{
-    MemoryRegion *mr = MEMORY_REGION(uc, obj);
-
-    return mr->may_overlap;
-}
-
 static void memory_region_get_size(struct uc_struct *uc,
                                    Object *obj, Visitor *v,
                                    const char *name, void *opaque,
@@ -979,10 +972,6 @@ static void memory_region_initfn(struct uc_struct *uc, Object *obj, void *opaque
                         memory_region_get_priority,
                         NULL, /* memory_region_set_priority */
                         NULL, NULL, &error_abort);
-    object_property_add_bool(mr->uc, OBJECT(mr), "may-overlap",
-                             memory_region_get_may_overlap,
-                             NULL, /* memory_region_set_may_overlap */
-                             &error_abort);
     object_property_add(mr->uc, OBJECT(mr), "size", "uint64",
                         memory_region_get_size,
                         NULL, /* memory_region_set_size, */
@@ -1391,34 +1380,12 @@ bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,
 
 static void memory_region_update_container_subregions(MemoryRegion *subregion)
 {
-    hwaddr offset = subregion->addr;
     MemoryRegion *mr = subregion->container;
     MemoryRegion *other;
 
     memory_region_transaction_begin(mr->uc);
 
     memory_region_ref(subregion);
-    QTAILQ_FOREACH(other, &mr->subregions, subregions_link) {
-        if (subregion->may_overlap || other->may_overlap) {
-            continue;
-        }
-        if (int128_ge(int128_make64(offset),
-                      int128_add(int128_make64(other->addr), other->size))
-            || int128_le(int128_add(int128_make64(offset), subregion->size),
-                         int128_make64(other->addr))) {
-            continue;
-        }
-#if 0
-        printf("warning: subregion collision %llx/%llx (%s) "
-               "vs %llx/%llx (%s)\n",
-               (unsigned long long)offset,
-               (unsigned long long)int128_get64(subregion->size),
-               subregion->name,
-               (unsigned long long)other->addr,
-               (unsigned long long)int128_get64(other->size),
-               other->name);
-#endif
-    }
     QTAILQ_FOREACH(other, &mr->subregions, subregions_link) {
         if (subregion->priority >= other->priority) {
             QTAILQ_INSERT_BEFORE(other, subregion, subregions_link);
@@ -1446,7 +1413,6 @@ void memory_region_add_subregion(MemoryRegion *mr,
                                  hwaddr offset,
                                  MemoryRegion *subregion)
 {
-    subregion->may_overlap = false;
     subregion->priority = 0;
     memory_region_add_subregion_common(mr, offset, subregion);
 }
@@ -1456,7 +1422,6 @@ void memory_region_add_subregion_overlap(MemoryRegion *mr,
                                          MemoryRegion *subregion,
                                          int priority)
 {
-    subregion->may_overlap = true;
     subregion->priority = priority;
     memory_region_add_subregion_common(mr, offset, subregion);
 }
