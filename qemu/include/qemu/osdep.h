@@ -147,6 +147,19 @@
 /* Check if n is a multiple of m */
 #define QEMU_IS_ALIGNED(n, m) (((n) % (m)) == 0)
 
+/* Unfortunately MSVC compatibility means explicit casting */
+#ifdef _MSC_VER
+/* n-byte align pointer down */
+#define QEMU_ALIGN_PTR_DOWN(p, n) \
+    (QEMU_ALIGN_DOWN((uintptr_t)(p), (n)))
+
+/* n-byte align pointer up */
+#define QEMU_ALIGN_PTR_UP(p, n) \
+    (QEMU_ALIGN_UP((uintptr_t)(p), (n)))
+
+/* Check if pointer p is n-bytes aligned */
+#define QEMU_PTR_IS_ALIGNED(p, n) QEMU_IS_ALIGNED((uintptr_t)(p), (n))
+#else
 /* n-byte align pointer down */
 #define QEMU_ALIGN_PTR_DOWN(p, n) \
     ((typeof(p))QEMU_ALIGN_DOWN((uintptr_t)(p), (n)))
@@ -157,6 +170,7 @@
 
 /* Check if pointer p is n-bytes aligned */
 #define QEMU_PTR_IS_ALIGNED(p, n) QEMU_IS_ALIGNED((uintptr_t)(p), (n))
+#endif
 
 #ifndef ROUND_UP
 #define ROUND_UP(n,d) (((n) + (d) - 1) & -(d))
