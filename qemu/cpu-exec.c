@@ -189,7 +189,7 @@ static inline bool cpu_handle_halt(CPUState *cpu)
     return false;
 }
 
-static void cpu_handle_debug_exception(CPUState *cpu)
+static inline void cpu_handle_debug_exception(CPUState *cpu)
 {
     CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
     CPUWatchpoint *wp;
@@ -201,6 +201,61 @@ static void cpu_handle_debug_exception(CPUState *cpu)
     }
 
     cc->debug_excp_handler(cpu);
+}
+
+static inline bool cpu_handle_exception(struct uc_struct *uc, CPUState *cpu, int *ret)
+{
+    struct hook *hook;
+
+    if (cpu->exception_index >= 0) {
+        if (uc->stop_interrupt && uc->stop_interrupt(cpu->exception_index)) {
+            cpu->halted = 1;
+            uc->invalid_error = UC_ERR_INSN_INVALID;
+            *ret = EXCP_HLT;
+            return true;
+        }
+
+        if (cpu->exception_index >= EXCP_INTERRUPT) {
+            /* exit request from the cpu execution loop */
+            *ret = cpu->exception_index;
+            if (*ret == EXCP_DEBUG) {
+                cpu_handle_debug_exception(cpu);
+            }
+            cpu->exception_index = -1;
+            return true;
+        } else {
+#if defined(CONFIG_USER_ONLY)
+            /* if user mode only, we simulate a fake exception
+               which will be handled outside the cpu execution
+               loop */
+#if defined(TARGET_I386)
+            CPUClass *cc = CPU_GET_CLASS(cpu);
+            cc->do_interrupt(cpu);
+#endif
+            *ret = cpu->exception_index;
+            cpu->exception_index = -1;
+            return true;
+#else
+            bool catched = false;
+            // Unicorn: call registered interrupt callbacks
+            HOOK_FOREACH_VAR_DECLARE;
+            HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
+                ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
+                catched = true;
+            }
+            // Unicorn: If un-catched interrupt, stop executions.
+            if (!catched) {
+                cpu->halted = 1;
+                uc->invalid_error = UC_ERR_EXCEPTION;
+                *ret = EXCP_HLT;
+                return true;
+            }
+            cpu->exception_index = -1;
+#endif
+        }
+    }
+
+    return false;
 }
 
 /* main execution loop */
@@ -215,7 +270,6 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     int ret, interrupt_request;
     TranslationBlock *tb, *last_tb;
     int tb_exit = 0;
-    struct hook *hook;
 
     if (cpu_handle_halt(cpu)) {
         return EXCP_HALTED;
@@ -232,66 +286,16 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     cpu->exception_index = -1;
     env->invalid_error = UC_ERR_OK;
 
-    /* prepare setjmp context for exception handling */
     for(;;) {
+        /* prepare setjmp context for exception handling */
         if (sigsetjmp(cpu->jmp_env, 0) == 0) {
-            if (uc->stop_request || uc->invalid_error)
+            if (uc->stop_request || uc->invalid_error) {
                 break;
+            }
 
             /* if an exception is pending, we execute it here */
-            if (cpu->exception_index >= 0) {
-                //printf(">>> GOT INTERRUPT. exception idx = %x\n", cpu->exception_index);  // qq
-                if (uc->stop_interrupt && uc->stop_interrupt(cpu->exception_index)) {
-                    cpu->halted = 1;
-                    uc->invalid_error = UC_ERR_INSN_INVALID;
-                    ret = EXCP_HLT;
-                    break;
-                }
-
-                if (cpu->exception_index >= EXCP_INTERRUPT) {
-                    /* exit request from the cpu execution loop */
-                    ret = cpu->exception_index;
-                    if (ret == EXCP_DEBUG) {
-                        cpu_handle_debug_exception(cpu);
-                    }
-                    break;
-                } else {
-#if defined(CONFIG_USER_ONLY)
-                    /* if user mode only, we simulate a fake exception
-                       which will be handled outside the cpu execution
-                       loop */
-#if defined(TARGET_I386)
-                    cc->do_interrupt(cpu);
-#endif
-                    ret = cpu->exception_index;
-                    break;
-#else
-                    bool catched = false;
-                    // Unicorn: call registered interrupt callbacks
-                    HOOK_FOREACH_VAR_DECLARE;
-                    HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
-                        ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
-                        catched = true;
-                    }
-                    // Unicorn: If un-catched interrupt, stop executions.
-                    if (!catched) {
-                        cpu->halted = 1;
-                        uc->invalid_error = UC_ERR_EXCEPTION;
-                        ret = EXCP_HLT;
-                        break;
-                    }
-                    cpu->exception_index = -1;
-#if defined(TARGET_X86_64)
-                    if (env->exception_is_int) {
-                        // point EIP to the next instruction after INT
-                        env->eip = env->exception_next_eip;
-                    }
-#endif
-#if defined(TARGET_MIPS) || defined(TARGET_MIPS64)
-                    env->active_tc.PC = uc->next_pc;
-#endif
-#endif
-                }
+            if (cpu_handle_exception(uc, cpu, &ret)) {
+                break;
             }
 
             last_tb = NULL; /* forget the last executed TB after exception */
