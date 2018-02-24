@@ -30,6 +30,7 @@
 #include "hw/boards.h"  // MachineClass
 #include "sysemu/sysemu.h"
 #include "sysemu/cpus.h"
+#include "qemu/log.h"
 #include "vl.h"
 #include "uc_priv.h"
 #include "exec/semihost.h"

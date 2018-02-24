@@ -9,7 +9,6 @@
 #include "qemu-common.h"
 #include "exec/cpu-common.h"
 #include "exec/ioport.h"
-#include "qemu/log.h"
 
 #ifdef NEED_CPU_H
 #if TARGET_LONG_BITS == 64
