@@ -535,44 +535,44 @@ static const X86RegisterInfo32 x86_reg_info_32[CPU_NB_REGS32] = {
     // XSTATE_YMM_BIT
     {
         FEAT_1_ECX, CPUID_EXT_AVX,
-        0x240,
-        0x100,
+        offsetof(X86XSaveArea, avx_state),
+        sizeof(XSaveAVX),
     },
     // XSTATE_BNDREGS_BIT
     {
         FEAT_7_0_EBX, CPUID_7_0_EBX_MPX,
-        0x3c0,
-        0x40,
+        offsetof(X86XSaveArea, bndreg_state),
+        sizeof(XSaveBNDREG),
     },
     // XSTATE_BNDCSR_BIT
     {
         FEAT_7_0_EBX, CPUID_7_0_EBX_MPX,
-        0x400,
-        0x40,
+        offsetof(X86XSaveArea, bndcsr_state),
+        sizeof(XSaveBNDCSR),
     },
     // XSTATE_OPMASK_BIT
     {
         FEAT_7_0_EBX, CPUID_7_0_EBX_AVX512F,
-        0x440,
-        0x40,
+        offsetof(X86XSaveArea, opmask_state),
+        sizeof(XSaveOpmask),
     },
     // XSTATE_ZMM_Hi256_BIT
     {
         FEAT_7_0_EBX, CPUID_7_0_EBX_AVX512F,
-        0x480,
-        0x200,
+        offsetof(X86XSaveArea, zmm_hi256_state),
+        sizeof(XSaveZMM_Hi256),
     },
     // XSTATE_Hi16_ZMM_BIT
     {
         FEAT_7_0_EBX, CPUID_7_0_EBX_AVX512F,
-        0x680,
-        0x400,
+        offsetof(X86XSaveArea, hi16_zmm_state),
+        sizeof(XSaveHi16_ZMM),
     },
     // XSTATE_PKRU_BIT
     {
-        FEAT_7_0_ECX, .bits = CPUID_7_0_ECX_PKU,
-        0xA80,
-        0x8,
+        FEAT_7_0_ECX, CPUID_7_0_ECX_PKU,
+        offsetof(X86XSaveArea, pkru_state),
+        sizeof(XSavePKRU),
     },
 };
 
