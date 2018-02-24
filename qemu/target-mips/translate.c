@@ -4248,16 +4248,27 @@ static void gen_trap (DisasContext *ctx, uint32_t opc,
     tcg_temp_free(tcg_ctx, t1);
 }
 
+static inline bool use_goto_tb(DisasContext *ctx, target_ulong dest)
+{
+    if (unlikely(ctx->singlestep_enabled)) {
+        return false;
+    }
+
+#ifndef CONFIG_USER_ONLY
+    return (ctx->tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK);
+#else
+    return true;
+#endif
+}
+
 static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    TranslationBlock *tb;
-    tb = ctx->tb;
-    if ((tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK) &&
-        likely(!ctx->singlestep_enabled)) {
+
+    if (use_goto_tb(ctx, dest)) {
         tcg_gen_goto_tb(tcg_ctx, n);
         gen_save_pc(ctx, dest);
-        tcg_gen_exit_tb(tcg_ctx, (uintptr_t)tb + n);
+        tcg_gen_exit_tb(tcg_ctx, (uintptr_t)ctx->tb + n);
     } else {
         gen_save_pc(ctx, dest);
         if (ctx->singlestep_enabled) {
