@@ -9,6 +9,7 @@
 
 #include "config.h"
 #include "qemu-common.h"
+#include "cpu-qom.h"
 #include "mips-defs.h"
 #include "exec/cpu-defs.h"
 #include "fpu/softfloat.h"
@@ -613,7 +614,34 @@ struct CPUMIPSState {
     struct uc_struct *uc;
 };
 
-#include "cpu-qom.h"
+/**
+ * MIPSCPU:
+ * @env: #CPUMIPSState
+ *
+ * A MIPS CPU.
+ */
+typedef struct MIPSCPU {
+    /*< private >*/
+    CPUState parent_obj;
+    /*< public >*/
+
+    CPUMIPSState env;
+} MIPSCPU;
+
+static inline MIPSCPU *mips_env_get_cpu(CPUMIPSState *env)
+{
+    return container_of(env, MIPSCPU, env);
+}
+
+#define ENV_GET_CPU(e) CPU(mips_env_get_cpu(e))
+
+#define ENV_OFFSET offsetof(MIPSCPU, env)
+
+void mips_cpu_do_interrupt(CPUState *cpu);
+bool mips_cpu_exec_interrupt(CPUState *cpu, int int_req);
+hwaddr mips_cpu_get_phys_page_debug(CPUState *cpu, vaddr addr);
+void mips_cpu_do_unaligned_access(CPUState *cpu, vaddr addr,
+                                  int is_write, int is_user, uintptr_t retaddr);
 
 #if !defined(CONFIG_USER_ONLY)
 int no_mmu_map_address (CPUMIPSState *env, hwaddr *physical, int *prot,
