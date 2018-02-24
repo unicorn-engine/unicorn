@@ -771,6 +771,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_8000_0001_ECX
             CPUID_EXT3_LAHF_LM | CPUID_EXT3_SVM,
         },
+        "QEMU Virtual CPU version " QEMU_HW_VERSION
     },
     {
         "phenom",
@@ -881,6 +882,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_1_ECX
             CPUID_EXT_SSSE3,
         },
+        "QEMU Virtual CPU version " QEMU_HW_VERSION
     },
     {
         "kvm32",
@@ -985,6 +987,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_8000_0001_EDX
             CPUID_EXT2_MMXEXT | CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT,
         },
+        "QEMU Virtual CPU version " QEMU_HW_VERSION
     },
     {
         "n270",
@@ -2202,26 +2205,8 @@ void cpu_clear_apic_feature(CPUX86State *env)
 
 #endif /* !CONFIG_USER_ONLY */
 
-/* Initialize list of CPU models, filling some non-static fields if necessary
- */
 void x86_cpudef_setup(void)
 {
-    int i, j;
-    static const char *model_with_versions[] = { "qemu32", "qemu64", "athlon" };
-
-    for (i = 0; i < ARRAY_SIZE(builtin_x86_defs); ++i) {
-        X86CPUDefinition *def = &builtin_x86_defs[i];
-
-        /* Look for specific "cpudef" models that */
-        /* have the QEMU version in .model_id */
-        for (j = 0; j < ARRAY_SIZE(model_with_versions); j++) {
-            if (strcmp(model_with_versions[j], def->name) == 0) {
-                pstrcpy(def->model_id, sizeof(def->model_id),
-                        "QEMU Virtual CPU version ");
-                break;
-            }
-        }
-    }
 }
 
 void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
