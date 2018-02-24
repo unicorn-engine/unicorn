@@ -44,10 +44,9 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     X86CPU *x86_cpu = X86_CPU(uc, cpu);
 #endif
     int ret, interrupt_request;
-    TranslationBlock *tb;
-    uintptr_t next_tb;
+    TranslationBlock *tb, *last_tb;
+    int tb_exit = 0;
     struct hook *hook;
-
 
     if (cpu->halted) {
         if (!cpu_has_work(cpu)) {
@@ -130,7 +129,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                 }
             }
 
-            next_tb = 0; /* force lookup of first TB */
+            last_tb = NULL; /* forget the last executed TB after exception */
             for(;;) {
                 interrupt_request = cpu->interrupt_request;
 
@@ -167,7 +166,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                        True when it is, and we should restart on a new TB,
                        and via longjmp via cpu_loop_exit.  */
                     if (cc->cpu_exec_interrupt(cpu, interrupt_request)) {
-                        next_tb = 0;
+                        last_tb = NULL;
                     }
                     /* Don't use the cached interrupt_request value,
                        do_interrupt may have updated the EXITTB flag. */
@@ -175,7 +174,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                         cpu->interrupt_request &= ~CPU_INTERRUPT_EXITTB;
                         /* ensure that no TB jump will be modified as
                            the program flow was changed */
-                        next_tb = 0;
+                        last_tb = NULL;
                     }
                 }
                 if (unlikely(cpu->exit_request)) {
@@ -195,22 +194,23 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                     /* as some TB could have been invalidated because
                        of memory exceptions while generating the code, we
                        must recompute the hash index here */
-                    next_tb = 0;
+                    last_tb = NULL;
                     tcg_ctx->tb_ctx.tb_invalidated_flag = 0;
                 }
                 /* See if we can patch the calling TB. */
-                if (next_tb != 0 && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
-                    tb_add_jump((TranslationBlock *)(next_tb & ~TB_EXIT_MASK),
-                            next_tb & TB_EXIT_MASK, tb);
+                if (last_tb && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
+                    tb_add_jump(last_tb, tb_exit, tb);
                 }
 
                 if (likely(!cpu->exit_request)) {
+                    uintptr_t ret;
                     cpu->current_tb = tb;
                     /* execute the generated code */
-                    next_tb = cpu_tb_exec(cpu, tb);
+                    ret = cpu_tb_exec(cpu, tb);
                     cpu->current_tb = NULL;
-
-                    switch (next_tb & TB_EXIT_MASK) {
+                    last_tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
+                    tb_exit = ret & TB_EXIT_MASK;
+                    switch (tb_exit) {
                     case TB_EXIT_REQUESTED:
                         /* Something asked us to stop executing
                          * chained TBs; just continue round the main
@@ -223,8 +223,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
                          * or cpu->interrupt_request.
                          */
                         smp_rmb();
-                        tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
-                        next_tb = 0;
+                        last_tb = NULL;
                         break;
                     default:
                         break;
@@ -277,46 +276,53 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
 {
     CPUArchState *env = cpu->env_ptr;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    uintptr_t next_tb;
+    uintptr_t ret;
+    TranslationBlock *last_tb;
+    int tb_exit;
     uint8_t *tb_ptr = itb->tc_ptr;
 
     // Unicorn: commented out
     //qemu_log_mask_and_addr(CPU_LOG_EXEC, itb->pc,
     //                       "Trace %p [" TARGET_FMT_lx "] %s\n",
     //                       itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
-    next_tb = tcg_qemu_tb_exec(env, tb_ptr);
+    ret = tcg_qemu_tb_exec(env, tb_ptr);
+    last_tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
+    tb_exit = ret & TB_EXIT_MASK;
+    //trace_exec_tb_exit(last_tb, tb_exit);
 
-    if ((next_tb & TB_EXIT_MASK) > TB_EXIT_IDX1) {
+    if (tb_exit > TB_EXIT_IDX1) {
         /* We didn't start executing this TB (eg because the instruction
          * counter hit zero); we must restore the guest PC to the address
          * of the start of the TB.
          */
         CPUClass *cc = CPU_GET_CLASS(env->uc, cpu);
-        TranslationBlock *tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
         // Unicorn: commented out
-        //qemu_log_mask_and_addr(CPU_LOG_EXEC, itb->pc,
+        //qemu_log_mask_and_addr(CPU_LOG_EXEC, last_tb->pc,
         //                       "Stopped execution of TB chain before %p ["
         //                       TARGET_FMT_lx "] %s\n",
-        //                       itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
+        //                       last_tb->tc_ptr, last_tb->pc,
+        //                       lookup_symbol(last_tb->pc));
         if (cc->synchronize_from_tb) {
             // avoid sync twice when helper_uc_tracecode() already did this.
             if (env->uc->emu_counter <= env->uc->emu_count &&
-                    !env->uc->stop_request && !env->uc->quit_request)
-                cc->synchronize_from_tb(cpu, tb);
+                    !env->uc->stop_request && !env->uc->quit_request) {
+                cc->synchronize_from_tb(cpu, last_tb);
+            }
         } else {
             assert(cc->set_pc);
             // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count && !env->uc->quit_request)
-                cc->set_pc(cpu, tb->pc);
+            if (env->uc->emu_counter <= env->uc->emu_count && !env->uc->quit_request) {
+                cc->set_pc(cpu, last_tb->pc);
+            }
         }
     }
-    if ((next_tb & TB_EXIT_MASK) == TB_EXIT_REQUESTED) {
+    if (tb_exit == TB_EXIT_REQUESTED) {
         /* We were asked to stop executing TBs (probably a pending
          * interrupt. We've now stopped, so clear the flag.
          */
         cpu->tcg_exit_req = 0;
     }
-    return next_tb;
+    return ret;
 }
 
 static TranslationBlock *tb_find_slow(CPUState *cpu,
