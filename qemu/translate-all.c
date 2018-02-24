@@ -74,11 +74,12 @@
 typedef struct PageDesc {
     /* list of TBs intersecting this ram page */
     TranslationBlock *first_tb;
+#ifdef CONFIG_SOFTMMU
     /* in order to optimize self modifying code, we count the number
        of lookups we do to a given page to use a bitmap */
     unsigned int code_write_count;
     uint8_t *code_bitmap;
-#if defined(CONFIG_USER_ONLY)
+#else
     unsigned long flags;
 #endif
 } PageDesc;
@@ -854,11 +855,11 @@ void tb_free(struct uc_struct *uc, TranslationBlock *tb)
 
 static inline void invalidate_page_bitmap(PageDesc *p)
 {
-    if (p->code_bitmap) {
-        g_free(p->code_bitmap);
-        p->code_bitmap = NULL;
-    }
+#ifdef CONFIG_SOFTMMU
+    g_free(p->code_bitmap);
+    p->code_bitmap = NULL;
     p->code_write_count = 0;
+#endif
 }
 
 /* Set to NULL all the 'first_tb' fields in all PageDescs. */
@@ -1133,6 +1134,7 @@ static inline void set_bits(uint8_t *tab, int start, int len)
     }
 }
 
+#ifdef CONFIG_SOFTMMU
 static void build_page_bitmap(PageDesc *p)
 {
     int n, tb_start, tb_end;
@@ -1161,6 +1163,7 @@ static void build_page_bitmap(PageDesc *p)
         tb = tb->page_next[n];
     }
 }
+#endif
 
 /* add the tb in the target page and protect it if necessary */
 static inline void tb_alloc_page(struct uc_struct *uc, TranslationBlock *tb,
@@ -1523,7 +1526,45 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
 #endif
 }
 
-#if !defined(CONFIG_SOFTMMU)
+#ifdef CONFIG_SOFTMMU
+/* len must be <= 8 and start must be a multiple of len */
+void tb_invalidate_phys_page_fast(struct uc_struct* uc, tb_page_addr_t start, int len)
+{
+    PageDesc *p;
+
+#if 0
+    if (1) {
+        qemu_log("modifying code at 0x%x size=%d EIP=%x PC=%08x\n",
+                  cpu_single_env->mem_io_vaddr, len,
+                  cpu_single_env->eip,
+                  cpu_single_env->eip +
+                  (intptr_t)cpu_single_env->segs[R_CS].base);
+    }
+#endif
+    p = page_find(uc, start >> TARGET_PAGE_BITS);
+    if (!p) {
+        return;
+    }
+    if (!p->code_bitmap &&
+        ++p->code_write_count >= SMC_BITMAP_USE_THRESHOLD) {
+        /* build code bitmap */
+        build_page_bitmap(p);
+    }
+    if (p->code_bitmap) {
+        unsigned int nr;
+        unsigned long b;
+
+        nr = start & ~TARGET_PAGE_MASK;
+        b = p->code_bitmap[BIT_WORD(nr)] >> (nr & (BITS_PER_LONG - 1));
+        if (b & ((1 << len) - 1)) {
+            goto do_invalidate;
+        }
+    } else {
+    do_invalidate:
+        tb_invalidate_phys_page_range(uc, start, start + len, 1);
+    }
+}
+#else
 static void tb_invalidate_phys_page(struct uc_struct *uc, tb_page_addr_t addr,
                                     uintptr_t pc, void *puc,
                                     bool locked)
@@ -1592,43 +1633,6 @@ static void tb_invalidate_phys_page(struct uc_struct *uc, tb_page_addr_t addr,
 #endif
 }
 #endif
-
-void tb_invalidate_phys_page_fast(struct uc_struct* uc, tb_page_addr_t start, int len)
-{
-    PageDesc *p;
-
-#if 0
-    if (1) {
-        qemu_log("modifying code at 0x%x size=%d EIP=%x PC=%08x\n",
-                  cpu_single_env->mem_io_vaddr, len,
-                  cpu_single_env->eip,
-                  cpu_single_env->eip +
-                  (intptr_t)cpu_single_env->segs[R_CS].base);
-    }
-#endif
-    p = page_find(uc, start >> TARGET_PAGE_BITS);
-    if (!p) {
-        return;
-    }
-    if (!p->code_bitmap &&
-        ++p->code_write_count >= SMC_BITMAP_USE_THRESHOLD) {
-        /* build code bitmap */
-        build_page_bitmap(p);
-    }
-    if (p->code_bitmap) {
-        unsigned int nr;
-        unsigned long b;
-
-        nr = start & ~TARGET_PAGE_MASK;
-        b = p->code_bitmap[BIT_WORD(nr)] >> (nr & (BITS_PER_LONG - 1));
-        if (b & ((1 << len) - 1)) {
-            goto do_invalidate;
-        }
-    } else {
-    do_invalidate:
-        tb_invalidate_phys_page_range(uc, start, start + len, 1);
-    }
-}
 
 /* find the TB 'tb' such that tb[0].tc_ptr <= tc_ptr <
    tb[1].tc_ptr. Return NULL if not found */
