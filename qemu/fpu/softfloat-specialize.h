@@ -184,7 +184,7 @@ float128 float128_default_nan(float_status *status)
 | should be simply `float_exception_flags |= flags;'.
 *----------------------------------------------------------------------------*/
 
-void float_raise( int8_t flags, float_status *status)
+void float_raise(int8_t flags, float_status *status)
 {
     status->float_exception_flags |= flags;
 }
@@ -264,7 +264,7 @@ float16 float16_maybe_silence_nan(float16 a_, float_status *status)
 | exception is raised.
 *----------------------------------------------------------------------------*/
 
-static commonNaNT float16ToCommonNaN( float16 a, float_status *status)
+static commonNaNT float16ToCommonNaN(float16 a, float_status *status)
 {
     commonNaNT z;
 
@@ -273,7 +273,7 @@ static commonNaNT float16ToCommonNaN( float16 a, float_status *status)
     }
     z.sign = float16_val(a) >> 15;
     z.low = 0;
-    z.high = ((uint64_t) float16_val(a))<<54;
+    z.high = ((uint64_t) float16_val(a)) << 54;
     return z;
 }
 
@@ -284,7 +284,7 @@ static commonNaNT float16ToCommonNaN( float16 a, float_status *status)
 
 static float16 commonNaNToFloat16(commonNaNT a, float_status *status)
 {
-    uint16_t mantissa = a.high>>54;
+    uint16_t mantissa = a.high >> 54;
 
     if (status->default_nan_mode) {
         return float16_default_nan(status);
@@ -365,16 +365,16 @@ float32 float32_maybe_silence_nan(float32 a_, float_status *status)
 | exception is raised.
 *----------------------------------------------------------------------------*/
 
-static commonNaNT float32ToCommonNaN( float32 a, float_status *status)
+static commonNaNT float32ToCommonNaN(float32 a, float_status *status)
 {
     commonNaNT z;
 
     if (float32_is_signaling_nan(a, status)) {
         float_raise(float_flag_invalid, status);
     }
-    z.sign = float32_val(a)>>31;
+    z.sign = float32_val(a) >> 31;
     z.low = 0;
-    z.high = ( (uint64_t) float32_val(a) )<<41;
+    z.high = ((uint64_t) float32_val(a)) << 41;
     return z;
 }
 
@@ -383,17 +383,17 @@ static commonNaNT float32ToCommonNaN( float32 a, float_status *status)
 | precision floating-point format.
 *----------------------------------------------------------------------------*/
 
-static float32 commonNaNToFloat32( commonNaNT a, float_status *status)
+static float32 commonNaNToFloat32(commonNaNT a, float_status *status)
 {
-    uint32_t mantissa = a.high>>41;
+    uint32_t mantissa = a.high >> 41;
 
-    if (status->default_nan_mode)  {
+    if (status->default_nan_mode) {
         return float32_default_nan(status);
     }
 
     if (mantissa) {
         return make_float32(
-            ( ( (uint32_t) a.sign )<<31 ) | 0x7F800000 | ( a.high>>41 ) );
+            (((uint32_t) a.sign) << 31) | 0x7F800000 | (a.high >> 41));
     } else {
         return float32_default_nan(status);
     }
@@ -418,7 +418,7 @@ static float32 commonNaNToFloat32( commonNaNT a, float_status *status)
 
 #if defined(TARGET_ARM)
 static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
-                    flag aIsLargerSignificand)
+                   flag aIsLargerSignificand)
 {
     /* ARM mandated NaN propagation rules: take the first of:
      *  1. A if it is signaling
@@ -439,7 +439,7 @@ static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
 }
 #elif defined(TARGET_MIPS)
 static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
-                    flag aIsLargerSignificand)
+                   flag aIsLargerSignificand)
 {
     /* According to MIPS specifications, if one of the two operands is
      * a sNaN, a new qNaN has to be generated. This is done in
@@ -481,7 +481,7 @@ static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
 }
 #else
 static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
-                    flag aIsLargerSignificand)
+                   flag aIsLargerSignificand)
 {
     /* This implements x87 NaN propagation rules:
      * SNaN + QNaN => return the QNaN
@@ -498,11 +498,10 @@ static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
             return aIsLargerSignificand ? 0 : 1;
         }
         return bIsQNaN ? 1 : 0;
-    }
-    else if (aIsQNaN) {
-        if (bIsSNaN || !bIsQNaN)
+    } else if (aIsQNaN) {
+        if (bIsSNaN || !bIsQNaN) {
             return 0;
-        else {
+        } else {
             return aIsLargerSignificand ? 0 : 1;
         }
     } else {
@@ -620,7 +619,7 @@ static int pickNaNMulAdd(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
 | signaling NaN, the invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static float32 propagateFloat32NaN( float32 a, float32 b, float_status *status)
+static float32 propagateFloat32NaN(float32 a, float32 b, float_status *status)
 {
     flag aIsQuietNaN, aIsSignalingNaN, bIsQuietNaN, bIsSignalingNaN;
     flag aIsLargerSignificand;
@@ -641,9 +640,9 @@ static float32 propagateFloat32NaN( float32 a, float32 b, float_status *status)
         return float32_default_nan(status);
     }
 
-    if ((uint32_t)(av<<1) < (uint32_t)(bv<<1)) {
+    if ((uint32_t)(av << 1) < (uint32_t)(bv << 1)) {
         aIsLargerSignificand = 0;
-    } else if ((uint32_t)(bv<<1) < (uint32_t)(av<<1)) {
+    } else if ((uint32_t)(bv << 1) < (uint32_t)(av << 1)) {
         aIsLargerSignificand = 1;
     } else {
         aIsLargerSignificand = (av < bv) ? 1 : 0;
@@ -777,16 +776,16 @@ float64 float64_maybe_silence_nan(float64 a_, float_status *status)
 | exception is raised.
 *----------------------------------------------------------------------------*/
 
-static commonNaNT float64ToCommonNaN( float64 a, float_status *status)
+static commonNaNT float64ToCommonNaN(float64 a, float_status *status)
 {
     commonNaNT z;
 
     if (float64_is_signaling_nan(a, status)) {
         float_raise(float_flag_invalid, status);
     }
-    z.sign = float64_val(a)>>63;
+    z.sign = float64_val(a) >> 63;
     z.low = 0;
-    z.high = float64_val(a)<<12;
+    z.high = float64_val(a) << 12;
     return z;
 }
 
@@ -795,9 +794,9 @@ static commonNaNT float64ToCommonNaN( float64 a, float_status *status)
 | precision floating-point format.
 *----------------------------------------------------------------------------*/
 
-static float64 commonNaNToFloat64( commonNaNT a, float_status *status)
+static float64 commonNaNToFloat64(commonNaNT a, float_status *status)
 {
-    uint64_t mantissa = a.high>>12;
+    uint64_t mantissa = a.high >> 12;
 
     if (status->default_nan_mode) {
         return float64_default_nan(status);
@@ -805,9 +804,9 @@ static float64 commonNaNToFloat64( commonNaNT a, float_status *status)
 
     if (mantissa) {
         return make_float64(
-              ( ( (uint64_t) a.sign )<<63 )
-            | LIT64( 0x7FF0000000000000 )
-            | ( a.high>>12 ));
+              (((uint64_t) a.sign) << 63)
+            | LIT64(0x7FF0000000000000)
+            | (a.high >> 12));
     } else {
         return float64_default_nan(status);
     }
@@ -819,7 +818,7 @@ static float64 commonNaNToFloat64( commonNaNT a, float_status *status)
 | signaling NaN, the invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static float64 propagateFloat64NaN( float64 a, float64 b, float_status *status)
+static float64 propagateFloat64NaN(float64 a, float64 b, float_status *status)
 {
     flag aIsQuietNaN, aIsSignalingNaN, bIsQuietNaN, bIsSignalingNaN;
     flag aIsLargerSignificand;
@@ -840,9 +839,9 @@ static float64 propagateFloat64NaN( float64 a, float64 b, float_status *status)
         return float64_default_nan(status);
     }
 
-    if ((uint64_t)(av<<1) < (uint64_t)(bv<<1)) {
+    if ((uint64_t)(av << 1) < (uint64_t)(bv << 1)) {
         aIsLargerSignificand = 0;
-    } else if ((uint64_t)(bv<<1) < (uint64_t)(av<<1)) {
+    } else if ((uint64_t)(bv << 1) < (uint64_t)(av << 1)) {
         aIsLargerSignificand = 1;
     } else {
         aIsLargerSignificand = (av < bv) ? 1 : 0;
@@ -983,7 +982,7 @@ floatx80 floatx80_maybe_silence_nan(floatx80 a, float_status *status)
 | invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static commonNaNT floatx80ToCommonNaN( floatx80 a, float_status *status)
+static commonNaNT floatx80ToCommonNaN(floatx80 a, float_status *status)
 {
     floatx80 dflt;
     commonNaNT z;
@@ -991,7 +990,7 @@ static commonNaNT floatx80ToCommonNaN( floatx80 a, float_status *status)
     if (floatx80_is_signaling_nan(a, status)) {
         float_raise(float_flag_invalid, status);
     }
-    if ( a.low >> 63 ) {
+    if (a.low >> 63) {
         z.sign = a.high >> 15;
         z.low = 0;
         z.high = a.low << 1;
@@ -1009,17 +1008,17 @@ static commonNaNT floatx80ToCommonNaN( floatx80 a, float_status *status)
 | double-precision floating-point format.
 *----------------------------------------------------------------------------*/
 
-static floatx80 commonNaNToFloatx80( commonNaNT a, float_status *status)
+static floatx80 commonNaNToFloatx80(commonNaNT a, float_status *status)
 {
     floatx80 z;
 
-    if (status->default_nan_mode)  {
+    if (status->default_nan_mode) {
         return floatx80_default_nan(status);
     }
 
     if (a.high >> 1) {
-        z.low = LIT64( 0x8000000000000000 ) | a.high >> 1;
-        z.high = ( ( (uint16_t) a.sign )<<15 ) | 0x7FFF;
+        z.low = LIT64(0x8000000000000000) | a.high >> 1;
+        z.high = (((uint16_t) a.sign) << 15) | 0x7FFF;
     } else {
         z = floatx80_default_nan(status);
     }
@@ -1032,7 +1031,7 @@ static floatx80 commonNaNToFloatx80( commonNaNT a, float_status *status)
 | `b' is a signaling NaN, the invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static floatx80 propagateFloatx80NaN( floatx80 a, floatx80 b, float_status *status)
+static floatx80 propagateFloatx80NaN(floatx80 a, floatx80 b, float_status *status)
 {
     flag aIsQuietNaN, aIsSignalingNaN, bIsQuietNaN, bIsSignalingNaN;
     flag aIsLargerSignificand;
@@ -1046,7 +1045,7 @@ static floatx80 propagateFloatx80NaN( floatx80 a, floatx80 b, float_status *stat
         float_raise(float_flag_invalid, status);
     }
 
-    if (status->default_nan_mode)  {
+    if (status->default_nan_mode) {
         return floatx80_default_nan(status);
     }
 
@@ -1134,15 +1133,15 @@ float128 float128_maybe_silence_nan(float128 a, float_status *status)
 | exception is raised.
 *----------------------------------------------------------------------------*/
 
-static commonNaNT float128ToCommonNaN( float128 a, float_status *status)
+static commonNaNT float128ToCommonNaN(float128 a, float_status *status)
 {
     commonNaNT z;
 
     if (float128_is_signaling_nan(a, status)) {
         float_raise(float_flag_invalid, status);
     }
-    z.sign = a.high>>63;
-    shortShift128Left( a.high, a.low, 16, &z.high, &z.low );
+    z.sign = a.high >> 63;
+    shortShift128Left(a.high, a.low, 16, &z.high, &z.low);
     return z;
 }
 
@@ -1151,16 +1150,16 @@ static commonNaNT float128ToCommonNaN( float128 a, float_status *status)
 | precision floating-point format.
 *----------------------------------------------------------------------------*/
 
-static float128 commonNaNToFloat128( commonNaNT a, float_status *status)
+static float128 commonNaNToFloat128(commonNaNT a, float_status *status)
 {
     float128 z;
 
-    if (status->default_nan_mode)  {
+    if (status->default_nan_mode) {
         return float128_default_nan(status);
     }
 
-    shift128Right( a.high, a.low, 16, &z.high, &z.low );
-    z.high |= ( ( (uint64_t) a.sign )<<63 ) | LIT64( 0x7FFF000000000000 );
+    shift128Right(a.high, a.low, 16, &z.high, &z.low);
+    z.high |= (((uint64_t) a.sign) << 63) | LIT64(0x7FFF000000000000);
     return z;
 }
 
@@ -1170,7 +1169,7 @@ static float128 commonNaNToFloat128( commonNaNT a, float_status *status)
 | `b' is a signaling NaN, the invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static float128 propagateFloat128NaN( float128 a, float128 b, float_status *status)
+static float128 propagateFloat128NaN(float128 a, float128 b, float_status *status)
 {
     flag aIsQuietNaN, aIsSignalingNaN, bIsQuietNaN, bIsSignalingNaN;
     flag aIsLargerSignificand;
@@ -1184,13 +1183,13 @@ static float128 propagateFloat128NaN( float128 a, float128 b, float_status *stat
         float_raise(float_flag_invalid, status);
     }
 
-    if (status->default_nan_mode)  {
+    if (status->default_nan_mode) {
         return float128_default_nan(status);
     }
 
-    if (lt128(a.high<<1, a.low, b.high<<1, b.low)) {
+    if (lt128(a.high << 1, a.low, b.high << 1, b.low)) {
         aIsLargerSignificand = 0;
-    } else if (lt128(b.high<<1, b.low, a.high<<1, a.low)) {
+    } else if (lt128(b.high << 1, b.low, a.high << 1, a.low)) {
         aIsLargerSignificand = 1;
     } else {
         aIsLargerSignificand = (a.high < b.high) ? 1 : 0;
