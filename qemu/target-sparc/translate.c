@@ -2868,12 +2868,16 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 case 0x4: /* V9 rdtick */
                     {
                         TCGv_ptr r_tickptr;
+                        TCGv_i32 r_const;
 
                         r_tickptr = tcg_temp_new_ptr(tcg_ctx);
+                        r_const = tcg_const_i32(tcg_ctx, dc->mem_idx);
                         tcg_gen_ld_ptr(tcg_ctx, r_tickptr, tcg_ctx->cpu_env,
                                        offsetof(CPUSPARCState, tick));
-                        gen_helper_tick_get_count(tcg_ctx, cpu_dst, r_tickptr);
+                        gen_helper_tick_get_count(tcg_ctx, cpu_dst, tcg_ctx->cpu_env, r_tickptr,
+                                                  r_const);
                         tcg_temp_free_ptr(tcg_ctx, r_tickptr);
+                        tcg_temp_free_i32(tcg_ctx, r_const);
                         gen_store_gpr(dc, rd, cpu_dst);
                     }
                     break;
@@ -2901,7 +2905,8 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     gen_store_gpr(dc, rd, tcg_ctx->cpu_gsr);
                     break;
                 case 0x16: /* Softint */
-                    tcg_gen_ext_i32_tl(tcg_ctx, cpu_dst, tcg_ctx->cpu_softint);
+                    tcg_gen_ld32s_tl(tcg_ctx, cpu_dst, tcg_ctx->cpu_env,
+                                     offsetof(CPUSPARCState, softint));
                     gen_store_gpr(dc, rd, cpu_dst);
                     break;
                 case 0x17: /* Tick compare */
@@ -2910,12 +2915,16 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 case 0x18: /* System tick */
                     {
                         TCGv_ptr r_tickptr;
+                        TCGv_i32 r_const;
 
                         r_tickptr = tcg_temp_new_ptr(tcg_ctx);
+                        r_const = tcg_const_i32(tcg_ctx, dc->mem_idx);
                         tcg_gen_ld_ptr(tcg_ctx, r_tickptr, tcg_ctx->cpu_env,
                                        offsetof(CPUSPARCState, stick));
-                        gen_helper_tick_get_count(tcg_ctx, cpu_dst, r_tickptr);
+                        gen_helper_tick_get_count(tcg_ctx, cpu_dst, tcg_ctx->cpu_env, r_tickptr,
+                                                  r_const);
                         tcg_temp_free_ptr(tcg_ctx, r_tickptr);
+                        tcg_temp_free_i32(tcg_ctx, r_const);
                         gen_store_gpr(dc, rd, cpu_dst);
                     }
                     break;
@@ -3023,12 +3032,16 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 case 4: // tick
                     {
                         TCGv_ptr r_tickptr;
+                        TCGv_i32 r_const;
 
                         r_tickptr = tcg_temp_new_ptr(tcg_ctx);
+                        r_const = tcg_const_i32(tcg_ctx, dc->mem_idx);
                         tcg_gen_ld_ptr(tcg_ctx, r_tickptr, tcg_ctx->cpu_env,
                                        offsetof(CPUSPARCState, tick));
-                        gen_helper_tick_get_count(tcg_ctx, cpu_tmp0, r_tickptr);
+                        gen_helper_tick_get_count(tcg_ctx, cpu_tmp0, tcg_ctx->cpu_env,
+                                                  r_tickptr, r_const);
                         tcg_temp_free_ptr(tcg_ctx, r_tickptr);
+                        tcg_temp_free_i32(tcg_ctx, r_const);
                     }
                     break;
                 case 5: // tba
@@ -5579,10 +5592,6 @@ void gen_intermediate_code_init(CPUSPARCState *env)
 
     tcg_ctx->cpu_ver = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, version), "ver");
-
-    tcg_ctx->cpu_softint = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env,
-            offsetof(CPUSPARCState, softint),
-            "softint");
 #else
     tcg_ctx->cpu_wim = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, wim),
             "wim");
