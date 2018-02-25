@@ -3148,8 +3148,10 @@
 #define xscale_cpar_write xscale_cpar_write_mipsel
 #define xscale_cp_reginfo xscale_cp_reginfo_mipsel
 #define cpu_mips_exec cpu_mips_exec_mipsel
+#define cpu_mips_init cpu_mips_init_mipsel
 #define cpu_mips_get_random cpu_mips_get_random_mipsel
 #define cpu_mips_get_count cpu_mips_get_count_mipsel
+#define cpu_set_exception_base cpu_set_exception_base_mipsel
 #define cpu_mips_store_cause cpu_mips_store_cause_mipsel
 #define cpu_mips_store_count cpu_mips_store_count_mipsel
 #define cpu_mips_store_compare cpu_mips_store_compare_mipsel
@@ -3157,12 +3159,9 @@
 #define cpu_mips_start_count cpu_mips_start_count_mipsel
 #define cpu_mips_stop_count cpu_mips_stop_count_mipsel
 #define cpu_mips_tlb_flush cpu_mips_tlb_flush_mipsel
-#define mips_machine_init mips_machine_init_mipsel
 #define cpu_mips_kseg0_to_phys cpu_mips_kseg0_to_phys_mipsel
 #define cpu_mips_phys_to_kseg0 cpu_mips_phys_to_kseg0_mipsel
 #define cpu_mips_kvm_um_phys_to_kseg0 cpu_mips_kvm_um_phys_to_kseg0_mipsel
-#define mips_cpu_register_types mips_cpu_register_types_mipsel
-#define cpu_mips_init cpu_mips_init_mipsel
 #define cpu_state_reset cpu_state_reset_mipsel
 #define do_raise_exception_err do_raise_exception_err_mipsel
 #define float_class_d float_class_d_mipsel
@@ -4088,6 +4087,8 @@
 #define helper_dmfc0_watchlo helper_dmfc0_watchlo_mipsel
 #define helper_dmtc0_entrylo0 helper_dmtc0_entrylo0_mipsel
 #define helper_dmtc0_entrylo1 helper_dmtc0_entrylo1_mipsel
+#define mips_cpu_register_types mips_cpu_register_types_mipsel
+#define mips_machine_init mips_machine_init_mipsel
 #define mips_reg_reset mips_reg_reset_mipsel
 #define mips_reg_read mips_reg_read_mipsel
 #define mips_reg_write mips_reg_write_mipsel

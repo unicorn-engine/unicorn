@@ -611,6 +611,7 @@ struct CPUMIPSState {
     const mips_def_t *cpu_model;
     //void *irq[8];
     //QEMUTimer *timer; /* Internal timer */
+    target_ulong exception_base; /* ExceptionBase input to the core */
 
     // Unicorn engine
     struct uc_struct *uc;
@@ -799,6 +800,7 @@ int cpu_mips_exec(struct uc_struct *uc, CPUState *cpu);
 void mips_tcg_init(struct uc_struct *uc);
 MIPSCPU *cpu_mips_init(struct uc_struct *uc, const char *cpu_model);
 int cpu_mips_signal_handler(int host_signum, void *pinfo, void *puc);
+void cpu_set_exception_base(struct uc_struct *uc, int vp_index, target_ulong address);
 
 /* TODO QOM'ify CPU reset and remove */
 void cpu_state_reset(CPUMIPSState *s);
