@@ -145,6 +145,8 @@ typedef struct MemoryRegionIOMMUOps MemoryRegionIOMMUOps;
 struct MemoryRegionIOMMUOps {
     /* Return a TLB entry that contains a given address. */
     IOMMUTLBEntry (*translate)(MemoryRegion *iommu, hwaddr addr, bool is_write);
+    /* Returns minimum supported page size */
+    uint64_t (*get_min_page_size)(MemoryRegion *iommu);
 };
 
 struct MemoryRegion {
