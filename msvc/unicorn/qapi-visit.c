@@ -47,7 +47,7 @@ void visit_type_DummyForceArrays(Visitor *v, const char *name, DummyForceArrays 
     }
     visit_check_struct(v, &err);
 out_obj:
-    visit_end_struct(v);
+    visit_end_struct(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_DummyForceArrays(*obj);
         *obj = NULL;
@@ -114,7 +114,7 @@ void visit_type_X86CPUFeatureWordInfo(Visitor *v, const char *name, X86CPUFeatur
     }
     visit_check_struct(v, &err);
 out_obj:
-    visit_end_struct(v);
+    visit_end_struct(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_X86CPUFeatureWordInfo(*obj);
         *obj = NULL;
@@ -144,7 +144,7 @@ void visit_type_X86CPUFeatureWordInfoList(Visitor *v, const char *name, X86CPUFe
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_X86CPUFeatureWordInfoList(*obj);
         *obj = NULL;
@@ -181,7 +181,7 @@ void visit_type_anyList(Visitor *v, const char *name, anyList **obj, Error **err
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_anyList(*obj);
         *obj = NULL;
@@ -211,7 +211,7 @@ void visit_type_boolList(Visitor *v, const char *name, boolList **obj, Error **e
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_boolList(*obj);
         *obj = NULL;
@@ -241,7 +241,7 @@ void visit_type_int16List(Visitor *v, const char *name, int16List **obj, Error *
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_int16List(*obj);
         *obj = NULL;
@@ -271,7 +271,7 @@ void visit_type_int32List(Visitor *v, const char *name, int32List **obj, Error *
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_int32List(*obj);
         *obj = NULL;
@@ -301,7 +301,7 @@ void visit_type_int64List(Visitor *v, const char *name, int64List **obj, Error *
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_int64List(*obj);
         *obj = NULL;
@@ -331,7 +331,7 @@ void visit_type_int8List(Visitor *v, const char *name, int8List **obj, Error **e
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_int8List(*obj);
         *obj = NULL;
@@ -361,7 +361,7 @@ void visit_type_intList(Visitor *v, const char *name, intList **obj, Error **err
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_intList(*obj);
         *obj = NULL;
@@ -391,7 +391,7 @@ void visit_type_numberList(Visitor *v, const char *name, numberList **obj, Error
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_numberList(*obj);
         *obj = NULL;
@@ -421,7 +421,7 @@ void visit_type_sizeList(Visitor *v, const char *name, sizeList **obj, Error **e
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_sizeList(*obj);
         *obj = NULL;
@@ -451,7 +451,7 @@ void visit_type_strList(Visitor *v, const char *name, strList **obj, Error **err
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_strList(*obj);
         *obj = NULL;
@@ -481,7 +481,7 @@ void visit_type_uint16List(Visitor *v, const char *name, uint16List **obj, Error
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_uint16List(*obj);
         *obj = NULL;
@@ -511,7 +511,7 @@ void visit_type_uint32List(Visitor *v, const char *name, uint32List **obj, Error
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_uint32List(*obj);
         *obj = NULL;
@@ -541,7 +541,7 @@ void visit_type_uint64List(Visitor *v, const char *name, uint64List **obj, Error
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_uint64List(*obj);
         *obj = NULL;
@@ -571,7 +571,7 @@ void visit_type_uint8List(Visitor *v, const char *name, uint8List **obj, Error *
 
     error_propagate(errp, err);
     err = NULL;
-    visit_end_list(v);
+    visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_uint8List(*obj);
         *obj = NULL;

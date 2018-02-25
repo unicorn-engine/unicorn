@@ -48,7 +48,7 @@ struct Visitor
     void (*check_struct)(Visitor *v, Error **errp);
 
     /* Must be set to visit structs */
-    void (*end_struct)(Visitor *v);
+    void (*end_struct)(Visitor *v, void **obj);
 
     /* Must be set; implementations may require @list to be non-null,
      * but must document it. */
@@ -59,7 +59,7 @@ struct Visitor
     GenericList *(*next_list)(Visitor *v, GenericList *tail, size_t size);
 
     /* Must be set */
-    void (*end_list)(Visitor *v);
+    void (*end_list)(Visitor *v, void **list);
 
     /* Must be set by input and dealloc visitors to visit alternates;
      * optional for output visitors. */
@@ -68,7 +68,7 @@ struct Visitor
                             bool promote_int, Error **errp);
 
     /* Optional, needed for dealloc visitor */
-    void (*end_alternate)(Visitor *v);
+    void (*end_alternate)(Visitor *v, void **obj);
 
     /* Must be set */
     void (*type_int64)(Visitor *v, const char *name, int64_t *obj,

@@ -44,9 +44,9 @@ void visit_check_struct(Visitor *v, Error **errp)
     }
 }
 
-void visit_end_struct(Visitor *v)
+void visit_end_struct(Visitor *v, void **obj)
 {
-    v->end_struct(v);
+    v->end_struct(v, obj);
 }
 
 void visit_start_list(Visitor *v, const char *name, GenericList **list,
@@ -68,9 +68,9 @@ GenericList *visit_next_list(Visitor *v, GenericList *tail, size_t size)
     return v->next_list(v, tail, size);
 }
 
-void visit_end_list(Visitor *v)
+void visit_end_list(Visitor *v, void **obj)
 {
-    v->end_list(v);
+    v->end_list(v, obj);
 }
 
 void visit_start_alternate(Visitor *v, const char *name,
@@ -84,10 +84,10 @@ void visit_start_alternate(Visitor *v, const char *name,
     }
 }
 
-void visit_end_alternate(Visitor *v)
+void visit_end_alternate(Visitor *v, void **obj)
 {
     if (v->end_alternate) {
-        v->end_alternate(v);
+        v->end_alternate(v, obj);
     }
 }
 
