@@ -2444,12 +2444,18 @@ static void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
     default:
         {
             TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
-            TCGv_i32 r_rd = tcg_const_i32(tcg_ctx, rd);
+            TCGv_i64 tmp;
 
             save_state(dc);
-            gen_helper_ldda_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_asi, r_rd);
-            tcg_temp_free_i32(tcg_ctx, r_rd);
+            gen_helper_ldda_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_asi);
             tcg_temp_free_i32(tcg_ctx, r_asi);
+
+            tmp = gen_dest_gpr(dc, rd);
+            tcg_gen_ld_i64(tcg_ctx, tmp, tcg_ctx->cpu_env, offsetof(CPUSPARCState, qt0.high));
+            gen_store_gpr(dc, rd, tmp);
+            tmp = gen_dest_gpr(dc, rd + 1);
+            tcg_gen_ld_i64(tcg_ctx, tmp, tcg_ctx->cpu_env, offsetof(CPUSPARCState, qt0.low));
+            gen_store_gpr(dc, rd + 1, tmp);
         }
         break;
     }
