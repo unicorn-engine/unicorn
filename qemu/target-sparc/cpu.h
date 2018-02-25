@@ -1,5 +1,5 @@
-#ifndef CPU_SPARC_H
-#define CPU_SPARC_H
+#ifndef SPARC_CPU_H
+#define SPARC_CPU_H
 
 #include "config.h"
 #include "qemu-common.h"
