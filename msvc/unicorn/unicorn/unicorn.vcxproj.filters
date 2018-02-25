@@ -68,6 +68,9 @@
     <ClCompile Include="..\..\..\qemu\hw\core\qdev.c">
       <Filter>qemu\hw\core</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qapi\qapi-clone-visitor.c">
+      <Filter>qemu\qapi</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\qapi\qapi-dealloc-visitor.c">
       <Filter>qemu\qapi</Filter>
     </ClCompile>
@@ -366,6 +369,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\hw\sparc\sun4m.h">
       <Filter>qemu\include\hw\sparc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\clone-visitor.h">
+      <Filter>qemu\include\qapi</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\dealloc-visitor.h">
       <Filter>qemu\include\qapi</Filter>

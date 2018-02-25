@@ -26,6 +26,7 @@
     <ClCompile Include="..\..\..\qemu\crypto\hash.c" />
     <ClCompile Include="..\..\..\qemu\hw\core\machine.c" />
     <ClCompile Include="..\..\..\qemu\hw\core\qdev.c" />
+    <ClCompile Include="..\..\..\qemu\qapi\qapi-clone-visitor.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qapi-dealloc-visitor.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qapi-visit-core.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qmp-input-visitor.c" />
@@ -125,6 +126,7 @@
     <ClInclude Include="..\..\..\qemu\include\hw\sparc\sparc.h" />
     <ClInclude Include="..\..\..\qemu\include\hw\sparc\sparc32_dma.h" />
     <ClInclude Include="..\..\..\qemu\include\hw\sparc\sun4m.h" />
+    <ClInclude Include="..\..\..\qemu\include\qapi\clone-visitor.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\dealloc-visitor.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\error.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\opts-visitor.h" />
