@@ -3160,7 +3160,7 @@
 #define gen_intermediate_code_init gen_intermediate_code_init_sparc
 #define helper_cas_asi helper_cas_asi_sparc
 #define helper_check_align helper_check_align_sparc
-#define helper_check_ieee_exception helper_check_ieee_exception_sparc
+#define helper_check_ieee_exceptions helper_check_ieee_exceptions_sparc
 #define helper_compute_C_icc helper_compute_C_icc_sparc
 #define helper_compute_psr helper_compute_psr_sparc
 #define helper_debug helper_debug_sparc
@@ -3204,7 +3204,8 @@
 #define helper_ld_asi helper_ld_asi_sparc
 #define helper_ldfsr helper_ldfsr_sparc
 #define helper_ldqf helper_ldqf_sparc
-#define helper_restorehelper_save helper_restorehelper_save_sparc
+#define helper_restore helper_restore_sparc
+#define helper_save helper_save_sparc
 #define helper_sdiv_cc helper_sdiv_cc_sparc
 #define helper_st_asi helper_st_asi_sparc
 #define helper_stqf helper_stqf_sparc
