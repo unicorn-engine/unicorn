@@ -189,6 +189,9 @@
     <ClCompile Include="..\..\..\qemu\util\qemu-timer-common.c">
       <Filter>qemu\util</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\range.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\uc.c" />
     <ClCompile Include="..\qapi-visit.c">
       <Filter>qemu</Filter>

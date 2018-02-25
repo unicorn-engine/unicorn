@@ -231,6 +231,7 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClCompile Include="..\..\..\qemu\util\qemu-error.c" />
     <ClCompile Include="..\..\..\qemu\util\qemu-thread-win32.c" />
     <ClCompile Include="..\..\..\qemu\util\qemu-timer-common.c" />
+    <ClCompile Include="..\..\..\qemu\util\range.c" />
     <ClCompile Include="..\..\..\qemu\vl.c" />
     <ClCompile Include="..\..\..\uc.c" />
     <ClCompile Include="..\qapi-types.c" />

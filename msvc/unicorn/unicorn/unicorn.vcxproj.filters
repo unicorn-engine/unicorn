@@ -59,6 +59,9 @@
     <ClCompile Include="..\..\..\qemu\util\qemu-timer-common.c">
       <Filter>qemu\util</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\range.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\hw\core\machine.c">
       <Filter>qemu\hw\core</Filter>
     </ClCompile>
