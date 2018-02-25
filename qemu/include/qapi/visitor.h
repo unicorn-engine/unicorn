@@ -10,8 +10,9 @@
  * See the COPYING.LIB file in the top-level directory.
  *
  */
-#ifndef QAPI_VISITOR_CORE_H
-#define QAPI_VISITOR_CORE_H
+
+#ifndef QAPI_VISITOR_H
+#define QAPI_VISITOR_H
 
 #include "qemu/typedefs.h"
 #include "qapi/qmp/qobject.h"
