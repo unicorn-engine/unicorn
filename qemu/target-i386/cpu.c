@@ -226,6 +226,58 @@ static const char *ext4_feature_name[] = {
     NULL, NULL, NULL, NULL,
 };
 
+static const char *hyperv_priv_feature_name[] = {
+    NULL /* hv_msr_vp_runtime_access */, NULL /* hv_msr_time_refcount_access */,
+    NULL /* hv_msr_synic_access */, NULL /* hv_msr_stimer_access */,
+    NULL /* hv_msr_apic_access */, NULL /* hv_msr_hypercall_access */,
+    NULL /* hv_vpindex_access */, NULL /* hv_msr_reset_access */,
+    NULL /* hv_msr_stats_access */, NULL /* hv_reftsc_access */,
+    NULL /* hv_msr_idle_access */, NULL /* hv_msr_frequency_access */,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
+static const char *hyperv_ident_feature_name[] = {
+    NULL /* hv_create_partitions */, NULL /* hv_access_partition_id */,
+    NULL /* hv_access_memory_pool */, NULL /* hv_adjust_message_buffers */,
+    NULL /* hv_post_messages */, NULL /* hv_signal_events */,
+    NULL /* hv_create_port */, NULL /* hv_connect_port */,
+    NULL /* hv_access_stats */, NULL, NULL, NULL /* hv_debugging */,
+    NULL /* hv_cpu_power_management */, NULL /* hv_configure_profiler */,
+    NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
+static const char *hyperv_misc_feature_name[] = {
+    NULL /* hv_mwait */, NULL /* hv_guest_debugging */,
+    NULL /* hv_perf_monitor */, NULL /* hv_cpu_dynamic_part */,
+    NULL /* hv_hypercall_params_xmm */, NULL /* hv_guest_idle_state */,
+    NULL, NULL,
+    NULL, NULL, NULL /* hv_guest_crash_msr */, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
+static const char *svm_feature_name[] = {
+    "npt", "lbrv", "svm_lock", "nrip_save",
+    "tsc_scale", "vmcb_clean",  "flushbyasid", "decodeassists",
+    NULL, NULL, "pause_filter", NULL,
+    "pfthreshold", NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+    NULL, NULL, NULL, NULL,
+};
+
 static const char *cpuid_7_0_ebx_feature_name[] = {
     "fsgsbase", "tsc_adjust", NULL, "bmi1", "hle", "avx2", NULL, "smep",
     "bmi2", "erms", "invpcid", "rtm", NULL, NULL, "mpx", NULL,
@@ -421,8 +473,36 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
     },
     // FEAT_KVM
     {0},
+    // FEAT_HYPERV_EAX
+    {
+        hyperv_priv_feature_name,
+        0x40000003,
+        false, 0,
+        R_EAX,
+    },
+    // FEAT_HYPERV_EBX
+    {
+        hyperv_ident_feature_name,
+        0x40000003,
+        false, 0,
+        R_EBX,
+    },
+    // FEAT_HYPERV_EDX
+    {
+        hyperv_misc_feature_name,
+        0x40000003,
+        false, 0,
+        R_EDX,
+    },
     // FEAT_SVM
-    {0},
+    {
+        svm_feature_name,
+        0x8000000A,
+        false, 0,
+        R_EDX,
+        0,
+        TCG_SVM_FEATURES,
+    },
     // FEAT_XSAVE
     {
         cpuid_xsave_feature_name,
@@ -465,6 +545,23 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         .feat_names = ext4_feature_name,
         .cpuid_eax = 0xC0000001, .cpuid_reg = R_EDX,
         .tcg_features = TCG_EXT4_FEATURES,
+    },
+    [FEAT_HYPERV_EAX] = {
+        .feat_names = hyperv_priv_feature_name,
+        .cpuid_eax = 0x40000003, .cpuid_reg = R_EAX,
+    },
+    [FEAT_HYPERV_EBX] = {
+        .feat_names = hyperv_ident_feature_name,
+        .cpuid_eax = 0x40000003, .cpuid_reg = R_EBX,
+    },
+    [FEAT_HYPERV_EDX] = {
+        .feat_names = hyperv_misc_feature_name,
+        .cpuid_eax = 0x40000003, .cpuid_reg = R_EDX,
+    },
+    [FEAT_SVM] = {
+         .feat_names = svm_feature_name,
+         .cpuid_eax = 0x8000000A, .cpuid_reg = R_EDX,
+         .tcg_features = TCG_SVM_FEATURES,
     },
     [FEAT_7_0_EBX] = {
         .feat_names = cpuid_7_0_ebx_feature_name,
@@ -835,6 +932,12 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_KVM
             0,
+        // FEAT_HYPERV_EAX
+            0,
+        // FEAT_HYPERV_EBX
+            0,
+        // FEAT_HYPERV_EDX
+            0,
         /* Missing: CPUID_SVM_LBRV */
         // FEAT_SVM
             CPUID_SVM_NPT,
@@ -1151,6 +1254,12 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_KVM
             0,
+        // FEAT_HYPERV_EAX
+            0,
+        // FEAT_HYPERV_EBX
+            0,
+        // FEAT_HYPERV_EDX
+            0,
         // FEAT_SVM
             0,
         // FEAT_XSAVE
@@ -1192,6 +1301,12 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_C000_0001_EDX
             0,
         // FEAT_KVM
+            0,
+        // FEAT_HYPERV_EAX
+            0,
+        // FEAT_HYPERV_EBX
+            0,
+        // FEAT_HYPERV_EDX
             0,
         // FEAT_SVM
             0,
@@ -1235,6 +1350,12 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_C000_0001_EDX
             0,
         // FEAT_KVM
+            0,
+        // FEAT_HYPERV_EAX
+            0,
+        // FEAT_HYPERV_EBX
+            0,
+        // FEAT_HYPERV_EDX
             0,
         // FEAT_SVM
             0,
@@ -1281,6 +1402,12 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_KVM
             0,
+        // FEAT_HYPERV_EAX
+            0,
+        // FEAT_HYPERV_EBX
+            0,
+        // FEAT_HYPERV_EDX
+            0,
         // FEAT_SVM
             0,
         // FEAT_XSAVE
@@ -1326,6 +1453,12 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_C000_0001_EDX
             0,
         // FEAT_KVM
+            0,
+        // FEAT_HYPERV_EAX
+            0,
+        // FEAT_HYPERV_EBX
+            0,
+        // FEAT_HYPERV_EDX
             0,
         // FEAT_SVM
             0,
@@ -1374,6 +1507,12 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_KVM
             0,
+        // FEAT_HYPERV_EAX
+            0,
+        // FEAT_HYPERV_EBX
+            0,
+        // FEAT_HYPERV_EDX
+            0,
         // FEAT_SVM
             0,
         // FEAT_XSAVE
@@ -1421,6 +1560,12 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_KVM
             0,
+        // FEAT_HYPERV_EAX
+            0,
+        // FEAT_HYPERV_EBX
+            0,
+        // FEAT_HYPERV_EDX
+            0,
         // FEAT_SVM
             0,
         // FEAT_XSAVE
@@ -1467,6 +1612,12 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_C000_0001_EDX
             0,
         // FEAT_KVM
+            0,
+        // FEAT_HYPERV_EAX
+            0,
+        // FEAT_HYPERV_EBX
+            0,
+        // FEAT_HYPERV_EDX
             0,
         // FEAT_SVM
             0,
