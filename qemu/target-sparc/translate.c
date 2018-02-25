@@ -1608,16 +1608,20 @@ static inline void gen_op_fcmps(DisasContext *dc, int fccno, TCGv_i32 r_rs1, TCG
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     switch (fccno) {
     case 0:
-        gen_helper_fcmps(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmps(tcg_ctx, tcg_ctx->cpu_fsr,
+                         tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 1:
-        gen_helper_fcmps_fcc1(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmps_fcc1(tcg_ctx, tcg_ctx->cpu_fsr,
+                              tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 2:
-        gen_helper_fcmps_fcc2(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmps_fcc2(tcg_ctx, tcg_ctx->cpu_fsr,
+                              tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 3:
-        gen_helper_fcmps_fcc3(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmps_fcc3(tcg_ctx, tcg_ctx->cpu_fsr,
+                              tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     }
 }
@@ -1627,16 +1631,20 @@ static inline void gen_op_fcmpd(DisasContext *dc, int fccno, TCGv_i64 r_rs1, TCG
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     switch (fccno) {
     case 0:
-        gen_helper_fcmpd(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmpd(tcg_ctx, tcg_ctx->cpu_fsr,
+                         tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 1:
-        gen_helper_fcmpd_fcc1(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmpd_fcc1(tcg_ctx, tcg_ctx->cpu_fsr,
+                              tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 2:
-        gen_helper_fcmpd_fcc2(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmpd_fcc2(tcg_ctx, tcg_ctx->cpu_fsr,
+                              tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 3:
-        gen_helper_fcmpd_fcc3(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmpd_fcc3(tcg_ctx, tcg_ctx->cpu_fsr,
+                              tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     }
 }
@@ -1646,16 +1654,16 @@ static inline void gen_op_fcmpq(DisasContext *dc, int fccno)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     switch (fccno) {
     case 0:
-        gen_helper_fcmpq(tcg_ctx, tcg_ctx->cpu_env);
+        gen_helper_fcmpq(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
         break;
     case 1:
-        gen_helper_fcmpq_fcc1(tcg_ctx, tcg_ctx->cpu_env);
+        gen_helper_fcmpq_fcc1(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
         break;
     case 2:
-        gen_helper_fcmpq_fcc2(tcg_ctx, tcg_ctx->cpu_env);
+        gen_helper_fcmpq_fcc2(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
         break;
     case 3:
-        gen_helper_fcmpq_fcc3(tcg_ctx, tcg_ctx->cpu_env);
+        gen_helper_fcmpq_fcc3(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
         break;
     }
 }
@@ -1665,16 +1673,20 @@ static inline void gen_op_fcmpes(DisasContext *dc, int fccno, TCGv_i32 r_rs1, TC
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     switch (fccno) {
     case 0:
-        gen_helper_fcmpes(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmpes(tcg_ctx, tcg_ctx->cpu_fsr,
+                          tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 1:
-        gen_helper_fcmpes_fcc1(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmpes_fcc1(tcg_ctx, tcg_ctx->cpu_fsr,
+                               tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 2:
-        gen_helper_fcmpes_fcc2(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmpes_fcc2(tcg_ctx, tcg_ctx->cpu_fsr,
+                               tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 3:
-        gen_helper_fcmpes_fcc3(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmpes_fcc3(tcg_ctx, tcg_ctx->cpu_fsr,
+                               tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     }
 }
@@ -1684,16 +1696,20 @@ static inline void gen_op_fcmped(DisasContext *dc, int fccno, TCGv_i64 r_rs1, TC
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     switch (fccno) {
     case 0:
-        gen_helper_fcmped(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmped(tcg_ctx, tcg_ctx->cpu_fsr,
+                          tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 1:
-        gen_helper_fcmped_fcc1(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmped_fcc1(tcg_ctx, tcg_ctx->cpu_fsr,
+                               tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 2:
-        gen_helper_fcmped_fcc2(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmped_fcc2(tcg_ctx, tcg_ctx->cpu_fsr,
+                               tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     case 3:
-        gen_helper_fcmped_fcc3(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+        gen_helper_fcmped_fcc3(tcg_ctx, tcg_ctx->cpu_fsr,
+                               tcg_ctx->cpu_env, r_rs1, r_rs2);
         break;
     }
 }
@@ -1703,16 +1719,16 @@ static inline void gen_op_fcmpeq(DisasContext *dc, int fccno)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     switch (fccno) {
     case 0:
-        gen_helper_fcmpeq(tcg_ctx, tcg_ctx->cpu_env);
+        gen_helper_fcmpeq(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
         break;
     case 1:
-        gen_helper_fcmpeq_fcc1(tcg_ctx, tcg_ctx->cpu_env);
+        gen_helper_fcmpeq_fcc1(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
         break;
     case 2:
-        gen_helper_fcmpeq_fcc2(tcg_ctx, tcg_ctx->cpu_env);
+        gen_helper_fcmpeq_fcc2(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
         break;
     case 3:
-        gen_helper_fcmpeq_fcc3(tcg_ctx, tcg_ctx->cpu_env);
+        gen_helper_fcmpeq_fcc3(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
         break;
     }
 }
@@ -1722,37 +1738,39 @@ static inline void gen_op_fcmpeq(DisasContext *dc, int fccno)
 static inline void gen_op_fcmps(DisasContext *dc, int fccno, TCGv r_rs1, TCGv r_rs2)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    gen_helper_fcmps(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+    gen_helper_fcmps(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env, r_rs1, r_rs2);
 }
 
 static inline void gen_op_fcmpd(DisasContext *dc, int fccno, TCGv_i64 r_rs1, TCGv_i64 r_rs2)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    gen_helper_fcmpd(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+    gen_helper_fcmpd(tcg_ctx, tcg_ctx->cpu_fsr,
+                     tcg_ctx->cpu_env, r_rs1, r_rs2);
 }
 
 static inline void gen_op_fcmpq(DisasContext *dc, int fccno)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    gen_helper_fcmpq(tcg_ctx, tcg_ctx->cpu_env);
+    gen_helper_fcmpq(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 }
 
 static inline void gen_op_fcmpes(DisasContext *dc, int fccno, TCGv r_rs1, TCGv r_rs2)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    gen_helper_fcmpes(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+    gen_helper_fcmpes(tcg_ctx, tcg_ctx->cpu_fsr,
+                      tcg_ctx->cpu_env, r_rs1, r_rs2);
 }
 
 static inline void gen_op_fcmped(DisasContext *dc, int fccno, TCGv_i64 r_rs1, TCGv_i64 r_rs2)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    gen_helper_fcmped(tcg_ctx, tcg_ctx->cpu_env, r_rs1, r_rs2);
+    gen_helper_fcmped(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env, r_rs1, r_rs2);
 }
 
 static inline void gen_op_fcmpeq(DisasContext *dc, int fccno)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    gen_helper_fcmpeq(tcg_ctx, tcg_ctx->cpu_env);
+    gen_helper_fcmpeq(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 }
 #endif
 
@@ -1792,6 +1810,7 @@ static inline void gen_fop_FF(DisasContext *dc, int rd, int rs,
     dst = gen_dest_fpr_F(dc);
 
     gen(tcg_ctx, dst, tcg_ctx->cpu_env, src);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_store_fpr_F(dc, rd, dst);
 }
@@ -1821,6 +1840,7 @@ static inline void gen_fop_FFF(DisasContext *dc, int rd, int rs1, int rs2,
     dst = gen_dest_fpr_F(dc);
 
     gen(tcg_ctx, dst, tcg_ctx->cpu_env, src1, src2);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_store_fpr_F(dc, rd, dst);
 }
@@ -1852,6 +1872,7 @@ static inline void gen_fop_DD(DisasContext *dc, int rd, int rs,
     dst = gen_dest_fpr_D(dc, rd);
 
     gen(tcg_ctx, dst, tcg_ctx->cpu_env, src);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_store_fpr_D(dc, rd, dst);
 }
@@ -1883,6 +1904,7 @@ static inline void gen_fop_DDD(DisasContext *dc, int rd, int rs1, int rs2,
     dst = gen_dest_fpr_D(dc, rd);
 
     gen(tcg_ctx, dst, tcg_ctx->cpu_env, src1, src2);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_store_fpr_D(dc, rd, dst);
 }
@@ -1942,6 +1964,7 @@ static inline void gen_fop_QQ(DisasContext *dc, int rd, int rs,
     gen_op_load_fpr_QT1(dc, QFPREG(rs));
 
     gen(tcg_ctx, tcg_ctx->cpu_env);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_op_store_QT0_fpr(dc, QFPREG(rd));
     gen_update_fprs_dirty(dc, QFPREG(rd));
@@ -1969,6 +1992,7 @@ static inline void gen_fop_QQQ(DisasContext *dc, int rd, int rs1, int rs2,
     gen_op_load_fpr_QT1(dc, QFPREG(rs2));
 
     gen(tcg_ctx, tcg_ctx->cpu_env);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_op_store_QT0_fpr(dc, QFPREG(rd));
     gen_update_fprs_dirty(dc, QFPREG(rd));
@@ -1986,6 +2010,7 @@ static inline void gen_fop_DFF(DisasContext *dc, int rd, int rs1, int rs2,
     dst = gen_dest_fpr_D(dc, rd);
 
     gen(tcg_ctx, dst, tcg_ctx->cpu_env, src1, src2);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_store_fpr_D(dc, rd, dst);
 }
@@ -2000,6 +2025,7 @@ static inline void gen_fop_QDD(DisasContext *dc, int rd, int rs1, int rs2,
     src2 = gen_load_fpr_D(dc, rs2);
 
     gen(tcg_ctx, tcg_ctx->cpu_env, src1, src2);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_op_store_QT0_fpr(dc, QFPREG(rd));
     gen_update_fprs_dirty(dc, QFPREG(rd));
@@ -2017,6 +2043,7 @@ static inline void gen_fop_DF(DisasContext *dc, int rd, int rs,
     dst = gen_dest_fpr_D(dc, rd);
 
     gen(tcg_ctx, dst, tcg_ctx->cpu_env, src);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_store_fpr_D(dc, rd, dst);
 }
@@ -2048,6 +2075,7 @@ static inline void gen_fop_FD(DisasContext *dc, int rd, int rs,
     dst = gen_dest_fpr_F(dc);
 
     gen(tcg_ctx, dst, tcg_ctx->cpu_env, src);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_store_fpr_F(dc, rd, dst);
 }
@@ -2062,6 +2090,7 @@ static inline void gen_fop_FQ(DisasContext *dc, int rd, int rs,
     dst = gen_dest_fpr_F(dc);
 
     gen(tcg_ctx, dst, tcg_ctx->cpu_env);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_store_fpr_F(dc, rd, dst);
 }
@@ -2076,6 +2105,7 @@ static inline void gen_fop_DQ(DisasContext *dc, int rd, int rs,
     dst = gen_dest_fpr_D(dc, rd);
 
     gen(tcg_ctx, dst, tcg_ctx->cpu_env);
+    gen_helper_check_ieee_exceptions(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env);
 
     gen_store_fpr_D(dc, rd, dst);
 }
@@ -5440,7 +5470,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     if (rd == 1) {
                         TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
                         tcg_gen_qemu_ld64(dc->uc, t64, cpu_addr, dc->mem_idx);
-                        gen_helper_ldxfsr(tcg_ctx, tcg_ctx->cpu_env, t64);
+                        gen_helper_ldxfsr(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env, tcg_ctx->cpu_fsr, t64);
                         tcg_temp_free_i64(tcg_ctx, t64);
                         break;
                     }
@@ -5449,7 +5479,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     t0 = get_temp_tl(dc);
                     tcg_gen_qemu_ld32u(dc->uc, t0, cpu_addr, dc->mem_idx);
                     tcg_gen_trunc_tl_i32(tcg_ctx, cpu_dst_32, t0);
-                    gen_helper_ldfsr(tcg_ctx, tcg_ctx->cpu_env, cpu_dst_32);
+                    gen_helper_ldfsr(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env, tcg_ctx->cpu_fsr, cpu_dst_32);
                     break;
                 case 0x22:      /* ldqf, load quad fpreg */
                     {
