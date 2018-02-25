@@ -3153,6 +3153,7 @@
 #define arm64_reg_write arm64_reg_write_aarch64eb
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64eb
 #define aarch64_cpu_register_types aarch64_cpu_register_types_aarch64eb
+#define arm_register_el_change_hook arm_register_el_change_hook_aarch64eb
 #define helper_udiv64 helper_udiv64_aarch64eb
 #define helper_sdiv64 helper_sdiv64_aarch64eb
 #define helper_cls64 helper_cls64_aarch64eb

@@ -3155,6 +3155,7 @@ symbols = (
 )
 
 arm_symbols = (
+    'arm_register_el_change_hook',
     'ARM_REGS_STORAGE_SIZE',
 )
 
@@ -3166,6 +3167,7 @@ aarch64_symbols = (
     'arm64_reg_write',
     'gen_a64_set_pc_im',
     'aarch64_cpu_register_types',
+    'arm_register_el_change_hook',
     'helper_udiv64',
     'helper_sdiv64',
     'helper_cls64',

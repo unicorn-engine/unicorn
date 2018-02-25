@@ -3146,5 +3146,6 @@
 #define xpsr_write xpsr_write_arm
 #define xscale_cpar_write xscale_cpar_write_arm
 #define xscale_cp_reginfo xscale_cp_reginfo_arm
+#define arm_register_el_change_hook arm_register_el_change_hook_arm
 #define ARM_REGS_STORAGE_SIZE ARM_REGS_STORAGE_SIZE_arm
 #endif
