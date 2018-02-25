@@ -2104,18 +2104,22 @@ static inline void gen_ne_fop_QD(DisasContext *dc, int rd, int rs,
 typedef enum {
     GET_ASI_HELPER,
     GET_ASI_EXCP,
+    GET_ASI_DIRECT,
 } ASIType;
 
 typedef struct {
     ASIType type;
     int asi;
+    int mem_idx;
+    TCGMemOp memop;
 } DisasASI;
 
-static DisasASI get_asi(DisasContext *dc, int insn)
+static DisasASI get_asi(DisasContext *dc, int insn, TCGMemOp memop)
 {
     int asi = GET_FIELD(insn, 19, 26);
     ASIType type = GET_ASI_HELPER;
     DisasASI result;
+    int mem_idx = dc->mem_idx;
 
 #ifndef TARGET_SPARC64
     /* Before v9, all asis are immediate and privileged.  */
@@ -2129,6 +2133,16 @@ static DisasASI get_asi(DisasContext *dc, int insn)
                   for LEON, which is incorrect.  */
                || (asi == ASI_USERDATA
                    && (dc->def->features & CPU_FEATURE_CASA))) {
+        switch (asi) {
+        case ASI_USERDATA:   /* User data access */
+            mem_idx = MMU_USER_IDX;
+            type = GET_ASI_DIRECT;
+            break;
+        case ASI_KERNELDATA: /* Supervisor data access */
+            mem_idx = MMU_KERNEL_IDX;
+            type = GET_ASI_DIRECT;
+            break;
+        }
     } else {
         gen_exception(dc, TT_PRIV_INSN);
         type = GET_ASI_EXCP;
@@ -2137,10 +2151,66 @@ static DisasASI get_asi(DisasContext *dc, int insn)
     if (IS_IMM) {
         asi = dc->asi;
     }
+    /* With v9, all asis below 0x80 are privileged.  */
+    /* ??? We ought to check cpu_has_hypervisor, but we didn't copy
+       down that bit into DisasContext.  For the moment that's ok,
+       since the direct implementations below doesn't have any ASIs
+       in the restricted [0x30, 0x7f] range, and the check will be
+       done properly in the helper.  */
+    if (!supervisor(dc) && asi < 0x80) {
+        gen_exception(dc, TT_PRIV_ACT);
+        type = GET_ASI_EXCP;
+    } else {
+        switch (asi) {
+        case ASI_N:  /* Nucleus */
+        case ASI_NL: /* Nucleus LE */
+            mem_idx = MMU_NUCLEUS_IDX;
+            break;
+        case ASI_AIUP:  /* As if user primary */
+        case ASI_AIUPL: /* As if user primary LE */
+            mem_idx = MMU_USER_IDX;
+            break;
+        case ASI_AIUS:  /* As if user secondary */
+        case ASI_AIUSL: /* As if user secondary LE */
+            mem_idx = MMU_USER_SECONDARY_IDX;
+            break;
+        case ASI_S:  /* Secondary */
+        case ASI_SL: /* Secondary LE */
+            if (mem_idx == MMU_USER_IDX) {
+                mem_idx = MMU_USER_SECONDARY_IDX;
+            } else if (mem_idx == MMU_KERNEL_IDX) {
+                mem_idx = MMU_KERNEL_SECONDARY_IDX;
+            }
+            break;
+        case ASI_P:  /* Primary */
+        case ASI_PL: /* Primary LE */
+            break;
+        }
+        switch (asi) {
+        case ASI_N:
+        case ASI_NL:
+        case ASI_AIUP:
+        case ASI_AIUPL:
+        case ASI_AIUS:
+        case ASI_AIUSL:
+        case ASI_S:
+        case ASI_SL:
+        case ASI_P:
+        case ASI_PL:
+            type = GET_ASI_DIRECT;
+            break;
+        }
+        /* The little-endian asis all have bit 3 set.  */
+        if (asi & 8) {
+            memop ^= MO_BSWAP;
+        }
+    }
 #endif
 
     result.type = type;
     result.asi = asi;
+    result.mem_idx = mem_idx;
+    result.memop = memop;
     return result;
 }
 
@@ -2148,10 +2218,14 @@ static void gen_ld_asi(DisasContext *dc, TCGv dst, TCGv addr,
                        int insn, TCGMemOp memop)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, memop);
 
     switch (da.type) {
     case GET_ASI_EXCP:
+        break;
+    case GET_ASI_DIRECT:
+        gen_address_mask(dc, addr);
+        tcg_gen_qemu_ld_tl(dc->uc, dst, addr, da.mem_idx, da.memop);
         break;
     default:
         {
@@ -2182,10 +2256,14 @@ static void gen_st_asi(DisasContext *dc, TCGv src, TCGv addr,
                        int insn, TCGMemOp memop)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, memop);
 
     switch (da.type) {
     case GET_ASI_EXCP:
+        break;
+    case GET_ASI_DIRECT:
+        gen_address_mask(dc, addr);
+        tcg_gen_qemu_st_tl(dc->uc, src, addr, da.mem_idx, da.memop);
         break;
     default:
         {
@@ -2217,7 +2295,7 @@ static void gen_swap_asi(DisasContext *dc, TCGv dst, TCGv src,
                          TCGv addr, int insn)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, MO_TEUL);
 
     switch (da.type) {
     case GET_ASI_EXCP:
@@ -2252,7 +2330,7 @@ static void gen_cas_asi(DisasContext *dc, TCGv addr, TCGv val2,
                         int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, MO_TEUL);
     TCGv val1, dst;
     TCGv_i32 r_asi;
 
@@ -2272,7 +2350,7 @@ static void gen_cas_asi(DisasContext *dc, TCGv addr, TCGv val2,
 static void gen_ldstub_asi(DisasContext *dc, TCGv dst, TCGv addr, int insn)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, MO_UB);
 
     switch (da.type) {
     case GET_ASI_EXCP:
@@ -2308,7 +2386,7 @@ static void gen_ldf_asi(DisasContext *dc, TCGv addr,
                         int insn, int size, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, (size == 4 ? MO_TEUL : MO_TEQ));
 
     switch (da.type) {
     case GET_ASI_EXCP:
@@ -2333,7 +2411,7 @@ static void gen_stf_asi(DisasContext *dc, TCGv addr,
                         int insn, int size, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, (size == 4 ? MO_TEUL : MO_TEQ));
 
     switch (da.type) {
     case GET_ASI_EXCP:
@@ -2358,7 +2436,7 @@ static void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
                          int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, MO_TEQ);
 
     switch (da.type) {
     case GET_ASI_EXCP:
@@ -2381,7 +2459,7 @@ static void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
                          int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, MO_TEQ);
     TCGv lo = gen_load_gpr(dc, rd + 1);
 
     switch (da.type) {
@@ -2410,7 +2488,7 @@ static void gen_casx_asi(DisasContext *dc, TCGv addr, TCGv val2,
                          int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, MO_TEQ);
     TCGv val1 = gen_load_gpr(dc, rd);
     TCGv dst = gen_dest_gpr(dc, rd);
     TCGv_i32 r_asi;
@@ -2437,9 +2515,9 @@ static void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
        Since we have already asserted that rd is even, the semantics
        are unchanged.  */
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
     TCGv lo = gen_dest_gpr(dc, rd | 1);
     TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
+    DisasASI da = get_asi(dc, insn, MO_TEQ);
 
     switch (da.type) {
     case GET_ASI_EXCP:
@@ -2470,7 +2548,7 @@ static void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
                          int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    DisasASI da = get_asi(dc, insn);
+    DisasASI da = get_asi(dc, insn, MO_TEQ);
     TCGv lo = gen_load_gpr(dc, rd + 1);
     TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
 
