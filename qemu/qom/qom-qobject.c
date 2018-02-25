@@ -33,14 +33,14 @@ QObject *object_property_get_qobject(struct uc_struct *uc, Object *obj, const ch
 {
     QObject *ret = NULL;
     Error *local_err = NULL;
-    QmpOutputVisitor *qov;
+    Visitor *v;
 
-    qov = qmp_output_visitor_new();
-    object_property_get(uc, obj, qmp_output_get_visitor(qov), name, &local_err);
+    v = qmp_output_visitor_new(&ret);
+    object_property_get(uc, obj, v, name, &local_err);
     if (!local_err) {
-        ret = qmp_output_get_qobject(qov);
+        visit_complete(v, &ret);
     }
     error_propagate(errp, local_err);
-    visit_free(qmp_output_get_visitor(qov));
+    visit_free(v);
     return ret;
 }
