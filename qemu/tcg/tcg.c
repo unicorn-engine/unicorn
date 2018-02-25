@@ -539,7 +539,7 @@ int tcg_global_mem_new_internal(TCGContext *s, TCGType type, TCGv_ptr base,
         ts->mem_offset = offset + bigendian * 4;
         pstrcpy(buf, sizeof(buf), name);
         pstrcat(buf, sizeof(buf), "_0");
-        ts->name = g_strdup(buf);
+        ts->name = strdup(buf);
 
         tcg_debug_assert(ts2 == ts + 1);
         ts2->base_type = TCG_TYPE_I64;
@@ -550,7 +550,7 @@ int tcg_global_mem_new_internal(TCGContext *s, TCGType type, TCGv_ptr base,
         ts2->mem_offset = offset + (1 - bigendian) * 4;
         pstrcpy(buf, sizeof(buf), name);
         pstrcat(buf, sizeof(buf), "_1");
-        ts->name = g_strdup(buf);
+        ts2->name = g_strdup(buf);
     } else {
         ts->base_type = type;
         ts->type = type;
