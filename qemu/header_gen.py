@@ -2105,6 +2105,7 @@ symbols = (
     'memory_region_init_ram_ptr',
     'memory_region_init_reservation',
     'memory_region_init_resizeable_ram',
+    'memory_region_init_rom',
     'memory_region_is_logging',
     'memory_region_is_mapped',
     'memory_region_is_skip_dump',

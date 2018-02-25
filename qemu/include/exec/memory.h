@@ -327,7 +327,8 @@ void memory_region_unref(MemoryRegion *mr);
  * @name: used for debugging; not visible to the user or ABI
  * @size: size of the region.
  */
-void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
+void memory_region_init_io(struct uc_struct *uc,
+                           MemoryRegion *mr,
                            struct Object *owner,
                            const MemoryRegionOps *ops,
                            void *opaque,
@@ -345,7 +346,8 @@ void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
  * @perms: permissions on the region (UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC).
  * @errp: pointer to Error*, to store an error if it happens.
  */
-void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
+void memory_region_init_ram(struct uc_struct *uc,
+                            MemoryRegion *mr,
                             struct Object *owner,
                             const char *name,
                             uint64_t size,
@@ -363,7 +365,8 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
  * @size: size of the region.
  * @ptr: memory to be mapped; must contain at least @size bytes.
  */
-void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
+void memory_region_init_ram_ptr(struct uc_struct *uc,
+                                MemoryRegion *mr,
                                 struct Object *owner,
                                 const char *name,
                                 uint64_t size,
@@ -381,12 +384,33 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
  * @offset: start of the section in @orig to be referenced.
  * @size: size of the region.
  */
-void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
+void memory_region_init_alias(struct uc_struct *uc,
+                              MemoryRegion *mr,
                               struct Object *owner,
                               const char *name,
                               MemoryRegion *orig,
                               hwaddr offset,
                               uint64_t size);
+
+/**
+ * memory_region_init_rom: Initialize a ROM memory region.
+ *
+ * This has the same effect as calling memory_region_init_ram()
+ * and then marking the resulting region read-only with
+ * memory_region_set_readonly().
+ *
+ * @mr: the #MemoryRegion to be initialized.
+ * @owner: the object that tracks the region's reference count
+ * @name: the name of the region.
+ * @size: size of the region.
+ * @errp: pointer to Error*, to store an error if it happens.
+ */
+void memory_region_init_rom(struct uc_struct *uc,
+                            MemoryRegion *mr,
+                            struct Object *owner,
+                            const char *name,
+                            uint64_t size,
+                            Error **errp);
 
 /**
  * memory_region_init_rom_device:  Initialize a ROM memory region.  Writes are
@@ -402,7 +426,8 @@ void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
  * @size: size of the region.
  * @errp: pointer to Error*, to store an error if it happens.
  */
-void memory_region_init_rom_device(MemoryRegion *mr,
+void memory_region_init_rom_device(struct uc_struct *uc,
+                                   MemoryRegion *mr,
                                    struct Object *owner,
                                    const MemoryRegionOps *ops,
                                    void *opaque,
