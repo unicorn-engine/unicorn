@@ -20144,6 +20144,7 @@ void mips_tcg_init(struct uc_struct *uc)
     int i;
 
     tcg_ctx->cpu_env = tcg_global_reg_new_ptr(uc->tcg_ctx, TCG_AREG0, "env");
+    tcg_ctx->tcg_env = tcg_ctx->cpu_env;
 
     for (i = 0; i < 32; i++) {
         tcg_ctx->cpu_gpr[i] = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,

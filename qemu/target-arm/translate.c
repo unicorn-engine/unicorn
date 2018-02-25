@@ -73,6 +73,7 @@ void arm_translate_init(struct uc_struct *uc)
     TCGContext *tcg_ctx = uc->tcg_ctx;
 
     tcg_ctx->cpu_env = tcg_global_reg_new_ptr(uc->tcg_ctx, TCG_AREG0, "env");
+    tcg_ctx->tcg_env = tcg_ctx->cpu_env;
 
     for (i = 0; i < 16; i++) {
         tcg_ctx->cpu_R[i] = tcg_global_mem_new_i32(uc->tcg_ctx, tcg_ctx->cpu_env,

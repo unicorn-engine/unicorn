@@ -5537,6 +5537,8 @@ void gen_intermediate_code_init(CPUSPARCState *env)
         return;
     }
     tcg_ctx->cpu_env = tcg_global_reg_new_ptr(tcg_ctx, TCG_AREG0, "env");
+    tcg_ctx->tcg_env = tcg_ctx->cpu_env;
+
     tcg_ctx->cpu_regwptr = tcg_global_mem_new_ptr(tcg_ctx, tcg_ctx->cpu_env,
             offsetof(CPUSPARCState, regwptr),
             "regwptr");

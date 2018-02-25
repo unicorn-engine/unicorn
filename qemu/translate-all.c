@@ -1292,7 +1292,9 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
 
     tcg_func_start(tcg_ctx);
 
+    tcg_ctx->cpu = ENV_GET_CPU(env);
     gen_intermediate_code(env, tb);
+    tcg_ctx->cpu = NULL;
 
     // Unicorn: when tracing block, patch block size operand for callback
     if (env->uc->size_arg != -1 && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, tb->pc)) {
