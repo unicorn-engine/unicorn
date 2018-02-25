@@ -487,6 +487,35 @@ void tlb_unprotect_code(CPUState *cpu, ram_addr_t ram_addr)
     cpu_physical_memory_set_dirty_flag(cpu->uc, ram_addr, DIRTY_MEMORY_CODE);
 }
 
+/* Return true if ADDR is present in the victim tlb, and has been copied
+   back to the main tlb.  */
+static bool victim_tlb_hit(CPUArchState *env, size_t mmu_idx, size_t index,
+                           size_t elt_ofs, target_ulong page)
+{
+    size_t vidx;
+    for (vidx = 0; vidx < CPU_VTLB_SIZE; ++vidx) {
+        CPUTLBEntry *vtlb = &env->tlb_v_table[mmu_idx][vidx];
+        target_ulong cmp = *(target_ulong *)((uintptr_t)vtlb + elt_ofs);
+
+        if (cmp == page) {
+            /* Found entry in victim tlb, swap tlb and iotlb.  */
+            CPUTLBEntry tmptlb, *tlb = &env->tlb_table[mmu_idx][index];
+            CPUIOTLBEntry tmpio, *io = &env->iotlb[mmu_idx][index];
+            CPUIOTLBEntry *vio = &env->iotlb_v[mmu_idx][vidx];
+
+            tmptlb = *tlb; *tlb = *vtlb; *vtlb = tmptlb;
+            tmpio = *io; *io = *vio; *vio = tmpio;
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Macro to call the above, with local variables from the use context.  */
+#define VICTIM_TLB_HIT(TY) \
+    victim_tlb_hit(env, mmu_idx, index, offsetof(CPUTLBEntry, TY), \
+                        addr & TARGET_PAGE_MASK)
+
 #define MMUSUFFIX _mmu
 
 #define SHIFT 0
