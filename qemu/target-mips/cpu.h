@@ -647,7 +647,8 @@ void mips_cpu_do_interrupt(CPUState *cpu);
 bool mips_cpu_exec_interrupt(CPUState *cpu, int int_req);
 hwaddr mips_cpu_get_phys_page_debug(CPUState *cpu, vaddr addr);
 void mips_cpu_do_unaligned_access(CPUState *cpu, vaddr addr,
-                                  int is_write, int is_user, uintptr_t retaddr);
+                                  MMUAccessType access_type,
+                                  int mmu_idx, uintptr_t retaddr);
 
 #if !defined(CONFIG_USER_ONLY)
 int no_mmu_map_address (CPUMIPSState *env, hwaddr *physical, int *prot,
