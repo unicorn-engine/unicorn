@@ -1970,7 +1970,7 @@ static void x86_cpu_get_feature_words(struct uc_struct *uc,
 {
     uint32_t *array = (uint32_t *)opaque;
     FeatureWord w;
-    Error *err = NULL;
+
     // These all get setup below, so no need to initialise them here.
     X86CPUFeatureWordInfo word_infos[FEATURE_WORDS];
     X86CPUFeatureWordInfoList list_entries[FEATURE_WORDS];
@@ -1991,8 +1991,7 @@ static void x86_cpu_get_feature_words(struct uc_struct *uc,
         list = &list_entries[w];
     }
 
-    visit_type_X86CPUFeatureWordInfoList(v, "feature-words", &list, &err);
-    error_propagate(errp, err);
+    visit_type_X86CPUFeatureWordInfoList(v, "feature-words", &list, errp);
 }
 
 /* Convert all '_' in a feature string option name to '-', to make feature
