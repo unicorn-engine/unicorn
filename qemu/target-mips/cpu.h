@@ -20,7 +20,7 @@ typedef struct r4k_tlb_t r4k_tlb_t;
 struct r4k_tlb_t {
     target_ulong VPN;
     uint32_t PageMask;
-    uint8_t ASID;
+    uint16_t ASID;
     uint16_t G:1;
     uint16_t C0:3;
     uint16_t C1:3;
