@@ -283,6 +283,107 @@ GList *g_list_sort (GList *list, GCompareFunc  compare_func)
     return g_list_sort_real (list, (GFunc) compare_func, NULL);
 }
 
+static inline GList*
+_g_list_remove_link (GList *list,
+         GList *link)
+{
+  if (link)
+    {
+      if (link->prev)
+        link->prev->next = link->next;
+      if (link->next)
+        link->next->prev = link->prev;
+
+      if (link == list)
+        list = list->next;
+
+      link->next = NULL;
+      link->prev = NULL;
+    }
+
+  return list;
+}
+
+/**
+ * g_list_delete_link:
+ * @list: a #GList, this must point to the top of the list
+ * @link_: node to delete from @list
+ *
+ * Removes the node link_ from the list and frees it.
+ * Compare this to g_list_remove_link() which removes the node 
+ * without freeing it.
+ *
+ * Returns: the (possibly changed) start of the #GList
+ */
+GList *
+g_list_delete_link (GList *list,
+                    GList *link_)
+{
+  list = _g_list_remove_link (list, link_);
+  //_g_list_free1 (link_);
+  g_free (link_);
+
+  return list;
+}
+
+/**
+ * g_list_insert_before:
+ * @list: a pointer to a #GList
+ * @sibling: the list element before which the new element 
+ *     is inserted or %NULL to insert at the end of the list
+ * @data: the data for the new element
+ *
+ * Inserts a new element into the list before the given position.
+ *
+ * Returns: the new start of the #GList
+ */
+GList*
+g_list_insert_before (GList   *list,
+          GList   *sibling,
+          gpointer data)
+{
+  if (!list)
+    {
+      list = g_malloc(sizeof(GList));
+      list->data = data;
+      return list;
+    }
+  else if (sibling)
+    {
+      GList *node;
+
+      node = g_malloc(sizeof(GList));
+      node->data = data;
+      node->prev = sibling->prev;
+      node->next = sibling;
+      sibling->prev = node;
+      if (node->prev)
+  {
+    node->prev->next = node;
+    return list;
+  }
+      else
+  {
+    return node;
+  }
+    }
+  else
+    {
+      GList *last;
+
+      last = list;
+      while (last->next)
+  last = last->next;
+
+      last->next = g_malloc(sizeof(GList));
+      last->next->data = data;
+      last->next->prev = last;
+      last->next->next = NULL;
+
+      return list;
+    }
+}
+
 /* END of g_list related functions */
 
 /* Singly-linked list */
