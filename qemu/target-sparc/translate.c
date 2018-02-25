@@ -2114,6 +2114,7 @@ typedef enum {
     GET_ASI_HELPER,
     GET_ASI_EXCP,
     GET_ASI_DIRECT,
+    GET_ASI_DTWINX,
 } ASIType;
 
 typedef struct {
@@ -2173,18 +2174,26 @@ static DisasASI get_asi(DisasContext *dc, int insn, TCGMemOp memop)
         switch (asi) {
         case ASI_N:  /* Nucleus */
         case ASI_NL: /* Nucleus LE */
+        case ASI_TWINX_N:
+        case ASI_TWINX_NL:
             mem_idx = MMU_NUCLEUS_IDX;
             break;
         case ASI_AIUP:  /* As if user primary */
         case ASI_AIUPL: /* As if user primary LE */
+        case ASI_TWINX_AIUP:
+        case ASI_TWINX_AIUP_L:
             mem_idx = MMU_USER_IDX;
             break;
         case ASI_AIUS:  /* As if user secondary */
         case ASI_AIUSL: /* As if user secondary LE */
+        case ASI_TWINX_AIUS:
+        case ASI_TWINX_AIUS_L:
             mem_idx = MMU_USER_SECONDARY_IDX;
             break;
         case ASI_S:  /* Secondary */
         case ASI_SL: /* Secondary LE */
+        case ASI_TWINX_S:
+        case ASI_TWINX_SL:
             if (mem_idx == MMU_USER_IDX) {
                 mem_idx = MMU_USER_SECONDARY_IDX;
             } else if (mem_idx == MMU_KERNEL_IDX) {
@@ -2193,6 +2202,8 @@ static DisasASI get_asi(DisasContext *dc, int insn, TCGMemOp memop)
             break;
         case ASI_P:  /* Primary */
         case ASI_PL: /* Primary LE */
+        case ASI_TWINX_P:
+        case ASI_TWINX_PL:
             break;
         }
         switch (asi) {
@@ -2207,6 +2218,18 @@ static DisasASI get_asi(DisasContext *dc, int insn, TCGMemOp memop)
         case ASI_P:
         case ASI_PL:
             type = GET_ASI_DIRECT;
+            break;
+        case ASI_TWINX_N:
+        case ASI_TWINX_NL:
+        case ASI_TWINX_AIUP:
+        case ASI_TWINX_AIUP_L:
+        case ASI_TWINX_AIUS:
+        case ASI_TWINX_AIUS_L:
+        case ASI_TWINX_P:
+        case ASI_TWINX_PL:
+        case ASI_TWINX_S:
+        case ASI_TWINX_SL:
+            type = GET_ASI_DTWINX;
             break;
         }
         /* The little-endian asis all have bit 3 set.  */
@@ -2231,6 +2254,9 @@ static void gen_ld_asi(DisasContext *dc, TCGv dst, TCGv addr,
 
     switch (da.type) {
     case GET_ASI_EXCP:
+        break;
+    case GET_ASI_DTWINX: /* Reserved for ldda.  */
+        gen_exception(dc, TT_ILL_INSN);
         break;
     case GET_ASI_DIRECT:
         gen_address_mask(dc, addr);
@@ -2269,6 +2295,9 @@ static void gen_st_asi(DisasContext *dc, TCGv src, TCGv addr,
 
     switch (da.type) {
     case GET_ASI_EXCP:
+        break;
+    case GET_ASI_DTWINX: /* Reserved for stda.  */
+        gen_exception(dc, TT_ILL_INSN);
         break;
     case GET_ASI_DIRECT:
         gen_address_mask(dc, addr);
@@ -2441,33 +2470,60 @@ static void gen_stf_asi(DisasContext *dc, TCGv addr,
     }
 }
 
-static void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
-                         int insn, int rd)
+static void gen_ldda_asi(DisasContext *dc, TCGv addr, int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     DisasASI da = get_asi(dc, insn, MO_TEQ);
+    TCGv_i64 hi = gen_dest_gpr(dc, rd);
+    TCGv_i64 lo = gen_dest_gpr(dc, rd + 1);
 
     switch (da.type) {
     case GET_ASI_EXCP:
+        return;
+
+    case GET_ASI_DTWINX:
+        gen_check_align(dc, addr, 15);
+        gen_address_mask(dc, addr);
+        tcg_gen_qemu_ld_i64(dc->uc, hi, addr, da.mem_idx, da.memop);
+        tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
+        tcg_gen_qemu_ld_i64(dc->uc, lo, addr, da.mem_idx, da.memop);
         break;
+
+    case GET_ASI_DIRECT:
+        {
+            TCGv_i64 tmp = tcg_temp_new_i64(tcg_ctx);
+
+            gen_address_mask(dc, addr);
+            tcg_gen_qemu_ld_i64(dc->uc, tmp, addr, da.mem_idx, da.memop);
+
+            /* Note that LE ldda acts as if each 32-bit register
+               result is byte swapped.  Having just performed one
+               64-bit bswap, we need now to swap the writebacks.  */
+            if ((da.memop & MO_BSWAP) == MO_TE) {
+                tcg_gen_extr32_i64(tcg_ctx, lo, hi, tmp);
+            } else {
+                tcg_gen_extr32_i64(tcg_ctx, hi, lo, tmp);
+            }
+            tcg_temp_free_i64(tcg_ctx, tmp);
+        }
+        break;
+
     default:
         {
             TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
-            TCGv_i64 tmp;
 
             save_state(dc);
             gen_helper_ldda_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_asi);
             tcg_temp_free_i32(tcg_ctx, r_asi);
 
-            tmp = gen_dest_gpr(dc, rd);
-            tcg_gen_ld_i64(tcg_ctx, tmp, tcg_ctx->cpu_env, offsetof(CPUSPARCState, qt0.high));
-            gen_store_gpr(dc, rd, tmp);
-            tmp = gen_dest_gpr(dc, rd + 1);
-            tcg_gen_ld_i64(tcg_ctx, tmp, tcg_ctx->cpu_env, offsetof(CPUSPARCState, qt0.low));
-            gen_store_gpr(dc, rd + 1, tmp);
+            tcg_gen_ld_i64(tcg_ctx, hi, tcg_ctx->cpu_env, offsetof(CPUSPARCState, qt0.high));
+            tcg_gen_ld_i64(tcg_ctx, lo, tcg_ctx->cpu_env, offsetof(CPUSPARCState, qt0.low));
         }
         break;
     }
+
+    gen_store_gpr(dc, rd, hi);
+    gen_store_gpr(dc, rd + 1, lo);
 }
 
 static void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
@@ -2480,6 +2536,33 @@ static void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
     switch (da.type) {
     case GET_ASI_EXCP:
         break;
+
+    case GET_ASI_DTWINX:
+        gen_check_align(dc, addr, 15);
+        gen_address_mask(dc, addr);
+        tcg_gen_qemu_st_i64(dc->uc, hi, addr, da.mem_idx, da.memop);
+        tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
+        tcg_gen_qemu_st_i64(dc->uc, lo, addr, da.mem_idx, da.memop);
+        break;
+
+    case GET_ASI_DIRECT:
+        {
+            TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
+
+            /* Note that LE stda acts as if each 32-bit register result is
+               byte swapped.  We will perform one 64-bit LE store, so now
+               we must swap the order of the construction.  */
+            if ((da.memop & MO_BSWAP) == MO_TE) {
+                tcg_gen_concat32_i64(tcg_ctx, t64, lo, hi);
+            } else {
+                tcg_gen_concat32_i64(tcg_ctx, t64, hi, lo);
+            }
+            gen_address_mask(dc, addr);
+            tcg_gen_qemu_st_i64(dc->uc, t64, addr, da.mem_idx, da.memop);
+            tcg_temp_free_i64(tcg_ctx, t64);
+        }
+        break;
+
     default:
         {
             TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
@@ -2522,8 +2605,7 @@ static void gen_casx_asi(DisasContext *dc, TCGv addr, TCGv val2,
 
 #elif !defined(CONFIG_USER_ONLY)
 
-static void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
-                         int insn, int rd)
+static void gen_ldda_asi(DisasContext *dc, TCGv addr, int insn, int rd)
 {
     /* ??? Work around an apparent bug in Ubuntu gcc 4.8.2-10ubuntu2+12,
        whereby "rd + 1" elicits "error: array subscript is above array".
@@ -2531,6 +2613,7 @@ static void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
        are unchanged.  */
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv lo = gen_dest_gpr(dc, rd | 1);
+    TCGv hi = gen_dest_gpr(dc, rd);
     TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
     DisasASI da = get_asi(dc, insn, MO_TEQ);
 
@@ -2538,6 +2621,10 @@ static void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
     case GET_ASI_EXCP:
         tcg_temp_free_i64(tcg_ctx, t64);
         return;
+    case GET_ASI_DIRECT:
+        gen_address_mask(dc, addr);
+        tcg_gen_qemu_ld_i64(dc->uc, t64, addr, da.mem_idx, da.memop);
+        break;
     default:
         {
             TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
@@ -2571,6 +2658,10 @@ static void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
 
     switch (da.type) {
     case GET_ASI_EXCP:
+        break;
+    case GET_ASI_DIRECT:
+        gen_address_mask(dc, addr);
+        tcg_gen_qemu_st_i64(dc->uc, t64, addr, da.mem_idx, da.memop);
         break;
     default:
         {
@@ -5075,7 +5166,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     if (rd & 1) {
                         goto illegal_insn;
                     }
-                    gen_ldda_asi(dc, cpu_val, cpu_addr, insn, rd);
+                    gen_ldda_asi(dc, cpu_addr, insn, rd);
                     goto skip_move;
                 case 0x19:      /* ldsba, load signed byte alternate */
                     gen_ld_asi(dc, cpu_val, cpu_addr, insn, MO_SB);
