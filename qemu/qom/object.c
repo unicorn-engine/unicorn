@@ -1099,11 +1099,9 @@ int64_t object_property_get_int(struct uc_struct *uc, Object *obj, const char *n
 void object_property_parse(struct uc_struct *uc, Object *obj, const char *string,
                            const char *name, Error **errp)
 {
-    StringInputVisitor *siv;
-    siv = string_input_visitor_new(string);
-    object_property_set(uc, obj, string_input_get_visitor(siv), name, errp);
-
-    string_input_visitor_cleanup(siv);
+    Visitor *v = string_input_visitor_new(string);
+    object_property_set(uc, obj, v, name, errp);
+    visit_free(v);
 }
 
 const char *object_property_get_type(struct uc_struct *uc, Object *obj,
