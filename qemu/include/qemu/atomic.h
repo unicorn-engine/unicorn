@@ -12,8 +12,8 @@
  * atomic primitive is meant to provide.
  */
 
-#ifndef __QEMU_ATOMIC_H
-#define __QEMU_ATOMIC_H 1
+#ifndef QEMU_ATOMIC_H
+#define QEMU_ATOMIC_H
 
 #include "qemu/compiler.h"
 
@@ -385,4 +385,4 @@ void _ReadWriteBarrier(void);
 #endif
 
 #endif /* __ATOMIC_RELAXED */
-#endif /* __QEMU_ATOMIC_H */
+#endif /* QEMU_ATOMIC_H */
