@@ -201,4 +201,4 @@ void apic_enable_vapic(struct uc_struct *uc, DeviceState *d, hwaddr paddr);
 void vapic_report_tpr_access(DeviceState *dev, CPUState *cpu, target_ulong ip,
                              TPRAccess access);
 
-#endif /* !QEMU_APIC_INTERNAL_H */
+#endif /* QEMU_APIC_INTERNAL_H */

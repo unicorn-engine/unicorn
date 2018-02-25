@@ -6,7 +6,7 @@
  */
 
 #ifndef QEMU_FPRINTF_FN_H
-#define QEMU_FPRINTF_FN_H 1
+#define QEMU_FPRINTF_FN_H
 
 #include "qemu/compiler.h"
 #include <stdio.h>
