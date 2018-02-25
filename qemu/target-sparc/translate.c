@@ -1136,6 +1136,15 @@ static void gen_exception(DisasContext *dc, int which)
     dc->is_br = 1;
 }
 
+static void gen_check_align(DisasContext *dc, TCGv addr, int mask)
+{
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+    TCGv_i32 r_mask = tcg_const_i32(tcg_ctx, mask);
+
+    gen_helper_check_align(tcg_ctx, tcg_ctx->cpu_env, addr, r_mask);
+    tcg_temp_free_i32(tcg_ctx, r_mask);
+}
+
 static inline void gen_mov_pc_npc(DisasContext *dc)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
@@ -4851,8 +4860,6 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
 #endif
 #ifdef TARGET_SPARC64
             } else if (xop == 0x39) { /* V9 return */
-                TCGv_i32 r_const;
-
                 save_state(dc);
                 cpu_src1 = get_src1(dc, insn);
                 cpu_tmp0 = get_temp_tl(dc);
@@ -4870,9 +4877,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 }
                 gen_helper_restore(tcg_ctx, tcg_ctx->cpu_env);
                 gen_mov_pc_npc(dc);
-                r_const = tcg_const_i32(tcg_ctx, 3);
-                gen_helper_check_align(tcg_ctx, tcg_ctx->cpu_env, cpu_tmp0, r_const);
-                tcg_temp_free_i32(tcg_ctx, r_const);
+                gen_check_align(dc, cpu_tmp0, 3);
                 tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_npc, cpu_tmp0);
                 dc->npc = DYNAMIC_PC;
                 goto jmp_insn;
@@ -4895,16 +4900,12 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 switch (xop) {
                 case 0x38:      /* jmpl */
                     {
-                        TCGv t;
-                        TCGv_i32 r_const;
-
-                        t = gen_dest_gpr(dc, rd);
+                        TCGv t = gen_dest_gpr(dc, rd);
                         tcg_gen_movi_tl(tcg_ctx, t, dc->pc);
                         gen_store_gpr(dc, rd, t);
+
                         gen_mov_pc_npc(dc);
-                        r_const = tcg_const_i32(tcg_ctx, 3);
-                        gen_helper_check_align(tcg_ctx, tcg_ctx->cpu_env, cpu_tmp0, r_const);
-                        tcg_temp_free_i32(tcg_ctx, r_const);
+                        gen_check_align(dc, cpu_tmp0, 3);
                         gen_address_mask(dc, cpu_tmp0);
                         tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_npc, cpu_tmp0);
                         dc->npc = DYNAMIC_PC;
@@ -4913,14 +4914,10 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
 #if !defined(CONFIG_USER_ONLY) && !defined(TARGET_SPARC64)
                 case 0x39:      /* rett, V9 return */
                     {
-                        TCGv_i32 r_const;
-
                         if (!supervisor(dc))
                             goto priv_insn;
                         gen_mov_pc_npc(dc);
-                        r_const = tcg_const_i32(tcg_ctx, 3);
-                        gen_helper_check_align(tcg_ctx, tcg_ctx->cpu_env, cpu_tmp0, r_const);
-                        tcg_temp_free_i32(tcg_ctx, r_const);
+                        gen_check_align(dc, cpu_tmp0, 3);
                         tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_npc, cpu_tmp0);
                         dc->npc = DYNAMIC_PC;
                         gen_helper_rett(tcg_ctx, tcg_ctx->cpu_env);
@@ -5016,14 +5013,8 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     if (rd & 1)
                         goto illegal_insn;
                     else {
-                        TCGv_i32 r_const;
                         TCGv_i64 t64;
 
-                        save_state(dc);
-                        r_const = tcg_const_i32(tcg_ctx, 7);
-                        /* XXX remove alignment check */
-                        gen_helper_check_align(tcg_ctx, tcg_ctx->cpu_env, cpu_addr, r_const);
-                        tcg_temp_free_i32(tcg_ctx, r_const);
                         gen_address_mask(dc, cpu_addr);
                         t64 = tcg_temp_new_i64(tcg_ctx);
                         tcg_gen_qemu_ld64(dc->uc, t64, cpu_addr, dc->mem_idx);
@@ -5234,18 +5225,11 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     if (rd & 1)
                         goto illegal_insn;
                     else {
-                        TCGv_i32 r_const;
                         TCGv_i64 t64;
                         TCGv lo;
 
-                        save_state(dc);
                         gen_address_mask(dc, cpu_addr);
-                        r_const = tcg_const_i32(tcg_ctx, 7);
-                        /* XXX remove alignment check */
-                        gen_helper_check_align(tcg_ctx, tcg_ctx->cpu_env, cpu_addr, r_const);
-                        tcg_temp_free_i32(tcg_ctx, r_const);
                         lo = gen_load_gpr(dc, rd + 1);
-
                         t64 = tcg_temp_new_i64(tcg_ctx);
                         tcg_gen_concat_tl_i64(tcg_ctx, t64, lo, cpu_val);
                         tcg_gen_qemu_st64(dc->uc, t64, cpu_addr, dc->mem_idx);
@@ -5358,15 +5342,11 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     break;
                 case 0x36: /* V9 stqfa */
                     {
-                        TCGv_i32 r_const;
-
                         CHECK_FPU_FEATURE(dc, FLOAT128);
                         if (gen_trap_ifnofpu(dc)) {
                             goto jmp_insn;
                         }
-                        r_const = tcg_const_i32(tcg_ctx, 7);
-                        gen_helper_check_align(tcg_ctx, tcg_ctx->cpu_env, cpu_addr, r_const);
-                        tcg_temp_free_i32(tcg_ctx, r_const);
+                        gen_check_align(dc, cpu_addr, 7);
                         gen_stf_asi(dc, cpu_addr, insn, 16, QFPREG(rd));
                     }
                     break;
