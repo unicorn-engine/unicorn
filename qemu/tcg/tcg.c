@@ -1045,6 +1045,21 @@ static const char * const ldst_name[] =
 #endif // _MSC_VER
 };
 
+static const char * const alignment_name[(MO_AMASK >> MO_ASHIFT) + 1] = {
+    "",
+    "al2+",
+    "al4+",
+    "al8+",
+    "al16+",
+    "al32+",
+    "al64+",
+#ifdef ALIGNED_ONLY
+    "un+"
+#else
+    "al+",
+#endif
+};
+
 void tcg_dump_ops(TCGContext *s)
 {
     char buf[128];
@@ -1147,14 +1162,8 @@ void tcg_dump_ops(TCGContext *s)
                     if (op & ~(MO_AMASK | MO_BSWAP | MO_SSIZE)) {
                         printf(",%s,%u", ldst_name[op], ix);
                     } else {
-                        const char *s_al = "", *s_op;
-                        if (op & MO_AMASK) {
-                            if ((op & MO_AMASK) == MO_ALIGN) {
-                                s_al = "al+";
-                            } else {
-                                s_al = "un+";
-                            }
-                        }
+                        const char *s_al, *s_op;
+                        s_al = alignment_name[(op & MO_AMASK) >> MO_ASHIFT];
                         s_op = ldst_name[op & (MO_BSWAP | MO_SSIZE)];
                         printf(",%s%s,%u", s_al, s_op, ix);
                     }

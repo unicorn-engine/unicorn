@@ -186,6 +186,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr,
     unsigned mmu_idx = get_mmuidx(oi);
     int index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     target_ulong tlb_addr = env->tlb_table[mmu_idx][index].ADDR_READ;
+    int a_bits = get_alignment_bits(get_memop(oi));
     uintptr_t haddr;
     DATA_TYPE res;
     int error_code;
@@ -288,23 +289,14 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr,
     /* Adjust the given return address.  */
     retaddr -= GETPC_ADJ;
 
+    if (a_bits > 0 && (addr & ((1 << a_bits) - 1)) != 0) {
+        cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
+                             mmu_idx, retaddr);
+    }
+
     /* If the TLB entry is for a different page, reload and try again.  */
     if ((addr & TARGET_PAGE_MASK)
          != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
-        if ((addr & (DATA_SIZE - 1)) != 0
-            && (get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-            //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-            //                     mmu_idx, retaddr);
-            env->invalid_addr = addr;
-#if defined(SOFTMMU_CODE_ACCESS)
-            env->invalid_error = UC_ERR_FETCH_UNALIGNED;
-#else
-            env->invalid_error = UC_ERR_READ_UNALIGNED;
-#endif
-            cpu_exit(uc->current_cpu);
-            return 0;
-        }
-
         if (!victim_tlb_hit_read(env, addr, mmu_idx, index)) {
             tlb_fill(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
                      mmu_idx, retaddr);
@@ -344,18 +336,6 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr,
         DATA_TYPE res1, res2;
         unsigned shift;
     do_unaligned_access:
-        if ((get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-            //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-            //                     mmu_idx, retaddr);
-            env->invalid_addr = addr;
-#if defined(SOFTMMU_CODE_ACCESS)
-            env->invalid_error = UC_ERR_FETCH_UNALIGNED;
-#else
-            env->invalid_error = UC_ERR_READ_UNALIGNED;
-#endif
-            cpu_exit(uc->current_cpu);
-            return 0;
-        }
         addr1 = addr & ~(DATA_SIZE - 1);
         addr2 = addr1 + DATA_SIZE;
         /* Note the adjustment at the beginning of the function.
@@ -367,21 +347,6 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr,
         /* Little-endian combine.  */
         res = (res1 >> shift) | (res2 << ((DATA_SIZE * 8) - shift));
         goto _out;
-    }
-
-    /* Handle aligned access or unaligned access in the same page.  */
-    if ((addr & (DATA_SIZE - 1)) != 0
-        && (get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-        //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-        //                     mmu_idx, retaddr);
-        env->invalid_addr = addr;
-#if defined(SOFTMMU_CODE_ACCESS)
-        env->invalid_error = UC_ERR_FETCH_UNALIGNED;
-#else
-        env->invalid_error = UC_ERR_READ_UNALIGNED;
-#endif
-        cpu_exit(uc->current_cpu);
-        return 0;
     }
 
     haddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][index].addend);
@@ -411,6 +376,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr,
     unsigned mmu_idx = get_mmuidx(oi);
     int index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     target_ulong tlb_addr = env->tlb_table[mmu_idx][index].ADDR_READ;
+    int a_bits = get_alignment_bits(get_memop(oi));
     uintptr_t haddr;
     DATA_TYPE res;
     int error_code;
@@ -513,22 +479,14 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr,
     /* Adjust the given return address.  */
     retaddr -= GETPC_ADJ;
 
+    if (a_bits > 0 && (addr & ((1 << a_bits) - 1)) != 0) {
+        cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
+                             mmu_idx, retaddr);
+    }
+
     /* If the TLB entry is for a different page, reload and try again.  */
     if ((addr & TARGET_PAGE_MASK)
          != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
-        if ((addr & (DATA_SIZE - 1)) != 0
-            && (get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-            //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-            //                     mmu_idx, retaddr);
-            env->invalid_addr = addr;
-#if defined(SOFTMMU_CODE_ACCESS)
-            env->invalid_error = UC_ERR_FETCH_UNALIGNED;
-#else
-            env->invalid_error = UC_ERR_READ_UNALIGNED;
-#endif
-            cpu_exit(uc->current_cpu);
-            return 0;
-        }
         if (!victim_tlb_hit_read(env, addr, mmu_idx, index)) {
             tlb_fill(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
                      mmu_idx, retaddr);
@@ -567,18 +525,6 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr,
         DATA_TYPE res1, res2;
         unsigned shift;
     do_unaligned_access:
-        if ((get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-            //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-            //                     mmu_idx, retaddr);
-            env->invalid_addr = addr;
-#if defined(SOFTMMU_CODE_ACCESS)
-            env->invalid_error = UC_ERR_FETCH_UNALIGNED;
-#else
-            env->invalid_error = UC_ERR_READ_UNALIGNED;
-#endif
-            cpu_exit(uc->current_cpu);
-            return 0;
-        }
         addr1 = addr & ~(DATA_SIZE - 1);
         addr2 = addr1 + DATA_SIZE;
         /* Note the adjustment at the beginning of the function.
@@ -590,21 +536,6 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr,
         /* Big-endian combine.  */
         res = (res1 << shift) | (res2 >> ((DATA_SIZE * 8) - shift));
         goto _out;
-    }
-
-    /* Handle aligned access or unaligned access in the same page.  */
-    if ((addr & (DATA_SIZE - 1)) != 0
-        && (get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-        //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
-        //                     mmu_idx, retaddr);
-        env->invalid_addr = addr;
-#if defined(SOFTMMU_CODE_ACCESS)
-        env->invalid_error = UC_ERR_FETCH_UNALIGNED;
-#else
-        env->invalid_error = UC_ERR_READ_UNALIGNED;
-#endif
-        cpu_exit(uc->current_cpu);
-        return 0;
     }
 
     haddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][index].addend);
@@ -672,6 +603,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     unsigned mmu_idx = get_mmuidx(oi);
     int index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     target_ulong tlb_addr = env->tlb_table[mmu_idx][index].addr_write;
+    int a_bits = get_alignment_bits(get_memop(oi));
     uintptr_t haddr;
     struct hook *hook;
     bool handled;
@@ -734,18 +666,14 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     /* Adjust the given return address.  */
     retaddr -= GETPC_ADJ;
 
+    if (a_bits > 0 && (addr & ((1 << a_bits) - 1)) != 0) {
+        cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
+                             mmu_idx, retaddr);
+    }
+
     /* If the TLB entry is for a different page, reload and try again.  */
     if ((addr & TARGET_PAGE_MASK)
         != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
-        if ((addr & (DATA_SIZE - 1)) != 0
-            && (get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-            //cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
-            //                     mmu_idx, retaddr);
-            env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_WRITE_UNALIGNED;
-            cpu_exit(uc->current_cpu);
-            return;
-        }
         if (!victim_tlb_hit_write(env, addr, mmu_idx, index)) {
             tlb_fill(ENV_GET_CPU(env), addr, MMU_DATA_STORE, mmu_idx, retaddr);
         }
@@ -780,14 +708,6 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
                      >= TARGET_PAGE_SIZE)) {
         int i;
     do_unaligned_access:
-        if ((get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-            cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
-                                 mmu_idx, retaddr);
-            env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_WRITE_UNALIGNED;
-            cpu_exit(uc->current_cpu);
-            return;
-        }
         /* XXX: not efficient, but simple */
         /* Note: relies on the fact that tlb_fill() does not remove the
          * previous page from the TLB cache.  */
@@ -801,17 +721,6 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
             if (env->invalid_error != UC_ERR_OK)
                 break;
         }
-        return;
-    }
-
-    /* Handle aligned access or unaligned access in the same page.  */
-    if ((addr & (DATA_SIZE - 1)) != 0
-        && (get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-        cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
-                             mmu_idx, retaddr);
-        env->invalid_addr = addr;
-        env->invalid_error = UC_ERR_WRITE_UNALIGNED;
-        cpu_exit(uc->current_cpu);
         return;
     }
 
@@ -830,6 +739,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     unsigned mmu_idx = get_mmuidx(oi);
     int index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     target_ulong tlb_addr = env->tlb_table[mmu_idx][index].addr_write;
+    int a_bits = get_alignment_bits(get_memop(oi));
     uintptr_t haddr;
     struct hook *hook;
     bool handled;
@@ -892,18 +802,14 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
     /* Adjust the given return address.  */
     retaddr -= GETPC_ADJ;
 
+    if (a_bits > 0 && (addr & ((1 << a_bits) - 1)) != 0) {
+        cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
+                             mmu_idx, retaddr);
+    }
+
     /* If the TLB entry is for a different page, reload and try again.  */
     if ((addr & TARGET_PAGE_MASK)
         != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
-        if ((addr & (DATA_SIZE - 1)) != 0
-            && (get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-            cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
-                                 mmu_idx, retaddr);
-            env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_WRITE_UNALIGNED;
-            cpu_exit(uc->current_cpu);
-            return;
-        }
         if (!victim_tlb_hit_write(env, addr, mmu_idx, index)) {
             tlb_fill(ENV_GET_CPU(env), addr, MMU_DATA_STORE, mmu_idx, retaddr);
         }
@@ -938,14 +844,6 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
                      >= TARGET_PAGE_SIZE)) {
         int i;
     do_unaligned_access:
-        if ((get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-            cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
-                                 mmu_idx, retaddr);
-            env->invalid_addr = addr;
-            env->invalid_error = UC_ERR_WRITE_UNALIGNED;
-            cpu_exit(uc->current_cpu);
-            return;
-        }
         /* XXX: not efficient, but simple */
         /* Note: relies on the fact that tlb_fill() does not remove the
          * previous page from the TLB cache.  */
@@ -959,17 +857,6 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
             if (env->invalid_error != UC_ERR_OK)
                 break;
         }
-        return;
-    }
-
-    /* Handle aligned access or unaligned access in the same page.  */
-    if ((addr & (DATA_SIZE - 1)) != 0
-        && (get_memop(oi) & MO_AMASK) == MO_ALIGN) {
-        cpu_unaligned_access(ENV_GET_CPU(env), addr, MMU_DATA_STORE,
-                             mmu_idx, retaddr);
-        env->invalid_addr = addr;
-        env->invalid_error = UC_ERR_WRITE_UNALIGNED;
-        cpu_exit(uc->current_cpu);
         return;
     }
 
