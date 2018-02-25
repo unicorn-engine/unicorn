@@ -814,25 +814,22 @@ static const mips_def_t mips_defs[] =
         MMU_TYPE_R4000,
     },
     {
-        /* A generic CPU supporting MIPS64 Release 6 ISA.
-           FIXME: Support IEEE 754-2008 FP and misaligned memory accesses.
-                  Eventually this should be replaced by a real CPU model. */
-        "MIPS64R6-generic",
-        0x00010000,
+        "I6400",
+        0x1A900,
         MIPS_CONFIG0 | (0x2 << CP0C0_AR) | (0x2 << CP0C0_AT) |
                        (MMU_TYPE_R4000 << CP0C0_MT),
-        MIPS_CONFIG1 | (1 << CP0C1_FP) | (63 << CP0C1_MMU) |
-                       (2 << CP0C1_IS) | (4 << CP0C1_IL) | (3 << CP0C1_IA) |
-                       (2 << CP0C1_DS) | (4 << CP0C1_DL) | (3 << CP0C1_DA) |
+        MIPS_CONFIG1 | (1 << CP0C1_FP) | (15 << CP0C1_MMU) |
+                       (2 << CP0C1_IS) | (5 << CP0C1_IL) | (3 << CP0C1_IA) |
+                       (2 << CP0C1_DS) | (5 << CP0C1_DL) | (3 << CP0C1_DA) |
                        (0 << CP0C1_PC) | (1 << CP0C1_WR) | (1 << CP0C1_EP),
         MIPS_CONFIG2,
         MIPS_CONFIG3 | (1U << CP0C3_M) | (1 << CP0C3_CMGCR) | (1 << CP0C3_MSAP) |
                        (1 << CP0C3_BP) | (1 << CP0C3_BI) | (1 << CP0C3_ULRI) |
-                       (1 << CP0C3_RXI) | (1 << CP0C3_LPA),
+                       (1 << CP0C3_RXI) | (1 << CP0C3_LPA) | (1 << CP0C3_VInt),
         MIPS_CONFIG4 | (1U << CP0C4_M) | (3 << CP0C4_IE) |
                        (0xfc << CP0C4_KScrExist),
         MIPS_CONFIG5 | (1 << CP0C5_XNP) | (1 << CP0C5_VP) |
-                       (1 << CP0C5_LLB),
+                       (1 << CP0C5_LLB) | (1 << CP0C5_MRP),
         (1 << CP0C5_MSAEn) | (1 << CP0C5_SBRI) |
                              (1 << CP0C5_FRE) | (1 << CP0C5_UFE),
         0,
@@ -847,10 +844,10 @@ static const mips_def_t mips_defs[] =
         0,
         (1 << FCR0_FREP) | (1 << FCR0_HAS2008) | (1 << FCR0_F64) |
             (1 << FCR0_L) | (1 << FCR0_W) | (1 << FCR0_D) |
-            (1 << FCR0_S) | (0x00 << FCR0_PRID) | (0x0 << FCR0_REV),
+            (1 << FCR0_S) | (0x03 << FCR0_PRID) | (0x0 << FCR0_REV),
         0x0103FFFF,
         (1 << FCR31_ABS2008) | (1 << FCR31_NAN2008),
-        0,
+        0x03 << MSAIR_ProcID,
         48,
         48,
         0,0, 0,0, 0,0, 0,0, 0,0,
