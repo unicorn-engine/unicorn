@@ -2096,56 +2096,140 @@ static inline void gen_ne_fop_QD(DisasContext *dc, int rd, int rs,
 }
 
 /* asi moves */
-#ifdef TARGET_SPARC64
-static inline TCGv_i32 gen_get_asi(DisasContext *dc, int insn, TCGv r_addr)
+#if !defined(CONFIG_USER_ONLY) || defined(TARGET_SPARC64)
+static TCGv_i32 gen_get_asi(DisasContext *dc, int insn)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    int asi;
-    TCGv_i32 r_asi;
+    TCGv_i32 r_asi = tcg_temp_new_i32(tcg_ctx);
 
     if (IS_IMM) {
         r_asi = tcg_temp_new_i32(tcg_ctx);
+#ifdef TARGET_SPARC64
         tcg_gen_mov_i32(tcg_ctx, r_asi, tcg_ctx->cpu_asi);
+#else
+        gen_exception(dc, TT_ILL_INSN);
+        tcg_gen_movi_i32(tcg_ctx, r_asi, 0);
+#endif
     } else {
-        asi = GET_FIELD(insn, 19, 26);
-        r_asi = tcg_const_i32(tcg_ctx, asi);
+        tcg_gen_movi_i32(tcg_ctx, r_asi, GET_FIELD(insn, 19, 26));
     }
     return r_asi;
 }
 
-static inline void gen_ld_asi(DisasContext *dc, TCGv dst, TCGv addr, int insn, int size,
-                              int sign)
+static void gen_ld_asi(DisasContext *dc, TCGv dst, TCGv addr,
+                       int insn, int size, int sign)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv_i32 r_asi, r_size, r_sign;
 
-    r_asi = gen_get_asi(dc, insn, addr);
+    r_asi = gen_get_asi(dc, insn);
     r_size = tcg_const_i32(tcg_ctx, size);
     r_sign = tcg_const_i32(tcg_ctx, sign);
+#ifdef TARGET_SPARC64
     gen_helper_ld_asi(tcg_ctx, dst, tcg_ctx->cpu_env, addr, r_asi, r_size, r_sign);
+#else
+    {
+        TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
+        gen_helper_ld_asi(tcg_ctx, t64, tcg_ctx->cpu_env, addr, r_asi, r_size, r_sign);
+        tcg_gen_trunc_i64_tl(tcg_ctx, dst, t64);
+        tcg_temp_free_i64(tcg_ctx, t64);
+    }
+#endif
     tcg_temp_free_i32(tcg_ctx, r_sign);
     tcg_temp_free_i32(tcg_ctx, r_size);
     tcg_temp_free_i32(tcg_ctx, r_asi);
 }
 
-static inline void gen_st_asi(DisasContext *dc, TCGv src, TCGv addr, int insn, int size)
+static void gen_st_asi(DisasContext *dc, TCGv src, TCGv addr,
+                       int insn, int size)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv_i32 r_asi, r_size;
 
-    r_asi = gen_get_asi(dc, insn, addr);
+    r_asi = gen_get_asi(dc, insn);
     r_size = tcg_const_i32(tcg_ctx, size);
+#ifdef TARGET_SPARC64
     gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, src, r_asi, r_size);
+#else
+    {
+        TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
+        tcg_gen_extu_tl_i64(tcg_ctx, t64, src);
+        gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, t64, r_asi, r_size);
+        tcg_temp_free_i64(tcg_ctx, t64);
+    }
+#endif
     tcg_temp_free_i32(tcg_ctx, r_size);
     tcg_temp_free_i32(tcg_ctx, r_asi);
 }
 
-static inline void gen_ldf_asi(DisasContext *dc, TCGv addr, int insn, int size, int rd)
+static void gen_swap_asi(DisasContext *dc, TCGv dst, TCGv src,
+                         TCGv addr, int insn)
+{
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+    TCGv_i32 r_asi, r_size, r_sign;
+    TCGv_i64 s64, t64 = tcg_temp_new_i64(tcg_ctx);
+
+    r_asi = gen_get_asi(dc, insn);
+    r_size = tcg_const_i32(tcg_ctx, 4);
+    r_sign = tcg_const_i32(tcg_ctx, 0);
+    gen_helper_ld_asi(tcg_ctx, t64, tcg_ctx->cpu_env, addr, r_asi, r_size, r_sign);
+    tcg_temp_free_i32(tcg_ctx, r_sign);
+
+    s64 = tcg_temp_new_i64(tcg_ctx);
+    tcg_gen_extu_tl_i64(tcg_ctx, s64, src);
+    gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, s64, r_asi, r_size);
+    tcg_temp_free_i64(tcg_ctx, s64);
+    tcg_temp_free_i32(tcg_ctx, r_size);
+    tcg_temp_free_i32(tcg_ctx, r_asi);
+
+    tcg_gen_trunc_i64_tl(tcg_ctx, dst, t64);
+    tcg_temp_free_i64(tcg_ctx, t64);
+}
+
+static void gen_cas_asi(DisasContext *dc, TCGv addr, TCGv val2,
+                        int insn, int rd)
+{
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+    TCGv val1 = gen_load_gpr(dc, rd);
+    TCGv dst = gen_dest_gpr(dc, rd);
+    TCGv_i32 r_asi = gen_get_asi(dc, insn);
+
+    gen_helper_cas_asi(tcg_ctx, dst, tcg_ctx->cpu_env, addr, val1, val2, r_asi);
+    tcg_temp_free_i32(tcg_ctx, r_asi);
+    gen_store_gpr(dc, rd, dst);
+}
+
+static void gen_ldstub_asi(DisasContext *dc, TCGv dst, TCGv addr, int insn)
+{
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+    TCGv_i32 r_asi, r_size, r_sign;
+    TCGv_i64 s64, d64 = tcg_temp_new_i64(tcg_ctx);
+
+    r_asi = gen_get_asi(dc, insn);
+    r_size = tcg_const_i32(tcg_ctx, 1);
+    r_sign = tcg_const_i32(tcg_ctx, 0);
+    gen_helper_ld_asi(tcg_ctx, d64, tcg_ctx->cpu_env, addr, r_asi, r_size, r_sign);
+    tcg_temp_free_i32(tcg_ctx, r_sign);
+
+    s64 = tcg_const_i64(tcg_ctx, 0xff);
+    gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, s64, r_asi, r_size);
+    tcg_temp_free_i64(tcg_ctx, s64);
+    tcg_temp_free_i32(tcg_ctx, r_size);
+    tcg_temp_free_i32(tcg_ctx, r_asi);
+
+    tcg_gen_trunc_i64_tl(tcg_ctx, dst, d64);
+    tcg_temp_free_i64(tcg_ctx, d64);
+}
+#endif
+
+#ifdef TARGET_SPARC64
+static void gen_ldf_asi(DisasContext *dc, TCGv addr,
+                        int insn, int size, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv_i32 r_asi, r_size, r_rd;
 
-    r_asi = gen_get_asi(dc, insn, addr);
+    r_asi = gen_get_asi(dc, insn);
     r_size = tcg_const_i32(tcg_ctx, size);
     r_rd = tcg_const_i32(tcg_ctx, rd);
     gen_helper_ldf_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_asi, r_size, r_rd);
@@ -2154,12 +2238,13 @@ static inline void gen_ldf_asi(DisasContext *dc, TCGv addr, int insn, int size, 
     tcg_temp_free_i32(tcg_ctx, r_asi);
 }
 
-static inline void gen_stf_asi(DisasContext *dc, TCGv addr, int insn, int size, int rd)
+static void gen_stf_asi(DisasContext *dc, TCGv addr,
+                        int insn, int size, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv_i32 r_asi, r_size, r_rd;
 
-    r_asi = gen_get_asi(dc, insn, addr);
+    r_asi = gen_get_asi(dc, insn);
     r_size = tcg_const_i32(tcg_ctx, size);
     r_rd = tcg_const_i32(tcg_ctx, rd);
     gen_helper_stf_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_asi, r_size, r_rd);
@@ -2168,39 +2253,21 @@ static inline void gen_stf_asi(DisasContext *dc, TCGv addr, int insn, int size, 
     tcg_temp_free_i32(tcg_ctx, r_asi);
 }
 
-static inline void gen_swap_asi(DisasContext *dc, TCGv dst, TCGv src, TCGv addr, int insn)
-{
-    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    TCGv_i32 r_asi, r_size, r_sign;
-    TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
-
-    r_asi = gen_get_asi(dc, insn, addr);
-    r_size = tcg_const_i32(tcg_ctx, 4);
-    r_sign = tcg_const_i32(tcg_ctx, 0);
-    gen_helper_ld_asi(tcg_ctx, t64, tcg_ctx->cpu_env, addr, r_asi, r_size, r_sign);
-    tcg_temp_free_i32(tcg_ctx, r_sign);
-    gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, src, r_asi, r_size);
-    tcg_temp_free_i32(tcg_ctx, r_size);
-    tcg_temp_free_i32(tcg_ctx, r_asi);
-    tcg_gen_trunc_i64_tl(tcg_ctx, dst, t64);
-    tcg_temp_free_i64(tcg_ctx, t64);
-}
-
-static inline void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
-                                int insn, int rd)
+static void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
+                         int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv_i32 r_asi, r_rd;
 
-    r_asi = gen_get_asi(dc, insn, addr);
+    r_asi = gen_get_asi(dc, insn);
     r_rd = tcg_const_i32(tcg_ctx, rd);
     gen_helper_ldda_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_asi, r_rd);
     tcg_temp_free_i32(tcg_ctx, r_rd);
     tcg_temp_free_i32(tcg_ctx, r_asi);
 }
 
-static inline void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
-                                int insn, int rd)
+static void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
+                         int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv_i32 r_asi, r_size;
@@ -2208,7 +2275,7 @@ static inline void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
     TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
 
     tcg_gen_concat_tl_i64(tcg_ctx, t64, lo, hi);
-    r_asi = gen_get_asi(dc, insn, addr);
+    r_asi = gen_get_asi(dc, insn);
     r_size = tcg_const_i32(tcg_ctx, 8);
     gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, t64, r_asi, r_size);
     tcg_temp_free_i32(tcg_ctx, r_size);
@@ -2216,13 +2283,13 @@ static inline void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
     tcg_temp_free_i64(tcg_ctx, t64);
 }
 
-static inline void gen_casx_asi(DisasContext *dc, TCGv addr,
-                                TCGv val2, int insn, int rd)
+static void gen_casx_asi(DisasContext *dc, TCGv addr, TCGv val2,
+                         int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv val1 = gen_load_gpr(dc, rd);
     TCGv dst = gen_dest_gpr(dc, rd);
-    TCGv_i32 r_asi = gen_get_asi(dc, insn, addr);
+    TCGv_i32 r_asi = gen_get_asi(dc, insn);
 
     gen_helper_casx_asi(tcg_ctx, dst, tcg_ctx->cpu_env, addr, val1, val2, r_asi);
     tcg_temp_free_i32(tcg_ctx, r_asi);
@@ -2231,70 +2298,15 @@ static inline void gen_casx_asi(DisasContext *dc, TCGv addr,
 
 #elif !defined(CONFIG_USER_ONLY)
 
-static inline void gen_ld_asi(DisasContext *dc, TCGv dst, TCGv addr, int insn, int size,
-                              int sign)
-{
-    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    TCGv_i32 r_asi, r_size, r_sign;
-    TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
-
-    r_asi = tcg_const_i32(tcg_ctx, GET_FIELD(insn, 19, 26));
-    r_size = tcg_const_i32(tcg_ctx, size);
-    r_sign = tcg_const_i32(tcg_ctx, sign);
-    gen_helper_ld_asi(tcg_ctx, t64, tcg_ctx->cpu_env, addr, r_asi, r_size, r_sign);
-    tcg_temp_free_i32(tcg_ctx, r_sign);
-    tcg_temp_free_i32(tcg_ctx, r_size);
-    tcg_temp_free_i32(tcg_ctx, r_asi);
-    tcg_gen_trunc_i64_tl(tcg_ctx, dst, t64);
-    tcg_temp_free_i64(tcg_ctx, t64);
-}
-
-static inline void gen_st_asi(DisasContext *dc, TCGv src, TCGv addr, int insn, int size)
-{
-    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    TCGv_i32 r_asi, r_size;
-    TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
-
-    tcg_gen_extu_tl_i64(tcg_ctx, t64, src);
-    r_asi = tcg_const_i32(tcg_ctx, GET_FIELD(insn, 19, 26));
-    r_size = tcg_const_i32(tcg_ctx, size);
-    gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, t64, r_asi, r_size);
-    tcg_temp_free_i32(tcg_ctx, r_size);
-    tcg_temp_free_i32(tcg_ctx, r_asi);
-    tcg_temp_free_i64(tcg_ctx, t64);
-}
-
-static inline void gen_swap_asi(DisasContext *dc, TCGv dst, TCGv src, TCGv addr, int insn)
-{
-    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    TCGv_i32 r_asi, r_size, r_sign;
-    TCGv_i64 r_val, t64;
-
-    r_asi = tcg_const_i32(tcg_ctx, GET_FIELD(insn, 19, 26));
-    r_size = tcg_const_i32(tcg_ctx, 4);
-    r_sign = tcg_const_i32(tcg_ctx, 0);
-    t64 = tcg_temp_new_i64(tcg_ctx);
-    gen_helper_ld_asi(tcg_ctx, t64, tcg_ctx->cpu_env, addr, r_asi, r_size, r_sign);
-    tcg_temp_free(tcg_ctx, r_sign);
-    r_val = tcg_temp_new_i64(tcg_ctx);
-    tcg_gen_extu_tl_i64(tcg_ctx, r_val, src);
-    gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_val, r_asi, r_size);
-    tcg_temp_free_i64(tcg_ctx, r_val);
-    tcg_temp_free_i32(tcg_ctx, r_size);
-    tcg_temp_free_i32(tcg_ctx, r_asi);
-    tcg_gen_trunc_i64_tl(tcg_ctx, dst, t64);
-    tcg_temp_free_i64(tcg_ctx, t64);
-}
-
-static inline void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
-                                int insn, int rd)
+static void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
+                         int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv_i32 r_asi, r_size, r_sign;
     TCGv t;
     TCGv_i64 t64;
 
-    r_asi = tcg_const_i32(tcg_ctx, GET_FIELD(insn, 19, 26));
+    r_asi = gen_get_asi(dc, insn);
     r_size = tcg_const_i32(tcg_ctx, 8);
     r_sign = tcg_const_i32(tcg_ctx, 0);
     t64 = tcg_temp_new_i64(tcg_ctx);
@@ -2317,8 +2329,8 @@ static inline void gen_ldda_asi(DisasContext *dc, TCGv hi, TCGv addr,
     gen_store_gpr(dc, rd, hi);
 }
 
-static inline void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
-                                int insn, int rd)
+static void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
+                         int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     TCGv_i32 r_asi, r_size;
@@ -2326,48 +2338,12 @@ static inline void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
     TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
 
     tcg_gen_concat_tl_i64(tcg_ctx, t64, lo, hi);
-    r_asi = tcg_const_i32(tcg_ctx, GET_FIELD(insn, 19, 26));
+    r_asi = gen_get_asi(dc, insn);
     r_size = tcg_const_i32(tcg_ctx, 8);
     gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, t64, r_asi, r_size);
     tcg_temp_free_i32(tcg_ctx, r_size);
     tcg_temp_free_i32(tcg_ctx, r_asi);
     tcg_temp_free_i64(tcg_ctx, t64);
-}
-#endif
-
-#if !defined(CONFIG_USER_ONLY) || defined(TARGET_SPARC64)
-static inline void gen_cas_asi(DisasContext *dc, TCGv addr,
-                               TCGv val2, int insn, int rd)
-{
-    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    TCGv val1 = gen_load_gpr(dc, rd);
-    TCGv dst = gen_dest_gpr(dc, rd);
-#ifdef TARGET_SPARC64
-    TCGv_i32 r_asi = gen_get_asi(dc, insn, addr);
-#else
-    TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, GET_FIELD(insn, 19, 26));
-#endif
-
-    gen_helper_cas_asi(tcg_ctx, dst, tcg_ctx->cpu_env, addr, val1, val2, r_asi);
-    tcg_temp_free_i32(tcg_ctx, r_asi);
-    gen_store_gpr(dc, rd, dst);
-}
-
-static inline void gen_ldstub_asi(DisasContext *dc, TCGv dst, TCGv addr, int insn)
-{
-    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    TCGv_i64 r_val;
-    TCGv_i32 r_asi, r_size;
-
-    gen_ld_asi(dc, dst, addr, insn, 1, 0);
-
-    r_val = tcg_const_i64(tcg_ctx, 0xffULL);
-    r_asi = tcg_const_i32(tcg_ctx, GET_FIELD(insn, 19, 26));
-    r_size = tcg_const_i32(tcg_ctx, 1);
-    gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_val, r_asi, r_size);
-    tcg_temp_free_i32(tcg_ctx, r_size);
-    tcg_temp_free_i32(tcg_ctx, r_asi);
-    tcg_temp_free_i64(tcg_ctx, r_val);
 }
 #endif
 
