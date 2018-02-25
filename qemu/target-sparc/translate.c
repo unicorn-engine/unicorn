@@ -2419,10 +2419,33 @@ static void gen_ldf_asi(DisasContext *dc, TCGv addr,
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     DisasASI da = get_asi(dc, insn, (size == 4 ? MO_TEUL : MO_TEQ));
+    TCGv_i32 d32;
 
     switch (da.type) {
     case GET_ASI_EXCP:
         break;
+
+    case GET_ASI_DIRECT:
+        gen_address_mask(dc, addr);
+        switch (size) {
+        case 4:
+            d32 = gen_dest_fpr_F(dc);
+            tcg_gen_qemu_ld_i32(dc->uc, d32, addr, da.mem_idx, da.memop);
+            gen_store_fpr_F(dc, rd, d32);
+            break;
+        case 8:
+            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx, da.memop);
+            break;
+        case 16:
+            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx, da.memop);
+            tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
+            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd/2+1], addr, da.mem_idx, da.memop);
+            break;
+        default:
+            g_assert_not_reached();
+        }
+        break;
+
     default:
         {
             TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
@@ -2444,10 +2467,32 @@ static void gen_stf_asi(DisasContext *dc, TCGv addr,
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     DisasASI da = get_asi(dc, insn, (size == 4 ? MO_TEUL : MO_TEQ));
+    TCGv_i32 d32;
 
     switch (da.type) {
     case GET_ASI_EXCP:
         break;
+
+    case GET_ASI_DIRECT:
+        gen_address_mask(dc, addr);
+        switch (size) {
+        case 4:
+            d32 = gen_load_fpr_F(dc, rd);
+            tcg_gen_qemu_st_i32(dc->uc, d32, addr, da.mem_idx, da.memop);
+            break;
+        case 8:
+            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx, da.memop);
+            break;
+        case 16:
+            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx, da.memop);
+            tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
+            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd/2+1], addr, da.mem_idx, da.memop);
+            break;
+        default:
+            g_assert_not_reached();
+        }
+        break;
+
     default:
         {
             TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
