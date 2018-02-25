@@ -30,6 +30,7 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
     <ClInclude Include="..\..\..\qemu\target-sparc\cpu-qom.h" />
     <ClInclude Include="..\..\..\qemu\target-sparc\cpu.h" />
+    <ClInclude Include="..\..\..\qemu\target-sparc\asi.h" />
     <ClInclude Include="..\..\..\qemu\target-sparc\helper.h" />
     <ClInclude Include="..\..\..\qemu\target-sparc\unicorn.h" />
     <ClInclude Include="..\..\..\qemu\sparc.h" />

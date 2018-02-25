@@ -54,6 +54,9 @@
     <ClInclude Include="..\..\..\qemu\target-sparc\cpu-qom.h">
       <Filter>target-sparc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-sparc\asi.h">
+      <Filter>target-sparc</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\qemu\target-sparc\helper.h">
       <Filter>target-sparc</Filter>
     </ClInclude>
