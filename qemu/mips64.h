@@ -3164,6 +3164,10 @@
 #define cpu_mips_init cpu_mips_init_mips64
 #define cpu_state_reset cpu_state_reset_mips64
 #define do_raise_exception_err do_raise_exception_err_mips64
+#define float_class_d float_class_d_mips64
+#define float_class_s float_class_s_mips64
+#define gen_helper_float_class_d gen_helper_float_class_d_mips64
+#define gen_helper_float_class_s gen_helper_float_class_s_mips64
 #define helper_msa_andi_b helper_msa_andi_b_mips64
 #define helper_msa_ori_b helper_msa_ori_b_mips64
 #define helper_msa_nori_b helper_msa_nori_b_mips64

@@ -7940,7 +7940,7 @@ float64 VFP_HELPER(fcvtd, s)(float32 x, CPUARMState *env)
     /* ARM requires that S<->D conversion of any kind of NaN generates
      * a quiet NaN by forcing the most significant frac bit to 1.
      */
-    return float64_maybe_silence_nan(r);
+    return float64_maybe_silence_nan(r, &env->vfp.fp_status);
 }
 
 float32 VFP_HELPER(fcvts, d)(float64 x, CPUARMState *env)
@@ -7949,7 +7949,7 @@ float32 VFP_HELPER(fcvts, d)(float64 x, CPUARMState *env)
     /* ARM requires that S<->D conversion of any kind of NaN generates
      * a quiet NaN by forcing the most significant frac bit to 1.
      */
-    return float32_maybe_silence_nan(r);
+    return float32_maybe_silence_nan(r, &env->vfp.fp_status);
 }
 
 /* VFP3 fixed point conversion.  */
@@ -8048,7 +8048,7 @@ static float32 do_fcvt_f16_to_f32(uint32_t a, CPUARMState *env, float_status *s)
     int ieee = (env->vfp.xregs[ARM_VFP_FPSCR] & (1 << 26)) == 0;
     float32 r = float16_to_float32(make_float16(a), ieee, s);
     if (ieee) {
-        return float32_maybe_silence_nan(r);
+        return float32_maybe_silence_nan(r, s);
     }
     return r;
 }
@@ -8058,7 +8058,7 @@ static uint32_t do_fcvt_f32_to_f16(float32 a, CPUARMState *env, float_status *s)
     int ieee = (env->vfp.xregs[ARM_VFP_FPSCR] & (1 << 26)) == 0;
     float16 r = float32_to_float16(a, ieee, s);
     if (ieee) {
-        r = float16_maybe_silence_nan(r);
+        r = float16_maybe_silence_nan(r, s);
     }
     return float16_val(r);
 }
@@ -8088,7 +8088,7 @@ float64 HELPER(vfp_fcvt_f16_to_f64)(uint32_t a, CPUARMState *env)
     int ieee = (env->vfp.xregs[ARM_VFP_FPSCR] & (1 << 26)) == 0;
     float64 r = float16_to_float64(make_float16(a), ieee, &env->vfp.fp_status);
     if (ieee) {
-        return float64_maybe_silence_nan(r);
+        return float64_maybe_silence_nan(r, &env->vfp.fp_status);
     }
     return r;
 }
@@ -8098,7 +8098,7 @@ uint32_t HELPER(vfp_fcvt_f64_to_f16)(float64 a, CPUARMState *env)
     int ieee = (env->vfp.xregs[ARM_VFP_FPSCR] & (1 << 26)) == 0;
     float16 r = float64_to_float16(a, ieee, &env->vfp.fp_status);
     if (ieee) {
-        r = float16_maybe_silence_nan(r);
+        r = float16_maybe_silence_nan(r, &env->vfp.fp_status);
     }
     return float16_val(r);
 }
@@ -8251,12 +8251,12 @@ float32 HELPER(recpe_f32)(float32 input, void *fpstp)
 
     if (float32_is_any_nan(f32)) {
         float32 nan = f32;
-        if (float32_is_signaling_nan(f32)) {
+        if (float32_is_signaling_nan(f32, fpst)) {
             float_raise(float_flag_invalid, fpst);
-            nan = float32_maybe_silence_nan(f32);
+            nan = float32_maybe_silence_nan(f32, fpst);
         }
         if (fpst->default_nan_mode) {
-            nan =  float32_default_nan;
+            nan =  float32_default_nan(fpst);
         }
         return nan;
     } else if (float32_is_infinity(f32)) {
@@ -8305,12 +8305,12 @@ float64 HELPER(recpe_f64)(float64 input, void *fpstp)
     /* Deal with any special cases */
     if (float64_is_any_nan(f64)) {
         float64 nan = f64;
-        if (float64_is_signaling_nan(f64)) {
+        if (float64_is_signaling_nan(f64, fpst)) {
             float_raise(float_flag_invalid, fpst);
-            nan = float64_maybe_silence_nan(f64);
+            nan = float64_maybe_silence_nan(f64, fpst);
         }
         if (fpst->default_nan_mode) {
-            nan =  float64_default_nan;
+            nan =  float64_default_nan(fpst);
         }
         return nan;
     } else if (float64_is_infinity(f64)) {
@@ -8414,12 +8414,12 @@ float32 HELPER(rsqrte_f32)(float32 input, void *fpstp)
 
     if (float32_is_any_nan(f32)) {
         float32 nan = f32;
-        if (float32_is_signaling_nan(f32)) {
+        if (float32_is_signaling_nan(f32, s)) {
             float_raise(float_flag_invalid, s);
-            nan = float32_maybe_silence_nan(f32);
+            nan = float32_maybe_silence_nan(f32, s);
         }
         if (s->default_nan_mode) {
-            nan =  float32_default_nan;
+            nan =  float32_default_nan(s);
         }
         return nan;
     } else if (float32_is_zero(f32)) {
@@ -8427,7 +8427,7 @@ float32 HELPER(rsqrte_f32)(float32 input, void *fpstp)
         return float32_set_sign(float32_infinity, float32_is_neg(f32));
     } else if (float32_is_neg(f32)) {
         float_raise(float_flag_invalid, s);
-        return float32_default_nan;
+        return float32_default_nan(s);
     } else if (float32_is_infinity(f32)) {
         return float32_zero;
     }
@@ -8478,12 +8478,12 @@ float64 HELPER(rsqrte_f64)(float64 input, void *fpstp)
 
     if (float64_is_any_nan(f64)) {
         float64 nan = f64;
-        if (float64_is_signaling_nan(f64)) {
+        if (float64_is_signaling_nan(f64, s)) {
             float_raise(float_flag_invalid, s);
-            nan = float64_maybe_silence_nan(f64);
+            nan = float64_maybe_silence_nan(f64, s);
         }
         if (s->default_nan_mode) {
-            nan =  float64_default_nan;
+            nan =  float64_default_nan(s);
         }
         return nan;
     } else if (float64_is_zero(f64)) {
@@ -8491,7 +8491,7 @@ float64 HELPER(rsqrte_f64)(float64 input, void *fpstp)
         return float64_set_sign(float64_infinity, float64_is_neg(f64));
     } else if (float64_is_neg(f64)) {
         float_raise(float_flag_invalid, s);
-        return float64_default_nan;
+        return float64_default_nan(s);
     } else if (float64_is_infinity(f64)) {
         return float64_zero;
     }
