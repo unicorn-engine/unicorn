@@ -20,17 +20,15 @@
 
 void qapi_free_DummyForceArrays(DummyForceArrays *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_DummyForceArrays(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 const char *const QType_lookup[] = {
@@ -57,32 +55,28 @@ const char *const QapiErrorClass_lookup[] = {
 
 void qapi_free_X86CPUFeatureWordInfo(X86CPUFeatureWordInfo *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_X86CPUFeatureWordInfo(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_X86CPUFeatureWordInfoList(X86CPUFeatureWordInfoList *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_X86CPUFeatureWordInfoList(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 const char *const X86CPURegister32_lookup[] = {
@@ -99,210 +93,182 @@ const char *const X86CPURegister32_lookup[] = {
 
 void qapi_free_anyList(anyList *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_anyList(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_boolList(boolList *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_boolList(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_int16List(int16List *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_int16List(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_int32List(int32List *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_int32List(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_int64List(int64List *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_int64List(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_int8List(int8List *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_int8List(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_intList(intList *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_intList(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_numberList(numberList *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_numberList(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_sizeList(sizeList *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_sizeList(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_strList(strList *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_strList(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_uint16List(uint16List *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_uint16List(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_uint32List(uint32List *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_uint32List(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_uint64List(uint64List *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_uint64List(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
 
 void qapi_free_uint8List(uint8List *obj)
 {
-    QapiDeallocVisitor *qdv;
     Visitor *v;
 
     if (!obj) {
         return;
     }
 
-    qdv = qapi_dealloc_visitor_new();
-    v = qapi_dealloc_get_visitor(qdv);
+    v = qapi_dealloc_visitor_new();
     visit_type_uint8List(v, NULL, &obj, NULL);
-    qapi_dealloc_visitor_cleanup(qdv);
+    visit_free(v);
 }
