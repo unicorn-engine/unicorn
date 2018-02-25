@@ -50,6 +50,9 @@ typedef struct DisasContext {
     TCGv ttl[5];
     int n_t32;
     int n_ttl;
+#ifdef TARGET_SPARC64
+    int asi;
+#endif
 
     // Unicorn engine
     struct uc_struct *uc;
@@ -2100,20 +2103,19 @@ static inline void gen_ne_fop_QD(DisasContext *dc, int rd, int rs,
 static TCGv_i32 gen_get_asi(DisasContext *dc, int insn)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    TCGv_i32 r_asi = tcg_temp_new_i32(tcg_ctx);
+    int asi;
 
     if (IS_IMM) {
-        r_asi = tcg_temp_new_i32(tcg_ctx);
 #ifdef TARGET_SPARC64
-        tcg_gen_mov_i32(tcg_ctx, r_asi, tcg_ctx->cpu_asi);
+        asi = dc->asi;
 #else
         gen_exception(dc, TT_ILL_INSN);
-        tcg_gen_movi_i32(tcg_ctx, r_asi, 0);
+        asi = 0;
 #endif
     } else {
-        tcg_gen_movi_i32(tcg_ctx, r_asi, GET_FIELD(insn, 19, 26));
+        asi = GET_FIELD(insn, 19, 26);
     }
-    return r_asi;
+    return tcg_const_i32(tcg_ctx, asi);
 }
 
 static void gen_ld_asi(DisasContext *dc, TCGv dst, TCGv addr,
@@ -2840,7 +2842,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     gen_store_gpr(dc, rd, cpu_dst);
                     break;
                 case 0x3: /* V9 rdasi */
-                    tcg_gen_ext_i32_tl(tcg_ctx, cpu_dst, tcg_ctx->cpu_asi);
+                    tcg_gen_movi_tl(tcg_ctx, cpu_dst, dc->asi);
                     gen_store_gpr(dc, rd, cpu_dst);
                     break;
                 case 0x4: /* V9 rdtick */
@@ -3744,7 +3746,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                             /* undefined in the SPARCv8 manual, nop on the microSPARC II */
                             case 0x01: case 0x02: case 0x03: case 0x04: case 0x05: case 0x06: case 0x07:
                             case 0x08: case 0x09: case 0x0a: case 0x0b: case 0x0c: case 0x0d: case 0x0e: case 0x0f: 
-                            
+
                             /* implementation-dependent in the SPARCv8 manual, nop on the microSPARC II */
                             case 0x10: case 0x11: case 0x12: case 0x13: case 0x14: case 0x15: case 0x16: case 0x17:
                             case 0x18: case 0x19: case 0x1a: case 0x1b: case 0x1c: case 0x1d: case 0x1e: case 0x1f: 
@@ -3765,7 +3767,13 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                             case 0x3: /* V9 wrasi */
                                 tcg_gen_xor_tl(tcg_ctx, cpu_tmp0, cpu_src1, cpu_src2);
                                 tcg_gen_andi_tl(tcg_ctx, cpu_tmp0, cpu_tmp0, 0xff);
-                                tcg_gen_trunc_tl_i32(tcg_ctx, tcg_ctx->cpu_asi, cpu_tmp0);
+                                tcg_gen_st32_tl(tcg_ctx, cpu_tmp0, tcg_ctx->cpu_env,
+                                                offsetof(CPUSPARCState, asi));
+                                /* End TB to notice changed ASI.  */
+                                save_state(dc);
+                                gen_op_next_insn(dc);
+                                tcg_gen_exit_tb(tcg_ctx, 0);
+                                dc->is_br = 1;
                                 break;
                             case 0x6: /* V9 wrfprs */
                                 tcg_gen_xor_tl(tcg_ctx, cpu_tmp0, cpu_src1, cpu_src2);
@@ -5349,6 +5357,9 @@ void gen_intermediate_code(CPUSPARCState * env, TranslationBlock * tb)
     dc->fpu_enabled = tb_fpu_enabled(tb->flags);
     dc->address_mask_32bit = tb_am_enabled(tb->flags);
     dc->singlestep = (cs->singlestep_enabled); // || singlestep);
+#ifdef TARGET_SPARC64
+    dc->asi = (tb->flags >> TB_FLAG_ASI_SHIFT) & 0xff;
+#endif
 
     // early check to see if the address of this block is the until address
     if (pc_start == env->uc->addr_end) {
@@ -5500,8 +5511,6 @@ void gen_intermediate_code_init(CPUSPARCState *env)
 #ifdef TARGET_SPARC64
     tcg_ctx->cpu_xcc = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, xcc),
             "xcc");
-    tcg_ctx->cpu_asi = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, asi),
-            "asi");
     tcg_ctx->cpu_fprs = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUSPARCState, fprs),
             "fprs");
 

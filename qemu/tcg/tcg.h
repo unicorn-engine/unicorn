@@ -923,7 +923,7 @@ struct TCGContext {
     /* global register indexes */
     TCGv_ptr cpu_regwptr;
     TCGv_i32 cpu_psr;
-    TCGv_i32 cpu_xcc, cpu_asi, cpu_fprs;
+    TCGv_i32 cpu_xcc, cpu_fprs;
     /* Floating point registers */
     TCGv_i64 cpu_fpr[32];   // TARGET_DPREGS = 32 for Sparc64, 16 for Sparc
 
