@@ -827,7 +827,7 @@ static const mips_def_t mips_defs[] =
                        (1 << CP0C3_BP) | (1 << CP0C3_BI) | (1 << CP0C3_ULRI) |
                        (1 << CP0C3_RXI) | (1 << CP0C3_LPA) | (1 << CP0C3_VInt),
         MIPS_CONFIG4 | (1U << CP0C4_M) | (3 << CP0C4_IE) |
-                       (0xfc << CP0C4_KScrExist),
+                       (1 << CP0C4_AE) | (0xfc << CP0C4_KScrExist),
         MIPS_CONFIG5 | (1 << CP0C5_XNP) | (1 << CP0C5_VP) |
                        (1 << CP0C5_LLB) | (1 << CP0C5_MRP),
         (1 << CP0C5_MSAEn) | (1 << CP0C5_SBRI) |
