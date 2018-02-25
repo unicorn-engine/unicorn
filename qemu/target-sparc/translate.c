@@ -2537,13 +2537,39 @@ static void gen_ldf_asi(DisasContext *dc, TCGv addr,
     default:
         {
             TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
-            TCGv_i32 r_size = tcg_const_i32(tcg_ctx, size);
-            TCGv_i32 r_rd = tcg_const_i32(tcg_ctx, rd);
+            TCGv_i32 r_mop = tcg_const_i32(tcg_ctx, da.memop);
 
             save_state(dc);
-            gen_helper_ldf_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_asi, r_size, r_rd);
-            tcg_temp_free_i32(tcg_ctx, r_rd);
-            tcg_temp_free_i32(tcg_ctx, r_size);
+            /* According to the table in the UA2011 manual, the only
+               other asis that are valid for ldfa/lddfa/ldqfa are
+               the NO_FAULT asis.  We still need a helper for these,
+               but we can just use the integer asi helper for them.  */
+            switch (size) {
+            case 4:
+                {
+                    TCGv d64 = tcg_temp_new_i64(tcg_ctx);
+                    gen_helper_ld_asi(tcg_ctx, d64, tcg_ctx->cpu_env, addr, r_asi, r_mop);
+                    d32 = gen_dest_fpr_F(dc);
+                    tcg_gen_extrl_i64_i32(tcg_ctx, d32, d64);
+                    tcg_temp_free_i64(tcg_ctx, d64);
+                    gen_store_fpr_F(dc, rd, d32);
+                }
+                break;
+            case 8:
+                gen_helper_ld_asi(tcg_ctx, tcg_ctx->cpu_fpr[rd / 2],
+                                  tcg_ctx->cpu_env, addr, r_asi, r_mop);
+                break;
+            case 16:
+                gen_helper_ld_asi(tcg_ctx, tcg_ctx->cpu_fpr[rd / 2],
+                                  tcg_ctx->cpu_env, addr, r_asi, r_mop);
+                tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
+                gen_helper_ld_asi(tcg_ctx, tcg_ctx->cpu_fpr[rd/2+1],
+                                  tcg_ctx->cpu_env, addr, r_asi, r_mop);
+                break;
+            default:
+                g_assert_not_reached();
+            }
+            tcg_temp_free_i32(tcg_ctx, r_mop);
             tcg_temp_free_i32(tcg_ctx, r_asi);
         }
         break;
@@ -2616,17 +2642,10 @@ static void gen_stf_asi(DisasContext *dc, TCGv addr,
         break;
 
     default:
-        {
-            TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
-            TCGv_i32 r_size = tcg_const_i32(tcg_ctx, size);
-            TCGv_i32 r_rd = tcg_const_i32(tcg_ctx, rd);
-
-            save_state(dc);
-            gen_helper_stf_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_asi, r_size, r_rd);
-            tcg_temp_free_i32(tcg_ctx, r_rd);
-            tcg_temp_free_i32(tcg_ctx, r_size);
-            tcg_temp_free_i32(tcg_ctx, r_asi);
-        }
+        /* According to the table in the UA2011 manual, the only
+           other asis that are valid for ldfa/lddfa/ldqfa are
+           the PST* asis, which aren't currently handled.  */
+        gen_exception(dc, TT_ILL_INSN);
         break;
     }
 }
