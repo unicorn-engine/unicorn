@@ -35,7 +35,7 @@
 #include "exec/memory.h"
 #include "exec/address-spaces.h"
 #if defined(CONFIG_USER_ONLY)
-#include <qemu.h>
+#include "qemu.h"
 #endif
 #include "exec/cpu-all.h"
 

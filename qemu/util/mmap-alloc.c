@@ -11,7 +11,7 @@
  */
 
 #include "qemu/osdep.h"
-#include <qemu/mmap-alloc.h>
+#include "qemu/mmap-alloc.h"
 #include <sys/mman.h>
 
 void *qemu_ram_mmap(int fd, size_t size, size_t align, bool shared)

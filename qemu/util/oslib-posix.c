@@ -61,7 +61,7 @@
 #include <sys/sysctl.h>
 #endif
 
-#include <qemu/mmap-alloc.h>
+#include "qemu/mmap-alloc.h"
 
 void *qemu_oom_check(void *ptr)
 {
