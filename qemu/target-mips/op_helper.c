@@ -570,7 +570,7 @@ static bool mips_vpe_is_wfi(MIPSCPU *c)
     return cpu->halted && mips_vpe_active(env);
 }
 
-static bool mips_vp_is_wfi(MIPSCPU *c)
+static QEMU_UNUSED_FUNC bool mips_vp_is_wfi(MIPSCPU *c)
 {
     CPUState *cpu = CPU(c);
     CPUMIPSState *env = &c->env;
