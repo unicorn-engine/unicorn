@@ -133,12 +133,13 @@ static void tcg_commit(MemoryListener *listener);
 
 #if !defined(CONFIG_USER_ONLY)
 
-static void phys_map_node_reserve(PhysPageMap *map, unsigned nodes)
+static void phys_map_node_reserve(struct uc_struct *uc, PhysPageMap *map, unsigned nodes)
 {
     if (map->nodes_nb + nodes > map->nodes_nb_alloc) {
-        map->nodes_nb_alloc = MAX(map->nodes_nb_alloc * 2, 16);
+        map->nodes_nb_alloc = MAX(map->nodes_nb_alloc, uc->phys_map_node_alloc_hint);
         map->nodes_nb_alloc = MAX(map->nodes_nb_alloc, map->nodes_nb + nodes);
         map->nodes = g_renew(Node, map->nodes, map->nodes_nb_alloc);
+        uc->phys_map_node_alloc_hint = map->nodes_nb_alloc;
     }
 }
 
@@ -188,12 +189,13 @@ static void phys_page_set_level(PhysPageMap *map, PhysPageEntry *lp,
     }
 }
 
-static void phys_page_set(AddressSpaceDispatch *d,
-        hwaddr index, hwaddr nb,
-        uint16_t leaf)
+static void phys_page_set(struct uc_struct *uc,
+                          AddressSpaceDispatch *d,
+                          hwaddr index, hwaddr nb,
+                          uint16_t leaf)
 {
     /* Wildly overreserve - it doesn't matter much. */
-    phys_map_node_reserve(&d->map, 3 * P_L2_LEVELS);
+    phys_map_node_reserve(uc, &d->map, 3 * P_L2_LEVELS);
 
     phys_page_set_level(&d->map, &d->phys_map, &index, &nb, leaf, P_L2_LEVELS - 1);
 }
@@ -916,7 +918,8 @@ static void phys_sections_free(PhysPageMap *map)
 }
 
 static void register_subpage(struct uc_struct* uc,
-    AddressSpaceDispatch *d, MemoryRegionSection *section)
+                             AddressSpaceDispatch *d,
+                             MemoryRegionSection *section)
 {
     subpage_t *subpage;
     hwaddr base = section->offset_within_address_space
@@ -932,21 +935,22 @@ static void register_subpage(struct uc_struct* uc,
         subpage = subpage_init(d->as, base);
         subsection.address_space = d->as;
         subsection.mr = &subpage->iomem;
-        phys_page_set(d, base >> TARGET_PAGE_BITS, 1,
-                phys_section_add(&d->map, &subsection));
+        phys_page_set(uc, d, base >> TARGET_PAGE_BITS, 1,
+                      phys_section_add(&d->map, &subsection));
     } else {
         subpage = container_of(existing->mr, subpage_t, iomem);
     }
     start = section->offset_within_address_space & ~TARGET_PAGE_MASK;
     end = start + int128_get64(section->size) - 1;
     subpage_register(subpage, start, end,
-            phys_section_add(&d->map, section));
+                     phys_section_add(&d->map, section));
     //g_free(subpage);
 }
 
 
-static void register_multipage(AddressSpaceDispatch *d,
-        MemoryRegionSection *section)
+static void register_multipage(struct uc_struct *uc,
+                               AddressSpaceDispatch *d,
+                               MemoryRegionSection *section)
 {
     hwaddr start_addr = section->offset_within_address_space;
     uint16_t section_index = phys_section_add(&d->map, section);
@@ -954,7 +958,7 @@ static void register_multipage(AddressSpaceDispatch *d,
                 TARGET_PAGE_BITS));
 
     assert(num_pages);
-    phys_page_set(d, start_addr >> TARGET_PAGE_BITS, num_pages, section_index);
+    phys_page_set(uc, d, start_addr >> TARGET_PAGE_BITS, num_pages, section_index);
 }
 
 static void mem_add(MemoryListener *listener, MemoryRegionSection *section)
@@ -985,7 +989,7 @@ static void mem_add(MemoryListener *listener, MemoryRegionSection *section)
             register_subpage(as->uc, d, &now);
         } else {
             now.size = int128_and(now.size, int128_neg(page_size));
-            register_multipage(d, &now);
+            register_multipage(as->uc, d, &now);
         }
     }
 }

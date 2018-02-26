@@ -182,6 +182,8 @@ struct uc_struct {
     MemoryRegion io_mem_unassigned;
     MemoryRegion io_mem_watch;
     RAMList ram_list;
+    // Renamed from "alloc_hint" in qemu.
+    unsigned phys_map_node_alloc_hint;
 
     // qemu/cpu-exec.c
     BounceBuffer bounce;

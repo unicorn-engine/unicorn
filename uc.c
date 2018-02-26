@@ -162,6 +162,8 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         uc->address_spaces.tqh_first = NULL;
         uc->address_spaces.tqh_last = &uc->address_spaces.tqh_first;
 
+        uc->phys_map_node_alloc_hint = 16;
+
         switch(arch) {
             default:
                 break;
