@@ -10,11 +10,6 @@
 extern FILE *qemu_logfile;
 extern int qemu_loglevel;
 
-/* 
- * The new API:
- *
- */
-
 /* Log settings checking macros: */
 
 /* Returns true if qemu_log() will really write somewhere
@@ -50,7 +45,7 @@ static inline bool qemu_loglevel_mask(int mask)
 
 /* main logging function
  */
-void GCC_FMT_ATTR(1, 2) qemu_log(const char *fmt, ...);
+int GCC_FMT_ATTR(1, 2) qemu_log(const char *fmt, ...);
 
 /* vfprintf-like logging function
  */
