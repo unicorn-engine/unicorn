@@ -1188,6 +1188,9 @@ typedef struct X86CPU {
     /* Number of physical address bits supported */
     uint32_t phys_bits;
 
+    /* if true fill the top bits of the MTRR_PHYSMASKn variable range */
+    bool fill_mtrr_mask;
+
     /* in order to simplify APIC support, we leave this pointer to the
        user */
     struct DeviceState *apic_state;
