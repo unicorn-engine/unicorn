@@ -60,14 +60,13 @@ void _ReadWriteBarrier(void);
  */
 #define atomic_read(ptr)                          \
     ({                                            \
-    typeof(*ptr) _val;                            \
-     __atomic_load(ptr, &_val, __ATOMIC_RELAXED); \
-    _val;                                         \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *)); \
+    __atomic_load_n(ptr, __ATOMIC_RELAXED);           \
     })
 
 #define atomic_set(ptr, i)  do {                  \
-    typeof(*ptr) _val = (i);                      \
-    __atomic_store(ptr, &_val, __ATOMIC_RELAXED); \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *)); \
+    __atomic_store_n(ptr, i, __ATOMIC_RELAXED);       \
 } while(0)
 
 /* See above: most compilers currently treat consume and acquire the
@@ -82,16 +81,17 @@ void _ReadWriteBarrier(void);
     smp_read_barrier_depends();
 #endif
 
-#define atomic_rcu_read(ptr)                      \
-    ({                                            \
-    typeof(*ptr) _val;                            \
-    atomic_rcu_read__nocheck(ptr, &_val);         \
-    _val;                                         \
+#define atomic_rcu_read(ptr)                          \
+    ({                                                \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *)); \
+    typeof(*ptr) _val;                                \
+    atomic_rcu_read__nocheck(ptr, &_val);             \
+    _val;                                             \
     })
 
-#define atomic_rcu_set(ptr, i)  do {                    \
-    typeof(*ptr) _val = (i);                            \
-    __atomic_store(ptr, &_val, __ATOMIC_RELEASE);       \
+#define atomic_rcu_set(ptr, i)  do {                  \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *)); \
+    __atomic_store_n(ptr, i, __ATOMIC_RELEASE);       \
 } while(0)
 
 /* atomic_mb_read/set semantics map Java volatile variables. They are
@@ -105,6 +105,7 @@ void _ReadWriteBarrier(void);
 #if defined(_ARCH_PPC)
 #define atomic_mb_read(ptr)                             \
     ({                                                  \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *));   \
     typeof(*ptr) _val;                                  \
      __atomic_load(ptr, &_val, __ATOMIC_RELAXED);       \
      smp_rmb();                                         \
@@ -112,41 +113,41 @@ void _ReadWriteBarrier(void);
     })
 
 #define atomic_mb_set(ptr, i)  do {                     \
-    typeof(*ptr) _val = (i);                            \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *));   \
     smp_wmb();                                          \
-    __atomic_store(ptr, &_val, __ATOMIC_RELAXED);       \
+    __atomic_store_n(ptr, i, __ATOMIC_RELAXED);         \
     smp_mb();                                           \
 } while(0)
 #else
-#define atomic_mb_read(ptr)                       \
-    ({                                            \
-    typeof(*ptr) _val;                            \
-     __atomic_load(ptr, &_val, __ATOMIC_SEQ_CST); \
-    _val;                                         \
+#define atomic_mb_read(ptr)                             \
+    ({                                                  \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *));   \
+    typeof(*ptr) _val;                                  \
+     __atomic_load(ptr, &_val, __ATOMIC_SEQ_CST);       \
+    _val;                                               \
     })
 
-#define atomic_mb_set(ptr, i)  do {               \
-    typeof(*ptr) _val = (i);                      \
-    __atomic_store(ptr, &_val, __ATOMIC_SEQ_CST); \
+#define atomic_mb_set(ptr, i)  do {                     \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *));   \
+    __atomic_store_n(ptr, i, __ATOMIC_SEQ_CST);         \
 } while(0)
 #endif
 
 
 /* All the remaining operations are fully sequentially consistent */
 
-#define atomic_xchg(ptr, i)    ({                           \
-    typeof(*ptr) _new = (i), _old;                          \
-    __atomic_exchange(ptr, &_new, &_old, __ATOMIC_SEQ_CST); \
-    _old;                                                   \
+#define atomic_xchg(ptr, i)    ({                        \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *));    \
+    __atomic_exchange_n(ptr, i, __ATOMIC_SEQ_CST);       \
 })
 
 /* Returns the eventual value, failed or not */
 #define atomic_cmpxchg(ptr, old, new)                                   \
     ({                                                                  \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *));                   \
     typeof(*ptr) _old = (old), _new = (new);                            \
-    __atomic_compare_exchange(ptr, &_old, &_new, false,                 \
+    __atomic_compare_exchange_n(ptr, &_old, new, false,                 \
                               __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);      \
-    _old;                                                               \
     })
 
 /* Provide shorter names for GCC atomic builtins, return old value */
