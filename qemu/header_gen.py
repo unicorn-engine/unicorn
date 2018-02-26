@@ -2925,6 +2925,8 @@ symbols = (
     'tcg_malloc',
     'tcg_malloc_internal',
     'tcg_op_defs_org',
+    'tcg_op_insert_after',
+    'tcg_op_insert_before',
     'tcg_op_remove',
     'tcg_opt_gen_mov',
     'tcg_opt_gen_movi',

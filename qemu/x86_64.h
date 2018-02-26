@@ -2919,6 +2919,8 @@
 #define tcg_malloc tcg_malloc_x86_64
 #define tcg_malloc_internal tcg_malloc_internal_x86_64
 #define tcg_op_defs_org tcg_op_defs_org_x86_64
+#define tcg_op_insert_after tcg_op_insert_after_x86_64
+#define tcg_op_insert_before tcg_op_insert_before_x86_64
 #define tcg_op_remove tcg_op_remove_x86_64
 #define tcg_opt_gen_mov tcg_opt_gen_mov_x86_64
 #define tcg_opt_gen_movi tcg_opt_gen_movi_x86_64

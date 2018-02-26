@@ -81,34 +81,6 @@ static void init_temp_info(TCGContext *s, TCGArg temp)
     }
 }
 
-static TCGOp *insert_op_before(TCGContext *s, TCGOp *old_op,
-                                TCGOpcode opc, int nargs)
-{
-    int oi = s->gen_next_op_idx;
-    int pi = s->gen_next_parm_idx;
-    int prev = old_op->prev;
-    int next = old_op - s->gen_op_buf;
-    TCGOp *new_op;
-    TCGOp new_opp = {0};
-
-    tcg_debug_assert(oi < OPC_BUF_SIZE);
-    tcg_debug_assert(pi + nargs <= OPPARAM_BUF_SIZE);
-    s->gen_next_op_idx = oi + 1;
-    s->gen_next_parm_idx = pi + nargs;
-
-    new_opp.opc = opc;
-    new_opp.args = pi;
-    new_opp.prev = prev;
-    new_opp.next = next;
-
-    new_op = &s->gen_op_buf[oi];
-    *new_op = new_opp;
-    s->gen_op_buf[prev].next = oi;
-    old_op->prev = oi;
-
-    return new_op;
-}
-
 static int op_bits(TCGContext *s, TCGOpcode op)
 {
     const TCGOpDef *def = &s->tcg_op_defs[op];
@@ -1128,7 +1100,7 @@ void tcg_optimize(TCGContext *s)
                 uint64_t a = ((uint64_t)ah << 32) | al;
                 uint64_t b = ((uint64_t)bh << 32) | bl;
                 TCGArg rl, rh;
-                TCGOp *op2 = insert_op_before(s, op, INDEX_op_movi_i32, 2);
+                TCGOp *op2 = tcg_op_insert_before(s, op, INDEX_op_movi_i32, 2);
                 TCGArg *args2 = &s->gen_opparam_buf[op2->args];
 
                 if (opc == INDEX_op_add2_i32) {
@@ -1154,7 +1126,7 @@ void tcg_optimize(TCGContext *s)
                 uint32_t b = temps[args[3]].val;
                 uint64_t r = (uint64_t)a * b;
                 TCGArg rl, rh;
-                TCGOp *op2 = insert_op_before(s, op, INDEX_op_movi_i32, 2);
+                TCGOp *op2 = tcg_op_insert_before(s, op, INDEX_op_movi_i32, 2);
                 TCGArg *args2 = &s->gen_opparam_buf[op2->args];
 
                 rl = args[0];

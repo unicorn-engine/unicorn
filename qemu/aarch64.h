@@ -2919,6 +2919,8 @@
 #define tcg_malloc tcg_malloc_aarch64
 #define tcg_malloc_internal tcg_malloc_internal_aarch64
 #define tcg_op_defs_org tcg_op_defs_org_aarch64
+#define tcg_op_insert_after tcg_op_insert_after_aarch64
+#define tcg_op_insert_before tcg_op_insert_before_aarch64
 #define tcg_op_remove tcg_op_remove_aarch64
 #define tcg_opt_gen_mov tcg_opt_gen_mov_aarch64
 #define tcg_opt_gen_movi tcg_opt_gen_movi_aarch64
