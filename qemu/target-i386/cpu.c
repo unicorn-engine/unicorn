@@ -1773,6 +1773,17 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
 };
 
+typedef struct PropValue {
+    const char *prop, *value;
+} PropValue;
+
+/* TCG-specific defaults that override all CPU models when using TCG
+ */
+static PropValue tcg_default_props[] = {
+    { "vme", "off" },
+    { NULL, NULL },
+};
+
 static uint32_t x86_cpu_get_supported_feature_word(struct uc_struct *uc,
                                                    FeatureWord w, bool migratable);
 
@@ -2191,6 +2202,18 @@ static int x86_cpu_filter_features(X86CPU *cpu)
     return rv;
 }
 
+static void x86_cpu_apply_props(X86CPU *cpu, PropValue *props)
+{
+    PropValue *pv;
+    for (pv = props; pv->prop; pv++) {
+        if (!pv->value) {
+            continue;
+        }
+        object_property_parse(cpu->uc, OBJECT(cpu), pv->value, pv->prop,
+                              &error_abort);
+    }
+}
+
 /* Load data from X86CPUDefinition
  */
 static void x86_cpu_load_def(X86CPU *cpu, X86CPUDefinition *def, Error **errp)
@@ -2208,6 +2231,10 @@ static void x86_cpu_load_def(X86CPU *cpu, X86CPUDefinition *def, Error **errp)
     object_property_set_str(env->uc, OBJECT(cpu), def->model_id, "model-id", errp);
     for (w = 0; w < FEATURE_WORDS; w++) {
         env->features[w] = def->features[w];
+    }
+
+    if (tcg_enabled(cpu->uc)) {
+        x86_cpu_apply_props(cpu, tcg_default_props);
     }
 
     env->features[FEAT_1_ECX] |= CPUID_EXT_HYPERVISOR;
