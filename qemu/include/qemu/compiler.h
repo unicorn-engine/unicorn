@@ -67,6 +67,10 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define NAN		(0.0 / 0.0)
 #endif
 
+#if defined __clang_analyzer__ || defined __COVERITY__
+#define QEMU_STATIC_ANALYSIS 1
+#endif
+
 /*----------------------------------------------------------------------------
 | The macro QEMU_GNUC_PREREQ tests for minimum version of the GNU C compiler.
 | The code is a copy of SOFTFLOAT_GNUC_PREREQ, see softfloat-macros.h.
