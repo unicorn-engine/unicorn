@@ -180,7 +180,7 @@ found:
 }
 
 static inline TranslationBlock *tb_find_fast(CPUState *cpu,
-                                             TranslationBlock **last_tb,
+                                             TranslationBlock *last_tb,
                                              int tb_exit)
 {
     CPUArchState *env = (CPUArchState *)cpu->env_ptr;
@@ -203,7 +203,7 @@ static inline TranslationBlock *tb_find_fast(CPUState *cpu,
         /* Ensure that no TB jump will be modified as the
          * translation buffer has been flushed.
          */
-        *last_tb = NULL;
+        last_tb = NULL;
         cpu->tb_flushed = false;
     }
 #ifndef CONFIG_USER_ONLY
@@ -212,12 +212,12 @@ static inline TranslationBlock *tb_find_fast(CPUState *cpu,
      * spanning two pages because the mapping for the second page can change.
      */
     if (tb->page_addr[1] != -1) {
-        *last_tb = NULL;
+        last_tb = NULL;
     }
 #endif
     /* See if we can patch the calling TB. */
-    if (*last_tb && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
-        tb_add_jump(*last_tb, tb_exit, tb);
+    if (last_tb && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
+        tb_add_jump(last_tb, tb_exit, tb);
     }
     // Unicorn: commented out
     //tb_unlock();
@@ -444,7 +444,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
             cpu->tb_flushed = false; /* reset before first TB lookup */
             for(;;) {
                 cpu_handle_interrupt(cpu, &last_tb);
-                tb = tb_find_fast(cpu, &last_tb, tb_exit);
+                tb = tb_find_fast(cpu, last_tb, tb_exit);
                 if (!tb) {   // invalid TB due to invalid code?
                     uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
                     ret = EXCP_HLT;
