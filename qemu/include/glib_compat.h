@@ -17,8 +17,8 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 */
 
-#ifndef __GLIB_COMPAT_H
-#define __GLIB_COMPAT_H
+#ifndef QEMU_GLIB_COMPAT_H
+#define QEMU_GLIB_COMPAT_H
 
 #include "unicorn/platform.h"
 #include <stdarg.h>
