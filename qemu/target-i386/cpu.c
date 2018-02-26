@@ -578,13 +578,19 @@ typedef struct ExtSaveArea {
 static const ExtSaveArea x86_ext_save_areas[] = {
     // XSTATE_FP_BIT
     {
-        0, 0,
-        0, 0
+        /* x87 FP state component is always enabled if XSAVE is supported */
+        FEAT_1_ECX, CPUID_EXT_XSAVE,
+        /* x87 state is in the legacy region of the XSAVE area */
+        0,
+        sizeof(X86LegacyXSaveArea) + sizeof(X86XSaveHeader),
     },
     // XSTATE_SSE_BIT
     {
-        0, 0,
-        0, 0,
+        /* SSE state component is always enabled if XSAVE is supported */
+        FEAT_1_ECX, CPUID_EXT_XSAVE,
+        /* SSE state is in the legacy region of the XSAVE area */
+        0,
+        sizeof(X86LegacyXSaveArea) + sizeof(X86XSaveHeader),
     },
     // XSTATE_YMM_BIT
     {
