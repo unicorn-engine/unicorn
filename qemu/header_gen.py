@@ -3160,6 +3160,8 @@ symbols = (
 
 arm_symbols = (
     'ARM_REGS_STORAGE_SIZE',
+    'arm_regime_tbi0',
+    'arm_regime_tbi1',
     'arm_register_el_change_hook',
 )
 
@@ -3171,6 +3173,8 @@ aarch64_symbols = (
     'arm64_reg_reset',
     'arm64_reg_write',
     'arm64_release',
+    'arm_regime_tbi0',
+    'arm_regime_tbi1',
     'arm_register_el_change_hook',
     'gen_a64_set_pc_im',
     'helper_cls32',

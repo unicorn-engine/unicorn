@@ -3157,6 +3157,8 @@
 #define arm64_reg_reset arm64_reg_reset_aarch64
 #define arm64_reg_write arm64_reg_write_aarch64
 #define arm64_release arm64_release_aarch64
+#define arm_regime_tbi0 arm_regime_tbi0_aarch64
+#define arm_regime_tbi1 arm_regime_tbi1_aarch64
 #define arm_register_el_change_hook arm_register_el_change_hook_aarch64
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64
 #define helper_cls32 helper_cls32_aarch64

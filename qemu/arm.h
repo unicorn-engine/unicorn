@@ -3151,5 +3151,7 @@
 #define xscale_cp_reginfo xscale_cp_reginfo_arm
 #define xscale_cpar_write xscale_cpar_write_arm
 #define ARM_REGS_STORAGE_SIZE ARM_REGS_STORAGE_SIZE_arm
+#define arm_regime_tbi0 arm_regime_tbi0_arm
+#define arm_regime_tbi1 arm_regime_tbi1_arm
 #define arm_register_el_change_hook arm_register_el_change_hook_arm
 #endif
