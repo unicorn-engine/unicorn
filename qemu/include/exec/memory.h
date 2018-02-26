@@ -1160,9 +1160,11 @@ void *qemu_map_ram_ptr(struct uc_struct *uc, RAMBlock *ram_block,
 static inline bool memory_access_is_direct(MemoryRegion *mr, bool is_write)
 {
     if (is_write) {
-        return memory_region_is_ram(mr) && !mr->readonly;
+        return memory_region_is_ram(mr) &&
+               !mr->readonly && !memory_region_is_ram_device(mr);
     } else {
-        return memory_region_is_ram(mr) || memory_region_is_romd(mr);
+        return (memory_region_is_ram(mr) && !memory_region_is_ram_device(mr)) ||
+               memory_region_is_romd(mr);
     }
 }
 
