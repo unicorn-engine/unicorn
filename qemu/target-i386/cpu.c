@@ -2085,8 +2085,6 @@ static void x86_cpuid_set_apic_id(struct uc_struct *uc,
 {
     X86CPU *cpu = X86_CPU(uc, obj);
     DeviceState *dev = DEVICE(uc, obj);
-    const int64_t min = 0;
-    const int64_t max = UINT32_MAX;
     Error *error = NULL;
     int64_t value;
 
@@ -2099,17 +2097,6 @@ static void x86_cpuid_set_apic_id(struct uc_struct *uc,
     visit_type_int(v, name, &value, &error);
     if (error) {
         error_propagate(errp, error);
-        return;
-    }
-    if (value < min || value > max) {
-        error_setg(errp, "Property %s.%s doesn't take value %" PRId64
-                   " (minimum: %" PRId64 ", maximum: %" PRId64 ")" ,
-                   object_get_typename(obj), name, value, min, max);
-        return;
-    }
-
-    if ((value != cpu->apic_id) && cpu_exists(uc, value)) {
-        error_setg(errp, "CPU with APIC ID %" PRIi64 " exists", value);
         return;
     }
     cpu->apic_id = (uint32_t)value;
