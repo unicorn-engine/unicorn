@@ -1402,10 +1402,14 @@ static void gt_recalc_timer(ARMCPU *cpu, int timeridx)
         /* Note that this must be unsigned 64 bit arithmetic: */
         int istatus = count - offset >= gt->cval;
         uint64_t nexttick;
+        //int irqstate;
 
         gt->ctl = deposit32(gt->ctl, 2, 1, istatus);
-        //qemu_set_irq(cpu->gt_timer_outputs[timeridx],
-        //             (istatus && !(gt->ctl & 2)));
+
+        // Unicorn: commented out
+        //irqstate = (istatus && !(gt->ctl & 2));
+        //qemu_set_irq(cpu->gt_timer_outputs[timeridx], irqstate);
+
         if (istatus) {
             /* Next transition is when count rolls back over to zero */
             nexttick = UINT64_MAX;
@@ -1421,12 +1425,16 @@ static void gt_recalc_timer(ARMCPU *cpu, int timeridx)
         if (nexttick > INT64_MAX / GTIMER_SCALE) {
             nexttick = INT64_MAX / GTIMER_SCALE;
         }
+        // Unicorn: commented out
         //timer_mod(cpu->gt_timer[timeridx], nexttick);
+        //trace_arm_gt_recalc(timeridx, irqstate, nexttick);
     } else {
         /* Timer disabled: ISTATUS and timer output always clear */
         gt->ctl &= ~4;
+        // Unicorn: commented out
         //qemu_set_irq(cpu->gt_timer_outputs[timeridx], 0);
         //timer_del(cpu->gt_timer[timeridx]);
+        //trace_arm_gt_recalc_disabled(timeridx);
     }
 }
 
@@ -1449,6 +1457,8 @@ static void gt_cval_write(CPUARMState *env, const ARMCPRegInfo *ri,
                           int timeridx,
                           uint64_t value)
 {
+    // Unicorn: commented out
+    //trace_arm_gt_cval_write(timeridx, value);
     env->cp15.c14_timer[timeridx].cval = value;
     //gt_recalc_timer(arm_env_get_cpu(env), timeridx);
 }
@@ -1468,6 +1478,8 @@ static void gt_tval_write(CPUARMState *env, const ARMCPRegInfo *ri,
 {
     uint64_t offset = timeridx == GTIMER_VIRT ? env->cp15.cntvoff_el2 : 0;
 
+    // Unicorn: commented out
+    //trace_arm_gt_tval_write(timeridx, value);
     env->cp15.c14_timer[timeridx].cval = gt_get_countervalue(env) - offset +
                                          sextract64(value, 0, 32);
     gt_recalc_timer(arm_env_get_cpu(env), timeridx);
@@ -1480,6 +1492,8 @@ static void gt_ctl_write(CPUARMState *env, const ARMCPRegInfo *ri,
     ARMCPU *cpu = arm_env_get_cpu(env);
     uint32_t oldval = env->cp15.c14_timer[timeridx].ctl;
 
+    // Unicorn: commented out
+    //trace_arm_gt_ctl_write(timeridx, value);
     env->cp15.c14_timer[timeridx].ctl = deposit64(oldval, 0, 2, value);
     if ((oldval ^ value) & 1) {
         /* Enable toggled */
@@ -1488,8 +1502,12 @@ static void gt_ctl_write(CPUARMState *env, const ARMCPRegInfo *ri,
         /* IMASK toggled: don't need to recalculate,
          * just set the interrupt line based on ISTATUS
          */
-        //qemu_set_irq(cpu->gt_timer_outputs[timeridx],
-        //             (oldval & 4) && !(value & 2));
+        /* Unicorn: commented out
+        int irqstate = (oldval & 4) && !(value & 2);
+
+        trace_arm_gt_imask_toggle(timeridx, irqstate);
+        qemu_set_irq(cpu->gt_timer_outputs[timeridx], irqstate);
+        */
     }
 }
 
@@ -1554,6 +1572,8 @@ static void gt_cntvoff_write(CPUARMState *env, const ARMCPRegInfo *ri,
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
 
+    // Unicorn: commented out
+    //trace_arm_gt_cntvoff_write(value);
     raw_write(env, ri, value);
     gt_recalc_timer(cpu, GTIMER_VIRT);
 }
