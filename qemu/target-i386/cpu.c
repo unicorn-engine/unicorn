@@ -639,9 +639,9 @@ static const ExtSaveArea x86_ext_save_areas[] = {
 static uint32_t xsave_area_size(uint64_t mask)
 {
     int i;
-    uint64_t ret = sizeof(X86LegacyXSaveArea) + sizeof(X86XSaveHeader);
+    uint64_t ret = 0;
 
-    for (i = 2; i < ARRAY_SIZE(x86_ext_save_areas); i++) {
+    for (i = 0; i < ARRAY_SIZE(x86_ext_save_areas); i++) {
         const ExtSaveArea *esa = &x86_ext_save_areas[i];
         if ((mask >> i) & 1) {
             ret = MAX(ret, esa->offset + esa->size);
@@ -2198,14 +2198,20 @@ static int x86_cpu_filter_features(X86CPU *cpu)
         env->features[w] &= host_feat;
         cpu->filtered_features[w] = requested_features & ~env->features[w];
         if (cpu->filtered_features[w]) {
-            if (cpu->check_cpuid || cpu->enforce_cpuid) {
-                report_unavailable_features(w, cpu->filtered_features[w]);
-            }
             rv = 1;
         }
     }
 
     return rv;
+}
+
+static void x86_cpu_report_filtered_features(X86CPU *cpu)
+{
+    FeatureWord w;
+
+    for (w = 0; w < FEATURE_WORDS; w++) {
+        report_unavailable_features(w, cpu->filtered_features[w]);
+    }
 }
 
 static void x86_cpu_apply_props(X86CPU *cpu, PropValue *props)
@@ -3012,8 +3018,8 @@ static void x86_cpu_enable_xsave_components(X86CPU *cpu)
         return;
     }
 
-    mask = (XSTATE_FP_MASK | XSTATE_SSE_MASK);
-    for (i = 2; i < ARRAY_SIZE(x86_ext_save_areas); i++) {
+    mask = 0;
+    for (i = 0; i < ARRAY_SIZE(x86_ext_save_areas); i++) {
         const ExtSaveArea *esa = &x86_ext_save_areas[i];
         if (env->features[esa->feature] & esa->bits) {
             mask |= (1ULL << i);
@@ -3096,6 +3102,16 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     }
     if (env->cpuid_xlevel2 == UINT32_MAX) {
         env->cpuid_xlevel2 = env->cpuid_min_xlevel2;
+    }
+
+    if (x86_cpu_filter_features(cpu) &&
+        (cpu->check_cpuid || cpu->enforce_cpuid)) {
+        x86_cpu_report_filtered_features(cpu);
+        if (cpu->enforce_cpuid) {
+            error_setg(&local_err,
+                       "TCG doesn't support requested features");
+            goto out;
+        }
     }
 
     /* On AMD CPUs, some CPUID[8000_0001].EDX bits must match the bits on
