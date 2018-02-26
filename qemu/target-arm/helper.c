@@ -471,6 +471,106 @@ static void tlbimvaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
     // tlb_flush(other_cpu, value & TARGET_PAGE_MASK);
 }
 
+static void tlbiall_nsnh_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                               uint64_t value)
+{
+    CPUState *cs = ENV_GET_CPU(env);
+
+    tlb_flush_by_mmuidx(cs, ARMMMUIdx_S12NSE1, ARMMMUIdx_S12NSE0,
+                        ARMMMUIdx_S2NS, -1);
+}
+
+static void tlbiall_nsnh_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                                  uint64_t value)
+{
+  /* Unicorn: commented out. See issue 642
+    CPUState *other_cs;
+
+    CPU_FOREACH(other_cs) {
+        tlb_flush_by_mmuidx(other_cs, ARMMMUIdx_S12NSE1,
+                            ARMMMUIdx_S12NSE0, ARMMMUIdx_S2NS, -1);
+    }*/
+}
+
+static void tlbiipas2_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                            uint64_t value)
+{
+    /* Invalidate by IPA. This has to invalidate any structures that
+     * contain only stage 2 translation information, but does not need
+     * to apply to structures that contain combined stage 1 and stage 2
+     * translation information.
+     * This must NOP if EL2 isn't implemented or SCR_EL3.NS is zero.
+     */
+    CPUState *cs = ENV_GET_CPU(env);
+    uint64_t pageaddr;
+
+    if (!arm_feature(env, ARM_FEATURE_EL2) || !(env->cp15.scr_el3 & SCR_NS)) {
+        return;
+    }
+
+    pageaddr = sextract64(value << 12, 0, 40);
+
+    tlb_flush_page_by_mmuidx(cs, pageaddr, ARMMMUIdx_S2NS, -1);
+}
+
+static void tlbiipas2_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                               uint64_t value)
+{
+  /* Unicorn: commented out, see issue 642
+    CPUState *other_cs;
+    uint64_t pageaddr;
+
+    if (!arm_feature(env, ARM_FEATURE_EL2) || !(env->cp15.scr_el3 & SCR_NS)) {
+        return;
+    }
+
+    pageaddr = sextract64(value << 12, 0, 40);
+
+    CPU_FOREACH(other_cs) {
+        tlb_flush_page_by_mmuidx(other_cs, pageaddr, ARMMMUIdx_S2NS, -1);
+    }*/
+}
+
+static void tlbiall_hyp_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                              uint64_t value)
+{
+    CPUState *cs = ENV_GET_CPU(env);
+
+    tlb_flush_by_mmuidx(cs, ARMMMUIdx_S1E2, -1);
+}
+
+static void tlbiall_hyp_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                                 uint64_t value)
+{
+    /* Unicorn: commented out. See issue 642
+    CPUState *other_cs;
+
+    CPU_FOREACH(other_cs) {
+        tlb_flush_by_mmuidx(other_cs, ARMMMUIdx_S1E2, -1);
+    }*/
+}
+
+static void tlbimva_hyp_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                              uint64_t value)
+{
+    CPUState *cs = ENV_GET_CPU(env);
+    uint64_t pageaddr = value & ~MAKE_64BIT_MASK(0, 12);
+
+    tlb_flush_page_by_mmuidx(cs, pageaddr, ARMMMUIdx_S1E2, -1);
+}
+
+static void tlbimva_hyp_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                                 uint64_t value)
+{
+  /* Unicorn: commented out. See issue 642.
+    CPUState *other_cs;
+    uint64_t pageaddr = value & ~MAKE_64BIT_MASK(0, 12);
+
+    CPU_FOREACH(other_cs) {
+        tlb_flush_page_by_mmuidx(other_cs, pageaddr, ARMMMUIdx_S1E2, -1);
+    }*/
+}
+
 static const ARMCPRegInfo cp_reginfo[] = {
     /* Define the secure and non-secure FCSE identifier CP registers
      * separately because there is no secure bank in V8 (no _EL3).  This allows
@@ -2932,6 +3032,24 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
     { "TLBIMVAAL", 15,8,7, 0,0,7, 0,
       ARM_CP_NO_RAW, PL1_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbimvaa_write },
+    { "TLBIMVALH", 15,8,7, 0,4,5, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbimva_hyp_write },
+    { "TLBIMVALHIS", 15,8,3, 0,4,5, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbimva_hyp_is_write },
+    { "TLBIIPAS2", 15,8,4, 0,4,1, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiipas2_write },
+    { "TLBIIPAS2IS", 15,8,0, 0,4,1, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiipas2_is_write },
+    { "TLBIIPAS2L", 15,8,4, 0,4,5, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiipas2_write },
+    { "TLBIIPAS2LIS", 15,8,0, 0,4,5, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiipas2_is_write },
     /* 32 bit cache operations */
     { "ICIALLUIS", 15,7,1, 0,0,0, 0,
       ARM_CP_NOP, PL1_W },
@@ -3157,6 +3275,24 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el[2]) },
     { "HTTBR", 15,0,2, 0,4,0, 0, ARM_CP_64BIT | ARM_CP_ALIAS,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el[2]) },
+    { "TLBIALLNSNH", 15,8,7, 0,4,4, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiall_nsnh_write },
+    { "TLBIALLNSNHIS", 15,8,3, 0,4,4, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiall_nsnh_is_write },
+    { "TLBIALLH", 15,8,7, 0,4,0, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiall_hyp_write },
+    { "TLBIALLHIS", 15,8,3, 0,4,0, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbiall_hyp_is_write },
+    { "TLBIMVAH", 15,8,7, 0,4,1, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbimva_hyp_write },
+    { "TLBIMVAHIS", 15,8,3, 0,4,1, 0, ARM_CP_NO_RAW,
+      PL2_W, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, tlbimva_hyp_is_write },
     { "TLBI_ALLE2", 0,8,7, 1,4,0, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
       PL2_W, 0, NULL, 0, 0, {0, 0},
       NULL, NULL, tlbi_aa64_alle2_write },
