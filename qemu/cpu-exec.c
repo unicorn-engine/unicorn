@@ -78,7 +78,7 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
         /* We were asked to stop executing TBs (probably a pending
          * interrupt. We've now stopped, so clear the flag.
          */
-        cpu->tcg_exit_req = 0;
+        atomic_set(&cpu->tcg_exit_req, 0);
     }
     return ret;
 }
