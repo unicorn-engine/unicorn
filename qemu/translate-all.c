@@ -1237,12 +1237,6 @@ static void tb_link_page(struct uc_struct *uc,
     uint32_t h;
     TranslationBlock **ptb;
 
-    /* add in the hash table */
-    h = tb_hash_func(phys_pc, tb->pc, tb->flags);
-    ptb = &tcg_ctx->tb_ctx.tb_phys_hash[h];
-    tb->phys_hash_next = *ptb;
-    *ptb = tb;
-
     /* add in the page list */
     tb_alloc_page(uc, tb, 0, phys_pc & TARGET_PAGE_MASK);
     if (phys_page2 != -1) {
@@ -1250,6 +1244,12 @@ static void tb_link_page(struct uc_struct *uc,
     } else {
         tb->page_addr[1] = -1;
     }
+
+    /* add in the hash table */
+    h = tb_hash_func(phys_pc, tb->pc, tb->flags);
+    ptb = &tcg_ctx->tb_ctx.tb_phys_hash[h];
+    tb->phys_hash_next = *ptb;
+    *ptb = tb;
 
 #ifdef DEBUG_TB_CHECK
     tb_page_check();
