@@ -2530,9 +2530,6 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         *ebx &= 0xffff; /* The count doesn't need to be reliable. */
         break;
     case 0xD: {
-        uint64_t ena_mask;
-        int i;
-
         /* Processor Extended State */
         *eax = 0;
         *ebx = 0;
@@ -2542,33 +2539,16 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             break;
         }
 
-        ena_mask = (XSTATE_FP_MASK | XSTATE_SSE_MASK);
-        for (i = 2; i < ARRAY_SIZE(x86_ext_save_areas); i++) {
-            const ExtSaveArea *esa = &x86_ext_save_areas[i];
-            if (env->features[esa->feature] & esa->bits) {
-                ena_mask |= (1ULL << i);
-            }
-        }
-
-        /* Unicorn: commented out
-        if (kvm_enabled()) {
-            KVMState *s = cs->kvm_state;
-            uint64_t kvm_mask = kvm_arch_get_supported_cpuid(s, 0xd, 0, R_EDX);
-            kvm_mask <<= 32;
-            kvm_mask |= kvm_arch_get_supported_cpuid(s, 0xd, 0, R_EAX);
-            ena_mask &= kvm_mask;
-        } */
-
         if (count == 0) {
-            *ecx = xsave_area_size(ena_mask);
-            *eax = ena_mask;
-            *edx = ena_mask >> 32;
+            *ecx = xsave_area_size(env->xsave_components);
+            *eax = env->xsave_components;
+            *edx = env->xsave_components >> 32;
             *ebx = *ecx;
         } else if (count == 1) {
             *eax = env->features[FEAT_XSAVE];
         } else if (count < ARRAY_SIZE(x86_ext_save_areas)) {
             const ExtSaveArea *esa = &x86_ext_save_areas[count];
-            if ((ena_mask >> count) & 1) {
+            if ((env->xsave_components >> count) & 1) {
                 *eax = esa->size;
                 *ebx = esa->offset;
             }
@@ -2961,6 +2941,34 @@ static void x86_cpu_adjust_feat_level(X86CPU *cpu, FeatureWord w)
     }
 }
 
+/* Calculate XSAVE components based on the configured CPU feature flags */
+static void x86_cpu_enable_xsave_components(X86CPU *cpu)
+{
+    CPUX86State *env = &cpu->env;
+    int i;
+
+    if (!(env->features[FEAT_1_ECX] & CPUID_EXT_XSAVE)) {
+        return;
+    }
+
+    env->xsave_components = (XSTATE_FP_MASK | XSTATE_SSE_MASK);
+    for (i = 2; i < ARRAY_SIZE(x86_ext_save_areas); i++) {
+        const ExtSaveArea *esa = &x86_ext_save_areas[i];
+        if (env->features[esa->feature] & esa->bits) {
+            env->xsave_components |= (1ULL << i);
+        }
+    }
+
+    /* Unicorn: commented out
+    if (kvm_enabled()) {
+        KVMState *s = kvm_state;
+        uint64_t kvm_mask = kvm_arch_get_supported_cpuid(s, 0xd, 0, R_EDX);
+        kvm_mask <<= 32;
+        kvm_mask |= kvm_arch_get_supported_cpuid(s, 0xd, 0, R_EAX);
+        env->xsave_components &= kvm_mask;
+    }*/
+}
+
 #define IS_INTEL_CPU(env) ((env)->cpuid_vendor1 == CPUID_VENDOR_INTEL_1 && \
                            (env)->cpuid_vendor2 == CPUID_VENDOR_INTEL_2 && \
                            (env)->cpuid_vendor3 == CPUID_VENDOR_INTEL_3)
@@ -2980,6 +2988,25 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         error_setg(errp, "apic-id property was not initialized properly");
         return -1;
     }
+
+    /*TODO: cpu->host_features incorrectly overwrites features
+     * set using "feat=on|off". Once we fix this, we can convert
+     * plus_features & minus_features to global properties
+     * inside x86_cpu_parse_featurestr() too.
+     */
+    if (cpu->host_features) {
+        for (w = 0; w < FEATURE_WORDS; w++) {
+            env->features[w] =
+                x86_cpu_get_supported_feature_word(uc, w, cpu->migratable);
+        }
+    }
+
+    for (w = 0; w < FEATURE_WORDS; w++) {
+        cpu->env.features[w] |= cpu->plus_features[w];
+        cpu->env.features[w] &= ~cpu->minus_features[w];
+    }
+
+    x86_cpu_enable_xsave_components(cpu);
 
     /* CPUID[EAX=7,ECX=0].EBX always increased level automatically: */
     x86_cpu_adjust_feat_level(cpu, FEAT_7_0_EBX);
@@ -3009,23 +3036,6 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     }
     if (env->cpuid_xlevel2 == UINT32_MAX) {
         env->cpuid_xlevel2 = env->cpuid_min_xlevel2;
-    }
-
-    /*TODO: cpu->host_features incorrectly overwrites features
-     * set using "feat=on|off". Once we fix this, we can convert
-     * plus_features & minus_features to global properties
-     * inside x86_cpu_parse_featurestr() too.
-     */
-    if (cpu->host_features) {
-        for (w = 0; w < FEATURE_WORDS; w++) {
-            env->features[w] =
-                x86_cpu_get_supported_feature_word(uc, w, cpu->migratable);
-        }
-    }
-
-    for (w = 0; w < FEATURE_WORDS; w++) {
-        cpu->env.features[w] |= cpu->plus_features[w];
-        cpu->env.features[w] &= ~cpu->minus_features[w];
     }
 
     /* On AMD CPUs, some CPUID[8000_0001].EDX bits must match the bits on
