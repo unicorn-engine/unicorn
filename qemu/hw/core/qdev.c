@@ -161,6 +161,10 @@ static int device_set_realized(struct uc_struct *uc, Object *obj, bool value, Er
     DeviceClass *dc = DEVICE_GET_CLASS(uc, dev);
     BusState *bus;
     Error *local_err = NULL;
+    // Unicorn: commented out
+    //bool unattached_parent = false;
+    //static int unattached_count;
+
 
     if (dev->hotplugged && !dc->hotpluggable) {
         error_setg(errp, QERR_DEVICE_NO_HOTPLUG, object_get_typename(obj));
@@ -168,14 +172,15 @@ static int device_set_realized(struct uc_struct *uc, Object *obj, bool value, Er
     }
 
     if (value && !dev->realized) {
+        // Unicorn: if'd out
 #if 0
         if (!obj->parent) {
-            static int unattached_count;
             gchar *name = g_strdup_printf("device[%d]", unattached_count++);
 
             object_property_add_child(container_get(qdev_get_machine(),
                                                     "/unattached"),
                                       name, obj, &error_abort);
+            unattached_parent = true;
             g_free(name);
         }
 #endif
@@ -238,6 +243,11 @@ post_realize_fail:
 
 fail:
     error_propagate(errp, local_err);
+    /* Unicorn: commented out
+    if (unattached_parent) {
+        object_unparent(OBJECT(dev));
+        unattached_count--;
+    }*/
     return -1;
 }
 
