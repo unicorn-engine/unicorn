@@ -1409,10 +1409,12 @@ uint64_t cpu_get_tsc(CPUX86State *env);
 /* XXX: This value should match the one returned by CPUID
  * and in exec.c */
 # if defined(TARGET_X86_64)
-# define PHYS_ADDR_MASK 0xffffffffffLL
+# define TCG_PHYS_ADDR_BITS 40
 # else
-# define PHYS_ADDR_MASK 0xfffffffffLL
+# define TCG_PHYS_ADDR_BITS 36
 # endif
+
+#define PHYS_ADDR_MASK MAKE_64BIT_MASK(0, TCG_PHYS_ADDR_BITS)
 
 CPUX86State *cpu_x86_init_user(struct uc_struct *uc, const char *cpu_model);
 #define cpu_init cpu_x86_init_user
