@@ -75,7 +75,7 @@ int64_t cpu_get_ticks(void)
     return cpu_get_real_ticks();
 }
 
-/* return the host CPU monotonic timer and handle stop/restart */
+/* return the host CPU monotonic time */
 int64_t cpu_get_clock(void)
 {
     return get_clock();
