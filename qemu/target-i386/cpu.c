@@ -3023,6 +3023,11 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         cpu->env.features[w] &= ~cpu->minus_features[w];
     }
 
+    // Unicorn: commented out
+    //if (!kvm_enabled() || !cpu->expose_kvm) {
+        env->features[FEAT_KVM] = 0;
+    //}
+
     x86_cpu_enable_xsave_components(cpu);
 
     /* CPUID[EAX=7,ECX=0].EBX always increased level automatically: */
