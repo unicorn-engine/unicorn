@@ -2067,41 +2067,6 @@ static void x86_cpuid_set_tsc_freq(struct uc_struct *uc,
     cpu->env.tsc_khz = (int)(value / 1000);
 }
 
-static void x86_cpuid_get_apic_id(struct uc_struct *uc,
-                                  Object *obj, Visitor *v,
-                                  const char *name, void *opaque,
-                                  Error **errp)
-{
-    X86CPU *cpu = X86_CPU(uc, obj);
-    int64_t value = cpu->apic_id;
-
-    visit_type_int(v, name, &value, errp);
-}
-
-static void x86_cpuid_set_apic_id(struct uc_struct *uc,
-                                  Object *obj, Visitor *v,
-                                  const char *name, void *opaque,
-                                  Error **errp)
-{
-    X86CPU *cpu = X86_CPU(uc, obj);
-    DeviceState *dev = DEVICE(uc, obj);
-    Error *error = NULL;
-    int64_t value;
-
-    if (dev->realized) {
-        error_setg(errp, "Attempt to set property '%s' on '%s' after "
-                   "it was realized", name, object_get_typename(obj));
-        return;
-    }
-
-    visit_type_int(v, name, &value, &error);
-    if (error) {
-        error_propagate(errp, error);
-        return;
-    }
-    cpu->apic_id = (uint32_t)value;
-}
-
 /* Generic getter for "feature-words" and "filtered-features" properties */
 static void x86_cpu_get_feature_words(struct uc_struct *uc,
                                       Object *obj, Visitor *v,
@@ -3166,9 +3131,6 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     object_property_add(uc, obj, "tsc-frequency", "int",
                         x86_cpuid_get_tsc_freq,
                         x86_cpuid_set_tsc_freq, NULL, NULL, NULL);
-    object_property_add(uc, obj, "apic-id", "int",
-                        x86_cpuid_get_apic_id,
-                        x86_cpuid_set_apic_id, NULL, NULL, NULL);
     object_property_add(uc, obj, "feature-words", "X86CPUFeatureWordInfo",
                         x86_cpu_get_feature_words,
                         NULL, NULL, (void *)env->features, NULL);
@@ -3177,6 +3139,8 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
                         NULL, NULL, (void *)cpu->filtered_features, NULL);
 
     cpu->hyperv_spinlock_attempts = HYPERV_SPINLOCK_NEVER_RETRY;
+    // Unicorn: Should be removed with the commit backporting 2da00e3176abac34ca7a6aab1f5bbb94a0d03fc5
+    //          from qemu, but left this in to keep the member value initialized
     cpu->apic_id = UNASSIGNED_APIC_ID;
 
     x86_cpu_load_def(cpu, xcc->cpu_def, &error_abort);
