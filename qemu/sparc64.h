@@ -2442,7 +2442,6 @@
 #define qemu_ram_resize qemu_ram_resize_sparc64
 #define qemu_ram_setup_dump qemu_ram_setup_dump_sparc64
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_sparc64
-#define qemu_real_host_page_size qemu_real_host_page_size_sparc64
 #define qemu_st_helpers qemu_st_helpers_sparc64
 #define qemu_strnlen qemu_strnlen_sparc64
 #define qemu_strsep qemu_strsep_sparc64

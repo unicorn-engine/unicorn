@@ -2442,7 +2442,6 @@
 #define qemu_ram_resize qemu_ram_resize_m68k
 #define qemu_ram_setup_dump qemu_ram_setup_dump_m68k
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_m68k
-#define qemu_real_host_page_size qemu_real_host_page_size_m68k
 #define qemu_st_helpers qemu_st_helpers_m68k
 #define qemu_strnlen qemu_strnlen_m68k
 #define qemu_strsep qemu_strsep_m68k

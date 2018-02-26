@@ -2442,7 +2442,6 @@
 #define qemu_ram_resize qemu_ram_resize_aarch64eb
 #define qemu_ram_setup_dump qemu_ram_setup_dump_aarch64eb
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_aarch64eb
-#define qemu_real_host_page_size qemu_real_host_page_size_aarch64eb
 #define qemu_st_helpers qemu_st_helpers_aarch64eb
 #define qemu_strnlen qemu_strnlen_aarch64eb
 #define qemu_strsep qemu_strsep_aarch64eb

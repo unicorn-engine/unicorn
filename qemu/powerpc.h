@@ -2442,7 +2442,6 @@
 #define qemu_ram_resize qemu_ram_resize_powerpc
 #define qemu_ram_setup_dump qemu_ram_setup_dump_powerpc
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_powerpc
-#define qemu_real_host_page_size qemu_real_host_page_size_powerpc
 #define qemu_st_helpers qemu_st_helpers_powerpc
 #define qemu_strnlen qemu_strnlen_powerpc
 #define qemu_strsep qemu_strsep_powerpc

@@ -2442,7 +2442,6 @@
 #define qemu_ram_resize qemu_ram_resize_sparc
 #define qemu_ram_setup_dump qemu_ram_setup_dump_sparc
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_sparc
-#define qemu_real_host_page_size qemu_real_host_page_size_sparc
 #define qemu_st_helpers qemu_st_helpers_sparc
 #define qemu_strnlen qemu_strnlen_sparc
 #define qemu_strsep qemu_strsep_sparc

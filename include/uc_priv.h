@@ -197,6 +197,14 @@ struct uc_struct {
        The bottom level has pointers to PageDesc.  */
     void **l1_map;  // qemu/translate-all.c
     size_t l1_map_size;
+    int v_l1_size;
+    int v_l1_shift;
+    int v_l2_levels;
+    uintptr_t qemu_real_host_page_size;
+    intptr_t qemu_real_host_page_mask;
+    uintptr_t qemu_host_page_size;
+    intptr_t qemu_host_page_mask;
+
     /* code generation context */
     void *tcg_ctx;  // for "TCGContext tcg_ctx" in qemu/translate-all.c
     /* memory.c */

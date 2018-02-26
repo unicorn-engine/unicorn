@@ -101,29 +101,38 @@ typedef struct PageDesc {
 #define V_L2_BITS 10
 #define V_L2_SIZE (1 << V_L2_BITS)
 
-/* The bits remaining after N lower levels of page tables.  */
-#define V_L1_BITS_REM \
-    ((L1_MAP_ADDR_SPACE_BITS - TARGET_PAGE_BITS) % V_L2_BITS)
-
-#if V_L1_BITS_REM < 4
-#define V_L1_BITS  (V_L1_BITS_REM + V_L2_BITS)
-#else
-#define V_L1_BITS  V_L1_BITS_REM
-#endif
-
-#define V_L1_SIZE  ((target_ulong)1 << V_L1_BITS)
-
-#define V_L1_SHIFT (L1_MAP_ADDR_SPACE_BITS - TARGET_PAGE_BITS - V_L1_BITS)
-
-static uintptr_t qemu_real_host_page_size;
-static intptr_t qemu_real_host_page_mask;
-static uintptr_t qemu_host_page_size;
-static intptr_t qemu_host_page_mask;
+/* The bottom level has pointers to PageDesc, and is indexed by
+ * anything from 4 to (V_L2_BITS + 3) bits, depending on target page size.
+ */
+#define V_L1_MIN_BITS 4
+#define V_L1_MAX_BITS (V_L2_BITS + 3)
+#define V_L1_MAX_SIZE (1 << V_L1_MAX_BITS)
 
 static TranslationBlock *tb_find_pc(struct uc_struct *uc, uintptr_t tc_ptr);
 
 // Unicorn: for cleaning up memory later.
 void free_code_gen_buffer(struct uc_struct *uc);
+
+static void page_table_config_init(struct uc_struct *uc)
+{
+    uint32_t v_l1_bits;
+
+    assert(TARGET_PAGE_BITS);
+    /* The bits remaining after N lower levels of page tables.  */
+    v_l1_bits = (L1_MAP_ADDR_SPACE_BITS - TARGET_PAGE_BITS) % V_L2_BITS;
+    if (v_l1_bits < V_L1_MIN_BITS) {
+        v_l1_bits += V_L2_BITS;
+    }
+
+    uc->v_l1_size = 1 << v_l1_bits;
+    uc->v_l1_shift = L1_MAP_ADDR_SPACE_BITS - TARGET_PAGE_BITS - v_l1_bits;
+    uc->v_l2_levels = uc->v_l1_shift / V_L2_BITS - 1;
+
+    assert(v_l1_bits <= V_L1_MAX_BITS);
+    assert(uc->v_l1_shift % V_L2_BITS == 0);
+    assert(uc->v_l2_levels >= 0);
+}
+
 
 static void cpu_gen_init(struct uc_struct *uc)
 {
@@ -146,9 +155,9 @@ void tb_cleanup(struct uc_struct *uc)
 {
     int index = 0;
     /* Level 1.  Always allocated.  */
-    void** lp = uc->l1_map + ((index >> V_L1_SHIFT) & (V_L1_SIZE - 1));
+    void** lp = uc->l1_map + ((index >> uc->v_l1_shift) & (uc->v_l1_size - 1));
     /* Level 2..N-1.  */
-    tb_clean_internal(uc, V_L1_SHIFT / V_L2_BITS, lp);
+    tb_clean_internal(uc, uc->v_l1_shift / V_L2_BITS, lp);
 }
 
 /* Encode VAL as a signed leb128 sequence at P.
@@ -308,24 +317,25 @@ bool cpu_restore_state(CPUState *cpu, uintptr_t retaddr)
     return false;
 }
 
-static void page_size_init(void)
+static void page_size_init(struct uc_struct *uc)
 {
     /* NOTE: we can always suppose that qemu_host_page_size >=
        TARGET_PAGE_SIZE */
-    qemu_real_host_page_size = getpagesize();
-    qemu_real_host_page_mask = -(intptr_t)qemu_real_host_page_size;
-    if (qemu_host_page_size == 0) {
-        qemu_host_page_size = qemu_real_host_page_size;
+    uc->qemu_real_host_page_size = getpagesize();
+    uc->qemu_real_host_page_mask = -(intptr_t)uc->qemu_real_host_page_size;
+    if (uc->qemu_host_page_size == 0) {
+        uc->qemu_host_page_size = uc->qemu_real_host_page_size;
     }
-    if (qemu_host_page_size < TARGET_PAGE_SIZE) {
-        qemu_host_page_size = TARGET_PAGE_SIZE;
+    if (uc->qemu_host_page_size < TARGET_PAGE_SIZE) {
+        uc->qemu_host_page_size = TARGET_PAGE_SIZE;
     }
-    qemu_host_page_mask = -(intptr_t)qemu_host_page_size;
+    uc->qemu_host_page_mask = -(intptr_t)uc->qemu_host_page_size;
 }
 
-static void page_init(void)
+static void page_init(struct uc_struct *uc)
 {
-    page_size_init();
+    page_size_init(uc);
+    page_table_config_init(uc);
 #if defined(CONFIG_BSD) && defined(CONFIG_USER_ONLY)
     {
 #ifdef HAVE_KINFO_GETVMMAP
@@ -398,51 +408,37 @@ static PageDesc *page_find_alloc(struct uc_struct *uc, tb_page_addr_t index, int
     void **lp;
     int i;
 
-#if defined(CONFIG_USER_ONLY)
-    /* We can't use g_malloc because it may recurse into a locked mutex. */
-# define ALLOC(P, SIZE)                                 \
-    do {                                                \
-        P = mmap(NULL, SIZE, PROT_READ | PROT_WRITE,    \
-                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);   \
-    } while (0)
-#else
-# define ALLOC(P, SIZE) \
-    do { P = g_malloc0(SIZE); } while (0)
-#endif
-
     if (uc->l1_map == NULL) {
-        uc->l1_map_size = V_L1_SIZE * sizeof(uc->l1_map);
-        ALLOC(uc->l1_map, uc->l1_map_size);
+        uc->l1_map_size = uc->v_l1_size * sizeof(uc->l1_map);
+        uc->l1_map = g_new0(void*, uc->l1_map_size);
     }
 
     /* Level 1.  Always allocated.  */
-    lp = uc->l1_map + ((index >> V_L1_SHIFT) & (V_L1_SIZE - 1));
+    lp = uc->l1_map + ((index >> uc->v_l1_shift) & (uc->v_l1_size - 1));
 
     /* Level 2..N-1.  */
-    for (i = V_L1_SHIFT / V_L2_BITS - 1; i > 0; i--) {
-        void **p = *lp;
+    for (i = uc->v_l2_levels; i > 0; i--) {
+        void **p = atomic_read(lp);
 
         if (p == NULL) {
             if (!alloc) {
                 return NULL;
             }
-            ALLOC(p, sizeof(void *) * V_L2_SIZE);
-            *lp = p;
+            p = g_new0(void *, V_L2_SIZE);
+            atomic_set(lp, p);
         }
 
         lp = p + ((index >> (i * V_L2_BITS)) & (V_L2_SIZE - 1));
     }
 
-    pd = *lp;
+    pd = atomic_read(lp);
     if (pd == NULL) {
         if (!alloc) {
             return NULL;
         }
-        ALLOC(pd, sizeof(PageDesc) * V_L2_SIZE);
-        *lp = pd;
+        pd = g_new0(PageDesc, V_L2_SIZE);
+        atomic_set(lp, pd);
     }
-
-#undef ALLOC
 
     return pd + (index & (V_L2_SIZE - 1));
 }
@@ -554,43 +550,43 @@ void free_code_gen_buffer(struct uc_struct *uc)
 }
 
 # ifdef _WIN32
-static inline void do_protect(void *addr, long size, int prot)
+static inline void do_protect(struct uc_struct *uc, void *addr, long size, int prot)
 {
     DWORD old_protect;
     VirtualProtect(addr, size, prot, &old_protect);
 }
 
-static inline void map_exec(void *addr, long size)
+static inline void map_exec(struct uc_struct *uc, void *addr, long size)
 {
-    do_protect(addr, size, PAGE_EXECUTE_READWRITE);
+    do_protect(uc, addr, size, PAGE_EXECUTE_READWRITE);
 }
 
-static inline void map_none(void *addr, long size)
+static inline void map_none(struct uc_struct *uc, void *addr, long size)
 {
-    do_protect(addr, size, PAGE_NOACCESS);
+    do_protect(uc, addr, size, PAGE_NOACCESS);
 }
 # else
-static inline void do_protect(void *addr, long size, int prot)
+static inline void do_protect(struct uc_struct *uc, void *addr, long size, int prot)
 {
     uintptr_t start, end;
 
     start = (uintptr_t)addr;
-    start &= qemu_real_host_page_mask;
+    start &= uc->qemu_real_host_page_mask;
 
     end = (uintptr_t)addr + size;
-    end = ROUND_UP(end, qemu_real_host_page_size);
+    end = ROUND_UP(end, uc->qemu_real_host_page_size);
 
     mprotect((void *)start, end - start, prot);
 }
 
-static inline void map_exec(void *addr, long size)
+static inline void map_exec(struct uc_struct *uc, void *addr, long size)
 {
-    do_protect(addr, size, PROT_READ | PROT_WRITE | PROT_EXEC);
+    do_protect(uc, addr, size, PROT_READ | PROT_WRITE | PROT_EXEC);
 }
 
-static inline void map_none(void *addr, long size)
+static inline void map_none(struct uc_struct *uc, void *addr, long size)
 {
-    do_protect(addr, size, PROT_NONE);
+    do_protect(uc, addr, size, PROT_NONE);
 }
 # endif /* WIN32 */
 
@@ -602,15 +598,15 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 
     /* The size of the buffer, rounded down to end on a page boundary.  */
     full_size = (((uintptr_t)buf + sizeof(static_code_gen_buffer))
-                 & qemu_real_host_page_mask) - (uintptr_t)buf;
+                 & uc->qemu_real_host_page_mask) - (uintptr_t)buf;
 
     /* Reserve a guard page.  */
-    size = full_size - qemu_real_host_page_size;
+    size = full_size - uc->qemu_real_host_page_size;
 
     /* Honor a command-line option limiting the size of the buffer.  */
     if (size > tcg_ctx->code_gen_buffer_size) {
         size = (((uintptr_t)buf + tcg_ctx->code_gen_buffer_size)
-                & qemu_real_host_page_mask) - (uintptr_t)buf;
+                & uc->qemu_real_host_page_mask) - (uintptr_t)buf;
     }
     tcg_ctx->code_gen_buffer_size = size;
 
@@ -620,8 +616,8 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
         size = tcg_ctx->code_gen_buffer_size;
     }
 #endif
-    map_exec(buf, size);
-    map_none(buf + size, qemu_real_host_page_size);
+    map_exec(uc, buf, size);
+    map_none(uc, buf + size, uc->qemu_real_host_page_size);
     // Unicorn: commented out
     //qemu_madvise(buf, size, QEMU_MADV_HUGEPAGE);
 
@@ -636,7 +632,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 
     /* Perform the allocation in two steps, so that the guard page
        is reserved but uncommitted.  */
-    buf1 = VirtualAlloc(NULL, size + qemu_real_host_page_size,
+    buf1 = VirtualAlloc(NULL, size + uc->qemu_real_host_page_size,
                         MEM_RESERVE, PAGE_NOACCESS);
     if (buf1 != NULL) {
         buf2 = VirtualAlloc(buf1, size, MEM_COMMIT, PAGE_EXECUTE_READWRITE);
@@ -704,7 +700,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 #  endif
 # endif
 
-    buf = mmap((void *)start, size + qemu_real_host_page_size,
+    buf = mmap((void *)start, size + uc->qemu_real_host_page_size,
                PROT_NONE, flags, -1, 0);
     if (buf == MAP_FAILED) {
         return NULL;
@@ -715,24 +711,24 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
         /* Try again, with the original still mapped, to avoid re-acquiring
            that 256mb crossing.  This time don't specify an address.  */
         size_t size2;
-        void *buf2 = mmap(NULL, size + qemu_real_host_page_size,
+        void *buf2 = mmap(NULL, size + uc->qemu_real_host_page_size,
                           PROT_NONE, flags, -1, 0);
         switch (buf2 != MAP_FAILED) {
         case 1:
             if (!cross_256mb(buf2, size)) {
                 /* Success!  Use the new buffer.  */
-                munmap(buf, size + qemu_real_host_page_size);
+                munmap(buf, size + uc->qemu_real_host_page_size);
                 break;
             }
             /* Failure.  Work with what we had.  */
-            munmap(buf2, size + qemu_real_host_page_size);
+            munmap(buf2, size + uc->qemu_real_host_page_size);
             /* fallthru */
         default:
             /* Split the original buffer.  Free the smaller half.  */
             buf2 = split_cross_256mb(buf, size);
             size2 = tcg_ctx->code_gen_buffer_size;
             if (buf == buf2) {
-                munmap(buf + size2 + qemu_real_host_page_size, size - size2);
+                munmap(buf + size2 + uc->qemu_real_host_page_size, size - size2);
             } else {
                 munmap(buf, size - size2);
             }
@@ -810,7 +806,7 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
     cpu_gen_init(uc);
     tcg_ctx = uc->tcg_ctx;
     tcg_ctx->uc = uc;
-    page_init();
+    page_init(uc);
     code_gen_alloc(uc, tb_size);
 #if !defined(CONFIG_USER_ONLY) || !defined(CONFIG_USE_GUEST_BASE)
     /* There's no guest base to take into account, so go ahead and
@@ -891,13 +887,14 @@ static void page_flush_tb_1(int level, void **lp)
 
 static void page_flush_tb(struct uc_struct *uc)
 {
-    int i;
+    int i, l1_sz = uc->v_l1_size;
 
-    if (uc->l1_map == NULL)
+    if (uc->l1_map == NULL) {
         return;
+    }
 
-    for (i = 0; i < V_L1_SIZE; i++) {
-        page_flush_tb_1(V_L1_SHIFT / V_L2_BITS - 1, uc->l1_map + i);
+    for (i = 0; i < l1_sz; i++) {
+        page_flush_tb_1(uc->v_l2_levels, uc->l1_map + i);
     }
 }
 
@@ -1198,9 +1195,9 @@ static inline void tb_alloc_page(struct uc_struct *uc, TranslationBlock *tb,
 
         /* force the host page as non writable (writes will have a
            page fault + mprotect overhead) */
-        page_addr &= qemu_host_page_mask;
+        page_addr &= uc->qemu_host_page_mask;
         prot = 0;
-        for (addr = page_addr; addr < page_addr + qemu_host_page_size;
+        for (addr = page_addr; addr < page_addr + uc->qemu_host_page_size;
             addr += TARGET_PAGE_SIZE) {
 
             p2 = page_find(addr >> TARGET_PAGE_BITS);
@@ -1210,7 +1207,7 @@ static inline void tb_alloc_page(struct uc_struct *uc, TranslationBlock *tb,
             prot |= p2->flags;
             p2->flags &= ~PAGE_WRITE;
           }
-        mprotect(g2h(page_addr), qemu_host_page_size,
+        mprotect(g2h(page_addr), uc->qemu_host_page_size,
                  (prot & PAGE_BITS) & ~PAGE_WRITE);
 #ifdef DEBUG_TB_INVALIDATE
         printf("protecting code page: 0x" TARGET_FMT_lx "\n",
@@ -1929,16 +1926,16 @@ typedef int (*walk_memory_regions_fn)(void *, target_ulong,
 static int walk_memory_regions(void *priv, walk_memory_regions_fn fn)
 {
     struct walk_memory_regions_data data;
-    uintptr_t i;
+    uintptr_t i, l1_sz = v_l1_size;
 
     data.fn = fn;
     data.priv = priv;
     data.start = -1u;
     data.prot = 0;
 
-    for (i = 0; i < V_L1_SIZE; i++) {
-        int rc = walk_memory_regions_1(&data, (target_ulong)i << (V_L1_SHIFT + TARGET_PAGE_BITS),
-                                       V_L1_SHIFT / V_L2_BITS - 1, l1_map + i);
+    for (i = 0; i < l1_sz; i++) {
+        target_ulong base = i << (v_l1_shift + TARGET_PAGE_BITS);
+        int rc = walk_memory_regions_1(&data, base, v_l2_levels, l1_map + i);
         if (rc != 0) {
             return rc;
         }
@@ -2083,7 +2080,7 @@ static int page_check_range(target_ulong start, target_ulong len, int flags)
  * immediately exited. (We can only return 2 if the 'pc' argument is
  * non-zero.)
  */
-int page_unprotect(target_ulong address, uintptr_t pc)
+int page_unprotect(struct uc_struct *uc, target_ulong address, uintptr_t pc)
 {
     unsigned int prot;
     bool current_tb_invalidated;
@@ -2104,8 +2101,8 @@ int page_unprotect(target_ulong address, uintptr_t pc)
     /* if the page was really writable, then we change its
        protection back to writable */
     if ((p->flags & PAGE_WRITE_ORG) && !(p->flags & PAGE_WRITE)) {
-        host_start = address & qemu_host_page_mask;
-        host_end = host_start + qemu_host_page_size;
+        host_start = address & uc->qemu_host_page_mask;
+        host_end = host_start + uc->qemu_host_page_size;
 
         prot = 0;
         current_tb_invalidated = false;
@@ -2121,7 +2118,7 @@ int page_unprotect(target_ulong address, uintptr_t pc)
             tb_invalidate_check(addr);
 #endif
         }
-        mprotect((void *)g2h(host_start), qemu_host_page_size,
+        mprotect((void *)g2h(host_start), uc->qemu_host_page_size,
                  prot & PAGE_BITS);
 
         mmap_unlock();

@@ -2448,7 +2448,6 @@ symbols = (
     'qemu_ram_resize',
     'qemu_ram_setup_dump',
     'qemu_ram_unset_idstr',
-    'qemu_real_host_page_size',
     'qemu_st_helpers',
     'qemu_strnlen',
     'qemu_strsep',

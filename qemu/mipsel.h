@@ -2442,7 +2442,6 @@
 #define qemu_ram_resize qemu_ram_resize_mipsel
 #define qemu_ram_setup_dump qemu_ram_setup_dump_mipsel
 #define qemu_ram_unset_idstr qemu_ram_unset_idstr_mipsel
-#define qemu_real_host_page_size qemu_real_host_page_size_mipsel
 #define qemu_st_helpers qemu_st_helpers_mipsel
 #define qemu_strnlen qemu_strnlen_mipsel
 #define qemu_strsep qemu_strsep_mipsel
