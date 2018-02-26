@@ -1045,13 +1045,24 @@ uint64_t HELPER(neon_qrshl_u64)(CPUARMState *env, uint64_t val, uint64_t shiftop
     return val;
 }
 
+// Unicorn: Silences an implicit truncation warning with Clang, however
+//          this can't be brought to MSVC as it doesn't
+//          implement the typeof compiler extension
+#ifdef _MSC_VER
+#define SILENCE_NEON_WARNING(dest, src1) \
+            (1 << (sizeof(src1) * 8 - 1));
+#else
+#define SILENCE_NEON_WARNING(dest, src1) \
+            (typeof(dest))(1 << (sizeof(src1) * 8 - 1));
+#endif
+
 #define NEON_FN(dest, src1, src2) do { \
     int8_t tmp; \
     tmp = (int8_t)src2; \
     if (tmp >= (ssize_t)sizeof(src1) * 8) { \
         if (src1) { \
             SET_QC(); \
-            dest = (1 << (sizeof(src1) * 8 - 1)); \
+            dest = SILENCE_NEON_WARNING(dest, src1) \
             if (src1 > 0) { \
                 dest--; \
             } \
