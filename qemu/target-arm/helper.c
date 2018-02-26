@@ -3532,6 +3532,13 @@ static const ARMCPRegInfo debug_cp_reginfo[] = {
     { "DBGVCR", 14,0,7, 0,0,0, 0,
       ARM_CP_NOP, PL1_RW, 0, NULL, 0, 0, {0, 0},
       access_tda },
+    /* Dummy MDCCINT_EL1, since we don't implement the Debug Communications
+     * Channel but Linux may try to access this register. The 32-bit
+     * alias is DBGDCCINT.
+     */
+    { "MDCCINT_EL1", 14,0,2, 2,0,0, ARM_CP_STATE_BOTH, ARM_CP_NOP,
+      PL1_RW, 0, NULL, 0, 0, {0, 0},
+      access_tda },
     REGINFO_SENTINEL
 };
 
