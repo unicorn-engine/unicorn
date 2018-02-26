@@ -2804,6 +2804,7 @@
 #define tcg_gen_ld_i64 tcg_gen_ld_i64_armeb
 #define tcg_gen_ldst_op_i32 tcg_gen_ldst_op_i32_armeb
 #define tcg_gen_ldst_op_i64 tcg_gen_ldst_op_i64_armeb
+#define tcg_gen_mb tcg_gen_mb_armeb
 #define tcg_gen_mov_i32 tcg_gen_mov_i32_armeb
 #define tcg_gen_mov_i64 tcg_gen_mov_i64_armeb
 #define tcg_gen_movcond_i32 tcg_gen_movcond_i32_armeb

@@ -269,6 +269,8 @@ static inline void tcg_gen_br(TCGContext *s, TCGLabel *l)
     tcg_gen_op1(s, INDEX_op_br, label_arg(s, l));
 }
 
+void tcg_gen_mb(TCGContext *, TCGBar);
+
 /* Helper calls. */
 
 /* 32 bit ops */
