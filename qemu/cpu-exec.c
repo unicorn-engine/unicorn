@@ -140,7 +140,8 @@ static TranslationBlock *tb_find_physical(CPUState *cpu,
 static TranslationBlock *tb_find_slow(CPUState *cpu,
                                       target_ulong pc,
                                       target_ulong cs_base,
-                                      uint32_t flags)
+                                      uint32_t flags,
+                                      bool *have_tb_lock)
 {
     TranslationBlock *tb;
 
@@ -153,6 +154,7 @@ static TranslationBlock *tb_find_slow(CPUState *cpu,
         mmap_lock();
         // Unicorn: commented out
         //tb_lock();
+        *have_tb_lock = true;
 
         /* There's a chance that our desired tb has been translated while
          * taking the locks so we check again inside the lock.
@@ -180,6 +182,7 @@ static inline TranslationBlock *tb_find_fast(CPUState *cpu,
     TranslationBlock *tb;
     target_ulong cs_base, pc;
     uint32_t flags;
+    bool have_tb_lock = false;
 
     /* we record a subset of the CPU state. It will
        always be the same before a given translated block
@@ -189,7 +192,7 @@ static inline TranslationBlock *tb_find_fast(CPUState *cpu,
     tb = atomic_read(&cpu->tb_jmp_cache[tb_jmp_cache_hash_func(pc)]);
     if (unlikely(!tb || tb->pc != pc || tb->cs_base != cs_base ||
                 tb->flags != flags)) {
-        tb = tb_find_slow(cpu, pc, cs_base, flags);
+        tb = tb_find_slow(cpu, pc, cs_base, flags, &have_tb_lock);
     }
 #ifndef CONFIG_USER_ONLY
     /* We don't take care of direct jumps when address mapping changes in
@@ -202,14 +205,19 @@ static inline TranslationBlock *tb_find_fast(CPUState *cpu,
 #endif
     /* See if we can patch the calling TB. */
     if (last_tb && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
-        // Unicorn: commented out
-        //tb_lock();
+        if (!have_tb_lock) {
+            // Unicorn: commented out
+            //tb_lock();
+            have_tb_lock = true;
+        }
         /* Check if translation buffer has been flushed */
         if (cpu->tb_flushed) {
             cpu->tb_flushed = false;
         } else if (!tb->invalid) {
             tb_add_jump(last_tb, tb_exit, tb);
         }
+    }
+    if (have_tb_lock) {
         // Unicorn: commented out
         //tb_unlock();
     }
