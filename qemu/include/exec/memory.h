@@ -215,6 +215,7 @@ struct MemoryListener {
     unsigned priority;
     AddressSpace *address_space;
     QTAILQ_ENTRY(MemoryListener) link;
+    QTAILQ_ENTRY(MemoryListener) link_as;
 };
 
 /**
@@ -232,6 +233,7 @@ struct AddressSpace {
     MemoryListener dispatch_listener;
     struct uc_struct* uc;
 
+    QTAILQ_HEAD(memory_listeners_as, MemoryListener) listeners;
     QTAILQ_ENTRY(AddressSpace) address_spaces_link;
 };
 
