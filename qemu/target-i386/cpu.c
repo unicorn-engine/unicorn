@@ -276,12 +276,12 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
     // FEAT_1_ECX
     {
         {
-            "pni|sse3" /* Intel,AMD sse3 */, "pclmulqdq|pclmuldq", "dtes64", "monitor",
+            "pni" /* Intel,AMD sse3 */, "pclmulqdq", "dtes64", "monitor",
             "ds-cpl", "vmx", "smx", "est",
             "tm2", "ssse3", "cid", NULL,
             "fma", "cx16", "xtpr", "pdcm",
-            NULL, "pcid", "dca", "sse4.1|sse4-1",
-            "sse4.2|sse4-2", "x2apic", "movbe", "popcnt",
+            NULL, "pcid", "dca", "sse4.1",
+            "sse4.2", "x2apic", "movbe", "popcnt",
             "tsc-deadline", "aes", "xsave", "osxsave",
             "avx", "f16c", "rdrand", "hypervisor",
         },
@@ -337,9 +337,9 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
             NULL /* cx8 */, NULL /* apic */, NULL, "syscall",
             NULL /* mtrr */, NULL /* pge */, NULL /* mca */, NULL /* cmov */,
             NULL /* pat */, NULL /* pse36 */, NULL, NULL /* Linux mp */,
-            "nx|xd", NULL, "mmxext", NULL /* mmx */,
-            NULL /* fxsr */, "fxsr_opt|ffxsr", "pdpe1gb", "rdtscp",
-            NULL, "lm|i64", "3dnowext", "3dnow",
+            "nx", NULL, "mmxext", NULL /* mmx */,
+            NULL /* fxsr */, "fxsr-opt", "pdpe1gb", "rdtscp",
+            NULL, "lm", "3dnowext", "3dnow",
         },
         0x80000001,
         false,0,
