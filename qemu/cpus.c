@@ -58,9 +58,9 @@ bool cpu_is_stopped(CPUState *cpu)
     return cpu->stopped;
 }
 
-void run_on_cpu(CPUState *cpu, void (*func)(void *data), void *data)
+void run_on_cpu(CPUState *cpu, run_on_cpu_func func, void *data)
 {
-    func(data);
+    func(cpu, data);
 }
 
 int resume_all_vcpus(struct uc_struct *uc)

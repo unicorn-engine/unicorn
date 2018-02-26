@@ -189,6 +189,8 @@ struct kvm_run;
 #define TB_JMP_CACHE_BITS 12
 #define TB_JMP_CACHE_SIZE (1 << TB_JMP_CACHE_BITS)
 
+typedef void (*run_on_cpu_func)(CPUState *cpu, void *data);
+
 // Unicorn: Moved CPUAddressSpace here from exec.c
 /**
  * CPUAddressSpace: all the information a CPU needs about an AddressSpace
@@ -545,7 +547,7 @@ bool cpu_is_stopped(CPUState *cpu);
  *
  * Schedules the function @func for execution on the vCPU @cpu.
  */
-void run_on_cpu(CPUState *cpu, void (*func)(void *data), void *data);
+void run_on_cpu(CPUState *cpu, run_on_cpu_func func, void *data);
 
 /**
  * async_run_on_cpu:
@@ -555,7 +557,7 @@ void run_on_cpu(CPUState *cpu, void (*func)(void *data), void *data);
  *
  * Schedules the function @func for execution on the vCPU @cpu asynchronously.
  */
-void async_run_on_cpu(CPUState *cpu, void (*func)(void *data), void *data);
+void async_run_on_cpu(CPUState *cpu, run_on_cpu_func func, void *data);
 
 /**
  * qemu_get_cpu:

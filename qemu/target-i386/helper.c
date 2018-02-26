@@ -932,7 +932,6 @@ out:
 }
 
 typedef struct MCEInjectionParams {
-    X86CPU *cpu;
     int bank;
     uint64_t status;
     uint64_t mcg_status;
