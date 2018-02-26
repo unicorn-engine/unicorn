@@ -2998,7 +2998,7 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     Error *local_err = NULL;
     FeatureWord w;
 
-    if (cpu->apic_id < 0) {
+    if (cpu->apic_id == UNASSIGNED_APIC_ID) {
         error_setg(errp, "apic-id property was not initialized properly");
         return -1;
     }
@@ -3159,7 +3159,7 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
                         NULL, NULL, (void *)cpu->filtered_features, NULL);
 
     cpu->hyperv_spinlock_attempts = HYPERV_SPINLOCK_NEVER_RETRY;
-    cpu->apic_id = -1;
+    cpu->apic_id = UNASSIGNED_APIC_ID;
 
     x86_cpu_load_def(cpu, xcc->cpu_def, &error_abort);
 }
