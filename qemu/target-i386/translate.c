@@ -547,13 +547,12 @@ static void gen_lea_v_seg(DisasContext *s, TCGMemOp aflag, TCGv a0,
 #endif
     case MO_32:
         /* 32 bit address */
+        if (ovr_seg < 0 && s->addseg) {
+            ovr_seg = def_seg;
+        }
         if (ovr_seg < 0) {
-            if (s->addseg) {
-                ovr_seg = def_seg;
-            } else {
-                tcg_gen_ext32u_tl(tcg_ctx, cpu_A0, a0);
-                return;
-            }
+            tcg_gen_ext32u_tl(tcg_ctx, cpu_A0, a0);
+            return;
         }
         break;
     case MO_16:
@@ -6032,7 +6031,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         {
             AddressParts a = gen_lea_modrm_0(env, s, modrm);
             TCGv ea = gen_lea_modrm_1(s, a);
-            gen_op_mov_reg_v(tcg_ctx, dflag, reg, ea);
+            gen_lea_v_seg(s, s->aflag, ea, -1, -1);
+            gen_op_mov_reg_v(tcg_ctx, dflag, reg, cpu_A0);
         }
         break;
 
