@@ -29,6 +29,8 @@ typedef struct StackObject
 
     GHashTable *h;           /* If obj is dict: unvisited keys */
     const QListEntry *entry; /* If obj is list: unvisited tail */
+
+    QSLIST_ENTRY(StackObject) node;
 } StackObject;
 
 struct QmpInputVisitor
@@ -40,8 +42,7 @@ struct QmpInputVisitor
 
     /* Stack of objects being visited (all entries will be either
      * QDict or QList). */
-    StackObject stack[QIV_STACK_SIZE];
-    int nb_stack;
+    QSLIST_HEAD(, StackObject) stack;
 
     /* True to reject parse in visit_end_struct() if unvisited keys remain. */
     bool strict;
@@ -60,13 +61,13 @@ static QObject *qmp_input_get_object(QmpInputVisitor *qiv,
     QObject *qobj;
     QObject *ret;
 
-    if (!qiv->nb_stack) {
+    if (QSLIST_EMPTY(&qiv->stack)) {
         /* Starting at root, name is ignored. */
         return qiv->root;
     }
 
     /* We are in a container; find the next element. */
-    tos = &qiv->stack[qiv->nb_stack - 1];
+    tos = QSLIST_FIRST(&qiv->stack);
     qobj = tos->obj;
     assert(qobj);
 
@@ -99,18 +100,12 @@ static const QListEntry *qmp_input_push(QmpInputVisitor *qiv, QObject *obj,
                                         void *qapi, Error **errp)
 {
     GHashTable *h;
-    StackObject *tos = &qiv->stack[qiv->nb_stack];
+    StackObject *tos = g_new0(StackObject, 1);
 
     assert(obj);
-    if (qiv->nb_stack >= QIV_STACK_SIZE) {
-        error_setg(errp, "An internal buffer overran");
-        return NULL;
-    }
 
     tos->obj = obj;
     tos->qapi = qapi;
-    assert(!tos->h);
-    assert(!tos->entry);
 
     if (qiv->strict && qobject_type(obj) == QTYPE_QDICT) {
         h = g_hash_table_new(g_str_hash, g_str_equal);
@@ -120,7 +115,7 @@ static const QListEntry *qmp_input_push(QmpInputVisitor *qiv, QObject *obj,
         tos->entry = qlist_first(qobject_to_qlist(obj));
     }
 
-    qiv->nb_stack++;
+    QSLIST_INSERT_HEAD(&qiv->stack, tos, node);
     return tos->entry;
 }
 
@@ -134,9 +129,9 @@ static gboolean always_true(gpointer key, gpointer val, gpointer user_pkey)
 static void qmp_input_check_struct(Visitor *v, Error **errp)
 {
     QmpInputVisitor *qiv = to_qiv(v);
-    StackObject *tos = &qiv->stack[qiv->nb_stack - 1];
+    StackObject *tos = QSLIST_FIRST(&qiv->stack);
 
-    assert(qiv->nb_stack > 0);
+    assert(tos && !tos->entry);
 
     if (qiv->strict) {
         GHashTable *const top_ht = tos->h;
@@ -150,23 +145,23 @@ static void qmp_input_check_struct(Visitor *v, Error **errp)
     }
 }
 
+static void qmp_input_stack_object_free(StackObject *tos)
+{
+    if (tos->h) {
+        g_hash_table_unref(tos->h);
+    }
+
+    g_free(tos);
+}
+
 static void qmp_input_pop(Visitor *v, void **obj)
 {
     QmpInputVisitor *qiv = to_qiv(v);
-    StackObject *tos = &qiv->stack[qiv->nb_stack - 1];
+    StackObject *tos = QSLIST_FIRST(&qiv->stack);
 
-    assert(qiv->nb_stack > 0);
-    assert(tos->qapi == obj);
-
-    if (qiv->strict) {
-        GHashTable * const top_ht = qiv->stack[qiv->nb_stack - 1].h;
-        if (top_ht) {
-            g_hash_table_unref(top_ht);
-        }
-        tos->h = NULL;
-    }
-
-    qiv->nb_stack--;
+    assert(tos && tos->qapi == obj);
+    QSLIST_REMOVE_HEAD(&qiv->stack, node);
+    qmp_input_stack_object_free(tos);
 }
 
 static void qmp_input_start_struct(Visitor *v, const char *name, void **obj,
@@ -226,7 +221,7 @@ static GenericList *qmp_input_next_list(Visitor *v, GenericList *tail,
                                         size_t size)
 {
     QmpInputVisitor *qiv = to_qiv(v);
-    StackObject *so = &qiv->stack[qiv->nb_stack - 1];
+    StackObject *so = QSLIST_FIRST(&qiv->stack);
 
     if (!so->entry) {
         return NULL;
@@ -377,6 +372,12 @@ static void qmp_input_optional(Visitor *v, const char *name, bool *present)
 static void qmp_input_free(Visitor *v)
 {
     QmpInputVisitor *qiv = to_qiv(v);
+    while (!QSLIST_EMPTY(&qiv->stack)) {
+        StackObject *tos = QSLIST_FIRST(&qiv->stack);
+
+        QSLIST_REMOVE_HEAD(&qiv->stack, node);
+        qmp_input_stack_object_free(tos);
+    }
 
     qobject_decref(qiv->root);
     g_free(qiv);
