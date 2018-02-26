@@ -880,7 +880,6 @@ struct X86CPUDefinition {
     const char *name;
     uint32_t level;
     uint32_t xlevel;
-    uint32_t xlevel2;
     /* vendor is zero-terminated, 12 character ASCII string */
     char vendor[CPUID_VENDOR_SZ + 1];
     int family;
@@ -894,7 +893,7 @@ struct X86CPUDefinition {
 static X86CPUDefinition builtin_x86_defs[] = {
     {
         "qemu64",
-        0xd, 0x8000000A, 0,
+        0xd, 0x8000000A,
         CPUID_VENDOR_AMD,
         6, 6, 3,
         {
@@ -917,7 +916,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "phenom",
-        5, 0x8000001A, 0,
+        5, 0x8000001A,
         CPUID_VENDOR_AMD,
         16, 2, 3,
         {
@@ -964,7 +963,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "core2duo",
-        10, 0x80000008, 0,
+        10, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 15, 11,
         {
@@ -991,7 +990,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "kvm64",
-        0xd, 0x80000008, 0,
+        0xd, 0x80000008,
         CPUID_VENDOR_INTEL,
         15, 6, 1,
         {
@@ -1021,7 +1020,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "qemu32",
-        4, 0x80000004, 0,
+        4, 0x80000004,
         CPUID_VENDOR_INTEL,
         6, 6, 3,
         {
@@ -1034,7 +1033,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "kvm32",
-        5, 0x80000008, 0,
+        5, 0x80000008,
         CPUID_VENDOR_INTEL,
         15, 6, 1,
         {
@@ -1055,7 +1054,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "coreduo",
-        10, 0x80000008, 0,
+        10, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 14, 8,
         {
@@ -1079,7 +1078,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "486",
-        1, 0, 0,
+        1, 0,
         CPUID_VENDOR_INTEL,
         4, 8, 0,
         {
@@ -1089,7 +1088,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "pentium",
-        1, 0, 0,
+        1, 0,
         CPUID_VENDOR_INTEL,
         5, 4, 3,
         {
@@ -1099,7 +1098,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "pentium2",
-        2, 0, 0,
+        2, 0,
         CPUID_VENDOR_INTEL,
         6, 5, 2,
         {
@@ -1109,7 +1108,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "pentium3",
-        3, 0, 0,
+        3, 0,
         CPUID_VENDOR_INTEL,
         6, 7, 3,
         {
@@ -1119,7 +1118,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "athlon",
-        2, 0x80000008, 0,
+        2, 0x80000008,
         CPUID_VENDOR_AMD,
         6, 2, 3,
         {
@@ -1139,7 +1138,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "n270",
-        10, 0x80000008, 0,
+        10, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 28, 2,
         {
@@ -1167,7 +1166,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Conroe",
-        10, 0x80000008, 0,
+        10, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 15, 3,
         {
@@ -1192,7 +1191,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Penryn",
-        10, 0x80000008, 0,
+        10, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 23, 3,
         {
@@ -1218,7 +1217,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Nehalem",
-        11, 0x80000008, 0,
+        11, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 26, 3,
         {
@@ -1244,7 +1243,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Westmere",
-        11, 0x80000008, 0,
+        11, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 44, 1,
         {
@@ -1289,7 +1288,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "SandyBridge",
-        0xd, 0x80000008, 0,
+        0xd, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 42, 1,
         {
@@ -1337,7 +1336,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "IvyBridge",
-        0xd, 0x80000008, 0,
+        0xd, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 58, 9,
         {
@@ -1386,7 +1385,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Haswell-noTSX",
-        0xd, 0x80000008, 0,
+        0xd, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 60, 1,
         {
@@ -1437,7 +1436,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Haswell",
-        0xd, 0x80000008, 0,
+        0xd, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 60, 1,
         {
@@ -1489,7 +1488,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Broadwell-noTSX",
-        0xd, 0x80000008, 0,
+        0xd, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 61, 2,
         {
@@ -1542,7 +1541,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Broadwell",
-        0xd, 0x80000008, 0,
+        0xd, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 61, 2,
         {
@@ -1595,7 +1594,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Skylake-Client",
-        0xd, 0x80000008, 0,
+        0xd, 0x80000008,
         CPUID_VENDOR_INTEL,
         6, 94, 3,
         {
@@ -1655,7 +1654,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Opteron_G1",
-        5, 0x80000008, 0,
+        5, 0x80000008,
         CPUID_VENDOR_AMD,
         15, 6, 1,
         {
@@ -1683,7 +1682,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Opteron_G2",
-        5, 0x80000008, 0,
+        5, 0x80000008,
         CPUID_VENDOR_AMD,
         15, 6, 1,
         {
@@ -1714,7 +1713,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Opteron_G3",
-        5, 0x80000008, 0,
+        5, 0x80000008,
         CPUID_VENDOR_AMD,
         15, 6, 1,
         {
@@ -1747,7 +1746,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Opteron_G4",
-        0xd, 0x8000001A, 0,
+        0xd, 0x8000001A,
         CPUID_VENDOR_AMD,
         21, 1, 2,
         {
@@ -1784,7 +1783,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "Opteron_G5",
-        0xd, 0x8000001A, 0,
+        0xd, 0x8000001A,
         CPUID_VENDOR_AMD,
         21, 2, 0,
         {
@@ -2252,7 +2251,6 @@ static void x86_cpu_load_def(X86CPU *cpu, X86CPUDefinition *def, Error **errp)
     object_property_set_int(env->uc, OBJECT(cpu), def->model, "model", errp);
     object_property_set_int(env->uc, OBJECT(cpu), def->stepping, "stepping", errp);
     object_property_set_int(env->uc, OBJECT(cpu), def->xlevel, "xlevel", errp);
-    object_property_set_int(env->uc, OBJECT(cpu), def->xlevel2, "xlevel2", errp);
     cpu->cache_info_passthrough = def->cache_info_passthrough;
     object_property_set_str(env->uc, OBJECT(cpu), def->model_id, "model-id", errp);
     for (w = 0; w < FEATURE_WORDS; w++) {
