@@ -1668,7 +1668,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         "Opteron_G3",
         5, 0x80000008,
         CPUID_VENDOR_AMD,
-        15, 6, 1,
+        16, 2, 3,
         {
         // FEAT_1_EDX
             CPUID_VME | CPUID_SSE2 | CPUID_SSE | CPUID_FXSR | CPUID_MMX |
