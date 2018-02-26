@@ -1204,6 +1204,10 @@ typedef struct X86CPU {
     struct DeviceState *apic_state;
     struct MemoryRegion *cpu_as_root;
 
+    int32_t socket_id;
+    int32_t core_id;
+    int32_t thread_id;
+
     /* Features to be added */
     FeatureWordArray plus_features;
     /* Features to be removed */
