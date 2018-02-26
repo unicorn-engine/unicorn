@@ -13,18 +13,18 @@
 
 from qapi import *
 
- def gen_event_send_proto(name, arg_type):
+def gen_event_send_proto(name, arg_type, boxed):
      return 'void qapi_event_send_%(c_name)s(%(param)s)' % {
          'c_name': c_name(name.lower()),
-         'param': gen_params(arg_type, 'Error **errp')}
+        'param': gen_params(arg_type, boxed, 'Error **errp')}
 
 
-def gen_event_send_decl(name, arg_type):
+def gen_event_send_decl(name, arg_type, boxed):
     return mcgen('''
 
 %(proto)s;
 ''',
-                 proto=gen_event_send_proto(name, arg_type))
+                 proto=gen_event_send_proto(name, arg_type, boxed))
 
 
 # Declare and initialize an object 'qapi' using parameters from gen_params()
@@ -56,7 +56,7 @@ def gen_param_var(typ):
     return ret
 
 
-def gen_event_send(name, arg_type):
+def gen_event_send(name, arg_type, boxed):
     # FIXME: Our declaration of local variables (and of 'errp' in the
     # parameter list) can collide with exploded members of the event's
     # data type passed in as parameters.  If this collision ever hits in
@@ -71,7 +71,7 @@ def gen_event_send(name, arg_type):
     Error *err = NULL;
     QMPEventFuncEmit emit;
 ''',
-                proto=gen_event_send_proto(name, arg_type))
+                proto=gen_event_send_proto(name, arg_type, boxed))
 
     if arg_type and not arg_type.is_empty():
         assert not arg_type.variants
@@ -160,9 +160,9 @@ class QAPISchemaGenEventVisitor(QAPISchemaVisitor):
         self.defn += gen_enum_lookup(event_enum_name, self._event_names)
         self._event_names = None;
 
-    def visit_event(self, name, info, arg_type):
-        self.decl += gen_event_send_decl(name, arg_type)
-        self.defn += gen_event_send(name, arg_type)
+    def visit_event(self, name, info, arg_type, boxed):
+        self.decl += gen_event_send_decl(name, arg_type, boxed)
+        self.defn += gen_event_send(name, arg_type, boxed)
         self._event_names.append(name)
 
 (input_file, output_dir, do_c, do_h, prefix, dummy) = parse_command_line()
