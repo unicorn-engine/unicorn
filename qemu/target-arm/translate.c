@@ -4488,26 +4488,37 @@ static void gen_mrs_banked(DisasContext *s, int r, int sysm, int rn)
     s->is_jmp = DISAS_UPDATE;
 }
 
-/* Generate an old-style exception return. Marks pc as dead. */
-static void gen_exception_return(DisasContext *s, TCGv_i32 pc)
+/* Store value to PC as for an exception return (ie don't
+ * mask bits). The subsequent call to gen_helper_cpsr_write_eret()
+ * will do the masking based on the new value of the Thumb bit.
+ */
+static void store_pc_exc_ret(DisasContext *s, TCGv_i32 pc)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv_i32 tmp;
-    store_reg(s, 15, pc);
-    tmp = load_cpu_field(s->uc, spsr);
-    gen_helper_cpsr_write_eret(tcg_ctx, tcg_ctx->cpu_env, tmp);
-    tcg_temp_free_i32(tcg_ctx, tmp);
-    s->is_jmp = DISAS_JUMP;
+
+    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->cpu_R[15], pc);
+    tcg_temp_free_i32(tcg_ctx, pc);
 }
 
 /* Generate a v6 exception return.  Marks both values as dead.  */
 static void gen_rfe(DisasContext *s, TCGv_i32 pc, TCGv_i32 cpsr)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    store_pc_exc_ret(s, pc);
+    /* The cpsr_write_eret helper will mask the low bits of PC
+     * appropriately depending on the new Thumb bit, so it must
+     * be called after storing the new PC.
+     */
     gen_helper_cpsr_write_eret(tcg_ctx, tcg_ctx->cpu_env, cpsr);
     tcg_temp_free_i32(tcg_ctx, cpsr);
-    store_reg(s, 15, pc);
     s->is_jmp = DISAS_JUMP;
+}
+
+/* Generate an old-style exception return. Marks pc as dead. */
+static void gen_exception_return(DisasContext *s, TCGv_i32 pc)
+{
+    gen_rfe(s, pc, load_cpu_field(s->uc, spsr));
 }
 
 static void gen_nop_hint(DisasContext *s, int val)
@@ -9516,6 +9527,8 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
                             } else if (i == rn) {
                                 loaded_var = tmp;
                                 loaded_base = 1;
+                            } else if (rn == 15 && exc_return) {
+                                store_pc_exc_ret(s, tmp);
                             } else {
                                 store_reg_from_load(s, i, tmp);
                             }
