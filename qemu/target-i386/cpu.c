@@ -3071,6 +3071,10 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         x86_cpu_adjust_feat_level(cpu, FEAT_C000_0001_EDX);
         x86_cpu_adjust_feat_level(cpu, FEAT_SVM);
         x86_cpu_adjust_feat_level(cpu, FEAT_XSAVE);
+        /* SVM requires CPUID[0x8000000A] */
+        if (env->features[FEAT_8000_0001_ECX] & CPUID_EXT3_SVM) {
+            x86_cpu_adjust_level(cpu, &env->cpuid_min_xlevel, 0x8000000A);
+        }
     }
 
     /* Set cpuid_*level* based on cpuid_min_*level, if not explicitly set */
