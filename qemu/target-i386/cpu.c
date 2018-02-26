@@ -277,11 +277,11 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
     {
         {
             "pni|sse3" /* Intel,AMD sse3 */, "pclmulqdq|pclmuldq", "dtes64", "monitor",
-            "ds_cpl", "vmx", "smx", "est",
+            "ds-cpl", "vmx", "smx", "est",
             "tm2", "ssse3", "cid", NULL,
             "fma", "cx16", "xtpr", "pdcm",
-            NULL, "pcid", "dca", "sse4.1|sse4_1",
-            "sse4.2|sse4_2", "x2apic", "movbe", "popcnt",
+            NULL, "pcid", "dca", "sse4.1|sse4-1",
+            "sse4.2|sse4-2", "x2apic", "movbe", "popcnt",
             "tsc-deadline", "aes", "xsave", "osxsave",
             "avx", "f16c", "rdrand", "hypervisor",
         },
@@ -293,7 +293,7 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
     // FEAT_7_0_EBX
     {
         {
-            "fsgsbase", "tsc_adjust", NULL, "bmi1",
+            "fsgsbase", "tsc-adjust", NULL, "bmi1",
             "hle", "avx2", NULL, "smep",
             "bmi2", "erms", "invpcid", "rtm",
             NULL, NULL, "mpx", NULL,
@@ -349,12 +349,12 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
     // FEAT_8000_0001_ECX
     {
         {
-            "lahf_lm", "cmp_legacy", "svm", "extapic",
+            "lahf-lm", "cmp_legacy", "svm", "extapic",
             "cr8legacy", "abm", "sse4a", "misalignsse",
             "3dnowprefetch", "osvw", "ibs", "xop",
             "skinit", "wdt", NULL, "lwp",
-            "fma4", "tce", NULL, "nodeid_msr",
-            NULL, "tbm", "topoext", "perfctr_core",
+            "fma4", "tce", NULL, "nodeid-msr",
+            NULL, "tbm", "topoext", "perfctr-core",
             "perfctr_nb", NULL, NULL, NULL,
             NULL, NULL, NULL, NULL,
         },
@@ -402,8 +402,8 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
     {{NULL},
       /* Unicorn: commented out
         {
-            "kvmclock", "kvm_nopiodelay", "kvm_mmu", "kvmclock",
-            "kvm_asyncpf", "kvm_steal_time", "kvm_pv_eoi", "kvm_pv_unhalt",
+            "kvmclock", "kvm-nopiodelay", "kvm-mmu", "kvmclock",
+            "kvm-asyncpf", "kvm-steal-time", "kvm-pv-eoi", "kvm-pv-unhalt",
             NULL, NULL, NULL, NULL,
             NULL, NULL, NULL, NULL,
             NULL, NULL, NULL, NULL,
@@ -475,9 +475,9 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
     // FEAT_SVM
     {
         {
-            "npt", "lbrv", "svm_lock", "nrip_save",
-            "tsc_scale", "vmcb_clean",  "flushbyasid", "decodeassists",
-            NULL, NULL, "pause_filter", NULL,
+            "npt", "lbrv", "svm-lock", "nrip-save",
+            "tsc-scale", "vmcb-clean",  "flushbyasid", "decodeassists",
+            NULL, NULL, "pause-filter", NULL,
             "pfthreshold", NULL, NULL, NULL,
             NULL, NULL, NULL, NULL,
             NULL, NULL, NULL, NULL,
@@ -2204,12 +2204,13 @@ static int x86_cpu_filter_features(X86CPU *cpu)
 
 static void x86_cpu_apply_props(X86CPU *cpu, PropValue *props)
 {
+    CPUX86State *env = &cpu->env;
     PropValue *pv;
     for (pv = props; pv->prop; pv++) {
         if (!pv->value) {
             continue;
         }
-        object_property_parse(cpu->uc, OBJECT(cpu), pv->value, pv->prop,
+        object_property_parse(env->uc, OBJECT(cpu), pv->value, pv->prop,
                               &error_abort);
     }
 }
@@ -2233,7 +2234,7 @@ static void x86_cpu_load_def(X86CPU *cpu, X86CPUDefinition *def, Error **errp)
         env->features[w] = def->features[w];
     }
 
-    if (tcg_enabled(cpu->uc)) {
+    if (tcg_enabled(env->uc)) {
         x86_cpu_apply_props(cpu, tcg_default_props);
     }
 
