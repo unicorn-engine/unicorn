@@ -8,4 +8,5 @@ util-obj-y += error.o
 util-obj-y += crc32c.o
 util-obj-y += host-utils.o
 util-obj-y += getauxval.o
+util-obj-y += log.o
 util-obj-y += range.o

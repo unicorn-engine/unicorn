@@ -204,7 +204,6 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClCompile Include="..\..\..\qemu\qapi\qmp-input-visitor.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qmp-output-visitor.c" />
     <ClCompile Include="..\..\..\qemu\qapi\string-input-visitor.c" />
-    <ClCompile Include="..\..\..\qemu\qemu-log.c" />
     <ClCompile Include="..\..\..\qemu\qemu-timer.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qbool.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qdict.c" />
@@ -227,6 +226,7 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClCompile Include="..\..\..\qemu\util\error.c" />
     <ClCompile Include="..\..\..\qemu\util\getauxval.c" />
     <ClCompile Include="..\..\..\qemu\util\host-utils.c" />
+    <ClCompile Include="..\..\..\qemu\util\log.c" />
     <ClCompile Include="..\..\..\qemu\util\module.c" />
     <ClCompile Include="..\..\..\qemu\util\oslib-win32.c" />
     <ClCompile Include="..\..\..\qemu\util\qemu-error.c" />

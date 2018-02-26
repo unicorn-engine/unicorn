@@ -11,9 +11,6 @@
     <ClCompile Include="..\..\..\qemu\glib_compat.c">
       <Filter>qemu</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\qemu-log.c">
-      <Filter>qemu</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\qemu\qemu-timer.c">
       <Filter>qemu</Filter>
     </ClCompile>
@@ -42,6 +39,9 @@
       <Filter>qemu\util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\util\host-utils.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\log.c">
       <Filter>qemu\util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\util\module.c">
