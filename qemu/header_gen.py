@@ -3156,8 +3156,8 @@ symbols = (
 )
 
 arm_symbols = (
-    'arm_register_el_change_hook',
     'ARM_REGS_STORAGE_SIZE',
+    'arm_register_el_change_hook',
 )
 
 aarch64_symbols = (
