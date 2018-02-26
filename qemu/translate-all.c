@@ -904,6 +904,7 @@ void tb_flush(CPUState *cpu)
 {
     struct uc_struct* uc = cpu->uc;
     TCGContext *tcg_ctx = uc->tcg_ctx;
+    int i;
 
 #if defined(DEBUG_FLUSH)
     printf("qemu: flush code_size=%ld nb_tbs=%d avg_tb_size=%ld\n",
@@ -918,7 +919,9 @@ void tb_flush(CPUState *cpu)
     }
     tcg_ctx->tb_ctx.nb_tbs = 0;
 
-    memset(cpu->tb_jmp_cache, 0, sizeof(cpu->tb_jmp_cache));
+    for (i = 0; i < TB_JMP_CACHE_SIZE; ++i) {
+        atomic_set(&cpu->tb_jmp_cache[i], NULL);
+    }
     cpu->tb_flushed = true;
 
     memset(tcg_ctx->tb_ctx.tb_phys_hash, 0, sizeof(tcg_ctx->tb_ctx.tb_phys_hash));
@@ -1092,8 +1095,8 @@ void tb_phys_invalidate(struct uc_struct *uc,
 
     /* remove the TB from the hash list */
     h = tb_jmp_cache_hash_func(tb->pc);
-    if (cpu->tb_jmp_cache[h] == tb) {
-        cpu->tb_jmp_cache[h] = NULL;
+    if (atomic_read(&cpu->tb_jmp_cache[h]) == tb) {
+        atomic_set(&cpu->tb_jmp_cache[h], NULL);
     }
 
     /* suppress this TB from the two jump lists */
