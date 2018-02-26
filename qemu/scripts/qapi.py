@@ -1669,14 +1669,6 @@ def gen_params(arg_type, extra):
     return ret
 
 
-def gen_err_check(label='out', skiperr=False):
-    return mcgen('''
-    if (err) {
-        goto out;
-    }
-''')
-
-
 #
 # Common command line parsing
 #

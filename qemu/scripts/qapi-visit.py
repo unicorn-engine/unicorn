@@ -46,9 +46,11 @@ void visit_type_%(c_name)s_members(Visitor *v, %(c_name)s *obj, Error **errp)
     if base:
         ret += mcgen('''
     visit_type_%(c_type)s_members(v, (%(c_type)s *)obj, &err);
+    if (err) {
+        goto out;
+    }
 ''',
                      c_type=base.c_name())
-        ret += gen_err_check()
 
     for memb in members:
         if memb.optional:
@@ -59,10 +61,12 @@ void visit_type_%(c_name)s_members(Visitor *v, %(c_name)s *obj, Error **errp)
             push_indent()
         ret += mcgen('''
     visit_type_%(c_type)s(v, "%(name)s", &obj->%(c_name)s, &err);
+    if (err) {
+        goto out;
+    }
 ''',
                      c_type=memb.type.c_name(), name=memb.name,
                      c_name=c_name(memb.name))
-        ret += gen_err_check()
         if memb.optional:
             pop_indent()
             ret += mcgen('''
