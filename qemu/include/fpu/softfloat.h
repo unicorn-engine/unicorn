@@ -677,7 +677,7 @@ static inline int floatx80_is_any_nan(floatx80 a)
 *----------------------------------------------------------------------------*/
 static inline bool floatx80_invalid_encoding(floatx80 a)
 {
-    return (a.low & ((uint64_t)1 << 63)) == 0 && (a.high & 0x7FFF) != 0;
+    return (a.low & (1ULL << 63)) == 0 && (a.high & 0x7FFF) != 0;
 }
 
 #define floatx80_zero make_floatx80(0x0000, 0x0000000000000000LL)

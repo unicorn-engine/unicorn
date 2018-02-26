@@ -4859,7 +4859,7 @@ int64_t floatx80_to_int64(floatx80 a, float_status *status)
 
     if (floatx80_invalid_encoding(a)) {
         float_raise(float_flag_invalid, status);
-        return (uint64_t)1 << 63;
+        return 1ULL << 63;
     }
     aSig = extractFloatx80Frac( a );
     aExp = extractFloatx80Exp( a );
@@ -4904,7 +4904,7 @@ int64_t floatx80_to_int64_round_to_zero(floatx80 a, float_status *status)
 
     if (floatx80_invalid_encoding(a)) {
         float_raise(float_flag_invalid, status);
-        return (uint64_t)1 << 63;
+        return 1ULL << 63;
     }
     aSig = extractFloatx80Frac( a );
     aExp = extractFloatx80Exp( a );
