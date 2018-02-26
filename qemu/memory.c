@@ -185,8 +185,7 @@ enum ListenerDirection { Forward, Reverse };
 static bool memory_listener_match(MemoryListener *listener,
                                   MemoryRegionSection *section)
 {
-    return !listener->address_space_filter
-        || listener->address_space_filter == section->address_space;
+    return listener->address_space == section->address_space;
 }
 
 #define MEMORY_LISTENER_CALL_GLOBAL(_callback, _direction, ...)    \
@@ -1712,18 +1711,16 @@ bool memory_region_present(MemoryRegion *container, hwaddr addr)
     return mr && mr != container;
 }
 
-static void listener_add_address_space(MemoryListener *listener,
-                                       AddressSpace *as)
+static QEMU_UNUSED_FUNC void listener_add_address_space(MemoryListener *listener,
+                                                        AddressSpace *as)
 {
     FlatView *view;
     FlatRange *fr;
 
-    if (listener->address_space_filter
-        && listener->address_space_filter != as) {
-        return;
+    if (listener->begin) {
+        listener->begin(listener);
     }
-
-    if (listener->address_space_filter->uc->global_dirty_log) {
+    if (as->uc->global_dirty_log) {
         if (listener->log_global_start) {
             listener->log_global_start(listener);
         }
@@ -1738,6 +1735,9 @@ static void listener_add_address_space(MemoryListener *listener,
             fr->addr.size,
             int128_get64(fr->addr.start),
             fr->readonly);
+        if (fr->dirty_log_mask && listener->log_start) {
+            listener->log_start(listener, &section, 0, fr->dirty_log_mask);
+        }
         if (listener->region_add) {
             listener->region_add(listener, &section);
         }
@@ -1745,12 +1745,11 @@ static void listener_add_address_space(MemoryListener *listener,
     flatview_unref(view);
 }
 
-void memory_listener_register(struct uc_struct* uc, MemoryListener *listener, AddressSpace *filter)
+void memory_listener_register(struct uc_struct* uc, MemoryListener *listener, AddressSpace *as)
 {
     MemoryListener *other = NULL;
-    AddressSpace *as;
 
-    listener->address_space_filter = filter;
+    listener->address_space = as;
     if (QTAILQ_EMPTY(&uc->memory_listeners)
         || listener->priority >= QTAILQ_LAST(&uc->memory_listeners,
                                              memory_listeners)->priority) {
@@ -1762,10 +1761,6 @@ void memory_listener_register(struct uc_struct* uc, MemoryListener *listener, Ad
             }
         }
         QTAILQ_INSERT_BEFORE(other, listener, link);
-    }
-
-    QTAILQ_FOREACH(as, &uc->address_spaces, address_spaces_link) {
-        listener_add_address_space(listener, as);
     }
 }
 
@@ -1804,7 +1799,7 @@ static void do_address_space_destroy(AddressSpace *as)
 
     // TODO(danghvu): why assert fail here?
     //QTAILQ_FOREACH(listener, &as->uc->memory_listeners, link) {
-    //    assert(listener->address_space_filter != as);
+    //    assert(listener->address_space != as);
     //}
 
     flatview_unref(as->current_map);
