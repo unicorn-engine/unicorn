@@ -1190,6 +1190,9 @@ typedef struct X86CPU {
     /* Compatibility bits for old machine types: */
     bool enable_cpuid_0xb;
 
+    /* if true override the phys_bits value with a value read from the host */
+    bool host_phys_bits;
+
     /* Number of physical address bits supported */
     uint32_t phys_bits;
 
