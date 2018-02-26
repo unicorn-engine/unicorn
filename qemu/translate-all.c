@@ -836,6 +836,7 @@ static TranslationBlock *tb_alloc(struct uc_struct *uc, target_ulong pc)
     tb = &tcg_ctx->tb_ctx.tbs[tcg_ctx->tb_ctx.nb_tbs++];
     tb->pc = pc;
     tb->cflags = 0;
+    tb->invalid = false;
     return tb;
 }
 
@@ -1075,6 +1076,8 @@ void tb_phys_invalidate(struct uc_struct *uc,
     PageDesc *p;
     uint32_t h;
     tb_page_addr_t phys_pc;
+
+    atomic_set(&tb->invalid, true);
 
     /* remove the TB from the hash list */
     phys_pc = tb->page_addr[0] + (tb->pc & ~TARGET_PAGE_MASK);
