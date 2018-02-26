@@ -348,6 +348,7 @@ static tcg_insn_unit *tb_ret_addr;
 #define FACILITY_EXT_IMM	(1ULL << (63 - 21))
 #define FACILITY_GEN_INST_EXT	(1ULL << (63 - 34))
 #define FACILITY_LOAD_ON_COND   (1ULL << (63 - 45))
+#define FACILITY_FAST_BCR_SER   FACILITY_LOAD_ON_COND
 
 static uint64_t facilities;
 
@@ -2175,6 +2176,15 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
         tgen_deposit(s, args[0], args[2], args[3], args[4]);
         break;
 
+    case INDEX_op_mb:
+        /* The host memory model is quite strong, we simply need to
+           serialize the instruction stream.  */
+        if (args[0] & TCG_MO_ST_LD) {
+            tcg_out_insn(s, RR, BCR,
+                         facilities & FACILITY_FAST_BCR_SER ? 14 : 15, 0);
+        }
+        break;
+
     case INDEX_op_mov_i32:  /* Always emitted via tcg_out_mov.  */
     case INDEX_op_mov_i64:
     case INDEX_op_movi_i32: /* Always emitted via tcg_out_movi.  */
@@ -2296,6 +2306,7 @@ static const TCGTargetOpDef s390_op_defs[] = {
     { INDEX_op_movcond_i64, { "r", "r", "rC", "r", "0" } },
     { INDEX_op_deposit_i64, { "r", "0", "r" } },
 
+    { INDEX_op_mb, { } },
     { -1 },
 };
 
