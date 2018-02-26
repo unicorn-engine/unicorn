@@ -51,7 +51,7 @@ static void tcg_emit_op(TCGContext *ctx, TCGOpcode opc, int args)
     TCGOp op = {0};
 
     tcg_debug_assert(oi < OPC_BUF_SIZE);
-    ctx->gen_last_op_idx = oi;
+    ctx->gen_op_buf[0].prev = oi;
     ctx->gen_next_op_idx = ni;
 
     op.opc = opc;

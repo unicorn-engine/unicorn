@@ -4952,7 +4952,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     TCGv cpu_T1 = tcg_ctx->cpu_T1;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
     TCGv *cpu_seg_base = tcg_ctx->cpu_seg_base;
-    TCGArg* save_opparam_ptr = tcg_ctx->gen_opparam_buf + tcg_ctx->gen_op_buf[tcg_ctx->gen_last_op_idx].args;
+    TCGArg* save_opparam_ptr = tcg_ctx->gen_opparam_buf + tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
     bool cc_op_dirty = s->cc_op_dirty;
     bool changed_cc_op = false;
 
@@ -9062,7 +9062,7 @@ void gen_intermediate_code(CPUX86State *env, TranslationBlock *tb)
     // Unicorn: trace this block on request
     // Only hook this block if the previous block was not truncated due to space
     if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
-        int arg_i = tcg_ctx->gen_op_buf[tcg_ctx->gen_last_op_idx].args;
+        int arg_i = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
         env->uc->block_addr = pc_start;
         env->uc->size_arg = arg_i + 1;
         gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);

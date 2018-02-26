@@ -63,7 +63,8 @@ static inline void gen_tb_end(TCGContext *tcg_ctx, TranslationBlock *tb, int num
 #endif
 
      /* Terminate the linked list.  */
-    tcg_ctx->gen_op_buf[tcg_ctx->gen_last_op_idx].next = -1;
+    tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].next = 0;
+
 }
 
 #if 0

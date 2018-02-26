@@ -103,11 +103,7 @@ static TCGOp *insert_op_before(TCGContext *s, TCGOp *old_op,
 
     new_op = &s->gen_op_buf[oi];
     *new_op = new_opp;
-    if (prev >= 0) {
-        s->gen_op_buf[prev].next = oi;
-    } else {
-        s->gen_first_op_idx = oi;
-    }
+    s->gen_op_buf[prev].next = oi;
     old_op->prev = oi;
 
     return new_op;
@@ -595,7 +591,7 @@ void tcg_optimize(TCGContext *s)
     nb_globals = s->nb_globals;
     reset_all_temps(s, nb_temps);
 
-    for (oi = s->gen_first_op_idx; oi >= 0; oi = oi_next) {
+    for (oi = s->gen_op_buf[0].next; oi != 0; oi = oi_next) {
         tcg_target_ulong mask, partmask, affected;
         int nb_oargs, nb_iargs, i;
         TCGArg tmp;

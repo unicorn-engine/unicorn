@@ -20042,7 +20042,7 @@ void gen_intermediate_code(CPUMIPSState *env, struct TranslationBlock *tb)
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
     if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
-        int arg_i = tcg_ctx->gen_op_buf[tcg_ctx->gen_last_op_idx].args;
+        int arg_i = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
         // save block address to see if we need to patch block size later
         env->uc->block_addr = pc_start;
         env->uc->size_arg = arg_i + 1;

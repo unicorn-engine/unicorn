@@ -432,9 +432,9 @@ void tcg_func_start(TCGContext *s)
     s->goto_tb_issue_mask = 0;
 #endif
 
-    s->gen_first_op_idx = 0;
-    s->gen_last_op_idx = -1;
-    s->gen_next_op_idx = 0;
+    s->gen_op_buf[0].next = 1;
+    s->gen_op_buf[0].prev = 0;
+    s->gen_next_op_idx = 1;
     s->gen_next_parm_idx = 0;
 
     s->be = tcg_malloc(s, sizeof(TCGBackendData));
@@ -858,7 +858,7 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
     /* Make sure the calli field didn't overflow.  */
     tcg_debug_assert(s->gen_op_buf[i].calli == real_args);
 
-    s->gen_last_op_idx = i;
+    s->gen_op_buf[0].prev = i;
     s->gen_next_op_idx = i + 1;
     s->gen_next_parm_idx = pi;
 
@@ -1066,7 +1066,7 @@ void tcg_dump_ops(TCGContext *s)
     TCGOp *op;
     int oi;
 
-    for (oi = s->gen_first_op_idx; oi >= 0; oi = op->next) {
+    for (oi = s->gen_op_buf[0].next; oi != 0; oi = op->next) {
         int i, k, nb_oargs, nb_iargs, nb_cargs;
         const TCGOpDef *def;
         const TCGArg *args;
@@ -1078,7 +1078,7 @@ void tcg_dump_ops(TCGContext *s)
         args = &s->gen_opparam_buf[op->args];
 
         if (c == INDEX_op_insn_start) {
-            printf("%s ----", oi != s->gen_first_op_idx ? "\n" : "");
+            qemu_log("%s ----", oi != s->gen_op_buf[0].next ? "\n" : "");
 
             for (i = 0; i < TARGET_INSN_START_WORDS; ++i) {
                 target_ulong a;
@@ -1088,7 +1088,7 @@ void tcg_dump_ops(TCGContext *s)
 #else
                 a = args[i];
 #endif
-                printf(" " TARGET_FMT_lx, a);
+                qemu_log(" " TARGET_FMT_lx, a);
             }
         } else if (c == INDEX_op_call) {
             /* variable number of arguments */
@@ -1097,12 +1097,12 @@ void tcg_dump_ops(TCGContext *s)
             nb_cargs = def->nb_cargs;
 
             /* function name, flags, out args */
-            printf(" %s %s,$0x%" TCG_PRIlx ",$%d", def->name,
+            qemu_log(" %s %s,$0x%" TCG_PRIlx ",$%d", def->name,
                      tcg_find_helper(s, args[nb_oargs + nb_iargs]),
                      args[nb_oargs + nb_iargs + 1], nb_oargs);
             for (i = 0; i < nb_oargs; i++) {
-                printf(",%s", tcg_get_arg_str_idx(s, buf, sizeof(buf),
-                                                   args[i]));
+                qemu_log(",%s", tcg_get_arg_str_idx(s, buf, sizeof(buf),
+                                                    args[i]));
             }
             for (i = 0; i < nb_iargs; i++) {
                 TCGArg arg = args[nb_oargs + i];
@@ -1110,10 +1110,10 @@ void tcg_dump_ops(TCGContext *s)
                 if (arg != TCG_CALL_DUMMY_ARG) {
                     t = tcg_get_arg_str_idx(s, buf, sizeof(buf), arg);
                 }
-                printf(",%s", t);
+                qemu_log(",%s", t);
             }
         } else {
-            printf(" %s ", def->name);
+            qemu_log(" %s ", def->name);
 
             nb_oargs = def->nb_oargs;
             nb_iargs = def->nb_iargs;
@@ -1122,16 +1122,16 @@ void tcg_dump_ops(TCGContext *s)
             k = 0;
             for (i = 0; i < nb_oargs; i++) {
                 if (k != 0) {
-                    printf(",");
+                    qemu_log(",");
                 }
-                printf("%s", tcg_get_arg_str_idx(s, buf, sizeof(buf),
+                qemu_log("%s", tcg_get_arg_str_idx(s, buf, sizeof(buf),
                                                    args[k++]));
             }
             for (i = 0; i < nb_iargs; i++) {
                 if (k != 0) {
-                    printf(",");
+                    qemu_log(",");
                 }
-                printf("%s", tcg_get_arg_str_idx(s, buf, sizeof(buf),
+                qemu_log("%s", tcg_get_arg_str_idx(s, buf, sizeof(buf),
                                                    args[k++]));
             }
             switch (c) {
@@ -1144,9 +1144,9 @@ void tcg_dump_ops(TCGContext *s)
             case INDEX_op_setcond_i64:
             case INDEX_op_movcond_i64:
                 if (args[k] < ARRAY_SIZE(cond_name) && cond_name[args[k]]) {
-                    printf(",%s", cond_name[args[k++]]);
+                    qemu_log(",%s", cond_name[args[k++]]);
                 } else {
-                    printf(",$0x%" TCG_PRIlx, args[k++]);
+                    qemu_log(",$0x%" TCG_PRIlx, args[k++]);
                 }
                 i = 1;
                 break;
@@ -1160,12 +1160,12 @@ void tcg_dump_ops(TCGContext *s)
                     unsigned ix = get_mmuidx(oi);
 
                     if (op & ~(MO_AMASK | MO_BSWAP | MO_SSIZE)) {
-                        printf(",%s,%u", ldst_name[op], ix);
+                        qemu_log(",$0x%x,%u", op, ix);
                     } else {
                         const char *s_al, *s_op;
                         s_al = alignment_name[(op & MO_AMASK) >> MO_ASHIFT];
                         s_op = ldst_name[op & (MO_BSWAP | MO_SSIZE)];
-                        printf(",%s%s,%u", s_al, s_op, ix);
+                        qemu_log(",%s%s,%u", s_al, s_op, ix);
                     }
                     i = 1;
                 }
@@ -1190,9 +1190,8 @@ void tcg_dump_ops(TCGContext *s)
                 qemu_log("%s$0x%" TCG_PRIlx, k ? "," : "", args[k]);
             }
         }
-        printf("\n");
+        qemu_log("\n");
     }
-    printf("###########\n");
 }
 
 /* we give more priority to constraints with less registers */
@@ -1345,18 +1344,13 @@ void tcg_op_remove(TCGContext *s, TCGOp *op)
     int next = op->next;
     int prev = op->prev;
 
-    if (next >= 0) {
-        s->gen_op_buf[next].prev = prev;
-    } else {
-        s->gen_last_op_idx = prev;
-    }
-    if (prev >= 0) {
-        s->gen_op_buf[prev].next = next;
-    } else {
-        s->gen_first_op_idx = next;
-    }
+    /* We should never attempt to remove the list terminator.  */
+    tcg_debug_assert(op != &s->gen_op_buf[0]);
 
-    memset(op, -1, sizeof(*op));
+    s->gen_op_buf[next].prev = prev;
+    s->gen_op_buf[prev].next = next;
+
+    memset(op, 0, sizeof(*op));
 
 #ifdef CONFIG_PROFILER
     s->del_op_count++;
@@ -1417,7 +1411,7 @@ static void tcg_liveness_analysis(TCGContext *s)
     mem_temps = tcg_malloc(s, s->nb_temps);
     tcg_la_func_end(s, dead_temps, mem_temps);
 
-    for (oi = s->gen_last_op_idx; oi >= 0; oi = oi_prev) {
+    for (oi = s->gen_op_buf[0].prev; oi != 0; oi = oi_prev) {
         int i, nb_iargs, nb_oargs;
         TCGOpcode opc_new, opc_new2;
         bool have_opc_new2;
@@ -2399,7 +2393,7 @@ int tcg_gen_code(TCGContext *s, TranslationBlock *tb)
     {
         int n;
 
-        n = s->gen_last_op_idx + 1;
+        n = s->gen_op_buf[0].prev + 1;
         s->op_count += n;
         if (n > s->op_count_max) {
             s->op_count_max = n;
@@ -2458,7 +2452,7 @@ int tcg_gen_code(TCGContext *s, TranslationBlock *tb)
     tcg_out_tb_init(s);
 
     num_insns = -1;
-    for (oi = s->gen_first_op_idx; oi >= 0; oi = oi_next) {
+    for (oi = s->gen_op_buf[0].next; oi != 0; oi = oi_next) {
         TCGOp * const op = &s->gen_op_buf[oi];
         TCGArg * const args = &s->gen_opparam_buf[op->args];
         TCGOpcode opc = op->opc;
