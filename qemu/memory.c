@@ -1706,8 +1706,8 @@ bool memory_region_present(MemoryRegion *container, hwaddr addr)
     return mr && mr != container;
 }
 
-static void listener_add_address_space(MemoryListener *listener,
-                                       AddressSpace *as)
+static QEMU_UNUSED_FUNC void listener_add_address_space(MemoryListener *listener,
+                                                        AddressSpace *as)
 {
     FlatView *view;
     FlatRange *fr;
