@@ -29,6 +29,7 @@
 #include "qemu/log.h"
 #include "qemu/bitops.h"
 #include "arm_ldst.h"
+#include "exec/semihost.h"
 
 #include "exec/helper-proto.h"
 #include "exec/helper-gen.h"
@@ -1176,6 +1177,33 @@ static inline void gen_lookup_tb(DisasContext *s)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_R[15], s->pc & ~1);
     s->is_jmp = DISAS_JUMP;
+}
+
+static inline void gen_hlt(DisasContext *s, int imm)
+{
+    /* HLT. This has two purposes.
+     * Architecturally, it is an external halting debug instruction.
+     * Since QEMU doesn't implement external debug, we treat this as
+     * it is required for halting debug disabled: it will UNDEF.
+     * Secondly, "HLT 0x3C" is a T32 semihosting trap instruction,
+     * and "HLT 0xF000" is an A32 semihosting syscall. These traps
+     * must trigger semihosting even for ARMv7 and earlier, where
+     * HLT was an undefined encoding.
+     * In system mode, we don't allow userspace access to
+     * semihosting, to provide some semblance of security
+     * (and for consistency with our 32-bit semihosting).
+     */
+    if (semihosting_enabled() &&
+#ifndef CONFIG_USER_ONLY
+        s->current_el != 0 &&
+#endif
+        (imm == (s->thumb ? 0x3c : 0xf000))) {
+        gen_exception_internal_insn(s, 0, EXCP_SEMIHOST);
+        return;
+    }
+
+    gen_exception_insn(s, s->thumb ? 2 : 4, EXCP_UDEF, syn_uncategorized(),
+                       default_exception_el(s));
 }
 
 static inline void gen_add_data_offset(DisasContext *s, unsigned int insn,
@@ -8553,6 +8581,10 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
         {
             int imm16 = extract32(insn, 0, 4) | (extract32(insn, 8, 12) << 4);
             switch (op1) {
+            case 0:
+                /* HLT */
+                gen_hlt(s, imm16);
+                break;
             case 1:
                 /* bkpt */
                 ARCH(5);
@@ -8577,7 +8609,7 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
                 gen_smc(s);
                 break;
             default:
-                goto illegal_op;
+                g_assert_not_reached();
             }
             break;
         }
@@ -11633,19 +11665,33 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
             break;
         }
 
-        case 0xa: /* rev */
+        case 0xa: /* rev, and hlt */
+        {
+            int op1 = extract32(insn, 6, 2);
+
+            if (op1 == 2) {
+                /* HLT */
+                int imm6 = extract32(insn, 0, 6);
+
+                gen_hlt(s, imm6);
+                break;
+            }
+
+            /* Otherwise this is rev */
             ARCH(6);
             rn = (insn >> 3) & 0x7;
             rd = insn & 0x7;
             tmp = load_reg(s, rn);
-            switch ((insn >> 6) & 3) {
+            switch (op1) {
             case 0: tcg_gen_bswap32_i32(tcg_ctx, tmp, tmp); break;
             case 1: gen_rev16(s, tmp); break;
             case 3: gen_revsh(s, tmp); break;
-            default: goto illegal_op;
+            default:
+                g_assert_not_reached();
             }
             store_reg(s, rd, tmp);
             break;
+        }
 
         case 6:
             switch ((insn >> 5) & 7) {
