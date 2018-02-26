@@ -29,8 +29,8 @@
     <ClCompile Include="..\..\..\qemu\qapi\qapi-clone-visitor.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qapi-dealloc-visitor.c" />
     <ClCompile Include="..\..\..\qemu\qapi\qapi-visit-core.c" />
-    <ClCompile Include="..\..\..\qemu\qapi\qmp-input-visitor.c" />
-    <ClCompile Include="..\..\..\qemu\qapi\qmp-output-visitor.c" />
+    <ClCompile Include="..\..\..\qemu\qapi\qobject-input-visitor.c" />
+    <ClCompile Include="..\..\..\qemu\qapi\qobject-output-visitor.c" />
     <ClCompile Include="..\..\..\qemu\qapi\string-input-visitor.c" />
     <ClCompile Include="..\..\..\qemu\qemu-timer.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qbool.c" />
@@ -130,8 +130,8 @@
     <ClInclude Include="..\..\..\qemu\include\qapi\dealloc-visitor.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\error.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\opts-visitor.h" />
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp-input-visitor.h" />
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp-output-visitor.h" />
+    <ClInclude Include="..\..\..\qemu\include\qapi\qobject-input-visitor.h" />
+    <ClInclude Include="..\..\..\qemu\include\qapi\qobject-output-visitor.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qbool.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qdict.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qerror.h" />

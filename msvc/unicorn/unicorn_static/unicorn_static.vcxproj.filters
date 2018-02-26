@@ -105,10 +105,10 @@
     <ClCompile Include="..\..\..\qemu\qapi\qapi-visit-core.c">
       <Filter>qemu\qapi</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\qapi\qmp-input-visitor.c">
+    <ClCompile Include="..\..\..\qemu\qapi\qobject-input-visitor.c">
       <Filter>qemu\qapi</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\qapi\qmp-output-visitor.c">
+    <ClCompile Include="..\..\..\qemu\qapi\qobject-output-visitor.c">
       <Filter>qemu\qapi</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\qapi\string-input-visitor.c">
@@ -372,10 +372,10 @@
     <ClInclude Include="..\..\..\qemu\include\qapi\opts-visitor.h">
       <Filter>qemu\include\qapi</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp-input-visitor.h">
+    <ClInclude Include="..\..\..\qemu\include\qapi\qobject-input-visitor.h">
       <Filter>qemu\include\qapi</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp-output-visitor.h">
+    <ClInclude Include="..\..\..\qemu\include\qapi\qobject-output-visitor.h">
       <Filter>qemu\include\qapi</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\string-input-visitor.h">
