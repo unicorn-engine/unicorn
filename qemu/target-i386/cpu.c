@@ -3103,6 +3103,22 @@ out:
     return 0;
 }
 
+static void x86_cpu_unrealizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
+{
+    /* Unicorn: commented out
+    X86CPU *cpu = X86_CPU(uc, dev);
+
+#ifndef CONFIG_USER_ONLY
+    cpu_remove_sync(CPU(dev));
+    qemu_unregister_reset(x86_cpu_machine_reset_cb, dev);
+#endif
+
+    if (cpu->apic_state) {
+        object_unparent(OBJECT(cpu->apic_state));
+        cpu->apic_state = NULL;
+    }*/
+}
+
 static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
     //printf("... X86 initialize (object)\n");
@@ -3206,6 +3222,7 @@ static void x86_cpu_common_class_init(struct uc_struct *uc, ObjectClass *oc, voi
 
     xcc->parent_realize = dc->realize;
     dc->realize = x86_cpu_realizefn;
+    dc->unrealize = x86_cpu_unrealizefn;
     dc->bus_type = TYPE_ICC_BUS;
 
     xcc->parent_reset = cc->reset;
