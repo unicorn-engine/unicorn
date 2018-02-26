@@ -8724,6 +8724,7 @@ case 0x101:
                 || (prefixes & PREFIX_LOCK)) {
                 goto illegal_op;
             }
+            tcg_gen_mb(tcg_ctx, TCG_MO_ST_ST | TCG_BAR_SC);
             break;
         case 0xe8:
         case 0xe9:
@@ -8733,6 +8734,12 @@ case 0x101:
         case 0xed:
         case 0xee:
         case 0xef: /* lfence */
+            if (!(s->cpuid_features & CPUID_SSE)
+                || (prefixes & PREFIX_LOCK)) {
+                goto illegal_op;
+            }
+            tcg_gen_mb(tcg_ctx, TCG_MO_LD_LD | TCG_BAR_SC);
+            break;
         case 0xf0:
         case 0xf1:
         case 0xf2:
@@ -8745,6 +8752,7 @@ case 0x101:
                 || (prefixes & PREFIX_LOCK)) {
                 goto illegal_op;
             }
+            tcg_gen_mb(tcg_ctx, TCG_MO_ALL | TCG_BAR_SC);
             break;
 
         default:
