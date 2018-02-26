@@ -617,7 +617,6 @@ QEMU_BUILD_BUG_ON(sizeof(TCGOp) > 8);
 
 void *tcg_malloc_internal(TCGContext *s, int size);
 void tcg_pool_reset(TCGContext *s);
-void tcg_pool_delete(TCGContext *s);
 
 void tcg_context_init(TCGContext *s);
 void tcg_context_free(void *s);   // free memory allocated for @s
@@ -1042,7 +1041,6 @@ static inline void *tcg_malloc(TCGContext *s, int size)
 /* only used for debugging purposes */
 void tcg_dump_ops(TCGContext *s);
 
-void dump_ops(const uint16_t *opc_buf, const TCGArg *opparam_buf);
 TCGv_i32 tcg_const_i32(TCGContext *s, int32_t val);
 TCGv_i64 tcg_const_i64(TCGContext *s, int64_t val);
 TCGv_i32 tcg_const_local_i32(TCGContext *s, int32_t val);
