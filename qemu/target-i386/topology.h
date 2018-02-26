@@ -92,6 +92,21 @@ static inline unsigned apicid_pkg_offset(unsigned nr_cores, unsigned nr_threads)
            apicid_core_width(nr_cores, nr_threads);
 }
 
+/* Calculate thread/core/package IDs for a specific topology,
+ * based on APIC ID
+ */
+static inline void x86_topo_ids_from_apicid(apic_id_t apicid,
+                                            unsigned nr_cores,
+                                            unsigned nr_threads,
+                                            X86CPUTopoInfo *topo)
+{
+    topo->smt_id = apicid &
+                   ~(0xFFFFFFFFUL << apicid_smt_width(nr_cores, nr_threads));
+    topo->core_id = (apicid >> apicid_core_offset(nr_cores, nr_threads)) &
+                   ~(0xFFFFFFFFUL << apicid_core_width(nr_cores, nr_threads));
+    topo->pkg_id = apicid >> apicid_pkg_offset(nr_cores, nr_threads);
+}
+
 /* Make APIC ID for the CPU based on Pkg_ID, Core_ID, SMT_ID
  *
  * The caller must make sure core_id < nr_cores and smt_id < nr_threads.
