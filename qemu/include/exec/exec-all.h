@@ -351,16 +351,15 @@ static inline void tb_add_jump(TranslationBlock *tb, int n,
     tb_next->jmp_list_first = (uintptr_t)tb | n;
 }
 
-/* GETRA is the true target of the return instruction that we'll execute,
-   defined here for simplicity of defining the follow-up macros.  */
+/* GETPC is the true target of the return instruction that we'll execute.  */
 #if defined(CONFIG_TCG_INTERPRETER)
 extern uintptr_t tci_tb_ptr;
-# define GETRA() tci_tb_ptr
+# define GETPC() tci_tb_ptr
 #elif defined(_MSC_VER)
 #include <intrin.h>
-# define GETRA() (uintptr_t)_ReturnAddress()
+# define GETPC() (uintptr_t)_ReturnAddress()
 #else
-# define GETRA() \
+# define GETPC() \
     ((uintptr_t)__builtin_extract_return_addr(__builtin_return_address(0)))
 #endif
 
@@ -376,8 +375,6 @@ extern uintptr_t tci_tb_ptr;
 #else
 # define GETPC_ADJ   2
 #endif
-
-#define GETPC()  (GETRA() - GETPC_ADJ)
 
 #if !defined(CONFIG_USER_ONLY)
 
