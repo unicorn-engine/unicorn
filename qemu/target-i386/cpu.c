@@ -3006,6 +3006,38 @@ static QEMU_UNUSED_FUNC uint32_t x86_host_phys_bits(void)
     return host_phys_bits;
 }
 
+static void x86_cpu_adjust_level(X86CPU *cpu, uint32_t *min, uint32_t value)
+{
+    if (*min < value) {
+        *min = value;
+    }
+}
+
+/* Increase cpuid_min_{level,xlevel,xlevel2} automatically, if appropriate */
+static void x86_cpu_adjust_feat_level(X86CPU *cpu, FeatureWord w)
+{
+    CPUX86State *env = &cpu->env;
+    FeatureWordInfo *fi = &feature_word_info[w];
+    uint32_t eax = fi->cpuid_eax;
+    uint32_t region = eax & 0xF0000000;
+
+    if (!env->features[w]) {
+        return;
+    }
+
+    switch (region) {
+    case 0x00000000:
+        x86_cpu_adjust_level(cpu, &env->cpuid_min_level, eax);
+    break;
+    case 0x80000000:
+        x86_cpu_adjust_level(cpu, &env->cpuid_min_xlevel, eax);
+    break;
+    case 0xC0000000:
+        x86_cpu_adjust_level(cpu, &env->cpuid_min_xlevel2, eax);
+    break;
+    }
+}
+
 #define IS_INTEL_CPU(env) ((env)->cpuid_vendor1 == CPUID_VENDOR_INTEL_1 && \
                            (env)->cpuid_vendor2 == CPUID_VENDOR_INTEL_2 && \
                            (env)->cpuid_vendor3 == CPUID_VENDOR_INTEL_3)
@@ -3026,8 +3058,30 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         return -1;
     }
 
-    if (env->features[FEAT_7_0_EBX] && env->cpuid_level < 7) {
-        env->cpuid_level = 7;
+    /* CPUID[EAX=7,ECX=0].EBX always increased level automatically: */
+    x86_cpu_adjust_feat_level(cpu, FEAT_7_0_EBX);
+    if (cpu->full_cpuid_auto_level) {
+        x86_cpu_adjust_feat_level(cpu, FEAT_1_EDX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_1_ECX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_6_EAX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_7_0_ECX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_8000_0001_EDX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_8000_0001_ECX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_8000_0007_EDX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_C000_0001_EDX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_SVM);
+        x86_cpu_adjust_feat_level(cpu, FEAT_XSAVE);
+    }
+
+    /* Set cpuid_*level* based on cpuid_min_*level, if not explicitly set */
+    if (env->cpuid_level == UINT32_MAX) {
+        env->cpuid_level = env->cpuid_min_level;
+    }
+    if (env->cpuid_xlevel == UINT32_MAX) {
+        env->cpuid_xlevel = env->cpuid_min_xlevel;
+    }
+    if (env->cpuid_xlevel2 == UINT32_MAX) {
+        env->cpuid_xlevel2 = env->cpuid_min_xlevel2;
     }
 
     /*TODO: cpu->host_features incorrectly overwrites features

@@ -1104,9 +1104,12 @@ typedef struct CPUX86State {
     struct {} end_reset_fields;
 
     /* processor features (e.g. for CPUID insn) */
-    uint32_t cpuid_level;
-    uint32_t cpuid_xlevel;
-    uint32_t cpuid_xlevel2;
+    /* Minimum level/xlevel/xlevel2, based on CPU model + features */
+    uint32_t cpuid_min_level, cpuid_min_xlevel, cpuid_min_xlevel2;
+    /* Maximum level/xlevel/xlevel2 value for auto-assignment: */
+    uint32_t cpuid_max_level, cpuid_max_xlevel, cpuid_max_xlevel2;
+    /* Actual level/xlevel/xlevel2 value: */
+    uint32_t cpuid_level, cpuid_xlevel, cpuid_xlevel2;
     uint32_t cpuid_vendor1;
     uint32_t cpuid_vendor2;
     uint32_t cpuid_vendor3;
@@ -1206,14 +1209,17 @@ typedef struct X86CPU {
     /* Compatibility bits for old machine types: */
     bool enable_cpuid_0xb;
 
+    /* Enable auto level-increase for all CPUID leaves */
+    bool full_cpuid_auto_level;
+
+    /* if true fill the top bits of the MTRR_PHYSMASKn variable range */
+    bool fill_mtrr_mask;
+
     /* if true override the phys_bits value with a value read from the host */
     bool host_phys_bits;
 
     /* Number of physical address bits supported */
     uint32_t phys_bits;
-
-    /* if true fill the top bits of the MTRR_PHYSMASKn variable range */
-    bool fill_mtrr_mask;
 
     /* in order to simplify APIC support, we leave this pointer to the
        user */
