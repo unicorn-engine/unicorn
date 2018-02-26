@@ -917,13 +917,13 @@ void tb_flush(CPUState *cpu)
         > tcg_ctx->code_gen_buffer_size) {
         cpu_abort(cpu, "Internal error: code buffer overflow\n");
     }
-    tcg_ctx->tb_ctx.nb_tbs = 0;
 
     for (i = 0; i < TB_JMP_CACHE_SIZE; ++i) {
         atomic_set(&cpu->tb_jmp_cache[i], NULL);
     }
-    cpu->tb_flushed = true;
+    atomic_mb_set(&cpu->tb_flushed, true);
 
+    tcg_ctx->tb_ctx.nb_tbs = 0;
     memset(tcg_ctx->tb_ctx.tb_phys_hash, 0, sizeof(tcg_ctx->tb_ctx.tb_phys_hash));
     page_flush_tb(uc);
 
