@@ -1212,9 +1212,15 @@ void memory_region_init_rom(struct uc_struct *uc,
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
 }
 
-void memory_region_set_skip_dump(MemoryRegion *mr)
+void memory_region_init_ram_device_ptr(struct uc_struct *uc,
+                                       MemoryRegion *mr,
+                                       Object *owner,
+                                       const char *name,
+                                       uint64_t size,
+                                       void *ptr)
 {
-    mr->skip_dump = true;
+    memory_region_init_ram_ptr(uc, mr, owner, name, size, ptr);
+    mr->ram_device = true;
 }
 
 void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
@@ -1294,9 +1300,9 @@ const char *memory_region_name(const MemoryRegion *mr)
     return mr->name;
 }
 
-bool memory_region_is_skip_dump(MemoryRegion *mr)
+bool memory_region_is_ram_device(MemoryRegion *mr)
 {
-    return mr->skip_dump;
+    return mr->ram_device;
 }
 
 uint8_t memory_region_get_dirty_log_mask(MemoryRegion *mr)
