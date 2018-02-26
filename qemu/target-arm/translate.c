@@ -172,7 +172,12 @@ static void store_reg(DisasContext *s, int reg, TCGv_i32 var)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (reg == 15) {
-        tcg_gen_andi_i32(tcg_ctx, var, var, ~1);
+        /* In Thumb mode, we must ignore bit 0.
+         * In ARM mode, for ARMv4 and ARMv5, it is UNPREDICTABLE if bits [1:0]
+         * are not 0b00, but for ARMv6 and above, we must ignore bits [1:0].
+         * We choose to ignore [1:0] in ARM mode for all architecture versions.
+         */
+        tcg_gen_andi_i32(tcg_ctx, var, var, s->thumb ? ~1 : ~3);
         s->is_jmp = DISAS_JUMP;
     }
     tcg_gen_mov_i32(tcg_ctx, tcg_ctx->cpu_R[reg], var);
