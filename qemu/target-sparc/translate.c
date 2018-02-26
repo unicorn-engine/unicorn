@@ -52,6 +52,7 @@ typedef struct DisasContext {
     int n_t32;
     int n_ttl;
 #ifdef TARGET_SPARC64
+    int fprs_dirty;
     int asi;
 #endif
 
@@ -118,7 +119,13 @@ static inline void gen_update_fprs_dirty(DisasContext *dc, int rd)
 {
 #if defined(TARGET_SPARC64)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    tcg_gen_ori_i32(tcg_ctx, tcg_ctx->cpu_fprs, tcg_ctx->cpu_fprs, (rd < 32) ? 1 : 2);
+    int bit = (rd < 32) ? 1 : 2;
+    /* If we know we've already set this bit within the TB,
+       we can avoid setting it again.  */
+    if (!(dc->fprs_dirty & bit)) {
+        dc->fprs_dirty |= bit;
+        tcg_gen_ori_i32(tcg_ctx, tcg_ctx->cpu_fprs, tcg_ctx->cpu_fprs, bit);
+    }
 #endif
 }
 
@@ -4317,6 +4324,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                             case 0x6: /* V9 wrfprs */
                                 tcg_gen_xor_tl(tcg_ctx, cpu_tmp0, cpu_src1, cpu_src2);
                                 tcg_gen_trunc_tl_i32(tcg_ctx, tcg_ctx->cpu_fprs, cpu_tmp0);
+                                dc->fprs_dirty = 0;
                                 save_state(dc);
                                 gen_op_next_insn(dc);
                                 tcg_gen_exit_tb(tcg_ctx, 0);
@@ -5764,6 +5772,7 @@ void gen_intermediate_code(CPUSPARCState * env, TranslationBlock * tb)
     dc->address_mask_32bit = tb_am_enabled(tb->flags);
     dc->singlestep = (cs->singlestep_enabled); // || singlestep);
 #ifdef TARGET_SPARC64
+    dc->fprs_dirty = 0;
     dc->asi = (tb->flags >> TB_FLAG_ASI_SHIFT) & 0xff;
 #endif
 
