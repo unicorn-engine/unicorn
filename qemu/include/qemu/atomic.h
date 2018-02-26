@@ -48,7 +48,7 @@ void _ReadWriteBarrier(void);
  */
 #if defined(__SANITIZE_THREAD__)
 #define smp_read_barrier_depends() ({ barrier(); __atomic_thread_fence(__ATOMIC_CONSUME); barrier(); })
-#elsif defined(__alpha__)
+#elif defined(__alpha__)
 #define smp_read_barrier_depends()   asm volatile("mb":::"memory")
 #else
 #define smp_read_barrier_depends()   barrier()
