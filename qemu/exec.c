@@ -68,10 +68,39 @@
 
 #endif
 
+bool set_preferred_target_page_bits(struct uc_struct *uc, int bits)
+{
+    /* The target page size is the lowest common denominator for all
+     * the CPUs in the system, so we can only make it smaller, never
+     * larger. And we can't make it smaller once we've committed to
+     * a particular size.
+     */
+#ifdef TARGET_PAGE_BITS_VARY
+    assert(bits >= TARGET_PAGE_BITS_MIN);
+    if (uc->target_page_bits == 0 || uc->target_page_bits > bits) {
+        if (uc->target_page_bits_decided) {
+            return false;
+        }
+        uc->target_page_bits = bits;
+    }
+#endif
+    return true;
+}
+
 #if !defined(CONFIG_USER_ONLY)
 /* current CPU in the current thread. It is only valid inside
    cpu_exec() */
 //DEFINE_TLS(CPUState *, current_cpu);
+
+static void finalize_target_page_bits(struct uc_struct *uc)
+{
+#ifdef TARGET_PAGE_BITS_VARY
+    if (uc->target_page_bits == 0) {
+        uc->target_page_bits = TARGET_PAGE_BITS_MIN;
+    }
+    uc->target_page_bits_decided = true;
+#endif
+}
 
 typedef struct PhysPageEntry PhysPageEntry;
 
@@ -1826,6 +1855,14 @@ static void memory_map_init(struct uc_struct *uc)
 
 void cpu_exec_init_all(struct uc_struct *uc)
 {
+    /* The data structures we set up here depend on knowing the page size,
+     * so no more changes can be made after this point.
+     * In an ideal world, nothing we did before we had finished the
+     * machine setup would care about the target page size, and we could
+     * do this much later, rather than requiring board models to state
+     * up front what their requirements are.
+     */
+    finalize_target_page_bits(uc);
     io_mem_init(uc);
 #if !defined(CONFIG_USER_ONLY)
     memory_map_init(uc);

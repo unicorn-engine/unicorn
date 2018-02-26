@@ -184,6 +184,9 @@ struct uc_struct {
     RAMList ram_list;
     // Renamed from "alloc_hint" in qemu.
     unsigned phys_map_node_alloc_hint;
+    // Used when a target's page bits can vary
+    int target_page_bits;
+    bool target_page_bits_decided;
 
     // qemu/cpu-exec.c
     BounceBuffer bounce;

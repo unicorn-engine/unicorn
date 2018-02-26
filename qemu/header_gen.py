@@ -2591,6 +2591,7 @@ symbols = (
     'set_float_rounding_mode',
     'set_flush_inputs_to_zero',
     'set_flush_to_zero',
+    'set_preferred_target_page_bits',
     'set_swi_errno',
     'sextract32',
     'sextract64',

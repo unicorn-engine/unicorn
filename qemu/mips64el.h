@@ -2585,6 +2585,7 @@
 #define set_float_rounding_mode set_float_rounding_mode_mips64el
 #define set_flush_inputs_to_zero set_flush_inputs_to_zero_mips64el
 #define set_flush_to_zero set_flush_to_zero_mips64el
+#define set_preferred_target_page_bits set_preferred_target_page_bits_mips64el
 #define set_swi_errno set_swi_errno_mips64el
 #define sextract32 sextract32_mips64el
 #define sextract64 sextract64_mips64el

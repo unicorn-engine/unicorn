@@ -66,6 +66,18 @@ bool tcg_enabled(struct uc_struct *uc);
 struct uc_struct;
 void cpu_exec_init_all(struct uc_struct *uc);
 
+/**
+ * set_preferred_target_page_bits:
+ * @bits: number of bits needed to represent an address within the page
+ *
+ * Set the preferred target page size (the actual target page
+ * size may be smaller than any given CPU's preference).
+ * Returns true on success, false on failure (which can only happen
+ * if this is called after the system has already finalized its
+ * choice of page size and the requested page size is smaller than that).
+ */
+bool set_preferred_target_page_bits(struct uc_struct *uc, int bits);
+
 #include "qemu/module.h"
 
 // support for calling functions before main code is executed.

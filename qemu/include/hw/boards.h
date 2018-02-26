@@ -22,6 +22,7 @@ struct QEMUMachine {
     int max_cpus;
     int is_default;
     int arch;
+    int minimum_page_bits;
 };
 
 void memory_region_allocate_system_memory(MemoryRegion *mr, Object *owner,
@@ -46,6 +47,12 @@ MachineClass *find_default_machine(struct uc_struct *uc, int arch);
 /**
  * MachineClass:
  * @qemu_machine: #QEMUMachine
+ * @minimum_page_bits:
+ *    If non-zero, the board promises never to create a CPU with a page size
+ *    smaller than this, so QEMU can use a more efficient larger page
+ *    size than the target architecture's minimum. (Attempting to create
+ *    such a CPU will fail.) Note that changing this is a migration
+ *    compatibility break for the machine.
  */
 struct MachineClass {
     /*< private >*/
@@ -61,6 +68,7 @@ struct MachineClass {
     int max_cpus;
     int is_default;
     int arch;
+    int minimum_page_bits;
 };
 
 /**

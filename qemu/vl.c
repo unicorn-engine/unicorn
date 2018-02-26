@@ -136,6 +136,20 @@ int machine_initialize(struct uc_struct *uc)
                     OBJECT_CLASS(machine_class))));
     uc->machine_state = current_machine;
     current_machine->uc = uc;
+
+    // Unicorn: FIXME: this should be uncommented
+    //          However due to the "stellar" way unicorn
+    //          handles multiple targets (e.g. the YOLO
+    //          Python script named header_gen.py), this
+    //          results in a compilation error.
+    //if (machine_class->minimum_page_bits) {
+    //    if (!set_preferred_target_page_bits(uc, machine_class->minimum_page_bits)) {
+    //        /* This would be a board error: specifying a minimum smaller than
+    //         * a target's compile-time fixed setting.
+    //         */
+    //        g_assert_not_reached();
+    //    }
+    //}
     uc->cpu_exec_init_all(uc);
 
     machine_class->max_cpus = 1;
@@ -168,6 +182,7 @@ static void machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
     mc->max_cpus = qm->max_cpus;
     mc->is_default = qm->is_default;
     mc->arch = qm->arch;
+    mc->minimum_page_bits = qm->minimum_page_bits;
 }
 
 void qemu_register_machine(struct uc_struct *uc, QEMUMachine *m, const char *type_machine,
