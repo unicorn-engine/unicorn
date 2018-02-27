@@ -28,8 +28,6 @@
 #include "exec/memory.h"
 #include "uc_priv.h"
 
-#define DATA_SIZE (1 << SHIFT)
-
 #if DATA_SIZE == 8
 #define SUFFIX q
 #define LSUFFIX q
@@ -138,7 +136,7 @@ static inline DATA_TYPE glue(io_read, SUFFIX)(CPUArchState *env,
     }
 
     cpu->mem_io_vaddr = addr;
-    memory_region_dispatch_read(mr, physaddr, &val, 1 << SHIFT,
+    memory_region_dispatch_read(mr, physaddr, &val, DATA_SIZE,
                                 iotlbentry->attrs);
     return (DATA_TYPE)val;
 }
@@ -547,7 +545,7 @@ static inline void glue(io_write, SUFFIX)(CPUArchState *env,
 
     cpu->mem_io_vaddr = addr;
     cpu->mem_io_pc = retaddr;
-    memory_region_dispatch_write(mr, physaddr, val, 1 << SHIFT,
+    memory_region_dispatch_write(mr, physaddr, val, DATA_SIZE,
                                  iotlbentry->attrs);
 }
 
@@ -838,7 +836,6 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
 #endif /* !defined(SOFTMMU_CODE_ACCESS) */
 
 #undef READ_ACCESS_TYPE
-#undef SHIFT
 #undef DATA_TYPE
 #undef SUFFIX
 #undef LSUFFIX
