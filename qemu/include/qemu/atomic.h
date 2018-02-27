@@ -318,10 +318,23 @@ void _ReadWriteBarrier(void);
 /* Provide shorter names for GCC atomic builtins.  */
 #ifdef _MSC_VER
 // these return the new value (so we make it return the previous value)
-#define atomic_fetch_inc(ptr)        ((InterlockedIncrement(ptr))-1)
-#define atomic_fetch_dec(ptr)        ((InterlockedDecrement(ptr))+1)
-#define atomic_fetch_add(ptr, n)     ((InterlockedAdd(ptr,  n))-n)
-#define atomic_fetch_sub(ptr, n)     ((InterlockedAdd(ptr, -n))+n)
+#define atomic_fetch_inc(ptr)         ((InterlockedIncrement(ptr))-1)
+#define atomic_fetch_dec(ptr)         ((InterlockedDecrement(ptr))+1)
+#define atomic_fetch_add(ptr, n)      ((InterlockedAdd(ptr,  n))-n)
+#define atomic_fetch_sub(ptr, n)      ((InterlockedAdd(ptr, -n))+n)
+#define atomic_fetch_and(ptr, n)      ((InterlockedAnd(ptr, n)))
+#define atomic_fetch_or(ptr, n)       ((InterlockedOr(ptr, n)))
+#define atomic_fetch_xor(ptr, n)      ((InterlockedXor(ptr, n)))
+
+#define atomic_inc_fetch(ptr)         (InterlockedIncrement((long*)(ptr)))
+#define atomic_dec_fetch(ptr)         (InterlockedDecrement((long*)(ptr)))
+#define atomic_add_fetch(ptr, n)      (InterlockedExchangeAdd((long*)ptr, n) + n)
+#define atomic_sub_fetch(ptr, n)      (InterlockedExchangeAdd((long*)ptr, n) - n)
+#define atomic_and_fetch(ptr, n)      (InterlockedAnd((long*)ptr, n) & n)
+#define atomic_or_fetch(ptr, n)       (InterlockedOr((long*)ptr, n) | n)
+#define atomic_xor_fetch(ptr, n)      (InterlockedXor((long*)ptr, n) ^ n)
+
+#define atomic_cmpxchg(ptr, old, new) ((InterlockedCompareExchange(ptr, old, new)))
 #else
 // these return the previous value
 #define atomic_fetch_inc(ptr)  __sync_fetch_and_add(ptr, 1)
@@ -349,6 +362,9 @@ void _ReadWriteBarrier(void);
 #define atomic_dec(ptr)        ((void) InterlockedDecrement(ptr))
 #define atomic_add(ptr, n)     ((void) InterlockedAdd(ptr, n))
 #define atomic_sub(ptr, n)     ((void) InterlockedAdd(ptr, -n))
+#define atomic_and(ptr, n)     ((void) InterlockedAnd(ptr, n))
+#define atomic_or(ptr, n)      ((void) InterlockedOr(ptr, n))
+#define atomic_xor(ptr, n)     ((void) InterlockedXor(ptr, n))
 #else
 #define atomic_inc(ptr)        ((void) __sync_fetch_and_add(ptr, 1))
 #define atomic_dec(ptr)        ((void) __sync_fetch_and_add(ptr, -1))
