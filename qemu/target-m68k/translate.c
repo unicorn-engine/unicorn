@@ -1379,12 +1379,10 @@ static TCGv gen_get_ccr(DisasContext *s)
 DISAS_INSN(move_from_ccr)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv reg;
     TCGv ccr;
 
     ccr = gen_get_ccr(s);
-    reg = DREG(insn, 0);
-    gen_partset_reg(s, OS_WORD, reg, ccr);
+    DEST_EA(env, insn, OS_WORD, ccr, NULL);
 }
 
 DISAS_INSN(neg)
@@ -1413,38 +1411,32 @@ static void gen_set_sr_im(DisasContext *s, uint16_t val, int ccr_only)
     }
 }
 
-static void gen_set_sr(CPUM68KState *env, DisasContext *s, uint16_t insn,
-                       int ccr_only)
+static void gen_set_sr(DisasContext *s, TCGv val, int ccr_only)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv tmp;
-    TCGv reg;
+    tmp = tcg_temp_new(tcg_ctx);
+    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->QREG_CC_DEST, val, 0xf);
+    tcg_gen_shri_i32(tcg_ctx, tmp, val, 4);
+    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->QREG_CC_X, tmp, 1);
+    if (!ccr_only) {
+        gen_helper_set_sr(tcg_ctx, tcg_ctx->cpu_env, val);
+    }
+}
 
+static void gen_move_to_sr(CPUM68KState *env, DisasContext *s, uint16_t insn,
+                           int ccr_only)
+{
+    TCGv src;
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
     s->cc_op = CC_OP_FLAGS;
-    if ((insn & 0x38) == 0)
-      {
-        tmp = tcg_temp_new(tcg_ctx);
-        reg = DREG(insn, 0);
-        tcg_gen_andi_i32(tcg_ctx, tcg_ctx->QREG_CC_DEST, reg, 0xf);
-        tcg_gen_shri_i32(tcg_ctx, tmp, reg, 4);
-        tcg_gen_andi_i32(tcg_ctx, tcg_ctx->QREG_CC_X, tmp, 1);
-        if (!ccr_only) {
-            gen_helper_set_sr(tcg_ctx, tcg_ctx->cpu_env, reg);
-        }
-      }
-    else if ((insn & 0x3f) == 0x3c)
-      {
-        uint16_t val;
-        val = read_im16(env, s);
-        gen_set_sr_im(s, val, ccr_only);
-      }
-    else
-        disas_undef(env, s, insn);
+    SRC_EA(env, src, OS_WORD, 0, NULL);
+    gen_set_sr(s, src, ccr_only);
 }
 
 DISAS_INSN(move_to_ccr)
 {
-    gen_set_sr(env, s, insn, 1);
+    gen_move_to_sr(env, s, insn, 1);
 }
 
 DISAS_INSN(not)
@@ -2001,16 +1993,14 @@ DISAS_INSN(strldsr)
 DISAS_INSN(move_from_sr)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv reg;
     TCGv sr;
 
-    if (IS_USER(s)) {
+    if (IS_USER(s) && !m68k_feature(env, M68K_FEATURE_M68000)) {
         gen_exception(s, s->pc - 2, EXCP_PRIVILEGE);
         return;
     }
     sr = gen_get_sr(s);
-    reg = DREG(insn, 0);
-    gen_partset_reg(s, OS_WORD, reg, sr);
+    DEST_EA(env, insn, OS_WORD, sr, NULL);
 }
 
 DISAS_INSN(move_to_sr)
@@ -2019,7 +2009,7 @@ DISAS_INSN(move_to_sr)
         gen_exception(s, s->pc - 2, EXCP_PRIVILEGE);
         return;
     }
-    gen_set_sr(env, s, insn, 0);
+    gen_move_to_sr(env, s, insn, 0);
     gen_lookup_tb(s);
 }
 
@@ -2940,6 +2930,7 @@ void register_m68k_insns (CPUM68KState *env)
     BASE(clr,       4200, ff00);
     BASE(undef,     42c0, ffc0);
     INSN(move_from_ccr, 42c0, fff8, CF_ISA_A);
+    INSN(move_from_ccr, 42c0, ffc0, M68000);
     INSN(neg,       4480, fff8, CF_ISA_A);
     INSN(neg,       4400, ff00, M68000);
     INSN(undef,     44c0, ffc0, M68000);
