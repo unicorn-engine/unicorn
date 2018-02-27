@@ -891,9 +891,11 @@ struct TCGContext {
     TCGv QREG_PC;
     TCGv QREG_SR;
     TCGv QREG_CC_OP;
-    TCGv QREG_CC_DEST;
-    TCGv QREG_CC_SRC;
     TCGv QREG_CC_X;
+    TCGv QREG_CC_C;
+    TCGv QREG_CC_N;
+    TCGv QREG_CC_V;
+    TCGv QREG_CC_Z;
     TCGv QREG_DIV1;
     TCGv QREG_DIV2;
     TCGv QREG_MACSR;
