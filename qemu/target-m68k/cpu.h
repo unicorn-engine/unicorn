@@ -163,7 +163,8 @@ int cpu_m68k_exec(struct uc_struct *uc, CPUState *cpu);
    is returned if the signal was handled by the virtual CPU.  */
 int cpu_m68k_signal_handler(int host_signum, void *pinfo,
                            void *puc);
-uint32_t cpu_m68k_flush_flags(CPUM68KState *env, int op);
+uint32_t cpu_m68k_get_ccr(CPUM68KState *env);
+void cpu_m68k_set_ccr(CPUM68KState *env, uint32_t);
 
 typedef enum {
     CC_OP_DYNAMIC, /* Use env->cc_op  */
