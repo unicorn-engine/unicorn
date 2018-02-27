@@ -23,11 +23,6 @@
  */
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
-#include "qemu/timer.h"
-#include "exec/address-spaces.h"
-#include "exec/memory.h"
-#include "uc_priv.h"
-
 #if DATA_SIZE == 8
 #define SUFFIX q
 #define LSUFFIX q
