@@ -862,19 +862,22 @@ static void gen_jmpcc(DisasContext *s, int cond, TCGLabel *l1)
 DISAS_INSN(scc)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGLabel *l1;
+    DisasCompare c;
     int cond;
-    TCGv reg;
+    TCGv reg, tmp;
 
-    l1 = gen_new_label(tcg_ctx);
+    cond = (insn >> 8) & 0xf;
+    gen_cc_cond(&c, s, cond);
+
+    tmp = tcg_temp_new(tcg_ctx);
+    tcg_gen_setcond_i32(tcg_ctx, c.tcond, tmp, c.v1, c.v2);
+    free_cond(s, &c);
+
     cond = (insn >> 8) & 0xf;
     reg = DREG(insn, 0);
-    tcg_gen_andi_i32(tcg_ctx, reg, reg, 0xffffff00);
-    /* This is safe because we modify the reg directly, with no other values
-       live.  */
-    gen_jmpcc(s, cond ^ 1, l1);
-    tcg_gen_ori_i32(tcg_ctx, reg, reg, 0xff);
-    gen_set_label(tcg_ctx, l1);
+    tcg_gen_neg_i32(tcg_ctx, tmp, tmp);
+    tcg_gen_deposit_i32(tcg_ctx, reg, reg, tmp, 0, 8);
+    tcg_temp_free(tcg_ctx, tmp);
 }
 
 /* Force a TB lookup after an instruction that changes the CPU state.  */
