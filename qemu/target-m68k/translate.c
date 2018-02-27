@@ -37,9 +37,10 @@
 #define tcg_gen_qemu_ldf64 tcg_gen_qemu_ld64
 #define tcg_gen_qemu_stf64 tcg_gen_qemu_st64
 
-#define DREG(insn, pos) tcg_ctx->cpu_dregs[((insn) >> (pos)) & 7]
-#define AREG(insn, pos) tcg_ctx->cpu_aregs[((insn) >> (pos)) & 7]
-#define FREG(insn, pos) tcg_ctx->cpu_fregs[((insn) >> (pos)) & 7]
+#define REG(insn, pos) (((insn) >> (pos)) & 7)
+#define DREG(insn, pos) tcg_ctx->cpu_dregs[REG(insn, pos)]
+#define AREG(insn, pos) tcg_ctx->cpu_aregs[REG(insn, pos)]
+#define FREG(insn, pos) tcg_ctx->cpu_fregs[REG(insn, pos)]
 #define MACREG(acc) tcg_ctx->cpu_macc[acc]
 #define QREG_SP tcg_ctx->cpu_aregs[7]
 
