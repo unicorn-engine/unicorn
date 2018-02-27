@@ -124,12 +124,6 @@ typedef struct DisasContext {
 #define IS_USER(s) s->user
 #endif
 
-#define OS_BYTE 0
-#define OS_WORD 1
-#define OS_LONG 2
-#define OS_SINGLE 4
-#define OS_DOUBLE 5
-
 typedef void (*disas_proc)(CPUM68KState *env, DisasContext *s, uint16_t insn);
 
 #ifdef DEBUG_DISPATCH
@@ -429,12 +423,26 @@ static inline int opsize_bytes(int opsize)
     case OS_LONG: return 4;
     case OS_SINGLE: return 4;
     case OS_DOUBLE: return 8;
+    case OS_EXTENDED: return 12;
+    case OS_PACKED: return 12;
     default:
         g_assert_not_reached();
         return 0;
     }
 
     return 0;
+}
+
+static inline int insn_opsize(int insn)
+{
+    switch ((insn >> 6) & 3) {
+    case 0: return OS_BYTE;
+    case 1: return OS_WORD;
+    case 2: return OS_LONG;
+    default:
+        g_assert_not_reached();
+        return 0;
+    }
 }
 
 /* Assign value to a register.  If the width is less than the register width
@@ -1338,19 +1346,7 @@ DISAS_INSN(clr)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int opsize;
 
-    switch ((insn >> 6) & 3) {
-    case 0: /* clr.b */
-        opsize = OS_BYTE;
-        break;
-    case 1: /* clr.w */
-        opsize = OS_WORD;
-        break;
-    case 2: /* clr.l */
-        opsize = OS_LONG;
-        break;
-    default:
-        abort();
-    }
+    opsize = insn_opsize(insn);
     DEST_EA(env, insn, opsize, tcg_const_i32(tcg_ctx, 0), NULL);
     gen_logic_cc(s, tcg_const_i32(tcg_ctx, 0));
 }
@@ -1504,19 +1500,7 @@ DISAS_INSN(tst)
     int opsize;
     TCGv tmp;
 
-    switch ((insn >> 6) & 3) {
-    case 0: /* tst.b */
-        opsize = OS_BYTE;
-        break;
-    case 1: /* tst.w */
-        opsize = OS_WORD;
-        break;
-    case 2: /* tst.l */
-        opsize = OS_LONG;
-        break;
-    default:
-        abort();
-    }
+    opsize = insn_opsize(insn);
     SRC_EA(env, tmp, opsize, 1, NULL);
     gen_logic_cc(s, tmp);
 }
