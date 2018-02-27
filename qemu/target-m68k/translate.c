@@ -398,7 +398,7 @@ static inline void gen_flush_flags(DisasContext *s)
     if (s->cc_op == CC_OP_FLAGS)
         return;
     gen_flush_cc_op(s);
-    gen_helper_flush_flags(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->QREG_CC_OP);
+    gen_helper_flush_flags(tcg_ctx, tcg_ctx->QREG_CC_DEST, tcg_ctx->cpu_env, tcg_ctx->QREG_CC_OP);
     s->cc_op = CC_OP_FLAGS;
 }
 
@@ -705,6 +705,7 @@ static void gen_jmpcc(DisasContext *s, int cond, TCGLabel *l1)
     /* TODO: Optimize compare/branch pairs rather than always flushing
        flag state to CC_OP_FLAGS.  */
     gen_flush_flags(s);
+    gen_flush_cc_op(s);
     switch (cond) {
     case 0: /* T */
         tcg_gen_br(tcg_ctx, l1);
@@ -1700,7 +1701,6 @@ DISAS_INSN(branch)
         /* bsr */
         gen_push(s, tcg_const_i32(tcg_ctx, s->pc));
     }
-    gen_flush_cc_op(s);
     if (op > 1) {
         /* Bcc */
         l1 = gen_new_label(tcg_ctx);
