@@ -119,26 +119,12 @@
 
 #ifndef SOFTMMU_CODE_ACCESS
 static inline DATA_TYPE glue(io_read, SUFFIX)(CPUArchState *env,
-                                              CPUIOTLBEntry *iotlbentry,
+                                              size_t mmu_idx, size_t index,
                                               target_ulong addr,
                                               uintptr_t retaddr)
 {
-    uint64_t val;
-    CPUState *cpu = ENV_GET_CPU(env);
-    hwaddr physaddr = iotlbentry->addr;
-    MemoryRegion *mr = iotlb_to_region(cpu, physaddr, iotlbentry->attrs);
-
-    physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
-    cpu->mem_io_pc = retaddr;
-    if (mr != &(cpu->uc->io_mem_rom) && mr != &(cpu->uc->io_mem_notdirty)
-            && !cpu_can_do_io(cpu)) {
-        cpu_io_recompile(cpu, retaddr);
-    }
-
-    cpu->mem_io_vaddr = addr;
-    memory_region_dispatch_read(mr, physaddr, &val, DATA_SIZE,
-                                iotlbentry->attrs);
-    return (DATA_TYPE)val;
+    CPUIOTLBEntry *iotlbentry = &env->iotlb[mmu_idx][index];
+    return io_readx(env, iotlbentry, addr, retaddr, DATA_SIZE);
 }
 #endif
 
@@ -282,7 +268,7 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr,
 
         /* ??? Note that the io helpers always read data in the target
            byte ordering.  We should push the LE/BE request down into io.  */
-        res = glue(io_read, SUFFIX)(env, iotlbentry, addr, retaddr);
+        res = glue(io_read, SUFFIX)(env, mmu_idx, index, addr, retaddr);
         res = TGT_LE(res);
         goto _out;
     }
@@ -466,7 +452,7 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr,
 
         /* ??? Note that the io helpers always read data in the target
            byte ordering.  We should push the LE/BE request down into io.  */
-        res = glue(io_read, SUFFIX)(env, iotlbentry, addr, retaddr);
+        res = glue(io_read, SUFFIX)(env, mmu_idx, index, addr, retaddr);
         res = TGT_BE(res);
         goto _out;
     }
@@ -528,25 +514,13 @@ WORD_TYPE helper_be_lds_name(CPUArchState *env, target_ulong addr,
 #endif
 
 static inline void glue(io_write, SUFFIX)(CPUArchState *env,
-                                          CPUIOTLBEntry *iotlbentry,
+                                          size_t mmu_idx, size_t index,
                                           DATA_TYPE val,
                                           target_ulong addr,
                                           uintptr_t retaddr)
 {
-    CPUState *cpu = ENV_GET_CPU(env);
-    hwaddr physaddr = iotlbentry->addr;
-    MemoryRegion *mr = iotlb_to_region(cpu, physaddr, iotlbentry->attrs);
-
-    physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
-    if (mr != &(cpu->uc->io_mem_rom) && mr != &(cpu->uc->io_mem_notdirty)
-            && !cpu_can_do_io(cpu)) {
-        cpu_io_recompile(cpu, retaddr);
-    }
-
-    cpu->mem_io_vaddr = addr;
-    cpu->mem_io_pc = retaddr;
-    memory_region_dispatch_write(mr, physaddr, val, DATA_SIZE,
-                                 iotlbentry->attrs);
+    CPUIOTLBEntry *iotlbentry = &env->iotlb[mmu_idx][index];
+    return io_writex(env, iotlbentry, val, addr, retaddr, DATA_SIZE);
 }
 
 void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
@@ -647,7 +621,7 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         /* ??? Note that the io helpers always read data in the target
            byte ordering.  We should push the LE/BE request down into io.  */
         val = TGT_LE(val);
-        glue(io_write, SUFFIX)(env, iotlbentry, val, addr, retaddr);
+        glue(io_write, SUFFIX)(env, mmu_idx, index, val, addr, retaddr);
         return;
     }
 
@@ -791,7 +765,7 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         /* ??? Note that the io helpers always read data in the target
            byte ordering.  We should push the LE/BE request down into io.  */
         val = TGT_BE(val);
-        glue(io_write, SUFFIX)(env, iotlbentry, val, addr, retaddr);
+        glue(io_write, SUFFIX)(env, mmu_idx, index, val, addr, retaddr);
         return;
     }
 

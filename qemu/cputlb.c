@@ -487,6 +487,43 @@ void tlb_unprotect_code(CPUState *cpu, ram_addr_t ram_addr)
     cpu_physical_memory_set_dirty_flag(cpu->uc, ram_addr, DIRTY_MEMORY_CODE);
 }
 
+static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
+                         target_ulong addr, uintptr_t retaddr, int size)
+{
+    CPUState *cpu = ENV_GET_CPU(env);
+    hwaddr physaddr = iotlbentry->addr;
+    MemoryRegion *mr = iotlb_to_region(cpu, physaddr, iotlbentry->attrs);
+    uint64_t val;
+
+    physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
+    cpu->mem_io_pc = retaddr;
+    if (mr != &cpu->uc->io_mem_rom && mr != &cpu->uc->io_mem_notdirty && !cpu->can_do_io) {
+        cpu_io_recompile(cpu, retaddr);
+    }
+
+    cpu->mem_io_vaddr = addr;
+    memory_region_dispatch_read(mr, physaddr, &val, size, iotlbentry->attrs);
+    return val;
+}
+
+static void io_writex(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
+                      uint64_t val, target_ulong addr,
+                      uintptr_t retaddr, int size)
+{
+    CPUState *cpu = ENV_GET_CPU(env);
+    hwaddr physaddr = iotlbentry->addr;
+    MemoryRegion *mr = iotlb_to_region(cpu, physaddr, iotlbentry->attrs);
+
+    physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
+    if (mr != &cpu->uc->io_mem_rom && mr != &cpu->uc->io_mem_notdirty && !cpu->can_do_io) {
+        cpu_io_recompile(cpu, retaddr);
+    }
+
+    cpu->mem_io_vaddr = addr;
+    cpu->mem_io_pc = retaddr;
+    memory_region_dispatch_write(mr, physaddr, val, size, iotlbentry->attrs);
+}
+
 /* Return true if ADDR is present in the victim tlb, and has been copied
    back to the main tlb.  */
 static bool victim_tlb_hit(CPUArchState *env, size_t mmu_idx, size_t index,
