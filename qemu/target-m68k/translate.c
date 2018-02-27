@@ -2906,6 +2906,13 @@ register_opcode(TCGContext *tcg_ctx, disas_proc proc, uint16_t opcode, uint16_t 
 void register_m68k_insns (CPUM68KState *env)
 {
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
+
+    /* Build the opcode table only once to avoid
+       multithreading issues. */
+    if (tcg_ctx->opcode_table[0] != NULL) {
+        return;
+    }
+
 #define INSN(name, opcode, mask, feature) do { \
     if (m68k_feature(env, M68K_FEATURE_##feature)) \
         register_opcode(tcg_ctx, disas_##name, 0x##opcode, 0x##mask); \
