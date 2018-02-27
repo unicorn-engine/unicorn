@@ -46,7 +46,7 @@ M68kCPU *cpu_m68k_init(struct uc_struct *uc, const char *cpu_model)
     return cpu;
 }
 
-static uint32_t cpu_m68k_flush_flags(CPUM68KState *env, int op)
+uint32_t cpu_m68k_flush_flags(CPUM68KState *env, int op)
 {
     int flags;
     uint32_t src;
