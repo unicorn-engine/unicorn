@@ -254,8 +254,6 @@ static void m68k_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data
 #else
     cc->get_phys_page_debug = m68k_cpu_get_phys_page_debug;
 #endif
-    cc->cpu_exec_enter = m68k_cpu_exec_enter;
-    cc->cpu_exec_exit = m68k_cpu_exec_exit;
 }
 
 static void register_cpu_type(void *opaque, const M68kCPUInfo *info)

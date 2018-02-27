@@ -3128,7 +3128,7 @@ void gen_intermediate_code(CPUM68KState *env, TranslationBlock *tb)
     gen_tb_start(tcg_ctx);
     do {
         pc_offset = dc->pc - pc_start;
-        tcg_gen_insn_start(tcg_ctx, dc->pc);
+        tcg_gen_insn_start(tcg_ctx, dc->pc, dc->cc_op);
         num_insns++;
 
         if (unlikely(cpu_breakpoint_test(cs, dc->pc, BP_ANY))) {
@@ -3200,5 +3200,9 @@ done_generating:
 void restore_state_to_opc(CPUM68KState *env, TranslationBlock *tb,
                           target_ulong *data)
 {
+    int cc_op = data[1];
     env->pc = data[0];
+    if (cc_op != CC_OP_DYNAMIC) {
+        env->cc_op = cc_op;
+    }
 }
