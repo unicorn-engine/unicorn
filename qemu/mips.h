@@ -2296,6 +2296,7 @@
 #define print_type_number print_type_number_mips
 #define print_type_size print_type_size_mips
 #define print_type_str print_type_str_mips
+#define probe_write probe_write_mips
 #define propagateFloat128NaN propagateFloat128NaN_mips
 #define propagateFloat32MulAddNaN propagateFloat32MulAddNaN_mips
 #define propagateFloat32NaN propagateFloat32NaN_mips

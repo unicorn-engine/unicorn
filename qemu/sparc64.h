@@ -2296,6 +2296,7 @@
 #define print_type_number print_type_number_sparc64
 #define print_type_size print_type_size_sparc64
 #define print_type_str print_type_str_sparc64
+#define probe_write probe_write_sparc64
 #define propagateFloat128NaN propagateFloat128NaN_sparc64
 #define propagateFloat32MulAddNaN propagateFloat32MulAddNaN_sparc64
 #define propagateFloat32NaN propagateFloat32NaN_sparc64

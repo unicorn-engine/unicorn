@@ -2296,6 +2296,7 @@
 #define print_type_number print_type_number_x86_64
 #define print_type_size print_type_size_x86_64
 #define print_type_str print_type_str_x86_64
+#define probe_write probe_write_x86_64
 #define propagateFloat128NaN propagateFloat128NaN_x86_64
 #define propagateFloat32MulAddNaN propagateFloat32MulAddNaN_x86_64
 #define propagateFloat32NaN propagateFloat32NaN_x86_64

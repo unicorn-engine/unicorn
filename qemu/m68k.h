@@ -2296,6 +2296,7 @@
 #define print_type_number print_type_number_m68k
 #define print_type_size print_type_size_m68k
 #define print_type_str print_type_str_m68k
+#define probe_write probe_write_m68k
 #define propagateFloat128NaN propagateFloat128NaN_m68k
 #define propagateFloat32MulAddNaN propagateFloat32MulAddNaN_m68k
 #define propagateFloat32NaN propagateFloat32NaN_m68k

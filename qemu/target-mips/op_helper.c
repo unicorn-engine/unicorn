@@ -4118,11 +4118,10 @@ static inline void ensure_writable_pages(CPUMIPSState *env,
     target_ulong page_addr;
     if (unlikely(MSA_PAGESPAN(addr))) {
         /* first page */
-        // UNICORN: Commented out
-        //probe_write(env, addr, mmu_idx, retaddr);
+        probe_write(env, addr, mmu_idx, retaddr);
         /* second page */
         page_addr = (addr & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE;
-        //probe_write(env, page_addr, mmu_idx, retaddr);
+        probe_write(env, page_addr, mmu_idx, retaddr);
     }
 #endif
 }

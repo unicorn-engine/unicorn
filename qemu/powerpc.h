@@ -2296,6 +2296,7 @@
 #define print_type_number print_type_number_powerpc
 #define print_type_size print_type_size_powerpc
 #define print_type_str print_type_str_powerpc
+#define probe_write probe_write_powerpc
 #define propagateFloat128NaN propagateFloat128NaN_powerpc
 #define propagateFloat32MulAddNaN propagateFloat32MulAddNaN_powerpc
 #define propagateFloat32NaN propagateFloat32NaN_powerpc
