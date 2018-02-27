@@ -748,8 +748,17 @@ static TCGv gen_ea(CPUM68KState *env, DisasContext *s, uint16_t insn,
     return tcg_ctx->NULL_QREG;
 }
 
+typedef struct {
+    TCGCond tcond;
+    bool g1;
+    bool g2;
+    TCGv v1;
+    TCGv v2;
+} DisasCompare;
+
+
 /* This generates a conditional branch, clobbering all temporaries.  */
-static void gen_jmpcc(DisasContext *s, int cond, TCGLabel *l1)
+static void gen_cc_cond(DisasCompare *c, DisasContext *s, int cond)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv tmp, tmp2;
@@ -758,61 +767,96 @@ static void gen_jmpcc(DisasContext *s, int cond, TCGLabel *l1)
     /* TODO: Optimize compare/branch pairs rather than always flushing
        flag state to CC_OP_FLAGS.  */
     gen_flush_flags(s);
-    update_cc_op(s);
+
+    c->g1 = 1;
+    c->g2 = 0;
+    c->v2 = tcg_const_i32(tcg_ctx, 0);
+
     switch (cond) {
     case 0: /* T */
-        tcg_gen_br(tcg_ctx, l1);
-        return;
     case 1: /* F */
-        return;
+        c->v1 = c->v2;
+        tcond = TCG_COND_NEVER;
+        break;
     case 2: /* HI (!C && !Z) -> !(C || Z)*/
     case 3: /* LS (C || Z) */
-        tmp = tcg_temp_new(tcg_ctx);
+        c->v1 = tmp = tcg_temp_new(tcg_ctx);
+        c->g1 = 0;
+        tcg_gen_setcond_i32(tcg_ctx, TCG_COND_EQ, tmp, tcg_ctx->QREG_CC_Z, c->v2);
         tcg_gen_setcondi_i32(tcg_ctx, TCG_COND_EQ, tmp, tcg_ctx->QREG_CC_Z, 0);
         tcg_gen_or_i32(tcg_ctx, tmp, tmp, tcg_ctx->QREG_CC_C);
-        tcond = (cond & 1 ? TCG_COND_NE : TCG_COND_EQ);
+        tcond = TCG_COND_NE;
         break;
     case 4: /* CC (!C) */
     case 5: /* CS (C) */
-        tmp = tcg_ctx->QREG_CC_C;
-        tcond = (cond & 1 ? TCG_COND_NE : TCG_COND_EQ);
+        c->v1 = tcg_ctx->QREG_CC_C;
+        tcond = TCG_COND_NE;
         break;
     case 6: /* NE (!Z) */
     case 7: /* EQ (Z) */
-        tmp = tcg_ctx->QREG_CC_Z;
-        tcond = (cond & 1 ? TCG_COND_EQ : TCG_COND_NE);
+        c->v1 = tcg_ctx->QREG_CC_Z;
+        tcond = TCG_COND_EQ;
         break;
     case 8: /* VC (!V) */
     case 9: /* VS (V) */
-        tmp = tcg_ctx->QREG_CC_V;
-        tcond = (cond & 1 ? TCG_COND_LT : TCG_COND_GE);
+        c->v1 = tcg_ctx->QREG_CC_V;
+        tcond = TCG_COND_LT;
         break;
     case 10: /* PL (!N) */
     case 11: /* MI (N) */
-        tmp = tcg_ctx->QREG_CC_N;
-        tcond = (cond & 1 ? TCG_COND_LT : TCG_COND_GE);
+        c->v1 = tcg_ctx->QREG_CC_N;
+        tcond = TCG_COND_LT;
         break;
     case 12: /* GE (!(N ^ V)) */
     case 13: /* LT (N ^ V) */
-        tmp = tcg_temp_new(tcg_ctx);
+        c->v1 = tmp = tcg_temp_new(tcg_ctx);
+        c->g1 = 0;
         tcg_gen_xor_i32(tcg_ctx, tmp, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_V);
-        tcond = (cond & 1 ? TCG_COND_LT : TCG_COND_GE);
+        tcond = TCG_COND_LT;
         break;
     case 14: /* GT (!(Z || (N ^ V))) */
     case 15: /* LE (Z || (N ^ V)) */
-        tmp = tcg_temp_new(tcg_ctx);
-        tcg_gen_setcondi_i32(tcg_ctx, TCG_COND_EQ, tmp, tcg_ctx->QREG_CC_Z, 0);
+        c->v1 = tmp = tcg_temp_new(tcg_ctx);
+        c->g1 = 0;
+        tcg_gen_setcond_i32(tcg_ctx, TCG_COND_EQ, tmp, tcg_ctx->QREG_CC_Z, c->v2);
         tcg_gen_neg_i32(tcg_ctx, tmp, tmp);
         tmp2 = tcg_temp_new(tcg_ctx);
         tcg_gen_xor_i32(tcg_ctx, tmp2, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_V);
         tcg_gen_or_i32(tcg_ctx, tmp, tmp, tmp2);
-        tcond = (cond & 1 ? TCG_COND_LT : TCG_COND_GE);
+        tcg_temp_free(tcg_ctx, tmp2);
+        tcond = TCG_COND_LT;
         break;
     default:
         /* Should ever happen.  */
         abort();
     }
-  tcg_gen_brcondi_i32(tcg_ctx, tcond, tmp, 0, l1);
+    if ((cond & 1) == 0) {
+        tcond = tcg_invert_cond(tcond);
+    }
+    c->tcond = tcond;
+}
+
+static void free_cond(DisasContext *s, DisasCompare *c)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (!c->g1) {
+        tcg_temp_free(tcg_ctx, c->v1);
+    }
+    if (!c->g2) {
+        tcg_temp_free(tcg_ctx, c->v2);
+    }
+}
+
+static void gen_jmpcc(DisasContext *s, int cond, TCGLabel *l1)
+{
+  DisasCompare c;
+  TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+  gen_cc_cond(&c, s, cond);
+  update_cc_op(s);
+  tcg_gen_brcond_i32(tcg_ctx, c.tcond, c.v1, c.v2, l1);
+  free_cond(s, &c);
 }
 
 DISAS_INSN(scc)
@@ -1708,7 +1752,6 @@ DISAS_INSN(branch)
         /* bsr */
         gen_push(s, tcg_const_i32(tcg_ctx, s->pc));
     }
-    update_cc_op(s);
     if (op > 1) {
         /* Bcc */
         l1 = gen_new_label(tcg_ctx);
