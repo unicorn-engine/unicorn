@@ -70,6 +70,7 @@ void qdict_flatten(QDict *qdict);
 
 void qdict_extract_subqdict(QDict *src, QDict **dst, const char *start);
 void qdict_array_split(QDict *src, QList **dst);
+QObject *qdict_crumple(const QDict *src, Error **errp);
 
 void qdict_join(QDict *dest, QDict *src, bool overwrite);
 
