@@ -316,11 +316,11 @@ void _ReadWriteBarrier(void);
 // these return the previous value
 #define atomic_fetch_inc(ptr)  __sync_fetch_and_add(ptr, 1)
 #define atomic_fetch_dec(ptr)  __sync_fetch_and_add(ptr, -1)
-#define atomic_fetch_add       __sync_fetch_and_add
-#define atomic_fetch_sub       __sync_fetch_and_sub
-#define atomic_fetch_and       __sync_fetch_and_and
-#define atomic_fetch_or        __sync_fetch_and_or
-#define atomic_cmpxchg         __sync_val_compare_and_swap
+#define atomic_fetch_add(ptr, n) __sync_fetch_and_add(ptr, n)
+#define atomic_fetch_sub(ptr, n) __sync_fetch_and_sub(ptr, n)
+#define atomic_fetch_and(ptr, n) __sync_fetch_and_and(ptr, n)
+#define atomic_fetch_or(ptr, n) __sync_fetch_and_or(ptr, n)
+#define atomic_cmpxchg(ptr, old, new) __sync_val_compare_and_swap(ptr, old, new)
 #endif
 
 /* And even shorter names that return void.  */
