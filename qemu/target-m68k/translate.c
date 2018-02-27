@@ -434,18 +434,66 @@ static TCGv gen_lea_indexed(CPUM68KState *env, DisasContext *s, TCGv base)
 static void gen_flush_flags(DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv tmp;
+    TCGv t0, t1;
 
     switch (s->cc_op) {
     case CC_OP_FLAGS:
         return;
+
+    case CC_OP_ADD:
+        tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_CC_C, tcg_ctx->QREG_CC_X);
+        tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_CC_Z, tcg_ctx->QREG_CC_N);
+        /* Compute signed overflow for addition.  */
+        t0 = tcg_temp_new(tcg_ctx);
+        t1 = tcg_temp_new(tcg_ctx);
+        tcg_gen_sub_i32(tcg_ctx, t0, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_V);
+        tcg_gen_xor_i32(tcg_ctx, t1, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_V);
+        tcg_gen_xor_i32(tcg_ctx, tcg_ctx->QREG_CC_V, tcg_ctx->QREG_CC_V, t0);
+        tcg_temp_free(tcg_ctx, t0);
+        tcg_gen_andc_i32(tcg_ctx, tcg_ctx->QREG_CC_V, t1, tcg_ctx->QREG_CC_V);
+        tcg_temp_free(tcg_ctx, t1);
+        break;
+
+    case CC_OP_SUB:
+        tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_CC_C, tcg_ctx->QREG_CC_X);
+        tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_CC_Z, tcg_ctx->QREG_CC_N);
+        /* Compute signed overflow for subtraction.  */
+        t0 = tcg_temp_new(tcg_ctx);
+        t1 = tcg_temp_new(tcg_ctx);
+        tcg_gen_add_i32(tcg_ctx, t0, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_V);
+        tcg_gen_xor_i32(tcg_ctx, t1, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_V);
+        tcg_gen_xor_i32(tcg_ctx, tcg_ctx->QREG_CC_V, tcg_ctx->QREG_CC_V, t0);
+        tcg_temp_free(tcg_ctx, t0);
+        tcg_gen_and_i32(tcg_ctx, tcg_ctx->QREG_CC_V, tcg_ctx->QREG_CC_V, t1);
+        tcg_temp_free(tcg_ctx, t1);
+        break;
+
+    case CC_OP_CMP:
+        tcg_gen_setcond_i32(tcg_ctx, TCG_COND_LTU, tcg_ctx->QREG_CC_C, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_V);
+        tcg_gen_sub_i32(tcg_ctx, tcg_ctx->QREG_CC_Z, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_V);
+        /* Compute signed overflow for subtraction.  */
+        t0 = tcg_temp_new(tcg_ctx);
+        tcg_gen_xor_i32(tcg_ctx, t0, tcg_ctx->QREG_CC_Z, tcg_ctx->QREG_CC_N);
+        tcg_gen_xor_i32(tcg_ctx, tcg_ctx->QREG_CC_V, tcg_ctx->QREG_CC_V, tcg_ctx->QREG_CC_N);
+        tcg_gen_and_i32(tcg_ctx, tcg_ctx->QREG_CC_V, tcg_ctx->QREG_CC_V, t0);
+        tcg_temp_free(tcg_ctx, t0);
+        tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_Z);
+        break;
+
+    case CC_OP_LOGIC:
+        tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_CC_Z, tcg_ctx->QREG_CC_N);
+        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_C, 0);
+        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_V, 0);
+        break;
+
     case CC_OP_DYNAMIC:
         gen_helper_flush_flags(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->QREG_CC_OP);
         break;
+
     default:
-        tmp = tcg_const_i32(tcg_ctx, s->cc_op);
-        gen_helper_flush_flags(tcg_ctx, tcg_ctx->cpu_env, tmp);
-        tcg_temp_free(tcg_ctx, tmp);
+        t0 = tcg_const_i32(tcg_ctx, s->cc_op);
+        gen_helper_flush_flags(tcg_ctx, tcg_ctx->cpu_env, t0);
+        tcg_temp_free(tcg_ctx, t0);
         break;
     }
 
