@@ -64,15 +64,21 @@ void _ReadWriteBarrier(void);
  * no effect on the generated code but not using the atomic primitives
  * will get flagged by sanitizers as a violation.
  */
+#define atomic_read__nocheck(ptr) \
+    __atomic_load_n(ptr, __ATOMIC_RELAXED)
+
 #define atomic_read(ptr)                          \
     ({                                            \
     QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *)); \
-    __atomic_load_n(ptr, __ATOMIC_RELAXED);           \
+    atomic_read__nocheck(ptr);                        \
     })
+
+#define atomic_set__nocheck(ptr, i) \
+    __atomic_store_n(ptr, i, __ATOMIC_RELAXED)
 
 #define atomic_set(ptr, i)  do {                  \
     QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *)); \
-    __atomic_store_n(ptr, i, __ATOMIC_RELAXED);       \
+    atomic_set__nocheck(ptr, i);                      \
 } while(0)
 
 /* See above: most compilers currently treat consume and acquire the
@@ -115,19 +121,27 @@ void _ReadWriteBarrier(void);
 
 /* All the remaining operations are fully sequentially consistent */
 
+#define atomic_xchg__nocheck(ptr, i)    ({                  \
+    __atomic_exchange_n(ptr, (i), __ATOMIC_SEQ_CST);        \
+})
+
 #define atomic_xchg(ptr, i)    ({                        \
     QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *));    \
-    __atomic_exchange_n(ptr, i, __ATOMIC_SEQ_CST);       \
+    atomic_xchg__nocheck(ptr, i);                           \
 })
 
 /* Returns the eventual value, failed or not */
-#define atomic_cmpxchg(ptr, old, new)                                   \
+#define atomic_cmpxchg__nocheck(ptr, old, new)    ({                    \
     ({                                                                  \
-    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *));                   \
     typeof(*ptr) _old = (old), _new = (new);                            \
     __atomic_compare_exchange_n(ptr, &_old, new, false,                 \
                               __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);      \
     })
+
+#define atomic_cmpxchg(ptr, old, new)    ({                             \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > sizeof(void *));                   \
+    atomic_cmpxchg__nocheck(ptr, old, new);                             \
+})
 
 /* Provide shorter names for GCC atomic builtins, return old value */
 #define atomic_fetch_inc(ptr)  __atomic_fetch_add(ptr, 1, __ATOMIC_SEQ_CST)
@@ -252,8 +266,11 @@ void _ReadWriteBarrier(void);
 /* These will only be atomic if the processor does the fetch or store
  * in a single issue memory operation
  */
-#define atomic_read(ptr)       (*(__typeof__(*ptr) volatile*) (ptr))
-#define atomic_set(ptr, i)     ((*(__typeof__(*ptr) volatile*) (ptr)) = (i))
+#define atomic_read__nocheck(p)   (*(__typeof__(*(p)) volatile*) (p))
+#define atomic_set__nocheck(p, i) ((*(__typeof__(*(p)) volatile*) (p)) = (i))
+
+#define atomic_read(ptr)       atomic_read__nocheck(ptr)
+#define atomic_set(ptr, i)     atomic_set__nocheck(ptr,i)
 
 /**
  * atomic_rcu_read - reads a RCU-protected pointer to a local variable
@@ -315,6 +332,8 @@ void _ReadWriteBarrier(void);
 #endif
 #endif
 
+#define atomic_xchg__nocheck  atomic_xchg
+
 /* Provide shorter names for GCC atomic builtins.  */
 #ifdef _MSC_VER
 // these return the new value (so we make it return the previous value)
@@ -335,6 +354,7 @@ void _ReadWriteBarrier(void);
 #define atomic_xor_fetch(ptr, n)      (InterlockedXor((long*)ptr, n) ^ n)
 
 #define atomic_cmpxchg(ptr, old, new) ((InterlockedCompareExchange(ptr, old, new)))
+#define atomic_cmpxchg__nocheck(ptr, old, new)  atomic_cmpxchg(ptr, old, new)
 #else
 // these return the previous value
 #define atomic_fetch_inc(ptr)  __sync_fetch_and_add(ptr, 1)
@@ -354,6 +374,7 @@ void _ReadWriteBarrier(void);
 #define atomic_xor_fetch(ptr, n) __sync_xor_and_fetch(ptr, n)
 
 #define atomic_cmpxchg(ptr, old, new) __sync_val_compare_and_swap(ptr, old, new)
+#define atomic_cmpxchg__nocheck(ptr, old, new)  atomic_cmpxchg(ptr, old, new)
 #endif
 
 /* And even shorter names that return void.  */
