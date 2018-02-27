@@ -106,6 +106,7 @@ typedef struct DisasContext {
     target_ulong pc;
     int is_jmp;
     CCOp cc_op; /* Current CC operation */
+    int cc_op_synced;
     int user;
     uint32_t fpcr;
     struct TranslationBlock *tb;
@@ -144,11 +145,6 @@ typedef void (*disas_proc)(CPUM68KState *env, DisasContext *s, uint16_t insn);
     static void disas_##name(CPUM68KState *env, DisasContext *s,        \
                              uint16_t insn)
 #endif
-
-enum {
-    USES_CC_DST  = 1,
-    USES_CC_SRC  = 2,
-};
 
 static const uint8_t cc_op_live[CC_OP_NB] = {
     USES_CC_DST | USES_CC_SRC,
