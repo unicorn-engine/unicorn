@@ -253,6 +253,7 @@
 #define cpu_dump_statistics cpu_dump_statistics_mips64el
 #define cpu_exec_init cpu_exec_init_mips64el
 #define cpu_exec_init_all cpu_exec_init_all_mips64el
+#define cpu_exec_step_atomic cpu_exec_step_atomic_mips64el
 #define cpu_flush_icache_range cpu_flush_icache_range_mips64el
 #define cpu_gen_init cpu_gen_init_mips64el
 #define cpu_get_address_space cpu_get_address_space_mips64el
@@ -272,6 +273,7 @@
 #define cpu_ldub_code cpu_ldub_code_mips64el
 #define cpu_lduw_code cpu_lduw_code_mips64el
 #define cpu_loop_exit cpu_loop_exit_mips64el
+#define cpu_loop_exit_atomic cpu_loop_exit_atomic_mips64el
 #define cpu_loop_exit_noexc cpu_loop_exit_noexc_mips64el
 #define cpu_loop_exit_restore cpu_loop_exit_restore_mips64el
 #define cpu_memory_rw_debug cpu_memory_rw_debug_mips64el

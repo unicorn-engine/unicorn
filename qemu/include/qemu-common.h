@@ -65,6 +65,7 @@ bool tcg_enabled(struct uc_struct *uc);
 
 struct uc_struct;
 void cpu_exec_init_all(struct uc_struct *uc);
+void cpu_exec_step_atomic(struct uc_struct *uc, CPUState *cpu);
 
 /**
  * set_preferred_target_page_bits:

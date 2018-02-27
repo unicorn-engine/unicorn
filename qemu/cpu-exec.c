@@ -23,6 +23,8 @@
 #include "cpu.h"
 #include "exec/exec-all.h"
 #include "tcg.h"
+#include "qemu/atomic.h"
+#include "qemu/timer.h"
 #include "sysemu/sysemu.h"
 #include "exec/address-spaces.h"
 #include "exec/tb-hash.h"
@@ -81,6 +83,31 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
         atomic_set(&cpu->tcg_exit_req, 0);
     }
     return ret;
+}
+
+ /* Execute the code without caching the generated code. An interpreter
+    could be used if available. */
+static void cpu_exec_nocache(CPUState *cpu, int max_cycles,
+                             TranslationBlock *orig_tb, bool ignore_icount)
+{
+    TranslationBlock *tb;
+    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
+
+    /* Should never happen.
+       We only end up here when an existing TB is too long.  */
+    if (max_cycles > CF_COUNT_MASK) {
+        max_cycles = CF_COUNT_MASK;
+    }
+
+    tb = tb_gen_code(cpu, orig_tb->pc, orig_tb->cs_base, orig_tb->flags,
+                     max_cycles | CF_NOCACHE);
+    tb->orig_tb = orig_tb;
+    /* execute the generated code */
+    // Unicorn: commented out
+    //trace_exec_tb_nocache(tb, tb->pc);
+    cpu_tb_exec(cpu, tb);
+    tb_phys_invalidate(env->uc, tb, -1);
+    tb_free(env->uc, tb);
 }
 
 static TranslationBlock *tb_htable_lookup(CPUState *cpu,
@@ -385,9 +412,69 @@ static inline void cpu_loop_exec_tb(CPUState *cpu, TranslationBlock *tb,
         smp_rmb();
         *last_tb = NULL;
         break;
+    case TB_EXIT_ICOUNT_EXPIRED:
+    {
+        /* Instruction counter expired.  */
+#ifdef CONFIG_USER_ONLY
+        abort();
+#else
+        int insns_left = cpu->icount_decr.u32;
+        if (cpu->icount_extra && insns_left >= 0) {
+            /* Refill decrementer and continue execution.  */
+            cpu->icount_extra += insns_left;
+            insns_left = MIN(0xffff, cpu->icount_extra);
+            cpu->icount_extra -= insns_left;
+            cpu->icount_decr.u16.low = insns_left;
+        } else {
+            if (insns_left > 0) {
+                /* Execute remaining instructions.  */
+                cpu_exec_nocache(cpu, insns_left, *last_tb, false);
+                // Unicorn: commented out
+                //align_clocks(sc, cpu);
+            }
+            cpu->exception_index = EXCP_INTERRUPT;
+            *last_tb = NULL;
+            cpu_loop_exit(cpu);
+        }
+        break;
+#endif
+    }
     default:
         break;
     }
+}
+
+static void cpu_exec_step(struct uc_struct *uc, CPUState *cpu)
+{
+    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
+    TranslationBlock *tb;
+    target_ulong cs_base, pc;
+    uint32_t flags;
+
+    cpu_get_tb_cpu_state(env, &pc, &cs_base, &flags);
+    tb = tb_gen_code(cpu, pc, cs_base, flags,
+                     1 | CF_NOCACHE | CF_IGNORE_ICOUNT);
+    tb->orig_tb = NULL;
+    /* execute the generated code */
+    // Unicorn: commented out
+    //trace_exec_tb_nocache(tb, pc);
+    cpu_tb_exec(cpu, tb);
+    tb_phys_invalidate(uc, tb, -1);
+    tb_free(uc, tb);
+}
+
+void cpu_exec_step_atomic(struct uc_struct *uc, CPUState *cpu)
+{
+    // Unicorn: commented out
+    //start_exclusive();
+
+    /* Since we got here, we know that parallel_cpus must be true.  */
+    uc->parallel_cpus = false;
+    cpu_exec_step(uc, cpu);
+    uc->parallel_cpus = true;
+
+    // Unicorn: commented out
+    //end_exclusive();
 }
 
 /* main execution loop */

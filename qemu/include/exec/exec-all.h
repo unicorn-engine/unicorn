@@ -71,6 +71,7 @@ void cpu_exec_init(CPUState *env, void *opaque);
 
 void QEMU_NORETURN cpu_loop_exit(CPUState *cpu);
 void QEMU_NORETURN cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc);
+void QEMU_NORETURN cpu_loop_exit_atomic(CPUState *cpu, uintptr_t pc);
 
 #if !defined(CONFIG_USER_ONLY)
 /**
@@ -232,6 +233,8 @@ struct TranslationBlock {
     uint8_t *tc_search;  /* pointer to search data */
     /* next matching tb for physical address. */
     struct TranslationBlock *phys_hash_next;
+    /* original tb when cflags has CF_NOCACHE */
+    struct TranslationBlock *orig_tb;
     /* first and second physical page containing code. The lower bit
        of the pointer tells the index in page_next[] */
     struct TranslationBlock *page_next[2];

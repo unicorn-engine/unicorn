@@ -1753,6 +1753,14 @@ void cpu_io_recompile(CPUState *cpu, uintptr_t retaddr)
     cs_base = tb->cs_base;
     flags = tb->flags;
     tb_phys_invalidate(cpu->uc, tb, -1);
+    if (tb->cflags & CF_NOCACHE) {
+        if (tb->orig_tb) {
+            /* Invalidate original TB if this TB was generated in
+             * cpu_exec_nocache() */
+            tb_phys_invalidate(cpu->uc, tb->orig_tb, -1);
+        }
+        tb_free(env->uc, tb);
+    }
     /* FIXME: In theory this could raise an exception.  In practice
        we have already translated the block once so it's probably ok.  */
     tb_gen_code(cpu, pc, cs_base, (int)flags, cflags);

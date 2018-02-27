@@ -253,6 +253,7 @@
 #define cpu_dump_statistics cpu_dump_statistics_x86_64
 #define cpu_exec_init cpu_exec_init_x86_64
 #define cpu_exec_init_all cpu_exec_init_all_x86_64
+#define cpu_exec_step_atomic cpu_exec_step_atomic_x86_64
 #define cpu_flush_icache_range cpu_flush_icache_range_x86_64
 #define cpu_gen_init cpu_gen_init_x86_64
 #define cpu_get_address_space cpu_get_address_space_x86_64
@@ -272,6 +273,7 @@
 #define cpu_ldub_code cpu_ldub_code_x86_64
 #define cpu_lduw_code cpu_lduw_code_x86_64
 #define cpu_loop_exit cpu_loop_exit_x86_64
+#define cpu_loop_exit_atomic cpu_loop_exit_atomic_x86_64
 #define cpu_loop_exit_noexc cpu_loop_exit_noexc_x86_64
 #define cpu_loop_exit_restore cpu_loop_exit_restore_x86_64
 #define cpu_memory_rw_debug cpu_memory_rw_debug_x86_64

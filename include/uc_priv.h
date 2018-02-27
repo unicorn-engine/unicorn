@@ -210,6 +210,8 @@ struct uc_struct {
 
     /* code generation context */
     void *tcg_ctx;  // for "TCGContext tcg_ctx" in qemu/translate-all.c
+    bool parallel_cpus; // for "bool parallel_cpus" in qemu/translate-all.c
+
     /* memory.c */
     unsigned memory_region_transaction_depth;
     bool memory_region_update_pending;
