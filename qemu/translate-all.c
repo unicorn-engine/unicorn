@@ -35,6 +35,7 @@
 #include "tcg.h"
 #if defined(CONFIG_USER_ONLY)
 #include "qemu.h"
+#include "exec/exec-all.h"
 #if defined(__FreeBSD__) || defined(__FreeBSD_kernel__)
 #include <sys/param.h>
 #if __FreeBSD_version >= 700104
@@ -62,12 +63,35 @@
 
 /* #define DEBUG_TB_INVALIDATE */
 /* #define DEBUG_TB_FLUSH */
+/* #define DEBUG_LOCKING */
 /* make various TB consistency checks */
 /* #define DEBUG_TB_CHECK */
 
 #if !defined(CONFIG_USER_ONLY)
 /* TB consistency checks only implemented for usermode emulation.  */
 #undef DEBUG_TB_CHECK
+#endif
+
+/* Access to the various translations structures need to be serialised via locks
+ * for consistency. This is automatic for SoftMMU based system
+ * emulation due to its single threaded nature. In user-mode emulation
+ * access to the memory related structures are protected with the
+ * mmap_lock.
+ */
+#ifdef DEBUG_LOCKING
+#define DEBUG_MEM_LOCKS 1
+#else
+#define DEBUG_MEM_LOCKS 0
+#endif
+
+#ifdef CONFIG_SOFTMMU
+#define assert_memory_lock() do { /* nothing */ } while (0)
+#else
+#define assert_memory_lock() do {               \
+        if (DEBUG_MEM_LOCKS) {                  \
+            g_assert(have_mmap_lock());         \
+        }                                       \
+    } while (0)
 #endif
 
 #define SMC_BITMAP_USE_THRESHOLD 10
@@ -107,6 +131,22 @@ typedef struct PageDesc {
 #define V_L1_MIN_BITS 4
 #define V_L1_MAX_BITS (V_L2_BITS + 3)
 #define V_L1_MAX_SIZE (1 << V_L1_MAX_BITS)
+
+#ifdef DEBUG_LOCKING
+#define DEBUG_TB_LOCKS 1
+#else
+#define DEBUG_TB_LOCKS 0
+#endif
+
+#ifdef CONFIG_SOFTMMU
+#define assert_tb_lock() do { /* nothing */ } while (0)
+#else
+#define assert_tb_lock() do {               \
+        if (DEBUG_TB_LOCKS) {               \
+            g_assert(have_tb_lock);         \
+        }                                   \
+    } while (0)
+#endif
 
 static TranslationBlock *tb_find_pc(struct uc_struct *uc, uintptr_t tc_ptr);
 
