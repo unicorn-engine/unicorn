@@ -1936,40 +1936,48 @@ DISAS_INSN(jump)
 DISAS_INSN(addsubq)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv src1;
-    TCGv src2;
+    TCGv src;
     TCGv dest;
-    int val;
+    TCGv val;
+    int imm;
     TCGv addr;
+    int opsize;
 
-    SRC_EA(env, src1, OS_LONG, 0, &addr);
-    val = (insn >> 9) & 7;
-    if (val == 0)
-        val = 8;
+    if ((insn & 070) == 010) {
+        /* Operation on address register is always long.  */
+        opsize = OS_LONG;
+    } else {
+        opsize = insn_opsize(insn);
+    }
+    SRC_EA(env, src, opsize, 1, &addr);
+    imm = (insn >> 9) & 7;
+    if (imm == 0) {
+        imm = 8;
+    }
+    val = tcg_const_i32(tcg_ctx, imm);
     dest = tcg_temp_new(tcg_ctx);
-    tcg_gen_mov_i32(tcg_ctx, dest, src1);
+    tcg_gen_mov_i32(tcg_ctx, dest, src);
     if ((insn & 0x38) == 0x08) {
         /* Don't update condition codes if the destination is an
            address register.  */
         if (insn & 0x0100) {
-            tcg_gen_subi_i32(tcg_ctx, dest, dest, val);
+            tcg_gen_sub_i32(tcg_ctx, dest, dest, val);
         } else {
-            tcg_gen_addi_i32(tcg_ctx, dest, dest, val);
+            tcg_gen_add_i32(tcg_ctx, dest, dest, val);
         }
     } else {
-        src2 = tcg_const_i32(tcg_ctx, val);
         if (insn & 0x0100) {
-            tcg_gen_setcond_i32(tcg_ctx, TCG_COND_LTU, tcg_ctx->QREG_CC_X, dest, src2);
-            tcg_gen_sub_i32(tcg_ctx, dest, dest, src2);
-            set_cc_op(s, CC_OP_SUBL);
+            tcg_gen_setcond_i32(tcg_ctx, TCG_COND_LTU, tcg_ctx->QREG_CC_X, dest, val);
+            tcg_gen_sub_i32(tcg_ctx, dest, dest, val);
+            set_cc_op(s, CC_OP_SUBB + opsize);
         } else {
-            tcg_gen_add_i32(tcg_ctx, dest, dest, src2);
-            tcg_gen_setcond_i32(tcg_ctx, TCG_COND_LTU, tcg_ctx->QREG_CC_X, dest, src2);
-            set_cc_op(s, CC_OP_ADDL);
+            tcg_gen_add_i32(tcg_ctx, dest, dest, val);
+            tcg_gen_setcond_i32(tcg_ctx, TCG_COND_LTU, tcg_ctx->QREG_CC_X, dest, val);
+            set_cc_op(s, CC_OP_ADDB + opsize);
         }
-        gen_update_cc_add(s, dest, src2, OS_LONG);
+        gen_update_cc_add(s, dest, val, opsize);
     }
-    DEST_EA(env, insn, OS_LONG, dest, &addr);
+    DEST_EA(env, insn, opsize, dest, &addr);
 }
 
 DISAS_INSN(tpf)
