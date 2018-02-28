@@ -3388,6 +3388,8 @@ aarch64_symbols = (
     'helper_neon_ceq_f64',
     'helper_neon_cge_f64',
     'helper_neon_cgt_f64',
+    'helper_paired_cmpxchg64_be',
+    'helper_paired_cmpxchg64_le',
     'helper_rbit64',
     'helper_recpsf_f32',
     'helper_recpsf_f64',
