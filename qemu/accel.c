@@ -31,7 +31,6 @@
 #include "qemu-common.h"
 #include "sysemu/sysemu.h"
 #include "qom/object.h"
-#include "hw/boards.h"
 
 // use default size for TCG translated block
 #define TCG_TB_SIZE 0
