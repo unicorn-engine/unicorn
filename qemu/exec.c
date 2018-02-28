@@ -524,7 +524,12 @@ void cpu_exec_init(CPUState *cpu, void *opaque)
 #if defined(CONFIG_USER_ONLY)
 static void breakpoint_invalidate(CPUState *cpu, target_ulong pc)
 {
+    // Unicorn: commented out
+    mmap_lock();
+    //tb_lock();
     tb_invalidate_phys_page_range(pc, pc + 1, 0);
+    //tb_unlock();
+    mmap_unlock();
 }
 #else
 static void breakpoint_invalidate(CPUState *cpu, target_ulong pc)
@@ -533,6 +538,7 @@ static void breakpoint_invalidate(CPUState *cpu, target_ulong pc)
     hwaddr phys = cpu_get_phys_page_attrs_debug(cpu, pc, &attrs);
     int asidx = cpu_asidx_from_attrs(cpu, attrs);
     if (phys != -1) {
+        /* Locks grabbed by tb_invalidate_phys_addr */
         tb_invalidate_phys_addr(cpu->cpu_ases[asidx].as,
                 phys | (pc & ~TARGET_PAGE_MASK));
     }

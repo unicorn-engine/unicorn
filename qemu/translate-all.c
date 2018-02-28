@@ -1461,8 +1461,11 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
  * 'is_cpu_write_access' should be true if called from a real cpu write
  * access: the virtual CPU will exit the current TB if code is modified inside
  * this TB.
+ *
+ * Called with mmap_lock held for user-mode emulation, grabs tb_lock
+ * Called with tb_lock held for system-mode emulation
  */
-void tb_invalidate_phys_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end)
+static void tb_invalidate_phys_range_1(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end)
 {
     while (start < end) {
         tb_invalidate_phys_page_range(uc, start, end, 0);
@@ -1471,12 +1474,33 @@ void tb_invalidate_phys_range(struct uc_struct *uc, tb_page_addr_t start, tb_pag
     }
 }
 
+#ifdef CONFIG_SOFTMMU
+void tb_invalidate_phys_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end)
+{
+    // Unicorn: commented out
+    //assert_tb_lock();
+    tb_invalidate_phys_range_1(uc, start, end);
+}
+#else
+void tb_invalidate_phys_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end)
+{
+    // Unicorn: commented out
+    //assert_memory_lock();
+    //tb_lock();
+    tb_invalidate_phys_range_1(uc, start, end);
+    //tb_unlock();
+}
+#endif
+
 /*
  * Invalidate all TBs which intersect with the target physical address range
  * [start;end[. NOTE: start and end must refer to the *same* physical page.
  * 'is_cpu_write_access' should be true if called from a real cpu write
  * access: the virtual CPU will exit the current TB if code is modified inside
  * this TB.
+ *
+ * Called with tb_lock/mmap_lock held for user-mode emulation
+ * Called with tb_lock held for system-mode emulation
  */
 void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end,
                                    int is_cpu_write_access)
@@ -1497,6 +1521,10 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
     target_ulong current_cs_base = 0;
     uint32_t current_flags = 0;
 #endif /* TARGET_HAS_PRECISE_SMC */
+
+    // Unicorn: commented out
+    //assert_memory_lock();
+    //assert_tb_lock();
 
     p = page_find(uc, start >> TARGET_PAGE_BITS);
     if (!p) {
@@ -1574,7 +1602,10 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
 }
 
 #ifdef CONFIG_SOFTMMU
-/* len must be <= 8 and start must be a multiple of len */
+/* len must be <= 8 and start must be a multiple of len.
+ * Called via softmmu_template.h when code areas are written to with
+ * tb_lock held.
+ */
 void tb_invalidate_phys_page_fast(struct uc_struct* uc, tb_page_addr_t start, int len)
 {
     PageDesc *p;
