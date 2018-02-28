@@ -2191,6 +2191,11 @@ static DisasASI get_asi(DisasContext *dc, int insn, TCGMemOp memop)
             mem_idx = MMU_KERNEL_IDX;
             type = GET_ASI_DIRECT;
             break;
+        case ASI_M_BYPASS:    /* MMU passthrough */
+        case ASI_LEON_BYPASS: /* LEON MMU passthrough */
+            mem_idx = MMU_PHYS_IDX;
+            type = GET_ASI_DIRECT;
+            break;
         }
     } else {
         gen_exception(dc, TT_PRIV_INSN);
@@ -2211,6 +2216,14 @@ static DisasASI get_asi(DisasContext *dc, int insn, TCGMemOp memop)
         type = GET_ASI_EXCP;
     } else {
         switch (asi) {
+        case ASI_REAL:      /* Bypass */
+        case ASI_REAL_IO:   /* Bypass, non-cacheable */
+        case ASI_REAL_L:    /* Bypass LE */
+        case ASI_REAL_IO_L: /* Bypass, non-cacheable LE */
+        case ASI_TWINX_REAL:   /* Real address, twinx */
+        case ASI_TWINX_REAL_L: /* Real address, twinx, LE */
+            mem_idx = MMU_PHYS_IDX;
+            break;
         case ASI_N:  /* Nucleus */
         case ASI_NL: /* Nucleus LE */
         case ASI_TWINX_N:
@@ -2268,6 +2281,10 @@ static DisasASI get_asi(DisasContext *dc, int insn, TCGMemOp memop)
             break;
         }
         switch (asi) {
+        case ASI_REAL:
+        case ASI_REAL_IO:
+        case ASI_REAL_L:
+        case ASI_REAL_IO_L:
         case ASI_N:
         case ASI_NL:
         case ASI_AIUP:
@@ -2280,6 +2297,8 @@ static DisasASI get_asi(DisasContext *dc, int insn, TCGMemOp memop)
         case ASI_PL:
             type = GET_ASI_DIRECT;
             break;
+        case ASI_TWINX_REAL:
+        case ASI_TWINX_REAL_L:
         case ASI_TWINX_N:
         case ASI_TWINX_NL:
         case ASI_TWINX_AIUP:
