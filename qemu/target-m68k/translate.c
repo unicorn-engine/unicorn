@@ -2057,7 +2057,7 @@ DISAS_INSN(suba)
     TCGv src;
     TCGv reg;
 
-    SRC_EA(env, src, OS_LONG, 0, NULL);
+    SRC_EA(env, src, (insn & 0x100) ? OS_LONG : OS_WORD, 1, NULL);
     reg = AREG(insn, 9);
     tcg_gen_sub_i32(tcg_ctx, reg, reg, src);
 }
@@ -2269,7 +2269,7 @@ DISAS_INSN(adda)
     TCGv src;
     TCGv reg;
 
-    SRC_EA(env, src, OS_LONG, 0, NULL);
+    SRC_EA(env, src, (insn & 0x100) ? OS_LONG : OS_WORD, 1, NULL);
     reg = AREG(insn, 9);
     tcg_gen_add_i32(tcg_ctx, reg, reg, src);
 }
@@ -3454,6 +3454,7 @@ void register_m68k_insns (CPUM68KState *env)
     INSN(subx_reg,  9100, f138, M68000);
     INSN(subx_mem,  9108, f138, M68000);
     INSN(suba,      91c0, f1c0, CF_ISA_A);
+    INSN(suba,      90c0, f0c0, M68000);
 
     BASE(undef_mac, a000, f000);
     INSN(mac,       a000, f100, CF_EMAC);
