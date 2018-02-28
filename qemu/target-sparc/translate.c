@@ -2182,6 +2182,8 @@ typedef enum {
     GET_ASI_DTWINX,
     GET_ASI_BLOCK,
     GET_ASI_SHORT,
+    GET_ASI_BCOPY,
+    GET_ASI_BFILL,
 } ASIType;
 
 typedef struct {
@@ -2223,6 +2225,14 @@ static DisasASI get_asi(DisasContext *dc, int insn, TCGMemOp memop)
         case ASI_LEON_BYPASS: /* LEON MMU passthrough */
             mem_idx = MMU_PHYS_IDX;
             type = GET_ASI_DIRECT;
+            break;
+        case ASI_M_BCOPY: /* Block copy, sta access */
+            mem_idx = MMU_KERNEL_IDX;
+            type = GET_ASI_BCOPY;
+            break;
+        case ASI_M_BFILL: /* Block fill, stda access */
+            mem_idx = MMU_KERNEL_IDX;
+            type = GET_ASI_BFILL;
             break;
         }
     } else {
@@ -2447,6 +2457,38 @@ static void gen_st_asi(DisasContext *dc, TCGv src, TCGv addr,
         gen_address_mask(dc, addr);
         tcg_gen_qemu_st_tl(dc->uc, src, addr, da.mem_idx, da.memop);
         break;
+#if !defined(TARGET_SPARC64) && !defined(CONFIG_USER_ONLY)
+    case GET_ASI_BCOPY:
+        /* Copy 32 bytes from the address in SRC to ADDR.  */
+        /* ??? The original qemu code suggests 4-byte alignment, dropping
+           the low bits, but the only place I can see this used is in the
+           Linux kernel with 32 byte alignment, which would make more sense
+           as a cacheline-style operation.  */
+        {
+            TCGv saddr = tcg_temp_new(tcg_ctx);
+            TCGv daddr = tcg_temp_new(tcg_ctx);
+            TCGv four = tcg_const_tl(tcg_ctx, 4);
+            TCGv_i32 tmp = tcg_temp_new_i32(tcg_ctx);
+            int i;
+
+            tcg_gen_andi_tl(tcg_ctx, saddr, src, -4);
+            tcg_gen_andi_tl(tcg_ctx, daddr, addr, -4);
+            for (i = 0; i < 32; i += 4) {
+                /* Since the loads and stores are paired, allow the
+                   copy to happen in the host endianness.  */
+                tcg_gen_qemu_ld_i32(dc->uc, tmp, saddr, da.mem_idx, MO_UL);
+                tcg_gen_qemu_st_i32(dc->uc, tmp, daddr, da.mem_idx, MO_UL);
+                tcg_gen_add_tl(tcg_ctx, saddr, saddr, four);
+                tcg_gen_add_tl(tcg_ctx, daddr, daddr, four);
+            }
+
+            tcg_temp_free(tcg_ctx, saddr);
+            tcg_temp_free(tcg_ctx, daddr);
+            tcg_temp_free(tcg_ctx, four);
+            tcg_temp_free_i32(tcg_ctx, tmp);
+        }
+        break;
+#endif
     default:
         {
             TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
@@ -2930,6 +2972,27 @@ static void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
     case GET_ASI_DIRECT:
         gen_address_mask(dc, addr);
         tcg_gen_qemu_st_i64(dc->uc, t64, addr, da.mem_idx, da.memop);
+        break;
+    case GET_ASI_BFILL:
+        /* Store 32 bytes of T64 to ADDR.  */
+        /* ??? The original qemu code suggests 8-byte alignment, dropping
+           the low bits, but the only place I can see this used is in the
+           Linux kernel with 32 byte alignment, which would make more sense
+           as a cacheline-style operation.  */
+        {
+            TCGv d_addr = tcg_temp_new(tcg_ctx);
+            TCGv eight = tcg_const_tl(tcg_ctx, 8);
+            int i;
+
+            tcg_gen_andi_tl(tcg_ctx, d_addr, addr, -8);
+            for (i = 0; i < 32; i += 8) {
+                tcg_gen_qemu_st_i64(dc->uc, t64, d_addr, da.mem_idx, da.memop);
+                tcg_gen_add_tl(tcg_ctx, d_addr, d_addr, eight);
+            }
+
+            tcg_temp_free(tcg_ctx, d_addr);
+            tcg_temp_free(tcg_ctx, eight);
+        }
         break;
     default:
         {
