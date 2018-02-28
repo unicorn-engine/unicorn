@@ -6224,12 +6224,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             gen_lea_modrm(env, s, modrm);
             gen_op_mov_v_reg(tcg_ctx, ot, cpu_T0, reg);
             /* for xchg, lock is implicit */
-            if (!(prefixes & PREFIX_LOCK))
-                gen_helper_lock(tcg_ctx, cpu_env);
-            gen_op_ld_v(s, ot, cpu_T1, cpu_A0);
-            gen_op_st_v(s, ot, cpu_T0, cpu_A0);
-            if (!(prefixes & PREFIX_LOCK))
-                gen_helper_unlock(tcg_ctx, cpu_env);
+            tcg_gen_atomic_xchg_tl(tcg_ctx, cpu_T1, cpu_A0, cpu_T0,
+                                   s->mem_index, ot | MO_LE);
             gen_op_mov_reg_v(tcg_ctx, ot, reg, cpu_T1);
         }
         break;
