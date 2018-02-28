@@ -5721,57 +5721,57 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     case 0x1b0:
     case 0x1b1: /* cmpxchg Ev, Gv */
         {
-            TCGLabel *label1, *label2;
-            TCGv t0, t1, t2, a0;
+            TCGv oldv, newv, cmpv;
 
             ot = mo_b_d(b, dflag);
             modrm = cpu_ldub_code(env, s->pc++);
             reg = ((modrm >> 3) & 7) | rex_r;
             mod = (modrm >> 6) & 3;
-            t0 = tcg_temp_local_new(tcg_ctx);
-            t1 = tcg_temp_local_new(tcg_ctx);
-            t2 = tcg_temp_local_new(tcg_ctx);
-            a0 = tcg_temp_local_new(tcg_ctx);
-            gen_op_mov_v_reg(tcg_ctx, ot, t1, reg);
-            if (mod == 3) {
-                rm = (modrm & 7) | REX_B(s);
-                gen_op_mov_v_reg(tcg_ctx, ot, t0, rm);
+            oldv = tcg_temp_new(tcg_ctx);
+            newv = tcg_temp_new(tcg_ctx);
+            cmpv = tcg_temp_new(tcg_ctx);
+            gen_op_mov_v_reg(tcg_ctx, ot, newv, reg);
+            tcg_gen_mov_tl(tcg_ctx, cmpv, tcg_ctx->cpu_regs[R_EAX]);
+
+            if (s->prefix & PREFIX_LOCK) {
+                if (mod == 3) {
+                    goto illegal_op;
+                }
+                tcg_gen_atomic_cmpxchg_tl(tcg_ctx, oldv, cpu_A0, cmpv, newv,
+                                          s->mem_index, ot | MO_LE);
+                gen_op_mov_reg_v(tcg_ctx, ot, R_EAX, oldv);
             } else {
-                gen_lea_modrm(env, s, modrm);
-                tcg_gen_mov_tl(tcg_ctx, a0, cpu_A0);
-                gen_op_ld_v(s, ot, t0, a0);
-                rm = 0; /* avoid warning */
+                if (mod == 3) {
+                    rm = (modrm & 7) | REX_B(s);
+                    gen_op_mov_v_reg(tcg_ctx, ot, oldv, rm);
+                } else {
+                    gen_lea_modrm(env, s, modrm);
+                    gen_op_ld_v(s, ot, oldv, cpu_A0);
+                    rm = 0; /* avoid warning */
+                }
+                gen_extu(tcg_ctx, ot, oldv);
+                gen_extu(tcg_ctx, ot, cmpv);
+                /* store value = (old == cmp ? new : old);  */
+                tcg_gen_movcond_tl(tcg_ctx, TCG_COND_EQ, newv, oldv, cmpv, newv, oldv);
+                if (mod == 3) {
+                    gen_op_mov_reg_v(tcg_ctx, ot, R_EAX, oldv);
+                    gen_op_mov_reg_v(tcg_ctx, ot, rm, newv);
+                } else {
+                    /* Perform an unconditional store cycle like physical cpu;
+                       must be before changing accumulator to ensure
+                       idempotency if the store faults and the instruction
+                       is restarted */
+                    gen_op_st_v(s, ot, newv, cpu_A0);
+                    gen_op_mov_reg_v(tcg_ctx, ot, R_EAX, oldv);
+                }
             }
-            label1 = gen_new_label(tcg_ctx);
-            tcg_gen_mov_tl(tcg_ctx, t2, cpu_regs[R_EAX]);
-            gen_extu(tcg_ctx, ot, t0);
-            gen_extu(tcg_ctx, ot, t2);
-            tcg_gen_brcond_tl(tcg_ctx, TCG_COND_EQ, t2, t0, label1);
-            label2 = gen_new_label(tcg_ctx);
-            if (mod == 3) {
-                gen_op_mov_reg_v(tcg_ctx, ot, R_EAX, t0);
-                tcg_gen_br(tcg_ctx, label2);
-                gen_set_label(tcg_ctx, label1);
-                gen_op_mov_reg_v(tcg_ctx, ot, rm, t1);
-            } else {
-                /* perform no-op store cycle like physical cpu; must be
-                   before changing accumulator to ensure idempotency if
-                   the store faults and the instruction is restarted */
-                gen_op_st_v(s, ot, t0, a0);
-                gen_op_mov_reg_v(tcg_ctx, ot, R_EAX, t0);
-                tcg_gen_br(tcg_ctx, label2);
-                gen_set_label(tcg_ctx, label1);
-                gen_op_st_v(s, ot, t1, a0);
-            }
-            gen_set_label(tcg_ctx, label2);
-            tcg_gen_mov_tl(tcg_ctx, cpu_cc_src, t0);
-            tcg_gen_mov_tl(tcg_ctx, cpu_cc_srcT, t2);
-            tcg_gen_sub_tl(tcg_ctx, cpu_cc_dst, t2, t0);
+            tcg_gen_mov_tl(tcg_ctx, cpu_cc_src, oldv);
+            tcg_gen_mov_tl(tcg_ctx, cpu_cc_srcT, cmpv);
+            tcg_gen_sub_tl(tcg_ctx, cpu_cc_dst, cmpv, oldv);
             set_cc_op(s, CC_OP_SUBB + ot);
-            tcg_temp_free(tcg_ctx, t0);
-            tcg_temp_free(tcg_ctx, t1);
-            tcg_temp_free(tcg_ctx, t2);
-            tcg_temp_free(tcg_ctx, a0);
+            tcg_temp_free(tcg_ctx, oldv);
+            tcg_temp_free(tcg_ctx, newv);
+            tcg_temp_free(tcg_ctx, cmpv);
         }
         break;
     case 0x1c7: /* cmpxchg8b */
@@ -5784,14 +5784,22 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             if (!(s->cpuid_ext_features & CPUID_EXT_CX16))
                 goto illegal_op;
             gen_lea_modrm(env, s, modrm);
-            gen_helper_cmpxchg16b(tcg_ctx, cpu_env, cpu_A0);
+            if ((s->prefix & PREFIX_LOCK) && tcg_ctx->uc->parallel_cpus) {
+                gen_helper_cmpxchg16b(tcg_ctx, cpu_env, cpu_A0);
+            } else {
+                gen_helper_cmpxchg16b_unlocked(tcg_ctx, cpu_env, cpu_A0);
+            }
         } else
 #endif
         {
             if (!(s->cpuid_features & CPUID_CX8))
                 goto illegal_op;
             gen_lea_modrm(env, s, modrm);
-            gen_helper_cmpxchg8b(tcg_ctx, cpu_env, cpu_A0);
+            if ((s->prefix & PREFIX_LOCK) && tcg_ctx->uc->parallel_cpus) {
+                gen_helper_cmpxchg8b(tcg_ctx, cpu_env, cpu_A0);
+            } else {
+                gen_helper_cmpxchg8b_unlocked(tcg_ctx, cpu_env, cpu_A0);
+            }
         }
         set_cc_op(s, CC_OP_EFLAGS);
         break;
