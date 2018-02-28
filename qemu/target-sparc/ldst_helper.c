@@ -254,15 +254,21 @@ static void replace_tlb_1bit_lru(SparcTLBEntry *tlb,
 
 #endif
 
-void helper_check_align(CPUSPARCState *env, target_ulong addr, uint32_t align)
+static void do_check_align(CPUSPARCState *env, target_ulong addr,
+                           uint32_t align, uintptr_t ra)
 {
     if (addr & align) {
 #ifdef DEBUG_UNALIGNED
         printf("Unaligned access to 0x" TARGET_FMT_lx " from 0x" TARGET_FMT_lx
                "\n", addr, env->pc);
 #endif
-        helper_raise_exception(env, TT_UNALIGNED);
+        cpu_raise_exception_ra(env, TT_UNALIGNED, ra);
     }
+}
+
+void helper_check_align(CPUSPARCState *env, target_ulong addr, uint32_t align)
+{
+    do_check_align(env, addr, align, GETPC());
 }
 
 #if !defined(TARGET_SPARC64) && !defined(CONFIG_USER_ONLY) &&   \
@@ -393,7 +399,7 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr,
     uint32_t last_addr = addr;
 #endif
 
-    helper_check_align(env, addr, size - 1);
+    do_check_align(env, addr, size - 1, GETPC());
     switch (asi) {
     case ASI_M_MXCC: /* SuperSparc MXCC registers, or... */
     /* case ASI_LEON_CACHEREGS:  Leon3 cache control */
@@ -663,7 +669,7 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, uint64_t val,
     SPARCCPU *cpu = sparc_env_get_cpu(env);
     CPUState *cs = CPU(cpu);
 
-    helper_check_align(env, addr, size - 1);
+    do_check_align(env, addr, size - 1, GETPC());
     switch (asi) {
     case ASI_M_MXCC: /* SuperSparc MXCC registers, or... */
     /* case ASI_LEON_CACHEREGS:  Leon3 cache control */
@@ -1117,10 +1123,10 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr,
 #endif
 
     if (asi < 0x80) {
-        helper_raise_exception(env, TT_PRIV_ACT);
+        cpu_raise_exception_ra(env, TT_PRIV_ACT, GETPC());
     }
 
-    helper_check_align(env, addr, size - 1);
+    do_check_align(env, addr, size - 1, GETPC());
     addr = asi_address_mask(env, asi, addr);
 
     switch (asi) {
@@ -1223,10 +1229,9 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, target_ulong val,
     dump_asi("write", addr, asi, size, val);
 #endif
     if (asi < 0x80) {
-        helper_raise_exception(env, TT_PRIV_ACT);
+        cpu_raise_exception_ra(env, TT_PRIV_ACT, GETPC());
     }
-
-    helper_check_align(env, addr, size - 1);
+    do_check_align(env, addr, size - 1, GETPC());
     addr = asi_address_mask(env, asi, addr);
 
     /* Convert to little endian */
@@ -1281,7 +1286,7 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, target_ulong val,
     case ASI_PNFL: /* Primary no-fault LE, RO */
     case ASI_SNFL: /* Secondary no-fault LE, RO */
     default:
-        helper_raise_exception(env, TT_DATA_ACCESS);
+        cpu_raise_exception_ra(env, TT_DATA_ACCESS, GETPC());
         return;
     }
 }
@@ -1305,10 +1310,10 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr,
         || (cpu_has_hypervisor(env)
             && asi >= 0x30 && asi < 0x80
             && !(env->hpstate & HS_PRIV))) {
-        helper_raise_exception(env, TT_PRIV_ACT);
+        cpu_raise_exception_ra(env, TT_PRIV_ACT, GETPC());
     }
 
-    helper_check_align(env, addr, size - 1);
+    do_check_align(env, addr, size - 1, GETPC());
     addr = asi_address_mask(env, asi, addr);
 
     /* process nonfaulting loads first */
@@ -1327,7 +1332,7 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr,
             dump_asi("read ", last_addr, asi, size, ret);
 #endif
             /* env->exception_index is set in get_physical_address_data(). */
-            helper_raise_exception(env, cs->exception_index);
+            cpu_raise_exception_ra(env, cs->exception_index, GETPC());
         }
 
         /* convert nonfaulting load ASIs to normal load ASIs */
@@ -1619,7 +1624,7 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr,
     case ASI_TWINX_S:  /* Secondary, twinx */
     case ASI_TWINX_SL: /* Secondary, twinx, LE */
         /* These are all 128-bit atomic; only ldda (now ldtxa) allowed */
-        helper_raise_exception(env, TT_ILL_INSN);
+        cpu_raise_exception_ra(env, TT_ILL_INSN, GETPC());
         return 0;
     }
 
@@ -1688,10 +1693,10 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, target_ulong val,
         || (cpu_has_hypervisor(env)
             && asi >= 0x30 && asi < 0x80
             && !(env->hpstate & HS_PRIV))) {
-        helper_raise_exception(env, TT_PRIV_ACT);
+        cpu_raise_exception_ra(env, TT_PRIV_ACT, GETPC());
     }
 
-    helper_check_align(env, addr, size - 1);
+    do_check_align(env, addr, size - 1, GETPC());
     addr = asi_address_mask(env, asi, addr);
 
     /* Convert to little endian */
@@ -2037,7 +2042,7 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, target_ulong val,
     case ASI_TWINX_S:  /* Secondary, twinx */
     case ASI_TWINX_SL: /* Secondary, twinx, LE */
         /* Only stda allowed */
-        helper_raise_exception(env, TT_ILL_INSN);
+        cpu_raise_exception_ra(env, TT_ILL_INSN, GETPC());
         return;
     case ASI_DCACHE_DATA: /* D-cache data */
     case ASI_DCACHE_TAG: /* D-cache tag access */
@@ -2081,7 +2086,7 @@ void helper_ldda_asi(CPUSPARCState *env, target_ulong addr, int asi)
         || (cpu_has_hypervisor(env)
             && asi >= 0x30 && asi < 0x80
             && !(env->hpstate & HS_PRIV))) {
-        helper_raise_exception(env, TT_PRIV_ACT);
+        cpu_raise_exception_ra(env, TT_PRIV_ACT, GETPC());
     }
 
     addr = asi_address_mask(env, asi, addr);
@@ -2090,19 +2095,19 @@ void helper_ldda_asi(CPUSPARCState *env, target_ulong addr, int asi)
 #if !defined(CONFIG_USER_ONLY)
     case ASI_TWINX_AIUP:   /* As if user primary, twinx */
     case ASI_TWINX_AIUP_L: /* As if user primary, twinx, LE */
-        helper_check_align(env, addr, 0xf);
+        do_check_align(env, addr, 0xf, GETPC());
         h = cpu_ldq_user(env, addr);
         l = cpu_ldq_user(env, addr + 8);
         break;
     case ASI_TWINX_AIUS:   /* As if user secondary, twinx */
     case ASI_TWINX_AIUS_L: /* As if user secondary, twinx, LE */
-        helper_check_align(env, addr, 0xf);
+        do_check_align(env, addr, 0xf, GETPC());
         h = cpu_ldq_user_secondary(env, addr);
         l = cpu_ldq_user_secondary(env, addr + 8);
         break;
     case ASI_TWINX_REAL:   /* Real address, twinx */
     case ASI_TWINX_REAL_L: /* Real address, twinx, LE */
-        helper_check_align(env, addr, 0xf);
+        do_check_align(env, addr, 0xf, GETPC());
         {
             CPUState *cs = CPU(sparc_env_get_cpu(env));
             h = ldq_phys(cs->as, addr);
@@ -2113,14 +2118,14 @@ void helper_ldda_asi(CPUSPARCState *env, target_ulong addr, int asi)
     case ASI_NUCLEUS_QUAD_LDD_L:
     case ASI_TWINX_N:  /* Nucleus, twinx */
     case ASI_TWINX_NL: /* Nucleus, twinx, LE */
-        helper_check_align(env, addr, 0xf);
+        do_check_align(env, addr, 0xf, GETPC());
         h = cpu_ldq_nucleus(env, addr);
         l = cpu_ldq_nucleus(env, addr + 8);
         break;
     case ASI_TWINX_S: /* Secondary, twinx */
     case ASI_TWINX_SL: /* Secondary, twinx, LE */
         if (!cpu_hypervisor_mode(env)) {
-            helper_check_align(env, addr, 0xf);
+            do_check_align(env, addr, 0xf, GETPC());
             if (env->pstate & PS_PRIV) {
                 h = cpu_ldq_kernel_secondary(env, addr);
                 l = cpu_ldq_kernel_secondary(env, addr + 8);
@@ -2133,7 +2138,7 @@ void helper_ldda_asi(CPUSPARCState *env, target_ulong addr, int asi)
         /* fallthru */
     case ASI_TWINX_P:  /* Primary, twinx */
     case ASI_TWINX_PL: /* Primary, twinx, LE */
-        helper_check_align(env, addr, 0xf);
+        do_check_align(env, addr, 0xf, GETPC());
         h = cpu_ldq_data(env, addr);
         l = cpu_ldq_data(env, addr + 8);
         break;
@@ -2144,7 +2149,7 @@ void helper_ldda_asi(CPUSPARCState *env, target_ulong addr, int asi)
     case ASI_TWINX_SL: /* Primary, twinx, LE */
         /* ??? Should be available, but we need to implement
            an atomic 128-bit load.  */
-        helper_raise_exception(env, TT_PRIV_ACT);
+        cpu_raise_exception_ra(env, TT_PRIV_ACT, GETPC());
 #endif
     default:
         /* Non-twinx asi, so this is the legacy ldda insn, which
@@ -2152,7 +2157,7 @@ void helper_ldda_asi(CPUSPARCState *env, target_ulong addr, int asi)
         /* ??? The UA2011 manual recommends emulating this with
            a single 64-bit load.  However, LE asis *are* treated
            as two 32-bit loads individually byte swapped.  */
-        helper_check_align(env, addr, 0x7);
+        do_check_align(env, addr, 7, GETPC());
         QT0.high = (uint32_t)helper_ld_asi(env, addr, asi, MO_UL);
         QT0.low = (uint32_t)helper_ld_asi(env, addr + 4, asi, MO_UL);
         return;
@@ -2202,7 +2207,7 @@ void helper_ldqf(CPUSPARCState *env, target_ulong addr, int mem_idx)
     /* XXX add 128 bit load */
     CPU_QuadU u;
 
-    helper_check_align(env, addr, 7);
+    do_check_align(env, addr, 7, GETPC());
 #if !defined(CONFIG_USER_ONLY)
     switch (mem_idx) {
     case MMU_USER_IDX:
@@ -2238,7 +2243,7 @@ void helper_stqf(CPUSPARCState *env, target_ulong addr, int mem_idx)
     /* XXX add 128 bit store */
     CPU_QuadU u;
 
-    helper_check_align(env, addr, 7);
+    do_check_align(env, addr, 7, GETPC());
 #if !defined(CONFIG_USER_ONLY)
     switch (mem_idx) {
     case MMU_USER_IDX:
@@ -2320,11 +2325,8 @@ void sparc_cpu_unassigned_access(CPUState *cs, hwaddr addr,
     }
 
     if ((env->mmuregs[0] & MMU_E) && !(env->mmuregs[0] & MMU_NF)) {
-        if (is_exec) {
-            helper_raise_exception(env, TT_CODE_ACCESS);
-        } else {
-            helper_raise_exception(env, TT_DATA_ACCESS);
-        }
+        int tt = is_exec ? TT_CODE_ACCESS : TT_DATA_ACCESS;
+        cpu_raise_exception_ra(env, tt, GETPC());
     }
 
     /* flush neverland mappings created during no-fault mode,
@@ -2340,17 +2342,14 @@ void sparc_cpu_unassigned_access(CPUState *cs, hwaddr addr,
 {
     SPARCCPU *cpu = SPARC_CPU(cs->uc, cs);
     CPUSPARCState *env = &cpu->env;
+    int tt = is_exec ? TT_CODE_ACCESS : TT_DATA_ACCESS;
 
 #ifdef DEBUG_UNASSIGNED
     printf("Unassigned mem access to " TARGET_FMT_plx " from " TARGET_FMT_lx
            "\n", addr, env->pc);
 #endif
 
-    if (is_exec) {
-        helper_raise_exception(env, TT_CODE_ACCESS);
-    } else {
-        helper_raise_exception(env, TT_DATA_ACCESS);
-    }
+    cpu_raise_exception_ra(env, tt, GETPC());
 }
 #endif
 #endif
@@ -2368,10 +2367,7 @@ void QEMU_NORETURN sparc_cpu_do_unaligned_access(CPUState *cs, vaddr addr,
     printf("Unaligned access to 0x" TARGET_FMT_lx " from 0x" TARGET_FMT_lx
            "\n", addr, env->pc);
 #endif
-    if (retaddr) {
-        cpu_restore_state(CPU(cpu), retaddr);
-    }
-    helper_raise_exception(env, TT_UNALIGNED);
+    cpu_raise_exception_ra(env, TT_UNALIGNED, retaddr);
 }
 
 /* try to fill the TLB and return an exception if error. If retaddr is
@@ -2385,10 +2381,7 @@ void tlb_fill(CPUState *cs, target_ulong addr, MMUAccessType access_type,
 
     ret = sparc_cpu_handle_mmu_fault(cs, addr, access_type, mmu_idx);
     if (ret) {
-        if (retaddr) {
-            cpu_restore_state(cs, retaddr);
-        }
-        cpu_loop_exit(cs);
+        cpu_loop_exit_restore(cs, retaddr);
     }
 }
 #endif

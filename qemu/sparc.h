@@ -3352,6 +3352,7 @@
 #define cpu_get_psr cpu_get_psr_sparc
 #define cpu_put_psr cpu_put_psr_sparc
 #define cpu_put_psr_raw cpu_put_psr_raw_sparc
+#define cpu_raise_exception_ra cpu_raise_exception_ra_sparc
 #define cpu_set_cwp cpu_set_cwp_sparc
 #define cpu_sparc_exec cpu_sparc_exec_sparc
 #define cpu_sparc_init cpu_sparc_init_sparc

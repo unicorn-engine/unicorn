@@ -3637,7 +3637,6 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 break;
             } else if (xop == 0x2b) { /* rdtbr / V9 flushw */
 #ifdef TARGET_SPARC64
-                save_state(dc);
                 gen_helper_flushw(tcg_ctx, tcg_ctx->cpu_env);
 #else
                 if (!supervisor(dc))
@@ -5241,12 +5240,10 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     /* nop */
                     break;
                 case 0x3c:      /* save */
-                    save_state(dc);
                     gen_helper_save(tcg_ctx, tcg_ctx->cpu_env);
                     gen_store_gpr(dc, rd, cpu_tmp0);
                     break;
                 case 0x3d:      /* restore */
-                    save_state(dc);
                     gen_helper_restore(tcg_ctx, tcg_ctx->cpu_env);
                     gen_store_gpr(dc, rd, cpu_tmp0);
                     break;

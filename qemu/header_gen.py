@@ -4366,6 +4366,7 @@ sparc_symbols = (
     'cpu_get_psr',
     'cpu_put_psr',
     'cpu_put_psr_raw',
+    'cpu_raise_exception_ra',
     'cpu_set_cwp',
     'cpu_sparc_exec',
     'cpu_sparc_init',
