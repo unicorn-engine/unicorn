@@ -27,16 +27,6 @@
 
 #include "uc_priv.h"
 
-/* broken thread support */
-
-void helper_lock(CPUX86State *env)
-{
-}
-
-void helper_unlock(CPUX86State *env)
-{
-}
-
 void helper_cmpxchg8b_unlocked(CPUX86State *env, target_ulong a0)
 {
     uintptr_t ra = GETPC();

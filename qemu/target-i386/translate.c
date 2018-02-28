@@ -5184,10 +5184,6 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     s->aflag = aflag;
     s->dflag = dflag;
 
-    /* lock generation */
-    if (prefixes & PREFIX_LOCK)
-        gen_helper_lock(tcg_ctx, cpu_env);
-
     /* now check op code */
  reswitch:
     switch(b) {
@@ -8947,9 +8943,6 @@ case 0x101:
     default:
         goto unknown_op;
     }
-    /* lock generation */
-    if (s->prefix & PREFIX_LOCK)
-        gen_helper_unlock(tcg_ctx, cpu_env);
 
     // Unicorn: patch the callback for the instruction size
     if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, pc_start)) {
@@ -8975,15 +8968,9 @@ case 0x101:
 
     return s->pc;
  illegal_op:
-    if (s->prefix & PREFIX_LOCK)
-        gen_helper_unlock(tcg_ctx, cpu_env);
-    /* XXX: ensure that no lock was generated */
     gen_illegal_opcode(s);
     return s->pc;
  unknown_op:
-    if (s->prefix & PREFIX_LOCK)
-        gen_helper_unlock(tcg_ctx, cpu_env);
-    /* XXX: ensure that no lock was generated */
     gen_unknown_opcode(env, s);
     return s->pc;
 }

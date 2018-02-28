@@ -3,8 +3,6 @@ DEF_HELPER_4(uc_tracecode, void, i32, i32, ptr, i64)
 DEF_HELPER_FLAGS_4(cc_compute_all, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl, int)
 DEF_HELPER_FLAGS_4(cc_compute_c, TCG_CALL_NO_RWG_SE, tl, tl, tl, tl, int)
 
-DEF_HELPER_1(lock, void, env)
-DEF_HELPER_1(unlock, void, env)
 DEF_HELPER_3(write_eflags, void, env, tl, i32)
 DEF_HELPER_1(read_eflags, tl, env)
 DEF_HELPER_2(divb_AL, void, env, tl)
