@@ -57,12 +57,6 @@
 #define IS_USER(s) (s->user)
 #endif
 
-#ifdef CONFIG_USER_ONLY
-static TCGv_i64 cpu_exclusive_test;
-static TCGv_i32 cpu_exclusive_info;
-#endif
-
-
 static const char *regnames[] =
     { "r0", "r1", "r2", "r3", "r4", "r5", "r6", "r7",
       "r8", "r9", "r10", "r11", "r12", "r13", "r14", "pc" };
@@ -90,12 +84,6 @@ void arm_translate_init(struct uc_struct *uc)
         offsetof(CPUARMState, exclusive_addr), "exclusive_addr");
     tcg_ctx->cpu_exclusive_val = tcg_global_mem_new_i64(uc->tcg_ctx, tcg_ctx->cpu_env,
         offsetof(CPUARMState, exclusive_val), "exclusive_val");
-#ifdef CONFIG_USER_ONLY
-    cpu_exclusive_test = tcg_global_mem_new_i64(uc->tcg_ctx, tcg_ctx->cpu_env,
-        offsetof(CPUARMState, exclusive_test), "exclusive_test");
-    cpu_exclusive_info = tcg_global_mem_new_i32(uc->tcg_ctx, tcg_ctx->cpu_env,
-        offsetof(CPUARMState, exclusive_info), "exclusive_info");
-#endif
 
     a64_translate_init(uc);
 }
