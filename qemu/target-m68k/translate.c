@@ -1300,38 +1300,35 @@ DISAS_INSN(bitop_reg)
         opsize = OS_LONG;
     op = (insn >> 6) & 3;
 
-    gen_flush_flags(s);
-
     SRC_EA(env, src1, opsize, 0, op ? &addr: NULL);
-    src2 = DREG(insn, 9);
-    dest = tcg_temp_new(tcg_ctx);
-
-    tmp = tcg_temp_new(tcg_ctx);
+    gen_flush_flags(s);
+    src2 = tcg_temp_new(tcg_ctx);
     if (opsize == OS_BYTE)
-        tcg_gen_andi_i32(tcg_ctx, tmp, src2, 7);
+        tcg_gen_andi_i32(tcg_ctx, src2, DREG(insn, 9), 7);
     else
-        tcg_gen_andi_i32(tcg_ctx, tmp, src2, 31);
+        tcg_gen_andi_i32(tcg_ctx, src2, DREG(insn, 9), 31);
 
-    src2 = tcg_const_i32(tcg_ctx, 1);
-    tcg_gen_shl_i32(tcg_ctx, src2, src2, tmp);
-    tcg_temp_free(tcg_ctx, tmp);
+    tmp = tcg_const_i32(tcg_ctx, 1);
+    tcg_gen_shl_i32(tcg_ctx, tmp, tmp, src2);
+    tcg_temp_free(tcg_ctx, src2);
 
-    tcg_gen_and_i32(tcg_ctx, tcg_ctx->QREG_CC_Z, src1, src2);
+    tcg_gen_and_i32(tcg_ctx, tcg_ctx->QREG_CC_Z, src1, tmp);
 
+    dest = tcg_temp_new(tcg_ctx);
     switch (op) {
     case 1: /* bchg */
-        tcg_gen_xor_i32(tcg_ctx, dest, src1, src2);
+        tcg_gen_xor_i32(tcg_ctx, dest, src1, tmp);
         break;
     case 2: /* bclr */
-        tcg_gen_andc_i32(tcg_ctx, dest, src1, src2);
+        tcg_gen_andc_i32(tcg_ctx, dest, src1, tmp);
         break;
     case 3: /* bset */
-        tcg_gen_or_i32(tcg_ctx, dest, src1, src2);
+        tcg_gen_or_i32(tcg_ctx, dest, src1, tmp);
         break;
     default: /* btst */
         break;
     }
-    tcg_temp_free(tcg_ctx, src2);
+    tcg_temp_free(tcg_ctx, tmp);
     if (op) {
         DEST_EA(env, insn, opsize, dest, &addr);
     }
@@ -1419,10 +1416,9 @@ DISAS_INSN(bitop_im)
         return;
     }
 
-    gen_flush_flags(s);
-
     SRC_EA(env, src1, opsize, 0, op ? &addr: NULL);
 
+    gen_flush_flags(s);
     if (opsize == OS_BYTE)
         bitnum &= 7;
     else
