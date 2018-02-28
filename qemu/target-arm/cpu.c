@@ -541,6 +541,11 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         cpu->id_aa64pfr0 &= ~0xf000;
     }
 
+    if (!cpu->has_pmu) {
+        cpu->has_pmu = false;
+        unset_feature(env, ARM_FEATURE_PMU);
+    }
+
     if (!arm_feature(env, ARM_FEATURE_EL2)) {
         /* Disable the hypervisor feature bits in the processor feature
          * registers if we don't have EL2. These are id_pfr1[15:12] and
