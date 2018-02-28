@@ -3359,7 +3359,6 @@
 #define cpu_sparc_set_id cpu_sparc_set_id_sparc
 #define dump_mmu dump_mmu_sparc
 #define gen_intermediate_code_init gen_intermediate_code_init_sparc
-#define helper_cas_asi helper_cas_asi_sparc
 #define helper_check_align helper_check_align_sparc
 #define helper_check_ieee_exceptions helper_check_ieee_exceptions_sparc
 #define helper_compute_C_icc helper_compute_C_icc_sparc

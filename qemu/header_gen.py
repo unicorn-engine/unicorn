@@ -4373,7 +4373,6 @@ sparc_symbols = (
     'cpu_sparc_set_id',
     'dump_mmu',
     'gen_intermediate_code_init',
-    'helper_cas_asi',
     'helper_check_align',
     'helper_check_ieee_exceptions',
     'helper_compute_C_icc',
