@@ -568,6 +568,14 @@ static void gen_logic_cc(DisasContext *s, TCGv val, int opsize)
     set_cc_op(s, CC_OP_LOGIC);
 }
 
+static void gen_update_cc_cmp(DisasContext *s, TCGv dest, TCGv src, int opsize)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_CC_N, dest);
+    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_CC_V, src);
+    set_cc_op(s, CC_OP_CMPB + opsize);
+}
+
 static void gen_update_cc_add(DisasContext *s, TCGv dest, TCGv src, int opsize)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -2192,10 +2200,9 @@ DISAS_INSN(cmp)
     int opsize;
 
     opsize = insn_opsize(insn);
-    SRC_EA(env, src, opsize, -1, NULL);
-    reg = DREG(insn, 9);
-    gen_update_cc_add(s, reg, src, OS_LONG);
-    set_cc_op(s, CC_OP_CMPL);
+    SRC_EA(env, src, opsize, 1, NULL);
+    reg = gen_extend(s, DREG(insn, 9), opsize, 1);
+    gen_update_cc_cmp(s, reg, src, opsize);
 }
 
 DISAS_INSN(cmpa)
@@ -2212,8 +2219,7 @@ DISAS_INSN(cmpa)
     }
     SRC_EA(env, src, opsize, 1, NULL);
     reg = AREG(insn, 9);
-    gen_update_cc_add(s, reg, src, OS_LONG);
-    set_cc_op(s, CC_OP_CMPL);
+    gen_update_cc_cmp(s, reg, src, opsize);
 }
 
 DISAS_INSN(eor)
