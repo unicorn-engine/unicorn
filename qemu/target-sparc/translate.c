@@ -2145,6 +2145,19 @@ static inline void gen_ne_fop_QD(DisasContext *dc, int rd, int rs,
     gen_update_fprs_dirty(dc, QFPREG(rd));
 }
 
+static void gen_swap(DisasContext *dc, TCGv dst, TCGv src,
+                     TCGv addr, int mmu_idx, TCGMemOp memop)
+{
+    /* ??? Should be atomic.  */
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+    TCGv t0 = tcg_temp_new(tcg_ctx);
+    gen_address_mask(dc, addr);
+    tcg_gen_qemu_ld_tl(dc->uc, t0, addr, mmu_idx, memop);
+    tcg_gen_qemu_st_tl(dc->uc, src, addr, mmu_idx, memop);
+    tcg_gen_mov_tl(tcg_ctx, dst, t0);
+    tcg_temp_free(tcg_ctx, t0);
+}
+
 /* asi moves */
 #if !defined(CONFIG_USER_ONLY) || defined(TARGET_SPARC64)
 typedef enum {
@@ -2448,32 +2461,17 @@ static void gen_st_asi(DisasContext *dc, TCGv src, TCGv addr,
 static void gen_swap_asi(DisasContext *dc, TCGv dst, TCGv src,
                          TCGv addr, int insn)
 {
-    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     DisasASI da = get_asi(dc, insn, MO_TEUL);
 
     switch (da.type) {
     case GET_ASI_EXCP:
         break;
+    case GET_ASI_DIRECT:
+        gen_swap(dc, dst, src, addr, da.mem_idx, da.memop);
+        break;
     default:
-        {
-            TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
-            TCGv_i32 r_mop = tcg_const_i32(tcg_ctx, MO_UL);
-            TCGv_i64 s64, t64;
-
-            save_state(dc);
-            t64 = tcg_temp_new_i64(tcg_ctx);
-            gen_helper_ld_asi(tcg_ctx, t64, tcg_ctx->cpu_env, addr, r_asi, r_mop);
-
-            s64 = tcg_temp_new_i64(tcg_ctx);
-            tcg_gen_extu_tl_i64(tcg_ctx, s64, src);
-            gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, s64, r_asi, r_mop);
-            tcg_temp_free_i64(tcg_ctx, s64);
-            tcg_temp_free_i32(tcg_ctx, r_mop);
-            tcg_temp_free_i32(tcg_ctx, r_asi);
-
-            tcg_gen_trunc_i64_tl(tcg_ctx, dst, t64);
-            tcg_temp_free_i64(tcg_ctx, t64);
-        }
+        /* ??? Should be DAE_invalid_asi.  */
+        gen_exception(dc, TT_DATA_ACCESS);
         break;
     }
 }
@@ -5386,15 +5384,10 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     break;
                 case 0x0f:
                     /* swap, swap register with memory. Also atomically */
-                    {
-                        TCGv t0 = get_temp_tl(dc);
-                        CHECK_IU_FEATURE(dc, SWAP);
-                        cpu_src1 = gen_load_gpr(dc, rd);
-                        gen_address_mask(dc, cpu_addr);
-                        tcg_gen_qemu_ld32u(dc->uc, t0, cpu_addr, dc->mem_idx);
-                        tcg_gen_qemu_st32(dc->uc, cpu_src1, cpu_addr, dc->mem_idx);
-                        tcg_gen_mov_tl(tcg_ctx, cpu_val, t0);
-                    }
+                    CHECK_IU_FEATURE(dc, SWAP);
+                    cpu_src1 = gen_load_gpr(dc, rd);
+                    gen_swap(dc, cpu_val, cpu_src1, cpu_addr,
+                             dc->mem_idx, MO_TEUL);
                     break;
 #if !defined(CONFIG_USER_ONLY) || defined(TARGET_SPARC64)
                 case 0x10:      /* lda, V9 lduwa, load word alternate */
