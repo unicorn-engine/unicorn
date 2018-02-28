@@ -2158,6 +2158,21 @@ static void gen_swap(DisasContext *dc, TCGv dst, TCGv src,
     tcg_temp_free(tcg_ctx, t0);
 }
 
+static void gen_ldstub(DisasContext *dc, TCGv dst, TCGv addr, int mmu_idx)
+{
+    /* ??? Should be atomic.  */
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+    TCGv_i32 t0 = tcg_temp_new_i32(tcg_ctx);
+    TCGv_i32 t1 = tcg_const_i32(tcg_ctx, 0xff);
+
+    gen_address_mask(dc, addr);
+    tcg_gen_qemu_ld_i32(dc->uc, t0, addr, mmu_idx, MO_UB);
+    tcg_gen_qemu_st_i32(dc->uc, t1, addr, mmu_idx, MO_UB);
+    tcg_gen_extu_i32_tl(tcg_ctx, dst, t0);
+    tcg_temp_free_i32(tcg_ctx, t0);
+    tcg_temp_free_i32(tcg_ctx, t1);
+}
+
 /* asi moves */
 #if !defined(CONFIG_USER_ONLY) || defined(TARGET_SPARC64)
 typedef enum {
@@ -2499,31 +2514,17 @@ static void gen_cas_asi(DisasContext *dc, TCGv addr, TCGv val2,
 
 static void gen_ldstub_asi(DisasContext *dc, TCGv dst, TCGv addr, int insn)
 {
-    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     DisasASI da = get_asi(dc, insn, MO_UB);
 
     switch (da.type) {
     case GET_ASI_EXCP:
         break;
+    case GET_ASI_DIRECT:
+        gen_ldstub(dc, dst, addr, da.mem_idx);
+        break;
     default:
-        {
-            TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
-            TCGv_i32 r_mop = tcg_const_i32(tcg_ctx, MO_UB);
-            TCGv_i64 s64, t64;
-
-            save_state(dc);
-            t64 = tcg_temp_new_i64(tcg_ctx);
-            gen_helper_ld_asi(tcg_ctx, t64, tcg_ctx->cpu_env, addr, r_asi, r_mop);
-
-            s64 = tcg_const_i64(tcg_ctx, 0xff);
-            gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, s64, r_asi, r_mop);
-            tcg_temp_free_i64(tcg_ctx, s64);
-            tcg_temp_free_i32(tcg_ctx, r_mop);
-            tcg_temp_free_i32(tcg_ctx, r_asi);
-
-            tcg_gen_trunc_i64_tl(tcg_ctx, dst, t64);
-            tcg_temp_free_i64(tcg_ctx, t64);
-        }
+        /* ??? Should be DAE_invalid_asi.  */
+        gen_exception(dc, TT_DATA_ACCESS);
         break;
     }
 }
@@ -5368,19 +5369,8 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     gen_address_mask(dc, cpu_addr);
                     tcg_gen_qemu_ld16s(dc->uc, cpu_val, cpu_addr, dc->mem_idx);
                     break;
-                case 0xd:       /* ldstub -- XXX: should be atomically */
-                    {
-                        TCGv r_const;
-                        TCGv tmp = tcg_temp_new(tcg_ctx);
-
-                        gen_address_mask(dc, cpu_addr);
-                        tcg_gen_qemu_ld8u(dc->uc, tmp, cpu_addr, dc->mem_idx);
-                        r_const = tcg_const_tl(tcg_ctx, 0xff);
-                        tcg_gen_qemu_st8(dc->uc, r_const, cpu_addr, dc->mem_idx);
-                        tcg_gen_mov_tl(tcg_ctx, cpu_val, tmp);
-                        tcg_temp_free(tcg_ctx, r_const);
-                        tcg_temp_free(tcg_ctx, tmp);
-                    }
+                case 0xd:       /* ldstub */
+                    gen_ldstub(dc, cpu_val, cpu_addr, dc->mem_idx);
                     break;
                 case 0x0f:
                     /* swap, swap register with memory. Also atomically */
