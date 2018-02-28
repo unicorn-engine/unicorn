@@ -620,6 +620,7 @@ QEMU_BUILD_BUG_ON(sizeof(TCGOp) > 8);
 
 /* pool based memory allocation */
 
+/* tb_lock must be held for tcg_malloc_internal. */
 void *tcg_malloc_internal(TCGContext *s, int size);
 void tcg_pool_reset(TCGContext *s);
 
@@ -1031,6 +1032,7 @@ TCGOp *tcg_op_insert_after(TCGContext *s, TCGOp *op, TCGOpcode opc, int narg);
 
 void tcg_optimize(TCGContext *s);
 
+/* Called with tb_lock held.  */
 static inline void *tcg_malloc(TCGContext *s, int size)
 {
     uint8_t *ptr, *ptr_end;

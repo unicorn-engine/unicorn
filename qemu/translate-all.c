@@ -287,7 +287,9 @@ static int encode_search(TCGContext *tcg_ctx, TranslationBlock *tb, uint8_t *blo
     return p - block;
 }
 
-/* The cpu state corresponding to 'searched_pc' is restored.  */
+/* The cpu state corresponding to 'searched_pc' is restored.
+ * Called with tb_lock held.
+ */
 static int cpu_restore_state_from_tb(CPUState *cpu, TranslationBlock *tb,
                                      uintptr_t searched_pc)
 {
@@ -442,6 +444,10 @@ static void page_init(struct uc_struct *uc)
 #endif
 }
 
+/* If alloc=1:
+ * Called with tb_lock held for system emulation.
+ * Called with mmap_lock held for user-mode emulation.
+ */
 static PageDesc *page_find_alloc(struct uc_struct *uc, tb_page_addr_t index, int alloc)
 {
     PageDesc *pd;
@@ -861,8 +867,12 @@ bool tcg_enabled(struct uc_struct *uc)
     return tcg_ctx->code_gen_buffer != NULL;
 }
 
-/* Allocate a new translation block. Flush the translation buffer if
-   too many translation blocks or too much generated code. */
+/*
+ * Allocate a new translation block. Flush the translation buffer if
+ * too many translation blocks or too much generated code.
+ *
+ * Called with tb_lock held.
+ */
 static TranslationBlock *tb_alloc(struct uc_struct *uc, target_ulong pc)
 {
     TranslationBlock *tb;
@@ -878,6 +888,7 @@ static TranslationBlock *tb_alloc(struct uc_struct *uc, target_ulong pc)
     return tb;
 }
 
+/* Called with tb_lock held.  */
 void tb_free(struct uc_struct *uc, TranslationBlock *tb)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
@@ -975,6 +986,10 @@ void tb_flush(CPUState *cpu)
 
 #ifdef DEBUG_TB_CHECK
 
+/* verify that all the pages have correct rights for code
+ *
+ * Called with tb_lock held.
+ */
 static void tb_invalidate_check(target_ulong address)
 {
     TranslationBlock *tb;
@@ -1106,7 +1121,10 @@ static inline void tb_jmp_unlink(TranslationBlock *tb)
     }
 }
 
-/* invalidate one TB */
+/* invalidate one TB
+ *
+ * Called with tb_lock held.
+ */
 void tb_phys_invalidate(struct uc_struct *uc,
     TranslationBlock *tb, tb_page_addr_t page_addr)
 {
@@ -1576,7 +1594,9 @@ void tb_invalidate_phys_page_fast(struct uc_struct* uc, tb_page_addr_t start, in
     }
     if (!p->code_bitmap &&
         ++p->code_write_count >= SMC_BITMAP_USE_THRESHOLD) {
-        /* build code bitmap */
+        /* build code bitmap.  FIXME: writes should be protected by
+         * tb_lock, reads by tb_lock or RCU.
+         */
         build_page_bitmap(p);
     }
     if (p->code_bitmap) {
@@ -1715,6 +1735,7 @@ void tb_invalidate_phys_addr(AddressSpace *as, hwaddr addr)
 }
 #endif /* !defined(CONFIG_USER_ONLY) */
 
+/* Called with tb_lock held.  */
 void tb_check_watchpoint(CPUState *cpu)
 {
     TranslationBlock *tb;
