@@ -102,6 +102,11 @@ int64_t HELPER(mulsh_i64)(int64_t arg1, int64_t arg2)
     return h;
 }
 
+void HELPER(exit_atomic)(CPUArchState *env)
+{
+    cpu_loop_exit_atomic(ENV_GET_CPU(env), GETPC());
+}
+
 #ifndef CONFIG_SOFTMMU
 /* The softmmu versions of these helpers are in cputlb.c.  */
 
@@ -131,8 +136,10 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
 #define DATA_SIZE 4
 #include "atomic_template.h"
 
+#ifdef CONFIG_ATOMIC64
 #define DATA_SIZE 8
 #include "atomic_template.h"
+#endif
 
 /* The following is only callable from other helpers, and matches up
    with the softmmu version.  */

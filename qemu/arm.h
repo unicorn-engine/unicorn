@@ -679,6 +679,7 @@
 #define gen_helper_double_saturate gen_helper_double_saturate_arm
 #define gen_helper_exception_internal gen_helper_exception_internal_arm
 #define gen_helper_exception_with_syndrome gen_helper_exception_with_syndrome_arm
+#define gen_helper_exit_atomic gen_helper_exit_atomic_arm
 #define gen_helper_get_cp_reg gen_helper_get_cp_reg_arm
 #define gen_helper_get_cp_reg64 gen_helper_get_cp_reg64_arm
 #define gen_helper_get_r13_banked gen_helper_get_r13_banked_arm
@@ -1563,6 +1564,7 @@
 #define helper_exception_internal helper_exception_internal_arm
 #define helper_exception_return helper_exception_return_arm
 #define helper_exception_with_syndrome helper_exception_with_syndrome_arm
+#define helper_exit_atomic helper_exit_atomic_arm
 #define helper_get_cp_reg helper_get_cp_reg_arm
 #define helper_get_cp_reg64 helper_get_cp_reg64_arm
 #define helper_get_r13_banked helper_get_r13_banked_arm

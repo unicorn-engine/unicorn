@@ -1860,8 +1860,8 @@ void tcg_gen_goto_tb(TCGContext *s, unsigned idx)
     tcg_debug_assert(idx <= 1);
 #ifdef CONFIG_DEBUG_TCG
     /* Verify that we havn't seen this numbered exit before.  */
-    tcg_debug_assert((tcg_ctx.goto_tb_issue_mask & (1 << idx)) == 0);
-    tcg_ctx.goto_tb_issue_mask |= 1 << idx;
+    tcg_debug_assert((s->goto_tb_issue_mask & (1 << idx)) == 0);
+    s->goto_tb_issue_mask |= 1 << idx;
 #endif
     tcg_gen_op1i(s, INDEX_op_goto_tb, idx);
 }
@@ -2065,12 +2065,18 @@ typedef void (*gen_atomic_op_i32)(TCGContext *, TCGv_i32, TCGv_env, TCGv, TCGv_i
 typedef void (*gen_atomic_op_i64)(TCGContext *, TCGv_i64, TCGv_env, TCGv, TCGv_i64);
 #endif
 
+#ifdef CONFIG_ATOMIC64
+# define WITH_ATOMIC64(X) X,
+#else
+# define WITH_ATOMIC64(X) NULL,
+#endif
+
 #ifdef HOST_WORDS_BIGENDIAN
 static void * const table_cmpxchg[16] = {
     gen_helper_atomic_cmpxchgb,
     gen_helper_atomic_cmpxchgw_be,
     gen_helper_atomic_cmpxchgl_be,
-    gen_helper_atomic_cmpxchgq_be,
+    WITH_ATOMIC64(gen_helper_atomic_cmpxchgq_be)
     NULL,
     NULL,
     NULL,
@@ -2078,14 +2084,14 @@ static void * const table_cmpxchg[16] = {
     NULL,
     gen_helper_atomic_cmpxchgw_le,
     gen_helper_atomic_cmpxchgl_le,
-    gen_helper_atomic_cmpxchgq_le,
+    WITH_ATOMIC64(gen_helper_atomic_cmpxchgq_le)
 }
 #else
 static void * const table_cmpxchg[16] = {
     gen_helper_atomic_cmpxchgb,
     gen_helper_atomic_cmpxchgw_le,
     gen_helper_atomic_cmpxchgl_le,
-    gen_helper_atomic_cmpxchgq_le,
+    WITH_ATOMIC64(gen_helper_atomic_cmpxchgq_le)
     NULL,
     NULL,
     NULL,
@@ -2093,7 +2099,7 @@ static void * const table_cmpxchg[16] = {
     NULL,
     gen_helper_atomic_cmpxchgw_be,
     gen_helper_atomic_cmpxchgl_be,
-    gen_helper_atomic_cmpxchgq_be,
+    WITH_ATOMIC64(gen_helper_atomic_cmpxchgq_be)
 };
 #endif
 
@@ -2166,6 +2172,7 @@ void tcg_gen_atomic_cmpxchg_i64(TCGContext *s,
         }
         tcg_temp_free_i64(s, t1);
     } else if ((memop & MO_SIZE) == MO_64) {
+#ifdef CONFIG_ATOMIC64
         gen_atomic_cx_i64 gen;
 
         gen = table_cmpxchg[memop & (MO_SIZE | MO_BSWAP)];
@@ -2178,8 +2185,11 @@ void tcg_gen_atomic_cmpxchg_i64(TCGContext *s,
             tcg_temp_free_i32(s, oi);
         }
 #else
-        gen(s, retv, tcg_ctx.tcg_env, addr, cmpv, newv);
+        gen(s, retv, s->tcg_env, addr, cmpv, newv);
 #endif
+#else
+        gen_helper_exit_atomic(s, s->tcg_env);
+#endif /* CONFIG_ATOMIC64 */
     } else {
         TCGv_i32 c32 = tcg_temp_new_i32(s);
         TCGv_i32 n32 = tcg_temp_new_i32(s);
@@ -2237,7 +2247,7 @@ static void do_atomic_op_i32(TCGContext *s,
         tcg_temp_free_i32(s, oi);
     }
 #else
-    gen(s, ret, tcg_ctx.tcg_env, addr, val);
+    gen(s, ret, s->tcg_env, addr, val);
 #endif
 
     if (memop & MO_SIGN) {
@@ -2271,6 +2281,7 @@ static void do_atomic_op_i64(TCGContext *s,
     memop = tcg_canonicalize_memop(memop, 1, 0);
 
     if ((memop & MO_SIZE) == MO_64) {
+#ifdef CONFIG_ATOMIC64
         gen_atomic_op_i64 gen;
 
         gen = table[memop & (MO_SIZE | MO_BSWAP)];
@@ -2283,8 +2294,11 @@ static void do_atomic_op_i64(TCGContext *s,
             tcg_temp_free_i32(s, oi);
         }
 #else
-        gen(s, ret, tcg_ctx.tcg_env, addr, val);
+        gen(s, ret, s->tcg_env, addr, val);
 #endif
+#else
+        gen_helper_exit_atomic(s, s->tcg_env);
+#endif /* CONFIG_ATOMIC64 */
     } else {
         TCGv_i32 v32 = tcg_temp_new_i32(s);
         TCGv_i32 r32 = tcg_temp_new_i32(s);
@@ -2302,16 +2316,42 @@ static void do_atomic_op_i64(TCGContext *s,
     }
 }
 
+#ifdef HOST_WORDS_BIGENDIAN
+#define GEN_ATOMIC_TABLE(NAME) \
+static void * const table_##NAME[16] = {    \
+    gen_helper_atomic_##NAME##b,            \
+    gen_helper_atomic_##NAME##w_be,         \
+    gen_helper_atomic_##NAME##l_be,         \
+    gen_helper_atomic_##NAME##q_be,         \
+    NULL,                                   \
+    NULL,                                   \
+    NULL,                                   \
+    NULL,                                   \
+    NULL,                                   \
+    gen_helper_atomic_##NAME##w_le,         \
+    gen_helper_atomic_##NAME##l_le,         \
+    gen_helper_atomic_##NAME##q_le,         \
+};
+#else
+#define GEN_ATOMIC_TABLE(NAME) \
+static void * const table_##NAME[16] = {    \
+    gen_helper_atomic_##NAME##b,            \
+    gen_helper_atomic_##NAME##w_le,         \
+    gen_helper_atomic_##NAME##w_be,         \
+    gen_helper_atomic_##NAME##l_le,         \
+    NULL,                                   \
+    NULL,                                   \
+    NULL,                                   \
+    NULL,                                   \
+    NULL,                                   \
+    gen_helper_atomic_##NAME##l_be,         \
+    gen_helper_atomic_##NAME##q_le,         \
+    gen_helper_atomic_##NAME##q_be,         \
+};
+#endif
+
 #define GEN_ATOMIC_HELPER(NAME, OP, NEW)                                \
-static void * const table_##NAME[16] = {                                \
-    [MO_8] = gen_helper_atomic_##NAME##b,                               \
-    [MO_16 | MO_LE] = gen_helper_atomic_##NAME##w_le,                   \
-    [MO_16 | MO_BE] = gen_helper_atomic_##NAME##w_be,                   \
-    [MO_32 | MO_LE] = gen_helper_atomic_##NAME##l_le,                   \
-    [MO_32 | MO_BE] = gen_helper_atomic_##NAME##l_be,                   \
-    [MO_64 | MO_LE] = gen_helper_atomic_##NAME##q_le,                   \
-    [MO_64 | MO_BE] = gen_helper_atomic_##NAME##q_be,                   \
-};                                                                      \
+GEN_ATOMIC_TABLE(NAME)                                                  \
 void tcg_gen_atomic_##NAME##_i32                                        \
     (TCGContext *s, TCGv_i32 ret, TCGv addr, TCGv_i32 val, TCGArg idx, TCGMemOp memop) \
 {                                                                       \
@@ -2354,5 +2394,7 @@ static void tcg_gen_mov2_i64(TCGContext *s, TCGv_i64 r, TCGv_i64 a, TCGv_i64 b)
 }
 
 GEN_ATOMIC_HELPER(xchg, mov2, 0)
+
+#undef GEN_ATOMIC_TABLE
 
 #undef GEN_ATOMIC_HELPER
