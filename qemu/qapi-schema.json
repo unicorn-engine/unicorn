@@ -6,7 +6,7 @@
 { 'include': 'qapi/common.json' }
 
 ##
-# @X86CPURegister32
+# @X86CPURegister32:
 #
 # A X86 32-bit register
 #
@@ -16,7 +16,7 @@
   'data': [ 'EAX', 'EBX', 'ECX', 'EDX', 'ESP', 'EBP', 'ESI', 'EDI' ] }
 
 ##
-# @X86CPUFeatureWordInfo
+# @X86CPUFeatureWordInfo:
 #
 # Information about a X86 CPU feature word
 #
@@ -38,11 +38,11 @@
             'features': 'int' } }
 
 ##
-# @DummyForceArrays
+# @DummyForceArrays:
 #
 # Not used by QMP; hack to let us use X86CPUFeatureWordInfoList internally
 #
-# Since 2.5
+# Since: 2.5
 ##
 { 'struct': 'DummyForceArrays',
   'data': { 'unused': ['X86CPUFeatureWordInfo'] } }
