@@ -3011,6 +3011,8 @@
 #define tcg_gen_concat_i32_i64 tcg_gen_concat_i32_i64_mips64el
 #define tcg_gen_deposit_i32 tcg_gen_deposit_i32_mips64el
 #define tcg_gen_deposit_i64 tcg_gen_deposit_i64_mips64el
+#define tcg_gen_deposit_z_i32 tcg_gen_deposit_z_i32_mips64el
+#define tcg_gen_deposit_z_i64 tcg_gen_deposit_z_i64_mips64el
 #define tcg_gen_discard_i64 tcg_gen_discard_i64_mips64el
 #define tcg_gen_div_i32 tcg_gen_div_i32_mips64el
 #define tcg_gen_div_i64 tcg_gen_div_i64_mips64el
