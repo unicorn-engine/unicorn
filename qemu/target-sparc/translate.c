@@ -2574,6 +2574,7 @@ static void gen_cas_asi(DisasContext *dc, TCGv addr, TCGv cmpv,
 
 static void gen_ldstub_asi(DisasContext *dc, TCGv dst, TCGv addr, int insn)
 {
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     DisasASI da = get_asi(dc, insn, MO_UB);
 
     switch (da.type) {
@@ -2583,8 +2584,31 @@ static void gen_ldstub_asi(DisasContext *dc, TCGv dst, TCGv addr, int insn)
         gen_ldstub(dc, dst, addr, da.mem_idx);
         break;
     default:
-        /* ??? Should be DAE_invalid_asi.  */
-        gen_exception(dc, TT_DATA_ACCESS);
+        /* ??? In theory, this should be raise DAE_invalid_asi.
+           But the SS-20 roms do ldstuba [%l0] #ASI_M_CTL, %o1.  */
+        if (dc->uc->parallel_cpus) {
+            gen_helper_exit_atomic(tcg_ctx, tcg_ctx->cpu_env);
+        } else {
+            TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
+            TCGv_i32 r_mop = tcg_const_i32(tcg_ctx, MO_UB);
+            TCGv_i64 s64, t64;
+
+            save_state(dc);
+            t64 = tcg_temp_new_i64(tcg_ctx);
+            gen_helper_ld_asi(tcg_ctx, t64, tcg_ctx->cpu_env, addr, r_asi, r_mop);
+
+            s64 = tcg_const_i64(tcg_ctx, 0xff);
+            gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, s64, r_asi, r_mop);
+            tcg_temp_free_i64(tcg_ctx, s64);
+            tcg_temp_free_i32(tcg_ctx, r_mop);
+            tcg_temp_free_i32(tcg_ctx, r_asi);
+
+            tcg_gen_trunc_i64_tl(tcg_ctx, dst, t64);
+            tcg_temp_free_i64(tcg_ctx, t64);
+
+            /* End the TB.  */
+            dc->npc = DYNAMIC_PC;
+        }
         break;
     }
 }
