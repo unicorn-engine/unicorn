@@ -395,7 +395,7 @@ static inline void cpu_loop_exec_tb(CPUState *cpu, TranslationBlock *tb,
 
     /* execute the generated code */
     ret = cpu_tb_exec(cpu, tb);
-    *last_tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
+    tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
     *tb_exit = ret & TB_EXIT_MASK;
     switch (*tb_exit) {
     case TB_EXIT_REQUESTED:
@@ -419,6 +419,7 @@ static inline void cpu_loop_exec_tb(CPUState *cpu, TranslationBlock *tb,
         abort();
 #else
         int insns_left = cpu->icount_decr.u32;
+        *last_tb = NULL;
         if (cpu->icount_extra && insns_left >= 0) {
             /* Refill decrementer and continue execution.  */
             cpu->icount_extra += insns_left;
@@ -428,18 +429,18 @@ static inline void cpu_loop_exec_tb(CPUState *cpu, TranslationBlock *tb,
         } else {
             if (insns_left > 0) {
                 /* Execute remaining instructions.  */
-                cpu_exec_nocache(cpu, insns_left, *last_tb, false);
+                cpu_exec_nocache(cpu, insns_left, tb, false);
                 // Unicorn: commented out
                 //align_clocks(sc, cpu);
             }
             cpu->exception_index = EXCP_INTERRUPT;
-            *last_tb = NULL;
             cpu_loop_exit(cpu);
         }
         break;
 #endif
     }
     default:
+        *last_tb = tb;
         break;
     }
 }
