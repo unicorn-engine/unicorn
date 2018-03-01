@@ -7108,10 +7108,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                                       tcg_const_i32(tcg_ctx, s->pc - s->cs_base));
             set_cc_op(s, CC_OP_EFLAGS);
         }
-        /* TF handling for the syscall insn is different. The TF bit is checked
-           after the syscall insn completes. This allows #DB to not be
-           generated after one has entered CPL0 if TF is set in FMASK.  */
-        gen_eob_worker(s, false, true);
+        gen_eob(s);
         break;
     case 0xe8: /* call im */
         {
@@ -7805,7 +7802,10 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     case 0x105: /* syscall */
         /* XXX: is it usable in real mode ? */
         gen_helper_syscall(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
-        gen_eob(s);
+        /* TF handling for the syscall insn is different. The TF bit is  checked
+           after the syscall insn completes. This allows #DB to not be
+           generated after one has entered CPL0 if TF is set in FMASK.  */
+        gen_eob_worker(s, false, true);
         break;
     case 0x107: /* sysret */
         if (!s->pe) {
