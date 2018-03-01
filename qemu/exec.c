@@ -432,7 +432,8 @@ address_space_translate_for_iotlb(CPUState *cpu, int asidx, hwaddr addr,
                                   hwaddr *xlat, hwaddr *plen)
 {
     MemoryRegionSection *section;
-    AddressSpaceDispatch *d = cpu->cpu_ases[asidx].memory_dispatch;
+    // Unicorn: atomic_read used instead of atomic_rcu_read
+    AddressSpaceDispatch *d = atomic_read(&cpu->cpu_ases[asidx].memory_dispatch);
 
     section = address_space_translate_internal(d, addr, xlat, plen, false);
 
@@ -1809,7 +1810,8 @@ static void tcg_commit(MemoryListener *listener)
      */
     // Unicorn: uses atomic_read instead of atomic_rcu_read
     d = atomic_read(&cpuas->as->dispatch);
-    cpuas->memory_dispatch = d;
+    // Unicorn: atomic_set used instead of atomic_rcu_set
+    atomic_set(&cpuas->memory_dispatch, d);
     tlb_flush(cpuas->cpu, 1);
 }
 
