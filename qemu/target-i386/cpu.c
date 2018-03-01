@@ -25,7 +25,6 @@
 #include "cpu.h"
 #include "exec/exec-all.h"
 #include "sysemu/cpus.h"
-#include "sysemu/kvm.h"
 
 #include "qapi/qmp/qerror.h"
 
@@ -232,6 +231,7 @@ static void x86_cpu_vendor_words2str(char *dst, uint32_t vendor1,
           CPUID_7_0_EBX_INVPCID, CPUID_7_0_EBX_RTM,
           CPUID_7_0_EBX_RDSEED */
 #define TCG_7_0_ECX_FEATURES (CPUID_7_0_ECX_PKU | CPUID_7_0_ECX_OSPKE)
+#define TCG_7_0_EDX_FEATURES 0
 #define TCG_APM_FEATURES 0
 #define TCG_6_EAX_FEATURES CPUID_6_EAX_ARAT
 
@@ -323,6 +323,23 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         true, 0,
         R_ECX,
         TCG_7_0_ECX_FEATURES,
+    },
+    // FEAT_7_0_EDX
+    {
+        {
+            NULL, NULL, "avx512-4vnniw", "avx512-4fmaps",
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+        },
+        7,
+        true, 0,
+        R_EDX,
+        TCG_7_0_EDX_FEATURES,
     },
     /* Feature names that are already defined on feature_name[] but
      * are set on CPUID[8000_0001].EDX on AMD CPUs don't have their
@@ -866,6 +883,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_7_0_ECX
             0,
+        // FEAT_7_0_EDX
+            0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX,
         // FEAT_8000_0001_ECX
@@ -890,6 +909,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX |
@@ -940,6 +961,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_7_0_ECX
             0,
+        // FEAT_7_0_EDX
+            0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX,
         // FEAT_8000_0001_ECX
@@ -964,6 +987,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         /* Missing: CPUID_EXT2_PDPE1GB, CPUID_EXT2_RDTSCP */
         // FEAT_8000_0001_EDX
@@ -1005,6 +1030,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_7_0_ECX
             0,
+        // FEAT_7_0_EDX
+            0,
         // FEAT_8000_0001_EDX
         // FEAT_8000_0001_ECX
             0,
@@ -1029,6 +1056,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_NX,
@@ -1090,6 +1119,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_7_0_ECX
             0,
+        // FEAT_7_0_EDX
+            0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_MMXEXT | CPUID_EXT2_3DNOW | CPUID_EXT2_3DNOWEXT,
         },
@@ -1116,6 +1147,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_7_0_ECX
             0,
+        // FEAT_7_0_EDX
+            0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_NX,
         // FEAT_8000_0001_ECX
@@ -1140,6 +1173,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_NX | CPUID_EXT2_SYSCALL,
@@ -1167,6 +1202,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_7_0_ECX
             0,
+        // FEAT_7_0_EDX
+            0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_NX | CPUID_EXT2_SYSCALL,
         // FEAT_8000_0001_ECX
@@ -1192,6 +1229,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX,
@@ -1219,6 +1258,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_SYSCALL | CPUID_EXT2_NX,
@@ -1266,6 +1307,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
@@ -1315,6 +1358,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_7_0_EBX_FSGSBASE | CPUID_7_0_EBX_SMEP |
             CPUID_7_0_EBX_ERMS,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
@@ -1367,6 +1412,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_7_0_EBX_BMI2 | CPUID_7_0_EBX_ERMS | CPUID_7_0_EBX_INVPCID,
         // FEAT_7_0_ECX
             0,
+        // FEAT_7_0_EDX
+            0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
             CPUID_EXT2_SYSCALL,
@@ -1418,6 +1465,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_7_0_EBX_BMI2 | CPUID_7_0_EBX_ERMS | CPUID_7_0_EBX_INVPCID |
             CPUID_7_0_EBX_RTM,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
@@ -1472,6 +1521,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_7_0_EBX_SMAP,
         // FEAT_7_0_ECX
             0,
+        // FEAT_7_0_EDX
+            0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
             CPUID_EXT2_SYSCALL,
@@ -1524,6 +1575,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_7_0_EBX_RTM | CPUID_7_0_EBX_RDSEED | CPUID_7_0_EBX_ADX |
             CPUID_7_0_EBX_SMAP,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
@@ -1578,6 +1631,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_7_0_EBX_SMAP | CPUID_7_0_EBX_MPX,
         // FEAT_7_0_ECX
             0,
+        // FEAT_7_0_EDX
+            0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_NX |
             CPUID_EXT2_SYSCALL,
@@ -1629,6 +1684,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             0,
         // FEAT_7_0_ECX
             0,
+        // FEAT_7_0_EDX
+            0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_FXSR | CPUID_EXT2_MMX |
             CPUID_EXT2_NX | CPUID_EXT2_PSE36 | CPUID_EXT2_PAT |
@@ -1656,6 +1713,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_FXSR |
@@ -1688,6 +1747,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP | CPUID_EXT2_FXSR |
@@ -1723,6 +1784,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP |
@@ -1760,6 +1823,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_7_0_EBX
             0,
         // FEAT_7_0_ECX
+            0,
+        // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
             CPUID_EXT2_LM | CPUID_EXT2_RDTSCP |
@@ -2543,7 +2608,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             if ((*ecx & CPUID_7_0_ECX_PKU) && env->cr[4] & CR4_PKE_MASK) {
                 *ecx |= CPUID_7_0_ECX_OSPKE;
             }
-            *edx = 0; /* Reserved */
+            *edx = env->features[FEAT_7_0_EDX]; /* Feature flags */
         } else {
             *eax = 0;
             *ebx = 0;
