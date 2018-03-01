@@ -2173,29 +2173,19 @@ static inline void gen_ne_fop_QD(DisasContext *dc, int rd, int rs,
 static void gen_swap(DisasContext *dc, TCGv dst, TCGv src,
                      TCGv addr, int mmu_idx, TCGMemOp memop)
 {
-    /* ??? Should be atomic.  */
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    TCGv t0 = tcg_temp_new(tcg_ctx);
     gen_address_mask(dc, addr);
-    tcg_gen_qemu_ld_tl(dc->uc, t0, addr, mmu_idx, memop);
-    tcg_gen_qemu_st_tl(dc->uc, src, addr, mmu_idx, memop);
-    tcg_gen_mov_tl(tcg_ctx, dst, t0);
-    tcg_temp_free(tcg_ctx, t0);
+    tcg_gen_atomic_xchg_tl(tcg_ctx, dst, addr, src, mmu_idx, memop);
 }
 
 static void gen_ldstub(DisasContext *dc, TCGv dst, TCGv addr, int mmu_idx)
 {
-    /* ??? Should be atomic.  */
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
-    TCGv_i32 t0 = tcg_temp_new_i32(tcg_ctx);
-    TCGv_i32 t1 = tcg_const_i32(tcg_ctx, 0xff);
 
+    TCGv m1 = tcg_const_tl(tcg_ctx, 0xff);
     gen_address_mask(dc, addr);
-    tcg_gen_qemu_ld_i32(dc->uc, t0, addr, mmu_idx, MO_UB);
-    tcg_gen_qemu_st_i32(dc->uc, t1, addr, mmu_idx, MO_UB);
-    tcg_gen_extu_i32_tl(tcg_ctx, dst, t0);
-    tcg_temp_free_i32(tcg_ctx, t0);
-    tcg_temp_free_i32(tcg_ctx, t1);
+    tcg_gen_atomic_xchg_tl(tcg_ctx, dst, addr, m1, mmu_idx, MO_UB);
+    tcg_temp_free(tcg_ctx, m1);
 }
 
 /* asi moves */
