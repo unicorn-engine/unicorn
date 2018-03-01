@@ -59,6 +59,7 @@
 #define address_space_init address_space_init_powerpc
 #define address_space_init_dispatch address_space_init_dispatch_powerpc
 #define address_space_init_shareable address_space_init_shareable_powerpc
+#define address_space_get_iotlb_entry address_space_get_iotlb_entry_powerpc
 #define address_space_ldl address_space_ldl_powerpc
 #define address_space_ldl_be address_space_ldl_be_powerpc
 #define address_space_ldl_be_cached address_space_ldl_be_cached_powerpc
@@ -2858,8 +2859,8 @@
 #define strpadcpy strpadcpy_powerpc
 #define strstart strstart_powerpc
 #define stw_be_p stw_be_p_powerpc
-#define stw_be_phys_cached stw_be_phys_cached_powerpc
 #define stw_be_phys stw_be_phys_powerpc
+#define stw_be_phys_cached stw_be_phys_cached_powerpc
 #define stw_he_p stw_he_p_powerpc
 #define stw_le_p stw_le_p_powerpc
 #define stw_le_phys stw_le_phys_powerpc

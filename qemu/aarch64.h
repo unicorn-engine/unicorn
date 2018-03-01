@@ -59,6 +59,7 @@
 #define address_space_init address_space_init_aarch64
 #define address_space_init_dispatch address_space_init_dispatch_aarch64
 #define address_space_init_shareable address_space_init_shareable_aarch64
+#define address_space_get_iotlb_entry address_space_get_iotlb_entry_aarch64
 #define address_space_ldl address_space_ldl_aarch64
 #define address_space_ldl_be address_space_ldl_be_aarch64
 #define address_space_ldl_be_cached address_space_ldl_be_cached_aarch64
@@ -2858,8 +2859,8 @@
 #define strpadcpy strpadcpy_aarch64
 #define strstart strstart_aarch64
 #define stw_be_p stw_be_p_aarch64
-#define stw_be_phys_cached stw_be_phys_cached_aarch64
 #define stw_be_phys stw_be_phys_aarch64
+#define stw_be_phys_cached stw_be_phys_cached_aarch64
 #define stw_he_p stw_he_p_aarch64
 #define stw_le_p stw_le_p_aarch64
 #define stw_le_phys stw_le_phys_aarch64

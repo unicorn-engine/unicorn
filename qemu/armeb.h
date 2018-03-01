@@ -59,6 +59,7 @@
 #define address_space_init address_space_init_armeb
 #define address_space_init_dispatch address_space_init_dispatch_armeb
 #define address_space_init_shareable address_space_init_shareable_armeb
+#define address_space_get_iotlb_entry address_space_get_iotlb_entry_armeb
 #define address_space_ldl address_space_ldl_armeb
 #define address_space_ldl_be address_space_ldl_be_armeb
 #define address_space_ldl_be_cached address_space_ldl_be_cached_armeb
@@ -2858,8 +2859,8 @@
 #define strpadcpy strpadcpy_armeb
 #define strstart strstart_armeb
 #define stw_be_p stw_be_p_armeb
-#define stw_be_phys_cached stw_be_phys_cached_armeb
 #define stw_be_phys stw_be_phys_armeb
+#define stw_be_phys_cached stw_be_phys_cached_armeb
 #define stw_he_p stw_he_p_armeb
 #define stw_le_p stw_le_p_armeb
 #define stw_le_phys stw_le_phys_armeb

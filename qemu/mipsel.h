@@ -59,6 +59,7 @@
 #define address_space_init address_space_init_mipsel
 #define address_space_init_dispatch address_space_init_dispatch_mipsel
 #define address_space_init_shareable address_space_init_shareable_mipsel
+#define address_space_get_iotlb_entry address_space_get_iotlb_entry_mipsel
 #define address_space_ldl address_space_ldl_mipsel
 #define address_space_ldl_be address_space_ldl_be_mipsel
 #define address_space_ldl_be_cached address_space_ldl_be_cached_mipsel
@@ -2858,8 +2859,8 @@
 #define strpadcpy strpadcpy_mipsel
 #define strstart strstart_mipsel
 #define stw_be_p stw_be_p_mipsel
-#define stw_be_phys_cached stw_be_phys_cached_mipsel
 #define stw_be_phys stw_be_phys_mipsel
+#define stw_be_phys_cached stw_be_phys_cached_mipsel
 #define stw_he_p stw_he_p_mipsel
 #define stw_le_p stw_le_p_mipsel
 #define stw_le_phys stw_le_phys_mipsel

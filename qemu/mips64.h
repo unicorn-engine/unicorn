@@ -59,6 +59,7 @@
 #define address_space_init address_space_init_mips64
 #define address_space_init_dispatch address_space_init_dispatch_mips64
 #define address_space_init_shareable address_space_init_shareable_mips64
+#define address_space_get_iotlb_entry address_space_get_iotlb_entry_mips64
 #define address_space_ldl address_space_ldl_mips64
 #define address_space_ldl_be address_space_ldl_be_mips64
 #define address_space_ldl_be_cached address_space_ldl_be_cached_mips64
@@ -2858,8 +2859,8 @@
 #define strpadcpy strpadcpy_mips64
 #define strstart strstart_mips64
 #define stw_be_p stw_be_p_mips64
-#define stw_be_phys_cached stw_be_phys_cached_mips64
 #define stw_be_phys stw_be_phys_mips64
+#define stw_be_phys_cached stw_be_phys_cached_mips64
 #define stw_he_p stw_he_p_mips64
 #define stw_le_p stw_le_p_mips64
 #define stw_le_phys stw_le_phys_mips64
