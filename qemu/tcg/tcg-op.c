@@ -549,6 +549,21 @@ void tcg_gen_clrsb_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg)
     }
 }
 
+void tcg_gen_ctpop_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1)
+{
+    if (TCG_TARGET_HAS_ctpop_i32) {
+        tcg_gen_op2_i32(s, INDEX_op_ctpop_i32, ret, arg1);
+    } else if (TCG_TARGET_HAS_ctpop_i64) {
+        TCGv_i64 t = tcg_temp_new_i64(s);
+        tcg_gen_extu_i32_i64(s, t, arg1);
+        tcg_gen_ctpop_i64(s, t, t);
+        tcg_gen_extrl_i64_i32(s, ret, t);
+        tcg_temp_free_i64(s, t);
+    } else {
+        gen_helper_ctpop_i32(s, ret, arg1);
+    }
+}
+
 void tcg_gen_rotl_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2)
 {
     if (TCG_TARGET_HAS_rot_i32) {
@@ -1877,6 +1892,20 @@ void tcg_gen_clrsb_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg)
         tcg_temp_free_i64(s, t);
     } else {
         gen_helper_clrsb_i64(s, ret, arg);
+    }
+}
+
+void tcg_gen_ctpop_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1)
+{
+    if (TCG_TARGET_HAS_ctpop_i64) {
+        tcg_gen_op2_i64(s, INDEX_op_ctpop_i64, ret, arg1);
+    } else if (TCG_TARGET_REG_BITS == 32 && TCG_TARGET_HAS_ctpop_i32) {
+        tcg_gen_ctpop_i32(s, TCGV_HIGH(ret), TCGV_HIGH(arg1));
+        tcg_gen_ctpop_i32(s, TCGV_LOW(ret), TCGV_LOW(arg1));
+        tcg_gen_add_i32(s, TCGV_LOW(ret), TCGV_LOW(ret), TCGV_HIGH(ret));
+        tcg_gen_movi_i32(s, TCGV_HIGH(ret), 0);
+    } else {
+        gen_helper_ctpop_i64(s, ret, arg1);
     }
 }
 

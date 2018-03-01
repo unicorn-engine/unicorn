@@ -1568,6 +1568,8 @@
 #define helper_clrsb_i64 helper_clrsb_i64_aarch64
 #define helper_clz_i32 helper_clz_i32_aarch64
 #define helper_clz_i64 helper_clz_i64_aarch64
+#define helper_ctpop_i32 helper_ctpop_i32_aarch64
+#define helper_ctpop_i64 helper_ctpop_i64_aarch64
 #define helper_ctz_i32 helper_ctz_i32_aarch64
 #define helper_ctz_i64 helper_ctz_i64_aarch64
 #define helper_cpsr_read helper_cpsr_read_aarch64
@@ -3017,6 +3019,8 @@
 #define tcg_gen_clz_i64 tcg_gen_clz_i64_aarch64
 #define tcg_gen_clzi_i32 tcg_gen_clzi_i32_aarch64
 #define tcg_gen_clzi_i64 tcg_gen_clzi_i64_aarch64
+#define tcg_gen_ctpop_i32 tcg_gen_ctpop_i32_aarch64
+#define tcg_gen_ctpop_i64 tcg_gen_ctpop_i64_aarch64
 #define tcg_gen_ctz_i32 tcg_gen_ctz_i32_aarch64
 #define tcg_gen_ctz_i64 tcg_gen_ctz_i64_aarch64
 #define tcg_gen_ctzi_i32 tcg_gen_ctzi_i32_aarch64
