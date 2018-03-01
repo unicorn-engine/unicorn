@@ -2431,6 +2431,18 @@ static const TCGTargetOpDef x86_op_defs[] = {
     { -1 },
 };
 
+static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
+{
+    int i, n = ARRAY_SIZE(x86_op_defs);
+
+    for (i = 0; i < n; ++i) {
+        if (x86_op_defs[i].op == op) {
+            return &x86_op_defs[i];
+        }
+    }
+    return NULL;
+}
+
 static int tcg_target_callee_save_regs[] = {
 #if TCG_TARGET_REG_BITS == 64
     TCG_REG_RBP,
@@ -2592,6 +2604,4 @@ static void tcg_target_init(TCGContext *s)
 
     tcg_regset_clear(s->reserved_regs);
     tcg_regset_set_reg(s->reserved_regs, TCG_REG_CALL_STACK);
-
-    tcg_add_target_add_op_defs(s, x86_op_defs);
 }

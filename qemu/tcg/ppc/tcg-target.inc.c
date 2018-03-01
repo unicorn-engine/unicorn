@@ -2625,6 +2625,18 @@ static const TCGTargetOpDef ppc_op_defs[] = {
     { -1 },
 };
 
+static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
+{
+    int i, n = ARRAY_SIZE(ppc_op_defs);
+
+    for (i = 0; i < n; ++i) {
+        if (ppc_op_defs[i].op == op) {
+            return &ppc_op_defs[i];
+        }
+    }
+    return NULL;
+}
+
 static void tcg_target_init(TCGContext *s)
 {
     unsigned long hwcap = qemu_getauxval(AT_HWCAP);
@@ -2661,8 +2673,6 @@ static void tcg_target_init(TCGContext *s)
     if (USE_REG_RA) {
         tcg_regset_set_reg(s->reserved_regs, TCG_REG_RA);  /* return addr */
     }
-
-    tcg_add_target_add_op_defs(s, ppc_op_defs);
 }
 
 #ifdef __ELF__
