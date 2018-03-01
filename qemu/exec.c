@@ -2534,17 +2534,42 @@ uint64_t ldq_be_phys(AddressSpace *as, hwaddr addr)
     return address_space_ldq_be(as, addr, MEMTXATTRS_UNSPECIFIED, NULL);
 }
 
-/* XXX: optimize */
 uint32_t address_space_ldub(AddressSpace *as, hwaddr addr,
                             MemTxAttrs attrs, MemTxResult *result)
 {
-    uint8_t val;
+    uint8_t *ptr;
+    uint64_t val;
+    MemoryRegion *mr;
+    hwaddr l = 1;
+    hwaddr addr1;
     MemTxResult r;
+    // Unicorn: commented out
+    //bool release_lock = false;
 
-    r = address_space_rw(as, addr, attrs, &val, 1, 0);
+    //rcu_read_lock();
+    mr = address_space_translate(as, addr, &addr1, &l, false);
+    if (!memory_access_is_direct(mr, false)) {
+        // Unicorn: commented out
+        //release_lock |= prepare_mmio_access(mr);
+
+        /* I/O case */
+        r = memory_region_dispatch_read(mr, addr1, &val, 1, attrs);
+    } else {
+        /* RAM case */
+        ptr = qemu_map_ram_ptr(mr->uc, mr->ram_block, addr1);
+        val = ldub_p(ptr);
+        r = MEMTX_OK;
+    }
     if (result) {
         *result = r;
     }
+    // Unicorn: if'd out
+#if 0
+    if (release_lock) {
+        qemu_mutex_unlock_iothread();
+    }
+    rcu_read_unlock();
+#endif
     return val;
 }
 
