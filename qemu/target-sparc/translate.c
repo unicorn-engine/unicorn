@@ -2812,15 +2812,27 @@ static void gen_ldda_asi(DisasContext *dc, TCGv addr, int insn, int rd)
         break;
 
     default:
+        /* ??? In theory we've handled all of the ASIs that are valid
+           for ldda, and this should raise DAE_invalid_asi.  However,
+           real hardware allows others.  This can be seen with e.g.
+           FreeBSD 10.3 wrt ASI_IC_TAG.  */
         {
             TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
+            TCGv_i32 r_mop = tcg_const_i32(tcg_ctx, da.memop);
+            TCGv_i64 tmp = tcg_temp_new_i64(tcg_ctx);
 
             save_state(dc);
-            gen_helper_ldda_asi(tcg_ctx, tcg_ctx->cpu_env, addr, r_asi);
+            gen_helper_ld_asi(tcg_ctx, tmp, tcg_ctx->cpu_env, addr, r_asi, r_mop);
             tcg_temp_free_i32(tcg_ctx, r_asi);
+            tcg_temp_free_i32(tcg_ctx, r_mop);
 
-            tcg_gen_ld_i64(tcg_ctx, hi, tcg_ctx->cpu_env, offsetof(CPUSPARCState, qt0.high));
-            tcg_gen_ld_i64(tcg_ctx, lo, tcg_ctx->cpu_env, offsetof(CPUSPARCState, qt0.low));
+            /* See above.  */
+            if ((da.memop & MO_BSWAP) == MO_TE) {
+                tcg_gen_extr32_i64(tcg_ctx, lo, hi, tmp);
+            } else {
+                tcg_gen_extr32_i64(tcg_ctx, hi, lo, tmp);
+            }
+            tcg_temp_free_i64(tcg_ctx, tmp);
         }
         break;
     }
@@ -2866,15 +2878,21 @@ static void gen_stda_asi(DisasContext *dc, TCGv hi, TCGv addr,
         break;
 
     default:
+        /* ??? In theory we've handled all of the ASIs that are valid
+           for stda, and this should raise DAE_invalid_asi.  */
         {
             TCGv_i32 r_asi = tcg_const_i32(tcg_ctx, da.asi);
-            TCGv_i32 r_mop = tcg_const_i32(tcg_ctx, MO_Q);
-            TCGv_i64 t64;
+            TCGv_i32 r_mop = tcg_const_i32(tcg_ctx, da.memop);
+            TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
+
+            /* See above.  */
+            if ((da.memop & MO_BSWAP) == MO_TE) {
+                tcg_gen_concat32_i64(tcg_ctx, t64, lo, hi);
+            } else {
+                tcg_gen_concat32_i64(tcg_ctx, t64, hi, lo);
+            }
 
             save_state(dc);
-
-            t64 = tcg_temp_new_i64(tcg_ctx);
-            tcg_gen_concat_tl_i64(tcg_ctx, t64, lo, hi);
             gen_helper_st_asi(tcg_ctx, tcg_ctx->cpu_env, addr, t64, r_asi, r_mop);
             tcg_temp_free_i32(tcg_ctx, r_mop);
             tcg_temp_free_i32(tcg_ctx, r_asi);
