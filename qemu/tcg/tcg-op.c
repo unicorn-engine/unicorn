@@ -496,33 +496,27 @@ void tcg_gen_ctz_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2)
         tcg_gen_extrl_i64_i32(s, ret, t1);
         tcg_temp_free_i64(s, t1);
         tcg_temp_free_i64(s, t2);
-    } else if (TCG_TARGET_HAS_clz_i32) {
-        TCGv_i32 t1 = tcg_temp_new_i32(s);
-        TCGv_i32 t2 = tcg_temp_new_i32(s);
-        tcg_gen_neg_i32(s, t1, arg1);
-        tcg_gen_xori_i32(s, t2, arg2, 31);
-        tcg_gen_and_i32(s, t1, t1, arg1);
-        tcg_gen_clz_i32(s, ret, t1, t2);
-        tcg_temp_free_i32(s, t1);
-        tcg_temp_free_i32(s, t2);
-        tcg_gen_xori_i32(s, ret, ret, 31);
-    } else if (TCG_TARGET_HAS_clz_i64) {
-        TCGv_i32 t1 = tcg_temp_new_i32(s);
-        TCGv_i32 t2 = tcg_temp_new_i32(s);
-        TCGv_i64 x1 = tcg_temp_new_i64(s);
-        TCGv_i64 x2 = tcg_temp_new_i64(s);
-        tcg_gen_neg_i32(s, t1, arg1);
-        tcg_gen_xori_i32(s, t2, arg2, 63);
-        tcg_gen_and_i32(s, t1, t1, arg1);
-        tcg_gen_extu_i32_i64(s, x1, t1);
-        tcg_gen_extu_i32_i64(s, x2, t2);
-        tcg_temp_free_i32(s, t1);
-        tcg_temp_free_i32(s, t2);
-        tcg_gen_clz_i64(s, x1, x1, x2);
-        tcg_gen_extrl_i64_i32(s, ret, x1);
-        tcg_temp_free_i64(s, x1);
-        tcg_temp_free_i64(s, x2);
-        tcg_gen_xori_i32(s, ret, ret, 63);
+    } else if (TCG_TARGET_HAS_ctpop_i32
+               || TCG_TARGET_HAS_ctpop_i64
+               || TCG_TARGET_HAS_clz_i32
+               || TCG_TARGET_HAS_clz_i64) {
+        TCGv_i32 z, t = tcg_temp_new_i32(s);
+
+        if (TCG_TARGET_HAS_ctpop_i32 || TCG_TARGET_HAS_ctpop_i64) {
+            tcg_gen_subi_i32(s, t, arg1, 1);
+            tcg_gen_andc_i32(s, t, t, arg1);
+            tcg_gen_ctpop_i32(s, t, t);
+        } else {
+            /* Since all non-x86 hosts have clz(0) == 32, don't fight it.  */
+            tcg_gen_neg_i32(s, t, arg1);
+            tcg_gen_and_i32(s, t, t, arg1);
+            tcg_gen_clzi_i32(s, t, t, 32);
+            tcg_gen_xori_i32(s, t, t, 31);
+        }
+        z = tcg_const_i32(s, 0);
+        tcg_gen_movcond_i32(s, TCG_COND_EQ, ret, arg1, z, arg2, t);
+        tcg_temp_free_i32(s, t);
+        tcg_temp_free_i32(s, z);
     } else {
         gen_helper_ctz_i32(s, ret, arg1, arg2);
     }
@@ -530,9 +524,18 @@ void tcg_gen_ctz_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2)
 
 void tcg_gen_ctzi_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1, uint32_t arg2)
 {
-    TCGv_i32 t = tcg_const_i32(s, arg2);
-    tcg_gen_ctz_i32(s, ret, arg1, t);
-    tcg_temp_free_i32(s, t);
+    if (!TCG_TARGET_HAS_ctz_i32 && TCG_TARGET_HAS_ctpop_i32 && arg2 == 32) {
+        /* This equivalence has the advantage of not requiring a fixup.  */
+        TCGv_i32 t = tcg_temp_new_i32(s);
+        tcg_gen_subi_i32(s, t, arg1, 1);
+        tcg_gen_andc_i32(s, t, t, arg1);
+        tcg_gen_ctpop_i32(s, ret, t);
+        tcg_temp_free_i32(s, t);
+    } else {
+        TCGv_i32 t = tcg_const_i32(s, arg2);
+        tcg_gen_ctz_i32(s, ret, arg1, t);
+        tcg_temp_free_i32(s, t);
+    }
 }
 
 void tcg_gen_clrsb_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg)
@@ -1848,16 +1851,24 @@ void tcg_gen_ctz_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64 arg2)
 {
     if (TCG_TARGET_HAS_ctz_i64) {
         tcg_gen_op3_i64(s, INDEX_op_ctz_i64, ret, arg1, arg2);
-    } else if (TCG_TARGET_HAS_clz_i64) {
-        TCGv_i64 t1 = tcg_temp_new_i64(s);
-        TCGv_i64 t2 = tcg_temp_new_i64(s);
-        tcg_gen_neg_i64(s, t1, arg1);
-        tcg_gen_xori_i64(s, t2, arg2, 63);
-        tcg_gen_and_i64(s, t1, t1, arg1);
-        tcg_gen_clz_i64(s, ret, t1, t2);
-        tcg_temp_free_i64(s, t1);
-        tcg_temp_free_i64(s, t2);
-        tcg_gen_xori_i64(s, ret, ret, 63);
+    } else if (TCG_TARGET_HAS_ctpop_i64 || TCG_TARGET_HAS_clz_i64) {
+        TCGv_i64 z, t = tcg_temp_new_i64(s);
+
+        if (TCG_TARGET_HAS_ctpop_i64) {
+            tcg_gen_subi_i64(s, t, arg1, 1);
+            tcg_gen_andc_i64(s, t, t, arg1);
+            tcg_gen_ctpop_i64(s, t, t);
+        } else {
+            /* Since all non-x86 hosts have clz(0) == 64, don't fight it.  */
+            tcg_gen_neg_i64(s, t, arg1);
+            tcg_gen_and_i64(s, t, t, arg1);
+            tcg_gen_clzi_i64(s, t, t, 64);
+            tcg_gen_xori_i64(s, t, t, 63);
+        }
+        z = tcg_const_i64(s, 0);
+        tcg_gen_movcond_i64(s, TCG_COND_EQ, ret, arg1, z, arg2, t);
+        tcg_temp_free_i64(s, t);
+        tcg_temp_free_i64(s, z);
     } else {
         gen_helper_ctz_i64(s, ret, arg1, arg2);
     }
@@ -1874,6 +1885,15 @@ void tcg_gen_ctzi_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, uint64_t arg2)
         tcg_gen_ctz_i32(s, TCGV_LOW(ret), TCGV_LOW(arg1), t32);
         tcg_gen_movi_i32(s, TCGV_HIGH(ret), 0);
         tcg_temp_free_i32(s, t32);
+    } else if (!TCG_TARGET_HAS_ctz_i64
+               && TCG_TARGET_HAS_ctpop_i64
+               && arg2 == 64) {
+        /* This equivalence has the advantage of not requiring a fixup.  */
+        TCGv_i64 t = tcg_temp_new_i64(s);
+        tcg_gen_subi_i64(s, t, arg1, 1);
+        tcg_gen_andc_i64(s, t, t, arg1);
+        tcg_gen_ctpop_i64(s, ret, t);
+        tcg_temp_free_i64(s, t);
     } else {
         TCGv_i64 t64 = tcg_const_i64(s, arg2);
         tcg_gen_ctz_i64(s, ret, arg1, t64);
