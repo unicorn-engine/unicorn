@@ -686,7 +686,6 @@
 #define gen_helper_clear_pstate_ss gen_helper_clear_pstate_ss_aarch64
 #define gen_helper_clz32 gen_helper_clz32_aarch64
 #define gen_helper_clz64 gen_helper_clz64_aarch64
-#define gen_helper_clz_arm gen_helper_clz_arm_aarch64
 #define gen_helper_cpsr_read gen_helper_cpsr_read_aarch64
 #define gen_helper_cpsr_write gen_helper_cpsr_write_aarch64
 #define gen_helper_cpsr_write_eret gen_helper_cpsr_write_eret_aarch64

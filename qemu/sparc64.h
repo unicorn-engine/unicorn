@@ -686,7 +686,6 @@
 #define gen_helper_clear_pstate_ss gen_helper_clear_pstate_ss_sparc64
 #define gen_helper_clz32 gen_helper_clz32_sparc64
 #define gen_helper_clz64 gen_helper_clz64_sparc64
-#define gen_helper_clz_arm gen_helper_clz_arm_sparc64
 #define gen_helper_cpsr_read gen_helper_cpsr_read_sparc64
 #define gen_helper_cpsr_write gen_helper_cpsr_write_sparc64
 #define gen_helper_cpsr_write_eret gen_helper_cpsr_write_eret_sparc64

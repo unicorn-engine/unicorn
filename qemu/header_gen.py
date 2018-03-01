@@ -692,7 +692,6 @@ symbols = (
     'gen_helper_clear_pstate_ss',
     'gen_helper_clz32',
     'gen_helper_clz64',
-    'gen_helper_clz_arm',
     'gen_helper_cpsr_read',
     'gen_helper_cpsr_write',
     'gen_helper_cpsr_write_eret',

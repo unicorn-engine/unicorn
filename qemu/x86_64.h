@@ -686,7 +686,6 @@
 #define gen_helper_clear_pstate_ss gen_helper_clear_pstate_ss_x86_64
 #define gen_helper_clz32 gen_helper_clz32_x86_64
 #define gen_helper_clz64 gen_helper_clz64_x86_64
-#define gen_helper_clz_arm gen_helper_clz_arm_x86_64
 #define gen_helper_cpsr_read gen_helper_cpsr_read_x86_64
 #define gen_helper_cpsr_write gen_helper_cpsr_write_x86_64
 #define gen_helper_cpsr_write_eret gen_helper_cpsr_write_eret_x86_64
