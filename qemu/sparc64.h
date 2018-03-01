@@ -3403,12 +3403,10 @@
 #define helper_fsubs helper_fsubs_sparc64
 #define helper_ld_asi helper_ld_asi_sparc64
 #define helper_ldfsr helper_ldfsr_sparc64
-#define helper_ldqf helper_ldqf_sparc64
 #define helper_restore helper_restore_sparc64
 #define helper_save helper_save_sparc64
 #define helper_sdiv_cc helper_sdiv_cc_sparc64
 #define helper_st_asi helper_st_asi_sparc64
-#define helper_stqf helper_stqf_sparc64
 #define helper_taddcctv helper_taddcctv_sparc64
 #define helper_tsubcctv helper_tsubcctv_sparc64
 #define helper_udiv_cc helper_udiv_cc_sparc64
