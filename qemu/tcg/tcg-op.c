@@ -535,6 +535,20 @@ void tcg_gen_ctzi_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1, uint32_t arg2)
     tcg_temp_free_i32(s, t);
 }
 
+void tcg_gen_clrsb_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg)
+{
+    if (TCG_TARGET_HAS_clz_i32) {
+        TCGv_i32 t = tcg_temp_new_i32(s);
+        tcg_gen_sari_i32(s, t, arg, 31);
+        tcg_gen_xor_i32(s, t, t, arg);
+        tcg_gen_clzi_i32(s, t, t, 32);
+        tcg_gen_subi_i32(s, ret, t, 1);
+        tcg_temp_free_i32(s, t);
+    } else {
+        gen_helper_clrsb_i32(s, ret, arg);
+    }
+}
+
 void tcg_gen_rotl_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg1, TCGv_i32 arg2)
 {
     if (TCG_TARGET_HAS_rot_i32) {
@@ -1849,6 +1863,20 @@ void tcg_gen_ctzi_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, uint64_t arg2)
         TCGv_i64 t64 = tcg_const_i64(s, arg2);
         tcg_gen_ctz_i64(s, ret, arg1, t64);
         tcg_temp_free_i64(s, t64);
+    }
+}
+
+void tcg_gen_clrsb_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg)
+{
+    if (TCG_TARGET_HAS_clz_i64 || TCG_TARGET_HAS_clz_i32) {
+        TCGv_i64 t = tcg_temp_new_i64(s);
+        tcg_gen_sari_i64(s, t, arg, 63);
+        tcg_gen_xor_i64(s, t, t, arg);
+        tcg_gen_clzi_i64(s, t, t, 64);
+        tcg_gen_subi_i64(s, ret, t, 1);
+        tcg_temp_free_i64(s, t);
+    } else {
+        gen_helper_clrsb_i64(s, ret, arg);
     }
 }
 

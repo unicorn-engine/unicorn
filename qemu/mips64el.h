@@ -1564,7 +1564,8 @@
 #define helper_be_stq_mmu helper_be_stq_mmu_mips64el
 #define helper_be_stw_mmu helper_be_stw_mmu_mips64el
 #define helper_clear_pstate_ss helper_clear_pstate_ss_mips64el
-#define helper_clz_arm helper_clz_arm_mips64el
+#define helper_clrsb_i32 helper_clrsb_i32_mips64el
+#define helper_clrsb_i64 helper_clrsb_i64_mips64el
 #define helper_clz_i32 helper_clz_i32_mips64el
 #define helper_clz_i64 helper_clz_i64_mips64el
 #define helper_ctz_i32 helper_ctz_i32_mips64el
@@ -3010,6 +3011,8 @@
 #define tcg_gen_bswap32_i64 tcg_gen_bswap32_i64_mips64el
 #define tcg_gen_bswap64_i64 tcg_gen_bswap64_i64_mips64el
 #define tcg_gen_callN tcg_gen_callN_mips64el
+#define tcg_gen_clrsb_i32 tcg_gen_clrsb_i32_mips64el
+#define tcg_gen_clrsb_i64 tcg_gen_clrsb_i64_mips64el
 #define tcg_gen_clz_i32 tcg_gen_clz_i32_mips64el
 #define tcg_gen_clz_i64 tcg_gen_clz_i64_mips64el
 #define tcg_gen_clzi_i32 tcg_gen_clzi_i32_mips64el
