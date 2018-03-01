@@ -3032,6 +3032,8 @@
 #define tcg_gen_ext_i32_i64 tcg_gen_ext_i32_i64_mips64el
 #define tcg_gen_extr32_i64 tcg_gen_extr32_i64_mips64el
 #define tcg_gen_extr_i64_i32 tcg_gen_extr_i64_i32_mips64el
+#define tcg_gen_extract_i32 tcg_gen_extract_i32_mips64el
+#define tcg_gen_extract_i64 tcg_gen_extract_i64_mips64el
 #define tcg_gen_extrh_i64_i32 tcg_gen_extrh_i64_i32_mips64el
 #define tcg_gen_extrl_i64_i32 tcg_gen_extrl_i64_i32_mips64el
 #define tcg_gen_extu_i32_i64 tcg_gen_extu_i32_i64_mips64el
@@ -3123,6 +3125,8 @@
 #define tcg_gen_setcond_i64 tcg_gen_setcond_i64_mips64el
 #define tcg_gen_setcondi_i32 tcg_gen_setcondi_i32_mips64el
 #define tcg_gen_setcondi_i64 tcg_gen_setcondi_i64_mips64el
+#define tcg_gen_sextract_i32 tcg_gen_sextract_i32_mips64el
+#define tcg_gen_sextract_i64 tcg_gen_sextract_i64_mips64el
 #define tcg_gen_shifti_i64 tcg_gen_shifti_i64_mips64el
 #define tcg_gen_shl_i32 tcg_gen_shl_i32_mips64el
 #define tcg_gen_shl_i64 tcg_gen_shl_i64_mips64el

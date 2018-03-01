@@ -889,6 +889,19 @@ void tcg_optimize(TCGContext *s)
                              temps[args[2]].mask);
             break;
 
+        CASE_OP_32_64(extract):
+            mask = extract64(temps[args[1]].mask, args[2], args[3]);
+            if (args[2] == 0) {
+                affected = temps[args[1]].mask & ~mask;
+            }
+            break;
+        CASE_OP_32_64(sextract):
+            mask = sextract64(temps[args[1]].mask, args[2], args[3]);
+            if (args[2] == 0 && (tcg_target_long)mask >= 0) {
+                affected = temps[args[1]].mask & ~mask;
+            }
+            break;
+
         CASE_OP_32_64(or):
         CASE_OP_32_64(xor):
             mask = temps[args[1]].mask | temps[args[2]].mask;
@@ -1054,6 +1067,22 @@ void tcg_optimize(TCGContext *s)
             if (temp_is_const(s, args[1]) && temp_is_const(s, args[2])) {
                 tmp = (TCGArg)deposit64(temps[args[1]].val, args[3], args[4],
                                 temps[args[2]].val);
+                tcg_opt_gen_movi(s, op, args, args[0], tmp);
+                break;
+            }
+            goto do_default;
+
+        CASE_OP_32_64(extract):
+            if (temp_is_const(s, args[1])) {
+                tmp = extract64(temps[args[1]].val, args[2], args[3]);
+                tcg_opt_gen_movi(s, op, args, args[0], tmp);
+                break;
+            }
+            goto do_default;
+
+        CASE_OP_32_64(sextract):
+            if (temp_is_const(s, args[1])) {
+                tmp = sextract64(temps[args[1]].val, args[2], args[3]);
                 tcg_opt_gen_movi(s, op, args, args[0], tmp);
                 break;
             }
