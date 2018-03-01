@@ -3476,8 +3476,6 @@
 #define helper_bitrev helper_bitrev_mips
 #define helper_bitswap helper_bitswap_mips
 #define helper_cfc1 helper_cfc1_mips
-#define helper_clo helper_clo_mips
-#define helper_clz helper_clz_mips
 #define helper_cmp_d_eq helper_cmp_d_eq_mips
 #define helper_cmp_d_f helper_cmp_d_f_mips
 #define helper_cmp_d_le helper_cmp_d_le_mips
@@ -3600,8 +3598,6 @@
 #define helper_cmpu_lt_qb helper_cmpu_lt_qb_mips
 #define helper_ctc1 helper_ctc1_mips
 #define helper_dbitswap helper_dbitswap_mips
-#define helper_dclo helper_dclo_mips
-#define helper_dclz helper_dclz_mips
 #define helper_deret helper_deret_mips
 #define helper_dextp helper_dextp_mips
 #define helper_dextpdp helper_dextpdp_mips

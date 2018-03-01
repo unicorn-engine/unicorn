@@ -3680,29 +3680,38 @@ static void gen_cl (DisasContext *ctx, uint32_t opc,
         /* Treat as NOP. */
         return;
     }
-    t0 = tcg_temp_new(tcg_ctx);
+    t0 = cpu_gpr[rd];
     gen_load_gpr(ctx, t0, rs);
+
     switch (opc) {
     case OPC_CLO:
     case R6_OPC_CLO:
-        gen_helper_clo(tcg_ctx, cpu_gpr[rd], t0);
+#if defined(TARGET_MIPS64)
+    case OPC_DCLO:
+    case R6_OPC_DCLO:
+#endif
+        tcg_gen_not_tl(tcg_ctx, t0, t0);
         break;
+    }
+
+    switch (opc) {
+    case OPC_CLO:
+    case R6_OPC_CLO:
     case OPC_CLZ:
     case R6_OPC_CLZ:
-        gen_helper_clz(tcg_ctx, cpu_gpr[rd], t0);
+        tcg_gen_ext32u_tl(tcg_ctx, t0, t0);
+        tcg_gen_clzi_tl(tcg_ctx, t0, t0, TARGET_LONG_BITS);
+        tcg_gen_subi_tl(tcg_ctx, t0, t0, TARGET_LONG_BITS - 32);
         break;
 #if defined(TARGET_MIPS64)
     case OPC_DCLO:
     case R6_OPC_DCLO:
-        gen_helper_dclo(tcg_ctx, cpu_gpr[rd], t0);
-        break;
     case OPC_DCLZ:
     case R6_OPC_DCLZ:
-        gen_helper_dclz(tcg_ctx, cpu_gpr[rd], t0);
+        tcg_gen_clzi_i64(tcg_ctx, t0, t0, 64);
         break;
 #endif
     }
-    tcg_temp_free(tcg_ctx, t0);
 }
 
 /* Godson integer instructions */

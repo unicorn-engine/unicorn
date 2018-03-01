@@ -3476,8 +3476,6 @@
 #define helper_bitrev helper_bitrev_mipsel
 #define helper_bitswap helper_bitswap_mipsel
 #define helper_cfc1 helper_cfc1_mipsel
-#define helper_clo helper_clo_mipsel
-#define helper_clz helper_clz_mipsel
 #define helper_cmp_d_eq helper_cmp_d_eq_mipsel
 #define helper_cmp_d_f helper_cmp_d_f_mipsel
 #define helper_cmp_d_le helper_cmp_d_le_mipsel
@@ -3600,8 +3598,6 @@
 #define helper_cmpu_lt_qb helper_cmpu_lt_qb_mipsel
 #define helper_ctc1 helper_ctc1_mipsel
 #define helper_dbitswap helper_dbitswap_mipsel
-#define helper_dclo helper_dclo_mipsel
-#define helper_dclz helper_dclz_mipsel
 #define helper_deret helper_deret_mipsel
 #define helper_dextp helper_dextp_mipsel
 #define helper_dextpdp helper_dextpdp_mipsel
