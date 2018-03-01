@@ -3426,8 +3426,6 @@
 #define arm_regime_tbi1 arm_regime_tbi1_aarch64eb
 #define arm_register_el_change_hook arm_register_el_change_hook_aarch64eb
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64eb
-#define helper_cls32 helper_cls32_aarch64eb
-#define helper_cls64 helper_cls64_aarch64eb
 #define helper_crc32_64 helper_crc32_64_aarch64eb
 #define helper_crc32c_64 helper_crc32c_64_aarch64eb
 #define helper_fcvtx_f64_to_f32 helper_fcvtx_f64_to_f32_aarch64eb

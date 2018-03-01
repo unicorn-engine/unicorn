@@ -3442,8 +3442,6 @@ aarch64_symbols = (
     'arm_regime_tbi1',
     'arm_register_el_change_hook',
     'gen_a64_set_pc_im',
-    'helper_cls32',
-    'helper_cls64',
     'helper_crc32_64',
     'helper_crc32c_64',
     'helper_fcvtx_f64_to_f32',
