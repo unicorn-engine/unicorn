@@ -300,7 +300,7 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
             "avx512f", "avx512dq", "rdseed", "adx",
             "smap", "avx512ifma", "pcommit", "clflushopt",
             "clwb", NULL, "avx512pf", "avx512er",
-            "avx512cd", NULL, "avx512bw", "avx512vl",
+            "avx512cd", "sha-ni", "avx512bw", "avx512vl",
         },
         7,
         true, 0,
