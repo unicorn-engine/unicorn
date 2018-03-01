@@ -2384,6 +2384,134 @@ void cpu_physical_memory_unmap(AddressSpace *as, void *buffer, hwaddr len,
 #define RCU_READ_UNLOCK(...)     rcu_read_unlock()
 #include "memory_ldst.inc.c"
 
+int64_t address_space_cache_init(MemoryRegionCache *cache,
+                                 AddressSpace *as,
+                                 hwaddr addr,
+                                 hwaddr len,
+                                 bool is_write)
+{
+    hwaddr l, xlat;
+    MemoryRegion *mr;
+    void *ptr;
+
+    assert(len > 0);
+
+    l = len;
+    mr = address_space_translate(as, addr, &xlat, &l, is_write);
+    if (!memory_access_is_direct(mr, is_write)) {
+        return -EINVAL;
+    }
+
+    l = address_space_extend_translation(as, addr, len, mr, xlat, l, is_write);
+    ptr = qemu_ram_ptr_length(mr->uc, mr->ram_block, xlat, &l);
+
+    cache->xlat = xlat;
+    cache->is_write = is_write;
+    cache->mr = mr;
+    cache->ptr = ptr;
+    cache->len = l;
+    memory_region_ref(cache->mr);
+
+    return l;
+}
+
+void address_space_cache_invalidate(MemoryRegionCache *cache,
+                                    hwaddr addr,
+                                    hwaddr access_len)
+{
+    assert(cache->is_write);
+    invalidate_and_set_dirty(cache->mr, addr + cache->xlat, access_len);
+}
+
+void address_space_cache_destroy(MemoryRegionCache *cache)
+{
+    if (!cache->mr) {
+        return;
+    }
+
+    // Unicorn: If'd out
+#if 0
+    if (xen_enabled()) {
+        xen_invalidate_map_cache_entry(cache->ptr);
+    }
+#endif
+    memory_region_unref(cache->mr);
+}
+
+/* Called from RCU critical section.  This function has the same
+ * semantics as address_space_translate, but it only works on a
+ * predefined range of a MemoryRegion that was mapped with
+ * address_space_cache_init.
+ */
+static inline MemoryRegion *address_space_translate_cached(
+    MemoryRegionCache *cache, hwaddr addr, hwaddr *xlat,
+    hwaddr *plen, bool is_write)
+{
+    assert(addr < cache->len && *plen <= cache->len - addr);
+    *xlat = addr + cache->xlat;
+    return cache->mr;
+}
+
+// Unicorn: Necessary due to the fantastic way duplicate
+//          symbol errors are avoided.
+//          When appending the "_cache" suffix, the preprocessor
+//          replaces the names in the glue macros with the target's
+//          equivalent, resulting in names like "address_space_ldl_be_aarch64_cached"
+//          which is incorrect. Therefore undef all the offending macros beforehand.
+#undef address_space_ldl
+#undef address_space_ldl_be
+#undef address_space_ldl_le
+#undef address_space_ldq
+#undef address_space_ldq_be
+#undef address_space_ldq_le
+#undef address_space_ldub
+#undef address_space_lduw
+#undef address_space_lduw_be
+#undef address_space_lduw_le
+#undef address_space_stb
+#undef address_space_stl
+#undef address_space_stl_be
+#undef address_space_stl_le
+#undef address_space_stl_notdirty
+#undef address_space_stq
+#undef address_space_stq_be
+#undef address_space_stq_le
+#undef address_space_stw
+#undef address_space_stw_be
+#undef address_space_stw_le
+#undef ldl_be_phys
+#undef ldl_le_phys
+#undef ldl_phys
+#undef ldq_be_phys
+#undef ldq_le_phys
+#undef ldq_phys
+#undef ldub_phys
+#undef lduw_be_phys
+#undef lduw_le_phys
+#undef lduw_phys
+#undef stb_phys
+#undef stl_be_phys
+#undef stl_le_phys
+#undef stl_phys
+#undef stl_phys_notdirty
+#undef stq_be_phys
+#undef stq_le_phys
+#undef stq_phys
+#undef stw_be_phys
+#undef stw_le_phys
+#undef stw_phys
+
+#define ARG1_DECL                MemoryRegionCache *cache
+#define ARG1                     cache
+#define SUFFIX                   _cached
+#define TRANSLATE(...)           address_space_translate_cached(cache, __VA_ARGS__)
+#define IS_DIRECT(mr, is_write)  true
+#define MAP_RAM(mr, ofs)         (cache->ptr + (ofs - cache->xlat))
+#define INVALIDATE(mr, ofs, len) ((void)0)
+#define RCU_READ_LOCK()          ((void)0)
+#define RCU_READ_UNLOCK()        ((void)0)
+#include "memory_ldst.inc.c"
+
 /* virtual memory access for debug (includes writing to ROM) */
 int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
         uint8_t *buf, int len, int is_write)
