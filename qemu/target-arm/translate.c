@@ -287,31 +287,6 @@ static void gen_revsh(DisasContext *s, TCGv_i32 var)
     tcg_gen_ext16s_i32(tcg_ctx, var, var);
 }
 
-/* Unsigned bitfield extract.  */
-static void gen_ubfx(DisasContext *s, TCGv_i32 var, int shift, uint32_t mask)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    if (shift)
-        tcg_gen_shri_i32(tcg_ctx, var, var, shift);
-    tcg_gen_andi_i32(tcg_ctx, var, var, mask);
-}
-
-/* Signed bitfield extract.  */
-static void gen_sbfx(DisasContext *s, TCGv_i32 var, int shift, int width)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    uint32_t signbit;
-
-    if (shift)
-        tcg_gen_sari_i32(tcg_ctx, var, var, shift);
-    if (shift + width < 32) {
-        signbit = 1u << (width - 1);
-        tcg_gen_andi_i32(tcg_ctx, var, var, (1u << width) - 1);
-        tcg_gen_xori_i32(tcg_ctx, var, var, signbit);
-        tcg_gen_subi_i32(tcg_ctx, var, var, signbit);
-    }
-}
-
 /* Return (b << 32) + a. Mark inputs as dead */
 static TCGv_i64 gen_addq_msw(DisasContext *s, TCGv_i64 a, TCGv_i32 b)
 {
@@ -9333,9 +9308,9 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
                             goto illegal_op;
                         if (i < 32) {
                             if (op1 & 0x20) {
-                                gen_ubfx(s, tmp, shift, (1u << i) - 1);
+                                tcg_gen_extract_i32(tcg_ctx, tmp, tmp, shift, i);
                             } else {
-                                gen_sbfx(s, tmp, shift, i);
+                                tcg_gen_sextract_i32(tcg_ctx, tmp, tmp, shift, i);
                             }
                         }
                         store_reg(s, rd, tmp);
@@ -10654,15 +10629,17 @@ static int disas_thumb2_insn(CPUARMState *env, DisasContext *s, uint16_t insn_hw
                         imm++;
                         if (shift + imm > 32)
                             goto illegal_op;
-                        if (imm < 32)
-                            gen_sbfx(s, tmp, shift, imm);
+                        if (imm < 32) {
+                            tcg_gen_sextract_i32(tcg_ctx, tmp, tmp, shift, imm);
+                        }
                         break;
                     case 6: /* Unsigned bitfield extract.  */
                         imm++;
                         if (shift + imm > 32)
                             goto illegal_op;
-                        if (imm < 32)
-                            gen_ubfx(s, tmp, shift, (1u << imm) - 1);
+                        if (imm < 32) {
+                            tcg_gen_extract_i32(tcg_ctx, tmp, tmp, shift, imm);
+                        }
                         break;
                     case 3: /* Bitfield insert/clear.  */
                         if (imm < shift)
