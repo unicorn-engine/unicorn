@@ -4850,7 +4850,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                         gen_store_gpr(dc, rd, cpu_dst);
                         break;
                     case 0x2e: /* V9 popc */
-                        gen_helper_popc(tcg_ctx, cpu_dst, cpu_src2);
+                        tcg_gen_ctpop_tl(tcg_ctx, cpu_dst, cpu_src2);
                         gen_store_gpr(dc, rd, cpu_dst);
                         break;
                     case 0x2f: /* V9 movr */
