@@ -2261,7 +2261,7 @@ static void do_exg(TCGContext *tcg_ctx, TCGv reg1, TCGv reg2)
     tcg_temp_free(tcg_ctx, temp);
 }
 
-DISAS_INSN(exg_aa)
+DISAS_INSN(exg_dd)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
@@ -2269,7 +2269,7 @@ DISAS_INSN(exg_aa)
     do_exg(tcg_ctx, DREG(insn, 9), DREG(insn, 0));
 }
 
-DISAS_INSN(exg_dd)
+DISAS_INSN(exg_aa)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
