@@ -3020,6 +3020,8 @@ symbols = (
     'tcg_gen_muli_i64',
     'tcg_gen_muls2_i32',
     'tcg_gen_muls2_i64',
+    'tcg_gen_mulsu2_i32',
+    'tcg_gen_mulsu2_i64',
     'tcg_gen_mulu2_i32',
     'tcg_gen_mulu2_i64',
     'tcg_gen_nand_i32',
