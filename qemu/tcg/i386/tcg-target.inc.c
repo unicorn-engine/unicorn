@@ -186,7 +186,6 @@ static const char *target_parse_constraint(TCGArgConstraint *ct,
         tcg_regset_set_reg(ct->u.regs, TCG_REG_EBX);
         break;
     case 'c':
-    case_c:
         ct->ct |= TCG_CT_REG;
         tcg_regset_set_reg(ct->u.regs, TCG_REG_ECX);
         break;
@@ -215,7 +214,6 @@ static const char *target_parse_constraint(TCGArgConstraint *ct,
         tcg_regset_set32(ct->u.regs, 0, 0xf);
         break;
     case 'r':
-    case_r:
         ct->ct |= TCG_CT_REG;
         if (TCG_TARGET_REG_BITS == 64) {
             tcg_regset_set32(ct->u.regs, 0, 0xffff);
@@ -223,13 +221,6 @@ static const char *target_parse_constraint(TCGArgConstraint *ct,
             tcg_regset_set32(ct->u.regs, 0, 0xff);
         }
         break;
-    case 'C':
-        /* With SHRX et al, we need not use ECX as shift count register.  */
-        if (have_bmi2) {
-            goto case_r;
-        } else {
-            goto case_c;
-        }
 
         /* qemu_ld/st address constraint */
     case 'L':
@@ -2060,6 +2051,17 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
         break;
 
     OP_32_64(shl):
+        /* For small constant 3-operand shift, use LEA.  */
+        if (const_a2 && a0 != a1 && (a2 - 1) < 3) {
+            if (a2 - 1 == 0) {
+                /* shl $1,a1,a0 -> lea (a1,a1),a0 */
+                tcg_out_modrm_sib_offset(s, OPC_LEA + rexw, a0, a1, a1, 0, 0);
+            } else {
+                /* shl $n,a1,a0 -> lea 0(,a1,n),a0 */
+                tcg_out_modrm_sib_offset(s, OPC_LEA + rexw, a0, -1, a1, a2, 0);
+            }
+            break;
+        }
         c = SHIFT_SHL;
         vexop = OPC_SHLX;
         goto gen_shift_maybe_vex;
@@ -2078,9 +2080,12 @@ static inline void tcg_out_op(TCGContext *s, TCGOpcode opc,
         c = SHIFT_ROR;
         goto gen_shift;
     gen_shift_maybe_vex:
-        if (have_bmi2 && !const_a2) {
-            tcg_out_vex_modrm(s, vexop + rexw, a0, a2, a1);
-            break;
+        if (have_bmi2) {
+            if (!const_a2) {
+                tcg_out_vex_modrm(s, vexop + rexw, a0, a2, a1);
+                break;
+            }
+            tcg_out_mov(s, rexw ? TCG_TYPE_I64 : TCG_TYPE_I32, a0, a1);
         }
         /* FALLTHRU */
     gen_shift:
@@ -2291,9 +2296,9 @@ static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
     static const TCGTargetOpDef r_q = { 0, { "r", "q" } };
     static const TCGTargetOpDef r_re = { 0, { "r", "re" } };
     static const TCGTargetOpDef r_0 = { 0, { "r", "0" } };
+    static const TCGTargetOpDef r_r_ri = { 0, { "r", "r", "ri" } };
     static const TCGTargetOpDef r_r_re = { 0, { "r", "r", "re" } };
     static const TCGTargetOpDef r_0_re = { 0, { "r", "0", "re" } };
-    static const TCGTargetOpDef r_0_Ci = { 0, { "r", "0", "Ci" } };
     static const TCGTargetOpDef r_0_ci = { 0, { "r", "0", "ci" } };
     static const TCGTargetOpDef r_L = { 0, { "r", "L" } };
     static const TCGTargetOpDef L_L = { 0, { "L", "L" } };
@@ -2363,7 +2368,7 @@ static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
     case INDEX_op_shr_i64:
     case INDEX_op_sar_i32:
     case INDEX_op_sar_i64:
-        return &r_0_Ci;
+        return have_bmi2 ? &r_r_ri : &r_0_ci;
     case INDEX_op_rotl_i32:
     case INDEX_op_rotl_i64:
     case INDEX_op_rotr_i32:
