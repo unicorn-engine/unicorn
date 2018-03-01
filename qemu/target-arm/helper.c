@@ -1105,10 +1105,6 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
     { "PMINTENCLR_EL1", 0,9,14, 3,0,2, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
       PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pminten), {0, 0},
       access_tpm, NULL, pmintenclr_write },
-    { "VBAR", 0,12,0, 3,0,0, ARM_CP_STATE_BOTH, 0,
-      PL1_RW, 0, NULL, 0, 0,
-      { offsetof(CPUARMState, cp15.vbar_s), offsetof(CPUARMState, cp15.vbar_ns) },
-      NULL, NULL, vbar_write, },
     { "CCSIDR", 0,0,0, 3,1,0, ARM_CP_STATE_BOTH,
       ARM_CP_NO_RAW, PL1_R, 0, NULL, 0, 0, {0, 0},
       NULL, ccsidr_read, },
@@ -4384,6 +4380,18 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             }
             define_one_arm_cp_reg(cpu, &cbar);
         }
+    }
+
+    if (arm_feature(env, ARM_FEATURE_VBAR)) {
+        ARMCPRegInfo vbar_cp_reginfo[] = {
+            { "VBAR", 0,12,0, 3,0,0, ARM_CP_STATE_BOTH, 0,
+              PL1_RW, 0, NULL, 0, 0,
+              { offsetof(CPUARMState, cp15.vbar_s),
+                offsetof(CPUARMState, cp15.vbar_ns) },
+              NULL, NULL, vbar_write },
+            REGINFO_SENTINEL
+        };
+        define_arm_cp_regs(cpu, vbar_cp_reginfo);
     }
 
     /* Generic registers whose values depend on the implementation */
