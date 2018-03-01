@@ -4002,7 +4002,7 @@ static void gen_loongson_multimedia(DisasContext *ctx, int rd, int rs, int rt)
     LMI_DIRECT(XOR_CP2, xor, xor);
     LMI_DIRECT(NOR_CP2, nor, nor);
     LMI_DIRECT(AND_CP2, and, and);
-    LMI_DIRECT(OR, or, or);
+    LMI_DIRECT(OR_CP2, or, or);
 
     case OPC_PANDN:
         tcg_gen_andc_i64(tcg_ctx, t0, t1, t0);
