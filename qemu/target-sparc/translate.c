@@ -2548,32 +2548,22 @@ static void gen_swap_asi(DisasContext *dc, TCGv dst, TCGv src,
     }
 }
 
-static void gen_cas_asi(DisasContext *dc, TCGv addr, TCGv cmpr,
+static void gen_cas_asi(DisasContext *dc, TCGv addr, TCGv cmpv,
                         int insn, int rd)
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     DisasASI da = get_asi(dc, insn, MO_TEUL);
-    TCGv cmpv, oldv, tmpv;
+    TCGv oldv;
 
     switch (da.type) {
     case GET_ASI_EXCP:
         return;
     case GET_ASI_DIRECT:
-        cmpv = tcg_temp_new(tcg_ctx);
         oldv = tcg_temp_new(tcg_ctx);
-        tmpv = tcg_temp_new(tcg_ctx);
-        tcg_gen_ext32u_tl(tcg_ctx, cmpv, cmpr);
-
-        /* ??? Should be atomic.  */
-        tcg_gen_qemu_ld_tl(dc->uc, oldv, addr, da.mem_idx, da.memop);
-        tcg_gen_movcond_tl(tcg_ctx, TCG_COND_EQ, tmpv, oldv, cmpv,
-                           gen_load_gpr(dc, rd), oldv);
-        tcg_gen_qemu_st_tl(dc->uc, tmpv, addr, da.mem_idx, da.memop);
-
+        tcg_gen_atomic_cmpxchg_tl(tcg_ctx, oldv, addr, cmpv, gen_load_gpr(dc, rd),
+                                  da.mem_idx, da.memop);
         gen_store_gpr(dc, rd, oldv);
-        tcg_temp_free(tcg_ctx, cmpv);
         tcg_temp_free(tcg_ctx, oldv);
-        tcg_temp_free(tcg_ctx, tmpv);
         break;
     default:
         /* ??? Should be DAE_invalid_asi.  */
@@ -2933,24 +2923,17 @@ static void gen_casx_asi(DisasContext *dc, TCGv addr, TCGv cmpv,
 {
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     DisasASI da = get_asi(dc, insn, MO_TEQ);
-    TCGv oldv, tmpv;
+    TCGv oldv;
 
     switch (da.type) {
     case GET_ASI_EXCP:
         return;
     case GET_ASI_DIRECT:
         oldv = tcg_temp_new(tcg_ctx);
-        tmpv = tcg_temp_new(tcg_ctx);
-
-        /* ??? Should be atomic.  */
-        tcg_gen_qemu_ld_tl(dc->uc, oldv, addr, da.mem_idx, da.memop);
-        tcg_gen_movcond_tl(tcg_ctx, TCG_COND_EQ, tmpv, oldv, cmpv,
-                           gen_load_gpr(dc, rd), oldv);
-        tcg_gen_qemu_st_tl(dc->uc, tmpv, addr, da.mem_idx, da.memop);
-
+        tcg_gen_atomic_cmpxchg_tl(tcg_ctx, oldv, addr, cmpv, gen_load_gpr(dc, rd),
+                                  da.mem_idx, da.memop);
         gen_store_gpr(dc, rd, oldv);
         tcg_temp_free(tcg_ctx, oldv);
-        tcg_temp_free(tcg_ctx, tmpv);
         break;
     default:
         /* ??? Should be DAE_invalid_asi.  */
