@@ -1259,31 +1259,24 @@ DISAS_INSN(mulw)
 DISAS_INSN(divw)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv reg;
-    TCGv tmp;
-    TCGv src;
     int sign;
+    TCGv src;
+    TCGv destr;
+
+    /* divX.w <EA>,Dn    32/16 -> 16r:16q */
 
     sign = (insn & 0x100) != 0;
-    reg = DREG(insn, 9);
-    if (sign) {
-        tcg_gen_ext16s_i32(tcg_ctx, tcg_ctx->QREG_DIV1, reg);
-    } else {
-        tcg_gen_ext16u_i32(tcg_ctx, tcg_ctx->QREG_DIV1, reg);
-    }
-    SRC_EA(env, src, OS_WORD, sign, NULL);
-    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_DIV2, src);
-    if (sign) {
-        gen_helper_divs(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 1));
-    } else {
-        gen_helper_divu(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 1));
-    }
 
-    tmp = tcg_temp_new(tcg_ctx);
-    src = tcg_temp_new(tcg_ctx);
-    tcg_gen_ext16u_i32(tcg_ctx, tmp, tcg_ctx->QREG_DIV1);
-    tcg_gen_shli_i32(tcg_ctx, src, tcg_ctx->QREG_DIV2, 16);
-    tcg_gen_or_i32(tcg_ctx, reg, tmp, src);
+    /* dest.l / src.w */
+
+    SRC_EA(env, src, OS_WORD, sign, NULL);
+    destr = tcg_const_i32(tcg_ctx, REG(insn, 9));
+    if (sign) {
+        gen_helper_divsw(tcg_ctx, tcg_ctx->cpu_env, destr, src);
+    } else {
+        gen_helper_divuw(tcg_ctx, tcg_ctx->cpu_env, destr, src);
+    }
+    tcg_temp_free(tcg_ctx, destr);
 
     set_cc_op(s, CC_OP_FLAGS);
 }
@@ -1291,33 +1284,49 @@ DISAS_INSN(divw)
 DISAS_INSN(divl)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv num;
-    TCGv den;
-    TCGv reg;
+    TCGv num, reg, den;
+    int sign;
     uint16_t ext;
 
     ext = read_im16(env, s);
-    if (ext & 0x87f8) {
-        gen_exception(s, s->pc - 4, EXCP_UNSUPPORTED);
+    sign = (ext & 0x0800) != 0;
+
+    if (ext & 0x400) {
+        if (!m68k_feature(s->env, M68K_FEATURE_QUAD_MULDIV)) {
+            gen_exception(s, s->insn_pc, EXCP_ILLEGAL);
+            return;
+        }
+
+        /* divX.l <EA>, Dr:Dq    64/32 -> 32r:32q */
+
+        SRC_EA(env, den, OS_LONG, 0, NULL);
+        num = tcg_const_i32(tcg_ctx, REG(ext, 12));
+        reg = tcg_const_i32(tcg_ctx, REG(ext, 0));
+        if (sign) {
+            gen_helper_divsll(tcg_ctx, tcg_ctx->cpu_env, num, reg, den);
+        } else {
+            gen_helper_divull(tcg_ctx, tcg_ctx->cpu_env, num, reg, den);
+        }
+        tcg_temp_free(tcg_ctx, reg);
+        tcg_temp_free(tcg_ctx, num);
+        set_cc_op(s, CC_OP_FLAGS);
         return;
     }
-    num = DREG(ext, 12);
-    reg = DREG(ext, 0);
-    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_DIV1, num);
+
+    /* divX.l <EA>, Dq        32/32 -> 32q     */
+    /* divXl.l <EA>, Dr:Dq    32/32 -> 32r:32q */
+
     SRC_EA(env, den, OS_LONG, 0, NULL);
-    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_DIV2, den);
-    if (ext & 0x0800) {
-        gen_helper_divs(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
+    num = tcg_const_i32(tcg_ctx, REG(ext, 12));
+    reg = tcg_const_i32(tcg_ctx, REG(ext, 0));
+    if (sign) {
+        gen_helper_divsl(tcg_ctx, tcg_ctx->cpu_env, num, reg, den);
     } else {
-        gen_helper_divu(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
+        gen_helper_divul(tcg_ctx, tcg_ctx->cpu_env, num, reg, den);
     }
-    if ((ext & 7) == ((ext >> 12) & 7)) {
-        /* div */
-        tcg_gen_mov_i32 (tcg_ctx, reg, tcg_ctx->QREG_DIV1);
-    } else {
-        /* rem */
-        tcg_gen_mov_i32 (tcg_ctx, reg, tcg_ctx->QREG_DIV2);
-    }
+    tcg_temp_free(tcg_ctx, reg);
+    tcg_temp_free(tcg_ctx, num);
+
     set_cc_op(s, CC_OP_FLAGS);
 }
 
