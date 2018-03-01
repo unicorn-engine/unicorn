@@ -759,7 +759,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
         size_t size2;
         void *buf2 = mmap(NULL, size + uc->qemu_real_host_page_size,
                           PROT_NONE, flags, -1, 0);
-        switch (buf2 != MAP_FAILED) {
+        switch ((int)(buf2 != MAP_FAILED)) {
         case 1:
             if (!cross_256mb(buf2, size)) {
                 /* Success!  Use the new buffer.  */
