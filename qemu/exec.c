@@ -2256,6 +2256,31 @@ bool address_space_access_valid(AddressSpace *as, hwaddr addr, int len, bool is_
     return true;
 }
 
+static hwaddr
+address_space_extend_translation(AddressSpace *as, hwaddr addr, hwaddr target_len,
+                                 MemoryRegion *mr, hwaddr base, hwaddr len,
+                                 bool is_write)
+{
+    hwaddr done = 0;
+    hwaddr xlat;
+    MemoryRegion *this_mr;
+
+    for (;;) {
+        target_len -= len;
+        addr += len;
+        done += len;
+        if (target_len == 0) {
+            return done;
+        }
+
+        len = target_len;
+        this_mr = address_space_translate(as, addr, &xlat, &len, is_write);
+        if (this_mr != mr || xlat != base + done) {
+            return done;
+        }
+    }
+}
+
 /* Map a physical memory region into a host virtual address.
  * May map a subset of the requested range, given by and returned in *plen.
  * May return NULL if resources needed to perform the mapping are exhausted.
@@ -2264,14 +2289,14 @@ bool address_space_access_valid(AddressSpace *as, hwaddr addr, int len, bool is_
  * likely to succeed.
  */
 void *address_space_map(AddressSpace *as,
-        hwaddr addr,
-        hwaddr *plen,
-        bool is_write)
+                        hwaddr addr,
+                        hwaddr *plen,
+                        bool is_write)
 {
     hwaddr len = *plen;
-    hwaddr done = 0;
-    hwaddr l, xlat, base;
-    MemoryRegion *mr, *this_mr;
+    hwaddr l, xlat;
+    MemoryRegion *mr;
+    void *ptr;
 
     if (len == 0) {
         return NULL;
@@ -2300,26 +2325,10 @@ void *address_space_map(AddressSpace *as,
         return as->uc->bounce.buffer;
     }
 
-    base = xlat;
-
-    for (;;) {
-        len -= l;
-        addr += l;
-        done += l;
-        if (len == 0) {
-            break;
-        }
-
-        l = len;
-        this_mr = address_space_translate(as, addr, &xlat, &l, is_write);
-        if (this_mr != mr || xlat != base + done) {
-            break;
-        }
-    }
-
     memory_region_ref(mr);
-    *plen = done;
-    return qemu_ram_ptr_length(as->uc, mr->ram_block, base, plen);
+    *plen = address_space_extend_translation(as, addr, len, mr, xlat, l, is_write);
+    ptr = qemu_ram_ptr_length(mr->uc, mr->ram_block, xlat, plen);
+    return ptr;
 }
 
 /* Unmaps a memory region previously mapped by address_space_map().
