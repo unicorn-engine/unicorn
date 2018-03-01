@@ -203,14 +203,6 @@ DEF_HELPER_FLAGS_3(xsetbv, TCG_CALL_NO_WG, void, env, i32, i64)
 DEF_HELPER_FLAGS_2(rdpkru, TCG_CALL_NO_WG, i64, env, i32)
 DEF_HELPER_FLAGS_3(wrpkru, TCG_CALL_NO_WG, void, env, i32, i64)
 
-DEF_HELPER_FLAGS_1(clz_x86, TCG_CALL_NO_RWG_SE, tl, tl)
-
-#ifdef TARGET_I386
-#define helper_clz helper_clz_x86
-#define gen_helper_clz gen_helper_clz_x86
-#endif
-
-DEF_HELPER_FLAGS_1(ctz, TCG_CALL_NO_RWG_SE, tl, tl)
 DEF_HELPER_FLAGS_2(pdep, TCG_CALL_NO_RWG_SE, tl, tl, tl)
 DEF_HELPER_FLAGS_2(pext, TCG_CALL_NO_RWG_SE, tl, tl, tl)
 
