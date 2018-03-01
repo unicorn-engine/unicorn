@@ -37,12 +37,12 @@
 #define tcg_gen_qemu_ldf64 tcg_gen_qemu_ld64
 #define tcg_gen_qemu_stf64 tcg_gen_qemu_st64
 
-#define REG(insn, pos) (((insn) >> (pos)) & 7)
+#define REG(insn, pos)  (((insn) >> (pos)) & 7)
 #define DREG(insn, pos) tcg_ctx->cpu_dregs[REG(insn, pos)]
-#define AREG(insn, pos) tcg_ctx->cpu_aregs[REG(insn, pos)]
+#define AREG(insn, pos) get_areg(s, REG(insn, pos))
 #define FREG(insn, pos) tcg_ctx->cpu_fregs[REG(insn, pos)]
-#define MACREG(acc) tcg_ctx->cpu_macc[acc]
-#define QREG_SP tcg_ctx->cpu_aregs[7]
+#define MACREG(acc)     tcg_ctx->cpu_macc[acc]
+#define QREG_SP         tcg_ctx->cpu_aregs[7]
 
 #define IS_NULL_QREG(t) (TCGV_EQUAL(t, tcg_ctx->NULL_QREG))
 
@@ -113,10 +113,63 @@ typedef struct DisasContext {
     int singlestep_enabled;
     TCGv_i64 mactmp;
     int done_mac;
+    int writeback_mask;
+    TCGv writeback[8];
 
     // Unicorn engine
     struct uc_struct *uc;
 } DisasContext;
+
+static TCGv get_areg(DisasContext *s, unsigned regno)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (s->writeback_mask & (1 << regno)) {
+        return s->writeback[regno];
+    } else {
+        return tcg_ctx->cpu_aregs[regno];
+    }
+}
+
+static void delay_set_areg(DisasContext *s, unsigned regno,
+                           TCGv val, bool give_temp)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (s->writeback_mask & (1 << regno)) {
+        if (give_temp) {
+            tcg_temp_free(tcg_ctx, s->writeback[regno]);
+            s->writeback[regno] = val;
+        } else {
+            tcg_gen_mov_i32(tcg_ctx, s->writeback[regno], val);
+        }
+    } else {
+        s->writeback_mask |= 1 << regno;
+        if (give_temp) {
+            s->writeback[regno] = val;
+        } else {
+            TCGv tmp = tcg_temp_new(tcg_ctx);
+            s->writeback[regno] = tmp;
+            tcg_gen_mov_i32(tcg_ctx, tmp, val);
+        }
+    }
+}
+
+static void do_writebacks(DisasContext *s)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    unsigned mask = s->writeback_mask;
+    if (mask) {
+        s->writeback_mask = 0;
+        do {
+            unsigned regno = ctz32(mask);
+            tcg_gen_mov_i32(tcg_ctx, tcg_ctx->cpu_aregs[regno], s->writeback[regno]);
+            tcg_temp_free(tcg_ctx, s->writeback[regno]);
+            mask &= mask - 1;
+        } while (mask);
+    }
+}
 
 #define DISAS_JUMP_NEXT 4
 
@@ -751,10 +804,11 @@ static TCGv gen_ea(CPUM68KState *env, DisasContext *s, uint16_t insn,
     case 3: /* Indirect postincrement.  */
         reg = AREG(insn, 0);
         result = gen_ldst(s, opsize, reg, val, what);
-        /* ??? This is not exception safe.  The instruction may still
-           fault after this point.  */
-        if (what == EA_STORE || !addrp)
-            tcg_gen_addi_i32(tcg_ctx, reg, reg, opsize_bytes(opsize));
+        if (what == EA_STORE || !addrp) {
+            TCGv tmp = tcg_temp_new(tcg_ctx);
+            tcg_gen_addi_i32(tcg_ctx, tmp, reg, opsize_bytes(opsize));
+            delay_set_areg(s, REG(insn, 0), tmp, true);
+        }
         return result;
     case 4: /* Indirect predecrememnt.  */
         {
@@ -769,11 +823,8 @@ static TCGv gen_ea(CPUM68KState *env, DisasContext *s, uint16_t insn,
                     *addrp = tmp;
             }
             result = gen_ldst(s, opsize, tmp, val, what);
-            /* ??? This is not exception safe.  The instruction may still
-               fault after this point.  */
             if (what == EA_STORE || !addrp) {
-                reg = AREG(insn, 0);
-                tcg_gen_mov_i32(tcg_ctx, reg, tmp);
+                delay_set_areg(s, REG(insn, 0), tmp, false);
             }
         }
         return result;
@@ -3558,7 +3609,6 @@ void register_m68k_insns (CPUM68KState *env)
 static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    uint16_t insn;
 
     // Unicorn: end address tells us to stop emulation
     if (s->pc == s->uc->addr_end) {
@@ -3573,9 +3623,9 @@ static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
         check_exit_request(tcg_ctx);
     }
 
-    insn = read_im16(env, s);
-
+    uint16_t insn = read_im16(env, s);
     ((disas_proc)tcg_ctx->opcode_table[insn])(env, s, insn);
+    do_writebacks(s);
 }
 
 /* generate intermediate code for basic block 'tb'.  */
@@ -3606,6 +3656,7 @@ void gen_intermediate_code(CPUM68KState *env, TranslationBlock *tb)
     dc->fpcr = env->fpcr;
     dc->user = (env->sr & SR_S) == 0;
     dc->done_mac = 0;
+    dc->writeback_mask = 0;
     num_insns = 0;
     max_insns = tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0) {
