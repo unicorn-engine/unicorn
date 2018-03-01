@@ -816,7 +816,7 @@ void tcg_gen_ld8u_i64(TCGContext *s, TCGv_i64 ret, TCGv_ptr arg2, tcg_target_lon
 void tcg_gen_ld8s_i64(TCGContext *s, TCGv_i64 ret, TCGv_ptr arg2, tcg_target_long offset)
 {
     tcg_gen_ld8s_i32(s, TCGV_LOW(ret), arg2, offset);
-    tcg_gen_sari_i32(s, TCGV_HIGH(ret), TCGV_HIGH(ret), 31);
+    tcg_gen_sari_i32(s, TCGV_HIGH(ret), TCGV_LOW(ret), 31);
 }
 
 void tcg_gen_ld16u_i64(TCGContext *s, TCGv_i64 ret, TCGv_ptr arg2, tcg_target_long offset)
