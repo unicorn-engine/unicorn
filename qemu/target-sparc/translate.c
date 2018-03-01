@@ -2617,6 +2617,7 @@ static void gen_ldf_asi(DisasContext *dc, TCGv addr,
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
     DisasASI da = get_asi(dc, insn, (size == 4 ? MO_TEUL : MO_TEQ));
     TCGv_i32 d32;
+    TCGv_i64 d64;
 
     switch (da.type) {
     case GET_ASI_EXCP:
@@ -2668,12 +2669,17 @@ static void gen_ldf_asi(DisasContext *dc, TCGv addr,
             gen_store_fpr_F(dc, rd, d32);
             break;
         case 8:
-            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx, da.memop);
+            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx,
+                                da.memop | MO_ALIGN_4);
             break;
         case 16:
-            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx, da.memop);
+            d64 = tcg_temp_new_i64(tcg_ctx);
+            tcg_gen_qemu_ld_i64(dc->uc, d64, addr, da.mem_idx, da.memop | MO_ALIGN_4);
             tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
-            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd/2+1], addr, da.mem_idx, da.memop);
+            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd/2+1], addr, da.mem_idx,
+                                da.memop | MO_ALIGN_4);
+            tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_fpr[rd / 2], d64);
+            tcg_temp_free_i64(tcg_ctx, d64);
             break;
         default:
             g_assert_not_reached();
@@ -2692,25 +2698,23 @@ static void gen_ldf_asi(DisasContext *dc, TCGv addr,
                but we can just use the integer asi helper for them.  */
             switch (size) {
             case 4:
-                {
-                    TCGv d64 = tcg_temp_new_i64(tcg_ctx);
-                    gen_helper_ld_asi(tcg_ctx, d64, tcg_ctx->cpu_env, addr, r_asi, r_mop);
-                    d32 = gen_dest_fpr_F(dc);
-                    tcg_gen_extrl_i64_i32(tcg_ctx, d32, d64);
-                    tcg_temp_free_i64(tcg_ctx, d64);
-                    gen_store_fpr_F(dc, rd, d32);
-                }
+                d64 = tcg_temp_new_i64(tcg_ctx);
+                gen_helper_ld_asi(tcg_ctx, d64, tcg_ctx->cpu_env, addr, r_asi, r_mop);
+                d32 = gen_dest_fpr_F(dc);
+                tcg_gen_extrl_i64_i32(tcg_ctx, d32, d64);
+                tcg_temp_free_i64(tcg_ctx, d64);
+                gen_store_fpr_F(dc, rd, d32);
                 break;
             case 8:
                 gen_helper_ld_asi(tcg_ctx, tcg_ctx->cpu_fpr[rd / 2],
                                   tcg_ctx->cpu_env, addr, r_asi, r_mop);
                 break;
             case 16:
-                gen_helper_ld_asi(tcg_ctx, tcg_ctx->cpu_fpr[rd / 2],
-                                  tcg_ctx->cpu_env, addr, r_asi, r_mop);
+                d64 = tcg_temp_new_i64(tcg_ctx);
+                gen_helper_ld_asi(tcg_ctx, d64, tcg_ctx->cpu_env, addr, r_asi, r_mop);
                 tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
-                gen_helper_ld_asi(tcg_ctx, tcg_ctx->cpu_fpr[rd/2+1],
-                                  tcg_ctx->cpu_env, addr, r_asi, r_mop);
+                tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_fpr[rd / 2], d64);
+                tcg_temp_free_i64(tcg_ctx, d64);
                 break;
             default:
                 g_assert_not_reached();
@@ -2778,15 +2782,15 @@ static void gen_stf_asi(DisasContext *dc, TCGv addr,
             tcg_gen_qemu_st_i32(dc->uc, d32, addr, da.mem_idx, da.memop);
             break;
         case 8:
-            /* ??? Only 4-byte alignment required.  However, it is legal
-               for the cpu to signal the alignment fault, and the OS trap
-               handler is required to fix it up.  */
-            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx, da.memop);
+            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx,
+                                da.memop | MO_ALIGN_4);
             break;
         case 16:
-            /* Only 4-byte alignment required.  See above.  Requiring
-               16-byte alignment here avoids having to probe the second
-               page before performing the first write.  */
+            /* Only 4-byte alignment required.  However, it is legal for the
+               cpu to signal the alignment fault, and the OS trap handler is
+               required to fix it up.  Requiring 16-byte alignment here avoids
+               having to probe the second page before performing the first
+               write.  */
             tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx,
                                 da.memop | MO_ALIGN_16);
             tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
@@ -5604,8 +5608,6 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
             skip_move: ;
 #endif
             } else if (xop >= 0x20 && xop < 0x24) {
-                TCGv t0;
-
                 if (gen_trap_ifnofpu(dc)) {
                     goto jmp_insn;
                 }
@@ -5613,10 +5615,9 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 switch (xop) {
                 case 0x20:      /* ldf, load fpreg */
                     gen_address_mask(dc, cpu_addr);
-                    t0 = get_temp_tl(dc);
-                    tcg_gen_qemu_ld32u(dc->uc, t0, cpu_addr, dc->mem_idx);
                     cpu_dst_32 = gen_dest_fpr_F(dc);
-                    tcg_gen_trunc_tl_i32(tcg_ctx, cpu_dst_32, t0);
+                    tcg_gen_qemu_ld_i32(dc->uc, cpu_dst_32, cpu_addr,
+                                        dc->mem_idx, MO_TEUL);
                     gen_store_fpr_F(dc, rd, cpu_dst_32);
                     break;
                 case 0x21:      /* ldfsr, V9 ldxfsr */
@@ -5624,26 +5625,28 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     gen_address_mask(dc, cpu_addr);
                     if (rd == 1) {
                         TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
-                        tcg_gen_qemu_ld64(dc->uc, t64, cpu_addr, dc->mem_idx);
+                        tcg_gen_qemu_ld_i64(dc->uc, t64, cpu_addr,
+                                            dc->mem_idx, MO_TEQ);
                         gen_helper_ldxfsr(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env, tcg_ctx->cpu_fsr, t64);
                         tcg_temp_free_i64(tcg_ctx, t64);
                         break;
                     }
 #endif
                     cpu_dst_32 = get_temp_i32(dc);
-                    t0 = get_temp_tl(dc);
-                    tcg_gen_qemu_ld32u(dc->uc, t0, cpu_addr, dc->mem_idx);
-                    tcg_gen_trunc_tl_i32(tcg_ctx, cpu_dst_32, t0);
+                    tcg_gen_qemu_ld_i32(dc->uc, cpu_dst_32, cpu_addr,
+                                        dc->mem_idx, MO_TEUL);
                     gen_helper_ldfsr(tcg_ctx, tcg_ctx->cpu_fsr, tcg_ctx->cpu_env, tcg_ctx->cpu_fsr, cpu_dst_32);
                     break;
                 case 0x22:      /* ldqf, load quad fpreg */
                     CHECK_FPU_FEATURE(dc, FLOAT128);
                     gen_address_mask(dc, cpu_addr);
                     cpu_src1_64 = tcg_temp_new_i64(tcg_ctx);
-                    tcg_gen_qemu_ld64(dc->uc, cpu_src1_64, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_ld_i64(dc->uc, cpu_src1_64, cpu_addr, dc->mem_idx,
+                                        MO_TEQ | MO_ALIGN_4);
                     tcg_gen_addi_tl(tcg_ctx, cpu_addr, cpu_addr, 8);
                     cpu_src2_64 = tcg_temp_new_i64(tcg_ctx);
-                    tcg_gen_qemu_ld64(dc->uc, cpu_src2_64, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_ld_i64(dc->uc, cpu_src2_64, cpu_addr, dc->mem_idx,
+                                        MO_TEQ | MO_ALIGN_4);
                     gen_store_fpr_Q(dc, rd, cpu_src1_64, cpu_src2_64);
                     tcg_temp_free_i64(tcg_ctx, cpu_src1_64);
                     tcg_temp_free_i64(tcg_ctx, cpu_src2_64);
@@ -5651,7 +5654,8 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 case 0x23:      /* lddf, load double fpreg */
                     gen_address_mask(dc, cpu_addr);
                     cpu_dst_64 = gen_dest_fpr_D(dc, rd);
-                    tcg_gen_qemu_ld64(dc->uc, cpu_dst_64, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_ld_i64(dc->uc, cpu_dst_64, cpu_addr, dc->mem_idx,
+                                        MO_TEQ | MO_ALIGN_4);
                     gen_store_fpr_D(dc, rd, cpu_dst_64);
                     break;
                 default:
@@ -5725,13 +5729,10 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 save_state(dc);
                 switch (xop) {
                 case 0x24: /* stf, store fpreg */
-                    {
-                        TCGv t = get_temp_tl(dc);
-                        gen_address_mask(dc, cpu_addr);
-                        cpu_src1_32 = gen_load_fpr_F(dc, rd);
-                        tcg_gen_ext_i32_tl(tcg_ctx, t, cpu_src1_32);
-                        tcg_gen_qemu_st32(dc->uc, t, cpu_addr, dc->mem_idx);
-                    }
+                    gen_address_mask(dc, cpu_addr);
+                    cpu_src1_32 = gen_load_fpr_F(dc, rd);
+                    tcg_gen_qemu_st_i32(dc->uc, cpu_src1_32, cpu_addr,
+                                        dc->mem_idx, MO_TEUL);
                     break;
                 case 0x25: /* stfsr, V9 stxfsr */
                     {
@@ -5777,12 +5778,10 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
 #endif
 #endif
                 case 0x27: /* stdf, store double fpreg */
-                    /* ??? Only 4-byte alignment required.  However, it is
-                       legal for the cpu to signal the alignment fault, and
-                       the OS trap handler is required to fix it up.  */
                     gen_address_mask(dc, cpu_addr);
                     cpu_src1_64 = gen_load_fpr_D(dc, rd);
-                    tcg_gen_qemu_st64(dc->uc, cpu_src1_64, cpu_addr, dc->mem_idx);
+                    tcg_gen_qemu_st_i64(dc->uc, cpu_src1_64, cpu_addr, dc->mem_idx,
+                                        MO_TEQ | MO_ALIGN_4);
                     break;
                 default:
                     goto illegal_insn;
