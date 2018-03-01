@@ -1392,6 +1392,7 @@
 #define has_help_option has_help_option_powerpc
 #define have_bmi1 have_bmi1_powerpc
 #define have_bmi2 have_bmi2_powerpc
+#define have_popcnt have_popcnt_powerpc
 #define hcr_write hcr_write_powerpc
 #define helper_access_check_cp_reg helper_access_check_cp_reg_powerpc
 #define helper_add_saturate helper_add_saturate_powerpc

@@ -1392,6 +1392,7 @@
 #define has_help_option has_help_option_x86_64
 #define have_bmi1 have_bmi1_x86_64
 #define have_bmi2 have_bmi2_x86_64
+#define have_popcnt have_popcnt_x86_64
 #define hcr_write hcr_write_x86_64
 #define helper_access_check_cp_reg helper_access_check_cp_reg_x86_64
 #define helper_add_saturate helper_add_saturate_x86_64

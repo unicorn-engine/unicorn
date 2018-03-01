@@ -1392,6 +1392,7 @@
 #define has_help_option has_help_option_arm
 #define have_bmi1 have_bmi1_arm
 #define have_bmi2 have_bmi2_arm
+#define have_popcnt have_popcnt_arm
 #define hcr_write hcr_write_arm
 #define helper_access_check_cp_reg helper_access_check_cp_reg_arm
 #define helper_add_saturate helper_add_saturate_arm

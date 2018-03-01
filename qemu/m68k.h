@@ -1392,6 +1392,7 @@
 #define has_help_option has_help_option_m68k
 #define have_bmi1 have_bmi1_m68k
 #define have_bmi2 have_bmi2_m68k
+#define have_popcnt have_popcnt_m68k
 #define hcr_write hcr_write_m68k
 #define helper_access_check_cp_reg helper_access_check_cp_reg_m68k
 #define helper_add_saturate helper_add_saturate_m68k
