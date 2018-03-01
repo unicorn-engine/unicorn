@@ -249,6 +249,7 @@ static const uint8_t cc_op_live[CC_OP_NB] = {
     USES_CC_DST | USES_CC_SRC | USES_CC_SRC2, // CC_OP_ADCOX, /* CC_DST = C, CC_SRC2 = O, CC_SRC = rest.  */
 
     0, // CC_OP_CLR, /* Z set, all other flags clear.  */
+    USES_CC_SRC, // CC_OP_POPCNT, /* Z via CC_SRC, all other flags clear.  */
 #else
     [CC_OP_DYNAMIC] = USES_CC_DST | USES_CC_SRC | USES_CC_SRC2,
     [CC_OP_EFLAGS] = USES_CC_SRC,
@@ -267,6 +268,7 @@ static const uint8_t cc_op_live[CC_OP_NB] = {
     [CC_OP_ADOX] = USES_CC_SRC | USES_CC_SRC2,
     [CC_OP_ADCOX] = USES_CC_DST | USES_CC_SRC | USES_CC_SRC2,
     [CC_OP_CLR] = 0,
+    [CC_OP_POPCNT] = USES_CC_SRC,
 #endif
 };
 
@@ -915,6 +917,7 @@ static CCPrepare gen_prepare_eflags_c(DisasContext *s, TCGv reg)
 
     case CC_OP_LOGICB: case CC_OP_LOGICW: case CC_OP_LOGICL: case CC_OP_LOGICQ:
     case CC_OP_CLR:
+    case CC_OP_POPCNT:
         return ccprepare_make(TCG_COND_NEVER, 0, 0, 0, -1, false, false);
 
     case CC_OP_INCB: case CC_OP_INCW: case CC_OP_INCL: case CC_OP_INCQ:
@@ -981,6 +984,7 @@ static CCPrepare gen_prepare_eflags_s(DisasContext *s, TCGv reg)
     case CC_OP_ADCOX:
         return ccprepare_make(TCG_COND_NE, cpu_cc_src, 0, 0, CC_S, false, false);
     case CC_OP_CLR:
+    case CC_OP_POPCNT:
         return ccprepare_make(TCG_COND_NEVER, 0, 0, 0, -1, false, false);
     default:
         {
@@ -1003,6 +1007,7 @@ static CCPrepare gen_prepare_eflags_o(DisasContext *s, TCGv reg)
     case CC_OP_ADCOX:
         return ccprepare_make(TCG_COND_NE, cpu_cc_src2, 0, 0, -1, false, true);
     case CC_OP_CLR:
+    case CC_OP_POPCNT:
         return ccprepare_make(TCG_COND_NEVER, 0, 0, 0, -1, false, false);
     default:
         gen_compute_eflags(s);
@@ -1027,6 +1032,7 @@ static CCPrepare gen_prepare_eflags_z(DisasContext *s, TCGv reg)
     case CC_OP_ADCOX:
         return ccprepare_make(TCG_COND_NE, cpu_cc_src, 0, 0, CC_Z, false, false);
     case CC_OP_CLR:
+    case CC_OP_POPCNT:
         return ccprepare_make(TCG_COND_ALWAYS, 0, 0, 0, -1, false, false);
     default:
         {
@@ -8926,10 +8932,12 @@ case 0x101:
         }
 
         gen_ldst_modrm(env, s, modrm, ot, OR_TMP0, 0);
-        gen_helper_popcnt(tcg_ctx, cpu_T0, cpu_env, cpu_T0, tcg_const_i32(tcg_ctx, ot));
+        gen_extu(tcg_ctx, ot, cpu_T0);
+        tcg_gen_mov_tl(tcg_ctx, cpu_cc_src, cpu_T0);
+        tcg_gen_ctpop_tl(tcg_ctx, cpu_T0, cpu_T0);
         gen_op_mov_reg_v(tcg_ctx, ot, reg, cpu_T0);
 
-        set_cc_op(s, CC_OP_EFLAGS);
+        set_cc_op(s, CC_OP_POPCNT);
         break;
     case 0x10e: case 0x10f:
         /* 3DNow! instructions, ignore prefixes */
