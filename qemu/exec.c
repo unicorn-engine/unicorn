@@ -1833,7 +1833,7 @@ static void tcg_commit(MemoryListener *listener)
     d = atomic_read(&cpuas->as->dispatch);
     // Unicorn: atomic_set used instead of atomic_rcu_set
     atomic_set(&cpuas->memory_dispatch, d);
-    tlb_flush(cpuas->cpu, 1);
+    tlb_flush(cpuas->cpu);
 }
 
 void address_space_init_dispatch(AddressSpace *as)

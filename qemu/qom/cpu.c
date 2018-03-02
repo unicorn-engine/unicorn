@@ -181,7 +181,7 @@ static void cpu_common_reset(CPUState *cpu)
         }
 
 #ifdef CONFIG_SOFTMMU
-        tlb_flush(cpu, 0);
+        tlb_flush(cpu);
 #endif
     //}
 }

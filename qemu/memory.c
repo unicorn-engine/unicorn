@@ -50,7 +50,7 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
     memory_region_add_subregion(get_system_memory(uc), begin, ram);
 
     if (uc->current_cpu)
-        tlb_flush(uc->current_cpu, 1);
+        tlb_flush(uc->current_cpu);
 
     return ram;
 }
@@ -69,7 +69,7 @@ MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, ui
     memory_region_add_subregion(get_system_memory(uc), begin, ram);
 
     if (uc->current_cpu)
-        tlb_flush(uc->current_cpu, 1);
+        tlb_flush(uc->current_cpu);
 
     return ram;
 }
