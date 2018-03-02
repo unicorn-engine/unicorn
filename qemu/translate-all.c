@@ -319,6 +319,19 @@ bool cpu_restore_state(CPUState *cpu, uintptr_t retaddr)
     TranslationBlock *tb;
     CPUArchState *env = cpu->env_ptr;
 
+    /* A retaddr of zero is invalid so we really shouldn't have ended
+     * up here. The target code has likely forgotten to check retaddr
+     * != 0 before attempting to restore state. We return early to
+     * avoid blowing up on a recursive tb_lock(). The target must have
+     * previously survived a failed cpu_restore_state because
+     * tb_find_pc(0) would have failed anyway. It still should be
+     * fixed though.
+     */
+
+    if (!retaddr) {
+        return false;
+    }
+
     tb = tb_find_pc(env->uc, retaddr);
     if (tb) {
         cpu_restore_state_from_tb(cpu, tb, retaddr);
