@@ -55,6 +55,7 @@ RAMBlock *qemu_ram_block_from_host(struct uc_struct* uc, void *ptr, bool round_o
 void qemu_ram_set_idstr(struct uc_struct *uc, RAMBlock *block, const char *name, DeviceState *dev);
 void qemu_ram_unset_idstr(struct uc_struct *uc, RAMBlock *block);
 const char *qemu_ram_get_idstr(RAMBlock *rb);
+bool qemu_ram_is_shared(RAMBlock *rb);
 
 bool cpu_physical_memory_rw(AddressSpace *as, hwaddr addr, uint8_t *buf,
                             int len, int is_write);

@@ -1118,6 +1118,11 @@ const char *qemu_ram_get_idstr(RAMBlock *rb)
     return rb->idstr;
 }
 
+bool qemu_ram_is_shared(RAMBlock *rb)
+{
+    return rb->flags & RAM_SHARED;
+}
+
 void qemu_ram_unset_idstr(struct uc_struct *uc, RAMBlock *block)
 {
     if (block) {

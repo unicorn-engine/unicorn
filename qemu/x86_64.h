@@ -2660,6 +2660,7 @@
 #define qemu_ram_foreach_block qemu_ram_foreach_block_x86_64
 #define qemu_ram_free qemu_ram_free_x86_64
 #define qemu_ram_get_idstr qemu_ram_get_idstr_x86_64
+#define qemu_ram_is_shared qemu_ram_is_shared_x86_64
 #define qemu_ram_ptr_length qemu_ram_ptr_length_x86_64
 #define qemu_ram_remap qemu_ram_remap_x86_64
 #define qemu_ram_resize qemu_ram_resize_x86_64
