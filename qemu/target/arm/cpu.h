@@ -672,6 +672,13 @@ typedef struct ARMCPU {
     uint32_t dcz_blocksize;
     uint64_t rvbar;
 
+    /* Whether the cfgend input is high (i.e. this CPU should reset into
+     * big-endian mode).  This setting isn't used directly: instead it modifies
+     * the reset_sctlr value to have SCTLR_B or SCTLR_EE set, depending on the
+     * architecture version.
+     */
+    bool cfgend;
+
     ARMELChangeHook *el_change_hook;
     void *el_change_hook_opaque;
 } ARMCPU;

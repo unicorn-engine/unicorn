@@ -527,6 +527,14 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
             cpu->reset_sctlr |= (1 << 13);
     }
 
+    if (cpu->cfgend) {
+        if (arm_feature(&cpu->env, ARM_FEATURE_V7)) {
+            cpu->reset_sctlr |= SCTLR_EE;
+        } else {
+            cpu->reset_sctlr |= SCTLR_B;
+        }
+    }
+
     if (!cpu->has_el3) {
         /* If the has_el3 CPU property is disabled then we need to disable the
          * feature.
