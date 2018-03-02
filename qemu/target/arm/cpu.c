@@ -192,6 +192,9 @@ static void arm_cpu_reset(CPUState *s)
          * it dependent on CPU model.
          */
         env->v7m.ccr = R_V7M_CCR_STKALIGN_MASK;
+
+        /* Unlike A/R profile, M profile defines the reset LR value */
+        env->regs[14] = 0xffffffff;
 #if 0
         /* Load the initial SP and PC from the vector table at address 0 */
         uint8_t *rom;
