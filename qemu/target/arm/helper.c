@@ -5318,14 +5318,18 @@ static uint32_t v7m_pop(CPUARMState *env)
 }
 
 /* Switch to V7M main or process stack pointer.  */
-static void switch_v7m_sp(CPUARMState *env, int process)
+static void switch_v7m_sp(CPUARMState *env, bool new_spsel)
 {
     uint32_t tmp;
-    if (env->v7m.current_sp != process) {
+    bool old_spsel = env->v7m.control & R_V7M_CONTROL_SPSEL_MASK;
+
+    if (old_spsel != new_spsel) {
         tmp = env->v7m.other_sp;
         env->v7m.other_sp = env->regs[13];
         env->regs[13] = tmp;
-        env->v7m.current_sp = process;
+        env->v7m.control = deposit32(env->v7m.control,
+                                     R_V7M_CONTROL_SPSEL_SHIFT,
+                                     R_V7M_CONTROL_SPSEL_LENGTH, new_spsel);
     }
 }
 
@@ -5395,8 +5399,9 @@ void arm_v7m_cpu_do_interrupt(CPUState *cs)
     arm_log_exception(cs->exception_index);
 
     lr = 0xfffffff1;
-    if (env->v7m.current_sp)
+    if (env->v7m.control & R_V7M_CONTROL_SPSEL_MASK) {
         lr |= 4;
+    }
     if (env->v7m.exception == 0)
         lr |= 8;
 
@@ -7640,9 +7645,11 @@ uint32_t HELPER(v7m_mrs)(CPUARMState *env, uint32_t reg)
     case 7: /* IEPSR */
         return xpsr_read(env) & 0x0700edff;
     case 8: /* MSP */
-        return env->v7m.current_sp ? env->v7m.other_sp : env->regs[13];
+        return (env->v7m.control & R_V7M_CONTROL_SPSEL_MASK) ?
+            env->v7m.other_sp : env->regs[13];
     case 9: /* PSP */
-        return env->v7m.current_sp ? env->regs[13] : env->v7m.other_sp;
+        return (env->v7m.control & R_V7M_CONTROL_SPSEL_MASK) ?
+            env->regs[13] : env->v7m.other_sp;
     case 16: /* PRIMASK */
         return (env->daif & PSTATE_I) != 0;
     case 17: /* BASEPRI */
@@ -7686,16 +7693,18 @@ void HELPER(v7m_msr)(CPUARMState *env, uint32_t reg, uint32_t val)
         xpsr_write(env, val, 0x0600fc00);
         break;
     case 8: /* MSP */
-        if (env->v7m.current_sp)
+        if (env->v7m.control & R_V7M_CONTROL_SPSEL_MASK) {
             env->v7m.other_sp = val;
-        else
+        } else {
             env->regs[13] = val;
+        }
         break;
     case 9: /* PSP */
-        if (env->v7m.current_sp)
+        if (env->v7m.control & R_V7M_CONTROL_SPSEL_MASK) {
             env->regs[13] = val;
-        else
+        } else {
             env->v7m.other_sp = val;
+        }
         break;
     case 16: /* PRIMASK */
         if (val & 1) {
@@ -7720,8 +7729,9 @@ void HELPER(v7m_msr)(CPUARMState *env, uint32_t reg, uint32_t val)
         }
         break;
     case 20: /* CONTROL */
-        env->v7m.control = val & 3;
-        switch_v7m_sp(env, (val & 2) != 0);
+        switch_v7m_sp(env, (val & R_V7M_CONTROL_SPSEL_MASK) != 0);
+        env->v7m.control = val & (R_V7M_CONTROL_SPSEL_MASK |
+                                  R_V7M_CONTROL_NPRIV_MASK);
         break;
     default:
         /* ??? For debugging only.  */

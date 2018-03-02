@@ -414,7 +414,6 @@ typedef struct CPUARMState {
         uint32_t vecbase;
         uint32_t basepri;
         uint32_t control;
-        int current_sp;
         int exception;
         uint32_t secure; /* Is CPU in Secure state? (not guest visible) */
     } v7m;
