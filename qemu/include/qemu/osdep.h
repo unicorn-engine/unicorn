@@ -184,8 +184,20 @@
 #define DIV_ROUND_UP(n,d) (((n) + (d) - 1) / (d))
 #endif
 
+#ifdef _MSC_VER
+#define QEMU_IS_ARRAY(x) (x)
+#else
+/*
+ * &(x)[0] is always a pointer - if it's same type as x then the argument is a
+ * pointer, not an array.
+ */
+#define QEMU_IS_ARRAY(x) (!__builtin_types_compatible_p(typeof(x), \
+                                                        typeof(&(x)[0])))
+#endif
+
 #ifndef ARRAY_SIZE
-#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
+#define ARRAY_SIZE(x) ((sizeof(x) / sizeof((x)[0])) + \
+                       QEMU_BUILD_BUG_ON_ZERO(!QEMU_IS_ARRAY(x)))
 #endif
 
 void *qemu_try_memalign(size_t alignment, size_t size);
