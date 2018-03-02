@@ -4036,13 +4036,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             { "ID_AA64PFR7_EL1_RESERVED", 0,0,4, 3,0,7, ARM_CP_STATE_AA64, ARM_CP_CONST,
               PL1_R, 0, NULL, 0 },
             { "ID_AA64DFR0_EL1", 0,0,5, 3,0,0, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, 0, NULL,
-              /* We mask out the PMUVer field, because we don't currently
-               * implement the PMU. Not advertising it prevents the guest
-               * from trying to use it and getting UNDEFs on registers we
-               * don't implement.
-               */
-              cpu->id_aa64dfr0 & ~0xf00 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64dfr0 },
             { "ID_AA64DFR1_EL1", 0,0,5, 3,0,1, ARM_CP_STATE_AA64,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64dfr1 },
             { "ID_AA64DFR2_EL1_RESERVED", 0,0,5, 3,0,2, ARM_CP_STATE_AA64, ARM_CP_CONST,
