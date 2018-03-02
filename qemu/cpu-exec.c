@@ -503,9 +503,6 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     env->invalid_error = UC_ERR_OK;
 
     for(;;) {
-        TranslationBlock *last_tb = NULL;
-        int tb_exit = 0;
-
         /* prepare setjmp context for exception handling */
         if (sigsetjmp(cpu->jmp_env, 0) == 0) {
             if (uc->stop_request || uc->invalid_error) {
@@ -513,21 +510,21 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
             }
 
             /* if an exception is pending, we execute it here */
-            if (cpu_handle_exception(uc, cpu, &ret)) {
-                break;
-            }
+            while (!cpu_handle_exception(uc, cpu, &ret)) {
+                TranslationBlock *last_tb = NULL;
+                int tb_exit = 0;
 
-            last_tb = NULL; /* forget the last executed TB after exception */
-            atomic_mb_set(&cpu->tb_flushed, false); /* reset before first TB lookup */
-            while (!cpu_handle_interrupt(cpu, &last_tb)) {
-                TranslationBlock *tb = tb_find(cpu, last_tb, tb_exit);
-                if (!tb) {   // invalid TB due to invalid code?
-                    uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
-                    ret = EXCP_HLT;
-                    break;
+                while (!cpu_handle_interrupt(cpu, &last_tb)) {
+                    TranslationBlock *tb = tb_find(cpu, last_tb, tb_exit);
+                    if (!tb) {   // invalid TB due to invalid code?
+                        uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
+                        ret = EXCP_HLT;
+                        break;
+                    }
+                    cpu_loop_exec_tb(cpu, tb, &last_tb, &tb_exit);
                 }
-                cpu_loop_exec_tb(cpu, tb, &last_tb, &tb_exit);
             }
+            break;
         } else {
 #if defined(__clang__) || !QEMU_GNUC_PREREQ(4, 6)
             /* Some compilers wrongly smash all local variables after
