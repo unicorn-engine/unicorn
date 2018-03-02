@@ -313,17 +313,14 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
     pd = iotlbentry->addr & ~TARGET_PAGE_MASK;
     mr = iotlb_to_region(cpu, pd, iotlbentry->attrs);
     if (memory_region_is_unassigned(cpu->uc, mr)) {
-        CPUClass *cc = CPU_GET_CLASS(env1->uc, cpu);
-
-        if (cc->do_unassigned_access) {
-            cc->do_unassigned_access(cpu, addr, false, true, 0, 4);
-        } else {
-            //cpu_abort(cpu, "Trying to execute code outside RAM or ROM at 0x"
-            //          TARGET_FMT_lx "\n", addr);    // qq
-            env1->invalid_addr = addr;
-            env1->invalid_error = UC_ERR_FETCH_UNMAPPED;
-            return RAM_ADDR_INVALID;
-        }
+        cpu_unassigned_access(cpu, addr, false, true, 0, 4);
+        /* The CPU's unassigned access hook might have longjumped out
+         * with an exception. If it didn't (or there was no hook) then
+         * we can't proceed further.
+         */
+        env1->invalid_addr = addr;
+        env1->invalid_error = UC_ERR_FETCH_UNMAPPED;
+        return RAM_ADDR_INVALID;
     }
     p = (void *)((uintptr_t)addr + env1->tlb_table[mmu_idx][page_index].addend);
     ram_addr = qemu_ram_addr_from_host_nofail(cpu->uc, p);
