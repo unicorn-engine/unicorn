@@ -787,7 +787,7 @@ static CPAccessResult pmreg_access(CPUARMState *env, const ARMCPRegInfo *ri,
      */
     int el = arm_current_el(env);
 
-    if (el == 0 && !env->cp15.c9_pmuserenr) {
+    if (el == 0 && !(env->cp15.c9_pmuserenr & 1)) {
         return CP_ACCESS_TRAP;
     }
     if (el < 2 && (env->cp15.mdcr_el2 & MDCR_TPM)
@@ -801,7 +801,66 @@ static CPAccessResult pmreg_access(CPUARMState *env, const ARMCPRegInfo *ri,
     return CP_ACCESS_OK;
 }
 
+static CPAccessResult pmreg_access_xevcntr(CPUARMState *env,
+                                           const ARMCPRegInfo *ri,
+                                           bool isread)
+{
+    /* ER: event counter read trap control */
+    if (arm_feature(env, ARM_FEATURE_V8)
+        && arm_current_el(env) == 0
+        && (env->cp15.c9_pmuserenr & (1 << 3)) != 0
+        && isread) {
+        return CP_ACCESS_OK;
+    }
+
+    return pmreg_access(env, ri, isread);
+}
+
+static CPAccessResult pmreg_access_swinc(CPUARMState *env,
+                                         const ARMCPRegInfo *ri,
+                                         bool isread)
+{
+    /* SW: software increment write trap control */
+    if (arm_feature(env, ARM_FEATURE_V8)
+        && arm_current_el(env) == 0
+        && (env->cp15.c9_pmuserenr & (1 << 1)) != 0
+        && !isread) {
+        return CP_ACCESS_OK;
+    }
+
+    return pmreg_access(env, ri, isread);
+}
+
 #ifndef CONFIG_USER_ONLY
+
+static CPAccessResult pmreg_access_selr(CPUARMState *env,
+                                        const ARMCPRegInfo *ri,
+                                        bool isread)
+{
+    /* ER: event counter read trap control */
+    if (arm_feature(env, ARM_FEATURE_V8)
+        && arm_current_el(env) == 0
+        && (env->cp15.c9_pmuserenr & (1 << 3)) != 0) {
+        return CP_ACCESS_OK;
+    }
+
+    return pmreg_access(env, ri, isread);
+}
+
+static CPAccessResult pmreg_access_ccntr(CPUARMState *env,
+                                         const ARMCPRegInfo *ri,
+                                         bool isread)
+{
+    /* CR: cycle counter read trap control */
+    if (arm_feature(env, ARM_FEATURE_V8)
+        && arm_current_el(env) == 0
+        && (env->cp15.c9_pmuserenr & (1 << 2)) != 0
+        && isread) {
+        return CP_ACCESS_OK;
+    }
+
+    return pmreg_access(env, ri, isread);
+}
 
 static inline bool arm_ccnt_enabled(CPUARMState *env)
 {
@@ -970,7 +1029,11 @@ static uint64_t pmxevtyper_read(CPUARMState *env, const ARMCPRegInfo *ri)
 static void pmuserenr_write(CPUARMState *env, const ARMCPRegInfo *ri,
                             uint64_t value)
 {
-    env->cp15.c9_pmuserenr = value & 1;
+    if (arm_feature(env, ARM_FEATURE_V8)) {
+        env->cp15.c9_pmuserenr = value & 0xf;
+    } else {
+        env->cp15.c9_pmuserenr = value & 1;
+    }
 }
 
 static void pmintenset_write(CPUARMState *env, const ARMCPRegInfo *ri,
@@ -1098,20 +1161,20 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
     /* Unimplemented so WI. */
     { "PMSWINC", 15,9,12, 0,0,4, 0,
       ARM_CP_NOP, PL0_W, 0, NULL, 0, 0, {0, 0},
-      pmreg_access, },
+      pmreg_access_swinc },
 #ifndef CONFIG_USER_ONLY
     { "PMSELR", 15,9,12, 0,0,5, 0, ARM_CP_ALIAS,
       PL0_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c9_pmselr), {0, 0},
-      pmreg_access, NULL, pmselr_write, NULL, raw_write},
+      pmreg_access_selr, NULL, pmselr_write, NULL, raw_write},
     { "PMSELR_EL0", 0,9,12, 3,3,5, ARM_CP_STATE_AA64, 0,
       PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmselr), {0, 0},
-      pmreg_access, NULL, pmselr_write, NULL, raw_write, },
+      pmreg_access_selr, NULL, pmselr_write, NULL, raw_write, },
     { "PMCCNTR", 15,9,13, 0,0,0, 0,
       ARM_CP_IO, PL0_RW, 0, NULL, 0, 0, {0, 0},
-      pmreg_access, pmccntr_read, pmccntr_write32, },
+      pmreg_access_ccntr, pmccntr_read, pmccntr_write32, },
     { "PMCCNTR_EL0", 0,9,13, 3,3,0, ARM_CP_STATE_AA64,
       ARM_CP_IO, PL0_RW, 0, NULL, 0, 0, {0, 0},
-      pmreg_access, pmccntr_read, pmccntr_write, },
+      pmreg_access_ccntr, pmccntr_read, pmccntr_write, },
 #endif
     { "PMCCFILTR_EL0", 0,14,15, 3,3,7, ARM_CP_STATE_AA64,
       ARM_CP_IO, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.pmccfiltr_el0), {0, 0},
@@ -1125,7 +1188,7 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
     /* Unimplemented, RAZ/WI. */
     { "PMXEVCNTR", 15,9,13, 0,0,2, 0,
       ARM_CP_CONST, PL0_RW, 0, NULL, 0, 0, {0, 0},
-      pmreg_access },
+      pmreg_access_xevcntr },
     { "PMUSERENR", 15,9,14, 0,0,0, 0,
       0, PL0_R | PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmuserenr), {0, 0},
       access_tpm, NULL, pmuserenr_write, NULL, raw_write },
