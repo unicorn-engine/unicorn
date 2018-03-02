@@ -33,6 +33,9 @@
 
 #define TARGET_IS_BIENDIAN 1
 
+/* ARM processors have a weak memory model */
+#define TCG_GUEST_DEFAULT_MO      (0)
+
 #define CPUArchState struct CPUARMState
 
 #include "qemu-common.h"
