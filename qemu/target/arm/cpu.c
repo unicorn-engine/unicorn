@@ -561,8 +561,8 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     }
 
     if (!cpu->has_pmu) {
-        cpu->has_pmu = false;
         unset_feature(env, ARM_FEATURE_PMU);
+        cpu->id_aa64dfr0 &= ~0xf00;
     }
 
     if (!arm_feature(env, ARM_FEATURE_EL2)) {
