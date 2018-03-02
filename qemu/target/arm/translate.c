@@ -303,6 +303,17 @@ static void gen_singlestep_exception(DisasContext *s)
     }
 }
 
+static inline bool is_singlestepping(DisasContext *s)
+{
+    /* Return true if we are singlestepping either because of
+     * architectural singlestep or QEMU gdbstub singlestep. This does
+     * not include the command line '-singlestep' mode which is rather
+     * misnamed as it only means "one instruction per TB" and doesn't
+     * affect the code we generate.
+     */
+    return s->singlestep_enabled || s->ss_active;
+}
+
 static void gen_smul_dual(DisasContext *s, TCGv_i32 a, TCGv_i32 b)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -4211,7 +4222,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
 
 static inline void gen_jmp(DisasContext *s, uint32_t dest)
 {
-    if (unlikely(s->singlestep_enabled || s->ss_active)) {
+    if (unlikely(is_singlestepping(s))) {
         /* An indirect jump so that we still trigger the debug exception.  */
         if (s->thumb)
             dest |= 1;
@@ -12190,8 +12201,7 @@ void gen_intermediate_code(CPUARMState *env, TranslationBlock *tb)
             ((dc->pc >= next_page_start - 3) && insn_crosses_page(env, dc));
 
     } while (!dc->is_jmp && !tcg_op_buf_full(tcg_ctx) &&
-             !cs->singlestep_enabled &&
-             !dc->ss_active &&
+             !is_singlestepping(dc) &&
              !end_of_page &&
              num_insns < max_insns);
 
@@ -12214,9 +12224,9 @@ tb_end:
     /* At this stage dc->condjmp will only be set when the skipped
        instruction was a conditional branch or trap, and the PC has
        already been written.  */
-    if (unlikely(cs->singlestep_enabled || dc->ss_active)) {
+    gen_set_condexec(dc);
+    if (unlikely(is_singlestepping(dc))) {
         /* Unconditional and "condition passed" instruction codepath. */
-        gen_set_condexec(dc);
         switch (dc->is_jmp) {
         case DISAS_SWI:
             gen_ss_advance(dc);
@@ -12239,13 +12249,6 @@ tb_end:
             /* FIXME: Single stepping a WFI insn will not halt the CPU. */
             gen_singlestep_exception(dc);
         }
-        if (dc->condjmp) {
-            /* "Condition failed" instruction codepath. */
-            gen_set_label(tcg_ctx, dc->condlabel);
-            gen_set_condexec(dc);
-            gen_set_pc_im(dc, dc->pc);
-            gen_singlestep_exception(dc);
-        }
     } else {
         /* While branches must always occur at the end of an IT block,
            there are a few other things that can cause us to terminate
@@ -12255,7 +12258,6 @@ tb_end:
             - Hardware watchpoints.
            Hardware breakpoints have already been handled and skip this code.
          */
-        gen_set_condexec(dc);
         switch(dc->is_jmp) {
         case DISAS_NEXT:
             gen_goto_tb(dc, 1, dc->pc);
@@ -12295,11 +12297,17 @@ tb_end:
             gen_exception(dc, EXCP_SMC, syn_aa32_smc(), 3);
             break;
         }
-        if (dc->condjmp) {
-            gen_set_label(tcg_ctx, dc->condlabel);
-            gen_set_condexec(dc);
+    }
+
+    if (dc->condjmp) {
+        /* "Condition failed" instruction codepath for the branch/trap insn */
+        gen_set_label(tcg_ctx, dc->condlabel);
+        gen_set_condexec(dc);
+    if (unlikely(is_singlestepping(dc))) {
+            gen_set_pc_im(dc, dc->pc);
+            gen_singlestep_exception(dc);
+        } else {
             gen_goto_tb(dc, 1, dc->pc);
-            dc->condjmp = 0;
         }
     }
 
