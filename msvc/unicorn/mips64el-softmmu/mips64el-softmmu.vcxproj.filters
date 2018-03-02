@@ -36,6 +36,9 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h">
       <Filter>tcg</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-mo.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h">
       <Filter>tcg</Filter>
     </ClInclude>

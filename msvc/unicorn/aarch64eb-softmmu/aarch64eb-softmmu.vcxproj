@@ -35,6 +35,7 @@
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-mo.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
