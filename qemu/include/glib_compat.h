@@ -48,6 +48,7 @@ typedef unsigned char guchar;
 typedef int gboolean;
 typedef unsigned long gulong;
 typedef unsigned long gsize;
+typedef signed long gssize;
 
 typedef gint (*GCompareDataFunc)(gconstpointer a,
                 gconstpointer b,
@@ -89,6 +90,27 @@ void g_slist_foreach(GSList *list, GFunc func, gpointer user_data);
 void g_slist_free(GSList *list);
 GSList *g_slist_prepend(GSList *list, gpointer data);
 GSList *g_slist_sort(GSList *list, GCompareFunc compare);
+
+typedef struct _GString   GString;
+
+struct _GString
+{
+  gchar  *str;
+  gsize len;
+  gsize allocated_len;
+};
+
+GString* g_string_new(const gchar *init);
+GString* g_string_sized_new(gsize dfl_size);
+gchar* g_string_free(GString *string, gboolean free_segment);
+GString* g_string_erase(GString *string, gssize pos, gssize len);
+GString* g_string_append_len(GString *string, const gchar *val, gssize len);
+GString* g_string_insert_c(GString *string, gssize pos, gchar c);
+GString* g_string_insert_len(GString *string, gssize pos, const gchar *val, gssize len);
+GString* g_string_prepend(GString *string, const gchar *val);
+GString* g_string_prepend_c(GString *string, gchar c);
+GString* g_string_truncate(GString *string, gsize len);
+GString* g_string_set_size(GString *string, gsize len);
 
 typedef guint (*GHashFunc)(gconstpointer key);
 typedef gboolean (*GEqualFunc)(gconstpointer a, gconstpointer b);

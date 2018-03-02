@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "glib_compat.h"
 
+#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #ifndef _WIN64
 #define GPOINTER_TO_UINT(p) ((guint)(uintptr_t)(p))
@@ -507,6 +508,425 @@ GSList *g_slist_sort (GSList *list,
 }
 
 /* END of g_slist related functions */
+
+// String functions lifted from glib-2.28.0/glib/gstring.c
+
+#define MY_MAXSIZE ((gsize)-1)
+
+static inline gsize
+nearest_power (gsize base, gsize num)
+{
+  if (num > MY_MAXSIZE / 2)
+    {
+      return MY_MAXSIZE;
+    }
+  else
+    {
+      gsize n = base;
+
+      while (n < num)
+  n <<= 1;
+
+      return n;
+    }
+}
+
+static void
+g_string_maybe_expand (GString* string,
+           gsize    len)
+{
+  if (string->len + len >= string->allocated_len)
+    {
+      string->allocated_len = nearest_power (1, string->len + len + 1);
+      string->str = g_realloc (string->str, string->allocated_len);
+    }
+}
+
+GString*
+g_string_sized_new (gsize dfl_size)
+{
+  GString *string = malloc(sizeof(GString));
+
+  string->allocated_len = 0;
+  string->len   = 0;
+  string->str   = NULL;
+
+  g_string_maybe_expand (string, MAX (dfl_size, 2));
+  string->str[0] = 0;
+
+  return string;
+}
+
+/**
+ * g_string_free:
+ * @string: a #GString
+ * @free_segment: if %TRUE the actual character data is freed as well
+ *
+ * Frees the memory allocated for the #GString.
+ * If @free_segment is %TRUE it also frees the character data.  If
+ * it's %FALSE, the caller gains ownership of the buffer and must
+ * free it after use with g_free().
+ *
+ * Returns: the character data of @string
+ *          (i.e. %NULL if @free_segment is %TRUE)
+ */
+gchar*
+g_string_free (GString *string,
+         gboolean free_segment)
+{
+  gchar *segment;
+
+  if (string == NULL) {
+    return NULL;
+  }
+
+  if (free_segment)
+    {
+      g_free (string->str);
+      segment = NULL;
+    }
+  else
+    segment = string->str;
+
+  free(string);
+  return segment;
+}
+
+/**
+ * g_string_insert_len:
+ * @string: a #GString
+ * @pos: position in @string where insertion should
+ *       happen, or -1 for at the end
+ * @val: bytes to insert
+ * @len: number of bytes of @val to insert
+ *
+ * Inserts @len bytes of @val into @string at @pos.
+ * Because @len is provided, @val may contain embedded
+ * nuls and need not be nul-terminated. If @pos is -1,
+ * bytes are inserted at the end of the string.
+ *
+ * Since this function does not stop at nul bytes, it is
+ * the caller's responsibility to ensure that @val has at
+ * least @len addressable bytes.
+ *
+ * Returns: @string
+ */
+GString*
+g_string_insert_len (GString     *string,
+         gssize       pos,
+         const gchar *val,
+         gssize       len)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+  if (len != 0 || val == NULL) {
+    return string;
+  }
+
+  if (len == 0)
+    return string;
+
+  if (len < 0)
+    len = strlen (val);
+
+  if (pos < 0)
+    pos = string->len;
+  else {
+    if (pos > string->len) {
+      return string;
+    }
+  }
+
+  /* Check whether val represents a substring of string.  This test
+     probably violates chapter and verse of the C standards, since
+     ">=" and "<=" are only valid when val really is a substring.
+     In practice, it will work on modern archs.  */
+  if (val >= string->str && val <= string->str + string->len)
+    {
+      gsize offset = val - string->str;
+      gsize precount = 0;
+
+      g_string_maybe_expand (string, len);
+      val = string->str + offset;
+      /* At this point, val is valid again.  */
+
+      /* Open up space where we are going to insert.  */
+      if (pos < string->len)
+        memmove (string->str + pos + len, string->str + pos, string->len - pos);
+
+      /* Move the source part before the gap, if any.  */
+      if (offset < pos)
+        {
+          precount = MIN (len, pos - offset);
+          memcpy (string->str + pos, val, precount);
+        }
+
+      /* Move the source part after the gap, if any.  */
+      if (len > precount)
+        memcpy (string->str + pos + precount,
+                val + /* Already moved: */ precount + /* Space opened up: */ len,
+                len - precount);
+    }
+  else
+    {
+      g_string_maybe_expand (string, len);
+
+      /* If we aren't appending at the end, move a hunk
+       * of the old string to the end, opening up space
+       */
+      if (pos < string->len)
+        memmove (string->str + pos + len, string->str + pos, string->len - pos);
+
+      /* insert the new string */
+      if (len == 1)
+        string->str[pos] = *val;
+      else
+        memcpy (string->str + pos, val, len);
+    }
+
+  string->len += len;
+
+  string->str[string->len] = 0;
+
+  return string;
+}
+
+/**
+ * g_string_append_len:
+ * @string: a #GString
+ * @val: bytes to append
+ * @len: number of bytes of @val to use
+ *
+ * Appends @len bytes of @val to @string. Because @len is
+ * provided, @val may contain embedded nuls and need not
+ * be nul-terminated.
+ *
+ * Since this function does not stop at nul bytes, it is
+ * the caller's responsibility to ensure that @val has at
+ * least @len addressable bytes.
+ *
+ * Returns: @string
+ */
+GString*
+g_string_append_len (GString   *string,
+                     const gchar *val,
+                     gssize       len)
+{
+  if (string == NULL) {
+    return  NULL;
+  }
+  if (len != 0 || val == NULL) {
+    return string;
+  }
+
+  return g_string_insert_len (string, -1, val, len);
+}
+
+/**
+ * g_string_prepend:
+ * @string: a #GString
+ * @val: the string to prepend on the start of @string
+ *
+ * Adds a string on to the start of a #GString, 
+ * expanding it if necessary.
+ *
+ * Returns: @string
+ */
+GString*
+g_string_prepend (GString     *string,
+      const gchar *val)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+  if (val == NULL) {
+    return string;
+  }
+
+  return g_string_insert_len (string, 0, val, -1);
+}
+
+/**
+ * g_string_insert_c:
+ * @string: a #GString
+ * @pos: the position to insert the byte
+ * @c: the byte to insert
+ *
+ * Inserts a byte into a #GString, expanding it if necessary.
+ *
+ * Returns: @string
+ */
+GString*
+g_string_insert_c (GString *string,
+       gssize   pos,
+       gchar    c)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+
+  g_string_maybe_expand (string, 1);
+
+  if (pos < 0)
+    pos = string->len;
+  else {
+    if (pos > string->len) {
+      return string;
+    }
+  }
+
+  /* If not just an append, move the old stuff */
+  if (pos < string->len)
+    memmove (string->str + pos + 1, string->str + pos, string->len - pos);
+
+  string->str[pos] = c;
+
+  string->len += 1;
+
+  string->str[string->len] = 0;
+
+  return string;
+}
+
+/**
+ * g_string_prepend_c:
+ * @string: a #GString
+ * @c: the byte to prepend on the start of the #GString
+ *
+ * Adds a byte onto the start of a #GString,
+ * expanding it if necessary.
+ *
+ * Returns: @string
+ */
+GString*
+g_string_prepend_c (GString *string,
+        gchar    c)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+
+  return g_string_insert_c (string, 0, c);
+}
+
+/**
+ * g_string_truncate:
+ * @string: a #GString
+ * @len: the new size of @string
+ *
+ * Cuts off the end of the GString, leaving the first @len bytes. 
+ *
+ * Returns: @string
+ */
+GString*
+g_string_truncate (GString *string,
+       gsize    len)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+
+  string->len = MIN (len, string->len);
+  string->str[string->len] = 0;
+
+  return string;
+}
+
+/**
+ * g_string_set_size:
+ * @string: a #GString
+ * @len: the new length
+ *
+ * Sets the length of a #GString. If the length is less than
+ * the current length, the string will be truncated. If the
+ * length is greater than the current length, the contents
+ * of the newly added area are undefined. (However, as
+ * always, string->str[string->len] will be a nul byte.)
+ *
+ * Return value: @string
+ **/
+GString*
+g_string_set_size (GString *string,
+       gsize    len)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+
+  if (len >= string->allocated_len)
+    g_string_maybe_expand (string, len - string->len);
+
+  string->len = len;
+  string->str[len] = 0;
+
+  return string;
+}
+
+/**
+ * g_string_new:
+ * @init: the initial text to copy into the string
+ *
+ * Creates a new #GString, initialized with the given string.
+ *
+ * Returns: the new #GString
+ */
+GString*
+g_string_new (const gchar *init)
+{
+  GString *string;
+
+  if (init == NULL || *init == '\0')
+    string = g_string_sized_new (2);
+  else
+    {
+      gint len;
+
+      len = strlen (init);
+      string = g_string_sized_new (len + 2);
+
+      g_string_append_len (string, init, len);
+    }
+
+  return string;
+}
+
+
+GString*
+g_string_erase (GString *string,
+    gssize   pos,
+    gssize   len)
+{
+  if (string == NULL) {
+   return NULL;
+  }
+  if (pos < 0) {
+    return string;
+  }
+  if (pos > string->len) {
+    return string;
+  }
+
+  if (len < 0)
+    len = string->len - pos;
+  else
+    {
+      if (pos + len > string->len) {
+        return string;
+      }
+
+      if (pos + len < string->len)
+    memmove (string->str + pos, string->str + pos + len, string->len - (pos + len));
+    }
+
+  string->len -= len;
+
+  string->str[string->len] = 0;
+
+  return string;
+}
+
+/* END of g_string related functions */
 
 // Hash functions lifted glib-2.28.0/glib/ghash.c
 
