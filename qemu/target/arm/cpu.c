@@ -1419,6 +1419,9 @@ static void arm_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
 #endif
     cc->debug_excp_handler = arm_debug_excp_handler;
     cc->debug_check_watchpoint = arm_debug_check_watchpoint;
+#if !defined(CONFIG_USER_ONLY)
+    cc->adjust_watchpoint_address = arm_adjust_watchpoint_address;
+#endif
 }
 
 static void cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)

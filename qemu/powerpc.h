@@ -134,6 +134,7 @@
 #define arm11mpcore_initfn arm11mpcore_initfn_powerpc
 #define arm926_initfn arm926_initfn_powerpc
 #define arm946_initfn arm946_initfn_powerpc
+#define arm_adjust_watchpoint_address arm_adjust_watchpoint_address_powerpc
 #define arm_ccnt_enabled arm_ccnt_enabled_powerpc
 #define arm_cp_read_zero arm_cp_read_zero_powerpc
 #define arm_cp_reset_ignore arm_cp_reset_ignore_powerpc

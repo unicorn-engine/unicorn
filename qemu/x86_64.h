@@ -134,6 +134,7 @@
 #define arm11mpcore_initfn arm11mpcore_initfn_x86_64
 #define arm926_initfn arm926_initfn_x86_64
 #define arm946_initfn arm946_initfn_x86_64
+#define arm_adjust_watchpoint_address arm_adjust_watchpoint_address_x86_64
 #define arm_ccnt_enabled arm_ccnt_enabled_x86_64
 #define arm_cp_read_zero arm_cp_read_zero_x86_64
 #define arm_cp_reset_ignore arm_cp_reset_ignore_x86_64

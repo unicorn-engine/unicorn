@@ -140,6 +140,7 @@ symbols = (
     'arm11mpcore_initfn',
     'arm926_initfn',
     'arm946_initfn',
+    'arm_adjust_watchpoint_address',
     'arm_ccnt_enabled',
     'arm_cp_read_zero',
     'arm_cp_reset_ignore',
