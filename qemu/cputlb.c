@@ -272,6 +272,19 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
                             prot, mmu_idx, size);
 }
 
+static ram_addr_t qemu_ram_addr_from_host_nofail(struct uc_struct *uc, void *ptr)
+{
+    ram_addr_t ram_addr;
+
+    ram_addr = qemu_ram_addr_from_host(uc, ptr);
+    if (ram_addr == RAM_ADDR_INVALID) {
+        //error_report("Bad ram pointer %p", ptr);
+        return RAM_ADDR_INVALID;
+    }
+
+    return ram_addr;
+}
+
 /* NOTE: this function can trigger an exception */
 /* NOTE2: the returned address is not exactly the physical address: it
  * is actually a ram_addr_t (in system mode; the user mode emulation
@@ -321,19 +334,6 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
     } else {
         return ram_addr;
     }
-}
-
-static ram_addr_t qemu_ram_addr_from_host_nofail(struct uc_struct *uc, void *ptr)
-{
-    ram_addr_t ram_addr;
-
-    ram_addr = qemu_ram_addr_from_host(uc, ptr);
-    if (ram_addr == RAM_ADDR_INVALID) {
-        // fprintf(stderr, "Bad ram pointer %p\n", ptr);
-        return RAM_ADDR_INVALID;
-    }
-
-    return ram_addr;
 }
 
 static void tlb_set_dirty1(CPUTLBEntry *tlb_entry, target_ulong vaddr)
