@@ -532,6 +532,14 @@ typedef struct CPUARMState {
  */
 typedef void ARMELChangeHook(ARMCPU *cpu, void *opaque);
 
+/* These values map onto the return values for
+ * QEMU_PSCI_0_2_FN_AFFINITY_INFO */
+typedef enum ARMPSCIState {
+    PSCI_ON = 0,
+    PSCI_OFF = 1,
+    PSCI_ON_PENDING = 2
+} ARMPSCIState;
+
 /**
  * ARMCPU:
  * @env: #CPUARMState
