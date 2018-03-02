@@ -187,7 +187,7 @@ static bool tcg_exec_all(struct uc_struct* uc)
             } else if (r == EXCP_ATOMIC) {
                 cpu_exec_step_atomic(uc, cpu);
             }
-        } else if (cpu->stop || cpu->stopped) {
+        } else if (cpu->stop) {
             printf(">>> got stopped!!!\n");
             break;
         }

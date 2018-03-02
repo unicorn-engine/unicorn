@@ -452,15 +452,31 @@ static void cpu_exec_step(struct uc_struct *uc, CPUState *cpu)
     uint32_t flags;
 
     cpu_get_tb_cpu_state(env, &pc, &cs_base, &flags);
-    tb = tb_gen_code(cpu, pc, cs_base, flags,
-                     1 | CF_NOCACHE | CF_IGNORE_ICOUNT);
-    tb->orig_tb = NULL;
-    /* execute the generated code */
-    // Unicorn: commented out
-    //trace_exec_tb_nocache(tb, pc);
-    cpu_tb_exec(cpu, tb);
-    tb_phys_invalidate(uc, tb, -1);
-    tb_free(uc, tb);
+
+    if (sigsetjmp(cpu->jmp_env, 0) == 0) {
+        mmap_lock();
+        tb = tb_gen_code(cpu, pc, cs_base, flags,
+                         1 | CF_NOCACHE | CF_IGNORE_ICOUNT);
+        tb->orig_tb = NULL;
+        mmap_unlock();
+
+        /* execute the generated code */
+        cpu_tb_exec(cpu, tb);
+        tb_phys_invalidate(uc, tb, -1);
+        tb_free(uc, tb);
+    } else {
+        /* We may have exited due to another problem here, so we need
+         * to reset any tb_locks we may have taken but didn't release.
+         * The mmap_lock is dropped by tb_gen_code if it runs out of
+         * memory.
+         */
+#ifndef CONFIG_SOFTMMU
+        // Unicorn: Commented out
+        //tcg_debug_assert(!have_mmap_lock());
+#endif
+        // Unicorn: commented out
+        //tb_lock_reset();
+    }
 }
 
 void cpu_exec_step_atomic(struct uc_struct *uc, CPUState *cpu)
