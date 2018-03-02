@@ -144,7 +144,8 @@ static void qobject_input_check_struct(Visitor *v, Error **errp)
             if (g_hash_table_size(top_ht)) {
                 const char *key;
                 g_hash_table_find(top_ht, always_true, (gpointer)&key);
-                error_setg(errp, QERR_QMP_EXTRA_MEMBER, key);
+                error_setg(errp, "QMP input object member '%s' is unexpected",
+                           key);
             }
         }
     }
