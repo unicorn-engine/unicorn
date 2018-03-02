@@ -539,9 +539,5 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     // TODO: optimize this for better performance
     tb_flush(cpu);
 
-    /* fail safe : never use current_cpu outside cpu_exec() */
-    atomic_set(&uc->current_cpu, NULL);
-    /* Does not need atomic_mb_set because a spurious wakeup is okay.  */
-    atomic_set(&uc->tcg_current_rr_cpu, NULL);
     return ret;
 }

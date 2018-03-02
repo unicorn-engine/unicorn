@@ -78,7 +78,7 @@
  * mmap_lock.
  */
 #ifdef CONFIG_SOFTMMU
-#define assert_memory_lock() do { /* nothing */ } while (0)
+#define assert_memory_lock() tcg_debug_assert(have_tb_lock)
 #else
 #define assert_memory_lock() tcg_debug_assert(have_mmap_lock())
 #endif
