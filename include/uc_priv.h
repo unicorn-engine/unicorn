@@ -194,7 +194,7 @@ struct uc_struct {
     // qemu/cpu-exec.c
     BounceBuffer bounce;
     volatile sig_atomic_t exit_request;
-    CPUState *tcg_current_cpu;
+    CPUState *tcg_current_rr_cpu;
 
     // qemu/memory.c
     bool global_dirty_log;
