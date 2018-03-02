@@ -4942,7 +4942,7 @@ static void gen_mfhc0(DisasContext *ctx, TCGv arg, int reg, int sel)
     return;
 
 cp0_unimplemented:
-    LOG_DISAS("mfhc0 %s (reg %d sel %d)\n", rn, reg, sel);
+    qemu_log_mask(LOG_UNIMP, "mfhc0 %s (reg %d sel %d)\n", rn, reg, sel);
     tcg_gen_movi_tl(s, arg, 0);
 }
 
@@ -5015,7 +5015,7 @@ static void gen_mthc0(DisasContext *ctx, TCGv arg, int reg, int sel)
 
     (void)rn; /* avoid a compiler warning */
 cp0_unimplemented:
-    LOG_DISAS("mthc0 %s (reg %d sel %d)\n", rn, reg, sel);
+    qemu_log_mask(LOG_UNIMP, "mthc0 %s (reg %d sel %d)\n", rn, reg, sel);
 }
 
 static inline void gen_mfc0_unimplemented(DisasContext *ctx, TCGv arg)
@@ -5696,7 +5696,7 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
     return;
 
 cp0_unimplemented:
-    LOG_DISAS("mfc0 %s (reg %d sel %d)\n", rn, reg, sel);
+    qemu_log_mask(LOG_UNIMP, "mfc0 %s (reg %d sel %d)\n", rn, reg, sel);
     gen_mfc0_unimplemented(ctx, arg);
 }
 
@@ -6362,7 +6362,7 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
     return;
 
 cp0_unimplemented:
-    LOG_DISAS("mtc0 %s (reg %d sel %d)\n", rn, reg, sel);
+    qemu_log_mask(LOG_UNIMP, "mtc0 %s (reg %d sel %d)\n", rn, reg, sel);
 }
 
 #if defined(TARGET_MIPS64)
@@ -6985,7 +6985,7 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
     return;
 
 cp0_unimplemented:
-    LOG_DISAS("dmfc0 %s (reg %d sel %d)\n", rn, reg, sel);
+    qemu_log_mask(LOG_UNIMP, "dmfc0 %s (reg %d sel %d)\n", rn, reg, sel);
     gen_mfc0_unimplemented(ctx, arg);
 }
 
@@ -7645,7 +7645,7 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
     return;
 
 cp0_unimplemented:
-    LOG_DISAS("dmtc0 %s (reg %d sel %d)\n", rn, reg, sel);
+    qemu_log_mask(LOG_UNIMP, "dmtc0 %s (reg %d sel %d)\n", rn, reg, sel);
 }
 #endif /* TARGET_MIPS64 */
 
