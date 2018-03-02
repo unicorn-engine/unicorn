@@ -2219,30 +2219,6 @@ static uint32_t x86_cpu_get_supported_feature_word(struct uc_struct *uc,
     return r;
 }
 
-/*
- * Filters CPU feature words based on host availability of each feature.
- *
- * Returns: 0 if all flags are supported by the host, non-zero otherwise.
- */
-static int x86_cpu_filter_features(X86CPU *cpu)
-{
-    CPUX86State *env = &cpu->env;
-    FeatureWord w;
-    int rv = 0;
-
-    for (w = 0; w < FEATURE_WORDS; w++) {
-        uint32_t host_feat = x86_cpu_get_supported_feature_word(env->uc, w, false);
-        uint32_t requested_features = env->features[w];
-        env->features[w] &= host_feat;
-        cpu->filtered_features[w] = requested_features & ~env->features[w];
-        if (cpu->filtered_features[w]) {
-            rv = 1;
-        }
-    }
-
-    return rv;
-}
-
 static void x86_cpu_report_filtered_features(X86CPU *cpu)
 {
     FeatureWord w;
@@ -3069,8 +3045,47 @@ static void x86_cpu_enable_xsave_components(X86CPU *cpu)
     env->features[FEAT_XSAVE_COMP_HI] = mask >> 32;
 }
 
-/* Load CPUID data based on configured features */
-static void x86_cpu_load_features(struct uc_struct *uc, X86CPU *cpu, Error **errp)
+/***** Steps involved on loading and filtering CPUID data
+ *
+ * When initializing and realizing a CPU object, the steps
+ * involved in setting up CPUID data are:
+ *
+ * 1) Loading CPU model definition (X86CPUDefinition). This is
+ *    implemented by x86_cpu_load_def() and should be completely
+ *    transparent, as it is done automatically by instance_init.
+ *    No code should need to look at X86CPUDefinition structs
+ *    outside instance_init.
+ *
+ * 2) CPU expansion. This is done by realize before CPUID
+ *    filtering, and will make sure host/accelerator data is
+ *    loaded for CPU models that depend on host capabilities
+ *    (e.g. "host"). Done by x86_cpu_expand_features().
+ *
+ * 3) CPUID filtering. This initializes extra data related to
+ *    CPUID, and checks if the host supports all capabilities
+ *    required by the CPU. Runnability of a CPU model is
+ *    determined at this step. Done by x86_cpu_filter_features().
+ *
+ * Some operations don't require all steps to be performed.
+ * More precisely:
+ *
+ * - CPU instance creation (instance_init) will run only CPU
+ *   model loading. CPU expansion can't run at instance_init-time
+ *   because host/accelerator data may be not available yet.
+ * - CPU realization will perform both CPU model expansion and CPUID
+ *   filtering, and return an error in case one of them fails.
+ * - query-cpu-definitions needs to run all 3 steps. It needs
+ *   to run CPUID filtering, as the 'unavailable-features'
+ *   field is set based on the filtering results.
+ * - The query-cpu-model-expansion QMP command only needs to run
+ *   CPU model loading and CPU expansion. It should not filter
+ *   any CPUID data based on host capabilities.
+ */
+
+/* Expand CPU configuration data, based on configured features
+ * and host/accelerator capabilities when appropriate.
+ */
+static void x86_cpu_expand_features(struct uc_struct *uc, X86CPU *cpu, Error **errp)
 {
     CPUX86State *env = &cpu->env;
     FeatureWord w;
@@ -3135,6 +3150,32 @@ static void x86_cpu_load_features(struct uc_struct *uc, X86CPU *cpu, Error **err
     }
 }
 
+/*
+ * Finishes initialization of CPUID data, filters CPU feature
+ * words based on host availability of each feature.
+ *
+ * Returns: 0 if all flags are supported by the host, non-zero otherwise.
+ */
+static int x86_cpu_filter_features(X86CPU *cpu)
+{
+    CPUX86State *env = &cpu->env;
+    FeatureWord w;
+    int rv = 0;
+
+    for (w = 0; w < FEATURE_WORDS; w++) {
+        uint32_t host_feat =
+            x86_cpu_get_supported_feature_word(env->uc, w, false);
+        uint32_t requested_features = env->features[w];
+        env->features[w] &= host_feat;
+        cpu->filtered_features[w] = requested_features & ~env->features[w];
+        if (cpu->filtered_features[w]) {
+            rv = 1;
+        }
+    }
+
+    return rv;
+}
+
 #define IS_INTEL_CPU(env) ((env)->cpuid_vendor1 == CPUID_VENDOR_INTEL_1 && \
                            (env)->cpuid_vendor2 == CPUID_VENDOR_INTEL_2 && \
                            (env)->cpuid_vendor3 == CPUID_VENDOR_INTEL_3)
@@ -3163,7 +3204,7 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         return -1;
     }
 
-    x86_cpu_load_features(uc, cpu, &local_err);
+    x86_cpu_expand_features(uc, cpu, &local_err);
     if (local_err) {
         goto out;
     }
