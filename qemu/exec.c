@@ -393,54 +393,23 @@ address_space_translate_internal(AddressSpaceDispatch *d, hwaddr addr, hwaddr *x
     return section;
 }
 
-/* Called from RCU critical section */
-IOMMUTLBEntry address_space_get_iotlb_entry(AddressSpace *as, hwaddr addr,
-                                            bool is_write)
-{
-    IOMMUTLBEntry iotlb = {0};
-    MemoryRegionSection *section;
-    MemoryRegion *mr;
-
-    for (;;) {
-        // Unicorn: atomic_read used instead of atomic_rcu_read
-        AddressSpaceDispatch *d = atomic_read(&as->dispatch);
-        section = address_space_lookup_region(d, addr, false);
-        addr = addr - section->offset_within_address_space
-               + section->offset_within_region;
-        mr = section->mr;
-
-        if (!mr->iommu_ops) {
-            break;
-        }
-
-        iotlb = mr->iommu_ops->translate(mr, addr, is_write);
-        if (!(iotlb.perm & (1 << is_write))) {
-            iotlb.target_as = NULL;
-            break;
-        }
-
-        addr = ((iotlb.translated_addr & ~iotlb.addr_mask)
-                | (addr & iotlb.addr_mask));
-        as = iotlb.target_as;
-    }
-
-    return iotlb;
-}
-
-/* Called from RCU critical section */
-MemoryRegion *address_space_translate(AddressSpace *as, hwaddr addr,
-        hwaddr *xlat, hwaddr *plen,
-        bool is_write)
+static MemoryRegionSection address_space_do_translate(AddressSpace *as,
+                                                      hwaddr addr,
+                                                      hwaddr *xlat,
+                                                      hwaddr *plen,
+                                                      bool is_write,
+                                                      bool is_mmio)
 {
     IOMMUTLBEntry iotlb;
     MemoryRegionSection *section;
     MemoryRegion *mr;
+    MemoryRegionSection failure_section = {0};
 
     for (;;) {
-        section = address_space_translate_internal(as->dispatch, addr, &addr, plen, true);
+        // Unicorn: atomic_read used instead of atomic_rcu_read
+        AddressSpaceDispatch *d = atomic_read(&as->dispatch);
+        section = address_space_translate_internal(d, addr, &addr, plen, is_mmio);
         mr = section->mr;
-        if (mr->ops == NULL)
-            return NULL;
 
         if (!mr->iommu_ops) {
             break;
@@ -451,14 +420,87 @@ MemoryRegion *address_space_translate(AddressSpace *as, hwaddr addr,
                 | (addr & iotlb.addr_mask));
         *plen = MIN(*plen, (addr | iotlb.addr_mask) - addr + 1);
         if (!(iotlb.perm & (1 << is_write))) {
-            mr = &as->uc->io_mem_unassigned;
-            break;
+            goto translate_fail;
         }
 
         as = iotlb.target_as;
     }
 
     *xlat = addr;
+
+    return *section;
+
+translate_fail:
+    failure_section.mr = &as->uc->io_mem_unassigned;
+    return failure_section;
+}
+
+IOMMUTLBEntry address_space_get_iotlb_entry(AddressSpace *as, hwaddr addr,
+                                            bool is_write)
+{
+    MemoryRegionSection section;
+    hwaddr xlat, plen;
+    IOMMUTLBEntry result = {0};
+
+    /* Try to get maximum page mask during translation. */
+    plen = (hwaddr)-1;
+
+    /* This can never be MMIO. */
+    section = address_space_do_translate(as, addr, &xlat, &plen,
+                                         is_write, false);
+
+    /* Illegal translation */
+    if (section.mr == &as->uc->io_mem_unassigned) {
+        goto iotlb_fail;
+    }
+
+    /* Convert memory region offset into address space offset */
+    xlat += section.offset_within_address_space -
+        section.offset_within_region;
+
+    if (plen == (hwaddr)-1) {
+        /*
+         * We use default page size here. Logically it only happens
+         * for identity mappings.
+         */
+        plen = TARGET_PAGE_SIZE;
+    }
+
+    /* Convert to address mask */
+    plen -= 1;
+
+    result.target_as = section.address_space;
+    result.iova = addr & ~plen;
+    result.translated_addr = xlat & ~plen;
+    result.addr_mask = plen;
+    /* IOTLBs are for DMAs, and DMA only allows on RAMs. */
+    result.perm = IOMMU_RW;
+    return result;
+
+iotlb_fail:
+    return result;
+}
+
+/* Called from RCU critical section */
+MemoryRegion *address_space_translate(AddressSpace *as, hwaddr addr,
+                                      hwaddr *xlat, hwaddr *plen,
+                                      bool is_write)
+{
+    MemoryRegion *mr;
+    MemoryRegionSection section;
+
+    /* This can be MMIO, so setup MMIO bit. */
+    section = address_space_do_translate(as, addr, xlat, plen, is_write, true);
+    mr = section.mr;
+
+    // Unicorn: if'd out
+#if 0
+    if (xen_enabled() && memory_access_is_direct(mr, is_write)) {
+        hwaddr page = ((addr & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE) - addr;
+        *plen = MIN(page, *plen);
+    }
+#endif
+
     return mr;
 }
 
