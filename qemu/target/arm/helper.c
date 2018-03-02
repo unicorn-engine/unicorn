@@ -942,7 +942,25 @@ static void pmovsr_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void pmxevtyper_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    env->cp15.c9_pmxevtyper = value & 0xff;
+    /* Attempts to access PMXEVTYPER are CONSTRAINED UNPREDICTABLE when
+     * PMSELR value is equal to or greater than the number of implemented
+     * counters, but not equal to 0x1f. We opt to behave as a RAZ/WI.
+     */
+    if (env->cp15.c9_pmselr == 0x1f) {
+        pmccfiltr_write(env, ri, value);
+    }
+}
+
+static uint64_t pmxevtyper_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    /* We opt to behave as a RAZ/WI when attempts to access PMXEVTYPER
+     * are CONSTRAINED UNPREDICTABLE. See comments in pmxevtyper_write().
+     */
+    if (env->cp15.c9_pmselr == 0x1f) {
+        return env->cp15.pmccfiltr_el0;
+    } else {
+        return 0;
+    }
 }
 
 static void pmuserenr_write(CPUARMState *env, const ARMCPRegInfo *ri,
@@ -1094,9 +1112,12 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
     { "PMCCFILTR_EL0", 0,14,15, 3,3,7, ARM_CP_STATE_AA64,
       ARM_CP_IO, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.pmccfiltr_el0), {0, 0},
       pmreg_access, NULL, pmccfiltr_write, },
-    { "PMXEVTYPER", 15,9,13, 0,0,1, 0,
-      0, PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmxevtyper), {0, 0},
-      pmreg_access, NULL, pmxevtyper_write, NULL, raw_write },
+    { "PMXEVTYPER", 15,9,13, 0,0,1, 0, ARM_CP_NO_RAW,
+      PL0_RW, 0, NULL, 0, 0, {0, 0},
+      pmreg_access, pmxevtyper_read, pmxevtyper_write },
+    { "PMXEVTYPER_EL0", 0,9,13, 3,3,1, ARM_CP_STATE_AA64, ARM_CP_NO_RAW,
+      PL0_RW, 0, NULL, 0, 0, {0, 0},
+      pmreg_access, pmxevtyper_read, pmxevtyper_write },
     /* Unimplemented, RAZ/WI. */
     { "PMXEVCNTR", 15,9,13, 0,0,2, 0,
       ARM_CP_CONST, PL0_RW, 0, NULL, 0, 0, {0, 0},
