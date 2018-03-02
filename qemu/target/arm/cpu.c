@@ -540,6 +540,10 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         cpu->id_aa64pfr0 &= ~0xf000;
     }
 
+    if (!cpu->has_el2) {
+        unset_feature(env, ARM_FEATURE_EL2);
+    }
+
     if (!cpu->has_pmu) {
         cpu->has_pmu = false;
         unset_feature(env, ARM_FEATURE_PMU);
