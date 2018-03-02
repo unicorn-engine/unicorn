@@ -2924,6 +2924,9 @@ void tcg_gen_atomic_cmpxchg_i64(TCGContext *s,
 #endif
 #else
         gen_helper_exit_atomic(s, s->tcg_env);
+        /* Produce a result, so that we have a well-formed opcode stream
+           with respect to uses of the result in the (dead) code following.  */
+        tcg_gen_movi_i64(s, retv, 0);
 #endif /* CONFIG_ATOMIC64 */
     } else {
         TCGv_i32 c32 = tcg_temp_new_i32(s);
@@ -3033,6 +3036,9 @@ static void do_atomic_op_i64(TCGContext *s,
 #endif
 #else
         gen_helper_exit_atomic(s, s->tcg_env);
+        /* Produce a result, so that we have a well-formed opcode stream
+           with respect to uses of the result in the (dead) code following.  */
+        tcg_gen_movi_i64(s, ret, 0);
 #endif /* CONFIG_ATOMIC64 */
     } else {
         TCGv_i32 v32 = tcg_temp_new_i32(s);
