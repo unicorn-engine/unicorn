@@ -60,8 +60,14 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 
 #define cat(x,y) x ## y
 #define cat2(x,y) cat(x,y)
+
+#ifdef __COUNTER__
 #define QEMU_BUILD_BUG_ON(x) \
-    typedef char cat2(qemu_build_bug_on__,__LINE__)[(x)?-1:1] QEMU_UNUSED_VAR
+    typedef char glue(qemu_build_bug_on__, __COUNTER__)[(x) ? -1 : 1] \
+        __attribute__((unused))
+#else
+#define QEMU_BUILD_BUG_ON(x)
+#endif
 
 #define GCC_FMT_ATTR(n, m)
 
