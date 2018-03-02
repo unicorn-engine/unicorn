@@ -5384,6 +5384,27 @@ static void arm_log_exception(int idx)
 {
     if (qemu_loglevel_mask(CPU_LOG_INT)) {
         const char *exc = NULL;
+        static const char * const excnames[] = {
+            NULL,
+            "Undefined Instruction",
+            "SVC",
+            "Prefetch Abort",
+            "Data Abort",
+            "IRQ",
+            "FIQ",
+            "Breakpoint",
+            "QEMU v7M exception exit",
+             "QEMU intercept of kernel commpage",
+             NULL,
+            "Hypervisor Call",
+            "Hypervisor Trap",
+            "Secure Monitor Call",
+            "Virtual IRQ",
+            "Virtual FIQ",
+            "Semihosting call",
+            "v7M NOCP UsageFault",
+            "v7M INVSTATE UsageFault",
+        };
 
         if (idx >= 0 && idx < ARRAY_SIZE(excnames)) {
             exc = excnames[idx];

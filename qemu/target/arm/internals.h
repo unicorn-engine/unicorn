@@ -51,31 +51,6 @@ static inline bool excp_is_internal(int excp)
         || excp == EXCP_SEMIHOST;
 }
 
-/* Exception names for debug logging; note that not all of these
- * precisely correspond to architectural exceptions.
- */
-static const char * const excnames[] = {
-    NULL,
-    "Undefined Instruction",
-    "SVC",
-    "Prefetch Abort",
-    "Data Abort",
-    "IRQ",
-    "FIQ",
-    "Breakpoint",
-    "QEMU v7M exception exit",
-     "QEMU intercept of kernel commpage",
-     NULL,
-    "Hypervisor Call",
-    "Hypervisor Trap",
-    "Secure Monitor Call",
-    "Virtual IRQ",
-    "Virtual FIQ",
-    "Semihosting call",
-    "v7M NOCP UsageFault",
-    "v7M INVSTATE UsageFault",
-};
-
 /* Scale factor for generic timers, ie number of ns per tick.
  * This gives a 62.5MHz timer.
  */
