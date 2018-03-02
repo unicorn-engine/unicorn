@@ -22,8 +22,7 @@ void object_property_set_qobject(struct uc_struct *uc, Object *obj, QObject *val
                                  const char *name, Error **errp)
 {
     Visitor *v;
-    /* TODO: Should we reject, rather than ignore, excess input? */
-    v = qobject_input_visitor_new(value, false);
+    v = qobject_input_visitor_new(value, true);
     object_property_set(uc, obj, v, name, errp);
     visit_free(v);
 }
