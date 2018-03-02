@@ -5339,8 +5339,14 @@ static void do_v7m_exception_exit(CPUARMState *env)
     uint32_t xpsr;
 
     type = env->regs[15];
-    //if (env->v7m.exception != 0)
-    //    armv7m_nvic_complete_irq(env->nvic, env->v7m.exception);
+    if (env->v7m.exception != ARMV7M_EXCP_NMI) {
+        /* Auto-clear FAULTMASK on return from other than NMI */
+        env->daif &= ~PSTATE_F;
+    }
+    /* Unicorn: commented out
+    if (env->v7m.exception != 0) {
+        armv7m_nvic_complete_irq(env->nvic, env->v7m.exception);
+    }*/
 
     /* Switch to the target stack.  */
     switch_v7m_sp(env, (type & 4) != 0);
