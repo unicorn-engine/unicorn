@@ -29,7 +29,7 @@
 #include "hw/i386/pc.h"
 #include "sysemu/cpus.h"
 #include "sysemu/sysemu.h"
-#include "target-i386/topology.h"
+#include "target/i386/topology.h"
 #include "qapi-visit.h"
 
 
