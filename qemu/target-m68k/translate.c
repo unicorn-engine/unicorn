@@ -711,10 +711,17 @@ static TCGv gen_lea_mode(CPUM68KState *env, DisasContext *s,
     case 0: /* Data register direct.  */
     case 1: /* Address register direct.  */
         return tcg_ctx->NULL_QREG;
+    case 3: /* Indirect postincrement */
+        if (opsize == OS_UNSIZED) {
+            return tcg_ctx->NULL_QREG;
+        }
+        /* fallthru */
     case 2: /* Indirect register */
-    case 3: /* Indirect postincrement.  */
         return get_areg(s, reg0);
     case 4: /* Indirect predecrememnt.  */
+        if (opsize == OS_UNSIZED) {
+            return tcg_ctx->NULL_QREG;
+        }
         reg = get_areg(s, reg0);
         tmp = tcg_temp_new(tcg_ctx);
         tcg_gen_subi_i32(tcg_ctx, tmp, reg, opsize_bytes(opsize));
@@ -3709,6 +3716,50 @@ DISAS_INSN(bfext_reg)
     set_cc_op(s, CC_OP_LOGIC);
 }
 
+DISAS_INSN(bfext_mem)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int ext = read_im16(env, s);
+    int is_sign = insn & 0x200;
+    TCGv dest = DREG(ext, 12);
+    TCGv addr, len, ofs;
+
+    addr = gen_lea(env, s, insn, OS_UNSIZED);
+    if (IS_NULL_QREG(addr)) {
+        gen_addr_fault(s);
+        return;
+    }
+
+    if (ext & 0x20) {
+        len = DREG(ext, 0);
+    } else {
+        len = tcg_const_i32(tcg_ctx, extract32(ext, 0, 5));
+    }
+    if (ext & 0x800) {
+        ofs = DREG(ext, 6);
+    } else {
+        ofs = tcg_const_i32(tcg_ctx, extract32(ext, 6, 5));
+    }
+
+    if (is_sign) {
+        gen_helper_bfexts_mem(tcg_ctx, dest, tcg_ctx->cpu_env, addr, ofs, len);
+        tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_CC_N, dest);
+    } else {
+        TCGv_i64 tmp = tcg_temp_new_i64(tcg_ctx);
+        gen_helper_bfextu_mem(tcg_ctx, tmp, tcg_ctx->cpu_env, addr, ofs, len);
+        tcg_gen_extr_i64_i32(tcg_ctx, dest, tcg_ctx->QREG_CC_N, tmp);
+        tcg_temp_free_i64(tcg_ctx, tmp);
+    }
+    set_cc_op(s, CC_OP_LOGIC);
+
+    if (!(ext & 0x20)) {
+        tcg_temp_free(tcg_ctx, len);
+    }
+    if (!(ext & 0x800)) {
+        tcg_temp_free(tcg_ctx, ofs);
+    }
+}
+
 DISAS_INSN(bfop_reg)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -3773,6 +3824,55 @@ DISAS_INSN(bfop_reg)
         g_assert_not_reached();
     }
     tcg_temp_free(tcg_ctx, mask);
+}
+
+DISAS_INSN(bfop_mem)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int ext = read_im16(env, s);
+    TCGv addr, len, ofs;
+
+    addr = gen_lea(env, s, insn, OS_UNSIZED);
+    if (IS_NULL_QREG(addr)) {
+        gen_addr_fault(s);
+        return;
+    }
+
+    if (ext & 0x20) {
+        len = DREG(ext, 0);
+    } else {
+        len = tcg_const_i32(tcg_ctx, extract32(ext, 0, 5));
+    }
+    if (ext & 0x800) {
+        ofs = DREG(ext, 6);
+    } else {
+        ofs = tcg_const_i32(tcg_ctx, extract32(ext, 6, 5));
+    }
+
+    switch (insn & 0x0f00) {
+    case 0x0a00: /* bfchg */
+        gen_helper_bfchg_mem(tcg_ctx, tcg_ctx->QREG_CC_N, tcg_ctx->cpu_env, addr, ofs, len);
+        break;
+    case 0x0c00: /* bfclr */
+        gen_helper_bfclr_mem(tcg_ctx, tcg_ctx->QREG_CC_N, tcg_ctx->cpu_env, addr, ofs, len);
+        break;
+    case 0x0e00: /* bfset */
+        gen_helper_bfset_mem(tcg_ctx, tcg_ctx->QREG_CC_N, tcg_ctx->cpu_env, addr, ofs, len);
+        break;
+    case 0x0800: /* bftst */
+        gen_helper_bfexts_mem(tcg_ctx, tcg_ctx->QREG_CC_N, tcg_ctx->cpu_env, addr, ofs, len);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+    set_cc_op(s, CC_OP_LOGIC);
+
+    if (!(ext & 0x20)) {
+        tcg_temp_free(tcg_ctx, len);
+    }
+    if (!(ext & 0x800)) {
+        tcg_temp_free(tcg_ctx, ofs);
+    }
 }
 
 DISAS_INSN(bfins_reg)
@@ -3848,6 +3948,41 @@ DISAS_INSN(bfins_reg)
         tcg_temp_free(tcg_ctx, mask);
     }
     tcg_temp_free(tcg_ctx, tmp);
+}
+
+DISAS_INSN(bfins_mem)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int ext = read_im16(env, s);
+    TCGv src = DREG(ext, 12);
+    TCGv addr, len, ofs;
+
+    addr = gen_lea(env, s, insn, OS_UNSIZED);
+    if (IS_NULL_QREG(addr)) {
+        gen_addr_fault(s);
+        return;
+    }
+
+    if (ext & 0x20) {
+        len = DREG(ext, 0);
+    } else {
+        len = tcg_const_i32(tcg_ctx, extract32(ext, 0, 5));
+    }
+    if (ext & 0x800) {
+        ofs = DREG(ext, 6);
+    } else {
+        ofs = tcg_const_i32(tcg_ctx, extract32(ext, 6, 5));
+    }
+
+    gen_helper_bfins_mem(tcg_ctx, tcg_ctx->QREG_CC_N, tcg_ctx->cpu_env, addr, src, ofs, len);
+    set_cc_op(s, CC_OP_LOGIC);
+
+    if (!(ext & 0x20)) {
+        tcg_temp_free(tcg_ctx, len);
+    }
+    if (!(ext & 0x800)) {
+        tcg_temp_free(tcg_ctx, ofs);
+    }
 }
 
 DISAS_INSN(ff1)
@@ -4971,11 +5106,17 @@ void register_m68k_insns (CPUM68KState *env)
     INSN(rotate8_reg, e030, f0f0, M68000);
     INSN(rotate16_reg, e070, f0f0, M68000);
     INSN(rotate_mem, e4c0, fcc0, M68000);
-    INSN(bfext_reg, e9c0, fdf8, BITFIELD);  /* bfextu & bfexts */
+    INSN(bfext_mem, e9c0, fdc0, BITFIELD);  /* bfextu & bfexts */
+    INSN(bfext_reg, e9c0, fdf8, BITFIELD);
+    INSN(bfins_mem, efc0, ffc0, BITFIELD);
     INSN(bfins_reg, efc0, fff8, BITFIELD);
+    INSN(bfop_mem, eac0, ffc0, BITFIELD);   /* bfchg */
     INSN(bfop_reg, eac0, fff8, BITFIELD);   /* bfchg */
+    INSN(bfop_mem, ecc0, ffc0, BITFIELD);   /* bfclr */
     INSN(bfop_reg, ecc0, fff8, BITFIELD);   /* bfclr */
+    INSN(bfop_mem, eec0, ffc0, BITFIELD);   /* bfset */
     INSN(bfop_reg, eec0, fff8, BITFIELD);   /* bfset */
+    INSN(bfop_mem, e8c0, ffc0, BITFIELD);   /* bftst */
     INSN(bfop_reg, e8c0, fff8, BITFIELD);   /* bftst */
     INSN(undef_fpu, f000, f000, CF_ISA_A);
     INSN(fpu,       f200, ffc0, CF_FPU);
