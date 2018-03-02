@@ -104,11 +104,7 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define QEMU_UNUSED_VAR __attribute__((unused))
 #define QEMU_UNUSED_FUNC __attribute__((unused))
 
-#if QEMU_GNUC_PREREQ(3, 4)
 #define QEMU_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
-#else
-#define QEMU_WARN_UNUSED_RESULT
-#endif
 
 #if QEMU_GNUC_PREREQ(4, 3)
 #define QEMU_ARTIFICIAL __attribute__((always_inline, artificial))
