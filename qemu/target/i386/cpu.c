@@ -1465,7 +1465,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         "Haswell",
         0xd, 0x80000008,
         CPUID_VENDOR_INTEL,
-        6, 60, 1,
+        6, 60, 4,
         {
         // FEAT_1_EDX
             CPUID_VME | CPUID_SSE2 | CPUID_SSE | CPUID_FXSR | CPUID_MMX |
