@@ -863,6 +863,17 @@ static uint64_t pmccntr_read(CPUARMState *env, const ARMCPRegInfo *ri)
     return total_ticks - env->cp15.c15_ccnt;
 }
 
+static void pmselr_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                         uint64_t value)
+{
+    /* The value of PMSELR.SEL affects the behavior of PMXEVTYPER and
+     * PMXEVCNTR. We allow [0..31] to be written to PMSELR here; in the
+     * meanwhile, we check PMSELR.SEL when PMXEVTYPER and PMXEVCNTR are
+     * accessed.
+     */
+    env->cp15.c9_pmselr = value & 0x1f;
+}
+
 static void pmccntr_write(CPUARMState *env, const ARMCPRegInfo *ri,
                         uint64_t value)
 {
@@ -1066,13 +1077,13 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
     { "PMSWINC", 15,9,12, 0,0,4, 0,
       ARM_CP_NOP, PL0_W, 0, NULL, 0, 0, {0, 0},
       pmreg_access, },
-    /* Since we don't implement any events, writing to PMSELR is UNPREDICTABLE.
-     * We choose to RAZ/WI.
-     */
-    { "PMSELR", 15,9,12, 0,0,5, 0,
-      ARM_CP_CONST, PL0_RW, 0, NULL, 0, 0, {0, 0},
-      pmreg_access },
 #ifndef CONFIG_USER_ONLY
+    { "PMSELR", 15,9,12, 0,0,5, 0, ARM_CP_ALIAS,
+      PL0_RW, 0, NULL, 0, offsetoflow32(CPUARMState, cp15.c9_pmselr), {0, 0},
+      pmreg_access, NULL, pmselr_write, NULL, raw_write},
+    { "PMSELR_EL0", 0,9,12, 3,3,5, ARM_CP_STATE_AA64, 0,
+      PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmselr), {0, 0},
+      pmreg_access, NULL, pmselr_write, NULL, raw_write, },
     { "PMCCNTR", 15,9,13, 0,0,0, 0,
       ARM_CP_IO, PL0_RW, 0, NULL, 0, 0, {0, 0},
       pmreg_access, pmccntr_read, pmccntr_write32, },
