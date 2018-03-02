@@ -144,9 +144,9 @@ int qemu_strtou64(const char *nptr, const char **endptr, int base,
 #define QEMU_STRTOSZ_DEFSUFFIX_MB 'M'
 #define QEMU_STRTOSZ_DEFSUFFIX_KB 'K'
 #define QEMU_STRTOSZ_DEFSUFFIX_B 'B'
-int64_t qemu_strtosz(const char *nptr, char **end);
 int64_t qemu_strtosz_suffix(const char *nptr, char **end,
                             const char default_suffix);
+int64_t qemu_strtosz_MiB(const char *nptr, char **end);
 int64_t qemu_strtosz_metric(const char *nptr, char **end);
 
 #define K_BYTE     (1ULL << 10)
