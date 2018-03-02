@@ -150,7 +150,7 @@ static bool tcg_exec_all(struct uc_struct* uc)
 {
     int r;
     bool finish = false;
-    while (!uc->exit_request) {
+    while (!uc->cpu->exit_request) {
         CPUState *cpu = uc->cpu;
         CPUArchState *env = cpu->env_ptr;
 
@@ -165,38 +165,37 @@ static bool tcg_exec_all(struct uc_struct* uc)
                 // reset stop_request
                 uc->stop_request = false;
             } else if (uc->stop_request) {
-                //printf(">>> got STOP request!!!\n");
                 finish = true;
                 break;
             }
 
             // save invalid memory access error & quit
             if (env->invalid_error) {
-                // printf(">>> invalid memory accessed, STOP = %u!!!\n", env->invalid_error);
                 uc->invalid_addr = env->invalid_addr;
                 uc->invalid_error = env->invalid_error;
                 finish = true;
                 break;
             }
 
-            // printf(">>> stop with r = %x, HLT=%x\n", r, EXCP_HLT);
             if (r == EXCP_DEBUG) {
                 cpu_handle_guest_debug(cpu);
                 break;
             }
             if (r == EXCP_HLT) {
-                //printf(">>> got HLT!!!\n");
                 finish = true;
                 break;
             } else if (r == EXCP_ATOMIC) {
                 cpu_exec_step_atomic(uc, cpu);
             }
         } else if (cpu->stop || cpu->stopped) {
-                printf(">>> got stopped!!!\n");
+            printf(">>> got stopped!!!\n");
             break;
         }
     }
-    uc->exit_request = 0;
+
+    if (uc->cpu && uc->cpu->exit_request) {
+        atomic_mb_set(&uc->cpu->exit_request, 0);
+    }
 
     return finish;
 }
