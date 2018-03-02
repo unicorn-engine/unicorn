@@ -390,10 +390,6 @@ static inline void cpu_loop_exec_tb(CPUState *cpu, TranslationBlock *tb,
 {
     uintptr_t ret;
 
-    if (unlikely(cpu->exit_request)) {
-        return;
-    }
-
     /* execute the generated code */
     ret = cpu_tb_exec(cpu, tb);
     tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
