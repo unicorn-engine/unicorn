@@ -2665,6 +2665,7 @@
 #define qemu_st_helpers qemu_st_helpers_sparc
 #define qemu_strnlen qemu_strnlen_sparc
 #define qemu_strsep qemu_strsep_sparc
+#define qemu_tcg_configure qemu_tcg_configure_sparc
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_sparc
 #define qemu_try_memalign qemu_try_memalign_sparc
 #define qentry_destroy qentry_destroy_sparc

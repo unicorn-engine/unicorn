@@ -2665,6 +2665,7 @@
 #define qemu_st_helpers qemu_st_helpers_mips64
 #define qemu_strnlen qemu_strnlen_mips64
 #define qemu_strsep qemu_strsep_mips64
+#define qemu_tcg_configure qemu_tcg_configure_mips64
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_mips64
 #define qemu_try_memalign qemu_try_memalign_mips64
 #define qentry_destroy qentry_destroy_mips64

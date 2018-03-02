@@ -2665,6 +2665,7 @@
 #define qemu_st_helpers qemu_st_helpers_armeb
 #define qemu_strnlen qemu_strnlen_armeb
 #define qemu_strsep qemu_strsep_armeb
+#define qemu_tcg_configure qemu_tcg_configure_armeb
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_armeb
 #define qemu_try_memalign qemu_try_memalign_armeb
 #define qentry_destroy qentry_destroy_armeb

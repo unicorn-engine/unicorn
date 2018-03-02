@@ -2665,6 +2665,7 @@
 #define qemu_st_helpers qemu_st_helpers_powerpc
 #define qemu_strnlen qemu_strnlen_powerpc
 #define qemu_strsep qemu_strsep_powerpc
+#define qemu_tcg_configure qemu_tcg_configure_powerpc
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_powerpc
 #define qemu_try_memalign qemu_try_memalign_powerpc
 #define qentry_destroy qentry_destroy_powerpc

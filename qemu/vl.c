@@ -137,6 +137,9 @@ int machine_initialize(struct uc_struct *uc)
     uc->machine_state = current_machine;
     current_machine->uc = uc;
 
+    // Unicorn: FIXME: ditto with regards to below
+    //qemu_tcg_configure(uc);
+
     // Unicorn: FIXME: this should be uncommented
     //          However due to the "stellar" way unicorn
     //          handles multiple targets (e.g. the YOLO

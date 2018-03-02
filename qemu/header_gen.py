@@ -2671,6 +2671,7 @@ symbols = (
     'qemu_st_helpers',
     'qemu_strnlen',
     'qemu_strsep',
+    'qemu_tcg_configure',
     'qemu_tcg_init_vcpu',
     'qemu_try_memalign',
     'qentry_destroy',

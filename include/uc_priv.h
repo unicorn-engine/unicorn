@@ -175,6 +175,9 @@ struct uc_struct {
 
     uc_insn_hook_validate insn_hook_validate;
 
+    // qemu/cpus.c
+    bool mttcg_enabled;
+
     // qemu/exec.c
     MemoryRegion *system_memory;
     MemoryRegion io_mem_rom;

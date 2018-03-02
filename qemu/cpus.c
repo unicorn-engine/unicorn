@@ -31,6 +31,7 @@
 #include "sysemu/sysemu.h"
 #include "exec/exec-all.h"
 
+#include "tcg.h"
 #include "qemu/thread.h"
 #include "sysemu/cpus.h"
 
@@ -44,6 +45,17 @@ static int tcg_cpu_exec(struct uc_struct *uc, CPUState *cpu);
 static bool tcg_exec_all(struct uc_struct* uc);
 static int qemu_tcg_init_vcpu(CPUState *cpu);
 static void *qemu_tcg_cpu_loop(struct uc_struct *uc);
+
+
+static bool default_mttcg_enabled(void)
+{
+    return false;
+}
+
+void qemu_tcg_configure(struct uc_struct *uc)
+{
+    uc->mttcg_enabled = default_mttcg_enabled();
+}
 
 int vm_start(struct uc_struct* uc)
 {

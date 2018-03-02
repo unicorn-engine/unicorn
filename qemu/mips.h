@@ -2665,6 +2665,7 @@
 #define qemu_st_helpers qemu_st_helpers_mips
 #define qemu_strnlen qemu_strnlen_mips
 #define qemu_strsep qemu_strsep_mips
+#define qemu_tcg_configure qemu_tcg_configure_mips
 #define qemu_tcg_init_vcpu qemu_tcg_init_vcpu_mips
 #define qemu_try_memalign qemu_try_memalign_mips
 #define qentry_destroy qentry_destroy_mips
