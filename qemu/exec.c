@@ -2474,6 +2474,7 @@ void address_space_cache_destroy(MemoryRegionCache *cache)
     }
 #endif
     memory_region_unref(cache->mr);
+    cache->mr = NULL;
 }
 
 /* Called from RCU critical section.  This function has the same
