@@ -807,6 +807,7 @@ int cpu_mips_exec(struct uc_struct *uc, CPUState *cpu);
 void mips_tcg_init(struct uc_struct *uc);
 MIPSCPU *cpu_mips_init(struct uc_struct *uc, const char *cpu_model);
 int cpu_mips_signal_handler(int host_signum, void *pinfo, void *puc);
+bool cpu_supports_isa(const char *cpu_model, unsigned int isa);
 void cpu_set_exception_base(struct uc_struct *uc, int vp_index, target_ulong address);
 
 /* TODO QOM'ify CPU reset and remove */

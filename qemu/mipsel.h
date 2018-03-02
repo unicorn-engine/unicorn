@@ -3441,6 +3441,7 @@
 #define cpu_rddsp cpu_rddsp_mipsel
 #define cpu_set_exception_base cpu_set_exception_base_mipsel
 #define cpu_state_reset cpu_state_reset_mipsel
+#define cpu_supports_isa cpu_supports_isa_mipsel
 #define cpu_wrdsp cpu_wrdsp_mipsel
 #define do_raise_exception_err do_raise_exception_err_mipsel
 #define exception_resume_pc exception_resume_pc_mipsel

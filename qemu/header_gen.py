@@ -3505,6 +3505,7 @@ mips_symbols = (
     'cpu_rddsp',
     'cpu_set_exception_base',
     'cpu_state_reset',
+    'cpu_supports_isa',
     'cpu_wrdsp',
     'do_raise_exception_err',
     'exception_resume_pc',

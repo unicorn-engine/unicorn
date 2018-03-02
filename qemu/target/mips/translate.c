@@ -20367,6 +20367,16 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc, const char *cpu_model)
     return cpu;
 }
 
+bool cpu_supports_isa(const char *cpu_model, unsigned int isa)
+{
+    const mips_def_t *def = cpu_mips_find_by_name(cpu_model);
+    if (!def) {
+        return false;
+    }
+
+    return (def->insn_flags & isa) != 0;
+}
+
 void cpu_set_exception_base(struct uc_struct *uc, int vp_index, target_ulong address)
 {
     MIPSCPU *vp = MIPS_CPU(uc, qemu_get_cpu(uc, vp_index));
