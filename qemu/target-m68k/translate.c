@@ -1971,7 +1971,6 @@ DISAS_INSN(cas)
     default:
         g_assert_not_reached();
     }
-    opc |= MO_ALIGN;
 
     ext = read_im16(env, s);
 
