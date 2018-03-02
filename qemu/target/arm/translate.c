@@ -10117,7 +10117,7 @@ static int disas_thumb2_insn(CPUARMState *env, DisasContext *s, uint16_t insn_hw
             gen_arm_shift_reg(s, tmp, op, tmp2, logic_cc);
             if (logic_cc)
                 gen_logic_CC(s, tmp);
-            store_reg_bx(s, rd, tmp);
+            store_reg(s, rd, tmp);
             break;
         case 1: /* Sign/zero extend.  */
             op = (insn >> 20) & 7;
