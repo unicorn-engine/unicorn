@@ -28,11 +28,11 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
-    <ClInclude Include="..\..\..\qemu\target-sparc\cpu-qom.h" />
-    <ClInclude Include="..\..\..\qemu\target-sparc\cpu.h" />
-    <ClInclude Include="..\..\..\qemu\target-sparc\asi.h" />
-    <ClInclude Include="..\..\..\qemu\target-sparc\helper.h" />
-    <ClInclude Include="..\..\..\qemu\target-sparc\unicorn.h" />
+    <ClInclude Include="..\..\..\qemu\target\sparc\cpu-qom.h" />
+    <ClInclude Include="..\..\..\qemu\target\sparc\cpu.h" />
+    <ClInclude Include="..\..\..\qemu\target\sparc\asi.h" />
+    <ClInclude Include="..\..\..\qemu\target\sparc\helper.h" />
+    <ClInclude Include="..\..\..\qemu\target\sparc\unicorn.h" />
     <ClInclude Include="..\..\..\qemu\sparc64.h" />
     <ClInclude Include="..\config-host.h" />
     <ClInclude Include="config-target.h" />
@@ -48,17 +48,17 @@
     <ClCompile Include="..\..\..\qemu\ioport.c" />
     <ClCompile Include="..\..\..\qemu\memory.c" />
     <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\cc_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\cpu.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\fop_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\int64_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\ldst_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\mmu_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\translate.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\unicorn64.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\vis_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-sparc\win_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\cc_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\cpu.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\fop_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\int64_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\ldst_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\mmu_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\translate.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\unicorn64.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\vis_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\sparc\win_helper.c" />
     <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -140,7 +140,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;__i386__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-sparc;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target/sparc;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
@@ -161,7 +161,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;__x86_64__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-sparc;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target/sparc;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
@@ -184,7 +184,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;__i386__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-sparc;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target/sparc;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
@@ -210,7 +210,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;__x86_64__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-sparc;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target/sparc;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>

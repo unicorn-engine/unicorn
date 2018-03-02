@@ -16,11 +16,11 @@
 #include "uc_priv.h"
 
 // target specific headers
-#include "qemu/target-m68k/unicorn.h"
-#include "qemu/target-i386/unicorn.h"
-#include "qemu/target-arm/unicorn.h"
-#include "qemu/target-mips/unicorn.h"
-#include "qemu/target-sparc/unicorn.h"
+#include "qemu/target/arm/unicorn.h"
+#include "qemu/target/i386/unicorn.h"
+#include "qemu/target/m68k/unicorn.h"
+#include "qemu/target/mips/unicorn.h"
+#include "qemu/target/sparc/unicorn.h"
 
 #include "qemu/include/hw/boards.h"
 #include "qemu/include/qemu/queue.h"

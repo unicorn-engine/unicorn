@@ -6,7 +6,7 @@ include config-devices.mak
 include $(SRC_PATH)/rules.mak
 
 $(call set-vpath, $(SRC_PATH))
-QEMU_CFLAGS += -I.. -I$(SRC_PATH)/target-$(TARGET_BASE_ARCH) -DNEED_CPU_H
+QEMU_CFLAGS += -I.. -I$(SRC_PATH)/target/$(TARGET_BASE_ARCH) -DNEED_CPU_H
 
 QEMU_CFLAGS+=-I$(SRC_PATH)/include
 
@@ -46,7 +46,7 @@ obj-y += cpu-exec-common.o
 obj-y += tcg/tcg.o tcg/tcg-op.o tcg/optimize.o
 obj-y += tcg/tcg-common.o
 obj-y += fpu/softfloat.o
-obj-y += target-$(TARGET_BASE_ARCH)/
+obj-y += target/$(TARGET_BASE_ARCH)/
 obj-y += tcg-runtime.o
 
 #########################################################

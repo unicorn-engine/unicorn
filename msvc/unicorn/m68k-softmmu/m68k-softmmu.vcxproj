@@ -28,11 +28,11 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\cpu-qom.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\cpu.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\helper.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\m68k-qreg.h" />
-    <ClInclude Include="..\..\..\qemu\target-m68k\unicorn.h" />
+    <ClInclude Include="..\..\..\qemu\target\m68k\cpu-qom.h" />
+    <ClInclude Include="..\..\..\qemu\target\m68k\cpu.h" />
+    <ClInclude Include="..\..\..\qemu\target\m68k\helper.h" />
+    <ClInclude Include="..\..\..\qemu\target\m68k\m68k-qreg.h" />
+    <ClInclude Include="..\..\..\qemu\target\m68k\unicorn.h" />
     <ClInclude Include="..\..\..\qemu\m68k.h" />
     <ClInclude Include="..\config-host.h" />
     <ClInclude Include="config-target.h" />
@@ -59,11 +59,11 @@
     <ClCompile Include="..\..\..\qemu\translate-all.c" />
     <ClCompile Include="..\..\..\qemu\translate-common.c" />
     <ClCompile Include="..\..\..\qemu\hw\m68k\dummy_m68k.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\cpu.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\op_helper.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\translate.c" />
-    <ClCompile Include="..\..\..\qemu\target-m68k\unicorn.c" />
+    <ClCompile Include="..\..\..\qemu\target\m68k\cpu.c" />
+    <ClCompile Include="..\..\..\qemu\target\m68k\helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\m68k\op_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\m68k\translate.c" />
+    <ClCompile Include="..\..\..\qemu\target\m68k\unicorn.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{2C5AD347-6E34-463B-8289-00578E43B255}</ProjectGuid>
@@ -134,7 +134,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;__i386__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-m68k;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target/m68k;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
@@ -155,7 +155,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;__x86_64__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-m68k;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target/m68k;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
@@ -178,7 +178,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;__i386__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-m68k;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target/m68k;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
@@ -204,7 +204,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;__x86_64__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-m68k;../../../include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target/m68k;../../../include</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>

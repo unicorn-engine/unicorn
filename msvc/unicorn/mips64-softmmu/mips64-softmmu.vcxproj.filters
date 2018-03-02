@@ -10,7 +10,7 @@
     <Filter Include="hw\mips">
       <UniqueIdentifier>{39b8b5d5-ffa1-4eb6-ab78-2edb05e49e84}</UniqueIdentifier>
     </Filter>
-    <Filter Include="target-mips">
+    <Filter Include="target\mips">
       <UniqueIdentifier>{a4e58c5f-5143-4c18-b291-2f472259d6d9}</UniqueIdentifier>
     </Filter>
     <Filter Include="tcg">
@@ -48,20 +48,20 @@
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
       <Filter>tcg\i386</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-mips\cpu.h">
-      <Filter>target-mips</Filter>
+    <ClInclude Include="..\..\..\qemu\target\mips\cpu.h">
+      <Filter>target\mips</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-mips\cpu-qom.h">
-      <Filter>target-mips</Filter>
+    <ClInclude Include="..\..\..\qemu\target\mips\cpu-qom.h">
+      <Filter>target\mips</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-mips\helper.h">
-      <Filter>target-mips</Filter>
+    <ClInclude Include="..\..\..\qemu\target\mips\helper.h">
+      <Filter>target\mips</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-mips\mips-defs.h">
-      <Filter>target-mips</Filter>
+    <ClInclude Include="..\..\..\qemu\target\mips\mips-defs.h">
+      <Filter>target\mips</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-mips\unicorn.h">
-      <Filter>target-mips</Filter>
+    <ClInclude Include="..\..\..\qemu\target\mips\unicorn.h">
+      <Filter>target\mips</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\mips64.h" />
     <ClInclude Include="..\config-host.h" />
@@ -101,32 +101,32 @@
     <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c">
       <Filter>tcg\i386</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-mips\cpu.c">
-      <Filter>target-mips</Filter>
+    <ClCompile Include="..\..\..\qemu\target\mips\cpu.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-mips\dsp_helper.c">
-      <Filter>target-mips</Filter>
+    <ClCompile Include="..\..\..\qemu\target\mips\dsp_helper.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-mips\helper.c">
-      <Filter>target-mips</Filter>
+    <ClCompile Include="..\..\..\qemu\target\mips\helper.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-mips\lmi_helper.c">
-      <Filter>target-mips</Filter>
+    <ClCompile Include="..\..\..\qemu\target\mips\lmi_helper.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-mips\msa_helper.c">
-      <Filter>target-mips</Filter>
+    <ClCompile Include="..\..\..\qemu\target\mips\msa_helper.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-mips\op_helper.c">
-      <Filter>target-mips</Filter>
+    <ClCompile Include="..\..\..\qemu\target\mips\op_helper.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-mips\translate.c">
-      <Filter>target-mips</Filter>
+    <ClCompile Include="..\..\..\qemu\target\mips\translate.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-mips\translate_init.c">
-      <Filter>target-mips</Filter>
+    <ClCompile Include="..\..\..\qemu\target\mips\translate_init.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-mips\unicorn.c">
-      <Filter>target-mips</Filter>
+    <ClCompile Include="..\..\..\qemu\target\mips\unicorn.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

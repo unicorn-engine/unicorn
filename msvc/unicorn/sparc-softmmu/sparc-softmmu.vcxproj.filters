@@ -10,7 +10,7 @@
     <Filter Include="hw\sparc">
       <UniqueIdentifier>{0a04b798-735c-4115-ab62-b6cfc772efed}</UniqueIdentifier>
     </Filter>
-    <Filter Include="target-sparc">
+    <Filter Include="target\sparc">
       <UniqueIdentifier>{10f0c533-e16b-4e31-b979-812af068bb36}</UniqueIdentifier>
     </Filter>
     <Filter Include="tcg">
@@ -48,20 +48,20 @@
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
       <Filter>tcg\i386</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-sparc\cpu.h">
-      <Filter>target-sparc</Filter>
+    <ClInclude Include="..\..\..\qemu\target\sparc\cpu.h">
+      <Filter>target\sparc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-sparc\cpu-qom.h">
-      <Filter>target-sparc</Filter>
+    <ClInclude Include="..\..\..\qemu\target\sparc\cpu-qom.h">
+      <Filter>target\sparc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-sparc\asi.h">
-      <Filter>target-sparc</Filter>
+    <ClInclude Include="..\..\..\qemu\target\sparc\asi.h">
+      <Filter>target\sparc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-sparc\helper.h">
-      <Filter>target-sparc</Filter>
+    <ClInclude Include="..\..\..\qemu\target\sparc\helper.h">
+      <Filter>target\sparc</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-sparc\unicorn.h">
-      <Filter>target-sparc</Filter>
+    <ClInclude Include="..\..\..\qemu\target\sparc\unicorn.h">
+      <Filter>target\sparc</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\sparc.h" />
     <ClInclude Include="..\config-host.h" />
@@ -96,35 +96,35 @@
     <ClCompile Include="..\..\..\qemu\hw\sparc\leon3.c">
       <Filter>hw\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-sparc\fop_helper.c">
-      <Filter>target-sparc</Filter>
+    <ClCompile Include="..\..\..\qemu\target\sparc\fop_helper.c">
+      <Filter>target\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-sparc\helper.c">
-      <Filter>target-sparc</Filter>
+    <ClCompile Include="..\..\..\qemu\target\sparc\helper.c">
+      <Filter>target\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-sparc\ldst_helper.c">
-      <Filter>target-sparc</Filter>
+    <ClCompile Include="..\..\..\qemu\target\sparc\ldst_helper.c">
+      <Filter>target\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-sparc\mmu_helper.c">
-      <Filter>target-sparc</Filter>
+    <ClCompile Include="..\..\..\qemu\target\sparc\mmu_helper.c">
+      <Filter>target\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-sparc\translate.c">
-      <Filter>target-sparc</Filter>
+    <ClCompile Include="..\..\..\qemu\target\sparc\translate.c">
+      <Filter>target\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-sparc\win_helper.c">
-      <Filter>target-sparc</Filter>
+    <ClCompile Include="..\..\..\qemu\target\sparc\win_helper.c">
+      <Filter>target\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-sparc\cc_helper.c">
-      <Filter>target-sparc</Filter>
+    <ClCompile Include="..\..\..\qemu\target\sparc\cc_helper.c">
+      <Filter>target\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-sparc\cpu.c">
-      <Filter>target-sparc</Filter>
+    <ClCompile Include="..\..\..\qemu\target\sparc\cpu.c">
+      <Filter>target\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-sparc\unicorn.c">
-      <Filter>target-sparc</Filter>
+    <ClCompile Include="..\..\..\qemu\target\sparc\unicorn.c">
+      <Filter>target\sparc</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-sparc\int32_helper.c">
-      <Filter>target-sparc</Filter>
+    <ClCompile Include="..\..\..\qemu\target\sparc\int32_helper.c">
+      <Filter>target\sparc</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
