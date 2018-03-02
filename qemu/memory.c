@@ -1064,7 +1064,7 @@ static const MemoryRegionOps ram_device_mem_ops = {
     memory_region_ram_device_write,
     NULL,
     NULL,
-    DEVICE_NATIVE_ENDIAN,
+    DEVICE_HOST_ENDIAN,
     // valid
     {
         1, 8,
