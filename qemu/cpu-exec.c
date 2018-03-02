@@ -321,7 +321,7 @@ static inline bool cpu_handle_exception(struct uc_struct *uc, CPUState *cpu, int
     return false;
 }
 
-static inline void cpu_handle_interrupt(CPUState *cpu,
+static inline bool cpu_handle_interrupt(CPUState *cpu,
                                         TranslationBlock **last_tb)
 {
     CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
@@ -335,13 +335,13 @@ static inline void cpu_handle_interrupt(CPUState *cpu,
         if (interrupt_request & CPU_INTERRUPT_DEBUG) {
             cpu->interrupt_request &= ~CPU_INTERRUPT_DEBUG;
             cpu->exception_index = EXCP_DEBUG;
-            cpu_loop_exit(cpu);
+            return true;
         }
         if (interrupt_request & CPU_INTERRUPT_HALT) {
             cpu->interrupt_request &= ~CPU_INTERRUPT_HALT;
             cpu->halted = 1;
             cpu->exception_index = EXCP_HLT;
-            cpu_loop_exit(cpu);
+            return true;
         }
 #if defined(TARGET_I386)
         else if (interrupt_request & CPU_INTERRUPT_INIT) {
@@ -350,7 +350,7 @@ static inline void cpu_handle_interrupt(CPUState *cpu,
             cpu_svm_check_intercept_param(env, SVM_EXIT_INIT, 0, 0);
             do_cpu_init(x86_cpu);
             cpu->exception_index = EXCP_HALTED;
-            cpu_loop_exit(cpu);
+            return true;
         }
 #else
         else if (interrupt_request & CPU_INTERRUPT_RESET) {
@@ -380,8 +380,9 @@ static inline void cpu_handle_interrupt(CPUState *cpu,
     if (unlikely(cpu->exit_request)) {
         cpu->exit_request = 0;
         cpu->exception_index = EXCP_INTERRUPT;
-        cpu_loop_exit(cpu);
+        return true;
     }
+    return false;
 }
 
 static inline void cpu_loop_exec_tb(CPUState *cpu, TranslationBlock *tb,
@@ -502,7 +503,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     env->invalid_error = UC_ERR_OK;
 
     for(;;) {
-        TranslationBlock *tb, *last_tb;
+        TranslationBlock *last_tb = NULL;
         int tb_exit = 0;
 
         /* prepare setjmp context for exception handling */
@@ -518,16 +519,15 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 
             last_tb = NULL; /* forget the last executed TB after exception */
             atomic_mb_set(&cpu->tb_flushed, false); /* reset before first TB lookup */
-            for(;;) {
-                cpu_handle_interrupt(cpu, &last_tb);
-                tb = tb_find(cpu, last_tb, tb_exit);
+            while (!cpu_handle_interrupt(cpu, &last_tb)) {
+                TranslationBlock *tb = tb_find(cpu, last_tb, tb_exit);
                 if (!tb) {   // invalid TB due to invalid code?
                     uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
                     ret = EXCP_HLT;
                     break;
                 }
                 cpu_loop_exec_tb(cpu, tb, &last_tb, &tb_exit);
-            } /* for(;;) */
+            }
         } else {
 #if defined(__clang__) || !QEMU_GNUC_PREREQ(4, 6)
             /* Some compilers wrongly smash all local variables after
