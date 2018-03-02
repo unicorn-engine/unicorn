@@ -376,9 +376,6 @@ fi
 # OS specific
 
 case $targetos in
-CYGWIN*)
-  linux="yes"
-;;
 MINGW32*)
   mingw32="yes"
 ;;
