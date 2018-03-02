@@ -118,7 +118,7 @@ static void arm_cpu_reset(CPUState *s)
 
     acc->parent_reset(s);
 
-    memset(env, 0, offsetof(CPUARMState, features));
+    memset(env, 0, offsetof(CPUARMState, end_reset_fields));
     g_hash_table_foreach(cpu->cp_regs, cp_reg_reset, cpu);
     g_hash_table_foreach(cpu->cp_regs, cp_reg_check_reset, cpu);
     env->vfp.xregs[ARM_VFP_FPSID] = cpu->reset_fpsid;
@@ -231,7 +231,6 @@ static void arm_cpu_reset(CPUState *s)
                               &env->vfp.fp_status);
     set_float_detect_tininess(float_tininess_before_rounding,
                               &env->vfp.standard_fp_status);
-    tlb_flush(s, 1);
 
     hw_breakpoint_update_all(cpu);
     hw_watchpoint_update_all(cpu);
