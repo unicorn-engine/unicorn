@@ -585,18 +585,19 @@ static void gen_flush_flags(DisasContext *s)
 
     case CC_OP_DYNAMIC:
         gen_helper_flush_flags(tcg_ctx, tcg_ctx->cpu_env, tcg_ctx->QREG_CC_OP);
+        s->cc_op_synced = 1;
         break;
 
     default:
         t0 = tcg_const_i32(tcg_ctx, s->cc_op);
         gen_helper_flush_flags(tcg_ctx, tcg_ctx->cpu_env, t0);
         tcg_temp_free(tcg_ctx, t0);
+        s->cc_op_synced = 1;
         break;
     }
 
     /* Note that flush_flags also assigned to env->cc_op.  */
     s->cc_op = CC_OP_FLAGS;
-    s->cc_op_synced = 1;
 }
 
 static inline TCGv gen_extend(DisasContext *s, TCGv val, int opsize, int sign)
