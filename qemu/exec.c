@@ -537,6 +537,9 @@ void cpu_exec_init(CPUState *cpu, void *opaque)
     // TODO: assert uc does not already have a cpu?
     uc->cpu = cpu;
 
+    // Unicorn: Required to clean-slate TLB state
+    tlb_flush(cpu);
+
 #ifndef CONFIG_USER_ONLY
 
     // Unicorn: commented out
