@@ -173,9 +173,7 @@ static void arm_cpu_reset(CPUState *s)
     /* SVC mode with interrupts disabled.  */
     env->uncached_cpsr = ARM_CPU_MODE_SVC;
     env->daif = PSTATE_D | PSTATE_A | PSTATE_I | PSTATE_F;
-    /* On ARMv7-M the CPSR_I is the value of the PRIMASK register, and is
-     * clear at reset. Initial SP and PC are loaded from ROM.
-     */
+
     if (arm_feature(env, ARM_FEATURE_M)) {
         uint32_t initial_msp; /* Loaded from 0x0 */
         uint32_t initial_pc; /* Loaded from 0x4 */
@@ -184,7 +182,10 @@ static void arm_cpu_reset(CPUState *s)
             env->v7m.secure = true;
         }
 
-        env->daif &= ~PSTATE_I;
+        /* For M profile we store FAULTMASK and PRIMASK in the
+         * PSTATE F and I bits; these are both clear at reset.
+         */
+        env->daif &= ~(PSTATE_I | PSTATE_F);
 
         /* The reset value of this bit is IMPDEF, but ARM recommends
          * that it resets to 1, so QEMU always does that rather than making
@@ -192,6 +193,7 @@ static void arm_cpu_reset(CPUState *s)
          */
         env->v7m.ccr = R_V7M_CCR_STKALIGN_MASK;
 #if 0
+        /* Load the initial SP and PC from the vector table at address 0 */
         uint8_t *rom;
         rom = rom_ptr(0);
         if (rom) {
