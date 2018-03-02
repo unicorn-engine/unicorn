@@ -50,7 +50,8 @@ static QObjectInputVisitor *to_qiv(Visitor *v)
     return container_of(v, QObjectInputVisitor, visitor);
 }
 
-static const char *full_name(QObjectInputVisitor *qiv, const char *name)
+static const char *full_name_nth(QObjectInputVisitor *qiv, const char *name,
+                                 int n)
 {
     StackObject *so;
     char buf[32];
@@ -62,8 +63,10 @@ static const char *full_name(QObjectInputVisitor *qiv, const char *name)
     }
 
     QSLIST_FOREACH(so , &qiv->stack, node) {
-        if (qobject_type(so->obj) == QTYPE_QDICT) {
-            g_string_prepend(qiv->errname, name);
+        if (n) {
+            n--;
+        } else if (qobject_type(so->obj) == QTYPE_QDICT) {
+            g_string_prepend(qiv->errname, name ?: "<anonymous>");
             g_string_prepend_c(qiv->errname, '.');
         } else {
             snprintf(buf, sizeof(buf), "[%u]", so->index);
@@ -71,16 +74,22 @@ static const char *full_name(QObjectInputVisitor *qiv, const char *name)
         }
         name = so->name;
     }
+    assert(!n);
 
     if (name) {
         g_string_prepend(qiv->errname, name);
     } else if (qiv->errname->str[0] == '.') {
         g_string_erase(qiv->errname, 0, 1);
-    } else {
+    } else if (!qiv->errname->str[0]) {
         return "<anonymous>";
     }
 
     return qiv->errname->str;
+}
+
+static const char *full_name(QObjectInputVisitor *qiv, const char *name)
+{
+    return full_name_nth(qiv, name, 0);
 }
 
 static QObject *qobject_input_try_get_object(QObjectInputVisitor *qiv,
@@ -165,13 +174,6 @@ static const QListEntry *qobject_input_push(QObjectInputVisitor *qiv,
 
     QSLIST_INSERT_HEAD(&qiv->stack, tos, node);
     return tos->entry;
-}
-
-/** Only for qobject_input_pop. */
-static gboolean always_true(gpointer key, gpointer val, gpointer user_pkey)
-{
-    *(const char **)user_pkey = (const char *)key;
-    return TRUE;
 }
 
 static void qobject_input_check_struct(Visitor *v, Error **errp)
@@ -263,13 +265,28 @@ static GenericList *qobject_input_next_list(Visitor *v, GenericList *tail,
                                             size_t size)
 {
     QObjectInputVisitor *qiv = to_qiv(v);
-    StackObject *so = QSLIST_FIRST(&qiv->stack);
+    StackObject *tos = QSLIST_FIRST(&qiv->stack);
 
-    if (!so->entry) {
+    assert(tos && tos->obj && qobject_type(tos->obj) == QTYPE_QLIST);
+
+    if (!tos->entry) {
         return NULL;
     }
     tail->next = g_malloc0(size);
     return tail->next;
+}
+
+static void qobject_input_check_list(Visitor *v, Error **errp)
+{
+    QObjectInputVisitor *qiv = to_qiv(v);
+    StackObject *tos = QSLIST_FIRST(&qiv->stack);
+
+    assert(tos && tos->obj && qobject_type(tos->obj) == QTYPE_QLIST);
+
+    if (tos->entry) {
+        error_setg(errp, "Only %u list elements expected in %s",
+                   tos->index + 1, full_name_nth(qiv, NULL, 1));
+    }
 }
 
 static void qobject_input_start_alternate(Visitor *v, const char *name,
@@ -474,6 +491,7 @@ Visitor *qobject_input_visitor_new(QObject *obj)
     v->visitor.start_alternate = qobject_input_start_alternate;
     v->visitor.start_list = qobject_input_start_list;
     v->visitor.next_list = qobject_input_next_list;
+    v->visitor.check_list = qobject_input_check_list;
     v->visitor.end_list = qobject_input_pop;
     v->visitor.type_int64 = qobject_input_type_int64;
     v->visitor.type_uint64 = qobject_input_type_uint64;
