@@ -131,9 +131,9 @@ int qemu_strtoi64(const char *nptr, const char **endptr, int base,
 int qemu_strtou64(const char *nptr, const char **endptr, int base,
                   uint64_t *result);
 
-int qemu_strtosz(const char *nptr, char **end, int64_t *result);
-int qemu_strtosz_MiB(const char *nptr, char **end, int64_t *result);
-int qemu_strtosz_metric(const char *nptr, char **end, int64_t *result);
+int qemu_strtosz(const char *nptr, char **end, uint64_t *result);
+int qemu_strtosz_MiB(const char *nptr, char **end, uint64_t *result);
+int qemu_strtosz_metric(const char *nptr, char **end, uint64_t *result);
 
 #define K_BYTE     (1ULL << 10)
 #define M_BYTE     (1ULL << 20)
