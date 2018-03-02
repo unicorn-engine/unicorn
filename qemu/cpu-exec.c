@@ -502,46 +502,41 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
     cpu->exception_index = -1;
     env->invalid_error = UC_ERR_OK;
 
-    for(;;) {
-        /* prepare setjmp context for exception handling */
-        if (sigsetjmp(cpu->jmp_env, 0) == 0) {
-            if (uc->stop_request || uc->invalid_error) {
+    /* prepare setjmp context for exception handling */
+    if (sigsetjmp(cpu->jmp_env, 0) != 0) {
+#if defined(__clang__) || !QEMU_GNUC_PREREQ(4, 6)
+        /* Some compilers wrongly smash all local variables after
+         * siglongjmp. There were bug reports for gcc 4.5.0 and clang.
+         * Reload essential local variables here for those compilers.
+         * Newer versions of gcc would complain about this code (-Wclobbered). */
+        cpu = uc->current_cpu;
+        env = cpu->env_ptr;
+        cc = CPU_GET_CLASS(uc, cpu);
+#else /* buggy compiler */
+        /* Assert that the compiler does not smash local variables. */
+        g_assert(cpu == current_cpu);
+        g_assert(cc == CPU_GET_CLASS(cpu));
+#endif /* buggy compiler */
+        cpu->can_do_io = 1;
+        // Unicorn: commented out
+        //tb_lock_reset();
+    }
+
+    /* if an exception is pending, we execute it here */
+    while (!cpu_handle_exception(uc, cpu, &ret)) {
+        TranslationBlock *last_tb = NULL;
+        int tb_exit = 0;
+
+        while (!cpu_handle_interrupt(cpu, &last_tb)) {
+            TranslationBlock *tb = tb_find(cpu, last_tb, tb_exit);
+            if (!tb) {   // invalid TB due to invalid code?
+                uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
+                ret = EXCP_HLT;
                 break;
             }
-
-            /* if an exception is pending, we execute it here */
-            while (!cpu_handle_exception(uc, cpu, &ret)) {
-                TranslationBlock *last_tb = NULL;
-                int tb_exit = 0;
-
-                while (!cpu_handle_interrupt(cpu, &last_tb)) {
-                    TranslationBlock *tb = tb_find(cpu, last_tb, tb_exit);
-                    if (!tb) {   // invalid TB due to invalid code?
-                        uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
-                        ret = EXCP_HLT;
-                        break;
-                    }
-                    cpu_loop_exec_tb(cpu, tb, &last_tb, &tb_exit);
-                }
-            }
-            break;
-        } else {
-#if defined(__clang__) || !QEMU_GNUC_PREREQ(4, 6)
-            /* Some compilers wrongly smash all local variables after
-             * siglongjmp. There were bug reports for gcc 4.5.0 and clang.
-             * Reload essential local variables here for those compilers.
-             * Newer versions of gcc would complain about this code (-Wclobbered). */
-            cpu = uc->current_cpu;
-            env = cpu->env_ptr;
-            cc = CPU_GET_CLASS(uc, cpu);
-#else /* buggy compiler */
-            /* Assert that the compiler does not smash local variables. */
-            g_assert(cpu == current_cpu);
-            g_assert(cc == CPU_GET_CLASS(cpu));
-#endif /* buggy compiler */
-            cpu->can_do_io = 1;
+            cpu_loop_exec_tb(cpu, tb, &last_tb, &tb_exit);
         }
-    } /* for(;;) */
+    }
 
     cc->cpu_exec_exit(cpu);
 
