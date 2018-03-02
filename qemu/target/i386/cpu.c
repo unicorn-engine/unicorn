@@ -3076,12 +3076,12 @@ static void x86_cpu_load_features(struct uc_struct *uc, X86CPU *cpu, Error **err
     FeatureWord w;
     Error *local_err = NULL;
 
-    /*TODO: cpu->host_features incorrectly overwrites features
+    /*TODO: cpu->max_features incorrectly overwrites features
      * set using "feat=on|off". Once we fix this, we can convert
      * plus_features & minus_features to global properties
      * inside x86_cpu_parse_featurestr() too.
      */
-    if (cpu->host_features) {
+    if (cpu->max_features) {
         for (w = 0; w < FEATURE_WORDS; w++) {
             env->features[w] =
                 x86_cpu_get_supported_feature_word(uc, w, cpu->migratable);
