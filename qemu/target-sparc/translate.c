@@ -4760,8 +4760,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 break;
                             case 16: // UA2005 gl
                                 CHECK_IU_FEATURE(dc, GL);
-                                tcg_gen_st32_tl(tcg_ctx, cpu_tmp0, tcg_ctx->cpu_env,
-                                                offsetof(CPUSPARCState, gl));
+                                gen_helper_wrgl(tcg_ctx, tcg_ctx->cpu_env, cpu_tmp0);
                                 break;
                             case 26: // UA2005 strand status
                                 CHECK_IU_FEATURE(dc, HYPV);

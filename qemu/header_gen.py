@@ -4491,6 +4491,7 @@ sparc_symbols = (
     'helper_taddcctv',
     'helper_tsubcctv',
     'helper_udiv_cc',
+    'helper_wrgl',
     'sparc_cpu_do_interrupt',
     'sparc_cpu_do_unaligned_access',
     'sparc_cpu_get_phys_page_debug',

@@ -3483,6 +3483,7 @@
 #define helper_taddcctv helper_taddcctv_sparc64
 #define helper_tsubcctv helper_tsubcctv_sparc64
 #define helper_udiv_cc helper_udiv_cc_sparc64
+#define helper_wrgl helper_wrgl_sparc64
 #define sparc_cpu_do_interrupt sparc_cpu_do_interrupt_sparc64
 #define sparc_cpu_do_unaligned_access sparc_cpu_do_unaligned_access_sparc64
 #define sparc_cpu_get_phys_page_debug sparc_cpu_get_phys_page_debug_sparc64
