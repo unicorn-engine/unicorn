@@ -5533,19 +5533,19 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 1:
 //            gen_helper_mfc0_tracecontrol(arg); /* PDtrace support */
             rn = "TraceControl";
-//            break;
+            goto cp0_unimplemented;
         case 2:
 //            gen_helper_mfc0_tracecontrol2(arg); /* PDtrace support */
             rn = "TraceControl2";
-//            break;
+            goto cp0_unimplemented;
         case 3:
 //            gen_helper_mfc0_usertracedata(arg); /* PDtrace support */
             rn = "UserTraceData";
-//            break;
+            goto cp0_unimplemented;
         case 4:
 //            gen_helper_mfc0_tracebpc(arg); /* PDtrace support */
             rn = "TraceBPC";
-//            break;
+            goto cp0_unimplemented;
         default:
             goto cp0_unimplemented;
         }
@@ -5571,31 +5571,31 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 1:
 //            gen_helper_mfc0_performance1(arg);
             rn = "Performance1";
-//            break;
+            goto cp0_unimplemented;
         case 2:
 //            gen_helper_mfc0_performance2(arg);
             rn = "Performance2";
-//            break;
+            goto cp0_unimplemented;
         case 3:
 //            gen_helper_mfc0_performance3(arg);
             rn = "Performance3";
-//            break;
+            goto cp0_unimplemented;
         case 4:
 //            gen_helper_mfc0_performance4(arg);
             rn = "Performance4";
-//            break;
+            goto cp0_unimplemented;
         case 5:
 //            gen_helper_mfc0_performance5(arg);
             rn = "Performance5";
-//            break;
+            goto cp0_unimplemented;
         case 6:
 //            gen_helper_mfc0_performance6(arg);
             rn = "Performance6";
-//            break;
+            goto cp0_unimplemented;
         case 7:
 //            gen_helper_mfc0_performance7(arg);
             rn = "Performance7";
-//            break;
+            goto cp0_unimplemented;
         default:
             goto cp0_unimplemented;
         }
@@ -6191,13 +6191,13 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             rn = "TraceControl";
             /* Stop translation as we may have switched the execution mode */
             ctx->bstate = BS_STOP;
-//            break;
+            goto cp0_unimplemented;
         case 2:
 //            gen_helper_mtc0_tracecontrol2(tcg_ctx->cpu_env, arg); /* PDtrace support */
             rn = "TraceControl2";
             /* Stop translation as we may have switched the execution mode */
             ctx->bstate = BS_STOP;
-//            break;
+            goto cp0_unimplemented;
         case 3:
             /* Stop translation as we may have switched the execution mode */
             ctx->bstate = BS_STOP;
@@ -6205,13 +6205,13 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             rn = "UserTraceData";
             /* Stop translation as we may have switched the execution mode */
             ctx->bstate = BS_STOP;
-//            break;
+            goto cp0_unimplemented;
         case 4:
 //            gen_helper_mtc0_tracebpc(tcg_ctx->cpu_env, arg); /* PDtrace support */
             /* Stop translation as we may have switched the execution mode */
             ctx->bstate = BS_STOP;
             rn = "TraceBPC";
-//            break;
+            goto cp0_unimplemented;
         default:
             goto cp0_unimplemented;
         }
@@ -6236,31 +6236,31 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 1:
 //            gen_helper_mtc0_performance1(arg);
             rn = "Performance1";
-//            break;
+            goto cp0_unimplemented;
         case 2:
 //            gen_helper_mtc0_performance2(arg);
             rn = "Performance2";
-//            break;
+            goto cp0_unimplemented;
         case 3:
 //            gen_helper_mtc0_performance3(arg);
             rn = "Performance3";
-//            break;
+            goto cp0_unimplemented;
         case 4:
 //            gen_helper_mtc0_performance4(arg);
             rn = "Performance4";
-//            break;
+            goto cp0_unimplemented;
         case 5:
 //            gen_helper_mtc0_performance5(arg);
             rn = "Performance5";
-//            break;
+            goto cp0_unimplemented;
         case 6:
 //            gen_helper_mtc0_performance6(arg);
             rn = "Performance6";
-//            break;
+            goto cp0_unimplemented;
         case 7:
 //            gen_helper_mtc0_performance7(arg);
             rn = "Performance7";
-//            break;
+            goto cp0_unimplemented;
         default:
             goto cp0_unimplemented;
         }
@@ -6829,19 +6829,19 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 1:
 //            gen_helper_dmfc0_tracecontrol(arg, tcg_ctx->cpu_env); /* PDtrace support */
             rn = "TraceControl";
-//            break;
+            goto cp0_unimplemented;
         case 2:
 //            gen_helper_dmfc0_tracecontrol2(arg, tcg_ctx->cpu_env); /* PDtrace support */
             rn = "TraceControl2";
-//            break;
+            goto cp0_unimplemented;
         case 3:
 //            gen_helper_dmfc0_usertracedata(arg, tcg_ctx->cpu_env); /* PDtrace support */
             rn = "UserTraceData";
-//            break;
+            goto cp0_unimplemented;
         case 4:
 //            gen_helper_dmfc0_tracebpc(arg, tcg_ctx->cpu_env); /* PDtrace support */
             rn = "TraceBPC";
-//            break;
+            goto cp0_unimplemented;
         default:
             goto cp0_unimplemented;
         }
@@ -6866,31 +6866,31 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 1:
 //            gen_helper_dmfc0_performance1(arg);
             rn = "Performance1";
-//            break;
+            goto cp0_unimplemented;
         case 2:
 //            gen_helper_dmfc0_performance2(arg);
             rn = "Performance2";
-//            break;
+            goto cp0_unimplemented;
         case 3:
 //            gen_helper_dmfc0_performance3(arg);
             rn = "Performance3";
-//            break;
+            goto cp0_unimplemented;
         case 4:
 //            gen_helper_dmfc0_performance4(arg);
             rn = "Performance4";
-//            break;
+            goto cp0_unimplemented;
         case 5:
 //            gen_helper_dmfc0_performance5(arg);
             rn = "Performance5";
-//            break;
+            goto cp0_unimplemented;
         case 6:
 //            gen_helper_dmfc0_performance6(arg);
             rn = "Performance6";
-//            break;
+            goto cp0_unimplemented;
         case 7:
 //            gen_helper_dmfc0_performance7(arg);
             rn = "Performance7";
-//            break;
+            goto cp0_unimplemented;
         default:
             goto cp0_unimplemented;
         }
@@ -7476,25 +7476,25 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             /* Stop translation as we may have switched the execution mode */
             ctx->bstate = BS_STOP;
             rn = "TraceControl";
-//            break;
+            goto cp0_unimplemented;
         case 2:
 //            gen_helper_mtc0_tracecontrol2(tcg_ctx->cpu_env, arg); /* PDtrace support */
             /* Stop translation as we may have switched the execution mode */
             ctx->bstate = BS_STOP;
             rn = "TraceControl2";
-//            break;
+            goto cp0_unimplemented;
         case 3:
 //            gen_helper_mtc0_usertracedata(tcg_ctx->cpu_env, arg); /* PDtrace support */
             /* Stop translation as we may have switched the execution mode */
             ctx->bstate = BS_STOP;
             rn = "UserTraceData";
-//            break;
+            goto cp0_unimplemented;
         case 4:
 //            gen_helper_mtc0_tracebpc(tcg_ctx->cpu_env, arg); /* PDtrace support */
             /* Stop translation as we may have switched the execution mode */
             ctx->bstate = BS_STOP;
             rn = "TraceBPC";
-//            break;
+            goto cp0_unimplemented;
         default:
             goto cp0_unimplemented;
         }
@@ -7519,31 +7519,31 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 1:
 //            gen_helper_mtc0_performance1(tcg_ctx->cpu_env, arg);
             rn = "Performance1";
-//            break;
+            goto cp0_unimplemented;
         case 2:
 //            gen_helper_mtc0_performance2(tcg_ctx->cpu_env, arg);
             rn = "Performance2";
-//            break;
+            goto cp0_unimplemented;
         case 3:
 //            gen_helper_mtc0_performance3(tcg_ctx->cpu_env, arg);
             rn = "Performance3";
-//            break;
+            goto cp0_unimplemented;
         case 4:
 //            gen_helper_mtc0_performance4(tcg_ctx->cpu_env, arg);
             rn = "Performance4";
-//            break;
+            goto cp0_unimplemented;
         case 5:
 //            gen_helper_mtc0_performance5(tcg_ctx->cpu_env, arg);
             rn = "Performance5";
-//            break;
+            goto cp0_unimplemented;
         case 6:
 //            gen_helper_mtc0_performance6(tcg_ctx->cpu_env, arg);
             rn = "Performance6";
-//            break;
+            goto cp0_unimplemented;
         case 7:
 //            gen_helper_mtc0_performance7(tcg_ctx->cpu_env, arg);
             rn = "Performance7";
-//            break;
+            goto cp0_unimplemented;
         default:
             goto cp0_unimplemented;
         }
