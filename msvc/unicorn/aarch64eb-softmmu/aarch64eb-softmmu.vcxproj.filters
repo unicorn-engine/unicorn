@@ -30,6 +30,9 @@
     <ClInclude Include="..\..\..\qemu\target\arm\arm_ldst.h">
       <Filter>target\arm</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target\arm\arm-powerctl.h">
+      <Filter>target\arm</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\qemu\target\arm\cpu-qom.h">
       <Filter>target\arm</Filter>
     </ClInclude>
@@ -91,6 +94,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\hw\arm\virt.c">
       <Filter>hw\arm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target\arm\arm-powerctl.c">
+      <Filter>target\arm</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\target\arm\cpu.c">
       <Filter>target\arm</Filter>

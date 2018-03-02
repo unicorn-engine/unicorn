@@ -3424,4 +3424,7 @@
 #define arm_regime_tbi0 arm_regime_tbi0_arm
 #define arm_regime_tbi1 arm_regime_tbi1_arm
 #define arm_register_el_change_hook arm_register_el_change_hook_arm
+#define arm_reset_cpu arm_reset_cpu_arm
+#define arm_set_cpu_off arm_set_cpu_off_arm
+#define arm_set_cpu_on arm_set_cpu_on_arm
 #endif

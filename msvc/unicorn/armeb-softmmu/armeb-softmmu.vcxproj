@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h" />
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h" />
+    <ClInclude Include="..\..\..\qemu\target\arm\arm-powerctl.h" />
     <ClInclude Include="..\..\..\qemu\target\arm\arm_ldst.h" />
     <ClInclude Include="..\..\..\qemu\target\arm\cpu-qom.h" />
     <ClInclude Include="..\..\..\qemu\target\arm\cpu.h" />
@@ -53,6 +54,7 @@
     <ClCompile Include="..\..\..\qemu\ioport.c" />
     <ClCompile Include="..\..\..\qemu\memory.c" />
     <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
+    <ClCompile Include="..\..\..\qemu\target\arm\arm-powerctl.c" />
     <ClCompile Include="..\..\..\qemu\target\arm\cpu.c" />
     <ClCompile Include="..\..\..\qemu\target\arm\crypto_helper.c" />
     <ClCompile Include="..\..\..\qemu\target\arm\helper.c" />

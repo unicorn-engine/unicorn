@@ -4,3 +4,4 @@ obj-$(CONFIG_SOFTMMU) += psci.o
 obj-$(TARGET_AARCH64) += cpu64.o translate-a64.o helper-a64.o unicorn_aarch64.o
 obj-$(TARGET_ARM) += unicorn_arm.o
 obj-y += crypto_helper.o
+obj-y += arm-powerctl.o

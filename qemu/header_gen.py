@@ -3433,6 +3433,9 @@ arm_symbols = (
     'arm_regime_tbi0',
     'arm_regime_tbi1',
     'arm_register_el_change_hook',
+    'arm_reset_cpu',
+    'arm_set_cpu_off',
+    'arm_set_cpu_on',
 )
 
 aarch64_symbols = (
@@ -3446,6 +3449,9 @@ aarch64_symbols = (
     'arm_regime_tbi0',
     'arm_regime_tbi1',
     'arm_register_el_change_hook',
+    'arm_reset_cpu',
+    'arm_set_cpu_off',
+    'arm_set_cpu_on',
     'gen_a64_set_pc_im',
     'helper_crc32_64',
     'helper_crc32c_64',

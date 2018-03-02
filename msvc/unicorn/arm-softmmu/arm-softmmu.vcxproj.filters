@@ -10,7 +10,7 @@
     <Filter Include="hw\arm">
       <UniqueIdentifier>{76f837ed-af45-43bf-9ee7-193dbdec1cd5}</UniqueIdentifier>
     </Filter>
-    <Filter Include="target-arm">
+    <Filter Include="target\arm">
       <UniqueIdentifier>{1f03d4ae-6433-4037-a347-993db1a315e6}</UniqueIdentifier>
     </Filter>
     <Filter Include="tcg">
@@ -48,32 +48,35 @@
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
       <Filter>tcg\i386</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-arm\arm_ldst.h">
-      <Filter>target-arm</Filter>
+    <ClInclude Include="..\..\..\qemu\target\arm\arm_ldst.h">
+      <Filter>target\arm</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-arm\cpu.h">
-      <Filter>target-arm</Filter>
+    <ClInclude Include="..\..\..\qemu\target\arm\arm-powerctl.h">
+      <Filter>target\arm</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-arm\cpu-qom.h">
-      <Filter>target-arm</Filter>
+    <ClInclude Include="..\..\..\qemu\target\arm\cpu.h">
+      <Filter>target\arm</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-arm\helper.h">
-      <Filter>target-arm</Filter>
+    <ClInclude Include="..\..\..\qemu\target\arm\cpu-qom.h">
+      <Filter>target\arm</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-arm\internals.h">
-      <Filter>target-arm</Filter>
+    <ClInclude Include="..\..\..\qemu\target\arm\helper.h">
+      <Filter>target\arm</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-arm\kvm-consts.h">
-      <Filter>target-arm</Filter>
+    <ClInclude Include="..\..\..\qemu\target\arm\internals.h">
+      <Filter>target\arm</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-arm\op_addsub.h">
-      <Filter>target-arm</Filter>
+    <ClInclude Include="..\..\..\qemu\target\arm\kvm-consts.h">
+      <Filter>target\arm</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-arm\translate.h">
-      <Filter>target-arm</Filter>
+    <ClInclude Include="..\..\..\qemu\target\arm\op_addsub.h">
+      <Filter>target\arm</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\target-arm\unicorn.h">
-      <Filter>target-arm</Filter>
+    <ClInclude Include="..\..\..\qemu\target\arm\translate.h">
+      <Filter>target\arm</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target\arm\unicorn.h">
+      <Filter>target\arm</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\arm.h" />
     <ClInclude Include="..\config-host.h" />
@@ -111,32 +114,35 @@
     <ClCompile Include="..\..\..\qemu\hw\arm\virt.c">
       <Filter>hw\arm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-arm\translate.c">
-      <Filter>target-arm</Filter>
+    <ClCompile Include="..\..\..\qemu\target\arm\translate.c">
+      <Filter>target\arm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-arm\cpu.c">
-      <Filter>target-arm</Filter>
+    <ClCompile Include="..\..\..\qemu\target\arm\arm-powerctl.c">
+      <Filter>target\arm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-arm\crypto_helper.c">
-      <Filter>target-arm</Filter>
+    <ClCompile Include="..\..\..\qemu\target\arm\cpu.c">
+      <Filter>target\arm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-arm\helper.c">
-      <Filter>target-arm</Filter>
+    <ClCompile Include="..\..\..\qemu\target\arm\crypto_helper.c">
+      <Filter>target\arm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-arm\iwmmxt_helper.c">
-      <Filter>target-arm</Filter>
+    <ClCompile Include="..\..\..\qemu\target\arm\helper.c">
+      <Filter>target\arm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-arm\neon_helper.c">
-      <Filter>target-arm</Filter>
+    <ClCompile Include="..\..\..\qemu\target\arm\iwmmxt_helper.c">
+      <Filter>target\arm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-arm\op_helper.c">
-      <Filter>target-arm</Filter>
+    <ClCompile Include="..\..\..\qemu\target\arm\neon_helper.c">
+      <Filter>target\arm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-arm\psci.c">
-      <Filter>target-arm</Filter>
+    <ClCompile Include="..\..\..\qemu\target\arm\op_helper.c">
+      <Filter>target\arm</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\target-arm\unicorn_arm.c">
-      <Filter>target-arm</Filter>
+    <ClCompile Include="..\..\..\qemu\target\arm\psci.c">
+      <Filter>target\arm</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target\arm\unicorn_arm.c">
+      <Filter>target\arm</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

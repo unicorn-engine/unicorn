@@ -23,6 +23,7 @@
 #include "sysemu/sysemu.h"
 #include "internals.h"
 #include "exec/exec-all.h"
+#include "arm-powerctl.h"
 
 bool arm_is_psci_call(ARMCPU *cpu, int excp_type)
 {
@@ -84,7 +85,6 @@ void arm_handle_psci_call(ARMCPU *cpu)
      * Additional information about the calling convention used is available in
      * the document 'SMC Calling Convention' (ARM DEN 0028)
      */
-    CPUState *cs = CPU(cpu);
     CPUARMState *env = &cpu->env;
     uint64_t param[4];
     uint64_t context_id, mpidr;
@@ -109,7 +109,6 @@ void arm_handle_psci_call(ARMCPU *cpu)
     switch (param[0]) {
         CPUState *target_cpu_state;
         ARMCPU *target_cpu;
-        CPUClass *target_cpu_class;
 
     case QEMU_PSCI_0_2_FN_PSCI_VERSION:
         ret = QEMU_PSCI_0_2_RET_VERSION_0_2;
@@ -154,51 +153,13 @@ void arm_handle_psci_call(ARMCPU *cpu)
         entry = param[2];
         context_id = param[3];
 
-        /* change to the cpu we are powering up */
-        target_cpu_state = qemu_get_cpu(env->uc, mpidr & 0xff);
-        if (!target_cpu_state) {
-            ret = QEMU_PSCI_RET_INVALID_PARAMS;
-            break;
-        }
-        target_cpu = ARM_CPU(env->uc, target_cpu_state);
-        if (!target_cpu->powered_off) {
-            ret = QEMU_PSCI_RET_ALREADY_ON;
-            break;
-        }
-        target_cpu_class = CPU_GET_CLASS(env->uc, target_cpu);
-
-        /* Initialize the cpu we are turning on */
-        cpu_reset(target_cpu_state);
-        target_cpu->powered_off = false;
-        target_cpu_state->halted = 0;
-
         /*
          * The PSCI spec mandates that newly brought up CPUs enter the
          * exception level of the caller in the same execution mode as
          * the caller, with context_id in x0/r0, respectively.
-         *
-         * For now, it is sufficient to assert() that CPUs come out of
-         * reset in the same mode as the calling CPU, since we only
-         * implement EL1, which means that
-         * (a) there is no EL2 for the calling CPU to trap into to change
-         *     its state
-         * (b) the newly brought up CPU enters EL1 immediately after coming
-         *     out of reset in the default state
          */
-        assert(is_a64(env) == is_a64(&target_cpu->env));
-        if (is_a64(env)) {
-            if (entry & 1) {
-                ret = QEMU_PSCI_RET_INVALID_PARAMS;
-                break;
-            }
-            target_cpu->env.xregs[0] = context_id;
-        } else {
-            target_cpu->env.regs[0] = context_id;
-            target_cpu->env.thumb = entry & 1;
-        }
-        target_cpu_class->set_pc(target_cpu_state, entry);
-
-        ret = 0;
+        ret = arm_set_cpu_on(env->uc, mpidr, entry, context_id, arm_current_el(env),
+                             is_a64(env));
         break;
     case QEMU_PSCI_0_1_FN_CPU_OFF:
     case QEMU_PSCI_0_2_FN_CPU_OFF:
@@ -236,9 +197,8 @@ err:
     return;
 
 cpu_off:
-    cpu->powered_off = true;
-    cs->halted = 1;
-    cs->exception_index = EXCP_HLT;
-    cpu_loop_exit(cs);
+    ret = arm_set_cpu_off(env->uc, cpu->mp_affinity);
     /* notreached */
+    /* sanity check in case something failed */
+    assert(ret == QEMU_ARM_POWERCTL_RET_SUCCESS);
 }

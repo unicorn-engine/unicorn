@@ -3430,6 +3430,9 @@
 #define arm_regime_tbi0 arm_regime_tbi0_aarch64
 #define arm_regime_tbi1 arm_regime_tbi1_aarch64
 #define arm_register_el_change_hook arm_register_el_change_hook_aarch64
+#define arm_reset_cpu arm_reset_cpu_aarch64
+#define arm_set_cpu_off arm_set_cpu_off_aarch64
+#define arm_set_cpu_on arm_set_cpu_on_aarch64
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64
 #define helper_crc32_64 helper_crc32_64_aarch64
 #define helper_crc32c_64 helper_crc32c_64_aarch64
