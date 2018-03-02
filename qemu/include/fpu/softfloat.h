@@ -348,8 +348,8 @@ static inline float64 uint16_to_float64(uint16_t v, float_status *status)
 /*----------------------------------------------------------------------------
 | Software half-precision conversion routines.
 *----------------------------------------------------------------------------*/
-float16 float32_to_float16( float32, flag, float_status *status );
-float32 float16_to_float32( float16, flag, float_status *status );
+float16 float32_to_float16(float32, flag, float_status *status);
+float32 float16_to_float32(float16, flag, float_status *status);
 float16 float64_to_float16(float64 a, flag ieee, float_status *status);
 float64 float16_to_float64(float16 a, flag ieee, float_status *status);
 
@@ -377,41 +377,41 @@ int16_t float32_to_int16(float32, float_status *status);
 uint16_t float32_to_uint16(float32, float_status *status);
 int16_t float32_to_int16_round_to_zero(float32, float_status *status);
 uint16_t float32_to_uint16_round_to_zero(float32, float_status *status);
-int32_t float32_to_int32( float32, float_status *status );
-int32_t float32_to_int32_round_to_zero( float32, float_status *status );
-uint32_t float32_to_uint32( float32, float_status *status );
-uint32_t float32_to_uint32_round_to_zero( float32, float_status *status );
-int64_t float32_to_int64( float32, float_status *status );
+int32_t float32_to_int32(float32, float_status *status);
+int32_t float32_to_int32_round_to_zero(float32, float_status *status);
+uint32_t float32_to_uint32(float32, float_status *status);
+uint32_t float32_to_uint32_round_to_zero(float32, float_status *status);
+int64_t float32_to_int64(float32, float_status *status);
 uint64_t float32_to_uint64(float32, float_status *status);
 uint64_t float32_to_uint64_round_to_zero(float32, float_status *status);
-int64_t float32_to_int64_round_to_zero( float32, float_status *status );
-float64 float32_to_float64( float32, float_status *status );
-floatx80 float32_to_floatx80( float32, float_status *status );
-float128 float32_to_float128( float32, float_status *status );
+int64_t float32_to_int64_round_to_zero(float32, float_status *status);
+float64 float32_to_float64(float32, float_status *status);
+floatx80 float32_to_floatx80(float32, float_status *status);
+float128 float32_to_float128(float32, float_status *status);
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE single-precision operations.
 *----------------------------------------------------------------------------*/
-float32 float32_round_to_int( float32, float_status *status );
-float32 float32_add( float32, float32, float_status *status );
-float32 float32_sub( float32, float32, float_status *status );
-float32 float32_mul( float32, float32, float_status *status );
-float32 float32_div( float32, float32, float_status *status );
-float32 float32_rem( float32, float32, float_status *status );
+float32 float32_round_to_int(float32, float_status *status);
+float32 float32_add(float32, float32, float_status *status);
+float32 float32_sub(float32, float32, float_status *status);
+float32 float32_mul(float32, float32, float_status *status);
+float32 float32_div(float32, float32, float_status *status);
+float32 float32_rem(float32, float32, float_status *status);
 float32 float32_muladd(float32, float32, float32, int, float_status *status);
-float32 float32_sqrt( float32, float_status *status );
-float32 float32_exp2( float32, float_status *status );
-float32 float32_log2( float32, float_status *status );
-int float32_eq( float32, float32, float_status *status );
-int float32_le( float32, float32, float_status *status );
-int float32_lt( float32, float32, float_status *status );
-int float32_unordered( float32, float32, float_status *status );
-int float32_eq_quiet( float32, float32, float_status *status );
-int float32_le_quiet( float32, float32, float_status *status );
-int float32_lt_quiet( float32, float32, float_status *status );
-int float32_unordered_quiet( float32, float32, float_status *status );
-int float32_compare( float32, float32, float_status *status );
-int float32_compare_quiet( float32, float32, float_status *status );
+float32 float32_sqrt(float32, float_status *status);
+float32 float32_exp2(float32, float_status *status);
+float32 float32_log2(float32, float_status *status);
+int float32_eq(float32, float32, float_status *status);
+int float32_le(float32, float32, float_status *status);
+int float32_lt(float32, float32, float_status *status);
+int float32_unordered(float32, float32, float_status *status);
+int float32_eq_quiet(float32, float32, float_status *status);
+int float32_le_quiet(float32, float32, float_status *status);
+int float32_lt_quiet(float32, float32, float_status *status);
+int float32_unordered_quiet(float32, float32, float_status *status);
+int float32_compare(float32, float32, float_status *status);
+int float32_compare_quiet(float32, float32, float_status *status);
 float32 float32_min(float32, float32, float_status *status);
 float32 float32_max(float32, float32, float_status *status);
 float32 float32_minnum(float32, float32, float_status *status);
@@ -421,7 +421,7 @@ float32 float32_maxnummag(float32, float32, float_status *status);
 int float32_is_quiet_nan(float32, float_status *status);
 int float32_is_signaling_nan(float32, float_status *status);
 float32 float32_maybe_silence_nan(float32, float_status *status);
-float32 float32_scalbn( float32, int, float_status *status );
+float32 float32_scalbn(float32, int, float_status *status);
 
 static inline float32 float32_abs(float32 a)
 {
@@ -489,41 +489,41 @@ int16_t float64_to_int16(float64, float_status *status);
 uint16_t float64_to_uint16(float64, float_status *status);
 int16_t float64_to_int16_round_to_zero(float64, float_status *status);
 uint16_t float64_to_uint16_round_to_zero(float64, float_status *status);
-int32_t float64_to_int32( float64, float_status *status );
-int32_t float64_to_int32_round_to_zero( float64, float_status *status );
-uint32_t float64_to_uint32( float64, float_status *status );
-uint32_t float64_to_uint32_round_to_zero( float64, float_status *status );
-int64_t float64_to_int64( float64, float_status *status );
-int64_t float64_to_int64_round_to_zero( float64, float_status *status );
-uint64_t float64_to_uint64 (float64 a, float_status *status);
-uint64_t float64_to_uint64_round_to_zero (float64 a, float_status *status);
-float32 float64_to_float32( float64, float_status *status );
-floatx80 float64_to_floatx80( float64, float_status *status );
-float128 float64_to_float128( float64, float_status *status );
+int32_t float64_to_int32(float64, float_status *status);
+int32_t float64_to_int32_round_to_zero(float64, float_status *status);
+uint32_t float64_to_uint32(float64, float_status *status);
+uint32_t float64_to_uint32_round_to_zero(float64, float_status *status);
+int64_t float64_to_int64(float64, float_status *status);
+int64_t float64_to_int64_round_to_zero(float64, float_status *status);
+uint64_t float64_to_uint64(float64 a, float_status *status);
+uint64_t float64_to_uint64_round_to_zero(float64 a, float_status *status);
+float32 float64_to_float32(float64, float_status *status);
+floatx80 float64_to_floatx80(float64, float_status *status);
+float128 float64_to_float128(float64, float_status *status);
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE double-precision operations.
 *----------------------------------------------------------------------------*/
-float64 float64_round_to_int( float64, float_status *status );
-float64 float64_trunc_to_int( float64, float_status *status );
-float64 float64_add( float64, float64, float_status *status );
-float64 float64_sub( float64, float64, float_status *status );
-float64 float64_mul( float64, float64, float_status *status );
-float64 float64_div( float64, float64, float_status *status );
-float64 float64_rem( float64, float64, float_status *status );
+float64 float64_round_to_int(float64, float_status *status);
+float64 float64_trunc_to_int(float64, float_status *status);
+float64 float64_add(float64, float64, float_status *status);
+float64 float64_sub(float64, float64, float_status *status);
+float64 float64_mul(float64, float64, float_status *status);
+float64 float64_div(float64, float64, float_status *status);
+float64 float64_rem(float64, float64, float_status *status);
 float64 float64_muladd(float64, float64, float64, int, float_status *status);
-float64 float64_sqrt( float64, float_status *status );
-float64 float64_log2( float64, float_status *status );
-int float64_eq( float64, float64, float_status *status );
-int float64_le( float64, float64, float_status *status );
-int float64_lt( float64, float64, float_status *status );
-int float64_unordered( float64, float64, float_status *status );
-int float64_eq_quiet( float64, float64, float_status *status );
-int float64_le_quiet( float64, float64, float_status *status );
-int float64_lt_quiet( float64, float64, float_status *status );
-int float64_unordered_quiet( float64, float64, float_status *status );
-int float64_compare( float64, float64, float_status *status );
-int float64_compare_quiet( float64, float64, float_status *status );
+float64 float64_sqrt(float64, float_status *status);
+float64 float64_log2(float64, float_status *status);
+int float64_eq(float64, float64, float_status *status);
+int float64_le(float64, float64, float_status *status);
+int float64_lt(float64, float64, float_status *status);
+int float64_unordered(float64, float64, float_status *status);
+int float64_eq_quiet(float64, float64, float_status *status);
+int float64_le_quiet(float64, float64, float_status *status);
+int float64_lt_quiet(float64, float64, float_status *status);
+int float64_unordered_quiet(float64, float64, float_status *status);
+int float64_compare(float64, float64, float_status *status);
+int float64_compare_quiet(float64, float64, float_status *status);
 float64 float64_min(float64, float64, float_status *status);
 float64 float64_max(float64, float64, float_status *status);
 float64 float64_minnum(float64, float64, float_status *status);
@@ -533,7 +533,7 @@ float64 float64_maxnummag(float64, float64, float_status *status);
 int float64_is_quiet_nan(float64 a, float_status *status);
 int float64_is_signaling_nan(float64, float_status *status);
 float64 float64_maybe_silence_nan(float64, float_status *status);
-float64 float64_scalbn( float64, int, float_status *status );
+float64 float64_scalbn(float64, int, float_status *status);
 
 static inline float64 float64_abs(float64 a)
 {
@@ -597,38 +597,38 @@ float64 float64_default_nan(float_status *status);
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE extended double-precision conversion routines.
 *----------------------------------------------------------------------------*/
-int32_t floatx80_to_int32( floatx80, float_status *status );
-int32_t floatx80_to_int32_round_to_zero( floatx80, float_status *status );
-int64_t floatx80_to_int64( floatx80, float_status *status );
-int64_t floatx80_to_int64_round_to_zero( floatx80, float_status *status );
-float32 floatx80_to_float32( floatx80, float_status *status );
-float64 floatx80_to_float64( floatx80, float_status *status );
-float128 floatx80_to_float128( floatx80, float_status *status );
+int32_t floatx80_to_int32(floatx80, float_status *status);
+int32_t floatx80_to_int32_round_to_zero(floatx80, float_status *status);
+int64_t floatx80_to_int64(floatx80, float_status *status);
+int64_t floatx80_to_int64_round_to_zero(floatx80, float_status *status);
+float32 floatx80_to_float32(floatx80, float_status *status);
+float64 floatx80_to_float64(floatx80, float_status *status);
+float128 floatx80_to_float128(floatx80, float_status *status);
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE extended double-precision operations.
 *----------------------------------------------------------------------------*/
-floatx80 floatx80_round_to_int( floatx80, float_status *status );
-floatx80 floatx80_add( floatx80, floatx80, float_status *status );
-floatx80 floatx80_sub( floatx80, floatx80, float_status *status );
-floatx80 floatx80_mul( floatx80, floatx80, float_status *status );
-floatx80 floatx80_div( floatx80, floatx80, float_status *status );
-floatx80 floatx80_rem( floatx80, floatx80, float_status *status );
-floatx80 floatx80_sqrt( floatx80, float_status *status );
-int floatx80_eq( floatx80, floatx80, float_status *status );
-int floatx80_le( floatx80, floatx80, float_status *status );
-int floatx80_lt( floatx80, floatx80, float_status *status );
-int floatx80_unordered( floatx80, floatx80, float_status *status );
-int floatx80_eq_quiet( floatx80, floatx80, float_status *status );
-int floatx80_le_quiet( floatx80, floatx80, float_status *status );
-int floatx80_lt_quiet( floatx80, floatx80, float_status *status );
-int floatx80_unordered_quiet( floatx80, floatx80, float_status *status );
-int floatx80_compare( floatx80, floatx80, float_status *status );
-int floatx80_compare_quiet( floatx80, floatx80, float_status *status );
+floatx80 floatx80_round_to_int(floatx80, float_status *status);
+floatx80 floatx80_add(floatx80, floatx80, float_status *status);
+floatx80 floatx80_sub(floatx80, floatx80, float_status *status);
+floatx80 floatx80_mul(floatx80, floatx80, float_status *status);
+floatx80 floatx80_div(floatx80, floatx80, float_status *status);
+floatx80 floatx80_rem(floatx80, floatx80, float_status *status);
+floatx80 floatx80_sqrt(floatx80, float_status *status);
+int floatx80_eq(floatx80, floatx80, float_status *status);
+int floatx80_le(floatx80, floatx80, float_status *status);
+int floatx80_lt(floatx80, floatx80, float_status *status);
+int floatx80_unordered(floatx80, floatx80, float_status *status);
+int floatx80_eq_quiet(floatx80, floatx80, float_status *status);
+int floatx80_le_quiet(floatx80, floatx80, float_status *status);
+int floatx80_lt_quiet(floatx80, floatx80, float_status *status);
+int floatx80_unordered_quiet(floatx80, floatx80, float_status *status);
+int floatx80_compare(floatx80, floatx80, float_status *status);
+int floatx80_compare_quiet(floatx80, floatx80, float_status *status);
 int floatx80_is_quiet_nan(floatx80, float_status *status);
 int floatx80_is_signaling_nan(floatx80, float_status *status);
 floatx80 floatx80_maybe_silence_nan(floatx80, float_status *status);
-floatx80 floatx80_scalbn( floatx80, int, float_status *status );
+floatx80 floatx80_scalbn(floatx80, int, float_status *status);
 
 static inline floatx80 floatx80_abs(floatx80 a)
 {
@@ -697,38 +697,40 @@ floatx80 floatx80_default_nan(float_status *status);
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE quadruple-precision conversion routines.
 *----------------------------------------------------------------------------*/
-int32_t float128_to_int32( float128, float_status *status );
-int32_t float128_to_int32_round_to_zero( float128, float_status *status );
-int64_t float128_to_int64( float128, float_status *status );
-int64_t float128_to_int64_round_to_zero( float128, float_status *status );
-float32 float128_to_float32( float128, float_status *status );
-float64 float128_to_float64( float128, float_status *status );
-floatx80 float128_to_floatx80( float128, float_status *status );
+int32_t float128_to_int32(float128, float_status *status);
+int32_t float128_to_int32_round_to_zero( float128, float_status *status);
+int64_t float128_to_int64(float128, float_status *status);
+int64_t float128_to_int64_round_to_zero(float128, float_status *status);
+uint64_t float128_to_uint64(float128, float_status *status);
+uint64_t float128_to_uint64_round_to_zero(float128, float_status *status);
+float32 float128_to_float32(float128, float_status *status);
+float64 float128_to_float64(float128, float_status *status);
+floatx80 float128_to_floatx80(float128, float_status *status);
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE quadruple-precision operations.
 *----------------------------------------------------------------------------*/
-float128 float128_round_to_int( float128, float_status *status );
-float128 float128_add( float128, float128, float_status *status );
-float128 float128_sub( float128, float128, float_status *status );
-float128 float128_mul( float128, float128, float_status *status );
-float128 float128_div( float128, float128, float_status *status );
-float128 float128_rem( float128, float128, float_status *status );
-float128 float128_sqrt( float128, float_status *status );
-int float128_eq( float128, float128, float_status *status );
-int float128_le( float128, float128, float_status *status );
-int float128_lt( float128, float128, float_status *status );
-int float128_unordered( float128, float128, float_status *status );
-int float128_eq_quiet( float128, float128, float_status *status );
-int float128_le_quiet( float128, float128, float_status *status );
-int float128_lt_quiet( float128, float128, float_status *status );
-int float128_unordered_quiet( float128, float128, float_status *status );
-int float128_compare( float128, float128, float_status *status );
-int float128_compare_quiet( float128, float128, float_status *status );
+float128 float128_round_to_int(float128, float_status *status);
+float128 float128_add(float128, float128, float_status *status);
+float128 float128_sub(float128, float128, float_status *status);
+float128 float128_mul(float128, float128, float_status *status);
+float128 float128_div(float128, float128, float_status *status);
+float128 float128_rem(float128, float128, float_status *status);
+float128 float128_sqrt(float128, float_status *status);
+int float128_eq(float128, float128, float_status *status);
+int float128_le(float128, float128, float_status *status);
+int float128_lt(float128, float128, float_status *status);
+int float128_unordered(float128, float128, float_status *status);
+int float128_eq_quiet(float128, float128, float_status *status);
+int float128_le_quiet(float128, float128, float_status *status);
+int float128_lt_quiet(float128, float128, float_status *status);
+int float128_unordered_quiet(float128, float128, float_status *status);
+int float128_compare(float128, float128, float_status *status);
+int float128_compare_quiet(float128, float128, float_status *status);
 int float128_is_quiet_nan(float128, float_status *status);
 int float128_is_signaling_nan(float128, float_status *status);
 float128 float128_maybe_silence_nan(float128, float_status *status);
-float128 float128_scalbn( float128, int, float_status *status );
+float128 float128_scalbn(float128, int, float_status *status);
 
 static inline float128 float128_abs(float128 a)
 {
