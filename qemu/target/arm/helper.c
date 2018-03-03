@@ -5457,15 +5457,15 @@ void arm_v7m_cpu_do_interrupt(CPUState *cs)
     case EXCP_UDEF:
         //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_USAGE);
         env->v7m.cfsr |= R_V7M_CFSR_UNDEFINSTR_MASK;
-        return;
+        break;
     case EXCP_NOCP:
         //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_USAGE);
         env->v7m.cfsr |= R_V7M_CFSR_NOCP_MASK;
-        return;
+        break;
     case EXCP_SWI:
         /* The PC already points to the next instruction.  */
         //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_SVC);
-        return;
+        break;
     case EXCP_PREFETCH_ABORT:
     case EXCP_DATA_ABORT:
         /* Note that for M profile we don't have a guest facing FSR, but
@@ -5513,7 +5513,7 @@ void arm_v7m_cpu_do_interrupt(CPUState *cs)
             //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_MEM);
             break;
         }
-        return;
+        break;
     case EXCP_BKPT:
 #if 0
         if (semihosting_enabled) {
@@ -5530,9 +5530,8 @@ void arm_v7m_cpu_do_interrupt(CPUState *cs)
         }
 #endif
         //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_DEBUG);
-        return;
+        break;
     case EXCP_IRQ:
-        //env->v7m.exception = armv7m_nvic_acknowledge_irq(env->nvic);
         break;
     case EXCP_EXCEPTION_EXIT:
         do_v7m_exception_exit(env);
@@ -5541,6 +5540,11 @@ void arm_v7m_cpu_do_interrupt(CPUState *cs)
         cpu_abort(cs, "Unhandled exception 0x%x\n", cs->exception_index);
         return; /* Never happens.  Keep compiler happy.  */
     }
+
+    // Unicorn: commented out
+    //armv7m_nvic_acknowledge_irq(env->nvic);
+
+    qemu_log_mask(CPU_LOG_INT, "... as %d\n", env->v7m.exception);
 
     /* Align stack pointer if the guest wants that */
     if ((env->regs[13] & 4) && (env->v7m.ccr & R_V7M_CCR_STKALIGN_MASK)) {
