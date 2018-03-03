@@ -5,6 +5,7 @@ util-obj-$(CONFIG_POSIX) += mmap-alloc.o
 util-obj-y += module.o
 util-obj-y += bitmap.o bitops.o
 util-obj-y += error.o
+util-obj-y += cacheinfo.o
 util-obj-y += crc32c.o
 util-obj-y += host-utils.o
 util-obj-y += getauxval.o

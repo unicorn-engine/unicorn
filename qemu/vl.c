@@ -120,6 +120,9 @@ int machine_initialize(struct uc_struct *uc)
     cpu_register_types(uc);
     qdev_register_types(uc);
 
+    // Initialize cache information
+    init_cache_info(uc);
+
     // Initialize arch specific.
     uc->init_arch(uc);
 

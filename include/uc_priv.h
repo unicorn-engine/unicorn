@@ -270,6 +270,10 @@ struct uc_struct {
     uint32_t target_page_align;
     uint64_t next_pc;   // save next PC for some special cases
     bool hook_insert;	// insert new hook at begin of the hook list (append by default)
+
+    // util/cacheinfo.c
+    int qemu_icache_linesize;
+    int qemu_dcache_linesize;
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
@@ -280,6 +284,10 @@ struct uc_context {
 
 // check if this address is mapped in (via uc_mem_map())
 MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address);
+
+// Defined in util/cacheinfo.c. Made externally linked to
+// allow calling it directly.
+void init_cache_info(struct uc_struct *uc);
 
 #endif
 /* vim: set ts=4 noet:  */
