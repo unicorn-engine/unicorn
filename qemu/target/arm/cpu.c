@@ -575,10 +575,10 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     }
 
     if (!cpu->has_mpu) {
-        unset_feature(env, ARM_FEATURE_MPU);
+        unset_feature(env, ARM_FEATURE_PMSA);
     }
 
-    if (arm_feature(env, ARM_FEATURE_MPU) &&
+    if (arm_feature(env, ARM_FEATURE_PMSA) &&
         arm_feature(env, ARM_FEATURE_V7)) {
         uint32_t nr = cpu->pmsav7_dregion;
 
@@ -680,7 +680,7 @@ static void arm946_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 
     cpu->dtb_compatible = "arm,arm946";
     set_feature(&cpu->env, ARM_FEATURE_V5);
-    set_feature(&cpu->env, ARM_FEATURE_MPU);
+    set_feature(&cpu->env, ARM_FEATURE_PMSA);
     set_feature(&cpu->env, ARM_FEATURE_DUMMY_C15_REGS);
     cpu->midr = 0x41059461;
     cpu->ctr = 0x0f004006;
@@ -896,7 +896,7 @@ static void cortex_r5_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     set_feature(&cpu->env, ARM_FEATURE_THUMB_DIV);
     set_feature(&cpu->env, ARM_FEATURE_ARM_DIV);
     set_feature(&cpu->env, ARM_FEATURE_V7MP);
-    set_feature(&cpu->env, ARM_FEATURE_MPU);
+    set_feature(&cpu->env, ARM_FEATURE_PMSA);
     cpu->midr = 0x411fc153; /* r1p3 */
     cpu->id_pfr0 = 0x0131;
     cpu->id_pfr1 = 0x001;
