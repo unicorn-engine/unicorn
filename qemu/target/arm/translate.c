@@ -4266,8 +4266,11 @@ static inline void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
         gen_set_pc_im(s, dest);
         tcg_gen_exit_tb(tcg_ctx, (uintptr_t)s->tb + n);
     } else {
+        TCGv addr = tcg_temp_new(tcg_ctx);
         gen_set_pc_im(s, dest);
-        tcg_gen_exit_tb(tcg_ctx, 0);
+        tcg_gen_extu_i32_tl(tcg_ctx, addr, tcg_ctx->cpu_R[15]);
+        tcg_gen_lookup_and_goto_ptr(tcg_ctx, addr);
+        tcg_temp_free(tcg_ctx, addr);
     }
 }
 
