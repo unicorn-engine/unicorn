@@ -3279,6 +3279,7 @@
 #define tcg_target_init tcg_target_init_mips
 #define tcg_target_qemu_prologue tcg_target_qemu_prologue_mips
 #define tcg_target_reg_alloc_order tcg_target_reg_alloc_order_mips
+#define tcg_tb_alloc tcg_tb_alloc_mips
 #define tcg_temp_alloc tcg_temp_alloc_mips
 #define tcg_temp_free_i32 tcg_temp_free_i32_mips
 #define tcg_temp_free_i64 tcg_temp_free_i64_mips

@@ -3279,6 +3279,7 @@
 #define tcg_target_init tcg_target_init_x86_64
 #define tcg_target_qemu_prologue tcg_target_qemu_prologue_x86_64
 #define tcg_target_reg_alloc_order tcg_target_reg_alloc_order_x86_64
+#define tcg_tb_alloc tcg_tb_alloc_x86_64
 #define tcg_temp_alloc tcg_temp_alloc_x86_64
 #define tcg_temp_free_i32 tcg_temp_free_i32_x86_64
 #define tcg_temp_free_i64 tcg_temp_free_i64_x86_64

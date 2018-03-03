@@ -30,8 +30,9 @@ typedef struct TBContext TBContext;
 
 struct TBContext {
 
-    TranslationBlock *tbs;
+    TranslationBlock **tbs;
     TranslationBlock *tb_phys_hash[CODE_GEN_PHYS_HASH_SIZE];
+    size_t tbs_size;
     int nb_tbs;
 
     /* statistics */

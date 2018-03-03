@@ -3285,6 +3285,7 @@ symbols = (
     'tcg_target_init',
     'tcg_target_qemu_prologue',
     'tcg_target_reg_alloc_order',
+    'tcg_tb_alloc',
     'tcg_temp_alloc',
     'tcg_temp_free_i32',
     'tcg_temp_free_i64',

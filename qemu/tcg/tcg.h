@@ -649,6 +649,7 @@ QEMU_BUILD_BUG_ON(sizeof(TCGOp) > 8);
 /* tb_lock must be held for tcg_malloc_internal. */
 void *tcg_malloc_internal(TCGContext *s, int size);
 void tcg_pool_reset(TCGContext *s);
+TranslationBlock *tcg_tb_alloc(TCGContext *s);
 
 void tcg_context_init(TCGContext *s);
 void tcg_context_free(void *s);   // free memory allocated for @s
@@ -826,7 +827,6 @@ struct TCGContext {
        here, because there's too much arithmetic throughout that relies
        on addition and subtraction working on bytes.  Rely on the GCC
        extension that allows arithmetic on void*.  */
-    int code_gen_max_blocks;
     void *code_gen_prologue;
     void *code_gen_epilogue;
     void *code_gen_buffer;

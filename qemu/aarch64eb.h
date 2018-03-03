@@ -3279,6 +3279,7 @@
 #define tcg_target_init tcg_target_init_aarch64eb
 #define tcg_target_qemu_prologue tcg_target_qemu_prologue_aarch64eb
 #define tcg_target_reg_alloc_order tcg_target_reg_alloc_order_aarch64eb
+#define tcg_tb_alloc tcg_tb_alloc_aarch64eb
 #define tcg_temp_alloc tcg_temp_alloc_aarch64eb
 #define tcg_temp_free_i32 tcg_temp_free_i32_aarch64eb
 #define tcg_temp_free_i64 tcg_temp_free_i64_aarch64eb

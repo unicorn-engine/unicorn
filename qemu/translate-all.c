@@ -823,9 +823,13 @@ static inline void code_gen_alloc(struct uc_struct *uc, size_t tb_size)
     /* Estimate a good size for the number of TBs we can support.  We
        still haven't deducted the prologue from the buffer size here,
        but that's minimal and won't affect the estimate much.  */
-    tcg_ctx->code_gen_max_blocks
-        = tcg_ctx->code_gen_buffer_size / CODE_GEN_AVG_BLOCK_SIZE;
-    tcg_ctx->tb_ctx.tbs = g_new(TranslationBlock, tcg_ctx->code_gen_max_blocks);
+    /* size this conservatively -- realloc later if needed */
+    tcg_ctx->tb_ctx.tbs_size =
+        tcg_ctx->code_gen_buffer_size / CODE_GEN_AVG_BLOCK_SIZE / 8;
+    if (unlikely(!tcg_ctx->tb_ctx.tbs_size)) {
+        tcg_ctx->tb_ctx.tbs_size = 64 * 1024;
+    }
+    tcg_ctx->tb_ctx.tbs = g_new(TranslationBlock *, tcg_ctx->tb_ctx.tbs_size);
 }
 
 /* Must be called before using the QEMU cpus. 'tb_size' is the size
@@ -861,13 +865,20 @@ bool tcg_enabled(struct uc_struct *uc)
  */
 static TranslationBlock *tb_alloc(struct uc_struct *uc, target_ulong pc)
 {
-    TranslationBlock *tb;
     TCGContext *tcg_ctx = uc->tcg_ctx;
+    TranslationBlock *tb;
+    TBContext *ctx;
 
-    if (tcg_ctx->tb_ctx.nb_tbs >= tcg_ctx->code_gen_max_blocks) {
+    tb = tcg_tb_alloc(tcg_ctx);
+    if (unlikely(tb == NULL)) {
         return NULL;
     }
-    tb = &tcg_ctx->tb_ctx.tbs[tcg_ctx->tb_ctx.nb_tbs++];
+    ctx = &tcg_ctx->tb_ctx;
+    if (unlikely(ctx->nb_tbs == ctx->tbs_size)) {
+        ctx->tbs_size *= 2;
+        ctx->tbs = g_renew(TranslationBlock *, ctx->tbs, ctx->tbs_size);
+    }
+    ctx->tbs[ctx->nb_tbs++] = tb;
     tb->pc = pc;
     tb->cflags = 0;
     tb->invalid = false;
@@ -883,8 +894,10 @@ void tb_free(struct uc_struct *uc, TranslationBlock *tb)
        Ignore the hard cases and just back up if this TB happens to
        be the last one generated.  */
     if (tcg_ctx->tb_ctx.nb_tbs > 0 &&
-            tb == &tcg_ctx->tb_ctx.tbs[tcg_ctx->tb_ctx.nb_tbs - 1]) {
-        tcg_ctx->code_gen_ptr = tb->tc_ptr;
+            tb == tcg_ctx->tb_ctx.tbs[tcg_ctx->tb_ctx.nb_tbs - 1]) {
+        size_t struct_size = ROUND_UP(sizeof(*tb), uc->qemu_icache_linesize);
+
+        tcg_ctx->code_gen_ptr = tb->tc_ptr - struct_size;
         tcg_ctx->tb_ctx.nb_tbs--;
     }
 }
@@ -1722,7 +1735,7 @@ static TranslationBlock *tb_find_pc(struct uc_struct *uc, uintptr_t tc_ptr)
     m_max = tcg_ctx->tb_ctx.nb_tbs - 1;
     while (m_min <= m_max) {
         m = (m_min + m_max) >> 1;
-        tb = &tcg_ctx->tb_ctx.tbs[m];
+        tb = tcg_ctx->tb_ctx.tbs[m];
         v = (uintptr_t)tb->tc_ptr;
         if (v == tc_ptr) {
             return tb;
@@ -1732,7 +1745,7 @@ static TranslationBlock *tb_find_pc(struct uc_struct *uc, uintptr_t tc_ptr)
             m_min = m + 1;
         }
     }
-    return &tcg_ctx->tb_ctx.tbs[m_max];
+    return tcg_ctx->tb_ctx.tbs[m_max];
 }
 
 #if !defined(CONFIG_USER_ONLY)
@@ -1898,8 +1911,7 @@ void dump_exec_info(FILE *f, fprintf_function cpu_fprintf)
     cpu_fprintf(f, "gen code size       %td/%zd\n",
                 tcg_ctx->code_gen_ptr - tcg_ctx->code_gen_buffer,
                 tcg_ctx->code_gen_highwater - tcg_ctx->code_gen_buffer);
-    cpu_fprintf(f, "TB count            %d/%d\n",
-            tcg_ctx.tb_ctx.nb_tbs, tcg_ctx.code_gen_max_blocks);
+    cpu_fprintf(f, "TB count            %d\n", tcg_ctx.tb_ctx.nb_tbs);
     cpu_fprintf(f, "TB avg target size  %d max=%d bytes\n",
             tcg_ctx.tb_ctx.nb_tbs ? target_code_size /
                     tcg_ctx.tb_ctx.nb_tbs : 0,
