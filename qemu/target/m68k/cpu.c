@@ -120,6 +120,7 @@ static void m68020_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     m68k_set_feature(env, M68K_FEATURE_FPU);
     m68k_set_feature(env, M68K_FEATURE_CAS);
     m68k_set_feature(env, M68K_FEATURE_BKPT);
+    m68k_set_feature(env, M68K_FEATURE_RTD);
 }
 #define m68030_cpu_initfn m68020_cpu_initfn
 #define m68040_cpu_initfn m68020_cpu_initfn
@@ -141,6 +142,7 @@ static void m68060_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     m68k_set_feature(env, M68K_FEATURE_FPU);
     m68k_set_feature(env, M68K_FEATURE_CAS);
     m68k_set_feature(env, M68K_FEATURE_BKPT);
+    m68k_set_feature(env, M68K_FEATURE_RTD);
 }
 
 static void m5208_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
