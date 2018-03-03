@@ -11612,8 +11612,7 @@ tb_end:
             gen_a64_set_pc_im(dc, dc->pc);
             /* fall through */
         case DISAS_JUMP:
-            /* indicate that the hash table must be used to find the next TB */
-            tcg_gen_exit_tb(tcg_ctx, 0);
+            tcg_gen_lookup_and_goto_ptr(tcg_ctx, tcg_ctx->cpu_pc);
             break;
         case DISAS_TB_JUMP:
         case DISAS_EXC:
