@@ -358,7 +358,6 @@ static void qobject_input_type_int64(Visitor *v, const char *name, int64_t *obj,
 static void qobject_input_type_uint64(Visitor *v, const char *name, uint64_t *obj,
                                       Error **errp)
 {
-    /* FIXME: qobject_to_qnum mishandles values over INT64_MAX */
     QObjectInputVisitor *qiv = to_qiv(v);
     QObject *qobj = qobject_input_get_object(qiv, name, true, errp);
     QNum *qnum;
@@ -368,11 +367,23 @@ static void qobject_input_type_uint64(Visitor *v, const char *name, uint64_t *ob
         return;
     }
     qnum = qobject_to_qnum(qobj);
-    if (!qnum || !qnum_get_try_int(qnum, &val)) {
-        error_setg(errp, QERR_INVALID_PARAMETER_TYPE,
-                   full_name(qiv, name), "integer");
+    if (!qnum) {
+        goto err;
     }
-    *obj = val;
+
+    if (qnum_get_try_uint(qnum, obj)) {
+        return;
+    }
+
+    /* Need to accept negative values for backward compatibility */
+    if (qnum_get_try_int(qnum, &val)) {
+        *obj = val;
+        return;
+    }
+
+err:
+    error_setg(errp, QERR_INVALID_PARAMETER_VALUE,
+               full_name(qiv, name), "uint64");
 }
 
 static void qobject_input_type_bool(Visitor *v, const char *name, bool *obj,
