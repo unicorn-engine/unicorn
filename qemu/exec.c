@@ -304,10 +304,11 @@ static inline bool section_covers_addr(const MemoryRegionSection *section,
                              int128_getlo(section->size), addr);
 }
 
-static MemoryRegionSection *phys_page_find(PhysPageEntry lp, hwaddr addr,
-        Node *nodes, MemoryRegionSection *sections)
+static MemoryRegionSection *phys_page_find(AddressSpaceDispatch *d, hwaddr addr)
 {
-    PhysPageEntry *p;
+    PhysPageEntry lp = d->phys_map, *p;
+    Node *nodes = d->map.nodes;
+    MemoryRegionSection *sections = d->map.sections;
     hwaddr index = addr >> TARGET_PAGE_BITS;
     int i;
 
@@ -344,8 +345,7 @@ static MemoryRegionSection *address_space_lookup_region(AddressSpaceDispatch *d,
         section_covers_addr(section, addr)) {
         update = false;
     } else {
-        section = phys_page_find(d->phys_map, addr, d->map.nodes,
-                                 d->map.sections);
+        section = phys_page_find(d, addr);
         update = true;
     }
     if (resolve_subpage && section->mr->subpage) {
@@ -1027,8 +1027,7 @@ static void register_subpage(struct uc_struct* uc,
     subpage_t *subpage;
     hwaddr base = section->offset_within_address_space
         & TARGET_PAGE_MASK;
-    MemoryRegionSection *existing = phys_page_find(d->phys_map, base,
-            d->map.nodes, d->map.sections);
+    MemoryRegionSection *existing = phys_page_find(d, base);
     hwaddr start, end;
     MemoryRegionSection subsection = MemoryRegionSection_make(NULL, NULL, 0, int128_make64(TARGET_PAGE_SIZE), base, false);
 
