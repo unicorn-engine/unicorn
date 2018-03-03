@@ -1,1 +1,1 @@
-util-obj-y = qint.o qnull.o qobject.o qstring.o qdict.o qlist.o qfloat.o qbool.o
+util-obj-y = qnull.o qobject.o qstring.o qdict.o qlist.o qbool.o qnum.o

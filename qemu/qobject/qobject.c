@@ -10,19 +10,16 @@
 #include "qemu-common.h"
 #include "qapi/qmp/qbool.h"
 #include "qapi/qmp/qdict.h"
-#include "qapi/qmp/qfloat.h"
-#include "qapi/qmp/qint.h"
 #include "qapi/qmp/qlist.h"
 #include "qapi/qmp/qstring.h"
 
 static void (*qdestroy[QTYPE__MAX])(QObject *) = {
     NULL,               /* No such object exists */
     NULL,              /* qnull_ is indestructible */
-    qint_destroy_obj,
+    qnum_destroy_obj,
     qstring_destroy_obj,
     qdict_destroy_obj,
     qlist_destroy_obj,
-    qfloat_destroy_obj,
     qbool_destroy_obj,
 };
 

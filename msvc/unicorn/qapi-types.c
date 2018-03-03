@@ -34,11 +34,10 @@ void qapi_free_DummyForceArrays(DummyForceArrays *obj)
 const char *const QType_lookup[] = {
     "none",
     "qnull",
-    "qint",
+    "qnum",
     "qstring",
     "qdict",
     "qlist",
-    "qfloat",
     "qbool",
     NULL,
 };
