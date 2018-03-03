@@ -2430,9 +2430,8 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
         gen_jmp_im(s, eip);
         tcg_gen_exit_tb(tcg_ctx, (uintptr_t)s->tb + tb_num);
     } else {
-        /* jump to another page: currently not optimized */
-        gen_jmp_im(s, eip);
-        gen_eob(s);
+        /* jump to another page */
+        gen_jr(s, tcg_ctx->cpu_tmp0);
     }
 }
 
