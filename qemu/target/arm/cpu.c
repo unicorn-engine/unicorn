@@ -308,14 +308,6 @@ static bool arm_v7m_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     CPUClass *cc = CPU_GET_CLASS(env->uc, cs);
     bool ret = false;
 
-
-    if (interrupt_request & CPU_INTERRUPT_FIQ
-        && !(env->daif & PSTATE_F)) {
-        cs->exception_index = EXCP_FIQ;
-        cc->do_interrupt(cs);
-        ret = true;
-    }
-
     /* ARMv7-M interrupt masking works differently than -A or -R.
      * There is no FIQ/IRQ distinction. Instead of I and F bits
      * masking FIQ and IRQ interrupts, an exception is taken only
