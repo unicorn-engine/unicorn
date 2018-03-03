@@ -2035,8 +2035,9 @@ static inline CPUARMState *cpu_init(struct uc_struct *uc, const char *cpu_model)
  * of the AT/ATS operations.
  * The values used are carefully arranged to make mmu_idx => EL lookup easy.
  */
-#define ARM_MMU_IDX_A 0x10 /* A profile (and M profile, for the moment) */
+#define ARM_MMU_IDX_A 0x10 /* A profile */
 #define ARM_MMU_IDX_NOTLB 0x20 /* does not have a TLB */
+#define ARM_MMU_IDX_M 0x40 /* M profile */
 
 #define ARM_MMU_IDX_TYPE_MASK (~0x7)
 #define ARM_MMU_IDX_COREIDX_MASK 0x7
@@ -2049,6 +2050,8 @@ typedef enum ARMMMUIdx {
     ARMMMUIdx_S1SE0 = 4 | ARM_MMU_IDX_A,
     ARMMMUIdx_S1SE1 = 5 | ARM_MMU_IDX_A,
     ARMMMUIdx_S2NS = 6 | ARM_MMU_IDX_A,
+    ARMMMUIdx_MUser = 0 | ARM_MMU_IDX_M,
+    ARMMMUIdx_MPriv = 1 | ARM_MMU_IDX_M,
     /* Indexes below here don't have TLBs and are used only for AT system
      * instructions or for the first stage of an S12 page table walk.
      */
@@ -2067,6 +2070,8 @@ typedef enum ARMMMUIdxBit {
     ARMMMUIdxBit_S1SE0 = 1 << 4,
     ARMMMUIdxBit_S1SE1 = 1 << 5,
     ARMMMUIdxBit_S2NS = 1 << 6,
+    ARMMMUIdxBit_MUser = 1 << 0,
+    ARMMMUIdxBit_MPriv = 1 << 1,
 } ARMMMUIdxBit;
 
 #define MMU_USER_IDX 0
@@ -2078,7 +2083,11 @@ static inline int arm_to_core_mmu_idx(ARMMMUIdx mmu_idx)
 
 static inline ARMMMUIdx core_to_arm_mmu_idx(CPUARMState *env, int mmu_idx)
 {
-    return mmu_idx | ARM_MMU_IDX_A;
+    if (arm_feature(env, ARM_FEATURE_M)) {
+        return mmu_idx | ARM_MMU_IDX_M;
+    } else {
+        return mmu_idx | ARM_MMU_IDX_A;
+    }
 }
 
 /* Indexes used when registering address spaces with cpu_address_space_init */
@@ -2093,6 +2102,8 @@ static inline int arm_mmu_idx_to_el(ARMMMUIdx mmu_idx)
     switch (mmu_idx & ARM_MMU_IDX_TYPE_MASK) {
     case ARM_MMU_IDX_A:
         return mmu_idx & 3;
+    case ARM_MMU_IDX_M:
+        return mmu_idx & 1;
     default:
         g_assert_not_reached();
     }
@@ -2102,6 +2113,12 @@ static inline int arm_mmu_idx_to_el(ARMMMUIdx mmu_idx)
 static inline int cpu_mmu_index(CPUARMState *env, bool ifetch)
 {
     int el = arm_current_el(env);
+
+    if (arm_feature(env, ARM_FEATURE_M)) {
+        ARMMMUIdx mmu_idx = el == 0 ? ARMMMUIdx_MUser : ARMMMUIdx_MPriv;
+
+        return arm_to_core_mmu_idx(mmu_idx);
+    }
 
     if (el < 2 && arm_is_secure_below_el3(env)) {
         return arm_to_core_mmu_idx(ARMMMUIdx_S1SE0 + el);
