@@ -8624,14 +8624,38 @@ case 0x101:
                 gen_update_cc_op(s);
                 gen_jmp_im(s, pc_start - s->cs_base);
                 if (b & 2) {
+                    // Unicorn: if'd out
+                    #if 0
+                    if (s->tb->cflags & CF_USE_ICOUNT) {
+                        gen_io_start();
+                    }
+                    #endif
                     gen_op_mov_v_reg(tcg_ctx, ot, cpu_T0, rm);
                     gen_helper_write_crN(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, reg),
                                          cpu_T0);
+
+                    // Unicorn: if'd out
+                    #if 0
+                    if (s->tb->cflags & CF_USE_ICOUNT) {
+                        gen_io_end();
+                    }
+                    #endif
                     gen_jmp_im(s, s->pc - s->cs_base);
                     gen_eob(s);
                 } else {
+                    // Unicorn: if'd out
+                    #if 0
+                    if (s->tb->cflags & CF_USE_ICOUNT) {
+                        gen_io_start();
+                    }
+                    #endif
                     gen_helper_read_crN(tcg_ctx, cpu_T0, cpu_env, tcg_const_i32(tcg_ctx, reg));
                     gen_op_mov_reg_v(tcg_ctx, ot, rm, cpu_T0);
+                    #if 0
+                    if (s->tb->cflags & CF_USE_ICOUNT) {
+                        gen_io_end();
+                    }
+                    #endif
                 }
                 break;
             default:
