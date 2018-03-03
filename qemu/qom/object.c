@@ -1001,7 +1001,7 @@ char *object_property_get_str(struct uc_struct *uc, Object *obj, const char *nam
         retval = g_strdup(qstring_get_str(qstring));
     }
 
-    QDECREF(qstring);
+    qobject_decref(ret);
     return retval;
 }
 
