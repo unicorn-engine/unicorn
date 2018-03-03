@@ -891,6 +891,7 @@ static const ARMCPRegInfo cortexr5_cp_reginfo[] = {
     /* Dummy the TCM region regs for the moment */
     { "ATCM", 15,9,1, 0,0,0, 0,ARM_CP_CONST, PL1_RW },
     { "BTCM", 15,9,1, 0,0,1, 0,ARM_CP_CONST, PL1_RW },
+    { "DCACHE_INVAL", 15,15,5,  0,0,0, 0, ARM_CP_NOP, PL1_W },
     REGINFO_SENTINEL
 };
 
