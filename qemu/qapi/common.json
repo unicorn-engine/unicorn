@@ -1,9 +1,11 @@
 # -*- Mode: Python -*-
-#
-# QAPI common definitions
 
 ##
-# @QapiErrorClass
+# = QAPI common definitions
+##
+
+##
+# @QapiErrorClass:
 #
 # QEMU error classes
 #

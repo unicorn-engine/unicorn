@@ -13,6 +13,7 @@
 
 from qapi import *
 
+
 # variants must be emitted before their container; track what has already
 # been output
 objects_seen = set()
@@ -25,8 +26,10 @@ typedef struct %(c_name)s %(c_name)s;
 ''',
                  c_name=c_name(name))
 
+
 def gen_array(name, element_type):
     return mcgen('''
+
 struct %(c_name)s {
     %(c_name)s *next;
     %(c_type)s value;
@@ -37,7 +40,6 @@ struct %(c_name)s {
 
 def gen_struct_members(members):
     ret = ''
-
     for memb in members:
         if memb.optional:
             ret += mcgen('''
@@ -114,39 +116,6 @@ static inline %(base)s *qapi_%(c_name)s_base(const %(c_name)s *obj)
                  c_name=c_name(name), base=base.c_name())
 
 
-def gen_alternate_qtypes_decl(name):
-    return mcgen('''
-
-extern const int %(c_name)s_qtypes[];
-''',
-                 c_name=c_name(name))
-
-
-def gen_alternate_qtypes(name, variants):
-    ret = mcgen('''
-
-const int %(c_name)s_qtypes[QTYPE__MAX] = {
-''',
-                c_name=c_name(name))
-
-    for var in variants.variants:
-        qtype = var.type.alternate_qtype()
-        assert qtype
-
-        ret += mcgen('''
-    [%(qtype)s] = %(enum_const)s,
-''',
-                     qtype=qtype,
-                     enum_const=c_enum_const(variants.tag_member.type.name,
-                                             var.name))
-
-
-    ret += mcgen('''
-};
-''')
-    return ret
-
-
 def gen_variants(variants):
     ret = mcgen('''
     union { /* union tag is @%(c_name)s */
@@ -169,6 +138,7 @@ def gen_variants(variants):
 
 def gen_type_cleanup_decl(name):
     ret = mcgen('''
+
 void qapi_free_%(c_name)s(%(c_name)s *obj);
 ''',
                 c_name=c_name(name))
@@ -208,7 +178,6 @@ class QAPISchemaGenTypeVisitor(QAPISchemaVisitor):
         self.decl = ''
         self.defn = ''
         self._fwdecl = ''
-        self._fwdefn = ''
         self._btin = guardstart('QAPI_TYPES_BUILTIN')
 
     def visit_end(self):
@@ -265,9 +234,7 @@ class QAPISchemaGenTypeVisitor(QAPISchemaVisitor):
 
     def visit_alternate_type(self, name, info, variants):
         self._fwdecl += gen_fwd_object_or_array(name)
-        self._fwdefn += gen_alternate_qtypes(name, variants)
         self.decl += gen_object(name, None, [variants.tag_member], variants)
-        self.decl += gen_alternate_qtypes_decl(name)
         self._gen_type_cleanup(name)
 
 # If you link code generated from multiple schemata, you want only one
@@ -277,10 +244,10 @@ class QAPISchemaGenTypeVisitor(QAPISchemaVisitor):
 do_builtins = False
 
 (input_file, output_dir, do_c, do_h, prefix, opts) = \
-    parse_command_line("b", ["builtins"])
+    parse_command_line('b', ['builtins'])
 
 for o, a in opts:
-    if o in ("-b", "--builtins"):
+    if o in ('-b', '--builtins'):
         do_builtins = True
 
 c_comment = '''
@@ -312,22 +279,18 @@ h_comment = '''
  *
  */
 '''
+
 (fdef, fdecl) = open_output(output_dir, do_c, do_h, prefix,
                             'qapi-types.c', 'qapi-types.h',
                             c_comment, h_comment)
 
 fdef.write(mcgen('''
+#include "qemu/osdep.h"
 #include "qapi/dealloc-visitor.h"
 #include "%(prefix)sqapi-types.h"
 #include "%(prefix)sqapi-visit.h"
 ''',
                  prefix=prefix))
-
-# To avoid circular headers, use only typedefs.h here, not qobject.h
-fdecl.write(mcgen('''
-#include "qemu/typedefs.h"
-#include "unicorn/platform.h"
-'''))
 
 schema = QAPISchema(input_file)
 gen = QAPISchemaGenTypeVisitor()

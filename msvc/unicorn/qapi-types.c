@@ -14,6 +14,7 @@
  *
  */
 
+#include "qemu/osdep.h"
 #include "qapi/dealloc-visitor.h"
 #include "qapi-types.h"
 #include "qapi-visit.h"

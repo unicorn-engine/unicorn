@@ -13,7 +13,7 @@
 # See the COPYING file in the top-level directory.
 
 from qapi import *
-import re
+
 
 def gen_visit_decl(name, scalar=False):
     c_type = c_name(name) + ' *'
@@ -89,6 +89,7 @@ void visit_type_%(c_name)s_members(Visitor *v, %(c_name)s *obj, Error **errp)
                                            var.name,
                                            variants.tag_member.type.prefix),
                          c_type=var.type.c_name(), c_name=c_name(var.name))
+
         ret += mcgen('''
     default:
         abort();
@@ -131,8 +132,9 @@ void visit_type_%(c_name)s(Visitor *v, const char *name, %(c_name)s **obj, Error
         }
     }
 
-    error_propagate(errp, err);
-    err = NULL;
+    if (!err) {
+        visit_check_list(v, &err);
+    }
     visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_%(c_name)s(*obj);
@@ -159,8 +161,8 @@ void visit_type_%(c_name)s(Visitor *v, const char *name, %(c_name)s *obj, Error 
 
 
 def gen_visit_alternate(name, variants):
-    ret = ''
     promote_int = 'true'
+    ret = ''
     for var in variants.variants:
         if var.type.alternate_qtype() == 'QTYPE_QNUM':
             promote_int = 'false'
@@ -332,10 +334,10 @@ class QAPISchemaGenVisitVisitor(QAPISchemaVisitor):
 do_builtins = False
 
 (input_file, output_dir, do_c, do_h, prefix, opts) = \
-    parse_command_line("b", ["builtins"])
+    parse_command_line('b', ['builtins'])
 
 for o, a in opts:
-    if o in ("-b", "--builtins"):
+    if o in ('-b', '--builtins'):
         do_builtins = True
 
 c_comment = '''
@@ -372,6 +374,7 @@ h_comment = '''
                             c_comment, h_comment)
 
 fdef.write(mcgen('''
+#include "qemu/osdep.h"
 #include "qemu-common.h"
 #include "qapi/error.h"
 #include "%(prefix)sqapi-visit.h"

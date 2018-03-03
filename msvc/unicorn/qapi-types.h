@@ -16,8 +16,6 @@
 #ifndef QAPI_TYPES_H
 #define QAPI_TYPES_H
 
-#include "qemu/typedefs.h"
-#include "unicorn/platform.h"
 
 #ifndef QAPI_TYPES_BUILTIN
 #define QAPI_TYPES_BUILTIN
@@ -33,104 +31,133 @@ typedef enum QType {
     QTYPE_QBOOL = 6,
     QTYPE__MAX = 7,
 } QType;
+
 extern const char *const QType_lookup[];
 
 typedef struct anyList anyList;
+
 struct anyList {
     anyList *next;
     QObject *value;
 };
+
 void qapi_free_anyList(anyList *obj);
 
 typedef struct boolList boolList;
+
 struct boolList {
     boolList *next;
     bool value;
 };
+
 void qapi_free_boolList(boolList *obj);
 
 typedef struct int16List int16List;
+
 struct int16List {
     int16List *next;
     int16_t value;
 };
+
 void qapi_free_int16List(int16List *obj);
 
 typedef struct int32List int32List;
+
 struct int32List {
     int32List *next;
     int32_t value;
 };
+
 void qapi_free_int32List(int32List *obj);
 
 typedef struct int64List int64List;
+
 struct int64List {
     int64List *next;
     int64_t value;
 };
+
 void qapi_free_int64List(int64List *obj);
 
 typedef struct int8List int8List;
+
 struct int8List {
     int8List *next;
     int8_t value;
 };
+
 void qapi_free_int8List(int8List *obj);
 
 typedef struct intList intList;
+
 struct intList {
     intList *next;
     int64_t value;
 };
+
 void qapi_free_intList(intList *obj);
 
 typedef struct numberList numberList;
+
 struct numberList {
     numberList *next;
     double value;
 };
+
 void qapi_free_numberList(numberList *obj);
 
 typedef struct sizeList sizeList;
+
 struct sizeList {
     sizeList *next;
     uint64_t value;
 };
+
 void qapi_free_sizeList(sizeList *obj);
 
 typedef struct strList strList;
+
 struct strList {
     strList *next;
     char *value;
 };
+
 void qapi_free_strList(strList *obj);
 
 typedef struct uint16List uint16List;
+
 struct uint16List {
     uint16List *next;
     uint16_t value;
 };
+
 void qapi_free_uint16List(uint16List *obj);
 
 typedef struct uint32List uint32List;
+
 struct uint32List {
     uint32List *next;
     uint32_t value;
 };
+
 void qapi_free_uint32List(uint32List *obj);
 
 typedef struct uint64List uint64List;
+
 struct uint64List {
     uint64List *next;
     uint64_t value;
 };
+
 void qapi_free_uint64List(uint64List *obj);
 
 typedef struct uint8List uint8List;
+
 struct uint8List {
     uint8List *next;
     uint8_t value;
 };
+
 void qapi_free_uint8List(uint8List *obj);
 
 #endif /* QAPI_TYPES_BUILTIN */
@@ -147,6 +174,7 @@ typedef enum QapiErrorClass {
     QAPI_ERROR_CLASS_KVMMISSINGCAP = 5,
     QAPI_ERROR_CLASS__MAX = 6,
 } QapiErrorClass;
+
 extern const char *const QapiErrorClass_lookup[];
 
 typedef struct X86CPUFeatureWordInfo X86CPUFeatureWordInfo;
@@ -164,11 +192,13 @@ typedef enum X86CPURegister32 {
     X86_CPU_REGISTER32_EDI = 7,
     X86_CPU_REGISTER32__MAX = 8,
 } X86CPURegister32;
+
 extern const char *const X86CPURegister32_lookup[];
 
 struct DummyForceArrays {
     X86CPUFeatureWordInfoList *unused;
 };
+
 void qapi_free_DummyForceArrays(DummyForceArrays *obj);
 
 struct X86CPUFeatureWordInfo {
@@ -178,11 +208,14 @@ struct X86CPUFeatureWordInfo {
     X86CPURegister32 cpuid_register;
     int64_t features;
 };
+
 void qapi_free_X86CPUFeatureWordInfo(X86CPUFeatureWordInfo *obj);
+
 struct X86CPUFeatureWordInfoList {
     X86CPUFeatureWordInfoList *next;
     X86CPUFeatureWordInfo *value;
 };
+
 void qapi_free_X86CPUFeatureWordInfoList(X86CPUFeatureWordInfoList *obj);
 
 #endif
