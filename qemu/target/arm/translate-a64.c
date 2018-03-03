@@ -1465,7 +1465,9 @@ static void handle_msr_i(DisasContext *s, uint32_t insn,
         gen_helper_msr_i_pstate(tcg_ctx, tcg_ctx->cpu_env, tcg_op, tcg_imm);
         tcg_temp_free_i32(tcg_ctx, tcg_imm);
         tcg_temp_free_i32(tcg_ctx, tcg_op);
-        s->is_jmp = DISAS_UPDATE;
+        /* For DAIFClear, exit the cpu loop to re-evaluate pending IRQs.  */
+        gen_a64_set_pc_im(s, s->pc);
+        s->is_jmp = (op == 0x1f ? DISAS_EXIT : DISAS_JUMP);
         break;
     }
     default:
@@ -11613,6 +11615,9 @@ tb_end:
             /* fall through */
         case DISAS_JUMP:
             tcg_gen_lookup_and_goto_ptr(tcg_ctx, tcg_ctx->cpu_pc);
+            break;
+        case DISAS_EXIT:
+            tcg_gen_exit_tb(tcg_ctx, 0);
             break;
         case DISAS_TB_JUMP:
         case DISAS_EXC:
