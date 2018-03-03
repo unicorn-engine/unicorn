@@ -1244,7 +1244,7 @@ typedef struct X86CPU {
     /* in order to simplify APIC support, we leave this pointer to the
        user */
     struct DeviceState *apic_state;
-    struct MemoryRegion *cpu_as_root;
+    struct MemoryRegion *cpu_as_root, *cpu_as_mem, *smram;
 
     int32_t socket_id;
     int32_t core_id;
@@ -1424,6 +1424,16 @@ int x86_cpu_handle_mmu_fault(CPUState *cpu, vaddr addr,
 void x86_cpu_set_a20(X86CPU *cpu, int a20_state);
 
 #ifndef CONFIG_USER_ONLY
+static inline int x86_asidx_from_attrs(CPUState *cs, MemTxAttrs attrs)
+{
+    return !!attrs.secure;
+}
+
+static inline AddressSpace *cpu_addressspace(CPUState *cs, MemTxAttrs attrs)
+{
+    return cpu_get_address_space(cs, cpu_asidx_from_attrs(cs, attrs));
+}
+
 uint8_t x86_ldub_phys(CPUState *cs, hwaddr addr);
 uint32_t x86_lduw_phys(CPUState *cs, hwaddr addr);
 uint32_t x86_ldl_phys(CPUState *cs, hwaddr addr);
