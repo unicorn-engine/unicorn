@@ -911,12 +911,10 @@ struct TCGContext {
 
     /* qemu/target-m68k/translate.c */
     TCGv_i32 cpu_halted;
-    char cpu_reg_names[3*8*3 + 5*4];
+    char cpu_reg_names[2 * 8 * 3 + 5 * 4];
     TCGv cpu_dregs[8];
     TCGv cpu_aregs[8];
-    TCGv_i64 cpu_fregs[8];
     TCGv_i64 cpu_macc[4];
-    TCGv_i64 QREG_FP_RESULT;
     TCGv QREG_PC;
     TCGv QREG_SR;
     TCGv QREG_CC_OP;
