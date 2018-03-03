@@ -61,6 +61,7 @@
     <ClCompile Include="..\..\..\qemu\translate-common.c" />
     <ClCompile Include="..\..\..\qemu\hw\m68k\dummy_m68k.c" />
     <ClCompile Include="..\..\..\qemu\target\m68k\cpu.c" />
+    <ClCompile Include="..\..\..\qemu\target\m68k\fpu_helper.c" />
     <ClCompile Include="..\..\..\qemu\target\m68k\helper.c" />
     <ClCompile Include="..\..\..\qemu\target\m68k\op_helper.c" />
     <ClCompile Include="..\..\..\qemu\target\m68k\translate.c" />

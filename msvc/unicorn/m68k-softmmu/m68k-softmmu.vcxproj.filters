@@ -102,6 +102,9 @@
     <ClCompile Include="..\..\..\qemu\target\m68k\cpu.c">
       <Filter>target\m68k</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target\m68k\fpu_helper.c">
+      <Filter>target\m68k</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\target\m68k\helper.c">
       <Filter>target\m68k</Filter>
     </ClCompile>
