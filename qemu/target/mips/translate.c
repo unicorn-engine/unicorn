@@ -4291,7 +4291,7 @@ static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
             save_cpu_state(ctx, 0);
             gen_helper_raise_exception_debug(tcg_ctx, tcg_ctx->cpu_env);
         }
-        tcg_gen_exit_tb(tcg_ctx, 0);
+        tcg_gen_lookup_and_goto_ptr(tcg_ctx, tcg_ctx->cpu_PC);
     }
 }
 
