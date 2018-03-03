@@ -986,6 +986,29 @@ int64_t object_property_get_int(struct uc_struct *uc, Object *obj,
                                 const char *name, Error **errp);
 
 /**
+ * object_property_set_uint:
+ * @value: the value to be written to the property
+ * @name: the name of the property
+ * @errp: returns an error if this function fails
+ *
+ * Writes an unsigned integer value to a property.
+ */
+void object_property_set_uint(struct uc_struct *uc, Object *obj, uint64_t value,
+                              const char *name, Error **errp);
+
+/**
+ * object_property_get_uint:
+ * @obj: the object
+ * @name: the name of the property
+ * @errp: returns an error if this function fails
+ *
+ * Returns: the value of the property, converted to an unsigned integer, or 0
+ * an error occurs (including when the property value is not an integer).
+ */
+uint64_t object_property_get_uint(struct uc_struct *uc, Object *obj,
+                                  const char *name, Error **errp);
+
+/**
  * object_property_set:
  * @obj: the object
  * @v: the visitor that will be used to write the property value.  This should

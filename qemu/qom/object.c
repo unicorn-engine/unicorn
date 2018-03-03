@@ -1096,6 +1096,35 @@ int64_t object_property_get_int(struct uc_struct *uc, Object *obj, const char *n
     return retval;
 }
 
+void object_property_set_uint(struct uc_struct *uc, Object *obj, uint64_t value,
+                              const char *name, Error **errp)
+{
+    QNum *qnum = qnum_from_uint(value);
+
+    object_property_set_qobject(uc, obj, QOBJECT(qnum), name, errp);
+    QDECREF(qnum);
+}
+
+uint64_t object_property_get_uint(struct uc_struct *uc, Object *obj,
+                                  const char *name, Error **errp)
+{
+    QObject *ret = object_property_get_qobject(uc, obj, name, errp);
+    QNum *qnum;
+    uint64_t retval;
+
+    if (!ret) {
+        return 0;
+    }
+    qnum = qobject_to_qnum(ret);
+    if (!qnum || !qnum_get_try_uint(qnum, &retval)) {
+        error_setg(errp, QERR_INVALID_PARAMETER_TYPE, name, "uint");
+        retval = 0;
+    }
+
+    qobject_decref(ret);
+    return retval;
+}
+
 void object_property_parse(struct uc_struct *uc, Object *obj, const char *string,
                            const char *name, Error **errp)
 {
