@@ -1729,6 +1729,7 @@
 #define helper_le_stl_mmu helper_le_stl_mmu_mipsel
 #define helper_le_stq_mmu helper_le_stq_mmu_mipsel
 #define helper_le_stw_mmu helper_le_stw_mmu_mipsel
+#define helper_lookup_tb_ptr helper_lookup_tb_ptr_mipsel
 #define helper_mulsh_i32 helper_mulsh_i32_mipsel
 #define helper_mulsh_i64 helper_mulsh_i64_mipsel
 #define helper_muluh_i32 helper_muluh_i32_mipsel
@@ -2939,6 +2940,7 @@
 #define tb_free tb_free_mipsel
 #define tb_gen_code tb_gen_code_mipsel
 #define tb_hash_remove tb_hash_remove_mipsel
+#define tb_htable_lookup tb_htable_lookup_mipsel
 #define tb_invalidate_phys_addr tb_invalidate_phys_addr_mipsel
 #define tb_invalidate_phys_page_fast tb_invalidate_phys_page_fast_mipsel
 #define tb_invalidate_phys_page_range tb_invalidate_phys_page_range_mipsel
@@ -3076,6 +3078,7 @@
 #define tcg_gen_ld_i64 tcg_gen_ld_i64_mipsel
 #define tcg_gen_ldst_op_i32 tcg_gen_ldst_op_i32_mipsel
 #define tcg_gen_ldst_op_i64 tcg_gen_ldst_op_i64_mipsel
+#define tcg_gen_lookup_and_goto_ptr tcg_gen_lookup_and_goto_ptr_mipsel
 #define tcg_gen_mb tcg_gen_mb_mipsel
 #define tcg_gen_mov_i32 tcg_gen_mov_i32_mipsel
 #define tcg_gen_mov_i64 tcg_gen_mov_i64_mipsel

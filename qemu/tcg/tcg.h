@@ -828,6 +828,7 @@ struct TCGContext {
        extension that allows arithmetic on void*.  */
     int code_gen_max_blocks;
     void *code_gen_prologue;
+    void *code_gen_epilogue;
     void *code_gen_buffer;
     size_t code_gen_buffer_size;
     void *code_gen_ptr;
@@ -1008,7 +1009,7 @@ static inline bool tcg_op_buf_full(TCGContext *tcg_ctx)
 }
 
 // UNICORN: Added
-#define TCG_OP_DEFS_TABLE_SIZE 135
+#define TCG_OP_DEFS_TABLE_SIZE 136
 extern const TCGOpDef tcg_op_defs_org[TCG_OP_DEFS_TABLE_SIZE];
 
 typedef struct TCGTargetOpDef {

@@ -110,10 +110,8 @@ static void cpu_exec_nocache(CPUState *cpu, int max_cycles,
     tb_free(env->uc, tb);
 }
 
-static TranslationBlock *tb_htable_lookup(CPUState *cpu,
-                                          target_ulong pc,
-                                          target_ulong cs_base,
-                                          uint32_t flags)
+TranslationBlock *tb_htable_lookup(CPUState *cpu, target_ulong pc,
+                                   target_ulong cs_base, uint32_t flags)
 {
     TCGContext *tcg_ctx = cpu->uc->tcg_ctx;
     CPUArchState *env = (CPUArchState *)cpu->env_ptr;
