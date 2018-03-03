@@ -555,7 +555,7 @@ static void gen_flush_flags(DisasContext *s)
         t1 = tcg_temp_new(tcg_ctx);
         tcg_gen_add_i32(tcg_ctx, t0, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_V);
         gen_ext(s, t0, t0, s->cc_op - CC_OP_SUBB, 1);
-        tcg_gen_xor_i32(tcg_ctx, t1, tcg_ctx->QREG_CC_N, tcg_ctx->QREG_CC_V);
+        tcg_gen_xor_i32(tcg_ctx, t1, tcg_ctx->QREG_CC_N, t0);
         tcg_gen_xor_i32(tcg_ctx, tcg_ctx->QREG_CC_V, tcg_ctx->QREG_CC_V, t0);
         tcg_temp_free(tcg_ctx, t0);
         tcg_gen_and_i32(tcg_ctx, tcg_ctx->QREG_CC_V, tcg_ctx->QREG_CC_V, t1);
