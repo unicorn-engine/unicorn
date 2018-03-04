@@ -5006,15 +5006,16 @@ static void restore_eflags(DisasContext *s, TCGContext *tcg_ctx)
 
 /* convert one instruction. s->base.is_jmp is set if the translation must
    be stopped. Return the next pc value */
-static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
-                               target_ulong pc_start)   // qq
+static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 {
+    CPUX86State *env = cpu->env_ptr;
     int b, prefixes;
     int shift;
     TCGMemOp ot, aflag, dflag;
     int modrm, reg, rm, mod, op, opreg, val;
     target_ulong next_eip, tval;
     int rex_w, rex_r;
+    target_ulong pc_start = s->base.pc_next;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_ptr cpu_env = tcg_ctx->cpu_env;
     TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
@@ -9253,6 +9254,43 @@ static bool i386_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cpu,
     }
 }
 
+static void i386_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
+{
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+    target_ulong pc_next = disas_insn(dc, cpu);
+
+    if (dc->tf || (dc->base.tb->flags & HF_INHIBIT_IRQ_MASK)) {
+        /* if single step mode, we generate only one instruction and
+           generate an exception */
+        /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
+           the flag and abort the translation to give the irqs a
+           chance to happen */
+        gen_jmp_im(dc, pc_next - dc->cs_base);
+        gen_eob(dc);
+        dc->base.is_jmp = DISAS_TOO_MANY;
+    } else if ((dc->base.tb->cflags & CF_USE_ICOUNT)
+               && ((dc->base.pc_next & TARGET_PAGE_MASK)
+                   != ((dc->base.pc_next + TARGET_MAX_INSN_SIZE - 1)
+                       & TARGET_PAGE_MASK)
+                   || (dc->base.pc_next & ~TARGET_PAGE_MASK) == 0)) {
+        /* Do not cross the boundary of the pages in icount mode,
+           it can cause an exception. Do it only when boundary is
+           crossed by the first instruction in the block.
+           If current instruction already crossed the bound - it's ok,
+           because an exception hasn't stopped this code.
+         */
+        gen_jmp_im(dc, pc_next - dc->cs_base);
+        gen_eob(dc);
+        dc->base.is_jmp = DISAS_TOO_MANY;
+    } else if ((pc_next - dc->base.pc_first) >= (TARGET_PAGE_SIZE - 32)) {
+        gen_jmp_im(dc, pc_next - dc->cs_base);
+        gen_eob(dc);
+        dc->base.is_jmp = DISAS_TOO_MANY;
+    }
+
+    dc->base.pc_next = pc_next;
+}
+
 /* generate intermediate code for basic block 'tb'.  */
 void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
 {
@@ -9329,40 +9367,20 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
 
         // Unicorn: save current PC address to sync EIP
         dc->prev_pc = dc->base.pc_next;
-        dc->base.pc_next = disas_insn(env, dc, dc->base.pc_next);
+        i386_tr_translate_insn(&dc->base, cs);
         /* stop translation if indicated */
         if (dc->base.is_jmp) {
             break;
         }
         /* if single step mode, we generate only one instruction and
            generate an exception */
-        /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
-           the flag and abort the translation to give the irqs a
-           change to be happen */
-        if (dc->tf || dc->base.singlestep_enabled ||
-            (dc->base.tb->flags & HF_INHIBIT_IRQ_MASK)) {
+        if (dc->base.singlestep_enabled) {
             gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
             gen_eob(dc);
             break;
         }
-        /* Do not cross the boundary of the pages in icount mode,
-           it can cause an exception. Do it only when boundary is
-           crossed by the first instruction in the block.
-           If current instruction already crossed the bound - it's ok,
-           because an exception hasn't stopped this code.
-         */
-        /* UNICORN: Commented out
-        if (use_icount
-            && ((dc->base.pc_next & TARGET_PAGE_MASK)
-                != ((dc->base.pc_next + TARGET_MAX_INSN_SIZE - 1) & TARGET_PAGE_MASK)
-                || (dc->base.pc_next & ~TARGET_PAGE_MASK) == 0)) {
-            gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
-            gen_eob(dc);
-            break;
-        }*/
         /* if too long translation, stop generation too */
         if (tcg_op_buf_full(tcg_ctx) ||
-            (dc->base.pc_next - dc->base.pc_first) >= (TARGET_PAGE_SIZE - 32) ||
             num_insns >= max_insns) {
             gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
             gen_eob(dc);
