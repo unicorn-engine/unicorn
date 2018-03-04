@@ -1510,7 +1510,7 @@ void *qemu_map_ram_ptr(struct uc_struct *uc, RAMBlock *ram_block,
 /* Return a host pointer to guest's ram. Similar to qemu_map_ram_ptr
  * but takes a size argument */
 static void *qemu_ram_ptr_length(struct uc_struct *uc, RAMBlock *ram_block,
-                                 ram_addr_t addr, hwaddr *size)
+                                 ram_addr_t addr, hwaddr *size, bool lock)
 {
     RAMBlock *block = ram_block;
     if (*size == 0) {
@@ -2426,7 +2426,7 @@ void *address_space_map(AddressSpace *as,
 
     memory_region_ref(mr);
     *plen = address_space_extend_translation(as, addr, len, mr, xlat, l, is_write);
-    ptr = qemu_ram_ptr_length(mr->uc, mr->ram_block, xlat, plen);
+    ptr = qemu_ram_ptr_length(mr->uc, mr->ram_block, xlat, plen, true);
     return ptr;
 }
 
