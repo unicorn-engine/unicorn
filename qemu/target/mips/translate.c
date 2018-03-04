@@ -4635,12 +4635,14 @@ static void gen_bshfl (DisasContext *ctx, uint32_t op2, int rt, int rd)
     case OPC_WSBH:
         {
             TCGv t1 = tcg_temp_new(tcg_ctx);
+            TCGv t2 = tcg_const_tl(tcg_ctx, 0x00FF00FF);
 
             tcg_gen_shri_tl(tcg_ctx, t1, t0, 8);
-            tcg_gen_andi_tl(tcg_ctx, t1, t1, 0x00FF00FF);
+            tcg_gen_and_tl(tcg_ctx, t1, t1, t2);
+            tcg_gen_and_tl(tcg_ctx, t0, t0, t2);
             tcg_gen_shli_tl(tcg_ctx, t0, t0, 8);
-            tcg_gen_andi_tl(tcg_ctx, t0, t0, ~0x00FF00FF);
             tcg_gen_or_tl(tcg_ctx, t0, t0, t1);
+            tcg_temp_free(tcg_ctx, t2);
             tcg_temp_free(tcg_ctx, t1);
             tcg_gen_ext32s_tl(tcg_ctx, cpu_gpr[rd], t0);
         }
@@ -4655,27 +4657,31 @@ static void gen_bshfl (DisasContext *ctx, uint32_t op2, int rt, int rd)
     case OPC_DSBH:
         {
             TCGv t1 = tcg_temp_new(tcg_ctx);
+            TCGv t2 = tcg_const_tl(tcg_ctx, 0x00FF00FF00FF00FFULL);
 
             tcg_gen_shri_tl(tcg_ctx, t1, t0, 8);
-            tcg_gen_andi_tl(tcg_ctx, t1, t1, 0x00FF00FF00FF00FFULL);
+            tcg_gen_and_tl(tcg_ctx, t1, t1, t2);
+            tcg_gen_and_tl(tcg_ctx, t0, t0, t2);
             tcg_gen_shli_tl(tcg_ctx, t0, t0, 8);
-            tcg_gen_andi_tl(tcg_ctx, t0, t0, ~0x00FF00FF00FF00FFULL);
             tcg_gen_or_tl(tcg_ctx, cpu_gpr[rd], t0, t1);
+            tcg_temp_free(tcg_ctx, t2);
             tcg_temp_free(tcg_ctx, t1);
         }
         break;
     case OPC_DSHD:
         {
             TCGv t1 = tcg_temp_new(tcg_ctx);
+            TCGv t2 = tcg_const_tl(tcg_ctx, 0x0000FFFF0000FFFFULL);
 
             tcg_gen_shri_tl(tcg_ctx, t1, t0, 16);
-            tcg_gen_andi_tl(tcg_ctx, t1, t1, 0x0000FFFF0000FFFFULL);
+            tcg_gen_and_tl(tcg_ctx, t1, t1, t2);
+            tcg_gen_and_tl(tcg_ctx, t0, t0, t2);
             tcg_gen_shli_tl(tcg_ctx, t0, t0, 16);
-            tcg_gen_andi_tl(tcg_ctx, t0, t0, ~0x0000FFFF0000FFFFULL);
             tcg_gen_or_tl(tcg_ctx, t0, t0, t1);
             tcg_gen_shri_tl(tcg_ctx, t1, t0, 32);
             tcg_gen_shli_tl(tcg_ctx, t0, t0, 32);
             tcg_gen_or_tl(tcg_ctx, cpu_gpr[rd], t0, t1);
+            tcg_temp_free(tcg_ctx, t2);
             tcg_temp_free(tcg_ctx, t1);
         }
         break;
