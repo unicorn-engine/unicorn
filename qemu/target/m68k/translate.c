@@ -4695,10 +4695,21 @@ DISAS_INSN(fpu)
     ext = read_im16(env, s);
     opmode = ext & 0x7f;
     switch ((ext >> 13) & 7) {
-    case 0: case 2:
+    case 0:
         break;
     case 1:
         goto undef;
+    case 2:
+        if (insn == 0xf200 && (ext & 0xfc00) == 0x5c00) {
+            /* fmovecr */
+            TCGv rom_offset = tcg_const_i32(tcg_ctx, opmode);
+            cpu_dest = gen_fp_ptr(s, REG(ext, 7));
+            gen_helper_fconst(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, rom_offset);
+            tcg_temp_free_ptr(tcg_ctx, cpu_dest);
+            tcg_temp_free(tcg_ctx, rom_offset);
+            return;
+        }
+        break;
     case 3: /* fmove out */
         cpu_src = gen_fp_ptr(s, REG(ext, 7));
         opsize = ext_opsize(ext, 10);
