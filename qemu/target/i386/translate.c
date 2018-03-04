@@ -9242,7 +9242,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     // early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
         // imitate the HLT instruction
-        gen_tb_start(tcg_ctx);
+        gen_tb_start(tcg_ctx, tb);
         gen_jmp_im(dc, tb->pc - tb->cs_base);
         gen_helper_hlt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
         dc->is_jmp = DISAS_NORETURN;
@@ -9269,7 +9269,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
         env->uc->size_arg = -1;
     }
 
-    gen_tb_start(tcg_ctx);
+    gen_tb_start(tcg_ctx, tb);
     for(;;) {
         tcg_gen_insn_start(tcg_ctx, pc_start, dc->cc_op);
         num_insns++;

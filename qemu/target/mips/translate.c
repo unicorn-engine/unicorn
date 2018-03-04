@@ -20444,7 +20444,7 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
 
     // Unicorn: early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
-        gen_tb_start(tcg_ctx);
+        gen_tb_start(tcg_ctx, tb);
         gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
         ctx.bstate = BS_EXCP;
         goto done_generating;
@@ -20463,7 +20463,7 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
         env->uc->size_arg = -1;
     }
 
-    gen_tb_start(tcg_ctx);
+    gen_tb_start(tcg_ctx, tb);
     while (ctx.bstate == BS_NONE) {
         tcg_gen_insn_start(tcg_ctx, ctx.pc, ctx.hflags & MIPS_HFLAG_BMASK, ctx.btarget);
         num_insns++;

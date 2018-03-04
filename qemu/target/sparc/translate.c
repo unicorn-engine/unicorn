@@ -5958,7 +5958,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
 
     // early check to see if the address of this block is the until address
     if (pc_start == env->uc->addr_end) {
-        gen_tb_start(tcg_ctx);
+        gen_tb_start(tcg_ctx, tb);
         gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
         goto done_generating;
     }
@@ -5973,7 +5973,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
 
     // Unicorn: early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
-        gen_tb_start(tcg_ctx);
+        gen_tb_start(tcg_ctx, tb);
         save_state(dc);
         gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
         goto done_generating;
@@ -5989,7 +5989,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
         gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     }
 
-    gen_tb_start(tcg_ctx);
+    gen_tb_start(tcg_ctx, tb);
     do {
         if (dc->npc & JUMP_PC) {
             assert(dc->jump_pc[1] == dc->pc + 4);

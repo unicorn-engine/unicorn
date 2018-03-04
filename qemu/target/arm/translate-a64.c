@@ -11515,7 +11515,7 @@ void gen_intermediate_code_a64(CPUState *cs, TranslationBlock *tb)
     // Unicorn: early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
         // imitate WFI instruction to halt emulation
-        gen_tb_start(tcg_ctx);
+        gen_tb_start(tcg_ctx, tb);
         dc->is_jmp = DISAS_WFI;
         goto tb_end;
     }
@@ -11532,7 +11532,7 @@ void gen_intermediate_code_a64(CPUState *cs, TranslationBlock *tb)
         env->uc->size_arg = -1;
     }
 
-    gen_tb_start(tcg_ctx);
+    gen_tb_start(tcg_ctx, tb);
 
     do {
         dc->insn_start_idx = tcg_op_buf_count(tcg_ctx);

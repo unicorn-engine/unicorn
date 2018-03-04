@@ -5774,7 +5774,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
 
     // Unicorn: early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
-        gen_tb_start(tcg_ctx);
+        gen_tb_start(tcg_ctx, tb);
         gen_exception(dc, dc->pc, EXCP_HLT);
         goto done_generating;
     }
@@ -5791,7 +5791,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
         env->uc->size_arg = -1;
     }
 
-    gen_tb_start(tcg_ctx);
+    gen_tb_start(tcg_ctx, tb);
     do {
         pc_offset = dc->pc - pc_start;
         tcg_gen_insn_start(tcg_ctx, dc->pc, dc->cc_op);
