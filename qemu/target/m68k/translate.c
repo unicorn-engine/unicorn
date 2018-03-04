@@ -4772,8 +4772,14 @@ DISAS_INSN(fpu)
     }
     cpu_dest = gen_fp_ptr(s, REG(ext, 7));
     switch (opmode) {
-    case 0: case 0x40: case 0x44: /* fmove */
+    case 0: /* fmove */
         gen_fp_move(s, cpu_dest, cpu_src);
+        break;
+    case 0x40: /* fsmove */
+        gen_helper_fsround(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
+        break;
+    case 0x44: /* fdmove */
+        gen_helper_fdround(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
         break;
     case 1: /* fint */
         gen_helper_firound(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
@@ -4790,11 +4796,23 @@ DISAS_INSN(fpu)
     case 0x45: /* fdsqrt */
         gen_helper_fdsqrt(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
         break;
-    case 0x18: case 0x58: case 0x5c: /* fabs */
+    case 0x18: /* fabs */
         gen_helper_fabs(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
         break;
-    case 0x1a: case 0x5a: case 0x5e: /* fneg */
-        gen_helper_fchs(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
+    case 0x58: /* fsabs */
+        gen_helper_fsabs(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
+        break;
+    case 0x5c: /* fdabs */
+        gen_helper_fdabs(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
+        break;
+    case 0x1a: /* fneg */
+        gen_helper_fneg(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
+        break;
+    case 0x5a: /* fsneg */
+        gen_helper_fsneg(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
+        break;
+    case 0x5e: /* fdneg */
+        gen_helper_fdneg(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
         break;
     case 0x20: /* fdiv */
         gen_helper_fdiv(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src, cpu_dest);
