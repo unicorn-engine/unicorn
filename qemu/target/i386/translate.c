@@ -9145,22 +9145,14 @@ void tcg_x86_init(struct uc_struct *uc)
     }
 }
 
-/* generate intermediate code for basic block 'tb'.  */
-void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
+static int i386_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cpu,
+                                      int max_insns)
 {
-    CPUX86State *env = cs->env_ptr;
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+    CPUX86State *env = cpu->env_ptr;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    DisasContext dc1, *dc = &dc1;
-    uint32_t flags;
-    target_ulong cs_base;
-    int num_insns = 0;
-    int max_insns;
-    bool block_full = false;
-
-    /* generate intermediate code */
-    dc->base.pc_first = tb->pc;
-    cs_base = tb->cs_base;
-    flags = tb->flags;
+    uint32_t flags = dc->base.tb->flags;
+    target_ulong cs_base = dc->base.tb->cs_base;
 
     dc->uc = env->uc;
     dc->pe = (flags >> HF_PE_SHIFT) & 1;
@@ -9172,11 +9164,9 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     dc->cpl = (flags >> HF_CPL_SHIFT) & 3;
     dc->iopl = (flags >> IOPL_SHIFT) & 3;
     dc->tf = (flags >> TF_SHIFT) & 1;
-    dc->base.singlestep_enabled = cs->singlestep_enabled;
     dc->last_cc_op = dc->cc_op = CC_OP_DYNAMIC;
     dc->cc_op_dirty = false;
     dc->cs_base = cs_base;
-    dc->base.tb = tb;
     dc->popl_esp_hack = 0;
     /* select memory access functions */
     dc->mem_index = 0;
@@ -9194,7 +9184,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     dc->code64 = (flags >> HF_CS64_SHIFT) & 1;
 #endif
     dc->flags = flags;
-    dc->jmp_opt = !(dc->tf || cs->singlestep_enabled ||
+    dc->jmp_opt = !(dc->tf || dc->base.singlestep_enabled ||
                     (flags & HF_INHIBIT_IRQ_MASK));
     /* Do not optimize repz jumps at all in icount mode, because
        rep movsS instructions are execured with different paths
@@ -9206,7 +9196,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
        record/replay modes and there will always be an
        additional step for ecx=0 when icount is enabled.
      */
-    dc->repz_opt = !dc->jmp_opt;// && !use_icount; UNICORN: Commented out
+    dc->repz_opt = !dc->jmp_opt && !(dc->base.tb->cflags & CF_USE_ICOUNT);
 #if 0
     /* check addseg logic */
     if (!dc->addseg && (dc->vm86 || !dc->pe || !dc->code32))
@@ -9232,6 +9222,24 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     // done with initializing TCG variables
     env->uc->init_tcg = true;
 
+    return max_insns;
+}
+
+/* generate intermediate code for basic block 'tb'.  */
+void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
+{
+    CPUX86State *env = cs->env_ptr;
+    DisasContext dc1, *dc = &dc1;
+    TCGContext *tcg_ctx = env->uc->tcg_ctx;
+    int num_insns = 0;
+    int max_insns;
+    bool block_full = false;
+
+    /* generate intermediate code */
+    dc->base.singlestep_enabled = cs->singlestep_enabled;
+    dc->base.tb = tb;
+    dc->base.is_jmp = DISAS_NEXT;
+    dc->base.pc_first = tb->pc;
     dc->base.pc_next = dc->base.pc_first;
 
     // early check to see if the address of this block is the until address
@@ -9252,6 +9260,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     if (max_insns > TCG_MAX_INSNS) {
         max_insns = TCG_MAX_INSNS;
     }
+    max_insns = i386_tr_init_disas_context(&dc->base, cs, max_insns);
 
     // Unicorn: trace this block on request
     // Only hook this block if the previous block was not truncated due to space
@@ -9299,7 +9308,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
            the flag and abort the translation to give the irqs a
            change to be happen */
         if (dc->tf || dc->base.singlestep_enabled ||
-            (flags & HF_INHIBIT_IRQ_MASK)) {
+            (dc->base.tb->flags & HF_INHIBIT_IRQ_MASK)) {
             gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
             gen_eob(dc);
             break;
