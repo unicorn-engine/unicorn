@@ -2147,7 +2147,7 @@ static uint64_t pmsav7_read(CPUARMState *env, const ARMCPRegInfo *ri)
         return 0;
     }
 
-    u32p += env->cp15.c6_rgnr;
+    u32p += env->pmsav7.rnr;
     return *u32p;
 }
 
@@ -2161,7 +2161,7 @@ static void pmsav7_write(CPUARMState *env, const ARMCPRegInfo *ri,
         return;
     }
 
-    u32p += env->cp15.c6_rgnr;
+    u32p += env->pmsav7.rnr;
     tlb_flush(CPU(cpu)); /* Mappings may have changed - purge! */
     *u32p = value;
 }
@@ -2205,7 +2205,7 @@ static const ARMCPRegInfo pmsav7_cp_reginfo[] = {
       PL1_RW, 0, NULL, 0, offsetof(CPUARMState, pmsav7.dracr), {0, 0},
       NULL, pmsav7_read, pmsav7_write, NULL, NULL, pmsav7_reset },
     { "RGNR", 15,6,2, 0,0,0, 0,0,
-      PL1_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c6_rgnr), {0, 0},
+      PL1_RW, 0, NULL, 0, offsetof(CPUARMState, pmsav7.rnr), {0, 0},
       NULL, NULL, pmsav7_rgnr_write },
     REGINFO_SENTINEL
 };
