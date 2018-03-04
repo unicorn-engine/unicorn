@@ -290,26 +290,26 @@ static ram_addr_t qemu_ram_addr_from_host_nofail(struct uc_struct *uc, void *ptr
  * is actually a ram_addr_t (in system mode; the user mode emulation
  * version of this function returns a guest virtual address).
  */
-tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
+tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
 {
-    int mmu_idx, page_index, pd;
+    int mmu_idx, index, pd;
     void *p;
     MemoryRegion *mr;
     ram_addr_t  ram_addr;
-    CPUState *cpu = ENV_GET_CPU(env1);
+    CPUState *cpu = ENV_GET_CPU(env);
     CPUIOTLBEntry *iotlbentry;
 
-    page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-    mmu_idx = cpu_mmu_index(env1, true);
-    if (unlikely(env1->tlb_table[mmu_idx][page_index].addr_code !=
+    index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+    mmu_idx = cpu_mmu_index(env, true);
+    if (unlikely(env->tlb_table[mmu_idx][index].addr_code !=
                  (addr & TARGET_PAGE_MASK))) {
-        cpu_ldub_code(env1, addr);
+        cpu_ldub_code(env, addr);
         //check for NX related error from softmmu
-        if (env1->invalid_error == UC_ERR_FETCH_PROT) {
+        if (env->invalid_error == UC_ERR_FETCH_PROT) {
             return RAM_ADDR_INVALID;
         }
     }
-    iotlbentry = &env1->iotlb[mmu_idx][page_index];
+    iotlbentry = &env->iotlb[mmu_idx][index];
     pd = iotlbentry->addr & ~TARGET_PAGE_MASK;
     mr = iotlb_to_region(cpu, pd, iotlbentry->attrs);
     if (memory_region_is_unassigned(cpu->uc, mr)) {
@@ -318,15 +318,15 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
          * with an exception. If it didn't (or there was no hook) then
          * we can't proceed further.
          */
-        env1->invalid_addr = addr;
-        env1->invalid_error = UC_ERR_FETCH_UNMAPPED;
+        env->invalid_addr = addr;
+        env->invalid_error = UC_ERR_FETCH_UNMAPPED;
         return RAM_ADDR_INVALID;
     }
-    p = (void *)((uintptr_t)addr + env1->tlb_table[mmu_idx][page_index].addend);
+    p = (void *)((uintptr_t)addr + env->tlb_table[mmu_idx][index].addend);
     ram_addr = qemu_ram_addr_from_host_nofail(cpu->uc, p);
     if (ram_addr == RAM_ADDR_INVALID) {
-        env1->invalid_addr = addr;
-        env1->invalid_error = UC_ERR_FETCH_UNMAPPED;
+        env->invalid_addr = addr;
+        env->invalid_error = UC_ERR_FETCH_UNMAPPED;
         return RAM_ADDR_INVALID;
     } else {
         return ram_addr;
