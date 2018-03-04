@@ -72,6 +72,7 @@
 #include "exec/gen-icount.h"
 
 typedef struct DisasContext {
+    DisasContextBase base;
     /* current insn context */
     int override; /* -1 if no override */
     int prefix;
@@ -79,8 +80,6 @@ typedef struct DisasContext {
     TCGMemOp dflag;
     target_ulong pc_start;
     target_ulong pc; /* pc = eip + cs_base */
-    int is_jmp; /* 1 = means jump (stop translation), 2 means CPU
-                   static state change (stop translation) */
     /* current block context */
     target_ulong cs_base; /* base of CS segment */
     int pe;     /* protected mode */
@@ -102,12 +101,10 @@ typedef struct DisasContext {
     int cpl;
     int iopl;
     int tf;     /* TF cpu flag */
-    int singlestep_enabled; /* "hardware" single step enabled */
     int jmp_opt; /* use direct block chaining for direct jumps */
     int repz_opt; /* optimize jumps within repz instructions */
     int mem_index; /* select memory access functions */
     uint64_t flags; /* all execution flags */
-    struct TranslationBlock *tb;
     int popl_esp_hack; /* for correct popl with esp base handling */
     int rip_offset; /* only used in x86_64, but left for simplicity */
     int cpuid_features;
@@ -2414,7 +2411,7 @@ static inline int insn_const_size(TCGMemOp ot)
 static inline bool use_goto_tb(DisasContext *s, target_ulong pc)
 {
 #ifndef CONFIG_USER_ONLY
-    return (pc & TARGET_PAGE_MASK) == (s->tb->pc & TARGET_PAGE_MASK) ||
+    return (pc & TARGET_PAGE_MASK) == (s->base.tb->pc & TARGET_PAGE_MASK) ||
            (pc & TARGET_PAGE_MASK) == (s->pc_start & TARGET_PAGE_MASK);
 #else
     return true;
@@ -2430,8 +2427,8 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
         /* jump to same page: we can use a direct jump */
         tcg_gen_goto_tb(tcg_ctx, tb_num);
         gen_jmp_im(s, eip);
-        tcg_gen_exit_tb(tcg_ctx, (uintptr_t)s->tb + tb_num);
-        s->is_jmp = DISAS_NORETURN;
+        tcg_gen_exit_tb(tcg_ctx, (uintptr_t)s->base.tb + tb_num);
+        s->base.is_jmp = DISAS_NORETURN;
     } else {
         /* jump to another page */
         gen_jr(s, tcg_ctx->cpu_tmp0);
@@ -2535,12 +2532,12 @@ static void gen_movl_seg_T0(DisasContext *s, int seg_reg)
            stop as a special handling must be done to disable hardware
            interrupts for the next instruction */
         if (seg_reg == R_SS || (s->code32 && seg_reg < R_FS)) {
-            s->is_jmp = DISAS_TOO_MANY;
+            s->base.is_jmp = DISAS_TOO_MANY;
         }
     } else {
         gen_op_movl_seg_T0_vm(tcg_ctx, seg_reg);
         if (seg_reg == R_SS) {
-            s->is_jmp = DISAS_TOO_MANY;
+            s->base.is_jmp = DISAS_TOO_MANY;
         }
     }
 }
@@ -2747,7 +2744,7 @@ static void gen_exception(DisasContext *s, int trapno, target_ulong cur_eip)
     gen_update_cc_op(s);
     gen_jmp_im(s, cur_eip);
     gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, trapno));
-    s->is_jmp = DISAS_NORETURN;
+    s->base.is_jmp = DISAS_NORETURN;
 }
 
 /* Generate #UD for the current instruction.  The assumption here is that
@@ -2786,7 +2783,7 @@ static void gen_interrupt(DisasContext *s, int intno,
     gen_jmp_im(s, cur_eip);
     gen_helper_raise_interrupt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, intno),
                                tcg_const_i32(tcg_ctx, next_eip - cur_eip));
-    s->is_jmp = DISAS_NORETURN;
+    s->base.is_jmp = DISAS_NORETURN;
 }
 
 static void gen_debug(DisasContext *s, target_ulong cur_eip)
@@ -2796,7 +2793,7 @@ static void gen_debug(DisasContext *s, target_ulong cur_eip)
     gen_update_cc_op(s);
     gen_jmp_im(s, cur_eip);
     gen_helper_debug(tcg_ctx, tcg_ctx->cpu_env);
-    s->is_jmp = DISAS_NORETURN;
+    s->base.is_jmp = DISAS_NORETURN;
 }
 
 static void gen_set_hflag(DisasContext *s, uint32_t mask)
@@ -2863,10 +2860,10 @@ do_gen_eob_worker(DisasContext *s, bool inhibit, bool recheck_tf, TCGv jr)
         gen_reset_hflag(s, HF_INHIBIT_IRQ_MASK);
     }
 
-    if (s->tb->flags & HF_RF_MASK) {
+    if (s->base.tb->flags & HF_RF_MASK) {
         gen_helper_reset_rf(tcg_ctx, tcg_ctx->cpu_env);
     }
-    if (s->singlestep_enabled) {
+    if (s->base.singlestep_enabled) {
         gen_helper_debug(tcg_ctx, tcg_ctx->cpu_env);
     } else if (recheck_tf) {
         gen_helper_rechecking_single_step(tcg_ctx, tcg_ctx->cpu_env);
@@ -2882,7 +2879,7 @@ do_gen_eob_worker(DisasContext *s, bool inhibit, bool recheck_tf, TCGv jr)
     } else {
         tcg_gen_exit_tb(tcg_ctx, 0);
     }
-    s->is_jmp = DISAS_NORETURN;
+    s->base.is_jmp = DISAS_NORETURN;
 }
 
 static inline void
@@ -2921,7 +2918,7 @@ static void gen_jmp_tb(DisasContext *s, target_ulong eip, int tb_num)
     set_cc_op(s, CC_OP_DYNAMIC);
     if (s->jmp_opt) {
         gen_goto_tb(s, tb_num, eip);
-        s->is_jmp = DISAS_NORETURN;
+        s->base.is_jmp = DISAS_NORETURN;
     } else {
         gen_jmp_im(s, eip);
         gen_eob(s);
@@ -5007,7 +5004,7 @@ static void restore_eflags(DisasContext *s, TCGContext *tcg_ctx)
 }
 */
 
-/* convert one instruction. s->is_jmp is set if the translation must
+/* convert one instruction. s->base.is_jmp is set if the translation must
    be stopped. Return the next pc value */
 static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                                target_ulong pc_start)   // qq
@@ -5045,7 +5042,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         gen_update_cc_op(s);
         gen_jmp_im(s, pc_start - s->cs_base);
         gen_helper_hlt(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
-        s->is_jmp = DISAS_NORETURN;
+        s->base.is_jmp = DISAS_NORETURN;
         return s->pc;
     }
 
@@ -6027,7 +6024,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         gen_movl_seg_T0(s, reg);
         gen_pop_update(s, ot);
         /* Note that reg == R_SS in gen_movl_seg_T0 always sets is_jmp.  */
-        if (s->is_jmp) {
+        if (s->base.is_jmp) {
             gen_jmp_im(s, s->pc - s->cs_base);
             if (reg == R_SS) {
                 s->tf = 0;
@@ -6042,7 +6039,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         ot = gen_pop_T0(s);
         gen_movl_seg_T0(s, (b >> 3) & 7);
         gen_pop_update(s, ot);
-        if (s->is_jmp) {
+        if (s->base.is_jmp) {
             gen_jmp_im(s, s->pc - s->cs_base);
             gen_eob(s);
         }
@@ -6099,7 +6096,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         gen_ldst_modrm(env, s, modrm, MO_16, OR_TMP0, 0);
         gen_movl_seg_T0(s, reg);
         /* Note that reg == R_SS in gen_movl_seg_T0 always sets is_jmp.  */
-        if (s->is_jmp) {
+        if (s->base.is_jmp) {
             gen_jmp_im(s, s->pc - s->cs_base);
             if (reg == R_SS) {
                 s->tf = 0;
@@ -6311,7 +6308,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         gen_movl_seg_T0(s, op);
         /* then put the data */
         gen_op_mov_reg_v(tcg_ctx, ot, reg, cpu_T1);
-        if (s->is_jmp) {
+        if (s->base.is_jmp) {
             gen_jmp_im(s, s->pc - s->cs_base);
             gen_eob(s);
         }
@@ -7619,7 +7616,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             gen_update_cc_op(s);
             gen_jmp_im(s, pc_start - s->cs_base);
             gen_helper_pause(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
-            s->is_jmp = DISAS_NORETURN;
+            s->base.is_jmp = DISAS_NORETURN;
         }
         break;
     case 0x9b: /* fwait */
@@ -7872,7 +7869,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             gen_update_cc_op(s);
             gen_jmp_im(s, pc_start - s->cs_base);
             gen_helper_hlt(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
-            s->is_jmp = DISAS_NORETURN;
+            s->base.is_jmp = DISAS_NORETURN;
         }
         break;
     case 0x100:
@@ -8055,7 +8052,7 @@ case 0x101:
                              tcg_const_i32(tcg_ctx, s->aflag - 1),
                              tcg_const_i32(tcg_ctx, s->pc - pc_start));
             tcg_gen_exit_tb(tcg_ctx, 0);
-            s->is_jmp = DISAS_NORETURN;
+            s->base.is_jmp = DISAS_NORETURN;
             break;
 
         case 0xd9: /* VMMCALL */
@@ -8258,12 +8255,12 @@ case 0x101:
             }
             gen_update_cc_op(s);
             gen_jmp_im(s, pc_start - s->cs_base);
-            if (s->tb->cflags & CF_USE_ICOUNT) {
+            if (s->base.tb->cflags & CF_USE_ICOUNT) {
                 // Unicorn: commented out
                 //gen_io_start();
             }
             gen_helper_rdtscp(tcg_ctx, cpu_env);
-            if (s->tb->cflags & CF_USE_ICOUNT) {
+            if (s->base.tb->cflags & CF_USE_ICOUNT) {
                 // Unicorn: commented out
                 //gen_io_end();
                 gen_jmp(s, s->pc - s->cs_base);
@@ -8631,7 +8628,7 @@ case 0x101:
                 if (b & 2) {
                     // Unicorn: if'd out
                     #if 0
-                    if (s->tb->cflags & CF_USE_ICOUNT) {
+                    if (s->base.tb->cflags & CF_USE_ICOUNT) {
                         gen_io_start();
                     }
                     #endif
@@ -8641,7 +8638,7 @@ case 0x101:
 
                     // Unicorn: if'd out
                     #if 0
-                    if (s->tb->cflags & CF_USE_ICOUNT) {
+                    if (s->base.tb->cflags & CF_USE_ICOUNT) {
                         gen_io_end();
                     }
                     #endif
@@ -8650,14 +8647,14 @@ case 0x101:
                 } else {
                     // Unicorn: if'd out
                     #if 0
-                    if (s->tb->cflags & CF_USE_ICOUNT) {
+                    if (s->base.tb->cflags & CF_USE_ICOUNT) {
                         gen_io_start();
                     }
                     #endif
                     gen_helper_read_crN(tcg_ctx, cpu_T0, cpu_env, tcg_const_i32(tcg_ctx, reg));
                     gen_op_mov_reg_v(tcg_ctx, ot, rm, cpu_T0);
                     #if 0
-                    if (s->tb->cflags & CF_USE_ICOUNT) {
+                    if (s->base.tb->cflags & CF_USE_ICOUNT) {
                         gen_io_end();
                     }
                     #endif
@@ -9154,16 +9151,14 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     CPUX86State *env = cs->env_ptr;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     DisasContext dc1, *dc = &dc1;
-    target_ulong pc_ptr;
     uint32_t flags;
-    target_ulong pc_start;
     target_ulong cs_base;
     int num_insns = 0;
     int max_insns;
     bool block_full = false;
 
     /* generate intermediate code */
-    pc_start = tb->pc;
+    dc->base.pc_first = tb->pc;
     cs_base = tb->cs_base;
     flags = tb->flags;
 
@@ -9177,11 +9172,11 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     dc->cpl = (flags >> HF_CPL_SHIFT) & 3;
     dc->iopl = (flags >> IOPL_SHIFT) & 3;
     dc->tf = (flags >> TF_SHIFT) & 1;
-    dc->singlestep_enabled = cs->singlestep_enabled;
+    dc->base.singlestep_enabled = cs->singlestep_enabled;
     dc->last_cc_op = dc->cc_op = CC_OP_DYNAMIC;
     dc->cc_op_dirty = false;
     dc->cs_base = cs_base;
-    dc->tb = tb;
+    dc->base.tb = tb;
     dc->popl_esp_hack = 0;
     /* select memory access functions */
     dc->mem_index = 0;
@@ -9237,7 +9232,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     // done with initializing TCG variables
     env->uc->init_tcg = true;
 
-    pc_ptr = pc_start;
+    dc->base.pc_next = dc->base.pc_first;
 
     // early check to see if the address of this block is the until address
     if (tb->pc == env->uc->addr_end) {
@@ -9245,11 +9240,11 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
         gen_tb_start(tcg_ctx, tb);
         gen_jmp_im(dc, tb->pc - tb->cs_base);
         gen_helper_hlt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
-        dc->is_jmp = DISAS_NORETURN;
+        dc->base.is_jmp = DISAS_NORETURN;
         goto done_generating;
     }
 
-    dc->is_jmp = DISAS_NEXT;
+    dc->base.is_jmp = DISAS_NEXT;
     max_insns = tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0) {
         max_insns = CF_COUNT_MASK;
@@ -9260,30 +9255,30 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
 
     // Unicorn: trace this block on request
     // Only hook this block if the previous block was not truncated due to space
-    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, dc->base.pc_first)) {
         int arg_i = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
-        env->uc->block_addr = pc_start;
+        env->uc->block_addr = dc->base.pc_first;
         env->uc->size_arg = arg_i + 1;
-        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, dc->base.pc_first);
     } else {
         env->uc->size_arg = -1;
     }
 
     gen_tb_start(tcg_ctx, tb);
     for(;;) {
-        tcg_gen_insn_start(tcg_ctx, pc_start, dc->cc_op);
+        tcg_gen_insn_start(tcg_ctx, dc->base.pc_next, dc->cc_op);
         num_insns++;
 
         /* If RF is set, suppress an internally generated breakpoint.  */
-        if (unlikely(cpu_breakpoint_test(cs, pc_ptr,
+        if (unlikely(cpu_breakpoint_test(cs, dc->base.pc_next,
                                          tb->flags & HF_RF_MASK
                                          ? BP_GDB : BP_ANY))) {
-            gen_debug(dc, pc_ptr - dc->cs_base);
+            gen_debug(dc, dc->base.pc_next - dc->cs_base);
             /* The address covered by the breakpoint must be included in
                [tb->pc, tb->pc + tb->size) in order to for it to be
                properly cleared -- thus we increment the PC here so that
                the logic setting tb->size below does the right thing.  */
-            pc_ptr += 1;
+            dc->base.pc_next += 1;
             goto done_generating;
         }
         // Unicorn: commented out
@@ -9292,19 +9287,20 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
         //}
 
         // Unicorn: save current PC address to sync EIP
-        dc->prev_pc = pc_ptr;
-        pc_ptr = disas_insn(env, dc, pc_ptr);
+        dc->prev_pc = dc->base.pc_next;
+        dc->base.pc_next = disas_insn(env, dc, dc->base.pc_next);
         /* stop translation if indicated */
-        if (dc->is_jmp)
+        if (dc->base.is_jmp) {
             break;
+        }
         /* if single step mode, we generate only one instruction and
            generate an exception */
         /* if irq were inhibited with HF_INHIBIT_IRQ_MASK, we clear
            the flag and abort the translation to give the irqs a
            change to be happen */
-        if (dc->tf || dc->singlestep_enabled ||
+        if (dc->tf || dc->base.singlestep_enabled ||
             (flags & HF_INHIBIT_IRQ_MASK)) {
-            gen_jmp_im(dc, pc_ptr - dc->cs_base);
+            gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
             gen_eob(dc);
             break;
         }
@@ -9316,18 +9312,18 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
          */
         /* UNICORN: Commented out
         if (use_icount
-            && ((pc_ptr & TARGET_PAGE_MASK)
-                != ((pc_ptr + TARGET_MAX_INSN_SIZE - 1) & TARGET_PAGE_MASK)
-                || (pc_ptr & ~TARGET_PAGE_MASK) == 0)) {
-            gen_jmp_im(dc, pc_ptr - dc->cs_base);
+            && ((dc->base.pc_next & TARGET_PAGE_MASK)
+                != ((dc->base.pc_next + TARGET_MAX_INSN_SIZE - 1) & TARGET_PAGE_MASK)
+                || (dc->base.pc_next & ~TARGET_PAGE_MASK) == 0)) {
+            gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
             gen_eob(dc);
             break;
         }*/
         /* if too long translation, stop generation too */
         if (tcg_op_buf_full(tcg_ctx) ||
-            (pc_ptr - pc_start) >= (TARGET_PAGE_SIZE - 32) ||
+            (dc->base.pc_next - dc->base.pc_first) >= (TARGET_PAGE_SIZE - 32) ||
             num_insns >= max_insns) {
-            gen_jmp_im(dc, pc_ptr - dc->cs_base);
+            gen_jmp_im(dc, dc->base.pc_next - dc->cs_base);
             gen_eob(dc);
             block_full = true;
             break;
@@ -9338,7 +9334,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
 done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
 
-    tb->size = pc_ptr - pc_start;
+    tb->size = dc->base.pc_next - dc->base.pc_first;
     tb->icount = num_insns;
 
     env->uc->block_full = block_full;
