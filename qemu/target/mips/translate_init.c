@@ -871,7 +871,7 @@ static const mips_def_t mips_defs[] =
         42,
         36,
         0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
-        0,
+        (1 << CP0EBase_WG),
         CPU_MIPS64R2 | ASE_MIPS3D,
         MMU_TYPE_R4000,
     },
@@ -916,7 +916,7 @@ static const mips_def_t mips_defs[] =
         (1 << CP0PG_ELPA),
         (1 << CP0PG_IEC) | (1 << CP0PG_XIE) |
                          (1U << CP0PG_RIE),
-        0,
+        (1 << CP0EBase_WG),
         CPU_MIPS64R6 | ASE_MSA,
         MMU_TYPE_R4000,
     },
