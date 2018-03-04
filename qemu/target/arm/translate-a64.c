@@ -11609,15 +11609,8 @@ tb_end:
         case DISAS_NEXT:
             gen_goto_tb(dc, 1, dc->pc);
             break;
-        default:
-        case DISAS_UPDATE:
-            gen_a64_set_pc_im(dc, dc->pc);
-            /* fall through */
         case DISAS_JUMP:
             tcg_gen_lookup_and_goto_ptr(tcg_ctx, tcg_ctx->cpu_pc);
-            break;
-        case DISAS_EXIT:
-            tcg_gen_exit_tb(tcg_ctx, 0);
             break;
         case DISAS_TB_JUMP:
         case DISAS_EXC:
@@ -11640,6 +11633,13 @@ tb_end:
             /* The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
+            tcg_gen_exit_tb(tcg_ctx, 0);
+            break;
+        case DISAS_UPDATE:
+            gen_a64_set_pc_im(dc, dc->pc);
+            /* fall through */
+        case DISAS_EXIT:
+        default:
             tcg_gen_exit_tb(tcg_ctx, 0);
             break;
         }

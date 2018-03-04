@@ -156,7 +156,7 @@ static inline void gen_intermediate_code_a64(ARMCPU *cpu, TranslationBlock *tb)
 {
 }
 
-static inline void gen_a64_set_pc_im(uint64_t val)
+static inline void gen_a64_set_pc_im(DisasContext *s, uint64_t val)
 {
 }
 #endif
