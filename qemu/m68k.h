@@ -2978,6 +2978,7 @@
 #define tcg_exec_all tcg_exec_all_m68k
 #define tcg_exec_init tcg_exec_init_m68k
 #define tcg_find_helper tcg_find_helper_m68k
+#define tcg_flush_softmmu_tlb tcg_flush_softmmu_tlb_m68k
 #define tcg_func_start tcg_func_start_m68k
 #define tcg_gen_abs_i32 tcg_gen_abs_i32_m68k
 #define tcg_gen_add2_i32 tcg_gen_add2_i32_m68k

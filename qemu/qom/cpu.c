@@ -178,9 +178,8 @@ static void cpu_common_reset(CPUState *cpu)
     //if (tcg_enabled(cpu->uc)) {
         cpu_tb_jmp_cache_clear(cpu);
 
-#ifdef CONFIG_SOFTMMU
-        tlb_flush(cpu);
-#endif
+        // Ditto: should also be uncommented
+        //tcg_flush_softmmu_tlb(cpu);
     //}
 }
 

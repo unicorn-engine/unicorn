@@ -2978,6 +2978,7 @@
 #define tcg_exec_all tcg_exec_all_aarch64
 #define tcg_exec_init tcg_exec_init_aarch64
 #define tcg_find_helper tcg_find_helper_aarch64
+#define tcg_flush_softmmu_tlb tcg_flush_softmmu_tlb_aarch64
 #define tcg_func_start tcg_func_start_aarch64
 #define tcg_gen_abs_i32 tcg_gen_abs_i32_aarch64
 #define tcg_gen_add2_i32 tcg_gen_add2_i32_aarch64

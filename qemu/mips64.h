@@ -2978,6 +2978,7 @@
 #define tcg_exec_all tcg_exec_all_mips64
 #define tcg_exec_init tcg_exec_init_mips64
 #define tcg_find_helper tcg_find_helper_mips64
+#define tcg_flush_softmmu_tlb tcg_flush_softmmu_tlb_mips64
 #define tcg_func_start tcg_func_start_mips64
 #define tcg_gen_abs_i32 tcg_gen_abs_i32_mips64
 #define tcg_gen_add2_i32 tcg_gen_add2_i32_mips64

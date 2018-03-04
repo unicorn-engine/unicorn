@@ -2984,6 +2984,7 @@ symbols = (
     'tcg_exec_all',
     'tcg_exec_init',
     'tcg_find_helper',
+    'tcg_flush_softmmu_tlb',
     'tcg_func_start',
     'tcg_gen_abs_i32',
     'tcg_gen_add2_i32',

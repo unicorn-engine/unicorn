@@ -14,6 +14,8 @@ struct uc_struct;
 #include "qemu/fprintf-fn.h"
 #include "qemu/typedefs.h"
 
+void tcg_flush_softmmu_tlb(CPUState *cs);
+
 #if !defined(CONFIG_USER_ONLY)
 
 enum device_endian {

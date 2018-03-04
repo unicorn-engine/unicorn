@@ -2978,6 +2978,7 @@
 #define tcg_exec_all tcg_exec_all_armeb
 #define tcg_exec_init tcg_exec_init_armeb
 #define tcg_find_helper tcg_find_helper_armeb
+#define tcg_flush_softmmu_tlb tcg_flush_softmmu_tlb_armeb
 #define tcg_func_start tcg_func_start_armeb
 #define tcg_gen_abs_i32 tcg_gen_abs_i32_armeb
 #define tcg_gen_add2_i32 tcg_gen_add2_i32_armeb
