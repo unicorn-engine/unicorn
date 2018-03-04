@@ -351,33 +351,6 @@ extern bool mttcg_enabled;
 #define qemu_tcg_mttcg_enabled() (mttcg_enabled)
 
 /**
- * cpu_alloc_env: allocate CPU environment structure
- * @cpu: allocate environment structure for this CPU
- */
-void *cpu_alloc_env(CPUState *cpu);
-
-/**
- * cpu_get_env: retrieve CPU environment structure
- * @cpu: CPU to use
- * @env: environment structure to use
- */
-void cpu_get_env(CPUState *cpu, void *env);
-
-/**
- * cpu_set_env: switch to given CPU environment
- * @cpu: CPU to use
- * @env: environment structure to use
- */
-void cpu_set_env(CPUState *cpu, void *env);
-
-/**
- * cpu_free_env: free CPU environment structure
- * @cpu: free environment structure for this CPU
- * @env: structure to free
- */
-void cpu_free_env(CPUState *cpu, void *env);
-
-/**
  * cpu_paging_enabled:
  * @cpu: The CPU whose state is to be inspected.
  *
