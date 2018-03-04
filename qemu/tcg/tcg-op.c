@@ -28,6 +28,7 @@
 #include "exec/exec-all.h"
 #include "tcg.h"
 #include "tcg-op.h"
+#include "tcg-mo.h"
 
 /* Reduce the number of ifdefs below.  This assumes that all uses of
    TCGV_HIGH and TCGV_LOW are properly protected by a conditional that
@@ -2690,10 +2691,23 @@ void check_exit_request(TCGContext *tcg_ctx)
     tcg_temp_free_i32(tcg_ctx, flag);
 }
 
+
+static void tcg_gen_req_mo(TCGContext *s, TCGBar type)
+{
+#ifdef TCG_GUEST_DEFAULT_MO
+    type &= TCG_GUEST_DEFAULT_MO;
+#endif
+    type &= ~TCG_TARGET_DEFAULT_MO;
+    if (type) {
+        tcg_gen_mb(s, type | TCG_BAR_SC);
+    }
+}
+
 void tcg_gen_qemu_ld_i32(struct uc_struct *uc, TCGv_i32 val, TCGv addr, TCGArg idx, TCGMemOp memop)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
 
+    tcg_gen_req_mo(tcg_ctx, TCG_MO_LD_LD | TCG_MO_ST_LD);
     memop = tcg_canonicalize_memop(memop, 0, 0);
     gen_ldst_i32(tcg_ctx, INDEX_op_qemu_ld_i32, val, addr, memop, idx);
     check_exit_request(tcg_ctx);
@@ -2703,6 +2717,7 @@ void tcg_gen_qemu_st_i32(struct uc_struct *uc, TCGv_i32 val, TCGv addr, TCGArg i
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
 
+    tcg_gen_req_mo(tcg_ctx, TCG_MO_LD_ST | TCG_MO_ST_ST);
     memop = tcg_canonicalize_memop(memop, 0, 1);
     gen_ldst_i32(tcg_ctx, INDEX_op_qemu_st_i32, val, addr, memop, idx);
     check_exit_request(tcg_ctx);
@@ -2712,6 +2727,7 @@ void tcg_gen_qemu_ld_i64(struct uc_struct *uc, TCGv_i64 val, TCGv addr, TCGArg i
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
 
+    tcg_gen_req_mo(tcg_ctx, TCG_MO_LD_LD | TCG_MO_ST_LD);
     if (TCG_TARGET_REG_BITS == 32 && (memop & MO_SIZE) < MO_64) {
         tcg_gen_qemu_ld_i32(uc, TCGV_LOW(val), addr, idx, memop);
         if (memop & MO_SIGN) {
@@ -2733,6 +2749,7 @@ void tcg_gen_qemu_st_i64(struct uc_struct *uc, TCGv_i64 val, TCGv addr, TCGArg i
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
 
+    tcg_gen_req_mo(tcg_ctx, TCG_MO_LD_ST | TCG_MO_ST_ST);
     if (TCG_TARGET_REG_BITS == 32 && (memop & MO_SIZE) < MO_64) {
         tcg_gen_qemu_st_i32(uc, TCGV_LOW(val), addr, idx, memop);
         check_exit_request(tcg_ctx);
