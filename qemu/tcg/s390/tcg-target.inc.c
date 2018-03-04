@@ -2392,12 +2392,155 @@ static void query_s390_facilities(void)
 
 static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
 {
-    int i, n = ARRAY_SIZE(s390_op_defs);
+    static const TCGTargetOpDef r = { 0, { "r" } };
+    static const TCGTargetOpDef r_r = { 0, { "r", "r" } };
+    static const TCGTargetOpDef r_L = { 0, { "r", "L" } };
+    static const TCGTargetOpDef L_L = { 0, { "L", "L" } };
+    static const TCGTargetOpDef r_rC = { 0, { "r", "rC" } };
+    static const TCGTargetOpDef r_r_ri = { 0, { "r", "r", "ri" } };
+    static const TCGTargetOpDef r_0_ri = { 0, { "r", "0", "ri" } };
+    static const TCGTargetOpDef r_0_rK = { 0, { "r", "0", "rK" } };
+    static const TCGTargetOpDef r_0_rO = { 0, { "r", "0", "rO" } };
+    static const TCGTargetOpDef r_0_rX = { 0, { "r", "0", "rX" } };
 
-    for (i = 0; i < n; ++i) {
-        if (s390_op_defs[i].op == op) {
-            return &s390_op_defs[i];
+    switch (op) {
+    case INDEX_op_goto_ptr:
+        return &r;
+
+    case INDEX_op_ld8u_i32:
+    case INDEX_op_ld8u_i64:
+    case INDEX_op_ld8s_i32:
+    case INDEX_op_ld8s_i64:
+    case INDEX_op_ld16u_i32:
+    case INDEX_op_ld16u_i64:
+    case INDEX_op_ld16s_i32:
+    case INDEX_op_ld16s_i64:
+    case INDEX_op_ld_i32:
+    case INDEX_op_ld32u_i64:
+    case INDEX_op_ld32s_i64:
+    case INDEX_op_ld_i64:
+    case INDEX_op_st8_i32:
+    case INDEX_op_st8_i64:
+    case INDEX_op_st16_i32:
+    case INDEX_op_st16_i64:
+    case INDEX_op_st_i32:
+    case INDEX_op_st32_i64:
+    case INDEX_op_st_i64:
+        return &r_r;
+
+    case INDEX_op_add_i32:
+    case INDEX_op_add_i64:
+        return &r_r_ri;
+    case INDEX_op_sub_i32:
+    case INDEX_op_sub_i64:
+        return &r_0_ri;
+    case INDEX_op_mul_i32:
+    case INDEX_op_mul_i64:
+        return &r_0_rK;
+    case INDEX_op_or_i32:
+    case INDEX_op_or_i64:
+        return &r_0_rO;
+    case INDEX_op_xor_i32:
+    case INDEX_op_xor_i64:
+        return &r_0_rX;
+    case INDEX_op_and_i32:
+    case INDEX_op_and_i64:
+        return &r_0_ri;
+
+    case INDEX_op_shl_i32:
+    case INDEX_op_shr_i32:
+    case INDEX_op_sar_i32:
+        return &r_0_ri;
+
+    case INDEX_op_shl_i64:
+    case INDEX_op_shr_i64:
+    case INDEX_op_sar_i64:
+        return &r_r_ri;
+
+    case INDEX_op_rotl_i32:
+    case INDEX_op_rotl_i64:
+    case INDEX_op_rotr_i32:
+    case INDEX_op_rotr_i64:
+        return &r_r_ri;
+
+    case INDEX_op_brcond_i32:
+    case INDEX_op_brcond_i64:
+        return &r_rC;
+
+    case INDEX_op_bswap16_i32:
+    case INDEX_op_bswap16_i64:
+    case INDEX_op_bswap32_i32:
+    case INDEX_op_bswap32_i64:
+    case INDEX_op_bswap64_i64:
+    case INDEX_op_neg_i32:
+    case INDEX_op_neg_i64:
+    case INDEX_op_ext8s_i32:
+    case INDEX_op_ext8s_i64:
+    case INDEX_op_ext8u_i32:
+    case INDEX_op_ext8u_i64:
+    case INDEX_op_ext16s_i32:
+    case INDEX_op_ext16s_i64:
+    case INDEX_op_ext16u_i32:
+    case INDEX_op_ext16u_i64:
+    case INDEX_op_ext32s_i64:
+    case INDEX_op_ext32u_i64:
+    case INDEX_op_ext_i32_i64:
+    case INDEX_op_extu_i32_i64:
+    case INDEX_op_extract_i32:
+    case INDEX_op_extract_i64:
+        return &r_r;
+
+    case INDEX_op_clz_i64:
+        return &r_r_ri;
+
+    case INDEX_op_qemu_ld_i32:
+    case INDEX_op_qemu_ld_i64:
+        return &r_L;
+    case INDEX_op_qemu_st_i64:
+    case INDEX_op_qemu_st_i32:
+        return &L_L;
+    case INDEX_op_deposit_i32:
+    case INDEX_op_deposit_i64:
+        {
+            static const TCGTargetOpDef dep = { 0, { "r", "rZ", "r" } };
+            return &dep;
         }
+    case INDEX_op_setcond_i32:
+    case INDEX_op_setcond_i64:
+        {
+            static const TCGTargetOpDef setc = { 0, { "r", "r", "rC" } };
+            return &setc;
+        }
+    case INDEX_op_movcond_i32:
+    case INDEX_op_movcond_i64:
+        {
+            static const TCGTargetOpDef movc = { 0, { "r", "r", "rC", "r", "0" } };
+            return &movc;
+        }
+    case INDEX_op_div2_i32:
+    case INDEX_op_div2_i64:
+    case INDEX_op_divu2_i32:
+    case INDEX_op_divu2_i64:
+        {
+            static const TCGTargetOpDef div2 = { 0, { "b", "a", "0", "1", "r" } };
+            return &div2;
+        }
+    case INDEX_op_mulu2_i64:
+        {
+            static const TCGTargetOpDef mul2 = { 0, { "b", "a", "0", "r" } };
+            return &mul2;
+        }
+    case INDEX_op_add2_i32:
+    case INDEX_op_add2_i64:
+    case INDEX_op_sub2_i32:
+    case INDEX_op_sub2_i64:
+        {
+            static const TCGTargetOpDef arith2 = { 0, { "r", "r", "0", "1", "rA", "r" } };
+            return &arith2;
+        }
+
+    default:
+        break;
     }
     return NULL;
 }
