@@ -12187,16 +12187,6 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
                            (dc->condexec_cond << 4) | (dc->condexec_mask >> 1),
                            0);
         num_insns++;
-#ifdef CONFIG_USER_ONLY
-        /* Intercept jump to the magic kernel page.  */
-        if (dc->pc >= 0xffff0000) {
-            /* We always get here via a jump, so know we are not in a
-               conditional execution block.  */
-            gen_exception_internal(dc, EXCP_KERNEL_TRAP);
-            dc->is_jmp = DISAS_NORETURN;
-            break;
-        }
-#endif
 
         if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
             CPUBreakpoint *bp;
@@ -12228,6 +12218,17 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();
         //}
+
+#ifdef CONFIG_USER_ONLY
+        /* Intercept jump to the magic kernel page.  */
+        if (dc->pc >= 0xffff0000) {
+            /* We always get here via a jump, so know we are not in a
+               conditional execution block.  */
+            gen_exception_internal(dc, EXCP_KERNEL_TRAP);
+            dc->is_jmp = DISAS_NORETURN;
+            break;
+        }
+#endif
 
         if (dc->ss_active && !dc->pstate_ss) {
             /* Singlestep state is Active-pending.
