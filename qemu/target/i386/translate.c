@@ -9295,6 +9295,24 @@ static void i386_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
+static void i386_tr_disas_log(const DisasContextBase *dcbase,
+                              CPUState *cpu)
+{
+    // Unicorn: if'd out
+#if 0
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+    int disas_flags = !dc->code32;
+
+    qemu_log("IN: %s\n", lookup_symbol(dc->base.pc_first));
+#ifdef TARGET_X86_64
+    if (dc->code64) {
+        disas_flags = 2;
+    }
+#endif
+    log_target_disas(cpu, dc->base.pc_first, dc->base.tb->size, disas_flags);
+#endif
+}
+
 /* generate intermediate code for basic block 'tb'.  */
 void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
 {
@@ -9408,6 +9426,17 @@ done_generating:
 
     tb->size = dc->base.pc_next - dc->base.pc_first;
     tb->icount = num_insns;
+
+#ifdef DEBUG_DISAS
+    if (qemu_loglevel_mask(CPU_LOG_TB_IN_ASM)
+        && qemu_log_in_addr_range(dc->base.pc_first)) {
+        //qemu_log_lock();
+        qemu_log("----------------\n");
+        i386_tr_disas_log(&dc->base, cs);
+        qemu_log("\n");
+        //qemu_log_unlock();
+    }
+#endif
 
     env->uc->block_full = block_full;
 }
