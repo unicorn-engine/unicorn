@@ -634,6 +634,7 @@ symbols = (
     'floatx80_maybe_silence_nan',
     'floatx80_mul',
     'floatx80_rem',
+    'floatx80_round',
     'floatx80_round_to_int',
     'floatx80_scalbn',
     'floatx80_sqrt',

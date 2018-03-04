@@ -628,6 +628,7 @@
 #define floatx80_maybe_silence_nan floatx80_maybe_silence_nan_aarch64eb
 #define floatx80_mul floatx80_mul_aarch64eb
 #define floatx80_rem floatx80_rem_aarch64eb
+#define floatx80_round floatx80_round_aarch64eb
 #define floatx80_round_to_int floatx80_round_to_int_aarch64eb
 #define floatx80_scalbn floatx80_scalbn_aarch64eb
 #define floatx80_sqrt floatx80_sqrt_aarch64eb
