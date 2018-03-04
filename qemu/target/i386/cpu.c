@@ -1674,7 +1674,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_SVM
             0,
         /* Missing: XSAVES (not supported by some Linux versions,
-         * including v4.1 to v4.6).
+         * including v4.1 to v4.12).
          * KVM doesn't yet expose any XSAVES state save component,
          * and the only one defined in Skylake (processor tracing)
          * probably will block migration anyway.
