@@ -30,6 +30,8 @@
 
 #include "uc_priv.h"
 
+#define DISAS_TOO_MANY 5
+
 #define PREFIX_REPZ   0x01
 #define PREFIX_REPNZ  0x02
 #define PREFIX_LOCK   0x04
@@ -2429,6 +2431,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
         tcg_gen_goto_tb(tcg_ctx, tb_num);
         gen_jmp_im(s, eip);
         tcg_gen_exit_tb(tcg_ctx, (uintptr_t)s->tb + tb_num);
+        s->is_jmp = DISAS_NORETURN;
     } else {
         /* jump to another page */
         gen_jr(s, tcg_ctx->cpu_tmp0);
@@ -2449,7 +2452,6 @@ static inline void gen_jcc(DisasContext *s, int b,
 
         gen_set_label(tcg_ctx, l1);
         gen_goto_tb(s, 1, val);
-        s->is_jmp = DISAS_TB_JUMP;
     } else {
         l1 = gen_new_label(tcg_ctx);
         l2 = gen_new_label(tcg_ctx);
@@ -2532,12 +2534,14 @@ static void gen_movl_seg_T0(DisasContext *s, int seg_reg)
            because ss32 may change. For R_SS, translation must always
            stop as a special handling must be done to disable hardware
            interrupts for the next instruction */
-        if (seg_reg == R_SS || (s->code32 && seg_reg < R_FS))
-            s->is_jmp = DISAS_TB_JUMP;
+        if (seg_reg == R_SS || (s->code32 && seg_reg < R_FS)) {
+            s->is_jmp = DISAS_TOO_MANY;
+        }
     } else {
         gen_op_movl_seg_T0_vm(tcg_ctx, seg_reg);
-        if (seg_reg == R_SS)
-            s->is_jmp = DISAS_TB_JUMP;
+        if (seg_reg == R_SS) {
+            s->is_jmp = DISAS_TOO_MANY;
+        }
     }
 }
 
@@ -2743,7 +2747,7 @@ static void gen_exception(DisasContext *s, int trapno, target_ulong cur_eip)
     gen_update_cc_op(s);
     gen_jmp_im(s, cur_eip);
     gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, trapno));
-    s->is_jmp = DISAS_TB_JUMP;
+    s->is_jmp = DISAS_NORETURN;
 }
 
 /* Generate #UD for the current instruction.  The assumption here is that
@@ -2782,7 +2786,7 @@ static void gen_interrupt(DisasContext *s, int intno,
     gen_jmp_im(s, cur_eip);
     gen_helper_raise_interrupt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, intno),
                                tcg_const_i32(tcg_ctx, next_eip - cur_eip));
-    s->is_jmp = DISAS_TB_JUMP;
+    s->is_jmp = DISAS_NORETURN;
 }
 
 static void gen_debug(DisasContext *s, target_ulong cur_eip)
@@ -2792,7 +2796,7 @@ static void gen_debug(DisasContext *s, target_ulong cur_eip)
     gen_update_cc_op(s);
     gen_jmp_im(s, cur_eip);
     gen_helper_debug(tcg_ctx, tcg_ctx->cpu_env);
-    s->is_jmp = DISAS_TB_JUMP;
+    s->is_jmp = DISAS_NORETURN;
 }
 
 static void gen_set_hflag(DisasContext *s, uint32_t mask)
@@ -2878,7 +2882,7 @@ do_gen_eob_worker(DisasContext *s, bool inhibit, bool recheck_tf, TCGv jr)
     } else {
         tcg_gen_exit_tb(tcg_ctx, 0);
     }
-    s->is_jmp = DISAS_TB_JUMP;
+    s->is_jmp = DISAS_NORETURN;
 }
 
 static inline void
@@ -2917,7 +2921,7 @@ static void gen_jmp_tb(DisasContext *s, target_ulong eip, int tb_num)
     set_cc_op(s, CC_OP_DYNAMIC);
     if (s->jmp_opt) {
         gen_goto_tb(s, tb_num, eip);
-        s->is_jmp = DISAS_TB_JUMP;
+        s->is_jmp = DISAS_NORETURN;
     } else {
         gen_jmp_im(s, eip);
         gen_eob(s);
@@ -7615,7 +7619,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             gen_update_cc_op(s);
             gen_jmp_im(s, pc_start - s->cs_base);
             gen_helper_pause(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
-            s->is_jmp = DISAS_TB_JUMP;
+            s->is_jmp = DISAS_NORETURN;
         }
         break;
     case 0x9b: /* fwait */
@@ -7868,7 +7872,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             gen_update_cc_op(s);
             gen_jmp_im(s, pc_start - s->cs_base);
             gen_helper_hlt(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
-            s->is_jmp = DISAS_TB_JUMP;
+            s->is_jmp = DISAS_NORETURN;
         }
         break;
     case 0x100:
@@ -8051,7 +8055,7 @@ case 0x101:
                              tcg_const_i32(tcg_ctx, s->aflag - 1),
                              tcg_const_i32(tcg_ctx, s->pc - pc_start));
             tcg_gen_exit_tb(tcg_ctx, 0);
-            s->is_jmp = DISAS_TB_JUMP;
+            s->is_jmp = DISAS_NORETURN;
             break;
 
         case 0xd9: /* VMMCALL */
