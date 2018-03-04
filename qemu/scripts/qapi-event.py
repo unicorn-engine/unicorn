@@ -13,7 +13,7 @@
 
 from qapi import *
 
-def gen_event_send_proto(name, arg_type, boxed):
+def build_event_send_proto(name, arg_type, boxed):
      return 'void qapi_event_send_%(c_name)s(%(param)s)' % {
          'c_name': c_name(name.lower()),
         'param': gen_params(arg_type, boxed, 'Error **errp')}
@@ -24,10 +24,10 @@ def gen_event_send_decl(name, arg_type, boxed):
 
 %(proto)s;
 ''',
-                 proto=gen_event_send_proto(name, arg_type, boxed))
+                 proto=build_event_send_proto(name, arg_type, boxed))
 
 
-# Declare and initialize an object 'qapi' using parameters from gen_params()
+# Declare and initialize an object 'qapi' using parameters from build_params()
 def gen_param_var(typ):
     assert not typ.variants
     ret = mcgen('''
@@ -41,7 +41,7 @@ def gen_param_var(typ):
         if memb.optional:
             ret += 'has_' + c_name(memb.name) + sep
         if memb.type.name == 'str':
-            # Cast away const added in gen_params()
+            # Cast away const added in build_params()
             ret += '(char *)'
         ret += c_name(memb.name)
     ret += mcgen('''
@@ -71,7 +71,7 @@ def gen_event_send(name, arg_type, boxed):
     Error *err = NULL;
     QMPEventFuncEmit emit;
 ''',
-                proto=gen_event_send_proto(name, arg_type, boxed))
+                proto=build_event_send_proto(name, arg_type, boxed))
 
     if arg_type and not arg_type.is_empty():
         assert not arg_type.variants
