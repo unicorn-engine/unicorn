@@ -5,9 +5,9 @@
 
 /* internal defines */
 typedef struct DisasContext {
+    DisasContextBase base;
     target_ulong pc;
     uint32_t insn;
-    int is_jmp;
     /* Nonzero if this instruction has been conditionally skipped.  */
     int condjmp;
     /* The label that will be jumped to when the instruction is skipped.  */
@@ -15,8 +15,6 @@ typedef struct DisasContext {
     /* Thumb-2 conditional execution bits.  */
     int condexec_mask;
     int condexec_cond;
-    struct TranslationBlock *tb;
-    int singlestep_enabled;
     int thumb;
     int sctlr_b;
     TCGMemOp be_data;
@@ -149,14 +147,16 @@ static void disas_set_insn_syndrome(DisasContext *s, uint32_t syn)
 
 #ifdef TARGET_AARCH64
 void a64_translate_init(struct uc_struct *uc);
-void gen_intermediate_code_a64(CPUState *cpu, TranslationBlock *tb);
+void gen_intermediate_code_a64(DisasContextBase *db, CPUState *cpu,
+                               TranslationBlock *tb);
 void gen_a64_set_pc_im(DisasContext *s, uint64_t val);
 #else
 static inline void a64_translate_init(struct uc_struct *uc)
 {
 }
 
-static inline void gen_intermediate_code_a64(CPUState *cpu, TranslationBlock *tb)
+static inline void gen_intermediate_code_a64(DisasContextBase *db, CPUState *cpu,
+                                             TranslationBlock *tb)
 {
 }
 
