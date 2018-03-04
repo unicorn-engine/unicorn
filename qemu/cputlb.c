@@ -298,6 +298,7 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
     ram_addr_t  ram_addr;
     CPUState *cpu = ENV_GET_CPU(env);
     CPUIOTLBEntry *iotlbentry;
+    hwaddr physaddr;
 
     index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = cpu_mmu_index(env, true);
@@ -313,6 +314,19 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
     pd = iotlbentry->addr & ~TARGET_PAGE_MASK;
     mr = iotlb_to_region(cpu, pd, iotlbentry->attrs);
     if (memory_region_is_unassigned(cpu->uc, mr)) {
+        /* Give the new-style cpu_transaction_failed() hook first chance
+         * to handle this.
+         * This is not the ideal place to detect and generate CPU
+         * exceptions for instruction fetch failure (for instance
+         * we don't know the length of the access that the CPU would
+         * use, and it would be better to go ahead and try the access
+         * and use the MemTXResult it produced). However it is the
+         * simplest place we have currently available for the check.
+         */
+        physaddr = (iotlbentry->addr & TARGET_PAGE_MASK) + addr;
+        cpu_transaction_failed(cpu, physaddr, addr, 0, MMU_INST_FETCH, mmu_idx,
+                               iotlbentry->attrs, MEMTX_DECODE_ERROR, 0);
+
         cpu_unassigned_access(cpu, addr, false, true, 0, 4);
         /* The CPU's unassigned access hook might have longjumped out
          * with an exception. If it didn't (or there was no hook) then
@@ -454,12 +468,14 @@ void tlb_unprotect_code(CPUState *cpu, ram_addr_t ram_addr)
 }
 
 static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
+                         int mmu_idx,
                          target_ulong addr, uintptr_t retaddr, int size)
 {
     CPUState *cpu = ENV_GET_CPU(env);
     hwaddr physaddr = iotlbentry->addr;
     MemoryRegion *mr = iotlb_to_region(cpu, physaddr, iotlbentry->attrs);
     uint64_t val;
+    MemTxResult r;
 
     physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
     cpu->mem_io_pc = retaddr;
@@ -468,17 +484,24 @@ static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
     }
 
     cpu->mem_io_vaddr = addr;
-    memory_region_dispatch_read(mr, physaddr, &val, size, iotlbentry->attrs);
+    r = memory_region_dispatch_read(mr, physaddr,
+                                    &val, size, iotlbentry->attrs);
+    if (r != MEMTX_OK) {
+        cpu_transaction_failed(cpu, physaddr, addr, size, MMU_DATA_LOAD,
+                               mmu_idx, iotlbentry->attrs, r, retaddr);
+    }
     return val;
 }
 
 static void io_writex(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
+                      int mmu_idx,
                       uint64_t val, target_ulong addr,
                       uintptr_t retaddr, int size)
 {
     CPUState *cpu = ENV_GET_CPU(env);
     hwaddr physaddr = iotlbentry->addr;
     MemoryRegion *mr = iotlb_to_region(cpu, physaddr, iotlbentry->attrs);
+    MemTxResult r;
 
     physaddr = (physaddr & TARGET_PAGE_MASK) + addr;
     if (mr != &cpu->uc->io_mem_rom && mr != &cpu->uc->io_mem_notdirty && !cpu->can_do_io) {
@@ -487,7 +510,12 @@ static void io_writex(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
 
     cpu->mem_io_vaddr = addr;
     cpu->mem_io_pc = retaddr;
-    memory_region_dispatch_write(mr, physaddr, val, size, iotlbentry->attrs);
+    r = memory_region_dispatch_write(mr, physaddr,
+                                     val, size, iotlbentry->attrs);
+    if (r != MEMTX_OK) {
+        cpu_transaction_failed(cpu, physaddr, addr, size, MMU_DATA_STORE,
+                               mmu_idx, iotlbentry->attrs, r, retaddr);
+    }
 }
 
 /* Return true if ADDR is present in the victim tlb, and has been copied
