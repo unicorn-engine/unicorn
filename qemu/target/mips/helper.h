@@ -150,6 +150,7 @@ DEF_HELPER_2(mtc0_framemask, void, env, tl)
 DEF_HELPER_2(mtc0_debug, void, env, tl)
 DEF_HELPER_2(mttc0_debug, void, env, tl)
 DEF_HELPER_2(mtc0_performance0, void, env, tl)
+DEF_HELPER_2(mtc0_errctl, void, env, tl)
 DEF_HELPER_2(mtc0_taglo, void, env, tl)
 DEF_HELPER_2(mtc0_datalo, void, env, tl)
 DEF_HELPER_2(mtc0_taghi, void, env, tl)
@@ -950,3 +951,6 @@ MSALDST_PROTO(h)
 MSALDST_PROTO(w)
 MSALDST_PROTO(d)
 #undef MSALDST_PROTO
+
+DEF_HELPER_3(cache, void, env, tl, i32)
+

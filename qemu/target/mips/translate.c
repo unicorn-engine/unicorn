@@ -5680,8 +5680,14 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         }
         break;
     case 26:
-        tcg_gen_movi_tl(tcg_ctx, arg, 0); /* unimplemented */
-        rn = "ECC";
+        switch (sel) {
+        case 0:
+            gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_ErrCtl));
+            rn = "ErrCtl";
+            break;
+        default:
+            goto cp0_unimplemented;
+        }
         break;
     case 27:
         switch (sel) {
@@ -6345,8 +6351,15 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         }
        break;
     case 26:
-        /* ignored */
-        rn = "ECC";
+        switch (sel) {
+        case 0:
+            gen_helper_mtc0_errctl(tcg_ctx, tcg_ctx->cpu_env, arg);
+            ctx->bstate = BS_STOP;
+            rn = "ErrCtl";
+            break;
+        default:
+            goto cp0_unimplemented;
+        }
         break;
     case 27:
         switch (sel) {
@@ -6975,8 +6988,14 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         }
         break;
     case 26:
-        tcg_gen_movi_tl(tcg_ctx, arg, 0); /* unimplemented */
-        rn = "ECC";
+        switch (sel) {
+        case 0:
+            gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_ErrCtl));
+            rn = "ErrCtl";
+            break;
+        default:
+            goto cp0_unimplemented;
+        }
         break;
     case 27:
         switch (sel) {
@@ -7628,8 +7647,15 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         }
         break;
     case 26:
-        /* ignored */
-        rn = "ECC";
+        switch (sel) {
+        case 0:
+            gen_helper_mtc0_errctl(tcg_ctx, tcg_ctx->cpu_env, arg);
+            ctx->bstate = BS_STOP;
+            rn = "ErrCtl";
+            break;
+        default:
+            goto cp0_unimplemented;
+        }
         break;
     case 27:
         switch (sel) {
@@ -11542,6 +11568,16 @@ static void gen_addiupc (DisasContext *ctx, int rx, int imm,
     tcg_temp_free(tcg_ctx, t0);
 }
 
+static void gen_cache_operation(DisasContext *ctx, uint32_t op, int base,
+                                int16_t offset)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv_i32 t0 = tcg_const_i32(tcg_ctx, op);
+    TCGv t1 = tcg_temp_new(tcg_ctx);
+    gen_base_offset_addr(ctx, t1, base, offset);
+    gen_helper_cache(tcg_ctx, tcg_ctx->cpu_env, t1, t0);
+}
+
 #if defined(TARGET_MIPS64)
 static void decode_i64_mips16 (DisasContext *ctx,
                                int ry, int funct, int16_t offset,
@@ -14122,7 +14158,9 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
         switch (minor) {
         case CACHE:
             check_cp0_enabled(ctx);
-            /* Treat as no-op. */
+            if (ctx->hflags & MIPS_HFLAG_ITC_CACHE) {
+                gen_cache_operation(ctx, rt, rs, imm);
+            }
             break;
         case LWC2:
         case SWC2:
@@ -17646,7 +17684,9 @@ static void decode_opc_special3_r6(CPUMIPSState *env, DisasContext *ctx)
         break;
     case R6_OPC_CACHE:
         check_cp0_enabled(ctx);
-        /* Treat as NOP. */
+        if (ctx->hflags & MIPS_HFLAG_ITC_CACHE) {
+            gen_cache_operation(ctx, rt, rs, imm);
+        }
         break;
     case R6_OPC_SC:
         gen_st_cond(ctx, op1, rt, rs, imm);
@@ -19793,7 +19833,9 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
         check_insn_opc_removed(ctx, ISA_MIPS32R6);
         check_cp0_enabled(ctx);
         check_insn(ctx, ISA_MIPS3 | ISA_MIPS32);
-        /* Treat as NOP. */
+        if (ctx->hflags & MIPS_HFLAG_ITC_CACHE) {
+            gen_cache_operation(ctx, rt, rs, imm);
+        }
         break;
     case OPC_PREF:
         check_insn_opc_removed(ctx, ISA_MIPS32R6);

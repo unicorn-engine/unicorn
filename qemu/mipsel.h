@@ -3495,6 +3495,7 @@
 #define helper_biadd helper_biadd_mipsel
 #define helper_bitrev helper_bitrev_mipsel
 #define helper_bitswap helper_bitswap_mipsel
+#define helper_cache helper_cache_mipsel
 #define helper_cfc1 helper_cfc1_mipsel
 #define helper_cmp_d_eq helper_cmp_d_eq_mipsel
 #define helper_cmp_d_f helper_cmp_d_f_mipsel
@@ -4058,6 +4059,7 @@
 #define helper_mtc0_datalo helper_mtc0_datalo_mipsel
 #define helper_mtc0_debug helper_mtc0_debug_mipsel
 #define helper_mtc0_ebase helper_mtc0_ebase_mipsel
+#define helper_mtc0_errctl helper_mtc0_errctl_mipsel
 #define helper_mtc0_entryhi helper_mtc0_entryhi_mipsel
 #define helper_mtc0_entrylo0 helper_mtc0_entrylo0_mipsel
 #define helper_mtc0_entrylo1 helper_mtc0_entrylo1_mipsel

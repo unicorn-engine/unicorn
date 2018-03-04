@@ -3495,6 +3495,7 @@
 #define helper_biadd helper_biadd_mips64el
 #define helper_bitrev helper_bitrev_mips64el
 #define helper_bitswap helper_bitswap_mips64el
+#define helper_cache helper_cache_mips64el
 #define helper_cfc1 helper_cfc1_mips64el
 #define helper_cmp_d_eq helper_cmp_d_eq_mips64el
 #define helper_cmp_d_f helper_cmp_d_f_mips64el
@@ -4058,6 +4059,7 @@
 #define helper_mtc0_datalo helper_mtc0_datalo_mips64el
 #define helper_mtc0_debug helper_mtc0_debug_mips64el
 #define helper_mtc0_ebase helper_mtc0_ebase_mips64el
+#define helper_mtc0_errctl helper_mtc0_errctl_mips64el
 #define helper_mtc0_entryhi helper_mtc0_entryhi_mips64el
 #define helper_mtc0_entrylo0 helper_mtc0_entrylo0_mips64el
 #define helper_mtc0_entrylo1 helper_mtc0_entrylo1_mips64el
