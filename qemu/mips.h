@@ -4074,6 +4074,9 @@
 #define helper_mtc0_pagegrain helper_mtc0_pagegrain_mips
 #define helper_mtc0_pagemask helper_mtc0_pagemask_mips
 #define helper_mtc0_performance0 helper_mtc0_performance0_mips
+#define helper_mtc0_segctl0 helper_mtc0_segctl0_mips
+#define helper_mtc0_segctl1 helper_mtc0_segctl1_mips
+#define helper_mtc0_segctl2 helper_mtc0_segctl2_mips
 #define helper_mtc0_srsconf0 helper_mtc0_srsconf0_mips
 #define helper_mtc0_srsconf1 helper_mtc0_srsconf1_mips
 #define helper_mtc0_srsconf2 helper_mtc0_srsconf2_mips

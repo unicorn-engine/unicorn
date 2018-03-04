@@ -1434,6 +1434,7 @@ typedef struct DisasContext {
     uint64_t PAMask;
     bool mvh;
     bool eva;
+    bool sc;
     int CP0_LLAddr_shift;
     bool ps;
     bool vp;
@@ -5309,7 +5310,24 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             check_insn(ctx, ISA_MIPS32R2);
             gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_PageGrain));
             rn = "PageGrain";
-            ctx->bstate = BS_STOP;
+            break;
+        case 2:
+            CP0_CHECK(ctx->sc);
+            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_SegCtl0));
+            tcg_gen_ext32s_tl(tcg_ctx, arg, arg);
+            rn = "SegCtl0";
+            break;
+        case 3:
+            CP0_CHECK(ctx->sc);
+            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_SegCtl1));
+            tcg_gen_ext32s_tl(tcg_ctx, arg, arg);
+            rn = "SegCtl1";
+            break;
+        case 4:
+            CP0_CHECK(ctx->sc);
+            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_SegCtl2));
+            tcg_gen_ext32s_tl(tcg_ctx, arg, arg);
+            rn = "SegCtl2";
             break;
         default:
             goto cp0_unimplemented;
@@ -5965,6 +5983,22 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             check_insn(ctx, ISA_MIPS32R2);
             gen_helper_mtc0_pagegrain(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "PageGrain";
+            ctx->bstate = BS_STOP;
+            break;
+        case 2:
+            CP0_CHECK(ctx->sc);
+            gen_helper_mtc0_segctl0(tcg_ctx, tcg_ctx->cpu_env, arg);
+            rn = "SegCtl0";
+            break;
+        case 3:
+            CP0_CHECK(ctx->sc);
+            gen_helper_mtc0_segctl1(tcg_ctx, tcg_ctx->cpu_env, arg);
+            rn = "SegCtl1";
+            break;
+        case 4:
+            CP0_CHECK(ctx->sc);
+            gen_helper_mtc0_segctl2(tcg_ctx, tcg_ctx->cpu_env, arg);
+            rn = "SegCtl2";
             break;
         default:
             goto cp0_unimplemented;
@@ -6634,6 +6668,21 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_PageGrain));
             rn = "PageGrain";
             break;
+        case 2:
+            CP0_CHECK(ctx->sc);
+            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_SegCtl0));
+            rn = "SegCtl0";
+            break;
+        case 3:
+            CP0_CHECK(ctx->sc);
+            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_SegCtl1));
+            rn = "SegCtl1";
+            break;
+        case 4:
+            CP0_CHECK(ctx->sc);
+            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_SegCtl2));
+            rn = "SegCtl2";
+            break;
         default:
             goto cp0_unimplemented;
         }
@@ -7266,6 +7315,21 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             check_insn(ctx, ISA_MIPS32R2);
             gen_helper_mtc0_pagegrain(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "PageGrain";
+            break;
+        case 2:
+            CP0_CHECK(ctx->sc);
+            gen_helper_mtc0_segctl0(tcg_ctx, tcg_ctx->cpu_env, arg);
+            rn = "SegCtl0";
+            break;
+        case 3:
+            CP0_CHECK(ctx->sc);
+            gen_helper_mtc0_segctl1(tcg_ctx, tcg_ctx->cpu_env, arg);
+            rn = "SegCtl1";
+            break;
+        case 4:
+            CP0_CHECK(ctx->sc);
+            gen_helper_mtc0_segctl2(tcg_ctx, tcg_ctx->cpu_env, arg);
+            rn = "SegCtl2";
             break;
         default:
             goto cp0_unimplemented;
@@ -20322,6 +20386,7 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
     ctx.PAMask = env->PAMask;
     ctx.mvh = (env->CP0_Config5 >> CP0C5_MVH) & 1;
     ctx.eva = (env->CP0_Config5 >> CP0C5_EVA) & 1;
+    ctx.sc = (env->CP0_Config3 >> CP0C3_SC) & 1;
     ctx.CP0_LLAddr_shift = env->CP0_LLAddr_shift;
     ctx.cmgcr = (env->CP0_Config3 >> CP0C3_CMGCR) & 1;
     /* Restore delay slot state from the tb context.  */
@@ -20813,6 +20878,29 @@ void cpu_state_reset(CPUMIPSState *env)
             env->tcs[0].CP0_TCStatus = (1 << CP0TCSt_A);
         }
     }
+
+    /*
+     * Configure default legacy segmentation control. We use this regardless of
+     * whether segmentation control is presented to the guest.
+     */
+    /* KSeg3 (seg0 0xE0000000..0xFFFFFFFF) */
+    env->CP0_SegCtl0 =   (CP0SC_AM_MK << CP0SC_AM);
+    /* KSeg2 (seg1 0xC0000000..0xDFFFFFFF) */
+    env->CP0_SegCtl0 |= ((CP0SC_AM_MSK << CP0SC_AM)) << 16;
+    /* KSeg1 (seg2 0xA0000000..0x9FFFFFFF) */
+    env->CP0_SegCtl1 =   (0 << CP0SC_PA) | (CP0SC_AM_UK << CP0SC_AM) |
+                         (2 << CP0SC_C);
+    /* KSeg0 (seg3 0x80000000..0x9FFFFFFF) */
+    env->CP0_SegCtl1 |= ((0 << CP0SC_PA) | (CP0SC_AM_UK << CP0SC_AM) |
+                         (3 << CP0SC_C)) << 16;
+    /* USeg (seg4 0x40000000..0x7FFFFFFF) */
+    env->CP0_SegCtl2 =   (2 << CP0SC_PA) | (CP0SC_AM_MUSK << CP0SC_AM) |
+                         (1 << CP0SC_EU) | (2 << CP0SC_C);
+    /* USeg (seg5 0x00000000..0x3FFFFFFF) */
+    env->CP0_SegCtl2 |= ((0 << CP0SC_PA) | (CP0SC_AM_MUSK << CP0SC_AM) |
+                         (1 << CP0SC_EU) | (2 << CP0SC_C)) << 16;
+    /* XKPhys (note, SegCtl2.XR = 0, so XAM won't be used) */
+    env->CP0_SegCtl1 |= (CP0SC_AM_UK << CP0SC1_XAM);
 #endif
     if ((env->insn_flags & ISA_MIPS32R6) &&
         (env->active_fpu.fcr0 & (1 << FCR0_F64))) {
