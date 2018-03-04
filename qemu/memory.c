@@ -41,7 +41,7 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
 {
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
-    memory_region_init_ram(uc, ram, NULL, "pc.ram", size, perms, &error_abort);
+    memory_region_init_ram_nomigrate(uc, ram, NULL, "pc.ram", size, perms, &error_abort);
     if (ram->ram_block == NULL) {
         // out of memory
         return NULL;
@@ -1205,12 +1205,13 @@ void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
     mr->terminates = true;
 }
 
-void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
-                            Object *owner,
-                            const char *name,
-                            uint64_t size,
-                            uint32_t perms,
-                            Error **errp)
+void memory_region_init_ram_nomigrate(struct uc_struct *uc,
+                                      MemoryRegion *mr,
+                                      Object *owner,
+                                      const char *name,
+                                      uint64_t size,
+                                      uint32_t perms,
+                                      Error **errp)
 {
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
