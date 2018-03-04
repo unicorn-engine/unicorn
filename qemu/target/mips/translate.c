@@ -2026,21 +2026,25 @@ FOP_CONDNS(s, FMT_S, 32, gen_store_fpr32(ctx, fp0, fd))
 
 /* load/store instructions. */
 #ifdef CONFIG_USER_ONLY
-#define OP_LD_ATOMIC(insn,fname)                                           \
-static inline void op_ld_##insn(TCGContext *tcg_ctx, TCGv ret, TCGv arg1, DisasContext *ctx)    \
-{                                                                          \
-    TCGv t0 = tcg_temp_new(tcg_ctx);                                              \
+#define OP_LD_ATOMIC(insn,fname)                                                    \
+static inline void op_ld_##insn(TCGv ret, TCGv arg1, int mem_idx,                   \
+                                DisasContext *ctx)                                  \
+{                                                                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                         \
+    TCGv t0 = tcg_temp_new(tcg_ctx);                                                \
     tcg_gen_mov_tl(tcg_ctx, t0, arg1);                                              \
-    tcg_gen_qemu_##fname(ret, arg1, ctx->mem_idx);                         \
-    tcg_gen_st_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUMIPSState, lladdr));                \
-    tcg_gen_st_tl(tcg_ctx, ret, tcg_ctx->cpu_env, offsetof(CPUMIPSState, llval));                \
+    tcg_gen_qemu_##fname(ret, arg1, ctx->mem_idx);                                  \
+    tcg_gen_st_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUMIPSState, lladdr));   \
+    tcg_gen_st_tl(tcg_ctx, ret, tcg_ctx->cpu_env, offsetof(CPUMIPSState, llval));   \
     tcg_temp_free(tcg_ctx, t0);                                                     \
 }
 #else
-#define OP_LD_ATOMIC(insn,fname)                                           \
-static inline void op_ld_##insn(TCGContext *tcg_ctx, TCGv ret, TCGv arg1, DisasContext *ctx)    \
-{                                                                          \
-    gen_helper_1e1i(tcg_ctx, insn, ret, arg1, ctx->mem_idx);                        \
+#define OP_LD_ATOMIC(insn,fname)                                    \
+static inline void op_ld_##insn(TCGv ret, TCGv arg1, int mem_idx,   \
+                                DisasContext *ctx)                  \
+{                                                                   \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                         \
+    gen_helper_1e1i(tcg_ctx, insn, ret, arg1, mem_idx);             \
 }
 #endif
 OP_LD_ATOMIC(ll,ld32s);
@@ -2050,38 +2054,41 @@ OP_LD_ATOMIC(lld,ld64);
 #undef OP_LD_ATOMIC
 
 #ifdef CONFIG_USER_ONLY
-#define OP_ST_ATOMIC(insn,fname,ldname,almask)                               \
-static inline void op_st_##insn(DisasContext *s, TCGv arg1, TCGv arg2, int rt, DisasContext *ctx) \
-{                                                                            \
-    TCGContext *tcg_ctx = s->uc->tcg_ctx; \
-    TCGv t0 = tcg_temp_new(tcg_ctx);                                                \
-    TCGLabel *l1 = gen_new_label(tcg_ctx);                                                \
-    TCGLabel *l2 = gen_new_label(tcg_ctx);                                                \
-                                                                             \
-    tcg_gen_andi_tl(tcg_ctx, t0, arg2, almask);                                       \
-    tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, t0, 0, l1);                              \
-    tcg_gen_st_tl(tcg_ctx, arg2, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_BadVAddr));          \
-    generate_exception(ctx, EXCP_AdES);                                      \
-    gen_set_label(tcg_ctx, l1);                                                       \
-    tcg_gen_ld_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUMIPSState, lladdr));                  \
-    tcg_gen_brcond_tl(tcg_ctx, TCG_COND_NE, arg2, t0, l2);                            \
-    tcg_gen_movi_tl(tcg_ctx, t0, rt | ((almask << 3) & 0x20));                        \
-    tcg_gen_st_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUMIPSState, llreg));                   \
-    tcg_gen_st_tl(tcg_ctx, arg1, tcg_ctx->cpu_env, offsetof(CPUMIPSState, llnewval));              \
-    generate_exception_end(ctx, EXCP_SC);                                    \
-    gen_set_label(tcg_ctx, l2);                                                       \
-    tcg_gen_movi_tl(tcg_ctx, t0, 0);                                                  \
-    gen_store_gpr(tcg_ctx, t0, rt);                                                   \
-    tcg_temp_free(tcg_ctx, t0);                                                       \
+#define OP_ST_ATOMIC(insn,fname,ldname,almask)                                              \
+static inline void op_st_##insn(TCGv arg1, TCGv arg2, int rt, int mem_idx,                  \
+                                DisasContext *ctx)                                          \
+{                                                                                           \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                                 \
+    TCGv t0 = tcg_temp_new(tcg_ctx);                                                        \
+    TCGLabel *l1 = gen_new_label(tcg_ctx);                                                  \
+    TCGLabel *l2 = gen_new_label(tcg_ctx);                                                  \
+                                                                                            \
+    tcg_gen_andi_tl(tcg_ctx, t0, arg2, almask);                                             \
+    tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, t0, 0, l1);                                    \
+    tcg_gen_st_tl(tcg_ctx, arg2, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_BadVAddr));   \
+    generate_exception(ctx, EXCP_AdES);                                                     \
+    gen_set_label(tcg_ctx, l1);                                                             \
+    tcg_gen_ld_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUMIPSState, lladdr));           \
+    tcg_gen_brcond_tl(tcg_ctx, TCG_COND_NE, arg2, t0, l2);                                  \
+    tcg_gen_movi_tl(tcg_ctx, t0, rt | ((almask << 3) & 0x20));                              \
+    tcg_gen_st_tl(tcg_ctx, t0, tcg_ctx->cpu_env, offsetof(CPUMIPSState, llreg));            \
+    tcg_gen_st_tl(tcg_ctx, arg1, tcg_ctx->cpu_env, offsetof(CPUMIPSState, llnewval));       \
+    generate_exception_end(ctx, EXCP_SC);                                                   \
+    gen_set_label(tcg_ctx, l2);                                                             \
+    tcg_gen_movi_tl(tcg_ctx, t0, 0);                                                        \
+    gen_store_gpr(tcg_ctx, t0, rt);                                                         \
+    tcg_temp_free(tcg_ctx, t0);                                                             \
 }
 #else
-#define OP_ST_ATOMIC(insn,fname,ldname,almask)                               \
-static inline void op_st_##insn(TCGContext *tcg_ctx, TCGv arg1, TCGv arg2, int rt, DisasContext *ctx) \
-{                                                                            \
-    TCGv t0 = tcg_temp_new(tcg_ctx);                                                \
-    gen_helper_1e2i(tcg_ctx, insn, t0, arg1, arg2, ctx->mem_idx);                     \
-    gen_store_gpr(tcg_ctx, t0, rt);                                                   \
-    tcg_temp_free(tcg_ctx, t0);                                                       \
+#define OP_ST_ATOMIC(insn,fname,ldname,almask)                              \
+static inline void op_st_##insn(TCGv arg1, TCGv arg2, int rt, int mem_idx,  \
+                                DisasContext *ctx)                          \
+{                                                                           \
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;                                 \
+    TCGv t0 = tcg_temp_new(tcg_ctx);                                        \
+    gen_helper_1e2i(tcg_ctx, insn, t0, arg1, arg2, ctx->mem_idx);           \
+    gen_store_gpr(tcg_ctx, t0, rt);                                         \
+    tcg_temp_free(tcg_ctx, t0);                                             \
 }
 #endif
 OP_ST_ATOMIC(sc,st32,ld32s,0x3);
@@ -2125,6 +2132,7 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv t0, t1, t2;
+    int mem_idx = ctx->mem_idx;
 
     if (rt == 0 && ctx->insn_flags & (INSN_LOONGSON2E | INSN_LOONGSON2F)) {
         /* Loongson CPU uses a load to zero register for prefetch.
@@ -2139,32 +2147,32 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
     switch (opc) {
 #if defined(TARGET_MIPS64)
     case OPC_LWU:
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TEUL |
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TEUL |
                            ctx->default_tcg_memop_mask);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     case OPC_LD:
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TEQ |
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TEQ |
                            ctx->default_tcg_memop_mask);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     case OPC_LLD:
     case R6_OPC_LLD:
-        op_ld_lld(tcg_ctx, t0, t0, ctx);
+        op_ld_lld(t0, t0, mem_idx, ctx);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     case OPC_LDL:
         t1 = tcg_temp_new(tcg_ctx);
         /* Do a byte access to possibly trigger a page
            fault with the unaligned address.  */
-        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_UB);
+        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, mem_idx, MO_UB);
         tcg_gen_andi_tl(tcg_ctx, t1, t0, 7);
 #ifndef TARGET_WORDS_BIGENDIAN
         tcg_gen_xori_tl(tcg_ctx, t1, t1, 7);
 #endif
         tcg_gen_shli_tl(tcg_ctx, t1, t1, 3);
         tcg_gen_andi_tl(tcg_ctx, t0, t0, ~7);
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TEQ);
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TEQ);
         tcg_gen_shl_tl(tcg_ctx, t0, t0, t1);
         t2 = tcg_const_tl(tcg_ctx, -1);
         tcg_gen_shl_tl(tcg_ctx, t2, t2, t1);
@@ -2179,14 +2187,14 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
         t1 = tcg_temp_new(tcg_ctx);
         /* Do a byte access to possibly trigger a page
            fault with the unaligned address.  */
-        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_UB);
+        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, mem_idx, MO_UB);
         tcg_gen_andi_tl(tcg_ctx, t1, t0, 7);
 #ifdef TARGET_WORDS_BIGENDIAN
         tcg_gen_xori_tl(tcg_ctx, t1, t1, 7);
 #endif
         tcg_gen_shli_tl(tcg_ctx, t1, t1, 3);
         tcg_gen_andi_tl(tcg_ctx, t0, t0, ~7);
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TEQ);
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TEQ);
         tcg_gen_shr_tl(tcg_ctx, t0, t0, t1);
         tcg_gen_xori_tl(tcg_ctx, t1, t1, 63);
         t2 = tcg_const_tl(tcg_ctx, 0xfffffffffffffffeull);
@@ -2202,7 +2210,7 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
         t1 = tcg_const_tl(tcg_ctx, pc_relative_pc(ctx));
         gen_op_addr_add(ctx, t0, t0, t1);
         tcg_temp_free(tcg_ctx, t1);
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TEQ);
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TEQ);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
 #endif
@@ -2210,44 +2218,44 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
         t1 = tcg_const_tl(tcg_ctx, pc_relative_pc(ctx));
         gen_op_addr_add(ctx, t0, t0, t1);
         tcg_temp_free(tcg_ctx, t1);
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TESL);
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TESL);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     case OPC_LW:
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TESL |
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TESL |
                            ctx->default_tcg_memop_mask);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     case OPC_LH:
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TESW |
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TESW |
                            ctx->default_tcg_memop_mask);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     case OPC_LHU:
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TEUW |
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TEUW |
                            ctx->default_tcg_memop_mask);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     case OPC_LB:
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_SB);
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_SB);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     case OPC_LBU:
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_UB);
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_UB);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     case OPC_LWL:
         t1 = tcg_temp_new(tcg_ctx);
         /* Do a byte access to possibly trigger a page
            fault with the unaligned address.  */
-        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_UB);
+        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, mem_idx, MO_UB);
         tcg_gen_andi_tl(tcg_ctx, t1, t0, 3);
 #ifndef TARGET_WORDS_BIGENDIAN
         tcg_gen_xori_tl(tcg_ctx, t1, t1, 3);
 #endif
         tcg_gen_shli_tl(tcg_ctx, t1, t1, 3);
         tcg_gen_andi_tl(tcg_ctx, t0, t0, ~3);
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TEUL);
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TEUL);
         tcg_gen_shl_tl(tcg_ctx, t0, t0, t1);
         t2 = tcg_const_tl(tcg_ctx, -1);
         tcg_gen_shl_tl(tcg_ctx, t2, t2, t1);
@@ -2263,14 +2271,14 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
         t1 = tcg_temp_new(tcg_ctx);
         /* Do a byte access to possibly trigger a page
            fault with the unaligned address.  */
-        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_UB);
+        tcg_gen_qemu_ld_tl(ctx->uc, t1, t0, mem_idx, MO_UB);
         tcg_gen_andi_tl(tcg_ctx, t1, t0, 3);
 #ifdef TARGET_WORDS_BIGENDIAN
         tcg_gen_xori_tl(tcg_ctx, t1, t1, 3);
 #endif
         tcg_gen_shli_tl(tcg_ctx, t1, t1, 3);
         tcg_gen_andi_tl(tcg_ctx, t0, t0, ~3);
-        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, ctx->mem_idx, MO_TEUL);
+        tcg_gen_qemu_ld_tl(ctx->uc, t0, t0, mem_idx, MO_TEUL);
         tcg_gen_shr_tl(tcg_ctx, t0, t0, t1);
         tcg_gen_xori_tl(tcg_ctx, t1, t1, 31);
         t2 = tcg_const_tl(tcg_ctx, 0xfffffffeull);
@@ -2285,7 +2293,7 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
         break;
     case OPC_LL:
     case R6_OPC_LL:
-        op_ld_ll(tcg_ctx, t0, t0, ctx);
+        op_ld_ll(t0, t0, mem_idx, ctx);
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     }
@@ -2299,38 +2307,39 @@ static void gen_st (DisasContext *ctx, uint32_t opc, int rt,
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv t0 = tcg_temp_new(tcg_ctx);
     TCGv t1 = tcg_temp_new(tcg_ctx);
+    int mem_idx = ctx->mem_idx;
 
     gen_base_offset_addr(ctx, t0, base, offset);
     gen_load_gpr(ctx, t1, rt);
     switch (opc) {
 #if defined(TARGET_MIPS64)
     case OPC_SD:
-        tcg_gen_qemu_st_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_TEQ |
+        tcg_gen_qemu_st_tl(ctx->uc, t1, t0, mem_idx, MO_TEQ |
                            ctx->default_tcg_memop_mask);
         break;
     case OPC_SDL:
-        gen_helper_0e2i(tcg_ctx, sdl, t1, t0, ctx->mem_idx);
+        gen_helper_0e2i(tcg_ctx, sdl, t1, t0, mem_idx);
         break;
     case OPC_SDR:
-        gen_helper_0e2i(tcg_ctx, sdr, t1, t0, ctx->mem_idx);
+        gen_helper_0e2i(tcg_ctx, sdr, t1, t0, mem_idx);
         break;
 #endif
     case OPC_SW:
-        tcg_gen_qemu_st_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_TEUL |
+        tcg_gen_qemu_st_tl(ctx->uc, t1, t0, mem_idx, MO_TEUL |
                            ctx->default_tcg_memop_mask);
         break;
     case OPC_SH:
-        tcg_gen_qemu_st_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_TEUW |
+        tcg_gen_qemu_st_tl(ctx->uc, t1, t0, mem_idx, MO_TEUW |
                            ctx->default_tcg_memop_mask);
         break;
     case OPC_SB:
-        tcg_gen_qemu_st_tl(ctx->uc, t1, t0, ctx->mem_idx, MO_8);
+        tcg_gen_qemu_st_tl(ctx->uc, t1, t0, mem_idx, MO_8);
         break;
     case OPC_SWL:
-        gen_helper_0e2i(tcg_ctx, swl, t1, t0, ctx->mem_idx);
+        gen_helper_0e2i(tcg_ctx, swl, t1, t0, mem_idx);
         break;
     case OPC_SWR:
-        gen_helper_0e2i(tcg_ctx, swr, t1, t0, ctx->mem_idx);
+        gen_helper_0e2i(tcg_ctx, swr, t1, t0, mem_idx);
         break;
     }
     tcg_temp_free(tcg_ctx, t0);
@@ -2344,6 +2353,7 @@ static void gen_st_cond (DisasContext *ctx, uint32_t opc, int rt,
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     TCGv t0, t1;
+    int mem_idx = ctx->mem_idx;
 
 #ifdef CONFIG_USER_ONLY
     t0 = tcg_temp_local_new(tcg_ctx);
@@ -2358,12 +2368,12 @@ static void gen_st_cond (DisasContext *ctx, uint32_t opc, int rt,
 #if defined(TARGET_MIPS64)
     case OPC_SCD:
     case R6_OPC_SCD:
-        op_st_scd(tcg_ctx, t1, t0, rt, ctx);
+        op_st_scd(t1, t0, rt, mem_idx, ctx);
         break;
 #endif
     case OPC_SC:
     case R6_OPC_SC:
-        op_st_sc(tcg_ctx, t1, t0, rt, ctx);
+        op_st_sc(t1, t0, rt, mem_idx, ctx);
         break;
     }
     tcg_temp_free(tcg_ctx, t1);
