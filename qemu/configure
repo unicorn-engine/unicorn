@@ -174,6 +174,7 @@ solaris="no"
 softmmu="yes"
 aix="no"
 pie=""
+tcg="yes"
 
 # parse CC options first
 for opt do
@@ -190,6 +191,10 @@ for opt do
   ;;
   --extra-ldflags=*) LDFLAGS="$optarg $LDFLAGS"
                      EXTRA_LDFLAGS="$optarg"
+  ;;
+  --disable-tcg) tcg="no"
+  ;;
+  --enable-tcg) tcg="yes"
   ;;
   --enable-debug-info) debug_info="yes"
   ;;
@@ -1150,7 +1155,6 @@ echo "python            $python"
 echo "host CPU          $cpu"
 echo "host big endian   $bigendian"
 echo "target list       $target_list"
-echo "tcg debug enabled $debug_tcg"
 echo "strip binaries    $strip_opt"
 echo "static build      $static"
 echo "mingw32 support   $mingw32"
@@ -1158,6 +1162,11 @@ if test -n "$sparc_cpu"; then
     echo "Target Sparc Arch $sparc_cpu"
 fi
 echo "PIE               $pie"
+echo "TCG support       $tcg"
+if test "$tcg" = "yes" ; then
+    echo "TCG debug enabled $debug_tcg"
+    echo "TCG interpreter   $tcg_interpreter"
+fi
 
 config_host_mak="config-host.mak"
 
@@ -1217,8 +1226,11 @@ fi
 if test "$bswap_h" = "yes" ; then
   echo "CONFIG_MACHINE_BSWAP_H=y" >> $config_host_mak
 fi
-if test "$tcg_interpreter" = "yes" ; then
-  echo "CONFIG_TCG_INTERPRETER=y" >> $config_host_mak
+if test "$tcg" = "yes"; then
+  echo "CONFIG_TCG=y" >> $config_host_mak
+  if test "$tcg_interpreter" = "yes" ; then
+    echo "CONFIG_TCG_INTERPRETER=y" >> $config_host_mak
+  fi
 fi
 
 # XXX: suppress that
