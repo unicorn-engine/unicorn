@@ -4283,7 +4283,7 @@ static void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
         gen_set_pc_im(s, dest);
         gen_goto_ptr(s);
     }
-    s->is_jmp = DISAS_TB_JUMP;
+    s->is_jmp = DISAS_NORETURN;
 }
 
 static inline void gen_jmp(DisasContext *s, uint32_t dest)
@@ -4295,7 +4295,6 @@ static inline void gen_jmp(DisasContext *s, uint32_t dest)
         gen_bx_im(s, dest);
     } else {
         gen_goto_tb(s, 0, dest);
-        s->is_jmp = DISAS_TB_JUMP;
     }
 }
 

@@ -25,12 +25,12 @@
 #include "exec/exec-all.h"
 #include "tcg-op.h"
 #include "exec/cpu_ldst.h"
+#include "exec/translator.h"
+
 #include "exec/helper-proto.h"
 #include "exec/helper-gen.h"
 
 #include "uc_priv.h"
-
-#define DISAS_TOO_MANY 5
 
 #define PREFIX_REPZ   0x01
 #define PREFIX_REPNZ  0x02
@@ -5045,7 +5045,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         gen_update_cc_op(s);
         gen_jmp_im(s, pc_start - s->cs_base);
         gen_helper_hlt(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
-        s->is_jmp = DISAS_TB_JUMP;
+        s->is_jmp = DISAS_NORETURN;
         return s->pc;
     }
 
@@ -9245,7 +9245,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
         gen_tb_start(tcg_ctx);
         gen_jmp_im(dc, tb->pc - tb->cs_base);
         gen_helper_hlt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, 0));
-        dc->is_jmp = DISAS_TB_JUMP;
+        dc->is_jmp = DISAS_NORETURN;
         goto done_generating;
     }
 
