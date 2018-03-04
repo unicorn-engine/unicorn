@@ -236,7 +236,6 @@ struct AddressSpace {
     struct FlatView *current_map;
     struct AddressSpaceDispatch *dispatch;
     struct AddressSpaceDispatch *next_dispatch;
-    MemoryListener dispatch_listener;
     struct uc_struct* uc;
 
     QTAILQ_HEAD(memory_listeners_as, MemoryListener) listeners;

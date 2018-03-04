@@ -1080,9 +1080,8 @@ static void register_multipage(struct uc_struct *uc,
     phys_page_set(uc, d, start_addr >> TARGET_PAGE_BITS, num_pages, section_index);
 }
 
-static void mem_add(MemoryListener *listener, MemoryRegionSection *section)
+void mem_add(AddressSpace *as, MemoryRegionSection *section)
 {
-    AddressSpace *as = container_of(listener, AddressSpace, dispatch_listener);
     AddressSpaceDispatch *d = as->next_dispatch;
     MemoryRegionSection now = *section, remain = *section;
     Int128 page_size = int128_make64(TARGET_PAGE_SIZE);
@@ -1845,9 +1844,8 @@ void phys_mem_clean(AddressSpace *as)
     g_free(d->map.sections);
 }
 
-static void mem_begin(MemoryListener *listener)
+void mem_begin(AddressSpace *as)
 {
-    AddressSpace *as = container_of(listener, AddressSpace, dispatch_listener);
     AddressSpaceDispatch *d = g_new0(AddressSpaceDispatch, 1);
     uint16_t n;
     PhysPageEntry ppe = { 1, PHYS_MAP_NODE_NIL };
@@ -1867,9 +1865,8 @@ static void mem_begin(MemoryListener *listener)
     as->next_dispatch = d;
 }
 
-static void mem_commit(MemoryListener *listener)
+void mem_commit(AddressSpace *as)
 {
-    AddressSpace *as = container_of(listener, AddressSpace, dispatch_listener);
     AddressSpaceDispatch *cur = as->dispatch;
     AddressSpaceDispatch *next = as->next_dispatch;
 
@@ -1903,31 +1900,10 @@ static void tcg_commit(MemoryListener *listener)
     tlb_flush(cpuas->cpu);
 }
 
-void address_space_init_dispatch(AddressSpace *as)
-{
-    MemoryListener ml = { 0 };
-
-    ml.begin = mem_begin;
-    ml.commit = mem_commit;
-    ml.region_add = mem_add;
-    ml.region_nop = mem_add;
-    ml.priority = 0;
-
-    as->dispatch = NULL;
-    as->dispatch_listener = ml;
-    memory_listener_register(as->uc, &as->dispatch_listener, as);
-}
-
-void address_space_unregister(AddressSpace *as)
-{
-    memory_listener_unregister(as->uc, &as->dispatch_listener);
-}
-
 void address_space_destroy_dispatch(AddressSpace *as)
 {
     AddressSpaceDispatch *d = as->dispatch;
 
-    memory_listener_unregister(as->uc, &as->dispatch_listener);
     g_free(d->map.nodes);
     g_free(d);
 
