@@ -41,7 +41,7 @@
 #define TCG_CT_CONST_MULI  0x100
 #define TCG_CT_CONST_ORI   0x200
 #define TCG_CT_CONST_XORI  0x400
-#define TCG_CT_CONST_CMPI  0x800
+#define TCG_CT_CONST_U31   0x800
 #define TCG_CT_CONST_ADLI  0x1000
 #define TCG_CT_CONST_ZERO  0x2000
 
@@ -404,7 +404,18 @@ static const char *target_parse_constraint(TCGArgConstraint *ct,
         ct->ct |= TCG_CT_CONST_XORI;
         break;
     case 'C':
-        ct->ct |= TCG_CT_CONST_CMPI;
+        /* ??? We have no insight here into whether the comparison is
+           signed or unsigned.  The COMPARE IMMEDIATE insn uses a 32-bit
+           signed immediate, and the COMPARE LOGICAL IMMEDIATE insn uses
+           a 32-bit unsigned immediate.  If we were to use the (semi)
+           obvious "val == (int32_t)val" we would be enabling unsigned
+           comparisons vs very large numbers.  The only solution is to
+           take the intersection of the ranges.  */
+        /* ??? Another possible solution is to simply lie and allow all
+           constants here and force the out-of-range values into a temp
+           register in tgen_cmp when we have knowledge of the actual
+           comparison code in use.  */
+        ct->ct |= TCG_CT_CONST_U31;
         break;
     case 'Z':
         ct->ct |= TCG_CT_CONST_ZERO;
@@ -469,35 +480,6 @@ static int tcg_match_xori(TCGType type, tcg_target_long val)
     return 1;
 }
 
-/* Imediates to be used with comparisons.  */
-
-static int tcg_match_cmpi(TCGType type, tcg_target_long val)
-{
-    if (s390_facilities & FACILITY_EXT_IMM) {
-        /* The COMPARE IMMEDIATE instruction is available.  */
-        if (type == TCG_TYPE_I32) {
-            /* We have a 32-bit immediate and can compare against anything.  */
-            return 1;
-        } else {
-            /* ??? We have no insight here into whether the comparison is
-               signed or unsigned.  The COMPARE IMMEDIATE insn uses a 32-bit
-               signed immediate, and the COMPARE LOGICAL IMMEDIATE insn uses
-               a 32-bit unsigned immediate.  If we were to use the (semi)
-               obvious "val == (int32_t)val" we would be enabling unsigned
-               comparisons vs very large numbers.  The only solution is to
-               take the intersection of the ranges.  */
-            /* ??? Another possible solution is to simply lie and allow all
-               constants here and force the out-of-range values into a temp
-               register in tgen_cmp when we have knowledge of the actual
-               comparison code in use.  */
-            return val >= 0 && val <= 0x7fffffff;
-        }
-    } else {
-        /* Only the LOAD AND TEST instruction is available.  */
-        return val == 0;
-    }
-}
-
 /* Immediates to be used with add2/sub2.  */
 
 static int tcg_match_add2i(TCGType type, tcg_target_long val)
@@ -543,8 +525,8 @@ static int tcg_target_const_match(tcg_target_long val, TCGType type,
         return tcg_match_ori(type, val);
     } else if (ct & TCG_CT_CONST_XORI) {
         return tcg_match_xori(type, val);
-    } else if (ct & TCG_CT_CONST_CMPI) {
-        return tcg_match_cmpi(type, val);
+    } else if (ct & TCG_CT_CONST_U31) {
+        return val >= 0 && val <= 0x7fffffff;
     } else if (ct & TCG_CT_CONST_ZERO) {
         return val == 0;
     }
@@ -2396,7 +2378,9 @@ static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
     static const TCGTargetOpDef r_r = { 0, { "r", "r" } };
     static const TCGTargetOpDef r_L = { 0, { "r", "L" } };
     static const TCGTargetOpDef L_L = { 0, { "L", "L" } };
+    static const TCGTargetOpDef r_ri = { 0, { "r", "ri" } };
     static const TCGTargetOpDef r_rC = { 0, { "r", "rC" } };
+    static const TCGTargetOpDef r_rZ = { 0, { "r", "rZ" } };
     static const TCGTargetOpDef r_r_ri = { 0, { "r", "r", "ri" } };
     static const TCGTargetOpDef r_0_ri = { 0, { "r", "0", "ri" } };
     static const TCGTargetOpDef r_0_rK = { 0, { "r", "0", "rK" } };
@@ -2464,8 +2448,10 @@ static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
         return &r_r_ri;
 
     case INDEX_op_brcond_i32:
+        /* Without EXT_IMM, only the LOAD AND TEST insn is available.  */
+        return (s390_facilities & FACILITY_EXT_IMM ? &r_ri : &r_rZ);
     case INDEX_op_brcond_i64:
-        return &r_rC;
+        return (s390_facilities & FACILITY_EXT_IMM ? &r_rC : &r_rZ);
 
     case INDEX_op_bswap16_i32:
     case INDEX_op_bswap16_i64:
@@ -2508,14 +2494,18 @@ static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
     case INDEX_op_setcond_i32:
     case INDEX_op_setcond_i64:
         {
-            static const TCGTargetOpDef setc = { 0, { "r", "r", "rC" } };
-            return &setc;
+            /* Without EXT_IMM, only the LOAD AND TEST insn is available.  */
+            static const TCGTargetOpDef setc_z = { 0, { "r", "r", "rZ" } };
+            static const TCGTargetOpDef setc_c = { 0, { "r", "r", "rC" } };
+            return (s390_facilities & FACILITY_EXT_IMM ? &setc_c : &setc_z);
         }
     case INDEX_op_movcond_i32:
     case INDEX_op_movcond_i64:
         {
-            static const TCGTargetOpDef movc = { 0, { "r", "r", "rC", "r", "0" } };
-            return &movc;
+            /* Without EXT_IMM, only the LOAD AND TEST insn is available.  */
+            static const TCGTargetOpDef movc_z = { 0, { "r", "r", "rZ", "r", "0" } };
+            static const TCGTargetOpDef movc_c = { 0, { "r", "r", "rC", "r", "0" } };
+            return (s390_facilities & FACILITY_EXT_IMM ? &movc_c : &movc_z);
         }
     case INDEX_op_div2_i32:
     case INDEX_op_div2_i64:
