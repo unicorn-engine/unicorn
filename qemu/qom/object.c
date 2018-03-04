@@ -1481,15 +1481,13 @@ static Object *object_resolve_partial_path(struct uc_struct *uc, Object *parent,
                                             typename, ambiguous);
         if (found) {
             if (obj) {
-                if (ambiguous) {
-                    *ambiguous = true;
-                }
+                *ambiguous = true;
                 return NULL;
             }
             obj = found;
         }
 
-        if (ambiguous && *ambiguous) {
+        if (*ambiguous) {
             return NULL;
         }
     }
@@ -1498,7 +1496,7 @@ static Object *object_resolve_partial_path(struct uc_struct *uc, Object *parent,
 }
 
 Object *object_resolve_path_type(struct uc_struct *uc, const char *path, const char *typename,
-                                 bool *ambiguous)
+                                 bool *ambiguousp)
 {
     Object *obj;
     gchar **parts;
@@ -1507,11 +1505,12 @@ Object *object_resolve_path_type(struct uc_struct *uc, const char *path, const c
     assert(parts);
 
     if (parts[0] == NULL || strcmp(parts[0], "") != 0) {
-        if (ambiguous) {
-            *ambiguous = false;
-        }
+        bool ambiguous = false;
         obj = object_resolve_partial_path(uc, object_get_root(NULL), parts,
-                                          typename, ambiguous);
+                                          typename, &ambiguous);
+        if (ambiguousp) {
+            *ambiguousp = ambiguous;
+        }
     } else {
         obj = object_resolve_abs_path(uc, object_get_root(NULL), parts, typename, 1);
     }
