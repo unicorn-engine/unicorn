@@ -354,6 +354,9 @@ void memory_region_init_io(struct uc_struct *uc,
  * @size: size of the region.
  * @perms: permissions on the region (UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC).
  * @errp: pointer to Error*, to store an error if it happens.
+ *
+ * Note that this function does not do anything to cause the data in the
+ * RAM memory region to be migrated; that is the responsibility of the caller.
  */
 void memory_region_init_ram(struct uc_struct *uc,
                             MemoryRegion *mr,
@@ -374,6 +377,9 @@ void memory_region_init_ram(struct uc_struct *uc,
  *        must be unique within any device
  * @size: size of the region.
  * @ptr: memory to be mapped; must contain at least @size bytes.
+ *
+ * Note that this function does not do anything to cause the data in the
+ * RAM memory region to be migrated; that is the responsibility of the caller.
  */
 void memory_region_init_ram_ptr(struct uc_struct *uc,
                                 MemoryRegion *mr,
@@ -400,6 +406,10 @@ void memory_region_init_ram_ptr(struct uc_struct *uc,
  *        must be unique within any device
  * @size: size of the region.
  * @ptr: memory to be mapped; must contain at least @size bytes.
+ *
+ * Note that this function does not do anything to cause the data in the
+ * RAM memory region to be migrated; that is the responsibility of the caller.
+ * (For RAM device memory regions, migrating the contents rarely makes sense.)
  */
 void memory_region_init_ram_device_ptr(struct uc_struct *uc,
                                        MemoryRegion *mr,
@@ -485,6 +495,9 @@ void memory_region_init_rom_device(struct uc_struct *uc,
  * @max_size: max size of the region.
  * @resized: callback to notify owner about used size change.
  * @errp: pointer to Error*, to store an error if it happens.
+ *
+ * Note that this function does not do anything to cause the data in the
+ * RAM memory region to be migrated; that is the responsibility of the caller.
  */
 void memory_region_init_resizeable_ram(struct uc_struct *uc,
                                        MemoryRegion *mr,
