@@ -606,6 +606,16 @@ CPUState *qemu_get_cpu(struct uc_struct *uc, int index);
  */
 bool cpu_exists(struct uc_struct* uc, int64_t id);
 
+/**
+ * cpu_by_arch_id:
+ * @id: Guest-exposed CPU ID of the CPU to obtain.
+ *
+ * Get a CPU with matching @id.
+ *
+ * Returns: The CPU or %NULL if there is no matching CPU.
+ */
+CPUState *cpu_by_arch_id(struct uc_struct *uc, int64_t id);
+
 #ifndef CONFIG_USER_ONLY
 
 typedef void (*CPUInterruptHandler)(CPUState *, int);

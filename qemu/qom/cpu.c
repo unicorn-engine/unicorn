@@ -24,15 +24,20 @@
 #include "qemu/log.h"
 #include "uc_priv.h"
 
-bool cpu_exists(struct uc_struct* uc, int64_t id)
+CPUState *cpu_by_arch_id(struct uc_struct *uc, int64_t id)
 {
     CPUState *cpu = uc->cpu;
     CPUClass *cc = CPU_GET_CLASS(uc, cpu);
 
     if (cc->get_arch_id(cpu) == id) {
-        return true;
+        return cpu;
     }
-    return false;
+    return NULL;
+}
+
+bool cpu_exists(struct uc_struct *uc, int64_t id)
+{
+    return !!cpu_by_arch_id(uc, id);
 }
 
 CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const char *cpu_model)
