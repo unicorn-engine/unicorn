@@ -2166,18 +2166,6 @@ static void pmsav7_write(CPUARMState *env, const ARMCPRegInfo *ri,
     *u32p = value;
 }
 
-static void pmsav7_reset(CPUARMState *env, const ARMCPRegInfo *ri)
-{
-    ARMCPU *cpu = arm_env_get_cpu(env);
-    uint32_t *u32p = *(uint32_t **)raw_ptr(env, ri);
-
-    if (!u32p) {
-        return;
-    }
-
-    memset(u32p, 0, sizeof(*u32p) * cpu->pmsav7_dregion);
-}
-
 static void pmsav7_rgnr_write(CPUARMState *env, const ARMCPRegInfo *ri,
                               uint64_t value)
 {
@@ -2195,18 +2183,22 @@ static void pmsav7_rgnr_write(CPUARMState *env, const ARMCPRegInfo *ri,
 }
 
 static const ARMCPRegInfo pmsav7_cp_reginfo[] = {
+    /* Reset for all these registers is handled in arm_cpu_reset(),
+     * because the PMSAv7 is also used by M-profile CPUs, which do
+     * not register cpregs but still need the state to be reset.
+     */
     { "DRBAR", 15,6,1, 0,0,0, 0,ARM_CP_NO_RAW,
       PL1_RW, 0, NULL, 0, offsetof(CPUARMState, pmsav7.drbar), {0, 0},
-      NULL, pmsav7_read, pmsav7_write, NULL, NULL, pmsav7_reset },
+      NULL, pmsav7_read, pmsav7_write, NULL, NULL, arm_cp_reset_ignore },
     { "DRSR", 15,6,1, 0,0,2, 0,ARM_CP_NO_RAW,
       PL1_RW, 0, NULL, 0, offsetof(CPUARMState, pmsav7.drsr), {0, 0},
-      NULL, pmsav7_read, pmsav7_write, NULL, NULL, pmsav7_reset },
+      NULL, pmsav7_read, pmsav7_write, NULL, NULL, arm_cp_reset_ignore },
     { "DRACR", 15,6,1, 0,0,4, 0,ARM_CP_NO_RAW,
       PL1_RW, 0, NULL, 0, offsetof(CPUARMState, pmsav7.dracr), {0, 0},
-      NULL, pmsav7_read, pmsav7_write, NULL, NULL, pmsav7_reset },
+      NULL, pmsav7_read, pmsav7_write, NULL, NULL, arm_cp_reset_ignore },
     { "RGNR", 15,6,2, 0,0,0, 0,0,
       PL1_RW, 0, NULL, 0, offsetof(CPUARMState, pmsav7.rnr), {0, 0},
-      NULL, NULL, pmsav7_rgnr_write },
+      NULL, NULL, pmsav7_rgnr_write, NULL, NULL, arm_cp_reset_ignore },
     REGINFO_SENTINEL
 };
 
