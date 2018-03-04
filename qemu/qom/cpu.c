@@ -176,9 +176,7 @@ static void cpu_common_reset(CPUState *cpu)
     //       unicorn's crappy symbol deduplication
     //       makes it impossible right now
     //if (tcg_enabled(cpu->uc)) {
-        for (i = 0; i < TB_JMP_CACHE_SIZE; ++i) {
-            atomic_set(&cpu->tb_jmp_cache[i], NULL);
-        }
+        cpu_tb_jmp_cache_clear(cpu);
 
 #ifdef CONFIG_SOFTMMU
         tlb_flush(cpu);
