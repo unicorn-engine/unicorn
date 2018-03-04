@@ -676,11 +676,8 @@ static inline void gen_op_mulscc(DisasContext *dc, TCGv dst, TCGv src1, TCGv src
 
     // b2 = T0 & 1;
     // env->y = (b2 << 31) | (env->y >> 1);
-    tcg_gen_andi_tl(tcg_ctx, r_temp, tcg_ctx->cpu_cc_src, 0x1);
-    tcg_gen_shli_tl(tcg_ctx, r_temp, r_temp, 31);
     tcg_gen_extract_tl(tcg_ctx, t0, tcg_ctx->cpu_y, 1, 31);
-    tcg_gen_or_tl(tcg_ctx, t0, t0, r_temp);
-    tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_y, t0, 0xffffffff);
+    tcg_gen_deposit_tl(tcg_ctx, tcg_ctx->cpu_y, t0, tcg_ctx->cpu_cc_src, 31, 1);
 
     // b1 = N ^ V;
     gen_mov_reg_N(dc, t0, tcg_ctx->cpu_psr);
