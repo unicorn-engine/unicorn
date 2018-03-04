@@ -38,12 +38,13 @@
    a 32-bit displacement here Just In Case.  */
 #define USE_LONG_BRANCHES 0
 
-#define TCG_CT_CONST_MULI  0x100
-#define TCG_CT_CONST_ORI   0x200
-#define TCG_CT_CONST_XORI  0x400
-#define TCG_CT_CONST_U31   0x800
-#define TCG_CT_CONST_ADLI  0x1000
-#define TCG_CT_CONST_ZERO  0x2000
+#define TCG_CT_CONST_S16   0x100
+#define TCG_CT_CONST_S32   0x200
+#define TCG_CT_CONST_ORI   0x400
+#define TCG_CT_CONST_XORI  0x800
+#define TCG_CT_CONST_U31   0x1000
+#define TCG_CT_CONST_ADLI  0x2000
+#define TCG_CT_CONST_ZERO  0x4000
 
 /* Several places within the instruction set 0 means "no register"
    rather than TCG_REG_R0.  */
@@ -394,8 +395,11 @@ static const char *target_parse_constraint(TCGArgConstraint *ct,
     case 'A':
         ct->ct |= TCG_CT_CONST_ADLI;
         break;
-    case 'K':
-        ct->ct |= TCG_CT_CONST_MULI;
+    case 'I':
+        ct->ct |= TCG_CT_CONST_S16;
+        break;
+    case 'J':
+        ct->ct |= TCG_CT_CONST_S32;
         break;
     case 'O':
         ct->ct |= TCG_CT_CONST_ORI;
@@ -509,16 +513,10 @@ static int tcg_target_const_match(tcg_target_long val, TCGType type,
     }
 
     /* The following are mutually exclusive.  */
-    if (ct & TCG_CT_CONST_MULI) {
-        /* Immediates that may be used with multiply.  If we have the
-           general-instruction-extensions, then we have MULTIPLY SINGLE
-           IMMEDIATE with a signed 32-bit, otherwise we have only
-           MULTIPLY HALFWORD IMMEDIATE, with a signed 16-bit.  */
-        if (s390_facilities & FACILITY_GEN_INST_EXT) {
-            return val == (int32_t)val;
-        } else {
-            return val == (int16_t)val;
-        }
+    if (ct & TCG_CT_CONST_S16) {
+        return val == (int16_t)val;
+    } else if (ct & TCG_CT_CONST_S32) {
+        return val == (int32_t)val;
     } else if (ct & TCG_CT_CONST_ADLI) {
         return tcg_match_add2i(type, val);
     } else if (ct & TCG_CT_CONST_ORI) {
@@ -2383,7 +2381,8 @@ static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
     static const TCGTargetOpDef r_rZ = { 0, { "r", "rZ" } };
     static const TCGTargetOpDef r_r_ri = { 0, { "r", "r", "ri" } };
     static const TCGTargetOpDef r_0_ri = { 0, { "r", "0", "ri" } };
-    static const TCGTargetOpDef r_0_rK = { 0, { "r", "0", "rK" } };
+    static const TCGTargetOpDef r_0_rI = { 0, { "r", "0", "rI" } };
+    static const TCGTargetOpDef r_0_rJ = { 0, { "r", "0", "rJ" } };
     static const TCGTargetOpDef r_0_rO = { 0, { "r", "0", "rO" } };
     static const TCGTargetOpDef r_0_rX = { 0, { "r", "0", "rX" } };
 
@@ -2418,9 +2417,15 @@ static const TCGTargetOpDef *tcg_target_op_def(TCGOpcode op)
     case INDEX_op_sub_i32:
     case INDEX_op_sub_i64:
         return &r_0_ri;
+
     case INDEX_op_mul_i32:
+        /* If we have the general-instruction-extensions, then we have
+           MULTIPLY SINGLE IMMEDIATE with a signed 32-bit, otherwise we
+           have only MULTIPLY HALFWORD IMMEDIATE, with a signed 16-bit.  */
+        return (s390_facilities & FACILITY_GEN_INST_EXT ? &r_0_ri : &r_0_rI);
     case INDEX_op_mul_i64:
-        return &r_0_rK;
+        return (s390_facilities & FACILITY_GEN_INST_EXT ? &r_0_rJ : &r_0_rI);
+
     case INDEX_op_or_i32:
     case INDEX_op_or_i64:
         return &r_0_rO;
