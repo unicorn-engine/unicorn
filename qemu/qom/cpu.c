@@ -155,7 +155,6 @@ void cpu_reset(CPUState *cpu)
 static void cpu_common_reset(CPUState *cpu)
 {
     CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
-    int i;
 
     if (qemu_loglevel_mask(CPU_LOG_RESET)) {
         qemu_log("CPU Reset (CPU %d)\n", cpu->cpu_index);
