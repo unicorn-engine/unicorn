@@ -114,6 +114,7 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
            or we have executed all of the allowed instructions.  */
         if (tcg_op_buf_full(tcg_ctx) || db->num_insns >= max_insns) {
             db->is_jmp = DISAS_TOO_MANY;
+            db->uc->block_full = true;
             break;
         }
     }
