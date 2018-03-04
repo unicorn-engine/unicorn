@@ -345,21 +345,6 @@ bool cpu_restore_state(CPUState *cpu, uintptr_t retaddr)
     return false;
 }
 
-static void page_size_init(struct uc_struct *uc)
-{
-    /* NOTE: we can always suppose that qemu_host_page_size >=
-       TARGET_PAGE_SIZE */
-    uc->qemu_real_host_page_size = getpagesize();
-    uc->qemu_real_host_page_mask = -(intptr_t)uc->qemu_real_host_page_size;
-    if (uc->qemu_host_page_size == 0) {
-        uc->qemu_host_page_size = uc->qemu_real_host_page_size;
-    }
-    if (uc->qemu_host_page_size < TARGET_PAGE_SIZE) {
-        uc->qemu_host_page_size = TARGET_PAGE_SIZE;
-    }
-    uc->qemu_host_page_mask = -(intptr_t)uc->qemu_host_page_size;
-}
-
 static void page_init(struct uc_struct *uc)
 {
     page_size_init(uc);
@@ -949,7 +934,6 @@ void tb_flush(CPUState *cpu)
 {
     struct uc_struct* uc = cpu->uc;
     TCGContext *tcg_ctx = uc->tcg_ctx;
-    int i;
 
 #if defined(DEBUG_TB_FLUSH)
     printf("qemu: flush code_size=%ld nb_tbs=%d avg_tb_size=%ld\n",
@@ -1870,8 +1854,6 @@ static void tb_jmp_cache_clear_page(CPUState *cpu, target_ulong page_addr)
 
 void tb_flush_jmp_cache(CPUState *cpu, target_ulong addr)
 {
-    unsigned int i;
-
     /* Discard jump cache entries for any tb which might potentially
        overlap the flushed page.  */
     tb_jmp_cache_clear_page(cpu, addr - TARGET_PAGE_SIZE);
