@@ -4267,6 +4267,10 @@ static void gen_goto_ptr(DisasContext *s)
     tcg_temp_free(tcg_ctx, addr);
 }
 
+/* This will end the TB but doesn't guarantee we'll return to
+ * cpu_loop_exec. Any live exit_requests will be processed as we
+ * enter the next TB.
+ */
 static void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -4279,6 +4283,7 @@ static void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
         gen_set_pc_im(s, dest);
         gen_goto_ptr(s);
     }
+    s->is_jmp = DISAS_TB_JUMP;
 }
 
 static inline void gen_jmp(DisasContext *s, uint32_t dest)
