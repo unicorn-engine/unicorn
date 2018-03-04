@@ -4618,7 +4618,8 @@ static void gen_rfe(DisasContext *s, TCGv_i32 pc, TCGv_i32 cpsr)
      */
     gen_helper_cpsr_write_eret(tcg_ctx, tcg_ctx->cpu_env, cpsr);
     tcg_temp_free_i32(tcg_ctx, cpsr);
-    s->is_jmp = DISAS_JUMP;
+    /* Must exit loop to check un-masked IRQs */
+    s->is_jmp = DISAS_EXIT;
 }
 
 /* Generate an old-style exception return. Marks pc as dead. */
@@ -9690,7 +9691,8 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
                     tmp = load_cpu_field(s->uc, spsr);
                     gen_helper_cpsr_write_eret(tcg_ctx, tcg_ctx->cpu_env, tmp);
                     tcg_temp_free_i32(tcg_ctx, tmp);
-                    s->is_jmp = DISAS_JUMP;
+                    /* Must exit loop to check un-masked IRQs */
+                    s->is_jmp = DISAS_EXIT;
                 }
             }
             break;
