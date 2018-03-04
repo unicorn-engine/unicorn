@@ -1199,6 +1199,7 @@ typedef struct X86CPU {
     bool check_cpuid;
     bool enforce_cpuid;
     bool expose_kvm;
+    bool expose_tcg;
     bool migratable;
     bool max_features; /* Enable all supported features automatically */
     uint32_t apic_id;
