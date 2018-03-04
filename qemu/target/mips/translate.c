@@ -10867,8 +10867,24 @@ static void gen_rdhwr(DisasContext *ctx, int rt, int rd, int sel)
         gen_store_gpr(tcg_ctx, t0, rt);
         break;
     case 2:
+    // Unicorn: if'd out
+#if 0
+        if (ctx->tb->cflags & CF_USE_ICOUNT) {
+            gen_io_start();
+        }
+#endif
         gen_helper_rdhwr_cc(tcg_ctx, t0, tcg_ctx->cpu_env);
+#if 0
+        if (ctx->tb->cflags & CF_USE_ICOUNT) {
+            gen_io_end();
+        }
+#endif
         gen_store_gpr(tcg_ctx, t0, rt);
+        /* Break the TB to be able to take timer interrupts immediately
+           after reading count. BS_STOP isn't sufficient, we need to ensure
+           we break completely out of translated code.  */
+        gen_save_pc(ctx, ctx->pc + 4);
+        ctx->bstate = BS_EXCP;
         break;
     case 3:
         gen_helper_rdhwr_ccres(tcg_ctx, t0, tcg_ctx->cpu_env);
