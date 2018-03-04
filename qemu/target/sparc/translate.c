@@ -379,8 +379,7 @@ static inline void gen_mov_reg_N(DisasContext *dc, TCGv reg, TCGv_i32 src)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
     tcg_gen_extu_i32_tl(tcg_ctx, reg, src);
-    tcg_gen_shri_tl(tcg_ctx, reg, reg, PSR_NEG_SHIFT);
-    tcg_gen_andi_tl(tcg_ctx, reg, reg, 0x1);
+    tcg_gen_extract_tl(tcg_ctx, reg, reg, PSR_NEG_SHIFT, 1);
 }
 
 static inline void gen_mov_reg_Z(DisasContext *dc, TCGv reg, TCGv_i32 src)
@@ -388,8 +387,7 @@ static inline void gen_mov_reg_Z(DisasContext *dc, TCGv reg, TCGv_i32 src)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
     tcg_gen_extu_i32_tl(tcg_ctx, reg, src);
-    tcg_gen_shri_tl(tcg_ctx, reg, reg, PSR_ZERO_SHIFT);
-    tcg_gen_andi_tl(tcg_ctx, reg, reg, 0x1);
+    tcg_gen_extract_tl(tcg_ctx, reg, reg, PSR_ZERO_SHIFT, 1);
 }
 
 static inline void gen_mov_reg_V(DisasContext *dc, TCGv reg, TCGv_i32 src)
@@ -397,8 +395,7 @@ static inline void gen_mov_reg_V(DisasContext *dc, TCGv reg, TCGv_i32 src)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
     tcg_gen_extu_i32_tl(tcg_ctx, reg, src);
-    tcg_gen_shri_tl(tcg_ctx, reg, reg, PSR_OVF_SHIFT);
-    tcg_gen_andi_tl(tcg_ctx, reg, reg, 0x1);
+    tcg_gen_extract_tl(tcg_ctx, reg, reg, PSR_OVF_SHIFT, 1);
 }
 
 static inline void gen_mov_reg_C(DisasContext *dc, TCGv reg, TCGv_i32 src)
@@ -406,8 +403,7 @@ static inline void gen_mov_reg_C(DisasContext *dc, TCGv reg, TCGv_i32 src)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
     tcg_gen_extu_i32_tl(tcg_ctx, reg, src);
-    tcg_gen_shri_tl(tcg_ctx, reg, reg, PSR_CARRY_SHIFT);
-    tcg_gen_andi_tl(tcg_ctx, reg, reg, 0x1);
+    tcg_gen_extract_tl(tcg_ctx, reg, reg, PSR_CARRY_SHIFT, 1);
 }
 
 #if 0
@@ -682,8 +678,7 @@ static inline void gen_op_mulscc(DisasContext *dc, TCGv dst, TCGv src1, TCGv src
     // env->y = (b2 << 31) | (env->y >> 1);
     tcg_gen_andi_tl(tcg_ctx, r_temp, tcg_ctx->cpu_cc_src, 0x1);
     tcg_gen_shli_tl(tcg_ctx, r_temp, r_temp, 31);
-    tcg_gen_shri_tl(tcg_ctx, t0, tcg_ctx->cpu_y, 1);
-    tcg_gen_andi_tl(tcg_ctx, t0, t0, 0x7fffffff);
+    tcg_gen_extract_tl(tcg_ctx, t0, tcg_ctx->cpu_y, 1, 31);
     tcg_gen_or_tl(tcg_ctx, t0, t0, r_temp);
     tcg_gen_andi_tl(tcg_ctx, tcg_ctx->cpu_y, t0, 0xffffffff);
 
