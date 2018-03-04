@@ -3345,6 +3345,8 @@
 #define tokens_append_from_iter tokens_append_from_iter_mipsel
 #define tosa_init tosa_init_mipsel
 #define tosa_machine_init tosa_machine_init_mipsel
+#define translator_loop translator_loop_mipsel
+#define translator_loop_temp_check translator_loop_temp_check_mipsel
 #define tswap32 tswap32_mipsel
 #define tswap64 tswap64_mipsel
 #define type_class_get_size type_class_get_size_mipsel

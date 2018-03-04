@@ -3345,6 +3345,8 @@
 #define tokens_append_from_iter tokens_append_from_iter_mips
 #define tosa_init tosa_init_mips
 #define tosa_machine_init tosa_machine_init_mips
+#define translator_loop translator_loop_mips
+#define translator_loop_temp_check translator_loop_temp_check_mips
 #define tswap32 tswap32_mips
 #define tswap64 tswap64_mips
 #define type_class_get_size type_class_get_size_mips

@@ -3345,6 +3345,8 @@
 #define tokens_append_from_iter tokens_append_from_iter_armeb
 #define tosa_init tosa_init_armeb
 #define tosa_machine_init tosa_machine_init_armeb
+#define translator_loop translator_loop_armeb
+#define translator_loop_temp_check translator_loop_temp_check_armeb
 #define tswap32 tswap32_armeb
 #define tswap64 tswap64_armeb
 #define type_class_get_size type_class_get_size_armeb

@@ -3351,6 +3351,8 @@ symbols = (
     'tokens_append_from_iter',
     'tosa_init',
     'tosa_machine_init',
+    'translator_loop',
+    'translator_loop_temp_check',
     'tswap32',
     'tswap64',
     'type_class_get_size',

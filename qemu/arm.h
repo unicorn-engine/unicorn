@@ -3345,6 +3345,8 @@
 #define tokens_append_from_iter tokens_append_from_iter_arm
 #define tosa_init tosa_init_arm
 #define tosa_machine_init tosa_machine_init_arm
+#define translator_loop translator_loop_arm
+#define translator_loop_temp_check translator_loop_temp_check_arm
 #define tswap32 tswap32_arm
 #define tswap64 tswap64_arm
 #define type_class_get_size type_class_get_size_arm

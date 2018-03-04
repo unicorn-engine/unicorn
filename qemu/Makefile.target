@@ -48,6 +48,7 @@ obj-$(CONFIG_TCG) += tcg/tcg-common.o
 obj-y += fpu/softfloat.o
 obj-y += target/$(TARGET_BASE_ARCH)/
 obj-y += tcg-runtime.o
+obj-y += accel/
 
 #########################################################
 # System emulator target

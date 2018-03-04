@@ -3345,6 +3345,8 @@
 #define tokens_append_from_iter tokens_append_from_iter_aarch64eb
 #define tosa_init tosa_init_aarch64eb
 #define tosa_machine_init tosa_machine_init_aarch64eb
+#define translator_loop translator_loop_aarch64eb
+#define translator_loop_temp_check translator_loop_temp_check_aarch64eb
 #define tswap32 tswap32_aarch64eb
 #define tswap64 tswap64_aarch64eb
 #define type_class_get_size type_class_get_size_aarch64eb

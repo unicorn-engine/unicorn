@@ -3345,6 +3345,8 @@
 #define tokens_append_from_iter tokens_append_from_iter_sparc64
 #define tosa_init tosa_init_sparc64
 #define tosa_machine_init tosa_machine_init_sparc64
+#define translator_loop translator_loop_sparc64
+#define translator_loop_temp_check translator_loop_temp_check_sparc64
 #define tswap32 tswap32_sparc64
 #define tswap64 tswap64_sparc64
 #define type_class_get_size type_class_get_size_sparc64

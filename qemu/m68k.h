@@ -3345,6 +3345,8 @@
 #define tokens_append_from_iter tokens_append_from_iter_m68k
 #define tosa_init tosa_init_m68k
 #define tosa_machine_init tosa_machine_init_m68k
+#define translator_loop translator_loop_m68k
+#define translator_loop_temp_check translator_loop_temp_check_m68k
 #define tswap32 tswap32_m68k
 #define tswap64 tswap64_m68k
 #define type_class_get_size type_class_get_size_m68k
