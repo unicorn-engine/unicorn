@@ -320,7 +320,7 @@ static void gen_exception_internal_insn(DisasContext *s, int offset, int excp)
 {
     gen_a64_set_pc_im(s, s->pc - offset);
     gen_exception_internal(s, excp);
-    s->is_jmp = DISAS_EXC;
+    s->is_jmp = DISAS_NORETURN;
 }
 
 static void gen_exception_insn(DisasContext *s, int offset, int excp,
@@ -328,7 +328,7 @@ static void gen_exception_insn(DisasContext *s, int offset, int excp,
 {
     gen_a64_set_pc_im(s, s->pc - offset);
     gen_exception(s, excp, syndrome, target_el);
-    s->is_jmp = DISAS_EXC;
+    s->is_jmp = DISAS_NORETURN;
 }
 
 static void gen_ss_advance(DisasContext *s)
@@ -357,7 +357,7 @@ static void gen_step_complete_exception(DisasContext *s)
     gen_ss_advance(s);
     gen_exception(s, EXCP_UDEF, syn_swstep(s->ss_same_el, 1, s->is_ldex),
                   default_exception_el(s));
-    s->is_jmp = DISAS_EXC;
+    s->is_jmp = DISAS_NORETURN;
 }
 
 static inline bool use_goto_tb(DisasContext *s, int n, uint64_t dest)
@@ -389,7 +389,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
         tcg_gen_goto_tb(tcg_ctx, n);
         gen_a64_set_pc_im(s, dest);
         tcg_gen_exit_tb(tcg_ctx, (intptr_t)tb + n);
-        s->is_jmp = DISAS_TB_JUMP;
+        s->is_jmp = DISAS_NORETURN;
     } else {
         gen_a64_set_pc_im(s, dest);
         if (s->ss_active) {
@@ -398,7 +398,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
             gen_exception_internal(s, EXCP_DEBUG);
         } else {
             tcg_gen_lookup_and_goto_ptr(tcg_ctx, tcg_ctx->cpu_pc);
-            s->is_jmp = DISAS_TB_JUMP;
+            s->is_jmp = DISAS_NORETURN;
         }
     }
 }
@@ -11573,7 +11573,7 @@ void gen_intermediate_code_a64(CPUState *cs, TranslationBlock *tb)
             assert(num_insns == 1);
             gen_exception(dc, EXCP_UDEF, syn_swstep(dc->ss_same_el, 0, 0),
                           default_exception_el(dc));
-            dc->is_jmp = DISAS_EXC;
+            dc->is_jmp = DISAS_NORETURN;
             break;
         }
 
@@ -11605,21 +11605,25 @@ void gen_intermediate_code_a64(CPUState *cs, TranslationBlock *tb)
     //}
 
 tb_end:
-    if (unlikely(cs->singlestep_enabled || dc->ss_active)
-        && dc->is_jmp != DISAS_EXC) {
+    if (unlikely(cs->singlestep_enabled || dc->ss_active)) {
         /* Note that this means single stepping WFI doesn't halt the CPU.
          * For conditional branch insns this is harmless unreachable code as
          * gen_goto_tb() has already handled emitting the debug exception
          * (and thus a tb-jump is not possible when singlestepping).
          */
-        assert(dc->is_jmp != DISAS_TB_JUMP);
-        if (dc->is_jmp != DISAS_JUMP) {
+        switch (dc->is_jmp) {
+        default:
             gen_a64_set_pc_im(dc, dc->pc);
-        }
-        if (cs->singlestep_enabled) {
-            gen_exception_internal(dc, EXCP_DEBUG);
-        } else {
-            gen_step_complete_exception(dc);
+            /* fall through */
+        case DISAS_JUMP:
+            if (cs->singlestep_enabled) {
+                gen_exception_internal(dc, EXCP_DEBUG);
+            } else {
+                gen_step_complete_exception(dc);
+            }
+            break;
+        case DISAS_NORETURN:
+            break;
         }
     } else {
         switch (dc->is_jmp) {
@@ -11629,8 +11633,7 @@ tb_end:
         case DISAS_JUMP:
             tcg_gen_lookup_and_goto_ptr(tcg_ctx, tcg_ctx->cpu_pc);
             break;
-        case DISAS_TB_JUMP:
-        case DISAS_EXC:
+        case DISAS_NORETURN:
         case DISAS_SWI:
             break;
         case DISAS_WFE:
