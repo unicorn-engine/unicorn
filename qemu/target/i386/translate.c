@@ -9307,17 +9307,21 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
         num_insns++;
 
         /* If RF is set, suppress an internally generated breakpoint.  */
-        if (unlikely(cpu_breakpoint_test(cs, dc->base.pc_next,
-                                         tb->flags & HF_RF_MASK
-                                         ? BP_GDB : BP_ANY))) {
-            gen_debug(dc, dc->base.pc_next - dc->cs_base);
-            /* The address covered by the breakpoint must be included in
-               [tb->pc, tb->pc + tb->size) in order to for it to be
-               properly cleared -- thus we increment the PC here so that
-               the logic setting tb->size below does the right thing.  */
-            dc->base.pc_next += 1;
-            goto done_generating;
+        if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
+            CPUBreakpoint *bp;
+            QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
+                if (bp->pc == dc->base.pc_next) {
+                    if (i386_tr_breakpoint_check(&dc->base, cs, bp)) {
+                        break;
+                    }
+                }
+            }
+
+            if (dc->base.is_jmp == DISAS_NORETURN) {
+                break;
+            }
         }
+
         // Unicorn: commented out
         //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
         //    gen_io_start();
@@ -9366,8 +9370,11 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
             break;
         }
     }
-    //if (tb->cflags & CF_LAST_IO)
+
+    //if (tb->cflags & CF_LAST_IO) {
     //    gen_io_end();
+    //}
+// Unicorn: Left in for unicorn.
 done_generating:
     gen_tb_end(tcg_ctx, tb, num_insns);
 
