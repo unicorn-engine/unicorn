@@ -9144,10 +9144,9 @@ void tcg_x86_init(struct uc_struct *uc)
 }
 
 /* generate intermediate code for basic block 'tb'.  */
-void gen_intermediate_code(CPUX86State *env, TranslationBlock *tb)
+void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
 {
-    X86CPU *cpu = x86_env_get_cpu(env);
-    CPUState *cs = CPU(cpu);
+    CPUX86State *env = cs->env_ptr;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     DisasContext dc1, *dc = &dc1;
     target_ulong pc_ptr;
