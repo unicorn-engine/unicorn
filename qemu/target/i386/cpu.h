@@ -1567,7 +1567,6 @@ void QEMU_NORETURN raise_interrupt(CPUX86State *nenv, int intno, int is_int,
 /* cc_helper.c */
 extern const uint8_t parity_table[256];
 uint32_t cpu_cc_compute_all(CPUX86State *env1, int op);
-void update_fp_status(CPUX86State *env);
 
 static inline uint32_t cpu_compute_eflags(CPUX86State *env)
 {
@@ -1618,8 +1617,24 @@ static inline int32_t x86_get_a20_mask(CPUX86State *env)
 }
 
 /* fpu_helper.c */
-void cpu_set_mxcsr(CPUX86State *env, uint32_t val);
-void cpu_set_fpuc(CPUX86State *env, uint16_t val);
+void update_fp_status(CPUX86State *env);
+void update_mxcsr_status(CPUX86State *env);
+
+static inline void cpu_set_mxcsr(CPUX86State *env, uint32_t mxcsr)
+{
+    env->mxcsr = mxcsr;
+    if (tcg_enabled(env->uc)) {
+        update_mxcsr_status(env);
+    }
+}
+
+static inline void cpu_set_fpuc(CPUX86State *env, uint16_t fpuc)
+{
+     env->fpuc = fpuc;
+     if (tcg_enabled(env->uc)) {
+        update_fp_status(env);
+     }
+}
 
 /* svm_helper.c */
 void cpu_svm_check_intercept_param(CPUX86State *env1, uint32_t type,
