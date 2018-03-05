@@ -3444,10 +3444,6 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         goto out;
     }
 
-    if (tcg_enabled(env->uc)) {
-        tcg_x86_init(env->uc);
-    }
-
 #ifndef CONFIG_USER_ONLY
     //qemu_register_reset(x86_cpu_machine_reset_cb, cpu);
 
@@ -3660,6 +3656,7 @@ static void x86_cpu_common_class_init(struct uc_struct *uc, ObjectClass *oc, voi
 #endif
     cc->cpu_exec_enter = x86_cpu_exec_enter;
     cc->cpu_exec_exit = x86_cpu_exec_exit;
+    cc->tcg_initialize = tcg_x86_init;
 }
 
 void x86_cpu_register_types(void *opaque)

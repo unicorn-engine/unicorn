@@ -461,7 +461,6 @@ static void arm_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 
     if (tcg_enabled(uc)) {
         cpu->psci_version = 2; /* TCG implements PSCI 0.2 */
-        arm_translate_init(uc);
     }
 }
 
@@ -1516,6 +1515,7 @@ static void arm_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
 #if !defined(CONFIG_USER_ONLY)
     cc->adjust_watchpoint_address = arm_adjust_watchpoint_address;
 #endif
+    cc->tcg_initialize = arm_translate_init;
 }
 
 static void cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)

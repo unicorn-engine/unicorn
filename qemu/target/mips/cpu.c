@@ -131,10 +131,6 @@ static void mips_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cs->env_ptr = env;
     env->cpu_model = mcc->cpu_def;
     cpu_exec_init(cs, opaque);
-
-    if (tcg_enabled(uc)) {
-        mips_tcg_init(uc);
-    }
 }
 
 static char *mips_cpu_type_name(const char *cpu_model)
@@ -182,6 +178,7 @@ static void mips_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data
     cc->do_unaligned_access = mips_cpu_do_unaligned_access;
     cc->get_phys_page_debug = mips_cpu_get_phys_page_debug;
 #endif
+    cc->tcg_initialize = mips_tcg_init;
 }
 
 static void mips_cpu_cpudef_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)

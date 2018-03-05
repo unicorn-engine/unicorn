@@ -4473,7 +4473,6 @@ sparc_symbols = (
     'cpu_sparc_init',
     'cpu_sparc_set_id',
     'dump_mmu',
-    'gen_intermediate_code_init',
     'helper_check_align',
     'helper_check_ieee_exceptions',
     'helper_compute_C_icc',
@@ -4535,6 +4534,7 @@ sparc_symbols = (
     'sparc_reg_read',
     'sparc_reg_reset',
     'sparc_reg_write',
+    'sparc_tcg_init',
 )
 
 

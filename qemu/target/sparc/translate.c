@@ -141,9 +141,9 @@ static TCGv_i32 gen_load_fpr_F(DisasContext *dc, unsigned int src)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 #if TCG_TARGET_REG_BITS == 32
     if (src & 1) {
-        return TCGV_LOW(tcg_ctx->cpu_fpr[src / 2]);
+        return TCGV_LOW(tcg_ctx, tcg_ctx->cpu_fpr[src / 2]);
     } else {
-        return TCGV_HIGH(tcg_ctx->cpu_fpr[src / 2]);
+        return TCGV_HIGH(tcg_ctx, tcg_ctx->cpu_fpr[src / 2]);
     }
 #else
     TCGv_i32 ret = get_temp_i32(dc);
@@ -161,9 +161,9 @@ static void gen_store_fpr_F(DisasContext *dc, unsigned int dst, TCGv_i32 v)
     TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 #if TCG_TARGET_REG_BITS == 32
     if (dst & 1) {
-        tcg_gen_mov_i32(tcg_ctx, TCGV_LOW(tcg_ctx->cpu_fpr[dst / 2]), v);
+        tcg_gen_mov_i32(tcg_ctx, TCGV_LOW(tcg_ctx, tcg_ctx->cpu_fpr[dst / 2]), v);
     } else {
-        tcg_gen_mov_i32(tcg_ctx, TCGV_HIGH(tcg_ctx->cpu_fpr[dst / 2]), v);
+        tcg_gen_mov_i32(tcg_ctx, TCGV_HIGH(tcg_ctx, tcg_ctx->cpu_fpr[dst / 2]), v);
     }
 #else
     TCGv_i64 t = (TCGv_i64)v;
@@ -5974,15 +5974,18 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
         goto done_generating;
     }
 
+    // Unicorn: FIXME: Amend to work with new TCG API
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
+#if 0
     if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
         // save block address to see if we need to patch block size later
         env->uc->block_addr = pc_start;
         env->uc->size_arg = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
         gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
     }
+#endif
 
     gen_tb_start(tcg_ctx, tb);
     do {
@@ -6070,11 +6073,13 @@ done_generating:
     env->uc->block_full = block_full;
 }
 
-void gen_intermediate_code_init(CPUSPARCState *env)
+void sparc_tcg_init(struct uc_struct *uc)
 {
+    SPARCCPU *cpu = SPARC_CPU(s->uc, uc->cpu);
+    CPUSPARCState *env = &cpu->env;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    struct uc_struct *uc = env->uc;
     unsigned int i;
+
     static const char gregnames[32][4] = {
         "g0", "g1", "g2", "g3", "g4", "g5", "g6", "g7",
         "o0", "o1", "o2", "o3", "o4", "o5", "o6", "o7",

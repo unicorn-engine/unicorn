@@ -169,6 +169,10 @@ typedef struct CPUClass {
     void (*cpu_exec_exit)(CPUState *cpu);
     bool (*cpu_exec_interrupt)(CPUState *cpu, int interrupt_request);
     vaddr (*adjust_watchpoint_address)(CPUState *cpu, vaddr addr, int len);
+    void (*tcg_initialize)(struct uc_struct *uc);
+
+    /* Keep non-pointer data at the end to minimize holes.  */
+    bool tcg_initialized;
 } CPUClass;
 
 #ifdef HOST_WORDS_BIGENDIAN

@@ -572,6 +572,7 @@ AddressSpace *cpu_get_address_space(CPUState *cpu, int asidx)
 void cpu_exec_init(CPUState *cpu, void *opaque)
 {
     struct uc_struct *uc = opaque;
+    CPUClass *cc = CPU_GET_CLASS(uc, cpu);
     CPUArchState *env = cpu->env_ptr;
 
     cpu->as = NULL;
@@ -585,6 +586,11 @@ void cpu_exec_init(CPUState *cpu, void *opaque)
 
     // Unicorn: Required to clean-slate TLB state
     tlb_flush(cpu);
+
+    if (tcg_enabled(uc) && !cc->tcg_initialized) {
+        cc->tcg_initialized = true;
+        cc->tcg_initialize(uc);
+    }
 
 #ifndef CONFIG_USER_ONLY
 

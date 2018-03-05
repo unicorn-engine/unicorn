@@ -35,6 +35,7 @@
 #define SPARC_CPU_GET_CLASS(uc, obj) \
     OBJECT_GET_CLASS(uc, SPARCCPUClass, (obj), TYPE_SPARC_CPU)
 
+typedef struct sparc_def_t sparc_def_t;
 /**
  * SPARCCPUClass:
  * @parent_realize: The parent class' realize handler.

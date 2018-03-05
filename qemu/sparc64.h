@@ -3449,7 +3449,6 @@
 #define cpu_sparc_init cpu_sparc_init_sparc64
 #define cpu_sparc_set_id cpu_sparc_set_id_sparc64
 #define dump_mmu dump_mmu_sparc64
-#define gen_intermediate_code_init gen_intermediate_code_init_sparc64
 #define helper_check_align helper_check_align_sparc64
 #define helper_check_ieee_exceptions helper_check_ieee_exceptions_sparc64
 #define helper_compute_C_icc helper_compute_C_icc_sparc64
@@ -3511,4 +3510,5 @@
 #define sparc_reg_read sparc_reg_read_sparc64
 #define sparc_reg_reset sparc_reg_reset_sparc64
 #define sparc_reg_write sparc_reg_write_sparc64
+#define sparc_tcg_init sparc_tcg_init_sparc64
 #endif

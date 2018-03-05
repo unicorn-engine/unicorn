@@ -860,10 +860,6 @@ static void sparc_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 
     cs->env_ptr = env;
     cpu_exec_init(cs, opaque);
-
-    if (tcg_enabled(uc)) {
-        gen_intermediate_code_init(env);
-    }
 }
 
 static void sparc_cpu_uninitfn(struct uc_struct *uc, Object *obj, void *opaque)
@@ -904,6 +900,7 @@ static void sparc_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *da
     // Unicorn: commented out
     //cc->vmsd = &vmstate_sparc_cpu;
 #endif
+    cc->tcg_initialize = sparc_tcg_init;
 }
 
 void sparc_cpu_register_types(void *opaque)

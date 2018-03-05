@@ -234,10 +234,6 @@ static void m68k_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 
     cs->env_ptr = env;
     cpu_exec_init(cs, opaque);
-
-    if (tcg_enabled(uc)) {
-        m68k_tcg_init(uc);
-    }
 }
 
 static void m68k_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data)
@@ -262,6 +258,7 @@ static void m68k_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data
 #else
     cc->get_phys_page_debug = m68k_cpu_get_phys_page_debug;
 #endif
+    cc->tcg_initialize = m68k_tcg_init;
 }
 
 static void register_cpu_type(void *opaque, const M68kCPUInfo *info)
