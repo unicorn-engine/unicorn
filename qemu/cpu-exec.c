@@ -205,7 +205,7 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
     TranslationBlock *tb;
     target_ulong cs_base, pc;
     uint32_t flags;
-    bool have_tb_lock = false;
+    bool acquired_tb_lock = false;
 
     /* we record a subset of the CPU state. It will
        always be the same before a given translated block
@@ -224,7 +224,7 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
             mmap_lock();
             // Unicorn: commented out
             //tb_lock();
-            have_tb_lock = true;
+            acquired_tb_lock = true;
 
             /* There's a chance that our desired tb has been translated while
              * taking the locks so we check again inside the lock.
@@ -253,10 +253,10 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
 #endif
     /* See if we can patch the calling TB. */
     if (last_tb && !qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
-        if (!have_tb_lock) {
+        if (!acquired_tb_lock) {
             // Unicorn: commented out
             //tb_lock();
-            have_tb_lock = true;
+            acquired_tb_lock = true;
         }
         /* Check if translation buffer has been flushed */
         if (cpu->tb_flushed) {
@@ -265,7 +265,7 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
             tb_add_jump(last_tb, tb_exit, tb);
         }
     }
-    if (have_tb_lock) {
+    if (acquired_tb_lock) {
         // Unicorn: commented out
         //tb_unlock();
     }
