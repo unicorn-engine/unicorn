@@ -66,6 +66,12 @@
 /* make various TB consistency checks */
 /* #define DEBUG_TB_CHECK */
 
+#ifdef DEBUG_TB_FLUSH
+#define DEBUG_TB_FLUSH_GATE 1
+#else
+#define DEBUG_TB_FLUSH_GATE 0
+#endif
+
 #if !defined(CONFIG_USER_ONLY)
 /* TB consistency checks only implemented for usermode emulation.  */
 #undef DEBUG_TB_CHECK
@@ -935,13 +941,13 @@ void tb_flush(CPUState *cpu)
     struct uc_struct* uc = cpu->uc;
     TCGContext *tcg_ctx = uc->tcg_ctx;
 
-#if defined(DEBUG_TB_FLUSH)
-    printf("qemu: flush code_size=%ld nb_tbs=%d avg_tb_size=%ld\n",
-           (unsigned long)(tcg_ctx->code_gen_ptr - tcg_ctx->code_gen_buffer),
-           tcg_ctx->tb_ctx.nb_tbs, tcg_ctx->tb_ctx.nb_tbs > 0 ?
-           ((unsigned long)(tcg_ctx->code_gen_ptr - tcg_ctx->code_gen_buffer)) /
-           tcg_ctx->tb_ctx.nb_tbs : 0);
-#endif
+    if (DEBUG_TB_FLUSH_GATE) {
+        printf("qemu: flush code_size=%td nb_tbs=%d avg_tb_size=%td\n",
+               tcg_ctx->code_gen_ptr - tcg_ctx->code_gen_buffer,
+               tcg_ctx->tb_ctx.nb_tbs, tcg_ctx->tb_ctx.nb_tbs > 0 ?
+               (tcg_ctx->code_gen_ptr - tcg_ctx->code_gen_buffer) /
+               tcg_ctx->tb_ctx.nb_tbs : 0);
+    }
     if ((unsigned long)((char*)tcg_ctx->code_gen_ptr - (char*)tcg_ctx->code_gen_buffer)
         > tcg_ctx->code_gen_buffer_size) {
         cpu_abort(cpu, "Internal error: code buffer overflow\n");
