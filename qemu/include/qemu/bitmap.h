@@ -48,6 +48,8 @@
 #define DECLARE_BITMAP(name,bits)                  \
         unsigned long name[BITS_TO_LONGS(bits)]
 
+long slow_bitmap_count_one(const unsigned long *bitmap, long nbits);
+
 static inline unsigned long *bitmap_try_new(long nbits)
 {
     long len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
@@ -61,6 +63,15 @@ static inline unsigned long *bitmap_new(long nbits)
         abort();
     }
     return ptr;
+}
+
+static inline long bitmap_count_one(const unsigned long *bitmap, long nbits)
+{
+    if (small_nbits(nbits)) {
+        return ctpopl(*bitmap & BITMAP_LAST_WORD_MASK(nbits));
+    } else {
+        return slow_bitmap_count_one(bitmap, nbits);
+    }
 }
 
 void bitmap_set(unsigned long *map, long i, long len);
