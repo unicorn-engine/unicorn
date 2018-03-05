@@ -1093,6 +1093,7 @@
 #define gen_helper_usub8 gen_helper_usub8_sparc64
 #define gen_helper_usubaddx gen_helper_usubaddx_sparc64
 #define gen_helper_uxtb16 gen_helper_uxtb16_sparc64
+#define gen_helper_v7m_bxns gen_helper_v7m_bxns_sparc64
 #define gen_helper_v7m_mrs gen_helper_v7m_mrs_sparc64
 #define gen_helper_v7m_msr gen_helper_v7m_msr_sparc64
 #define gen_helper_vfp_absd gen_helper_vfp_absd_sparc64
@@ -2052,6 +2053,7 @@
 #define helper_usub8 helper_usub8_sparc64
 #define helper_usubaddx helper_usubaddx_sparc64
 #define helper_uxtb16 helper_uxtb16_sparc64
+#define helper_v7m_bxns helper_v7m_bxns_sparc64
 #define helper_v7m_mrs helper_v7m_mrs_sparc64
 #define helper_v7m_msr helper_v7m_msr_sparc64
 #define helper_vfp_absd helper_vfp_absd_sparc64

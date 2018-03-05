@@ -1093,6 +1093,7 @@
 #define gen_helper_usub8 gen_helper_usub8_mips
 #define gen_helper_usubaddx gen_helper_usubaddx_mips
 #define gen_helper_uxtb16 gen_helper_uxtb16_mips
+#define gen_helper_v7m_bxns gen_helper_v7m_bxns_mips
 #define gen_helper_v7m_mrs gen_helper_v7m_mrs_mips
 #define gen_helper_v7m_msr gen_helper_v7m_msr_mips
 #define gen_helper_vfp_absd gen_helper_vfp_absd_mips
@@ -2052,6 +2053,7 @@
 #define helper_usub8 helper_usub8_mips
 #define helper_usubaddx helper_usubaddx_mips
 #define helper_uxtb16 helper_uxtb16_mips
+#define helper_v7m_bxns helper_v7m_bxns_mips
 #define helper_v7m_mrs helper_v7m_mrs_mips
 #define helper_v7m_msr helper_v7m_msr_mips
 #define helper_vfp_absd helper_vfp_absd_mips
