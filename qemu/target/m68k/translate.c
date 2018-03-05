@@ -193,6 +193,7 @@ typedef void (*disas_proc)(CPUM68KState *env, DisasContext *s, uint16_t insn);
 
 static const uint8_t cc_op_live[CC_OP_NB] = {
     CCF_C | CCF_V | CCF_Z | CCF_N | CCF_X,
+    CCF_C | CCF_V | CCF_Z | CCF_N | CCF_X,
     CCF_X | CCF_N | CCF_V,
     CCF_X | CCF_N | CCF_V,
     CCF_X | CCF_N | CCF_V,
