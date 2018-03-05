@@ -6175,7 +6175,7 @@ void sparc_tcg_init(struct uc_struct *uc)
             "tbr");
 #endif
 
-    TCGV_UNUSED(tcg_ctx->cpu_regs[0]);
+    tcg_ctx->cpu_regs[0] = NULL;
     for (i = 1; i < 8; ++i) {
         tcg_ctx->cpu_regs_sparc[i] = tcg_global_mem_new(tcg_ctx, tcg_ctx->cpu_env,
                                                         offsetof(CPUSPARCState, gregs[i]),

@@ -835,7 +835,7 @@ static void gen_compute_eflags(DisasContext *s)
         return;
     }
 
-    TCGV_UNUSED(zero);
+    zero = NULL;
     dst = cpu_cc_dst;
     src1 = cpu_cc_src;
     src2 = cpu_cc_src2;
@@ -2316,8 +2316,7 @@ static TCGv gen_lea_modrm_1(DisasContext *s, AddressParts a)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv cpu_A0 = tcg_ctx->cpu_A0;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
-    TCGv ea;
-    TCGV_UNUSED(ea);
+    TCGv ea = NULL;
 
     if (a.index >= 0) {
         if (a.scale == 0) {
@@ -2333,7 +2332,7 @@ static TCGv gen_lea_modrm_1(DisasContext *s, AddressParts a)
     } else if (a.base >= 0) {
         ea = cpu_regs[a.base];
     }
-    if (TCGV_IS_UNUSED(ea)) {
+    if (!ea) {
         tcg_gen_movi_tl(tcg_ctx, cpu_A0, a.disp);
         ea = cpu_A0;
     } else if (a.disp != 0) {
@@ -4520,7 +4519,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                     gen_ldst_modrm(env, s, modrm, ot, OR_TMP0, 0);
 
                     /* Re-use the carry-out from a previous round.  */
-                    TCGV_UNUSED(carry_in);
+                    carry_in = NULL;
                     carry_out = (b == 0x1f6 ? cpu_cc_dst : cpu_cc_src2);
                     switch (s->cc_op) {
                     case CC_OP_ADCX:
@@ -4548,7 +4547,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                         break;
                     }
                     /* If we can't reuse carry-out, get it out of EFLAGS.  */
-                    if (TCGV_IS_UNUSED(carry_in)) {
+                    if (!carry_in) {
                         if (s->cc_op != CC_OP_ADCX && s->cc_op != CC_OP_ADOX) {
                             gen_compute_eflags(s);
                         }
@@ -8361,7 +8360,7 @@ case 0x101:
                 tcg_gen_mov_tl(tcg_ctx, a0, cpu_A0);
             } else {
                 gen_op_mov_v_reg(tcg_ctx, ot, t0, rm);
-                TCGV_UNUSED(a0);
+                a0 = NULL;
             }
             gen_op_mov_v_reg(tcg_ctx, ot, t1, reg);
             tcg_gen_andi_tl(tcg_ctx, cpu_tmp0, t0, 3);

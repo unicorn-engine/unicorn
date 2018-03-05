@@ -20667,7 +20667,7 @@ void mips_tcg_init(struct uc_struct *uc)
                 regnames[i]);
     }
 
-    TCGV_UNUSED(cpu_gpr[0]);
+    cpu_gpr[0] = NULL;
 
     for (i = 0; i < 32; i++) {
         int off = offsetof(CPUMIPSState, active_fpu.fpr[i].wr.d[0]);

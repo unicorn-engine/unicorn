@@ -813,8 +813,6 @@ void tcg_gen_lookup_and_goto_ptr(TCGContext *s);
 #define tcg_global_mem_new tcg_global_mem_new_i32
 #define tcg_temp_local_new(s) tcg_temp_local_new_i32(s)
 #define tcg_temp_free tcg_temp_free_i32
-#define TCGV_UNUSED(x) TCGV_UNUSED_I32(x)
-#define TCGV_IS_UNUSED(x) TCGV_IS_UNUSED_I32(x)
 #define tcg_gen_qemu_ld_tl tcg_gen_qemu_ld_i32
 #define tcg_gen_qemu_st_tl tcg_gen_qemu_st_i32
 #else
@@ -823,8 +821,6 @@ void tcg_gen_lookup_and_goto_ptr(TCGContext *s);
 #define tcg_global_mem_new tcg_global_mem_new_i64
 #define tcg_temp_local_new(s) tcg_temp_local_new_i64(s)
 #define tcg_temp_free tcg_temp_free_i64
-#define TCGV_UNUSED(x) TCGV_UNUSED_I64(x)
-#define TCGV_IS_UNUSED(x) TCGV_IS_UNUSED_I64(x)
 #define tcg_gen_qemu_ld_tl tcg_gen_qemu_ld_i64
 #define tcg_gen_qemu_st_tl tcg_gen_qemu_st_i64
 #endif
