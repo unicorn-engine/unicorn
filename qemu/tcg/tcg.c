@@ -488,8 +488,8 @@ static inline TCGTemp *tcg_global_alloc(TCGContext *s)
     return ts;
 }
 
-static int tcg_global_reg_new_internal(TCGContext *s, TCGType type,
-                                       TCGReg reg, const char *name)
+static TCGTemp *tcg_global_reg_new_internal(TCGContext *s, TCGType type,
+                                            TCGReg reg, const char *name)
 {
     TCGTemp *ts;
 
@@ -505,44 +505,42 @@ static int tcg_global_reg_new_internal(TCGContext *s, TCGType type,
     ts->name = name;
     tcg_regset_set_reg(s->reserved_regs, reg);
 
-    return temp_idx(s, ts);
+    return ts;
 }
 
 void tcg_set_frame(TCGContext *s, TCGReg reg, intptr_t start, intptr_t size)
 {
-    int idx;
     s->frame_start = start;
     s->frame_end = start + size;
-    idx = tcg_global_reg_new_internal(s, TCG_TYPE_PTR, reg, "_frame");
-    s->frame_temp = &s->temps[idx];
+    s->frame_temp
+        = tcg_global_reg_new_internal(s, TCG_TYPE_PTR, reg, "_frame");
 }
 
 TCGv_i32 tcg_global_reg_new_i32(TCGContext *s, TCGReg reg, const char *name)
 {
-    int idx;
+    TCGTemp *t;
 
     if (tcg_regset_test_reg(s->reserved_regs, reg)) {
         tcg_abort();
     }
-
-    idx = tcg_global_reg_new_internal(s, TCG_TYPE_I32, reg, name);
-    return MAKE_TCGV_I32(idx);
+    t = tcg_global_reg_new_internal(s, TCG_TYPE_I32, reg, name);
+    return temp_tcgv_i32(s, t);
 }
 
 TCGv_i64 tcg_global_reg_new_i64(TCGContext *s, TCGReg reg, const char *name)
 {
-    int idx;
+    TCGTemp *t;
 
     if (tcg_regset_test_reg(s->reserved_regs, reg)) {
         tcg_abort();
     }
 
-    idx = tcg_global_reg_new_internal(s, TCG_TYPE_I64, reg, name);
-    return MAKE_TCGV_I64(idx);
+    t = tcg_global_reg_new_internal(s, TCG_TYPE_I64, reg, name);
+    return temp_tcgv_i64(s, t);
 }
 
-int tcg_global_mem_new_internal(TCGContext *s, TCGType type, TCGv_ptr base,
-                                intptr_t offset, const char *name)
+TCGTemp *tcg_global_mem_new_internal(TCGContext *s, TCGType type, TCGv_ptr base,
+                                     intptr_t offset, const char *name)
 {
     TCGTemp *base_ts = &s->temps[GET_TCGV_PTR(base)];
     TCGTemp *ts = tcg_global_alloc(s);
@@ -593,10 +591,10 @@ int tcg_global_mem_new_internal(TCGContext *s, TCGType type, TCGv_ptr base,
         ts->mem_offset = offset;
         ts->name = name;
     }
-    return temp_idx(s, ts);
+    return ts;
 }
 
-static int tcg_temp_new_internal(TCGContext *s, TCGType type, int temp_local)
+static TCGTemp *tcg_temp_new_internal(TCGContext *s, TCGType type, int temp_local)
 {
     TCGTemp *ts;
     int idx, k;
@@ -632,35 +630,29 @@ static int tcg_temp_new_internal(TCGContext *s, TCGType type, int temp_local)
             ts->temp_allocated = 1;
             ts->temp_local = temp_local;
         }
-        idx = temp_idx(s, ts);
     }
 
 #if defined(CONFIG_DEBUG_TCG)
     s->temps_in_use++;
 #endif
-    return idx;
+    return ts;
 }
 
 TCGv_i32 tcg_temp_new_internal_i32(TCGContext *s, int temp_local)
 {
-    int idx;
-
-    idx = tcg_temp_new_internal(s, TCG_TYPE_I32, temp_local);
-    return MAKE_TCGV_I32(idx);
+    TCGTemp *t = tcg_temp_new_internal(s, TCG_TYPE_I32, temp_local);
+    return temp_tcgv_i32(s, t);
 }
 
 TCGv_i64 tcg_temp_new_internal_i64(TCGContext *s, int temp_local)
 {
-    int idx;
-
-    idx = tcg_temp_new_internal(s, TCG_TYPE_I64, temp_local);
-    return MAKE_TCGV_I64(idx);
+    TCGTemp *t = tcg_temp_new_internal(s, TCG_TYPE_I64, temp_local);
+    return temp_tcgv_i64(s, t);
 }
 
-static void tcg_temp_free_internal(TCGContext *s, int idx)
+static void tcg_temp_free_internal(TCGContext *s, TCGTemp *ts)
 {
-    TCGTemp *ts;
-    int k;
+    int k, idx;
 
 #if defined(CONFIG_DEBUG_TCG)
     s->temps_in_use--;
@@ -669,23 +661,23 @@ static void tcg_temp_free_internal(TCGContext *s, int idx)
     }
 #endif
 
-    tcg_debug_assert(idx >= s->nb_globals && idx < s->nb_temps);
-    ts = &s->temps[idx];
+    tcg_debug_assert(ts->temp_global == 0);
     tcg_debug_assert(ts->temp_allocated != 0);
     ts->temp_allocated = 0;
 
+    idx = temp_idx(s, ts);
     k = ts->base_type + (ts->temp_local ? TCG_TYPE_COUNT : 0);
     set_bit(idx, s->free_temps[k].l);
 }
 
 void tcg_temp_free_i32(TCGContext *s, TCGv_i32 arg)
 {
-    tcg_temp_free_internal(s, GET_TCGV_I32(arg));
+    tcg_temp_free_internal(s, tcgv_i32_temp(s, arg));
 }
 
 void tcg_temp_free_i64(TCGContext *s, TCGv_i64 arg)
 {
-    tcg_temp_free_internal(s, GET_TCGV_I64(arg));
+    tcg_temp_free_internal(s, tcgv_i64_temp(s, arg));
 }
 
 TCGv_i32 tcg_const_i32(TCGContext *s, int32_t val)
@@ -991,7 +983,7 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGTemp *ret, int nargs, TCGTemp *
         for (i = real_args = 0; i < nargs; ++i) {
             int is_64bit = sizemask & (1 << (i+1)*2);
             if (is_64bit) {
-                TCGv_i64 orig = MAKE_TCGV_I64(temp_idx(s, args[i]));
+                TCGv_i64 orig = temp_tcgv_i64(s, args[i]);
                 TCGv_i32 h = tcg_temp_new_i32(s);
                 TCGv_i32 l = tcg_temp_new_i32(s);
                 tcg_gen_extr_i64_i32(l, h, orig);
@@ -1011,7 +1003,7 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGTemp *ret, int nargs, TCGTemp *
         int is_signed = sizemask & (2 << (i+1)*2);
         if (!is_64bit) {
             TCGv_i64 temp = tcg_temp_new_i64(s);
-            TCGv_i64 orig = MAKE_TCGV_I64(temp_idx(s, args[i]));
+            TCGv_i64 orig = temp_tcgv_i64(s, args[i]);
             if (is_signed) {
                 tcg_gen_ext32s_i64(s, temp, orig);
             } else {
@@ -1119,10 +1111,8 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGTemp *ret, int nargs, TCGTemp *
     for (i = real_args = 0; i < orig_nargs; ++i) {
         int is_64bit = orig_sizemask & (1 << (i+1)*2);
         if (is_64bit) {
-            TCGv_i32 h = MAKE_TCGV_I32(temp_idx(s, args[real_args++]));
-            TCGv_i32 l = MAKE_TCGV_I32(temp_idx(s, args[real_args++]));
-            tcg_temp_free_i32(s, h);
-            tcg_temp_free_i32(s, l);
+            tcg_temp_free_internal(s, args[real_args++]);
+            tcg_temp_free_internal(s, args[real_args++]);
         } else {
             real_args++;
         }
@@ -1131,7 +1121,7 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGTemp *ret, int nargs, TCGTemp *
         /* The 32-bit ABI returned two 32-bit pieces.  Re-assemble them.
            Note that describing these as TCGv_i64 eliminates an unnecessary
            zero-extension that tcg_gen_concat_i32_i64 would create.  */
-        tcg_gen_concat32_i64(s, MAKE_TCGV_I64(temp_idx(s, ret)), retl, reth);
+        tcg_gen_concat32_i64(s, temp_tcgv_i64(s, ret), retl, reth);
         tcg_temp_free_i64(s, retl);
         tcg_temp_free_i64(s, reth);
     }
@@ -1139,8 +1129,7 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGTemp *ret, int nargs, TCGTemp *
     for (i = 0; i < nargs; ++i) {
         int is_64bit = sizemask & (1 << (i+1)*2);
         if (!is_64bit) {
-            TCGv_i64 temp = MAKE_TCGV_I64(temp_idx(s, args[i]));
-            tcg_temp_free_i64(s, temp);
+            tcg_temp_free_internal(s, args[i]);
         }
     }
 #endif /* TCG_TARGET_EXTEND_ARGS */

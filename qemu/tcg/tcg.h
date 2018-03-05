@@ -660,51 +660,6 @@ int tcg_gen_code(TCGContext *s, TranslationBlock *tb);
 
 void tcg_set_frame(TCGContext *s, TCGReg reg, intptr_t start, intptr_t size);
 
-int tcg_global_mem_new_internal(TCGContext *s, TCGType type, TCGv_ptr base, intptr_t offset, const char *name);
-
-TCGv_i32 tcg_global_reg_new_i32(TCGContext *s, TCGReg reg, const char *name);
-TCGv_i64 tcg_global_reg_new_i64(TCGContext *s, TCGReg reg, const char *name);
-
-TCGv_i32 tcg_temp_new_internal_i32(TCGContext *s, int temp_local);
-TCGv_i64 tcg_temp_new_internal_i64(TCGContext *s, int temp_local);
-
-void tcg_temp_free_i32(TCGContext *s, TCGv_i32 arg);
-void tcg_temp_free_i64(TCGContext *s, TCGv_i64 arg);
-
-static inline TCGv_i32 tcg_global_mem_new_i32(TCGContext *s, TCGv_ptr reg,
-                                              intptr_t offset, const char *name)
-{
-    int idx = tcg_global_mem_new_internal(s, TCG_TYPE_I32, reg, offset, name);
-    return MAKE_TCGV_I32(idx);
-}
-
-static inline TCGv_i32 tcg_temp_new_i32(TCGContext *s)
-{
-    return tcg_temp_new_internal_i32(s, 0);
-}
-
-static inline TCGv_i32 tcg_temp_local_new_i32(TCGContext *s)
-{
-    return tcg_temp_new_internal_i32(s, 1);
-}
-
-static inline TCGv_i64 tcg_global_mem_new_i64(TCGContext *s, TCGv_ptr reg,
-                                              intptr_t offset, const char *name)
-{
-    int idx = tcg_global_mem_new_internal(s, TCG_TYPE_I64, reg, offset, name);
-    return MAKE_TCGV_I64(idx);
-}
-
-static inline TCGv_i64 tcg_temp_new_i64(TCGContext *s)
-{
-    return tcg_temp_new_internal_i64(s, 0);
-}
-
-static inline TCGv_i64 tcg_temp_local_new_i64(TCGContext *s)
-{
-    return tcg_temp_new_internal_i64(s, 1);
-}
-
 #if defined(CONFIG_DEBUG_TCG)
 /* If you call tcg_clear_temp_count() at the start of a section of
  * code which is not supposed to leak any TCG temporaries, then
@@ -1044,6 +999,21 @@ static inline TCGTemp *tcgv_ptr_temp(TCGContext *s, TCGv_ptr t)
     return arg_temp(s, tcgv_ptr_arg(t));
 }
 
+static inline TCGv_i32 temp_tcgv_i32(TCGContext *s, TCGTemp *t)
+{
+    return (TCGv_i32)temp_idx(s, t);
+}
+
+static inline TCGv_i64 temp_tcgv_i64(TCGContext *s, TCGTemp *t)
+{
+    return (TCGv_i64)temp_idx(s, t);
+}
+
+static inline TCGv_ptr temp_tcgv_ptr(TCGContext *s, TCGTemp *t)
+{
+    return (TCGv_ptr)temp_idx(s, t);
+}
+
 static inline void tcg_set_insn_param(TCGContext *tcg_ctx, int op_idx, int arg, TCGArg v)
 {
     tcg_ctx->gen_op_buf[op_idx].args[arg] = v;
@@ -1059,6 +1029,52 @@ static inline int tcg_op_buf_count(TCGContext *tcg_ctx)
 static inline bool tcg_op_buf_full(TCGContext *tcg_ctx)
 {
     return tcg_op_buf_count(tcg_ctx) >= OPC_MAX_SIZE;
+}
+
+TCGTemp *tcg_global_mem_new_internal(TCGContext *s, TCGType type, TCGv_ptr base,
+                                     intptr_t offset, const char *name);
+
+TCGv_i32 tcg_global_reg_new_i32(TCGContext *s, TCGReg reg, const char *name);
+TCGv_i64 tcg_global_reg_new_i64(TCGContext *s, TCGReg reg, const char *name);
+
+TCGv_i32 tcg_temp_new_internal_i32(TCGContext *s, int temp_local);
+TCGv_i64 tcg_temp_new_internal_i64(TCGContext *s, int temp_local);
+
+void tcg_temp_free_i32(TCGContext *s, TCGv_i32 arg);
+void tcg_temp_free_i64(TCGContext *s, TCGv_i64 arg);
+
+static inline TCGv_i32 tcg_global_mem_new_i32(TCGContext *s, TCGv_ptr reg,
+                                              intptr_t offset, const char *name)
+{
+    TCGTemp *t = tcg_global_mem_new_internal(s, TCG_TYPE_I32, reg, offset, name);
+    return temp_tcgv_i32(s, t);
+}
+
+static inline TCGv_i32 tcg_temp_new_i32(TCGContext *s)
+{
+    return tcg_temp_new_internal_i32(s, 0);
+}
+
+static inline TCGv_i32 tcg_temp_local_new_i32(TCGContext *s)
+{
+    return tcg_temp_new_internal_i32(s, 1);
+}
+
+static inline TCGv_i64 tcg_global_mem_new_i64(TCGContext *s, TCGv_ptr reg,
+                                              intptr_t offset, const char *name)
+{
+    TCGTemp *t = tcg_global_mem_new_internal(s, TCG_TYPE_I64, reg, offset, name);
+    return temp_tcgv_i64(s, t);
+}
+
+static inline TCGv_i64 tcg_temp_new_i64(TCGContext *s)
+{
+    return tcg_temp_new_internal_i64(s, 0);
+}
+
+static inline TCGv_i64 tcg_temp_local_new_i64(TCGContext *s)
+{
+    return tcg_temp_new_internal_i64(s, 1);
 }
 
 // UNICORN: Added
