@@ -604,8 +604,8 @@ static bool swap_commutative2(TCGContext *s, TCGArg *p1, TCGArg *p2)
 /* Propagate constants and copies, fold constant expressions. */
 void tcg_optimize(TCGContext *s)
 {
-    int oi, oi_next, nb_temps, nb_globals;
-    TCGOp *prev_mb = NULL;
+    int nb_temps, nb_globals;
+    TCGOp *op, *op_next, *prev_mb = NULL;
 
     /* Array VALS has an element for each temp.
        If this temp holds a constant then its value is kept in VALS' element.
@@ -616,16 +616,13 @@ void tcg_optimize(TCGContext *s)
     nb_globals = s->nb_globals;
     reset_all_temps(s, nb_temps);
 
-    for (oi = s->gen_op_buf[0].next; oi != 0; oi = oi_next) {
+    QTAILQ_FOREACH_SAFE(op, &s->ops, link, op_next) {
         tcg_target_ulong mask, partmask, affected;
         int nb_oargs, nb_iargs, i;
         TCGArg tmp;
 
-        TCGOp * const op = &s->gen_op_buf[oi];
         TCGOpcode opc = op->opc;
         const TCGOpDef *def = &s->tcg_op_defs[opc];
-
-        oi_next = op->next;
 
         /* Count the arguments, and initialize the temps that are
            going to be used */
@@ -1260,9 +1257,6 @@ void tcg_optimize(TCGContext *s)
                 rh = op->args[1];
                 tcg_opt_gen_movi(s, op, rl, (int32_t)a);
                 tcg_opt_gen_movi(s, op2, rh, (int32_t)(a >> 32));
-
-                /* We've done all we need to do with the movi.  Skip it.  */
-                oi_next = op2->next;
                 break;
             }
             goto do_default;
@@ -1279,9 +1273,6 @@ void tcg_optimize(TCGContext *s)
                 rh = op->args[1];
                 tcg_opt_gen_movi(s, op, rl, (int32_t)r);
                 tcg_opt_gen_movi(s, op2, rh, (int32_t)(r >> 32));
-
-                /* We've done all we need to do with the movi.  Skip it.  */
-                oi_next = op2->next;
                 break;
             }
             goto do_default;

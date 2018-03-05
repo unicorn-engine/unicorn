@@ -2977,6 +2977,7 @@
 #define tcg_current_code_size tcg_current_code_size_sparc64
 #define tcg_dump_info tcg_dump_info_sparc64
 #define tcg_dump_ops tcg_dump_ops_sparc64
+#define tcg_emit_op tcg_emit_op_sparc64
 #define tcg_enabled tcg_enabled_sparc64
 #define tcg_exec_all tcg_exec_all_sparc64
 #define tcg_exec_init tcg_exec_init_sparc64

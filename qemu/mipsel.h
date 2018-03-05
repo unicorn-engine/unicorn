@@ -2977,6 +2977,7 @@
 #define tcg_current_code_size tcg_current_code_size_mipsel
 #define tcg_dump_info tcg_dump_info_mipsel
 #define tcg_dump_ops tcg_dump_ops_mipsel
+#define tcg_emit_op tcg_emit_op_mipsel
 #define tcg_enabled tcg_enabled_mipsel
 #define tcg_exec_all tcg_exec_all_mipsel
 #define tcg_exec_init tcg_exec_init_mipsel

@@ -65,8 +65,8 @@ typedef struct DisasContext {
     bool ss_same_el;
     /* Bottom two bits of XScale c15_cpar coprocessor access control reg */
     int c15_cpar;
-    /* TCG op index of the current insn_start.  */
-    int insn_start_idx;
+    /* TCG op of the current insn_start.  */
+    TCGOp *insn_start;
 #define TMP_A64_MAX 16
     int tmp_a64_count;
     TCGv_i64 tmp_a64[TMP_A64_MAX];
@@ -107,8 +107,6 @@ static inline int default_exception_el(DisasContext *s)
 
 static void disas_set_insn_syndrome(DisasContext *s, uint32_t syn)
 {
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-
     /* We don't need to save all of the syndrome so we mask and shift
      * out unneeded bits to help the sleb128 encoder do a better job.
      */
@@ -116,9 +114,9 @@ static void disas_set_insn_syndrome(DisasContext *s, uint32_t syn)
     syn >>= ARM_INSN_START_WORD2_SHIFT;
 
     /* We check and clear insn_start_idx to catch multiple updates.  */
-    assert(s->insn_start_idx != 0);
-    tcg_set_insn_param(tcg_ctx, s->insn_start_idx, 2, syn);
-    s->insn_start_idx = 0;
+    assert(s->insn_start != NULL);
+    tcg_set_insn_param(s->insn_start, 2, syn);
+    s->insn_start = NULL;
 }
 
 /* target-specific extra values for is_jmp */

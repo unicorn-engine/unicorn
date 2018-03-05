@@ -2977,6 +2977,7 @@
 #define tcg_current_code_size tcg_current_code_size_powerpc
 #define tcg_dump_info tcg_dump_info_powerpc
 #define tcg_dump_ops tcg_dump_ops_powerpc
+#define tcg_emit_op tcg_emit_op_powerpc
 #define tcg_enabled tcg_enabled_powerpc
 #define tcg_exec_all tcg_exec_all_powerpc
 #define tcg_exec_init tcg_exec_init_powerpc

@@ -2983,6 +2983,7 @@ symbols = (
     'tcg_current_code_size',
     'tcg_dump_info',
     'tcg_dump_ops',
+    'tcg_emit_op',
     'tcg_enabled',
     'tcg_exec_all',
     'tcg_exec_init',

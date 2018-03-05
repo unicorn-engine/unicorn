@@ -12312,10 +12312,10 @@ static void arm_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     TCGContext *tcg_ctx = cpu->uc->tcg_ctx;
 
-    dc->insn_start_idx = tcg_op_buf_count(tcg_ctx);
     tcg_gen_insn_start(tcg_ctx, dc->pc,
                        (dc->condexec_cond << 4) | (dc->condexec_mask >> 1),
                        0);
+    dc->insn_start = tcg_last_op(tcg_ctx);
 }
 
 static bool arm_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cpu,

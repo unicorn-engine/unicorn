@@ -2977,6 +2977,7 @@
 #define tcg_current_code_size tcg_current_code_size_mips64
 #define tcg_dump_info tcg_dump_info_mips64
 #define tcg_dump_ops tcg_dump_ops_mips64
+#define tcg_emit_op tcg_emit_op_mips64
 #define tcg_enabled tcg_enabled_mips64
 #define tcg_exec_all tcg_exec_all_mips64
 #define tcg_exec_init tcg_exec_init_mips64

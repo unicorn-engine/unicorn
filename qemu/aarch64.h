@@ -2977,6 +2977,7 @@
 #define tcg_current_code_size tcg_current_code_size_aarch64
 #define tcg_dump_info tcg_dump_info_aarch64
 #define tcg_dump_ops tcg_dump_ops_aarch64
+#define tcg_emit_op tcg_emit_op_aarch64
 #define tcg_enabled tcg_enabled_aarch64
 #define tcg_exec_all tcg_exec_all_aarch64
 #define tcg_exec_init tcg_exec_init_aarch64

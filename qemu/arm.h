@@ -2977,6 +2977,7 @@
 #define tcg_current_code_size tcg_current_code_size_arm
 #define tcg_dump_info tcg_dump_info_arm
 #define tcg_dump_ops tcg_dump_ops_arm
+#define tcg_emit_op tcg_emit_op_arm
 #define tcg_enabled tcg_enabled_arm
 #define tcg_exec_all tcg_exec_all_arm
 #define tcg_exec_init tcg_exec_init_arm
