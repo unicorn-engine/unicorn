@@ -58,6 +58,9 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 
 #define QEMU_ALIGNED(A, B) __declspec(align(A)) B
 
+// Unicorn: Addition for thread-local variables
+#define QEMU_THREAD_LOCAL_VAR __declspec(thread)
+
 #define cat(x,y) x ## y
 #define cat2(x,y) cat(x,y)
 
@@ -119,6 +122,9 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #endif
 
 #define QEMU_ALIGNED(A, B) B __attribute__((aligned(A)))
+
+// Unicorn: Addition for thread-local variables
+#define QEMU_THREAD_LOCAL_VAR __thread
 
 #ifndef glue
 #define xglue(x, y) x ## y
