@@ -2905,7 +2905,6 @@
 #define swap_commutative swap_commutative_arm
 #define swap_commutative2 swap_commutative2_arm
 #define switch_mode switch_mode_arm
-#define switch_v7m_sp switch_v7m_sp_arm
 #define syn_aa32_bkpt syn_aa32_bkpt_arm
 #define syn_aa32_hvc syn_aa32_hvc_arm
 #define syn_aa32_smc syn_aa32_smc_arm
@@ -3422,6 +3421,7 @@
 #define write_cpustate_to_list write_cpustate_to_list_arm
 #define write_list_to_cpustate write_list_to_cpustate_arm
 #define write_raw_cp_reg write_raw_cp_reg_arm
+#define write_v7m_exception write_v7m_exception_arm
 #define x86_ldl_phys x86_ldl_phys_arm
 #define x86_ldq_phys x86_ldq_phys_arm
 #define x86_ldub_phys x86_ldub_phys_arm

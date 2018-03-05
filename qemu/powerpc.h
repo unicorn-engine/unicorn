@@ -2905,7 +2905,6 @@
 #define swap_commutative swap_commutative_powerpc
 #define swap_commutative2 swap_commutative2_powerpc
 #define switch_mode switch_mode_powerpc
-#define switch_v7m_sp switch_v7m_sp_powerpc
 #define syn_aa32_bkpt syn_aa32_bkpt_powerpc
 #define syn_aa32_hvc syn_aa32_hvc_powerpc
 #define syn_aa32_smc syn_aa32_smc_powerpc
@@ -3422,6 +3421,7 @@
 #define write_cpustate_to_list write_cpustate_to_list_powerpc
 #define write_list_to_cpustate write_list_to_cpustate_powerpc
 #define write_raw_cp_reg write_raw_cp_reg_powerpc
+#define write_v7m_exception write_v7m_exception_powerpc
 #define x86_ldl_phys x86_ldl_phys_powerpc
 #define x86_ldq_phys x86_ldq_phys_powerpc
 #define x86_ldub_phys x86_ldub_phys_powerpc

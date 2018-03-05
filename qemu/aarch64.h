@@ -2905,7 +2905,6 @@
 #define swap_commutative swap_commutative_aarch64
 #define swap_commutative2 swap_commutative2_aarch64
 #define switch_mode switch_mode_aarch64
-#define switch_v7m_sp switch_v7m_sp_aarch64
 #define syn_aa32_bkpt syn_aa32_bkpt_aarch64
 #define syn_aa32_hvc syn_aa32_hvc_aarch64
 #define syn_aa32_smc syn_aa32_smc_aarch64
@@ -3422,6 +3421,7 @@
 #define write_cpustate_to_list write_cpustate_to_list_aarch64
 #define write_list_to_cpustate write_list_to_cpustate_aarch64
 #define write_raw_cp_reg write_raw_cp_reg_aarch64
+#define write_v7m_exception write_v7m_exception_aarch64
 #define x86_ldl_phys x86_ldl_phys_aarch64
 #define x86_ldq_phys x86_ldq_phys_aarch64
 #define x86_ldub_phys x86_ldub_phys_aarch64
