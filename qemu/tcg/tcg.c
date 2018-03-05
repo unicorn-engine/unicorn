@@ -471,7 +471,8 @@ void tcg_prologue_init(TCGContext *s)
                 }
             }
         } else {
-            log_disas(buf0, prologue_size);
+            // Unicorn: commented out
+            //log_disas(buf0, prologue_size);
         }
         qemu_log("\n");
         qemu_log_flush();
