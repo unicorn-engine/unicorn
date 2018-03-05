@@ -686,25 +686,17 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
 
 #ifndef CONFIG_USER_ONLY
     if (cpu->has_el3 || arm_feature(env, ARM_FEATURE_M_SECURITY)) {
-        AddressSpace *as;
-
         cs->num_ases = 2;
 
         if (!cpu->secure_memory) {
             cpu->secure_memory = cs->memory;
         }
-        as = address_space_init_shareable(uc,
-                                          cpu->secure_memory,
-                                          "cpu-secure-memory");
-        cpu_address_space_init(cs, as, ARMASIdx_S);
+        cpu_address_space_init(cs, ARMASIdx_S, "cpu-secure-memory",
+                               cpu->secure_memory);
     } else {
         cs->num_ases = 1;
     }
-    cpu_address_space_init(cs,
-                           address_space_init_shareable(uc,
-                                                        cs->memory,
-                                                        "cpu-memory"),
-                           ARMASIdx_NS);
+    cpu_address_space_init(cs, ARMASIdx_NS, "cpu-memory", cs->memory);
 #endif
 
     init_cpreg_list(cpu);

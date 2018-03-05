@@ -4108,10 +4108,6 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
 
 #ifndef CONFIG_USER_ONLY
     if (tcg_enabled(uc)) {
-        AddressSpace *as_normal = address_space_init_shareable(uc, cs->memory,
-                                                               "cpu-memory");
-        AddressSpace *as_smm = g_new(AddressSpace, 1);
-
         cpu->cpu_as_mem = g_new(MemoryRegion, 1);
         cpu->cpu_as_root = g_new(MemoryRegion, 1);
 
@@ -4126,11 +4122,10 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
                                  get_system_memory(uc), 0, ~0ull);
         memory_region_add_subregion_overlap(cpu->cpu_as_root, 0, cpu->cpu_as_mem, 0);
         memory_region_set_enabled(cpu->cpu_as_mem, true);
-        address_space_init(uc, as_smm, cpu->cpu_as_root, "CPU");
 
         cs->num_ases = 2;
-        cpu_address_space_init(cs, as_normal, 0);
-        cpu_address_space_init(cs, as_smm, 1);
+        cpu_address_space_init(cs, 0, "cpu-memory", cs->memory);
+        cpu_address_space_init(cs, 1, "cpu-smm", cpu->cpu_as_root);
     }
 #endif
 
