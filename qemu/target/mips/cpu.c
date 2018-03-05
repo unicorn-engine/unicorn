@@ -21,6 +21,7 @@
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "cpu.h"
+#include "internal.h"
 #include "qemu-common.h"
 #include "exec/exec-all.h"
 #include "hw/mips/mips.h"

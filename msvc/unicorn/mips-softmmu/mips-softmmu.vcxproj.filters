@@ -96,8 +96,8 @@
     <ClCompile Include="..\..\..\qemu\hw\mips\addr.c">
       <Filter>hw\mips</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\hw\mips\cputimer.c">
-      <Filter>hw\mips</Filter>
+    <ClCompile Include="..\..\..\qemu\target\mips\cp0_timer.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\target\mips\cpu.c">
       <Filter>target\mips</Filter>

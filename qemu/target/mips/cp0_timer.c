@@ -22,9 +22,9 @@
 
 #include "qemu/osdep.h"
 #include "cpu.h"
-#include "hw/hw.h"
 #include "hw/mips/cpudevs.h"
 #include "qemu/timer.h"
+#include "internal.h"
 
 #define TIMER_FREQ	100 * 1000 * 1000
 

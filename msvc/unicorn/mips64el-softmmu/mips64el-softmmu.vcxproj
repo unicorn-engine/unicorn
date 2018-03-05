@@ -45,11 +45,11 @@
     <ClCompile Include="..\..\..\qemu\exec.c" />
     <ClCompile Include="..\..\..\qemu\fpu\softfloat.c" />
     <ClCompile Include="..\..\..\qemu\hw\mips\addr.c" />
-    <ClCompile Include="..\..\..\qemu\hw\mips\cputimer.c" />
     <ClCompile Include="..\..\..\qemu\hw\mips\mips_r4k.c" />
     <ClCompile Include="..\..\..\qemu\ioport.c" />
     <ClCompile Include="..\..\..\qemu\memory.c" />
     <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
+    <ClCompile Include="..\..\..\qemu\target\mips\cp0_timer.c" />
     <ClCompile Include="..\..\..\qemu\target\mips\cpu.c" />
     <ClCompile Include="..\..\..\qemu\target\mips\dsp_helper.c" />
     <ClCompile Include="..\..\..\qemu\target\mips\helper.c" />

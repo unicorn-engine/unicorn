@@ -83,9 +83,6 @@
     <ClCompile Include="..\..\..\qemu\hw\mips\addr.c">
       <Filter>hw\mips</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\hw\mips\cputimer.c">
-      <Filter>hw\mips</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\optimize.c">
       <Filter>tcg</Filter>
     </ClCompile>
@@ -97,6 +94,9 @@
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c">
       <Filter>tcg\i386</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target\mips\cp0_timer.c">
+      <Filter>target\mips</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\target\mips\cpu.c">
       <Filter>target\mips</Filter>
