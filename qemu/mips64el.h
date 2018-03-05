@@ -1094,6 +1094,7 @@
 #define gen_helper_usub8 gen_helper_usub8_mips64el
 #define gen_helper_usubaddx gen_helper_usubaddx_mips64el
 #define gen_helper_uxtb16 gen_helper_uxtb16_mips64el
+#define gen_helper_v7m_blxns gen_helper_v7m_blxns_mips64el
 #define gen_helper_v7m_bxns gen_helper_v7m_bxns_mips64el
 #define gen_helper_v7m_mrs gen_helper_v7m_mrs_mips64el
 #define gen_helper_v7m_msr gen_helper_v7m_msr_mips64el
@@ -2054,6 +2055,7 @@
 #define helper_usub8 helper_usub8_mips64el
 #define helper_usubaddx helper_usubaddx_mips64el
 #define helper_uxtb16 helper_uxtb16_mips64el
+#define helper_v7m_blxns helper_v7m_blxns_mips64el
 #define helper_v7m_bxns helper_v7m_bxns_mips64el
 #define helper_v7m_mrs helper_v7m_mrs_mips64el
 #define helper_v7m_msr helper_v7m_msr_mips64el

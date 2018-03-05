@@ -1094,6 +1094,7 @@
 #define gen_helper_usub8 gen_helper_usub8_aarch64eb
 #define gen_helper_usubaddx gen_helper_usubaddx_aarch64eb
 #define gen_helper_uxtb16 gen_helper_uxtb16_aarch64eb
+#define gen_helper_v7m_blxns gen_helper_v7m_blxns_aarch64eb
 #define gen_helper_v7m_bxns gen_helper_v7m_bxns_aarch64eb
 #define gen_helper_v7m_mrs gen_helper_v7m_mrs_aarch64eb
 #define gen_helper_v7m_msr gen_helper_v7m_msr_aarch64eb
@@ -2054,6 +2055,7 @@
 #define helper_usub8 helper_usub8_aarch64eb
 #define helper_usubaddx helper_usubaddx_aarch64eb
 #define helper_uxtb16 helper_uxtb16_aarch64eb
+#define helper_v7m_blxns helper_v7m_blxns_aarch64eb
 #define helper_v7m_bxns helper_v7m_bxns_aarch64eb
 #define helper_v7m_mrs helper_v7m_mrs_aarch64eb
 #define helper_v7m_msr helper_v7m_msr_aarch64eb

@@ -1094,6 +1094,7 @@
 #define gen_helper_usub8 gen_helper_usub8_arm
 #define gen_helper_usubaddx gen_helper_usubaddx_arm
 #define gen_helper_uxtb16 gen_helper_uxtb16_arm
+#define gen_helper_v7m_blxns gen_helper_v7m_blxns_arm
 #define gen_helper_v7m_bxns gen_helper_v7m_bxns_arm
 #define gen_helper_v7m_mrs gen_helper_v7m_mrs_arm
 #define gen_helper_v7m_msr gen_helper_v7m_msr_arm
@@ -2054,6 +2055,7 @@
 #define helper_usub8 helper_usub8_arm
 #define helper_usubaddx helper_usubaddx_arm
 #define helper_uxtb16 helper_uxtb16_arm
+#define helper_v7m_blxns helper_v7m_blxns_arm
 #define helper_v7m_bxns helper_v7m_bxns_arm
 #define helper_v7m_mrs helper_v7m_mrs_arm
 #define helper_v7m_msr helper_v7m_msr_arm
