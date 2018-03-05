@@ -317,14 +317,14 @@ struct CPUState {
     struct kvm_run *kvm_run;
 
     /* TODO Move common fields from CPUArchState here. */
-    int cpu_index; /* used by alpha TCG */
-    uint32_t halted; /* used by alpha, cris, ppc TCG */
+    int cpu_index;
+    uint32_t halted;
     union {
         uint32_t u32;
         icount_decr_u16 u16;
     } icount_decr;
     uint32_t can_do_io;
-    int32_t exception_index; /* used by m68k TCG */
+    int32_t exception_index;
 
     /* Used to keep track of an outstanding cpu throttle thread for migration
      * autoconverge
