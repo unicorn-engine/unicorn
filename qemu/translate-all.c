@@ -167,7 +167,7 @@ static void page_table_config_init(struct uc_struct *uc)
 
 static void cpu_gen_init(struct uc_struct *uc)
 {
-    uc->tcg_ctx = g_malloc(sizeof(TCGContext));
+    uc->tcg_ctx = g_malloc0(sizeof(TCGContext));
     tcg_context_init(uc->tcg_ctx);
 }
 
