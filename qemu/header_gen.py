@@ -1172,8 +1172,6 @@ symbols = (
     'gen_helper_yield',
     'gen_hvc',
     'gen_intermediate_code',
-    'gen_intermediate_code',
-    'gen_intermediate_code_a64',
     'gen_iwmmxt_address',
     'gen_iwmmxt_shift',
     'gen_jmp',
@@ -3443,6 +3441,7 @@ symbols = (
 )
 
 arm_symbols = (
+    'aarch64_translator_ops',
     'ARM_REGS_STORAGE_SIZE',
     'arm_regime_tbi0',
     'arm_regime_tbi1',
@@ -3456,6 +3455,7 @@ aarch64_symbols = (
     'ARM64_REGS_STORAGE_SIZE',
     'aarch64_cpu_do_interrupt',
     'aarch64_cpu_register_types',
+    'aarch64_translator_ops',
     'arm64_reg_read',
     'arm64_reg_reset',
     'arm64_reg_write',

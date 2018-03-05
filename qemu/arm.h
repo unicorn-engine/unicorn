@@ -1166,8 +1166,6 @@
 #define gen_helper_yield gen_helper_yield_arm
 #define gen_hvc gen_hvc_arm
 #define gen_intermediate_code gen_intermediate_code_arm
-#define gen_intermediate_code gen_intermediate_code_arm
-#define gen_intermediate_code_a64 gen_intermediate_code_a64_arm
 #define gen_iwmmxt_address gen_iwmmxt_address_arm
 #define gen_iwmmxt_shift gen_iwmmxt_shift_arm
 #define gen_jmp gen_jmp_arm
@@ -3434,6 +3432,7 @@
 #define xpsr_write xpsr_write_arm
 #define xscale_cp_reginfo xscale_cp_reginfo_arm
 #define xscale_cpar_write xscale_cpar_write_arm
+#define aarch64_translator_ops aarch64_translator_ops_arm
 #define ARM_REGS_STORAGE_SIZE ARM_REGS_STORAGE_SIZE_arm
 #define arm_regime_tbi0 arm_regime_tbi0_arm
 #define arm_regime_tbi1 arm_regime_tbi1_arm

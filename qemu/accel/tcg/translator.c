@@ -44,6 +44,8 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
     db->singlestep_enabled = cpu->singlestep_enabled;
     db->uc = cpu->uc;
 
+    db->uc->block_full = false;
+
     /* Instruction counting */
     max_insns = db->tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0) {
@@ -62,6 +64,26 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
 
     /* Reset the temp count so that we can identify leaks */
     tcg_clear_temp_count();
+
+    /* Unicorn: early check to see if the address of this block is
+     * the "run until" address. */
+    if (tb->pc == cpu->uc->addr_end) {
+        gen_tb_start(tcg_ctx, tb);
+        goto tb_end;
+    }
+
+    /* Unicorn: trace this block on request
+     * Only hook this block if it is not broken from previous translation due to
+     * full translation cache
+     */
+    if (!cpu->uc->block_full && HOOK_EXISTS_BOUNDED(cpu->uc, UC_HOOK_BLOCK, db->pc_first)) {
+        // Save block address to see if we need to patch block size later
+        cpu->uc->block_addr = db->pc_first;
+        cpu->uc->size_arg = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
+        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, cpu->uc, db->pc_first);
+    } else {
+        cpu->uc->size_arg = -1;
+    }
 
     /* Start translating.  */
     gen_tb_start(tcg_ctx, db->tb);
@@ -119,6 +141,7 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
         }
     }
 
+tb_end:
     /* Emit code to exit the TB, as indicated by db->is_jmp.  */
     ops->tb_stop(db, cpu);
     gen_tb_end(tcg_ctx, db->tb, db->num_insns);

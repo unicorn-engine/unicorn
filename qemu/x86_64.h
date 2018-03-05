@@ -1166,8 +1166,6 @@
 #define gen_helper_yield gen_helper_yield_x86_64
 #define gen_hvc gen_hvc_x86_64
 #define gen_intermediate_code gen_intermediate_code_x86_64
-#define gen_intermediate_code gen_intermediate_code_x86_64
-#define gen_intermediate_code_a64 gen_intermediate_code_a64_x86_64
 #define gen_iwmmxt_address gen_iwmmxt_address_x86_64
 #define gen_iwmmxt_shift gen_iwmmxt_shift_x86_64
 #define gen_jmp gen_jmp_x86_64

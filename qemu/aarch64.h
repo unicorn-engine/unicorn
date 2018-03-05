@@ -1166,8 +1166,6 @@
 #define gen_helper_yield gen_helper_yield_aarch64
 #define gen_hvc gen_hvc_aarch64
 #define gen_intermediate_code gen_intermediate_code_aarch64
-#define gen_intermediate_code gen_intermediate_code_aarch64
-#define gen_intermediate_code_a64 gen_intermediate_code_a64_aarch64
 #define gen_iwmmxt_address gen_iwmmxt_address_aarch64
 #define gen_iwmmxt_shift gen_iwmmxt_shift_aarch64
 #define gen_jmp gen_jmp_aarch64
@@ -3437,6 +3435,7 @@
 #define ARM64_REGS_STORAGE_SIZE ARM64_REGS_STORAGE_SIZE_aarch64
 #define aarch64_cpu_do_interrupt aarch64_cpu_do_interrupt_aarch64
 #define aarch64_cpu_register_types aarch64_cpu_register_types_aarch64
+#define aarch64_translator_ops aarch64_translator_ops_aarch64
 #define arm64_reg_read arm64_reg_read_aarch64
 #define arm64_reg_reset arm64_reg_reset_aarch64
 #define arm64_reg_write arm64_reg_write_aarch64

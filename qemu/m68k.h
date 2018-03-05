@@ -1166,8 +1166,6 @@
 #define gen_helper_yield gen_helper_yield_m68k
 #define gen_hvc gen_hvc_m68k
 #define gen_intermediate_code gen_intermediate_code_m68k
-#define gen_intermediate_code gen_intermediate_code_m68k
-#define gen_intermediate_code_a64 gen_intermediate_code_a64_m68k
 #define gen_iwmmxt_address gen_iwmmxt_address_m68k
 #define gen_iwmmxt_shift gen_iwmmxt_shift_m68k
 #define gen_jmp gen_jmp_m68k

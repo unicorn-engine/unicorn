@@ -12147,6 +12147,8 @@ static void arm_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)
         tcg_gen_movi_i32(tcg_ctx, tmp, 0);
         store_cpu_field(tcg_ctx, tmp, condexec_bits);
     }
+
+    tcg_clear_temp_count();
 }
 
 static void arm_tr_insn_start(DisasContextBase *dcbase, CPUState *cpu)
@@ -12269,6 +12271,7 @@ static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     }
 
     dc->base.pc_next = dc->pc;
+    translator_loop_temp_check(&dc->base);
 }
 
 static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
@@ -12384,6 +12387,8 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             gen_goto_tb(dc, 1, dc->pc);
         }
     }
+    /* Functions above can change dc->pc, so re-align db->pc_next */
+    dc->base.pc_next = dc->pc;
 }
 
 static void arm_tr_disas_log(const DisasContextBase *dcbase, CPUState *cpu)
@@ -12398,133 +12403,29 @@ static void arm_tr_disas_log(const DisasContextBase *dcbase, CPUState *cpu)
 #endif
 }
 
+static const TranslatorOps arm_translator_ops = {
+    arm_tr_init_disas_context,
+    arm_tr_tb_start,
+    arm_tr_insn_start,
+    arm_tr_breakpoint_check,
+    arm_tr_translate_insn,
+    arm_tr_tb_stop,
+    arm_tr_disas_log,
+};
+
 /* generate intermediate code for basic block 'tb'.  */
-void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
+void gen_intermediate_code(CPUState *cpu, TranslationBlock *tb)
 {
-    DisasContext dc1, *dc = &dc1;
-    CPUARMState *env = cs->env_ptr;
-    TCGContext *tcg_ctx = cs->uc->tcg_ctx;
-    int max_insns;
+    DisasContext dc;
+    const TranslatorOps *ops = &arm_translator_ops;
 
-    /* generate intermediate code */
-
-    /* The A64 decoder has its own top level loop, because it doesn't need
-     * the A32/T32 complexity to do with conditional execution/IT blocks/etc.
-     */
+#ifdef TARGET_AARCH64
     if (ARM_TBFLAG_AARCH64_STATE(tb->flags)) {
-        gen_intermediate_code_a64(&dc->base, cs, tb);
-        return;
-    }
-
-    dc->base.tb = tb;
-    dc->base.pc_first = dc->base.tb->pc;
-    dc->base.pc_next = dc->base.pc_first;
-    dc->base.is_jmp = DISAS_NEXT;
-    dc->base.num_insns = 0;
-    dc->base.singlestep_enabled = cs->singlestep_enabled;
-
-    env->uc->block_full = false;
-
-    max_insns = tb->cflags & CF_COUNT_MASK;
-    if (max_insns == 0) {
-        max_insns = CF_COUNT_MASK;
-    }
-    if (max_insns > TCG_MAX_INSNS) {
-        max_insns = TCG_MAX_INSNS;
-    }
-    max_insns = arm_tr_init_disas_context(&dc->base, cs, max_insns);
-
-    gen_tb_start(tcg_ctx, tb);
-
-    tcg_clear_temp_count();
-    arm_tr_tb_start(&dc->base, cs);
-
-// Unicorn: early check to see if the address of this block is the until address
-    if (tb->pc == env->uc->addr_end) {
-        // imitate WFI instruction to halt emulation
-        gen_tb_start(tcg_ctx, tb);
-        dc->base.is_jmp = DISAS_WFI;
-        goto tb_end;
-    }
-
-    // Unicorn: trace this block on request
-    // Only hook this block if it is not broken from previous translation due to
-    // full translation cache
-    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, dc->base.pc_first)) {
-        // save block address to see if we need to patch block size later
-        env->uc->block_addr = dc->base.pc_first;
-        env->uc->size_arg = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
-        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, dc->base.pc_first);
-    } else {
-        env->uc->size_arg = -1;
-    }
-
-    do {
-        dc->base.num_insns++;
-        arm_tr_insn_start(&dc->base, cs);
-
-        if (unlikely(!QTAILQ_EMPTY(&cs->breakpoints))) {
-            CPUBreakpoint *bp;
-            QTAILQ_FOREACH(bp, &cs->breakpoints, entry) {
-                if (bp->pc == dc->base.pc_next) {
-                    if (arm_tr_breakpoint_check(&dc->base, cs, bp)) {
-                        break;
-                    }
-                }
-            }
-            if (dc->base.is_jmp > DISAS_TOO_MANY) {
-                break;
-            }
-        }
-
-    // Unicorn: commented out
-#if 0
-        if (dc->base.num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
-            gen_io_start();
-        }
-#endif
-
-        arm_tr_translate_insn(&dc->base, cs);
-
-        if (tcg_check_temp_count()) {
-            fprintf(stderr, "TCG temporary leak before "TARGET_FMT_lx"\n",
-                    dc->pc);
-        }
-
-        if (!dc->base.is_jmp && (tcg_op_buf_full(tcg_ctx) || // singlestep || // Unicorn: commented out
-                            dc->base.num_insns >= max_insns)) {
-            dc->base.is_jmp = DISAS_TOO_MANY;
-            env->uc->block_full = true;
-        }
-    } while (!dc->base.is_jmp);
-
-    // Unicorn: if'd out
-#if 0
-    if (dc->base.tb->cflags & CF_LAST_IO) {
-        gen_io_end();
+        ops = &aarch64_translator_ops;
     }
 #endif
 
-tb_end:
-    arm_tr_tb_stop(&dc->base, cs);
-
-    gen_tb_end(tcg_ctx, tb, dc->base.num_insns);
-
-    tb->size = dc->pc - dc->base.pc_first;
-    tb->icount = dc->base.num_insns;
-
-    // Unicorn: commented out
-#ifdef DEBUG_DISAS
-    if (qemu_loglevel_mask(CPU_LOG_TB_IN_ASM) &&
-        qemu_log_in_addr_range(dc->base.pc_first)) {
-        //qemu_log_lock();
-        qemu_log("----------------\n");
-        //qemu_log("IN: %s\n", lookup_symbol(dc->base.pc_first));
-        arm_tr_disas_log(&dc->base, cs);
-        qemu_log("\n");
-        //qemu_log_unlock();
-    }
-#endif
+    translator_loop(ops, &dc.base, cpu, tb);
 }
 
 #if 0
