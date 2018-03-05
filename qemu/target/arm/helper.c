@@ -5434,6 +5434,7 @@ static void v7m_exception_taken(ARMCPU *cpu, uint32_t lr)
     // Unicorn: commented out
     //armv7m_nvic_acknowledge_irq(env->nvic);
     switch_v7m_sp(env, 0);
+    arm_clear_exclusive(env);
     /* Clear IT bits */
     env->condexec_bits = 0;
     env->regs[14] = lr;
@@ -5620,6 +5621,7 @@ static void do_v7m_exception_exit(ARMCPU *cpu)
     }
 
     /* Otherwise, we have a successful exception exit. */
+    arm_clear_exclusive(env);
     qemu_log_mask(CPU_LOG_INT, "...successful exception return\n");
 }
 
