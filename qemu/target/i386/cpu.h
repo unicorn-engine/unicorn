@@ -1253,6 +1253,8 @@ typedef struct X86CPU {
     int32_t core_id;
     int32_t thread_id;
 
+    int32_t hv_max_vps;
+
     /* Features to be added */
     FeatureWordArray plus_features;
     /* Features to be removed */
