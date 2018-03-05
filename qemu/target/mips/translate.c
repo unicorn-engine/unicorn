@@ -20729,16 +20729,15 @@ void cpu_mips_realize_env(CPUMIPSState *env)
 
 MIPSCPU *cpu_mips_init(struct uc_struct *uc, const char *cpu_model)
 {
+    ObjectClass *oc;
     MIPSCPU *cpu;
-    CPUMIPSState *env;
-    const mips_def_t *def;
 
-    def = cpu_mips_find_by_name(cpu_model);
-    if (!def)
+    oc = cpu_class_by_name(uc, TYPE_MIPS_CPU, cpu_model);
+    if (oc == NULL) {
         return NULL;
-    cpu = MIPS_CPU(uc, object_new(uc, TYPE_MIPS_CPU));
-    env = &cpu->env;
-    env->cpu_model = def;
+    }
+
+    cpu = MIPS_CPU(uc, object_new(uc, object_class_get_name(oc)));
 
     object_property_set_bool(uc, OBJECT(cpu), true, "realized", NULL);
 

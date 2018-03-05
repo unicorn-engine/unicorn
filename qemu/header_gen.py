@@ -4439,6 +4439,8 @@ mips_symbols = (
     'mips_cpu_list',
     'mips_cpu_register_types',
     'mips_cpu_unassigned_access',
+    'mips_defs',
+    'mips_defs_number',
     'mips_machine_init',
     'mips_reg_read',
     'mips_reg_reset',

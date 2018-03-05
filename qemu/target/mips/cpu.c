@@ -126,13 +126,35 @@ static void mips_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     CPUState *cs = CPU(obj);
     MIPSCPU *cpu = MIPS_CPU(uc, obj);
     CPUMIPSState *env = &cpu->env;
+    MIPSCPUClass *mcc = MIPS_CPU_GET_CLASS(uc, obj);
 
     cs->env_ptr = env;
+    env->cpu_model = mcc->cpu_def;
     cpu_exec_init(cs, opaque);
 
     if (tcg_enabled(uc)) {
         mips_tcg_init(uc);
     }
+}
+
+static char *mips_cpu_type_name(const char *cpu_model)
+{
+    return g_strdup_printf("%s-" TYPE_MIPS_CPU, cpu_model);
+}
+
+static ObjectClass *mips_cpu_class_by_name(struct uc_struct *uc, const char *cpu_model)
+{
+    ObjectClass *oc;
+    char *typename;
+
+    if (cpu_model == NULL) {
+        return NULL;
+    }
+
+    typename = mips_cpu_type_name(cpu_model);
+    oc = object_class_by_name(uc, typename);
+    g_free(typename);
+    return oc;
 }
 
 static void mips_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data)
@@ -147,6 +169,7 @@ static void mips_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data
     mcc->parent_reset = cc->reset;
     cc->reset = mips_cpu_reset;
 
+    cc->class_by_name = mips_cpu_class_by_name;
     cc->has_work = mips_cpu_has_work;
     cc->do_interrupt = mips_cpu_do_interrupt;
     cc->cpu_exec_interrupt = mips_cpu_exec_interrupt;
@@ -161,16 +184,56 @@ static void mips_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data
 #endif
 }
 
+static void mips_cpu_cpudef_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
+{
+    MIPSCPUClass *mcc = MIPS_CPU_CLASS(uc, oc);
+    mcc->cpu_def = data;
+}
+
+static void mips_register_cpudef_type(struct uc_struct *uc, const struct mips_def_t *def)
+{
+    char *typename = mips_cpu_type_name(def->name);
+    TypeInfo ti = {
+        typename,
+        TYPE_MIPS_CPU,
+
+        0,
+        0,
+        NULL,
+
+        NULL,
+        NULL,
+        NULL,
+
+        (void *)def,
+
+        mips_cpu_cpudef_class_init,
+        NULL,
+        NULL,
+
+        false,
+
+        NULL,
+        NULL,
+        NULL,
+    };
+
+    type_register(uc, &ti);
+    g_free(typename);
+}
+
 void mips_cpu_register_types(void *opaque)
 {
+    int i;
+
     const TypeInfo mips_cpu_type_info = {
         TYPE_MIPS_CPU,
         TYPE_CPU,
-        
+
         sizeof(MIPSCPUClass),
         sizeof(MIPSCPU),
         opaque,
-        
+
         mips_cpu_initfn,
         NULL,
         NULL,
@@ -181,8 +244,11 @@ void mips_cpu_register_types(void *opaque)
         NULL,
         NULL,
 
-        false,
+        true,
     };
 
     type_register_static(opaque, &mips_cpu_type_info);
+    for (i = 0; i < mips_defs_number; i++) {
+        mips_register_cpudef_type(opaque, &mips_defs[i]);
+    }
 }
