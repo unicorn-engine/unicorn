@@ -3204,6 +3204,7 @@
 #define tcg_op_insert_after tcg_op_insert_after_sparc64
 #define tcg_op_insert_before tcg_op_insert_before_sparc64
 #define tcg_op_remove tcg_op_remove_sparc64
+#define tcg_op_supported tcg_op_supported_sparc64
 #define tcg_opt_gen_mov tcg_opt_gen_mov_sparc64
 #define tcg_opt_gen_movi tcg_opt_gen_movi_sparc64
 #define tcg_optimize tcg_optimize_sparc64

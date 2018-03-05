@@ -1051,6 +1051,8 @@ do {\
 #define tcg_temp_free_ptr(s, T) tcg_temp_free_i64(s, TCGV_PTR_TO_NAT(T))
 #endif
 
+bool tcg_op_supported(TCGOpcode op);
+
 void tcg_gen_callN(TCGContext *s, void *func,
                    TCGArg ret, int nargs, TCGArg *args);
 

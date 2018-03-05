@@ -3204,6 +3204,7 @@
 #define tcg_op_insert_after tcg_op_insert_after_arm
 #define tcg_op_insert_before tcg_op_insert_before_arm
 #define tcg_op_remove tcg_op_remove_arm
+#define tcg_op_supported tcg_op_supported_arm
 #define tcg_opt_gen_mov tcg_opt_gen_mov_arm
 #define tcg_opt_gen_movi tcg_opt_gen_movi_arm
 #define tcg_optimize tcg_optimize_arm

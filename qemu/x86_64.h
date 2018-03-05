@@ -3204,6 +3204,7 @@
 #define tcg_op_insert_after tcg_op_insert_after_x86_64
 #define tcg_op_insert_before tcg_op_insert_before_x86_64
 #define tcg_op_remove tcg_op_remove_x86_64
+#define tcg_op_supported tcg_op_supported_x86_64
 #define tcg_opt_gen_mov tcg_opt_gen_mov_x86_64
 #define tcg_opt_gen_movi tcg_opt_gen_movi_x86_64
 #define tcg_optimize tcg_optimize_x86_64

@@ -3204,6 +3204,7 @@
 #define tcg_op_insert_after tcg_op_insert_after_m68k
 #define tcg_op_insert_before tcg_op_insert_before_m68k
 #define tcg_op_remove tcg_op_remove_m68k
+#define tcg_op_supported tcg_op_supported_m68k
 #define tcg_opt_gen_mov tcg_opt_gen_mov_m68k
 #define tcg_opt_gen_movi tcg_opt_gen_movi_m68k
 #define tcg_optimize tcg_optimize_m68k
