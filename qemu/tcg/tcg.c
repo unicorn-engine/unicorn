@@ -467,7 +467,6 @@ void tcg_func_start(TCGContext *s)
     s->gen_op_buf[0].next = 1;
     s->gen_op_buf[0].prev = 0;
     s->gen_next_op_idx = 1;
-    s->gen_next_parm_idx = 0;
 }
 
 static inline int temp_idx(TCGContext *s, TCGTemp *ts)
@@ -971,9 +970,10 @@ bool tcg_op_supported(TCGOpcode op)
 void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
                    int nargs, TCGArg *args)
 {
-    int i, real_args, nb_rets, pi, pi_first;
+    int i, real_args, nb_rets, pi;
     unsigned sizemask, flags;
     TCGHelperInfo *info;
+    TCGOp *op;
 
     info = g_hash_table_lookup(s->helpers, (gpointer)func);
     flags = info->flags;
@@ -986,11 +986,11 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
     int orig_sizemask = sizemask;
     int orig_nargs = nargs;
     TCGv_i64 retl, reth;
+    TCGArg split_args[MAX_OPC_PARAM];
 
     TCGV_UNUSED_I64(retl);
     TCGV_UNUSED_I64(reth);
     if (sizemask != 0) {
-        TCGArg *split_args = __builtin_alloca(sizeof(TCGArg) * nargs * 2);
         for (i = real_args = 0; i < nargs; ++i) {
             int is_64bit = sizemask & (1 << (i+1)*2);
             if (is_64bit) {
@@ -1025,7 +1025,19 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
     }
 #endif /* TCG_TARGET_EXTEND_ARGS */
 
-    pi_first = pi = s->gen_next_parm_idx;
+    i = s->gen_next_op_idx;
+    tcg_debug_assert(i < OPC_BUF_SIZE);
+    s->gen_op_buf[0].prev = i;
+    s->gen_next_op_idx = i + 1;
+    op = &s->gen_op_buf[i];
+
+    /* Set links for sequential allocation during translation.  */
+    memset(op, 0, offsetof(TCGOp, args));
+    op->opc = INDEX_op_call;
+    op->prev = i - 1;
+    op->next = i + 1;
+
+    pi = 0;
     if (ret != TCG_CALL_DUMMY_ARG) {
 #if defined(__sparc__) && !defined(__arch64__) \
     && !defined(CONFIG_TCG_INTERPRETER)
@@ -1035,31 +1047,33 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
                two return temporaries, and reassemble below.  */
             retl = tcg_temp_new_i64(s);
             reth = tcg_temp_new_i64(s);
-            s->gen_opparam_buf[pi++] = GET_TCGV_I64(reth);
-            s->gen_opparam_buf[pi++] = GET_TCGV_I64(retl);
+            op->args[pi++] = GET_TCGV_I64(reth);
+            op->args[pi++] = GET_TCGV_I64(retl);
             nb_rets = 2;
         } else {
-            s->gen_opparam_buf[pi++] = ret;
+            op->args[pi++] = ret;
             nb_rets = 1;
         }
 #else
         if (TCG_TARGET_REG_BITS < 64 && (sizemask & 1)) {
 #ifdef HOST_WORDS_BIGENDIAN
-            s->gen_opparam_buf[pi++] = ret + 1;
-            s->gen_opparam_buf[pi++] = ret;
+            op->args[pi++] = ret + 1;
+            op->args[pi++] = ret;
 #else
-            s->gen_opparam_buf[pi++] = ret;
-            s->gen_opparam_buf[pi++] = ret + 1;
+            op->args[pi++] = ret;
+            op->args[pi++] = ret + 1;
 #endif
             nb_rets = 2;
         } else {
-            s->gen_opparam_buf[pi++] = ret;
+            op->args[pi++] = ret;
             nb_rets = 1;
         }
 #endif
     } else {
         nb_rets = 0;
     }
+    op->callo = nb_rets;
+
     real_args = 0;
     for (i = 0; i < nargs; i++) {
         int is_64bit = sizemask & (1 << (i+1)*2);
@@ -1067,7 +1081,7 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
 #ifdef TCG_TARGET_CALL_ALIGN_ARGS
             /* some targets want aligned 64 bit args */
             if (real_args & 1) {
-                s->gen_opparam_buf[pi++] = TCG_CALL_DUMMY_ARG;
+                op->args[pi++] = TCG_CALL_DUMMY_ARG;
                 real_args++;
             }
 #endif
@@ -1082,43 +1096,26 @@ void tcg_gen_callN(TCGContext *s, void *func, TCGArg ret,
               have to get more complicated to differentiate between
               stack arguments and register arguments.  */
 #if defined(HOST_WORDS_BIGENDIAN) != defined(TCG_TARGET_STACK_GROWSUP)
-            s->gen_opparam_buf[pi++] = args[i] + 1;
-            s->gen_opparam_buf[pi++] = args[i];
+            op->args[pi++] = args[i] + 1;
+            op->args[pi++] = args[i];
 #else
-            s->gen_opparam_buf[pi++] = args[i];
-            s->gen_opparam_buf[pi++] = args[i] + 1;
+            op->args[pi++] = args[i];
+            op->args[pi++] = args[i] + 1;
 #endif
             real_args += 2;
             continue;
         }
 
-        s->gen_opparam_buf[pi++] = args[i];
+        op->args[pi++] = args[i];
         real_args++;
     }
-    s->gen_opparam_buf[pi++] = (uintptr_t)func;
-    s->gen_opparam_buf[pi++] = flags;
+    op->args[pi++] = (uintptr_t)func;
+    op->args[pi++] = flags;
+    op->calli = real_args;
 
-    i = s->gen_next_op_idx;
-    tcg_debug_assert(i < OPC_BUF_SIZE);
-    tcg_debug_assert(pi <= OPPARAM_BUF_SIZE);
-
-    /* Set links for sequential allocation during translation.  */
-    TCGOp op = {0};
-    op.opc = INDEX_op_call;
-    op.callo = nb_rets;
-    op.calli = real_args;
-    op.args = pi_first;
-    op.prev = i - 1;
-    op.next = i + 1;
-    s->gen_op_buf[i] = op;
-
-    /* Make sure the calli field didn't overflow.  */
-    tcg_debug_assert(s->gen_op_buf[i].calli == real_args);
-
-    s->gen_op_buf[0].prev = i;
-    s->gen_next_op_idx = i + 1;
-    s->gen_next_parm_idx = pi;
-
+    /* Make sure the fields didn't overflow.  */
+    tcg_debug_assert(op->calli == real_args);
+    tcg_debug_assert(pi <= ARRAY_SIZE(op->args));
 #if defined(__sparc__) && !defined(__arch64__) \
     && !defined(CONFIG_TCG_INTERPRETER)
     /* Free all of the parts we allocated above.  */
@@ -1333,7 +1330,7 @@ void tcg_dump_ops(TCGContext *s)
         op = &s->gen_op_buf[oi];
         c = op->opc;
         def = &s->tcg_op_defs[c];
-        args = &s->gen_opparam_buf[op->args];
+        args = op->args;
 
         if (c == INDEX_op_insn_start) {
             col += qemu_log("%s ----", oi != s->gen_op_buf[0].next ? "\n" : "");
@@ -1627,19 +1624,15 @@ TCGOp *tcg_op_insert_before(TCGContext *s, TCGOp *old_op,
                             TCGOpcode opc, int nargs)
 {
     int oi = s->gen_next_op_idx;
-    int pi = s->gen_next_parm_idx;
     int prev = old_op->prev;
     int next = old_op - s->gen_op_buf;
     TCGOp *new_op;
 
     tcg_debug_assert(oi < OPC_BUF_SIZE);
-    tcg_debug_assert(pi + nargs <= OPPARAM_BUF_SIZE);
     s->gen_next_op_idx = oi + 1;
-    s->gen_next_parm_idx = pi + nargs;
 
     new_op = &s->gen_op_buf[oi];
     new_op->opc = opc;
-    new_op->args = pi;
     new_op->prev = prev;
     new_op->next = next;
     s->gen_op_buf[prev].next = oi;
@@ -1652,19 +1645,15 @@ TCGOp *tcg_op_insert_after(TCGContext *s, TCGOp *old_op,
                            TCGOpcode opc, int nargs)
 {
     int oi = s->gen_next_op_idx;
-    int pi = s->gen_next_parm_idx;
     int prev = old_op - s->gen_op_buf;
     int next = old_op->next;
     TCGOp *new_op;
 
     tcg_debug_assert(oi < OPC_BUF_SIZE);
-    tcg_debug_assert(pi + nargs <= OPPARAM_BUF_SIZE);
     s->gen_next_op_idx = oi + 1;
-    s->gen_next_parm_idx = pi + nargs;
 
     new_op = &s->gen_op_buf[oi];
     new_op->opc = opc;
-    new_op->args = pi;
     new_op->prev = prev;
     new_op->next = next;
     s->gen_op_buf[next].prev = oi;
@@ -1733,7 +1722,7 @@ static void liveness_pass_1(TCGContext *s, uint8_t *temp_state)
         TCGArg arg;
 
         TCGOp * const op = &s->gen_op_buf[oi];
-        TCGArg * const args = &s->gen_opparam_buf[op->args];
+        TCGArg * const args = op->args;
         TCGOpcode opc = op->opc;
         const TCGOpDef *def = &s->tcg_op_defs[opc];
 
@@ -1984,7 +1973,7 @@ static bool liveness_pass_2(TCGContext *s, uint8_t *temp_state)
 
     for (oi = s->gen_op_buf[0].next; oi != 0; oi = oi_next) {
         TCGOp *op = &s->gen_op_buf[oi];
-        TCGArg *args = &s->gen_opparam_buf[op->args];
+        TCGArg *args = op->args;
         TCGOpcode opc = op->opc;
         const TCGOpDef *def = &s->tcg_op_defs[opc];
         TCGLifeData arg_life = op->life;
@@ -2027,7 +2016,7 @@ static bool liveness_pass_2(TCGContext *s, uint8_t *temp_state)
                                       ? INDEX_op_ld_i32
                                       : INDEX_op_ld_i64);
                     TCGOp *lop = tcg_op_insert_before(s, op, lopc, 3);
-                    TCGArg *largs = &s->gen_opparam_buf[lop->args];
+                    TCGArg *largs = lop->args;
 
                     largs[0] = dir;
                     largs[1] = temp_idx(s, its->mem_base);
@@ -2099,7 +2088,7 @@ static bool liveness_pass_2(TCGContext *s, uint8_t *temp_state)
                                   ? INDEX_op_st_i32
                                   : INDEX_op_st_i64);
                 TCGOp *sop = tcg_op_insert_after(s, op, sopc, 3);
-                TCGArg *sargs = &s->gen_opparam_buf[sop->args];
+                TCGArg *sargs = sop->args;
 
                 sargs[0] = dir;
                 sargs[1] = temp_idx(s, its->mem_base);
@@ -2920,7 +2909,7 @@ int tcg_gen_code(TCGContext *s, TranslationBlock *tb)
     num_insns = -1;
     for (oi = s->gen_op_buf[0].next; oi != 0; oi = oi_next) {
         TCGOp * const op = &s->gen_op_buf[oi];
-        TCGArg * const args = &s->gen_opparam_buf[op->args];
+        TCGArg * const args = op->args;
         TCGOpcode opc = op->opc;
         const TCGOpDef *def = &s->tcg_op_defs[opc];
         TCGLifeData arg_life = op->life;

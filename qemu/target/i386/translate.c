@@ -5070,7 +5070,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     TCGv cpu_T1 = tcg_ctx->cpu_T1;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
     TCGv *cpu_seg_base = tcg_ctx->cpu_seg_base;
-    TCGArg* save_opparam_ptr = tcg_ctx->gen_opparam_buf + tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
+    //TCGArg* save_opparam_ptr = tcg_ctx->gen_opparam_buf + tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
     bool cc_op_dirty = s->cc_op_dirty;
     bool changed_cc_op = false;
 
@@ -9072,6 +9072,8 @@ case 0x101:
         goto unknown_op;
     }
 
+    // FIXME: Amend this non-conforming garbage
+#if 0
     // Unicorn: patch the callback for the instruction size
     if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, pc_start)) {
         // int i;
@@ -9093,6 +9095,7 @@ case 0x101:
             *(save_opparam_ptr + 1) = s->pc - pc_start;
         }
     }
+#endif
 
     return s->pc;
  illegal_op:

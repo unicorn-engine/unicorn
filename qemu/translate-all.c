@@ -1361,6 +1361,8 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     gen_intermediate_code(cpu, tb);
     tcg_ctx->cpu = NULL;
 
+    // Unicorn: FIXME: Needs to be amended to work with new TCG
+#if 0
     // Unicorn: when tracing block, patch block size operand for callback
     if (env->uc->size_arg != -1 && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, tb->pc)) {
         if (env->uc->block_full)    // block size is unknown
@@ -1368,6 +1370,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
         else
             *(tcg_ctx->gen_opparam_buf + env->uc->size_arg) = tb->size;
     }
+#endif
 
     // UNICORN: Commented out
     //trace_translate_block(tb, tb->pc, tb->tc.ptr);

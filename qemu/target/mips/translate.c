@@ -20497,7 +20497,7 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
 
             // Unicorn: save param buffer
             if (HOOK_EXISTS(env->uc, UC_HOOK_CODE)) {
-                save_opparam_idx = tcg_ctx->gen_next_parm_idx;
+                save_opparam_idx = tcg_ctx->gen_next_op_idx;
             }
 
             is_slot = ctx.hflags & MIPS_HFLAG_BMASK;
@@ -20525,7 +20525,8 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
                    printf("[%u] = %x\n", i, *(save_opparam_ptr + i));
                    printf("\n");
                  */
-                tcg_ctx->gen_opparam_buf[save_opparam_idx + insn_patch_offset] = insn_bytes;
+                // FIXME
+                //tcg_ctx->gen_op_buf[save_opparam_idx + insn_patch_offset] = insn_bytes;
             }
         }
 

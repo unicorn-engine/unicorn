@@ -77,10 +77,13 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
      * full translation cache
      */
     if (!cpu->uc->block_full && HOOK_EXISTS_BOUNDED(cpu->uc, UC_HOOK_BLOCK, db->pc_first)) {
+    // Unicorn: FIXME: Needs to be adjusted to work with new TCG
+#if 0
         // Save block address to see if we need to patch block size later
         cpu->uc->block_addr = db->pc_first;
         cpu->uc->size_arg = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
         gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, cpu->uc, db->pc_first);
+#endif
     } else {
         cpu->uc->size_arg = -1;
     }
