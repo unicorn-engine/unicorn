@@ -2293,19 +2293,20 @@ static inline int cpu_mmu_index(CPUARMState *env, bool ifetch)
     int el = arm_current_el(env);
 
     if (arm_feature(env, ARM_FEATURE_M)) {
-        ARMMMUIdx mmu_idx = el == 0 ? ARMMMUIdx_MUser : ARMMMUIdx_MPriv;
+        ARMMMUIdx mmu_idx;
 
-        /* Execution priority is negative if FAULTMASK is set or
-         * we're in a HardFault or NMI handler.
-         */
-        if ((env->v7m.exception > 0 && env->v7m.exception <= 3)
-            || env->v7m.faultmask[env->v7m.secure]) {
-            mmu_idx = ARMMMUIdx_MNegPri;
+        if (el == 0) {
+            mmu_idx = env->v7m.secure ? ARMMMUIdx_MSUser : ARMMMUIdx_MUser;
+        } else {
+            mmu_idx = env->v7m.secure ? ARMMMUIdx_MSPriv : ARMMMUIdx_MPriv;
         }
 
-        if (env->v7m.secure) {
-            mmu_idx += ARMMMUIdx_MSUser;
+        // Unicorn: if'd out
+        #if 0
+        if (armv7m_nvic_neg_prio_requested(env->nvic, env->v7m.secure)) {
+            mmu_idx = env->v7m.secure ? ARMMMUIdx_MSNegPri : ARMMMUIdx_MNegPri;
         }
+        #endif
 
         return arm_to_core_mmu_idx(mmu_idx);
     }
