@@ -595,6 +595,12 @@ typedef struct TCGTemp {
     intptr_t mem_offset;
     struct TCGTemp *mem_base;
     const char *name;
+
+    /* Pass-specific information that can be stored for a temporary.
+       One word worth of integer data, and one pointer to data
+       allocated separately.  */
+    uintptr_t state;
+    void *state_ptr;
 } TCGTemp;
 
 typedef struct TCGContext TCGContext;
