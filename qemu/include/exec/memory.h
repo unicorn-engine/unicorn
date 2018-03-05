@@ -727,18 +727,6 @@ bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,
 void memory_region_set_readonly(MemoryRegion *mr, bool readonly);
 
 /**
- * memory_region_set_global_locking: Declares the access processing requires
- *                                   QEMU's global lock.
- *
- * When this is invoked, accesses to the memory region will be processed while
- * holding the global lock of QEMU. This is the default behavior of memory
- * regions.
- *
- * @mr: the memory region to be updated.
- */
-void memory_region_set_global_locking(MemoryRegion *mr);
-
-/**
  * memory_region_clear_global_locking: Declares that access processing does
  *                                     not depend on the QEMU global lock.
  *

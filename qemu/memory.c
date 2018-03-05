@@ -1412,11 +1412,6 @@ void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
     }
 }
 
-void memory_region_set_global_locking(MemoryRegion *mr)
-{
-    mr->global_locking = true;
-}
-
 void memory_region_clear_global_locking(MemoryRegion *mr)
 {
     mr->global_locking = false;

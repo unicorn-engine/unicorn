@@ -2339,7 +2339,6 @@ symbols = (
     'memory_region_set_address',
     'memory_region_set_alias_offset',
     'memory_region_set_enabled',
-    'memory_region_set_global_locking',
     'memory_region_set_readonly',
     'memory_region_set_size',
     'memory_region_size',
