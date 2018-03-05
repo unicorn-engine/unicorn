@@ -196,7 +196,7 @@ struct uc_struct {
     CPUState *tcg_current_rr_cpu;
 
     // qemu/user-exec.c
-    QEMU_THREAD_LOCAL_VAR helper_retaddr;
+    uintptr_t helper_retaddr;
 
     // qemu/memory.c
     bool global_dirty_log;

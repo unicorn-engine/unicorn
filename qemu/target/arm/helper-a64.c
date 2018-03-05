@@ -524,6 +524,9 @@ uint64_t HELPER(paired_cmpxchg64_le)(CPUARMState *env, uint64_t addr,
 #ifdef CONFIG_USER_ONLY
         /* ??? Enforce alignment.  */
         uint64_t *haddr = g2h(addr);
+
+        env->uc->helper_retaddr = ra;
+
         o0 = ldq_le_p(haddr + 0);
         o1 = ldq_le_p(haddr + 1);
         oldv = int128_make128(o0, o1);
@@ -533,6 +536,7 @@ uint64_t HELPER(paired_cmpxchg64_le)(CPUARMState *env, uint64_t addr,
             stq_le_p(haddr + 0, int128_getlo(newv));
             stq_le_p(haddr + 1, int128_gethi(newv));
         }
+        env->uc->helper_retaddr = 0;
 #else
         int mem_idx = cpu_mmu_index(env, false);
         TCGMemOpIdx oi0 = make_memop_idx(MO_LEQ | MO_ALIGN_16, mem_idx);
@@ -578,6 +582,9 @@ uint64_t HELPER(paired_cmpxchg64_be)(CPUARMState *env, uint64_t addr,
 #ifdef CONFIG_USER_ONLY
         /* ??? Enforce alignment.  */
         uint64_t *haddr = g2h(addr);
+
+        env->uc->helper_retaddr = ra;
+
         o1 = ldq_be_p(haddr + 0);
         o0 = ldq_be_p(haddr + 1);
         oldv = int128_make128(o0, o1);
@@ -587,6 +594,7 @@ uint64_t HELPER(paired_cmpxchg64_be)(CPUARMState *env, uint64_t addr,
             stq_be_p(haddr + 0, int128_gethi(newv));
             stq_be_p(haddr + 1, int128_getlo(newv));
         }
+        env->uc->helper_retaddr = 0;
 #else
         int mem_idx = cpu_mmu_index(env, false);
         TCGMemOpIdx oi0 = make_memop_idx(MO_BEQ | MO_ALIGN_16, mem_idx);
