@@ -1110,7 +1110,7 @@ void tb_phys_invalidate(struct uc_struct *uc,
     uint32_t h;
     tb_page_addr_t phys_pc;
 
-    atomic_set(&tb->invalid, true);
+    atomic_set(&tb->cflags, tb->cflags | CF_INVALID);
 
     /* remove the TB from the hash list */
     phys_pc = tb->page_addr[0] + (tb->pc & ~TARGET_PAGE_MASK);
@@ -1323,7 +1323,6 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     tb->cs_base = cs_base;
     tb->flags = flags;
     tb->cflags = cflags;
-    tb->invalid = false;
 
 #ifdef CONFIG_PROFILER
     tcg_ctx->tb_count1++; /* includes aborted translations because of
