@@ -1098,6 +1098,7 @@
 #define gen_helper_v7m_bxns gen_helper_v7m_bxns_x86_64
 #define gen_helper_v7m_mrs gen_helper_v7m_mrs_x86_64
 #define gen_helper_v7m_msr gen_helper_v7m_msr_x86_64
+#define gen_helper_v7m_tt gen_helper_v7m_tt_x86_64
 #define gen_helper_vfp_absd gen_helper_vfp_absd_x86_64
 #define gen_helper_vfp_abss gen_helper_vfp_abss_x86_64
 #define gen_helper_vfp_addd gen_helper_vfp_addd_x86_64
@@ -2059,6 +2060,7 @@
 #define helper_v7m_bxns helper_v7m_bxns_x86_64
 #define helper_v7m_mrs helper_v7m_mrs_x86_64
 #define helper_v7m_msr helper_v7m_msr_x86_64
+#define helper_v7m_tt helper_v7m_tt_x86_64
 #define helper_vfp_absd helper_vfp_absd_x86_64
 #define helper_vfp_abss helper_vfp_abss_x86_64
 #define helper_vfp_addd helper_vfp_addd_x86_64

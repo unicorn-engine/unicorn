@@ -1098,6 +1098,7 @@
 #define gen_helper_v7m_bxns gen_helper_v7m_bxns_powerpc
 #define gen_helper_v7m_mrs gen_helper_v7m_mrs_powerpc
 #define gen_helper_v7m_msr gen_helper_v7m_msr_powerpc
+#define gen_helper_v7m_tt gen_helper_v7m_tt_powerpc
 #define gen_helper_vfp_absd gen_helper_vfp_absd_powerpc
 #define gen_helper_vfp_abss gen_helper_vfp_abss_powerpc
 #define gen_helper_vfp_addd gen_helper_vfp_addd_powerpc
@@ -2059,6 +2060,7 @@
 #define helper_v7m_bxns helper_v7m_bxns_powerpc
 #define helper_v7m_mrs helper_v7m_mrs_powerpc
 #define helper_v7m_msr helper_v7m_msr_powerpc
+#define helper_v7m_tt helper_v7m_tt_powerpc
 #define helper_vfp_absd helper_vfp_absd_powerpc
 #define helper_vfp_abss helper_vfp_abss_powerpc
 #define helper_vfp_addd helper_vfp_addd_powerpc
