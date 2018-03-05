@@ -133,7 +133,7 @@ static TCGArg find_better_copy(TCGContext *s, TCGArg temp)
     }
 
     /* If it is a temp, search for a temp local. */
-    if (!s->temps[temp].temp_local) {
+    if (!arg_temp(s, temp)->temp_local) {
         for (i = temps[temp].next_copy ; i != temp ; i = temps[i].next_copy) {
             if (s->temps[i].temp_local) {
                 return i;
@@ -211,7 +211,7 @@ static void tcg_opt_gen_mov(TCGContext *s, TCGOp *op, TCGArg dst, TCGArg src)
     }
     temps[dst].mask = mask;
 
-    if (s->temps[src].type == s->temps[dst].type) {
+    if (arg_temp(s, src)->type == arg_temp(s, dst)->type) {
         temps[dst].next_copy = temps[src].next_copy;
         temps[dst].prev_copy = src;
         temps[temps[dst].next_copy].prev_copy = dst;
