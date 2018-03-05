@@ -205,6 +205,14 @@ static inline void tb_invalidate_phys_addr(AddressSpace *as, hwaddr addr)
 #define CODE_GEN_AVG_BLOCK_SIZE 150
 #endif
 
+/*
+ * Translation Cache-related fields of a TB.
+ */
+struct tb_tc {
+    void *ptr;    /* pointer to the translated code */
+    uint8_t *search;  /* pointer to search data */
+};
+
 struct TranslationBlock {
     target_ulong pc;   /* simulated PC corresponding to this block (EIP + CS base) */
     target_ulong cs_base; /* CS base for this block */
@@ -220,8 +228,7 @@ struct TranslationBlock {
 #define CF_IGNORE_ICOUNT 0x40000 /* Do not generate icount code */
 #define CF_INVALID     0x80000 /* TB is stale. Setters must acquire tb_lock */
 
-    void *tc_ptr;    /* pointer to the translated code */
-    uint8_t *tc_search;  /* pointer to search data */
+    struct tb_tc tc;
     /* next matching tb for physical address. */
     struct TranslationBlock *phys_hash_next;
     /* original tb when cflags has CF_NOCACHE */

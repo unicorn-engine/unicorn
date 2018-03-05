@@ -40,12 +40,12 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
     uintptr_t ret;
     TranslationBlock *last_tb;
     int tb_exit;
-    uint8_t *tb_ptr = itb->tc_ptr;
+    uint8_t *tb_ptr = itb->tc.ptr;
 
     // Unicorn: commented out
     //qemu_log_mask_and_addr(CPU_LOG_EXEC, itb->pc,
     //                       "Trace %p [" TARGET_FMT_lx "] %s\n",
-    //                       itb->tc_ptr, itb->pc, lookup_symbol(itb->pc));
+    //                       itb->tc.ptr, itb->pc, lookup_symbol(itb->pc));
     ret = tcg_qemu_tb_exec(env, tb_ptr);
     last_tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
     tb_exit = ret & TB_EXIT_MASK;
@@ -61,7 +61,7 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
         //qemu_log_mask_and_addr(CPU_LOG_EXEC, last_tb->pc,
         //                       "Stopped execution of TB chain before %p ["
         //                       TARGET_FMT_lx "] %s\n",
-        //                       last_tb->tc_ptr, last_tb->pc,
+        //                       last_tb->tc.ptr, last_tb->pc,
         //                       lookup_symbol(last_tb->pc));
         if (cc->synchronize_from_tb) {
             // avoid sync twice when helper_uc_tracecode() already did this.
@@ -168,7 +168,7 @@ void tb_set_jmp_target(TranslationBlock *tb, int n, uintptr_t addr)
 {
     if (TCG_TARGET_HAS_direct_jump) {
         uintptr_t offset = tb->jmp_target_arg[n];
-        uintptr_t tc_ptr = (uintptr_t)tb->tc_ptr;
+        uintptr_t tc_ptr = (uintptr_t)tb->tc.ptr;
         tb_target_set_jmp_target(tc_ptr, tc_ptr + offset, addr);
     } else {
         tb->jmp_target_arg[n] = addr;
@@ -188,11 +188,11 @@ static inline void tb_add_jump(TranslationBlock *tb, int n,
     qemu_log_mask_and_addr(CPU_LOG_EXEC, tb->pc,
                            "Linking TBs %p [" TARGET_FMT_lx
                            "] index %d -> %p [" TARGET_FMT_lx "]\n",
-                           tb->tc_ptr, tb->pc, n,
-                           tb_next->tc_ptr, tb_next->pc);
+                           tb->tc.ptr, tb->pc, n,
+                           tb_next->tc.ptr, tb_next->pc);
 
     /* patch the native jump address */
-    tb_set_jmp_target(tb, n, (uintptr_t)tb_next->tc_ptr);
+    tb_set_jmp_target(tb, n, (uintptr_t)tb_next->tc.ptr);
 
     /* add in TB jmp circular list */
     tb->jmp_list_next[n] = tb_next->jmp_list_first;
