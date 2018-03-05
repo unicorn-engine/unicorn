@@ -146,6 +146,7 @@ symbols = (
     'arm_cp_reset_ignore',
     'arm_cp_write_ignore',
     'arm_cpu_do_interrupt',
+    'arm_cpu_do_transaction_failed',
     'arm_cpu_do_unaligned_access',
     'arm_cpu_exec_interrupt',
     'arm_cpu_finalizefn',

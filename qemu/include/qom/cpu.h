@@ -331,6 +331,8 @@ struct CPUState {
      */
     bool throttle_thread_scheduled;
 
+    bool ignore_memory_transaction_failures;
+
     /* Note that this is accessed at the start of every TB via a negative
        offset from AREG0.  Leave this field at the end so as to make the
        (absolute value) offset as small as possible.  This reduces code
@@ -677,7 +679,7 @@ static inline void cpu_transaction_failed(CPUState *cpu, hwaddr physaddr,
 {
     CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
 
-    if (cc->do_transaction_failed) {
+    if (!cpu->ignore_memory_transaction_failures && cc->do_transaction_failed) {
         cc->do_transaction_failed(cpu, physaddr, addr, size, access_type,
                                   mmu_idx, attrs, response, retaddr);
     }

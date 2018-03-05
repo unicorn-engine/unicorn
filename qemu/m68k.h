@@ -140,6 +140,7 @@
 #define arm_cp_reset_ignore arm_cp_reset_ignore_m68k
 #define arm_cp_write_ignore arm_cp_write_ignore_m68k
 #define arm_cpu_do_interrupt arm_cpu_do_interrupt_m68k
+#define arm_cpu_do_transaction_failed arm_cpu_do_transaction_failed_m68k
 #define arm_cpu_do_unaligned_access arm_cpu_do_unaligned_access_m68k
 #define arm_cpu_exec_interrupt arm_cpu_exec_interrupt_m68k
 #define arm_cpu_finalizefn arm_cpu_finalizefn_m68k

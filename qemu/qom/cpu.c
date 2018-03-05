@@ -21,6 +21,7 @@
 #include "qemu/osdep.h"
 #include "qapi/error.h"
 #include "qemu-common.h"
+#include "hw/boards.h"
 #include "qemu/log.h"
 #include "uc_priv.h"
 
@@ -243,6 +244,21 @@ static void cpu_common_parse_features(CPUState *cpu, char *features,
 static int cpu_common_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     CPUState *cpu = CPU(dev);
+    Object *machine = qdev_get_machine(uc);
+
+    /* qdev_get_machine() can return something that's not TYPE_MACHINE
+     * if this is one of the user-only emulators; in that case there's
+     * no need to check the ignore_memory_transaction_failures board flag.
+     */
+    if (object_dynamic_cast(uc, machine, TYPE_MACHINE)) {
+        ObjectClass *oc = object_get_class(machine);
+        MachineClass *mc = MACHINE_CLASS(uc, oc);
+
+        if (mc) {
+            cpu->ignore_memory_transaction_failures =
+                mc->ignore_memory_transaction_failures;
+        }
+    }
 
     if (dev->hotplugged) {
         cpu_resume(cpu);

@@ -81,6 +81,16 @@ MachineClass *find_default_machine(struct uc_struct *uc, int arch);
  *    size than the target architecture's minimum. (Attempting to create
  *    such a CPU will fail.) Note that changing this is a migration
  *    compatibility break for the machine.
+ * @ignore_memory_transaction_failures:
+ *    If this is flag is true then the CPU will ignore memory transaction
+ *    failures which should cause the CPU to take an exception due to an
+ *    access to an unassigned physical address; the transaction will instead
+ *    return zero (for a read) or be ignored (for a write). This should be
+ *    set only by legacy board models which rely on the old RAZ/WI behaviour
+ *    for handling devices that QEMU does not yet model. New board models
+ *    should instead use "unimplemented-device" for all memory ranges where
+ *    the guest will attempt to probe for a device that QEMU doesn't
+ *    implement and a stub device is required.
  */
 struct MachineClass {
     /*< private >*/
@@ -97,6 +107,8 @@ struct MachineClass {
     int is_default;
     int arch;
     int minimum_page_bits;
+    bool has_hotpluggable_cpus;
+    bool ignore_memory_transaction_failures;
 };
 
 /**
