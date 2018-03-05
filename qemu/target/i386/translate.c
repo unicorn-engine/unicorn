@@ -5098,10 +5098,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         check_exit_request(tcg_ctx);
     }
 
-    prefixes = 0;
     s->override = -1;
-    rex_w = -1;
-    rex_r = 0;
 #ifdef TARGET_X86_64
     s->rex_x = 0;
     s->rex_b = 0;
@@ -5115,6 +5112,10 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
         return s->pc;
     }
+
+    prefixes = 0;
+    rex_w = -1;
+    rex_r = 0;
 
  next_byte:
     b = x86_ldub_code(env, s);
