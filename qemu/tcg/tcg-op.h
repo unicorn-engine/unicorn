@@ -651,31 +651,31 @@ static inline void tcg_gen_mul_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, T
 static inline void tcg_gen_st8_i64(TCGContext *s, TCGv_i64 arg1, TCGv_ptr arg2,
                                    tcg_target_long offset)
 {
-    tcg_gen_st8_i32(s, TCGV_LOW(arg1), arg2, offset);
+    tcg_gen_st8_i32(s, TCGV_LOW(s, arg1), arg2, offset);
 }
 
 static inline void tcg_gen_st16_i64(TCGContext *s, TCGv_i64 arg1, TCGv_ptr arg2,
                                     tcg_target_long offset)
 {
-    tcg_gen_st16_i32(s, TCGV_LOW(arg1), arg2, offset);
+    tcg_gen_st16_i32(s, TCGV_LOW(s, arg1), arg2, offset);
 }
 
 static inline void tcg_gen_st32_i64(TCGContext *s, TCGv_i64 arg1, TCGv_ptr arg2,
                                     tcg_target_long offset)
 {
-    tcg_gen_st_i32(s, TCGV_LOW(arg1), arg2, offset);
+    tcg_gen_st_i32(s, TCGV_LOW(s, arg1), arg2, offset);
 }
 
 static inline void tcg_gen_add_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64 arg2)
 {
-    tcg_gen_add2_i32(s, TCGV_LOW(ret), TCGV_HIGH(ret), TCGV_LOW(arg1),
-                     TCGV_HIGH(arg1), TCGV_LOW(arg2), TCGV_HIGH(arg2));
+    tcg_gen_add2_i32(s, TCGV_LOW(s, ret), TCGV_HIGH(s, ret), TCGV_LOW(s, arg1),
+                     TCGV_HIGH(s, arg1), TCGV_LOW(s, arg2), TCGV_HIGH(s, arg2));
 }
 
 static inline void tcg_gen_sub_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg1, TCGv_i64 arg2)
 {
-    tcg_gen_sub2_i32(s, TCGV_LOW(ret), TCGV_HIGH(ret), TCGV_LOW(arg1),
-                     TCGV_HIGH(arg1), TCGV_LOW(arg2), TCGV_HIGH(arg2));
+    tcg_gen_sub2_i32(s, TCGV_LOW(s, ret), TCGV_HIGH(s, ret), TCGV_LOW(s, arg1),
+                     TCGV_HIGH(s, arg1), TCGV_LOW(s, arg2), TCGV_HIGH(s, arg2));
 }
 
 void tcg_gen_discard_i64(TCGContext *s, TCGv_i64 arg);
