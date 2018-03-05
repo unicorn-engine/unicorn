@@ -145,6 +145,15 @@ TypeImpl *type_register_static(struct uc_struct *uc, const TypeInfo *info)
     return type_register(uc, info);
 }
 
+void type_register_static_array(struct uc_struct *uc, const TypeInfo *infos, int nr_infos)
+{
+    int i;
+
+    for (i = 0; i < nr_infos; i++) {
+        type_register_static(uc, &infos[i]);
+    }
+}
+
 static TypeImpl *type_get_by_name(struct uc_struct *uc, const char *name)
 {
     if (name == NULL) {
