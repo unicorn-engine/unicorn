@@ -172,7 +172,6 @@ bsd="no"
 linux="no"
 solaris="no"
 softmmu="yes"
-aix="no"
 pie=""
 tcg="yes"
 
@@ -445,10 +444,6 @@ SunOS)
   QEMU_CFLAGS="-std=gnu99 $QEMU_CFLAGS"
   solarisnetlibs="-lsocket -lnsl -lresolv"
   LIBS="$solarisnetlibs $LIBS"
-;;
-AIX)
-  aix="yes"
-  make="${MAKE-gmake}"
 ;;
 Haiku)
   haiku="yes"
@@ -1007,7 +1002,7 @@ elif compile_prog "" "$pthread_lib -lrt" ; then
 fi
 
 if test "$darwin" != "yes" -a "$mingw32" != "yes" -a "$solaris" != yes -a \
-        "$aix" != "yes" -a "$haiku" != "yes" ; then
+        "$haiku" != "yes" ; then
     libs_softmmu="-lutil $libs_softmmu"
 fi
 
