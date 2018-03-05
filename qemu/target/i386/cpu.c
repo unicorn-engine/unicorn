@@ -883,7 +883,7 @@ struct X86CPUDefinition {
     int model;
     int stepping;
     FeatureWordArray features;
-    char model_id[48];
+    const char *model_id;
     bool cache_info_passthrough;
 };
 
@@ -1094,6 +1094,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_1_EDX
             I486_FEATURES,
         },
+        "",
     },
     {
         "pentium",
@@ -1104,6 +1105,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_1_EDX
             PENTIUM_FEATURES,
         },
+        "",
     },
     {
         "pentium2",
@@ -1114,6 +1116,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_1_EDX
             PENTIUM2_FEATURES,
         },
+        "",
     },
     {
         "pentium3",
@@ -1124,6 +1127,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_1_EDX
             PENTIUM3_FEATURES,
         },
+        "",
     },
     {
         "athlon",
@@ -2525,6 +2529,9 @@ static void x86_register_cpudef_type(struct uc_struct *uc, X86CPUDefinition *def
 
         x86_cpu_cpudef_class_init,
     };
+
+    /* catch mistakes instead of silently truncating model_id when too long */
+    assert(def->model_id && strlen(def->model_id) <= 48);
 
     type_register(uc, &ti);
     g_free(typename);
