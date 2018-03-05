@@ -2076,6 +2076,10 @@ static inline CPUARMState *cpu_init(struct uc_struct *uc, const char *cpu_model)
 
 #ifdef TARGET_ARM
 #define cpu_exec cpu_arm_exec
+
+#define ARM_CPU_TYPE_SUFFIX "-" TYPE_ARM_CPU
+#define ARM_CPU_TYPE_NAME(name) (name ARM_CPU_TYPE_SUFFIX)
+
 #define cpu_signal_handler cpu_arm_signal_handler
 #define cpu_list arm_cpu_list
 #endif
