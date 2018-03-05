@@ -1951,7 +1951,7 @@ static void gen_load_exclusive(DisasContext *s, int rt, int rt2,
 }
 
 static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
-                                TCGv_i64 inaddr, int size, int is_pair)
+                                TCGv_i64 addr, int size, int is_pair)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     /* if (env->exclusive_addr == addr && env->exclusive_val == [addr]
@@ -1968,13 +1968,8 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
      */
     TCGLabel *fail_label = gen_new_label(tcg_ctx);
     TCGLabel *done_label = gen_new_label(tcg_ctx);
-    TCGv_i64 addr = tcg_temp_local_new_i64(tcg_ctx);
     TCGv_i64 tmp;
 
-    /* Copy input into a local temp so it is not trashed when the
-     * basic block ends at the branch insn.
-     */
-    tcg_gen_mov_i64(tcg_ctx, addr, inaddr);
     tcg_gen_brcond_i64(tcg_ctx, TCG_COND_NE, addr, tcg_ctx->cpu_exclusive_addr, fail_label);
 
     tmp = tcg_temp_new_i64(tcg_ctx);
@@ -1986,26 +1981,24 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
             } else {
                 tcg_gen_concat32_i64(tcg_ctx, tmp, cpu_reg(s, rt2), cpu_reg(s, rt));
             }
-            tcg_gen_atomic_cmpxchg_i64(tcg_ctx, tmp, addr, tcg_ctx->cpu_exclusive_val, tmp,
+            tcg_gen_atomic_cmpxchg_i64(tcg_ctx, tmp, tcg_ctx->cpu_exclusive_addr,
+                                       tcg_ctx->cpu_exclusive_val, tmp,
                                        get_mem_index(s),
                                        MO_64 | MO_ALIGN | s->be_data);
             tcg_gen_setcond_i64(tcg_ctx, TCG_COND_NE, tmp, tmp, tcg_ctx->cpu_exclusive_val);
         } else if (s->be_data == MO_LE) {
-            gen_helper_paired_cmpxchg64_le(tcg_ctx, tmp, tcg_ctx->cpu_env, addr, cpu_reg(s, rt),
-                                           cpu_reg(s, rt2));
+            gen_helper_paired_cmpxchg64_le(tcg_ctx, tmp, tcg_ctx->cpu_env, tcg_ctx->cpu_exclusive_addr,
+                                           cpu_reg(s, rt), cpu_reg(s, rt2));
         } else {
-            gen_helper_paired_cmpxchg64_be(tcg_ctx, tmp, tcg_ctx->cpu_env, addr, cpu_reg(s, rt),
-                                           cpu_reg(s, rt2));
+            gen_helper_paired_cmpxchg64_be(tcg_ctx, tmp, tcg_ctx->cpu_env, tcg_ctx->cpu_exclusive_addr,
+                                           cpu_reg(s, rt), cpu_reg(s, rt2));
         }
     } else {
-        TCGv_i64 val = cpu_reg(s, rt);
-        tcg_gen_atomic_cmpxchg_i64(tcg_ctx, tmp, addr, tcg_ctx->cpu_exclusive_val, val,
-                                   get_mem_index(s),
+        tcg_gen_atomic_cmpxchg_i64(tcg_ctx, tmp, tcg_ctx->cpu_exclusive_addr, tcg_ctx->cpu_exclusive_val,
+                                   cpu_reg(s, rt), get_mem_index(s),
                                    size | MO_ALIGN | s->be_data);
         tcg_gen_setcond_i64(tcg_ctx, TCG_COND_NE, tmp, tmp, tcg_ctx->cpu_exclusive_val);
     }
-
-    tcg_temp_free_i64(tcg_ctx, addr);
 
     tcg_gen_mov_i64(tcg_ctx, cpu_reg(s, rd), tmp);
     tcg_temp_free_i64(tcg_ctx, tmp);
