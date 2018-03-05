@@ -529,6 +529,19 @@ typedef struct CPUARMState {
         uint32_t rnr;
     } pmsav7;
 
+    /* PMSAv8 MPU */
+    struct {
+        /* The PMSAv8 implementation also shares some PMSAv7 config
+         * and state:
+         *  pmsav7.rnr (region number register)
+         *  pmsav7_dregion (number of configured regions)
+         */
+        uint32_t *rbar;
+        uint32_t *rlar;
+        uint32_t mair0;
+        uint32_t mair1;
+    } pmsav8;
+
     void *nvic;
     const struct arm_boot_info *boot_info;
 
