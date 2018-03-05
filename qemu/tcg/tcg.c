@@ -2441,7 +2441,7 @@ static void tcg_reg_alloc_mov(TCGContext *s, const TCGOpDef *def,
     TCGTemp *ts, *ots;
     TCGType otype, itype;
 
-    tcg_regset_set(allocated_regs, s->reserved_regs);
+    allocated_regs = s->reserved_regs;
     ots = &s->temps[args[0]];
     ts = &s->temps[args[1]];
 
@@ -2511,7 +2511,6 @@ static void tcg_reg_alloc_op(TCGContext *s,
                              const TCGOpDef *def, TCGOpcode opc,
                              const TCGArg *args, TCGLifeData arg_life)
 {
-    TCGRegSet allocated_regs;
     TCGRegSet i_allocated_regs;
     TCGRegSet o_allocated_regs;
     int i, k, nb_iargs, nb_oargs;
@@ -2530,8 +2529,8 @@ static void tcg_reg_alloc_op(TCGContext *s,
            args + nb_oargs + nb_iargs,
            sizeof(TCGArg) * def->nb_cargs);
 
-    tcg_regset_set(i_allocated_regs, s->reserved_regs);
-    tcg_regset_set(o_allocated_regs, s->reserved_regs);
+    i_allocated_regs = s->reserved_regs;
+    o_allocated_regs = s->reserved_regs;
 
     /* satisfy input constraints */
     for(k = 0; k < nb_iargs; k++) {
@@ -2550,7 +2549,6 @@ static void tcg_reg_alloc_op(TCGContext *s,
 
         temp_load(s, ts, arg_ct->u.regs, i_allocated_regs);
 
-        assert(ts->val_type == TEMP_VAL_REG);
         if (arg_ct->ct & TCG_CT_IALIAS) {
             if (ts->fixed_reg) {
                 /* if fixed register, we must allocate a new register
@@ -2563,6 +2561,16 @@ static void tcg_reg_alloc_op(TCGContext *s,
                    a new register and move it */
                 if (!IS_DEAD_ARG(i)) {
                     goto allocate_in_reg;
+                }
+                /* check if the current register has already been allocated
+                   for another input aliased to an output */
+                int k2, i2;
+                for (k2 = 0 ; k2 < k ; k2++) {
+                    i2 = def->sorted_args[nb_oargs + k2];
+                    if ((def->args_ct[i2].ct & TCG_CT_IALIAS) &&
+                        (new_args[i2] == ts->reg)) {
+                        goto allocate_in_reg;
+                    }
                 }
             }
         }
@@ -2595,7 +2603,7 @@ static void tcg_reg_alloc_op(TCGContext *s,
     } else {
         if (def->flags & TCG_OPF_CALL_CLOBBER) {
             /* XXX: permit generic clobber register list ? */
-            for(i = 0; i < TCG_TARGET_NB_REGS; i++) {
+            for (i = 0; i < TCG_TARGET_NB_REGS; i++) {
                 if (tcg_regset_test_reg(s->tcg_target_call_clobber_regs, i)) {
                     tcg_reg_free(s, i, i_allocated_regs);
                 }
@@ -2608,7 +2616,6 @@ static void tcg_reg_alloc_op(TCGContext *s,
         }
 
         /* satisfy the output constraints */
-        tcg_regset_set(allocated_regs, s->reserved_regs);
         for(k = 0; k < nb_oargs; k++) {
             i = def->sorted_args[k];
             arg = args[i];
@@ -2727,7 +2734,7 @@ static void tcg_reg_alloc_call(TCGContext *s, int nb_oargs, int nb_iargs,
     }
 
     /* assign input registers */
-    tcg_regset_set(allocated_regs, s->reserved_regs);
+    allocated_regs = s->reserved_regs;
     for(i = 0; i < nb_regs; i++) {
         arg = args[nb_oargs + i];
         if (arg != TCG_CALL_DUMMY_ARG) {
