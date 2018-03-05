@@ -2117,6 +2117,41 @@ static void gen_shifti(DisasContext *s, int op, TCGMemOp ot, int d, int c)
     }
 }
 
+static uint64_t advance_pc(CPUX86State *env, DisasContext *s, int num_bytes)
+{
+    uint64_t pc = s->pc;
+
+    s->pc += num_bytes;
+    return pc;
+}
+
+static inline uint8_t x86_ldub_code(CPUX86State *env, DisasContext *s)
+{
+    return cpu_ldub_code(env, advance_pc(env, s, 1));
+}
+
+static inline int16_t x86_ldsw_code(CPUX86State *env, DisasContext *s)
+{
+    return cpu_ldsw_code(env, advance_pc(env, s, 2));
+}
+
+static inline uint16_t x86_lduw_code(CPUX86State *env, DisasContext *s)
+{
+    return cpu_lduw_code(env, advance_pc(env, s, 2));
+}
+
+static inline uint32_t x86_ldl_code(CPUX86State *env, DisasContext *s)
+{
+    return cpu_ldl_code(env, advance_pc(env, s, 4));
+}
+
+#ifdef TARGET_X86_64
+static inline uint64_t x86_ldq_code(CPUX86State *env, DisasContext *s)
+{
+    return cpu_ldq_code(env, advance_pc(env, s, 8));
+}
+#endif
+
 /* Decompose an address.  */
 
 typedef struct AddressParts {
@@ -2156,7 +2191,7 @@ static AddressParts gen_lea_modrm_0(CPUX86State *env, DisasContext *s,
     case MO_32:
         havesib = 0;
         if (rm == 4) {
-            int code = cpu_ldub_code(env, s->pc++);
+            int code = x86_ldub_code(env, s);
             scale = (code >> 6) & 3;
             index = ((code >> 3) & 7) | REX_X(s);
             if (index == 4) {
@@ -2170,8 +2205,7 @@ static AddressParts gen_lea_modrm_0(CPUX86State *env, DisasContext *s,
         case 0:
             if ((base & 7) == 5) {
                 base = -1;
-                disp = (int32_t)cpu_ldl_code(env, s->pc);
-                s->pc += 4;
+                disp = (int32_t)x86_ldl_code(env, s);
                 if (CODE64(s) && !havesib) {
                     base = -2;
                     disp += s->pc + s->rip_offset;
@@ -2179,12 +2213,11 @@ static AddressParts gen_lea_modrm_0(CPUX86State *env, DisasContext *s,
             }
             break;
         case 1:
-            disp = (int8_t)cpu_ldub_code(env, s->pc++);
+            disp = (int8_t)x86_ldub_code(env, s);
             break;
         default:
         case 2:
-            disp = (int32_t)cpu_ldl_code(env, s->pc);
-            s->pc += 4;
+            disp = (int32_t)x86_ldl_code(env, s);
             break;
         }
 
@@ -2202,15 +2235,13 @@ static AddressParts gen_lea_modrm_0(CPUX86State *env, DisasContext *s,
         if (mod == 0) {
             if (rm == 6) {
                 base = -1;
-                disp = cpu_lduw_code(env, s->pc);
-                s->pc += 2;
+                disp = x86_lduw_code(env, s);
                 break;
             }
         } else if (mod == 1) {
-            disp = (int8_t)cpu_ldub_code(env, s->pc++);
+            disp = (int8_t)x86_ldub_code(env, s);
         } else {
-            disp = (int16_t)cpu_lduw_code(env, s->pc);
-            s->pc += 2;
+            disp = (int16_t)x86_lduw_code(env, s);
         }
 
         switch (rm) {
@@ -2379,19 +2410,16 @@ static inline uint32_t insn_get(CPUX86State *env, DisasContext *s, TCGMemOp ot)
 
     switch (ot) {
     case MO_8:
-        ret = cpu_ldub_code(env, s->pc);
-        s->pc++;
+        ret = x86_ldub_code(env, s);
         break;
     case MO_16:
-        ret = cpu_lduw_code(env, s->pc);
-        s->pc += 2;
+        ret = x86_lduw_code(env, s);
         break;
     case MO_32:
 #ifdef TARGET_X86_64
     case MO_64:
 #endif
-        ret = cpu_ldl_code(env, s->pc);
-        s->pc += 4;
+        ret = x86_ldl_code(env, s);
         break;
     default:
         tcg_abort();
@@ -3609,7 +3637,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
         gen_helper_enter_mmx(tcg_ctx, cpu_env);
     }
 
-    modrm = cpu_ldub_code(env, s->pc++);
+    modrm = x86_ldub_code(env, s);
     reg = ((modrm >> 3) & 7);
     if (is_xmm)
         reg |= rex_r;
@@ -3818,8 +3846,8 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
 
                 if (b1 == 1 && reg != 0)
                     goto illegal_op;
-                field_length = cpu_ldub_code(env, s->pc++) & 0x3F;
-                bit_index = cpu_ldub_code(env, s->pc++) & 0x3F;
+                field_length = x86_ldub_code(env, s) & 0x3F;
+                bit_index = x86_ldub_code(env, s) & 0x3F;
                 tcg_gen_addi_ptr(tcg_ctx, cpu_ptr0, cpu_env,
                     offsetof(CPUX86State,xmm_regs[reg]));
                 if (b1 == 1)
@@ -3948,7 +3976,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             if (b1 >= 2) {
             goto unknown_op;
             }
-            val = cpu_ldub_code(env, s->pc++);
+            val = x86_ldub_code(env, s);
             if (is_xmm) {
                 tcg_gen_movi_tl(tcg_ctx, cpu_T0, val);
                 tcg_gen_st32_tl(tcg_ctx, cpu_T0, cpu_env, offsetof(CPUX86State,xmm_t0.ZMM_L(0)));
@@ -4105,7 +4133,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
         case 0x1c4:
             s->rip_offset = 1;
             gen_ldst_modrm(env, s, modrm, MO_16, OR_TMP0, 0);
-            val = cpu_ldub_code(env, s->pc++);
+            val = x86_ldub_code(env, s);
             if (b1) {
                 val &= 7;
                 tcg_gen_st16_tl(tcg_ctx, cpu_T0, cpu_env,
@@ -4121,7 +4149,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             if (mod != 3)
                 goto illegal_op;
             ot = mo_64_32(s->dflag);
-            val = cpu_ldub_code(env, s->pc++);
+            val = x86_ldub_code(env, s);
             if (b1) {
                 val &= 7;
                 rm = (modrm & 7) | REX_B(s);
@@ -4184,7 +4212,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             if ((b & 0xf0) == 0xf0) {
                 goto do_0f_38_fx;
             }
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             rm = modrm & 7;
             reg = ((modrm >> 3) & 7) | rex_r;
             mod = (modrm >> 6) & 3;
@@ -4261,7 +4289,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
         do_0f_38_fx:
             /* Various integer extensions at 0f 38 f[0-f].  */
             b = modrm | (b1 << 8);
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             reg = ((modrm >> 3) & 7) | rex_r;
 
             switch (b) {
@@ -4622,7 +4650,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
         case 0x03a:
         case 0x13a:
             b = modrm;
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             rm = modrm & 7;
             reg = ((modrm >> 3) & 7) | rex_r;
             mod = (modrm >> 6) & 3;
@@ -4645,7 +4673,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                 if (mod != 3)
                     gen_lea_modrm(env, s, modrm);
                 reg = ((modrm >> 3) & 7) | rex_r;
-                val = cpu_ldub_code(env, s->pc++);
+                val = x86_ldub_code(env, s);
                 switch (b) {
                 case 0x14: /* pextrb */
                     tcg_gen_ld8u_tl(tcg_ctx, cpu_T0, cpu_env, offsetof(CPUX86State,
@@ -4793,7 +4821,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                     gen_ldq_env_A0(s, op2_offset);
                 }
             }
-            val = cpu_ldub_code(env, s->pc++);
+            val = x86_ldub_code(env, s);
 
             if ((b & 0xfc) == 0x60) { /* pcmpXstrX */
                 set_cc_op(s, CC_OP_EFLAGS);
@@ -4812,7 +4840,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
         case 0x33a:
             /* Various integer extensions at 0f 3a f[0-f].  */
             b = modrm | (b1 << 8);
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             reg = ((modrm >> 3) & 7) | rex_r;
 
             switch (b) {
@@ -4824,7 +4852,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                 }
                 ot = mo_64_32(s->dflag);
                 gen_ldst_modrm(env, s, modrm, ot, OR_TMP0, 0);
-                b = cpu_ldub_code(env, s->pc++);
+                b = x86_ldub_code(env, s);
                 if (ot == MO_64) {
                     tcg_gen_rotri_tl(tcg_ctx, cpu_T0, cpu_T0, b & 63);
                 } else {
@@ -4916,7 +4944,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
         }
         switch(b) {
         case 0x0f: /* 3DNow! data insns */
-            val = cpu_ldub_code(env, s->pc++);
+            val = x86_ldub_code(env, s);
             sse_fn_epp = sse_op_table5[val];
             if (!sse_fn_epp) {
                 goto unknown_op;
@@ -4930,7 +4958,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             break;
         case 0x70: /* pshufx insn */
         case 0xc6: /* pshufx insn */
-            val = cpu_ldub_code(env, s->pc++);
+            val = x86_ldub_code(env, s);
             tcg_gen_addi_ptr(tcg_ctx, cpu_ptr0, cpu_env, op1_offset);
             tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
             /* XXX: introduce a new table? */
@@ -4939,7 +4967,7 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             break;
         case 0xc2:
             /* compare insns */
-            val = cpu_ldub_code(env, s->pc++);
+            val = x86_ldub_code(env, s);
             if (val >= 8)
                 goto unknown_op;
             sse_fn_epp = sse_op_table4[val][b1];
@@ -5074,8 +5102,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     if (s->pc - pc_start > 14) {
         goto illegal_op;
     }
-    b = cpu_ldub_code(env, s->pc);
-    s->pc++;
+    b = x86_ldub_code(env, s);
     /* Collect prefixes.  */
     switch (b) {
     case 0xf3:
@@ -5147,7 +5174,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             static const int pp_prefix[4] = {
                 0, PREFIX_DATA, PREFIX_REPZ, PREFIX_REPNZ
             };
-            int vex3, vex2 = cpu_ldub_code(env, s->pc);
+            int vex3, vex2 = x86_ldub_code(env, s);
 
             if (!CODE64(s) && (vex2 & 0xc0) != 0xc0) {
                 /* 4.1.4.6: In 32-bit mode, bits [7:6] must be 11b,
@@ -5169,17 +5196,17 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             rex_r = (~vex2 >> 4) & 8;
             if (b == 0xc5) {
                 vex3 = vex2;
-                b = cpu_ldub_code(env, s->pc++);
+                b = x86_ldub_code(env, s);
             } else {
 #ifdef TARGET_X86_64
                 s->rex_x = (~vex2 >> 3) & 8;
                 s->rex_b = (~vex2 >> 2) & 8;
 #endif
-                vex3 = cpu_ldub_code(env, s->pc++);
+                vex3 = x86_ldub_code(env, s);
                 rex_w = (vex3 >> 7) & 1;
                 switch (vex2 & 0x1f) {
                 case 0x01: /* Implied 0f leading opcode bytes.  */
-                    b = cpu_ldub_code(env, s->pc++) | 0x100;
+                    b = x86_ldub_code(env, s) | 0x100;
                     break;
                 case 0x02: /* Implied 0f 38 leading opcode bytes.  */
                     b = 0x138;
@@ -5231,7 +5258,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0x0f:
         /**************************/
         /* extended op code */
-        b = cpu_ldub_code(env, s->pc++) | 0x100;
+        b = x86_ldub_code(env, s) | 0x100;
         goto reswitch;
 
         /**************************/
@@ -5253,7 +5280,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 
             switch(f) {
             case 0: /* OP Ev, Gv */
-                modrm = cpu_ldub_code(env, s->pc++);
+                modrm = x86_ldub_code(env, s);
                 reg = ((modrm >> 3) & 7) | rex_r;
                 mod = (modrm >> 6) & 3;
                 rm = (modrm & 7) | REX_B(s);
@@ -5274,7 +5301,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
                 gen_op(s, op, ot, opreg);
                 break;
             case 1: /* OP Gv, Ev */
-                modrm = cpu_ldub_code(env, s->pc++);
+                modrm = x86_ldub_code(env, s);
                 mod = (modrm >> 6) & 3;
                 reg = ((modrm >> 3) & 7) | rex_r;
                 rm = (modrm & 7) | REX_B(s);
@@ -5308,7 +5335,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 
             ot = mo_b_d(b, dflag);
 
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             mod = (modrm >> 6) & 3;
             rm = (modrm & 7) | REX_B(s);
             op = (modrm >> 3) & 7;
@@ -5356,7 +5383,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0xf7:
         ot = mo_b_d(b, dflag);
 
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         rm = (modrm & 7) | REX_B(s);
         op = (modrm >> 3) & 7;
@@ -5588,7 +5615,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0xff: /* GRP5 */
         ot = mo_b_d(b, dflag);
 
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         rm = (modrm & 7) | REX_B(s);
         op = (modrm >> 3) & 7;
@@ -5696,7 +5723,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0x85:
         ot = mo_b_d(b, dflag);
 
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
 
         gen_ldst_modrm(env, s, modrm, ot, OR_TMP0, 0);
@@ -5768,7 +5795,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0x69: /* imul Gv, Ev, I */
     case 0x6b:
         ot = dflag;
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
         if (b == 0x69)
             s->rip_offset = insn_const_size(ot);
@@ -5820,7 +5847,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0x1c0:
     case 0x1c1: /* xadd Ev, Gv */
         ot = mo_b_d(b, dflag);
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
         mod = (modrm >> 6) & 3;
         gen_op_mov_v_reg(tcg_ctx, ot, cpu_T0, reg);
@@ -5852,7 +5879,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             TCGv oldv, newv, cmpv;
 
             ot = mo_b_d(b, dflag);
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             reg = ((modrm >> 3) & 7) | rex_r;
             mod = (modrm >> 6) & 3;
             oldv = tcg_temp_new(tcg_ctx);
@@ -5903,7 +5930,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         }
         break;
     case 0x1c7: /* cmpxchg8b */
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         if ((mod == 3) || ((modrm & 0x38) != 0x8))
             goto illegal_op;
@@ -5967,7 +5994,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         gen_push_v(s, cpu_T0);
         break;
     case 0x8f: /* pop Ev */
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         ot = gen_pop_T0(s);
         if (mod == 3) {
@@ -5986,9 +6013,8 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0xc8: /* enter */
         {
             int level;
-            val = cpu_lduw_code(env, s->pc);
-            s->pc += 2;
-            level = cpu_ldub_code(env, s->pc++);
+            val = x86_lduw_code(env, s);
+            level = x86_ldub_code(env, s);
             gen_enter(s, val, level);
         }
         break;
@@ -6045,7 +6071,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0x88:
     case 0x89: /* mov Gv, Ev */
         ot = mo_b_d(b, dflag);
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
 
         /* generate a generic store */
@@ -6054,7 +6080,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0xc6:
     case 0xc7: /* mov Ev, Iv */
         ot = mo_b_d(b, dflag);
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         reg = ((modrm >> 3) & 7) | rex_r;
         if (mod != 3) {
@@ -6077,14 +6103,14 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0x8a:
     case 0x8b: /* mov Ev, Gv */
         ot = mo_b_d(b, dflag);
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
 
         gen_ldst_modrm(env, s, modrm, ot, OR_TMP0, 0);
         gen_op_mov_reg_v(tcg_ctx, ot, reg, cpu_T0);
         break;
     case 0x8e: /* mov seg, Gv */
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = (modrm >> 3) & 7;
         if (reg >= 6 || reg == R_CS)
             goto illegal_op;
@@ -6102,7 +6128,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         }
         break;
     case 0x8c: /* mov Gv, seg */
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = (modrm >> 3) & 7;
         mod = (modrm >> 6) & 3;
         if (reg >= 6)
@@ -6127,7 +6153,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             /* s_ot is the sign+size of source */
             s_ot = b & 8 ? MO_SIGN | ot : ot;
 
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             reg = ((modrm >> 3) & 7) | rex_r;
             mod = (modrm >> 6) & 3;
             rm = (modrm & 7) | REX_B(s);
@@ -6163,7 +6189,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         break;
 
     case 0x8d: /* lea */
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         if (mod == 3)
             goto illegal_op;
@@ -6187,8 +6213,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             switch (s->aflag) {
 #ifdef TARGET_X86_64
             case MO_64:
-                offset_addr = cpu_ldq_code(env, s->pc);
-                s->pc += 8;
+                offset_addr = x86_ldq_code(env, s);
                 break;
 #endif
             default:
@@ -6227,8 +6252,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         if (dflag == MO_64) {
             uint64_t tmp;
             /* 64 bit case */
-            tmp = cpu_ldq_code(env, s->pc);
-            s->pc += 8;
+            tmp = x86_ldq_code(env, s);
             reg = (b & 7) | REX_B(s);
             tcg_gen_movi_tl(tcg_ctx, cpu_T0, tmp);
             gen_op_mov_reg_v(tcg_ctx, MO_64, reg, cpu_T0);
@@ -6253,7 +6277,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0x86:
     case 0x87: /* xchg Ev, Gv */
         ot = mo_b_d(b, dflag);
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
         mod = (modrm >> 6) & 3;
         if (mod == 3) {
@@ -6290,7 +6314,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         op = R_GS;
     do_lxx:
         ot = dflag != MO_16 ? MO_32 : MO_16;
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
         mod = (modrm >> 6) & 3;
         if (mod == 3)
@@ -6318,7 +6342,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     grp2_label:
         {
             ot = mo_b_d(b, dflag);
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             mod = (modrm >> 6) & 3;
             op = (modrm >> 3) & 7;
 
@@ -6337,7 +6361,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
                 gen_shift(s, op, ot, opreg, OR_ECX);
             } else {
                 if (shift == 2) {
-                    shift = cpu_ldub_code(env, s->pc++);
+                    shift = x86_ldub_code(env, s);
                 }
                 gen_shifti(s, op, ot, opreg, shift);
             }
@@ -6371,7 +6395,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         shift = 0;
     do_shiftd:
         ot = dflag;
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         rm = (modrm & 7) | REX_B(s);
         reg = ((modrm >> 3) & 7) | rex_r;
@@ -6384,7 +6408,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         gen_op_mov_v_reg(tcg_ctx, ot, cpu_T1, reg);
 
         if (shift) {
-            TCGv imm = tcg_const_tl(tcg_ctx, cpu_ldub_code(env, s->pc++));
+            TCGv imm = tcg_const_tl(tcg_ctx, x86_ldub_code(env, s));
             gen_shiftd_rm_T1(s, ot, opreg, op, imm);
             tcg_temp_free(tcg_ctx, imm);
         } else {
@@ -6402,14 +6426,14 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             gen_exception(s, EXCP07_PREX, pc_start - s->cs_base);
             break;
         }
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         rm = modrm & 7;
         op = ((b & 7) << 3) | ((modrm >> 3) & 7);
         if (mod != 3) {
             /* memory op */
             gen_lea_modrm(env, s, modrm);
-            
+
             if( (op >= 0x00 && op <= 0x07) || /* fxxxs */
                 (op >= 0x10 && op <= 0x17) || /* fixxxl */
                 (op >= 0x20 && op <= 0x27) || /* fxxxl */
@@ -7022,7 +7046,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0xe4:  // in
     case 0xe5:  // out
         ot = mo_b_d32(b, dflag);
-        val = cpu_ldub_code(env, s->pc++);
+        val = x86_ldub_code(env, s);
         tcg_gen_movi_tl(tcg_ctx, cpu_T0, val);
         gen_check_io(s, ot, pc_start - s->cs_base,
                      SVM_IOIO_TYPE_MASK | svm_is_rep(prefixes));
@@ -7034,7 +7058,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0xe6:
     case 0xe7:
         ot = mo_b_d32(b, dflag);
-        val = cpu_ldub_code(env, s->pc++);
+        val = x86_ldub_code(env, s);
         tcg_gen_movi_tl(tcg_ctx, cpu_T0, val);
         gen_check_io(s, ot, pc_start - s->cs_base,
                      svm_is_rep(prefixes));
@@ -7073,8 +7097,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         /************************/
         /* control */
     case 0xc2: /* ret im */
-        val = cpu_ldsw_code(env, s->pc);
-        s->pc += 2;
+        val = x86_ldsw_code(env, s);
         ot = gen_pop_T0(s);
         gen_stack_update(s, val + (1 << ot));
         /* Note that gen_pop_T0 uses a zero-extending load.  */
@@ -7091,8 +7114,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         gen_jr(s, cpu_T0);
         break;
     case 0xca: /* lret im */
-        val = cpu_ldsw_code(env, s->pc);
-        s->pc += 2;
+        val = x86_ldsw_code(env, s);
     do_lret:
         if (s->pe && !s->vm86) {
             gen_update_cc_op(s);
@@ -7235,7 +7257,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     //case 0x190 ... 0x19f: /* setcc Gv */
     case 0x190: case 0x191: case 0x192: case 0x193: case 0x194: case 0x195: case 0x196: case 0x197:
     case 0x198: case 0x199: case 0x19a: case 0x19b: case 0x19c: case 0x19d: case 0x19e: case 0x19f:
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         gen_setcc1(s, b, cpu_T0);
         gen_ldst_modrm(env, s, modrm, MO_8, OR_TMP0, 1);
         break;
@@ -7246,7 +7268,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             goto illegal_op;
         }
         ot = dflag;
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
         gen_cmovcc1(env, s, ot, b, modrm, reg);
         break;
@@ -7363,7 +7385,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         /* bit operations */
     case 0x1ba: /* bt/bts/btr/btc Gv, im */
         ot = dflag;
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         op = (modrm >> 3) & 7;
         mod = (modrm >> 6) & 3;
         rm = (modrm & 7) | REX_B(s);
@@ -7377,7 +7399,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             gen_op_mov_v_reg(tcg_ctx, ot, cpu_T0, rm);
         }
         /* load shift */
-        val = cpu_ldub_code(env, s->pc++);
+        val = x86_ldub_code(env, s);
         tcg_gen_movi_tl(tcg_ctx, cpu_T1, val);
         if (op < 4)
             goto unknown_op;
@@ -7396,7 +7418,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         op = 3;
     do_btx:
         ot = dflag;
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
         mod = (modrm >> 6) & 3;
         rm = (modrm & 7) | REX_B(s);
@@ -7501,7 +7523,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0x1bc: /* bsf / tzcnt */
     case 0x1bd: /* bsr / lzcnt */
         ot = dflag;
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
         gen_ldst_modrm(env, s, modrm, ot, OR_TMP0, 0);
         gen_extu(tcg_ctx, ot, cpu_T0);
@@ -7581,7 +7603,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0xd4: /* aam */
         if (CODE64(s))
             goto illegal_op;
-        val = cpu_ldub_code(env, s->pc++);
+        val = x86_ldub_code(env, s);
         if (val == 0) {
             gen_exception(s, EXCP00_DIVZ, pc_start - s->cs_base);
         } else {
@@ -7592,7 +7614,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     case 0xd5: /* aad */
         if (CODE64(s))
             goto illegal_op;
-        val = cpu_ldub_code(env, s->pc++);
+        val = x86_ldub_code(env, s);
         gen_helper_aad(tcg_ctx, cpu_env, tcg_const_i32(tcg_ctx, val));
         set_cc_op(s, CC_OP_LOGICB);
         break;
@@ -7628,7 +7650,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         gen_interrupt(s, EXCP03_INT3, pc_start - s->cs_base, s->pc - s->cs_base);
         break;
     case 0xcd: /* int N */
-        val = cpu_ldub_code(env, s->pc++);
+        val = x86_ldub_code(env, s);
         if (s->vm86 && s->iopl != 3) {
             gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
         } else {
@@ -7696,7 +7718,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         if (CODE64(s))
             goto illegal_op;
         ot = dflag;
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = (modrm >> 3) & 7;
         mod = (modrm >> 6) & 3;
         if (mod == 3)
@@ -7868,7 +7890,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         }
         break;
     case 0x100:
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         op = (modrm >> 3) & 7;
         switch(op) {
@@ -7931,7 +7953,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         break;
 
 case 0x101:
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         switch (modrm) {
         CASE_MODRM_MEM_OP(0): /* sgdt */
             gen_svm_check_intercept(s, pc_start, SVM_EXIT_GDTR_READ);
@@ -8283,7 +8305,7 @@ case 0x101:
             /* d_ot is the size of destination */
             d_ot = dflag;
 
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             reg = ((modrm >> 3) & 7) | rex_r;
             mod = (modrm >> 6) & 3;
             rm = (modrm & 7) | REX_B(s);
@@ -8312,7 +8334,7 @@ case 0x101:
             t1 = tcg_temp_local_new(tcg_ctx);
             t2 = tcg_temp_local_new(tcg_ctx);
             ot = MO_16;
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             reg = (modrm >> 3) & 7;
             mod = (modrm >> 6) & 3;
             rm = modrm & 7;
@@ -8357,7 +8379,7 @@ case 0x101:
             if (!s->pe || s->vm86)
                 goto illegal_op;
             ot = dflag != MO_16 ? MO_32 : MO_16;
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             reg = ((modrm >> 3) & 7) | rex_r;
             gen_ldst_modrm(env, s, modrm, MO_16, OR_TMP0, 0);
             t0 = tcg_temp_local_new(tcg_ctx);
@@ -8377,7 +8399,7 @@ case 0x101:
         }
         break;
     case 0x118:
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         op = (modrm >> 3) & 7;
         switch(op) {
@@ -8396,7 +8418,7 @@ case 0x101:
         }
         break;
     case 0x11a:
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         if (s->flags & HF_MPX_EN_MASK) {
             mod = (modrm >> 6) & 3;
             reg = ((modrm >> 3) & 7) | rex_r;
@@ -8486,7 +8508,7 @@ case 0x101:
         gen_nop_modrm(env, s, modrm);
         break;
     case 0x11b:
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         if (s->flags & HF_MPX_EN_MASK) {
             mod = (modrm >> 6) & 3;
             reg = ((modrm >> 3) & 7) | rex_r;
@@ -8588,7 +8610,7 @@ case 0x101:
         gen_nop_modrm(env, s, modrm);
         break;
     case 0x119: case 0x11c: case 0x11d: case 0x11e: case 0x11f: /* nop (multi byte) */
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         gen_nop_modrm(env, s, modrm);
         break;
     case 0x120: /* mov reg, crN */
@@ -8596,7 +8618,7 @@ case 0x101:
         if (s->cpl != 0) {
             gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
         } else {
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             /* Ignore the mod bits (assume (modrm&0xc0)==0xc0).
              * AMD documentation (24594.pdf) and testing of
              * intel 386 and 486 processors all show that the mod bits
@@ -8665,7 +8687,7 @@ case 0x101:
         if (s->cpl != 0) {
             gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
         } else {
-            modrm = cpu_ldub_code(env, s->pc++);
+            modrm = x86_ldub_code(env, s);
             /* Ignore the mod bits (assume (modrm&0xc0)==0xc0).
              * AMD documentation (24594.pdf) and testing of
              * intel 386 and 486 processors all show that the mod bits
@@ -8711,7 +8733,7 @@ case 0x101:
         if (!(s->cpuid_features & CPUID_SSE2))
             goto illegal_op;
         ot = mo_64_32(dflag);
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         if (mod == 3)
             goto illegal_op;
@@ -8720,7 +8742,7 @@ case 0x101:
         gen_ldst_modrm(env, s, modrm, ot, reg, 1);
         break;
     case 0x1ae:
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         switch (modrm) {
         CASE_MODRM_MEM_OP(0): /* fxsave */
             if (!(s->cpuid_features & CPUID_FXSR)
@@ -8966,7 +8988,7 @@ case 0x101:
         break;
 
     case 0x10d: /* 3DNow! prefetch(w) */
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         mod = (modrm >> 6) & 3;
         if (mod == 3)
             goto illegal_op;
@@ -8988,7 +9010,7 @@ case 0x101:
         if (!(s->cpuid_ext_features & CPUID_EXT_POPCNT))
             goto illegal_op;
 
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = x86_ldub_code(env, s);
         reg = ((modrm >> 3) & 7) | rex_r;
 
         if (s->prefix & PREFIX_DATA) {
