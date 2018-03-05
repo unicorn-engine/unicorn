@@ -5700,6 +5700,30 @@ static void do_v7m_exception_exit(ARMCPU *cpu)
         }
         xpsr = ldl_phys(cs->as, frameptr + 0x1c);
 
+        if (arm_feature(env, ARM_FEATURE_V8)) {
+            /* For v8M we have to check whether the xPSR exception field
+             * matches the EXCRET value for return to handler/thread
+             * before we commit to changing the SP and xPSR.
+             */
+            bool will_be_handler = (xpsr & XPSR_EXCP) != 0;
+            if (return_to_handler != will_be_handler) {
+                /* Take an INVPC UsageFault on the current stack.
+                 * By this point we will have switched to the security state
+                 * for the background state, so this UsageFault will target
+                 * that state.
+                 */
+                // Unicorn: commented out
+                //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_USAGE,
+                //                        env->v7m.secure);
+                env->v7m.cfsr[env->v7m.secure] |= R_V7M_CFSR_INVPC_MASK;
+                v7m_exception_taken(cpu, excret);
+                qemu_log_mask(CPU_LOG_INT, "...taking UsageFault on existing "
+                              "stackframe: failed exception return integrity "
+                              "check\n");
+                return;
+            }
+        }
+
         /* Commit to consuming the stack frame */
         frameptr += 0x20;
         /* Undo stack alignment (the SPREALIGN bit indicates that the original
@@ -5719,9 +5743,13 @@ static void do_v7m_exception_exit(ARMCPU *cpu)
     /* The restored xPSR exception field will be zero if we're
      * resuming in Thread mode. If that doesn't match what the
      * exception return excret specified then this is a UsageFault.
+     * v7M requires we make this check here; v8M did it earlier.
      */
     if (return_to_handler != arm_v7m_is_handler_mode(env)) {
-        /* Take an INVPC UsageFault by pushing the stack again. */
+        /* Take an INVPC UsageFault by pushing the stack again;
+         * we know we're v7M so this is never a Secure UsageFault.
+         */
+        assert(!arm_feature(env, ARM_FEATURE_V8));
         // Unicorn: commented out
         //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_USAGE);
         env->v7m.cfsr[env->v7m.secure] |= R_V7M_CFSR_INVPC_MASK;
