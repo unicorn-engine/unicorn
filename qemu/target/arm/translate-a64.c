@@ -11643,6 +11643,19 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
+static void aarch64_tr_disas_log(const DisasContextBase *dcbase,
+                                      CPUState *cpu)
+{
+    // Unicorn: if'd out
+#if 0
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+
+    qemu_log("IN: %s\n", lookup_symbol(dc->base.pc_first));
+    log_target_disas(cpu, dc->base.pc_first, dc->base.tb->size,
+                     4 | (bswap_code(dc->sctlr_b) ? 2 : 0));
+#endif
+}
+
 void gen_intermediate_code_a64(DisasContextBase *dcbase, CPUState *cs,
                                TranslationBlock *tb)
 {
@@ -11650,7 +11663,6 @@ void gen_intermediate_code_a64(DisasContextBase *dcbase, CPUState *cs,
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     int max_insns;
-    bool block_full = false;
 
     dc->base.tb = tb;
     dc->base.pc_first = dc->base.tb->pc;
@@ -11658,6 +11670,8 @@ void gen_intermediate_code_a64(DisasContextBase *dcbase, CPUState *cs,
     dc->base.is_jmp = DISAS_NEXT;
     dc->base.num_insns = 0;
     dc->base.singlestep_enabled = cs->singlestep_enabled;
+
+    env->uc->block_full = false;
 
     max_insns = dc->base.tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0) {
@@ -11735,7 +11749,7 @@ void gen_intermediate_code_a64(DisasContextBase *dcbase, CPUState *cs,
 
     /* if too long translation, save this info */
     if (tcg_op_buf_full(tcg_ctx) || dc->base.num_insns >= max_insns) {
-        block_full = true;
+        env->uc->block_full = true;
     }
 
     //if (dc->base.tb->cflags & CF_LAST_IO) {
@@ -11747,22 +11761,19 @@ tb_end:
 
     gen_tb_end(tcg_ctx, tb, dc->base.num_insns);
 
-    // Unicorn: commented out
-#if 0
-    if (qemu_loglevel_mask(CPU_LOG_TB_IN_ASM) &&
-        qemu_log_in_addr_range(dc->base.pc_first)) {
-        qemu_log_lock();
-        qemu_log("----------------\n");
-        qemu_log("IN: %s\n", lookup_symbol(dc->base.pc_first));
-        log_target_disas(cs, dc->base.pc_first, dc->pc - dc->base.pc_first,
-                         4 | (bswap_code(dc->sctlr_b) ? 2 : 0));
-        qemu_log("\n");
-        qemu_log_unlock();
-    }
-#endif
-
     dc->base.tb->size = dc->pc - dc->base.pc_first;
     dc->base.tb->icount = dc->base.num_insns;
 
-    env->uc->block_full = block_full;
+    // Unicorn: commented out
+#ifdef DEBUG_DISAS
+    if (qemu_loglevel_mask(CPU_LOG_TB_IN_ASM) &&
+        qemu_log_in_addr_range(dc->base.pc_first)) {
+        //qemu_log_lock();
+        qemu_log("----------------\n");
+        //qemu_log("IN: %s\n", lookup_symbol(dc->base.pc_first));
+        aarch64_tr_disas_log(&dc->base, cs);
+        qemu_log("\n");
+        //qemu_log_unlock();
+    }
+#endif
 }

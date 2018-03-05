@@ -12423,6 +12423,8 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     dc->base.num_insns = 0;
     dc->base.singlestep_enabled = cs->singlestep_enabled;
 
+    env->uc->block_full = false;
+
     max_insns = tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0) {
         max_insns = CF_COUNT_MASK;
