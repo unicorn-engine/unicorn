@@ -143,35 +143,35 @@ uint64_t HELPER(ctpop_i64)(uint64_t arg)
     return ctpop64(arg);
 }
 
-void *HELPER(lookup_tb_ptr)(CPUArchState *env, target_ulong addr)
+void *HELPER(lookup_tb_ptr)(CPUArchState *env)
 {
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     CPUState *cpu = ENV_GET_CPU(env);
     TranslationBlock *tb;
     target_ulong cs_base, pc;
-    uint32_t flags, addr_hash;
+    uint32_t flags, hash;
 
-    addr_hash = tb_jmp_cache_hash_func(addr);
-    // Unicorn: atomic_read used instead of atomic_rcu_read
-    tb = atomic_read(&cpu->tb_jmp_cache[addr_hash]);
     cpu_get_tb_cpu_state(env, &pc, &cs_base, &flags);
+    hash = tb_jmp_cache_hash_func(pc);
+    // Unicorn: atomic_read used instead of atomic_rcu_read
+    tb = atomic_read(&cpu->tb_jmp_cache[hash]);
 
     if (unlikely(!(tb
-                   && tb->pc == addr
+                   && tb->pc == pc
                    && tb->cs_base == cs_base
                    && tb->flags == flags))) {
-        tb = tb_htable_lookup(cpu, addr, cs_base, flags);
+        tb = tb_htable_lookup(cpu, pc, cs_base, flags);
         if (!tb) {
             return tcg_ctx->code_gen_epilogue;
         }
-        atomic_set(&cpu->tb_jmp_cache[addr_hash], tb);
+        atomic_set(&cpu->tb_jmp_cache[hash], tb);
     }
 
     // Unicorn: commented out
-    //qemu_log_mask_and_addr(CPU_LOG_EXEC, addr,
+    //qemu_log_mask_and_addr(CPU_LOG_EXEC, pc,
     //                       "Chain %p [%d: " TARGET_FMT_lx "] %s\n",
-    //                       tb->tc_ptr, cpu->cpu_index, addr,
-    //                       lookup_symbol(addr));
+    //                       tb->tc_ptr, cpu->cpu_index, pc,
+    //                       lookup_symbol(pc));
     return tb->tc_ptr;
 }
 

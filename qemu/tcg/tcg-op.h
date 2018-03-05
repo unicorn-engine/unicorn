@@ -805,7 +805,7 @@ void tcg_gen_goto_tb(TCGContext *s, unsigned idx);
  * This operation is optional. If the TCG backend does not implement goto_ptr,
  * this op is equivalent to calling tcg_gen_exit_tb() with 0 as the argument.
  */
-void tcg_gen_lookup_and_goto_ptr(TCGContext *s, TCGv addr);
+void tcg_gen_lookup_and_goto_ptr(TCGContext *s);
 
 #if TARGET_LONG_BITS == 32
 #define tcg_temp_new(s) tcg_temp_new_i32(s)

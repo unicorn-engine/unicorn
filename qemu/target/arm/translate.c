@@ -4283,7 +4283,7 @@ static void gen_goto_ptr(DisasContext *s)
 
     TCGv addr = tcg_temp_new(tcg_ctx);
     tcg_gen_extu_i32_tl(tcg_ctx, addr, tcg_ctx->cpu_R[15]);
-    tcg_gen_lookup_and_goto_ptr(tcg_ctx, addr);
+    tcg_gen_lookup_and_goto_ptr(tcg_ctx);
     tcg_temp_free(tcg_ctx, addr);
 }
 
