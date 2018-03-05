@@ -989,7 +989,7 @@ struct TCGContext {
 
 static inline TCGTemp *arg_temp(TCGContext *tcg_ctx, TCGArg a)
 {
-    return &tcg_ctx->temps[a];
+    return a == TCG_CALL_DUMMY_ARG ? NULL : &tcg_ctx->temps[a];
 }
 
 static inline void tcg_set_insn_param(TCGContext *tcg_ctx, int op_idx, int arg, TCGArg v)
