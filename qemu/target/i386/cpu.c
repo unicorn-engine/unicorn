@@ -399,6 +399,24 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         TCG_APM_FEATURES,
         CPUID_APM_INVTSC,
     },
+    // FEAT_8000_0008_EBX
+    {
+        {
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            "ibpb", NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+            NULL, NULL, NULL, NULL,
+        },
+        0x80000008,
+        false,0,
+        R_EBX,
+        0,
+        0,
+    },
     // FEAT_C000_0001_EDX
     {
         {
@@ -946,6 +964,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT3_ABM | CPUID_EXT3_SSE4A,
         // FEAT_8000_0007_EDX
             0,
+        // FEAT_8000_0008_EBX
+            0,
         // FEAT_C000_0001_EDX
             0,
         // FEAT_KVM
@@ -1292,6 +1312,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT3_LAHF_LM,
         // FEAT_8000_0007_EDX
             0,
+        // FEAT_8000_0008_EBX
+            0,
         // FEAT_C000_0001_EDX
             0,
         // FEAT_KVM
@@ -1341,6 +1363,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_8000_0001_ECX
             CPUID_EXT3_LAHF_LM,
         // FEAT_8000_0007_EDX
+            0,
+        // FEAT_8000_0008_EBX
             0,
         // FEAT_C000_0001_EDX
             0,
@@ -1392,6 +1416,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_8000_0001_ECX
             CPUID_EXT3_LAHF_LM,
         // FEAT_8000_0007_EDX
+            0,
+        // FEAT_8000_0008_EBX
             0,
         // FEAT_C000_0001_EDX
             0,
@@ -1446,6 +1472,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT3_ABM | CPUID_EXT3_LAHF_LM,
         // FEAT_8000_0007_EDX
             0,
+        // FEAT_8000_0008_EBX
+            0,
         // FEAT_C000_0001_EDX
             0,
         // FEAT_KVM
@@ -1499,6 +1527,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_8000_0001_ECX
             CPUID_EXT3_ABM | CPUID_EXT3_LAHF_LM,
         // FEAT_8000_0007_EDX
+            0,
+        // FEAT_8000_0008_EBX
             0,
         // FEAT_C000_0001_EDX
             0,
@@ -1555,6 +1585,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT3_ABM | CPUID_EXT3_LAHF_LM | CPUID_EXT3_3DNOWPREFETCH,
         // FEAT_8000_0007_EDX
             0,
+        // FEAT_8000_0008_EBX
+            0,
         // FEAT_C000_0001_EDX
             0,
         // FEAT_KVM
@@ -1610,6 +1642,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT3_ABM | CPUID_EXT3_LAHF_LM | CPUID_EXT3_3DNOWPREFETCH,
         // FEAT_8000_0007_EDX
             0,
+        // FEAT_8000_0008_EBX
+            0,
         // FEAT_C000_0001_EDX
             0,
         // FEAT_KVM
@@ -1664,6 +1698,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_8000_0001_ECX
             CPUID_EXT3_ABM | CPUID_EXT3_LAHF_LM | CPUID_EXT3_3DNOWPREFETCH,
         // FEAT_8000_0007_EDX
+            0,
+        // FEAT_8000_0008_EBX
             0,
         // FEAT_C000_0001_EDX
             0,
@@ -1731,6 +1767,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_8000_0001_ECX
             CPUID_EXT3_ABM | CPUID_EXT3_LAHF_LM | CPUID_EXT3_3DNOWPREFETCH,
         // FEAT_8000_0007_EDX
+            0,
+        // FEAT_8000_0008_EBX
             0,
         // FEAT_C000_0001_EDX
             0,
@@ -1943,6 +1981,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_EXT3_MISALIGNSSE | CPUID_EXT3_SSE4A | CPUID_EXT3_ABM |
             CPUID_EXT3_CR8LEG | CPUID_EXT3_SVM | CPUID_EXT3_LAHF_LM,
         // FEAT_8000_0007_EDX
+            0,
+        // FEAT_8000_0008_EBX
             0,
         // FEAT_C000_0001_EDX
             0,
@@ -2905,7 +2945,7 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         } else {
             *eax = cpu->phys_bits;
         }
-        *ebx = 0;
+        *ebx = env->features[FEAT_8000_0008_EBX];
         *ecx = 0;
         *edx = 0;
         if (cs->nr_cores * cs->nr_threads > 1) {
@@ -3306,6 +3346,7 @@ static void x86_cpu_expand_features(struct uc_struct *uc, X86CPU *cpu, Error **e
         x86_cpu_adjust_feat_level(cpu, FEAT_8000_0001_EDX);
         x86_cpu_adjust_feat_level(cpu, FEAT_8000_0001_ECX);
         x86_cpu_adjust_feat_level(cpu, FEAT_8000_0007_EDX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_8000_0008_EBX);
         x86_cpu_adjust_feat_level(cpu, FEAT_C000_0001_EDX);
         x86_cpu_adjust_feat_level(cpu, FEAT_SVM);
         x86_cpu_adjust_feat_level(cpu, FEAT_XSAVE);
