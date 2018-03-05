@@ -20740,8 +20740,6 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc, const char *cpu_model)
     env = &cpu->env;
     env->cpu_model = def;
 
-    cpu_mips_realize_env(env);
-
     object_property_set_bool(uc, OBJECT(cpu), true, "realized", NULL);
 
     return cpu;

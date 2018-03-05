@@ -108,7 +108,10 @@ static void mips_cpu_reset(CPUState *s)
 static int mips_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     CPUState *cs = CPU(dev);
+    MIPSCPU *cpu = MIPS_CPU(uc, dev);
     MIPSCPUClass *mcc = MIPS_CPU_GET_CLASS(uc, dev);
+
+    cpu_mips_realize_env(&cpu->env);
 
     cpu_reset(cs);
     qemu_init_vcpu(cs);
