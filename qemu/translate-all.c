@@ -83,6 +83,12 @@
 #undef DEBUG_TB_CHECK
 #endif
 
+#ifdef DEBUG_TB_CHECK
+#define DEBUG_TB_CHECK_GATE 1
+#else
+#define DEBUG_TB_CHECK_GATE 0
+#endif
+
 /* Access to the various translations structures need to be serialised via locks
  * for consistency. This is automatic for SoftMMU based system
  * emulation due to its single threaded nature. In user-mode emulation
@@ -972,7 +978,13 @@ void tb_flush(CPUState *cpu)
     tcg_ctx->tb_ctx.tb_flush_count++;
 }
 
-#ifdef DEBUG_TB_CHECK
+/*
+ * Formerly ifdef DEBUG_TB_CHECK. These debug functions are user-mode-only,
+ * so in order to prevent bit rot we compile them unconditionally in user-mode,
+ * and let the optimizer get rid of them by wrapping their user-only callers
+ * with if (DEBUG_TB_CHECK_GATE).
+ */
+#ifdef CONFIG_USER_ONLY
 
 /* verify that all the pages have correct rights for code
  *
@@ -1017,7 +1029,7 @@ static void tb_page_check(struct uc_struct *uc)
     }
 }
 
-#endif
+#endif /* CONFIG_USER_ONLY */
 
 static inline void tb_hash_remove(TranslationBlock **ptb, TranslationBlock *tb)
 {
@@ -1295,8 +1307,10 @@ static void tb_link_page(struct uc_struct *uc,
     tb->phys_hash_next = *ptb;
     *ptb = tb;
 
-#ifdef DEBUG_TB_CHECK
-    tb_page_check();
+#ifdef CONFIG_USER_ONLY
+    if (DEBUG_TB_CHECK_GATE) {
+        tb_page_check();
+    }
 #endif
 }
 
@@ -2225,8 +2239,10 @@ int page_unprotect(struct uc_struct *uc, target_ulong address, uintptr_t pc)
             /* and since the content will be modified, we must invalidate
                the corresponding translated code. */
             current_tb_invalidated |= tb_invalidate_phys_page(addr, pc);
-#ifdef DEBUG_TB_CHECK
-            tb_invalidate_check(addr);
+#ifdef CONFIG_USER_ONLY
+            if (DEBUG_TB_CHECK_GATE) {
+                tb_invalidate_check(addr);
+            }
 #endif
         }
         mprotect((void *)g2h(host_start), uc->qemu_host_page_size,
