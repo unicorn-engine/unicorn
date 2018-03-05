@@ -765,8 +765,8 @@ typedef struct TCGOpDef {
 
 struct tcg_temp_info {
     bool is_const;
-    uint16_t prev_copy;
-    uint16_t next_copy;
+    TCGTemp *prev_copy;
+    TCGTemp *next_copy;
     tcg_target_ulong val;
     tcg_target_ulong mask;
 };
@@ -1007,6 +1007,11 @@ static inline TCGArg temp_arg(TCGContext *tcg_ctx, TCGTemp *ts)
 static inline TCGTemp *arg_temp(TCGContext *tcg_ctx, TCGArg a)
 {
     return a == TCG_CALL_DUMMY_ARG ? NULL : &tcg_ctx->temps[a];
+}
+
+static inline size_t arg_index(TCGArg a)
+{
+    return a;
 }
 
 static inline void tcg_set_insn_param(TCGContext *tcg_ctx, int op_idx, int arg, TCGArg v)
