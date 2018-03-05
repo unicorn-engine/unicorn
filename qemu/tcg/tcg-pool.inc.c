@@ -32,7 +32,7 @@ typedef struct TCGLabelPoolData {
 static void new_pool_label(TCGContext *s, tcg_target_ulong data, int type,
                            tcg_insn_unit *label, intptr_t addend)
 {
-    TCGLabelPoolData *n = tcg_malloc(sizeof(*n));
+    TCGLabelPoolData *n = tcg_malloc(s, sizeof(*n));
     TCGLabelPoolData *i, **pp;
 
     n->data = data;
