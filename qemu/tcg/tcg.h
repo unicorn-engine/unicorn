@@ -987,6 +987,18 @@ struct TCGContext {
     TCGLabel *exitreq_label;  // gen_tb_start()
 };
 
+static inline size_t temp_idx(TCGContext *tcg_ctx, TCGTemp *ts)
+{
+    ptrdiff_t n = ts - tcg_ctx->temps;
+    tcg_debug_assert(n >= 0 && n < tcg_ctx->nb_temps);
+    return n;
+}
+
+static inline TCGArg temp_arg(TCGContext *tcg_ctx, TCGTemp *ts)
+{
+    return temp_idx(tcg_ctx, ts);
+}
+
 static inline TCGTemp *arg_temp(TCGContext *tcg_ctx, TCGArg a)
 {
     return a == TCG_CALL_DUMMY_ARG ? NULL : &tcg_ctx->temps[a];
