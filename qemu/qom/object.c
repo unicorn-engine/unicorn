@@ -1153,6 +1153,17 @@ Object *object_get_root(struct uc_struct *uc)
     return uc->root;
 }
 
+Object *object_get_internal_root(struct uc_struct *uc)
+{
+    static Object *internal_root;
+
+    if (!internal_root) {
+        internal_root = object_new(uc, "container");
+    }
+
+    return internal_root;
+}
+
 static void object_get_child_property(struct uc_struct *uc, Object *obj, Visitor *v,
                                       const char *name, void *opaque, Error **errp)
 {

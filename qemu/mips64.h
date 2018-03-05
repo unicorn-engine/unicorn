@@ -2391,6 +2391,7 @@
 #define object_finalize object_finalize_mips64
 #define object_finalize_child_property object_finalize_child_property_mips64
 #define object_get_child_property object_get_child_property_mips64
+#define object_get_internal_root object_get_internal_root_mips64
 #define object_get_link_property object_get_link_property_mips64
 #define object_get_root object_get_root_mips64
 #define object_init_with_type object_init_with_type_mips64
@@ -3440,7 +3441,6 @@
 #define cpu_mips_exec cpu_mips_exec_mips64
 #define cpu_mips_get_count cpu_mips_get_count_mips64
 #define cpu_mips_get_random cpu_mips_get_random_mips64
-#define cpu_mips_init cpu_mips_init_mips64
 #define cpu_mips_kseg0_to_phys cpu_mips_kseg0_to_phys_mips64
 #define cpu_mips_kvm_um_phys_to_kseg0 cpu_mips_kvm_um_phys_to_kseg0_mips64
 #define cpu_mips_phys_to_kseg0 cpu_mips_phys_to_kseg0_mips64

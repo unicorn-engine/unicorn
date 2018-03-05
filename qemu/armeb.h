@@ -2391,6 +2391,7 @@
 #define object_finalize object_finalize_armeb
 #define object_finalize_child_property object_finalize_child_property_armeb
 #define object_get_child_property object_get_child_property_armeb
+#define object_get_internal_root object_get_internal_root_armeb
 #define object_get_link_property object_get_link_property_armeb
 #define object_get_root object_get_root_armeb
 #define object_init_with_type object_init_with_type_armeb

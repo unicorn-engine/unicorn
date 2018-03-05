@@ -1054,6 +1054,17 @@ const char *object_property_get_type(struct uc_struct *uc, Object *obj,
 Object *object_get_root(struct uc_struct *uc);
 
 /**
+ * object_get_internal_root:
+ *
+ * Get the container object that holds internally used object
+ * instances.  Any object which is put into this container must not be
+ * user visible, and it will not be exposed in the QOM tree.
+ *
+ * Returns: the internal object container
+ */
+Object *object_get_internal_root(struct uc_struct *uc);
+
+/**
  * object_get_canonical_path_component:
  *
  * Returns: The final component in the object's canonical path.  The canonical

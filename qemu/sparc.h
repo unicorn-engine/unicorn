@@ -2391,6 +2391,7 @@
 #define object_finalize object_finalize_sparc
 #define object_finalize_child_property object_finalize_child_property_sparc
 #define object_get_child_property object_get_child_property_sparc
+#define object_get_internal_root object_get_internal_root_sparc
 #define object_get_link_property object_get_link_property_sparc
 #define object_get_root object_get_root_sparc
 #define object_init_with_type object_init_with_type_sparc

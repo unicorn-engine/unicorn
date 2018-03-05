@@ -2397,6 +2397,7 @@ symbols = (
     'object_finalize',
     'object_finalize_child_property',
     'object_get_child_property',
+    'object_get_internal_root',
     'object_get_link_property',
     'object_get_root',
     'object_init_with_type',
