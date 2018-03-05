@@ -3510,6 +3510,7 @@ mips_symbols = (
     'cpu_mips_kseg0_to_phys',
     'cpu_mips_kvm_um_phys_to_kseg0',
     'cpu_mips_phys_to_kseg0',
+    'cpu_mips_realize_env',
     'cpu_mips_start_count',
     'cpu_mips_stop_count',
     'cpu_mips_store_cause',
