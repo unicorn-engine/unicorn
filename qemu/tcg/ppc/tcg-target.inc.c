@@ -1301,7 +1301,8 @@ static void tcg_out_mb(TCGContext *s, TCGArg a0)
     tcg_out32(s, insn);
 }
 
-void ppc_tb_set_jmp_target(uintptr_t jmp_addr, uintptr_t addr)
+void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_addr,
+                              uintptr_t addr)
 {
     tcg_insn_unit i1, i2;
     uint64_t pair;

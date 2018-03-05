@@ -2929,7 +2929,6 @@
 #define target_el_table target_el_table_x86_64
 #define target_parse_constraint target_parse_constraint_x86_64
 #define target_words_bigendian target_words_bigendian_x86_64
-#define tb_add_jump tb_add_jump_x86_64
 #define tb_alloc tb_alloc_x86_64
 #define tb_alloc_page tb_alloc_page_x86_64
 #define tb_check_watchpoint tb_check_watchpoint_x86_64

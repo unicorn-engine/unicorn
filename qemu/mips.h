@@ -2929,7 +2929,6 @@
 #define target_el_table target_el_table_mips
 #define target_parse_constraint target_parse_constraint_mips
 #define target_words_bigendian target_words_bigendian_mips
-#define tb_add_jump tb_add_jump_mips
 #define tb_alloc tb_alloc_mips
 #define tb_alloc_page tb_alloc_page_mips
 #define tb_check_watchpoint tb_check_watchpoint_mips

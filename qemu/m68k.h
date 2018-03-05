@@ -2929,7 +2929,6 @@
 #define target_el_table target_el_table_m68k
 #define target_parse_constraint target_parse_constraint_m68k
 #define target_words_bigendian target_words_bigendian_m68k
-#define tb_add_jump tb_add_jump_m68k
 #define tb_alloc tb_alloc_m68k
 #define tb_alloc_page tb_alloc_page_m68k
 #define tb_check_watchpoint tb_check_watchpoint_m68k

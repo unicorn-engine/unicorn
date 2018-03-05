@@ -2929,7 +2929,6 @@
 #define target_el_table target_el_table_powerpc
 #define target_parse_constraint target_parse_constraint_powerpc
 #define target_words_bigendian target_words_bigendian_powerpc
-#define tb_add_jump tb_add_jump_powerpc
 #define tb_alloc tb_alloc_powerpc
 #define tb_alloc_page tb_alloc_page_powerpc
 #define tb_check_watchpoint tb_check_watchpoint_powerpc

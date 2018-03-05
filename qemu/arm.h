@@ -2929,7 +2929,6 @@
 #define target_el_table target_el_table_arm
 #define target_parse_constraint target_parse_constraint_arm
 #define target_words_bigendian target_words_bigendian_arm
-#define tb_add_jump tb_add_jump_arm
 #define tb_alloc tb_alloc_arm
 #define tb_alloc_page tb_alloc_page_arm
 #define tb_check_watchpoint tb_check_watchpoint_arm

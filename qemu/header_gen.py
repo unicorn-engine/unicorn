@@ -2935,7 +2935,7 @@ symbols = (
     'target_el_table',
     'target_parse_constraint',
     'target_words_bigendian',
-    'tb_add_jump',
+    #'tb_add_jump',
     'tb_alloc',
     'tb_alloc_page',
     'tb_check_watchpoint',

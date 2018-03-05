@@ -2929,7 +2929,6 @@
 #define target_el_table target_el_table_sparc64
 #define target_parse_constraint target_parse_constraint_sparc64
 #define target_words_bigendian target_words_bigendian_sparc64
-#define tb_add_jump tb_add_jump_sparc64
 #define tb_alloc tb_alloc_sparc64
 #define tb_alloc_page tb_alloc_page_sparc64
 #define tb_check_watchpoint tb_check_watchpoint_sparc64

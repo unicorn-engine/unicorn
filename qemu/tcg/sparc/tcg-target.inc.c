@@ -1675,7 +1675,8 @@ static void tcg_target_init(TCGContext *s)
 # define ELF_HOST_FLAGS    EF_SPARC_32PLUS
 #endif
 
-void tb_set_jmp_target1(uintptr_t jmp_addr, uintptr_t addr)
+void tb_target_set_jmp_target(uintptr_t tc_ptr, uintptr_t jmp_addr,
+                              uintptr_t addr)
 {
     uint32_t *ptr = (uint32_t *)jmp_addr;
     uintptr_t disp = addr - jmp_addr;
