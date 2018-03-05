@@ -12386,6 +12386,18 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     }
 }
 
+static void arm_tr_disas_log(const DisasContextBase *dcbase, CPUState *cpu)
+{
+    // Unicorn: if'd out
+#if 0
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+
+    qemu_log("IN: %s\n", lookup_symbol(dc->base.pc_first));
+    log_target_disas(cpu, dc->base.pc_first, dc->base.tb->size,
+                     dc->thumb | (dc->sctlr_b << 1));
+#endif
+}
+
 /* generate intermediate code for basic block 'tb'.  */
 void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
 {
@@ -12496,22 +12508,21 @@ tb_end:
 
     gen_tb_end(tcg_ctx, tb, dc->base.num_insns);
 
-    // Unicorn: if'd out
-#if 0
-    if (qemu_loglevel_mask(CPU_LOG_TB_IN_ASM) &&
-        qemu_log_in_addr_range(dc->base.pc_first)) {
-        qemu_log_lock();
-        qemu_log("----------------\n");
-        qemu_log("IN: %s\n", lookup_symbol(dc->base.pc_first));
-        log_target_disas(cs, dc->base.pc_first, dc->pc - dc->base.pc_first,
-                         dc->thumb | (dc->sctlr_b << 1));
-        qemu_log("\n");
-        qemu_log_unlock();
-    }
-#endif
-
     tb->size = dc->pc - dc->base.pc_first;
     tb->icount = dc->base.num_insns;
+
+    // Unicorn: commented out
+#ifdef DEBUG_DISAS
+    if (qemu_loglevel_mask(CPU_LOG_TB_IN_ASM) &&
+        qemu_log_in_addr_range(dc->base.pc_first)) {
+        //qemu_log_lock();
+        qemu_log("----------------\n");
+        //qemu_log("IN: %s\n", lookup_symbol(dc->base.pc_first));
+        arm_tr_disas_log(&dc->base, cs);
+        qemu_log("\n");
+        //qemu_log_unlock();
+    }
+#endif
 }
 
 #if 0
