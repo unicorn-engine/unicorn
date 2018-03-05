@@ -341,7 +341,7 @@ static inline void tcg_gen_discard_i32(TCGContext *s, TCGv_i32 arg)
 
 static inline void tcg_gen_mov_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg)
 {
-    if (!TCGV_EQUAL_I32(ret, arg)) {
+    if (ret != arg) {
         tcg_gen_op2_i32(s, INDEX_op_mov_i32, ret, arg);
     }
 }
@@ -527,7 +527,7 @@ static inline void tcg_gen_discard_i64(TCGContext *s, TCGv_i64 arg)
 
 static inline void tcg_gen_mov_i64(TCGContext *s, TCGv_i64 ret, TCGv_i64 arg)
 {
-    if (!TCGV_EQUAL_I64(ret, arg)) {
+    if (ret != arg) {
         tcg_gen_op2_i64(s, INDEX_op_mov_i64, ret, arg);
     }
 }
@@ -815,7 +815,6 @@ void tcg_gen_lookup_and_goto_ptr(TCGContext *s);
 #define tcg_temp_free tcg_temp_free_i32
 #define TCGV_UNUSED(x) TCGV_UNUSED_I32(x)
 #define TCGV_IS_UNUSED(x) TCGV_IS_UNUSED_I32(x)
-#define TCGV_EQUAL(a, b) TCGV_EQUAL_I32(a, b)
 #define tcg_gen_qemu_ld_tl tcg_gen_qemu_ld_i32
 #define tcg_gen_qemu_st_tl tcg_gen_qemu_st_i32
 #else
@@ -826,7 +825,6 @@ void tcg_gen_lookup_and_goto_ptr(TCGContext *s);
 #define tcg_temp_free tcg_temp_free_i64
 #define TCGV_UNUSED(x) TCGV_UNUSED_I64(x)
 #define TCGV_IS_UNUSED(x) TCGV_IS_UNUSED_I64(x)
-#define TCGV_EQUAL(a, b) TCGV_EQUAL_I64(a, b)
 #define tcg_gen_qemu_ld_tl tcg_gen_qemu_ld_i64
 #define tcg_gen_qemu_st_tl tcg_gen_qemu_st_i64
 #endif

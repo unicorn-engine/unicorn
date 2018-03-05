@@ -903,7 +903,7 @@ static CCPrepare gen_prepare_eflags_c(DisasContext *s, TCGv reg)
         size = s->cc_op - CC_OP_SUBB;
         t1 = gen_ext_tl(tcg_ctx, cpu_tmp0, cpu_cc_src, size, false);
         /* If no temporary was used, be careful not to alias t1 and t0.  */
-        t0 = TCGV_EQUAL(t1, cpu_cc_src) ? cpu_tmp0 : reg;
+        t0 = t1 == cpu_cc_src ? cpu_tmp0 : reg;
         tcg_gen_mov_tl(tcg_ctx, t0, cpu_cc_srcT);
         gen_extu(tcg_ctx, size, t0);
         goto add_sub;
@@ -1115,7 +1115,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
             break;
         case JCC_L:
             gen_compute_eflags(s);
-            if (TCGV_EQUAL(reg, cpu_cc_src)) {
+            if (reg == cpu_cc_src) {
                 reg = cpu_tmp0;
             }
             tcg_gen_shri_tl(tcg_ctx, reg, cpu_cc_src, 4); /* CC_O -> CC_S */
@@ -1125,7 +1125,7 @@ static CCPrepare gen_prepare_cc(DisasContext *s, int b, TCGv reg)
         default:
         case JCC_LE:
             gen_compute_eflags(s);
-            if (TCGV_EQUAL(reg, cpu_cc_src)) {
+            if (reg == cpu_cc_src) {
                 reg = cpu_tmp0;
             }
             tcg_gen_shri_tl(tcg_ctx, reg, cpu_cc_src, 4); /* CC_O -> CC_S */

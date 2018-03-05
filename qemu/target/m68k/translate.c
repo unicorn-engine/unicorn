@@ -39,7 +39,7 @@
 #define MACREG(acc)     tcg_ctx->cpu_macc[acc]
 #define QREG_SP         tcg_ctx->cpu_aregs[7]
 
-#define IS_NULL_QREG(t) (TCGV_EQUAL(t, tcg_ctx->NULL_QREG))
+#define IS_NULL_QREG(t) (t == tcg_ctx->NULL_QREG)
 
 void m68k_tcg_init(struct uc_struct *uc)
 {
