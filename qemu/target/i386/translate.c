@@ -9223,17 +9223,6 @@ static int i386_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cpu,
     // done with initializing TCG variables
     env->uc->init_tcg = true;
 
-    // Unicorn: trace this block on request
-    // Only hook this block if the previous block was not truncated due to space
-    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, dc->base.pc_first)) {
-        int arg_i = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
-        env->uc->block_addr = dc->base.pc_first;
-        env->uc->size_arg = arg_i + 1;
-        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, dc->base.pc_first);
-    } else {
-        env->uc->size_arg = -1;
-    }
-
     return max_insns;
 }
 
