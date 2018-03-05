@@ -8861,7 +8861,14 @@ case 0x101:
         case 0xc5:
         case 0xc6:
         case 0xc7: /* rdfsbase (f3 0f ae /0) */
-        case 0xc8: /* rdgsbase (f3 0f ae /1) */
+        case 0xc8:
+        case 0xc9:
+        case 0xca:
+        case 0xcb:
+        case 0xcc:
+        case 0xcd:
+        case 0xce:
+        case 0xcf: /* rdgsbase (f3 0f ae /1) */
         case 0xd0:
         case 0xd1:
         case 0xd2:
@@ -8870,7 +8877,14 @@ case 0x101:
         case 0xd5:
         case 0xd6:
         case 0xd7: /* wrfsbase (f3 0f ae /2) */
-        case 0xd8: /* wrgsbase (f3 0f ae /3) */
+        case 0xd8:
+        case 0xd9:
+        case 0xda:
+        case 0xdb:
+        case 0xdc:
+        case 0xdd:
+        case 0xde:
+        case 0xdf: /* wrgsbase (f3 0f ae /3) */
             if (CODE64(s)
                 && (prefixes & PREFIX_REPZ)
                 && !(prefixes & PREFIX_LOCK)
