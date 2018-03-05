@@ -4030,6 +4030,33 @@ static void define_debug_regs(ARMCPU *cpu)
     }
 }
 
+/* We don't know until after realize whether there's a GICv3
+ * attached, and that is what registers the gicv3 sysregs.
+ * So we have to fill in the GIC fields in ID_PFR/ID_PFR1_EL1/ID_AA64PFR0_EL1
+ * at runtime.
+ */
+static uint64_t id_pfr1_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    ARMCPU *cpu = arm_env_get_cpu(env);
+    uint64_t pfr1 = cpu->id_pfr1;
+
+    if (env->gicv3state) {
+        pfr1 |= 1 << 28;
+    }
+    return pfr1;
+}
+
+static uint64_t id_aa64pfr0_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    ARMCPU *cpu = arm_env_get_cpu(env);
+    uint64_t pfr0 = cpu->id_aa64pfr0;
+
+    if (env->gicv3state) {
+        pfr0 |= 1 << 24;
+    }
+    return pfr0;
+}
+
 void register_cp_regs_for_features(ARMCPU *cpu)
 {
     /* Register all the coprocessor registers based on feature bits */
@@ -4052,8 +4079,12 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         ARMCPRegInfo v6_idregs[] = {
             { "ID_PFR0", 0,0,1, 3,0,0, ARM_CP_STATE_BOTH,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_pfr0 },
+            /* ID_PFR1 is not a plain ARM_CP_CONST because we don't know
+             * the value of the GIC field until after we define these regs.
+             */
             { "ID_PFR1", 0,0,1, 3,0,1, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_pfr1 },
+              ARM_CP_NO_RAW, PL1_R, 0, NULL, cpu->id_pfr1, 0, {0, 0},
+              NULL, id_pfr1_read, arm_cp_write_ignore },
             { "ID_DFR0", 0,0,1, 3,0,2, ARM_CP_STATE_BOTH,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_dfr0 },
             { "ID_AFR0", 0,0,1, 3,0,3, ARM_CP_STATE_BOTH,
@@ -4133,8 +4164,13 @@ void register_cp_regs_for_features(ARMCPU *cpu)
          * define new registers here.
          */
         ARMCPRegInfo v8_idregs[] = {
+            /* ID_AA64PFR0_EL1 is not a plain ARM_CP_CONST because we don't
+             * know the right value for the GIC field until after we
+             * define these regs.
+             */
             { "ID_AA64PFR0_EL1", 0,0,4, 3,0,0, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64pfr0 },
+              ARM_CP_NO_RAW, PL1_R, 0, NULL, cpu->id_aa64pfr0, 0, {0, 0},
+              NULL, id_aa64pfr0_read, arm_cp_write_ignore },
             { "ID_AA64PFR1_EL1", 0,0,4, 3,0,1, ARM_CP_STATE_AA64,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64pfr1},
             { "ID_AA64PFR2_EL1_RESERVED", 0,0,4, 3,0,2, ARM_CP_STATE_AA64, ARM_CP_CONST,

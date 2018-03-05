@@ -583,6 +583,9 @@ typedef struct CPUARMState {
     void *nvic;
     const struct arm_boot_info *boot_info;
 
+    // Store GICv3State to access from this struct
+    void *gicv3state;
+
     // Unicorn engine
     struct uc_struct *uc;
 } CPUARMState;
