@@ -27,12 +27,6 @@
     <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h">
       <Filter>fpu</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h">
-      <Filter>tcg</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\qemu\tcg\tcg-mo.h">
       <Filter>tcg</Filter>
     </ClInclude>

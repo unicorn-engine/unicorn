@@ -32,8 +32,6 @@
     <ClInclude Include="..\..\..\qemu\target\i386\topology.h" />
     <ClInclude Include="..\..\..\qemu\target\i386\unicorn.h" />
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-mo.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
@@ -44,6 +42,7 @@
     <ClInclude Include="config-target.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\qemu\accel\tcg\translator.c"/>
     <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
     <ClCompile Include="..\..\..\qemu\cpu-exec-common.c" />
     <ClCompile Include="..\..\..\qemu\cpus.c" />
