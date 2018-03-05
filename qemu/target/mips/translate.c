@@ -20727,23 +20727,6 @@ void cpu_mips_realize_env(CPUMIPSState *env)
     mvp_init(env, env->cpu_model);
 }
 
-MIPSCPU *cpu_mips_init(struct uc_struct *uc, const char *cpu_model)
-{
-    ObjectClass *oc;
-    MIPSCPU *cpu;
-
-    oc = cpu_class_by_name(uc, TYPE_MIPS_CPU, cpu_model);
-    if (oc == NULL) {
-        return NULL;
-    }
-
-    cpu = MIPS_CPU(uc, object_new(uc, object_class_get_name(oc)));
-
-    object_property_set_bool(uc, OBJECT(cpu), true, "realized", NULL);
-
-    return cpu;
-}
-
 bool cpu_supports_isa(const char *cpu_model, unsigned int isa)
 {
     const mips_def_t *def = cpu_mips_find_by_name(cpu_model);

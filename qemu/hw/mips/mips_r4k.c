@@ -36,7 +36,7 @@ static int mips_r4k_init(struct uc_struct *uc, MachineState *machine)
 #endif
     }
 
-    uc->cpu = (void*) cpu_mips_init(uc, cpu_model);
+    uc->cpu = cpu_generic_init(uc, TYPE_MIPS_CPU, cpu_model);
     if (uc->cpu == NULL) {
         fprintf(stderr, "Unable to find CPU definition\n");
         return -1;

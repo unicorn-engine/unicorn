@@ -3506,7 +3506,6 @@ mips_symbols = (
     'cpu_mips_exec',
     'cpu_mips_get_count',
     'cpu_mips_get_random',
-    'cpu_mips_init',
     'cpu_mips_kseg0_to_phys',
     'cpu_mips_kvm_um_phys_to_kseg0',
     'cpu_mips_phys_to_kseg0',
