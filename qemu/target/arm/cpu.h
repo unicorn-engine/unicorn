@@ -2090,6 +2090,10 @@ static inline CPUARMState *cpu_init(struct uc_struct *uc, const char *cpu_model)
  *  Execution priority negative (this is like privileged, but the
  *  MPU HFNMIENA bit means that it may have different access permission
  *  check results to normal privileged code, so can't share a TLB).
+ * If the CPU supports the v8M Security Extension then there are also:
+ *  Secure User
+ *  Secure Privileged
+ *  Secure, execution priority negative
  *
  * The ARMMMUIdx and the mmu index value used by the core QEMU TLB code
  * are not quite the same -- different CPU types (most notably M profile
@@ -2127,6 +2131,9 @@ typedef enum ARMMMUIdx {
     ARMMMUIdx_MUser = 0 | ARM_MMU_IDX_M,
     ARMMMUIdx_MPriv = 1 | ARM_MMU_IDX_M,
     ARMMMUIdx_MNegPri = 2 | ARM_MMU_IDX_M,
+    ARMMMUIdx_MSUser = 3 | ARM_MMU_IDX_M,
+    ARMMMUIdx_MSPriv = 4 | ARM_MMU_IDX_M,
+    ARMMMUIdx_MSNegPri = 5 | ARM_MMU_IDX_M,
     /* Indexes below here don't have TLBs and are used only for AT system
      * instructions or for the first stage of an S12 page table walk.
      */
@@ -2148,6 +2155,9 @@ typedef enum ARMMMUIdxBit {
     ARMMMUIdxBit_MUser = 1 << 0,
     ARMMMUIdxBit_MPriv = 1 << 1,
     ARMMMUIdxBit_MNegPri = 1 << 2,
+    ARMMMUIdxBit_MSUser = 1 << 3,
+    ARMMMUIdxBit_MSPriv = 1 << 4,
+    ARMMMUIdxBit_MSNegPri = 1 << 5,
 } ARMMMUIdxBit;
 
 #define MMU_USER_IDX 0
@@ -2179,7 +2189,8 @@ static inline int arm_mmu_idx_to_el(ARMMMUIdx mmu_idx)
     case ARM_MMU_IDX_A:
         return mmu_idx & 3;
     case ARM_MMU_IDX_M:
-        return mmu_idx == ARMMMUIdx_MUser ? 0 : 1;
+        return (mmu_idx == ARMMMUIdx_MUser || mmu_idx == ARMMMUIdx_MSUser)
+            ? 0 : 1;
     default:
         g_assert_not_reached();
     }
@@ -2198,7 +2209,11 @@ static inline int cpu_mmu_index(CPUARMState *env, bool ifetch)
          */
         if ((env->v7m.exception > 0 && env->v7m.exception <= 3)
             || env->v7m.faultmask) {
-            return arm_to_core_mmu_idx(ARMMMUIdx_MNegPri);
+            mmu_idx = ARMMMUIdx_MNegPri;
+        }
+
+        if (env->v7m.secure) {
+            mmu_idx += ARMMMUIdx_MSUser;
         }
 
         return arm_to_core_mmu_idx(mmu_idx);
