@@ -1398,6 +1398,8 @@
 #define handle_vrint handle_vrint_aarch64eb
 #define handle_vsel handle_vsel_aarch64eb
 #define has_help_option has_help_option_aarch64eb
+#define have_avx1 have_avx1_aarch64eb
+#define have_avx2 have_avx2_aarch64eb
 #define have_bmi1 have_bmi1_aarch64eb
 #define have_bmi2 have_bmi2_aarch64eb
 #define have_popcnt have_popcnt_aarch64eb
@@ -3060,6 +3062,7 @@
 #define tcg_add_param_i64 tcg_add_param_i64_aarch64eb
 #define tcg_add_target_add_op_defs tcg_add_target_add_op_defs_aarch64eb
 #define tcg_allowed tcg_allowed_aarch64eb
+#define tcg_can_emit_vec_op tcg_can_emit_vec_op_aarch64eb
 #define tcg_canonicalize_memop tcg_canonicalize_memop_aarch64eb
 #define tcg_commit tcg_commit_aarch64eb
 #define tcg_cond_to_jcc tcg_cond_to_jcc_aarch64eb

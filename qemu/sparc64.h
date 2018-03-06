@@ -1398,6 +1398,8 @@
 #define handle_vrint handle_vrint_sparc64
 #define handle_vsel handle_vsel_sparc64
 #define has_help_option has_help_option_sparc64
+#define have_avx1 have_avx1_sparc64
+#define have_avx2 have_avx2_sparc64
 #define have_bmi1 have_bmi1_sparc64
 #define have_bmi2 have_bmi2_sparc64
 #define have_popcnt have_popcnt_sparc64
@@ -3060,6 +3062,7 @@
 #define tcg_add_param_i64 tcg_add_param_i64_sparc64
 #define tcg_add_target_add_op_defs tcg_add_target_add_op_defs_sparc64
 #define tcg_allowed tcg_allowed_sparc64
+#define tcg_can_emit_vec_op tcg_can_emit_vec_op_sparc64
 #define tcg_canonicalize_memop tcg_canonicalize_memop_sparc64
 #define tcg_commit tcg_commit_sparc64
 #define tcg_cond_to_jcc tcg_cond_to_jcc_sparc64

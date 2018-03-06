@@ -1098,7 +1098,7 @@ static inline TCGv_i64 tcg_temp_local_new_i64(TCGContext *s)
 }
 
 // UNICORN: Added
-#define TCG_OP_DEFS_TABLE_SIZE 162
+#define TCG_OP_DEFS_TABLE_SIZE 171
 extern const TCGOpDef tcg_op_defs_org[TCG_OP_DEFS_TABLE_SIZE];
 
 typedef struct TCGTargetOpDef {

@@ -1398,6 +1398,8 @@
 #define handle_vrint handle_vrint_arm
 #define handle_vsel handle_vsel_arm
 #define has_help_option has_help_option_arm
+#define have_avx1 have_avx1_arm
+#define have_avx2 have_avx2_arm
 #define have_bmi1 have_bmi1_arm
 #define have_bmi2 have_bmi2_arm
 #define have_popcnt have_popcnt_arm
@@ -3060,6 +3062,7 @@
 #define tcg_add_param_i64 tcg_add_param_i64_arm
 #define tcg_add_target_add_op_defs tcg_add_target_add_op_defs_arm
 #define tcg_allowed tcg_allowed_arm
+#define tcg_can_emit_vec_op tcg_can_emit_vec_op_arm
 #define tcg_canonicalize_memop tcg_canonicalize_memop_arm
 #define tcg_commit tcg_commit_arm
 #define tcg_cond_to_jcc tcg_cond_to_jcc_arm
