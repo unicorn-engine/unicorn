@@ -7496,6 +7496,7 @@ static hwaddr S1_ptw_translate(CPUARMState *env, ARMMMUIdx mmu_idx,
         ret = get_phys_addr_lpae(env, addr, 0, ARMMMUIdx_S2NS, &s2pa,
                                  &txattrs, &s2prot, &s2size, fi, NULL);
         if (ret) {
+            assert(fi->type != ARMFault_None);
             fi->s2addr = addr;
             fi->stage2 = true;
             fi->s1ptw = true;
@@ -7519,7 +7520,9 @@ static uint32_t arm_ldl_ptw(CPUState *cs, hwaddr addr, bool is_secure,
     ARMCPU *cpu = ARM_CPU(cs->uc, cs);
     CPUARMState *env = &cpu->env;
     MemTxAttrs attrs = {0};
+    MemTxResult result = MEMTX_OK;
     AddressSpace *as;
+    uint32_t data;
 
     attrs.secure = is_secure;
     as = arm_addressspace(cs, attrs);
@@ -7528,10 +7531,16 @@ static uint32_t arm_ldl_ptw(CPUState *cs, hwaddr addr, bool is_secure,
         return 0;
     }
     if (regime_translation_big_endian(env, mmu_idx)) {
-        return address_space_ldl_be(as, addr, attrs, NULL);
+        data = address_space_ldl_be(as, addr, attrs, &result);
     } else {
-        return address_space_ldl_le(as, addr, attrs, NULL);
+        data = address_space_ldl_le(as, addr, attrs, &result);
     }
+    if (result == MEMTX_OK) {
+        return data;
+    }
+    fi->type = ARMFault_SyncExternalOnWalk;
+    fi->ea = arm_extabort_type(result);
+    return 0;
 }
 
 static uint64_t arm_ldq_ptw(CPUState *cs, hwaddr addr, bool is_secure,
@@ -7540,7 +7549,9 @@ static uint64_t arm_ldq_ptw(CPUState *cs, hwaddr addr, bool is_secure,
     ARMCPU *cpu = ARM_CPU(cs->uc, cs);
     CPUARMState *env = &cpu->env;
     MemTxAttrs attrs = {0};
+    MemTxResult result = MEMTX_OK;
     AddressSpace *as;
+    uint32_t data;
 
     attrs.secure = is_secure;
     as = arm_addressspace(cs, attrs);
@@ -7549,10 +7560,16 @@ static uint64_t arm_ldq_ptw(CPUState *cs, hwaddr addr, bool is_secure,
         return 0;
     }
     if (regime_translation_big_endian(env, mmu_idx)) {
-        return address_space_ldq_be(as, addr, attrs, NULL);
+        data = address_space_ldq_be(as, addr, attrs, &result);
     } else {
-        return address_space_ldq_le(as, addr, attrs, NULL);
+        data = address_space_ldq_le(as, addr, attrs, &result);
     }
+    if (result == MEMTX_OK) {
+        return data;
+    }
+    fi->type = ARMFault_SyncExternalOnWalk;
+    fi->ea = arm_extabort_type(result);
+    return 0;
 }
 
 static bool get_phys_addr_v5(CPUARMState *env, uint32_t address,
@@ -7581,6 +7598,9 @@ static bool get_phys_addr_v5(CPUARMState *env, uint32_t address,
     }
     desc = arm_ldl_ptw(cs, table, regime_is_secure(env, mmu_idx),
                        mmu_idx, fi);
+    if (fi->type != ARMFault_None) {
+        goto do_fault;
+    }
     type = (desc & 3);
     domain = (desc >> 5) & 0x0f;
     if (regime_el(env, mmu_idx) == 1) {
@@ -7617,6 +7637,9 @@ static bool get_phys_addr_v5(CPUARMState *env, uint32_t address,
         }
         desc = arm_ldl_ptw(cs, table, regime_is_secure(env, mmu_idx),
                            mmu_idx, fi);
+        if (fi->type != ARMFault_None) {
+            goto do_fault;
+        }
         switch (desc & 3) {
         case 0: /* Page translation fault.  */
             fi->type = ARMFault_Translation;
@@ -7699,6 +7722,9 @@ static bool get_phys_addr_v6(CPUARMState *env, uint32_t address,
     }
     desc = arm_ldl_ptw(cs, table, regime_is_secure(env, mmu_idx),
                        mmu_idx, fi);
+    if (fi->type != ARMFault_None) {
+        goto do_fault;
+    }
     type = (desc & 3);
     if (type == 0 || (type == 3 && !arm_feature(env, ARM_FEATURE_PXN))) {
         /* Section translation fault, or attempt to use the encoding
@@ -7750,6 +7776,9 @@ static bool get_phys_addr_v6(CPUARMState *env, uint32_t address,
         table = (desc & 0xfffffc00) | ((address >> 10) & 0x3fc);
         desc = arm_ldl_ptw(cs, table, regime_is_secure(env, mmu_idx),
                            mmu_idx, fi);
+        if (fi->type != ARMFault_None) {
+            goto do_fault;
+        }
         ap = ((desc >> 4) & 3) | ((desc >> 7) & 4);
         switch (desc & 3) {
         case 0: /* Page translation fault.  */
@@ -8155,7 +8184,7 @@ static bool get_phys_addr_lpae(CPUARMState *env, target_ulong address,
         descaddr &= ~7ULL;
         nstable = extract32(tableattrs, 4, 1);
         descriptor = arm_ldq_ptw(cs, descaddr, !nstable, mmu_idx, fi);
-        if (fi->s1ptw) {
+        if (fi->type != ARMFault_None) {
             goto do_fault;
         }
         if (!(descriptor & 1) ||
