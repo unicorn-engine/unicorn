@@ -161,6 +161,7 @@ unset target_list
 
 debug_tcg="no"
 debug="no"
+sanitizers="no"
 strip_opt="yes"
 tcg_interpreter="no"
 bigendian="no"
@@ -198,6 +199,10 @@ for opt do
   --enable-debug-info) debug_info="yes"
   ;;
   --disable-debug-info) debug_info="no"
+  ;;
+  --enable-sanitizers) sanitizers="yes"
+  ;;
+  --disable-sanitizers) sanitizers="no"
   ;;
   esac
 done
@@ -656,6 +661,7 @@ Advanced options (experts only):
   --enable-debug-info      enable debugging information (default)
   --disable-debug-info     disable debugging information
   --enable-debug           enable common debug build options
+  --enable-sanitizers      enable default sanitizers
   --disable-strip          disable stripping binaries
   --disable-werror         disable compilation abort on warning
   --disable-stack-protector disable compiler-provided stack protection
@@ -1127,6 +1133,34 @@ int main(void)
 EOF
 if compile_prog "" "" ; then
   atomic64=yes
+fi
+
+##########################################
+# checks for sanitizers
+
+write_c_skeleton
+
+have_asan=no
+have_ubsan=no
+
+if test "$sanitizers" = "yes" ; then
+  if compile_prog "$CPU_CFLAGS -Werror -fsanitize=address" ""; then
+      have_asan=yes
+  fi
+  if compile_prog "$CPU_CFLAGS -Werror -fsanitize=undefined" ""; then
+      have_ubsan=yes
+  fi
+fi
+
+##########################################
+# End of CC checks
+# After here, no more $cc or $ld runs
+
+if test "$have_asan" = "yes"; then
+  CFLAGS="-fsanitize=address $CFLAGS"
+fi
+if test "$have_ubsan" = "yes"; then
+  CFLAGS="-fsanitize=undefined $CFLAGS"
 fi
 
 # Now we've finished running tests it's OK to add -Werror to the compiler flags
