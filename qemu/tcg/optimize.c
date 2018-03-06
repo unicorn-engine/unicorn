@@ -32,6 +32,11 @@
         glue(glue(case INDEX_op_, x), _i32):    \
         glue(glue(case INDEX_op_, x), _i64)
 
+#define CASE_OP_32_64_VEC(x)                    \
+        glue(glue(case INDEX_op_, x), _i32):    \
+        glue(glue(case INDEX_op_, x), _i64):    \
+        glue(glue(case INDEX_op_, x), _vec)
+
 static inline struct tcg_temp_info *ts_info(TCGTemp *ts)
 {
     return ts->state_ptr;
@@ -108,40 +113,6 @@ static void init_arg_info(TCGContext *s, TCGArg arg)
     init_ts_info(s, arg_temp(arg));
 }
 
-static int op_bits(TCGContext *s, TCGOpcode op)
-{
-    const TCGOpDef *def = &s->tcg_op_defs[op];
-    return def->flags & TCG_OPF_64BIT ? 64 : 32;
-}
-
-static TCGOpcode op_to_mov(TCGContext *s, TCGOpcode op)
-{
-    switch (op_bits(s, op)) {
-    case 32:
-        return INDEX_op_mov_i32;
-    case 64:
-        return INDEX_op_mov_i64;
-    default:
-        fprintf(stderr, "op_to_mov: unexpected return value of "
-                "function op_bits.\n");
-        tcg_abort();
-    }
-}
-
-static TCGOpcode op_to_movi(TCGContext *s, TCGOpcode op)
-{
-    switch (op_bits(s, op)) {
-    case 32:
-        return INDEX_op_movi_i32;
-    case 64:
-        return INDEX_op_movi_i64;
-    default:
-        fprintf(stderr, "op_to_movi: unexpected return value of "
-                "function op_bits.\n");
-        tcg_abort();
-    }
-}
-
 static TCGTemp *find_better_copy(TCGTemp *ts)
 {
     TCGTemp *i;
@@ -199,11 +170,23 @@ static bool args_are_copies(TCGArg arg1, TCGArg arg2)
 
 static void tcg_opt_gen_movi(TCGContext *s, TCGOp *op, TCGArg dst, TCGArg val)
 {
-    TCGOpcode new_op = op_to_movi(s, op->opc);
+    const TCGOpDef *def;
+    TCGOpcode new_op;
     tcg_target_ulong mask;
     struct tcg_temp_info *di = arg_info(dst);
 
+    def = &s->tcg_op_defs[op->opc];
+    if (def->flags & TCG_OPF_VECTOR) {
+        new_op = INDEX_op_dupi_vec;
+    } else if (def->flags & TCG_OPF_64BIT) {
+        new_op = INDEX_op_movi_i64;
+    } else {
+        new_op = INDEX_op_movi_i32;
+    }
     op->opc = new_op;
+    /* TCGOP_VECL and TCGOP_VECE remain unchanged.  */
+    op->args[0] = dst;
+    op->args[1] = val;
 
     reset_temp(s, dst);
 
@@ -215,15 +198,13 @@ static void tcg_opt_gen_movi(TCGContext *s, TCGOp *op, TCGArg dst, TCGArg val)
         mask |= ~0xffffffffull;
     }
     di->mask = mask;
-
-    op->args[0] = dst;
-    op->args[1] = val;
 }
 
 static void tcg_opt_gen_mov(TCGContext *s, TCGOp *op, TCGArg dst, TCGArg src)
 {
     TCGTemp *dst_ts = arg_temp(dst);
     TCGTemp *src_ts = arg_temp(src);
+    const TCGOpDef *def;
     struct tcg_temp_info *di;
     struct tcg_temp_info *si;
     tcg_target_ulong mask;
@@ -237,9 +218,17 @@ static void tcg_opt_gen_mov(TCGContext *s, TCGOp *op, TCGArg dst, TCGArg src)
     reset_ts(dst_ts);
     di = ts_info(dst_ts);
     si = ts_info(src_ts);
-    new_op = op_to_mov(s, op->opc);
 
+    def = &s->tcg_op_defs[op->opc];
+    if (def->flags & TCG_OPF_VECTOR) {
+        new_op = INDEX_op_mov_vec;
+    } else if (def->flags & TCG_OPF_64BIT) {
+        new_op = INDEX_op_mov_i64;
+    } else {
+        new_op = INDEX_op_mov_i32;
+    }
     op->opc = new_op;
+    /* TCGOP_VECL and TCGOP_VECE remain unchanged.  */
     op->args[0] = dst;
     op->args[1] = src;
 
@@ -418,8 +407,9 @@ static TCGArg do_constant_folding_2(TCGOpcode op, TCGArg x, TCGArg y)
 
 static TCGArg do_constant_folding(TCGContext *s, TCGOpcode op, TCGArg x, TCGArg y)
 {
+    const TCGOpDef *def = &s->tcg_op_defs[op];
     TCGArg res = do_constant_folding_2(op, x, y);
-    if (op_bits(s, op) == 32) {
+    if (!(def->flags & TCG_OPF_64BIT)) {
         res = (int32_t)res;
     }
     return res;
@@ -510,13 +500,12 @@ static TCGArg do_constant_folding_cond(TCGContext *s, TCGOpcode op, TCGArg x,
     tcg_target_ulong yv = arg_info(y)->val;
 
     if (arg_is_const(x) && arg_is_const(y)) {
-        switch (op_bits(s, op)) {
-        case 32:
-            return do_constant_folding_cond_32(xv, yv, c);
-        case 64:
+        const TCGOpDef *def = &s->tcg_op_defs[op];
+        tcg_debug_assert(!(def->flags & TCG_OPF_VECTOR));
+        if (def->flags & TCG_OPF_64BIT) {
             return do_constant_folding_cond_64(xv, yv, c);
-        default:
-            tcg_abort();
+        } else {
+            return do_constant_folding_cond_32(xv, yv, c);
         }
     } else if (args_are_copies(x, y)) {
         return do_constant_folding_cond_eq(c);
@@ -653,11 +642,11 @@ void tcg_optimize(TCGContext *s)
 
         /* For commutative operations make constant second argument */
         switch (opc) {
-        CASE_OP_32_64(add):
-        CASE_OP_32_64(mul):
-        CASE_OP_32_64(and):
-        CASE_OP_32_64(or):
-        CASE_OP_32_64(xor):
+        CASE_OP_32_64_VEC(add):
+        CASE_OP_32_64_VEC(mul):
+        CASE_OP_32_64_VEC(and):
+        CASE_OP_32_64_VEC(or):
+        CASE_OP_32_64_VEC(xor):
         CASE_OP_32_64(eqv):
         CASE_OP_32_64(nand):
         CASE_OP_32_64(nor):
@@ -722,7 +711,7 @@ void tcg_optimize(TCGContext *s)
                 continue;
             }
             break;
-        CASE_OP_32_64(sub):
+        CASE_OP_32_64_VEC(sub):
             {
                 TCGOpcode neg_op;
                 bool have_neg;
@@ -734,9 +723,12 @@ void tcg_optimize(TCGContext *s)
                 if (opc == INDEX_op_sub_i32) {
                     neg_op = INDEX_op_neg_i32;
                     have_neg = TCG_TARGET_HAS_neg_i32;
-                } else {
+                } else if (opc == INDEX_op_sub_i64) {
                     neg_op = INDEX_op_neg_i64;
                     have_neg = TCG_TARGET_HAS_neg_i64;
+                } else {
+                    neg_op = INDEX_op_neg_vec;
+                    have_neg = TCG_TARGET_HAS_neg_vec;
                 }
                 if (!have_neg) {
                     break;
@@ -750,7 +742,7 @@ void tcg_optimize(TCGContext *s)
                 }
             }
             break;
-        CASE_OP_32_64(xor):
+        CASE_OP_32_64_VEC(xor):
         CASE_OP_32_64(nand):
             if (!arg_is_const(op->args[1])
                 && arg_is_const(op->args[2])
@@ -767,7 +759,7 @@ void tcg_optimize(TCGContext *s)
                 goto try_not;
             }
             break;
-        CASE_OP_32_64(andc):
+        CASE_OP_32_64_VEC(andc):
             if (!arg_is_const(op->args[2])
                 && arg_is_const(op->args[1])
                 && arg_info(op->args[1])->val == -1) {
@@ -775,7 +767,7 @@ void tcg_optimize(TCGContext *s)
                 goto try_not;
             }
             break;
-        CASE_OP_32_64(orc):
+        CASE_OP_32_64_VEC(orc):
         CASE_OP_32_64(eqv):
             if (!arg_is_const(op->args[2])
                 && arg_is_const(op->args[1])
@@ -789,7 +781,10 @@ void tcg_optimize(TCGContext *s)
                 TCGOpcode not_op;
                 bool have_not;
 
-                if (def->flags & TCG_OPF_64BIT) {
+                if (def->flags & TCG_OPF_VECTOR) {
+                    not_op = INDEX_op_not_vec;
+                    have_not = TCG_TARGET_HAS_not_vec;
+                } else if (def->flags & TCG_OPF_64BIT) {
                     not_op = INDEX_op_not_i64;
                     have_not = TCG_TARGET_HAS_not_i64;
                 } else {
@@ -810,16 +805,16 @@ void tcg_optimize(TCGContext *s)
 
         /* Simplify expression for "op r, a, const => mov r, a" cases */
         switch (opc) {
-        CASE_OP_32_64(add):
-        CASE_OP_32_64(sub):
+        CASE_OP_32_64_VEC(add):
+        CASE_OP_32_64_VEC(sub):
+        CASE_OP_32_64_VEC(or):
+        CASE_OP_32_64_VEC(xor):
+        CASE_OP_32_64_VEC(andc):
         CASE_OP_32_64(shl):
         CASE_OP_32_64(shr):
         CASE_OP_32_64(sar):
         CASE_OP_32_64(rotl):
         CASE_OP_32_64(rotr):
-        CASE_OP_32_64(or):
-        CASE_OP_32_64(xor):
-        CASE_OP_32_64(andc):
             if (!arg_is_const(op->args[1])
                 && arg_is_const(op->args[2])
                 && arg_info(op->args[2])->val == 0) {
@@ -827,8 +822,8 @@ void tcg_optimize(TCGContext *s)
                 continue;
             }
             break;
-        CASE_OP_32_64(and):
-        CASE_OP_32_64(orc):
+        CASE_OP_32_64_VEC(and):
+        CASE_OP_32_64_VEC(orc):
         CASE_OP_32_64(eqv):
             if (!arg_is_const(op->args[1])
                 && arg_is_const(op->args[2])
@@ -1042,8 +1037,8 @@ void tcg_optimize(TCGContext *s)
 
         /* Simplify expression for "op r, a, 0 => movi r, 0" cases */
         switch (opc) {
-        CASE_OP_32_64(and):
-        CASE_OP_32_64(mul):
+        CASE_OP_32_64_VEC(and):
+        CASE_OP_32_64_VEC(mul):
         CASE_OP_32_64(muluh):
         CASE_OP_32_64(mulsh):
             if (arg_is_const(op->args[2])
@@ -1058,8 +1053,8 @@ void tcg_optimize(TCGContext *s)
 
         /* Simplify expression for "op r, a, a => mov r, a" cases */
         switch (opc) {
-        CASE_OP_32_64(or):
-        CASE_OP_32_64(and):
+        CASE_OP_32_64_VEC(or):
+        CASE_OP_32_64_VEC(and):
             if (args_are_copies(op->args[1], op->args[2])) {
                 tcg_opt_gen_mov(s, op, op->args[0], op->args[1]);
                 continue;
@@ -1071,9 +1066,9 @@ void tcg_optimize(TCGContext *s)
 
         /* Simplify expression for "op r, a, a => movi r, 0" cases */
         switch (opc) {
-        CASE_OP_32_64(andc):
-        CASE_OP_32_64(sub):
-        CASE_OP_32_64(xor):
+        CASE_OP_32_64_VEC(andc):
+        CASE_OP_32_64_VEC(sub):
+        CASE_OP_32_64_VEC(xor):
             if (args_are_copies(op->args[1], op->args[2])) {
                 tcg_opt_gen_movi(s, op, op->args[0], 0);
                 continue;
@@ -1087,11 +1082,21 @@ void tcg_optimize(TCGContext *s)
            folding.  Constants will be substituted to arguments by register
            allocator where needed and possible.  Also detect copies. */
         switch (opc) {
-        CASE_OP_32_64(mov):
+        CASE_OP_32_64_VEC(mov):
             tcg_opt_gen_mov(s, op, op->args[0], op->args[1]);
             break;
         CASE_OP_32_64(movi):
+        case INDEX_op_dupi_vec:
             tcg_opt_gen_movi(s, op, op->args[0], op->args[1]);
+            break;
+
+        case INDEX_op_dup_vec:
+            if (arg_is_const(op->args[1])) {
+                tmp = arg_info(op->args[1])->val;
+                tmp = dup_const(TCGOP_VECE(op), tmp);
+                tcg_opt_gen_movi(s, op, op->args[0], tmp);
+                continue;
+            }
             break;
 
         CASE_OP_32_64(not):
