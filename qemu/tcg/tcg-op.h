@@ -36,6 +36,10 @@ void tcg_gen_op5(TCGContext *, TCGOpcode, TCGArg, TCGArg, TCGArg,
 void tcg_gen_op6(TCGContext *, TCGOpcode, TCGArg, TCGArg, TCGArg,
                  TCGArg, TCGArg, TCGArg);
 
+void vec_gen_2(TCGContext *, TCGOpcode, TCGType, unsigned, TCGArg, TCGArg);
+void vec_gen_3(TCGContext *, TCGOpcode, TCGType, unsigned, TCGArg, TCGArg, TCGArg);
+void vec_gen_4(TCGContext *, TCGOpcode, TCGType, unsigned, TCGArg, TCGArg, TCGArg, TCGArg);
+
 static inline void gen_uc_tracecode(TCGContext *tcg_ctx, int32_t size, int32_t type, void *uc, uint64_t pc)
 {
     TCGv_i32 tsize = tcg_const_i32(tcg_ctx, size);
@@ -911,6 +915,27 @@ void tcg_gen_atomic_or_fetch_i64(TCGContext *, TCGv_i64, TCGv, TCGv_i64, TCGArg,
 void tcg_gen_atomic_xor_fetch_i32(TCGContext *, TCGv_i32, TCGv, TCGv_i32, TCGArg, TCGMemOp);
 void tcg_gen_atomic_xor_fetch_i64(TCGContext *, TCGv_i64, TCGv, TCGv_i64, TCGArg, TCGMemOp);
 
+void tcg_gen_mov_vec(TCGContext *, TCGv_vec, TCGv_vec);
+void tcg_gen_dup_i32_vec(TCGContext *, unsigned vece, TCGv_vec, TCGv_i32);
+void tcg_gen_dup_i64_vec(TCGContext *, unsigned vece, TCGv_vec, TCGv_i64);
+void tcg_gen_dup8i_vec(TCGContext *, TCGv_vec, uint32_t);
+void tcg_gen_dup16i_vec(TCGContext *, TCGv_vec, uint32_t);
+void tcg_gen_dup32i_vec(TCGContext *, TCGv_vec, uint32_t);
+void tcg_gen_dup64i_vec(TCGContext *, TCGv_vec, uint64_t);
+void tcg_gen_add_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_sub_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_and_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_or_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_xor_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_andc_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_orc_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_vec b);
+void tcg_gen_not_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a);
+void tcg_gen_neg_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a);
+
+void tcg_gen_ld_vec(TCGContext *, TCGv_vec r, TCGv_ptr base, TCGArg offset);
+void tcg_gen_st_vec(TCGContext *, TCGv_vec r, TCGv_ptr base, TCGArg offset);
+void tcg_gen_stl_vec(TCGContext *, TCGv_vec r, TCGv_ptr base, TCGArg offset, TCGType t);
+
 #if TARGET_LONG_BITS == 64
 #define tcg_gen_movi_tl tcg_gen_movi_i64
 #define tcg_gen_mov_tl tcg_gen_mov_i64
@@ -1009,6 +1034,7 @@ void tcg_gen_atomic_xor_fetch_i64(TCGContext *, TCGv_i64, TCGv, TCGv_i64, TCGArg
 #define tcg_gen_atomic_and_fetch_tl tcg_gen_atomic_and_fetch_i64
 #define tcg_gen_atomic_or_fetch_tl tcg_gen_atomic_or_fetch_i64
 #define tcg_gen_atomic_xor_fetch_tl tcg_gen_atomic_xor_fetch_i64
+#define tcg_gen_dup_tl_vec  tcg_gen_dup_i64_vec
 #else
 #define tcg_gen_movi_tl tcg_gen_movi_i32
 #define tcg_gen_mov_tl tcg_gen_mov_i32
@@ -1106,6 +1132,7 @@ void tcg_gen_atomic_xor_fetch_i64(TCGContext *, TCGv_i64, TCGv, TCGv_i64, TCGArg
 #define tcg_gen_atomic_and_fetch_tl tcg_gen_atomic_and_fetch_i32
 #define tcg_gen_atomic_or_fetch_tl tcg_gen_atomic_or_fetch_i32
 #define tcg_gen_atomic_xor_fetch_tl tcg_gen_atomic_xor_fetch_i32
+#define tcg_gen_dup_tl_vec  tcg_gen_dup_i32_vec
 #endif
 
 #if UINTPTR_MAX == UINT32_MAX

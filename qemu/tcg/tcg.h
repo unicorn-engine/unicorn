@@ -173,6 +173,27 @@ typedef uint64_t TCGRegSet;
 # error "Missing unsigned widening multiply"
 #endif
 
+#if !defined(TCG_TARGET_HAS_v64) \
+    && !defined(TCG_TARGET_HAS_v128) \
+    && !defined(TCG_TARGET_HAS_v256)
+#define TCG_TARGET_MAYBE_vec            0
+#define TCG_TARGET_HAS_neg_vec          0
+#define TCG_TARGET_HAS_not_vec          0
+#define TCG_TARGET_HAS_andc_vec         0
+#define TCG_TARGET_HAS_orc_vec          0
+#else
+#define TCG_TARGET_MAYBE_vec            1
+#endif
+#ifndef TCG_TARGET_HAS_v64
+#define TCG_TARGET_HAS_v64              0
+#endif
+#ifndef TCG_TARGET_HAS_v128
+#define TCG_TARGET_HAS_v128             0
+#endif
+#ifndef TCG_TARGET_HAS_v256
+#define TCG_TARGET_HAS_v256             0
+#endif
+
 #ifndef TARGET_INSN_START_EXTRA_WORDS
 # define TARGET_INSN_START_WORDS 1
 #else
@@ -248,6 +269,11 @@ typedef struct TCGPool {
 typedef enum TCGType {
     TCG_TYPE_I32,
     TCG_TYPE_I64,
+
+    TCG_TYPE_V64,
+    TCG_TYPE_V128,
+    TCG_TYPE_V256,
+
     TCG_TYPE_COUNT, /* number of different types */
 
     /* An alias for the size of the host register.  */
@@ -399,6 +425,8 @@ typedef tcg_target_ulong TCGArg;
     * TCGv_i32 : 32 bit integer type
     * TCGv_i64 : 64 bit integer type
     * TCGv_ptr : a host pointer type
+    * TCGv_vec : a host vector type; the exact size is not exposed
+                 to the CPU front-end code.
     * TCGv : an integer type the same size as target_ulong
              (an alias for either TCGv_i32 or TCGv_i64)
    The compiler's type checking will complain if you mix them
@@ -421,6 +449,7 @@ typedef tcg_target_ulong TCGArg;
 typedef struct TCGv_i32_d *TCGv_i32;
 typedef struct TCGv_i64_d *TCGv_i64;
 typedef struct TCGv_ptr_d *TCGv_ptr;
+typedef struct TCGv_vec_d *TCGv_vec;
 typedef TCGv_ptr TCGv_env;
 #if TARGET_LONG_BITS == 32
 #define TCGv TCGv_i32
@@ -593,6 +622,9 @@ typedef struct TCGOp {
 #define TCGOP_CALLI(X)    (X)->param1
 #define TCGOP_CALLO(X)    (X)->param2
 
+#define TCGOP_VECL(X)     (X)->param1
+#define TCGOP_VECE(X)     (X)->param2
+
 /* Make sure operands fit in the bitfields above.  */
 QEMU_BUILD_BUG_ON(NB_OPS > (1 << 8));
 
@@ -657,6 +689,8 @@ enum {
     /* Instruction is optional and not implemented by the host, or insn
        is generic and should not be implemened by the host.  */
     TCG_OPF_NOT_PRESENT  = 0x10,
+    /* Instruction operands are vectors.  */
+    TCG_OPF_VECTOR       = 0x20,
 };
 
 typedef struct TCGOpDef {
@@ -808,7 +842,7 @@ struct TCGContext {
 
     /* qemu/tcg/tcg.c */
     uint64_t tcg_target_call_clobber_regs;
-    uint64_t tcg_target_available_regs[2];
+    uint64_t tcg_target_available_regs[TCG_TYPE_COUNT];
     // Unicorn: Use a large array size to get around needing a file static
     //          Initially was using: ARRAY_SIZE(tcg_target_reg_alloc_order) as the size
     int indirect_reg_alloc_order[50];
@@ -935,6 +969,11 @@ static inline TCGTemp *tcgv_ptr_temp(TCGContext *s, TCGv_ptr v)
     return tcgv_i32_temp(s, (TCGv_i32)v);
 }
 
+static inline TCGTemp *tcgv_vec_temp(TCGContext *s, TCGv_vec v)
+{
+    return tcgv_i32_temp(s, (TCGv_i32)v);
+}
+
 static inline TCGArg tcgv_i32_arg(TCGContext *s, TCGv_i32 v)
 {
     return temp_arg(tcgv_i32_temp(s, v));
@@ -948,6 +987,11 @@ static inline TCGArg tcgv_i64_arg(TCGContext *s, TCGv_i64 v)
 static inline TCGArg tcgv_ptr_arg(TCGContext *s, TCGv_ptr v)
 {
     return temp_arg(tcgv_ptr_temp(s, v));
+}
+
+static inline TCGArg tcgv_vec_arg(TCGContext *s, TCGv_vec v)
+{
+    return temp_arg(tcgv_vec_temp(s, v));
 }
 
 static inline TCGv_i32 temp_tcgv_i32(TCGContext *s, TCGTemp *t)
@@ -964,6 +1008,11 @@ static inline TCGv_i64 temp_tcgv_i64(TCGContext *s, TCGTemp *t)
 static inline TCGv_ptr temp_tcgv_ptr(TCGContext *s, TCGTemp *t)
 {
     return (TCGv_ptr)temp_tcgv_i32(s, t);
+}
+
+static inline TCGv_vec temp_tcgv_vec(TCGContext *s, TCGTemp *t)
+{
+    return (TCGv_vec)temp_tcgv_i32(s, t);
 }
 
 #if TCG_TARGET_REG_BITS == 32
@@ -1003,9 +1052,12 @@ TCGv_i64 tcg_global_reg_new_i64(TCGContext *s, TCGReg reg, const char *name);
 
 TCGv_i32 tcg_temp_new_internal_i32(TCGContext *s, int temp_local);
 TCGv_i64 tcg_temp_new_internal_i64(TCGContext *s, int temp_local);
+TCGv_vec tcg_temp_new_vec(TCGContext *s, TCGType type);
+TCGv_vec tcg_temp_new_vec_matching(TCGContext *s, TCGv_vec match);
 
 void tcg_temp_free_i32(TCGContext *s, TCGv_i32 arg);
 void tcg_temp_free_i64(TCGContext *s, TCGv_i64 arg);
+void tcg_temp_free_vec(TCGContext *s, TCGv_vec arg);
 
 static inline TCGv_i32 tcg_global_mem_new_i32(TCGContext *s, TCGv_ptr reg,
                                               intptr_t offset, const char *name)
@@ -1042,7 +1094,7 @@ static inline TCGv_i64 tcg_temp_local_new_i64(TCGContext *s)
 }
 
 // UNICORN: Added
-#define TCG_OP_DEFS_TABLE_SIZE 136
+#define TCG_OP_DEFS_TABLE_SIZE 151
 extern const TCGOpDef tcg_op_defs_org[TCG_OP_DEFS_TABLE_SIZE];
 
 typedef struct TCGTargetOpDef {
@@ -1116,6 +1168,10 @@ TCGv_i32 tcg_const_i32(TCGContext *s, int32_t val);
 TCGv_i64 tcg_const_i64(TCGContext *s, int64_t val);
 TCGv_i32 tcg_const_local_i32(TCGContext *s, int32_t val);
 TCGv_i64 tcg_const_local_i64(TCGContext *s, int64_t val);
+TCGv_vec tcg_const_zeros_vec(TCGContext *s, TCGType);
+TCGv_vec tcg_const_ones_vec(TCGContext *s, TCGType);
+TCGv_vec tcg_const_zeros_vec_matching(TCGContext *s, TCGv_vec);
+TCGv_vec tcg_const_ones_vec_matching(TCGContext *s, TCGv_vec);
 
 TCGLabel *gen_new_label(TCGContext* s);
 
