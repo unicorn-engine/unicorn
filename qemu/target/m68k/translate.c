@@ -998,7 +998,6 @@ static void gen_load_fp(DisasContext *s, int opsize, TCGv addr, TCGv_ptr fp)
     case OS_DOUBLE:
         tcg_gen_qemu_ld64(s->uc, t64, addr, index);
         gen_helper_extf64(tcg_ctx, tcg_ctx->cpu_env, fp, t64);
-        tcg_temp_free_i64(tcg_ctx, t64);
         break;
     case OS_EXTENDED:
         if (m68k_feature(s->env, M68K_FEATURE_CF_FPU)) {
