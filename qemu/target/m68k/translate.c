@@ -2848,6 +2848,20 @@ DISAS_INSN(unlk)
     tcg_temp_free(tcg_ctx, src);
 }
 
+#if defined(CONFIG_SOFTMMU)
+DISAS_INSN(reset)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    if (IS_USER(s)) {
+        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        return;
+    }
+
+    gen_helper_reset(tcg_ctx, tcg_ctx->cpu_env);
+}
+#endif
+
 DISAS_INSN(nop)
 {
 }
@@ -5779,6 +5793,7 @@ void register_m68k_insns (CPUM68KState *env)
 #if defined(CONFIG_SOFTMMU)
     INSN(move_to_usp, 4e60, fff8, USP);
     INSN(move_from_usp, 4e68, fff8, USP);
+    INSN(reset,     4e70, ffff, M68000);
     BASE(stop,      4e72, ffff);
     BASE(rte,       4e73, ffff);
     INSN(movec,     4e7b, ffff, CF_ISA_A);
