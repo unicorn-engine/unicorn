@@ -20390,7 +20390,8 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
     int insn_bytes;
     int is_slot = 0;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    int save_opparam_idx = -1;
+    // Unicorn: used with hooking below
+    //int save_opparam_idx = -1;
     bool block_full = false;
 
     pc_start = tb->pc;
@@ -20455,11 +20456,14 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
     if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
+        // Unicorn: FIXME: Amend to work with the new TCG API
+#if 0
         int arg_i = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
         // save block address to see if we need to patch block size later
         env->uc->block_addr = pc_start;
         env->uc->size_arg = arg_i + 1;
         gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
+#endif
     } else {
         env->uc->size_arg = -1;
     }
@@ -20496,9 +20500,12 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
             int insn_patch_offset = 1;
 
             // Unicorn: save param buffer
+            // Unicorn: FIXME: Amend to work with new TCG API
+            #if 0
             if (HOOK_EXISTS(env->uc, UC_HOOK_CODE)) {
                 save_opparam_idx = tcg_ctx->gen_next_op_idx;
             }
+            #endif
 
             is_slot = ctx.hflags & MIPS_HFLAG_BMASK;
 
