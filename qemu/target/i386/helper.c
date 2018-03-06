@@ -530,7 +530,7 @@ void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4)
 
 #if defined(CONFIG_USER_ONLY)
 
-int x86_cpu_handle_mmu_fault(CPUState *cs, vaddr addr,
+int x86_cpu_handle_mmu_fault(CPUState *cs, vaddr addr, int size,
                              int is_write, int mmu_idx)
 {
     X86CPU *cpu = X86_CPU(cs);
@@ -554,7 +554,7 @@ int x86_cpu_handle_mmu_fault(CPUState *cs, vaddr addr,
  * 0  = nothing more to do
  * 1  = generate PF fault
  */
-int x86_cpu_handle_mmu_fault(CPUState *cs, vaddr addr,
+int x86_cpu_handle_mmu_fault(CPUState *cs, vaddr addr, int size,
                              int is_write1, int mmu_idx)
 {
     X86CPU *cpu = X86_CPU(cs->uc, cs);

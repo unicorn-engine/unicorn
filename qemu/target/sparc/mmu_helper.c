@@ -25,7 +25,7 @@
 
 #if defined(CONFIG_USER_ONLY)
 
-int sparc_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int rw,
+int sparc_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int size, int rw,
                                int mmu_idx)
 {
     if (rw & 2) {
@@ -198,7 +198,7 @@ static int get_physical_address(CPUSPARCState *env, hwaddr *physical,
 }
 
 /* Perform address translation */
-int sparc_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int rw,
+int sparc_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int size, int rw,
                                int mmu_idx)
 {
     SPARCCPU *cpu = SPARC_CPU(cs->uc, cs);
@@ -705,7 +705,7 @@ static int get_physical_address(CPUSPARCState *env, hwaddr *physical,
 }
 
 /* Perform address translation */
-int sparc_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int rw,
+int sparc_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int size, int rw,
                                int mmu_idx)
 {
     SPARCCPU *cpu = SPARC_CPU(cs->uc, cs);

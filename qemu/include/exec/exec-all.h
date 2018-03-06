@@ -170,7 +170,7 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
                   int mmu_idx, target_ulong size);
 
 void tb_invalidate_phys_addr(AddressSpace *as, hwaddr addr);
-void probe_write(CPUArchState *env, target_ulong addr, int mmu_idx,
+void probe_write(CPUArchState *env, target_ulong addr, int size, int mmu_idx,
                  uintptr_t retaddr);
 
 #else
@@ -308,8 +308,8 @@ void phys_mem_set_alloc(void *(*alloc)(size_t, uint64_t *align));
 struct MemoryRegion *iotlb_to_region(CPUState *cpu,
                                      hwaddr index, MemTxAttrs attrs);
 
-void tlb_fill(CPUState *cpu, target_ulong addr, MMUAccessType access_type,
-              int mmu_idx, uintptr_t retaddr);
+void tlb_fill(CPUState *cpu, target_ulong addr, int size,
+              MMUAccessType access_type, int mmu_idx, uintptr_t retaddr);
 #endif
 
 #if defined(CONFIG_USER_ONLY)
