@@ -506,8 +506,11 @@ uint64_t HELPER(paired_cmpxchg64_le)(CPUARMState *env, uint64_t addr,
     Int128 oldv, cmpv, newv;
     bool success;
 
-    cmpv = int128_make128(env->exclusive_val, env->exclusive_high);
-    newv = int128_make128(new_lo, new_hi);
+    /* high and low need to be switched here because this is not actually a
+     * 128bit store but two doublewords stored consecutively
+     */
+    cmpv = int128_make128(env->exclusive_high, env->exclusive_val);
+    newv = int128_make128(new_hi, new_lo);
 
     if (env->uc->parallel_cpus) {
 #ifndef CONFIG_ATOMIC128
