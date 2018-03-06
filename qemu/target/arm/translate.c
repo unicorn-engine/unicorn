@@ -1623,6 +1623,13 @@ static inline void neon_store_reg64(TCGContext *tcg_ctx, TCGv_i64 var, int reg)
     tcg_gen_st_i64(tcg_ctx, var, tcg_ctx->cpu_env, vfp_reg_offset(1, reg));
 }
 
+static TCGv_ptr vfp_reg_ptr(TCGContext *tcg_ctx, bool dp, int reg)
+{
+    TCGv_ptr ret = tcg_temp_new_ptr(tcg_ctx);
+    tcg_gen_addi_ptr(tcg_ctx, ret, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
+    return ret;
+}
+
 #define tcg_gen_ld_f32 tcg_gen_ld_i32
 #define tcg_gen_ld_f64 tcg_gen_ld_i64
 #define tcg_gen_st_f32 tcg_gen_st_i32
@@ -5756,6 +5763,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
     int u;
     uint32_t imm, mask;
     TCGv_i32 tmp, tmp2, tmp3, tmp4, tmp5;
+    TCGv_ptr ptr1, ptr2, ptr3;
     TCGv_i64 tmp64;
 
     /* FIXME: this access check should not take precedence over UNDEF
@@ -5802,34 +5810,34 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                 if (!arm_dc_feature(s, ARM_FEATURE_V8_SHA1)) {
                     return 1;
                 }
-                tmp = tcg_const_i32(tcg_ctx, rd);
-                tmp2 = tcg_const_i32(tcg_ctx, rn);
-                tmp3 = tcg_const_i32(tcg_ctx, rm);
+                ptr1 = vfp_reg_ptr(tcg_ctx, true, rd);
+                ptr2 = vfp_reg_ptr(tcg_ctx, true, rn);
+                ptr3 = vfp_reg_ptr(tcg_ctx, true, rm);
                 tmp4 = tcg_const_i32(tcg_ctx, size);
-                gen_helper_crypto_sha1_3reg(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2, tmp3, tmp4);
+                gen_helper_crypto_sha1_3reg(tcg_ctx, ptr1, ptr2, ptr3, tmp4);
                 tcg_temp_free_i32(tcg_ctx, tmp4);
             } else { /* SHA-256 */
                 if (!arm_dc_feature(s, ARM_FEATURE_V8_SHA256) || size == 3) {
                     return 1;
                 }
-                tmp = tcg_const_i32(tcg_ctx, rd);
-                tmp2 = tcg_const_i32(tcg_ctx, rn);
-                tmp3 = tcg_const_i32(tcg_ctx, rm);
+                ptr1 = vfp_reg_ptr(tcg_ctx, true, rd);
+                ptr2 = vfp_reg_ptr(tcg_ctx, true, rn);
+                ptr3 = vfp_reg_ptr(tcg_ctx, true, rm);
                 switch (size) {
                 case 0:
-                    gen_helper_crypto_sha256h(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2, tmp3);
+                    gen_helper_crypto_sha256h(tcg_ctx, ptr1, ptr2, ptr3);
                     break;
                 case 1:
-                    gen_helper_crypto_sha256h2(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2, tmp3);
+                    gen_helper_crypto_sha256h2(tcg_ctx, ptr1, ptr2, ptr3);
                     break;
                 case 2:
-                    gen_helper_crypto_sha256su1(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2, tmp3);
+                    gen_helper_crypto_sha256su1(tcg_ctx, ptr1, ptr2, ptr3);
                     break;
                 }
             }
-            tcg_temp_free_i32(tcg_ctx, tmp);
-            tcg_temp_free_i32(tcg_ctx, tmp2);
-            tcg_temp_free_i32(tcg_ctx, tmp3);
+            tcg_temp_free_ptr(tcg_ctx, ptr1);
+            tcg_temp_free_ptr(tcg_ctx, ptr2);
+            tcg_temp_free_ptr(tcg_ctx, ptr3);
             return 0;
         }
         if (size == 3 && op != NEON_3R_LOGIC) {
@@ -7318,8 +7326,8 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                         || ((rm | rd) & 1)) {
                         return 1;
                     }
-                    tmp = tcg_const_i32(tcg_ctx, rd);
-                    tmp2 = tcg_const_i32(tcg_ctx, rm);
+                    ptr1 = vfp_reg_ptr(tcg_ctx, true, rd);
+                    ptr2 = vfp_reg_ptr(tcg_ctx, true, rm);
 
                      /* Bit 6 is the lowest opcode bit; it distinguishes between
                       * encryption (AESE/AESMC) and decryption (AESD/AESIMC)
@@ -7327,12 +7335,12 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                     tmp3 = tcg_const_i32(tcg_ctx, extract32(insn, 6, 1));
 
                     if (op == NEON_2RM_AESE) {
-                        gen_helper_crypto_aese(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2, tmp3);
+                        gen_helper_crypto_aese(tcg_ctx, ptr1, ptr2, tmp3);
                     } else {
-                        gen_helper_crypto_aesmc(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2, tmp3);
+                        gen_helper_crypto_aesmc(tcg_ctx, ptr1, ptr2, tmp3);
                     }
-                    tcg_temp_free_i32(tcg_ctx, tmp);
-                    tcg_temp_free_i32(tcg_ctx, tmp2);
+                    tcg_temp_free_ptr(tcg_ctx, ptr1);
+                    tcg_temp_free_ptr(tcg_ctx, ptr2);
                     tcg_temp_free_i32(tcg_ctx, tmp3);
                     break;
                 case NEON_2RM_SHA1H:
@@ -7340,13 +7348,13 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                         || ((rm | rd) & 1)) {
                         return 1;
                     }
-                    tmp = tcg_const_i32(tcg_ctx, rd);
-                    tmp2 = tcg_const_i32(tcg_ctx, rm);
+                    ptr1 = vfp_reg_ptr(tcg_ctx, true, rd);
+                    ptr2 = vfp_reg_ptr(tcg_ctx, true, rm);
 
-                    gen_helper_crypto_sha1h(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+                    gen_helper_crypto_sha1h(tcg_ctx, ptr1, ptr2);
 
-                    tcg_temp_free_i32(tcg_ctx, tmp);
-                    tcg_temp_free_i32(tcg_ctx, tmp2);
+                    tcg_temp_free_ptr(tcg_ctx, ptr1);
+                    tcg_temp_free_ptr(tcg_ctx, ptr2);
                     break;
                 case NEON_2RM_SHA1SU1:
                     if ((rm | rd) & 1) {
@@ -7360,15 +7368,15 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                     } else if (!arm_dc_feature(s, ARM_FEATURE_V8_SHA1)) {
                         return 1;
                     }
-                    tmp = tcg_const_i32(tcg_ctx, rd);
-                    tmp2 = tcg_const_i32(tcg_ctx, rm);
+                    ptr1 = vfp_reg_ptr(tcg_ctx, true, rd);
+                    ptr2 = vfp_reg_ptr(tcg_ctx, true, rm);
                     if (q) {
-                        gen_helper_crypto_sha256su0(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+                        gen_helper_crypto_sha256su0(tcg_ctx, ptr1, ptr2);
                     } else {
-                        gen_helper_crypto_sha1su1(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+                        gen_helper_crypto_sha1su1(tcg_ctx, ptr1, ptr2);
                     }
-                    tcg_temp_free_i32(tcg_ctx, tmp);
-                    tcg_temp_free_i32(tcg_ctx, tmp2);
+                    tcg_temp_free_ptr(tcg_ctx, ptr1);
+                    tcg_temp_free_ptr(tcg_ctx, ptr2);
                     break;
                 default:
                 elementwise:
