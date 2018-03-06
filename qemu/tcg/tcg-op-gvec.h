@@ -179,6 +179,16 @@ void tcg_gen_gvec_sub(TCGContext *, unsigned vece, uint32_t dofs, uint32_t aofs,
 void tcg_gen_gvec_mul(TCGContext *, unsigned vece, uint32_t dofs, uint32_t aofs,
                       uint32_t bofs, uint32_t oprsz, uint32_t maxsz);
 
+/* Saturated arithmetic.  */
+void tcg_gen_gvec_ssadd(TCGContext *s, unsigned vece, uint32_t dofs, uint32_t aofs,
+                        uint32_t bofs, uint32_t oprsz, uint32_t maxsz);
+void tcg_gen_gvec_sssub(TCGContext *s, unsigned vece, uint32_t dofs, uint32_t aofs,
+                        uint32_t bofs, uint32_t oprsz, uint32_t maxsz);
+void tcg_gen_gvec_usadd(TCGContext *s, unsigned vece, uint32_t dofs, uint32_t aofs,
+                        uint32_t bofs, uint32_t oprsz, uint32_t maxsz);
+void tcg_gen_gvec_ussub(TCGContext *s, unsigned vece, uint32_t dofs, uint32_t aofs,
+                        uint32_t bofs, uint32_t oprsz, uint32_t maxsz);
+
 void tcg_gen_gvec_and(TCGContext *, unsigned vece, uint32_t dofs, uint32_t aofs,
                       uint32_t bofs, uint32_t oprsz, uint32_t maxsz);
 void tcg_gen_gvec_or(TCGContext *, unsigned vece, uint32_t dofs, uint32_t aofs,
