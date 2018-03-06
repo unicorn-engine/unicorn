@@ -1060,10 +1060,10 @@ bool tcg_op_supported(TCGOpcode op)
     case INDEX_op_orc_vec:
         return have_vec && TCG_TARGET_HAS_orc_vec;
 
-    case NB_OPS:
-        break;
+    default:
+        tcg_debug_assert(op > INDEX_op_last_generic && op < NB_OPS);
+        return true;
     }
-    g_assert_not_reached();
 }
 
 /* Note: we convert the 64 bit args to 32 bit and do some alignment
@@ -3127,5 +3127,12 @@ void tcg_dump_info(FILE *f, fprintf_function cpu_fprintf)
 void tcg_dump_info(FILE *f, fprintf_function cpu_fprintf)
 {
     cpu_fprintf(f, "[TCG profiler not compiled]\n");
+}
+#endif
+
+#if !TCG_TARGET_MAYBE_vec
+void tcg_expand_vec_op(TCGOpcode o, TCGType t, unsigned e, TCGArg a0, ...)
+{
+    g_assert_not_reached();
 }
 #endif

@@ -1094,7 +1094,7 @@ static inline TCGv_i64 tcg_temp_local_new_i64(TCGContext *s)
 }
 
 // UNICORN: Added
-#define TCG_OP_DEFS_TABLE_SIZE 151
+#define TCG_OP_DEFS_TABLE_SIZE 152
 extern const TCGOpDef tcg_op_defs_org[TCG_OP_DEFS_TABLE_SIZE];
 
 typedef struct TCGTargetOpDef {
@@ -1338,6 +1338,33 @@ static inline unsigned get_mmuidx(TCGMemOpIdx oi)
 # define tcg_qemu_tb_exec(env, tb_ptr) \
     ((uintptr_t (*)(void *, void *))tcg_ctx->code_gen_prologue)(env, tb_ptr)
 #endif
+
+#if TCG_TARGET_MAYBE_vec
+/* Return zero if the tuple (opc, type, vece) is unsupportable;
+   return > 0 if it is directly supportable;
+   return < 0 if we must call tcg_expand_vec_op.  */
+int tcg_can_emit_vec_op(TCGOpcode, TCGType, unsigned);
+#else
+static inline int tcg_can_emit_vec_op(TCGOpcode o, TCGType t, unsigned ve)
+{
+    return 0;
+}
+#endif
+
+/* Expand the tuple (opc, type, vece) on the given arguments.  */
+void tcg_expand_vec_op(TCGOpcode, TCGType, unsigned, TCGArg, ...);
+
+/* Replicate a constant C accoring to the log2 of the element size.  */
+// Unicorn: renamed to avoid symbol clashing
+uint64_t dup_const_impl(unsigned vece, uint64_t c);
+
+#define dup_const(VECE, C)                                         \
+    (__builtin_constant_p(VECE)                                    \
+     ? (  (VECE) == MO_8  ? 0x0101010101010101ull * (uint8_t)(C)   \
+        : (VECE) == MO_16 ? 0x0001000100010001ull * (uint16_t)(C)  \
+        : (VECE) == MO_32 ? 0x0000000100000001ull * (uint32_t)(C)  \
+        : dup_const_impl(VECE, C))                                      \
+     : dup_const_impl(VECE, C))
 
 /*
  * Memory helpers that will be used by TCG generated code.

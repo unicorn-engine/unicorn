@@ -43,11 +43,11 @@ all: $(PROGS)
 obj-y = exec.o translate-all.o cpu-exec.o
 obj-y += translate-common.o
 obj-y += cpu-exec-common.o
-obj-$(CONFIG_TCG) += tcg/tcg.o tcg/tcg-op.o tcg/tcg-op-vec.o
+obj-$(CONFIG_TCG) += tcg/tcg.o tcg/tcg-op.o tcg/tcg-op-vec.o tcg/tcg-op-gvec.o
 obj-$(CONFIG_TCG) += tcg/tcg-common.o tcg/optimize.o
 obj-y += fpu/softfloat.o
 obj-y += target/$(TARGET_BASE_ARCH)/
-obj-y += tcg-runtime.o
+obj-y += tcg-runtime.o tcg-runtime-gvec.o
 obj-y += accel/
 
 #########################################################

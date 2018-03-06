@@ -39,6 +39,12 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h">
       <Filter>tcg</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-gvec-desc.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-op-gvec.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h">
       <Filter>tcg</Filter>
     </ClInclude>
@@ -70,6 +76,8 @@
     <ClCompile Include="..\..\..\qemu\cpus.c" />
     <ClCompile Include="..\..\..\qemu\cputlb.c" />
     <ClCompile Include="..\..\..\qemu\exec.c" />
+    <ClCompile Include="..\..\..\qemu\tcg-runtime.c" />
+    <ClCompile Include="..\..\..\qemu\tcg-runtime-gvec.c" />
     <ClCompile Include="..\..\..\qemu\ioport.c" />
     <ClCompile Include="..\..\..\qemu\memory.c" />
     <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
@@ -88,6 +96,9 @@
       <Filter>tcg</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\tcg.c">
+      <Filter>tcg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\tcg\tcg-op-gvec.c">
       <Filter>tcg</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\tcg\tcg-op-vec.c">
