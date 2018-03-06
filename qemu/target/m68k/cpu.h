@@ -303,6 +303,7 @@ enum m68k_features {
     M68K_FEATURE_CAS,
     M68K_FEATURE_BKPT,
     M68K_FEATURE_RTD,
+    M68K_FEATURE_CHK2,
 };
 
 static inline int m68k_feature(CPUM68KState *env, int feature)
