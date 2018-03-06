@@ -7701,9 +7701,9 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                     tcg_gen_movi_i32(tcg_ctx, tmp, 0);
                 }
                 tmp2 = neon_load_reg(tcg_ctx, rm, 0);
-                tmp4 = tcg_const_i32(tcg_ctx, rn);
+                ptr1 = vfp_reg_ptr(tcg_ctx, true, rn);
                 tmp5 = tcg_const_i32(tcg_ctx, n);
-                gen_helper_neon_tbl(tcg_ctx, tmp2, tcg_ctx->cpu_env, tmp2, tmp, tmp4, tmp5);
+                gen_helper_neon_tbl(tcg_ctx, tmp2, tmp2, tmp, ptr1, tmp5);
                 tcg_temp_free_i32(tcg_ctx, tmp);
                 if (insn & (1 << 6)) {
                     tmp = neon_load_reg(tcg_ctx, rd, 1);
@@ -7712,9 +7712,9 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                     tcg_gen_movi_i32(tcg_ctx, tmp, 0);
                 }
                 tmp3 = neon_load_reg(tcg_ctx, rm, 1);
-                gen_helper_neon_tbl(tcg_ctx, tmp3, tcg_ctx->cpu_env, tmp3, tmp, tmp4, tmp5);
+                gen_helper_neon_tbl(tcg_ctx, tmp3, tmp3, tmp, ptr1, tmp5);
                 tcg_temp_free_i32(tcg_ctx, tmp5);
-                tcg_temp_free_i32(tcg_ctx, tmp4);
+                tcg_temp_free_ptr(tcg_ctx, ptr1);
                 neon_store_reg(tcg_ctx, rd, 0, tmp2);
                 neon_store_reg(tcg_ctx, rd, 1, tmp3);
                 tcg_temp_free_i32(tcg_ctx, tmp);
