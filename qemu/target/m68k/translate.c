@@ -2193,6 +2193,65 @@ DISAS_INSN(bitop_im)
     }
 }
 
+static TCGv gen_get_ccr(DisasContext *s)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv dest;
+
+    update_cc_op(s);
+    dest = tcg_temp_new(tcg_ctx);
+    gen_helper_get_ccr(tcg_ctx, dest, tcg_ctx->cpu_env);
+    return dest;
+}
+
+static void gen_set_sr_im(DisasContext *s, uint16_t val, int ccr_only)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    if (ccr_only) {
+        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_C, val & CCF_C ? 1 : 0);
+        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_V, val & CCF_V ? -1 : 0);
+        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_Z, val & CCF_Z ? 0 : 1);
+        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_N, val & CCF_N ? -1 : 0);
+        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_X, val & CCF_X ? 1 : 0);
+    } else {
+        gen_helper_set_sr(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, val));
+    }
+    set_cc_op(s, CC_OP_FLAGS);
+}
+
+static void gen_set_sr(CPUM68KState *env, DisasContext *s, uint16_t insn,
+                       int ccr_only)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    if ((insn & 0x38) == 0) {
+        if (ccr_only) {
+            gen_helper_set_ccr(tcg_ctx, tcg_ctx->cpu_env, DREG(insn, 0));
+        } else {
+            gen_helper_set_sr(tcg_ctx, tcg_ctx->cpu_env, DREG(insn, 0));
+        }
+        set_cc_op(s, CC_OP_FLAGS);
+    } else if ((insn & 0x3f) == 0x3c) {
+        uint16_t val;
+        val = read_im16(env, s);
+        gen_set_sr_im(s, val, ccr_only);
+    } else {
+        disas_undef(env, s, insn);
+    }
+}
+
+static TCGv gen_get_sr(DisasContext *s)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv ccr;
+    TCGv sr;
+
+    ccr = gen_get_ccr(s);
+    sr = tcg_temp_new(tcg_ctx);
+    tcg_gen_andi_i32(tcg_ctx, sr, tcg_ctx->QREG_SR, 0xffe0);
+    tcg_gen_or_i32(tcg_ctx, sr, sr, ccr);
+    return sr;
+}
+
 DISAS_INSN(arith_im)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -2543,17 +2602,6 @@ DISAS_INSN(clr)
     tcg_temp_free(tcg_ctx, zero);
 }
 
-static TCGv gen_get_ccr(DisasContext *s)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv dest;
-
-    update_cc_op(s);
-    dest = tcg_temp_new(tcg_ctx);
-    gen_helper_get_ccr(tcg_ctx, dest, tcg_ctx->cpu_env);
-    return dest;
-}
-
 DISAS_INSN(move_from_ccr)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -2580,41 +2628,6 @@ DISAS_INSN(neg)
     tcg_gen_setcondi_i32(tcg_ctx, TCG_COND_NE, tcg_ctx->QREG_CC_X, dest, 0);
     DEST_EA(env, insn, opsize, dest, &addr);
     tcg_temp_free(tcg_ctx, dest);
-}
-
-static void gen_set_sr_im(DisasContext *s, uint16_t val, int ccr_only)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    if (ccr_only) {
-        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_C, val & CCF_C ? 1 : 0);
-        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_V, val & CCF_V ? -1 : 0);
-        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_Z, val & CCF_Z ? 0 : 1);
-        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_N, val & CCF_N ? -1 : 0);
-        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_CC_X, val & CCF_X ? 1 : 0);
-    } else {
-        gen_helper_set_sr(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, val));
-    }
-    set_cc_op(s, CC_OP_FLAGS);
-}
-
-static void gen_set_sr(CPUM68KState *env, DisasContext *s, uint16_t insn,
-                       int ccr_only)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    if ((insn & 0x38) == 0) {
-        if (ccr_only) {
-            gen_helper_set_ccr(tcg_ctx, tcg_ctx->cpu_env, DREG(insn, 0));
-        } else {
-            gen_helper_set_sr(tcg_ctx, tcg_ctx->cpu_env, DREG(insn, 0));
-        }
-        set_cc_op(s, CC_OP_FLAGS);
-    } else if ((insn & 0x3f) == 0x3c) {
-        uint16_t val;
-        val = read_im16(env, s);
-        gen_set_sr_im(s, val, ccr_only);
-    } else {
-        disas_undef(env, s, insn);
-    }
 }
 
 DISAS_INSN(move_to_ccr)
@@ -4530,19 +4543,6 @@ DISAS_INSN(move16_mem)
         /* (Ay)+ */
         tcg_gen_addi_i32(tcg_ctx, reg, reg, 16);
     }
-}
-
-static TCGv gen_get_sr(DisasContext *s)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv ccr;
-    TCGv sr;
-
-    ccr = gen_get_ccr(s);
-    sr = tcg_temp_new(tcg_ctx);
-    tcg_gen_andi_i32(tcg_ctx, sr, tcg_ctx->QREG_SR, 0xffe0);
-    tcg_gen_or_i32(tcg_ctx, sr, sr, ccr);
-    return sr;
 }
 
 DISAS_INSN(strldsr)
