@@ -202,6 +202,10 @@ void tcg_gen_gvec_shri(TCGContext *s, unsigned vece, uint32_t dofs, uint32_t aof
 void tcg_gen_gvec_sari(TCGContext *s, unsigned vece, uint32_t dofs, uint32_t aofs,
                        int64_t shift, uint32_t oprsz, uint32_t maxsz);
 
+void tcg_gen_gvec_cmp(TCGContext *s, TCGCond cond, unsigned vece, uint32_t dofs,
+                      uint32_t aofs, uint32_t bofs,
+                      uint32_t oprsz, uint32_t maxsz);
+
 void tcg_gen_gvec_dup8i(TCGContext *, uint32_t dofs, uint32_t s, uint32_t m, uint8_t x);
 void tcg_gen_gvec_dup16i(TCGContext *, uint32_t dofs, uint32_t s, uint32_t m, uint16_t x);
 void tcg_gen_gvec_dup32i(TCGContext *, uint32_t dofs, uint32_t s, uint32_t m, uint32_t x);

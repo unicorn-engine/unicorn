@@ -937,6 +937,9 @@ void tcg_gen_shli_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a, int64
 void tcg_gen_shri_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a, int64_t i);
 void tcg_gen_sari_vec(TCGContext *, unsigned vece, TCGv_vec r, TCGv_vec a, int64_t i);
 
+void tcg_gen_cmp_vec(TCGContext *, TCGCond cond, unsigned vece, TCGv_vec r,
+                     TCGv_vec a, TCGv_vec b);
+
 void tcg_gen_ld_vec(TCGContext *, TCGv_vec r, TCGv_ptr base, TCGArg offset);
 void tcg_gen_st_vec(TCGContext *, TCGv_vec r, TCGv_ptr base, TCGArg offset);
 void tcg_gen_stl_vec(TCGContext *, TCGv_vec r, TCGv_ptr base, TCGArg offset, TCGType t);
