@@ -181,6 +181,9 @@ typedef uint64_t TCGRegSet;
 #define TCG_TARGET_HAS_not_vec          0
 #define TCG_TARGET_HAS_andc_vec         0
 #define TCG_TARGET_HAS_orc_vec          0
+#define TCG_TARGET_HAS_shi_vec          0
+#define TCG_TARGET_HAS_shs_vec          0
+#define TCG_TARGET_HAS_shv_vec          0
 #else
 #define TCG_TARGET_MAYBE_vec            1
 #endif
@@ -1094,7 +1097,7 @@ static inline TCGv_i64 tcg_temp_local_new_i64(TCGContext *s)
 }
 
 // UNICORN: Added
-#define TCG_OP_DEFS_TABLE_SIZE 152
+#define TCG_OP_DEFS_TABLE_SIZE 161
 extern const TCGOpDef tcg_op_defs_org[TCG_OP_DEFS_TABLE_SIZE];
 
 typedef struct TCGTargetOpDef {
@@ -1352,7 +1355,7 @@ static inline int tcg_can_emit_vec_op(TCGOpcode o, TCGType t, unsigned ve)
 #endif
 
 /* Expand the tuple (opc, type, vece) on the given arguments.  */
-void tcg_expand_vec_op(TCGOpcode, TCGType, unsigned, TCGArg, ...);
+void tcg_expand_vec_op(TCGContext *s, TCGOpcode, TCGType, unsigned, TCGArg, ...);
 
 /* Replicate a constant C accoring to the log2 of the element size.  */
 // Unicorn: renamed to avoid symbol clashing
