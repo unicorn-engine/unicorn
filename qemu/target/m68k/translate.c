@@ -4445,6 +4445,79 @@ DISAS_INSN(chk2)
     tcg_temp_free(tcg_ctx, reg);
 }
 
+static void m68k_copy_line(DisasContext *s, TCGv dst, TCGv src, int index)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv addr;
+    TCGv_i64 t0, t1;
+
+    addr = tcg_temp_new(tcg_ctx);
+
+    t0 = tcg_temp_new_i64(tcg_ctx);
+    t1 = tcg_temp_new_i64(tcg_ctx);
+
+    tcg_gen_andi_i32(tcg_ctx, addr, src, ~15);
+    tcg_gen_qemu_ld64(s->uc, t0, addr, index);
+    tcg_gen_addi_i32(tcg_ctx, addr, addr, 8);
+    tcg_gen_qemu_ld64(s->uc, t1, addr, index);
+
+    tcg_gen_andi_i32(tcg_ctx, addr, dst, ~15);
+    tcg_gen_qemu_st64(s->uc, t0, addr, index);
+    tcg_gen_addi_i32(tcg_ctx, addr, addr, 8);
+    tcg_gen_qemu_st64(s->uc, t1, addr, index);
+
+    tcg_temp_free_i64(tcg_ctx, t0);
+    tcg_temp_free_i64(tcg_ctx, t1);
+    tcg_temp_free(tcg_ctx, addr);
+}
+
+DISAS_INSN(move16_reg)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int index = IS_USER(s);
+    TCGv tmp;
+    uint16_t ext;
+
+    ext = read_im16(env, s);
+    if ((ext & (1 << 15)) == 0) {
+        gen_exception(s, s->insn_pc, EXCP_ILLEGAL);
+    }
+
+    m68k_copy_line(s, AREG(ext, 12), AREG(insn, 0), index);
+
+    /* Ax can be Ay, so save Ay before incrementing Ax */
+    tmp = tcg_temp_new(tcg_ctx);
+    tcg_gen_mov_i32(tcg_ctx, tmp, AREG(ext, 12));
+    tcg_gen_addi_i32(tcg_ctx, AREG(insn, 0), AREG(insn, 0), 16);
+    tcg_gen_addi_i32(tcg_ctx, AREG(ext, 12), tmp, 16);
+    tcg_temp_free(tcg_ctx, tmp);
+}
+
+DISAS_INSN(move16_mem)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int index = IS_USER(s);
+    TCGv reg, addr;
+
+    reg = AREG(insn, 0);
+    addr = tcg_const_i32(tcg_ctx, read_im32(env, s));
+
+    if ((insn >> 3) & 1) {
+        /* MOVE16 (xxx).L, (Ay) */
+        m68k_copy_line(s, reg, addr, index);
+    } else {
+        /* MOVE16 (Ay), (xxx).L */
+        m68k_copy_line(s, addr, reg, index);
+    }
+
+    tcg_temp_free(tcg_ctx, addr);
+
+    if (((insn >> 3) & 2) == 0) {
+        /* (Ay)+ */
+        tcg_gen_addi_i32(tcg_ctx, reg, reg, 16);
+    }
+}
+
 static TCGv gen_get_sr(DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -5785,6 +5858,8 @@ void register_m68k_insns (CPUM68KState *env)
     INSN(fsave,     f300, ffc0, FPU);
     INSN(intouch,   f340, ffc0, CF_ISA_A);
     INSN(cpushl,    f428, ff38, CF_ISA_A);
+    INSN(move16_mem, f600, ffe0, M68040);
+    INSN(move16_reg, f620, fff8, M68040);
     INSN(wddata,    fb00, ff00, CF_ISA_A);
     INSN(wdebug,    fbc0, ffc0, CF_ISA_A);
 #undef INSN
