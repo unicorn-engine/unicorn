@@ -4700,7 +4700,7 @@ DISAS_INSN(rte)
     gen_exception(s, s->insn_pc, EXCP_RTE);
 }
 
-DISAS_INSN(movec)
+DISAS_INSN(cf_movec)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     uint16_t ext;
@@ -4718,7 +4718,33 @@ DISAS_INSN(movec)
     } else {
         reg = DREG(ext, 12);
     }
-    gen_helper_movec(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, ext & 0xfff), reg);
+    gen_helper_cf_movec_to(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, ext & 0xfff), reg);
+    gen_lookup_tb(s);
+}
+
+DISAS_INSN(m68k_movec)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    uint16_t ext;
+    TCGv reg;
+
+    if (IS_USER(s)) {
+        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        return;
+    }
+
+    ext = read_im16(env, s);
+
+    if (ext & 0x8000) {
+        reg = AREG(ext, 12);
+    } else {
+        reg = DREG(ext, 12);
+    }
+    if (insn & 1) {
+        gen_helper_m68k_movec_to(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, ext & 0xfff), reg);
+    } else {
+        gen_helper_m68k_movec_from(tcg_ctx, reg, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, ext & 0xfff));
+    }
     gen_lookup_tb(s);
 }
 
@@ -5855,7 +5881,8 @@ void register_m68k_insns (CPUM68KState *env)
     INSN(reset,     4e70, ffff, M68000);
     BASE(stop,      4e72, ffff);
     BASE(rte,       4e73, ffff);
-    INSN(movec,     4e7b, ffff, CF_ISA_A);
+    INSN(cf_movec,  4e7b, ffff, CF_ISA_A);
+    INSN(m68k_movec, 4e7a, fffe, M68000);
 #endif
     BASE(nop,       4e71, ffff);
     INSN(rtd,       4e74, ffff, RTD);
