@@ -7551,7 +7551,7 @@ static uint64_t arm_ldq_ptw(CPUState *cs, hwaddr addr, bool is_secure,
     MemTxAttrs attrs = {0};
     MemTxResult result = MEMTX_OK;
     AddressSpace *as;
-    uint32_t data;
+    uint64_t data;
 
     attrs.secure = is_secure;
     as = arm_addressspace(cs, attrs);
