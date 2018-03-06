@@ -1640,6 +1640,10 @@
 #define helper_gvec_ltu32 helper_gvec_ltu32_arm
 #define helper_gvec_ltu64 helper_gvec_ltu64_arm
 #define helper_gvec_mov helper_gvec_mov_arm
+#define helper_gvec_mul8 helper_gvec_mul8_arm
+#define helper_gvec_mul16 helper_gvec_mul16_arm
+#define helper_gvec_mul32 helper_gvec_mul32_arm
+#define helper_gvec_mul64 helper_gvec_mul64_arm
 #define helper_gvec_ne8 helper_gvec_ne8_arm
 #define helper_gvec_ne16 helper_gvec_ne16_arm
 #define helper_gvec_ne32 helper_gvec_ne32_arm
@@ -3173,6 +3177,7 @@
 #define tcg_gen_gvec_dup_i64 tcg_gen_gvec_dup_i64_arm
 #define tcg_gen_gvec_dup_mem tcg_gen_gvec_dup_mem_arm
 #define tcg_gen_gvec_mov tcg_gen_gvec_mov_arm
+#define tcg_gen_gvec_mul tcg_gen_gvec_mul_arm
 #define tcg_gen_gvec_neg tcg_gen_gvec_neg_arm
 #define tcg_gen_gvec_not tcg_gen_gvec_not_arm
 #define tcg_gen_gvec_or tcg_gen_gvec_or_arm
@@ -3205,6 +3210,7 @@
 #define tcg_gen_movi_i64 tcg_gen_movi_i64_arm
 #define tcg_gen_mul_i32 tcg_gen_mul_i32_arm
 #define tcg_gen_mul_i64 tcg_gen_mul_i64_arm
+#define tcg_gen_mul_vec tcg_gen_mul_vec_arm
 #define tcg_gen_muli_i32 tcg_gen_muli_i32_arm
 #define tcg_gen_muli_i64 tcg_gen_muli_i64_arm
 #define tcg_gen_muls2_i32 tcg_gen_muls2_i32_arm

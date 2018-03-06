@@ -1640,6 +1640,10 @@
 #define helper_gvec_ltu32 helper_gvec_ltu32_sparc
 #define helper_gvec_ltu64 helper_gvec_ltu64_sparc
 #define helper_gvec_mov helper_gvec_mov_sparc
+#define helper_gvec_mul8 helper_gvec_mul8_sparc
+#define helper_gvec_mul16 helper_gvec_mul16_sparc
+#define helper_gvec_mul32 helper_gvec_mul32_sparc
+#define helper_gvec_mul64 helper_gvec_mul64_sparc
 #define helper_gvec_ne8 helper_gvec_ne8_sparc
 #define helper_gvec_ne16 helper_gvec_ne16_sparc
 #define helper_gvec_ne32 helper_gvec_ne32_sparc
@@ -3173,6 +3177,7 @@
 #define tcg_gen_gvec_dup_i64 tcg_gen_gvec_dup_i64_sparc
 #define tcg_gen_gvec_dup_mem tcg_gen_gvec_dup_mem_sparc
 #define tcg_gen_gvec_mov tcg_gen_gvec_mov_sparc
+#define tcg_gen_gvec_mul tcg_gen_gvec_mul_sparc
 #define tcg_gen_gvec_neg tcg_gen_gvec_neg_sparc
 #define tcg_gen_gvec_not tcg_gen_gvec_not_sparc
 #define tcg_gen_gvec_or tcg_gen_gvec_or_sparc
@@ -3205,6 +3210,7 @@
 #define tcg_gen_movi_i64 tcg_gen_movi_i64_sparc
 #define tcg_gen_mul_i32 tcg_gen_mul_i32_sparc
 #define tcg_gen_mul_i64 tcg_gen_mul_i64_sparc
+#define tcg_gen_mul_vec tcg_gen_mul_vec_sparc
 #define tcg_gen_muli_i32 tcg_gen_muli_i32_sparc
 #define tcg_gen_muli_i64 tcg_gen_muli_i64_sparc
 #define tcg_gen_muls2_i32 tcg_gen_muls2_i32_sparc
