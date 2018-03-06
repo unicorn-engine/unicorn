@@ -191,11 +191,16 @@ uint32_t HELPER(sats)(uint32_t val, uint32_t v)
     return val;
 }
 
+void cpu_m68k_set_sr(CPUM68KState *env, uint32_t sr)
+{
+    env->sr = sr & 0xffe0;
+    cpu_m68k_set_ccr(env, sr);
+    m68k_switch_sp(env);
+}
+
 void HELPER(set_sr)(CPUM68KState *env, uint32_t val)
 {
-    env->sr = val & 0xffe0;
-    cpu_m68k_set_ccr(env, val);
-    m68k_switch_sp(env);
+    cpu_m68k_set_sr(env, val);
 }
 
 /* MAC unit.  */
