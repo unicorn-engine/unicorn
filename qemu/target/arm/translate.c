@@ -4830,22 +4830,22 @@ static inline TCGv_i32 neon_get_scalar(DisasContext *s, int size, int reg)
 
 static int gen_neon_unzip(TCGContext *tcg_ctx, int rd, int rm, int size, int q)
 {
-    TCGv_i32 tmp, tmp2;
+    TCGv_ptr pd, pm;
     if (!q && size == 2) {
         return 1;
     }
-    tmp = tcg_const_i32(tcg_ctx, rd);
-    tmp2 = tcg_const_i32(tcg_ctx, rm);
+    pd = vfp_reg_ptr(tcg_ctx, true, rd);
+    pm = vfp_reg_ptr(tcg_ctx, true, rm);
     if (q) {
         switch (size) {
         case 0:
-            gen_helper_neon_qunzip8(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+            gen_helper_neon_qunzip8(tcg_ctx, pd, pm);
             break;
         case 1:
-            gen_helper_neon_qunzip16(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+            gen_helper_neon_qunzip16(tcg_ctx, pd, pm);
             break;
         case 2:
-            gen_helper_neon_qunzip32(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+            gen_helper_neon_qunzip32(tcg_ctx, pd, pm);
             break;
         default:
             abort();
@@ -4853,38 +4853,38 @@ static int gen_neon_unzip(TCGContext *tcg_ctx, int rd, int rm, int size, int q)
     } else {
         switch (size) {
         case 0:
-            gen_helper_neon_unzip8(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+            gen_helper_neon_unzip8(tcg_ctx, pd, pm);
             break;
         case 1:
-            gen_helper_neon_unzip16(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+            gen_helper_neon_unzip16(tcg_ctx, pd, pm);
             break;
         default:
             abort();
         }
     }
-    tcg_temp_free_i32(tcg_ctx, tmp);
-    tcg_temp_free_i32(tcg_ctx, tmp2);
+    tcg_temp_free_ptr(tcg_ctx, pd);
+    tcg_temp_free_ptr(tcg_ctx, pm);
     return 0;
 }
 
 static int gen_neon_zip(TCGContext *tcg_ctx, int rd, int rm, int size, int q)
 {
-    TCGv_i32 tmp, tmp2;
+    TCGv_ptr pd, pm;
     if (!q && size == 2) {
         return 1;
     }
-    tmp = tcg_const_i32(tcg_ctx, rd);
-    tmp2 = tcg_const_i32(tcg_ctx, rm);
+    pd = vfp_reg_ptr(tcg_ctx, true, rd);
+    pm = vfp_reg_ptr(tcg_ctx, true, rm);
     if (q) {
         switch (size) {
         case 0:
-            gen_helper_neon_qzip8(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+            gen_helper_neon_qzip8(tcg_ctx, pd, pm);
             break;
         case 1:
-            gen_helper_neon_qzip16(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+            gen_helper_neon_qzip16(tcg_ctx, pd, pm);
             break;
         case 2:
-            gen_helper_neon_qzip32(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+            gen_helper_neon_qzip32(tcg_ctx, pd, pm);
             break;
         default:
             abort();
@@ -4892,17 +4892,17 @@ static int gen_neon_zip(TCGContext *tcg_ctx, int rd, int rm, int size, int q)
     } else {
         switch (size) {
         case 0:
-            gen_helper_neon_zip8(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+            gen_helper_neon_zip8(tcg_ctx, pd, pm);
             break;
         case 1:
-            gen_helper_neon_zip16(tcg_ctx, tcg_ctx->cpu_env, tmp, tmp2);
+            gen_helper_neon_zip16(tcg_ctx, pd, pm);
             break;
         default:
             abort();
         }
     }
-    tcg_temp_free_i32(tcg_ctx, tmp);
-    tcg_temp_free_i32(tcg_ctx, tmp2);
+    tcg_temp_free_ptr(tcg_ctx, pd);
+    tcg_temp_free_ptr(tcg_ctx, pm);
     return 0;
 }
 
