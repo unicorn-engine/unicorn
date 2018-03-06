@@ -4850,6 +4850,37 @@ DISAS_INSN(cinv)
     /* Invalidate cache line.  Implement as no-op.  */
 }
 
+#if defined(CONFIG_SOFTMMU)
+DISAS_INSN(pflush)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv opmode;
+
+    if (IS_USER(s)) {
+        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        return;
+    }
+
+    opmode = tcg_const_i32(tcg_ctx, (insn >> 3) & 3);
+    gen_helper_pflush(tcg_ctx, tcg_ctx->cpu_env, AREG(insn, 0), opmode);
+    tcg_temp_free(tcg_ctx, opmode);
+}
+
+DISAS_INSN(ptest)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv is_read;
+
+    if (IS_USER(s)) {
+        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        return;
+    }
+    is_read = tcg_const_i32(tcg_ctx, (insn >> 5) & 1);
+    gen_helper_ptest(tcg_ctx, tcg_ctx->cpu_env, AREG(insn, 0), is_read);
+    tcg_temp_free(tcg_ctx, is_read);
+}
+#endif
+
 DISAS_INSN(wddata)
 {
     gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
@@ -6076,6 +6107,8 @@ void register_m68k_insns (CPUM68KState *env)
     INSN(cpushl,    f428, ff38, CF_ISA_A);
     INSN(cpush,     f420, ff20, M68040);
     INSN(cinv,      f400, ff20, M68040);
+    INSN(pflush,    f500, ffe0, M68040);
+    INSN(ptest,     f548, ffd8, M68040);
     INSN(wddata,    fb00, ff00, CF_ISA_A);
     INSN(wdebug,    fbc0, ffc0, CF_ISA_A);
 #endif
