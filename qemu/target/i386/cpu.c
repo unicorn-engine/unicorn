@@ -28,7 +28,6 @@
 
 #include "qapi/qmp/qerror.h"
 
-#include "qapi-types.h"
 #include "qapi-visit.h"
 #include "qapi/visitor.h"
 
