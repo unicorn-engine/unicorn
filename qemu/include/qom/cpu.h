@@ -145,10 +145,6 @@ typedef struct CPUClass {
     void (*dump_statistics)(CPUState *cpu, FILE *f,
                             fprintf_function cpu_fprintf, int flags);
     int64_t (*get_arch_id)(CPUState *cpu);
-    void * (*alloc_env)(CPUState *cpu);
-    void (*get_env)(CPUState *cpu, void *env);
-    void (*set_env)(CPUState *cpu, void *env);
-    void (*free_env)(CPUState *cpu, void *env);
     bool (*get_paging_enabled)(const CPUState *cpu);
     void (*get_memory_mapping)(CPUState *cpu, MemoryMappingList *list,
                                Error **errp);
