@@ -11829,9 +11829,10 @@ static void disas_crypto_three_reg_sha512(DisasContext *s, uint32_t insn)
             feature = ARM_FEATURE_V8_SHA512;
             genfn = gen_helper_crypto_sha512su1;
             break;
-        default:
-            unallocated_encoding(s);
-            return;
+        case 3: /* RAX1 */
+            feature = ARM_FEATURE_V8_SHA3;
+            genfn = NULL;
+            break;
         }
     } else {
         unallocated_encoding(s);
@@ -11860,7 +11861,28 @@ static void disas_crypto_three_reg_sha512(DisasContext *s, uint32_t insn)
         tcg_temp_free_ptr(tcg_ctx, tcg_rn_ptr);
         tcg_temp_free_ptr(tcg_ctx, tcg_rm_ptr);
     } else {
-        g_assert_not_reached();
+        TCGv_i64 tcg_op1, tcg_op2, tcg_res[2];
+        int pass;
+
+        tcg_op1 = tcg_temp_new_i64(tcg_ctx);
+        tcg_op2 = tcg_temp_new_i64(tcg_ctx);
+        tcg_res[0] = tcg_temp_new_i64(tcg_ctx);
+        tcg_res[1] = tcg_temp_new_i64(tcg_ctx);
+
+        for (pass = 0; pass < 2; pass++) {
+            read_vec_element(s, tcg_op1, rn, pass, MO_64);
+            read_vec_element(s, tcg_op2, rm, pass, MO_64);
+
+            tcg_gen_rotli_i64(tcg_ctx, tcg_res[pass], tcg_op2, 1);
+            tcg_gen_xor_i64(tcg_ctx, tcg_res[pass], tcg_res[pass], tcg_op1);
+        }
+        write_vec_element(s, tcg_res[0], rd, 0, MO_64);
+        write_vec_element(s, tcg_res[1], rd, 1, MO_64);
+
+        tcg_temp_free_i64(tcg_ctx, tcg_op1);
+        tcg_temp_free_i64(tcg_ctx, tcg_op2);
+        tcg_temp_free_i64(tcg_ctx, tcg_res[0]);
+        tcg_temp_free_i64(tcg_ctx, tcg_res[1]);
     }
 }
 
