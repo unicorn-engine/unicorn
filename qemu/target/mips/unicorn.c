@@ -39,17 +39,19 @@ static uint64_t mips_mem_redirect(uint64_t address)
 
 static void mips_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    ((CPUMIPSState *)uc->current_cpu->env_ptr)->active_tc.PC = address;
+    CPUMIPSState *state = uc->cpu->env_ptr;
+
+    state->active_tc.PC = address;
 }
 
 
 void mips_release(void *ctx);
 void mips_release(void *ctx)
 {
-    MIPSCPU* cpu;
     TCGContext *tcg_ctx = (TCGContext *) ctx;
+    MIPSCPU *cpu = MIPS_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
+
     release_common(ctx);
-    cpu = MIPS_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
     g_free(cpu->env.tlb);
     g_free(cpu->env.mvp);
     g_free(tcg_ctx->tb_ctx.tbs);
@@ -57,9 +59,8 @@ void mips_release(void *ctx)
 
 void mips_reg_reset(struct uc_struct *uc)
 {
-    CPUArchState *env;
-    (void)uc;
-    env = uc->cpu->env_ptr;
+    CPUArchState *env = uc->cpu->env_ptr;
+
     memset(env->active_tc.gpr, 0, sizeof(env->active_tc.gpr));
 
     env->active_tc.PC = 0;
@@ -68,19 +69,20 @@ void mips_reg_reset(struct uc_struct *uc)
 int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
     CPUState *mycpu = uc->cpu;
+    CPUMIPSState *state = &MIPS_CPU(uc, mycpu)->env;
     int i;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
-            *(mipsreg_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0];
-        else {
+        if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31) {
+            *(mipsreg_t *)value = state->active_tc.gpr[regid - UC_MIPS_REG_0];
+        } else {
             switch(regid) {
                 default: break;
                 case UC_MIPS_REG_PC:
-                         *(mipsreg_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.PC;
-                         break;
+                    *(mipsreg_t *)value = state->active_tc.PC;
+                    break;
             }
         }
     }
@@ -91,22 +93,23 @@ int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int cou
 int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, int count)
 {
     CPUState *mycpu = uc->cpu;
+    CPUMIPSState *state = &MIPS_CPU(uc, mycpu)->env;
     int i;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31)
-            MIPS_CPU(uc, mycpu)->env.active_tc.gpr[regid - UC_MIPS_REG_0] = *(mipsreg_t *)value;
-        else {
+        if (regid >= UC_MIPS_REG_0 && regid <= UC_MIPS_REG_31) {
+            state->active_tc.gpr[regid - UC_MIPS_REG_0] = *(mipsreg_t *)value;
+        } else {
             switch(regid) {
                 default: break;
                 case UC_MIPS_REG_PC:
-                         MIPS_CPU(uc, mycpu)->env.active_tc.PC = *(mipsreg_t *)value;
-                         // force to quit execution and flush TB
-                         uc->quit_request = true;
-                         uc_emu_stop(uc);
-                         break;
+                    state->active_tc.PC = *(mipsreg_t *)value;
+                    // force to quit execution and flush TB
+                    uc->quit_request = true;
+                    uc_emu_stop(uc);
+                    break;
             }
         }
     }
