@@ -54,6 +54,8 @@ bool qlit_equal_qobject(const QLitObject *lhs, const QObject *rhs)
     }
 
     switch (lhs->type) {
+    case QTYPE_QBOOL:
+        return lhs->value.qbool == qbool_get_bool(qobject_to_qbool(rhs));
     case QTYPE_QNUM:
         g_assert(qnum_get_try_int(qobject_to_qnum(rhs), &val));
         return lhs->value.qnum == val;
@@ -85,6 +87,8 @@ bool qlit_equal_qobject(const QLitObject *lhs, const QObject *rhs)
 
         return helper.result;
     }
+    case QTYPE_QNULL:
+        return true;
     default:
         break;
     }
