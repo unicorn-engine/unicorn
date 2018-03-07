@@ -280,9 +280,10 @@ void visit_type_any(Visitor *v, const char *name, QObject **obj, Error **errp)
     error_propagate(errp, err);
 }
 
-void visit_type_null(Visitor *v, const char *name, Error **errp)
+void visit_type_null(Visitor *v, const char *name, QNull **obj,
+                     Error **errp)
 {
-    v->type_null(v, name, errp);
+    v->type_null(v, name, obj, errp);
 }
 
 static void output_type_enum(Visitor *v, const char *name, int *obj,
