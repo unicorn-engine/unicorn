@@ -50,46 +50,45 @@ void arm_reg_reset(struct uc_struct *uc)
 
 int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
-    CPUState *mycpu;
+    CPUState *mycpu = uc->cpu;
+    CPUARMState *state = &ARM_CPU(uc, mycpu)->env;
     int i;
-
-    mycpu = uc->cpu;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
         if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
-            *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0];
+            *(int32_t *)value = state->regs[regid - UC_ARM_REG_R0];
         else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31)
-            *(float64 *)value = ARM_CPU(uc, mycpu)->env.vfp.regs[regid - UC_ARM_REG_D0];
+            *(float64 *)value = state->vfp.regs[regid - UC_ARM_REG_D0];
         else {
             switch(regid) {
                 case UC_ARM_REG_APSR:
-                    *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env) & CPSR_NZCV;
+                    *(int32_t *)value = cpsr_read(state) & CPSR_NZCV;
                     break;
                 case UC_ARM_REG_CPSR:
-                    *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env);
+                    *(int32_t *)value = cpsr_read(state);
                     break;
                 //case UC_ARM_REG_SP:
                 case UC_ARM_REG_R13:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[13];
+                    *(int32_t *)value = state->regs[13];
                     break;
                 //case UC_ARM_REG_LR:
                 case UC_ARM_REG_R14:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[14];
+                    *(int32_t *)value = state->regs[14];
                     break;
                 //case UC_ARM_REG_PC:
                 case UC_ARM_REG_R15:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[15];
+                    *(int32_t *)value = state->regs[15];
                     break;
                 case UC_ARM_REG_C1_C0_2:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.cp15.cpacr_el1;
+                    *(int32_t *)value = state->cp15.cpacr_el1;
                     break;
                 case UC_ARM_REG_C13_C0_3:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.cp15.tpidrro_el[0];
+                    *(int32_t *)value = state->cp15.tpidrro_el[0];
                     break;
                 case UC_ARM_REG_FPEXC:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.vfp.xregs[ARM_VFP_FPEXC];
+                    *(int32_t *)value = state->vfp.xregs[ARM_VFP_FPEXC];
                     break;
             }
         }
@@ -101,51 +100,52 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
 int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, int count)
 {
     CPUState *mycpu = uc->cpu;
+    CPUARMState *state = &ARM_CPU(uc, mycpu)->env;
     int i;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
         if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
-            ARM_CPU(uc, mycpu)->env.regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
+            state->regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
         else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31)
-            ARM_CPU(uc, mycpu)->env.vfp.regs[regid - UC_ARM_REG_D0] = *(float64 *)value;
+            state->vfp.regs[regid - UC_ARM_REG_D0] = *(float64 *)value;
         else {
             switch(regid) {
                 case UC_ARM_REG_APSR:
-                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, CPSR_NZCV, CPSRWriteRaw);
+                    cpsr_write(state, *(uint32_t *)value, CPSR_NZCV, CPSRWriteRaw);
                     break;
                 case UC_ARM_REG_CPSR:
-                    cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, ~0, CPSRWriteRaw);
+                    cpsr_write(state, *(uint32_t *)value, ~0, CPSRWriteRaw);
                     break;
                 //case UC_ARM_REG_SP:
                 case UC_ARM_REG_R13:
-                    ARM_CPU(uc, mycpu)->env.regs[13] = *(uint32_t *)value;
+                    state->regs[13] = *(uint32_t *)value;
                     break;
                 //case UC_ARM_REG_LR:
                 case UC_ARM_REG_R14:
-                    ARM_CPU(uc, mycpu)->env.regs[14] = *(uint32_t *)value;
+                    state->regs[14] = *(uint32_t *)value;
                     break;
                 //case UC_ARM_REG_PC:
                 case UC_ARM_REG_R15:
-                    ARM_CPU(uc, mycpu)->env.pc = (*(uint32_t *)value & ~1);
-                    ARM_CPU(uc, mycpu)->env.thumb = (*(uint32_t *)value & 1);
-                    ARM_CPU(uc, mycpu)->env.uc->thumb = (*(uint32_t *)value & 1);
-                    ARM_CPU(uc, mycpu)->env.regs[15] = (*(uint32_t *)value & ~1);
+                    state->pc = (*(uint32_t *)value & ~1);
+                    state->thumb = (*(uint32_t *)value & 1);
+                    state->uc->thumb = (*(uint32_t *)value & 1);
+                    state->regs[15] = (*(uint32_t *)value & ~1);
                     // force to quit execution and flush TB
                     uc->quit_request = true;
                     uc_emu_stop(uc);
 
                     break;
                 case UC_ARM_REG_C1_C0_2:
-                    ARM_CPU(uc, mycpu)->env.cp15.cpacr_el1 = *(int32_t *)value;
+                    state->cp15.cpacr_el1 = *(int32_t *)value;
                     break;
 
                 case UC_ARM_REG_C13_C0_3:
-                    ARM_CPU(uc, mycpu)->env.cp15.tpidrro_el[0] = *(int32_t *)value;
+                    state->cp15.tpidrro_el[0] = *(int32_t *)value;
                     break;
                 case UC_ARM_REG_FPEXC:
-                    ARM_CPU(uc, mycpu)->env.vfp.xregs[ARM_VFP_FPEXC] = *(int32_t *)value;
+                    state->vfp.xregs[ARM_VFP_FPEXC] = *(int32_t *)value;
                     break;
             }
         }
@@ -168,6 +168,7 @@ static bool arm_stop_interrupt(int intno)
 static uc_err arm_query(struct uc_struct *uc, uc_query_type type, size_t *result)
 {
     CPUState *mycpu = uc->cpu;
+    CPUARMState *state = &ARM_CPU(uc, mycpu)->env;
     uint32_t mode;
 
     switch(type) {
@@ -175,7 +176,7 @@ static uc_err arm_query(struct uc_struct *uc, uc_query_type type, size_t *result
             // zero out ARM/THUMB mode
             mode = uc->mode & ~(UC_MODE_ARM | UC_MODE_THUMB);
             // THUMB mode or ARM MOde
-            mode += ((ARM_CPU(uc, mycpu)->env.thumb != 0)? UC_MODE_THUMB : UC_MODE_ARM);
+            mode += ((state->thumb != 0) ? UC_MODE_THUMB : UC_MODE_ARM);
             *result = mode;
             return UC_ERR_OK;
         default:
