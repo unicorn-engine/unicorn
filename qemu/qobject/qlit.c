@@ -25,19 +25,19 @@
 typedef struct QListCompareHelper {
     int index;
     QLitObject *objs;
-    int result;
+    bool result;
 } QListCompareHelper;
 
 static void compare_helper(QObject *obj, void *opaque)
 {
     QListCompareHelper *helper = opaque;
 
-    if (helper->result == 0) {
+    if (!helper->result) {
         return;
     }
 
     if (helper->objs[helper->index].type == QTYPE_NONE) {
-        helper->result = 0;
+        helper->result = false;
         return;
     }
 
@@ -45,12 +45,12 @@ static void compare_helper(QObject *obj, void *opaque)
         qlit_equal_qobject(&helper->objs[helper->index++], obj);
 }
 
-int qlit_equal_qobject(QLitObject *lhs, QObject *rhs)
+bool qlit_equal_qobject(QLitObject *lhs, QObject *rhs)
 {
     int64_t val;
 
     if (!rhs || lhs->type != qobject_type(rhs)) {
-        return 0;
+        return false;
     }
 
     switch (lhs->type) {
@@ -68,18 +68,18 @@ int qlit_equal_qobject(QLitObject *lhs, QObject *rhs)
                                      lhs->value.qdict[i].key);
 
             if (!qlit_equal_qobject(&lhs->value.qdict[i].value, obj)) {
-                return 0;
+                return false;
             }
         }
 
-        return 1;
+        return true;
     }
     case QTYPE_QLIST: {
         QListCompareHelper helper;
 
         helper.index = 0;
         helper.objs = lhs->value.qlist;
-        helper.result = 1;
+        helper.result = true;
 
         qlist_iter(qobject_to_qlist(rhs), compare_helper, &helper);
 
@@ -89,5 +89,5 @@ int qlit_equal_qobject(QLitObject *lhs, QObject *rhs)
         break;
     }
 
-    return 0;
+    return false;
 }
