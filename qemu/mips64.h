@@ -1604,6 +1604,8 @@
 #define helper_crypto_sm3partw1 helper_crypto_sm3partw1_mips64
 #define helper_crypto_sm3partw2 helper_crypto_sm3partw2_mips64
 #define helper_crypto_sm3tt helper_crypto_sm3tt_mips64
+#define helper_crypto_sm4e helper_crypto_sm4e_mips64
+#define helper_crypto_sm4ekey helper_crypto_sm4ekey_mips64
 #define helper_dc_zva helper_dc_zva_mips64
 #define helper_div_i32 helper_div_i32_mips64
 #define helper_div_i64 helper_div_i64_mips64

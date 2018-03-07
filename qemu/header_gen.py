@@ -1610,6 +1610,8 @@ symbols = (
     'helper_crypto_sm3partw1',
     'helper_crypto_sm3partw2',
     'helper_crypto_sm3tt',
+    'helper_crypto_sm4e',
+    'helper_crypto_sm4ekey',
     'helper_dc_zva',
     'helper_div_i32',
     'helper_div_i64',
