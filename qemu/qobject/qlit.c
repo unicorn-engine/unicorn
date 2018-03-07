@@ -24,7 +24,7 @@
 
 typedef struct QListCompareHelper {
     int index;
-    LiteralQObject *objs;
+    QLitObject *objs;
     int result;
 } QListCompareHelper;
 
@@ -45,7 +45,7 @@ static void compare_helper(QObject *obj, void *opaque)
         compare_litqobj_to_qobj(&helper->objs[helper->index++], obj);
 }
 
-int compare_litqobj_to_qobj(LiteralQObject *lhs, QObject *rhs)
+int compare_litqobj_to_qobj(QLitObject *lhs, QObject *rhs)
 {
     int64_t val;
 
