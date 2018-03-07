@@ -73,6 +73,7 @@ typedef struct QBool QBool;
 typedef struct QDict QDict;
 typedef struct QList QList;
 typedef struct QNum QNum;
+typedef struct QNull QNull;
 typedef struct QObject QObject;
 typedef struct QString QString;
 typedef struct RAMBlock RAMBlock;
