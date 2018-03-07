@@ -24,10 +24,10 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
-/* Needed early for CONFIG_BSD etc. */
 #include "qemu/osdep.h"
 #include "qemu-common.h"
 #include "cpu.h"
+#include "qapi/error.h"
 #include "sysemu/sysemu.h"
 #include "exec/exec-all.h"
 

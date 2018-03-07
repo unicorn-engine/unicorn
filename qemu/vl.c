@@ -26,6 +26,7 @@
 /* By Nguyen Anh Quynh, 2015 */
 
 #include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "qemu/cutils.h"
 #include "hw/boards.h"  // MachineClass
 #include "sysemu/sysemu.h"

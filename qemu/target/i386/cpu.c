@@ -19,13 +19,13 @@
 
 #include "qemu/osdep.h"
 #include "qemu/cutils.h"
-#include "qapi/error.h"
 #include "unicorn/platform.h"
 
 #include "cpu.h"
 #include "exec/exec-all.h"
 #include "sysemu/cpus.h"
 
+#include "qapi/error.h"
 #include "qapi/qmp/qerror.h"
 
 #include "qapi-visit.h"

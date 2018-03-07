@@ -25,6 +25,7 @@
 
 #include "qemu/osdep.h"
 #include "cpu.h"
+#include "qapi/error.h"
 #include "hw/i386/pc.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
