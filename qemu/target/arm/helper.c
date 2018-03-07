@@ -5669,7 +5669,8 @@ static uint32_t arm_v7m_load_vector(ARMCPU *cpu, int exc, bool targets_secure)
     return addr;
 }
 
-static void v7m_push_callee_stack(ARMCPU *cpu, uint32_t lr, bool dotailchain)
+static void v7m_push_callee_stack(ARMCPU *cpu, uint32_t lr, bool dotailchain,
+                                  bool ignore_faults)
 {
     /* For v8M, push the callee-saves register part of the stack frame.
      * Compare the v8M pseudocode PushCalleeStack().
@@ -5703,7 +5704,8 @@ static void v7m_push_callee_stack(ARMCPU *cpu, uint32_t lr, bool dotailchain)
     *frame_sp_p = frameptr;
 }
 
-static void v7m_exception_taken(ARMCPU *cpu, uint32_t lr, bool dotailchain)
+static void v7m_exception_taken(ARMCPU *cpu, uint32_t lr, bool dotailchain,
+                                bool ignore_stackfaults)
 {
     /* Do the "take the exception" parts of exception entry,
      * but not the pushing of state to the stack. This is
@@ -5712,7 +5714,7 @@ static void v7m_exception_taken(ARMCPU *cpu, uint32_t lr, bool dotailchain)
     CPUARMState *env = &cpu->env;
     uint32_t addr;
     bool targets_secure = false;
-    int exc;
+    int exc = 0;
 
     // Unicorn: commented out
     //armv7m_nvic_get_pending_irq_info(env->nvic, &exc, &targets_secure);
@@ -5741,7 +5743,8 @@ static void v7m_exception_taken(ARMCPU *cpu, uint32_t lr, bool dotailchain)
                  */
                 if (lr & R_V7M_EXCRET_DCRS_MASK &&
                     !(dotailchain && (lr & R_V7M_EXCRET_ES_MASK))) {
-                    v7m_push_callee_stack(cpu, lr, dotailchain);
+                    v7m_push_callee_stack(cpu, lr, dotailchain,
+                                          ignore_stackfaults);
                 }
                 lr |= R_V7M_EXCRET_DCRS_MASK;
             }
@@ -5803,10 +5806,13 @@ static void v7m_exception_taken(ARMCPU *cpu, uint32_t lr, bool dotailchain)
     env->thumb = addr & 1;
 }
 
-static void v7m_push_stack(ARMCPU *cpu)
+static bool v7m_push_stack(ARMCPU *cpu)
 {
     /* Do the "set up stack frame" part of exception entry,
      * similar to pseudocode PushStack().
+     * Return true if we generate a derived exception (and so
+     * should ignore further stack faults trying to process
+     * that derived exception.)
      */
     CPUARMState *env = &cpu->env;
     uint32_t xpsr = xpsr_read(env);
@@ -5826,6 +5832,8 @@ static void v7m_push_stack(ARMCPU *cpu)
     v7m_push(env, env->regs[2]);
     v7m_push(env, env->regs[1]);
     v7m_push(env, env->regs[0]);
+
+    return false;
 }
 
 static void do_v7m_exception_exit(ARMCPU *cpu)
@@ -5969,7 +5977,7 @@ static void do_v7m_exception_exit(ARMCPU *cpu)
         env->v7m.sfsr |= R_V7M_SFSR_INVER_MASK;
         // Unicorn: commented out
         //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_SECURE, false);
-        v7m_exception_taken(cpu, excret, true);
+        v7m_exception_taken(cpu, excret, true, false);
         qemu_log_mask(CPU_LOG_INT, "...taking SecureFault on existing "
                       "stackframe: failed EXC_RETURN.ES validity check\n");
         return;
@@ -5982,7 +5990,7 @@ static void do_v7m_exception_exit(ARMCPU *cpu)
         env->v7m.cfsr[env->v7m.secure] |= R_V7M_CFSR_INVPC_MASK;
         // Unicorn: commented out
         //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_USAGE);
-        v7m_exception_taken(cpu, excret, true);
+        v7m_exception_taken(cpu, excret, true, false);
         qemu_log_mask(CPU_LOG_INT, "...taking UsageFault on existing "
                       "stackframe: failed exception return integrity check\n");
         return;
@@ -6031,7 +6039,7 @@ static void do_v7m_exception_exit(ARMCPU *cpu)
                 env->v7m.sfsr |= R_V7M_SFSR_INVIS_MASK;
                 // Unicorn: commented out
                 //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_SECURE, false);
-                v7m_exception_taken(cpu, excret, true);
+                v7m_exception_taken(cpu, excret, true, false);
                 qemu_log_mask(CPU_LOG_INT, "...taking SecureFault on existing "
                               "stackframe: failed exception return integrity "
                               "signature check\n");
@@ -6097,7 +6105,7 @@ static void do_v7m_exception_exit(ARMCPU *cpu)
                 //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_USAGE,
                 //                        env->v7m.secure);
                 env->v7m.cfsr[env->v7m.secure] |= R_V7M_CFSR_INVPC_MASK;
-                v7m_exception_taken(cpu, excret, true);
+                v7m_exception_taken(cpu, excret, true, false);
                 qemu_log_mask(CPU_LOG_INT, "...taking UsageFault on existing "
                               "stackframe: failed exception return integrity "
                               "check\n");
@@ -6130,12 +6138,14 @@ static void do_v7m_exception_exit(ARMCPU *cpu)
         /* Take an INVPC UsageFault by pushing the stack again;
          * we know we're v7M so this is never a Secure UsageFault.
          */
+        bool ignore_stackfaults;
+
         assert(!arm_feature(env, ARM_FEATURE_V8));
         // Unicorn: commented out
         //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_USAGE);
         env->v7m.cfsr[env->v7m.secure] |= R_V7M_CFSR_INVPC_MASK;
-        v7m_push_stack(cpu);
-        v7m_exception_taken(cpu, excret, false);
+        ignore_stackfaults = v7m_push_stack(cpu);
+        v7m_exception_taken(cpu, excret, false, ignore_stackfaults);
         qemu_log_mask(CPU_LOG_INT, "...taking UsageFault on new stackframe: "
                       "failed exception return integrity check\n");
         return;
@@ -6310,6 +6320,7 @@ void arm_v7m_cpu_do_interrupt(CPUState *cs)
     ARMCPU *cpu = ARM_CPU(cs->uc, cs);
     CPUARMState *env = cs->env_ptr;
     uint32_t lr;
+    bool ignore_stackfaults;
 
     arm_log_exception(cs->exception_index);
 
@@ -6478,8 +6489,8 @@ void arm_v7m_cpu_do_interrupt(CPUState *cs)
         lr |= R_V7M_EXCRET_MODE_MASK;
     }
 
-    v7m_push_stack(cpu);
-    v7m_exception_taken(cpu, lr, false);
+    ignore_stackfaults = v7m_push_stack(cpu);
+    v7m_exception_taken(cpu, lr, false, ignore_stackfaults);
     qemu_log_mask(CPU_LOG_INT, "... as %d\n", env->v7m.exception);
 }
 
