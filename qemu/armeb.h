@@ -1601,6 +1601,9 @@
 #define helper_crypto_sha512h2 helper_crypto_sha512h2_armeb
 #define helper_crypto_sha512su0 helper_crypto_sha512su0_armeb
 #define helper_crypto_sha512su1 helper_crypto_sha512su1_armeb
+#define helper_crypto_sm3partw1 helper_crypto_sm3partw1_armeb
+#define helper_crypto_sm3partw2 helper_crypto_sm3partw2_armeb
+#define helper_crypto_sm3tt helper_crypto_sm3tt_armeb
 #define helper_dc_zva helper_dc_zva_armeb
 #define helper_div_i32 helper_div_i32_armeb
 #define helper_div_i64 helper_div_i64_armeb

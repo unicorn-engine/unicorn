@@ -1601,6 +1601,9 @@
 #define helper_crypto_sha512h2 helper_crypto_sha512h2_sparc64
 #define helper_crypto_sha512su0 helper_crypto_sha512su0_sparc64
 #define helper_crypto_sha512su1 helper_crypto_sha512su1_sparc64
+#define helper_crypto_sm3partw1 helper_crypto_sm3partw1_sparc64
+#define helper_crypto_sm3partw2 helper_crypto_sm3partw2_sparc64
+#define helper_crypto_sm3tt helper_crypto_sm3tt_sparc64
 #define helper_dc_zva helper_dc_zva_sparc64
 #define helper_div_i32 helper_div_i32_sparc64
 #define helper_div_i64 helper_div_i64_sparc64
