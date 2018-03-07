@@ -1597,6 +1597,10 @@
 #define helper_crypto_sha256h2 helper_crypto_sha256h2_x86_64
 #define helper_crypto_sha256su0 helper_crypto_sha256su0_x86_64
 #define helper_crypto_sha256su1 helper_crypto_sha256su1_x86_64
+#define helper_crypto_sha512h helper_crypto_sha512h_x86_64
+#define helper_crypto_sha512h2 helper_crypto_sha512h2_x86_64
+#define helper_crypto_sha512su0 helper_crypto_sha512su0_x86_64
+#define helper_crypto_sha512su1 helper_crypto_sha512su1_x86_64
 #define helper_dc_zva helper_dc_zva_x86_64
 #define helper_div_i32 helper_div_i32_x86_64
 #define helper_div_i64 helper_div_i64_x86_64

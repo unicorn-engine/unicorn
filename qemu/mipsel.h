@@ -1597,6 +1597,10 @@
 #define helper_crypto_sha256h2 helper_crypto_sha256h2_mipsel
 #define helper_crypto_sha256su0 helper_crypto_sha256su0_mipsel
 #define helper_crypto_sha256su1 helper_crypto_sha256su1_mipsel
+#define helper_crypto_sha512h helper_crypto_sha512h_mipsel
+#define helper_crypto_sha512h2 helper_crypto_sha512h2_mipsel
+#define helper_crypto_sha512su0 helper_crypto_sha512su0_mipsel
+#define helper_crypto_sha512su1 helper_crypto_sha512su1_mipsel
 #define helper_dc_zva helper_dc_zva_mipsel
 #define helper_div_i32 helper_div_i32_mipsel
 #define helper_div_i64 helper_div_i64_mipsel
