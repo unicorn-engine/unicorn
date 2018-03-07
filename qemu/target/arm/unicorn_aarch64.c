@@ -23,13 +23,11 @@ void arm64_release(void* ctx);
 
 void arm64_release(void* ctx)
 {
-    struct uc_struct* uc;
-    ARMCPU* cpu;
     TCGContext *s = (TCGContext *) ctx;
+    struct uc_struct* uc = s->uc;
+    ARMCPU* cpu = ARM_CPU(uc, uc->cpu);
 
     g_free(s->tb_ctx.tbs);
-    uc = s->uc;
-    cpu = (ARMCPU*) uc->cpu;
     g_free(cpu->cpreg_indexes);
     g_free(cpu->cpreg_values);
     g_free(cpu->cpreg_vmstate_indexes);
