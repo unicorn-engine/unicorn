@@ -13,7 +13,9 @@
 #include "qemu-common.h"
 #include "qapi/qmp/qobject.h"
 
-QObject qnull_ = {
-    QTYPE_QNULL,
-    1,
+QNull qnull_ = {
+    {
+        QTYPE_QNULL,
+        1,
+    }
 };
