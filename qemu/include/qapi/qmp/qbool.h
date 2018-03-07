@@ -17,10 +17,10 @@
 #include "unicorn/platform.h"
 #include "qapi/qmp/qobject.h"
 
-typedef struct QBool {
+struct QBool {
     QObject_HEAD;
     bool value;
-} QBool;
+};
 
 QBool *qbool_from_bool(bool value);
 bool qbool_get_bool(const QBool *qb);
