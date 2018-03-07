@@ -2139,6 +2139,52 @@ DISAS_INSN(movem)
     tcg_temp_free(tcg_ctx, addr);
 }
 
+DISAS_INSN(movep)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    uint8_t i;
+    int16_t displ;
+    TCGv reg;
+    TCGv addr;
+    TCGv abuf;
+    TCGv dbuf;
+
+    displ = read_im16(env, s);
+
+    addr = AREG(insn, 0);
+    reg = DREG(insn, 9);
+
+    abuf = tcg_temp_new(tcg_ctx);
+    tcg_gen_addi_i32(tcg_ctx, abuf, addr, displ);
+    dbuf = tcg_temp_new(tcg_ctx);
+
+    if (insn & 0x40) {
+        i = 4;
+    } else {
+        i = 2;
+    }
+
+    if (insn & 0x80) {
+        for ( ; i > 0 ; i--) {
+            tcg_gen_shri_i32(tcg_ctx, dbuf, reg, (i - 1) * 8);
+            tcg_gen_qemu_st8(s->uc, dbuf, abuf, IS_USER(s));
+            if (i > 1) {
+                tcg_gen_addi_i32(tcg_ctx, abuf, abuf, 2);
+            }
+        }
+    } else {
+        for ( ; i > 0 ; i--) {
+            tcg_gen_qemu_ld8u(s->uc, dbuf, abuf, IS_USER(s));
+            tcg_gen_deposit_i32(tcg_ctx, reg, reg, dbuf, (i - 1) * 8, 8);
+            if (i > 1) {
+                tcg_gen_addi_i32(tcg_ctx, abuf, abuf, 2);
+            }
+        }
+    }
+    tcg_temp_free(tcg_ctx, abuf);
+    tcg_temp_free(tcg_ctx, dbuf);
+}
+
 DISAS_INSN(bitop_im)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -5899,6 +5945,7 @@ void register_m68k_insns (CPUM68KState *env)
     BASE(bitop_reg, 0140, f1c0);
     BASE(bitop_reg, 0180, f1c0);
     BASE(bitop_reg, 01c0, f1c0);
+    INSN(movep,     0108, f138, MOVEP);
     INSN(arith_im,  0280, fff8, CF_ISA_A);
     INSN(arith_im,  0200, ff00, M68000);
     INSN(undef,     02c0, ffc0, M68000);
