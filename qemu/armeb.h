@@ -2812,6 +2812,7 @@
 #define qlist_size qlist_size_armeb
 #define qlist_size_iter qlist_size_iter_armeb
 #define qlist_type qlist_type_armeb
+#define qlit_equal_qobject qlit_equal_qobject_armeb
 #define qobject_input_end_implicit_struct qobject_input_end_implicit_struct_armeb
 #define qobject_input_end_list qobject_input_end_list_armeb
 #define qobject_input_end_struct qobject_input_end_struct_armeb

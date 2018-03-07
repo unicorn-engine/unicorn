@@ -2812,6 +2812,7 @@
 #define qlist_size qlist_size_mips64
 #define qlist_size_iter qlist_size_iter_mips64
 #define qlist_type qlist_type_mips64
+#define qlit_equal_qobject qlit_equal_qobject_mips64
 #define qobject_input_end_implicit_struct qobject_input_end_implicit_struct_mips64
 #define qobject_input_end_list qobject_input_end_list_mips64
 #define qobject_input_end_struct qobject_input_end_struct_mips64

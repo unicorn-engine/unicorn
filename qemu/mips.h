@@ -2812,6 +2812,7 @@
 #define qlist_size qlist_size_mips
 #define qlist_size_iter qlist_size_iter_mips
 #define qlist_type qlist_type_mips
+#define qlit_equal_qobject qlit_equal_qobject_mips
 #define qobject_input_end_implicit_struct qobject_input_end_implicit_struct_mips
 #define qobject_input_end_list qobject_input_end_list_mips
 #define qobject_input_end_struct qobject_input_end_struct_mips
