@@ -132,6 +132,9 @@
     <ClCompile Include="..\..\..\qemu\qobject\qlist.c">
       <Filter>qemu\qobject</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qlit.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\qobject\qnull.c">
       <Filter>qemu\qobject</Filter>
     </ClCompile>
@@ -400,6 +403,9 @@
       <Filter>qemu\include\qapi\qmp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qlist.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qlit.h">
       <Filter>qemu\include\qapi\qmp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qnum.h">

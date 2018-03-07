@@ -211,6 +211,7 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClCompile Include="..\..\..\qemu\qobject\qfloat.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qint.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qlist.c" />
+    <ClCompile Include="..\..\..\qemu\qobject\qlit.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qnull.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qobject.c" />
     <ClCompile Include="..\..\..\qemu\qobject\qstring.c" />
@@ -323,6 +324,7 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qerror.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qjson.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qlist.h" />
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qlit.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qnum.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qobject.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qstring.h" />

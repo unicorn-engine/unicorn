@@ -230,6 +230,7 @@ symbols = (
     'commonNaNToFloat32',
     'commonNaNToFloat64',
     'commonNaNToFloatx80',
+    'compare_litqobj_to_qobj',
     'compute_abs_deadline',
     'cond_name',
     'configure_accelerator',
