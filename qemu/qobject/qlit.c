@@ -15,6 +15,7 @@
 
 #include "qemu/osdep.h"
 
+#include "qapi/qmp/qbool.h"
 #include "qapi/qmp/qdict.h"
 #include "qapi/qmp/qlist.h"
 #include "qapi/qmp/qlit.h"
@@ -47,8 +48,6 @@ static void compare_helper(QObject *obj, void *opaque)
 
 bool qlit_equal_qobject(const QLitObject *lhs, const QObject *rhs)
 {
-    int64_t val;
-
     if (!rhs || lhs->type != qobject_type(rhs)) {
         return false;
     }
@@ -57,8 +56,7 @@ bool qlit_equal_qobject(const QLitObject *lhs, const QObject *rhs)
     case QTYPE_QBOOL:
         return lhs->value.qbool == qbool_get_bool(qobject_to_qbool(rhs));
     case QTYPE_QNUM:
-        g_assert(qnum_get_try_int(qobject_to_qnum(rhs), &val));
-        return lhs->value.qnum == val;
+        return lhs->value.qnum ==  qnum_get_int(qobject_to_qnum(rhs));
     case QTYPE_QSTRING:
         return (strcmp(lhs->value.qstr,
                        qstring_get_str(qobject_to_qstring(rhs))) == 0);
