@@ -59,11 +59,12 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
+        if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
             *(int32_t *)value = state->regs[regid - UC_ARM_REG_R0];
-        else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31)
-            *(float64 *)value = state->vfp.regs[regid - UC_ARM_REG_D0];
-        else {
+        } else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31) {
+            const float64 *d_reg = aa32_vfp_dreg(state, regid - UC_ARM64_REG_D0);
+            *(float64 *)value = *d_reg;
+        } else {
             switch(regid) {
                 case UC_ARM_REG_APSR:
                     *(int32_t *)value = cpsr_read(state) & CPSR_NZCV;
@@ -108,11 +109,12 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, i
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12)
+        if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
             state->regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
-        else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31)
-            state->vfp.regs[regid - UC_ARM_REG_D0] = *(float64 *)value;
-        else {
+        } else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31) {
+            float64 *d_reg = aa32_vfp_dreg(state, regid - UC_ARM64_REG_D0);
+            *d_reg = *(float64 *)value;
+        } else {
             switch(regid) {
                 case UC_ARM_REG_APSR:
                     cpsr_write(state, *(uint32_t *)value, CPSR_NZCV, CPSRWriteRaw);
