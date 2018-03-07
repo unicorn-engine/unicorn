@@ -396,25 +396,19 @@
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qerror.h">
       <Filter>qemu\include\qapi\qmp</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qfloat.h">
-      <Filter>qemu\include\qapi\qmp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qint.h">
-      <Filter>qemu\include\qapi\qmp</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qjson.h">
       <Filter>qemu\include\qapi\qmp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qlist.h">
       <Filter>qemu\include\qapi\qmp</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qnum.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qobject.h">
       <Filter>qemu\include\qapi\qmp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qstring.h">
-      <Filter>qemu\include\qapi\qmp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\types.h">
       <Filter>qemu\include\qapi\qmp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qemu\atomic.h">

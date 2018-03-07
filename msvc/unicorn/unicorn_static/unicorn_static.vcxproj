@@ -141,7 +141,6 @@
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qlist.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qobject.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qstring.h" />
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\types.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\string-input-visitor.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\visitor-impl.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\visitor.h" />

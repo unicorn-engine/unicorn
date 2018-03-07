@@ -321,13 +321,11 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qbool.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qdict.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qerror.h" />
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qfloat.h" />
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qint.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qjson.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qlist.h" />
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qnum.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qobject.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qstring.h" />
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\types.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\string-input-visitor.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\visitor-impl.h" />
     <ClInclude Include="..\..\..\qemu\include\qapi\visitor.h" />
