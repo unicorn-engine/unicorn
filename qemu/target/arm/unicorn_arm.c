@@ -26,7 +26,7 @@ void arm_release(void* ctx)
 {
     TCGContext *s = (TCGContext *) ctx;
     struct uc_struct* uc = s->uc;
-    ARMCPU* cpu = (ARMCPU*) uc->cpu;
+    ARMCPU* cpu = ARM_CPU(uc, uc->cpu);
     CPUArchState *env = &cpu->env;
 
     g_free(s->tb_ctx.tbs);
