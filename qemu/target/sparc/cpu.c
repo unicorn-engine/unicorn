@@ -66,7 +66,7 @@ static void sparc_cpu_reset(CPUState *s)
     env->lsu = 0;
 #else
     env->mmuregs[0] &= ~(MMU_E | MMU_NF);
-    env->mmuregs[0] |= env->def->mmu_bm;
+    env->mmuregs[0] |= env->def.mmu_bm;
 #endif
     env->pc = 0;
     env->npc = env->pc + 4;
@@ -113,18 +113,18 @@ static int cpu_sparc_register(struct uc_struct *uc, SPARCCPU *cpu, const char *c
         return -1;
     }
 
-    env->version = env->def->iu_version;
-    env->fsr = env->def->fpu_version;
-    env->nwindows = env->def->nwindows;
+    env->version = env->def.iu_version;
+    env->fsr = env->def.fpu_version;
+    env->nwindows = env->def.nwindows;
 #if !defined(TARGET_SPARC64)
-    env->mmuregs[0] |= env->def->mmu_version;
+    env->mmuregs[0] |= env->def.mmu_version;
     cpu_sparc_set_id(env, 0);
-    env->mxccregs[7] |= env->def->mxcc_version;
+    env->mxccregs[7] |= env->def.mxcc_version;
 #else
-    env->mmu_version = env->def->mmu_version;
-    env->maxtl = env->def->maxtl;
-    env->version |= env->def->maxtl << 8;
-    env->version |= env->def->nwindows - 1;
+    env->mmu_version = env->def.mmu_version;
+    env->maxtl = env->def.maxtl;
+    env->version |= env->def.maxtl << 8;
+    env->version |= env->def.nwindows - 1;
 #endif
     return 0;
 }
@@ -592,7 +592,7 @@ static void sparc_cpu_parse_features(CPUState *cs, char *features,
                                      Error **errp)
 {
     SPARCCPU *cpu = SPARC_CPU(cs->uc, cs);
-    sparc_def_t *cpu_def = cpu->env.def;
+    sparc_def_t *cpu_def = &cpu->env.def;
     char *featurestr;
     uint32_t plus_features = 0;
     uint32_t minus_features = 0;
@@ -854,8 +854,8 @@ static int sparc_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **e
     SPARCCPUClass *scc = SPARC_CPU_GET_CLASS(uc, obj);
     CPUSPARCState *env = &cpu->env;
 
-    if ((env->def->features & CPU_FEATURE_FLOAT)) {
-        env->def->features |= CPU_FEATURE_FLOAT128;
+    if ((env->def.features & CPU_FEATURE_FLOAT)) {
+        env->def.features |= CPU_FEATURE_FLOAT128;
     }
 #endif
 
@@ -876,15 +876,9 @@ static void sparc_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cs->env_ptr = env;
     cpu_exec_init(cs, opaque);
 
-    env->def = g_memdup(scc->cpu_def, sizeof(*scc->cpu_def));
-}
-
-static void sparc_cpu_uninitfn(struct uc_struct *uc, Object *obj, void *opaque)
-{
-    SPARCCPU *cpu = SPARC_CPU(uc, obj);
-    CPUSPARCState *env = &cpu->env;
-
-    g_free(env->def);
+    if (scc->cpu_def) {
+        env->def = *scc->cpu_def;
+    }
 }
 
 static void sparc_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
@@ -964,7 +958,7 @@ void sparc_cpu_register_types(void *opaque)
 
         sparc_cpu_initfn,
         NULL,
-        sparc_cpu_uninitfn,
+        NULL,
 
         NULL,
 
