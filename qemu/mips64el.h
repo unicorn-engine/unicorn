@@ -492,6 +492,7 @@
 #define float16_is_quiet_nan float16_is_quiet_nan_mips64el
 #define float16_is_signaling_nan float16_is_signaling_nan_mips64el
 #define float16_maybe_silence_nan float16_maybe_silence_nan_mips64el
+#define float16_mul float16_mul_mips64el
 #define float16_squash_input_denormal float16_squash_input_denormal_mips64el
 #define float16_sub float16_sub_mips64el
 #define float16_to_float32 float16_to_float32_mips64el

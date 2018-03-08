@@ -498,6 +498,7 @@ symbols = (
     'float16_is_quiet_nan',
     'float16_is_signaling_nan',
     'float16_maybe_silence_nan',
+    'float16_mul',
     'float16_squash_input_denormal',
     'float16_sub',
     'float16_to_float32',
