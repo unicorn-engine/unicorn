@@ -50,6 +50,7 @@ typedef struct SPARCCPUClass {
 
     DeviceRealize parent_realize;
     void (*parent_reset)(CPUState *cpu);
+    sparc_def_t *cpu_def;
 } SPARCCPUClass;
 
 typedef struct SPARCCPU SPARCCPU;

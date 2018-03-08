@@ -25,8 +25,6 @@
 
 //#define DEBUG_FEATURES
 
-static int cpu_sparc_find_by_name(sparc_def_t *cpu_def, const char *cpu_model);
-
 /* CPUClass::reset() */
 static void sparc_cpu_reset(CPUState *s)
 {
@@ -103,16 +101,8 @@ static int cpu_sparc_register(struct uc_struct *uc, SPARCCPU *cpu, const char *c
 {
     CPUSPARCState *env = &cpu->env;
     char *s = g_strdup(cpu_model);
-    char *featurestr, *name = strtok(s, ",");
-    sparc_def_t def1, *def = &def1;
+    char *featurestr = strtok(s, ",");
     Error *err = NULL;
-
-    if (cpu_sparc_find_by_name(def, name) < 0) {
-        g_free(s);
-        return -1;
-    }
-
-    env->def = g_memdup(def, sizeof(*def));
 
     featurestr = strtok(NULL, ",");
     sparc_cpu_parse_features(CPU(cpu), featurestr, &err);
@@ -123,18 +113,18 @@ static int cpu_sparc_register(struct uc_struct *uc, SPARCCPU *cpu, const char *c
         return -1;
     }
 
-    env->version = def->iu_version;
-    env->fsr = def->fpu_version;
-    env->nwindows = def->nwindows;
+    env->version = env->def->iu_version;
+    env->fsr = env->def->fpu_version;
+    env->nwindows = env->def->nwindows;
 #if !defined(TARGET_SPARC64)
-    env->mmuregs[0] |= def->mmu_version;
+    env->mmuregs[0] |= env->def->mmu_version;
     cpu_sparc_set_id(env, 0);
-    env->mxccregs[7] |= def->mxcc_version;
+    env->mxccregs[7] |= env->def->mxcc_version;
 #else
-    env->mmu_version = def->mmu_version;
-    env->maxtl = def->maxtl;
-    env->version |= def->maxtl << 8;
-    env->version |= def->nwindows - 1;
+    env->mmu_version = env->def->mmu_version;
+    env->maxtl = env->def->maxtl;
+    env->version |= env->def->maxtl << 8;
+    env->version |= env->def->nwindows - 1;
 #endif
     return 0;
 }
@@ -142,8 +132,18 @@ static int cpu_sparc_register(struct uc_struct *uc, SPARCCPU *cpu, const char *c
 SPARCCPU *cpu_sparc_init(struct uc_struct *uc, const char *cpu_model)
 {
     SPARCCPU *cpu;
+    ObjectClass *oc;
+    char *str, *name;
 
-    cpu = SPARC_CPU(uc, object_new(uc, TYPE_SPARC_CPU));
+    str = g_strdup(cpu_model);
+    name = strtok(str, ",");
+    oc = cpu_class_by_name(uc, TYPE_SPARC_CPU, name);
+    g_free(str);
+    if (oc == NULL) {
+        return NULL;
+    }
+
+    cpu = SPARC_CPU(uc, object_new(uc, object_class_get_name(oc)));
 
     if (cpu_sparc_register(uc, cpu, cpu_model) < 0) {
         object_unref(uc, OBJECT(cpu));
@@ -588,23 +588,6 @@ static void add_flagname_to_bitmaps(const char *flagname, uint32_t *features)
     //error_report("CPU feature %s not found", flagname);
 }
 
-static int cpu_sparc_find_by_name(sparc_def_t *cpu_def, const char *name)
-{
-    unsigned int i;
-    const sparc_def_t *def = NULL;
-
-    for (i = 0; i < ARRAY_SIZE(sparc_defs); i++) {
-        if (strcasecmp(name, sparc_defs[i].name) == 0) {
-            def = &sparc_defs[i];
-        }
-    }
-    if (!def) {
-        return -1;
-    }
-    memcpy(cpu_def, def, sizeof(*def));
-    return 0;
-}
-
 static void sparc_cpu_parse_features(CPUState *cs, char *features,
                                      Error **errp)
 {
@@ -833,11 +816,42 @@ static bool sparc_cpu_has_work(CPUState *cs)
         cpu_interrupts_enabled(env);
 }
 
+static char *sparc_cpu_type_name(const char *cpu_model)
+{
+    char *name = g_strdup_printf("%s-" TYPE_SPARC_CPU, cpu_model);
+    char *s = name;
+
+    /* SPARC cpu model names happen to have whitespaces,
+     * as type names shouldn't have spaces replace them with '-'
+     */
+    while ((s = strchr(s, ' '))) {
+        *s = '-';
+    }
+
+    return name;
+}
+
+static ObjectClass *sparc_cpu_class_by_name(struct uc_struct *uc, const char *cpu_model)
+{
+    ObjectClass *oc;
+    char *typename;
+
+    if (cpu_model == NULL) {
+        return NULL;
+    }
+
+    typename = sparc_cpu_type_name(cpu_model);
+    oc = object_class_by_name(uc, typename);
+    g_free(typename);
+    return oc;
+}
+
 static int sparc_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     SPARCCPUClass *scc = SPARC_CPU_GET_CLASS(uc, dev);
 #if defined(CONFIG_USER_ONLY)
     SPARCCPU *cpu = SPARC_CPU(uc, dev);
+    SPARCCPUClass *scc = SPARC_CPU_GET_CLASS(uc, obj);
     CPUSPARCState *env = &cpu->env;
 
     if ((env->def->features & CPU_FEATURE_FLOAT)) {
@@ -856,10 +870,13 @@ static void sparc_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
     CPUState *cs = CPU(obj);
     SPARCCPU *cpu = SPARC_CPU(uc, obj);
+    SPARCCPUClass *scc = SPARC_CPU_GET_CLASS(uc, obj);
     CPUSPARCState *env = &cpu->env;
 
     cs->env_ptr = env;
     cpu_exec_init(cs, opaque);
+
+    env->def = g_memdup(scc->cpu_def, sizeof(*scc->cpu_def));
 }
 
 static void sparc_cpu_uninitfn(struct uc_struct *uc, Object *obj, void *opaque)
@@ -882,6 +899,7 @@ static void sparc_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *da
     scc->parent_reset = cc->reset;
     cc->reset = sparc_cpu_reset;
 
+    cc->class_by_name = sparc_cpu_class_by_name;
     cc->has_work = sparc_cpu_has_work;
     cc->do_interrupt = sparc_cpu_do_interrupt;
     cc->cpu_exec_interrupt = sparc_cpu_exec_interrupt;
@@ -903,29 +921,63 @@ static void sparc_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *da
     cc->tcg_initialize = sparc_tcg_init;
 }
 
+static void sparc_cpu_cpudef_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
+{
+    SPARCCPUClass *scc = SPARC_CPU_CLASS(uc, oc);
+    scc->cpu_def = data;
+}
+
+static void sparc_register_cpudef_type(struct uc_struct *uc, const struct sparc_def_t *def)
+{
+    char *typename = sparc_cpu_type_name(def->name);
+    TypeInfo ti = {
+        typename,
+        TYPE_SPARC_CPU,
+        0,
+        0,
+        NULL,
+
+        NULL,
+        NULL,
+        NULL,
+
+        (void *)def,
+
+        sparc_cpu_cpudef_class_init,
+    };
+
+    type_register(uc, &ti);
+    g_free(typename);
+}
+
 void sparc_cpu_register_types(void *opaque)
 {
+    int i;
+
     const TypeInfo sparc_cpu_type_info = {
         TYPE_SPARC_CPU,
         TYPE_CPU,
-        
+
         sizeof(SPARCCPUClass),
         sizeof(SPARCCPU),
         opaque,
-        
+
         sparc_cpu_initfn,
         NULL,
         sparc_cpu_uninitfn,
-        
+
         NULL,
 
         sparc_cpu_class_init,
         NULL,
         NULL,
 
-        false,
+        true,
     };
 
     //printf(">>> sparc_cpu_register_types\n");
     type_register_static(opaque, &sparc_cpu_type_info);
+    for (i = 0; i < ARRAY_SIZE(sparc_defs); i++) {
+        sparc_register_cpudef_type(opaque, &sparc_defs[i]);
+    }
 }
