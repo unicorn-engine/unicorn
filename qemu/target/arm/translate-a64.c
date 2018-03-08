@@ -10455,6 +10455,9 @@ static void disas_simd_three_reg_same_fp16(DisasContext *s, uint32_t insn)
         case 0x6: /* FMAX */
             gen_helper_advsimd_maxh(tcg_ctx, tcg_res, tcg_op1, tcg_op2, fpst);
             break;
+        case 0x7: /* FRECPS */
+            gen_helper_recpsf_f16(tcg_ctx, tcg_res, tcg_op1, tcg_op2, fpst);
+            break;
         case 0x8: /* FMINNM */
             gen_helper_advsimd_minnumh(tcg_ctx, tcg_res, tcg_op1, tcg_op2, fpst);
             break;
@@ -10470,6 +10473,9 @@ static void disas_simd_three_reg_same_fp16(DisasContext *s, uint32_t insn)
             break;
         case 0xe: /* FMIN */
             gen_helper_advsimd_minh(tcg_ctx, tcg_res, tcg_op1, tcg_op2, fpst);
+            break;
+        case 0xf: /* FRSQRTS */
+            gen_helper_rsqrtsf_f16(tcg_ctx, tcg_res, tcg_op1, tcg_op2, fpst);
             break;
         case 0x13: /* FMUL */
             gen_helper_advsimd_mulh(tcg_ctx, tcg_res, tcg_op1, tcg_op2, fpst);

@@ -3750,8 +3750,10 @@
 #define helper_paired_cmpxchg64_be helper_paired_cmpxchg64_be_aarch64eb
 #define helper_paired_cmpxchg64_le helper_paired_cmpxchg64_le_aarch64eb
 #define helper_rbit64 helper_rbit64_aarch64eb
+#define helper_recpsf_f16 helper_recpsf_f16_aarch64eb
 #define helper_recpsf_f32 helper_recpsf_f32_aarch64eb
 #define helper_recpsf_f64 helper_recpsf_f64_aarch64eb
+#define helper_rsqrtsf_f16 helper_rsqrtsf_f16_aarch64eb
 #define helper_rsqrtsf_f32 helper_rsqrtsf_f32_aarch64eb
 #define helper_rsqrtsf_f64 helper_rsqrtsf_f64_aarch64eb
 #define helper_sdiv64 helper_sdiv64_aarch64eb
