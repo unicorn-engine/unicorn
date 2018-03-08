@@ -11574,8 +11574,13 @@ static void disas_simd_indexed(DisasContext *s, uint32_t insn)
                          * multiply-add */
                         tcg_gen_xori_i32(tcg_ctx, tcg_op, tcg_op, 0x80008000);
                     }
-                    gen_helper_advsimd_muladdh(tcg_ctx, tcg_res, tcg_op, tcg_idx,
-                                               tcg_res, fpst);
+                    if (is_scalar) {
+                        gen_helper_advsimd_muladdh(tcg_ctx, tcg_res, tcg_op, tcg_idx,
+                                                   tcg_res, fpst);
+                    } else {
+                        gen_helper_advsimd_muladd2h(tcg_ctx, tcg_res, tcg_op, tcg_idx,
+                                                    tcg_res, fpst);
+                    }
                     break;
                 case 2:
                     if (opcode == 0x5) {
@@ -11594,10 +11599,21 @@ static void disas_simd_indexed(DisasContext *s, uint32_t insn)
                 switch (size) {
                 case 1:
                     if (u) {
-                        gen_helper_advsimd_mulxh(tcg_ctx, tcg_res, tcg_op, tcg_idx,
-                                                 fpst);
+                        if (is_scalar) {
+                            gen_helper_advsimd_mulxh(tcg_ctx, tcg_res, tcg_op,
+                                                     tcg_idx, fpst);
+                        } else {
+                            gen_helper_advsimd_mulx2h(tcg_ctx, tcg_res, tcg_op,
+                                                      tcg_idx, fpst);
+                        }
                     } else {
-                        g_assert_not_reached();
+                        if (is_scalar) {
+                            gen_helper_advsimd_mulh(tcg_ctx, tcg_res, tcg_op,
+                                                    tcg_idx, fpst);
+                        } else {
+                            gen_helper_advsimd_mul2h(tcg_ctx, tcg_res, tcg_op,
+                                                     tcg_idx, fpst);
+                        }
                     }
                     break;
                 case 2:
