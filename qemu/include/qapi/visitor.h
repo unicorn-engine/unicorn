@@ -15,7 +15,7 @@
 #define QAPI_VISITOR_H
 
 #include "qemu/typedefs.h"
-#include "qapi/qmp/qobject.h"
+#include "qapi-types.h"
 #include "qapi/error.h"
 #include <stdlib.h>
 
