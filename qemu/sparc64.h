@@ -1062,9 +1062,6 @@
 #define gen_helper_qsub8 gen_helper_qsub8_sparc64
 #define gen_helper_qsubaddx gen_helper_qsubaddx_sparc64
 #define gen_helper_rbit gen_helper_rbit_sparc64
-#define gen_helper_recpe_f32 gen_helper_recpe_f32_sparc64
-#define gen_helper_recpe_u32 gen_helper_recpe_u32_sparc64
-#define gen_helper_recps_f32 gen_helper_recps_f32_sparc64
 #define gen_helper_rintd gen_helper_rintd_sparc64
 #define gen_helper_rintd_exact gen_helper_rintd_exact_sparc64
 #define gen_helper_rints gen_helper_rints_sparc64
@@ -2119,6 +2116,7 @@
 #define helper_qsubaddx helper_qsubaddx_sparc64
 #define helper_raise_exception helper_raise_exception_sparc64
 #define helper_rbit helper_rbit_sparc64
+#define helper_recpe_f16 helper_recpe_f16_sparc64
 #define helper_recpe_f32 helper_recpe_f32_sparc64
 #define helper_recpe_f64 helper_recpe_f64_sparc64
 #define helper_recpe_u32 helper_recpe_u32_sparc64

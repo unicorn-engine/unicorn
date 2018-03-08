@@ -1062,9 +1062,6 @@
 #define gen_helper_qsub8 gen_helper_qsub8_mips64
 #define gen_helper_qsubaddx gen_helper_qsubaddx_mips64
 #define gen_helper_rbit gen_helper_rbit_mips64
-#define gen_helper_recpe_f32 gen_helper_recpe_f32_mips64
-#define gen_helper_recpe_u32 gen_helper_recpe_u32_mips64
-#define gen_helper_recps_f32 gen_helper_recps_f32_mips64
 #define gen_helper_rintd gen_helper_rintd_mips64
 #define gen_helper_rintd_exact gen_helper_rintd_exact_mips64
 #define gen_helper_rints gen_helper_rints_mips64
@@ -2119,6 +2116,7 @@
 #define helper_qsubaddx helper_qsubaddx_mips64
 #define helper_raise_exception helper_raise_exception_mips64
 #define helper_rbit helper_rbit_mips64
+#define helper_recpe_f16 helper_recpe_f16_mips64
 #define helper_recpe_f32 helper_recpe_f32_mips64
 #define helper_recpe_f64 helper_recpe_f64_mips64
 #define helper_recpe_u32 helper_recpe_u32_mips64
