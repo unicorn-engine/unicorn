@@ -489,6 +489,7 @@
 #define float16ToCommonNaN float16ToCommonNaN_arm
 #define float16_add float16_add_arm
 #define float16_default_nan float16_default_nan_arm
+#define float16_div float16_div_arm
 #define float16_is_quiet_nan float16_is_quiet_nan_arm
 #define float16_is_signaling_nan float16_is_signaling_nan_arm
 #define float16_maybe_silence_nan float16_maybe_silence_nan_arm

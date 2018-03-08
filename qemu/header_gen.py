@@ -495,6 +495,7 @@ symbols = (
     'float16ToCommonNaN',
     'float16_add',
     'float16_default_nan',
+    'float16_div',
     'float16_is_quiet_nan',
     'float16_is_signaling_nan',
     'float16_maybe_silence_nan',

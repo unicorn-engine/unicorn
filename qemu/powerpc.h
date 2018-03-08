@@ -489,6 +489,7 @@
 #define float16ToCommonNaN float16ToCommonNaN_powerpc
 #define float16_add float16_add_powerpc
 #define float16_default_nan float16_default_nan_powerpc
+#define float16_div float16_div_powerpc
 #define float16_is_quiet_nan float16_is_quiet_nan_powerpc
 #define float16_is_signaling_nan float16_is_signaling_nan_powerpc
 #define float16_maybe_silence_nan float16_maybe_silence_nan_powerpc
