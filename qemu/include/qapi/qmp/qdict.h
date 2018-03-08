@@ -14,7 +14,6 @@
 #define QDICT_H
 
 #include "qapi/qmp/qobject.h"
-#include "qapi/qmp/qlist.h"
 #include "qemu/queue.h"
 #include "unicorn/platform.h"
 
