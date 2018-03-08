@@ -3763,6 +3763,8 @@ aarch64_symbols = (
     'helper_advsimd_mulh',
     'helper_advsimd_mulx2h',
     'helper_advsimd_mulxh',
+    'helper_advsimd_rinth',
+    'helper_advsimd_rinth_exact',
     'helper_advsimd_sub2h',
     'helper_advsimd_subh',
     'helper_crc32_64',

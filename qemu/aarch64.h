@@ -3743,6 +3743,8 @@
 #define helper_advsimd_mulh helper_advsimd_mulh_aarch64
 #define helper_advsimd_mulx2h helper_advsimd_mulx2h_aarch64
 #define helper_advsimd_mulxh helper_advsimd_mulxh_aarch64
+#define helper_advsimd_rinth helper_advsimd_rinth_aarch64
+#define helper_advsimd_rinth_exact helper_advsimd_rinth_exact_aarch64
 #define helper_advsimd_sub2h helper_advsimd_sub2h_aarch64
 #define helper_advsimd_subh helper_advsimd_subh_aarch64
 #define helper_crc32_64 helper_crc32_64_aarch64
