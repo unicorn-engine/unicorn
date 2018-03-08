@@ -492,7 +492,13 @@
 #define float16_div float16_div_aarch64eb
 #define float16_is_quiet_nan float16_is_quiet_nan_aarch64eb
 #define float16_is_signaling_nan float16_is_signaling_nan_aarch64eb
+#define float16_max float16_max_aarch64eb
+#define float16_maxnum float16_maxnum_aarch64eb
+#define float16_maxnummag float16_maxnummag_aarch64eb
 #define float16_maybe_silence_nan float16_maybe_silence_nan_aarch64eb
+#define float16_min float16_min_aarch64eb
+#define float16_minnum float16_minnum_aarch64eb
+#define float16_minnummag float16_minnummag_aarch64eb
 #define float16_mul float16_mul_aarch64eb
 #define float16_muladd float16_muladd_aarch64eb
 #define float16_round_to_int float16_round_to_int_aarch64eb

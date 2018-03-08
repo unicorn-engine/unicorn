@@ -492,7 +492,13 @@
 #define float16_div float16_div_m68k
 #define float16_is_quiet_nan float16_is_quiet_nan_m68k
 #define float16_is_signaling_nan float16_is_signaling_nan_m68k
+#define float16_max float16_max_m68k
+#define float16_maxnum float16_maxnum_m68k
+#define float16_maxnummag float16_maxnummag_m68k
 #define float16_maybe_silence_nan float16_maybe_silence_nan_m68k
+#define float16_min float16_min_m68k
+#define float16_minnum float16_minnum_m68k
+#define float16_minnummag float16_minnummag_m68k
 #define float16_mul float16_mul_m68k
 #define float16_muladd float16_muladd_m68k
 #define float16_round_to_int float16_round_to_int_m68k
