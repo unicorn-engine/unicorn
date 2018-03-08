@@ -496,6 +496,7 @@
 #define float16_mul float16_mul_sparc
 #define float16_muladd float16_muladd_sparc
 #define float16_round_to_int float16_round_to_int_sparc
+#define float16_scalbn float16_scalbn_sparc
 #define float16_squash_input_denormal float16_squash_input_denormal_sparc
 #define float16_sub float16_sub_sparc
 #define float16_to_int16 float16_to_int16_sparc

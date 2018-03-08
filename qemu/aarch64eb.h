@@ -496,6 +496,7 @@
 #define float16_mul float16_mul_aarch64eb
 #define float16_muladd float16_muladd_aarch64eb
 #define float16_round_to_int float16_round_to_int_aarch64eb
+#define float16_scalbn float16_scalbn_aarch64eb
 #define float16_squash_input_denormal float16_squash_input_denormal_aarch64eb
 #define float16_sub float16_sub_aarch64eb
 #define float16_to_int16 float16_to_int16_aarch64eb
