@@ -19,3 +19,12 @@ QNull qnull_ = {
         1,
     }
 };
+
+/**
+ * qnull_is_equal(): Always return true because any two QNull objects
+ * are equal.
+ */
+bool qnull_is_equal(const QObject *x, const QObject *y)
+{
+    return true;
+}
