@@ -501,6 +501,7 @@ symbols = (
     'float16_maybe_silence_nan',
     'float16_mul',
     'float16_muladd',
+    'float16_round_to_int',
     'float16_squash_input_denormal',
     'float16_sub',
     'float16_to_float32',
