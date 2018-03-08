@@ -3749,6 +3749,8 @@ aarch64_symbols = (
     'helper_advsimd_cgt_f16',
     'helper_advsimd_div2h',
     'helper_advsimd_divh',
+    'helper_advsimd_f16tosinth',
+    'helper_advsimd_f16touinth',
     'helper_advsimd_max2h',
     'helper_advsimd_maxh',
     'helper_advsimd_maxnum2h',
