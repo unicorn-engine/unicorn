@@ -1,11 +1,10 @@
 #ifndef BSWAP_H
 #define BSWAP_H
 
+#include "qemu/osdep.h"
 #include "config-host.h"
 #include "unicorn/platform.h"
-#include <limits.h>
-#include <string.h>
-#include "fpu/softfloat.h"
+#include "fpu/softfloat-types.h"
 
 #ifdef CONFIG_MACHINE_BSWAP_H
 # include <sys/endian.h>

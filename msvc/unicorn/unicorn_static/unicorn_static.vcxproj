@@ -106,6 +106,7 @@
     <ClInclude Include="..\..\..\qemu\include\exec\tb-hash.h" />
     <ClInclude Include="..\..\..\qemu\include\exec\tb-hash-xx.h" />
     <ClInclude Include="..\..\..\qemu\include\fpu\softfloat.h" />
+    <ClInclude Include="..\..\..\qemu\include\fpu\softfloat-types.h" />
     <ClInclude Include="..\..\..\qemu\include\glib_compat.h" />
     <ClInclude Include="..\..\..\qemu\include\crypto\aes.h" />
     <ClInclude Include="..\..\..\qemu\include\hw\arm\arm.h" />
