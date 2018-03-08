@@ -487,11 +487,13 @@
 #define float128_unordered float128_unordered_mips64
 #define float128_unordered_quiet float128_unordered_quiet_mips64
 #define float16ToCommonNaN float16ToCommonNaN_mips64
+#define float16_add float16_add_mips64
 #define float16_default_nan float16_default_nan_mips64
 #define float16_is_quiet_nan float16_is_quiet_nan_mips64
 #define float16_is_signaling_nan float16_is_signaling_nan_mips64
 #define float16_maybe_silence_nan float16_maybe_silence_nan_mips64
 #define float16_squash_input_denormal float16_squash_input_denormal_mips64
+#define float16_sub float16_sub_mips64
 #define float16_to_float32 float16_to_float32_mips64
 #define float16_to_float64 float16_to_float64_mips64
 #define float32ToCommonNaN float32ToCommonNaN_mips64

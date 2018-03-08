@@ -487,11 +487,13 @@
 #define float128_unordered float128_unordered_armeb
 #define float128_unordered_quiet float128_unordered_quiet_armeb
 #define float16ToCommonNaN float16ToCommonNaN_armeb
+#define float16_add float16_add_armeb
 #define float16_default_nan float16_default_nan_armeb
 #define float16_is_quiet_nan float16_is_quiet_nan_armeb
 #define float16_is_signaling_nan float16_is_signaling_nan_armeb
 #define float16_maybe_silence_nan float16_maybe_silence_nan_armeb
 #define float16_squash_input_denormal float16_squash_input_denormal_armeb
+#define float16_sub float16_sub_armeb
 #define float16_to_float32 float16_to_float32_armeb
 #define float16_to_float64 float16_to_float64_armeb
 #define float32ToCommonNaN float32ToCommonNaN_armeb
