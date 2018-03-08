@@ -15,7 +15,6 @@
 
 #include "qapi/qmp/qobject.h"
 #include "qapi/qmp/qlist.h"
-#include "qapi/qmp/qnum.h"
 #include "qemu/queue.h"
 #include "unicorn/platform.h"
 
