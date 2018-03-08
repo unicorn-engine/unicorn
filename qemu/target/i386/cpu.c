@@ -26,6 +26,7 @@
 #include "sysemu/cpus.h"
 
 #include "qapi/error.h"
+#include "qapi/qmp/qdict.h"
 #include "qapi/qmp/qerror.h"
 
 #include "qapi-visit.h"
