@@ -511,6 +511,7 @@ symbols = (
     'float16_muladd',
     'float16_round_to_int',
     'float16_scalbn',
+    'float16_sqrt',
     'float16_squash_input_denormal',
     'float16_sub',
     'float16_to_int16',

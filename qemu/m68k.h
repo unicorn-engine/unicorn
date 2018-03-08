@@ -505,6 +505,7 @@
 #define float16_muladd float16_muladd_m68k
 #define float16_round_to_int float16_round_to_int_m68k
 #define float16_scalbn float16_scalbn_m68k
+#define float16_sqrt float16_sqrt_m68k
 #define float16_squash_input_denormal float16_squash_input_denormal_m68k
 #define float16_sub float16_sub_m68k
 #define float16_to_int16 float16_to_int16_m68k
