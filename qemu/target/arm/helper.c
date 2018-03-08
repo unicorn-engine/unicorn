@@ -4405,13 +4405,13 @@ void register_cp_regs_for_features(ARMCPU *cpu)
     if (arm_feature(env, ARM_FEATURE_EL2)) {
         uint64_t vmpidr_def = mpidr_read_val(env);
         ARMCPRegInfo vpidr_regs[] = {
-            { "VPIDR", 15,0,0, 0,4,0, ARM_CP_STATE_AA32, 0,
-              PL2_RW, 0, NULL, cpu->midr, offsetof(CPUARMState, cp15.vpidr_el2), {0, 0},
+            { "VPIDR", 15,0,0, 0,4,0, ARM_CP_STATE_AA32, ARM_CP_ALIAS,
+              PL2_RW, 0, NULL, cpu->midr, offsetoflow32(CPUARMState, cp15.vpidr_el2), {0, 0},
               access_el3_aa32ns },
             { "VPIDR_EL2", 0,0,0, 3,4,0, ARM_CP_STATE_AA64, 0,
               PL2_RW, 0, NULL, cpu->midr, offsetof(CPUARMState, cp15.vpidr_el2) },
-            { "VMPIDR", 15,0,0, 0,4,5, ARM_CP_STATE_AA32, 0,
-              PL2_RW, 0, NULL, vmpidr_def, offsetof(CPUARMState, cp15.vmpidr_el2), {0, 0},
+            { "VMPIDR", 15,0,0, 0,4,5, ARM_CP_STATE_AA32, ARM_CP_ALIAS,
+              PL2_RW, 0, NULL, vmpidr_def, offsetoflow32(CPUARMState, cp15.vmpidr_el2), {0, 0},
               access_el3_aa32ns },
             { "VMPIDR_EL2", 0,0,0, 3,4,5, ARM_CP_STATE_AA64, 0,
               PL2_RW, 0, NULL, vmpidr_def, offsetof(CPUARMState, cp15.vmpidr_el2) },
