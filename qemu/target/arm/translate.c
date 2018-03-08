@@ -3250,7 +3250,7 @@ static int handle_vrint(DisasContext *s, uint32_t insn, uint32_t rd, uint32_t rm
     TCGv_i32 tcg_rmode;
 
     tcg_rmode = tcg_const_i32(tcg_ctx, arm_rmode_to_sf(rounding));
-    gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, tcg_ctx->cpu_env);
+    gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, fpst);
 
     if (dp) {
         TCGv_i64 tcg_op;
@@ -3274,7 +3274,7 @@ static int handle_vrint(DisasContext *s, uint32_t insn, uint32_t rd, uint32_t rm
         tcg_temp_free_i32(tcg_ctx, tcg_res);
     }
 
-    gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, tcg_ctx->cpu_env);
+    gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, fpst);
     tcg_temp_free_i32(tcg_ctx, tcg_rmode);
 
     tcg_temp_free_ptr(tcg_ctx, fpst);
@@ -3292,7 +3292,7 @@ static int handle_vcvt(DisasContext *s, uint32_t insn, uint32_t rd, uint32_t rm,
     tcg_shift = tcg_const_i32(tcg_ctx, 0);
 
     tcg_rmode = tcg_const_i32(tcg_ctx, arm_rmode_to_sf(rounding));
-    gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, tcg_ctx->cpu_env);
+    gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, fpst);
 
     if (dp) {
         TCGv_i64 tcg_double, tcg_res;
@@ -3330,7 +3330,7 @@ static int handle_vcvt(DisasContext *s, uint32_t insn, uint32_t rd, uint32_t rm,
         tcg_temp_free_i32(tcg_ctx, tcg_single);
     }
 
-    gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, tcg_ctx->cpu_env);
+    gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, fpst);
     tcg_temp_free_i32(tcg_ctx, tcg_rmode);
 
     tcg_temp_free_i32(tcg_ctx, tcg_shift);
@@ -4001,13 +4001,13 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                         TCGv_ptr fpst = get_fpstatus_ptr(s, 0);
                         TCGv_i32 tcg_rmode;
                         tcg_rmode = tcg_const_i32(tcg_ctx, float_round_to_zero);
-                        gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, tcg_ctx->cpu_env);
+                        gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, fpst);
                         if (dp) {
                             gen_helper_rintd(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d, fpst);
                         } else {
                             gen_helper_rints(tcg_ctx, tcg_ctx->cpu_F0s, tcg_ctx->cpu_F0s, fpst);
                         }
-                        gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, tcg_ctx->cpu_env);
+                        gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, fpst);
                         tcg_temp_free_i32(tcg_ctx, tcg_rmode);
                         tcg_temp_free_ptr(tcg_ctx, fpst);
                         break;
