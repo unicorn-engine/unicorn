@@ -1690,6 +1690,9 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
     default:
         break;
     }
+    if ((ri->type & ARM_CP_FPU) && !fp_access_check(s)) {
+        return;
+    }
 
     // Unicorn: if'd out
 #if 0
