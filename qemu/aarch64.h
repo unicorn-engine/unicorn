@@ -3731,7 +3731,9 @@
 #define helper_advsimd_maxnumh helper_advsimd_maxnumh_aarch64
 #define helper_advsimd_minh helper_advsimd_minh_aarch64
 #define helper_advsimd_minnumh helper_advsimd_minnumh_aarch64
+#define helper_advsimd_muladdh helper_advsimd_muladdh_aarch64
 #define helper_advsimd_mulh helper_advsimd_mulh_aarch64
+#define helper_advsimd_mulxh helper_advsimd_mulxh_aarch64
 #define helper_advsimd_subh helper_advsimd_subh_aarch64
 #define helper_crc32_64 helper_crc32_64_aarch64
 #define helper_crc32c_64 helper_crc32c_64_aarch64
