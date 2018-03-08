@@ -3720,6 +3720,10 @@
 #define arm_set_cpu_off arm_set_cpu_off_aarch64eb
 #define arm_set_cpu_on arm_set_cpu_on_aarch64eb
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64eb
+#define helper_advsimd_maxh helper_advsimd_maxh_aarch64eb
+#define helper_advsimd_maxnumh helper_advsimd_maxnumh_aarch64eb
+#define helper_advsimd_minh helper_advsimd_minh_aarch64eb
+#define helper_advsimd_minnumh helper_advsimd_minnumh_aarch64eb
 #define helper_crc32_64 helper_crc32_64_aarch64eb
 #define helper_crc32c_64 helper_crc32c_64_aarch64eb
 #define helper_fcvtx_f64_to_f32 helper_fcvtx_f64_to_f32_aarch64eb
