@@ -54,15 +54,10 @@ void qdict_destroy_obj(QObject *obj);
 #define qdict_put(qdict, key, obj) \
         qdict_put_obj(qdict, key, QOBJECT(obj))
 
-/* Helpers for int, bool, null, and string */
-#define qdict_put_int(qdict, key, value) \
-        qdict_put(qdict, key, qnum_from_int(value))
-#define qdict_put_bool(qdict, key, value) \
-        qdict_put(qdict, key, qbool_from_bool(value))
-#define qdict_put_str(qdict, key, value) \
-        qdict_put(qdict, key, qstring_from_str(value))
-#define qdict_put_null(qdict, key) \
-        qdict_put(qdict, key, qnull())
+void qdict_put_bool(QDict *qdict, const char *key, bool value);
+void qdict_put_int(QDict *qdict, const char *key, int64_t value);
+void qdict_put_null(QDict *qdict, const char *key);
+void qdict_put_str(QDict *qdict, const char *key, const char *value);
 
 /* High level helpers */
 double qdict_get_double(const QDict *qdict, const char *key);
