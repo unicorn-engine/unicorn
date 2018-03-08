@@ -491,6 +491,7 @@
 #define float16_is_quiet_nan float16_is_quiet_nan_powerpc
 #define float16_is_signaling_nan float16_is_signaling_nan_powerpc
 #define float16_maybe_silence_nan float16_maybe_silence_nan_powerpc
+#define float16_squash_input_denormal float16_squash_input_denormal_powerpc
 #define float16_to_float32 float16_to_float32_powerpc
 #define float16_to_float64 float16_to_float64_powerpc
 #define float32ToCommonNaN float32ToCommonNaN_powerpc
