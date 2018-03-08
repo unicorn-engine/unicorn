@@ -1479,14 +1479,6 @@ ram_addr_t memory_region_get_ram_addr(MemoryRegion *mr)
     return mr->ram_block ? mr->ram_block->offset : RAM_ADDR_INVALID;
 }
 
-bool memory_region_test_and_clear_dirty(MemoryRegion *mr, hwaddr addr,
-                                        hwaddr size, unsigned client)
-{
-    assert(mr->ram_block);
-    return cpu_physical_memory_test_and_clear_dirty(mr->uc,
-                memory_region_get_ram_addr(mr) + addr, size, client);
-}
-
 static void memory_region_update_container_subregions(MemoryRegion *subregion)
 {
     MemoryRegion *mr = subregion->container;

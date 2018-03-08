@@ -2442,7 +2442,6 @@
 #define memory_region_set_readonly memory_region_set_readonly_aarch64
 #define memory_region_set_size memory_region_set_size_aarch64
 #define memory_region_size memory_region_size_aarch64
-#define memory_region_test_and_clear_dirty memory_region_test_and_clear_dirty_aarch64
 #define memory_region_to_address_space memory_region_to_address_space_aarch64
 #define memory_region_transaction_begin memory_region_transaction_begin_aarch64
 #define memory_region_transaction_commit memory_region_transaction_commit_aarch64
@@ -2743,7 +2742,11 @@
 #define qdict_new qdict_new_aarch64
 #define qdict_next qdict_next_aarch64
 #define qdict_next_entry qdict_next_entry_aarch64
+#define qdict_put_bool qdict_put_bool_aarch64
+#define qdict_put_int qdict_put_int_aarch64
+#define qdict_put_null qdict_put_null_aarch64
 #define qdict_put_obj qdict_put_obj_aarch64
+#define qdict_put_str qdict_put_str_aarch64
 #define qdict_size qdict_size_aarch64
 #define qdict_type qdict_type_aarch64
 #define qemu_clock_get_us qemu_clock_get_us_aarch64
@@ -2797,7 +2800,11 @@
 #define qint_from_int qint_from_int_aarch64
 #define qint_get_int qint_get_int_aarch64
 #define qint_type qint_type_aarch64
+#define qlist_append_bool qlist_append_bool_aarch64
+#define qlist_append_int qlist_append_int_aarch64
+#define qlist_append_null qlist_append_null_aarch64
 #define qlist_append_obj qlist_append_obj_aarch64
+#define qlist_append_str qlist_append_str_aarch64
 #define qlist_copy qlist_copy_aarch64
 #define qlist_copy_elem qlist_copy_elem_aarch64
 #define qlist_destroy_obj qlist_destroy_obj_aarch64

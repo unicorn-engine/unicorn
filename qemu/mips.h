@@ -2442,7 +2442,6 @@
 #define memory_region_set_readonly memory_region_set_readonly_mips
 #define memory_region_set_size memory_region_set_size_mips
 #define memory_region_size memory_region_size_mips
-#define memory_region_test_and_clear_dirty memory_region_test_and_clear_dirty_mips
 #define memory_region_to_address_space memory_region_to_address_space_mips
 #define memory_region_transaction_begin memory_region_transaction_begin_mips
 #define memory_region_transaction_commit memory_region_transaction_commit_mips
@@ -2743,7 +2742,11 @@
 #define qdict_new qdict_new_mips
 #define qdict_next qdict_next_mips
 #define qdict_next_entry qdict_next_entry_mips
+#define qdict_put_bool qdict_put_bool_mips
+#define qdict_put_int qdict_put_int_mips
+#define qdict_put_null qdict_put_null_mips
 #define qdict_put_obj qdict_put_obj_mips
+#define qdict_put_str qdict_put_str_mips
 #define qdict_size qdict_size_mips
 #define qdict_type qdict_type_mips
 #define qemu_clock_get_us qemu_clock_get_us_mips
@@ -2797,7 +2800,11 @@
 #define qint_from_int qint_from_int_mips
 #define qint_get_int qint_get_int_mips
 #define qint_type qint_type_mips
+#define qlist_append_bool qlist_append_bool_mips
+#define qlist_append_int qlist_append_int_mips
+#define qlist_append_null qlist_append_null_mips
 #define qlist_append_obj qlist_append_obj_mips
+#define qlist_append_str qlist_append_str_mips
 #define qlist_copy qlist_copy_mips
 #define qlist_copy_elem qlist_copy_elem_mips
 #define qlist_destroy_obj qlist_destroy_obj_mips

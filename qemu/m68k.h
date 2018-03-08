@@ -2442,7 +2442,6 @@
 #define memory_region_set_readonly memory_region_set_readonly_m68k
 #define memory_region_set_size memory_region_set_size_m68k
 #define memory_region_size memory_region_size_m68k
-#define memory_region_test_and_clear_dirty memory_region_test_and_clear_dirty_m68k
 #define memory_region_to_address_space memory_region_to_address_space_m68k
 #define memory_region_transaction_begin memory_region_transaction_begin_m68k
 #define memory_region_transaction_commit memory_region_transaction_commit_m68k
@@ -2743,7 +2742,11 @@
 #define qdict_new qdict_new_m68k
 #define qdict_next qdict_next_m68k
 #define qdict_next_entry qdict_next_entry_m68k
+#define qdict_put_bool qdict_put_bool_m68k
+#define qdict_put_int qdict_put_int_m68k
+#define qdict_put_null qdict_put_null_m68k
 #define qdict_put_obj qdict_put_obj_m68k
+#define qdict_put_str qdict_put_str_m68k
 #define qdict_size qdict_size_m68k
 #define qdict_type qdict_type_m68k
 #define qemu_clock_get_us qemu_clock_get_us_m68k
@@ -2797,7 +2800,11 @@
 #define qint_from_int qint_from_int_m68k
 #define qint_get_int qint_get_int_m68k
 #define qint_type qint_type_m68k
+#define qlist_append_bool qlist_append_bool_m68k
+#define qlist_append_int qlist_append_int_m68k
+#define qlist_append_null qlist_append_null_m68k
 #define qlist_append_obj qlist_append_obj_m68k
+#define qlist_append_str qlist_append_str_m68k
 #define qlist_copy qlist_copy_m68k
 #define qlist_copy_elem qlist_copy_elem_m68k
 #define qlist_destroy_obj qlist_destroy_obj_m68k

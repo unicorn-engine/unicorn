@@ -2448,7 +2448,6 @@ symbols = (
     'memory_region_set_readonly',
     'memory_region_set_size',
     'memory_region_size',
-    'memory_region_test_and_clear_dirty',
     'memory_region_to_address_space',
     'memory_region_transaction_begin',
     'memory_region_transaction_commit',

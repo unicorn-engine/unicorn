@@ -2442,7 +2442,6 @@
 #define memory_region_set_readonly memory_region_set_readonly_arm
 #define memory_region_set_size memory_region_set_size_arm
 #define memory_region_size memory_region_size_arm
-#define memory_region_test_and_clear_dirty memory_region_test_and_clear_dirty_arm
 #define memory_region_to_address_space memory_region_to_address_space_arm
 #define memory_region_transaction_begin memory_region_transaction_begin_arm
 #define memory_region_transaction_commit memory_region_transaction_commit_arm
@@ -2743,7 +2742,11 @@
 #define qdict_new qdict_new_arm
 #define qdict_next qdict_next_arm
 #define qdict_next_entry qdict_next_entry_arm
+#define qdict_put_bool qdict_put_bool_arm
+#define qdict_put_int qdict_put_int_arm
+#define qdict_put_null qdict_put_null_arm
 #define qdict_put_obj qdict_put_obj_arm
+#define qdict_put_str qdict_put_str_arm
 #define qdict_size qdict_size_arm
 #define qdict_type qdict_type_arm
 #define qemu_clock_get_us qemu_clock_get_us_arm
@@ -2797,7 +2800,11 @@
 #define qint_from_int qint_from_int_arm
 #define qint_get_int qint_get_int_arm
 #define qint_type qint_type_arm
+#define qlist_append_bool qlist_append_bool_arm
+#define qlist_append_int qlist_append_int_arm
+#define qlist_append_null qlist_append_null_arm
 #define qlist_append_obj qlist_append_obj_arm
+#define qlist_append_str qlist_append_str_arm
 #define qlist_copy qlist_copy_arm
 #define qlist_copy_elem qlist_copy_elem_arm
 #define qlist_destroy_obj qlist_destroy_obj_arm
