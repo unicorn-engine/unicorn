@@ -494,6 +494,7 @@
 #define float16_is_signaling_nan float16_is_signaling_nan_aarch64
 #define float16_maybe_silence_nan float16_maybe_silence_nan_aarch64
 #define float16_mul float16_mul_aarch64
+#define float16_muladd float16_muladd_aarch64
 #define float16_squash_input_denormal float16_squash_input_denormal_aarch64
 #define float16_sub float16_sub_aarch64
 #define float16_to_float32 float16_to_float32_aarch64
