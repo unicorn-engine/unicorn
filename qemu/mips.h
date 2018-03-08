@@ -2301,10 +2301,12 @@
 #define int16_to_float32 int16_to_float32_mips
 #define int16_to_float64 int16_to_float64_mips
 #define int32_to_float128 int32_to_float128_mips
+#define int32_to_float16 int32_to_float16_mips
 #define int32_to_float32 int32_to_float32_mips
 #define int32_to_float64 int32_to_float64_mips
 #define int32_to_floatx80 int32_to_floatx80_mips
 #define int64_to_float128 int64_to_float128_mips
+#define int64_to_float16 int64_to_float16_mips
 #define int64_to_float32 int64_to_float32_mips
 #define int64_to_float64 int64_to_float64_mips
 #define int64_to_floatx80 int64_to_floatx80_mips
@@ -3614,11 +3616,14 @@
 #define type_table_add type_table_add_mips
 #define type_table_get type_table_get_mips
 #define type_table_lookup type_table_lookup_mips
+#define uint16_to_float16 uint16_to_float16_mips
 #define uint16_to_float32 uint16_to_float32_mips
 #define uint16_to_float64 uint16_to_float64_mips
+#define uint32_to_float16 uint32_to_float16_mips
 #define uint32_to_float32 uint32_to_float32_mips
 #define uint32_to_float64 uint32_to_float64_mips
 #define uint64_to_float128 uint64_to_float128_mips
+#define uint64_to_float16 uint64_to_float16_mips
 #define uint64_to_float32 uint64_to_float32_mips
 #define uint64_to_float64 uint64_to_float64_mips
 #define unassigned_io_ops unassigned_io_ops_mips
