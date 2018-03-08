@@ -3814,20 +3814,6 @@ static int sve_exception_el(CPUARMState *env)
     return 0;
 }
 
-static CPAccessResult zcr_access(CPUARMState *env, const ARMCPRegInfo *ri,
-                                 bool isread)
-{
-    switch (sve_exception_el(env)) {
-    case 3:
-        return CP_ACCESS_TRAP_EL3;
-    case 2:
-        return CP_ACCESS_TRAP_EL2;
-    case 1:
-        return CP_ACCESS_TRAP;
-    }
-    return CP_ACCESS_OK;
-}
-
 static void zcr_write(CPUARMState *env, const ARMCPRegInfo *ri,
                       uint64_t value)
 {
@@ -3836,27 +3822,27 @@ static void zcr_write(CPUARMState *env, const ARMCPRegInfo *ri,
 }
 
 static const ARMCPRegInfo zcr_el1_reginfo = {
-    "ZCR_EL1", 0,1,2, 3,0,0, ARM_CP_STATE_AA64, 0,
+    "ZCR_EL1", 0,1,2, 3,0,0, ARM_CP_STATE_AA64, ARM_CP_SVE | ARM_CP_FPU,
     PL1_RW, 0, NULL, 0, offsetof(CPUARMState, vfp.zcr_el[1]), {0, 0},
-    zcr_access, NULL, zcr_write, NULL, raw_write
+    NULL, NULL, zcr_write, NULL, raw_write
 };
 
 static const ARMCPRegInfo zcr_el2_reginfo = {
-    "ZCR_EL2", 0,1,2, 3,4,0, ARM_CP_STATE_AA64, 0,
+    "ZCR_EL2", 0,1,2, 3,4,0, ARM_CP_STATE_AA64, ARM_CP_SVE | ARM_CP_FPU,
     PL2_RW, 0, NULL, 0, offsetof(CPUARMState, vfp.zcr_el[2]), {0, 0},
-    zcr_access, NULL, zcr_write, NULL, raw_write
+    NULL, NULL, zcr_write, NULL, raw_write
 };
 
 static const ARMCPRegInfo zcr_no_el2_reginfo = {
-    "ZCR_EL2", 0,1,2, 3,4,0, ARM_CP_STATE_AA64, 0,
+    "ZCR_EL2", 0,1,2, 3,4,0, ARM_CP_STATE_AA64, ARM_CP_SVE | ARM_CP_FPU,
     PL2_RW, 0, NULL, 0, 0, {0, 0},
     NULL, arm_cp_read_zero, arm_cp_write_ignore
 };
 
 static const ARMCPRegInfo zcr_el3_reginfo = {
-    "ZCR_EL3", 0,1,2, 3,6,0, ARM_CP_STATE_AA64, 0,
+    "ZCR_EL3", 0,1,2, 3,6,0, ARM_CP_STATE_AA64, ARM_CP_SVE | ARM_CP_FPU,
     PL3_RW, 0, NULL, 0, offsetof(CPUARMState, vfp.zcr_el[3]), {0, 0},
-    zcr_access, NULL, zcr_write, NULL, raw_write
+    NULL, NULL, zcr_write, NULL, raw_write
 };
 
 void hw_watchpoint_update(ARMCPU *cpu, int n)
