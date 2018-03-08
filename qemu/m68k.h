@@ -488,6 +488,8 @@
 #define float128_unordered_quiet float128_unordered_quiet_m68k
 #define float16ToCommonNaN float16ToCommonNaN_m68k
 #define float16_add float16_add_m68k
+#define float16_compare float16_compare_m68k
+#define float16_compare_quiet float16_compare_quiet_m68k
 #define float16_default_nan float16_default_nan_m68k
 #define float16_div float16_div_m68k
 #define float16_is_quiet_nan float16_is_quiet_nan_m68k

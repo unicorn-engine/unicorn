@@ -488,6 +488,8 @@
 #define float128_unordered_quiet float128_unordered_quiet_sparc
 #define float16ToCommonNaN float16ToCommonNaN_sparc
 #define float16_add float16_add_sparc
+#define float16_compare float16_compare_sparc
+#define float16_compare_quiet float16_compare_quiet_sparc
 #define float16_default_nan float16_default_nan_sparc
 #define float16_div float16_div_sparc
 #define float16_is_quiet_nan float16_is_quiet_nan_sparc

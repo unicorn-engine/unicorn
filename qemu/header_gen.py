@@ -494,6 +494,8 @@ symbols = (
     'float128_unordered_quiet',
     'float16ToCommonNaN',
     'float16_add',
+    'float16_compare',
+    'float16_compare_quiet',
     'float16_default_nan',
     'float16_div',
     'float16_is_quiet_nan',
