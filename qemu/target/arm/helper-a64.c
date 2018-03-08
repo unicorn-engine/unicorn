@@ -30,6 +30,7 @@
 #include "exec/cpu_ldst.h"
 #include "qemu/int128.h"
 #include "tcg.h"
+#include "fpu/softfloat.h"
 
 /* C2.4.7 Multiply and divide */
 /* special cases for 0 and LLONG_MIN are mandated by the standard */

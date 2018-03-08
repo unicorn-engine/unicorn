@@ -30,8 +30,6 @@
 #include "cpu-qom.h"
 #include "exec/cpu-defs.h"
 
-#include "fpu/softfloat.h"
-
 #define OS_BYTE     0
 #define OS_WORD     1
 #define OS_LONG     2

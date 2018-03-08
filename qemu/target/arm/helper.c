@@ -9,6 +9,7 @@
 #include "exec/exec-all.h"
 #include "exec/cpu_ldst.h"
 #include "arm_ldst.h"
+#include "fpu/softfloat.h"
 
 #ifndef CONFIG_USER_ONLY
 /* Cacheability and shareability attributes for a memory access */

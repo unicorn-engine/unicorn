@@ -23,6 +23,7 @@
 #include "exec/exec-all.h"
 
 #include "exec/helper-proto.h"
+#include "fpu/softfloat.h"
 
 #define SIGNBIT (1u << 31)
 

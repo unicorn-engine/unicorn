@@ -30,6 +30,7 @@
 #include "exec/helper-gen.h"
 
 #include "exec/gen-icount.h"
+#include "fpu/softfloat.h"
 
 //#define DEBUG_DISPATCH 1
 
