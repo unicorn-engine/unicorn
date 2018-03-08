@@ -58,6 +58,9 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 
 #define QEMU_ALIGNED(A, B) __declspec(align(A)) B
 
+// Unicorn: Initially added to abstract away GCC's flatten attribute in softfloat.c
+#define QEMU_FLATTEN
+
 // Unicorn: Addition for thread-local variables
 #define QEMU_THREAD_LOCAL_VAR __declspec(thread)
 
@@ -122,6 +125,9 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #endif
 
 #define QEMU_ALIGNED(A, B) B __attribute__((aligned(A)))
+
+// Unicorn: Initially added to abstract away GCC's flatten attribute in softfloat.c
+#define QEMU_FLATTEN __attribute__((flatten))
 
 // Unicorn: Addition for thread-local variables
 #define QEMU_THREAD_LOCAL_VAR __thread
