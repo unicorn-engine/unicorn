@@ -704,6 +704,9 @@ if compile_object ; then
 else
     error_exit "\"$cc\" either does not exist or does not work"
 fi
+if ! compile_prog ; then
+    error_exit "\"$cc\" cannot build an executable (is your linker broken?)"
+fi
 
 if test "$bogus_os" = "yes"; then
     # Now that we know that we're not printing the help and that
