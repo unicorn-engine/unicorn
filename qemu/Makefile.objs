@@ -3,6 +3,8 @@
 util-obj-y = util/ qobject/ qapi/ qapi-types.o qapi-visit.o
 util-obj-y += qapi-builtin-types.o
 util-obj-y += qapi-builtin-visit.o
+util-obj-y += qapi/qapi-types-misc.o
+util-obj-y += qapi/qapi-visit-misc.o
 
 #######################################################################
 # block-obj-y is code used by both qemu system emulation and qemu-img

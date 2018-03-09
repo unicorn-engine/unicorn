@@ -138,10 +138,16 @@
     <ClCompile Include="..\qapi-builtin-visit.c">
       <Filter>qemu</Filter>
     </ClCompile>
-    <ClCompile Include="..\qapi-types-common.c">
+    <ClCompile Include="..\qapi\qapi-types-common.c">
       <Filter>qemu</Filter>
     </ClCompile>
-    <ClCompile Include="..\qapi-visit-common.c">
+    <ClCompile Include="..\qapi\qapi-visit-common.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\qapi\qapi-types-misc.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\qapi\qapi-visit-misc.c">
       <Filter>qemu</Filter>
     </ClCompile>
     <ClCompile Include="..\qapi-visit.c">
@@ -244,10 +250,16 @@
     <ClInclude Include="..\qapi-builtin-visit.h">
       <Filter>qemu</Filter>
     </ClInclude>
-    <ClInclude Include="..\qapi-types-common.h">
+    <ClInclude Include="..\qapi\qapi-types-common.h">
       <Filter>qemu</Filter>
     </ClInclude>
-    <ClInclude Include="..\qapi-visit-common.h">
+    <ClInclude Include="..\qapi\qapi-visit-common.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi\qapi-types-misc.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi\qapi-visit-misc.h">
       <Filter>qemu</Filter>
     </ClInclude>
     <ClInclude Include="..\qapi-visit.h">

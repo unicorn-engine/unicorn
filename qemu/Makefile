@@ -50,8 +50,10 @@ GENERATED_FILES = config-host.h
 GENERATED_FILES += qapi-builtin-types.h qapi-builtin-types.c
 GENERATED_FILES += qapi-types.h qapi-types.c
 GENERATED_FILES += qapi/qapi-types-common.h qapi/qapi-types-common.c
+GENERATED_FILES += qapi/qapi-types-misc.h qapi/qapi-types-misc.c
 GENERATED_FILES += qapi-builtin-visit.h qapi-builtin-visit.c
 GENERATED_FILES += qapi-visit.h qapi-visit.c
+GENERATED_FILES += qapi/qapi-visit-misc.h qapi/qapi-visit-misc.c
 GENERATED_FILES += qapi/qapi-visit-common.h qapi/qapi-visit-common.c
 
 # Don't try to regenerate Makefile or configure
@@ -153,14 +155,20 @@ $(SRC_PATH)/scripts/qapi/common.py \
 $(SRC_PATH)/scripts/ordereddict.py \
 $(SRC_PATH)/scripts/qapi-gen.py
 
-qapi-modules = $(SRC_PATH)/qapi-schema.json $(SRC_PATH)/qapi/common.json
+qapi-modules = \
+$(SRC_PATH)/qapi-schema.json \
+$(SRC_PATH)/qapi/common.json \
+$(SRC_PATH)/qapi/misc.json
+
 
 qapi-builtin-types.c qapi-builtin-types.h \
 qapi-types.c qapi-types.h \
 qapi/qapi-types-common.c qapi/qapi-types-common.h \
+qapi/qapi-types-misc.c qapi/qapi-types-misc.h \
 qapi-builtin-visit.c qapi-builtin-visit.h \
 qapi-visit.c qapi-visit.h \
 qapi/qapi-visit-common.c qapi/qapi-visit-common.h \
+qapi/qapi-visit-misc.c qapi/qapi-visit-misc.h \
 qapi-doc.texi: \
 qapi-gen-timestamp ;
 qapi-gen-timestamp: $(qapi-modules) $(qapi-py)

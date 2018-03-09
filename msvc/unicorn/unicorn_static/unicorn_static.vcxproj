@@ -66,6 +66,8 @@
     <ClCompile Include="..\..\..\uc.c" />
     <ClCompile Include="..\qapi-builtin-types.c" />
     <ClCompile Include="..\qapi-builtin-visit.c" />
+    <ClCompile Include="..\qapi\qapi-types-misc.c" />
+    <ClCompile Include="..\qapi\qapi-visit-misc.c" />
     <ClCompile Include="..\qapi-types.c" />
     <ClCompile Include="..\qapi-visit.c" />
   </ItemGroup>
@@ -181,8 +183,10 @@
     <ClInclude Include="..\config-host.h" />
     <ClInclude Include="..\qapi-builtin-types.h" />
     <ClInclude Include="..\qapi-builtin-visit.h" />
-    <ClInclude Include="..\qapi-types-common.h" />
-    <ClInclude Include="..\qapi-visit-common.h" />
+    <ClInclude Include="..\qapi\qapi-types-common.h" />
+    <ClInclude Include="..\qapi\qapi-visit-common.h" />
+    <ClInclude Include="..\qapi\qapi-types-misc.h" />
+    <ClInclude Include="..\qapi\qapi-visit-misc.h" />
     <ClInclude Include="..\qapi-types.h" />
     <ClInclude Include="..\qapi-visit.h" />
   </ItemGroup>
