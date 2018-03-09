@@ -1336,8 +1336,6 @@ static bool x86_stop_interrupt(int intno)
     }
 }
 
-void pc_machine_init(struct uc_struct *uc);
-
 static bool x86_insn_hook_validate(uint32_t insn_enum)
 {
     //for x86 we can only hook IN, OUT, and SYSCALL
@@ -1349,6 +1347,8 @@ static bool x86_insn_hook_validate(uint32_t insn_enum)
     return true;
 }
 
+void pc_machine_init_v2_2(struct uc_struct *uc);
+
 DEFAULT_VISIBILITY
 void x86_uc_init(struct uc_struct* uc)
 {
@@ -1357,7 +1357,7 @@ void x86_uc_init(struct uc_struct* uc)
     register_accel_types(uc);
     pc_machine_register_types(uc);
     x86_cpu_register_types(uc);
-    pc_machine_init(uc); // pc_piix
+    pc_machine_init_v2_2(uc); // pc_piix
     uc->reg_read = x86_reg_read;
     uc->reg_write = x86_reg_write;
     uc->reg_reset = x86_reg_reset;

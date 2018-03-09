@@ -47,4 +47,26 @@ void x86_cpu_register_types(struct uc_struct *uc);
 #define PC_DEFAULT_MACHINE_OPTIONS \
     .max_cpus = 255
 
+// Unicorn: Modified to work with Unicorn.
+#define DEFINE_PC_MACHINE(suffix, namestr, initfn) \
+    static void pc_machine_##suffix##_class_init(struct uc_struct *uc, ObjectClass *oc, void *data) \
+    { \
+        MachineClass *mc = MACHINE_CLASS(uc, oc); \
+        mc->max_cpus = 255; \
+        mc->is_default = 1; \
+        mc->name = namestr; \
+        mc->init = initfn; \
+        mc->arch = UC_ARCH_X86; \
+    } \
+    static const TypeInfo pc_machine_type_##suffix = { \
+        .name       = namestr TYPE_MACHINE_SUFFIX, \
+        .parent     = TYPE_PC_MACHINE, \
+        .class_init = pc_machine_##suffix##_class_init, \
+    }; \
+    void pc_machine_init_##suffix(struct uc_struct *uc); \
+    void pc_machine_init_##suffix(struct uc_struct *uc) \
+    { \
+        type_register(uc, &pc_machine_type_##suffix); \
+    }
+
 #endif

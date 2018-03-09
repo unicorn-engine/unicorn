@@ -49,6 +49,16 @@ static int pc_init_pci(struct uc_struct *uc, MachineState *machine)
     return pc_init1(uc, machine);
 }
 
+static void pc_compat_2_2(struct uc_struct *uc, MachineState *machine)
+{
+}
+
+static int pc_init_pci_2_2(struct uc_struct *uc, MachineState *machine)
+{
+    pc_compat_2_2(uc, machine);
+    return pc_init_pci(uc, machine);
+}
+
 static QEMUMachine pc_i440fx_machine_v2_2 = {
     "pc_piix",
     "pc-i440fx-2.2",
@@ -59,23 +69,4 @@ static QEMUMachine pc_i440fx_machine_v2_2 = {
     UC_ARCH_X86,    // X86
 };
 
-static void pc_generic_machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
-{
-    MachineClass *mc = MACHINE_CLASS(uc, oc);
-    QEMUMachine *qm = data;
-
-    mc->family = qm->family;
-    mc->name = qm->name;
-    mc->init = qm->init;
-    mc->reset = qm->reset;
-    mc->max_cpus = qm->max_cpus;
-    mc->is_default = qm->is_default;
-    mc->arch = qm->arch;
-}
-
-void pc_machine_init(struct uc_struct *uc);
-void pc_machine_init(struct uc_struct *uc)
-{
-    qemu_register_machine(uc, &pc_i440fx_machine_v2_2,
-            TYPE_PC_MACHINE, pc_generic_machine_class_init);
-}
+DEFINE_PC_MACHINE(v2_2, "pc-i440fx-2.2", pc_init_pci_2_2);
