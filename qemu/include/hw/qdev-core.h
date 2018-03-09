@@ -202,7 +202,7 @@ typedef struct BusChild {
 struct BusState {
     Object obj;
     DeviceState *parent;
-    const char *name;
+    char *name;
     int max_index;
     bool realized;
     QTAILQ_HEAD(ChildrenHead, BusChild) children;
