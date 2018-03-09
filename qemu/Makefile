@@ -47,8 +47,10 @@ endif
 include $(SRC_PATH)/rules.mak
 
 GENERATED_FILES = config-host.h
-GENERATED_FILES += qapi-types.h qapi-visit.h
-GENERATED_FILES += qapi-types.c qapi-visit.c
+GENERATED_FILES += qapi-builtin-types.h qapi-builtin-types.c
+GENERATED_FILES += qapi-types.h qapi-types.c
+GENERATED_FILES += qapi-builtin-visit.h qapi-builtin-visit.c
+GENERATED_FILES += qapi-visit.h qapi-visit.c
 
 # Don't try to regenerate Makefile or configure
 # We don't generate any of them
@@ -151,7 +153,9 @@ $(SRC_PATH)/scripts/qapi-gen.py
 
 qapi-modules = $(SRC_PATH)/qapi-schema.json $(SRC_PATH)/qapi/common.json
 
+qapi-builtin-types.c qapi-builtin-types.h \
 qapi-types.c qapi-types.h \
+qapi-builtin-visit.c qapi-builtin-visit.h \
 qapi-visit.c qapi-visit.h \
 qapi-doc.texi: \
 qapi-gen-timestamp ;

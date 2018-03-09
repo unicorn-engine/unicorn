@@ -64,6 +64,8 @@
     <ClCompile Include="..\..\..\qemu\util\range.c" />
     <ClCompile Include="..\..\..\qemu\vl.c" />
     <ClCompile Include="..\..\..\uc.c" />
+    <ClCompile Include="..\qapi-builtin-types.c" />
+    <ClCompile Include="..\qapi-builtin-visit.c" />
     <ClCompile Include="..\qapi-types.c" />
     <ClCompile Include="..\qapi-visit.c" />
   </ItemGroup>
@@ -177,6 +179,8 @@
     <ClInclude Include="..\..\..\qemu\include\sysemu\sysemu.h" />
     <ClInclude Include="..\..\..\qemu\vl.h" />
     <ClInclude Include="..\config-host.h" />
+    <ClCompile Include="..\qapi-builtin-types.h" />
+    <ClCompile Include="..\qapi-builtin-visit.h" />
     <ClInclude Include="..\qapi-types.h" />
     <ClInclude Include="..\qapi-visit.h" />
   </ItemGroup>
