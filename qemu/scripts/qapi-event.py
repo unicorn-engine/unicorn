@@ -170,14 +170,15 @@ class QAPISchemaGenEventVisitor(QAPISchemaVisitor):
         self.defn += gen_event_send(name, arg_type, boxed, self._enum_name)
         self._event_names.append(name)
 
-(input_file, output_dir, do_c, do_h, prefix, dummy) = parse_command_line()
+def main(argv):
+    (input_file, output_dir, do_c, do_h, prefix, dummy) = parse_command_line()
 
-blurb = ' * Schema-defined QAPI/QMP events'
+    blurb = ' * Schema-defined QAPI/QMP events'
 
-genc = QAPIGenC(blurb, __doc__)
-genh = QAPIGenH(blurb, __doc__)
+    genc = QAPIGenC(blurb, __doc__)
+    genh = QAPIGenH(blurb, __doc__)
 
-genc.add(mcgen('''
+    genc.add(mcgen('''
 #include "qemu-common.h"
 #include "%(prefix)sqapi-event.h"
 #include "%(prefix)sqapi-visit.h"
@@ -187,21 +188,25 @@ genc.add(mcgen('''
 #include "qapi/qmp-event.h"
 
 ''',
-               prefix=prefix))
+                   prefix=prefix))
 
-genh.add(mcgen('''
+    genh.add(mcgen('''
 #include "%(prefix)sqapi-types.h"
 
 ''',
-               prefix=prefix))
+                   prefix=prefix))
 
-schema = QAPISchema(input_file)
-vis = QAPISchemaGenEventVisitor(prefix)
-schema.visit(vis)
-genc.add(vis.defn)
-genh.add(vis.decl)
+    schema = QAPISchema(input_file)
+    vis = QAPISchemaGenEventVisitor(prefix)
+    schema.visit(vis)
+    genc.add(vis.defn)
+    genh.add(vis.decl)
 
-if do_c:
-    genc.write(output_dir, prefix + 'qapi-event.c')
-if do_h:
-    genh.write(output_dir, prefix + 'qapi-event.h')
+    if do_c:
+        genc.write(output_dir, prefix + 'qapi-event.c')
+    if do_h:
+        genh.write(output_dir, prefix + 'qapi-event.h')
+
+
+if __name__ == '__main__':
+    main(sys.argv)
