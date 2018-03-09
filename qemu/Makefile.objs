@@ -1,9 +1,11 @@
 #######################################################################
 # Common libraries for tools and emulators
-util-obj-y = util/ qobject/ qapi/ qapi-types.o qapi-visit.o
-util-obj-y += qapi-builtin-types.o
-util-obj-y += qapi-builtin-visit.o
+util-obj-y = util/ qobject/ qapi/
+util-obj-y += qapi/qapi-types.o
+util-obj-y += qapi/qapi-builtin-types.o
+util-obj-y += qapi/qapi-builtin-visit.o
 util-obj-y += qapi/qapi-types-misc.o
+util-obj-y += qapi/qapi-visit.o
 util-obj-y += qapi/qapi-visit-misc.o
 
 #######################################################################

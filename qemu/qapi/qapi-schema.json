@@ -73,5 +73,5 @@
     ] } }
 
 # QAPI common definitions
-{ 'include': 'qapi/common.json' }
-{ 'include': 'qapi/misc.json' }
+{ 'include': 'common.json' }
+{ 'include': 'misc.json' }

@@ -236,14 +236,14 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClCompile Include="..\..\..\qemu\util\range.c" />
     <ClCompile Include="..\..\..\qemu\vl.c" />
     <ClCompile Include="..\..\..\uc.c" />
-    <ClCompile Include="..\qapi-builtin-types.c" />
-    <ClCompile Include="..\qapi-builtin-visit.c" />
+    <ClCompile Include="..\qapi\qapi-builtin-types.c" />
+    <ClCompile Include="..\qapi\qapi-builtin-visit.c" />
     <ClCompile Include="..\qapi\qapi-types-misc.c" />
     <ClCompile Include="..\qapi\qapi-visit-misc.c" />
     <ClCompile Include="..\qapi\qapi-types-common.c" />
     <ClCompile Include="..\qapi\qapi-visit-common.c" />
-    <ClCompile Include="..\qapi-types.c" />
-    <ClCompile Include="..\qapi-visit.c" />
+    <ClCompile Include="..\qapi\qapi-types.c" />
+    <ClCompile Include="..\qapi\qapi-visit.c" />
     <ClCompile Include="dllmain.cpp">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</CompileAsManaged>
@@ -368,14 +368,14 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClInclude Include="..\..\..\qemu\include\sysemu\sysemu.h" />
     <ClInclude Include="..\..\..\qemu\vl.h" />
     <ClInclude Include="..\config-host.h" />
-    <ClInclude Include="..\qapi-builtin-types.h" />
-    <ClInclude Include="..\qapi-builtin-visit.h" />
+    <ClInclude Include="..\qapi\qapi-builtin-types.h" />
+    <ClInclude Include="..\qapi\qapi-builtin-visit.h" />
     <ClInclude Include="..\qapi\qapi-types-common.h" />
     <ClInclude Include="..\qapi\qapi-visit-common.h" />
     <ClInclude Include="..\qapi\qapi-types-misc.h" />
     <ClInclude Include="..\qapi\qapi-visit-misc.h" />
-    <ClInclude Include="..\qapi-types.h" />
-    <ClInclude Include="..\qapi-visit.h" />
+    <ClInclude Include="..\qapi\qapi-types.h" />
+    <ClInclude Include="..\qapi\qapi-visit.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

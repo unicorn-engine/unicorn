@@ -109,7 +109,7 @@
 #define ERROR_H
 
 #include "qemu/compiler.h"
-#include "qapi-types.h"
+#include "qapi/qapi-types.h"
 #include "unicorn/platform.h"
 
 /*

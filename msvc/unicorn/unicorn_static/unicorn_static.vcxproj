@@ -64,12 +64,12 @@
     <ClCompile Include="..\..\..\qemu\util\range.c" />
     <ClCompile Include="..\..\..\qemu\vl.c" />
     <ClCompile Include="..\..\..\uc.c" />
-    <ClCompile Include="..\qapi-builtin-types.c" />
-    <ClCompile Include="..\qapi-builtin-visit.c" />
+    <ClCompile Include="..\qapi\qapi-builtin-types.c" />
+    <ClCompile Include="..\qapi\qapi-builtin-visit.c" />
     <ClCompile Include="..\qapi\qapi-types-misc.c" />
     <ClCompile Include="..\qapi\qapi-visit-misc.c" />
-    <ClCompile Include="..\qapi-types.c" />
-    <ClCompile Include="..\qapi-visit.c" />
+    <ClCompile Include="..\qapi\qapi-types.c" />
+    <ClCompile Include="..\qapi\qapi-visit.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\list.h" />
@@ -181,14 +181,14 @@
     <ClInclude Include="..\..\..\qemu\include\sysemu\sysemu.h" />
     <ClInclude Include="..\..\..\qemu\vl.h" />
     <ClInclude Include="..\config-host.h" />
-    <ClInclude Include="..\qapi-builtin-types.h" />
-    <ClInclude Include="..\qapi-builtin-visit.h" />
+    <ClInclude Include="..\qapi\qapi-builtin-types.h" />
+    <ClInclude Include="..\qapi\qapi-builtin-visit.h" />
     <ClInclude Include="..\qapi\qapi-types-common.h" />
     <ClInclude Include="..\qapi\qapi-visit-common.h" />
     <ClInclude Include="..\qapi\qapi-types-misc.h" />
     <ClInclude Include="..\qapi\qapi-visit-misc.h" />
-    <ClInclude Include="..\qapi-types.h" />
-    <ClInclude Include="..\qapi-visit.h" />
+    <ClInclude Include="..\qapi\qapi-types.h" />
+    <ClInclude Include="..\qapi\qapi-visit.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B6EFD6D7-C2D4-4FBB-B363-2E08CE09CC96}</ProjectGuid>

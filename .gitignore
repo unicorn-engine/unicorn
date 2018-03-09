@@ -28,13 +28,13 @@ qemu/sparc-softmmu/
 qemu/i386-softmmu/
 qemu/x86_64-softmmu/
 
-qemu/qapi-builtin-types.[ch]
-qemu/qapi-builtin-visit.[ch]
+qemu/qapi/qapi-builtin-types.[ch]
+qemu/qapi/qapi-builtin-visit.[ch]
 qemu/qapi/qapi-types-common.[ch]
 qemu/qapi/qapi-types-misc.[ch]
 qemu/qapi/qapi-visit-common.[ch]
-qemu/qapi-types.[ch]
-qemu/qapi-visit.[ch]
+qemu/qapi/qapi-types.[ch]
+qemu/qapi/qapi-visit.[ch]
 qemu/qapi/qapi-visit-misc.[ch]
 qemu/qapi-gen-timestamp
 tags

@@ -47,12 +47,12 @@ endif
 include $(SRC_PATH)/rules.mak
 
 GENERATED_FILES = config-host.h
-GENERATED_FILES += qapi-builtin-types.h qapi-builtin-types.c
-GENERATED_FILES += qapi-types.h qapi-types.c
+GENERATED_FILES += qapi/qapi-builtin-types.h qapi/qapi-builtin-types.c
+GENERATED_FILES += qapi/qapi-types.h qapi/qapi-types.c
 GENERATED_FILES += qapi/qapi-types-common.h qapi/qapi-types-common.c
 GENERATED_FILES += qapi/qapi-types-misc.h qapi/qapi-types-misc.c
-GENERATED_FILES += qapi-builtin-visit.h qapi-builtin-visit.c
-GENERATED_FILES += qapi-visit.h qapi-visit.c
+GENERATED_FILES += qapi/qapi-builtin-visit.h qapi/qapi-builtin-visit.c
+GENERATED_FILES += qapi/qapi-visit.h qapi/qapi-visit.c
 GENERATED_FILES += qapi/qapi-visit-misc.h qapi/qapi-visit-misc.c
 GENERATED_FILES += qapi/qapi-visit-common.h qapi/qapi-visit-common.c
 
@@ -135,7 +135,7 @@ $(SOFTMMU_SUBDIR_RULES): config-all-devices.mak
 subdir-%:
 	$(call quiet-command,$(MAKE) $(SUBDIR_MAKEFLAGS) -C $* V="$(V)" TARGET_DIR="$*/" all,)
 
-$(SUBDIR_RULES): qapi-types.c qapi-types.h qapi-visit.c qapi-visit.h $(common-obj-y) $(util-obj-y)
+$(SUBDIR_RULES): qapi/qapi-types.c qapi/qapi-types.h qapi/qapi-visit.c qapi/qapi-visit.h $(common-obj-y) $(util-obj-y)
 
 ALL_SUBDIRS=$(TARGET_DIRS)
 
@@ -156,24 +156,24 @@ $(SRC_PATH)/scripts/ordereddict.py \
 $(SRC_PATH)/scripts/qapi-gen.py
 
 qapi-modules = \
-$(SRC_PATH)/qapi-schema.json \
+$(SRC_PATH)/qapi/qapi-schema.json \
 $(SRC_PATH)/qapi/common.json \
 $(SRC_PATH)/qapi/misc.json
 
 
-qapi-builtin-types.c qapi-builtin-types.h \
-qapi-types.c qapi-types.h \
+qapi/qapi-builtin-types.c qapi/qapi-builtin-types.h \
+qapi/qapi-types.c qapi/qapi-types.h \
 qapi/qapi-types-common.c qapi/qapi-types-common.h \
 qapi/qapi-types-misc.c qapi/qapi-types-misc.h \
-qapi-builtin-visit.c qapi-builtin-visit.h \
-qapi-visit.c qapi-visit.h \
+qapi/qapi-builtin-visit.c qapi/qapi-builtin-visit.h \
+qapi/qapi-visit.c qapi/qapi-visit.h \
 qapi/qapi-visit-common.c qapi/qapi-visit-common.h \
 qapi/qapi-visit-misc.c qapi/qapi-visit-misc.h \
 qapi-doc.texi: \
 qapi-gen-timestamp ;
 qapi-gen-timestamp: $(qapi-modules) $(qapi-py)
 	$(call quiet-command,$(PYTHON_UTF8) $(SRC_PATH)/scripts/qapi-gen.py \
-		-o "." -b $<, \
+		-o "qapi" -b $<, \
 		"GEN","$(@:%-timestamp=%)")
 	@>$@
 
