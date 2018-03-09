@@ -211,6 +211,12 @@
     <ClCompile Include="..\qapi-builtin-visit.c">
       <Filter>qemu</Filter>
     </ClCompile>
+    <ClCompile Include="..\qapi-types-common.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\qapi-visit-common.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\list.h">
@@ -528,6 +534,12 @@
       <Filter>qemu</Filter>
     </ClInclude>
     <ClInclude Include="..\qapi-builtin-visit.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi-types-common.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi-visit-common.h">
       <Filter>qemu</Filter>
     </ClInclude>
   </ItemGroup>

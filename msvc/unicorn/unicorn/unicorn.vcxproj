@@ -238,6 +238,8 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClCompile Include="..\..\..\uc.c" />
     <ClCompile Include="..\qapi-builtin-types.c" />
     <ClCompile Include="..\qapi-builtin-visit.c" />
+    <ClCompile Include="..\qapi-types-common.c" />
+    <ClCompile Include="..\qapi-visit-common.c" />
     <ClCompile Include="..\qapi-types.c" />
     <ClCompile Include="..\qapi-visit.c" />
     <ClCompile Include="dllmain.cpp">
@@ -366,6 +368,8 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
     <ClInclude Include="..\config-host.h" />
     <ClInclude Include="..\qapi-builtin-types.h" />
     <ClInclude Include="..\qapi-builtin-visit.h" />
+    <ClInclude Include="..\qapi-types-common.h" />
+    <ClInclude Include="..\qapi-visit-common.h" />
     <ClInclude Include="..\qapi-types.h" />
     <ClInclude Include="..\qapi-visit.h" />
   </ItemGroup>
