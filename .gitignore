@@ -30,6 +30,8 @@ qemu/x86_64-softmmu/
 
 qemu/qapi-builtin-types.[ch]
 qemu/qapi-builtin-visit.[ch]
+qemu/qapi/qapi-types-common.[ch]
+qemu/qapi/qapi-visit-common.[ch]
 qemu/qapi-types.[ch]
 qemu/qapi-visit.[ch]
 qemu/qapi-gen-timestamp

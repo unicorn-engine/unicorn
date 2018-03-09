@@ -16,7 +16,7 @@
 
 #include "glib_compat.h"
 #include "unicorn/platform.h"
-#include "qapi-types.h"
+#include "qapi-builtin-types.h"
 #include "qemu/queue.h"
 #include "qemu/typedefs.h"
 #include "qapi/error.h"
