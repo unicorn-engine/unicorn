@@ -990,6 +990,35 @@ static void cortex_m4_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->id_isar5 = 0x00000000;
 }
 
+static void cortex_m33_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    ARMCPU *cpu = ARM_CPU(uc, obj);
+
+    set_feature(&cpu->env, ARM_FEATURE_V8);
+    set_feature(&cpu->env, ARM_FEATURE_M);
+    set_feature(&cpu->env, ARM_FEATURE_M_SECURITY);
+    set_feature(&cpu->env, ARM_FEATURE_THUMB_DSP);
+    cpu->midr = 0x410fd213; /* r0p3 */
+    cpu->pmsav7_dregion = 16;
+    cpu->sau_sregion = 8;
+    cpu->id_pfr0 = 0x00000030;
+    cpu->id_pfr1 = 0x00000210;
+    cpu->id_dfr0 = 0x00200000;
+    cpu->id_afr0 = 0x00000000;
+    cpu->id_mmfr0 = 0x00101F40;
+    cpu->id_mmfr1 = 0x00000000;
+    cpu->id_mmfr2 = 0x01000000;
+    cpu->id_mmfr3 = 0x00000000;
+    cpu->id_isar0 = 0x01101110;
+    cpu->id_isar1 = 0x02212000;
+    cpu->id_isar2 = 0x20232232;
+    cpu->id_isar3 = 0x01111131;
+    cpu->id_isar4 = 0x01310132;
+    cpu->id_isar5 = 0x00000000;
+    cpu->clidr = 0x00000000;
+    cpu->ctr = 0x8000c000;
+}
+
 static void arm_v7m_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
     CPUClass *cc = CPU_CLASS(uc, oc);
@@ -1472,6 +1501,7 @@ static const ARMCPUInfo arm_cpus[] = {
     { "arm11mpcore", arm11mpcore_initfn },
     { "cortex-m3",   cortex_m3_initfn, arm_v7m_class_init },
     { "cortex-m4",   cortex_m4_initfn, arm_v7m_class_init },
+    { "cortex-m33",  cortex_m33_initfn, arm_v7m_class_init },
     { "cortex-r5",   cortex_r5_initfn },
     { "cortex-a7",   cortex_a7_initfn },
     { "cortex-a8",   cortex_a8_initfn },
