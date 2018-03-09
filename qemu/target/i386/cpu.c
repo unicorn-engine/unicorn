@@ -29,7 +29,7 @@
 #include "qapi/qmp/qdict.h"
 #include "qapi/qmp/qerror.h"
 
-#include "qapi-visit.h"
+#include "qapi/qapi-visit.h"
 #include "qapi/visitor.h"
 
 #include "hw/hw.h"

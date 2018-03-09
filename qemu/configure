@@ -175,6 +175,8 @@ solaris="no"
 softmmu="yes"
 pie=""
 tcg="yes"
+cpuid_h="no"
+avx2_opt="no"
 
 # parse CC options first
 for opt do
@@ -1043,7 +1045,6 @@ fi
 ########################################
 # check if cpuid.h is usable.
 
-cpuid_h=no
 cat > $TMPC << EOF
 #include <cpuid.h>
 int main(void) {
@@ -1063,6 +1064,29 @@ int main(void) {
 EOF
 if compile_prog "" "" ; then
     cpuid_h=yes
+fi
+
+##########################################
+# avx2 optimization requirement check
+#
+# There is no point enabling this if cpuid.h is not usable,
+# since we won't be able to select the new routines.
+
+if test $cpuid_h = yes; then
+  cat > $TMPC << EOF
+#pragma GCC push_options
+#pragma GCC target("avx2")
+#include <cpuid.h>
+#include <immintrin.h>
+static int bar(void *a) {
+    __m256i x = *(__m256i *)a;
+    return _mm256_testz_si256(x, x);
+}
+int main(int argc, char *argv[]) { return bar(argv[0]); }
+EOF
+  if compile_object "" ; then
+    avx2_opt="yes"
+  fi
 fi
 
 ########################################
@@ -1279,6 +1303,7 @@ if test "$tcg" = "yes" ; then
     echo "TCG debug enabled $debug_tcg"
     echo "TCG interpreter   $tcg_interpreter"
 fi
+echo "avx2 optimization $avx2_opt"
 
 config_host_mak="config-host.mak"
 
@@ -1341,6 +1366,10 @@ if test "$tcg" = "yes"; then
   if test "$tcg_interpreter" = "yes" ; then
     echo "CONFIG_TCG_INTERPRETER=y" >> $config_host_mak
   fi
+fi
+
+if test "$avx2_opt" = "yes" ; then
+  echo "CONFIG_AVX2_OPT=y" >> $config_host_mak
 fi
 
 # XXX: suppress that

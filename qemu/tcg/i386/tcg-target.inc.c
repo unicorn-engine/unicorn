@@ -144,23 +144,14 @@ static const int tcg_target_call_oarg_regs[] = {
 #if defined(CONFIG_CPUID_H)
 #ifdef _MSC_VER
 #include <intrin.h>
-/* %ecx */
-#define bit_MOVBE  (1 << 22)
-/* %edx */
-#define bit_CMOV   (1 << 15)
-/* Extended Features (%eax == 7) */
-#define bit_BMI    (1 <<  3)
-#define bit_BMI2   (1 <<  8)
-#else
-#include <cpuid.h>
 #endif
+#include "qemu/cpuid.h"
 #endif
 
-/* For 32-bit, we are going to attempt to determine at runtime whether cmov
-   is available.  */
+/* For 64-bit, we always know that CMOV is available.  */
 #if TCG_TARGET_REG_BITS == 64
 # define have_cmov 1
-#elif defined(CONFIG_CPUID_H) && defined(bit_CMOV)
+#elif defined(CONFIG_CPUID_H)
 static bool have_cmov;
 #else
 # define have_cmov 0
@@ -173,14 +164,13 @@ bool have_popcnt;
 bool have_avx1;
 bool have_avx2;
 
-#if defined(CONFIG_CPUID_H) && defined(bit_BMI2)
+#ifdef CONFIG_CPUID_H
+static bool have_movbe;
 static bool have_bmi2;
-#else
-static bool have_bmi2 = 0;
-#endif
-#if defined(CONFIG_CPUID_H) && defined(bit_LZCNT)
 static bool have_lzcnt;
 #else
+# define have_movbe 0
+# define have_bmi2 0
 # define have_lzcnt 0
 #endif
 
@@ -3598,14 +3588,10 @@ static void tcg_target_init(TCGContext *s)
            available, we'll use a small forward branch.  */
         have_cmov = (d & bit_CMOV) != 0;
 #endif
-#ifndef have_movbe
         /* MOVBE is only available on Intel Atom and Haswell CPUs, so we
            need to probe for it.  */
         s->have_movbe = (c & bit_MOVBE) != 0;
-#endif
-#ifdef bit_POPCNT
         have_popcnt = (c & bit_POPCNT) != 0;
-#endif
 
         /* There are a number of things we must check before we can be
            sure of not hitting invalid opcode.  */
@@ -3620,15 +3606,13 @@ static void tcg_target_init(TCGContext *s)
     }
 
 // TODO: MSVC-compatible equivalent
-#ifndef have_lzcnt
     max = __get_cpuid_max(0x8000000, 0);
     if (max >= 1) {
         __cpuid(0x80000001, a, b, c, d);
         /* LZCNT was introduced with AMD Barcelona and Intel Haswell CPUs.  */
         have_lzcnt = (c & bit_LZCNT) != 0;
     }
-#endif
-#endif
+#endif /* CONFIG_CPUID_H */
 
     s->tcg_target_available_regs[TCG_TYPE_I32] = ALL_GENERAL_REGS;
 
