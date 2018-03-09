@@ -267,10 +267,9 @@ class QAPIDoc(object):
 class QAPISchemaParser(object):
 
     def __init__(self, fp, previously_included=[], incl_info=None):
-        abs_fname = os.path.abspath(fp.name)
         fname = fp.name
         self.fname = fname
-        previously_included.append(abs_fname)
+        previously_included.append(os.path.abspath(fp.name))
         self.incl_info = incl_info
         self.src = fp.read()
         if self.src == '' or self.src[-1] != '\n':
@@ -301,7 +300,7 @@ class QAPISchemaParser(object):
                 if not isinstance(include, str):
                     raise QAPISemError(info,
                                        "Value of 'include' must be a string")
-                self._include(include, info, os.path.dirname(abs_fname),
+                self._include(include, info, os.path.dirname(self.fname),
                               previously_included)
             elif "pragma" in expr:
                 self.reject_expr_doc()
@@ -334,7 +333,8 @@ class QAPISchemaParser(object):
                 % self.cur_doc.symbol)
 
     def _include(self, include, info, base_dir, previously_included):
-        incl_abs_fname = os.path.join(base_dir, include)
+        incl_fname = os.path.join(base_dir, include)
+        incl_abs_fname = os.path.abspath(incl_fname)
         # catch inclusion cycle
         inf = info
         while inf:
@@ -346,9 +346,9 @@ class QAPISchemaParser(object):
         if incl_abs_fname in previously_included:
             return
         try:
-            fobj = open(incl_abs_fname, 'r')
+            fobj = open(incl_fname, 'r')
         except IOError as e:
-            raise QAPISemError(info, '%s: %s' % (e.strerror, include))
+            raise QAPISemError(info, '%s: %s' % (e.strerror, incl_fname))
         exprs_include = QAPISchemaParser(fobj, previously_included, info)
         self.exprs.extend(exprs_include.exprs)
         self.docs.extend(exprs_include.docs)
