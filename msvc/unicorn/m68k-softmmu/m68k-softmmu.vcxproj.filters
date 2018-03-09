@@ -63,6 +63,9 @@
     <ClInclude Include="..\..\..\qemu\target\m68k\m68k-qreg.h">
       <Filter>target\m68k</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target\m68k\softfloat.h">
+      <Filter>target\m68k</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\qemu\target\m68k\unicorn.h">
       <Filter>target\m68k</Filter>
     </ClInclude>
@@ -117,6 +120,9 @@
       <Filter>target\m68k</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\target\m68k\op_helper.c">
+      <Filter>target\m68k</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target\m68k\softfloat.c">
       <Filter>target\m68k</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\target\m68k\translate.c">

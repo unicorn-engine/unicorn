@@ -33,6 +33,7 @@
     <ClInclude Include="..\..\..\qemu\target\m68k\cpu.h" />
     <ClInclude Include="..\..\..\qemu\target\m68k\helper.h" />
     <ClInclude Include="..\..\..\qemu\target\m68k\m68k-qreg.h" />
+    <ClInclude Include="..\..\..\qemu\target\m68k\softfloat.h" />
     <ClInclude Include="..\..\..\qemu\target\m68k\unicorn.h" />
     <ClInclude Include="..\..\..\qemu\m68k.h" />
     <ClInclude Include="..\config-host.h" />
@@ -69,6 +70,7 @@
     <ClCompile Include="..\..\..\qemu\target\m68k\fpu_helper.c" />
     <ClCompile Include="..\..\..\qemu\target\m68k\helper.c" />
     <ClCompile Include="..\..\..\qemu\target\m68k\op_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target\m68k\softfloat.c" />
     <ClCompile Include="..\..\..\qemu\target\m68k\translate.c" />
     <ClCompile Include="..\..\..\qemu\target\m68k\unicorn.c" />
   </ItemGroup>
