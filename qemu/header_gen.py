@@ -3790,6 +3790,7 @@ aarch64_symbols = (
     'helper_crc32_64',
     'helper_crc32c_64',
     'helper_fcvtx_f64_to_f32',
+    'helper_frecpx_f16',
     'helper_frecpx_f32',
     'helper_frecpx_f64',
     'helper_neon_addlp_s16',
