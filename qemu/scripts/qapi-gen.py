@@ -4,8 +4,11 @@
 # This work is licensed under the terms of the GNU GPL, version 2 or later.
 # See the COPYING file in the top-level directory.
 
+from __future__ import print_function
+import argparse
+import re
 import sys
-from qapi.common import parse_command_line, QAPISchema
+from qapi.common import QAPISchema
 from qapi.types import gen_types
 from qapi.visit import gen_visit
 # Unicorn: commented out
@@ -16,27 +19,36 @@ from qapi.visit import gen_visit
 
 
 def main(argv):
-    (input_file, output_dir, prefix, opts) = \
-        parse_command_line('bu', ['builtins', 'unmask-non-abi-names'])
+    parser = argparse.ArgumentParser(
+        description='Generate code from a QAPI schema')
+    parser.add_argument('-b', '--builtins', action='store_true',
+                        help="generate code for built-in types")
+    parser.add_argument('-o', '--output-dir', action='store', default='',
+                        help="write output to directory OUTPUT_DIR")
+    parser.add_argument('-p', '--prefix', action='store', default='',
+                        help="prefix for symbols")
+    parser.add_argument('-u', '--unmask-non-abi-names', action='store_true',
+                        dest='unmask',
+                        help="expose non-ABI names in introspection")
+    parser.add_argument('schema', action='store')
+    args = parser.parse_args()
 
-    opt_builtins = False
-    opt_unmask = False
+    match = re.match(r'([A-Za-z_.-][A-Za-z0-9_.-]*)?', args.prefix)
+    if match.end() != len(args.prefix):
+        print("%s: 'funny character '%s' in argument of --prefix"
+              % (sys.argv[0], args.prefix[match.end()]),
+              file=sys.stderr)
+        sys.exit(1)
 
-    for o, a in opts:
-        if o in ('-b', '--builtins'):
-            opt_builtins = True
-        if o in ('-u', '--unmask-non-abi-names'):
-            opt_unmask = True
+    schema = QAPISchema(args.schema)
 
-    schema = QAPISchema(input_file)
-
-    gen_types(schema, output_dir, prefix, opt_builtins)
-    gen_visit(schema, output_dir, prefix, opt_builtins)
+    gen_types(schema, args.output_dir, args.prefix, args.builtins)
+    gen_visit(schema, args.output_dir, args.prefix, args.builtins)
     # Unicorn: commented out
-    #gen_commands(schema, output_dir, prefix)
-    #gen_events(schema, output_dir, prefix)
-    #gen_introspect(schema, output_dir, prefix, opt_unmask)
-    #gen_doc(schema, output_dir, prefix)
+    #gen_commands(schema, args.output_dir, args.prefix)
+    #gen_events(schema, args.output_dir, args.prefix)
+    #gen_introspect(schema, args.output_dir, args.prefix, args.unmask)
+    #gen_doc(schema, args.output_dir, args.prefix)
 
 
 if __name__ == '__main__':
