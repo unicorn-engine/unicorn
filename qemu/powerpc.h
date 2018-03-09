@@ -996,6 +996,11 @@
 #define helper_gvec_fcaddh helper_gvec_fcaddh_powerpc
 #define helper_gvec_fcadds helper_gvec_fcadds_powerpc
 #define helper_gvec_fcaddd helper_gvec_fcaddd_powerpc
+#define helper_gvec_fcmlad helper_gvec_fcmlad_powerpc
+#define helper_gvec_fcmlah helper_gvec_fcmlah_powerpc
+#define helper_gvec_fcmlah_idx helper_gvec_fcmlah_idx_powerpc
+#define helper_gvec_fcmlas helper_gvec_fcmlas_powerpc
+#define helper_gvec_fcmlas_idx helper_gvec_fcmlas_idx_powerpc
 #define helper_gvec_le8 helper_gvec_le8_powerpc
 #define helper_gvec_le16 helper_gvec_le16_powerpc
 #define helper_gvec_le32 helper_gvec_le32_powerpc

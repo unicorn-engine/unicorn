@@ -996,6 +996,11 @@
 #define helper_gvec_fcaddh helper_gvec_fcaddh_sparc
 #define helper_gvec_fcadds helper_gvec_fcadds_sparc
 #define helper_gvec_fcaddd helper_gvec_fcaddd_sparc
+#define helper_gvec_fcmlad helper_gvec_fcmlad_sparc
+#define helper_gvec_fcmlah helper_gvec_fcmlah_sparc
+#define helper_gvec_fcmlah_idx helper_gvec_fcmlah_idx_sparc
+#define helper_gvec_fcmlas helper_gvec_fcmlas_sparc
+#define helper_gvec_fcmlas_idx helper_gvec_fcmlas_idx_sparc
 #define helper_gvec_le8 helper_gvec_le8_sparc
 #define helper_gvec_le16 helper_gvec_le16_sparc
 #define helper_gvec_le32 helper_gvec_le32_sparc
