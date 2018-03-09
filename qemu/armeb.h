@@ -993,6 +993,9 @@
 #define helper_gvec_eq16 helper_gvec_eq16_armeb
 #define helper_gvec_eq32 helper_gvec_eq32_armeb
 #define helper_gvec_eq64 helper_gvec_eq64_armeb
+#define helper_gvec_fcaddh helper_gvec_fcaddh_armeb
+#define helper_gvec_fcadds helper_gvec_fcadds_armeb
+#define helper_gvec_fcaddd helper_gvec_fcaddd_armeb
 #define helper_gvec_le8 helper_gvec_le8_armeb
 #define helper_gvec_le16 helper_gvec_le16_armeb
 #define helper_gvec_le32 helper_gvec_le32_armeb

@@ -993,6 +993,9 @@
 #define helper_gvec_eq16 helper_gvec_eq16_mipsel
 #define helper_gvec_eq32 helper_gvec_eq32_mipsel
 #define helper_gvec_eq64 helper_gvec_eq64_mipsel
+#define helper_gvec_fcaddh helper_gvec_fcaddh_mipsel
+#define helper_gvec_fcadds helper_gvec_fcadds_mipsel
+#define helper_gvec_fcaddd helper_gvec_fcaddd_mipsel
 #define helper_gvec_le8 helper_gvec_le8_mipsel
 #define helper_gvec_le16 helper_gvec_le16_mipsel
 #define helper_gvec_le32 helper_gvec_le32_mipsel

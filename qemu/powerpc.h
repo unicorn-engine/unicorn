@@ -993,6 +993,9 @@
 #define helper_gvec_eq16 helper_gvec_eq16_powerpc
 #define helper_gvec_eq32 helper_gvec_eq32_powerpc
 #define helper_gvec_eq64 helper_gvec_eq64_powerpc
+#define helper_gvec_fcaddh helper_gvec_fcaddh_powerpc
+#define helper_gvec_fcadds helper_gvec_fcadds_powerpc
+#define helper_gvec_fcaddd helper_gvec_fcaddd_powerpc
 #define helper_gvec_le8 helper_gvec_le8_powerpc
 #define helper_gvec_le16 helper_gvec_le16_powerpc
 #define helper_gvec_le32 helper_gvec_le32_powerpc
