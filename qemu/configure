@@ -180,6 +180,7 @@ avx2_opt="no"
 
 supported_cpu="no"
 supported_os="no"
+bogus_os="no"
 
 # parse CC options first
 for opt do
@@ -462,7 +463,10 @@ Linux)
   supported_os="yes"
 ;;
 *)
-  error_exit "Unsupported host OS $targetos"
+  # This is a fatal error, but don't report it yet, because we
+  # might be going to just print the --help text, or it might
+  # be the result of a missing compiler.
+  bogus_os="yes"
 ;;
 esac
 
@@ -699,6 +703,14 @@ if compile_object ; then
   : C compiler works ok
 else
     error_exit "\"$cc\" either does not exist or does not work"
+fi
+
+if test "$bogus_os" = "yes"; then
+    # Now that we know that we're not printing the help and that
+    # the compiler works (so the results of the check_defines we used
+    # to identify the OS are reliable), if we didn't recognize the
+    # host OS we should stop now.
+    error_exit "Unrecognized host OS $targetos"
 fi
 
 gcc_flags="-Wold-style-declaration -Wold-style-definition -Wtype-limits"
