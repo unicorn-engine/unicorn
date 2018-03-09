@@ -67,6 +67,7 @@
     <ClCompile Include="..\..\..\qemu\target\arm\op_helper.c" />
     <ClCompile Include="..\..\..\qemu\target\arm\psci.c" />
     <ClCompile Include="..\..\..\qemu\target\arm\translate.c" />
+    <ClCompile Include="..\..\..\qemu\target\arm\vec_helper.c" />
     <ClCompile Include="..\..\..\qemu\target\arm\unicorn_arm.c" />
     <ClCompile Include="..\..\..\qemu\tcg\i386\tcg-target.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>

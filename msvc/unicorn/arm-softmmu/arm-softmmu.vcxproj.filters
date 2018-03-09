@@ -128,6 +128,9 @@
     <ClCompile Include="..\..\..\qemu\target\arm\translate.c">
       <Filter>target\arm</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target\arm\vec_helper.c">
+      <Filter>target\arm</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\target\arm\arm-powerctl.c">
       <Filter>target\arm</Filter>
     </ClCompile>
