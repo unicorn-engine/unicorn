@@ -260,15 +260,6 @@ static inline int64_t cpu_get_real_ticks(void)
     return val;
 }
 
-#elif defined(__ia64)
-
-static inline int64_t cpu_get_real_ticks(void)
-{
-    int64_t val;
-    asm volatile ("mov %0 = ar.itc" : "=r"(val) :: "memory");
-    return val;
-}
-
 #elif defined(__s390__)
 
 static inline int64_t cpu_get_real_ticks(void)
