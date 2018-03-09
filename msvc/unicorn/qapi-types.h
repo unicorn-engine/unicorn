@@ -1,21 +1,19 @@
 /* AUTOMATICALLY GENERATED, DO NOT MODIFY */
 
 /*
- * schema-defined QAPI types
+ * Schema-defined QAPI types
  *
  * Copyright IBM, Corp. 2011
- *
- * Authors:
- *  Anthony Liguori   <aliguori@us.ibm.com>
+ * Copyright (c) 2013-2018 Red Hat Inc.
  *
  * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
  * See the COPYING.LIB file in the top-level directory.
- *
  */
 
 #ifndef QAPI_TYPES_H
 #define QAPI_TYPES_H
 
+/* #include "qapi/util.h" */
 
 #ifndef QAPI_TYPES_BUILTIN
 #define QAPI_TYPES_BUILTIN
@@ -97,6 +95,15 @@ struct intList {
 
 void qapi_free_intList(intList *obj);
 
+typedef struct nullList nullList;
+
+struct nullList {
+    nullList *next;
+    QNull *value;
+};
+
+void qapi_free_nullList(nullList *obj);
+
 typedef struct numberList numberList;
 
 struct numberList {
@@ -162,7 +169,6 @@ void qapi_free_uint8List(uint8List *obj);
 
 #endif /* QAPI_TYPES_BUILTIN */
 
-
 typedef struct DummyForceArrays DummyForceArrays;
 
 typedef enum QapiErrorClass {
@@ -218,4 +224,4 @@ struct X86CPUFeatureWordInfoList {
 
 void qapi_free_X86CPUFeatureWordInfoList(X86CPUFeatureWordInfoList *obj);
 
-#endif
+#endif /* QAPI_TYPES_H */

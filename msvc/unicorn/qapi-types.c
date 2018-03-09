@@ -1,17 +1,13 @@
 /* AUTOMATICALLY GENERATED, DO NOT MODIFY */
 
 /*
- * deallocation functions for schema-defined QAPI types
+ * Schema-defined QAPI types
  *
  * Copyright IBM, Corp. 2011
- *
- * Authors:
- *  Anthony Liguori   <aliguori@us.ibm.com>
- *  Michael Roth      <mdroth@linux.vnet.ibm.com>
+ * Copyright (c) 2013-2018 Red Hat Inc.
  *
  * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
  * See the COPYING.LIB file in the top-level directory.
- *
  */
 
 #include "qemu/osdep.h"
@@ -179,6 +175,19 @@ void qapi_free_intList(intList *obj)
 
     v = qapi_dealloc_visitor_new();
     visit_type_intList(v, NULL, &obj, NULL);
+    visit_free(v);
+}
+
+void qapi_free_nullList(nullList *obj)
+{
+    Visitor *v;
+
+    if (!obj) {
+        return;
+    }
+
+    v = qapi_dealloc_visitor_new();
+    visit_type_nullList(v, NULL, &obj, NULL);
     visit_free(v);
 }
 

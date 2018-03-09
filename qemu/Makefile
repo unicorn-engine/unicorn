@@ -26,7 +26,6 @@ CONFIG_USER_ONLY := $(if $(filter %-user,$(TARGET_DIRS)),y)
 CONFIG_ALL=y
 -include config-all-devices.mak
 
-include $(SRC_PATH)/rules.mak
 config-host.mak: $(SRC_PATH)/configure
 	@echo $@ is out-of-date, running configure
 	@# TODO: The next lines include code which supports a smooth
@@ -45,9 +44,11 @@ ifneq ($(filter-out %clean,$(MAKECMDGOALS)),$(if $(MAKECMDGOALS),,fail))
 endif
 endif
 
-GENERATED_HEADERS = config-host.h
-GENERATED_HEADERS += qapi-types.h qapi-visit.h
-GENERATED_SOURCES += qapi-types.c qapi-visit.c
+include $(SRC_PATH)/rules.mak
+
+GENERATED_FILES = config-host.h
+GENERATED_FILES += qapi-types.h qapi-visit.h
+GENERATED_FILES += qapi-types.c qapi-visit.c
 
 # Don't try to regenerate Makefile or configure
 # We don't generate any of them
@@ -141,22 +142,24 @@ util/module.o-cflags = -D'CONFIG_BLOCK_MODULES=$(block-modules)'
 
 ######################################################################
 
-gen-out-type = $(subst .,-,$(suffix $@))
-
-qapi-py = $(SRC_PATH)/scripts/qapi.py $(SRC_PATH)/scripts/ordereddict.py
+qapi-py = \
+$(SRC_PATH)/scripts/qapi/types.py \
+$(SRC_PATH)/scripts/qapi/visit.py \
+$(SRC_PATH)/scripts/qapi/common.py \
+$(SRC_PATH)/scripts/ordereddict.py \
+$(SRC_PATH)/scripts/qapi-gen.py
 
 qapi-modules = $(SRC_PATH)/qapi-schema.json $(SRC_PATH)/qapi/common.json
 
-qapi-types.c qapi-types.h :\
-$(qapi-modules) $(SRC_PATH)/scripts/qapi-types.py $(qapi-py)
-	$(call quiet-command,$(PYTHON_UTF8) $(SRC_PATH)/scripts/qapi-types.py \
-		$(gen-out-type) -o "." -b $<, \
-		"  GEN   $@")
-qapi-visit.c qapi-visit.h :\
-$(qapi-modules) $(SRC_PATH)/scripts/qapi-visit.py $(qapi-py)
-	$(call quiet-command,$(PYTHON_UTF8) $(SRC_PATH)/scripts/qapi-visit.py \
-		$(gen-out-type) -o "." -b $<, \
-		"  GEN   $@")
+qapi-types.c qapi-types.h \
+qapi-visit.c qapi-visit.h \
+qapi-doc.texi: \
+qapi-gen-timestamp ;
+qapi-gen-timestamp: $(qapi-modules) $(qapi-py)
+	$(call quiet-command,$(PYTHON_UTF8) $(SRC_PATH)/scripts/qapi-gen.py \
+		-o "." -b $<, \
+		"GEN","$(@:%-timestamp=%)")
+	@>$@
 
 clean:
 # avoid old build problems by removing potentially incorrect old files
@@ -164,9 +167,9 @@ clean:
 	find . \( -name '*.l[oa]' -o -name '*.so' -o -name '*.dll' -o -name '*.mo' -o -name '*.[oda]' \) -type f -exec rm {} +
 	rm -f $(filter-out %.tlb,$(TOOLS)) $(HELPERS-y) qemu-ga TAGS cscope.* *.pod *~ */*~
 	rm -rf .libs */.libs
-	@# May not be present in GENERATED_HEADERS
-	rm -f $(foreach f,$(GENERATED_HEADERS),$(f) $(f)-timestamp)
-	rm -f $(foreach f,$(GENERATED_SOURCES),$(f) $(f)-timestamp)
+	@# May not be present in GENERATED_FILES
+	rm -f $(foreach f,$(GENERATED_FILES),$(f) $(f)-timestamp)
+	rm -f qapi-gen-timestamp
 	rm -rf qapi-generated
 	for d in $(ALL_SUBDIRS); do \
 	if test -d $$d; then $(MAKE) -C $$d $@ || exit 1; fi; \
@@ -191,6 +194,6 @@ cscope:
 # Add a dependency on the generated files, so that they are always
 # rebuilt before other object files
 ifneq ($(filter-out %clean,$(MAKECMDGOALS)),$(if $(MAKECMDGOALS),,fail))
-Makefile: $(GENERATED_HEADERS)
+Makefile: $(GENERATED_FILES)
 endif
 

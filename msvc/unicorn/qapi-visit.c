@@ -1,16 +1,13 @@
 /* AUTOMATICALLY GENERATED, DO NOT MODIFY */
 
 /*
- * schema-defined QAPI visitor functions
+ * Schema-defined QAPI visitors
  *
  * Copyright IBM, Corp. 2011
- *
- * Authors:
- *  Anthony Liguori   <aliguori@us.ibm.com>
+ * Copyright (C) 2014-2018 Red Hat, Inc.
  *
  * This work is licensed under the terms of the GNU LGPL, version 2.1 or later.
  * See the COPYING.LIB file in the top-level directory.
- *
  */
 
 #include "qemu/osdep.h"
@@ -373,6 +370,37 @@ void visit_type_intList(Visitor *v, const char *name, intList **obj, Error **err
     visit_end_list(v, (void **)obj);
     if (err && visit_is_input(v)) {
         qapi_free_intList(*obj);
+        *obj = NULL;
+    }
+out:
+    error_propagate(errp, err);
+}
+
+void visit_type_nullList(Visitor *v, const char *name, nullList **obj, Error **errp)
+{
+    Error *err = NULL;
+    nullList *tail;
+    size_t size = sizeof(**obj);
+
+    visit_start_list(v, name, (GenericList **)obj, size, &err);
+    if (err) {
+        goto out;
+    }
+
+    for (tail = *obj; tail;
+         tail = (nullList *)visit_next_list(v, (GenericList *)tail, size)) {
+        visit_type_null(v, NULL, &tail->value, &err);
+        if (err) {
+            break;
+        }
+    }
+
+    if (!err) {
+        visit_check_list(v, &err);
+    }
+    visit_end_list(v, (void **)obj);
+    if (err && visit_is_input(v)) {
+        qapi_free_nullList(*obj);
         *obj = NULL;
     }
 out:

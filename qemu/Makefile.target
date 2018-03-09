@@ -123,6 +123,6 @@ ifneq ($(PROGS),)
 	$(call install-prog,$(PROGS),$(DESTDIR)$(bindir))
 endif
 
-GENERATED_HEADERS += config-target.h
-Makefile: $(GENERATED_HEADERS)
+GENERATED_FILES += config-target.h
+Makefile: $(GENERATED_FILES)
 

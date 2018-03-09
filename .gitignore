@@ -32,6 +32,7 @@ qemu/qapi-types.h
 qemu/qapi-visit.h
 qemu/qapi-types.c
 qemu/qapi-visit.c
+qemu/qapi-gen-timestamp
 tags
 qemu/config-host.ld
 qemu/config.log
