@@ -97,7 +97,6 @@ struct MachineClass {
     ObjectClass parent_class;
     /*< public >*/
 
-    const char *family; /* NULL iff @name identifies a standalone machtype */
     const char *name;
 
     int (*init)(struct uc_struct *uc, MachineState *state);

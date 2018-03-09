@@ -182,10 +182,8 @@ static void machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
     MachineClass *mc = MACHINE_CLASS(uc, oc);
     QEMUMachine *qm = data;
 
-    mc->family = qm->family;
     mc->name = qm->name;
     mc->init = qm->init;
-    mc->reset = qm->reset;
     mc->max_cpus = qm->max_cpus;
     mc->is_default = qm->is_default;
     mc->arch = qm->arch;
