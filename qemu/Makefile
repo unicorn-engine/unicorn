@@ -186,7 +186,6 @@ clean:
 	@# May not be present in GENERATED_FILES
 	rm -f $(foreach f,$(GENERATED_FILES),$(f) $(f)-timestamp)
 	rm -f qapi-gen-timestamp
-	rm -rf qapi-generated
 	for d in $(ALL_SUBDIRS); do \
 	if test -d $$d; then $(MAKE) -C $$d $@ || exit 1; fi; \
         done
