@@ -1030,6 +1030,10 @@
 #define helper_gvec_or helper_gvec_or_aarch64
 #define helper_gvec_orc helper_gvec_orc_aarch64
 #define helper_gvec_ors helper_gvec_ors_aarch64
+#define helper_gvec_qrdmlah_s16 helper_gvec_qrdmlah_s16_aarch64
+#define helper_gvec_qrdmlah_s32 helper_gvec_qrdmlah_s32_aarch64
+#define helper_gvec_qrdmlsh_s16 helper_gvec_qrdmlsh_s16_aarch64
+#define helper_gvec_qrdmlsh_s32 helper_gvec_qrdmlsh_s32_aarch64
 #define helper_gvec_sar8i helper_gvec_sar8i_aarch64
 #define helper_gvec_sar16i helper_gvec_sar16i_aarch64
 #define helper_gvec_sar32i helper_gvec_sar32i_aarch64
