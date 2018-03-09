@@ -3770,6 +3770,7 @@
 #define helper_crc32_64 helper_crc32_64_aarch64eb
 #define helper_crc32c_64 helper_crc32c_64_aarch64eb
 #define helper_fcvtx_f64_to_f32 helper_fcvtx_f64_to_f32_aarch64eb
+#define helper_frecpx_f16 helper_frecpx_f16_aarch64eb
 #define helper_frecpx_f32 helper_frecpx_f32_aarch64eb
 #define helper_frecpx_f64 helper_frecpx_f64_aarch64eb
 #define helper_neon_addlp_s16 helper_neon_addlp_s16_aarch64eb
@@ -3790,6 +3791,7 @@
 #define helper_rsqrtsf_f64 helper_rsqrtsf_f64_aarch64eb
 #define helper_sdiv64 helper_sdiv64_aarch64eb
 #define helper_simd_tbl helper_simd_tbl_aarch64eb
+#define helper_sqrt_f16 helper_sqrt_f16_aarch64eb
 #define helper_udiv64 helper_udiv64_aarch64eb
 #define helper_vfp_cmpd_a64 helper_vfp_cmpd_a64_aarch64eb
 #define helper_vfp_cmped_a64 helper_vfp_cmped_a64_aarch64eb
