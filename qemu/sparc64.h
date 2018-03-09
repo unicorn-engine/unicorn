@@ -650,6 +650,7 @@
 #define floatx80_div floatx80_div_sparc64
 #define floatx80_eq floatx80_eq_sparc64
 #define floatx80_eq_quiet floatx80_eq_quiet_sparc64
+#define floatx80_infinity floatx80_infinity_sparc64
 #define floatx80_is_quiet_nan floatx80_is_quiet_nan_sparc64
 #define floatx80_is_signaling_nan floatx80_is_signaling_nan_sparc64
 #define floatx80_le floatx80_le_sparc64

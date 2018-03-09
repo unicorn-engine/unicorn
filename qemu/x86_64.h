@@ -650,6 +650,7 @@
 #define floatx80_div floatx80_div_x86_64
 #define floatx80_eq floatx80_eq_x86_64
 #define floatx80_eq_quiet floatx80_eq_quiet_x86_64
+#define floatx80_infinity floatx80_infinity_x86_64
 #define floatx80_is_quiet_nan floatx80_is_quiet_nan_x86_64
 #define floatx80_is_signaling_nan floatx80_is_signaling_nan_x86_64
 #define floatx80_le floatx80_le_x86_64

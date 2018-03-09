@@ -650,6 +650,7 @@
 #define floatx80_div floatx80_div_mips64el
 #define floatx80_eq floatx80_eq_mips64el
 #define floatx80_eq_quiet floatx80_eq_quiet_mips64el
+#define floatx80_infinity floatx80_infinity_mips64el
 #define floatx80_is_quiet_nan floatx80_is_quiet_nan_mips64el
 #define floatx80_is_signaling_nan floatx80_is_signaling_nan_mips64el
 #define floatx80_le floatx80_le_mips64el
