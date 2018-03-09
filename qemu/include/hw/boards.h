@@ -15,10 +15,8 @@ typedef int QEMUMachineInitFunc(struct uc_struct *uc, MachineState *ms);
 typedef void QEMUMachineResetFunc(void);
 
 struct QEMUMachine {
-    const char *family; /* NULL iff @name identifies a standalone machtype */
     const char *name;
     QEMUMachineInitFunc *init;
-    QEMUMachineResetFunc *reset;
     int max_cpus;
     int is_default;
     int arch;
