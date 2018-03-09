@@ -178,6 +178,7 @@ static void arm_cpu_reset(CPUState *s)
     if (arm_feature(env, ARM_FEATURE_M)) {
         uint32_t initial_msp; /* Loaded from 0x0 */
         uint32_t initial_pc; /* Loaded from 0x4 */
+        uint32_t vecbase = 0;
 
         if (arm_feature(env, ARM_FEATURE_M_SECURITY)) {
             env->v7m.secure = true;
@@ -204,10 +205,14 @@ static void arm_cpu_reset(CPUState *s)
 
         /* Unlike A/R profile, M profile defines the reset LR value */
         env->regs[14] = 0xffffffff;
+
+        env->v7m.vecbase[M_REG_S] = cpu->init_svtor & 0xffffff80;
 #if 0
-        /* Load the initial SP and PC from the vector table at address 0 */
         uint8_t *rom;
-        rom = rom_ptr(0);
+
+        /* Load the initial SP and PC from offset 0 and 4 in the vector table */
+        vecbase = env->v7m.vecbase[env->v7m.secure];
+        rom = rom_ptr(vecbase);
         if (rom) {
             /* Address zero is covered by ROM which hasn't yet been
              * copied into physical memory.
@@ -222,8 +227,8 @@ static void arm_cpu_reset(CPUState *s)
              * it got copied into memory. In the latter case, rom_ptr
              * will return a NULL pointer and we should use ldl_phys instead.
              */
-            initial_msp = ldl_phys(s->as, 0);
-            initial_pc = ldl_phys(s->as, 4);
+            initial_msp = ldl_phys(s->as, vecbase);
+            initial_pc = ldl_phys(s->as, vecbase + 4);
         }
 
         env->regs[13] = initial_msp & 0xFFFFFFFC;
@@ -508,13 +513,17 @@ static void arm_cpu_post_init(struct uc_struct *uc, Object *obj)
         //                         &error_abort);
 
 #ifndef CONFIG_USER_ONLY
-        /* Unicorn: commented out
+        /* Unicorn: if'd out */
+#if 0
         object_property_add_link(obj, "secure-memory",
                                  TYPE_MEMORY_REGION,
                                  (Object **)&cpu->secure_memory,
                                  qdev_prop_allow_set_link_before_realize,
                                  OBJ_PROP_LINK_UNREF_ON_RELEASE,
                                  &error_abort);*/
+        qdev_property_add_static(DEVICE(obj), &arm_cpu_initsvtor_property,
+                                 &error_abort);
+#endif
 #endif
     }
 }
