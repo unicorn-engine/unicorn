@@ -48,10 +48,16 @@ static void pc_compat_2_2(struct uc_struct *uc, MachineState *machine)
 {
 }
 
-static int pc_init_pci_2_2(struct uc_struct *uc, MachineState *machine)
-{
-    pc_compat_2_2(uc, machine);
-    return pc_init1(uc, machine);
-}
+// Unicorn: Modified for use with unicorn (no need for an option function)
+#define DEFINE_I440FX_MACHINE(suffix, name, compatfn) \
+    static int pc_init_##suffix(struct uc_struct *uc, MachineState *machine) \
+    { \
+        void (*compat)(struct uc_struct *uc, MachineState *m) = (compatfn); \
+        if (compat) { \
+            compat(uc, machine); \
+        } \
+        return pc_init1(uc, machine); \
+    } \
+    DEFINE_PC_MACHINE(suffix, name, pc_init_##suffix)
 
-DEFINE_PC_MACHINE(v2_2, "pc-i440fx-2.2", pc_init_pci_2_2);
+DEFINE_I440FX_MACHINE(v2_2, "pc-i440fx-2.2", pc_compat_2_2);
