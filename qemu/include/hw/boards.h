@@ -129,6 +129,29 @@ struct MachineState {
     AccelState *accelerator;
 };
 
+#define DEFINE_MACHINE(namestr, machine_initfn) \
+    static void machine_initfn##_class_init(struct uc_struct *uc, ObjectClass *oc, void *data) \
+    { \
+        MachineClass *mc = MACHINE_CLASS(uc, oc); \
+        machine_initfn(mc); \
+    } \
+    static const TypeInfo machine_initfn##_typeinfo = { \
+        MACHINE_TYPE_NAME(namestr), \
+        TYPE_MACHINE, \
+        0, \
+        0, \
+        NULL, \
+        NULL, \
+        NULL, \
+        NULL, \
+        NULL, \
+        machine_initfn##_class_init, \
+    }; \
+    void machine_initfn##_register_types(struct uc_struct *uc) \
+    { \
+        type_register_static(uc, &machine_initfn##_typeinfo); \
+    }
+
 void machine_register_types(struct uc_struct *uc);
 
 #endif
