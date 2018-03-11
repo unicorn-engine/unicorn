@@ -51,12 +51,34 @@ static int sun4u_init(struct uc_struct *uc, MachineState *machine)
     return 0;
 }
 
-static void sun4u_machine_init(struct uc_struct *uc, MachineClass *mc)
+static void sun4u_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
+    MachineClass *mc = MACHINE_CLASS(uc, oc);
+
     mc->init = sun4u_init;
     mc->max_cpus = 1; /* XXX for now */
     mc->is_default = 1;
     mc->arch = UC_ARCH_SPARC;
 }
 
-DEFINE_MACHINE("sun4u", sun4u_machine_init)
+static const TypeInfo sun4u_type = {
+    MACHINE_TYPE_NAME("sun4u"),
+    TYPE_MACHINE,
+
+    0,
+    0,
+    NULL,
+
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,
+
+    sun4u_class_init,
+};
+
+void sun4u_machine_init(struct uc_struct *uc)
+{
+    type_register_static(uc, &sun4u_type);
+}
