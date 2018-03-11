@@ -50,7 +50,8 @@ typedef struct {
     bool secure;
 } VirtMachineState;
 
-#define TYPE_VIRT_MACHINE   "virt"
+#define VIRT_MACHINE_NAME   "virt"
+#define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME(VIRT_MACHINE_NAME)
 #define VIRT_MACHINE(uc, obj) \
     OBJECT_CHECK((uc), VirtMachineState, (obj), TYPE_VIRT_MACHINE)
 #define VIRT_MACHINE_GET_CLASS(uc, obj) \
@@ -120,7 +121,7 @@ static void virt_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(uc, oc);
 
-    mc->name = TYPE_VIRT_MACHINE;
+    mc->name = VIRT_MACHINE_NAME;
     mc->init = machvirt_init;
     mc->max_cpus = 8;
     mc->is_default = 1;
