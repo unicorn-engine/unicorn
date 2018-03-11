@@ -39,6 +39,24 @@
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
 
+// Unicorn: Daughterboard member removed, as it's not necessary
+//          for Unicorn's purposes.
+typedef struct {
+    MachineClass parent;
+} VirtMachineClass;
+
+typedef struct {
+    MachineState parent;
+} VirtMachineState;
+
+#define TYPE_VIRT_MACHINE   "virt"
+#define VIRT_MACHINE(uc, obj) \
+    OBJECT_CHECK((uc), VirtMachineState, (obj), TYPE_VIRT_MACHINE)
+#define VIRT_MACHINE_GET_CLASS(uc, obj) \
+    OBJECT_GET_CLASS(uc, VirtMachineClass, obj, TYPE_VIRT_MACHINE)
+#define VIRT_MACHINE_CLASS(uc, klass) \
+    OBJECT_CLASS_CHECK(uc, VirtMachineClass, klass, TYPE_VIRT_MACHINE)
+
 static int machvirt_init(struct uc_struct *uc, MachineState *machine)
 {
     const char *cpu_model = machine->cpu_model;
@@ -65,13 +83,35 @@ static int machvirt_init(struct uc_struct *uc, MachineState *machine)
     return 0;
 }
 
+static void virt_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(uc, oc);
+
+    mc->name = TYPE_VIRT_MACHINE;
+    mc->init = machvirt_init;
+    mc->max_cpus = 8;
+    mc->is_default = 1;
+    mc->arch = UC_ARCH_ARM64;
+}
+
+static const TypeInfo machvirt_info = {
+    TYPE_VIRT_MACHINE,
+    TYPE_MACHINE,
+
+    sizeof(VirtMachineClass),
+    sizeof(VirtMachineState),
+    NULL,
+
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,
+
+    virt_class_init,
+};
+
 void machvirt_machine_init(struct uc_struct *uc)
 {
-    static QEMUMachine machvirt_a15_machine = { 0 };
-    machvirt_a15_machine.name = "virt",
-    machvirt_a15_machine.init = machvirt_init,
-    machvirt_a15_machine.is_default = 1,
-    machvirt_a15_machine.arch = UC_ARCH_ARM64,
-
-    qemu_register_machine(uc, &machvirt_a15_machine, TYPE_MACHINE, NULL);
+    type_register_static(uc, &machvirt_info);
 }
