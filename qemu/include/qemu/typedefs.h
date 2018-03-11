@@ -63,7 +63,6 @@ typedef struct Property Property;
 typedef struct PropertyInfo PropertyInfo;
 typedef struct QEMUBH QEMUBH;
 typedef struct QEMUFile QEMUFile;
-typedef struct QEMUMachine QEMUMachine;
 typedef struct QEMUSGList QEMUSGList;
 typedef struct QEMUSizedBuffer QEMUSizedBuffer;
 typedef struct QEMUTimer QEMUTimer;

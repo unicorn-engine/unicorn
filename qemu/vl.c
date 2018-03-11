@@ -176,32 +176,3 @@ void qemu_system_shutdown_request(void)
 {
     //shutdown_requested = 1;
 }
-
-static void machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
-{
-    MachineClass *mc = MACHINE_CLASS(uc, oc);
-    QEMUMachine *qm = data;
-
-    mc->init = qm->init;
-    mc->max_cpus = qm->max_cpus;
-    mc->is_default = qm->is_default;
-    mc->arch = qm->arch;
-    mc->minimum_page_bits = qm->minimum_page_bits;
-}
-
-void qemu_register_machine(struct uc_struct *uc, QEMUMachine *m, const char *type_machine,
-        void (*init)(struct uc_struct *uc, ObjectClass *oc, void *data))
-{
-    char *name = g_strdup_printf(MACHINE_TYPE_NAME("%s"), m->name);
-    TypeInfo ti = {0};
-    ti.name       = name;
-    ti.parent     = type_machine;
-    ti.class_init = init;
-    ti.class_data = (void *)m;
-
-    if (init == NULL)
-        ti.class_init = machine_class_init;
-
-    type_register(uc, &ti);
-    g_free(name);
-}

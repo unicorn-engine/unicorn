@@ -10,19 +10,6 @@
 #include "qom/cpu.h"
 #include "uc_priv.h"
 
-typedef int QEMUMachineInitFunc(struct uc_struct *uc, MachineState *ms);
-
-typedef void QEMUMachineResetFunc(void);
-
-struct QEMUMachine {
-    const char *name;
-    QEMUMachineInitFunc *init;
-    int max_cpus;
-    int is_default;
-    int arch;
-    int minimum_page_bits;
-};
-
 /**
  * memory_region_allocate_system_memory - Allocate a board's main memory
  * @mr: the #MemoryRegion to be initialized
@@ -55,9 +42,6 @@ void memory_region_allocate_system_memory(MemoryRegion *mr, Object *owner,
                                           const char *name,
                                           uint64_t ram_size);
 
-void qemu_register_machine(struct uc_struct *uc, QEMUMachine *m, const char *type_machine,
-        void (*init)(struct uc_struct *uc, ObjectClass *oc, void *data));
-
 #define TYPE_MACHINE_SUFFIX "-machine"
 
 /* Machine class name that needs to be used for class-name-based machine
@@ -78,7 +62,6 @@ MachineClass *find_default_machine(struct uc_struct *uc, int arch);
 
 /**
  * MachineClass:
- * @qemu_machine: #QEMUMachine
  * @minimum_page_bits:
  *    If non-zero, the board promises never to create a CPU with a page size
  *    smaller than this, so QEMU can use a more efficient larger page
