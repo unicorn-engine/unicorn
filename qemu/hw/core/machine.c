@@ -15,11 +15,14 @@
 #include "qapi/error.h"
 #include "qemu/cutils.h"
 
-static void machine_class_base_init(ObjectClass *oc, void *data)
+static void machine_class_base_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
     if (!object_class_is_abstract(oc)) {
+        MachineClass *mc = MACHINE_CLASS(uc, oc);
         const char *cname = object_class_get_name(oc);
         assert(g_str_has_suffix(cname, TYPE_MACHINE_SUFFIX));
+        mc->name = g_strndup(cname,
+                            strlen(cname) - strlen(TYPE_MACHINE_SUFFIX));
     }
 }
 

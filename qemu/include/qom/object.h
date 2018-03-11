@@ -489,8 +489,8 @@ struct TypeInfo
     void *class_data;
 
     void (*class_init)(struct uc_struct *uc, ObjectClass *klass, void *data);
-    void (*class_base_init)(ObjectClass *klass, void *data);
-    void (*class_finalize)(ObjectClass *klass, void *data);
+    void (*class_base_init)(struct uc_struct *uc, ObjectClass *klass, void *data);
+    void (*class_finalize)(struct uc_struct *uc, ObjectClass *klass, void *data);
 
     bool abstract;
 

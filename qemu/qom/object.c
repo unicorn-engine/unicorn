@@ -48,8 +48,8 @@ struct TypeImpl
     void *instance_userdata;
 
     void (*class_init)(struct uc_struct *uc, ObjectClass *klass, void *data);
-    void (*class_base_init)(ObjectClass *klass, void *data);
-    void (*class_finalize)(ObjectClass *klass, void *data);
+    void (*class_base_init)(struct uc_struct *uc, ObjectClass *klass, void *data);
+    void (*class_finalize)(struct uc_struct *uc, ObjectClass *klass, void *data);
 
     void *class_data;
 
@@ -320,7 +320,7 @@ static void type_initialize(struct uc_struct *uc, TypeImpl *ti)
 
     while (parent) {
         if (parent->class_base_init) {
-            parent->class_base_init(ti->class, ti->class_data);
+            parent->class_base_init(uc, ti->class, ti->class_data);
         }
         parent = type_get_parent(uc, parent);
     }

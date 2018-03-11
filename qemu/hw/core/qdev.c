@@ -271,7 +271,7 @@ static void device_finalize(struct uc_struct *uc, Object *obj, void *opaque)
 {
 }
 
-static void device_class_base_init(ObjectClass *class, void *data)
+static void device_class_base_init(struct uc_struct *uc, ObjectClass *class, void *data)
 {
 }
 
