@@ -84,7 +84,7 @@ struct MachineClass {
     ObjectClass parent_class;
     /*< public >*/
 
-    const char *name;
+    char *name;
 
     int (*init)(struct uc_struct *uc, MachineState *state);
     void (*reset)(void);

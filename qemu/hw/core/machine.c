@@ -26,6 +26,13 @@ static void machine_class_base_init(struct uc_struct *uc, ObjectClass *oc, void 
     }
 }
 
+static void machine_class_finalize(struct uc_struct *uc, ObjectClass *klass, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(uc, klass);
+
+    g_free(mc->name);
+}
+
 static void machine_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
 }
@@ -50,7 +57,7 @@ static const TypeInfo machine_info = {
 
     NULL,
     machine_class_base_init,
-    NULL,
+    machine_class_finalize,
 
     true,
 };

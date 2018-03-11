@@ -54,14 +54,20 @@ void x86_cpu_register_types(struct uc_struct *uc);
         MachineClass *mc = MACHINE_CLASS(uc, oc); \
         mc->max_cpus = 255; \
         mc->is_default = 1; \
-        mc->name = namestr; \
         mc->init = initfn; \
         mc->arch = UC_ARCH_X86; \
     } \
     static const TypeInfo pc_machine_type_##suffix = { \
-        .name       = namestr TYPE_MACHINE_SUFFIX, \
-        .parent     = TYPE_PC_MACHINE, \
-        .class_init = pc_machine_##suffix##_class_init, \
+        namestr TYPE_MACHINE_SUFFIX, \
+        TYPE_PC_MACHINE, \
+        0, \
+        0, \
+        NULL, \
+        NULL, \
+        NULL, \
+        NULL, \
+        NULL, \
+        pc_machine_##suffix##_class_init, \
     }; \
     void pc_machine_init_##suffix(struct uc_struct *uc); \
     void pc_machine_init_##suffix(struct uc_struct *uc) \
