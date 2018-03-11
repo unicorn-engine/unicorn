@@ -47,6 +47,7 @@ typedef struct {
 
 typedef struct {
     MachineState parent;
+    bool secure;
 } VirtMachineState;
 
 #define TYPE_VIRT_MACHINE   "virt"
@@ -83,6 +84,38 @@ static int machvirt_init(struct uc_struct *uc, MachineState *machine)
     return 0;
 }
 
+static QEMU_UNUSED_FUNC bool virt_get_secure(struct uc_struct *uc, Object *obj, Error **errp)
+{
+    VirtMachineState *vms = VIRT_MACHINE(uc, obj);
+
+    return vms->secure;
+}
+
+static QEMU_UNUSED_FUNC int virt_set_secure(struct uc_struct *uc, Object *obj, bool value, Error **errp)
+{
+    VirtMachineState *vms = VIRT_MACHINE(uc, obj);
+
+    vms->secure = value;
+    return 0;
+}
+
+static void virt_instance_init(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    VirtMachineState *vms = VIRT_MACHINE(uc, obj);
+
+    /* EL3 is enabled by default on virt */
+    vms->secure = true;
+
+    /* Unicorn: should be uncommented, but causes linkage errors :/
+    object_property_add_bool(uc, obj, "secure", virt_get_secure,
+                             virt_set_secure, NULL);
+    object_property_set_description(uc, obj, "secure",
+                                    "Set on/off to enable/disable the ARM "
+                                    "Security Extensions (TrustZone)",
+                                    NULL);
+    */
+}
+
 static void virt_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(uc, oc);
@@ -102,7 +135,7 @@ static const TypeInfo machvirt_info = {
     sizeof(VirtMachineState),
     NULL,
 
-    NULL,
+    virt_instance_init,
     NULL,
     NULL,
 
