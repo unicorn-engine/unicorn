@@ -59,6 +59,12 @@ void qemu_register_machine(struct uc_struct *uc, QEMUMachine *m, const char *typ
         void (*init)(struct uc_struct *uc, ObjectClass *oc, void *data));
 
 #define TYPE_MACHINE_SUFFIX "-machine"
+
+/* Machine class name that needs to be used for class-name-based machine
+ * type lookup to work.
+ */
+#define MACHINE_TYPE_NAME(machinename) (machinename TYPE_MACHINE_SUFFIX)
+
 #define TYPE_MACHINE "machine"
 #undef MACHINE  /* BSD defines it and QEMU does not use it */
 #define MACHINE(uc, obj) \

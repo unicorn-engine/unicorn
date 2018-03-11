@@ -193,7 +193,7 @@ static void machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
 void qemu_register_machine(struct uc_struct *uc, QEMUMachine *m, const char *type_machine,
         void (*init)(struct uc_struct *uc, ObjectClass *oc, void *data))
 {
-    char *name = g_strconcat(m->name, TYPE_MACHINE_SUFFIX, NULL);
+    char *name = g_strdup_printf(MACHINE_TYPE_NAME("%s"), m->name);
     TypeInfo ti = {0};
     ti.name       = name;
     ti.parent     = type_machine;
