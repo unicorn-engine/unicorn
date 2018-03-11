@@ -2962,7 +2962,7 @@
 #define token_is_operator token_is_operator_sparc
 #define tokens_append_from_iter tokens_append_from_iter_sparc
 #define tosa_init tosa_init_sparc
-#define tosa_machine_init tosa_machine_init_sparc
+#define tosa_machine_init_register_types tosa_machine_init_register_types_sparc
 #define translator_loop translator_loop_sparc
 #define translator_loop_temp_check translator_loop_temp_check_sparc
 #define tswap32 tswap32_sparc

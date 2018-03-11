@@ -2962,7 +2962,7 @@
 #define token_is_operator token_is_operator_mipsel
 #define tokens_append_from_iter tokens_append_from_iter_mipsel
 #define tosa_init tosa_init_mipsel
-#define tosa_machine_init tosa_machine_init_mipsel
+#define tosa_machine_init_register_types tosa_machine_init_register_types_mipsel
 #define translator_loop translator_loop_mipsel
 #define translator_loop_temp_check translator_loop_temp_check_mipsel
 #define tswap32 tswap32_mipsel
@@ -3998,7 +3998,7 @@
 #define mips_cpu_unassigned_access mips_cpu_unassigned_access_mipsel
 #define mips_defs mips_defs_mipsel
 #define mips_defs_number mips_defs_number_mipsel
-#define mips_machine_init mips_machine_init_mipsel
+#define mips_machine_init_register_types mips_machine_init_register_types_mipsel
 #define mips_reg_read mips_reg_read_mipsel
 #define mips_reg_reset mips_reg_reset_mipsel
 #define mips_reg_write mips_reg_write_mipsel

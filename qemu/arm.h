@@ -2962,7 +2962,7 @@
 #define token_is_operator token_is_operator_arm
 #define tokens_append_from_iter tokens_append_from_iter_arm
 #define tosa_init tosa_init_arm
-#define tosa_machine_init tosa_machine_init_arm
+#define tosa_machine_init_register_types tosa_machine_init_register_types_arm
 #define translator_loop translator_loop_arm
 #define translator_loop_temp_check translator_loop_temp_check_arm
 #define tswap32 tswap32_arm

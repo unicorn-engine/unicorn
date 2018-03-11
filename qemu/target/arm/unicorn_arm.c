@@ -196,7 +196,7 @@ void arm_uc_init(struct uc_struct* uc)
 {
     register_accel_types(uc);
     arm_cpu_register_types(uc);
-    tosa_machine_init(uc);
+    tosa_machine_init_register_types(uc);
     uc->reg_read = arm_reg_read;
     uc->reg_write = arm_reg_write;
     uc->reg_reset = arm_reg_reset;

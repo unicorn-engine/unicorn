@@ -2962,7 +2962,7 @@
 #define token_is_operator token_is_operator_powerpc
 #define tokens_append_from_iter tokens_append_from_iter_powerpc
 #define tosa_init tosa_init_powerpc
-#define tosa_machine_init tosa_machine_init_powerpc
+#define tosa_machine_init_register_types tosa_machine_init_register_types_powerpc
 #define translator_loop translator_loop_powerpc
 #define translator_loop_temp_check translator_loop_temp_check_powerpc
 #define tswap32 tswap32_powerpc

@@ -38,14 +38,11 @@ static int dummy_m68k_init(struct uc_struct *uc, MachineState *machine)
     return 0;
 }
 
-void dummy_m68k_machine_init(struct uc_struct *uc)
+static void dummy_m68k_machine_init(struct uc_struct *uc, MachineClass *mc)
 {
-    static QEMUMachine dummy_m68k_machine = { 0 };
-    dummy_m68k_machine.name = "dummy",
-    dummy_m68k_machine.init = dummy_m68k_init,
-    dummy_m68k_machine.is_default = 1,
-    dummy_m68k_machine.arch = UC_ARCH_M68K,
-
-    //printf(">>> dummy_m68k_machine_init\n");
-    qemu_register_machine(uc, &dummy_m68k_machine, TYPE_MACHINE, NULL);
+    mc->init = dummy_m68k_init;
+    mc->is_default = 1;
+    mc->arch = UC_ARCH_M68K;
 }
+
+DEFINE_MACHINE("dummy", dummy_m68k_machine_init)

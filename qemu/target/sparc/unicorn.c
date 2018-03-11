@@ -120,7 +120,7 @@ void sparc_uc_init(struct uc_struct* uc)
 {
     register_accel_types(uc);
     sparc_cpu_register_types(uc);
-    leon3_machine_init(uc);
+    leon3_generic_machine_init_register_types(uc);
     uc->release = sparc_release;
     uc->reg_read = sparc_reg_read;
     uc->reg_write = sparc_reg_write;

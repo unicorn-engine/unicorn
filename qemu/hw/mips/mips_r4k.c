@@ -45,17 +45,11 @@ static int mips_r4k_init(struct uc_struct *uc, MachineState *machine)
     return 0;
 }
 
-void mips_machine_init(struct uc_struct *uc)
+static void mips_machine_init(struct uc_struct *uc, MachineClass *mc)
 {
-    static QEMUMachine mips_machine = {
-        NULL,
-        "mips",
-        mips_r4k_init,
-        NULL,
-        0,
-        1,
-        UC_ARCH_MIPS,
-    };
-
-    qemu_register_machine(uc, &mips_machine, TYPE_MACHINE, NULL);
+    mc->init = mips_r4k_init;
+    mc->is_default = 1;
+    mc->arch = UC_ARCH_MIPS;
 }
+
+DEFINE_MACHINE("mips", mips_machine_init)

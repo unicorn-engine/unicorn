@@ -2962,7 +2962,7 @@
 #define token_is_operator token_is_operator_m68k
 #define tokens_append_from_iter tokens_append_from_iter_m68k
 #define tosa_init tosa_init_m68k
-#define tosa_machine_init tosa_machine_init_m68k
+#define tosa_machine_init_register_types tosa_machine_init_register_types_m68k
 #define translator_loop translator_loop_m68k
 #define translator_loop_temp_check translator_loop_temp_check_m68k
 #define tswap32 tswap32_m68k

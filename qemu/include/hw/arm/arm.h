@@ -14,7 +14,7 @@
 #include "exec/memory.h"
 #include "target/arm/cpu-qom.h"
 
-void tosa_machine_init(struct uc_struct *uc);
+void tosa_machine_init_register_types(struct uc_struct *uc);
 void machvirt_machine_init(struct uc_struct *uc);   // ARM64
 
 void arm_cpu_register_types(void *opaque);

@@ -98,7 +98,7 @@ void m68k_uc_init(struct uc_struct* uc)
 {
     register_accel_types(uc);
     m68k_cpu_register_types(uc);
-    dummy_m68k_machine_init(uc);
+    dummy_m68k_machine_init_register_types(uc);
     uc->release = m68k_release;
     uc->reg_read = m68k_reg_read;
     uc->reg_write = m68k_reg_write;

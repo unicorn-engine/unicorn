@@ -133,7 +133,7 @@ struct MachineState {
     static void machine_initfn##_class_init(struct uc_struct *uc, ObjectClass *oc, void *data) \
     { \
         MachineClass *mc = MACHINE_CLASS(uc, oc); \
-        machine_initfn(mc); \
+        machine_initfn(uc, mc); \
     } \
     static const TypeInfo machine_initfn##_typeinfo = { \
         MACHINE_TYPE_NAME(namestr), \

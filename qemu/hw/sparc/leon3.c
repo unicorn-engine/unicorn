@@ -36,7 +36,6 @@
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
 
-
 static int leon3_generic_hw_init(struct uc_struct *uc, MachineState *machine)
 {
     const char *cpu_model = machine->cpu_model;
@@ -59,18 +58,11 @@ static int leon3_generic_hw_init(struct uc_struct *uc, MachineState *machine)
     return 0;
 }
 
-void leon3_machine_init(struct uc_struct *uc)
+static void leon3_generic_machine_init(struct uc_struct *uc, MachineClass *mc)
 {
-    static QEMUMachine leon3_generic_machine = {
-        NULL,
-        "leon3_generic",
-        leon3_generic_hw_init,
-        NULL,
-        0,
-        1,
-        UC_ARCH_SPARC,
-    };
-
-    //printf(">>> leon3_machine_init\n");
-    qemu_register_machine(uc, &leon3_generic_machine, TYPE_MACHINE, NULL);
+    mc->init = leon3_generic_hw_init;
+    mc->is_default = 1;
+    mc->arch = UC_ARCH_SPARC;
 }
+
+DEFINE_MACHINE("leon3_generic", leon3_generic_machine_init)

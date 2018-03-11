@@ -110,7 +110,7 @@ void sparc64_uc_init(struct uc_struct* uc)
 {
     register_accel_types(uc);
     sparc_cpu_register_types(uc);
-    sun4u_machine_init(uc);
+    sun4u_machine_init_register_types(uc);
     uc->reg_read = sparc_reg_read;
     uc->reg_write = sparc_reg_write;
     uc->reg_reset = sparc_reg_reset;

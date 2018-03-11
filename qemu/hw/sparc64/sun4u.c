@@ -33,7 +33,6 @@
 #include "exec/address-spaces.h"
 #include "qemu/cutils.h"
 
-
 /* Sun4u hardware initialisation */
 static int sun4u_init(struct uc_struct *uc, MachineState *machine)
 {
@@ -52,17 +51,12 @@ static int sun4u_init(struct uc_struct *uc, MachineState *machine)
     return 0;
 }
 
-void sun4u_machine_init(struct uc_struct *uc)
+static void sun4u_machine_init(struct uc_struct *uc, MachineClass *mc)
 {
-    static QEMUMachine sun4u_machine = {
-        NULL,
-        "sun4u",
-        sun4u_init,
-        NULL,
-        1, // XXX for now
-        1,
-        UC_ARCH_SPARC,
-    };
-
-    qemu_register_machine(uc, &sun4u_machine, TYPE_MACHINE, NULL);
+    mc->init = sun4u_init;
+    mc->max_cpus = 1; /* XXX for now */
+    mc->is_default = 1;
+    mc->arch = UC_ARCH_SPARC;
 }
+
+DEFINE_MACHINE("sun4u", sun4u_machine_init)

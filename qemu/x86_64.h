@@ -2962,7 +2962,7 @@
 #define token_is_operator token_is_operator_x86_64
 #define tokens_append_from_iter tokens_append_from_iter_x86_64
 #define tosa_init tosa_init_x86_64
-#define tosa_machine_init tosa_machine_init_x86_64
+#define tosa_machine_init_register_types tosa_machine_init_register_types_x86_64
 #define translator_loop translator_loop_x86_64
 #define translator_loop_temp_check translator_loop_temp_check_x86_64
 #define tswap32 tswap32_x86_64

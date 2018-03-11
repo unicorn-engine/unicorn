@@ -134,7 +134,7 @@ DEFAULT_VISIBILITY
 {
     register_accel_types(uc);
     mips_cpu_register_types(uc);
-    mips_machine_init(uc);
+    mips_machine_init_register_types(uc);
     uc->reg_read = mips_reg_read;
     uc->reg_write = mips_reg_write;
     uc->reg_reset = mips_reg_reset;
