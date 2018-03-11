@@ -22,12 +22,50 @@ static inline bool cpu_physical_mem_write(AddressSpace *as, hwaddr addr,
 void tb_cleanup(struct uc_struct *uc);
 void free_code_gen_buffer(struct uc_struct *uc);
 
+static inline void free_address_spaces(struct uc_struct *uc)
+{
+    int i;
+
+    phys_mem_clean(&uc->as);
+    address_space_destroy(&uc->as);
+    for (i = 0; i < uc->cpu->num_ases; i++) {
+        AddressSpace *as = uc->cpu->cpu_ases[i].as;
+        phys_mem_clean(as);
+        address_space_destroy(as);
+        g_free(as);
+    }
+}
+
+/* This is *supposed* to be done by the class finalizer but it never executes */
+static inline void free_machine_class_name(struct uc_struct *uc) {
+    MachineClass *mc = MACHINE_GET_CLASS(uc, uc->machine_state);
+
+    g_free(mc->name);
+    mc->name = NULL;
+}
+
+static inline void free_tcg_temp_names(TCGContext *s)
+{
+#if TCG_TARGET_REG_BITS == 32
+    int i;
+
+    for (i = 0; i < s->nb_globals; i++) {
+        TCGTemp *ts = &s->temps[i];
+        if (ts->base_type == TCG_TYPE_I64) {
+            if (ts->name && ((strcmp(ts->name+(strlen(ts->name)-2), "_0") == 0) ||
+                        (strcmp(ts->name+(strlen(ts->name)-2), "_1") == 0))) {
+                free((void *)ts->name);
+            }
+        }
+    }
+#endif
+}
+
 /** Freeing common resources */
 static void release_common(void *t)
 {
     TCGPool *po, *to;
     TCGContext *s = (TCGContext *)t;
-    int i;
 
     // Clean TCG.
     TCGOpDef* def = &s->tcg_op_defs[0];
@@ -44,28 +82,12 @@ static void release_common(void *t)
 
     // TODO(danghvu): these function is not available outside qemu
     // so we keep them here instead of outside uc_close.
-    phys_mem_clean(&s->uc->as);
-    address_space_destroy(&s->uc->as);
-    for (i = 0; i < s->uc->cpu->num_ases; i++) {
-        AddressSpace *as = s->uc->cpu->cpu_ases[i].as;
-        phys_mem_clean(as);
-        address_space_destroy(as);
-    }
+    free_address_spaces(s->uc);
     memory_free(s->uc);
     tb_cleanup(s->uc);
     free_code_gen_buffer(s->uc);
-
-#if TCG_TARGET_REG_BITS == 32
-    for(i = 0; i < s->nb_globals; i++) {
-        TCGTemp *ts = &s->temps[i];
-        if (ts->base_type == TCG_TYPE_I64) {
-            if (ts->name && ((strcmp(ts->name+(strlen(ts->name)-2), "_0") == 0) ||
-                        (strcmp(ts->name+(strlen(ts->name)-2), "_1") == 0))) {
-                free((void *)ts->name);
-            }
-        }
-    }
-#endif
+    free_machine_class_name(s->uc);
+    free_tcg_temp_names(s);
 }
 
 static inline void uc_common_init(struct uc_struct* uc)
@@ -85,8 +107,9 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->target_page_size = TARGET_PAGE_SIZE;
     uc->target_page_align = TARGET_PAGE_SIZE - 1;
 
-    if (!uc->release)
+    if (!uc->release) {
         uc->release = release_common;
+    }
 }
 
 #endif
