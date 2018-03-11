@@ -94,6 +94,66 @@ gboolean g_str_equal(gconstpointer v1, gconstpointer v2)
    return strcmp((const char*)v1, (const char*)v2) == 0;
 }
 
+/**
+ * g_str_has_suffix:
+ * @str: a nul-terminated string.
+ * @suffix: the nul-terminated suffix to look for.
+ *
+ * Looks whether the string @str ends with @suffix.
+ *
+ * Return value: %TRUE if @str end with @suffix, %FALSE otherwise.
+ *
+ * Since: 2.2
+ **/
+gboolean
+g_str_has_suffix(const gchar *str, const gchar *suffix)
+{
+  int str_len;
+  int suffix_len;
+
+  if (str == NULL || suffix == NULL) {
+    return FALSE;
+  }
+
+  str_len = strlen (str);
+  suffix_len = strlen (suffix);
+
+  if (str_len < suffix_len)
+    return FALSE;
+
+  return strcmp (str + str_len - suffix_len, suffix) == 0;
+}
+
+/**
+ * g_str_has_prefix:
+ * @str: a nul-terminated string.
+ * @prefix: the nul-terminated prefix to look for.
+ *
+ * Looks whether the string @str begins with @prefix.
+ *
+ * Return value: %TRUE if @str begins with @prefix, %FALSE otherwise.
+ *
+ * Since: 2.2
+ **/
+gboolean
+g_str_has_prefix(const gchar *str, const gchar *prefix)
+{
+  int str_len;
+  int prefix_len;
+
+  if (str == NULL || prefix == NULL) {
+    return FALSE;
+  }
+
+  str_len = strlen (str);
+  prefix_len = strlen (prefix);
+
+  if (str_len < prefix_len)
+    return FALSE;
+
+  return strncmp (str, prefix, prefix_len) == 0;
+}
+
 // g_int_hash() is lifted from glib-2.28.0/glib/gutils.c
 /**
  * g_int_hash:

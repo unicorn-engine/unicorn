@@ -59,8 +59,10 @@ typedef void (*GDestroyNotify)(gpointer data);
 
 guint g_str_hash(gconstpointer v);
 gboolean g_str_equal(gconstpointer v1, gconstpointer v2);
-guint g_int_hash(gconstpointer v);
+gboolean g_str_has_suffix(const gchar *str, const gchar *prefix);
+gboolean g_str_has_prefix(const gchar *str, const gchar *prefix);
 
+guint g_int_hash(gconstpointer v);
 gboolean g_int_equal(gconstpointer v1, gconstpointer v2);
 
 typedef struct _GList {
