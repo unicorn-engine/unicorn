@@ -44,11 +44,6 @@ static int pc_init1(struct uc_struct *uc, MachineState *machine)
     return pc_cpus_init(uc, machine->cpu_model);
 }
 
-static int pc_init_pci(struct uc_struct *uc, MachineState *machine)
-{
-    return pc_init1(uc, machine);
-}
-
 static void pc_compat_2_2(struct uc_struct *uc, MachineState *machine)
 {
 }
@@ -56,7 +51,7 @@ static void pc_compat_2_2(struct uc_struct *uc, MachineState *machine)
 static int pc_init_pci_2_2(struct uc_struct *uc, MachineState *machine)
 {
     pc_compat_2_2(uc, machine);
-    return pc_init_pci(uc, machine);
+    return pc_init1(uc, machine);
 }
 
 DEFINE_PC_MACHINE(v2_2, "pc-i440fx-2.2", pc_init_pci_2_2);
