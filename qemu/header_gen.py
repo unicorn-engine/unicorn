@@ -2135,6 +2135,7 @@ symbols = (
     'qdict_put_null',
     'qdict_put_obj',
     'qdict_put_str',
+    'qdict_rename_keys',
     'qdict_size',
     'qdict_type',
     'qemu_clock_get_us',

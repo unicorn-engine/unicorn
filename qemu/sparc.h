@@ -2129,6 +2129,7 @@
 #define qdict_put_null qdict_put_null_sparc
 #define qdict_put_obj qdict_put_obj_sparc
 #define qdict_put_str qdict_put_str_sparc
+#define qdict_rename_keys qdict_rename_keys_sparc
 #define qdict_size qdict_size_sparc
 #define qdict_type qdict_type_sparc
 #define qemu_clock_get_us qemu_clock_get_us_sparc

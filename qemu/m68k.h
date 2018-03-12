@@ -2129,6 +2129,7 @@
 #define qdict_put_null qdict_put_null_m68k
 #define qdict_put_obj qdict_put_obj_m68k
 #define qdict_put_str qdict_put_str_m68k
+#define qdict_rename_keys qdict_rename_keys_m68k
 #define qdict_size qdict_size_m68k
 #define qdict_type qdict_type_m68k
 #define qemu_clock_get_us qemu_clock_get_us_m68k

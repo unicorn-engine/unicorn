@@ -2129,6 +2129,7 @@
 #define qdict_put_null qdict_put_null_mips
 #define qdict_put_obj qdict_put_obj_mips
 #define qdict_put_str qdict_put_str_mips
+#define qdict_rename_keys qdict_rename_keys_mips
 #define qdict_size qdict_size_mips
 #define qdict_type qdict_type_mips
 #define qemu_clock_get_us qemu_clock_get_us_mips

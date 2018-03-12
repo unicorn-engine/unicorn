@@ -2129,6 +2129,7 @@
 #define qdict_put_null qdict_put_null_aarch64eb
 #define qdict_put_obj qdict_put_obj_aarch64eb
 #define qdict_put_str qdict_put_str_aarch64eb
+#define qdict_rename_keys qdict_rename_keys_aarch64eb
 #define qdict_size qdict_size_aarch64eb
 #define qdict_type qdict_type_aarch64eb
 #define qemu_clock_get_us qemu_clock_get_us_aarch64eb
