@@ -583,7 +583,7 @@ static int exception_has_error_code(int intno)
 /* protected mode interrupt */
 static void do_interrupt_protected(CPUX86State *env, int intno, int is_int,
                                    int error_code, unsigned int next_eip,
-                                   int is_hw)   // qq
+                                   int is_hw)
 {
     SegmentCache *dt;
     target_ulong ptr, ssp;
@@ -708,7 +708,7 @@ static void do_interrupt_protected(CPUX86State *env, int intno, int is_int,
         new_stack = 1;
         sp_mask = get_sp_mask(ss_e2);
         ssp = get_seg_base(ss_e1, ss_e2);
-    } else {
+    } else  {
         /* to same privilege */
         if (vm86) {
             raise_exception_err(env, EXCP0D_GPF, selector & 0xfffc);
@@ -831,7 +831,7 @@ static inline target_ulong get_rsp_from_tss(CPUX86State *env, int level)
 
 /* 64 bit interrupt */
 static void do_interrupt64(CPUX86State *env, int intno, int is_int,
-                           int error_code, target_ulong next_eip, int is_hw)    // qq
+                           int error_code, target_ulong next_eip, int is_hw)
 {
     SegmentCache *dt;
     target_ulong ptr;
@@ -1085,7 +1085,7 @@ void helper_sysret(CPUX86State *env, int dflag)
 
 /* real mode interrupt */
 static void do_interrupt_real(CPUX86State *env, int intno, int is_int,
-                              int error_code, unsigned int next_eip)    // qq
+                              int error_code, unsigned int next_eip)
 {
     SegmentCache *dt;
     target_ulong ptr, ssp;
@@ -1145,7 +1145,6 @@ static void do_interrupt_user(CPUX86State *env, int intno, int is_int,
         }
         ptr = dt->base + (intno << shift);
         e2 = cpu_ldl_kernel(env, ptr + 4);
-
 
         dpl = (e2 >> DESC_DPL_SHIFT) & 3;
         cpl = env->hflags & HF_CPL_MASK;
@@ -1321,10 +1320,14 @@ bool x86_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     if (interrupt_request & CPU_INTERRUPT_POLL) {
         cs->interrupt_request &= ~CPU_INTERRUPT_POLL;
         apic_poll_irq(cpu->apic_state);
+        /* Don't process multiple interrupt requests in a single call.
+           This is required to make icount-driven execution deterministic. */
+        return true;
     }
 #endif
     if (interrupt_request & CPU_INTERRUPT_SIPI) {
         do_cpu_sipi(cpu);
+        ret = true;
     } else if (env->hflags2 & HF2_GIF_MASK) {
         if ((interrupt_request & CPU_INTERRUPT_SMI) &&
             !(env->hflags & HF_SMM_MASK)) {
