@@ -102,7 +102,7 @@ static void QEMU_NORETURN raise_interrupt2(CPUX86State *env, int intno,
         cpu_svm_check_intercept_param(env, SVM_EXIT_SWINT, 0, retaddr);
     }
 
-    cs->exception_index = intno;    // qq
+    cs->exception_index = intno;
     env->error_code = error_code;
     env->exception_is_int = is_int;
     env->exception_next_eip = env->eip + next_eip_addend;
