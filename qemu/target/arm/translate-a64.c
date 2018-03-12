@@ -1409,7 +1409,7 @@ static void disas_uncond_b_imm(DisasContext *s, uint32_t insn)
     gen_goto_tb(s, 0, addr);
 }
 
-/* Compare & branch (immediate)
+/* Compare and branch (immediate)
  *   31  30         25  24  23                  5 4      0
  * +----+-------------+----+---------------------+--------+
  * | sf | 0 1 1 0 1 0 | op |         imm19       |   Rt   |
@@ -1439,7 +1439,7 @@ static void disas_comp_b_imm(DisasContext *s, uint32_t insn)
     gen_goto_tb(s, 1, addr);
 }
 
-/* Test & branch (immediate)
+/* Test and branch (immediate)
  *   31  30         25  24  23   19 18          5 4    0
  * +----+-------------+----+-------+-------------+------+
  * | b5 | 0 1 1 0 1 1 | op |  b40  |    imm14    |  Rt  |
@@ -1975,12 +1975,7 @@ static void disas_uncond_b_reg(DisasContext *s, uint32_t insn)
 
     switch (opc) {
     case 0: /* BR */
-        tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_pc, cpu_reg(s, rn));
-        break;
     case 1: /* BLR */
-        tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_pc, cpu_reg(s, rn));
-        tcg_gen_movi_i64(tcg_ctx, cpu_reg(s, 30), s->pc);
-        break;
     case 2: /* RET */
         gen_a64_set_pc(s, cpu_reg(s, rn));
         /* BLR also needs to load return address */
@@ -2064,7 +2059,6 @@ static void gen_load_exclusive(DisasContext *s, int rt, int rt2,
     TCGMemOp memop = s->be_data;
 
     g_assert(size <= 3);
-
     if (is_pair) {
         g_assert(size >= 2);
         if (size == 2) {
@@ -2093,11 +2087,10 @@ static void gen_load_exclusive(DisasContext *s, int rt, int rt2,
             tcg_gen_mov_i64(tcg_ctx, cpu_reg(s, rt2), tcg_ctx->cpu_exclusive_high);
         }
     } else {
-        memop |= size;
+        memop |= size | MO_ALIGN;
         tcg_gen_qemu_ld_i64(s->uc, tcg_ctx->cpu_exclusive_val, addr, idx, memop);
         tcg_gen_mov_i64(tcg_ctx, cpu_reg(s, rt), tcg_ctx->cpu_exclusive_val);
     }
-
     tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_exclusive_addr, addr);
 }
 
@@ -2150,7 +2143,6 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
                                    size | MO_ALIGN | s->be_data);
         tcg_gen_setcond_i64(tcg_ctx, TCG_COND_NE, tmp, tmp, tcg_ctx->cpu_exclusive_val);
     }
-
     tcg_gen_mov_i64(tcg_ctx, cpu_reg(s, rd), tmp);
     tcg_temp_free_i64(tcg_ctx, tmp);
     tcg_gen_br(tcg_ctx, done_label);
@@ -2345,7 +2337,7 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
     int rt = extract32(insn, 0, 5);
     int rn = extract32(insn, 5, 5);
     int rt2 = extract32(insn, 10, 5);
-    uint64_t offset = sextract32(insn, 15, 7);
+    uint64_t offset = sextract64(insn, 15, 7);
     int index = extract32(insn, 23, 2);
     bool is_vector = extract32(insn, 26, 1);
     bool is_load = extract32(insn, 22, 1);
@@ -2424,12 +2416,12 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
             do_fp_st(s, rt, tcg_addr, size);
         }
         tcg_gen_addi_i64(tcg_ctx, tcg_addr, tcg_addr, 1 << size);
-         if (is_load) {
-             do_fp_ld(s, rt2, tcg_addr, size);
-         } else {
-             do_fp_st(s, rt2, tcg_addr, size);
-         }
-     } else {
+        if (is_load) {
+            do_fp_ld(s, rt2, tcg_addr, size);
+        } else {
+            do_fp_st(s, rt2, tcg_addr, size);
+        }
+    } else {
         TCGv_i64 tcg_rt = cpu_reg(s, rt);
         TCGv_i64 tcg_rt2 = cpu_reg(s, rt2);
 
@@ -2759,7 +2751,6 @@ static void disas_ldst_reg_unsigned_imm(DisasContext *s, uint32_t insn,
     } else {
         TCGv_i64 tcg_rt = cpu_reg(s, rt);
         bool iss_sf = disas_ldst_compute_iss_sf(size, is_signed, opc);
-
         if (is_store) {
             do_gpr_st(s, tcg_rt, tcg_addr, size,
                       true, rt, iss_sf, false);
@@ -3494,7 +3485,7 @@ static void disas_bitfield(DisasContext *s, uint32_t insn)
         return;
     }
 
-done:
+ done:
     if (!sf) { /* zero extend final result */
         tcg_gen_ext32u_i64(tcg_ctx, tcg_rd, tcg_rd);
     }
@@ -3991,6 +3982,7 @@ static void disas_data_proc_3src(DisasContext *s, uint32_t insn)
  * +--+--+--+------------------------+------+---------+------+-----+
  *                                            [000000]
  */
+
 static void disas_adc_sbc(DisasContext *s, uint32_t insn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -4127,6 +4119,9 @@ static void disas_cc(DisasContext *s, uint32_t insn)
             tcg_gen_and_i32(tcg_ctx, tcg_ctx->cpu_VF, tcg_ctx->cpu_VF, tcg_t2);
         }
     }
+    tcg_temp_free_i32(tcg_ctx, tcg_t0);
+    tcg_temp_free_i32(tcg_ctx, tcg_t1);
+    tcg_temp_free_i32(tcg_ctx, tcg_t2);
 }
 
 /* Conditional select
@@ -4160,7 +4155,6 @@ static void disas_cond_select(DisasContext *s, uint32_t insn)
     a64_test_cc(tcg_ctx, &c, cond);
     zero = tcg_const_i64(tcg_ctx, 0);
 
-
     if (rn == 31 && rm == 31 && (else_inc ^ else_inv)) {
         /* CSET & CSETM.  */
         tcg_gen_setcond_i64(tcg_ctx, tcg_invert_cond(c.cond), tcg_rd, c.value, zero);
@@ -4170,7 +4164,6 @@ static void disas_cond_select(DisasContext *s, uint32_t insn)
     } else {
         TCGv_i64 t_true = cpu_reg(s, rn);
         TCGv_i64 t_false = read_cpu_reg(s, rm, 1);
-
         if (else_inv && else_inc) {
             tcg_gen_neg_i64(tcg_ctx, t_false, t_false);
         } else if (else_inv) {
@@ -6649,6 +6642,10 @@ static void disas_simd_scalar_pairwise(DisasContext *s, uint32_t insn)
             size = extract32(size, 0, 1) ? MO_64 : MO_32;
         }
 
+        if (!fp_access_check(s)) {
+            return;
+        }
+
         fpst = get_fpstatus_ptr(tcg_ctx, size == MO_16);
         break;
     default:
@@ -7107,7 +7104,6 @@ static void handle_simd_qshl(DisasContext *s, bool scalar, bool is_q,
             tcg_temp_free_i64(tcg_ctx, tcg_op);
         }
         tcg_temp_free_i64(tcg_ctx, tcg_shift);
-
         clear_vec_high(s, is_q, rd);
     } else {
         TCGv_i32 tcg_shift = tcg_const_i32(tcg_ctx, shift);
@@ -7171,6 +7167,7 @@ static void handle_simd_intfp_conv(DisasContext *s, int rd, int rn,
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_ptr tcg_fpst = get_fpstatus_ptr(tcg_ctx, size == MO_16);
     TCGv_i32 tcg_shift = NULL;
+
     TCGMemOp mop = size | (is_signed ? MO_SIGN : 0);
     int pass;
 
@@ -7632,7 +7629,6 @@ static void handle_3same_64(DisasContext *s, int opcode, bool u,
             cond = TCG_COND_EQ;
             goto do_cmop;
         }
-        /* CMTST : test is "if (X & Y != 0)". */
         gen_cmtst_i64(tcg_ctx, tcg_rd, tcg_rn, tcg_rm);
         break;
     case 0x8: /* SSHL, USHL */
@@ -8373,7 +8369,6 @@ static void handle_2misc_fcmp_zero(DisasContext *s, int opcode,
             }
             write_vec_element(s, tcg_res, rd, pass, MO_64);
         }
-
         tcg_temp_free_i64(tcg_ctx, tcg_res);
         tcg_temp_free_i64(tcg_ctx, tcg_zero);
         tcg_temp_free_i64(tcg_ctx, tcg_op);
@@ -8490,7 +8485,6 @@ static void handle_2misc_reciprocal(DisasContext *s, int opcode,
             }
             write_vec_element(s, tcg_res, rd, pass, MO_64);
         }
-
         tcg_temp_free_i64(tcg_ctx, tcg_res);
         tcg_temp_free_i64(tcg_ctx, tcg_op);
         clear_vec_high(s, !is_scalar, rd);
@@ -9304,7 +9298,6 @@ static void handle_vec_simd_shli(DisasContext *s, bool is_q, bool insert,
           .load_dest = true,
           .vece = MO_64 },
     };
-
     int size = 32 - clz32(immh) - 1;
     int immhb = immh << 3 | immb;
     int shift = immhb - (8 << size);
@@ -10047,6 +10040,7 @@ static void disas_simd_3same_logic(DisasContext *s, uint32_t insn)
     case 4: /* EOR */
         gen_gvec_fn3(s, is_q, rd, rn, rm, tcg_gen_gvec_xor, 0);
         return;
+
     case 5: /* BSL bitwise select */
         gen_gvec_op3(s, is_q, rd, rn, rm, &bsl_op);
         return;
@@ -10056,6 +10050,7 @@ static void disas_simd_3same_logic(DisasContext *s, uint32_t insn)
     case 7: /* BIF, bitwise insert if false */
         gen_gvec_op3(s, is_q, rd, rn, rm, &bif_op);
         return;
+
     default:
         g_assert_not_reached();
     }
@@ -10719,7 +10714,6 @@ static void disas_simd_3same_int(DisasContext *s, uint32_t insn)
             tcg_temp_free_i32(tcg_ctx, tcg_op2);
         }
     }
-
     clear_vec_high(s, is_q, rd);
 }
 
@@ -11048,27 +11042,6 @@ static void disas_simd_three_reg_same_extra(DisasContext *s, uint32_t insn)
         }
         return;
 
-    case 0xc: /* FCADD, #90 */
-    case 0xe: /* FCADD, #270 */
-        rot = extract32(opcode, 1, 1);
-        switch (size) {
-        case 1:
-            gen_gvec_op3_fpst(s, is_q, rd, rn, rm, size == 1, rot,
-                              gen_helper_gvec_fcaddh);
-            break;
-        case 2:
-            gen_gvec_op3_fpst(s, is_q, rd, rn, rm, size == 1, rot,
-                              gen_helper_gvec_fcadds);
-            break;
-        case 3:
-            gen_gvec_op3_fpst(s, is_q, rd, rn, rm, size == 1, rot,
-                              gen_helper_gvec_fcaddd);
-            break;
-        default:
-            g_assert_not_reached();
-        }
-        return;
-
     case 0x8: /* FCMLA, #0 */
     case 0x9: /* FCMLA, #90 */
     case 0xa: /* FCMLA, #180 */
@@ -11086,6 +11059,27 @@ static void disas_simd_three_reg_same_extra(DisasContext *s, uint32_t insn)
         case 3:
             gen_gvec_op3_fpst(s, is_q, rd, rn, rm, false, rot,
                               gen_helper_gvec_fcmlad);
+            break;
+        default:
+            g_assert_not_reached();
+        }
+        return;
+
+    case 0xc: /* FCADD, #90 */
+    case 0xe: /* FCADD, #270 */
+        rot = extract32(opcode, 1, 1);
+        switch (size) {
+        case 1:
+            gen_gvec_op3_fpst(s, is_q, rd, rn, rm, size == 1, rot,
+                              gen_helper_gvec_fcaddh);
+            break;
+        case 2:
+            gen_gvec_op3_fpst(s, is_q, rd, rn, rm, size == 1, rot,
+                              gen_helper_gvec_fcadds);
+            break;
+        case 3:
+            gen_gvec_op3_fpst(s, is_q, rd, rn, rm, size == 1, rot,
+                              gen_helper_gvec_fcaddd);
             break;
         default:
             g_assert_not_reached();
@@ -12004,6 +11998,7 @@ static void disas_simd_two_reg_misc_fp16(DisasContext *s, uint32_t insn)
         fprintf(stderr, "%s: insn %#04x fpop %#2x\n", __func__, insn, fpop);
         g_assert_not_reached();
     }
+
 
     /* Check additional constraints for the scalar encoding */
     if (is_scalar) {
