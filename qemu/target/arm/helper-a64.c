@@ -107,6 +107,9 @@ float32 HELPER(vfp_mulxs)(float32 a, float32 b, void *fpstp)
 {
     float_status *fpst = fpstp;
 
+    a = float32_squash_input_denormal(a, fpst);
+    b = float32_squash_input_denormal(b, fpst);
+
     if ((float32_is_zero(a) && float32_is_infinity(b)) ||
         (float32_is_infinity(a) && float32_is_zero(b))) {
         /* 2.0 with the sign bit set to sign(A) XOR sign(B) */
@@ -119,6 +122,9 @@ float32 HELPER(vfp_mulxs)(float32 a, float32 b, void *fpstp)
 float64 HELPER(vfp_mulxd)(float64 a, float64 b, void *fpstp)
 {
     float_status *fpst = fpstp;
+
+    a = float64_squash_input_denormal(a, fpst);
+    b = float64_squash_input_denormal(b, fpst);
 
     if ((float64_is_zero(a) && float64_is_infinity(b)) ||
         (float64_is_infinity(a) && float64_is_zero(b))) {
@@ -448,7 +454,7 @@ float32 HELPER(fcvtx_f64_to_f32)(float64 a, CPUARMState *env)
     set_float_rounding_mode(float_round_to_zero, &tstat);
     set_float_exception_flags(0, &tstat);
     r = float64_to_float32(a, &tstat);
-    r = float32_maybe_silence_nan(r, fpst);
+    r = float32_maybe_silence_nan(r, &tstat);
     exflags = get_float_exception_flags(&tstat);
     if (exflags & float_flag_inexact) {
         r = make_float32(float32_val(r) | 1);
