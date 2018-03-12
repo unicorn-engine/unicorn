@@ -1549,8 +1549,8 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
         return;
     }
 #if defined(TARGET_HAS_PRECISE_SMC)
-    if (cpu != NULL) {
-        env = cpu->env_ptr;
+    if (uc->cpu != NULL) {
+        env = uc->cpu->env_ptr;
     }
 #endif
 
@@ -1577,9 +1577,9 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
             if (current_tb_not_found) {
                 current_tb_not_found = 0;
                 current_tb = NULL;
-                if (cpu->mem_io_pc) {
+                if (uc->cpu->mem_io_pc) {
                     /* now we have a real cpu fault */
-                    current_tb = tb_find_pc(uc, cpu->mem_io_pc);
+                    current_tb = tb_find_pc(uc, uc->cpu->mem_io_pc);
                 }
             }
             if (current_tb == tb &&
@@ -1592,7 +1592,7 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
 
                 current_tb_modified = 1;
                 // self-modifying code will restore state from TB
-                cpu_restore_state_from_tb(cpu, current_tb, cpu->mem_io_pc);
+                cpu_restore_state_from_tb(uc->cpu, current_tb, uc->cpu->mem_io_pc);
                 cpu_get_tb_cpu_state(env, &current_pc, &current_cs_base,
                                      &current_flags);
             }
@@ -1612,8 +1612,8 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
         /* we generate a block containing just the instruction
            modifying the memory. It will ensure that it cannot modify
            itself */
-        tb_gen_code(cpu, current_pc, current_cs_base, current_flags, 1);
-        cpu_loop_exit_noexc(cpu);
+        tb_gen_code(uc->cpu, current_pc, current_cs_base, current_flags, 1);
+        cpu_loop_exit_noexc(uc->cpu);
     }
 #endif
 }
