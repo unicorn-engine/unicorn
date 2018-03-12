@@ -34,7 +34,6 @@ void HELPER(crypto_aese)(void *vd, void *vm, uint32_t decrypt)
 {
     static uint8_t const * const sbox[2] = { AES_sbox, AES_isbox };
     static uint8_t const * const shift[2] = { AES_shifts, AES_ishifts };
-
     uint64_t *rd = vd;
     uint64_t *rm = vm;
     union CRYPTO_STATE rk;
@@ -350,13 +349,13 @@ static uint32_t s1(uint32_t x)
 
 void HELPER(crypto_sha256h)(void *vd, void *vn, void *vm)
 {
-    int i;
     uint64_t *rd = vd;
     uint64_t *rn = vn;
     uint64_t *rm = vm;
     union CRYPTO_STATE d;
     union CRYPTO_STATE n;
     union CRYPTO_STATE m;
+    int i;
     d.l[0] = rd[0];
     d.l[1] = rd[1];
     n.l[0] = rn[0];

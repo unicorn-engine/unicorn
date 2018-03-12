@@ -115,7 +115,6 @@ enum {
 #define ARM_CPU_VFIQ 3
 
 #define NB_MMU_MODES 8
-
 /* ARM-specific extra insn start words:
  * 1: Conditional execution bits
  * 2: Partial exception syndrome for data aborts
@@ -199,6 +198,7 @@ typedef struct ARMPredicateReg {
 } ARMPredicateReg;
 #endif
 
+
 typedef struct CPUARMState {
     /* Regs for current mode.  */
     uint32_t regs[16];
@@ -248,7 +248,7 @@ typedef struct CPUARMState {
     uint32_t GE; /* cpsr[19:16] */
     uint32_t thumb; /* cpsr[5]. 0 = arm mode, 1 = thumb mode. */
     uint32_t condexec_bits; /* IT bits.  cpsr[15:10,26:25].  */
-    uint64_t daif; /* exception masks, in the bits they are in in PSTATE */
+    uint64_t daif; /* exception masks, in the bits they are in PSTATE */
 
     uint64_t elr_el[4]; /* AArch64 exception link regs  */
     uint64_t sp_el[4]; /* AArch64 banked stack pointers */
@@ -301,8 +301,8 @@ typedef struct CPUARMState {
         /* MMU translation table base control. */
         TCR tcr_el[4];
         TCR vtcr_el2; /* Virtualization Translation Control.  */
-        uint32_t c2_data; /* MPU data cachable bits.  */
-        uint32_t c2_insn; /* MPU instruction cachable bits.  */
+        uint32_t c2_data; /* MPU data cacheable bits.  */
+        uint32_t c2_insn; /* MPU instruction cacheable bits.  */
         union { /* MMU domain access control register
                  * MPU write buffer control.
                  */
@@ -631,8 +631,7 @@ typedef struct CPUARMState {
 
     void *nvic;
     const struct arm_boot_info *boot_info;
-
-    // Store GICv3State to access from this struct
+    /* Store GICv3CPUState to access from this struct */
     void *gicv3state;
 
     // Unicorn engine
@@ -645,6 +644,7 @@ typedef struct CPUARMState {
  * to get callbacks when the CPU changes its exception level or mode.
  */
 typedef void ARMELChangeHook(ARMCPU *cpu, void *opaque);
+
 
 /* These values map onto the return values for
  * QEMU_PSCI_0_2_FN_AFFINITY_INFO */
@@ -1481,7 +1481,6 @@ static inline bool arm_el_is_aa64(CPUARMState *env, int el)
 {
     /* This isn't valid for EL0 (if we're in EL0, is_a64() is what you want,
      * and if we're not in EL0 then the state of EL0 isn't well defined.)
-     * then the state of EL0 isn't well defined.)
      */
     assert(el >= 1 && el <= 3);
     bool aa64 = arm_feature(env, ARM_FEATURE_AARCH64);
@@ -1509,7 +1508,7 @@ static inline bool arm_el_is_aa64(CPUARMState *env, int el)
     return aa64;
 }
 
-/* Function for determining whether guest cp register reads and writes should
+/* Function for determing whether guest cp register reads and writes should
  * access the secure or non-secure bank of a cp register.  When EL3 is
  * operating in AArch32 state, the NS-bit determines whether the secure
  * instance of a cp register should be used. When EL3 is AArch64 (or if
@@ -1524,7 +1523,6 @@ static inline bool access_secure_reg(CPUARMState *env)
 
     return ret;
 }
-
 
 /* Macros for accessing a specified CP register bank */
 #define A32_BANKED_REG_GET(_env, _regname, _secure)    \
@@ -1566,7 +1564,19 @@ static inline bool armv7m_nvic_can_take_pending_exception(void *opaque)
     return true;
 }
 #endif
-void armv7m_nvic_set_pending(void *opaque, int irq);
+/**
+ * armv7m_nvic_set_pending: mark the specified exception as pending
+ * @opaque: the NVIC
+ * @irq: the exception number to mark pending
+ * @secure: false for non-banked exceptions or for the nonsecure
+ * version of a banked exception, true for the secure version of a banked
+ * exception.
+ *
+ * Marks the specified exception as pending. Note that we will assert()
+ * if @secure is true and @irq does not specify one of the fixed set
+ * of architecturally banked exceptions.
+ */
+void armv7m_nvic_set_pending(void *opaque, int irq, bool secure);
 /**
  * armv7m_nvic_set_pending_derived: mark this derived exception as pending
  * @opaque: the NVIC
@@ -1595,28 +1605,27 @@ void armv7m_nvic_set_pending_derived(void *opaque, int irq, bool secure);
  */
 void armv7m_nvic_get_pending_irq_info(void *opaque, int *pirq,
                                       bool *ptargets_secure);
- /**
+/**
  * armv7m_nvic_acknowledge_irq: make highest priority pending exception active
  * @opaque: the NVIC
  *
  * Move the current highest priority pending exception from the pending
  * state to the active state, and update v7m.exception to indicate that
  * it is the exception currently being handled.
- *
- * Returns: true if exception should be taken to Secure state, false for NS
  */
 void armv7m_nvic_acknowledge_irq(void *opaque);
 /**
  * armv7m_nvic_complete_irq: complete specified interrupt or exception
  * @opaque: the NVIC
  * @irq: the exception number to complete
+ * @secure: true if this exception was secure
  *
  * Returns: -1 if the irq was not active
  *           1 if completing this irq brought us back to base (no active irqs)
  *           0 if there is still an irq active after this one was completed
  * (Ignoring -1, this is the same as the RETTOBASE value before completion.)
  */
-int armv7m_nvic_complete_irq(void *opaque, int irq);
+int armv7m_nvic_complete_irq(void *opaque, int irq, bool secure);
 /**
  * armv7m_nvic_raw_execution_priority: return the raw execution priority
  * @opaque: the NVIC
@@ -2171,6 +2180,7 @@ static inline bool arm_excp_unmasked(CPUState *cs, unsigned int excp_idx,
     case EXCP_FIQ:
         pstate_unmasked = !(env->daif & PSTATE_F);
         break;
+
     case EXCP_IRQ:
         pstate_unmasked = !(env->daif & PSTATE_I);
         break;
@@ -2252,7 +2262,7 @@ static inline bool arm_excp_unmasked(CPUState *cs, unsigned int excp_idx,
         }
     }
 
-    /* The PSTATE bits only mask the interrupt if we have not overridden the
+    /* The PSTATE bits only mask the interrupt if we have not overriden the
      * ability above.
      */
     return unmasked || pstate_unmasked;
@@ -2428,12 +2438,6 @@ static inline ARMMMUIdx core_to_arm_mmu_idx(CPUARMState *env, int mmu_idx)
     }
 }
 
-/* Indexes used when registering address spaces with cpu_address_space_init */
-typedef enum ARMASIdx {
-    ARMASIdx_NS = 0,
-    ARMASIdx_S = 1,
-} ARMASIdx;
-
 /* Return the exception level we're running at if this is our mmu_idx */
 static inline int arm_mmu_idx_to_el(ARMMMUIdx mmu_idx)
 {
@@ -2499,6 +2503,12 @@ static inline int cpu_mmu_index(CPUARMState *env, bool ifetch)
     }
     return el;
 }
+
+/* Indexes used when registering address spaces with cpu_address_space_init */
+typedef enum ARMASIdx {
+    ARMASIdx_NS = 0,
+    ARMASIdx_S = 1,
+} ARMASIdx;
 
 /* Return the Exception Level targeted by debug exceptions. */
 static inline int arm_debug_target_el(CPUARMState *env)
