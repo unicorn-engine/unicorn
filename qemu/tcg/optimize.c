@@ -498,7 +498,6 @@ static TCGArg do_constant_folding_cond(TCGContext *s, TCGOpcode op, TCGArg x,
 {
     tcg_target_ulong xv = arg_info(x)->val;
     tcg_target_ulong yv = arg_info(y)->val;
-
     if (arg_is_const(x) && arg_is_const(y)) {
         const TCGOpDef *def = &s->tcg_op_defs[op];
         tcg_debug_assert(!(def->flags & TCG_OPF_VECTOR));
@@ -609,7 +608,6 @@ void tcg_optimize(TCGContext *s)
         tcg_target_ulong mask, partmask, affected;
         int nb_oargs, nb_iargs, i;
         TCGArg tmp;
-
         TCGOpcode opc = op->opc;
         const TCGOpDef *def = &s->tcg_op_defs[opc];
 
@@ -883,7 +881,7 @@ void tcg_optimize(TCGContext *s)
 
         CASE_OP_32_64(andc):
             /* Known-zeros does not imply known-ones.  Therefore unless
-               args[2] is constant, we can't infer anything from it.  */
+               op->args[2] is constant, we can't infer anything from it.  */
             if (arg_is_const(op->args[2])) {
                 mask = ~arg_info(op->args[2])->mask;
                 goto and_const;
