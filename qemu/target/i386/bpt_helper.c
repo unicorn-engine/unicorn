@@ -138,16 +138,16 @@ void cpu_x86_update_dr7(CPUX86State *env, uint32_t new_dr7)
 
         for (i = 0; i < DR7_MAX_BP; i++) {
             if ((mod & (2 << i * 2)) && !hw_breakpoint_enabled(new_dr7, i)) {
-                iobpt |= hw_breakpoint_insert(env, i);
-            } else if (hw_breakpoint_type(new_dr7, i) == DR7_TYPE_IO_RW
-                       && hw_breakpoint_enabled(new_dr7, i)) {
-                iobpt |= HF_IOBPT_MASK;
+                hw_breakpoint_remove(env, i);
             }
         }
         env->dr[7] = new_dr7;
         for (i = 0; i < DR7_MAX_BP; i++) {
             if (mod & (2 << i * 2) && hw_breakpoint_enabled(new_dr7, i)) {
-                hw_breakpoint_insert(env, i);
+                iobpt |= hw_breakpoint_insert(env, i);
+            } else if (hw_breakpoint_type(new_dr7, i) == DR7_TYPE_IO_RW
+                       && hw_breakpoint_enabled(new_dr7, i)) {
+                iobpt |= HF_IOBPT_MASK;
             }
         }
     } else {
@@ -270,7 +270,7 @@ void helper_set_dr(CPUX86State *env, int reg, target_ulong t0)
         }
         /* fallthru */
     case 6:
-        env->dr[6] = t0;
+        env->dr[6] = t0 | DR6_FIXED_1;
         return;
     case 5:
         if (env->cr[4] & CR4_DE_MASK) {
