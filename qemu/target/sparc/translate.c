@@ -2641,6 +2641,32 @@ static void gen_ldf_asi(DisasContext *dc, TCGv addr,
     case GET_ASI_EXCP:
         break;
 
+    case GET_ASI_DIRECT:
+        gen_address_mask(dc, addr);
+        switch (size) {
+        case 4:
+            d32 = gen_dest_fpr_F(dc);
+            tcg_gen_qemu_ld_i32(dc->uc, d32, addr, da.mem_idx, da.memop);
+            gen_store_fpr_F(dc, rd, d32);
+            break;
+        case 8:
+            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx,
+                                da.memop | MO_ALIGN_4);
+            break;
+        case 16:
+            d64 = tcg_temp_new_i64(tcg_ctx);
+            tcg_gen_qemu_ld_i64(dc->uc, d64, addr, da.mem_idx, da.memop | MO_ALIGN_4);
+            tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
+            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd/2+1], addr, da.mem_idx,
+                                da.memop | MO_ALIGN_4);
+            tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_fpr[rd / 2], d64);
+            tcg_temp_free_i64(tcg_ctx, d64);
+            break;
+        default:
+            g_assert_not_reached();
+        }
+        break;
+
     case GET_ASI_BLOCK:
         /* Valid for lddfa on aligned registers only.  */
         if (size == 8 && (rd & 7) == 0) {
@@ -2675,32 +2701,6 @@ static void gen_ldf_asi(DisasContext *dc, TCGv addr,
             tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx, da.memop);
         } else {
             gen_exception(dc, TT_ILL_INSN);
-        }
-        break;
-
-    case GET_ASI_DIRECT:
-        gen_address_mask(dc, addr);
-        switch (size) {
-        case 4:
-            d32 = gen_dest_fpr_F(dc);
-            tcg_gen_qemu_ld_i32(dc->uc, d32, addr, da.mem_idx, da.memop);
-            gen_store_fpr_F(dc, rd, d32);
-            break;
-        case 8:
-            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx,
-                                da.memop | MO_ALIGN_4);
-            break;
-        case 16:
-            d64 = tcg_temp_new_i64(tcg_ctx);
-            tcg_gen_qemu_ld_i64(dc->uc, d64, addr, da.mem_idx, da.memop | MO_ALIGN_4);
-            tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
-            tcg_gen_qemu_ld_i64(dc->uc, tcg_ctx->cpu_fpr[rd/2+1], addr, da.mem_idx,
-                                da.memop | MO_ALIGN_4);
-            tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_fpr[rd / 2], d64);
-            tcg_temp_free_i64(tcg_ctx, d64);
-            break;
-        default:
-            g_assert_not_reached();
         }
         break;
 
@@ -2755,6 +2755,33 @@ static void gen_stf_asi(DisasContext *dc, TCGv addr,
     case GET_ASI_EXCP:
         break;
 
+    case GET_ASI_DIRECT:
+        gen_address_mask(dc, addr);
+        switch (size) {
+        case 4:
+            d32 = gen_load_fpr_F(dc, rd);
+            tcg_gen_qemu_st_i32(dc->uc, d32, addr, da.mem_idx, da.memop);
+            break;
+        case 8:
+            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx,
+                                da.memop | MO_ALIGN_4);
+            break;
+        case 16:
+            /* Only 4-byte alignment required.  However, it is legal for the
+               cpu to signal the alignment fault, and the OS trap handler is
+               required to fix it up.  Requiring 16-byte alignment here avoids
+               having to probe the second page before performing the first
+               write.  */
+            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx,
+                                da.memop | MO_ALIGN_16);
+            tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
+            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd/2+1], addr, da.mem_idx, da.memop);
+            break;
+        default:
+            g_assert_not_reached();
+        }
+        break;
+
     case GET_ASI_BLOCK:
         /* Valid for stdfa on aligned registers only.  */
         if (size == 8 && (rd & 7) == 0) {
@@ -2789,33 +2816,6 @@ static void gen_stf_asi(DisasContext *dc, TCGv addr,
             tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx, da.memop);
         } else {
             gen_exception(dc, TT_ILL_INSN);
-        }
-        break;
-
-    case GET_ASI_DIRECT:
-        gen_address_mask(dc, addr);
-        switch (size) {
-        case 4:
-            d32 = gen_load_fpr_F(dc, rd);
-            tcg_gen_qemu_st_i32(dc->uc, d32, addr, da.mem_idx, da.memop);
-            break;
-        case 8:
-            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx,
-                                da.memop | MO_ALIGN_4);
-            break;
-        case 16:
-            /* Only 4-byte alignment required.  However, it is legal for the
-               cpu to signal the alignment fault, and the OS trap handler is
-               required to fix it up.  Requiring 16-byte alignment here avoids
-               having to probe the second page before performing the first
-               write.  */
-            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd / 2], addr, da.mem_idx,
-                                da.memop | MO_ALIGN_16);
-            tcg_gen_addi_tl(tcg_ctx, addr, addr, 8);
-            tcg_gen_qemu_st_i64(dc->uc, tcg_ctx->cpu_fpr[rd/2+1], addr, da.mem_idx, da.memop);
-            break;
-        default:
-            g_assert_not_reached();
         }
         break;
 
