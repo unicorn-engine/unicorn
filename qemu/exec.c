@@ -886,65 +886,6 @@ found:
     return block;
 }
 
-static void tlb_reset_dirty_range_all(struct uc_struct* uc,
-                                      ram_addr_t start, ram_addr_t length)
-{
-    ram_addr_t start1;
-    RAMBlock *block;
-    ram_addr_t end;
-
-    end = TARGET_PAGE_ALIGN(start + length);
-    start &= TARGET_PAGE_MASK;
-
-    block = qemu_get_ram_block(uc, start);
-    assert(block == qemu_get_ram_block(uc, end - 1));
-    start1 = (uintptr_t)ramblock_ptr(block, start - block->offset);
-    tlb_reset_dirty(uc->cpu, start1, length);
-}
-
-/* Note: start and end must be within the same ram block.  */
-bool cpu_physical_memory_test_and_clear_dirty(struct uc_struct *uc,
-                                              ram_addr_t start,
-                                              ram_addr_t length,
-                                              unsigned client)
-{
-    DirtyMemoryBlocks *blocks;
-    unsigned long end, page;
-    bool dirty = false;
-
-    if (length == 0) {
-        return false;
-    }
-
-    end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
-    page = start >> TARGET_PAGE_BITS;
-
-    // Unicorn: commented out
-    //rcu_read_lock();
-
-    // Unicorn: atomic_read instead of atomic_rcu_read used
-    blocks = atomic_read(&uc->ram_list.dirty_memory[client]);
-
-    while (page < end) {
-        unsigned long idx = page / DIRTY_MEMORY_BLOCK_SIZE;
-        unsigned long offset = page % DIRTY_MEMORY_BLOCK_SIZE;
-        unsigned long num = MIN(end - page, DIRTY_MEMORY_BLOCK_SIZE - offset);
-
-        dirty |= bitmap_test_and_clear_atomic(blocks->blocks[idx],
-                                              offset, num);
-        page += num;
-    }
-
-    // Unicorn: commented out
-    //rcu_read_unlock();
-
-    if (dirty && tcg_enabled(uc)) {
-        tlb_reset_dirty_range_all(uc, start, length);
-    }
-
-    return dirty;
-}
-
 hwaddr memory_region_section_get_iotlb(CPUState *cpu,
         MemoryRegionSection *section,
         target_ulong vaddr,
@@ -1238,60 +1179,13 @@ int qemu_ram_resize(struct uc_struct *uc, RAMBlock *block, ram_addr_t newsize, E
         return -EINVAL;
     }
 
-    cpu_physical_memory_clear_dirty_range(uc, block->offset, block->used_length);
     block->used_length = newsize;
-    cpu_physical_memory_set_dirty_range(uc, block->offset, block->used_length,
-                                        DIRTY_CLIENTS_ALL);
+
     memory_region_set_size(block->mr, newsize);
     if (block->resized) {
         block->resized(block->idstr, newsize, block->host);
     }
     return 0;
-}
-
-/* Called with ram_list.mutex held */
-static void dirty_memory_extend(struct uc_struct *uc,
-                                ram_addr_t old_ram_size,
-                                ram_addr_t new_ram_size)
-{
-    ram_addr_t old_num_blocks = DIV_ROUND_UP(old_ram_size,
-                                             DIRTY_MEMORY_BLOCK_SIZE);
-    ram_addr_t new_num_blocks = DIV_ROUND_UP(new_ram_size,
-                                             DIRTY_MEMORY_BLOCK_SIZE);
-    int i;
-
-    /* Only need to extend if block count increased */
-    if (new_num_blocks <= old_num_blocks) {
-        return;
-    }
-
-    for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
-        DirtyMemoryBlocks *old_blocks;
-        DirtyMemoryBlocks *new_blocks;
-        int j;
-
-        // Unicorn: atomic_read used instead of atomic_rcu_read
-        old_blocks = atomic_read(&uc->ram_list.dirty_memory[i]);
-        new_blocks = g_malloc(sizeof(*new_blocks) +
-                              sizeof(new_blocks->blocks[0]) * new_num_blocks);
-        // Unicorn: unicorn-specific variable to make memory handling less painful.
-        new_blocks->num_blocks = new_num_blocks;
-
-        if (old_num_blocks) {
-            memcpy(new_blocks->blocks, old_blocks->blocks,
-                   old_num_blocks * sizeof(old_blocks->blocks[0]));
-        }
-
-        for (j = old_num_blocks; j < new_num_blocks; j++) {
-            new_blocks->blocks[j] = bitmap_new(DIRTY_MEMORY_BLOCK_SIZE);
-        }
-
-        // Unicorn: atomic_set used instead of atomic_rcu_set
-        atomic_set(&uc->ram_list.dirty_memory[i], new_blocks);
-
-        // Unicorn: g_free used instead of g_free_rcu
-        g_free(old_blocks);
-    }
 }
 
 static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **errp)
@@ -1318,11 +1212,7 @@ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **err
 
     new_ram_size = MAX(old_ram_size,
               (new_block->offset + new_block->max_length) >> TARGET_PAGE_BITS);
-    if (new_ram_size > old_ram_size) {
-        // Unicorn: commented out
-        //migration_bitmap_extend(old_ram_size, new_ram_size);
-        dirty_memory_extend(uc, old_ram_size, new_ram_size);
-    }
+
     /* Keep the list sorted from biggest to smallest block.  Unlike QTAILQ,
      * QLIST (which has an RCU-friendly variant) does not have insertion at
      * tail, so save the last element in last_block.
@@ -1345,10 +1235,6 @@ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block, Error **err
     /* Write list before version */
     smp_wmb();
     uc->ram_list.version++;
-
-    cpu_physical_memory_set_dirty_range(uc, new_block->offset,
-                                        new_block->used_length,
-                                        DIRTY_CLIENTS_ALL);
 
     if (new_block->host) {
         qemu_ram_setup_dump(new_block->host, new_block->max_length);
@@ -1756,9 +1642,6 @@ static int subpage_register (subpage_t *mmio, uint32_t start, uint32_t end,
 static void notdirty_mem_write(struct uc_struct* uc, void *opaque, hwaddr ram_addr,
                                uint64_t val, unsigned size)
 {
-    if (!cpu_physical_memory_get_dirty_flag(uc, ram_addr, DIRTY_MEMORY_CODE)) {
-        tb_invalidate_phys_page_fast(uc, ram_addr, size);
-    }
     switch (size) {
     case 1:
         stb_p(qemu_map_ram_ptr(uc, NULL, ram_addr), val);
@@ -1771,11 +1654,6 @@ static void notdirty_mem_write(struct uc_struct* uc, void *opaque, hwaddr ram_ad
         break;
     default:
         abort();
-    }
-    /* we remove the notdirty callback only if the code has been
-       flushed */
-    if (!cpu_physical_memory_is_clean(uc, ram_addr)) {
-        tlb_set_dirty(uc->current_cpu, uc->current_cpu->mem_io_vaddr);
     }
 }
 
@@ -1974,23 +1852,6 @@ int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
 
 #else
 
-static void invalidate_and_set_dirty(MemoryRegion *mr, hwaddr addr,
-                                     hwaddr length)
-{
-    uint8_t dirty_log_mask = memory_region_get_dirty_log_mask(mr);
-    addr += memory_region_get_ram_addr(mr);
-
-    if (dirty_log_mask) {
-        dirty_log_mask =
-            cpu_physical_memory_range_includes_clean(mr->uc, addr, length, dirty_log_mask);
-    }
-    if (dirty_log_mask & (1 << DIRTY_MEMORY_CODE)) {
-        tb_invalidate_phys_range(mr->uc, addr, addr + length);
-        dirty_log_mask &= ~(1 << DIRTY_MEMORY_CODE);
-    }
-    cpu_physical_memory_set_dirty_range(mr->uc, addr, length, dirty_log_mask);
-}
-
 static int memory_access_size(MemoryRegion *mr, unsigned l, hwaddr addr)
 {
     unsigned access_size_max = mr->ops->valid.max_access_size;
@@ -2072,7 +1933,6 @@ static MemTxResult flatview_write_continue(FlatView *fv, hwaddr addr,
             /* RAM case */
             ptr = qemu_map_ram_ptr(mr->uc, mr->ram_block, addr1);
             memcpy(ptr, buf, l);
-            invalidate_and_set_dirty(mr, addr1, l);
         }
 
         /* Unicorn: commented out
@@ -2271,7 +2131,6 @@ static inline void cpu_physical_memory_write_rom_internal(AddressSpace *as,
             switch (type) {
                 case WRITE_DATA:
                     memcpy(ptr, buf, l);
-                    invalidate_and_set_dirty(mr, addr1, l);
                     break;
                 case FLUSH_CACHE:
                     flush_icache_range((uintptr_t)ptr, (uintptr_t)ptr + l);
@@ -2431,9 +2290,6 @@ void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
 
         mr = memory_region_from_host(as->uc, buffer, &addr1);
         assert(mr != NULL);
-        if (is_write) {
-            invalidate_and_set_dirty(mr, addr1, access_len);
-        }
         memory_region_unref(mr);
         return;
     }
@@ -2466,7 +2322,7 @@ void cpu_physical_memory_unmap(AddressSpace *as, void *buffer, hwaddr len,
 #define TRANSLATE(...)           address_space_translate(as, __VA_ARGS__)
 #define IS_DIRECT(mr, is_write)  memory_access_is_direct(mr, is_write)
 #define MAP_RAM(mr, ofs)         qemu_map_ram_ptr((mr)->uc, (mr)->ram_block, ofs)
-#define INVALIDATE(mr, ofs, len) invalidate_and_set_dirty(mr, ofs, len)
+#define INVALIDATE(mr, ofs, len)
 #define RCU_READ_LOCK(...)       rcu_read_lock()
 #define RCU_READ_UNLOCK(...)     rcu_read_unlock()
 #include "memory_ldst.inc.c"
@@ -2556,7 +2412,7 @@ void address_space_cache_destroy(MemoryRegionCache *cache)
     address_space_translate(cache->as, cache->xlat + (addr), __VA_ARGS__)
 #define IS_DIRECT(mr, is_write)  true
 #define MAP_RAM(mr, ofs)         qemu_map_ram_ptr((mr)->uc, (mr)->ram_block, ofs)
-#define INVALIDATE(mr, ofs, len) invalidate_and_set_dirty(mr, ofs, len)
+#define INVALIDATE(mr, ofs, len)
 #define RCU_READ_LOCK()          //rcu_read_lock()
 #define RCU_READ_UNLOCK()        //rcu_read_unlock()
 #include "memory_ldst.inc.c"

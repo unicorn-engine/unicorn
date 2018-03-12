@@ -1271,13 +1271,6 @@ static inline void tb_alloc_page(struct uc_struct *uc, TranslationBlock *tb,
             printf("protecting code page: 0x" TB_PAGE_ADDR_FMT "\n", page_addr);
         }
     }
-#else
-    /* if some code is already present, then the pages are already
-       protected. So we handle the case where only the first TB is
-       allocated in a physical page */
-    if (!page_already_protected) {
-        tlb_protect_code(uc, page_addr);
-    }
 #endif
 }
 
@@ -1532,7 +1525,6 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
                                    int is_cpu_write_access)
 {
     TranslationBlock *tb, *tb_next;
-    CPUState *cpu = uc->current_cpu;
 #if defined(TARGET_HAS_PRECISE_SMC)
     CPUArchState *env = NULL;
 #endif
@@ -1613,7 +1605,6 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
     /* if no code remaining, no need to continue to use slow writes */
     if (!p->first_tb) {
         invalidate_page_bitmap(p);
-        tlb_unprotect_code(cpu, start);
     }
 #endif
 #ifdef TARGET_HAS_PRECISE_SMC

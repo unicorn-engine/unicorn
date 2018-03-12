@@ -249,9 +249,7 @@ void tlb_set_page_with_attrs(CPUState *cpu, target_ulong vaddr,
             || memory_region_is_romd(section->mr)) {
             /* Write access calls the I/O callback.  */
             te->addr_write = address | TLB_MMIO;
-        } else if (memory_region_is_ram(section->mr)
-                   && cpu_physical_memory_is_clean(cpu->uc,
-                        memory_region_get_ram_addr(section->mr) + xlat)) {
+        } else if (memory_region_is_ram(section->mr)) {
             te->addr_write = address | TLB_NOTDIRTY;
         } else {
             te->addr_write = address;
@@ -450,21 +448,6 @@ void tlb_flush_page_by_mmuidx(CPUState *cpu, target_ulong addr, uint16_t idxmap)
     }
 
     tb_flush_jmp_cache(cpu, addr);
-}
-
-/* update the TLBs so that writes to code in the virtual page 'addr'
-   can be detected */
-void tlb_protect_code(struct uc_struct *uc, ram_addr_t ram_addr)
-{
-    cpu_physical_memory_test_and_clear_dirty(uc, ram_addr, TARGET_PAGE_SIZE,
-                                             DIRTY_MEMORY_CODE);
-}
-
-/* update the TLB so that writes in physical page 'phys_addr' are no longer
-   tested for self modifying code */
-void tlb_unprotect_code(CPUState *cpu, ram_addr_t ram_addr)
-{
-    cpu_physical_memory_set_dirty_flag(cpu->uc, ram_addr, DIRTY_MEMORY_CODE);
 }
 
 static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,

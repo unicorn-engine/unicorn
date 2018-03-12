@@ -281,23 +281,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
     }
 }
 
-static void ramlist_free_dirty_memory(struct uc_struct *uc)
-{
-    int i;
-    DirtyMemoryBlocks** blocks = uc->ram_list.dirty_memory;
-
-    for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
-        DirtyMemoryBlocks* block = blocks[i];
-        int j;
-
-        for (j = 0; j < block->num_blocks; j++) {
-            free(block->blocks[j]);
-        }
-
-        free(blocks[i]);
-    }
-}
-
 static void free_hooks(uc_engine *uc)
 {
     struct list_item *cur;
@@ -363,7 +346,6 @@ uc_err uc_close(uc_engine *uc)
     g_hash_table_foreach(uc->type_table, free_table, uc);
     g_hash_table_destroy(uc->type_table);
 
-    ramlist_free_dirty_memory(uc);
     free_hooks(uc);
     free(uc->mapped_blocks);
 

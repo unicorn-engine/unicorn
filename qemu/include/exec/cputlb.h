@@ -21,8 +21,6 @@
 
 #if !defined(CONFIG_USER_ONLY)
 /* cputlb.c */
-void tlb_protect_code(struct uc_struct *uc, ram_addr_t ram_addr);
-void tlb_unprotect_code(CPUState *cpu, ram_addr_t ram_addr);
 void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry,
     uintptr_t start, uintptr_t length);
 //extern int tlb_flush_count;
