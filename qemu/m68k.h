@@ -82,9 +82,6 @@
 #define address_space_lduw_le_cached address_space_lduw_le_cached_m68k
 #define address_space_lookup_region address_space_lookup_region_m68k
 #define address_space_map address_space_map_m68k
-#define address_space_read address_space_read_m68k
-#define address_space_read_continue address_space_read_continue_m68k
-#define address_space_read_full address_space_read_full_m68k
 #define address_space_rw address_space_rw_m68k
 #define address_space_stb address_space_stb_m68k
 #define address_space_stb_cached address_space_stb_cached_m68k
@@ -109,7 +106,7 @@
 #define address_space_stw_le address_space_stw_le_m68k
 #define address_space_stw_le_cached address_space_stw_le_cached_m68k
 #define address_space_to_dispatch address_space_to_dispatch_m68k
-#define address_space_translate address_space_translate_m68k
+#define address_space_to_flatview address_space_to_flatview_m68k
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_m68k
 #define address_space_translate_internal address_space_translate_internal_m68k
 #define address_space_unmap address_space_unmap_m68k
@@ -450,9 +447,13 @@
 #define flatview_init flatview_init_m68k
 #define flatview_insert flatview_insert_m68k
 #define flatview_lookup flatview_lookup_m68k
+#define flatview_read flatview_read_m68k
+#define flatview_read_continue flatview_read_continue_m68k
+#define flatview_read_full flatview_read_full_m68k
 #define flatview_ref flatview_ref_m68k
 #define flatview_simplify flatview_simplify_m68k
 #define flatview_to_dispatch flatview_to_dispatch_m68k
+#define flatview_translate flatview_translate_m68k
 #define flatview_unref flatview_unref_m68k
 #define float128ToCommonNaN float128ToCommonNaN_m68k
 #define float128_add float128_add_m68k

@@ -82,9 +82,6 @@
 #define address_space_lduw_le_cached address_space_lduw_le_cached_mipsel
 #define address_space_lookup_region address_space_lookup_region_mipsel
 #define address_space_map address_space_map_mipsel
-#define address_space_read address_space_read_mipsel
-#define address_space_read_continue address_space_read_continue_mipsel
-#define address_space_read_full address_space_read_full_mipsel
 #define address_space_rw address_space_rw_mipsel
 #define address_space_stb address_space_stb_mipsel
 #define address_space_stb_cached address_space_stb_cached_mipsel
@@ -109,7 +106,7 @@
 #define address_space_stw_le address_space_stw_le_mipsel
 #define address_space_stw_le_cached address_space_stw_le_cached_mipsel
 #define address_space_to_dispatch address_space_to_dispatch_mipsel
-#define address_space_translate address_space_translate_mipsel
+#define address_space_to_flatview address_space_to_flatview_mipsel
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_mipsel
 #define address_space_translate_internal address_space_translate_internal_mipsel
 #define address_space_unmap address_space_unmap_mipsel
@@ -450,9 +447,13 @@
 #define flatview_init flatview_init_mipsel
 #define flatview_insert flatview_insert_mipsel
 #define flatview_lookup flatview_lookup_mipsel
+#define flatview_read flatview_read_mipsel
+#define flatview_read_continue flatview_read_continue_mipsel
+#define flatview_read_full flatview_read_full_mipsel
 #define flatview_ref flatview_ref_mipsel
 #define flatview_simplify flatview_simplify_mipsel
 #define flatview_to_dispatch flatview_to_dispatch_mipsel
+#define flatview_translate flatview_translate_mipsel
 #define flatview_unref flatview_unref_mipsel
 #define float128ToCommonNaN float128ToCommonNaN_mipsel
 #define float128_add float128_add_mipsel

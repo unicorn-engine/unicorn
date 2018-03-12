@@ -82,9 +82,6 @@
 #define address_space_lduw_le_cached address_space_lduw_le_cached_sparc64
 #define address_space_lookup_region address_space_lookup_region_sparc64
 #define address_space_map address_space_map_sparc64
-#define address_space_read address_space_read_sparc64
-#define address_space_read_continue address_space_read_continue_sparc64
-#define address_space_read_full address_space_read_full_sparc64
 #define address_space_rw address_space_rw_sparc64
 #define address_space_stb address_space_stb_sparc64
 #define address_space_stb_cached address_space_stb_cached_sparc64
@@ -109,7 +106,7 @@
 #define address_space_stw_le address_space_stw_le_sparc64
 #define address_space_stw_le_cached address_space_stw_le_cached_sparc64
 #define address_space_to_dispatch address_space_to_dispatch_sparc64
-#define address_space_translate address_space_translate_sparc64
+#define address_space_to_flatview address_space_to_flatview_sparc64
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_sparc64
 #define address_space_translate_internal address_space_translate_internal_sparc64
 #define address_space_unmap address_space_unmap_sparc64
@@ -450,9 +447,13 @@
 #define flatview_init flatview_init_sparc64
 #define flatview_insert flatview_insert_sparc64
 #define flatview_lookup flatview_lookup_sparc64
+#define flatview_read flatview_read_sparc64
+#define flatview_read_continue flatview_read_continue_sparc64
+#define flatview_read_full flatview_read_full_sparc64
 #define flatview_ref flatview_ref_sparc64
 #define flatview_simplify flatview_simplify_sparc64
 #define flatview_to_dispatch flatview_to_dispatch_sparc64
+#define flatview_translate flatview_translate_sparc64
 #define flatview_unref flatview_unref_sparc64
 #define float128ToCommonNaN float128ToCommonNaN_sparc64
 #define float128_add float128_add_sparc64

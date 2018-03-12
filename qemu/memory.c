@@ -236,12 +236,12 @@ enum ListenerDirection { Forward, Reverse };
 /* No need to ref/unref .mr, the FlatRange keeps it alive.  */
 #define MEMORY_LISTENER_UPDATE_REGION(fr, as, dir, callback, ...)     \
     do {                                                              \
-        MemoryRegionSection mrs = section_from_flat_range(fr, as);    \
+        MemoryRegionSection mrs = section_from_flat_range(fr,           \
+                address_space_to_flatview(as));                         \
         MEMORY_LISTENER_CALL(as, callback, dir, &mrs, ##__VA_ARGS__); \
     } while(0);
 
 typedef struct FlatRange FlatRange;
-typedef struct FlatView FlatView;
 
 /* Range of memory in the global map.  Addresses are absolute. */
 struct FlatRange {
@@ -269,11 +269,11 @@ typedef struct AddressSpaceOps AddressSpaceOps;
     for (var = (view)->ranges; var < (view)->ranges + (view)->nr; ++var)
 
 static inline MemoryRegionSection
-section_from_flat_range(FlatRange *fr, AddressSpace *as)
+section_from_flat_range(FlatRange *fr, FlatView *fv)
 {
     MemoryRegionSection s = {0};
     s.mr = fr->mr;
-    s.address_space = as;
+    s.fv = fv;
     s.offset_within_region = fr->offset_in_region;
     s.size = fr->addr.size;
     s.offset_within_address_space = int128_get64(fr->addr.start);
@@ -342,7 +342,7 @@ static void flatview_unref(FlatView *view)
     }
 }
 
-static FlatView *address_space_to_flatview(AddressSpace *as)
+FlatView *address_space_to_flatview(AddressSpace *as)
 {
     // Unicorn: atomic_read used instead of atomic_rcu_read
     return atomic_read(&as->current_map);
@@ -784,8 +784,8 @@ static void address_space_update_topology(AddressSpace *as)
     new_view->dispatch = mem_begin(as);
     for (i = 0; i < new_view->nr; i++) {
         MemoryRegionSection mrs =
-            section_from_flat_range(&new_view->ranges[i], as);
-        mem_add(as, new_view, &mrs);
+            section_from_flat_range(&new_view->ranges[i], new_view);
+        mem_add(new_view, &mrs);
     }
     mem_commit(new_view->dispatch);
 
@@ -1678,8 +1678,7 @@ static MemoryRegionSection memory_region_find_rcu(MemoryRegion *mr,
     }
     range = addrrange_make(int128_make64(addr), int128_make64(size));
 
-    // Unicorn: Uses atomic_read instead of atomic_rcu_read
-    view = atomic_read(&as->current_map);
+    view = address_space_to_flatview(as);
     fr = flatview_lookup(view, range);
     if (!fr) {
         return ret;
@@ -1690,7 +1689,7 @@ static MemoryRegionSection memory_region_find_rcu(MemoryRegion *mr,
     }
 
     ret.mr = fr->mr;
-    ret.address_space = as;
+    ret.fv = view;
     range = addrrange_intersection(range, fr->addr);
     ret.offset_within_region = fr->offset_in_region;
     ret.offset_within_region += int128_get64(int128_sub(range.start,
@@ -1747,7 +1746,7 @@ static QEMU_UNUSED_FUNC void listener_add_address_space(MemoryListener *listener
     FOR_EACH_FLAT_RANGE(fr, view) {
         MemoryRegionSection section = MemoryRegionSection_make(
             fr->mr,
-            as,
+            view,
             fr->offset_in_region,
             fr->addr.size,
             int128_get64(fr->addr.start),
