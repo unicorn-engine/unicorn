@@ -714,6 +714,11 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         cs->num_ases = 1;
     }
     cpu_address_space_init(cs, ARMASIdx_NS, "cpu-memory", cs->memory);
+
+    /* No core_count specified, default to smp_cpus. */
+    if (cpu->core_count == -1) {
+        cpu->core_count = smp_cpus;
+    }
 #endif
 
     init_cpreg_list(cpu);
