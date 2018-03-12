@@ -105,7 +105,6 @@ throwaway:
     cpu_m68k_set_sr(env, sr);
 }
 
-
 static const char *m68k_exception_name(int index)
 {
     switch (index) {
@@ -210,7 +209,6 @@ static const char *m68k_exception_name(int index)
     if (index >= 64 && index <= 255) {
         return "User Defined Vector";
     }
-
     return "Unassigned";
 }
 

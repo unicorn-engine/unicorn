@@ -30,7 +30,7 @@
  */
 
 static const floatx80 fpu_rom[128] = {
-    make_floatx80_init(0x4000, 0xc90fdaa22168c235ULL), /* Pi */
+    make_floatx80_init(0x4000, 0xc90fdaa22168c235ULL), /* Pi       */
     {0, 0}, {0, 0},
     {0, 0}, {0, 0}, {0, 0}, {0, 0},
     {0, 0}, {0, 0}, {0, 0}, {0, 0},
