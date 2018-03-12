@@ -281,7 +281,7 @@ static void phys_page_compact(PhysPageEntry *lp, Node *nodes, unsigned long *com
     }
 }
 
-static void phys_page_compact_all(AddressSpaceDispatch *d, int nodes_nb)
+void address_space_dispatch_compact(AddressSpaceDispatch *d)
 {
     //DECLARE_BITMAP(compacted, nodes_nb);
     // this isnt actually used
@@ -1093,7 +1093,7 @@ static void register_multipage(FlatView *fv,
     phys_page_set(d, start_addr >> TARGET_PAGE_BITS, num_pages, section_index);
 }
 
-void mem_add(FlatView *fv, MemoryRegionSection *section)
+void flatview_add_to_dispatch(FlatView *fv, MemoryRegionSection *section)
 {
     MemoryRegionSection now = *section, remain = *section;
     Int128 page_size = int128_make64(TARGET_PAGE_SIZE);
@@ -1853,15 +1853,13 @@ MemoryRegion *iotlb_to_region(CPUState *cpu, hwaddr index, MemTxAttrs attrs)
     return sections[index & ~TARGET_PAGE_MASK].mr;
 }
 
-AddressSpaceDispatch *mem_begin(AddressSpace *as)
+AddressSpaceDispatch *address_space_dispatch_new(struct uc_struct *uc, FlatView *fv)
 {
-    FlatView *fv = address_space_to_flatview(as);
     AddressSpaceDispatch *d = g_new0(AddressSpaceDispatch, 1);
     uint16_t n;
     PhysPageEntry ppe = { 1, PHYS_MAP_NODE_NIL };
-    struct uc_struct *uc = as->uc;
 
-    d->uc = as->uc;
+    d->uc = uc;
 
     n = dummy_section(&d->map, fv, &uc->io_mem_unassigned);
     assert(n == PHYS_SECTION_UNASSIGNED);
@@ -1881,11 +1879,6 @@ void address_space_dispatch_free(AddressSpaceDispatch *d)
 {
     phys_sections_free(&d->map);
     g_free(d);
-}
-
-void mem_commit(AddressSpaceDispatch *d)
-{
-    phys_page_compact_all(d, d->map.nodes_nb);
 }
 
 static void tcg_commit(MemoryListener *listener)

@@ -54,7 +54,9 @@
 #define address_space_cache_init address_space_cache_init_m68k
 #define address_space_cache_invalidate address_space_cache_invalidate_m68k
 #define address_space_destroy address_space_destroy_m68k
+#define address_space_dispatch_compact address_space_dispatch_compact_m68k
 #define address_space_dispatch_free address_space_dispatch_free_m68k
+#define address_space_dispatch_new address_space_dispatch_new_m68k
 #define address_space_get_flatview address_space_get_flatview_m68k
 #define address_space_init address_space_init_m68k
 #define address_space_init_dispatch address_space_init_dispatch_m68k
@@ -443,6 +445,7 @@
 #define find_string find_string_m68k
 #define find_type find_type_m68k
 #define flatrange_equal flatrange_equal_m68k
+#define flatview_add_to_dispatch flatview_add_to_dispatch_m68k
 #define flatview_destroy flatview_destroy_m68k
 #define flatview_init flatview_init_m68k
 #define flatview_insert flatview_insert_m68k
@@ -1753,9 +1756,6 @@
 #define mapping_contiguous mapping_contiguous_m68k
 #define mapping_have_same_region mapping_have_same_region_m68k
 #define mapping_merge mapping_merge_m68k
-#define mem_add mem_add_m68k
-#define mem_begin mem_begin_m68k
-#define mem_commit mem_commit_m68k
 #define memory_access_size memory_access_size_m68k
 #define memory_free memory_free_m68k
 #define memory_init memory_init_m68k

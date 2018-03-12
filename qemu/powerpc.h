@@ -54,7 +54,9 @@
 #define address_space_cache_init address_space_cache_init_powerpc
 #define address_space_cache_invalidate address_space_cache_invalidate_powerpc
 #define address_space_destroy address_space_destroy_powerpc
+#define address_space_dispatch_compact address_space_dispatch_compact_powerpc
 #define address_space_dispatch_free address_space_dispatch_free_powerpc
+#define address_space_dispatch_new address_space_dispatch_new_powerpc
 #define address_space_get_flatview address_space_get_flatview_powerpc
 #define address_space_init address_space_init_powerpc
 #define address_space_init_dispatch address_space_init_dispatch_powerpc
@@ -443,6 +445,7 @@
 #define find_string find_string_powerpc
 #define find_type find_type_powerpc
 #define flatrange_equal flatrange_equal_powerpc
+#define flatview_add_to_dispatch flatview_add_to_dispatch_powerpc
 #define flatview_destroy flatview_destroy_powerpc
 #define flatview_init flatview_init_powerpc
 #define flatview_insert flatview_insert_powerpc
@@ -1753,9 +1756,6 @@
 #define mapping_contiguous mapping_contiguous_powerpc
 #define mapping_have_same_region mapping_have_same_region_powerpc
 #define mapping_merge mapping_merge_powerpc
-#define mem_add mem_add_powerpc
-#define mem_begin mem_begin_powerpc
-#define mem_commit mem_commit_powerpc
 #define memory_access_size memory_access_size_powerpc
 #define memory_free memory_free_powerpc
 #define memory_init memory_init_powerpc

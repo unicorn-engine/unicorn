@@ -54,7 +54,9 @@
 #define address_space_cache_init address_space_cache_init_mips
 #define address_space_cache_invalidate address_space_cache_invalidate_mips
 #define address_space_destroy address_space_destroy_mips
+#define address_space_dispatch_compact address_space_dispatch_compact_mips
 #define address_space_dispatch_free address_space_dispatch_free_mips
+#define address_space_dispatch_new address_space_dispatch_new_mips
 #define address_space_get_flatview address_space_get_flatview_mips
 #define address_space_init address_space_init_mips
 #define address_space_init_dispatch address_space_init_dispatch_mips
@@ -443,6 +445,7 @@
 #define find_string find_string_mips
 #define find_type find_type_mips
 #define flatrange_equal flatrange_equal_mips
+#define flatview_add_to_dispatch flatview_add_to_dispatch_mips
 #define flatview_destroy flatview_destroy_mips
 #define flatview_init flatview_init_mips
 #define flatview_insert flatview_insert_mips
@@ -1753,9 +1756,6 @@
 #define mapping_contiguous mapping_contiguous_mips
 #define mapping_have_same_region mapping_have_same_region_mips
 #define mapping_merge mapping_merge_mips
-#define mem_add mem_add_mips
-#define mem_begin mem_begin_mips
-#define mem_commit mem_commit_mips
 #define memory_access_size memory_access_size_mips
 #define memory_free memory_free_mips
 #define memory_init memory_init_mips

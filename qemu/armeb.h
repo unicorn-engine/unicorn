@@ -54,7 +54,9 @@
 #define address_space_cache_init address_space_cache_init_armeb
 #define address_space_cache_invalidate address_space_cache_invalidate_armeb
 #define address_space_destroy address_space_destroy_armeb
+#define address_space_dispatch_compact address_space_dispatch_compact_armeb
 #define address_space_dispatch_free address_space_dispatch_free_armeb
+#define address_space_dispatch_new address_space_dispatch_new_armeb
 #define address_space_get_flatview address_space_get_flatview_armeb
 #define address_space_init address_space_init_armeb
 #define address_space_init_dispatch address_space_init_dispatch_armeb
@@ -443,6 +445,7 @@
 #define find_string find_string_armeb
 #define find_type find_type_armeb
 #define flatrange_equal flatrange_equal_armeb
+#define flatview_add_to_dispatch flatview_add_to_dispatch_armeb
 #define flatview_destroy flatview_destroy_armeb
 #define flatview_init flatview_init_armeb
 #define flatview_insert flatview_insert_armeb
@@ -1753,9 +1756,6 @@
 #define mapping_contiguous mapping_contiguous_armeb
 #define mapping_have_same_region mapping_have_same_region_armeb
 #define mapping_merge mapping_merge_armeb
-#define mem_add mem_add_armeb
-#define mem_begin mem_begin_armeb
-#define mem_commit mem_commit_armeb
 #define memory_access_size memory_access_size_armeb
 #define memory_free memory_free_armeb
 #define memory_init memory_init_armeb

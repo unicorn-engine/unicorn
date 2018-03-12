@@ -54,7 +54,9 @@
 #define address_space_cache_init address_space_cache_init_aarch64eb
 #define address_space_cache_invalidate address_space_cache_invalidate_aarch64eb
 #define address_space_destroy address_space_destroy_aarch64eb
+#define address_space_dispatch_compact address_space_dispatch_compact_aarch64eb
 #define address_space_dispatch_free address_space_dispatch_free_aarch64eb
+#define address_space_dispatch_new address_space_dispatch_new_aarch64eb
 #define address_space_get_flatview address_space_get_flatview_aarch64eb
 #define address_space_init address_space_init_aarch64eb
 #define address_space_init_dispatch address_space_init_dispatch_aarch64eb
@@ -443,6 +445,7 @@
 #define find_string find_string_aarch64eb
 #define find_type find_type_aarch64eb
 #define flatrange_equal flatrange_equal_aarch64eb
+#define flatview_add_to_dispatch flatview_add_to_dispatch_aarch64eb
 #define flatview_destroy flatview_destroy_aarch64eb
 #define flatview_init flatview_init_aarch64eb
 #define flatview_insert flatview_insert_aarch64eb
@@ -1753,9 +1756,6 @@
 #define mapping_contiguous mapping_contiguous_aarch64eb
 #define mapping_have_same_region mapping_have_same_region_aarch64eb
 #define mapping_merge mapping_merge_aarch64eb
-#define mem_add mem_add_aarch64eb
-#define mem_begin mem_begin_aarch64eb
-#define mem_commit mem_commit_aarch64eb
 #define memory_access_size memory_access_size_aarch64eb
 #define memory_free memory_free_aarch64eb
 #define memory_init memory_init_aarch64eb

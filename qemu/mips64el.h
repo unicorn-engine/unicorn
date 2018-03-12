@@ -54,7 +54,9 @@
 #define address_space_cache_init address_space_cache_init_mips64el
 #define address_space_cache_invalidate address_space_cache_invalidate_mips64el
 #define address_space_destroy address_space_destroy_mips64el
+#define address_space_dispatch_compact address_space_dispatch_compact_mips64el
 #define address_space_dispatch_free address_space_dispatch_free_mips64el
+#define address_space_dispatch_new address_space_dispatch_new_mips64el
 #define address_space_get_flatview address_space_get_flatview_mips64el
 #define address_space_init address_space_init_mips64el
 #define address_space_init_dispatch address_space_init_dispatch_mips64el
@@ -443,6 +445,7 @@
 #define find_string find_string_mips64el
 #define find_type find_type_mips64el
 #define flatrange_equal flatrange_equal_mips64el
+#define flatview_add_to_dispatch flatview_add_to_dispatch_mips64el
 #define flatview_destroy flatview_destroy_mips64el
 #define flatview_init flatview_init_mips64el
 #define flatview_insert flatview_insert_mips64el
@@ -1753,9 +1756,6 @@
 #define mapping_contiguous mapping_contiguous_mips64el
 #define mapping_have_same_region mapping_have_same_region_mips64el
 #define mapping_merge mapping_merge_mips64el
-#define mem_add mem_add_mips64el
-#define mem_begin mem_begin_mips64el
-#define mem_commit mem_commit_mips64el
 #define memory_access_size memory_access_size_mips64el
 #define memory_free memory_free_mips64el
 #define memory_init memory_init_mips64el

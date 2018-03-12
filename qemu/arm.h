@@ -54,7 +54,9 @@
 #define address_space_cache_init address_space_cache_init_arm
 #define address_space_cache_invalidate address_space_cache_invalidate_arm
 #define address_space_destroy address_space_destroy_arm
+#define address_space_dispatch_compact address_space_dispatch_compact_arm
 #define address_space_dispatch_free address_space_dispatch_free_arm
+#define address_space_dispatch_new address_space_dispatch_new_arm
 #define address_space_get_flatview address_space_get_flatview_arm
 #define address_space_init address_space_init_arm
 #define address_space_init_dispatch address_space_init_dispatch_arm
@@ -443,6 +445,7 @@
 #define find_string find_string_arm
 #define find_type find_type_arm
 #define flatrange_equal flatrange_equal_arm
+#define flatview_add_to_dispatch flatview_add_to_dispatch_arm
 #define flatview_destroy flatview_destroy_arm
 #define flatview_init flatview_init_arm
 #define flatview_insert flatview_insert_arm
@@ -1753,9 +1756,6 @@
 #define mapping_contiguous mapping_contiguous_arm
 #define mapping_have_same_region mapping_have_same_region_arm
 #define mapping_merge mapping_merge_arm
-#define mem_add mem_add_arm
-#define mem_begin mem_begin_arm
-#define mem_commit mem_commit_arm
 #define memory_access_size memory_access_size_arm
 #define memory_free memory_free_arm
 #define memory_init memory_init_arm

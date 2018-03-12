@@ -54,7 +54,9 @@
 #define address_space_cache_init address_space_cache_init_sparc
 #define address_space_cache_invalidate address_space_cache_invalidate_sparc
 #define address_space_destroy address_space_destroy_sparc
+#define address_space_dispatch_compact address_space_dispatch_compact_sparc
 #define address_space_dispatch_free address_space_dispatch_free_sparc
+#define address_space_dispatch_new address_space_dispatch_new_sparc
 #define address_space_get_flatview address_space_get_flatview_sparc
 #define address_space_init address_space_init_sparc
 #define address_space_init_dispatch address_space_init_dispatch_sparc
@@ -443,6 +445,7 @@
 #define find_string find_string_sparc
 #define find_type find_type_sparc
 #define flatrange_equal flatrange_equal_sparc
+#define flatview_add_to_dispatch flatview_add_to_dispatch_sparc
 #define flatview_destroy flatview_destroy_sparc
 #define flatview_init flatview_init_sparc
 #define flatview_insert flatview_insert_sparc
@@ -1753,9 +1756,6 @@
 #define mapping_contiguous mapping_contiguous_sparc
 #define mapping_have_same_region mapping_have_same_region_sparc
 #define mapping_merge mapping_merge_sparc
-#define mem_add mem_add_sparc
-#define mem_begin mem_begin_sparc
-#define mem_commit mem_commit_sparc
 #define memory_access_size memory_access_size_sparc
 #define memory_free memory_free_sparc
 #define memory_init memory_init_sparc

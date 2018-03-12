@@ -54,7 +54,9 @@
 #define address_space_cache_init address_space_cache_init_mipsel
 #define address_space_cache_invalidate address_space_cache_invalidate_mipsel
 #define address_space_destroy address_space_destroy_mipsel
+#define address_space_dispatch_compact address_space_dispatch_compact_mipsel
 #define address_space_dispatch_free address_space_dispatch_free_mipsel
+#define address_space_dispatch_new address_space_dispatch_new_mipsel
 #define address_space_get_flatview address_space_get_flatview_mipsel
 #define address_space_init address_space_init_mipsel
 #define address_space_init_dispatch address_space_init_dispatch_mipsel
@@ -443,6 +445,7 @@
 #define find_string find_string_mipsel
 #define find_type find_type_mipsel
 #define flatrange_equal flatrange_equal_mipsel
+#define flatview_add_to_dispatch flatview_add_to_dispatch_mipsel
 #define flatview_destroy flatview_destroy_mipsel
 #define flatview_init flatview_init_mipsel
 #define flatview_insert flatview_insert_mipsel
@@ -1753,9 +1756,6 @@
 #define mapping_contiguous mapping_contiguous_mipsel
 #define mapping_have_same_region mapping_have_same_region_mipsel
 #define mapping_merge mapping_merge_mipsel
-#define mem_add mem_add_mipsel
-#define mem_begin mem_begin_mipsel
-#define mem_commit mem_commit_mipsel
 #define memory_access_size memory_access_size_mipsel
 #define memory_free memory_free_mipsel
 #define memory_init memory_init_mipsel

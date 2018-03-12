@@ -54,7 +54,9 @@
 #define address_space_cache_init address_space_cache_init_x86_64
 #define address_space_cache_invalidate address_space_cache_invalidate_x86_64
 #define address_space_destroy address_space_destroy_x86_64
+#define address_space_dispatch_compact address_space_dispatch_compact_x86_64
 #define address_space_dispatch_free address_space_dispatch_free_x86_64
+#define address_space_dispatch_new address_space_dispatch_new_x86_64
 #define address_space_get_flatview address_space_get_flatview_x86_64
 #define address_space_init address_space_init_x86_64
 #define address_space_init_dispatch address_space_init_dispatch_x86_64
@@ -443,6 +445,7 @@
 #define find_string find_string_x86_64
 #define find_type find_type_x86_64
 #define flatrange_equal flatrange_equal_x86_64
+#define flatview_add_to_dispatch flatview_add_to_dispatch_x86_64
 #define flatview_destroy flatview_destroy_x86_64
 #define flatview_init flatview_init_x86_64
 #define flatview_insert flatview_insert_x86_64
@@ -1753,9 +1756,6 @@
 #define mapping_contiguous mapping_contiguous_x86_64
 #define mapping_have_same_region mapping_have_same_region_x86_64
 #define mapping_merge mapping_merge_x86_64
-#define mem_add mem_add_x86_64
-#define mem_begin mem_begin_x86_64
-#define mem_commit mem_commit_x86_64
 #define memory_access_size memory_access_size_x86_64
 #define memory_free memory_free_x86_64
 #define memory_init memory_init_x86_64
