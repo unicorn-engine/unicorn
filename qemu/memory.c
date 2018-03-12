@@ -1884,10 +1884,8 @@ void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *ro
     }
 
     memory_region_transaction_begin(uc);
-    as->ref_count = 1;
     as->uc = uc;
     as->root = root;
-    as->malloced = false;
     as->current_map = NULL;
     QTAILQ_INIT(&as->listeners);
     QTAILQ_INSERT_TAIL(&uc->address_spaces, as, address_spaces_link);
@@ -1898,9 +1896,6 @@ void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *ro
 
 static void do_address_space_destroy(AddressSpace *as)
 {
-    // Unicorn: commented out
-    bool do_free = as->malloced;
-
     // TODO(danghvu): why assert fail here?
     //QTAILQ_FOREACH(listener, &as->uc->memory_listeners, link) {
     //    assert(QTAILQ_EMPTY(&as->listeners));
@@ -1911,29 +1906,11 @@ static void do_address_space_destroy(AddressSpace *as)
     // Unicorn: commented out
     //g_free(as->ioeventfds);
     memory_region_unref(as->root);
-    if (do_free) {
-        g_free(as);
-    }
-}
-
-AddressSpace *address_space_init_shareable(struct uc_struct *uc, MemoryRegion *root, const char *name)
-{
-    AddressSpace *as;
-
-    as = g_malloc0(sizeof *as);
-    address_space_init(uc, as, root, name);
-    as->malloced = true;
-    return as;
 }
 
 void address_space_destroy(AddressSpace *as)
 {
     MemoryRegion *root = as->root;
-
-    as->ref_count--;
-    if (as->ref_count) {
-        return;
-    }
 
     /* Flush out anything from MemoryListeners listening in on this */
     memory_region_transaction_begin(as->uc);

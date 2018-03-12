@@ -60,7 +60,6 @@
 #define address_space_get_flatview address_space_get_flatview_mips
 #define address_space_init address_space_init_mips
 #define address_space_init_dispatch address_space_init_dispatch_mips
-#define address_space_init_shareable address_space_init_shareable_mips
 #define address_space_get_iotlb_entry address_space_get_iotlb_entry_mips
 #define address_space_ldl address_space_ldl_mips
 #define address_space_ldl_be address_space_ldl_be_mips
