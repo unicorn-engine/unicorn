@@ -898,7 +898,7 @@ void arm_test_cc(TCGContext *tcg_ctx, DisasCompare *cmp, int cc)
         cond = tcg_invert_cond(cond);
     }
 
-no_invert:
+ no_invert:
     cmp->cond = cond;
     cmp->value = value;
     cmp->value_global = global;
@@ -1119,6 +1119,7 @@ static inline void store_reg_from_load(DisasContext *s, int reg, TCGv_i32 var)
  * These functions work like tcg_gen_qemu_{ld,st}* except
  * that the address argument is TCGv_i32 rather than TCGv.
  */
+
 static inline TCGv gen_aa32_addr(DisasContext *s, TCGv_i32 a32, TCGMemOp op)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -1164,7 +1165,6 @@ static inline void gen_aa32_ld##SUFF##_iss(DisasContext *s,              \
     gen_aa32_ld##SUFF(s, val, a32, index);                               \
     disas_set_da_iss(s, OPC, issinfo);                                   \
 }
-
 
 #define DO_GEN_ST(SUFF, OPC)                                             \
 static inline void gen_aa32_st##SUFF(DisasContext *s, TCGv_i32 val,      \
@@ -4324,11 +4324,7 @@ static inline bool use_goto_tb(DisasContext *s, target_ulong dest)
 static void gen_goto_ptr(DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-
-    TCGv addr = tcg_temp_new(tcg_ctx);
-    tcg_gen_extu_i32_tl(tcg_ctx, addr, tcg_ctx->cpu_R[15]);
     tcg_gen_lookup_and_goto_ptr(tcg_ctx);
-    tcg_temp_free(tcg_ctx, addr);
 }
 
 /* This will end the TB but doesn't guarantee we'll return to
@@ -4835,6 +4831,7 @@ static inline TCGv_i32 neon_get_scalar(DisasContext *s, int size, int reg)
 static int gen_neon_unzip(TCGContext *tcg_ctx, int rd, int rm, int size, int q)
 {
     TCGv_ptr pd, pm;
+    
     if (!q && size == 2) {
         return 1;
     }
@@ -4874,6 +4871,7 @@ static int gen_neon_unzip(TCGContext *tcg_ctx, int rd, int rm, int size, int q)
 static int gen_neon_zip(TCGContext *tcg_ctx, int rd, int rm, int size, int q)
 {
     TCGv_ptr pd, pm;
+
     if (!q && size == 2) {
         return 1;
     }
@@ -5748,6 +5746,7 @@ static const uint8_t neon_2rm_sizes[] = {
     /*NEON_2RM_VCVT_UF*/ 0x4,
 };
 
+
 /* Expand v8.1 simd helper.  */
 static int do_v81_helper(DisasContext *s, gen_helper_gvec_3_ptr *fn,
                          int q, int rd, int rn, int rm)
@@ -6444,8 +6443,8 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             tcg_gen_add_i64(tcg_ctx, tcg_ctx->cpu_V0, tcg_ctx->cpu_V0, tcg_ctx->cpu_V1);
                         } else if (op == 4 || (op == 5 && u)) {
                             /* Insert */
-                            uint64_t mask;
                             neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rd + pass);
+                            uint64_t mask;
                             if (shift < -63 || shift > 63) {
                                 mask = 0;
                             } else {
@@ -8064,6 +8063,7 @@ static int disas_coproc_insn(DisasContext *s, uint32_t insn)
                                            tcg_isread);
             tcg_temp_free_ptr(tcg_ctx, tmpptr);
             tcg_temp_free_i32(tcg_ctx, tcg_syn);
+            tcg_temp_free_i32(tcg_ctx, tcg_isread);
         }
 
         /* Handle special cases first */
@@ -8303,7 +8303,6 @@ static void gen_load_exclusive(DisasContext *s, int rt, int rt2,
 
         tcg_gen_qemu_ld_i64(s->uc, t64, taddr, get_mem_index(s), opc);
         tcg_temp_free(tcg_ctx, taddr);
-
         tcg_gen_mov_i64(tcg_ctx, tcg_ctx->cpu_exclusive_val, t64);
         if (s->be_data == MO_BE) {
             tcg_gen_extr_i64_i32(tcg_ctx, tmp2, tmp, t64);
@@ -10045,7 +10044,7 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
                 goto illegal_op;
             }
             break;
-        case 0xf:   // qq
+        case 0xf:
             /* swi */
             gen_set_pc_im(s, s->pc);
             s->svc_imm = extract32(insn, 0, 24);
@@ -11768,7 +11767,6 @@ static void disas_thumb_insn(DisasContext *s, uint32_t insn)
                 /* BLX/BX */
                 tmp = load_reg(s, rm);
                 if (link) {
-                    ARCH(5);
                     val = (uint32_t)s->pc | 1;
                     tmp2 = tcg_temp_new_i32(tcg_ctx);
                     tcg_gen_movi_i32(tcg_ctx, tmp2, val);
@@ -12626,9 +12624,29 @@ static void arm_post_translate_insn(DisasContext *dc)
         gen_set_label(tcg_ctx, dc->condlabel);
         dc->condjmp = 0;
     }
-
     dc->base.pc_next = dc->pc;
     translator_loop_temp_check(&dc->base);
+}
+
+static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
+{
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+    CPUARMState *env = cpu->env_ptr;
+    unsigned int insn;
+
+    if (arm_pre_translate_insn(dc)) {
+        return;
+    }
+
+    insn = arm_ldl_code(env, dc->pc, dc->sctlr_b);
+    dc->insn = insn;
+    dc->pc += 4;
+    disas_arm_insn(dc, insn);
+
+    arm_post_translate_insn(dc);
+
+    /* ARM is a fixed-length ISA.  We performed the cross-page check
+       in init_disas_context by adjusting max_insns.  */
 }
 
 static bool thumb_insn_is_unconditional(DisasContext *s, uint32_t insn)
@@ -12675,27 +12693,6 @@ static bool thumb_insn_is_unconditional(DisasContext *s, uint32_t insn)
     }
 
     return false;
-}
-
-static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
-{
-    DisasContext *dc = container_of(dcbase, DisasContext, base);
-    CPUARMState *env = cpu->env_ptr;
-    unsigned int insn;
-
-    if (arm_pre_translate_insn(dc)) {
-        return;
-    }
-
-    insn = arm_ldl_code(env, dc->pc, dc->sctlr_b);
-    dc->insn = insn;
-    dc->pc += 4;
-    disas_arm_insn(dc, insn);
-
-    arm_post_translate_insn(dc);
-
-    /* ARM is a fixed-length ISA.  We performed the cross-page check
-       in init_disas_context by adjusting max_insns.  */
 }
 
 static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
@@ -12850,9 +12847,9 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         {
             TCGv_i32 tmp = tcg_const_i32(tcg_ctx, (dc->thumb &&
                                           !(dc->insn & (1U << 31))) ? 2 : 4);
+
             gen_helper_wfi(tcg_ctx, tcg_ctx->cpu_env, tmp);
             tcg_temp_free_i32(tcg_ctx, tmp);
-
             /* The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
@@ -12889,6 +12886,7 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             gen_goto_tb(dc, 1, dc->pc);
         }
     }
+
     /* Functions above can change dc->pc, so re-align db->pc_next */
     dc->base.pc_next = dc->pc;
 }
