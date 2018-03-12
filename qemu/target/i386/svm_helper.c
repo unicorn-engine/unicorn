@@ -581,6 +581,7 @@ void cpu_vmexit(CPUX86State *env, uint32_t exit_code, uint64_t exit_info_1,
                   x86_ldq_phys(cs, env->vm_vmcb + offsetof(struct vmcb,
                                                    control.exit_info_2)),
                   env->eip);
+
     cs->exception_index = EXCP_VMEXIT + exit_code;
     env->error_code = exit_info_1;
 
