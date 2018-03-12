@@ -377,7 +377,6 @@ static inline uint32_t read_im32(CPUM68KState *env, DisasContext *s)
     uint32_t im;
     im = read_im16(env, s) << 16;
     im |= 0xffff & read_im16(env, s);
-    s->pc += 2;
     return im;
 }
 
@@ -1251,8 +1250,6 @@ typedef struct {
     TCGv v2;
 } DisasCompare;
 
-
-/* This generates a conditional branch, clobbering all temporaries.  */
 static void gen_cc_cond(DisasCompare *c, DisasContext *s, int cond)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -1426,6 +1423,7 @@ static void gen_cc_cond(DisasCompare *c, DisasContext *s, int cond)
         tcond = TCG_COND_LT;
         break;
     }
+
  done:
     if ((cond & 1) == 0) {
         tcond = tcg_invert_cond(tcond);
@@ -1630,6 +1628,7 @@ DISAS_INSN(divl)
     uint16_t ext;
 
     ext = read_im16(env, s);
+
     sign = (ext & 0x0800) != 0;
 
     if (ext & 0x400) {
@@ -1908,16 +1907,18 @@ DISAS_INSN(addsub)
     TCGv tmp;
     TCGv addr;
     int add;
+    int opsize;
 
     add = (insn & 0x4000) != 0;
-    reg = DREG(insn, 9);
+    opsize = insn_opsize(insn);
+    reg = gen_extend(s, DREG(insn, 9), opsize, 1);
     dest = tcg_temp_new(tcg_ctx);
     if (insn & 0x100) {
-        SRC_EA(env, tmp, OS_LONG, 0, &addr);
+        SRC_EA(env, tmp, opsize, 1, &addr);
         src = reg;
     } else {
         tmp = reg;
-        SRC_EA(env, src, OS_LONG, 0, NULL);
+        SRC_EA(env, src, opsize, 1, NULL);
     }
     if (add) {
         tcg_gen_add_i32(tcg_ctx, dest, tmp, src);
@@ -1934,8 +1935,8 @@ DISAS_INSN(addsub)
     } else {
         tcg_gen_mov_i32(tcg_ctx, reg, dest);
     }
+    tcg_temp_free(tcg_ctx, dest);
 }
-
 
 /* Reverse the order of the bits in REG.  */
 DISAS_INSN(bitrev)
@@ -1962,8 +1963,8 @@ DISAS_INSN(bitop_reg)
     else
         opsize = OS_LONG;
     op = (insn >> 6) & 3;
-
     SRC_EA(env, src1, opsize, 0, op ? &addr: NULL);
+
     gen_flush_flags(s);
     src2 = tcg_temp_new(tcg_ctx);
     if (opsize == OS_BYTE)
@@ -2051,6 +2052,7 @@ DISAS_INSN(movem)
     do_addr_fault:
         gen_addr_fault(s);
         return;
+
     case 2: /* indirect */
         break;
 
@@ -2258,6 +2260,19 @@ static TCGv gen_get_ccr(DisasContext *s)
     return dest;
 }
 
+static TCGv gen_get_sr(DisasContext *s)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv ccr;
+    TCGv sr;
+
+    ccr = gen_get_ccr(s);
+    sr = tcg_temp_new(tcg_ctx);
+    tcg_gen_andi_i32(tcg_ctx, sr, tcg_ctx->QREG_SR, 0xffe0);
+    tcg_gen_or_i32(tcg_ctx, sr, sr, ccr);
+    return sr;
+}
+
 static void gen_set_sr_im(DisasContext *s, uint16_t val, int ccr_only)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -2301,19 +2316,6 @@ static void gen_move_to_sr(CPUM68KState *env, DisasContext *s, uint16_t insn,
         SRC_EA(env, src, OS_WORD, 0, NULL);
         gen_set_sr(s, src, ccr_only);
     }
-}
-
-static TCGv gen_get_sr(DisasContext *s)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv ccr;
-    TCGv sr;
-
-    ccr = gen_get_ccr(s);
-    sr = tcg_temp_new(tcg_ctx);
-    tcg_gen_andi_i32(tcg_ctx, sr, tcg_ctx->QREG_SR, 0xffe0);
-    tcg_gen_or_i32(tcg_ctx, sr, sr, ccr);
-    return sr;
 }
 
 DISAS_INSN(arith_im)
@@ -6085,15 +6087,12 @@ void register_m68k_insns (CPUM68KState *env)
     INSN(rtd,       4e74, ffff, RTD);
     BASE(rts,       4e75, ffff);
     BASE(jump,      4e80, ffc0);
-    INSN(jump,      4ec0, ffc0, CF_ISA_A);
-    INSN(addsubq,   5180, f1c0, CF_ISA_A);
-    INSN(jump,      4ec0, ffc0, M68000);
+    BASE(jump,      4ec0, ffc0);
     INSN(addsubq,   5000, f080, M68000);
-    INSN(addsubq,   5080, f0c0, M68000);
+    BASE(addsubq,   5080, f0c0);
     INSN(scc,       50c0, f0f8, CF_ISA_A); /* Scc.B Dx   */
     INSN(scc,       50c0, f0c0, M68000);   /* Scc.B <EA> */
     INSN(dbcc,      50c8, f0f8, M68000);
-    INSN(addsubq,   5080, f1c0, CF_ISA_A);
     INSN(tpf,       51f8, fff8, CF_ISA_A);
 
     /* Branch instructions.  */
