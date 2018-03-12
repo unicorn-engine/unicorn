@@ -64,9 +64,9 @@ static int machvirt_init(struct uc_struct *uc, MachineState *machine)
     int n;
 
     if (!cpu_model) {
-        // Unicorn: "any" used instead to allow use of ARMv8.1+ instructions.
+        // Unicorn: "max" used instead to allow use of ARMv8.1+ instructions.
         //cpu_model = "cortex-a57";   // ARM64
-        cpu_model = "any";
+        cpu_model = "max";
     }
 
     for (n = 0; n < smp_cpus; n++) {

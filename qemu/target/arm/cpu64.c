@@ -197,17 +197,17 @@ static void aarch64_a53_initfn(struct uc_struct *uc, Object *obj, void *opaque)
  */
 static void aarch64_max_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
-    aarch64_a57_initfn(uc, obj, opaque);
-    /* In future we might add feature bits here even if the
-     * real-world A57 doesn't implement them.
-     */
-}
-
-// Unicorn: enabled for the general use-case as well.
-static void aarch64_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
-{
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
+    aarch64_a57_initfn(uc, obj, opaque);
+
+    // Unicorn: we lie and enable them anyway
+    /* We don't set these in system emulation mode for the moment,
+     * since we don't correctly set the ID registers to advertise them,
+     * and in some cases they're only available in AArch64 and not AArch32,
+     * whereas the architecture requires them to be present in both if
+     * present in either.
+     */
     set_feature(&cpu->env, ARM_FEATURE_V8);
     set_feature(&cpu->env, ARM_FEATURE_VFP4);
     set_feature(&cpu->env, ARM_FEATURE_NEON);
@@ -224,6 +224,9 @@ static void aarch64_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     set_feature(&cpu->env, ARM_FEATURE_V8_RDM);
     set_feature(&cpu->env, ARM_FEATURE_V8_FP16);
     set_feature(&cpu->env, ARM_FEATURE_V8_FCMA);
+    /* For usermode -cpu max we can use a larger and more efficient DCZ
+     * blocksize since we don't have to follow what the hardware does.
+     */
     cpu->ctr = 0x80038003; /* 32 byte I and D cacheline size, VIPT icache */
     cpu->dcz_blocksize = 7; /*  512 bytes */
 }
@@ -238,8 +241,6 @@ static const ARMCPUInfo aarch64_cpus[] = {
     { "cortex-a57",  aarch64_a57_initfn },
     { "cortex-a53",  aarch64_a53_initfn },
     { "max",         aarch64_max_initfn },
-    // Unicorn: enabled for the general use case as well
-    { "any",         aarch64_any_initfn },
     { NULL }
 };
 

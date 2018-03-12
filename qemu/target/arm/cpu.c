@@ -735,13 +735,22 @@ static ObjectClass *arm_cpu_class_by_name(struct uc_struct *uc, const char *cpu_
 {
     ObjectClass *oc;
     char *typename;
+    char **cpuname;
+    const char *cpunamestr;
 
-    if (!cpu_model) {
-        return NULL;
+    cpuname = g_strsplit(cpu_model, ",", 1);
+    cpunamestr = cpuname[0];
+#ifdef CONFIG_USER_ONLY
+    /* For backwards compatibility usermode emulation allows "-cpu any",
+     * which has the same semantics as "-cpu max".
+     */
+    if (!strcmp(cpunamestr, "any")) {
+        cpunamestr = "max";
     }
-
-    typename = g_strdup_printf("%s-" TYPE_ARM_CPU, cpu_model);
+#endif
+    typename = g_strdup_printf(ARM_CPU_TYPE_NAME("%s"), cpunamestr);
     oc = object_class_by_name(uc, typename);
+    g_strfreev(cpuname);
     g_free(typename);
     if (!oc || !object_class_dynamic_cast(uc, oc, TYPE_ARM_CPU) ||
         object_class_is_abstract(oc)) {
@@ -1474,17 +1483,17 @@ static void pxa270c5_initfn(struct uc_struct *uc, Object *obj, void *opaque)
  */
 static void arm_max_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
+    ARMCPU *cpu = ARM_CPU(uc, obj);
+
     cortex_a15_initfn(uc, obj, opaque);
     /* In future we might add feature bits here even if the
      * real-world A15 doesn't implement them.
      */
-}
-#endif
 
-#ifdef CONFIG_USER_ONLY
-static void arm_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
-{
-    ARMCPU *cpu = ARM_CPU(uc, obj);
+    // Unicorn: We lie and enable them anyway
+    /* We don't set these in system emulation mode for the moment,
+     * since we don't correctly set the ID registers to advertise them,
+     */
     set_feature(&cpu->env, ARM_FEATURE_V8);
     set_feature(&cpu->env, ARM_FEATURE_VFP4);
     set_feature(&cpu->env, ARM_FEATURE_NEON);
@@ -1496,7 +1505,6 @@ static void arm_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     set_feature(&cpu->env, ARM_FEATURE_CRC);
     set_feature(&cpu->env, ARM_FEATURE_V8_RDM);
     set_feature(&cpu->env, ARM_FEATURE_V8_FCMA);
-    cpu->midr = 0xffffffff;
 }
 #endif
 
@@ -1549,7 +1557,7 @@ static const ARMCPUInfo arm_cpus[] = {
     { "max",         arm_max_initfn },
 #endif
 #ifdef CONFIG_USER_ONLY
-    { "any",         arm_any_initfn },
+    { "any",         arm_max_initfn },
 #endif
 #endif
     { NULL }
@@ -1584,6 +1592,7 @@ static void arm_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
 
     acc->parent_reset = cc->reset;
     cc->reset = arm_cpu_reset;
+    cc->class_by_name = arm_cpu_class_by_name;
 
     cc->class_by_name = arm_cpu_class_by_name;
     cc->has_work = arm_cpu_has_work;
