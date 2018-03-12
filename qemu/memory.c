@@ -880,6 +880,18 @@ static void address_space_set_flatview(AddressSpace *as)
     }
 }
 
+static void address_space_update_topology(AddressSpace *as)
+{
+    MemoryRegion *physmr = memory_region_get_flatview_root(as->root);
+    struct uc_struct *uc = as->uc;
+
+    flatviews_init(uc);
+    if (!g_hash_table_lookup(uc->flat_views, physmr)) {
+        generate_memory_topology(physmr);
+    }
+    address_space_set_flatview(as);
+}
+
 void memory_region_transaction_begin(struct uc_struct *uc)
 {
     ++uc->memory_region_transaction_depth;
@@ -1883,15 +1895,14 @@ void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *ro
         memory_init(uc);
     }
 
-    memory_region_transaction_begin(uc);
+    memory_region_ref(root);
     as->uc = uc;
     as->root = root;
     as->current_map = NULL;
     QTAILQ_INIT(&as->listeners);
     QTAILQ_INSERT_TAIL(&uc->address_spaces, as, address_spaces_link);
     as->name = g_strdup(name ? name : "anonymous");
-    uc->memory_region_update_pending |= root->enabled;
-    memory_region_transaction_commit(uc);
+    address_space_update_topology(as);
 }
 
 static void do_address_space_destroy(AddressSpace *as)
