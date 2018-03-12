@@ -7,6 +7,7 @@
 #ifndef MIPS_INTERNAL_H
 #define MIPS_INTERNAL_H
 
+
 /* MMU types, the first four entries have the same layout as the
    CP0C0_MT field.  */
 enum mips_mmu_types {
