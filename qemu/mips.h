@@ -3076,6 +3076,7 @@
 #define cpu_set_exception_base cpu_set_exception_base_mips
 #define cpu_state_reset cpu_state_reset_mips
 #define cpu_supports_isa cpu_supports_isa_mips
+#define cpu_supports_cps_smp cpu_supports_cps_smp_mips
 #define cpu_wrdsp cpu_wrdsp_mips
 #define do_raise_exception_err do_raise_exception_err_mips
 #define exception_resume_pc exception_resume_pc_mips
