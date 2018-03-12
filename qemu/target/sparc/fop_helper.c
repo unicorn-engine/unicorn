@@ -64,9 +64,10 @@ static target_ulong do_check_ieee_exceptions(CPUSPARCState *env, uintptr_t ra)
             cpu_loop_exit_restore(cs, ra);
         } else {
             /* Accumulate exceptions */
-            fsr |= (env->fsr & FSR_CEXC_MASK) << 5;
+            fsr |= (fsr & FSR_CEXC_MASK) << 5;
         }
     }
+
     return fsr;
 }
 
