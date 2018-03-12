@@ -1352,6 +1352,7 @@ void helper_msa_ctcmsa(CPUMIPSState *env, target_ulong elm, uint32_t cd)
     case 0:
         break;
     case 1:
+        env->active_tc.msacsr = (int32_t)elm & MSACSR_MASK;
         restore_msa_fp_status(env);
         /* check exception */
         if ((GET_FP_ENABLE(env->active_tc.msacsr) | FP_UNIMPLEMENTED)
@@ -2923,6 +2924,7 @@ void helper_msa_fclass_df(CPUMIPSState *env, uint32_t df,
         uint32_t wd, uint32_t ws)
 {
     float_status* status = &env->active_tc.msa_fp_status;
+
     wr_t *pwd = &(env->active_fpu.fpr[wd].wr);
     wr_t *pws = &(env->active_fpu.fpr[ws].wr);
     if (df == DF_WORD) {
