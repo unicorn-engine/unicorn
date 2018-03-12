@@ -1466,6 +1466,21 @@ static void pxa270c5_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
+#ifndef TARGET_AARCH64
+/* -cpu max: if KVM is enabled, like -cpu host (best possible with this host);
+ * otherwise, a CPU with as many features enabled as our emulation supports.
+ * The version of '-cpu max' for qemu-system-aarch64 is defined in cpu64.c;
+ * this only needs to handle 32 bits.
+ */
+static void arm_max_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    cortex_a15_initfn(uc, obj, opaque);
+    /* In future we might add feature bits here even if the
+     * real-world A15 doesn't implement them.
+     */
+}
+#endif
+
 #ifdef CONFIG_USER_ONLY
 static void arm_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
@@ -1530,6 +1545,9 @@ static const ARMCPUInfo arm_cpus[] = {
     { "pxa270-b1",   pxa270b1_initfn },
     { "pxa270-c0",   pxa270c0_initfn },
     { "pxa270-c5",   pxa270c5_initfn },
+#ifndef TARGET_AARCH64
+    { "max",         arm_max_initfn },
+#endif
 #ifdef CONFIG_USER_ONLY
     { "any",         arm_any_initfn },
 #endif

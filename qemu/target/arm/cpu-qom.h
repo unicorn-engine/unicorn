@@ -30,6 +30,8 @@
 #define ARM_CPU_GET_CLASS(uc, obj) \
     OBJECT_GET_CLASS(uc, ARMCPUClass, (obj), TYPE_ARM_CPU)
 
+#define TYPE_ARM_MAX_CPU "max-" TYPE_ARM_CPU
+
 /**
  * ARMCPUClass:
  * @parent_realize: The parent class' realize handler.

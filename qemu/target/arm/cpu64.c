@@ -190,6 +190,19 @@ static void aarch64_a53_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     define_arm_cp_regs(cpu, cortex_a57_a53_cp_reginfo);
 }
 
+/* -cpu max: if KVM is enabled, like -cpu host (best possible with this host);
+ * otherwise, a CPU with as many features enabled as our emulation supports.
+ * The version of '-cpu max' for qemu-system-arm is defined in cpu.c;
+ * this only needs to handle 64 bits.
+ */
+static void aarch64_max_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    aarch64_a57_initfn(uc, obj, opaque);
+    /* In future we might add feature bits here even if the
+     * real-world A57 doesn't implement them.
+     */
+}
+
 // Unicorn: enabled for the general use-case as well.
 static void aarch64_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
@@ -224,6 +237,7 @@ typedef struct ARMCPUInfo {
 static const ARMCPUInfo aarch64_cpus[] = {
     { "cortex-a57",  aarch64_a57_initfn },
     { "cortex-a53",  aarch64_a53_initfn },
+    { "max",         aarch64_max_initfn },
     // Unicorn: enabled for the general use case as well
     { "any",         aarch64_any_initfn },
     { NULL }
