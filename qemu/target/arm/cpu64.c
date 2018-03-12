@@ -188,7 +188,7 @@ static void aarch64_a53_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     define_arm_cp_regs(cpu, cortex_a57_a53_cp_reginfo);
 }
 
-#ifdef CONFIG_USER_ONLY
+// Unicorn: enabled for the general use-case as well.
 static void aarch64_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
@@ -212,7 +212,6 @@ static void aarch64_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->ctr = 0x80038003; /* 32 byte I and D cacheline size, VIPT icache */
     cpu->dcz_blocksize = 7; /*  512 bytes */
 }
-#endif
 
 typedef struct ARMCPUInfo {
     const char *name;
@@ -223,9 +222,8 @@ typedef struct ARMCPUInfo {
 static const ARMCPUInfo aarch64_cpus[] = {
     { "cortex-a57",  aarch64_a57_initfn },
     { "cortex-a53",  aarch64_a53_initfn },
-#ifdef CONFIG_USER_ONLY
+    // Unicorn: enabled for the general use case as well
     { "any",         aarch64_any_initfn },
-#endif
     { NULL }
 };
 
