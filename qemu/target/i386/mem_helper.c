@@ -60,6 +60,7 @@ void helper_cmpxchg8b(CPUX86State *env, target_ulong a0)
     int eflags;
 
     eflags = cpu_cc_compute_all(env, CC_OP);
+
     cmpv = deposit64(env->regs[R_EAX], 32, 32, env->regs[R_EDX]);
     newv = deposit64(env->regs[R_EBX], 32, 32, env->regs[R_ECX]);
 
@@ -106,6 +107,7 @@ void helper_cmpxchg16b_unlocked(CPUX86State *env, target_ulong a0)
         raise_exception_ra(env, EXCP0D_GPF, GETPC());
     }
     eflags = cpu_cc_compute_all(env, CC_OP);
+
     cmpv = int128_make128(env->regs[R_EAX], env->regs[R_EDX]);
     newv = int128_make128(env->regs[R_EBX], env->regs[R_ECX]);
 
