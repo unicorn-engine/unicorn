@@ -54,7 +54,7 @@
 #define address_space_cache_init address_space_cache_init_powerpc
 #define address_space_cache_invalidate address_space_cache_invalidate_powerpc
 #define address_space_destroy address_space_destroy_powerpc
-#define address_space_destroy_dispatch address_space_destroy_dispatch_powerpc
+#define address_space_dispatch_free address_space_dispatch_free_powerpc
 #define address_space_get_flatview address_space_get_flatview_powerpc
 #define address_space_init address_space_init_powerpc
 #define address_space_init_dispatch address_space_init_dispatch_powerpc
@@ -108,6 +108,7 @@
 #define address_space_stw_cached address_space_stw_cached_powerpc
 #define address_space_stw_le address_space_stw_le_powerpc
 #define address_space_stw_le_cached address_space_stw_le_cached_powerpc
+#define address_space_to_dispatch address_space_to_dispatch_powerpc
 #define address_space_translate address_space_translate_powerpc
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_powerpc
 #define address_space_translate_internal address_space_translate_internal_powerpc
@@ -451,6 +452,7 @@
 #define flatview_lookup flatview_lookup_powerpc
 #define flatview_ref flatview_ref_powerpc
 #define flatview_simplify flatview_simplify_powerpc
+#define flatview_to_dispatch flatview_to_dispatch_powerpc
 #define flatview_unref flatview_unref_powerpc
 #define float128ToCommonNaN float128ToCommonNaN_powerpc
 #define float128_add float128_add_powerpc
@@ -1977,7 +1979,6 @@
 #define phys_map_node_alloc phys_map_node_alloc_powerpc
 #define phys_map_node_reserve phys_map_node_reserve_powerpc
 #define phys_mem_alloc phys_mem_alloc_powerpc
-#define phys_mem_clean phys_mem_clean_powerpc
 #define phys_mem_set_alloc phys_mem_set_alloc_powerpc
 #define phys_page_compact phys_page_compact_powerpc
 #define phys_page_compact_all phys_page_compact_all_powerpc

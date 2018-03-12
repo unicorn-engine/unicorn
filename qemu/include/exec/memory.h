@@ -224,8 +224,6 @@ struct AddressSpace {
     int ref_count;
     bool malloced;
     struct FlatView *current_map;
-    struct AddressSpaceDispatch *dispatch;
-    struct AddressSpaceDispatch *next_dispatch;
     struct uc_struct* uc;
 
     QTAILQ_HEAD(memory_listeners_as, MemoryListener) listeners;

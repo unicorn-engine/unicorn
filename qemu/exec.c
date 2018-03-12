@@ -408,7 +408,7 @@ static MemoryRegionSection address_space_do_translate(AddressSpace *as,
 
     for (;;) {
         // Unicorn: atomic_read used instead of atomic_rcu_read
-        AddressSpaceDispatch *d = atomic_read(&as->dispatch);
+        AddressSpaceDispatch *d = address_space_to_dispatch(as);
         section = address_space_translate_internal(d, addr, &addr, plen, is_mmio);
         mr = section->mr;
 
@@ -968,7 +968,7 @@ hwaddr memory_region_section_get_iotlb(CPUState *cpu,
         AddressSpaceDispatch *d;
 
         // Unicorn: uses atomic_read instead of atomic_rcu_read
-        d = atomic_read(&section->address_space->dispatch);
+        d = address_space_to_dispatch(section->address_space);
         iotlb = section - d->map.sections;
         iotlb += xlat;
     }
@@ -1094,9 +1094,9 @@ static void register_multipage(struct uc_struct *uc,
     phys_page_set(uc, d, start_addr >> TARGET_PAGE_BITS, num_pages, section_index);
 }
 
-void mem_add(AddressSpace *as, MemoryRegionSection *section)
+void mem_add(AddressSpace *as, FlatView *fv, MemoryRegionSection *section)
 {
-    AddressSpaceDispatch *d = as->next_dispatch;
+    AddressSpaceDispatch *d = flatview_to_dispatch(fv);
     MemoryRegionSection now = *section, remain = *section;
     Int128 page_size = int128_make64(TARGET_PAGE_SIZE);
 
@@ -1852,13 +1852,7 @@ MemoryRegion *iotlb_to_region(CPUState *cpu, hwaddr index, MemTxAttrs attrs)
     return sections[index & ~TARGET_PAGE_MASK].mr;
 }
 
-void phys_mem_clean(AddressSpace *as)
-{
-    AddressSpaceDispatch* d = as->next_dispatch;
-    g_free(d->map.sections);
-}
-
-void mem_begin(AddressSpace *as)
+AddressSpaceDispatch *mem_begin(AddressSpace *as)
 {
     AddressSpaceDispatch *d = g_new0(AddressSpaceDispatch, 1);
     uint16_t n;
@@ -1876,22 +1870,19 @@ void mem_begin(AddressSpace *as)
 
     d->phys_map = ppe;
     d->as = as;
-    as->next_dispatch = d;
+
+    return d;
 }
 
-void mem_commit(AddressSpace *as)
+void address_space_dispatch_free(AddressSpaceDispatch *d)
 {
-    AddressSpaceDispatch *cur = as->dispatch;
-    AddressSpaceDispatch *next = as->next_dispatch;
+    phys_sections_free(&d->map);
+    g_free(d);
+}
 
-    phys_page_compact_all(next, next->map.nodes_nb);
-
-    as->dispatch = next;
-
-    if (cur) {
-        phys_sections_free(&cur->map);
-        g_free(cur);
-    }
+void mem_commit(AddressSpaceDispatch *d)
+{
+    phys_page_compact_all(d, d->map.nodes_nb);
 }
 
 static void tcg_commit(MemoryListener *listener)
@@ -1907,28 +1898,10 @@ static void tcg_commit(MemoryListener *listener)
      * We reload the dispatch pointer now because cpu_reloading_memory_map()
      * may have split the RCU critical section.
      */
-    // Unicorn: uses atomic_read instead of atomic_rcu_read
-    d = atomic_read(&cpuas->as->dispatch);
+    d = address_space_to_dispatch(cpuas->as);
     // Unicorn: atomic_set used instead of atomic_rcu_set
     atomic_set(&cpuas->memory_dispatch, d);
     tlb_flush(cpuas->cpu);
-}
-
-void address_space_destroy_dispatch(AddressSpace *as)
-{
-    AddressSpaceDispatch *d = as->dispatch;
-
-    g_free(d->map.nodes);
-    g_free(d);
-
-    if (as->dispatch != as->next_dispatch) {
-        d = as->next_dispatch;
-        g_free(d->map.nodes);
-        g_free(d);
-    }
-
-    as->dispatch = NULL;
-    as->next_dispatch = NULL;
 }
 
 static void memory_map_init(struct uc_struct *uc)

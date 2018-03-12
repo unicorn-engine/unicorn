@@ -26,11 +26,9 @@ static inline void free_address_spaces(struct uc_struct *uc)
 {
     int i;
 
-    phys_mem_clean(&uc->as);
     address_space_destroy(&uc->as);
     for (i = 0; i < uc->cpu->num_ases; i++) {
         AddressSpace *as = uc->cpu->cpu_ases[i].as;
-        phys_mem_clean(as);
         address_space_destroy(as);
         g_free(as);
     }

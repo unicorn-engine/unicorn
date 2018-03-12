@@ -24,6 +24,7 @@ typedef struct DisplaySurface DisplaySurface;
 typedef struct DriveInfo DriveInfo;
 typedef struct Error Error;
 typedef struct EventNotifier EventNotifier;
+typedef struct FlatView FlatView;
 typedef struct FWCfgState FWCfgState;
 typedef struct HCIInfo HCIInfo;
 typedef struct I2CBus I2CBus;

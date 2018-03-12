@@ -54,7 +54,7 @@
 #define address_space_cache_init address_space_cache_init_m68k
 #define address_space_cache_invalidate address_space_cache_invalidate_m68k
 #define address_space_destroy address_space_destroy_m68k
-#define address_space_destroy_dispatch address_space_destroy_dispatch_m68k
+#define address_space_dispatch_free address_space_dispatch_free_m68k
 #define address_space_get_flatview address_space_get_flatview_m68k
 #define address_space_init address_space_init_m68k
 #define address_space_init_dispatch address_space_init_dispatch_m68k
@@ -108,6 +108,7 @@
 #define address_space_stw_cached address_space_stw_cached_m68k
 #define address_space_stw_le address_space_stw_le_m68k
 #define address_space_stw_le_cached address_space_stw_le_cached_m68k
+#define address_space_to_dispatch address_space_to_dispatch_m68k
 #define address_space_translate address_space_translate_m68k
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_m68k
 #define address_space_translate_internal address_space_translate_internal_m68k
@@ -451,6 +452,7 @@
 #define flatview_lookup flatview_lookup_m68k
 #define flatview_ref flatview_ref_m68k
 #define flatview_simplify flatview_simplify_m68k
+#define flatview_to_dispatch flatview_to_dispatch_m68k
 #define flatview_unref flatview_unref_m68k
 #define float128ToCommonNaN float128ToCommonNaN_m68k
 #define float128_add float128_add_m68k
@@ -1977,7 +1979,6 @@
 #define phys_map_node_alloc phys_map_node_alloc_m68k
 #define phys_map_node_reserve phys_map_node_reserve_m68k
 #define phys_mem_alloc phys_mem_alloc_m68k
-#define phys_mem_clean phys_mem_clean_m68k
 #define phys_mem_set_alloc phys_mem_set_alloc_m68k
 #define phys_page_compact phys_page_compact_m68k
 #define phys_page_compact_all phys_page_compact_all_m68k

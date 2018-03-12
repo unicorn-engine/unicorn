@@ -54,7 +54,7 @@
 #define address_space_cache_init address_space_cache_init_mips
 #define address_space_cache_invalidate address_space_cache_invalidate_mips
 #define address_space_destroy address_space_destroy_mips
-#define address_space_destroy_dispatch address_space_destroy_dispatch_mips
+#define address_space_dispatch_free address_space_dispatch_free_mips
 #define address_space_get_flatview address_space_get_flatview_mips
 #define address_space_init address_space_init_mips
 #define address_space_init_dispatch address_space_init_dispatch_mips
@@ -108,6 +108,7 @@
 #define address_space_stw_cached address_space_stw_cached_mips
 #define address_space_stw_le address_space_stw_le_mips
 #define address_space_stw_le_cached address_space_stw_le_cached_mips
+#define address_space_to_dispatch address_space_to_dispatch_mips
 #define address_space_translate address_space_translate_mips
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_mips
 #define address_space_translate_internal address_space_translate_internal_mips
@@ -451,6 +452,7 @@
 #define flatview_lookup flatview_lookup_mips
 #define flatview_ref flatview_ref_mips
 #define flatview_simplify flatview_simplify_mips
+#define flatview_to_dispatch flatview_to_dispatch_mips
 #define flatview_unref flatview_unref_mips
 #define float128ToCommonNaN float128ToCommonNaN_mips
 #define float128_add float128_add_mips
@@ -1977,7 +1979,6 @@
 #define phys_map_node_alloc phys_map_node_alloc_mips
 #define phys_map_node_reserve phys_map_node_reserve_mips
 #define phys_mem_alloc phys_mem_alloc_mips
-#define phys_mem_clean phys_mem_clean_mips
 #define phys_mem_set_alloc phys_mem_set_alloc_mips
 #define phys_page_compact phys_page_compact_mips
 #define phys_page_compact_all phys_page_compact_all_mips

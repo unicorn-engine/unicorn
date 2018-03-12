@@ -260,6 +260,7 @@ struct FlatView {
     FlatRange *ranges;
     unsigned nr;
     unsigned nr_allocated;
+    struct AddressSpaceDispatch *dispatch;
 };
 
 typedef struct AddressSpaceOps AddressSpaceOps;
@@ -319,6 +320,9 @@ static void flatview_destroy(FlatView *view)
 {
     int i;
 
+    if (view->dispatch) {
+        address_space_dispatch_free(view->dispatch);
+    }
     for (i = 0; i < view->nr; i++) {
         memory_region_unref(view->ranges[i].mr);
     }
@@ -336,6 +340,22 @@ static void flatview_unref(FlatView *view)
     if (atomic_fetch_dec(&view->ref) == 1) {
         flatview_destroy(view);
     }
+}
+
+static FlatView *address_space_to_flatview(AddressSpace *as)
+{
+    // Unicorn: atomic_read used instead of atomic_rcu_read
+    return atomic_read(&as->current_map);
+}
+
+AddressSpaceDispatch *flatview_to_dispatch(FlatView *fv)
+{
+    return fv->dispatch;
+}
+
+AddressSpaceDispatch *address_space_to_dispatch(AddressSpace *as)
+{
+    return flatview_to_dispatch(address_space_to_flatview(as));
 }
 
 static bool can_merge(FlatRange *r1, FlatRange *r2)
@@ -761,21 +781,22 @@ static void address_space_update_topology(AddressSpace *as)
     FlatView *new_view = generate_memory_topology(as->root);
     int i;
 
-    mem_begin(as);
+    new_view->dispatch = mem_begin(as);
     for (i = 0; i < new_view->nr; i++) {
         MemoryRegionSection mrs =
             section_from_flat_range(&new_view->ranges[i], as);
-        mem_add(as, &mrs);
+        mem_add(as, new_view, &mrs);
     }
-    mem_commit(as);
+    mem_commit(new_view->dispatch);
 
     if (!QTAILQ_EMPTY(&as->listeners)) {
         address_space_update_topology_pass(as, old_view, new_view, false);
         address_space_update_topology_pass(as, old_view, new_view, true);
     }
 
-    flatview_unref(as->current_map);
-    as->current_map = new_view;
+    /* Writes are protected by the BQL.  */
+    atomic_set(&as->current_map, new_view);
+    flatview_unref(old_view);
 
     /* Note that all the old MemoryRegions are still alive up to this
      * point.  This relieves most MemoryListeners from the need to
@@ -1797,7 +1818,6 @@ void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *ro
     QTAILQ_INIT(&as->listeners);
     QTAILQ_INSERT_TAIL(&uc->address_spaces, as, address_spaces_link);
     as->name = g_strdup(name ? name : "anonymous");
-    as->dispatch = NULL;
     uc->memory_region_update_pending |= root->enabled;
     memory_region_transaction_commit(uc);
 }
@@ -1806,8 +1826,6 @@ static void do_address_space_destroy(AddressSpace *as)
 {
     // Unicorn: commented out
     bool do_free = as->malloced;
-
-    address_space_destroy_dispatch(as);
 
     // TODO(danghvu): why assert fail here?
     //QTAILQ_FOREACH(listener, &as->uc->memory_listeners, link) {
