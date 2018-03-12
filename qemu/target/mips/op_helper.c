@@ -35,7 +35,7 @@ void helper_raise_exception_err(CPUMIPSState *env, uint32_t exception,
 
 void helper_raise_exception(CPUMIPSState *env, uint32_t exception)
 {
-    do_raise_exception(env, exception, 0);
+    do_raise_exception(env, exception, GETPC());
 }
 
 void helper_raise_exception_debug(CPUMIPSState *env)
@@ -115,10 +115,8 @@ static inline uint64_t get_HILO(CPUMIPSState *env)
 
 static inline target_ulong set_HIT0_LO(CPUMIPSState *env, uint64_t HILO)
 {
-    target_ulong tmp;
     env->active_tc.LO[0] = (int32_t)(HILO & 0xFFFFFFFF);
-    tmp = env->active_tc.HI[0] = (int32_t)(HILO >> 32);
-    return tmp;
+    return env->active_tc.HI[0] = (int32_t)(HILO >> 32);
 }
 
 static inline target_ulong set_HI_LOT0(CPUMIPSState *env, uint64_t HILO)
@@ -404,6 +402,7 @@ void helper_sdl(CPUMIPSState *env, target_ulong arg1, target_ulong arg2,
         do_sb(env, GET_OFFSET(arg2, 6), (uint8_t)(arg1 >> 8), mem_idx,
               GETPC());
     }
+
     if (GET_LMASK64(arg2) <= 0) {
         do_sb(env, GET_OFFSET(arg2, 7), (uint8_t)arg1, mem_idx,
               GETPC());
@@ -1311,7 +1310,6 @@ void helper_mtc0_pagemask(CPUMIPSState *env, target_ulong arg1)
 void helper_mtc0_pagegrain(CPUMIPSState *env, target_ulong arg1)
 {
     /* SmartMIPS not implemented */
-    /* Large physaddr (PABITS) not implemented */
     /* 1k pages not implemented */
     env->CP0_PageGrain = (arg1 & env->CP0_PageGrain_rw_bitmask) |
                          (env->CP0_PageGrain & ~env->CP0_PageGrain_rw_bitmask);
@@ -1870,17 +1868,17 @@ target_ulong helper_dvpe(CPUMIPSState *env)
     //CPUState *other_cs = uc->cpu;
     target_ulong prev = env->mvp->CP0_MVPControl;
 
-    // TODO: #642 SMP groups
-    /*
+// Unicorn if'd out
+#if 0
     CPU_FOREACH(other_cs) {
         MIPSCPU *other_cpu = MIPS_CPU(uc, other_cs);
-        // Turn off all VPEs except the one executing the dvpe.
+        /* Turn off all VPEs except the one executing the dvpe.  */
         if (&other_cpu->env != env) {
             other_cpu->env.mvp->CP0_MVPControl &= ~(1 << CP0MVPCo_EVP);
             mips_vpe_sleep(other_cpu);
         }
     }
-    */
+#endif
     return prev;
 }
 
@@ -1890,20 +1888,20 @@ target_ulong helper_evpe(CPUMIPSState *env)
     //CPUState *other_cs = uc->cpu;
     target_ulong prev = env->mvp->CP0_MVPControl;
 
-    // TODO: #642 SMP groups
-    /*
+// Unicorn: if'd out
+#if 0
     CPU_FOREACH(other_cs) {
         MIPSCPU *other_cpu = MIPS_CPU(uc, other_cs);
 
         if (&other_cpu->env != env
-            // If the VPE is WFI, don't disturb its sleep.
+            /* If the VPE is WFI, don't disturb its sleep.  */
             && !mips_vpe_is_wfi(other_cpu)) {
-            // Enable the VPE.
+            /* Enable the VPE.  */
             other_cpu->env.mvp->CP0_MVPControl |= (1 << CP0MVPCo_EVP);
-            mips_vpe_wake(other_cpu); // And wake it up.
+            mips_vpe_wake(other_cpu); /* And wake it up.  */
         }
     }
-    */
+#endif
     return prev;
 }
 #endif /* !CONFIG_USER_ONLY */
@@ -2524,7 +2522,7 @@ target_ulong helper_cfc1(CPUMIPSState *env, uint32_t reg)
             if (env->CP0_Config5 & (1 << CP0C5_UFE)) {
                 arg1 = (env->CP0_Config5 >> CP0C5_FRE) & 1;
             } else {
-                do_raise_exception(env, EXCP_RI, GETPC());
+                helper_raise_exception(env, EXCP_RI);
             }
         }
         break;
@@ -2557,7 +2555,7 @@ void helper_ctc1(CPUMIPSState *env, target_ulong arg1, uint32_t fs, uint32_t rt)
             env->CP0_Status &= ~(1 << CP0St_FR);
             compute_hflags(env);
         } else {
-            helper_raise_exception(env, EXCP_RI);
+            do_raise_exception(env, EXCP_RI, GETPC());
         }
         break;
     case 4:
@@ -2569,7 +2567,7 @@ void helper_ctc1(CPUMIPSState *env, target_ulong arg1, uint32_t fs, uint32_t rt)
             env->CP0_Status |= (1 << CP0St_FR);
             compute_hflags(env);
         } else {
-            helper_raise_exception(env, EXCP_RI);
+            do_raise_exception(env, EXCP_RI, GETPC());
         }
         break;
     case 5:
@@ -4158,6 +4156,18 @@ void helper_msa_ld_ ## TYPE(CPUMIPSState *env, uint32_t wd,             \
     memcpy(pwd, &wx, sizeof(wr_t));                                     \
 }
 
+#if !defined(CONFIG_USER_ONLY)
+MSA_LD_DF(DF_BYTE,   b, helper_ret_ldub_mmu, oi, GETPC())
+MSA_LD_DF(DF_HALF,   h, helper_ret_lduw_mmu, oi, GETPC())
+MSA_LD_DF(DF_WORD,   w, helper_ret_ldul_mmu, oi, GETPC())
+MSA_LD_DF(DF_DOUBLE, d, helper_ret_ldq_mmu,  oi, GETPC())
+#else
+MSA_LD_DF(DF_BYTE,   b, cpu_ldub_data)
+MSA_LD_DF(DF_HALF,   h, cpu_lduw_data)
+MSA_LD_DF(DF_WORD,   w, cpu_ldl_data)
+MSA_LD_DF(DF_DOUBLE, d, cpu_ldq_data)
+#endif
+
 #define MSA_PAGESPAN(x) \
         ((((x) & ~TARGET_PAGE_MASK) + MSA_WRLEN/8 - 1) >= TARGET_PAGE_SIZE)
 
@@ -4219,15 +4229,3 @@ void helper_cache(CPUMIPSState *env, target_ulong addr, uint32_t op)
     }
 #endif
 }
-
-#if !defined(CONFIG_USER_ONLY)
-MSA_LD_DF(DF_BYTE,   b, helper_ret_ldub_mmu, oi, GETPC())
-MSA_LD_DF(DF_HALF,   h, helper_ret_lduw_mmu, oi, GETPC())
-MSA_LD_DF(DF_WORD,   w, helper_ret_ldul_mmu, oi, GETPC())
-MSA_LD_DF(DF_DOUBLE, d, helper_ret_ldq_mmu,  oi, GETPC())
-#else
-MSA_LD_DF(DF_BYTE,   b, cpu_ldub_data)
-MSA_LD_DF(DF_HALF,   h, cpu_lduw_data)
-MSA_LD_DF(DF_WORD,   w, cpu_ldl_data)
-MSA_LD_DF(DF_DOUBLE, d, cpu_ldq_data)
-#endif
