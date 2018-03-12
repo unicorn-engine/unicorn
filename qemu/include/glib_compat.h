@@ -57,6 +57,9 @@ typedef void (*GFunc)(gpointer data, gpointer user_data);
 typedef gint (*GCompareFunc)(gconstpointer v1, gconstpointer v2);
 typedef void (*GDestroyNotify)(gpointer data);
 
+guint g_direct_hash(gconstpointer v);
+gboolean g_direct_equal(gconstpointer v1, gconstpointer v2);
+
 guint g_str_hash(gconstpointer v);
 gboolean g_str_equal(gconstpointer v1, gconstpointer v2);
 gboolean g_str_has_suffix(const gchar *str, const gchar *prefix);
@@ -137,9 +140,10 @@ void g_hash_table_destroy(GHashTable *hash_table);
 gpointer g_hash_table_find(GHashTable *hash_table, GHRFunc predicate, gpointer user_data);
 void g_hash_table_foreach(GHashTable *hash_table, GHFunc func, gpointer user_data);
 void g_hash_table_insert(GHashTable *hash_table, gpointer key, gpointer value);
+void g_hash_table_replace(GHashTable *hash_table, gpointer key, gpointer value);
 gpointer g_hash_table_lookup(GHashTable *hash_table, gconstpointer key);
 GHashTable *g_hash_table_new(GHashFunc hash_func, GEqualFunc key_equal_func);
-GHashTable *g_hash_table_new_full(GHashFunc hash_func, GEqualFunc key_equal_func, 
+GHashTable *g_hash_table_new_full(GHashFunc hash_func, GEqualFunc key_equal_func,
                                   GDestroyNotify key_destroy_func, GDestroyNotify value_destroy_func);
 void g_hash_table_remove_all(GHashTable *hash_table);
 gboolean g_hash_table_remove(GHashTable *hash_table, gconstpointer key);

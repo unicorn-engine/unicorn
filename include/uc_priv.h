@@ -199,6 +199,7 @@ struct uc_struct {
     uintptr_t helper_retaddr;
 
     // qemu/memory.c
+    GHashTable *flat_views;
     bool global_dirty_log;
 
     /* This is a multi-level map on the virtual address space.

@@ -55,9 +55,27 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Returns: a hash value corresponding to the key.
  */
-static guint g_direct_hash (gconstpointer v)
+guint g_direct_hash (gconstpointer v)
 {
   return GPOINTER_TO_UINT (v);
+}
+
+/**
+ * g_direct_equal:
+ * @v1: a key.
+ * @v2: a key to compare with @v1.
+ *
+ * Compares two #gpointer arguments and returns %TRUE if they are equal.
+ * It can be passed to g_hash_table_new() as the @key_equal_func
+ * parameter, when using pointers as keys in a #GHashTable.
+ *
+ * Returns: %TRUE if the two keys match.
+ */
+gboolean
+g_direct_equal (gconstpointer v1,
+    gconstpointer v2)
+{
+  return v1 == v2;
 }
 
 // g_str_hash() is lifted glib-2.28.0/glib/gstring.c
@@ -1436,6 +1454,27 @@ void g_hash_table_insert (GHashTable *hash_table,
                      gpointer    value)
 {
   g_hash_table_insert_internal (hash_table, key, value, FALSE);
+}
+
+/**
+ * g_hash_table_replace:
+ * @hash_table: a #GHashTable.
+ * @key: a key to insert.
+ * @value: the value to associate with the key.
+ *
+ * Inserts a new key and value into a #GHashTable similar to
+ * g_hash_table_insert(). The difference is that if the key already exists
+ * in the #GHashTable, it gets replaced by the new key. If you supplied a
+ * @value_destroy_func when creating the #GHashTable, the old value is freed
+ * using that function. If you supplied a @key_destroy_func when creating the
+ * #GHashTable, the old key is freed using that function.
+ **/
+void
+g_hash_table_replace (GHashTable *hash_table,
+                      gpointer    key,
+                      gpointer    value)
+{
+  g_hash_table_insert_internal (hash_table, key, value, TRUE);
 }
 
 /*
