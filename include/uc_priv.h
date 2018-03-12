@@ -199,6 +199,7 @@ struct uc_struct {
     uintptr_t helper_retaddr;
 
     // qemu/memory.c
+    FlatView *empty_view;
     GHashTable *flat_views;
     bool global_dirty_log;
 

@@ -3004,6 +3004,7 @@ symbols = (
     'unassigned_mem_ops',
     'unassigned_mem_read',
     'unassigned_mem_write',
+    'unicorn_free_empty_flat_view',
     'update_spsel',
     'use_idiv_instructions_rt',
     'v6_cp_reginfo',

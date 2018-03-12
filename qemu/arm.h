@@ -2998,6 +2998,7 @@
 #define unassigned_mem_ops unassigned_mem_ops_arm
 #define unassigned_mem_read unassigned_mem_read_arm
 #define unassigned_mem_write unassigned_mem_write_arm
+#define unicorn_free_empty_flat_view unicorn_free_empty_flat_view_arm
 #define update_spsel update_spsel_arm
 #define use_idiv_instructions_rt use_idiv_instructions_rt_arm
 #define v6_cp_reginfo v6_cp_reginfo_arm

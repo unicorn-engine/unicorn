@@ -2998,6 +2998,7 @@
 #define unassigned_mem_ops unassigned_mem_ops_mips64el
 #define unassigned_mem_read unassigned_mem_read_mips64el
 #define unassigned_mem_write unassigned_mem_write_mips64el
+#define unicorn_free_empty_flat_view unicorn_free_empty_flat_view_mips64el
 #define update_spsel update_spsel_mips64el
 #define use_idiv_instructions_rt use_idiv_instructions_rt_mips64el
 #define v6_cp_reginfo v6_cp_reginfo_mips64el

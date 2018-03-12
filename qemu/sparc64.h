@@ -2998,6 +2998,7 @@
 #define unassigned_mem_ops unassigned_mem_ops_sparc64
 #define unassigned_mem_read unassigned_mem_read_sparc64
 #define unassigned_mem_write unassigned_mem_write_sparc64
+#define unicorn_free_empty_flat_view unicorn_free_empty_flat_view_sparc64
 #define update_spsel update_spsel_sparc64
 #define use_idiv_instructions_rt use_idiv_instructions_rt_sparc64
 #define v6_cp_reginfo v6_cp_reginfo_sparc64

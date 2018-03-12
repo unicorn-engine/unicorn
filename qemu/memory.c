@@ -346,6 +346,15 @@ static void flatview_unref(FlatView *view)
     }
 }
 
+void unicorn_free_empty_flat_view(struct uc_struct *uc)
+{
+    if (!uc->empty_view) {
+        return;
+    }
+
+    flatview_destroy(uc->empty_view);
+}
+
 FlatView *address_space_to_flatview(AddressSpace *as)
 {
     // Unicorn: atomic_read used instead of atomic_rcu_read
@@ -728,7 +737,7 @@ static MemoryRegion *memory_region_get_flatview_root(MemoryRegion *mr)
 }
 
 /* Render a memory topology into a list of disjoint absolute ranges. */
-static FlatView *generate_memory_topology(MemoryRegion *mr)
+static FlatView *generate_memory_topology(struct uc_struct *uc, MemoryRegion *mr)
 {
     int i;
     FlatView *view;
@@ -741,14 +750,14 @@ static FlatView *generate_memory_topology(MemoryRegion *mr)
     }
     flatview_simplify(view);
 
-    view->dispatch = address_space_dispatch_new(mr->uc, view);
+    view->dispatch = address_space_dispatch_new(uc, view);
     for (i = 0; i < view->nr; i++) {
         MemoryRegionSection mrs =
             section_from_flat_range(&view->ranges[i], view);
         flatview_add_to_dispatch(view, &mrs);
     }
     address_space_dispatch_compact(view->dispatch);
-    g_hash_table_replace(mr->uc->flat_views, mr, view);
+    g_hash_table_replace(uc->flat_views, mr, view);
 
     return view;
 }
@@ -838,6 +847,15 @@ static void flatviews_init(struct uc_struct *uc)
 
     uc->flat_views = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL,
                                            (GDestroyNotify) flatview_unref);
+
+    if (!uc->empty_view) {
+        uc->empty_view = generate_memory_topology(uc, NULL);
+        /* We keep it alive forever in the global variable.  */
+        flatview_ref(uc->empty_view);
+    } else {
+        g_hash_table_replace(uc->flat_views, NULL, uc->empty_view);
+        flatview_ref(uc->empty_view);
+    }
 }
 
 static void flatviews_reset(struct uc_struct *uc)
@@ -858,7 +876,7 @@ static void flatviews_reset(struct uc_struct *uc)
             continue;
         }
 
-        generate_memory_topology(physmr);
+        generate_memory_topology(uc, physmr);
     }
 }
 
@@ -915,7 +933,7 @@ static void address_space_update_topology(AddressSpace *as)
 
     flatviews_init(uc);
     if (!g_hash_table_lookup(uc->flat_views, physmr)) {
-        generate_memory_topology(physmr);
+        generate_memory_topology(uc, physmr);
     }
     address_space_set_flatview(as);
 }

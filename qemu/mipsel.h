@@ -2998,6 +2998,7 @@
 #define unassigned_mem_ops unassigned_mem_ops_mipsel
 #define unassigned_mem_read unassigned_mem_read_mipsel
 #define unassigned_mem_write unassigned_mem_write_mipsel
+#define unicorn_free_empty_flat_view unicorn_free_empty_flat_view_mipsel
 #define update_spsel update_spsel_mipsel
 #define use_idiv_instructions_rt use_idiv_instructions_rt_mipsel
 #define v6_cp_reginfo v6_cp_reginfo_mipsel

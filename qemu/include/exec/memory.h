@@ -1379,6 +1379,8 @@ address_space_write_cached(MemoryRegionCache *cache, hwaddr addr,
     address_space_write(cache->as, cache->xlat + addr, MEMTXATTRS_UNSPECIFIED, buf, len);
 }
 
+void unicorn_free_empty_flat_view(struct uc_struct *uc);
+
 #endif
 
 #endif

@@ -80,6 +80,7 @@ static void release_common(void *t)
 
     // Destory flat view hash table
     g_hash_table_destroy(s->uc->flat_views);
+    unicorn_free_empty_flat_view(s->uc);
 
     // TODO(danghvu): these function is not available outside qemu
     // so we keep them here instead of outside uc_close.
