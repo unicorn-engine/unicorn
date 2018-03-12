@@ -315,7 +315,7 @@ static inline bool cpu_handle_exception(struct uc_struct *uc, CPUState *cpu, int
                which will be handled outside the cpu execution
                loop */
 #if defined(TARGET_I386)
-            CPUClass *cc = CPU_GET_CLASS(cpu);
+            CPUClass *cc = CPU_GET_CLASS(uc, cpu);
             cc->do_interrupt(cpu);
 #endif
             *ret = cpu->exception_index;
@@ -543,8 +543,8 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
         cc = CPU_GET_CLASS(uc, cpu);
 #else /* buggy compiler */
         /* Assert that the compiler does not smash local variables. */
-        g_assert(cpu == current_cpu);
-        g_assert(cc == CPU_GET_CLASS(cpu));
+        g_assert(cpu == uc->current_cpu);
+        g_assert(cc == CPU_GET_CLASS(uc, cpu));
 #endif /* buggy compiler */
         cpu->can_do_io = 1;
         // Unicorn: commented out
