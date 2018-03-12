@@ -204,8 +204,8 @@ static int get_physical_address (CPUMIPSState *env, hwaddr *physical,
                                 int *prot, target_ulong real_address,
                                 int rw, int access_type, int mmu_idx)
 {
-#if defined(TARGET_MIPS64)
     /* User mode can only access useg/xuseg */
+#if defined(TARGET_MIPS64)
     int user_mode = mmu_idx == MIPS_HFLAG_UM;
     int supervisor_mode = mmu_idx == MIPS_HFLAG_SM;
     int kernel_mode = !user_mode && !supervisor_mode;
@@ -317,7 +317,6 @@ static int get_physical_address (CPUMIPSState *env, hwaddr *physical,
                                           access_type, mmu_idx,
                                           env->CP0_SegCtl0, 0x1FFFFFFF);
     }
-
     return ret;
 }
 
@@ -783,6 +782,7 @@ void mips_cpu_do_interrupt(CPUState *cs)
         set_hflags_for_handler(env);
         break;
     case EXCP_EXT_INTERRUPT:
+        cause = 0;
         if (env->CP0_Cause & (1 << CP0Ca_IV)) {
             uint32_t spacing = (env->CP0_IntCtl >> CP0IntCtl_VS) & 0x1f;
 
@@ -803,7 +803,6 @@ void mips_cpu_do_interrupt(CPUState *cs)
                     /* Find the highest-priority interrupt. */
                     while (pending >>= 1) {
                         vector++;
-
                     }
                 }
                 offset = 0x200 + (vector * (spacing << 5));
@@ -923,7 +922,7 @@ void mips_cpu_do_interrupt(CPUState *cs)
         goto set_EPC;
     case EXCP_DWATCH:
         cause = 23;
-        /* XXX: TODO: manage defered watch exceptions */
+        /* XXX: TODO: manage deferred watch exceptions */
         goto set_EPC;
     case EXCP_MCHECK:
         cause = 24;
@@ -989,7 +988,7 @@ void mips_cpu_do_interrupt(CPUState *cs)
     cs->exception_index = EXCP_NONE;
 }
 
-bool mips_cpu_exec_interrupt(CPUState *cs, int interrupt_request)   // qq
+bool mips_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 {
     if (interrupt_request & CPU_INTERRUPT_HARD) {
         MIPSCPU *cpu = MIPS_CPU(cs->uc, cs);
@@ -1066,7 +1065,6 @@ void r4k_invalidate_tlb (CPUMIPSState *env, int idx, int use_extra)
     }
 }
 #endif
-
 
 void QEMU_NORETURN do_raise_exception_err(CPUMIPSState *env,
                                           uint32_t exception,
