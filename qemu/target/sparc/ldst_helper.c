@@ -70,12 +70,11 @@
 #define QT1 (env->qt1)
 
 #if defined(TARGET_SPARC64) && !defined(CONFIG_USER_ONLY)
-/* Calculates TSB pointer value for fault page size 8k or 64k */
-static uint64_t ultrasparc_tsb_pointer(CPUSPARCState *env,
-                                       const SparcV9MMU *mmu, const int idx)
 /* Calculates TSB pointer value for fault page size
  * UltraSPARC IIi has fixed sizes (8k or 64k) for the page pointers
  * UA2005 holds the page size configuration in mmu_ctx registers */
+static uint64_t ultrasparc_tsb_pointer(CPUSPARCState *env,
+                                       const SparcV9MMU *mmu, const int idx)
 {
     uint64_t tsb_register;
     int page_size;
@@ -92,11 +91,9 @@ static uint64_t ultrasparc_tsb_pointer(CPUSPARCState *env,
         page_size = idx;
         tsb_register = mmu->tsb;
     }
-
     int tsb_split = (tsb_register & 0x1000ULL) ? 1 : 0;
     int tsb_size  = tsb_register & 0xf;
 
-    /* discard lower 13 bits which hold tag access context */
     uint64_t tsb_base_mask = (~0x1fffULL) << tsb_size;
 
     /* move va bits to correct position,
@@ -257,7 +254,6 @@ static void replace_tlb_1bit_lru(SparcTLBEntry *tlb,
 
         }
     }
-
     /* Try replacing invalid entry */
     for (i = 0; i < 64; i++) {
         if (!TTE_IS_VALID(tlb[i].tte)) {
@@ -303,6 +299,51 @@ static void replace_tlb_1bit_lru(SparcTLBEntry *tlb,
     /* corner case: the last entry is replaced anyway */
     replace_tlb_entry(&tlb[63], tlb_tag, tlb_tte, env1);
 }
+
+#endif
+
+#ifdef TARGET_SPARC64
+/* returns true if access using this ASI is to have address translated by MMU
+   otherwise access is to raw physical address */
+/* TODO: check sparc32 bits */
+static inline int is_translating_asi(int asi)
+{
+    /* Ultrasparc IIi translating asi
+       - note this list is defined by cpu implementation
+    */
+    if( (asi >= 0x04 && asi <= 0x11) ||
+        (asi >= 0x16 && asi <= 0x19) ||
+        (asi >= 0x1E && asi <= 0x1F) ||
+        (asi >= 0x24 && asi <= 0x2C) ||
+        (asi >= 0x70 && asi <= 0x73) ||
+        (asi >= 0x78 && asi <= 0x79) ||
+        (asi >= 0x80 && asi <= 0xFF) )
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+static inline target_ulong address_mask(CPUSPARCState *env1, target_ulong addr)
+{
+    if (AM_CHECK(env1)) {
+        addr &= 0xffffffffULL;
+    }
+    return addr;
+}
+
+static inline target_ulong asi_address_mask(CPUSPARCState *env,
+                                            int asi, target_ulong addr)
+{
+    if (is_translating_asi(asi)) {
+        addr = address_mask(env, addr);
+    }
+    return addr;
+}
+
 #ifndef CONFIG_USER_ONLY
 static inline void do_check_asi(CPUSPARCState *env, int asi, uintptr_t ra)
 {
@@ -1013,51 +1054,6 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, uint64_t val,
 #endif /* CONFIG_USER_ONLY */
 #else /* TARGET_SPARC64 */
 
-/* returns true if access using this ASI is to have address translated by MMU
-   otherwise access is to raw physical address */
-static inline int is_translating_asi(int asi)
-{
-#ifdef TARGET_SPARC64
-    /* Ultrasparc IIi translating asi
-       - note this list is defined by cpu implementation
-    */
-    if( (asi >= 0x04 && asi <= 0x11) ||
-        (asi >= 0x16 && asi <= 0x19) ||
-        (asi >= 0x1E && asi <= 0x1F) ||
-        (asi >= 0x24 && asi <= 0x2C) ||
-        (asi >= 0x70 && asi <= 0x73) ||
-        (asi >= 0x78 && asi <= 0x79) ||
-        (asi >= 0x80 && asi <= 0xFF) )
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
-#else
-    /* TODO: check sparc32 bits */
-    return 0;
-#endif
-}
-
-static inline target_ulong address_mask(CPUSPARCState *env1, target_ulong addr)
-{
-    if (AM_CHECK(env1)) {
-        addr &= 0xffffffffULL;
-    }
-    return addr;
-}
-
-static inline target_ulong asi_address_mask(CPUSPARCState *env,
-                                            int asi, target_ulong addr)
-{
-    if (is_translating_asi(asi)) {
-        addr = address_mask(env, addr);
-    }
-    return addr;
-}
-
 #ifdef CONFIG_USER_ONLY
 uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr,
                        int asi, uint32_t memop)
@@ -1106,10 +1102,9 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr,
     case ASI_SL: /* Secondary LE */
         /* These are always handled inline.  */
         g_assert_not_reached();
-        break;
+
     default:
         cpu_raise_exception_ra(env, TT_DATA_ACCESS, GETPC());
-        break;
     }
 
     /* Convert from little endian */
@@ -1168,7 +1163,6 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, target_ulong val,
     case ASI_SL: /* Secondary LE */
         /* These are always handled inline.  */
         g_assert_not_reached();
-        return;
 
     case ASI_PNF:  /* Primary no-fault, RO */
     case ASI_SNF:  /* Secondary no-fault, RO */
@@ -1216,7 +1210,6 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr,
                 /* exception_index is set in get_physical_address_data. */
                 cpu_raise_exception_ra(env, cs->exception_index, GETPC());
             }
-
             oi = make_memop_idx(memop, idx);
             switch (size) {
             case 1:
@@ -1290,7 +1283,6 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr,
     case ASI_IMMU: /* I-MMU regs */
         {
             int reg = (addr >> 3) & 0xf;
-
             switch (reg) {
             case 0:
                 /* 0x00 I-TSB Tag Target register */
@@ -1343,7 +1335,6 @@ uint64_t helper_ld_asi(CPUSPARCState *env, target_ulong addr,
     case ASI_DMMU: /* D-MMU regs */
         {
             int reg = (addr >> 3) & 0xf;
-
             switch (reg) {
             case 0:
                 /* 0x00 D-TSB Tag Target register */
@@ -1540,7 +1531,6 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, target_ulong val,
     case ASI_TWINX_SL: /* Secondary, twinx, LE */
         /* These are always handled inline.  */
         g_assert_not_reached();
-        return;
     /* these ASIs have different functions on UltraSPARC-IIIi
      * and UA2005 CPUs. Use the explicit numbers to avoid confusion
      */
@@ -1671,7 +1661,6 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, target_ulong val,
                 replace_tlb_entry(&env->itlb[i], env->immu.tag_access,
                                   sun4v_tte_to_sun4u(env, addr, val), env);
             }
-
 #ifdef DEBUG_MMU
             DPRINTF_MMU("immu data access replaced entry [%i]\n", i);
             dump_mmu(stdout, fprintf, env);
@@ -1754,7 +1743,6 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, target_ulong val,
                 replace_tlb_entry(&env->dtlb[i], env->dmmu.tag_access,
                                   sun4v_tte_to_sun4u(env, addr, val), env);
             }
-
 #ifdef DEBUG_MMU
             DPRINTF_MMU("dmmu data access replaced entry [%i]\n", i);
             dump_mmu(stdout, fprintf, env);
@@ -1767,6 +1755,18 @@ void helper_st_asi(CPUSPARCState *env, target_ulong addr, target_ulong val,
     case ASI_INTR_RECEIVE: /* Interrupt data receive */
         env->ivec_status = val & 0x20;
         return;
+    case ASI_SCRATCHPAD: /* UA2005 privileged scratchpad */
+        if (unlikely((addr >= 0x20) && (addr < 0x30))) {
+            /* Hyperprivileged access only */
+            cpu_unassigned_access(cs, addr, true, false, 1, size);
+        }
+        /* fall through */
+    case ASI_HYP_SCRATCHPAD: /* UA2005 hyperprivileged scratchpad */
+        {
+            unsigned int i = (addr >> 3) & 0x7;
+            env->scratch[i] = val;
+            return;
+        }
     case ASI_MMU: /* UA2005 Context ID registers */
         {
           switch ((addr >> 3) & 0x3) {
