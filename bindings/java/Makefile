@@ -16,7 +16,7 @@ install: lib jar
 	$(MAKE) -f Makefile.build install
 
 uninstall:
-		$(MAKE) -f Makefile.build uninstall
+	$(MAKE) -f Makefile.build uninstall
 
 gen_const:
 	cd .. && python const_generator.py java
