@@ -2023,11 +2023,10 @@ static void tcg_out_qemu_ld_direct(TCGContext *s, TCGReg datalo, TCGReg datahi,
                                          base, index, 0, ofs);
                 tcg_out_rolw_8(s, datalo);
             }
+            tcg_out_modrm(s, OPC_MOVSWL + P_REXW, datalo, datalo);
+        } else {
             tcg_out_modrm_sib_offset(s, OPC_MOVSWL + P_REXW + seg,
                                      datalo, base, index, 0, ofs);
-        } else {
-            tcg_out_modrm_offset(s, OPC_MOVSWL + P_REXW + seg,
-                                 datalo, base, ofs);
         }
         break;
     case MO_UL:
@@ -3388,22 +3387,17 @@ void tcg_expand_vec_op(TCGContext *s, TCGOpcode opc, TCGType type, unsigned vece
                 NEED_BIAS = 4
             };
             static const uint8_t fixups[16] = {
-                -1,
-                -1,
-                NEED_SWAP,
-                0,
-                NEED_BIAS | NEED_SWAP,
-                NEED_BIAS | NEED_SWAP | NEED_INV,
-                -1,
-                -1,
-                0,
-                NEED_INV,
-                NEED_INV,
-                0,
-                NEED_BIAS | NEED_INV,
-                NEED_BIAS,
-                -1,
-                -1,
+                [0 ... 15] = -1,
+                [TCG_COND_EQ] = 0,
+                [TCG_COND_NE] = NEED_INV,
+                [TCG_COND_GT] = 0,
+                [TCG_COND_LT] = NEED_SWAP,
+                [TCG_COND_LE] = NEED_INV,
+                [TCG_COND_GE] = NEED_SWAP | NEED_INV,
+                [TCG_COND_GTU] = NEED_BIAS,
+                [TCG_COND_LTU] = NEED_BIAS | NEED_SWAP,
+                [TCG_COND_LEU] = NEED_BIAS | NEED_INV,
+                [TCG_COND_GEU] = NEED_BIAS | NEED_SWAP | NEED_INV,
             };
 
             TCGCond cond;
