@@ -31,11 +31,11 @@
     <ClInclude Include="..\..\..\qemu\target\arm\op_addsub.h" />
     <ClInclude Include="..\..\..\qemu\target\arm\translate.h" />
     <ClInclude Include="..\..\..\qemu\target\arm\unicorn.h" />
+    <ClInclude Include="..\..\..\qemu\accel\tcg\tcg-runtime.h" />
     <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-mo.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-op-gvec.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg-gvec-desc.h" />
     <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
@@ -44,14 +44,16 @@
     <ClInclude Include="config-target.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\qemu\accel\tcg\cpu-exec-common.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\cpu-exec.c" />
     <ClCompile Include="..\..\..\qemu\accel\tcg\translator.c"/>
-    <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
-    <ClCompile Include="..\..\..\qemu\cpu-exec-common.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\cputlb.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\tcg-runtime.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\tcg-runtime-gvec.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\translate-all.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\translate-common.c" />
     <ClCompile Include="..\..\..\qemu\cpus.c" />
-    <ClCompile Include="..\..\..\qemu\cputlb.c" />
     <ClCompile Include="..\..\..\qemu\exec.c" />
-    <ClCompile Include="..\..\..\qemu\tcg-runtime.c" />
-    <ClCompile Include="..\..\..\qemu\tcg-runtime-gvec.c" />
     <ClCompile Include="..\..\..\qemu\fpu\softfloat.c" />
     <ClCompile Include="..\..\..\qemu\hw\arm\tosa.c" />
     <ClCompile Include="..\..\..\qemu\hw\arm\virt.c" />
@@ -80,8 +82,6 @@
     <ClCompile Include="..\..\..\qemu\tcg\tcg-op-gvec.c" />
     <ClCompile Include="..\..\..\qemu\tcg\tcg-op-vec.c" />
     <ClCompile Include="..\..\..\qemu\tcg\tcg-common.c" />
-    <ClCompile Include="..\..\..\qemu\translate-all.c" />
-    <ClCompile Include="..\..\..\qemu\translate-common.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{740F3007-7BF0-4C0C-8FA5-2587C794EF31}</ProjectGuid>

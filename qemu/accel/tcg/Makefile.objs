@@ -1,1 +1,4 @@
+obj-$(CONFIG_SOFTMMU) += cputlb.o
+obj-y += tcg-runtime.o tcg-runtime-gvec.o
+obj-y += cpu-exec.o cpu-exec-common.o translate-all.o translate-common.o
 obj-y += translator.o

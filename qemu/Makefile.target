@@ -40,14 +40,11 @@ all: $(PROGS)
 
 #########################################################
 # cpu emulator library
-obj-y = exec.o translate-all.o cpu-exec.o
-obj-y += translate-common.o
-obj-y += cpu-exec-common.o
+obj-y = exec.o
 obj-$(CONFIG_TCG) += tcg/tcg.o tcg/tcg-op.o tcg/tcg-op-vec.o tcg/tcg-op-gvec.o
 obj-$(CONFIG_TCG) += tcg/tcg-common.o tcg/optimize.o
 obj-y += fpu/softfloat.o
 obj-y += target/$(TARGET_BASE_ARCH)/
-obj-y += tcg-runtime.o tcg-runtime-gvec.o
 obj-y += accel/
 
 #########################################################
@@ -55,7 +52,7 @@ obj-y += accel/
 ifdef CONFIG_SOFTMMU
 obj-y += cpus.o ioport.o
 obj-y += hw/
-obj-y += memory.o cputlb.o
+obj-y += memory.o
 obj-y += memory_mapping.o
 LIBS+=$(libs_softmmu)
 

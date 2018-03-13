@@ -42,8 +42,8 @@
     <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h">
       <Filter>tcg</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h">
-      <Filter>tcg</Filter>
+    <ClInclude Include="..\..\..\qemu\accel\tcg\tcg-runtime.h">
+      <Filter>accel\tcg</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\tcg\tcg.h">
       <Filter>tcg</Filter>
@@ -86,18 +86,19 @@
     <ClInclude Include="config-target.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
-    <ClCompile Include="..\..\..\qemu\cpu-exec-common.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\cpu-exec.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\cpu-exec-common.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\cputlb.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\tcg-runtime.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\tcg-runtime-gvec.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\translate-all.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\translate-common.c" />
+    <ClCompile Include="..\..\..\qemu\accel\tcg\translator.c" />
     <ClCompile Include="..\..\..\qemu\cpus.c" />
-    <ClCompile Include="..\..\..\qemu\cputlb.c" />
     <ClCompile Include="..\..\..\qemu\exec.c" />
-    <ClCompile Include="..\..\..\qemu\tcg-runtime.c" />
-    <ClCompile Include="..\..\..\qemu\tcg-runtime-gvec.c" />
     <ClCompile Include="..\..\..\qemu\ioport.c" />
     <ClCompile Include="..\..\..\qemu\memory.c" />
     <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
-    <ClCompile Include="..\..\..\qemu\translate-all.c" />
-    <ClCompile Include="..\..\..\qemu\translate-common.c" />
     <ClCompile Include="..\..\..\qemu\fpu\softfloat.c">
       <Filter>fpu</Filter>
     </ClCompile>
