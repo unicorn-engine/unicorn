@@ -173,11 +173,11 @@ static void cpu_gen_init(struct uc_struct *uc)
 
 static void tb_clean_internal(struct uc_struct *uc, int i, void** lp)
 {
-    if (i == 0 || lp == 0) {
+    if (i == 0 || lp == NULL) {
         return;
     }
-    tb_clean_internal(uc, i-1, (void*)(((char*)*lp) + ((0 >> (i * V_L2_BITS)) & (V_L2_SIZE - 1))));
     if (lp && *lp) {
+        tb_clean_internal(uc, i-1, (void*)(((char*)*lp) + ((0 >> (i * V_L2_BITS)) & (V_L2_SIZE - 1))));
         g_free(*lp);
     }
 }
