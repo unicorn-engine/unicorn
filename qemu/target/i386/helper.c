@@ -533,7 +533,7 @@ void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4)
 int x86_cpu_handle_mmu_fault(CPUState *cs, vaddr addr, int size,
                              int is_write, int mmu_idx)
 {
-    X86CPU *cpu = X86_CPU(cs);
+    X86CPU *cpu = X86_CPU(cs->uc, cs);
     CPUX86State *env = &cpu->env;
 
     /* user mode only emulation */
