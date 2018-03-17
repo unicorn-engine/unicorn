@@ -608,3 +608,8 @@ void HELPER(ftan)(CPUM68KState *env, FPReg *res, FPReg *val)
 {
     res->d = floatx80_tan(val->d, &env->fp_status);
 }
+
+void HELPER(fsin)(CPUM68KState *env, FPReg *res, FPReg *val)
+{
+    res->d = floatx80_sin(val->d, &env->fp_status);
+}
