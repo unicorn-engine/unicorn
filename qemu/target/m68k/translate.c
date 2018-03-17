@@ -5360,6 +5360,14 @@ DISAS_INSN(fpu)
     case 0x6c: /* fdsub */
         gen_helper_fdsub(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src, cpu_dest);
         break;
+    case 0x30: case 0x31: case 0x32:
+    case 0x33: case 0x34: case 0x35:
+    case 0x36: case 0x37: {
+            TCGv_ptr cpu_dest2 = gen_fp_ptr(s, REG(ext, 0));
+            gen_helper_fsincos(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_dest2, cpu_src);
+            tcg_temp_free_ptr(tcg_ctx, cpu_dest2);
+        }
+        break;
     case 0x38: /* fcmp */
         gen_helper_fcmp(tcg_ctx, tcg_ctx->cpu_env, cpu_src, cpu_dest);
         return;
