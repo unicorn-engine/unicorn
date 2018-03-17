@@ -5243,6 +5243,9 @@ DISAS_INSN(fpu)
     case 1: /* fint */
         gen_helper_firound(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
         break;
+    case 2: /* fsinh */
+        gen_helper_fsinh(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
+        break;
     case 3: /* fintrz */
         gen_helper_fitrunc(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
         break;
