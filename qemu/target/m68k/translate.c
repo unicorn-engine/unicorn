@@ -5306,6 +5306,9 @@ DISAS_INSN(fpu)
     case 0x5c: /* fdabs */
         gen_helper_fdabs(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
         break;
+    case 0x19: /* fcosh */
+        gen_helper_fcosh(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
+        break;
     case 0x1a: /* fneg */
         gen_helper_fneg(tcg_ctx, tcg_ctx->cpu_env, cpu_dest, cpu_src);
         break;
