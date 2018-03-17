@@ -386,6 +386,7 @@ static inline bool cpu_handle_interrupt(CPUState *cpu,
                True when it is, and we should restart on a new TB,
                and via longjmp via cpu_loop_exit.  */
             if (cc->cpu_exec_interrupt(cpu, interrupt_request)) {
+                cpu->exception_index = -1;
                 *last_tb = NULL;
             }
             /* The target hook may have updated the 'cpu->interrupt_request';
@@ -401,8 +402,10 @@ static inline bool cpu_handle_interrupt(CPUState *cpu,
         }
     }
     if (unlikely(cpu->exit_request)) {
-        cpu->exit_request = 0;
-        cpu->exception_index = EXCP_INTERRUPT;
+        atomic_set(&cpu->exit_request, 0);
+        if (cpu->exception_index == -1) {
+            cpu->exception_index = EXCP_INTERRUPT;
+        }
         return true;
     }
     return false;
