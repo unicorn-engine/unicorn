@@ -1875,6 +1875,7 @@
 #define object_class_foreach object_class_foreach_m68k
 #define object_class_foreach_tramp object_class_foreach_tramp_m68k
 #define object_class_get_list object_class_get_list_m68k
+#define object_class_get_list_sorted object_class_get_list_sorted_m68k
 #define object_class_get_list_tramp object_class_get_list_tramp_m68k
 #define object_class_get_parent object_class_get_parent_m68k
 #define object_deinit object_deinit_m68k

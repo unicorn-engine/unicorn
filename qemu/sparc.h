@@ -1875,6 +1875,7 @@
 #define object_class_foreach object_class_foreach_sparc
 #define object_class_foreach_tramp object_class_foreach_tramp_sparc
 #define object_class_get_list object_class_get_list_sparc
+#define object_class_get_list_sorted object_class_get_list_sorted_sparc
 #define object_class_get_list_tramp object_class_get_list_tramp_sparc
 #define object_class_get_parent object_class_get_parent_sparc
 #define object_deinit object_deinit_sparc

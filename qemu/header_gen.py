@@ -1881,6 +1881,7 @@ symbols = (
     'object_class_foreach',
     'object_class_foreach_tramp',
     'object_class_get_list',
+    'object_class_get_list_sorted',
     'object_class_get_list_tramp',
     'object_class_get_parent',
     'object_deinit',

@@ -1875,6 +1875,7 @@
 #define object_class_foreach object_class_foreach_armeb
 #define object_class_foreach_tramp object_class_foreach_tramp_armeb
 #define object_class_get_list object_class_get_list_armeb
+#define object_class_get_list_sorted object_class_get_list_sorted_armeb
 #define object_class_get_list_tramp object_class_get_list_tramp_armeb
 #define object_class_get_parent object_class_get_parent_armeb
 #define object_deinit object_deinit_armeb

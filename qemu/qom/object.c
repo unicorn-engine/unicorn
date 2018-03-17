@@ -767,6 +767,19 @@ GSList *object_class_get_list(struct uc_struct *uc, const char *implements_type,
     return list;
 }
 
+static gint object_class_cmp(gconstpointer a, gconstpointer b)
+{
+    return strcasecmp(object_class_get_name((ObjectClass *)a),
+                      object_class_get_name((ObjectClass *)b));
+}
+
+GSList *object_class_get_list_sorted(struct uc_struct *uc, const char *implements_type,
+                                     bool include_abstract)
+{
+    return g_slist_sort(object_class_get_list(uc, implements_type, include_abstract),
+                        object_class_cmp);
+}
+
 void object_ref(Object *obj)
 {
     if (!obj) {
