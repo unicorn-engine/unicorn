@@ -175,6 +175,7 @@ solaris="no"
 softmmu="yes"
 pie=""
 tcg="yes"
+membarrier=""
 cpuid_h="no"
 avx2_opt="no"
 
@@ -561,6 +562,10 @@ for opt do
   --enable-stack-protector) stack_protector="yes"
   ;;
   --disable-stack-protector) stack_protector="no"
+  ;;
+  --disable-membarrier) membarrier="no"
+  ;;
+  --enable-membarrier) membarrier="yes"
   ;;
   *)
       echo "ERROR: unknown option $opt"
@@ -1181,6 +1186,37 @@ if compile_prog "" "" ; then
   vector16=yes
 fi
 
+##########################################
+# check for usable membarrier system call
+if test "$membarrier" = "yes"; then
+    have_membarrier=no
+    if test "$mingw32" = "yes" ; then
+        have_membarrier=yes
+    elif test "$linux" = "yes" ; then
+        cat > $TMPC << EOF
+    #include <linux/membarrier.h>
+    #include <sys/syscall.h>
+    #include <unistd.h>
+    #include <stdlib.h>
+    int main(void) {
+        syscall(__NR_membarrier, MEMBARRIER_CMD_QUERY, 0);
+        syscall(__NR_membarrier, MEMBARRIER_CMD_SHARED, 0);
+  exit(0);
+    }
+EOF
+        if compile_prog "" "" ; then
+            have_membarrier=yes
+        fi
+    fi
+    if test "$have_membarrier" = "no"; then
+      feature_not_found "membarrier" "membarrier system call not available"
+    fi
+else
+    # Do not enable it by default even for Mingw32, because it doesn't
+    # work on Wine.
+    membarrier=no
+fi
+
 #########################################
 # See if 128-bit atomic operations are supported.
 
@@ -1323,6 +1359,7 @@ if test -n "$sparc_cpu"; then
     echo "Target Sparc Arch $sparc_cpu"
 fi
 echo "PIE               $pie"
+echo "membarrier        $membarrier"
 echo "TCG support       $tcg"
 if test "$tcg" = "yes" ; then
     echo "TCG debug enabled $debug_tcg"
@@ -1407,6 +1444,9 @@ if test "$byteswap_h" = "yes" ; then
 fi
 if test "$bswap_h" = "yes" ; then
   echo "CONFIG_MACHINE_BSWAP_H=y" >> $config_host_mak
+fi
+if test "$membarrier" = "yes" ; then
+  echo "CONFIG_MEMBARRIER=y" >> $config_host_mak
 fi
 if test "$tcg" = "yes"; then
   echo "CONFIG_TCG=y" >> $config_host_mak
