@@ -103,10 +103,36 @@ typedef struct DisasContext {
     int done_mac;
     int writeback_mask;
     TCGv writeback[8];
+#define MAX_TO_RELEASE 8
+    int release_count;
+    TCGv release[MAX_TO_RELEASE];
 
     // Unicorn engine
     struct uc_struct *uc;
 } DisasContext;
+
+static void init_release_array(DisasContext *s)
+{
+#ifdef CONFIG_DEBUG_TCG
+    memset(s->release, 0, sizeof(s->release));
+#endif
+    s->release_count = 0;
+}
+
+static void do_release(DisasContext *s)
+{
+    int i;
+    for (i = 0; i < s->release_count; i++) {
+        tcg_temp_free(s->uc->tcg_ctx, s->release[i]);
+    }
+    init_release_array(s);
+}
+
+static TCGv mark_to_release(DisasContext *s, TCGv tmp)
+{
+    g_assert(s->release_count < MAX_TO_RELEASE);
+    return s->release[s->release_count++] = tmp;
+}
 
 static TCGv get_areg(DisasContext *s, unsigned regno)
 {
@@ -352,7 +378,8 @@ static TCGv gen_ldst(DisasContext *s, int opsize, TCGv addr, TCGv val,
         gen_store(s, opsize, addr, val, index);
         return tcg_ctx->store_dummy;
     } else {
-        return gen_load(s, opsize, addr, what == EA_LOADS, index);
+        return mark_to_release(s, gen_load(s, opsize, addr,
+                                           what == EA_LOADS, index));
     }
 }
 
@@ -446,7 +473,7 @@ static TCGv gen_lea_indexed(CPUM68KState *env, DisasContext *s, TCGv base)
         } else {
             bd = 0;
         }
-        tmp = tcg_temp_new(tcg_ctx);
+        tmp = mark_to_release(s, tcg_temp_new(tcg_ctx));
         if ((ext & 0x44) == 0) {
             /* pre-index */
             add = gen_addr_index(s, ext, tmp);
@@ -456,7 +483,7 @@ static TCGv gen_lea_indexed(CPUM68KState *env, DisasContext *s, TCGv base)
         if ((ext & 0x80) == 0) {
             /* base not suppressed */
             if (IS_NULL_QREG(base)) {
-                base = tcg_const_i32(tcg_ctx, offset + bd);
+                base = mark_to_release(s, tcg_const_i32(tcg_ctx, offset + bd));
                 bd = 0;
             }
             if (!IS_NULL_QREG(add)) {
@@ -472,11 +499,11 @@ static TCGv gen_lea_indexed(CPUM68KState *env, DisasContext *s, TCGv base)
                 add = tmp;
             }
         } else {
-            add = tcg_const_i32(tcg_ctx, bd);
+            add = mark_to_release(s, tcg_const_i32(tcg_ctx, bd));
         }
         if ((ext & 3) != 0) {
             /* memory indirect */
-            base = gen_load(s, OS_LONG, add, 0, IS_USER(s));
+            base = mark_to_release(s, gen_load(s, OS_LONG, add, 0, IS_USER(s)));
             if ((ext & 0x44) == 4) {
                 add = gen_addr_index(s, ext, tmp);
                 tcg_gen_add_i32(tcg_ctx, tmp, add, base);
@@ -501,7 +528,7 @@ static TCGv gen_lea_indexed(CPUM68KState *env, DisasContext *s, TCGv base)
         }
     } else {
         /* brief extension word format */
-        tmp = tcg_temp_new(tcg_ctx);
+        tmp = mark_to_release(s, tcg_temp_new(tcg_ctx));
         add = gen_addr_index(s, ext, tmp);
         if (!IS_NULL_QREG(base)) {
             tcg_gen_add_i32(tcg_ctx, tmp, add, base);
@@ -635,7 +662,7 @@ static inline TCGv gen_extend(DisasContext *s, TCGv val, int opsize, int sign)
     if (opsize == OS_LONG) {
         tmp = val;
     } else {
-        tmp = tcg_temp_new(tcg_ctx);
+        tmp = mark_to_release(s, tcg_temp_new(tcg_ctx));
         gen_ext(s, tmp, val, opsize, sign);
     }
 
@@ -766,7 +793,7 @@ static TCGv gen_lea_mode(CPUM68KState *env, DisasContext *s,
             return tcg_ctx->NULL_QREG;
         }
         reg = get_areg(s, reg0);
-        tmp = tcg_temp_new(tcg_ctx);
+        tmp = mark_to_release(s, tcg_temp_new(tcg_ctx));
         if (reg0 == 7 && opsize == OS_BYTE &&
             m68k_feature(s->env, M68K_FEATURE_M68000)) {
             tcg_gen_subi_i32(tcg_ctx, tmp, reg, 2);
@@ -776,7 +803,7 @@ static TCGv gen_lea_mode(CPUM68KState *env, DisasContext *s,
         return tmp;
     case 5: /* Indirect displacement.  */
         reg = get_areg(s, reg0);
-        tmp = tcg_temp_new(tcg_ctx);
+        tmp = mark_to_release(s, tcg_temp_new(tcg_ctx));
         ext = read_im16(env, s);
         tcg_gen_addi_i32(tcg_ctx, tmp, reg, (int16_t)ext);
         return tmp;
@@ -787,14 +814,14 @@ static TCGv gen_lea_mode(CPUM68KState *env, DisasContext *s,
         switch (reg0) {
         case 0: /* Absolute short.  */
             offset = (int16_t)read_im16(env, s);
-            return tcg_const_i32(tcg_ctx, offset);
+            return mark_to_release(s, tcg_const_i32(tcg_ctx, offset));
         case 1: /* Absolute long.  */
             offset = read_im32(env, s);
-            return tcg_const_i32(tcg_ctx, offset);
+            return mark_to_release(s, tcg_const_i32(tcg_ctx, offset));
         case 2: /* pc displacement  */
             offset = s->pc;
             offset += (int16_t)read_im16(env, s);
-            return tcg_const_i32(tcg_ctx, offset);
+            return mark_to_release(s, tcg_const_i32(tcg_ctx, offset));
         case 3: /* pc index+displacement.  */
             return gen_lea_indexed(env, s, tcg_ctx->NULL_QREG);
         case 4: /* Immediate.  */
@@ -921,7 +948,7 @@ static TCGv gen_ea_mode(CPUM68KState *env, DisasContext *s, int mode, int reg0,
             default:
                 g_assert_not_reached();
             }
-            return tcg_const_i32(tcg_ctx, offset);
+            return mark_to_release(s, tcg_const_i32(tcg_ctx, offset));
         default:
             return tcg_ctx->NULL_QREG;
         }
@@ -6271,6 +6298,7 @@ static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
     uint16_t insn = read_im16(env, s);
     ((disas_proc)tcg_ctx->opcode_table[insn])(env, s, insn);
     do_writebacks(s);
+    do_release(s);
 }
 
 /* generate intermediate code for basic block 'tb'.  */
@@ -6329,6 +6357,8 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     } else {
         env->uc->size_arg = -1;
     }
+
+    init_release_array(dc);
 
     gen_tb_start(tcg_ctx, tb);
     do {
