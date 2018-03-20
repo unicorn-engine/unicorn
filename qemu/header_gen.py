@@ -262,7 +262,6 @@ symbols = (
     'cptype_valid',
     'cpu_abort',
     'cpu_address_space_init',
-    'cpu_arm_exec',
     'cpu_arm_init',
     'cpu_breakpoint_insert',
     'cpu_breakpoint_remove',
@@ -283,6 +282,7 @@ symbols = (
     'cpu_common_realizefn',
     'cpu_common_reset',
     'cpu_dump_statistics',
+    'cpu_exec',
     'cpu_exec_init',
     'cpu_exec_init_all',
     'cpu_exec_step_atomic',
@@ -3157,7 +3157,6 @@ aarch64_symbols = (
 mips_symbols = (
     'MIPS64_REGS_STORAGE_SIZE',
     'MIPS_REGS_STORAGE_SIZE',
-    'cpu_mips_exec',
     'cpu_mips_get_count',
     'cpu_mips_get_random',
     'cpu_mips_kseg0_to_phys',

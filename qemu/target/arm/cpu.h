@@ -841,7 +841,6 @@ hwaddr arm_cpu_get_phys_page_attrs_debug(CPUState *cpu, vaddr addr,
                                          MemTxAttrs *attrs);
 
 ARMCPU *cpu_arm_init(struct uc_struct *uc, const char *cpu_model);
-int cpu_arm_exec(struct uc_struct *uc, CPUState *cpu);
 target_ulong do_arm_semihosting(CPUARMState *env);
 void aarch64_sync_32_to_64(CPUARMState *env);
 void aarch64_sync_64_to_32(CPUARMState *env);
@@ -2280,7 +2279,6 @@ static inline CPUARMState *cpu_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 #ifdef TARGET_ARM
-#define cpu_exec cpu_arm_exec
 
 #define ARM_CPU_TYPE_SUFFIX "-" TYPE_ARM_CPU
 #define ARM_CPU_TYPE_NAME(name) (name ARM_CPU_TYPE_SUFFIX)

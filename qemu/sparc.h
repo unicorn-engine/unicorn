@@ -256,7 +256,6 @@
 #define cptype_valid cptype_valid_sparc
 #define cpu_abort cpu_abort_sparc
 #define cpu_address_space_init cpu_address_space_init_sparc
-#define cpu_arm_exec cpu_arm_exec_sparc
 #define cpu_arm_init cpu_arm_init_sparc
 #define cpu_breakpoint_insert cpu_breakpoint_insert_sparc
 #define cpu_breakpoint_remove cpu_breakpoint_remove_sparc
@@ -277,6 +276,7 @@
 #define cpu_common_realizefn cpu_common_realizefn_sparc
 #define cpu_common_reset cpu_common_reset_sparc
 #define cpu_dump_statistics cpu_dump_statistics_sparc
+#define cpu_exec cpu_exec_sparc
 #define cpu_exec_init cpu_exec_init_sparc
 #define cpu_exec_init_all cpu_exec_init_all_sparc
 #define cpu_exec_step_atomic cpu_exec_step_atomic_sparc

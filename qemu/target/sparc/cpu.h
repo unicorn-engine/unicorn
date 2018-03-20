@@ -586,9 +586,6 @@ int sparc_cpu_memory_rw_debug(CPUState *cpu, vaddr addr,
 /* translate.c */
 void sparc_tcg_init(struct uc_struct *uc);
 
-/* cpu-exec.c */
-int cpu_sparc_exec(struct uc_struct *uc, CPUState *cpu);
-
 /* win_helper.c */
 target_ulong cpu_get_psr(CPUSPARCState *env1);
 void cpu_put_psr(CPUSPARCState *env1, target_ulong val);
@@ -656,7 +653,6 @@ static inline CPUSPARCState *cpu_init(struct uc_struct *uc, const char *cpu_mode
 }
 #endif
 
-#define cpu_exec cpu_sparc_exec
 #define cpu_signal_handler cpu_sparc_signal_handler
 #define cpu_list sparc_cpu_list
 

@@ -256,7 +256,6 @@
 #define cptype_valid cptype_valid_m68k
 #define cpu_abort cpu_abort_m68k
 #define cpu_address_space_init cpu_address_space_init_m68k
-#define cpu_arm_exec cpu_arm_exec_m68k
 #define cpu_arm_init cpu_arm_init_m68k
 #define cpu_breakpoint_insert cpu_breakpoint_insert_m68k
 #define cpu_breakpoint_remove cpu_breakpoint_remove_m68k
@@ -277,6 +276,7 @@
 #define cpu_common_realizefn cpu_common_realizefn_m68k
 #define cpu_common_reset cpu_common_reset_m68k
 #define cpu_dump_statistics cpu_dump_statistics_m68k
+#define cpu_exec cpu_exec_m68k
 #define cpu_exec_init cpu_exec_init_m68k
 #define cpu_exec_init_all cpu_exec_init_all_m68k
 #define cpu_exec_step_atomic cpu_exec_step_atomic_m68k

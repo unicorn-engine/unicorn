@@ -641,7 +641,6 @@ static inline MIPSCPU *mips_env_get_cpu(CPUMIPSState *env)
 
 void mips_cpu_list (FILE *f, fprintf_function cpu_fprintf);
 
-#define cpu_exec cpu_mips_exec
 #define cpu_signal_handler cpu_mips_signal_handler
 #define cpu_list mips_cpu_list
 
@@ -745,7 +744,6 @@ enum {
 #define CPU_INTERRUPT_WAKE CPU_INTERRUPT_TGT_INT_0
 
 #define cpu_init(uc, cpu_model) cpu_generic_init(uc, TYPE_MIPS_CPU, cpu_model)
-int cpu_mips_exec(struct uc_struct *uc, CPUState *cpu);
 int cpu_mips_signal_handler(int host_signum, void *pinfo, void *puc);
 bool cpu_supports_isa(struct uc_struct *uc, const char *cpu_model, unsigned int isa);
 bool cpu_supports_cps_smp(struct uc_struct *uc, const char *cpu_type);

@@ -373,4 +373,6 @@ void qemu_mutex_unlock_ramlist(struct uc_struct *uc);
 int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
                         uint8_t *buf, int len, int is_write);
 
+int cpu_exec(struct uc_struct *uc, CPUState *cpu);
+
 #endif /* CPU_ALL_H */

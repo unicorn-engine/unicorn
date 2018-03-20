@@ -256,7 +256,6 @@
 #define cptype_valid cptype_valid_mips64el
 #define cpu_abort cpu_abort_mips64el
 #define cpu_address_space_init cpu_address_space_init_mips64el
-#define cpu_arm_exec cpu_arm_exec_mips64el
 #define cpu_arm_init cpu_arm_init_mips64el
 #define cpu_breakpoint_insert cpu_breakpoint_insert_mips64el
 #define cpu_breakpoint_remove cpu_breakpoint_remove_mips64el
@@ -277,6 +276,7 @@
 #define cpu_common_realizefn cpu_common_realizefn_mips64el
 #define cpu_common_reset cpu_common_reset_mips64el
 #define cpu_dump_statistics cpu_dump_statistics_mips64el
+#define cpu_exec cpu_exec_mips64el
 #define cpu_exec_init cpu_exec_init_mips64el
 #define cpu_exec_init_all cpu_exec_init_all_mips64el
 #define cpu_exec_step_atomic cpu_exec_step_atomic_mips64el
@@ -3058,7 +3058,6 @@
 #define xscale_cpar_write xscale_cpar_write_mips64el
 #define MIPS64_REGS_STORAGE_SIZE MIPS64_REGS_STORAGE_SIZE_mips64el
 #define MIPS_REGS_STORAGE_SIZE MIPS_REGS_STORAGE_SIZE_mips64el
-#define cpu_mips_exec cpu_mips_exec_mips64el
 #define cpu_mips_get_count cpu_mips_get_count_mips64el
 #define cpu_mips_get_random cpu_mips_get_random_mips64el
 #define cpu_mips_kseg0_to_phys cpu_mips_kseg0_to_phys_mips64el

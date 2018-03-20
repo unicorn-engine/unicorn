@@ -256,7 +256,6 @@
 #define cptype_valid cptype_valid_powerpc
 #define cpu_abort cpu_abort_powerpc
 #define cpu_address_space_init cpu_address_space_init_powerpc
-#define cpu_arm_exec cpu_arm_exec_powerpc
 #define cpu_arm_init cpu_arm_init_powerpc
 #define cpu_breakpoint_insert cpu_breakpoint_insert_powerpc
 #define cpu_breakpoint_remove cpu_breakpoint_remove_powerpc
@@ -277,6 +276,7 @@
 #define cpu_common_realizefn cpu_common_realizefn_powerpc
 #define cpu_common_reset cpu_common_reset_powerpc
 #define cpu_dump_statistics cpu_dump_statistics_powerpc
+#define cpu_exec cpu_exec_powerpc
 #define cpu_exec_init cpu_exec_init_powerpc
 #define cpu_exec_init_all cpu_exec_init_all_powerpc
 #define cpu_exec_step_atomic cpu_exec_step_atomic_powerpc

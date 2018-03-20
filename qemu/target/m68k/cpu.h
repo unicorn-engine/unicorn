@@ -192,7 +192,6 @@ int m68k_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
 
 void m68k_tcg_init(struct uc_struct *uc);
 M68kCPU *cpu_m68k_init(struct uc_struct *uc, const char *cpu_model);
-int cpu_m68k_exec(struct uc_struct *uc, CPUState *cpu);
 /* you can call this signal handler from your SIGBUS and SIGSEGV
    signal handlers to inform the virtual CPU of exceptions. non zero
    is returned if the signal was handled by the virtual CPU.  */
@@ -532,7 +531,6 @@ static inline CPUM68KState *cpu_init(struct uc_struct *uc, const char *cpu_model
     return &cpu->env;
 }
 
-#define cpu_exec cpu_m68k_exec
 #define cpu_signal_handler cpu_m68k_signal_handler
 #define cpu_list m68k_cpu_list
 
