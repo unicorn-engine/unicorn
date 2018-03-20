@@ -119,41 +119,12 @@ static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *typename, int64_t ap
 int pc_cpus_init(struct uc_struct *uc, PCMachineState *pcms)
 {
     int i;
-    CPUClass *cc;
-    ObjectClass *oc;
-    const char *typename;
-    gchar **model_pieces;
     Error *error = NULL;
-    MachineState *machine = MACHINE(uc, pcms);
+    MachineState *ms = MACHINE(uc, pcms);
 
-    /* init CPUs */
-    if (machine->cpu_model == NULL) {
-#ifdef TARGET_X86_64
-        machine->cpu_model = "qemu64";
-#else
-        machine->cpu_model = "qemu32";
-#endif
-    }
-
-    model_pieces = g_strsplit(machine->cpu_model, ",", 2);
-    if (!model_pieces[0]) {
-        fprintf(stderr, "Invalid/empty CPU model name");
-        return -1;
-    }
-
-    oc = cpu_class_by_name(uc, TYPE_X86_CPU, model_pieces[0]);
-    if (oc == NULL) {
-        fprintf(stderr, "Unable to find CPU definition: %s", model_pieces[0]);
-        return -1;
-    }
-    typename = object_class_get_name(oc);
-    cc = CPU_CLASS(uc, oc);
-    cc->parse_features(uc, typename, model_pieces[1], &error_fatal);
-    g_strfreev(model_pieces);
     for (i = 0; i < smp_cpus; i++) {
-        uc->cpu = (CPUState *)pc_new_cpu(uc, typename, x86_cpu_apic_id_from_index(i), &error);
+        uc->cpu = (CPUState *)pc_new_cpu(uc, ms->cpu_type, x86_cpu_apic_id_from_index(i), &error);
         if (error) {
-            //error_report("%s", error_get_pretty(error));
             error_free(error);
             return -1;
         }
@@ -168,6 +139,8 @@ static void pc_machine_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 
 static void pc_machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
+    MachineClass *mc = MACHINE_CLASS(uc, oc);
+    mc->default_cpu_type = TARGET_DEFAULT_CPU_TYPE;
 }
 
 static const TypeInfo pc_machine_info = {
