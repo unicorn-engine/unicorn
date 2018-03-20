@@ -747,6 +747,7 @@ enum {
 
 #define MIPS_CPU_TYPE_SUFFIX "-" TYPE_MIPS_CPU
 #define MIPS_CPU_TYPE_NAME(model) model MIPS_CPU_TYPE_SUFFIX
+#define CPU_RESOLVING_TYPE TYPE_MIPS_CPU
 
 int cpu_mips_signal_handler(int host_signum, void *pinfo, void *puc);
 bool cpu_supports_isa(struct uc_struct *uc, const char *cpu_model, unsigned int isa);
