@@ -2243,12 +2243,6 @@
 #define qobject_output_visitor_cleanup qobject_output_visitor_cleanup_mips64
 #define qobject_output_visitor_new qobject_output_visitor_new_mips64
 #define qobject_decref qobject_decref_mips64
-#define qobject_to_qbool qobject_to_qbool_mips64
-#define qobject_to_qdict qobject_to_qdict_mips64
-#define qobject_to_qfloat qobject_to_qfloat_mips64
-#define qobject_to_qint qobject_to_qint_mips64
-#define qobject_to_qlist qobject_to_qlist_mips64
-#define qobject_to_qstring qobject_to_qstring_mips64
 #define qobject_type qobject_type_mips64
 #define qstring_append qstring_append_mips64
 #define qstring_append_chr qstring_append_chr_mips64
@@ -2259,6 +2253,7 @@
 #define qstring_from_substr qstring_from_substr_mips64
 #define qstring_get_length qstring_get_length_mips64
 #define qstring_get_str qstring_get_str_mips64
+#define qstring_get_try_str qstring_get_try_str_mips64
 #define qstring_new qstring_new_mips64
 #define qstring_type qstring_type_mips64
 #define ram_block_add ram_block_add_mips64

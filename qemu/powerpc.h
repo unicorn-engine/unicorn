@@ -2243,12 +2243,6 @@
 #define qobject_output_visitor_cleanup qobject_output_visitor_cleanup_powerpc
 #define qobject_output_visitor_new qobject_output_visitor_new_powerpc
 #define qobject_decref qobject_decref_powerpc
-#define qobject_to_qbool qobject_to_qbool_powerpc
-#define qobject_to_qdict qobject_to_qdict_powerpc
-#define qobject_to_qfloat qobject_to_qfloat_powerpc
-#define qobject_to_qint qobject_to_qint_powerpc
-#define qobject_to_qlist qobject_to_qlist_powerpc
-#define qobject_to_qstring qobject_to_qstring_powerpc
 #define qobject_type qobject_type_powerpc
 #define qstring_append qstring_append_powerpc
 #define qstring_append_chr qstring_append_chr_powerpc
@@ -2259,6 +2253,7 @@
 #define qstring_from_substr qstring_from_substr_powerpc
 #define qstring_get_length qstring_get_length_powerpc
 #define qstring_get_str qstring_get_str_powerpc
+#define qstring_get_try_str qstring_get_try_str_powerpc
 #define qstring_new qstring_new_powerpc
 #define qstring_type qstring_type_powerpc
 #define ram_block_add ram_block_add_powerpc

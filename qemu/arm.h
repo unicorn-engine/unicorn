@@ -2243,12 +2243,6 @@
 #define qobject_output_visitor_cleanup qobject_output_visitor_cleanup_arm
 #define qobject_output_visitor_new qobject_output_visitor_new_arm
 #define qobject_decref qobject_decref_arm
-#define qobject_to_qbool qobject_to_qbool_arm
-#define qobject_to_qdict qobject_to_qdict_arm
-#define qobject_to_qfloat qobject_to_qfloat_arm
-#define qobject_to_qint qobject_to_qint_arm
-#define qobject_to_qlist qobject_to_qlist_arm
-#define qobject_to_qstring qobject_to_qstring_arm
 #define qobject_type qobject_type_arm
 #define qstring_append qstring_append_arm
 #define qstring_append_chr qstring_append_chr_arm
@@ -2259,6 +2253,7 @@
 #define qstring_from_substr qstring_from_substr_arm
 #define qstring_get_length qstring_get_length_arm
 #define qstring_get_str qstring_get_str_arm
+#define qstring_get_try_str qstring_get_try_str_arm
 #define qstring_new qstring_new_arm
 #define qstring_type qstring_type_arm
 #define ram_block_add ram_block_add_arm

@@ -2243,12 +2243,6 @@
 #define qobject_output_visitor_cleanup qobject_output_visitor_cleanup_x86_64
 #define qobject_output_visitor_new qobject_output_visitor_new_x86_64
 #define qobject_decref qobject_decref_x86_64
-#define qobject_to_qbool qobject_to_qbool_x86_64
-#define qobject_to_qdict qobject_to_qdict_x86_64
-#define qobject_to_qfloat qobject_to_qfloat_x86_64
-#define qobject_to_qint qobject_to_qint_x86_64
-#define qobject_to_qlist qobject_to_qlist_x86_64
-#define qobject_to_qstring qobject_to_qstring_x86_64
 #define qobject_type qobject_type_x86_64
 #define qstring_append qstring_append_x86_64
 #define qstring_append_chr qstring_append_chr_x86_64
@@ -2259,6 +2253,7 @@
 #define qstring_from_substr qstring_from_substr_x86_64
 #define qstring_get_length qstring_get_length_x86_64
 #define qstring_get_str qstring_get_str_x86_64
+#define qstring_get_try_str qstring_get_try_str_x86_64
 #define qstring_new qstring_new_x86_64
 #define qstring_type qstring_type_x86_64
 #define ram_block_add ram_block_add_x86_64

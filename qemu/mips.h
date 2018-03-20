@@ -2243,12 +2243,6 @@
 #define qobject_output_visitor_cleanup qobject_output_visitor_cleanup_mips
 #define qobject_output_visitor_new qobject_output_visitor_new_mips
 #define qobject_decref qobject_decref_mips
-#define qobject_to_qbool qobject_to_qbool_mips
-#define qobject_to_qdict qobject_to_qdict_mips
-#define qobject_to_qfloat qobject_to_qfloat_mips
-#define qobject_to_qint qobject_to_qint_mips
-#define qobject_to_qlist qobject_to_qlist_mips
-#define qobject_to_qstring qobject_to_qstring_mips
 #define qobject_type qobject_type_mips
 #define qstring_append qstring_append_mips
 #define qstring_append_chr qstring_append_chr_mips
@@ -2259,6 +2253,7 @@
 #define qstring_from_substr qstring_from_substr_mips
 #define qstring_get_length qstring_get_length_mips
 #define qstring_get_str qstring_get_str_mips
+#define qstring_get_try_str qstring_get_try_str_mips
 #define qstring_new qstring_new_mips
 #define qstring_type qstring_type_mips
 #define ram_block_add ram_block_add_mips
