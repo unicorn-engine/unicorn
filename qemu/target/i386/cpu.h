@@ -1286,6 +1286,7 @@ typedef struct X86CPU {
     struct DeviceState *apic_state;
     struct MemoryRegion *cpu_as_root, *cpu_as_mem, *smram;
 
+    int32_t node_id; /* NUMA node this CPU belongs to */
     int32_t socket_id;
     int32_t core_id;
     int32_t thread_id;

@@ -816,6 +816,8 @@ typedef struct ARMCPU {
 
     ARMELChangeHook *el_change_hook;
     void *el_change_hook_opaque;
+
+    int32_t node_id; /* NUMA node this CPU belongs to */
 } ARMCPU;
 
 static inline ARMCPU *arm_env_get_cpu(CPUARMState *env)
