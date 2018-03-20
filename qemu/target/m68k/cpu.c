@@ -81,7 +81,7 @@ static ObjectClass *m68k_cpu_class_by_name(struct uc_struct *uc, const char *cpu
         return NULL;
     }
 
-    typename = g_strdup_printf("%s-" TYPE_M68K_CPU, cpu_model);
+    typename = g_strdup_printf(M68K_CPU_TYPE_NAME("%s"), cpu_model);
     oc = object_class_by_name(uc, typename);
     g_free(typename);
     if (oc != NULL && (object_class_dynamic_cast(uc, oc, TYPE_M68K_CPU) == NULL ||
@@ -208,23 +208,6 @@ static void any_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     m68k_set_feature(env, M68K_FEATURE_WORD_INDEX);
 }
 
-typedef struct M68kCPUInfo {
-    const char *name;
-    void (*instance_init)(struct uc_struct *uc, Object *obj, void *opaque);
-} M68kCPUInfo;
-
-static const M68kCPUInfo m68k_cpus[] = {
-    { "m68000", m68000_cpu_initfn },
-    { "m68020", m68020_cpu_initfn },
-    { "m68030", m68030_cpu_initfn },
-    { "m68040", m68040_cpu_initfn },
-    { "m68060", m68060_cpu_initfn },
-    { "m5206", m5206_cpu_initfn },
-    { "m5208", m5208_cpu_initfn },
-    { "cfv4e", cfv4e_cpu_initfn },
-    { "any",   any_cpu_initfn },
-};
-
 static int m68k_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     CPUState *cs = CPU(dev);
@@ -273,27 +256,27 @@ static void m68k_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data
     cc->tcg_initialize = m68k_tcg_init;
 }
 
-static void register_cpu_type(void *opaque, const M68kCPUInfo *info)
-{
-    TypeInfo type_info = {0};
-    type_info.parent = TYPE_M68K_CPU,
-    type_info.instance_init = info->instance_init,
+#define DEFINE_M68K_CPU_TYPE(cpu_model, initfn) \
+    {                                           \
+        M68K_CPU_TYPE_NAME(cpu_model),          \
+        TYPE_M68K_CPU,                          \
+                                                \
+        0,                                      \
+        0,                                      \
+        NULL,                                   \
+                                                \
+        initfn,                                 \
+    }
 
-    type_info.name = g_strdup_printf("%s-" TYPE_M68K_CPU, info->name);
-    type_register(opaque, &type_info);
-    g_free((void *)type_info.name);
-}
-
-void m68k_cpu_register_types(void *opaque)
-{
-    const TypeInfo m68k_cpu_type_info = {
+static const TypeInfo m68k_cpus_type_infos[] = {
+    { /* base class should be registered first */
         TYPE_M68K_CPU,
         TYPE_CPU,
-        
+
         sizeof(M68kCPUClass),
         sizeof(M68kCPU),
-        opaque,
-        
+        NULL,
+
         m68k_cpu_initfn,
         NULL,
         NULL,
@@ -305,12 +288,19 @@ void m68k_cpu_register_types(void *opaque)
         NULL,
 
         true,
-    };
+    },
+    DEFINE_M68K_CPU_TYPE("m68000", m68000_cpu_initfn),
+    DEFINE_M68K_CPU_TYPE("m68020", m68020_cpu_initfn),
+    DEFINE_M68K_CPU_TYPE("m68030", m68030_cpu_initfn),
+    DEFINE_M68K_CPU_TYPE("m68040", m68040_cpu_initfn),
+    DEFINE_M68K_CPU_TYPE("m68060", m68060_cpu_initfn),
+    DEFINE_M68K_CPU_TYPE("m5206", m5206_cpu_initfn),
+    DEFINE_M68K_CPU_TYPE("m5208", m5208_cpu_initfn),
+    DEFINE_M68K_CPU_TYPE("cfv4e", cfv4e_cpu_initfn),
+    DEFINE_M68K_CPU_TYPE("any", any_cpu_initfn),
+};
 
-    int i;
-
-    type_register_static(opaque, &m68k_cpu_type_info);
-    for (i = 0; i < ARRAY_SIZE(m68k_cpus); i++) {
-        register_cpu_type(opaque, &m68k_cpus[i]);
-    }
+void m68k_cpu_register_types(void *opaque)
+{
+    type_register_static_array(opaque, m68k_cpus_type_infos, ARRAY_SIZE(m68k_cpus_type_infos));
 }
