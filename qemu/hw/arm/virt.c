@@ -58,43 +58,38 @@ typedef struct {
 #define VIRT_MACHINE_CLASS(uc, klass) \
     OBJECT_CLASS_CHECK(uc, VirtMachineClass, klass, TYPE_VIRT_MACHINE)
 
+static const char *valid_cpus[] = {
+    ARM_CPU_TYPE_NAME("cortex-a15"),
+    ARM_CPU_TYPE_NAME("cortex-a53"),
+    ARM_CPU_TYPE_NAME("cortex-a57"),
+    ARM_CPU_TYPE_NAME("host"),
+    // Unicorn: added to allow enabling all CPU features
+    ARM_CPU_TYPE_NAME("max"),
+};
+
+static bool cpu_type_valid(const char *cpu)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(valid_cpus); i++) {
+        if (strcmp(cpu, valid_cpus[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static int machvirt_init(struct uc_struct *uc, MachineState *machine)
 {
-    const char *cpu_model = machine->cpu_model;
-    char **cpustr;
-    ObjectClass *oc;
-    const char *typename;
-    CPUClass *cc;
-    Error *err = NULL;
     int n;
 
-    if (!cpu_model) {
-        // Unicorn: "max" used instead to allow use of ARMv8.1+ instructions.
-        //cpu_model = "cortex-a57";   // ARM64
-        cpu_model = "max";
-    }
-
-    /* Separate the actual CPU model name from any appended features */
-    cpustr = g_strsplit(cpu_model, ",", 2);
-
-    oc = cpu_class_by_name(uc, TYPE_ARM_CPU, cpustr[0]);
-    if (!oc) {
-        fprintf(stderr, "Unable to find CPU definition");
-        return -1;
-    }
-    typename = object_class_get_name(oc);
-
-    /* convert -smp CPU options specified by the user into global props */
-    cc = CPU_CLASS(uc, oc);
-    cc->parse_features(uc, typename, cpustr[1], &err);
-    g_strfreev(cpustr);
-    if (err) {
-        fprintf(stderr, "Error parsing cpu features");
+    if (!cpu_type_valid(machine->cpu_type)) {
+        fprintf(stderr, "mach-virt: CPU type %s not supported", machine->cpu_type);
         return -1;
     }
 
     for (n = 0; n < smp_cpus; n++) {
-        Object *cpuobj = object_new(uc, typename);
+        Object *cpuobj = object_new(uc, machine->cpu_type);
 
         uc->cpu = CPU(cpuobj);
         object_property_set_bool(uc, cpuobj, true, "realized", NULL);
@@ -142,6 +137,8 @@ static void virt_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
     mc->max_cpus = 8;
     mc->is_default = 1;
     mc->arch = UC_ARCH_ARM64;
+    // Unicorn: Enable all CPU features
+    mc->default_cpu_type = ARM_CPU_TYPE_NAME("max");
 }
 
 static const TypeInfo machvirt_info = {
