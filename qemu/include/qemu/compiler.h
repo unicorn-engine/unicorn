@@ -72,7 +72,9 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
         int:(x) ? -1 : 1; \
     }
 
-#ifdef __COUNTER__
+#if defined(CONFIG_STATIC_ASSERT)
+#define QEMU_BUILD_BUG_ON(x) _Static_assert(!(x), "not expecting: " #x)
+#elif defined(__COUNTER__)
 #define QEMU_BUILD_BUG_ON(x) typedef QEMU_BUILD_BUG_ON_STRUCT(x) \
     glue(qemu_build_bug_on__, __COUNTER__) QEMU_UNUSED_VAR
 #else
@@ -188,7 +190,9 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
         int:(x) ? -1 : 1; \
     }
 
-#ifdef __COUNTER__
+#if defined(CONFIG_STATIC_ASSERT)
+#define QEMU_BUILD_BUG_ON(x) _Static_assert(!(x), "not expecting: " #x)
+#elif defined(__COUNTER__)
 #define QEMU_BUILD_BUG_ON(x) typedef QEMU_BUILD_BUG_ON_STRUCT(x) \
     glue(qemu_build_bug_on__, __COUNTER__) QEMU_UNUSED_VAR
 #else
