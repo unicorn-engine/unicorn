@@ -116,7 +116,7 @@ static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *typename, int64_t ap
     return cpu;
 }
 
-int pc_cpus_init(struct uc_struct *uc, const char *cpu_model)
+int pc_cpus_init(struct uc_struct *uc, PCMachineState *pcms)
 {
     int i;
     CPUClass *cc;
@@ -124,13 +124,14 @@ int pc_cpus_init(struct uc_struct *uc, const char *cpu_model)
     const char *typename;
     gchar **model_pieces;
     Error *error = NULL;
+    MachineState *machine = MACHINE(uc, pcms);
 
     /* init CPUs */
-    if (cpu_model == NULL) {
+    if (machine->cpu_model == NULL) {
 #ifdef TARGET_X86_64
-        cpu_model = "qemu64";
+        machine->cpu_model = "qemu64";
 #else
-        cpu_model = "qemu32";
+        machine->cpu_model = "qemu32";
 #endif
     }
 

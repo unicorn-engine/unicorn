@@ -1211,7 +1211,6 @@ typedef struct CPUX86State {
 
     // Unicorn engine
     struct uc_struct *uc;
-    bool cpu_globals_initialized;
 } CPUX86State;
 
 /**
@@ -1298,6 +1297,9 @@ typedef struct X86CPU {
     FeatureWordArray plus_features;
     /* Features to be removed */
     FeatureWordArray minus_features;
+
+    // Unicorn: Moved here to prevent a local static
+    bool cpu_globals_initialized;
 } X86CPU;
 
 static inline X86CPU *x86_env_get_cpu(CPUX86State *env)

@@ -32,7 +32,7 @@ struct PCMachineClass {
 #define PC_MACHINE_CLASS(klass) \
     OBJECT_CLASS_CHECK(PCMachineClass, (klass), TYPE_PC_MACHINE)
 
-int pc_cpus_init(struct uc_struct *uc, const char *cpu_model);
+int pc_cpus_init(struct uc_struct *uc, PCMachineState *pcms);
 
 FWCfgState *pc_memory_init(MachineState *machine,
                            MemoryRegion *system_memory,

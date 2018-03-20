@@ -41,7 +41,8 @@
 /* PC hardware initialisation */
 static int pc_init1(struct uc_struct *uc, MachineState *machine)
 {
-    return pc_cpus_init(uc, machine->cpu_model);
+    PCMachineState *pcms = PC_MACHINE(uc, machine);
+    return pc_cpus_init(uc, pcms);
 }
 
 static void pc_compat_2_2(struct uc_struct *uc, MachineState *machine)

@@ -20,6 +20,7 @@
 #include "qemu/osdep.h"
 #include "qemu/cutils.h"
 #include "unicorn/platform.h"
+#include "uc_priv.h"
 
 #include "cpu.h"
 #include "exec/exec-all.h"
