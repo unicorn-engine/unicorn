@@ -3018,16 +3018,17 @@ static inline void feat2prop(char *s)
 
 /* Parse "+feature,-feature,feature=foo" CPU feature string
  */
-static void x86_cpu_parse_featurestr(CPUState *cs, char *features,
+static void x86_cpu_parse_featurestr(struct uc_struct *uc, const char *typename, char *features,
                                      Error **errp)
 {
-    X86CPU *cpu = X86_CPU(cs->uc, cs);
+    X86CPU *cpu = X86_CPU(uc, uc->cpu);
     char *featurestr; /* Single 'key=value" string being parsed */
     Error *local_err = NULL;
 
-    // Unicorn: added for consistent zeroing out
-    memset(cpu->plus_features, 0, sizeof(cpu->plus_features));
-    memset(cpu->minus_features, 0, sizeof(cpu->minus_features));
+    if (cpu->cpu_globals_initialized) {
+        return;
+    }
+    cpu->cpu_globals_initialized = true;
 
     if (!features) {
         return;
@@ -3040,6 +3041,10 @@ static void x86_cpu_parse_featurestr(CPUState *cs, char *features,
         const char *val = NULL;
         char *eq = NULL;
         char num[32];
+        // Unicorn: If'd out
+#if 0
+        GlobalProperty *prop;
+#endif
 
         /* Compatibility syntax: */
         if (featurestr[0] == '+') {
@@ -3076,7 +3081,15 @@ static void x86_cpu_parse_featurestr(CPUState *cs, char *features,
             name = "tsc-frequency";
         }
 
-        object_property_parse(cs->uc, OBJECT(cpu), val, name, &local_err);
+        // Unicorn: if'd out
+#if 0
+        prop = g_new0(GlobalProperty, 1);
+        prop->driver = typename;
+        prop->property = g_strdup(name);
+        prop->value = g_strdup(val);
+        prop->errp = &error_fatal;
+        qdev_prop_register_global(prop);
+#endif
     }
 
     if (local_err) {
@@ -3164,9 +3177,11 @@ X86CPU *cpu_x86_create(struct uc_struct *uc, const char *cpu_model, Error **errp
 {
     X86CPU *cpu = NULL;
     ObjectClass *oc;
+    CPUClass *cc;
     gchar **model_pieces;
     char *name, *features;
     Error *error = NULL;
+    const char *typename;
 
     model_pieces = g_strsplit(cpu_model, ",", 2);
     if (!model_pieces[0]) {
@@ -3181,10 +3196,11 @@ X86CPU *cpu_x86_create(struct uc_struct *uc, const char *cpu_model, Error **errp
         error_setg(&error, "Unable to find CPU definition: %s", name);
         goto out;
     }
+    cc = CPU_CLASS(uc, oc);
+    typename = object_class_get_name(oc);
 
-    cpu = X86_CPU(uc, object_new(uc, object_class_get_name(oc)));
-
-    x86_cpu_parse_featurestr(CPU(cpu), features, &error);
+    cc->parse_features(uc, typename, features, &error);
+    cpu = X86_CPU(uc, object_new(uc, typename));
     if (error) {
         goto out;
     }

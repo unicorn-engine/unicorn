@@ -1211,6 +1211,7 @@ typedef struct CPUX86State {
 
     // Unicorn engine
     struct uc_struct *uc;
+    bool cpu_globals_initialized;
 } CPUX86State;
 
 /**

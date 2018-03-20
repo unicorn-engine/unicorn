@@ -226,6 +226,8 @@ struct uc_struct {
     QTAILQ_HEAD(memory_listeners, MemoryListener) memory_listeners;
     QTAILQ_HEAD(, AddressSpace) address_spaces;
     MachineState *machine_state;
+    // qom/cpu.c
+    bool cpu_globals_initialized;
     // qom/object.c
     GHashTable *type_table;
     Type type_interface;

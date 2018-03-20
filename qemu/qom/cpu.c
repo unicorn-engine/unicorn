@@ -44,7 +44,7 @@ bool cpu_exists(struct uc_struct *uc, int64_t id)
 CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const char *cpu_model)
 {
     char *str, *name, *featurestr;
-    CPUState *cpu;
+    CPUState *cpu = NULL;
     ObjectClass *oc;
     CPUClass *cc;
     Error *err = NULL;
@@ -58,16 +58,18 @@ CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const cha
         return NULL;
     }
 
-    cpu = CPU(object_new(uc, object_class_get_name(oc)));
-    cc = CPU_GET_CLASS(uc, cpu);
-
+    cc = CPU_CLASS(uc, oc);
     featurestr = strtok(NULL, ",");
-    cc->parse_features(cpu, featurestr, &err);
+    /* TODO: all callers of cpu_generic_init() need to be converted to
+     * call parse_features() only once, before calling cpu_generic_init().
+     */
+    cc->parse_features(uc, object_class_get_name(oc), featurestr, &err);
     g_free(str);
     if (err != NULL) {
         goto out;
     }
 
+    cpu = CPU(object_new(uc, object_class_get_name(oc)));
     object_property_set_bool(uc, OBJECT(cpu), true, "realized", &err);
 
 out:
@@ -218,25 +220,45 @@ static ObjectClass *cpu_common_class_by_name(struct uc_struct *uc, const char *c
     return NULL;
 }
 
-static void cpu_common_parse_features(CPUState *cpu, char *features,
+static void cpu_common_parse_features(struct uc_struct *uc, const char *typename, char *features,
                                       Error **errp)
 {
     char *featurestr; /* Single "key=value" string being parsed */
     char *val;
-    Error *err = NULL;
+
+    /* TODO: all callers of ->parse_features() need to be changed to
+     * call it only once, so we can remove this check (or change it
+     * to assert(!cpu_globals_initialized).
+     * Current callers of ->parse_features() are:
+     * - machvirt_init()
+     * - cpu_generic_init()
+     * - cpu_x86_create()
+     */
+    if (uc->cpu_globals_initialized) {
+        return;
+    }
+    uc->cpu_globals_initialized = true;
 
     featurestr = features ? strtok(features, ",") : NULL;
 
     while (featurestr) {
         val = strchr(featurestr, '=');
         if (val) {
+            // Unicorn: if'd out
+#if 0
+            GlobalProperty *prop = g_new0(GlobalProperty, 1);
+#endif
             *val = 0;
             val++;
-            object_property_parse(cpu->uc, OBJECT(cpu), val, featurestr, &err);
-            if (err) {
-                error_propagate(errp, err);
-                return;
-            }
+
+            // Unicorn: If'd out
+#if 0
+            prop->driver = typename;
+            prop->property = g_strdup(featurestr);
+            prop->value = g_strdup(val);
+            prop->errp = &error_fatal;
+            qdev_prop_register_global(prop);
+#endif
         } else {
             error_setg(errp, "Expected key=value format, found %s.",
                        featurestr);
