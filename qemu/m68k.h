@@ -2203,6 +2203,7 @@
 #define qlist_size_iter qlist_size_iter_m68k
 #define qlist_type qlist_type_m68k
 #define qlit_equal_qobject qlit_equal_qobject_m68k
+#define qobject_from_qlit qobject_from_qlit_m68k
 #define qobject_input_end_implicit_struct qobject_input_end_implicit_struct_m68k
 #define qobject_input_end_list qobject_input_end_list_m68k
 #define qobject_input_end_struct qobject_input_end_struct_m68k
