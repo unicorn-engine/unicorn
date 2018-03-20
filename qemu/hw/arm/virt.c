@@ -62,6 +62,10 @@ static int machvirt_init(struct uc_struct *uc, MachineState *machine)
 {
     const char *cpu_model = machine->cpu_model;
     char **cpustr;
+    ObjectClass *oc;
+    const char *typename;
+    CPUClass *cc;
+    Error *err = NULL;
     int n;
 
     if (!cpu_model) {
@@ -73,28 +77,28 @@ static int machvirt_init(struct uc_struct *uc, MachineState *machine)
     /* Separate the actual CPU model name from any appended features */
     cpustr = g_strsplit(cpu_model, ",", 2);
 
+    oc = cpu_class_by_name(uc, TYPE_ARM_CPU, cpustr[0]);
+    if (!oc) {
+        fprintf(stderr, "Unable to find CPU definition");
+        return -1;
+    }
+    typename = object_class_get_name(oc);
+
+    /* convert -smp CPU options specified by the user into global props */
+    cc = CPU_CLASS(uc, oc);
+    cc->parse_features(uc, typename, cpustr[1], &err);
+    g_strfreev(cpustr);
+    if (err) {
+        fprintf(stderr, "Error parsing cpu features");
+        return -1;
+    }
+
     for (n = 0; n < smp_cpus; n++) {
-        ObjectClass *oc = cpu_class_by_name(uc, TYPE_ARM_CPU, cpustr[0]);
-        char *cpuopts = g_strdup(cpustr[1]);
-        CPUClass *cc = CPU_CLASS(uc, oc);
-        Object *cpuobj;
-        Error *err = NULL;
-        const char *typename = object_class_get_name(oc);
+        Object *cpuobj = object_new(uc, typename);
 
-        if (!oc) {
-            fprintf(stderr, "Unable to find CPU definition\n");
-            return -1;
-        }
-
-        /* convert -smp CPU options specified by the user into global props */
-        cc->parse_features(uc, typename, cpuopts, &err);
-        cpuobj = object_new(uc, typename);
         uc->cpu = CPU(cpuobj);
         object_property_set_bool(uc, cpuobj, true, "realized", NULL);
-
-        g_free(cpuopts);
     }
-    g_strfreev(cpustr);
     return 0;
 }
 
