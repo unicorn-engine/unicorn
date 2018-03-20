@@ -230,9 +230,7 @@ static void cpu_common_parse_features(struct uc_struct *uc, const char *typename
      * call it only once, so we can remove this check (or change it
      * to assert(!cpu_globals_initialized).
      * Current callers of ->parse_features() are:
-     * - machvirt_init()
      * - cpu_generic_init()
-     * - cpu_x86_create()
      */
     if (uc->cpu_globals_initialized) {
         return;

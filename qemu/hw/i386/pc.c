@@ -97,17 +97,13 @@ DeviceState *cpu_get_current_apic(struct uc_struct *uc)
     }
 }
 
-static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *cpu_model, int64_t apic_id,
+static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *typename, int64_t apic_id,
                           Error **errp)
 {
     X86CPU *cpu;
     Error *local_err = NULL;
 
-    cpu = cpu_x86_create(uc, cpu_model, &local_err);
-    if (local_err != NULL) {
-        error_propagate(errp, local_err);
-        return NULL;
-    }
+    cpu = X86_CPU(uc, object_new(uc, typename));
 
     object_property_set_int(uc, OBJECT(cpu), apic_id, "apic-id", &local_err);
     object_property_set_bool(uc, OBJECT(cpu), true, "realized", &local_err);
@@ -123,6 +119,10 @@ static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *cpu_model, int64_t a
 int pc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     int i;
+    CPUClass *cc;
+    ObjectClass *oc;
+    const char *typename;
+    gchar **model_pieces;
     Error *error = NULL;
 
     /* init CPUs */
@@ -134,8 +134,23 @@ int pc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 #endif
     }
 
+    model_pieces = g_strsplit(machine->cpu_model, ",", 2);
+    if (!model_pieces[0]) {
+        fprintf(stderr, "Invalid/empty CPU model name");
+        return -1;
+    }
+
+    oc = cpu_class_by_name(uc, TYPE_X86_CPU, model_pieces[0]);
+    if (oc == NULL) {
+        fprintf(stderr, "Unable to find CPU definition: %s", model_pieces[0]);
+        return -1;
+    }
+    typename = object_class_get_name(oc);
+    cc = CPU_CLASS(uc, oc);
+    cc->parse_features(uc, typename, model_pieces[1], &error_fatal);
+    g_strfreev(model_pieces);
     for (i = 0; i < smp_cpus; i++) {
-        uc->cpu = (CPUState *)pc_new_cpu(uc, cpu_model, x86_cpu_apic_id_from_index(i), &error);
+        uc->cpu = (CPUState *)pc_new_cpu(uc, typename, x86_cpu_apic_id_from_index(i), &error);
         if (error) {
             //error_report("%s", error_get_pretty(error));
             error_free(error);

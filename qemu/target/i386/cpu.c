@@ -3173,50 +3173,6 @@ static void x86_cpu_load_def(X86CPU *cpu, X86CPUDefinition *def, Error **errp)
     object_property_set_str(env->uc, OBJECT(cpu), vendor, "vendor", errp);
 }
 
-X86CPU *cpu_x86_create(struct uc_struct *uc, const char *cpu_model, Error **errp)
-{
-    X86CPU *cpu = NULL;
-    ObjectClass *oc;
-    CPUClass *cc;
-    gchar **model_pieces;
-    char *name, *features;
-    Error *error = NULL;
-    const char *typename;
-
-    model_pieces = g_strsplit(cpu_model, ",", 2);
-    if (!model_pieces[0]) {
-        error_setg(&error, "Invalid/empty CPU model name");
-        goto out;
-    }
-    name = model_pieces[0];
-    features = model_pieces[1];
-
-    oc = x86_cpu_class_by_name(uc, name);
-    if (oc == NULL) {
-        error_setg(&error, "Unable to find CPU definition: %s", name);
-        goto out;
-    }
-    cc = CPU_CLASS(uc, oc);
-    typename = object_class_get_name(oc);
-
-    cc->parse_features(uc, typename, features, &error);
-    cpu = X86_CPU(uc, object_new(uc, typename));
-    if (error) {
-        goto out;
-    }
-
-out:
-    if (error != NULL) {
-        error_propagate(errp, error);
-        if (cpu) {
-            object_unref(uc, OBJECT(cpu));
-            cpu = NULL;
-        }
-    }
-    g_strfreev(model_pieces);
-    return cpu;
-}
-
 static void x86_cpu_cpudef_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
     X86CPUDefinition *cpudef = data;
