@@ -164,6 +164,11 @@ int machine_initialize(struct uc_struct *uc)
 
     current_machine->cpu_model = NULL;
 
+    /* parse features once if machine provides default cpu_type */
+    if (machine_class->default_cpu_type) {
+        current_machine->cpu_type = machine_class->default_cpu_type;
+    }
+
     return machine_class->init(uc, current_machine);
 }
 

@@ -62,6 +62,10 @@ MachineClass *find_default_machine(struct uc_struct *uc, int arch);
 
 /**
  * MachineClass:
+ * @default_cpu_type:
+ *    specifies default CPU_TYPE, which will be used for parsing target
+ *    specific features and for creating CPUs if CPU name wasn't provided
+ *    explicitly at CLI
  * @minimum_page_bits:
  *    If non-zero, the board promises never to create a CPU with a page size
  *    smaller than this, so QEMU can use a more efficient larger page
@@ -91,6 +95,7 @@ struct MachineClass {
 
     int max_cpus;
     int is_default;
+    const char *default_cpu_type;
     int arch;
     int minimum_page_bits;
     bool has_hotpluggable_cpus;
@@ -108,6 +113,7 @@ struct MachineState {
     ram_addr_t ram_size;
     ram_addr_t maxram_size;
     const char *cpu_model;
+    const char *cpu_type;
     struct uc_struct *uc;
     AccelState *accelerator;
 };
