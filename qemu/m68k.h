@@ -1947,6 +1947,7 @@
 #define page_size_init page_size_init_m68k
 #define par_write par_write_m68k
 #define parse_array parse_array_m68k
+#define parse_cpu_model parse_cpu_model_m68k
 #define parse_error parse_error_m68k
 #define parse_escape parse_escape_m68k
 #define parse_keyword parse_keyword_m68k

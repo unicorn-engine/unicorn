@@ -1947,6 +1947,7 @@
 #define page_size_init page_size_init_sparc
 #define par_write par_write_sparc
 #define parse_array parse_array_sparc
+#define parse_cpu_model parse_cpu_model_sparc
 #define parse_error parse_error_sparc
 #define parse_escape parse_escape_sparc
 #define parse_keyword parse_keyword_sparc

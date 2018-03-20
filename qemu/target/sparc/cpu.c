@@ -514,105 +514,97 @@ static void print_features(FILE *f, fprintf_function cpu_fprintf,
 }
 #endif
 
-static void add_flagname_to_bitmaps(const char *flagname, uint32_t *features)
+static void
+cpu_add_feat_as_prop(const char *typename, const char *name, const char *val)
 {
-    unsigned int i;
-
-    for (i = 0; i < ARRAY_SIZE(feature_name); i++) {
-        if (feature_name[i] && !strcmp(flagname, feature_name[i])) {
-            *features |= 1 << i;
-            return;
-        }
-    }
-    //error_report("CPU feature %s not found", flagname);
+    // Unicorn: if'd out
+#if 0
+    GlobalProperty *prop = g_new0(typeof(*prop), 1);
+    prop->driver = typename;
+    prop->property = g_strdup(name);
+    prop->value = g_strdup(val);
+    prop->errp = &error_fatal;
+    qdev_prop_register_global(prop);
+#endif
 }
 
-static void sparc_cpu_parse_features(CPUState *cs, char *features,
+/* Parse "+feature,-feature,feature=foo" CPU feature string */
+static void sparc_cpu_parse_features(struct uc_struct *uc, const char *typename, char *features,
                                      Error **errp)
 {
-    SPARCCPU *cpu = SPARC_CPU(cs->uc, cs);
-    sparc_def_t *cpu_def = &cpu->env.def;
-    char *featurestr;
-    uint32_t plus_features = 0;
-    uint32_t minus_features = 0;
-    uint64_t iu_version;
-    uint32_t fpu_version, mmu_version, nwindows;
+    GList *l, *plus_features = NULL, *minus_features = NULL;
+    char *featurestr; /* Single 'key=value" string being parsed */
+    static bool cpu_globals_initialized;
 
-    featurestr = features ? strtok(features, ",") : NULL;
-    while (featurestr) {
-        char *val;
+    if (cpu_globals_initialized) {
+        return;
+    }
+    cpu_globals_initialized = true;
 
+    if (!features) {
+        return;
+    }
+
+    for (featurestr = strtok(features, ",");
+         featurestr;
+         featurestr = strtok(NULL, ",")) {
+        const char *name;
+        const char *val = NULL;
+        char *eq = NULL;
+
+        /* Compatibility syntax: */
         if (featurestr[0] == '+') {
-            add_flagname_to_bitmaps(featurestr + 1, &plus_features);
+            plus_features = g_list_append(plus_features,
+                                          g_strdup(featurestr + 1));
+            continue;
         } else if (featurestr[0] == '-') {
-            add_flagname_to_bitmaps(featurestr + 1, &minus_features);
-        } else if ((val = strchr(featurestr, '='))) {
-            *val = 0; val++;
-            if (!strcmp(featurestr, "iu_version")) {
-                char *err;
+            minus_features = g_list_append(minus_features,
+                                           g_strdup(featurestr + 1));
+            continue;
+        }
 
-                iu_version = strtoll(val, &err, 0);
-                if (!*val || *err) {
-                    error_setg(errp, "bad numerical value %s", val);
-                    return;
-                }
-                cpu_def->iu_version = iu_version;
-#ifdef DEBUG_FEATURES
-                fprintf(stderr, "iu_version %" PRIx64 "\n", iu_version);
-#endif
-            } else if (!strcmp(featurestr, "fpu_version")) {
-                char *err;
+        eq = strchr(featurestr, '=');
+        name = featurestr;
+        if (eq) {
+            *eq++ = 0;
+            val = eq;
 
-                fpu_version = strtol(val, &err, 0);
-                if (!*val || *err) {
-                    error_setg(errp, "bad numerical value %s", val);
-                    return;
-                }
-                cpu_def->fpu_version = fpu_version;
-#ifdef DEBUG_FEATURES
-                fprintf(stderr, "fpu_version %x\n", fpu_version);
-#endif
-            } else if (!strcmp(featurestr, "mmu_version")) {
-                char *err;
-
-                mmu_version = strtol(val, &err, 0);
-                if (!*val || *err) {
-                    error_setg(errp, "bad numerical value %s", val);
-                    return;
-                }
-                cpu_def->mmu_version = mmu_version;
-#ifdef DEBUG_FEATURES
-                fprintf(stderr, "mmu_version %x\n", mmu_version);
-#endif
-            } else if (!strcmp(featurestr, "nwindows")) {
-                char *err;
-
-                nwindows = strtol(val, &err, 0);
-                if (!*val || *err || nwindows > MAX_NWINDOWS ||
-                    nwindows < MIN_NWINDOWS) {
-                    error_setg(errp, "bad numerical value %s", val);
-                    return;
-                }
-                cpu_def->nwindows = nwindows;
-#ifdef DEBUG_FEATURES
-                fprintf(stderr, "nwindows %d\n", nwindows);
-#endif
-            } else {
-                error_setg(errp, "unrecognized feature %s", featurestr);
+            /*
+             * Temporarily, only +feat/-feat will be supported
+             * for boolean properties until we remove the
+             * minus-overrides-plus semantics and just follow
+             * the order options appear on the command-line.
+             *
+             * TODO: warn if user is relying on minus-override-plus semantics
+             * TODO: remove minus-override-plus semantics after
+             *       warning for a few releases
+             */
+            if (!strcasecmp(val, "on") ||
+                !strcasecmp(val, "off") ||
+                !strcasecmp(val, "true") ||
+                !strcasecmp(val, "false")) {
+                error_setg(errp, "Boolean properties in format %s=%s"
+                                 " are not supported", name, val);
                 return;
             }
         } else {
-            error_setg(errp, "feature string `%s' not in format "
-                             "(+feature|-feature|feature=xyz)", featurestr);
+            error_setg(errp, "Unsupported property format: %s", name);
             return;
         }
-        featurestr = strtok(NULL, ",");
+        cpu_add_feat_as_prop(typename, name, val);
     }
-    cpu_def->features |= plus_features;
-    cpu_def->features &= ~minus_features;
-#ifdef DEBUG_FEATURES
-    print_features(stderr, fprintf, cpu_def->features, NULL);
-#endif
+
+    for (l = plus_features; l; l = l->next) {
+        const char *name = l->data;
+        cpu_add_feat_as_prop(typename, name, "on");
+    }
+    g_list_free_full(plus_features, g_free);
+
+    for (l = minus_features; l; l = l->next) {
+        const char *name = l->data;
+        cpu_add_feat_as_prop(typename, name, "off");
+    }
+    g_list_free_full(minus_features, g_free);
 }
 
 #if 0

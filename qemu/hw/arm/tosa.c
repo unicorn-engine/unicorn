@@ -22,9 +22,9 @@
 static int tosa_init(struct uc_struct *uc, MachineState *machine)
 {
     if (uc->mode & UC_MODE_MCLASS) {
-        uc->cpu = cpu_init(uc, "cortex-m3");
+        uc->cpu = cpu_create(uc, "cortex-m3");
     } else {
-        uc->cpu = cpu_init(uc, "cortex-a15");
+        uc->cpu = cpu_create(uc, "cortex-a15");
     }
 
     return 0;

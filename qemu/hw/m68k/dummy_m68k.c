@@ -19,14 +19,10 @@
 /* Board init.  */
 static int dummy_m68k_init(struct uc_struct *uc, MachineState *machine)
 {
-    const char *cpu_model = machine->cpu_model;
     CPUM68KState *env;
+    const char *cpu_type = parse_cpu_model(uc, "cf4ve");
 
-    if (!cpu_model) {
-        cpu_model = "cfv4e";
-    }
-
-    uc->cpu = cpu_init(uc, cpu_model);
+    uc->cpu = cpu_create(uc, cpu_type);
     if (!uc->cpu) {
         fprintf(stderr, "Unable to find m68k CPU definition\n");
         return -1;
@@ -45,6 +41,7 @@ static void dummy_m68k_machine_init(struct uc_struct *uc, MachineClass *mc)
     mc->init = dummy_m68k_init;
     mc->is_default = 1;
     mc->arch = UC_ARCH_M68K;
+    mc->default_cpu_type = M68K_CPU_TYPE_NAME("cfv4e");
 }
 
 DEFINE_MACHINE("dummy", dummy_m68k_machine_init)

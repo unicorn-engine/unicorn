@@ -1947,6 +1947,7 @@
 #define page_size_init page_size_init_x86_64
 #define par_write par_write_x86_64
 #define parse_array parse_array_x86_64
+#define parse_cpu_model parse_cpu_model_x86_64
 #define parse_error parse_error_x86_64
 #define parse_escape parse_escape_x86_64
 #define parse_keyword parse_keyword_x86_64

@@ -1953,6 +1953,7 @@ symbols = (
     'page_size_init',
     'par_write',
     'parse_array',
+    'parse_cpu_model',
     'parse_error',
     'parse_escape',
     'parse_keyword',

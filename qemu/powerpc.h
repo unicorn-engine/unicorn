@@ -1947,6 +1947,7 @@
 #define page_size_init page_size_init_powerpc
 #define par_write par_write_powerpc
 #define parse_array parse_array_powerpc
+#define parse_cpu_model parse_cpu_model_powerpc
 #define parse_error parse_error_powerpc
 #define parse_escape parse_escape_powerpc
 #define parse_keyword parse_keyword_powerpc

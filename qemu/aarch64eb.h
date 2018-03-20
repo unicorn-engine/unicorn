@@ -1947,6 +1947,7 @@
 #define page_size_init page_size_init_aarch64eb
 #define par_write par_write_aarch64eb
 #define parse_array parse_array_aarch64eb
+#define parse_cpu_model parse_cpu_model_aarch64eb
 #define parse_error parse_error_aarch64eb
 #define parse_escape parse_escape_aarch64eb
 #define parse_keyword parse_keyword_aarch64eb

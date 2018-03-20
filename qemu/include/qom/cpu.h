@@ -538,26 +538,14 @@ ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename, const
 CPUState *cpu_create(struct uc_struct *uc, const char *typename);
 
 /**
- * cpu_parse_cpu_model:
- * @typename: The CPU base type or CPU type.
+ * parse_cpu_model:
  * @cpu_model: The model string including optional parameters.
  *
  * processes optional parameters and registers them as global properties
  *
  * Returns: type of CPU to create or %NULL if an error occurred.
  */
-const char *cpu_parse_cpu_model(struct uc_struct *uc, const char *typename, const char *cpu_model);
-
-/**
- * cpu_generic_init:
- * @typename: The CPU base type.
- * @cpu_model: The model string including optional parameters.
- *
- * Instantiates a CPU, processes optional parameters and realizes the CPU.
- *
- * Returns: A #CPUState or %NULL if an error occurred.
- */
-CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const char *cpu_model);
+const char *parse_cpu_model(struct uc_struct *uc, const char *cpu_model);
 
 /**
  * cpu_has_work:

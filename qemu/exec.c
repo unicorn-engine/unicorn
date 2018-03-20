@@ -620,6 +620,29 @@ void cpu_exec_init(CPUState *cpu, void *opaque)
 #endif
 }
 
+const char *parse_cpu_model(struct uc_struct *uc, const char *cpu_model)
+{
+    ObjectClass *oc;
+    CPUClass *cc;
+    gchar **model_pieces;
+    const char *cpu_type;
+
+    model_pieces = g_strsplit(cpu_model, ",", 2);
+
+    oc = cpu_class_by_name(uc, CPU_RESOLVING_TYPE, model_pieces[0]);
+    if (oc == NULL) {
+        fprintf(stderr, "unable to find CPU model '%s'", model_pieces[0]);
+        g_strfreev(model_pieces);
+        return NULL;
+    }
+
+    cpu_type = object_class_get_name(oc);
+    cc = CPU_CLASS(uc, oc);
+    cc->parse_features(uc, cpu_type, model_pieces[1], &error_fatal);
+    g_strfreev(model_pieces);
+    return cpu_type;
+}
+
 #if defined(CONFIG_USER_ONLY)
 static void breakpoint_invalidate(CPUState *cpu, target_ulong pc)
 {

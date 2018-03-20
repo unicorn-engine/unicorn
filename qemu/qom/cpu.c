@@ -53,46 +53,6 @@ CPUState *cpu_create(struct uc_struct *uc, const char *typename)
     return cpu;
 }
 
-const char *cpu_parse_cpu_model(struct uc_struct *uc, const char *typename, const char *cpu_model)
-{
-    ObjectClass *oc;
-    CPUClass *cc;
-    Error *err = NULL;
-    gchar **model_pieces;
-    const char *cpu_type;
-
-    model_pieces = g_strsplit(cpu_model, ",", 2);
-
-    oc = cpu_class_by_name(uc, typename, model_pieces[0]);
-    if (oc == NULL) {
-        g_strfreev(model_pieces);
-        return NULL;
-    }
-
-    cpu_type = object_class_get_name(oc);
-    cc = CPU_CLASS(uc, oc);
-    cc->parse_features(uc, cpu_type, model_pieces[1], &err);
-    g_strfreev(model_pieces);
-    if (err != NULL) {
-        error_free(err);
-        return NULL;
-    }
-    return cpu_type;
-}
-
-CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const char *cpu_model)
-{
-    /* TODO: all callers of cpu_generic_init() need to be converted to
-     * call cpu_parse_features() only once, before calling cpu_generic_init().
-     */
-    const char *cpu_type = cpu_parse_cpu_model(uc, typename, cpu_model);
-
-    if (cpu_type) {
-        return cpu_create(uc, cpu_type);
-    }
-    return NULL;
-}
-
 bool cpu_paging_enabled(const CPUState *cpu)
 {
     CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
@@ -234,21 +194,16 @@ static ObjectClass *cpu_common_class_by_name(struct uc_struct *uc, const char *c
 static void cpu_common_parse_features(struct uc_struct *uc, const char *typename, char *features,
                                       Error **errp)
 {
-    char *featurestr; /* Single "key=value" string being parsed */
     char *val;
+    /* Single "key=value" string being parsed */
+    char *featurestr = features ? strtok(features, ",") : NULL;
 
-    /* TODO: all callers of ->parse_features() need to be changed to
-     * call it only once, so we can remove this check (or change it
-     * to assert(!cpu_globals_initialized).
-     * Current callers of ->parse_features() are:
-     * - cpu_generic_init()
-     */
+    /* should be called only once, catch invalid users */
+    assert(!uc->cpu_globals_initialized);
     if (uc->cpu_globals_initialized) {
         return;
     }
     uc->cpu_globals_initialized = true;
-
-    featurestr = features ? strtok(features, ",") : NULL;
 
     while (featurestr) {
         val = strchr(featurestr, '=');

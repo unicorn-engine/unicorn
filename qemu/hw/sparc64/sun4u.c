@@ -36,14 +36,10 @@
 /* Sun4u hardware initialisation */
 static int sun4u_init(struct uc_struct *uc, MachineState *machine)
 {
-    const char *cpu_model = machine->cpu_model;
+    const char *cpu_type = parse_cpu_model(uc, "Sun UltraSparc IV");
     SPARCCPU *cpu;
 
-    if (cpu_model == NULL) {
-        cpu_model = "Sun UltraSparc IV";
-    }
-
-    uc->cpu = cpu_init(uc, cpu_model);
+    uc->cpu = cpu_create(uc, cpu_type);
     cpu = SPARC_CPU(uc, uc->cpu);
     if (cpu == NULL) {
         fprintf(stderr, "Unable to find Sparc CPU definition\n");
@@ -61,6 +57,7 @@ static void sun4u_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
     mc->max_cpus = 1; /* XXX for now */
     mc->is_default = 1;
     mc->arch = UC_ARCH_SPARC;
+    mc->default_cpu_type = SPARC_CPU_TYPE_NAME("Sun UltraSparc IV");
 }
 
 static const TypeInfo sun4u_type = {

@@ -1947,6 +1947,7 @@
 #define page_size_init page_size_init_armeb
 #define par_write par_write_armeb
 #define parse_array parse_array_armeb
+#define parse_cpu_model parse_cpu_model_armeb
 #define parse_error parse_error_armeb
 #define parse_escape parse_escape_armeb
 #define parse_keyword parse_keyword_armeb

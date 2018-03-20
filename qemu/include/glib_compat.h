@@ -74,9 +74,12 @@ typedef struct _GList {
   struct _GList *prev;
 } GList;
 
+GList* g_list_append(GList *list, gpointer data);
 GList *g_list_first(GList *list);
+GList* g_list_last(GList *list);
 void g_list_foreach(GList *list, GFunc func, gpointer user_data);
 void g_list_free(GList *list);
+void g_list_free_full(GList *list, GDestroyNotify free_func);
 GList* g_list_insert_before(GList *list, GList *sibling, gpointer data);
 GList *g_list_insert_sorted(GList *list, gpointer data, GCompareFunc compare);
 #define g_list_next(list) (list->next)

@@ -112,7 +112,6 @@ struct MachineState {
     /*< public >*/
     ram_addr_t ram_size;
     ram_addr_t maxram_size;
-    const char *cpu_model;
     const char *cpu_type;
     struct uc_struct *uc;
     AccelState *accelerator;

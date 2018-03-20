@@ -1947,6 +1947,7 @@
 #define page_size_init page_size_init_mipsel
 #define par_write par_write_mipsel
 #define parse_array parse_array_mipsel
+#define parse_cpu_model parse_cpu_model_mipsel
 #define parse_error parse_error_mipsel
 #define parse_escape parse_escape_mipsel
 #define parse_keyword parse_keyword_mipsel
