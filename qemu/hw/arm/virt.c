@@ -79,7 +79,7 @@ static int machvirt_init(struct uc_struct *uc, MachineState *machine)
         }
 
         cpuobj = object_new(uc, object_class_get_name(oc));
-        uc->cpu = (CPUState *)cpuobj;
+        uc->cpu = CPU(cpuobj);
         object_property_set_bool(uc, cpuobj, true, "realized", NULL);
     }
 

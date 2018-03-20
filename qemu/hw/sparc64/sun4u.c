@@ -39,10 +39,12 @@ static int sun4u_init(struct uc_struct *uc, MachineState *machine)
     const char *cpu_model = machine->cpu_model;
     SPARCCPU *cpu;
 
-    if (cpu_model == NULL)
+    if (cpu_model == NULL) {
         cpu_model = "Sun UltraSparc IV";
+    }
 
-    cpu = cpu_sparc_init(uc, cpu_model);
+    uc->cpu = cpu_init(uc, cpu_model);
+    cpu = SPARC_CPU(uc, uc->cpu);
     if (cpu == NULL) {
         fprintf(stderr, "Unable to find Sparc CPU definition\n");
         return -1;

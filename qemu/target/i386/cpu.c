@@ -3201,37 +3201,6 @@ out:
     return cpu;
 }
 
-CPUX86State *cpu_x86_init_user(struct uc_struct *uc, const char *cpu_model)
-{
-    Error *error = NULL;
-    X86CPU *cpu;
-
-    cpu = cpu_x86_create(uc, cpu_model, &error);
-    if (error) {
-        goto error;
-    }
-
-    object_property_set_int(uc, OBJECT(cpu), CPU(cpu)->cpu_index, "apic-id",
-                            &error);
-    if (error) {
-        goto error;
-    }
-
-    object_property_set_bool(uc, OBJECT(cpu), true, "realized", &error);
-    if (error) {
-        goto error;
-    }
-
-    return &cpu->env;
-
-error:
-    error_free(error);
-    if (cpu != NULL) {
-        object_unref(uc, OBJECT(cpu));
-    }
-    return NULL;
-}
-
 static void x86_cpu_cpudef_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
     X86CPUDefinition *cpudef = data;
@@ -4143,6 +4112,12 @@ static int x86_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
         g_free(name);
         goto out;
     }*/
+
+    object_property_set_int(uc, OBJECT(cpu), CPU(cpu)->cpu_index, "apic-id",
+                            &local_err);
+    if (local_err) {
+        goto out;
+    }
 
     if (cpu->apic_id == UNASSIGNED_APIC_ID) {
         error_setg(errp, "apic-id property was not initialized properly");

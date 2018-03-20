@@ -568,7 +568,6 @@ void cpu_raise_exception_ra(CPUSPARCState *, int, uintptr_t) QEMU_NORETURN;
 
 #ifndef NO_CPU_IO_DEFS
 /* cpu_init.c */
-SPARCCPU *cpu_sparc_init(struct uc_struct *uc, const char *cpu_model);
 void cpu_sparc_set_id(CPUSPARCState *env, unsigned int cpu);
 void sparc_cpu_list(FILE *f, fprintf_function cpu_fprintf);
 /* mmu_helper.c */
@@ -643,15 +642,11 @@ hwaddr cpu_get_phys_page_nofault(CPUSPARCState *env, target_ulong addr,
 int cpu_sparc_signal_handler(int host_signum, void *pinfo, void *puc);
 
 #ifndef NO_CPU_IO_DEFS
-static inline CPUSPARCState *cpu_init(struct uc_struct *uc, const char *cpu_model)
-{
-    SPARCCPU *cpu = cpu_sparc_init(uc, cpu_model);
-    if (cpu == NULL) {
-        return NULL;
-    }
-    return &cpu->env;
-}
+#define cpu_init(uc, cpu_model) cpu_generic_init(uc, TYPE_SPARC_CPU, cpu_model)
 #endif
+
+#define SPARC_CPU_TYPE_SUFFIX "-" TYPE_SPARC_CPU
+#define SPARC_CPU_TYPE_NAME(model) model SPARC_CPU_TYPE_SUFFIX
 
 #define cpu_signal_handler cpu_sparc_signal_handler
 #define cpu_list sparc_cpu_list

@@ -840,7 +840,6 @@ bool arm_cpu_exec_interrupt(CPUState *cpu, int int_req);
 hwaddr arm_cpu_get_phys_page_attrs_debug(CPUState *cpu, vaddr addr,
                                          MemTxAttrs *attrs);
 
-ARMCPU *cpu_arm_init(struct uc_struct *uc, const char *cpu_model);
 target_ulong do_arm_semihosting(CPUARMState *env);
 void aarch64_sync_32_to_64(CPUARMState *env);
 void aarch64_sync_64_to_32(CPUARMState *env);
@@ -2269,16 +2268,8 @@ static inline bool arm_excp_unmasked(CPUState *cs, unsigned int excp_idx,
     return unmasked || pstate_unmasked;
 }
 
-static inline CPUARMState *cpu_init(struct uc_struct *uc, const char *cpu_model)
-{
-    ARMCPU *cpu = cpu_arm_init(uc, cpu_model);
-    if (cpu) {
-        return &cpu->env;
-    }
-    return NULL;
-}
-
 #ifdef TARGET_ARM
+#define cpu_init(uc, cpu_model) cpu_generic_init(uc, TYPE_ARM_CPU, cpu_model)
 
 #define ARM_CPU_TYPE_SUFFIX "-" TYPE_ARM_CPU
 #define ARM_CPU_TYPE_NAME(name) (name ARM_CPU_TYPE_SUFFIX)

@@ -256,7 +256,6 @@
 #define cptype_valid cptype_valid_aarch64eb
 #define cpu_abort cpu_abort_aarch64eb
 #define cpu_address_space_init cpu_address_space_init_aarch64eb
-#define cpu_arm_init cpu_arm_init_aarch64eb
 #define cpu_breakpoint_insert cpu_breakpoint_insert_aarch64eb
 #define cpu_breakpoint_remove cpu_breakpoint_remove_aarch64eb
 #define cpu_breakpoint_remove_all cpu_breakpoint_remove_all_aarch64eb

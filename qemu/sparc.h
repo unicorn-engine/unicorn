@@ -256,7 +256,6 @@
 #define cptype_valid cptype_valid_sparc
 #define cpu_abort cpu_abort_sparc
 #define cpu_address_space_init cpu_address_space_init_sparc
-#define cpu_arm_init cpu_arm_init_sparc
 #define cpu_breakpoint_insert cpu_breakpoint_insert_sparc
 #define cpu_breakpoint_remove cpu_breakpoint_remove_sparc
 #define cpu_breakpoint_remove_all cpu_breakpoint_remove_all_sparc
@@ -3064,7 +3063,6 @@
 #define cpu_raise_exception_ra cpu_raise_exception_ra_sparc
 #define cpu_set_cwp cpu_set_cwp_sparc
 #define cpu_sparc_exec cpu_sparc_exec_sparc
-#define cpu_sparc_init cpu_sparc_init_sparc
 #define cpu_sparc_set_id cpu_sparc_set_id_sparc
 #define dump_mmu dump_mmu_sparc
 #define helper_check_align helper_check_align_sparc

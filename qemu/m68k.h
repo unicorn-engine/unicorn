@@ -256,7 +256,6 @@
 #define cptype_valid cptype_valid_m68k
 #define cpu_abort cpu_abort_m68k
 #define cpu_address_space_init cpu_address_space_init_m68k
-#define cpu_arm_init cpu_arm_init_m68k
 #define cpu_breakpoint_insert cpu_breakpoint_insert_m68k
 #define cpu_breakpoint_remove cpu_breakpoint_remove_m68k
 #define cpu_breakpoint_remove_all cpu_breakpoint_remove_all_m68k

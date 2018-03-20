@@ -22,16 +22,18 @@ static int dummy_m68k_init(struct uc_struct *uc, MachineState *machine)
     const char *cpu_model = machine->cpu_model;
     CPUM68KState *env;
 
-    if (!cpu_model)
+    if (!cpu_model) {
         cpu_model = "cfv4e";
+    }
 
-    env = cpu_init(uc, cpu_model);
-    if (!env) {
+    uc->cpu = cpu_init(uc, cpu_model);
+    if (!uc->cpu) {
         fprintf(stderr, "Unable to find m68k CPU definition\n");
         return -1;
     }
 
     /* Initialize CPU registers.  */
+    env = uc->cpu->env_ptr;
     env->vbr = 0;
     env->pc = 0;
 

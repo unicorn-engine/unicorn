@@ -4733,11 +4733,6 @@ void register_cp_regs_for_features(ARMCPU *cpu)
     }
 }
 
-ARMCPU *cpu_arm_init(struct uc_struct *uc, const char *cpu_model)
-{
-    return ARM_CPU(uc, cpu_generic_init(uc, TYPE_ARM_CPU, cpu_model));
-}
-
 void arm_cpu_register_gdb_regs_for_features(ARMCPU *cpu)
 {
 #if 0

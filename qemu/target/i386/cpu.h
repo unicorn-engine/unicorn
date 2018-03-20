@@ -1520,10 +1520,12 @@ uint64_t cpu_get_tsc(CPUX86State *env);
 
 #define PHYS_ADDR_MASK MAKE_64BIT_MASK(0, TCG_PHYS_ADDR_BITS)
 
-CPUX86State *cpu_x86_init_user(struct uc_struct *uc, const char *cpu_model);
-#define cpu_init cpu_x86_init_user
-
 #ifdef TARGET_I386
+#define cpu_init(uc, cpu_model) cpu_generic_init(uc, TYPE_X86_CPU, cpu_model)
+
+#define X86_CPU_TYPE_SUFFIX "-" TYPE_X86_CPU
+#define X86_CPU_TYPE_NAME(name) (name X86_CPU_TYPE_SUFFIX)
+
 #define cpu_signal_handler cpu_x86_signal_handler
 #endif
 

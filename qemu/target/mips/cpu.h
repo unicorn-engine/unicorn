@@ -744,6 +744,10 @@ enum {
 #define CPU_INTERRUPT_WAKE CPU_INTERRUPT_TGT_INT_0
 
 #define cpu_init(uc, cpu_model) cpu_generic_init(uc, TYPE_MIPS_CPU, cpu_model)
+
+#define MIPS_CPU_TYPE_SUFFIX "-" TYPE_MIPS_CPU
+#define MIPS_CPU_TYPE_NAME(model) model MIPS_CPU_TYPE_SUFFIX
+
 int cpu_mips_signal_handler(int host_signum, void *pinfo, void *puc);
 bool cpu_supports_isa(struct uc_struct *uc, const char *cpu_model, unsigned int isa);
 bool cpu_supports_cps_smp(struct uc_struct *uc, const char *cpu_type);

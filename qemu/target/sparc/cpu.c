@@ -94,53 +94,6 @@ static bool sparc_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     return false;
 }
 
-static void sparc_cpu_parse_features(CPUState *cs, char *features,
-                                     Error **errp);
-
-static int cpu_sparc_register(struct uc_struct *uc, SPARCCPU *cpu, const char *cpu_model)
-{
-    char *s = g_strdup(cpu_model);
-    char *featurestr = strtok(s, ",");
-    Error *err = NULL;
-
-    featurestr = strtok(NULL, ",");
-    sparc_cpu_parse_features(CPU(cpu), featurestr, &err);
-    g_free(s);
-    if (err) {
-        //error_report("%s", error_get_pretty(err));
-        error_free(err);
-        return -1;
-    }
-
-    return 0;
-}
-
-SPARCCPU *cpu_sparc_init(struct uc_struct *uc, const char *cpu_model)
-{
-    SPARCCPU *cpu;
-    ObjectClass *oc;
-    char *str, *name;
-
-    str = g_strdup(cpu_model);
-    name = strtok(str, ",");
-    oc = cpu_class_by_name(uc, TYPE_SPARC_CPU, name);
-    g_free(str);
-    if (oc == NULL) {
-        return NULL;
-    }
-
-    cpu = SPARC_CPU(uc, object_new(uc, object_class_get_name(oc)));
-
-    if (cpu_sparc_register(uc, cpu, cpu_model) < 0) {
-        object_unref(uc, OBJECT(cpu));
-        return NULL;
-    }
-
-    object_property_set_bool(uc, OBJECT(cpu), true, "realized", NULL);
-
-    return cpu;
-}
-
 void cpu_sparc_set_id(CPUSPARCState *env, unsigned int cpu)
 {
 #if !defined(TARGET_SPARC64)
@@ -893,6 +846,7 @@ static void sparc_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *da
     cc->reset = sparc_cpu_reset;
 
     cc->class_by_name = sparc_cpu_class_by_name;
+    cc->parse_features = sparc_cpu_parse_features;
     cc->has_work = sparc_cpu_has_work;
     cc->do_interrupt = sparc_cpu_do_interrupt;
     cc->cpu_exec_interrupt = sparc_cpu_exec_interrupt;

@@ -256,7 +256,6 @@
 #define cptype_valid cptype_valid_mips
 #define cpu_abort cpu_abort_mips
 #define cpu_address_space_init cpu_address_space_init_mips
-#define cpu_arm_init cpu_arm_init_mips
 #define cpu_breakpoint_insert cpu_breakpoint_insert_mips
 #define cpu_breakpoint_remove cpu_breakpoint_remove_mips
 #define cpu_breakpoint_remove_all cpu_breakpoint_remove_all_mips

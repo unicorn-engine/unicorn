@@ -191,7 +191,6 @@ int m68k_cpu_gdb_read_register(CPUState *cpu, uint8_t *buf, int reg);
 int m68k_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
 
 void m68k_tcg_init(struct uc_struct *uc);
-M68kCPU *cpu_m68k_init(struct uc_struct *uc, const char *cpu_model);
 /* you can call this signal handler from your SIGBUS and SIGSEGV
    signal handlers to inform the virtual CPU of exceptions. non zero
    is returned if the signal was handled by the virtual CPU.  */
@@ -522,14 +521,10 @@ enum {
 #define TARGET_PHYS_ADDR_SPACE_BITS 32
 #define TARGET_VIRT_ADDR_SPACE_BITS 32
 
-static inline CPUM68KState *cpu_init(struct uc_struct *uc, const char *cpu_model)
-{
-    M68kCPU *cpu = cpu_m68k_init(uc, cpu_model);
-    if (cpu == NULL) {
-        return NULL;
-    }
-    return &cpu->env;
-}
+#define cpu_init(uc, cpu_model) cpu_generic_init(uc, TYPE_M68K_CPU, cpu_model)
+
+#define M68K_CPU_TYPE_SUFFIX "-" TYPE_M68K_CPU
+#define M68K_CPU_TYPE_NAME(model) model M68K_CPU_TYPE_SUFFIX
 
 #define cpu_signal_handler cpu_m68k_signal_handler
 #define cpu_list m68k_cpu_list

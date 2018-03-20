@@ -256,7 +256,6 @@
 #define cptype_valid cptype_valid_x86_64
 #define cpu_abort cpu_abort_x86_64
 #define cpu_address_space_init cpu_address_space_init_x86_64
-#define cpu_arm_init cpu_arm_init_x86_64
 #define cpu_breakpoint_insert cpu_breakpoint_insert_x86_64
 #define cpu_breakpoint_remove cpu_breakpoint_remove_x86_64
 #define cpu_breakpoint_remove_all cpu_breakpoint_remove_all_x86_64
