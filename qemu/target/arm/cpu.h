@@ -2269,8 +2269,6 @@ static inline bool arm_excp_unmasked(CPUState *cs, unsigned int excp_idx,
 }
 
 #ifdef TARGET_ARM
-#define cpu_init(uc, cpu_model) cpu_generic_init(uc, TYPE_ARM_CPU, cpu_model)
-
 #define ARM_CPU_TYPE_SUFFIX "-" TYPE_ARM_CPU
 #define ARM_CPU_TYPE_NAME(name) (name ARM_CPU_TYPE_SUFFIX)
 #define CPU_RESOLVING_TYPE TYPE_ARM_CPU
