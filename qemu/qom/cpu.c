@@ -176,13 +176,9 @@ static bool cpu_common_debug_check_watchpoint(CPUState *cpu, CPUWatchpoint *wp)
 
 ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename, const char *cpu_model)
 {
-    CPUClass *cc;
+    CPUClass *cc = CPU_CLASS(uc, object_class_by_name(uc, typename));
 
-    if (!cpu_model) {
-        return NULL;
-    }
-    cc = CPU_CLASS(uc, object_class_by_name(uc, typename));
-
+    assert(cpu_model && cc->class_by_name);
     return cc->class_by_name(uc, cpu_model);
 }
 
