@@ -135,6 +135,17 @@ bool qstring_is_equal(const QObject *x, const QObject *y)
 }
 
 /**
+ * qobject_get_try_str(): Return a pointer to the corresponding string
+ *
+ * NOTE: the string will only be returned if the object is valid, and
+ * its type is QString, otherwise NULL is returned.
+ */
+const char *qobject_get_try_str(const QObject *qstring)
+{
+    return qstring_get_try_str(qobject_to(QString, qstring));
+}
+
+/**
  * qstring_destroy_obj(): Free all memory allocated by a QString
  * object
  */

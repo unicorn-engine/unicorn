@@ -2210,6 +2210,7 @@ symbols = (
     'qlist_type',
     'qlit_equal_qobject',
     'qobject_from_qlit',
+    'qobject_get_try_str',
     'qobject_input_end_implicit_struct',
     'qobject_input_end_list',
     'qobject_input_end_struct',

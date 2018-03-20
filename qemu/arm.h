@@ -2204,6 +2204,7 @@
 #define qlist_type qlist_type_arm
 #define qlit_equal_qobject qlit_equal_qobject_arm
 #define qobject_from_qlit qobject_from_qlit_arm
+#define qobject_get_try_str qobject_get_try_str_arm
 #define qobject_input_end_implicit_struct qobject_input_end_implicit_struct_arm
 #define qobject_input_end_list qobject_input_end_list_arm
 #define qobject_input_end_struct qobject_input_end_struct_arm

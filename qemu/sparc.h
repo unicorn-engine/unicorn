@@ -2204,6 +2204,7 @@
 #define qlist_type qlist_type_sparc
 #define qlit_equal_qobject qlit_equal_qobject_sparc
 #define qobject_from_qlit qobject_from_qlit_sparc
+#define qobject_get_try_str qobject_get_try_str_sparc
 #define qobject_input_end_implicit_struct qobject_input_end_implicit_struct_sparc
 #define qobject_input_end_list qobject_input_end_list_sparc
 #define qobject_input_end_struct qobject_input_end_struct_sparc
