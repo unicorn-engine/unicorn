@@ -1164,6 +1164,8 @@ const char *object_property_get_type(struct uc_struct *uc, Object *obj,
 
 Object *object_get_root(struct uc_struct *uc)
 {
+    assert(uc);
+
     if (!uc->root) {
         uc->root = object_new(uc, "container");
     }
