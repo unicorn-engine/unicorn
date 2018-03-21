@@ -724,6 +724,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     start = 0x40000000ul;
 # elif defined(__s390x__)
     start = 0x90000000ul;
+# elif defined(__mips__)
 #  if _MIPS_SIM == _ABI64
     start = 0x68000000ul;
 #  elif _MIPS_SIM == _ABI64
