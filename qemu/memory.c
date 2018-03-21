@@ -97,6 +97,7 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
             //shift remainder of array down over deleted pointer
             memmove(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
             mr->destructor(mr);
+            mr->ram_block = NULL;
             obj = OBJECT(mr);
             obj->ref = 1;
             obj->free = g_free;
@@ -119,6 +120,7 @@ int memory_free(struct uc_struct *uc)
         mr->enabled = false;
         memory_region_del_subregion(get_system_memory(uc), mr);
         mr->destructor(mr);
+        mr->ram_block = NULL;
         obj = OBJECT(mr);
         obj->ref = 1;
         obj->free = g_free;
