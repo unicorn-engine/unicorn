@@ -100,6 +100,7 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->tcg_enabled = tcg_enabled;
     uc->tcg_exec_init = tcg_exec_init;
     uc->cpu_exec_init_all = cpu_exec_init_all;
+    uc->cpu_exec_exit = cpu_exec_exit;
     uc->vm_start = vm_start;
     uc->memory_map = memory_map;
     uc->memory_map_ptr = memory_map_ptr;

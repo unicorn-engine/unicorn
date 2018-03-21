@@ -276,6 +276,7 @@
 #define cpu_common_reset cpu_common_reset_x86_64
 #define cpu_dump_statistics cpu_dump_statistics_x86_64
 #define cpu_exec cpu_exec_x86_64
+#define cpu_exec_exit cpu_exec_exit_x86_64
 #define cpu_exec_init cpu_exec_init_x86_64
 #define cpu_exec_init_all cpu_exec_init_all_x86_64
 #define cpu_exec_step_atomic cpu_exec_step_atomic_x86_64

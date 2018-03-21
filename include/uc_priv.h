@@ -58,6 +58,7 @@ typedef void (*uc_args_void_t)(void*);
 
 typedef void (*uc_args_uc_t)(struct uc_struct*);
 typedef int (*uc_args_int_uc_t)(struct uc_struct*);
+typedef void (*uc_cpu_exec_exit_t)(CPUState*);
 
 typedef bool (*uc_args_tcg_enable_t)(struct uc_struct*);
 
@@ -162,6 +163,7 @@ struct uc_struct {
     uc_args_int_t stop_interrupt;   // check if the interrupt should stop emulation
 
     uc_args_uc_t init_arch, cpu_exec_init_all;
+    uc_cpu_exec_exit_t cpu_exec_exit;
     uc_args_int_uc_t vm_start;
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;

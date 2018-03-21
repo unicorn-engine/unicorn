@@ -276,6 +276,7 @@
 #define cpu_common_reset cpu_common_reset_mipsel
 #define cpu_dump_statistics cpu_dump_statistics_mipsel
 #define cpu_exec cpu_exec_mipsel
+#define cpu_exec_exit cpu_exec_exit_mipsel
 #define cpu_exec_init cpu_exec_init_mipsel
 #define cpu_exec_init_all cpu_exec_init_all_mipsel
 #define cpu_exec_step_atomic cpu_exec_step_atomic_mipsel

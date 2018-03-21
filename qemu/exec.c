@@ -577,17 +577,77 @@ AddressSpace *cpu_get_address_space(CPUState *cpu, int asidx)
 }
 #endif
 
+#ifndef CONFIG_USER_ONLY
+static int cpu_get_free_index(Error **errp)
+{
+    // Unicorn: if'd out
+#if 0
+    int cpu = find_first_zero_bit(cpu_index_map, MAX_CPUMASK_BITS);
+
+    if (cpu >= MAX_CPUMASK_BITS) {
+        error_setg(errp, "Trying to use more CPUs than max of %d",
+                   MAX_CPUMASK_BITS);
+        return -1;
+    }
+
+    bitmap_set(cpu_index_map, cpu, 1);
+    return cpu;
+#endif
+    return 0;
+}
+
+void cpu_exec_exit(CPUState *cpu)
+{
+    if (cpu->cpu_index == -1) {
+        /* cpu_index was never allocated by this @cpu or was already freed. */
+        return;
+    }
+
+    // Unicorn: if'd out
+#if 0
+    bitmap_clear(cpu_index_map, cpu->cpu_index, 1);
+#endif
+    cpu->cpu_index = -1;
+}
+#else
+
+static int cpu_get_free_index(Error **errp)
+{
+    // Unicorn: if'd out
+#if 0
+    CPUState *some_cpu;
+    int cpu_index = 0;
+
+    CPU_FOREACH(some_cpu) {
+        cpu_index++;
+    }
+    return cpu_index;
+#endif
+    return 0;
+}
+
+void cpu_exec_exit(CPUState *cpu)
+{
+}
+#endif
+
 void cpu_exec_init(CPUState *cpu, Error **errp, void *opaque)
 {
     struct uc_struct *uc = opaque;
     CPUClass *cc = CPU_GET_CLASS(uc, cpu);
     CPUArchState *env = cpu->env_ptr;
+    Error *local_err = NULL;
 
     cpu->as = NULL;
-    cpu->cpu_index = 0;
     cpu->num_ases = 0;
     cpu->uc = uc;
     env->uc = uc;
+
+    cpu->cpu_index = cpu_get_free_index(&local_err);
+    if (local_err) {
+        error_propagate(errp, local_err);
+        return;
+    }
 
     // TODO: assert uc does not already have a cpu?
     uc->cpu = cpu;

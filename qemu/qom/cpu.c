@@ -258,8 +258,14 @@ static void cpu_common_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
     CPUState *cpu = CPU(obj);
 
+    cpu->cpu_index = -1;
     QTAILQ_INIT(&cpu->breakpoints);
     QTAILQ_INIT(&cpu->watchpoints);
+}
+
+static void cpu_common_finalize(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    uc->cpu_exec_exit(CPU(obj));
 }
 
 static int64_t cpu_common_get_arch_id(CPUState *cpu)
@@ -308,7 +314,7 @@ static const TypeInfo cpu_type_info = {
 
     cpu_common_initfn,
     NULL,
-    NULL,
+    cpu_common_finalize,
 
     NULL,
 

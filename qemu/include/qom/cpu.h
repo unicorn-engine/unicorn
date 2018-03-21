@@ -807,6 +807,7 @@ static inline bool cpu_breakpoint_test(CPUState *cpu, vaddr pc, int mask)
 
 void QEMU_NORETURN cpu_abort(CPUState *cpu, const char *fmt, ...)
     GCC_FMT_ATTR(2, 3);
+void cpu_exec_exit(CPUState *cpu);
 
 void cpu_register_types(struct uc_struct *uc);
 

@@ -276,6 +276,7 @@
 #define cpu_common_reset cpu_common_reset_sparc64
 #define cpu_dump_statistics cpu_dump_statistics_sparc64
 #define cpu_exec cpu_exec_sparc64
+#define cpu_exec_exit cpu_exec_exit_sparc64
 #define cpu_exec_init cpu_exec_init_sparc64
 #define cpu_exec_init_all cpu_exec_init_all_sparc64
 #define cpu_exec_step_atomic cpu_exec_step_atomic_sparc64

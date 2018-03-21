@@ -282,6 +282,7 @@ symbols = (
     'cpu_common_reset',
     'cpu_dump_statistics',
     'cpu_exec',
+    'cpu_exec_exit',
     'cpu_exec_init',
     'cpu_exec_init_all',
     'cpu_exec_step_atomic',
