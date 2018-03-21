@@ -114,7 +114,8 @@ float32 float32_default_nan(float_status *status)
 #if defined(TARGET_SPARC) || defined(TARGET_M68K)
     return const_float32(0x7FFFFFFF);
 #elif defined(TARGET_PPC) || defined(TARGET_ARM) || defined(TARGET_ALPHA) || \
-      defined(TARGET_XTENSA)
+      defined(TARGET_XTENSA) || defined(TARGET_S390X) || \
+      defined(TARGET_TRICORE) || defined(TARGET_RISCV)
     return const_float32(0x7FC00000);
 #elif defined(TARGET_HPPA)
     return const_float32(0x7FA00000);
@@ -138,7 +139,8 @@ float64 float64_default_nan(float_status *status)
 {
 #if defined(TARGET_SPARC) || defined(TARGET_M68K)
     return const_float64(LIT64(0x7FFFFFFFFFFFFFFF));
-#elif defined(TARGET_PPC) || defined(TARGET_ARM) || defined(TARGET_ALPHA)
+#elif defined(TARGET_PPC) || defined(TARGET_ARM) || defined(TARGET_ALPHA) || \
+      defined(TARGET_S390X) || defined(TARGET_RISCV)
     return const_float64(LIT64(0x7FF8000000000000));
 #elif defined(TARGET_HPPA)
     return const_float64(LIT64(0x7FF4000000000000));
@@ -161,7 +163,6 @@ float64 float64_default_nan(float_status *status)
 floatx80 floatx80_default_nan(float_status *status)
 {
     floatx80 r;
-
 #if defined(TARGET_M68K)
     r.low = LIT64(0xFFFFFFFFFFFFFFFF);
     r.high = 0x7FFF;
@@ -203,7 +204,7 @@ float128 float128_default_nan(float_status *status)
         r.high = LIT64(0x7FFF7FFFFFFFFFFF);
     } else {
         r.low = LIT64(0x0000000000000000);
-#if defined(TARGET_S390X) || defined(TARGET_PPC)
+#if defined(TARGET_S390X) || defined(TARGET_PPC) || defined(TARGET_RISCV)
         r.high = LIT64(0x7FFF800000000000);
 #else
         r.high = LIT64(0xFFFF800000000000);
@@ -289,7 +290,6 @@ float16 float16_maybe_silence_nan(float16 a_, float_status *status)
             return make_float16(a);
         }
     }
-
     return a_;
 }
 
@@ -416,7 +416,7 @@ static commonNaNT float32ToCommonNaN(float32 a, float_status *status)
     }
     z.sign = float32_val(a) >> 31;
     z.low = 0;
-    z.high = ((uint64_t) float32_val(a)) << 41;
+    z.high = ((uint64_t)float32_val(a)) << 41;
     return z;
 }
 
@@ -435,7 +435,7 @@ static float32 commonNaNToFloat32(commonNaNT a, float_status *status)
 
     if (mantissa) {
         return make_float32(
-            (((uint32_t) a.sign) << 31) | 0x7F800000 | (a.high >> 41));
+            (((uint32_t)a.sign) << 31) | 0x7F800000 | (a.high >> 41));
     } else {
         return float32_default_nan(status);
     }
@@ -482,7 +482,7 @@ static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
 }
 #elif defined(TARGET_MIPS) || defined(TARGET_HPPA)
 static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
-                   flag aIsLargerSignificand)
+                    flag aIsLargerSignificand)
 {
     /* According to MIPS specifications, if one of the two operands is
      * a sNaN, a new qNaN has to be generated. This is done in
@@ -548,7 +548,7 @@ static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
 }
 #else
 static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
-                   flag aIsLargerSignificand)
+                    flag aIsLargerSignificand)
 {
     /* This implements x87 NaN propagation rules:
      * SNaN + QNaN => return the QNaN
@@ -585,7 +585,8 @@ static int pickNaN(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
 *----------------------------------------------------------------------------*/
 #if defined(TARGET_ARM)
 static int pickNaNMulAdd(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
-                         flag cIsQNaN, flag cIsSNaN, flag infzero, float_status *status)
+                         flag cIsQNaN, flag cIsSNaN, flag infzero,
+                         float_status *status)
 {
     /* For ARM, the (inf,zero,qnan) case sets InvalidOp and returns
      * the default NaN
@@ -614,7 +615,8 @@ static int pickNaNMulAdd(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
 }
 #elif defined(TARGET_MIPS)
 static int pickNaNMulAdd(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
-                         flag cIsQNaN, flag cIsSNaN, flag infzero, float_status *status)
+                         flag cIsQNaN, flag cIsSNaN, flag infzero,
+                         float_status *status)
 {
     /* For MIPS, the (inf,zero,qnan) case sets InvalidOp and returns
      * the default NaN
@@ -658,7 +660,8 @@ static int pickNaNMulAdd(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
 }
 #elif defined(TARGET_PPC)
 static int pickNaNMulAdd(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
-                         flag cIsQNaN, flag cIsSNaN, flag infzero, float_status *status)
+                         flag cIsQNaN, flag cIsSNaN, flag infzero,
+                         float_status *status)
 {
     /* For PPC, the (inf,zero,qnan) case sets InvalidOp, but we prefer
      * to return an input NaN if we have one (ie c) rather than generating
@@ -685,7 +688,8 @@ static int pickNaNMulAdd(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
  * This is unlikely to actually match any real implementation.
  */
 static int pickNaNMulAdd(flag aIsQNaN, flag aIsSNaN, flag bIsQNaN, flag bIsSNaN,
-                         flag cIsQNaN, flag cIsSNaN, flag infzero, float_status *status)
+                         flag cIsQNaN, flag cIsSNaN, flag infzero,
+                         float_status *status)
 {
     if (aIsSNaN || aIsQNaN) {
         return 0;
@@ -916,6 +920,7 @@ int floatx80_is_quiet_nan(floatx80 a, float_status *status)
 {
     if (status->snan_bit_is_one) {
         uint64_t aLow;
+
         aLow = a.low & ~0x4000000000000000ULL;
         return ((a.high & 0x7FFF) == 0x7FFF)
             && (aLow << 1)
@@ -939,6 +944,7 @@ int floatx80_is_signaling_nan(floatx80 a, float_status *status)
             && ((a.low << 1) >= 0x8000000000000000ULL);
     } else {
         uint64_t aLow;
+
         aLow = a.low & ~LIT64(0x4000000000000000);
         return ((a.high & 0x7FFF) == 0x7FFF)
             && (uint64_t)(aLow << 1)
@@ -1007,7 +1013,7 @@ static floatx80 commonNaNToFloatx80(commonNaNT a, float_status *status)
 
     if (a.high >> 1) {
         z.low = LIT64(0x8000000000000000) | a.high >> 1;
-        z.high = (((uint16_t) a.sign) << 15) | 0x7FFF;
+        z.high = (((uint16_t)a.sign) << 15) | 0x7FFF;
     } else {
         z = floatx80_default_nan(status);
     }
@@ -1148,7 +1154,7 @@ static float128 commonNaNToFloat128(commonNaNT a, float_status *status)
     }
 
     shift128Right(a.high, a.low, 16, &z.high, &z.low);
-    z.high |= (((uint64_t) a.sign) << 63) | LIT64(0x7FFF000000000000);
+    z.high |= (((uint64_t)a.sign) << 63) | LIT64(0x7FFF000000000000);
     return z;
 }
 
@@ -1158,7 +1164,8 @@ static float128 commonNaNToFloat128(commonNaNT a, float_status *status)
 | `b' is a signaling NaN, the invalid exception is raised.
 *----------------------------------------------------------------------------*/
 
-static float128 propagateFloat128NaN(float128 a, float128 b, float_status *status)
+static float128 propagateFloat128NaN(float128 a, float128 b,
+                                     float_status *status)
 {
     flag aIsQuietNaN, aIsSignalingNaN, bIsQuietNaN, bIsSignalingNaN;
     flag aIsLargerSignificand;
