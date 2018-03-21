@@ -130,7 +130,7 @@ static void mips_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 
     cs->env_ptr = env;
     env->cpu_model = mcc->cpu_def;
-    cpu_exec_init(cs, opaque);
+    cpu_exec_init(cs, &error_abort, opaque);
 }
 
 static char *mips_cpu_type_name(const char *cpu_model)

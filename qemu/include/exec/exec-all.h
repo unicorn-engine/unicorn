@@ -63,7 +63,7 @@ static inline void cpu_list_lock(void)
 }
 #endif
 
-void cpu_exec_init(CPUState *env, void *opaque);
+void cpu_exec_init(CPUState *env, Error **errp, void *opaque);
 
 void QEMU_NORETURN cpu_loop_exit(CPUState *cpu);
 void QEMU_NORETURN cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc);

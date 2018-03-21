@@ -228,7 +228,7 @@ static void m68k_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     CPUM68KState *env = &cpu->env;
 
     cs->env_ptr = env;
-    cpu_exec_init(cs, opaque);
+    cpu_exec_init(cs, &error_abort, opaque);
 }
 
 static void m68k_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data)

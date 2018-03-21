@@ -577,7 +577,7 @@ AddressSpace *cpu_get_address_space(CPUState *cpu, int asidx)
 }
 #endif
 
-void cpu_exec_init(CPUState *cpu, void *opaque)
+void cpu_exec_init(CPUState *cpu, Error **errp, void *opaque)
 {
     struct uc_struct *uc = opaque;
     CPUClass *cc = CPU_GET_CLASS(uc, cpu);
