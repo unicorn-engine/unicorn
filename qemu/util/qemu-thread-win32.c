@@ -47,13 +47,14 @@ static unsigned __stdcall win32_start_routine(void *arg)
     QemuThreadData *data = (QemuThreadData *) arg;
     void *(*start_routine)(void *) = data->start_routine;
     void *thread_arg = data->arg;
+    struct uc_struct *uc = data->uc;
 
     if (data->mode == QEMU_THREAD_DETACHED) {
         data->uc->qemu_thread_data = NULL;
         g_free(data);
         data = NULL;
     }
-    qemu_thread_exit(data->uc, start_routine(thread_arg));
+    qemu_thread_exit(uc, start_routine(thread_arg));
     abort();
 }
 
