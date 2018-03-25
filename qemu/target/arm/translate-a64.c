@@ -13561,11 +13561,11 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
         case DISAS_UPDATE:
             gen_a64_set_pc_im(dc, dc->pc);
             /* fall through */
-        case DISAS_JUMP:
-            tcg_gen_lookup_and_goto_ptr(tcg_ctx);
-            break;
         case DISAS_EXIT:
             tcg_gen_exit_tb(tcg_ctx, 0);
+            break;
+        case DISAS_JUMP:
+            tcg_gen_lookup_and_goto_ptr(tcg_ctx);
             break;
         case DISAS_NORETURN:
         case DISAS_SWI:
