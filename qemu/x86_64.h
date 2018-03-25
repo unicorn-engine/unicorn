@@ -967,6 +967,7 @@
 #define helper_divu_i32 helper_divu_i32_x86_64
 #define helper_divu_i64 helper_divu_i64_x86_64
 #define helper_double_saturate helper_double_saturate_x86_64
+#define helper_exception_bkpt_insn helper_exception_bkpt_insn_x86_64
 #define helper_exception_internal helper_exception_internal_x86_64
 #define helper_exception_return helper_exception_return_x86_64
 #define helper_exception_with_syndrome helper_exception_with_syndrome_x86_64

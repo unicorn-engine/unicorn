@@ -973,6 +973,7 @@ symbols = (
     'helper_divu_i32',
     'helper_divu_i64',
     'helper_double_saturate',
+    'helper_exception_bkpt_insn',
     'helper_exception_internal',
     'helper_exception_return',
     'helper_exception_with_syndrome',

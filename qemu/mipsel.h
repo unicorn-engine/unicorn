@@ -967,6 +967,7 @@
 #define helper_divu_i32 helper_divu_i32_mipsel
 #define helper_divu_i64 helper_divu_i64_mipsel
 #define helper_double_saturate helper_double_saturate_mipsel
+#define helper_exception_bkpt_insn helper_exception_bkpt_insn_mipsel
 #define helper_exception_internal helper_exception_internal_mipsel
 #define helper_exception_return helper_exception_return_mipsel
 #define helper_exception_with_syndrome helper_exception_with_syndrome_mipsel
