@@ -118,11 +118,11 @@ VALUE m_uc_reg_read(VALUE self, VALUE reg_id){
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
 
-    uc_arch arch;
+    size_t arch;
     uc_query(_uc, UC_QUERY_ARCH, &arch);
 
     if(arch == UC_ARCH_X86) {
-        switch(tmp_reg){
+      switch(tmp_reg){
             case UC_X86_REG_GDTR:
             case UC_X86_REG_IDTR:
             case UC_X86_REG_LDTR:
@@ -202,7 +202,7 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
     uc_engine *_uc;
     Data_Get_Struct(rb_iv_get(self,"@uch"), uc_engine, _uc);
     
-    uc_arch arch;
+    size_t arch;
     uc_query(_uc, UC_QUERY_ARCH, &arch);
 
     if(arch == UC_ARCH_X86) {
@@ -256,7 +256,7 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
             uint64_t neon128_value[2];
             neon128_value[0] = NUM2ULL(rb_ary_entry(reg_value, 0));
             neon128_value[1] = NUM2ULL(rb_ary_entry(reg_value, 1));
-            err = uc_reg_write(_uc, NUM2INT(reg_id), &neon128_value);
+            err = uc_reg_write(_uc, tmp_reg, &neon128_value);
             if (err != UC_ERR_OK) {
               rb_raise(UcError, "%s", uc_strerror(err));
             }
@@ -265,7 +265,7 @@ VALUE m_uc_reg_write(VALUE self, VALUE reg_id, VALUE reg_value){
     }
     
     tmp = NUM2ULL(reg_value);
-    err = uc_reg_write(_uc, NUM2INT(reg_id), &tmp);
+    err = uc_reg_write(_uc, tmp_reg, &tmp);
     if (err != UC_ERR_OK) {
       rb_raise(UcError, "%s", uc_strerror(err));
     }
