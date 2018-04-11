@@ -332,35 +332,43 @@ found:
     return 0;
 }
 
-bool cpu_restore_state(CPUState *cpu, uintptr_t retaddr)
+bool cpu_restore_state(CPUState *cpu, uintptr_t host_pc)
 {
     TranslationBlock *tb;
     CPUArchState *env = cpu->env_ptr;
+    TCGContext* tcg_ctx = env->uc->tcg_ctx;
+    bool r = false;
+    uintptr_t check_offset;
 
-    /* A retaddr of zero is invalid so we really shouldn't have ended
-     * up here. The target code has likely forgotten to check retaddr
-     * != 0 before attempting to restore state. We return early to
-     * avoid blowing up on a recursive tb_lock(). The target must have
-     * previously survived a failed cpu_restore_state because
-     * tb_find_pc(0) would have failed anyway. It still should be
-     * fixed though.
+    /* The host_pc has to be in the region of current code buffer. If
+     * it is not we will not be able to resolve it here. The two cases
+     * where host_pc will not be correct are:
+     *
+     *  - fault during translation (instruction fetch)
+     *  - fault from helper (not using GETPC() macro)
+     *
+     * Either way we need return early to avoid blowing up on a
+     * recursive tb_lock() as we can't resolve it here.
+     *
+     * We are using unsigned arithmetic so if host_pc <
+     * tcg_init_ctx.code_gen_buffer check_offset will wrap to way
+     * above the code_gen_buffer_size
      */
+    check_offset = host_pc - (uintptr_t) tcg_ctx->code_gen_buffer;
 
-    if (!retaddr) {
-        return false;
-    }
-
-    tb = tb_find_pc(env->uc, retaddr);
-    if (tb) {
-        cpu_restore_state_from_tb(cpu, tb, retaddr);
-        if (tb->cflags & CF_NOCACHE) {
-            /* one-shot translation, invalidate it immediately */
-            tb_phys_invalidate(cpu->uc, tb, -1);
-            tb_free(cpu->uc, tb);
+    if (check_offset < tcg_ctx->code_gen_buffer_size) {
+        tb = tb_find_pc(env->uc, host_pc);
+        if (tb) {
+            cpu_restore_state_from_tb(cpu, tb, host_pc);
+            if (tb->cflags & CF_NOCACHE) {
+                /* one-shot translation, invalidate it immediately */
+                tb_phys_invalidate(cpu->uc, tb, -1);
+                tb_free(cpu->uc, tb);
+            }
+            r = true;
         }
-        return true;
     }
-    return false;
+    return r;
 }
 
 static void page_init(struct uc_struct *uc)
