@@ -280,9 +280,11 @@ static int encode_search(TCGContext *tcg_ctx, TranslationBlock *tb, uint8_t *blo
 
 /* The cpu state corresponding to 'searched_pc' is restored.
  * Called with tb_lock held.
+ * When reset_icount is true, current TB will be interrupted and
+ * icount should be recalculated.
  */
 static int cpu_restore_state_from_tb(CPUState *cpu, TranslationBlock *tb,
-                                     uintptr_t searched_pc)
+                                     uintptr_t searched_pc, bool reset_icount)
 {
     target_ulong data[TARGET_INSN_START_WORDS] = { tb->pc };
     uintptr_t host_pc = (uintptr_t)tb->tc.ptr;
@@ -314,15 +316,12 @@ static int cpu_restore_state_from_tb(CPUState *cpu, TranslationBlock *tb,
 
 found:
     // UNICORN: Commented out
-    //if (tb->cflags & CF_USE_ICOUNT) {
+    //if (reset_icount && (tb->cflags & CF_USE_ICOUNT)) {
     //    assert(use_icount);
-    //    /* Reset the cycle counter to the start of the block.  */
-    //    cpu->icount_decr.u16.low += num_insns;
-    //    /* Clear the IO flag.  */
-    //    cpu->can_do_io = 0;
+    //    /* Reset the cycle counter to the start of the block
+    //       and shift if to the number of actually executed instructions */
+    //    cpu->icount_decr.u16.low += num_insns - i;
     //}
-
-    cpu->icount_decr.u16.low -= i;
     restore_state_to_opc(env, tb, data);
 
 #ifdef CONFIG_PROFILER
@@ -332,7 +331,7 @@ found:
     return 0;
 }
 
-bool cpu_restore_state(CPUState *cpu, uintptr_t host_pc)
+bool cpu_restore_state(CPUState *cpu, uintptr_t host_pc, bool will_exit)
 {
     TranslationBlock *tb;
     CPUArchState *env = cpu->env_ptr;
@@ -359,7 +358,7 @@ bool cpu_restore_state(CPUState *cpu, uintptr_t host_pc)
     if (check_offset < tcg_ctx->code_gen_buffer_size) {
         tb = tb_find_pc(env->uc, host_pc);
         if (tb) {
-            cpu_restore_state_from_tb(cpu, tb, host_pc);
+            cpu_restore_state_from_tb(cpu, tb, host_pc, will_exit);
             if (tb->cflags & CF_NOCACHE) {
                 /* one-shot translation, invalidate it immediately */
                 tb_phys_invalidate(cpu->uc, tb, -1);
@@ -1601,7 +1600,8 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
 
                 current_tb_modified = 1;
                 // self-modifying code will restore state from TB
-                cpu_restore_state_from_tb(uc->cpu, current_tb, uc->cpu->mem_io_pc);
+                cpu_restore_state_from_tb(uc->cpu, current_tb,
+                                          uc->cpu->mem_io_pc, true);
                 cpu_get_tb_cpu_state(env, &current_pc, &current_cs_base,
                                      &current_flags);
             }
@@ -1719,7 +1719,7 @@ static bool tb_invalidate_phys_page(tb_page_addr_t addr, uintptr_t pc)
                    restore the CPU state */
 
             current_tb_modified = 1;
-            cpu_restore_state_from_tb(cpu, current_tb, pc);
+            cpu_restore_state_from_tb(cpu, current_tb, pc, true);
             cpu_get_tb_cpu_state(env, &current_pc, &current_cs_base,
                                  &current_flags);
         }
@@ -1801,7 +1801,7 @@ void tb_check_watchpoint(CPUState *cpu)
     tb = tb_find_pc(env->uc, cpu->mem_io_pc);
     if (tb) {
         /* We can use retranslation to find the PC.  */
-        cpu_restore_state_from_tb(cpu, tb, cpu->mem_io_pc);
+        cpu_restore_state_from_tb(cpu, tb, cpu->mem_io_pc, true);
         tb_phys_invalidate(cpu->uc, tb, -1);
     } else {
         /* The exception probably happened in a helper.  The CPU state should
@@ -1816,7 +1816,7 @@ void tb_check_watchpoint(CPUState *cpu)
         tb_invalidate_phys_range(cpu->uc, addr, addr + 1);
     }
 
-    cpu_restore_state_from_tb(cpu, tb, cpu->mem_io_pc);
+    cpu_restore_state_from_tb(cpu, tb, cpu->mem_io_pc, true);
     tb_phys_invalidate(cpu->uc, tb, -1);
 }
 
@@ -1837,7 +1837,7 @@ void cpu_io_recompile(CPUState *cpu, uintptr_t retaddr)
                   (void *)retaddr);
     }
     n = cpu->icount_decr.u16.low + tb->icount;
-    cpu_restore_state_from_tb(cpu, tb, retaddr);
+    cpu_restore_state_from_tb(cpu, tb, retaddr, true);
     /* Calculate how many instructions had been executed before the fault
        occurred.  */
     n = n - cpu->icount_decr.u16.low;

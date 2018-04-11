@@ -1014,7 +1014,7 @@ void cpu_report_tpr_access(CPUX86State *env, TPRAccess access)
     CPUState *cs = CPU(cpu);
 
     if (tcg_enabled(env->uc)) {
-        cpu_restore_state(cs, cs->mem_io_pc);
+        cpu_restore_state(cs, cs->mem_io_pc, false);
 
         apic_handle_tpr_access_report(cpu->apic_state, env->eip, access);
     }

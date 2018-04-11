@@ -549,7 +549,6 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
         g_assert(cpu == uc->current_cpu);
         g_assert(cc == CPU_GET_CLASS(uc, cpu));
 #endif /* buggy compiler */
-        cpu->can_do_io = 1;
         // Unicorn: commented out
         //tb_lock_reset();
     }
