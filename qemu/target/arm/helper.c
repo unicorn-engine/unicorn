@@ -1193,7 +1193,7 @@ static const ARMCPRegInfo v7_cp_reginfo[] = {
       PL0_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.c9_pmselr), {0, 0},
       pmreg_access_selr, NULL, pmselr_write, NULL, raw_write, },
     { "PMCCNTR", 15,9,13, 0,0,0, 0,
-      ARM_CP_IO, PL0_RW, 0, NULL, 0, 0, {0, 0},
+      ARM_CP_ALIAS | ARM_CP_IO, PL0_RW, 0, NULL, 0, 0, {0, 0},
       pmreg_access_ccntr, pmccntr_read, pmccntr_write32, },
     { "PMCCNTR_EL0", 0,9,13, 3,3,0, ARM_CP_STATE_AA64,
       ARM_CP_IO, PL0_RW, 0, NULL, 0, 0, {0, 0},
