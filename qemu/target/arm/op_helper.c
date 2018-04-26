@@ -517,6 +517,8 @@ void HELPER(cpsr_write)(CPUARMState *env, uint32_t val, uint32_t mask)
 /* Write the CPSR for a 32-bit exception return */
 void HELPER(cpsr_write_eret)(CPUARMState *env, uint32_t val)
 {
+    arm_call_pre_el_change_hook(arm_env_get_cpu(env));
+
     cpsr_write(env, val, CPSR_ERET_MASK, CPSRWriteExceptionReturn);
 
     /* Generated code has already stored the new PC value, but
@@ -1009,6 +1011,8 @@ void HELPER(exception_return)(CPUARMState *env)
         && !arm_is_secure_below_el3(env)) {
         goto illegal_return;
     }
+
+    arm_call_pre_el_change_hook(arm_env_get_cpu(env));
 
     if (!return_to_aa64) {
         env->aarch64 = 0;

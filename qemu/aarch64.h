@@ -3065,6 +3065,7 @@
 #define arm64_release arm64_release_aarch64
 #define arm_regime_tbi0 arm_regime_tbi0_aarch64
 #define arm_regime_tbi1 arm_regime_tbi1_aarch64
+#define arm_register_pre_el_change_hook arm_register_pre_el_change_hook_aarch64
 #define arm_register_el_change_hook arm_register_el_change_hook_aarch64
 #define arm_reset_cpu arm_reset_cpu_aarch64
 #define arm_set_cpu_off arm_set_cpu_off_aarch64
