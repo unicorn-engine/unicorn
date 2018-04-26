@@ -49,13 +49,15 @@ static bool arm_cpu_has_work(CPUState *cs)
          | CPU_INTERRUPT_EXITTB);
 }
 
-void arm_register_el_change_hook(ARMCPU *cpu, ARMELChangeHook *hook,
+void arm_register_el_change_hook(ARMCPU *cpu, ARMELChangeHookFn *hook,
                                  void *opaque)
 {
-    /* We currently only support registering a single hook function */
-    assert(!cpu->el_change_hook);
-    cpu->el_change_hook = hook;
-    cpu->el_change_hook_opaque = opaque;
+    ARMELChangeHook *entry = g_new0(ARMELChangeHook, 1);
+
+    entry->hook = hook;
+    entry->opaque = opaque;
+
+    QLIST_INSERT_HEAD(&cpu->el_change_hooks, entry, node);
 }
 
 static void cp_reg_reset(gpointer key, gpointer value, gpointer opaque)
@@ -438,6 +440,8 @@ static void arm_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->cp_regs = g_hash_table_new_full(g_int_hash, g_int_equal,
                                          g_free, g_free);
 
+    QLIST_INIT(&cpu->el_change_hooks);
+
     /* This cpu-id-to-MPIDR affinity is used only for TCG; KVM will override it.
      * We don't support setting cluster ID ([16..23]) (known as Aff2
      * in later ARM ARM versions), or any of the higher affinity level fields,
@@ -531,7 +535,14 @@ static void arm_cpu_post_init(struct uc_struct *uc, Object *obj)
 static void arm_cpu_finalizefn(struct uc_struct *uc, Object *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
+    ARMELChangeHook *hook, *next;
+
     g_hash_table_destroy(cpu->cp_regs);
+
+    QLIST_FOREACH_SAFE(hook, &cpu->el_change_hooks, node, next) {
+        QLIST_REMOVE(hook, node);
+        g_free(hook);
+    }
 }
 
 static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
