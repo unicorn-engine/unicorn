@@ -355,8 +355,8 @@ void tcg_gen_cmp_vec(TCGContext *s, TCGCond cond, unsigned vece,
     TCGType type = rt->base_type;
     int can;
 
-    tcg_debug_assert(at->base_type == type);
-    tcg_debug_assert(bt->base_type == type);
+    tcg_debug_assert(at->base_type >= type);
+    tcg_debug_assert(bt->base_type >= type);
     can = tcg_can_emit_vec_op(INDEX_op_cmp_vec, type, vece);
     if (can > 0) {
         vec_gen_4(s, INDEX_op_cmp_vec, type, vece, ri, ai, bi, cond);
@@ -377,8 +377,8 @@ void tcg_gen_mul_vec(TCGContext *s, unsigned vece, TCGv_vec r, TCGv_vec a, TCGv_
     TCGType type = rt->base_type;
     int can;
 
-    tcg_debug_assert(at->base_type == type);
-    tcg_debug_assert(bt->base_type == type);
+    tcg_debug_assert(at->base_type >= type);
+    tcg_debug_assert(bt->base_type >= type);
     can = tcg_can_emit_vec_op(INDEX_op_mul_vec, type, vece);
     if (can > 0) {
         vec_gen_3(s, INDEX_op_mul_vec, type, vece, ri, ai, bi);
