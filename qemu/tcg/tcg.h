@@ -1064,14 +1064,30 @@ TCGTemp *tcg_global_mem_new_internal(TCGContext *s, TCGType type, TCGv_ptr base,
 TCGv_i32 tcg_global_reg_new_i32(TCGContext *s, TCGReg reg, const char *name);
 TCGv_i64 tcg_global_reg_new_i64(TCGContext *s, TCGReg reg, const char *name);
 
-TCGv_i32 tcg_temp_new_internal_i32(TCGContext *s, int temp_local);
-TCGv_i64 tcg_temp_new_internal_i64(TCGContext *s, int temp_local);
+TCGTemp *tcg_temp_new_internal(TCGContext *s, TCGType, bool);
+void tcg_temp_free_internal(TCGContext *s, TCGTemp *);
 TCGv_vec tcg_temp_new_vec(TCGContext *s, TCGType type);
 TCGv_vec tcg_temp_new_vec_matching(TCGContext *s, TCGv_vec match);
 
-void tcg_temp_free_i32(TCGContext *s, TCGv_i32 arg);
-void tcg_temp_free_i64(TCGContext *s, TCGv_i64 arg);
-void tcg_temp_free_vec(TCGContext *s, TCGv_vec arg);
+static inline void tcg_temp_free_i32(TCGContext *s, TCGv_i32 arg)
+{
+    tcg_temp_free_internal(s, tcgv_i32_temp(s, arg));
+}
+
+static inline void tcg_temp_free_i64(TCGContext *s, TCGv_i64 arg)
+{
+    tcg_temp_free_internal(s, tcgv_i64_temp(s, arg));
+}
+
+static inline void tcg_temp_free_ptr(TCGContext *s, TCGv_ptr arg)
+{
+    tcg_temp_free_internal(s, tcgv_ptr_temp(s, arg));
+}
+
+static inline void tcg_temp_free_vec(TCGContext *s, TCGv_vec arg)
+{
+    tcg_temp_free_internal(s, tcgv_vec_temp(s, arg));
+}
 
 static inline TCGv_i32 tcg_global_mem_new_i32(TCGContext *s, TCGv_ptr reg,
                                               intptr_t offset, const char *name)
@@ -1082,12 +1098,14 @@ static inline TCGv_i32 tcg_global_mem_new_i32(TCGContext *s, TCGv_ptr reg,
 
 static inline TCGv_i32 tcg_temp_new_i32(TCGContext *s)
 {
-    return tcg_temp_new_internal_i32(s, 0);
+    TCGTemp *t = tcg_temp_new_internal(s, TCG_TYPE_I32, false);
+    return temp_tcgv_i32(s, t);
 }
 
 static inline TCGv_i32 tcg_temp_local_new_i32(TCGContext *s)
 {
-    return tcg_temp_new_internal_i32(s, 1);
+    TCGTemp *t = tcg_temp_new_internal(s, TCG_TYPE_I32, true);
+    return temp_tcgv_i32(s, t);
 }
 
 static inline TCGv_i64 tcg_global_mem_new_i64(TCGContext *s, TCGv_ptr reg,
@@ -1099,12 +1117,33 @@ static inline TCGv_i64 tcg_global_mem_new_i64(TCGContext *s, TCGv_ptr reg,
 
 static inline TCGv_i64 tcg_temp_new_i64(TCGContext *s)
 {
-    return tcg_temp_new_internal_i64(s, 0);
+    TCGTemp *t = tcg_temp_new_internal(s, TCG_TYPE_I64, false);
+    return temp_tcgv_i64(s, t);
 }
 
 static inline TCGv_i64 tcg_temp_local_new_i64(TCGContext *s)
 {
-    return tcg_temp_new_internal_i64(s, 1);
+    TCGTemp *t = tcg_temp_new_internal(s, TCG_TYPE_I64, true);
+    return temp_tcgv_i64(s, t);
+}
+
+static inline TCGv_ptr tcg_global_mem_new_ptr(TCGContext *s, TCGv_ptr reg, intptr_t offset,
+                                              const char *name)
+{
+    TCGTemp *t = tcg_global_mem_new_internal(s, TCG_TYPE_PTR, reg, offset, name);
+    return temp_tcgv_ptr(s, t);
+}
+
+static inline TCGv_ptr tcg_temp_new_ptr(TCGContext* s)
+{
+    TCGTemp *t = tcg_temp_new_internal(s, TCG_TYPE_PTR, false);
+    return temp_tcgv_ptr(s, t);
+}
+
+static inline TCGv_ptr tcg_temp_local_new_ptr(TCGContext *s)
+{
+    TCGTemp *t = tcg_temp_new_internal(s, TCG_TYPE_PTR, true);
+    return temp_tcgv_ptr(s, t);
 }
 
 // UNICORN: Added
@@ -1121,30 +1160,6 @@ do {\
     fprintf(stderr, "%s:%d: tcg fatal error\n", __FILE__, __LINE__);\
     abort();\
 } while (0)
-
-#if UINTPTR_MAX == UINT32_MAX
-static inline TCGv_ptr TCGV_NAT_TO_PTR(TCGv_i32 n) { return (TCGv_ptr)n; }
-static inline TCGv_i32 TCGV_PTR_TO_NAT(TCGv_ptr n) { return (TCGv_i32)n; }
-
-#define tcg_const_ptr(t, V) TCGV_NAT_TO_PTR(tcg_const_i32(t, (intptr_t)(V)))
-#define tcg_global_reg_new_ptr(U, R, N) \
-    TCGV_NAT_TO_PTR(tcg_global_reg_new_i32(U, (R), (N)))
-#define tcg_global_mem_new_ptr(t, R, O, N) \
-    TCGV_NAT_TO_PTR(tcg_global_mem_new_i32(t, (R), (O), (N)))
-#define tcg_temp_new_ptr(s) TCGV_NAT_TO_PTR(tcg_temp_new_i32(s))
-#define tcg_temp_free_ptr(s, T) tcg_temp_free_i32(s, TCGV_PTR_TO_NAT(T))
-#else
-static inline TCGv_ptr TCGV_NAT_TO_PTR(TCGv_i64 n) { return (TCGv_ptr)n; }
-static inline TCGv_i64 TCGV_PTR_TO_NAT(TCGv_ptr n) { return (TCGv_i64)n; }
-
-#define tcg_const_ptr(t, V) TCGV_NAT_TO_PTR(tcg_const_i64(t, (intptr_t)(V)))
-#define tcg_global_reg_new_ptr(U, R, N) \
-    TCGV_NAT_TO_PTR(tcg_global_reg_new_i64(U, (R), (N)))
-#define tcg_global_mem_new_ptr(t, R, O, N) \
-    TCGV_NAT_TO_PTR(tcg_global_mem_new_i64(t, (R), (O), (N)))
-#define tcg_temp_new_ptr(s) TCGV_NAT_TO_PTR(tcg_temp_new_i64(s))
-#define tcg_temp_free_ptr(s, T) tcg_temp_free_i64(s, TCGV_PTR_TO_NAT(T))
-#endif
 
 bool tcg_op_supported(TCGOpcode op);
 
@@ -1186,6 +1201,16 @@ TCGv_vec tcg_const_zeros_vec(TCGContext *s, TCGType);
 TCGv_vec tcg_const_ones_vec(TCGContext *s, TCGType);
 TCGv_vec tcg_const_zeros_vec_matching(TCGContext *s, TCGv_vec);
 TCGv_vec tcg_const_ones_vec_matching(TCGContext *s, TCGv_vec);
+
+#if UINTPTR_MAX == UINT32_MAX
+# define tcg_const_ptr(t, x)             ((TCGv_ptr)tcg_const_i32((t), (intptr_t)(x)))
+# define tcg_const_local_ptr(t, x)       ((TCGv_ptr)tcg_const_local_i32((t), (intptr_t)(x)))
+# define tcg_global_reg_new_ptr(U, R, N) ((TCGv_ptr)tcg_global_reg_new_i32((U), (R), (N)))
+#else
+# define tcg_const_ptr(t, x)             ((TCGv_ptr)tcg_const_i64((t), (intptr_t)(x)))
+# define tcg_const_local_ptr(t, x)       ((TCGv_ptr)tcg_const_local_i64((t), (intptr_t)(x)))
+# define tcg_global_reg_new_ptr(U, R, N) ((TCGv_ptr)tcg_global_reg_new_i64((U), (R), (N)))
+#endif
 
 TCGLabel *gen_new_label(TCGContext* s);
 

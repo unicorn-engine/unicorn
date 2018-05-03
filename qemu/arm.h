@@ -2895,17 +2895,12 @@
 #define tcg_target_reg_alloc_order tcg_target_reg_alloc_order_arm
 #define tcg_tb_alloc tcg_tb_alloc_arm
 #define tcg_temp_alloc tcg_temp_alloc_arm
-#define tcg_temp_free_i32 tcg_temp_free_i32_arm
-#define tcg_temp_free_i64 tcg_temp_free_i64_arm
-#define tcg_temp_free_vec tcg_temp_free_vec_arm
 #define tcg_temp_free_internal tcg_temp_free_internal_arm
 #define tcg_temp_local_new_i32 tcg_temp_local_new_i32_arm
 #define tcg_temp_local_new_i64 tcg_temp_local_new_i64_arm
 #define tcg_temp_new_i32 tcg_temp_new_i32_arm
 #define tcg_temp_new_i64 tcg_temp_new_i64_arm
 #define tcg_temp_new_internal tcg_temp_new_internal_arm
-#define tcg_temp_new_internal_i32 tcg_temp_new_internal_i32_arm
-#define tcg_temp_new_internal_i64 tcg_temp_new_internal_i64_arm
 #define tcg_temp_new_vec tcg_temp_new_vec_arm
 #define tcg_temp_new_vec_matching tcg_temp_new_vec_matching_arm
 #define tdb_hash tdb_hash_arm

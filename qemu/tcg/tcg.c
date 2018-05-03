@@ -640,7 +640,7 @@ TCGTemp *tcg_global_mem_new_internal(TCGContext *s, TCGType type, TCGv_ptr base,
     return ts;
 }
 
-static TCGTemp *tcg_temp_new_internal(TCGContext *s, TCGType type, int temp_local)
+TCGTemp *tcg_temp_new_internal(TCGContext *s, TCGType type, bool temp_local)
 {
     TCGTemp *ts;
     int idx, k;
@@ -684,18 +684,6 @@ static TCGTemp *tcg_temp_new_internal(TCGContext *s, TCGType type, int temp_loca
     return ts;
 }
 
-TCGv_i32 tcg_temp_new_internal_i32(TCGContext *s, int temp_local)
-{
-    TCGTemp *t = tcg_temp_new_internal(s, TCG_TYPE_I32, temp_local);
-    return temp_tcgv_i32(s, t);
-}
-
-TCGv_i64 tcg_temp_new_internal_i64(TCGContext *s, int temp_local)
-{
-    TCGTemp *t = tcg_temp_new_internal(s, TCG_TYPE_I64, temp_local);
-    return temp_tcgv_i64(s, t);
-}
-
 TCGv_vec tcg_temp_new_vec(TCGContext *s, TCGType type)
 {
     TCGTemp *t;
@@ -731,7 +719,7 @@ TCGv_vec tcg_temp_new_vec_matching(TCGContext *s, TCGv_vec match)
     return temp_tcgv_vec(s, t);
 }
 
-static void tcg_temp_free_internal(TCGContext *s, TCGTemp *ts)
+void tcg_temp_free_internal(TCGContext *s, TCGTemp *ts)
 {
     int k, idx;
 
@@ -749,21 +737,6 @@ static void tcg_temp_free_internal(TCGContext *s, TCGTemp *ts)
     idx = temp_idx(s, ts);
     k = ts->base_type + (ts->temp_local ? TCG_TYPE_COUNT : 0);
     set_bit(idx, s->free_temps[k].l);
-}
-
-void tcg_temp_free_i32(TCGContext *s, TCGv_i32 arg)
-{
-    tcg_temp_free_internal(s, tcgv_i32_temp(s, arg));
-}
-
-void tcg_temp_free_i64(TCGContext *s, TCGv_i64 arg)
-{
-    tcg_temp_free_internal(s, tcgv_i64_temp(s, arg));
-}
-
-void tcg_temp_free_vec(TCGContext *s, TCGv_vec arg)
-{
-    tcg_temp_free_internal(s, tcgv_vec_temp(s, arg));
 }
 
 TCGv_i32 tcg_const_i32(TCGContext *s, int32_t val)
