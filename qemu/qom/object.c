@@ -1001,7 +1001,7 @@ void object_property_set_str(struct uc_struct *uc, Object *obj, const char *valu
     QString *qstr = qstring_from_str(value);
     object_property_set_qobject(uc, obj, QOBJECT(qstr), name, errp);
 
-    QDECREF(qstr);
+    qobject_unref(qstr);
 }
 
 char *object_property_get_str(struct uc_struct *uc, Object *obj, const char *name,
@@ -1019,7 +1019,7 @@ char *object_property_get_str(struct uc_struct *uc, Object *obj, const char *nam
         error_setg(errp, QERR_INVALID_PARAMETER_TYPE, name, "string");
     }
 
-    qobject_decref(ret);
+    qobject_unref(ret);
     return retval;
 }
 
@@ -1059,7 +1059,7 @@ void object_property_set_bool(struct uc_struct *uc, Object *obj, bool value,
     QBool *qbool = qbool_from_bool(value);
     object_property_set_qobject(uc, obj, QOBJECT(qbool), name, errp);
 
-    QDECREF(qbool);
+    qobject_unref(qbool);
 }
 
 bool object_property_get_bool(struct uc_struct *uc, Object *obj, const char *name,
@@ -1080,7 +1080,7 @@ bool object_property_get_bool(struct uc_struct *uc, Object *obj, const char *nam
         retval = qbool_get_bool(qbool);
     }
 
-    qobject_decref(ret);
+    qobject_unref(ret);
     return retval;
 }
 
@@ -1090,7 +1090,7 @@ void object_property_set_int(struct uc_struct *uc, Object *obj, int64_t value,
     QNum *qnum = qnum_from_int(value);
     object_property_set_qobject(uc, obj, QOBJECT(qnum), name, errp);
 
-    QDECREF(qnum);
+    qobject_unref(qnum);
 }
 
 int64_t object_property_get_int(struct uc_struct *uc, Object *obj, const char *name,
@@ -1110,7 +1110,7 @@ int64_t object_property_get_int(struct uc_struct *uc, Object *obj, const char *n
         retval = -1;
     }
 
-    qobject_decref(ret);
+    qobject_unref(ret);
     return retval;
 }
 
@@ -1120,7 +1120,7 @@ void object_property_set_uint(struct uc_struct *uc, Object *obj, uint64_t value,
     QNum *qnum = qnum_from_uint(value);
 
     object_property_set_qobject(uc, obj, QOBJECT(qnum), name, errp);
-    QDECREF(qnum);
+    qobject_unref(qnum);
 }
 
 uint64_t object_property_get_uint(struct uc_struct *uc, Object *obj,
@@ -1139,7 +1139,7 @@ uint64_t object_property_get_uint(struct uc_struct *uc, Object *obj,
         retval = 0;
     }
 
-    qobject_decref(ret);
+    qobject_unref(ret);
     return retval;
 }
 

@@ -123,7 +123,7 @@ void qdict_put_obj(QDict *qdict, const char *key, QObject *value)
     entry = qdict_find(qdict, key, bucket);
     if (entry) {
         /* replace key's value */
-        qobject_decref(entry->value);
+        qobject_unref(entry->value);
         entry->value = value;
     } else {
         /* allocate a new entry */
@@ -373,7 +373,7 @@ QDict *qdict_clone_shallow(const QDict *src)
 
     for (i = 0; i < QDICT_BUCKET_MAX; i++) {
         QLIST_FOREACH(entry, &src->table[i], next) {
-            qobject_incref(entry->value);
+            qobject_ref(entry->value);
             qdict_put_obj(dest, entry->key, entry->value);
         }
     }
@@ -390,7 +390,7 @@ static void qentry_destroy(QDictEntry *e)
     assert(e->key != NULL);
     assert(e->value != NULL);
 
-    qobject_decref(e->value);
+    qobject_unref(e->value);
     g_free(e->key);
     g_free(e);
 }
@@ -493,7 +493,7 @@ static void qdict_flatten_qlist(QList *qlist, QDict *target, const char *prefix)
             qdict_flatten_qlist(qobject_to(QList, value), target, new_key);
         } else {
             /* All other types are moved to the target unchanged. */
-            qobject_incref(value);
+            qobject_ref(value);
             qdict_put_obj(target, new_key, value);
         }
 
@@ -533,7 +533,7 @@ static void qdict_flatten_qdict(QDict *qdict, QDict *target, const char *prefix)
             delete = true;
         } else if (prefix) {
             /* All other objects are moved to the target unchanged. */
-            qobject_incref(value);
+            qobject_ref(value);
             qdict_put_obj(target, new_key, value);
             delete = true;
         }
@@ -576,7 +576,7 @@ bool qdict_rename_keys(QDict *qdict, const QDictRenames *renames, Error **errp)
             }
 
             qobj = qdict_get(qdict, renames->from);
-            qobject_incref(qobj);
+            qobject_ref(qobj);
             qdict_put_obj(qdict, renames->to, qobj);
             qdict_del(qdict, renames->from);
         }
@@ -611,7 +611,7 @@ void qdict_extract_subqdict(QDict *src, QDict **dst, const char *start)
     while (entry != NULL) {
         next = qdict_next(src, entry);
         if (strstart(entry->key, start, &p)) {
-            qobject_incref(entry->value);
+            qobject_ref(entry->value);
             qdict_put_obj(*dst, p, entry->value);
             qdict_del(src, entry->key);
         }
@@ -680,7 +680,7 @@ void qdict_array_split(QDict *src, QList **dst)
             qdict_extract_subqdict(src, &subqdict, prefix);
             assert(qdict_size(subqdict) > 0);
         } else {
-            qobject_incref(subqobj);
+            qobject_ref(subqobj);
             qdict_del(src, indexstr);
         }
 
@@ -890,7 +890,7 @@ QObject *qdict_crumple(const QDict *src, Error **errp)
                 qdict_put_obj(two_level, prefix, QOBJECT(child_dict));
             }
 
-            qobject_incref(ent->value);
+            qobject_ref(ent->value);
             qdict_put_obj(child_dict, suffix, ent->value);
         } else {
             if (child) {
@@ -898,7 +898,7 @@ QObject *qdict_crumple(const QDict *src, Error **errp)
                            prefix);
                 goto error;
             }
-            qobject_incref(ent->value);
+            qobject_ref(ent->value);
             qdict_put_obj(two_level, prefix, ent->value);
         }
 
@@ -921,11 +921,11 @@ QObject *qdict_crumple(const QDict *src, Error **errp)
 
             qdict_put_obj(multi_level, ent->key, child);
         } else {
-            qobject_incref(ent->value);
+            qobject_ref(ent->value);
             qdict_put_obj(multi_level, ent->key, ent->value);
         }
     }
-    QDECREF(two_level);
+    qobject_unref(two_level);
     two_level = NULL;
 
     /* Step 3: detect if we need to turn our dict into list */
@@ -948,10 +948,10 @@ QObject *qdict_crumple(const QDict *src, Error **errp)
                 goto error;
             }
 
-            qobject_incref(child);
+            qobject_ref(child);
             qlist_append_obj(qobject_to(QList, dst), child);
         }
-        QDECREF(multi_level);
+        qobject_unref(multi_level);
         multi_level = NULL;
     } else {
         dst = QOBJECT(multi_level);
@@ -961,9 +961,9 @@ QObject *qdict_crumple(const QDict *src, Error **errp)
 
  error:
     g_free(prefix);
-    QDECREF(multi_level);
-    QDECREF(two_level);
-    qobject_decref(dst);
+    qobject_unref(multi_level);
+    qobject_unref(two_level);
+    qobject_unref(dst);
     return NULL;
 }
 
@@ -990,7 +990,7 @@ void qdict_join(QDict *dest, QDict *src, bool overwrite)
         next = qdict_next(src, entry);
 
         if (overwrite || !qdict_haskey(dest, entry->key)) {
-            qobject_incref(entry->value);
+            qobject_ref(entry->value);
             qdict_put_obj(dest, entry->key, entry->value);
             qdict_del(src, entry->key);
         }
