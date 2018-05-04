@@ -22,7 +22,7 @@ typedef struct QListEntry {
 } QListEntry;
 
 struct QList {
-    QObject_HEAD;
+    struct QObjectBase_ base;
     QTAILQ_HEAD(,QListEntry) head;
 };
 

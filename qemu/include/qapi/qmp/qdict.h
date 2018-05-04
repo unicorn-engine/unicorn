@@ -26,7 +26,7 @@ typedef struct QDictEntry {
 } QDictEntry;
 
 struct QDict {
-    QObject_HEAD;
+    struct QObjectBase_ base;
     size_t size;
     QLIST_HEAD(,QDictEntry) table[QDICT_BUCKET_MAX];
 };

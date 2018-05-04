@@ -18,7 +18,7 @@
 #include "qapi/qmp/qobject.h"
 
 struct QBool {
-    QObject_HEAD;
+    struct QObjectBase_ base;
     bool value;
 };
 
