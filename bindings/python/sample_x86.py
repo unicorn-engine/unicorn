@@ -29,8 +29,8 @@ def hook_block(uc, address, size, user_data):
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
-    eip = uc.reg_read(UC_X86_REG_EFLAGS)
-    print(">>> --- EFLAGS is 0x%x" %(eip))
+    eflags = uc.reg_read(UC_X86_REG_EFLAGS)
+    print(">>> --- EFLAGS is 0x%x" %eflags)
 
 def hook_code64(uc, address, size, user_data):
     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
