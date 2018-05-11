@@ -5921,141 +5921,101 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
     }
 }
 
-void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
+static void sparc_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
 {
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
     CPUSPARCState *env = cs->env_ptr;
-    DisasContext dc1, *dc = &dc1;
-    int max_insns;
-    unsigned int insn;
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    bool block_full = false;
+    int bound;
 
-    memset(dc, 0, sizeof(DisasContext));
-    dc->base.tb = tb;
-    dc->base.pc_first = tb->pc;
-    dc->base.pc_next = tb->pc;
-    dc->base.is_jmp = DISAS_NEXT;
-    dc->base.num_insns = 0;
-    dc->base.singlestep_enabled = cs->singlestep_enabled;
-
-    dc->uc = env->uc;
     dc->pc = dc->base.pc_first;
-    dc->npc = (target_ulong) tb->cs_base;
+    dc->npc = (target_ulong)dc->base.tb->cs_base;
     dc->cc_op = CC_OP_DYNAMIC;
-    dc->mem_idx = tb->flags & TB_FLAG_MMU_MASK;
+    dc->mem_idx = dc->base.tb->flags & TB_FLAG_MMU_MASK;
     dc->def = &env->def;
-    dc->fpu_enabled = tb_fpu_enabled(tb->flags);
-    dc->address_mask_32bit = tb_am_enabled(tb->flags);
+    dc->fpu_enabled = tb_fpu_enabled(dc->base.tb->flags);
+    dc->address_mask_32bit = tb_am_enabled(dc->base.tb->flags);
 #ifndef CONFIG_USER_ONLY
-    dc->supervisor = (tb->flags & TB_FLAG_SUPER) != 0;
+    dc->supervisor = (dc->base.tb->flags & TB_FLAG_SUPER) != 0;
 #endif
 #ifdef TARGET_SPARC64
     dc->fprs_dirty = 0;
-    dc->asi = (tb->flags >> TB_FLAG_ASI_SHIFT) & 0xff;
+    dc->asi = (dc->base.tb->flags >> TB_FLAG_ASI_SHIFT) & 0xff;
 #ifndef CONFIG_USER_ONLY
-    dc->hypervisor = (tb->flags & TB_FLAG_HYPER) != 0;
+    dc->hypervisor = (dc->base.tb->flags & TB_FLAG_HYPER) != 0;
 #endif
 #endif
+    /*
+     * if we reach a page boundary, we stop generation so that the
+     * PC of a TT_TFAULT exception is always in the right page
+     */
+    bound = -(dc->base.pc_first | TARGET_PAGE_MASK) / 4;
+    dc->base.max_insns = MIN(dc->base.max_insns, bound);
+}
 
-    // early check to see if the address of this block is the until address
-    if (dc->base.pc_first == env->uc->addr_end) {
-        gen_tb_start(tcg_ctx, tb);
-        gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
-        goto done_generating;
-    }
+static void sparc_tr_tb_start(DisasContextBase *db, CPUState *cs)
+{
+}
 
-    max_insns = tb->cflags & CF_COUNT_MASK;
-    if (max_insns == 0) {
-        max_insns = CF_COUNT_MASK;
-    }
-    if (max_insns > TCG_MAX_INSNS) {
-        max_insns = TCG_MAX_INSNS;
-    }
-    if (dc->base.singlestep_enabled) {
-        max_insns = 1;
-    }
+static void sparc_tr_insn_start(DisasContextBase *dcbase, CPUState *cs)
+{
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
-    // Unicorn: early check to see if the address of this block is the until address
-    if (tb->pc == env->uc->addr_end) {
-        gen_tb_start(tcg_ctx, tb);
+    if (dc->npc & JUMP_PC) {
+        assert(dc->jump_pc[1] == dc->pc + 4);
+        tcg_gen_insn_start(tcg_ctx, dc->pc, dc->jump_pc[0] | JUMP_PC);
+    } else {
+        tcg_gen_insn_start(tcg_ctx, dc->pc, dc->npc);
+    }
+}
+
+static bool sparc_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cs,
+                                      const CPUBreakpoint *bp)
+{
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+
+    if (dc->pc != dc->base.pc_first) {
+        save_state(dc);
+    }
+    gen_helper_debug(tcg_ctx, tcg_ctx->cpu_env);
+    tcg_gen_exit_tb(tcg_ctx, 0);
+    dc->base.is_jmp = DISAS_NORETURN;
+    /* update pc_next so that the current instruction is included in tb->size */
+    dc->base.pc_next += 4;
+    return true;
+}
+
+static void sparc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
+{
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+    CPUSPARCState *env = cs->env_ptr;
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
+    unsigned int insn;
+
+    if (dc->pc == dc->uc->addr_end) {
         save_state(dc);
         gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
-        goto done_generating;
+        return;
     }
 
-    // Unicorn: FIXME: Amend to work with new TCG API
-    // Unicorn: trace this block on request
-    // Only hook this block if it is not broken from previous translation due to
-    // full translation cache
-#if 0
-    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, pc_start)) {
-        // save block address to see if we need to patch block size later
-        env->uc->block_addr = pc_start;
-        env->uc->size_arg = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
-        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, pc_start);
+    insn = cpu_ldl_code(env, dc->pc);
+    dc->base.pc_next += 4;
+    disas_sparc_insn(dc, insn, false);
+
+    if (dc->base.is_jmp == DISAS_NORETURN) {
+        return;
     }
-#endif
+    if (dc->pc != dc->base.pc_next) {
+        dc->base.is_jmp = DISAS_TOO_MANY;
+    }
+}
 
-    gen_tb_start(tcg_ctx, tb);
-    do {
-        if (dc->npc & JUMP_PC) {
-            assert(dc->jump_pc[1] == dc->pc + 4);
-            tcg_gen_insn_start(tcg_ctx, dc->pc, dc->jump_pc[0] | JUMP_PC);
-        } else {
-            tcg_gen_insn_start(tcg_ctx, dc->pc, dc->npc);
-        }
-        dc->base.num_insns++;
+static void sparc_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
+{
+    DisasContext *dc = container_of(dcbase, DisasContext, base);
+    TCGContext *tcg_ctx = dc->uc->tcg_ctx;
 
-        if (unlikely(cpu_breakpoint_test(cs, dc->base.pc_next, BP_ANY))) {
-            if (dc->pc != dc->base.pc_first) {
-                save_state(dc);
-            }
-            gen_helper_debug(tcg_ctx, tcg_ctx->cpu_env);
-            tcg_gen_exit_tb(tcg_ctx, 0);
-            dc->base.is_jmp = DISAS_NORETURN;
-            dc->base.pc_next += 4;
-            goto exit_gen_loop;
-        }
-
-        //if (dc->base.num_insns == max_insns && (tb_cflags(tb) & CF_LAST_IO)) {
-        //    gen_io_start();
-        //}
-
-        // Unicorn: end address tells us to stop emulation
-        if (dc->pc == dc->uc->addr_end) {
-            save_state(dc);
-            gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
-            break;
-        } else {
-            insn = cpu_ldl_code(env, dc->pc);
-            dc->base.pc_next += 4;
-        }
-
-        disas_sparc_insn(dc, insn, true);
-
-        if (dc->base.is_jmp == DISAS_NORETURN) {
-            break;
-        }
-        /* if the next PC is different, we abort now */
-        if (dc->pc != dc->base.pc_next) {
-            break;
-        }
-        /* if we reach a page boundary, we stop generation so that the
-           PC of a TT_TFAULT exception is always in the right page */
-        if ((dc->pc & (TARGET_PAGE_SIZE - 1)) == 0)
-            break;
-    } while (!tcg_op_buf_full(tcg_ctx) &&
-             (dc->pc - dc->base.pc_first) < (TARGET_PAGE_SIZE - 32) &&
-             dc->base.num_insns < max_insns);
-
-    /* if too long translation, save this info */
-    if (tcg_op_buf_full(tcg_ctx) || dc->base.num_insns >= max_insns)
-        block_full = true;
-
- exit_gen_loop:
-    //if (tb->cflags & CF_LAST_IO) {
-    //    gen_io_end();
-    //}
     if (dc->base.is_jmp != DISAS_NORETURN) {
         if (dc->pc != DYNAMIC_PC &&
             (dc->npc != DYNAMIC_PC && dc->npc != JUMP_PC)) {
@@ -6069,14 +6029,27 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
             tcg_gen_exit_tb(tcg_ctx, 0);
         }
     }
+}
 
-done_generating:
-    gen_tb_end(tcg_ctx, tb, dc->base.num_insns);
+static void sparc_tr_disas_log(const DisasContextBase *dcbase, CPUState *cpu)
+{
+}
 
-    tb->size = dc->base.pc_next - dc->base.pc_first;
-    tb->icount = dc->base.num_insns;
+static const TranslatorOps sparc_tr_ops = {
+    sparc_tr_init_disas_context,
+    sparc_tr_tb_start,
+    sparc_tr_insn_start,
+    sparc_tr_breakpoint_check,
+    sparc_tr_translate_insn,
+    sparc_tr_tb_stop,
+    sparc_tr_disas_log,
+};
 
-    env->uc->block_full = block_full;
+void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
+{
+    DisasContext dc = {{0}};
+
+    translator_loop(&sparc_tr_ops, &dc.base, cs, tb);
 }
 
 void sparc_tcg_init(struct uc_struct *uc)
