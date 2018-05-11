@@ -33,6 +33,8 @@
 
 #include "exec/gen-icount.h"
 
+#include "exec/translator.h"
+
 #define MIPS_DEBUG_DISAS 0
 
 /* MIPS major opcodes */
@@ -1424,7 +1426,7 @@ typedef struct DisasContext {
     int mem_idx;
     TCGMemOp default_tcg_memop_mask;
     uint32_t hflags, saved_hflags;
-    int bstate;
+    DisasJumpType is_jmp;
     target_ulong btarget;
     bool ulri;
     int kscrexist;
@@ -1447,13 +1449,8 @@ typedef struct DisasContext {
     struct uc_struct *uc;
 } DisasContext;
 
-enum {
-    BS_NONE     = 0, /* We go out of the TB without reaching a branch or an
-                      * exception condition */
-    BS_STOP     = 1, /* We want to stop translation for any reason */
-    BS_BRANCH   = 2, /* We reached a branch condition     */
-    BS_EXCP     = 3, /* We reached an exception condition */
-};
+#define DISAS_STOP       DISAS_TARGET_0
+#define DISAS_EXIT       DISAS_TARGET_1
 
 static const char * const regnames[] = {
     "r0", "at", "v0", "v1", "a0", "a1", "a2", "a3",
@@ -1634,7 +1631,7 @@ static inline void generate_exception_err(DisasContext *ctx, int excp, int err)
     gen_helper_raise_exception_err(tcg_ctx, tcg_ctx->cpu_env, texcp, terr);
     tcg_temp_free_i32(tcg_ctx, terr);
     tcg_temp_free_i32(tcg_ctx, texcp);
-    ctx->bstate = BS_EXCP;
+    ctx->is_jmp = DISAS_NORETURN;
 }
 
 static inline void generate_exception(DisasContext *ctx, int excp)
@@ -5410,10 +5407,10 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             //    gen_io_end();
             //}
             /* Break the TB to be able to take timer interrupts immediately
-               after reading count. BS_STOP isn't sufficient, we need to ensure
-               we break completely out of translated code.  */
+               after reading count. DISAS_STOP isn't sufficient, we need to
+               ensure we break completely out of translated code.  */
             gen_save_pc(ctx, ctx->pc + 4);
-            ctx->bstate = BS_EXCP;
+            ctx->is_jmp = DISAS_EXIT;
             rn = "Count";
             break;
         /* 6,7 are implementation dependent */
@@ -5983,7 +5980,7 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             check_insn(ctx, ISA_MIPS32R2);
             gen_helper_mtc0_pagegrain(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "PageGrain";
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         case 2:
             CP0_CHECK(ctx->sc);
@@ -6044,7 +6041,7 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 0:
             check_insn(ctx, ISA_MIPS32R2);
             gen_helper_mtc0_hwrena(tcg_ctx, tcg_ctx->cpu_env, arg);
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "HWREna";
             break;
         default:
@@ -6106,30 +6103,30 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 0:
             save_cpu_state(ctx, 1);
             gen_helper_mtc0_status(tcg_ctx, tcg_ctx->cpu_env, arg);
-            /* BS_STOP isn't good enough here, hflags may have changed. */
+            /* DISAS_STOP isn't good enough here, hflags may have changed. */
             gen_save_pc(ctx, ctx->pc + 4);
-            ctx->bstate = BS_EXCP;
+            ctx->is_jmp = DISAS_EXIT;
             rn = "Status";
             break;
         case 1:
             check_insn(ctx, ISA_MIPS32R2);
             gen_helper_mtc0_intctl(tcg_ctx, tcg_ctx->cpu_env, arg);
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "IntCtl";
             break;
         case 2:
             check_insn(ctx, ISA_MIPS32R2);
             gen_helper_mtc0_srsctl(tcg_ctx, tcg_ctx->cpu_env, arg);
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "SRSCtl";
             break;
         case 3:
             check_insn(ctx, ISA_MIPS32R2);
             gen_mtc0_store32(ctx, arg, offsetof(CPUMIPSState, CP0_SRSMap));
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "SRSMap";
             break;
         default:
@@ -6141,11 +6138,11 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 0:
             save_cpu_state(ctx, 1);
             gen_helper_mtc0_cause(tcg_ctx, tcg_ctx->cpu_env, arg);
-            /* Stop translation as we may have triggered an interrupt. BS_STOP
-             * isn't sufficient, we need to ensure we break out of translated
-             * code to check for pending interrupts.  */
+            /* Stop translation as we may have triggered an interrupt.
+             * DISAS_STOP isn't sufficient, we need to ensure we break out of
+             * translated code to check for pending interrupts.  */
             gen_save_pc(ctx, ctx->pc + 4);
-            ctx->bstate = BS_EXCP;
+            ctx->is_jmp = DISAS_EXIT;
             rn = "Cause";
             break;
         default:
@@ -6183,7 +6180,7 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_helper_mtc0_config0(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         case 1:
             /* ignored, read only */
@@ -6193,24 +6190,24 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_helper_mtc0_config2(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config2";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         case 3:
             gen_helper_mtc0_config3(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config3";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         case 4:
             gen_helper_mtc0_config4(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config4";
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         case 5:
             gen_helper_mtc0_config5(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config5";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         /* 6,7 are implementation dependent */
         case 6:
@@ -6299,35 +6296,35 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         switch (sel) {
         case 0:
             gen_helper_mtc0_debug(tcg_ctx, tcg_ctx->cpu_env, arg); /* EJTAG support */
-            /* BS_STOP isn't good enough here, hflags may have changed. */
+            /* DISAS_STOP isn't good enough here, hflags may have changed. */
             gen_save_pc(ctx, ctx->pc + 4);
-            ctx->bstate = BS_EXCP;
+            ctx->is_jmp = DISAS_EXIT;
             rn = "Debug";
             break;
         case 1:
 //            gen_helper_mtc0_tracecontrol(tcg_ctx->cpu_env, arg); /* PDtrace support */
             rn = "TraceControl";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             goto cp0_unimplemented;
         case 2:
 //            gen_helper_mtc0_tracecontrol2(tcg_ctx->cpu_env, arg); /* PDtrace support */
             rn = "TraceControl2";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             goto cp0_unimplemented;
         case 3:
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
 //            gen_helper_mtc0_usertracedata(tcg_ctx->cpu_env, arg); /* PDtrace support */
             rn = "UserTraceData";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             goto cp0_unimplemented;
         case 4:
 //            gen_helper_mtc0_tracebpc(tcg_ctx->cpu_env, arg); /* PDtrace support */
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "TraceBPC";
             goto cp0_unimplemented;
         default:
@@ -6387,7 +6384,7 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         switch (sel) {
         case 0:
             gen_helper_mtc0_errctl(tcg_ctx, tcg_ctx->cpu_env, arg);
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "ErrCtl";
             break;
         default:
@@ -6483,7 +6480,7 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
     //    /* BS_STOP isn't sufficient, we need to ensure we break out of
     //     * translated code to check for pending interrupts.  */
     //    gen_save_pc(ctx, ctx->pc + 4);
-    //    ctx->bstate = BS_EXCP;
+    //    ctx->is_jmp = DISAS_EXIT;
     //}
     return;
 
@@ -6765,10 +6762,10 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             //    gen_io_end();
             //}
             /* Break the TB to be able to take timer interrupts immediately
-               after reading count. BS_STOP isn't sufficient, we need to ensure
-               we break completely out of translated code.  */
+               after reading count. DISAS_STOP isn't sufficient, we need to
+               ensure we break completely out of translated code.  */
             gen_save_pc(ctx, ctx->pc + 4);
-            ctx->bstate = BS_EXCP;
+            ctx->is_jmp = DISAS_EXIT;
             rn = "Count";
             break;
         /* 6,7 are implementation dependent */
@@ -7382,7 +7379,7 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 0:
             check_insn(ctx, ISA_MIPS32R2);
             gen_helper_mtc0_hwrena(tcg_ctx, tcg_ctx->cpu_env, arg);
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "HWREna";
             break;
         default:
@@ -7418,7 +7415,7 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             goto cp0_unimplemented;
         }
         /* Stop translation as we may have switched the execution mode */
-        ctx->bstate = BS_STOP;
+        ctx->is_jmp = DISAS_STOP;
         break;
     case 10:
         switch (sel) {
@@ -7441,7 +7438,7 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             goto cp0_unimplemented;
         }
         /* Stop translation as we may have switched the execution mode */
-        ctx->bstate = BS_STOP;
+        ctx->is_jmp = DISAS_STOP;
         break;
     case 12:
         switch (sel) {
@@ -7450,28 +7447,28 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_helper_mtc0_status(tcg_ctx, tcg_ctx->cpu_env, arg);
             /* BS_STOP isn't good enough here, hflags may have changed. */
             gen_save_pc(ctx, ctx->pc + 4);
-            ctx->bstate = BS_EXCP;
+            ctx->is_jmp = DISAS_EXIT;
             rn = "Status";
             break;
         case 1:
             check_insn(ctx, ISA_MIPS32R2);
             gen_helper_mtc0_intctl(tcg_ctx, tcg_ctx->cpu_env, arg);
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "IntCtl";
             break;
         case 2:
             check_insn(ctx, ISA_MIPS32R2);
             gen_helper_mtc0_srsctl(tcg_ctx, tcg_ctx->cpu_env, arg);
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "SRSCtl";
             break;
         case 3:
             check_insn(ctx, ISA_MIPS32R2);
             gen_mtc0_store32(ctx, arg, offsetof(CPUMIPSState, CP0_SRSMap));
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "SRSMap";
             break;
         default:
@@ -7483,11 +7480,11 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 0:
             save_cpu_state(ctx, 1);
             gen_helper_mtc0_cause(tcg_ctx, tcg_ctx->cpu_env, arg);
-            /* Stop translation as we may have triggered an intetrupt. BS_STOP
-             * isn't sufficient, we need to ensure we break out of translated
-             * code to check for pending interrupts.  */
+            /* Stop translation as we may have triggered an interrupt.
+             * DISAS_STOP isn't sufficient, we need to ensure we break out of
+             * translated code to check for pending interrupts.  */
             gen_save_pc(ctx, ctx->pc + 4);
-            ctx->bstate = BS_EXCP;
+            ctx->is_jmp = DISAS_EXIT;
             rn = "Cause";
             break;
         default:
@@ -7525,7 +7522,7 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_helper_mtc0_config0(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         case 1:
             /* ignored, read only */
@@ -7535,13 +7532,13 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_helper_mtc0_config2(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config2";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         case 3:
             gen_helper_mtc0_config3(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config3";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         case 4:
             /* currently ignored */
@@ -7551,7 +7548,7 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_helper_mtc0_config5(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "Config5";
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         /* 6,7 are implementation dependent */
         default:
@@ -7630,33 +7627,33 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         switch (sel) {
         case 0:
             gen_helper_mtc0_debug(tcg_ctx, tcg_ctx->cpu_env, arg); /* EJTAG support */
-            /* BS_STOP isn't good enough here, hflags may have changed. */
+            /* DISAS_STOP isn't good enough here, hflags may have changed. */
             gen_save_pc(ctx, ctx->pc + 4);
-            ctx->bstate = BS_EXCP;
+            ctx->is_jmp = DISAS_EXIT;
             rn = "Debug";
             break;
         case 1:
 //            gen_helper_mtc0_tracecontrol(tcg_ctx->cpu_env, arg); /* PDtrace support */
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "TraceControl";
             goto cp0_unimplemented;
         case 2:
 //            gen_helper_mtc0_tracecontrol2(tcg_ctx->cpu_env, arg); /* PDtrace support */
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "TraceControl2";
             goto cp0_unimplemented;
         case 3:
 //            gen_helper_mtc0_usertracedata(tcg_ctx->cpu_env, arg); /* PDtrace support */
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "UserTraceData";
             goto cp0_unimplemented;
         case 4:
 //            gen_helper_mtc0_tracebpc(tcg_ctx->cpu_env, arg); /* PDtrace support */
             /* Stop translation as we may have switched the execution mode */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "TraceBPC";
             goto cp0_unimplemented;
         default:
@@ -7716,7 +7713,7 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         switch (sel) {
         case 0:
             gen_helper_mtc0_errctl(tcg_ctx, tcg_ctx->cpu_env, arg);
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             rn = "ErrCtl";
             break;
         default:
@@ -7809,10 +7806,10 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
     /* For simplicity assume that all writes can cause interrupts.  */
     //if (ctx->tb->cflags & CF_USE_ICOUNT) {
     //    gen_io_end();
-    //    /* BS_STOP isn't sufficient, we need to ensure we break out of
+    //    /* DISAS_STOP isn't sufficient, we need to ensure we break out of
     //     * translated code to check for pending interrupts.  */
     //    gen_save_pc(ctx, ctx->pc + 4);
-    //    ctx->bstate = BS_EXCP;
+    //    ctx->is_jmp = DISAS_EXIT;
     //}
     return;
 
@@ -8225,7 +8222,7 @@ static void gen_mttr(CPUMIPSState *env, DisasContext *ctx, int rd, int rt,
             tcg_temp_free_i32(tcg_ctx, fs_tmp);
         }
         /* Stop translation as we may have changed hflags */
-        ctx->bstate = BS_STOP;
+        ctx->is_jmp = DISAS_STOP;
         break;
     /* COP2: Not implemented. */
     case 4:
@@ -8386,7 +8383,7 @@ static void gen_cp0 (CPUMIPSState *env, DisasContext *ctx, uint32_t opc, int rt,
                 check_insn(ctx, ISA_MIPS2);
                 gen_helper_eret(tcg_ctx, tcg_ctx->cpu_env);
             }
-            ctx->bstate = BS_EXCP;
+            ctx->is_jmp = DISAS_EXIT;
         }
         break;
     case OPC_DERET:
@@ -8401,7 +8398,7 @@ static void gen_cp0 (CPUMIPSState *env, DisasContext *ctx, uint32_t opc, int rt,
             generate_exception_end(ctx, EXCP_RI);
         } else {
             gen_helper_deret(tcg_ctx, tcg_ctx->cpu_env);
-            ctx->bstate = BS_EXCP;
+            ctx->is_jmp = DISAS_EXIT;
         }
         break;
     case OPC_WAIT:
@@ -8416,7 +8413,7 @@ static void gen_cp0 (CPUMIPSState *env, DisasContext *ctx, uint32_t opc, int rt,
         save_cpu_state(ctx, 1);
         ctx->pc -= 4;
         gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
-        ctx->bstate = BS_EXCP;
+        ctx->is_jmp = DISAS_NORETURN;
         break;
     default:
  die:
@@ -8844,7 +8841,7 @@ static void gen_cp1 (DisasContext *ctx, uint32_t opc, int rt, int fs)
             tcg_temp_free_i32(tcg_ctx, fs_tmp);
         }
         /* Stop translation as we may have changed hflags */
-        ctx->bstate = BS_STOP;
+        ctx->is_jmp = DISAS_STOP;
         break;
 #if defined(TARGET_MIPS64)
     case OPC_DMFC1:
@@ -10872,10 +10869,10 @@ static void gen_rdhwr(DisasContext *ctx, int rt, int rd, int sel)
 #endif
         gen_store_gpr(tcg_ctx, t0, rt);
         /* Break the TB to be able to take timer interrupts immediately
-           after reading count. BS_STOP isn't sufficient, we need to ensure
+           after reading count. DISAS_STOP isn't sufficient, we need to ensure
            we break completely out of translated code.  */
         gen_save_pc(ctx, ctx->pc + 4);
-        ctx->bstate = BS_EXCP;
+        ctx->is_jmp = DISAS_EXIT;
         break;
     case 3:
         gen_helper_rdhwr_ccres(tcg_ctx, t0, tcg_ctx->cpu_env);
@@ -10926,7 +10923,7 @@ static inline void clear_branch_hflags(DisasContext *ctx)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     ctx->hflags &= ~MIPS_HFLAG_BMASK;
-    if (ctx->bstate == BS_NONE) {
+    if (ctx->is_jmp == DISAS_NEXT) {
         save_cpu_state(ctx, 0);
     } else {
         /* it is not safe to save ctx->hflags as hflags may be changed
@@ -10942,7 +10939,7 @@ static void gen_branch(DisasContext *ctx, int insn_bytes)
         int proc_hflags = ctx->hflags & MIPS_HFLAG_BMASK;
         /* Branches completion */
         clear_branch_hflags(ctx);
-        ctx->bstate = BS_BRANCH;
+        ctx->is_jmp = DISAS_NORETURN;
         /* FIXME: Need to clear can_do_io.  */
         switch (proc_hflags & MIPS_HFLAG_BMASK_BASE) {
         case MIPS_HFLAG_FBNSLOT:
@@ -13695,7 +13692,7 @@ static void gen_pool32axf (CPUMIPSState *env, DisasContext *ctx, int rt, int rs)
                 gen_helper_di(tcg_ctx, t0, tcg_ctx->cpu_env);
                 gen_store_gpr(tcg_ctx, t0, rs);
                 /* Stop translation as we may have switched the execution mode */
-                ctx->bstate = BS_STOP;
+                ctx->is_jmp = DISAS_STOP;
                 tcg_temp_free(tcg_ctx, t0);
             }
             break;
@@ -13707,10 +13704,10 @@ static void gen_pool32axf (CPUMIPSState *env, DisasContext *ctx, int rt, int rs)
                 save_cpu_state(ctx, 1);
                 gen_helper_ei(tcg_ctx, t0, tcg_ctx->cpu_env);
                 gen_store_gpr(tcg_ctx, t0, rs);
-                /* BS_STOP isn't sufficient, we need to ensure we break out
+                /* DISAS_STOP isn't sufficient, we need to ensure we break out
                    of translated code to check for pending interrupts.  */
                 gen_save_pc(ctx, ctx->pc + 4);
-                ctx->bstate = BS_EXCP;
+                ctx->is_jmp = DISAS_EXIT;
                 tcg_temp_free(tcg_ctx, t0);
             }
             break;
@@ -14862,7 +14859,7 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
                 /* SYNCI */
                 /* Break the TB to be able to sync copied instructions
                    immediately */
-                ctx->bstate = BS_STOP;
+                ctx->is_jmp = DISAS_STOP;
             } else {
                 /* TNEI */
                 mips32_op = OPC_TNEI;
@@ -14893,7 +14890,7 @@ static void decode_micromips32_opc(CPUMIPSState *env, DisasContext *ctx)
             check_insn_opc_removed(ctx, ISA_MIPS32R6);
             /* Break the TB to be able to sync copied instructions
                immediately */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         case BC2F:
         case BC2T:
@@ -19772,7 +19769,7 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
             check_insn(ctx, ISA_MIPS32R2);
             /* Break the TB to be able to sync copied instructions
                immediately */
-            ctx->bstate = BS_STOP;
+            ctx->is_jmp = DISAS_STOP;
             break;
         case OPC_BPOSGE32:    /* MIPS DSP branch */
 #if defined(TARGET_MIPS64)
@@ -19875,17 +19872,17 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
                     gen_store_gpr(tcg_ctx, t0, rt);
                     /* Stop translation as we may have switched
                        the execution mode.  */
-                    ctx->bstate = BS_STOP;
+                    ctx->is_jmp = DISAS_STOP;
                     break;
                 case OPC_EI:
                     check_insn(ctx, ISA_MIPS32R2);
                     save_cpu_state(ctx, 1);
                     gen_helper_ei(tcg_ctx, t0, tcg_ctx->cpu_env);
                     gen_store_gpr(tcg_ctx, t0, rt);
-                    /* BS_STOP isn't sufficient, we need to ensure we break out
-                       of translated code to check for pending interrupts.  */
+                    /* DISAS_STOP isn't sufficient, we need to ensure we break
+                       out of translated code to check for pending interrupts */
                     gen_save_pc(ctx, ctx->pc + 4);
-                    ctx->bstate = BS_EXCP;
+                    ctx->is_jmp = DISAS_EXIT;
                     break;
                 default:            /* Invalid */
                     MIPS_INVAL("mfmc0");
@@ -20392,7 +20389,7 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
     ctx.insn_flags = env->insn_flags;
     ctx.CP0_Config1 = env->CP0_Config1;
     ctx.tb = tb;
-    ctx.bstate = BS_NONE;
+    ctx.is_jmp = DISAS_NEXT;
     ctx.btarget = 0;
     ctx.kscrexist = (env->CP0_Config4 >> CP0C4_KScrExist) & 0xff;
     ctx.rxi = (env->CP0_Config3 >> CP0C3_RXI) & 1;
@@ -20437,7 +20434,7 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
     if (tb->pc == env->uc->addr_end) {
         gen_tb_start(tcg_ctx, tb);
         gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
-        ctx.bstate = BS_EXCP;
+        ctx.is_jmp = DISAS_EXIT;
         goto done_generating;
     }
 
@@ -20458,13 +20455,13 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
     }
 
     gen_tb_start(tcg_ctx, tb);
-    while (ctx.bstate == BS_NONE) {
+    while (ctx.is_jmp == DISAS_NEXT) {
         tcg_gen_insn_start(tcg_ctx, ctx.pc, ctx.hflags & MIPS_HFLAG_BMASK, ctx.btarget);
         num_insns++;
 
         if (unlikely(cpu_breakpoint_test(cs, ctx.pc, BP_ANY))) {
             save_cpu_state(&ctx, 1);
-            ctx.bstate = BS_BRANCH;
+            ctx.is_jmp = DISAS_NORETURN;
             gen_helper_raise_exception_debug(tcg_ctx, tcg_ctx->cpu_env);
             /* The address covered by the breakpoint must be included in
                [tb->pc, tb->pc + tb->size) in order to for it to be
@@ -20482,7 +20479,7 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
         // Unicorn: end address tells us to stop emulation
         if (ctx.pc == ctx.uc->addr_end) {
             gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
-            ctx.bstate = BS_EXCP;
+            ctx.is_jmp = DISAS_EXIT;
             break;
         } else {
             bool insn_need_patch = false;
@@ -20575,24 +20572,24 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
     //if (tb->cflags & CF_LAST_IO) {
     //    gen_io_end();
     //}
-    if (cs->singlestep_enabled && ctx.bstate != BS_BRANCH) {
-        save_cpu_state(&ctx, ctx.bstate != BS_EXCP);
+    if (cs->singlestep_enabled && ctx.is_jmp != DISAS_NORETURN) {
+        save_cpu_state(&ctx, ctx.is_jmp != DISAS_EXIT);
         gen_helper_raise_exception_debug(tcg_ctx, tcg_ctx->cpu_env);
     } else {
-        switch (ctx.bstate) {
-        case BS_STOP:
-            gen_save_pc(tcg_ctx, ctx.pc);
+        switch (ctx.is_jmp) {
+        case DISAS_STOP:
+            gen_save_pc(&ctx, ctx.pc);
             tcg_gen_lookup_and_goto_ptr(tcg_ctx);
             env->uc->next_pc = ctx.pc;
             break;
-        case BS_NONE:
+        case DISAS_NEXT:
             save_cpu_state(&ctx, 0);
             gen_goto_tb(&ctx, 0, ctx.pc);
             break;
-        case BS_EXCP:
+        case DISAS_EXIT:
             tcg_gen_exit_tb(tcg_ctx, 0);
             break;
-        case BS_BRANCH:
+        case DISAS_NORETURN:
         default:
             break;
         }
