@@ -2369,7 +2369,7 @@ DISAS_INSN(arith_im)
         im = tcg_const_i32(tcg_ctx, read_im32(env, s));
         break;
     default:
-       abort();
+        g_assert_not_reached();
     }
 
     if (with_SR) {
@@ -2389,7 +2389,8 @@ DISAS_INSN(arith_im)
             }
             src1 = gen_get_sr(s);
             break;
-        case OS_LONG:
+        default:
+            /* OS_LONG; others already g_assert_not_reached.  */
             disas_undef(env, s, insn);
             return;
         }
