@@ -12440,8 +12440,7 @@ static bool insn_crosses_page(CPUARMState *env, DisasContext *s)
     return !thumb_insn_is_16bit(s, insn);
 }
 
-static int arm_tr_init_disas_context(DisasContextBase *dcbase,
-                                     CPUState *cs, int max_insns)
+static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
 {
     TCGContext *tcg_ctx = cs->uc->tcg_ctx;
     DisasContext *dc = container_of(dcbase, DisasContext, base);
@@ -12504,14 +12503,14 @@ static int arm_tr_init_disas_context(DisasContextBase *dcbase,
 
     /* If architectural single step active, limit to 1.  */
     if (is_singlestepping(dc)) {
-        max_insns = 1;
+        dc->base.max_insns = 1;
     }
 
     /* ARM is a fixed-length ISA.  Bound the number of insns to execute
        to those left on the page.  */
     if (!dc->thumb) {
         int bound = -(dc->base.pc_first | TARGET_PAGE_MASK) / 4;
-        max_insns = MIN(max_insns, bound);
+        dc->base.max_insns = MIN(dc->base.max_insns, bound);
     }
 
     tcg_ctx->cpu_F0s = tcg_temp_new_i32(tcg_ctx);
@@ -12522,8 +12521,6 @@ static int arm_tr_init_disas_context(DisasContextBase *dcbase,
     tcg_ctx->cpu_V1 = tcg_ctx->cpu_F1d;
     /* FIXME: tcg_ctx->cpu_M0 can probably be the same as tcg_ctx->cpu_V0.  */
     tcg_ctx->cpu_M0 = tcg_temp_new_i64(tcg_ctx);
-
-    return max_insns;
 }
 
 static void arm_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)

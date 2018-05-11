@@ -13397,8 +13397,8 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
     free_tmp_a64(s);
 }
 
-static int aarch64_tr_init_disas_context(DisasContextBase *dcbase,
-                                         CPUState *cpu, int max_insns)
+static void aarch64_tr_init_disas_context(DisasContextBase *dcbase,
+                                          CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     CPUARMState *env = cpu->env_ptr;
@@ -13464,11 +13464,9 @@ static int aarch64_tr_init_disas_context(DisasContextBase *dcbase,
     if (dc->ss_active) {
         bound = 1;
     }
-    max_insns = MIN(max_insns, bound);
+    dc->base.max_insns = MIN(dc->base.max_insns, bound);
 
     init_tmp_a64_array(dc);
-
-    return max_insns;
 }
 
 static void aarch64_tr_tb_start(DisasContextBase *db, CPUState *cpu)

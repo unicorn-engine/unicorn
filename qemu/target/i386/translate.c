@@ -9141,8 +9141,7 @@ void tcg_x86_init(struct uc_struct *uc)
     }
 }
 
-static int i386_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cpu,
-                                      int max_insns)
+static void i386_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     CPUX86State *env = cpu->env_ptr;
@@ -9217,8 +9216,6 @@ static int i386_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cpu,
 
     // done with initializing TCG variables
     env->uc->init_tcg = true;
-
-    return max_insns;
 }
 
 static void i386_tr_tb_start(DisasContextBase *db, CPUState *cpu)
