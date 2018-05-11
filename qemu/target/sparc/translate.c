@@ -38,14 +38,13 @@
 
 
 typedef struct DisasContext {
+    DisasContextBase base;
     target_ulong pc;    /* current Program Counter: integer or DYNAMIC_PC */
     target_ulong npc;   /* next PC: integer or DYNAMIC_PC or JUMP_PC */
     target_ulong jump_pc[2]; /* used when JUMP_PC pc value is used */
-    DisasJumpType is_jmp;
     int mem_idx;
     bool fpu_enabled;
     bool address_mask_32bit;
-    bool singlestep;
 #ifndef CONFIG_USER_ONLY
     bool supervisor;
 #ifdef TARGET_SPARC64
@@ -53,7 +52,6 @@ typedef struct DisasContext {
 #endif
 #endif
     uint32_t cc_op;  /* current CC operation */
-    struct TranslationBlock *tb;
     sparc_def_t *def;
     TCGv_i32 t32[3];
     TCGv ttl[5];
@@ -339,13 +337,13 @@ static inline TCGv gen_dest_gpr(DisasContext *dc, int reg)
 static inline bool use_goto_tb(DisasContext *s, target_ulong pc,
                                target_ulong npc)
 {
-    if (unlikely(s->singlestep)) {
+    if (unlikely(s->base.singlestep_enabled)) {
         return false;
     }
 
 #ifndef CONFIG_USER_ONLY
-    return (pc & TARGET_PAGE_MASK) == (s->tb->pc & TARGET_PAGE_MASK) &&
-           (npc & TARGET_PAGE_MASK) == (s->tb->pc & TARGET_PAGE_MASK);
+    return (pc & TARGET_PAGE_MASK) == (s->base.tb->pc & TARGET_PAGE_MASK) &&
+           (npc & TARGET_PAGE_MASK) == (s->base.tb->pc & TARGET_PAGE_MASK);
 #else
     return true;
 #endif
@@ -361,7 +359,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num,
         tcg_gen_goto_tb(tcg_ctx, tb_num);
         tcg_gen_movi_tl(tcg_ctx, tcg_ctx->sparc_cpu_pc, pc);
         tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_npc, npc);
-        tcg_gen_exit_tb(tcg_ctx, (uintptr_t)s->tb + tb_num);
+        tcg_gen_exit_tb(tcg_ctx, (uintptr_t)s->base.tb + tb_num);
     } else {
         /* jump to another page: currently not optimized */
         tcg_gen_movi_tl(tcg_ctx, tcg_ctx->sparc_cpu_pc, pc);
@@ -1071,7 +1069,7 @@ static void gen_branch_a(DisasContext *dc, target_ulong pc1)
     gen_set_label(tcg_ctx, l1);
     gen_goto_tb(dc, 1, npc + 4, npc + 8);
 
-    dc->is_jmp = DISAS_NORETURN;
+    dc->base.is_jmp = DISAS_NORETURN;
 }
 
 static void gen_branch_n(DisasContext *dc, target_ulong pc1)
@@ -1161,7 +1159,7 @@ static void gen_exception(DisasContext *dc, int which)
     t = tcg_const_i32(tcg_ctx, which);
     gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, t);
     tcg_temp_free_i32(tcg_ctx, t);
-    dc->is_jmp = DISAS_NORETURN;
+    dc->base.is_jmp = DISAS_NORETURN;
 }
 
 static void gen_check_align(DisasContext *dc, TCGv addr, int mask)
@@ -3533,7 +3531,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
 
                 if (cond == 8) {
                     /* An unconditional trap ends the TB.  */
-                    dc->is_jmp = DISAS_NORETURN;
+                    dc->base.is_jmp = DISAS_NORETURN;
                     goto jmp_insn;
                 } else {
                     /* A conditional trap falls through to the next insn.  */
@@ -4513,7 +4511,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 save_state(dc);
                                 gen_op_next_insn(dc);
                                 tcg_gen_exit_tb(tcg_ctx, 0);
-                                dc->is_jmp = DISAS_NORETURN;
+                                dc->base.is_jmp = DISAS_NORETURN;
                                 break;
                             case 0x6: /* V9 wrfprs */
                                 tcg_gen_xor_tl(tcg_ctx, cpu_tmp0, cpu_src1, cpu_src2);
@@ -4522,7 +4520,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 save_state(dc);
                                 gen_op_next_insn(dc);
                                 tcg_gen_exit_tb(tcg_ctx, 0);
-                                dc->is_jmp = DISAS_NORETURN;
+                                dc->base.is_jmp = DISAS_NORETURN;
                                 break;
                             case 0xf: /* V9 sir, nop if user */
 #if !defined(CONFIG_USER_ONLY)
@@ -4650,7 +4648,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                             save_state(dc);
                             gen_op_next_insn(dc);
                             tcg_gen_exit_tb(tcg_ctx, 0);
-                            dc->is_jmp = DISAS_NORETURN;
+                            dc->base.is_jmp = DISAS_NORETURN;
 #endif
                         }
                         break;
@@ -4806,7 +4804,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                                 save_state(dc);
                                 gen_op_next_insn(dc);
                                 tcg_gen_exit_tb(tcg_ctx, 0);
-                                dc->is_jmp = DISAS_NORETURN;
+                                dc->base.is_jmp = DISAS_NORETURN;
                                 break;
                             case 1: // htstate
                                 // XXX gen_op_wrhtstate();
@@ -5875,7 +5873,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
     } else if (dc->npc == JUMP_PC) {
         /* we can do a static jump */
         gen_branch2(dc, dc->jump_pc[0], dc->jump_pc[1], tcg_ctx->cpu_cond);
-        dc->is_jmp = DISAS_NORETURN;
+        dc->base.is_jmp = DISAS_NORETURN;
     } else {
         dc->pc = dc->npc;
         dc->npc = dc->npc + 4;
@@ -5926,28 +5924,28 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
 void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
 {
     CPUSPARCState *env = cs->env_ptr;
-    target_ulong pc_start, last_pc;
     DisasContext dc1, *dc = &dc1;
-    int num_insns = 0;
     int max_insns;
     unsigned int insn;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     bool block_full = false;
 
     memset(dc, 0, sizeof(DisasContext));
+    dc->base.tb = tb;
+    dc->base.pc_first = tb->pc;
+    dc->base.pc_next = tb->pc;
+    dc->base.is_jmp = DISAS_NEXT;
+    dc->base.num_insns = 0;
+    dc->base.singlestep_enabled = cs->singlestep_enabled;
+
     dc->uc = env->uc;
-    dc->tb = tb;
-    pc_start = tb->pc;
-    dc->pc = pc_start;
-    last_pc = dc->pc;
-    dc->is_jmp = DISAS_NEXT;
+    dc->pc = dc->base.pc_first;
     dc->npc = (target_ulong) tb->cs_base;
     dc->cc_op = CC_OP_DYNAMIC;
     dc->mem_idx = tb->flags & TB_FLAG_MMU_MASK;
     dc->def = &env->def;
     dc->fpu_enabled = tb_fpu_enabled(tb->flags);
     dc->address_mask_32bit = tb_am_enabled(tb->flags);
-    dc->singlestep = (cs->singlestep_enabled); // || singlestep);
 #ifndef CONFIG_USER_ONLY
     dc->supervisor = (tb->flags & TB_FLAG_SUPER) != 0;
 #endif
@@ -5960,7 +5958,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
 #endif
 
     // early check to see if the address of this block is the until address
-    if (pc_start == env->uc->addr_end) {
+    if (dc->base.pc_first == env->uc->addr_end) {
         gen_tb_start(tcg_ctx, tb);
         gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
         goto done_generating;
@@ -5972,6 +5970,9 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
     }
     if (max_insns > TCG_MAX_INSNS) {
         max_insns = TCG_MAX_INSNS;
+    }
+    if (dc->base.singlestep_enabled) {
+        max_insns = 1;
     }
 
     // Unicorn: early check to see if the address of this block is the until address
@@ -6003,20 +6004,20 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
         } else {
             tcg_gen_insn_start(tcg_ctx, dc->pc, dc->npc);
         }
-        num_insns++;
-        last_pc = dc->pc;
+        dc->base.num_insns++;
 
-        if (unlikely(cpu_breakpoint_test(cs, dc->pc, BP_ANY))) {
-            if (dc->pc != pc_start) {
+        if (unlikely(cpu_breakpoint_test(cs, dc->base.pc_next, BP_ANY))) {
+            if (dc->pc != dc->base.pc_first) {
                 save_state(dc);
             }
             gen_helper_debug(tcg_ctx, tcg_ctx->cpu_env);
             tcg_gen_exit_tb(tcg_ctx, 0);
-            dc->is_jmp = DISAS_NORETURN;
+            dc->base.is_jmp = DISAS_NORETURN;
+            dc->base.pc_next += 4;
             goto exit_gen_loop;
         }
 
-        //if (num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
+        //if (dc->base.num_insns == max_insns && (tb_cflags(tb) & CF_LAST_IO)) {
         //    gen_io_start();
         //}
 
@@ -6027,39 +6028,35 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
             break;
         } else {
             insn = cpu_ldl_code(env, dc->pc);
+            dc->base.pc_next += 4;
         }
 
         disas_sparc_insn(dc, insn, true);
 
-        if (dc->is_jmp == DISAS_NORETURN) {
+        if (dc->base.is_jmp == DISAS_NORETURN) {
             break;
         }
         /* if the next PC is different, we abort now */
-        if (dc->pc != (last_pc + 4))
+        if (dc->pc != dc->base.pc_next) {
             break;
-
+        }
         /* if we reach a page boundary, we stop generation so that the
            PC of a TT_TFAULT exception is always in the right page */
         if ((dc->pc & (TARGET_PAGE_SIZE - 1)) == 0)
             break;
-        /* if single step mode, we generate only one instruction and
-           generate an exception */
-        if (dc->singlestep) {
-            break;
-        }
     } while (!tcg_op_buf_full(tcg_ctx) &&
-             (dc->pc - pc_start) < (TARGET_PAGE_SIZE - 32) &&
-             num_insns < max_insns);
+             (dc->pc - dc->base.pc_first) < (TARGET_PAGE_SIZE - 32) &&
+             dc->base.num_insns < max_insns);
 
     /* if too long translation, save this info */
-    if (tcg_op_buf_full(tcg_ctx) || num_insns >= max_insns)
+    if (tcg_op_buf_full(tcg_ctx) || dc->base.num_insns >= max_insns)
         block_full = true;
 
  exit_gen_loop:
     //if (tb->cflags & CF_LAST_IO) {
     //    gen_io_end();
     //}
-    if (dc->is_jmp != DISAS_NORETURN) {
+    if (dc->base.is_jmp != DISAS_NORETURN) {
         if (dc->pc != DYNAMIC_PC &&
             (dc->npc != DYNAMIC_PC && dc->npc != JUMP_PC)) {
             /* static PC and NPC: we can use direct chaining */
@@ -6074,10 +6071,10 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock * tb)
     }
 
 done_generating:
-    gen_tb_end(tcg_ctx, tb, num_insns);
+    gen_tb_end(tcg_ctx, tb, dc->base.num_insns);
 
-    tb->size = last_pc + 4 - pc_start;
-    tb->icount = num_insns;
+    tb->size = dc->base.pc_next - dc->base.pc_first;
+    tb->icount = dc->base.num_insns;
 
     env->uc->block_full = block_full;
 }
