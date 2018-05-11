@@ -549,8 +549,13 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
                 default:
                     break;
                 case UC_MODE_16:
-                    uc_reg_write(uc, UC_X86_REG_IP, &begin);
+				{
+					uint16_t cs = begin / 16;
+					uint16_t ip = begin % 16;
+					uc_reg_write(uc, UC_X86_REG_CS, &cs);
+					uc_reg_write(uc, UC_X86_REG_IP, &ip);                    
                     break;
+				}
                 case UC_MODE_32:
                     uc_reg_write(uc, UC_X86_REG_EIP, &begin);
                     break;
