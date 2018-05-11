@@ -20581,7 +20581,8 @@ void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
     } else {
         switch (ctx.bstate) {
         case BS_STOP:
-            gen_goto_tb(&ctx, 0, ctx.pc);
+            gen_save_pc(tcg_ctx, ctx.pc);
+            tcg_gen_lookup_and_goto_ptr(tcg_ctx);
             env->uc->next_pc = ctx.pc;
             break;
         case BS_NONE:
