@@ -723,6 +723,7 @@ struct TCGContext {
     int nb_globals;
     int nb_temps;
     int nb_indirects;
+    int nb_ops;
 
     /* goto_tb support */
     tcg_insn_unit *code_buf;
@@ -1055,7 +1056,12 @@ static inline TCGOp *tcg_last_op(TCGContext *tcg_ctx)
 /* Test for whether to terminate the TB for using too many opcodes.  */
 static inline bool tcg_op_buf_full(TCGContext *tcg_ctx)
 {
-    return false;
+    /* This is not a hard limit, it merely stops translation when
+     * we have produced "enough" opcodes.  We want to limit TB size
+     * such that a RISC host can reasonably use a 16-bit signed
+     * branch within the TB.
+     */
+    return tcg_ctx->nb_ops >= 8000;
 }
 
 TCGTemp *tcg_global_mem_new_internal(TCGContext *s, TCGType type, TCGv_ptr base,
