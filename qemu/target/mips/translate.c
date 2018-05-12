@@ -1418,6 +1418,7 @@ enum {
 typedef struct DisasContext {
     DisasContextBase base;
     target_ulong saved_pc;
+    target_ulong page_start;
     uint32_t opcode;
     int insn_flags;
     int32_t CP0_Config1;
@@ -20366,28 +20367,12 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
     }
 }
 
-void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
+static void mips_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
 {
+    DisasContext *ctx = container_of(dcbase, DisasContext, base);
     CPUMIPSState *env = cs->env_ptr;
-    DisasContext ctx1;
-    DisasContext *ctx = &ctx1;
-    target_ulong page_start;
-    int max_insns;
-    int insn_bytes;
-    int is_slot = 0;
-    TCGContext *tcg_ctx = env->uc->tcg_ctx;
-    // Unicorn: used with hooking below
-    //int save_opparam_idx = -1;
-    bool block_full = false;
 
-    ctx->base.tb = tb;
-    ctx->base.pc_first = tb->pc;
-    ctx->base.pc_next = tb->pc;
-    ctx->base.is_jmp = DISAS_NEXT;
-    ctx->base.singlestep_enabled = cs->singlestep_enabled;
-    ctx->base.num_insns = 0;
-
-    page_start = ctx->base.pc_first & TARGET_PAGE_MASK;
+    ctx->page_start = ctx->base.pc_first & TARGET_PAGE_MASK;
     ctx->uc = env->uc;
     ctx->saved_pc = -1;
     ctx->insn_flags = env->insn_flags;
@@ -20422,160 +20407,117 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     ctx->default_tcg_memop_mask = (ctx->insn_flags & ISA_MIPS32R6) ?
                                  MO_UNALN : MO_ALIGN;
 
-    max_insns = tb->cflags & CF_COUNT_MASK;
-    if (max_insns == 0) {
-        max_insns = CF_COUNT_MASK;
-    }
-    if (max_insns > TCG_MAX_INSNS) {
-        max_insns = TCG_MAX_INSNS;
-    }
-    LOG_DISAS("\ntb %p idx %d hflags %04x\n", tb, ctx->mem_idx, ctx->hflags);
+    LOG_DISAS("\ntb %p idx %d hflags %04x\n", ctx->base.tb, ctx->mem_idx,
+              ctx->hflags);
+}
+
+static void mips_tr_tb_start(DisasContextBase *dcbase, CPUState *cs)
+{
+}
+
+static void mips_tr_insn_start(DisasContextBase *dcbase, CPUState *cs)
+{
+    DisasContext *ctx = container_of(dcbase, DisasContext, base);
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+
+    tcg_gen_insn_start(tcg_ctx, ctx->base.pc_next, ctx->hflags & MIPS_HFLAG_BMASK,
+                       ctx->btarget);
+}
+
+static bool mips_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cs,
+                                     const CPUBreakpoint *bp)
+{
+    DisasContext *ctx = container_of(dcbase, DisasContext, base);
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+
+    save_cpu_state(ctx, 1);
+    ctx->base.is_jmp = DISAS_NORETURN;
+    gen_helper_raise_exception_debug(tcg_ctx, tcg_ctx->cpu_env);
+    /* The address covered by the breakpoint must be included in
+       [tb->pc, tb->pc + tb->size) in order to for it to be
+       properly cleared -- thus we increment the PC here so that
+       the logic setting tb->size below does the right thing.  */
+    ctx->base.pc_next += 4;
+    return true;
+}
+
+static void mips_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
+{
+    CPUMIPSState *env = cs->env_ptr;
+    DisasContext *ctx = container_of(dcbase, DisasContext, base);
+    TCGContext *tcg_ctx = env->uc->tcg_ctx;
+    int insn_bytes;
+    int is_slot;
+    bool need_patch = false;
+    int patch_offset = 0;
 
     // Unicorn: early check to see if the address of this block is the until address
-    if (tb->pc == env->uc->addr_end) {
-        gen_tb_start(tcg_ctx, tb);
+    if (dcbase->tb->pc == env->uc->addr_end) {
+        gen_tb_start(tcg_ctx, dcbase->tb);
         gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
         ctx->base.is_jmp = DISAS_EXIT;
-        goto done_generating;
+        return;
     }
 
-    // Unicorn: trace this block on request
-    // Only hook this block if it is not broken from previous translation due to
-    // full translation cache
-    if (!env->uc->block_full && HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_BLOCK, ctx->base.pc_first)) {
-        // Unicorn: FIXME: Amend to work with the new TCG API
-#if 0
-        int arg_i = tcg_ctx->gen_op_buf[tcg_ctx->gen_op_buf[0].prev].args;
-        // save block address to see if we need to patch block size later
-        env->uc->block_addr = ctx->base.pc_first;
-        env->uc->size_arg = arg_i + 1;
-        gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_BLOCK_IDX, env->uc, ctx->base.pc_first);
-#endif
+    is_slot = ctx->hflags & MIPS_HFLAG_BMASK;
+    if (!(ctx->hflags & MIPS_HFLAG_M16)) {
+        ctx->opcode = cpu_ldl_code(env, ctx->base.pc_next);
+        insn_bytes = 4;
+        decode_opc(env, ctx, &need_patch, &patch_offset);
+    } else if (ctx->insn_flags & ASE_MICROMIPS) {
+        ctx->opcode = cpu_lduw_code(env, ctx->base.pc_next);
+        insn_bytes = decode_micromips_opc(env, ctx, &need_patch);
+    } else if (ctx->insn_flags & ASE_MIPS16) {
+        ctx->opcode = cpu_lduw_code(env, ctx->base.pc_next);
+        insn_bytes = decode_mips16_opc(env, ctx, &need_patch);
     } else {
-        env->uc->size_arg = -1;
+        generate_exception_end(ctx, EXCP_RI);
+        g_assert(ctx->base.is_jmp == DISAS_NORETURN);
+        return;
     }
 
-    gen_tb_start(tcg_ctx, tb);
-    while (ctx->base.is_jmp == DISAS_NEXT) {
-        tcg_gen_insn_start(tcg_ctx, ctx->base.pc_next, ctx->hflags & MIPS_HFLAG_BMASK,
-                           ctx->btarget);
-        ctx->base.num_insns++;
-
-        if (unlikely(cpu_breakpoint_test(cs, ctx->base.pc_next, BP_ANY))) {
-            save_cpu_state(ctx, 1);
-            ctx->base.is_jmp = DISAS_NORETURN;
-            gen_helper_raise_exception_debug(tcg_ctx, tcg_ctx->cpu_env);
-            /* The address covered by the breakpoint must be included in
-               [tb->pc, tb->pc + tb->size) in order to for it to be
-               properly cleared -- thus we increment the PC here so that
-               the logic setting tb->size below does the right thing.  */
-            ctx->base.pc_next += 4;
-            goto done_generating;
+    if (ctx->hflags & MIPS_HFLAG_BMASK) {
+        if (!(ctx->hflags & (MIPS_HFLAG_BDS16 | MIPS_HFLAG_BDS32 |
+                             MIPS_HFLAG_FBNSLOT))) {
+            /* force to generate branch as there is neither delay nor
+               forbidden slot */
+            is_slot = 1;
         }
-
-        // Unicorn: Commented out
-        //if (ctx->base.num_insns == max_insns && (tb->cflags & CF_LAST_IO)) {
-        //    gen_io_start();
-        //}
-
-        // Unicorn: end address tells us to stop emulation
-        if (ctx->base.pc_next == ctx->uc->addr_end) {
-            gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
-            ctx->base.is_jmp = DISAS_EXIT;
-            break;
-        } else {
-            bool insn_need_patch = false;
-            int insn_patch_offset = 1;
-
-            // Unicorn: save param buffer
-            // Unicorn: FIXME: Amend to work with new TCG API
-            #if 0
-            if (HOOK_EXISTS(env->uc, UC_HOOK_CODE)) {
-                save_opparam_idx = tcg_ctx->gen_next_op_idx;
-            }
-            #endif
-
-            is_slot = ctx->hflags & MIPS_HFLAG_BMASK;
-
-            if (!(ctx->hflags & MIPS_HFLAG_M16)) {
-                ctx->opcode = cpu_ldl_code(env, ctx->base.pc_next);
-                insn_bytes = 4;
-                decode_opc(env, ctx, &insn_need_patch, &insn_patch_offset);
-            } else if (ctx->insn_flags & ASE_MICROMIPS) {
-                ctx->opcode = cpu_lduw_code(env, ctx->base.pc_next);
-                insn_bytes = decode_micromips_opc(env, ctx, &insn_need_patch);
-            } else if (ctx->insn_flags & ASE_MIPS16) {
-                ctx->opcode = cpu_lduw_code(env, ctx->base.pc_next);
-                insn_bytes = decode_mips16_opc(env, ctx, &insn_need_patch);
-            } else {
-                generate_exception_end(ctx, EXCP_RI);
-                break;
-            }
-
-            // Unicorn: patch the callback for the instruction size
-            if (insn_need_patch) {
-                /*
-                   int i;
-                   for (i = 0; i < 30; i++)
-                   printf("[%u] = %x\n", i, *(save_opparam_ptr + i));
-                   printf("\n");
-                 */
-                // FIXME
-                //tcg_ctx->gen_op_buf[save_opparam_idx + insn_patch_offset] = insn_bytes;
-            }
+        if ((ctx->hflags & MIPS_HFLAG_M16) &&
+            (ctx->hflags & MIPS_HFLAG_FBNSLOT)) {
+            /* Force to generate branch as microMIPS R6 doesn't restrict
+               branches in the forbidden slot. */
+            is_slot = 1;
         }
+    }
+    if (is_slot) {
+        gen_branch(ctx, insn_bytes);
+    }
+    ctx->base.pc_next += insn_bytes;
 
-        if (ctx->hflags & MIPS_HFLAG_BMASK) {
-            if (!(ctx->hflags & (MIPS_HFLAG_BDS16 | MIPS_HFLAG_BDS32 |
-                                MIPS_HFLAG_FBNSLOT))) {
-                /* force to generate branch as there is neither delay nor
-                   forbidden slot */
-                is_slot = 1;
-            }
-            if ((ctx->hflags & MIPS_HFLAG_M16) &&
-                (ctx->hflags & MIPS_HFLAG_FBNSLOT)) {
-                /* Force to generate branch as microMIPS R6 doesn't restrict
-                   branches in the forbidden slot. */
-                is_slot = 1;
-            }
-        }
-        if (is_slot) {
-            gen_branch(ctx, insn_bytes);
-        }
-        ctx->base.pc_next += insn_bytes;
-
-        /* Execute a branch and its delay slot as a single instruction.
-           This is what GDB expects and is consistent with what the
-           hardware does (e.g. if a delay slot instruction faults, the
-           reported PC is the PC of the branch).  */
-        if (ctx->base.singlestep_enabled &&
-            (ctx->hflags & MIPS_HFLAG_BMASK) == 0) {
-            break;
-        }
-
-        if (ctx->base.pc_next - page_start >= TARGET_PAGE_SIZE) {
-            break;
-        }
-
-        if (tcg_op_buf_full(tcg_ctx)) {
-            break;
-        }
-
-        if (ctx->base.num_insns >= max_insns) {
-            break;
-        }
-
-        //if (singlestep)
-        //    break;
+    if (ctx->base.is_jmp != DISAS_NEXT) {
+        return;
     }
 
-    if (tcg_op_buf_full(tcg_ctx) || ctx->base.num_insns >= max_insns) {
-        block_full = true;
+    /* Execute a branch and its delay slot as a single instruction.
+       This is what GDB expects and is consistent with what the
+       hardware does (e.g. if a delay slot instruction faults, the
+       reported PC is the PC of the branch).  */
+    if (ctx->base.singlestep_enabled &&
+        (ctx->hflags & MIPS_HFLAG_BMASK) == 0) {
+        ctx->base.is_jmp = DISAS_TOO_MANY;
     }
+    if (ctx->base.pc_next - ctx->page_start >= TARGET_PAGE_SIZE) {
+        ctx->base.is_jmp = DISAS_TOO_MANY;
+    }
+}
 
-    //if (tb->cflags & CF_LAST_IO) {
-    //    gen_io_end();
-    //}
+static void mips_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
+{
+    CPUMIPSState *env = cs->env_ptr;
+    DisasContext *ctx = container_of(dcbase, DisasContext, base);
+    TCGContext *tcg_ctx = env->uc->tcg_ctx;
+
     if (ctx->base.singlestep_enabled && ctx->base.is_jmp != DISAS_NORETURN) {
         save_cpu_state(ctx, ctx->base.is_jmp != DISAS_EXIT);
         gen_helper_raise_exception_debug(tcg_ctx, tcg_ctx->cpu_env);
@@ -20587,6 +20529,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
             env->uc->next_pc = ctx->base.pc_next;
             break;
         case DISAS_NEXT:
+        case DISAS_TOO_MANY:
             save_cpu_state(ctx, 0);
             gen_goto_tb(ctx, 0, ctx->base.pc_next);
             break;
@@ -20594,17 +20537,32 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
             tcg_gen_exit_tb(tcg_ctx, 0);
             break;
         case DISAS_NORETURN:
-        default:
             break;
+        default:
+            g_assert_not_reached();
         }
     }
-done_generating:
-    gen_tb_end(tcg_ctx, tb, ctx->base.num_insns);
+}
 
-    tb->size = ctx->base.pc_next - ctx->base.pc_first;
-    tb->icount = ctx->base.num_insns;
+static void mips_tr_disas_log(const DisasContextBase *dcbase, CPUState *cs)
+{
+}
 
-    env->uc->block_full = block_full;
+static const TranslatorOps mips_tr_ops = {
+    mips_tr_init_disas_context,
+    mips_tr_tb_start,
+    mips_tr_insn_start,
+    mips_tr_breakpoint_check,
+    mips_tr_translate_insn,
+    mips_tr_tb_stop,
+    mips_tr_disas_log,
+};
+
+void gen_intermediate_code(CPUState *cs, struct TranslationBlock *tb)
+{
+    DisasContext ctx;
+
+    translator_loop(&mips_tr_ops, &ctx.base, cs, tb);
 }
 
 #if 0
