@@ -3231,6 +3231,8 @@
 #define helper_advsimd_rinth_exact helper_advsimd_rinth_exact_aarch64
 #define helper_advsimd_sub2h helper_advsimd_sub2h_aarch64
 #define helper_advsimd_subh helper_advsimd_subh_aarch64
+#define helper_casp_be_parallel helper_casp_be_parallel_aarch64
+#define helper_casp_le_parallel helper_casp_le_parallel_aarch64
 #define helper_crc32_64 helper_crc32_64_aarch64
 #define helper_crc32c_64 helper_crc32c_64_aarch64
 #define helper_fcvtx_f64_to_f32 helper_fcvtx_f64_to_f32_aarch64

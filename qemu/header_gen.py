@@ -3252,6 +3252,8 @@ aarch64_symbols = (
     'helper_advsimd_rinth_exact',
     'helper_advsimd_sub2h',
     'helper_advsimd_subh',
+    'helper_casp_be_parallel',
+    'helper_casp_le_parallel',
     'helper_crc32_64',
     'helper_crc32c_64',
     'helper_fcvtx_f64_to_f32',

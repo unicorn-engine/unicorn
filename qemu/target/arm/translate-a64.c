@@ -2166,6 +2166,106 @@ static void gen_store_exclusive(DisasContext *s, int rd, int rt, int rt2,
     tcg_gen_movi_i64(tcg_ctx, tcg_ctx->cpu_exclusive_addr, -1);
 }
 
+static void gen_compare_and_swap(DisasContext *s, int rs, int rt,
+                                 int rn, int size)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i64 tcg_rs = cpu_reg(s, rs);
+    TCGv_i64 tcg_rt = cpu_reg(s, rt);
+    int memidx = get_mem_index(s);
+    TCGv_i64 addr = cpu_reg_sp(s, rn);
+
+    if (rn == 31) {
+        gen_check_sp_alignment(s);
+    }
+    tcg_gen_atomic_cmpxchg_i64(tcg_ctx, tcg_rs, addr, tcg_rs, tcg_rt, memidx,
+                               size | MO_ALIGN | s->be_data);
+}
+
+static void gen_compare_and_swap_pair(DisasContext *s, int rs, int rt,
+                                      int rn, int size)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i64 s1 = cpu_reg(s, rs);
+    TCGv_i64 s2 = cpu_reg(s, rs + 1);
+    TCGv_i64 t1 = cpu_reg(s, rt);
+    TCGv_i64 t2 = cpu_reg(s, rt + 1);
+    TCGv_i64 addr = cpu_reg_sp(s, rn);
+    int memidx = get_mem_index(s);
+
+    if (rn == 31) {
+        gen_check_sp_alignment(s);
+    }
+
+    if (size == 2) {
+        TCGv_i64 cmp = tcg_temp_new_i64(tcg_ctx);
+        TCGv_i64 val = tcg_temp_new_i64(tcg_ctx);
+
+        if (s->be_data == MO_LE) {
+            tcg_gen_concat32_i64(tcg_ctx, val, t1, t2);
+            tcg_gen_concat32_i64(tcg_ctx, cmp, s1, s2);
+        } else {
+            tcg_gen_concat32_i64(tcg_ctx, val, t2, t1);
+            tcg_gen_concat32_i64(tcg_ctx, cmp, s2, s1);
+        }
+
+        tcg_gen_atomic_cmpxchg_i64(tcg_ctx, cmp, addr, cmp, val, memidx,
+                                   MO_64 | MO_ALIGN | s->be_data);
+        tcg_temp_free_i64(tcg_ctx, val);
+
+        if (s->be_data == MO_LE) {
+            tcg_gen_extr32_i64(tcg_ctx, s1, s2, cmp);
+        } else {
+            tcg_gen_extr32_i64(tcg_ctx, s2, s1, cmp);
+        }
+        tcg_temp_free_i64(tcg_ctx, cmp);
+        // Unicorn: commented out as parallel context support isn't implemented
+    /* } else if (s->base.tb->cflags & CF_PARALLEL) {
+        TCGv_i32 tcg_rs = tcg_const_i32(tcg_ctx, rs);
+
+        if (s->be_data == MO_LE) {
+            gen_helper_casp_le_parallel(tcg_ctx, tcg_ctx->cpu_env, tcg_rs, addr, t1, t2);
+        } else {
+            gen_helper_casp_be_parallel(tcg_ctx, tcg_ctx->cpu_env, tcg_rs, addr, t1, t2);
+        }
+        tcg_temp_free_i32(tcg_ctx, tcg_rs);*/
+    } else {
+        TCGv_i64 d1 = tcg_temp_new_i64(tcg_ctx);
+        TCGv_i64 d2 = tcg_temp_new_i64(tcg_ctx);
+        TCGv_i64 a2 = tcg_temp_new_i64(tcg_ctx);
+        TCGv_i64 c1 = tcg_temp_new_i64(tcg_ctx);
+        TCGv_i64 c2 = tcg_temp_new_i64(tcg_ctx);
+        TCGv_i64 zero = tcg_const_i64(tcg_ctx, 0);
+
+        /* Load the two words, in memory order.  */
+        tcg_gen_qemu_ld_i64(s->uc, d1, addr, memidx,
+                            MO_64 | MO_ALIGN_16 | s->be_data);
+        tcg_gen_addi_i64(tcg_ctx, a2, addr, 8);
+        tcg_gen_qemu_ld_i64(s->uc, d2, addr, memidx, MO_64 | s->be_data);
+
+        /* Compare the two words, also in memory order.  */
+        tcg_gen_setcond_i64(tcg_ctx, TCG_COND_EQ, c1, d1, s1);
+        tcg_gen_setcond_i64(tcg_ctx, TCG_COND_EQ, c2, d2, s2);
+        tcg_gen_and_i64(tcg_ctx, c2, c2, c1);
+
+        /* If compare equal, write back new data, else write back old data.  */
+        tcg_gen_movcond_i64(tcg_ctx, TCG_COND_NE, c1, c2, zero, t1, d1);
+        tcg_gen_movcond_i64(tcg_ctx, TCG_COND_NE, c2, c2, zero, t2, d2);
+        tcg_gen_qemu_st_i64(s->uc, c1, addr, memidx, MO_64 | s->be_data);
+        tcg_gen_qemu_st_i64(s->uc, c2, a2, memidx, MO_64 | s->be_data);
+        tcg_temp_free_i64(tcg_ctx, a2);
+        tcg_temp_free_i64(tcg_ctx, c1);
+        tcg_temp_free_i64(tcg_ctx, c2);
+        tcg_temp_free_i64(tcg_ctx, zero);
+
+        /* Write back the data from memory to Rs.  */
+        tcg_gen_mov_i64(tcg_ctx, s1, d1);
+        tcg_gen_mov_i64(tcg_ctx, s2, d2);
+        tcg_temp_free_i64(tcg_ctx, d1);
+        tcg_temp_free_i64(tcg_ctx, d2);
+    }
+}
+
 /* Update the Sixty-Four bit (SF) registersize. This logic is derived
  * from the ARMv8 specs for LDR (Shared decode for all encodings).
  */
@@ -2268,10 +2368,16 @@ static void disas_ldst_excl(DisasContext *s, uint32_t insn)
             gen_store_exclusive(s, rs, rt, rt2, tcg_addr, size, true);
             return;
         }
-        /* CASP / CASPL */
+        if (rt2 == 31
+            && ((rt | rs) & 1) == 0
+            && arm_dc_feature(s, ARM_FEATURE_V8_ATOMICS)) {
+            /* CASP / CASPL */
+            gen_compare_and_swap_pair(s, rs, rt, rn, size | 2);
+            return;
+        }
         break;
 
-    case 0x6: case 0x7: /* CASP / LDXP */
+    case 0x6: case 0x7: /* CASPA / LDXP */
         if (size & 2) { /* LDXP / LDAXP */
             if (rn == 31) {
                 gen_check_sp_alignment(s);
@@ -2284,13 +2390,23 @@ static void disas_ldst_excl(DisasContext *s, uint32_t insn)
             }
             return;
         }
-        /* CASPA / CASPAL */
+        if (rt2 == 31
+            && ((rt | rs) & 1) == 0
+            && arm_dc_feature(s, ARM_FEATURE_V8_ATOMICS)) {
+            /* CASPA / CASPAL */
+            gen_compare_and_swap_pair(s, rs, rt, rn, size | 2);
+            return;
+        }
         break;
 
     case 0xa: /* CAS */
     case 0xb: /* CASL */
     case 0xe: /* CASA */
     case 0xf: /* CASAL */
+        if (rt2 == 31 && arm_dc_feature(s, ARM_FEATURE_V8_ATOMICS)) {
+            gen_compare_and_swap(s, rs, rt, rn, size);
+            return;
+        }
         break;
     }
     unallocated_encoding(s);
