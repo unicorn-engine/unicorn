@@ -1701,6 +1701,7 @@
 #define helper_vfp_subs helper_vfp_subs_aarch64eb
 #define helper_vfp_toshd helper_vfp_toshd_aarch64eb
 #define helper_vfp_toshd_round_to_zero helper_vfp_toshd_round_to_zero_aarch64eb
+#define helper_vfp_toshh helper_vfp_toshh_aarch64eb
 #define helper_vfp_toshs helper_vfp_toshs_aarch64eb
 #define helper_vfp_toshs_round_to_zero helper_vfp_toshs_round_to_zero_aarch64eb
 #define helper_vfp_tosid helper_vfp_tosid_aarch64eb
@@ -1718,6 +1719,7 @@
 #define helper_vfp_tosqs helper_vfp_tosqs_aarch64eb
 #define helper_vfp_touhd helper_vfp_touhd_aarch64eb
 #define helper_vfp_touhd_round_to_zero helper_vfp_touhd_round_to_zero_aarch64eb
+#define helper_vfp_touhh helper_vfp_touhh_aarch64eb
 #define helper_vfp_touhs helper_vfp_touhs_aarch64eb
 #define helper_vfp_touhs_round_to_zero helper_vfp_touhs_round_to_zero_aarch64eb
 #define helper_vfp_touid helper_vfp_touid_aarch64eb

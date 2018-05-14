@@ -1701,6 +1701,7 @@
 #define helper_vfp_subs helper_vfp_subs_powerpc
 #define helper_vfp_toshd helper_vfp_toshd_powerpc
 #define helper_vfp_toshd_round_to_zero helper_vfp_toshd_round_to_zero_powerpc
+#define helper_vfp_toshh helper_vfp_toshh_powerpc
 #define helper_vfp_toshs helper_vfp_toshs_powerpc
 #define helper_vfp_toshs_round_to_zero helper_vfp_toshs_round_to_zero_powerpc
 #define helper_vfp_tosid helper_vfp_tosid_powerpc
@@ -1718,6 +1719,7 @@
 #define helper_vfp_tosqs helper_vfp_tosqs_powerpc
 #define helper_vfp_touhd helper_vfp_touhd_powerpc
 #define helper_vfp_touhd_round_to_zero helper_vfp_touhd_round_to_zero_powerpc
+#define helper_vfp_touhh helper_vfp_touhh_powerpc
 #define helper_vfp_touhs helper_vfp_touhs_powerpc
 #define helper_vfp_touhs_round_to_zero helper_vfp_touhs_round_to_zero_powerpc
 #define helper_vfp_touid helper_vfp_touid_powerpc

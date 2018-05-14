@@ -1701,6 +1701,7 @@
 #define helper_vfp_subs helper_vfp_subs_mips
 #define helper_vfp_toshd helper_vfp_toshd_mips
 #define helper_vfp_toshd_round_to_zero helper_vfp_toshd_round_to_zero_mips
+#define helper_vfp_toshh helper_vfp_toshh_mips
 #define helper_vfp_toshs helper_vfp_toshs_mips
 #define helper_vfp_toshs_round_to_zero helper_vfp_toshs_round_to_zero_mips
 #define helper_vfp_tosid helper_vfp_tosid_mips
@@ -1718,6 +1719,7 @@
 #define helper_vfp_tosqs helper_vfp_tosqs_mips
 #define helper_vfp_touhd helper_vfp_touhd_mips
 #define helper_vfp_touhd_round_to_zero helper_vfp_touhd_round_to_zero_mips
+#define helper_vfp_touhh helper_vfp_touhh_mips
 #define helper_vfp_touhs helper_vfp_touhs_mips
 #define helper_vfp_touhs_round_to_zero helper_vfp_touhs_round_to_zero_mips
 #define helper_vfp_touid helper_vfp_touid_mips
