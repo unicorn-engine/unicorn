@@ -2760,6 +2760,10 @@
 #define tcg_gen_shri_i32 tcg_gen_shri_i32_aarch64eb
 #define tcg_gen_shri_i64 tcg_gen_shri_i64_aarch64eb
 #define tcg_gen_shri_vec tcg_gen_shri_vec_aarch64eb
+#define tcg_gen_smax_i32 tcg_gen_smax_i32_aarch64eb
+#define tcg_gen_smax_i64 tcg_gen_smax_i64_aarch64eb
+#define tcg_gen_smin_i32 tcg_gen_smin_i32_aarch64eb
+#define tcg_gen_smin_i64 tcg_gen_smin_i64_aarch64eb
 #define tcg_gen_st_i32 tcg_gen_st_i32_aarch64eb
 #define tcg_gen_st_i64 tcg_gen_st_i64_aarch64eb
 #define tcg_gen_st_vec tcg_gen_st_vec_aarch64eb
@@ -2773,6 +2777,10 @@
 #define tcg_gen_subfi_i64 tcg_gen_subfi_i64_aarch64eb
 #define tcg_gen_subi_i32 tcg_gen_subi_i32_aarch64eb
 #define tcg_gen_subi_i64 tcg_gen_subi_i64_aarch64eb
+#define tcg_gen_umax_i32 tcg_gen_umax_i32_aarch64eb
+#define tcg_gen_umax_i64 tcg_gen_umax_i64_aarch64eb
+#define tcg_gen_umin_i32 tcg_gen_umin_i32_aarch64eb
+#define tcg_gen_umin_i64 tcg_gen_umin_i64_aarch64eb
 #define tcg_gen_vec_add8_i64 tcg_gen_vec_add8_i64_aarch64eb
 #define tcg_gen_vec_add16_i64 tcg_gen_vec_add16_i64_aarch64eb
 #define tcg_gen_vec_add32_i64 tcg_gen_vec_add32_i64_aarch64eb
