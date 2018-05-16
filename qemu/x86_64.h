@@ -1658,7 +1658,9 @@
 #define helper_vfp_addd helper_vfp_addd_x86_64
 #define helper_vfp_adds helper_vfp_adds_x86_64
 #define helper_vfp_cmpd helper_vfp_cmpd_x86_64
+#define helper_vfp_cmph_a64 helper_vfp_cmph_a64_x86_64
 #define helper_vfp_cmped helper_vfp_cmped_x86_64
+#define helper_vfp_cmpeh_a64 helper_vfp_cmpeh_a64_x86_64
 #define helper_vfp_cmpes helper_vfp_cmpes_x86_64
 #define helper_vfp_cmps helper_vfp_cmps_x86_64
 #define helper_vfp_divd helper_vfp_divd_x86_64

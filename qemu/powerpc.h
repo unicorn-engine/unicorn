@@ -1658,7 +1658,9 @@
 #define helper_vfp_addd helper_vfp_addd_powerpc
 #define helper_vfp_adds helper_vfp_adds_powerpc
 #define helper_vfp_cmpd helper_vfp_cmpd_powerpc
+#define helper_vfp_cmph_a64 helper_vfp_cmph_a64_powerpc
 #define helper_vfp_cmped helper_vfp_cmped_powerpc
+#define helper_vfp_cmpeh_a64 helper_vfp_cmpeh_a64_powerpc
 #define helper_vfp_cmpes helper_vfp_cmpes_powerpc
 #define helper_vfp_cmps helper_vfp_cmps_powerpc
 #define helper_vfp_divd helper_vfp_divd_powerpc
