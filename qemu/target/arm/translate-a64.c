@@ -5612,11 +5612,11 @@ static void handle_fpfpcvt(DisasContext *s, int rd, int rn, int opcode,
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     bool is_signed = !(opcode & 1);
-    bool is_double = type;
     TCGv_ptr tcg_fpstatus;
-    TCGv_i32 tcg_shift;
+    TCGv_i32 tcg_shift, tcg_single;
+    TCGv_i64 tcg_double;
 
-    tcg_fpstatus = get_fpstatus_ptr(tcg_ctx, false);
+    tcg_fpstatus = get_fpstatus_ptr(tcg_ctx, type == 3);
 
     tcg_shift = tcg_const_i32(tcg_ctx, 64 - scale);
 
@@ -5634,8 +5634,9 @@ static void handle_fpfpcvt(DisasContext *s, int rd, int rn, int opcode,
             tcg_int = tcg_extend;
         }
 
-        if (is_double) {
-            TCGv_i64 tcg_double = tcg_temp_new_i64(tcg_ctx);
+        switch (type) {
+        case 1: /* float64 */
+            tcg_double = tcg_temp_new_i64(tcg_ctx);
             if (is_signed) {
                 gen_helper_vfp_sqtod(tcg_ctx, tcg_double, tcg_int,
                                      tcg_shift, tcg_fpstatus);
@@ -5645,8 +5646,10 @@ static void handle_fpfpcvt(DisasContext *s, int rd, int rn, int opcode,
             }
             write_fp_dreg(s, rd, tcg_double);
             tcg_temp_free_i64(tcg_ctx, tcg_double);
-        } else {
-            TCGv_i32 tcg_single = tcg_temp_new_i32(tcg_ctx);
+            break;
+
+        case 0: /* float32 */
+            tcg_single = tcg_temp_new_i32(tcg_ctx);
             if (is_signed) {
                 gen_helper_vfp_sqtos(tcg_ctx, tcg_single, tcg_int,
                                      tcg_shift, tcg_fpstatus);
@@ -5656,6 +5659,23 @@ static void handle_fpfpcvt(DisasContext *s, int rd, int rn, int opcode,
             }
             write_fp_sreg(s, rd, tcg_single);
             tcg_temp_free_i32(tcg_ctx, tcg_single);
+            break;
+
+        case 3: /* float16 */
+            tcg_single = tcg_temp_new_i32(tcg_ctx);
+            if (is_signed) {
+                gen_helper_vfp_sqtoh(tcg_ctx, tcg_single, tcg_int,
+                                     tcg_shift, tcg_fpstatus);
+            } else {
+                gen_helper_vfp_uqtoh(tcg_ctx, tcg_single, tcg_int,
+                                     tcg_shift, tcg_fpstatus);
+            }
+            write_fp_sreg(s, rd, tcg_single);
+            tcg_temp_free_i32(tcg_ctx, tcg_single);
+            break;
+
+        default:
+            g_assert_not_reached();
         }
     } else {
         TCGv_i64 tcg_int = cpu_reg(s, rd);
@@ -5672,8 +5692,9 @@ static void handle_fpfpcvt(DisasContext *s, int rd, int rn, int opcode,
 
         gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, tcg_fpstatus);
 
-        if (is_double) {
-            TCGv_i64 tcg_double = read_fp_dreg(s, rn);
+        switch (type) {
+        case 1: /* float64 */
+            tcg_double = read_fp_dreg(s, rn);
             if (is_signed) {
                 if (!sf) {
                     gen_helper_vfp_tosld(tcg_ctx, tcg_int, tcg_double,
@@ -5691,9 +5712,14 @@ static void handle_fpfpcvt(DisasContext *s, int rd, int rn, int opcode,
                                          tcg_shift, tcg_fpstatus);
                 }
             }
+            if (!sf) {
+                tcg_gen_ext32u_i64(tcg_ctx, tcg_int, tcg_int);
+            }
             tcg_temp_free_i64(tcg_ctx, tcg_double);
-        } else {
-            TCGv_i32 tcg_single = read_fp_sreg(s, rn);
+            break;
+
+        case 0: /* float32 */
+            tcg_single = read_fp_sreg(s, rn);
             if (sf) {
                 if (is_signed) {
                     gen_helper_vfp_tosqs(tcg_ctx, tcg_int, tcg_single,
@@ -5715,14 +5741,39 @@ static void handle_fpfpcvt(DisasContext *s, int rd, int rn, int opcode,
                 tcg_temp_free_i32(tcg_ctx, tcg_dest);
             }
             tcg_temp_free_i32(tcg_ctx, tcg_single);
+            break;
+
+        case 3: /* float16 */
+            tcg_single = read_fp_sreg(s, rn);
+            if (sf) {
+                if (is_signed) {
+                    gen_helper_vfp_tosqh(tcg_ctx, tcg_int, tcg_single,
+                                         tcg_shift, tcg_fpstatus);
+                } else {
+                    gen_helper_vfp_touqh(tcg_ctx, tcg_int, tcg_single,
+                                         tcg_shift, tcg_fpstatus);
+                }
+            } else {
+                TCGv_i32 tcg_dest = tcg_temp_new_i32(tcg_ctx);
+                if (is_signed) {
+                    gen_helper_vfp_toslh(tcg_ctx, tcg_dest, tcg_single,
+                                         tcg_shift, tcg_fpstatus);
+                } else {
+                    gen_helper_vfp_toulh(tcg_ctx, tcg_dest, tcg_single,
+                                         tcg_shift, tcg_fpstatus);
+                }
+                tcg_gen_extu_i32_i64(tcg_ctx, tcg_int, tcg_dest);
+                tcg_temp_free_i32(tcg_ctx, tcg_dest);
+            }
+            tcg_temp_free_i32(tcg_ctx, tcg_single);
+            break;
+
+        default:
+            g_assert_not_reached();
         }
 
         gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, tcg_fpstatus);
         tcg_temp_free_i32(tcg_ctx, tcg_rmode);
-
-        if (!sf) {
-            tcg_gen_ext32u_i64(tcg_ctx, tcg_int, tcg_int);
-        }
     }
 
     tcg_temp_free_ptr(tcg_ctx, tcg_fpstatus);
@@ -5893,7 +5944,20 @@ static void disas_fp_int_conv(DisasContext *s, uint32_t insn)
         /* actual FP conversions */
         bool itof = extract32(opcode, 1, 1);
 
-        if (type > 1 || (rmode != 0 && opcode > 1)) {
+        if (rmode != 0 && opcode > 1) {
+            unallocated_encoding(s);
+            return;
+        }
+        switch (type) {
+        case 0: /* float32 */
+        case 1: /* float64 */
+            break;
+        case 3: /* float16 */
+            if (arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+                break;
+            }
+            /* fallthru */
+        default:
             unallocated_encoding(s);
             return;
         }

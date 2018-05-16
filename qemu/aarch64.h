@@ -1696,6 +1696,7 @@
 #define helper_vfp_sqrtd helper_vfp_sqrtd_aarch64
 #define helper_vfp_sqrts helper_vfp_sqrts_aarch64
 #define helper_vfp_sqtod helper_vfp_sqtod_aarch64
+#define helper_vfp_sqtoh helper_vfp_sqtoh_aarch64
 #define helper_vfp_sqtos helper_vfp_sqtos_aarch64
 #define helper_vfp_subd helper_vfp_subd_aarch64
 #define helper_vfp_subs helper_vfp_subs_aarch64
@@ -1716,6 +1717,7 @@
 #define helper_vfp_tosls helper_vfp_tosls_aarch64
 #define helper_vfp_tosls_round_to_zero helper_vfp_tosls_round_to_zero_aarch64
 #define helper_vfp_tosqd helper_vfp_tosqd_aarch64
+#define helper_vfp_tosqh helper_vfp_tosqh_aarch64
 #define helper_vfp_tosqs helper_vfp_tosqs_aarch64
 #define helper_vfp_touhd helper_vfp_touhd_aarch64
 #define helper_vfp_touhd_round_to_zero helper_vfp_touhd_round_to_zero_aarch64
@@ -1734,6 +1736,7 @@
 #define helper_vfp_touls helper_vfp_touls_aarch64
 #define helper_vfp_touls_round_to_zero helper_vfp_touls_round_to_zero_aarch64
 #define helper_vfp_touqd helper_vfp_touqd_aarch64
+#define helper_vfp_touqh helper_vfp_touqh_aarch64
 #define helper_vfp_touqs helper_vfp_touqs_aarch64
 #define helper_vfp_uhtod helper_vfp_uhtod_aarch64
 #define helper_vfp_uhtos helper_vfp_uhtos_aarch64
@@ -1744,6 +1747,7 @@
 #define helper_vfp_ultoh helper_vfp_ultoh_aarch64
 #define helper_vfp_ultos helper_vfp_ultos_aarch64
 #define helper_vfp_uqtod helper_vfp_uqtod_aarch64
+#define helper_vfp_uqtoh helper_vfp_uqtoh_aarch64
 #define helper_vfp_uqtos helper_vfp_uqtos_aarch64
 #define helper_wfe helper_wfe_aarch64
 #define helper_wfi helper_wfi_aarch64

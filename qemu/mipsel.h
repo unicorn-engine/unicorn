@@ -1696,6 +1696,7 @@
 #define helper_vfp_sqrtd helper_vfp_sqrtd_mipsel
 #define helper_vfp_sqrts helper_vfp_sqrts_mipsel
 #define helper_vfp_sqtod helper_vfp_sqtod_mipsel
+#define helper_vfp_sqtoh helper_vfp_sqtoh_mipsel
 #define helper_vfp_sqtos helper_vfp_sqtos_mipsel
 #define helper_vfp_subd helper_vfp_subd_mipsel
 #define helper_vfp_subs helper_vfp_subs_mipsel
@@ -1716,6 +1717,7 @@
 #define helper_vfp_tosls helper_vfp_tosls_mipsel
 #define helper_vfp_tosls_round_to_zero helper_vfp_tosls_round_to_zero_mipsel
 #define helper_vfp_tosqd helper_vfp_tosqd_mipsel
+#define helper_vfp_tosqh helper_vfp_tosqh_mipsel
 #define helper_vfp_tosqs helper_vfp_tosqs_mipsel
 #define helper_vfp_touhd helper_vfp_touhd_mipsel
 #define helper_vfp_touhd_round_to_zero helper_vfp_touhd_round_to_zero_mipsel
@@ -1734,6 +1736,7 @@
 #define helper_vfp_touls helper_vfp_touls_mipsel
 #define helper_vfp_touls_round_to_zero helper_vfp_touls_round_to_zero_mipsel
 #define helper_vfp_touqd helper_vfp_touqd_mipsel
+#define helper_vfp_touqh helper_vfp_touqh_mipsel
 #define helper_vfp_touqs helper_vfp_touqs_mipsel
 #define helper_vfp_uhtod helper_vfp_uhtod_mipsel
 #define helper_vfp_uhtos helper_vfp_uhtos_mipsel
@@ -1744,6 +1747,7 @@
 #define helper_vfp_ultoh helper_vfp_ultoh_mipsel
 #define helper_vfp_ultos helper_vfp_ultos_mipsel
 #define helper_vfp_uqtod helper_vfp_uqtod_mipsel
+#define helper_vfp_uqtoh helper_vfp_uqtoh_mipsel
 #define helper_vfp_uqtos helper_vfp_uqtos_mipsel
 #define helper_wfe helper_wfe_mipsel
 #define helper_wfi helper_wfi_mipsel

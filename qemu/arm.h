@@ -1696,6 +1696,7 @@
 #define helper_vfp_sqrtd helper_vfp_sqrtd_arm
 #define helper_vfp_sqrts helper_vfp_sqrts_arm
 #define helper_vfp_sqtod helper_vfp_sqtod_arm
+#define helper_vfp_sqtoh helper_vfp_sqtoh_arm
 #define helper_vfp_sqtos helper_vfp_sqtos_arm
 #define helper_vfp_subd helper_vfp_subd_arm
 #define helper_vfp_subs helper_vfp_subs_arm
@@ -1716,6 +1717,7 @@
 #define helper_vfp_tosls helper_vfp_tosls_arm
 #define helper_vfp_tosls_round_to_zero helper_vfp_tosls_round_to_zero_arm
 #define helper_vfp_tosqd helper_vfp_tosqd_arm
+#define helper_vfp_tosqh helper_vfp_tosqh_arm
 #define helper_vfp_tosqs helper_vfp_tosqs_arm
 #define helper_vfp_touhd helper_vfp_touhd_arm
 #define helper_vfp_touhd_round_to_zero helper_vfp_touhd_round_to_zero_arm
@@ -1734,6 +1736,7 @@
 #define helper_vfp_touls helper_vfp_touls_arm
 #define helper_vfp_touls_round_to_zero helper_vfp_touls_round_to_zero_arm
 #define helper_vfp_touqd helper_vfp_touqd_arm
+#define helper_vfp_touqh helper_vfp_touqh_arm
 #define helper_vfp_touqs helper_vfp_touqs_arm
 #define helper_vfp_uhtod helper_vfp_uhtod_arm
 #define helper_vfp_uhtos helper_vfp_uhtos_arm
@@ -1744,6 +1747,7 @@
 #define helper_vfp_ultoh helper_vfp_ultoh_arm
 #define helper_vfp_ultos helper_vfp_ultos_arm
 #define helper_vfp_uqtod helper_vfp_uqtod_arm
+#define helper_vfp_uqtoh helper_vfp_uqtoh_arm
 #define helper_vfp_uqtos helper_vfp_uqtos_arm
 #define helper_wfe helper_wfe_arm
 #define helper_wfi helper_wfi_arm

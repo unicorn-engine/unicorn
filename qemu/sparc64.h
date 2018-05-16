@@ -1696,6 +1696,7 @@
 #define helper_vfp_sqrtd helper_vfp_sqrtd_sparc64
 #define helper_vfp_sqrts helper_vfp_sqrts_sparc64
 #define helper_vfp_sqtod helper_vfp_sqtod_sparc64
+#define helper_vfp_sqtoh helper_vfp_sqtoh_sparc64
 #define helper_vfp_sqtos helper_vfp_sqtos_sparc64
 #define helper_vfp_subd helper_vfp_subd_sparc64
 #define helper_vfp_subs helper_vfp_subs_sparc64
@@ -1716,6 +1717,7 @@
 #define helper_vfp_tosls helper_vfp_tosls_sparc64
 #define helper_vfp_tosls_round_to_zero helper_vfp_tosls_round_to_zero_sparc64
 #define helper_vfp_tosqd helper_vfp_tosqd_sparc64
+#define helper_vfp_tosqh helper_vfp_tosqh_sparc64
 #define helper_vfp_tosqs helper_vfp_tosqs_sparc64
 #define helper_vfp_touhd helper_vfp_touhd_sparc64
 #define helper_vfp_touhd_round_to_zero helper_vfp_touhd_round_to_zero_sparc64
@@ -1734,6 +1736,7 @@
 #define helper_vfp_touls helper_vfp_touls_sparc64
 #define helper_vfp_touls_round_to_zero helper_vfp_touls_round_to_zero_sparc64
 #define helper_vfp_touqd helper_vfp_touqd_sparc64
+#define helper_vfp_touqh helper_vfp_touqh_sparc64
 #define helper_vfp_touqs helper_vfp_touqs_sparc64
 #define helper_vfp_uhtod helper_vfp_uhtod_sparc64
 #define helper_vfp_uhtos helper_vfp_uhtos_sparc64
@@ -1744,6 +1747,7 @@
 #define helper_vfp_ultoh helper_vfp_ultoh_sparc64
 #define helper_vfp_ultos helper_vfp_ultos_sparc64
 #define helper_vfp_uqtod helper_vfp_uqtod_sparc64
+#define helper_vfp_uqtoh helper_vfp_uqtoh_sparc64
 #define helper_vfp_uqtos helper_vfp_uqtos_sparc64
 #define helper_wfe helper_wfe_sparc64
 #define helper_wfi helper_wfi_sparc64

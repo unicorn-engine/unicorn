@@ -1696,6 +1696,7 @@
 #define helper_vfp_sqrtd helper_vfp_sqrtd_mips
 #define helper_vfp_sqrts helper_vfp_sqrts_mips
 #define helper_vfp_sqtod helper_vfp_sqtod_mips
+#define helper_vfp_sqtoh helper_vfp_sqtoh_mips
 #define helper_vfp_sqtos helper_vfp_sqtos_mips
 #define helper_vfp_subd helper_vfp_subd_mips
 #define helper_vfp_subs helper_vfp_subs_mips
@@ -1716,6 +1717,7 @@
 #define helper_vfp_tosls helper_vfp_tosls_mips
 #define helper_vfp_tosls_round_to_zero helper_vfp_tosls_round_to_zero_mips
 #define helper_vfp_tosqd helper_vfp_tosqd_mips
+#define helper_vfp_tosqh helper_vfp_tosqh_mips
 #define helper_vfp_tosqs helper_vfp_tosqs_mips
 #define helper_vfp_touhd helper_vfp_touhd_mips
 #define helper_vfp_touhd_round_to_zero helper_vfp_touhd_round_to_zero_mips
@@ -1734,6 +1736,7 @@
 #define helper_vfp_touls helper_vfp_touls_mips
 #define helper_vfp_touls_round_to_zero helper_vfp_touls_round_to_zero_mips
 #define helper_vfp_touqd helper_vfp_touqd_mips
+#define helper_vfp_touqh helper_vfp_touqh_mips
 #define helper_vfp_touqs helper_vfp_touqs_mips
 #define helper_vfp_uhtod helper_vfp_uhtod_mips
 #define helper_vfp_uhtos helper_vfp_uhtos_mips
@@ -1744,6 +1747,7 @@
 #define helper_vfp_ultoh helper_vfp_ultoh_mips
 #define helper_vfp_ultos helper_vfp_ultos_mips
 #define helper_vfp_uqtod helper_vfp_uqtod_mips
+#define helper_vfp_uqtoh helper_vfp_uqtoh_mips
 #define helper_vfp_uqtos helper_vfp_uqtos_mips
 #define helper_wfe helper_wfe_mips
 #define helper_wfi helper_wfi_mips
