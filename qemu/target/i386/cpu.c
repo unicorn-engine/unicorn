@@ -323,10 +323,14 @@ static void encode_cache_cpuid80000006(CPUCacheInfo *l2,
     }
 }
 
-/* Definitions of the hardcoded cache entries we expose: */
+/*
+ * Definitions of the hardcoded cache entries we expose:
+ * These are legacy cache values. If there is a need to change any
+ * of these values please use builtin_x86_defs
+ */
 
 /* L1 data cache: */
-static CPUCacheInfo l1d_cache = {
+static CPUCacheInfo legacy_l1d_cache = {
     DCACHE,
     1,
     32 * KiB,
@@ -340,7 +344,7 @@ static CPUCacheInfo l1d_cache = {
 };
 
 /*FIXME: CPUID leaf 0x80000005 is inconsistent with leaves 2 & 4 */
-static CPUCacheInfo l1d_cache_amd = {
+static CPUCacheInfo legacy_l1d_cache_amd = {
     DCACHE,
     1,
     64 * KiB,
@@ -354,7 +358,7 @@ static CPUCacheInfo l1d_cache_amd = {
 };
 
 /* L1 instruction cache: */
-static CPUCacheInfo l1i_cache = {
+static CPUCacheInfo legacy_l1i_cache = {
     ICACHE,
     1,
     32 * KiB,
@@ -366,7 +370,7 @@ static CPUCacheInfo l1i_cache = {
 };
 
 /*FIXME: CPUID leaf 0x80000005 is inconsistent with leaves 2 & 4 */
-static CPUCacheInfo l1i_cache_amd = {
+static CPUCacheInfo legacy_l1i_cache_amd = {
     ICACHE,
     1,
     64 * KiB,
@@ -380,7 +384,7 @@ static CPUCacheInfo l1i_cache_amd = {
 };
 
 /* Level 2 unified cache: */
-static CPUCacheInfo l2_cache = {
+static CPUCacheInfo legacy_l2_cache = {
     UNIFIED_CACHE,
     2,
     4 * MiB,
@@ -394,7 +398,7 @@ static CPUCacheInfo l2_cache = {
 };
 
 /*FIXME: CPUID leaf 2 descriptor is inconsistent with CPUID leaf 4 */
-static CPUCacheInfo l2_cache_cpuid2 = {
+static CPUCacheInfo legacy_l2_cache_cpuid2 = {
     UNIFIED_CACHE,
     2,
     2 * MiB,
@@ -403,7 +407,7 @@ static CPUCacheInfo l2_cache_cpuid2 = {
 };
 
 /*FIXME: CPUID leaf 0x80000006 is inconsistent with leaves 2 & 4 */
-static CPUCacheInfo l2_cache_amd = {
+static CPUCacheInfo legacy_l2_cache_amd = {
     UNIFIED_CACHE,
     2,
     512 * KiB,
@@ -415,7 +419,7 @@ static CPUCacheInfo l2_cache_amd = {
 };
 
 /* Level 3 unified cache: */
-static CPUCacheInfo l3_cache = {
+static CPUCacheInfo legacy_l3_cache = {
     UNIFIED_CACHE,
     3,
     16 * MiB,
@@ -3561,6 +3565,10 @@ static void x86_cpu_load_def(X86CPU *cpu, X86CPUDefinition *def, Error **errp)
         env->features[w] = def->features[w];
     }
 
+    /* Store Cache information from the X86CPUDefinition if available */
+    env->cache_info = def->cache_info;
+    cpu->legacy_cache = def->cache_info ? 0 : 1;
+
     if (tcg_enabled(env->uc)) {
         x86_cpu_apply_props(cpu, tcg_default_props);
     }
@@ -3684,11 +3692,21 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
         if (!cpu->enable_l3_cache) {
             *ecx = 0;
         } else {
-            *ecx = cpuid2_cache_descriptor(&l3_cache);
+            if (env->cache_info && !cpu->legacy_cache) {
+                *ecx = cpuid2_cache_descriptor(&env->cache_info->l3_cache);
+            } else {
+                *ecx = cpuid2_cache_descriptor(&legacy_l3_cache);
+            }
         }
-        *edx = (cpuid2_cache_descriptor(&l1d_cache) << 16) |
-               (cpuid2_cache_descriptor(&l1i_cache) <<  8) |
-               (cpuid2_cache_descriptor(&l2_cache_cpuid2));
+        if (env->cache_info && !cpu->legacy_cache) {
+            *edx = (cpuid2_cache_descriptor(&env->cache_info->l1d_cache) << 16) |
+                   (cpuid2_cache_descriptor(&env->cache_info->l1i_cache) <<  8) |
+                   (cpuid2_cache_descriptor(&env->cache_info->l2_cache));
+        } else {
+            *edx = (cpuid2_cache_descriptor(&legacy_l1d_cache) << 16) |
+                   (cpuid2_cache_descriptor(&legacy_l1i_cache) <<  8) |
+                   (cpuid2_cache_descriptor(&legacy_l2_cache_cpuid2));
+        }
         break;
     case 4:
         /* cache info: needed for Core compatibility */
@@ -3701,27 +3719,35 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
             }
         } else {
             *eax = 0;
+            CPUCacheInfo *l1d, *l1i, *l2, *l3;
+            if (env->cache_info && !cpu->legacy_cache) {
+                l1d = &env->cache_info->l1d_cache;
+                l1i = &env->cache_info->l1i_cache;
+                l2 = &env->cache_info->l2_cache;
+                l3 = &env->cache_info->l3_cache;
+            } else {
+                l1d = &legacy_l1d_cache;
+                l1i = &legacy_l1i_cache;
+                l2 = &legacy_l2_cache;
+                l3 = &legacy_l3_cache;
+            }
             switch (count) {
             case 0: /* L1 dcache info */
-                encode_cache_cpuid4(&l1d_cache,
-                                    1, cs->nr_cores,
+                encode_cache_cpuid4(l1d, 1, cs->nr_cores,
                                     eax, ebx, ecx, edx);
                 break;
             case 1: /* L1 icache info */
-                encode_cache_cpuid4(&l1i_cache,
-                                    1, cs->nr_cores,
+                encode_cache_cpuid4(l1i, 1, cs->nr_cores,
                                     eax, ebx, ecx, edx);
                 break;
             case 2: /* L2 cache info */
-                encode_cache_cpuid4(&l2_cache,
-                                    cs->nr_threads, cs->nr_cores,
+                encode_cache_cpuid4(l2, cs->nr_threads, cs->nr_cores,
                                     eax, ebx, ecx, edx);
                 break;
             case 3: /* L3 cache info */
                 pkg_offset = apicid_pkg_offset(cs->nr_cores, cs->nr_threads);
                 if (cpu->enable_l3_cache) {
-                    encode_cache_cpuid4(&l3_cache,
-                                        (1 << pkg_offset), cs->nr_cores,
+                    encode_cache_cpuid4(l3, (1 << pkg_offset), cs->nr_cores,
                                         eax, ebx, ecx, edx);
                     break;
                 }
@@ -3925,8 +3951,13 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
                (L1_ITLB_2M_ASSOC <<  8) | (L1_ITLB_2M_ENTRIES);
         *ebx = (L1_DTLB_4K_ASSOC << 24) | (L1_DTLB_4K_ENTRIES << 16) | \
                (L1_ITLB_4K_ASSOC <<  8) | (L1_ITLB_4K_ENTRIES);
-        *ecx = encode_cache_cpuid80000005(&l1d_cache_amd);
-        *edx = encode_cache_cpuid80000005(&l1i_cache_amd);
+        if (env->cache_info && !cpu->legacy_cache) {
+            *ecx = encode_cache_cpuid80000005(&env->cache_info->l1d_cache);
+            *edx = encode_cache_cpuid80000005(&env->cache_info->l1i_cache);
+        } else {
+            *ecx = encode_cache_cpuid80000005(&legacy_l1d_cache_amd);
+            *edx = encode_cache_cpuid80000005(&legacy_l1i_cache_amd);
+        }
         break;
     case 0x80000006:
         /* cache info (L2 cache) */
@@ -3942,9 +3973,17 @@ void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
                (L2_DTLB_4K_ENTRIES << 16) | \
                (AMD_ENC_ASSOC(L2_ITLB_4K_ASSOC) << 12) | \
                (L2_ITLB_4K_ENTRIES);
-        encode_cache_cpuid80000006(&l2_cache_amd,
-                                   cpu->enable_l3_cache ? &l3_cache : NULL,
-                                   ecx, edx);
+        if (env->cache_info && !cpu->legacy_cache) {
+            encode_cache_cpuid80000006(&env->cache_info->l2_cache,
+                                       cpu->enable_l3_cache ?
+                                       &env->cache_info->l3_cache : NULL,
+                                       ecx, edx);
+        } else {
+            encode_cache_cpuid80000006(&legacy_l2_cache_amd,
+                                       cpu->enable_l3_cache ?
+                                       &legacy_l3_cache : NULL,
+                                       ecx, edx);
+        }
         break;
     case 0x80000007:
         *eax = 0;
