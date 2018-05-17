@@ -1242,6 +1242,57 @@ struct X86CPUDefinition {
     CPUCaches *cache_info;
 };
 
+static CPUCaches epyc_cache_info = {
+    {
+        DCACHE,
+        1,
+        32 * KiB,
+        64,
+        8,
+        1,
+        64,
+        1,
+        1,
+        true,
+    },
+    {
+        ICACHE,
+        1,
+        64 * KiB,
+        64,
+        4,
+        1,
+        256,
+        1,
+        1,
+        true,
+    },
+    {
+        UNIFIED_CACHE,
+        2,
+        512 * KiB,
+        64,
+        8,
+        1,
+        1024,
+        1,
+    },
+    {
+        UNIFIED_CACHE,
+        3,
+        8 * MiB,
+        64,
+        16,
+        1,
+        8192,
+        1,
+        true,
+        false,
+        true,
+        true,
+    },
+};
+
 static X86CPUDefinition builtin_x86_defs[] = {
     {
         "qemu64",
@@ -2983,6 +3034,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_6_EAX_ARAT,
         },
         "AMD EPYC Processor",
+        false,
+        &epyc_cache_info,
     },
     {
         "EPYC-IBPB",
@@ -3048,6 +3101,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_6_EAX_ARAT,
         },
         "AMD EPYC Processor (with IBPB)",
+        false,
+        &epyc_cache_info,
     },
 };
 
