@@ -1239,6 +1239,7 @@ struct X86CPUDefinition {
     FeatureWordArray features;
     const char *model_id;
     bool cache_info_passthrough;
+    CPUCaches *cache_info;
 };
 
 static X86CPUDefinition builtin_x86_defs[] = {
