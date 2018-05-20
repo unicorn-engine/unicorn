@@ -3216,6 +3216,7 @@
 #define arm_set_cpu_on arm_set_cpu_on_aarch64
 #define cpu_reg cpu_reg_aarch64
 #define cpu_reg_sp cpu_reg_sp_aarch64
+#define disas_sve disas_sve_aarch64
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64
 #define helper_advsimd_acge_f16 helper_advsimd_acge_f16_aarch64
 #define helper_advsimd_acgt_f16 helper_advsimd_acgt_f16_aarch64

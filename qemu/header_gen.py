@@ -3237,6 +3237,7 @@ aarch64_symbols = (
     'arm_set_cpu_on',
     'cpu_reg',
     'cpu_reg_sp',
+    'disas_sve',
     'gen_a64_set_pc_im',
     'helper_advsimd_acge_f16',
     'helper_advsimd_acgt_f16',
