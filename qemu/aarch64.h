@@ -3355,6 +3355,7 @@
 #define helper_sve_eorv_d helper_sve_eorv_d_aarch64
 #define helper_sve_eorv_h helper_sve_eorv_h_aarch64
 #define helper_sve_eorv_s helper_sve_eorv_s_aarch64
+#define helper_sve_ext helper_sve_ext_aarch64
 #define helper_sve_fabs_d helper_sve_fabs_d_aarch64
 #define helper_sve_fabs_h helper_sve_fabs_h_aarch64
 #define helper_sve_fabs_s helper_sve_fabs_s_aarch64
