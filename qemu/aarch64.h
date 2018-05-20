@@ -3274,6 +3274,14 @@
 #define helper_sdiv64 helper_sdiv64_aarch64
 #define helper_simd_tbl helper_simd_tbl_aarch64
 #define helper_sqrt_f16 helper_sqrt_f16_aarch64
+#define helper_sve_and_pppp helper_sve_and_pppp_aarch64
+#define helper_sve_bic_pppp helper_sve_bic_pppp_aarch64
+#define helper_sve_eor_pppp helper_sve_eor_pppp_aarch64
+#define helper_sve_nand_pppp helper_sve_nand_pppp_aarch64
+#define helper_sve_nor_pppp helper_sve_nor_pppp_aarch64
+#define helper_sve_orn_pppp helper_sve_orn_pppp_aarch64
+#define helper_sve_orr_pppp helper_sve_orr_pppp_aarch64
+#define helper_sve_sel_pppp helper_sve_sel_pppp_aarch64
 #define helper_sve_predtest helper_sve_predtest_aarch64
 #define helper_sve_predtest1 helper_sve_predtest1_aarch64
 #define helper_udiv64 helper_udiv64_aarch64
