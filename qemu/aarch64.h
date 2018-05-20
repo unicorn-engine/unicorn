@@ -3350,6 +3350,9 @@
 #define helper_sve_fabs_d helper_sve_fabs_d_aarch64
 #define helper_sve_fabs_h helper_sve_fabs_h_aarch64
 #define helper_sve_fabs_s helper_sve_fabs_s_aarch64
+#define helper_sve_fexpa_d helper_sve_fexpa_d_aarch64
+#define helper_sve_fexpa_h helper_sve_fexpa_h_aarch64
+#define helper_sve_fexpa_s helper_sve_fexpa_s_aarch64
 #define helper_sve_fneg_d helper_sve_fneg_d_aarch64
 #define helper_sve_fneg_h helper_sve_fneg_h_aarch64
 #define helper_sve_fneg_s helper_sve_fneg_s_aarch64
