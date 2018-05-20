@@ -3356,6 +3356,9 @@
 #define helper_sve_fneg_d helper_sve_fneg_d_aarch64eb
 #define helper_sve_fneg_h helper_sve_fneg_h_aarch64eb
 #define helper_sve_fneg_s helper_sve_fneg_s_aarch64eb
+#define helper_sve_ftssel_d helper_sve_ftssel_d_aarch64eb
+#define helper_sve_ftssel_h helper_sve_ftssel_h_aarch64eb
+#define helper_sve_ftssel_s helper_sve_ftssel_s_aarch64eb
 #define helper_sve_index_b helper_sve_index_b_aarch64eb
 #define helper_sve_index_d helper_sve_index_d_aarch64eb
 #define helper_sve_index_h helper_sve_index_h_aarch64eb
