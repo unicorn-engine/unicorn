@@ -3282,6 +3282,10 @@
 #define helper_sve_add_zpzz_d helper_sve_add_zpzz_d_aarch64
 #define helper_sve_add_zpzz_h helper_sve_add_zpzz_h_aarch64
 #define helper_sve_add_zpzz_s helper_sve_add_zpzz_s_aarch64
+#define helper_sve_adr_p32 helper_sve_adr_p32_aarch64
+#define helper_sve_adr_p64 helper_sve_adr_p64_aarch64
+#define helper_sve_adr_s32 helper_sve_adr_s32_aarch64
+#define helper_sve_adr_u32 helper_sve_adr_u32_aarch64
 #define helper_sve_and_pppp helper_sve_and_pppp_aarch64
 #define helper_sve_and_zpzz_b helper_sve_and_zpzz_b_aarch64
 #define helper_sve_and_zpzz_d helper_sve_and_zpzz_d_aarch64
