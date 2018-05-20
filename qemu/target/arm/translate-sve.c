@@ -86,6 +86,46 @@ static bool do_mov_z(DisasContext *s, int rd, int rn)
     return do_vector2_z(s, tcg_gen_gvec_mov, 0, rd, rn);
 }
 
+/* Set the cpu flags as per a return from an SVE helper.  */
+static void do_pred_flags(DisasContext *s, TCGv_i32 t)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->cpu_NF, t);
+    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_ZF, t, 2);
+    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_CF, t, 1);
+    tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_VF, 0);
+}
+
+/* Subroutines computing the ARM PredTest psuedofunction.  */
+static void do_predtest1(DisasContext *s, TCGv_i64 d, TCGv_i64 g)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_i32 t = tcg_temp_new_i32(tcg_ctx);
+
+    gen_helper_sve_predtest1(tcg_ctx, t, d, g);
+    do_pred_flags(s, t);
+    tcg_temp_free_i32(tcg_ctx, t);
+}
+
+static void do_predtest(DisasContext *s, int dofs, int gofs, int words)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    TCGv_ptr dptr = tcg_temp_new_ptr(tcg_ctx);
+    TCGv_ptr gptr = tcg_temp_new_ptr(tcg_ctx);
+    TCGv_i32 t;
+
+    tcg_gen_addi_ptr(tcg_ctx, dptr, tcg_ctx->cpu_env, dofs);
+    tcg_gen_addi_ptr(tcg_ctx, gptr, tcg_ctx->cpu_env, gofs);
+    t = tcg_const_i32(tcg_ctx, words);
+
+    gen_helper_sve_predtest(tcg_ctx, t, dptr, gptr, t);
+    tcg_temp_free_ptr(tcg_ctx, dptr);
+    tcg_temp_free_ptr(tcg_ctx, gptr);
+
+    do_pred_flags(s, t);
+    tcg_temp_free_i32(tcg_ctx, t);
+}
+
 /*
  *** SVE Logical - Unpredicated Group
  */
@@ -112,6 +152,35 @@ static bool trans_EOR_zzz(DisasContext *s, arg_rrr_esz *a, uint32_t insn)
 static bool trans_BIC_zzz(DisasContext *s, arg_rrr_esz *a, uint32_t insn)
 {
     return do_vector3_z(s, tcg_gen_gvec_andc, 0, a->rd, a->rn, a->rm);
+}
+
+/*
+ *** SVE Predicate Misc Group
+ */
+
+static bool trans_PTEST(DisasContext *s, arg_PTEST *a, uint32_t insn)
+{
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        int nofs = pred_full_reg_offset(s, a->rn);
+        int gofs = pred_full_reg_offset(s, a->pg);
+        int words = DIV_ROUND_UP(pred_full_reg_size(s), 8);
+
+        if (words == 1) {
+            TCGv_i64 pn = tcg_temp_new_i64(tcg_ctx);
+            TCGv_i64 pg = tcg_temp_new_i64(tcg_ctx);
+
+            tcg_gen_ld_i64(tcg_ctx, pn, tcg_ctx->cpu_env, nofs);
+            tcg_gen_ld_i64(tcg_ctx, pg, tcg_ctx->cpu_env, gofs);
+            do_predtest1(s, pn, pg);
+
+            tcg_temp_free_i64(tcg_ctx, pn);
+            tcg_temp_free_i64(tcg_ctx, pg);
+        } else {
+            do_predtest(s, nofs, gofs, words);
+        }
+    }
+    return true;
 }
 
 /*

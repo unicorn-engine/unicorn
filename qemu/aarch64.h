@@ -3274,6 +3274,8 @@
 #define helper_sdiv64 helper_sdiv64_aarch64
 #define helper_simd_tbl helper_simd_tbl_aarch64
 #define helper_sqrt_f16 helper_sqrt_f16_aarch64
+#define helper_sve_predtest helper_sve_predtest_aarch64
+#define helper_sve_predtest1 helper_sve_predtest1_aarch64
 #define helper_udiv64 helper_udiv64_aarch64
 #define helper_vfp_cmpd_a64 helper_vfp_cmpd_a64_aarch64
 #define helper_vfp_cmped_a64 helper_vfp_cmped_a64_aarch64

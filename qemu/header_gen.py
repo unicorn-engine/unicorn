@@ -3295,6 +3295,8 @@ aarch64_symbols = (
     'helper_sdiv64',
     'helper_simd_tbl',
     'helper_sqrt_f16',
+    'helper_sve_predtest',
+    'helper_sve_predtest1',
     'helper_udiv64',
     'helper_vfp_cmpd_a64',
     'helper_vfp_cmped_a64',
