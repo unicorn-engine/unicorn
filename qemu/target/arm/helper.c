@@ -599,11 +599,11 @@ static const ARMCPRegInfo cp_reginfo[] = {
      * the secure register to be properly reset and migrated. There is also no
      * v8 EL1 version of the register so the non-secure instance stands alone.
      */
-    { "FCSEIDR(NS)", 15,13,0, 0,0,0, 0,0,
+    { "FCSEIDR", 15,13,0, 0,0,0, 0,0,
       PL1_RW, ARM_CP_SECSTATE_NS, NULL, 0,
       offsetof(CPUARMState, cp15.fcseidr_ns), {0, 0},
       NULL, NULL, fcse_write, NULL, raw_write, },
-    { "FCSEIDR(S)", 15,13,0, 0,0,0, 0,0,
+    { "FCSEIDR_S", 15,13,0, 0,0,0, 0,0,
       PL1_RW, ARM_CP_SECSTATE_S, NULL, 0,
       offsetof(CPUARMState, cp15.fcseidr_s), {0, 0},
       NULL, NULL, fcse_write, NULL, raw_write, },
@@ -616,7 +616,7 @@ static const ARMCPRegInfo cp_reginfo[] = {
     { "CONTEXTIDR_EL1", 0,13,0, 3,0,1, ARM_CP_STATE_BOTH,
       0, PL1_RW, ARM_CP_SECSTATE_NS, NULL, 0, offsetof(CPUARMState, cp15.contextidr_el[1]), {0, 0},
       NULL, NULL, contextidr_write, NULL, raw_write, NULL, },
-    { "CONTEXTIDR(S)", 15,13,0, 0,0,1, ARM_CP_STATE_AA32,0,
+    { "CONTEXTIDR_S", 15,13,0, 0,0,1, ARM_CP_STATE_AA32,0,
       PL1_RW, ARM_CP_SECSTATE_S, NULL, 0,
       offsetof(CPUARMState, cp15.contextidr_s), {0, 0},
       NULL, NULL, contextidr_write, NULL, raw_write, NULL, },
@@ -1814,7 +1814,7 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
     { "CNTP_CTL", 15,14,2, 0,0,1, 0,
       ARM_CP_IO | ARM_CP_ALIAS, PL1_RW | PL0_R, ARM_CP_SECSTATE_NS, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_timer[GTIMER_PHYS].ctl), {0, 0},
       gt_ptimer_access, NULL, gt_phys_ctl_write, NULL, raw_write, NULL },
-    { "CNTP_CTL(S)", 15,14,2, 0,0,1, 0, ARM_CP_IO | ARM_CP_ALIAS,
+    { "CNTP_CTL_S", 15,14,2, 0,0,1, 0, ARM_CP_IO | ARM_CP_ALIAS,
       PL1_RW | PL0_R, ARM_CP_SECSTATE_S, NULL, 0, offsetoflow32(CPUARMState, cp15.c14_timer[GTIMER_SEC].ctl), {0, 0},
       gt_ptimer_access, NULL, gt_sec_ctl_write, NULL, raw_write },
     { "CNTP_CTL_EL0", 0,14,2, 3,3,1, ARM_CP_STATE_AA64,
@@ -1830,7 +1830,7 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
     { "CNTP_TVAL", 15,14,2, 0,0,0, 0,
       ARM_CP_NO_RAW | ARM_CP_IO, PL1_RW | PL0_R, ARM_CP_SECSTATE_NS, NULL, 0, 0, {0, 0},
       gt_ptimer_access, gt_phys_tval_read, gt_phys_tval_write, },
-    { "CNTP_TVAL(S)", 15,14,2, 0,0,0, 0, ARM_CP_NO_RAW | ARM_CP_IO,
+    { "CNTP_TVAL_S", 15,14,2, 0,0,0, 0, ARM_CP_NO_RAW | ARM_CP_IO,
       PL1_RW | PL0_R, ARM_CP_SECSTATE_S, NULL, 0, 0, {0, 0},
       gt_ptimer_access, gt_sec_tval_read, gt_sec_tval_write },
     { "CNTP_TVAL_EL0", 0,14,2, 3,3,0, ARM_CP_STATE_AA64,
@@ -1859,7 +1859,7 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
     { "CNTP_CVAL", 15, 0,14, 0,2, 0, 0,
       ARM_CP_64BIT | ARM_CP_IO | ARM_CP_ALIAS, PL1_RW | PL0_R, ARM_CP_SECSTATE_NS, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_PHYS].cval), {0, 0},
       gt_ptimer_access, NULL, gt_phys_cval_write, NULL, raw_write, NULL },
-    { "CNTP_CVAL(S)", 15,0,14, 0,2,0, 0, ARM_CP_64BIT | ARM_CP_IO | ARM_CP_ALIAS,
+    { "CNTP_CVAL_S", 15,0,14, 0,2,0, 0, ARM_CP_64BIT | ARM_CP_IO | ARM_CP_ALIAS,
       PL1_RW | PL0_R, ARM_CP_SECSTATE_S, NULL, 0, offsetof(CPUARMState, cp15.c14_timer[GTIMER_SEC].cval), {0, 0},
       gt_ptimer_access, NULL, gt_sec_cval_write, NULL, raw_write },
     { "CNTP_CVAL_EL0", 0,14,2, 3,3,2, ARM_CP_STATE_AA64,
@@ -4811,7 +4811,8 @@ void arm_cpu_list(FILE *f, fprintf_function cpu_fprintf)
 
 static void add_cpreg_to_hashtable(ARMCPU *cpu, const ARMCPRegInfo *r,
                                    void *opaque, int state, int secstate,
-                                   int crm, int opc1, int opc2)
+                                   int crm, int opc1, int opc2,
+                                   const char *name)
 {
     /* Private utility function for define_one_arm_cp_reg_with_opaque():
      * add a single reginfo struct to the hash table.
@@ -4821,6 +4822,7 @@ static void add_cpreg_to_hashtable(ARMCPU *cpu, const ARMCPRegInfo *r,
     int is64 = (r->type & ARM_CP_64BIT) ? 1 : 0;
     int ns = (secstate & ARM_CP_SECSTATE_NS) ? 1 : 0;
 
+    r2->name = g_strdup(name);
     /* Reset the secure state to the specific incoming state.  This is
      * necessary as the register may have been defined with both states.
      */
@@ -5052,19 +5054,24 @@ void define_one_arm_cp_reg_with_opaque(ARMCPU *cpu,
                         /* Under AArch32 CP registers can be common
                          * (same for secure and non-secure world) or banked.
                          */
+                        char *name;
+
                         switch (r->secure) {
                         case ARM_CP_SECSTATE_S:
                         case ARM_CP_SECSTATE_NS:
                             add_cpreg_to_hashtable(cpu, r, opaque, state,
-                                                   r->secure, crm, opc1, opc2);
+                                                   r->secure, crm, opc1, opc2,
+                                                   r->name);
                             break;
                         default:
+                            name = g_strdup_printf("%s_S", r->name);
                             add_cpreg_to_hashtable(cpu, r, opaque, state,
                                                    ARM_CP_SECSTATE_S,
-                                                   crm, opc1, opc2);
+                                                   crm, opc1, opc2, name);
+                            g_free(name);
                             add_cpreg_to_hashtable(cpu, r, opaque, state,
                                                    ARM_CP_SECSTATE_NS,
-                                                   crm, opc1, opc2);
+                                                   crm, opc1, opc2, r->name);
                             break;
                         }
                     } else {
@@ -5072,7 +5079,7 @@ void define_one_arm_cp_reg_with_opaque(ARMCPU *cpu,
                          * of AArch32 */
                         add_cpreg_to_hashtable(cpu, r, opaque, state,
                                                ARM_CP_SECSTATE_NS,
-                                               crm, opc1, opc2);
+                                               crm, opc1, opc2, r->name);
                     }
                 }
             }
