@@ -3346,6 +3346,10 @@
 #define helper_sve_fneg_d helper_sve_fneg_d_aarch64eb
 #define helper_sve_fneg_h helper_sve_fneg_h_aarch64eb
 #define helper_sve_fneg_s helper_sve_fneg_s_aarch64eb
+#define helper_sve_index_b helper_sve_index_b_aarch64eb
+#define helper_sve_index_d helper_sve_index_d_aarch64eb
+#define helper_sve_index_h helper_sve_index_h_aarch64eb
+#define helper_sve_index_s helper_sve_index_s_aarch64eb
 #define helper_sve_lsl_zpzi_b helper_sve_lsl_zpzi_b_aarch64eb
 #define helper_sve_lsl_zpzi_d helper_sve_lsl_zpzi_d_aarch64eb
 #define helper_sve_lsl_zpzi_h helper_sve_lsl_zpzi_h_aarch64eb
