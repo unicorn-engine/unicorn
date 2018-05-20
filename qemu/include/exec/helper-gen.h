@@ -57,7 +57,7 @@ static inline void glue(gen_helper_, name)(TCGContext *tcg_ctx, dh_retvar_decl(r
 }
 
 #define DEF_HELPER_FLAGS_6(name, flags, ret, t1, t2, t3, t4, t5, t6)    \
-static inline void glue(gen_helper_, name)(TCGContet *tcg_ctx, dh_retvar_decl(ret)          \
+static inline void glue(gen_helper_, name)(TCGContext *tcg_ctx, dh_retvar_decl(ret)          \
     dh_arg_decl(t1, 1),  dh_arg_decl(t2, 2), dh_arg_decl(t3, 3),        \
     dh_arg_decl(t4, 4), dh_arg_decl(t5, 5), dh_arg_decl(t6, 6))         \
 {                                                                       \
