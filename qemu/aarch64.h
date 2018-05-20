@@ -3298,6 +3298,9 @@
 #define helper_sve_asr_zpzz_d helper_sve_asr_zpzz_d_aarch64
 #define helper_sve_asr_zpzz_h helper_sve_asr_zpzz_h_aarch64
 #define helper_sve_asr_zpzz_s helper_sve_asr_zpzz_s_aarch64
+#define helper_sve_asr_zzw_b helper_sve_asr_zzw_b_aarch64
+#define helper_sve_asr_zzw_h helper_sve_asr_zzw_h_aarch64
+#define helper_sve_asr_zzw_s helper_sve_asr_zzw_s_aarch64
 #define helper_sve_asrd_b helper_sve_asrd_b_aarch64
 #define helper_sve_asrd_d helper_sve_asrd_d_aarch64
 #define helper_sve_asrd_h helper_sve_asrd_h_aarch64
@@ -3361,6 +3364,9 @@
 #define helper_sve_lsl_zpzz_d helper_sve_lsl_zpzz_d_aarch64
 #define helper_sve_lsl_zpzz_h helper_sve_lsl_zpzz_h_aarch64
 #define helper_sve_lsl_zpzz_s helper_sve_lsl_zpzz_s_aarch64
+#define helper_sve_lsl_zzw_b helper_sve_lsl_zzw_b_aarch64
+#define helper_sve_lsl_zzw_h helper_sve_lsl_zzw_h_aarch64
+#define helper_sve_lsl_zzw_s helper_sve_lsl_zzw_s_aarch64
 #define helper_sve_lsr_zpzi_b helper_sve_lsr_zpzi_b_aarch64
 #define helper_sve_lsr_zpzi_d helper_sve_lsr_zpzi_d_aarch64
 #define helper_sve_lsr_zpzi_h helper_sve_lsr_zpzi_h_aarch64
@@ -3372,6 +3378,9 @@
 #define helper_sve_lsr_zpzz_d helper_sve_lsr_zpzz_d_aarch64
 #define helper_sve_lsr_zpzz_h helper_sve_lsr_zpzz_h_aarch64
 #define helper_sve_lsr_zpzz_s helper_sve_lsr_zpzz_s_aarch64
+#define helper_sve_lsr_zzw_b helper_sve_lsr_zzw_b_aarch64
+#define helper_sve_lsr_zzw_h helper_sve_lsr_zzw_h_aarch64
+#define helper_sve_lsr_zzw_s helper_sve_lsr_zzw_s_aarch64
 #define helper_sve_mla_b helper_sve_mla_b_aarch64
 #define helper_sve_mla_d helper_sve_mla_d_aarch64
 #define helper_sve_mla_h helper_sve_mla_h_aarch64
