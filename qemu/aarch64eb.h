@@ -3214,6 +3214,8 @@
 #define arm_reset_cpu arm_reset_cpu_aarch64eb
 #define arm_set_cpu_off arm_set_cpu_off_aarch64eb
 #define arm_set_cpu_on arm_set_cpu_on_aarch64eb
+#define cpu_reg cpu_reg_aarch64eb
+#define cpu_reg_sp cpu_reg_sp_aarch64eb
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64eb
 #define helper_advsimd_acge_f16 helper_advsimd_acge_f16_aarch64eb
 #define helper_advsimd_acgt_f16 helper_advsimd_acgt_f16_aarch64eb
@@ -3278,4 +3280,13 @@
 #define helper_vfp_cmps_a64 helper_vfp_cmps_a64_aarch64eb
 #define helper_vfp_mulxd helper_vfp_mulxd_aarch64eb
 #define helper_vfp_mulxs helper_vfp_mulxs_aarch64eb
+#define logic_imm_decode_wmask logic_imm_decode_wmask_aarch64eb
+#define new_tmp_a64 new_tmp_a64_aarch64eb
+#define new_tmp_a64_zero new_tmp_a64_zero_aarch64eb
+#define read_cpu_reg read_cpu_reg_aarch64eb
+#define read_cpu_reg_sp read_cpu_reg_sp_aarch64eb
+#define sve_access_check sve_access_check_aarch64eb
+#define unallocated_encoding unallocated_encoding_aarch64eb
+#define vfp_expand_imm vfp_expand_imm_aarch64eb
+#define write_fp_dreg write_fp_dreg_aarch64eb
 #endif

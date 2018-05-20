@@ -3235,6 +3235,8 @@ aarch64_symbols = (
     'arm_reset_cpu',
     'arm_set_cpu_off',
     'arm_set_cpu_on',
+    'cpu_reg',
+    'cpu_reg_sp',
     'gen_a64_set_pc_im',
     'helper_advsimd_acge_f16',
     'helper_advsimd_acgt_f16',
@@ -3298,7 +3300,16 @@ aarch64_symbols = (
     'helper_vfp_cmpes_a64',
     'helper_vfp_cmps_a64',
     'helper_vfp_mulxd',
-    'helper_vfp_mulxs'
+    'helper_vfp_mulxs',
+    'logic_imm_decode_wmask',
+    'new_tmp_a64',
+    'new_tmp_a64_zero',
+    'read_cpu_reg',
+    'read_cpu_reg_sp',
+    'sve_access_check',
+    'unallocated_encoding',
+    'vfp_expand_imm',
+    'write_fp_dreg',
 )
 
 mips_symbols = (
