@@ -3148,7 +3148,7 @@ float128 uint64_to_float128(uint64_t a, float_status *status)
         float128 zero = {0};
         return zero;
     }
-    return normalizeRoundAndPackFloat128(0, 0x406E, a, 0, status);
+    return normalizeRoundAndPackFloat128(0, 0x406E, 0, a, status);
 }
 
 
