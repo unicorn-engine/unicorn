@@ -5243,10 +5243,15 @@ static void handle_fp_fcvt(DisasContext *s, int opcode,
         } else {
             /* Single to half */
             TCGv_i32 tcg_rd = tcg_temp_new_i32(tcg_ctx);
-            gen_helper_vfp_fcvt_f32_to_f16(tcg_ctx, tcg_rd, tcg_rn, tcg_ctx->cpu_env);
+            TCGv_i32 ahp = get_ahp_flag(tcg_ctx);
+            TCGv_ptr fpst = get_fpstatus_ptr(tcg_ctx, false);
+
+            gen_helper_vfp_fcvt_f32_to_f16(tcg_ctx, tcg_rd, tcg_rn, fpst, ahp);
             /* write_fp_sreg is OK here because top half of tcg_rd is zero */
             write_fp_sreg(s, rd, tcg_rd);
             tcg_temp_free_i32(tcg_ctx, tcg_rd);
+            tcg_temp_free_i32(tcg_ctx, ahp);
+            tcg_temp_free_ptr(tcg_ctx, fpst);
         }
         tcg_temp_free_i32(tcg_ctx, tcg_rn);
         break;
@@ -5259,9 +5264,13 @@ static void handle_fp_fcvt(DisasContext *s, int opcode,
             /* Double to single */
             gen_helper_vfp_fcvtsd(tcg_ctx, tcg_rd, tcg_rn, tcg_ctx->cpu_env);
         } else {
+            TCGv_ptr fpst = get_fpstatus_ptr(tcg_ctx, false);
+            TCGv_i32 ahp = get_ahp_flag(tcg_ctx);
             /* Double to half */
-            gen_helper_vfp_fcvt_f64_to_f16(tcg_ctx, tcg_rd, tcg_rn, tcg_ctx->cpu_env);
+            gen_helper_vfp_fcvt_f64_to_f16(tcg_ctx, tcg_rd, tcg_rn, fpst, ahp);
             /* write_fp_sreg is OK here because top half of tcg_rd is zero */
+            tcg_temp_free_ptr(tcg_ctx, fpst);
+            tcg_temp_free_i32(tcg_ctx, ahp);
         }
         write_fp_sreg(s, rd, tcg_rd);
         tcg_temp_free_i32(tcg_ctx, tcg_rd);
@@ -5271,17 +5280,21 @@ static void handle_fp_fcvt(DisasContext *s, int opcode,
     case 0x3:
     {
         TCGv_i32 tcg_rn = read_fp_sreg(s, rn);
+        TCGv_ptr tcg_fpst = get_fpstatus_ptr(tcg_ctx, false);
+        TCGv_i32 tcg_ahp = get_ahp_flag(tcg_ctx);
         tcg_gen_ext16u_i32(tcg_ctx, tcg_rn, tcg_rn);
         if (dtype == 0) {
             /* Half to single */
             TCGv_i32 tcg_rd = tcg_temp_new_i32(tcg_ctx);
-            gen_helper_vfp_fcvt_f16_to_f32(tcg_ctx, tcg_rd, tcg_rn, tcg_ctx->cpu_env);
+            gen_helper_vfp_fcvt_f16_to_f32(tcg_ctx, tcg_rd, tcg_rn, tcg_fpst, tcg_ahp);
             write_fp_sreg(s, rd, tcg_rd);
+            tcg_temp_free_ptr(tcg_ctx, tcg_fpst);
+            tcg_temp_free_i32(tcg_ctx, tcg_ahp);
             tcg_temp_free_i32(tcg_ctx, tcg_rd);
         } else {
             /* Half to double */
             TCGv_i64 tcg_rd = tcg_temp_new_i64(tcg_ctx);
-            gen_helper_vfp_fcvt_f16_to_f64(tcg_ctx, tcg_rd, tcg_rn, tcg_ctx->cpu_env);
+            gen_helper_vfp_fcvt_f16_to_f64(tcg_ctx, tcg_rd, tcg_rn, tcg_fpst, tcg_ahp);
             write_fp_dreg(s, rd, tcg_rd);
             tcg_temp_free_i64(tcg_ctx, tcg_rd);
         }
@@ -9191,12 +9204,17 @@ static void handle_2misc_narrow(DisasContext *s, bool scalar,
             } else {
                 TCGv_i32 tcg_lo = tcg_temp_new_i32(tcg_ctx);
                 TCGv_i32 tcg_hi = tcg_temp_new_i32(tcg_ctx);
+                TCGv_ptr fpst = get_fpstatus_ptr(tcg_ctx, false);
+                TCGv_i32 ahp = get_ahp_flag(tcg_ctx);
+
                 tcg_gen_extr_i64_i32(tcg_ctx, tcg_lo, tcg_hi, tcg_op);
-                gen_helper_vfp_fcvt_f32_to_f16(tcg_ctx, tcg_lo, tcg_lo, tcg_ctx->cpu_env);
-                gen_helper_vfp_fcvt_f32_to_f16(tcg_ctx, tcg_hi, tcg_hi, tcg_ctx->cpu_env);
+                gen_helper_vfp_fcvt_f32_to_f16(tcg_ctx, tcg_lo, tcg_lo, fpst, ahp);
+                gen_helper_vfp_fcvt_f32_to_f16(tcg_ctx, tcg_hi, tcg_hi, fpst, ahp);
                 tcg_gen_deposit_i32(tcg_ctx, tcg_res[pass], tcg_lo, tcg_hi, 16, 16);
                 tcg_temp_free_i32(tcg_ctx, tcg_lo);
                 tcg_temp_free_i32(tcg_ctx, tcg_hi);
+                tcg_temp_free_ptr(tcg_ctx, fpst);
+                tcg_temp_free_i32(tcg_ctx, ahp);
             }
             break;
         case 0x56:  /* FCVTXN, FCVTXN2 */
@@ -11686,18 +11704,23 @@ static void handle_2misc_widening(DisasContext *s, int opcode, bool is_q,
         /* 16 -> 32 bit fp conversion */
         int srcelt = is_q ? 4 : 0;
         TCGv_i32 tcg_res[4];
+        TCGv_ptr fpst = get_fpstatus_ptr(tcg_ctx, false);
+        TCGv_i32 ahp = get_ahp_flag(tcg_ctx);
 
         for (pass = 0; pass < 4; pass++) {
             tcg_res[pass] = tcg_temp_new_i32(tcg_ctx);
 
             read_vec_element_i32(s, tcg_res[pass], rn, srcelt + pass, MO_16);
             gen_helper_vfp_fcvt_f16_to_f32(tcg_ctx, tcg_res[pass], tcg_res[pass],
-                                           tcg_ctx->cpu_env);
+                                           fpst, ahp);
         }
         for (pass = 0; pass < 4; pass++) {
             write_vec_element_i32(s, tcg_res[pass], rd, pass, MO_32);
             tcg_temp_free_i32(tcg_ctx, tcg_res[pass]);
         }
+
+        tcg_temp_free_ptr(tcg_ctx, fpst);
+        tcg_temp_free_i32(tcg_ctx, ahp);
     }
 }
 

@@ -472,6 +472,7 @@
 #define float128_rem float128_rem_armeb
 #define float128_round_to_int float128_round_to_int_armeb
 #define float128_scalbn float128_scalbn_armeb
+#define float128_silence_nan float128_silence_nan_armeb
 #define float128_sqrt float128_sqrt_armeb
 #define float128_sub float128_sub_armeb
 #define float128_to_float32 float128_to_float32_armeb
@@ -505,6 +506,7 @@
 #define float16_muladd float16_muladd_armeb
 #define float16_round_to_int float16_round_to_int_armeb
 #define float16_scalbn float16_scalbn_armeb
+#define float16_silence_nan float16_silence_nan_armeb
 #define float16_sqrt float16_sqrt_armeb
 #define float16_squash_input_denormal float16_squash_input_denormal_armeb
 #define float16_sub float16_sub_armeb
@@ -561,6 +563,7 @@
 #define float32_round_to_int float32_round_to_int_armeb
 #define float32_scalbn float32_scalbn_armeb
 #define float32_set_sign float32_set_sign_armeb
+#define float32_silence_nan float32_silence_nan_armeb
 #define float32_sqrt float32_sqrt_armeb
 #define float32_squash_input_denormal float32_squash_input_denormal_armeb
 #define float32_sub float32_sub_armeb
@@ -618,6 +621,7 @@
 #define float64_round_to_int float64_round_to_int_armeb
 #define float64_scalbn float64_scalbn_armeb
 #define float64_set_sign float64_set_sign_armeb
+#define float64_silence_nan float64_silence_nan_armeb
 #define float64_sqrt float64_sqrt_armeb
 #define float64_squash_input_denormal float64_squash_input_denormal_armeb
 #define float64_sub float64_sub_armeb
@@ -663,6 +667,7 @@
 #define floatx80_round floatx80_round_armeb
 #define floatx80_round_to_int floatx80_round_to_int_armeb
 #define floatx80_scalbn floatx80_scalbn_armeb
+#define floatx80_silence_nan floatx80_silence_nan_armeb
 #define floatx80_sqrt floatx80_sqrt_armeb
 #define floatx80_sub floatx80_sub_armeb
 #define floatx80_to_float128 floatx80_to_float128_armeb
