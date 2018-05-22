@@ -58,7 +58,6 @@ typedef struct PCIHostState PCIHostState;
 typedef struct PCMCIACardState PCMCIACardState;
 typedef struct PCMachineClass PCMachineClass;
 typedef struct PCMachineState PCMachineState;
-typedef struct PcGuestInfo PcGuestInfo;
 typedef struct PixelFormat PixelFormat;
 typedef struct Property Property;
 typedef struct PropertyInfo PropertyInfo;
