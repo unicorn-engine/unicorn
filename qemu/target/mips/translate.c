@@ -4350,7 +4350,7 @@ static inline void gen_goto_tb(DisasContext *ctx, int n, target_ulong dest)
     if (use_goto_tb(ctx, dest)) {
         tcg_gen_goto_tb(tcg_ctx, n);
         gen_save_pc(ctx, dest);
-        tcg_gen_exit_tb(tcg_ctx, (uintptr_t)ctx->base.tb + n);
+        tcg_gen_exit_tb(tcg_ctx, ctx->base.tb, n);
     } else {
         gen_save_pc(ctx, dest);
         if (ctx->base.singlestep_enabled) {
@@ -20534,7 +20534,7 @@ static void mips_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
             gen_goto_tb(ctx, 0, ctx->base.pc_next);
             break;
         case DISAS_EXIT:
-            tcg_gen_exit_tb(tcg_ctx, 0);
+            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
             break;
         case DISAS_NORETURN:
             break;

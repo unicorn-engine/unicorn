@@ -50,7 +50,7 @@ static inline void gen_tb_start(TCGContext *tcg_ctx, TranslationBlock *tb)
 static inline void gen_tb_end(TCGContext *tcg_ctx, TranslationBlock *tb, int num_insns)
 {
     gen_set_label(tcg_ctx, tcg_ctx->exitreq_label);
-    tcg_gen_exit_tb(tcg_ctx, (uintptr_t)tb + TB_EXIT_REQUESTED);
+    tcg_gen_exit_tb(tcg_ctx, tb, TB_EXIT_REQUESTED);
 
 #if 0
     if (tb->cflags & CF_USE_ICOUNT) {

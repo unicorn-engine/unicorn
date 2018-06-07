@@ -1528,10 +1528,10 @@ static void gen_jmp_tb(DisasContext *s, int n, uint32_t dest)
     } else if (use_goto_tb(s, dest)) {
         tcg_gen_goto_tb(tcg_ctx, n);
         tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_PC, dest);
-        tcg_gen_exit_tb(tcg_ctx, (uintptr_t)s->tb + n);
+        tcg_gen_exit_tb(tcg_ctx, s->tb, n);
     } else {
         gen_jmp_im(s, dest);
-        tcg_gen_exit_tb(tcg_ctx, 0);
+        tcg_gen_exit_tb(tcg_ctx, NULL, 0);
     }
     s->is_jmp = DISAS_TB_JUMP;
 }
@@ -6416,7 +6416,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
             case DISAS_UPDATE:
                 update_cc_op(dc);
                 /* indicate that the hash table must be used to find the next TB */
-                tcg_gen_exit_tb(tcg_ctx, 0);
+                tcg_gen_exit_tb(tcg_ctx, NULL, 0);
                 break;
             case DISAS_TB_JUMP:
                 /* nothing more to generate */

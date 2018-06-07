@@ -789,10 +789,19 @@ static inline void tcg_gen_insn_start(TCGContext *tcg_ctx, target_ulong pc, targ
 # error "Unhandled number of operands to insn_start"
 #endif
 
-static inline void tcg_gen_exit_tb(TCGContext *s, uintptr_t val)
-{
-    tcg_gen_op1i(s, INDEX_op_exit_tb, val);
-}
+/**
+ * tcg_gen_exit_tb() - output exit_tb TCG operation
+ * @tb: The TranslationBlock from which we are exiting
+ * @idx: Direct jump slot index, or exit request
+ *
+ * See tcg/README for more info about this TCG operation.
+ * See also tcg.h and the block comment above TB_EXIT_MASK.
+ *
+ * For a normal exit from the TB, back to the main loop, @tb should
+ * be NULL and @idx should be 0.  Otherwise, @tb should be valid and
+ * @idx should be one of the TB_EXIT_ values.
+ */
+void tcg_gen_exit_tb(TCGContext *s, TranslationBlock *tb, unsigned idx);
 
 /**
  * tcg_gen_goto_tb() - output goto_tb TCG operation

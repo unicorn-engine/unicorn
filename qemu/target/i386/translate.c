@@ -2464,7 +2464,7 @@ static inline void gen_goto_tb(DisasContext *s, int tb_num, target_ulong eip)
         /* jump to same page: we can use a direct jump */
         tcg_gen_goto_tb(tcg_ctx, tb_num);
         gen_jmp_im(s, eip);
-        tcg_gen_exit_tb(tcg_ctx, (uintptr_t)s->base.tb + tb_num);
+        tcg_gen_exit_tb(tcg_ctx, s->base.tb, tb_num);
         s->base.is_jmp = DISAS_NORETURN;
     } else {
         /* jump to another page */
@@ -2904,13 +2904,13 @@ do_gen_eob_worker(DisasContext *s, bool inhibit, bool recheck_tf, bool jr)
         gen_helper_debug(tcg_ctx, tcg_ctx->cpu_env);
     } else if (recheck_tf) {
         gen_helper_rechecking_single_step(tcg_ctx, tcg_ctx->cpu_env);
-        tcg_gen_exit_tb(tcg_ctx, 0);
+        tcg_gen_exit_tb(tcg_ctx, NULL, 0);
     } else if (s->tf) {
         gen_helper_single_step(tcg_ctx, tcg_ctx->cpu_env);
     } else if (jr) {
         tcg_gen_lookup_and_goto_ptr(tcg_ctx);
     } else {
-        tcg_gen_exit_tb(tcg_ctx, 0);
+        tcg_gen_exit_tb(tcg_ctx, NULL, 0);
     }
     s->base.is_jmp = DISAS_NORETURN;
 }
@@ -8030,7 +8030,7 @@ case 0x101:
             gen_helper_vmrun(tcg_ctx, cpu_env,
                              tcg_const_i32(tcg_ctx, s->aflag - 1),
                              tcg_const_i32(tcg_ctx, s->pc - pc_start));
-            tcg_gen_exit_tb(tcg_ctx, 0);
+            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
             s->base.is_jmp = DISAS_NORETURN;
             break;
 

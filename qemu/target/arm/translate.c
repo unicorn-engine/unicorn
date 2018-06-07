@@ -1028,7 +1028,7 @@ static inline void gen_bx_excret_final_code(DisasContext *s)
     if (is_singlestepping(s)) {
         gen_singlestep_exception(s);
     } else {
-        tcg_gen_exit_tb(tcg_ctx, 0);
+        tcg_gen_exit_tb(tcg_ctx, NULL, 0);
     }
     gen_set_label(tcg_ctx, excret_label);
     /* Yes: this is an exception return.
@@ -4376,7 +4376,7 @@ static void gen_goto_tb(DisasContext *s, int n, target_ulong dest)
     if (use_goto_tb(s, dest)) {
         tcg_gen_goto_tb(tcg_ctx, n);
         gen_set_pc_im(s, dest);
-        tcg_gen_exit_tb(tcg_ctx, (uintptr_t)s->base.tb + n);
+        tcg_gen_exit_tb(tcg_ctx, s->base.tb, n);
     } else {
         gen_set_pc_im(s, dest);
         gen_goto_ptr(s);
@@ -12907,7 +12907,7 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             /* fall through */
         default:
             /* indicate that the hash table must be used to find the next TB */
-            tcg_gen_exit_tb(tcg_ctx, 0);
+            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
             break;
         case DISAS_NORETURN:
             /* nothing more to generate */
@@ -12922,7 +12922,7 @@ static void arm_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             /* The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
-            tcg_gen_exit_tb(tcg_ctx, 0);
+            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
             break;
         }
         case DISAS_WFE:

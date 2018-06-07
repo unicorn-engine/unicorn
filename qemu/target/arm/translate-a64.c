@@ -404,7 +404,7 @@ static inline void gen_goto_tb(DisasContext *s, int n, uint64_t dest)
     if (use_goto_tb(s, n, dest)) {
         tcg_gen_goto_tb(tcg_ctx, n);
         gen_a64_set_pc_im(s, dest);
-        tcg_gen_exit_tb(tcg_ctx, (intptr_t)tb + n);
+        tcg_gen_exit_tb(tcg_ctx, tb, n);
         s->base.is_jmp = DISAS_NORETURN;
     } else {
         gen_a64_set_pc_im(s, dest);
@@ -14070,7 +14070,7 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             gen_a64_set_pc_im(dc, dc->pc);
             /* fall through */
         case DISAS_EXIT:
-            tcg_gen_exit_tb(tcg_ctx, 0);
+            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
             break;
         case DISAS_JUMP:
             tcg_gen_lookup_and_goto_ptr(tcg_ctx);
@@ -14099,7 +14099,7 @@ static void aarch64_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
             /* The helper doesn't necessarily throw an exception, but we
              * must go back to the main loop to check for interrupts anyway.
              */
-            tcg_gen_exit_tb(tcg_ctx, 0);
+            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
             break;
         }
         }
