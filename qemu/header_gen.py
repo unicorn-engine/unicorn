@@ -3709,6 +3709,7 @@ aarch64_symbols = (
     'helper_sve_uzp_h',
     'helper_sve_uzp_s',
     'helper_sve_uzp_p',
+    'helper_sve_while',
     'helper_sve_zip_b',
     'helper_sve_zip_d',
     'helper_sve_zip_h',

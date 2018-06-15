@@ -3688,6 +3688,7 @@
 #define helper_sve_uzp_h helper_sve_uzp_h_aarch64eb
 #define helper_sve_uzp_s helper_sve_uzp_s_aarch64eb
 #define helper_sve_uzp_p helper_sve_uzp_p_aarch64eb
+#define helper_sve_while helper_sve_while_aarch64eb
 #define helper_sve_zip_b helper_sve_zip_b_aarch64eb
 #define helper_sve_zip_d helper_sve_zip_d_aarch64eb
 #define helper_sve_zip_h helper_sve_zip_h_aarch64eb
