@@ -1810,7 +1810,7 @@
 #define io_writel io_writel_sparc
 #define io_writeq io_writeq_sparc
 #define io_writew io_writew_sparc
-#define iotlb_to_region iotlb_to_region_sparc
+#define iotlb_to_section iotlb_to_section_sparc
 #define is_a64 is_a64_sparc
 #define is_help_option is_help_option_sparc
 #define is_valid_option_list is_valid_option_list_sparc

@@ -1810,7 +1810,7 @@
 #define io_writel io_writel_aarch64eb
 #define io_writeq io_writeq_aarch64eb
 #define io_writew io_writew_aarch64eb
-#define iotlb_to_region iotlb_to_region_aarch64eb
+#define iotlb_to_section iotlb_to_section_aarch64eb
 #define is_a64 is_a64_aarch64eb
 #define is_help_option is_help_option_aarch64eb
 #define is_valid_option_list is_valid_option_list_aarch64eb

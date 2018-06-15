@@ -1810,7 +1810,7 @@
 #define io_writel io_writel_powerpc
 #define io_writeq io_writeq_powerpc
 #define io_writew io_writew_powerpc
-#define iotlb_to_region iotlb_to_region_powerpc
+#define iotlb_to_section iotlb_to_section_powerpc
 #define is_a64 is_a64_powerpc
 #define is_help_option is_help_option_powerpc
 #define is_valid_option_list is_valid_option_list_powerpc

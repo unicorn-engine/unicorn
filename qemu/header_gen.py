@@ -1816,7 +1816,7 @@ symbols = (
     'io_writel',
     'io_writeq',
     'io_writew',
-    'iotlb_to_region',
+    'iotlb_to_section',
     'is_a64',
     'is_help_option',
     'is_valid_option_list',

@@ -1810,7 +1810,7 @@
 #define io_writel io_writel_arm
 #define io_writeq io_writeq_arm
 #define io_writew io_writew_arm
-#define iotlb_to_region iotlb_to_region_arm
+#define iotlb_to_section iotlb_to_section_arm
 #define is_a64 is_a64_arm
 #define is_help_option is_help_option_arm
 #define is_valid_option_list is_valid_option_list_arm

@@ -319,8 +319,17 @@ extern uintptr_t tci_tb_ptr;
 
 void phys_mem_set_alloc(void *(*alloc)(size_t, uint64_t *align));
 
-struct MemoryRegion *iotlb_to_region(CPUState *cpu,
-                                     hwaddr index, MemTxAttrs attrs);
+/**
+ * iotlb_to_section:
+ * @cpu: CPU performing the access
+ * @index: TCG CPU IOTLB entry
+ *
+ * Given a TCG CPU IOTLB entry, return the MemoryRegionSection that
+ * it refers to. @index will have been initially created and returned
+ * by memory_region_section_get_iotlb().
+ */
+struct MemoryRegionSection *iotlb_to_section(CPUState *cpu,
+                                             hwaddr index, MemTxAttrs attrs);
 
 void tlb_fill(CPUState *cpu, target_ulong addr, int size,
               MMUAccessType access_type, int mmu_idx, uintptr_t retaddr);

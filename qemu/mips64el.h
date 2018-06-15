@@ -1810,7 +1810,7 @@
 #define io_writel io_writel_mips64el
 #define io_writeq io_writeq_mips64el
 #define io_writew io_writew_mips64el
-#define iotlb_to_region iotlb_to_region_mips64el
+#define iotlb_to_section iotlb_to_section_mips64el
 #define is_a64 is_a64_mips64el
 #define is_help_option is_help_option_mips64el
 #define is_valid_option_list is_valid_option_list_mips64el

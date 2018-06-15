@@ -1810,7 +1810,7 @@
 #define io_writel io_writel_armeb
 #define io_writeq io_writeq_armeb
 #define io_writew io_writew_armeb
-#define iotlb_to_region iotlb_to_region_armeb
+#define iotlb_to_section iotlb_to_section_armeb
 #define is_a64 is_a64_armeb
 #define is_help_option is_help_option_armeb
 #define is_valid_option_list is_valid_option_list_armeb

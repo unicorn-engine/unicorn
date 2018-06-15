@@ -1810,7 +1810,7 @@
 #define io_writel io_writel_m68k
 #define io_writeq io_writeq_m68k
 #define io_writew io_writew_m68k
-#define iotlb_to_region iotlb_to_region_m68k
+#define iotlb_to_section iotlb_to_section_m68k
 #define is_a64 is_a64_m68k
 #define is_help_option is_help_option_m68k
 #define is_valid_option_list is_valid_option_list_m68k

@@ -1804,7 +1804,9 @@ static uint16_t dummy_section(PhysPageMap *map, FlatView *fv, MemoryRegion *mr)
     return phys_section_add(map, &section);
 }
 
-MemoryRegion *iotlb_to_region(CPUState *cpu, hwaddr index, MemTxAttrs attrs)
+MemoryRegionSection *iotlb_to_section(CPUState *cpu,
+                                      hwaddr index, MemTxAttrs attrs)
+
 {
     int asidx = cpu_asidx_from_attrs(cpu, attrs);
     CPUAddressSpace *cpuas = &cpu->cpu_ases[asidx];
@@ -1812,7 +1814,7 @@ MemoryRegion *iotlb_to_region(CPUState *cpu, hwaddr index, MemTxAttrs attrs)
     AddressSpaceDispatch *d = atomic_read(&cpuas->memory_dispatch);
     MemoryRegionSection *sections = d->map.sections;
 
-    return sections[index & ~TARGET_PAGE_MASK].mr;
+    return &sections[index & ~TARGET_PAGE_MASK];
 }
 
 AddressSpaceDispatch *address_space_dispatch_new(struct uc_struct *uc, FlatView *fv)
