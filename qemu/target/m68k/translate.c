@@ -6273,31 +6273,6 @@ void register_m68k_insns (CPUM68KState *env)
 #undef INSN
 }
 
-/* ??? Some of this implementation is not exception safe.  We should always
-   write back the result to memory before setting the condition codes.  */
-static void disas_m68k_insn(CPUM68KState * env, DisasContext *s)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-
-    // Unicorn: end address tells us to stop emulation
-    if (s->pc == s->uc->addr_end) {
-        gen_exception(s, s->pc, EXCP_HLT);
-        return;
-    }
-
-    // Unicorn: trace this instruction on request
-    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, s->pc)) {
-        gen_uc_tracecode(tcg_ctx, 2, UC_HOOK_CODE_IDX, env->uc, s->pc);
-        // the callback might want to stop emulation immediately
-        check_exit_request(tcg_ctx);
-    }
-
-    uint16_t insn = read_im16(env, s);
-    ((disas_proc)tcg_ctx->opcode_table[insn])(env, s, insn);
-    do_writebacks(s);
-    do_release(s);
-}
-
 static void m68k_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
@@ -6357,8 +6332,27 @@ static bool m68k_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cpu,
 static void m68k_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
+    CPUM68KState *env = cpu->env_ptr;
+    TCGContext *tcg_ctx = env->uc->tcg_ctx;
+    uint16_t insn = read_im16(env, dc);
 
-    disas_m68k_insn(cpu->env_ptr, dc);
+    // Unicorn: end address tells us to stop emulation
+    if (dc->pc == dc->uc->addr_end) {
+        gen_exception(dc, dc->pc, EXCP_HLT);
+        return;
+    }
+
+    // Unicorn: trace this instruction on request
+    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, dc->pc)) {
+        gen_uc_tracecode(tcg_ctx, 2, UC_HOOK_CODE_IDX, env->uc, dc->pc);
+        // the callback might want to stop emulation immediately
+        check_exit_request(tcg_ctx);
+    }
+
+    ((disas_proc)tcg_ctx->opcode_table[insn])(env, dc, insn);
+    do_writebacks(dc);
+    do_release(dc);
+
     dc->base.pc_next = dc->pc;
 
     if (dc->base.is_jmp == DISAS_NEXT) {
