@@ -3399,6 +3399,7 @@ aarch64_symbols = (
     'helper_sve_insr_d',
     'helper_sve_insr_h',
     'helper_sve_insr_s',
+    'helper_sve_last_active_element',
     'helper_sve_lsl_zpzi_b',
     'helper_sve_lsl_zpzi_d',
     'helper_sve_lsl_zpzi_h',
