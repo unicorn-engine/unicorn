@@ -6405,20 +6405,23 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
         gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, EXCP_DEBUG));
     } else {
         switch(dc->is_jmp) {
-            case DISAS_NEXT:
-                update_cc_op(dc);
-                gen_jmp_tb(dc, 0, dc->pc);
-                break;
-            default:
-            case DISAS_JUMP:
-            case DISAS_UPDATE:
-                update_cc_op(dc);
-                /* indicate that the hash table must be used to find the next TB */
-                tcg_gen_exit_tb(tcg_ctx, NULL, 0);
-                break;
-            case DISAS_NORETURN:
-                /* nothing more to generate */
-                break;
+        case DISAS_NEXT:
+            update_cc_op(dc);
+            gen_jmp_tb(dc, 0, dc->pc);
+            break;
+        case DISAS_JUMP:
+            /* We updated CC_OP and PC in gen_jmp/gen_jmp_im.  */
+            tcg_gen_lookup_and_goto_ptr(tcg_ctx);
+            break;
+        default:
+        case DISAS_UPDATE:
+            update_cc_op(dc);
+            /* indicate that the hash table must be used to find the next TB */
+            tcg_gen_exit_tb(tcg_ctx, NULL, 0);
+            break;
+        case DISAS_NORETURN:
+            /* nothing more to generate */
+            break;
         }
     }
 
