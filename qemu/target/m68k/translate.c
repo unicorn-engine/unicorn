@@ -293,19 +293,20 @@ static void gen_jmp(DisasContext *s, TCGv dest)
     s->is_jmp = DISAS_JUMP;
 }
 
-static void gen_raise_exception(DisasContext *s, int nr)
+static void gen_exception(DisasContext *s, uint32_t dest, int nr)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv_i32 tmp = tcg_const_i32(tcg_ctx, nr);
+    TCGv_i32 tmp;
+
+    update_cc_op(s);
+    tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_PC, dest);
+
+    tmp = tcg_const_i32(tcg_ctx, nr);
 
     gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, tmp);
     tcg_temp_free_i32(tcg_ctx, tmp);
-}
 
-static void gen_exception(DisasContext *s, uint32_t where, int nr)
-{
-    gen_jmp_im(s, where);
-    gen_raise_exception(s, nr);
+    s->is_jmp = DISAS_NORETURN;
 }
 
 static inline void gen_addr_fault(DisasContext *s)
@@ -6369,7 +6370,6 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
 
         if (unlikely(cpu_breakpoint_test(cs, dc->pc, BP_ANY))) {
             gen_exception(dc, dc->pc, EXCP_DEBUG);
-            dc->is_jmp = DISAS_JUMP;
             /* The address covered by the breakpoint must be included in
                [tb->pc, tb->pc + tb->size) in order to for it to be
                properly cleared -- thus we increment the PC here so that
@@ -6419,6 +6419,7 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
                 tcg_gen_exit_tb(tcg_ctx, NULL, 0);
                 break;
             case DISAS_TB_JUMP:
+            case DISAS_NORETURN:
                 /* nothing more to generate */
                 break;
         }
