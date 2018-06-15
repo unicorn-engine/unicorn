@@ -3330,6 +3330,8 @@
 #define helper_sve_clz_d helper_sve_clz_d_aarch64
 #define helper_sve_clz_h helper_sve_clz_h_aarch64
 #define helper_sve_clz_s helper_sve_clz_s_aarch64
+#define helper_sve_compact_d helper_sve_compact_d_aarch64
+#define helper_sve_compact_s helper_sve_compact_s_aarch64
 #define helper_sve_cnot_b helper_sve_cnot_b_aarch64
 #define helper_sve_cnot_d helper_sve_cnot_d_aarch64
 #define helper_sve_cnot_h helper_sve_cnot_h_aarch64

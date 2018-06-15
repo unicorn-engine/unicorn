@@ -3351,6 +3351,8 @@ aarch64_symbols = (
     'helper_sve_clz_d',
     'helper_sve_clz_h',
     'helper_sve_clz_s',
+    'helper_sve_compact_d',
+    'helper_sve_compact_s',
     'helper_sve_cnot_b',
     'helper_sve_cnot_d',
     'helper_sve_cnot_h',
