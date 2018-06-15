@@ -91,14 +91,11 @@ void m68k_tcg_init(struct uc_struct *uc)
 
 /* internal defines */
 typedef struct DisasContext {
+    DisasContextBase base;
     CPUM68KState *env;
-    target_ulong insn_pc; /* Start of the current instruction.  */
     target_ulong pc;
-    int is_jmp;
     CCOp cc_op; /* Current CC operation */
     int cc_op_synced;
-    struct TranslationBlock *tb;
-    int singlestep_enabled;
     TCGv_i64 mactmp;
     int done_mac;
     int writeback_mask;
@@ -192,10 +189,10 @@ static void do_writebacks(DisasContext *s)
 #if defined(CONFIG_USER_ONLY)
 #define IS_USER(s) 1
 #else
-#define IS_USER(s)   (!(s->tb->flags & TB_FLAGS_MSR_S))
-#define SFC_INDEX(s) ((s->tb->flags & TB_FLAGS_SFC_S) ? \
+#define IS_USER(s)   (!(s->base.tb->flags & TB_FLAGS_MSR_S))
+#define SFC_INDEX(s) ((s->base.tb->flags & TB_FLAGS_SFC_S) ? \
                       MMU_KERNEL_IDX : MMU_USER_IDX)
-#define DFC_INDEX(s) ((s->tb->flags & TB_FLAGS_DFC_S) ? \
+#define DFC_INDEX(s) ((s->base.tb->flags & TB_FLAGS_DFC_S) ? \
                       MMU_KERNEL_IDX : MMU_USER_IDX)
 #endif
 
@@ -278,7 +275,7 @@ static void gen_jmp_im(DisasContext *s, uint32_t dest)
 
     update_cc_op(s);
     tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_PC, dest);
-    s->is_jmp = DISAS_JUMP;
+    s->base.is_jmp = DISAS_JUMP;
 }
 
 /* Generate a jump to the address in qreg DEST.  */
@@ -288,7 +285,7 @@ static void gen_jmp(DisasContext *s, TCGv dest)
 
     update_cc_op(s);
     tcg_gen_mov_i32(tcg_ctx, tcg_ctx->QREG_PC, dest);
-    s->is_jmp = DISAS_JUMP;
+    s->base.is_jmp = DISAS_JUMP;
 }
 
 static void gen_exception(DisasContext *s, uint32_t dest, int nr)
@@ -304,12 +301,12 @@ static void gen_exception(DisasContext *s, uint32_t dest, int nr)
     gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, tmp);
     tcg_temp_free_i32(tcg_ctx, tmp);
 
-    s->is_jmp = DISAS_NORETURN;
+    s->base.is_jmp = DISAS_NORETURN;
 }
 
 static inline void gen_addr_fault(DisasContext *s)
 {
-    gen_exception(s, s->insn_pc, EXCP_ADDRESS);
+    gen_exception(s, s->base.pc_next, EXCP_ADDRESS);
 }
 
 /* Generate a load from the specified address.  Narrow values are
@@ -1031,7 +1028,7 @@ static void gen_load_fp(DisasContext *s, int opsize, TCGv addr, TCGv_ptr fp,
         break;
     case OS_EXTENDED:
         if (m68k_feature(s->env, M68K_FEATURE_CF_FPU)) {
-            gen_exception(s, s->insn_pc, EXCP_FP_UNIMP);
+            gen_exception(s, s->base.pc_next, EXCP_FP_UNIMP);
             break;
         }
         tcg_gen_qemu_ld32u(s->uc, tmp, addr, index);
@@ -1045,7 +1042,7 @@ static void gen_load_fp(DisasContext *s, int opsize, TCGv addr, TCGv_ptr fp,
         /* unimplemented data type on 68040/ColdFire
          * FIXME if needed for another FPU
          */
-        gen_exception(s, s->insn_pc, EXCP_FP_UNIMP);
+        gen_exception(s, s->base.pc_next, EXCP_FP_UNIMP);
         break;
     default:
         g_assert_not_reached();
@@ -1086,7 +1083,7 @@ static void gen_store_fp(DisasContext *s, int opsize, TCGv addr, TCGv_ptr fp,
         break;
     case OS_EXTENDED:
         if (m68k_feature(s->env, M68K_FEATURE_CF_FPU)) {
-            gen_exception(s, s->insn_pc, EXCP_FP_UNIMP);
+            gen_exception(s, s->base.pc_next, EXCP_FP_UNIMP);
             break;
         }
         tcg_gen_ld16u_i32(tcg_ctx, tmp, fp, offsetof(FPReg, l.upper));
@@ -1100,7 +1097,7 @@ static void gen_store_fp(DisasContext *s, int opsize, TCGv addr, TCGv_ptr fp,
         /* unimplemented data type on 68040/ColdFire
          * FIXME if needed for another FPU
          */
-        gen_exception(s, s->insn_pc, EXCP_FP_UNIMP);
+        gen_exception(s, s->base.pc_next, EXCP_FP_UNIMP);
         break;
     default:
         g_assert_not_reached();
@@ -1233,7 +1230,7 @@ static int gen_ea_mode_fp(CPUM68KState *env, DisasContext *s, int mode,
                 break;
             case OS_EXTENDED:
                 if (m68k_feature(s->env, M68K_FEATURE_CF_FPU)) {
-                    gen_exception(s, s->insn_pc, EXCP_FP_UNIMP);
+                    gen_exception(s, s->base.pc_next, EXCP_FP_UNIMP);
                     break;
                 }
                 tmp = tcg_const_i32(tcg_ctx, read_im32(env, s) >> 16);
@@ -1247,7 +1244,7 @@ static int gen_ea_mode_fp(CPUM68KState *env, DisasContext *s, int mode,
                 /* unimplemented data type on 68040/ColdFire
                  * FIXME if needed for another FPU
                  */
-                gen_exception(s, s->insn_pc, EXCP_FP_UNIMP);
+                gen_exception(s, s->base.pc_next, EXCP_FP_UNIMP);
                 break;
             default:
                 g_assert_not_reached();
@@ -1486,7 +1483,7 @@ static void gen_exit_tb(DisasContext *s)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     update_cc_op(s);
     tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_PC, s->pc);
-    s->is_jmp = DISAS_EXIT;
+    s->base.is_jmp = DISAS_EXIT;
 }
 
 #define SRC_EA(env, result, opsize, op_sign, addrp) do {                \
@@ -1510,8 +1507,8 @@ static void gen_exit_tb(DisasContext *s)
 static inline bool use_goto_tb(DisasContext *s, uint32_t dest)
 {
 #ifndef CONFIG_USER_ONLY
-    return (s->tb->pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK) ||
-           (s->insn_pc & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK);
+    return (s->base.pc_first & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK)
+        || (s->base.pc_next & TARGET_PAGE_MASK) == (dest & TARGET_PAGE_MASK);
 #else
     return true;
 #endif
@@ -1522,17 +1519,17 @@ static void gen_jmp_tb(DisasContext *s, int n, uint32_t dest)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
-    if (unlikely(s->singlestep_enabled)) {
+    if (unlikely(s->base.singlestep_enabled)) {
         gen_exception(s, dest, EXCP_DEBUG);
     } else if (use_goto_tb(s, dest)) {
         tcg_gen_goto_tb(tcg_ctx, n);
         tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_PC, dest);
-        tcg_gen_exit_tb(tcg_ctx, s->tb, n);
+        tcg_gen_exit_tb(tcg_ctx, s->base.tb, n);
     } else {
         gen_jmp_im(s, dest);
         tcg_gen_exit_tb(tcg_ctx, NULL, 0);
     }
-    s->is_jmp = DISAS_NORETURN;
+    s->base.is_jmp = DISAS_NORETURN;
 }
 
 DISAS_INSN(scc)
@@ -1581,12 +1578,12 @@ DISAS_INSN(dbcc)
 
 DISAS_INSN(undef_mac)
 {
-    gen_exception(s, s->insn_pc, EXCP_LINEA);
+    gen_exception(s, s->base.pc_next, EXCP_LINEA);
 }
 
 DISAS_INSN(undef_fpu)
 {
-    gen_exception(s, s->insn_pc, EXCP_LINEF);
+    gen_exception(s, s->base.pc_next, EXCP_LINEF);
 }
 
 DISAS_INSN(undef)
@@ -1595,8 +1592,8 @@ DISAS_INSN(undef)
        for the 680x0 series, as well as those that are implemented
        but actually illegal for CPU32 or pre-68020.  */
     qemu_log_mask(LOG_UNIMP, "Illegal instruction: %04x @ %08x\n",
-                  insn, s->insn_pc);
-    gen_exception(s, s->insn_pc, EXCP_UNSUPPORTED);
+                  insn, s->base.pc_next);
+    gen_exception(s, s->base.pc_next, EXCP_UNSUPPORTED);
 }
 
 DISAS_INSN(mulw)
@@ -1659,7 +1656,7 @@ DISAS_INSN(divl)
 
     if (ext & 0x400) {
         if (!m68k_feature(s->env, M68K_FEATURE_QUAD_MULDIV)) {
-            gen_exception(s, s->insn_pc, EXCP_ILLEGAL);
+            gen_exception(s, s->base.pc_next, EXCP_ILLEGAL);
             return;
         }
 
@@ -2383,7 +2380,7 @@ DISAS_INSN(arith_im)
             break;
         case OS_WORD:
             if (IS_USER(s)) {
-                gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+                gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
                 return;
             }
             src1 = gen_get_sr(s);
@@ -2803,7 +2800,7 @@ DISAS_INSN(swap)
 
 DISAS_INSN(bkpt)
 {
-    gen_exception(s, s->insn_pc, EXCP_DEBUG);
+    gen_exception(s, s->base.pc_next, EXCP_DEBUG);
 }
 
 DISAS_INSN(pea)
@@ -2859,7 +2856,7 @@ DISAS_INSN(pulse)
 
 DISAS_INSN(illegal)
 {
-    gen_exception(s, s->insn_pc, EXCP_ILLEGAL);
+    gen_exception(s, s->base.pc_next, EXCP_ILLEGAL);
 }
 
 /* ??? This should be atomic.  */
@@ -2895,7 +2892,7 @@ DISAS_INSN(mull)
 
     if (ext & 0x400) {
         if (!m68k_feature(s->env, M68K_FEATURE_QUAD_MULDIV)) {
-            gen_exception(s, s->insn_pc, EXCP_UNSUPPORTED);
+            gen_exception(s, s->base.pc_next, EXCP_UNSUPPORTED);
             return;
         }
 
@@ -3000,7 +2997,7 @@ DISAS_INSN(reset)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -4552,7 +4549,7 @@ DISAS_INSN(chk)
         }
         /* fallthru */
     default:
-        gen_exception(s, s->insn_pc, EXCP_ILLEGAL);
+        gen_exception(s, s->base.pc_next, EXCP_ILLEGAL);
         return;
     }
     SRC_EA(env, src, opsize, 1, NULL);
@@ -4580,13 +4577,13 @@ DISAS_INSN(chk2)
         opsize = OS_LONG;
         break;
     default:
-        gen_exception(s, s->insn_pc, EXCP_ILLEGAL);
+        gen_exception(s, s->base.pc_next, EXCP_ILLEGAL);
         return;
     }
 
     ext = read_im16(env, s);
     if ((ext & 0x0800) == 0) {
-        gen_exception(s, s->insn_pc, EXCP_ILLEGAL);
+        gen_exception(s, s->base.pc_next, EXCP_ILLEGAL);
         return;
     }
 
@@ -4648,7 +4645,7 @@ DISAS_INSN(move16_reg)
 
     ext = read_im16(env, s);
     if ((ext & (1 << 15)) == 0) {
-        gen_exception(s, s->insn_pc, EXCP_ILLEGAL);
+        gen_exception(s, s->base.pc_next, EXCP_ILLEGAL);
     }
 
     m68k_copy_line(s, AREG(ext, 12), AREG(insn, 0), index);
@@ -4712,7 +4709,7 @@ DISAS_INSN(move_from_sr)
     TCGv sr;
 
     if (IS_USER(s) && !m68k_feature(env, M68K_FEATURE_M68000)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
     sr = gen_get_sr(s);
@@ -4730,7 +4727,7 @@ DISAS_INSN(moves)
     int extend;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -4783,7 +4780,7 @@ DISAS_INSN(moves)
 DISAS_INSN(move_to_sr)
 {
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
     gen_move_to_sr(env, s, insn, false);
@@ -4795,7 +4792,7 @@ DISAS_INSN(move_from_usp)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -4808,7 +4805,7 @@ DISAS_INSN(move_to_usp)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -4819,7 +4816,7 @@ DISAS_INSN(move_to_usp)
 DISAS_INSN(halt)
 {
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -4832,7 +4829,7 @@ DISAS_INSN(stop)
     uint16_t ext;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -4846,10 +4843,10 @@ DISAS_INSN(stop)
 DISAS_INSN(rte)
 {
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
-    gen_exception(s, s->insn_pc, EXCP_RTE);
+    gen_exception(s, s->base.pc_next, EXCP_RTE);
 }
 
 DISAS_INSN(cf_movec)
@@ -4859,7 +4856,7 @@ DISAS_INSN(cf_movec)
     TCGv reg;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -4881,7 +4878,7 @@ DISAS_INSN(m68k_movec)
     TCGv reg;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -4903,7 +4900,7 @@ DISAS_INSN(m68k_movec)
 DISAS_INSN(intouch)
 {
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
     /* ICache fetch.  Implement as no-op.  */
@@ -4912,7 +4909,7 @@ DISAS_INSN(intouch)
 DISAS_INSN(cpushl)
 {
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
     /* Cache push/invalidate.  Implement as no-op.  */
@@ -4921,7 +4918,7 @@ DISAS_INSN(cpushl)
 DISAS_INSN(cpush)
 {
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
     /* Cache push/invalidate.  Implement as no-op.  */
@@ -4930,7 +4927,7 @@ DISAS_INSN(cpush)
 DISAS_INSN(cinv)
 {
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
     /* Invalidate cache line.  Implement as no-op.  */
@@ -4943,7 +4940,7 @@ DISAS_INSN(pflush)
     TCGv opmode;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -4958,7 +4955,7 @@ DISAS_INSN(ptest)
     TCGv is_read;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
     is_read = tcg_const_i32(tcg_ctx, (insn >> 5) & 1);
@@ -4969,7 +4966,7 @@ DISAS_INSN(ptest)
 
 DISAS_INSN(wddata)
 {
-    gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+    gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
 }
 
 DISAS_INSN(wdebug)
@@ -4977,7 +4974,7 @@ DISAS_INSN(wdebug)
     M68kCPU *cpu = m68k_env_get_cpu(env);
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
     /* TODO: Implement wdebug.  */
@@ -4987,7 +4984,7 @@ DISAS_INSN(wdebug)
 
 DISAS_INSN(trap)
 {
-    gen_exception(s, s->insn_pc, EXCP_TRAP0 + (insn & 0xf));
+    gen_exception(s, s->base.pc_next, EXCP_TRAP0 + (insn & 0xf));
 }
 
 static void gen_load_fcr(DisasContext *s, TCGv res, int reg)
@@ -5060,7 +5057,7 @@ static void gen_op_fmove_fcr(CPUM68KState *env, DisasContext *s,
     switch (mode) {
     case 0: /* Dn */
         if (mask != M68K_FPIAR && mask != M68K_FPSR && mask != M68K_FPCR) {
-            gen_exception(s, s->insn_pc, EXCP_ILLEGAL);
+            gen_exception(s, s->base.pc_next, EXCP_ILLEGAL);
             return;
         }
         if (is_write) {
@@ -5071,7 +5068,7 @@ static void gen_op_fmove_fcr(CPUM68KState *env, DisasContext *s,
         return;
     case 1: /* An, only with FPIAR */
         if (mask != M68K_FPIAR) {
-            gen_exception(s, s->insn_pc, EXCP_ILLEGAL);
+            gen_exception(s, s->base.pc_next, EXCP_ILLEGAL);
             return;
         }
         if (is_write) {
@@ -5636,7 +5633,7 @@ DISAS_INSN(frestore)
     TCGv addr;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -5653,7 +5650,7 @@ DISAS_INSN(fsave)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
 
     if (IS_USER(s)) {
-        gen_exception(s, s->insn_pc, EXCP_PRIVILEGE);
+        gen_exception(s, s->base.pc_next, EXCP_PRIVILEGE);
         return;
     }
 
@@ -6316,15 +6313,15 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     /* generate intermediate code */
     pc_start = tb->pc;
 
-    dc->tb = tb;
+    dc->base.tb = tb;
     dc->uc = env->uc;
 
     dc->env = env;
-    dc->is_jmp = DISAS_NEXT;
+    dc->base.is_jmp = DISAS_NEXT;
     dc->pc = pc_start;
     dc->cc_op = CC_OP_DYNAMIC;
     dc->cc_op_synced = 1;
-    dc->singlestep_enabled = cs->singlestep_enabled;
+    dc->base.singlestep_enabled = cs->singlestep_enabled;
     dc->done_mac = 0;
     dc->writeback_mask = 0;
     num_insns = 0;
@@ -6381,9 +6378,9 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
         //    gen_io_start();
         //}
 
-        dc->insn_pc = dc->pc;
+        dc->base.pc_next = dc->pc;
         disas_m68k_insn(env, dc);
-    } while (!dc->is_jmp && !tcg_op_buf_full(tcg_ctx) &&
+    } while (!dc->base.is_jmp && !tcg_op_buf_full(tcg_ctx) &&
             !cs->singlestep_enabled &&
             (pc_offset) < (TARGET_PAGE_SIZE - 32) &&
             num_insns < max_insns);
@@ -6398,13 +6395,13 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
     //}
     if (unlikely(cs->singlestep_enabled)) {
         /* Make sure the pc is updated, and raise a debug exception.  */
-        if (!dc->is_jmp) {
+        if (!dc->base.is_jmp) {
             update_cc_op(dc);
             tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_PC, dc->pc);
         }
         gen_helper_raise_exception(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, EXCP_DEBUG));
     } else {
-        switch(dc->is_jmp) {
+        switch(dc->base.is_jmp) {
         case DISAS_NEXT:
             update_cc_op(dc);
             gen_jmp_tb(dc, 0, dc->pc);
