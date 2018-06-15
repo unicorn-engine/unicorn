@@ -3489,6 +3489,7 @@
 #define helper_sve_smulh_zpzz_d helper_sve_smulh_zpzz_d_aarch64
 #define helper_sve_smulh_zpzz_h helper_sve_smulh_zpzz_h_aarch64
 #define helper_sve_smulh_zpzz_s helper_sve_smulh_zpzz_s_aarch64
+#define helper_sve_splice helper_sve_splice_aarch64
 #define helper_sve_sqaddi_b helper_sve_sqaddi_b_aarch64
 #define helper_sve_sqaddi_d helper_sve_sqaddi_d_aarch64
 #define helper_sve_sqaddi_h helper_sve_sqaddi_h_aarch64

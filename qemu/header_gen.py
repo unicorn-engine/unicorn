@@ -3510,6 +3510,7 @@ aarch64_symbols = (
     'helper_sve_smulh_zpzz_d',
     'helper_sve_smulh_zpzz_h',
     'helper_sve_smulh_zpzz_s',
+    'helper_sve_splice',
     'helper_sve_sqaddi_b',
     'helper_sve_sqaddi_d',
     'helper_sve_sqaddi_h',
