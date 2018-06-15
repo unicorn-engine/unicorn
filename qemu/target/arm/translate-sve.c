@@ -2032,6 +2032,146 @@ static bool trans_EXT(DisasContext *s, arg_EXT *a, uint32_t insn)
 }
 
 /*
+ *** SVE Permute - Unpredicated Group
+ */
+
+static bool trans_DUP_s(DisasContext *s, arg_DUP_s *a, uint32_t insn)
+{
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        unsigned vsz = vec_full_reg_size(s);
+        tcg_gen_gvec_dup_i64(tcg_ctx, a->esz, vec_full_reg_offset(s, a->rd),
+                             vsz, vsz, cpu_reg_sp(s, a->rn));
+    }
+    return true;
+}
+
+static bool trans_DUP_x(DisasContext *s, arg_DUP_x *a, uint32_t insn)
+{
+    if ((a->imm & 0x1f) == 0) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        unsigned vsz = vec_full_reg_size(s);
+        unsigned dofs = vec_full_reg_offset(s, a->rd);
+        unsigned esz, index;
+
+        esz = ctz32(a->imm);
+        index = a->imm >> (esz + 1);
+
+        if ((index << esz) < vsz) {
+            unsigned nofs = vec_reg_offset(s, a->rn, index, esz);
+            tcg_gen_gvec_dup_mem(tcg_ctx, esz, dofs, nofs, vsz, vsz);
+        } else {
+            tcg_gen_gvec_dup64i(tcg_ctx, dofs, vsz, vsz, 0);
+        }
+    }
+    return true;
+}
+
+static void do_insr_i64(DisasContext *s, arg_rrr_esz *a, TCGv_i64 val)
+{
+    typedef void gen_insr(TCGContext *, TCGv_ptr, TCGv_ptr, TCGv_i64, TCGv_i32);
+    static gen_insr * const fns[4] = {
+        gen_helper_sve_insr_b, gen_helper_sve_insr_h,
+        gen_helper_sve_insr_s, gen_helper_sve_insr_d,
+    };
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    unsigned vsz = vec_full_reg_size(s);
+    TCGv_i32 desc = tcg_const_i32(tcg_ctx, simd_desc(vsz, vsz, 0));
+    TCGv_ptr t_zd = tcg_temp_new_ptr(tcg_ctx);
+    TCGv_ptr t_zn = tcg_temp_new_ptr(tcg_ctx);
+
+    tcg_gen_addi_ptr(tcg_ctx, t_zd, tcg_ctx->cpu_env, vec_full_reg_offset(s, a->rd));
+    tcg_gen_addi_ptr(tcg_ctx, t_zn, tcg_ctx->cpu_env, vec_full_reg_offset(s, a->rn));
+
+    fns[a->esz](tcg_ctx, t_zd, t_zn, val, desc);
+
+    tcg_temp_free_ptr(tcg_ctx, t_zd);
+    tcg_temp_free_ptr(tcg_ctx, t_zn);
+    tcg_temp_free_i32(tcg_ctx, desc);
+}
+
+static bool trans_INSR_f(DisasContext *s, arg_rrr_esz *a, uint32_t insn)
+{
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        TCGv_i64 t = tcg_temp_new_i64(tcg_ctx);
+        tcg_gen_ld_i64(tcg_ctx, t, tcg_ctx->cpu_env, vec_reg_offset(s, a->rm, 0, MO_64));
+        do_insr_i64(s, a, t);
+        tcg_temp_free_i64(tcg_ctx, t);
+    }
+    return true;
+}
+
+static bool trans_INSR_r(DisasContext *s, arg_rrr_esz *a, uint32_t insn)
+{
+    if (sve_access_check(s)) {
+        do_insr_i64(s, a, cpu_reg(s, a->rm));
+    }
+    return true;
+}
+
+static bool trans_REV_v(DisasContext *s, arg_rr_esz *a, uint32_t insn)
+{
+    static gen_helper_gvec_2 * const fns[4] = {
+        gen_helper_sve_rev_b, gen_helper_sve_rev_h,
+        gen_helper_sve_rev_s, gen_helper_sve_rev_d
+    };
+
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        unsigned vsz = vec_full_reg_size(s);
+        tcg_gen_gvec_2_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vsz, vsz, 0, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_TBL(DisasContext *s, arg_rrr_esz *a, uint32_t insn)
+{
+    static gen_helper_gvec_3 * const fns[4] = {
+        gen_helper_sve_tbl_b, gen_helper_sve_tbl_h,
+        gen_helper_sve_tbl_s, gen_helper_sve_tbl_d
+    };
+
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        unsigned vsz = vec_full_reg_size(s);
+        tcg_gen_gvec_3_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           vsz, vsz, 0, fns[a->esz]);
+    }
+    return true;
+}
+
+static bool trans_UNPK(DisasContext *s, arg_UNPK *a, uint32_t insn)
+{
+    static gen_helper_gvec_2 * const fns[4][2] = {
+        { NULL, NULL },
+        { gen_helper_sve_sunpk_h, gen_helper_sve_uunpk_h },
+        { gen_helper_sve_sunpk_s, gen_helper_sve_uunpk_s },
+        { gen_helper_sve_sunpk_d, gen_helper_sve_uunpk_d },
+    };
+
+    if (a->esz == 0) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        unsigned vsz = vec_full_reg_size(s);
+        tcg_gen_gvec_2_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn)
+                           + (a->h ? vsz / 2 : 0),
+                           vsz, vsz, 0, fns[a->esz][a->u]);
+    }
+    return true;
+}
+
+/*
  *** SVE Memory - 32-bit Gather and Unsized Contiguous Group
  */
 
