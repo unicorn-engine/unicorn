@@ -1636,7 +1636,7 @@ static MemTxResult subpage_read(struct uc_struct* uc, void *opaque, hwaddr addr,
         *data = lduw_p(buf);
         return MEMTX_OK;
     case 4:
-        *data = ldl_p(buf);
+        *data = (uint32_t)ldl_p(buf);
         return MEMTX_OK;
     case 8:
         *data = ldq_p(buf);
