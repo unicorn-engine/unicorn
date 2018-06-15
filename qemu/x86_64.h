@@ -1112,6 +1112,9 @@
 #define helper_gvec_eq16 helper_gvec_eq16_x86_64
 #define helper_gvec_eq32 helper_gvec_eq32_x86_64
 #define helper_gvec_eq64 helper_gvec_eq64_x86_64
+#define helper_gvec_fadd_d helper_gvec_fadd_d_x86_64
+#define helper_gvec_fadd_h helper_gvec_fadd_h_x86_64
+#define helper_gvec_fadd_s helper_gvec_fadd_s_x86_64
 #define helper_gvec_fcaddh helper_gvec_fcaddh_x86_64
 #define helper_gvec_fcadds helper_gvec_fcadds_x86_64
 #define helper_gvec_fcaddd helper_gvec_fcaddd_x86_64
@@ -1120,6 +1123,15 @@
 #define helper_gvec_fcmlah_idx helper_gvec_fcmlah_idx_x86_64
 #define helper_gvec_fcmlas helper_gvec_fcmlas_x86_64
 #define helper_gvec_fcmlas_idx helper_gvec_fcmlas_idx_x86_64
+#define helper_gvec_fmul_d helper_gvec_fmul_d_x86_64
+#define helper_gvec_fmul_h helper_gvec_fmul_h_x86_64
+#define helper_gvec_fmul_s helper_gvec_fmul_s_x86_64
+#define helper_gvec_fsub_d helper_gvec_fsub_d_x86_64
+#define helper_gvec_fsub_h helper_gvec_fsub_h_x86_64
+#define helper_gvec_fsub_s helper_gvec_fsub_s_x86_64
+#define helper_gvec_ftsmul_d helper_gvec_ftsmul_d_x86_64
+#define helper_gvec_ftsmul_h helper_gvec_ftsmul_h_x86_64
+#define helper_gvec_ftsmul_s helper_gvec_ftsmul_s_x86_64
 #define helper_gvec_le8 helper_gvec_le8_x86_64
 #define helper_gvec_le16 helper_gvec_le16_x86_64
 #define helper_gvec_le32 helper_gvec_le32_x86_64
