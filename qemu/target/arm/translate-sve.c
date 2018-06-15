@@ -73,6 +73,11 @@ static inline int expand_imm_sh8s(int x)
     return (int8_t)x << (x & 0x100 ? 8 : 0);
 }
 
+static inline int expand_imm_sh8u(int x)
+{
+    return (uint8_t)x << (x & 0x100 ? 8 : 0);
+}
+
 /*
  * Include the generated decoder.
  */
@@ -3344,6 +3349,169 @@ static bool trans_DUP_i(DisasContext *s, arg_DUP_i *a, uint32_t insn)
     }
     return true;
 }
+
+static bool trans_ADD_zzi(DisasContext *s, arg_rri_esz *a, uint32_t insn)
+{
+    if (a->esz == 0 && extract32(insn, 13, 1)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        unsigned vsz = vec_full_reg_size(s);
+        tcg_gen_gvec_addi(tcg_ctx, a->esz, vec_full_reg_offset(s, a->rd),
+                          vec_full_reg_offset(s, a->rn), a->imm, vsz, vsz);
+    }
+    return true;
+}
+
+static bool trans_SUB_zzi(DisasContext *s, arg_rri_esz *a, uint32_t insn)
+{
+    a->imm = -a->imm;
+    return trans_ADD_zzi(s, a, insn);
+}
+
+static bool trans_SUBR_zzi(DisasContext *s, arg_rri_esz *a, uint32_t insn)
+{
+    static const GVecGen2s op[4] = {
+        {
+            tcg_gen_vec_sub8_i64,
+            NULL,
+            tcg_gen_sub_vec,
+            gen_helper_sve_subri_b,
+            INDEX_op_sub_vec,
+            0,
+            MO_8,
+            false,
+            true
+        },
+        {
+            tcg_gen_vec_sub16_i64,
+            NULL,
+            tcg_gen_sub_vec,
+            gen_helper_sve_subri_h,
+            INDEX_op_sub_vec,
+            0,
+            MO_16,
+            false,
+            true
+        },
+        {
+            NULL,
+            tcg_gen_sub_i32,
+            tcg_gen_sub_vec,
+            gen_helper_sve_subri_s,
+            INDEX_op_sub_vec,
+            0,
+            MO_32,
+            false,
+            true
+        },
+        {
+            tcg_gen_sub_i64,
+            NULL,
+            tcg_gen_sub_vec,
+            gen_helper_sve_subri_d,
+            INDEX_op_sub_vec,
+            0,
+            MO_64,
+            TCG_TARGET_REG_BITS == 64,
+            true
+        }
+    };
+
+    if (a->esz == 0 && extract32(insn, 13, 1)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        unsigned vsz = vec_full_reg_size(s);
+        TCGv_i64 c = tcg_const_i64(tcg_ctx, a->imm);
+        tcg_gen_gvec_2s(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                        vec_full_reg_offset(s, a->rn),
+                        vsz, vsz, c, &op[a->esz]);
+        tcg_temp_free_i64(tcg_ctx, c);
+    }
+    return true;
+}
+
+static bool trans_MUL_zzi(DisasContext *s, arg_rri_esz *a, uint32_t insn)
+{
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        unsigned vsz = vec_full_reg_size(s);
+        tcg_gen_gvec_muli(tcg_ctx, a->esz, vec_full_reg_offset(s, a->rd),
+                          vec_full_reg_offset(s, a->rn), a->imm, vsz, vsz);
+    }
+    return true;
+}
+
+static bool do_zzi_sat(DisasContext *s, arg_rri_esz *a, uint32_t insn,
+                       bool u, bool d)
+{
+    if (a->esz == 0 && extract32(insn, 13, 1)) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        TCGv_i64 val = tcg_const_i64(tcg_ctx, a->imm);
+        do_sat_addsub_vec(s, a->esz, a->rd, a->rn, val, u, d);
+        tcg_temp_free_i64(tcg_ctx, val);
+    }
+    return true;
+}
+
+static bool trans_SQADD_zzi(DisasContext *s, arg_rri_esz *a, uint32_t insn)
+{
+    return do_zzi_sat(s, a, insn, false, false);
+}
+
+static bool trans_UQADD_zzi(DisasContext *s, arg_rri_esz *a, uint32_t insn)
+{
+    return do_zzi_sat(s, a, insn, true, false);
+}
+
+static bool trans_SQSUB_zzi(DisasContext *s, arg_rri_esz *a, uint32_t insn)
+{
+    return do_zzi_sat(s, a, insn, false, true);
+}
+
+static bool trans_UQSUB_zzi(DisasContext *s, arg_rri_esz *a, uint32_t insn)
+{
+    return do_zzi_sat(s, a, insn, true, true);
+}
+
+static bool do_zzi_ool(DisasContext *s, arg_rri_esz *a, gen_helper_gvec_2i *fn)
+{
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        unsigned vsz = vec_full_reg_size(s);
+        TCGv_i64 c = tcg_const_i64(tcg_ctx, a->imm);
+
+        tcg_gen_gvec_2i_ool(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                            vec_full_reg_offset(s, a->rn),
+                            c, vsz, vsz, 0, fn);
+        tcg_temp_free_i64(tcg_ctx, c);
+    }
+    return true;
+}
+
+#define DO_ZZI(NAME, name) \
+static bool trans_##NAME##_zzi(DisasContext *s, arg_rri_esz *a,         \
+                               uint32_t insn)                           \
+{                                                                       \
+    static gen_helper_gvec_2i * const fns[4] = {                        \
+        gen_helper_sve_##name##i_b, gen_helper_sve_##name##i_h,         \
+        gen_helper_sve_##name##i_s, gen_helper_sve_##name##i_d,         \
+    };                                                                  \
+    return do_zzi_ool(s, a, fns[a->esz]);                               \
+}
+
+DO_ZZI(SMAX, smax)
+DO_ZZI(UMAX, umax)
+DO_ZZI(SMIN, smin)
+DO_ZZI(UMIN, umin)
+
+#undef DO_ZZI
 
 /*
  *** SVE Memory - 32-bit Gather and Unsized Contiguous Group

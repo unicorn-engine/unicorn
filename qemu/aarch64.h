@@ -3596,6 +3596,10 @@
 #define helper_sve_smax_zpzz_d helper_sve_smax_zpzz_d_aarch64
 #define helper_sve_smax_zpzz_h helper_sve_smax_zpzz_h_aarch64
 #define helper_sve_smax_zpzz_s helper_sve_smax_zpzz_s_aarch64
+#define helper_sve_smaxi_b helper_sve_smaxi_b_aarch64
+#define helper_sve_smaxi_d helper_sve_smaxi_d_aarch64
+#define helper_sve_smaxi_h helper_sve_smaxi_h_aarch64
+#define helper_sve_smaxi_s helper_sve_smaxi_s_aarch64
 #define helper_sve_smaxv_b helper_sve_smaxv_b_aarch64
 #define helper_sve_smaxv_d helper_sve_smaxv_d_aarch64
 #define helper_sve_smaxv_h helper_sve_smaxv_h_aarch64
@@ -3604,6 +3608,10 @@
 #define helper_sve_smin_zpzz_d helper_sve_smin_zpzz_d_aarch64
 #define helper_sve_smin_zpzz_h helper_sve_smin_zpzz_h_aarch64
 #define helper_sve_smin_zpzz_s helper_sve_smin_zpzz_s_aarch64
+#define helper_sve_smini_b helper_sve_smini_b_aarch64
+#define helper_sve_smini_d helper_sve_smini_d_aarch64
+#define helper_sve_smini_h helper_sve_smini_h_aarch64
+#define helper_sve_smini_s helper_sve_smini_s_aarch64
 #define helper_sve_sminv_b helper_sve_sminv_b_aarch64
 #define helper_sve_sminv_d helper_sve_sminv_d_aarch64
 #define helper_sve_sminv_h helper_sve_sminv_h_aarch64
@@ -3621,6 +3629,10 @@
 #define helper_sve_sub_zpzz_d helper_sve_sub_zpzz_d_aarch64
 #define helper_sve_sub_zpzz_h helper_sve_sub_zpzz_h_aarch64
 #define helper_sve_sub_zpzz_s helper_sve_sub_zpzz_s_aarch64
+#define helper_sve_subri_b helper_sve_subri_b_aarch64
+#define helper_sve_subri_d helper_sve_subri_d_aarch64
+#define helper_sve_subri_h helper_sve_subri_h_aarch64
+#define helper_sve_subri_s helper_sve_subri_s_aarch64
 #define helper_sve_sunpk_d helper_sve_sunpk_d_aarch64
 #define helper_sve_sunpk_h helper_sve_sunpk_h_aarch64
 #define helper_sve_sunpk_s helper_sve_sunpk_s_aarch64
@@ -3653,6 +3665,10 @@
 #define helper_sve_umax_zpzz_d helper_sve_umax_zpzz_d_aarch64
 #define helper_sve_umax_zpzz_h helper_sve_umax_zpzz_h_aarch64
 #define helper_sve_umax_zpzz_s helper_sve_umax_zpzz_s_aarch64
+#define helper_sve_umaxi_b helper_sve_umaxi_b_aarch64
+#define helper_sve_umaxi_d helper_sve_umaxi_d_aarch64
+#define helper_sve_umaxi_h helper_sve_umaxi_h_aarch64
+#define helper_sve_umaxi_s helper_sve_umaxi_s_aarch64
 #define helper_sve_umaxv_b helper_sve_umaxv_b_aarch64
 #define helper_sve_umaxv_d helper_sve_umaxv_d_aarch64
 #define helper_sve_umaxv_h helper_sve_umaxv_h_aarch64
@@ -3661,6 +3677,10 @@
 #define helper_sve_umin_zpzz_d helper_sve_umin_zpzz_d_aarch64
 #define helper_sve_umin_zpzz_h helper_sve_umin_zpzz_h_aarch64
 #define helper_sve_umin_zpzz_s helper_sve_umin_zpzz_s_aarch64
+#define helper_sve_umini_b helper_sve_umini_b_aarch64
+#define helper_sve_umini_d helper_sve_umini_d_aarch64
+#define helper_sve_umini_h helper_sve_umini_h_aarch64
+#define helper_sve_umini_s helper_sve_umini_s_aarch64
 #define helper_sve_uminv_b helper_sve_uminv_b_aarch64
 #define helper_sve_uminv_d helper_sve_uminv_d_aarch64
 #define helper_sve_uminv_h helper_sve_uminv_h_aarch64
