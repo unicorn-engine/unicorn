@@ -30,7 +30,8 @@
 #include "exec/helper-gen.h"
 #include "translate-a64.h"
 
-
+typedef void gen_helper_gvec_flags_3(TCGContext *, TCGv_i32, TCGv_ptr, TCGv_ptr,
+                                     TCGv_ptr, TCGv_i32);
 typedef void gen_helper_gvec_flags_4(TCGContext *, TCGv_i32, TCGv_ptr, TCGv_ptr,
                                      TCGv_ptr, TCGv_ptr, TCGv_i32);
 
@@ -2890,6 +2891,72 @@ DO_PPZW(CMPLO, cmplo)
 DO_PPZW(CMPLS, cmpls)
 
 #undef DO_PPZW
+
+/*
+ *** SVE Integer Compare - Immediate Groups
+ */
+
+static bool do_ppzi_flags(DisasContext *s, arg_rpri_esz *a,
+                          gen_helper_gvec_flags_3 *gen_fn)
+{
+    TCGv_ptr pd, zn, pg;
+    unsigned vsz;
+    TCGv_i32 t;
+    TCGContext *tcg_ctx;
+
+    if (gen_fn == NULL) {
+        return false;
+    }
+    if (!sve_access_check(s)) {
+        return true;
+    }
+
+    tcg_ctx = s->uc->tcg_ctx;
+    vsz = vec_full_reg_size(s);
+    t = tcg_const_i32(tcg_ctx, simd_desc(vsz, vsz, a->imm));
+    pd = tcg_temp_new_ptr(tcg_ctx);
+    zn = tcg_temp_new_ptr(tcg_ctx);
+    pg = tcg_temp_new_ptr(tcg_ctx);
+
+    tcg_gen_addi_ptr(tcg_ctx, pd, tcg_ctx->cpu_env, pred_full_reg_offset(s, a->rd));
+    tcg_gen_addi_ptr(tcg_ctx, zn, tcg_ctx->cpu_env, vec_full_reg_offset(s, a->rn));
+    tcg_gen_addi_ptr(tcg_ctx, pg, tcg_ctx->cpu_env, pred_full_reg_offset(s, a->pg));
+
+    gen_fn(tcg_ctx, t, pd, zn, pg, t);
+
+    tcg_temp_free_ptr(tcg_ctx, pd);
+    tcg_temp_free_ptr(tcg_ctx, zn);
+    tcg_temp_free_ptr(tcg_ctx, pg);
+
+    do_pred_flags(s, t);
+
+    tcg_temp_free_i32(tcg_ctx, t);
+    return true;
+}
+
+#define DO_PPZI(NAME, name) \
+static bool trans_##NAME##_ppzi(DisasContext *s, arg_rpri_esz *a,         \
+                                uint32_t insn)                            \
+{                                                                         \
+    static gen_helper_gvec_flags_3 * const fns[4] = {                     \
+        gen_helper_sve_##name##_ppzi_b, gen_helper_sve_##name##_ppzi_h,   \
+        gen_helper_sve_##name##_ppzi_s, gen_helper_sve_##name##_ppzi_d,   \
+    };                                                                    \
+    return do_ppzi_flags(s, a, fns[a->esz]);                              \
+}
+
+DO_PPZI(CMPEQ, cmpeq)
+DO_PPZI(CMPNE, cmpne)
+DO_PPZI(CMPGT, cmpgt)
+DO_PPZI(CMPGE, cmpge)
+DO_PPZI(CMPHI, cmphi)
+DO_PPZI(CMPHS, cmphs)
+DO_PPZI(CMPLT, cmplt)
+DO_PPZI(CMPLE, cmple)
+DO_PPZI(CMPLO, cmplo)
+DO_PPZI(CMPLS, cmpls)
+
+#undef DO_PPZI
 
 /*
  *** SVE Memory - 32-bit Gather and Unsized Contiguous Group
