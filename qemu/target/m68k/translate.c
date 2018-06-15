@@ -187,7 +187,7 @@ static void do_writebacks(DisasContext *s)
 
 /* is_jmp field values */
 #define DISAS_JUMP      DISAS_TARGET_0 /* only pc was modified dynamically */
-#define DISAS_UPDATE    DISAS_TARGET_1 /* cpu state was modified dynamically */
+#define DISAS_EXIT      DISAS_TARGET_1 /* cpu state was modified dynamically */
 
 #if defined(CONFIG_USER_ONLY)
 #define IS_USER(s) 1
@@ -1481,12 +1481,12 @@ static void gen_jmpcc(DisasContext *s, int cond, TCGLabel *l1)
 }
 
 /* Force a TB lookup after an instruction that changes the CPU state.  */
-static void gen_lookup_tb(DisasContext *s)
+static void gen_exit_tb(DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     update_cc_op(s);
     tcg_gen_movi_i32(tcg_ctx, tcg_ctx->QREG_PC, s->pc);
-    s->is_jmp = DISAS_UPDATE;
+    s->is_jmp = DISAS_EXIT;
 }
 
 #define SRC_EA(env, result, opsize, op_sign, addrp) do {                \
@@ -4787,7 +4787,7 @@ DISAS_INSN(move_to_sr)
         return;
     }
     gen_move_to_sr(env, s, insn, false);
-    gen_lookup_tb(s);
+    gen_exit_tb(s);
 }
 
 DISAS_INSN(move_from_usp)
@@ -4871,7 +4871,7 @@ DISAS_INSN(cf_movec)
         reg = DREG(ext, 12);
     }
     gen_helper_cf_movec_to(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, ext & 0xfff), reg);
-    gen_lookup_tb(s);
+    gen_exit_tb(s);
 }
 
 DISAS_INSN(m68k_movec)
@@ -4897,7 +4897,7 @@ DISAS_INSN(m68k_movec)
     } else {
         gen_helper_m68k_movec_from(tcg_ctx, reg, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, ext & 0xfff));
     }
-    gen_lookup_tb(s);
+    gen_exit_tb(s);
 }
 
 DISAS_INSN(intouch)
@@ -5970,7 +5970,7 @@ DISAS_INSN(to_macsr)
     TCGv val;
     SRC_EA(env, val, OS_LONG, 0, NULL);
     gen_helper_set_macsr(tcg_ctx, tcg_ctx->cpu_env, val);
-    gen_lookup_tb(s);
+    gen_exit_tb(s);
 }
 
 DISAS_INSN(to_mask)
@@ -6414,9 +6414,9 @@ void gen_intermediate_code(CPUState *cs, TranslationBlock *tb)
             tcg_gen_lookup_and_goto_ptr(tcg_ctx);
             break;
         default:
-        case DISAS_UPDATE:
-            update_cc_op(dc);
-            /* indicate that the hash table must be used to find the next TB */
+        case DISAS_EXIT:
+            /* We updated CC_OP and PC in gen_exit_tb, but also modified
+               other state that may require returning to the main loop.  */
             tcg_gen_exit_tb(tcg_ctx, NULL, 0);
             break;
         case DISAS_NORETURN:
