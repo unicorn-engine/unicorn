@@ -3440,9 +3440,11 @@
 #define helper_sve_pnext helper_sve_pnext_aarch64eb
 #define helper_sve_predtest helper_sve_predtest_aarch64eb
 #define helper_sve_predtest1 helper_sve_predtest1_aarch64eb
+#define helper_sve_punpk_p helper_sve_punpk_p_aarch64eb
 #define helper_sve_rev_b helper_sve_rev_b_aarch64eb
 #define helper_sve_rev_d helper_sve_rev_d_aarch64eb
 #define helper_sve_rev_h helper_sve_rev_h_aarch64eb
+#define helper_sve_rev_p helper_sve_rev_p_aarch64eb
 #define helper_sve_rev_s helper_sve_rev_s_aarch64eb
 #define helper_sve_sabd_zpzz_b helper_sve_sabd_zpzz_b_aarch64eb
 #define helper_sve_sabd_zpzz_d helper_sve_sabd_zpzz_d_aarch64eb
@@ -3495,6 +3497,7 @@
 #define helper_sve_tbl_d helper_sve_tbl_d_aarch64eb
 #define helper_sve_tbl_h helper_sve_tbl_h_aarch64eb
 #define helper_sve_tbl_s helper_sve_tbl_s_aarch64eb
+#define helper_sve_trn_p helper_sve_trn_p_aarch64eb
 #define helper_sve_uabd_zpzz_b helper_sve_uabd_zpzz_b_aarch64eb
 #define helper_sve_uabd_zpzz_d helper_sve_uabd_zpzz_d_aarch64eb
 #define helper_sve_uabd_zpzz_h helper_sve_uabd_zpzz_h_aarch64eb
@@ -3539,6 +3542,8 @@
 #define helper_sve_uxth_d helper_sve_uxth_d_aarch64eb
 #define helper_sve_uxth_s helper_sve_uxth_s_aarch64eb
 #define helper_sve_uxtw_d helper_sve_uxtw_d_aarch64eb
+#define helper_sve_uzp_p helper_sve_uzp_p_aarch64eb
+#define helper_sve_zip_p helper_sve_zip_p_aarch64eb
 #define helper_udiv64 helper_udiv64_aarch64eb
 #define helper_vfp_cmpd_a64 helper_vfp_cmpd_a64_aarch64eb
 #define helper_vfp_cmped_a64 helper_vfp_cmped_a64_aarch64eb
