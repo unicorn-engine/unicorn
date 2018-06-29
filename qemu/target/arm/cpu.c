@@ -1109,6 +1109,14 @@ static void cortex_r5_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     define_arm_cp_regs(cpu, cortexr5_cp_reginfo);
 }
 
+static void cortex_r5f_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    ARMCPU *cpu = ARM_CPU(uc, obj);
+
+    cortex_r5_initfn(uc, obj, opaque);
+    set_feature(&cpu->env, ARM_FEATURE_VFP3);
+}
+
 static const ARMCPRegInfo cortexa8_cp_reginfo[] = {
     { "L2LOCKDOWN", 15,9,0, 0,1,0, 0,
       ARM_CP_CONST, PL1_RW, 0, NULL, 0, },
@@ -1562,6 +1570,7 @@ static const ARMCPUInfo arm_cpus[] = {
     { "cortex-m4",   cortex_m4_initfn, arm_v7m_class_init },
     { "cortex-m33",  cortex_m33_initfn, arm_v7m_class_init },
     { "cortex-r5",   cortex_r5_initfn },
+    { "cortex-r5f",  cortex_r5f_initfn },
     { "cortex-a7",   cortex_a7_initfn },
     { "cortex-a8",   cortex_a8_initfn },
     { "cortex-a9",   cortex_a9_initfn },
