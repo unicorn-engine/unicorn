@@ -990,6 +990,7 @@ static void cortex_m3_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     ARMCPU *cpu = ARM_CPU(uc, obj);
     set_feature(&cpu->env, ARM_FEATURE_V7);
     set_feature(&cpu->env, ARM_FEATURE_M);
+    set_feature(&cpu->env, ARM_FEATURE_M_MAIN);
     cpu->midr = 0x410fc231;
     cpu->pmsav7_dregion = 8;
     cpu->id_pfr0 = 0x00000030;
@@ -1014,6 +1015,7 @@ static void cortex_m4_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 
     set_feature(&cpu->env, ARM_FEATURE_V7);
     set_feature(&cpu->env, ARM_FEATURE_M);
+    set_feature(&cpu->env, ARM_FEATURE_M_MAIN);
     set_feature(&cpu->env, ARM_FEATURE_THUMB_DSP);
     cpu->midr = 0x410fc240; /* r0p0 */
     cpu->pmsav7_dregion = 8;
@@ -1039,6 +1041,7 @@ static void cortex_m33_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 
     set_feature(&cpu->env, ARM_FEATURE_V8);
     set_feature(&cpu->env, ARM_FEATURE_M);
+    set_feature(&cpu->env, ARM_FEATURE_M_MAIN);
     set_feature(&cpu->env, ARM_FEATURE_M_SECURITY);
     set_feature(&cpu->env, ARM_FEATURE_THUMB_DSP);
     cpu->midr = 0x410fd213; /* r0p3 */
