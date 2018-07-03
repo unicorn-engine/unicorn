@@ -1132,6 +1132,12 @@
 #define helper_gvec_fmul_idx_d helper_gvec_fmul_idx_d_armeb
 #define helper_gvec_fmul_idx_h helper_gvec_fmul_idx_h_armeb
 #define helper_gvec_fmul_idx_s helper_gvec_fmul_idx_s_armeb
+#define helper_gvec_frecpe_d helper_gvec_frecpe_d_armeb
+#define helper_gvec_frecpe_h helper_gvec_frecpe_h_armeb
+#define helper_gvec_frecpe_s helper_gvec_frecpe_s_armeb
+#define helper_gvec_frsqrte_d helper_gvec_frsqrte_d_armeb
+#define helper_gvec_frsqrte_h helper_gvec_frsqrte_h_armeb
+#define helper_gvec_frsqrte_s helper_gvec_frsqrte_s_armeb
 #define helper_gvec_fsub_d helper_gvec_fsub_d_armeb
 #define helper_gvec_fsub_h helper_gvec_fsub_h_armeb
 #define helper_gvec_fsub_s helper_gvec_fsub_s_armeb
