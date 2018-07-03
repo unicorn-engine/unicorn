@@ -1889,11 +1889,27 @@ static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
 };
 
 #else
-/* In user-mode none of the generic timer registers are accessible,
- * and their implementation depends on QEMU_CLOCK_VIRTUAL and qdev gpio outputs,
- * so instead just don't register any of them.
+/* In user-mode most of the generic timer registers are inaccessible
+ * however modern kernels (4.12+) allow access to cntvct_el0
  */
+
+static uint64_t gt_virt_cnt_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    /* Currently we have no support for QEMUTimer in linux-user so we
+     * can't call gt_get_countervalue(env), instead we directly
+     * call the lower level functions.
+     */
+    return cpu_get_clock() / GTIMER_SCALE;
+}
+
 static const ARMCPRegInfo generic_timer_cp_reginfo[] = {
+    { "CNTFRQ_EL0", 0,14,0, 3,3,0, ARM_CP_STATE_AA64,
+      ARM_CP_CONST, PL0_R /* no PL1_RW in linux-user */, 0, NULL, NANOSECONDS_PER_SECOND / GTIMER_SCALE,
+      offsetof(CPUARMState, cp15.c14_cntfrq),
+    },
+    { "CNTVCT_EL0", 0,14,0, 3,3,2, ARM_CP_STATE_AA64, ARM_CP_NO_RAW | ARM_CP_IO,
+      PL0_R, 0, NULL, 0, 0, 0, NULL, gt_virt_cnt_read,
+    },
     REGINFO_SENTINEL
 };
 
