@@ -3552,6 +3552,9 @@
 #define helper_sve_fcmgt0_d helper_sve_fcmgt0_d_aarch64
 #define helper_sve_fcmgt0_h helper_sve_fcmgt0_h_aarch64
 #define helper_sve_fcmgt0_s helper_sve_fcmgt0_s_aarch64
+#define helper_sve_fcmla_zpzzz_d helper_sve_fcmla_zpzzz_d_aarch64
+#define helper_sve_fcmla_zpzzz_h helper_sve_fcmla_zpzzz_h_aarch64
+#define helper_sve_fcmla_zpzzz_s helper_sve_fcmla_zpzzz_s_aarch64
 #define helper_sve_fcmle0_d helper_sve_fcmle0_d_aarch64
 #define helper_sve_fcmle0_h helper_sve_fcmle0_h_aarch64
 #define helper_sve_fcmle0_s helper_sve_fcmle0_s_aarch64
