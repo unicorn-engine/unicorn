@@ -4266,7 +4266,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar5 },
             { "ID_MMFR4", 0,0,2, 3,0,6, ARM_CP_STATE_BOTH, ARM_CP_CONST,
               PL1_R, 0, NULL, cpu->id_mmfr4 },
-            { "ID_ISAR6", 0,0,2, 3,0,7, 0,
+            { "ID_ISAR6", 0,0,2, 3,0,7, ARM_CP_STATE_BOTH,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar6 },
             REGINFO_SENTINEL
         };
