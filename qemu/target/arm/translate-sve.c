@@ -39,6 +39,9 @@ typedef void gen_helper_gvec_flags_4(TCGContext *, TCGv_i32, TCGv_ptr, TCGv_ptr,
                                      TCGv_ptr, TCGv_ptr, TCGv_i32);
 
 typedef void gen_helper_gvec_mem(TCGContext *, TCGv_env, TCGv_ptr, TCGv_i64, TCGv_i32);
+typedef void gen_helper_gvec_mem_scatter(TCGContext *, TCGv_env, TCGv_ptr, TCGv_ptr,
+                                         TCGv_ptr, TCGv_i64, TCGv_i32);
+
 
 /*
  * Helpers for extracting complex instruction fields.
@@ -3946,7 +3949,7 @@ static void do_str(DisasContext *s, uint32_t vofs, uint32_t len,
 
         gen_set_label(tcg_ctx, loop);
 
-        t2 = tcg_temp_new_ptr(tcg_ctx, );
+        t2 = tcg_temp_new_ptr(tcg_ctx);
         tcg_gen_add_ptr(tcg_ctx, t2, tcg_ctx->cpu_env, i);
         tcg_gen_ld_i64(tcg_ctx, t0, t2, vofs);
 
@@ -4386,5 +4389,79 @@ static bool trans_ST_zpri(DisasContext *s, arg_rpri_store *a, uint32_t insn)
                          (a->imm * elements * (a->nreg + 1)) << a->msz);
         do_st_zpa(s, a->rd, a->pg, addr, a->msz, a->esz, a->nreg);
     }
+    return true;
+}
+
+/*
+ *** SVE gather loads / scatter stores
+ */
+
+static void do_mem_zpz(DisasContext *s, int zt, int pg, int zm, int scale,
+                       TCGv_i64 scalar, gen_helper_gvec_mem_scatter *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    unsigned vsz = vec_full_reg_size(s);
+    TCGv_i32 desc = tcg_const_i32(tcg_ctx, simd_desc(vsz, vsz, scale));
+    TCGv_ptr t_zm = tcg_temp_new_ptr(tcg_ctx);
+    TCGv_ptr t_pg = tcg_temp_new_ptr(tcg_ctx);
+    TCGv_ptr t_zt = tcg_temp_new_ptr(tcg_ctx);
+
+    tcg_gen_addi_ptr(tcg_ctx, t_pg, tcg_ctx->cpu_env, pred_full_reg_offset(s, pg));
+    tcg_gen_addi_ptr(tcg_ctx, t_zm, tcg_ctx->cpu_env, vec_full_reg_offset(s, zm));
+    tcg_gen_addi_ptr(tcg_ctx, t_zt, tcg_ctx->cpu_env, vec_full_reg_offset(s, zt));
+    fn(tcg_ctx, tcg_ctx->cpu_env, t_zt, t_pg, t_zm, scalar, desc);
+
+    tcg_temp_free_ptr(tcg_ctx, t_zt);
+    tcg_temp_free_ptr(tcg_ctx, t_zm);
+    tcg_temp_free_ptr(tcg_ctx, t_pg);
+    tcg_temp_free_i32(tcg_ctx, desc);
+}
+
+static bool trans_ST1_zprz(DisasContext *s, arg_ST1_zprz *a, uint32_t insn)
+{
+    /* Indexed by [xs][msz].  */
+    static gen_helper_gvec_mem_scatter * const fn32[2][3] = {
+        { gen_helper_sve_stbs_zsu,
+          gen_helper_sve_sths_zsu,
+          gen_helper_sve_stss_zsu, },
+        { gen_helper_sve_stbs_zss,
+          gen_helper_sve_sths_zss,
+          gen_helper_sve_stss_zss, },
+    };
+    /* Note that we overload xs=2 to indicate 64-bit offset.  */
+    static gen_helper_gvec_mem_scatter * const fn64[3][4] = {
+        { gen_helper_sve_stbd_zsu,
+          gen_helper_sve_sthd_zsu,
+          gen_helper_sve_stsd_zsu,
+          gen_helper_sve_stdd_zsu, },
+        { gen_helper_sve_stbd_zss,
+          gen_helper_sve_sthd_zss,
+          gen_helper_sve_stsd_zss,
+          gen_helper_sve_stdd_zss, },
+        { gen_helper_sve_stbd_zd,
+          gen_helper_sve_sthd_zd,
+          gen_helper_sve_stsd_zd,
+          gen_helper_sve_stdd_zd, },
+    };
+    gen_helper_gvec_mem_scatter *fn;
+
+    if (a->esz < a->msz || (a->msz == 0 && a->scale)) {
+        return false;
+    }
+    if (!sve_access_check(s)) {
+        return true;
+    }
+    switch (a->esz) {
+    case MO_32:
+        fn = fn32[a->xs][a->msz];
+        break;
+    case MO_64:
+        fn = fn64[a->xs][a->msz];
+        break;
+    default:
+        g_assert_not_reached();
+    }
+    do_mem_zpz(s, a->rd, a->pg, a->rm, a->scale * a->msz,
+               cpu_reg_sp(s, a->rn), fn);
     return true;
 }
