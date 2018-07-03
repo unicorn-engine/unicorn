@@ -32,6 +32,20 @@
 #include "config-target.h"
 #endif
 #include "qemu/compiler.h"
+#ifdef __COVERITY__
+/* Coverity does not like the new _Float* types that are used by
+ * recent glibc, and croaks on every single file that includes
+ * stdlib.h.  These typedefs are enough to please it.
+ *
+ * Note that these fix parse errors so they cannot be placed in
+ * scripts/coverity-model.c.
+ */
+typedef float _Float32;
+typedef double _Float32x;
+typedef double _Float64;
+typedef __float80 _Float64x;
+typedef __float128 _Float128;
+#endif
 
 /* Older versions of C++ don't get definitions of various macros from
  * stdlib.h unless we define these macros before first inclusion of
