@@ -8074,8 +8074,9 @@ case 0x101:
                 break;
             }
             gen_update_cc_op(s);
-            gen_jmp_im(s, pc_start - s->cs_base);
             gen_helper_stgi(tcg_ctx, cpu_env);
+            gen_jmp_im(s, s->pc - s->cs_base);
+            gen_eob(s);
             break;
 
         case 0xdd: /* CLGI */
