@@ -3564,6 +3564,12 @@
 #define helper_sve_fcmuo_d helper_sve_fcmuo_d_aarch64eb
 #define helper_sve_fcmuo_h helper_sve_fcmuo_h_aarch64eb
 #define helper_sve_fcmuo_s helper_sve_fcmuo_s_aarch64eb
+#define helper_sve_fcvt_dh helper_sve_fcvt_dh_aarch64eb
+#define helper_sve_fcvt_ds helper_sve_fcvt_ds_aarch64eb
+#define helper_sve_fcvt_hd helper_sve_fcvt_hd_aarch64eb
+#define helper_sve_fcvt_hs helper_sve_fcvt_hs_aarch64eb
+#define helper_sve_fcvt_sd helper_sve_fcvt_sd_aarch64eb
+#define helper_sve_fcvt_sh helper_sve_fcvt_sh_aarch64eb
 #define helper_sve_fdiv_d helper_sve_fdiv_d_aarch64eb
 #define helper_sve_fdiv_h helper_sve_fdiv_h_aarch64eb
 #define helper_sve_fdiv_s helper_sve_fdiv_s_aarch64eb
