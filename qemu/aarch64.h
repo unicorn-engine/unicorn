@@ -3650,6 +3650,9 @@
 #define helper_sve_fnmls_zpzzz_d helper_sve_fnmls_zpzzz_d_aarch64
 #define helper_sve_fnmls_zpzzz_h helper_sve_fnmls_zpzzz_h_aarch64
 #define helper_sve_fnmls_zpzzz_s helper_sve_fnmls_zpzzz_s_aarch64
+#define helper_sve_frecpx_d helper_sve_frecpx_d_aarch64
+#define helper_sve_frecpx_h helper_sve_frecpx_h_aarch64
+#define helper_sve_frecpx_s helper_sve_frecpx_s_aarch64
 #define helper_sve_frint_d helper_sve_frint_d_aarch64
 #define helper_sve_frint_h helper_sve_frint_h_aarch64
 #define helper_sve_frint_s helper_sve_frint_s_aarch64
@@ -3659,6 +3662,9 @@
 #define helper_sve_fscalbn_d helper_sve_fscalbn_d_aarch64
 #define helper_sve_fscalbn_h helper_sve_fscalbn_h_aarch64
 #define helper_sve_fscalbn_s helper_sve_fscalbn_s_aarch64
+#define helper_sve_fsqrt_d helper_sve_fsqrt_d_aarch64
+#define helper_sve_fsqrt_h helper_sve_fsqrt_h_aarch64
+#define helper_sve_fsqrt_s helper_sve_fsqrt_s_aarch64
 #define helper_sve_fsub_d helper_sve_fsub_d_aarch64
 #define helper_sve_fsub_h helper_sve_fsub_h_aarch64
 #define helper_sve_fsub_s helper_sve_fsub_s_aarch64
