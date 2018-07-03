@@ -3642,6 +3642,9 @@
 #define helper_sve_fsubs_d helper_sve_fsubs_d_aarch64eb
 #define helper_sve_fsubs_h helper_sve_fsubs_h_aarch64eb
 #define helper_sve_fsubs_s helper_sve_fsubs_s_aarch64eb
+#define helper_sve_ftmad_d helper_sve_ftmad_d_aarch64eb
+#define helper_sve_ftmad_h helper_sve_ftmad_h_aarch64eb
+#define helper_sve_ftmad_s helper_sve_ftmad_s_aarch64eb
 #define helper_sve_ftssel_d helper_sve_ftssel_d_aarch64eb
 #define helper_sve_ftssel_h helper_sve_ftssel_h_aarch64eb
 #define helper_sve_ftssel_s helper_sve_ftssel_s_aarch64eb
