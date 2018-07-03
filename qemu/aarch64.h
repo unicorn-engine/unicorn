@@ -3504,6 +3504,9 @@
 #define helper_sve_fadd_d helper_sve_fadd_d_aarch64
 #define helper_sve_fadd_h helper_sve_fadd_h_aarch64
 #define helper_sve_fadd_s helper_sve_fadd_s_aarch64
+#define helper_sve_fadda_d helper_sve_fadda_d_aarch64
+#define helper_sve_fadda_h helper_sve_fadda_h_aarch64
+#define helper_sve_fadda_s helper_sve_fadda_s_aarch64
 #define helper_sve_fdiv_d helper_sve_fdiv_d_aarch64
 #define helper_sve_fdiv_h helper_sve_fdiv_h_aarch64
 #define helper_sve_fdiv_s helper_sve_fdiv_s_aarch64
