@@ -3596,6 +3596,64 @@ static bool trans_FMUL_zzx(DisasContext *s, arg_FMUL_zzx *a, uint32_t insn)
 }
 
 /*
+ *** SVE Floating Point Fast Reduction Group
+ */
+
+typedef void gen_helper_fp_reduce(TCGContext *, TCGv_i64, TCGv_ptr, TCGv_ptr,
+                                  TCGv_ptr, TCGv_i32);
+
+static void do_reduce(DisasContext *s, arg_rpr_esz *a,
+                      gen_helper_fp_reduce *fn)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    unsigned vsz = vec_full_reg_size(s);
+    unsigned p2vsz = pow2ceil(vsz);
+    TCGv_i32 t_desc = tcg_const_i32(tcg_ctx, simd_desc(vsz, p2vsz, 0));
+    TCGv_ptr t_zn, t_pg, status;
+    TCGv_i64 temp;
+
+    temp = tcg_temp_new_i64(tcg_ctx);
+    t_zn = tcg_temp_new_ptr(tcg_ctx);
+    t_pg = tcg_temp_new_ptr(tcg_ctx);
+
+    tcg_gen_addi_ptr(tcg_ctx, t_zn, tcg_ctx->cpu_env, vec_full_reg_offset(s, a->rn));
+    tcg_gen_addi_ptr(tcg_ctx, t_pg, tcg_ctx->cpu_env, pred_full_reg_offset(s, a->pg));
+    status = get_fpstatus_ptr(tcg_ctx, a->esz == MO_16);
+
+    fn(tcg_ctx, temp, t_zn, t_pg, status, t_desc);
+    tcg_temp_free_ptr(tcg_ctx, t_zn);
+    tcg_temp_free_ptr(tcg_ctx, t_pg);
+    tcg_temp_free_ptr(tcg_ctx, status);
+    tcg_temp_free_i32(tcg_ctx, t_desc);
+
+    write_fp_dreg(s, a->rd, temp);
+    tcg_temp_free_i64(tcg_ctx, temp);
+}
+
+#define DO_VPZ(NAME, name) \
+static bool trans_##NAME(DisasContext *s, arg_rpr_esz *a, uint32_t insn) \
+{                                                                        \
+    static gen_helper_fp_reduce * const fns[3] = {                       \
+        gen_helper_sve_##name##_h,                                       \
+        gen_helper_sve_##name##_s,                                       \
+        gen_helper_sve_##name##_d,                                       \
+    };                                                                   \
+    if (a->esz == 0) {                                                   \
+        return false;                                                    \
+    }                                                                    \
+    if (sve_access_check(s)) {                                           \
+        do_reduce(s, a, fns[a->esz - 1]);                                \
+    }                                                                    \
+    return true;                                                         \
+}
+
+DO_VPZ(FADDV, faddv)
+DO_VPZ(FMINNMV, fminnmv)
+DO_VPZ(FMAXNMV, fmaxnmv)
+DO_VPZ(FMINV, fminv)
+DO_VPZ(FMAXV, fmaxv)
+
+/*
  *** SVE Floating Point Accumulating Reduction Group
  */
 
