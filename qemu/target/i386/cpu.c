@@ -3183,7 +3183,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "EPYC",
-        0xd, 0x8000000A,
+        0xd, 0x8000001E,
         CPUID_VENDOR_AMD,
         23, 1, 2,
         {
@@ -3215,7 +3215,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_8000_0001_ECX
             CPUID_EXT3_OSVW | CPUID_EXT3_3DNOWPREFETCH |
             CPUID_EXT3_MISALIGNSSE | CPUID_EXT3_SSE4A | CPUID_EXT3_ABM |
-            CPUID_EXT3_CR8LEG | CPUID_EXT3_SVM | CPUID_EXT3_LAHF_LM,
+            CPUID_EXT3_CR8LEG | CPUID_EXT3_SVM | CPUID_EXT3_LAHF_LM |
+            CPUID_EXT3_TOPOEXT,
         // FEAT_8000_0007_EDX
             0,
         // FEAT_8000_0008_EBX
@@ -3250,7 +3251,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
     },
     {
         "EPYC-IBPB",
-        0xd, 0x8000000A,
+        0xd, 0x8000001E,
         CPUID_VENDOR_AMD,
         23, 1, 2,
         {
@@ -3282,7 +3283,8 @@ static X86CPUDefinition builtin_x86_defs[] = {
         // FEAT_8000_0001_ECX
             CPUID_EXT3_OSVW | CPUID_EXT3_3DNOWPREFETCH |
             CPUID_EXT3_MISALIGNSSE | CPUID_EXT3_SSE4A | CPUID_EXT3_ABM |
-            CPUID_EXT3_CR8LEG | CPUID_EXT3_SVM | CPUID_EXT3_LAHF_LM,
+            CPUID_EXT3_CR8LEG | CPUID_EXT3_SVM | CPUID_EXT3_LAHF_LM |
+            CPUID_EXT3_TOPOEXT,
         // FEAT_8000_0007_EDX
             0,
         // FEAT_8000_0008_EBX
