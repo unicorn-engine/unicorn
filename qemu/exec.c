@@ -2325,8 +2325,6 @@ void cpu_physical_memory_unmap(AddressSpace *as, void *buffer, hwaddr len,
 #define ARG1                     as
 #define SUFFIX
 #define TRANSLATE(...)           address_space_translate(as, __VA_ARGS__)
-#define IS_DIRECT(mr, is_write)  memory_access_is_direct(mr, is_write)
-#define MAP_RAM(mr, ofs)         qemu_map_ram_ptr((mr)->uc, (mr)->ram_block, ofs)
 #define INVALIDATE(mr, ofs, len)
 #define RCU_READ_LOCK(...)       rcu_read_lock()
 #define RCU_READ_UNLOCK(...)     rcu_read_unlock()
