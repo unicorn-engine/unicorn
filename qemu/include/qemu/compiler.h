@@ -28,6 +28,7 @@
 #endif
 #endif
 
+#define sizeof_field(type, field) sizeof(((type *)0)->field)
 
 static double rint( double x )
 {
@@ -165,6 +166,8 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define container_of(ptr, type, member) ((type *)((char *)(ptr) -offsetof(type,member)))
 #endif
 #endif
+
+#define sizeof_field(type, field) sizeof(((type *)0)->field)
 
 /* Convert from a base type to a parent type, with compile time checking.  */
 #ifdef __GNUC__
