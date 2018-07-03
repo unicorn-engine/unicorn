@@ -4264,11 +4264,10 @@ void register_cp_regs_for_features(ARMCPU *cpu)
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar4 },
             { "ID_ISAR5", 0,0,2, 3,0,5, ARM_CP_STATE_BOTH,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar5 },
-            /* 6..7 are as yet unallocated and must RAZ */
-            { "ID_ISAR6", 15,0,2, 0,0,6, 0,
-              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
-            { "ID_ISAR7", 15,0,2, 0,0,7, 0,
-              ARM_CP_CONST, PL1_R, 0, NULL, 0 },
+            { "ID_MMFR4", 0,0,2, 3,0,6, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+              PL1_R, 0, NULL, cpu->id_mmfr4 },
+            { "ID_ISAR6", 0,0,2, 3,0,7, 0,
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar6 },
             REGINFO_SENTINEL
         };
         define_arm_cp_regs(cpu, v6_idregs);
