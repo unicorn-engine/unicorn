@@ -1551,6 +1551,7 @@ static void arm_max_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     set_feature(&cpu->env, ARM_FEATURE_V8_PMULL);
     set_feature(&cpu->env, ARM_FEATURE_CRC);
     set_feature(&cpu->env, ARM_FEATURE_V8_RDM);
+    set_feature(&cpu->env, ARM_FEATURE_V8_DOTPROD);
     set_feature(&cpu->env, ARM_FEATURE_V8_FCMA);
 }
 #endif
