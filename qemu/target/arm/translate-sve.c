@@ -3910,6 +3910,90 @@ static void do_ldr(DisasContext *s, uint32_t vofs, uint32_t len,
     tcg_temp_free_i64(tcg_ctx, t0);
 }
 
+/* Similarly for stores.  */
+static void do_str(DisasContext *s, uint32_t vofs, uint32_t len,
+                   int rn, int imm)
+{
+    uint32_t len_align = QEMU_ALIGN_DOWN(len, 8);
+    uint32_t len_remain = len % 8;
+    uint32_t nparts = len / 8 + ctpop8(len_remain);
+    int midx = get_mem_index(s);
+    TCGv_i64 addr, t0;
+
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    addr = tcg_temp_new_i64(tcg_ctx);
+    t0 = tcg_temp_new_i64(tcg_ctx);
+
+    /* Note that unpredicated load/store of vector/predicate registers
+     * are defined as a stream of bytes, which equates to little-endian
+     * operations on larger quantities.  There is no nice way to force
+     * a little-endian store for aarch64_be-linux-user out of line.
+     *
+     * Attempt to keep code expansion to a minimum by limiting the
+     * amount of unrolling done.
+     */
+    if (nparts <= 4) {
+        int i;
+
+        for (i = 0; i < len_align; i += 8) {
+            tcg_gen_ld_i64(tcg_ctx, t0, tcg_ctx->cpu_env, vofs + i);
+            tcg_gen_addi_i64(tcg_ctx, addr, cpu_reg_sp(s, rn), imm + i);
+            tcg_gen_qemu_st_i64(s->uc, t0, addr, midx, MO_LEQ);
+        }
+    } else {
+        TCGLabel *loop = gen_new_label(tcg_ctx);
+        TCGv_ptr t2, i = tcg_const_local_ptr(tcg_ctx, 0);
+
+        gen_set_label(tcg_ctx, loop);
+
+        t2 = tcg_temp_new_ptr(tcg_ctx, );
+        tcg_gen_add_ptr(tcg_ctx, t2, tcg_ctx->cpu_env, i);
+        tcg_gen_ld_i64(tcg_ctx, t0, t2, vofs);
+
+        /* Minimize the number of local temps that must be re-read from
+         * the stack each iteration.  Instead, re-compute values other
+         * than the loop counter.
+         */
+        tcg_gen_addi_ptr(tcg_ctx, t2, i, imm);
+        tcg_gen_extu_ptr_i64(tcg_ctx, addr, t2);
+        tcg_gen_add_i64(tcg_ctx, addr, addr, cpu_reg_sp(s, rn));
+        tcg_temp_free_ptr(tcg_ctx, t2);
+
+        tcg_gen_qemu_st_i64(s->uc, t0, addr, midx, MO_LEQ);
+
+        tcg_gen_addi_ptr(tcg_ctx, i, i, 8);
+
+        tcg_gen_brcondi_ptr(tcg_ctx, TCG_COND_LTU, i, len_align, loop);
+        tcg_temp_free_ptr(tcg_ctx, i);
+    }
+
+    /* Predicate register stores can be any multiple of 2.  */
+    if (len_remain) {
+        tcg_gen_ld_i64(tcg_ctx, t0, tcg_ctx->cpu_env, vofs + len_align);
+        tcg_gen_addi_i64(tcg_ctx, addr, cpu_reg_sp(s, rn), imm + len_align);
+
+        switch (len_remain) {
+        case 2:
+        case 4:
+        case 8:
+            tcg_gen_qemu_st_i64(s->uc, t0, addr, midx, MO_LE | ctz32(len_remain));
+            break;
+
+        case 6:
+            tcg_gen_qemu_st_i64(s->uc, t0, addr, midx, MO_LEUL);
+            tcg_gen_addi_i64(tcg_ctx, addr, addr, 4);
+            tcg_gen_shri_i64(tcg_ctx, t0, t0, 32);
+            tcg_gen_qemu_st_i64(s->uc, t0, addr, midx, MO_LEUW);
+            break;
+
+        default:
+            g_assert_not_reached();
+        }
+    }
+    tcg_temp_free_i64(tcg_ctx, addr);
+    tcg_temp_free_i64(tcg_ctx, t0);
+}
+
 static bool trans_LDR_zri(DisasContext *s, arg_rri *a, uint32_t insn)
 {
     if (sve_access_check(s)) {
@@ -3926,6 +4010,26 @@ static bool trans_LDR_pri(DisasContext *s, arg_rri *a, uint32_t insn)
         int size = pred_full_reg_size(s);
         int off = pred_full_reg_offset(s, a->rd);
         do_ldr(s, off, size, a->rn, a->imm * size);
+    }
+    return true;
+}
+
+static bool trans_STR_zri(DisasContext *s, arg_rri *a, uint32_t insn)
+{
+    if (sve_access_check(s)) {
+        int size = vec_full_reg_size(s);
+        int off = vec_full_reg_offset(s, a->rd);
+        do_str(s, off, size, a->rn, a->imm * size);
+    }
+    return true;
+}
+
+static bool trans_STR_pri(DisasContext *s, arg_rri *a, uint32_t insn)
+{
+    if (sve_access_check(s)) {
+        int size = pred_full_reg_size(s);
+        int off = pred_full_reg_offset(s, a->rd);
+        do_str(s, off, size, a->rn, a->imm * size);
     }
     return true;
 }
