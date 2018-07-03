@@ -3660,6 +3660,10 @@
 #define helper_sve_mls_d helper_sve_mls_d_aarch64eb
 #define helper_sve_mls_h helper_sve_mls_h_aarch64eb
 #define helper_sve_mls_s helper_sve_mls_s_aarch64eb
+#define helper_sve_movz_b helper_sve_movz_b_aarch64eb
+#define helper_sve_movz_d helper_sve_movz_d_aarch64eb
+#define helper_sve_movz_h helper_sve_movz_h_aarch64eb
+#define helper_sve_movz_s helper_sve_movz_s_aarch64eb
 #define helper_sve_mul_zpzz_b helper_sve_mul_zpzz_b_aarch64eb
 #define helper_sve_mul_zpzz_d helper_sve_mul_zpzz_d_aarch64eb
 #define helper_sve_mul_zpzz_h helper_sve_mul_zpzz_h_aarch64eb
