@@ -4051,6 +4051,31 @@ DO_FPCMP(FACGT, facgt)
 
 #undef DO_FPCMP
 
+static bool trans_FCADD(DisasContext *s, arg_FCADD *a, uint32_t insn)
+{
+    static gen_helper_gvec_4_ptr * const fns[3] = {
+        gen_helper_sve_fcadd_h,
+        gen_helper_sve_fcadd_s,
+        gen_helper_sve_fcadd_d
+    };
+
+    if (a->esz == 0) {
+        return false;
+    }
+    if (sve_access_check(s)) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+        unsigned vsz = vec_full_reg_size(s);
+        TCGv_ptr status = get_fpstatus_ptr(tcg_ctx, a->esz == MO_16);
+        tcg_gen_gvec_4_ptr(tcg_ctx, vec_full_reg_offset(s, a->rd),
+                           vec_full_reg_offset(s, a->rn),
+                           vec_full_reg_offset(s, a->rm),
+                           pred_full_reg_offset(s, a->pg),
+                           status, vsz, vsz, a->rot, fns[a->esz - 1]);
+        tcg_temp_free_ptr(tcg_ctx, status);
+    }
+    return true;
+}
+
 typedef void gen_helper_sve_fmla(TCGContext *, TCGv_env, TCGv_ptr, TCGv_i32);
 
 static bool do_fmla(DisasContext *s, arg_rprrr_esz *a, gen_helper_sve_fmla *fn)

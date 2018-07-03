@@ -3531,6 +3531,9 @@
 #define helper_sve_facgt_d helper_sve_facgt_d_aarch64
 #define helper_sve_facgt_h helper_sve_facgt_h_aarch64
 #define helper_sve_facgt_s helper_sve_facgt_s_aarch64
+#define helper_sve_fcadd_d helper_sve_fcadd_d_aarch64
+#define helper_sve_fcadd_h helper_sve_fcadd_h_aarch64
+#define helper_sve_fcadd_s helper_sve_fcadd_s_aarch64
 #define helper_sve_fcmeq_d helper_sve_fcmeq_d_aarch64
 #define helper_sve_fcmeq_h helper_sve_fcmeq_h_aarch64
 #define helper_sve_fcmeq_s helper_sve_fcmeq_s_aarch64
