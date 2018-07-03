@@ -33,7 +33,7 @@ namespace UnicornSamples
                 // mov ecx,[0xaaaaaaaa]; INC ecx; DEC edx
                 0x8B, 0x0D, 0xAA, 0xAA, 0xAA, 0xAA, 0x41, 0x4a
             };
-            Run(X86_CODE32_MEM_READ, true);
+            Run(X86_CODE32_MEM_READ);
         }
 
         public static void X86Code32InvalidMemWriteWithRuntimeFix()

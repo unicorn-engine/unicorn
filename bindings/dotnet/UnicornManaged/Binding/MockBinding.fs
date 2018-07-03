@@ -21,9 +21,9 @@ module internal MockBinding =
     let mutable arch_supported = fun(arch) -> true
     let mutable errno = fun(eng) -> 0
     let mutable strerror = fun(err) -> new nativeint(0)
-    let mutable hook_add_noarg = fun(eng, hh, callbackType, callback, userData) -> 0
-    let mutable hook_add_arg0 = fun(eng, hh, callbackType, callback, userData, arg0) -> 0
-    let mutable hook_add_arg0_arg1 = fun(eng, hh, callbackType, callback, userData, arg0, arg1) -> 0
+    let mutable hook_add_noarg = fun(eng, hh, callbackType, callback, userData, hookBegin, hookEnd) -> 0
+    let mutable hook_add_arg0 = fun(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0) -> 0
+    let mutable hook_add_arg0_arg1 = fun(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0, arg1) -> 0
 
     let instance =
         {new IBinding with
@@ -44,8 +44,8 @@ module internal MockBinding =
             member this.MemMapPtr(eng, address, size, perms, ptr)  = mem_map_ptr(eng, address, size, perms, ptr)
             member this.MemUnmap(eng, address, size) = mem_unmap(eng, address, size)
             member this.MemProtect(eng, address, size, perms) = mem_protect(eng, address, size, perms)
-            member thi.HookAddNoarg(eng, hh, callbackType, callback, userData) = hook_add_noarg(eng, hh, callbackType, callback, userData)
-            member thi.HookAddArg0(eng, hh, callbackType, callback, userData, arg0) = hook_add_arg0(eng, hh, callbackType, callback, userData, arg0)
-            member thi.HookAddArg0Arg1(eng, hh, callbackType, callback, userData, arg0, arg1) = hook_add_arg0_arg1(eng, hh, callbackType, callback, userData, arg0, arg1)
+            member thi.HookAddNoarg(eng, hh, callbackType, callback, userData, hookBegin, hookEnd) = hook_add_noarg(eng, hh, callbackType, callback, userData, hookBegin, hookEnd)
+            member thi.HookAddArg0(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0) = hook_add_arg0(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0)
+            member thi.HookAddArg0Arg1(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0, arg1) = hook_add_arg0_arg1(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0, arg1)
         }
     
