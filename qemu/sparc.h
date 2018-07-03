@@ -1191,6 +1191,8 @@
 #define helper_gvec_sar64i helper_gvec_sar64i_sparc
 #define helper_gvec_sdot_b helper_gvec_sdot_b_sparc
 #define helper_gvec_sdot_h helper_gvec_sdot_h_sparc
+#define helper_gvec_sdot_idx_b helper_gvec_sdot_idx_b_sparc
+#define helper_gvec_sdot_idx_h helper_gvec_sdot_idx_h_sparc
 #define helper_gvec_shl8i helper_gvec_shl8i_sparc
 #define helper_gvec_shl16i helper_gvec_shl16i_sparc
 #define helper_gvec_shl32i helper_gvec_shl32i_sparc
@@ -1217,6 +1219,8 @@
 #define helper_gvec_sssub64 helper_gvec_sssub64_sparc
 #define helper_gvec_udot_b helper_gvec_udot_b_sparc
 #define helper_gvec_udot_h helper_gvec_udot_h_sparc
+#define helper_gvec_udot_idx_b helper_gvec_udot_idx_b_sparc
+#define helper_gvec_udot_idx_h helper_gvec_udot_idx_h_sparc
 #define helper_gvec_usadd8 helper_gvec_usadd8_sparc
 #define helper_gvec_usadd16 helper_gvec_usadd16_sparc
 #define helper_gvec_usadd32 helper_gvec_usadd32_sparc
