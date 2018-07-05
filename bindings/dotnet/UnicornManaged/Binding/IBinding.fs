@@ -21,8 +21,8 @@ type IBinding =
         abstract MemMapPtr : UIntPtr * UInt64 * UIntPtr * UInt32 * UIntPtr -> Int32
         abstract MemUnmap : UIntPtr * UInt64 * UIntPtr -> Int32
         abstract MemProtect : UIntPtr * UInt64 * UIntPtr * UInt32 -> Int32
-        abstract HookAddNoarg : UIntPtr * UIntPtr * Int32 * UIntPtr * IntPtr -> Int32
-        abstract HookAddArg0 : UIntPtr * UIntPtr * Int32 * UIntPtr * IntPtr * Int32 -> Int32
-        abstract HookAddArg0Arg1 : UIntPtr * UIntPtr * Int32 * UIntPtr * IntPtr * UInt64 * UInt64 -> Int32
+        abstract HookAddNoarg : UIntPtr * UIntPtr * Int32 * UIntPtr * IntPtr * UInt64 * UInt64 -> Int32
+        abstract HookAddArg0 : UIntPtr * UIntPtr * Int32 * UIntPtr * IntPtr * UInt64 * UInt64 * Int32 -> Int32
+        abstract HookAddArg0Arg1 : UIntPtr * UIntPtr * Int32 * UIntPtr * IntPtr * UInt64 * UInt64 * UInt64 * UInt64 -> Int32
     end
 
