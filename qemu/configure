@@ -1459,7 +1459,7 @@ if test "$static" = "yes" ; then
   echo "CONFIG_STATIC=y" >> $config_host_mak
 fi
 echo "SRC_PATH=$source_path" >> $config_host_mak
-echo "TARGET_LIST=$target_list" >> $config_host_mak
+echo "TARGET_DIRS=$target_list" >> $config_host_mak
 if test "$byteswap_h" = "yes" ; then
   echo "CONFIG_BYTESWAP_H=y" >> $config_host_mak
 fi

@@ -19,8 +19,8 @@ seems to have been used for an in-tree build. You can fix this by running \
 endif
 endif
 
-CONFIG_SOFTMMU := $(if $(filter %-softmmu,$(TARGET_LIST)),y)
-CONFIG_USER_ONLY := $(if $(filter %-user,$(TARGET_LIST)),y)
+CONFIG_SOFTMMU := $(if $(filter %-softmmu,$(TARGET_DIRS)),y)
+CONFIG_USER_ONLY := $(if $(filter %-user,$(TARGET_DIRS)),y)
 CONFIG_ALL=y
 -include config-all-devices.mak
 
@@ -66,8 +66,8 @@ $(call set-vpath, $(SRC_PATH))
 LIBS+=-lz $(LIBS_TOOLS)
 
 SUBDIR_MAKEFLAGS=$(if $(V),,--no-print-directory --quiet) BUILD_DIR=$(BUILD_DIR)
-SUBDIR_DEVICES_MAK=$(patsubst %, %/config-devices.mak, $(TARGET_LIST))
-SUBDIR_DEVICES_MAK_DEP=$(patsubst %, %-config-devices.mak.d, $(TARGET_LIST))
+SUBDIR_DEVICES_MAK=$(patsubst %, %/config-devices.mak, $(TARGET_DIRS))
+SUBDIR_DEVICES_MAK_DEP=$(patsubst %, %-config-devices.mak.d, $(TARGET_DIRS))
 
 ifeq ($(SUBDIR_DEVICES_MAK),)
 config-all-devices.mak:
@@ -123,7 +123,7 @@ all: $(TOOLS) $(HELPERS-y) recurse-all modules
 config-host.h: config-host.h-timestamp
 config-host.h-timestamp: config-host.mak
 
-SUBDIR_RULES=$(patsubst %,subdir-%, $(TARGET_LIST))
+SUBDIR_RULES=$(patsubst %,subdir-%, $(TARGET_DIRS))
 SOFTMMU_SUBDIR_RULES=$(filter %-softmmu,$(SUBDIR_RULES))
 
 $(SOFTMMU_SUBDIR_RULES): $(block-obj-y)
@@ -135,7 +135,7 @@ subdir-%:
 
 $(SUBDIR_RULES): qapi/qapi-types.c qapi/qapi-types.h qapi/qapi-visit.c qapi/qapi-visit.h $(common-obj-y) $(util-obj-y)
 
-ALL_SUBDIRS=$(TARGET_LIST)
+ALL_SUBDIRS=$(TARGET_DIRS)
 
 recurse-all: $(SUBDIR_RULES)
 
@@ -192,7 +192,7 @@ distclean: clean
 	rm -f config-host.mak config-host.h* config-host.ld qemu-img-cmds.texi qemu-monitor.texi
 	rm -f config-all-devices.mak config-all-disas.mak
 	rm -f config.log
-	for d in $(TARGET_LIST); do \
+	for d in $(TARGET_DIRS); do \
 	rm -rf $$d || exit 1 ; \
         done
 	rm -Rf .sdk
