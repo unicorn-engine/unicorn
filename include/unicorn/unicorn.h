@@ -515,6 +515,23 @@ UNICORN_EXPORT
 uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
 
 /*
+ Coninue to Emulate machine code in a specific duration of time from the last
+ time it stopped.
+
+ @uc: handle returned by uc_open()
+ @until: address where emulation stops (i.e when this address is hit)
+ @timeout: duration to emulate the code (in microseconds). When this value is 0,
+        we will emulate the code in infinite time, until the code is finished.
+ @count: the number of instructions to be emulated. When this value is 0,
+        we will emulate all the code available, until the code is finished.
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_emu_continue(uc_engine *uc, uint64_t until, uint64_t timeout, size_t count);
+
+/*
  Stop emulation (which was started by uc_emu_start() API.
  This is typically called from callback functions registered via tracing APIs.
 
