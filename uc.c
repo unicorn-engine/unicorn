@@ -54,20 +54,6 @@ uc_err uc_errno(uc_engine *uc)
 
 
 UNICORN_EXPORT
-uint32_t uc_target_page_align(uc_engine *uc)
-{
-    return uc->target_page_align;
-}
-
-
-UNICORN_EXPORT
-uint32_t uc_target_page_size(uc_engine *uc)
-{
-    return uc->target_page_size;
-}
-
-
-UNICORN_EXPORT
 const char *uc_strerror(uc_err code)
 {
     switch(code) {
