@@ -401,6 +401,28 @@ UNICORN_EXPORT
 uc_err uc_errno(uc_engine *uc);
 
 /*
+ Report the last error number when some API function fail.
+ Like glibc's errno, uc_errno might not retain its old value once accessed.
+
+ @uc: handle returned by uc_open()
+
+ @return: error code of uc_err enum type (UC_ERR_*, see above)
+*/
+UNICORN_EXPORT
+uint32_t uc_target_page_align(uc_engine *uc);
+
+/*
+ Report the last error number when some API function fail.
+ Like glibc's errno, uc_errno might not retain its old value once accessed.
+
+ @uc: handle returned by uc_open()
+
+ @return: error code of uc_err enum type (UC_ERR_*, see above)
+*/
+UNICORN_EXPORT
+uint32_t uc_target_page_size(uc_engine *uc);
+
+/*
  Return a string describing given error code.
 
  @code: error code (see UC_ERR_* above)
