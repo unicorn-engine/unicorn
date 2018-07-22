@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 from unicorn import *
 from unicorn.x86_const import *
 from struct import pack

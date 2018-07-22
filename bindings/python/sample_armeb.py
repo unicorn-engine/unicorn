@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Sample code for ARM big endian of Unicorn. zhangwm <rustydaar@gmail.com>
 
 from __future__ import print_function

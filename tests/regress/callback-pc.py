@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 # reg_write() can't modify PC from within trace callbacks
 # issue #210

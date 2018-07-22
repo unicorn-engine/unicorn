@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Sample code for X86 of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 
 from __future__ import print_function

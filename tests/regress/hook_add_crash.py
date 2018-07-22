@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 
 """https://github.com/unicorn-engine/unicorn/issues/165"""
 

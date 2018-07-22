@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Test callback that returns False to cancel emulation
 
 from __future__ import print_function

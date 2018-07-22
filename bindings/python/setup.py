@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 # Python binding for Unicorn engine. Nguyen Anh Quynh <aquynh@gmail.com>
 
 from __future__ import print_function
