@@ -161,7 +161,7 @@ typedef _W64 unsigned int  uintptr_t;
 static int gettimeofday(struct timeval* t, void* timezone)
 {
     struct _timeb timebuffer;
-    _ftime( &timebuffer );
+    _ftime64_s(&timebuffer);
     t->tv_sec = (long)timebuffer.time;
     t->tv_usec = 1000*timebuffer.millitm;
     return 0;

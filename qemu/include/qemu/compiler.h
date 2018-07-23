@@ -25,10 +25,10 @@
 #endif
 
 
-static double rint( double x )
-{
-    return floor(x < 0 ? x - 0.5 : x + 0.5);
-}
+//static double rint( double x )
+//{
+//    return floor(x < 0 ? x - 0.5 : x + 0.5);
+//}
 
 union MSVC_FLOAT_HACK
 {
