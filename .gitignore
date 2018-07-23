@@ -87,6 +87,8 @@ config.log
 *.suo
 *.user
 *.sln.docstates
+*.VC.*db*
+.vs/
 
 # Build results
 
