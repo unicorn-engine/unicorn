@@ -2692,8 +2692,8 @@ static int disas_dsp_insn(DisasContext *s, uint32_t insn)
 // on msvc, so is replaced with separate versions for the shift to perform.
 //#define VFP_REG_SHR(x, n) (((n) > 0) ? (x) >> (n) : (x) << -(n))
 #if 0
-//#define VFP_SREG(insn, bigbit, smallbit) \
-//  ((VFP_REG_SHR(insn, bigbit - 1) & 0x1e) | (((insn) >> (smallbit)) & 1))
+#define VFP_SREG(insn, bigbit, smallbit) \
+  ((VFP_REG_SHR(insn, bigbit - 1) & 0x1e) | (((insn) >> (smallbit)) & 1))
 #endif
 
 #define VFP_REG_SHR_NEG(insn, n) ((insn) << -(n))

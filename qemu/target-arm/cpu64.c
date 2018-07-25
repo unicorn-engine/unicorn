@@ -163,8 +163,8 @@ static void aarch64_cpu_finalizefn(struct uc_struct *uc, Object *obj, void *opaq
 
 static void aarch64_cpu_set_pc(CPUState *cs, vaddr value)
 {
-    CPUARMState *env = cs->env_ptr;
-    ARMCPU *cpu = ARM_CPU(env->uc, cs);
+    //CPUARMState *env = cs->env_ptr;
+    ARMCPU *cpu = ARM_CPU(NULL, cs);
     /* It's OK to look at env for the current mode here, because it's
      * never possible for an AArch64 TB to chain to an AArch32 TB.
      * (Otherwise we would need to use synchronize_from_tb instead.)
