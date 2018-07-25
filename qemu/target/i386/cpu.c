@@ -60,19 +60,19 @@ struct CPUID2CacheDescriptorInfo {
  * From Intel SDM Volume 2A, CPUID instruction
  */
 struct CPUID2CacheDescriptorInfo cpuid2_cache_descriptors[] = {
-    [0x06] = { .level = 1, .type = ICACHE,        .size =   8 * KiB,
+    [0x06] = { .level = 1, .type = INSTRUCTION_CACHE,        .size =   8 * KiB,
                .associativity = 4,  .line_size = 32, },
-    [0x08] = { .level = 1, .type = ICACHE,        .size =  16 * KiB,
+    [0x08] = { .level = 1, .type = INSTRUCTION_CACHE,        .size =  16 * KiB,
                .associativity = 4,  .line_size = 32, },
-    [0x09] = { .level = 1, .type = ICACHE,        .size =  32 * KiB,
+    [0x09] = { .level = 1, .type = INSTRUCTION_CACHE,        .size =  32 * KiB,
                .associativity = 4,  .line_size = 64, },
-    [0x0A] = { .level = 1, .type = DCACHE,        .size =   8 * KiB,
+    [0x0A] = { .level = 1, .type = DATA_CACHE,        .size =   8 * KiB,
                .associativity = 2,  .line_size = 32, },
-    [0x0C] = { .level = 1, .type = DCACHE,        .size =  16 * KiB,
+    [0x0C] = { .level = 1, .type = DATA_CACHE,        .size =  16 * KiB,
                .associativity = 4,  .line_size = 32, },
-    [0x0D] = { .level = 1, .type = DCACHE,        .size =  16 * KiB,
+    [0x0D] = { .level = 1, .type = DATA_CACHE,        .size =  16 * KiB,
                .associativity = 4,  .line_size = 64, },
-    [0x0E] = { .level = 1, .type = DCACHE,        .size =  24 * KiB,
+    [0x0E] = { .level = 1, .type = DATA_CACHE,        .size =  24 * KiB,
                .associativity = 6,  .line_size = 64, },
     [0x1D] = { .level = 2, .type = UNIFIED_CACHE, .size = 128 * KiB,
                .associativity = 2,  .line_size = 64, },
@@ -86,9 +86,9 @@ struct CPUID2CacheDescriptorInfo cpuid2_cache_descriptors[] = {
     /* lines per sector is not supported cpuid2_cache_descriptor(),
     * so descriptors 0x25, 0x20 are not included
     */
-    [0x2C] = { .level = 1, .type = DCACHE,        .size =  32 * KiB,
+    [0x2C] = { .level = 1, .type = DATA_CACHE,        .size =  32 * KiB,
                .associativity = 8,  .line_size = 64, },
-    [0x30] = { .level = 1, .type = ICACHE,        .size =  32 * KiB,
+    [0x30] = { .level = 1, .type = INSTRUCTION_CACHE,        .size =  32 * KiB,
                .associativity = 8,  .line_size = 64, },
     [0x41] = { .level = 2, .type = UNIFIED_CACHE, .size = 128 * KiB,
                .associativity = 4,  .line_size = 32, },
@@ -117,13 +117,13 @@ struct CPUID2CacheDescriptorInfo cpuid2_cache_descriptors[] = {
                .associativity = 16, .line_size = 64, },
     [0x4E] = { .level = 2, .type = UNIFIED_CACHE, .size =   6 * MiB,
                .associativity = 24, .line_size = 64, },
-    [0x60] = { .level = 1, .type = DCACHE,        .size =  16 * KiB,
+    [0x60] = { .level = 1, .type = DATA_CACHE,        .size =  16 * KiB,
                .associativity = 8,  .line_size = 64, },
-    [0x66] = { .level = 1, .type = DCACHE,        .size =   8 * KiB,
+    [0x66] = { .level = 1, .type = DATA_CACHE,        .size =   8 * KiB,
                .associativity = 4,  .line_size = 64, },
-    [0x67] = { .level = 1, .type = DCACHE,        .size =  16 * KiB,
+    [0x67] = { .level = 1, .type = DATA_CACHE,        .size =  16 * KiB,
                .associativity = 4,  .line_size = 64, },
-    [0x68] = { .level = 1, .type = DCACHE,        .size =  32 * KiB,
+    [0x68] = { .level = 1, .type = DATA_CACHE,        .size =  32 * KiB,
                .associativity = 4,  .line_size = 64, },
     [0x78] = { .level = 2, .type = UNIFIED_CACHE, .size =   1 * MiB,
                .associativity = 4,  .line_size = 64, },
@@ -227,10 +227,10 @@ static uint8_t cpuid2_cache_descriptor(CPUCacheInfo *cache)
 #define CACHE_COMPLEX_IDX     (1 << 2)
 
 /* Encode CacheType for CPUID[4].EAX */
-#define CACHE_TYPE(t) (((t) == DCACHE)  ? CACHE_TYPE_D  : \
-                         ((t) == ICACHE)  ? CACHE_TYPE_I  : \
-                         ((t) == UNIFIED_CACHE) ? CACHE_TYPE_UNIFIED : \
-                         0 /* Invalid value */)
+#define CACHE_TYPE(t) (((t) == DATA_CACHE)  ? CACHE_TYPE_D  : \
+                       ((t) == INSTRUCTION_CACHE)  ? CACHE_TYPE_I  : \
+                       ((t) == UNIFIED_CACHE) ? CACHE_TYPE_UNIFIED : \
+                       0 /* Invalid value */)
 
 
 /* Encode cache info for CPUID[4] */
@@ -527,7 +527,7 @@ static void encode_topo_cpuid8000001e(CPUState *cs, X86CPU *cpu,
 
 /* L1 data cache: */
 static CPUCacheInfo legacy_l1d_cache = {
-    DCACHE,
+    DATA_CACHE,
     1,
     32 * KiB,
     64,
@@ -541,7 +541,7 @@ static CPUCacheInfo legacy_l1d_cache = {
 
 /*FIXME: CPUID leaf 0x80000005 is inconsistent with leaves 2 & 4 */
 static CPUCacheInfo legacy_l1d_cache_amd = {
-    DCACHE,
+    DATA_CACHE,
     1,
     64 * KiB,
     64,
@@ -555,7 +555,7 @@ static CPUCacheInfo legacy_l1d_cache_amd = {
 
 /* L1 instruction cache: */
 static CPUCacheInfo legacy_l1i_cache = {
-    ICACHE,
+    INSTRUCTION_CACHE,
     1,
     32 * KiB,
     64,
@@ -567,7 +567,7 @@ static CPUCacheInfo legacy_l1i_cache = {
 
 /*FIXME: CPUID leaf 0x80000005 is inconsistent with leaves 2 & 4 */
 static CPUCacheInfo legacy_l1i_cache_amd = {
-    ICACHE,
+    INSTRUCTION_CACHE,
     1,
     64 * KiB,
     64,
@@ -1444,7 +1444,7 @@ struct X86CPUDefinition {
 };
 
 static CPUCacheInfo epyc_l1d_cache = {
-    DCACHE,
+    DATA_CACHE,
     1,
     32 * KiB,
     64,
@@ -1457,7 +1457,7 @@ static CPUCacheInfo epyc_l1d_cache = {
 };
 
 static CPUCacheInfo epyc_l1i_cache = {
-    ICACHE,
+    INSTRUCTION_CACHE,
     1,
     64 * KiB,
     64,
