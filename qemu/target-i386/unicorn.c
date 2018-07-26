@@ -971,7 +971,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         uc_emu_stop(uc);
                         break;
                     case UC_X86_REG_IP:
-                        WRITE_WORD(X86_CPU(uc, mycpu)->env.eip, *(uint16_t *)value);
+                        X86_CPU(uc, mycpu)->env.eip = *(uint16_t *)value;
                         // force to quit execution and flush TB
                         uc->quit_request = true;
                         uc_emu_stop(uc);
@@ -1161,7 +1161,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         uc_emu_stop(uc);
                         break;
                     case UC_X86_REG_EIP:
-                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.eip, *(uint32_t *)value);
+                        X86_CPU(uc, mycpu)->env.eip = *(uint32_t *)value;
                         // force to quit execution and flush TB
                         uc->quit_request = true;
                         uc_emu_stop(uc);
