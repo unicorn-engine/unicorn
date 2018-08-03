@@ -19,4 +19,4 @@
 ./eflags_nosync
 ./mips_kseg0_1
 ./mem_double_unmap
-
+./x86_cmpxchg

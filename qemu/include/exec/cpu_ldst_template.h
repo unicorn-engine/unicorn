@@ -115,20 +115,12 @@ static inline void
 glue(glue(cpu_st, SUFFIX), MEMSUFFIX)(CPUArchState *env, target_ulong ptr,
                                       RES_TYPE v)
 {
-    int page_index;
     target_ulong addr;
     int mmu_idx;
 
     addr = ptr;
-    page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = CPU_MMU_INDEX;
-    if (unlikely(env->tlb_table[mmu_idx][page_index].addr_write !=
-                 (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
-        glue(glue(helper_st, SUFFIX), MMUSUFFIX)(env, addr, v, mmu_idx);
-    } else {
-        uintptr_t hostaddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][page_index].addend);
-        glue(glue(st, SUFFIX), _raw)(hostaddr, v);
-    }
+    glue(glue(helper_st, SUFFIX), MMUSUFFIX)(env, addr, v, mmu_idx);
 }
 
 
