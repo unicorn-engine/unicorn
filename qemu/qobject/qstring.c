@@ -41,13 +41,13 @@ QString *qstring_from_substr(const char *str, size_t start, size_t end)
 {
     QString *qstring;
 
-    assert(start <= end + 1);
+    assert(start <= end);
 
     qstring = g_malloc(sizeof(*qstring));
     qobject_init(QOBJECT(qstring), QTYPE_QSTRING);
 
     assert(qstring->capacity < SIZE_MAX);
-    qstring->length = end - start + 1;
+    qstring->length = end - start;
     qstring->capacity = qstring->length;
 
     qstring->string = g_malloc(qstring->capacity + 1);
@@ -64,7 +64,7 @@ QString *qstring_from_substr(const char *str, size_t start, size_t end)
  */
 QString *qstring_from_str(const char *str)
 {
-    return qstring_from_substr(str, 0, strlen(str) - 1);
+    return qstring_from_substr(str, 0, strlen(str));
 }
 
 static void capacity_increase(QString *qstring, size_t len)
