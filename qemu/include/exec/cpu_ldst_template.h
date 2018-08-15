@@ -66,21 +66,13 @@
 static inline RES_TYPE
 glue(glue(cpu_ld, USUFFIX), MEMSUFFIX)(CPUArchState *env, target_ulong ptr)
 {
-    int page_index;
     RES_TYPE res;
     target_ulong addr;
     int mmu_idx;
 
     addr = ptr;
-    page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = CPU_MMU_INDEX;
-    if (unlikely(env->tlb_table[mmu_idx][page_index].ADDR_READ !=
-                 (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
-        res = glue(glue(helper_ld, SUFFIX), MMUSUFFIX)(env, addr, mmu_idx);
-    } else {
-        uintptr_t hostaddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][page_index].addend);
-        res = glue(glue(ld, USUFFIX), _raw)(hostaddr);
-    }
+    res = glue(glue(helper_ld, SUFFIX), MMUSUFFIX)(env, addr, mmu_idx);
     return res;
 }
 
@@ -88,21 +80,14 @@ glue(glue(cpu_ld, USUFFIX), MEMSUFFIX)(CPUArchState *env, target_ulong ptr)
 static inline int
 glue(glue(cpu_lds, SUFFIX), MEMSUFFIX)(CPUArchState *env, target_ulong ptr)
 {
-    int res, page_index;
+    int res;
     target_ulong addr;
     int mmu_idx;
 
     addr = ptr;
-    page_index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     mmu_idx = CPU_MMU_INDEX;
-    if (unlikely(env->tlb_table[mmu_idx][page_index].ADDR_READ !=
-                 (addr & (TARGET_PAGE_MASK | (DATA_SIZE - 1))))) {
-        res = (DATA_STYPE)glue(glue(helper_ld, SUFFIX),
-                               MMUSUFFIX)(env, addr, mmu_idx);
-    } else {
-        uintptr_t hostaddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][page_index].addend);
-        res = glue(glue(lds, SUFFIX), _raw)(hostaddr);
-    }
+    res = (DATA_STYPE)glue(glue(helper_ld, SUFFIX),
+                           MMUSUFFIX)(env, addr, mmu_idx);
     return res;
 }
 #endif
