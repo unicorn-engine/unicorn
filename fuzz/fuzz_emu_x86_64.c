@@ -35,7 +35,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     if (err) {
         printf("Failed on uc_emu_start() with error returned %u: %s\n",
                err, uc_strerror(err));
-        abort();
     }
 
     //no closing for global variable uc_close(uc);
