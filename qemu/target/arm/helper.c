@@ -6246,6 +6246,7 @@ static void do_v7m_exception_exit(ARMCPU *cpu)
             /* For all other purposes, treat ES as 0 (R_HXSR) */
             excret &= ~R_V7M_EXCRET_ES_MASK;
         }
+        exc_secure = excret & R_V7M_EXCRET_ES_MASK;
     }
 
     if (env->v7m.exception != ARMV7M_EXCP_NMI) {
@@ -6256,7 +6257,6 @@ static void do_v7m_exception_exit(ARMCPU *cpu)
          * which security state's faultmask to clear. (v8M ARM ARM R_KBNF.)
          */
         if (arm_feature(env, ARM_FEATURE_M_SECURITY)) {
-            exc_secure = excret & R_V7M_EXCRET_ES_MASK;
             // Unicorn: commented out
             //if (armv7m_nvic_raw_execution_priority(env->nvic) >= 0) {
             //    env->v7m.faultmask[es] = 0;
