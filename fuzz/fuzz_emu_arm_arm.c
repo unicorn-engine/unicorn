@@ -13,16 +13,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
     uc_err err;
 
     if (initialized == 0) {
-        // Initialize emulator in X86-32bit mode
-        err = uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc);
-        if (err != UC_ERR_OK) {
-            printf("Failed on uc_open() with error returned: %u\n", err);
-            abort();
-        }
-
-        // map 4MB memory for this emulation
-        uc_mem_map(uc, ADDRESS, 4 * 1024 * 1024, UC_PROT_ALL);
-
         if (outfile == NULL) {
             // we compute the output
             outfile = fopen("/dev/null", "w");
@@ -36,6 +26,17 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
         initialized = 1;
     }
 
+    // Not global as we must reset this structure
+    // Initialize emulator in supplied mode
+    err = uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc);
+    if (err != UC_ERR_OK) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        abort();
+    }
+
+    // map 4MB memory for this emulation
+    uc_mem_map(uc, ADDRESS, 4 * 1024 * 1024, UC_PROT_ALL);
+
     // write machine code to be emulated to memory
     if (uc_mem_write(uc, ADDRESS, Data, Size)) {
         printf("Failed to write emulation code to memory, quit!\n");
@@ -48,7 +49,7 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
         fprintf(outfile, "Failed on uc_emu_start() with error returned %u: %s\n", err, uc_strerror(err));
     }
 
-    //no closing for global variable uc_close(uc);
+    uc_close(uc);
 
     return 0;
 }
