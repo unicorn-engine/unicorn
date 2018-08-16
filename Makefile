@@ -265,6 +265,11 @@ endif
 $(PKGCFGF):
 	$(generate-pkgcfg)
 
+
+.PHONY: fuzz
+fuzz: all
+	$(MAKE) -C fuzz all
+
 .PHONY: test
 test: all
 	$(MAKE) -C tests/unit test
