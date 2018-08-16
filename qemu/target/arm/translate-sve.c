@@ -1725,7 +1725,7 @@ static void do_sat_addsub_64(DisasContext *s, TCGv_i64 reg, TCGv_i64 val, bool u
             /* Detect signed overflow for subtraction.  */
             tcg_gen_xor_i64(tcg_ctx, t0, reg, val);
             tcg_gen_sub_i64(tcg_ctx, t1, reg, val);
-            tcg_gen_xor_i64(tcg_ctx, reg, reg, t0);
+            tcg_gen_xor_i64(tcg_ctx, reg, reg, t1);
             tcg_gen_and_i64(tcg_ctx, t0, t0, reg);
 
             /* Bound the result.  */
