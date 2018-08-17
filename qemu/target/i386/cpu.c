@@ -858,12 +858,13 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
             NULL, NULL, NULL, NULL,
             NULL, NULL, NULL, NULL,
             NULL, NULL, "spec-ctrl", NULL,
-            NULL, NULL, NULL, "ssbd",
+            NULL, "arch-capabilities", NULL, "ssbd",
         },
         7,
         true, 0,
         R_EDX,
         TCG_7_0_EDX_FEATURES,
+        CPUID_7_0_EDX_ARCH_CAPABILITIES,
     },
     /* Feature names that are already defined on feature_name[] but
      * are set on CPUID[8000_0001].EDX on AMD CPUs don't have their
