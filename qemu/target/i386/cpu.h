@@ -674,6 +674,8 @@ typedef uint32_t FeatureWordArray[FEATURE_WORDS];
 
 #define KVM_HINTS_DEDICATED (1U << 0)
 
+#define CPUID_8000_0008_EBX_WBNOINVD  (1U << 9)  /* Write back and do not invalidate cache */
+
 #define CPUID_8000_0008_EBX_IBPB    (1U << 12) /* Indirect Branch Prediction Barrier */
 
 #define CPUID_XSAVE_XSAVEOPT   (1U << 0)
