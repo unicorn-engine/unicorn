@@ -5594,6 +5594,7 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 5:
         case 6:
         case 7:
+            CP0_CHECK(ctx->CP0_Config1 & (1 << CP0C1_WR));
             gen_helper_1e0i(tcg_ctx, mfc0_watchlo, arg, sel);
             rn = "WatchLo";
             break;
@@ -5611,6 +5612,7 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 5:
         case 6:
         case 7:
+            CP0_CHECK(ctx->CP0_Config1 & (1 << CP0C1_WR));
             gen_helper_1e0i(tcg_ctx, mfc0_watchhi, arg, sel);
             rn = "WatchHi";
             break;
@@ -6291,6 +6293,7 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 5:
         case 6:
         case 7:
+            CP0_CHECK(ctx->CP0_Config1 & (1 << CP0C1_WR));
             gen_helper_0e1i(tcg_ctx, mtc0_watchlo, arg, sel);
             rn = "WatchLo";
             break;
@@ -6308,6 +6311,7 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 5:
         case 6:
         case 7:
+            CP0_CHECK(ctx->CP0_Config1 & (1 << CP0C1_WR));
             gen_helper_0e1i(tcg_ctx, mtc0_watchhi, arg, sel);
             rn = "WatchHi";
             break;
@@ -6989,6 +6993,7 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 5:
         case 6:
         case 7:
+            CP0_CHECK(ctx->CP0_Config1 & (1 << CP0C1_WR));
             gen_helper_1e0i(tcg_ctx, dmfc0_watchlo, arg, sel);
             rn = "WatchLo";
             break;
@@ -7006,6 +7011,7 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 5:
         case 6:
         case 7:
+            CP0_CHECK(ctx->CP0_Config1 & (1 << CP0C1_WR));
             gen_helper_1e0i(tcg_ctx, mfc0_watchhi, arg, sel);
             rn = "WatchHi";
             break;
@@ -7668,6 +7674,7 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 5:
         case 6:
         case 7:
+            CP0_CHECK(ctx->CP0_Config1 & (1 << CP0C1_WR));
             gen_helper_0e1i(tcg_ctx, mtc0_watchlo, arg, sel);
             rn = "WatchLo";
             break;
@@ -7685,6 +7692,7 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
         case 5:
         case 6:
         case 7:
+            CP0_CHECK(ctx->CP0_Config1 & (1 << CP0C1_WR));
             gen_helper_0e1i(tcg_ctx, mtc0_watchhi, arg, sel);
             rn = "WatchHi";
             break;
