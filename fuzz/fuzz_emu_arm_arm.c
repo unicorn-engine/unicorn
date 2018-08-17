@@ -43,8 +43,9 @@ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
         abort();
     }
 
-    // emulate code in infinite time & unlimited instructions
-    err=uc_emu_start(uc, ADDRESS, ADDRESS + Size, 0, 0);
+    // emulate code in infinite time & 4096 instructions
+    // avoid timeouts with infinite loops
+    err=uc_emu_start(uc, ADDRESS, ADDRESS + Size, 0, 0x1000);
     if (err) {
         fprintf(outfile, "Failed on uc_emu_start() with error returned %u: %s\n", err, uc_strerror(err));
     }
