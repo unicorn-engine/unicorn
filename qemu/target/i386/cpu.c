@@ -777,6 +777,8 @@ typedef struct FeatureWordInfo {
     uint32_t tcg_features; /* Feature flags supported by TCG */
     uint32_t unmigratable_flags; /* Feature flags known to be unmigratable */
     uint32_t migratable_flags; /* Feature flags known to be migratable */
+    /* Features that shouldn't be auto-enabled by "-cpu-host" */
+    uint32_t no_autoenable_flags;
 } FeatureWordInfo;
 
 static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
@@ -904,6 +906,7 @@ static FeatureWordInfo feature_word_info[FEATURE_WORDS] = {
         false,0,
         R_ECX,
         TCG_EXT3_FEATURES,
+        CPUID_EXT3_TOPOEXT,
     },
     // FEAT_8000_0007_EDX
     {
