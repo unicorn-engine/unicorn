@@ -225,6 +225,8 @@ static void aarch64_max_initfn(struct uc_struct *uc, Object *obj, void *opaque)
      */
     cpu->ctr = 0x80038003; /* 32 byte I and D cacheline size, VIPT icache */
     cpu->dcz_blocksize = 7; /*  512 bytes */
+
+    cpu->sve_max_vq = ARM_MAX_VQ;
 }
 
 typedef struct ARMCPUInfo {
