@@ -1007,6 +1007,15 @@ static void arm11mpcore_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_auxcr = 1;
 }
 
+static void cortex_m0_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    ARMCPU *cpu = ARM_CPU(uc, obj);
+    set_feature(&cpu->env, ARM_FEATURE_V6);
+    set_feature(&cpu->env, ARM_FEATURE_M);
+
+    cpu->midr = 0x410cc200;
+}
+
 static void cortex_m3_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
@@ -1589,6 +1598,7 @@ static const ARMCPUInfo arm_cpus[] = {
     { "arm1136",     arm1136_initfn },
     { "arm1176",     arm1176_initfn },
     { "arm11mpcore", arm11mpcore_initfn },
+    { "cortex-m0",   cortex_m0_initfn, arm_v7m_class_init },
     { "cortex-m3",   cortex_m3_initfn, arm_v7m_class_init },
     { "cortex-m4",   cortex_m4_initfn, arm_v7m_class_init },
     { "cortex-m33",  cortex_m33_initfn, arm_v7m_class_init },
