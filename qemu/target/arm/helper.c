@@ -3406,6 +3406,10 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
       access_el3_aa32ns_aa64any },
     { "HSTR_EL2", 0,1,1, 3,4,3, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
+    { "FAR_EL2", 0,6,0, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
+    { "HIFAR", 15,6,0, 0,4,2, ARM_CP_STATE_AA32, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
     REGINFO_SENTINEL
 };
 
@@ -3449,8 +3453,10 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
       ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[2]) },
     { "ESR_EL2", 0,5,2, 3,4,0, ARM_CP_STATE_AA64, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.esr_el[2]) },
-    { "FAR_EL2", 0,6,0, 3,4,0, ARM_CP_STATE_AA64,
+    { "FAR_EL2", 0,6,0, 3,4,0, ARM_CP_STATE_BOTH,
       0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.far_el[2]) },
+    { "HIFAR", 15,6,0, 0,4,2, ARM_CP_STATE_AA32,
+      ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetofhigh32(CPUARMState, cp15.far_el[2]) },
     { "SPSR_EL2", 0,4,0, 3,4,0, ARM_CP_STATE_AA64,
       ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_HYP]) },
     { "VBAR_EL2", 0,12,0, 3,4,0, ARM_CP_STATE_BOTH,
