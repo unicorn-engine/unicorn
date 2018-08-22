@@ -3360,7 +3360,7 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
       PL2_RW, 0, NULL, 0 },
     { "AMAIR_EL2", 0,10,3, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
-    { "HMAIR1", 0,10,3, 0,4,1, ARM_CP_STATE_AA32, ARM_CP_CONST,
+    { "HAMAIR1", 0,10,3, 0,4,1, ARM_CP_STATE_AA32, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
     { "AFSR0_EL2", 0,5,1, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
@@ -3468,7 +3468,7 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "AMAIR_EL2", 0,10,3, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
     /* HAMAIR1 is mapped to AMAIR_EL2[63:32] */
-    { "HMAIR1", 0,10,3, 0,4,1, ARM_CP_STATE_AA32, ARM_CP_CONST,
+    { "HAMAIR1", 0,10,3, 0,4,1, ARM_CP_STATE_AA32, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
     { "AFSR0_EL2", 0,5,1, 3,4,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
