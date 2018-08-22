@@ -8646,7 +8646,27 @@ static void gen_srs(DisasContext *s,
     s->base.is_jmp = DISAS_UPDATE;
 }
 
-static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
+/* Generate a label used for skipping this instruction */
+static void arm_gen_condlabel(DisasContext *s)
+{
+    if (!s->condjmp) {
+        TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+        s->condlabel = gen_new_label(tcg_ctx);
+        s->condjmp = 1;
+    }
+}
+
+/* Skip this instruction if the ARM condition is false */
+static void arm_skip_unless(DisasContext *s, uint32_t cond)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+    arm_gen_condlabel(s);
+    arm_gen_test_cc(tcg_ctx, cond ^ 1, s->condlabel);
+}
+
+static void disas_arm_insn(DisasContext *s, unsigned int insn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     unsigned int cond, val, op1, i, shift, rm, rs, rn, rd, sh;
@@ -8884,9 +8904,7 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
     if (cond != 0xe) {
         /* if not always execute, we generate a conditional jump to
            next instruction */
-        s->condlabel = gen_new_label(tcg_ctx);
-        arm_gen_test_cc(tcg_ctx, cond ^ 1, s->condlabel);
-        s->condjmp = 1;
+        arm_skip_unless(s, cond);
     }
     if ((insn & 0x0f900000) == 0x03000000) {
         if ((insn & (1 << 21)) == 0) {
@@ -11376,9 +11394,7 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
                 /* Conditional branch.  */
                 op = (insn >> 22) & 0xf;
                 /* Generate a conditional jump to next instruction.  */
-                s->condlabel = gen_new_label(tcg_ctx);
-                arm_gen_test_cc(tcg_ctx, op ^ 1, s->condlabel);
-                s->condjmp = 1;
+                arm_skip_unless(s, op);
 
                 /* offset[11:1] = insn[10:0] */
                 offset = (insn & 0x7ff) << 1;
@@ -12329,8 +12345,7 @@ static void disas_thumb_insn(DisasContext *s, uint32_t insn)
         case 1: case 3: case 9: case 11: /* czb */
             rm = insn & 7;
             tmp = load_reg(s, rm);
-            s->condlabel = gen_new_label(tcg_ctx);
-            s->condjmp = 1;
+            arm_gen_condlabel(s);
             if (insn & (1 << 11))
                 tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_EQ, tmp, 0, s->condlabel);
             else
@@ -12493,9 +12508,7 @@ static void disas_thumb_insn(DisasContext *s, uint32_t insn)
             break;
         }
         /* generate a conditional jump to next instruction */
-        s->condlabel = gen_new_label(tcg_ctx);
-        arm_gen_test_cc(tcg_ctx, cond ^ 1, s->condlabel);
-        s->condjmp = 1;
+        arm_skip_unless(s, cond);
 
         /* jump to the offset */
         val = (uint32_t)s->pc + 2;
@@ -12859,7 +12872,6 @@ static bool thumb_insn_is_unconditional(DisasContext *s, uint32_t insn)
 static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
-    TCGContext *tcg_ctx = cpu->uc->tcg_ctx;
     CPUARMState *env = cpu->env_ptr;
     uint32_t insn;
     bool is_16bit;
@@ -12883,9 +12895,7 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         uint32_t cond = dc->condexec_cond;
 
         if (cond != 0x0e) {     /* Skip conditional when condition is AL. */
-            dc->condlabel = gen_new_label(tcg_ctx);
-            arm_gen_test_cc(tcg_ctx, cond ^ 1, dc->condlabel);
-            dc->condjmp = 1;
+            arm_skip_unless(dc, cond);
         }
     }
 
