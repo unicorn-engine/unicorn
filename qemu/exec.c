@@ -53,21 +53,6 @@
 
 //#define DEBUG_SUBPAGE
 
-#if !defined(CONFIG_USER_ONLY)
-
-/* RAM is pre-allocated and passed into qemu_ram_alloc_from_ptr */
-#define RAM_PREALLOC   (1 << 0)
-
-/* RAM is mmap-ed with MAP_SHARED */
-#define RAM_SHARED     (1 << 1)
-
-/* Only a portion of RAM (used_length) is actually used, and migrated.
- * This used_length size can change across reboots.
- */
-#define RAM_RESIZEABLE (1 << 2)
-
-#endif
-
 bool set_preferred_target_page_bits(struct uc_struct *uc, int bits)
 {
     /* The target page size is the lowest common denominator for all
