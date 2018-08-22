@@ -3346,7 +3346,7 @@ static const ARMCPRegInfo v8_cp_reginfo[] = {
 
 /* Used to describe the behaviour of EL2 regs when EL2 does not exist.  */
 static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
-    { "VBAR_EL2", 0,12,0, 3,4,0, ARM_CP_STATE_AA64,
+    { "VBAR_EL2", 0,12,0, 3,4,0, ARM_CP_STATE_BOTH,
       0, PL2_RW, 0, NULL, 0, 0, {0, 0},
       NULL, arm_cp_read_zero, arm_cp_write_ignore },
     { "HCR_EL2", 0,1,1, 3,4,0, ARM_CP_STATE_AA64,
@@ -3453,7 +3453,7 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
       0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.far_el[2]) },
     { "SPSR_EL2", 0,4,0, 3,4,0, ARM_CP_STATE_AA64,
       ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, banked_spsr[BANK_HYP]) },
-    { "VBAR_EL2", 0,12,0, 3,4,0, ARM_CP_STATE_AA64,
+    { "VBAR_EL2", 0,12,0, 3,4,0, ARM_CP_STATE_BOTH,
       0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.vbar_el[2]), {0, 0},
       NULL, NULL, vbar_write, },
     { "SP_EL2", 0,4,1, 3,6,0, ARM_CP_STATE_AA64, ARM_CP_ALIAS,
