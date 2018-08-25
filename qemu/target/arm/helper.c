@@ -3349,9 +3349,9 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
     { "VBAR_EL2", 0,12,0, 3,4,0, ARM_CP_STATE_BOTH,
       0, PL2_RW, 0, NULL, 0, 0, {0, 0},
       NULL, arm_cp_read_zero, arm_cp_write_ignore },
-    { "HCR_EL2", 0,1,1, 3,4,0, ARM_CP_STATE_AA64,
-      ARM_CP_NO_RAW, PL2_RW, 0, NULL, 0, 0, {0, 0},
-      NULL, arm_cp_read_zero, arm_cp_write_ignore },
+    { "HCR_EL2", 0,1,1, 3,4,0, ARM_CP_STATE_BOTH,
+      ARM_CP_CONST, PL2_RW, 0, NULL, 0, 0, {0, 0},
+      NULL, NULL, NULL },
     { "ESR_EL2", 0,5,2, 3,1,0, ARM_CP_STATE_BOTH, ARM_CP_CONST,
       PL2_RW, 0, NULL, 0 },
     { "CPTR_EL2", 0,1,1, 3,4,2, ARM_CP_STATE_BOTH, ARM_CP_CONST,
@@ -3415,6 +3415,14 @@ static const ARMCPRegInfo el3_no_el2_cp_reginfo[] = {
     REGINFO_SENTINEL
 };
 
+/* Ditto, but for registers which exist in ARMv8 but not v7 */
+static const ARMCPRegInfo el3_no_el2_v8_cp_reginfo[] = {
+    { "HCR2", 15,1,1, 0,4,4, ARM_CP_STATE_AA32, ARM_CP_CONST,
+      PL2_RW, 0, NULL, 0 },
+    REGINFO_SENTINEL
+};
+
+
 static void hcr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
@@ -3441,16 +3449,35 @@ static void hcr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
      * HCR_PTW forbids certain page-table setups
      * HCR_DC Disables stage1 and enables stage2 translation
      */
-    if ((raw_read(env, ri) ^ value) & (HCR_VM | HCR_PTW | HCR_DC)) {
+    if ((env->cp15.hcr_el2 ^ value) & (HCR_VM | HCR_PTW | HCR_DC)) {
         tlb_flush(CPU(cpu));
     }
-    raw_write(env, ri, value);
+    env->cp15.hcr_el2 = value;
+}
+
+static void hcr_writehigh(CPUARMState *env, const ARMCPRegInfo *ri,
+                          uint64_t value)
+{
+    /* Handle HCR2 write, i.e. write to high half of HCR_EL2 */
+    value = deposit64(env->cp15.hcr_el2, 32, 32, value);
+    hcr_write(env, NULL, value);
+}
+
+static void hcr_writelow(CPUARMState *env, const ARMCPRegInfo *ri,
+                         uint64_t value)
+{
+    /* Handle HCR write, i.e. write to low half of HCR_EL2 */
+    value = deposit64(env->cp15.hcr_el2, 0, 32, value);
+    hcr_write(env, NULL, value);
 }
 
 static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "HCR_EL2", 0,1,1, 3,4,0, ARM_CP_STATE_AA64,
       0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2), {0, 0},
       NULL, NULL, hcr_write },
+    { "HCR", 15,1,1, 0,4,0, ARM_CP_STATE_AA32,
+      ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2),
+      {0, 0}, NULL, NULL, hcr_writelow },
     { "ELR_EL2", 0,4,0, 3,4,1, ARM_CP_STATE_AA64,
       ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[2]) },
     { "ESR_EL2", 0,5,2, 3,4,0, ARM_CP_STATE_BOTH, 0,
@@ -3603,12 +3630,19 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "MDCR_EL2", 0,1,1, 3,4,1, ARM_CP_STATE_BOTH, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.mdcr_el2), },
     { "HPFAR", 15,6,0, 0,4,4, ARM_CP_STATE_AA32, 0,
-      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hpfar_el2), {0, 0}, 
+      PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hpfar_el2), {0, 0},
       access_el3_aa32ns },
     { "HPFAR_EL2", 0,6,0, 3,4,4, ARM_CP_STATE_AA64, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hpfar_el2) },
     { "HSTR_EL2", 15,1,1, 3,4,3, ARM_CP_STATE_BOTH, 0,
       PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hstr_el2) },
+    REGINFO_SENTINEL
+};
+
+static const ARMCPRegInfo el2_v8_cp_reginfo[] = {
+    { "HCR2", 15,1,1, 0,4,4, ARM_CP_STATE_AA32,
+      ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetofhigh32(CPUARMState, cp15.hcr_el2),
+      {0, 0}, NULL, NULL, hcr_writehigh },
     REGINFO_SENTINEL
 };
 
@@ -4461,6 +4495,9 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         };
         define_arm_cp_regs(cpu, vpidr_regs);
         define_arm_cp_regs(cpu, el2_cp_reginfo);
+        if (arm_feature(env, ARM_FEATURE_V8)) {
+            define_arm_cp_regs(cpu, el2_v8_cp_reginfo);
+        }
         /* RVBAR_EL2 is only implemented if EL2 is the highest EL */
         if (!arm_feature(env, ARM_FEATURE_EL3)) {
             ARMCPRegInfo rvbar = {
@@ -4488,6 +4525,9 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             };
             define_arm_cp_regs(cpu, vpidr_regs);
             define_arm_cp_regs(cpu, el3_no_el2_cp_reginfo);
+            if (arm_feature(env, ARM_FEATURE_V8)) {
+                define_arm_cp_regs(cpu, el3_no_el2_v8_cp_reginfo);
+            }
         }
     }
     if (arm_feature(env, ARM_FEATURE_EL3)) {
