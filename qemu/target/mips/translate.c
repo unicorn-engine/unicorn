@@ -17553,6 +17553,38 @@ static int decode_nanomips_opc(CPUMIPSState *env, DisasContext *ctx)
     case NM_MOVEP:
         break;
     case NM_MOVEPREV:
+        {
+            static const int gpr2reg1[] = {4, 5, 6, 7};
+            static const int gpr2reg2[] = {5, 6, 7, 8};
+            int re;
+            int rd2 = extract32(ctx->opcode, 3, 1) << 1 |
+                      extract32(ctx->opcode, 8, 1);
+            int r1 = gpr2reg1[rd2];
+            int r2 = gpr2reg2[rd2];
+            int r3 = extract32(ctx->opcode, 4, 1) << 3 |
+                     extract32(ctx->opcode, 0, 3);
+            int r4 = extract32(ctx->opcode, 9, 1) << 3 |
+                     extract32(ctx->opcode, 5, 3);
+            TCGv t0 = tcg_temp_new(tcg_ctx);
+            TCGv t1 = tcg_temp_new(tcg_ctx);
+            if (op == NM_MOVEP) {
+                rd = r1;
+                re = r2;
+                rs = decode_gpr_gpr4_zero(r3);
+                rt = decode_gpr_gpr4_zero(r4);
+            } else {
+                rd = decode_gpr_gpr4(r3);
+                re = decode_gpr_gpr4(r4);
+                rs = r1;
+                rt = r2;
+            }
+            gen_load_gpr(ctx, t0, rs);
+            gen_load_gpr(ctx, t1, rt);
+            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[rd], t0);
+            tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_gpr[re], t1);
+            tcg_temp_free(tcg_ctx, t0);
+            tcg_temp_free(tcg_ctx, t1);
+        }
         break;
     default:
         return decode_nanomips_32_48_opc(env, ctx);
