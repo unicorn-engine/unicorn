@@ -17897,6 +17897,145 @@ static void gen_pool32axf_2_nanomips_insn(DisasContext *ctx, uint32_t opc,
     tcg_temp_free(tcg_ctx, v1_t);
 }
 
+static void gen_pool32axf_4_nanomips_insn(DisasContext *ctx, uint32_t opc,
+                                          int rt, int rs)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    int ret = rt;
+    TCGv t0 = tcg_temp_new(tcg_ctx);
+    TCGv v0_t = tcg_temp_new(tcg_ctx);
+
+    gen_load_gpr(ctx, v0_t, rs);
+
+    switch (opc) {
+    case NM_ABSQ_S_QB:
+        check_dspr2(ctx);
+        gen_helper_absq_s_qb(tcg_ctx, v0_t, v0_t, tcg_ctx->cpu_env);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_ABSQ_S_PH:
+        check_dsp(ctx);
+        gen_helper_absq_s_ph(tcg_ctx, v0_t, v0_t, tcg_ctx->cpu_env);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_ABSQ_S_W:
+        check_dsp(ctx);
+        gen_helper_absq_s_w(tcg_ctx, v0_t, v0_t, tcg_ctx->cpu_env);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_PRECEQ_W_PHL:
+        check_dsp(ctx);
+        tcg_gen_andi_tl(tcg_ctx, v0_t, v0_t, 0xFFFF0000);
+        tcg_gen_ext32s_tl(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_PRECEQ_W_PHR:
+        check_dsp(ctx);
+        tcg_gen_andi_tl(tcg_ctx, v0_t, v0_t, 0x0000FFFF);
+        tcg_gen_shli_tl(tcg_ctx, v0_t, v0_t, 16);
+        tcg_gen_ext32s_tl(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_PRECEQU_PH_QBL:
+        check_dsp(ctx);
+        gen_helper_precequ_ph_qbl(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_PRECEQU_PH_QBR:
+        check_dsp(ctx);
+        gen_helper_precequ_ph_qbr(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_PRECEQU_PH_QBLA:
+        check_dsp(ctx);
+        gen_helper_precequ_ph_qbla(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_PRECEQU_PH_QBRA:
+        check_dsp(ctx);
+        gen_helper_precequ_ph_qbra(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_PRECEU_PH_QBL:
+        check_dsp(ctx);
+        gen_helper_preceu_ph_qbl(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_PRECEU_PH_QBR:
+        check_dsp(ctx);
+        gen_helper_preceu_ph_qbr(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_PRECEU_PH_QBLA:
+        check_dsp(ctx);
+        gen_helper_preceu_ph_qbla(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_PRECEU_PH_QBRA:
+        check_dsp(ctx);
+        gen_helper_preceu_ph_qbra(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_REPLV_PH:
+        check_dsp(ctx);
+        tcg_gen_ext16u_tl(tcg_ctx, v0_t, v0_t);
+        tcg_gen_shli_tl(tcg_ctx, t0, v0_t, 16);
+        tcg_gen_or_tl(tcg_ctx, v0_t, v0_t, t0);
+        tcg_gen_ext32s_tl(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_REPLV_QB:
+        check_dsp(ctx);
+        tcg_gen_ext8u_tl(tcg_ctx, v0_t, v0_t);
+        tcg_gen_shli_tl(tcg_ctx, t0, v0_t, 8);
+        tcg_gen_or_tl(tcg_ctx, v0_t, v0_t, t0);
+        tcg_gen_shli_tl(tcg_ctx, t0, v0_t, 16);
+        tcg_gen_or_tl(tcg_ctx, v0_t, v0_t, t0);
+        tcg_gen_ext32s_tl(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_BITREV:
+        check_dsp(ctx);
+        gen_helper_bitrev(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_INSV:
+        check_dsp(ctx);
+        {
+            TCGv tv0 = tcg_temp_new(tcg_ctx);
+
+            gen_load_gpr(ctx, tv0, rt);
+            gen_helper_insv(tcg_ctx, v0_t, tcg_ctx->cpu_env, v0_t, tv0);
+            gen_store_gpr(tcg_ctx, v0_t, ret);
+            tcg_temp_free(tcg_ctx, tv0);
+        }
+        break;
+    case NM_RADDU_W_QB:
+        check_dsp(ctx);
+        gen_helper_raddu_w_qb(tcg_ctx, v0_t, v0_t);
+        gen_store_gpr(tcg_ctx, v0_t, ret);
+        break;
+    case NM_BITSWAP:
+        gen_bitswap(ctx, OPC_BITSWAP, ret, rs);
+        break;
+    case NM_CLO:
+        gen_cl(ctx, OPC_CLO, ret, rs);
+        break;
+    case NM_CLZ:
+        gen_cl(ctx, OPC_CLZ, ret, rs);
+        break;
+    case NM_WSBH:
+        gen_bshfl(ctx, OPC_WSBH, ret, rs);
+        break;
+    default:
+        generate_exception_end(ctx, EXCP_RI);
+        break;
+    }
+
+    tcg_temp_free(tcg_ctx, v0_t);
+    tcg_temp_free(tcg_ctx, t0);
+}
+
 
 static void gen_pool32axf_nanomips_insn(CPUMIPSState *env, DisasContext *ctx)
 {
@@ -17919,6 +18058,10 @@ static void gen_pool32axf_nanomips_insn(CPUMIPSState *env, DisasContext *ctx)
         }
         break;
     case NM_POOL32AXF_4:
+        {
+            int32_t op1 = extract32(ctx->opcode, 9, 7);
+            gen_pool32axf_4_nanomips_insn(ctx, op1, rt, rs);
+        }
         break;
     case NM_POOL32AXF_5:
         switch (extract32(ctx->opcode, 9, 7)) {
