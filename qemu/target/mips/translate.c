@@ -1922,6 +1922,18 @@ static inline void check_mvh(DisasContext *ctx)
 }
 #endif
 
+/*
+ * This code generates a "reserved instruction" exception if the
+ * Config5 XNP bit is set.
+ */
+static inline void check_xnp(DisasContext *ctx)
+{
+    if (unlikely(ctx->CP0_Config5 & (1 << CP0C5_XNP))) {
+        generate_exception_end(ctx, EXCP_RI);
+    }
+}
+
+
 /* Define small wrappers for gen_load_fpr* so that we have a uniform
    calling interface for 32 and 64-bit FPRs.  No sense in changing
    all callers for gen_load_fpr32 when we need the CTX parameter for
@@ -2377,6 +2389,32 @@ static void gen_ld(DisasContext *ctx, uint32_t opc,
     tcg_temp_free(tcg_ctx, t0);
 }
 
+static void gen_llwp(DisasContext *ctx, uint32_t base, int16_t offset,
+                    uint32_t reg1, uint32_t reg2)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv taddr = tcg_temp_new(tcg_ctx);
+    TCGv_i64 tval = tcg_temp_new_i64(tcg_ctx);
+    TCGv tmp1 = tcg_temp_new(tcg_ctx);
+    TCGv tmp2 = tcg_temp_new(tcg_ctx);
+
+    gen_base_offset_addr(ctx, taddr, base, offset);
+    tcg_gen_qemu_ld64(ctx->uc, tval, taddr, ctx->mem_idx);
+#ifdef TARGET_WORDS_BIGENDIAN
+    tcg_gen_extr_i64_tl(tcg_ctx, tmp2, tmp1, tval);
+#else
+    tcg_gen_extr_i64_tl(tcg_ctx, tmp1, tmp2, tval);
+#endif
+    gen_store_gpr(tcg_ctx, tmp1, reg1);
+    tcg_temp_free(tcg_ctx, tmp1);
+    gen_store_gpr(tcg_ctx, tmp2, reg2);
+    tcg_temp_free(tcg_ctx, tmp2);
+    tcg_gen_st_i64(tcg_ctx, tval, tcg_ctx->cpu_env, offsetof(CPUMIPSState, llval_wp));
+    tcg_temp_free_i64(tcg_ctx, tval);
+    tcg_gen_st_tl(tcg_ctx, taddr, tcg_ctx->cpu_env, offsetof(CPUMIPSState, lladdr));
+    tcg_temp_free(tcg_ctx, taddr);
+}
+
 /* Store */
 static void gen_st (DisasContext *ctx, uint32_t opc, int rt,
                     int base, int offset)
@@ -2473,6 +2511,52 @@ static void gen_st_cond (DisasContext *ctx, uint32_t opc, int rt,
     }
     tcg_temp_free(tcg_ctx, t1);
     tcg_temp_free(tcg_ctx, t0);
+}
+
+static void gen_scwp(DisasContext *ctx, uint32_t base, int16_t offset,
+                    uint32_t reg1, uint32_t reg2)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv taddr = tcg_temp_local_new(tcg_ctx);
+    TCGv lladdr = tcg_temp_local_new(tcg_ctx);
+    TCGv_i64 tval = tcg_temp_new_i64(tcg_ctx);
+    TCGv_i64 llval = tcg_temp_new_i64(tcg_ctx);
+    TCGv_i64 val = tcg_temp_new_i64(tcg_ctx);
+    TCGv tmp1 = tcg_temp_new(tcg_ctx);
+    TCGv tmp2 = tcg_temp_new(tcg_ctx);
+    TCGLabel *lab_fail = gen_new_label(tcg_ctx);
+    TCGLabel *lab_done = gen_new_label(tcg_ctx);
+
+    gen_base_offset_addr(ctx, taddr, base, offset);
+
+    tcg_gen_ld_tl(tcg_ctx, lladdr, tcg_ctx->cpu_env, offsetof(CPUMIPSState, lladdr));
+    tcg_gen_brcond_tl(tcg_ctx, TCG_COND_NE, taddr, lladdr, lab_fail);
+
+    gen_load_gpr(ctx, tmp1, reg1);
+    gen_load_gpr(ctx, tmp2, reg2);
+
+#ifdef TARGET_WORDS_BIGENDIAN
+    tcg_gen_concat_tl_i64(tcg_ctx, tval, tmp2, tmp1);
+#else
+    tcg_gen_concat_tl_i64(tcg_ctx, tval, tmp1, tmp2);
+#endif
+
+    tcg_gen_ld_i64(tcg_ctx, llval, tcg_ctx->cpu_env, offsetof(CPUMIPSState, llval_wp));
+    tcg_gen_atomic_cmpxchg_i64(tcg_ctx, val, taddr, llval, tval,
+                               ctx->mem_idx, MO_64);
+    if (reg1 != 0) {
+        tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_gpr[reg1], 1);
+    }
+    tcg_gen_brcond_i64(tcg_ctx, TCG_COND_EQ, val, llval, lab_done);
+
+    gen_set_label(tcg_ctx, lab_fail);
+
+    if (reg1 != 0) {
+        tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_gpr[reg1], 0);
+    }
+    gen_set_label(tcg_ctx, lab_done);
+    tcg_gen_movi_tl(tcg_ctx, lladdr, -1);
+    tcg_gen_st_tl(tcg_ctx, lladdr, tcg_ctx->cpu_env, offsetof(CPUMIPSState, lladdr));
 }
 
 /* Load and store */
@@ -18240,6 +18324,8 @@ static int decode_nanomips_32_48_opc(CPUMIPSState *env, DisasContext *ctx)
                         gen_ld(ctx, OPC_LL, rt, rs, s);
                         break;
                     case NM_LLWP:
+                        check_xnp(ctx);
+                        gen_llwp(ctx, rs, 0, rt, extract32(ctx->opcode, 3, 5));
                         break;
                     }
                     break;
@@ -18249,6 +18335,8 @@ static int decode_nanomips_32_48_opc(CPUMIPSState *env, DisasContext *ctx)
                         gen_st_cond(ctx, OPC_SC, rt, rs, s);
                         break;
                     case NM_SCWP:
+                        check_xnp(ctx);
+                        gen_scwp(ctx, rs, 0, rt, extract32(ctx->opcode, 3, 5));
                         break;
                     }
                     break;
