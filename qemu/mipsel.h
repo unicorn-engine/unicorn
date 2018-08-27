@@ -4129,6 +4129,7 @@
 #define helper_rdhwr_performance helper_rdhwr_performance_mipsel
 #define helper_rdhwr_synci_step helper_rdhwr_synci_step_mipsel
 #define helper_rdhwr_xnp helper_rdhwr_xnp_mipsel
+#define helper_rotx helper_rotx_mipsel
 #define helper_sc helper_sc_mipsel
 #define helper_scd helper_scd_mipsel
 #define helper_sdl helper_sdl_mipsel

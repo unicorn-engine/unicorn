@@ -4129,6 +4129,7 @@
 #define helper_rdhwr_performance helper_rdhwr_performance_mips64el
 #define helper_rdhwr_synci_step helper_rdhwr_synci_step_mips64el
 #define helper_rdhwr_xnp helper_rdhwr_xnp_mips64el
+#define helper_rotx helper_rotx_mips64el
 #define helper_sc helper_sc_mips64el
 #define helper_scd helper_scd_mips64el
 #define helper_sdl helper_sdl_mips64el

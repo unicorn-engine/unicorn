@@ -5039,6 +5039,7 @@ mips_symbols = (
     'helper_rdhwr_performance',
     'helper_rdhwr_synci_step',
     'helper_rdhwr_xnp',
+    'helper_rotx',
     'helper_sc',
     'helper_scd',
     'helper_sdl',

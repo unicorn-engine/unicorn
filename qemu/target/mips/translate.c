@@ -17933,6 +17933,21 @@ static int decode_nanomips_32_48_opc(CPUMIPSState *env, DisasContext *ctx)
             }
             break;
         case NM_P_ROTX:
+            if (rt != 0) {
+                TCGv t0 = tcg_temp_new(tcg_ctx);
+                TCGv_i32 shift = tcg_const_i32(tcg_ctx, extract32(ctx->opcode, 0, 5));
+                TCGv_i32 shiftx = tcg_const_i32(tcg_ctx, extract32(ctx->opcode, 7, 4)
+                                                << 1);
+                TCGv_i32 stripe = tcg_const_i32(tcg_ctx, extract32(ctx->opcode, 6, 1));
+
+                gen_load_gpr(ctx, t0, rs);
+                gen_helper_rotx(tcg_ctx, tcg_ctx->cpu_gpr[rt], t0, shift, shiftx, stripe);
+                tcg_temp_free(tcg_ctx, t0);
+
+                tcg_temp_free_i32(tcg_ctx, shift);
+                tcg_temp_free_i32(tcg_ctx, shiftx);
+                tcg_temp_free_i32(tcg_ctx, stripe);
+            }
             break;
         case NM_P_INS:
             switch (((ctx->opcode >> 10) & 2) |
