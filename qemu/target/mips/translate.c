@@ -17107,7 +17107,7 @@ static void gen_pool16c_nanomips_insn(DisasContext *ctx)
     }
 }
 
-static void gen_pool32a0_nanomips_insn(DisasContext *ctx)
+static void gen_pool32a0_nanomips_insn(CPUMIPSState *env, DisasContext *ctx)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
     int rt = extract32(ctx->opcode, 21, 5);
@@ -17273,6 +17273,87 @@ static void gen_pool32a0_nanomips_insn(DisasContext *ctx)
 
             gen_load_gpr(ctx, t0, rt);
             gen_mtc0(ctx, t0, rs, extract32(ctx->opcode, 11, 3));
+            tcg_temp_free(tcg_ctx, t0);
+        }
+        break;
+    case NM_D_E_MT_VPE:
+        {
+            uint8_t sc = extract32(ctx->opcode, 10, 1);
+            TCGv t0 = tcg_temp_new(tcg_ctx);
+
+            switch (sc) {
+            case 0:
+                if (rs == 1) {
+                    /* DMT */
+                    check_cp0_mt(ctx);
+                    gen_helper_dmt(tcg_ctx, t0);
+                    gen_store_gpr(tcg_ctx, t0, rt);
+                } else if (rs == 0) {
+                    /* DVPE */
+                    check_cp0_mt(ctx);
+                    gen_helper_dvpe(tcg_ctx, t0, tcg_ctx->cpu_env);
+                    gen_store_gpr(tcg_ctx, t0, rt);
+                } else {
+                    generate_exception_end(ctx, EXCP_RI);
+                }
+                break;
+            case 1:
+                if (rs == 1) {
+                    /* EMT */
+                    check_cp0_mt(ctx);
+                    gen_helper_emt(tcg_ctx, t0);
+                    gen_store_gpr(tcg_ctx, t0, rt);
+                } else if (rs == 0) {
+                    /* EVPE */
+                    check_cp0_mt(ctx);
+                    gen_helper_evpe(tcg_ctx, t0, tcg_ctx->cpu_env);
+                    gen_store_gpr(tcg_ctx, t0, rt);
+                } else {
+                    generate_exception_end(ctx, EXCP_RI);
+                }
+                break;
+            }
+
+            tcg_temp_free(tcg_ctx, t0);
+        }
+        break;
+    case NM_FORK:
+        check_mt(ctx);
+        {
+            TCGv t0 = tcg_temp_new(tcg_ctx);
+            TCGv t1 = tcg_temp_new(tcg_ctx);
+
+            gen_load_gpr(ctx, t0, rt);
+            gen_load_gpr(ctx, t1, rs);
+            gen_helper_fork(tcg_ctx, t0, t1);
+            tcg_temp_free(tcg_ctx, t0);
+            tcg_temp_free(tcg_ctx, t1);
+        }
+        break;
+    case NM_MFTR:
+    case NM_MFHTR:
+        check_cp0_enabled(ctx);
+        if (rd == 0) {
+            /* Treat as NOP. */
+            return;
+        }
+        gen_mftr(env, ctx, rs, rt, extract32(ctx->opcode, 10, 1),
+                 extract32(ctx->opcode, 11, 5), extract32(ctx->opcode, 3, 1));
+        break;
+    case NM_MTTR:
+    case NM_MTHTR:
+        check_cp0_enabled(ctx);
+        gen_mttr(env, ctx, rs, rt, extract32(ctx->opcode, 10, 1),
+                 extract32(ctx->opcode, 11, 5), extract32(ctx->opcode, 3, 1));
+        break;
+    case NM_YIELD:
+        check_mt(ctx);
+        {
+            TCGv t0 = tcg_temp_new(tcg_ctx);
+
+            gen_load_gpr(ctx, t0, rs);
+            gen_helper_yield(tcg_ctx, t0, tcg_ctx->cpu_env, t0);
+            gen_store_gpr(tcg_ctx, t0, rt);
             tcg_temp_free(tcg_ctx, t0);
         }
         break;
@@ -18176,7 +18257,7 @@ static int decode_nanomips_32_48_opc(CPUMIPSState *env, DisasContext *ctx)
     case NM_POOL32A:
         switch (ctx->opcode & 0x07) {
         case NM_POOL32A0:
-            gen_pool32a0_nanomips_insn(ctx);
+            gen_pool32a0_nanomips_insn(env, ctx);
             break;
         case NM_POOL32A7:
             switch (extract32(ctx->opcode, 3, 3)) {
