@@ -268,7 +268,7 @@ $(PKGCFGF):
 
 .PHONY: fuzz
 fuzz: all
-	$(MAKE) -C fuzz all
+	$(MAKE) -C tests/fuzz all
 
 .PHONY: test
 test: all
