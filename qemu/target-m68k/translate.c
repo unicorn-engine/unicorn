@@ -891,7 +891,9 @@ DISAS_INSN(undef)
     M68kCPU *cpu = m68k_env_get_cpu(env);
 
     gen_exception(s, s->pc - 2, EXCP_UNSUPPORTED);
+#ifndef FUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION
     cpu_abort(CPU(cpu), "Illegal instruction: %04x @ %08x", insn, s->pc - 2);
+#endif
 }
 
 DISAS_INSN(mulw)
