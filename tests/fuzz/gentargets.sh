@@ -4,7 +4,6 @@
 sed 's/UC_MODE_32/UC_MODE_64/' fuzz_emu_x86_32.c > fuzz_emu_x86_64.c
 sed 's/UC_MODE_32/UC_MODE_16/' fuzz_emu_x86_32.c > fuzz_emu_x86_16.c
 
-sed 's/UC_ARCH_X86/UC_ARCH_SPARC/' fuzz_emu_x86_32.c > fuzz_emu_sparc_32.c
 sed 's/UC_ARCH_X86/UC_ARCH_SPARC/' fuzz_emu_x86_32.c | sed 's/UC_MODE_32/UC_MODE_SPARC32|UC_MODE_BIG_ENDIAN/' > fuzz_emu_sparc_32be.c
 sed 's/UC_ARCH_X86/UC_ARCH_SPARC/' fuzz_emu_x86_32.c | sed 's/UC_MODE_32/UC_MODE_SPARC64|UC_MODE_BIG_ENDIAN/' > fuzz_emu_sparc_64be.c
 
