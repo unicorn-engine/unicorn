@@ -21,12 +21,7 @@
 
 static int tosa_init(struct uc_struct *uc, MachineState *machine)
 {
-    if (uc->mode & UC_MODE_MCLASS) {
-        uc->cpu = cpu_create(uc, "cortex-m3");
-    } else {
-        uc->cpu = cpu_create(uc, "cortex-a15");
-    }
-
+    uc->cpu = cpu_create(uc, machine->cpu_type);
     return 0;
 }
 
@@ -35,6 +30,12 @@ static void tosa_machine_init(struct uc_struct *uc, MachineClass *mc)
     mc->init = tosa_init;
     mc->is_default = 1;
     mc->arch = UC_ARCH_ARM;
+
+    if (uc->mode & UC_MODE_MCLASS) {
+        mc->default_cpu_type = ARM_CPU_TYPE_NAME("cortex-m3");
+    } else {
+        mc->default_cpu_type = ARM_CPU_TYPE_NAME("cortex-a15");
+    }
 }
 
 DEFINE_MACHINE("tosa", tosa_machine_init)
