@@ -36,7 +36,7 @@ int main(int argc, char **argv, char **envp)
   }
 
   // Hook the SYSENTER instructions
-  if (uc_hook_add (uc, &sysenterHook, UC_HOOK_INSN, sysenter, NULL, UC_X86_INS_SYSENTER, 1, 0) != UC_ERR_OK) {
+  if (uc_hook_add (uc, &sysenterHook, UC_HOOK_INSN, sysenter, NULL, 1, 0, UC_X86_INS_SYSENTER) != UC_ERR_OK) {
       printf ("Cannot hook SYSENTER instruction\n.");
       return -1;
   }
