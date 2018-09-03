@@ -759,7 +759,7 @@ static inline void gen_movs(DisasContext *s, TCGMemOp ot)
 
 static void gen_op_update1_cc(TCGContext *s)
 {
-    TCGv cpu_cc_dst = *(TCGv *)s->cpu_cc_dst;
+    TCGv cpu_cc_dst = s->cpu_cc_dst;
     TCGv cpu_T0 = s->cpu_T0;
 
     tcg_gen_mov_tl(s, cpu_cc_dst, cpu_T0);
@@ -767,8 +767,8 @@ static void gen_op_update1_cc(TCGContext *s)
 
 static void gen_op_update2_cc(TCGContext *s)
 {
-    TCGv cpu_cc_dst = *(TCGv *)s->cpu_cc_dst;
-    TCGv cpu_cc_src = *(TCGv *)s->cpu_cc_src;
+    TCGv cpu_cc_dst = s->cpu_cc_dst;
+    TCGv cpu_cc_src = s->cpu_cc_src;
     TCGv cpu_T0 = s->cpu_T0;
     TCGv cpu_T1 = s->cpu_T1;
 
@@ -778,9 +778,9 @@ static void gen_op_update2_cc(TCGContext *s)
 
 static void gen_op_update3_cc(TCGContext *s, TCGv reg)
 {
-    TCGv cpu_cc_dst = *(TCGv *)s->cpu_cc_dst;
-    TCGv cpu_cc_src = *(TCGv *)s->cpu_cc_src;
-    TCGv cpu_cc_src2 = *(TCGv *)s->cpu_cc_src2;
+    TCGv cpu_cc_dst = s->cpu_cc_dst;
+    TCGv cpu_cc_src = s->cpu_cc_src;
+    TCGv cpu_cc_src2 = s->cpu_cc_src2;
     TCGv cpu_T0 = s->cpu_T0;
     TCGv cpu_T1 = s->cpu_T1;
 
@@ -791,7 +791,7 @@ static void gen_op_update3_cc(TCGContext *s, TCGv reg)
 
 static inline void gen_op_testl_T0_T1_cc(TCGContext *s)
 {
-    TCGv cpu_cc_dst = *(TCGv *)s->cpu_cc_dst;
+    TCGv cpu_cc_dst = s->cpu_cc_dst;
     TCGv cpu_T0 = s->cpu_T0;
     TCGv cpu_T1 = s->cpu_T1;
 
@@ -800,9 +800,9 @@ static inline void gen_op_testl_T0_T1_cc(TCGContext *s)
 
 static void gen_op_update_neg_cc(TCGContext *s)
 {
-    TCGv cpu_cc_dst = *(TCGv *)s->cpu_cc_dst;
-    TCGv cpu_cc_src = *(TCGv *)s->cpu_cc_src;
-    TCGv cpu_cc_srcT = *(TCGv *)s->cpu_cc_srcT;
+    TCGv cpu_cc_dst = s->cpu_cc_dst;
+    TCGv cpu_cc_src = s->cpu_cc_src;
+    TCGv cpu_cc_srcT = s->cpu_cc_srcT;
     TCGv cpu_T0 = s->cpu_T0;
 
     tcg_gen_mov_tl(s, cpu_cc_dst, cpu_T0);
