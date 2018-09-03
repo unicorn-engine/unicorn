@@ -9202,6 +9202,9 @@ static void i386_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cpu)
         printf("ERROR addseg\n");
 #endif
 
+    // Unicorn: Used to synchronize EIP when read/write callbacks are set.
+    dc->prev_pc = dcbase->pc_first;
+
     tcg_ctx->cpu_T0 = tcg_temp_new(tcg_ctx);
     tcg_ctx->cpu_T1 = tcg_temp_new(tcg_ctx);
 
@@ -9257,6 +9260,10 @@ static bool i386_tr_breakpoint_check(DisasContextBase *dcbase, CPUState *cpu,
 static void i386_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
+
+    // Unicorn: Save previous PC to synchronize EIP
+    dc->prev_pc = dcbase->pc_next;
+
     target_ulong pc_next = disas_insn(dc, cpu);
 
     if (dc->tf || (dc->base.tb->flags & HF_INHIBIT_IRQ_MASK)) {
