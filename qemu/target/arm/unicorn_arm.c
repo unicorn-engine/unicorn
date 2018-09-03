@@ -62,7 +62,7 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
         if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
             *(int32_t *)value = state->regs[regid - UC_ARM_REG_R0];
         } else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31) {
-            const float64 *d_reg = aa32_vfp_dreg(state, regid - UC_ARM64_REG_D0);
+            const float64 *d_reg = aa32_vfp_dreg(state, regid - UC_ARM_REG_D0);
             *(float64 *)value = *d_reg;
         } else {
             switch(regid) {
@@ -112,7 +112,7 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, i
         if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
             state->regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
         } else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31) {
-            float64 *d_reg = aa32_vfp_dreg(state, regid - UC_ARM64_REG_D0);
+            float64 *d_reg = aa32_vfp_dreg(state, regid - UC_ARM_REG_D0);
             *d_reg = *(float64 *)value;
         } else {
             switch(regid) {
