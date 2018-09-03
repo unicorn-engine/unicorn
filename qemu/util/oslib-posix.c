@@ -51,7 +51,11 @@
 #include <sys/mman.h>
 #include <libgen.h>
 #include <setjmp.h>
+#ifdef __HAIKU__
+#include <posix/signal.h>
+#else
 #include <sys/signal.h>
+#endif
 #include "qemu/cutils.h"
 
 #ifdef CONFIG_LINUX

@@ -139,6 +139,15 @@ UNICORN_CFLAGS := $(UNICORN_CFLAGS:-fPIC=)
 $(LIBNAME)_LDFLAGS += -Wl,--output-def,unicorn.def
 DO_WINDOWS_EXPORT = 1
 
+# Haiku
+else ifneq ($(filter Haiku%,$(UNAME_S)),)
+EXT = so
+VERSION_EXT = $(EXT).$(API_MAJOR)
+AR_EXT = a
+$(LIBNAME)_LDFLAGS += -Wl,-Bsymbolic-functions,-soname,lib$(LIBNAME).$(VERSION_EXT)
+UNICORN_CFLAGS := $(UNICORN_CFLAGS:-fPIC=)
+UNICORN_QEMU_FLAGS += --disable-stack-protector
+
 # Linux, Darwin
 else
 EXT = so
