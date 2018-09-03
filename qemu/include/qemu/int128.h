@@ -21,7 +21,7 @@ static inline Int128 int128_make128(uint64_t lo, uint64_t hi)
 static inline uint64_t int128_get64(Int128 a)
 {
     uint64_t r = a;
-    assert(r == a);
+    //assert(r == a);
     return r;
 }
 
