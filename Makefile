@@ -71,8 +71,8 @@ UNICORN_CFLAGS += -fPIC
 # Verbose output?
 V ?= 0
 
-# on MacOS, compile in Universal format by default
-MACOS_UNIVERSAL ?= yes
+# on MacOS, by default do not compile in Universal format
+MACOS_UNIVERSAL ?= no
 
 ifeq ($(UNICORN_DEBUG),yes)
 CFLAGS += -g
