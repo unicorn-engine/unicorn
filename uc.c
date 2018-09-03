@@ -267,8 +267,9 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
             return UC_ERR_ARCH;
         }
 
-        if (machine_initialize(uc))
+        if (machine_initialize(uc)) {
             return UC_ERR_RESOURCE;
+        }
 
         *result = uc;
 

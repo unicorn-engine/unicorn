@@ -3597,6 +3597,48 @@ static void x86_cpuid_version_set_stepping(struct uc_struct *uc,
     env->cpuid_version |= value & 0xf;
 }
 
+static void x86_cpuid_get_level(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
+                                void *opaque, Error **errp)
+{
+    X86CPU *cpu = X86_CPU(uc, obj);
+
+    visit_type_uint32(v, name, &cpu->env.cpuid_level, errp);
+}
+
+static void x86_cpuid_set_level(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
+                                void *opaque, Error **errp)
+{
+    X86CPU *cpu = X86_CPU(uc, obj);
+
+    visit_type_uint32(v, name, &cpu->env.cpuid_level, errp);
+}
+
+static void x86_cpuid_get_xlevel(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
+                                 void *opaque, Error **errp)
+{
+    X86CPU *cpu = X86_CPU(uc, obj);
+
+    visit_type_uint32(v, name, &cpu->env.cpuid_xlevel, errp);
+}
+
+static void x86_cpuid_set_xlevel(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
+                                 void *opaque, Error **errp)
+{
+    X86CPU *cpu = X86_CPU(uc, obj);
+
+    visit_type_uint32(v, name, &cpu->env.cpuid_xlevel, errp);
+}
+
+static void x86_cpuid_get_vme(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
+                              void *opaque, Error **errp)
+{
+}
+
+static void x86_cpuid_set_vme(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
+                              void *opaque, Error **errp)
+{
+}
+
 static char *x86_cpuid_get_vendor(struct uc_struct *uc, Object *obj, Error **errp)
 {
     X86CPU *cpu = X86_CPU(uc, obj);
@@ -3708,6 +3750,50 @@ static void x86_cpuid_set_tsc_freq(struct uc_struct *uc,
     }
 
     cpu->env.tsc_khz = (int)(value / 1000);
+}
+
+static void x86_cpuid_get_apic_id(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
+                                  void* opaque, Error **errp)
+{
+    X86CPU *cpu = X86_CPU(uc, obj);
+    int64_t value = cpu->apic_id;
+
+    visit_type_int(v, name, &value, errp);
+}
+
+static void x86_cpuid_set_apic_id(struct uc_struct *uc, Object *obj, Visitor *v, const char *name,
+                                  void *opaque, Error **errp)
+{
+    X86CPU *cpu = X86_CPU(uc, obj);
+    DeviceState *dev = DEVICE(uc, obj);
+    const int64_t min = 0;
+    const int64_t max = UINT32_MAX;
+    Error *error = NULL;
+    int64_t value;
+
+    if (dev->realized) {
+        error_setg(errp, "Attempt to set property '%s' on '%s' after "
+                   "it was realized", name, object_get_typename(obj));
+        return;
+    }
+
+    visit_type_int(v, name, &value, &error);
+    if (error) {
+        error_propagate(errp, error);
+        return;
+    }
+    if (value < min || value > max) {
+        error_setg(errp, "Property %s.%s doesn't take value %" PRId64
+                   " (minimum: %" PRId64 ", maximum: %" PRId64 ")" ,
+                   object_get_typename(obj), name, value, min, max);
+        return;
+    }
+
+    if ((value != cpu->apic_id) && cpu_exists(uc, value)) {
+        error_setg(errp, "CPU with APIC ID %" PRIi64 " exists", value);
+        return;
+    }
+    cpu->apic_id = (uint32_t)value;
 }
 
 /* Generic getter for "feature-words" and "filtered-features" properties */
@@ -5005,6 +5091,15 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     object_property_add(uc, obj, "stepping", "int",
                         x86_cpuid_version_get_stepping,
                         x86_cpuid_version_set_stepping, NULL, NULL, NULL);
+    object_property_add(uc, obj, "level", "int",
+                        x86_cpuid_get_level,
+                        x86_cpuid_set_level, NULL, NULL, NULL);
+    object_property_add(uc, obj, "xlevel", "int",
+                        x86_cpuid_get_xlevel,
+                        x86_cpuid_set_xlevel, NULL, NULL, NULL);
+    object_property_add(uc, obj, "vme", "int",
+                        x86_cpuid_get_vme,
+                        x86_cpuid_set_vme, NULL, NULL, NULL);
     object_property_add_str(uc, obj, "vendor",
                             x86_cpuid_get_vendor,
                             x86_cpuid_set_vendor, NULL);
@@ -5014,6 +5109,9 @@ static void x86_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     object_property_add(uc, obj, "tsc-frequency", "int",
                         x86_cpuid_get_tsc_freq,
                         x86_cpuid_set_tsc_freq, NULL, NULL, NULL);
+    object_property_add(uc, obj, "apic-id", "int",
+                        x86_cpuid_get_apic_id,
+                        x86_cpuid_set_apic_id, NULL, NULL, NULL);
     object_property_add(uc, obj, "feature-words", "X86CPUFeatureWordInfo",
                         x86_cpu_get_feature_words,
                         NULL, NULL, (void *)env->features, NULL);
