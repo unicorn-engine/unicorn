@@ -93,6 +93,9 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                 case UC_ARM_REG_FPEXC:
                     *(int32_t *)value = state->vfp.xregs[ARM_VFP_FPEXC];
                     break;
+                case UC_ARM_REG_FPSCR:
+                    *(int32_t *)value = vfp_get_fpscr(state);
+                    break;
             }
         }
     }
@@ -150,6 +153,9 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, i
                     break;
                 case UC_ARM_REG_FPEXC:
                     state->vfp.xregs[ARM_VFP_FPEXC] = *(int32_t *)value;
+                    break;
+                case UC_ARM_REG_FPSCR:
+                    vfp_set_fpscr(state, *(uint32_t *)value);
                     break;
             }
         }
