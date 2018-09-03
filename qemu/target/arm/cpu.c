@@ -1707,8 +1707,8 @@ static void cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)
 void arm_cpu_register_types(void *opaque)
 {
     const ARMCPUInfo *info = arm_cpus;
-    
-    TypeInfo arm_cpu_type_info = { 0 };
+
+    TypeInfo arm_cpu_type_info = {0};
     arm_cpu_type_info.name = TYPE_ARM_CPU,
     arm_cpu_type_info.parent = TYPE_CPU,
     arm_cpu_type_info.instance_userdata = opaque,
@@ -1720,7 +1720,7 @@ void arm_cpu_register_types(void *opaque)
     arm_cpu_type_info.class_size = sizeof(ARMCPUClass),
     arm_cpu_type_info.class_init = arm_cpu_class_init,
 
-    type_register_static(opaque, &arm_cpu_type_info);
+    type_register(opaque, &arm_cpu_type_info);
 
     while (info->name) {
         cpu_register(opaque, info);
