@@ -268,7 +268,7 @@ static void m68k_cpu_class_init(struct uc_struct *uc, ObjectClass *c, void *data
         initfn,                                 \
     }
 
-static const TypeInfo m68k_cpus_type_infos[] = {
+static TypeInfo m68k_cpus_type_infos[] = {
     { /* base class should be registered first */
         TYPE_M68K_CPU,
         TYPE_CPU,
@@ -302,5 +302,7 @@ static const TypeInfo m68k_cpus_type_infos[] = {
 
 void m68k_cpu_register_types(void *opaque)
 {
+    m68k_cpus_type_infos[0].instance_userdata = opaque;
+
     type_register_static_array(opaque, m68k_cpus_type_infos, ARRAY_SIZE(m68k_cpus_type_infos));
 }

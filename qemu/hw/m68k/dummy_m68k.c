@@ -20,9 +20,8 @@
 static int dummy_m68k_init(struct uc_struct *uc, MachineState *machine)
 {
     CPUM68KState *env;
-    const char *cpu_type = parse_cpu_model(uc, "cf4ve");
 
-    uc->cpu = cpu_create(uc, cpu_type);
+    uc->cpu = cpu_create(uc, machine->cpu_type);
     if (!uc->cpu) {
         fprintf(stderr, "Unable to find m68k CPU definition\n");
         return -1;
