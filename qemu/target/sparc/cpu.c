@@ -869,12 +869,12 @@ static void sparc_cpu_cpudef_class_init(struct uc_struct *uc, ObjectClass *oc, v
 static void sparc_register_cpudef_type(struct uc_struct *uc, const struct sparc_def_t *def)
 {
     char *typename = sparc_cpu_type_name(def->name);
-    TypeInfo ti = {
+    const TypeInfo ti = {
         typename,
         TYPE_SPARC_CPU,
         0,
         0,
-        NULL,
+        uc,
 
         NULL,
         NULL,
@@ -914,8 +914,7 @@ void sparc_cpu_register_types(void *opaque)
         true,
     };
 
-    //printf(">>> sparc_cpu_register_types\n");
-    type_register_static(opaque, &sparc_cpu_type_info);
+    type_register(opaque, &sparc_cpu_type_info);
     for (i = 0; i < ARRAY_SIZE(sparc_defs); i++) {
         sparc_register_cpudef_type(opaque, &sparc_defs[i]);
     }

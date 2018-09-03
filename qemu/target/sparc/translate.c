@@ -5950,6 +5950,9 @@ static void sparc_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
      */
     bound = -(dc->base.pc_first | TARGET_PAGE_MASK) / 4;
     dc->base.max_insns = MIN(dc->base.max_insns, bound);
+
+    // Unicorn: Initialize specifics for Unicorn
+    dc->uc = cs->uc;
 }
 
 static void sparc_tr_tb_start(DisasContextBase *db, CPUState *cs)
