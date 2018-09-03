@@ -63,22 +63,21 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
             *(int32_t *)value = READ_DWORD(state->xregs[regid - UC_ARM64_REG_W0]);
         } else if (regid >= UC_ARM64_REG_Q0 && regid <= UC_ARM64_REG_Q31) {
             float64 *dst = (float64*) value;
-            const uint32_t reg_index = regid - UC_ARM64_REG_Q0;
-            const float64 *q_reg = aa64_vfp_qreg(state, reg_index);
+            const float64 *q_reg = aa64_vfp_qreg(state, regid - UC_ARM64_REG_Q0);
             dst[0] = q_reg[0];
             dst[1] = q_reg[1];
         } else if (regid >= UC_ARM64_REG_D0 && regid <= UC_ARM64_REG_D31) {
-            const float64 *d_reg = aa32_vfp_dreg(state, 2 * (regid - UC_ARM64_REG_D0));
-            *(float64*)value = *d_reg;
+            const float64 *q_reg = aa64_vfp_qreg(state, regid - UC_ARM64_REG_D0);
+            *(float64*)value = *q_reg;
         } else if (regid >= UC_ARM64_REG_S0 && regid <= UC_ARM64_REG_S31) {
-            const float64 *d_reg = aa32_vfp_dreg(state, 2 * (regid - UC_ARM64_REG_S0));
-            *(int32_t*)value = READ_DWORD(*d_reg);
+            const float64 *q_reg = aa64_vfp_qreg(state, regid - UC_ARM64_REG_S0);
+            *(int32_t*)value = READ_DWORD(*q_reg);
         } else if (regid >= UC_ARM64_REG_H0 && regid <= UC_ARM64_REG_H31) {
-            const float64 *d_reg = aa32_vfp_dreg(state, 2 * (regid - UC_ARM64_REG_H0));
-            *(int16_t*)value = READ_WORD(*d_reg);
+            const float64 *q_reg = aa64_vfp_qreg(state, regid - UC_ARM64_REG_H0);
+            *(int16_t*)value = READ_WORD(*q_reg);
         } else if (regid >= UC_ARM64_REG_B0 && regid <= UC_ARM64_REG_B31) {
-            const float64 *d_reg = aa32_vfp_dreg(state, 2 * (regid - UC_ARM64_REG_B0));
-            *(int8_t*)value = READ_BYTE_L(*d_reg);
+            const float64 *q_reg = aa64_vfp_qreg(state, regid - UC_ARM64_REG_B0);
+            *(int8_t*)value = READ_BYTE_L(*q_reg);
         } else {
             switch(regid) {
                 default: break;
@@ -146,22 +145,21 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
             WRITE_DWORD(state->xregs[regid - UC_ARM64_REG_W0], *(uint32_t *)value);
         } else if (regid >= UC_ARM64_REG_Q0 && regid <= UC_ARM64_REG_Q31) {
             const float64 *src = (const float64*) value;
-            const uint32_t reg_index = regid - UC_ARM64_REG_Q0;
-            float64 *q_reg = aa64_vfp_qreg(state, reg_index);
+            float64 *q_reg = aa64_vfp_qreg(state, regid - UC_ARM64_REG_Q0);
             q_reg[0] = src[0];
             q_reg[1] = src[1];
         } else if (regid >= UC_ARM64_REG_D0 && regid <= UC_ARM64_REG_D31) {
-            float64 *d_reg = aa32_vfp_dreg(state, 2 * (regid - UC_ARM64_REG_D0));
-            *d_reg = *(float64*) value;
+            float64 *q_reg = aa64_vfp_qreg(state, regid - UC_ARM64_REG_D0);
+            *q_reg = *(float64*) value;
         } else if (regid >= UC_ARM64_REG_S0 && regid <= UC_ARM64_REG_S31) {
-            float64 *d_reg = aa32_vfp_dreg(state, 2 * (regid - UC_ARM64_REG_S0));
-            WRITE_DWORD(*d_reg, *(int32_t*) value);
+            float64 *q_reg = aa64_vfp_qreg(state, regid - UC_ARM64_REG_S0);
+            WRITE_DWORD(*q_reg, *(int32_t*) value);
         } else if (regid >= UC_ARM64_REG_H0 && regid <= UC_ARM64_REG_H31) {
-            float64 *d_reg = aa32_vfp_dreg(state, 2 * (regid - UC_ARM64_REG_H0));
-            WRITE_WORD(*d_reg, *(int16_t*) value);
+            float64 *q_reg = aa64_vfp_qreg(state, regid - UC_ARM64_REG_H0);
+            WRITE_WORD(*q_reg, *(int16_t*) value);
         } else if (regid >= UC_ARM64_REG_B0 && regid <= UC_ARM64_REG_B31) {
-            float64 *d_reg = aa32_vfp_dreg(state, 2 * (regid - UC_ARM64_REG_B0));
-            WRITE_BYTE_L(*d_reg, *(int8_t*) value);
+            float64 *q_reg = aa64_vfp_qreg(state, regid - UC_ARM64_REG_B0);
+            WRITE_BYTE_L(*q_reg, *(int8_t*) value);
         } else {
             switch(regid) {
                 default: break;
