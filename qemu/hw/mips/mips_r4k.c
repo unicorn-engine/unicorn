@@ -22,17 +22,10 @@
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
 
-
 static int mips_r4k_init(struct uc_struct *uc, MachineState *machine)
 {
-#ifdef TARGET_MIPS64
-    const char *cpu_model = MIPS_CPU_TYPE_NAME("R4000");
-#else
-    const char *cpu_model = MIPS_CPU_TYPE_NAME("24Kf");
-#endif
-    const char *cpu_type = parse_cpu_model(uc, cpu_model);
+    uc->cpu = cpu_create(uc, machine->cpu_type);
 
-    uc->cpu = cpu_create(uc, cpu_type);
     if (uc->cpu == NULL) {
         fprintf(stderr, "Unable to find CPU definition\n");
         return -1;
