@@ -244,7 +244,7 @@ void mips_cpu_register_types(void *opaque)
         true,
     };
 
-    type_register_static(opaque, &mips_cpu_type_info);
+    type_register(opaque, &mips_cpu_type_info);
     for (i = 0; i < mips_defs_number; i++) {
         mips_register_cpudef_type(opaque, &mips_defs[i]);
     }
