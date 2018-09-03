@@ -5243,12 +5243,10 @@ void x86_cpu_register_types(void *opaque)
         true,
     };
 
-    //printf("... register X86 cpu\n");
     int i;
 
-    type_register_static(opaque, &x86_cpu_type_info);
+    type_register(opaque, &x86_cpu_type_info);
     for (i = 0; i < ARRAY_SIZE(builtin_x86_defs); i++) {
         x86_register_cpudef_type(opaque, &builtin_x86_defs[i]);
     }
-    //printf("... END OF register X86 cpu\n");
 }
