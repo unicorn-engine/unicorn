@@ -274,6 +274,7 @@ fuzz: all
 test: all
 	$(MAKE) -C tests/unit test
 	$(MAKE) -C tests/regress test
+	$(MAKE) -C tests/fuzz test
 	$(MAKE) -C bindings test
 
 install: qemu/config-host.h-timestamp $(PKGCFGF)
