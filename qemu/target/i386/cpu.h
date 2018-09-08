@@ -1709,9 +1709,10 @@ uint32_t cpu_cc_compute_all(CPUX86State *env1, int op);
 
 static inline uint32_t cpu_compute_eflags(CPUX86State *env)
 {
-    uint32_t eflags = env->eflags;
+    // Unicorn: Modified to use eflags0 instead of eflags
+    uint32_t eflags = env->eflags0;
     if (tcg_enabled(env->uc)) {
-        eflags |= cpu_cc_compute_all(env, CC_OP) | (env->df & DF_MASK);
+        eflags = (eflags & ~(CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C | DF_MASK)) | cpu_cc_compute_all(env, CC_OP) | (env->df & DF_MASK);
     }
     return eflags;
 }
