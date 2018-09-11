@@ -888,10 +888,7 @@ DISAS_INSN(undef_fpu)
 
 DISAS_INSN(undef)
 {
-    M68kCPU *cpu = m68k_env_get_cpu(env);
-
     gen_exception(s, s->pc - 2, EXCP_UNSUPPORTED);
-    cpu_abort(CPU(cpu), "Illegal instruction: %04x @ %08x", insn, s->pc - 2);
 }
 
 DISAS_INSN(mulw)
