@@ -24,3 +24,6 @@ More bindings created & maintained externally by community are available as foll
 
 - Unicorn.CR: Crystal binding (by Benoit Côté-Jodoin)
     https://github.com/Becojo/unicorn.cr
+
+- Deimos/unicorn: D binding (by Vladimir Panteleev)
+    https://github.com/D-Programming-Deimos/unicorn
