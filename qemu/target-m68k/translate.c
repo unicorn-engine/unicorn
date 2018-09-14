@@ -2148,7 +2148,7 @@ DISAS_INSN(wdebug)
         return;
     }
     /* TODO: Implement wdebug.  */
-    cpu_abort(CPU(cpu), "WDEBUG not implemented");
+    gen_exception(s, s->pc - 2, EXCP_UNSUPPORTED);
 }
 
 DISAS_INSN(trap)
