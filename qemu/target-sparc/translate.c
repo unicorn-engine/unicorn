@@ -51,7 +51,7 @@ typedef struct DisasContext {
     struct TranslationBlock *tb;
     sparc_def_t *def;
     TCGv_i32 t32[3];
-    TCGv ttl[5];
+    TCGv ttl[6];
     int n_t32;
     int n_ttl;
 
