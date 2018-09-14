@@ -2148,6 +2148,7 @@ DISAS_INSN(wdebug)
         return;
     }
     /* TODO: Implement wdebug.  */
+    qemu_log("WDEBUG not implemented\n");
     gen_exception(s, s->pc - 2, EXCP_UNSUPPORTED);
 }
 
@@ -2245,8 +2246,9 @@ DISAS_INSN(fpu)
         case 1: /* FPIAR */
         case 2: /* FPSR */
         default:
-            cpu_abort(NULL, "Unimplemented: fmove to control %d",
-                      (ext >> 10) & 7);
+            qemu_log("Unimplemented: fmove to control %d\n",
+                     (ext >> 10) & 7);
+            goto undef;
         }
         break;
     case 5: /* fmove from control register.  */
@@ -2258,8 +2260,8 @@ DISAS_INSN(fpu)
         case 1: /* FPIAR */
         case 2: /* FPSR */
         default:
-            cpu_abort(NULL, "Unimplemented: fmove from control %d",
-                      (ext >> 10) & 7);
+            qemu_log("Unimplemented: fmove from control %d\n",
+                     (ext >> 10) & 7);
             goto undef;
         }
         DEST_EA(env, insn, OS_LONG, tmp32, NULL);
