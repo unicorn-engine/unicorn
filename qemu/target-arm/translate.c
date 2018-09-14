@@ -737,7 +737,7 @@ static void gen_thumb2_parallel_addsub(DisasContext *s, int op1, int op2, TCGv_i
  * generate a conditional branch based on ARM condition code cc.
  * This is common between ARM and Aarch64 targets.
  */
-void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, int label)
+void arm_gen_test_cc(DisasContext *s, TCGContext *tcg_ctx, int cc, int label)
 {
     TCGv_i32 tmp;
     int inv;
@@ -807,7 +807,8 @@ void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, int label)
         break;
     default:
         fprintf(stderr, "Bad condition code 0x%x\n", cc);
-        abort();
+        gen_exception_insn(s, 4, EXCP_UDEF,
+                           syn_uncategorized());
     }
 }
 
@@ -7907,7 +7908,7 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
         /* if not always execute, we generate a conditional jump to
            next instruction */
         s->condlabel = gen_new_label(tcg_ctx);
-        arm_gen_test_cc(tcg_ctx, cond ^ 1, s->condlabel);
+        arm_gen_test_cc(s, tcg_ctx, cond ^ 1, s->condlabel);
         s->condjmp = 1;
     }
     if ((insn & 0x0f900000) == 0x03000000) {
@@ -10049,7 +10050,7 @@ static int disas_thumb2_insn(CPUARMState *env, DisasContext *s, uint16_t insn_hw
                 op = (insn >> 22) & 0xf;
                 /* Generate a conditional jump to next instruction.  */
                 s->condlabel = gen_new_label(tcg_ctx);
-                arm_gen_test_cc(tcg_ctx, op ^ 1, s->condlabel);
+                arm_gen_test_cc(s, tcg_ctx, op ^ 1, s->condlabel);
                 s->condjmp = 1;
 
                 /* offset[11:1] = insn[10:0] */
@@ -10415,7 +10416,7 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
         cond = s->condexec_cond;
         if (cond != 0x0e) {     /* Skip conditional when condition is AL. */
           s->condlabel = gen_new_label(tcg_ctx);
-          arm_gen_test_cc(tcg_ctx, cond ^ 1, s->condlabel);
+          arm_gen_test_cc(s, tcg_ctx, cond ^ 1, s->condlabel);
           s->condjmp = 1;
         }
     }
@@ -11112,7 +11113,7 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
         }
         /* generate a conditional jump to next instruction */
         s->condlabel = gen_new_label(tcg_ctx);
-        arm_gen_test_cc(tcg_ctx, cond ^ 1, s->condlabel);
+        arm_gen_test_cc(s, tcg_ctx, cond ^ 1, s->condlabel);
         s->condjmp = 1;
 
         /* jump to the offset */

@@ -111,6 +111,6 @@ static inline void gen_a64_set_pc_im(uint64_t val)
 }
 #endif
 
-void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, int label);
+void arm_gen_test_cc(DisasContext *s, TCGContext *tcg_ctx, int cc, int label);
 
 #endif /* TARGET_ARM_TRANSLATE_H */
