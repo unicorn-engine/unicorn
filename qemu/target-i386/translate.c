@@ -5008,6 +5008,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     bool changed_cc_op = false;
 
     s->pc = pc_start;
+    s->prefix = 0;
 
     // end address tells us to stop emulation
     if (s->pc == s->uc->addr_end) {
