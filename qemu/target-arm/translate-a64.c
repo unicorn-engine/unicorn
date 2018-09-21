@@ -1989,7 +1989,7 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
         return;
     }
 
-    offset <<= size;
+    offset *= (1 << size);
 
     if (rn == 31) {
         gen_check_sp_alignment(s);
