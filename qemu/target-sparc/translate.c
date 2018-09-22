@@ -91,7 +91,7 @@ typedef struct {
 static int sign_extend(int x, int len)
 {
     len = 32 - len;
-    return (x << len) >> len;
+    return ((x & 0x7FFFFFFF) << len) >> len;
 }
 
 #define IS_IMM (insn & (1<<13))
