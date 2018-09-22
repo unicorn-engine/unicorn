@@ -18871,7 +18871,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
                 check_cop1x(ctx);
                 check_insn(ctx, ASE_MIPS3D);
                 gen_compute_branch1(ctx, MASK_BC1(ctx->opcode),
-                                    (rt >> 2) & 0x7, imm << 2);
+                                    (rt >> 2) & 0x7, imm * 4);
             }
             break;
         case OPC_BC1NEZ:
