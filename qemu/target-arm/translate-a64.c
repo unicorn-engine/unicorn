@@ -1308,7 +1308,7 @@ static void gen_set_nzcv(TCGContext *tcg_ctx, TCGv_i64 tcg_rt)
     tcg_gen_trunc_i64_i32(tcg_ctx, nzcv, tcg_rt);
 
     /* bit 31, N */
-    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_NF, nzcv, (1 << 31));
+    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_NF, nzcv, ((uint32_t) 1 << 31));
     /* bit 30, Z */
     tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_ZF, nzcv, (1 << 30));
     tcg_gen_setcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_ZF, tcg_ctx->cpu_ZF, 0);
