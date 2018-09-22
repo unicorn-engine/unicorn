@@ -4735,7 +4735,7 @@ static void gen_bitops (DisasContext *ctx, uint32_t opc, int rt,
             goto fail;
         tcg_gen_shri_tl(tcg_ctx, t0, t1, lsb);
         if (msb != 31) {
-            tcg_gen_andi_tl(tcg_ctx, t0, t0, (1 << (msb + 1)) - 1);
+            tcg_gen_andi_tl(tcg_ctx, t0, t0, (((uint32_t) 1) << (msb + 1)) - 1);
         } else {
             tcg_gen_ext32s_tl(tcg_ctx, t0, t0);
         }
