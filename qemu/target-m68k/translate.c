@@ -664,7 +664,8 @@ static TCGv gen_ea(CPUM68KState *env, DisasContext *s, uint16_t insn,
                 offset = read_im32(env, s);
                 break;
             default:
-                g_assert_not_reached();
+                // Should not happen : for OS_SIGNLE
+                return *(TCGv *)tcg_ctx->NULL_QREG;
             }
             return tcg_const_i32(tcg_ctx, offset);
         default:
