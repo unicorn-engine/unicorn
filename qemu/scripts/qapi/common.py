@@ -2226,6 +2226,7 @@ class QAPIGenC(QAPIGenCCode):
 
     def _bottom(self, fname):
         return mcgen('''
+
 /* Dummy declaration to prevent empty .o file */
 char dummy_%(name)s;
 ''',
