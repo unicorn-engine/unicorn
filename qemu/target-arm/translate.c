@@ -9893,7 +9893,7 @@ static int disas_thumb2_insn(CPUARMState *env, DisasContext *s, uint16_t insn_hw
             if (insn & 0x5000) {
                 /* Unconditional branch.  */
                 /* signextend(hw1[10:0]) -> offset[:12].  */
-                offset = ((int32_t)insn << 5) >> 9 & ~(int32_t)0xfff;
+                offset = ((int32_t)insn * (1 << 5)) >> 9 & ~(int32_t)0xfff;
                 /* hw1[10:0] -> offset[11:1].  */
                 offset |= (insn & 0x7ff) << 1;
                 /* (~hw2[13, 11] ^ offset[24]) -> offset[23,22]
