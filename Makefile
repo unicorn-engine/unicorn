@@ -117,8 +117,8 @@ AR_EXT = a
 UNICORN_CFLAGS += -fvisibility=hidden
 
 ifeq ($(MACOS_UNIVERSAL),yes)
-$(LIBNAME)_LDFLAGS += -m32 -arch i386 -m64 -arch x86_64
-UNICORN_CFLAGS += -m32 -arch i386 -m64 -arch x86_64
+$(LIBNAME)_LDFLAGS += -m64 -arch x86_64
+UNICORN_CFLAGS += -m64 -arch x86_64
 endif
 
 # Cygwin?
