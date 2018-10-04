@@ -95,6 +95,9 @@ typedef struct DisasContext {
     CCOp cc_op;  /* current CC operation */
     CCOp last_cc_op;  /* Unicorn: last CC operation. Save this to see if cc_op has changed */
     bool cc_op_dirty;
+#ifdef TARGET_X86_64
+    bool x86_64_hregs;
+#endif
     int addseg; /* non zero if either DS/ES/SS have a non zero base */
     int f_st;   /* currently unused */
     int vm86;   /* vm86 mode */
@@ -374,13 +377,13 @@ static void gen_update_cc_op(DisasContext *s)
  * [AH, CH, DH, BH], ie "bits 15..8 of register N-4". Return
  * true for this special case, false otherwise.
  */
-static inline bool byte_reg_is_xH(int x86_64_hregs, int reg)
+static inline bool byte_reg_is_xH(DisasContext *s, int reg)
 {
     if (reg < 4) {
         return false;
     }
 #ifdef TARGET_X86_64
-    if (reg >= 8 || x86_64_hregs) {
+    if (reg >= 8 || s->x86_64_hregs) {
         return false;
     }
 #endif
@@ -434,7 +437,7 @@ static void gen_op_mov_reg_v(DisasContext *s, TCGMemOp ot, int reg, TCGv t0)
 
     switch(ot) {
     case MO_8:
-        if (!byte_reg_is_xH(tcg_ctx->x86_64_hregs, reg)) {
+        if (!byte_reg_is_xH(s, reg)) {
             tcg_gen_deposit_tl(tcg_ctx, cpu_regs[reg], cpu_regs[reg], t0, 0, 8);
         } else {
             tcg_gen_deposit_tl(tcg_ctx, cpu_regs[reg - 4], cpu_regs[reg - 4], t0, 8, 8);
@@ -463,7 +466,7 @@ static inline void gen_op_mov_v_reg(DisasContext *s, TCGMemOp ot, TCGv t0, int r
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
-    if (ot == MO_8 && byte_reg_is_xH(tcg_ctx->x86_64_hregs, reg)) {
+    if (ot == MO_8 && byte_reg_is_xH(s, reg)) {
         tcg_gen_extract_tl(tcg_ctx, t0, cpu_regs[reg - 4], 8, 8);
     } else {
         tcg_gen_mov_tl(tcg_ctx, t0, cpu_regs[reg]);
@@ -4998,7 +5001,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     s->rex_x = 0;
     s->rex_b = 0;
     s->uc = env->uc;
-    tcg_ctx->x86_64_hregs = 0;
+    s->x86_64_hregs = 0;
 #endif
     s->rip_offset = 0; /* for relative ip address */
     s->vex_l = 0;
@@ -5072,7 +5075,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             rex_r = (b & 0x4) << 1;
             s->rex_x = (b & 0x2) << 2;
             REX_B(s) = (b & 0x1) << 3;
-            tcg_ctx->x86_64_hregs = 1; /* select uniform byte register addressing */
+            s->x86_64_hregs = 1; /* select uniform byte register addressing */
             goto next_byte;
         }
         break;
@@ -5100,7 +5103,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
                 goto illegal_op;
             }
 #ifdef TARGET_X86_64
-            if (tcg_ctx->x86_64_hregs) {
+            if (s->x86_64_hregs) {
                 goto illegal_op;
             }
 #endif
@@ -6075,7 +6078,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             rm = (modrm & 7) | REX_B(s);
 
             if (mod == 3) {
-                if (s_ot == MO_SB && byte_reg_is_xH(tcg_ctx->x86_64_hregs, rm)) {
+                if (s_ot == MO_SB && byte_reg_is_xH(s, rm)) {
                     tcg_gen_sextract_tl(tcg_ctx, s->T0, cpu_regs[rm - 4], 8, 8);
                 } else {
                     gen_op_mov_v_reg(s, ot, s->T0, rm);
