@@ -126,6 +126,7 @@ typedef struct DisasContext {
     TCGv_ptr ptr0;
     TCGv_ptr ptr1;
     TCGv_i32 tmp2_i32;
+    TCGv_i32 tmp3_i32;
 
     sigjmp_buf jmpbuf;
     struct uc_struct *uc;
@@ -1302,7 +1303,6 @@ static inline void gen_ins(DisasContext *s, TCGMemOp ot)
 static inline void gen_outs(DisasContext *s, TCGMemOp ot)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv_i32 cpu_tmp3_i32 = tcg_ctx->cpu_tmp3_i32;
     TCGv *cpu_regs = tcg_ctx->cpu_regs;
 
     gen_string_movl_A0_ESI(s);
@@ -1310,8 +1310,8 @@ static inline void gen_outs(DisasContext *s, TCGMemOp ot)
 
     tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp2_i32, cpu_regs[R_EDX]);
     tcg_gen_andi_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, 0xffff);
-    tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp3_i32, s->T0);
-    gen_helper_out_func(s, ot, s->tmp2_i32, cpu_tmp3_i32);
+    tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp3_i32, s->T0);
+    gen_helper_out_func(s, ot, s->tmp2_i32, s->tmp3_i32);
 
     gen_op_movl_T0_Dshift(s, ot);
     gen_op_add_reg_T0(s, s->aflag, R_ESI);
@@ -1562,7 +1562,6 @@ static void gen_shift_flags(DisasContext *s, TCGMemOp ot, TCGv result,
     TCGv_i32 z32, s32, oldop;
     TCGv z_tl;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv_i32 cpu_tmp3_i32 = tcg_ctx->cpu_tmp3_i32;
     TCGv_i32 cpu_cc_op = tcg_ctx->cpu_cc_op;
     TCGv cpu_cc_dst = tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src = tcg_ctx->cpu_cc_src;
@@ -1590,8 +1589,8 @@ static void gen_shift_flags(DisasContext *s, TCGMemOp ot, TCGv result,
     if (s->cc_op == CC_OP_DYNAMIC) {
         oldop = cpu_cc_op;
     } else {
-        tcg_gen_movi_i32(tcg_ctx, cpu_tmp3_i32, s->cc_op);
-        oldop = cpu_tmp3_i32;
+        tcg_gen_movi_i32(tcg_ctx, s->tmp3_i32, s->cc_op);
+        oldop = s->tmp3_i32;
     }
 
     /* Conditionally store the CC_OP value.  */
@@ -1691,7 +1690,6 @@ static void gen_rot_rm_T1(DisasContext *s, TCGMemOp ot, int op1, int is_right)
     target_ulong mask = (ot == MO_64 ? 0x3f : 0x1f);
     TCGv_i32 t0, t1;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    TCGv_i32 cpu_tmp3_i32 = tcg_ctx->cpu_tmp3_i32;
     TCGv_i32 cpu_cc_op = tcg_ctx->cpu_cc_op;
     TCGv cpu_cc_dst = tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src2 = tcg_ctx->cpu_cc_src2;
@@ -1719,11 +1717,11 @@ static void gen_rot_rm_T1(DisasContext *s, TCGMemOp ot, int op1, int is_right)
 #ifdef TARGET_X86_64
     case MO_32:
         tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp2_i32, s->T0);
-        tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp3_i32, s->T1);
+        tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp3_i32, s->T1);
         if (is_right) {
-            tcg_gen_rotr_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, cpu_tmp3_i32);
+            tcg_gen_rotr_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, s->tmp3_i32);
         } else {
-            tcg_gen_rotl_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, cpu_tmp3_i32);
+            tcg_gen_rotl_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, s->tmp3_i32);
         }
         tcg_gen_extu_i32_tl(tcg_ctx, s->T0, s->tmp2_i32);
         break;
@@ -1766,9 +1764,9 @@ static void gen_rot_rm_T1(DisasContext *s, TCGMemOp ot, int op1, int is_right)
     t1 = tcg_temp_new_i32(tcg_ctx);
     tcg_gen_trunc_tl_i32(tcg_ctx, t1, s->T1);
     tcg_gen_movi_i32(tcg_ctx, s->tmp2_i32, CC_OP_ADCOX);
-    tcg_gen_movi_i32(tcg_ctx, cpu_tmp3_i32, CC_OP_EFLAGS);
+    tcg_gen_movi_i32(tcg_ctx, s->tmp3_i32, CC_OP_EFLAGS);
     tcg_gen_movcond_i32(tcg_ctx, TCG_COND_NE, cpu_cc_op, t1, t0,
-                        s->tmp2_i32, cpu_tmp3_i32);
+                        s->tmp2_i32, s->tmp3_i32);
     tcg_temp_free_i32(tcg_ctx, t0);
     tcg_temp_free_i32(tcg_ctx, t1);
 
@@ -3487,7 +3485,6 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
     TCGMemOp ot;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_ptr cpu_env = tcg_ctx->cpu_env;
-    TCGv_i32 cpu_tmp3_i32 = tcg_ctx->cpu_tmp3_i32;
     TCGv_i64 cpu_tmp1_i64 = tcg_ctx->cpu_tmp1_i64;
     TCGv cpu_cc_dst = tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src = tcg_ctx->cpu_cc_src;
@@ -4353,11 +4350,11 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                 switch (ot) {
                 default:
                     tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp2_i32, s->T0);
-                    tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp3_i32, cpu_regs[R_EDX]);
-                    tcg_gen_mulu2_i32(tcg_ctx, s->tmp2_i32, cpu_tmp3_i32,
-                                      s->tmp2_i32, cpu_tmp3_i32);
+                    tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp3_i32, cpu_regs[R_EDX]);
+                    tcg_gen_mulu2_i32(tcg_ctx, s->tmp2_i32, s->tmp3_i32,
+                                      s->tmp2_i32, s->tmp3_i32);
                     tcg_gen_extu_i32_tl(tcg_ctx, cpu_regs[s->vex_v], s->tmp2_i32);
-                    tcg_gen_extu_i32_tl(tcg_ctx, cpu_regs[reg], cpu_tmp3_i32);
+                    tcg_gen_extu_i32_tl(tcg_ctx, cpu_regs[reg], s->tmp3_i32);
                     break;
 #ifdef TARGET_X86_64
                 case MO_64:
@@ -4947,7 +4944,6 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     target_ulong pc_start = s->base.pc_next;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_ptr cpu_env = tcg_ctx->cpu_env;
-    TCGv_i32 cpu_tmp3_i32 = tcg_ctx->cpu_tmp3_i32;
     TCGv_i64 cpu_tmp1_i64 = tcg_ctx->cpu_tmp1_i64;
     TCGv cpu_cc_dst = tcg_ctx->cpu_cc_dst;
     TCGv cpu_cc_src = tcg_ctx->cpu_cc_src;
@@ -5420,11 +5416,11 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             default:
             case MO_32:
                 tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp2_i32, s->T0);
-                tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp3_i32, cpu_regs[R_EAX]);
-                tcg_gen_mulu2_i32(tcg_ctx, s->tmp2_i32, cpu_tmp3_i32,
-                                  s->tmp2_i32, cpu_tmp3_i32);
+                tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp3_i32, cpu_regs[R_EAX]);
+                tcg_gen_mulu2_i32(tcg_ctx, s->tmp2_i32, s->tmp3_i32,
+                                  s->tmp2_i32, s->tmp3_i32);
                 tcg_gen_extu_i32_tl(tcg_ctx, cpu_regs[R_EAX], s->tmp2_i32);
-                tcg_gen_extu_i32_tl(tcg_ctx, cpu_regs[R_EDX], cpu_tmp3_i32);
+                tcg_gen_extu_i32_tl(tcg_ctx, cpu_regs[R_EDX], s->tmp3_i32);
                 tcg_gen_mov_tl(tcg_ctx, cpu_cc_dst, cpu_regs[R_EAX]);
                 tcg_gen_mov_tl(tcg_ctx, cpu_cc_src, cpu_regs[R_EDX]);
                 set_cc_op(s, CC_OP_MULL);
@@ -5471,14 +5467,14 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             default:
             case MO_32:
                 tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp2_i32, s->T0);
-                tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp3_i32, cpu_regs[R_EAX]);
-                tcg_gen_muls2_i32(tcg_ctx, s->tmp2_i32, cpu_tmp3_i32,
-                                  s->tmp2_i32, cpu_tmp3_i32);
+                tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp3_i32, cpu_regs[R_EAX]);
+                tcg_gen_muls2_i32(tcg_ctx, s->tmp2_i32, s->tmp3_i32,
+                                  s->tmp2_i32, s->tmp3_i32);
                 tcg_gen_extu_i32_tl(tcg_ctx, cpu_regs[R_EAX], s->tmp2_i32);
-                tcg_gen_extu_i32_tl(tcg_ctx, cpu_regs[R_EDX], cpu_tmp3_i32);
+                tcg_gen_extu_i32_tl(tcg_ctx, cpu_regs[R_EDX], s->tmp3_i32);
                 tcg_gen_sari_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, 31);
                 tcg_gen_mov_tl(tcg_ctx, cpu_cc_dst, cpu_regs[R_EAX]);
-                tcg_gen_sub_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, cpu_tmp3_i32);
+                tcg_gen_sub_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, s->tmp3_i32);
                 tcg_gen_extu_i32_tl(tcg_ctx, cpu_cc_src, s->tmp2_i32);
                 set_cc_op(s, CC_OP_MULL);
                 break;
@@ -5748,13 +5744,13 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 #endif
         case MO_32:
             tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp2_i32, s->T0);
-            tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp3_i32, s->T1);
-            tcg_gen_muls2_i32(tcg_ctx, s->tmp2_i32, cpu_tmp3_i32,
-                              s->tmp2_i32, cpu_tmp3_i32);
+            tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp3_i32, s->T1);
+            tcg_gen_muls2_i32(tcg_ctx, s->tmp2_i32, s->tmp3_i32,
+                              s->tmp2_i32, s->tmp3_i32);
             tcg_gen_extu_i32_tl(tcg_ctx, cpu_regs[reg], s->tmp2_i32);
             tcg_gen_sari_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, 31);
             tcg_gen_mov_tl(tcg_ctx, cpu_cc_dst, cpu_regs[reg]);
-            tcg_gen_sub_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, cpu_tmp3_i32);
+            tcg_gen_sub_i32(tcg_ctx, s->tmp2_i32, s->tmp2_i32, s->tmp3_i32);
             tcg_gen_extu_i32_tl(tcg_ctx, cpu_cc_src, s->tmp2_i32);
             break;
         default:
@@ -6966,8 +6962,8 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
                      svm_is_rep(prefixes));
         gen_op_mov_v_reg(s, ot, s->T1, R_EAX);
         tcg_gen_movi_i32(tcg_ctx, s->tmp2_i32, val);
-        tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp3_i32, s->T1);
-        gen_helper_out_func(s, ot, s->tmp2_i32, cpu_tmp3_i32);
+        tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp3_i32, s->T1);
+        gen_helper_out_func(s, ot, s->tmp2_i32, s->tmp3_i32);
         gen_bpt_io(s, s->tmp2_i32, ot);
 
         break;
@@ -6991,8 +6987,8 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         gen_op_mov_v_reg(s, ot, s->T1, R_EAX);
 
         tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp2_i32, s->T0);
-        tcg_gen_trunc_tl_i32(tcg_ctx, cpu_tmp3_i32, s->T1);
-        gen_helper_out_func(s, ot, s->tmp2_i32, cpu_tmp3_i32);
+        tcg_gen_trunc_tl_i32(tcg_ctx, s->tmp3_i32, s->T1);
+        gen_helper_out_func(s, ot, s->tmp2_i32, s->tmp3_i32);
         gen_bpt_io(s, s->tmp2_i32, ot);
         break;
 
@@ -9124,7 +9120,7 @@ static void i386_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cpu)
 
     tcg_ctx->cpu_tmp1_i64 = tcg_temp_new_i64(tcg_ctx);
     dc->tmp2_i32 = tcg_temp_new_i32(tcg_ctx);
-    tcg_ctx->cpu_tmp3_i32 = tcg_temp_new_i32(tcg_ctx);
+    dc->tmp3_i32 = tcg_temp_new_i32(tcg_ctx);
     dc->ptr0 = tcg_temp_new_ptr(tcg_ctx);
     dc->ptr1 = tcg_temp_new_ptr(tcg_ctx);
 
