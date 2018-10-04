@@ -443,6 +443,20 @@ static void adjust_endianness(MemoryRegion *mr, uint64_t *data, unsigned size)
     }
 }
 
+static inline void memory_region_shift_read_access(uint64_t *value,
+                                                   unsigned shift,
+                                                   uint64_t mask,
+                                                   uint64_t tmp)
+{
+    *value |= (tmp & mask) << shift;
+}
+static inline uint64_t memory_region_shift_write_access(uint64_t *value,
+                                                        unsigned shift,
+                                                        uint64_t mask)
+{
+    return (*value >> shift) & mask;
+}
+
 static MemTxResult memory_region_oldmmio_read_accessor(MemoryRegion *mr,
                                                        hwaddr addr,
                                                        uint64_t *value,
@@ -456,7 +470,7 @@ static MemTxResult memory_region_oldmmio_read_accessor(MemoryRegion *mr,
     tmp = mr->ops->old_mmio.read[ctz32(size)](mr->opaque, addr);
     // UNICORN: Commented out
     //trace_memory_region_ops_read(mr, addr, tmp, size);
-    *value |= (tmp & mask) << shift;
+    memory_region_shift_read_access(value, shift, mask, tmp);
     return MEMTX_OK;
 }
 
@@ -475,7 +489,7 @@ static MemTxResult  memory_region_read_accessor(MemoryRegion *mr,
     //    qemu_flush_coalesced_mmio_buffer();
     //}
     tmp = mr->ops->read(mr->uc, mr->opaque, addr, size);
-    *value |= (tmp & mask) << shift;
+    memory_region_shift_read_access(value, shift, mask, tmp);
     return MEMTX_OK;
 }
 
@@ -497,7 +511,7 @@ static MemTxResult memory_region_read_with_attrs_accessor(MemoryRegion *mr,
     r = mr->ops->read_with_attrs(mr->uc, mr->opaque, addr, &tmp, size, attrs);
     // UNICORN: Commented out
     //trace_memory_region_ops_read(mr, addr, tmp, size);
-    *value |= (tmp & mask) << shift;
+    memory_region_shift_read_access(value, shift, mask, tmp);
     return r;
 }
 
@@ -509,9 +523,8 @@ static MemTxResult memory_region_oldmmio_write_accessor(MemoryRegion *mr,
                                                         uint64_t mask,
                                                         MemTxAttrs attrs)
 {
-    uint64_t tmp;
+    uint64_t tmp = memory_region_shift_write_access(value, shift, mask);
 
-    tmp = (*value >> shift) & mask;
     mr->ops->old_mmio.write[ctz32(size)](mr->opaque, addr, tmp);
     return MEMTX_OK;
 }
@@ -524,9 +537,8 @@ static MemTxResult memory_region_write_accessor(MemoryRegion *mr,
                                                 uint64_t mask,
                                                 MemTxAttrs attrs)
 {
-    uint64_t tmp;
+    uint64_t tmp = memory_region_shift_write_access(value, shift, mask);
 
-    tmp = (*value >> shift) & mask;
     mr->ops->write(mr->uc, mr->opaque, addr, tmp, size);
     return MEMTX_OK;
 }
@@ -539,14 +551,12 @@ static MemTxResult memory_region_write_with_attrs_accessor(MemoryRegion *mr,
                                                            uint64_t mask,
                                                            MemTxAttrs attrs)
 {
-    uint64_t tmp;
+    uint64_t tmp = memory_region_shift_write_access(value, shift, mask);
 
     // UNICORN: Commented out
     //if (mr->flush_coalesced_mmio) {
     //    qemu_flush_coalesced_mmio_buffer();
     //}
-    tmp = (*value >> shift) & mask;
-    // UNICORN: Commented out
     //trace_memory_region_ops_write(mr, addr, tmp, size);
     return mr->ops->write_with_attrs(mr->uc, mr->opaque, addr, tmp, size, attrs);
 }
