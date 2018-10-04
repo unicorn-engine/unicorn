@@ -124,6 +124,7 @@ typedef struct DisasContext {
     TCGv tmp0;
     TCGv tmp4;
     TCGv_ptr ptr0;
+    TCGv_ptr ptr1;
 
     sigjmp_buf jmpbuf;
     struct uc_struct *uc;
@@ -3496,7 +3497,6 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
     TCGMemOp ot;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_ptr cpu_env = tcg_ctx->cpu_env;
-    TCGv_ptr cpu_ptr1 = tcg_ctx->cpu_ptr1;
     TCGv_i32 cpu_tmp2_i32 = tcg_ctx->cpu_tmp2_i32;
     TCGv_i32 cpu_tmp3_i32 = tcg_ctx->cpu_tmp3_i32;
     TCGv_i64 cpu_tmp1_i64 = tcg_ctx->cpu_tmp1_i64;
@@ -3929,8 +3929,8 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                 op2_offset = offsetof(CPUX86State,fpregs[rm].mmx);
             }
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, cpu_env, op2_offset);
-            tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op1_offset);
-            sse_fn_epp(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+            tcg_gen_addi_ptr(tcg_ctx, s->ptr1, cpu_env, op1_offset);
+            sse_fn_epp(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
             break;
         case 0x050: /* movmskps */
             rm = (modrm & 7) | REX_B(s);
@@ -3959,14 +3959,14 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             }
             op1_offset = offsetof(CPUX86State,xmm_regs[reg]);
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, cpu_env, op1_offset);
-            tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
+            tcg_gen_addi_ptr(tcg_ctx, s->ptr1, cpu_env, op2_offset);
             switch(b >> 8) {
             case 0x0:
-                gen_helper_cvtpi2ps(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+                gen_helper_cvtpi2ps(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
                 break;
             default:
             case 0x1:
-                gen_helper_cvtpi2pd(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+                gen_helper_cvtpi2pd(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
                 break;
             }
             break;
@@ -4004,19 +4004,19 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             }
             op1_offset = offsetof(CPUX86State,fpregs[reg & 7].mmx);
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, cpu_env, op1_offset);
-            tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
+            tcg_gen_addi_ptr(tcg_ctx, s->ptr1, cpu_env, op2_offset);
             switch(b) {
             case 0x02c:
-                gen_helper_cvttps2pi(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+                gen_helper_cvttps2pi(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
                 break;
             case 0x12c:
-                gen_helper_cvttpd2pi(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+                gen_helper_cvttpd2pi(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
                 break;
             case 0x02d:
-                gen_helper_cvtps2pi(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+                gen_helper_cvtps2pi(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
                 break;
             case 0x12d:
-                gen_helper_cvtpd2pi(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+                gen_helper_cvtpd2pi(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
                 break;
             }
             break;
@@ -4202,8 +4202,8 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             }
 
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, cpu_env, op1_offset);
-            tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
-            sse_fn_epp(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+            tcg_gen_addi_ptr(tcg_ctx, s->ptr1, cpu_env, op2_offset);
+            sse_fn_epp(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
 
             if (b == 0x17) {
                 set_cc_op(s, CC_OP_EFLAGS);
@@ -4751,8 +4751,8 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             }
 
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, cpu_env, op1_offset);
-            tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
-            sse_fn_eppi(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1, tcg_const_i32(tcg_ctx, val));
+            tcg_gen_addi_ptr(tcg_ctx, s->ptr1, cpu_env, op2_offset);
+            sse_fn_eppi(tcg_ctx, cpu_env, s->ptr0, s->ptr1, tcg_const_i32(tcg_ctx, val));
             break;
 
         case 0x33a:
@@ -4871,17 +4871,17 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
                 goto illegal_op;
             }
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, cpu_env, op1_offset);
-            tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
-            sse_fn_epp(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+            tcg_gen_addi_ptr(tcg_ctx, s->ptr1, cpu_env, op2_offset);
+            sse_fn_epp(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
             break;
         case 0x70: /* pshufx insn */
         case 0xc6: /* pshufx insn */
             val = x86_ldub_code(env, s);
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, cpu_env, op1_offset);
-            tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
+            tcg_gen_addi_ptr(tcg_ctx, s->ptr1, cpu_env, op2_offset);
             /* XXX: introduce a new table? */
             sse_fn_ppi = (SSEFunc_0_ppi)sse_fn_epp;
-            sse_fn_ppi(tcg_ctx, s->ptr0, cpu_ptr1, tcg_const_i32(tcg_ctx, val));
+            sse_fn_ppi(tcg_ctx, s->ptr0, s->ptr1, tcg_const_i32(tcg_ctx, val));
             break;
         case 0xc2:
             /* compare insns */
@@ -4891,8 +4891,8 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             sse_fn_epp = sse_op_table4[val][b1];
 
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, cpu_env, op1_offset);
-            tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
-            sse_fn_epp(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+            tcg_gen_addi_ptr(tcg_ctx, s->ptr1, cpu_env, op2_offset);
+            sse_fn_epp(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
             break;
         case 0xf7:
             /* maskmov : we must prepare A0 */
@@ -4903,15 +4903,15 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
             gen_add_A0_ds_seg(s);
 
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, cpu_env, op1_offset);
-            tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
+            tcg_gen_addi_ptr(tcg_ctx, s->ptr1, cpu_env, op2_offset);
             /* XXX: introduce a new table? */
             sse_fn_eppt = (SSEFunc_0_eppt)sse_fn_epp;
-            sse_fn_eppt(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1, s->A0);
+            sse_fn_eppt(tcg_ctx, cpu_env, s->ptr0, s->ptr1, s->A0);
             break;
         default:
             tcg_gen_addi_ptr(tcg_ctx, s->ptr0, cpu_env, op1_offset);
-            tcg_gen_addi_ptr(tcg_ctx, cpu_ptr1, cpu_env, op2_offset);
-            sse_fn_epp(tcg_ctx, cpu_env, s->ptr0, cpu_ptr1);
+            tcg_gen_addi_ptr(tcg_ctx, s->ptr1, cpu_env, op2_offset);
+            sse_fn_epp(tcg_ctx, cpu_env, s->ptr0, s->ptr1);
             break;
         }
         if (b == 0x2e || b == 0x2f) {
@@ -9138,7 +9138,7 @@ static void i386_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cpu)
     tcg_ctx->cpu_tmp2_i32 = tcg_temp_new_i32(tcg_ctx);
     tcg_ctx->cpu_tmp3_i32 = tcg_temp_new_i32(tcg_ctx);
     dc->ptr0 = tcg_temp_new_ptr(tcg_ctx);
-    tcg_ctx->cpu_ptr1 = tcg_temp_new_ptr(tcg_ctx);
+    dc->ptr1 = tcg_temp_new_ptr(tcg_ctx);
 
     dc->cc_srcT = tcg_temp_local_new(tcg_ctx);
 
