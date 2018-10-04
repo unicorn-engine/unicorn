@@ -822,7 +822,6 @@ struct TCGContext {
     int x86_64_hregs;   // qemu/target-i386/translate.c
 
     /* qemu/target-i386/translate.c: global TCGv vars */
-    TCGv cpu_A0;
     TCGv cpu_cc_dst;
     TCGv cpu_cc_src;
     TCGv cpu_cc_src2;
