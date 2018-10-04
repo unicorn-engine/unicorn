@@ -444,24 +444,36 @@ static void adjust_endianness(MemoryRegion *mr, uint64_t *data, unsigned size)
 }
 
 static inline void memory_region_shift_read_access(uint64_t *value,
-                                                   unsigned shift,
+                                                   signed shift,
                                                    uint64_t mask,
                                                    uint64_t tmp)
 {
-    *value |= (tmp & mask) << shift;
+    if (shift >= 0) {
+        *value |= (tmp & mask) << shift;
+    } else {
+        *value |= (tmp & mask) >> -shift;
+    }
 }
 static inline uint64_t memory_region_shift_write_access(uint64_t *value,
-                                                        unsigned shift,
+                                                        signed shift,
                                                         uint64_t mask)
 {
-    return (*value >> shift) & mask;
+    uint64_t tmp;
+
+    if (shift >= 0) {
+        tmp = (*value >> shift) & mask;
+    } else {
+        tmp = (*value << -shift) & mask;
+    }
+
+    return tmp;
 }
 
 static MemTxResult memory_region_oldmmio_read_accessor(MemoryRegion *mr,
                                                        hwaddr addr,
                                                        uint64_t *value,
                                                        unsigned size,
-                                                       unsigned shift,
+                                                       signed shift,
                                                        uint64_t mask,
                                                        MemTxAttrs attrs)
 {
@@ -478,7 +490,7 @@ static MemTxResult  memory_region_read_accessor(MemoryRegion *mr,
                                                 hwaddr addr,
                                                 uint64_t *value,
                                                 unsigned size,
-                                                unsigned shift,
+                                                signed shift,
                                                 uint64_t mask,
                                                 MemTxAttrs attrs)
 {
@@ -497,7 +509,7 @@ static MemTxResult memory_region_read_with_attrs_accessor(MemoryRegion *mr,
                                                           hwaddr addr,
                                                           uint64_t *value,
                                                           unsigned size,
-                                                          unsigned shift,
+                                                          signed shift,
                                                           uint64_t mask,
                                                           MemTxAttrs attrs)
 {
@@ -519,7 +531,7 @@ static MemTxResult memory_region_oldmmio_write_accessor(MemoryRegion *mr,
                                                         hwaddr addr,
                                                         uint64_t *value,
                                                         unsigned size,
-                                                        unsigned shift,
+                                                        signed shift,
                                                         uint64_t mask,
                                                         MemTxAttrs attrs)
 {
@@ -533,7 +545,7 @@ static MemTxResult memory_region_write_accessor(MemoryRegion *mr,
                                                 hwaddr addr,
                                                 uint64_t *value,
                                                 unsigned size,
-                                                unsigned shift,
+                                                signed shift,
                                                 uint64_t mask,
                                                 MemTxAttrs attrs)
 {
@@ -547,7 +559,7 @@ static MemTxResult memory_region_write_with_attrs_accessor(MemoryRegion *mr,
                                                            hwaddr addr,
                                                            uint64_t *value,
                                                            unsigned size,
-                                                           unsigned shift,
+                                                           signed shift,
                                                            uint64_t mask,
                                                            MemTxAttrs attrs)
 {
@@ -571,7 +583,7 @@ static MemTxResult access_with_adjusted_size(hwaddr addr,
                                                    hwaddr addr,
                                                    uint64_t *value,
                                                    unsigned size,
-                                                   unsigned shift,
+                                                   signed shift,
                                                    uint64_t mask,
                                                    MemTxAttrs attrs),
                                       MemoryRegion *mr,
