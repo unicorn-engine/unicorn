@@ -2109,7 +2109,6 @@
 #define object_resolve_path_type object_resolve_path_type_x86_64
 #define object_set_link_property object_set_link_property_x86_64
 #define object_type_get_instance_size object_type_get_instance_size_x86_64
-#define object_unparent object_unparent_x86_64
 #define omap_cachemaint_write omap_cachemaint_write_x86_64
 #define omap_cp_reginfo omap_cp_reginfo_x86_64
 #define omap_threadid_write omap_threadid_write_x86_64

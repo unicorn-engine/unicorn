@@ -1382,6 +1382,7 @@ void memory_region_init_ram_nomigrate(struct uc_struct *uc,
                                       uint32_t perms,
                                       Error **errp)
 {
+    Error *err = NULL;
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
     if (!(perms & UC_PROT_WRITE)) {
@@ -1390,8 +1391,13 @@ void memory_region_init_ram_nomigrate(struct uc_struct *uc,
     mr->perms = perms;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
-    mr->ram_block = qemu_ram_alloc(size, mr, errp);
+    mr->ram_block = qemu_ram_alloc(size, mr, &err);
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
+    if (err) {
+        mr->size = int128_zero();
+        object_unparent(uc, OBJECT(mr));
+        error_propagate(errp, err);
+    }
 }
 
 void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
@@ -1422,13 +1428,19 @@ void memory_region_init_resizeable_ram(struct uc_struct *uc,
                                                        void *host),
                                        Error **errp)
 {
+    Error *err = NULL;
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
     mr->ram_block = qemu_ram_alloc_resizeable(size, max_size, resized,
-                                              mr, errp);
+                                              mr, &err);
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
+    if (err) {
+        mr->size = int128_zero();
+        object_unparent(uc, OBJECT(mr));
+        error_propagate(errp, err);
+    }
 }
 
 void memory_region_init_rom_nomigrate(struct uc_struct *uc,
@@ -1438,13 +1450,19 @@ void memory_region_init_rom_nomigrate(struct uc_struct *uc,
                                       uint64_t size,
                                       Error **errp)
 {
+    Error *err = NULL;
     memory_region_init(uc, mr, owner, name, size);
     mr->ram = true;
     mr->readonly = true;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram;
-    mr->ram_block = qemu_ram_alloc(size, mr, errp);
+    mr->ram_block = qemu_ram_alloc(size, mr, &err);
     mr->dirty_log_mask = tcg_enabled(uc) ? (1 << DIRTY_MEMORY_CODE) : 0;
+    if (err) {
+        mr->size = int128_zero();
+        object_unparent(uc, OBJECT(mr));
+        error_propagate(errp, err);
+    }
 }
 
 void memory_region_init_ram_device_ptr(struct uc_struct *uc,

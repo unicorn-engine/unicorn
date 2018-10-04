@@ -2109,7 +2109,6 @@
 #define object_resolve_path_type object_resolve_path_type_sparc64
 #define object_set_link_property object_set_link_property_sparc64
 #define object_type_get_instance_size object_type_get_instance_size_sparc64
-#define object_unparent object_unparent_sparc64
 #define omap_cachemaint_write omap_cachemaint_write_sparc64
 #define omap_cp_reginfo omap_cp_reginfo_sparc64
 #define omap_threadid_write omap_threadid_write_sparc64
