@@ -273,7 +273,18 @@ static void type_initialize(struct uc_struct *uc, TypeImpl *ti)
 
     ti->class_size = type_class_get_size(uc, ti);
     ti->instance_size = type_object_get_size(uc, ti);
+    if (ti->instance_size == 0) {
+        ti->abstract = true;
+    }
 
+    if (type_is_ancestor(uc, ti, uc->type_interface)) {
+        assert(ti->instance_size == 0);
+        assert(ti->abstract);
+        assert(!ti->instance_init);
+        assert(!ti->instance_post_init);
+        assert(!ti->instance_finalize);
+        assert(!ti->num_interfaces);
+    }
     ti->class = g_malloc0(ti->class_size);
 
     parent = type_get_parent(uc, ti);
