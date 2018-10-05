@@ -33,7 +33,6 @@ library
   build-depends:         base >=4 && <5
                        , bytestring >= 0.9.1
                        , transformers < 0.6
-                       , either >= 4.4
   hs-source-dirs:      src
   c-sources:           src/cbits/unicorn_wrapper.c
   include-dirs:        src/include

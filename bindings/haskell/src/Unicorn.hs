@@ -53,9 +53,9 @@ module Unicorn
     , version
     ) where
 
-import Control.Monad (liftM)
+import Control.Monad (join, liftM)
 import Control.Monad.Trans.Class (lift)
-import Control.Monad.Trans.Either (hoistEither, left, right, runEitherT)
+import Control.Monad.Trans.Except (throwE, runExceptT)
 import Data.ByteString (ByteString, pack)
 import Foreign
 import Prelude hiding (until)
@@ -73,7 +73,7 @@ runEmulator :: Emulator a           -- ^ The emulation code to execute
             -> IO (Either Error a)  -- ^ A result on success, or an 'Error' on
                                     -- failure
 runEmulator =
-    runEitherT
+    runExceptT
 
 -- | Create a new instance of the Unicorn engine.
 open :: Architecture    -- ^ CPU architecture
@@ -88,7 +88,7 @@ open arch mode = do
         lift $ mkEngine ucPtr
     else
         -- Otherwise return the error
-        left err
+        throwE err
 
 -- | Query internal status of the Unicorn engine.
 query :: Engine         -- ^ 'Unicorn' engine handle
@@ -97,9 +97,9 @@ query :: Engine         -- ^ 'Unicorn' engine handle
 query uc queryType = do
     (err, result) <- lift $ ucQuery uc queryType
     if err == ErrOk then
-        right result
+        pure result
     else
-        left err
+        throwE err
 
 -- | Emulate machine code for a specific duration of time.
 start :: Engine         -- ^ 'Unicorn' engine handle
@@ -117,9 +117,9 @@ start :: Engine         -- ^ 'Unicorn' engine handle
 start uc begin until timeout count = do
     err <- lift $ ucEmuStart uc begin until (maybeZ timeout) (maybeZ count)
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
     where maybeZ = maybe 0 id
 
 -- | Stop emulation (which was started by 'start').
@@ -131,9 +131,9 @@ stop :: Engine      -- ^ 'Unicorn' engine handle
 stop uc = do
     err <- lift $ ucEmuStop uc
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
 
 -------------------------------------------------------------------------------
 -- Register operations
@@ -148,9 +148,9 @@ regWrite :: Reg r
 regWrite uc reg value = do
     err <- lift $ ucRegWrite uc reg value
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
 
 -- | Read register value.
 regRead :: Reg r
@@ -161,9 +161,9 @@ regRead :: Reg r
 regRead uc reg = do
     (err, val) <- lift $ ucRegRead uc reg
     if err == ErrOk then
-        right val
+        pure val
     else
-        left err
+        throwE err
 
 -- | Write multiple register values.
 regWriteBatch :: Reg r
@@ -174,9 +174,9 @@ regWriteBatch :: Reg r
 regWriteBatch uc regs vals = do
     err <- lift $ ucRegWriteBatch uc regs vals (length regs)
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
 
 -- | Read multiple register values.
 regReadBatch ::  Reg r
@@ -187,16 +187,15 @@ regReadBatch ::  Reg r
 regReadBatch uc regs = do
     -- Allocate an array of the given size
     let size = length regs
-    result <- lift . allocaArray size $ \array -> do
+    join . lift . allocaArray size $ \array -> do
         err <- ucRegReadBatch uc regs array size
         if err == ErrOk then
             -- If ucRegReadBatch completed successfully, pack the contents of
             -- the array into a list and return it
-            liftM Right (peekArray size array)
+            liftM pure (peekArray size array)
         else
             -- Otherwise return the error
-            return $ Left err
-    hoistEither result
+            return $ throwE err
 
 -------------------------------------------------------------------------------
 -- Memory operations
@@ -210,9 +209,9 @@ memWrite :: Engine      -- ^ 'Unicorn' engine handle
 memWrite uc address bytes = do
     err <- lift $ ucMemWrite uc address bytes
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
 
 -- | Read memory contents.
 memRead :: Engine                       -- ^ 'Unicorn' engine handle
@@ -223,16 +222,15 @@ memRead :: Engine                       -- ^ 'Unicorn' engine handle
                                         -- an 'Error' on failure
 memRead uc address size = do
     -- Allocate an array of the given size
-    result <- lift . allocaArray size $ \array -> do
+    join . lift . allocaArray size $ \array -> do
         err <- ucMemRead uc address array size
         if err == ErrOk then
             -- If ucMemRead completed successfully, pack the contents of the
             -- array into a ByteString and return it
-            liftM (Right . pack) (peekArray size array)
+            liftM (pure . pack) (peekArray size array)
         else
             -- Otherwise return the error
-            return $ Left err
-    hoistEither result
+            return $ throwE err
 
 -- | Map a range of memory.
 memMap :: Engine                -- ^ 'Unicorn' engine handle
@@ -248,9 +246,9 @@ memMap :: Engine                -- ^ 'Unicorn' engine handle
 memMap uc address size perms = do
     err <- lift $ ucMemMap uc address size perms
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
 
 -- | Unmap a range of memory.
 memUnmap :: Engine      -- ^ 'Unicorn' engine handle
@@ -264,9 +262,9 @@ memUnmap :: Engine      -- ^ 'Unicorn' engine handle
 memUnmap uc address size = do
     err <- lift $ ucMemUnmap uc address size
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
 
 -- | Change permissions on a range of memory.
 memProtect :: Engine                -- ^ 'Unicorn' engine handle
@@ -283,9 +281,9 @@ memProtect :: Engine                -- ^ 'Unicorn' engine handle
 memProtect uc address size perms = do
     err <- lift $ ucMemProtect uc address size perms
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
 
 -- | Retrieve all memory regions mapped by 'memMap'. 
 memRegions :: Engine                    -- ^ 'Unicorn' engine handle
@@ -294,9 +292,9 @@ memRegions uc = do
     (err, regionPtr, count) <- lift $ ucMemRegions uc
     if err == ErrOk then do
         regions <- lift $ peekArray count regionPtr
-        right regions
+        pure regions
     else
-        left err
+        throwE err
 
 -------------------------------------------------------------------------------
 -- Context operations
@@ -314,7 +312,7 @@ contextAllocate uc = do
         -- Return a CPU context if ucContextAlloc completed successfully
         lift $ mkContext contextPtr
     else
-        left err
+        throwE err
 
 -- | Save a copy of the internal CPU context.
 contextSave :: Engine       -- ^ 'Unicorn' engine handle
@@ -323,9 +321,9 @@ contextSave :: Engine       -- ^ 'Unicorn' engine handle
 contextSave uc context = do
     err <- lift $ ucContextSave uc context
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
 
 -- | Restore the current CPU context from a saved copy.
 contextRestore :: Engine        -- ^ 'Unicorn' engine handle
@@ -334,9 +332,9 @@ contextRestore :: Engine        -- ^ 'Unicorn' engine handle
 contextRestore uc context = do
     err <- lift $ ucContextRestore uc context
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
 
 -------------------------------------------------------------------------------
 -- Misc.
