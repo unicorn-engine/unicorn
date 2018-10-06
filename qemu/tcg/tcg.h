@@ -825,9 +825,6 @@ struct TCGContext {
     TCGv cpu_cc_src;
     TCGv cpu_cc_src2;
 
-    /* qemu/target-i386/translate.c: local register indexes (only used inside old micro ops) */
-    TCGv_i64 cpu_tmp1_i64;
-
     /* qemu/tcg/i386/tcg-target.c */
     void *tb_ret_addr;
     int guest_base_flags;
