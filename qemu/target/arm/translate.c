@@ -1434,7 +1434,7 @@ static inline void gen_vfp_##name(DisasContext *s, int dp)                      
     if (dp) {                                                         \
         gen_helper_vfp_##name##d(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F1d, fpst);    \
     } else {                                                          \
-        gen_helper_vfp_##name##s(tcg_ctx, s->F0s, s->F0s, tcg_ctx->cpu_F1s, fpst);    \
+        gen_helper_vfp_##name##s(tcg_ctx, s->F0s, s->F0s, s->F1s, fpst);    \
     }                                                                 \
     tcg_temp_free_ptr(tcg_ctx, fpst);                                          \
 }
@@ -1454,7 +1454,7 @@ static inline void gen_vfp_F1_mul(DisasContext *s, int dp)
     if (dp) {
         gen_helper_vfp_muld(tcg_ctx, tcg_ctx->cpu_F1d, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F1d, fpst);
     } else {
-        gen_helper_vfp_muls(tcg_ctx, tcg_ctx->cpu_F1s, s->F0s, tcg_ctx->cpu_F1s, fpst);
+        gen_helper_vfp_muls(tcg_ctx, s->F1s, s->F0s, s->F1s, fpst);
     }
     tcg_temp_free_ptr(tcg_ctx, fpst);
 }
@@ -1466,7 +1466,7 @@ static inline void gen_vfp_F1_neg(DisasContext *s, int dp)
     if (dp) {
         gen_helper_vfp_negd(tcg_ctx, tcg_ctx->cpu_F1d, tcg_ctx->cpu_F0d);
     } else {
-        gen_helper_vfp_negs(tcg_ctx, tcg_ctx->cpu_F1s, s->F0s);
+        gen_helper_vfp_negs(tcg_ctx, s->F1s, s->F0s);
     }
 }
 
@@ -1503,7 +1503,7 @@ static inline void gen_vfp_cmp(DisasContext *s, int dp)
     if (dp)
         gen_helper_vfp_cmpd(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F1d, tcg_ctx->cpu_env);
     else
-        gen_helper_vfp_cmps(tcg_ctx, s->F0s, tcg_ctx->cpu_F1s, tcg_ctx->cpu_env);
+        gen_helper_vfp_cmps(tcg_ctx, s->F0s, s->F1s, tcg_ctx->cpu_env);
 }
 
 static inline void gen_vfp_cmpe(DisasContext *s, int dp)
@@ -1512,7 +1512,7 @@ static inline void gen_vfp_cmpe(DisasContext *s, int dp)
     if (dp)
         gen_helper_vfp_cmped(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F1d, tcg_ctx->cpu_env);
     else
-        gen_helper_vfp_cmpes(tcg_ctx, s->F0s, tcg_ctx->cpu_F1s, tcg_ctx->cpu_env);
+        gen_helper_vfp_cmpes(tcg_ctx, s->F0s, s->F1s, tcg_ctx->cpu_env);
 }
 
 static inline void gen_vfp_F1_ld0(DisasContext *s, int dp)
@@ -1521,7 +1521,7 @@ static inline void gen_vfp_F1_ld0(DisasContext *s, int dp)
     if (dp)
         tcg_gen_movi_i64(tcg_ctx, tcg_ctx->cpu_F1d, 0);
     else
-        tcg_gen_movi_i32(tcg_ctx, tcg_ctx->cpu_F1s, 0);
+        tcg_gen_movi_i32(tcg_ctx, s->F1s, 0);
 }
 
 #define VFP_GEN_ITOF(name) \
@@ -1681,7 +1681,7 @@ static inline void gen_mov_F1_vreg(DisasContext *s, int dp, int reg)
     if (dp)
         tcg_gen_ld_f64(tcg_ctx, tcg_ctx->cpu_F1d, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
     else
-        tcg_gen_ld_f32(tcg_ctx, tcg_ctx->cpu_F1s, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
+        tcg_gen_ld_f32(tcg_ctx, s->F1s, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
 }
 
 static inline void gen_mov_vreg_F0(DisasContext *s, int dp, int reg)
@@ -3905,7 +3905,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                         }
                         fpst = get_fpstatus_ptr(s, 0);
                         gen_helper_vfp_muladds(tcg_ctx, s->F0s, s->F0s,
-                                               tcg_ctx->cpu_F1s, frd, fpst);
+                                               s->F1s, frd, fpst);
                         tcg_temp_free_ptr(tcg_ctx, fpst);
                         tcg_temp_free_i32(tcg_ctx, frd);
                     }
@@ -12693,7 +12693,7 @@ static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
     }
 
     dc->F0s = tcg_temp_new_i32(tcg_ctx);
-    tcg_ctx->cpu_F1s = tcg_temp_new_i32(tcg_ctx);
+    dc->F1s = tcg_temp_new_i32(tcg_ctx);
     tcg_ctx->cpu_F0d = tcg_temp_new_i64(tcg_ctx);
     tcg_ctx->cpu_F1d = tcg_temp_new_i64(tcg_ctx);
     tcg_ctx->cpu_V0 = tcg_ctx->cpu_F0d;

@@ -872,7 +872,6 @@ struct TCGContext {
     TCGv_i32 cpu_CF, cpu_NF, cpu_VF, cpu_ZF;
     TCGv_i64 cpu_exclusive_addr;
     TCGv_i64 cpu_exclusive_val;
-    TCGv_i32 cpu_F0s, cpu_F1s;
     TCGv_i64 cpu_F0d, cpu_F1d;
 
     /* qemu/target-arm/translate-a64.c */
