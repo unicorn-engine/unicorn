@@ -940,7 +940,8 @@ static TCGv gen_ea_mode(CPUM68KState *env, DisasContext *s, int mode, int reg0,
                 offset = read_im32(env, s);
                 break;
             default:
-                g_assert_not_reached();
+                // Unicorn: Should not happen for OS_SINGLE
+                return tcg_ctx->NULL_QREG;
             }
             return mark_to_release(s, tcg_const_i32(tcg_ctx, offset));
         default:
