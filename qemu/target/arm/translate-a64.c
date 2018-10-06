@@ -1330,9 +1330,10 @@ bool sve_access_check(DisasContext *s)
  * optional shift. You will likely want to pass a temporary for the
  * destination register. See DecodeRegExtend() in the ARM ARM.
  */
-static void ext_and_shift_reg(TCGContext *tcg_ctx, TCGv_i64 tcg_out, TCGv_i64 tcg_in,
+static void ext_and_shift_reg(DisasContext *s, TCGv_i64 tcg_out, TCGv_i64 tcg_in,
                               int option, unsigned int shift)
 {
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int extsize = extract32(option, 0, 2);
     bool is_signed = extract32(option, 2, 1);
 
@@ -2834,7 +2835,7 @@ static void disas_ldst_reg_roffset(DisasContext *s, uint32_t insn,
     tcg_addr = read_cpu_reg_sp(s, rn, 1);
 
     tcg_rm = read_cpu_reg(s, rm, 1);
-    ext_and_shift_reg(tcg_ctx, tcg_rm, tcg_rm, opt, shift ? size : 0);
+    ext_and_shift_reg(s, tcg_rm, tcg_rm, opt, shift ? size : 0);
 
     tcg_gen_add_i64(tcg_ctx, tcg_addr, tcg_addr, tcg_rm);
 
@@ -4053,7 +4054,7 @@ static void disas_add_sub_ext_reg(DisasContext *s, uint32_t insn)
     tcg_rn = read_cpu_reg_sp(s, rn, sf);
 
     tcg_rm = read_cpu_reg(s, rm, sf);
-    ext_and_shift_reg(tcg_ctx, tcg_rm, tcg_rm, option, imm3);
+    ext_and_shift_reg(s, tcg_rm, tcg_rm, option, imm3);
 
     tcg_result = tcg_temp_new_i64(tcg_ctx);
 
@@ -9964,7 +9965,7 @@ static void handle_vec_simd_wshli(DisasContext *s, bool is_q, bool is_u,
 
     for (i = 0; i < elements; i++) {
         tcg_gen_shri_i64(tcg_ctx, tcg_rd, tcg_rn, i * esize);
-        ext_and_shift_reg(tcg_ctx, tcg_rd, tcg_rd, size | (!is_u << 2), 0);
+        ext_and_shift_reg(s, tcg_rd, tcg_rd, size | (!is_u << 2), 0);
         tcg_gen_shli_i64(tcg_ctx, tcg_rd, tcg_rd, shift);
         write_vec_element(s, tcg_rd, rd, i, size + 1);
     }
