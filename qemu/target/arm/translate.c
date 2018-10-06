@@ -1735,38 +1735,38 @@ static inline void gen_op_iwmmxt_movq_M0_wRn(DisasContext *s, int rn)
 static inline void gen_op_iwmmxt_orq_M0_wRn(DisasContext *s, int rn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    iwmmxt_load_reg(s, tcg_ctx->cpu_V1, rn);
-    tcg_gen_or_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tcg_ctx->cpu_V1);
+    iwmmxt_load_reg(s, s->V1, rn);
+    tcg_gen_or_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1);
 }
 
 static inline void gen_op_iwmmxt_andq_M0_wRn(DisasContext *s, int rn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    iwmmxt_load_reg(s, tcg_ctx->cpu_V1, rn);
-    tcg_gen_and_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tcg_ctx->cpu_V1);
+    iwmmxt_load_reg(s, s->V1, rn);
+    tcg_gen_and_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1);
 }
 
 static inline void gen_op_iwmmxt_xorq_M0_wRn(DisasContext *s, int rn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    iwmmxt_load_reg(s, tcg_ctx->cpu_V1, rn);
-    tcg_gen_xor_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tcg_ctx->cpu_V1);
+    iwmmxt_load_reg(s, s->V1, rn);
+    tcg_gen_xor_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1);
 }
 
 #define IWMMXT_OP(name) \
 static inline void gen_op_iwmmxt_##name##_M0_wRn(DisasContext *s, int rn) \
 { \
     TCGContext *tcg_ctx = s->uc->tcg_ctx; \
-    iwmmxt_load_reg(s, tcg_ctx->cpu_V1, rn); \
-    gen_helper_iwmmxt_##name(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tcg_ctx->cpu_V1); \
+    iwmmxt_load_reg(s, s->V1, rn); \
+    gen_helper_iwmmxt_##name(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1); \
 }
 
 #define IWMMXT_OP_ENV(name) \
 static inline void gen_op_iwmmxt_##name##_M0_wRn(DisasContext *s, int rn) \
 { \
     TCGContext *tcg_ctx = s->uc->tcg_ctx; \
-    iwmmxt_load_reg(s, tcg_ctx->cpu_V1, rn); \
-    gen_helper_iwmmxt_##name(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tcg_ctx->cpu_V1); \
+    iwmmxt_load_reg(s, s->V1, rn); \
+    gen_helper_iwmmxt_##name(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, s->V1); \
 }
 
 #define IWMMXT_OP_ENV_SIZE(name) \
@@ -1865,9 +1865,9 @@ static void gen_op_iwmmxt_setpsr_nz(DisasContext *s)
 static inline void gen_op_iwmmxt_addl_M0_wRn(DisasContext *s, int rn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    iwmmxt_load_reg(s, tcg_ctx->cpu_V1, rn);
-    tcg_gen_ext32u_i64(tcg_ctx, tcg_ctx->cpu_V1, tcg_ctx->cpu_V1);
-    tcg_gen_add_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tcg_ctx->cpu_V1);
+    iwmmxt_load_reg(s, s->V1, rn);
+    tcg_gen_ext32u_i64(tcg_ctx, s->V1, s->V1);
+    tcg_gen_add_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1);
 }
 
 static inline int gen_iwmmxt_address(DisasContext *s, uint32_t insn,
@@ -2209,8 +2209,8 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         else
             gen_op_iwmmxt_macuw_M0_wRn(s, rd1);
         if (!(insn & (1 << 20))) {
-            iwmmxt_load_reg(s, tcg_ctx->cpu_V1, wrd);
-            tcg_gen_add_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tcg_ctx->cpu_V1);
+            iwmmxt_load_reg(s, s->V1, wrd);
+            tcg_gen_add_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1);
         }
         gen_op_iwmmxt_movq_wRn_M0(s, wrd);
         gen_op_iwmmxt_set_mup(s);
@@ -2264,8 +2264,8 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         gen_op_iwmmxt_movq_M0_wRn(s, rd0);
         tmp = iwmmxt_load_creg(s, ARM_IWMMXT_wCGR0 + ((insn >> 20) & 3));
         tcg_gen_andi_i32(tcg_ctx, tmp, tmp, 7);
-        iwmmxt_load_reg(s, tcg_ctx->cpu_V1, rd1);
-        gen_helper_iwmmxt_align(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tcg_ctx->cpu_V1, tmp);
+        iwmmxt_load_reg(s, s->V1, rd1);
+        gen_helper_iwmmxt_align(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1, tmp);
         tcg_temp_free_i32(tcg_ctx, tmp);
         gen_op_iwmmxt_movq_wRn_M0(s, wrd);
         gen_op_iwmmxt_set_mup(s);
@@ -2753,8 +2753,8 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         rd1 = (insn >> 0) & 0xf;
         gen_op_iwmmxt_movq_M0_wRn(s, rd0);
         tmp = tcg_const_i32(tcg_ctx, (insn >> 20) & 3);
-        iwmmxt_load_reg(s, tcg_ctx->cpu_V1, rd1);
-        gen_helper_iwmmxt_align(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tcg_ctx->cpu_V1, tmp);
+        iwmmxt_load_reg(s, s->V1, rd1);
+        gen_helper_iwmmxt_align(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1, tmp);
         tcg_temp_free_i32(tcg_ctx, tmp);
         gen_op_iwmmxt_movq_wRn_M0(s, wrd);
         gen_op_iwmmxt_set_mup(s);
@@ -4776,7 +4776,7 @@ static void gen_nop_hint(DisasContext *s, int val)
     }
 }
 
-#define CPU_V001 s->V0, s->V0, tcg_ctx->cpu_V1
+#define CPU_V001 s->V0, s->V0, s->V1
 
 static inline void gen_neon_add(DisasContext *s, int size, TCGv_i32 t0, TCGv_i32 t1)
 {
@@ -5953,56 +5953,56 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
             /* 64-bit element instructions. */
             for (pass = 0; pass < (q ? 2 : 1); pass++) {
                 neon_load_reg64(tcg_ctx, s->V0, rn + pass);
-                neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rm + pass);
+                neon_load_reg64(tcg_ctx, s->V1, rm + pass);
                 switch (op) {
                 case NEON_3R_VQADD:
                     if (u) {
                         gen_helper_neon_qadd_u64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                 s->V0, tcg_ctx->cpu_V1);
+                                                 s->V0, s->V1);
                     } else {
                         gen_helper_neon_qadd_s64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                 s->V0, tcg_ctx->cpu_V1);
+                                                 s->V0, s->V1);
                     }
                     break;
                 case NEON_3R_VQSUB:
                     if (u) {
                         gen_helper_neon_qsub_u64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                 s->V0, tcg_ctx->cpu_V1);
+                                                 s->V0, s->V1);
                     } else {
                         gen_helper_neon_qsub_s64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                 s->V0, tcg_ctx->cpu_V1);
+                                                 s->V0, s->V1);
                     }
                     break;
                 case NEON_3R_VSHL:
                     if (u) {
-                        gen_helper_neon_shl_u64(tcg_ctx, s->V0, tcg_ctx->cpu_V1, s->V0);
+                        gen_helper_neon_shl_u64(tcg_ctx, s->V0, s->V1, s->V0);
                     } else {
-                        gen_helper_neon_shl_s64(tcg_ctx, s->V0, tcg_ctx->cpu_V1, s->V0);
+                        gen_helper_neon_shl_s64(tcg_ctx, s->V0, s->V1, s->V0);
                     }
                     break;
                 case NEON_3R_VQSHL:
                     if (u) {
                         gen_helper_neon_qshl_u64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                 tcg_ctx->cpu_V1, s->V0);
+                                                 s->V1, s->V0);
                     } else {
                         gen_helper_neon_qshl_s64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                 tcg_ctx->cpu_V1, s->V0);
+                                                 s->V1, s->V0);
                     }
                     break;
                 case NEON_3R_VRSHL:
                     if (u) {
-                        gen_helper_neon_rshl_u64(tcg_ctx, s->V0, tcg_ctx->cpu_V1, s->V0);
+                        gen_helper_neon_rshl_u64(tcg_ctx, s->V0, s->V1, s->V0);
                     } else {
-                        gen_helper_neon_rshl_s64(tcg_ctx, s->V0, tcg_ctx->cpu_V1, s->V0);
+                        gen_helper_neon_rshl_s64(tcg_ctx, s->V0, s->V1, s->V0);
                     }
                     break;
                 case NEON_3R_VQRSHL:
                     if (u) {
                         gen_helper_neon_qrshl_u64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                  tcg_ctx->cpu_V1, s->V0);
+                                                  s->V1, s->V0);
                     } else {
                         gen_helper_neon_qrshl_s64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                  tcg_ctx->cpu_V1, s->V0);
+                                                  s->V1, s->V0);
                     }
                     break;
                 case NEON_3R_VADD_VSUB:
@@ -6457,47 +6457,47 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                 for (pass = 0; pass < count; pass++) {
                     if (size == 3) {
                         neon_load_reg64(tcg_ctx, s->V0, rm + pass);
-                        tcg_gen_movi_i64(tcg_ctx, tcg_ctx->cpu_V1, imm);
+                        tcg_gen_movi_i64(tcg_ctx, s->V1, imm);
                         switch (op) {
                         case 0:  /* VSHR */
                         case 1:  /* VSRA */
                             if (u)
-                                gen_helper_neon_shl_u64(tcg_ctx, s->V0, s->V0, tcg_ctx->cpu_V1);
+                                gen_helper_neon_shl_u64(tcg_ctx, s->V0, s->V0, s->V1);
                             else
-                                gen_helper_neon_shl_s64(tcg_ctx, s->V0, s->V0, tcg_ctx->cpu_V1);
+                                gen_helper_neon_shl_s64(tcg_ctx, s->V0, s->V0, s->V1);
                             break;
                         case 2: /* VRSHR */
                         case 3: /* VRSRA */
                             if (u)
-                                gen_helper_neon_rshl_u64(tcg_ctx, s->V0, s->V0, tcg_ctx->cpu_V1);
+                                gen_helper_neon_rshl_u64(tcg_ctx, s->V0, s->V0, s->V1);
                             else
-                                gen_helper_neon_rshl_s64(tcg_ctx, s->V0, s->V0, tcg_ctx->cpu_V1);
+                                gen_helper_neon_rshl_s64(tcg_ctx, s->V0, s->V0, s->V1);
                             break;
                         case 4: /* VSRI */
                         case 5: /* VSHL, VSLI */
-                            gen_helper_neon_shl_u64(tcg_ctx, s->V0, s->V0, tcg_ctx->cpu_V1);
+                            gen_helper_neon_shl_u64(tcg_ctx, s->V0, s->V0, s->V1);
                             break;
                         case 6: /* VQSHLU */
                             gen_helper_neon_qshlu_s64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                      s->V0, tcg_ctx->cpu_V1);
+                                                      s->V0, s->V1);
                             break;
                         case 7: /* VQSHL */
                             if (u) {
                                 gen_helper_neon_qshl_u64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                         s->V0, tcg_ctx->cpu_V1);
+                                                         s->V0, s->V1);
                             } else {
                                 gen_helper_neon_qshl_s64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
-                                                         s->V0, tcg_ctx->cpu_V1);
+                                                         s->V0, s->V1);
                             }
                             break;
                         }
                         if (op == 1 || op == 3) {
                             /* Accumulate.  */
-                            neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rd + pass);
-                            tcg_gen_add_i64(tcg_ctx, s->V0, s->V0, tcg_ctx->cpu_V1);
+                            neon_load_reg64(tcg_ctx, s->V1, rd + pass);
+                            tcg_gen_add_i64(tcg_ctx, s->V0, s->V0, s->V1);
                         } else if (op == 4 || (op == 5 && u)) {
                             /* Insert */
-                            neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rd + pass);
+                            neon_load_reg64(tcg_ctx, s->V1, rd + pass);
                             uint64_t mask;
                             if (shift < -63 || shift > 63) {
                                 mask = 0;
@@ -6508,8 +6508,8 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                                     mask = 0xffffffffffffffffull << shift;
                                 }
                             }
-                            tcg_gen_andi_i64(tcg_ctx, tcg_ctx->cpu_V1, tcg_ctx->cpu_V1, ~mask);
-                            tcg_gen_or_i64(tcg_ctx, s->V0, s->V0, tcg_ctx->cpu_V1);
+                            tcg_gen_andi_i64(tcg_ctx, s->V1, s->V1, ~mask);
+                            tcg_gen_or_i64(tcg_ctx, s->V0, s->V0, s->V1);
                         }
                         neon_store_reg64(tcg_ctx, s->V0, rd + pass);
                     } else { /* size < 3 */
@@ -6616,13 +6616,13 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                 if (size == 3) {
                     tmp64 = tcg_const_i64(tcg_ctx, shift);
                     neon_load_reg64(tcg_ctx, s->V0, rm);
-                    neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rm + 1);
+                    neon_load_reg64(tcg_ctx, s->V1, rm + 1);
                     for (pass = 0; pass < 2; pass++) {
                         TCGv_i64 in;
                         if (pass == 0) {
                             in = s->V0;
                         } else {
-                            in = tcg_ctx->cpu_V1;
+                            in = s->V1;
                         }
                         if (q) {
                             if (input_unsigned) {
@@ -6931,7 +6931,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                         }
                     }
                     if (src2_wide) {
-                        neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rm + pass);
+                        neon_load_reg64(tcg_ctx, s->V1, rm + pass);
                         tmp2 = NULL;
                     } else {
                         if (pass == 1 && rd == rm) {
@@ -6940,7 +6940,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             tmp2 = neon_load_reg(tcg_ctx, rm, pass);
                         }
                         if (prewiden) {
-                            gen_neon_widen(s, tcg_ctx->cpu_V1, tmp2, size, u);
+                            gen_neon_widen(s, s->V1, tmp2, size, u);
                         }
                     }
                     switch (op) {
@@ -6993,7 +6993,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                         neon_store_reg64(tcg_ctx, s->V0, rd + pass);
                     } else if (op == 5 || (op >= 8 && op <= 11)) {
                         /* Accumulate.  */
-                        neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rd + pass);
+                        neon_load_reg64(tcg_ctx, s->V1, rd + pass);
                         switch (op) {
                         case 10: /* VMLSL */
                             gen_neon_negl(s, s->V0, size);
@@ -7006,7 +7006,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             if (op == 11) {
                                 gen_neon_negl(s, s->V0, size);
                             }
-                            gen_neon_addl_saturate(s, s->V0, tcg_ctx->cpu_V1, size);
+                            gen_neon_addl_saturate(s, s->V0, s->V1, size);
                             break;
                         default:
                             abort();
@@ -7171,7 +7171,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                         }
                         gen_neon_mull(s, s->V0, tmp, tmp2, size, u);
                         if (op != 11) {
-                            neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rd + pass);
+                            neon_load_reg64(tcg_ctx, s->V1, rd + pass);
                         }
                         switch (op) {
                         case 6:
@@ -7185,7 +7185,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             if (op == 7) {
                                 gen_neon_negl(s, s->V0, size);
                             }
-                            gen_neon_addl_saturate(s, s->V0, tcg_ctx->cpu_V1, size);
+                            gen_neon_addl_saturate(s, s->V0, s->V1, size);
                             break;
                         case 10:
                             /* no-op */
@@ -7254,12 +7254,12 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                 if (imm == 0) {
                     neon_load_reg64(tcg_ctx, s->V0, rn);
                     if (q) {
-                        neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rn + 1);
+                        neon_load_reg64(tcg_ctx, s->V1, rn + 1);
                     }
                 } else if (imm == 8) {
                     neon_load_reg64(tcg_ctx, s->V0, rn + 1);
                     if (q) {
-                        neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rm);
+                        neon_load_reg64(tcg_ctx, s->V1, rm);
                     }
                 } else if (q) {
                     tmp64 = tcg_temp_new_i64(tcg_ctx);
@@ -7271,29 +7271,29 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                         neon_load_reg64(tcg_ctx, tmp64, rm);
                     }
                     tcg_gen_shri_i64(tcg_ctx, s->V0, s->V0, (imm & 7) * 8);
-                    tcg_gen_shli_i64(tcg_ctx, tcg_ctx->cpu_V1, tmp64, 64 - ((imm & 7) * 8));
-                    tcg_gen_or_i64(tcg_ctx, s->V0, s->V0, tcg_ctx->cpu_V1);
+                    tcg_gen_shli_i64(tcg_ctx, s->V1, tmp64, 64 - ((imm & 7) * 8));
+                    tcg_gen_or_i64(tcg_ctx, s->V0, s->V0, s->V1);
                     if (imm < 8) {
-                        neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rm);
+                        neon_load_reg64(tcg_ctx, s->V1, rm);
                     } else {
-                        neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rm + 1);
+                        neon_load_reg64(tcg_ctx, s->V1, rm + 1);
                         imm -= 8;
                     }
-                    tcg_gen_shli_i64(tcg_ctx, tcg_ctx->cpu_V1, tcg_ctx->cpu_V1, 64 - (imm * 8));
+                    tcg_gen_shli_i64(tcg_ctx, s->V1, s->V1, 64 - (imm * 8));
                     tcg_gen_shri_i64(tcg_ctx, tmp64, tmp64, imm * 8);
-                    tcg_gen_or_i64(tcg_ctx, tcg_ctx->cpu_V1, tcg_ctx->cpu_V1, tmp64);
+                    tcg_gen_or_i64(tcg_ctx, s->V1, s->V1, tmp64);
                     tcg_temp_free_i64(tcg_ctx, tmp64);
                 } else {
                     /* BUGFIX */
                     neon_load_reg64(tcg_ctx, s->V0, rn);
                     tcg_gen_shri_i64(tcg_ctx, s->V0, s->V0, imm * 8);
-                    neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rm);
-                    tcg_gen_shli_i64(tcg_ctx, tcg_ctx->cpu_V1, tcg_ctx->cpu_V1, 64 - (imm * 8));
-                    tcg_gen_or_i64(tcg_ctx, s->V0, s->V0, tcg_ctx->cpu_V1);
+                    neon_load_reg64(tcg_ctx, s->V1, rm);
+                    tcg_gen_shli_i64(tcg_ctx, s->V1, s->V1, 64 - (imm * 8));
+                    tcg_gen_or_i64(tcg_ctx, s->V0, s->V0, s->V1);
                 }
                 neon_store_reg64(tcg_ctx, s->V0, rd);
                 if (q) {
-                    neon_store_reg64(tcg_ctx, tcg_ctx->cpu_V1, rd + 1);
+                    neon_store_reg64(tcg_ctx, s->V1, rd + 1);
                 }
             } else if ((insn & (1 << 11)) == 0) {
                 /* Two register misc.  */
@@ -7341,7 +7341,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                         tmp = neon_load_reg(tcg_ctx, rm, pass * 2);
                         gen_neon_widen(s, s->V0, tmp, size, op & 1);
                         tmp = neon_load_reg(tcg_ctx, rm, pass * 2 + 1);
-                        gen_neon_widen(s, tcg_ctx->cpu_V1, tmp, size, op & 1);
+                        gen_neon_widen(s, s->V1, tmp, size, op & 1);
                         switch (size) {
                         case 0: gen_helper_neon_paddl_u16(tcg_ctx, CPU_V001); break;
                         case 1: gen_helper_neon_paddl_u32(tcg_ctx, CPU_V001); break;
@@ -7350,7 +7350,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                         }
                         if (op >= NEON_2RM_VPADAL) {
                             /* Accumulate.  */
-                            neon_load_reg64(tcg_ctx, tcg_ctx->cpu_V1, rd + pass);
+                            neon_load_reg64(tcg_ctx, s->V1, rd + pass);
                             gen_neon_addl(s, size);
                         }
                         neon_store_reg64(tcg_ctx, s->V0, rd + pass);
@@ -12695,7 +12695,7 @@ static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
     dc->F0d = tcg_temp_new_i64(tcg_ctx);
     dc->F1d = tcg_temp_new_i64(tcg_ctx);
     dc->V0 = dc->F0d;
-    tcg_ctx->cpu_V1 = dc->F1d;
+    dc->V1 = dc->F1d;
     /* FIXME: tcg_ctx->cpu_M0 can probably be the same as dc->V0.  */
     tcg_ctx->cpu_M0 = tcg_temp_new_i64(tcg_ctx);
 }

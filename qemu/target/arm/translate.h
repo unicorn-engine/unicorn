@@ -74,6 +74,7 @@ typedef struct DisasContext {
     TCGv_i64 tmp_a64[TMP_A64_MAX];
 
     TCGv_i64 V0;
+    TCGv_i64 V1;
     TCGv_i32 F0s;
     TCGv_i32 F1s;
     TCGv_i64 F0d;
