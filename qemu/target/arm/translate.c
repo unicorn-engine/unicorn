@@ -1432,7 +1432,7 @@ static inline void gen_vfp_##name(DisasContext *s, int dp)                      
     TCGContext *tcg_ctx = s->uc->tcg_ctx; \
     TCGv_ptr fpst = get_fpstatus_ptr(s, 0);                              \
     if (dp) {                                                         \
-        gen_helper_vfp_##name##d(tcg_ctx, s->F0d, s->F0d, tcg_ctx->cpu_F1d, fpst);    \
+        gen_helper_vfp_##name##d(tcg_ctx, s->F0d, s->F0d, s->F1d, fpst);    \
     } else {                                                          \
         gen_helper_vfp_##name##s(tcg_ctx, s->F0s, s->F0s, s->F1s, fpst);    \
     }                                                                 \
@@ -1452,7 +1452,7 @@ static inline void gen_vfp_F1_mul(DisasContext *s, int dp)
     /* Like gen_vfp_mul() but put result in F1 */
     TCGv_ptr fpst = get_fpstatus_ptr(s, 0);
     if (dp) {
-        gen_helper_vfp_muld(tcg_ctx, tcg_ctx->cpu_F1d, s->F0d, tcg_ctx->cpu_F1d, fpst);
+        gen_helper_vfp_muld(tcg_ctx, s->F1d, s->F0d, s->F1d, fpst);
     } else {
         gen_helper_vfp_muls(tcg_ctx, s->F1s, s->F0s, s->F1s, fpst);
     }
@@ -1464,7 +1464,7 @@ static inline void gen_vfp_F1_neg(DisasContext *s, int dp)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     /* Like gen_vfp_neg() but put result in F1 */
     if (dp) {
-        gen_helper_vfp_negd(tcg_ctx, tcg_ctx->cpu_F1d, s->F0d);
+        gen_helper_vfp_negd(tcg_ctx, s->F1d, s->F0d);
     } else {
         gen_helper_vfp_negs(tcg_ctx, s->F1s, s->F0s);
     }
@@ -1501,7 +1501,7 @@ static inline void gen_vfp_cmp(DisasContext *s, int dp)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        gen_helper_vfp_cmpd(tcg_ctx, s->F0d, tcg_ctx->cpu_F1d, tcg_ctx->cpu_env);
+        gen_helper_vfp_cmpd(tcg_ctx, s->F0d, s->F1d, tcg_ctx->cpu_env);
     else
         gen_helper_vfp_cmps(tcg_ctx, s->F0s, s->F1s, tcg_ctx->cpu_env);
 }
@@ -1510,7 +1510,7 @@ static inline void gen_vfp_cmpe(DisasContext *s, int dp)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        gen_helper_vfp_cmped(tcg_ctx, s->F0d, tcg_ctx->cpu_F1d, tcg_ctx->cpu_env);
+        gen_helper_vfp_cmped(tcg_ctx, s->F0d, s->F1d, tcg_ctx->cpu_env);
     else
         gen_helper_vfp_cmpes(tcg_ctx, s->F0s, s->F1s, tcg_ctx->cpu_env);
 }
@@ -1519,7 +1519,7 @@ static inline void gen_vfp_F1_ld0(DisasContext *s, int dp)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        tcg_gen_movi_i64(tcg_ctx, tcg_ctx->cpu_F1d, 0);
+        tcg_gen_movi_i64(tcg_ctx, s->F1d, 0);
     else
         tcg_gen_movi_i32(tcg_ctx, s->F1s, 0);
 }
@@ -1677,7 +1677,7 @@ static inline void gen_mov_F1_vreg(DisasContext *s, int dp, int reg)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        tcg_gen_ld_f64(tcg_ctx, tcg_ctx->cpu_F1d, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
+        tcg_gen_ld_f64(tcg_ctx, s->F1d, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
     else
         tcg_gen_ld_f32(tcg_ctx, s->F1s, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
 }
@@ -3886,7 +3886,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                         }
                         fpst = get_fpstatus_ptr(s, 0);
                         gen_helper_vfp_muladdd(tcg_ctx, s->F0d, s->F0d,
-                                               tcg_ctx->cpu_F1d, frd, fpst);
+                                               s->F1d, frd, fpst);
                         tcg_temp_free_ptr(tcg_ctx, fpst);
                         tcg_temp_free_i64(tcg_ctx, frd);
                     } else {
@@ -12693,9 +12693,9 @@ static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
     dc->F0s = tcg_temp_new_i32(tcg_ctx);
     dc->F1s = tcg_temp_new_i32(tcg_ctx);
     dc->F0d = tcg_temp_new_i64(tcg_ctx);
-    tcg_ctx->cpu_F1d = tcg_temp_new_i64(tcg_ctx);
+    dc->F1d = tcg_temp_new_i64(tcg_ctx);
     tcg_ctx->cpu_V0 = dc->F0d;
-    tcg_ctx->cpu_V1 = tcg_ctx->cpu_F1d;
+    tcg_ctx->cpu_V1 = dc->F1d;
     /* FIXME: tcg_ctx->cpu_M0 can probably be the same as tcg_ctx->cpu_V0.  */
     tcg_ctx->cpu_M0 = tcg_temp_new_i64(tcg_ctx);
 }
