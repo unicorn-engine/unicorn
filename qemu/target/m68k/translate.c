@@ -4976,7 +4976,8 @@ DISAS_INSN(wdebug)
         return;
     }
     /* TODO: Implement wdebug.  */
-    cpu_abort(CPU(cpu), "WDEBUG not implemented");
+    qemu_log("WDEBUG not implemented\n");
+    gen_exception(s, s->pc - 2, EXCP_UNSUPPORTED);
 }
 #endif
 

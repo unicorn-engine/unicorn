@@ -47,9 +47,9 @@ void HELPER(cf_movec_to)(CPUM68KState *env, uint32_t reg, uint32_t val)
         break;
     /* TODO: Implement control registers.  */
     default:
-        cpu_abort(CPU(cpu),
-                  "Unimplemented control register write 0x%x = 0x%x\n",
-                  reg, val);
+        qemu_log("Unimplemented control register write 0x%x = 0x%x\n",
+                 reg, val);
+        raise_exception(env, EXCP_UNSUPPORTED);
     }
 }
 
