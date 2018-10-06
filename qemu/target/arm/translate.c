@@ -1432,7 +1432,7 @@ static inline void gen_vfp_##name(DisasContext *s, int dp)                      
     TCGContext *tcg_ctx = s->uc->tcg_ctx; \
     TCGv_ptr fpst = get_fpstatus_ptr(s, 0);                              \
     if (dp) {                                                         \
-        gen_helper_vfp_##name##d(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F1d, fpst);    \
+        gen_helper_vfp_##name##d(tcg_ctx, s->F0d, s->F0d, tcg_ctx->cpu_F1d, fpst);    \
     } else {                                                          \
         gen_helper_vfp_##name##s(tcg_ctx, s->F0s, s->F0s, s->F1s, fpst);    \
     }                                                                 \
@@ -1452,7 +1452,7 @@ static inline void gen_vfp_F1_mul(DisasContext *s, int dp)
     /* Like gen_vfp_mul() but put result in F1 */
     TCGv_ptr fpst = get_fpstatus_ptr(s, 0);
     if (dp) {
-        gen_helper_vfp_muld(tcg_ctx, tcg_ctx->cpu_F1d, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F1d, fpst);
+        gen_helper_vfp_muld(tcg_ctx, tcg_ctx->cpu_F1d, s->F0d, tcg_ctx->cpu_F1d, fpst);
     } else {
         gen_helper_vfp_muls(tcg_ctx, s->F1s, s->F0s, s->F1s, fpst);
     }
@@ -1464,7 +1464,7 @@ static inline void gen_vfp_F1_neg(DisasContext *s, int dp)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     /* Like gen_vfp_neg() but put result in F1 */
     if (dp) {
-        gen_helper_vfp_negd(tcg_ctx, tcg_ctx->cpu_F1d, tcg_ctx->cpu_F0d);
+        gen_helper_vfp_negd(tcg_ctx, tcg_ctx->cpu_F1d, s->F0d);
     } else {
         gen_helper_vfp_negs(tcg_ctx, s->F1s, s->F0s);
     }
@@ -1474,7 +1474,7 @@ static inline void gen_vfp_abs(DisasContext *s, int dp)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        gen_helper_vfp_absd(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d);
+        gen_helper_vfp_absd(tcg_ctx, s->F0d, s->F0d);
     else
         gen_helper_vfp_abss(tcg_ctx, s->F0s, s->F0s);
 }
@@ -1483,7 +1483,7 @@ static inline void gen_vfp_neg(DisasContext *s, int dp)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        gen_helper_vfp_negd(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d);
+        gen_helper_vfp_negd(tcg_ctx, s->F0d, s->F0d);
     else
         gen_helper_vfp_negs(tcg_ctx, s->F0s, s->F0s);
 }
@@ -1492,7 +1492,7 @@ static inline void gen_vfp_sqrt(DisasContext *s, int dp)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        gen_helper_vfp_sqrtd(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d, tcg_ctx->cpu_env);
+        gen_helper_vfp_sqrtd(tcg_ctx, s->F0d, s->F0d, tcg_ctx->cpu_env);
     else
         gen_helper_vfp_sqrts(tcg_ctx, s->F0s, s->F0s, tcg_ctx->cpu_env);
 }
@@ -1501,7 +1501,7 @@ static inline void gen_vfp_cmp(DisasContext *s, int dp)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        gen_helper_vfp_cmpd(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F1d, tcg_ctx->cpu_env);
+        gen_helper_vfp_cmpd(tcg_ctx, s->F0d, tcg_ctx->cpu_F1d, tcg_ctx->cpu_env);
     else
         gen_helper_vfp_cmps(tcg_ctx, s->F0s, s->F1s, tcg_ctx->cpu_env);
 }
@@ -1510,7 +1510,7 @@ static inline void gen_vfp_cmpe(DisasContext *s, int dp)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        gen_helper_vfp_cmped(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F1d, tcg_ctx->cpu_env);
+        gen_helper_vfp_cmped(tcg_ctx, s->F0d, tcg_ctx->cpu_F1d, tcg_ctx->cpu_env);
     else
         gen_helper_vfp_cmpes(tcg_ctx, s->F0s, s->F1s, tcg_ctx->cpu_env);
 }
@@ -1530,7 +1530,7 @@ static inline void gen_vfp_##name(DisasContext *s, int dp, int neon) \
     TCGContext *tcg_ctx = s->uc->tcg_ctx; \
     TCGv_ptr statusptr = get_fpstatus_ptr(s, neon); \
     if (dp) { \
-        gen_helper_vfp_##name##d(tcg_ctx, tcg_ctx->cpu_F0d, s->F0s, statusptr); \
+        gen_helper_vfp_##name##d(tcg_ctx, s->F0d, s->F0s, statusptr); \
     } else { \
         gen_helper_vfp_##name##s(tcg_ctx, s->F0s, s->F0s, statusptr); \
     } \
@@ -1547,7 +1547,7 @@ static inline void gen_vfp_##name(DisasContext *s, int dp, int neon) \
     TCGContext *tcg_ctx = s->uc->tcg_ctx; \
     TCGv_ptr statusptr = get_fpstatus_ptr(s, neon); \
     if (dp) { \
-        gen_helper_vfp_##name##d(tcg_ctx, s->F0s, tcg_ctx->cpu_F0d, statusptr); \
+        gen_helper_vfp_##name##d(tcg_ctx, s->F0s, s->F0d, statusptr); \
     } else { \
         gen_helper_vfp_##name##s(tcg_ctx, s->F0s, s->F0s, statusptr); \
     } \
@@ -1567,7 +1567,7 @@ static inline void gen_vfp_##name(DisasContext *s, int dp, int shift, int neon) 
     TCGv_i32 tmp_shift = tcg_const_i32(tcg_ctx, shift); \
     TCGv_ptr statusptr = get_fpstatus_ptr(s, neon); \
     if (dp) { \
-        gen_helper_vfp_##name##d##round(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d, tmp_shift, \
+        gen_helper_vfp_##name##d##round(tcg_ctx, s->F0d, s->F0d, tmp_shift, \
                                         statusptr); \
     } else { \
         gen_helper_vfp_##name##s##round(tcg_ctx, s->F0s, s->F0s, tmp_shift, \
@@ -1588,9 +1588,8 @@ VFP_GEN_FIX(ulto, )
 
 static inline void gen_vfp_ld(DisasContext *s, int dp, TCGv_i32 addr)
 {
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp) {
-        gen_aa32_ld64(s, tcg_ctx->cpu_F0d, addr, get_mem_index(s));
+        gen_aa32_ld64(s, s->F0d, addr, get_mem_index(s));
     } else {
         gen_aa32_ld32u(s, s->F0s, addr, get_mem_index(s));
     }
@@ -1598,9 +1597,8 @@ static inline void gen_vfp_ld(DisasContext *s, int dp, TCGv_i32 addr)
 
 static inline void gen_vfp_st(DisasContext *s, int dp, TCGv_i32 addr)
 {
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp) {
-        gen_aa32_st64(s, tcg_ctx->cpu_F0d, addr, get_mem_index(s));
+        gen_aa32_st64(s, s->F0d, addr, get_mem_index(s));
     } else {
         gen_aa32_st32(s, s->F0s, addr, get_mem_index(s));
     }
@@ -1670,7 +1668,7 @@ static inline void gen_mov_F0_vreg(DisasContext *s, int dp, int reg)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        tcg_gen_ld_f64(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
+        tcg_gen_ld_f64(tcg_ctx, s->F0d, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
     else
         tcg_gen_ld_f32(tcg_ctx, s->F0s, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
 }
@@ -1688,7 +1686,7 @@ static inline void gen_mov_vreg_F0(DisasContext *s, int dp, int reg)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     if (dp)
-        tcg_gen_st_f64(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
+        tcg_gen_st_f64(tcg_ctx, s->F0d, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
     else
         tcg_gen_st_f32(tcg_ctx, s->F0s, tcg_ctx->cpu_env, vfp_reg_offset(dp, reg));
 }
@@ -3878,7 +3876,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                         TCGv_i64 frd;
                         if (op & 1) {
                             /* VFNMS, VFMS */
-                            gen_helper_vfp_negd(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d);
+                            gen_helper_vfp_negd(tcg_ctx, s->F0d, s->F0d);
                         }
                         frd = tcg_temp_new_i64(tcg_ctx);
                         tcg_gen_ld_f64(tcg_ctx, frd, tcg_ctx->cpu_env, vfp_reg_offset(dp, rd));
@@ -3887,7 +3885,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                             gen_helper_vfp_negd(tcg_ctx, frd, frd);
                         }
                         fpst = get_fpstatus_ptr(s, 0);
-                        gen_helper_vfp_muladdd(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d,
+                        gen_helper_vfp_muladdd(tcg_ctx, s->F0d, s->F0d,
                                                tcg_ctx->cpu_F1d, frd, fpst);
                         tcg_temp_free_ptr(tcg_ctx, fpst);
                         tcg_temp_free_i64(tcg_ctx, frd);
@@ -3923,7 +3921,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                         else
                             i |= 0x4000;
                         n |= i << 16;
-                        tcg_gen_movi_i64(tcg_ctx, tcg_ctx->cpu_F0d, ((uint64_t)n) << 32);
+                        tcg_gen_movi_i64(tcg_ctx, s->F0d, ((uint64_t)n) << 32);
                     } else {
                         if (i & 0x40)
                             i |= 0x780;
@@ -3954,7 +3952,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                         tmp = gen_vfp_mrs(s);
                         tcg_gen_ext16u_i32(tcg_ctx, tmp, tmp);
                         if (dp) {
-                            gen_helper_vfp_fcvt_f16_to_f64(tcg_ctx, tcg_ctx->cpu_F0d, tmp,
+                            gen_helper_vfp_fcvt_f16_to_f64(tcg_ctx, s->F0d, tmp,
                                                            fpst, ahp_mode);
                         } else {
                             gen_helper_vfp_fcvt_f16_to_f32(tcg_ctx, s->F0s, tmp,
@@ -3972,7 +3970,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                         tmp = gen_vfp_mrs(s);
                         tcg_gen_shri_i32(tcg_ctx, tmp, tmp, 16);
                         if (dp) {
-                            gen_helper_vfp_fcvt_f16_to_f64(tcg_ctx, tcg_ctx->cpu_F0d, tmp,
+                            gen_helper_vfp_fcvt_f16_to_f64(tcg_ctx, s->F0d, tmp,
                                                            fpst, ahp);
                         } else {
                             gen_helper_vfp_fcvt_f16_to_f32(tcg_ctx, s->F0s, tmp,
@@ -3990,7 +3988,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                         tmp = tcg_temp_new_i32(tcg_ctx);
 
                         if (dp) {
-                            gen_helper_vfp_fcvt_f64_to_f16(tcg_ctx, tmp, tcg_ctx->cpu_F0d,
+                            gen_helper_vfp_fcvt_f64_to_f16(tcg_ctx, tmp, s->F0d,
                                                            fpst, ahp);
                         } else {
                             gen_helper_vfp_fcvt_f32_to_f16(tcg_ctx, tmp, s->F0s,
@@ -4012,7 +4010,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                         TCGv_i32 ahp = get_ahp_flag(tcg_ctx);
                         tmp = tcg_temp_new_i32(tcg_ctx);
                         if (dp) {
-                            gen_helper_vfp_fcvt_f64_to_f16(tcg_ctx, tmp, tcg_ctx->cpu_F0d,
+                            gen_helper_vfp_fcvt_f64_to_f16(tcg_ctx, tmp, s->F0d,
                                                            fpst, ahp);
                         } else {
                             gen_helper_vfp_fcvt_f32_to_f16(tcg_ctx, tmp, s->F0s,
@@ -4046,7 +4044,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                     {
                         TCGv_ptr fpst = get_fpstatus_ptr(s, 0);
                         if (dp) {
-                            gen_helper_rintd(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d, fpst);
+                            gen_helper_rintd(tcg_ctx, s->F0d, s->F0d, fpst);
                         } else {
                             gen_helper_rints(tcg_ctx, s->F0s, s->F0s, fpst);
                         }
@@ -4060,7 +4058,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                         tcg_rmode = tcg_const_i32(tcg_ctx, float_round_to_zero);
                         gen_helper_set_rmode(tcg_ctx, tcg_rmode, tcg_rmode, fpst);
                         if (dp) {
-                            gen_helper_rintd(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d, fpst);
+                            gen_helper_rintd(tcg_ctx, s->F0d, s->F0d, fpst);
                         } else {
                             gen_helper_rints(tcg_ctx, s->F0s, s->F0s, fpst);
                         }
@@ -4073,7 +4071,7 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                     {
                         TCGv_ptr fpst = get_fpstatus_ptr(s, 0);
                         if (dp) {
-                            gen_helper_rintd_exact(tcg_ctx, tcg_ctx->cpu_F0d, tcg_ctx->cpu_F0d, fpst);
+                            gen_helper_rintd_exact(tcg_ctx, s->F0d, s->F0d, fpst);
                         } else {
                             gen_helper_rints_exact(tcg_ctx, s->F0s, s->F0s, fpst);
                         }
@@ -4082,9 +4080,9 @@ static int disas_vfp_insn(DisasContext *s, uint32_t insn)
                     }
                     case 15: /* single<->double conversion */
                         if (dp)
-                            gen_helper_vfp_fcvtsd(tcg_ctx, s->F0s, tcg_ctx->cpu_F0d, tcg_ctx->cpu_env);
+                            gen_helper_vfp_fcvtsd(tcg_ctx, s->F0s, s->F0d, tcg_ctx->cpu_env);
                         else
-                            gen_helper_vfp_fcvtds(tcg_ctx, tcg_ctx->cpu_F0d, s->F0s, tcg_ctx->cpu_env);
+                            gen_helper_vfp_fcvtds(tcg_ctx, s->F0d, s->F0s, tcg_ctx->cpu_env);
                         break;
                     case 16: /* fuito */
                         gen_vfp_uito(s, dp, 0);
@@ -12694,9 +12692,9 @@ static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
 
     dc->F0s = tcg_temp_new_i32(tcg_ctx);
     dc->F1s = tcg_temp_new_i32(tcg_ctx);
-    tcg_ctx->cpu_F0d = tcg_temp_new_i64(tcg_ctx);
+    dc->F0d = tcg_temp_new_i64(tcg_ctx);
     tcg_ctx->cpu_F1d = tcg_temp_new_i64(tcg_ctx);
-    tcg_ctx->cpu_V0 = tcg_ctx->cpu_F0d;
+    tcg_ctx->cpu_V0 = dc->F0d;
     tcg_ctx->cpu_V1 = tcg_ctx->cpu_F1d;
     /* FIXME: tcg_ctx->cpu_M0 can probably be the same as tcg_ctx->cpu_V0.  */
     tcg_ctx->cpu_M0 = tcg_temp_new_i64(tcg_ctx);
