@@ -57,8 +57,6 @@ void m68k_tcg_init(struct uc_struct *uc)
 #undef DEFO32
 #undef DEFO64
 
-    // tcg_ctx->QREG_FP_RESULT = tcg_global_mem_new_i64(tcg_ctx, tcg_ctx->cpu_env, offsetof(CPUM68KState, fp_result), "FP_RESULT");
-
     tcg_ctx->cpu_halted = tcg_global_mem_new_i32(tcg_ctx, tcg_ctx->cpu_env,
                                         0-offsetof(M68kCPU, env) +
                                         offsetof(CPUState, halted), "HALTED");
