@@ -73,6 +73,8 @@ typedef struct DisasContext {
     int tmp_a64_count;
     TCGv_i64 tmp_a64[TMP_A64_MAX];
 
+    TCGv_i32 F0s;
+
     // Unicorn engine
     struct uc_struct *uc;
 } DisasContext;
