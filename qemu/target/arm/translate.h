@@ -171,14 +171,15 @@ static inline void gen_a64_set_pc_im(DisasContext *s, uint64_t val)
 }
 #endif
 
-void arm_test_cc(TCGContext *tcg_ctx, DisasCompare *cmp, int cc);
-void arm_free_cc(TCGContext *tcg_ctx, DisasCompare *cmp);
-void arm_jump_cc(TCGContext *tcg_ctx, DisasCompare *cmp, TCGLabel *label);
-void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, TCGLabel *label);
+void arm_test_cc(DisasContext *s, DisasCompare *cmp, int cc);
+void arm_free_cc(DisasContext *s, DisasCompare *cmp);
+void arm_jump_cc(DisasContext *s, DisasCompare *cmp, TCGLabel *label);
+void arm_gen_test_cc(DisasContext *s, int cc, TCGLabel *label);
 
 /* Return state of Alternate Half-precision flag, caller frees result */
-static inline TCGv_i32 get_ahp_flag(TCGContext *tcg_ctx)
+static inline TCGv_i32 get_ahp_flag(DisasContext *s)
 {
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i32 ret = tcg_temp_new_i32(tcg_ctx);
 
     tcg_gen_ld_i32(tcg_ctx, ret, tcg_ctx->cpu_env,
