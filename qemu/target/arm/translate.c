@@ -1722,35 +1722,33 @@ static inline void iwmmxt_store_creg(DisasContext *s, int reg, TCGv_i32 var)
 
 static inline void gen_op_iwmmxt_movq_wRn_M0(DisasContext *s, int rn)
 {
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    iwmmxt_store_reg(s, tcg_ctx->cpu_M0, rn);
+    iwmmxt_store_reg(s, s->M0, rn);
 }
 
 static inline void gen_op_iwmmxt_movq_M0_wRn(DisasContext *s, int rn)
 {
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-    iwmmxt_load_reg(s, tcg_ctx->cpu_M0, rn);
+    iwmmxt_load_reg(s, s->M0, rn);
 }
 
 static inline void gen_op_iwmmxt_orq_M0_wRn(DisasContext *s, int rn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     iwmmxt_load_reg(s, s->V1, rn);
-    tcg_gen_or_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1);
+    tcg_gen_or_i64(tcg_ctx, s->M0, s->M0, s->V1);
 }
 
 static inline void gen_op_iwmmxt_andq_M0_wRn(DisasContext *s, int rn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     iwmmxt_load_reg(s, s->V1, rn);
-    tcg_gen_and_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1);
+    tcg_gen_and_i64(tcg_ctx, s->M0, s->M0, s->V1);
 }
 
 static inline void gen_op_iwmmxt_xorq_M0_wRn(DisasContext *s, int rn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     iwmmxt_load_reg(s, s->V1, rn);
-    tcg_gen_xor_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1);
+    tcg_gen_xor_i64(tcg_ctx, s->M0, s->M0, s->V1);
 }
 
 #define IWMMXT_OP(name) \
@@ -1758,7 +1756,7 @@ static inline void gen_op_iwmmxt_##name##_M0_wRn(DisasContext *s, int rn) \
 { \
     TCGContext *tcg_ctx = s->uc->tcg_ctx; \
     iwmmxt_load_reg(s, s->V1, rn); \
-    gen_helper_iwmmxt_##name(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1); \
+    gen_helper_iwmmxt_##name(tcg_ctx, s->M0, s->M0, s->V1); \
 }
 
 #define IWMMXT_OP_ENV(name) \
@@ -1766,7 +1764,7 @@ static inline void gen_op_iwmmxt_##name##_M0_wRn(DisasContext *s, int rn) \
 { \
     TCGContext *tcg_ctx = s->uc->tcg_ctx; \
     iwmmxt_load_reg(s, s->V1, rn); \
-    gen_helper_iwmmxt_##name(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, s->V1); \
+    gen_helper_iwmmxt_##name(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, s->V1); \
 }
 
 #define IWMMXT_OP_ENV_SIZE(name) \
@@ -1778,7 +1776,7 @@ IWMMXT_OP_ENV(name##l)
 static inline void gen_op_iwmmxt_##name##_M0(DisasContext *s) \
 { \
     TCGContext *tcg_ctx = s->uc->tcg_ctx; \
-    gen_helper_iwmmxt_##name(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0); \
+    gen_helper_iwmmxt_##name(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0); \
 }
 
 IWMMXT_OP(maddsq)
@@ -1858,7 +1856,7 @@ static void gen_op_iwmmxt_setpsr_nz(DisasContext *s)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     TCGv_i32 tmp = tcg_temp_new_i32(tcg_ctx);
-    gen_helper_iwmmxt_setpsr_nz(tcg_ctx, tmp, tcg_ctx->cpu_M0);
+    gen_helper_iwmmxt_setpsr_nz(tcg_ctx, tmp, s->M0);
     store_cpu_field(tcg_ctx, tmp, iwmmxt.cregs[ARM_IWMMXT_wCASF]);
 }
 
@@ -1867,7 +1865,7 @@ static inline void gen_op_iwmmxt_addl_M0_wRn(DisasContext *s, int rn)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     iwmmxt_load_reg(s, s->V1, rn);
     tcg_gen_ext32u_i64(tcg_ctx, s->V1, s->V1);
-    tcg_gen_add_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1);
+    tcg_gen_add_i64(tcg_ctx, s->M0, s->M0, s->V1);
 }
 
 static inline int gen_iwmmxt_address(DisasContext *s, uint32_t insn,
@@ -1972,7 +1970,7 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
                 i = 1;
                 if (insn & (1 << 8)) {
                     if (insn & (1 << 22)) {     /* WLDRD */
-                        gen_aa32_ld64(s, tcg_ctx->cpu_M0, addr, get_mem_index(s));
+                        gen_aa32_ld64(s, s->M0, addr, get_mem_index(s));
                         i = 0;
                     } else {                /* WLDRW wRd */
                         tmp = tcg_temp_new_i32(tcg_ctx);
@@ -1987,7 +1985,7 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
                     }
                 }
                 if (i) {
-                    tcg_gen_extu_i32_i64(tcg_ctx, tcg_ctx->cpu_M0, tmp);
+                    tcg_gen_extu_i32_i64(tcg_ctx, s->M0, tmp);
                     tcg_temp_free_i32(tcg_ctx, tmp);
                 }
                 gen_op_iwmmxt_movq_wRn_M0(s, wrd);
@@ -2001,17 +1999,17 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
                 tmp = tcg_temp_new_i32(tcg_ctx);
                 if (insn & (1 << 8)) {
                     if (insn & (1 << 22)) {     /* WSTRD */
-                        gen_aa32_st64(s, tcg_ctx->cpu_M0, addr, get_mem_index(s));
+                        gen_aa32_st64(s, s->M0, addr, get_mem_index(s));
                     } else {                /* WSTRW wRd */
-                        tcg_gen_extrl_i64_i32(tcg_ctx, tmp, tcg_ctx->cpu_M0);
+                        tcg_gen_extrl_i64_i32(tcg_ctx, tmp, s->M0);
                         gen_aa32_st32(s, tmp, addr, get_mem_index(s));
                     }
                 } else {
                     if (insn & (1 << 22)) {     /* WSTRH */
-                        tcg_gen_extrl_i64_i32(tcg_ctx, tmp, tcg_ctx->cpu_M0);
+                        tcg_gen_extrl_i64_i32(tcg_ctx, tmp, s->M0);
                         gen_aa32_st16(s, tmp, addr, get_mem_index(s));
                     } else {                /* WSTRB */
-                        tcg_gen_extrl_i64_i32(tcg_ctx, tmp, tcg_ctx->cpu_M0);
+                        tcg_gen_extrl_i64_i32(tcg_ctx, tmp, s->M0);
                         gen_aa32_st8(s, tmp, addr, get_mem_index(s));
                     }
                 }
@@ -2092,7 +2090,7 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         rd0 = (insn >> 0) & 0xf;
         rd1 = (insn >> 16) & 0xf;
         gen_op_iwmmxt_movq_M0_wRn(s, rd0);
-        tcg_gen_neg_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0);
+        tcg_gen_neg_i64(tcg_ctx, s->M0, s->M0);
         gen_op_iwmmxt_andq_M0_wRn(s, rd1);
         gen_op_iwmmxt_setpsr_nz(s);
         gen_op_iwmmxt_movq_wRn_M0(s, wrd);
@@ -2210,7 +2208,7 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
             gen_op_iwmmxt_macuw_M0_wRn(s, rd1);
         if (!(insn & (1 << 20))) {
             iwmmxt_load_reg(s, s->V1, wrd);
-            tcg_gen_add_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1);
+            tcg_gen_add_i64(tcg_ctx, s->M0, s->M0, s->V1);
         }
         gen_op_iwmmxt_movq_wRn_M0(s, wrd);
         gen_op_iwmmxt_set_mup(s);
@@ -2265,7 +2263,7 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         tmp = iwmmxt_load_creg(s, ARM_IWMMXT_wCGR0 + ((insn >> 20) & 3));
         tcg_gen_andi_i32(tcg_ctx, tmp, tmp, 7);
         iwmmxt_load_reg(s, s->V1, rd1);
-        gen_helper_iwmmxt_align(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1, tmp);
+        gen_helper_iwmmxt_align(tcg_ctx, s->M0, s->M0, s->V1, tmp);
         tcg_temp_free_i32(tcg_ctx, tmp);
         gen_op_iwmmxt_movq_wRn_M0(s, wrd);
         gen_op_iwmmxt_set_mup(s);
@@ -2294,7 +2292,7 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
             tmp2 = NULL;
             tmp3 = NULL;
         }
-        gen_helper_iwmmxt_insr(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tmp, tmp2, tmp3);
+        gen_helper_iwmmxt_insr(tcg_ctx, s->M0, s->M0, tmp, tmp2, tmp3);
         tcg_temp_free_i32(tcg_ctx, tmp3);
         tcg_temp_free_i32(tcg_ctx, tmp2);
         tcg_temp_free_i32(tcg_ctx, tmp);
@@ -2310,8 +2308,8 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         tmp = tcg_temp_new_i32(tcg_ctx);
         switch ((insn >> 22) & 3) {
         case 0:
-            tcg_gen_shri_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, (insn & 7) << 3);
-            tcg_gen_extrl_i64_i32(tcg_ctx, tmp, tcg_ctx->cpu_M0);
+            tcg_gen_shri_i64(tcg_ctx, s->M0, s->M0, (insn & 7) << 3);
+            tcg_gen_extrl_i64_i32(tcg_ctx, tmp, s->M0);
             if (insn & 8) {
                 tcg_gen_ext8s_i32(tcg_ctx, tmp, tmp);
             } else {
@@ -2319,8 +2317,8 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
             }
             break;
         case 1:
-            tcg_gen_shri_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, (insn & 3) << 4);
-            tcg_gen_extrl_i64_i32(tcg_ctx, tmp, tcg_ctx->cpu_M0);
+            tcg_gen_shri_i64(tcg_ctx, s->M0, s->M0, (insn & 3) << 4);
+            tcg_gen_extrl_i64_i32(tcg_ctx, tmp, s->M0);
             if (insn & 8) {
                 tcg_gen_ext16s_i32(tcg_ctx, tmp, tmp);
             } else {
@@ -2328,8 +2326,8 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
             }
             break;
         case 2:
-            tcg_gen_shri_i64(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, (insn & 1) << 5);
-            tcg_gen_extrl_i64_i32(tcg_ctx, tmp, tcg_ctx->cpu_M0);
+            tcg_gen_shri_i64(tcg_ctx, s->M0, s->M0, (insn & 1) << 5);
+            tcg_gen_extrl_i64_i32(tcg_ctx, tmp, s->M0);
             break;
         }
         store_reg(s, rd, tmp);
@@ -2361,13 +2359,13 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         tmp = load_reg(s, rd);
         switch ((insn >> 6) & 3) {
         case 0:
-            gen_helper_iwmmxt_bcstb(tcg_ctx, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_bcstb(tcg_ctx, s->M0, tmp);
             break;
         case 1:
-            gen_helper_iwmmxt_bcstw(tcg_ctx, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_bcstw(tcg_ctx, s->M0, tmp);
             break;
         case 2:
-            gen_helper_iwmmxt_bcstl(tcg_ctx, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_bcstl(tcg_ctx, s->M0, tmp);
             break;
         }
         tcg_temp_free_i32(tcg_ctx, tmp);
@@ -2408,13 +2406,13 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         gen_op_iwmmxt_movq_M0_wRn(s, rd0);
         switch ((insn >> 22) & 3) {
         case 0:
-            gen_helper_iwmmxt_addcb(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0);
+            gen_helper_iwmmxt_addcb(tcg_ctx, s->M0, s->M0);
             break;
         case 1:
-            gen_helper_iwmmxt_addcw(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0);
+            gen_helper_iwmmxt_addcw(tcg_ctx, s->M0, s->M0);
             break;
         case 2:
-            gen_helper_iwmmxt_addcl(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0);
+            gen_helper_iwmmxt_addcl(tcg_ctx, s->M0, s->M0);
             break;
         case 3:
             return 1;
@@ -2459,13 +2457,13 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         tmp = tcg_temp_new_i32(tcg_ctx);
         switch ((insn >> 22) & 3) {
         case 0:
-            gen_helper_iwmmxt_msbb(tcg_ctx, tmp, tcg_ctx->cpu_M0);
+            gen_helper_iwmmxt_msbb(tcg_ctx, tmp, s->M0);
             break;
         case 1:
-            gen_helper_iwmmxt_msbw(tcg_ctx, tmp, tcg_ctx->cpu_M0);
+            gen_helper_iwmmxt_msbw(tcg_ctx, tmp, s->M0);
             break;
         case 2:
-            gen_helper_iwmmxt_msbl(tcg_ctx, tmp, tcg_ctx->cpu_M0);
+            gen_helper_iwmmxt_msbl(tcg_ctx, tmp, s->M0);
             break;
         }
         store_reg(s, rd, tmp);
@@ -2578,13 +2576,13 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         }
         switch ((insn >> 22) & 3) {
         case 1:
-            gen_helper_iwmmxt_srlw(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_srlw(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         case 2:
-            gen_helper_iwmmxt_srll(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_srll(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         case 3:
-            gen_helper_iwmmxt_srlq(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_srlq(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         }
         tcg_temp_free_i32(tcg_ctx, tmp);
@@ -2606,13 +2604,13 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         }
         switch ((insn >> 22) & 3) {
         case 1:
-            gen_helper_iwmmxt_sraw(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_sraw(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         case 2:
-            gen_helper_iwmmxt_sral(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_sral(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         case 3:
-            gen_helper_iwmmxt_sraq(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_sraq(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         }
         tcg_temp_free_i32(tcg_ctx, tmp);
@@ -2634,13 +2632,13 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         }
         switch ((insn >> 22) & 3) {
         case 1:
-            gen_helper_iwmmxt_sllw(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_sllw(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         case 2:
-            gen_helper_iwmmxt_slll(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_slll(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         case 3:
-            gen_helper_iwmmxt_sllq(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_sllq(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         }
         tcg_temp_free_i32(tcg_ctx, tmp);
@@ -2662,21 +2660,21 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
                 tcg_temp_free_i32(tcg_ctx, tmp);
                 return 1;
             }
-            gen_helper_iwmmxt_rorw(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_rorw(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         case 2:
             if (gen_iwmmxt_shift(s, insn, 0x1f, tmp)) {
                 tcg_temp_free_i32(tcg_ctx, tmp);
                 return 1;
             }
-            gen_helper_iwmmxt_rorl(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_rorl(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         case 3:
             if (gen_iwmmxt_shift(s, insn, 0x3f, tmp)) {
                 tcg_temp_free_i32(tcg_ctx, tmp);
                 return 1;
             }
-            gen_helper_iwmmxt_rorq(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+            gen_helper_iwmmxt_rorq(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
             break;
         }
         tcg_temp_free_i32(tcg_ctx, tmp);
@@ -2754,7 +2752,7 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         gen_op_iwmmxt_movq_M0_wRn(s, rd0);
         tmp = tcg_const_i32(tcg_ctx, (insn >> 20) & 3);
         iwmmxt_load_reg(s, s->V1, rd1);
-        gen_helper_iwmmxt_align(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, s->V1, tmp);
+        gen_helper_iwmmxt_align(tcg_ctx, s->M0, s->M0, s->V1, tmp);
         tcg_temp_free_i32(tcg_ctx, tmp);
         gen_op_iwmmxt_movq_wRn_M0(s, wrd);
         gen_op_iwmmxt_set_mup(s);
@@ -2810,7 +2808,7 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         rd0 = (insn >> 16) & 0xf;
         gen_op_iwmmxt_movq_M0_wRn(s, rd0);
         tmp = tcg_const_i32(tcg_ctx, ((insn >> 16) & 0xf0) | (insn & 0x0f));
-        gen_helper_iwmmxt_shufh(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_env, tcg_ctx->cpu_M0, tmp);
+        gen_helper_iwmmxt_shufh(tcg_ctx, s->M0, tcg_ctx->cpu_env, s->M0, tmp);
         tcg_temp_free_i32(tcg_ctx, tmp);
         gen_op_iwmmxt_movq_wRn_M0(s, wrd);
         gen_op_iwmmxt_set_mup(s);
@@ -2907,17 +2905,17 @@ static int disas_iwmmxt_insn(DisasContext *s, uint32_t insn)
         tmp2 = load_reg(s, rd1);
         switch ((insn >> 16) & 0xf) {
         case 0x0:                   /* TMIA */
-            gen_helper_iwmmxt_muladdsl(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tmp, tmp2);
+            gen_helper_iwmmxt_muladdsl(tcg_ctx, s->M0, s->M0, tmp, tmp2);
             break;
         case 0x8:                   /* TMIAPH */
-            gen_helper_iwmmxt_muladdsw(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tmp, tmp2);
+            gen_helper_iwmmxt_muladdsw(tcg_ctx, s->M0, s->M0, tmp, tmp2);
             break;
         case 0xc: case 0xd: case 0xe: case 0xf:     /* TMIAxy */
             if (insn & (1 << 16))
                 tcg_gen_shri_i32(tcg_ctx, tmp, tmp, 16);
             if (insn & (1 << 17))
                 tcg_gen_shri_i32(tcg_ctx, tmp2, tmp2, 16);
-            gen_helper_iwmmxt_muladdswl(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tmp, tmp2);
+            gen_helper_iwmmxt_muladdswl(tcg_ctx, s->M0, s->M0, tmp, tmp2);
             break;
         default:
             tcg_temp_free_i32(tcg_ctx, tmp2);
@@ -2957,10 +2955,10 @@ static int disas_dsp_insn(DisasContext *s, uint32_t insn)
         tmp2 = load_reg(s, rd1);
         switch ((insn >> 16) & 0xf) {
         case 0x0:                   /* MIA */
-            gen_helper_iwmmxt_muladdsl(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tmp, tmp2);
+            gen_helper_iwmmxt_muladdsl(tcg_ctx, s->M0, s->M0, tmp, tmp2);
             break;
         case 0x8:                   /* MIAPH */
-            gen_helper_iwmmxt_muladdsw(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tmp, tmp2);
+            gen_helper_iwmmxt_muladdsw(tcg_ctx, s->M0, s->M0, tmp, tmp2);
             break;
         case 0xc:                   /* MIABB */
         case 0xd:                   /* MIABT */
@@ -2970,7 +2968,7 @@ static int disas_dsp_insn(DisasContext *s, uint32_t insn)
                 tcg_gen_shri_i32(tcg_ctx, tmp, tmp, 16);
             if (insn & (1 << 17))
                 tcg_gen_shri_i32(tcg_ctx, tmp2, tmp2, 16);
-            gen_helper_iwmmxt_muladdswl(tcg_ctx, tcg_ctx->cpu_M0, tcg_ctx->cpu_M0, tmp, tmp2);
+            gen_helper_iwmmxt_muladdswl(tcg_ctx, s->M0, s->M0, tmp, tmp2);
             break;
         default:
             return 1;
@@ -12696,8 +12694,8 @@ static void arm_tr_init_disas_context(DisasContextBase *dcbase, CPUState *cs)
     dc->F1d = tcg_temp_new_i64(tcg_ctx);
     dc->V0 = dc->F0d;
     dc->V1 = dc->F1d;
-    /* FIXME: tcg_ctx->cpu_M0 can probably be the same as dc->V0.  */
-    tcg_ctx->cpu_M0 = tcg_temp_new_i64(tcg_ctx);
+    /* FIXME: dc->M0 can probably be the same as dc->V0.  */
+    dc->M0 = tcg_temp_new_i64(tcg_ctx);
 }
 
 static void arm_tr_tb_start(DisasContextBase *dcbase, CPUState *cpu)

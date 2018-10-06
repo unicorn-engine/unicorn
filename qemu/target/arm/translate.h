@@ -73,8 +73,10 @@ typedef struct DisasContext {
     int tmp_a64_count;
     TCGv_i64 tmp_a64[TMP_A64_MAX];
 
+    // Unicorn: Moved here to avoid global state.
     TCGv_i64 V0;
     TCGv_i64 V1;
+    TCGv_i64 M0;
     TCGv_i32 F0s;
     TCGv_i32 F1s;
     TCGv_i64 F0d;
