@@ -10712,6 +10712,7 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
             } else {
                 int i, loaded_base = 0;
                 TCGv_i32 loaded_var;
+                bool wback = extract32(insn, 21, 1);
                 /* Load/store multiple.  */
                 addr = load_reg(s, rn);
                 offset = 0;
@@ -10719,8 +10720,24 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
                     if (insn & (1 << i))
                         offset += 4;
                 }
+
                 if (insn & (1 << 24)) {
                     tcg_gen_addi_i32(tcg_ctx, addr, addr, 0-offset);
+                }
+
+                if (s->v8m_stackcheck && rn == 13 && wback) {
+                    /*
+                     * If the writeback is incrementing SP rather than
+                     * decrementing it, and the initial SP is below the
+                     * stack limit but the final written-back SP would
+                     * be above, then then we must not perform any memory
+                     * accesses, but it is IMPDEF whether we generate
+                     * an exception. We choose to do so in this case.
+                     * At this point 'addr' is the lowest address, so
+                     * either the original SP (if incrementing) or our
+                     * final SP (if decrementing), so that's what we check.
+                     */
+                    gen_helper_v8m_stackcheck(tcg_ctx, tcg_ctx->cpu_env, addr);
                 }
 
                 loaded_var = NULL;
