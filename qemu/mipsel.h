@@ -1707,6 +1707,7 @@
 #define helper_v7m_mrs helper_v7m_mrs_mipsel
 #define helper_v7m_msr helper_v7m_msr_mipsel
 #define helper_v7m_tt helper_v7m_tt_mipsel
+#define helper_v8m_stackcheck helper_v8m_stackcheck_mipsel
 #define helper_vfp_absd helper_vfp_absd_mipsel
 #define helper_vfp_abss helper_vfp_abss_mipsel
 #define helper_vfp_addd helper_vfp_addd_mipsel

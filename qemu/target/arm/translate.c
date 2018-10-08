@@ -235,6 +235,25 @@ static void store_reg(DisasContext *s, int reg, TCGv_i32 var)
     tcg_temp_free_i32(tcg_ctx, var);
 }
 
+/*
+ * Variant of store_reg which applies v8M stack-limit checks before updating
+ * SP. If the check fails this will result in an exception being taken.
+ * We disable the stack checks for CONFIG_USER_ONLY because we have
+ * no idea what the stack limits should be in that case.
+ * If stack checking is not being done this just acts like store_reg().
+ */
+static void store_sp_checked(DisasContext *s, TCGv_i32 var)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+
+#ifndef CONFIG_USER_ONLY
+    if (s->v8m_stackcheck) {
+        gen_helper_v8m_stackcheck(tcg_ctx, tcg_ctx->cpu_env, var);
+    }
+#endif
+    store_reg(s, 13, var);
+}
+
 /* Value extensions.  */
 #define gen_uxtb(var) tcg_gen_ext8u_i32(tcg_ctx, var, var)
 #define gen_uxth(var) tcg_gen_ext16u_i32(tcg_ctx, var, var)
@@ -10769,7 +10788,13 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
             if (gen_thumb2_data_op(s, op, conds, 0, tmp, tmp2))
                 goto illegal_op;
             tcg_temp_free_i32(tcg_ctx, tmp2);
-            if (rd != 15) {
+            if (rd == 13 &&
+                ((op == 2 && rn == 15) ||
+                 (op == 8 && rn == 13) ||
+                 (op == 13 && rn == 13))) {
+                /* MOV SP, ... or ADD SP, SP, ... or SUB SP, SP, ... */
+                store_sp_checked(s, tmp);
+            } else if (rd != 15) {
                 store_reg(s, rd, tmp);
             } else {
                 tcg_temp_free_i32(tcg_ctx, tmp);
@@ -11453,8 +11478,15 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
                 gen_jmp(s, s->pc + offset);
             }
         } else {
-            /* Data processing immediate.  */
+            /*
+             * 0b1111_0xxx_xxxx_0xxx_xxxx_xxxx
+             *  - Data-processing (modified immediate, plain binary immediate)
+             */
             if (insn & (1 << 25)) {
+                /*
+                 * 0b1111_0x1x_xxxx_0xxx_xxxx_xxxx
+                 *  - Data-processing (plain binary immediate)
+                 */
                 if (insn & (1 << 24)) {
                     if (insn & (1 << 20))
                         goto illegal_op;
@@ -11550,6 +11582,7 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
                             tmp = tcg_temp_new_i32(tcg_ctx);
                             tcg_gen_movi_i32(tcg_ctx, tmp, imm);
                         }
+                        store_reg(s, rd, tmp);
                     } else {
                         /* Add/sub 12-bit immediate.  */
                         if (rn == 15) {
@@ -11560,17 +11593,27 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
                                 offset += imm;
                             tmp = tcg_temp_new_i32(tcg_ctx);
                             tcg_gen_movi_i32(tcg_ctx, tmp, offset);
+                            store_reg(s, rd, tmp);
                         } else {
                             tmp = load_reg(s, rn);
                             if (insn & (1 << 23))
                                 tcg_gen_subi_i32(tcg_ctx, tmp, tmp, imm);
                             else
                                 tcg_gen_addi_i32(tcg_ctx, tmp, tmp, imm);
+                            if (rn == 13 && rd == 13) {
+                                /* ADD SP, SP, imm or SUB SP, SP, imm */
+                                store_sp_checked(s, tmp);
+                            } else {
+                                store_reg(s, rd, tmp);
+                            }
                         }
                     }
-                    store_reg(s, rd, tmp);
                 }
             } else {
+                /*
+                 * 0b1111_0x0x_xxxx_0xxx_xxxx_xxxx
+                 *  - Data-processing (modified immediate)
+                 */
                 int shifter_out = 0;
                 /* modified 12-bit immediate.  */
                 shift = ((insn & 0x04000000) >> 23) | ((insn & 0x7000) >> 12);
@@ -11612,7 +11655,11 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
                     goto illegal_op;
                 tcg_temp_free_i32(tcg_ctx, tmp2);
                 rd = (insn >> 8) & 0xf;
-                if (rd != 15) {
+                if (rd == 13 && rn == 13
+                    && (op == 8 || op == 13)) {
+                    /* ADD(S) SP, SP, imm or SUB(S) SP, SP, imm */
+                    store_sp_checked(s, tmp);
+                } else if (rd != 15) {
                     store_reg(s, rd, tmp);
                 } else {
                     tcg_temp_free_i32(tcg_ctx, tmp);
@@ -11945,7 +11992,12 @@ static void disas_thumb_insn(DisasContext *s, uint32_t insn)
                 tmp2 = load_reg(s, rm);
                 tcg_gen_add_i32(tcg_ctx, tmp, tmp, tmp2);
                 tcg_temp_free_i32(tcg_ctx, tmp2);
-                store_reg(s, rd, tmp);
+                if (rd == 13) {
+                    /* ADD SP, SP, reg */
+                    store_sp_checked(s, tmp);
+                } else {
+                    store_reg(s, rd, tmp);
+                }
                 break;
             case 1: /* cmp */
                 tmp = load_reg(s, rd);
@@ -11956,7 +12008,12 @@ static void disas_thumb_insn(DisasContext *s, uint32_t insn)
                 break;
             case 2: /* mov/cpy */
                 tmp = load_reg(s, rm);
-                store_reg(s, rd, tmp);
+                if (rd == 13) {
+                    /* MOV SP, reg */
+                    store_sp_checked(s, tmp);
+                } else {
+                    store_reg(s, rd, tmp);
+                }
                 break;
             case 3:
             {
@@ -12284,7 +12341,10 @@ static void disas_thumb_insn(DisasContext *s, uint32_t insn)
         break;
 
     case 10:
-        /* add to high reg */
+        /*
+         * 0b1010_xxxx_xxxx_xxxx
+         *  - Add PC/SP (immediate)
+         */
         rd = (insn >> 8) & 7;
         if (insn & (1 << 11)) {
             /* SP */
@@ -12304,13 +12364,17 @@ static void disas_thumb_insn(DisasContext *s, uint32_t insn)
         op = (insn >> 8) & 0xf;
         switch (op) {
         case 0:
-            /* adjust stack pointer */
+            /*
+             * 0b1011_0000_xxxx_xxxx
+             *  - ADD (SP plus immediate)
+             *  - SUB (SP minus immediate)
+             */
             tmp = load_reg(s, 13);
             val = (insn & 0x7f) * 4;
             if (insn & (1 << 7))
                 val = -(int32_t)val;
             tcg_gen_addi_i32(tcg_ctx, tmp, tmp, val);
-            store_reg(s, 13, tmp);
+            store_sp_checked(s, tmp);
             break;
 
         case 2: /* sign/zero extend.  */

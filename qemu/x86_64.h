@@ -1707,6 +1707,7 @@
 #define helper_v7m_mrs helper_v7m_mrs_x86_64
 #define helper_v7m_msr helper_v7m_msr_x86_64
 #define helper_v7m_tt helper_v7m_tt_x86_64
+#define helper_v8m_stackcheck helper_v8m_stackcheck_x86_64
 #define helper_vfp_absd helper_vfp_absd_x86_64
 #define helper_vfp_abss helper_vfp_abss_x86_64
 #define helper_vfp_addd helper_vfp_addd_x86_64

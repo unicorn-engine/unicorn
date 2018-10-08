@@ -1713,6 +1713,7 @@ symbols = (
     'helper_v7m_mrs',
     'helper_v7m_msr',
     'helper_v7m_tt',
+    'helper_v8m_stackcheck',
     'helper_vfp_absd',
     'helper_vfp_abss',
     'helper_vfp_addd',
