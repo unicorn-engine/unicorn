@@ -10466,6 +10466,8 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
                  * 0b1111_1001_x11x_xxxx_xxxx_xxxx_xxxx_xxxx
                  *  - load/store dual (pre-indexed)
                  */
+                bool wback = extract32(insn, 21, 1);
+
                 if (rn == 15) {
                     if (insn & (1 << 21)) {
                         /* UNPREDICTABLE */
@@ -10477,8 +10479,29 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
                     addr = load_reg(s, rn);
                 }
                 offset = (insn & 0xff) * 4;
-                if ((insn & (1 << 23)) == 0)
+                if ((insn & (1 << 23)) == 0) {
                     offset = 0-offset;
+                }
+
+                if (s->v8m_stackcheck && rn == 13 && wback) {
+                    /*
+                     * Here 'addr' is the current SP; if offset is +ve we're
+                     * moving SP up, else down. It is UNKNOWN whether the limit
+                     * check triggers when SP starts below the limit and ends
+                     * up above it; check whichever of the current and final
+                     * SP is lower, so QEMU will trigger in that situation.
+                     */
+                    if ((int32_t)offset < 0) {
+                        TCGv_i32 newsp = tcg_temp_new_i32(tcg_ctx);
+
+                        tcg_gen_addi_i32(tcg_ctx, newsp, addr, offset);
+                        gen_helper_v8m_stackcheck(tcg_ctx, tcg_ctx->cpu_env, newsp);
+                        tcg_temp_free_i32(tcg_ctx, newsp);
+                    } else {
+                        gen_helper_v8m_stackcheck(tcg_ctx, tcg_ctx->cpu_env, addr);
+                    }
+                }
+
                 if (insn & (1 << 24)) {
                     tcg_gen_addi_i32(tcg_ctx, addr, addr, offset);
                     offset = 0;
