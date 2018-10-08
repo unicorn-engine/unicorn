@@ -11812,7 +11812,6 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
                     imm = 0-imm;
                     /* Fall through.  */
                 case 0xf: /* Pre-increment.  */
-                    tcg_gen_addi_i32(tcg_ctx, addr, addr, imm);
                     writeback = 1;
                     break;
                 default:
@@ -11823,6 +11822,28 @@ static void disas_thumb2_insn(DisasContext *s, uint32_t insn)
         }
 
         issinfo = writeback ? ISSInvalid : rs;
+
+        if (s->v8m_stackcheck && rn == 13 && writeback) {
+            /*
+             * Stackcheck. Here we know 'addr' is the current SP;
+             * if imm is +ve we're moving SP up, else down. It is
+             * UNKNOWN whether the limit check triggers when SP starts
+             * below the limit and ends up above it; we chose to do so.
+             */
+            if ((int32_t)imm < 0) {
+                TCGv_i32 newsp = tcg_temp_new_i32(tcg_ctx);
+
+                tcg_gen_addi_i32(tcg_ctx, newsp, addr, imm);
+                gen_helper_v8m_stackcheck(tcg_ctx, tcg_ctx->cpu_env, newsp);
+                tcg_temp_free_i32(tcg_ctx, newsp);
+            } else {
+                gen_helper_v8m_stackcheck(tcg_ctx, tcg_ctx->cpu_env, addr);
+            }
+        }
+
+        if (writeback && !postinc) {
+            tcg_gen_addi_i32(tcg_ctx, addr, addr, imm);
+        }
 
         if (insn & (1 << 20)) {
             /* Load.  */
