@@ -852,6 +852,14 @@ bool arm_cpu_exec_interrupt(CPUState *cpu, int int_req);
 hwaddr arm_cpu_get_phys_page_attrs_debug(CPUState *cpu, vaddr addr,
                                          MemTxAttrs *attrs);
 
+#ifdef TARGET_AARCH64
+void aarch64_sve_narrow_vq(CPUARMState *env, unsigned vq);
+void aarch64_sve_change_el(CPUARMState *env, int old_el, int new_el);
+#else
+static inline void aarch64_sve_narrow_vq(CPUARMState *env, unsigned vq) { }
+static inline void aarch64_sve_change_el(CPUARMState *env, int o, int n) { }
+#endif
+
 target_ulong do_arm_semihosting(CPUARMState *env);
 void aarch64_sync_32_to_64(CPUARMState *env);
 void aarch64_sync_64_to_32(CPUARMState *env);

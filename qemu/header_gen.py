@@ -3289,6 +3289,8 @@ aarch64_symbols = (
     'ARM64_REGS_STORAGE_SIZE',
     'aarch64_cpu_do_interrupt',
     'aarch64_cpu_register_types',
+    'aarch64_sve_change_el',
+    'aarch64_sve_narrow_vq',
     'aarch64_translator_ops',
     'arm64_reg_read',
     'arm64_reg_reset',

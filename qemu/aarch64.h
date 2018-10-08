@@ -3268,6 +3268,8 @@
 #define ARM64_REGS_STORAGE_SIZE ARM64_REGS_STORAGE_SIZE_aarch64
 #define aarch64_cpu_do_interrupt aarch64_cpu_do_interrupt_aarch64
 #define aarch64_cpu_register_types aarch64_cpu_register_types_aarch64
+#define aarch64_sve_change_el aarch64_sve_change_el_aarch64
+#define aarch64_sve_narrow_vq aarch64_sve_narrow_vq_aarch64
 #define aarch64_translator_ops aarch64_translator_ops_aarch64
 #define arm64_reg_read arm64_reg_read_aarch64
 #define arm64_reg_reset arm64_reg_reset_aarch64
