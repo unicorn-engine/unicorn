@@ -3276,6 +3276,7 @@
 #define arm_set_cpu_off arm_set_cpu_off_arm
 #define arm_set_cpu_on arm_set_cpu_on_arm
 #define fp_exception_el fp_exception_el_arm
+#define raise_exception raise_exception_arm
 #define sve_exception_el sve_exception_el_arm
 #define sve_zcr_len_for_el sve_zcr_len_for_el_arm
 #endif

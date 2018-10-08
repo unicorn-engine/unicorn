@@ -3285,6 +3285,7 @@ arm_symbols = (
     'arm_set_cpu_off',
     'arm_set_cpu_on',
     'fp_exception_el',
+    'raise_exception',
     'sve_exception_el',
     'sve_zcr_len_for_el',
 )
@@ -4279,6 +4280,7 @@ aarch64_symbols = (
     'new_tmp_a64',
     'new_tmp_a64_zero',
     'pred_esz_masks',
+    'raise_exception',
     'read_cpu_reg',
     'read_cpu_reg_sp',
     'sve_access_check',
