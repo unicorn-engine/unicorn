@@ -1973,9 +1973,10 @@ void object_class_property_set_description(struct uc_struct *uc,
     op->description = g_strdup(description);
 }
 
-static void object_instance_init(struct uc_struct *uc, Object *obj, void *opaque)
+static void object_class_init(struct uc_struct *uc, ObjectClass *klass, void *opaque)
 {
-    object_property_add_str(uc, obj, "type", qdev_get_type, NULL, NULL);
+    object_class_property_add_str(uc, klass, "type", qdev_get_type,
+                                  NULL, &error_abort);
 }
 
 void register_types_object(struct uc_struct *uc)
@@ -2009,13 +2010,13 @@ void register_types_object(struct uc_struct *uc)
         sizeof(Object),
         NULL,
 
-        object_instance_init,
         NULL,
         NULL,
-
         NULL,
 
         NULL,
+
+        object_class_init,
         NULL,
         NULL,
 
