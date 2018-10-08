@@ -4380,7 +4380,8 @@ void register_cp_regs_for_features(ARMCPU *cpu)
               PL1_R, 0, NULL, 0 },
             { "ID_AA64PFR3_EL1_RESERVED", 0,0,4, 3,0,3, ARM_CP_STATE_AA64, ARM_CP_CONST,
               PL1_R, 0, NULL, 0,},
-            { "ID_AA64PFR4_EL1_RESERVED", 0,0,4, 3,0,4, ARM_CP_STATE_AA64, ARM_CP_CONST,
+            { "ID_AA64ZFR0_EL1", 0,0,4, 3,0,4, ARM_CP_STATE_AA64, ARM_CP_CONST,
+              /* At present, only SVEver == 0 is defined anyway.  */
               PL1_R, 0, NULL, 0 },
             { "ID_AA64PFR5_EL1_RESERVED", 0,0,4, 3,0,5, ARM_CP_STATE_AA64, ARM_CP_CONST,
               PL1_R, 0, NULL, 0 },
