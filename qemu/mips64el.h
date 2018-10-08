@@ -659,7 +659,6 @@
 #define float64_to_uint64 float64_to_uint64_mips64el
 #define float64_to_uint64_round_to_zero float64_to_uint64_round_to_zero_mips64el
 #define float64_to_uint64_scalbn float64_to_uint64_scalbn_mips64el
-#define float64_trunc_to_int float64_trunc_to_int_mips64el
 #define float64_unordered float64_unordered_mips64el
 #define float64_unordered_quiet float64_unordered_quiet_mips64el
 #define float_raise float_raise_mips64el

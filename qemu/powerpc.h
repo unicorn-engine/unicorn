@@ -659,7 +659,6 @@
 #define float64_to_uint64 float64_to_uint64_powerpc
 #define float64_to_uint64_round_to_zero float64_to_uint64_round_to_zero_powerpc
 #define float64_to_uint64_scalbn float64_to_uint64_scalbn_powerpc
-#define float64_trunc_to_int float64_trunc_to_int_powerpc
 #define float64_unordered float64_unordered_powerpc
 #define float64_unordered_quiet float64_unordered_quiet_powerpc
 #define float_raise float_raise_powerpc

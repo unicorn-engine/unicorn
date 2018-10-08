@@ -659,7 +659,6 @@
 #define float64_to_uint64 float64_to_uint64_sparc64
 #define float64_to_uint64_round_to_zero float64_to_uint64_round_to_zero_sparc64
 #define float64_to_uint64_scalbn float64_to_uint64_scalbn_sparc64
-#define float64_trunc_to_int float64_trunc_to_int_sparc64
 #define float64_unordered float64_unordered_sparc64
 #define float64_unordered_quiet float64_unordered_quiet_sparc64
 #define float_raise float_raise_sparc64

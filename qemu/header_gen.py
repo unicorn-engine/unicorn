@@ -665,7 +665,6 @@ symbols = (
     'float64_to_uint64',
     'float64_to_uint64_round_to_zero',
     'float64_to_uint64_scalbn',
-    'float64_trunc_to_int',
     'float64_unordered',
     'float64_unordered_quiet',
     'float_raise',

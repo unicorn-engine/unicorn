@@ -659,7 +659,6 @@
 #define float64_to_uint64 float64_to_uint64_m68k
 #define float64_to_uint64_round_to_zero float64_to_uint64_round_to_zero_m68k
 #define float64_to_uint64_scalbn float64_to_uint64_scalbn_m68k
-#define float64_trunc_to_int float64_trunc_to_int_m68k
 #define float64_unordered float64_unordered_m68k
 #define float64_unordered_quiet float64_unordered_quiet_m68k
 #define float_raise float_raise_m68k
