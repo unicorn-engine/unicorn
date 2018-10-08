@@ -3283,6 +3283,9 @@ arm_symbols = (
     'arm_reset_cpu',
     'arm_set_cpu_off',
     'arm_set_cpu_on',
+    'fp_exception_el',
+    'sve_exception_el',
+    'sve_zcr_len_for_el',
 )
 
 aarch64_symbols = (
@@ -3306,6 +3309,7 @@ aarch64_symbols = (
     'cpu_reg',
     'cpu_reg_sp',
     'disas_sve',
+    'fp_exception_el',
     'gen_a64_set_pc_im',
     'helper_advsimd_acge_f16',
     'helper_advsimd_acgt_f16',
@@ -4171,6 +4175,8 @@ aarch64_symbols = (
     'read_cpu_reg',
     'read_cpu_reg_sp',
     'sve_access_check',
+    'sve_exception_el',
+    'sve_zcr_len_for_el',
     'unallocated_encoding',
     'vfp_expand_imm',
     'write_fp_dreg',

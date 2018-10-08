@@ -3285,6 +3285,7 @@
 #define cpu_reg cpu_reg_aarch64eb
 #define cpu_reg_sp cpu_reg_sp_aarch64eb
 #define disas_sve disas_sve_aarch64eb
+#define fp_exception_el fp_exception_el_aarch64eb
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64eb
 #define helper_advsimd_acge_f16 helper_advsimd_acge_f16_aarch64eb
 #define helper_advsimd_acgt_f16 helper_advsimd_acgt_f16_aarch64eb
@@ -4150,6 +4151,8 @@
 #define read_cpu_reg read_cpu_reg_aarch64eb
 #define read_cpu_reg_sp read_cpu_reg_sp_aarch64eb
 #define sve_access_check sve_access_check_aarch64eb
+#define sve_exception_el sve_exception_el_aarch64eb
+#define sve_zcr_len_for_el sve_zcr_len_for_el_aarch64eb
 #define unallocated_encoding unallocated_encoding_aarch64eb
 #define vfp_expand_imm vfp_expand_imm_aarch64eb
 #define write_fp_dreg write_fp_dreg_aarch64eb
