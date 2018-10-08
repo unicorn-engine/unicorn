@@ -6728,6 +6728,7 @@ static void arm_log_exception(int idx)
             "Semihosting call",
             "v7M NOCP UsageFault",
             "v7M INVSTATE UsageFault",
+            "v8M STKOF UsageFault",
         };
 
         if (idx >= 0 && idx < ARRAY_SIZE(excnames)) {
@@ -6886,6 +6887,10 @@ void arm_v7m_cpu_do_interrupt(CPUState *cs)
     case EXCP_INVSTATE:
         //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_USAGE);
         env->v7m.cfsr[env->v7m.secure] |= R_V7M_CFSR_INVSTATE_MASK;
+        break;
+    case EXCP_STKOF:
+        //armv7m_nvic_set_pending(env->nvic, ARMV7M_EXCP_USAGE, env->v7m.secure);
+        env->v7m.cfsr[env->v7m.secure] |= R_V7M_CFSR_STKOF_MASK;
         break;
     case EXCP_SWI:
         /* The PC already points to the next instruction.  */
