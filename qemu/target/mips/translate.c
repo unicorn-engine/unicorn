@@ -2486,6 +2486,20 @@ static inline void check_xnp(DisasContext *ctx)
     }
 }
 
+#ifndef CONFIG_USER_ONLY
+/*
+ * This code generates a "reserved instruction" exception if the
+ * Config3 PW bit is NOT set.
+ */
+static inline void check_pw(DisasContext *ctx)
+{
+    if (unlikely(!(ctx->CP0_Config3 & (1 << CP0C3_PW)))) {
+        generate_exception_end(ctx, EXCP_RI);
+    }
+}
+#endif
+
+
 /*
  * This code generates a "reserved instruction" exception if the
  * Config3 MT bit is NOT set.
@@ -6176,6 +6190,11 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_SegCtl2));
             tcg_gen_ext32s_tl(tcg_ctx, arg, arg);
             rn = "SegCtl2";
+        case 5:
+            check_pw(ctx);
+            gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_PWBase));
+            rn = "PWBase";
+            break;
             break;
         default:
             goto cp0_unimplemented;
@@ -6873,6 +6892,11 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             CP0_CHECK(ctx->sc);
             gen_helper_mtc0_segctl2(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "SegCtl2";
+            break;
+        case 5:
+            check_pw(ctx);
+            gen_mtc0_store32(ctx, arg, offsetof(CPUMIPSState, CP0_PWBase));
+            rn = "PWBase";
             break;
         default:
             goto cp0_unimplemented;
@@ -7581,6 +7605,11 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_SegCtl2));
             rn = "SegCtl2";
             break;
+        case 5:
+            check_pw(ctx);
+            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_PWBase));
+            rn = "PWBase";
+            break;
         default:
             goto cp0_unimplemented;
         }
@@ -8259,6 +8288,11 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             CP0_CHECK(ctx->sc);
             gen_helper_mtc0_segctl2(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "SegCtl2";
+            break;
+        case 5:
+            check_pw(ctx);
+            tcg_gen_st_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_PWBase));
+            rn = "PWBase";
             break;
         default:
             goto cp0_unimplemented;
