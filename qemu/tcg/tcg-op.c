@@ -2600,6 +2600,10 @@ void tcg_gen_exit_tb(TCGContext *s, TranslationBlock *tb, unsigned idx)
            seen this numbered exit before, via tcg_gen_goto_tb.  */
         tcg_debug_assert(tcg_ctx->goto_tb_issue_mask & (1 << idx));
 #endif
+        /* When not chaining, exit without indicating a link.  */
+        if (qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
+            val = 0;
+        }
     } else {
         /* This is an exit via the exitreq label.  */
         tcg_debug_assert(idx == TB_EXIT_REQUESTED);
@@ -2617,7 +2621,10 @@ void tcg_gen_goto_tb(TCGContext *s, unsigned idx)
     tcg_debug_assert((s->goto_tb_issue_mask & (1 << idx)) == 0);
     s->goto_tb_issue_mask |= 1 << idx;
 #endif
-    tcg_gen_op1i(s, INDEX_op_goto_tb, idx);
+    /* When not chaining, we simply fall through to the "fallback" exit.  */
+    if (!qemu_loglevel_mask(CPU_LOG_TB_NOCHAIN)) {
+        tcg_gen_op1i(s, INDEX_op_goto_tb, idx);
+    }
 }
 
 void tcg_gen_lookup_and_goto_ptr(TCGContext *s)
