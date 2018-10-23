@@ -91,7 +91,6 @@ void tlb_flush(CPUState *cpu)
 void tlb_flush_page(CPUState *cpu, target_ulong addr)
 {
     CPUArchState *env = cpu->env_ptr;
-    int i;
     int mmu_idx;
 
     tlb_debug("page :" TARGET_FMT_lx "\n", addr);
@@ -107,9 +106,8 @@ void tlb_flush_page(CPUState *cpu, target_ulong addr)
     }
 
     addr &= TARGET_PAGE_MASK;
-    i = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
-        tlb_flush_entry(&env->tlb_table[mmu_idx][i], addr);
+        tlb_flush_entry(tlb_entry(env, mmu_idx, addr), addr);
     }
 
     /* check whether there are entries that need to be flushed in the vtlb */
@@ -163,13 +161,11 @@ void tlb_reset_dirty(CPUState *cpu, ram_addr_t start1, ram_addr_t length)
 void tlb_set_dirty(CPUState *cpu, target_ulong vaddr)
 {
     CPUArchState *env = cpu->env_ptr;
-    int i;
     int mmu_idx;
 
     vaddr &= TARGET_PAGE_MASK;
-    i = (vaddr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
-        tlb_set_dirty1(&env->tlb_table[mmu_idx][i], vaddr);
+        tlb_set_dirty1(tlb_entry(env, mmu_idx, vaddr), vaddr);
     }
 
     for (mmu_idx = 0; mmu_idx < NB_MMU_MODES; mmu_idx++) {
@@ -306,7 +302,9 @@ static ram_addr_t qemu_ram_addr_from_host_nofail(struct uc_struct *uc, void *ptr
  */
 tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
 {
-    int mmu_idx, index;
+    uintptr_t mmu_idx = cpu_mmu_index(env, true);
+    uintptr_t index = tlb_index(env, mmu_idx, addr);
+    CPUTLBEntry *entry = tlb_entry(env, mmu_idx, addr);
     void *p;
     MemoryRegion *mr;
     MemoryRegionSection *section;
@@ -315,9 +313,7 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
     CPUIOTLBEntry *iotlbentry;
     hwaddr physaddr, mr_offset;
 
-    index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-    mmu_idx = cpu_mmu_index(env, true);
-    if (unlikely(!tlb_hit(env->tlb_table[mmu_idx][index].addr_code, addr))) {
+    if (unlikely(!tlb_hit(entry->addr_code, addr))) {
         cpu_ldub_code(env, addr);
         //check for NX related error from softmmu
         if (env->invalid_error == UC_ERR_FETCH_PROT) {
@@ -353,7 +349,7 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
         env->invalid_error = UC_ERR_FETCH_UNMAPPED;
         return RAM_ADDR_INVALID;
     }
-    p = (void *)((uintptr_t)addr + env->tlb_table[mmu_idx][index].addend);
+    p = (void *)((uintptr_t)addr + entry->addend);
     ram_addr = qemu_ram_addr_from_host_nofail(cpu->uc, p);
     if (ram_addr == RAM_ADDR_INVALID) {
         env->invalid_addr = addr;
@@ -569,10 +565,10 @@ static bool victim_tlb_hit(CPUArchState *env, size_t mmu_idx, size_t index,
 void probe_write(CPUArchState *env, target_ulong addr, int size, int mmu_idx,
                  uintptr_t retaddr)
 {
-    int index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-    target_ulong tlb_addr = env->tlb_table[mmu_idx][index].addr_write;
+    uintptr_t index = tlb_index(env, mmu_idx, addr);
+    CPUTLBEntry *entry = tlb_entry(env, mmu_idx, addr);
 
-    if (!tlb_hit(tlb_addr, addr)) {
+    if (!tlb_hit(entry->addr_write, addr)) {
         /* TLB entry is for a different page */
         if (!VICTIM_TLB_HIT(addr_write, addr)) {
             tlb_fill(ENV_GET_CPU(env), addr, size, MMU_DATA_STORE,
@@ -587,8 +583,8 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
                                TCGMemOpIdx oi, uintptr_t retaddr)
 {
     size_t mmu_idx = get_mmuidx(oi);
-    size_t index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-    CPUTLBEntry *tlbe = &env->tlb_table[mmu_idx][index];
+    uintptr_t index = tlb_index(env, mmu_idx, addr);
+    CPUTLBEntry *tlbe = tlb_entry(env, mmu_idx, addr);
     target_ulong tlb_addr = tlbe->addr_write;
     TCGMemOp mop = get_memop(oi);
     int a_bits = get_alignment_bits(mop);
