@@ -3123,6 +3123,7 @@
 #define thumb2_logic_op thumb2_logic_op_sparc
 #define ti925t_initfn ti925t_initfn_sparc
 #define tlb_add_large_page tlb_add_large_page_sparc
+#define tlb_init tlb_init_sparc
 #define tlb_fill tlb_fill_sparc
 #define tlb_flush tlb_flush_sparc
 #define tlb_flush_by_mmuidx tlb_flush_by_mmuidx_sparc

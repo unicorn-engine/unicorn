@@ -66,6 +66,10 @@ static void tlb_add_large_page(CPUArchState *env, target_ulong vaddr,
                                target_ulong size);
 static void tlb_set_dirty1(CPUTLBEntry *tlb_entry, target_ulong vaddr);
 
+void tlb_init(CPUState *cpu)
+{
+}
+
 /* This is OK because CPU architectures generally permit an
  * implementation to drop entries from the TLB at any time, so
  * flushing more entries than required is only an efficiency issue,

@@ -110,6 +110,11 @@ void cpu_address_space_init(CPUState *cpu, int asidx,
 #if !defined(CONFIG_USER_ONLY) && defined(CONFIG_TCG)
 /* cputlb.c */
 /**
+ * tlb_init - initialize a CPU's TLB
+ * @cpu: CPU whose TLB should be initialized
+ */
+void tlb_init(CPUState *cpu);
+/**
  * tlb_flush_page:
  * @cpu: CPU whose TLB should be flushed
  * @addr: virtual address of page to be flushed

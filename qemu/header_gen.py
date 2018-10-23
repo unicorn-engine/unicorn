@@ -3129,6 +3129,7 @@ symbols = (
     'thumb2_logic_op',
     'ti925t_initfn',
     'tlb_add_large_page',
+    'tlb_init',
     'tlb_fill',
     'tlb_flush',
     'tlb_flush_by_mmuidx',

@@ -3123,6 +3123,7 @@
 #define thumb2_logic_op thumb2_logic_op_mips64el
 #define ti925t_initfn ti925t_initfn_mips64el
 #define tlb_add_large_page tlb_add_large_page_mips64el
+#define tlb_init tlb_init_mips64el
 #define tlb_fill tlb_fill_mips64el
 #define tlb_flush tlb_flush_mips64el
 #define tlb_flush_by_mmuidx tlb_flush_by_mmuidx_mips64el

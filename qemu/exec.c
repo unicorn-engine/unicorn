@@ -644,6 +644,7 @@ void cpu_exec_init(CPUState *cpu, Error **errp, void *opaque)
         cc->tcg_initialized = true;
         cc->tcg_initialize(uc);
     }
+    tlb_init(cpu);
 
 #ifndef CONFIG_USER_ONLY
 
