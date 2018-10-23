@@ -4934,6 +4934,7 @@ mips_symbols = (
     'helper_mtc0_pagegrain',
     'helper_mtc0_pagemask',
     'helper_mtc0_performance0',
+    'helper_mtc0_pwfield',
     'helper_mtc0_segctl0',
     'helper_mtc0_segctl1',
     'helper_mtc0_segctl2',
