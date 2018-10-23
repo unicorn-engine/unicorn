@@ -4225,4 +4225,5 @@
 #define r4k_invalidate_tlb r4k_invalidate_tlb_mips64el
 #define r4k_map_address r4k_map_address_mips64el
 #define sync_c0_status sync_c0_status_mips64el
+#define update_pagemask update_pagemask_mips64el
 #endif

@@ -5251,6 +5251,7 @@ mips_symbols = (
     'r4k_invalidate_tlb',
     'r4k_map_address',
     'sync_c0_status',
+    'update_pagemask',
 )
 
 sparc_symbols = (
