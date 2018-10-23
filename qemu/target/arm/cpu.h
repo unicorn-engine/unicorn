@@ -855,10 +855,13 @@ hwaddr arm_cpu_get_phys_page_attrs_debug(CPUState *cpu, vaddr addr,
 
 #ifdef TARGET_AARCH64
 void aarch64_sve_narrow_vq(CPUARMState *env, unsigned vq);
-void aarch64_sve_change_el(CPUARMState *env, int old_el, int new_el);
+void aarch64_sve_change_el(CPUARMState *env, int old_el,
+                           int new_el, bool el0_a64);
 #else
 static inline void aarch64_sve_narrow_vq(CPUARMState *env, unsigned vq) { }
-static inline void aarch64_sve_change_el(CPUARMState *env, int o, int n) { }
+static inline void aarch64_sve_change_el(CPUARMState *env, int o,
+                                         int n, bool a)
+{ }
 #endif
 
 target_ulong do_arm_semihosting(CPUARMState *env);
