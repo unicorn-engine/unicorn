@@ -128,7 +128,7 @@ void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry, uintptr_t start,
     uintptr_t addr;
 
     if (tlb_is_dirty_ram(tlb_entry)) {
-        addr = (tlb_entry->addr_write & TARGET_PAGE_MASK) + tlb_entry->addend;
+        addr = (tlb_addr_write(tlb_entry) & TARGET_PAGE_MASK) + tlb_entry->addend;
         if ((addr - start) < length) {
             tlb_entry->addr_write |= TLB_NOTDIRTY;
         }
@@ -363,7 +363,7 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
 
 static void tlb_set_dirty1(CPUTLBEntry *tlb_entry, target_ulong vaddr)
 {
-    if (tlb_entry->addr_write == (vaddr | TLB_NOTDIRTY)) {
+    if (tlb_addr_write(tlb_entry) == (vaddr | TLB_NOTDIRTY)) {
         tlb_entry->addr_write = vaddr;
     }
 }
@@ -393,7 +393,7 @@ static void tlb_add_large_page(CPUArchState *env, target_ulong vaddr,
 
 static bool tlb_is_dirty_ram(CPUTLBEntry *tlbe)
 {
-    return (tlbe->addr_write & (TLB_INVALID_MASK|TLB_MMIO|TLB_NOTDIRTY)) == 0;
+    return (tlb_addr_write(tlbe) & (TLB_INVALID_MASK|TLB_MMIO|TLB_NOTDIRTY)) == 0;
 }
 
 static inline void v_tlb_flush_by_mmuidx(CPUState *cpu, uint16_t idxmap)
@@ -424,7 +424,7 @@ void tlb_flush_by_mmuidx(CPUState *cpu, uint16_t idxmap)
 static inline void tlb_flush_entry(CPUTLBEntry *tlb_entry, target_ulong addr)
 {
     if (tlb_hit_page(tlb_entry->addr_read, addr) ||
-        tlb_hit_page(tlb_entry->addr_write, addr) ||
+        tlb_hit_page(tlb_addr_write(tlb_entry), addr) ||
         tlb_hit_page(tlb_entry->addr_code, addr)) {
         memset(tlb_entry, -1, sizeof(*tlb_entry));
     }
@@ -536,7 +536,14 @@ static bool victim_tlb_hit(CPUArchState *env, size_t mmu_idx, size_t index,
     size_t vidx;
     for (vidx = 0; vidx < CPU_VTLB_SIZE; ++vidx) {
         CPUTLBEntry *vtlb = &env->tlb_v_table[mmu_idx][vidx];
-        target_ulong cmp = *(target_ulong *)((uintptr_t)vtlb + elt_ofs);
+        target_ulong cmp;
+
+        /* elt_ofs might correspond to .addr_write, so use atomic_read */
+#if TCG_OVERSIZED_GUEST
+        cmp = *(target_ulong *)((uintptr_t)vtlb + elt_ofs);
+#else
+        cmp = atomic_read((target_ulong *)((uintptr_t)vtlb + elt_ofs));
+#endif
 
         if (cmp == page) {
             /* Found entry in victim tlb, swap tlb and iotlb.  */
@@ -569,7 +576,7 @@ void probe_write(CPUArchState *env, target_ulong addr, int size, int mmu_idx,
     uintptr_t index = tlb_index(env, mmu_idx, addr);
     CPUTLBEntry *entry = tlb_entry(env, mmu_idx, addr);
 
-    if (!tlb_hit(entry->addr_write, addr)) {
+    if (!tlb_hit(tlb_addr_write(entry), addr)) {
         /* TLB entry is for a different page */
         if (!VICTIM_TLB_HIT(addr_write, addr)) {
             tlb_fill(ENV_GET_CPU(env), addr, size, MMU_DATA_STORE,
@@ -586,7 +593,7 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
     size_t mmu_idx = get_mmuidx(oi);
     uintptr_t index = tlb_index(env, mmu_idx, addr);
     CPUTLBEntry *tlbe = tlb_entry(env, mmu_idx, addr);
-    target_ulong tlb_addr = tlbe->addr_write;
+    target_ulong tlb_addr = tlb_addr_write(tlbe);
     TCGMemOp mop = get_memop(oi);
     int a_bits = get_alignment_bits(mop);
     int s_bits = mop & MO_SIZE;
@@ -616,7 +623,7 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
             tlb_fill(ENV_GET_CPU(env), addr, 1 << s_bits, MMU_DATA_STORE,
                      mmu_idx, retaddr);
         }
-        tlb_addr = tlbe->addr_write;
+        tlb_addr = tlb_addr_write(tlbe);
     }
 
     /* Check notdirty */
