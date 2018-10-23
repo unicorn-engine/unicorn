@@ -126,6 +126,8 @@ _setup_prototype(_uc, "uc_reg_read", ucerr, uc_engine, ctypes.c_int, ctypes.c_vo
 _setup_prototype(_uc, "uc_reg_write", ucerr, uc_engine, ctypes.c_int, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_mem_read", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
 _setup_prototype(_uc, "uc_mem_write", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
+_setup_prototype(_uc, "uc_virtual_mem_read", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
+_setup_prototype(_uc, "uc_virtual_mem_write", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
 _setup_prototype(_uc, "uc_emu_start", ucerr, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_size_t)
 _setup_prototype(_uc, "uc_emu_stop", ucerr, uc_engine)
 _setup_prototype(_uc, "uc_hook_del", ucerr, uc_engine, uc_hook_h)
@@ -436,6 +438,20 @@ class Uc(object):
     # write to memory
     def mem_write(self, address, data):
         status = _uc.uc_mem_write(self._uch, address, data, len(data))
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+
+    # read data from virtual memory
+    def virtual_mem_read(self, address, size):
+        data = ctypes.create_string_buffer(size)
+        status = _uc.uc_virtual_mem_read(self._uch, address, data, size)
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+        return bytearray(data)
+
+    # write to virtual memory
+    def virtual_mem_write(self, address, data):
+        status = _uc.uc_virtual_mem_write(self._uch, address, data, len(data))
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 

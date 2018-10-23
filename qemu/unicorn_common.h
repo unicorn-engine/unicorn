@@ -19,6 +19,18 @@ static inline bool cpu_physical_mem_write(AddressSpace *as, hwaddr addr,
     return !cpu_physical_memory_rw(as, addr, (void *)buf, len, 1);
 }
 
+static inline bool cpu_virtual_mem_read(CPUState *cpu, hwaddr addr,
+                                            uint8_t *buf, int len)
+{
+    return !cpu_memory_rw_debug(cpu, addr, (void *)buf, len, 0);
+}
+
+static inline bool cpu_virtual_mem_write(CPUState *cpu, hwaddr addr,
+                                            const uint8_t *buf, int len)
+{
+    return !cpu_memory_rw_debug(cpu, addr, (void *)buf, len, 1);
+}
+
 void tb_cleanup(struct uc_struct *uc);
 void free_code_gen_buffer(struct uc_struct *uc);
 
@@ -70,6 +82,8 @@ static inline void uc_common_init(struct uc_struct* uc)
     memory_register_types(uc);
     uc->write_mem = cpu_physical_mem_write;
     uc->read_mem = cpu_physical_mem_read;
+    uc->write_virtual_mem = cpu_virtual_mem_write;
+    uc->read_virtual_mem = cpu_virtual_mem_read;
     uc->tcg_enabled = tcg_enabled;
     uc->tcg_exec_init = tcg_exec_init;
     uc->cpu_exec_init_all = cpu_exec_init_all;
