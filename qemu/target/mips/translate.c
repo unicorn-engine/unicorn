@@ -1385,6 +1385,23 @@ enum {
     OPC_BINSRI_df   = (0x7 << 23) | OPC_MSA_BIT_09,
 };
 
+/*
+ *    AN OVERVIEW OF MXU EXTENSION INSTRUCTION SET
+ *    ============================================
+ *
+ * MXU (full name: MIPS eXtension/enhanced Unit) is an SIMD extension of MIPS32
+ * instructions set. It is designed to fit the needs of signal, graphical and
+ * video processing applications. MXU instruction set is used in Xburst family
+ * of microprocessors by Ingenic.
+ *
+ * MXU unit contains 17 registers called X0-X16. X0 is always zero, and X16 is
+ * the control register.
+ *
+ *   Compiled after:
+ *
+ *   "XBurst® Instruction Set Architecture MIPS eXtension/enhanced Unit
+ *   Programming Manual", Ingenic Semiconductor Co, Ltd., 2017
+ */
 
 #define gen_helper_0e0i(tcg_ctx, name, arg) do {                           \
     TCGv_i32 helper_tmp = tcg_const_i32(tcg_ctx, arg);                     \
