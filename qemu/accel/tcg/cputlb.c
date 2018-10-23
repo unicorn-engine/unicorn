@@ -31,6 +31,7 @@
 #include "tcg/tcg.h"
 #include "exec/helper-proto.h"
 #include "qemu/atomic.h"
+#include "qemu/atomic128.h"
 
 #include "uc_priv.h"
 
@@ -692,7 +693,7 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
 #include "atomic_template.h"
 #endif
 
-#ifdef CONFIG_ATOMIC128
+#if HAVE_CMPXCHG128 || HAVE_ATOMIC128
 #define DATA_SIZE 16
 #include "atomic_template.h"
 #endif

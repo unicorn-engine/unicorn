@@ -10,6 +10,21 @@
 #include "config-host.h"
 #include "unicorn/platform.h"
 
+#ifndef __has_attribute
+#define __has_attribute(x) 0 /* compatibility with older GCC */
+#endif
+
+/*
+ * If __attribute__((error)) is present, use it to produce an error at
+ * compile time.  Otherwise, one must wait for the linker to diagnose
+ * the missing symbol.
+ */
+#if __has_attribute(error)
+# define QEMU_ERROR(X) __attribute__((error(X)))
+#else
+# define QEMU_ERROR(X)
+#endif
+
 #ifdef _MSC_VER
 // MSVC support
 

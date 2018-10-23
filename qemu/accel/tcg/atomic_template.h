@@ -66,16 +66,22 @@ ABI_TYPE ATOMIC_NAME(cmpxchg)(CPUArchState *env, target_ulong addr,
                               ABI_TYPE cmpv, ABI_TYPE newv EXTRA_ARGS)
 {
     DATA_TYPE *haddr = ATOMIC_MMU_LOOKUP;
-    DATA_TYPE ret = atomic_cmpxchg__nocheck(haddr, cmpv, newv);
+    DATA_TYPE ret;
+#if DATA_SIZE == 16
+    ret = atomic16_cmpxchg(haddr, cmpv, newv);
+#else
+    ret = atomic_cmpxchg__nocheck(haddr, cmpv, newv);
+#endif
     ATOMIC_MMU_CLEANUP;
     return ret;
 }
 
 #if DATA_SIZE >= 16
+#if HAVE_ATOMIC128
 ABI_TYPE ATOMIC_NAME(ld)(CPUArchState *env, target_ulong addr EXTRA_ARGS)
 {
     DATA_TYPE val, *haddr = ATOMIC_MMU_LOOKUP;
-    __atomic_load(haddr, &val, __ATOMIC_RELAXED);
+    val = atomic16_read(haddr);
     ATOMIC_MMU_CLEANUP;
     return val;
 }
@@ -84,9 +90,10 @@ void ATOMIC_NAME(st)(CPUArchState *env, target_ulong addr,
                      ABI_TYPE val EXTRA_ARGS)
 {
     DATA_TYPE *haddr = ATOMIC_MMU_LOOKUP;
-    __atomic_store(haddr, &val, __ATOMIC_RELAXED);
+    atomic16_set(haddr, val);
     ATOMIC_MMU_CLEANUP;
 }
+#endif
 #else
 ABI_TYPE ATOMIC_NAME(xchg)(CPUArchState *env, target_ulong addr,
                            ABI_TYPE val EXTRA_ARGS)
@@ -167,16 +174,24 @@ ABI_TYPE ATOMIC_NAME(cmpxchg)(CPUArchState *env, target_ulong addr,
                               ABI_TYPE cmpv, ABI_TYPE newv EXTRA_ARGS)
 {
     DATA_TYPE *haddr = ATOMIC_MMU_LOOKUP;
-    DATA_TYPE ret = atomic_cmpxchg__nocheck(haddr, BSWAP(cmpv), BSWAP(newv));
+    DATA_TYPE ret;
+
+#if DATA_SIZE == 16
+    ret = atomic16_cmpxchg(haddr, BSWAP(cmpv), BSWAP(newv));
+#else
+    ret = atomic_cmpxchg__nocheck(haddr, BSWAP(cmpv), BSWAP(newv));
+#endif
+
     ATOMIC_MMU_CLEANUP;
     return BSWAP(ret);
 }
 
 #if DATA_SIZE >= 16
+#if HAVE_ATOMIC128
 ABI_TYPE ATOMIC_NAME(ld)(CPUArchState *env, target_ulong addr EXTRA_ARGS)
 {
     DATA_TYPE val, *haddr = ATOMIC_MMU_LOOKUP;
-    __atomic_load(haddr, &val, __ATOMIC_RELAXED);
+    val = atomic16_read(haddr);
     ATOMIC_MMU_CLEANUP;
     return BSWAP(val);
 }
@@ -186,9 +201,10 @@ void ATOMIC_NAME(st)(CPUArchState *env, target_ulong addr,
 {
     DATA_TYPE *haddr = ATOMIC_MMU_LOOKUP;
     val = BSWAP(val);
-    __atomic_store(haddr, &val, __ATOMIC_RELAXED);
+    atomic16_set(haddr, val);
     ATOMIC_MMU_CLEANUP;
 }
+#endif
 #else
 ABI_TYPE ATOMIC_NAME(xchg)(CPUArchState *env, target_ulong addr,
                            ABI_TYPE val EXTRA_ARGS)
