@@ -6200,6 +6200,11 @@ static void gen_mfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_PWField));
             rn = "PWField";
             break;
+        case 7:
+            check_pw(ctx);
+            gen_mfc0_load32(ctx, arg, offsetof(CPUMIPSState, CP0_PWSize));
+            rn = "PWSize";
+            break;
         default:
             goto cp0_unimplemented;
         }
@@ -6906,6 +6911,11 @@ static void gen_mtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             check_pw(ctx);
             gen_helper_mtc0_pwfield(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "PWField";
+            break;
+        case 7:
+            check_pw(ctx);
+            gen_helper_mtc0_pwsize(tcg_ctx, tcg_ctx->cpu_env, arg);
+            rn = "PWSize";
             break;
         default:
             goto cp0_unimplemented;
@@ -7624,6 +7634,11 @@ static void gen_dmfc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_PWField));
             rn = "PWField";
             break;
+        case 7:
+            check_pw(ctx);
+            tcg_gen_ld_tl(tcg_ctx, arg, tcg_ctx->cpu_env, offsetof(CPUMIPSState, CP0_PWSize));
+            rn = "PWSize";
+            break;
         default:
             goto cp0_unimplemented;
         }
@@ -8312,6 +8327,11 @@ static void gen_dmtc0(DisasContext *ctx, TCGv arg, int reg, int sel)
             check_pw(ctx);
             gen_helper_mtc0_pwfield(tcg_ctx, tcg_ctx->cpu_env, arg);
             rn = "PWField";
+            break;
+        case 7:
+            check_pw(ctx);
+            gen_helper_mtc0_pwsize(tcg_ctx, tcg_ctx->cpu_env, arg);
+            rn = "PWSize";
             break;
         default:
             goto cp0_unimplemented;
