@@ -444,7 +444,7 @@ const mips_def_t mips_defs[] =
         32,
         0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
         0,
-        CPU_MIPS32R2 | ASE_MIPS16 | ASE_DSP | ASE_DSPR2,
+        CPU_MIPS32R2 | ASE_MIPS16 | ASE_DSP | ASE_DSP_R2,
         MMU_TYPE_R4000,
     },
     {
@@ -659,7 +659,7 @@ const mips_def_t mips_defs[] =
         0,
         (1 << CP0PG_IEC) | (1 << CP0PG_XIE) | (1U << CP0PG_RIE),
         0,
-        CPU_NANOMIPS32 | ASE_DSP | ASE_DSPR2 | ASE_DSPR3 | ASE_MT,
+        CPU_NANOMIPS32 | ASE_DSP | ASE_DSP_R2 | ASE_DSP_R3 | ASE_MT,
         MMU_TYPE_R4000,
     },
 #if defined(TARGET_MIPS64)
@@ -1052,7 +1052,7 @@ const mips_def_t mips_defs[] =
         MMU_TYPE_R4000,
     },
     {
-        /* A generic CPU providing MIPS64 ASE DSP 2 features.
+        /* A generic CPU providing MIPS64 DSP R2 ASE features.
            FIXME: Eventually this should be replaced by a real CPU model. */
         "mips64dspr2",
         0x00010000,
@@ -1089,7 +1089,7 @@ const mips_def_t mips_defs[] =
         36,
         0,0, 0,0, 0,0, 0,0, 0,0, 0,0,
         0,
-        CPU_MIPS64R2 | ASE_DSP | ASE_DSPR2,
+        CPU_MIPS64R2 | ASE_DSP | ASE_DSP_R2,
         MMU_TYPE_R4000,
     },
 #endif
