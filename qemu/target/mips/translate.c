@@ -1969,7 +1969,7 @@ typedef struct DisasContext {
     target_ulong saved_pc;
     target_ulong page_start;
     uint32_t opcode;
-    int insn_flags;
+    uint64_t insn_flags;
     int32_t CP0_Config1;
     int32_t CP0_Config3;
     int32_t CP0_Config5;
@@ -2417,7 +2417,7 @@ static inline void check_dspr2(DisasContext *ctx)
 
 /* This code generates a "reserved instruction" exception if the
    CPU does not support the instruction set corresponding to flags. */
-static inline void check_insn(DisasContext *ctx, int flags)
+static inline void check_insn(DisasContext *ctx, uint64_t flags)
 {
     if (unlikely(!(ctx->insn_flags & flags))) {
         generate_exception_end(ctx, EXCP_RI);
@@ -2427,7 +2427,7 @@ static inline void check_insn(DisasContext *ctx, int flags)
 /* This code generates a "reserved instruction" exception if the
    CPU has corresponding flag set which indicates that the instruction
    has been removed. */
-static inline void check_insn_opc_removed(DisasContext *ctx, int flags)
+static inline void check_insn_opc_removed(DisasContext *ctx, uint64_t flags)
 {
     if (unlikely(ctx->insn_flags & flags)) {
         generate_exception_end(ctx, EXCP_RI);
