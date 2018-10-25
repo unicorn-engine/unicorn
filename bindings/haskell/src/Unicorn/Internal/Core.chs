@@ -14,7 +14,7 @@ way cabal handles ordering of chs files.
 module Unicorn.Internal.Core where
 
 import Control.Monad
-import Control.Monad.Trans.Either (EitherT)
+import Control.Monad.Trans.Except (ExceptT)
 import Foreign
 
 {# context lib = "unicorn" #}
@@ -48,7 +48,7 @@ mkEngine ptr =
 
 -- | The emulator runs in the IO monad and allows for the handling of errors
 -- "under the hood".
-type Emulator a = EitherT Error IO a
+type Emulator a = ExceptT Error IO a
 
 -- | An architecture-dependent register.
 class Enum a => Reg a
