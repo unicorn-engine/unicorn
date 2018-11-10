@@ -4281,17 +4281,21 @@ static void gen_HILO(DisasContext *ctx, uint32_t opc, int acc, int reg)
     TCGv *cpu_HI = tcg_ctx->cpu_HI;
     TCGv *cpu_LO = tcg_ctx->cpu_LO;
 
-    if (reg == 0 && (opc == OPC_MFHI || opc == OPC_MFLO)) {
+    if (reg == 0 && (opc == OPC_MFHI || opc == TX79_MMI_MFHI1 ||
+                     opc == OPC_MFLO || opc == TX79_MMI_MFLO1)) {
         /* Treat as NOP. */
         return;
     }
 
     if (acc != 0) {
-        check_dsp(ctx);
+        if (!(ctx->insn_flags & INSN_R5900)) {
+            check_dsp(ctx);
+        }
     }
 
     switch (opc) {
     case OPC_MFHI:
+    case TX79_MMI_MFHI1:
 #if defined(TARGET_MIPS64)
         if (acc != 0) {
             tcg_gen_ext32s_tl(tcg_ctx, cpu_gpr[reg], cpu_HI[acc]);
@@ -4302,6 +4306,7 @@ static void gen_HILO(DisasContext *ctx, uint32_t opc, int acc, int reg)
         }
         break;
     case OPC_MFLO:
+    case TX79_MMI_MFLO1:
 #if defined(TARGET_MIPS64)
         if (acc != 0) {
             tcg_gen_ext32s_tl(tcg_ctx, cpu_gpr[reg], cpu_LO[acc]);
@@ -4312,6 +4317,7 @@ static void gen_HILO(DisasContext *ctx, uint32_t opc, int acc, int reg)
         }
         break;
     case OPC_MTHI:
+    case TX79_MMI_MTHI1:
         if (reg != 0) {
 #if defined(TARGET_MIPS64)
             if (acc != 0) {
@@ -4326,6 +4332,7 @@ static void gen_HILO(DisasContext *ctx, uint32_t opc, int acc, int reg)
         }
         break;
     case OPC_MTLO:
+    case TX79_MMI_MTLO1:
         if (reg != 0) {
 #if defined(TARGET_MIPS64)
             if (acc != 0) {
@@ -24809,13 +24816,17 @@ static void decode_tx79_mmi(CPUMIPSState *env, DisasContext *ctx)
     case TX79_MMI_MULTU1:
         gen_mul_txx9(ctx, opc, rd, rs, rt);
         break;
+    case TX79_MMI_MTLO1:
+    case TX79_MMI_MTHI1:
+        gen_HILO(ctx, opc, 1, rs);
+        break;
+    case TX79_MMI_MFLO1:
+    case TX79_MMI_MFHI1:
+        gen_HILO(ctx, opc, 1, rd);
+        break;
     case TX79_MMI_MADD:          /* TODO: TX79_MMI_MADD */
     case TX79_MMI_MADDU:         /* TODO: TX79_MMI_MADDU */
     case TX79_MMI_PLZCW:         /* TODO: TX79_MMI_PLZCW */
-    case TX79_MMI_MFHI1:         /* TODO: TX79_MMI_MFHI1 */
-    case TX79_MMI_MTHI1:         /* TODO: TX79_MMI_MTHI1 */
-    case TX79_MMI_MFLO1:         /* TODO: TX79_MMI_MFLO1 */
-    case TX79_MMI_MTLO1:         /* TODO: TX79_MMI_MTLO1 */
     case TX79_MMI_DIV1:          /* TODO: TX79_MMI_DIV1 */
     case TX79_MMI_DIVU1:         /* TODO: TX79_MMI_DIVU1 */
     case TX79_MMI_MADD1:         /* TODO: TX79_MMI_MADD1 */
