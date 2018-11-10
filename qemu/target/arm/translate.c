@@ -1682,6 +1682,26 @@ static TCGv_i32 neon_load_reg(DisasContext *s, int reg, int pass)
     return tmp;
 }
 
+static void neon_load_element(DisasContext *s, TCGv_i32 var, int reg, int ele, TCGMemOp mop)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    long offset = neon_element_offset(reg, ele, mop & MO_SIZE);
+
+    switch (mop) {
+    case MO_UB:
+        tcg_gen_ld8u_i32(tcg_ctx, var, tcg_ctx->cpu_env, offset);
+        break;
+    case MO_UW:
+        tcg_gen_ld16u_i32(tcg_ctx, var, tcg_ctx->cpu_env, offset);
+        break;
+    case MO_UL:
+        tcg_gen_ld_i32(tcg_ctx, var, tcg_ctx->cpu_env, offset);
+        break;
+    default:
+        g_assert_not_reached();
+    }
+}
+
 static void neon_load_element64(DisasContext *s, TCGv_i64 var, int reg, int ele, TCGMemOp mop)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
@@ -1710,6 +1730,26 @@ static void neon_store_reg(DisasContext *s, int reg, int pass, TCGv_i32 var)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     tcg_gen_st_i32(tcg_ctx, var, tcg_ctx->cpu_env, neon_reg_offset(reg, pass));
     tcg_temp_free_i32(tcg_ctx, var);
+}
+
+static void neon_store_element(DisasContext *s, int reg, int ele, TCGMemOp size, TCGv_i32 var)
+{
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    long offset = neon_element_offset(reg, ele, size);
+
+    switch (size) {
+    case MO_8:
+        tcg_gen_st8_i32(tcg_ctx, var, tcg_ctx->cpu_env, offset);
+        break;
+    case MO_16:
+        tcg_gen_st16_i32(tcg_ctx, var, tcg_ctx->cpu_env, offset);
+        break;
+    case MO_32:
+        tcg_gen_st_i32(tcg_ctx, var, tcg_ctx->cpu_env, offset);
+        break;
+    default:
+        g_assert_not_reached();
+    }
 }
 
 static void neon_store_element64(DisasContext *s, int reg, int ele, TCGMemOp size, TCGv_i64 var)
@@ -5102,9 +5142,7 @@ static int disas_neon_ls_insn(DisasContext *s, uint32_t insn)
     int stride;
     int size;
     int reg;
-    int pass;
     int load;
-    int shift;
     int n;
     int vec_size;
     int mmu_idx;
@@ -5252,19 +5290,18 @@ static int disas_neon_ls_insn(DisasContext *s, uint32_t insn)
         } else {
             /* Single element.  */
             int idx = (insn >> 4) & 0xf;
-            pass = (insn >> 7) & 1;
+            int reg_idx;
             switch (size) {
             case 0:
-                shift = ((insn >> 5) & 3) * 8;
+                reg_idx = (insn >> 5) & 7;
                 stride = 1;
                 break;
             case 1:
-                shift = ((insn >> 6) & 1) * 16;
+                reg_idx = (insn >> 6) & 3;
                 stride = (insn & (1 << 5)) ? 2 : 1;
                 break;
             case 2:
-                shift = 0;
-                stride = (insn & (1 << 6)) ? 2 : 1;
+                reg_idx = (insn >> 7) & 1;
                 break;
             default:
                 abort();
@@ -5303,52 +5340,24 @@ static int disas_neon_ls_insn(DisasContext *s, uint32_t insn)
                  */
                 return 1;
             }
+            tmp = tcg_temp_new_i32(tcg_ctx);
             addr = tcg_temp_new_i32(tcg_ctx);
             load_reg_var(s, addr, rn);
             for (reg = 0; reg < nregs; reg++) {
                 if (load) {
-                    tmp = tcg_temp_new_i32(tcg_ctx);
-                    switch (size) {
-                    case 0:
-                        gen_aa32_ld8u(s, tmp, addr, get_mem_index(s));
-                        break;
-                    case 1:
-                        gen_aa32_ld16u(s, tmp, addr, get_mem_index(s));
-                        break;
-                    case 2:
-                        gen_aa32_ld32u(s, tmp, addr, get_mem_index(s));
-                        break;
-                    default: /* Avoid compiler warnings.  */
-                        abort();
-                    }
-                    if (size != 2) {
-                        tmp2 = neon_load_reg(s, rd, pass);
-                        tcg_gen_deposit_i32(tcg_ctx, tmp, tmp2, tmp,
-                                            shift, size ? 16 : 8);
-                        tcg_temp_free_i32(tcg_ctx, tmp2);
-                    }
-                    neon_store_reg(s, rd, pass, tmp);
+                    gen_aa32_ld_i32(s, tmp, addr, get_mem_index(s),
+                                    s->be_data | size);
+                    neon_store_element(s, rd, reg_idx, size, tmp);
                 } else { /* Store */
-                    tmp = neon_load_reg(s, rd, pass);
-                    if (shift)
-                        tcg_gen_shri_i32(tcg_ctx, tmp, tmp, shift);
-                    switch (size) {
-                    case 0:
-                        gen_aa32_st8(s, tmp, addr, get_mem_index(s));
-                        break;
-                    case 1:
-                        gen_aa32_st16(s, tmp, addr, get_mem_index(s));
-                        break;
-                    case 2:
-                        gen_aa32_st32(s, tmp, addr, get_mem_index(s));
-                        break;
-                    }
-                    tcg_temp_free_i32(tcg_ctx, tmp);
+                    neon_load_element(s, tmp, rd, reg_idx, size);
+                    gen_aa32_st_i32(s, tmp, addr, get_mem_index(s),
+                                    s->be_data | size);
                 }
                 rd += stride;
                 tcg_gen_addi_i32(tcg_ctx, addr, addr, 1 << size);
             }
             tcg_temp_free_i32(tcg_ctx, addr);
+            tcg_temp_free_i32(tcg_ctx, tmp);
             stride = nregs * (1 << size);
         }
     }
