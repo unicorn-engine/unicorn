@@ -6806,7 +6806,8 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                 return 1;
             }
         } else { /* (insn & 0x00380080) == 0 */
-            int invert;
+            int invert, reg_ofs, vec_size;
+
             if (q && (rd & 1)) {
                 return 1;
             }
@@ -6846,8 +6847,9 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                 break;
             case 14:
                 imm |= (imm << 8) | (imm << 16) | (imm << 24);
-                if (invert)
+                if (invert) {
                     imm = ~imm;
+                }
                 break;
             case 15:
                 if (invert) {
@@ -6857,36 +6859,44 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                       | ((imm & 0x40) ? (0x1f << 25) : (1 << 30));
                 break;
             }
-            if (invert)
+            if (invert) {
                 imm = ~imm;
+            }
 
-            for (pass = 0; pass < (q ? 4 : 2); pass++) {
-                if (op & 1 && op < 12) {
-                    tmp = neon_load_reg(s, rd, pass);
-                    if (invert) {
-                        /* The immediate value has already been inverted, so
-                           BIC becomes AND.  */
-                        tcg_gen_andi_i32(tcg_ctx, tmp, tmp, imm);
-                    } else {
-                        tcg_gen_ori_i32(tcg_ctx, tmp, tmp, imm);
-                    }
+            reg_ofs = neon_reg_offset(rd, 0);
+            vec_size = q ? 16 : 8;
+
+            if (op & 1 && op < 12) {
+                if (invert) {
+                    /* The immediate value has already been inverted,
+                     * so BIC becomes AND.
+                     */
+                    tcg_gen_gvec_andi(tcg_ctx, MO_32, reg_ofs, reg_ofs, imm,
+                                      vec_size, vec_size);
                 } else {
-                    /* VMOV, VMVN.  */
-                    tmp = tcg_temp_new_i32(tcg_ctx);
-                    if (op == 14 && invert) {
-                        int n;
-                        uint32_t val;
-                        val = 0;
-                        for (n = 0; n < 4; n++) {
-                            if (imm & (1 << (n + (pass & 1) * 4)))
-                                val |= 0xff << (n * 8);
-                        }
-                        tcg_gen_movi_i32(tcg_ctx, tmp, val);
-                    } else {
-                        tcg_gen_movi_i32(tcg_ctx, tmp, imm);
-                    }
+                    tcg_gen_gvec_ori(tcg_ctx, MO_32, reg_ofs, reg_ofs, imm,
+                                     vec_size, vec_size);
                 }
-                neon_store_reg(s, rd, pass, tmp);
+            } else {
+                /* VMOV, VMVN.  */
+                if (op == 14 && invert) {
+                    TCGv_i64 t64 = tcg_temp_new_i64(tcg_ctx);
+
+                    for (pass = 0; pass <= q; ++pass) {
+                        uint64_t val = 0;
+                        int n;
+                        for (n = 0; n < 8; n++) {
+                            if (imm & (1 << (n + pass * 8))) {
+                                val |= 0xffull << (n * 8);
+                            }
+                        }
+                        tcg_gen_movi_i64(tcg_ctx, t64, val);
+                        neon_store_reg64(t64, rd + pass);
+                    }
+                    tcg_temp_free_i64(tcg_ctx, t64);
+                } else {
+                    tcg_gen_gvec_dup32i(tcg_ctx, reg_ofs, vec_size, vec_size, imm);
+                }
             }
         }
     } else { /* (insn & 0x00800010 == 0x00800000) */
