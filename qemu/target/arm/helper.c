@@ -4400,7 +4400,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
              * define these regs.
              */
             { "ID_AA64PFR0_EL1", 0,0,4, 3,0,0, ARM_CP_STATE_AA64,
-              ARM_CP_NO_RAW, PL1_R, 0, NULL, cpu->id_aa64pfr0, 0, {0, 0},
+              ARM_CP_NO_RAW, PL1_R, 0, NULL, cpu->isar.id_aa64pfr0, 0, {0, 0},
               NULL, id_aa64pfr0_read, arm_cp_write_ignore },
             { "ID_AA64PFR1_EL1", 0,0,4, 3,0,1, ARM_CP_STATE_AA64,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_aa64pfr1},
