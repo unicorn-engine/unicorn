@@ -4905,7 +4905,7 @@ static void disas_fp_compare(DisasContext *s, uint32_t insn)
         break;
     case 3:
         size = MO_16;
-        if (arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+        if (dc_isar_feature(aa64_fp16, s)) {
             break;
         }
         /* fallthru */
@@ -4957,7 +4957,7 @@ static void disas_fp_ccomp(DisasContext *s, uint32_t insn)
         break;
     case 3:
         size = MO_16;
-        if (arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+        if (dc_isar_feature(aa64_fp16, s)) {
             break;
         }
         /* fallthru */
@@ -5024,7 +5024,7 @@ static void disas_fp_csel(DisasContext *s, uint32_t insn)
         break;
     case 3:
         sz = MO_16;
-        if (arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+        if (dc_isar_feature(aa64_fp16, s)) {
             break;
         }
         /* fallthru */
@@ -5361,7 +5361,7 @@ static void disas_fp_1src(DisasContext *s, uint32_t insn)
             handle_fp_1src_double(s, opcode, rd, rn);
             break;
         case 3:
-            if (!arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+            if (!dc_isar_feature(aa64_fp16, s)) {
                 unallocated_encoding(s);
                 return;
             }
@@ -5580,7 +5580,7 @@ static void disas_fp_2src(DisasContext *s, uint32_t insn)
         handle_fp_2src_double(s, opcode, rd, rn, rm);
         break;
     case 3:
-        if (!arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+        if (!dc_isar_feature(aa64_fp16, s)) {
             unallocated_encoding(s);
             return;
         }
@@ -5742,7 +5742,7 @@ static void disas_fp_3src(DisasContext *s, uint32_t insn)
         handle_fp_3src_double(s, o0, o1, rd, rn, rm, ra);
         break;
     case 3:
-        if (!arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+        if (!dc_isar_feature(aa64_fp16, s)) {
             unallocated_encoding(s);
             return;
         }
@@ -5813,7 +5813,7 @@ static void disas_fp_imm(DisasContext *s, uint32_t insn)
         break;
     case 3:
         sz = MO_16;
-        if (arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+        if (dc_isar_feature(aa64_fp16, s)) {
             break;
         }
         /* fallthru */
@@ -6039,7 +6039,7 @@ static void disas_fp_fixed_conv(DisasContext *s, uint32_t insn)
     case 1: /* float64 */
         break;
     case 3: /* float16 */
-        if (arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+        if (dc_isar_feature(aa64_fp16, s)) {
             break;
         }
         /* fallthru */
@@ -6170,7 +6170,7 @@ static void disas_fp_int_conv(DisasContext *s, uint32_t insn)
             break;
         case 0x6: /* 16-bit float, 32-bit int */
         case 0xe: /* 16-bit float, 64-bit int */
-            if (arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+            if (dc_isar_feature(aa64_fp16, s)) {
                 break;
             }
             /* fallthru */
@@ -6197,7 +6197,7 @@ static void disas_fp_int_conv(DisasContext *s, uint32_t insn)
         case 1: /* float64 */
             break;
         case 3: /* float16 */
-            if (arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+            if (dc_isar_feature(aa64_fp16, s)) {
                 break;
             }
             /* fallthru */
@@ -6641,7 +6641,7 @@ static void disas_simd_across_lanes(DisasContext *s, uint32_t insn)
          */
         is_min = extract32(size, 1, 1);
         is_fp = true;
-        if (!is_u && arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+        if (!is_u && dc_isar_feature(aa64_fp16, s)) {
             size = 1;
         } else if (!is_u || !is_q || extract32(size, 0, 1)) {
             unallocated_encoding(s);
@@ -7043,7 +7043,7 @@ static void disas_simd_mod_imm(DisasContext *s, uint32_t insn)
 
     if (o2 != 0 || ((cmode == 0xf) && is_neg && !is_q)) {
         /* Check for FMOV (vector, immediate) - half-precision */
-        if (!(arm_dc_feature(s, ARM_FEATURE_V8_FP16) && o2 && cmode == 0xf)) {
+        if (!(dc_isar_feature(aa64_fp16, s) && o2 && cmode == 0xf)) {
             unallocated_encoding(s);
             return;
         }
@@ -7211,7 +7211,7 @@ static void disas_simd_scalar_pairwise(DisasContext *s, uint32_t insn)
     case 0x2f: /* FMINP */
         /* FP op, size[0] is 32 or 64 bit*/
         if (!u) {
-            if (!arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+            if (!dc_isar_feature(aa64_fp16, s)) {
                 unallocated_encoding(s);
                 return;
             } else {
@@ -7862,7 +7862,7 @@ static void handle_simd_shift_intfp_conv(DisasContext *s, bool is_scalar,
         size = MO_32;
     } else if (immh & 2) {
         size = MO_16;
-        if (!arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+        if (!dc_isar_feature(aa64_fp16, s)) {
             unallocated_encoding(s);
             return;
         }
@@ -7908,7 +7908,7 @@ static void handle_simd_shift_fpint_conv(DisasContext *s, bool is_scalar,
         size = MO_32;
     } else if (immh & 0x2) {
         size = MO_16;
-        if (!arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+        if (!dc_isar_feature(aa64_fp16, s)) {
             unallocated_encoding(s);
             return;
         }
@@ -8677,7 +8677,7 @@ static void disas_simd_scalar_three_reg_same_fp16(DisasContext *s,
         return;
     }
 
-    if (!arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+    if (!dc_isar_feature(aa64_fp16, s)) {
         unallocated_encoding(s);
     }
 
@@ -11379,7 +11379,7 @@ static void disas_simd_three_reg_same_fp16(DisasContext *s, uint32_t insn)
     TCGv_ptr fpst;
     bool pairwise = false;
 
-    if (!arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+    if (!dc_isar_feature(aa64_fp16, s)) {
         unallocated_encoding(s);
         return;
     }
@@ -11593,7 +11593,7 @@ static void disas_simd_three_reg_same_extra(DisasContext *s, uint32_t insn)
     case 0x1c: /* FCADD, #90 */
     case 0x1e: /* FCADD, #270 */
         if (size == 0
-            || (size == 1 && !arm_dc_feature(s, ARM_FEATURE_V8_FP16))
+            || (size == 1 && !dc_isar_feature(aa64_fp16, s))
             || (size == 3 && !is_q)) {
             unallocated_encoding(s);
             return;
@@ -12479,7 +12479,7 @@ static void disas_simd_two_reg_misc_fp16(DisasContext *s, uint32_t insn)
     bool need_fpst = true;
     int rmode;
 
-    if (!arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+    if (!dc_isar_feature(aa64_fp16, s)) {
         unallocated_encoding(s);
         return;
     }
@@ -12897,7 +12897,7 @@ static void disas_simd_indexed(DisasContext *s, uint32_t insn)
         }
         break;
     }
-    if (is_fp16 && !arm_dc_feature(s, ARM_FEATURE_V8_FP16)) {
+    if (is_fp16 && !dc_isar_feature(aa64_fp16, s)) {
         unallocated_encoding(s);
         return;
     }
