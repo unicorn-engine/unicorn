@@ -3287,8 +3287,12 @@ arm_symbols = (
     'arm_set_cpu_on',
     'fp_exception_el',
     'raise_exception',
+    'sli_op',
+    'ssra_op',
+    'sri_op',
     'sve_exception_el',
     'sve_zcr_len_for_el',
+    'usra_op',
 )
 
 aarch64_symbols = (
@@ -4287,7 +4291,9 @@ aarch64_symbols = (
     'raise_exception',
     'read_cpu_reg',
     'read_cpu_reg_sp',
+    'sli_op',
     'ssra_op',
+    'sri_op',
     'sve_access_check',
     'sve_exception_el',
     'sve_zcr_len_for_el',

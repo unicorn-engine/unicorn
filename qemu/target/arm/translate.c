@@ -6041,6 +6041,157 @@ const GVecGen2i usra_op[4] = {
       .vece = MO_64, },
 };
 
+static void gen_shr8_ins_i64(TCGContext *s, TCGv_i64 d, TCGv_i64 a, int64_t shift)
+{
+    uint64_t mask = dup_const(MO_8, 0xff >> shift);
+    TCGv_i64 t = tcg_temp_new_i64(s);
+
+    tcg_gen_shri_i64(s, t, a, shift);
+    tcg_gen_andi_i64(s, t, t, mask);
+    tcg_gen_andi_i64(s, d, d, ~mask);
+    tcg_gen_or_i64(s, d, d, t);
+    tcg_temp_free_i64(s, t);
+}
+
+static void gen_shr16_ins_i64(TCGContext *s, TCGv_i64 d, TCGv_i64 a, int64_t shift)
+{
+    uint64_t mask = dup_const(MO_16, 0xffff >> shift);
+    TCGv_i64 t = tcg_temp_new_i64(s);
+
+    tcg_gen_shri_i64(s, t, a, shift);
+    tcg_gen_andi_i64(s, t, t, mask);
+    tcg_gen_andi_i64(s, d, d, ~mask);
+    tcg_gen_or_i64(s, d, d, t);
+    tcg_temp_free_i64(s, t);
+}
+
+static void gen_shr32_ins_i32(TCGContext *s, TCGv_i32 d, TCGv_i32 a, int32_t shift)
+{
+    tcg_gen_shri_i32(s, a, a, shift);
+    tcg_gen_deposit_i32(s, d, d, a, 0, 32 - shift);
+}
+
+static void gen_shr64_ins_i64(TCGContext *s, TCGv_i64 d, TCGv_i64 a, int64_t shift)
+{
+    tcg_gen_shri_i64(s, a, a, shift);
+    tcg_gen_deposit_i64(s, d, d, a, 0, 64 - shift);
+}
+
+static void gen_shr_ins_vec(TCGContext *s, unsigned vece, TCGv_vec d, TCGv_vec a, int64_t sh)
+{
+    uint64_t mask = (2ull << ((8 << vece) - 1)) - 1;
+    TCGv_vec t = tcg_temp_new_vec_matching(s, d);
+    TCGv_vec m = tcg_temp_new_vec_matching(s, d);
+
+    tcg_gen_dupi_vec(s, vece, m, mask ^ (mask >> sh));
+    tcg_gen_shri_vec(s, vece, t, a, sh);
+    tcg_gen_and_vec(s, vece, d, d, m);
+    tcg_gen_or_vec(s, vece, d, d, t);
+
+    tcg_temp_free_vec(s, t);
+    tcg_temp_free_vec(s, m);
+}
+
+const GVecGen2i sri_op[4] = {
+    { .fni8 = gen_shr8_ins_i64,
+      .fniv = gen_shr_ins_vec,
+      .load_dest = true,
+      .opc = INDEX_op_shri_vec,
+      .vece = MO_8 },
+    { .fni8 = gen_shr16_ins_i64,
+      .fniv = gen_shr_ins_vec,
+      .load_dest = true,
+      .opc = INDEX_op_shri_vec,
+      .vece = MO_16 },
+    { .fni4 = gen_shr32_ins_i32,
+      .fniv = gen_shr_ins_vec,
+      .load_dest = true,
+      .opc = INDEX_op_shri_vec,
+      .vece = MO_32 },
+    { .fni8 = gen_shr64_ins_i64,
+      .fniv = gen_shr_ins_vec,
+      .prefer_i64 = TCG_TARGET_REG_BITS == 64,
+      .load_dest = true,
+      .opc = INDEX_op_shri_vec,
+      .vece = MO_64 },
+};
+
+static void gen_shl8_ins_i64(TCGContext *s, TCGv_i64 d, TCGv_i64 a, int64_t shift)
+{
+    uint64_t mask = dup_const(MO_8, 0xff << shift);
+    TCGv_i64 t = tcg_temp_new_i64(s);
+
+    tcg_gen_shli_i64(s, t, a, shift);
+    tcg_gen_andi_i64(s, t, t, mask);
+    tcg_gen_andi_i64(s, d, d, ~mask);
+    tcg_gen_or_i64(s, d, d, t);
+    tcg_temp_free_i64(s, t);
+}
+
+static void gen_shl16_ins_i64(TCGContext *s, TCGv_i64 d, TCGv_i64 a, int64_t shift)
+{
+    uint64_t mask = dup_const(MO_16, 0xffff << shift);
+    TCGv_i64 t = tcg_temp_new_i64(s);
+
+    tcg_gen_shli_i64(s, t, a, shift);
+    tcg_gen_andi_i64(s, t, t, mask);
+    tcg_gen_andi_i64(s, d, d, ~mask);
+    tcg_gen_or_i64(s, d, d, t);
+    tcg_temp_free_i64(s, t);
+}
+
+static void gen_shl32_ins_i32(TCGContext *s, TCGv_i32 d, TCGv_i32 a, int32_t shift)
+{
+    tcg_gen_deposit_i32(s, d, d, a, shift, 32 - shift);
+}
+
+static void gen_shl64_ins_i64(TCGContext *s, TCGv_i64 d, TCGv_i64 a, int64_t shift)
+{
+    tcg_gen_deposit_i64(s, d, d, a, shift, 64 - shift);
+}
+
+static void gen_shl_ins_vec(TCGContext *s, unsigned vece, TCGv_vec d, TCGv_vec a, int64_t sh)
+{
+    uint64_t mask = (1ull << sh) - 1;
+    TCGv_vec t = tcg_temp_new_vec_matching(s, d);
+    TCGv_vec m = tcg_temp_new_vec_matching(s, d);
+
+    tcg_gen_dupi_vec(s, vece, m, mask);
+    tcg_gen_shli_vec(s, vece, t, a, sh);
+    tcg_gen_and_vec(s, vece, d, d, m);
+    tcg_gen_or_vec(s, vece, d, d, t);
+
+    tcg_temp_free_vec(s, t);
+    tcg_temp_free_vec(s, m);
+}
+
+const GVecGen2i sli_op[4] = {
+    { .fni8 = gen_shl8_ins_i64,
+      .fniv = gen_shl_ins_vec,
+      .opc = INDEX_op_shli_vec,
+      .prefer_i64 = TCG_TARGET_REG_BITS == 64,
+      .load_dest = true,
+      .vece = MO_8 },
+    { .fni8 = gen_shl16_ins_i64,
+      .fniv = gen_shl_ins_vec,
+      .opc = INDEX_op_shli_vec,
+      .prefer_i64 = TCG_TARGET_REG_BITS == 64,
+      .load_dest = true,
+      .vece = MO_16 },
+    { .fni4 = gen_shl32_ins_i32,
+      .fniv = gen_shl_ins_vec,
+      .opc = INDEX_op_shli_vec,
+      .prefer_i64 = TCG_TARGET_REG_BITS == 64,
+      .load_dest = true,
+      .vece = MO_32 },
+    { .fni8 = gen_shl64_ins_i64,
+      .fniv = gen_shl_ins_vec,
+      .opc = INDEX_op_shli_vec,
+      .prefer_i64 = TCG_TARGET_REG_BITS == 64,
+      .load_dest = true,
+      .vece = MO_64 },
+};
+
 /* Translate a NEON data processing instruction.  Return nonzero if the
    instruction is invalid.
    We process data in a mixture of 32-bit and 64-bit chunks.
@@ -6059,7 +6210,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
     int pairwise;
     int u;
     int vec_size;
-    uint32_t imm, mask;
+    uint32_t imm;
     TCGv_i32 tmp, tmp2, tmp3, tmp4, tmp5;
     TCGv_ptr ptr1, ptr2, ptr3;
     TCGv_i64 tmp64;
@@ -6698,8 +6849,27 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                     }
                     return 0;
 
+                case 4: /* VSRI */
+                    if (!u) {
+                        return 1;
+                    }
+                    /* Right shift comes here negative.  */
+                    shift = -shift;
+                    /* Shift out of range leaves destination unchanged.  */
+                    if (shift < 8 << size) {
+                        tcg_gen_gvec_2i(tcg_ctx, rd_ofs, rm_ofs, vec_size, vec_size,
+                                        shift, &sri_op[size]);
+                    }
+                    return 0;
+
                 case 5: /* VSHL, VSLI */
-                    if (!u) { /* VSHL */
+                    if (u) { /* VSLI */
+                        /* Shift out of range leaves destination unchanged.  */
+                        if (shift < 8 << size) {
+                            tcg_gen_gvec_2i(tcg_ctx, rd_ofs, rm_ofs, vec_size,
+                                            vec_size, shift, &sli_op[size]);
+                        }
+                    } else { /* VSHL */
                         /* Shifts larger than the element size are
                          * architecturally valid and results in zero.
                          */
@@ -6709,9 +6879,8 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             tcg_gen_gvec_shli(tcg_ctx, size, rd_ofs, rm_ofs, shift,
                                               vec_size, vec_size);
                         }
-                        return 0;
                     }
-                    break;
+                    return 0;
                 }
 
                 if (size == 3) {
@@ -6737,10 +6906,6 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             else
                                 gen_helper_neon_rshl_s64(tcg_ctx, s->V0, s->V0, s->V1);
                             break;
-                        case 4: /* VSRI */
-                        case 5: /* VSHL, VSLI */
-                            gen_helper_neon_shl_u64(tcg_ctx, s->V0, s->V0, s->V1);
-                            break;
                         case 6: /* VQSHLU */
                             gen_helper_neon_qshlu_s64(tcg_ctx, s->V0, tcg_ctx->cpu_env,
                                                       s->V0, s->V1);
@@ -6761,21 +6926,6 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             /* Accumulate.  */
                             neon_load_reg64(s, s->V1, rd + pass);
                             tcg_gen_add_i64(tcg_ctx, s->V0, s->V0, s->V1);
-                        } else if (op == 4 || (op == 5 && u)) {
-                            /* Insert */
-                            neon_load_reg64(s, s->V1, rd + pass);
-                            uint64_t mask;
-                            if (shift < -63 || shift > 63) {
-                                mask = 0;
-                            } else {
-                                if (op == 4) {
-                                    mask = 0xffffffffffffffffull >> -shift;
-                                } else {
-                                    mask = 0xffffffffffffffffull << shift;
-                                }
-                            }
-                            tcg_gen_andi_i64(tcg_ctx, s->V1, s->V1, ~mask);
-                            tcg_gen_or_i64(tcg_ctx, s->V0, s->V0, s->V1);
                         }
                         neon_store_reg64(s, s->V0, rd + pass);
                     } else { /* size < 3 */
@@ -6787,15 +6937,6 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                         case 2: /* VRSHR */
                         case 3: /* VRSRA */
                             GEN_NEON_INTEGER_OP(rshl);
-                            break;
-                        case 4: /* VSRI */
-                        case 5: /* VSHL, VSLI */
-                            switch (size) {
-                            case 0: gen_helper_neon_shl_u8(tcg_ctx, tmp, tmp, tmp2); break;
-                            case 1: gen_helper_neon_shl_u16(tcg_ctx, tmp, tmp, tmp2); break;
-                            case 2: gen_helper_neon_shl_u32(tcg_ctx, tmp, tmp, tmp2); break;
-                            default: abort();
-                            }
                             break;
                         case 6: /* VQSHLU */
                             switch (size) {
@@ -6827,42 +6968,6 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             /* Accumulate.  */
                             tmp2 = neon_load_reg(s, rd, pass);
                             gen_neon_add(s, size, tmp, tmp2);
-                            tcg_temp_free_i32(tcg_ctx, tmp2);
-                        } else if (op == 4 || (op == 5 && u)) {
-                            /* Insert */
-                            switch (size) {
-                            case 0:
-                                if (op == 4)
-                                    mask = 0xff >> -shift;
-                                else
-                                    mask = (uint8_t)(0xff << shift);
-                                mask |= mask << 8;
-                                mask |= mask << 16;
-                                break;
-                            case 1:
-                                if (op == 4)
-                                    mask = 0xffff >> -shift;
-                                else
-                                    mask = (uint16_t)(0xffff << shift);
-                                mask |= mask << 16;
-                                break;
-                            case 2:
-                                if (shift < -31 || shift > 31) {
-                                    mask = 0;
-                                } else {
-                                    if (op == 4)
-                                        mask = 0xffffffffu >> -shift;
-                                    else
-                                        mask = 0xffffffffu << shift;
-                                }
-                                break;
-                            default:
-                                abort();
-                            }
-                            tmp2 = neon_load_reg(s, rd, pass);
-                            tcg_gen_andi_i32(tcg_ctx, tmp, tmp, mask);
-                            tcg_gen_andi_i32(tcg_ctx, tmp2, tmp2, ~mask);
-                            tcg_gen_or_i32(tcg_ctx, tmp, tmp, tmp2);
                             tcg_temp_free_i32(tcg_ctx, tmp2);
                         }
                         neon_store_reg(s, rd, pass, tmp);
