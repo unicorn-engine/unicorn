@@ -1578,19 +1578,28 @@ static void arm_max_initfn(struct uc_struct *uc, Object *obj, void *opaque)
      * real-world A15 doesn't implement them.
      */
 
-    // Unicorn: We lie and enable them anyway
+    // Unicorn: We lie and enable them anyway.
     /* We don't set these in system emulation mode for the moment,
-     * since we don't correctly set the ID registers to advertise them,
+     * since we don't correctly set (all of) the ID registers to
+     * advertise them.
      */
     set_feature(&cpu->env, ARM_FEATURE_V8);
-    set_feature(&cpu->env, ARM_FEATURE_V8_AES);
-    set_feature(&cpu->env, ARM_FEATURE_V8_SHA1);
-    set_feature(&cpu->env, ARM_FEATURE_V8_SHA256);
-    set_feature(&cpu->env, ARM_FEATURE_V8_PMULL);
-    set_feature(&cpu->env, ARM_FEATURE_CRC);
-    set_feature(&cpu->env, ARM_FEATURE_V8_RDM);
-    set_feature(&cpu->env, ARM_FEATURE_V8_DOTPROD);
-    set_feature(&cpu->env, ARM_FEATURE_V8_FCMA);
+    {
+        uint32_t t;
+
+        t = cpu->isar.id_isar5;
+        t = FIELD_DP32(t, ID_ISAR5, AES, 2);
+        t = FIELD_DP32(t, ID_ISAR5, SHA1, 1);
+        t = FIELD_DP32(t, ID_ISAR5, SHA2, 1);
+        t = FIELD_DP32(t, ID_ISAR5, CRC32, 1);
+        t = FIELD_DP32(t, ID_ISAR5, RDM, 1);
+        t = FIELD_DP32(t, ID_ISAR5, VCMA, 1);
+        cpu->isar.id_isar5 = t;
+
+        t = cpu->isar.id_isar6;
+        t = FIELD_DP32(t, ID_ISAR6, DP, 1);
+        cpu->isar.id_isar6 = t;
+    }
 }
 #endif
 
