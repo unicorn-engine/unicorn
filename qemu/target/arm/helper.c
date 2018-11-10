@@ -47,6 +47,8 @@ static void v8m_security_lookup(CPUARMState *env, uint32_t address,
                                 V8M_SAttributes *sattrs);
 #endif
 
+static void switch_mode(CPUARMState *env, int mode);
+
 static uint64_t raw_read(CPUARMState *env, const ARMCPRegInfo *ri)
 {
     assert(ri->fieldoffset);
@@ -5390,8 +5392,18 @@ void cpsr_write(CPUARMState *env, uint32_t val, uint32_t mask,
                 arm_feature(env, ARM_FEATURE_V8)) {
                 mask |= CPSR_IL;
                 val |= CPSR_IL;
+            qemu_log_mask(LOG_GUEST_ERROR,
+                          "Illegal AArch32 mode switch attempt from %s to %s\n",
+                          aarch32_mode_name(env->uncached_cpsr),
+                          aarch32_mode_name(val));
             }
         } else {
+            qemu_log_mask(CPU_LOG_INT, "%s %s to %s PC 0x%" PRIx32 "\n",
+                          write_type == CPSRWriteExceptionReturn ?
+                          "Exception return from AArch32" :
+                          "AArch32 mode switch from",
+                          aarch32_mode_name(env->uncached_cpsr),
+                          aarch32_mode_name(val), env->regs[15]);
             switch_mode(env, val & CPSR_M);
         }
     }
@@ -5489,7 +5501,7 @@ uint32_t HELPER(v7m_tt)(CPUARMState *env, uint32_t addr, uint32_t op)
     return 0;
 }
 
-void switch_mode(CPUARMState *env, int mode)
+static void switch_mode(CPUARMState *env, int mode)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
 
@@ -5511,7 +5523,7 @@ void aarch64_sync_64_to_32(CPUARMState *env)
 
 #else
 
-void switch_mode(CPUARMState *env, int mode)
+static void switch_mode(CPUARMState *env, int mode)
 {
     int old_mode;
     int i;
