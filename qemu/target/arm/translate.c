@@ -5159,6 +5159,16 @@ static int disas_neon_ls_insn(DisasContext *s, uint32_t insn)
         if (size == 3 && (interleave | spacing) != 1) {
             return 1;
         }
+        /* For our purposes, bytes are always little-endian.  */
+        if (size == 0) {
+            endian = MO_LE;
+        }
+        /* Consecutive little-endian elements from a single register
+         * can be promoted to a larger little-endian operation.
+         */
+        if (interleave == 1 && endian == MO_LE) {
+            size = 3;
+        }
         tmp64 = tcg_temp_new_i64(tcg_ctx);
         addr = tcg_temp_new_i32(tcg_ctx);
         tmp2 = tcg_const_i32(tcg_ctx, 1 << size);
