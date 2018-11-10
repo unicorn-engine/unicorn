@@ -7665,6 +7665,14 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                     tcg_temp_free_ptr(tcg_ctx, ptr1);
                     tcg_temp_free_ptr(tcg_ctx, ptr2);
                     break;
+
+                case NEON_2RM_VMVN:
+                    tcg_gen_gvec_not(tcg_ctx, 0, rd_ofs, rm_ofs, vec_size, vec_size);
+                    break;
+                case NEON_2RM_VNEG:
+                    tcg_gen_gvec_neg(tcg_ctx, size, rd_ofs, rm_ofs, vec_size, vec_size);
+                    break;
+
                 default:
                 elementwise:
                     for (pass = 0; pass < (q ? 4 : 2); pass++) {
@@ -7704,9 +7712,6 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             break;
                         case NEON_2RM_VCNT:
                             gen_helper_neon_cnt_u8(tcg_ctx, tmp, tmp);
-                            break;
-                        case NEON_2RM_VMVN:
-                            tcg_gen_not_i32(tcg_ctx, tmp, tmp);
                             break;
                         case NEON_2RM_VQABS:
                             switch (size) {
@@ -7779,11 +7784,6 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                             case 2: tcg_gen_abs_i32(s, tmp, tmp); break;
                             default: abort();
                             }
-                            break;
-                        case NEON_2RM_VNEG:
-                            tmp2 = tcg_const_i32(tcg_ctx, 0);
-                            gen_neon_rsb(s, size, tmp, tmp2);
-                            tcg_temp_free_i32(tcg_ctx, tmp2);
                             break;
                         case NEON_2RM_VCGT0_F:
                         {
