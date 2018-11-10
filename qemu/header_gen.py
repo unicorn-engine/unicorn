@@ -4287,10 +4287,12 @@ aarch64_symbols = (
     'raise_exception',
     'read_cpu_reg',
     'read_cpu_reg_sp',
+    'ssra_op',
     'sve_access_check',
     'sve_exception_el',
     'sve_zcr_len_for_el',
     'unallocated_encoding',
+    'usra_op',
     'vfp_expand_imm',
     'write_fp_dreg',
 )

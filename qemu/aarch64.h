@@ -4262,10 +4262,12 @@
 #define raise_exception raise_exception_aarch64
 #define read_cpu_reg read_cpu_reg_aarch64
 #define read_cpu_reg_sp read_cpu_reg_sp_aarch64
+#define ssra_op ssra_op_aarch64
 #define sve_access_check sve_access_check_aarch64
 #define sve_exception_el sve_exception_el_aarch64
 #define sve_zcr_len_for_el sve_zcr_len_for_el_aarch64
 #define unallocated_encoding unallocated_encoding_aarch64
+#define usra_op usra_op_aarch64
 #define vfp_expand_imm vfp_expand_imm_aarch64
 #define write_fp_dreg write_fp_dreg_aarch64
 #endif
