@@ -3277,6 +3277,8 @@
 #define arm_set_cpu_off arm_set_cpu_off_armeb
 #define arm_set_cpu_on arm_set_cpu_on_armeb
 #define fp_exception_el fp_exception_el_armeb
+#define mla_op mla_op_armeb
+#define mls_op mls_op_armeb
 #define raise_exception raise_exception_armeb
 #define sli_op sli_op_armeb
 #define ssra_op ssra_op_armeb

@@ -6192,6 +6192,117 @@ const GVecGen2i sli_op[4] = {
       .vece = MO_64 },
 };
 
+static void gen_mla8_i32(TCGContext *s, TCGv_i32 d, TCGv_i32 a, TCGv_i32 b)
+{
+    gen_helper_neon_mul_u8(s, a, a, b);
+    gen_helper_neon_add_u8(s, d, d, a);
+}
+
+static void gen_mla16_i32(TCGContext *s, TCGv_i32 d, TCGv_i32 a, TCGv_i32 b)
+{
+    gen_helper_neon_mul_u16(s, a, a, b);
+    gen_helper_neon_add_u16(s, d, d, a);
+}
+
+static void gen_mla32_i32(TCGContext *s, TCGv_i32 d, TCGv_i32 a, TCGv_i32 b)
+{
+    tcg_gen_mul_i32(s, a, a, b);
+    tcg_gen_add_i32(s, d, d, a);
+}
+
+static void gen_mla64_i64(TCGContext *s, TCGv_i64 d, TCGv_i64 a, TCGv_i64 b)
+{
+    tcg_gen_mul_i64(s, a, a, b);
+    tcg_gen_add_i64(s, d, d, a);
+}
+
+static void gen_mla_vec(TCGContext *s, unsigned vece, TCGv_vec d, TCGv_vec a, TCGv_vec b)
+{
+    tcg_gen_mul_vec(s, vece, a, a, b);
+    tcg_gen_add_vec(s, vece, d, d, a);
+}
+
+static void gen_mls8_i32(TCGContext *s, TCGv_i32 d, TCGv_i32 a, TCGv_i32 b)
+{
+    gen_helper_neon_mul_u8(s, a, a, b);
+    gen_helper_neon_sub_u8(s, d, d, a);
+}
+
+static void gen_mls16_i32(TCGContext *s, TCGv_i32 d, TCGv_i32 a, TCGv_i32 b)
+{
+    gen_helper_neon_mul_u16(s, a, a, b);
+    gen_helper_neon_sub_u16(s, d, d, a);
+}
+
+static void gen_mls32_i32(TCGContext *s, TCGv_i32 d, TCGv_i32 a, TCGv_i32 b)
+{
+    tcg_gen_mul_i32(s, a, a, b);
+    tcg_gen_sub_i32(s, d, d, a);
+}
+
+static void gen_mls64_i64(TCGContext *s, TCGv_i64 d, TCGv_i64 a, TCGv_i64 b)
+{
+    tcg_gen_mul_i64(s, a, a, b);
+    tcg_gen_sub_i64(s, d, d, a);
+}
+
+static void gen_mls_vec(TCGContext *s, unsigned vece, TCGv_vec d, TCGv_vec a, TCGv_vec b)
+{
+    tcg_gen_mul_vec(s, vece, a, a, b);
+    tcg_gen_sub_vec(s, vece, d, d, a);
+}
+
+/* Note that while NEON does not support VMLA and VMLS as 64-bit ops,
+ * these tables are shared with AArch64 which does support them.
+ */
+const GVecGen3 mla_op[4] = {
+    { .fni4 = gen_mla8_i32,
+      .fniv = gen_mla_vec,
+      .opc = INDEX_op_mul_vec,
+      .load_dest = true,
+      .vece = MO_8 },
+    { .fni4 = gen_mla16_i32,
+      .fniv = gen_mla_vec,
+      .opc = INDEX_op_mul_vec,
+      .load_dest = true,
+      .vece = MO_16 },
+    { .fni4 = gen_mla32_i32,
+      .fniv = gen_mla_vec,
+      .opc = INDEX_op_mul_vec,
+      .load_dest = true,
+      .vece = MO_32 },
+    { .fni8 = gen_mla64_i64,
+      .fniv = gen_mla_vec,
+      .opc = INDEX_op_mul_vec,
+      .prefer_i64 = TCG_TARGET_REG_BITS == 64,
+      .load_dest = true,
+      .vece = MO_64 },
+};
+
+const GVecGen3 mls_op[4] = {
+    { .fni4 = gen_mls8_i32,
+      .fniv = gen_mls_vec,
+      .opc = INDEX_op_mul_vec,
+      .load_dest = true,
+      .vece = MO_8 },
+    { .fni4 = gen_mls16_i32,
+      .fniv = gen_mls_vec,
+      .opc = INDEX_op_mul_vec,
+      .load_dest = true,
+      .vece = MO_16 },
+    { .fni4 = gen_mls32_i32,
+      .fniv = gen_mls_vec,
+      .opc = INDEX_op_mul_vec,
+      .load_dest = true,
+      .vece = MO_32 },
+    { .fni8 = gen_mls64_i64,
+      .fniv = gen_mls_vec,
+      .opc = INDEX_op_mul_vec,
+      .prefer_i64 = TCG_TARGET_REG_BITS == 64,
+      .load_dest = true,
+      .vece = MO_64 },
+};
+
 /* Translate a NEON data processing instruction.  Return nonzero if the
    instruction is invalid.
    We process data in a mixture of 32-bit and 64-bit chunks.
@@ -6394,7 +6505,13 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                 return 0;
             }
             break;
+
+        case NEON_3R_VML: /* VMLA, VMLS */
+            tcg_gen_gvec_3(tcg_ctx, rd_ofs, rn_ofs, rm_ofs, vec_size, vec_size,
+                           u ? &mls_op[size] : &mla_op[size]);
+            return 0;
         }
+
         if (size == 3) {
             /* 64-bit element instructions. */
             for (pass = 0; pass < (q ? 2 : 1); pass++) {
@@ -6594,21 +6711,6 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                 case 2: gen_helper_neon_ceq_u32(tcg_ctx, tmp, tmp, tmp2); break;
                 default: abort();
                 }
-            }
-            break;
-        case NEON_3R_VML: /* VMLA, VMLAL, VMLS,VMLSL */
-            switch (size) {
-            case 0: gen_helper_neon_mul_u8(tcg_ctx, tmp, tmp, tmp2); break;
-            case 1: gen_helper_neon_mul_u16(tcg_ctx, tmp, tmp, tmp2); break;
-            case 2: tcg_gen_mul_i32(tcg_ctx, tmp, tmp, tmp2); break;
-            default: abort();
-            }
-            tcg_temp_free_i32(tcg_ctx, tmp2);
-            tmp2 = neon_load_reg(s, rd, pass);
-            if (u) { /* VMLS */
-                gen_neon_rsb(s, size, tmp, tmp2);
-            } else { /* VMLA */
-                gen_neon_add(s, size, tmp, tmp2);
             }
             break;
         case NEON_3R_VMUL:

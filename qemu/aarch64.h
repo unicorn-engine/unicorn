@@ -4256,6 +4256,8 @@
 #define helper_vfp_mulxd helper_vfp_mulxd_aarch64
 #define helper_vfp_mulxs helper_vfp_mulxs_aarch64
 #define logic_imm_decode_wmask logic_imm_decode_wmask_aarch64
+#define mla_op mla_op_aarch64
+#define mls_op mls_op_aarch64
 #define new_tmp_a64 new_tmp_a64_aarch64
 #define new_tmp_a64_zero new_tmp_a64_zero_aarch64
 #define pred_esz_masks pred_esz_masks_aarch64
