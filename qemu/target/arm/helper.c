@@ -3779,7 +3779,7 @@ static const ARMCPRegInfo el3_cp_reginfo[] = {
       access_trap_aa32s_el1, NULL, vbar_write },
     { "TTBR0_EL3", 0,2,0, 3,6,0, ARM_CP_STATE_AA64,0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.ttbr0_el[3]), {0, 0},
-      NULL, NULL, vmsa_ttbr_write },
+      NULL, NULL, NULL },
     { "TCR_EL3", 0,2,0, 3,6,2, ARM_CP_STATE_AA64,0,
       PL3_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.tcr_el[3]), {0, 0},
       /* no .writefn needed as this can't cause an ASID change;
