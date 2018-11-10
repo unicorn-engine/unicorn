@@ -4281,7 +4281,7 @@ static uint64_t id_pfr1_read(CPUARMState *env, const ARMCPRegInfo *ri)
 static uint64_t id_aa64pfr0_read(CPUARMState *env, const ARMCPRegInfo *ri)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
-    uint64_t pfr0 = cpu->id_aa64pfr0;
+    uint64_t pfr0 = cpu->isar.id_aa64pfr0;
 
     if (env->gicv3state) {
         pfr0 |= 1 << 24;
@@ -4330,21 +4330,21 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             { "ID_MMFR3", 0,0,1, 3,0,7, ARM_CP_STATE_BOTH,
               ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_mmfr3 },
             { "ID_ISAR0", 0,0,2, 3,0,0, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_isar0 },
             { "ID_ISAR1", 0,0,2, 3,0,1, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_isar1 },
             { "ID_ISAR2", 0,0,2, 3,0,2, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar2 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_isar2 },
             { "ID_ISAR3", 0,0,2, 3,0,3, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar3 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_isar3 },
             { "ID_ISAR4", 0,0,2, 3,0,4, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar4 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_isar4 },
             { "ID_ISAR5", 0,0,2, 3,0,5, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar5 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_isar5 },
             { "ID_MMFR4", 0,0,2, 3,0,6, ARM_CP_STATE_BOTH, ARM_CP_CONST,
               PL1_R, 0, NULL, cpu->id_mmfr4 },
             { "ID_ISAR6", 0,0,2, 3,0,7, ARM_CP_STATE_BOTH,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_isar6 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_isar6 },
             REGINFO_SENTINEL
         };
         define_arm_cp_regs(cpu, v6_idregs);
@@ -4403,7 +4403,7 @@ void register_cp_regs_for_features(ARMCPU *cpu)
               ARM_CP_NO_RAW, PL1_R, 0, NULL, cpu->id_aa64pfr0, 0, {0, 0},
               NULL, id_aa64pfr0_read, arm_cp_write_ignore },
             { "ID_AA64PFR1_EL1", 0,0,4, 3,0,1, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64pfr1},
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_aa64pfr1},
             { "ID_AA64PFR2_EL1_RESERVED", 0,0,4, 3,0,2, ARM_CP_STATE_AA64, ARM_CP_CONST,
               PL1_R, 0, NULL, 0 },
             { "ID_AA64PFR3_EL1_RESERVED", 0,0,4, 3,0,3, ARM_CP_STATE_AA64, ARM_CP_CONST,
@@ -4434,9 +4434,9 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             { "ID_AA64AFR3_EL1_RESERVED", 0,0,5, 3,0,7, ARM_CP_STATE_AA64, ARM_CP_CONST,
               PL1_R, 0, NULL, 0 },
             { "ID_AA64ISAR0_EL1", 0,0,6, 3,0,0, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64isar0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_aa64isar0 },
             { "ID_AA64ISAR1_EL1", 0,0,6, 3,0,1, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->id_aa64isar1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.id_aa64isar1 },
             { "ID_AA64ISAR2_EL1_RESERVED", 0,0,6, 3,0,2, ARM_CP_STATE_AA64, ARM_CP_CONST,
               PL1_R, 0, NULL, 0 },
             { "ID_AA64ISAR3_EL1_RESERVED", 0,0,6, 3,0,3, ARM_CP_STATE_AA64, ARM_CP_CONST,
@@ -4466,11 +4466,11 @@ void register_cp_regs_for_features(ARMCPU *cpu)
             { "ID_AA64MMFR7_EL1_RESERVED", 0,0,7, 3,0,7, ARM_CP_STATE_AA64, ARM_CP_CONST,
               PL1_R, 0, NULL, 0 },
             { "MVFR0_EL1", 0,0,3, 3,0,0, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->mvfr0 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.mvfr0 },
             { "MVFR1_EL1", 0,0,3, 3,0,1, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->mvfr1 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.mvfr1 },
             { "MVFR2_EL1", 0,0,3, 3,0,2, ARM_CP_STATE_AA64,
-              ARM_CP_CONST, PL1_R, 0, NULL, cpu->mvfr2 },
+              ARM_CP_CONST, PL1_R, 0, NULL, cpu->isar.mvfr2 },
             { "MVFR3_EL1_RESERVED", 0,0,3, 3,0,3, ARM_CP_STATE_AA64, ARM_CP_CONST,
               PL1_R, 0, NULL, 0 },
             { "MVFR4_EL1_RESERVED", 0,0,3, 3,0,4, ARM_CP_STATE_AA64, ARM_CP_CONST,
