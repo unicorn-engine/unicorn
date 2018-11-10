@@ -5054,7 +5054,7 @@ static struct {
     int nregs;
     int interleave;
     int spacing;
-} neon_ls_element_type[11] = {
+} const neon_ls_element_type[11] = {
     {4, 4, 1},
     {4, 4, 2},
     {4, 1, 1},
