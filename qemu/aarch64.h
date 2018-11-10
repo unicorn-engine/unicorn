@@ -3287,11 +3287,13 @@
 #define bif_op bif_op_aarch64
 #define bit_op bit_op_aarch64
 #define bsl_op bsl_op_aarch64
+#define cmtst_op cmtst_op_aarch64
 #define cpu_reg cpu_reg_aarch64
 #define cpu_reg_sp cpu_reg_sp_aarch64
 #define disas_sve disas_sve_aarch64
 #define fp_exception_el fp_exception_el_aarch64
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64
+#define gen_cmtst_i64 gen_cmtst_i64_aarch64
 #define helper_advsimd_acge_f16 helper_advsimd_acge_f16_aarch64
 #define helper_advsimd_acgt_f16 helper_advsimd_acgt_f16_aarch64
 #define helper_advsimd_add2h helper_advsimd_add2h_aarch64

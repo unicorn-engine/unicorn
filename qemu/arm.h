@@ -3276,7 +3276,9 @@
 #define arm_reset_cpu arm_reset_cpu_arm
 #define arm_set_cpu_off arm_set_cpu_off_arm
 #define arm_set_cpu_on arm_set_cpu_on_arm
+#define cmtst_op cmtst_op_arm
 #define fp_exception_el fp_exception_el_arm
+#define gen_cmtst_i64 gen_cmtst_i64_arm
 #define mla_op mla_op_arm
 #define mls_op mls_op_arm
 #define raise_exception raise_exception_arm

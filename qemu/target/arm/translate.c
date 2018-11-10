@@ -6303,6 +6303,44 @@ const GVecGen3 mls_op[4] = {
       .vece = MO_64 },
 };
 
+/* CMTST : test is "if (X & Y != 0)". */
+static void gen_cmtst_i32(TCGContext *s, TCGv_i32 d, TCGv_i32 a, TCGv_i32 b)
+{
+    tcg_gen_and_i32(s, d, a, b);
+    tcg_gen_setcondi_i32(s, TCG_COND_NE, d, d, 0);
+    tcg_gen_neg_i32(s, d, d);
+}
+
+void gen_cmtst_i64(TCGContext *s, TCGv_i64 d, TCGv_i64 a, TCGv_i64 b)
+{
+    tcg_gen_and_i64(s, d, a, b);
+    tcg_gen_setcondi_i64(s, TCG_COND_NE, d, d, 0);
+    tcg_gen_neg_i64(s, d, d);
+}
+
+static void gen_cmtst_vec(TCGContext *s, unsigned vece, TCGv_vec d, TCGv_vec a, TCGv_vec b)
+{
+    tcg_gen_and_vec(s, vece, d, a, b);
+    tcg_gen_dupi_vec(s, vece, a, 0);
+    tcg_gen_cmp_vec(s, TCG_COND_NE, vece, d, d, a);
+}
+
+const GVecGen3 cmtst_op[4] = {
+    { .fni4 = gen_helper_neon_tst_u8,
+      .fniv = gen_cmtst_vec,
+      .vece = MO_8 },
+    { .fni4 = gen_helper_neon_tst_u16,
+      .fniv = gen_cmtst_vec,
+      .vece = MO_16 },
+    { .fni4 = gen_cmtst_i32,
+      .fniv = gen_cmtst_vec,
+      .vece = MO_32 },
+    { .fni8 = gen_cmtst_i64,
+      .fniv = gen_cmtst_vec,
+      .prefer_i64 = TCG_TARGET_REG_BITS == 64,
+      .vece = MO_64 },
+};
+
 /* Translate a NEON data processing instruction.  Return nonzero if the
    instruction is invalid.
    We process data in a mixture of 32-bit and 64-bit chunks.
@@ -6510,6 +6548,26 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
             tcg_gen_gvec_3(tcg_ctx, rd_ofs, rn_ofs, rm_ofs, vec_size, vec_size,
                            u ? &mls_op[size] : &mla_op[size]);
             return 0;
+
+        case NEON_3R_VTST_VCEQ:
+            if (u) { /* VCEQ */
+                tcg_gen_gvec_cmp(tcg_ctx, TCG_COND_EQ, size, rd_ofs, rn_ofs, rm_ofs,
+                                 vec_size, vec_size);
+            } else { /* VTST */
+                tcg_gen_gvec_3(tcg_ctx, rd_ofs, rn_ofs, rm_ofs,
+                               vec_size, vec_size, &cmtst_op[size]);
+            }
+            return 0;
+
+        case NEON_3R_VCGT:
+            tcg_gen_gvec_cmp(tcg_ctx, u ? TCG_COND_GTU : TCG_COND_GT, size,
+                             rd_ofs, rn_ofs, rm_ofs, vec_size, vec_size);
+            return 0;
+
+        case NEON_3R_VCGE:
+            tcg_gen_gvec_cmp(tcg_ctx, u ? TCG_COND_GEU : TCG_COND_GE, size,
+                             rd_ofs, rn_ofs, rm_ofs, vec_size, vec_size);
+            return 0;
         }
 
         if (size == 3) {
@@ -6663,12 +6721,6 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
         case NEON_3R_VQSUB:
             GEN_NEON_INTEGER_OP_ENV(qsub);
             break;
-        case NEON_3R_VCGT:
-            GEN_NEON_INTEGER_OP(cgt);
-            break;
-        case NEON_3R_VCGE:
-            GEN_NEON_INTEGER_OP(cge);
-            break;
         case NEON_3R_VSHL:
             GEN_NEON_INTEGER_OP(shl);
             break;
@@ -6695,23 +6747,6 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
             tcg_temp_free_i32(tcg_ctx, tmp2);
             tmp2 = neon_load_reg(s, rd, pass);
             gen_neon_add(s, size, tmp, tmp2);
-            break;
-        case NEON_3R_VTST_VCEQ:
-            if (!u) { /* VTST */
-                switch (size) {
-                case 0: gen_helper_neon_tst_u8(tcg_ctx, tmp, tmp, tmp2); break;
-                case 1: gen_helper_neon_tst_u16(tcg_ctx, tmp, tmp, tmp2); break;
-                case 2: gen_helper_neon_tst_u32(tcg_ctx, tmp, tmp, tmp2); break;
-                default: abort();
-                }
-            } else { /* VCEQ */
-                switch (size) {
-                case 0: gen_helper_neon_ceq_u8(tcg_ctx, tmp, tmp, tmp2); break;
-                case 1: gen_helper_neon_ceq_u16(tcg_ctx, tmp, tmp, tmp2); break;
-                case 2: gen_helper_neon_ceq_u32(tcg_ctx, tmp, tmp, tmp2); break;
-                default: abort();
-                }
-            }
             break;
         case NEON_3R_VMUL:
             /* VMUL.P8; other cases already eliminated.  */

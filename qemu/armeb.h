@@ -3276,7 +3276,9 @@
 #define arm_reset_cpu arm_reset_cpu_armeb
 #define arm_set_cpu_off arm_set_cpu_off_armeb
 #define arm_set_cpu_on arm_set_cpu_on_armeb
+#define cmtst_op cmtst_op_armeb
 #define fp_exception_el fp_exception_el_armeb
+#define gen_cmtst_i64 gen_cmtst_i64_armeb
 #define mla_op mla_op_armeb
 #define mls_op mls_op_armeb
 #define raise_exception raise_exception_armeb
