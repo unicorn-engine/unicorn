@@ -3284,6 +3284,9 @@
 #define arm_reset_cpu arm_reset_cpu_aarch64eb
 #define arm_set_cpu_off arm_set_cpu_off_aarch64eb
 #define arm_set_cpu_on arm_set_cpu_on_aarch64eb
+#define bif_op bif_op_aarch64eb
+#define bit_op bit_op_aarch64eb
+#define bsl_op bsl_op_aarch64eb
 #define cpu_reg cpu_reg_aarch64eb
 #define cpu_reg_sp cpu_reg_sp_aarch64eb
 #define disas_sve disas_sve_aarch64eb

@@ -10550,70 +10550,9 @@ static void disas_simd_three_reg_diff(DisasContext *s, uint32_t insn)
     }
 }
 
-static void gen_bsl_i64(TCGContext *s, TCGv_i64 rd, TCGv_i64 rn, TCGv_i64 rm)
-{
-    tcg_gen_xor_i64(s, rn, rn, rm);
-    tcg_gen_and_i64(s, rn, rn, rd);
-    tcg_gen_xor_i64(s, rd, rm, rn);
-}
-
-static void gen_bit_i64(TCGContext *s, TCGv_i64 rd, TCGv_i64 rn, TCGv_i64 rm)
-{
-    tcg_gen_xor_i64(s, rn, rn, rd);
-    tcg_gen_and_i64(s, rn, rn, rm);
-    tcg_gen_xor_i64(s, rd, rd, rn);
-}
-
-static void gen_bif_i64(TCGContext *s, TCGv_i64 rd, TCGv_i64 rn, TCGv_i64 rm)
-{
-    tcg_gen_xor_i64(s, rn, rn, rd);
-    tcg_gen_andc_i64(s, rn, rn, rm);
-    tcg_gen_xor_i64(s, rd, rd, rn);
-}
-
-static void gen_bsl_vec(TCGContext *s, unsigned vece, TCGv_vec rd, TCGv_vec rn, TCGv_vec rm)
-{
-    tcg_gen_xor_vec(s, vece, rn, rn, rm);
-    tcg_gen_and_vec(s, vece, rn, rn, rd);
-    tcg_gen_xor_vec(s, vece, rd, rm, rn);
-}
-
-static void gen_bit_vec(TCGContext *s, unsigned vece, TCGv_vec rd, TCGv_vec rn, TCGv_vec rm)
-{
-    tcg_gen_xor_vec(s, vece, rn, rn, rd);
-    tcg_gen_and_vec(s, vece, rn, rn, rm);
-    tcg_gen_xor_vec(s, vece, rd, rd, rn);
-}
-
-static void gen_bif_vec(TCGContext *s, unsigned vece, TCGv_vec rd, TCGv_vec rn, TCGv_vec rm)
-{
-    tcg_gen_xor_vec(s, vece, rn, rn, rd);
-    tcg_gen_andc_vec(s, vece, rn, rn, rm);
-    tcg_gen_xor_vec(s, vece, rd, rd, rn);
-}
-
 /* Logic op (opcode == 3) subgroup of C3.6.16. */
 static void disas_simd_3same_logic(DisasContext *s, uint32_t insn)
 {
-    static const GVecGen3 bsl_op = {
-        .fni8 = gen_bsl_i64,
-        .fniv = gen_bsl_vec,
-        .prefer_i64 = TCG_TARGET_REG_BITS == 64,
-        .load_dest = true
-    };
-    static const GVecGen3 bit_op = {
-        .fni8 = gen_bit_i64,
-        .fniv = gen_bit_vec,
-        .prefer_i64 = TCG_TARGET_REG_BITS == 64,
-        .load_dest = true
-    };
-    static const GVecGen3 bif_op = {
-        .fni8 = gen_bif_i64,
-        .fniv = gen_bif_vec,
-        .prefer_i64 = TCG_TARGET_REG_BITS == 64,
-        .load_dest = true
-    };
-
     int rd = extract32(insn, 0, 5);
     int rn = extract32(insn, 5, 5);
     int rm = extract32(insn, 16, 5);
