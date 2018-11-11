@@ -891,6 +891,8 @@ struct TCGContext {
     TCGv_i32 fpu_fcr31;
     TCGv_i64 fpu_f64[32];
     TCGv_i64 msa_wr_d[64];
+    TCGv mxu_gpr[16 - 1]; // NUMBER_OF_MXU_REGISTERS - 1
+    TCGv mxu_CR;
 
     /* qemu/target-sparc/translate.c */
     /* global register indexes */
