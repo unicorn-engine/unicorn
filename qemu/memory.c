@@ -252,6 +252,7 @@ struct FlatRange {
     AddrRange addr;
     uint8_t dirty_log_mask;
     bool readonly;
+    bool nonvolatile;
 };
 
 /* Flattened global view of current active memory hierarchy.  Kept in sorted
@@ -281,6 +282,7 @@ section_from_flat_range(FlatRange *fr, FlatView *fv)
     s.size = fr->addr.size;
     s.offset_within_address_space = int128_get64(fr->addr.start);
     s.readonly = fr->readonly;
+    s.nonvolatile = fr->nonvolatile;
     return s;
 }
 
@@ -289,7 +291,8 @@ static bool flatrange_equal(FlatRange *a, FlatRange *b)
     return a->mr == b->mr
         && addrrange_equal(a->addr, b->addr)
         && a->offset_in_region == b->offset_in_region
-        && a->readonly == b->readonly;
+        && a->readonly == b->readonly
+        && a->nonvolatile == b->nonvolatile;
 }
 
 static FlatView *flatview_new(MemoryRegion *mr_root)
@@ -381,7 +384,8 @@ static bool can_merge(FlatRange *r1, FlatRange *r2)
                                 r1->addr.size),
                      int128_make64(r2->offset_in_region))
         && r1->dirty_log_mask == r2->dirty_log_mask
-        && r1->readonly == r2->readonly;
+        && r1->readonly == r2->readonly
+        && r1->nonvolatile == r2->nonvolatile;
 }
 
 /* Attempt to simplify a view by merging adjacent ranges */
@@ -609,7 +613,8 @@ static void render_memory_region(FlatView *view,
                                  MemoryRegion *mr,
                                  Int128 base,
                                  AddrRange clip,
-                                 bool readonly)
+                                 bool readonly,
+                                 bool nonvolatile)
 {
     MemoryRegion *subregion;
     unsigned i;
@@ -625,6 +630,7 @@ static void render_memory_region(FlatView *view,
 
     int128_addto(&base, int128_make64(mr->addr));
     readonly |= mr->readonly;
+    nonvolatile |= mr->nonvolatile;
 
     tmp = addrrange_make(base, mr->size);
 
@@ -637,13 +643,15 @@ static void render_memory_region(FlatView *view,
     if (mr->alias) {
         int128_subfrom(&base, int128_make64(mr->alias->addr));
         int128_subfrom(&base, int128_make64(mr->alias_offset));
-        render_memory_region(view, mr->alias, base, clip, readonly);
+        render_memory_region(view, mr->alias, base, clip,
+                             readonly, nonvolatile);
         return;
     }
 
     /* Render subregions in priority order. */
     QTAILQ_FOREACH(subregion, &mr->subregions, subregions_link) {
-        render_memory_region(view, subregion, base, clip, readonly);
+        render_memory_region(view, subregion, base, clip,
+                             readonly, nonvolatile);
     }
 
     if (!mr->terminates) {
@@ -657,6 +665,7 @@ static void render_memory_region(FlatView *view,
     fr.mr = mr;
     fr.dirty_log_mask = mr->dirty_log_mask;
     fr.readonly = readonly;
+    fr.nonvolatile = nonvolatile;
 
     /* Render the region itself into any gaps left by the current view. */
     for (i = 0; i < view->nr && int128_nz(remain); ++i) {
@@ -739,7 +748,8 @@ static FlatView *generate_memory_topology(struct uc_struct *uc, MemoryRegion *mr
 
     if (mr) {
         render_memory_region(view, mr, int128_zero(),
-                             addrrange_make(int128_zero(), int128_2_64()), false);
+                             addrrange_make(int128_zero(), int128_2_64()),
+                             false, false);
     }
     flatview_simplify(view);
 
@@ -1574,6 +1584,16 @@ void memory_region_clear_global_locking(MemoryRegion *mr)
     mr->global_locking = false;
 }
 
+void memory_region_set_nonvolatile(MemoryRegion *mr, bool nonvolatile)
+{
+    if (mr->nonvolatile != nonvolatile) {
+        memory_region_transaction_begin(mr->uc);
+        mr->nonvolatile = nonvolatile;
+        mr->uc->memory_region_update_pending |= mr->enabled;
+        memory_region_transaction_commit(mr->uc);
+    }
+}
+
 void memory_region_rom_device_set_romd(MemoryRegion *mr, bool romd_mode)
 {
     if (mr->romd_mode != romd_mode) {
@@ -1833,6 +1853,7 @@ static MemoryRegionSection memory_region_find_rcu(MemoryRegion *mr,
     ret.size = range.size;
     ret.offset_within_address_space = int128_get64(range.start);
     ret.readonly = fr->readonly;
+    ret.nonvolatile = fr->nonvolatile;
     return ret;
 }
 

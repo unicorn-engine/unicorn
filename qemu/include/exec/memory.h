@@ -174,6 +174,7 @@ struct MemoryRegion {
     bool ram;
     bool subpage;
     bool readonly; /* For RAM regions */
+    bool nonvolatile;
     bool rom_device;
     bool flush_coalesced_mmio;
     bool global_locking;
@@ -259,6 +260,7 @@ FlatView *address_space_to_flatview(AddressSpace *as);
  * @offset_within_address_space: the address of the first byte of the section
  *     relative to the region's address space
  * @readonly: writes to this section are ignored
+ * @nonvolatile: this section is non-volatile
  */
 struct MemoryRegionSection {
     MemoryRegion *mr;
@@ -267,6 +269,7 @@ struct MemoryRegionSection {
     Int128 size;
     hwaddr offset_within_address_space;
     bool readonly;
+    bool nonvolatile;
 };
 
 static inline MemoryRegionSection MemoryRegionSection_make(MemoryRegion *mr, FlatView *fv,
@@ -677,6 +680,18 @@ static inline bool memory_region_is_rom(MemoryRegion *mr)
 }
 
 /**
+ * memory_region_is_nonvolatile: check whether a memory region is non-volatile
+ *
+ * Returns %true is a memory region is non-volatile memory.
+ *
+ * @mr: the memory region being queried
+ */
+static inline bool memory_region_is_nonvolatile(MemoryRegion *mr)
+{
+    return mr->nonvolatile;
+}
+
+/**
  * memory_region_get_fd: Get a file descriptor backing a RAM memory region.
  *
  * Returns a file descriptor backing a file-based RAM memory region,
@@ -725,6 +740,17 @@ void *memory_region_get_ram_ptr(MemoryRegion *mr);
  * @readonly: whether rhe region is to be ROM or RAM.
  */
 void memory_region_set_readonly(MemoryRegion *mr, bool readonly);
+
+/**
+ * memory_region_set_nonvolatile: Turn a memory region non-volatile
+ *
+ * Allows a memory region to be marked as non-volatile.
+ * only useful on RAM regions.
+ *
+ * @mr: the region being updated.
+ * @nonvolatile: whether rhe region is to be non-volatile.
+ */
+void memory_region_set_nonvolatile(MemoryRegion *mr, bool nonvolatile);
 
 /**
  * memory_region_clear_global_locking: Declares that access processing does
