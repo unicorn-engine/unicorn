@@ -24127,6 +24127,12 @@ static void decode_opc_special(CPUMIPSState *env, DisasContext *ctx)
     }
 }
 
+static void decode_opc_mxu(CPUMIPSState *env, DisasContext *ctx)
+{
+    MIPS_INVAL("decode_opc_mxu");
+    generate_exception_end(ctx, EXCP_RI);
+}
+
 static void decode_opc_special2_legacy(CPUMIPSState *env, DisasContext *ctx)
 {
     int rs, rt, rd;
@@ -26401,6 +26407,8 @@ static void decode_opc(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pat
     case OPC_SPECIAL2:
         if ((ctx->insn_flags & INSN_R5900) && (ctx->insn_flags & ASE_MMI)) {
             decode_tx79_mmi(env, ctx);
+        } else if (ctx->insn_flags & ASE_MXU) {
+            decode_opc_mxu(env, ctx);
         } else {
             decode_opc_special2_legacy(env, ctx);
         }
