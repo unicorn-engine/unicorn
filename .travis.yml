@@ -1,7 +1,6 @@
 language: c
 sudo: false
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew bundle; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./install-cmocka-linux.sh; fi
 script:
   - make && make -C bindings/go && make -C bindings/go test && make test
@@ -25,6 +24,5 @@ matrix:
     - os: osx
       script: brew install --HEAD unicorn && brew test unicorn
 addons:
-  apt:
-    packages:
-    # mingw-w64 packages too old in precise
+  homebrew:
+    brewfile: true
