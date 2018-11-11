@@ -2910,7 +2910,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_7_0_EBX_AVX512BW | CPUID_7_0_EBX_AVX512CD |
             CPUID_7_0_EBX_AVX512VL,
         // FEAT_7_0_ECX
-            0,
+            CPUID_7_0_ECX_PKU,
         // FEAT_7_0_EDX
             0,
         // FEAT_8000_0001_EDX
@@ -2979,7 +2979,7 @@ static X86CPUDefinition builtin_x86_defs[] = {
             CPUID_7_0_EBX_AVX512BW | CPUID_7_0_EBX_AVX512CD |
             CPUID_7_0_EBX_AVX512VL,
         // FEAT_7_0_ECX
-            0,
+            CPUID_7_0_ECX_PKU,
         // FEAT_7_0_EDX
             CPUID_7_0_EDX_SPEC_CTRL,
         // FEAT_8000_0001_EDX
