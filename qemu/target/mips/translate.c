@@ -24325,6 +24325,69 @@ static void gen_mxu_s8ldd(DisasContext *ctx)
     tcg_temp_free(tcg_ctx, t1);
 }
 
+/*
+ * D16MUL XRa, XRb, XRc, XRd, optn2 - Signed 16 bit pattern multiplication
+ */
+static void gen_mxu_d16mul(DisasContext *ctx)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0, t1, t2, t3;
+    TCGLabel *l0;
+    uint32_t XRa, XRb, XRc, XRd, optn2;
+
+    t0 = tcg_temp_new(tcg_ctx);
+    t1 = tcg_temp_new(tcg_ctx);
+    t2 = tcg_temp_new(tcg_ctx);
+    t3 = tcg_temp_new(tcg_ctx);
+
+    l0 = gen_new_label(tcg_ctx);
+
+    XRa = extract32(ctx->opcode, 6, 4);
+    XRb = extract32(ctx->opcode, 10, 4);
+    XRc = extract32(ctx->opcode, 14, 4);
+    XRd = extract32(ctx->opcode, 18, 4);
+    optn2 = extract32(ctx->opcode, 22, 2);
+
+    gen_load_mxu_cr(ctx, t0);
+    tcg_gen_andi_tl(tcg_ctx, t0, t0, MXU_CR_MXU_EN);
+    tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t0, MXU_CR_MXU_EN, l0);
+
+    gen_load_mxu_gpr(ctx, t1, XRb);
+    tcg_gen_sextract_tl(tcg_ctx, t0, t1, 0, 16);
+    tcg_gen_sextract_tl(tcg_ctx, t1, t1, 16, 16);
+    gen_load_mxu_gpr(ctx, t3, XRc);
+    tcg_gen_sextract_tl(tcg_ctx, t2, t3, 0, 16);
+    tcg_gen_sextract_tl(tcg_ctx, t3, t3, 16, 16);
+
+    switch (optn2) {
+    case MXU_OPTN2_WW: /* XRB.H*XRC.H == lop, XRB.L*XRC.L == rop */
+        tcg_gen_mul_tl(tcg_ctx, t3, t1, t3);
+        tcg_gen_mul_tl(tcg_ctx, t2, t0, t2);
+        break;
+    case MXU_OPTN2_LW: /* XRB.L*XRC.H == lop, XRB.L*XRC.L == rop */
+        tcg_gen_mul_tl(tcg_ctx, t3, t0, t3);
+        tcg_gen_mul_tl(tcg_ctx, t2, t0, t2);
+        break;
+    case MXU_OPTN2_HW: /* XRB.H*XRC.H == lop, XRB.H*XRC.L == rop */
+        tcg_gen_mul_tl(tcg_ctx, t3, t1, t3);
+        tcg_gen_mul_tl(tcg_ctx, t2, t1, t2);
+        break;
+    case MXU_OPTN2_XW: /* XRB.L*XRC.H == lop, XRB.H*XRC.L == rop */
+        tcg_gen_mul_tl(tcg_ctx, t3, t0, t3);
+        tcg_gen_mul_tl(tcg_ctx, t2, t1, t2);
+        break;
+    }
+    gen_store_mxu_gpr(ctx, t3, XRa);
+    gen_store_mxu_gpr(ctx, t2, XRd);
+
+    gen_set_label(tcg_ctx, l0);
+
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
+    tcg_temp_free(tcg_ctx, t2);
+    tcg_temp_free(tcg_ctx, t3);
+}
+
 
 /*
  * Decoding engine for MXU
@@ -25289,9 +25352,7 @@ static void decode_opc_mxu(CPUMIPSState *env, DisasContext *ctx)
         decode_opc_mxu__pool02(env, ctx);
         break;
     case OPC_MXU_D16MUL:
-        /* TODO: Implement emulation of D16MUL instruction. */
-        MIPS_INVAL("OPC_MXU_D16MUL");
-        generate_exception_end(ctx, EXCP_RI);
+        gen_mxu_d16mul(ctx);
         break;
     case OPC_MXU__POOL03:
         decode_opc_mxu__pool03(env, ctx);
