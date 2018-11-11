@@ -590,6 +590,7 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     ARMCPU *cpu = ARM_CPU(uc, dev);
     ARMCPUClass *acc = ARM_CPU_GET_CLASS(uc, dev);
     CPUARMState *env = &cpu->env;
+    bool no_aa32 = false;
 
     /* Some features automatically imply others: */
     if (arm_feature(env, ARM_FEATURE_V8)) {
@@ -599,6 +600,16 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
             set_feature(env, ARM_FEATURE_V7VE);
         }
     }
+
+    /*
+     * There exist AArch64 cpus without AArch32 support.  When KVM
+     * queries ID_ISAR0_EL1 on such a host, the value is UNKNOWN.
+     * Similarly, we cannot check ID_AA64PFR0 without AArch64 support.
+     */
+    if (arm_feature(&cpu->env, ARM_FEATURE_AARCH64)) {
+        no_aa32 = !cpu_isar_feature(aa64_aa32, cpu);
+    }
+
     if (arm_feature(env, ARM_FEATURE_V7VE)) {
         /* v7 Virtualization Extensions. In real hardware this implies
          * EL2 and also the presence of the Security Extensions.
@@ -608,7 +619,7 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
          * Presence of EL2 itself is ARM_FEATURE_EL2, and of the
          * Security Extensions is ARM_FEATURE_EL3.
          */
-        assert(cpu_isar_feature(arm_div, cpu));
+        assert(no_aa32 || cpu_isar_feature(arm_div, cpu));
         set_feature(env, ARM_FEATURE_LPAE);
         set_feature(env, ARM_FEATURE_V7);
     }
@@ -634,7 +645,7 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     if (arm_feature(env, ARM_FEATURE_V6)) {
         set_feature(env, ARM_FEATURE_V5);
         if (!arm_feature(env, ARM_FEATURE_M)) {
-            assert(cpu_isar_feature(jazelle, cpu));
+            assert(no_aa32 || cpu_isar_feature(jazelle, cpu));
             set_feature(env, ARM_FEATURE_AUXCR);
         }
     }
