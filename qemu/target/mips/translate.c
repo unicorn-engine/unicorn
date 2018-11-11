@@ -24575,6 +24575,53 @@ static void gen_mxu_q8mul_q8mulsu(DisasContext *ctx)
     tcg_temp_free(tcg_ctx, t7);
 }
 
+/*
+ * S32LDD  XRa, Rb, S12 - Load a word from memory to XRF
+ * S32LDDR XRa, Rb, S12 - Load a word from memory to XRF, reversed byte seq.
+ */
+static void gen_mxu_s32ldd_s32lddr(DisasContext *ctx)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0, t1;
+    TCGLabel *l0;
+    uint32_t XRa, Rb, s12, sel;
+
+    t0 = tcg_temp_new(tcg_ctx);
+    t1 = tcg_temp_new(tcg_ctx);
+
+    l0 = gen_new_label(tcg_ctx);
+
+    XRa = extract32(ctx->opcode, 6, 4);
+    s12 = extract32(ctx->opcode, 10, 10);
+    sel = extract32(ctx->opcode, 20, 1);
+    Rb = extract32(ctx->opcode, 21, 5);
+
+    gen_load_mxu_cr(ctx, t0);
+    tcg_gen_andi_tl(tcg_ctx, t0, t0, MXU_CR_MXU_EN);
+    tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t0, MXU_CR_MXU_EN, l0);
+
+    gen_load_gpr(ctx, t0, Rb);
+
+    tcg_gen_movi_tl(tcg_ctx, t1, s12);
+    tcg_gen_shli_tl(tcg_ctx, t1, t1, 2);
+    if (s12 & 0x200) {
+        tcg_gen_ori_tl(tcg_ctx, t1, t1, 0xFFFFF000);
+    }
+    tcg_gen_add_tl(tcg_ctx, t1, t0, t1);
+    tcg_gen_qemu_ld_tl(ctx->uc, t1, t1, ctx->mem_idx, MO_SL);
+
+    if (sel == 1) {
+        /* S32LDDR */
+        tcg_gen_bswap32_tl(tcg_ctx, t1, t1);
+    }
+    gen_store_mxu_gpr(ctx, t1, XRa);
+
+    gen_set_label(tcg_ctx, l0);
+
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
+}
+
 
 /*
  * Decoding engine for MXU
@@ -24804,14 +24851,8 @@ static void decode_opc_mxu__pool04(CPUMIPSState *env, DisasContext *ctx)
 
     switch (opcode) {
     case OPC_MXU_S32LDD:
-        /* TODO: Implement emulation of S32LDD instruction. */
-        MIPS_INVAL("OPC_MXU_S32LDD");
-        generate_exception_end(ctx, EXCP_RI);
-        break;
     case OPC_MXU_S32LDDR:
-        /* TODO: Implement emulation of S32LDDR instruction. */
-        MIPS_INVAL("OPC_MXU_S32LDDR");
-        generate_exception_end(ctx, EXCP_RI);
+        gen_mxu_s32ldd_s32lddr(ctx);
         break;
     default:
         MIPS_INVAL("decode_opc_mxu");
