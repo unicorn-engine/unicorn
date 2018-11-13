@@ -25,10 +25,10 @@ template = {
             'comment_close': '',
         },
     'ruby': {
-            'header': "# For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [%s_const.rb]\n\nmodule Unicorn\n",
+            'header': "# For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [%s_const.rb]\n\nmodule UnicornEngine\n",
             'footer': "end",
             'line_format': '\tUC_%s = %s\n',
-            'out_file': './ruby/unicorn_gem/lib/unicorn/%s_const.rb',
+            'out_file': './ruby/unicorn_gem/lib/unicorn_engine/%s_const.rb',
             # prefixes for constant filenames of all archs - case sensitive
             'arm.h': 'arm',
             'arm64.h': 'arm64',
@@ -86,6 +86,22 @@ template = {
             'm68k.h': 'M68k',
             'unicorn.h': 'Common',
             'comment_open': '    //',
+            'comment_close': '',
+        },
+    'pascal': {
+            'header': "// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT\n\nunit %sConst;\n\ninterface\n\nconst",
+            'footer': "\nimplementation\nend.",
+            'line_format': '  UC_%s = %s;\n',
+            'out_file': os.path.join('pascal', 'unicorn', '%sConst.pas'),
+            # prefixes for constant filenames of all archs - case sensitive
+            'arm.h': 'Arm',
+            'arm64.h': 'Arm64',
+            'mips.h': 'Mips',
+            'x86.h': 'X86',
+            'sparc.h': 'Sparc',
+            'm68k.h': 'M68k',
+            'unicorn.h': 'Unicorn',
+            'comment_open': '//',
             'comment_close': '',
         },
 }

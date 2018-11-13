@@ -2,10 +2,10 @@
 # Sample code for ARM of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
 # Ruby sample ported by Sascha Schirra <sashs82@gmail.com>
 
-require 'unicorn'
-require 'unicorn/m68k_const'
+require 'unicorn_engine'
+require 'unicorn_engine/m68k_const'
 
-include Unicorn
+include UnicornEngine
 
 # code to be emulated
 M68K_CODE  = "\x76\xed" # movq #-19, %d3

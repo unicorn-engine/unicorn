@@ -54,8 +54,8 @@ void perform_unmap_step(uc_engine *uc){
 }
 
 void perform_write_step(uc_engine *uc){
-    char* buff[4096*4];
-    memset(buff, 0, 4096*4);
+    char buff[4096*4];
+    memset((void *)buff, 0, 4096*4);
     uint64_t addr = get_addr();
     uint64_t len = get_len()%(4096*3);
     printf("write(uc,0x%"PRIx64",0x%"PRIx64"); //%d\n", addr, len, step);
@@ -63,9 +63,9 @@ void perform_write_step(uc_engine *uc){
 }
 
 void perform_read_step(uc_engine *uc){
-    char* buff[4096*4];
+    char buff[4096*4];
     uint64_t addr = get_addr();
-    uint64_t len = get_len()%(4096*3);
+    uint64_t len = get_len()%(4096*4);
     printf("read(uc,0x%"PRIx64",0x%"PRIx64"); //%d\n", addr, len, step);
     uc_mem_read(uc, addr, buff, len);
 }

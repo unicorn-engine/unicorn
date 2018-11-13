@@ -82,14 +82,14 @@ void hook_code_test_i386_shl(uc_engine *uc, uint64_t address, uint32_t size, voi
     instruction* currInst = getInstruction(b, (uint32_t)address);
     assert_true(currInst != NULL);
 
-    print_message("|\teip=%08x - %s\n", (uint32_t)address, currInst->asmStr);
+    printf("|\teip=%08x - %s\n", (uint32_t)address, currInst->asmStr);
 
     for (i = 0; i < currInst->nbValues; i++)
     {
         uint32_t regValue = getRegisterValue(uc, currInst->values[i].regId);
-        print_message("|\t\ttesting %s : ", getRegisterName(currInst->values[i].regId));
+        printf("|\t\ttesting %s : ", getRegisterName(currInst->values[i].regId));
         assert_int_equal(regValue & currInst->values[i].mask, currInst->values[i].regValue);
-        print_message("ok\n");
+        printf("ok\n");
     }
 
     if (currInst->code[0] == 0xCC)
@@ -101,17 +101,17 @@ bool hook_mem_invalid(uc_engine *uc, uc_mem_type type, uint64_t addr, int size, 
     switch (type)
     {
     default:
-        print_message("hook_mem_invalid: UC_HOOK_MEM_INVALID type: %d at 0x%" PRIx64 "\n", type, addr); break;
+        printf("hook_mem_invalid: UC_HOOK_MEM_INVALID type: %d at 0x%" PRIx64 "\n", type, addr); break;
     case UC_MEM_READ_UNMAPPED:
-        print_message("hook_mem_invalid: Read from invalid memory at 0x%" PRIx64 ", data size = %u\n", addr, size); break;
+        printf("hook_mem_invalid: Read from invalid memory at 0x%" PRIx64 ", data size = %u\n", addr, size); break;
     case UC_MEM_WRITE_UNMAPPED:
-        print_message("hook_mem_invalid: Write to invalid memory at 0x%" PRIx64 ", data size = %u, data value = 0x%" PRIx64 "\n", addr, size, value); break;
+        printf("hook_mem_invalid: Write to invalid memory at 0x%" PRIx64 ", data size = %u, data value = 0x%" PRIx64 "\n", addr, size, value); break;
     case UC_MEM_FETCH_PROT:
-        print_message("hook_mem_invalid: Fetch from non-executable memory at 0x%" PRIx64 "\n", addr); break;
+        printf("hook_mem_invalid: Fetch from non-executable memory at 0x%" PRIx64 "\n", addr); break;
     case UC_MEM_WRITE_PROT:
-        print_message("hook_mem_invalid: Write to non-writeable memory at 0x%" PRIx64 ", data size = %u, data value = 0x%" PRIx64 "\n", addr, size, value); break;
+        printf("hook_mem_invalid: Write to non-writeable memory at 0x%" PRIx64 ", data size = %u, data value = 0x%" PRIx64 "\n", addr, size, value); break;
     case UC_MEM_READ_PROT:
-        print_message("hook_mem_invalid: Read from non-readable memory at 0x%" PRIx64 ", data size = %u\n", addr, size); break;
+        printf("hook_mem_invalid: Read from non-readable memory at 0x%" PRIx64 ", data size = %u\n", addr, size); break;
     }
     return false;
 }
@@ -310,10 +310,10 @@ uint32_t loadBlock(uc_engine *_uc, block* _block, uint32_t _at)
         const uint32_t codeSize = _block->insts[i]->codeSize;
         const uint8_t* code = _block->insts[i]->code;
         _block->insts[i]->addr = _at + offset;
-        print_message("load: %08X: ", _block->insts[i]->addr);
-        for (j = 0; j < codeSize; j++)			print_message("%02X ", code[j]);
-        for (j = 0; j < 15 - codeSize; j++)		print_message("   ");
-        print_message("%s\n", _block->insts[i]->asmStr);
+        printf("load: %08X: ", _block->insts[i]->addr);
+        for (j = 0; j < codeSize; j++)			printf("%02X ", code[j]);
+        for (j = 0; j < 15 - codeSize; j++)		printf("   ");
+        printf("%s\n", _block->insts[i]->asmStr);
         OK(uc_mem_write(_uc, _at + offset, code, codeSize));
         offset += codeSize;
     }

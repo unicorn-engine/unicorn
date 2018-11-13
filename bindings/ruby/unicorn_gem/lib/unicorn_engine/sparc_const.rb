@@ -1,6 +1,6 @@
 # For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [sparc_const.rb]
 
-module Unicorn
+module UnicornEngine
 
 # SPARC registers
 

@@ -1,6 +1,6 @@
 # For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [unicorn_const.rb]
 
-module Unicorn
+module UnicornEngine
 	UC_API_MAJOR = 1
 
 	UC_API_MINOR = 0
@@ -96,6 +96,7 @@ module Unicorn
 	UC_HOOK_MEM_VALID = 7168
 	UC_QUERY_MODE = 1
 	UC_QUERY_PAGE_SIZE = 2
+	UC_QUERY_ARCH = 3
 
 	UC_PROT_NONE = 0
 	UC_PROT_READ = 1

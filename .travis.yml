@@ -1,8 +1,7 @@
 language: c
 sudo: false
 before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update; fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install cmocka; fi
+  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew bundle; fi
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./install-cmocka-linux.sh; fi
 script:
   - make && make -C bindings/go && make -C bindings/go test && make test
@@ -14,16 +13,12 @@ os:
   - osx
 matrix:
   include:
-    - os: linux
-      dist: trusty
-      compiler: gcc
-    - os: linux
-      dist: trusty
-      compiler: clang
-    - os: osx
+    - if: branch = master
+      os: osx
       script: brew install --HEAD unicorn && brew test unicorn
       compiler: gcc
-    - os: osx
+    - if: branch = master
+      os: osx
       script: brew install --HEAD unicorn && brew test unicorn
       compiler: clang
   allow_failures:

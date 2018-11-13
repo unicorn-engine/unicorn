@@ -67,3 +67,5 @@ Andrew Dutcher: uc_context_{save, restore} API.
 Stephen Groat: improved CI setup.
 David Zimmer: VB6 binding.
 zhangwm: ARM & ARM64 big endian.
+Mohamed Osama: FreePascal/Delphi binding.
+Philippe Antoine (Catena cyber): fuzzing 

@@ -78,6 +78,9 @@ typedef bool (*uc_args_int_t)(int intno);
 // some architecture redirect virtual memory to physical memory like Mips
 typedef uint64_t (*uc_mem_redirect_t)(uint64_t address);
 
+// validate if Unicorn supports hooking a given instruction
+typedef bool(*uc_insn_hook_validate)(uint32_t insn_enum);
+
 struct hook {
     int type;            // UC_HOOK_*
     int insn;            // instruction for HOOK_INSN
@@ -169,6 +172,8 @@ struct uc_struct {
     // TODO: remove current_cpu, as it's a flag for something else ("cpu running"?)
     CPUState *cpu, *current_cpu;
 
+    uc_insn_hook_validate insn_hook_validate;
+
     MemoryRegion *system_memory;    // qemu/exec.c
     MemoryRegion io_mem_rom;    // qemu/exec.c
     MemoryRegion io_mem_notdirty;   // qemu/exec.c
@@ -239,6 +244,7 @@ struct uc_struct {
     uint32_t target_page_size;
     uint32_t target_page_align;
     uint64_t next_pc;   // save next PC for some special cases
+    bool hook_insert;	// insert new hook at begin of the hook list (append by default)
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()

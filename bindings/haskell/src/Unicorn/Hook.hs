@@ -39,7 +39,7 @@ module Unicorn.Hook
 
 import Control.Monad
 import Control.Monad.Trans.Class
-import Control.Monad.Trans.Either (hoistEither, left, right)
+import Control.Monad.Trans.Except (ExceptT (..), throwE)
 import Foreign
 
 import Unicorn.Internal.Core
@@ -60,12 +60,11 @@ codeHookAdd :: Storable a
             -> Word64           -- ^ End address
             -> Emulator Hook    -- ^ The hook handle on success, or an 'Error'
                                 -- on failure
-codeHookAdd uc callback userData begin end = do
-    result <- lift . alloca $ \userDataPtr -> do
+codeHookAdd uc callback userData begin end =
+    ExceptT . alloca $ \userDataPtr -> do
         poke userDataPtr userData
         funPtr <- marshalCodeHook callback
         getResult $ ucHookAdd uc HookCode funPtr userDataPtr begin end
-    hoistEither result
 
 -- | Register a callback for an interrupt hook event.
 interruptHookAdd :: Storable a
@@ -77,12 +76,11 @@ interruptHookAdd :: Storable a
                  -> Word64          -- ^ End address
                  -> Emulator Hook   -- ^ The hook handle on success, or 'Error'
                                     -- on failure
-interruptHookAdd uc callback userData begin end = do
-    result <- lift . alloca $ \userDataPtr -> do
+interruptHookAdd uc callback userData begin end =
+    ExceptT . alloca $ \userDataPtr -> do
         poke userDataPtr userData
         funPtr <- marshalInterruptHook callback
         getResult $ ucHookAdd uc HookIntr funPtr userDataPtr begin end
-    hoistEither result
 
 -- | Register a callback for a block hook event.
 blockHookAdd :: Storable a
@@ -94,12 +92,11 @@ blockHookAdd :: Storable a
              -> Word64          -- ^ End address
              -> Emulator Hook   -- ^ The hook handle on success, or an 'Error'
                                 -- on failure
-blockHookAdd uc callback userData begin end = do
-    result <- lift . alloca $ \userDataPtr -> do
+blockHookAdd uc callback userData begin end =
+    ExceptT . alloca $ \userDataPtr -> do
         poke userDataPtr userData
         funPtr <- marshalBlockHook callback
         getResult $ ucHookAdd uc HookBlock funPtr userDataPtr begin end
-    hoistEither result
 
 -- | Register a callback for an IN instruction hook event (X86).
 inHookAdd :: Storable a
@@ -111,13 +108,12 @@ inHookAdd :: Storable a
           -> Word64         -- ^ End address
           -> Emulator Hook  -- ^ The hook handle on success, or an 'Error' on
                             -- failure
-inHookAdd uc callback userData begin end = do
-    result <- lift . alloca $ \userDataPtr -> do
+inHookAdd uc callback userData begin end =
+    ExceptT . alloca $ \userDataPtr -> do
         poke userDataPtr userData
         funPtr <- marshalInHook callback
         getResult $ ucInsnHookAdd uc HookInsn funPtr userDataPtr begin end
                                   X86.In
-    hoistEither result
 
 -- | Register a callback for an OUT instruction hook event (X86).
 outHookAdd :: Storable a
@@ -129,13 +125,12 @@ outHookAdd :: Storable a
            -> Word64        -- ^ End address
            -> Emulator Hook -- ^ The hook handle on success, or an 'Error' on
                             -- failure
-outHookAdd uc callback userData begin end = do
-    result <- lift . alloca $ \userDataPtr -> do
+outHookAdd uc callback userData begin end =
+    ExceptT . alloca $ \userDataPtr -> do
         poke userDataPtr userData
         funPtr <- marshalOutHook callback
         getResult $ ucInsnHookAdd uc HookInsn funPtr userDataPtr begin end
                                   X86.Out
-    hoistEither result
 
 -- | Register a callback for a SYSCALL instruction hook event (X86).
 syscallHookAdd :: Storable a
@@ -147,13 +142,12 @@ syscallHookAdd :: Storable a
                -> Word64        -- ^ End address
                -> Emulator Hook -- ^ The hook handle on success, or an 'Error'
                                 -- on failure
-syscallHookAdd uc callback userData begin end = do
-    result <- lift . alloca $ \userDataPtr -> do
+syscallHookAdd uc callback userData begin end =
+    ExceptT . alloca $ \userDataPtr -> do
         poke userDataPtr userData
         funPtr <- marshalSyscallHook callback
         getResult $ ucInsnHookAdd uc HookInsn funPtr userDataPtr begin end
                                   X86.Syscall
-    hoistEither result
 
 -- | Register a callback for a valid memory access event.
 memoryHookAdd :: Storable a
@@ -167,12 +161,11 @@ memoryHookAdd :: Storable a
               -> Word64         -- ^ End address
               -> Emulator Hook  -- ^ The hook handle on success, or an 'Error'
                                 -- on failure
-memoryHookAdd uc memHookType callback userData begin end = do
-    result <- lift . alloca $ \userDataPtr -> do
+memoryHookAdd uc memHookType callback userData begin end =
+    ExceptT . alloca $ \userDataPtr -> do
         poke userDataPtr userData
         funPtr <- marshalMemoryHook callback
         getResult $ ucHookAdd uc memHookType funPtr userDataPtr begin end
-    hoistEither result
 
 -- | Register a callback for an invalid memory access event.
 memoryEventHookAdd :: Storable a
@@ -188,12 +181,11 @@ memoryEventHookAdd :: Storable a
                    -> Word64                -- ^ End address
                    -> Emulator Hook         -- ^ The hook handle on success, or
                                             -- an 'Error' on failure
-memoryEventHookAdd uc memEventHookType callback userData begin end = do
-    result <- lift . alloca $ \userDataPtr -> do
+memoryEventHookAdd uc memEventHookType callback userData begin end =
+    ExceptT . alloca $ \userDataPtr -> do
         poke userDataPtr userData
         funPtr <- marshalMemoryEventHook callback
         getResult $ ucHookAdd uc memEventHookType funPtr userDataPtr begin end
-    hoistEither result
 
 -- | Unregister (remove) a hook callback.
 hookDel :: Engine       -- ^ 'Unicorn' engine handle
@@ -202,9 +194,9 @@ hookDel :: Engine       -- ^ 'Unicorn' engine handle
 hookDel uc hook = do
     err <- lift $ ucHookDel uc hook
     if err == ErrOk then
-        right ()
+        pure ()
     else
-        left err
+        throwE err
 
 -------------------------------------------------------------------------------
 -- Helper functions

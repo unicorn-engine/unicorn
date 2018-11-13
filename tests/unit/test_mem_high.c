@@ -90,6 +90,8 @@ static void test_high_address_reads(void **state)
 static void test_high_address_read_values(void **state)
 {
     uc_engine *uc = *state;
+    struct stat info;
+    char * code = read_file("high_address.bin", &info);
 
     uint64_t addr = 0x0010000000000001; 
     //addr = 0x000ffffffffffff8; // uncomment to fix wrong behaviour
@@ -100,15 +102,16 @@ static void test_high_address_read_values(void **state)
     uc_assert_success(uc_mem_write(uc, addr, content, 8));
     uc_assert_success(uc_reg_write(uc, UC_X86_REG_RAX, &addr));
     const uint64_t base_addr = 0x40000;
-    uint8_t code[] = {0x48,0x8b,0x00,0x90,0x90,0x90,0x90}; // mov rax, [rax], nops
     uc_assert_success(uc_mem_map(uc, base_addr, 4096, UC_PROT_ALL));
-    uc_assert_success(uc_mem_write(uc, base_addr, code, 7));
+    uc_assert_success(uc_mem_write(uc, base_addr, code, info.st_size));
     uc_assert_success(uc_emu_start(uc, base_addr, base_addr + 3, 0, 0));
     uint64_t rax = 0;
     uc_assert_success(uc_reg_read(uc, UC_X86_REG_RAX, &rax));
     if(rax != 0x4242424242424242) {
         fail_msg("wrong memory read from code %"PRIx64, rax);
     }
+
+    free(code);
 }
 
 

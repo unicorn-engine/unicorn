@@ -1,8 +1,11 @@
+/* Unicorn Emulator Engine */
+/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015-2017 */
+/* This file is released under LGPL2.
+   See COPYING.LGPL2 in root directory for more details
+*/
+
 #ifndef UNICORN_X86_H
 #define UNICORN_X86_H
-
-/* Unicorn Emulator Engine */
-/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 
 #ifdef __cplusplus
 extern "C" {

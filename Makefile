@@ -71,8 +71,8 @@ UNICORN_CFLAGS += -fPIC
 # Verbose output?
 V ?= 0
 
-# on MacOS, compile in Universal format by default
-MACOS_UNIVERSAL ?= yes
+# on MacOS, by default do not compile in Universal format
+MACOS_UNIVERSAL ?= no
 
 ifeq ($(UNICORN_DEBUG),yes)
 CFLAGS += -g
@@ -138,6 +138,15 @@ UNICORN_QEMU_FLAGS += --disable-stack-protector
 UNICORN_CFLAGS := $(UNICORN_CFLAGS:-fPIC=)
 $(LIBNAME)_LDFLAGS += -Wl,--output-def,unicorn.def
 DO_WINDOWS_EXPORT = 1
+
+# Haiku
+else ifneq ($(filter Haiku%,$(UNAME_S)),)
+EXT = so
+VERSION_EXT = $(EXT).$(API_MAJOR)
+AR_EXT = a
+$(LIBNAME)_LDFLAGS += -Wl,-Bsymbolic-functions,-soname,lib$(LIBNAME).$(VERSION_EXT)
+UNICORN_CFLAGS := $(UNICORN_CFLAGS:-fPIC=)
+UNICORN_QEMU_FLAGS += --disable-stack-protector
 
 # Linux, Darwin
 else
@@ -255,6 +264,11 @@ endif
 
 $(PKGCFGF):
 	$(generate-pkgcfg)
+
+
+.PHONY: fuzz
+fuzz: all
+	$(MAKE) -C tests/fuzz all
 
 .PHONY: test
 test: all

@@ -273,11 +273,16 @@ module Arm64 =
     // pseudo registers
     let UC_ARM64_REG_PC = 260
     let UC_ARM64_REG_CPACR_EL1 = 261
-    let UC_ARM64_REG_ENDING = 262
+
+    // thread registers
+    let UC_ARM64_REG_TPIDR_EL0 = 262
+    let UC_ARM64_REG_TPIDRRO_EL0 = 263
+    let UC_ARM64_REG_TPIDR_EL1 = 264
+    let UC_ARM64_REG_ENDING = 265
 
     // alias registers
-    let UC_ARM64_REG_IP1 = 215
-    let UC_ARM64_REG_IP0 = 216
+    let UC_ARM64_REG_IP0 = 215
+    let UC_ARM64_REG_IP1 = 216
     let UC_ARM64_REG_FP = 1
     let UC_ARM64_REG_LR = 2
 

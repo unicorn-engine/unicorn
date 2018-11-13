@@ -9,6 +9,7 @@ The following bindings are contributed by community.
 - Ruby binding: by Sascha Schirra
 - Haskell binding: by Adrian Herrera.
 - VB6 binding: David Zimmer.
+- FreePascal/Delphi binding: Mohamed Osama.
 
 More bindings created & maintained externally by community are available as follows.
 
@@ -20,3 +21,9 @@ More bindings created & maintained externally by community are available as foll
 
 - UnicornEngine: Perl binding (by Vikas Naresh Kumar)
     https://metacpan.org/pod/UnicornEngine
+
+- Unicorn.CR: Crystal binding (by Benoit Côté-Jodoin)
+    https://github.com/Becojo/unicorn.cr
+
+- Deimos/unicorn: D binding (by Vladimir Panteleev)
+    https://github.com/D-Programming-Deimos/unicorn

@@ -1,44 +1,8 @@
+#include "unicorn_test.h"
 #include <unicorn/unicorn.h>
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
-
-/**
- * Assert that err matches expect
- */
-#define uc_assert_err(expect, err)                                  \
-do {                                                                \
-    uc_err __err = err;                                             \
-    if (__err != expect) {                                          \
-        fprintf(stderr, "%s", uc_strerror(__err));                  \
-        exit(1);                                                    \
-    }                                                               \
-} while (0)
-
-/**
- * Assert that err is UC_ERR_OK
- */
-#define uc_assert_success(err)  uc_assert_err(UC_ERR_OK, err)
-
-/**
- * Assert that err is anything but UC_ERR_OK
- *
- * Note: Better to use uc_assert_err(<specific error>, err),
- * as this serves to document which errors a function will return
- * in various scenarios.
- */
-#define uc_assert_fail(err)                                         \
-do {                                                                \
-    uc_err __err = err;                                             \
-    if (__err == UC_ERR_OK) {                                       \
-        fprintf(stderr, "%s", uc_strerror(__err));                  \
-        exit(1);                                                    \
-    }                                                               \
-} while (0)
-
-#define OK(x)   uc_assert_success(x)
-
-/******************************************************************************/
 
 static void test_idt_gdt_i386(/*void **state*/)
 {
@@ -50,7 +14,9 @@ static void test_idt_gdt_i386(/*void **state*/)
     uc_x86_mmr ldt;
     uc_x86_mmr tr;
 
-    const uint8_t code[] = "\x0f\x01\x0c\x24\x0f\x01\x44\x24\x06"; // sidt [esp]; sgdt [esp+6]
+    struct stat info;
+    char * code = read_file("gdt_idx.bin", &info);
+
     const uint64_t address = 0x1000000;
 
     int r_esp = address + 0x1000 - 0x100;     // initial esp
@@ -79,7 +45,7 @@ static void test_idt_gdt_i386(/*void **state*/)
     uc_assert_success(err);
 
     // write machine code to be emulated to memory
-    err = uc_mem_write(uc, address, code, sizeof(code)-1);
+    err = uc_mem_write(uc, address, code, info.st_size);
     uc_assert_success(err);
 
     // initialize machine registers
@@ -118,7 +84,7 @@ static void test_idt_gdt_i386(/*void **state*/)
     assert(ldt.base == 0xfedcba98);
     assert(ldt.limit == 0x11111111);
     assert(ldt.selector == 0x3333);
-    assert(ldt.flags = 0x55555555);
+    assert(ldt.flags == 0x55555555);
 
     //userspace can only set tr selector, remainder are loaded from 
     //GDT/LDT, but we allow all to emulator user
@@ -126,7 +92,7 @@ static void test_idt_gdt_i386(/*void **state*/)
     assert(tr.base == 0x22222222);
     assert(tr.limit == 0x33333333);
     assert(tr.selector == 0x4444);
-    assert(tr.flags = 0x66666666);
+    assert(tr.flags == 0x66666666);
 
     // read from memory
     err = uc_mem_read(uc, r_esp, buf, 6);
@@ -141,7 +107,7 @@ static void test_idt_gdt_i386(/*void **state*/)
     assert(memcmp(buf, "\xba\xdc\x21\x43\x65\x87", 6) == 0);
 
     uc_close(uc);
-    
+    free(code);
 }
 
 /******************************************************************************/

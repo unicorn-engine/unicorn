@@ -8,6 +8,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 #include "unicorn/unicorn.h"
 
 #define RIP_NEXT_TO_THE_SELFMODIFY_OPCODE (1)
@@ -20,17 +21,6 @@
 
 #define CODE_SPACE (2 * 1024 * 1024)
 #define PHY_STACK_REGION (0x60000000)
-
-#define X86_CODE32_ALPHA_MIXED \
-    "\x89\xe1\xd9\xcd\xd9\x71\xf4\x5d\x55\x59\x49\x49\x49\x49\x49\x49" \
-    "\x49\x49\x49\x49\x43\x43\x43\x43\x43\x43\x37\x51\x5a\x6a\x41\x58" \
-    "\x50\x30\x41\x30\x41\x6b\x41\x41\x51\x32\x41\x42\x32\x42\x42\x30" \
-    "\x42\x42\x41\x42\x58\x50\x38\x41\x42\x75\x4a\x49\x51\x51\x51\x52" \
-    "\x47\x33\x47\x34\x51\x55\x51\x56\x50\x47\x47\x38\x47\x39\x50\x4a" \
-    "\x50\x4b\x50\x4c\x50\x4d\x50\x4e\x50\x4f\x50\x50\x50\x31\x47\x42" \
-    "\x47\x42\x50\x34\x50\x5a\x50\x45\x51\x52\x46\x32\x47\x31\x50\x4d" \
-    "\x51\x51\x50\x4e\x41\x41"
-
 
 /* Called before every test to set up a new instance */
 static int setup(void **state)
@@ -57,12 +47,12 @@ static int teardown(void **state)
 
 
 
-static void dump_stack_mem(uc_engine *uc)
+static void dump_stack_mem(uc_engine *uc, const struct stat info)
 {
     uint8_t tmp[256];
     uint32_t size;
 
-    size = sizeof(X86_CODE32_ALPHA_MIXED);
+    size = sizeof(info.st_size);
     if (size > 255) size = 255;
     if (!uc_mem_read(uc, PHY_STACK_REGION, tmp, size)) 
     {
@@ -106,7 +96,8 @@ static void print_registers(uc_engine *uc)
 static void hook_code32(uc_engine *uc, 
                         uint64_t address, 
                         uint32_t size, 
-                        void *user_data)
+                        void *user_data,
+                        const struct stat info)
 {
     //uint8_t opcode[256];
     uint8_t tmp[16];
@@ -126,7 +117,7 @@ static void hook_code32(uc_engine *uc,
         }
         printf("\n");
     }
-    dump_stack_mem(uc);
+    dump_stack_mem(uc, info);
 
 
     if (address == 0x60000025)
@@ -222,6 +213,8 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
 {
     uc_engine *uc = *state;
     uc_hook trace1, trace2;
+    struct stat info;
+    char * code = read_file("tb_x86.bin", &info);
     //void *mem;
 #ifdef RIP_NEXT_TO_THE_SELFMODIFY_OPCODE
     // These values assumes just before PC = 0x60000021
@@ -258,8 +251,8 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
                                  UC_PROT_ALL));
     uc_assert_success(uc_mem_write(uc,
                                    PHY_STACK_REGION,
-                                   X86_CODE32_ALPHA_MIXED,
-                                   sizeof(X86_CODE32_ALPHA_MIXED) - 1));
+                                   code,
+                                   info.st_size));
     uc_assert_success(uc_reg_write(uc, UC_X86_REG_EAX, &eax));
     uc_assert_success(uc_reg_write(uc, UC_X86_REG_ECX, &ecx));
     uc_assert_success(uc_reg_write(uc, UC_X86_REG_EDX, &edx));
@@ -275,7 +268,8 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
                 hook_code32,
                 NULL,
                 1,
-                0));
+                0,
+                info));
 
     uc_assert_success(uc_hook_add(uc,
                 &trace2,
@@ -294,7 +288,7 @@ static void test_tb_x86_64_32_imul_Gv_Ev_Ib(void **state)
 #else
                        PHY_STACK_REGION+0x0000,
 #endif
-                       PHY_STACK_REGION+sizeof(X86_CODE32_ALPHA_MIXED) - 1,
+                       PHY_STACK_REGION+info.st_size,
                        0, 0));
 
     uc_assert_success(uc_close(uc));

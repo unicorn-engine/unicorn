@@ -60,13 +60,13 @@ module NativeBinding =
         extern IntPtr uc_strerror(Int32 err)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl, EntryPoint = "uc_hook_add")>]
-        extern Int32 uc_hook_add_noarg(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData)
+        extern Int32 uc_hook_add_noarg(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData, UInt64 hookbegin, UInt64 hookend)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl, EntryPoint = "uc_hook_add")>]
-        extern Int32 uc_hook_add_arg0(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData, Int32 arg0)
+        extern Int32 uc_hook_add_arg0(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData, UInt64 hookbegin, UInt64 hookend, Int32 arg0)
 
         [<DllImport("unicorn", CallingConvention = CallingConvention.Cdecl, EntryPoint = "uc_hook_add")>]
-        extern Int32 uc_hook_add_arg0_arg1(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData, UInt64 arg0, UInt64 arg1)
+        extern Int32 uc_hook_add_arg0_arg1(UIntPtr eng, UIntPtr hh, Int32 callbackType, UIntPtr callback, IntPtr userData, UInt64 hookbegin, UInt64 hookend, UInt64 arg0, UInt64 arg1)
             
     let instance =
         {new IBinding with
@@ -87,7 +87,7 @@ module NativeBinding =
             member this.MemMapPtr(eng, address, size, perms, ptr)  = uc_mem_map_ptr(eng, address, size, perms, ptr)
             member this.MemUnmap(eng, address, size) = uc_mem_unmap(eng, address, size)
             member this.MemProtect(eng, address, size, perms) = uc_mem_protect(eng, address, size, perms)
-            member thi.HookAddNoarg(eng, hh, callbackType, callback, userData) = uc_hook_add_noarg(eng, hh, callbackType, callback, userData)
-            member thi.HookAddArg0(eng, hh, callbackType, callback, userData, arg0) = uc_hook_add_arg0(eng, hh, callbackType, callback, userData, arg0)
-            member thi.HookAddArg0Arg1(eng, hh, callbackType, callback, userData, arg0, arg1) = uc_hook_add_arg0_arg1(eng, hh, callbackType, callback, userData, arg0, arg1)
+            member thi.HookAddNoarg(eng, hh, callbackType, callback, userData, hookBegin, hookEnd) = uc_hook_add_noarg(eng, hh, callbackType, callback, userData, hookBegin, hookEnd)
+            member thi.HookAddArg0(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0) = uc_hook_add_arg0(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0)
+            member thi.HookAddArg0Arg1(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0, arg1) = uc_hook_add_arg0_arg1(eng, hh, callbackType, callback, userData, hookBegin, hookEnd, arg0, arg1)
         }

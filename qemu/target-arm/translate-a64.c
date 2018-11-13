@@ -11113,7 +11113,7 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
         // imitate WFI instruction to halt emulation
         gen_tb_start(tcg_ctx);
         dc->is_jmp = DISAS_WFI;
-        goto done_generating;
+        goto tb_end;
     }
 
     // Unicorn: trace this block on request
@@ -11209,6 +11209,7 @@ void gen_intermediate_code_internal_a64(ARMCPU *cpu,
     //    gen_io_end();
     //}
 
+tb_end:
     if (unlikely(cs->singlestep_enabled || dc->ss_active)
         && dc->is_jmp != DISAS_EXC) {
         /* Note that this means single stepping WFI doesn't halt the CPU.

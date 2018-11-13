@@ -1,9 +1,9 @@
 #!/usr/bin/env ruby
 
-require 'unicorn'
-require 'unicorn/arm_const'
+require 'unicorn_engine'
+require 'unicorn_engine/arm_const'
 
-include Unicorn
+include UnicornEngine
 
 # code to be emulated
 ARM_CODE   = "\x37\x00\xa0\xe3\x03\x10\x42\xe0" # mov r0, #0x37; sub r1, r2, r3

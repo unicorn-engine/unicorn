@@ -158,3 +158,28 @@ func TestX86Mmr(t *testing.T) {
 		t.Fatalf("mmr read failed: %#v", mmr)
 	}
 }
+
+func BenchmarkX86Hook(b *testing.B) {
+	// loop rax times
+	code := "\x48\xff\xc8\x48\x83\xf8\x00\x0f\x8f\xf3\xff\xff\xff"
+	mu, err := MakeUc(MODE_64, code)
+	if err != nil {
+		b.Fatal(err)
+	}
+	count := 0
+	mu.HookAdd(HOOK_CODE, func(_ Unicorn, addr uint64, size uint32) {
+		count++
+	}, 1, 0)
+	mu.RegWrite(X86_REG_RAX, uint64(b.N))
+	b.ResetTimer()
+	if err := mu.Start(ADDRESS, ADDRESS+uint64(len(code))); err != nil {
+		b.Fatal(err)
+	}
+	rax, _ := mu.RegRead(X86_REG_RAX)
+	if rax != 0 {
+		b.Errorf("benchmark fell short: rax (%d) != 0", rax)
+	}
+	if count != b.N*3 {
+		b.Fatalf("benchmark fell short: %d < %d", count, b.N)
+	}
+}

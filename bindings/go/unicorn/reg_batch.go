@@ -46,7 +46,11 @@ func regBatchSetup(regs []int) (buf unsafe.Pointer, vals []uint64, cenums *C.int
 		enums[i] = C.int(regs[i])
 	}
 	var cvals *C.uint64_t
-	buf = C.reg_batch_setup((*C.int)(unsafe.Pointer(&enums[0])), C.int(len(regs)), &cvals, &cenums, &crefs)
+	var inEnums *C.int
+	if len(regs) > 0 {
+		inEnums = (*C.int)(unsafe.Pointer(&enums[0]))
+	}
+	buf = C.reg_batch_setup(inEnums, C.int(len(regs)), &cvals, &cenums, &crefs)
 	vals = (*[1 << 24]uint64)(unsafe.Pointer(cvals))[:len(regs)]
 	return
 }

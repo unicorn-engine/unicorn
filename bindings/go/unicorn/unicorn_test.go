@@ -1,7 +1,6 @@
 package unicorn
 
 import (
-	"fmt"
 	"testing"
 )
 
@@ -21,7 +20,7 @@ func TestMemUnmap(t *testing.T) {
 		t.Fatal(err)
 	}
 	if err := mu.MemWrite(0x1000, tmp); err.(UcError) != ERR_WRITE_UNMAPPED {
-		t.Fatal(fmt.Errorf("Expected ERR_WRITE_UNMAPPED, got: %v", err))
+		t.Fatalf("Expected ERR_WRITE_UNMAPPED, got: %v", err)
 	}
 }
 
@@ -70,6 +69,6 @@ func TestQuery(t *testing.T) {
 		t.Fatal(err)
 	}
 	if mode != MODE_THUMB {
-		t.Fatal("query returned invalid mode: %d != %d", mode, MODE_THUMB)
+		t.Fatalf("query returned invalid mode: %d != %d", mode, MODE_THUMB)
 	}
 }

@@ -1,10 +1,16 @@
 CFLAGS += -Wall -Werror -Wno-unused-function -g
+CFLAGS += -D__USE_MINGW_ANSI_STDIO=1
 CFLAGS += -L ../../ -I ../../include
 CFLAGS += -L ../../cmocka/src -I ../../cmocka/include
+ASFLAGS += --32
+OBJCOPY = objcopy
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Linux)
 LDLIBS += -lrt -pthread
+else ifeq ($(UNAME_S), Darwin)
+OBJCOPY = gobjcopy
+ASFLAGS = -arch i386
 endif
 
 LDLIBS += -lcmocka -lunicorn
@@ -19,17 +25,24 @@ LDFLAGS := -fsanitize=address ${LDFLAGS}
 endif
 
 ALL_TESTS_SOURCES = $(wildcard *.c)
+TEST_ASSEMBLY = $(wildcard *.s)
+TEST_PROGS = $(TEST_ASSEMBLY:%.s=%.o)
+TEST_BINS = $(TEST_PROGS:%.o=%.bin)
 ALL_TESTS = $(ALL_TESTS_SOURCES:%.c=%)
 
 .PHONY: all
-all: ${ALL_TESTS}
+all: ${TEST_BINS} ${ALL_TESTS}
 
 .PHONY: clean
 clean:
-	rm -rf ${ALL_TESTS}
+	rm -rf ${TEST_BINS} ${ALL_TESTS}
+
+%.bin: %.o
+	${OBJCOPY} -O binary $^ $@
+	hexdump -C $@
 
 .PHONY: test
-test: ${ALL_TESTS}
+test: all 
 	${EXECUTE_VARS} ./test_sanity
 	${EXECUTE_VARS} ./test_x86
 	${EXECUTE_VARS} ./test_mem_map

@@ -29,8 +29,8 @@ def hook_block(uc, address, size, user_data):
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
-    eip = uc.reg_read(UC_X86_REG_EFLAGS)
-    print(">>> --- EFLAGS is 0x%x" %(eip))
+    eflags = uc.reg_read(UC_X86_REG_EFLAGS)
+    print(">>> --- EFLAGS is 0x%x" %eflags)
 
 def hook_code64(uc, address, size, user_data):
     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
@@ -431,7 +431,7 @@ def test_i386_inout():
 def test_i386_context_save():
     print("Save/restore CPU context in opaque blob")
     address = 0
-    code = '\x40'  # inc eax
+    code = b'\x40'  # inc eax
     try:
         # Initialize emulator
         mu = Uc(UC_ARCH_X86, UC_MODE_32)

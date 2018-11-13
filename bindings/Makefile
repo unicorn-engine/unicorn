@@ -13,7 +13,7 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S), Linux)
 ENV_VARS = LD_PRELOAD=librt.so LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../
 else
-ENV_VARS = LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../
+ENV_VARS = LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../ LIBUNICORN_PATH=$(TRAVIS_BUILD_DIR)
 endif
 
 
@@ -25,6 +25,7 @@ build:
 	$(MAKE) -C java gen_const
 	$(MAKE) -C ruby gen_const
 	python const_generator.py dotnet
+	python const_generator.py pascal
 
 install: build
 	$(MAKE) -C python install

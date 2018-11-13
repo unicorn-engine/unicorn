@@ -1,8 +1,8 @@
 #!/usr/bin/env ruby
-require 'unicorn'
-require 'unicorn/x86_const'
+require 'unicorn_engine'
+require 'unicorn_engine/x86_const'
 
-include Unicorn
+include UnicornEngine
 
 F_GRANULARITY = 0x8
 F_PROT_32 = 0x4
@@ -16,8 +16,8 @@ A_PRIV_2 = 0x40
 A_PRIV_1 = 0x20
 A_PRIV_0 = 0x0
 
-A_CODE = 0x10
-A_DATA = 0x10
+A_CODE = 0x8
+A_DATA = 0x0
 A_TSS = 0x0
 A_GATE = 0x0
 

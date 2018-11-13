@@ -181,14 +181,14 @@ int main(int argc, char **argv, char **envp)
     th = (HANDLE)_beginthreadex(NULL, 0, win32_emu_starter, &starter_params, CREATE_SUSPENDED, NULL);
     if(th == (HANDLE)-1)
     {
-        printf("Failed on _beginthreadex() with error returned: %u\n", _errno());
+        printf("Failed on _beginthreadex() with error returned: %p\n", _errno());
         return -1;
     }
     // start thread
     ret = ResumeThread(th);
     if( ret == -1 )
     {
-        printf("Failed on ResumeThread() with error returned: %u\n", _errno());
+        printf("Failed on ResumeThread() with error returned: %p\n", _errno());
         return -2;
     }
     // wait 3 seconds

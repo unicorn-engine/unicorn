@@ -135,12 +135,12 @@ endif
 
 
 define link-dynamic
-	$(CC) $< $(LDFLAGS) -o $@
+	$(CC) $< ${CFLAGS} $(LDFLAGS) -o $@
 endef
 
 
 define link-static
-	$(CC) $< $(ARCHIVE) $(LDFLAGS) -o $(call staticname,$@)
+	$(CC) $< $(ARCHIVE) ${CFLAGS} $(LDFLAGS) -o $(call staticname,$@)
 endef
 
 

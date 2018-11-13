@@ -3157,7 +3157,7 @@ uint32_t HELPER(rbit)(uint32_t x)
 int arm_cpu_handle_mmu_fault(CPUState *cs, vaddr address, int rw,
                              int mmu_idx)
 {
-    ARMCPU *cpu = ARM_CPU(cs);
+    ARMCPU *cpu = ARM_CPU(NULL, cs);
     CPUARMState *env = &cpu->env;
 
     env->exception.vaddress = address;
@@ -4335,8 +4335,7 @@ int arm_cpu_handle_mmu_fault(CPUState *cs, vaddr address,
 
 hwaddr arm_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
 {
-    CPUARMState *env = cs->env_ptr;
-    ARMCPU *cpu = ARM_CPU(env->uc, cs);
+    ARMCPU *cpu = ARM_CPU(NULL, cs);
     hwaddr phys_addr;
     target_ulong page_size;
     int prot;

@@ -153,8 +153,14 @@ of corresponding languages.
 
 [8] Unit tests
 
+Mac OS X users will also need the GNU version of binutils (for gobjcopy).
+It can be easily installed with Homebrew: `brew install binutils`.
+
 Automated unit tests use the cmocka unit testing framework (https://cmocka.org/).
 It can be installed in most Linux distros using the package manager, e.g.
-`sudo yum install libcmocka libcmocka-devel`, or you can easily build and install it from source.
+`sudo yum install libcmocka libcmocka-devel`.
+On Mac OS X with Homebrew: `brew install cmocka`.
+You can also easily build and install it from source.
 
-You can run the tests by running `make test` in the project directory.
+You can run the tests by running `make test` in the project directory. If you don't
+build some architecture support then the corresponding tests will fail when run.

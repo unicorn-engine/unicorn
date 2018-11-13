@@ -1,6 +1,6 @@
 # For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [arm64_const.rb]
 
-module Unicorn
+module UnicornEngine
 
 # ARM64 registers
 
@@ -268,11 +268,16 @@ module Unicorn
 # pseudo registers
 	UC_ARM64_REG_PC = 260
 	UC_ARM64_REG_CPACR_EL1 = 261
-	UC_ARM64_REG_ENDING = 262
+
+# thread registers
+	UC_ARM64_REG_TPIDR_EL0 = 262
+	UC_ARM64_REG_TPIDRRO_EL0 = 263
+	UC_ARM64_REG_TPIDR_EL1 = 264
+	UC_ARM64_REG_ENDING = 265
 
 # alias registers
-	UC_ARM64_REG_IP1 = 215
-	UC_ARM64_REG_IP0 = 216
+	UC_ARM64_REG_IP0 = 215
+	UC_ARM64_REG_IP1 = 216
 	UC_ARM64_REG_FP = 1
 	UC_ARM64_REG_LR = 2
 end

@@ -96,7 +96,7 @@ func (u *uc) Close() (err error) {
 	u.final.Do(func() {
 		if u.handle != nil {
 			for _, uptr := range u.hooks {
-				delete(hookDataMap, uptr)
+				hookMap.remove(uptr)
 			}
 			u.hooks = nil
 			err = errReturn(C.uc_close(u.handle))

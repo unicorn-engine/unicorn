@@ -1,8 +1,11 @@
+/* Unicorn Emulator Engine */
+/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015-2017 */
+/* This file is released under LGPL2.
+   See COPYING.LGPL2 in root directory for more details
+*/
+
 #ifndef UNICORN_ARM64_H
 #define UNICORN_ARM64_H
-
-/* Unicorn Emulator Engine */
-/* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 
 #ifdef __cplusplus
 extern "C" {
@@ -282,12 +285,17 @@ typedef enum uc_arm64_reg {
 
     UC_ARM64_REG_CPACR_EL1,
 
+    //> thread registers
+    UC_ARM64_REG_TPIDR_EL0,
+    UC_ARM64_REG_TPIDRRO_EL0,
+    UC_ARM64_REG_TPIDR_EL1,
+    
     UC_ARM64_REG_ENDING,		// <-- mark the end of the list of registers
 
     //> alias registers
 
-    UC_ARM64_REG_IP1 = UC_ARM64_REG_X16,
-    UC_ARM64_REG_IP0 = UC_ARM64_REG_X17,
+    UC_ARM64_REG_IP0 = UC_ARM64_REG_X16,
+    UC_ARM64_REG_IP1 = UC_ARM64_REG_X17,
     UC_ARM64_REG_FP = UC_ARM64_REG_X29,
     UC_ARM64_REG_LR = UC_ARM64_REG_X30,
 } uc_arm64_reg;

@@ -1,6 +1,6 @@
 # For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [x86_const.rb]
 
-module Unicorn
+module UnicornEngine
 
 # X86 registers
 

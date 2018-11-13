@@ -60,7 +60,7 @@ void x86_reg_reset(struct uc_struct *uc)
     CPUArchState *env = uc->cpu->env_ptr;
 
     env->features[FEAT_1_EDX] = CPUID_CX8 | CPUID_CMOV | CPUID_SSE2 | CPUID_FXSR | CPUID_SSE | CPUID_CLFLUSH;
-    env->features[FEAT_1_ECX] = CPUID_EXT_SSSE3 | CPUID_EXT_SSE41 | CPUID_EXT_SSE42 | CPUID_EXT_AES;
+    env->features[FEAT_1_ECX] = CPUID_EXT_SSSE3 | CPUID_EXT_SSE41 | CPUID_EXT_SSE42 | CPUID_EXT_AES | CPUID_EXT_CX16;
     env->features[FEAT_8000_0001_EDX] = CPUID_EXT2_3DNOW | CPUID_EXT2_RDTSCP;
     env->features[FEAT_8000_0001_ECX] = CPUID_EXT3_LAHF_LM | CPUID_EXT3_ABM | CPUID_EXT3_SKINIT | CPUID_EXT3_CR8LEG;
     env->features[FEAT_7_0_EBX] = CPUID_7_0_EBX_BMI1 | CPUID_7_0_EBX_BMI2 | CPUID_7_0_EBX_ADX | CPUID_7_0_EBX_SMAP;
@@ -77,6 +77,7 @@ void x86_reg_reset(struct uc_struct *uc)
     env->eip = 0;
     env->eflags = 0;
     env->eflags0 = 0;
+    env->cc_op = CC_OP_EFLAGS;
 
     env->fpstt = 0; /* top of stack index */
     env->fpus = 0;
@@ -171,7 +172,7 @@ static int x86_msr_read(struct uc_struct *uc, uc_x86_msr *msr)
     helper_rdmsr(env);
 
     msr->value = ((uint32_t)env->regs[R_EAX]) |
-    	((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
+        ((uint64_t)((uint32_t)env->regs[R_EDX]) << 32);
 
     env->regs[R_EAX] = eax;
     env->regs[R_ECX] = ecx;
@@ -348,7 +349,7 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                         *(int32_t *)value = X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0];
                         break;
                     case UC_X86_REG_EFLAGS:
-                        *(int32_t *)value = X86_CPU(uc, mycpu)->env.eflags;
+                        *(int32_t *)value = cpu_compute_eflags(&X86_CPU(uc, mycpu)->env);
                         break;
                     case UC_X86_REG_EAX:
                         *(int32_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EAX];
@@ -495,7 +496,7 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                         *(int64_t *)value = X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0];
                         break;
                     case UC_X86_REG_EFLAGS:
-                        *(int64_t *)value = X86_CPU(uc, mycpu)->env.eflags;
+                        *(int64_t *)value = cpu_compute_eflags(&X86_CPU(uc, mycpu)->env);
                         break;
                     case UC_X86_REG_RAX:
                         *(uint64_t *)value = X86_CPU(uc, mycpu)->env.regs[R_EAX];
@@ -888,7 +889,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0] = *(uint32_t *)value;
                         break;
                     case UC_X86_REG_EFLAGS:
-                        X86_CPU(uc, mycpu)->env.eflags = *(uint32_t *)value;
+                        cpu_load_eflags(&X86_CPU(uc, mycpu)->env, *(uint32_t *)value, -1);
                         X86_CPU(uc, mycpu)->env.eflags0 = *(uint32_t *)value;
                         break;
                     case UC_X86_REG_EAX:
@@ -970,7 +971,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         uc_emu_stop(uc);
                         break;
                     case UC_X86_REG_IP:
-                        WRITE_WORD(X86_CPU(uc, mycpu)->env.eip, *(uint16_t *)value);
+                        X86_CPU(uc, mycpu)->env.eip = *(uint16_t *)value;
                         // force to quit execution and flush TB
                         uc->quit_request = true;
                         uc_emu_stop(uc);
@@ -1042,7 +1043,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         X86_CPU(uc, mycpu)->env.dr[regid - UC_X86_REG_DR0] = *(uint64_t *)value;
                         break;
                     case UC_X86_REG_EFLAGS:
-                        X86_CPU(uc, mycpu)->env.eflags = *(uint64_t *)value;
+                        cpu_load_eflags(&X86_CPU(uc, mycpu)->env, *(uint64_t *)value, -1);
                         X86_CPU(uc, mycpu)->env.eflags0 = *(uint64_t *)value;
                         break;
                     case UC_X86_REG_RAX:
@@ -1160,7 +1161,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         uc_emu_stop(uc);
                         break;
                     case UC_X86_REG_EIP:
-                        WRITE_DWORD(X86_CPU(uc, mycpu)->env.eip, *(uint32_t *)value);
+                        X86_CPU(uc, mycpu)->env.eip = *(uint32_t *)value;
                         // force to quit execution and flush TB
                         uc->quit_request = true;
                         uc_emu_stop(uc);
@@ -1184,10 +1185,10 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
                         break;
                     case UC_X86_REG_FS:
-                        X86_CPU(uc, mycpu)->env.segs[R_FS].selector = *(uint16_t *)value;
+                        cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_GS:
-                        X86_CPU(uc, mycpu)->env.segs[R_GS].selector = *(uint16_t *)value;
+                        cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_R8:
                         X86_CPU(uc, mycpu)->env.regs[8] = *(uint64_t *)value;
@@ -1335,6 +1336,18 @@ static bool x86_stop_interrupt(int intno)
 
 void pc_machine_init(struct uc_struct *uc);
 
+static bool x86_insn_hook_validate(uint32_t insn_enum)
+{
+    //for x86 we can only hook IN, OUT, and SYSCALL
+    if (insn_enum != UC_X86_INS_IN
+        &&  insn_enum != UC_X86_INS_OUT
+        &&  insn_enum != UC_X86_INS_SYSCALL
+        &&  insn_enum != UC_X86_INS_SYSENTER) {
+        return false;
+    }
+    return true;
+}
+
 DEFAULT_VISIBILITY
 void x86_uc_init(struct uc_struct* uc)
 {
@@ -1350,6 +1363,7 @@ void x86_uc_init(struct uc_struct* uc)
     uc->release = x86_release;
     uc->set_pc = x86_set_pc;
     uc->stop_interrupt = x86_stop_interrupt;
+    uc->insn_hook_validate = x86_insn_hook_validate;
     uc_common_init(uc);
 }
 
