@@ -579,30 +579,32 @@ JNIEXPORT jlong JNICALL Java_unicorn_Unicorn_registerHook__JIJJ
   (JNIEnv *env, jclass clz, jlong eng, jint type, jlong arg1, jlong arg2) {
    uc_hook hh = 0;
    uc_err err = 0;
+   uint64_t begin = (uint64_t) arg1;
+   uint64_t end = (uint64_t) arg2;
    switch (type) {
       case UC_HOOK_CODE:           // Hook a range of code
          if (invokeCodeCallbacks == 0) {
             invokeCodeCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeCodeCallbacks", "(JJI)V");
          }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookcode, env, 1, 0, arg1, arg2);
+         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookcode, env, begin, end, arg1, arg2);
          break;
       case UC_HOOK_BLOCK:          // Hook basic blocks
          if (invokeBlockCallbacks == 0) {
             invokeBlockCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeBlockCallbacks", "(JJI)V");
          }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookblock, env, 1, 0, arg1, arg2);
+         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookblock, env, begin, end, arg1, arg2);
          break;
       case UC_HOOK_MEM_READ:       // Hook all memory read events.
          if (invokeReadCallbacks == 0) {
             invokeReadCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeReadCallbacks", "(JJI)V");
          }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookmem, env, 1, 0, arg1, arg2);
+         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookmem, env, begin, end, arg1, arg2);
          break;
       case UC_HOOK_MEM_WRITE:      // Hook all memory write events.
          if (invokeWriteCallbacks == 0) {
             invokeWriteCallbacks = (*env)->GetStaticMethodID(env, clz, "invokeWriteCallbacks", "(JJIJ)V");
          }
-         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookmem, env, 1, 0, arg1, arg2);
+         err = uc_hook_add((uc_engine*)eng, &hh, (uc_hook_type)type, cb_hookmem, env, begin, end, arg1, arg2);
          break;
    }
    return (jlong)hh;
