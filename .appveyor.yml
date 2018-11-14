@@ -7,9 +7,11 @@ environment:
         - MSYSTEM: MINGW64
           BASH: C:\msys64\usr\bin\bash
           CC: x86_64-w64-mingw32-gcc
+          MSYS_CACHE: C:\msys64\var\cache\pacman\pkg
         - MSYSTEM: MINGW32
           BASH: C:\msys64\usr\bin\bash
           CC: i686-w64-mingw32-gcc
+          MSYS_CACHE: C:\msys64\var\cache\pacman\pkg
         - CYG_ROOT: C:\cygwin64
           CYG_CACHE: C:\cygwin64\var\cache\setup
           CYG_SETUP: setup-x86_64.exe
@@ -25,6 +27,7 @@ environment:
 # Cache Cygwin/MSYS files to speed up build
 cache:
     - '%CYG_CACHE%'
+    - '%MSYS_CACHE%'
 clone_depth: 1
 
 # Attempt to ensure we don't try to convert line endings to Win32 CRLF as this will cause build to fail
@@ -38,7 +41,7 @@ install:
     - ps: if (Test-Path Env:\CYG_ROOT) { Start-FileDownload "https://cygwin.com/$env:CYG_SETUP" -FileName "$env:CYG_SETUP" }
     - if defined CYG_ROOT (%CYG_SETUP% --quiet-mode --no-shortcuts --only-site --root "%CYG_ROOT%" --site "%CYG_MIRROR%" --local-package-dir "%CYG_CACHE%" --packages "%CYG_PACKAGES%" --upgrade-also)
     - if defined MSYSTEM (%BASH% -lc "pacman -Suuy --noconfirm ${MSYS_PACKAGES}")
-    - if defined MSYSTEM (%BASH% -lc "pacman -Suuy --noconfirm ${MSYS_PACKAGES}")
+    - if defined MSYSTEM (%BASH% -lc "pacman -Suuy --noconfirm ${MSYS_PACKAGES} && pacman -Sc --noconfirm")
 build_script:
     - if defined BASH (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && make")
     - if "%MSYSTEM%" == "MINGW64" (%BASH% -lc "cd $(cygpath ${APPVEYOR_BUILD_FOLDER}) && make -C bindings/go")
