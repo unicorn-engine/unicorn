@@ -6,11 +6,9 @@ environment:
     matrix:
         - MSYSTEM: MINGW64
           BASH: C:\msys64\usr\bin\bash
-          MSYS_CACHE: C:\msys64\var\cache\pacman\pkg
           CC: x86_64-w64-mingw32-gcc
         - MSYSTEM: MINGW32
           BASH: C:\msys64\usr\bin\bash
-          MSYS_CACHE: C:\msys64\var\cache\pacman\pkg
           CC: i686-w64-mingw32-gcc
         - CYG_ROOT: C:\cygwin64
           CYG_CACHE: C:\cygwin64\var\cache\setup
@@ -27,7 +25,6 @@ environment:
 # Cache Cygwin/MSYS files to speed up build
 cache:
     - '%CYG_CACHE%'
-    - '%MSYS_CACHE%'
 clone_depth: 1
 
 # Attempt to ensure we don't try to convert line endings to Win32 CRLF as this will cause build to fail
