@@ -7573,7 +7573,6 @@ static void arm_cpu_do_interrupt_aarch32_(CPUState *cs)
         return;
     }
 
-    /* TODO: Vectored interrupt controller.  */
     switch (cs->exception_index) {
     case EXCP_UDEF:
         new_mode = ARM_CPU_MODE_UND;
