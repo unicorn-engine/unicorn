@@ -3512,6 +3512,22 @@ static void hcr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
         tlb_flush(CPU(cpu));
     }
     env->cp15.hcr_el2 = value;
+
+    /*
+     * Updates to VI and VF require us to update the status of
+     * virtual interrupts, which are the logical OR of these bits
+     * and the state of the input lines from the GIC. (This requires
+     * that we have the iothread lock, which is done by marking the
+     * reginfo structs as ARM_CP_IO.)
+     * Note that if a write to HCR pends a VIRQ or VFIQ it is never
+     * possible for it to be taken immediately, because VIRQ and
+     * VFIQ are masked unless running at EL0 or EL1, and HCR
+     * can only be written at EL2.
+     */
+    // Unicorn: Commented out
+    //g_assert(qemu_mutex_iothread_locked());
+    arm_cpu_update_virq(cpu);
+    arm_cpu_update_vfiq(cpu);
 }
 
 static void hcr_writehigh(CPUARMState *env, const ARMCPRegInfo *ri,
@@ -3532,10 +3548,10 @@ static void hcr_writelow(CPUARMState *env, const ARMCPRegInfo *ri,
 
 static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "HCR_EL2", 0,1,1, 3,4,0, ARM_CP_STATE_AA64,
-      0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2), {0, 0},
+      ARM_CP_IO, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2), {0, 0},
       NULL, NULL, hcr_write },
     { "HCR", 15,1,1, 0,4,0, ARM_CP_STATE_AA32,
-      ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2),
+      ARM_CP_ALIAS | ARM_CP_IO, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2),
       {0, 0}, NULL, NULL, hcr_writelow },
     { "ELR_EL2", 0,4,0, 3,4,1, ARM_CP_STATE_AA64,
       ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[2]) },
@@ -3700,7 +3716,7 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
 
 static const ARMCPRegInfo el2_v8_cp_reginfo[] = {
     { "HCR2", 15,1,1, 0,4,4, ARM_CP_STATE_AA32,
-      ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetofhigh32(CPUARMState, cp15.hcr_el2),
+      ARM_CP_ALIAS | ARM_CP_IO, PL2_RW, 0, NULL, 0, offsetofhigh32(CPUARMState, cp15.hcr_el2),
       {0, 0}, NULL, NULL, hcr_writehigh },
     REGINFO_SENTINEL
 };

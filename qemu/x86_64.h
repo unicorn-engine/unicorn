@@ -151,6 +151,8 @@
 #define arm_cpu_register_gdb_regs_for_features arm_cpu_register_gdb_regs_for_features_x86_64
 #define arm_cpu_register_types arm_cpu_register_types_x86_64
 #define arm_cpu_set_pc arm_cpu_set_pc_x86_64
+#define arm_cpu_update_virq arm_cpu_update_virq_x86_64
+#define arm_cpu_update_vfiq arm_cpu_update_vfiq_x86_64
 #define arm_cpus arm_cpus_x86_64
 #define arm_current_el arm_current_el_x86_64
 #define arm_dc_feature arm_dc_feature_x86_64

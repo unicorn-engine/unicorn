@@ -151,6 +151,8 @@
 #define arm_cpu_register_gdb_regs_for_features arm_cpu_register_gdb_regs_for_features_mipsel
 #define arm_cpu_register_types arm_cpu_register_types_mipsel
 #define arm_cpu_set_pc arm_cpu_set_pc_mipsel
+#define arm_cpu_update_virq arm_cpu_update_virq_mipsel
+#define arm_cpu_update_vfiq arm_cpu_update_vfiq_mipsel
 #define arm_cpus arm_cpus_mipsel
 #define arm_current_el arm_current_el_mipsel
 #define arm_dc_feature arm_dc_feature_mipsel

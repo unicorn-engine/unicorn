@@ -151,6 +151,8 @@
 #define arm_cpu_register_gdb_regs_for_features arm_cpu_register_gdb_regs_for_features_powerpc
 #define arm_cpu_register_types arm_cpu_register_types_powerpc
 #define arm_cpu_set_pc arm_cpu_set_pc_powerpc
+#define arm_cpu_update_virq arm_cpu_update_virq_powerpc
+#define arm_cpu_update_vfiq arm_cpu_update_vfiq_powerpc
 #define arm_cpus arm_cpus_powerpc
 #define arm_current_el arm_current_el_powerpc
 #define arm_dc_feature arm_dc_feature_powerpc
