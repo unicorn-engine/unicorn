@@ -3485,7 +3485,6 @@ static const ARMCPRegInfo el3_no_el2_v8_cp_reginfo[] = {
 static void hcr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 {
     ARMCPU *cpu = arm_env_get_cpu(env);
-    CPUState *cs = ENV_GET_CPU(env);
     uint64_t valid_mask = HCR_MASK;
 
     if (arm_feature(env, ARM_FEATURE_EL3)) {
@@ -3503,29 +3502,6 @@ static void hcr_write(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t value)
 
     /* Clear RES0 bits.  */
     value &= valid_mask;
-
-    /*
-     * VI and VF are kept in cs->interrupt_request. Modifying that
-     * requires that we have the iothread lock, which is done by
-     * marking the reginfo structs as ARM_CP_IO.
-     * Note that if a write to HCR pends a VIRQ or VFIQ it is never
-     * possible for it to be taken immediately, because VIRQ and
-     * VFIQ are masked unless running at EL0 or EL1, and HCR
-     * can only be written at EL2.
-     */
-    // Unicorn: Commented out
-    //g_assert(qemu_mutex_iothread_locked());
-    if (value & HCR_VI) {
-        cs->interrupt_request |= CPU_INTERRUPT_VIRQ;
-    } else {
-        cs->interrupt_request &= ~CPU_INTERRUPT_VIRQ;
-    }
-    if (value & HCR_VF) {
-        cs->interrupt_request |= CPU_INTERRUPT_VFIQ;
-    } else {
-        cs->interrupt_request &= ~CPU_INTERRUPT_VFIQ;
-    }
-    value &= ~(HCR_VI | HCR_VF);
 
     /* These bits change the MMU setup:
      * HCR_VM enables stage 2 translation
@@ -3554,28 +3530,13 @@ static void hcr_writelow(CPUARMState *env, const ARMCPRegInfo *ri,
     hcr_write(env, NULL, value);
 }
 
-static uint64_t hcr_read(CPUARMState *env, const ARMCPRegInfo *ri)
-{
-    /* The VI and VF bits live in cs->interrupt_request */
-    uint64_t ret = env->cp15.hcr_el2 & ~(HCR_VI | HCR_VF);
-    CPUState *cs = ENV_GET_CPU(env);
-
-    if (cs->interrupt_request & CPU_INTERRUPT_VIRQ) {
-        ret |= HCR_VI;
-    }
-    if (cs->interrupt_request & CPU_INTERRUPT_VFIQ) {
-        ret |= HCR_VF;
-    }
-    return ret;
-}
-
 static const ARMCPRegInfo el2_cp_reginfo[] = {
     { "HCR_EL2", 0,1,1, 3,4,0, ARM_CP_STATE_AA64,
-      ARM_CP_IO, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2), {0, 0},
-      NULL, hcr_read, hcr_write },
+      0, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2), {0, 0},
+      NULL, NULL, hcr_write },
     { "HCR", 15,1,1, 0,4,0, ARM_CP_STATE_AA32,
-      ARM_CP_ALIAS | ARM_CP_IO, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2),
-      {0, 0}, NULL, hcr_read, hcr_writelow },
+      ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, cp15.hcr_el2),
+      {0, 0}, NULL, NULL, hcr_writelow },
     { "ELR_EL2", 0,4,0, 3,4,1, ARM_CP_STATE_AA64,
       ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetof(CPUARMState, elr_el[2]) },
     { "ESR_EL2", 0,5,2, 3,4,0, ARM_CP_STATE_BOTH, 0,
@@ -3739,7 +3700,7 @@ static const ARMCPRegInfo el2_cp_reginfo[] = {
 
 static const ARMCPRegInfo el2_v8_cp_reginfo[] = {
     { "HCR2", 15,1,1, 0,4,4, ARM_CP_STATE_AA32,
-      ARM_CP_ALIAS | ARM_CP_IO, PL2_RW, 0, NULL, 0, offsetofhigh32(CPUARMState, cp15.hcr_el2),
+      ARM_CP_ALIAS, PL2_RW, 0, NULL, 0, offsetofhigh32(CPUARMState, cp15.hcr_el2),
       {0, 0}, NULL, NULL, hcr_writehigh },
     REGINFO_SENTINEL
 };
