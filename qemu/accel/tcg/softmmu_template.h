@@ -100,10 +100,12 @@
 static inline DATA_TYPE glue(io_read, SUFFIX)(CPUArchState *env,
                                               size_t mmu_idx, size_t index,
                                               target_ulong addr,
-                                              uintptr_t retaddr)
+                                              uintptr_t retaddr,
+                                              bool recheck)
 {
     CPUIOTLBEntry *iotlbentry = &env->iotlb[mmu_idx][index];
-    return io_readx(env, iotlbentry, mmu_idx, addr, retaddr, DATA_SIZE);
+    return io_readx(env, iotlbentry, mmu_idx, addr, retaddr, recheck,
+                    DATA_SIZE);
 }
 #endif
 
@@ -247,7 +249,8 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr,
 
         /* ??? Note that the io helpers always read data in the target
            byte ordering.  We should push the LE/BE request down into io.  */
-        res = glue(io_read, SUFFIX)(env, mmu_idx, index, addr, retaddr);
+        res = glue(io_read, SUFFIX)(env, mmu_idx, index, addr, retaddr,
+                                    tlb_addr & TLB_RECHECK);
         res = TGT_LE(res);
         goto _out;
     }
@@ -431,7 +434,8 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr,
 
         /* ??? Note that the io helpers always read data in the target
            byte ordering.  We should push the LE/BE request down into io.  */
-        res = glue(io_read, SUFFIX)(env, mmu_idx, index, addr, retaddr);
+        res = glue(io_read, SUFFIX)(env, mmu_idx, index, addr, retaddr,
+                                    tlb_addr & TLB_RECHECK);
         res = TGT_BE(res);
         goto _out;
     }
@@ -496,10 +500,12 @@ static inline void glue(io_write, SUFFIX)(CPUArchState *env,
                                           size_t mmu_idx, size_t index,
                                           DATA_TYPE val,
                                           target_ulong addr,
-                                          uintptr_t retaddr)
+                                          uintptr_t retaddr,
+                                          bool recheck)
 {
     CPUIOTLBEntry *iotlbentry = &env->iotlb[mmu_idx][index];
-    return io_writex(env, iotlbentry, mmu_idx, val, addr, retaddr, DATA_SIZE);
+    return io_writex(env, iotlbentry, mmu_idx, val, addr, retaddr,
+                     recheck, DATA_SIZE);
 }
 
 void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
@@ -601,7 +607,8 @@ void helper_le_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         /* ??? Note that the io helpers always read data in the target
            byte ordering.  We should push the LE/BE request down into io.  */
         val = TGT_LE(val);
-        glue(io_write, SUFFIX)(env, mmu_idx, index, val, addr, retaddr);
+        glue(io_write, SUFFIX)(env, mmu_idx, index, val, addr,
+                               retaddr, tlb_addr & TLB_RECHECK);
         return;
     }
 
@@ -746,7 +753,8 @@ void helper_be_st_name(CPUArchState *env, target_ulong addr, DATA_TYPE val,
         /* ??? Note that the io helpers always read data in the target
            byte ordering.  We should push the LE/BE request down into io.  */
         val = TGT_BE(val);
-        glue(io_write, SUFFIX)(env, mmu_idx, index, val, addr, retaddr);
+        glue(io_write, SUFFIX)(env, mmu_idx, index, val, addr, retaddr,
+                               tlb_addr & TLB_RECHECK);
         return;
     }
 

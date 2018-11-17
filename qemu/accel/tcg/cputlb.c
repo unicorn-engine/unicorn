@@ -192,26 +192,40 @@ void tlb_set_page_with_attrs(CPUState *cpu, target_ulong vaddr,
     target_ulong code_address;
     uintptr_t addend;
     CPUTLBEntry *te;
-    hwaddr iotlb, xlat, sz;
+    hwaddr iotlb, xlat, sz, paddr_page;
+    target_ulong vaddr_page;
     unsigned vidx = env->vtlb_index++ % CPU_VTLB_SIZE;
     int asidx = cpu_asidx_from_attrs(cpu, attrs);
 
-    assert(size >= TARGET_PAGE_SIZE);
-    if (size != TARGET_PAGE_SIZE) {
-        tlb_add_large_page(env, vaddr, size);
+    if (size < TARGET_PAGE_SIZE) {
+        sz = TARGET_PAGE_SIZE;
+    } else {
+        if (size > TARGET_PAGE_SIZE) {
+            tlb_add_large_page(env, vaddr, size);
+        }
+        sz = size;
     }
+    vaddr_page = vaddr & TARGET_PAGE_MASK;
+    paddr_page = paddr & TARGET_PAGE_MASK;
 
-    sz = size;
-    section = address_space_translate_for_iotlb(cpu, asidx, paddr, &xlat, &sz,
-                                                attrs, &prot);
+    section = address_space_translate_for_iotlb(cpu, asidx, paddr_page,
+                                                &xlat, &sz, attrs, &prot);
     assert(sz >= TARGET_PAGE_SIZE);
 
     tlb_debug("vaddr=" TARGET_FMT_lx " paddr=0x" TARGET_FMT_plx
               " prot=%x idx=%d\n",
               vaddr, paddr, prot, mmu_idx);
 
-    address = vaddr;
-    if (!memory_region_is_ram(section->mr) && !memory_region_is_romd(section->mr)) {
+    address = vaddr_page;
+    if (size < TARGET_PAGE_SIZE) {
+        /*
+         * Slow-path the TLB entries; we will repeat the MMU check and TLB
+         * fill on every access.
+         */
+        address |= TLB_RECHECK;
+    }
+    if (!memory_region_is_ram(section->mr) &&
+        !memory_region_is_romd(section->mr)) {
         /* IO memory case */
         address |= TLB_MMIO;
         addend = 0;
@@ -221,10 +235,10 @@ void tlb_set_page_with_attrs(CPUState *cpu, target_ulong vaddr,
     }
 
     code_address = address;
-    iotlb = memory_region_section_get_iotlb(cpu, section, vaddr, paddr, xlat,
-                                            prot, &address);
+    iotlb = memory_region_section_get_iotlb(cpu, section, vaddr_page,
+                                            paddr_page, xlat, prot, &address);
 
-    index = (vaddr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+    index = (vaddr_page >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
     te = &env->tlb_table[mmu_idx][index];
 
     /* do not discard the translation in te, evict it into a victim tlb */
@@ -237,16 +251,16 @@ void tlb_set_page_with_attrs(CPUState *cpu, target_ulong vaddr,
      * TARGET_PAGE_BITS, and either
      *  + the ram_addr_t of the page base of the target RAM (if NOTDIRTY or ROM)
      *  + the offset within section->mr of the page base (otherwise)
-     * We subtract the vaddr (which is page aligned and thus won't
+     * We subtract the vaddr_page (which is page aligned and thus won't
      * disturb the low bits) to give an offset which can be added to the
      * (non-page-aligned) vaddr of the eventual memory access to get
      * the MemoryRegion offset for the access. Note that the vaddr we
      * subtract here is that of the page base, and not the same as the
      * vaddr we add back in io_readx()/io_writex()/get_page_addr_code().
      */
-    env->iotlb[mmu_idx][index].addr = iotlb - vaddr;
+    env->iotlb[mmu_idx][index].addr = iotlb - vaddr_page;
     env->iotlb[mmu_idx][index].attrs = attrs;
-    te->addend = (uintptr_t)(addend - vaddr);
+    te->addend = addend - vaddr_page;
     if (prot & PAGE_READ) {
         te->addr_read = address;
     } else {
@@ -322,6 +336,32 @@ tb_page_addr_t get_page_addr_code(CPUArchState *env, target_ulong addr)
             return RAM_ADDR_INVALID;
         }
     }
+
+    if (unlikely(env->tlb_table[mmu_idx][index].addr_code & TLB_RECHECK)) {
+        /*
+         * This is a TLB_RECHECK access, where the MMU protection
+         * covers a smaller range than a target page, and we must
+         * repeat the MMU check here. This tlb_fill() call might
+         * longjump out if this access should cause a guest exception.
+         */
+        int index;
+        target_ulong tlb_addr;
+
+        tlb_fill(cpu, addr, 0, MMU_INST_FETCH, mmu_idx, 0);
+
+        index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+        tlb_addr = env->tlb_table[mmu_idx][index].addr_code;
+        if (!(tlb_addr & ~(TARGET_PAGE_MASK | TLB_RECHECK))) {
+            /* RAM access. We can't handle this, so for now just stop */
+            cpu_abort(cpu, "Unable to handle guest executing from RAM within "
+                      "a small MPU region at 0x" TARGET_FMT_lx, addr);
+        }
+        /*
+         * Fall through to handle IO accesses (which will almost certainly
+         * also result in failure)
+         */
+    }
+
     iotlbentry = &env->iotlb[mmu_idx][index];
     section = iotlb_to_section(cpu, iotlbentry->addr, iotlbentry->attrs);
     mr = section->mr;
@@ -466,7 +506,8 @@ void tlb_flush_page_by_mmuidx(CPUState *cpu, target_ulong addr, uint16_t idxmap)
 
 static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
                          int mmu_idx,
-                         target_ulong addr, uintptr_t retaddr, int size)
+                         target_ulong addr, uintptr_t retaddr,
+                         bool recheck, int size)
 {
     CPUState *cpu = ENV_GET_CPU(env);
     hwaddr mr_offset;
@@ -474,6 +515,29 @@ static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
     MemoryRegion *mr;
     uint64_t val;
     MemTxResult r;
+
+    if (recheck) {
+        /*
+         * This is a TLB_RECHECK access, where the MMU protection
+         * covers a smaller range than a target page, and we must
+         * repeat the MMU check here. This tlb_fill() call might
+         * longjump out if this access should cause a guest exception.
+         */
+        int index;
+        target_ulong tlb_addr;
+
+        tlb_fill(cpu, addr, size, MMU_DATA_LOAD, mmu_idx, retaddr);
+
+        index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+        tlb_addr = env->tlb_table[mmu_idx][index].addr_read;
+        if (!(tlb_addr & ~(TARGET_PAGE_MASK | TLB_RECHECK))) {
+            /* RAM access */
+            uintptr_t haddr = addr + env->tlb_table[mmu_idx][index].addend;
+
+            return ldn_p((void *)haddr, size);
+        }
+        /* Fall through for handling IO accesses */
+    }
 
     section = iotlb_to_section(cpu, iotlbentry->addr, iotlbentry->attrs);
     mr = section->mr;
@@ -500,13 +564,37 @@ static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
 static void io_writex(CPUArchState *env, CPUIOTLBEntry *iotlbentry,
                       int mmu_idx,
                       uint64_t val, target_ulong addr,
-                      uintptr_t retaddr, int size)
+                      uintptr_t retaddr, bool recheck, int size)
 {
     CPUState *cpu = ENV_GET_CPU(env);
     hwaddr mr_offset;
     MemoryRegionSection *section;
     MemoryRegion *mr;
     MemTxResult r;
+
+    if (recheck) {
+        /*
+         * This is a TLB_RECHECK access, where the MMU protection
+         * covers a smaller range than a target page, and we must
+         * repeat the MMU check here. This tlb_fill() call might
+         * longjump out if this access should cause a guest exception.
+         */
+        int index;
+        target_ulong tlb_addr;
+
+        tlb_fill(cpu, addr, size, MMU_DATA_STORE, mmu_idx, retaddr);
+
+        index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+        tlb_addr = env->tlb_table[mmu_idx][index].addr_write;
+        if (!(tlb_addr & ~(TARGET_PAGE_MASK | TLB_RECHECK))) {
+            /* RAM access */
+            uintptr_t haddr = addr + env->tlb_table[mmu_idx][index].addend;
+
+            stn_p((void *)haddr, size, val);
+            return;
+        }
+        /* Fall through for handling IO accesses */
+    }
 
     section = iotlb_to_section(cpu, iotlbentry->addr, iotlbentry->attrs);
     mr = section->mr;
@@ -633,8 +721,8 @@ static void *atomic_mmu_lookup(CPUArchState *env, target_ulong addr,
         tlb_addr = tlb_addr & ~TLB_NOTDIRTY;
     }
 
-    /* Notice an IO access  */
-    if (unlikely(tlb_addr & ~TARGET_PAGE_MASK)) {
+    /* Notice an IO access or a needs-MMU-lookup access */
+    if (unlikely(tlb_addr & (TLB_MMIO | TLB_RECHECK))) {
         /* There's really nothing that can be done to
            support this apart from stop-the-world.  */
         goto stop_the_world;
