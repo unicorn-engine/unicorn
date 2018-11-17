@@ -27,10 +27,10 @@
 
 #define SIGNBIT (1u << 31)
 
+void raise_exception(CPUM68KState *env, int tt);
+
 void HELPER(cf_movec_to)(CPUM68KState *env, uint32_t reg, uint32_t val)
 {
-    M68kCPU *cpu = m68k_env_get_cpu(env);
-
     switch (reg) {
     case M68K_CR_CACR:
         env->cacr = val;
@@ -49,7 +49,7 @@ void HELPER(cf_movec_to)(CPUM68KState *env, uint32_t reg, uint32_t val)
     default:
         qemu_log("Unimplemented control register write 0x%x = 0x%x\n",
                  reg, val);
-        raise_exception(env, EXCP_UNSUPPORTED);
+        raise_exception(env, EXCP_ILLEGAL);
     }
 }
 
