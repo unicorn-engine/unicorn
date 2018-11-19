@@ -6,12 +6,12 @@ environment:
     matrix:
         - MSYSTEM: MINGW64
           BASH: C:\msys64\usr\bin\bash
-          CC: x86_64-w64-mingw32-gcc
           MSYS_CACHE: C:\msys64\var\cache\pacman\pkg
+          CC: x86_64-w64-mingw32-gcc
         - MSYSTEM: MINGW32
           BASH: C:\msys64\usr\bin\bash
-          CC: i686-w64-mingw32-gcc
           MSYS_CACHE: C:\msys64\var\cache\pacman\pkg
+          CC: i686-w64-mingw32-gcc
         - CYG_ROOT: C:\cygwin64
           CYG_CACHE: C:\cygwin64\var\cache\setup
           CYG_SETUP: setup-x86_64.exe
