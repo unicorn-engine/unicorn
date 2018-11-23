@@ -4803,6 +4803,64 @@ static void gen_r6_muldiv(DisasContext *ctx, int opc, int rd, int rs, int rt)
     tcg_temp_free(tcg_ctx, t1);
 }
 
+static void gen_div1_tx79(DisasContext *ctx, uint32_t opc, int rs, int rt)
+{
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
+    TCGv t0, t1;
+
+    t0 = tcg_temp_new(tcg_ctx);
+    t1 = tcg_temp_new(tcg_ctx);
+
+    gen_load_gpr(ctx, t0, rs);
+    gen_load_gpr(ctx, t1, rt);
+
+    switch (opc) {
+    case TX79_MMI_DIV1:
+        {
+            TCGv t2 = tcg_temp_new(tcg_ctx);
+            TCGv t3 = tcg_temp_new(tcg_ctx);
+            tcg_gen_ext32s_tl(tcg_ctx, t0, t0);
+            tcg_gen_ext32s_tl(tcg_ctx, t1, t1);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t2, t0, INT_MIN);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t3, t1, -1);
+            tcg_gen_and_tl(tcg_ctx, t2, t2, t3);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t3, t1, 0);
+            tcg_gen_or_tl(tcg_ctx, t2, t2, t3);
+            tcg_gen_movi_tl(tcg_ctx, t3, 0);
+            tcg_gen_movcond_tl(tcg_ctx, TCG_COND_NE, t1, t2, t3, t2, t1);
+            tcg_gen_div_tl(tcg_ctx, tcg_ctx->cpu_LO[1], t0, t1);
+            tcg_gen_rem_tl(tcg_ctx, tcg_ctx->cpu_HI[1], t0, t1);
+            tcg_gen_ext32s_tl(tcg_ctx, tcg_ctx->cpu_LO[1], tcg_ctx->cpu_LO[1]);
+            tcg_gen_ext32s_tl(tcg_ctx, tcg_ctx->cpu_HI[1], tcg_ctx->cpu_HI[1]);
+            tcg_temp_free(tcg_ctx, t3);
+            tcg_temp_free(tcg_ctx, t2);
+        }
+        break;
+    case TX79_MMI_DIVU1:
+        {
+            TCGv t2 = tcg_const_tl(tcg_ctx, 0);
+            TCGv t3 = tcg_const_tl(tcg_ctx, 1);
+            tcg_gen_ext32u_tl(tcg_ctx, t0, t0);
+            tcg_gen_ext32u_tl(tcg_ctx, t1, t1);
+            tcg_gen_movcond_tl(tcg_ctx, TCG_COND_EQ, t1, t1, t2, t3, t1);
+            tcg_gen_divu_tl(tcg_ctx, tcg_ctx->cpu_LO[1], t0, t1);
+            tcg_gen_remu_tl(tcg_ctx, tcg_ctx->cpu_HI[1], t0, t1);
+            tcg_gen_ext32s_tl(tcg_ctx, tcg_ctx->cpu_LO[1], tcg_ctx->cpu_LO[1]);
+            tcg_gen_ext32s_tl(tcg_ctx, tcg_ctx->cpu_HI[1], tcg_ctx->cpu_HI[1]);
+            tcg_temp_free(tcg_ctx, t3);
+            tcg_temp_free(tcg_ctx, t2);
+        }
+        break;
+    default:
+        MIPS_INVAL("div1 TX79");
+        generate_exception_end(ctx, EXCP_RI);
+        goto out;
+    }
+ out:
+    tcg_temp_free(tcg_ctx, t0);
+    tcg_temp_free(tcg_ctx, t1);
+}
+
 static void gen_muldiv(DisasContext *ctx, uint32_t opc,
                        int acc, int rs, int rt)
 {
@@ -4818,14 +4876,11 @@ static void gen_muldiv(DisasContext *ctx, uint32_t opc,
     gen_load_gpr(ctx, t1, rt);
 
     if (acc != 0) {
-        if (!(ctx->insn_flags & INSN_R5900)) {
-            check_dsp(ctx);
-        }
+        check_dsp(ctx);
     }
 
     switch (opc) {
     case OPC_DIV:
-    case TX79_MMI_DIV1:
         {
             TCGv t2 = tcg_temp_new(tcg_ctx);
             TCGv t3 = tcg_temp_new(tcg_ctx);
@@ -4847,7 +4902,6 @@ static void gen_muldiv(DisasContext *ctx, uint32_t opc,
         }
         break;
     case OPC_DIVU:
-    case TX79_MMI_DIVU1:
         {
             TCGv t2 = tcg_const_tl(tcg_ctx, 0);
             TCGv t3 = tcg_const_tl(tcg_ctx, 1);
@@ -26686,7 +26740,7 @@ static void decode_tx79_mmi(CPUMIPSState *env, DisasContext *ctx)
         break;
     case TX79_MMI_DIV1:
     case TX79_MMI_DIVU1:
-        gen_muldiv(ctx, opc, 1, rs, rt);
+        gen_div1_tx79(ctx, opc, rs, rt);
         break;
     case TX79_MMI_MTLO1:
     case TX79_MMI_MTHI1:
