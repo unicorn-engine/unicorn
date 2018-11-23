@@ -2195,7 +2195,7 @@ enum {
  *    7 111 |   *   |   *   |   *   |   *   | PSLLW |   *   | PSRLW | PSRAW
  */
 
-#define MASK_TX79_MMI(op) (MASK_OP_MAJOR(op) | ((op) & 0x3F))
+#define MASK_MMI(op) (MASK_OP_MAJOR(op) | ((op) & 0x3F))
 enum {
     TX79_MMI_MADD       = 0x00 | TX79_CLASS_MMI, /* Same as OPC_MADD */
     TX79_MMI_MADDU      = 0x01 | TX79_CLASS_MMI, /* Same as OPC_MADDU */
@@ -2246,7 +2246,7 @@ enum {
  *    7 111 |   *   |   *   | PEXT5 | PPAC5
  */
 
-#define MASK_TX79_MMI0(op) (MASK_OP_MAJOR(op) | ((op) & 0x7FF))
+#define MASK_MMI0(op) (MASK_OP_MAJOR(op) | ((op) & 0x7FF))
 enum {
     TX79_MMI0_PADDW  = (0x00 << 6) | TX79_MMI_CLASS_MMI0,
     TX79_MMI0_PSUBW  = (0x01 << 6) | TX79_MMI_CLASS_MMI0,
@@ -2297,7 +2297,7 @@ enum {
  *    7 111 |   *   |   *   |   *   |   *
  */
 
-#define MASK_TX79_MMI1(op) (MASK_OP_MAJOR(op) | ((op) & 0x7FF))
+#define MASK_MMI1(op) (MASK_OP_MAJOR(op) | ((op) & 0x7FF))
 enum {
     TX79_MMI1_PABSW  = (0x01 << 6) | TX79_MMI_CLASS_MMI1,
     TX79_MMI1_PCEQW  = (0x02 << 6) | TX79_MMI_CLASS_MMI1,
@@ -2341,7 +2341,7 @@ enum {
  *    7 111 | PMULTH| PDIVBW| PEXEW | PROT3W
  */
 
-#define MASK_TX79_MMI2(op) (MASK_OP_MAJOR(op) | ((op) & 0x7FF))
+#define MASK_MMI2(op) (MASK_OP_MAJOR(op) | ((op) & 0x7FF))
 enum {
     TX79_MMI2_PMADDW = (0x00 << 6) | TX79_MMI_CLASS_MMI2,
     TX79_MMI2_PSLLVW = (0x02 << 6) | TX79_MMI_CLASS_MMI2,
@@ -2389,7 +2389,7 @@ enum {
  *    7 111 |   *   |   *   | PEXCW |   *
  */
 
-#define MASK_TX79_MMI3(op) (MASK_OP_MAJOR(op) | ((op) & 0x7FF))
+#define MASK_MMI3(op) (MASK_OP_MAJOR(op) | ((op) & 0x7FF))
 enum {
     TX79_MMI3_PMADDUW = (0x00 << 6) | TX79_MMI_CLASS_MMI3,
     TX79_MMI3_PSRAVW  = (0x03 << 6) | TX79_MMI_CLASS_MMI3,
@@ -26628,7 +26628,7 @@ static void decode_opc_special3_legacy(CPUMIPSState *env, DisasContext *ctx)
 
 static void decode_tx79_mmi0(CPUMIPSState *env, DisasContext *ctx)
 {
-    uint32_t opc = MASK_TX79_MMI0(ctx->opcode);
+    uint32_t opc = MASK_MMI0(ctx->opcode);
 
     switch (opc) {
     case TX79_MMI0_PADDW:     /* TODO: TX79_MMI0_PADDW */
@@ -26667,7 +26667,7 @@ static void decode_tx79_mmi0(CPUMIPSState *env, DisasContext *ctx)
 
 static void decode_tx79_mmi1(CPUMIPSState *env, DisasContext *ctx)
 {
-    uint32_t opc = MASK_TX79_MMI1(ctx->opcode);
+    uint32_t opc = MASK_MMI1(ctx->opcode);
 
     switch (opc) {
     case TX79_MMI1_PABSW:     /* TODO: TX79_MMI1_PABSW */
@@ -26699,7 +26699,7 @@ static void decode_tx79_mmi1(CPUMIPSState *env, DisasContext *ctx)
 
 static void decode_tx79_mmi2(CPUMIPSState *env, DisasContext *ctx)
 {
-    uint32_t opc = MASK_TX79_MMI2(ctx->opcode);
+    uint32_t opc = MASK_MMI2(ctx->opcode);
 
     switch (opc) {
     case TX79_MMI2_PMADDW:    /* TODO: TX79_MMI2_PMADDW */
@@ -26735,7 +26735,7 @@ static void decode_tx79_mmi2(CPUMIPSState *env, DisasContext *ctx)
 
 static void decode_tx79_mmi3(CPUMIPSState *env, DisasContext *ctx)
 {
-    uint32_t opc = MASK_TX79_MMI3(ctx->opcode);
+    uint32_t opc = MASK_MMI3(ctx->opcode);
 
     switch (opc) {
     case TX79_MMI3_PMADDUW:    /* TODO: TX79_MMI3_PMADDUW */
@@ -26762,7 +26762,7 @@ static void decode_tx79_mmi3(CPUMIPSState *env, DisasContext *ctx)
 
 static void decode_tx79_mmi(CPUMIPSState *env, DisasContext *ctx)
 {
-    uint32_t opc = MASK_TX79_MMI(ctx->opcode);
+    uint32_t opc = MASK_MMI(ctx->opcode);
     int rs = extract32(ctx->opcode, 21, 5);
     int rt = extract32(ctx->opcode, 16, 5);
     int rd = extract32(ctx->opcode, 11, 5);
