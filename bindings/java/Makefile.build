@@ -15,8 +15,7 @@ SRC := $(shell ls unicorn/*.java)
 OS := $(shell uname)
 ifeq ($(OS),Darwin)
    LIB_EXT=.dylib
-endif
-ifeq ($(OS),Linux)
+else ifeq ($(OS),Linux)
    LIB_EXT=.so
 else
    LIB_EXT=.dll
@@ -48,7 +47,7 @@ all: lib jar samples
 
 unicorn_Unicorn.h: unicorn/Unicorn.java
 	javah unicorn.Unicorn
-	
+
 unicorn_Unicorn.o: unicorn_Unicorn.c unicorn_Unicorn.h
 	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
 
@@ -61,11 +60,15 @@ samples: $(SAMPLES:.java=.class)
 jarfiles: $(SRC:.java=.class)
 
 jar: jarfiles
-	jar cf $(JARFILE) unicorn/*.class 
+	jar cf $(JARFILE) unicorn/*.class
 
 install: lib jar
 	cp libunicorn_java$(LIB_EXT) $(JAVA_HOME)/lib/ext
 	cp $(JARFILE) $(JAVA_HOME)/lib/ext
+
+uninstall:
+	rm $(JAVA_HOME)/lib/ext/libunicorn_java$(LIB_EXT)
+	rm $(JAVA_HOME)/lib/ext/$(JARFILE)
 
 gen_const:
 	cd .. && python const_generator.py java

@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <ProjectSession>
+    <Version Value="10"/>
+    <BuildModes Active="Debug"/>
+    <Units Count="10">
+      <Unit0>
+        <Filename Value="x86.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <TopLine Value="8"/>
+        <CursorPos X="34" Y="4"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="../unicorn/UnicornConst.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="25" Y="2"/>
+        <UsageCount Value="10"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="../unicorn/Unicorn_dyn.pas"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
+        <CursorPos X="80" Y="3"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="/usr/local/share/fpcsrc/rtl/objpas/sysutils/sysstrh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="71"/>
+        <CursorPos X="25" Y="77"/>
+        <UsageCount Value="10"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="/usr/local/share/fpcsrc/rtl/inc/systemh.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="331"/>
+        <CursorPos X="3" Y="339"/>
+        <UsageCount Value="10"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="/usr/local/share/fpcsrc/packages/rtl-console/src/unix/crt.pp"/>
+        <UnitName Value="Crt"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="1104"/>
+        <CursorPos X="7" Y="534"/>
+        <UsageCount Value="10"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="/usr/local/share/fpcsrc/packages/rtl-console/src/inc/crth.inc"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="31"/>
+        <CursorPos X="11" Y="44"/>
+        <UsageCount Value="10"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="/usr/local/share/fpcsrc/rtl/darwin/termio.pp"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="24"/>
+        <UsageCount Value="10"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="../unicorn/X86Const.pas"/>
+        <EditorIndex Value="-1"/>
+        <CursorPos X="57"/>
+        <UsageCount Value="10"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="/usr/local/share/fpcsrc/rtl/inc/dynlibs.pas"/>
+        <EditorIndex Value="-1"/>
+        <TopLine Value="46"/>
+        <CursorPos X="25" Y="53"/>
+        <UsageCount Value="10"/>
+      </Unit9>
+    </Units>
+    <JumpHistory Count="26" HistoryIndex="25">
+      <Position1>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="332" TopLine="323"/>
+      </Position1>
+      <Position2>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="333" TopLine="323"/>
+      </Position2>
+      <Position3>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="338" TopLine="331"/>
+      </Position3>
+      <Position4>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="340" Column="42" TopLine="330"/>
+      </Position4>
+      <Position5>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="339" Column="29" TopLine="335"/>
+      </Position5>
+      <Position6>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="684" Column="42" TopLine="507"/>
+      </Position6>
+      <Position7>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="51" Column="73" TopLine="43"/>
+      </Position7>
+      <Position8>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="32" Column="16" TopLine="27"/>
+      </Position8>
+      <Position9>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="895" Column="18" TopLine="889"/>
+      </Position9>
+      <Position10>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="894" Column="6" TopLine="889"/>
+      </Position10>
+      <Position11>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="52" Column="73" TopLine="44"/>
+      </Position11>
+      <Position12>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="279" TopLine="268"/>
+      </Position12>
+      <Position13>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="280" Column="26" TopLine="272"/>
+      </Position13>
+      <Position14>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="898" Column="16" TopLine="883"/>
+      </Position14>
+      <Position15>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="889" Column="40" TopLine="879"/>
+      </Position15>
+      <Position16>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="447" Column="44" TopLine="440"/>
+      </Position16>
+      <Position17>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="894" Column="12" TopLine="887"/>
+      </Position17>
+      <Position18>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="255" Column="28" TopLine="247"/>
+      </Position18>
+      <Position19>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="984" Column="8" TopLine="973"/>
+      </Position19>
+      <Position20>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="987" Column="9" TopLine="976"/>
+      </Position20>
+      <Position21>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="22" Column="15" TopLine="17"/>
+      </Position21>
+      <Position22>
+        <Filename Value="../unicorn/Unicorn_dyn.pas"/>
+        <Caret Line="128" Column="37" TopLine="119"/>
+      </Position22>
+      <Position23>
+        <Filename Value="../unicorn/Unicorn_dyn.pas"/>
+        <Caret Line="600" TopLine="597"/>
+      </Position23>
+      <Position24>
+        <Filename Value="../unicorn/Unicorn_dyn.pas"/>
+        <Caret Line="9" Column="3" TopLine="8"/>
+      </Position24>
+      <Position25>
+        <Filename Value="../unicorn/Unicorn_dyn.pas"/>
+        <Caret Line="640" Column="15" TopLine="632"/>
+      </Position25>
+      <Position26>
+        <Filename Value="x86.lpr"/>
+        <Caret Line="989" Column="132" TopLine="6"/>
+      </Position26>
+    </JumpHistory>
+  </ProjectSession>
+  <Debugging>
+    <Watches Count="2">
+      <Item1>
+        <Expression Value="mem"/>
+        <DisplayStyle Value="wdfPointer"/>
+      </Item1>
+      <Item2>
+        <Expression Value="X86_CODE32"/>
+        <DisplayStyle Value="wdfMemDump"/>
+      </Item2>
+    </Watches>
+  </Debugging>
+</CONFIG>

@@ -66,7 +66,7 @@ void x86_reg_reset(struct uc_struct *uc)
     CPUArchState *env = uc->cpu->env_ptr;
 
     env->features[FEAT_1_EDX] = CPUID_CX8 | CPUID_CMOV | CPUID_SSE2 | CPUID_FXSR | CPUID_SSE | CPUID_CLFLUSH;
-    env->features[FEAT_1_ECX] = CPUID_EXT_SSSE3 | CPUID_EXT_SSE41 | CPUID_EXT_SSE42 | CPUID_EXT_AES;
+    env->features[FEAT_1_ECX] = CPUID_EXT_SSSE3 | CPUID_EXT_SSE41 | CPUID_EXT_SSE42 | CPUID_EXT_AES | CPUID_EXT_CX16;
     env->features[FEAT_8000_0001_EDX] = CPUID_EXT2_3DNOW | CPUID_EXT2_RDTSCP;
     env->features[FEAT_8000_0001_ECX] = CPUID_EXT3_LAHF_LM | CPUID_EXT3_ABM | CPUID_EXT3_SKINIT | CPUID_EXT3_CR8LEG;
     env->features[FEAT_7_0_EBX] = CPUID_7_0_EBX_BMI1 | CPUID_7_0_EBX_BMI2 | CPUID_7_0_EBX_ADX | CPUID_7_0_EBX_SMAP;
@@ -1187,10 +1187,10 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         state->segs[R_ES].selector = *(uint16_t *)value;
                         break;
                     case UC_X86_REG_FS:
-                        state->segs[R_FS].selector = *(uint16_t *)value;
+                        cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_GS:
-                        state->segs[R_GS].selector = *(uint16_t *)value;
+                        cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_R8:
                         state->regs[8] = *(uint64_t *)value;

@@ -45,12 +45,12 @@ Unicorn can be compiled either on Ubuntu or Windows.
           $ pacman -S make
           $ pacman -S mingw-w64-x86_64-toolchain
 
-- For Cygwin, "make", "gcc-core", "libpcre-devel", "zlib-devel"
+- For Cygwin, "make", "gcc-core", "libpcre-devel", "zlib-devel", "python2-setuptools"
   are needed.
 
   If apt-cyg is available, you can install these with:
 
-        $ apt-cyg install make gcc-core libpcre-devel zlib-devel
+        $ apt-cyg install make gcc-core libpcre-devel zlib-devel python2-setuptools
 
 
 
