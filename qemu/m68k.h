@@ -3270,4 +3270,9 @@
 #define xpsr_write xpsr_write_m68k
 #define xscale_cp_reginfo xscale_cp_reginfo_m68k
 #define xscale_cpar_write xscale_cpar_write_m68k
+#define helper_fsqrt helper_fsqrt_m68k
+#define helper_fsincos helper_fsincos_m68k
+#define helper_fcos helper_fcos_m68k
+#define helper_fsin helper_fsin_m68k
+#define helper_fscale helper_fscale_m68k
 #endif
