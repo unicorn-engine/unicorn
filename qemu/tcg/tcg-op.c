@@ -3117,7 +3117,7 @@ static void * const table_##NAME[16] = {    \
     gen_helper_atomic_##NAME##b,            \
     gen_helper_atomic_##NAME##w_be,         \
     gen_helper_atomic_##NAME##l_be,         \
-    WITH_ATOMIC64(gen_helper_atomic_##NAME##q_be)         \
+    gen_helper_atomic_##NAME##q_be,         \
     NULL,                                   \
     NULL,                                   \
     NULL,                                   \
@@ -3125,7 +3125,7 @@ static void * const table_##NAME[16] = {    \
     NULL,                                   \
     gen_helper_atomic_##NAME##w_le,         \
     gen_helper_atomic_##NAME##l_le,         \
-    WITH_ATOMIC64(gen_helper_atomic_##NAME##q_le)         \
+    gen_helper_atomic_##NAME##q_le,         \
 };
 #else
 #define GEN_ATOMIC_TABLE(NAME) \
@@ -3140,8 +3140,8 @@ static void * const table_##NAME[16] = {    \
     NULL,                                   \
     NULL,                                   \
     gen_helper_atomic_##NAME##l_be,         \
-    WITH_ATOMIC64(gen_helper_atomic_##NAME##q_le)         \
-    WITH_ATOMIC64(gen_helper_atomic_##NAME##q_be)         \
+    gen_helper_atomic_##NAME##q_le,         \
+    gen_helper_atomic_##NAME##q_be,         \
 };
 #endif
 
