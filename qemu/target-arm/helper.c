@@ -287,6 +287,7 @@ static void tlbiall_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
     //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, 1);
+    assert(false);
 }
 
 static void tlbiasid_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
@@ -295,6 +296,7 @@ static void tlbiasid_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
     //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, value == 0);
+    assert(false);
 }
 
 static void tlbimva_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
@@ -303,6 +305,7 @@ static void tlbimva_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
     //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, value & TARGET_PAGE_MASK);
+    assert(false);
 }
 
 static void tlbimvaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
@@ -311,6 +314,7 @@ static void tlbimvaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
     //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, value & TARGET_PAGE_MASK);
+    assert(false);
 }
 
 static const ARMCPRegInfo cp_reginfo[] = {
@@ -1695,6 +1699,7 @@ static void tlbi_aa64_va_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
     //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, pageaddr);
+    assert(false);
 }
 
 static void tlbi_aa64_vaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
@@ -1704,6 +1709,7 @@ static void tlbi_aa64_vaa_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
     //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, pageaddr);
+    assert(false);
 }
 
 static void tlbi_aa64_asid_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
@@ -1713,6 +1719,7 @@ static void tlbi_aa64_asid_is_write(CPUARMState *env, const ARMCPRegInfo *ri,
     //struct uc_struct *uc = env->uc;
     // TODO: issue #642
     // tlb_flush(other_cpu, asid == 0);
+    assert(false);
 }
 
 static CPAccessResult aa64_zva_access(CPUARMState *env, const ARMCPRegInfo *ri)
