@@ -35,6 +35,6 @@ addons:
       - lib32ncurses5
       - lib32z1
       - lib32bz2-1.0
-      - libevent-pthreads-2.0-5
+      - libpthread-stubs0-dev
   homebrew:
     brewfile: true
