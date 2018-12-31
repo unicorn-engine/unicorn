@@ -32,6 +32,8 @@ matrix:
 addons:
   apt:
     packages:
-      - ia32-libs
+      - lib32ncurses5
+      - lib32z1
+      - lib32bz2-1.0
   homebrew:
     brewfile: true
