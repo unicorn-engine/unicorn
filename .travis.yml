@@ -13,6 +13,10 @@ os:
 matrix:
   include:
     - os: linux
+      compiler: gcc
+      env: CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
+    - os: linux
+      compiler: clang
       env: CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
     - if: branch = master
       os: osx
@@ -26,5 +30,8 @@ matrix:
     - os: osx
       script: brew install --HEAD unicorn && brew test unicorn
 addons:
+  apt:
+    packages:
+      - ia32-libs
   homebrew:
     brewfile: true
