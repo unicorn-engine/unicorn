@@ -32,9 +32,9 @@ matrix:
 addons:
   apt:
     packages:
-      - lib32ncurses5
-      - lib32z1
-      - lib32bz2-1.0
+      - lib32ncurses5-dev
+      - lib32z1-dev
+      - lib32bz2-dev
       - libpthread-stubs0-dev
   homebrew:
     brewfile: true
