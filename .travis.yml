@@ -37,5 +37,6 @@ addons:
       - lib32bz2-dev
       - libpthread-stubs0-dev
       - lib32gcc-4.8-dev
+      - libc6-dev-i386
   homebrew:
     brewfile: true
