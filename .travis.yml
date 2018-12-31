@@ -12,6 +12,8 @@ os:
   - osx
 matrix:
   include:
+    - os: linux
+      env: CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
     - if: branch = master
       os: osx
       script: brew install --HEAD unicorn && brew test unicorn
