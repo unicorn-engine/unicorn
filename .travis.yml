@@ -38,5 +38,6 @@ addons:
       - libpthread-stubs0-dev
       - lib32gcc-4.8-dev
       - libc6-dev-i386
+      - gcc-multilib
   homebrew:
     brewfile: true
