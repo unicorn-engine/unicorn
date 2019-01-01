@@ -16,10 +16,6 @@ matrix:
       compiler: gcc
       env: CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
       script: make && make -C tests/unit test && make -C tests/regress test
-    - os: linux
-      compiler: clang
-      env: CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
-      script: make && make -C tests/unit test && make -C tests/regress test
     - if: branch = master
       os: osx
       script: brew install --HEAD unicorn && brew test unicorn
