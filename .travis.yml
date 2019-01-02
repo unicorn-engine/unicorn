@@ -12,6 +12,10 @@ os:
   - osx
 matrix:
   include:
+    - os: linux
+      compiler: gcc
+      env: CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
+      script: make && make -C tests/unit test && make -C tests/regress test
     - if: branch = master
       os: osx
       script: brew install --HEAD unicorn && brew test unicorn
@@ -24,5 +28,14 @@ matrix:
     - os: osx
       script: brew install --HEAD unicorn && brew test unicorn
 addons:
+  apt:
+    packages:
+      - lib32ncurses5-dev
+      - lib32z1-dev
+      - lib32bz2-dev
+      - libpthread-stubs0-dev
+      - lib32gcc-4.8-dev
+      - libc6-dev-i386
+      - gcc-multilib
   homebrew:
     brewfile: true
