@@ -84,8 +84,6 @@ def hook_intr(uc, intno, user_data):
         print(">>> 0x%x: interrupt 0x%x, EAX = 0x%x" %(eip, intno, eax))
 
 
-
-
 def hook_syscall32(mu, user_data):
     eax = mu.reg_read(UC_X86_REG_EAX)
     ebx = mu.reg_read(UC_X86_REG_EBX)
@@ -104,7 +102,6 @@ def hook_syscall64(mu, user_data):
     print(">>> got SYSCALL with RAX = %d" %(rax))
     
     if rax == 59:    #sys_execve
-        #print(">>> rbx=0x%x, rcx=0x%x, rdx=0x%x" % (rbx, rcx, rdx))
         filename = read_string(mu, rdi)
         print(">>> SYS_EXECV filename=%s" % filename)
 
