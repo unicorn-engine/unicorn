@@ -103,12 +103,7 @@ def hook_syscall32(mu, user_data):
 
 def hook_syscall64(mu, user_data):
     rax = mu.reg_read(UC_X86_REG_RAX)
-    rbx = mu.reg_read(UC_X86_REG_RBX)
-    rcx = mu.reg_read(UC_X86_REG_RCX)
-    rdx = mu.reg_read(UC_X86_REG_RDX)
     rdi = mu.reg_read(UC_X86_REG_RDI)
-    rsi = mu.reg_read(UC_X86_REG_RSI)
-    rip = mu.reg_read(UC_X86_REG_RIP)
 
     print(">>> got SYSCALL with RAX = %d" %(rax))
     
