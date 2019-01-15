@@ -7,8 +7,20 @@ from __future__ import print_function
 from unicorn import *
 from unicorn.x86_const import *
 
-
+# Original shellcode from this example.
 #X86_CODE32 = b"\xeb\x19\x31\xc0\x31\xdb\x31\xd2\x31\xc9\xb0\x04\xb3\x01\x59\xb2\x05\xcd\x80\x31\xc0\xb0\x01\x31\xdb\xcd\x80\xe8\xe2\xff\xff\xff\x68\x65\x6c\x6c\x6f"
+
+# Linux/x86 execve /bin/sh shellcode 23 bytes, from http://shell-storm.org/shellcode/files/shellcode-827.php
+# xor    %eax,%eax
+# push   %eax
+# push   $0x68732f2f
+# push   $0x6e69622f
+# mov    %esp,%ebx
+# push   %eax
+# push   %ebx
+# mov    %esp,%ecx
+# mov    $0xb,%al
+# int    $0x80
 X86_CODE32 = b"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80"
 X86_CODE32_SELF = b"\xeb\x1c\x5a\x89\xd6\x8b\x02\x66\x3d\xca\x7d\x75\x06\x66\x05\x03\x03\x89\x02\xfe\xc2\x3d\x41\x41\x41\x41\x75\xe9\xff\xe6\xe8\xdf\xff\xff\xff\x31\xd2\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x52\x53\x89\xe1\xca\x7d\x41\x41\x41\x41\x41\x41\x41\x41"
 X86_CODE64 = b"\x48\x31\xff\x57\x57\x5e\x5a\x48\xbf\x2f\x2f\x62\x69\x6e\x2f\x73\x68\x48\xc1\xef\x08\x57\x54\x5f\x6a\x3b\x58\x0f\x05"
@@ -30,7 +42,6 @@ def hook_code(uc, address, size, user_data):
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
     print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
-    return
 
 def read_string(uc, address):
     ret = ""
@@ -155,12 +166,9 @@ def test_i386(mode, code):
     except UcError as e:
         print("ERROR: %s" % e)
 
-
-
 if __name__ == '__main__':
     test_i386(UC_MODE_32, X86_CODE32_SELF)
     print("=" * 20)
     test_i386(UC_MODE_32, X86_CODE32)
     print("=" * 20)
     test_i386(UC_MODE_64, X86_CODE64)
-
