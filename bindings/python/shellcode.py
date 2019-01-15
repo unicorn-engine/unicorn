@@ -15,14 +15,13 @@ X86_CODE64 = b"\x48\x31\xff\x57\x57\x5e\x5a\x48\xbf\x2f\x2f\x62\x69\x6e\x2f\x73\
 
 # memory address where emulation starts
 ADDRESS = 0x1000000
-X86_CODE64_SYSCALL = b'\x0f\x05' # SYSCALL
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
     # read this instruction code from memory
     tmp = uc.mem_read(address, size)
-    print("*** XIP = %x *** :" %(address), end="")
+    print("*** PC = %x *** :" %(address), end="")
     for i in tmp:
         print(" %02x" %i, end="")
     print("")
@@ -85,8 +84,6 @@ def hook_intr(uc, intno, user_data):
         print(">>> 0x%x: interrupt 0x%x, EAX = 0x%x" %(eip, intno, eax))
 
 
-
-
 def hook_syscall32(mu, user_data):
     eax = mu.reg_read(UC_X86_REG_EAX)
     ebx = mu.reg_read(UC_X86_REG_EBX)
@@ -94,7 +91,6 @@ def hook_syscall32(mu, user_data):
     mu.emu_stop()
 
 def hook_syscall64(mu, user_data):
-
     rax = mu.reg_read(UC_X86_REG_RAX)
     rbx = mu.reg_read(UC_X86_REG_RBX)
     rcx = mu.reg_read(UC_X86_REG_RCX)
@@ -106,7 +102,6 @@ def hook_syscall64(mu, user_data):
     print(">>> got SYSCALL with RAX = %d" %(rax))
     
     if rax == 59:    #sys_execve
-        #print(">>> rbx=0x%x, rcx=0x%x, rdx=0x%x" % (rbx, rcx, rdx))
         filename = read_string(mu, rdi)
         print(">>> SYS_EXECV filename=%s" % filename)
 
@@ -119,7 +114,6 @@ def hook_syscall64(mu, user_data):
 
 # Test X86 32 bit
 def test_i386(mode, code):
-    
     if mode == UC_MODE_32:
         print("Emulate x86_32 code")
     elif mode == UC_MODE_64:
@@ -147,8 +141,6 @@ def test_i386(mode, code):
         if mode == UC_MODE_32:
             # handle interrupt ourself
             mu.hook_add(UC_HOOK_INTR, hook_intr)
-        
-        if mode == UC_MODE_32:
             # handle SYSCALL
             mu.hook_add(UC_HOOK_INSN, hook_syscall32, None, 1, 0, UC_X86_INS_SYSCALL)
         elif mode == UC_MODE_64:
