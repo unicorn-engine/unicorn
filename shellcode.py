@@ -93,7 +93,6 @@ def hook_syscall32(mu, user_data):
     mu.emu_stop()
 
 def hook_syscall64(mu, user_data):
-
     rax = mu.reg_read(UC_X86_REG_RAX)
     rbx = mu.reg_read(UC_X86_REG_RBX)
     rcx = mu.reg_read(UC_X86_REG_RCX)
@@ -118,7 +117,6 @@ def hook_syscall64(mu, user_data):
 
 # Test X86 32 bit
 def test_i386(mode, code):
-    
     if mode == UC_MODE_32:
         print("Emulate x86_32 code")
     elif mode == UC_MODE_64:
