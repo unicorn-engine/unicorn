@@ -115,7 +115,6 @@ def hook_syscall32(mu, user_data):
 def hook_syscall64(mu, user_data):
     rax = mu.reg_read(UC_X86_REG_RAX)
     rdi = mu.reg_read(UC_X86_REG_RDI)
-    rip = mu.reg_read(UC_X86_REG_RIP)
 
     print(">>> got SYSCALL with RAX = %d" %(rax))
     
@@ -124,6 +123,7 @@ def hook_syscall64(mu, user_data):
         print(">>> SYS_EXECV filename=%s" % filename)
 
     else:
+        rip = mu.reg_read(UC_X86_REG_RIP)
         print("=" * 20)
         print(">>> Syscall Found at 0x%x: , RAX = 0x%x" %(rip, rax))
         print("=" * 20)
