@@ -1,27 +1,28 @@
 #!/usr/bin/env python
-# Sample code for X86 of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
+# Sample code for X86 of Unicorn. 
+# Nguyen Anh Quynh <aquynh@gmail.com>
+# KaiJern Lau <kj@theshepherdlab.io>
 
 from __future__ import print_function
 from unicorn import *
 from unicorn.x86_const import *
 
 
-X86_CODE32 = b"\xeb\x19\x31\xc0\x31\xdb\x31\xd2\x31\xc9\xb0\x04\xb3\x01\x59\xb2\x05\xcd\x80\x31\xc0\xb0\x01\x31\xdb\xcd\x80\xe8\xe2\xff\xff\xff\x68\x65\x6c\x6c\x6f"
-
+#X86_CODE32 = b"\xeb\x19\x31\xc0\x31\xdb\x31\xd2\x31\xc9\xb0\x04\xb3\x01\x59\xb2\x05\xcd\x80\x31\xc0\xb0\x01\x31\xdb\xcd\x80\xe8\xe2\xff\xff\xff\x68\x65\x6c\x6c\x6f"
+X86_CODE32 = b"\x31\xc0\x50\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x50\x53\x89\xe1\xb0\x0b\xcd\x80"
 X86_CODE32_SELF = b"\xeb\x1c\x5a\x89\xd6\x8b\x02\x66\x3d\xca\x7d\x75\x06\x66\x05\x03\x03\x89\x02\xfe\xc2\x3d\x41\x41\x41\x41\x75\xe9\xff\xe6\xe8\xdf\xff\xff\xff\x31\xd2\x6a\x0b\x58\x99\x52\x68\x2f\x2f\x73\x68\x68\x2f\x62\x69\x6e\x89\xe3\x52\x53\x89\xe1\xca\x7d\x41\x41\x41\x41\x41\x41\x41\x41"
-
 X86_CODE64 = b"\x48\x31\xff\x57\x57\x5e\x5a\x48\xbf\x2f\x2f\x62\x69\x6e\x2f\x73\x68\x48\xc1\xef\x08\x57\x54\x5f\x6a\x3b\x58\x0f\x05"
 
 # memory address where emulation starts
 ADDRESS = 0x1000000
-
+X86_CODE64_SYSCALL = b'\x0f\x05' # SYSCALL
 
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
     # read this instruction code from memory
     tmp = uc.mem_read(address, size)
-    print("*** EIP = %x *** :" %(address), end="")
+    print("*** XIP = %x *** :" %(address), end="")
     for i in tmp:
         print(" %02x" %i, end="")
     print("")
@@ -30,7 +31,18 @@ def hook_code(uc, address, size, user_data):
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
     print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
+    return
 
+def read_string(uc, address):
+    ret = ""
+    c = uc.mem_read(address, 1)[0]
+    read_bytes = 1
+
+    while c != 0x0:
+        ret += chr(c)
+        c = uc.mem_read(address + read_bytes, 1)[0]
+        read_bytes += 1
+    return ret
 
 # callback for tracing Linux interrupt
 def hook_intr(uc, intno, user_data):
@@ -41,7 +53,11 @@ def hook_intr(uc, intno, user_data):
         return
 
     eax = uc.reg_read(UC_X86_REG_EAX)
+    ebx = uc.reg_read(UC_X86_REG_EBX)
+    ecx = uc.reg_read(UC_X86_REG_ECX)
+    edx = uc.reg_read(UC_X86_REG_EDX)
     eip = uc.reg_read(UC_X86_REG_EIP)
+
     if eax == 1:    # sys_exit
         print(">>> 0x%x: interrupt 0x%x, EAX = 0x%x" %(eip, intno, eax))
         uc.emu_stop()
@@ -50,6 +66,10 @@ def hook_intr(uc, intno, user_data):
         ecx = uc.reg_read(UC_X86_REG_ECX)
         # EDX = buffer size
         edx = uc.reg_read(UC_X86_REG_EDX)
+    elif eax == 11:    # sys_write
+        #print(">>> rbx=0x%x, rcx=0x%x, rdx=0x%x" % (rbx, rcx, rdx))
+        filename = read_string(uc, ebx)
+        print(">>> SYS_EXECV filename=%s" % filename)
 
         try:
             buf = uc.mem_read(ecx, edx)
@@ -65,15 +85,46 @@ def hook_intr(uc, intno, user_data):
         print(">>> 0x%x: interrupt 0x%x, EAX = 0x%x" %(eip, intno, eax))
 
 
-def hook_syscall(mu, user_data):
-    rax = mu.reg_read(UC_X86_REG_RAX)
-    print(">>> got SYSCALL with RAX = 0x%x" %(rax))
+
+
+def hook_syscall32(mu, user_data):
+    eax = mu.reg_read(UC_X86_REG_EAX)
+    ebx = mu.reg_read(UC_X86_REG_EBX)
+    print(">>> got SYSCALL with EAX = 0x%x" %(eax))
     mu.emu_stop()
 
+def hook_syscall64(mu, user_data):
+
+    rax = mu.reg_read(UC_X86_REG_RAX)
+    rbx = mu.reg_read(UC_X86_REG_RBX)
+    rcx = mu.reg_read(UC_X86_REG_RCX)
+    rdx = mu.reg_read(UC_X86_REG_RDX)
+    rdi = mu.reg_read(UC_X86_REG_RDI)
+    rsi = mu.reg_read(UC_X86_REG_RSI)
+    rip = mu.reg_read(UC_X86_REG_RIP)
+
+    print(">>> got SYSCALL with RAX = %d" %(rax))
+    
+    if rax == 59:    #sys_execve
+        #print(">>> rbx=0x%x, rcx=0x%x, rdx=0x%x" % (rbx, rcx, rdx))
+        filename = read_string(mu, rdi)
+        print(">>> SYS_EXECV filename=%s" % filename)
+
+    else:
+        print("=" * 20)
+        print(">>> Syscall Found 0x%x: interrupt 0x%x, RAX = 0x%x" %(eip, intno, eax))
+        print("=" * 20)
+
+    mu.emu_stop()
 
 # Test X86 32 bit
 def test_i386(mode, code):
-    print("Emulate x86 code")
+    
+    if mode == UC_MODE_32:
+        print("Emulate x86_32 code")
+    elif mode == UC_MODE_64:
+        print("Emulate x86_64 code")
+    
     try:
         # Initialize emulator
         mu = Uc(UC_ARCH_X86, mode)
@@ -93,11 +144,15 @@ def test_i386(mode, code):
         # tracing all instructions with customized callback
         mu.hook_add(UC_HOOK_CODE, hook_code)
 
-        # handle interrupt ourself
-        mu.hook_add(UC_HOOK_INTR, hook_intr)
-
-        # handle SYSCALL
-        mu.hook_add(UC_HOOK_INSN, hook_syscall, None, 1, 0, UC_X86_INS_SYSCALL)
+        if mode == UC_MODE_32:
+            # handle interrupt ourself
+            mu.hook_add(UC_HOOK_INTR, hook_intr)
+        
+        if mode == UC_MODE_32:
+            # handle SYSCALL
+            mu.hook_add(UC_HOOK_INSN, hook_syscall32, None, 1, 0, UC_X86_INS_SYSCALL)
+        elif mode == UC_MODE_64:
+            mu.hook_add(UC_HOOK_INSN, hook_syscall64, None, 1, 0, UC_X86_INS_SYSCALL)
 
         # emulate machine code in infinite time
         mu.emu_start(ADDRESS, ADDRESS + len(code))
@@ -115,5 +170,5 @@ if __name__ == '__main__':
     print("=" * 20)
     test_i386(UC_MODE_32, X86_CODE32)
     print("=" * 20)
-    test_i386(UC_MODE_64, X86_CODE64)  # FIXME
+    test_i386(UC_MODE_64, X86_CODE64)
 
