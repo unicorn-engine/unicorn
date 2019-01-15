@@ -124,9 +124,7 @@ def hook_syscall64(mu, user_data):
 
     else:
         rip = mu.reg_read(UC_X86_REG_RIP)
-        print("=" * 20)
         print(">>> Syscall Found at 0x%x: , RAX = 0x%x" %(rip, rax))
-        print("=" * 20)
 
     mu.emu_stop()
 
