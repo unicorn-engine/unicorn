@@ -64,8 +64,6 @@ def hook_intr(uc, intno, user_data):
 
     eax = uc.reg_read(UC_X86_REG_EAX)
     ebx = uc.reg_read(UC_X86_REG_EBX)
-    ecx = uc.reg_read(UC_X86_REG_ECX)
-    edx = uc.reg_read(UC_X86_REG_EDX)
     eip = uc.reg_read(UC_X86_REG_EIP)
 
     if eax == 1:    # sys_exit
@@ -77,7 +75,6 @@ def hook_intr(uc, intno, user_data):
         # EDX = buffer size
         edx = uc.reg_read(UC_X86_REG_EDX)
     elif eax == 11:    # sys_write
-        #print(">>> rbx=0x%x, rcx=0x%x, rdx=0x%x" % (rbx, rcx, rdx))
         filename = read_string(uc, ebx)
         print(">>> SYS_EXECV filename=%s" % filename)
 
