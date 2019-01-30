@@ -27,3 +27,6 @@ More bindings created & maintained externally by community are available as foll
 
 - Deimos/unicorn: D binding (by Vladimir Panteleev)
     https://github.com/D-Programming-Deimos/unicorn
+
+- Unicorn-Lua: Lua binding (by Diego Argueta)
+    https://github.com/dargueta/unicorn-lua

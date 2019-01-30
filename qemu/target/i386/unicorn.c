@@ -158,6 +158,7 @@ void x86_reg_reset(struct uc_struct *uc)
         case UC_MODE_64:
             env->hflags |= HF_CS32_MASK | HF_SS32_MASK | HF_CS64_MASK | HF_LMA_MASK | HF_OSFXSR_MASK;
             env->hflags &= ~(HF_ADDSEG_MASK);
+            env->efer |= MSR_EFER_LMA | MSR_EFER_LME; // extended mode activated
             cpu_x86_update_cr0(env, CR0_PE_MASK); // protected mode
             break;
     }
