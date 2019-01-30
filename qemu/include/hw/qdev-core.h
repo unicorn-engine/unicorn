@@ -25,6 +25,7 @@ typedef enum DeviceCategory {
     DEVICE_CATEGORY_DISPLAY,
     DEVICE_CATEGORY_SOUND,
     DEVICE_CATEGORY_MISC,
+    DEVICE_CATEGORY_CPU,
     DEVICE_CATEGORY_MAX
 } DeviceCategory;
 
@@ -32,7 +33,7 @@ typedef int (*qdev_initfn)(DeviceState *dev);
 typedef int (*qdev_event)(DeviceState *dev);
 typedef void (*qdev_resetfn)(DeviceState *dev);
 typedef int (*DeviceRealize)(struct uc_struct *uc, DeviceState *dev, Error **errp);
-typedef void (*DeviceUnrealize)(DeviceState *dev, Error **errp);
+typedef void (*DeviceUnrealize)(struct uc_struct *uc, DeviceState *dev, Error **errp);
 typedef void (*BusRealize)(BusState *bus, Error **errp);
 typedef void (*BusUnrealize)(BusState *bus, Error **errp);
 
@@ -201,7 +202,7 @@ typedef struct BusChild {
 struct BusState {
     Object obj;
     DeviceState *parent;
-    const char *name;
+    char *name;
     int max_index;
     bool realized;
     QTAILQ_HEAD(ChildrenHead, BusChild) children;
@@ -333,7 +334,7 @@ const char *qdev_fw_name(DeviceState *dev);
 Object *qdev_get_machine(struct uc_struct *);
 
 /* FIXME: make this a link<> */
-void qdev_set_parent_bus(DeviceState *dev, BusState *bus);
+void qdev_set_parent_bus(struct uc_struct *uc, DeviceState *dev, BusState *bus);
 
 extern int qdev_hotplug;
 

@@ -25,11 +25,16 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
+#include "qapi/error.h"
+#include "qemu/cutils.h"
 #include "hw/boards.h"  // MachineClass
 #include "sysemu/sysemu.h"
 #include "sysemu/cpus.h"
+#include "qemu/log.h"
 #include "vl.h"
 #include "uc_priv.h"
+#include "exec/semihost.h"
 
 #define DEFAULT_RAM_SIZE 128
 
@@ -53,6 +58,34 @@ void cpu_stop_current(struct uc_struct *uc)
     }
 }
 
+/***********************************************************/
+/* Semihosting */
+
+bool semihosting_enabled(void)
+{
+    // UNICORN: Always return false
+    return false;
+}
+
+SemihostingTarget semihosting_get_target(void)
+{
+    return SEMIHOSTING_TARGET_AUTO;
+}
+
+const char *semihosting_get_arg(int i)
+{
+    return NULL;
+}
+
+int semihosting_get_argc(void)
+{
+    return 0;
+}
+
+const char *semihosting_get_cmdline(void)
+{
+    return NULL;
+}
 
 /***********************************************************/
 /* machine registration */
@@ -88,6 +121,9 @@ int machine_initialize(struct uc_struct *uc)
     cpu_register_types(uc);
     qdev_register_types(uc);
 
+    // Initialize cache information
+    init_cache_info(uc);
+
     // Initialize arch specific.
     uc->init_arch(uc);
 
@@ -95,8 +131,8 @@ int machine_initialize(struct uc_struct *uc)
     // this will auto initialize all register objects above.
     machine_class = find_default_machine(uc, uc->arch);
     if (machine_class == NULL) {
-        //fprintf(stderr, "No machine specified, and there is no default.\n"
-        //        "Use -machine help to list supported machines!\n");
+        // error_report("No machine specified, and there is no default");
+        // error_printf("Use -machine help to list supported machines\n");
         return -2;
     }
 
@@ -104,12 +140,30 @@ int machine_initialize(struct uc_struct *uc)
                     OBJECT_CLASS(machine_class))));
     uc->machine_state = current_machine;
     current_machine->uc = uc;
+
+    // Unicorn: FIXME: ditto with regards to below
+    //qemu_tcg_configure(uc);
+
+    // Unicorn: FIXME: this should be uncommented
+    //          However due to the "stellar" way unicorn
+    //          handles multiple targets (e.g. the YOLO
+    //          Python script named header_gen.py), this
+    //          results in a compilation error.
+    //if (machine_class->minimum_page_bits) {
+    //    if (!set_preferred_target_page_bits(uc, machine_class->minimum_page_bits)) {
+    //        /* This would be a board error: specifying a minimum smaller than
+    //         * a target's compile-time fixed setting.
+    //         */
+    //        g_assert_not_reached();
+    //    }
+    //}
     uc->cpu_exec_init_all(uc);
 
     machine_class->max_cpus = 1;
     configure_accelerator(current_machine);
 
-    current_machine->cpu_model = NULL;
+    /* parse features once if machine provides default cpu_type */
+    current_machine->cpu_type = machine_class->default_cpu_type;
 
     return machine_class->init(uc, current_machine);
 }
@@ -122,35 +176,4 @@ void qemu_system_reset_request(struct uc_struct* uc)
 void qemu_system_shutdown_request(void)
 {
     //shutdown_requested = 1;
-}
-
-static void machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
-{
-    MachineClass *mc = MACHINE_CLASS(uc, oc);
-    QEMUMachine *qm = data;
-
-    mc->family = qm->family;
-    mc->name = qm->name;
-    mc->init = qm->init;
-    mc->reset = qm->reset;
-    mc->max_cpus = qm->max_cpus;
-    mc->is_default = qm->is_default;
-    mc->arch = qm->arch;
-}
-
-void qemu_register_machine(struct uc_struct *uc, QEMUMachine *m, const char *type_machine,
-        void (*init)(struct uc_struct *uc, ObjectClass *oc, void *data))
-{
-    char *name = g_strconcat(m->name, TYPE_MACHINE_SUFFIX, NULL);
-    TypeInfo ti = {0};
-    ti.name       = name;
-    ti.parent     = type_machine;
-    ti.class_init = init;
-    ti.class_data = (void *)m;
-
-    if (init == NULL)
-        ti.class_init = machine_class_init;
-
-    type_register(uc, &ti);
-    g_free(name);
 }

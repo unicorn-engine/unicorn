@@ -27,7 +27,11 @@
  * Otherwise many inlines will generate horrible code.
  *
  * bitmap_set(dst, pos, nbits)			Set specified bit area
+ * bitmap_set_atomic(dst, pos, nbits)   Set specified bit area with atomic ops
  * bitmap_clear(dst, pos, nbits)		Clear specified bit area
+ * bitmap_test_and_clear_atomic(dst, pos, nbits)    Test and clear area
+ * bitmap_to_le(dst, src, nbits)      Convert bitmap to little endian
+ * bitmap_from_le(dst, src, nbits)    Convert bitmap from little endian
  */
 
 /*
@@ -46,8 +50,41 @@
 #define DECLARE_BITMAP(name,bits)                  \
         unsigned long name[BITS_TO_LONGS(bits)]
 
+#define small_nbits(nbits)                      \
+        ((nbits) <= BITS_PER_LONG)
+
+long slow_bitmap_count_one(const unsigned long *bitmap, long nbits);
+
+static inline unsigned long *bitmap_try_new(long nbits)
+{
+    long len = BITS_TO_LONGS(nbits) * sizeof(unsigned long);
+    return g_try_malloc0(len);
+}
+
+static inline unsigned long *bitmap_new(long nbits)
+{
+    unsigned long *ptr = bitmap_try_new(nbits);
+    if (ptr == NULL) {
+        abort();
+    }
+    return ptr;
+}
+
+static inline long bitmap_count_one(const unsigned long *bitmap, long nbits)
+{
+    if (small_nbits(nbits)) {
+        return ctpopl(*bitmap & BITMAP_LAST_WORD_MASK(nbits));
+    } else {
+        return slow_bitmap_count_one(bitmap, nbits);
+    }
+}
+
 void bitmap_set(unsigned long *map, long i, long len);
+void bitmap_set_atomic(unsigned long *map, long i, long len);
 void bitmap_clear(unsigned long *map, long start, long nr);
+bool bitmap_test_and_clear_atomic(unsigned long *map, long start, long nr);
+void bitmap_copy_and_clear_atomic(unsigned long *dst, unsigned long *src,
+                                  long nr);
 
 static inline unsigned long *bitmap_zero_extend(unsigned long *old,
                                                 long old_nbits, long new_nbits)
@@ -57,5 +94,10 @@ static inline unsigned long *bitmap_zero_extend(unsigned long *old,
     bitmap_clear(new, old_nbits, new_nbits - old_nbits);
     return new;
 }
+
+void bitmap_to_le(unsigned long *dst, const unsigned long *src,
+                  long nbits);
+void bitmap_from_le(unsigned long *dst, const unsigned long *src,
+                    long nbits);
 
 #endif /* BITMAP_H */

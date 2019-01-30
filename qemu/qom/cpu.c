@@ -18,57 +18,38 @@
  * <http://www.gnu.org/licenses/gpl-2.0.html>
  */
 
+#include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "qemu-common.h"
+#include "hw/boards.h"
 #include "qemu/log.h"
 #include "uc_priv.h"
 
-bool cpu_exists(struct uc_struct* uc, int64_t id)
+CPUState *cpu_by_arch_id(struct uc_struct *uc, int64_t id)
 {
     CPUState *cpu = uc->cpu;
     CPUClass *cc = CPU_GET_CLASS(uc, cpu);
 
     if (cc->get_arch_id(cpu) == id) {
-        return true;
+        return cpu;
     }
-    return false;
+    return NULL;
 }
 
-CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const char *cpu_model)
+bool cpu_exists(struct uc_struct *uc, int64_t id)
 {
-    char *str, *name, *featurestr;
-    CPUState *cpu;
-    ObjectClass *oc;
-    CPUClass *cc;
+    return !!cpu_by_arch_id(uc, id);
+}
+
+CPUState *cpu_create(struct uc_struct *uc, const char *typename)
+{
     Error *err = NULL;
-
-    str = g_strdup(cpu_model);
-    name = strtok(str, ",");
-
-    oc = cpu_class_by_name(uc, typename, name);
-    if (oc == NULL) {
-        g_free(str);
-        return NULL;
-    }
-
-    cpu = CPU(object_new(uc, object_class_get_name(oc)));
-    cc = CPU_GET_CLASS(uc, cpu);
-
-    featurestr = strtok(NULL, ",");
-    cc->parse_features(cpu, featurestr, &err);
-    g_free(str);
-    if (err != NULL) {
-        goto out;
-    }
-
+    CPUState *cpu = CPU(object_new(uc, typename));
     object_property_set_bool(uc, OBJECT(cpu), true, "realized", &err);
-
-out:
     if (err != NULL) {
-        error_free(err);
         object_unref(uc, OBJECT(cpu));
         return NULL;
     }
-
     return cpu;
 }
 
@@ -106,8 +87,10 @@ void cpu_reset_interrupt(CPUState *cpu, int mask)
 
 void cpu_exit(CPUState *cpu)
 {
-    cpu->exit_request = 1;
-    cpu->tcg_exit_req = 1;
+    atomic_set(&cpu->exit_request, 1);
+    /* Ensure cpu_exec will see the exit request after TCG has exited.  */
+    smp_wmb();
+    atomic_set(&cpu->tcg_exit_req, 1);
 }
 
 static void cpu_common_noop(CPUState *cpu)
@@ -158,14 +141,24 @@ static void cpu_common_reset(CPUState *cpu)
     }
 
     cpu->interrupt_request = 0;
-    cpu->current_tb = NULL;
     cpu->halted = 0;
     cpu->mem_io_pc = 0;
     cpu->mem_io_vaddr = 0;
     cpu->icount_extra = 0;
-    cpu->icount_decr.u32 = 0;
+    atomic_set(&cpu->icount_decr.u32, 0);
     cpu->can_do_io = 0;
-    memset(cpu->tb_jmp_cache, 0, TB_JMP_CACHE_SIZE * sizeof(void *));
+    cpu->exception_index = -1;
+    cpu->crash_occurred = false;
+
+    // TODO: Should be uncommented, but good 'ol
+    //       unicorn's crappy symbol deduplication
+    //       makes it impossible right now
+    //if (tcg_enabled(cpu->uc)) {
+        cpu_tb_jmp_cache_clear(cpu);
+
+        // Ditto: should also be uncommented
+        //tcg_flush_softmmu_tlb(cpu);
+    //}
 }
 
 static bool cpu_common_has_work(CPUState *cs)
@@ -173,10 +166,19 @@ static bool cpu_common_has_work(CPUState *cs)
     return false;
 }
 
+static bool cpu_common_debug_check_watchpoint(CPUState *cpu, CPUWatchpoint *wp)
+{
+    /* If no extra check is required, QEMU watchpoint match can be considered
+     * as an architectural match.
+     */
+    return true;
+}
+
 ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename, const char *cpu_model)
 {
     CPUClass *cc = CPU_CLASS(uc, object_class_by_name(uc, typename));
 
+    assert(cpu_model && cc->class_by_name);
     return cc->class_by_name(uc, cpu_model);
 }
 
@@ -185,25 +187,38 @@ static ObjectClass *cpu_common_class_by_name(struct uc_struct *uc, const char *c
     return NULL;
 }
 
-static void cpu_common_parse_features(CPUState *cpu, char *features,
+static void cpu_common_parse_features(struct uc_struct *uc, const char *typename, char *features,
                                       Error **errp)
 {
-    char *featurestr; /* Single "key=value" string being parsed */
     char *val;
-    Error *err = NULL;
+    /* Single "key=value" string being parsed */
+    char *featurestr = features ? strtok(features, ",") : NULL;
 
-    featurestr = features ? strtok(features, ",") : NULL;
+    /* should be called only once, catch invalid users */
+    assert(!uc->cpu_globals_initialized);
+    if (uc->cpu_globals_initialized) {
+        return;
+    }
+    uc->cpu_globals_initialized = true;
 
     while (featurestr) {
         val = strchr(featurestr, '=');
         if (val) {
+            // Unicorn: if'd out
+#if 0
+            GlobalProperty *prop = g_new0(GlobalProperty, 1);
+#endif
             *val = 0;
             val++;
-            object_property_parse(cpu->uc, OBJECT(cpu), val, featurestr, &err);
-            if (err) {
-                error_propagate(errp, err);
-                return;
-            }
+
+            // Unicorn: If'd out
+#if 0
+            prop->driver = typename;
+            prop->property = g_strdup(featurestr);
+            prop->value = g_strdup(val);
+            prop->errp = &error_fatal;
+            qdev_prop_register_global(prop);
+#endif
         } else {
             error_setg(errp, "Expected key=value format, found %s.",
                        featurestr);
@@ -216,6 +231,21 @@ static void cpu_common_parse_features(CPUState *cpu, char *features,
 static int cpu_common_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     CPUState *cpu = CPU(dev);
+    Object *machine = qdev_get_machine(uc);
+
+    /* qdev_get_machine() can return something that's not TYPE_MACHINE
+     * if this is one of the user-only emulators; in that case there's
+     * no need to check the ignore_memory_transaction_failures board flag.
+     */
+    if (object_dynamic_cast(uc, machine, TYPE_MACHINE)) {
+        ObjectClass *oc = object_get_class(machine);
+        MachineClass *mc = MACHINE_CLASS(uc, oc);
+
+        if (mc) {
+            cpu->ignore_memory_transaction_failures =
+                mc->ignore_memory_transaction_failures;
+        }
+    }
 
     if (dev->hotplugged) {
         cpu_resume(cpu);
@@ -226,11 +256,26 @@ static int cpu_common_realizefn(struct uc_struct *uc, DeviceState *dev, Error **
 
 static void cpu_common_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
+    CPUState *cpu = CPU(obj);
+
+    cpu->cpu_index = -1;
+    QTAILQ_INIT(&cpu->breakpoints);
+    QTAILQ_INIT(&cpu->watchpoints);
+}
+
+static void cpu_common_finalize(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    uc->cpu_exec_exit(CPU(obj));
 }
 
 static int64_t cpu_common_get_arch_id(CPUState *cpu)
 {
     return cpu->cpu_index;
+}
+
+static vaddr cpu_adjust_watchpoint_address(CPUState *cpu, vaddr addr, int len)
+{
+    return addr;
 }
 
 static void cpu_class_init(struct uc_struct *uc, ObjectClass *klass, void *data)
@@ -246,9 +291,11 @@ static void cpu_class_init(struct uc_struct *uc, ObjectClass *klass, void *data)
     k->get_paging_enabled = cpu_common_get_paging_enabled;
     k->get_memory_mapping = cpu_common_get_memory_mapping;
     k->debug_excp_handler = cpu_common_noop;
+    k->debug_check_watchpoint = cpu_common_debug_check_watchpoint;
     k->cpu_exec_enter = cpu_common_noop;
     k->cpu_exec_exit = cpu_common_noop;
     k->cpu_exec_interrupt = cpu_common_exec_interrupt;
+    k->adjust_watchpoint_address = cpu_adjust_watchpoint_address;
     dc->realize = cpu_common_realizefn;
     /*
      * Reason: CPUs still need special care by board code: wiring up
@@ -267,7 +314,7 @@ static const TypeInfo cpu_type_info = {
 
     cpu_common_initfn,
     NULL,
-    NULL,
+    cpu_common_finalize,
 
     NULL,
 

@@ -10,21 +10,17 @@
  * See the COPYING.LIB file in the top-level directory.
  */
 
-#include "qapi/qmp/qint.h"
-#include "qapi/qmp/qfloat.h"
+#include "qemu/osdep.h"
+#include "qapi/qmp/qnum.h"
 #include "qapi/qmp/qdict.h"
 #include "qapi/qmp/qbool.h"
+#include "qapi/qmp/qlist.h"
+#include "qapi/qmp/qnull.h"
 #include "qapi/qmp/qstring.h"
-#include "qapi/qmp/qobject.h"
+#include "qapi/error.h"
 #include "qemu/queue.h"
 #include "qemu-common.h"
-
-static void qdict_destroy_obj(QObject *obj);
-
-static const QType qdict_type = {
-    QTYPE_QDICT,
-    qdict_destroy_obj,
-};
+#include "qemu/cutils.h"
 
 /**
  * qdict_new(): Create a new QDict
@@ -36,20 +32,9 @@ QDict *qdict_new(void)
     QDict *qdict;
 
     qdict = g_malloc0(sizeof(*qdict));
-    QOBJECT_INIT(qdict, &qdict_type);
+    qobject_init(QOBJECT(qdict), QTYPE_QDICT);
 
     return qdict;
-}
-
-/**
- * qobject_to_qdict(): Convert a QObject into a QDict
- */
-QDict *qobject_to_qdict(const QObject *obj)
-{
-    if (qobject_type(obj) != QTYPE_QDICT)
-        return NULL;
-
-    return container_of(obj, QDict, base);
 }
 
 /**
@@ -138,7 +123,7 @@ void qdict_put_obj(QDict *qdict, const char *key, QObject *value)
     entry = qdict_find(qdict, key, bucket);
     if (entry) {
         /* replace key's value */
-        qobject_decref(entry->value);
+        qobject_unref(entry->value);
         entry->value = value;
     } else {
         /* allocate a new entry */
@@ -146,6 +131,26 @@ void qdict_put_obj(QDict *qdict, const char *key, QObject *value)
         QLIST_INSERT_HEAD(&qdict->table[bucket], entry, next);
         qdict->size++;
     }
+}
+
+void qdict_put_int(QDict *qdict, const char *key, int64_t value)
+{
+    qdict_put(qdict, key, qnum_from_int(value));
+}
+
+void qdict_put_bool(QDict *qdict, const char *key, bool value)
+{
+    qdict_put(qdict, key, qbool_from_bool(value));
+}
+
+void qdict_put_str(QDict *qdict, const char *key, const char *value)
+{
+    qdict_put(qdict, key, qstring_from_str(value));
+}
+
+void qdict_put_null(QDict *qdict, const char *key)
+{
+    qdict_put(qdict, key, qnull());
 }
 
 /**
@@ -182,55 +187,28 @@ size_t qdict_size(const QDict *qdict)
 }
 
 /**
- * qdict_get_obj(): Get a QObject of a specific type
- */
-static QObject *qdict_get_obj(const QDict *qdict, const char *key,
-                              qtype_code type)
-{
-    QObject *obj;
-
-    obj = qdict_get(qdict, key);
-    assert(obj != NULL);
-    assert(qobject_type(obj) == type);
-
-    return obj;
-}
-
-/**
  * qdict_get_double(): Get an number mapped by 'key'
  *
- * This function assumes that 'key' exists and it stores a
- * QFloat or QInt object.
+ * This function assumes that 'key' exists and it stores a QNum.
  *
  * Return number mapped by 'key'.
  */
 double qdict_get_double(const QDict *qdict, const char *key)
 {
-    QObject *obj = qdict_get(qdict, key);
-
-    assert(obj);
-    switch (qobject_type(obj)) {
-    case QTYPE_QFLOAT:
-        return qfloat_get_double(qobject_to_qfloat(obj));
-    case QTYPE_QINT:
-        return (double)qint_get_int(qobject_to_qint(obj));
-    default:
-        abort();
-    }
+    return qnum_get_double(qobject_to(QNum, qdict_get(qdict, key)));
 }
 
 /**
  * qdict_get_int(): Get an integer mapped by 'key'
  *
  * This function assumes that 'key' exists and it stores a
- * QInt object.
+ * QNum representable as int.
  *
  * Return integer mapped by 'key'.
  */
 int64_t qdict_get_int(const QDict *qdict, const char *key)
 {
-    QObject *obj = qdict_get_obj(qdict, key, QTYPE_QINT);
-    return qint_get_int(qobject_to_qint(obj));
+    return qnum_get_int(qobject_to(QNum, qdict_get(qdict, key)));
 }
 
 /**
@@ -241,36 +219,25 @@ int64_t qdict_get_int(const QDict *qdict, const char *key)
  *
  * Return bool mapped by 'key'.
  */
-int qdict_get_bool(const QDict *qdict, const char *key)
+bool qdict_get_bool(const QDict *qdict, const char *key)
 {
-    QObject *obj = qdict_get_obj(qdict, key, QTYPE_QBOOL);
-    return qbool_get_int(qobject_to_qbool(obj));
+    return qbool_get_bool(qobject_to(QBool, qdict_get(qdict, key)));
 }
 
 /**
- * qdict_get_qlist(): Get the QList mapped by 'key'
- *
- * This function assumes that 'key' exists and it stores a
- * QList object.
- *
- * Return QList mapped by 'key'.
+ * qdict_get_qlist(): If @qdict maps @key to a QList, return it, else NULL.
  */
 QList *qdict_get_qlist(const QDict *qdict, const char *key)
 {
-    return qobject_to_qlist(qdict_get_obj(qdict, key, QTYPE_QLIST));
+    return qobject_to(QList, qdict_get(qdict, key));
 }
 
 /**
- * qdict_get_qdict(): Get the QDict mapped by 'key'
- *
- * This function assumes that 'key' exists and it stores a
- * QDict object.
- *
- * Return QDict mapped by 'key'.
+ * qdict_get_qdict(): If @qdict maps @key to a QDict, return it, else NULL.
  */
 QDict *qdict_get_qdict(const QDict *qdict, const char *key)
 {
-    return qobject_to_qdict(qdict_get_obj(qdict, key, QTYPE_QDICT));
+    return qobject_to(QDict, qdict_get(qdict, key));
 }
 
 /**
@@ -284,27 +251,27 @@ QDict *qdict_get_qdict(const QDict *qdict, const char *key)
  */
 const char *qdict_get_str(const QDict *qdict, const char *key)
 {
-    QObject *obj = qdict_get_obj(qdict, key, QTYPE_QSTRING);
-    return qstring_get_str(qobject_to_qstring(obj));
+    return qstring_get_str(qobject_to(QString, qdict_get(qdict, key)));
 }
 
 /**
  * qdict_get_try_int(): Try to get integer mapped by 'key'
  *
- * Return integer mapped by 'key', if it is not present in
- * the dictionary or if the stored object is not of QInt type
- * 'def_value' will be returned.
+ * Return integer mapped by 'key', if it is not present in the
+ * dictionary or if the stored object is not a QNum representing an
+ * integer, 'def_value' will be returned.
  */
 int64_t qdict_get_try_int(const QDict *qdict, const char *key,
                           int64_t def_value)
 {
-    QObject *obj;
+    QNum *qnum = qobject_to(QNum, qdict_get(qdict, key));
+    int64_t val;
 
-    obj = qdict_get(qdict, key);
-    if (!obj || qobject_type(obj) != QTYPE_QINT)
+    if (!qnum || !qnum_get_try_int(qnum, &val)) {
         return def_value;
+    }
 
-    return qint_get_int(qobject_to_qint(obj));
+    return val;
 }
 
 /**
@@ -314,15 +281,11 @@ int64_t qdict_get_try_int(const QDict *qdict, const char *key,
  * dictionary or if the stored object is not of QBool type
  * 'def_value' will be returned.
  */
-int qdict_get_try_bool(const QDict *qdict, const char *key, int def_value)
+bool qdict_get_try_bool(const QDict *qdict, const char *key, int def_value)
 {
-    QObject *obj;
+    QBool *qbool = qobject_to(QBool, qdict_get(qdict, key));
 
-    obj = qdict_get(qdict, key);
-    if (!obj || qobject_type(obj) != QTYPE_QBOOL)
-        return def_value;
-
-    return qbool_get_int(qobject_to_qbool(obj));
+    return qbool ? qbool_get_bool(qbool) : def_value;
 }
 
 /**
@@ -335,13 +298,9 @@ int qdict_get_try_bool(const QDict *qdict, const char *key, int def_value)
  */
 const char *qdict_get_try_str(const QDict *qdict, const char *key)
 {
-    QObject *obj;
+    QString *qstr = qobject_to(QString, qdict_get(qdict, key));
 
-    obj = qdict_get(qdict, key);
-    if (!obj || qobject_type(obj) != QTYPE_QSTRING)
-        return NULL;
-
-    return qstring_get_str(qobject_to_qstring(obj));
+    return qstr ? qstring_get_str(qstr) : NULL;
 }
 
 /**
@@ -414,7 +373,7 @@ QDict *qdict_clone_shallow(const QDict *src)
 
     for (i = 0; i < QDICT_BUCKET_MAX; i++) {
         QLIST_FOREACH(entry, &src->table[i], next) {
-            qobject_incref(entry->value);
+            qobject_ref(entry->value);
             qdict_put_obj(dest, entry->key, entry->value);
         }
     }
@@ -431,7 +390,7 @@ static void qentry_destroy(QDictEntry *e)
     assert(e->key != NULL);
     assert(e->value != NULL);
 
-    qobject_decref(e->value);
+    qobject_unref(e->value);
     g_free(e->key);
     g_free(e);
 }
@@ -454,15 +413,44 @@ void qdict_del(QDict *qdict, const char *key)
 }
 
 /**
+ * qdict_is_equal(): Test whether the two QDicts are equal
+ *
+ * Here, equality means whether they contain the same keys and whether
+ * the respective values are in turn equal (i.e. invoking
+ * qobject_is_equal() on them yields true).
+ */
+bool qdict_is_equal(const QObject *x, const QObject *y)
+{
+    const QDict *dict_x = qobject_to(QDict, x);
+    const QDict *dict_y = qobject_to(QDict, y);
+    const QDictEntry *e;
+
+    if (qdict_size(dict_x) != qdict_size(dict_y)) {
+        return false;
+    }
+
+    for (e = qdict_first(dict_x); e; e = qdict_next(dict_x, e)) {
+        const QObject *obj_x = qdict_entry_value(e);
+        const QObject *obj_y = qdict_get(dict_y, qdict_entry_key(e));
+
+        if (!qobject_is_equal(obj_x, obj_y)) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/**
  * qdict_destroy_obj(): Free all the memory allocated by a QDict
  */
-static void qdict_destroy_obj(QObject *obj)
+void qdict_destroy_obj(QObject *obj)
 {
     int i;
     QDict *qdict;
 
     assert(obj != NULL);
-    qdict = qobject_to_qdict(obj);
+    qdict = qobject_to(QDict, obj);
 
     for (i = 0; i < QDICT_BUCKET_MAX; i++) {
         QDictEntry *entry = QLIST_FIRST(&qdict->table[i]);
@@ -500,13 +488,12 @@ static void qdict_flatten_qlist(QList *qlist, QDict *target, const char *prefix)
         new_key = g_strdup_printf("%s.%i", prefix, i);
 
         if (qobject_type(value) == QTYPE_QDICT) {
-            qdict_flatten_qdict(qobject_to_qdict(value), target, new_key);
+            qdict_flatten_qdict(qobject_to(QDict, value), target, new_key);
         } else if (qobject_type(value) == QTYPE_QLIST) {
-            qdict_flatten_qlist(qobject_to_qlist(value), target, new_key);
+            qdict_flatten_qlist(qobject_to(QList, value), target, new_key);
         } else {
             /* All other types are moved to the target unchanged. */
-            qobject_incref(value);
-            qdict_put_obj(target, new_key, value);
+            qdict_put_obj(target, new_key, qobject_ref(value));
         }
 
         g_free(new_key);
@@ -536,17 +523,16 @@ static void qdict_flatten_qdict(QDict *qdict, QDict *target, const char *prefix)
         if (qobject_type(value) == QTYPE_QDICT) {
             /* Entries of QDicts are processed recursively, the QDict object
              * itself disappears. */
-            qdict_flatten_qdict(qobject_to_qdict(value), target,
+            qdict_flatten_qdict(qobject_to(QDict, value), target,
                                 new_key ? new_key : entry->key);
             delete = true;
         } else if (qobject_type(value) == QTYPE_QLIST) {
-            qdict_flatten_qlist(qobject_to_qlist(value), target,
+            qdict_flatten_qlist(qobject_to(QList, value), target,
                                 new_key ? new_key : entry->key);
             delete = true;
         } else if (prefix) {
             /* All other objects are moved to the target unchanged. */
-            qobject_incref(value);
-            qdict_put_obj(target, new_key, value);
+            qdict_put_obj(target, new_key, qobject_ref(value));
             delete = true;
         }
 
@@ -562,6 +548,39 @@ static void qdict_flatten_qdict(QDict *qdict, QDict *target, const char *prefix)
 
         entry = next;
     }
+}
+
+/**
+ * qdict_rename_keys(): Rename keys in qdict according to the replacements
+ * specified in the array renames. The array must be terminated by an entry
+ * with from = NULL.
+ *
+ * The renames are performed individually in the order of the array, so entries
+ * may be renamed multiple times and may or may not conflict depending on the
+ * order of the renames array.
+ *
+ * Returns true for success, false in error cases.
+ */
+bool qdict_rename_keys(QDict *qdict, const QDictRenames *renames, Error **errp)
+{
+    QObject *qobj;
+
+    while (renames->from) {
+        if (qdict_haskey(qdict, renames->from)) {
+            if (qdict_haskey(qdict, renames->to)) {
+                error_setg(errp, "'%s' and its alias '%s' can't be used at the "
+                           "same time", renames->to, renames->from);
+                return false;
+            }
+
+            qobj = qdict_get(qdict, renames->from);
+            qdict_put_obj(qdict, renames->to, qobject_ref(qobj));
+            qdict_del(qdict, renames->from);
+        }
+
+        renames++;
+    }
+    return true;
 }
 
 /**
@@ -589,8 +608,7 @@ void qdict_extract_subqdict(QDict *src, QDict **dst, const char *start)
     while (entry != NULL) {
         next = qdict_next(src, entry);
         if (strstart(entry->key, start, &p)) {
-            qobject_incref(entry->value);
-            qdict_put_obj(*dst, p, entry->value);
+            qdict_put_obj(*dst, p, qobject_ref(entry->value));
             qdict_del(src, entry->key);
         }
         entry = next;
@@ -658,12 +676,287 @@ void qdict_array_split(QDict *src, QList **dst)
             qdict_extract_subqdict(src, &subqdict, prefix);
             assert(qdict_size(subqdict) > 0);
         } else {
-            qobject_incref(subqobj);
+            qobject_ref(subqobj);
             qdict_del(src, indexstr);
         }
 
         qlist_append_obj(*dst, (subqobj!=NULL) ? subqobj : QOBJECT(subqdict));
     }
+}
+
+/**
+ * qdict_split_flat_key:
+ * @key: the key string to split
+ * @prefix: non-NULL pointer to hold extracted prefix
+ * @suffix: non-NULL pointer to remaining suffix
+ *
+ * Given a flattened key such as 'foo.0.bar', split it into two parts
+ * at the first '.' separator. Allows double dot ('..') to escape the
+ * normal separator.
+ *
+ * e.g.
+ *    'foo.0.bar' -> prefix='foo' and suffix='0.bar'
+ *    'foo..0.bar' -> prefix='foo.0' and suffix='bar'
+ *
+ * The '..' sequence will be unescaped in the returned 'prefix'
+ * string. The 'suffix' string will be left in escaped format, so it
+ * can be fed back into the qdict_split_flat_key() key as the input
+ * later.
+ *
+ * The caller is responsible for freeing the string returned in @prefix
+ * using g_free().
+ */
+static void qdict_split_flat_key(const char *key, char **prefix,
+                                 const char **suffix)
+{
+    const char *separator;
+    size_t i, j;
+
+    /* Find first '.' separator, but if there is a pair '..'
+     * that acts as an escape, so skip over '..' */
+    separator = NULL;
+    do {
+        if (separator) {
+            separator += 2;
+        } else {
+            separator = key;
+        }
+        separator = strchr(separator, '.');
+    } while (separator && separator[1] == '.');
+
+    if (separator) {
+        *prefix = g_strndup(key, separator - key);
+        *suffix = separator + 1;
+    } else {
+        *prefix = g_strdup(key);
+        *suffix = NULL;
+    }
+
+    /* Unescape the '..' sequence into '.' */
+    for (i = 0, j = 0; (*prefix)[i] != '\0'; i++, j++) {
+        if ((*prefix)[i] == '.') {
+            assert((*prefix)[i + 1] == '.');
+            i++;
+        }
+        (*prefix)[j] = (*prefix)[i];
+    }
+    (*prefix)[j] = '\0';
+}
+
+/**
+ * qdict_is_list:
+ * @maybe_list: dict to check if keys represent list elements.
+ *
+ * Determine whether all keys in @maybe_list are valid list elements.
+ * If @maybe_list is non-zero in length and all the keys look like
+ * valid list indexes, this will return 1. If @maybe_list is zero
+ * length or all keys are non-numeric then it will return 0 to indicate
+ * it is a normal qdict. If there is a mix of numeric and non-numeric
+ * keys, or the list indexes are non-contiguous, an error is reported.
+ *
+ * Returns: 1 if a valid list, 0 if a dict, -1 on error
+ */
+static int qdict_is_list(QDict *maybe_list, Error **errp)
+{
+    const QDictEntry *ent;
+    ssize_t len = 0;
+    ssize_t max = -1;
+    int is_list = -1;
+    int64_t val;
+
+    for (ent = qdict_first(maybe_list); ent != NULL;
+         ent = qdict_next(maybe_list, ent)) {
+
+        if (qemu_strtoi64(ent->key, NULL, 10, &val) == 0) {
+            if (is_list == -1) {
+                is_list = 1;
+            } else if (!is_list) {
+                error_setg(errp,
+                           "Cannot mix list and non-list keys");
+                return -1;
+            }
+            len++;
+            if (val > max) {
+                max = val;
+            }
+        } else {
+            if (is_list == -1) {
+                is_list = 0;
+            } else if (is_list) {
+                error_setg(errp,
+                           "Cannot mix list and non-list keys");
+                return -1;
+            }
+        }
+    }
+
+    if (is_list == -1) {
+        assert(!qdict_size(maybe_list));
+        is_list = 0;
+    }
+
+    /* NB this isn't a perfect check - e.g. it won't catch
+     * a list containing '1', '+1', '01', '3', but that
+     * does not matter - we've still proved that the
+     * input is a list. It is up the caller to do a
+     * stricter check if desired */
+    if (len != (max + 1)) {
+        error_setg(errp, "List indices are not contiguous, "
+                   "saw %zd elements but %zd largest index",
+                   len, max);
+        return -1;
+    }
+
+    return is_list;
+}
+
+/**
+ * qdict_crumple:
+ * @src: the original flat dictionary (only scalar values) to crumple
+ *
+ * Takes a flat dictionary whose keys use '.' separator to indicate
+ * nesting, and values are scalars, and crumples it into a nested
+ * structure.
+ *
+ * To include a literal '.' in a key name, it must be escaped as '..'
+ *
+ * For example, an input of:
+ *
+ * { 'foo.0.bar': 'one', 'foo.0.wizz': '1',
+ *   'foo.1.bar': 'two', 'foo.1.wizz': '2' }
+ *
+ * will result in an output of:
+ *
+ * {
+ *   'foo': [
+ *      { 'bar': 'one', 'wizz': '1' },
+ *      { 'bar': 'two', 'wizz': '2' }
+ *   ],
+ * }
+ *
+ * The following scenarios in the input dict will result in an
+ * error being returned:
+ *
+ *  - Any values in @src are non-scalar types
+ *  - If keys in @src imply that a particular level is both a
+ *    list and a dict. e.g., "foo.0.bar" and "foo.eek.bar".
+ *  - If keys in @src imply that a particular level is a list,
+ *    but the indices are non-contiguous. e.g. "foo.0.bar" and
+ *    "foo.2.bar" without any "foo.1.bar" present.
+ *  - If keys in @src represent list indexes, but are not in
+ *    the "%zu" format. e.g. "foo.+0.bar"
+ *
+ * Returns: either a QDict or QList for the nested data structure, or NULL
+ * on error
+ */
+QObject *qdict_crumple(const QDict *src, Error **errp)
+{
+    const QDictEntry *ent;
+    QDict *two_level, *multi_level = NULL;
+    QObject *dst = NULL, *child;
+    size_t i;
+    char *prefix = NULL;
+    const char *suffix = NULL;
+    int is_list;
+
+    two_level = qdict_new();
+
+    /* Step 1: split our totally flat dict into a two level dict */
+    for (ent = qdict_first(src); ent != NULL; ent = qdict_next(src, ent)) {
+        if (qobject_type(ent->value) == QTYPE_QDICT ||
+            qobject_type(ent->value) == QTYPE_QLIST) {
+            error_setg(errp, "Value %s is not a scalar",
+                       ent->key);
+            goto error;
+        }
+
+        qdict_split_flat_key(ent->key, &prefix, &suffix);
+
+        child = qdict_get(two_level, prefix);
+        if (suffix) {
+            QDict *child_dict = qobject_to(QDict, child);
+            if (!child_dict) {
+                if (child) {
+                    error_setg(errp, "Key %s prefix is already set as a scalar",
+                               prefix);
+                    goto error;
+                }
+
+                child_dict = qdict_new();
+                qdict_put_obj(two_level, prefix, QOBJECT(child_dict));
+            }
+
+            qdict_put_obj(child_dict, suffix, qobject_ref(ent->value));
+        } else {
+            if (child) {
+                error_setg(errp, "Key %s prefix is already set as a dict",
+                           prefix);
+                goto error;
+            }
+            qdict_put_obj(two_level, prefix, qobject_ref(ent->value));
+        }
+
+        g_free(prefix);
+        prefix = NULL;
+    }
+
+    /* Step 2: optionally process the two level dict recursively
+     * into a multi-level dict */
+    multi_level = qdict_new();
+    for (ent = qdict_first(two_level); ent != NULL;
+         ent = qdict_next(two_level, ent)) {
+
+        QDict *dict = qobject_to(QDict, ent->value);
+        if (dict) {
+            child = qdict_crumple(dict, errp);
+            if (!child) {
+                goto error;
+            }
+
+            qdict_put_obj(multi_level, ent->key, child);
+        } else {
+            qdict_put_obj(multi_level, ent->key, qobject_ref(ent->value));
+        }
+    }
+    qobject_unref(two_level);
+    two_level = NULL;
+
+    /* Step 3: detect if we need to turn our dict into list */
+    is_list = qdict_is_list(multi_level, errp);
+    if (is_list < 0) {
+        goto error;
+    }
+
+    if (is_list) {
+        dst = QOBJECT(qlist_new());
+
+        for (i = 0; i < qdict_size(multi_level); i++) {
+            char *key = g_strdup_printf("%zu", i);
+
+            child = qdict_get(multi_level, key);
+            g_free(key);
+
+            if (!child) {
+                error_setg(errp, "Missing list index %zu", i);
+                goto error;
+            }
+
+            qlist_append_obj(qobject_to(QList, dst), qobject_ref(child));
+        }
+        qobject_unref(multi_level);
+        multi_level = NULL;
+    } else {
+        dst = QOBJECT(multi_level);
+    }
+
+    return dst;
+
+ error:
+    g_free(prefix);
+    qobject_unref(multi_level);
+    qobject_unref(two_level);
+    qobject_unref(dst);
+    return NULL;
 }
 
 /**
@@ -689,8 +982,7 @@ void qdict_join(QDict *dest, QDict *src, bool overwrite)
         next = qdict_next(src, entry);
 
         if (overwrite || !qdict_haskey(dest, entry->key)) {
-            qobject_incref(entry->value);
-            qdict_put_obj(dest, entry->key, entry->value);
+            qdict_put_obj(dest, entry->key, qobject_ref(entry->value));
             qdict_del(src, entry->key);
         }
 

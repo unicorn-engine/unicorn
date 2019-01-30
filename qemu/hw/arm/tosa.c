@@ -11,30 +11,32 @@
  * GNU GPL, version 2 or (at your option) any later version.
  */
 
+#include "qemu/osdep.h"
+#include "qapi/error.h"
+#include "cpu.h"
 #include "hw/hw.h"
 #include "hw/arm/arm.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
 
-
 static int tosa_init(struct uc_struct *uc, MachineState *machine)
 {
-    if (uc->mode & UC_MODE_MCLASS) {
-        uc->cpu = (CPUState *)cpu_arm_init(uc, "cortex-m3");
-    } else {
-        uc->cpu = (CPUState *)cpu_arm_init(uc, "cortex-a15");
-    }
-
+    uc->cpu = cpu_create(uc, machine->cpu_type);
     return 0;
 }
 
-void tosa_machine_init(struct uc_struct *uc)
+static void tosa_machine_init(struct uc_struct *uc, MachineClass *mc)
 {
-    static QEMUMachine tosapda_machine = { 0 };
-    tosapda_machine.name = "tosa",
-    tosapda_machine.init = tosa_init,
-    tosapda_machine.is_default = 1,
-    tosapda_machine.arch = UC_ARCH_ARM,
+    mc->init = tosa_init;
+    mc->is_default = 1;
+    mc->arch = UC_ARCH_ARM;
 
-    qemu_register_machine(uc, &tosapda_machine, TYPE_MACHINE, NULL);
+    if (uc->mode & UC_MODE_MCLASS) {
+        mc->default_cpu_type = ARM_CPU_TYPE_NAME("cortex-m3");
+    } else {
+        // Unicorn: Enable all CPU features
+        mc->default_cpu_type = ARM_CPU_TYPE_NAME("max");
+    }
 }
+
+DEFINE_MACHINE("tosa", tosa_machine_init)

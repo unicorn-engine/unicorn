@@ -37,8 +37,8 @@
  *      @(#)queue.h     8.5 (Berkeley) 8/20/94
  */
 
-#ifndef QEMU_SYS_QUEUE_H_
-#define QEMU_SYS_QUEUE_H_
+#ifndef QEMU_SYS_QUEUE_H
+#define QEMU_SYS_QUEUE_H
 
 /*
  * This file defines four types of data structures: singly-linked lists,
@@ -399,6 +399,11 @@ struct {                                                                \
                 (var);                                                  \
                 (var) = (*(((struct headname *)((var)->field.tqe_prev))->tqh_last)))
 
+#define QTAILQ_FOREACH_REVERSE_SAFE(var, head, headname, field, prev_var) \
+        for ((var) = (*(((struct headname *)((head)->tqh_last))->tqh_last)); \
+             (var) && ((prev_var) = (*(((struct headname *)((var)->field.tqe_prev))->tqh_last)), 1); \
+             (var) = (prev_var))
+
 /*
  * Tail queue access methods.
  */
@@ -411,4 +416,4 @@ struct {                                                                \
 #define QTAILQ_PREV(elm, headname, field) \
         (*(((struct headname *)((elm)->field.tqe_prev))->tqh_last))
 
-#endif  /* !QEMU_SYS_QUEUE_H_ */
+#endif /* QEMU_SYS_QUEUE_H */

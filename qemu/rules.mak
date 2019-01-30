@@ -1,4 +1,6 @@
 
+COMMA := ,
+
 # Don't use implicit rules or variables
 # we have explicit rules for everything
 MAKEFLAGS += -rR
@@ -45,7 +47,7 @@ process-archive-undefs = $(filter-out %.a %.mo,$1) \
                               $(call undefined-symbols,$(filter %.mo,$1)))) \
                 $(filter %.a,$1)
 
-extract-libs = $(strip $(foreach o,$1,$($o-libs)))
+extract-libs = $(strip $(foreach o,$(filter-out %.mo,$1),$($o-libs)))
 expand-objs = $(strip $(sort $(filter %.o,$1)) \
                   $(foreach o,$(filter %.mo,$1),$($o-objs)) \
                   $(filter-out %.o %.mo,$1))
@@ -117,6 +119,8 @@ modules:
 
 quiet-command = $(if $(V),$1,$(if $(2),@echo $2 && $1, @$1))
 
+MAKEFLAGS += $(if $(V),,--no-print-directory --quiet)
+
 # cc-option
 # Usage: CFLAGS+=$(call cc-option, -falign-functions=0, -malign-functions=0)
 
@@ -178,7 +182,7 @@ TRACETOOL=$(PYTHON) $(SRC_PATH)/scripts/tracetool.py
 config-%.h: config-%.h-timestamp
 	@cmp $< $@ >/dev/null 2>&1 || cp $< $@
 
-config-%.h-timestamp: config-%.mak
+config-%.h-timestamp: config-%.mak $(SRC_PATH)/scripts/create_config
 	$(call quiet-command, sh $(SRC_PATH)/scripts/create_config < $< > $@, "  GEN   $(TARGET_DIR)config-$*.h")
 
 .PHONY: clean-timestamp

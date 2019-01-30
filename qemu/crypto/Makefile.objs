@@ -1,0 +1,4 @@
+crypto-obj-y += aes.o
+
+# Let the userspace emulators avoid linking gnutls/etc
+crypto-aes-obj-y = aes.o

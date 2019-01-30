@@ -31,6 +31,7 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 #include "glib_compat.h"
 
+#define MIN(a, b)  (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)  (((a) > (b)) ? (a) : (b))
 #ifndef _WIN64
 #define GPOINTER_TO_UINT(p) ((guint)(uintptr_t)(p))
@@ -54,9 +55,27 @@ Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  *
  * Returns: a hash value corresponding to the key.
  */
-static guint g_direct_hash (gconstpointer v)
+guint g_direct_hash (gconstpointer v)
 {
   return GPOINTER_TO_UINT (v);
+}
+
+/**
+ * g_direct_equal:
+ * @v1: a key.
+ * @v2: a key to compare with @v1.
+ *
+ * Compares two #gpointer arguments and returns %TRUE if they are equal.
+ * It can be passed to g_hash_table_new() as the @key_equal_func
+ * parameter, when using pointers as keys in a #GHashTable.
+ *
+ * Returns: %TRUE if the two keys match.
+ */
+gboolean
+g_direct_equal (gconstpointer v1,
+    gconstpointer v2)
+{
+  return v1 == v2;
 }
 
 // g_str_hash() is lifted glib-2.28.0/glib/gstring.c
@@ -91,6 +110,66 @@ guint g_str_hash (gconstpointer v)
 gboolean g_str_equal(gconstpointer v1, gconstpointer v2)
 {
    return strcmp((const char*)v1, (const char*)v2) == 0;
+}
+
+/**
+ * g_str_has_suffix:
+ * @str: a nul-terminated string.
+ * @suffix: the nul-terminated suffix to look for.
+ *
+ * Looks whether the string @str ends with @suffix.
+ *
+ * Return value: %TRUE if @str end with @suffix, %FALSE otherwise.
+ *
+ * Since: 2.2
+ **/
+gboolean
+g_str_has_suffix(const gchar *str, const gchar *suffix)
+{
+  int str_len;
+  int suffix_len;
+
+  if (str == NULL || suffix == NULL) {
+    return FALSE;
+  }
+
+  str_len = strlen (str);
+  suffix_len = strlen (suffix);
+
+  if (str_len < suffix_len)
+    return FALSE;
+
+  return strcmp (str + str_len - suffix_len, suffix) == 0;
+}
+
+/**
+ * g_str_has_prefix:
+ * @str: a nul-terminated string.
+ * @prefix: the nul-terminated prefix to look for.
+ *
+ * Looks whether the string @str begins with @prefix.
+ *
+ * Return value: %TRUE if @str begins with @prefix, %FALSE otherwise.
+ *
+ * Since: 2.2
+ **/
+gboolean
+g_str_has_prefix(const gchar *str, const gchar *prefix)
+{
+  int str_len;
+  int prefix_len;
+
+  if (str == NULL || prefix == NULL) {
+    return FALSE;
+  }
+
+  str_len = strlen (str);
+  prefix_len = strlen (prefix);
+
+  if (str_len < prefix_len)
+    return FALSE;
+
+  return strncmp (str, prefix, prefix_len) == 0;
 }
 
 // g_int_hash() is lifted from glib-2.28.0/glib/gutils.c
@@ -143,6 +222,106 @@ void g_list_free(GList *list)
       prev = lp->prev;
       free(lp);
    }
+}
+
+/**
+ * g_list_free_full:
+ * @list: a pointer to a #GList
+ * @free_func: the function to be called to free each element's data
+ *
+ * Convenience method, which frees all the memory used by a #GList, and
+ * calls the specified destroy function on every element's data.
+ *
+ * Since: 2.28
+ */
+void
+g_list_free_full (GList          *list,
+      GDestroyNotify  free_func)
+{
+  g_list_foreach (list, (GFunc) free_func, NULL);
+  g_list_free (list);
+}
+
+/**
+ * g_list_last:
+ * @list: a #GList
+ *
+ * Gets the last element in a #GList.
+ *
+ * Returns: the last element in the #GList,
+ *     or %NULL if the #GList has no elements
+ */
+GList*
+g_list_last (GList *list)
+{
+  if (list)
+    {
+      while (list->next)
+  list = list->next;
+    }
+
+  return list;
+}
+
+/**
+ * g_list_append:
+ * @list: a pointer to a #GList
+ * @data: the data for the new element
+ *
+ * Adds a new element on to the end of the list.
+ *
+ * <note><para>
+ * The return value is the new start of the list, which
+ * may have changed, so make sure you store the new value.
+ * </para></note>
+ *
+ * <note><para>
+ * Note that g_list_append() has to traverse the entire list
+ * to find the end, which is inefficient when adding multiple
+ * elements. A common idiom to avoid the inefficiency is to prepend
+ * the elements and reverse the list when all elements have been added.
+ * </para></note>
+ *
+ * |[
+ * /&ast; Notice that these are initialized to the empty list. &ast;/
+ * GList *list = NULL, *number_list = NULL;
+ *
+ * /&ast; This is a list of strings. &ast;/
+ * list = g_list_append (list, "first");
+ * list = g_list_append (list, "second");
+ *
+ * /&ast; This is a list of integers. &ast;/
+ * number_list = g_list_append (number_list, GINT_TO_POINTER (27));
+ * number_list = g_list_append (number_list, GINT_TO_POINTER (14));
+ * ]|
+ *
+ * Returns: the new start of the #GList
+ */
+GList*
+g_list_append (GList  *list,
+         gpointer  data)
+{
+  GList *new_list;
+  GList *last;
+
+  new_list = g_new0(GList, 1);
+  new_list->data = data;
+  new_list->next = NULL;
+
+  if (list)
+    {
+      last = g_list_last (list);
+      /* g_assert (last != NULL); */
+      last->next = new_list;
+      new_list->prev = last;
+
+      return list;
+    }
+  else
+    {
+      new_list->prev = NULL;
+      return new_list;
+    }
 }
 
 GList *g_list_insert_sorted(GList *list, gpointer data, GCompareFunc compare)
@@ -283,6 +462,107 @@ GList *g_list_sort (GList *list, GCompareFunc  compare_func)
     return g_list_sort_real (list, (GFunc) compare_func, NULL);
 }
 
+static inline GList*
+_g_list_remove_link (GList *list,
+         GList *link)
+{
+  if (link)
+    {
+      if (link->prev)
+        link->prev->next = link->next;
+      if (link->next)
+        link->next->prev = link->prev;
+
+      if (link == list)
+        list = list->next;
+
+      link->next = NULL;
+      link->prev = NULL;
+    }
+
+  return list;
+}
+
+/**
+ * g_list_delete_link:
+ * @list: a #GList, this must point to the top of the list
+ * @link_: node to delete from @list
+ *
+ * Removes the node link_ from the list and frees it.
+ * Compare this to g_list_remove_link() which removes the node 
+ * without freeing it.
+ *
+ * Returns: the (possibly changed) start of the #GList
+ */
+GList *
+g_list_delete_link (GList *list,
+                    GList *link_)
+{
+  list = _g_list_remove_link (list, link_);
+  //_g_list_free1 (link_);
+  g_free (link_);
+
+  return list;
+}
+
+/**
+ * g_list_insert_before:
+ * @list: a pointer to a #GList
+ * @sibling: the list element before which the new element 
+ *     is inserted or %NULL to insert at the end of the list
+ * @data: the data for the new element
+ *
+ * Inserts a new element into the list before the given position.
+ *
+ * Returns: the new start of the #GList
+ */
+GList*
+g_list_insert_before (GList   *list,
+          GList   *sibling,
+          gpointer data)
+{
+  if (!list)
+    {
+      list = g_malloc(sizeof(GList));
+      list->data = data;
+      return list;
+    }
+  else if (sibling)
+    {
+      GList *node;
+
+      node = g_malloc(sizeof(GList));
+      node->data = data;
+      node->prev = sibling->prev;
+      node->next = sibling;
+      sibling->prev = node;
+      if (node->prev)
+  {
+    node->prev->next = node;
+    return list;
+  }
+      else
+  {
+    return node;
+  }
+    }
+  else
+    {
+      GList *last;
+
+      last = list;
+      while (last->next)
+  last = last->next;
+
+      last->next = g_malloc(sizeof(GList));
+      last->next->data = data;
+      last->next->prev = last;
+      last->next->next = NULL;
+
+      return list;
+    }
+}
+
 /* END of g_list related functions */
 
 /* Singly-linked list */
@@ -406,6 +686,425 @@ GSList *g_slist_sort (GSList *list,
 }
 
 /* END of g_slist related functions */
+
+// String functions lifted from glib-2.28.0/glib/gstring.c
+
+#define MY_MAXSIZE ((gsize)-1)
+
+static inline gsize
+nearest_power (gsize base, gsize num)
+{
+  if (num > MY_MAXSIZE / 2)
+    {
+      return MY_MAXSIZE;
+    }
+  else
+    {
+      gsize n = base;
+
+      while (n < num)
+  n <<= 1;
+
+      return n;
+    }
+}
+
+static void
+g_string_maybe_expand (GString* string,
+           gsize    len)
+{
+  if (string->len + len >= string->allocated_len)
+    {
+      string->allocated_len = nearest_power (1, string->len + len + 1);
+      string->str = g_realloc (string->str, string->allocated_len);
+    }
+}
+
+GString*
+g_string_sized_new (gsize dfl_size)
+{
+  GString *string = malloc(sizeof(GString));
+
+  string->allocated_len = 0;
+  string->len   = 0;
+  string->str   = NULL;
+
+  g_string_maybe_expand (string, MAX (dfl_size, 2));
+  string->str[0] = 0;
+
+  return string;
+}
+
+/**
+ * g_string_free:
+ * @string: a #GString
+ * @free_segment: if %TRUE the actual character data is freed as well
+ *
+ * Frees the memory allocated for the #GString.
+ * If @free_segment is %TRUE it also frees the character data.  If
+ * it's %FALSE, the caller gains ownership of the buffer and must
+ * free it after use with g_free().
+ *
+ * Returns: the character data of @string
+ *          (i.e. %NULL if @free_segment is %TRUE)
+ */
+gchar*
+g_string_free (GString *string,
+         gboolean free_segment)
+{
+  gchar *segment;
+
+  if (string == NULL) {
+    return NULL;
+  }
+
+  if (free_segment)
+    {
+      g_free (string->str);
+      segment = NULL;
+    }
+  else
+    segment = string->str;
+
+  free(string);
+  return segment;
+}
+
+/**
+ * g_string_insert_len:
+ * @string: a #GString
+ * @pos: position in @string where insertion should
+ *       happen, or -1 for at the end
+ * @val: bytes to insert
+ * @len: number of bytes of @val to insert
+ *
+ * Inserts @len bytes of @val into @string at @pos.
+ * Because @len is provided, @val may contain embedded
+ * nuls and need not be nul-terminated. If @pos is -1,
+ * bytes are inserted at the end of the string.
+ *
+ * Since this function does not stop at nul bytes, it is
+ * the caller's responsibility to ensure that @val has at
+ * least @len addressable bytes.
+ *
+ * Returns: @string
+ */
+GString*
+g_string_insert_len (GString     *string,
+         gssize       pos,
+         const gchar *val,
+         gssize       len)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+  if (len != 0 || val == NULL) {
+    return string;
+  }
+
+  if (len == 0)
+    return string;
+
+  if (len < 0)
+    len = strlen (val);
+
+  if (pos < 0)
+    pos = string->len;
+  else {
+    if (pos > string->len) {
+      return string;
+    }
+  }
+
+  /* Check whether val represents a substring of string.  This test
+     probably violates chapter and verse of the C standards, since
+     ">=" and "<=" are only valid when val really is a substring.
+     In practice, it will work on modern archs.  */
+  if (val >= string->str && val <= string->str + string->len)
+    {
+      gsize offset = val - string->str;
+      gsize precount = 0;
+
+      g_string_maybe_expand (string, len);
+      val = string->str + offset;
+      /* At this point, val is valid again.  */
+
+      /* Open up space where we are going to insert.  */
+      if (pos < string->len)
+        memmove (string->str + pos + len, string->str + pos, string->len - pos);
+
+      /* Move the source part before the gap, if any.  */
+      if (offset < pos)
+        {
+          precount = MIN (len, pos - offset);
+          memcpy (string->str + pos, val, precount);
+        }
+
+      /* Move the source part after the gap, if any.  */
+      if (len > precount)
+        memcpy (string->str + pos + precount,
+                val + /* Already moved: */ precount + /* Space opened up: */ len,
+                len - precount);
+    }
+  else
+    {
+      g_string_maybe_expand (string, len);
+
+      /* If we aren't appending at the end, move a hunk
+       * of the old string to the end, opening up space
+       */
+      if (pos < string->len)
+        memmove (string->str + pos + len, string->str + pos, string->len - pos);
+
+      /* insert the new string */
+      if (len == 1)
+        string->str[pos] = *val;
+      else
+        memcpy (string->str + pos, val, len);
+    }
+
+  string->len += len;
+
+  string->str[string->len] = 0;
+
+  return string;
+}
+
+/**
+ * g_string_append_len:
+ * @string: a #GString
+ * @val: bytes to append
+ * @len: number of bytes of @val to use
+ *
+ * Appends @len bytes of @val to @string. Because @len is
+ * provided, @val may contain embedded nuls and need not
+ * be nul-terminated.
+ *
+ * Since this function does not stop at nul bytes, it is
+ * the caller's responsibility to ensure that @val has at
+ * least @len addressable bytes.
+ *
+ * Returns: @string
+ */
+GString*
+g_string_append_len (GString   *string,
+                     const gchar *val,
+                     gssize       len)
+{
+  if (string == NULL) {
+    return  NULL;
+  }
+  if (len != 0 || val == NULL) {
+    return string;
+  }
+
+  return g_string_insert_len (string, -1, val, len);
+}
+
+/**
+ * g_string_prepend:
+ * @string: a #GString
+ * @val: the string to prepend on the start of @string
+ *
+ * Adds a string on to the start of a #GString, 
+ * expanding it if necessary.
+ *
+ * Returns: @string
+ */
+GString*
+g_string_prepend (GString     *string,
+      const gchar *val)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+  if (val == NULL) {
+    return string;
+  }
+
+  return g_string_insert_len (string, 0, val, -1);
+}
+
+/**
+ * g_string_insert_c:
+ * @string: a #GString
+ * @pos: the position to insert the byte
+ * @c: the byte to insert
+ *
+ * Inserts a byte into a #GString, expanding it if necessary.
+ *
+ * Returns: @string
+ */
+GString*
+g_string_insert_c (GString *string,
+       gssize   pos,
+       gchar    c)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+
+  g_string_maybe_expand (string, 1);
+
+  if (pos < 0)
+    pos = string->len;
+  else {
+    if (pos > string->len) {
+      return string;
+    }
+  }
+
+  /* If not just an append, move the old stuff */
+  if (pos < string->len)
+    memmove (string->str + pos + 1, string->str + pos, string->len - pos);
+
+  string->str[pos] = c;
+
+  string->len += 1;
+
+  string->str[string->len] = 0;
+
+  return string;
+}
+
+/**
+ * g_string_prepend_c:
+ * @string: a #GString
+ * @c: the byte to prepend on the start of the #GString
+ *
+ * Adds a byte onto the start of a #GString,
+ * expanding it if necessary.
+ *
+ * Returns: @string
+ */
+GString*
+g_string_prepend_c (GString *string,
+        gchar    c)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+
+  return g_string_insert_c (string, 0, c);
+}
+
+/**
+ * g_string_truncate:
+ * @string: a #GString
+ * @len: the new size of @string
+ *
+ * Cuts off the end of the GString, leaving the first @len bytes. 
+ *
+ * Returns: @string
+ */
+GString*
+g_string_truncate (GString *string,
+       gsize    len)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+
+  string->len = MIN (len, string->len);
+  string->str[string->len] = 0;
+
+  return string;
+}
+
+/**
+ * g_string_set_size:
+ * @string: a #GString
+ * @len: the new length
+ *
+ * Sets the length of a #GString. If the length is less than
+ * the current length, the string will be truncated. If the
+ * length is greater than the current length, the contents
+ * of the newly added area are undefined. (However, as
+ * always, string->str[string->len] will be a nul byte.)
+ *
+ * Return value: @string
+ **/
+GString*
+g_string_set_size (GString *string,
+       gsize    len)
+{
+  if (string == NULL) {
+    return NULL;
+  }
+
+  if (len >= string->allocated_len)
+    g_string_maybe_expand (string, len - string->len);
+
+  string->len = len;
+  string->str[len] = 0;
+
+  return string;
+}
+
+/**
+ * g_string_new:
+ * @init: the initial text to copy into the string
+ *
+ * Creates a new #GString, initialized with the given string.
+ *
+ * Returns: the new #GString
+ */
+GString*
+g_string_new (const gchar *init)
+{
+  GString *string;
+
+  if (init == NULL || *init == '\0')
+    string = g_string_sized_new (2);
+  else
+    {
+      gint len;
+
+      len = strlen (init);
+      string = g_string_sized_new (len + 2);
+
+      g_string_append_len (string, init, len);
+    }
+
+  return string;
+}
+
+
+GString*
+g_string_erase (GString *string,
+    gssize   pos,
+    gssize   len)
+{
+  if (string == NULL) {
+   return NULL;
+  }
+  if (pos < 0) {
+    return string;
+  }
+  if (pos > string->len) {
+    return string;
+  }
+
+  if (len < 0)
+    len = string->len - pos;
+  else
+    {
+      if (pos + len > string->len) {
+        return string;
+      }
+
+      if (pos + len < string->len)
+    memmove (string->str + pos, string->str + pos + len, string->len - (pos + len));
+    }
+
+  string->len -= len;
+
+  string->str[string->len] = 0;
+
+  return string;
+}
+
+/* END of g_string related functions */
 
 // Hash functions lifted glib-2.28.0/glib/ghash.c
 
@@ -857,6 +1556,27 @@ void g_hash_table_insert (GHashTable *hash_table,
   g_hash_table_insert_internal (hash_table, key, value, FALSE);
 }
 
+/**
+ * g_hash_table_replace:
+ * @hash_table: a #GHashTable.
+ * @key: a key to insert.
+ * @value: the value to associate with the key.
+ *
+ * Inserts a new key and value into a #GHashTable similar to
+ * g_hash_table_insert(). The difference is that if the key already exists
+ * in the #GHashTable, it gets replaced by the new key. If you supplied a
+ * @value_destroy_func when creating the #GHashTable, the old value is freed
+ * using that function. If you supplied a @key_destroy_func when creating the
+ * #GHashTable, the old key is freed using that function.
+ **/
+void
+g_hash_table_replace (GHashTable *hash_table,
+                      gpointer    key,
+                      gpointer    value)
+{
+  g_hash_table_insert_internal (hash_table, key, value, TRUE);
+}
+
 /*
  * g_hash_table_lookup_node:
  * @hash_table: our #GHashTable
@@ -1206,6 +1926,108 @@ guint g_hash_table_size(GHashTable *hash_table)
   return hash_table->nnodes;
 }
 
+typedef struct
+{
+  GHashTable  *hash_table;
+  gpointer     dummy1;
+  gpointer     dummy2;
+  int          position;
+  gboolean     dummy3;
+  int          version;
+} RealIter;
+
+#define HASH_IS_UNUSED(h_) ((h_) == UNUSED_HASH_VALUE)
+#define HASH_IS_TOMBSTONE(h_) ((h_) == TOMBSTONE_HASH_VALUE)
+#define HASH_IS_REAL(h_) ((h_) >= 2)
+
+void g_hash_table_iter_init(GHashTableIter *iter, GHashTable *hash_table)
+{
+  RealIter *ri = (RealIter *) iter;
+
+  if (iter == NULL) {
+    return;
+  }
+  if (hash_table == NULL) {
+    return;
+  }
+
+  ri->hash_table = hash_table;
+  ri->position = -1;
+}
+
+gboolean g_hash_table_iter_next(GHashTableIter *iter, gpointer *key, gpointer *value)
+{
+  RealIter *ri = (RealIter *) iter;
+  GHashNode *node;
+  gint position;
+
+  if (iter == NULL)
+  {
+    return FALSE;
+  }
+  if (ri->position >= ri->hash_table->size)
+  {
+    return FALSE;
+  }
+
+  position = ri->position;
+
+  do
+  {
+    position++;
+    if (position >= ri->hash_table->size)
+    {
+      ri->position = position;
+      return FALSE;
+    }
+
+    node = &ri->hash_table->nodes [position];
+  }
+  while (node->key_hash <= 1);
+
+  if (key != NULL)
+    *key = node->key;
+  if (value != NULL)
+    *value = node->value;
+
+  ri->position = position;
+  return TRUE;
+}
+
+GHashTable *g_hash_table_iter_get_hash_table(GHashTableIter *iter)
+{
+  if (iter == NULL) {
+    return NULL;
+  }
+
+  return ((RealIter *) iter)->hash_table;
+}
+
+static void iter_remove_or_steal(RealIter *ri, gboolean notify)
+{
+  if (ri == NULL) {
+    return;
+  }
+  if (ri->position < 0) {
+    return;
+  }
+  if (ri->position >= ri->hash_table->size) {
+    return;
+  }
+
+g_hash_table_remove_node (ri->hash_table, &ri->hash_table->nodes[ri->position], notify);
+}
+
+void g_hash_table_iter_remove(GHashTableIter *iter)
+{
+  iter_remove_or_steal((RealIter *) iter, TRUE);
+}
+
+void g_hash_table_iter_steal(GHashTableIter *iter)
+{
+  iter_remove_or_steal((RealIter *) iter, FALSE);
+}
+
 /* END of g_hash_table related functions */
 
 /* general g_XXX substitutes */
@@ -1451,4 +2273,287 @@ gchar** g_strsplit (const gchar *string,
   g_slist_free (string_list);
 
   return str_array;
+}
+
+static const char base64_alphabet[] =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+
+static gsize g_base64_encode_step(const guchar *in, gsize len,
+                                  gboolean break_lines,
+                                  gchar *out, gint *state,
+                                  gint *save)
+{
+  char *outptr;
+  const guchar *inptr;
+
+  if (in == NULL || out == NULL || state == NULL || save == NULL) {
+    return 0;
+  }
+
+  if (len <= 0) {
+    return 0;
+  }
+
+  inptr = in;
+  outptr = out;
+
+  if (len + ((char *) save) [0] > 2)
+  {
+    const guchar *inend = in + len - 2;
+    int c1, c2, c3;
+    int already;
+
+    already = *state;
+
+    switch (((char *) save)[0])
+    {
+    case 1:
+      c1 = ((unsigned char *) save)[1];
+      goto skip1;
+    case 2:
+      c1 = ((unsigned char *) save)[1];
+      c2 = ((unsigned char *) save)[2];
+      goto skip2;
+    }
+
+    /*
+     * yes, we jump into the loop, no i'm not going to change it,
+     * it's beautiful!
+     */
+    while (inptr < inend)
+    {
+      c1 = *inptr++;
+    skip1:
+      c2 = *inptr++;
+    skip2:
+      c3 = *inptr++;
+      *outptr++ = base64_alphabet[c1 >> 2];
+      *outptr++ = base64_alphabet[c2 >> 4 | ((c1 & 0x3) << 4)];
+      *outptr++ = base64_alphabet[((c2 & 0x0f) << 2) | (c3 >> 6)];
+      *outptr++ = base64_alphabet[c3 & 0x3f];
+      /* this is a bit ugly ... */
+      if (break_lines && (++already) >= 19)
+      {
+          *outptr++ = '\n';
+          already = 0;
+      }
+    }
+
+    ((char *)save)[0] = 0;
+    len = 2 - (inptr - inend);
+    *state = already;
+  }
+
+  if (len > 0)
+  {
+      char *saveout;
+
+      /* points to the slot for the next char to save */
+      saveout = & (((char *)save)[1]) + ((char *)save)[0];
+
+      /* len can only be 0 1 or 2 */
+      switch (len)
+      {
+      case 2: *saveout++ = *inptr++;
+      case 1: *saveout++ = *inptr++;
+      }
+      ((char *) save)[0] += len;
+  }
+
+  return outptr - out;
+}
+
+gsize g_base64_encode_close(gboolean break_lines, gchar *out,
+                            gint *state, gint *save)
+{
+  int c1, c2;
+  char *outptr = out;
+
+  if (out == NULL || state == NULL || save == NULL) {
+    return 0;
+  }
+
+  c1 = ((unsigned char *) save)[1];
+  c2 = ((unsigned char *) save)[2];
+
+  switch (((char *) save)[0])
+  {
+  case 2:
+    outptr[2] = base64_alphabet[((c2 &0x0f) << 2)];
+    g_assert(outptr[2] != 0);
+    goto skip;
+  case 1:
+    outptr[2] = '=';
+    c2 = 0;  /* saved state here is not relevant */
+  skip:
+    outptr[0] = base64_alphabet[c1 >> 2 ];
+    outptr[1] = base64_alphabet[c2 >> 4 | ((c1 & 0x3) << 4)];
+    outptr[3] = '=';
+    outptr += 4;
+    break;
+  }
+  if (break_lines) {
+    *outptr++ = '\n';
+  }
+
+  *save = 0;
+  *state = 0;
+
+  return outptr - out;
+}
+
+gchar *g_base64_encode(const guchar *data, gsize len)
+{
+  gchar *out;
+  gint state = 0, outlen;
+  gint save = 0;
+
+  if (data == NULL && len != 0) {
+    return NULL;
+  }
+
+  /* We can use a smaller limit here, since we know the saved state is 0,
+     +1 is needed for trailing \0, also check for unlikely integer overflow */
+  if (len >= ((SIZE_MAX - 1) / 4 - 1) * 3) {
+    //g_error("%s: input too large for Base64 encoding (%"G_GSIZE_FORMAT" chars)",
+    //    G_STRLOC, len);
+    return NULL;
+  }
+
+  out = g_malloc((len / 3 + 1) * 4 + 1);
+
+  outlen = g_base64_encode_step(data, len, FALSE, out, &state, &save);
+  outlen += g_base64_encode_close(FALSE, out + outlen, &state, &save);
+  out[outlen] = '\0';
+
+  return (gchar *) out;
+}
+
+static const unsigned char mime_base64_rank[256] = {
+  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+  255,255,255,255,255,255,255,255,255,255,255, 62,255,255,255, 63,
+   52, 53, 54, 55, 56, 57, 58, 59, 60, 61,255,255,255,  0,255,255,
+  255,  0,  1,  2,  3,  4,  5,  6,  7,  8,  9, 10, 11, 12, 13, 14,
+   15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25,255,255,255,255,255,
+  255, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40,
+   41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51,255,255,255,255,255,
+  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+  255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+};
+
+static gsize g_base64_decode_step(const gchar  *in, gsize len,
+                                  guchar *out, gint *state,
+                                  guint *save)
+{
+  const guchar *inptr;
+  guchar *outptr;
+  const guchar *inend;
+  guchar c, rank;
+  guchar last[2];
+  unsigned int v;
+  int i;
+
+  if (in == NULL || out == NULL || state == NULL || save == NULL) {
+    return 0;
+  }
+
+  if (len <= 0) {
+    return 0;
+  }
+
+  inend = (const guchar *)in+len;
+  outptr = out;
+
+  /* convert 4 base64 bytes to 3 normal bytes */
+  v = *save;
+  i = *state;
+
+  last[0] = last[1] = 0;
+
+  /* we use the sign in the state to determine if we got a padding character
+     in the previous sequence */
+  if (i < 0)
+  {
+    i = -i;
+    last[0] = '=';
+  }
+
+  inptr = (const guchar *)in;
+  while (inptr < inend)
+  {
+    c = *inptr++;
+    rank = mime_base64_rank[c];
+    if (rank != 0xff)
+    {
+      last[1] = last[0];
+      last[0] = c;
+      v = (v << 6) | rank;
+      i++;
+      if (i == 4)
+      {
+        *outptr++ = v >> 16;
+        if (last[1] != '=') {
+          *outptr++ = v >> 8;
+        }
+        if (last[0] != '=') {
+          *outptr++ = v;
+        }
+        i = 0;
+      }
+    }
+  }
+
+  *save = v;
+  *state = last[0] == '=' ? -i : i;
+
+  return outptr - out;
+}
+
+guchar *g_base64_decode(const gchar *text, gsize *out_len)
+{
+  guchar *ret;
+  gsize input_length;
+  gint state = 0;
+  guint save = 0;
+
+  if (text == NULL || out_len == NULL) {
+    return NULL;
+  }
+
+  input_length = strlen(text);
+
+  /* We can use a smaller limit here, since we know the saved state is 0,
+     +1 used to avoid calling g_malloc0(0), and hence returning NULL */
+  ret = g_malloc0((input_length / 4) * 3 + 1);
+
+  *out_len = g_base64_decode_step(text, input_length, ret, &state, &save);
+
+  return ret;
+}
+
+guchar *g_base64_decode_inplace(gchar *text, gsize *out_len)
+{
+  gint input_length, state = 0;
+  guint save = 0;
+
+  if (text == NULL || out_len == NULL) {
+    return NULL;
+  }
+
+  input_length = strlen(text);
+
+  if (input_length <= 1) {
+    return NULL;
+  }
+
+  *out_len = g_base64_decode_step(text, input_length, (guchar *) text, &state, &save);
+
+  return (guchar *) text;
 }

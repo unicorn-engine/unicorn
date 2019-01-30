@@ -23,10 +23,16 @@
  */
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
+#include "cpu.h"
 #include "hw/hw.h"
 #include "hw/i386/pc.h"
+#include "sysemu/cpus.h"
 #include "sysemu/sysemu.h"
-#include "qapi-visit.h"
+#include "target/i386/topology.h"
+#include "qapi/error.h"
+#include "qapi/qapi-visit-common.h"
+#include "qapi/visitor.h"
 
 
 /* XXX: add IGNNE support */
@@ -91,17 +97,13 @@ DeviceState *cpu_get_current_apic(struct uc_struct *uc)
     }
 }
 
-static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *cpu_model, int64_t apic_id,
+static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *typename, int64_t apic_id,
                           Error **errp)
 {
     X86CPU *cpu;
     Error *local_err = NULL;
 
-    cpu = cpu_x86_create(uc, cpu_model, &local_err);
-    if (local_err != NULL) {
-        error_propagate(errp, local_err);
-        return NULL;
-    }
+    cpu = X86_CPU(uc, object_new(uc, typename));
 
     object_property_set_int(uc, OBJECT(cpu), apic_id, "apic-id", &local_err);
     object_property_set_bool(uc, OBJECT(cpu), true, "realized", &local_err);
@@ -114,24 +116,15 @@ static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *cpu_model, int64_t a
     return cpu;
 }
 
-int pc_cpus_init(struct uc_struct *uc, const char *cpu_model)
+int pc_cpus_init(struct uc_struct *uc, PCMachineState *pcms)
 {
     int i;
     Error *error = NULL;
-
-    /* init CPUs */
-    if (cpu_model == NULL) {
-#ifdef TARGET_X86_64
-        cpu_model = "qemu64";
-#else
-        cpu_model = "qemu32";
-#endif
-    }
+    MachineState *ms = MACHINE(uc, pcms);
 
     for (i = 0; i < smp_cpus; i++) {
-        uc->cpu = (CPUState *)pc_new_cpu(uc, cpu_model, x86_cpu_apic_id_from_index(i), &error);
+        uc->cpu = (CPUState *)pc_new_cpu(uc, ms->cpu_type, x86_cpu_apic_id_from_index(i), &error);
         if (error) {
-            //error_report("%s", error_get_pretty(error));
             error_free(error);
             return -1;
         }
@@ -146,6 +139,8 @@ static void pc_machine_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 
 static void pc_machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
+    MachineClass *mc = MACHINE_CLASS(uc, oc);
+    mc->default_cpu_type = TARGET_DEFAULT_CPU_TYPE;
 }
 
 static const TypeInfo pc_machine_info = {
@@ -178,4 +173,35 @@ static const TypeInfo pc_machine_info = {
 void pc_machine_register_types(struct uc_struct *uc)
 {
     type_register_static(uc, &pc_machine_info);
+}
+
+/* Enables contiguous-apic-ID mode, for compatibility */
+static bool compat_apic_id_mode;
+
+void enable_compat_apic_id_mode(void)
+{
+    compat_apic_id_mode = true;
+}
+
+/* Calculates initial APIC ID for a specific CPU index
+ *
+ * Currently we need to be able to calculate the APIC ID from the CPU index
+ * alone (without requiring a CPU object), as the QEMU<->Seabios interfaces have
+ * no concept of "CPU index", and the NUMA tables on fw_cfg need the APIC ID of
+ * all CPUs up to max_cpus.
+ */
+uint32_t x86_cpu_apic_id_from_index(unsigned int cpu_index)
+{
+    uint32_t correct_id;
+
+    correct_id = x86_apicid_from_cpu_idx(smp_cores, smp_threads, cpu_index);
+    if (compat_apic_id_mode) {
+        if (cpu_index != correct_id) {
+            //error_report("APIC IDs set in compatibility mode, "
+            //        "CPU topology won't match the configuration");
+        }
+        return cpu_index;
+    } else {
+        return correct_id;
+    }
 }

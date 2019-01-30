@@ -16,17 +16,17 @@
 
 #ifndef CONFIG_USER_ONLY
 
-#define DIRTY_MEMORY_CODE      0
-#define DIRTY_MEMORY_NUM       1        /* num of dirty bits */
-
 #include "unicorn/platform.h"
-#include "qemu-common.h"
 #include "exec/cpu-common.h"
 #include "exec/hwaddr.h"
+#include "exec/memattrs.h"
 #include "qemu/queue.h"
 #include "qemu/int128.h"
 #include "qapi/error.h"
 #include "qom/object.h"
+#include "qemu/typedefs.h"
+
+#define RAM_ADDR_INVALID (~(ram_addr_t)0)
 
 #define MAX_PHYS_ADDR_SPACE_BITS 62
 #define MAX_PHYS_ADDR            (((hwaddr)1 << MAX_PHYS_ADDR_SPACE_BITS) - 1)
@@ -37,6 +37,7 @@
 
 typedef struct MemoryRegionOps MemoryRegionOps;
 typedef struct MemoryRegionMmio MemoryRegionMmio;
+typedef struct FlatView FlatView;
 
 struct MemoryRegionMmio {
     CPUReadMemoryFunc *read[3];
@@ -61,6 +62,26 @@ struct IOMMUTLBEntry {
     IOMMUAccessFlags perm;
 };
 
+/* RAM is pre-allocated and passed into qemu_ram_alloc_from_ptr */
+#define RAM_PREALLOC   (1 << 0)
+
+/* RAM is mmap-ed with MAP_SHARED */
+#define RAM_SHARED     (1 << 1)
+
+/* Only a portion of RAM (used_length) is actually used, and migrated.
+ * This used_length size can change across reboots.
+ */
+#define RAM_RESIZEABLE (1 << 2)
+
+/* UFFDIO_ZEROPAGE is available on this RAMBlock to atomically
+ * zero the page and wake waiting processes.
+ * (Set during postcopy)
+ */
+#define RAM_UF_ZEROPAGE (1 << 3)
+
+/* RAM can be migrated */
+#define RAM_MIGRATABLE (1 << 4)
+
 /*
  * Memory region callbacks
  */
@@ -76,6 +97,17 @@ struct MemoryRegionOps {
                   hwaddr addr,
                   uint64_t data,
                   unsigned size);
+
+    MemTxResult (*read_with_attrs)(struct uc_struct* uc, void *opaque,
+                                   hwaddr addr,
+                                   uint64_t *data,
+                                   unsigned size,
+                                   MemTxAttrs attrs);
+    MemTxResult (*write_with_attrs)(struct uc_struct* uc, void *opaque,
+                                    hwaddr addr,
+                                    uint64_t data,
+                                    unsigned size,
+                                    MemTxAttrs attrs);
 
     enum device_endian endianness;
     /* Guest-visible constraints: */
@@ -112,49 +144,62 @@ struct MemoryRegionOps {
          */
         bool unaligned;
     } impl;
-
-    /* If .read and .write are not present, old_mmio may be used for
-     * backwards compatibility with old mmio registration
-     */
-    const MemoryRegionMmio old_mmio;
 };
 
 typedef struct MemoryRegionIOMMUOps MemoryRegionIOMMUOps;
 
 struct MemoryRegionIOMMUOps {
-    /* Return a TLB entry that contains a given address. */
-    IOMMUTLBEntry (*translate)(MemoryRegion *iommu, hwaddr addr, bool is_write);
+    /*
+     * Return a TLB entry that contains a given address. Flag should
+     * be the access permission of this translation operation. We can
+     * set flag to IOMMU_NONE to mean that we don't need any
+     * read/write permission checks, like, when for region replay.
+     */
+    IOMMUTLBEntry (*translate)(MemoryRegion *iommu, hwaddr addr,
+                               IOMMUAccessFlags flag);
+    /* Returns minimum supported page size */
+    uint64_t (*get_min_page_size)(MemoryRegion *iommu);
+    /* Called when the first notifier is set */
+    void (*notify_started)(MemoryRegion *iommu);
+    /* Called when the last notifier is removed */
+    void (*notify_stopped)(MemoryRegion *iommu);
 };
 
 struct MemoryRegion {
     Object parent_obj;
+
     /* All fields are private - violators will be prosecuted */
-    const MemoryRegionOps *ops;
+    /* The following fields should fit in a cache line */
+    bool romd_mode;
+    bool ram;
+    bool subpage;
+    bool readonly; /* For RAM regions */
+    bool nonvolatile;
+    bool rom_device;
+    bool flush_coalesced_mmio;
+    bool global_locking;
+    uint8_t dirty_log_mask;
+    RAMBlock *ram_block;
     const MemoryRegionIOMMUOps *iommu_ops;
+    Object *owner;
+
+    const MemoryRegionOps *ops;
     void *opaque;
     MemoryRegion *container;
     Int128 size;
     hwaddr addr;
     void (*destructor)(MemoryRegion *mr);
-    ram_addr_t ram_addr;
     uint64_t align;
-    bool subpage;
     bool terminates;
-    bool romd_mode;
-    bool ram;
-    bool skip_dump;
-    bool readonly; /* For RAM regions */
+    bool ram_device;
     bool enabled;
-    bool rom_device;
     bool warning_printed; /* For reservations */
     MemoryRegion *alias;
     hwaddr alias_offset;
     int32_t priority;
-    bool may_overlap;
     QTAILQ_HEAD(subregions, MemoryRegion) subregions;
     QTAILQ_ENTRY(MemoryRegion) subregions_link;
     const char *name;
-    uint8_t dirty_log_mask;
     struct uc_struct *uc;
     uint32_t perms;   //all perms, partially redundant with readonly
     uint64_t end;
@@ -172,15 +217,18 @@ struct MemoryListener {
     void (*region_add)(MemoryListener *listener, MemoryRegionSection *section);
     void (*region_del)(MemoryListener *listener, MemoryRegionSection *section);
     void (*region_nop)(MemoryListener *listener, MemoryRegionSection *section);
-    void (*log_start)(MemoryListener *listener, MemoryRegionSection *section);
-    void (*log_stop)(MemoryListener *listener, MemoryRegionSection *section);
+    void (*log_start)(MemoryListener *listener, MemoryRegionSection *section,
+                      int old, int new);
+    void (*log_stop)(MemoryListener *listener, MemoryRegionSection *section,
+                     int old, int new);
     void (*log_sync)(MemoryListener *listener, MemoryRegionSection *section);
     void (*log_global_start)(MemoryListener *listener);
     void (*log_global_stop)(MemoryListener *listener);
     /* Lower = earlier (during add), later (during del) */
     unsigned priority;
-    AddressSpace *address_space_filter;
+    AddressSpace *address_space;
     QTAILQ_ENTRY(MemoryListener) link;
+    QTAILQ_ENTRY(MemoryListener) link_as;
 };
 
 /**
@@ -190,14 +238,17 @@ struct AddressSpace {
     /* All fields are private. */
     char *name;
     MemoryRegion *root;
+
+    /* Accessed via RCU.  */
     struct FlatView *current_map;
-    struct AddressSpaceDispatch *dispatch;
-    struct AddressSpaceDispatch *next_dispatch;
-    MemoryListener dispatch_listener;
+
     struct uc_struct* uc;
 
+    QTAILQ_HEAD(memory_listeners_as, MemoryListener) listeners;
     QTAILQ_ENTRY(AddressSpace) address_spaces_link;
 };
+
+FlatView *address_space_to_flatview(AddressSpace *as);
 
 /**
  * MemoryRegionSection: describes a fragment of a #MemoryRegion
@@ -209,22 +260,24 @@ struct AddressSpace {
  * @offset_within_address_space: the address of the first byte of the section
  *     relative to the region's address space
  * @readonly: writes to this section are ignored
+ * @nonvolatile: this section is non-volatile
  */
 struct MemoryRegionSection {
     MemoryRegion *mr;
-    AddressSpace *address_space;
+    FlatView *fv;
     hwaddr offset_within_region;
     Int128 size;
     hwaddr offset_within_address_space;
     bool readonly;
+    bool nonvolatile;
 };
 
-static inline MemoryRegionSection MemoryRegionSection_make(MemoryRegion *mr, AddressSpace *address_space,
+static inline MemoryRegionSection MemoryRegionSection_make(MemoryRegion *mr, FlatView *fv,
     hwaddr offset_within_region, Int128 size, hwaddr offset_within_address_space, bool readonly)
 {
     MemoryRegionSection section;
     section.mr = mr;
-    section.address_space = address_space;
+    section.fv = fv;
     section.offset_within_region = offset_within_region;
     section.size = size;
     section.offset_within_address_space = offset_within_address_space;
@@ -291,7 +344,8 @@ void memory_region_unref(MemoryRegion *mr);
  * @name: used for debugging; not visible to the user or ABI
  * @size: size of the region.
  */
-void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
+void memory_region_init_io(struct uc_struct *uc,
+                           MemoryRegion *mr,
                            struct Object *owner,
                            const MemoryRegionOps *ops,
                            void *opaque,
@@ -299,22 +353,28 @@ void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
                            uint64_t size);
 
 /**
- * memory_region_init_ram:  Initialize RAM memory region.  Accesses into the
- *                          region will modify memory directly.
+ * memory_region_init_ram_nomigrate:  Initialize RAM memory region.  Accesses
+ *                                    into the region will modify memory
+ *                                    directly.
  *
  * @mr: the #MemoryRegion to be initialized.
  * @owner: the object that tracks the region's reference count
- * @name: the name of the region.
+ * @name: Region name, becomes part of RAMBlock name used in migration stream
+ *        must be unique within any device
  * @size: size of the region.
  * @perms: permissions on the region (UC_PROT_READ, UC_PROT_WRITE, UC_PROT_EXEC).
  * @errp: pointer to Error*, to store an error if it happens.
+ *
+ * Note that this function does not do anything to cause the data in the
+ * RAM memory region to be migrated; that is the responsibility of the caller.
  */
-void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
-                            struct Object *owner,
-                            const char *name,
-                            uint64_t size,
-                            uint32_t perms,
-                            Error **errp);
+void memory_region_init_ram_nomigrate(struct uc_struct *uc,
+                                      MemoryRegion *mr,
+                                      struct Object *owner,
+                                      const char *name,
+                                      uint64_t size,
+                                      uint32_t perms,
+                                      Error **errp);
 
 /**
  * memory_region_init_ram_ptr:  Initialize RAM memory region from a
@@ -323,15 +383,50 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
  *
  * @mr: the #MemoryRegion to be initialized.
  * @owner: the object that tracks the region's reference count
- * @name: the name of the region.
+ * @name: Region name, becomes part of RAMBlock name used in migration stream
+ *        must be unique within any device
  * @size: size of the region.
  * @ptr: memory to be mapped; must contain at least @size bytes.
+ *
+ * Note that this function does not do anything to cause the data in the
+ * RAM memory region to be migrated; that is the responsibility of the caller.
  */
-void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
+void memory_region_init_ram_ptr(struct uc_struct *uc,
+                                MemoryRegion *mr,
                                 struct Object *owner,
                                 const char *name,
                                 uint64_t size,
                                 void *ptr);
+
+/**
+ * memory_region_init_ram_device_ptr:  Initialize RAM device memory region from
+ *                                     a user-provided pointer.
+ *
+ * A RAM device represents a mapping to a physical device, such as to a PCI
+ * MMIO BAR of an vfio-pci assigned device.  The memory region may be mapped
+ * into the VM address space and access to the region will modify memory
+ * directly.  However, the memory region should not be included in a memory
+ * dump (device may not be enabled/mapped at the time of the dump), and
+ * operations incompatible with manipulating MMIO should be avoided.  Replaces
+ * skip_dump flag.
+ *
+ * @mr: the #MemoryRegion to be initialized.
+ * @owner: the object that tracks the region's reference count
+ * @name: Region name, becomes part of RAMBlock name used in migration stream
+ *        must be unique within any device
+ * @size: size of the region.
+ * @ptr: memory to be mapped; must contain at least @size bytes.
+ *
+ * Note that this function does not do anything to cause the data in the
+ * RAM memory region to be migrated; that is the responsibility of the caller.
+ * (For RAM device memory regions, migrating the contents rarely makes sense.)
+ */
+void memory_region_init_ram_device_ptr(struct uc_struct *uc,
+                                       MemoryRegion *mr,
+                                       struct Object *owner,
+                                       const char *name,
+                                       uint64_t size,
+                                       void *ptr);
 
 /**
  * memory_region_init_alias: Initialize a memory region that aliases all or a
@@ -345,7 +440,8 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
  * @offset: start of the section in @orig to be referenced.
  * @size: size of the region.
  */
-void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
+void memory_region_init_alias(struct uc_struct *uc,
+                              MemoryRegion *mr,
                               struct Object *owner,
                               const char *name,
                               MemoryRegion *orig,
@@ -353,23 +449,84 @@ void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
                               uint64_t size);
 
 /**
- * memory_region_init_rom_device:  Initialize a ROM memory region.  Writes are
- *                                 handled via callbacks.
+ * memory_region_init_rom_nomigrate: Initialize a ROM memory region.
+ *
+ * This has the same effect as calling memory_region_init_ram_nomigrate()
+ * and then marking the resulting region read-only with
+ * memory_region_set_readonly().
+ *
+ * Note that this function does not do anything to cause the data in the
+ * RAM side of the memory region to be migrated; that is the responsibility
+ * of the caller.
  *
  * @mr: the #MemoryRegion to be initialized.
  * @owner: the object that tracks the region's reference count
- * @ops: callbacks for write access handling.
- * @name: the name of the region.
+ * @name: Region name, becomes part of RAMBlock name used in migration stream
+ *        must be unique within any device
  * @size: size of the region.
  * @errp: pointer to Error*, to store an error if it happens.
  */
-void memory_region_init_rom_device(MemoryRegion *mr,
-                                   struct Object *owner,
-                                   const MemoryRegionOps *ops,
-                                   void *opaque,
-                                   const char *name,
-                                   uint64_t size,
-                                   Error **errp);
+void memory_region_init_rom_nomigrate(struct uc_struct *uc,
+                                      MemoryRegion *mr,
+                                      struct Object *owner,
+                                      const char *name,
+                                      uint64_t size,
+                                      Error **errp);
+
+/**
+ * memory_region_init_rom_device_nomigrate:  Initialize a ROM memory region.
+ *                                 Writes are handled via callbacks.
+ *
+ * Note that this function does not do anything to cause the data in the
+ * RAM side of the memory region to be migrated; that is the responsibility
+ * of the caller.
+ *
+ * @mr: the #MemoryRegion to be initialized.
+ * @owner: the object that tracks the region's reference count
+ * @ops: callbacks for write access handling (must not be NULL).
+ * @name: Region name, becomes part of RAMBlock name used in migration stream
+ *        must be unique within any device
+ * @size: size of the region.
+ * @errp: pointer to Error*, to store an error if it happens.
+ */
+void memory_region_init_rom_device_nomigrate(struct uc_struct *uc,
+                                             MemoryRegion *mr,
+                                             struct Object *owner,
+                                             const MemoryRegionOps *ops,
+                                             void *opaque,
+                                             const char *name,
+                                             uint64_t size,
+                                             Error **errp);
+
+/**
+ * memory_region_init_resizeable_ram:  Initialize memory region with resizeable
+ *                                     RAM.  Accesses into the region will
+ *                                     modify memory directly.  Only an initial
+ *                                     portion of this RAM is actually used.
+ *                                     The used size can change across reboots.
+ *
+ * @mr: the #MemoryRegion to be initialized.
+ * @owner: the object that tracks the region's reference count
+ * @name: Region name, becomes part of RAMBlock name used in migration stream
+ *        must be unique within any device
+ * @size: used size of the region.
+ * @max_size: max size of the region.
+ * @resized: callback to notify owner about used size change.
+ * @errp: pointer to Error*, to store an error if it happens.
+ *
+ * Note that this function does not do anything to cause the data in the
+ * RAM memory region to be migrated; that is the responsibility of the caller.
+ */
+void memory_region_init_resizeable_ram(struct uc_struct *uc,
+                                       MemoryRegion *mr,
+                                       struct Object *owner,
+                                       const char *name,
+                                       uint64_t size,
+                                       uint64_t max_size,
+                                       void (*resized)(const char*,
+                                                       uint64_t length,
+                                                       void *host),
+                                       Error **errp);
 
 /**
  * memory_region_init_reservation: Initialize a memory region that reserves
@@ -378,16 +535,21 @@ void memory_region_init_rom_device(MemoryRegion *mr,
  * A reservation region primariy serves debugging purposes.  It claims I/O
  * space that is not supposed to be handled by QEMU itself.  Any access via
  * the memory API will cause an abort().
+ * This function is deprecated. Use memory_region_init_io() with NULL
+ * callbacks instead.
  *
  * @mr: the #MemoryRegion to be initialized
  * @owner: the object that tracks the region's reference count
  * @name: used for debugging; not visible to the user or ABI
  * @size: size of the region.
  */
-void memory_region_init_reservation(struct uc_struct *uc, MemoryRegion *mr,
-                                    struct Object *owner,
-                                    const char *name,
-                                    uint64_t size);
+static inline void memory_region_init_reservation(struct uc_struct *uc, MemoryRegion *mr,
+                                                  Object *owner,
+                                                  const char *name,
+                                                  uint64_t size)
+{
+    memory_region_init_io(uc, mr, owner, NULL, mr, name, size);
+}
 
 /**
  * memory_region_init_iommu: Initialize a memory region that translates
@@ -418,29 +580,23 @@ uint64_t memory_region_size(MemoryRegion *mr);
 /**
  * memory_region_is_ram: check whether a memory region is random access
  *
- * Returns %true is a memory region is random access.
+ * Returns %true if a memory region is random access.
  *
  * @mr: the memory region being queried
  */
-bool memory_region_is_ram(MemoryRegion *mr);
+static inline bool memory_region_is_ram(MemoryRegion *mr)
+{
+    return mr->ram;
+}
 
 /**
- * memory_region_is_skip_dump: check whether a memory region should not be
- *                             dumped
+ * memory_region_is_ram_device: check whether a memory region is a ram device
  *
- * Returns %true is a memory region should not be dumped(e.g. VFIO BAR MMAP).
- *
- * @mr: the memory region being queried
- */
-bool memory_region_is_skip_dump(MemoryRegion *mr);
-
-/**
- * memory_region_set_skip_dump: Set skip_dump flag, dump will ignore this memory
- *                              region
+ * Returns %true if a memory region is a device backed ram region
  *
  * @mr: the memory region being queried
  */
-void memory_region_set_skip_dump(MemoryRegion *mr);
+bool memory_region_is_ram_device(MemoryRegion *mr);
 
 /**
  * memory_region_is_romd: check whether a memory region is in ROMD mode
@@ -462,7 +618,13 @@ static inline bool memory_region_is_romd(MemoryRegion *mr)
  *
  * @mr: the memory region being queried
  */
-bool memory_region_is_iommu(MemoryRegion *mr);
+static inline bool memory_region_is_iommu(MemoryRegion *mr)
+{
+    if (mr->alias) {
+        return memory_region_is_iommu(mr->alias);
+    }
+    return mr->iommu_ops;
+}
 
 /**
  * memory_region_notify_iommu: notify a change in an IOMMU translation entry.
@@ -490,17 +652,44 @@ const char *memory_region_name(const MemoryRegion *mr);
  * Returns %true if the memory region is logging writes
  *
  * @mr: the memory region being queried
+ * @client: the client being queried
  */
-bool memory_region_is_logging(MemoryRegion *mr);
+bool memory_region_is_logging(MemoryRegion *mr, uint8_t client);
+
+/**
+ * memory_region_get_dirty_log_mask: return the clients for which a
+ * memory region is logging writes.
+ *
+ * Returns a bitmap of clients, in which the DIRTY_MEMORY_* constants
+ * are the bit indices.
+ *
+ * @mr: the memory region being queried
+ */
+uint8_t memory_region_get_dirty_log_mask(MemoryRegion *mr);
 
 /**
  * memory_region_is_rom: check whether a memory region is ROM
  *
- * Returns %true is a memory region is read-only memory.
+ * Returns %true if a memory region is read-only memory.
  *
  * @mr: the memory region being queried
  */
-bool memory_region_is_rom(MemoryRegion *mr);
+static inline bool memory_region_is_rom(MemoryRegion *mr)
+{
+    return mr->ram && mr->readonly;
+}
+
+/**
+ * memory_region_is_nonvolatile: check whether a memory region is non-volatile
+ *
+ * Returns %true is a memory region is non-volatile memory.
+ *
+ * @mr: the memory region being queried
+ */
+static inline bool memory_region_is_nonvolatile(MemoryRegion *mr)
+{
+    return mr->nonvolatile;
+}
 
 /**
  * memory_region_get_fd: Get a file descriptor backing a RAM memory region.
@@ -511,6 +700,24 @@ bool memory_region_is_rom(MemoryRegion *mr);
  * @mr: the RAM or alias memory region being queried.
  */
 int memory_region_get_fd(MemoryRegion *mr);
+
+/**
+ * memory_region_from_host: Convert a pointer into a RAM memory region
+ * and an offset within it.
+ *
+ * Given a host pointer inside a RAM memory region (created with
+ * memory_region_init_ram() or memory_region_init_ram_ptr()), return
+ * the MemoryRegion and the offset within it.
+ *
+ * Use with care; by the time this function returns, the returned pointer is
+ * not protected by RCU anymore.  If the caller is not within an RCU critical
+ * section and does not hold the iothread lock, it must have other means of
+ * protecting the pointer, such as a reference to the region that includes
+ * the incoming ram_addr_t.
+ *
+ * @mr: the memory region being queried.
+ */
+MemoryRegion *memory_region_from_host(struct uc_struct *uc, void *ptr, ram_addr_t *offset);
 
 /**
  * memory_region_get_ram_ptr: Get a pointer into a RAM memory region.
@@ -533,6 +740,30 @@ void *memory_region_get_ram_ptr(MemoryRegion *mr);
  * @readonly: whether rhe region is to be ROM or RAM.
  */
 void memory_region_set_readonly(MemoryRegion *mr, bool readonly);
+
+/**
+ * memory_region_set_nonvolatile: Turn a memory region non-volatile
+ *
+ * Allows a memory region to be marked as non-volatile.
+ * only useful on RAM regions.
+ *
+ * @mr: the region being updated.
+ * @nonvolatile: whether rhe region is to be non-volatile.
+ */
+void memory_region_set_nonvolatile(MemoryRegion *mr, bool nonvolatile);
+
+/**
+ * memory_region_clear_global_locking: Declares that access processing does
+ *                                     not depend on the QEMU global lock.
+ *
+ * By clearing this property, accesses to the memory region will be processed
+ * outside of QEMU's global lock (unless the lock is held on when issuing the
+ * access request). In this case, the device model implementing the access
+ * handlers is responsible for synchronization of concurrency.
+ *
+ * @mr: the memory region to be updated.
+ */
+void memory_region_clear_global_locking(MemoryRegion *mr);
 
 /**
  * memory_region_rom_device_set_romd: enable/disable ROMD mode
@@ -590,9 +821,6 @@ void memory_region_add_subregion_overlap(MemoryRegion *mr,
 /**
  * memory_region_get_ram_addr: Get the ram address associated with a memory
  *                             region
- *
- * DO NOT USE THIS FUNCTION.  This is a temporary workaround while the Xen
- * code is being reworked.
  */
 ram_addr_t memory_region_get_ram_addr(MemoryRegion *mr);
 
@@ -634,6 +862,16 @@ void memory_region_set_enabled(MemoryRegion *mr, bool enabled);
  * @addr: new address, relative to container region
  */
 void memory_region_set_address(MemoryRegion *mr, hwaddr addr);
+
+/*
+ * memory_region_set_size: dynamically update the size of a region.
+ *
+ * Dynamically updates the size of a region.
+ *
+ * @mr: the region to be updated
+ * @size: used size of the region.
+ */
+void memory_region_set_size(MemoryRegion *mr, uint64_t size);
 
 /*
  * memory_region_set_alias_offset: dynamically update a memory alias's offset
@@ -730,6 +968,37 @@ void memory_listener_register(struct uc_struct* uc, MemoryListener *listener, Ad
 void memory_listener_unregister(struct uc_struct* uc, MemoryListener *listener);
 
 /**
+ * memory_region_dispatch_read: perform a read directly to the specified
+ * MemoryRegion.
+ *
+ * @mr: #MemoryRegion to access
+ * @addr: address within that region
+ * @pval: pointer to uint64_t which the data is written to
+ * @size: size of the access in bytes
+ * @attrs: memory transaction attributes to use for the access
+ */
+MemTxResult memory_region_dispatch_read(MemoryRegion *mr,
+                                        hwaddr addr,
+                                        uint64_t *pval,
+                                        unsigned size,
+                                        MemTxAttrs attrs);
+/**
+ * memory_region_dispatch_write: perform a write directly to the specified
+ * MemoryRegion.
+ *
+ * @mr: #MemoryRegion to access
+ * @addr: address within that region
+ * @data: data to write
+ * @size: size of the access in bytes
+ * @attrs: memory transaction attributes to use for the access
+ */
+MemTxResult memory_region_dispatch_write(MemoryRegion *mr,
+                                         hwaddr addr,
+                                         uint64_t data,
+                                         unsigned size,
+                                         MemTxAttrs attrs);
+
+/**
  * address_space_init: initializes an address space
  *
  * @as: an uninitialized #AddressSpace
@@ -738,7 +1007,6 @@ void memory_listener_unregister(struct uc_struct* uc, MemoryListener *listener);
  *        output.
  */
 void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *root, const char *name);
-
 
 /**
  * address_space_destroy: destroy an address space
@@ -754,41 +1022,222 @@ void address_space_destroy(AddressSpace *as);
 /**
  * address_space_rw: read from or write to an address space.
  *
- * Return true if the operation hit any unassigned memory or encountered an
- * IOMMU fault.
+ * Return a MemTxResult indicating whether the operation succeeded
+ * or failed (eg unassigned memory, device rejected the transaction,
+ * IOMMU fault).
  *
  * @as: #AddressSpace to be accessed
  * @addr: address within that address space
+ * @attrs: memory transaction attributes
  * @buf: buffer with the data transferred
  * @is_write: indicates the transfer direction
  */
-bool address_space_rw(AddressSpace *as, hwaddr addr, uint8_t *buf,
-                      int len, bool is_write);
+MemTxResult address_space_rw(AddressSpace *as, hwaddr addr,
+                             MemTxAttrs attrs, uint8_t *buf,
+                             int len, bool is_write);
 
 /**
  * address_space_write: write to address space.
  *
- * Return true if the operation hit any unassigned memory or encountered an
- * IOMMU fault.
+ * Return a MemTxResult indicating whether the operation succeeded
+ * or failed (eg unassigned memory, device rejected the transaction,
+ * IOMMU fault).
  *
  * @as: #AddressSpace to be accessed
  * @addr: address within that address space
+ * @attrs: memory transaction attributes
  * @buf: buffer with the data transferred
  */
-bool address_space_write(AddressSpace *as, hwaddr addr,
-                         const uint8_t *buf, int len);
+MemTxResult address_space_write(AddressSpace *as, hwaddr addr,
+                                MemTxAttrs attrs,
+                                const uint8_t *buf, int len);
 
 /**
- * address_space_read: read from an address space.
+ * address_space_ld*: load from an address space
+ * address_space_st*: store to an address space
  *
- * Return true if the operation hit any unassigned memory or encountered an
- * IOMMU fault.
+ * These functions perform a load or store of the byte, word,
+ * longword or quad to the specified address within the AddressSpace.
+ * The _le suffixed functions treat the data as little endian;
+ * _be indicates big endian; no suffix indicates "same endianness
+ * as guest CPU".
  *
+ * The "guest CPU endianness" accessors are deprecated for use outside
+ * target-* code; devices should be CPU-agnostic and use either the LE
+ * or the BE accessors.
+ *
+ * @as #AddressSpace to be accessed
+ * @addr: address within that address space
+ * @val: data value, for stores
+ * @attrs: memory transaction attributes
+ * @result: location to write the success/failure of the transaction;
+ *   if NULL, this information is discarded
+ */
+uint32_t address_space_ldub(AddressSpace *as, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint32_t address_space_lduw_le(AddressSpace *as, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint32_t address_space_lduw_be(AddressSpace *as, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint32_t address_space_ldl_le(AddressSpace *as, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint32_t address_space_ldl_be(AddressSpace *as, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint64_t address_space_ldq_le(AddressSpace *as, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint64_t address_space_ldq_be(AddressSpace *as, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stb(AddressSpace *as, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stw_le(AddressSpace *as, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stw_be(AddressSpace *as, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stl_le(AddressSpace *as, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stl_be(AddressSpace *as, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stq_le(AddressSpace *as, hwaddr addr, uint64_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stq_be(AddressSpace *as, hwaddr addr, uint64_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+
+uint32_t ldub_phys(AddressSpace *as, hwaddr addr);
+uint32_t lduw_le_phys(AddressSpace *as, hwaddr addr);
+uint32_t lduw_be_phys(AddressSpace *as, hwaddr addr);
+uint32_t ldl_le_phys(AddressSpace *as, hwaddr addr);
+uint32_t ldl_be_phys(AddressSpace *as, hwaddr addr);
+uint64_t ldq_le_phys(AddressSpace *as, hwaddr addr);
+uint64_t ldq_be_phys(AddressSpace *as, hwaddr addr);
+void stb_phys(AddressSpace *as, hwaddr addr, uint32_t val);
+void stw_le_phys(AddressSpace *as, hwaddr addr, uint32_t val);
+void stw_be_phys(AddressSpace *as, hwaddr addr, uint32_t val);
+void stl_le_phys(AddressSpace *as, hwaddr addr, uint32_t val);
+void stl_be_phys(AddressSpace *as, hwaddr addr, uint32_t val);
+void stq_le_phys(AddressSpace *as, hwaddr addr, uint64_t val);
+void stq_be_phys(AddressSpace *as, hwaddr addr, uint64_t val);
+
+struct MemoryRegionCache {
+    hwaddr xlat;
+    hwaddr len;
+    AddressSpace *as;
+};
+
+/* address_space_cache_init: prepare for repeated access to a physical
+ * memory region
+ *
+ * @cache: #MemoryRegionCache to be filled
  * @as: #AddressSpace to be accessed
  * @addr: address within that address space
- * @buf: buffer with the data transferred
+ * @len: length of buffer
+ * @is_write: indicates the transfer direction
+ *
+ * Will only work with RAM, and may map a subset of the requested range by
+ * returning a value that is less than @len.  On failure, return a negative
+ * errno value.
+ *
+ * Because it only works with RAM, this function can be used for
+ * read-modify-write operations.  In this case, is_write should be %true.
+ *
+ * Note that addresses passed to the address_space_*_cached functions
+ * are relative to @addr.
  */
-bool address_space_read(AddressSpace *as, hwaddr addr, uint8_t *buf, int len);
+int64_t address_space_cache_init(MemoryRegionCache *cache,
+                                 AddressSpace *as,
+                                 hwaddr addr,
+                                 hwaddr len,
+                                 bool is_write);
+
+/**
+ * address_space_cache_invalidate: complete a write to a #MemoryRegionCache
+ *
+ * @cache: The #MemoryRegionCache to operate on.
+ * @addr: The first physical address that was written, relative to the
+ * address that was passed to @address_space_cache_init.
+ * @access_len: The number of bytes that were written starting at @addr.
+ */
+void address_space_cache_invalidate(MemoryRegionCache *cache,
+                                    hwaddr addr,
+                                    hwaddr access_len);
+
+/**
+ * address_space_cache_destroy: free a #MemoryRegionCache
+ *
+ * @cache: The #MemoryRegionCache whose memory should be released.
+ */
+void address_space_cache_destroy(MemoryRegionCache *cache);
+
+/* address_space_ld*_cached: load from a cached #MemoryRegion
+ * address_space_st*_cached: store into a cached #MemoryRegion
+ *
+ * These functions perform a load or store of the byte, word,
+ * longword or quad to the specified address.  The address is
+ * a physical address in the AddressSpace, but it must lie within
+ * a #MemoryRegion that was mapped with address_space_cache_init.
+ *
+ * The _le suffixed functions treat the data as little endian;
+ * _be indicates big endian; no suffix indicates "same endianness
+ * as guest CPU".
+ *
+ * The "guest CPU endianness" accessors are deprecated for use outside
+ * target-* code; devices should be CPU-agnostic and use either the LE
+ * or the BE accessors.
+ *
+ * @cache: previously initialized #MemoryRegionCache to be accessed
+ * @addr: address within the address space
+ * @val: data value, for stores
+ * @attrs: memory transaction attributes
+ * @result: location to write the success/failure of the transaction;
+ *   if NULL, this information is discarded
+ */
+uint32_t address_space_ldub_cached(MemoryRegionCache *cache, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint32_t address_space_lduw_le_cached(MemoryRegionCache *cache, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint32_t address_space_lduw_be_cached(MemoryRegionCache *cache, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint32_t address_space_ldl_le_cached(MemoryRegionCache *cache, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint32_t address_space_ldl_be_cached(MemoryRegionCache *cache, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint64_t address_space_ldq_le_cached(MemoryRegionCache *cache, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint64_t address_space_ldq_be_cached(MemoryRegionCache *cache, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stb_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stw_le_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stw_be_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stl_le_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stl_be_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stq_le_cached(MemoryRegionCache *cache, hwaddr addr, uint64_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stq_be_cached(MemoryRegionCache *cache, hwaddr addr, uint64_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+
+uint32_t ldub_phys_cached(MemoryRegionCache *cache, hwaddr addr);
+uint32_t lduw_le_phys_cached(MemoryRegionCache *cache, hwaddr addr);
+uint32_t lduw_be_phys_cached(MemoryRegionCache *cache, hwaddr addr);
+uint32_t ldl_le_phys_cached(MemoryRegionCache *cache, hwaddr addr);
+uint32_t ldl_be_phys_cached(MemoryRegionCache *cache, hwaddr addr);
+uint64_t ldq_le_phys_cached(MemoryRegionCache *cache, hwaddr addr);
+uint64_t ldq_be_phys_cached(MemoryRegionCache *cache, hwaddr addr);
+void stb_phys_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val);
+void stw_le_phys_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val);
+void stw_be_phys_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val);
+void stl_le_phys_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val);
+void stl_be_phys_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val);
+void stq_le_phys_cached(MemoryRegionCache *cache, hwaddr addr, uint64_t val);
+void stq_be_phys_cached(MemoryRegionCache *cache, hwaddr addr, uint64_t val);
+/* address_space_get_iotlb_entry: translate an address into an IOTLB
+ * entry. Should be called from an RCU critical section.
+ */
+IOMMUTLBEntry address_space_get_iotlb_entry(AddressSpace *as, hwaddr addr,
+                                            bool is_write);
 
 /* address_space_translate: translate an address range into an address space
  * into a MemoryRegion and an address range into that section
@@ -800,9 +1249,17 @@ bool address_space_read(AddressSpace *as, hwaddr addr, uint8_t *buf, int len);
  * @len: pointer to length
  * @is_write: indicates the transfer direction
  */
-MemoryRegion *address_space_translate(AddressSpace *as, hwaddr addr,
-                                      hwaddr *xlat, hwaddr *len,
-                                      bool is_write);
+MemoryRegion *flatview_translate(FlatView *fv,
+                                 hwaddr addr, hwaddr *xlat,
+                                 hwaddr *len, bool is_write);
+
+static inline MemoryRegion *address_space_translate(AddressSpace *as,
+                                                    hwaddr addr, hwaddr *xlat,
+                                                    hwaddr *len, bool is_write)
+{
+    return flatview_translate(address_space_to_flatview(as),
+                              addr, xlat, len, is_write);
+}
 
 /* address_space_access_valid: check for validity of accessing an address
  * space range
@@ -851,13 +1308,119 @@ void *address_space_map(AddressSpace *as, hwaddr addr,
 void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
                          int is_write, hwaddr access_len);
 
-
 void memory_register_types(struct uc_struct *uc);
 
 MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms);
 MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms, void *ptr);
 void memory_unmap(struct uc_struct *uc, MemoryRegion *mr);
 int memory_free(struct uc_struct *uc);
+
+/* Internal functions, part of the implementation of address_space_read.  */
+MemTxResult flatview_read_continue(FlatView *fv, hwaddr addr,
+                                   MemTxAttrs attrs, uint8_t *buf,
+                                   int len, hwaddr addr1, hwaddr l,
+                                   MemoryRegion *mr);
+
+MemTxResult flatview_read_full(FlatView *fv, hwaddr addr,
+                               MemTxAttrs attrs, uint8_t *buf, int len);
+void *qemu_map_ram_ptr(struct uc_struct *uc, RAMBlock *ram_block,
+                       ram_addr_t addr);
+
+static inline bool memory_access_is_direct(MemoryRegion *mr, bool is_write)
+{
+    if (is_write) {
+        return memory_region_is_ram(mr) &&
+               !mr->readonly && !memory_region_is_ram_device(mr);
+    } else {
+        return (memory_region_is_ram(mr) && !memory_region_is_ram_device(mr)) ||
+               memory_region_is_romd(mr);
+    }
+}
+
+/**
+ * address_space_read: read from an address space.
+ *
+ * Return a MemTxResult indicating whether the operation succeeded
+ * or failed (eg unassigned memory, device rejected the transaction,
+ * IOMMU fault).
+ *
+ * @as: #AddressSpace to be accessed
+ * @addr: address within that address space
+ * @attrs: memory transaction attributes
+ * @buf: buffer with the data transferred
+ */
+static inline
+MemTxResult flatview_read(FlatView *fv, hwaddr addr, MemTxAttrs attrs,
+                          uint8_t *buf, int len)
+{
+    MemTxResult result = MEMTX_OK;
+    /* Unicorn: commented out
+    hwaddr l, addr1;
+    void *ptr;
+    MemoryRegion *mr;
+
+    if (__builtin_constant_p(len)) {
+        if (len) {
+            // Unicorn: commented out
+            //rcu_read_lock();
+            l = len;
+            mr = flatview_translate(fv, addr, &addr1, &l, false);
+            if (len == l && memory_access_is_direct(mr, false)) {
+                ptr = qemu_map_ram_ptr(mr->uc, mr->ram_block, addr1);
+                memcpy(buf, ptr, len);
+            } else {
+                result = flatview_read_continue(fv, addr, attrs, buf, len,
+                                                addr1, l, mr);
+            }
+            // Unicorn: commented out
+            //rcu_read_unlock();
+        }
+    } else {*/
+        result = flatview_read_full(fv, addr, attrs, buf, len);
+    //}
+    return result;
+}
+
+static inline MemTxResult address_space_read(AddressSpace *as, hwaddr addr,
+                                             MemTxAttrs attrs, uint8_t *buf,
+                                             int len)
+{
+    return flatview_read(address_space_to_flatview(as), addr, attrs, buf, len);
+}
+
+/**
+ * address_space_read_cached: read from a cached RAM region
+ *
+ * @cache: Cached region to be addressed
+ * @addr: address relative to the base of the RAM region
+ * @buf: buffer with the data transferred
+ * @len: length of the data transferred
+ */
+static inline void
+address_space_read_cached(MemoryRegionCache *cache, hwaddr addr,
+                          void *buf, int len)
+{
+    assert(addr < cache->len && len <= cache->len - addr);
+    address_space_read(cache->as, cache->xlat + addr, MEMTXATTRS_UNSPECIFIED, buf, len);
+}
+
+/**
+ * address_space_write_cached: write to a cached RAM region
+ *
+ * @cache: Cached region to be addressed
+ * @addr: address relative to the base of the RAM region
+ * @buf: buffer with the data transferred
+ * @len: length of the data transferred
+ */
+static inline void
+address_space_write_cached(MemoryRegionCache *cache, hwaddr addr,
+                           void *buf, int len)
+{
+    assert(addr < cache->len && len <= cache->len - addr);
+    address_space_write(cache->as, cache->xlat + addr, MEMTXATTRS_UNSPECIFIED, buf, len);
+}
+
+void unicorn_free_empty_flat_view(struct uc_struct *uc);
 
 #endif
 

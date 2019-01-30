@@ -10,11 +10,6 @@
 extern FILE *qemu_logfile;
 extern int qemu_loglevel;
 
-/* 
- * The new API:
- *
- */
-
 /* Log settings checking macros: */
 
 /* Returns true if qemu_log() will really write somewhere
@@ -36,6 +31,12 @@ static inline bool qemu_log_enabled(void)
 #define CPU_LOG_RESET      (1 << 9)
 #define LOG_UNIMP          (1 << 10)
 #define LOG_GUEST_ERROR    (1 << 11)
+#define CPU_LOG_MMU        (1 << 12)
+#define CPU_LOG_TB_NOCHAIN (1 << 13)
+#define CPU_LOG_PAGE       (1 << 14)
+#define LOG_TRACE          (1 << 15)
+#define CPU_LOG_TB_OP_IND  (1 << 16)
+#define CPU_LOG_TB_FPU     (1 << 17)
 
 /* Returns true if a bit is set in the current loglevel mask
  */
@@ -48,7 +49,7 @@ static inline bool qemu_loglevel_mask(int mask)
 
 /* main logging function
  */
-void GCC_FMT_ATTR(1, 2) qemu_log(const char *fmt, ...);
+int GCC_FMT_ATTR(1, 2) qemu_log(const char *fmt, ...);
 
 /* vfprintf-like logging function
  */
@@ -60,10 +61,32 @@ qemu_log_vprintf(const char *fmt, va_list va)
     }
 }
 
-/* log only if a bit is set on the current loglevel mask
+/* log only if a bit is set on the current loglevel mask:
+ * @mask: bit to check in the mask
+ * @fmt: printf-style format string
+ * @args: optional arguments for format string
  */
-void GCC_FMT_ATTR(2, 3) qemu_log_mask(int mask, const char *fmt, ...);
+#define qemu_log_mask(MASK, FMT, ...)                   \
+    do {                                                \
+        if (unlikely(qemu_loglevel_mask(MASK))) {       \
+            qemu_log(FMT, ## __VA_ARGS__);              \
+        }                                               \
+    } while (0)
 
+/* log only if a bit is set on the current loglevel mask
+ * and we are in the address range we care about:
+ * @mask: bit to check in the mask
+ * @addr: address to check in dfilter
+ * @fmt: printf-style format string
+ * @args: optional arguments for format string
+ */
+#define qemu_log_mask_and_addr(MASK, ADDR, FMT, ...)    \
+    do {                                                \
+        if (unlikely(qemu_loglevel_mask(MASK)) &&       \
+                     qemu_log_in_addr_range(ADDR)) {    \
+            qemu_log(FMT, ## __VA_ARGS__);              \
+        }                                               \
+    } while (0)
 
 /* Special cases: */
 
@@ -97,21 +120,12 @@ static inline void log_cpu_state_mask(int mask, CPUState *cpu, int flags)
     }
 }
 
-/* fflush() the log file */
-static inline void qemu_log_flush(void)
-{
-    fflush(qemu_logfile);
-}
+void qemu_set_dfilter_ranges(const char *ranges);
+bool qemu_log_in_addr_range(uint64_t addr);
 
+/* fflush() the log file */
+void qemu_log_flush(void);
 /* Close the log file */
-static inline void qemu_log_close(void)
-{
-    if (qemu_logfile) {
-        if (qemu_logfile != stderr) {
-            fclose(qemu_logfile);
-        }
-        qemu_logfile = NULL;
-    }
-}
+void qemu_log_close(void);
 
 #endif

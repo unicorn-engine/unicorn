@@ -163,24 +163,28 @@
 /* The memory helpers for tcg-generated code need tcg_target_long etc.  */
 #include "tcg.h"
 
-uint8_t helper_ldb_mmu(CPUArchState *env, target_ulong addr, int mmu_idx);
-uint16_t helper_ldw_mmu(CPUArchState *env, target_ulong addr, int mmu_idx);
-uint32_t helper_ldl_mmu(CPUArchState *env, target_ulong addr, int mmu_idx);
-uint64_t helper_ldq_mmu(CPUArchState *env, target_ulong addr, int mmu_idx);
+static inline target_ulong tlb_addr_write(const CPUTLBEntry *entry)
+{
+#if TCG_OVERSIZED_GUEST
+    return entry->addr_write;
+#else
+    return atomic_read(&entry->addr_write);
+#endif
+}
 
-void helper_stb_mmu(CPUArchState *env, target_ulong addr,
-                    uint8_t val, int mmu_idx);
-void helper_stw_mmu(CPUArchState *env, target_ulong addr,
-                    uint16_t val, int mmu_idx);
-void helper_stl_mmu(CPUArchState *env, target_ulong addr,
-                    uint32_t val, int mmu_idx);
-void helper_stq_mmu(CPUArchState *env, target_ulong addr,
-                    uint64_t val, int mmu_idx);
+/* Find the TLB index corresponding to the mmu_idx + address pair.  */
+static inline uintptr_t tlb_index(CPUArchState *env, uintptr_t mmu_idx,
+                                  target_ulong addr)
+{
+    return (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
+}
 
-uint8_t helper_ldb_cmmu(CPUArchState *env, target_ulong addr, int mmu_idx);
-uint16_t helper_ldw_cmmu(CPUArchState *env, target_ulong addr, int mmu_idx);
-uint32_t helper_ldl_cmmu(CPUArchState *env, target_ulong addr, int mmu_idx);
-uint64_t helper_ldq_cmmu(CPUArchState *env, target_ulong addr, int mmu_idx);
+/* Find the TLB entry corresponding to the mmu_idx + address pair.  */
+static inline CPUTLBEntry *tlb_entry(CPUArchState *env, uintptr_t mmu_idx,
+                                     target_ulong addr)
+{
+    return &env->tlb_table[mmu_idx][tlb_index(env, mmu_idx, addr)];
+}
 
 #define CPU_MMU_INDEX 0
 #define MEMSUFFIX MMU_MODE0_SUFFIX
@@ -290,12 +294,126 @@ uint64_t helper_ldq_cmmu(CPUArchState *env, target_ulong addr, int mmu_idx);
 #undef MEMSUFFIX
 #endif /* (NB_MMU_MODES >= 6) */
 
-#if (NB_MMU_MODES > 6)
-#error "NB_MMU_MODES > 6 is not supported for now"
-#endif /* (NB_MMU_MODES > 6) */
+#if (NB_MMU_MODES >= 7) && defined(MMU_MODE6_SUFFIX)
+
+#define CPU_MMU_INDEX 6
+#define MEMSUFFIX MMU_MODE6_SUFFIX
+#define DATA_SIZE 1
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 2
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 4
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 8
+#include "exec/cpu_ldst_template.h"
+#undef CPU_MMU_INDEX
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 7) */
+
+#if (NB_MMU_MODES >= 8) && defined(MMU_MODE7_SUFFIX)
+
+#define CPU_MMU_INDEX 7
+#define MEMSUFFIX MMU_MODE7_SUFFIX
+#define DATA_SIZE 1
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 2
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 4
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 8
+#include "exec/cpu_ldst_template.h"
+#undef CPU_MMU_INDEX
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 8) */
+
+#if (NB_MMU_MODES >= 9) && defined(MMU_MODE8_SUFFIX)
+
+#define CPU_MMU_INDEX 8
+#define MEMSUFFIX MMU_MODE8_SUFFIX
+#define DATA_SIZE 1
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 2
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 4
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 8
+#include "exec/cpu_ldst_template.h"
+#undef CPU_MMU_INDEX
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 9) */
+
+#if (NB_MMU_MODES >= 10) && defined(MMU_MODE9_SUFFIX)
+
+#define CPU_MMU_INDEX 9
+#define MEMSUFFIX MMU_MODE9_SUFFIX
+#define DATA_SIZE 1
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 2
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 4
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 8
+#include "exec/cpu_ldst_template.h"
+#undef CPU_MMU_INDEX
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 10) */
+
+#if (NB_MMU_MODES >= 11) && defined(MMU_MODE10_SUFFIX)
+
+#define CPU_MMU_INDEX 10
+#define MEMSUFFIX MMU_MODE10_SUFFIX
+#define DATA_SIZE 1
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 2
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 4
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 8
+#include "exec/cpu_ldst_template.h"
+#undef CPU_MMU_INDEX
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 11) */
+
+#if (NB_MMU_MODES >= 12) && defined(MMU_MODE11_SUFFIX)
+
+#define CPU_MMU_INDEX 11
+#define MEMSUFFIX MMU_MODE11_SUFFIX
+#define DATA_SIZE 1
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 2
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 4
+#include "exec/cpu_ldst_template.h"
+
+#define DATA_SIZE 8
+#include "exec/cpu_ldst_template.h"
+#undef CPU_MMU_INDEX
+#undef MEMSUFFIX
+#endif /* (NB_MMU_MODES >= 12) */
+
+#if (NB_MMU_MODES > 12)
+#error "NB_MMU_MODES > 12 is not supported for now"
+#endif /* (NB_MMU_MODES > 12) */
 
 /* these access are slower, they must be as rare as possible */
-#define CPU_MMU_INDEX (cpu_mmu_index(env))
+#define CPU_MMU_INDEX (cpu_mmu_index(env, false))
 #define MEMSUFFIX _data
 #define DATA_SIZE 1
 #include "exec/cpu_ldst_template.h"
@@ -323,7 +441,7 @@ uint64_t helper_ldq_cmmu(CPUArchState *env, target_ulong addr, int mmu_idx);
 #define stl(p, v) stl_data(p, v)
 #define stq(p, v) stq_data(p, v)
 
-#define CPU_MMU_INDEX (cpu_mmu_index(env))
+#define CPU_MMU_INDEX (cpu_mmu_index(env, true))
 #define MEMSUFFIX _code
 #define SOFTMMU_CODE_ACCESS
 
@@ -343,6 +461,8 @@ uint64_t helper_ldq_cmmu(CPUArchState *env, target_ulong addr, int mmu_idx);
 #undef MEMSUFFIX
 #undef SOFTMMU_CODE_ACCESS
 
+#endif /* defined(CONFIG_USER_ONLY) */
+
 /**
  * tlb_vaddr_to_host:
  * @env: CPUArchState
@@ -361,8 +481,10 @@ uint64_t helper_ldq_cmmu(CPUArchState *env, target_ulong addr, int mmu_idx);
 static inline void *tlb_vaddr_to_host(CPUArchState *env, target_ulong addr,
                                       int access_type, int mmu_idx)
 {
-    int index = (addr >> TARGET_PAGE_BITS) & (CPU_TLB_SIZE - 1);
-    CPUTLBEntry *tlbentry = &env->tlb_table[mmu_idx][index];
+#if defined(CONFIG_USER_ONLY)
+    return g2h(addr);
+#else
+    CPUTLBEntry *tlbentry = tlb_entry(env, mmu_idx, addr);
     target_ulong tlb_addr;
     uintptr_t haddr;
 
@@ -371,7 +493,7 @@ static inline void *tlb_vaddr_to_host(CPUArchState *env, target_ulong addr,
         tlb_addr = tlbentry->addr_read;
         break;
     case 1:
-        tlb_addr = tlbentry->addr_write;
+        tlb_addr = tlb_addr_write(tlbentry);
         break;
     case 2:
         tlb_addr = tlbentry->addr_code;
@@ -380,8 +502,7 @@ static inline void *tlb_vaddr_to_host(CPUArchState *env, target_ulong addr,
         g_assert_not_reached();
     }
 
-    if ((addr & TARGET_PAGE_MASK)
-        != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
+    if (!tlb_hit(tlb_addr, addr)) {
         /* TLB entry is for a different page */
         return NULL;
     }
@@ -391,10 +512,9 @@ static inline void *tlb_vaddr_to_host(CPUArchState *env, target_ulong addr,
         return NULL;
     }
 
-    haddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][index].addend);
+    haddr = (uintptr_t)(addr + tlbentry->addend);
     return (void *)haddr;
-}
-
 #endif /* defined(CONFIG_USER_ONLY) */
+}
 
 #endif /* CPU_LDST_H */

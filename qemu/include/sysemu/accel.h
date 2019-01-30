@@ -55,7 +55,7 @@ typedef struct AccelClass {
 #define ACCEL_GET_CLASS(uc, obj) \
     OBJECT_GET_CLASS(uc, AccelClass, (obj), TYPE_ACCEL)
 
-int configure_accelerator(MachineState *ms);
+void configure_accelerator(MachineState *ms);
 
 void register_accel_types(struct uc_struct *uc);
 

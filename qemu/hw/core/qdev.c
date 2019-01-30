@@ -30,7 +30,7 @@
 #include "qapi/qmp/qerror.h"
 
 
-static void bus_add_child(BusState *bus, DeviceState *child)
+static void bus_add_child(struct uc_struct *uc, BusState *bus, DeviceState *child)
 {
     char name[32];
     BusChild *kid = g_malloc0(sizeof(*kid));
@@ -43,7 +43,7 @@ static void bus_add_child(BusState *bus, DeviceState *child)
 
     /* This transfers ownership of kid->child to the property.  */
     snprintf(name, sizeof(name), "child[%d]", kid->index);
-    object_property_add_link(OBJECT(bus), name,
+    object_property_add_link(uc, OBJECT(bus), name,
                              object_get_typename(OBJECT(child)),
                              (Object **)&kid->child,
                              NULL, /* read-only property */
@@ -51,11 +51,11 @@ static void bus_add_child(BusState *bus, DeviceState *child)
                              NULL);
 }
 
-void qdev_set_parent_bus(DeviceState *dev, BusState *bus)
+void qdev_set_parent_bus(struct uc_struct *uc, DeviceState *dev, BusState *bus)
 {
     dev->parent_bus = bus;
     object_ref(OBJECT(bus));
-    bus_add_child(bus, dev);
+    bus_add_child(uc, bus, dev);
 }
 
 /* Create a new device.  This only initializes the device state structure
@@ -161,21 +161,26 @@ static int device_set_realized(struct uc_struct *uc, Object *obj, bool value, Er
     DeviceClass *dc = DEVICE_GET_CLASS(uc, dev);
     BusState *bus;
     Error *local_err = NULL;
+    // Unicorn: commented out
+    //bool unattached_parent = false;
+    //static int unattached_count;
+
 
     if (dev->hotplugged && !dc->hotpluggable) {
-        error_set(errp, QERR_DEVICE_NO_HOTPLUG, object_get_typename(obj));
+        error_setg(errp, QERR_DEVICE_NO_HOTPLUG, object_get_typename(obj));
         return -1;
     }
 
     if (value && !dev->realized) {
+        // Unicorn: if'd out
 #if 0
         if (!obj->parent) {
-            static int unattached_count;
             gchar *name = g_strdup_printf("device[%d]", unattached_count++);
 
             object_property_add_child(container_get(qdev_get_machine(),
                                                     "/unattached"),
                                       name, obj, &error_abort);
+            unattached_parent = true;
             g_free(name);
         }
 #endif
@@ -213,7 +218,7 @@ static int device_set_realized(struct uc_struct *uc, Object *obj, bool value, Er
         }
         if (dc->unrealize) {
             local_errp = local_err ? NULL : &local_err;
-            dc->unrealize(dev, local_errp);
+            dc->unrealize(uc, dev, local_errp);
         }
         dev->pending_deleted_event = true;
     }
@@ -233,11 +238,16 @@ child_realize_fail:
 
 post_realize_fail:
     if (dc->unrealize) {
-        dc->unrealize(dev, NULL);
+        dc->unrealize(uc, dev, NULL);
     }
 
 fail:
     error_propagate(errp, local_err);
+    /* Unicorn: commented out
+    if (unattached_parent) {
+        object_unparent(OBJECT(dev));
+        unattached_count--;
+    }*/
     return -1;
 }
 
@@ -261,7 +271,7 @@ static void device_finalize(struct uc_struct *uc, Object *obj, void *opaque)
 {
 }
 
-static void device_class_base_init(ObjectClass *class, void *data)
+static void device_class_base_init(struct uc_struct *uc, ObjectClass *class, void *data)
 {
 }
 

@@ -3,7 +3,7 @@
 
 #include "uc_priv.h"
 
-void dummy_m68k_machine_init(struct uc_struct *uc);
+void dummy_m68k_machine_init_register_types(struct uc_struct *uc);
 
 void m68k_cpu_register_types(void *opaque);
 

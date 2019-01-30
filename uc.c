@@ -16,11 +16,11 @@
 #include "uc_priv.h"
 
 // target specific headers
-#include "qemu/target-m68k/unicorn.h"
-#include "qemu/target-i386/unicorn.h"
-#include "qemu/target-arm/unicorn.h"
-#include "qemu/target-mips/unicorn.h"
-#include "qemu/target-sparc/unicorn.h"
+#include "qemu/target/arm/unicorn.h"
+#include "qemu/target/i386/unicorn.h"
+#include "qemu/target/m68k/unicorn.h"
+#include "qemu/target/mips/unicorn.h"
+#include "qemu/target/sparc/unicorn.h"
 
 #include "qemu/include/hw/boards.h"
 #include "qemu/include/qemu/queue.h"
@@ -28,6 +28,7 @@
 static void free_table(gpointer key, gpointer value, gpointer data)
 {
     TypeInfo *ti = (TypeInfo*) value;
+    g_hash_table_destroy(ti->class->properties);
     g_free((void *) ti->class);
     g_free((void *) ti->name);
     g_free((void *) ti->parent);
@@ -152,15 +153,16 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         uc->arch = arch;
         uc->mode = mode;
 
-        // uc->ram_list = { .blocks = QTAILQ_HEAD_INITIALIZER(ram_list.blocks) };
-        uc->ram_list.blocks.tqh_first = NULL;
-        uc->ram_list.blocks.tqh_last = &(uc->ram_list.blocks.tqh_first);
+        // uc->ram_list = { .blocks = QLIST_HEAD_INITIALIZER(ram_list.blocks) };
+        uc->ram_list.blocks.lh_first = NULL;
 
         uc->memory_listeners.tqh_first = NULL;
         uc->memory_listeners.tqh_last = &uc->memory_listeners.tqh_first;
 
         uc->address_spaces.tqh_first = NULL;
         uc->address_spaces.tqh_last = &uc->address_spaces.tqh_first;
+
+        uc->phys_map_node_alloc_hint = 16;
 
         switch(arch) {
             default:
@@ -265,8 +267,9 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
             return UC_ERR_ARCH;
         }
 
-        if (machine_initialize(uc))
+        if (machine_initialize(uc)) {
             return UC_ERR_RESOURCE;
+        }
 
         *result = uc;
 
@@ -279,21 +282,38 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
     }
 }
 
+static void free_hooks(uc_engine *uc)
+{
+    struct list_item *cur;
+    struct hook *hook;
+    int i;
+
+    // free hooks and hook lists
+    for (i = 0; i < UC_HOOK_MAX; i++) {
+        cur = uc->hook[i].head;
+        // hook can be in more than one list
+        // so we refcount to know when to free
+        while (cur) {
+            hook = (struct hook *)cur->data;
+            if (--hook->refs == 0) {
+                free(hook);
+            }
+            cur = cur->next;
+        }
+        list_clear(&uc->hook[i]);
+    }
+}
 
 UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc)
 {
-    int i;
-    struct list_item *cur;
-    struct hook *hook;
-
     // Cleanup internally.
     if (uc->release)
         uc->release(uc->tcg_ctx);
     g_free(uc->tcg_ctx);
 
     // Cleanup CPU.
-    g_free(uc->cpu->tcg_as_listener);
+    g_free(uc->cpu->cpu_ases);
     g_free(uc->cpu->thread);
 
     // Cleanup all objects.
@@ -327,25 +347,7 @@ uc_err uc_close(uc_engine *uc)
     g_hash_table_foreach(uc->type_table, free_table, uc);
     g_hash_table_destroy(uc->type_table);
 
-    for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
-        free(uc->ram_list.dirty_memory[i]);
-    }
-
-    // free hooks and hook lists
-    for (i = 0; i < UC_HOOK_MAX; i++) {
-        cur = uc->hook[i].head;
-        // hook can be in more than one list
-        // so we refcount to know when to free
-        while (cur) {
-            hook = (struct hook *)cur->data;
-            if (--hook->refs == 0) {
-                free(hook);
-            }
-            cur = cur->next;
-        }
-        list_clear(&uc->hook[i]);
-    }
-
+    free_hooks(uc);
     free(uc->mapped_blocks);
 
     // finally, free uc itself.
@@ -430,7 +432,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
         MemoryRegion *mr = memory_mapping(uc, address);
         if (mr) {
             len = (size_t)MIN(size - count, mr->end - address);
-            if (uc->read_mem(&uc->as, address, bytes, len) == false)
+            if (uc->read_mem(uc->cpu->as, address, bytes, len) == false)
                 break;
             count += len;
             address += len;
@@ -468,7 +470,7 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
                 uc->readonly_mem(mr, false);
 
             len = (size_t)MIN(size - count, mr->end - address);
-            if (uc->write_mem(&uc->as, address, bytes, len) == false)
+            if (uc->write_mem(uc->cpu->as, address, bytes, len) == false)
                 break;
 
             if (!(operms & UC_PROT_WRITE)) // write protected

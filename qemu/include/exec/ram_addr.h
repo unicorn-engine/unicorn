@@ -22,142 +22,176 @@
 #include "uc_priv.h"
 
 #ifndef CONFIG_USER_ONLY
+#include "hw/xen/xen.h"
+#include "exec/ramlist.h"
 
-ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
-                                   MemoryRegion *mr, Error **errp);
-ram_addr_t qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr, Error **errp);
-int qemu_get_ram_fd(struct uc_struct *uc, ram_addr_t addr);
-void *qemu_get_ram_block_host_ptr(struct uc_struct *uc, ram_addr_t addr);
-void *qemu_get_ram_ptr(struct uc_struct *uc, ram_addr_t addr);
+struct RAMBlock {
+    struct MemoryRegion *mr;
+    uint8_t *host;
+    ram_addr_t offset;
+    ram_addr_t used_length;
+    ram_addr_t max_length;
+    void (*resized)(const char*, uint64_t length, void *host);
+    uint32_t flags;
+    char idstr[256];
+    /* Reads can take either the iothread or the ramlist lock.
+     * Writes must take both locks.
+     */
+    QLIST_ENTRY(RAMBlock) next;
+    int fd;
+};
+
+static inline bool offset_in_ramblock(RAMBlock *b, ram_addr_t offset)
+{
+    return (b && b->host && offset < b->used_length) ? true : false;
+}
+
+static inline void *ramblock_ptr(RAMBlock *block, ram_addr_t offset)
+{
+    assert(offset < block->used_length);
+    assert(block->host);
+    return (char *)block->host + offset;
+}
+
+RAMBlock *qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
+                                  MemoryRegion *mr, Error **errp);
+RAMBlock *qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr, Error **errp);
+RAMBlock *qemu_ram_alloc_resizeable(ram_addr_t size, ram_addr_t max_size,
+                                    void (*resized)(const char*,
+                                                    uint64_t length,
+                                                    void *host),
+                                    MemoryRegion *mr, Error **errp);
 void qemu_ram_free(struct uc_struct *c, ram_addr_t addr);
-void qemu_ram_free_from_ptr(struct uc_struct *uc, ram_addr_t addr);
+
+int qemu_ram_resize(struct uc_struct *c, RAMBlock *block, ram_addr_t newsize, Error **errp);
+
+#define DIRTY_CLIENTS_ALL     ((1 << DIRTY_MEMORY_NUM) - 1)
+#define DIRTY_CLIENTS_NOCODE  (DIRTY_CLIENTS_ALL & ~(1 << DIRTY_MEMORY_CODE))
 
 static inline bool cpu_physical_memory_get_dirty(struct uc_struct *uc, ram_addr_t start,
                                                  ram_addr_t length,
                                                  unsigned client)
 {
-    unsigned long end, page, next;
+    DirtyMemoryBlocks *blocks;
+    unsigned long end, page;
+    unsigned long idx, offset, base;
+    bool dirty = false;
 
     assert(client < DIRTY_MEMORY_NUM);
 
     end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
     page = start >> TARGET_PAGE_BITS;
-    next = find_next_bit(uc->ram_list.dirty_memory[client], end, page);
 
-    return next < end;
+    // Unicorn: commented out
+    //rcu_read_lock();
+
+    // Unicorn: atomic_read used instead of atomic_rcu_read
+    blocks = atomic_read(&uc->ram_list.dirty_memory[client]);
+
+    idx = page / DIRTY_MEMORY_BLOCK_SIZE;
+    offset = page % DIRTY_MEMORY_BLOCK_SIZE;
+    base = page - offset;
+    while (page < end) {
+        unsigned long next = MIN(end, base + DIRTY_MEMORY_BLOCK_SIZE);
+        unsigned long num = next - base;
+        unsigned long found = find_next_bit(blocks->blocks[idx], num, offset);
+        if (found < num) {
+            dirty = true;
+            break;
+        }
+
+        page = next;
+        idx++;
+        offset = 0;
+        base += DIRTY_MEMORY_BLOCK_SIZE;
+    }
+
+    // Unicorn: commented out
+    //rcu_read_unlock();
+
+    return dirty;
+
 }
 
-static inline bool cpu_physical_memory_get_clean(struct uc_struct *uc, ram_addr_t start,
+static inline bool cpu_physical_memory_all_dirty(struct uc_struct *uc, ram_addr_t start,
                                                  ram_addr_t length,
                                                  unsigned client)
 {
-    unsigned long end, page, next;
+    DirtyMemoryBlocks *blocks;
+    unsigned long end, page;
+    unsigned long idx, offset, base;
+    bool dirty = true;
 
     assert(client < DIRTY_MEMORY_NUM);
 
     end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
     page = start >> TARGET_PAGE_BITS;
-    next = find_next_zero_bit(uc->ram_list.dirty_memory[client], end, page);
 
-    return next < end;
-}
+    // Unicorn: commented out
+    //rcu_read_lock();
 
-static inline bool cpu_physical_memory_get_dirty_flag(struct uc_struct *uc, ram_addr_t addr,
-                                                      unsigned client)
-{
-    return cpu_physical_memory_get_dirty(uc, addr, 1, client);
-}
+    // Unicorn: atomic_read used instead of atomic_rcu_read
+    blocks = atomic_read(&uc->ram_list.dirty_memory[client]);
 
-static inline bool cpu_physical_memory_is_clean(struct uc_struct *uc, ram_addr_t addr)
-{
-    return !cpu_physical_memory_get_dirty_flag(uc, addr, DIRTY_MEMORY_CODE);
+    idx = page / DIRTY_MEMORY_BLOCK_SIZE;
+    offset = page % DIRTY_MEMORY_BLOCK_SIZE;
+    base = page - offset;
+    while (page < end) {
+        unsigned long next = MIN(end, base + DIRTY_MEMORY_BLOCK_SIZE);
+        unsigned long num = next - base;
+        unsigned long found = find_next_zero_bit(blocks->blocks[idx], num, offset);
+        if (found < num) {
+            dirty = false;
+            break;
+        }
+
+        page = next;
+        idx++;
+        offset = 0;
+        base += DIRTY_MEMORY_BLOCK_SIZE;
+    }
+
+    // Unicorn: commented out
+    //rcu_read_unlock();
+
+    return dirty;
 }
 
 static inline bool cpu_physical_memory_range_includes_clean(struct uc_struct *uc, ram_addr_t start,
-                                                            ram_addr_t length)
+                                                            ram_addr_t length, uint8_t mask)
 {
-    return cpu_physical_memory_get_clean(uc, start, length, DIRTY_MEMORY_CODE);
+    uint8_t ret = 0;
+
+    if (mask & (1 << DIRTY_MEMORY_CODE) &&
+        !cpu_physical_memory_all_dirty(uc, start, length, DIRTY_MEMORY_CODE)) {
+        ret |= (1 << DIRTY_MEMORY_CODE);
+    }
+    return ret;
 }
 
 static inline void cpu_physical_memory_set_dirty_flag(struct uc_struct *uc, ram_addr_t addr,
                                                       unsigned client)
 {
-    assert(client < DIRTY_MEMORY_NUM);
-    set_bit(addr >> TARGET_PAGE_BITS, uc->ram_list.dirty_memory[client]);
-}
-
-static inline void cpu_physical_memory_set_dirty_range(struct uc_struct *uc, ram_addr_t start,
-                                                       ram_addr_t length)
-{
-    unsigned long end, page;
-
-    end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
-    page = start >> TARGET_PAGE_BITS;
-    bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE], page, end - page);
-}
-
-#if !defined(_WIN32)
-static inline void cpu_physical_memory_set_dirty_lebitmap(struct uc_struct *uc, unsigned long *bitmap,
-                                                          ram_addr_t start,
-                                                          ram_addr_t pages)
-{
-    unsigned long i, j;
-    unsigned long page_number, c;
-    hwaddr addr;
-    ram_addr_t ram_addr;
-    unsigned long len = (pages + HOST_LONG_BITS - 1) / HOST_LONG_BITS;
-    unsigned long hpratio = getpagesize() / TARGET_PAGE_SIZE;
-    unsigned long page = BIT_WORD(start >> TARGET_PAGE_BITS);
-
-    /* start address is aligned at the start of a word? */
-    if ((((page * BITS_PER_LONG) << TARGET_PAGE_BITS) == start) &&
-        (hpratio == 1)) {
-        long k;
-        long nr = BITS_TO_LONGS(pages);
-
-        for (k = 0; k < nr; k++) {
-            if (bitmap[k]) {
-                unsigned long temp = leul_to_cpu(bitmap[k]);
-                uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE][page + k] |= temp;
-            }
-        }
-    } else {
-        /*
-         * bitmap-traveling is faster than memory-traveling (for addr...)
-         * especially when most of the memory is not dirty.
-         */
-        for (i = 0; i < len; i++) {
-            if (bitmap[i] != 0) {
-                c = leul_to_cpu(bitmap[i]);
-                do {
-                    j = ctzl(c);
-                    c &= ~(1ul << j);
-                    page_number = (i * HOST_LONG_BITS + j) * hpratio;
-                    addr = page_number * TARGET_PAGE_SIZE;
-                    ram_addr = start + addr;
-                    cpu_physical_memory_set_dirty_range(uc, ram_addr,
-                                       TARGET_PAGE_SIZE * hpratio);
-                } while (c != 0);
-            }
-        }
-    }
-}
-#endif /* not _WIN32 */
-
-static inline void cpu_physical_memory_clear_dirty_range(struct uc_struct *uc, ram_addr_t start,
-                                                         ram_addr_t length,
-                                                         unsigned client)
-{
-    unsigned long end, page;
+    unsigned long page, idx, offset;
+    DirtyMemoryBlocks *blocks;
 
     assert(client < DIRTY_MEMORY_NUM);
-    end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
-    page = start >> TARGET_PAGE_BITS;
-    bitmap_clear(uc->ram_list.dirty_memory[client], page, end - page);
-}
 
-void cpu_physical_memory_reset_dirty(struct uc_struct *uc,
-    ram_addr_t start, ram_addr_t length, unsigned client);
+    page = addr >> TARGET_PAGE_BITS;
+    idx = page / DIRTY_MEMORY_BLOCK_SIZE;
+    offset = page % DIRTY_MEMORY_BLOCK_SIZE;
+
+    // Unicorn: commented out
+    //rcu_read_lock();
+
+    // Unicorn: atomic_read used instead of atomic_rcu_read
+    blocks = atomic_read(&uc->ram_list.dirty_memory[client]);
+
+    set_bit_atomic(offset, blocks->blocks[idx]);
+
+    // Unicorn: commented out
+    //rcu_read_unlock();
+}
 
 #endif
 #endif

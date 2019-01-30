@@ -1,13 +1,24 @@
 /*
  * QEMU float support macros
  *
- * Derived from SoftFloat.
+ * The code in this source file is derived from release 2a of the SoftFloat
+ * IEC/IEEE Floating-point Arithmetic Package. Those parts of the code (and
+ * some later contributions) are provided under that license, as detailed below.
+ * It has subsequently been modified by contributors to the QEMU Project,
+ * so some portions are provided under:
+ *  the SoftFloat-2a license
+ *  the BSD license
+ *  GPL-v2-or-later
+ *
+ * Any future contributions to this file after December 1st 2014 will be
+ * taken to be licensed under the Softfloat-2a license unless specifically
+ * indicated otherwise.
  */
 
-/*============================================================================
-
+/*
+===============================================================================
 This C source fragment is part of the SoftFloat IEC/IEEE Floating-point
-Arithmetic Package, Release 2b.
+Arithmetic Package, Release 2a.
 
 Written by John R. Hauser.  This work was made possible in part by the
 International Computer Science Institute, located at Suite 600, 1947 Center
@@ -16,35 +27,57 @@ National Science Foundation under grant MIP-9311980.  The original version
 of this code was written as part of a project to build a fixed-point vector
 processor in collaboration with the University of California at Berkeley,
 overseen by Profs. Nelson Morgan and John Wawrzynek.  More information
-is available through the Web page `http://www.cs.berkeley.edu/~jhauser/
+is available through the Web page `http://HTTP.CS.Berkeley.EDU/~jhauser/
 arithmetic/SoftFloat.html'.
 
-THIS SOFTWARE IS DISTRIBUTED AS IS, FOR FREE.  Although reasonable effort has
-been made to avoid it, THIS SOFTWARE MAY CONTAIN FAULTS THAT WILL AT TIMES
-RESULT IN INCORRECT BEHAVIOR.  USE OF THIS SOFTWARE IS RESTRICTED TO PERSONS
-AND ORGANIZATIONS WHO CAN AND WILL TAKE FULL RESPONSIBILITY FOR ALL LOSSES,
-COSTS, OR OTHER PROBLEMS THEY INCUR DUE TO THE SOFTWARE, AND WHO FURTHERMORE
-EFFECTIVELY INDEMNIFY JOHN HAUSER AND THE INTERNATIONAL COMPUTER SCIENCE
-INSTITUTE (possibly via similar legal notice) AGAINST ALL LOSSES, COSTS, OR
-OTHER PROBLEMS INCURRED BY THEIR CUSTOMERS AND CLIENTS DUE TO THE SOFTWARE.
+THIS SOFTWARE IS DISTRIBUTED AS IS, FOR FREE.  Although reasonable effort
+has been made to avoid it, THIS SOFTWARE MAY CONTAIN FAULTS THAT WILL AT
+TIMES RESULT IN INCORRECT BEHAVIOR.  USE OF THIS SOFTWARE IS RESTRICTED TO
+PERSONS AND ORGANIZATIONS WHO CAN AND WILL TAKE FULL RESPONSIBILITY FOR ANY
+AND ALL LOSSES, COSTS, OR OTHER PROBLEMS ARISING FROM ITS USE.
 
 Derivative works are acceptable, even for commercial purposes, so long as
-(1) the source code for the derivative work includes prominent notice that
-the work is derivative, and (2) the source code includes prominent notice with
-these four paragraphs for those parts of this code that are retained.
+(1) they include prominent notice that the work is derivative, and (2) they
+include prominent notice akin to these four paragraphs for those parts of
+this code that are retained.
 
-=============================================================================*/
+===============================================================================
+*/
 
-/*----------------------------------------------------------------------------
-| This macro tests for minimum version of the GNU C compiler.
-*----------------------------------------------------------------------------*/
-#if defined(__GNUC__) && defined(__GNUC_MINOR__)
-# define SOFTFLOAT_GNUC_PREREQ(maj, min) \
-         ((__GNUC__ << 16) + __GNUC_MINOR__ >= ((maj) << 16) + (min))
-#else
-# define SOFTFLOAT_GNUC_PREREQ(maj, min) 0
-#endif
+/* BSD licensing:
+ * Copyright (c) 2006, Fabrice Bellard
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ * this list of conditions and the following disclaimer.
+ *
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ *
+ * 3. Neither the name of the copyright holder nor the names of its contributors
+ * may be used to endorse or promote products derived from this software without
+ * specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
+ * THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
+/* Portions of this work are licensed under the terms of the GNU GPL,
+ * version 2 or later. See the COPYING file in the top-level directory.
+ */
 
 /*----------------------------------------------------------------------------
 | Shifts `a' right by the number of bits given in `count'.  If any nonzero
@@ -55,7 +88,7 @@ these four paragraphs for those parts of this code that are retained.
 | The result is stored in the location pointed to by `zPtr'.
 *----------------------------------------------------------------------------*/
 
-static inline void shift32RightJamming(uint32_t a, int_fast16_t count, uint32_t *zPtr)
+static inline void shift32RightJamming(uint32_t a, int count, uint32_t *zPtr)
 {
     uint32_t z;
 
@@ -81,7 +114,7 @@ static inline void shift32RightJamming(uint32_t a, int_fast16_t count, uint32_t 
 | The result is stored in the location pointed to by `zPtr'.
 *----------------------------------------------------------------------------*/
 
-static inline void shift64RightJamming(uint64_t a, int_fast16_t count, uint64_t *zPtr)
+static inline void shift64RightJamming(uint64_t a, int count, uint64_t *zPtr)
 {
     uint64_t z;
 
@@ -107,20 +140,20 @@ static inline void shift64RightJamming(uint64_t a, int_fast16_t count, uint64_t 
 | 63 bits of the extra result are all zero if and only if _all_but_the_last_
 | bits shifted off were all zero.  This extra result is stored in the location
 | pointed to by `z1Ptr'.  The value of `count' can be arbitrarily large.
-|     (This routine makes more sense if `a0' and `a1' are considered to form
-| a fixed-point value with binary point between `a0' and `a1'.  This fixed-
-| point value is shifted right by the number of bits given in `count', and
-| the integer part of the result is returned at the location pointed to by
+|     (This routine makes more sense if `a0' and `a1' are considered to form a
+| fixed-point value with binary point between `a0' and `a1'.  This fixed-point
+| value is shifted right by the number of bits given in `count', and the
+| integer part of the result is returned at the location pointed to by
 | `z0Ptr'.  The fractional part of the result may be slightly corrupted as
 | described above, and is returned at the location pointed to by `z1Ptr'.)
 *----------------------------------------------------------------------------*/
 
 static inline void
  shift64ExtraRightJamming(
-     uint64_t a0, uint64_t a1, int_fast16_t count, uint64_t *z0Ptr, uint64_t *z1Ptr)
+     uint64_t a0, uint64_t a1, int count, uint64_t *z0Ptr, uint64_t *z1Ptr)
 {
     uint64_t z0, z1;
-    int8 negCount = ( - count ) & 63;
+    int8_t negCount = ( - count ) & 63;
 
     if ( count == 0 ) {
         z1 = a1;
@@ -154,10 +187,10 @@ static inline void
 
 static inline void
  shift128Right(
-     uint64_t a0, uint64_t a1, int_fast16_t count, uint64_t *z0Ptr, uint64_t *z1Ptr)
+     uint64_t a0, uint64_t a1, int count, uint64_t *z0Ptr, uint64_t *z1Ptr)
 {
     uint64_t z0, z1;
-    int8 negCount = ( - count ) & 63;
+    int8_t negCount = ( - count ) & 63;
 
     if ( count == 0 ) {
         z1 = a1;
@@ -189,10 +222,10 @@ static inline void
 
 static inline void
  shift128RightJamming(
-     uint64_t a0, uint64_t a1, int_fast16_t count, uint64_t *z0Ptr, uint64_t *z1Ptr)
+     uint64_t a0, uint64_t a1, int count, uint64_t *z0Ptr, uint64_t *z1Ptr)
 {
     uint64_t z0, z1;
-    int8 negCount = ( - count ) & 63;
+    int8_t negCount = ( - count ) & 63;
 
     if ( count == 0 ) {
         z1 = a1;
@@ -243,14 +276,14 @@ static inline void
      uint64_t a0,
      uint64_t a1,
      uint64_t a2,
-     int_fast16_t count,
+     int count,
      uint64_t *z0Ptr,
      uint64_t *z1Ptr,
      uint64_t *z2Ptr
  )
 {
     uint64_t z0, z1, z2;
-    int8 negCount = ( - count ) & 63;
+    int8_t negCount = ( - count ) & 63;
 
     if ( count == 0 ) {
         z2 = a2;
@@ -296,15 +329,30 @@ static inline void
 | pieces which are stored at the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static inline void
- shortShift128Left(
-     uint64_t a0, uint64_t a1, int_fast16_t count, uint64_t *z0Ptr, uint64_t *z1Ptr)
+static inline void shortShift128Left(uint64_t a0, uint64_t a1, int count,
+                                     uint64_t *z0Ptr, uint64_t *z1Ptr)
 {
+    *z1Ptr = a1 << count;
+    *z0Ptr = count == 0 ? a0 : (a0 << count) | (a1 >> (-count & 63));
+}
 
-    *z1Ptr = a1<<count;
-    *z0Ptr =
-        ( count == 0 ) ? a0 : ( a0<<count ) | ( a1>>( ( - count ) & 63 ) );
+/*----------------------------------------------------------------------------
+| Shifts the 128-bit value formed by concatenating `a0' and `a1' left by the
+| number of bits given in `count'.  Any bits shifted off are lost.  The value
+| of `count' may be greater than 64.  The result is broken into two 64-bit
+| pieces which are stored at the locations pointed to by `z0Ptr' and `z1Ptr'.
+*----------------------------------------------------------------------------*/
 
+static inline void shift128Left(uint64_t a0, uint64_t a1, int count,
+                                uint64_t *z0Ptr, uint64_t *z1Ptr)
+{
+    if (count < 64) {
+        *z1Ptr = a1 << count;
+        *z0Ptr = count == 0 ? a0 : (a0 << count) | (a1 >> (-count & 63));
+    } else {
+        *z1Ptr = 0;
+        *z0Ptr = a1 << (count - 64);
+    }
 }
 
 /*----------------------------------------------------------------------------
@@ -320,14 +368,14 @@ static inline void
      uint64_t a0,
      uint64_t a1,
      uint64_t a2,
-     int_fast16_t count,
+     int count,
      uint64_t *z0Ptr,
      uint64_t *z1Ptr,
      uint64_t *z2Ptr
  )
 {
     uint64_t z0, z1, z2;
-    int8 negCount;
+    int8_t negCount;
 
     z2 = a2<<count;
     z1 = a1<<count;
@@ -384,7 +432,7 @@ static inline void
  )
 {
     uint64_t z0, z1, z2;
-    int8 carry0, carry1;
+    int8_t carry0, carry1;
 
     z2 = a2 + b2;
     carry1 = ( z2 < a2 );
@@ -440,7 +488,7 @@ static inline void
  )
 {
     uint64_t z0, z1, z2;
-    int8 borrow0, borrow1;
+    int8_t borrow0, borrow1;
 
     z2 = a2 - b2;
     borrow1 = ( a2 < b2 );
@@ -559,7 +607,7 @@ static inline void
 | unsigned integer is returned.
 *----------------------------------------------------------------------------*/
 
-static uint64_t estimateDiv128To64( uint64_t a0, uint64_t a1, uint64_t b )
+static inline uint64_t estimateDiv128To64(uint64_t a0, uint64_t a1, uint64_t b)
 {
     uint64_t b0, b1;
     uint64_t rem0, rem1, term0, term1;
@@ -581,6 +629,83 @@ static uint64_t estimateDiv128To64( uint64_t a0, uint64_t a1, uint64_t b )
 
 }
 
+/* From the GNU Multi Precision Library - longlong.h __udiv_qrnnd
+ * (https://gmplib.org/repo/gmp/file/tip/longlong.h)
+ *
+ * Licensed under the GPLv2/LGPLv3
+ */
+static inline uint64_t udiv_qrnnd(uint64_t *r, uint64_t n1,
+                                  uint64_t n0, uint64_t d)
+{
+#if defined(__x86_64__)
+    uint64_t q;
+    asm("divq %4" : "=a"(q), "=d"(*r) : "0"(n0), "1"(n1), "rm"(d));
+    return q;
+#elif defined(__s390x__)
+    /* Need to use a TImode type to get an even register pair for DLGR.  */
+    unsigned __int128 n = (unsigned __int128)n1 << 64 | n0;
+    asm("dlgr %0, %1" : "+r"(n) : "r"(d));
+    *r = n >> 64;
+    return n;
+#elif defined(_ARCH_PPC64) && defined(_ARCH_PWR7)
+    /* From Power ISA 3.0B, programming note for divdeu.  */
+    uint64_t q1, q2, Q, r1, r2, R;
+    asm("divdeu %0,%2,%4; divdu %1,%3,%4"
+        : "=&r"(q1), "=r"(q2)
+        : "r"(n1), "r"(n0), "r"(d));
+    r1 = -(q1 * d);         /* low part of (n1<<64) - (q1 * d) */
+    r2 = n0 - (q2 * d);
+    Q = q1 + q2;
+    R = r1 + r2;
+    if (R >= d || R < r2) { /* overflow implies R > d */
+        Q += 1;
+        R -= d;
+    }
+    *r = R;
+    return Q;
+#else
+    uint64_t d0, d1, q0, q1, r1, r0, m;
+
+    d0 = (uint32_t)d;
+    d1 = d >> 32;
+
+    r1 = n1 % d1;
+    q1 = n1 / d1;
+    m = q1 * d0;
+    r1 = (r1 << 32) | (n0 >> 32);
+    if (r1 < m) {
+        q1 -= 1;
+        r1 += d;
+        if (r1 >= d) {
+            if (r1 < m) {
+                q1 -= 1;
+                r1 += d;
+            }
+        }
+    }
+    r1 -= m;
+
+    r0 = r1 % d1;
+    q0 = r1 / d1;
+    m = q0 * d0;
+    r0 = (r0 << 32) | (uint32_t)n0;
+    if (r0 < m) {
+        q0 -= 1;
+        r0 += d;
+        if (r0 >= d) {
+            if (r0 < m) {
+                q0 -= 1;
+                r0 += d;
+            }
+        }
+    }
+    r0 -= m;
+
+    *r = r0;
+    return (q1 << 32) | q0;
+#endif
+}
+
 /*----------------------------------------------------------------------------
 | Returns an approximation to the square root of the 32-bit significand given
 | by `a'.  Considered as an integer, `a' must be at least 2^31.  If bit 0 of
@@ -591,7 +716,7 @@ static uint64_t estimateDiv128To64( uint64_t a0, uint64_t a1, uint64_t b )
 | value.
 *----------------------------------------------------------------------------*/
 
-static uint32_t estimateSqrt32(int_fast16_t aExp, uint32_t a)
+static inline uint32_t estimateSqrt32(int aExp, uint32_t a)
 {
     static const uint16_t sqrtOddAdjustments[] = {
         0x0004, 0x0022, 0x005D, 0x00B1, 0x011D, 0x019F, 0x0236, 0x02E0,
@@ -601,7 +726,7 @@ static uint32_t estimateSqrt32(int_fast16_t aExp, uint32_t a)
         0x0A2D, 0x08AF, 0x075A, 0x0629, 0x051A, 0x0429, 0x0356, 0x029E,
         0x0200, 0x0179, 0x0109, 0x00AF, 0x0068, 0x0034, 0x0012, 0x0002
     };
-    int8 index;
+    int8_t index;
     uint32_t z;
 
     index = ( a>>27 ) & 15;
@@ -618,82 +743,6 @@ static uint32_t estimateSqrt32(int_fast16_t aExp, uint32_t a)
     }
     return ( (uint32_t) ( ( ( (uint64_t) a )<<31 ) / z ) ) + ( z>>1 );
 
-}
-
-/*----------------------------------------------------------------------------
-| Returns the number of leading 0 bits before the most-significant 1 bit of
-| `a'.  If `a' is zero, 32 is returned.
-*----------------------------------------------------------------------------*/
-
-static int8 countLeadingZeros32( uint32_t a )
-{
-#if SOFTFLOAT_GNUC_PREREQ(3, 4)
-    if (a) {
-        return __builtin_clz(a);
-    } else {
-        return 32;
-    }
-#else
-    static const int8 countLeadingZerosHigh[] = {
-        8, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-    int8 shiftCount;
-
-    shiftCount = 0;
-    if ( a < 0x10000 ) {
-        shiftCount += 16;
-        a <<= 16;
-    }
-    if ( a < 0x1000000 ) {
-        shiftCount += 8;
-        a <<= 8;
-    }
-    shiftCount += countLeadingZerosHigh[ a>>24 ];
-    return shiftCount;
-#endif
-}
-
-/*----------------------------------------------------------------------------
-| Returns the number of leading 0 bits before the most-significant 1 bit of
-| `a'.  If `a' is zero, 64 is returned.
-*----------------------------------------------------------------------------*/
-
-static int8 countLeadingZeros64( uint64_t a )
-{
-#if SOFTFLOAT_GNUC_PREREQ(3, 4)
-    if (a) {
-        return __builtin_clzll(a);
-    } else {
-        return 64;
-    }
-#else
-    int8 shiftCount;
-
-    shiftCount = 0;
-    if ( a < ( (uint64_t) 1 )<<32 ) {
-        shiftCount += 32;
-    }
-    else {
-        a >>= 32;
-    }
-    shiftCount += countLeadingZeros32( (uint32_t)a );
-    return shiftCount;
-#endif
 }
 
 /*----------------------------------------------------------------------------

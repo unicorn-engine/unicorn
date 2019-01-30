@@ -6,7 +6,7 @@ include config-devices.mak
 include $(SRC_PATH)/rules.mak
 
 $(call set-vpath, $(SRC_PATH))
-QEMU_CFLAGS += -I.. -I$(SRC_PATH)/target-$(TARGET_BASE_ARCH) -DNEED_CPU_H
+QEMU_CFLAGS += -I.. -I$(SRC_PATH)/target/$(TARGET_BASE_ARCH) -DNEED_CPU_H
 
 QEMU_CFLAGS+=-I$(SRC_PATH)/include
 
@@ -40,17 +40,19 @@ all: $(PROGS)
 
 #########################################################
 # cpu emulator library
-obj-y = exec.o translate-all.o cpu-exec.o
-obj-y += tcg/tcg.o tcg/optimize.o
-obj-y += fpu/softfloat.o
-obj-y += target-$(TARGET_BASE_ARCH)/
+obj-y = exec.o
+obj-$(CONFIG_TCG) += tcg/tcg.o tcg/tcg-op.o tcg/tcg-op-vec.o tcg/tcg-op-gvec.o
+obj-$(CONFIG_TCG) += tcg/tcg-common.o tcg/optimize.o
+obj-$(CONFIG_TCG) += fpu/softfloat.o
+obj-y += target/$(TARGET_BASE_ARCH)/
+obj-y += accel/
 
 #########################################################
 # System emulator target
 ifdef CONFIG_SOFTMMU
 obj-y += cpus.o ioport.o
 obj-y += hw/
-obj-y += memory.o cputlb.o
+obj-y += memory.o
 obj-y += memory_mapping.o
 LIBS+=$(libs_softmmu)
 
@@ -79,7 +81,9 @@ target-obj-y-save := $(target-obj-y) $(util-obj-y)
 
 dummy := $(call unnest-vars,.., \
                block-obj-y \
-               block-obj-m)
+               block-obj-m \
+               crypto-obj-y \
+               crypto-aes-obj-y)
 
 dummy := $(call unnest-vars,..,common-obj-y,common-obj-m)
 
@@ -87,6 +91,8 @@ target-obj-y := $(target-obj-y-save)
 all-obj-y += $(common-obj-y)
 all-obj-y += $(target-obj-y)
 all-obj-$(CONFIG_SOFTMMU) += $(block-obj-y)
+all-obj-$(CONFIG_USER_ONLY) += $(crypto-aes-obj-y)
+all-obj-$(CONFIG_SOFTMMU) += $(crypto-obj-y)
 
 # determine shared lib extension
 IS_APPLE := $(shell $(CC) -dM -E - < /dev/null | grep __apple_build_version__ | wc -l | tr -d " ")
@@ -114,6 +120,6 @@ ifneq ($(PROGS),)
 	$(call install-prog,$(PROGS),$(DESTDIR)$(bindir))
 endif
 
-GENERATED_HEADERS += config-target.h
-Makefile: $(GENERATED_HEADERS)
+GENERATED_FILES += config-target.h
+Makefile: $(GENERATED_FILES)
 

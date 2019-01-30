@@ -24,11 +24,16 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
-/* Needed early for CONFIG_BSD etc. */
-#include "config-host.h"
+#include "qemu/osdep.h"
+#include "qemu-common.h"
+#include "cpu.h"
+#include "qapi/error.h"
 #include "sysemu/sysemu.h"
-#include "sysemu/cpus.h"
+#include "exec/exec-all.h"
+
+#include "tcg.h"
 #include "qemu/thread.h"
+#include "sysemu/cpus.h"
 
 #include "exec/address-spaces.h"	// debug, can be removed later
 
@@ -36,10 +41,21 @@
 
 static bool cpu_can_run(CPUState *cpu);
 static void cpu_handle_guest_debug(CPUState *cpu);
-static int tcg_cpu_exec(struct uc_struct *uc, CPUArchState *env);
+static int tcg_cpu_exec(struct uc_struct *uc, CPUState *cpu);
 static bool tcg_exec_all(struct uc_struct* uc);
 static int qemu_tcg_init_vcpu(CPUState *cpu);
 static void *qemu_tcg_cpu_loop(struct uc_struct *uc);
+
+
+static bool default_mttcg_enabled(void)
+{
+    return false;
+}
+
+void qemu_tcg_configure(struct uc_struct *uc)
+{
+    uc->mttcg_enabled = default_mttcg_enabled();
+}
 
 int vm_start(struct uc_struct* uc)
 {
@@ -54,9 +70,9 @@ bool cpu_is_stopped(CPUState *cpu)
     return cpu->stopped;
 }
 
-void run_on_cpu(CPUState *cpu, void (*func)(void *data), void *data)
+void run_on_cpu(CPUState *cpu, run_on_cpu_func func, void *data)
 {
-    func(data);
+    func(cpu, data);
 }
 
 int resume_all_vcpus(struct uc_struct *uc)
@@ -84,8 +100,17 @@ int qemu_init_vcpu(CPUState *cpu)
     cpu->nr_threads = smp_threads;
     cpu->stopped = true;
 
-    if (tcg_enabled(cpu->uc))
+    if (!cpu->as) {
+        /* If the target cpu hasn't set up any address spaces itself,
+         * give it the default one.
+         */
+        cpu->num_ases = 1;
+        cpu_address_space_init(cpu, 0, "cpu-memory", cpu->memory);
+    }
+
+    if (tcg_enabled(cpu->uc)) {
         return qemu_tcg_init_vcpu(cpu);
+    }
 
     return 0;
 }
@@ -110,21 +135,19 @@ static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
 
 static int qemu_tcg_init_vcpu(CPUState *cpu)
 {
-    tcg_cpu_address_space_init(cpu, cpu->as);
-
     return 0;
 }
 
-static int tcg_cpu_exec(struct uc_struct *uc, CPUArchState *env)
+static int tcg_cpu_exec(struct uc_struct *uc, CPUState *cpu)
 {
-    return cpu_exec(uc, env);
+    return cpu_exec(uc, cpu);
 }
 
 static bool tcg_exec_all(struct uc_struct* uc)
 {
     int r;
     bool finish = false;
-    while (!uc->exit_request) {
+    while (!uc->cpu->exit_request) {
         CPUState *cpu = uc->cpu;
         CPUArchState *env = cpu->env_ptr;
 
@@ -132,43 +155,44 @@ static bool tcg_exec_all(struct uc_struct* uc)
         //                  (cpu->singlestep_enabled & SSTEP_NOTIMER) == 0);
         if (cpu_can_run(cpu)) {
             uc->quit_request = false;
-            r = tcg_cpu_exec(uc, env);
+            r = tcg_cpu_exec(uc, cpu);
 
             // quit current TB but continue emulating?
             if (uc->quit_request) {
                 // reset stop_request
                 uc->stop_request = false;
             } else if (uc->stop_request) {
-                //printf(">>> got STOP request!!!\n");
                 finish = true;
                 break;
             }
 
             // save invalid memory access error & quit
             if (env->invalid_error) {
-                // printf(">>> invalid memory accessed, STOP = %u!!!\n", env->invalid_error);
                 uc->invalid_addr = env->invalid_addr;
                 uc->invalid_error = env->invalid_error;
                 finish = true;
                 break;
             }
 
-            // printf(">>> stop with r = %x, HLT=%x\n", r, EXCP_HLT);
             if (r == EXCP_DEBUG) {
                 cpu_handle_guest_debug(cpu);
                 break;
             }
             if (r == EXCP_HLT) {
-                //printf(">>> got HLT!!!\n");
                 finish = true;
                 break;
+            } else if (r == EXCP_ATOMIC) {
+                cpu_exec_step_atomic(uc, cpu);
             }
-        } else if (cpu->stop || cpu->stopped) {
-                printf(">>> got stopped!!!\n");
+        } else if (cpu->stop) {
+            printf(">>> got stopped!!!\n");
             break;
         }
     }
-    uc->exit_request = 0;
+
+    if (uc->cpu && uc->cpu->exit_request) {
+        atomic_mb_set(&uc->cpu->exit_request, 0);
+    }
 
     return finish;
 }

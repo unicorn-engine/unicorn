@@ -27,15 +27,6 @@
  */
 
 /* predefined ops */
-DEF(end, 0, 0, 0, TCG_OPF_NOT_PRESENT) /* must be kept first */
-DEF(nop, 0, 0, 0, TCG_OPF_NOT_PRESENT)
-DEF(nop1, 0, 0, 1, TCG_OPF_NOT_PRESENT)
-DEF(nop2, 0, 0, 2, TCG_OPF_NOT_PRESENT)
-DEF(nop3, 0, 0, 3, TCG_OPF_NOT_PRESENT)
-
-/* variable number of parameters */
-DEF(nopn, 0, 0, 1, TCG_OPF_NOT_PRESENT)
-
 DEF(discard, 1, 0, 0, TCG_OPF_NOT_PRESENT)
 DEF(set_label, 0, 0, 1, TCG_OPF_BB_END | TCG_OPF_NOT_PRESENT)
 
@@ -55,6 +46,8 @@ DEF(br, 0, 0, 1, TCG_OPF_BB_END)
 #else
 # define IMPL64  TCG_OPF_64BIT
 #endif
+
+DEF(mb, 0, 0, 1, 0)
 
 DEF(mov_i32, 1, 1, 0, TCG_OPF_NOT_PRESENT)
 DEF(movi_i32, 1, 0, 1, TCG_OPF_NOT_PRESENT)
@@ -89,6 +82,8 @@ DEF(sar_i32, 1, 2, 0, 0)
 DEF(rotl_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_rot_i32))
 DEF(rotr_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_rot_i32))
 DEF(deposit_i32, 1, 2, 2, IMPL(TCG_TARGET_HAS_deposit_i32))
+DEF(extract_i32, 1, 1, 2, IMPL(TCG_TARGET_HAS_extract_i32))
+DEF(sextract_i32, 1, 1, 2, IMPL(TCG_TARGET_HAS_sextract_i32))
 
 DEF(brcond_i32, 0, 2, 2, TCG_OPF_BB_END)
 
@@ -114,6 +109,9 @@ DEF(orc_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_orc_i32))
 DEF(eqv_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_eqv_i32))
 DEF(nand_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_nand_i32))
 DEF(nor_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_nor_i32))
+DEF(clz_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_clz_i32))
+DEF(ctz_i32, 1, 2, 0, IMPL(TCG_TARGET_HAS_ctz_i32))
+DEF(ctpop_i32, 1, 1, 0, IMPL(TCG_TARGET_HAS_ctpop_i32))
 
 DEF(mov_i64, 1, 1, 0, TCG_OPF_64BIT | TCG_OPF_NOT_PRESENT)
 DEF(movi_i64, 1, 0, 1, TCG_OPF_64BIT | TCG_OPF_NOT_PRESENT)
@@ -151,10 +149,19 @@ DEF(sar_i64, 1, 2, 0, IMPL64)
 DEF(rotl_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_rot_i64))
 DEF(rotr_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_rot_i64))
 DEF(deposit_i64, 1, 2, 2, IMPL64 | IMPL(TCG_TARGET_HAS_deposit_i64))
+DEF(extract_i64, 1, 1, 2, IMPL64 | IMPL(TCG_TARGET_HAS_extract_i64))
+DEF(sextract_i64, 1, 1, 2, IMPL64 | IMPL(TCG_TARGET_HAS_sextract_i64))
 
-DEF(trunc_shr_i32, 1, 1, 1,
-    IMPL(TCG_TARGET_HAS_trunc_shr_i32)
+/* size changing ops */
+DEF(ext_i32_i64, 1, 1, 0, IMPL64)
+DEF(extu_i32_i64, 1, 1, 0, IMPL64)
+DEF(extrl_i64_i32, 1, 1, 0,
+    IMPL(TCG_TARGET_HAS_extrl_i64_i32)
     | (TCG_TARGET_REG_BITS == 32 ? TCG_OPF_NOT_PRESENT : 0))
+DEF(extrh_i64_i32, 1, 1, 0,
+    IMPL(TCG_TARGET_HAS_extrh_i64_i32)
+    | (TCG_TARGET_REG_BITS == 32 ? TCG_OPF_NOT_PRESENT : 0))
+
 
 DEF(brcond_i64, 0, 2, 2, TCG_OPF_BB_END | IMPL64)
 DEF(ext8s_i64, 1, 1, 0, IMPL64 | IMPL(TCG_TARGET_HAS_ext8s_i64))
@@ -173,37 +180,82 @@ DEF(orc_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_orc_i64))
 DEF(eqv_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_eqv_i64))
 DEF(nand_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_nand_i64))
 DEF(nor_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_nor_i64))
+DEF(clz_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_clz_i64))
+DEF(ctz_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_ctz_i64))
+DEF(ctpop_i64, 1, 1, 0, IMPL64 | IMPL(TCG_TARGET_HAS_ctpop_i64))
 
 DEF(add2_i64, 2, 4, 0, IMPL64 | IMPL(TCG_TARGET_HAS_add2_i64))
 DEF(sub2_i64, 2, 4, 0, IMPL64 | IMPL(TCG_TARGET_HAS_sub2_i64))
 DEF(mulu2_i64, 2, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_mulu2_i64))
 DEF(muls2_i64, 2, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_muls2_i64))
-DEF(muluh_i64, 1, 2, 0, IMPL(TCG_TARGET_HAS_muluh_i64))
-DEF(mulsh_i64, 1, 2, 0, IMPL(TCG_TARGET_HAS_mulsh_i64))
+DEF(muluh_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_muluh_i64))
+DEF(mulsh_i64, 1, 2, 0, IMPL64 | IMPL(TCG_TARGET_HAS_mulsh_i64))
 
-/* QEMU specific */
-#if TARGET_LONG_BITS > TCG_TARGET_REG_BITS
-DEF(debug_insn_start, 0, 0, 2, TCG_OPF_NOT_PRESENT)
-#else
-DEF(debug_insn_start, 0, 0, 1, TCG_OPF_NOT_PRESENT)
-#endif
-DEF(exit_tb, 0, 0, 1, TCG_OPF_BB_END)
-DEF(goto_tb, 0, 0, 1, TCG_OPF_BB_END)
-
-#define TLADDR_ARGS    (TARGET_LONG_BITS <= TCG_TARGET_REG_BITS ? 1 : 2)
+#define TLADDR_ARGS  (TARGET_LONG_BITS <= TCG_TARGET_REG_BITS ? 1 : 2)
 #define DATA64_ARGS  (TCG_TARGET_REG_BITS == 64 ? 1 : 2)
 
-DEF(qemu_ld_i32, 1, TLADDR_ARGS, 2,
+/* QEMU specific */
+DEF(insn_start, 0, 0, TLADDR_ARGS * TARGET_INSN_START_WORDS,
+    TCG_OPF_NOT_PRESENT)
+DEF(exit_tb, 0, 0, 1, TCG_OPF_BB_END)
+DEF(goto_tb, 0, 0, 1, TCG_OPF_BB_END)
+DEF(goto_ptr, 0, 1, 0, TCG_OPF_BB_END | IMPL(TCG_TARGET_HAS_goto_ptr))
+
+DEF(qemu_ld_i32, 1, TLADDR_ARGS, 1,
     TCG_OPF_CALL_CLOBBER | TCG_OPF_SIDE_EFFECTS)
-DEF(qemu_st_i32, 0, TLADDR_ARGS + 1, 2,
+DEF(qemu_st_i32, 0, TLADDR_ARGS + 1, 1,
     TCG_OPF_CALL_CLOBBER | TCG_OPF_SIDE_EFFECTS)
-DEF(qemu_ld_i64, DATA64_ARGS, TLADDR_ARGS, 2,
+DEF(qemu_ld_i64, DATA64_ARGS, TLADDR_ARGS, 1,
     TCG_OPF_CALL_CLOBBER | TCG_OPF_SIDE_EFFECTS | TCG_OPF_64BIT)
-DEF(qemu_st_i64, 0, TLADDR_ARGS + DATA64_ARGS, 2,
+DEF(qemu_st_i64, 0, TLADDR_ARGS + DATA64_ARGS, 1,
     TCG_OPF_CALL_CLOBBER | TCG_OPF_SIDE_EFFECTS | TCG_OPF_64BIT)
+
+#define IMPLVEC  TCG_OPF_VECTOR | IMPL(TCG_TARGET_MAYBE_vec)
+
+DEF(mov_vec, 1, 1, 0, TCG_OPF_VECTOR | TCG_OPF_NOT_PRESENT)
+DEF(dupi_vec, 1, 0, 1, TCG_OPF_VECTOR | TCG_OPF_NOT_PRESENT)
+
+DEF(dup_vec, 1, 1, 0, IMPLVEC)
+DEF(dup2_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_REG_BITS == 32))
+
+DEF(ld_vec, 1, 1, 1, IMPLVEC)
+DEF(st_vec, 0, 2, 1, IMPLVEC)
+
+DEF(add_vec, 1, 2, 0, IMPLVEC)
+DEF(sub_vec, 1, 2, 0, IMPLVEC)
+DEF(mul_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_mul_vec))
+DEF(neg_vec, 1, 1, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_neg_vec))
+
+DEF(and_vec, 1, 2, 0, IMPLVEC)
+DEF(or_vec, 1, 2, 0, IMPLVEC)
+DEF(xor_vec, 1, 2, 0, IMPLVEC)
+DEF(andc_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_andc_vec))
+DEF(orc_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_orc_vec))
+DEF(not_vec, 1, 1, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_not_vec))
+
+DEF(shli_vec, 1, 1, 1, IMPLVEC | IMPL(TCG_TARGET_HAS_shi_vec))
+DEF(shri_vec, 1, 1, 1, IMPLVEC | IMPL(TCG_TARGET_HAS_shi_vec))
+DEF(sari_vec, 1, 1, 1, IMPLVEC | IMPL(TCG_TARGET_HAS_shi_vec))
+
+DEF(shls_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_shs_vec))
+DEF(shrs_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_shs_vec))
+DEF(sars_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_shs_vec))
+
+DEF(shlv_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_shv_vec))
+DEF(shrv_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_shv_vec))
+DEF(sarv_vec, 1, 2, 0, IMPLVEC | IMPL(TCG_TARGET_HAS_shv_vec))
+
+DEF(cmp_vec, 1, 2, 1, IMPLVEC)
+
+DEF(last_generic, 0, 0, 0, TCG_OPF_NOT_PRESENT)
+
+#if TCG_TARGET_MAYBE_vec
+#include "tcg-target.opc.h"
+#endif
 
 #undef TLADDR_ARGS
 #undef DATA64_ARGS
 #undef IMPL
 #undef IMPL64
+#undef IMPLVEC
 #undef DEF

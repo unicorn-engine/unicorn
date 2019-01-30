@@ -8,6 +8,7 @@
 #include <stdio.h>
 
 #include "qemu.h"
+#include "exec/ramlist.h"
 #include "unicorn/unicorn.h"
 #include "list.h"
 
@@ -22,7 +23,7 @@
 
 #define ARR_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
-#define READ_QWORD(x) ((uint64)x)
+#define READ_QWORD(x) ((uint64_t)x)
 #define READ_DWORD(x) (x & 0xffffffff)
 #define READ_WORD(x) (x & 0xffff)
 #define READ_BYTE_H(x) ((x & 0xffff) >> 8)
@@ -57,6 +58,7 @@ typedef void (*uc_args_void_t)(void*);
 
 typedef void (*uc_args_uc_t)(struct uc_struct*);
 typedef int (*uc_args_int_uc_t)(struct uc_struct*);
+typedef void (*uc_cpu_exec_exit_t)(CPUState*);
 
 typedef bool (*uc_args_tcg_enable_t)(struct uc_struct*);
 
@@ -161,6 +163,7 @@ struct uc_struct {
     uc_args_int_t stop_interrupt;   // check if the interrupt should stop emulation
 
     uc_args_uc_t init_arch, cpu_exec_init_all;
+    uc_cpu_exec_exit_t cpu_exec_exit;
     uc_args_int_uc_t vm_start;
     uc_args_tcg_enable_t tcg_enabled;
     uc_args_uc_long_t tcg_exec_init;
@@ -174,21 +177,50 @@ struct uc_struct {
 
     uc_insn_hook_validate insn_hook_validate;
 
-    MemoryRegion *system_memory;    // qemu/exec.c
-    MemoryRegion io_mem_rom;    // qemu/exec.c
-    MemoryRegion io_mem_notdirty;   // qemu/exec.c
-    MemoryRegion io_mem_unassigned; // qemu/exec.c
-    MemoryRegion io_mem_watch;  // qemu/exec.c
-    RAMList ram_list;   // qemu/exec.c
-    BounceBuffer bounce;    // qemu/cpu-exec.c
-    volatile sig_atomic_t exit_request; // qemu/cpu-exec.c
-    bool global_dirty_log;  // qemu/memory.c
+    // qemu/cpus.c
+    bool mttcg_enabled;
+
+    // qemu/exec.c
+    MemoryRegion *system_memory;
+    MemoryRegion io_mem_rom;
+    MemoryRegion io_mem_notdirty;
+    MemoryRegion io_mem_unassigned;
+    MemoryRegion io_mem_watch;
+    RAMList ram_list;
+    // Renamed from "alloc_hint" in qemu.
+    unsigned phys_map_node_alloc_hint;
+    // Used when a target's page bits can vary
+    int target_page_bits;
+    bool target_page_bits_decided;
+
+    // qemu/cpu-exec.c
+    BounceBuffer bounce;
+    CPUState *tcg_current_rr_cpu;
+
+    // qemu/user-exec.c
+    uintptr_t helper_retaddr;
+
+    // qemu/memory.c
+    FlatView *empty_view;
+    GHashTable *flat_views;
+    bool global_dirty_log;
+
     /* This is a multi-level map on the virtual address space.
        The bottom level has pointers to PageDesc.  */
     void **l1_map;  // qemu/translate-all.c
     size_t l1_map_size;
+    int v_l1_size;
+    int v_l1_shift;
+    int v_l2_levels;
+    uintptr_t qemu_real_host_page_size;
+    intptr_t qemu_real_host_page_mask;
+    uintptr_t qemu_host_page_size;
+    intptr_t qemu_host_page_mask;
+
     /* code generation context */
     void *tcg_ctx;  // for "TCGContext tcg_ctx" in qemu/translate-all.c
+    bool parallel_cpus; // for "bool parallel_cpus" in qemu/translate-all.c
+
     /* memory.c */
     unsigned memory_region_transaction_depth;
     bool memory_region_update_pending;
@@ -196,6 +228,8 @@ struct uc_struct {
     QTAILQ_HEAD(memory_listeners, MemoryListener) memory_listeners;
     QTAILQ_HEAD(, AddressSpace) address_spaces;
     MachineState *machine_state;
+    // qom/cpu.c
+    bool cpu_globals_initialized;
     // qom/object.c
     GHashTable *type_table;
     Type type_interface;
@@ -245,6 +279,10 @@ struct uc_struct {
     uint32_t target_page_align;
     uint64_t next_pc;   // save next PC for some special cases
     bool hook_insert;	// insert new hook at begin of the hook list (append by default)
+
+    // util/cacheinfo.c
+    int qemu_icache_linesize;
+    int qemu_dcache_linesize;
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
@@ -255,6 +293,10 @@ struct uc_context {
 
 // check if this address is mapped in (via uc_mem_map())
 MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address);
+
+// Defined in util/cacheinfo.c. Made externally linked to
+// allow calling it directly.
+void init_cache_info(struct uc_struct *uc);
 
 #endif
 /* vim: set ts=4 noet:  */

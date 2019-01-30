@@ -73,10 +73,21 @@
 #define sigsetjmp(env, savemask) setjmp(env)
 #define siglongjmp(env, val) longjmp(env, val)
 
-size_t getpagesize(void);
+int getpagesize(void);
 
 #if !defined(EPROTONOSUPPORT)
 # define EPROTONOSUPPORT EINVAL
+#endif
+
+#ifdef _WIN32
+#define fsync _commit
+#if !defined(lseek)
+# define lseek _lseeki64
+#endif
+int qemu_ftruncate64(int, int64_t);
+#if !defined(ftruncate)
+# define ftruncate qemu_ftruncate64
+#endif
 #endif
 
 #endif

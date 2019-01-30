@@ -3,6 +3,10 @@
 
 #include "qemu/typedefs.h"
 #include "qemu-common.h"
+#include "qemu/host-utils.h"
+#include "sysemu/cpus.h"
+
+#define NANOSECONDS_PER_SECOND 1000000000LL
 
 /* timers */
 
@@ -148,11 +152,6 @@ void cpu_enable_ticks(void);
 /* Caller must hold BQL */
 void cpu_disable_ticks(void);
 
-static inline int64_t get_ticks_per_sec(void)
-{
-    return 1000000000LL;
-}
-
 /*
  * Low level clock functions
  */
@@ -176,7 +175,7 @@ static inline int64_t get_clock(void)
 {
     LARGE_INTEGER ti;
     QueryPerformanceCounter(&ti);
-    return muldiv64(ti.QuadPart, (uint32_t)get_ticks_per_sec(), (uint32_t)clock_freq);
+    return muldiv64(ti.QuadPart, (uint32_t)NANOSECONDS_PER_SECOND, (uint32_t)clock_freq);
 }
 
 #else
@@ -258,15 +257,6 @@ static inline int64_t cpu_get_real_ticks(void)
 {
     int val;
     asm volatile ("mfctl %%cr16, %0" : "=r"(val));
-    return val;
-}
-
-#elif defined(__ia64)
-
-static inline int64_t cpu_get_real_ticks(void)
-{
-    int64_t val;
-    asm volatile ("mov %0 = ar.itc" : "=r"(val) :: "memory");
     return val;
 }
 

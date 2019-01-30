@@ -2,14 +2,18 @@
  * QEMU Error Objects
  *
  * Copyright IBM, Corp. 2011
+ * Copyright (C) 2011-2015 Red Hat, Inc.
  *
  * Authors:
  *  Anthony Liguori   <aliguori@us.ibm.com>
+ *  Markus Armbruster <armbru@redhat.com>,
  *
  * This work is licensed under the terms of the GNU LGPL, version 2.  See
  * the COPYING.LIB file in the top-level directory.
  */
 
+#include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "qemu-common.h"
 #include "qapi/error.h"
 
@@ -17,14 +21,36 @@ struct Error
 {
     char *msg;
     ErrorClass err_class;
+    const char *src, *func;
+    int line;
 };
 
 Error *error_abort;
+Error *error_fatal;
 
-void error_set(Error **errp, ErrorClass err_class, const char *fmt, ...)
+static void error_handle_fatal(Error **errp, Error *err)
+{
+    if (errp == &error_abort) {
+        fprintf(stderr, "Unexpected error in %s() at %s:%d:\n",
+                err->func, err->src, err->line);
+
+        // Unicorn: commented out
+        //error_report_err(err);
+        //abort();
+    }
+    if (errp == &error_fatal) {
+        // Unicorn: commented out
+        //error_report_err(err);
+        //exit(1);
+    }
+}
+
+static void error_setv(Error **errp,
+                       const char *src, int line, const char *func,
+                       ErrorClass err_class, const char *fmt, va_list ap,
+                       const char *suffix)
 {
     Error *err;
-    va_list ap;
     int saved_errno = errno;
 
     if (errp == NULL) {
@@ -34,58 +60,70 @@ void error_set(Error **errp, ErrorClass err_class, const char *fmt, ...)
 
     err = g_malloc0(sizeof(*err));
 
-    va_start(ap, fmt);
     err->msg = g_strdup_vprintf(fmt, ap);
-    va_end(ap);
-    err->err_class = err_class;
-
-    if (errp == &error_abort) {
-        // abort();
+    if (suffix) {
+        char *msg = err->msg;
+        err->msg = g_strdup_printf("%s: %s", msg, suffix);
+        g_free(msg);
     }
+    err->err_class = err_class;
+    err->src = src;
+    err->line = line;
+    err->func = func;
 
+    error_handle_fatal(errp, err);
     *errp = err;
 
     errno = saved_errno;
 }
 
-void error_set_errno(Error **errp, int os_errno, ErrorClass err_class,
-                     const char *fmt, ...)
+void error_set_internal(Error **errp,
+                        const char *src, int line, const char *func,
+                        ErrorClass err_class, const char *fmt, ...)
 {
-    Error *err;
-    char *msg1;
+    va_list ap;
+
+    va_start(ap, fmt);
+    error_setv(errp, src, line, func, err_class, fmt, ap, NULL);
+    va_end(ap);
+}
+
+void error_setg_internal(Error **errp,
+                         const char *src, int line, const char *func,
+                         const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    error_setv(errp, src, line, func, ERROR_CLASS_GENERIC_ERROR, fmt, ap, NULL);
+    va_end(ap);
+}
+
+void error_setg_errno_internal(Error **errp,
+                               const char *src, int line, const char *func,
+                               int os_errno, const char *fmt, ...)
+{
     va_list ap;
     int saved_errno = errno;
 
     if (errp == NULL) {
         return;
     }
-    assert(*errp == NULL);
-
-    err = g_malloc0(sizeof(*err));
 
     va_start(ap, fmt);
-    msg1 = g_strdup_vprintf(fmt, ap);
-    if (os_errno != 0) {
-        err->msg = g_strdup_printf("%s: %s", msg1, strerror(os_errno));
-        g_free(msg1);
-    } else {
-        err->msg = msg1;
-    }
+    error_setv(errp, src, line, func, ERROR_CLASS_GENERIC_ERROR, fmt, ap,
+               os_errno != 0 ? strerror(os_errno) : NULL);
     va_end(ap);
-    err->err_class = err_class;
-
-    if (errp == &error_abort) {
-        // abort();
-    }
-
-    *errp = err;
 
     errno = saved_errno;
 }
 
-void error_setg_file_open(Error **errp, int os_errno, const char *filename)
+void error_setg_file_open_internal(Error **errp,
+                                   const char *src, int line, const char *func,
+                                   int os_errno, const char *filename)
 {
-    error_setg_errno(errp, os_errno, "Could not open '%s'", filename);
+    error_setg_errno_internal(errp, src, line, func, os_errno,
+                              "Could not open '%s'", filename);
 }
 
 Error *error_copy(const Error *err)
@@ -95,6 +133,9 @@ Error *error_copy(const Error *err)
     err_new = g_malloc0(sizeof(*err));
     err_new->msg = g_strdup(err->msg);
     err_new->err_class = err->err_class;
+    err_new->src = err->src;
+    err_new->line = err->line;
+    err_new->func = err->func;
 
     return err_new;
 }
@@ -119,11 +160,13 @@ void error_free(Error *err)
 
 void error_propagate(Error **dst_errp, Error *local_err)
 {
-    if (local_err && dst_errp == &error_abort) {
-        // abort();
-    } else if (dst_errp && !*dst_errp) {
+    if (!local_err) {
+        return;
+    }
+    error_handle_fatal(dst_errp, local_err);
+    if (dst_errp && !*dst_errp) {
         *dst_errp = local_err;
-    } else if (local_err) {
+    } else {
         error_free(local_err);
     }
 }

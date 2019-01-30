@@ -31,44 +31,134 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
+#include "qapi/error.h"
+#include "qemu-common.h"
+#include "cpu.h"
 #include "hw/arm/arm.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
 
+// Unicorn: Daughterboard member removed, as it's not necessary
+//          for Unicorn's purposes.
+typedef struct {
+    MachineClass parent;
+} VirtMachineClass;
+
+typedef struct {
+    MachineState parent;
+    bool secure;
+} VirtMachineState;
+
+#define TYPE_VIRT_MACHINE   MACHINE_TYPE_NAME("virt")
+#define VIRT_MACHINE(uc, obj) \
+    OBJECT_CHECK((uc), VirtMachineState, (obj), TYPE_VIRT_MACHINE)
+#define VIRT_MACHINE_GET_CLASS(uc, obj) \
+    OBJECT_GET_CLASS(uc, VirtMachineClass, obj, TYPE_VIRT_MACHINE)
+#define VIRT_MACHINE_CLASS(uc, klass) \
+    OBJECT_CLASS_CHECK(uc, VirtMachineClass, klass, TYPE_VIRT_MACHINE)
+
+static const char *valid_cpus[] = {
+    ARM_CPU_TYPE_NAME("cortex-a15"),
+    ARM_CPU_TYPE_NAME("cortex-a53"),
+    ARM_CPU_TYPE_NAME("cortex-a57"),
+    ARM_CPU_TYPE_NAME("host"),
+    // Unicorn: added to allow enabling all CPU features
+    ARM_CPU_TYPE_NAME("max"),
+};
+
+static bool cpu_type_valid(const char *cpu)
+{
+    int i;
+
+    for (i = 0; i < ARRAY_SIZE(valid_cpus); i++) {
+        if (strcmp(cpu, valid_cpus[i]) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
 
 static int machvirt_init(struct uc_struct *uc, MachineState *machine)
 {
-    const char *cpu_model = machine->cpu_model;
     int n;
 
-    if (!cpu_model) {
-        cpu_model = "cortex-a57";   // ARM64
+    if (!cpu_type_valid(machine->cpu_type)) {
+        fprintf(stderr, "mach-virt: CPU type %s not supported", machine->cpu_type);
+        return -1;
     }
 
     for (n = 0; n < smp_cpus; n++) {
-        Object *cpuobj;
-        ObjectClass *oc = cpu_class_by_name(uc, TYPE_ARM_CPU, cpu_model);
+        Object *cpuobj = object_new(uc, machine->cpu_type);
 
-        if (!oc) {
-            fprintf(stderr, "Unable to find CPU definition\n");
-            return -1;
-        }
-
-        cpuobj = object_new(uc, object_class_get_name(oc));
-        uc->cpu = (CPUState *)cpuobj;
+        uc->cpu = CPU(cpuobj);
         object_property_set_bool(uc, cpuobj, true, "realized", NULL);
     }
-
     return 0;
 }
 
+static QEMU_UNUSED_FUNC bool virt_get_secure(struct uc_struct *uc, Object *obj, Error **errp)
+{
+    VirtMachineState *vms = VIRT_MACHINE(uc, obj);
+
+    return vms->secure;
+}
+
+static QEMU_UNUSED_FUNC int virt_set_secure(struct uc_struct *uc, Object *obj, bool value, Error **errp)
+{
+    VirtMachineState *vms = VIRT_MACHINE(uc, obj);
+
+    vms->secure = value;
+    return 0;
+}
+
+static void virt_instance_init(struct uc_struct *uc, Object *obj, void *opaque)
+{
+    VirtMachineState *vms = VIRT_MACHINE(uc, obj);
+
+    /* EL3 is enabled by default on virt */
+    vms->secure = true;
+
+    /* Unicorn: should be uncommented, but causes linkage errors :/
+    object_property_add_bool(uc, obj, "secure", virt_get_secure,
+                             virt_set_secure, NULL);
+    object_property_set_description(uc, obj, "secure",
+                                    "Set on/off to enable/disable the ARM "
+                                    "Security Extensions (TrustZone)",
+                                    NULL);
+    */
+}
+
+static void virt_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(uc, oc);
+
+    mc->init = machvirt_init;
+    mc->max_cpus = 8;
+    mc->is_default = 1;
+    mc->arch = UC_ARCH_ARM64;
+    // Unicorn: Enable all CPU features
+    mc->default_cpu_type = ARM_CPU_TYPE_NAME("max");
+}
+
+static const TypeInfo machvirt_info = {
+    TYPE_VIRT_MACHINE,
+    TYPE_MACHINE,
+
+    sizeof(VirtMachineClass),
+    sizeof(VirtMachineState),
+    NULL,
+
+    virt_instance_init,
+    NULL,
+    NULL,
+
+    NULL,
+
+    virt_class_init,
+};
+
 void machvirt_machine_init(struct uc_struct *uc)
 {
-    static QEMUMachine machvirt_a15_machine = { 0 };
-    machvirt_a15_machine.name = "virt",
-    machvirt_a15_machine.init = machvirt_init,
-    machvirt_a15_machine.is_default = 1,
-    machvirt_a15_machine.arch = UC_ARCH_ARM64,
-
-    qemu_register_machine(uc, &machvirt_a15_machine, TYPE_MACHINE, NULL);
+    type_register_static(uc, &machvirt_info);
 }

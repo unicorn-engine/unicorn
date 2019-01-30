@@ -26,7 +26,9 @@
  * THE SOFTWARE.
  */
 
-#if defined(__linux__) && (defined(__x86_64__) || defined(__arm__))
+#if defined(__linux__) && \
+    (defined(__x86_64__) || defined(__arm__) || defined(__aarch64__) \
+     || defined(__powerpc64__))
    /* Use 2 MiB alignment so transparent hugepages can be used by KVM.
       Valgrind does not support alignments larger than 1 MiB,
       therefore we need special code which handles running on Valgrind. */
@@ -34,13 +36,17 @@
 #elif defined(__linux__) && defined(__s390x__)
    /* Use 1 MiB (segment size) alignment so gmap can be used by KVM. */
 #  define QEMU_VMALLOC_ALIGN (256 * 4096)
+#elif defined(__linux__) && defined(__sparc__)
+#include <sys/shm.h>
+#  define QEMU_VMALLOC_ALIGN MAX(getpagesize(), SHMLBA)
 #else
 #  define QEMU_VMALLOC_ALIGN getpagesize()
 #endif
 #define HUGETLBFS_MAGIC       0x958458f6
 
+#include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "unicorn/platform.h"
-#include "config-host.h"
 #include "sysemu/sysemu.h"
 #include <sys/mman.h>
 #include <libgen.h>
@@ -50,6 +56,7 @@
 #else
 #include <sys/signal.h>
 #endif
+#include "qemu/cutils.h"
 
 #ifdef CONFIG_LINUX
 #if !defined(__CYGWIN__)
@@ -60,7 +67,10 @@
 
 #ifdef __FreeBSD__
 #include <sys/sysctl.h>
+#include <sys/user.h>
 #endif
+
+#include "qemu/mmap-alloc.h"
 
 void *qemu_oom_check(void *ptr)
 {
@@ -79,7 +89,7 @@ void *qemu_try_memalign(size_t alignment, size_t size)
         alignment = sizeof(void*);
     }
 
-#if defined(_POSIX_C_SOURCE) && !defined(__sun__)
+#if defined(CONFIG_POSIX_MEMALIGN)
     int ret;
     ret = posix_memalign(&ptr, alignment, size);
     if (ret != 0) {
@@ -103,10 +113,7 @@ void *qemu_memalign(size_t alignment, size_t size)
 void *qemu_anon_ram_alloc(size_t size, uint64_t *alignment)
 {
     size_t align = QEMU_VMALLOC_ALIGN;
-    size_t total = size + align - getpagesize();
-    void *ptr = mmap(0, total, PROT_READ | PROT_WRITE,
-                     MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    size_t offset = QEMU_ALIGN_UP((uintptr_t)ptr, align) - (uintptr_t)ptr;
+    void *ptr = qemu_ram_mmap(-1, size, align, false);
 
     if (ptr == MAP_FAILED) {
         return NULL;
@@ -114,15 +121,6 @@ void *qemu_anon_ram_alloc(size_t size, uint64_t *alignment)
 
     if (alignment) {
         *alignment = align;
-    }
-    ptr += offset;
-    total -= offset;
-
-    if (offset > 0) {
-        munmap(ptr - offset, offset);
-    }
-    if (total > size) {
-        munmap(ptr + size, total - size);
     }
 
     return ptr;
@@ -135,7 +133,5 @@ void qemu_vfree(void *ptr)
 
 void qemu_anon_ram_free(void *ptr, size_t size)
 {
-    if (ptr) {
-        munmap(ptr, size);
-    }
+    qemu_ram_munmap(ptr, size);
 }

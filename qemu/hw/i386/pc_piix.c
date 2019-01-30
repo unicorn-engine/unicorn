@@ -23,6 +23,9 @@
  */
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
+#include "qemu/osdep.h"
+#include "cpu.h"
+#include "qapi/error.h"
 #include "hw/i386/pc.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
@@ -38,41 +41,24 @@
 /* PC hardware initialisation */
 static int pc_init1(struct uc_struct *uc, MachineState *machine)
 {
-    return pc_cpus_init(uc, machine->cpu_model);
+    PCMachineState *pcms = PC_MACHINE(uc, machine);
+    return pc_cpus_init(uc, pcms);
 }
 
-static int pc_init_pci(struct uc_struct *uc, MachineState *machine)
+static void pc_compat_2_2(struct uc_struct *uc, MachineState *machine)
 {
-    return pc_init1(uc, machine);
 }
 
-static QEMUMachine pc_i440fx_machine_v2_2 = {
-    "pc_piix",
-    "pc-i440fx-2.2",
-    pc_init_pci,
-    NULL,
-    255,
-    1,
-    UC_ARCH_X86,    // X86
-};
+// Unicorn: Modified for use with unicorn (no need for an option function)
+#define DEFINE_I440FX_MACHINE(suffix, name, compatfn) \
+    static int pc_init_##suffix(struct uc_struct *uc, MachineState *machine) \
+    { \
+        void (*compat)(struct uc_struct *uc, MachineState *m) = (compatfn); \
+        if (compat) { \
+            compat(uc, machine); \
+        } \
+        return pc_init1(uc, machine); \
+    } \
+    DEFINE_PC_MACHINE(suffix, name, pc_init_##suffix)
 
-static void pc_generic_machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
-{
-    MachineClass *mc = MACHINE_CLASS(uc, oc);
-    QEMUMachine *qm = data;
-
-    mc->family = qm->family;
-    mc->name = qm->name;
-    mc->init = qm->init;
-    mc->reset = qm->reset;
-    mc->max_cpus = qm->max_cpus;
-    mc->is_default = qm->is_default;
-    mc->arch = qm->arch;
-}
-
-void pc_machine_init(struct uc_struct *uc);
-void pc_machine_init(struct uc_struct *uc)
-{
-    qemu_register_machine(uc, &pc_i440fx_machine_v2_2,
-            TYPE_PC_MACHINE, pc_generic_machine_class_init);
-}
+DEFINE_I440FX_MACHINE(v2_2, "pc-i440fx-2.2", pc_compat_2_2);

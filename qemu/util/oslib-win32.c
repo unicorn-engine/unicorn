@@ -26,11 +26,12 @@
  * THE SOFTWARE.
  *
  */
+#include "qemu/osdep.h"
+#include "qapi/error.h"
 #include <winsock2.h>
 #include <windows.h>
+#include "qemu/cutils.h"
 
-#include <stdlib.h>
-#include "config-host.h"
 #include "sysemu/sysemu.h"
 
 /* this must come after including "trace.h" */
@@ -94,7 +95,7 @@ void qemu_anon_ram_free(void *ptr, size_t size)
     }
 }
 
-size_t getpagesize(void)
+int getpagesize(void)
 {
     SYSTEM_INFO system_info;
 

@@ -11,9 +11,6 @@
     <ClCompile Include="..\..\..\qemu\glib_compat.c">
       <Filter>qemu</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\qemu-log.c">
-      <Filter>qemu</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\..\qemu\qemu-timer.c">
       <Filter>qemu</Filter>
     </ClCompile>
@@ -22,9 +19,6 @@
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\vl.c">
       <Filter>qemu</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\..\qemu\util\aes.c">
-      <Filter>qemu\util</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\util\bitmap.c">
       <Filter>qemu\util</Filter>
@@ -47,6 +41,9 @@
     <ClCompile Include="..\..\..\qemu\util\host-utils.c">
       <Filter>qemu\util</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\log.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\util\module.c">
       <Filter>qemu\util</Filter>
     </ClCompile>
@@ -62,11 +59,17 @@
     <ClCompile Include="..\..\..\qemu\util\qemu-timer-common.c">
       <Filter>qemu\util</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\util\range.c">
+      <Filter>qemu\util</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\hw\core\machine.c">
       <Filter>qemu\hw\core</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\hw\core\qdev.c">
       <Filter>qemu\hw\core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qapi\qapi-clone-visitor.c">
+      <Filter>qemu\qapi</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\qapi\qapi-dealloc-visitor.c">
       <Filter>qemu\qapi</Filter>
@@ -74,10 +77,10 @@
     <ClCompile Include="..\..\..\qemu\qapi\qapi-visit-core.c">
       <Filter>qemu\qapi</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\qapi\qmp-input-visitor.c">
+    <ClCompile Include="..\..\..\qemu\qapi\qobject-input-visitor.c">
       <Filter>qemu\qapi</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\qemu\qapi\qmp-output-visitor.c">
+    <ClCompile Include="..\..\..\qemu\qapi\qobject-output-visitor.c">
       <Filter>qemu\qapi</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\qemu\qapi\string-input-visitor.c">
@@ -101,6 +104,15 @@
     <ClCompile Include="..\..\..\qemu\qobject\qlist.c">
       <Filter>qemu\qobject</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qlit.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qnull.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\qobject\qobject.c">
+      <Filter>qemu\qobject</Filter>
+    </ClCompile>
     <ClCompile Include="..\..\..\qemu\qobject\qstring.c">
       <Filter>qemu\qobject</Filter>
     </ClCompile>
@@ -117,10 +129,28 @@
       <Filter>qemu\qom</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\uc.c" />
-    <ClCompile Include="..\qapi-types.c">
+    <ClCompile Include="..\qapi\qapi-types.c">
       <Filter>qemu</Filter>
     </ClCompile>
-    <ClCompile Include="..\qapi-visit.c">
+    <ClCompile Include="..\qapi\qapi-builtin-types.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\qapi\qapi-builtin-visit.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\qapi\qapi-types-common.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\qapi\qapi-visit-common.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\qapi\qapi-types-misc.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\qapi\qapi-visit-misc.c">
+      <Filter>qemu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\qapi\qapi-visit.c">
       <Filter>qemu</Filter>
     </ClCompile>
   </ItemGroup>
@@ -211,10 +241,28 @@
     <ClInclude Include="..\config-host.h">
       <Filter>qemu</Filter>
     </ClInclude>
-    <ClInclude Include="..\qapi-types.h">
+    <ClInclude Include="..\qapi\qapi-types.h">
       <Filter>qemu</Filter>
     </ClInclude>
-    <ClInclude Include="..\qapi-visit.h">
+    <ClInclude Include="..\qapi\qapi-builtin-types.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi\qapi-builtin-visit.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi\qapi-types-common.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi\qapi-visit-common.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi\qapi-types-misc.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi\qapi-visit-misc.h">
+      <Filter>qemu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\qapi\qapi-visit.h">
       <Filter>qemu</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\config.h">
@@ -292,7 +340,19 @@
     <ClInclude Include="..\..\..\qemu\include\exec\spinlock.h">
       <Filter>qemu\include\exec</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\tb-context.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\tb-hash.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\exec\tb-hash-xx.h">
+      <Filter>qemu\include\exec</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\fpu\softfloat.h">
+      <Filter>qemu\include\fpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\fpu\softfloat-types.h">
       <Filter>qemu\include\fpu</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\hw\boards.h">
@@ -352,6 +412,9 @@
     <ClInclude Include="..\..\..\qemu\include\hw\sparc\sun4m.h">
       <Filter>qemu\include\hw\sparc</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\clone-visitor.h">
+      <Filter>qemu\include\qapi</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\dealloc-visitor.h">
       <Filter>qemu\include\qapi</Filter>
     </ClInclude>
@@ -361,10 +424,10 @@
     <ClInclude Include="..\..\..\qemu\include\qapi\opts-visitor.h">
       <Filter>qemu\include\qapi</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp-input-visitor.h">
+    <ClInclude Include="..\..\..\qemu\include\qapi\qobject-input-visitor.h">
       <Filter>qemu\include\qapi</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp-output-visitor.h">
+    <ClInclude Include="..\..\..\qemu\include\qapi\qobject-output-visitor.h">
       <Filter>qemu\include\qapi</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\string-input-visitor.h">
@@ -385,16 +448,16 @@
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qerror.h">
       <Filter>qemu\include\qapi\qmp</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qfloat.h">
-      <Filter>qemu\include\qapi\qmp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qint.h">
-      <Filter>qemu\include\qapi\qmp</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qjson.h">
       <Filter>qemu\include\qapi\qmp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qlist.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qlit.h">
+      <Filter>qemu\include\qapi\qmp</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qnum.h">
       <Filter>qemu\include\qapi\qmp</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qobject.h">
@@ -402,13 +465,7 @@
     </ClInclude>
     <ClInclude Include="..\..\..\qemu\include\qapi\qmp\qstring.h">
       <Filter>qemu\include\qapi\qmp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qapi\qmp\types.h">
-      <Filter>qemu\include\qapi\qmp</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\..\qemu\include\qemu\aes.h">
-      <Filter>qemu\include\qemu</Filter>
-    </ClInclude>
+    </ClInclude
     <ClInclude Include="..\..\..\qemu\include\qemu\atomic.h">
       <Filter>qemu\include\qemu</Filter>
     </ClInclude>

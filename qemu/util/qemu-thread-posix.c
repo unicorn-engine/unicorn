@@ -10,14 +10,9 @@
  * See the COPYING file in the top-level directory.
  *
  */
-#include <stdlib.h>
-#include <stdio.h>
-#include <errno.h>
-#include <time.h>
-#include <signal.h>
+
+#include "qemu/osdep.h"
 #include "unicorn/platform.h"
-#include <string.h>
-#include <limits.h>
 #ifdef __linux__
 #include <sys/syscall.h>
 #include <linux/futex.h>

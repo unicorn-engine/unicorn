@@ -10,16 +10,9 @@
  * See the COPYING.LIB file in the top-level directory.
  */
 
-#include "qapi/qmp/qobject.h"
+#include "qemu/osdep.h"
 #include "qapi/qmp/qstring.h"
 #include "qemu-common.h"
-
-static void qstring_destroy_obj(QObject *obj);
-
-static const QType qstring_type = {
-    QTYPE_QSTRING,
-    qstring_destroy_obj,
-};
 
 /**
  * qstring_new(): Create a new empty QString
@@ -44,20 +37,22 @@ size_t qstring_get_length(const QString *qstring)
  *
  * Return string reference
  */
-QString *qstring_from_substr(const char *str, int start, int end)
+QString *qstring_from_substr(const char *str, size_t start, size_t end)
 {
     QString *qstring;
 
-    qstring = g_malloc(sizeof(*qstring));
+    assert(start <= end);
 
-    qstring->length = end - start + 1;
+    qstring = g_malloc(sizeof(*qstring));
+    qobject_init(QOBJECT(qstring), QTYPE_QSTRING);
+
+    assert(qstring->capacity < SIZE_MAX);
+    qstring->length = end - start;
     qstring->capacity = qstring->length;
 
     qstring->string = g_malloc(qstring->capacity + 1);
     memcpy(qstring->string, str + start, qstring->length);
     qstring->string[qstring->length] = 0;
-
-    QOBJECT_INIT(qstring, &qstring_type);
 
     return qstring;
 }
@@ -69,13 +64,15 @@ QString *qstring_from_substr(const char *str, int start, int end)
  */
 QString *qstring_from_str(const char *str)
 {
-    return qstring_from_substr(str, 0, strlen(str) - 1);
+    return qstring_from_substr(str, 0, strlen(str));
 }
 
 static void capacity_increase(QString *qstring, size_t len)
 {
     if (qstring->capacity < (qstring->length + len)) {
+        assert(len <= SIZE_MAX - qstring->capacity);
         qstring->capacity += len;
+        assert(qstring->capacity <= SIZE_MAX / 2);
         qstring->capacity *= 2; /* use exponential growth */
 
         qstring->string = g_realloc(qstring->string, qstring->capacity + 1);
@@ -113,17 +110,6 @@ void qstring_append_chr(QString *qstring, int c)
 }
 
 /**
- * qobject_to_qstring(): Convert a QObject to a QString
- */
-QString *qobject_to_qstring(const QObject *obj)
-{
-    if (qobject_type(obj) != QTYPE_QSTRING)
-        return NULL;
-
-    return container_of(obj, QString, base);
-}
-
-/**
  * qstring_get_str(): Return a pointer to the stored string
  *
  * NOTE: Should be used with caution, if the object is deallocated
@@ -135,15 +121,45 @@ const char *qstring_get_str(const QString *qstring)
 }
 
 /**
+ * qstring_get_try_str(): Return a pointer to the stored string
+ *
+ * NOTE: will return NULL if qstring is not provided.
+ */
+const char *qstring_get_try_str(const QString *qstring)
+{
+    return qstring ? qstring_get_str(qstring) : NULL;
+}
+
+/**
+ * qstring_is_equal(): Test whether the two QStrings are equal
+ */
+bool qstring_is_equal(const QObject *x, const QObject *y)
+{
+    return !strcmp(qobject_to(QString, x)->string,
+                   qobject_to(QString, y)->string);
+}
+
+/**
+ * qobject_get_try_str(): Return a pointer to the corresponding string
+ *
+ * NOTE: the string will only be returned if the object is valid, and
+ * its type is QString, otherwise NULL is returned.
+ */
+const char *qobject_get_try_str(const QObject *qstring)
+{
+    return qstring_get_try_str(qobject_to(QString, qstring));
+}
+
+/**
  * qstring_destroy_obj(): Free all memory allocated by a QString
  * object
  */
-static void qstring_destroy_obj(QObject *obj)
+void qstring_destroy_obj(QObject *obj)
 {
     QString *qs;
 
     assert(obj != NULL);
-    qs = qobject_to_qstring(obj);
+    qs = qobject_to(QString, obj);
     g_free(qs->string);
     g_free(qs);
 }

@@ -17,4 +17,6 @@ extern int smp_threads;
 #define smp_threads 1
 #endif
 
+void qemu_tcg_configure(struct uc_struct *uc);
+
 #endif

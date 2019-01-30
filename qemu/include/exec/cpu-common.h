@@ -11,12 +11,10 @@ struct uc_struct;
 
 #include "qemu/bswap.h"
 #include "qemu/queue.h"
+#include "qemu/fprintf-fn.h"
+#include "qemu/typedefs.h"
 
-typedef enum MMUAccessType {
-    MMU_DATA_LOAD  = 0,
-    MMU_DATA_STORE = 1,
-    MMU_INST_FETCH = 2
-} MMUAccessType;
+void tcg_flush_softmmu_tlb(CPUState *cs);
 
 #if !defined(CONFIG_USER_ONLY)
 
@@ -25,6 +23,12 @@ enum device_endian {
     DEVICE_BIG_ENDIAN,
     DEVICE_LITTLE_ENDIAN,
 };
+
+#if defined(HOST_WORDS_BIGENDIAN)
+#define DEVICE_HOST_ENDIAN DEVICE_BIG_ENDIAN
+#else
+#define DEVICE_HOST_ENDIAN DEVICE_LITTLE_ENDIAN
+#endif
 
 /* address in the RAM (different from a physical address) */
 #if defined(CONFIG_XEN_BACKEND)
@@ -46,9 +50,14 @@ typedef uint32_t CPUReadMemoryFunc(void *opaque, hwaddr addr);
 
 void qemu_ram_remap(struct uc_struct *uc, ram_addr_t addr, ram_addr_t length);
 /* This should not be used by devices.  */
-MemoryRegion *qemu_ram_addr_from_host(struct uc_struct* uc, void *ptr, ram_addr_t *ram_addr);
-void qemu_ram_set_idstr(struct uc_struct *uc, ram_addr_t addr, const char *name, DeviceState *dev);
-void qemu_ram_unset_idstr(struct uc_struct *uc, ram_addr_t addr);
+ram_addr_t qemu_ram_addr_from_host(struct uc_struct* uc, void *ptr);
+RAMBlock *qemu_ram_block_by_name(struct uc_struct* uc, const char *name);
+RAMBlock *qemu_ram_block_from_host(struct uc_struct* uc, void *ptr, bool round_offset,
+                                   ram_addr_t *offset);
+void qemu_ram_set_idstr(struct uc_struct *uc, RAMBlock *block, const char *name, DeviceState *dev);
+void qemu_ram_unset_idstr(struct uc_struct *uc, RAMBlock *block);
+const char *qemu_ram_get_idstr(RAMBlock *rb);
+bool qemu_ram_is_shared(RAMBlock *rb);
 
 bool cpu_physical_memory_rw(AddressSpace *as, hwaddr addr, uint8_t *buf,
                             int len, int is_write);
@@ -78,31 +87,6 @@ bool cpu_physical_memory_is_io(AddressSpace *as, hwaddr phys_addr);
  */
 void qemu_flush_coalesced_mmio_buffer(void);
 
-uint32_t ldub_phys(AddressSpace *as, hwaddr addr);
-uint32_t lduw_le_phys(AddressSpace *as, hwaddr addr);
-uint32_t lduw_be_phys(AddressSpace *as, hwaddr addr);
-uint32_t ldl_le_phys(AddressSpace *as, hwaddr addr);
-uint32_t ldl_be_phys(AddressSpace *as, hwaddr addr);
-uint64_t ldq_le_phys(AddressSpace *as, hwaddr addr);
-uint64_t ldq_be_phys(AddressSpace *as, hwaddr addr);
-void stb_phys(AddressSpace *as, hwaddr addr, uint32_t val);
-void stw_le_phys(AddressSpace *as, hwaddr addr, uint32_t val);
-void stw_be_phys(AddressSpace *as, hwaddr addr, uint32_t val);
-void stl_le_phys(AddressSpace *as, hwaddr addr, uint32_t val);
-void stl_be_phys(AddressSpace *as, hwaddr addr, uint32_t val);
-void stq_le_phys(AddressSpace *as, hwaddr addr, uint64_t val);
-void stq_be_phys(AddressSpace *as, hwaddr addr, uint64_t val);
-
-#ifdef NEED_CPU_H
-uint32_t lduw_phys(AddressSpace *as, hwaddr addr);
-uint32_t ldl_phys(AddressSpace *as, hwaddr addr);
-uint64_t ldq_phys(AddressSpace *as, hwaddr addr);
-void stl_phys_notdirty(AddressSpace *as, hwaddr addr, uint32_t val);
-void stw_phys(AddressSpace *as, hwaddr addr, uint32_t val);
-void stl_phys(AddressSpace *as, hwaddr addr, uint32_t val);
-void stq_phys(AddressSpace *as, hwaddr addr, uint64_t val);
-#endif
-
 void cpu_physical_memory_write_rom(AddressSpace *as, hwaddr addr,
                                    const uint8_t *buf, int len);
 void cpu_flush_icache_range(AddressSpace *as, hwaddr start, int len);
@@ -110,10 +94,10 @@ void cpu_flush_icache_range(AddressSpace *as, hwaddr start, int len);
 extern struct MemoryRegion io_mem_rom;
 extern struct MemoryRegion io_mem_notdirty;
 
-typedef void (RAMBlockIterFunc)(void *host_addr,
+typedef int (RAMBlockIterFunc)(const char *block_name, void *host_addr,
     ram_addr_t offset, ram_addr_t length, void *opaque);
 
-void qemu_ram_foreach_block(struct uc_struct *uc, RAMBlockIterFunc func, void *opaque);
+int qemu_ram_foreach_block(struct uc_struct *uc, RAMBlockIterFunc func, void *opaque);
 
 #endif
 

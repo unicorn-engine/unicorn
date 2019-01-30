@@ -1,9 +1,11 @@
 # -*- Mode: Python -*-
-#
-# QAPI common definitions
 
 ##
-# @ErrorClass
+# = QAPI common definitions
+##
+
+##
+# @QapiErrorClass:
 #
 # QEMU error classes
 #
@@ -24,7 +26,8 @@
 #
 # Since: 1.2
 ##
-{ 'enum': 'ErrorClass',
+{ 'enum': 'QapiErrorClass',
+  # Keep this in sync with ErrorClass in error.h
   'data': [ 'GenericError', 'CommandNotFound', 'DeviceEncrypted',
             'DeviceNotActive', 'DeviceNotFound', 'KVMMissingCap' ] }
 

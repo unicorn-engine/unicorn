@@ -21,24 +21,24 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#include "qemu/osdep.h"
+#include "qapi/error.h"
+#include "qemu-common.h"
+#include "cpu.h"
 #include "hw/hw.h"
 #include "hw/sparc/sparc.h"
 #include "qemu/timer.h"
 #include "sysemu/sysemu.h"
 #include "hw/boards.h"
 #include "exec/address-spaces.h"
-
+#include "qemu/cutils.h"
 
 /* Sun4u hardware initialisation */
 static int sun4u_init(struct uc_struct *uc, MachineState *machine)
 {
-    const char *cpu_model = machine->cpu_model;
-    SPARCCPU *cpu;
+    uc->cpu = cpu_create(uc, machine->cpu_type);
 
-    if (cpu_model == NULL)
-        cpu_model = "Sun UltraSparc IV";
-
-    cpu = cpu_sparc_init(uc, cpu_model);
+    SPARCCPU *cpu = SPARC_CPU(uc, uc->cpu);
     if (cpu == NULL) {
         fprintf(stderr, "Unable to find Sparc CPU definition\n");
         return -1;
@@ -47,17 +47,35 @@ static int sun4u_init(struct uc_struct *uc, MachineState *machine)
     return 0;
 }
 
+static void sun4u_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
+{
+    MachineClass *mc = MACHINE_CLASS(uc, oc);
+
+    mc->init = sun4u_init;
+    mc->max_cpus = 1; /* XXX for now */
+    mc->is_default = 1;
+    mc->arch = UC_ARCH_SPARC;
+    mc->default_cpu_type = SPARC_CPU_TYPE_NAME("Sun UltraSparc IV");
+}
+
+static const TypeInfo sun4u_type = {
+    MACHINE_TYPE_NAME("sun4u"),
+    TYPE_MACHINE,
+
+    0,
+    0,
+    NULL,
+
+    NULL,
+    NULL,
+    NULL,
+
+    NULL,
+
+    sun4u_class_init,
+};
+
 void sun4u_machine_init(struct uc_struct *uc)
 {
-    static QEMUMachine sun4u_machine = {
-        NULL,
-        "sun4u",
-        sun4u_init,
-        NULL,
-        1, // XXX for now
-        1,
-        UC_ARCH_SPARC,
-    };
-
-    qemu_register_machine(uc, &sun4u_machine, TYPE_MACHINE, NULL);
+    type_register_static(uc, &sun4u_type);
 }

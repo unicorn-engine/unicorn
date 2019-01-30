@@ -2,14 +2,13 @@
 #ifndef QEMU_HW_H
 #define QEMU_HW_H
 
-#include "qemu-common.h"
-
-#if !defined(CONFIG_USER_ONLY) && !defined(NEED_CPU_H)
-#include "exec/cpu-common.h"
+#ifdef CONFIG_USER_ONLY
+#error Cannot include hw/hw.h from user emulation
 #endif
 
-#include "exec/ioport.h"
-#include "qemu/log.h"
+#include "exec/cpu-common.h"
+#include "qom/object.h"
+#include "exec/memory.h"
 
 #ifdef NEED_CPU_H
 #if TARGET_LONG_BITS == 64

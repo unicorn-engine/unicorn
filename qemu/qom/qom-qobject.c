@@ -9,21 +9,22 @@
  * See the COPYING file in the top-level directory.
  */
 
+#include "qemu/osdep.h"
+#include "qapi/error.h"
 #include "qemu-common.h"
 #include "qom/object.h"
 #include "qom/qom-qobject.h"
 #include "qapi/visitor.h"
-#include "qapi/qmp-input-visitor.h"
-#include "qapi/qmp-output-visitor.h"
+#include "qapi/qobject-input-visitor.h"
+#include "qapi/qobject-output-visitor.h"
 
 void object_property_set_qobject(struct uc_struct *uc, Object *obj, QObject *value,
                                  const char *name, Error **errp)
 {
-    QmpInputVisitor *mi;
-    mi = qmp_input_visitor_new(value);
-    object_property_set(uc, obj, qmp_input_get_visitor(mi), name, errp);    // qq
-
-    qmp_input_visitor_cleanup(mi);
+    Visitor *v;
+    v = qobject_input_visitor_new(value);
+    object_property_set(uc, obj, v, name, errp);
+    visit_free(v);
 }
 
 QObject *object_property_get_qobject(struct uc_struct *uc, Object *obj, const char *name,
@@ -31,14 +32,14 @@ QObject *object_property_get_qobject(struct uc_struct *uc, Object *obj, const ch
 {
     QObject *ret = NULL;
     Error *local_err = NULL;
-    QmpOutputVisitor *mo;
+    Visitor *v;
 
-    mo = qmp_output_visitor_new();
-    object_property_get(uc, obj, qmp_output_get_visitor(mo), name, &local_err);
+    v = qobject_output_visitor_new(&ret);
+    object_property_get(uc, obj, v, name, &local_err);
     if (!local_err) {
-        ret = qmp_output_get_qobject(mo);
+        visit_complete(v, &ret);
     }
     error_propagate(errp, local_err);
-    qmp_output_visitor_cleanup(mo);
+    visit_free(v);
     return ret;
 }

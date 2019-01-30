@@ -1,10 +1,29 @@
-/* public domain */
+/* compiler.h: macros to abstract away compiler specifics
+ *
+ * This work is licensed under the terms of the GNU GPL, version 2 or later.
+ * See the COPYING file in the top-level directory.
+ */
 
 #ifndef COMPILER_H
 #define COMPILER_H
 
 #include "config-host.h"
 #include "unicorn/platform.h"
+
+#ifndef __has_attribute
+#define __has_attribute(x) 0 /* compatibility with older GCC */
+#endif
+
+/*
+ * If __attribute__((error)) is present, use it to produce an error at
+ * compile time.  Otherwise, one must wait for the linker to diagnose
+ * the missing symbol.
+ */
+#if __has_attribute(error)
+# define QEMU_ERROR(X) __attribute__((error(X)))
+#else
+# define QEMU_ERROR(X)
+#endif
 
 #ifdef _MSC_VER
 // MSVC support
@@ -24,6 +43,7 @@
 #endif
 #endif
 
+#define sizeof_field(type, field) sizeof(((type *)0)->field)
 
 static double rint( double x )
 {
@@ -52,12 +72,39 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define QEMU_ARTIFICIAL
 #define QEMU_PACK( __Declaration__ ) __pragma( pack(push, 1) ) __Declaration__ __pragma( pack(pop) )
 
-#define QEMU_ALIGN(A, B) __declspec(align(A)) B
+#define QEMU_ALIGNED(A, B) __declspec(align(A)) B
+
+// Unicorn: Initially added to abstract away GCC's flatten attribute in softfloat.c
+#define QEMU_FLATTEN
+
+// Unicorn: Addition for thread-local variables
+#define QEMU_THREAD_LOCAL_VAR __declspec(thread)
 
 #define cat(x,y) x ## y
 #define cat2(x,y) cat(x,y)
-#define QEMU_BUILD_BUG_ON(x) \
-    typedef char cat2(qemu_build_bug_on__,__LINE__)[(x)?-1:1] QEMU_UNUSED_VAR;
+
+#define QEMU_BUILD_BUG_ON_STRUCT(x) \
+    struct { \
+        int:(x) ? -1 : 1; \
+    }
+
+/* QEMU_BUILD_BUG_MSG() emits the message given if _Static_assert is
+ * supported; otherwise, it will be omitted from the compiler error
+ * message (but as it remains present in the source code, it can still
+ * be useful when debugging). */
+#if defined(CONFIG_STATIC_ASSERT)
+#define QEMU_BUILD_BUG_MSG(x, msg) _Static_assert(!(x), msg)
+#elif defined(__COUNTER__)
+#define QEMU_BUILD_BUG_MSG(x, msg) typedef QEMU_BUILD_BUG_ON_STRUCT(x) \
+    glue(qemu_build_bug_on__, __COUNTER__) QEMU_UNUSED_VAR
+#else
+#define QEMU_BUILD_BUG_MSG(x, msg)
+#endif
+
+#define QEMU_BUILD_BUG_ON(x) QEMU_BUILD_BUG_MSG(x, "not expecting: " #x)
+
+#define QEMU_BUILD_BUG_ON_ZERO(x) (sizeof(QEMU_BUILD_BUG_ON_STRUCT(x)) - \
+                                   sizeof(QEMU_BUILD_BUG_ON_STRUCT(x)))
 
 #define GCC_FMT_ATTR(n, m)
 
@@ -65,6 +112,10 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 
 #ifndef NAN
 #define NAN		(0.0 / 0.0)
+#endif
+
+#if defined __clang_analyzer__ || defined __COVERITY__
+#define QEMU_STATIC_ANALYSIS 1
 #endif
 
 /*----------------------------------------------------------------------------
@@ -83,11 +134,7 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 #define QEMU_UNUSED_VAR __attribute__((unused))
 #define QEMU_UNUSED_FUNC __attribute__((unused))
 
-#if QEMU_GNUC_PREREQ(3, 4)
 #define QEMU_WARN_UNUSED_RESULT __attribute__((warn_unused_result))
-#else
-#define QEMU_WARN_UNUSED_RESULT
-#endif
 
 #if QEMU_GNUC_PREREQ(4, 3)
 #define QEMU_ARTIFICIAL __attribute__((always_inline, artificial))
@@ -101,12 +148,89 @@ static union MSVC_FLOAT_HACK __NAN = {{0x00, 0x00, 0xC0, 0x7F}};
 # define QEMU_PACK( __Declaration__ ) __Declaration__ __attribute__((packed))
 #endif
 
-#define QEMU_ALIGN(A, B) B __attribute__((aligned(A)))
+#define QEMU_ALIGNED(A, B) B __attribute__((aligned(A)))
 
-#define cat(x,y) x ## y
-#define cat2(x,y) cat(x,y)
-#define QEMU_BUILD_BUG_ON(x) \
-    typedef char cat2(qemu_build_bug_on__,__LINE__)[(x)?-1:1] __attribute__((unused));
+// Unicorn: Initially added to abstract away GCC's flatten attribute in softfloat.c
+#define QEMU_FLATTEN __attribute__((flatten))
+
+// Unicorn: Addition for thread-local variables
+#define QEMU_THREAD_LOCAL_VAR __thread
+
+#ifndef glue
+#define xglue(x, y) x ## y
+#define glue(x, y) xglue(x, y)
+#define stringify(s)  tostring(s)
+#define tostring(s) #s
+#endif
+
+#ifndef likely
+#if __GNUC__ < 3
+#define __builtin_expect(x, n) (x)
+#endif
+
+#define likely(x)   __builtin_expect(!!(x), 1)
+#define unlikely(x)   __builtin_expect(!!(x), 0)
+#endif
+
+#ifndef container_of
+#ifndef _MSC_VER
+#define container_of(ptr, type, member) ({                      \
+        const typeof(((type *) 0)->member) *__mptr = (ptr);     \
+        (type *) ((char *) __mptr - offsetof(type, member));})
+#else
+#define container_of(ptr, type, member) ((type *)((char *)(ptr) -offsetof(type,member)))
+#endif
+#endif
+
+#define sizeof_field(type, field) sizeof(((type *)0)->field)
+
+/* Convert from a base type to a parent type, with compile time checking.  */
+#ifdef __GNUC__
+#define DO_UPCAST(type, field, dev) ( __extension__ ( { \
+    char QEMU_UNUSED_VAR offset_must_be_zero[ \
+        -offsetof(type, field)]; \
+    container_of(dev, type, field);}))
+#else
+#define DO_UPCAST(type, field, dev) container_of(dev, type, field)
+#endif
+
+#define typeof_field(type, field) typeof(((type *)0)->field)
+#define type_check(t1,t2) ((t1*)0 - (t2*)0)
+
+#ifndef always_inline
+#if !((__GNUC__ < 3) || defined(__APPLE__))
+#ifdef __OPTIMIZE__
+#undef inline
+#define inline __attribute__ (( always_inline )) __inline__
+#endif
+#endif
+#else
+#undef inline
+#define inline always_inline
+#endif
+
+#define QEMU_BUILD_BUG_ON_STRUCT(x) \
+    struct { \
+        int:(x) ? -1 : 1; \
+    }
+
+/* QEMU_BUILD_BUG_MSG() emits the message given if _Static_assert is
+ * supported; otherwise, it will be omitted from the compiler error
+ * message (but as it remains present in the source code, it can still
+ * be useful when debugging). */
+#if defined(CONFIG_STATIC_ASSERT)
+#define QEMU_BUILD_BUG_MSG(x, msg) _Static_assert(!(x), msg)
+#elif defined(__COUNTER__)
+#define QEMU_BUILD_BUG_MSG(x, msg) typedef QEMU_BUILD_BUG_ON_STRUCT(x) \
+    glue(qemu_build_bug_on__, __COUNTER__) QEMU_UNUSED_VAR
+#else
+#define QEMU_BUILD_BUG_MSG(x, msg)
+#endif
+
+#define QEMU_BUILD_BUG_ON(x) QEMU_BUILD_BUG_MSG(x, "not expecting: " #x)
+
+#define QEMU_BUILD_BUG_ON_ZERO(x) (sizeof(QEMU_BUILD_BUG_ON_STRUCT(x)) - \
+                                   sizeof(QEMU_BUILD_BUG_ON_STRUCT(x)))
 
 #if defined __GNUC__
 # if !QEMU_GNUC_PREREQ(4, 4)

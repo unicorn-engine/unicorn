@@ -17,6 +17,10 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>
  */
+#include "qemu/osdep.h"
+#include "qemu-common.h"
+#include "cpu.h"
+#include "qapi/error.h"
 #include "hw/i386/apic.h"
 #include "hw/i386/apic_internal.h"
 #include "hw/qdev.h"
@@ -161,7 +165,7 @@ void apic_init_reset(struct uc_struct *uc, DeviceState *dev)
     }
 }
 
-void apic_designate_bsp(struct uc_struct *uc, DeviceState *dev)
+void apic_designate_bsp(struct uc_struct *uc, DeviceState *dev, bool bsp)
 {
     APICCommonState *s;
 
@@ -170,7 +174,11 @@ void apic_designate_bsp(struct uc_struct *uc, DeviceState *dev)
     }
 
     s = APIC_COMMON(uc, dev);
-    s->apicbase |= MSR_IA32_APICBASE_BSP;
+    if (bsp) {
+        s->apicbase |= MSR_IA32_APICBASE_BSP;
+    } else {
+        s->apicbase &= ~MSR_IA32_APICBASE_BSP;
+    }
 }
 
 static void apic_reset_common(struct uc_struct *uc, DeviceState *dev)
@@ -187,15 +195,6 @@ static void apic_reset_common(struct uc_struct *uc, DeviceState *dev)
     info->vapic_base_update(s);
 
     apic_init_reset(uc, dev);
-
-    if (bsp) {
-        /*
-         * LINT0 delivery mode on CPU #0 is set to ExtInt at initialization
-         * time typically by BIOS, so PIC interrupt can be delivered to the
-         * processor when local APIC is enabled.
-         */
-        s->lvt[APIC_LVT_LINT0] = 0x700;
-    }
 }
 
 static int apic_common_realize(struct uc_struct *uc, DeviceState *dev, Error **errp)

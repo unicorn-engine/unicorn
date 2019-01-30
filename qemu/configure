@@ -134,7 +134,7 @@ path_of() {
 }
 
 # default parameters
-source_path=`dirname "$0"`
+source_path=$(dirname "$0")
 cpu=""
 static="no"
 cross_prefix=""
@@ -161,6 +161,7 @@ unset target_list
 
 debug_tcg="no"
 debug="no"
+sanitizers="no"
 strip_opt="yes"
 tcg_interpreter="no"
 bigendian="no"
@@ -172,12 +173,19 @@ bsd="no"
 linux="no"
 solaris="no"
 softmmu="yes"
-aix="no"
 pie=""
+tcg="yes"
+membarrier=""
+cpuid_h="no"
+avx2_opt="no"
+
+supported_cpu="no"
+supported_os="no"
+bogus_os="no"
 
 # parse CC options first
 for opt do
-  optarg=`expr "x$opt" : 'x[^=]*=\(.*\)'`
+  optarg=$(expr "x$opt" : 'x[^=]*=\(.*\)')
   case "$opt" in
   --cc=*) CC="$optarg"
   ;;
@@ -186,14 +194,20 @@ for opt do
   --cpu=*) cpu="$optarg"
   ;;
   --extra-cflags=*) QEMU_CFLAGS="$optarg $QEMU_CFLAGS"
-                    EXTRA_CFLAGS="$optarg"
   ;;
   --extra-ldflags=*) LDFLAGS="$optarg $LDFLAGS"
-                     EXTRA_LDFLAGS="$optarg"
+  ;;
+  --disable-tcg) tcg="no"
+  ;;
+  --enable-tcg) tcg="yes"
   ;;
   --enable-debug-info) debug_info="yes"
   ;;
   --disable-debug-info) debug_info="no"
+  ;;
+  --enable-sanitizers) sanitizers="yes"
+  ;;
+  --disable-sanitizers) sanitizers="no"
   ;;
   esac
 done
@@ -223,11 +237,15 @@ strip="${STRIP-${cross_prefix}strip}"
 ARFLAGS="${ARFLAGS-rv}"
 
 # default flags for all hosts
-QEMU_CFLAGS="-fno-strict-aliasing -fno-common $QEMU_CFLAGS"
+# We use -fwrapv to tell the compiler that we require a C dialect where
+# left shift of signed integers is well defined and has the expected
+# 2s-complement style results. (Both clang and gcc agree that it
+# provides these semantics.)
+QEMU_CFLAGS="-fno-strict-aliasing -fno-common -fwrapv $QEMU_CFLAGS"
 QEMU_CFLAGS="-Wall -Wundef -Wwrite-strings -Wmissing-prototypes $QEMU_CFLAGS"
 QEMU_CFLAGS="-Wstrict-prototypes -Wredundant-decls $QEMU_CFLAGS"
 QEMU_CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE $QEMU_CFLAGS"
-QEMU_INCLUDES="-I. -I\$(SRC_PATH) -I\$(SRC_PATH)/include"
+QEMU_INCLUDES="-I. -I\$(SRC_PATH) -I\$(SRC_PATH)/accel/tcg -I\$(SRC_PATH)/include"
 if test "$debug_info" = "yes"; then
     CFLAGS="-g $CFLAGS"
     LDFLAGS="-g $LDFLAGS"
@@ -237,7 +255,7 @@ else
 fi
 
 # make source path absolute
-source_path=`cd "$source_path"; pwd`
+source_path=$(cd "$source_path"; pwd)
 
 # running configure in the source tree?
 # we know that's the case if configure is there.
@@ -257,6 +275,12 @@ EOF
   compile_object
 }
 
+write_c_skeleton() {
+  cat > $TMPC <<EOF
+int main(void) { return 0; }
+EOF
+}
+
 if check_define __linux__ ; then
   targetos="Linux"
 elif check_define _WIN32 ; then
@@ -267,8 +291,22 @@ elif check_define __sun__ ; then
   targetos='SunOS'
 elif check_define __HAIKU__ ; then
   targetos='Haiku'
+elif check_define __FreeBSD__ ; then
+  targetos='FreeBSD'
+elif check_define __FreeBSD_kernel__ && check_define __GLIBC__; then
+  targetos='GNU/kFreeBSD'
+elif check_define __DragonFly__ ; then
+  targetos='DragonFly'
+elif check_define __NetBSD__; then
+  targetos='NetBSD'
+elif check_define __APPLE__; then
+  targetos='Darwin'
 else
-  targetos=`uname -s`
+  # This is a fatal error, but don't report it yet, because we
+  # might be going to just print the --help text, or it might
+  # be the result of a missing compiler.
+  targetos='bogus'
+  bogus_os='yes'
 fi
 
 # Some host OSes need non-standard checks for which CPU to use.
@@ -286,7 +324,7 @@ Darwin)
   fi
   ;;
 SunOS)
-  # `uname -m` returns i86pc even on an x86_64 box, so default based on isainfo
+  # $(uname -m) returns i86pc even on an x86_64 box, so default based on isainfo
   if test -z "$cpu" && test "$(isainfo -k)" = "amd64"; then
     cpu="x86_64"
   fi
@@ -317,8 +355,6 @@ elif check_define _ARCH_PPC ; then
   fi
 elif check_define __mips__ ; then
   cpu="mips"
-elif check_define __ia64__ ; then
-  cpu="ia64"
 elif check_define __s390__ ; then
   if check_define __s390x__ ; then
     cpu="s390x"
@@ -332,30 +368,39 @@ elif check_define __aarch64__ ; then
 elif check_define __hppa__ ; then
   cpu="hppa"
 else
-  cpu=`uname -m`
+  cpu=$(uname -m)
 fi
 
 ARCH=
 # Normalise host CPU name and set ARCH.
 # Note that this case should only have supported host CPUs, not guests.
 case "$cpu" in
-  ia64|ppc|ppc64|s390|s390x|sparc64|x32)
+  ppc|ppc64|s390|s390x|x32)
+    cpu="$cpu"
+    supported_cpu="yes"
+  ;;
+  sparc64)
     cpu="$cpu"
   ;;
   i386|i486|i586|i686|i86pc|BePC)
     cpu="i386"
+    supported_cpu="yes"
   ;;
   x86_64|amd64)
     cpu="x86_64"
+    supported_cpu="yes"
   ;;
   armv*b|armv*l|arm)
     cpu="arm"
+    supported_cpu="yes"
   ;;
   aarch64|aarch64eb)
     cpu="aarch64"
+    supported_cpu="yes"
   ;;
   mips*)
     cpu="mips"
+    supported_cpu="yes"
   ;;
   sparc|sun4[cdmuv])
     cpu="sparc"
@@ -372,11 +417,9 @@ fi
 # OS specific
 
 case $targetos in
-CYGWIN*)
-  linux="yes"
-;;
 MINGW32*)
   mingw32="yes"
+  supported_os="yes"
 ;;
 GNU/kFreeBSD)
   bsd="yes"
@@ -386,6 +429,7 @@ FreeBSD)
   make="${MAKE-gmake}"
   # needed for kinfo_getvmmap(3) in libutil.h
   LIBS="-lutil $LIBS"
+  supported_os="yes"
 ;;
 DragonFly)
   bsd="yes"
@@ -410,28 +454,12 @@ Darwin)
   # Disable attempts to use ObjectiveC features in os/object.h since they
   # won't work when we're compiling with gcc as a C compiler.
   QEMU_CFLAGS="-DOS_OBJECT_USE_OBJC=0 $QEMU_CFLAGS"
+  supported_os="yes"
 ;;
 SunOS)
   solaris="yes"
   make="${MAKE-gmake}"
   ld="gld"
-  needs_libsunmath="no"
-  solarisrev=`uname -r | cut -f2 -d.`
-  if [ "$cpu" = "i386" -o "$cpu" = "x86_64" ] ; then
-    if test "$solarisrev" -le 9 ; then
-      if test -f /opt/SUNWspro/prod/lib/libsunmath.so.1; then
-        needs_libsunmath="yes"
-        QEMU_CFLAGS="-I/opt/SUNWspro/prod/include/cc $QEMU_CFLAGS"
-        LDFLAGS="-L/opt/SUNWspro/prod/lib -R/opt/SUNWspro/prod/lib $LDFLAGS"
-        LIBS="-lsunmath $LIBS"
-      else
-        error_exit "QEMU will not link correctly on Solaris 8/X86 or 9/x86 without" \
-            "libsunmath from the Sun Studio compilers tools, due to a lack of" \
-            "C99 math features in libm.so in Solaris 8/x86 and Solaris 9/x86" \
-            "Studio 11 can be downloaded from www.sun.com."
-      fi
-    fi
-  fi
 # needed for CMSG_ macros in sys/socket.h
   QEMU_CFLAGS="-D_XOPEN_SOURCE=600 $QEMU_CFLAGS"
 # needed for TIOCWIN* defines in termios.h
@@ -440,17 +468,14 @@ SunOS)
   solarisnetlibs="-lsocket -lnsl -lresolv"
   LIBS="$solarisnetlibs $LIBS"
 ;;
-AIX)
-  aix="yes"
-  make="${MAKE-gmake}"
-;;
 Haiku)
   haiku="yes"
   QEMU_CFLAGS="-DB_USE_POSITIVE_POSIX_ERRORS $QEMU_CFLAGS"
   LIBS="-lposix_error_mapper -lnetwork $LIBS"
 ;;
-*)
+Linux)
   linux="yes"
+  supported_os="yes"
 ;;
 esac
 
@@ -471,9 +496,7 @@ if test "$mingw32" = "yes" ; then
   # enable C99/POSIX format strings (needs mingw32-runtime 3.15 or later)
   QEMU_CFLAGS="-D__USE_MINGW_ANSI_STDIO=1 $QEMU_CFLAGS"
   LIBS="-lwinmm -lws2_32 -liphlpapi $LIBS"
-cat > $TMPC << EOF
-int main(void) { return 0; }
-EOF
+  write_c_skeleton;
   if compile_prog "" "-liberty" ; then
     LIBS="-liberty $LIBS"
   fi
@@ -482,7 +505,7 @@ fi
 werror=""
 
 for opt do
-  optarg=`expr "x$opt" : 'x[^=]*=\(.*\)'`
+  optarg=$(expr "x$opt" : 'x[^=]*=\(.*\)')
   case "$opt" in
   --help|-h) show_help=yes
   ;;
@@ -540,6 +563,10 @@ for opt do
   ;;
   --disable-stack-protector) stack_protector="no"
   ;;
+  --disable-membarrier) membarrier="no"
+  ;;
+  --enable-membarrier) membarrier="yes"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -554,9 +581,8 @@ fi
 
 # Note that if the Python conditional here evaluates True we will exit
 # with status 1 which is a shell 'false' value.
-if ! $python -c 'import sys; sys.exit(sys.version_info < (2,4) or sys.version_info >= (3,))'; then
-  error_exit "Cannot use '$python', Python 2.4 or later is required." \
-      "Note that Python 3 or later is not yet supported." \
+if ! $python -c 'import sys; sys.exit(sys.version_info < (2,6))'; then
+  error_exit "Cannot use '$python', Python 2 >= 2.6 or Python 3 is required." \
       "Use --python=/path/to/python to specify a supported Python."
 fi
 
@@ -598,7 +624,10 @@ case "$cpu" in
            cc_i386='$(CC) -m32'
            ;;
     x86_64)
-           CPU_CFLAGS="-m64"
+           # ??? Only extremely old AMD cpus do not have cmpxchg16b.
+           # If we truly care, we should simply detect this case at
+           # runtime and generate the fallback to serial emulation.
+           CPU_CFLAGS="-m64 -mcx16"
            LDFLAGS="-m64 $LDFLAGS"
            cc_i386='$(CC) -m32'
            ;;
@@ -611,7 +640,6 @@ case "$cpu" in
 esac
 
 QEMU_CFLAGS="$CPU_CFLAGS $QEMU_CFLAGS"
-EXTRA_CFLAGS="$CPU_CFLAGS $EXTRA_CFLAGS"
 
 default_target_list=""
 
@@ -653,6 +681,7 @@ Advanced options (experts only):
   --enable-debug-info      enable debugging information (default)
   --disable-debug-info     disable debugging information
   --enable-debug           enable common debug build options
+  --enable-sanitizers      enable default sanitizers
   --disable-strip          disable stripping binaries
   --disable-werror         disable compilation abort on warning
   --disable-stack-protector disable compiler-provided stack protection
@@ -667,11 +696,11 @@ fi
 
 # Consult white-list to determine whether to enable werror
 # by default.  Only enable by default for git builds
-z_version=`cut -f3 -d. $source_path/VERSION`
+z_version=$(cut -f3 -d. $source_path/VERSION)
 
 if test -z "$werror" ; then
     if test -d "$source_path/.git" -a \
-        "$linux" = "yes" ; then
+        \( "$linux" = "yes" -o "$mingw32" = "yes" \) ; then
         werror="yes"
     else
         werror="no"
@@ -688,27 +717,41 @@ if compile_object ; then
 else
     error_exit "\"$cc\" either does not exist or does not work"
 fi
+if ! compile_prog ; then
+    error_exit "\"$cc\" cannot build an executable (is your linker broken?)"
+fi
+
+if test "$bogus_os" = "yes"; then
+    # Now that we know that we're not printing the help and that
+    # the compiler works (so the results of the check_defines we used
+    # to identify the OS are reliable), if we didn't recognize the
+    # host OS we should stop now.
+    error_exit "Unrecognized host OS (uname -s reports '$(uname -s)')"
+fi
 
 gcc_flags="-Wold-style-declaration -Wold-style-definition -Wtype-limits"
 gcc_flags="-Wformat-security -Wformat-y2k -Winit-self -Wignored-qualifiers $gcc_flags"
 gcc_flags="-Wmissing-include-dirs -Wempty-body -Wnested-externs $gcc_flags"
 gcc_flags="-Wendif-labels $gcc_flags"
-gcc_flags="-Wno-initializer-overrides $gcc_flags"
+gcc_flags="-Wno-initializer-overrides -Wexpansion-to-defined $gcc_flags"
 gcc_flags="-Wno-string-plus-int $gcc_flags"
 # Note that we do not add -Werror to gcc_flags here, because that would
 # enable it for all configure tests. If a configure test failed due
 # to -Werror this would just silently disable some features,
 # so it's too error prone.
-cat > $TMPC << EOF
-int main(void) { return 0; }
-EOF
-for flag in $gcc_flags; do
+cc_has_warning_flag() {
+    write_c_skeleton;
+
     # Use the positive sense of the flag when testing for -Wno-wombat
     # support (gcc will happily accept the -Wno- form of unknown
     # warning options).
-    optflag="$(echo $flag | sed -e 's/^-Wno-/-W/')"
-    if compile_prog "-Werror $optflag" "" ; then
-	QEMU_CFLAGS="$QEMU_CFLAGS $flag"
+    optflag="$(echo $1 | sed -e 's/^-Wno-/-W/')"
+    compile_prog "-Werror $optflag" ""
+}
+
+for flag in $gcc_flags; do
+    if cc_has_warning_flag $flag ; then
+        QEMU_CFLAGS="$QEMU_CFLAGS $flag"
     fi
 done
 
@@ -730,6 +773,19 @@ if test "$stack_protector" != "no"; then
       error_exit "Stack protector not supported"
     fi
   fi
+fi
+
+# Disable -Wmissing-braces on older compilers that warn even for
+# the "universal" C zero initializer {0}.
+cat > $TMPC << EOF
+struct {
+  int a[2];
+} x = {0};
+EOF
+if compile_object "-Werror" "" ; then
+  :
+else
+  QEMU_CFLAGS="$QEMU_CFLAGS -Wno-missing-braces"
 fi
 
 # Workaround for http://gcc.gnu.org/PR55489.  Happens with -fPIE/-fPIC and
@@ -844,7 +900,7 @@ fi
 if test -z "${target_list+xxx}" ; then
     target_list="$default_target_list"
 else
-    target_list=`echo "$target_list" | sed -e 's/,/ /g'`
+    target_list=$(echo "$target_list" | sed -e 's/,/ /g')
 fi
 
 # Check that we recognised the target name; this allows a more
@@ -998,7 +1054,7 @@ elif compile_prog "" "$pthread_lib -lrt" ; then
 fi
 
 if test "$darwin" != "yes" -a "$mingw32" != "yes" -a "$solaris" != yes -a \
-        "$aix" != "yes" -a "$haiku" != "yes" ; then
+        "$haiku" != "yes" ; then
     libs_softmmu="-lutil $libs_softmmu"
 fi
 
@@ -1019,7 +1075,6 @@ fi
 ########################################
 # check if cpuid.h is usable.
 
-cpuid_h=no
 cat > $TMPC << EOF
 #include <cpuid.h>
 int main(void) {
@@ -1039,6 +1094,29 @@ int main(void) {
 EOF
 if compile_prog "" "" ; then
     cpuid_h=yes
+fi
+
+##########################################
+# avx2 optimization requirement check
+#
+# There is no point enabling this if cpuid.h is not usable,
+# since we won't be able to select the new routines.
+
+if test $cpuid_h = yes; then
+  cat > $TMPC << EOF
+#pragma GCC push_options
+#pragma GCC target("avx2")
+#include <cpuid.h>
+#include <immintrin.h>
+static int bar(void *a) {
+    __m256i x = *(__m256i *)a;
+    return _mm256_testz_si256(x, x);
+}
+int main(int argc, char *argv[]) { return bar(argv[0]); }
+EOF
+  if compile_object "" ; then
+    avx2_opt="yes"
+  fi
 fi
 
 ########################################
@@ -1062,6 +1140,219 @@ int main (void) {
 EOF
 if compile_prog "" "" ; then
     int128=yes
+fi
+
+########################################
+# See if 16-byte vector operations are supported.
+# Even without a vector unit the compiler may expand these.
+# There is a bug in old GCC for PPC that crashes here.
+# Unfortunately it's the system compiler for Centos 7.
+
+cat > $TMPC << EOF
+typedef unsigned char U1 __attribute__((vector_size(16)));
+typedef unsigned short U2 __attribute__((vector_size(16)));
+typedef unsigned int U4 __attribute__((vector_size(16)));
+typedef unsigned long long U8 __attribute__((vector_size(16)));
+typedef signed char S1 __attribute__((vector_size(16)));
+typedef signed short S2 __attribute__((vector_size(16)));
+typedef signed int S4 __attribute__((vector_size(16)));
+typedef signed long long S8 __attribute__((vector_size(16)));
+static U1 a1, b1;
+static U2 a2, b2;
+static U4 a4, b4;
+static U8 a8, b8;
+static S1 c1;
+static S2 c2;
+static S4 c4;
+static S8 c8;
+static int i;
+void helper(void *d, void *a, int shift, int i);
+void helper(void *d, void *a, int shift, int i)
+{
+  *(U1 *)(d + i) = *(U1 *)(a + i) << shift;
+  *(U2 *)(d + i) = *(U2 *)(a + i) << shift;
+  *(U4 *)(d + i) = *(U4 *)(a + i) << shift;
+  *(U8 *)(d + i) = *(U8 *)(a + i) << shift;
+}
+int main(void)
+{
+  a1 += b1; a2 += b2; a4 += b4; a8 += b8;
+  a1 -= b1; a2 -= b2; a4 -= b4; a8 -= b8;
+  a1 *= b1; a2 *= b2; a4 *= b4; a8 *= b8;
+  a1 &= b1; a2 &= b2; a4 &= b4; a8 &= b8;
+  a1 |= b1; a2 |= b2; a4 |= b4; a8 |= b8;
+  a1 ^= b1; a2 ^= b2; a4 ^= b4; a8 ^= b8;
+  a1 <<= i; a2 <<= i; a4 <<= i; a8 <<= i;
+  a1 >>= i; a2 >>= i; a4 >>= i; a8 >>= i;
+  c1 >>= i; c2 >>= i; c4 >>= i; c8 >>= i;
+  return 0;
+}
+EOF
+
+vector16=no
+if compile_prog "" "" ; then
+  vector16=yes
+fi
+
+##########################################
+# check for usable membarrier system call
+if test "$membarrier" = "yes"; then
+    have_membarrier=no
+    if test "$mingw32" = "yes" ; then
+        have_membarrier=yes
+    elif test "$linux" = "yes" ; then
+        cat > $TMPC << EOF
+    #include <linux/membarrier.h>
+    #include <sys/syscall.h>
+    #include <unistd.h>
+    #include <stdlib.h>
+    int main(void) {
+        syscall(__NR_membarrier, MEMBARRIER_CMD_QUERY, 0);
+        syscall(__NR_membarrier, MEMBARRIER_CMD_SHARED, 0);
+  exit(0);
+    }
+EOF
+        if compile_prog "" "" ; then
+            have_membarrier=yes
+        fi
+    fi
+    if test "$have_membarrier" = "no"; then
+      feature_not_found "membarrier" "membarrier system call not available"
+    fi
+else
+    # Do not enable it by default even for Mingw32, because it doesn't
+    # work on Wine.
+    membarrier=no
+fi
+
+#########################################
+# See if 128-bit atomic operations are supported.
+
+atomic128=no
+if test "$int128" = "yes"; then
+  cat > $TMPC << EOF
+int main(void)
+{
+  unsigned __int128 x = 0, y = 0;
+  y = __atomic_load_16(&x, 0);
+  __atomic_store_16(&x, y, 0);
+  __atomic_compare_exchange_16(&x, &y, x, 0, 0, 0);
+  return 0;
+}
+EOF
+  if compile_prog "" "" ; then
+    atomic128=yes
+  fi
+fi
+
+cmpxchg128=no
+if test "$int128" = yes -a "$atomic128" = no; then
+  cat > $TMPC << EOF
+int main(void)
+{
+  unsigned __int128 x = 0, y = 0;
+  __sync_val_compare_and_swap_16(&x, y, x);
+  return 0;
+}
+EOF
+  if compile_prog "" "" ; then
+    cmpxchg128=yes
+  fi
+fi
+
+#########################################
+# See if 64-bit atomic operations are supported.
+# Note that without __atomic builtins, we can only
+# assume atomic loads/stores max at pointer size.
+
+cat > $TMPC << EOF
+#include <stdint.h>
+int main(void)
+{
+  uint64_t x = 0, y = 0;
+#ifdef __ATOMIC_RELAXED
+  y = __atomic_load_8(&x, 0);
+  __atomic_store_8(&x, y, 0);
+  __atomic_compare_exchange_8(&x, &y, x, 0, 0, 0);
+  __atomic_exchange_8(&x, y, 0);
+  __atomic_fetch_add_8(&x, y, 0);
+#else
+  typedef char is_host64[sizeof(void *) >= sizeof(uint64_t) ? 1 : -1];
+  __sync_lock_test_and_set(&x, y);
+  __sync_val_compare_and_swap(&x, y, 0);
+  __sync_fetch_and_add(&x, y);
+#endif
+  return 0;
+}
+EOF
+if compile_prog "" "" ; then
+  atomic64=yes
+fi
+
+##########################################
+# checks for sanitizers
+
+have_asan=no
+have_ubsan=no
+
+if test "$sanitizers" = "yes" ; then
+  write_c_skeleton
+  if compile_prog "$CPU_CFLAGS -Werror -fsanitize=address" ""; then
+      have_asan=yes
+  fi
+
+  # we could use a simple skeleton for flags checks, but this also
+  # detect the static linking issue of ubsan, see also:
+  # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=84285
+  cat > $TMPC << EOF
+#include <stdlib.h>
+int main(void) {
+    void *tmp = malloc(10);
+    return *(int *)(tmp + 2);
+}
+EOF
+  if compile_prog "$CPU_CFLAGS -Werror -fsanitize=undefined" ""; then
+      have_ubsan=yes
+  fi
+fi
+
+##########################################
+# check if we have posix_memalign()
+
+posix_memalign=no
+cat > $TMPC << EOF
+#include <stdlib.h>
+int main(void) {
+    void *p;
+    return posix_memalign(&p, 8, 8);
+}
+EOF
+if compile_prog "" "" ; then
+    posix_memalign=yes
+fi
+
+# check for _Static_assert()
+
+have_static_assert=no
+cat > $TMPC << EOF
+_Static_assert(1, "success");
+int main(void) {
+    return 0;
+}
+EOF
+if compile_prog "" "" ; then
+    have_static_assert=yes
+fi
+
+##########################################
+# End of CC checks
+# After here, no more $cc or $ld runs
+
+if test "$have_asan" = "yes"; then
+  CFLAGS="-fsanitize=address $CFLAGS"
+fi
+if test "$have_ubsan" = "yes"; then
+  CFLAGS="-fsanitize=undefined $CFLAGS"
 fi
 
 # Now we've finished running tests it's OK to add -Werror to the compiler flags
@@ -1097,7 +1388,6 @@ echo "python            $python"
 echo "host CPU          $cpu"
 echo "host big endian   $bigendian"
 echo "target list       $target_list"
-echo "tcg debug enabled $debug_tcg"
 echo "strip binaries    $strip_opt"
 echo "static build      $static"
 echo "mingw32 support   $mingw32"
@@ -1105,6 +1395,39 @@ if test -n "$sparc_cpu"; then
     echo "Target Sparc Arch $sparc_cpu"
 fi
 echo "PIE               $pie"
+echo "membarrier        $membarrier"
+echo "TCG support       $tcg"
+if test "$tcg" = "yes" ; then
+    echo "TCG debug enabled $debug_tcg"
+    echo "TCG interpreter   $tcg_interpreter"
+fi
+echo "avx2 optimization $avx2_opt"
+
+if test "$supported_cpu" = "no"; then
+    echo
+    echo "WARNING: SUPPORT FOR THIS HOST CPU WILL GO AWAY IN FUTURE RELEASES!"
+    echo
+    echo "CPU host architecture $cpu support is not currently maintained."
+    echo "The QEMU project intends to remove support for this host CPU in"
+    echo "a future release if nobody volunteers to maintain it and to"
+    echo "provide a build host for our continuous integration setup."
+    echo "configure has succeeded and you can continue to build, but"
+    echo "if you care about QEMU on this platform you should contact"
+    echo "us upstream at qemu-devel@nongnu.org."
+fi
+
+if test "$supported_os" = "no"; then
+    echo
+    echo "WARNING: SUPPORT FOR THIS HOST OS WILL GO AWAY IN FUTURE RELEASES!"
+    echo
+    echo "CPU host OS $targetos support is not currently maintained."
+    echo "The QEMU project intends to remove support for this host CPU in"
+    echo "a future release if nobody volunteers to maintain it and to"
+    echo "provide a build host for our continuous integration setup."
+    echo "configure has succeeded and you can continue to build, but"
+    echo "if you care about QEMU on this platform you should contact"
+    echo "us upstream at qemu-devel@nongnu.org."
+fi
 
 config_host_mak="config-host.mak"
 
@@ -1112,8 +1435,6 @@ echo "# Automatically generated by configure - do not modify" > $config_host_mak
 echo >> $config_host_mak
 
 echo all: >> $config_host_mak
-echo "extra_cflags=$EXTRA_CFLAGS" >> $config_host_mak
-echo "extra_ldflags=$EXTRA_LDFLAGS" >> $config_host_mak
 echo "libs_softmmu=$libs_softmmu" >> $config_host_mak
 
 echo "ARCH=$ARCH" >> $config_host_mak
@@ -1129,7 +1450,7 @@ if test "$bigendian" = "yes" ; then
 fi
 if test "$mingw32" = "yes" ; then
   echo "CONFIG_WIN32=y" >> $config_host_mak
-  rc_version=`cat $source_path/VERSION`
+  rc_version=$(cat $source_path/VERSION)
   version_major=${rc_version%%.*}
   rc_version=${rc_version#*.}
   version_minor=${rc_version%%.*}
@@ -1148,10 +1469,6 @@ fi
 
 if test "$solaris" = "yes" ; then
   echo "CONFIG_SOLARIS=y" >> $config_host_mak
-  echo "CONFIG_SOLARIS_VERSION=$solarisrev" >> $config_host_mak
-  if test "$needs_libsunmath" = "yes" ; then
-    echo "CONFIG_NEEDS_LIBSUNMATH=y" >> $config_host_mak
-  fi
 fi
 if test "$static" = "yes" ; then
   echo "CONFIG_STATIC=y" >> $config_host_mak
@@ -1164,8 +1481,18 @@ fi
 if test "$bswap_h" = "yes" ; then
   echo "CONFIG_MACHINE_BSWAP_H=y" >> $config_host_mak
 fi
-if test "$tcg_interpreter" = "yes" ; then
-  echo "CONFIG_TCG_INTERPRETER=y" >> $config_host_mak
+if test "$membarrier" = "yes" ; then
+  echo "CONFIG_MEMBARRIER=y" >> $config_host_mak
+fi
+if test "$tcg" = "yes"; then
+  echo "CONFIG_TCG=y" >> $config_host_mak
+  if test "$tcg_interpreter" = "yes" ; then
+    echo "CONFIG_TCG_INTERPRETER=y" >> $config_host_mak
+  fi
+fi
+
+if test "$avx2_opt" = "yes" ; then
+  echo "CONFIG_AVX2_OPT=y" >> $config_host_mak
 fi
 
 # XXX: suppress that
@@ -1183,6 +1510,26 @@ fi
 
 if test "$int128" = "yes" ; then
   echo "CONFIG_INT128=y" >> $config_host_mak
+fi
+
+if test "$atomic128" = "yes" ; then
+  echo "CONFIG_ATOMIC128=y" >> $config_host_mak
+fi
+
+if test "$cmpxchg128" = "yes" ; then
+  echo "CONFIG_CMPXCHG128=y" >> $config_host_mak
+fi
+
+if test "$atomic64" = "yes" ; then
+  echo "CONFIG_ATOMIC64=y" >> $config_host_mak
+fi
+
+if test "$vector16" = "yes" ; then
+  echo "CONFIG_VECTOR16=y" >> $config_host_mak
+fi
+
+if test "$have_static_assert" = "yes" ; then
+  echo "CONFIG_STATIC_ASSERT=y" >> $config_host_mak
 fi
 
 if test "$tcg_interpreter" = "yes"; then
@@ -1233,7 +1580,7 @@ echo "TRANSLATE_OPT_CFLAGS=$TRANSLATE_OPT_CFLAGS" >> $config_host_mak
 for target in $target_list; do
 target_dir="$target"
 config_target_mak=$target_dir/config-target.mak
-target_name=`echo $target | cut -d '-' -f 1`
+target_name=$(echo $target | cut -d '-' -f 1)
 target_bigendian="no"
 
 case "$target_name" in
@@ -1256,6 +1603,7 @@ mkdir -p $target_dir
 echo "# Automatically generated by configure - do not modify" > $config_target_mak
 
 bflt="no"
+mttcg="no"
 
 TARGET_ARCH="$target_name"
 TARGET_BASE_ARCH=""
@@ -1270,12 +1618,14 @@ case "$target_name" in
   ;;
   arm|armeb)
     TARGET_ARCH=arm
+    mttcg="yes"
     bflt="yes"
   ;;
   aarch64|aarch64eb)
     TARGET_BASE_ARCH=arm
     TARGET_ARCH=aarch64
     bflt="yes"
+    mttcg="yes"
   ;;
   cris)
   ;;
@@ -1364,7 +1714,7 @@ upper() {
     echo "$@"| LC_ALL=C tr '[a-z]' '[A-Z]'
 }
 
-target_arch_name="`upper $TARGET_ARCH`"
+target_arch_name="$(upper $TARGET_ARCH)"
 echo "TARGET_$target_arch_name=y" >> $config_target_mak
 echo "TARGET_NAME=$target_name" >> $config_target_mak
 echo "TARGET_BASE_ARCH=$TARGET_BASE_ARCH" >> $config_target_mak
@@ -1373,6 +1723,9 @@ if test "$target_bigendian" = "yes" ; then
 fi
 if test "$target_softmmu" = "yes" ; then
   echo "CONFIG_SOFTMMU=y" >> $config_target_mak
+  if test "$mttcg" = "yes" ; then
+    echo "TARGET_SUPPORTS_MTTCG=y" >> $config_target_mak
+  fi
 fi
 
 # generate QEMU_CFLAGS/LDFLAGS for targets
@@ -1401,9 +1754,49 @@ cat <<EOD >config.status
 # Compiler output produced by configure, useful for debugging
 # configure, is in config.log if it exists.
 EOD
+
+preserve_env() {
+    envname=$1
+
+    eval envval=\$$envname
+
+    if test -n "$envval"
+    then
+  echo "$envname='$envval'" >> config.status
+  echo "export $envname" >> config.status
+    else
+  echo "unset $envname" >> config.status
+    fi
+}
+
+# Preserve various env variables that influence what
+# features/build target configure will detect
+preserve_env AR
+preserve_env AS
+preserve_env CC
+preserve_env CPP
+preserve_env CXX
+preserve_env INSTALL
+preserve_env LD
+preserve_env LD_LIBRARY_PATH
+preserve_env LIBTOOL
+preserve_env MAKE
+preserve_env NM
+preserve_env OBJCOPY
+preserve_env PATH
+preserve_env PKG_CONFIG
+preserve_env PKG_CONFIG_LIBDIR
+preserve_env PKG_CONFIG_PATH
+preserve_env PYTHON
+preserve_env SDL_CONFIG
+preserve_env SDL2_CONFIG
+preserve_env SMBD
+preserve_env STRIP
+preserve_env WINDRES
+
 printf "exec" >>config.status
 printf " '%s'" "$0" "$@" >>config.status
-echo >>config.status
+echo ' "$@"' >>config.status
 chmod +x config.status
 
 rm -r "$TMPDIR1"

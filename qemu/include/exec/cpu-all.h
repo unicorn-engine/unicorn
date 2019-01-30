@@ -25,15 +25,17 @@
 #include "qemu/thread.h"
 #include "qom/cpu.h"
 
+#define EXCP_INTERRUPT  0x10000 /* async interruption */
+#define EXCP_HLT        0x10001 /* hlt instruction reached */
+#define EXCP_DEBUG      0x10002 /* cpu stopped after a breakpoint or singlestep */
+#define EXCP_HALTED     0x10003 /* cpu is halted (waiting for external event) */
+#define EXCP_YIELD      0x10004 /* cpu wants to yield timeslice to another */
+#define EXCP_ATOMIC     0x10005 /* stop-the-world and emulate atomic */
+
 /* some important defines:
- *
- * WORDS_ALIGNED : if defined, the host cpu can only make word aligned
- * memory accesses.
  *
  * HOST_WORDS_BIGENDIAN : if defined, the host cpu is big endian and
  * otherwise little endian.
- *
- * (TARGET_WORDS_ALIGNED : same for target cpu (not supported yet))
  *
  * TARGET_WORDS_BIGENDIAN : same for target cpu
  */
@@ -164,6 +166,8 @@ static inline void tswap64s(uint64_t *s)
 #define stq_p(p, v) stq_be_p(p, v)
 #define stfl_p(p, v) stfl_be_p(p, v)
 #define stfq_p(p, v) stfq_be_p(p, v)
+#define ldn_p(p, sz) ldn_be_p(p, sz)
+#define stn_p(p, sz, v) stn_be_p(p, sz, v)
 #else
 #define lduw_p(p) lduw_le_p(p)
 #define ldsw_p(p) ldsw_le_p(p)
@@ -176,6 +180,8 @@ static inline void tswap64s(uint64_t *s)
 #define stq_p(p, v) stq_le_p(p, v)
 #define stfl_p(p, v) stfl_le_p(p, v)
 #define stfq_p(p, v) stfq_le_p(p, v)
+#define ldn_p(p, sz) ldn_le_p(p, sz)
+#define stn_p(p, sz, v) stn_le_p(p, sz, v)
 #endif
 
 /* MMU memory access macros */
@@ -200,15 +206,72 @@ extern unsigned long reserved_va;
 
 #define GUEST_ADDR_MAX (RESERVED_VA ? RESERVED_VA : \
                                     (1ul << TARGET_VIRT_ADDR_SPACE_BITS) - 1)
+#else
+
+#include "exec/hwaddr.h"
+uint32_t lduw_phys(AddressSpace *as, hwaddr addr);
+uint32_t ldl_phys(AddressSpace *as, hwaddr addr);
+uint64_t ldq_phys(AddressSpace *as, hwaddr addr);
+void stl_phys_notdirty(AddressSpace *as, hwaddr addr, uint32_t val);
+void stw_phys(AddressSpace *as, hwaddr addr, uint32_t val);
+void stl_phys(AddressSpace *as, hwaddr addr, uint32_t val);
+void stq_phys(AddressSpace *as, hwaddr addr, uint64_t val);
+
+uint32_t address_space_lduw(AddressSpace *as, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint32_t address_space_ldl(AddressSpace *as, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint64_t address_space_ldq(AddressSpace *as, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stl_notdirty(AddressSpace *as, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stw(AddressSpace *as, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stl(AddressSpace *as, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stq(AddressSpace *as, hwaddr addr, uint64_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+
+uint32_t lduw_phys_cached(MemoryRegionCache *cache, hwaddr addr);
+uint32_t ldl_phys_cached(MemoryRegionCache *cache, hwaddr addr);
+uint64_t ldq_phys_cached(MemoryRegionCache *cache, hwaddr addr);
+void stl_phys_notdirty_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val);
+void stw_phys_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val);
+void stl_phys_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val);
+void stq_phys_cached(MemoryRegionCache *cache, hwaddr addr, uint64_t val);
+
+uint32_t address_space_lduw_cached(MemoryRegionCache *cache, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint32_t address_space_ldl_cached(MemoryRegionCache *cache, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+uint64_t address_space_ldq_cached(MemoryRegionCache *cache, hwaddr addr,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stl_notdirty_cached(MemoryRegionCache *cache, hwaddr addr,
+                            uint32_t val, MemTxAttrs attrs, MemTxResult *result);
+void address_space_stw_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stl_cached(MemoryRegionCache *cache, hwaddr addr, uint32_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
+void address_space_stq_cached(MemoryRegionCache *cache, hwaddr addr, uint64_t val,
+                            MemTxAttrs attrs, MemTxResult *result);
 #endif
 
 /* page related stuff */
+
+#ifdef TARGET_PAGE_BITS_VARY
+#define TARGET_PAGE_BITS ({ assert(target_page_bits_decided); \
+                            target_page_bits; })
+#else
+#define TARGET_PAGE_BITS_MIN TARGET_PAGE_BITS
+#endif
 
 #define TARGET_PAGE_SIZE (1 << TARGET_PAGE_BITS)
 #define TARGET_PAGE_MASK ~(TARGET_PAGE_SIZE - 1)
 #define TARGET_PAGE_ALIGN(addr) (((addr) + TARGET_PAGE_SIZE - 1) & TARGET_PAGE_MASK)
 
 #define HOST_PAGE_ALIGN(addr) (((addr) + qemu_host_page_size - 1) & qemu_host_page_mask)
+#define REAL_HOST_PAGE_ALIGN(addr) (((addr) + qemu_real_host_page_size - 1) & \
+                                    qemu_real_host_page_mask)
 
 /* same as PROT_xxx */
 #define PAGE_READ      0x0001
@@ -289,14 +352,48 @@ CPUArchState *cpu_copy(CPUArchState *env);
 /* memory API */
 
 /* Flags stored in the low bits of the TLB virtual address.  These are
-   defined so that fast path ram access is all zeros.  */
+ * defined so that fast path ram access is all zeros.
+ * The flags all must be between TARGET_PAGE_BITS and
+ * maximum address alignment bit.
+ */
 /* Zero if TLB entry is valid.  */
-#define TLB_INVALID_MASK   (1 << 3)
+#define TLB_INVALID_MASK    (1 << (TARGET_PAGE_BITS - 1))
 /* Set if TLB entry references a clean RAM page.  The iotlb entry will
    contain the page physical address.  */
-#define TLB_NOTDIRTY    (1 << 4)
+#define TLB_NOTDIRTY        (1 << (TARGET_PAGE_BITS - 2))
 /* Set if TLB entry is an IO callback.  */
-#define TLB_MMIO        (1 << 5)
+#define TLB_MMIO            (1 << (TARGET_PAGE_BITS - 3))
+/* Set if TLB entry must have MMU lookup repeated for every access */
+#define TLB_RECHECK         (1 << (TARGET_PAGE_BITS - 4))
+
+/* Use this mask to check interception with an alignment mask
+ * in a TCG backend.
+ */
+#define TLB_FLAGS_MASK  (TLB_INVALID_MASK | TLB_NOTDIRTY | TLB_MMIO \
+                         | TLB_RECHECK)
+
+/**
+ * tlb_hit_page: return true if page aligned @addr is a hit against the
+ * TLB entry @tlb_addr
+ *
+ * @addr: virtual address to test (must be page aligned)
+ * @tlb_addr: TLB entry address (a CPUTLBEntry addr_read/write/code value)
+ */
+static inline bool tlb_hit_page(target_ulong tlb_addr, target_ulong addr)
+{
+    return addr == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK));
+}
+
+/**
+ * tlb_hit: return true if @addr is a hit against the TLB entry @tlb_addr
+ *
+ * @addr: virtual address to test (need not be page aligned)
+ * @tlb_addr: TLB entry address (a CPUTLBEntry addr_read/write/code value)
+ */
+static inline bool tlb_hit(target_ulong tlb_addr, target_ulong addr)
+{
+    return tlb_hit_page(tlb_addr, addr & TARGET_PAGE_MASK);
+}
 
 ram_addr_t last_ram_offset(struct uc_struct *uc);
 void qemu_mutex_lock_ramlist(struct uc_struct *uc);
@@ -305,5 +402,7 @@ void qemu_mutex_unlock_ramlist(struct uc_struct *uc);
 
 int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
                         uint8_t *buf, int len, int is_write);
+
+int cpu_exec(struct uc_struct *uc, CPUState *cpu);
 
 #endif /* CPU_ALL_H */
