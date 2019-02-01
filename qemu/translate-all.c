@@ -812,6 +812,10 @@ static void page_flush_tb_1(int level, void **lp)
             pd[i].first_tb = NULL;
             invalidate_page_bitmap(pd + i);
         }
+        //free pd here
+        if(pd != NULL){
+            g_free(pd);
+        }
     } else {
         void **pp = *lp;
 
