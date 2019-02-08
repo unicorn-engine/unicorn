@@ -801,7 +801,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                 }
                 continue;
             case UC_X86_REG_FPCW:
-                X86_CPU(uc, mycpu)->env.fpuc = *(uint16_t *)value;
+                cpu_set_fpuc(&X86_CPU(uc, mycpu)->env, *(uint16_t *)value);
                 continue;
             case UC_X86_REG_FPTAG:
                 {
