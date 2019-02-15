@@ -471,6 +471,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                     case UC_X86_REG_MSR:
                         x86_msr_read(uc, (uc_x86_msr *)value);
                         break;
+                    case UC_X86_REG_MXCSR:
+                        *(uint32_t *)value = X86_CPU(uc, mycpu)->env.mxcsr;
+                        break;
                 }
                 break;
 
@@ -753,6 +756,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                     case UC_X86_REG_MSR:
                         x86_msr_read(uc, (uc_x86_msr *)value);
                         break;
+                    case UC_X86_REG_MXCSR:
+                        *(uint32_t *)value = X86_CPU(uc, mycpu)->env.mxcsr;
+                        break;
                 }
                 break;
 #endif
@@ -795,7 +801,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                 }
                 continue;
             case UC_X86_REG_FPCW:
-                X86_CPU(uc, mycpu)->env.fpuc = *(uint16_t *)value;
+                cpu_set_fpuc(&X86_CPU(uc, mycpu)->env, *(uint16_t *)value);
                 continue;
             case UC_X86_REG_FPTAG:
                 {
@@ -1017,6 +1023,9 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         break;
                     case UC_X86_REG_MSR:
                         x86_msr_write(uc, (uc_x86_msr *)value);
+                        break;
+                    case UC_X86_REG_MXCSR:
+                        cpu_set_mxcsr(&X86_CPU(uc, mycpu)->env, *(uint32_t *)value);
                         break;
                 }
                 break;
@@ -1309,6 +1318,9 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         break;
                     case UC_X86_REG_MSR:
                         x86_msr_write(uc, (uc_x86_msr *)value);
+                        break;
+                    case UC_X86_REG_MXCSR:
+                        cpu_set_mxcsr(&X86_CPU(uc, mycpu)->env, *(uint32_t *)value);
                         break;
                 }
                 break;
