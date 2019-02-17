@@ -3,7 +3,7 @@
 from __future__ import print_function
 import sys, re, os
 
-INCL_DIR = os.path.join('..', 'include', 'unicorn')
+INCL_DIR = os.path.join('.', 'tmp')
 
 include = [ 'arm.h', 'arm64.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'unicorn.h' ]
 
@@ -106,6 +106,8 @@ template = {
         },
 }
 
+all_arch_prefix = [ template["python"][tmp_target].upper() for tmp_target in include]
+
 # markup for comments to be added to autogen files
 MARKUP = '//>'
 
@@ -116,8 +118,11 @@ def gen(lang):
         prefix = templ[target]
         outfile = open(templ['out_file'] %(prefix), 'wb')   # open as binary prevents windows newlines
         outfile.write((templ['header'] % (prefix)).encode("utf-8"))
+        add_comments = True
+
         if target == 'unicorn.h':
             prefix = ''
+            add_comments = False
         lines = open(os.path.join(INCL_DIR, target)).readlines()
 
         previous = {}
@@ -125,7 +130,7 @@ def gen(lang):
         for line in lines:
             line = line.strip()
 
-            if line.startswith(MARKUP):  # markup for comments
+            if add_comments and line.startswith(MARKUP):  # markup for comments
                 outfile.write(("\n%s%s%s\n" %(templ['comment_open'], \
                             line.replace(MARKUP, ''), templ['comment_close'])).encode("utf-8"))
                 continue
@@ -155,6 +160,15 @@ def gen(lang):
                         rhs = ''.join(f[2:])
                     else:
                         rhs = str(count)
+
+                    if prefix == "":
+                        incorrect_prefix = False
+                        for arch in all_arch_prefix:
+                            if f[0].startswith("UC_" + arch):
+                                incorrect_prefix = True
+                                break
+                        if incorrect_prefix:
+                            continue
 
                     lhs = f[0].strip()
                     # evaluate bitshifts in constants e.g. "UC_X86 = 1 << 1"

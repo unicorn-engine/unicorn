@@ -16,16 +16,33 @@ else
 ENV_VARS = LD_LIBRARY_PATH=../ DYLD_LIBRARY_PATH=../ LIBUNICORN_PATH=$(TRAVIS_BUILD_DIR)
 endif
 
+TEMPDIR = tmp
+
+HEADERS = $(wildcard ../include/unicorn/*.h)
+HEADERS_DIR = ../include/unicorn
+HEADERS_PREPROC_DIR = $(TEMPDIR)
+HEADERS_PREPROC  := $(HEADERS:$(HEADERS_DIR)/%.h=$(HEADERS_PREPROC_DIR)/%.h)
 
 .PHONY: build install python c clean check test
 
-build:
+tmp_headers: $(TEMPDIR) $(HEADERS_PREPROC)
+
+build: $(TEMPDIR) $(HEADERS_PREPROC)
+
 	$(MAKE) -C python gen_const
 	$(MAKE) -C go gen_const
 	$(MAKE) -C java gen_const
 	$(MAKE) -C ruby gen_const
 	python const_generator.py dotnet
 	python const_generator.py pascal
+
+$(TEMPDIR):
+	-mkdir $(TEMPDIR)
+
+$(HEADERS_PREPROC): $(HEADERS_PREPROC_DIR)/%.h : $(HEADERS_DIR)/%.h
+# To generate header file with macro expanded. '-C' to keep comments
+	$(CC) -E -C $< -o $@
+	@echo "Preprocess "$<" in "$@" successfully!"
 
 install: build
 	$(MAKE) -C python install
@@ -49,6 +66,7 @@ clean:
 #	rm -rf *.txt
 	$(MAKE) -C python clean
 	$(MAKE) -C java clean
+	-rm -rf $(TEMPDIR)
 
 check:
 	make -C python check

@@ -69,6 +69,7 @@ bindings/python/unicorn.egg-info/
 bindings/python/unicorn/lib/
 bindings/python/unicorn/include/
 bindings/python/MANIFEST
+bindings/tmp/
 config.log
 
 
@@ -99,3 +100,6 @@ build/
 [Oo]bj/
 packages/
 cmocka/
+
+# Arm documentation used for cpregs generation
+utils/arm-doc/

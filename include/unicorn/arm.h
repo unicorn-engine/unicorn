@@ -7,6 +7,8 @@
 #ifndef UNICORN_ARM_H
 #define UNICORN_ARM_H
 
+#include "arm_cpreg.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -129,9 +131,8 @@ typedef enum uc_arm_reg {
     UC_ARM_REG_S30,
     UC_ARM_REG_S31,
 
-    UC_ARM_REG_C1_C0_2,
-    UC_ARM_REG_C13_C0_2,
-    UC_ARM_REG_C13_C0_3,
+    //> CP registers
+    UC_ARM_CPREG_LIST       // C macro, see arm_cpgreg.h
 
     UC_ARM_REG_ENDING,		// <-- mark the end of the list or registers
 
@@ -144,6 +145,9 @@ typedef enum uc_arm_reg {
     UC_ARM_REG_SL = UC_ARM_REG_R10,
     UC_ARM_REG_FP = UC_ARM_REG_R11,
     UC_ARM_REG_IP = UC_ARM_REG_R12,
+    UC_ARM_REG_C1_C0_2 = UC_ARM_REG_CPACR,
+    UC_ARM_REG_C13_C0_2 = UC_ARM_REG_TPIDRURW,
+    UC_ARM_REG_C13_C0_3 = UC_ARM_REG_TPIDRURO,
 } uc_arm_reg;
 
 #ifdef __cplusplus

@@ -142,6 +142,8 @@ symbols = (
     'arm_reg_read',
     'arm_reg_reset',
     'arm_reg_write',
+    'arm_cpreg_read',
+    'arm_cpreg_write',
     'restore_state_to_opc',
     'arm_rmode_to_sf',
     'arm_singlestep_active',
@@ -3027,6 +3029,7 @@ symbols = (
 
 arm_symbols = (
     'ARM_REGS_STORAGE_SIZE',
+    'ARM_CP_REGS_INFO',
 )
 
 aarch64_symbols = (
@@ -3035,6 +3038,8 @@ aarch64_symbols = (
     'arm64_reg_reset',
     'arm64_reg_read',
     'arm64_reg_write',
+    'arm64_cpreg_read',
+    'arm64_cpreg_write',
     'gen_a64_set_pc_im',
     'aarch64_cpu_register_types',
     'helper_udiv64',
@@ -3066,7 +3071,7 @@ aarch64_symbols = (
     'helper_crc32_64',
     'helper_crc32c_64',
     'aarch64_cpu_do_interrupt',
-
+    'ARM64_CP_REGS_INFO',
 )
 
 mips_symbols = (

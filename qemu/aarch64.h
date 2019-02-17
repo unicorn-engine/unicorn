@@ -136,6 +136,8 @@
 #define arm_reg_read arm_reg_read_aarch64
 #define arm_reg_reset arm_reg_reset_aarch64
 #define arm_reg_write arm_reg_write_aarch64
+#define arm_cpreg_read arm_cpreg_read_aarch64
+#define arm_cpreg_write arm_cpreg_write_aarch64
 #define restore_state_to_opc restore_state_to_opc_aarch64
 #define arm_rmode_to_sf arm_rmode_to_sf_aarch64
 #define arm_singlestep_active arm_singlestep_active_aarch64
@@ -3022,6 +3024,8 @@
 #define arm64_reg_reset arm64_reg_reset_aarch64
 #define arm64_reg_read arm64_reg_read_aarch64
 #define arm64_reg_write arm64_reg_write_aarch64
+#define arm64_cpreg_read arm64_cpreg_read_aarch64
+#define arm64_cpreg_write arm64_cpreg_write_aarch64
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64
 #define aarch64_cpu_register_types aarch64_cpu_register_types_aarch64
 #define helper_udiv64 helper_udiv64_aarch64
@@ -3053,4 +3057,5 @@
 #define helper_crc32_64 helper_crc32_64_aarch64
 #define helper_crc32c_64 helper_crc32c_64_aarch64
 #define aarch64_cpu_do_interrupt aarch64_cpu_do_interrupt_aarch64
+#define ARM64_CP_REGS_INFO ARM64_CP_REGS_INFO_aarch64
 #endif

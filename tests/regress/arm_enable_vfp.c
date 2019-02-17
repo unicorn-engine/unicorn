@@ -19,14 +19,14 @@ int main()
 
     uint64_t tmp_val;
 
-    err = uc_reg_read(uc, UC_ARM_REG_C1_C0_2, &tmp_val);
+    err = uc_reg_read(uc, UC_ARM_REG_CPACR, &tmp_val);
     if (err) {
         printf("uc_open %d\n", err);
         return 1;
     }
-
+    
     tmp_val = tmp_val | (0xf << 20);
-    err = uc_reg_write(uc, UC_ARM_REG_C1_C0_2, &tmp_val);
+    err = uc_reg_write(uc, UC_ARM_REG_CPACR, &tmp_val);
     if (err) {
         printf("uc_open %d\n", err);
         return 1;
@@ -34,6 +34,12 @@ int main()
 
     size_t enable_vfp = 0x40000000;
     err = uc_reg_write(uc, UC_ARM_REG_FPEXC, &enable_vfp);
+    if (err) {
+        printf("uc_open %d\n", err);
+        return 1;
+    }
+
+    err = uc_reg_read(uc, UC_ARM_REG_CPACR, &tmp_val);
     if (err) {
         printf("uc_open %d\n", err);
         return 1;

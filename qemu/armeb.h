@@ -136,6 +136,8 @@
 #define arm_reg_read arm_reg_read_armeb
 #define arm_reg_reset arm_reg_reset_armeb
 #define arm_reg_write arm_reg_write_armeb
+#define arm_cpreg_read arm_cpreg_read_armeb
+#define arm_cpreg_write arm_cpreg_write_armeb
 #define restore_state_to_opc restore_state_to_opc_armeb
 #define arm_rmode_to_sf arm_rmode_to_sf_armeb
 #define arm_singlestep_active arm_singlestep_active_armeb
@@ -3018,4 +3020,5 @@
 #define xscale_cpar_write xscale_cpar_write_armeb
 #define xscale_cp_reginfo xscale_cp_reginfo_armeb
 #define ARM_REGS_STORAGE_SIZE ARM_REGS_STORAGE_SIZE_armeb
+#define ARM_CP_REGS_INFO ARM_CP_REGS_INFO_armeb
 #endif

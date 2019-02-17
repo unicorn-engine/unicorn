@@ -136,6 +136,8 @@
 #define arm_reg_read arm_reg_read_mipsel
 #define arm_reg_reset arm_reg_reset_mipsel
 #define arm_reg_write arm_reg_write_mipsel
+#define arm_cpreg_read arm_cpreg_read_mipsel
+#define arm_cpreg_write arm_cpreg_write_mipsel
 #define restore_state_to_opc restore_state_to_opc_mipsel
 #define arm_rmode_to_sf arm_rmode_to_sf_mipsel
 #define arm_singlestep_active arm_singlestep_active_mipsel

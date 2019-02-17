@@ -7,6 +7,8 @@
 #ifndef UNICORN_ARM64_H
 #define UNICORN_ARM64_H
 
+#include "arm64_cpreg.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -283,13 +285,10 @@ typedef enum uc_arm64_reg {
     //> pseudo registers
     UC_ARM64_REG_PC,			// program counter register
 
-    UC_ARM64_REG_CPACR_EL1,
 
-    //> thread registers
-    UC_ARM64_REG_TPIDR_EL0,
-    UC_ARM64_REG_TPIDRRO_EL0,
-    UC_ARM64_REG_TPIDR_EL1,
-    
+    //> CP registers
+    UC_ARM64_CPREG_LIST       // C macro, see arm64_cpgreg.h
+
     UC_ARM64_REG_ENDING,		// <-- mark the end of the list of registers
 
     //> alias registers

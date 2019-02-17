@@ -8,8 +8,84 @@
 #include "cpu.h"
 #include "unicorn_common.h"
 #include "uc_priv.h"
-
+#include "arm_cpreg_info.h"
 const int ARM_REGS_STORAGE_SIZE = offsetof(CPUARMState, tlb_table);
+
+const uc_arm_cp_reg ARM_CP_REGS_INFO[] =  {
+    // { UC_ARM_REG_XXXXX,           cp, crn,crm,opc0,opc1,opc2 }
+
+    // Manual entries
+
+    // Automatical generated entries
+    UC_ARM_CPREG_INFO_LIST       // C macro, see arm_cpgreg_info.h
+};
+
+
+static int arm_uc_to_qemu_cp_regs(unsigned int regid)
+{
+    int i;
+    const uc_arm_cp_reg * tmp = NULL;
+    for(i=0; i < sizeof(ARM_CP_REGS_INFO); i++){
+        tmp = &ARM_CP_REGS_INFO[i];
+        if (regid==tmp->uc_reg_id){   
+            return ENCODE_CP_REG(tmp->cp,tmp->crn, tmp->crm, tmp->opc0, tmp->opc1, tmp->opc2);
+        }
+    }
+
+    return -1;
+}
+
+static uint64_t raw_read(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    if (cpreg_field_is_64bit(ri)) {
+        return CPREG_FIELD64(env, ri);
+    } else {
+        return CPREG_FIELD32(env, ri);
+    }
+}
+
+static void raw_write(CPUARMState *env, const ARMCPRegInfo *ri,
+                      uint64_t value)
+{
+    if (cpreg_field_is_64bit(ri)) {
+        CPREG_FIELD64(env, ri) = value;
+    } else {
+        CPREG_FIELD32(env, ri) = value;
+    }
+}
+
+static uint64_t read_raw_cp_reg(CPUARMState *env, const ARMCPRegInfo *ri)
+{
+    /* Raw read of a coprocessor register (as needed for migration, etc). */
+    if (ri->type & ARM_CP_CONST) {
+        return ri->resetvalue;
+    } else if (ri->raw_readfn) {
+        return ri->raw_readfn(env, ri);
+    } else if (ri->readfn) {
+        return ri->readfn(env, ri);
+    } else {
+        return raw_read(env, ri);
+    }
+}
+
+static void write_raw_cp_reg(CPUARMState *env, const ARMCPRegInfo *ri,
+                             uint64_t v)
+{
+    /* Raw write of a coprocessor register (as needed for migration, etc).
+     * Note that constant registers are treated as write-ignored; the
+     * caller should check for success by whether a readback gives the
+     * value written.
+     */
+    if (ri->type & ARM_CP_CONST) {
+        return;
+    } else if (ri->raw_writefn) {
+        ri->raw_writefn(env, ri, v);
+    } else if (ri->writefn) {
+        ri->writefn(env, ri, v);
+    } else {
+        raw_write(env, ri, v);
+    }
+}
 
 static void arm_set_pc(struct uc_struct *uc, uint64_t address)
 {
@@ -50,6 +126,7 @@ void arm_reg_reset(struct uc_struct *uc)
 int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
     CPUState *mycpu;
+    const ARMCPRegInfo *ri = NULL;
     int i;
 
     mycpu = uc->cpu;
@@ -81,25 +158,25 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                 case UC_ARM_REG_R15:
                     *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[15];
                     break;
-                case UC_ARM_REG_C1_C0_2:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.cp15.c1_coproc;
-                    break;
-                case UC_ARM_REG_C13_C0_3:
-                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.cp15.tpidrro_el0;
-                    break;
                 case UC_ARM_REG_FPEXC:
                     *(int32_t *)value = ARM_CPU(uc, mycpu)->env.vfp.xregs[ARM_VFP_FPEXC];
                     break;
             }
+
+            regid = arm_uc_to_qemu_cp_regs(regid);
+            ri = get_arm_cp_reginfo(ARM_CPU(uc, mycpu)->cp_regs, regid);
+            if (ri){
+                   *(int32_t *)value = read_raw_cp_reg(&ARM_CPU(uc, mycpu)->env, ri);
+            }
         }
     }
-
     return 0;
 }
 
 int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, int count)
 {
     CPUState *mycpu = uc->cpu;
+    const ARMCPRegInfo *ri = NULL;
     int i;
 
     for (i = 0; i < count; i++) {
@@ -136,21 +213,64 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, i
                     uc_emu_stop(uc);
 
                     break;
-                case UC_ARM_REG_C1_C0_2:
-                    ARM_CPU(uc, mycpu)->env.cp15.c1_coproc = *(int32_t *)value;
-                    break;
-
-                case UC_ARM_REG_C13_C0_3:
-                    ARM_CPU(uc, mycpu)->env.cp15.tpidrro_el0 = *(int32_t *)value;
-                    break;
                 case UC_ARM_REG_FPEXC:
                     ARM_CPU(uc, mycpu)->env.vfp.xregs[ARM_VFP_FPEXC] = *(int32_t *)value;
                     break;
+            }
+
+            regid = arm_uc_to_qemu_cp_regs(regid);
+            ri = get_arm_cp_reginfo(ARM_CPU(uc, mycpu)->cp_regs, regid);
+            if (ri){
+                write_raw_cp_reg(&ARM_CPU(uc, mycpu)->env, ri, *(uint32_t *)value);
             }
         }
     }
 
     return 0;
+}
+
+int arm_cpreg_read( struct uc_struct *uc,
+                    uint8_t cp,
+                    uint8_t crn,
+                    uint8_t crm,
+                    uint8_t opc0,
+                    uint8_t opc1,
+                    uint8_t opc2,
+                    void * value)
+{
+    CPUState *mycpu = uc->cpu;
+    const ARMCPRegInfo *ri = NULL;
+
+    unsigned int regid = ENCODE_CP_REG(cp, crn, crm, opc0, opc1, opc2);
+
+    ri = get_arm_cp_reginfo(ARM_CPU(uc, mycpu)->cp_regs, regid);
+    if (ri){
+           *(int32_t *)value = read_raw_cp_reg(&ARM_CPU(uc, mycpu)->env, ri);
+        return 0;
+    }
+    return 1;
+}
+
+int arm_cpreg_write( struct uc_struct *uc,
+                    uint8_t cp,
+                    uint8_t crn,
+                    uint8_t crm,
+                    uint8_t opc0,
+                    uint8_t opc1,
+                    uint8_t opc2,
+                    const void * value)
+{
+    CPUState *mycpu = uc->cpu;
+    const ARMCPRegInfo *ri = NULL;
+
+    unsigned int regid = ENCODE_CP_REG(cp, crn, crm, opc0, opc1, opc2);
+
+    ri = get_arm_cp_reginfo(ARM_CPU(uc, mycpu)->cp_regs, regid);
+    if (ri){
+        write_raw_cp_reg(&ARM_CPU(uc, mycpu)->env, ri, *(uint32_t *)value);
+        return 0;
+    }
+    return 1;
 }
 
 static bool arm_stop_interrupt(int intno)
