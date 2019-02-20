@@ -255,7 +255,8 @@ public interface X86Const {
    public static final int UC_X86_REG_FPCW = 246;
    public static final int UC_X86_REG_FPTAG = 247;
    public static final int UC_X86_REG_MSR = 248;
-   public static final int UC_X86_REG_ENDING = 249;
+   public static final int UC_X86_REG_MXCSR = 249;
+   public static final int UC_X86_REG_ENDING = 250;
 
 // X86 instructions
 
