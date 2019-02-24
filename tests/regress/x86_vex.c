@@ -3,7 +3,7 @@
 #include <stdio.h>
 
 
-#define OK(x) {uc_err __err; if (__err = x) { fprintf(stderr, "%s", uc_strerror(__err)); assert(false); } }
+#define OK(x) {uc_err __err; if ((__err = x)) { fprintf(stderr, "%s", uc_strerror(__err)); assert(false); } }
 static void test_vmovdqu(void)
 {
     uc_engine *uc;
