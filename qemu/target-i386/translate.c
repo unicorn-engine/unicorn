@@ -5145,7 +5145,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
             rex_r = (~vex2 >> 4) & 8;
             if (b == 0xc5) {
                 vex3 = vex2;
-                b = cpu_ldub_code(env, s->pc++);
+                b = cpu_ldub_code(env, s->pc++) | 0x100;
             } else {
 #ifdef TARGET_X86_64
                 s->rex_x = (~vex2 >> 3) & 8;
