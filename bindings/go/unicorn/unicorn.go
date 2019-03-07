@@ -60,6 +60,8 @@ type Unicorn interface {
 	ContextSave(reuse Context) (Context, error)
 	ContextRestore(Context) error
 	Handle() *C.uc_engine
+	RegWriteX86Msr(reg uint64, val uint64) error
+	RegReadX86Msr(reg uint64) (uint64, error)
 }
 
 type uc struct {
