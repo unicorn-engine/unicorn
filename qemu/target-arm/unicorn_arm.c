@@ -93,6 +93,15 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                 case UC_ARM_REG_IPSR:
                     *(uint32_t *)value = xpsr_read(&ARM_CPU(uc, mycpu)->env) & 0x1ff;
                     break;
+                case UC_ARM_REG_MSP:
+                    *(uint32_t *)value = helper_v7m_mrs(&ARM_CPU(uc, mycpu)->env, 8);
+                    break;
+                case UC_ARM_REG_PSP:
+                    *(uint32_t *)value = helper_v7m_mrs(&ARM_CPU(uc, mycpu)->env, 9);
+                    break;
+                 case UC_ARM_REG_CONTROL:
+                    *(uint32_t *)value = helper_v7m_mrs(&ARM_CPU(uc, mycpu)->env, 20);
+                    break; 
             }
         }
     }
@@ -151,6 +160,15 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, i
                     break;
                 case UC_ARM_REG_IPSR:
                     xpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, 0x1ff);
+                    break;
+                case UC_ARM_REG_MSP:
+                    helper_v7m_msr(&ARM_CPU(uc, mycpu)->env, 8, *(uint32_t *)value);
+                    break;
+                case UC_ARM_REG_PSP:
+                    helper_v7m_msr(&ARM_CPU(uc, mycpu)->env, 9, *(uint32_t *)value);
+                    break;
+                 case UC_ARM_REG_CONTROL:
+                    helper_v7m_msr(&ARM_CPU(uc, mycpu)->env, 20, *(uint32_t *)value);
                     break;
             }
         }
