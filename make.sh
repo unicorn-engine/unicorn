@@ -23,6 +23,7 @@ OPTIONS:
     ios_armv7s              Cross-compile for ArmV7s (iPad 4, iPhone 5C, iPad mini)
     ios_arm64               Cross-compile for Arm64 (iPhone 5S, iPad mini Retina, iPad Air)
     linux32                 Cross-compile Unicorn on 64-bit Linux to target 32-bit binary
+    msvc_update_genfiles    Generate files for MSVC projects
 EOF
 }
 
