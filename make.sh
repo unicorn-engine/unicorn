@@ -3,21 +3,43 @@
 # Unicorn Engine
 # By Nguyen Anh Quynh <aquynh@gmail.com>, 2015
 
-MAKE_JOBS=$((${MAKE_JOBS}+0))
+usage() {
+    cat 1>&2 <<EOF
+make.sh - The build script for unicorn engine
+USAGE:
+    $ ./make.sh [OPTIONS]
+OPTIONS:
+                            Build the project
+    asan                    Build for ASan
+    install                 Install the project
+    uninstall               Uninstall the project
+    macos-universal         Build universal binaries on macOS
+    macos-universal-no      Build non-universal binaries that includes only 64-bit code on macOS
+    cross-win32             Cross-compile Windows 32-bit binary with MinGW
+    cross-win64             Cross-compile Windows 64-bit binary with MinGW
+    cross-android           Cross-compile for Android
+    ios                     Cross-compile for all iDevices (armv7 + armv7s + arm64)
+    ios_armv7               Cross-compile for ArmV7 (iPod 4, iPad 1/2/3, iPhone4, iPhone4S)
+    ios_armv7s              Cross-compile for ArmV7s (iPad 4, iPhone 5C, iPad mini)
+    ios_arm64               Cross-compile for Arm64 (iPhone 5S, iPad mini Retina, iPad Air)
+    linux32                 Cross-compile Unicorn on 64-bit Linux to target 32-bit binary
+    msvc_update_genfiles    Generate files for MSVC projects
+EOF
+}
+
+MAKE_JOBS=$((MAKE_JOBS+0))
 [ ${MAKE_JOBS} -lt 1 ] && \
   MAKE_JOBS=4
 
 # build for ASAN
 asan() {
-  UNICORN_DEBUG=yes
-  UNICORN_ASAN=yes
-  ${MAKE} V=1
+  env UNICORN_DEBUG=yes UNICORN_ASAN=yes "${MAKE}" V=1
 }
 
 # build iOS lib for all iDevices, or only specific device
 build_iOS() {
-  IOS_SDK=`xcrun --sdk iphoneos --show-sdk-path`
-  IOS_CC=`xcrun --sdk iphoneos -f clang`
+  IOS_SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+  IOS_CC=$(xcrun --sdk iphoneos -f clang)
   IOS_CFLAGS="-Os -Wimplicit -isysroot $IOS_SDK"
   IOS_LDFLAGS="-isysroot $IOS_SDK"
   if [ -z "$1" ]; then
@@ -59,7 +81,7 @@ install() {
     rm -rf /usr/lib/libunicorn*
     rm -rf /usr/include/unicorn
     # install into /usr/local
-    PREFIX="${PREFIX-/usr/local}"
+    PREFIX=${PREFIX:-/usr/local}
     ${MAKE} install
   else  # not OSX
     test -d /usr/lib64 && LIBDIRARCH=lib64
@@ -72,7 +94,7 @@ uninstall() {
   if [ "$UNAME" = "Darwin" ]; then
     # find the directory automatically, so we can support both Macport & Brew
     PKGCFGDIR="$(pkg-config --variable pc_path pkg-config | cut -d ':' -f 1)"
-    PREFIX="${PREFIX-/usr/local}"
+    PREFIX=${PREFIX:-/usr/local}
     ${MAKE} uninstall
   else  # not OSX
     test -d /usr/lib64 && LIBDIRARCH=lib64
@@ -101,20 +123,20 @@ msvc_update_genfiles() {
   cp qemu/x86_64-softmmu/config-target.h   msvc/unicorn/x86_64-softmmu/config-target.h
 }
 
-[ -z "${UNAME}" ] && UNAME=$(uname)
-[ -z "${MAKE}" ] && MAKE=make
+UNAME=${UNAME:-$(uname)}
+MAKE=${MAKE:-make}
 #[ -n "${MAKE_JOBS}" ] && MAKE="$MAKE -j${MAKE_JOBS}"
 
 
 if [ "$UNAME" = SunOS ]; then
-  [ -z "${MAKE}" ] && MAKE=gmake
+  MAKE=${MAKE:-gmake}
   INSTALL_BIN=ginstall
   CC=gcc
 fi
 
-if [ -n "`echo "$UNAME" | grep BSD`" ]; then
+if echo "$UNAME" | grep -q BSD; then
   MAKE=gmake
-  PREFIX="${PREFIX-/usr/local}"
+  PREFIX=${PREFIX:-/usr/local}
 fi
 
 export CC INSTALL_BIN PREFIX PKGCFGDIR LIBDIRARCH LIBARCHS CFLAGS LDFLAGS
@@ -136,6 +158,6 @@ case "$1" in
   "linux32" ) build_linux32;;
   "msvc_update_genfiles" ) msvc_update_genfiles;;
   * )
-    echo "Usage: $0 ["`grep '^  "' $0 | cut -d '"' -f 2 | tr "\\n" "|"`"]"
+    usage;
     exit 1;;
 esac
