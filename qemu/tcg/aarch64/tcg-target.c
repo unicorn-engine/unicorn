@@ -45,10 +45,12 @@ static const int tcg_target_reg_alloc_order[] = {
     /* X30 reserved as temporary */
 };
 
-static const int tcg_target_call_iarg_regs[8] = {
+static const int tcg_target_call_iarg_regs[] = {
     TCG_REG_X0, TCG_REG_X1, TCG_REG_X2, TCG_REG_X3,
     TCG_REG_X4, TCG_REG_X5, TCG_REG_X6, TCG_REG_X7
 };
+static const int nb_tcg_target_call_iarg_regs = ARRAY_SIZE(tcg_target_call_iarg_regs);
+
 static const int tcg_target_call_oarg_regs[1] = {
     TCG_REG_X0
 };

@@ -266,6 +266,7 @@ static const int tcg_target_call_iarg_regs[] = {
     TCG_REG_R5,
     TCG_REG_R6,
 };
+static const int nb_tcg_target_call_iarg_regs = ARRAY_SIZE(tcg_target_call_iarg_regs);
 
 static const int tcg_target_call_oarg_regs[] = {
     TCG_REG_R2,

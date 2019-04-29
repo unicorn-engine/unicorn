@@ -83,9 +83,23 @@ static const int tcg_target_call_iarg_regs[] = {
     The "tcg_target_call_iarg_regs" array is not accessed when
     TCG_TARGET_REG_BITS == 32
     */
+	/* in tcg.c, there was :
+	 * #if TCG_TARGET_REG_BITS == 32
+     *     // do this because msvc cannot have arrays with 0 entries.
+     *     nb_regs = 0;
+     * #endif
+     * It is wrong to say that the "tcg_target_call_iarg_regs" array is not accessed when
+     * TCG_TARGET_REG_BITS == 32. In my case, I wanted to emulate arm on i386. So, in tcg.c, nb_regs is not 0 !
+     * Jief
+	 */
     0,
 #endif
 };
+#if TCG_TARGET_REG_BITS == 64
+	static const int nb_tcg_target_call_iarg_regs = ARRAY_SIZE(tcg_target_call_iarg_regs);
+#else
+	static const int nb_tcg_target_call_iarg_regs = 0;
+#endif
 
 static const int tcg_target_call_oarg_regs[] = {
     TCG_REG_EAX,
@@ -1506,7 +1520,7 @@ static void tcg_out_qemu_st_slow_path(TCGContext *s, TCGLabelQemuLdst *l)
         tcg_out_movi(s, TCG_TYPE_I32, tcg_target_call_iarg_regs[3],
                      l->mem_index);
 
-        if (ARRAY_SIZE(tcg_target_call_iarg_regs) > 4) {
+        if (nb_tcg_target_call_iarg_regs > 4) {
             retaddr = tcg_target_call_iarg_regs[4];
             tcg_out_movi(s, TCG_TYPE_PTR, retaddr, (uintptr_t)l->raddr);
         } else {

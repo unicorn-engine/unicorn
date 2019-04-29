@@ -2374,7 +2374,15 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def,
     func_addr = (tcg_insn_unit *)(intptr_t)args[nb_oargs + nb_iargs];
     flags = args[nb_oargs + nb_iargs + 1];
 
-    nb_regs = ARRAY_SIZE(tcg_target_call_iarg_regs);
+    nb_regs = nb_tcg_target_call_iarg_regs;
+// I removed the hereunder ugly hack.
+// TCG_TARGET_REG_BITS can be 32 and nb_regs != 0. Ex : emulating arm on i386.
+// See tcg/i386/tcg-target.c
+//
+//#if TCG_TARGET_REG_BITS == 32	
+//    // do this because msvc cannot have arrays with 0 entries.	
+//    nb_regs = 0;	
+//#endif
     if (nb_regs > nb_params) {
         nb_regs = nb_params;
     }
