@@ -175,6 +175,9 @@ typedef enum UC_MIPS_REG {
     UC_MIPS_REG_MPL1,
     UC_MIPS_REG_MPL2,
 
+    UC_MIPS_REG_CP0_CONFIG3,
+    UC_MIPS_REG_CP0_USERLOCAL,
+
     UC_MIPS_REG_ENDING,	// <-- mark the end of the list or registers
 
     // alias registers
