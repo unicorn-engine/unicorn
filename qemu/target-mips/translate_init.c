@@ -43,8 +43,7 @@
 #define MIPS_CONFIG3                                              \
 ((0 << CP0C3_M) | (0 << CP0C3_DSPP) | (0 << CP0C3_LPA) |          \
  (0 << CP0C3_VEIC) | (0 << CP0C3_VInt) | (0 << CP0C3_SP) |        \
- (0 << CP0C3_SM) | (0 << CP0C3_TL)) | (1 << CP0C3_ULRI)
-
+ (0 << CP0C3_SM) | (0 << CP0C3_TL))
 #define MIPS_CONFIG4                                              \
 ((0 << CP0C4_M))
 
