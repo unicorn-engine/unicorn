@@ -71,7 +71,7 @@ bindings/python/unicorn/include/
 bindings/python/MANIFEST
 config.log
 
-
+.vscode
 
 
 #################
