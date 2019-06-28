@@ -87,23 +87,23 @@ To build Unicorn on *nix (such as MacOSX, Linux, *BSD, Solaris):
 
 
 
-[3] Cross-compile for iOS from Mac OSX.
+[3] Cross-compile for iOS from macOS.
 
-To cross-compile for iOS (iPhone/iPad/iPod), Mac OSX with XCode installed is required.
+To cross-compile for iOS (iPhone/iPad/iPod), macOS with Xcode installed is required.
 
-- To cross-compile for ArmV7 (iPod 4, iPad 1/2/3, iPhone4, iPhone4S), run:
+- To cross-compile for iOS ArmV7 (iPod 4, iPad 1/2/3, iPhone4, iPhone4S), run:
 
         $ ./make.sh ios_armv7
 
-- To cross-compile for ArmV7s (iPad 4, iPhone 5C, iPad mini), run:
+- To cross-compile for iOS ArmV7s (iPad 4, iPhone 5C, iPad mini), run:
 
         $ ./make.sh ios_armv7s
 
-- To cross-compile for Arm64 (iPhone 5S, iPad mini Retina, iPad Air), run:
+- To cross-compile for iOS Arm64 (iPhone 5S, iPad mini Retina, iPad Air), run:
 
         $ ./make.sh ios_arm64
 
-- To cross-compile for all iDevices (armv7 + armv7s + arm64), run:
+- To cross-compile for all iOS devices (armv7 + armv7s + arm64), run:
 
         $ ./make.sh ios
 
@@ -115,11 +115,14 @@ be used on iOS devices.
 [4] Cross-compile for Android
 
 To cross-compile for Android (smartphone/tablet), Android NDK is required.
-NOTE: Only ARM and ARM64 are currently supported.
 
-        $ NDK=/android/android-ndk-r10e ./make.sh cross-android arm
-or
-        $ NDK=/android/android-ndk-r10e ./make.sh cross-android arm64
+- To cross-compile for Android Arm, run:
+
+        $ NDK=~/android/android-ndk-r20 ./make.sh cross-android_arm
+
+- To cross-compile for Android Arm64, run:
+
+        $ NDK=~/android/android-ndk-r20 ./make.sh cross-android_arm64
 
 Resulted files libunicorn.so, libunicorn.a & tests/test* can then
 be used on Android devices.
