@@ -17,11 +17,12 @@ OPTIONS:
     macos-universal-no      Build non-universal binaries that includes only 64-bit code on macOS
     cross-win32             Cross-compile Windows 32-bit binary with MinGW
     cross-win64             Cross-compile Windows 64-bit binary with MinGW
-    cross-android           Cross-compile for Android
-    ios                     Cross-compile for all iDevices (armv7 + armv7s + arm64)
-    ios_armv7               Cross-compile for ArmV7 (iPod 4, iPad 1/2/3, iPhone4, iPhone4S)
-    ios_armv7s              Cross-compile for ArmV7s (iPad 4, iPhone 5C, iPad mini)
-    ios_arm64               Cross-compile for Arm64 (iPhone 5S, iPad mini Retina, iPad Air)
+    cross-android_arm       Cross-compile for Android Arm
+    cross-android_arm64     Cross-compile for Android Arm64
+    ios                     Cross-compile for all iOS devices (armv7 + armv7s + arm64)
+    ios_armv7               Cross-compile for iOS ArmV7 (iPod 4, iPad 1/2/3, iPhone4, iPhone4S)
+    ios_armv7s              Cross-compile for iOS ArmV7s (iPad 4, iPhone 5C, iPad mini)
+    ios_arm64               Cross-compile for iOS Arm64 (iPhone 5S, iPad mini Retina, iPad Air)
     linux32                 Cross-compile Unicorn on 64-bit Linux to target 32-bit binary
     msvc_update_genfiles    Generate files for MSVC projects
 EOF
@@ -150,7 +151,8 @@ case "$1" in
   "macos-universal-no" ) MACOS_UNIVERSAL=no ${MAKE};;
   "cross-win32" ) build_cross i686-w64-mingw32;;
   "cross-win64" ) build_cross x86_64-w64-mingw32;;
-  "cross-android" ) CROSS=arm-linux-androideabi ${MAKE};;
+  "cross-android_arm" ) CROSS=arm-linux-androideabi ${MAKE};;
+  "cross-android_arm64" ) CROSS=aarch64-linux-android ${MAKE};;
   "ios" ) build_iOS;;
   "ios_armv7" ) build_iOS armv7;;
   "ios_armv7s" ) build_iOS armv7s;;
