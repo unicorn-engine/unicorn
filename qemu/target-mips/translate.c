@@ -19711,6 +19711,9 @@ void cpu_state_reset(CPUMIPSState *env)
             env->tcs[0].CP0_TCStatus = (1 << CP0TCSt_A);
         }
     }
+    if (env->CP0_Config1 & (1 << CP0C1_FP)) {
+        env->CP0_Status |= (1 << CP0St_CU1);
+    }
 #endif
     if ((env->insn_flags & ISA_MIPS32R6) &&
         (env->active_fpu.fcr0 & (1 << FCR0_F64))) {
