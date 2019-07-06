@@ -47,6 +47,10 @@ static inline void QEMU_NORETURN do_raise_exception_err(CPUMIPSState *env,
         cpu_restore_state(cs, pc);
     }
 
+    if (exception == 0x11) {
+        env->uc->next_pc = env->active_tc.PC + 4;
+    }
+
     cpu_loop_exit(cs);
 }
 
