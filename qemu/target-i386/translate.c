@@ -5165,7 +5165,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                     break;
                 default:   /* Reserved for future use.  */
                     goto illegal_op;
-                }
+               }
             }
             s->vex_v = (~vex3 >> 3) & 0xf;
             s->vex_l = (vex3 >> 2) & 1;
@@ -5842,29 +5842,61 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         }
         break;
     case 0x1c7: /* cmpxchg8b */
-        modrm = cpu_ldub_code(env, s->pc++);
+        modrm = cpu_ldub_code(env, s->pc);
         mod = (modrm >> 6) & 3;
-        if ((mod == 3) || ((modrm & 0x38) != 0x8))
-            goto illegal_op;
+        switch ((modrm >> 3) & 7) {
+        case 1: /* CMPXCHG8, CMPXCHG16 */
+            if (mod == 3) {
+                goto illegal_op;
+            }
 #ifdef TARGET_X86_64
-        if (dflag == MO_64) {
-            if (!(s->cpuid_ext_features & CPUID_EXT_CX16))
+            if (dflag == MO_64) {
+                if (!(s->cpuid_ext_features & CPUID_EXT_CX16)) {
+                    goto illegal_op;
+                }
+                gen_lea_modrm(env, s, modrm);
+
+                /* No Support for atomic functions in Unicorn at this point 
+                if ((s->prefix & PREFIX_LOCK) &&
+                    (tb->cflags & CF_PARALLEL)) {
+                    gen_helper_cmpxchg16b(tcg_ctx, cpu_env, cpu_A0);
+                } else { */
+                gen_helper_cmpxchg16b_unlocked(tcg_ctx, cpu_env, cpu_A0);
+                /* } */
+                set_cc_op(s, CC_OP_EFLAGS);
+                break;
+            }
+#endif        
+            if (!(s->cpuid_features & CPUID_CX8)) {
                 goto illegal_op;
-            gen_jmp_im(s, pc_start - s->cs_base);
-            gen_update_cc_op(s);
+            }
             gen_lea_modrm(env, s, modrm);
-            gen_helper_cmpxchg16b(tcg_ctx, cpu_env, cpu_A0);
-        } else
-#endif
-        {
-            if (!(s->cpuid_features & CPUID_CX8))
+            /* No Support for atomic functions in Unicorn at this point 
+            if ((s->prefix & PREFIX_LOCK) &&
+                (tb->cflags & CF_PARALLEL)) {
+                gen_helper_cmpxchg8b(tcg_ctx, cpu_env, cpu_A0);
+            } else { */
+            gen_helper_cmpxchg8b_unlocked(tcg_ctx, cpu_env, cpu_A0);
+            /* } */
+            set_cc_op(s, CC_OP_EFLAGS);
+            break;
+
+        case 7: /* RDSEED */
+        case 6: /* RDRAND */
+            if (mod != 3 ||
+                (s->prefix & (PREFIX_LOCK | PREFIX_REPZ | PREFIX_REPNZ)) ||
+                !(s->cpuid_ext_features & CPUID_EXT_RDRAND)) {
                 goto illegal_op;
-            gen_jmp_im(s, pc_start - s->cs_base);
-            gen_update_cc_op(s);
-            gen_lea_modrm(env, s, modrm);
-            gen_helper_cmpxchg8b(tcg_ctx, cpu_env, cpu_A0);
+            }
+            gen_helper_rdrand(tcg_ctx, *cpu_T[0], cpu_env);
+            rm = (modrm & 7) | REX_B(s);
+            gen_op_mov_reg_v(tcg_ctx, dflag, rm, *cpu_T[0]);
+            set_cc_op(s, CC_OP_EFLAGS);
+            break;
+
+        default:
+            goto illegal_op;
         }
-        set_cc_op(s, CC_OP_EFLAGS);
         break;
 
         /**************************/
