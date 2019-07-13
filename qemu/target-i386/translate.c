@@ -5842,7 +5842,7 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
         }
         break;
     case 0x1c7: /* cmpxchg8b */
-        modrm = cpu_ldub_code(env, s->pc);
+        modrm = cpu_ldub_code(env, s->pc++);
         mod = (modrm >> 6) & 3;
         switch ((modrm >> 3) & 7) {
         case 1: /* CMPXCHG8, CMPXCHG16 */
