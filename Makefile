@@ -172,6 +172,8 @@ LIBRARY_SYMLINK = lib$(LIBNAME).$(EXT)
 endif
 endif
 
+UNICORN_QEMU_FLAGS += --python=$(shell which python2 || which /usr/bin/python || which python)
+
 ifeq ($(UNICORN_STATIC),yes)
 ifneq ($(filter MINGW%,$(UNAME_S)),)
 ARCHIVE = $(LIBNAME).$(AR_EXT)
