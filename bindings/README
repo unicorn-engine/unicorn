@@ -30,3 +30,6 @@ More bindings created & maintained externally by community are available as foll
 
 - Unicorn-Lua: Lua binding (by Diego Argueta)
     https://github.com/dargueta/unicorn-lua
+
+- pharo-unicorn: Pharo binding (by Guille Polito)
+    https://github.com/guillep/pharo-unicorn
