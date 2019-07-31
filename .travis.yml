@@ -82,4 +82,5 @@ addons:
       - libc6-dev-i386
       - gcc-multilib
   homebrew:
+    update: true
     brewfile: true
