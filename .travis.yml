@@ -2,6 +2,8 @@ language: c
 sudo: false
 before_install:
   - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./install-cmocka-linux.sh; fi
+env:
+  - PATH=$PATH:/usr/local/opt/binutils/bin
 script:
   - make && make -C bindings/go && make -C bindings/go test && make test
 compiler:
@@ -82,4 +84,5 @@ addons:
       - libc6-dev-i386
       - gcc-multilib
   homebrew:
+    update: true
     brewfile: true
