@@ -60,7 +60,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
 #ifdef TARGET_I386
     X86CPU *x86_cpu = X86_CPU(uc, cpu);
 #endif
-    int ret, interrupt_request;
+    int ret = 0, interrupt_request;
     TranslationBlock *tb;
     uint8_t *tc_ptr;
     uintptr_t next_tb;
@@ -96,8 +96,9 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     /* prepare setjmp context for exception handling */
     for(;;) {
         if (sigsetjmp(cpu->jmp_env, 0) == 0) {
-            if (uc->stop_request || uc->invalid_error)
+            if (uc->stop_request || uc->invalid_error) {
                 break;
+            }
 
             /* if an exception is pending, we execute it here */
             if (cpu->exception_index >= 0) {
@@ -117,6 +118,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     }
                     break;
                 } else {
+                    bool catched = false;
 #if defined(CONFIG_USER_ONLY)
                     /* if user mode only, we simulate a fake exception
                        which will be handled outside the cpu execution
@@ -127,13 +129,13 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     ret = cpu->exception_index;
                     break;
 #else
-                    bool catched = false;
                     // Unicorn: call registered interrupt callbacks
                     HOOK_FOREACH_VAR_DECLARE;
                     HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
                         ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
                         catched = true;
                     }
+
                     // Unicorn: If un-catched interrupt, stop executions.
                     if (!catched) {
                         cpu->halted = 1;
@@ -141,6 +143,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                         ret = EXCP_HLT;
                         break;
                     }
+
                     cpu->exception_index = -1;
 #if defined(TARGET_X86_64)
                     if (env->exception_is_int) {
@@ -164,11 +167,13 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                         /* Mask out external interrupts for this step. */
                         interrupt_request &= ~CPU_INTERRUPT_SSTEP_MASK;
                     }
+
                     if (interrupt_request & CPU_INTERRUPT_DEBUG) {
                         cpu->interrupt_request &= ~CPU_INTERRUPT_DEBUG;
                         cpu->exception_index = EXCP_DEBUG;
                         cpu_loop_exit(cpu);
                     }
+
                     if (interrupt_request & CPU_INTERRUPT_HALT) {
                         cpu->interrupt_request &= ~CPU_INTERRUPT_HALT;
                         cpu->halted = 1;
@@ -194,6 +199,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     if (cc->cpu_exec_interrupt(cpu, interrupt_request)) {
                         next_tb = 0;
                     }
+
                     /* Don't use the cached interrupt_request value,
                        do_interrupt may have updated the EXITTB flag. */
                     if (cpu->interrupt_request & CPU_INTERRUPT_EXITTB) {
@@ -203,17 +209,20 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                         next_tb = 0;
                     }
                 }
+
                 if (unlikely(cpu->exit_request)) {
                     cpu->exit_request = 0;
                     cpu->exception_index = EXCP_INTERRUPT;
                     cpu_loop_exit(cpu);
                 }
+
                 tb = tb_find_fast(env);	// qq
                 if (!tb) {   // invalid TB due to invalid code?
                     uc->invalid_error = UC_ERR_FETCH_UNMAPPED;
                     ret = EXCP_HLT;
                     break;
                 }
+
                 /* Note: we do it here to avoid a gcc bug on Mac OS X when
                    doing it in tb_find_slow */
                 if (tcg_ctx->tb_ctx.tb_invalidated_flag) {
@@ -223,6 +232,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     next_tb = 0;
                     tcg_ctx->tb_ctx.tb_invalidated_flag = 0;
                 }
+
                 /* see if we can patch the calling TB. When the TB
                    spans two pages, we cannot safely do a direct
                    jump. */
@@ -258,6 +268,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                             break;
                     }
                 }
+
                 cpu->current_tb = NULL;
                 /* reset soft MMU for next block (it can currently
                    only be set by a memory fault) */
