@@ -16,6 +16,16 @@ matrix:
       compiler: gcc
       env: CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
       script: make && make -C tests/unit test && make -C tests/regress test
+      addons:
+        apt:
+          packages:
+            - lib32ncurses5-dev
+            - lib32z1-dev
+            - libpthread-stubs0-dev
+            - lib32gcc-4.8-dev
+            - libc6-dev-i386
+            - gcc-multilib
+            - libcmocka-dev:i386
     - if: branch = master
       os: osx
       script: brew install --HEAD unicorn && brew test unicorn
@@ -37,7 +47,6 @@ addons:
       - libc6-dev-i386
       - gcc-multilib
       - libcmocka-dev
-      - libcmocka-dev:i386
   homebrew:
     update: true
     brewfile: true
