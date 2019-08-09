@@ -37,6 +37,7 @@ addons:
       - libc6-dev-i386
       - gcc-multilib
       - libcmocka-dev
+      - libcmocka-dev:i386
   homebrew:
     update: true
     brewfile: true
