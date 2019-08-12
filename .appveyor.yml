@@ -56,3 +56,8 @@ build_script:
 test_script:
     - if defined CYG_ROOT (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && ./install-cmocka-linux.sh && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER:$APPVEYOR_BUILD_FOLDER/cmocka/src && make test")
     - if defined MSYSTEM (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER && make test")
+    
+after_build:
+  - if defined CYG_ROOT (appveyor PushArtifact %APPVEYOR_BUILD_FOLDER%\cygunicorn.dll)
+  - if defined MSYSTEM (appveyor PushArtifact %APPVEYOR_BUILD_FOLDER%\unicorn.dll)
+
