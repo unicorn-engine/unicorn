@@ -58,7 +58,7 @@ test_script:
     - if defined MSYSTEM (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && export PATH=$PATH:$APPVEYOR_BUILD_FOLDER && make test")
     
 after_test:
+  - if defined CYG_ROOT (%BASH% -lc "cd $APPVEYOR_BUILD_FOLDER && cygcheck cygunicorn.dll")
   - if defined CYG_ROOT (appveyor PushArtifact %APPVEYOR_BUILD_FOLDER%\cygunicorn.dll)
   - if defined MSYSTEM (appveyor PushArtifact %APPVEYOR_BUILD_FOLDER%\unicorn.dll)
   - if "%CC%" == "msvc" (appveyor PushArtifact %APPVEYOR_BUILD_FOLDER%\msvc\Win32\Debug\unicorn.dll)
-
