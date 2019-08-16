@@ -289,8 +289,11 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     retaddr -= GETPC_ADJ;
 
     /* If the TLB entry is for a different page, reload and try again.  */
+    /* If the TLB entry addend is invalidated by any callbacks (perhaps due to
+       a TLB flush), reload and try again.  */
     if ((addr & TARGET_PAGE_MASK)
-         != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
+         != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))
+         || env->tlb_table[mmu_idx][index].addend == -1) {
 #ifdef ALIGNED_ONLY
         if ((addr & (DATA_SIZE - 1)) != 0) {
             //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
@@ -517,8 +520,11 @@ WORD_TYPE helper_be_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     retaddr -= GETPC_ADJ;
 
     /* If the TLB entry is for a different page, reload and try again.  */
+    /* If the TLB entry addend is invalidated by any callbacks (perhaps due to
+       a TLB flush), reload and try again.  */
     if ((addr & TARGET_PAGE_MASK)
-         != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))) {
+         != (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK))
+         || env->tlb_table[mmu_idx][index].addend == -1) {
 #ifdef ALIGNED_ONLY
         if ((addr & (DATA_SIZE - 1)) != 0) {
             //cpu_unaligned_access(ENV_GET_CPU(env), addr, READ_ACCESS_TYPE,
