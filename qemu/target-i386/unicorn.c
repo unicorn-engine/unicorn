@@ -1016,42 +1016,42 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         uc_emu_stop(uc);
                         break;
                     case UC_X86_REG_CS:
-                        ret = _uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_CS, *(uint16_t *)value);
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_CS, *(uint16_t *)value);
                         if (ret) {
                             return ret;
                         }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_CS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_DS:
-                        ret = _uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_DS, *(uint16_t *)value);
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_DS, *(uint16_t *)value);
                         if (ret) {
                             return ret;
                         }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_DS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_SS:
-                        ret = _uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_SS, *(uint16_t *)value);
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_SS, *(uint16_t *)value);
                         if (ret) {
                             return ret;
                         }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_SS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_ES:
-                        ret = _uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_ES, *(uint16_t *)value);
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_ES, *(uint16_t *)value);
                         if (ret) {
                             return ret;
                         }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_ES, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_FS:
-                        ret = _uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
                         if (ret) {
                             return ret;
                         }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_GS:
-                        ret = _uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
                         if (ret) {
                             return ret;
                         }
@@ -1251,14 +1251,14 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
                         break;
                     case UC_X86_REG_FS:
-                        ret = _uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
                         if (ret) {
                             return ret;
                         }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_GS:
-                        ret = _uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
                         if (ret) {
                             return ret;
                         }

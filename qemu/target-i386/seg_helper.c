@@ -1540,7 +1540,7 @@ void helper_ltr(CPUX86State *env, int selector)
 }
 
 // Unicorn: check the arguments before run cpu_x86_load_seg().
-int _uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel)
+int uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel)
 {
     int selector;
     uint32_t e2;
@@ -1552,7 +1552,6 @@ int _uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel)
     if (!(env->cr[0] & CR0_PE_MASK) || (env->eflags & VM_MASK)) {
         return 0;
     } else {
-
         selector = sel & 0xffff;
         cpl = env->hflags & HF_CPL_MASK;
         if ((selector & 0xfffc) == 0) {
@@ -1566,7 +1565,6 @@ int _uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel)
             }
             return 0;
         } else {
-
             if (selector & 0x4) {
                 dt = &env->ldt;
             } else {
@@ -1613,7 +1611,6 @@ int _uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel)
                     return UC_ERR_EXCEPTION;
                 }
             }
-
         }
     }
 

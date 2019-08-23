@@ -1139,7 +1139,7 @@ void cpu_x86_frstor(CPUX86State *s, target_ulong ptr, int data32);
 
 /*  the binding language can not catch the exceptions.
     check the arguments, return error instead of raise exceptions. */
-int _uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel);
+int uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel);
 
 /* you can call this signal handler from your SIGBUS and SIGSEGV
    signal handlers to inform the virtual CPU of exceptions. non zero
