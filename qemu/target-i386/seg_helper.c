@@ -1539,6 +1539,84 @@ void helper_ltr(CPUX86State *env, int selector)
     env->tr.selector = selector;
 }
 
+// Unicorn: check the arguments before run cpu_x86_load_seg().
+int uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel)
+{
+    int selector;
+    uint32_t e2;
+    int cpl, dpl, rpl;
+    SegmentCache *dt;
+    int index;
+    target_ulong ptr;
+
+    if (!(env->cr[0] & CR0_PE_MASK) || (env->eflags & VM_MASK)) {
+        return 0;
+    } else {
+        selector = sel & 0xffff;
+        cpl = env->hflags & HF_CPL_MASK;
+        if ((selector & 0xfffc) == 0) {
+            /* null selector case */
+            if (seg_reg == R_SS
+#ifdef TARGET_X86_64
+                && (!(env->hflags & HF_CS64_MASK) || cpl == 3)
+#endif
+                ) {
+                return UC_ERR_EXCEPTION;
+            }
+            return 0;
+        } else {
+            if (selector & 0x4) {
+                dt = &env->ldt;
+            } else {
+                dt = &env->gdt;
+            }
+            index = selector & ~7;
+            if ((index + 7) > dt->limit) {
+                return UC_ERR_EXCEPTION;
+            }
+            ptr = dt->base + index;
+            e2 = cpu_ldl_kernel(env, ptr + 4);
+
+            if (!(e2 & DESC_S_MASK)) {
+                return UC_ERR_EXCEPTION;
+            }
+            rpl = selector & 3;
+            dpl = (e2 >> DESC_DPL_SHIFT) & 3;
+            if (seg_reg == R_SS) {
+                /* must be writable segment */
+                if ((e2 & DESC_CS_MASK) || !(e2 & DESC_W_MASK)) {
+                    return UC_ERR_EXCEPTION;
+                }
+                if (rpl != cpl || dpl != cpl) {
+                    return UC_ERR_EXCEPTION;
+                }
+            } else {
+                /* must be readable segment */
+                if ((e2 & (DESC_CS_MASK | DESC_R_MASK)) == DESC_CS_MASK) {
+                    return UC_ERR_EXCEPTION;
+                }
+
+                if (!(e2 & DESC_CS_MASK) || !(e2 & DESC_C_MASK)) {
+                    /* if not conforming code, test rights */
+                    if (dpl < cpl || dpl < rpl) {
+                        return UC_ERR_EXCEPTION;
+                    }
+                }
+            }
+
+            if (!(e2 & DESC_P_MASK)) {
+                if (seg_reg == R_SS) {
+                    return UC_ERR_EXCEPTION;
+                } else {
+                    return UC_ERR_EXCEPTION;
+                }
+            }
+        }
+    }
+
+    return 0;
+}
+
 /* only works if protected mode and not VM86. seg_reg must be != R_CS */
 void helper_load_seg(CPUX86State *env, int seg_reg, int selector)
 {
