@@ -138,7 +138,7 @@ _setup_prototype(_uc, "uc_context_alloc", ucerr, uc_engine, ctypes.POINTER(uc_co
 _setup_prototype(_uc, "uc_free", ucerr, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_context_save", ucerr, uc_engine, uc_context)
 _setup_prototype(_uc, "uc_context_restore", ucerr, uc_engine, uc_context)
-_setup_prototype(_uc, "uc_context_size", ctypes.c_uint64, uc_engine)
+_setup_prototype(_uc, "uc_context_size", ctypes.c_size_t, uc_engine)
 _setup_prototype(_uc, "uc_mem_regions", ucerr, uc_engine, ctypes.POINTER(ctypes.POINTER(_uc_mem_region)), ctypes.POINTER(ctypes.c_uint32))
 
 # uc_hook_add is special due to variable number of arguments
@@ -621,7 +621,7 @@ class Uc(object):
 def context_factory(size):
     class SavedContext(ctypes.Structure):
         _fields_ = [
-            ('size', ctypes.c_uint64),
+            ('size', ctypes.c_size_t),
             ('data', ctypes.c_char*size)
             ]
     ctxt = SavedContext()
