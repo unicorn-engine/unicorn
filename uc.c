@@ -1303,6 +1303,12 @@ uc_err uc_free(void *mem)
 }
 
 UNICORN_EXPORT
+size_t uc_context_size(uc_engine *uc)
+{
+    return cpu_context_size(uc->arch, uc->mode);
+}
+
+UNICORN_EXPORT
 uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
     struct uc_context *_context = context;
