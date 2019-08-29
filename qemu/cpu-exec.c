@@ -132,6 +132,8 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     // Unicorn: call registered interrupt callbacks
                     HOOK_FOREACH_VAR_DECLARE;
                     HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
+                        if (hook->to_delete)
+                            continue;
                         ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
                         catched = true;
                     }

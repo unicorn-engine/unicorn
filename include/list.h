@@ -27,4 +27,7 @@ void *list_append(struct list *list, void *data);
 // returns true if entry was removed, false otherwise
 bool list_remove(struct list *list, void *data);
 
+// returns true if the data exists in the list
+bool list_exists(struct list *list, void *data);
+
 #endif
