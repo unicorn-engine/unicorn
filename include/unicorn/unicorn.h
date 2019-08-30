@@ -177,6 +177,8 @@ typedef void (*uc_cb_hookintr_t)(uc_engine *uc, uint32_t intno, void *user_data)
   Callback function for tracing invalid instructions
 
   @user_data: user data passed to tracing APIs.
+
+  @return: return true to continue, or false to stop program (due to invalid instruction).
 */
 typedef bool (*uc_cb_hookinsn_invalid_t)(uc_engine *uc, void *user_data);
 
