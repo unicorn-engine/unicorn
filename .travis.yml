@@ -28,14 +28,6 @@ matrix:
             - libcmocka-dev:i386
     - if: branch = master
       os: osx
-      script: brew install -v --HEAD unicorn && brew test unicorn
-      compiler: gcc
-    - if: branch = master
-      os: osx
-      script: brew install -v --HEAD unicorn && brew test unicorn
-      compiler: clang
-  allow_failures:
-    - os: osx
       script: brew install --HEAD unicorn && brew test unicorn
 addons:
   apt:
