@@ -174,6 +174,13 @@ typedef void (*uc_cb_hookcode_t)(uc_engine *uc, uint64_t address, uint32_t size,
 typedef void (*uc_cb_hookintr_t)(uc_engine *uc, uint32_t intno, void *user_data);
 
 /*
+  Callback function for tracing invalid instructions
+
+  @user_data: user data passed to tracing APIs.
+*/
+typedef bool (*uc_cb_hookinsn_invalid_t)(uc_engine *uc, void *user_data);
+
+/*
   Callback function for tracing IN instruction of X86
 
   @port: port number
@@ -236,6 +243,8 @@ typedef enum uc_hook_type {
     // Hook memory read events, but only successful access.
     // The callback will be triggered after successful read.
     UC_HOOK_MEM_READ_AFTER = 1 << 13,
+    // Hook invalid instructions exceptions.
+    UC_HOOK_INSN_INVALID = 1 << 14,
 } uc_hook_type;
 
 // Hook type for all events of unmapped memory access
