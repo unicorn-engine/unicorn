@@ -527,15 +527,16 @@ static void hook_count_cb(struct uc_struct *uc, uint64_t address, uint32_t size,
         uc_emu_stop(uc);
 }
 
-static clear_deleted_hooks(uc_engine *uc)
+static void clear_deleted_hooks(uc_engine *uc)
 {
     struct list_item * cur;
     struct hook * hook;
+    int i;
     
     for (cur = uc->hooks_to_del.head; cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next)
     {
         assert(hook->to_delete);
-        for (int i = 0; i < UC_HOOK_MAX; i++) {
+        for (i = 0; i < UC_HOOK_MAX; i++) {
             if (list_remove(&uc->hook[i], (void *)hook)) {
                 if (--hook->refs == 0) {
                     free(hook);
@@ -544,7 +545,6 @@ static clear_deleted_hooks(uc_engine *uc)
                 break;
             }
         }
-        continue;
     }
     list_clear(&uc->hooks_to_del);
 }
