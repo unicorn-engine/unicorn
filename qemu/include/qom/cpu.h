@@ -402,7 +402,7 @@ void cpu_reset(CPUState *cpu);
  *
  * Returns: A #CPUClass or %NULL if not matching class is found.
  */
-ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename, const char *cpu_model);
+ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename_, const char *cpu_model);
 
 /**
  * cpu_generic_init:
@@ -413,7 +413,7 @@ ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename, const
  *
  * Returns: A #CPUState or %NULL if an error occurred.
  */
-CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const char *cpu_model);
+CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename_, const char *cpu_model);
 
 /**
  * cpu_has_work:
