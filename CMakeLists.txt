@@ -1,31 +1,32 @@
-# Only tested in vs2019.
+# Tested on window10(x64) with vs2019.
 # Open the "x86 Native Tools Command Prompt for VS 2019",
 # cd ${UNICORN_SOURCE_DIR}
 # mkdir build
 # cd build
 # cmake -G "NMake Makefiles" ..
 # nmake
-# or Open "x64 Native Tools Command Prompt for VS 2019" for 64bit binary.
+# Or Open "x64 Native Tools Command Prompt for VS 2019" for 64bit binary.
+# Tested on Ubuntu-1804-amd64 with gcc.
+# cd ${UNICORN_SOURCE_DIR}
+# mkdir build
+# cd build
+# cmake ..
+# make
+# By Huitao Chen, 2019
 cmake_minimum_required(VERSION 3.1)
-project(unicorn)
-
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_C_STANDARD 11)
-
-#set(CMAKE_BUILD_TYPE "Debug")
-set(CMAKE_BUILD_TYPE "Release")
+project(unicorn C)
 
 if(MSVC)
-    include_directories(SYSTEM
+    include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn
     )
 else()
-    include_directories(SYSTEM
-        ${CMAKE_CURRENT_SOURCE_DIR}
+    include_directories(
+        ${CMAKE_BINARY_DIR}
     )
 endif()
 
-include_directories(SYSTEM
+include_directories(
     qemu
     qemu/include
     qemu/tcg
@@ -33,15 +34,120 @@ include_directories(SYSTEM
 )
 
 if(MSVC)
-if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-    set(MSVC_FLAG  -D__x86_64__)
-elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-    set(MSVC_FLAG  -D__i386__)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        set(MSVC_FLAG  -D__x86_64__)
+    elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+        set(MSVC_FLAG  -D__i386__)
+    else()
+        message(FATAL_ERROR "Neither WIN64 or WIN32!")
+    endif()
+    add_compile_options(
+        -D_CRT_SECURE_NO_WARNINGS
+        -DWIN32_LEAN_AND_MEAN
+        ${MSVC_FLAG}
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
+        /wd4018 /wd4244 /wd4267
+    )
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+        string(REPLACE "/ZI" "/Zi" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+    endif()
 else()
-    message(FATAL_ERROR "Neither WIN64 or WIN32!")
+# check python
+    find_program(PYTHON_CMD python)
+    if (NOT PYTHON_CMD)
+        message(FATAL_ERROR "Please install python.")
+    endif()
+# GEN dynamic source files
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
+        "--extra-cflags=-DUNICORN_HAS_X86 \
+            -DUNICORN_HAS_ARM -DUNICORN_HAS_ARMEB \
+            -DUNICORN_HAS_ARM64 -DUNICORN_HAS_ARM64EB \
+            -DUNICORN_HAS_M68K \
+            -DUNICORN_HAS_MIPS -DUNICORN_HAS_MIPSEL \
+            -DUNICORN_HAS_MIPS64 -DUNICORN_HAS_MIPS64EL \
+            -DUNICORN_HAS_SPARC \
+            -fPIC -fvisibility=hidden"
+        "--target-list=x86_64-softmmu, \
+            arm-softmmu, armeb-softmmu, \
+            aarch64-softmmu, aarch64eb-softmmu, \
+            m68k-softmmu, \
+            mips-softmmu, mipsel-softmmu, \
+            mips64-softmmu, mips64el-softmmu, \
+            sparc-softmmu, sparc64-softmmu"
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/config-host.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/config-host.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/x86_64-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/x86_64-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/arm-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/arm-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/armeb-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/armeb-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/aarch64-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/aarch64-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/aarch64eb-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/aarch64eb-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/m68k-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/m68k-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/mips-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/mipsel-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/mipsel-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/mips64-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips64-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/mips64el-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips64el-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/sparc-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc-softmmu/config-target.h
+    )
+    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+        INPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.mak
+        OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.h
+    )
+    execute_process(COMMAND python -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-types.py
+        -h -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
+    )
+    execute_process(COMMAND python -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-types.py
+        -c -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
+    )
+    execute_process(COMMAND python -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-visit.py
+        -h -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
+    )
+    execute_process(COMMAND python -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-visit.py
+        -c -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
+    )
+    add_compile_options(
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
+        -D_GNU_SOURCE
+        -D_FILE_OFFSET_BITS=64
+        -D_LARGEFILE_SOURCE
+        -Wall -O2
+        -fPIC -fpic -fvisibility=hidden
+    )
 endif()
-endif()
-
 
 add_library(x86_64-softmmu
     qemu/cpu-exec.c
@@ -77,30 +183,17 @@ add_library(x86_64-softmmu
 
 if(MSVC)
     target_compile_options(x86_64-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI x86_64.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/x86_64-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-i386
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(x86_64-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(x86_64-softmmu PRIVATE
-        -include x86_64.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/x86_64-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-i386
-    )
-    target_compile_definitions(x86_64-softmmu PRIVATE
         -DNEED_CPU_H
+        -include x86_64.h
+        -I${CMAKE_BINARY_DIR}/x86_64-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-i386
     )
 endif()
 
@@ -131,30 +224,17 @@ add_library(arm-softmmu
 
 if(MSVC)
     target_compile_options(arm-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI arm.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/arm-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(arm-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(arm-softmmu PRIVATE
-        -include arm.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/arm-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
-    )
-    target_compile_definitions(arm-softmmu PRIVATE
         -DNEED_CPU_H
+        -include arm.h
+        -I${CMAKE_BINARY_DIR}/arm-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
     )
 endif()
 
@@ -185,30 +265,17 @@ add_library(armeb-softmmu
 
 if(MSVC)
     target_compile_options(armeb-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI armeb.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/armeb-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(armeb-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(armeb-softmmu PRIVATE
-        -include armeb.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/armeb-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
-    )
-    target_compile_definitions(armeb-softmmu PRIVATE
         -DNEED_CPU_H
+        -include armeb.h
+        -I${CMAKE_BINARY_DIR}/armeb-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
     )
 endif()
 
@@ -242,30 +309,17 @@ add_library(aarch64-softmmu
 
 if(MSVC)
     target_compile_options(aarch64-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI aarch64.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/aarch64-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(aarch64-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(aarch64-softmmu PRIVATE
-        -include aarch64.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/aarch64-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
-    )
-    target_compile_definitions(aarch64-softmmu PRIVATE
         -DNEED_CPU_H
+        -include aarch64.h
+        -I${CMAKE_BINARY_DIR}/aarch64-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
     )
 endif()
 
@@ -299,30 +353,17 @@ add_library(aarch64eb-softmmu
 
 if(MSVC)
     target_compile_options(aarch64eb-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI aarch64eb.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/aarch64eb-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(aarch64eb-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(aarch64eb-softmmu PRIVATE
-        -include aarch64eb.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/aarch64eb-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
-    )
-    target_compile_definitions(aarch64eb-softmmu PRIVATE
         -DNEED_CPU_H
+        -include aarch64eb.h
+        -I${CMAKE_BINARY_DIR}/aarch64eb-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
     )
 endif()
 
@@ -348,30 +389,17 @@ add_library(m68k-softmmu
 
 if(MSVC)
     target_compile_options(m68k-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI m68k.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/m68k-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-m68k
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(m68k-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(m68k-softmmu PRIVATE
-        -include m68k.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/m68k-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-m68k
-    )
-    target_compile_definitions(m68k-softmmu PRIVATE
         -DNEED_CPU_H
+        -include m68k.h
+        -I${CMAKE_BINARY_DIR}/m68k-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-m68k
     )
 endif()
 
@@ -402,30 +430,17 @@ add_library(mips-softmmu
 
 if(MSVC)
     target_compile_options(mips-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI mips.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/mips-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(mips-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(mips-softmmu PRIVATE
-        -include mips.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/mips-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
-    )
-    target_compile_definitions(mips-softmmu PRIVATE
         -DNEED_CPU_H
+        -include mips.h
+        -I${CMAKE_BINARY_DIR}/mips-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
     )
 endif()
 
@@ -456,30 +471,17 @@ add_library(mipsel-softmmu
 
 if(MSVC)
     target_compile_options(mipsel-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI mipsel.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/mipsel-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(mipsel-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(mipsel-softmmu PRIVATE
-        -include mipsel.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/mipsel-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
-    )
-    target_compile_definitions(mipsel-softmmu PRIVATE
         -DNEED_CPU_H
+        -include mipsel.h
+        -I${CMAKE_BINARY_DIR}/mipsel-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
     )
 endif()
 
@@ -510,30 +512,17 @@ add_library(mips64-softmmu
 
 if(MSVC)
     target_compile_options(mips64-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI mips64.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/mips64-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(mips64-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(mips64-softmmu PRIVATE
-        -include mips64.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/mips64-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
-    )
-    target_compile_definitions(mips64-softmmu PRIVATE
         -DNEED_CPU_H
+        -include mips64.h
+        -I${CMAKE_BINARY_DIR}/mips64-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
     )
 endif()
 
@@ -564,30 +553,17 @@ add_library(mips64el-softmmu
 
 if(MSVC)
     target_compile_options(mips64el-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI mips64el.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/mips64el-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(mips64el-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(mips64el-softmmu PRIVATE
-        -include mips64el.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/mips64el-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
-    )
-    target_compile_definitions(mips64el-softmmu PRIVATE
         -DNEED_CPU_H
+        -include mips64el.h
+        -I${CMAKE_BINARY_DIR}/mips64el-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
     )
 endif()
 
@@ -618,30 +594,17 @@ add_library(sparc-softmmu
 
 if(MSVC)
     target_compile_options(sparc-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI sparc.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/sparc-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-sparc
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(sparc-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(sparc-softmmu PRIVATE
-        -include sparc.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/sparc-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-sparc
-    )
-    target_compile_definitions(sparc-softmmu PRIVATE
         -DNEED_CPU_H
+        -include sparc.h
+        -I${CMAKE_BINARY_DIR}/sparc-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-sparc
     )
 endif()
 
@@ -673,30 +636,17 @@ add_library(sparc64-softmmu
 
 if(MSVC)
     target_compile_options(sparc64-softmmu PRIVATE
+        -DNEED_CPU_H
         /FI sparc64.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/sparc64-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-sparc
-        /wd4018 /wd4244 /wd4267
-    )
-
-    target_compile_definitions(sparc64-softmmu PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DNEED_CPU_H
-        -DWIN32_LEAN_AND_MEAN
-        ${MSVC_FLAG}
     )
 else()
     target_compile_options(sparc64-softmmu PRIVATE
-        -include sparc64.h
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/sparc64-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-sparc
-    )
-    target_compile_definitions(sparc64-softmmu PRIVATE
         -DNEED_CPU_H
+        -include sparc64.h
+        -I${CMAKE_BINARY_DIR}/sparc64-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-sparc
     )
 endif()
 
@@ -753,8 +703,8 @@ else()
         ${UNICORN_SRCS_COMMON}
         qemu/util/oslib-posix.c
         qemu/util/qemu-thread-posix.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-types.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-visit.c
+        ${CMAKE_BINARY_DIR}/qapi-types.c
+        ${CMAKE_BINARY_DIR}/qapi-visit.c
     )
 endif()
 
@@ -764,13 +714,6 @@ add_library(unicorn SHARED
 
 if(MSVC)
     target_compile_options(unicorn PRIVATE
-        /wd4018 /wd4244 /wd4267
-    )
-    target_compile_definitions(unicorn PRIVATE
-        -D_CRT_SECURE_NO_WARNINGS
-        -Dinline=__inline
-        -D__func__=__FUNCTION__
-        -DWIN32_LEAN_AND_MEAN
         -DUNICORN_HAS_ARM
         -DUNICORN_HAS_ARM64
         -DUNICORN_HAS_M68K
@@ -781,13 +724,23 @@ if(MSVC)
         -DUNICORN_HAS_SPARC
         -DUNICORN_HAS_X86
         -DUNICORN_SHARED
-        ${MSVC_FLAG}
+    )
+    target_link_libraries(unicorn
+        arm-softmmu
+        armeb-softmmu
+        aarch64-softmmu
+        aarch64eb-softmmu
+        m68k-softmmu
+        mips-softmmu
+        mipsel-softmmu
+        mips64-softmmu
+        mips64el-softmmu
+        sparc-softmmu
+        sparc64-softmmu
+        x86_64-softmmu
     )
 else()
     target_compile_options(unicorn PRIVATE
-        -I${CMAKE_CURRENT_SOURCE_DIR}
-    )
-    target_compile_definitions(unicorn PRIVATE
         -DUNICORN_HAS_ARM
         -DUNICORN_HAS_ARM64
         -DUNICORN_HAS_M68K
@@ -798,116 +751,54 @@ else()
         -DUNICORN_HAS_SPARC
         -DUNICORN_HAS_X86
     )
+    set_target_properties(unicorn PROPERTIES VERSION 1 SOVERSION 1)
+    target_link_libraries(unicorn
+        arm-softmmu
+        armeb-softmmu
+        aarch64-softmmu
+        aarch64eb-softmmu
+        m68k-softmmu
+        mips-softmmu
+        mipsel-softmmu
+        mips64-softmmu
+        mips64el-softmmu
+        sparc-softmmu
+        sparc64-softmmu
+        x86_64-softmmu
+        m
+    )
 endif()
 
-target_link_libraries(unicorn
-    arm-softmmu
-    armeb-softmmu
-    aarch64-softmmu
-    aarch64eb-softmmu
-    m68k-softmmu
-    mips-softmmu
-    mipsel-softmmu
-    mips64-softmmu
-    mips64el-softmmu
-    sparc-softmmu
-    sparc64-softmmu
-    x86_64-softmmu
-)
+if(MSVC)
+    set(SAMPLES_LIB
+        unicorn
+    )
+else()
+    set(SAMPLES_LIB
+        unicorn
+        pthread
+    )
+endif()
 
-add_executable(sample_x86
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/sample_x86.c
+foreach(SAMPLE_FILE
+    sample_x86
+    sample_arm
+    sample_armeb
+    sample_arm64
+    sample_arm64eb
+    sample_m68k
+    sample_mips
+    sample_sparc
+    sample_x86_32_gdt_and_seg_regs
+    sample_batch_reg
+    mem_apis
+    shellcode
 )
+    add_executable(${SAMPLE_FILE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/samples/${SAMPLE_FILE}.c
+    )
 
-target_link_libraries(sample_x86
-    unicorn
-)
-
-add_executable(sample_arm
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/sample_arm.c
-)
-
-target_link_libraries(sample_arm
-    unicorn
-)
-
-add_executable(sample_armeb
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/sample_armeb.c
-)
-
-target_link_libraries(sample_armeb
-    unicorn
-)
-
-add_executable(sample_arm64
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/sample_arm64.c
-)
-
-target_link_libraries(sample_arm64
-    unicorn
-)
-
-add_executable(sample_arm64eb
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/sample_arm64eb.c
-)
-
-target_link_libraries(sample_arm64eb
-    unicorn
-)
-
-add_executable(sample_m68k
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/sample_m68k.c
-)
-
-target_link_libraries(sample_m68k
-    unicorn
-)
-
-add_executable(sample_mips
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/sample_mips.c
-)
-
-target_link_libraries(sample_mips
-    unicorn
-)
-
-add_executable(sample_sparc
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/sample_sparc.c
-)
-
-target_link_libraries(sample_sparc
-    unicorn
-)
-
-
-add_executable(sample_x86_32_gdt_and_seg_regs
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/sample_x86_32_gdt_and_seg_regs.c
-)
-
-target_link_libraries(sample_x86_32_gdt_and_seg_regs
-    unicorn
-)
-
-add_executable(sample_batch_reg
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/sample_batch_reg.c
-)
-
-target_link_libraries(sample_batch_reg
-    unicorn
-)
-
-add_executable(mem_apis
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/mem_apis.c
-)
-
-target_link_libraries(mem_apis
-    unicorn
-)
-
-add_executable(shellcode
-    ${CMAKE_CURRENT_SOURCE_DIR}/samples/shellcode.c
-)
-
-target_link_libraries(shellcode
-    unicorn
-)
+    target_link_libraries(${SAMPLE_FILE}
+        ${SAMPLES_LIB}
+    )
+endforeach(SAMPLE_FILE)
