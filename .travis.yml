@@ -12,7 +12,8 @@ os:
   - osx
 matrix:
   include:
-    - os: linux
+    - name: 32bit
+      os: linux
       compiler: gcc
       env: CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
       script: make && make -C tests/unit test && make -C tests/regress test
@@ -27,6 +28,7 @@ matrix:
             - gcc-multilib
             - libcmocka-dev:i386
     - if: branch = master
+      name: brew HEAD
       os: osx
       script: brew install --HEAD unicorn && brew test unicorn
 addons:
