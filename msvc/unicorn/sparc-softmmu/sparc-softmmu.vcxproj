@@ -161,6 +161,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <ForcedIncludeFiles>sparc.h</ForcedIncludeFiles>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>

@@ -166,6 +166,7 @@
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
       <ForcedIncludeFiles>armeb.h</ForcedIncludeFiles>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
