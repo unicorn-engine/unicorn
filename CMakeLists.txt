@@ -16,6 +16,17 @@
 cmake_minimum_required(VERSION 3.1)
 project(unicorn C)
 
+if(NOT UNICORN_ARCH)
+    set(UNICORN_ARCH "x86 arm aarch64 m68k mips sparc")
+endif()
+
+string(TOUPPER ${UNICORN_ARCH} UNICORN_ARCH)
+string(REPLACE " " ";" UNICORN_ARCH_LIST ${UNICORN_ARCH})
+
+foreach(ARCH_LOOP ${UNICORN_ARCH_LIST})
+    set(UNICORN_HAS_${ARCH_LOOP} TRUE)
+endforeach(ARCH_LOOP)
+
 if(MSVC)
     include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn
@@ -57,76 +68,118 @@ else()
     if (NOT PYTHON_CMD)
         message(FATAL_ERROR "Please install python.")
     endif()
+
+    set(EXTRA_CFLAGS "--extra-cflags=")
+    if (UNICORN_HAS_X86)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_X86 ")
+    endif()
+    if (UNICORN_HAS_ARM)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_ARM -DUNICORN_HAS_ARMEB ")
+    endif()
+    if (UNICORN_HAS_AARCH64)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_ARM64 -DUNICORN_HAS_ARM64EB ")
+    endif()
+    if (UNICORN_HAS_M68K)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_M68K ")
+    endif()
+    if (UNICORN_HAS_MIPS)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_MIPS -DUNICORN_HAS_MIPSEL -DUNICORN_HAS_MIPS64 -DUNICORN_HAS_MIPS64EL ")
+    endif()
+    if (UNICORN_HAS_SPARC)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_SPARC ")
+    endif()
+    set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-fPIC -fvisibility=hidden")
+
+    set(TARGET_LIST "--target-list=")
+    if (UNICORN_HAS_X86)
+        set (TARGET_LIST "${TARGET_LIST}x86_64-softmmu, ")
+    endif()
+    if (UNICORN_HAS_ARM)
+        set (TARGET_LIST "${TARGET_LIST}arm-softmmu, armeb-softmmu, ")
+    endif()
+    if (UNICORN_HAS_AARCH64)
+        set (TARGET_LIST "${TARGET_LIST}aarch64-softmmu, aarch64eb-softmmu, ")
+    endif()
+    if (UNICORN_HAS_M68K)
+        set (TARGET_LIST "${TARGET_LIST}m68k-softmmu, ")
+    endif()
+    if (UNICORN_HAS_MIPS)
+        set (TARGET_LIST "${TARGET_LIST}mips-softmmu, mipsel-softmmu, mips64-softmmu, mips64el-softmmu, ")
+    endif()
+    if (UNICORN_HAS_SPARC)
+        set (TARGET_LIST "${TARGET_LIST}sparc-softmmu, sparc64-softmmu, ")
+    endif()
+    set (TARGET_LIST "${TARGET_LIST} ")
+
 # GEN dynamic source files
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
-        "--extra-cflags=-DUNICORN_HAS_X86 \
-            -DUNICORN_HAS_ARM -DUNICORN_HAS_ARMEB \
-            -DUNICORN_HAS_ARM64 -DUNICORN_HAS_ARM64EB \
-            -DUNICORN_HAS_M68K \
-            -DUNICORN_HAS_MIPS -DUNICORN_HAS_MIPSEL \
-            -DUNICORN_HAS_MIPS64 -DUNICORN_HAS_MIPS64EL \
-            -DUNICORN_HAS_SPARC \
-            -fPIC -fvisibility=hidden"
-        "--target-list=x86_64-softmmu, \
-            arm-softmmu, armeb-softmmu, \
-            aarch64-softmmu, aarch64eb-softmmu, \
-            m68k-softmmu, \
-            mips-softmmu, mipsel-softmmu, \
-            mips64-softmmu, mips64el-softmmu, \
-            sparc-softmmu, sparc64-softmmu"
+        ${EXTRA_CFLAGS}
+        ${TARGET_LIST}
     )
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
         INPUT_FILE ${CMAKE_BINARY_DIR}/config-host.mak
         OUTPUT_FILE ${CMAKE_BINARY_DIR}/config-host.h
     )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/x86_64-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/x86_64-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/arm-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/arm-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/armeb-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/armeb-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/aarch64-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/aarch64-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/aarch64eb-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/aarch64eb-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/m68k-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/m68k-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/mips-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/mipsel-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/mipsel-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/mips64-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips64-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/mips64el-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips64el-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/sparc-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc-softmmu/config-target.h
-    )
-    execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-        INPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.mak
-        OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.h
-    )
+    if (UNICORN_HAS_X86)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/x86_64-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/x86_64-softmmu/config-target.h
+        )
+    endif()
+    if (UNICORN_HAS_ARM)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/arm-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/arm-softmmu/config-target.h
+        )
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/armeb-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/armeb-softmmu/config-target.h
+        )
+    endif()
+    if (UNICORN_HAS_AARCH64)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/aarch64-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/aarch64-softmmu/config-target.h
+        )
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/aarch64eb-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/aarch64eb-softmmu/config-target.h
+        )
+    endif()
+    if (UNICORN_HAS_M68K)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/m68k-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/m68k-softmmu/config-target.h
+        )
+    endif()
+    if (UNICORN_HAS_MIPS)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/mips-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips-softmmu/config-target.h
+        )
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/mipsel-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/mipsel-softmmu/config-target.h
+        )
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/mips64-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips64-softmmu/config-target.h
+        )
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/mips64el-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/mips64el-softmmu/config-target.h
+        )
+    endif()
+    if (UNICORN_HAS_SPARC)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/sparc-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc-softmmu/config-target.h
+        )
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.h
+        )
+    endif()
     execute_process(COMMAND python -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-types.py
         -h -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
     )
@@ -149,6 +202,7 @@ else()
     )
 endif()
 
+if (UNICORN_HAS_X86)
 add_library(x86_64-softmmu
     qemu/cpu-exec.c
     qemu/cpus.c
@@ -196,7 +250,9 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-i386
     )
 endif()
+endif()
 
+if (UNICORN_HAS_ARM)
 add_library(arm-softmmu
     qemu/cpu-exec.c
     qemu/cpus.c
@@ -278,7 +334,9 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
     )
 endif()
+endif()
 
+if (UNICORN_HAS_AARCH64)
 add_library(aarch64-softmmu
     qemu/cpu-exec.c
     qemu/cpus.c
@@ -366,7 +424,9 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-arm
     )
 endif()
+endif()
 
+if (UNICORN_HAS_M68K)
 add_library(m68k-softmmu
     qemu/cpu-exec.c
     qemu/cpus.c
@@ -402,7 +462,9 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-m68k
     )
 endif()
+endif()
 
+if (UNICORN_HAS_MIPS)
 add_library(mips-softmmu
     qemu/cpu-exec.c
     qemu/cpus.c
@@ -566,7 +628,9 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-mips
     )
 endif()
+endif()
 
+if (UNICORN_HAS_SPARC)
 add_library(sparc-softmmu
     qemu/cpu-exec.c
     qemu/cpus.c
@@ -649,6 +713,7 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-sparc
     )
 endif()
+endif()
 
 set(UNICORN_SRCS_COMMON
     list.c
@@ -712,61 +777,55 @@ add_library(unicorn SHARED
     ${UNICORN_SRCS}
 )
 
+if (UNICORN_HAS_X86)
+    set(UNICRON_COMPILE_OPTIONS ${UNICRON_COMPILE_OPTIONS} -DUNICORN_HAS_X86)
+    set(UNICRON_LINK_LIBRARIES ${UNICRON_LINK_LIBRARIES} x86_64-softmmu)
+    set(UNICRON_SAMPLE_FILE ${UNICRON_SAMPLE_FILE} sample_x86 sample_x86_32_gdt_and_seg_regs sample_batch_reg mem_apis shellcode)
+endif()
+if (UNICORN_HAS_ARM)
+    set(UNICRON_COMPILE_OPTIONS ${UNICRON_COMPILE_OPTIONS} -DUNICORN_HAS_ARM)
+    set(UNICRON_LINK_LIBRARIES ${UNICRON_LINK_LIBRARIES} arm-softmmu armeb-softmmu)
+    set(UNICRON_SAMPLE_FILE ${UNICRON_SAMPLE_FILE} sample_arm sample_armeb)
+endif()
+if (UNICORN_HAS_AARCH64)
+    set(UNICRON_COMPILE_OPTIONS ${UNICRON_COMPILE_OPTIONS} -DUNICORN_HAS_ARM64)
+    set(UNICRON_LINK_LIBRARIES ${UNICRON_LINK_LIBRARIES} aarch64-softmmu aarch64eb-softmmu)
+    set(UNICRON_SAMPLE_FILE ${UNICRON_SAMPLE_FILE} sample_arm64 sample_arm64eb)
+endif()
+if (UNICORN_HAS_M68K)
+    set(UNICRON_COMPILE_OPTIONS ${UNICRON_COMPILE_OPTIONS} -DUNICORN_HAS_M68K)
+    set(UNICRON_LINK_LIBRARIES ${UNICRON_LINK_LIBRARIES} m68k-softmmu)
+    set(UNICRON_SAMPLE_FILE ${UNICRON_SAMPLE_FILE} sample_m68k)
+endif()
+if (UNICORN_HAS_MIPS)
+    set(UNICRON_COMPILE_OPTIONS ${UNICRON_COMPILE_OPTIONS} -DUNICORN_HAS_MIPS -DDUNICORN_HAS_MIPSEL -DUNICORN_HAS_MIPS64 -DUNICORN_HAS_MIPS64EL)
+    set(UNICRON_LINK_LIBRARIES ${UNICRON_LINK_LIBRARIES} mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu)
+    set(UNICRON_SAMPLE_FILE ${UNICRON_SAMPLE_FILE} sample_mips)
+endif()
+if (UNICORN_HAS_SPARC)
+    set(UNICRON_COMPILE_OPTIONS ${UNICRON_COMPILE_OPTIONS} -DUNICORN_HAS_SPARC)
+    set(UNICRON_LINK_LIBRARIES ${UNICRON_LINK_LIBRARIES} sparc-softmmu sparc64-softmmu)
+    set(UNICRON_SAMPLE_FILE ${UNICRON_SAMPLE_FILE} sample_sparc)
+endif()
+
+
 if(MSVC)
     target_compile_options(unicorn PRIVATE
-        -DUNICORN_HAS_ARM
-        -DUNICORN_HAS_ARM64
-        -DUNICORN_HAS_M68K
-        -DUNICORN_HAS_MIPS
-        -DUNICORN_HAS_MIPS64
-        -DUNICORN_HAS_MIPSEL
-        -DUNICORN_HAS_MIPS64EL
-        -DUNICORN_HAS_SPARC
-        -DUNICORN_HAS_X86
+        ${UNICRON_COMPILE_OPTIONS}
         -DUNICORN_SHARED
     )
     target_link_libraries(unicorn
-        arm-softmmu
-        armeb-softmmu
-        aarch64-softmmu
-        aarch64eb-softmmu
-        m68k-softmmu
-        mips-softmmu
-        mipsel-softmmu
-        mips64-softmmu
-        mips64el-softmmu
-        sparc-softmmu
-        sparc64-softmmu
-        x86_64-softmmu
+        ${UNICRON_LINK_LIBRARIES}
     )
 else()
     target_compile_options(unicorn PRIVATE
-        -DUNICORN_HAS_ARM
-        -DUNICORN_HAS_ARM64
-        -DUNICORN_HAS_M68K
-        -DUNICORN_HAS_MIPS
-        -DUNICORN_HAS_MIPS64
-        -DUNICORN_HAS_MIPSEL
-        -DUNICORN_HAS_MIPS64EL
-        -DUNICORN_HAS_SPARC
-        -DUNICORN_HAS_X86
+        ${UNICRON_COMPILE_OPTIONS}
     )
-    set_target_properties(unicorn PROPERTIES VERSION 1 SOVERSION 1)
     target_link_libraries(unicorn
-        arm-softmmu
-        armeb-softmmu
-        aarch64-softmmu
-        aarch64eb-softmmu
-        m68k-softmmu
-        mips-softmmu
-        mipsel-softmmu
-        mips64-softmmu
-        mips64el-softmmu
-        sparc-softmmu
-        sparc64-softmmu
-        x86_64-softmmu
+        ${UNICRON_LINK_LIBRARIES}
         m
     )
+    set_target_properties(unicorn PROPERTIES VERSION 1 SOVERSION 1)
 endif()
 
 if(MSVC)
@@ -780,24 +839,10 @@ else()
     )
 endif()
 
-foreach(SAMPLE_FILE
-    sample_x86
-    sample_arm
-    sample_armeb
-    sample_arm64
-    sample_arm64eb
-    sample_m68k
-    sample_mips
-    sample_sparc
-    sample_x86_32_gdt_and_seg_regs
-    sample_batch_reg
-    mem_apis
-    shellcode
-)
+foreach(SAMPLE_FILE ${UNICRON_SAMPLE_FILE})
     add_executable(${SAMPLE_FILE}
         ${CMAKE_CURRENT_SOURCE_DIR}/samples/${SAMPLE_FILE}.c
     )
-
     target_link_libraries(${SAMPLE_FILE}
         ${SAMPLES_LIB}
     )
