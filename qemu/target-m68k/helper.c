@@ -125,10 +125,11 @@ void cpu_m68k_flush_flags(CPUM68KState *env, int cc_op)
     env->cc_dest = flags;
 }
 
+/* this function is implemented in op_helper.c: void HELPER(raise_exception) */
+void raise_exception(CPUM68KState *env, uint32_t tt);
+
 void HELPER(movec)(CPUM68KState *env, uint32_t reg, uint32_t val)
 {
-    M68kCPU *cpu = m68k_env_get_cpu(env);
-
     switch (reg) {
     case 0x02: /* CACR */
         env->cacr = val;

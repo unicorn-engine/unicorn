@@ -205,7 +205,9 @@ typedef signed __int64    ssize_t;
 typedef _W64 signed int   ssize_t;
 #endif
 
+#ifndef va_copy
 #define va_copy(d,s) ((d) = (s))
+#endif
 #define strcasecmp	_stricmp
 #if (_MSC_VER < MSC_VER_VS2015)
 #define snprintf	_snprintf
