@@ -24,8 +24,15 @@
 #endif
 #endif
 
+/* gcc __builtin___clear_cache() */
+static inline void __builtin___clear_cache(void *beg, void *e)
+{
+    unsigned char *start = beg;
+    unsigned char *end = e;
+    FlushInstructionCache(GetCurrentProcess(), start, end - start);
+}
 
-static double rint( double x )
+static inline double rint( double x )
 {
     return floor(x < 0 ? x - 0.5 : x + 0.5);
 }
