@@ -16,6 +16,10 @@
 cmake_minimum_required(VERSION 3.1)
 project(unicorn C)
 
+set(UNICORN_VERSION_MAJOR 1)
+set(UNICORN_VERSION_MINOR 0)
+set(UNICORN_VERSION_PATCH 2)
+
 if(NOT UNICORN_ARCH)
     set(UNICORN_ARCH "x86 arm aarch64 m68k mips sparc")
 endif()
@@ -26,6 +30,13 @@ string(REPLACE " " ";" UNICORN_ARCH_LIST ${UNICORN_ARCH})
 foreach(ARCH_LOOP ${UNICORN_ARCH_LIST})
     set(UNICORN_HAS_${ARCH_LOOP} TRUE)
 endforeach(ARCH_LOOP)
+
+# qemu uses assert(). It is not recommended to define NDEBUG if using assert()
+#  to detect error conditions since the software may behave
+#  non-deterministically. Remove the NDEBUG macro.
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+    string(REPLACE "-DNDEBUG" "" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
+endif()
 
 if(MSVC)
     include_directories(
@@ -63,6 +74,12 @@ if(MSVC)
     )
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
         string(REPLACE "/ZI" "/Zi" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+    endif()
+    # default use the multithread, static version of the run-time library.
+    option(UNICORN_STATIC_MSVCRT "Embed static runtime library" ON)
+    if (UNICORN_STATIC_MSVCRT)
+        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
     endif()
 else()
 # check python
@@ -827,7 +844,10 @@ else()
         ${UNICRON_LINK_LIBRARIES}
         m
     )
-    set_target_properties(unicorn PROPERTIES VERSION 1 SOVERSION 1)
+    set_target_properties(unicorn PROPERTIES
+        VERSION ${UNICORN_VERSION_MAJOR}
+        SOVERSION ${UNICORN_VERSION_MAJOR}
+    )
 endif()
 
 if(MSVC)
@@ -849,3 +869,22 @@ foreach(SAMPLE_FILE ${UNICRON_SAMPLE_FILE})
         ${SAMPLES_LIB}
     )
 endforeach(SAMPLE_FILE)
+
+if(NOT MSVC)
+    include("GNUInstallDirs")
+    file(GLOB UNICORN_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/unicorn/*.h)
+    install(TARGETS unicorn
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    )
+    install(FILES ${UNICORN_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unicorn)
+    file(WRITE ${CMAKE_BINARY_DIR}/unicorn.pc "Name: unicorn\n\
+Description: Unicorn emulator engine\n\
+Version: ${UNICORN_VERSION_MAJOR}.${UNICORN_VERSION_MINOR}.${UNICORN_VERSION_PATCH}\n\
+libdir=${CMAKE_INSTALL_FULL_LIBDIR}\n\
+includedir=${CMAKE_INSTALL_FULL_INCLUDEDIR}\n\
+Libs: -L\$\{libdir\} -lunicorn\n\
+Cflags: -I\$\{includedir\}\n"
+    )
+    install(FILES ${CMAKE_BINARY_DIR}/unicorn.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
+endif()
