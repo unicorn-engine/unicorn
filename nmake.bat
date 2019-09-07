@@ -24,10 +24,10 @@ if "%allparams%"=="" (
 )
 :: remove left, right blank
 :intercept_left
-if "%allparams:~0,1%"==" " set "allparams=%allparams:~1%"&goto intercept_left
+if "%allparams:~0,1%"==" " set "allparams=%allparams:~1%" & goto intercept_left
 
 :intercept_right
-if "%allparams:~-1%"==" " set "allparams=%allparams:~0,-1%"&goto intercept_right
+if "%allparams:~-1%"==" " set "allparams=%allparams:~0,-1%" & goto intercept_right
 
 :eof
 
