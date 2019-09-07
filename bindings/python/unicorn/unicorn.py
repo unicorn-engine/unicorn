@@ -138,6 +138,7 @@ _setup_prototype(_uc, "uc_context_alloc", ucerr, uc_engine, ctypes.POINTER(uc_co
 _setup_prototype(_uc, "uc_free", ucerr, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_context_save", ucerr, uc_engine, uc_context)
 _setup_prototype(_uc, "uc_context_restore", ucerr, uc_engine, uc_context)
+_setup_prototype(_uc, "uc_context_size", ctypes.c_size_t, uc_engine)
 _setup_prototype(_uc, "uc_mem_regions", ucerr, uc_engine, ctypes.POINTER(ctypes.POINTER(_uc_mem_region)), ctypes.POINTER(ctypes.c_uint32))
 
 # uc_hook_add is special due to variable number of arguments
@@ -582,24 +583,23 @@ class Uc(object):
         h = 0
 
     def context_save(self):
-        ptr = ctypes.cast(0, ctypes.c_voidp)
-        status = _uc.uc_context_alloc(self._uch, ctypes.byref(ptr))
+        size = _uc.uc_context_size(self._uch)
+
+        context = context_factory(size)
+
+        status = _uc.uc_context_save(self._uch, ctypes.byref(context))
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-        status = _uc.uc_context_save(self._uch, ptr)
-        if status != uc.UC_ERR_OK:
-            raise UcError(status)
-
-        return SavedContext(ptr)
+        return ctypes.string_at(ctypes.byref(context), ctypes.sizeof(context))
 
     def context_update(self, context):
-        status = _uc.uc_context_save(self._uch, context.pointer)
+        status = _uc.uc_context_save(self._uch, context)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
     def context_restore(self, context):
-        status = _uc.uc_context_restore(self._uch, context.pointer)
+        status = _uc.uc_context_restore(self._uch, context)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
@@ -618,14 +618,15 @@ class Uc(object):
             _uc.uc_free(regions)
 
 
-class SavedContext(object):
-    def __init__(self, pointer):
-        self.pointer = pointer
-
-    def __del__(self):
-        status = _uc.uc_free(self.pointer)
-        if status != uc.UC_ERR_OK:
-            raise UcError(status)
+def context_factory(size):
+    class SavedContext(ctypes.Structure):
+        _fields_ = [
+            ('size', ctypes.c_size_t),
+            ('data', ctypes.c_char*size)
+            ]
+    ctxt = SavedContext()
+    ctxt.size = size
+    return ctxt
 
 # print out debugging info
 def debug():
