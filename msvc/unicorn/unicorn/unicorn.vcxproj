@@ -145,15 +145,15 @@
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(SolutionDir)distro\
-mkdir $(SolutionDir)distro\include
-mkdir $(SolutionDir)distro\include\unicorn
-mkdir $(SolutionDir)distro\$(Platform)
+      <Command>mkdir "$(SolutionDir)distro\"
+mkdir "$(SolutionDir)distro\include"
+mkdir "$(SolutionDir)distro\include\unicorn"
+mkdir "$(SolutionDir)distro\$(Platform)"
 
-copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)distro\$(Platform)\
-copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).lib $(SolutionDir)distro\$(Platform)\
+copy "$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll" "$(SolutionDir)distro\$(Platform)\"
+copy "$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).lib" "$(SolutionDir)distro\$(Platform)\"
 
-copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
+copy "$(SolutionDir)..\include\unicorn\*.h" "$(SolutionDir)distro\include\unicorn\"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -180,15 +180,15 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(SolutionDir)distro\
-mkdir $(SolutionDir)distro\include
-mkdir $(SolutionDir)distro\include\unicorn
-mkdir $(SolutionDir)distro\$(Platform)
+      <Command>mkdir "$(SolutionDir)distro\"
+mkdir "$(SolutionDir)distro\include"
+mkdir "$(SolutionDir)distro\include\unicorn"
+mkdir "$(SolutionDir)distro\$(Platform)"
 
-copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)distro\$(Platform)\
-copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).lib $(SolutionDir)distro\$(Platform)\
+copy "$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll" "$(SolutionDir)distro\$(Platform)\"
+copy "$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).lib" "$(SolutionDir)distro\$(Platform)\"
 
-copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
+copy "$(SolutionDir)..\include\unicorn\*.h" "$(SolutionDir)distro\include\unicorn\"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
