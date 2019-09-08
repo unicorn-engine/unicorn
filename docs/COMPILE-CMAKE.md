@@ -4,8 +4,9 @@ This documentation explains how to compile Unicorn with CMake on Windows or
 ----
 
 Requirements:
-    Windows: MicroSoft Visual Studio(>=2013).
-    *nix: GNU gcc. Python CLI to generate dynamic source files.
+
+- Windows: MicroSoft Visual Studio(>=2013).
+- *nix: GNU gcc and Python CLI to generate dynamic source files.
 
 Get CMake for free from http://www.cmake.org.
 
