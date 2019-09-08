@@ -1,7 +1,7 @@
 This documentation explains how to compile Unicorn with CMake on Windows or
 *nix.
 
-                        *-*-*-*-*-*
+----
 
 Requirements:
     Windows: MicroSoft Visual Studio(>=2013).
@@ -10,7 +10,7 @@ Requirements:
 Get CMake for free from http://www.cmake.org.
 
 
-(0) Tailor Unicorn to your need.
+[1] Tailor Unicorn to your need.
 
   Out of archtitectures supported by Unicorn, if you just need several selected archs,
   set the 'UNICORN_ARCH' in CMake. e.g.:
@@ -23,10 +23,10 @@ Get CMake for free from http://www.cmake.org.
 
   - UNICORN_STATIC_MSVCRT: change this to OFF to use dynamic MSVCRT lib, Only on Windows.
 
-(1) CMake allows you to generate different generators to build Unicorn. Below is
+[2] CMake allows you to generate different generators to build Unicorn. Below is
     some examples on how to build Unicorn on Windows with CMake.
 
-  (*) You can let CMake select a generator for you. Do:
+- You can let CMake select a generator for you. Do:
   
       mkdir build
       cd build
@@ -38,7 +38,7 @@ Get CMake for free from http://www.cmake.org.
       cmake --build . --config Release
       
 
-  (*) To build Unicorn using Nmake of Windows SDK, do:
+- To build Unicorn using Nmake of Windows SDK, do:
 
       mkdir build
       cd build
@@ -49,7 +49,7 @@ Get CMake for free from http://www.cmake.org.
 
 
 
-  (*) To build Unicorn using Visual Studio, choose the generator accordingly to the
+- To build Unicorn using Visual Studio, choose the generator accordingly to the
   version of Visual Studio on your machine. For example, with Visual Studio 2013, do:
 
       mkdir build
@@ -61,18 +61,18 @@ Get CMake for free from http://www.cmake.org.
 
 
 
-(2) You can make sure the prior steps successfully worked by launching one of the
+[3] You can make sure the prior steps successfully worked by launching one of the
   sample binary (sample_*.exe).
 
-(3) You can also enable just one specific architecture by passing the architecture name
+[4] You can also enable just one specific architecture by passing the architecture name
   to either the cmake.sh or nmake.bat scripts. e.g.:
   
     ../cmake.sh x86
 
-  Will just target the x86 architecture. The list of available architectures is: ARM,
-  ARM64, M68K, MIPS, PowerPC, Sparc, SystemZ, XCore, x86, TMS320C64x, M680x, EVM, MOS65XX.
+  Will just target the x86 architecture. The list of available architectures is:
+ X86 ARM AARCH64 M68K MIPS SPARC.
   
-(4) You can also create an installation image with cmake, by using the 'install' target.
+[5] You can also create an installation image with cmake, by using the 'install' target.
   Use:
 
     cmake --build . --config Release --target install
