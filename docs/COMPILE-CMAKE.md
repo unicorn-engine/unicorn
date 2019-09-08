@@ -27,16 +27,16 @@ Get CMake for free from http://www.cmake.org.
     some examples on how to build Unicorn on Windows with CMake.
 
 - You can let CMake select a generator for you. Do:
-  
+
       mkdir build
       cd build
       cmake ..
-      
+
     This last command is also where you can pass additional CMake configuration flags
     using `-D<key>=<value>`. Then to build use:
-    
+
       cmake --build . --config Release
-      
+
 
 - To build Unicorn using Nmake of Windows SDK, do:
 
@@ -46,7 +46,6 @@ Get CMake for free from http://www.cmake.org.
 
   After this, find the samples test*.exe, unicorn.lib & unicorn.dll
   in the same directory.
-
 
 
 - To build Unicorn using Visual Studio, choose the generator accordingly to the
@@ -60,18 +59,19 @@ Get CMake for free from http://www.cmake.org.
   and build the solution including libraries & all test as usual.
 
 
-
 [3] You can make sure the prior steps successfully worked by launching one of the
   sample binary (sample_*.exe).
 
+
 [4] You can also enable just one specific architecture by passing the architecture name
   to either the cmake.sh or nmake.bat scripts. e.g.:
-  
+
     ../cmake.sh x86
 
   Will just target the x86 architecture. The list of available architectures is:
  X86 ARM AARCH64 M68K MIPS SPARC.
-  
+
+
 [5] You can also create an installation image with cmake, by using the 'install' target.
   Use:
 
