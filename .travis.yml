@@ -12,6 +12,9 @@ os:
   - osx
 matrix:
   include:
+    - name: cmake
+      os: linux
+      script: mkdir build && pushd build && cmake .. && make
     - name: 32bit
       os: linux
       compiler: gcc
