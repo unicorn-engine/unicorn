@@ -8594,7 +8594,8 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     target_ulong pc_ptr;
     uint16_t *gen_opc_end;
     CPUBreakpoint *bp;
-    int j, lj;
+    int j;
+    int lj = -1;
     uint64_t flags;
     target_ulong pc_start;
     target_ulong cs_base;
@@ -8698,7 +8699,6 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
     gen_opc_end = tcg_ctx->gen_opc_buf + OPC_MAX_SIZE;
 
     dc->is_jmp = DISAS_NEXT;
-    lj = -1;
     max_insns = tb->cflags & CF_COUNT_MASK;
     if (max_insns == 0)
         max_insns = CF_COUNT_MASK;

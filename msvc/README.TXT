@@ -5,15 +5,33 @@ Zak Escano  -  January 2017
 These notes are to help myself and others with the upkeep of the msvc native port
 of unicorn-engine.
 
+
+:: Command line build instructions
+
+  msbuild -m -p:Configuration=Release -p:Platform=Win32
+  msbuild -m -p:Configuration=Release -p:Platform=x64
+
+Then bundle and release the folder "distro".
+
+
 :: Build settings
 
-Visual Studio Version:   Visual Studio 2012  v11.061219.00 Update 5
-Platform Toolset:        Visual Studio 2012 - Windows XP (v110_xp)
+Visual Studio Version:   Visual Studio 2017 v15.9.15
+Platform Toolset:        Default. Known to work with the 8.1 SDK
 Character Set:           Use Multi-Byte Character Set
 Runtime Library Debug:   Multi-threaded Debug (/MTd)
 Runtime Library Release: Multi-threaded (/MT)
 Precompiled Header:      Not Using Precompiled Headers
-Additional Options:      /wd4018 /wd4244 /wd4267 
+Additional Options:      /wd4018 /wd4244 /wd4267
+
+
+:: Build advice
+
+- If you see warnings about spectre-mitigated libraries and then some strange
+  errors, the errors may be related to the spectre libraries. Install them.
+  (via the visual studio installation manager)
+- The "platform default" target SDK may not actually be installed for you. Try
+  installing the Windows 8.1 SDK via the visual studio installation manager.
 
 
 :: Changes porting unicorn from GNU/GCC to MSVC.

@@ -28,26 +28,26 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v110_xp</PlatformToolset>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
     <WholeProgramOptimization>false</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -113,6 +113,7 @@
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <ExceptionHandling>false</ExceptionHandling>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -144,15 +145,15 @@
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(SolutionDir)distro\
-mkdir $(SolutionDir)distro\include
-mkdir $(SolutionDir)distro\include\unicorn
-mkdir $(SolutionDir)distro\$(Platform)
+      <Command>mkdir "$(SolutionDir)distro\"
+mkdir "$(SolutionDir)distro\include"
+mkdir "$(SolutionDir)distro\include\unicorn"
+mkdir "$(SolutionDir)distro\$(Platform)"
 
-copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)distro\$(Platform)\
-copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).lib $(SolutionDir)distro\$(Platform)\
+copy "$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll" "$(SolutionDir)distro\$(Platform)\"
+copy "$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).lib" "$(SolutionDir)distro\$(Platform)\"
 
-copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
+copy "$(SolutionDir)..\include\unicorn\*.h" "$(SolutionDir)distro\include\unicorn\"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
@@ -179,15 +180,15 @@ copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>mkdir $(SolutionDir)distro\
-mkdir $(SolutionDir)distro\include
-mkdir $(SolutionDir)distro\include\unicorn
-mkdir $(SolutionDir)distro\$(Platform)
+      <Command>mkdir "$(SolutionDir)distro\"
+mkdir "$(SolutionDir)distro\include"
+mkdir "$(SolutionDir)distro\include\unicorn"
+mkdir "$(SolutionDir)distro\$(Platform)"
 
-copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll $(SolutionDir)distro\$(Platform)\
-copy $(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).lib $(SolutionDir)distro\$(Platform)\
+copy "$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).dll" "$(SolutionDir)distro\$(Platform)\"
+copy "$(SolutionDir)$(Platform)\$(Configuration)\$(ProjectName).lib" "$(SolutionDir)distro\$(Platform)\"
 
-copy $(SolutionDir)..\include\unicorn\*.h $(SolutionDir)distro\include\unicorn\
+copy "$(SolutionDir)..\include\unicorn\*.h" "$(SolutionDir)distro\include\unicorn\"
 </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>

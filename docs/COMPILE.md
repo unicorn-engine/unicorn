@@ -3,6 +3,9 @@ see [COMPILE-NIX.md](COMPILE-NIX.md)
 
 To compile Unicorn on Windows, see [COMPILE-WINDOWS.md](COMPILE-WINDOWS.md)
 
+To compile Unicorn with CMake on Windows or *nix, see
+[COMPILE-CMAKE.md](COMPILE-CMAKE.md)
+
 Then learn more on how to code your own tools with our samples.
 
  - For C sample code, see code in directory samples/sample*.c

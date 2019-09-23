@@ -16,6 +16,11 @@ from ordereddict import OrderedDict
 import os
 import sys
 
+try:
+    basestring
+except NameError:
+    basestring = str
+
 builtin_types = [
     'str', 'int', 'number', 'bool',
     'int8', 'int16', 'int32', 'int64',
@@ -116,7 +121,7 @@ class QAPISchema:
                     continue
                 try:
                     fobj = open(include_path, 'r')
-                except IOError, e:
+                except IOError as e:
                     raise QAPIExprError(expr_info,
                                         '%s: %s' % (e.strerror, include))
                 exprs_include = QAPISchema(fobj, include, self.include_hist,
@@ -319,15 +324,15 @@ def check_union(expr, expr_info):
 def check_exprs(schema):
     for expr_elem in schema.exprs:
         expr = expr_elem['expr']
-        if expr.has_key('union'):
+        if 'union' in expr:
             check_union(expr, expr_elem['info'])
-        if expr.has_key('event'):
+        if 'event' in expr:
             check_event(expr, expr_elem['info'])
 
 def parse_schema(input_file):
     try:
         schema = QAPISchema(open(input_file, "r"))
-    except (QAPISchemaError, QAPIExprError), e:
+    except (QAPISchemaError, QAPIExprError) as e:
         print >>sys.stderr, e
         exit(1)
 
@@ -335,24 +340,24 @@ def parse_schema(input_file):
 
     for expr_elem in schema.exprs:
         expr = expr_elem['expr']
-        if expr.has_key('enum'):
+        if 'enum' in expr:
             add_enum(expr['enum'], expr['data'])
-        elif expr.has_key('union'):
+        elif 'union' in expr:
             add_union(expr)
-        elif expr.has_key('type'):
+        elif 'type' in expr:
             add_struct(expr)
         exprs.append(expr)
 
     # Try again for hidden UnionKind enum
     for expr_elem in schema.exprs:
         expr = expr_elem['expr']
-        if expr.has_key('union'):
+        if 'union' in expr:
             if not discriminator_find_enum_define(expr):
                 add_enum('%sKind' % expr['union'])
 
     try:
         check_exprs(schema)
-    except QAPIExprError, e:
+    except QAPIExprError as e:
         print >>sys.stderr, e
         exit(1)
 
