@@ -723,6 +723,18 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context);
 UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context);
 
+
+/*
+  Return the size needed to store the cpu context. Can be used to allocate a buffer
+  to contain the cpu context and directly call uc_context_save.
+
+  @uc: handle returned by uc_open()
+
+  @return the size for needed to store the cpu context as as size_t.
+*/
+UNICORN_EXPORT
+size_t uc_context_size(uc_engine *uc);
+
 #ifdef __cplusplus
 }
 #endif
