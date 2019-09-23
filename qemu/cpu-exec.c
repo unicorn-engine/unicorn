@@ -103,13 +103,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
             /* if an exception is pending, we execute it here */
             if (cpu->exception_index >= 0) {
                 //printf(">>> GOT INTERRUPT. exception idx = %x\n", cpu->exception_index);	// qq
-                if (uc->stop_interrupt && uc->stop_interrupt(cpu->exception_index)) {
-                    cpu->halted = 1;
-                    uc->invalid_error = UC_ERR_INSN_INVALID;
-                    ret = EXCP_HLT;
-                    break;
-                }
-
                 if (cpu->exception_index >= EXCP_INTERRUPT) {
                     /* exit request from the cpu execution loop */
                     ret = cpu->exception_index;
@@ -129,19 +122,34 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     ret = cpu->exception_index;
                     break;
 #else
-                    // Unicorn: call registered interrupt callbacks
-                    HOOK_FOREACH_VAR_DECLARE;
-                    HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
-                        if (hook->to_delete)
-                            continue;
-                        ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
-                        catched = true;
+                    if (uc->stop_interrupt && uc->stop_interrupt(cpu->exception_index)) {
+                        // Unicorn: call registered invalid instruction callbacks
+                        HOOK_FOREACH_VAR_DECLARE;
+                        HOOK_FOREACH(uc, hook, UC_HOOK_INSN_INVALID) {
+                            if (hook->to_delete)
+                                continue;
+                            catched = ((uc_cb_hookinsn_invalid_t)hook->callback)(uc, hook->user_data);
+                            if (catched)
+                                break;
+                        }
+                        if (!catched)
+                            uc->invalid_error = UC_ERR_INSN_INVALID;
+                    } else {
+                        // Unicorn: call registered interrupt callbacks
+                        HOOK_FOREACH_VAR_DECLARE;
+                        HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
+                            if (hook->to_delete)
+                                continue;
+                            ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
+                            catched = true;
+                        }
+                        if (!catched)
+                            uc->invalid_error = UC_ERR_EXCEPTION;
                     }
 
                     // Unicorn: If un-catched interrupt, stop executions.
                     if (!catched) {
                         cpu->halted = 1;
-                        uc->invalid_error = UC_ERR_EXCEPTION;
                         ret = EXCP_HLT;
                         break;
                     }

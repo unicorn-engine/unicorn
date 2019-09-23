@@ -566,7 +566,7 @@ static inline guint g_hash_table_lookup_node_for_insertion (GHashTable    *hash_
   GHashNode *node;
   guint node_index;
   guint hash_value;
-  guint first_tombstone;
+  guint first_tombstone = 0;
   gboolean have_tombstone = FALSE;
   guint step = 0;
 
@@ -1282,7 +1282,10 @@ char *g_strdup_vprintf(const char *format, va_list ap)
        return NULL;
    vsnprintf(str_res, len+1, format, ap);
 #else
-   vasprintf(&str_res, format, ap);
+    int ret = vasprintf(&str_res, format, ap);
+    if (ret == -1) {
+        return NULL;
+    }
 #endif
    return str_res;
 }

@@ -47,11 +47,6 @@ To build Unicorn on *nix (such as MacOSX, Linux, *BSD, Solaris):
 
         $ ./make.sh macos-universal-no
 
-- Unicorn requires Python 2.x to compile. If Python 2.x is not the default
-    Python interpreter, ensure that the appropriate option is set:
-
-        $ UNICORN_QEMU_FLAGS="--python=/path/to/python2" ./make.sh
-
 - To cross-compile Unicorn on 64-bit Linux to target 32-bit binary,
   cross-compile to 32-bit with:
 

@@ -439,8 +439,8 @@ try:
     opts, args = getopt.gnu_getopt(sys.argv[1:], "chbp:i:o:",
                                    ["source", "header", "builtins", "prefix=",
                                     "input-file=", "output-dir="])
-except getopt.GetoptError, err:
-    print str(err)
+except getopt.GetoptError as err:
+    print(str(err))
     sys.exit(1)
 
 input_file = ""
@@ -476,7 +476,7 @@ h_file = output_dir + prefix + h_file
 
 try:
     os.makedirs(output_dir)
-except os.error, e:
+except os.error as e:
     if e.errno != errno.EEXIST:
         raise
 
@@ -484,8 +484,12 @@ def maybe_open(really, name, opt):
     if really:
         return open(name, opt)
     else:
-        import StringIO
-        return StringIO.StringIO()
+        try:
+            import StringIO
+            return StringIO.StringIO()
+        except ImportError:
+            from io import StringIO
+            return StringIO()
 
 fdef = maybe_open(do_c, c_file, 'w')
 fdecl = maybe_open(do_h, h_file, 'w')
@@ -554,14 +558,14 @@ if do_builtins:
         fdef.write(generate_visit_list(typename, None))
 
 for expr in exprs:
-    if expr.has_key('type'):
+    if 'type' in expr:
         ret = generate_visit_struct(expr)
         ret += generate_visit_list(expr['type'], expr['data'])
         fdef.write(ret)
 
         ret = generate_declaration(expr['type'], expr['data'])
         fdecl.write(ret)
-    elif expr.has_key('union'):
+    elif 'union' in expr:
         ret = generate_visit_union(expr)
         ret += generate_visit_list(expr['union'], expr['data'])
         fdef.write(ret)
@@ -573,7 +577,7 @@ for expr in exprs:
                                      expr['data'].keys())
         ret += generate_declaration(expr['union'], expr['data'])
         fdecl.write(ret)
-    elif expr.has_key('enum'):
+    elif 'enum' in expr:
         ret = generate_visit_list(expr['enum'], expr['data'])
         ret += generate_visit_enum(expr['enum'], expr['data'])
         fdef.write(ret)

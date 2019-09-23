@@ -69,3 +69,5 @@ David Zimmer: VB6 binding.
 zhangwm: ARM & ARM64 big endian.
 Mohamed Osama: FreePascal/Delphi binding.
 Philippe Antoine (Catena cyber): fuzzing 
+Huitao Chen (chenhuitao) & KaiJern Lau (xwings): Cmake support
+Huitao Chen (chenhuitao) & KaiJern Lau (xwings): Python3 support for building

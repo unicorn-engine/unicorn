@@ -47,6 +47,11 @@ void arm_reg_reset(struct uc_struct *uc)
     env->pc = 0;
 }
 
+/* these functions are implemented in helper.c. */
+#include "exec/helper-head.h"
+uint32_t HELPER(v7m_mrs)(CPUARMState *env, uint32_t reg);
+void HELPER(v7m_msr)(CPUARMState *env, uint32_t reg, uint32_t val);
+
 int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
     CPUState *mycpu;

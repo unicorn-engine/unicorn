@@ -152,11 +152,9 @@ def build_libraries():
 
     # check if a prebuilt library exists
     # if so, use it instead of building
-    if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)) \
-            and (STATIC_LIBRARY_FILE is None \
-            or os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE))):
+    if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)):
         shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE), LIBS_DIR)
-        if STATIC_LIBRARY_FILE is not None:
+        if STATIC_LIBRARY_FILE is not None and os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE)):
             shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE), LIBS_DIR)
         return
 
