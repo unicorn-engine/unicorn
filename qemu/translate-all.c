@@ -135,24 +135,24 @@ static void cpu_gen_init(struct uc_struct *uc)
     tcg_context_init(uc->tcg_ctx);
 }
 
-static void tb_clean_internal(struct uc_struct *uc, int i, void** lp)
-{
-    if (i == 0 || lp == 0) {
-        return;
-    }
-    tb_clean_internal(uc, i-1, (void*)(((char*)*lp) + ((0 >> (i * V_L2_BITS)) & (V_L2_SIZE - 1))));
-    if (lp && *lp) {
-        g_free(*lp);
-    }
-}
-
 void tb_cleanup(struct uc_struct *uc)
 {
-    int index = 0;
-    /* Level 1.  Always allocated.  */
-    void** lp = uc->l1_map + ((index >> V_L1_SHIFT) & (V_L1_SIZE - 1));
-    /* Level 2..N-1.  */
-    tb_clean_internal(uc, V_L1_SHIFT / V_L2_BITS, lp);
+    int i, j;
+    void **p, *q;
+
+    for (i = 0; i < V_L1_SIZE; i++) {
+        p = uc->l1_map[i];
+        if (p) {
+            for (j = 0; j < V_L2_SIZE; j++) {
+                q = p[j];
+                if (q) {
+                    g_free(q);
+                }
+            }
+            g_free(p);
+            uc->l1_map[i] = NULL;
+        }
+    }
 }
 
 /* return non zero if the very first instruction is invalid so that
