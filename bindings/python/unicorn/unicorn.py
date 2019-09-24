@@ -146,6 +146,7 @@ _uc.uc_hook_add = _uc.uc_hook_add
 _uc.uc_hook_add.restype = ucerr
 
 UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p)
+UC_HOOK_INSN_INVALID_CB = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_void_p)
 UC_HOOK_MEM_INVALID_CB = ctypes.CFUNCTYPE(
     ctypes.c_bool, uc_engine, ctypes.c_int,
     ctypes.c_uint64, ctypes.c_int, ctypes.c_int64, ctypes.c_void_p
@@ -492,6 +493,11 @@ class Uc(object):
         (cb, data) = self._callbacks[user_data]
         cb(self, intno, data)
 
+    def _hook_insn_invalid_cb(self, handle, user_data):
+        # call user's callback with self object
+        (cb, data) = self._callbacks[user_data]
+        return cb(self, data)
+
     def _hook_insn_in_cb(self, handle, port, size, user_data):
         # call user's callback with self object
         (cb, data) = self._callbacks[user_data]
@@ -531,6 +537,13 @@ class Uc(object):
             )
         elif htype == uc.UC_HOOK_INTR:
             cb = ctypes.cast(UC_HOOK_INTR_CB(self._hook_intr_cb), UC_HOOK_INTR_CB)
+            status = _uc.uc_hook_add(
+                self._uch, ctypes.byref(_h2), htype, cb,
+                ctypes.cast(self._callback_count, ctypes.c_void_p),
+                ctypes.c_uint64(begin), ctypes.c_uint64(end)
+            )
+        elif htype == uc.UC_HOOK_INSN_INVALID:
+            cb = ctypes.cast(UC_HOOK_INSN_INVALID_CB(self._hook_insn_invalid_cb), UC_HOOK_INSN_INVALID_CB)
             status = _uc.uc_hook_add(
                 self._uch, ctypes.byref(_h2), htype, cb,
                 ctypes.cast(self._callback_count, ctypes.c_void_p),
