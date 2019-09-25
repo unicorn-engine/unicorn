@@ -140,17 +140,21 @@ void tb_cleanup(struct uc_struct *uc)
     int i, j;
     void **p, *q;
 
-    for (i = 0; i < V_L1_SIZE; i++) {
-        p = uc->l1_map[i];
-        if (p) {
-            for (j = 0; j < V_L2_SIZE; j++) {
-                q = p[j];
-                if (q) {
-                    g_free(q);
+    if (uc) {
+        if (uc->l1_map) {
+            for (i = 0; i < V_L1_SIZE; i++) {
+                p = uc->l1_map[i];
+                if (p) {
+                    for (j = 0; j < V_L2_SIZE; j++) {
+                        q = p[j];
+                        if (q) {
+                            g_free(q);
+                        }
+                    }
+                    g_free(p);
+                    uc->l1_map[i] = NULL;
                 }
             }
-            g_free(p);
-            uc->l1_map[i] = NULL;
         }
     }
 }
