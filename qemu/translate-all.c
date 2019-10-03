@@ -170,8 +170,10 @@ void tb_cleanup(struct uc_struct *uc)
             if (x <= 1) {
                 for (i = 0; i < V_L1_SIZE; i++) {
                     p = uc->l1_map[i];
-                    g_free(p);
-                    uc->l1_map[i] = NULL;
+                    if (p) {
+                        g_free(p);
+                        uc->l1_map[i] = NULL;
+                    }
                 }
             } else {
                 for (i = 0; i < V_L1_SIZE; i++) {
