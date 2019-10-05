@@ -135,24 +135,57 @@ static void cpu_gen_init(struct uc_struct *uc)
     tcg_context_init(uc->tcg_ctx);
 }
 
-static void tb_clean_internal(struct uc_struct *uc, int i, void** lp)
+static void tb_clean_internal(void **p, int x)
 {
-    if (i == 0 || lp == 0) {
-        return;
-    }
-    tb_clean_internal(uc, i-1, (void*)(((char*)*lp) + ((0 >> (i * V_L2_BITS)) & (V_L2_SIZE - 1))));
-    if (lp && *lp) {
-        g_free(*lp);
+    int i;
+    void **q;
+
+    if (x <= 1) {
+        for (i = 0; i < V_L2_SIZE; i++) {
+            q = p[i];
+            if (q) {
+                g_free(q);
+            }
+        }
+        g_free(p);
+    } else {
+        for (i = 0; i < V_L2_SIZE; i++) {
+            q = p[i];
+            if (q) {
+                tb_clean_internal(q, x - 1);
+            }
+        }
+        g_free(p);
     }
 }
 
 void tb_cleanup(struct uc_struct *uc)
 {
-    int index = 0;
-    /* Level 1.  Always allocated.  */
-    void** lp = uc->l1_map + ((index >> V_L1_SHIFT) & (V_L1_SIZE - 1));
-    /* Level 2..N-1.  */
-    tb_clean_internal(uc, V_L1_SHIFT / V_L2_BITS, lp);
+    int i, x;
+    void **p;
+
+    if (uc) {
+        if (uc->l1_map) {
+            x = V_L1_SHIFT / V_L2_BITS;
+            if (x <= 1) {
+                for (i = 0; i < V_L1_SIZE; i++) {
+                    p = uc->l1_map[i];
+                    if (p) {
+                        g_free(p);
+                        uc->l1_map[i] = NULL;
+                    }
+                }
+            } else {
+                for (i = 0; i < V_L1_SIZE; i++) {
+                    p = uc->l1_map[i];
+                    if (p) {
+                        tb_clean_internal(p, x - 1);
+                        uc->l1_map[i] = NULL;
+                    }
+                }
+            }
+        }
+    }
 }
 
 /* return non zero if the very first instruction is invalid so that
