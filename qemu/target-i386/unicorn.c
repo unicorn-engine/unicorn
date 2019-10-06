@@ -35,6 +35,8 @@ void x86_release(void *ctx)
     int i;
     TCGContext *s = (TCGContext *) ctx;
 
+    cpu_breakpoint_remove_all(s->uc->cpu, BP_CPU);
+
     release_common(ctx);
 
     // arch specific
