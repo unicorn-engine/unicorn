@@ -21,11 +21,6 @@ SYSTEM = sys.platform
 # sys.maxint is 2**31 - 1 on both 32 and 64 bit mingw
 IS_64BITS = platform.architecture()[0] == '64bit'
 
-ALL_WINDOWS_DLLS = (
-    "libwinpthread-1.dll",
-    "libgcc_s_seh-1.dll" if IS_64BITS else "libgcc_s_dw2-1.dll",
-)
-
 # are we building from the repository or from a source distribution?
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 LIBS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'lib')
@@ -130,25 +125,6 @@ def build_libraries():
 
     # copy public headers
     shutil.copytree(os.path.join(BUILD_DIR, 'include', 'unicorn'), os.path.join(HEADERS_DIR, 'unicorn'))
-
-    # copy special library dependencies
-    if SYSTEM == 'win32':
-        got_all = True
-        for dll in ALL_WINDOWS_DLLS:
-            dllpath = os.path.join(sys.prefix, 'bin', dll)
-            dllpath2 = os.path.join(ROOT_DIR, 'prebuilt', dll)
-            if os.path.exists(dllpath):
-                shutil.copy(dllpath, LIBS_DIR)
-            elif os.path.exists(dllpath2):
-                shutil.copy(dllpath2, LIBS_DIR)
-            else:
-                got_all = False
-
-        if not got_all:
-            print('Warning: not all DLLs were found! This build is not appropriate for a binary distribution')
-            # enforce this
-            if 'upload' in sys.argv:
-                sys.exit(1)
 
     # check if a prebuilt library exists
     # if so, use it instead of building
