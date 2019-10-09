@@ -84,6 +84,7 @@ def copy_sources():
     os.mkdir(SRC_DIR)
 
     shutil.copytree(os.path.join(ROOT_DIR, '../../qemu'), os.path.join(SRC_DIR, 'qemu/'))
+    shutil.copytree(os.path.join(ROOT_DIR, '../../msvc'), os.path.join(SRC_DIR, 'msvc/'))
     shutil.copytree(os.path.join(ROOT_DIR, '../../include'), os.path.join(SRC_DIR, 'include/'))
     # make -> configure -> clean -> clean tests fails unless tests is present
     shutil.copytree(os.path.join(ROOT_DIR, '../../tests'), os.path.join(SRC_DIR, 'tests/'))
