@@ -137,33 +137,49 @@ def build_libraries():
     # otherwise, build!!
     os.chdir(BUILD_DIR)
 
-    # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
-    new_env = dict(os.environ)
-    new_env['UNICORN_BUILD_CORE_ONLY'] = 'yes'
-    cmd = ['sh', './make.sh']
-    if SYSTEM == "cygwin":
-        if IS_64BITS:
-            cmd.append('cygwin-mingw64')
-        else:
-            cmd.append('cygwin-mingw32')
-    elif SYSTEM == "win32":
-        if IS_64BITS:
-            cmd.append('cross-win64')
-        else:
-            cmd.append('cross-win32')
-
-    subprocess.call(cmd, env=new_env)
-
-    shutil.copy(LIBRARY_FILE, LIBS_DIR)
     try:
-        # static library may fail to build on windows if user doesn't have visual studio installed. this is fine.
-        if STATIC_LIBRARY_FILE is not None:
-            shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+        subprocess.check_call(['msbuild', '/help'])
     except:
-        print('Warning: Could not build static library file! This build is not appropriate for a binary distribution')
-        # enforce this
-        if 'upload' in sys.argv:
-            sys.exit(1)
+        has_msbuild = False
+    else:
+        has_msbuild = True
+
+    if has_msbuild:
+        plat = 'Win32' if platform.architecture()[0] == '32bit' else 'x64'
+        conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
+        subprocess.call(['msbuild', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=os.path.join(BUILD_DIR, 'msvc'))
+
+        obj_dir = os.path.join(BUILD_DIR, 'msvc', plat, conf)
+        shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
+        shutil.copy(os.path.join(obj_dir, STATIC_LIBRARY_FILE), LIBS_DIR)
+    else:
+        # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
+        new_env = dict(os.environ)
+        new_env['UNICORN_BUILD_CORE_ONLY'] = 'yes'
+        cmd = ['sh', './make.sh']
+        if SYSTEM == "cygwin":
+            if IS_64BITS:
+                cmd.append('cygwin-mingw64')
+            else:
+                cmd.append('cygwin-mingw32')
+        elif SYSTEM == "win32":
+            if IS_64BITS:
+                cmd.append('cross-win64')
+            else:
+                cmd.append('cross-win32')
+
+        subprocess.call(cmd, env=new_env)
+
+        shutil.copy(LIBRARY_FILE, LIBS_DIR)
+        try:
+            # static library may fail to build on windows if user doesn't have visual studio installed. this is fine.
+            if STATIC_LIBRARY_FILE is not None:
+                shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+        except:
+            print('Warning: Could not build static library file! This build is not appropriate for a binary distribution')
+            # enforce this
+            if 'upload' in sys.argv:
+                sys.exit(1)
     os.chdir(cwd)
 
 
