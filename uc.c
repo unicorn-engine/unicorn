@@ -351,7 +351,7 @@ uc_err uc_close(uc_engine *uc)
     // finally, free uc itself.
     memset(uc, 0, sizeof(*uc));
     free(uc);
-    
+
     return UC_ERR_OK;
 }
 
@@ -743,6 +743,25 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
         return res;
 
     return mem_map(uc, address, size, perms, uc->memory_map(uc, address, size, perms));
+}
+
+UNICORN_EXPORT
+uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size, uc_cb_mmio_read read_cb, uc_cb_mmio_write write_cb, void *user_data)
+{
+    uc_err res;
+    struct mmio_data *data;
+
+    if (uc->mem_redirect) {
+        address = uc->mem_redirect(address);
+    }
+
+    res = mem_map_check(uc, address, size, UC_PROT_ALL);
+    if (res)
+        return res;
+
+    // The callbacks do not need to be checked for NULL here, as their presence
+    // (or lack thereof) will determine the permissions used.
+    return mem_map(uc, address, size, UC_PROT_NONE, uc->memory_map_io(uc, address, size, read_cb, write_cb, user_data));
 }
 
 UNICORN_EXPORT

@@ -13,6 +13,7 @@
 #define phys_mem_clean phys_mem_clean_sparc64
 #define tb_cleanup tb_cleanup_sparc64
 #define memory_map memory_map_sparc64
+#define memory_map_io memory_map_io_sparc64
 #define memory_map_ptr memory_map_ptr_sparc64
 #define memory_unmap memory_unmap_sparc64
 #define memory_free memory_free_sparc64

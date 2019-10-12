@@ -13,6 +13,7 @@
 #define phys_mem_clean phys_mem_clean_m68k
 #define tb_cleanup tb_cleanup_m68k
 #define memory_map memory_map_m68k
+#define memory_map_io memory_map_io_m68k
 #define memory_map_ptr memory_map_ptr_m68k
 #define memory_unmap memory_unmap_m68k
 #define memory_free memory_free_m68k

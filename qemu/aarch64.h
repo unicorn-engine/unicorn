@@ -13,6 +13,7 @@
 #define phys_mem_clean phys_mem_clean_aarch64
 #define tb_cleanup tb_cleanup_aarch64
 #define memory_map memory_map_aarch64
+#define memory_map_io memory_map_io_aarch64
 #define memory_map_ptr memory_map_ptr_aarch64
 #define memory_unmap memory_unmap_aarch64
 #define memory_free memory_free_aarch64

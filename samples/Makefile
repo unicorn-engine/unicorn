@@ -65,6 +65,7 @@ SOURCES =
 ifneq (,$(findstring arm,$(UNICORN_ARCHS)))
 SOURCES += sample_arm.c
 SOURCES += sample_armeb.c
+SOURCES += mmio_api.c
 endif
 ifneq (,$(findstring aarch64,$(UNICORN_ARCHS)))
 SOURCES += sample_arm64.c

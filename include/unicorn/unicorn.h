@@ -117,7 +117,7 @@ typedef enum uc_mode {
     UC_MODE_16 = 1 << 1,          // 16-bit mode
     UC_MODE_32 = 1 << 2,          // 32-bit mode
     UC_MODE_64 = 1 << 3,          // 64-bit mode
-    // ppc 
+    // ppc
     UC_MODE_PPC32 = 1 << 2,       // 32-bit mode (currently unsupported)
     UC_MODE_PPC64 = 1 << 3,       // 64-bit mode (currently unsupported)
     UC_MODE_QPX = 1 << 4,         // Quad Processing eXtensions mode (currently unsupported)
@@ -200,6 +200,10 @@ typedef uint32_t (*uc_cb_insn_in_t)(uc_engine *uc, uint32_t port, int size, void
 */
 typedef void (*uc_cb_insn_out_t)(uc_engine *uc, uint32_t port, int size, uint32_t value, void *user_data);
 
+typedef uint64_t (*uc_cb_mmio_read)(struct uc_struct* uc, void *opaque, uint64_t addr, unsigned size);
+
+typedef void (*uc_cb_mmio_write)(struct uc_struct* uc, void *opaque, uint64_t addr, uint64_t data, unsigned size);
+
 // All type of memory accesses for UC_HOOK_MEM_*
 typedef enum uc_mem_type {
     UC_MEM_READ = 16,   // Memory is read from
@@ -263,7 +267,7 @@ typedef enum uc_hook_type {
 #define UC_HOOK_MEM_INVALID (UC_HOOK_MEM_UNMAPPED + UC_HOOK_MEM_PROT)
 // Hook type for all events of valid memory access
 // NOTE: UC_HOOK_MEM_READ is triggered before UC_HOOK_MEM_READ_PROT and UC_HOOK_MEM_READ_UNMAPPED, so
-//       this hook may technically trigger on some invalid reads. 
+//       this hook may technically trigger on some invalid reads.
 #define UC_HOOK_MEM_VALID (UC_HOOK_MEM_READ + UC_HOOK_MEM_WRITE + UC_HOOK_MEM_FETCH)
 
 /*
@@ -291,11 +295,11 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
   @return: return true to continue, or false to stop program (due to invalid memory).
            NOTE: returning true to continue execution will only work if if the accessed
            memory is made accessible with the correct permissions during the hook.
-           
+
            In the event of a UC_MEM_READ_UNMAPPED or UC_MEM_WRITE_UNMAPPED callback,
            the memory should be uc_mem_map()-ed with the correct permissions, and the
            instruction will then read or write to the address as it was supposed to.
-           
+
            In the event of a UC_MEM_FETCH_UNMAPPED callback, the memory can be mapped
            in as executable, in which case execution will resume from the fetched address.
            The instruction pointer may be written to in order to change where execution resumes,
@@ -602,6 +606,26 @@ typedef enum uc_prot {
 */
 UNICORN_EXPORT
 uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
+
+/*
+ Map MMIO in for emulation.
+ This API adds a MMIO region that can be used by emulation.
+
+ @uc: handle returned by uc_open()
+ @address: starting address of the new MMIO region to be mapped in.
+    This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
+ @size: size of the new MMIO region to be mapped in.
+    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+ @read_cb: function for handling reads from this MMIO region.
+ @write_cb: function for handling writes to this MMIO region.
+ @user_data: user-defined data. This will be passed to callback function in its
+      last argument @user_data
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+UNICORN_EXPORT
+uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size, uc_cb_mmio_read read_cb, uc_cb_mmio_write write_cb, void *user_data);
 
 /*
  Map existing host memory in for emulation.

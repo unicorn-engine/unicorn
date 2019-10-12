@@ -48,6 +48,28 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
     return ram;
 }
 
+MemoryRegion *memory_map_io(struct uc_struct *uc, ram_addr_t begin, size_t size, uc_cb_mmio_read read_cb, uc_cb_mmio_write write_cb, void *user_data)
+{
+    MemoryRegion *mmio = g_new(MemoryRegion, 1);
+    MemoryRegionOps *ops = g_new(MemoryRegionOps, 1);
+    memset(ops, 0, sizeof(*ops));
+
+    ops->read = read_cb;
+    ops->write = write_cb;
+    ops->endianness = DEVICE_NATIVE_ENDIAN;
+
+    memory_region_init_io(uc, mmio, NULL, ops, user_data, "pc.io", size);
+    mmio->perms = 0;
+    if (read_cb)  mmio->perms |= UC_PROT_READ;
+    if (write_cb) mmio->perms |= UC_PROT_WRITE;
+    memory_region_add_subregion(get_system_memory(uc), begin, mmio);
+
+    if (uc->current_cpu)
+        tlb_flush(uc->current_cpu, 1);
+
+    return mmio;
+}
+
 MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms, void *ptr)
 {
     MemoryRegion *ram = g_new(MemoryRegion, 1);
@@ -88,6 +110,9 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
             uc->mapped_block_count--;
             //shift remainder of array down over deleted pointer
             memmove(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
+            if (mr->ops != &unassigned_mem_ops) {
+                g_free(mr->ops);
+            }
             mr->destructor(mr);
             obj = OBJECT(mr);
             obj->ref = 1;
@@ -1613,4 +1638,3 @@ void memory_register_types(struct uc_struct *uc)
 {
     type_register_static(uc, &memory_region_info);
 }
-
