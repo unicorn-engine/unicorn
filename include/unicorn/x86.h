@@ -89,8 +89,8 @@ typedef enum uc_x86_reg {
 	UC_X86_REG_FPTAG,
     UC_X86_REG_MSR, // Model-Specific Register
     UC_X86_REG_MXCSR,
-    UC_X86_REG_GS_BASE,
     UC_X86_REG_FS_BASE,
+    UC_X86_REG_GS_BASE,
     UC_X86_REG_ENDING		// <-- mark the end of the list of registers
 } uc_x86_reg;
 
