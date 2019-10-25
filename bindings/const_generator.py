@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Unicorn Engine
 # By Dang Hoang Vu, 2013
 from __future__ import print_function
