@@ -2,12 +2,14 @@ CFLAGS += -Wall -Werror -Wno-unused-function -g
 CFLAGS += -D__USE_MINGW_ANSI_STDIO=1
 CFLAGS += -L ../../ -I ../../include
 CFLAGS += -L ../../cmocka/src -I ../../cmocka/include
+CFLAGS += -L /usr/local/lib -I /usr/local/include
 ASFLAGS += --32
 OBJCOPY = objcopy
 
 UNAME_S := $(shell uname -s)
+LDLIBS += -pthread
 ifeq ($(UNAME_S), Linux)
-LDLIBS += -lrt -pthread
+LDLIBS += -lrt
 else ifeq ($(UNAME_S), Darwin)
 OBJCOPY = gobjcopy
 ASFLAGS = -arch i386
