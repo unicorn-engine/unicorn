@@ -530,12 +530,7 @@ static void hook_count_cb(struct uc_struct *uc, uint64_t address, uint32_t size,
 UNICORN_EXPORT
 uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count)
 {
-    // reset the counter
-    uc->emu_counter = 0;
-    uc->invalid_error = UC_ERR_OK;
-    uc->block_full = false;
-    uc->emulation_done = false;
-
+    // Set the Address Register
     switch(uc->arch) {
         default:
             break;
@@ -591,6 +586,19 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
             break;
 #endif
     }
+
+
+    return uc_emu_continue(uc, until, timeout, count);
+}
+
+UNICORN_EXPORT
+uc_err uc_emu_continue(uc_engine* uc, uint64_t until, uint64_t timeout, size_t count)
+{
+    // reset the counter
+    uc->emu_counter = 0;
+    uc->invalid_error = UC_ERR_OK;
+    uc->block_full = false;
+    uc->emulation_done = false;
 
     uc->stop_request = false;
 
