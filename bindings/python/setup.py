@@ -145,7 +145,7 @@ def build_libraries():
     else:
         has_msbuild = True
 
-    if has_msbuild:
+    if has_msbuild and SYSTEM == 'win32':
         plat = 'Win32' if platform.architecture()[0] == '32bit' else 'x64'
         conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
         subprocess.call(['msbuild', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=os.path.join(BUILD_DIR, 'msvc'))
