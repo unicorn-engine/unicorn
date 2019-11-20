@@ -1175,7 +1175,7 @@ static void disas_cond_b_imm(DisasContext *s, uint32_t insn)
     if (cond < 0x0e) {
         /* genuinely conditional branches */
         int label_match = gen_new_label(tcg_ctx);
-        arm_gen_test_cc(tcg_ctx, cond, label_match);
+        arm_gen_test_cc(s, tcg_ctx, cond, label_match);
         gen_goto_tb(s, 0, s->pc);
         gen_set_label(tcg_ctx, label_match);
         gen_goto_tb(s, 1, addr);
@@ -3584,7 +3584,7 @@ static void disas_cc(DisasContext *s, uint32_t insn)
     if (cond < 0x0e) { /* not always */
         int label_match = gen_new_label(tcg_ctx);
         label_continue = gen_new_label(tcg_ctx);
-        arm_gen_test_cc(tcg_ctx, cond, label_match);
+        arm_gen_test_cc(s, tcg_ctx, cond, label_match);
         /* nomatch: */
         tcg_tmp = tcg_temp_new_i64(tcg_ctx);
         tcg_gen_movi_i64(tcg_ctx, tcg_tmp, nzcv << 28);
@@ -3659,7 +3659,7 @@ static void disas_cond_select(DisasContext *s, uint32_t insn)
         int label_match = gen_new_label(tcg_ctx);
         int label_continue = gen_new_label(tcg_ctx);
 
-        arm_gen_test_cc(tcg_ctx, cond, label_match);
+        arm_gen_test_cc(s, tcg_ctx, cond, label_match);
         /* nomatch: */
         tcg_src = cpu_reg(s, rm);
 
@@ -4163,7 +4163,7 @@ static void disas_fp_ccomp(DisasContext *s, uint32_t insn)
     if (cond < 0x0e) { /* not always */
         int label_match = gen_new_label(tcg_ctx);
         label_continue = gen_new_label(tcg_ctx);
-        arm_gen_test_cc(tcg_ctx, cond, label_match);
+        arm_gen_test_cc(s, tcg_ctx, cond, label_match);
         /* nomatch: */
         tcg_flags = tcg_const_i64(tcg_ctx, nzcv << 28);
         gen_set_nzcv(tcg_ctx, tcg_flags);
@@ -4225,7 +4225,7 @@ static void disas_fp_csel(DisasContext *s, uint32_t insn)
     if (cond < 0x0e) { /* not always */
         int label_match = gen_new_label(tcg_ctx);
         label_continue = gen_new_label(tcg_ctx);
-        arm_gen_test_cc(tcg_ctx, cond, label_match);
+        arm_gen_test_cc(s, tcg_ctx, cond, label_match);
         /* nomatch: */
         gen_mov_fp2fp(s, type, rd, rm);
         tcg_gen_br(tcg_ctx, label_continue);
