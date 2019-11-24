@@ -101,6 +101,8 @@ const char *uc_strerror(uc_err code)
             return "Insufficient resource (UC_ERR_RESOURCE)";
         case UC_ERR_EXCEPTION:
             return "Unhandled CPU exception (UC_ERR_EXCEPTION)";
+        case UC_ERR_TIMEOUT:
+            return "Emulation timed out (UC_ERR_TIMEOUT)";
     }
 }
 
@@ -504,6 +506,7 @@ static void *_timeout_fn(void *arg)
 
     // timeout before emulation is done?
     if (!uc->emulation_done) {
+        uc->timed_out = true;
         // force emulation to stop
         uc_emu_stop(uc);
     }
@@ -535,6 +538,7 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     uc->invalid_error = UC_ERR_OK;
     uc->block_full = false;
     uc->emulation_done = false;
+    uc->timed_out = false;
 
     switch(uc->arch) {
         default:
@@ -631,6 +635,9 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
         // wait for the timer to finish
         qemu_thread_join(&uc->timer);
     }
+
+    if(uc->timed_out)
+        return UC_ERR_TIMEOUT;
 
     return uc->invalid_error;
 }
