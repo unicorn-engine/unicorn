@@ -219,6 +219,9 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                 if (unlikely(cpu->exit_request)) {
                     cpu->exit_request = 0;
                     cpu->exception_index = EXCP_INTERRUPT;
+                    if(uc->timeout_request){
+                        uc->stop_request = true;
+                    }
                     cpu_loop_exit(cpu);
                 }
 
@@ -322,13 +325,13 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
         if (cc->synchronize_from_tb) {
             // avoid sync twice when helper_uc_tracecode() already did this.
             if (env->uc->emu_counter <= env->uc->emu_count &&
-                    !env->uc->stop_request && !env->uc->quit_request)
+                    !env->uc->stop_request && !env->uc->quit_request && !!env->uc->timeout_request)
                 cc->synchronize_from_tb(cpu, tb);
         } else {
             assert(cc->set_pc);
             // avoid sync twice when helper_uc_tracecode() already did this.
             if (env->uc->emu_counter <= env->uc->emu_count &&
-                    !env->uc->stop_request && !env->uc->quit_request)
+                    !env->uc->stop_request && !env->uc->quit_request && !!env->uc->timeout_request)
                 cc->set_pc(cpu, tb->pc);
         }
     }

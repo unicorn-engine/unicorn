@@ -225,6 +225,7 @@ struct uc_struct {
 
     bool init_tcg;      // already initialized local TCGv variables?
     bool stop_request;  // request to immediately stop emulation - for uc_emu_stop()
+    bool timeout_request;  // request to timeout - for _timeout_fn()
     bool quit_request;  // request to quit the current TB, but continue to emulate - for uc_mem_protect()
     bool emulation_done;  // emulation is done by uc_emu_start()
     QemuThread timer;   // timer for emulation timeout

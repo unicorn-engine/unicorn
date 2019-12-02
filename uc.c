@@ -505,7 +505,15 @@ static void *_timeout_fn(void *arg)
     // timeout before emulation is done?
     if (!uc->emulation_done) {
         // force emulation to stop
-        uc_emu_stop(uc);
+        uc->timeout_request = true;
+        
+        if (uc->current_cpu) {
+            // exit the current TB
+            cpu_exit(uc->current_cpu);
+        }else{
+            uc->stop_request = true;
+        }
+
     }
 
     return NULL;
@@ -593,6 +601,7 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     }
 
     uc->stop_request = false;
+    uc->timeout_request = false;
 
     uc->emu_count = count;
     // remove count hook if counting isn't necessary
