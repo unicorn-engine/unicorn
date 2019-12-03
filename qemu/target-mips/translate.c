@@ -2547,11 +2547,11 @@ static void gen_logic_imm(DisasContext *ctx, uint32_t opc,
     case OPC_LUI:
         if (rs != 0 && (ctx->insn_flags & ISA_MIPS32R6)) {
             /* OPC_AUI */
-            tcg_gen_addi_tl(tcg_ctx, *cpu_gpr[rt], *cpu_gpr[rs], imm << 16);
+            tcg_gen_addi_tl(tcg_ctx, *cpu_gpr[rt], *cpu_gpr[rs], uimm << 16);
             tcg_gen_ext32s_tl(tcg_ctx, *cpu_gpr[rt], *cpu_gpr[rt]);
             MIPS_DEBUG("aui %s, %s, %04x", regnames[rt], regnames[rs], imm);
         } else {
-            tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[rt], imm << 16);
+            tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[rt], uimm << 16);
             MIPS_DEBUG("lui %s, " TARGET_FMT_lx, regnames[rt], uimm);
         }
         break;
@@ -4735,7 +4735,7 @@ static void gen_bitops (DisasContext *ctx, uint32_t opc, int rt,
             goto fail;
         tcg_gen_shri_tl(tcg_ctx, t0, t1, lsb);
         if (msb != 31) {
-            tcg_gen_andi_tl(tcg_ctx, t0, t0, (1 << (msb + 1)) - 1);
+            tcg_gen_andi_tl(tcg_ctx, t0, t0, (((uint32_t) 1) << (msb + 1)) - 1);
         } else {
             tcg_gen_ext32s_tl(tcg_ctx, t0, t0);
         }
@@ -15331,7 +15331,7 @@ static void gen_mipsdsp_bitinsn(DisasContext *ctx, uint32_t op1, uint32_t op2,
                 imm = (ctx->opcode >> 16) & 0x03FF;
                 imm = (int16_t)(imm << 6) >> 6;
                 tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[ret], \
-                                (target_long)((int32_t)imm << 16 | \
+                                (target_long)((int32_t)imm * (1 << 16) | \
                                 (uint16_t)imm));
             }
             break;
@@ -18871,7 +18871,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
                 check_cop1x(ctx);
                 check_insn(ctx, ASE_MIPS3D);
                 gen_compute_branch1(ctx, MASK_BC1(ctx->opcode),
-                                    (rt >> 2) & 0x7, imm << 2);
+                                    (rt >> 2) & 0x7, imm * 4);
             }
             break;
         case OPC_BC1NEZ:

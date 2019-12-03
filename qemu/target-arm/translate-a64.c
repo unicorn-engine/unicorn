@@ -1308,7 +1308,7 @@ static void gen_set_nzcv(TCGContext *tcg_ctx, TCGv_i64 tcg_rt)
     tcg_gen_trunc_i64_i32(tcg_ctx, nzcv, tcg_rt);
 
     /* bit 31, N */
-    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_NF, nzcv, (1 << 31));
+    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_NF, nzcv, ((uint32_t) 1 << 31));
     /* bit 30, Z */
     tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_ZF, nzcv, (1 << 30));
     tcg_gen_setcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_ZF, tcg_ctx->cpu_ZF, 0);
@@ -1989,7 +1989,7 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
         return;
     }
 
-    offset <<= size;
+    offset *= (1 << size);
 
     if (rn == 31) {
         gen_check_sp_alignment(s);
@@ -2839,7 +2839,11 @@ static bool logic_imm_decode_wmask(uint64_t *result, unsigned int immn,
      * by r within the element (which is e bits wide)...
      */
     mask = bitmask64(s + 1);
-    mask = (mask >> r) | (mask << (e - r));
+    if ( e - r < 64) {
+        mask = (mask >> r) | (mask << (e - r));
+    } else {
+        mask = (mask >> r);
+    }
     /* ...then replicate the element over the whole 64 bit value */
     mask = bitfield_replicate(mask, e);
     *result = mask;
