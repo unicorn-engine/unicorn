@@ -1,8 +1,9 @@
 CFLAGS += -L ../../ -I ../../include
 
 UNAME_S := $(shell uname -s)
+LDFLAGS += -pthread
 ifeq ($(UNAME_S), Linux)
-LDFLAGS += -lrt -pthread
+LDFLAGS += -lrt
 endif
 
 LDFLAGS += -lunicorn
