@@ -382,8 +382,8 @@ static void test_i386_loop(void)
     // emulate machine code in 2 seconds, so we can quit even
     // if the code loops
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_LOOP) - 1, 2 * UC_SECOND_SCALE, 0);
-    if (err) {
-        printf("Failed on uc_emu_start() with error returned %u: %s\n",
+    if (err != UC_ERR_TIMEOUT) {
+        printf("Failed on uc_emu_start() with error returned %u: %s, expected UC_ERR_TIMEOUT\n",
                 err, uc_strerror(err));
     }
 
