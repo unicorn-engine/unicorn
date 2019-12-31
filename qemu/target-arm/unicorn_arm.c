@@ -74,6 +74,9 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                 case UC_ARM_REG_CPSR:
                     *(int32_t *)value = cpsr_read(&ARM_CPU(uc, mycpu)->env);
                     break;
+                case UC_ARM_REG_SPSR:
+                    *(int32_t *)value = ARM_CPU(uc, mycpu)->env.spsr;
+                    break;
                 //case UC_ARM_REG_SP:
                 case UC_ARM_REG_R13:
                     *(int32_t *)value = ARM_CPU(uc, mycpu)->env.regs[13];
@@ -133,6 +136,9 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, i
                     break;
                 case UC_ARM_REG_CPSR:
                     cpsr_write(&ARM_CPU(uc, mycpu)->env, *(uint32_t *)value, ~0);
+                    break;
+                case UC_ARM_REG_SPSR:
+                    ARM_CPU(uc, mycpu)->env.spsr = *(uint32_t *)value;
                     break;
                 //case UC_ARM_REG_SP:
                 case UC_ARM_REG_R13:
