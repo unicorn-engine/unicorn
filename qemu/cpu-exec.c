@@ -319,17 +319,25 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
          */
         CPUClass *cc = CPU_GET_CLASS(env->uc, cpu);
         TranslationBlock *tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
-        if (cc->synchronize_from_tb) {
-            // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count &&
-                    !env->uc->stop_request && !env->uc->quit_request)
-                cc->synchronize_from_tb(cpu, tb);
-        } else {
-            assert(cc->set_pc);
-            // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count &&
-                    !env->uc->stop_request && !env->uc->quit_request)
-                cc->set_pc(cpu, tb->pc);
+
+        /* Both set_pc() & synchronize_fromtb() can be ignored when code tracing hook is installed,
+         * or timer mode is in effect, since these already fix the PC.
+         */
+        if (!HOOK_EXISTS(env->uc, UC_HOOK_CODE) &&
+                !env->uc->timeout) {
+
+            if (cc->synchronize_from_tb) {
+                // avoid sync twice when helper_uc_tracecode() already did this.
+                if (env->uc->emu_counter <= env->uc->emu_count &&
+                        !env->uc->stop_request && !env->uc->quit_request)
+                    cc->synchronize_from_tb(cpu, tb);
+            } else {
+                assert(cc->set_pc);
+                // avoid sync twice when helper_uc_tracecode() already did this.
+                if (env->uc->emu_counter <= env->uc->emu_count &&
+                        !env->uc->stop_request && !env->uc->quit_request)
+                    cc->set_pc(cpu, tb->pc);
+            }
         }
     }
     if ((next_tb & TB_EXIT_MASK) == TB_EXIT_REQUESTED) {
