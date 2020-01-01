@@ -323,9 +323,7 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
         /* Both set_pc() & synchronize_fromtb() can be ignored when code tracing hook is installed,
          * or timer mode is in effect, since these already fix the PC.
          */
-        if (!HOOK_EXISTS(env->uc, UC_HOOK_CODE) &&
-                !env->uc->timeout) {
-
+        if (!HOOK_EXISTS(env->uc, UC_HOOK_CODE) && !env->uc->timeout) {
             if (cc->synchronize_from_tb) {
                 // avoid sync twice when helper_uc_tracecode() already did this.
                 if (env->uc->emu_counter <= env->uc->emu_count &&
@@ -340,12 +338,14 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
             }
         }
     }
+
     if ((next_tb & TB_EXIT_MASK) == TB_EXIT_REQUESTED) {
         /* We were asked to stop executing TBs (probably a pending
          * interrupt. We've now stopped, so clear the flag.
          */
         cpu->tcg_exit_req = 0;
     }
+
     return next_tb;
 }
 
