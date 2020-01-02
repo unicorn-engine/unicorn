@@ -669,7 +669,7 @@ static void
     int8 shiftCount;
 
     shiftCount = countLeadingZeros64( aSig );
-    *zSigPtr = aSig<<shiftCount;
+    *zSigPtr = aSig<<(shiftCount&63);
     *zExpPtr = 1 - shiftCount;
 
 }
