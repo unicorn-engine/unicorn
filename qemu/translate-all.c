@@ -1451,9 +1451,15 @@ void tb_invalidate_phys_page_fast(struct uc_struct* uc, tb_page_addr_t start, in
     if (p->code_bitmap) {
         unsigned int nr;
         unsigned long b;
+        int x;
 
         nr = start & ~TARGET_PAGE_MASK;
-        b = p->code_bitmap[BIT_WORD(nr)] >> (nr & (BITS_PER_LONG - 1));
+        x = nr & (BITS_PER_LONG - 1);
+        if (x >= 32) {
+            x = x % 32;
+        }
+        b = p->code_bitmap[BIT_WORD(nr)] >> x;
+
         if (b & ((1 << len) - 1)) {
             goto do_invalidate;
         }
