@@ -7853,7 +7853,7 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
             tcg_gen_movi_i32(tcg_ctx, tmp, val);
             store_reg(s, 14, tmp);
             /* Sign-extend the 24-bit offset */
-            offset = (insn << 8) >> 8;
+            offset = ((int32_t)(insn << 8)) >> 8;
             /* offset * 4 + bit24 * 2 + (thumb bit) */
             val += (offset << 2) | ((insn >> 23) & 2) | 1;
             /* pipeline offset */
