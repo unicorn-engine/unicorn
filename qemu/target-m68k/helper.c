@@ -510,7 +510,7 @@ uint64_t HELPER(macmuls)(CPUM68KState *env, uint32_t op1, uint32_t op2)
     int64_t res;
 
     product = (uint64_t)op1 * op2;
-    res = (product << 24) >> 24;
+    res = ((int64_t)(((uint64_t)product) << 24)) >> 24;
     if (res != product) {
         env->macsr |= MACSR_V;
         if (env->macsr & MACSR_OMC) {
@@ -565,7 +565,7 @@ void HELPER(macsats)(CPUM68KState *env, uint32_t acc)
     int64_t tmp;
     int64_t result;
     tmp = env->macc[acc];
-    result = ((tmp << 16) >> 16);
+    result = ((int64_t)((uint64_t)tmp << 16) >> 16);
     if (result != tmp) {
         env->macsr |= MACSR_V;
     }
