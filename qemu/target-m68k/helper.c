@@ -746,12 +746,12 @@ void HELPER(set_mac_extf)(CPUM68KState *env, uint32_t val, uint32_t acc)
     int32_t tmp;
     res = env->macc[acc] & 0xffffffff00ull;
     tmp = (int16_t)(val & 0xff00);
-    res |= ((int64_t)tmp) << 32;
+    res |= ((uint64_t)((int64_t)tmp)) << 32;
     res |= val & 0xff;
     env->macc[acc] = res;
     res = env->macc[acc + 1] & 0xffffffff00ull;
     tmp = (val & 0xff000000);
-    res |= ((int64_t)tmp) << 16;
+    res |= ((uint64_t)((int64_t)tmp)) << 16;
     res |= (val >> 16) & 0xff;
     env->macc[acc + 1] = res;
 }
