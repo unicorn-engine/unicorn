@@ -2839,7 +2839,7 @@ static bool logic_imm_decode_wmask(uint64_t *result, unsigned int immn,
      * by r within the element (which is e bits wide)...
      */
     mask = bitmask64(s + 1);
-    mask = (mask >> r) | (mask << (e - r));
+    mask = (mask >> r) | (mask << ((e - r) & 0x3f) );
     /* ...then replicate the element over the whole 64 bit value */
     mask = bitfield_replicate(mask, e);
     *result = mask;
