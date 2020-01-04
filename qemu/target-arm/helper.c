@@ -2145,7 +2145,7 @@ void hw_watchpoint_update(ARMCPU *cpu, int n)
          * We choose to ignore any non-zero bits after the first range of 1s.
          */
         basstart = ctz32(bas);
-        len = cto32(bas >> basstart);
+        len = cto32(bas >> (basstart & 0x1f));
         wvr += basstart;
     }
 
