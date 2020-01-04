@@ -11157,7 +11157,7 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
         gen_addiupc(ctx, rx, imm, 0, 1);
         break;
     case M16_OPC_B:
-        gen_compute_branch(ctx, OPC_BEQ, 4, 0, 0, offset << 1, 0);
+        gen_compute_branch(ctx, OPC_BEQ, 4, 0, 0, (uint16_t)offset << 1, 0);
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_BEQZ:
