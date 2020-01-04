@@ -75,7 +75,7 @@ int r4k_map_address (CPUMIPSState *env, hwaddr *physical, int *prot,
     for (i = 0; i < env->tlb->tlb_in_use; i++) {
         r4k_tlb_t *tlb = &env->tlb->mmu.r4k.tlb[i];
         /* 1k pages are not supported. */
-        target_ulong mask = tlb->PageMask | ~(TARGET_PAGE_MASK << 1);
+        target_ulong mask = tlb->PageMask | ~(((unsigned int)TARGET_PAGE_MASK) << 1);
         target_ulong tag = address & ~mask;
         target_ulong VPN = tlb->VPN & ~mask;
 #if defined(TARGET_MIPS64)
@@ -286,7 +286,7 @@ static void raise_mmu_exception(CPUMIPSState *env, target_ulong address,
     env->CP0_Context = (env->CP0_Context & ~0x007fffff) |
                        ((address >> 9) & 0x007ffff0);
     env->CP0_EntryHi =
-        (env->CP0_EntryHi & 0xFF) | (address & (TARGET_PAGE_MASK << 1));
+        (env->CP0_EntryHi & 0xFF) | (address & (((unsigned int)TARGET_PAGE_MASK) << 1));
 #if defined(TARGET_MIPS64)
     env->CP0_EntryHi &= env->SEGMask;
     env->CP0_XContext = (env->CP0_XContext & ((~0ULL) << (env->SEGBITS - 7))) |
@@ -788,7 +788,7 @@ void r4k_invalidate_tlb (CPUMIPSState *env, int idx, int use_extra)
     }
 
     /* 1k pages are not supported. */
-    mask = tlb->PageMask | ~(TARGET_PAGE_MASK << 1);
+    mask = tlb->PageMask | ~(((unsigned int)TARGET_PAGE_MASK) << 1);
     if (tlb->V0) {
         cs = CPU(cpu);
         addr = tlb->VPN & ~mask;

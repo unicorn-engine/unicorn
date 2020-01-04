@@ -91,7 +91,7 @@ typedef struct {
 static int sign_extend(int x, int len)
 {
     len = 32 - len;
-    return (x << len) >> len;
+    return ((int)(((unsigned int)x) << len)) >> len;
 }
 
 #define IS_IMM (insn & (1<<13))
@@ -2728,7 +2728,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
         break;
     case 1:                     /*CALL*/
         {
-            target_long target = GET_FIELDs(insn, 2, 31) << 2;
+            target_long target = (int)(((unsigned int)(GET_FIELDs(insn, 2, 31))) << 2);
             TCGv o7 = gen_dest_gpr(dc, 15);
 
             tcg_gen_movi_tl(tcg_ctx, o7, dc->pc);
