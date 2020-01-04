@@ -874,7 +874,7 @@ static inline uint64_t helper_insertq(uint64_t src, int shift, int len)
     if (len == 0) {
         mask = ~0ULL;
     } else {
-        mask = (1ULL << len) - 1;
+        mask = (1ULL << (len & 0x3f)) - 1;
     }
     return (src & ~(mask << shift)) | ((src & mask) << shift);
 }
