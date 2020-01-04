@@ -15331,7 +15331,7 @@ static void gen_mipsdsp_bitinsn(DisasContext *ctx, uint32_t op1, uint32_t op2,
                 imm = (ctx->opcode >> 16) & 0x03FF;
                 imm = (int16_t)(imm << 6) >> 6;
                 tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[ret], \
-                                (target_long)((int32_t)imm << 16 | \
+                                (target_long)((int32_t)((uint32_t)imm << 16) | \
                                 (uint16_t)imm));
             }
             break;
