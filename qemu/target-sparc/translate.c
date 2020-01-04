@@ -90,7 +90,6 @@ typedef struct {
 
 static int sign_extend(int x, int len)
 {
-    int ret;
     len = 32 - len;
     return ((int)(((unsigned int)x) << len)) >> len;
 }
