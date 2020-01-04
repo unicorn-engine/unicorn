@@ -999,7 +999,7 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
                 /* zero */
                 fptag |= 1;
             } else if (exp == 0 || exp == MAXEXPD
-                       || (mant & (1LL << 63)) == 0) {
+                       || (mant & (1ULL << 63)) == 0) {
                 /* NaNs, infinity, denormal */
                 fptag |= 2;
             }
