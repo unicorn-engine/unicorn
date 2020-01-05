@@ -4606,7 +4606,7 @@ int32 floatx80_to_int32( floatx80 a STATUS_PARAM )
 
     if (floatx80_invalid_encoding(a)) {
         float_raise(float_flag_invalid STATUS_VAR);
-        return 1 << 31;
+        return (int32)(1U << 31);
     }
     aSig = extractFloatx80Frac( a );
     aExp = extractFloatx80Exp( a );
@@ -4638,7 +4638,7 @@ int32 floatx80_to_int32_round_to_zero( floatx80 a STATUS_PARAM )
 
     if (floatx80_invalid_encoding(a)) {
         float_raise(float_flag_invalid STATUS_VAR);
-        return 1 << 31;
+        return (int32)(1U << 31);
     }
     aSig = extractFloatx80Frac( a );
     aExp = extractFloatx80Exp( a );

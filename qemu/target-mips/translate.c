@@ -11157,7 +11157,7 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
         gen_addiupc(ctx, rx, imm, 0, 1);
         break;
     case M16_OPC_B:
-        gen_compute_branch(ctx, OPC_BEQ, 4, 0, 0, offset << 1, 0);
+        gen_compute_branch(ctx, OPC_BEQ, 4, 0, 0, (uint16_t)offset << 1, 0);
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_BEQZ:
@@ -15331,7 +15331,7 @@ static void gen_mipsdsp_bitinsn(DisasContext *ctx, uint32_t op1, uint32_t op2,
                 imm = (ctx->opcode >> 16) & 0x03FF;
                 imm = (int16_t)(imm << 6) >> 6;
                 tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[ret], \
-                                (target_long)((int32_t)imm << 16 | \
+                                (target_long)((int32_t)((uint32_t)imm << 16) | \
                                 (uint16_t)imm));
             }
             break;

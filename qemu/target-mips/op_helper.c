@@ -1301,7 +1301,7 @@ void helper_mtc0_pagemask(CPUMIPSState *env, target_ulong arg1)
         (mask == 0x0000 || mask == 0x0003 || mask == 0x000F ||
          mask == 0x003F || mask == 0x00FF || mask == 0x03FF ||
          mask == 0x0FFF || mask == 0x3FFF || mask == 0xFFFF)) {
-        env->CP0_PageMask = arg1 & (0x1FFFFFFF & (TARGET_PAGE_MASK << 1));
+        env->CP0_PageMask = arg1 & (0x1FFFFFFF & (((unsigned int)TARGET_PAGE_MASK) << 1));
     }
 }
 
@@ -1375,7 +1375,7 @@ void helper_mtc0_count(CPUMIPSState *env, target_ulong arg1)
 void helper_mtc0_entryhi(CPUMIPSState *env, target_ulong arg1)
 {
     target_ulong old, val, mask;
-    mask = (TARGET_PAGE_MASK << 1) | 0xFF;
+    mask = (((unsigned int)TARGET_PAGE_MASK) << 1) | 0xFF;
     if (((env->CP0_Config4 >> CP0C4_IE) & 0x3) >= 2) {
         mask |= 1 << CP0EnHi_EHINV;
     }
@@ -1911,7 +1911,7 @@ static void r4k_fill_tlb(CPUMIPSState *env, int idx)
         return;
     }
     tlb->EHINV = 0;
-    tlb->VPN = env->CP0_EntryHi & (TARGET_PAGE_MASK << 1);
+    tlb->VPN = env->CP0_EntryHi & (((unsigned int)TARGET_PAGE_MASK) << 1);
 #if defined(TARGET_MIPS64)
     tlb->VPN &= env->SEGMask;
 #endif
@@ -1967,7 +1967,7 @@ void r4k_helper_tlbwi(CPUMIPSState *env)
 
     idx = (env->CP0_Index & ~0x80000000) % env->tlb->nb_tlb;
     tlb = &env->tlb->mmu.r4k.tlb[idx];
-    VPN = env->CP0_EntryHi & (TARGET_PAGE_MASK << 1);
+    VPN = env->CP0_EntryHi & (((unsigned int)TARGET_PAGE_MASK) << 1);
 #if defined(TARGET_MIPS64)
     VPN &= env->SEGMask;
 #endif
@@ -2011,7 +2011,7 @@ void r4k_helper_tlbp(CPUMIPSState *env)
     for (i = 0; i < env->tlb->nb_tlb; i++) {
         tlb = &env->tlb->mmu.r4k.tlb[i];
         /* 1k pages are not supported. */
-        mask = tlb->PageMask | ~(TARGET_PAGE_MASK << 1);
+        mask = tlb->PageMask | ~(((unsigned int)TARGET_PAGE_MASK) << 1);
         tag = env->CP0_EntryHi & ~mask;
         VPN = tlb->VPN & ~mask;
 #if defined(TARGET_MIPS64)
@@ -2029,7 +2029,7 @@ void r4k_helper_tlbp(CPUMIPSState *env)
         for (i = env->tlb->nb_tlb; i < env->tlb->tlb_in_use; i++) {
             tlb = &env->tlb->mmu.r4k.tlb[i];
             /* 1k pages are not supported. */
-            mask = tlb->PageMask | ~(TARGET_PAGE_MASK << 1);
+            mask = tlb->PageMask | ~(((unsigned int)TARGET_PAGE_MASK) << 1);
             tag = env->CP0_EntryHi & ~mask;
             VPN = tlb->VPN & ~mask;
 #if defined(TARGET_MIPS64)
