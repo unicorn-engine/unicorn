@@ -1220,7 +1220,7 @@ float64 int32_to_float64(int32_t a STATUS_PARAM)
 
     if ( a == 0 ) return float64_zero;
     zSign = ( a < 0 );
-    absA = zSign ? - a : a;
+    absA = (zSign & (a != 0x80000000)) ? - a : a;
     shiftCount = countLeadingZeros32( absA ) + 21;
     zSig = absA;
     return packFloat64( zSign, 0x432 - shiftCount, zSig<<shiftCount );
