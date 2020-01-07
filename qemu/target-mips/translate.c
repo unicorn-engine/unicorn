@@ -8505,7 +8505,7 @@ static void gen_movci (DisasContext *ctx, int rd, int rs, int cc, int tf)
 
     l1 = gen_new_label(tcg_ctx);
     t0 = tcg_temp_new_i32(tcg_ctx);
-    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1 << get_fp_bit(cc));
+    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << get_fp_bit(cc));
     tcg_gen_brcondi_i32(tcg_ctx, cond, t0, 0, l1);
     tcg_temp_free_i32(tcg_ctx, t0);
     if (rs == 0) {
