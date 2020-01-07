@@ -132,7 +132,7 @@ static void load_reg_var(DisasContext *s, TCGv_i32 var, int reg)
             addr = (long)s->pc + 4;
         tcg_gen_movi_i32(tcg_ctx, var, addr);
     } else {
-        tcg_gen_mov_i32(tcg_ctx, var, tcg_ctx->cpu_R[reg]);
+        tcg_gen_mov_i32(tcg_ctx, var, tcg_ctx->cpu_R[(reg & 0x0f)]);
     }
 }
 
