@@ -317,7 +317,7 @@ static inline uint32_t syn_fp_access_trap(int cv, int cond, bool is_thumb)
 
 static inline uint32_t syn_insn_abort(int same_el, int ea, int s1ptw, int fsc)
 {
-    return (EC_INSNABORT << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
+    return (((unsigned int)EC_INSNABORT) << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
         | (ea << 9) | (s1ptw << 7) | fsc;
 }
 
