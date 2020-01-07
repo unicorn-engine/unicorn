@@ -852,7 +852,7 @@ static inline uint64_t helper_extrq(uint64_t src, int shift, int len)
     if (len == 0) {
         mask = ~0LL;
     } else {
-        mask = (1ULL << len) - 1;
+        mask = (1ULL << (len & 0x3f)) - 1;
     }
     return (src >> shift) & mask;
 }
