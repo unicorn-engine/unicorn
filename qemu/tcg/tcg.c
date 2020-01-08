@@ -263,7 +263,7 @@ void *tcg_malloc_internal(TCGContext *s, int size)
 
     if (size > TCG_POOL_CHUNK_SIZE) {
         /* big malloc: insert a new pool (XXX: could optimize) */
-        p = g_malloc(sizeof(TCGPool) + size);
+        p = g_malloc0(sizeof(TCGPool) + size);
         p->size = size;
         p->next = s->pool_first_large;
         s->pool_first_large = p;
@@ -278,7 +278,7 @@ void *tcg_malloc_internal(TCGContext *s, int size)
             if (!p->next) {
             new_pool:
                 pool_size = TCG_POOL_CHUNK_SIZE;
-                p = g_malloc(sizeof(TCGPool) + pool_size);
+                p = g_malloc0(sizeof(TCGPool) + pool_size);
                 p->size = pool_size;
                 p->next = NULL;
                 if (s->pool_current)
