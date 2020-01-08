@@ -1703,7 +1703,7 @@ static inline void gen_op_addr_add (DisasContext *ctx, TCGv ret, TCGv arg0, TCGv
 static target_long addr_add(DisasContext *ctx, target_long base,
                             target_long offset)
 {
-    target_long sum = base + offset;
+    target_long sum = (target_long)((target_ulong)base + offset);
 
 #if defined(TARGET_MIPS64)
     if (ctx->hflags & MIPS_HFLAG_AWRAP) {
