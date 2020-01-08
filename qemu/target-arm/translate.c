@@ -807,7 +807,9 @@ void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, int label)
         break;
     default:
         fprintf(stderr, "Bad condition code 0x%x\n", cc);
-        abort();
+        tmp = tcg_const_i32(tcg_ctx, EXCP_EXCEPTION_EXIT);
+        gen_helper_exception_internal(tcg_ctx, tcg_ctx->cpu_env, tmp);
+        tcg_temp_free_i32(tcg_ctx, tmp);
     }
 }
 
