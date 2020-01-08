@@ -1859,7 +1859,7 @@ static void disas_ld_lit(DisasContext *s, uint32_t insn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int rt = extract32(insn, 0, 5);
-    int64_t imm = sextract32(insn, 5, 19) << 2;
+    int64_t imm = (int32_t)(((uint32_t)sextract32(insn, 5, 19)) << 2);
     bool is_vector = extract32(insn, 26, 1);
     int opc = extract32(insn, 30, 2);
     bool is_signed = false;
@@ -2684,14 +2684,14 @@ static void disas_pc_rel_adr(DisasContext *s, uint32_t insn)
 
     page = extract32(insn, 31, 1);
     /* SignExtend(immhi:immlo) -> offset */
-    offset = ((int64_t)sextract32(insn, 5, 19) << 2) | extract32(insn, 29, 2);
+    offset = (int64_t)((uint64_t)sextract32(insn, 5, 19) << 2) | extract32(insn, 29, 2);
     rd = extract32(insn, 0, 5);
     base = s->pc - 4;
 
     if (page) {
         /* ADRP (page based) */
         base &= ~0xfff;
-        offset <<= 12;
+        offset = ((uint64_t)offset) << 12;
     }
 
     tcg_gen_movi_i64(tcg_ctx, cpu_reg(s, rd), base + offset);
