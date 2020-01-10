@@ -1014,7 +1014,7 @@ static CCPrepare gen_prepare_eflags_c(DisasContext *s, TCGv reg)
         /* (CC_SRC >> (DATA_BITS - 1)) & 1 */
             size = s->cc_op - CC_OP_SHLB;
         shift = (8 << size) - 1;
-        return ccprepare_make(TCG_COND_NE, cpu_cc_src, 0, 0, (target_ulong)(1U << shift), false, false);
+        return ccprepare_make(TCG_COND_NE, cpu_cc_src, 0, 0, (target_ulong)(1ULL << shift), false, false);
 
     case CC_OP_MULB: case CC_OP_MULW: case CC_OP_MULL: case CC_OP_MULQ:
         return ccprepare_make(TCG_COND_NE, cpu_cc_src, 0, 0, -1, false, false);

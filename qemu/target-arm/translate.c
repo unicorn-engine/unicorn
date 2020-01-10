@@ -132,7 +132,7 @@ static void load_reg_var(DisasContext *s, TCGv_i32 var, int reg)
             addr = (long)s->pc + 4;
         tcg_gen_movi_i32(tcg_ctx, var, addr);
     } else {
-        tcg_gen_mov_i32(tcg_ctx, var, tcg_ctx->cpu_R[reg]);
+        tcg_gen_mov_i32(tcg_ctx, var, tcg_ctx->cpu_R[(reg & 0x0f)]);
     }
 }
 
@@ -806,8 +806,10 @@ void arm_gen_test_cc(TCGContext *tcg_ctx, int cc, int label)
         tcg_temp_free_i32(tcg_ctx, tmp);
         break;
     default:
-        fprintf(stderr, "Bad condition code 0x%x\n", cc);
-        abort();
+        /* fprintf(stderr, "Bad condition code 0x%x\n", cc); */
+        tmp = tcg_const_i32(tcg_ctx, EXCP_EXCEPTION_EXIT);
+        gen_helper_exception_internal(tcg_ctx, tcg_ctx->cpu_env, tmp);
+        tcg_temp_free_i32(tcg_ctx, tmp);
     }
 }
 
@@ -11124,7 +11126,7 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
 
         /* jump to the offset */
         val = (uint32_t)s->pc + 2;
-        offset = ((int32_t)insn << 24) >> 24;
+        offset = ((int32_t)((uint32_t)insn << 24)) >> 24;
         val += offset << 1;
         gen_jmp(s, val);
         break;
@@ -11137,7 +11139,7 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
         }
         /* unconditional branch */
         val = (uint32_t)s->pc;
-        offset = ((int32_t)insn << 21) >> 21;
+        offset = ((int32_t)((uint32_t)insn << 21)) >> 21;
         val += (offset << 1) + 2;
         gen_jmp(s, val);
         break;

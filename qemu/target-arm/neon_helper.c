@@ -1767,7 +1767,7 @@ uint64_t HELPER(neon_abdl_s64)(uint32_t a, uint32_t b)
 #define DO_MULL(dest, x, y, type1, type2) do { \
     type1 tmp_x = x; \
     type1 tmp_y = y; \
-    dest = (type2)((type2)tmp_x * (type2)tmp_y); \
+    dest = (type2)((int64_t)tmp_x * (int64_t)tmp_y); \
     } while(0)
 
 uint64_t HELPER(neon_mull_u8)(uint32_t a, uint32_t b)

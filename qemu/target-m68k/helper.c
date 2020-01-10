@@ -169,10 +169,10 @@ void HELPER(set_macsr)(CPUM68KState *env, uint32_t val)
             }
             if (env->macsr & MACSR_FI) {
                 regval = (((uint64_t)acc) << 8) | extlow;
-                regval |= ((int64_t)exthigh) << 40;
+                regval |= ((uint64_t)((int64_t)exthigh)) << 40;
             } else if (env->macsr & MACSR_SU) {
                 regval = acc | (((int64_t)extlow) << 32);
-                regval |= ((int64_t)exthigh) << 40;
+                regval |= ((uint64_t)((int64_t)exthigh)) << 40;
             } else {
                 regval = acc | (((uint64_t)extlow) << 32);
                 regval |= ((uint64_t)(uint8_t)exthigh) << 40;
@@ -609,7 +609,7 @@ void HELPER(macsatf)(CPUM68KState *env, uint32_t acc)
     int64_t result;
 
     sum = env->macc[acc];
-    result = (sum << 16) >> 16;
+    result = ((int64_t)((uint64_t)sum << 16)) >> 16;
     if (result != sum) {
         env->macsr |= MACSR_V;
     }
@@ -762,11 +762,11 @@ void HELPER(set_mac_exts)(CPUM68KState *env, uint32_t val, uint32_t acc)
     int32_t tmp;
     res = (uint32_t)env->macc[acc];
     tmp = (int16_t)val;
-    res |= ((int64_t)tmp) << 32;
+    res |= ((uint64_t)((int64_t)tmp)) << 32;
     env->macc[acc] = res;
     res = (uint32_t)env->macc[acc + 1];
     tmp = val & 0xffff0000;
-    res |= (int64_t)tmp << 16;
+    res |= ((uint64_t)((int64_t)tmp)) << 16;
     env->macc[acc + 1] = res;
 }
 
