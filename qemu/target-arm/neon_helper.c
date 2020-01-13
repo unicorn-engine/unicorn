@@ -867,7 +867,7 @@ uint64_t HELPER(neon_qshl_u64)(CPUARMState *env, uint64_t val, uint64_t shiftop)
     } else if (tmp < 0) { \
         dest = src1 >> -tmp; \
     } else { \
-        dest = src1 << tmp; \
+        dest = (uint32_t)src1 << tmp; \
         if ((dest >> tmp) != src1) { \
             SET_QC(); \
             dest = (uint32_t)(1 << (sizeof(src1) * 8 - 1)); \
@@ -1170,7 +1170,7 @@ NEON_VOP(sub_u8, neon_u8, 4)
 NEON_VOP(sub_u16, neon_u16, 2)
 #undef NEON_FN
 
-#define NEON_FN(dest, src1, src2) dest = src1 * src2
+#define NEON_FN(dest, src1, src2) dest = (int64_t)src1 * src2
 NEON_VOP(mul_u8, neon_u8, 4)
 NEON_VOP(mul_u16, neon_u16, 2)
 #undef NEON_FN
