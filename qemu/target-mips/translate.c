@@ -1703,7 +1703,7 @@ static inline void gen_op_addr_add (DisasContext *ctx, TCGv ret, TCGv arg0, TCGv
 static target_long addr_add(DisasContext *ctx, target_long base,
                             target_long offset)
 {
-    target_long sum = base + offset;
+    target_long sum = (target_long)((target_ulong)base + offset);
 
 #if defined(TARGET_MIPS64)
     if (ctx->hflags & MIPS_HFLAG_AWRAP) {
@@ -8505,7 +8505,7 @@ static void gen_movci (DisasContext *ctx, int rd, int rs, int cc, int tf)
 
     l1 = gen_new_label(tcg_ctx);
     t0 = tcg_temp_new_i32(tcg_ctx);
-    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1 << get_fp_bit(cc));
+    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << get_fp_bit(cc));
     tcg_gen_brcondi_i32(tcg_ctx, cond, t0, 0, l1);
     tcg_temp_free_i32(tcg_ctx, t0);
     if (rs == 0) {
@@ -11378,12 +11378,12 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
         break;
     case M16_OPC_BEQZ:
         gen_compute_branch(ctx, OPC_BEQ, 2, rx, 0,
-                           ((int8_t)ctx->opcode) << 1, 0);
+                           ((uint8_t)ctx->opcode) << 1, 0);
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_BNEQZ:
         gen_compute_branch(ctx, OPC_BNE, 2, rx, 0,
-                           ((int8_t)ctx->opcode) << 1, 0);
+                           ((uint8_t)ctx->opcode) << 1, 0);
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_SHIFT:
@@ -11456,18 +11456,18 @@ static int decode_mips16_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_n
             switch (funct) {
             case I8_BTEQZ:
                 gen_compute_branch(ctx, OPC_BEQ, 2, 24, 0,
-                                   ((int8_t)ctx->opcode) << 1, 0);
+                                   ((uint8_t)ctx->opcode) << 1, 0);
                 break;
             case I8_BTNEZ:
                 gen_compute_branch(ctx, OPC_BNE, 2, 24, 0,
-                                   ((int8_t)ctx->opcode) << 1, 0);
+                                   ((uint8_t)ctx->opcode) << 1, 0);
                 break;
             case I8_SWRASP:
                 gen_st(ctx, OPC_SW, 31, 29, (ctx->opcode & 0xff) << 2);
                 break;
             case I8_ADJSP:
                 gen_arith_imm(ctx, OPC_ADDIU, 29, 29,
-                              ((int8_t)ctx->opcode) << 3);
+                              ((uint8_t)ctx->opcode) << 3);
                 break;
             case I8_SVRS:
                 {
@@ -17488,7 +17488,7 @@ static void gen_msa_branch(CPUMIPSState *env, DisasContext *ctx, uint32_t op1)
         break;
     }
 
-    ctx->btarget = ctx->pc + (s16 << 2) + 4;
+    ctx->btarget = ctx->pc + (int64_t)((uint64_t)s16 << 2) + 4;
 
     ctx->hflags |= MIPS_HFLAG_BC;
     ctx->hflags |= MIPS_HFLAG_BDS32;

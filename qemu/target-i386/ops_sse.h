@@ -852,7 +852,7 @@ static inline uint64_t helper_extrq(uint64_t src, int shift, int len)
     if (len == 0) {
         mask = ~0LL;
     } else {
-        mask = (1ULL << len) - 1;
+        mask = (1ULL << (len & 0x3f)) - 1;
     }
     return (src >> shift) & mask;
 }
@@ -1469,8 +1469,8 @@ void glue(helper_phsubw, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 
 void glue(helper_phsubd, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 {
-    d->L(0) = (int32_t)d->L(0) - (int32_t)d->L(1);
-    XMM_ONLY(d->L(1) = (int32_t)d->L(2) - (int32_t)d->L(3));
+    d->L(0) = (int32_t)((int64_t)d->L(0) - (int64_t)d->L(1));
+    XMM_ONLY(d->L(1) = (int32_t)((int64_t)d->L(2) - (int64_t)d->L(3)));
     d->L((1 << SHIFT) + 0) = (uint32_t)((int32_t)s->L(0) - (int32_t)s->L(1));
     XMM_ONLY(d->L(3) = (int32_t)s->L(2) - (int32_t)s->L(3));
 }

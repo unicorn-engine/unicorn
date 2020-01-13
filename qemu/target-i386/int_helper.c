@@ -352,7 +352,7 @@ static int idiv64(uint64_t *plow, uint64_t *phigh, int64_t b)
         neg128(plow, phigh);
     }
     sb = (b < 0);
-    if (sb) {
+    if (sb && (b != 0x8000000000000000LL)) {
         b = -b;
     }
     if (div64(plow, phigh, b) != 0) {
