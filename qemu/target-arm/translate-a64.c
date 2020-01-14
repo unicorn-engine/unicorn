@@ -5661,7 +5661,7 @@ static void handle_simd_dupg(DisasContext *s, int is_q, int rd, int rn,
                              int imm5)
 {
     int size = ctz32(imm5);
-    int esize = 8 << size;
+    int esize = 8 << (size & 0x1f);
     int elements = (is_q ? 128 : 64)/esize;
     int i = 0;
 
