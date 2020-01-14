@@ -1489,7 +1489,7 @@ void glue(helper_phsubsw, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 
 #define FABSB(_, x) (x > INT8_MAX  ? -(int8_t)x : x)
 #define FABSW(_, x) (x > INT16_MAX ? -(int16_t)x : x)
-#define FABSL(_, x) (x > INT32_MAX ? -(int32_t)x : x)
+#define FABSL(_, x) ((x > INT32_MAX && x != 0x80000000) ? -(int32_t)x : x)
 SSE_HELPER_B(helper_pabsb, FABSB)
 SSE_HELPER_W(helper_pabsw, FABSW)
 SSE_HELPER_L(helper_pabsd, FABSL)
