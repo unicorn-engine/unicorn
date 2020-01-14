@@ -2668,7 +2668,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     target = GET_FIELD_SP(insn, 0, 13) |
                         (GET_FIELD_SP(insn, 20, 21) << 14);
                     target = sign_extend(target, 16);
-                    target <<= 2;
+                    target = (int32_t)((uint32_t)target << 2);
                     cpu_src1 = get_src1(dc, insn);
                     do_branch_reg(dc, target, insn, cpu_src1);
                     goto jmp_insn;
@@ -2681,7 +2681,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     }
                     target = GET_FIELD_SP(insn, 0, 18);
                     target = sign_extend(target, 19);
-                    target <<= 2;
+                    target = (int32_t)((uint32_t)target << 2);
                     do_fbranch(dc, target, insn, cc);
                     goto jmp_insn;
                 }
@@ -2695,7 +2695,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 {
                     target = GET_FIELD(insn, 10, 31);
                     target = sign_extend(target, 22);
-                    target <<= 2;
+                    target = (int32_t)((uint32_t)target << 2);
                     do_branch(dc, target, insn, 0);
                     goto jmp_insn;
                 }
@@ -2706,7 +2706,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     }
                     target = GET_FIELD(insn, 10, 31);
                     target = sign_extend(target, 22);
-                    target <<= 2;
+                    target = (int32_t)((uint32_t)target << 2);
                     do_fbranch(dc, target, insn, 0);
                     goto jmp_insn;
                 }
