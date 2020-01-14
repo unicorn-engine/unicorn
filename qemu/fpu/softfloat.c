@@ -183,7 +183,7 @@ static int64 roundAndPackInt64( flag zSign, uint64_t absZ0, uint64_t absZ1 STATU
         absZ0 &= ~ ( ( (uint64_t) ( absZ1<<1 ) == 0 ) & roundNearestEven );
     }
     z = absZ0;
-    if ( zSign ) z = - z;
+    if ( zSign && z != 0x8000000000000000ULL ) z = - z;
     if ( z && ( ( z < 0 ) ^ zSign ) ) {
  overflow:
         float_raise( float_flag_invalid STATUS_VAR);
@@ -1243,7 +1243,7 @@ floatx80 int32_to_floatx80(int32_t a STATUS_PARAM)
 
     if ( a == 0 ) return packFloatx80( 0, 0, 0 );
     zSign = ( a < 0 );
-    absA = zSign ? - a : a;
+    absA = (zSign && a != 0x80000000) ? - a : a;
     shiftCount = countLeadingZeros32( absA ) + 32;
     zSig = absA;
     return packFloatx80( zSign, 0x403E - shiftCount, zSig<<shiftCount );
