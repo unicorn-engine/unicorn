@@ -132,7 +132,7 @@ static void load_reg_var(DisasContext *s, TCGv_i32 var, int reg)
             addr = (long)s->pc + 4;
         tcg_gen_movi_i32(tcg_ctx, var, addr);
     } else {
-        tcg_gen_mov_i32(tcg_ctx, var, tcg_ctx->cpu_R[(reg & 0x0f)]);
+        tcg_gen_mov_i32(tcg_ctx, var, tcg_ctx->cpu_R[reg & 0x0f]);
     }
 }
 
@@ -154,7 +154,7 @@ static void store_reg(DisasContext *s, int reg, TCGv_i32 var)
         tcg_gen_andi_i32(tcg_ctx, var, var, ~1);
         s->is_jmp = DISAS_JUMP;
     }
-    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->cpu_R[reg], var);
+    tcg_gen_mov_i32(tcg_ctx, tcg_ctx->cpu_R[reg & 0x0f], var);
     tcg_temp_free_i32(tcg_ctx, var);
 }
 

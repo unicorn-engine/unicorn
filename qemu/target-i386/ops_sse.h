@@ -876,7 +876,7 @@ static inline uint64_t helper_insertq(uint64_t src, int shift, int len)
     } else {
         mask = (1ULL << (len & 0x3f)) - 1;
     }
-    return (src & ~(mask << shift)) | ((src & mask) << shift);
+    return (src & ~(mask << (shift & 0x3f))) | ((src & mask) << (shift & 0x3f));
 }
 
 void helper_insertq_r(CPUX86State *env, XMMReg *d, XMMReg *s)
