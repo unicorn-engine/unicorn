@@ -116,7 +116,7 @@ static target_ulong helper_sdiv_common(CPUSPARCState *env, target_ulong a,
     int64_t x0;
     int32_t x1;
 
-    x0 = (a & 0xffffffff) | ((int64_t) (env->y) << 32);
+    x0 = (a & 0xffffffff) | ((uint64_t) (env->y) << 32);
     x1 = (b & 0xffffffff);
 
     if (x1 == 0) {
