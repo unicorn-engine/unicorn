@@ -854,7 +854,7 @@ static inline uint64_t helper_extrq(uint64_t src, int shift, int len)
     } else {
         mask = (1ULL << (len & 0x3f)) - 1;
     }
-    return (src >> shift) & mask;
+    return (src >> (shift & 0x3f)) & mask;
 }
 
 void helper_extrq_r(CPUX86State *env, XMMReg *d, XMMReg *s)

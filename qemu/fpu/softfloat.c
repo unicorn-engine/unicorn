@@ -1220,7 +1220,7 @@ float64 int32_to_float64(int32_t a STATUS_PARAM)
 
     if ( a == 0 ) return float64_zero;
     zSign = ( a < 0 );
-    absA = (zSign & (a != 0x80000000)) ? - a : a;
+    absA = (zSign && (a != 0x80000000)) ? - a : a;
     shiftCount = countLeadingZeros32( absA ) + 21;
     zSig = absA;
     return packFloat64( zSign, 0x432 - shiftCount, zSig<<shiftCount );
@@ -1265,7 +1265,7 @@ float128 int32_to_float128(int32_t a STATUS_PARAM)
 
     if ( a == 0 ) return packFloat128( 0, 0, 0, 0 );
     zSign = ( a < 0 );
-    absA = zSign ? - a : a;
+    absA = (zSign && a!= 0x80000000) ? - a : a;
     shiftCount = countLeadingZeros32( absA ) + 17;
     zSig0 = absA;
     return packFloat128( zSign, 0x402E - shiftCount, zSig0<<shiftCount, 0 );
@@ -1286,7 +1286,7 @@ float32 int64_to_float32(int64_t a STATUS_PARAM)
 
     if ( a == 0 ) return float32_zero;
     zSign = ( a < 0 );
-    absA = zSign ? - a : a;
+    absA = (zSign && a != 0x8000000000000000ULL) ? - a : a;
     shiftCount = countLeadingZeros64( absA ) - 40;
     if ( 0 <= shiftCount ) {
         return packFloat32( zSign, 0x95 - shiftCount, (uint32_t)(absA<<shiftCount) );
@@ -1373,7 +1373,7 @@ floatx80 int64_to_floatx80(int64_t a STATUS_PARAM)
 
     if ( a == 0 ) return packFloatx80( 0, 0, 0 );
     zSign = ( a < 0 );
-    absA = zSign ? - a : a;
+    absA = (zSign && a != 0x8000000000000000ULL) ? - a : a;
     shiftCount = countLeadingZeros64( absA );
     return packFloatx80( zSign, 0x403E - shiftCount, absA<<shiftCount );
 
@@ -1395,7 +1395,7 @@ float128 int64_to_float128(int64_t a STATUS_PARAM)
 
     if ( a == 0 ) return packFloat128( 0, 0, 0, 0 );
     zSign = ( a < 0 );
-    absA = zSign ? - a : a;
+    absA = (zSign && a!= 0x8000000000000000ULL) ? - a : a;
     shiftCount = countLeadingZeros64( absA ) + 49;
     zExp = 0x406E - shiftCount;
     if ( 64 <= shiftCount ) {

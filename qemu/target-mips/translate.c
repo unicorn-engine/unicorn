@@ -8505,7 +8505,7 @@ static void gen_movci (DisasContext *ctx, int rd, int rs, int cc, int tf)
 
     l1 = gen_new_label(tcg_ctx);
     t0 = tcg_temp_new_i32(tcg_ctx);
-    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << get_fp_bit(cc));
+    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << (get_fp_bit(cc) & 0x1f));
     tcg_gen_brcondi_i32(tcg_ctx, cond, t0, 0, l1);
     tcg_temp_free_i32(tcg_ctx, t0);
     if (rs == 0) {
@@ -8528,7 +8528,7 @@ static inline void gen_movcf_s (DisasContext *ctx, int fs, int fd, int cc, int t
     else
         cond = TCG_COND_NE;
 
-    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << get_fp_bit(cc));
+    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << (get_fp_bit(cc) & 0x1f));
     tcg_gen_brcondi_i32(tcg_ctx, cond, t0, 0, l1);
     gen_load_fpr32(ctx, t0, fs);
     gen_store_fpr32(ctx, t0, fd);
@@ -8549,7 +8549,7 @@ static inline void gen_movcf_d (DisasContext *ctx, int fs, int fd, int cc, int t
     else
         cond = TCG_COND_NE;
 
-    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << get_fp_bit(cc));
+    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << (get_fp_bit(cc) & 0x1f));
     tcg_gen_brcondi_i32(tcg_ctx, cond, t0, 0, l1);
     tcg_temp_free_i32(tcg_ctx, t0);
     fp0 = tcg_temp_new_i64(tcg_ctx);
@@ -8573,13 +8573,13 @@ static inline void gen_movcf_ps(DisasContext *ctx, int fs, int fd,
     else
         cond = TCG_COND_NE;
 
-    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << get_fp_bit(cc));
+    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << (get_fp_bit(cc) & 0x1f));
     tcg_gen_brcondi_i32(tcg_ctx, cond, t0, 0, l1);
     gen_load_fpr32(ctx, t0, fs);
     gen_store_fpr32(ctx, t0, fd);
     gen_set_label(tcg_ctx, l1);
 
-    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << get_fp_bit(cc+1));
+    tcg_gen_andi_i32(tcg_ctx, t0, tcg_ctx->fpu_fcr31, 1U << (get_fp_bit(cc+1) & 0x1f));
     tcg_gen_brcondi_i32(tcg_ctx, cond, t0, 0, l2);
     gen_load_fpr32h(ctx, t0, fs);
     gen_store_fpr32h(ctx, t0, fd);
