@@ -1370,6 +1370,9 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
             } else {
         do_reset_output:
                 for (i = 0; i < nb_oargs; i++) {
+                    if (args[i] < 0 || args[i] >= TCG_MAX_TEMPS) {
+                        continue;
+                    }
                     reset_temp(s, args[i]);
                     /* Save the corresponding known-zero bits mask for the
                        first output argument (only one supported so far). */
