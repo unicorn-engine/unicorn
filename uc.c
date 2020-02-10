@@ -414,6 +414,23 @@ static bool check_mem_area(uc_engine *uc, uint64_t address, size_t size)
     return (count == size);
 }
 
+UNICORN_EXPORT
+uc_err uc_vmem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
+{
+       bool res = uc->read_vmem(uc->cpu, address, _bytes, size);
+       if (res) return UC_ERR_OK;
+       else return UC_ERR_MAP;
+
+}
+
+UNICORN_EXPORT
+uc_err uc_vmem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t size)
+{
+       bool res = uc->write_vmem(uc->cpu, address, _bytes, size);
+       if (res) return UC_ERR_OK;
+       else return UC_ERR_MAP;
+}
+
 
 UNICORN_EXPORT
 uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)

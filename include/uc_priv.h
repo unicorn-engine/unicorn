@@ -54,6 +54,9 @@ typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr, const uint8_t *buf
 
 typedef bool (*uc_read_mem_t)(AddressSpace *as, hwaddr addr, uint8_t *buf, int len);
 
+typedef bool (*uc_read_vmem_t)(CPUState *cpu, hwaddr addr, uint8_t *buf, int len);
+typedef bool (*uc_write_vmem_t)(CPUState *cpu, hwaddr addr, const uint8_t *buf, int len);
+
 typedef void (*uc_args_void_t)(void*);
 
 typedef void (*uc_args_uc_t)(struct uc_struct*);
@@ -158,6 +161,8 @@ struct uc_struct {
 
     uc_write_mem_t write_mem;
     uc_read_mem_t read_mem;
+    uc_read_vmem_t read_vmem;
+    uc_write_vmem_t write_vmem;
     uc_args_void_t release;     // release resource when uc_close()
     uc_args_uc_u64_t set_pc;  // set PC for tracecode
     uc_args_int_t stop_interrupt;   // check if the interrupt should stop emulation
