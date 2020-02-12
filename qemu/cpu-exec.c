@@ -298,6 +298,10 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     // TODO: optimize this for better performance
     tb_flush(env);
 
+    /* clean watchpoints and breakpoints. */
+    cpu_watchpoint_remove_all(cpu, BP_CPU);
+    cpu_breakpoint_remove_all(cpu, BP_CPU);
+
     /* fail safe : never use current_cpu outside cpu_exec() */
     uc->current_cpu = NULL;
     return ret;
