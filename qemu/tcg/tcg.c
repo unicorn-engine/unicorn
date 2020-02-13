@@ -1719,7 +1719,7 @@ static void tcg_liveness_analysis(TCGContext *s)
                implies side effects */
             if (!(def->flags & TCG_OPF_SIDE_EFFECTS) && nb_oargs != 0) {
                 for(i = 0; i < nb_oargs; i++) {
-                    if (args[i] < 0 || args[i] >= TCG_MAX_TEMPS) {
+                    if (args[i] >= TCG_MAX_TEMPS) {
                         continue;
                     }
                     arg = args[i];
