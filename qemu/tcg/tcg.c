@@ -2546,9 +2546,6 @@ static inline int tcg_gen_code_common(TCGContext *s,
 #ifdef USE_TCG_OPTIMIZATIONS
     s->gen_opparam_ptr =
         tcg_optimize(s, s->gen_opc_ptr, s->gen_opparam_buf, s->tcg_op_defs);
-    if (s->gen_opparam_ptr == NULL) {
-        goto the_end;
-    }
 #endif
 
 #ifdef CONFIG_PROFILER
@@ -2657,7 +2654,6 @@ static inline int tcg_gen_code_common(TCGContext *s,
 
 int tcg_gen_code(TCGContext *s, tcg_insn_unit *gen_code_buf)    // qq
 {
-    int ret;
 #ifdef CONFIG_PROFILER
     {
         int n;
@@ -2674,10 +2670,7 @@ int tcg_gen_code(TCGContext *s, tcg_insn_unit *gen_code_buf)    // qq
 
     //printf("====== before gen code\n");
     //tcg_dump_ops(s);
-    ret = tcg_gen_code_common(s, gen_code_buf, -1);   // qq
-    if (ret == -1) {
-        return -1;
-    }
+    tcg_gen_code_common(s, gen_code_buf, -1);   // qq
 
     //printf("====== after gen code\n");
     //tcg_dump_ops(s);
