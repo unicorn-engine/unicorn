@@ -239,9 +239,9 @@ static int cpu_gen_code(CPUArchState *env, TranslationBlock *tb, int *gen_code_s
     s->code_time -= profile_getclock();
 #endif
     gen_code_size = tcg_gen_code(s, gen_code_buf);
-    if (gen_code_size == -1) {
-        return -1;
-    }
+//    if (gen_code_size == -1) {
+//        return -1;
+//    }
     //printf(">>> code size = %u: ", gen_code_size);
     //int i;
     //for (i = 0; i < gen_code_size; i++) {
