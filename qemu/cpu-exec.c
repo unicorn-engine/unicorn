@@ -298,9 +298,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     // TODO: optimize this for better performance
     tb_flush(env);
 
-    /* clean watchpoints and breakpoints. */
-    cpu_watchpoint_remove_all(cpu, BP_CPU);
-    cpu_breakpoint_remove_all(cpu, BP_CPU);
 
     /* fail safe : never use current_cpu outside cpu_exec() */
     uc->current_cpu = NULL;
@@ -399,6 +396,9 @@ static TranslationBlock *tb_find_slow(CPUArchState *env, target_ulong pc,
 not_found:
     /* if no translated code available, then translate it now */
     tb = tb_gen_code(cpu, pc, cs_base, (int)flags, 0);   // qq
+    if (tb == NULL) {
+        return NULL;
+    }
 
 found:
     /* Move the last found TB to the head of the list */
