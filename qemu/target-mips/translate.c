@@ -18865,7 +18865,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
             if (ctx->insn_flags & ISA_MIPS32R6) {
                 /* OPC_BC1EQZ */
                 gen_compute_branch1_r6(ctx, MASK_CP1(ctx->opcode),
-                                rt, imm << 2);
+                                rt, ((uint16_t)imm) << 2);
             } else {
                 /* OPC_BC1ANY2 */
                 check_cop1x(ctx);
@@ -18878,7 +18878,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
             check_cp1_enabled(ctx);
             check_insn(ctx, ISA_MIPS32R6);
             gen_compute_branch1_r6(ctx, MASK_CP1(ctx->opcode),
-                            rt, imm << 2);
+                            rt, ((uint16_t)imm) << 2);
             break;
         case OPC_BC1ANY4:
             check_cp1_enabled(ctx);
@@ -18890,7 +18890,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
             check_cp1_enabled(ctx);
             check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch1(ctx, MASK_BC1(ctx->opcode),
-                                (rt >> 2) & 0x7, (uint16_t)imm << 2);
+                                (rt >> 2) & 0x7, ((uint16_t)imm) << 2);
             break;
         case OPC_PS_FMT:
             check_cp1_enabled(ctx);
