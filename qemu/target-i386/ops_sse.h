@@ -1941,7 +1941,7 @@ SSE_HELPER_Q(helper_pcmpgtq, FCMPGTQ)
 
 static inline int pcmp_elen(CPUX86State *env, int reg, uint32_t ctrl)
 {
-    int val;
+    unsigned int val;
 
     /* Presence of REX.W is indicated by a bit higher than 7 set */
     if (ctrl >> 8) {
@@ -1958,6 +1958,9 @@ static inline int pcmp_elen(CPUX86State *env, int reg, uint32_t ctrl)
         if (val > 16) {
             return 16;
         }
+    }
+    if (val == 0x80000000) {
+        val = 0;
     }
     return val;
 }
