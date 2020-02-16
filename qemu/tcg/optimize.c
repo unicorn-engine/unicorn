@@ -571,6 +571,9 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
 
         /* Do copy propagation */
         for (i = nb_oargs; i < nb_oargs + nb_iargs; i++) {
+            if (args[i] >= TCG_MAX_TEMPS) {
+                return NULL;
+            }
             if (temps[args[i]].state == TCG_TEMP_COPY) {
                 args[i] = find_better_copy(s, args[i]);
             }

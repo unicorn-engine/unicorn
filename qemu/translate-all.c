@@ -239,6 +239,9 @@ static int cpu_gen_code(CPUArchState *env, TranslationBlock *tb, int *gen_code_s
     s->code_time -= profile_getclock();
 #endif
     gen_code_size = tcg_gen_code(s, gen_code_buf);
+    if (gen_code_size == -1) {
+        return -1;
+    }
     //printf(">>> code size = %u: ", gen_code_size);
     //int i;
     //for (i = 0; i < gen_code_size; i++) {
@@ -1130,6 +1133,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     TranslationBlock *tb;
     tb_page_addr_t phys_pc, phys_page2;
     int code_gen_size;
+    int ret;
 
     phys_pc = get_page_addr_code(env, pc);
     tb = tb_alloc(env->uc, pc);
@@ -1145,7 +1149,11 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     tb->cs_base = cs_base;
     tb->flags = flags;
     tb->cflags = cflags;
-    cpu_gen_code(env, tb, &code_gen_size);  // qq
+    ret = cpu_gen_code(env, tb, &code_gen_size);  // qq
+    if (ret == -1) {
+        tb_free(env->uc, tb);
+        return NULL;
+    }
     tcg_ctx->code_gen_ptr = (void *)(((uintptr_t)tcg_ctx->code_gen_ptr +
             code_gen_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
 
