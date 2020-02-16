@@ -12,6 +12,10 @@ Documention of Unicorn engine.
 
 	http://unicorn-engine.org/docs/beyond_qemu.html
 
+* Micro Uncorn-Engine API Documentation in Chinese
+
+	https://github.com/kabeor/Micro-Unicorn-Engine-API-Documentation
+
 #Building unicorn - Using vcpkg
 
 You can download and install unicorn using the [vcpkg](https://github.com/Microsoft/vcpkg) dependency manager:
