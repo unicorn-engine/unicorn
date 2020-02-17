@@ -11161,11 +11161,11 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_BEQZ:
-        gen_compute_branch(ctx, OPC_BEQ, 4, rx, 0, offset << 1, 0);
+        gen_compute_branch(ctx, OPC_BEQ, 4, rx, 0, (uint16_t)offset << 1, 0);
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_BNEQZ:
-        gen_compute_branch(ctx, OPC_BNE, 4, rx, 0, offset << 1, 0);
+        gen_compute_branch(ctx, OPC_BNE, 4, rx, 0, (uint16_t)offset << 1, 0);
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_SHIFT:
@@ -11223,10 +11223,10 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
     case M16_OPC_I8:
         switch (funct) {
         case I8_BTEQZ:
-            gen_compute_branch(ctx, OPC_BEQ, 4, 24, 0, offset << 1, 0);
+            gen_compute_branch(ctx, OPC_BEQ, 4, 24, 0, (uint16_t)offset << 1, 0);
             break;
         case I8_BTNEZ:
-            gen_compute_branch(ctx, OPC_BNE, 4, 24, 0, offset << 1, 0);
+            gen_compute_branch(ctx, OPC_BNE, 4, 24, 0, (uint16_t)offset << 1, 0);
             break;
         case I8_SWRASP:
             gen_st(ctx, OPC_SW, 31, 29, imm);
