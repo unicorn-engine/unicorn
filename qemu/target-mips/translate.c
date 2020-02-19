@@ -11157,7 +11157,7 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
         gen_addiupc(ctx, rx, imm, 0, 1);
         break;
     case M16_OPC_B:
-        gen_compute_branch(ctx, OPC_BEQ, 4, 0, 0, (uint16_t)offset << 1, 0);
+        gen_compute_branch(ctx, OPC_BEQ, 4, 0, 0, (uint32_t)offset << 1, 0);
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_BEQZ:
@@ -18572,19 +18572,19 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
             check_insn_opc_removed(ctx, ISA_MIPS32R6);
         case OPC_BLTZ:
         case OPC_BGEZ:
-            gen_compute_branch(ctx, op1, 4, rs, -1, (uint16_t)imm << 2, 4);
+            gen_compute_branch(ctx, op1, 4, rs, -1, (uint32_t)imm << 2, 4);
             break;
         case OPC_BLTZAL:
         case OPC_BGEZAL:
             if (ctx->insn_flags & ISA_MIPS32R6) {
                 if (rs == 0) {
                     /* OPC_NAL, OPC_BAL */
-                    gen_compute_branch(ctx, op1, 4, 0, -1, (uint16_t)imm << 2, 4);
+                    gen_compute_branch(ctx, op1, 4, 0, -1, (uint32_t)imm << 2, 4);
                 } else {
                     generate_exception(ctx, EXCP_RI);
                 }
             } else {
-                gen_compute_branch(ctx, op1, 4, rs, -1, (uint16_t)imm << 2, 4);
+                gen_compute_branch(ctx, op1, 4, rs, -1, (uint32_t)imm << 2, 4);
             }
             break;
         case OPC_TGEI: case OPC_TGEIU: case OPC_TLTI: case OPC_TLTIU: case OPC_TEQI: /* REGIMM traps */
@@ -18603,7 +18603,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
         case OPC_BPOSGE64:
 #endif
             check_dsp(ctx);
-            gen_compute_branch(ctx, op1, 4, -1, -2, (int32_t)imm << 2, 4);
+            gen_compute_branch(ctx, op1, 4, -1, -2, (uint32_t)imm << 2, 4);
             break;
 #if defined(TARGET_MIPS64)
         case OPC_DAHI:
@@ -18720,7 +18720,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
     case OPC_BOVC: /* OPC_BEQZALC, OPC_BEQC, OPC_ADDI */
         if (ctx->insn_flags & ISA_MIPS32R6) {
             /* OPC_BOVC, OPC_BEQZALC, OPC_BEQC */
-            gen_compute_compact_branch(ctx, op, rs, rt, (uint16_t)imm << 2);
+            gen_compute_compact_branch(ctx, op, rs, rt, (uint32_t)imm << 2);
         } else {
             /* OPC_ADDI */
             /* Arithmetic with immediate opcode */
@@ -18752,10 +18752,10 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
                 break;
             }
             /* OPC_BLEZC, OPC_BGEZC, OPC_BGEC */
-            gen_compute_compact_branch(ctx, op, rs, rt, (uint16_t)imm << 2);
+            gen_compute_compact_branch(ctx, op, rs, rt, (uint32_t)imm << 2);
         } else {
             /* OPC_BLEZL */
-            gen_compute_branch(ctx, op, 4, rs, rt, (uint16_t)imm << 2, 4);
+            gen_compute_branch(ctx, op, 4, rs, rt, (uint32_t)imm << 2, 4);
         }
         break;
     case OPC_BGTZC: /* OPC_BLTZC, OPC_BLTC, OPC_BGTZL */
@@ -18765,30 +18765,30 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
                 break;
             }
             /* OPC_BGTZC, OPC_BLTZC, OPC_BLTC */
-            gen_compute_compact_branch(ctx, op, rs, rt, (uint16_t)imm << 2);
+            gen_compute_compact_branch(ctx, op, rs, rt, (uint32_t)imm << 2);
         } else {
             /* OPC_BGTZL */
-            gen_compute_branch(ctx, op, 4, rs, rt, (uint16_t)imm << 2, 4);
+            gen_compute_branch(ctx, op, 4, rs, rt, (uint32_t)imm << 2, 4);
         }
         break;
     case OPC_BLEZALC: /* OPC_BGEZALC, OPC_BGEUC, OPC_BLEZ */
         if (rt == 0) {
             /* OPC_BLEZ */
-            gen_compute_branch(ctx, op, 4, rs, rt, (uint16_t)imm << 2, 4);
+            gen_compute_branch(ctx, op, 4, rs, rt, (uint32_t)imm << 2, 4);
         } else {
             check_insn(ctx, ISA_MIPS32R6);
             /* OPC_BLEZALC, OPC_BGEZALC, OPC_BGEUC */
-            gen_compute_compact_branch(ctx, op, rs, rt, (uint16_t)imm << 2);
+            gen_compute_compact_branch(ctx, op, rs, rt, (uint32_t)imm << 2);
         }
         break;
     case OPC_BGTZALC: /* OPC_BLTZALC, OPC_BLTUC, OPC_BGTZ */
         if (rt == 0) {
             /* OPC_BGTZ */
-            gen_compute_branch(ctx, op, 4, rs, rt, (uint16_t)imm << 2, 4);
+            gen_compute_branch(ctx, op, 4, rs, rt, (uint32_t)imm << 2, 4);
         } else {
             check_insn(ctx, ISA_MIPS32R6);
             /* OPC_BGTZALC, OPC_BLTZALC, OPC_BLTUC */
-            gen_compute_compact_branch(ctx, op, rs, rt, (uint16_t)imm << 2);
+            gen_compute_compact_branch(ctx, op, rs, rt, (uint32_t)imm << 2);
         }
         break;
     case OPC_BEQL:
@@ -18796,7 +18796,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
          check_insn_opc_removed(ctx, ISA_MIPS32R6);
     case OPC_BEQ:
     case OPC_BNE:
-         gen_compute_branch(ctx, op, 4, rs, rt, (uint16_t)imm << 2, 4);
+         gen_compute_branch(ctx, op, 4, rs, rt, (uint32_t)imm << 2, 4);
          break;
     case OPC_LWL: /* Load and stores */
     case OPC_LWR:
@@ -18871,7 +18871,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
                 check_cop1x(ctx);
                 check_insn(ctx, ASE_MIPS3D);
                 gen_compute_branch1(ctx, MASK_BC1(ctx->opcode),
-                                    (rt >> 2) & 0x7, ((uint16_t)imm) << 2);
+                                    (rt >> 2) & 0x7, ((uint32_t)imm) << 2);
             }
             break;
         case OPC_BC1NEZ:
@@ -18890,7 +18890,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
             check_cp1_enabled(ctx);
             check_insn_opc_removed(ctx, ISA_MIPS32R6);
             gen_compute_branch1(ctx, MASK_BC1(ctx->opcode),
-                                (rt >> 2) & 0x7, (uint16_t)imm << 2);
+                                (rt >> 2) & 0x7, (uint32_t)imm << 2);
             break;
         case OPC_PS_FMT:
             check_cp1_enabled(ctx);
@@ -19092,7 +19092,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
     case OPC_BNVC: /* OPC_BNEZALC, OPC_BNEC, OPC_DADDI */
         if (ctx->insn_flags & ISA_MIPS32R6) {
             /* OPC_BNVC, OPC_BNEZALC, OPC_BNEC */
-            gen_compute_compact_branch(ctx, op, rs, rt, (uint16_t)imm << 2);
+            gen_compute_compact_branch(ctx, op, rs, rt, (uint32_t)imm << 2);
         } else {
             /* OPC_DADDI */
             check_insn(ctx, ISA_MIPS3);
@@ -19108,7 +19108,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
 #else
     case OPC_BNVC: /* OPC_BNEZALC, OPC_BNEC */
         if (ctx->insn_flags & ISA_MIPS32R6) {
-            gen_compute_compact_branch(ctx, op, rs, rt, (uint16_t)imm << 2);
+            gen_compute_compact_branch(ctx, op, rs, rt, (uint32_t)imm << 2);
         } else {
             MIPS_INVAL("major opcode");
             generate_exception(ctx, EXCP_RI);
@@ -19123,7 +19123,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
             if (rt != 0) {
                 TCGv t0 = tcg_temp_new(tcg_ctx);
                 gen_load_gpr(ctx, t0, rs);
-                tcg_gen_addi_tl(tcg_ctx, *cpu_gpr[rt], t0, (uint16_t)imm << 16);
+                tcg_gen_addi_tl(tcg_ctx, *cpu_gpr[rt], t0, (uint32_t)imm << 16);
                 tcg_temp_free(tcg_ctx, t0);
             }
             MIPS_DEBUG("daui %s, %s, %04x", regnames[rt], regnames[rs], imm);
