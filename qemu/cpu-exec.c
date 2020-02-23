@@ -19,6 +19,8 @@
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
+#include <signal.h>
+#include <setjmp.h>
 #include "tcg.h"
 #include "sysemu/sysemu.h"
 
@@ -257,6 +259,14 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     tc_ptr = tb->tc_ptr;
                     /* execute the generated code */
                     next_tb = cpu_tb_exec(cpu, tc_ptr);	// qq
+                    if (next_tb == -1) {
+                        uc->invalid_error = UC_ERR_EXCEPTION;
+                        ret = EXCP_HLT;
+                        cc->cpu_exec_exit(cpu);
+                        tb_flush(env);
+                        uc->current_cpu = NULL;
+                        return ret;
+                    }
 
                     switch (next_tb & TB_EXIT_MASK) {
                         case TB_EXIT_REQUESTED:
@@ -303,14 +313,27 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     return ret;
 }
 
+static sigjmp_buf sigenv;
+static void recvsignal(int sig) {
+    siglongjmp(sigenv,1);
+}
+
 /* Execute a TB, and fix up the CPU state afterwards if necessary */
 static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
 {
     CPUArchState *env = cpu->env_ptr;
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     uintptr_t next_tb;
+    int ret;
 
-    next_tb = tcg_qemu_tb_exec(env, tb_ptr);
+    ret = sigsetjmp(sigenv, 1);
+    if (ret == 0) {
+        signal(SIGBUS, recvsignal);
+        signal(SIGSEGV, recvsignal);
+        next_tb = tcg_qemu_tb_exec(env, tb_ptr);
+    } else {
+        return -1;
+    }
 
     if ((next_tb & TB_EXIT_MASK) > TB_EXIT_IDX1) {
         /* We didn't start executing this TB (eg because the instruction
