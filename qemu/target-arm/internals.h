@@ -250,12 +250,12 @@ static inline uint32_t syn_aa32_smc(void)
 
 static inline uint32_t syn_aa64_bkpt(uint32_t imm16)
 {
-    return (EC_AA64_BKPT << ARM_EL_EC_SHIFT) | ARM_EL_IL | (imm16 & 0xffff);
+    return (((unsigned int)EC_AA64_BKPT) << ARM_EL_EC_SHIFT) | ARM_EL_IL | (imm16 & 0xffff);
 }
 
 static inline uint32_t syn_aa32_bkpt(uint32_t imm16, bool is_thumb)
 {
-    return (EC_AA32_BKPT << ARM_EL_EC_SHIFT) | (imm16 & 0xffff)
+    return (((unsigned int)EC_AA32_BKPT) << ARM_EL_EC_SHIFT) | (imm16 & 0xffff)
         | (is_thumb ? 0 : ARM_EL_IL);
 }
 
@@ -324,25 +324,25 @@ static inline uint32_t syn_insn_abort(int same_el, int ea, int s1ptw, int fsc)
 static inline uint32_t syn_data_abort(int same_el, int ea, int cm, int s1ptw,
                                       int wnr, int fsc)
 {
-    return (EC_DATAABORT << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
+    return (((unsigned int) EC_DATAABORT) << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
         | (ea << 9) | (cm << 8) | (s1ptw << 7) | (wnr << 6) | fsc;
 }
 
 static inline uint32_t syn_swstep(int same_el, int isv, int ex)
 {
-    return (EC_SOFTWARESTEP << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
+    return (((unsigned int)EC_SOFTWARESTEP) << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
         | (isv << 24) | (ex << 6) | 0x22;
 }
 
 static inline uint32_t syn_watchpoint(int same_el, int cm, int wnr)
 {
-    return (EC_WATCHPOINT << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
+    return (((unsigned int)EC_WATCHPOINT) << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
         | (cm << 8) | (wnr << 6) | 0x22;
 }
 
 static inline uint32_t syn_breakpoint(int same_el)
 {
-    return (EC_BREAKPOINT << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
+    return (((unsigned int) EC_BREAKPOINT) << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
         | ARM_EL_IL | 0x22;
 }
 

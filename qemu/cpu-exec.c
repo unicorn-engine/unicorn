@@ -395,6 +395,9 @@ static TranslationBlock *tb_find_slow(CPUArchState *env, target_ulong pc,
 not_found:
     /* if no translated code available, then translate it now */
     tb = tb_gen_code(cpu, pc, cs_base, (int)flags, 0);   // qq
+    if (tb == NULL) {
+        return NULL;
+    }
 
 found:
     /* Move the last found TB to the head of the list */
