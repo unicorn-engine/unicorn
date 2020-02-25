@@ -3217,14 +3217,14 @@ static inline void gen_pcrel(DisasContext *ctx, int rs, int16_t imm)
         switch (MASK_OPC_PCREL_TOP5BITS(ctx->opcode)) {
         case OPC_AUIPC:
             if (rs != 0) {
-                offset = imm << 16;
+                offset = ((target_ulong)imm) << 16;
                 addr = addr_add(ctx, ctx->pc, offset);
                 tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[rs], addr);
             }
             break;
         case OPC_ALUIPC:
             if (rs != 0) {
-                offset = imm << 16;
+                offset = ((target_ulong)imm) << 16;
                 addr = ~0xFFFF & addr_add(ctx, ctx->pc, offset);
                 tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[rs], addr);
             }
