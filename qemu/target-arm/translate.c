@@ -7857,7 +7857,7 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)  // qq
             /* Sign-extend the 24-bit offset */
             offset = ((int32_t)(insn << 8)) >> 8;
             /* offset * 4 + bit24 * 2 + (thumb bit) */
-            val += (offset << 2) | ((insn >> 23) & 2) | 1;
+            val += (((uint32_t)offset) << 2) | ((insn >> 23) & 2) | 1;
             /* pipeline offset */
             val += 4;
             /* protected by ARCH(5); above, near the start of uncond block */

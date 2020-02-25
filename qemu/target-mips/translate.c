@@ -11161,11 +11161,11 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_BEQZ:
-        gen_compute_branch(ctx, OPC_BEQ, 4, rx, 0, offset << 1, 0);
+        gen_compute_branch(ctx, OPC_BEQ, 4, rx, 0, (uint16_t)offset << 1, 0);
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_BNEQZ:
-        gen_compute_branch(ctx, OPC_BNE, 4, rx, 0, offset << 1, 0);
+        gen_compute_branch(ctx, OPC_BNE, 4, rx, 0, (uint16_t)offset << 1, 0);
         /* No delay slot, so just process as a normal instruction */
         break;
     case M16_OPC_SHIFT:
@@ -11223,10 +11223,10 @@ static int decode_extended_mips16_opc (CPUMIPSState *env, DisasContext *ctx)
     case M16_OPC_I8:
         switch (funct) {
         case I8_BTEQZ:
-            gen_compute_branch(ctx, OPC_BEQ, 4, 24, 0, offset << 1, 0);
+            gen_compute_branch(ctx, OPC_BEQ, 4, 24, 0, (uint16_t)offset << 1, 0);
             break;
         case I8_BTNEZ:
-            gen_compute_branch(ctx, OPC_BNE, 4, 24, 0, offset << 1, 0);
+            gen_compute_branch(ctx, OPC_BNE, 4, 24, 0, (uint16_t)offset << 1, 0);
             break;
         case I8_SWRASP:
             gen_st(ctx, OPC_SW, 31, 29, imm);
@@ -18865,7 +18865,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
             if (ctx->insn_flags & ISA_MIPS32R6) {
                 /* OPC_BC1EQZ */
                 gen_compute_branch1_r6(ctx, MASK_CP1(ctx->opcode),
-                                rt, imm << 2);
+                                rt, ((uint16_t)imm) << 2);
             } else {
                 /* OPC_BC1ANY2 */
                 check_cop1x(ctx);
@@ -18878,7 +18878,7 @@ static void decode_opc (CPUMIPSState *env, DisasContext *ctx, bool *insn_need_pa
             check_cp1_enabled(ctx);
             check_insn(ctx, ISA_MIPS32R6);
             gen_compute_branch1_r6(ctx, MASK_CP1(ctx->opcode),
-                            rt, imm << 2);
+                            rt, ((uint16_t)imm) << 2);
             break;
         case OPC_BC1ANY4:
             check_cp1_enabled(ctx);
