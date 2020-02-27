@@ -314,7 +314,9 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
 }
 
 static sigjmp_buf sigenv;
-static void recvsignal(int sig) {
+
+static void recvsignal(int sig)
+{
     siglongjmp(sigenv,1);
 }
 
@@ -328,6 +330,8 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
 
     ret = sigsetjmp(sigenv, 1);
     if (ret == 0) {
+        signal(SIGILL, recvsignal);
+        signal(SIGABRT, recvsignal);
         signal(SIGBUS, recvsignal);
         signal(SIGSEGV, recvsignal);
         next_tb = tcg_qemu_tb_exec(env, tb_ptr);
