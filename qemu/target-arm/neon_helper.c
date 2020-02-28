@@ -732,7 +732,7 @@ uint64_t HELPER(neon_rshl_s64)(uint64_t valop, uint64_t shiftop)
             val >>= 1;
         }
     } else {
-        val <<= shift;
+        val = ((uint64_t)val) << shift;
     }
     return val;
 }
