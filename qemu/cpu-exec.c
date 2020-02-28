@@ -332,6 +332,7 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
     if (ret == 0) {
         signal(SIGILL, recvsignal);
         signal(SIGABRT, recvsignal);
+        signal(SIGFPE, recvsignal);
         signal(SIGBUS, recvsignal);
         signal(SIGSEGV, recvsignal);
         next_tb = tcg_qemu_tb_exec(env, tb_ptr);
