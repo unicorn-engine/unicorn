@@ -2974,7 +2974,7 @@ int32 float64_to_int32_round_to_zero( float64 a STATUS_PARAM )
     savedASig = aSig;
     aSig >>= shiftCount;
     z = (int32_t)aSig;
-    if ( aSign ) z = - z;
+    if ( aSign && (z != 0x80000000)) z = - z;
     if ( ( z < 0 ) ^ aSign ) {
  invalid:
         float_raise( float_flag_invalid STATUS_VAR);

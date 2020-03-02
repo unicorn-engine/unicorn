@@ -5584,7 +5584,7 @@ static void handle_simd_dupe(DisasContext *s, int is_q, int rd, int rn,
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int size = ctz32(imm5);
-    int esize = 8 << size;
+    int esize = 8 << (size & 0x1f);
     int elements = (is_q ? 128 : 64) / esize;
     int index, i;
     TCGv_i64 tmp;

@@ -1678,7 +1678,7 @@ SSE_HELPER_L(helper_pmaxsd, FMAXSD)
 SSE_HELPER_W(helper_pmaxuw, MAX)
 SSE_HELPER_L(helper_pmaxud, MAX)
 
-#define FMULLD(d, s) ((int32_t)d * (int32_t)s)
+#define FMULLD(d, s) ((int64_t)d * (int32_t)s)
 SSE_HELPER_L(helper_pmulld, FMULLD)
 
 void glue(helper_phminposuw, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)

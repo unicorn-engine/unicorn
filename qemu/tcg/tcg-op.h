@@ -2079,7 +2079,7 @@ static inline void tcg_gen_deposit_i32(TCGContext *s, TCGv_i32 ret, TCGv_i32 arg
         return;
     }
 
-    mask = (1u << len) - 1;
+    mask = (1u << (len & 0x1f)) - 1;
     t1 = tcg_temp_new_i32(s);
 
     if (ofs + len < 32) {
