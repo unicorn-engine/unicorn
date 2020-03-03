@@ -1052,7 +1052,7 @@ uint64_t HELPER(neon_qrshl_u64)(CPUARMState *env, uint64_t val, uint64_t shiftop
     if (tmp >= (ssize_t)sizeof(src1) * 8) { \
         if (src1) { \
             SET_QC(); \
-            dest = (1 << (sizeof(src1) * 8 - 1)); \
+            dest = (uint32_t)(1U << (sizeof(src1) * 8 - 1)); \
             if (src1 > 0) { \
                 dest--; \
             } \
@@ -1067,7 +1067,7 @@ uint64_t HELPER(neon_qrshl_u64)(CPUARMState *env, uint64_t val, uint64_t shiftop
         dest = ((uint64_t)src1) << tmp; \
         if ((dest >> tmp) != src1) { \
             SET_QC(); \
-            dest = (uint32_t)(1 << (sizeof(src1) * 8 - 1)); \
+            dest = (uint32_t)(1U << (sizeof(src1) * 8 - 1)); \
             if (src1 > 0) { \
                 dest--; \
             } \

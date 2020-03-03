@@ -132,7 +132,7 @@ int64_t strtosz_suffix_unit(const char *nptr, char **end,
     if (mul == 1 && mul_required) {
         goto fail;
     }
-    if ((val * mul >= INT64_MAX) || val < 0) {
+    if ((val * mul >= (double)INT64_MAX) || val < 0) {
         retval = -ERANGE;
         goto fail;
     }
