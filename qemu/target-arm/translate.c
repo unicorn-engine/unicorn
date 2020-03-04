@@ -11127,7 +11127,7 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
         /* jump to the offset */
         val = (uint32_t)s->pc + 2;
         offset = ((int32_t)((uint32_t)insn << 24)) >> 24;
-        val += offset << 1;
+        val += (int32_t)((uint32_t)offset << 1);
         gen_jmp(s, val);
         break;
 
@@ -11140,7 +11140,7 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
         /* unconditional branch */
         val = (uint32_t)s->pc;
         offset = ((int32_t)((uint32_t)insn << 21)) >> 21;
-        val += (offset << 1) + 2;
+        val += (int32_t)((uint32_t)offset << 1) + 2;
         gen_jmp(s, val);
         break;
 
