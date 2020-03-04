@@ -608,7 +608,7 @@ NEON_POP(pmax_u16, neon_u16, 2)
 #undef NEON_FN
 
 #define NEON_FN(dest, src1, src2) \
-    dest = (src1 > src2) ? (src1 - src2) : (src2 - src1)
+    dest = (src1 > src2) ? ((int64_t)src1 - (int64_t)src2) : ((int64_t)src2 - (int64_t)src1)
 NEON_VOP(abd_s8, neon_s8, 4)
 NEON_VOP(abd_u8, neon_u8, 4)
 NEON_VOP(abd_s16, neon_s16, 2)
@@ -1133,7 +1133,7 @@ uint64_t HELPER(neon_qrshl_s64)(CPUARMState *env, uint64_t valop, uint64_t shift
         }
     } else {
         int64_t tmp = val;
-        val <<= shift;
+        val = (uint64_t)val << (shift & 0x3f);
         if ((val >> shift) != tmp) {
             SET_QC();
             val = (tmp >> 63) ^ ~SIGNBIT64;
