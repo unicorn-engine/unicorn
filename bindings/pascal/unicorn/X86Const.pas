@@ -256,7 +256,8 @@ const
   UC_X86_REG_FPCW = 246;
   UC_X86_REG_FPTAG = 247;
   UC_X86_REG_MSR = 248;
-  UC_X86_REG_ENDING = 249;
+  UC_X86_REG_MXCSR = 249;
+  UC_X86_REG_ENDING = 250;
 
 // X86 instructions
 

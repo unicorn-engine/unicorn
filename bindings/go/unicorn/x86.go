@@ -36,3 +36,19 @@ func (u *uc) RegReadMmr(reg int) (*X86Mmr, error) {
 	}
 	return ret, errReturn(ucerr)
 }
+
+func (u *uc) RegWriteX86Msr(reg uint64, val uint64) error {
+	msr := C.uc_x86_msr{
+		rid:   C.uint32_t(reg),
+		value: C.uint64_t(val),
+	}
+	return errReturn(C.uc_reg_write(u.handle, X86_REG_MSR, unsafe.Pointer(&msr)))
+}
+
+func (u *uc) RegReadX86Msr(reg uint64) (uint64, error) {
+	msr := C.uc_x86_msr{
+		rid: C.uint32_t(reg),
+	}
+	ucerr := C.uc_reg_read(u.handle, X86_REG_MSR, unsafe.Pointer(&msr))
+	return uint64(msr.value), errReturn(ucerr)
+}

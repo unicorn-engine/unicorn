@@ -155,7 +155,9 @@ public interface MipsConst {
    public static final int UC_MIPS_REG_MPL0 = 134;
    public static final int UC_MIPS_REG_MPL1 = 135;
    public static final int UC_MIPS_REG_MPL2 = 136;
-   public static final int UC_MIPS_REG_ENDING = 137;
+   public static final int UC_MIPS_REG_CP0_CONFIG3 = 137;
+   public static final int UC_MIPS_REG_CP0_USERLOCAL = 138;
+   public static final int UC_MIPS_REG_ENDING = 139;
    public static final int UC_MIPS_REG_ZERO = 2;
    public static final int UC_MIPS_REG_AT = 3;
    public static final int UC_MIPS_REG_V0 = 4;

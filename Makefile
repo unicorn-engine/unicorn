@@ -112,7 +112,7 @@ API_MAJOR=$(shell echo `grep -e UC_API_MAJOR include/unicorn/unicorn.h | grep -v
 ifeq ($(UNAME_S),Darwin)
 EXT = dylib
 VERSION_EXT = $(API_MAJOR).$(EXT)
-$(LIBNAME)_LDFLAGS += -dynamiclib -install_name lib$(LIBNAME).$(VERSION_EXT) -current_version $(PKG_MAJOR).$(PKG_MINOR).$(PKG_EXTRA) -compatibility_version $(PKG_MAJOR).$(PKG_MINOR)
+$(LIBNAME)_LDFLAGS += -dynamiclib -install_name @rpath/lib$(LIBNAME).$(VERSION_EXT) -current_version $(PKG_MAJOR).$(PKG_MINOR).$(PKG_EXTRA) -compatibility_version $(PKG_MAJOR).$(PKG_MINOR)
 AR_EXT = a
 UNICORN_CFLAGS += -fvisibility=hidden
 
@@ -171,6 +171,8 @@ LIBRARY = lib$(LIBNAME).$(VERSION_EXT)
 LIBRARY_SYMLINK = lib$(LIBNAME).$(EXT)
 endif
 endif
+
+UNICORN_QEMU_FLAGS += --python=$(shell which /usr/bin/python || which python || which python2 || which python3)
 
 ifeq ($(UNICORN_STATIC),yes)
 ifneq ($(filter MINGW%,$(UNAME_S)),)
@@ -243,9 +245,9 @@ else
 endif
 ifeq ($(DO_WINDOWS_EXPORT),1)
 ifneq ($(filter MINGW32%,$(UNAME_S)),)
-	cmd /c "windows_export.bat x86"
+	cmd //C "windows_export.bat x86"
 else
-	cmd /c "windows_export.bat x64"
+	cmd //C "windows_export.bat x64"
 endif
 endif
 endif

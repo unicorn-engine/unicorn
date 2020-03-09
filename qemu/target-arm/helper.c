@@ -406,11 +406,11 @@ static void cpacr_write(CPUARMState *env, const ARMCPRegInfo *ri,
          */
         if (arm_feature(env, ARM_FEATURE_VFP)) {
             /* VFP coprocessor: cp10 & cp11 [23:20] */
-            mask |= (1 << 31) | (1 << 30) | (0xf << 20);
+            mask |= (1U << 31) | (1 << 30) | (0xf << 20);
 
             if (!arm_feature(env, ARM_FEATURE_NEON)) {
                 /* ASEDIS [31] bit is RAO/WI */
-                value |= (1 << 31);
+                value |= (1U << 31);
             }
 
             /* VFPv3 and upwards with NEON implement 32 double precision
@@ -575,14 +575,14 @@ static void pmccfiltr_write(CPUARMState *env, const ARMCPRegInfo *ri,
 static void pmcntenset_write(CPUARMState *env, const ARMCPRegInfo *ri,
                             uint64_t value)
 {
-    value &= (1 << 31);
+    value &= (1U << 31);
     env->cp15.c9_pmcnten |= value;
 }
 
 static void pmcntenclr_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    value &= (1 << 31);
+    value &= (1U << 31);
     env->cp15.c9_pmcnten &= ~value;
 }
 
@@ -608,14 +608,14 @@ static void pmintenset_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
     /* We have no event counters so only the C bit can be changed */
-    value &= (1 << 31);
+    value &= (1U << 31);
     env->cp15.c9_pminten |= value;
 }
 
 static void pmintenclr_write(CPUARMState *env, const ARMCPRegInfo *ri,
                              uint64_t value)
 {
-    value &= (1 << 31);
+    value &= (1U << 31);
     env->cp15.c9_pminten &= ~value;
 }
 
@@ -2145,7 +2145,7 @@ void hw_watchpoint_update(ARMCPU *cpu, int n)
          * We choose to ignore any non-zero bits after the first range of 1s.
          */
         basstart = ctz32(bas);
-        len = cto32(bas >> basstart);
+        len = cto32(bas >> (basstart & 0x1f));
         wvr += basstart;
     }
 

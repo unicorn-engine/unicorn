@@ -102,29 +102,40 @@ typedef enum uc_arch {
 typedef enum uc_mode {
     UC_MODE_LITTLE_ENDIAN = 0,    // little-endian mode (default mode)
     UC_MODE_BIG_ENDIAN = 1 << 30, // big-endian mode
+
     // arm / arm64
     UC_MODE_ARM = 0,              // ARM mode
     UC_MODE_THUMB = 1 << 4,       // THUMB mode (including Thumb-2)
     UC_MODE_MCLASS = 1 << 5,      // ARM's Cortex-M series (currently unsupported)
     UC_MODE_V8 = 1 << 6,          // ARMv8 A32 encodings for ARM (currently unsupported)
+
+    // arm (32bit) cpu types
+    UC_MODE_ARM926 = 1 << 7,	  // ARM926 CPU type
+    UC_MODE_ARM946 = 1 << 8,	  // ARM946 CPU type
+    UC_MODE_ARM1176 = 1 << 9,	  // ARM1176 CPU type
+
     // mips
     UC_MODE_MICRO = 1 << 4,       // MicroMips mode (currently unsupported)
     UC_MODE_MIPS3 = 1 << 5,       // Mips III ISA (currently unsupported)
     UC_MODE_MIPS32R6 = 1 << 6,    // Mips32r6 ISA (currently unsupported)
     UC_MODE_MIPS32 = 1 << 2,      // Mips32 ISA
     UC_MODE_MIPS64 = 1 << 3,      // Mips64 ISA
+
     // x86 / x64
     UC_MODE_16 = 1 << 1,          // 16-bit mode
     UC_MODE_32 = 1 << 2,          // 32-bit mode
     UC_MODE_64 = 1 << 3,          // 64-bit mode
+
     // ppc 
     UC_MODE_PPC32 = 1 << 2,       // 32-bit mode (currently unsupported)
     UC_MODE_PPC64 = 1 << 3,       // 64-bit mode (currently unsupported)
     UC_MODE_QPX = 1 << 4,         // Quad Processing eXtensions mode (currently unsupported)
+
     // sparc
     UC_MODE_SPARC32 = 1 << 2,     // 32-bit mode
     UC_MODE_SPARC64 = 1 << 3,     // 64-bit mode
     UC_MODE_V9 = 1 << 4,          // SparcV9 mode (currently unsupported)
+
     // m68k
 } uc_mode;
 
@@ -152,7 +163,8 @@ typedef enum uc_err {
     UC_ERR_FETCH_UNALIGNED,  // Unaligned fetch
     UC_ERR_HOOK_EXIST,  // hook for this event already existed
     UC_ERR_RESOURCE,    // Insufficient resource: uc_emu_start()
-    UC_ERR_EXCEPTION // Unhandled CPU exception
+    UC_ERR_EXCEPTION, // Unhandled CPU exception
+    UC_ERR_TIMEOUT // Emulation timed out
 } uc_err;
 
 
@@ -172,6 +184,15 @@ typedef void (*uc_cb_hookcode_t)(uc_engine *uc, uint64_t address, uint32_t size,
   @user_data: user data passed to tracing APIs.
 */
 typedef void (*uc_cb_hookintr_t)(uc_engine *uc, uint32_t intno, void *user_data);
+
+/*
+  Callback function for tracing invalid instructions
+
+  @user_data: user data passed to tracing APIs.
+
+  @return: return true to continue, or false to stop program (due to invalid instruction).
+*/
+typedef bool (*uc_cb_hookinsn_invalid_t)(uc_engine *uc, void *user_data);
 
 /*
   Callback function for tracing IN instruction of X86
@@ -236,6 +257,8 @@ typedef enum uc_hook_type {
     // Hook memory read events, but only successful access.
     // The callback will be triggered after successful read.
     UC_HOOK_MEM_READ_AFTER = 1 << 13,
+    // Hook invalid instructions exceptions.
+    UC_HOOK_INSN_INVALID = 1 << 14,
 } uc_hook_type;
 
 // Hook type for all events of unmapped memory access
@@ -722,6 +745,18 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context);
 */
 UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context);
+
+
+/*
+  Return the size needed to store the cpu context. Can be used to allocate a buffer
+  to contain the cpu context and directly call uc_context_save.
+
+  @uc: handle returned by uc_open()
+
+  @return the size for needed to store the cpu context as as size_t.
+*/
+UNICORN_EXPORT
+size_t uc_context_size(uc_engine *uc);
 
 #ifdef __cplusplus
 }

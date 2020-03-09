@@ -301,9 +301,9 @@ static inline void
      uint64_t a0, uint64_t a1, int_fast16_t count, uint64_t *z0Ptr, uint64_t *z1Ptr)
 {
 
-    *z1Ptr = a1<<count;
+    *z1Ptr = a1<<(count & 0x3f);
     *z0Ptr =
-        ( count == 0 ) ? a0 : ( a0<<count ) | ( a1>>( ( - count ) & 63 ) );
+        ( count == 0 ) ? a0 : ( a0<<(count & 0x3f) ) | ( a1>>( ( - count ) & 63 ) );
 
 }
 

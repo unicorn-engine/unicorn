@@ -409,7 +409,7 @@ struct ObjectClass
 struct Object
 {
     /*< private >*/
-    ObjectClass *class;
+    ObjectClass *class_;
     ObjectFree *free;
     QTAILQ_HEAD(, ObjectProperty) properties;
     uint32_t ref;
@@ -478,7 +478,7 @@ struct TypeInfo
     bool abstract;
 
     void *parent_type;
-    ObjectClass *class;
+    ObjectClass *class_;
 
     InterfaceInfo *interfaces;
 };
@@ -604,7 +604,7 @@ struct InterfaceClass
  *
  * Returns: The newly allocated and instantiated object.
  */
-Object *object_new(struct uc_struct *, const char *typename);
+Object *object_new(struct uc_struct *, const char *typename_);
 
 /**
  * object_initialize:
@@ -616,7 +616,7 @@ Object *object_new(struct uc_struct *, const char *typename);
  * have already been allocated.  The returned object has a reference count of 1,
  * and will be finalized when the last reference is dropped.
  */
-void object_initialize(struct uc_struct *uc, void *obj, size_t size, const char *typename);
+void object_initialize(struct uc_struct *uc, void *obj, size_t size, const char *typename_);
 
 /**
  * object_dynamic_cast:
@@ -628,7 +628,7 @@ void object_initialize(struct uc_struct *uc, void *obj, size_t size, const char 
  *
  * Returns: This function returns @obj on success or #NULL on failure.
  */
-Object *object_dynamic_cast(struct uc_struct *uc, Object *obj, const char *typename);
+Object *object_dynamic_cast(struct uc_struct *uc, Object *obj, const char *typename_);
 
 /**
  * object_dynamic_cast_assert:
@@ -639,7 +639,7 @@ Object *object_dynamic_cast(struct uc_struct *uc, Object *obj, const char *typen
  * This function is not meant to be called directly, but only through
  * the wrapper macro OBJECT_CHECK.
  */
-Object *object_dynamic_cast_assert(struct uc_struct *uc, Object *obj, const char *typename,
+Object *object_dynamic_cast_assert(struct uc_struct *uc, Object *obj, const char *typename_,
                                    const char *file, int line, const char *func);
 
 /**
@@ -692,7 +692,7 @@ Type type_register(struct uc_struct *uc, const TypeInfo *info);
  * the wrapper macros OBJECT_CLASS_CHECK and INTERFACE_CHECK.
  */
 ObjectClass *object_class_dynamic_cast_assert(struct uc_struct *uc, ObjectClass *klass,
-                                              const char *typename,
+                                              const char *typename_,
                                               const char *file, int line,
                                               const char *func);
 
@@ -711,7 +711,7 @@ ObjectClass *object_class_dynamic_cast_assert(struct uc_struct *uc, ObjectClass 
  * it.  (FIXME: perhaps this can be detected at type definition time?)
  */
 ObjectClass *object_class_dynamic_cast(struct uc_struct *uc, ObjectClass *klass,
-                                       const char *typename);
+                                       const char *typename_);
 
 /**
  * object_class_get_parent:
@@ -743,7 +743,7 @@ bool object_class_is_abstract(ObjectClass *klass);
  *
  * Returns: The class for @typename or %NULL if not found.
  */
-ObjectClass *object_class_by_name(struct uc_struct *uc, const char *typename);
+ObjectClass *object_class_by_name(struct uc_struct *uc, const char *typename_);
 
 void object_class_foreach(struct uc_struct *uc, void (*fn)(ObjectClass *klass, void *opaque),
                           const char *implements_type, bool include_abstract,
@@ -1034,7 +1034,7 @@ Object *object_resolve_path(struct uc_struct *uc, const char *path, bool *ambigu
  *
  * Returns: The matched object or NULL on path lookup failure.
  */
-Object *object_resolve_path_type(struct uc_struct *uc, const char *path, const char *typename,
+Object *object_resolve_path_type(struct uc_struct *uc, const char *path, const char *typename_,
                                  bool *ambiguous);
 
 /**

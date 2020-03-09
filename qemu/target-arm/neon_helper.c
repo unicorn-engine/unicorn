@@ -732,7 +732,7 @@ uint64_t HELPER(neon_rshl_s64)(uint64_t valop, uint64_t shiftop)
             val >>= 1;
         }
     } else {
-        val <<= shift;
+        val = ((uint64_t)val) << shift;
     }
     return val;
 }
@@ -867,7 +867,7 @@ uint64_t HELPER(neon_qshl_u64)(CPUARMState *env, uint64_t val, uint64_t shiftop)
     } else if (tmp < 0) { \
         dest = src1 >> -tmp; \
     } else { \
-        dest = src1 << tmp; \
+        dest = (uint32_t)src1 << tmp; \
         if ((dest >> tmp) != src1) { \
             SET_QC(); \
             dest = (uint32_t)(1 << (sizeof(src1) * 8 - 1)); \
@@ -1064,7 +1064,7 @@ uint64_t HELPER(neon_qrshl_u64)(CPUARMState *env, uint64_t val, uint64_t shiftop
     } else if (tmp < 0) { \
         dest = (src1 + (1 << (-1 - tmp))) >> -tmp; \
     } else { \
-        dest = src1 << tmp; \
+        dest = ((uint64_t)src1) << tmp; \
         if ((dest >> tmp) != src1) { \
             SET_QC(); \
             dest = (uint32_t)(1 << (sizeof(src1) * 8 - 1)); \
@@ -1170,7 +1170,7 @@ NEON_VOP(sub_u8, neon_u8, 4)
 NEON_VOP(sub_u16, neon_u16, 2)
 #undef NEON_FN
 
-#define NEON_FN(dest, src1, src2) dest = src1 * src2
+#define NEON_FN(dest, src1, src2) dest = (int64_t)src1 * src2
 NEON_VOP(mul_u8, neon_u8, 4)
 NEON_VOP(mul_u16, neon_u16, 2)
 #undef NEON_FN
@@ -1767,7 +1767,7 @@ uint64_t HELPER(neon_abdl_s64)(uint32_t a, uint32_t b)
 #define DO_MULL(dest, x, y, type1, type2) do { \
     type1 tmp_x = x; \
     type1 tmp_y = y; \
-    dest = (type2)((type2)tmp_x * (type2)tmp_y); \
+    dest = (type2)((int64_t)tmp_x * (int64_t)tmp_y); \
     } while(0)
 
 uint64_t HELPER(neon_mull_u8)(uint32_t a, uint32_t b)

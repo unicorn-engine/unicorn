@@ -852,9 +852,9 @@ static inline uint64_t helper_extrq(uint64_t src, int shift, int len)
     if (len == 0) {
         mask = ~0LL;
     } else {
-        mask = (1ULL << len) - 1;
+        mask = (1ULL << (len & 0x3f)) - 1;
     }
-    return (src >> shift) & mask;
+    return (src >> (shift & 0x3f)) & mask;
 }
 
 void helper_extrq_r(CPUX86State *env, XMMReg *d, XMMReg *s)
@@ -874,9 +874,9 @@ static inline uint64_t helper_insertq(uint64_t src, int shift, int len)
     if (len == 0) {
         mask = ~0ULL;
     } else {
-        mask = (1ULL << len) - 1;
+        mask = (1ULL << (len & 0x3f)) - 1;
     }
-    return (src & ~(mask << shift)) | ((src & mask) << shift);
+    return (src & ~(mask << (shift & 0x3f))) | ((src & mask) << (shift & 0x3f));
 }
 
 void helper_insertq_r(CPUX86State *env, XMMReg *d, XMMReg *s)
@@ -1417,7 +1417,7 @@ void glue(helper_phaddd, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 {
     d->L(0) = (int32_t)d->L(0) + (int32_t)d->L(1);
     XMM_ONLY(d->L(1) = (int32_t)d->L(2) + (int32_t)d->L(3));
-    d->L((1 << SHIFT) + 0) = (uint32_t)((int32_t)s->L(0) + (int32_t)s->L(1));
+    d->L((1 << SHIFT) + 0) = (uint32_t)((int32_t)s->L(0) + (uint32_t)s->L(1));
     XMM_ONLY(d->L(3) = (int32_t)s->L(2) + (int32_t)s->L(3));
 }
 
@@ -1469,8 +1469,8 @@ void glue(helper_phsubw, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 
 void glue(helper_phsubd, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 {
-    d->L(0) = (int32_t)d->L(0) - (int32_t)d->L(1);
-    XMM_ONLY(d->L(1) = (int32_t)d->L(2) - (int32_t)d->L(3));
+    d->L(0) = (int32_t)((int64_t)d->L(0) - (int64_t)d->L(1));
+    XMM_ONLY(d->L(1) = (int32_t)((int64_t)d->L(2) - (int64_t)d->L(3)));
     d->L((1 << SHIFT) + 0) = (uint32_t)((int32_t)s->L(0) - (int32_t)s->L(1));
     XMM_ONLY(d->L(3) = (int32_t)s->L(2) - (int32_t)s->L(3));
 }
@@ -1489,7 +1489,7 @@ void glue(helper_phsubsw, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 
 #define FABSB(_, x) (x > INT8_MAX  ? -(int8_t)x : x)
 #define FABSW(_, x) (x > INT16_MAX ? -(int16_t)x : x)
-#define FABSL(_, x) (x > INT32_MAX ? -(int32_t)x : x)
+#define FABSL(_, x) ((x > INT32_MAX && x != 0x80000000) ? -(int32_t)x : x)
 SSE_HELPER_B(helper_pabsb, FABSB)
 SSE_HELPER_W(helper_pabsw, FABSW)
 SSE_HELPER_L(helper_pabsd, FABSL)
@@ -1678,7 +1678,7 @@ SSE_HELPER_L(helper_pmaxsd, FMAXSD)
 SSE_HELPER_W(helper_pmaxuw, MAX)
 SSE_HELPER_L(helper_pmaxud, MAX)
 
-#define FMULLD(d, s) ((int32_t)d * (int32_t)s)
+#define FMULLD(d, s) ((int64_t)d * (int32_t)s)
 SSE_HELPER_L(helper_pmulld, FMULLD)
 
 void glue(helper_phminposuw, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
@@ -1941,7 +1941,7 @@ SSE_HELPER_Q(helper_pcmpgtq, FCMPGTQ)
 
 static inline int pcmp_elen(CPUX86State *env, int reg, uint32_t ctrl)
 {
-    int val;
+    unsigned int val;
 
     /* Presence of REX.W is indicated by a bit higher than 7 set */
     if (ctrl >> 8) {
@@ -1958,6 +1958,9 @@ static inline int pcmp_elen(CPUX86State *env, int reg, uint32_t ctrl)
         if (val > 16) {
             return 16;
         }
+    }
+    if (val == 0x80000000) {
+        val = 0;
     }
     return val;
 }
@@ -2037,10 +2040,14 @@ static inline unsigned pcmpxstrx(CPUX86State *env, Reg *d, Reg *s,
         }
         break;
     case 3:
+        if (validd == -1) {
+            res = (2 << upper) - 1;
+            break;
+        }
         for (j = valids - validd; j >= 0; j--) {
             res <<= 1;
             v = 1;
-            for (i = MIN(upper - j, validd); i >= 0; i--) {
+            for (i = validd; i >= 0; i--) {
                 v &= (pcmp_val(s, ctrl, i + j) == pcmp_val(d, ctrl, i));
             }
             res |= v;

@@ -28,7 +28,7 @@
 static void free_table(gpointer key, gpointer value, gpointer data)
 {
     TypeInfo *ti = (TypeInfo*) value;
-    g_free((void *) ti->class);
+    g_free((void *) ti->class_);
     g_free((void *) ti->name);
     g_free((void *) ti->parent);
     g_free((void *) ti);
@@ -101,6 +101,8 @@ const char *uc_strerror(uc_err code)
             return "Insufficient resource (UC_ERR_RESOURCE)";
         case UC_ERR_EXCEPTION:
             return "Unhandled CPU exception (UC_ERR_EXCEPTION)";
+        case UC_ERR_TIMEOUT:
+            return "Emulation timed out (UC_ERR_TIMEOUT)";
     }
 }
 
@@ -371,12 +373,13 @@ uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
 UNICORN_EXPORT
 uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
 {
+    int ret = UC_ERR_OK;
     if (uc->reg_write)
-        uc->reg_write(uc, (unsigned int *)ids, vals, count);
+        ret = uc->reg_write(uc, (unsigned int *)ids, vals, count);
     else
-        return -1;  // FIXME: need a proper uc_err
+        return UC_ERR_EXCEPTION;  // FIXME: need a proper uc_err
 
-    return UC_ERR_OK;
+    return ret;
 }
 
 
@@ -503,6 +506,7 @@ static void *_timeout_fn(void *arg)
 
     // timeout before emulation is done?
     if (!uc->emulation_done) {
+        uc->timed_out = true;
         // force emulation to stop
         uc_emu_stop(uc);
     }
@@ -534,6 +538,7 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     uc->invalid_error = UC_ERR_OK;
     uc->block_full = false;
     uc->emulation_done = false;
+    uc->timed_out = false;
 
     switch(uc->arch) {
         default:
@@ -630,6 +635,9 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
         // wait for the timer to finish
         qemu_thread_join(&uc->timer);
     }
+
+    if(uc->timed_out)
+        return UC_ERR_TIMEOUT;
 
     return uc->invalid_error;
 }
@@ -801,6 +809,8 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr, uint64_t addres
     uint32_t perms;
     uint64_t begin, end, chunk_end;
     size_t l_size, m_size, r_size;
+    RAMBlock *block = NULL;
+    bool prealloc = false;
 
     chunk_end = address + size;
 
@@ -817,9 +827,26 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr, uint64_t addres
         // impossible case
         return false;
 
-    backup = copy_region(uc, mr);
-    if (backup == NULL)
+    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
+        if (block->offset <= mr->addr && block->length >= (mr->end - mr->addr)) {
+            break;
+        }
+    }
+
+    if (block == NULL)
         return false;
+
+    // RAM_PREALLOC is not defined outside exec.c and I didn't feel like
+    // moving it
+	prealloc = !!(block->flags & 1);
+
+    if (block->flags & 1) {
+        backup = block->host;
+    } else {
+        backup = copy_region(uc, mr);
+        if (backup == NULL)
+            return false;
+    }
 
     // save the essential information required for the split before mr gets deleted
     perms = mr->perms;
@@ -853,31 +880,48 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr, uint64_t addres
     // allocation just failed so no guarantee that we can recover the original
     // allocation at this point
     if (l_size > 0) {
-        if (uc_mem_map(uc, begin, l_size, perms) != UC_ERR_OK)
-            goto error;
-        if (uc_mem_write(uc, begin, backup, l_size) != UC_ERR_OK)
-            goto error;
+        if (!prealloc) {
+            if (uc_mem_map(uc, begin, l_size, perms) != UC_ERR_OK)
+                goto error;
+            if (uc_mem_write(uc, begin, backup, l_size) != UC_ERR_OK)
+                goto error;
+        } else {
+            if (uc_mem_map_ptr(uc, begin, l_size, perms, backup) != UC_ERR_OK)
+                goto error;
+        }
     }
 
     if (m_size > 0 && !do_delete) {
-        if (uc_mem_map(uc, address, m_size, perms) != UC_ERR_OK)
-            goto error;
-        if (uc_mem_write(uc, address, backup + l_size, m_size) != UC_ERR_OK)
-            goto error;
+        if (!prealloc) {
+            if (uc_mem_map(uc, address, m_size, perms) != UC_ERR_OK)
+                goto error;
+            if (uc_mem_write(uc, address, backup + l_size, m_size) != UC_ERR_OK)
+                goto error;
+        } else {
+            if (uc_mem_map_ptr(uc, address, m_size, perms, backup + l_size) != UC_ERR_OK)
+                goto error;
+        }
     }
 
     if (r_size > 0) {
-        if (uc_mem_map(uc, chunk_end, r_size, perms) != UC_ERR_OK)
-            goto error;
-        if (uc_mem_write(uc, chunk_end, backup + l_size + m_size, r_size) != UC_ERR_OK)
-            goto error;
+        if (!prealloc) {
+            if (uc_mem_map(uc, chunk_end, r_size, perms) != UC_ERR_OK)
+                goto error;
+            if (uc_mem_write(uc, chunk_end, backup + l_size + m_size, r_size) != UC_ERR_OK)
+                goto error;
+        } else {
+            if (uc_mem_map_ptr(uc, chunk_end, r_size, perms, backup + l_size + m_size) != UC_ERR_OK)
+                goto error;
+        }
     }
 
-    free(backup);
+    if (!prealloc)
+        free(backup);
     return true;
 
 error:
-    free(backup);
+    if (!prealloc)
+        free(backup);
     return false;
 }
 
@@ -1263,6 +1307,12 @@ uc_err uc_free(void *mem)
 {
     g_free(mem);
     return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+size_t uc_context_size(uc_engine *uc)
+{
+    return cpu_context_size(uc->arch, uc->mode);
 }
 
 UNICORN_EXPORT

@@ -1,8 +1,7 @@
 language: c
 sudo: false
-before_install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew bundle; fi
-  - if [[ "$TRAVIS_OS_NAME" == "linux" ]]; then ./install-cmocka-linux.sh; fi
+env:
+  - PATH=$PATH:/usr/local/opt/binutils/bin
 script:
   - make && make -C bindings/go && make -C bindings/go test && make test
 compiler:
@@ -13,18 +12,30 @@ os:
   - osx
 matrix:
   include:
-    - if: branch = master
-      os: osx
-      script: brew install --HEAD unicorn && brew test unicorn
+    - name: 32bit
+      os: linux
       compiler: gcc
+      env: CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
+      script: make && make -C tests/unit test && make -C tests/regress test
+      addons:
+        apt:
+          packages:
+            - lib32ncurses5-dev
+            - lib32z1-dev
+            - libpthread-stubs0-dev
+            - lib32gcc-4.8-dev
+            - libc6-dev-i386
+            - gcc-multilib
+            - libcmocka-dev:i386
     - if: branch = master
+      name: brew HEAD
       os: osx
-      script: brew install --HEAD unicorn && brew test unicorn
-      compiler: clang
-  allow_failures:
-    - os: osx
       script: brew install --HEAD unicorn && brew test unicorn
 addons:
   apt:
     packages:
-    # mingw-w64 packages too old in precise
+      - libpthread-stubs0-dev
+      - libcmocka-dev
+  homebrew:
+    update: true
+    brewfile: true
