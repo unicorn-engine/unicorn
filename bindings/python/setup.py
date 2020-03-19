@@ -60,6 +60,7 @@ else:
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
+    MAC_LIBRARY_FILE = "libunicorn*.dylib"
     STATIC_LIBRARY_FILE = None
 elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
@@ -171,7 +172,11 @@ def build_libraries():
 
         subprocess.call(cmd, env=new_env)
 
-        shutil.copy(LIBRARY_FILE, LIBS_DIR)
+        if SYSTEM == 'darwin':
+            for file in glob.glob(MAC_LIBRARY_FILE):
+                shutil.copy(file, LIBS_DIR, follow_symlinks=False)
+        else:
+            shutil.copy(LIBRARY_FILE, LIBS_DIR)
         try:
             # static library may fail to build on windows if user doesn't have visual studio installed. this is fine.
             if STATIC_LIBRARY_FILE is not None:
