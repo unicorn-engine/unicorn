@@ -688,7 +688,7 @@ uint64_t HELPER(neon_shl_s64)(uint64_t valop, uint64_t shiftop)
     } else if (tmp < 0) { \
         dest = (src1 + (1 << (-1 - tmp))) >> -tmp; \
     } else { \
-        dest = src1 << tmp; \
+        dest = (uint64_t)src1 << tmp; \
     }} while (0)
 NEON_VOP(rshl_s8, neon_s8, 4)
 NEON_VOP(rshl_s16, neon_s16, 2)
