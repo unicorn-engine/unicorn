@@ -105,7 +105,7 @@ void helper_idivw_AX(CPUX86State *env, target_ulong t0)
     if (den == 0) {
         raise_exception(env, EXCP00_DIVZ);
     }
-    q = (num / den);
+    q = ((int64_t)num / den);
     if (q != (int16_t)q) {
         raise_exception(env, EXCP00_DIVZ);
     }
