@@ -71,3 +71,4 @@ Mohamed Osama: FreePascal/Delphi binding.
 Philippe Antoine (Catena cyber): fuzzing 
 Huitao Chen (chenhuitao) & KaiJern Lau (xwings): Cmake support
 Huitao Chen (chenhuitao) & KaiJern Lau (xwings): Python3 support for building
+Kevin Foo (chfl4gs): Travis-CI migration
