@@ -155,17 +155,7 @@ typedef _W64 unsigned int  uintptr_t;
 // sys/time.h compatibility
 #if defined(_MSC_VER)
 #include <sys/timeb.h>
-#include <winsock2.h>
 #include <windows.h>
-
-static int gettimeofday(struct timeval* t, void* timezone)
-{
-    struct _timeb timebuffer;
-    _ftime( &timebuffer );
-    t->tv_sec = (long)timebuffer.time;
-    t->tv_usec = 1000*timebuffer.millitm;
-    return 0;
-}
 #else
 #include <sys/time.h>
 #endif
