@@ -40,4 +40,17 @@ INITIALIZER(init_get_clock)
     }
     clock_freq = freq.QuadPart;
 }
+
+#else
+int use_rt_clock;
+
+INITIALIZER(init_get_clock)
+{
+    struct timespec ts;
+
+    use_rt_clock = 0;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+        use_rt_clock = 1;
+    }
+}
 #endif
