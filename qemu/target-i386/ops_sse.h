@@ -1499,7 +1499,7 @@ SSE_HELPER_W(helper_pmulhrsw, FMULHRSW)
 
 #define FSIGNB(d, s) (s <= INT8_MAX  ? s ? d : 0 : -(int8_t)d)
 #define FSIGNW(d, s) (s <= INT16_MAX ? s ? d : 0 : -(int16_t)d)
-#define FSIGNL(d, s) (s <= INT32_MAX ? s ? d : 0 : -(int32_t)d)
+#define FSIGNL(d, s) (s <= INT32_MAX ? s ? d && d != 0x80000000 : 0 : -(int32_t)d)
 SSE_HELPER_B(helper_psignb, FSIGNB)
 SSE_HELPER_W(helper_psignw, FSIGNW)
 SSE_HELPER_L(helper_psignd, FSIGNL)
