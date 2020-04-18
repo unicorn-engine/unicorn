@@ -1415,7 +1415,7 @@ void glue(helper_phaddw, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 
 void glue(helper_phaddd, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 {
-    d->L(0) = (int32_t)d->L(0) + (int32_t)d->L(1);
+    d->L(0) = (int64_t)d->L(0) + (int32_t)d->L(1);
     XMM_ONLY(d->L(1) = (int32_t)d->L(2) + (int32_t)d->L(3));
     d->L((1 << SHIFT) + 0) = (uint32_t)((int32_t)s->L(0) + (uint32_t)s->L(1));
     XMM_ONLY(d->L(3) = (int32_t)s->L(2) + (int32_t)s->L(3));
@@ -1471,7 +1471,7 @@ void glue(helper_phsubd, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 {
     d->L(0) = (int32_t)((int64_t)d->L(0) - (int64_t)d->L(1));
     XMM_ONLY(d->L(1) = (int32_t)((int64_t)d->L(2) - (int64_t)d->L(3)));
-    d->L((1 << SHIFT) + 0) = (uint32_t)((int32_t)s->L(0) - (int32_t)s->L(1));
+    d->L((1 << SHIFT) + 0) = (uint32_t)((int64_t)s->L(0) - (int64_t)s->L(1));
     XMM_ONLY(d->L(3) = (int32_t)s->L(2) - (int32_t)s->L(3));
 }
 
@@ -1499,7 +1499,7 @@ SSE_HELPER_W(helper_pmulhrsw, FMULHRSW)
 
 #define FSIGNB(d, s) (s <= INT8_MAX  ? s ? d : 0 : -(int8_t)d)
 #define FSIGNW(d, s) (s <= INT16_MAX ? s ? d : 0 : -(int16_t)d)
-#define FSIGNL(d, s) (s <= INT32_MAX ? s ? d : 0 : -(int32_t)d)
+#define FSIGNL(d, s) (s <= INT32_MAX ? s ? d && d != 0x80000000 : 0 : -(int32_t)d)
 SSE_HELPER_B(helper_psignb, FSIGNB)
 SSE_HELPER_W(helper_psignw, FSIGNW)
 SSE_HELPER_L(helper_psignd, FSIGNL)

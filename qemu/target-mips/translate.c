@@ -3394,7 +3394,7 @@ static void gen_r6_muldiv(DisasContext *ctx, int opc, int rd, int rs, int rt)
         {
             TCGv t2 = tcg_temp_new(tcg_ctx);
             TCGv t3 = tcg_temp_new(tcg_ctx);
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t2, t0, -1LL << 63);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t2, t0, -1ULL << 63);
             tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t3, t1, -1LL);
             tcg_gen_and_tl(tcg_ctx, t2, t2, t3);
             tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t3, t1, 0);
@@ -3411,7 +3411,7 @@ static void gen_r6_muldiv(DisasContext *ctx, int opc, int rd, int rs, int rt)
         {
             TCGv t2 = tcg_temp_new(tcg_ctx);
             TCGv t3 = tcg_temp_new(tcg_ctx);
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t2, t0, -1LL << 63);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t2, t0, -1ULL << 63);
             tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t3, t1, -1LL);
             tcg_gen_and_tl(tcg_ctx, t2, t2, t3);
             tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t3, t1, 0);
@@ -3574,7 +3574,7 @@ static void gen_muldiv(DisasContext *ctx, uint32_t opc,
         {
             TCGv t2 = tcg_temp_new(tcg_ctx);
             TCGv t3 = tcg_temp_new(tcg_ctx);
-            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t2, t0, -1LL << 63);
+            tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t2, t0, -1ULL << 63);
             tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t3, t1, -1LL);
             tcg_gen_and_tl(tcg_ctx, t2, t2, t3);
             tcg_gen_setcondi_tl(tcg_ctx, TCG_COND_EQ, t3, t1, 0);
@@ -3983,7 +3983,7 @@ static void gen_loongson_integer(DisasContext *ctx, uint32_t opc,
             tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[rd], 0);
             tcg_gen_br(tcg_ctx, l3);
             gen_set_label(tcg_ctx, l1);
-            tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t0, -1LL << 63, l2);
+            tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t0, -1ULL << 63, l2);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t1, -1LL, l2);
             tcg_gen_mov_tl(tcg_ctx, *cpu_gpr[rd], t0);
             tcg_gen_br(tcg_ctx, l3);
@@ -4014,7 +4014,7 @@ static void gen_loongson_integer(DisasContext *ctx, uint32_t opc,
             int l2 = gen_new_label(tcg_ctx);
             int l3 = gen_new_label(tcg_ctx);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_EQ, t1, 0, l1);
-            tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t0, -1LL << 63, l2);
+            tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t0, -1ULL << 63, l2);
             tcg_gen_brcondi_tl(tcg_ctx, TCG_COND_NE, t1, -1LL, l2);
             gen_set_label(tcg_ctx, l1);
             tcg_gen_movi_tl(tcg_ctx, *cpu_gpr[rd], 0);

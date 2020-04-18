@@ -6144,7 +6144,7 @@ static int disas_neon_data_insn(DisasContext *s, uint32_t insn)
                         val = 0;
                         for (n = 0; n < 4; n++) {
                             if (imm & (1 << (n + (pass & 1) * 4)))
-                                val |= 0xff << (n * 8);
+                                val |= 0xffU << (n * 8);
                         }
                         tcg_gen_movi_i32(tcg_ctx, tmp, val);
                     } else {
@@ -11127,7 +11127,7 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
         /* jump to the offset */
         val = (uint32_t)s->pc + 2;
         offset = ((int32_t)((uint32_t)insn << 24)) >> 24;
-        val += offset << 1;
+        val += (int32_t)((uint32_t)offset << 1);
         gen_jmp(s, val);
         break;
 
@@ -11140,7 +11140,7 @@ static void disas_thumb_insn(CPUARMState *env, DisasContext *s) // qq
         /* unconditional branch */
         val = (uint32_t)s->pc;
         offset = ((int32_t)((uint32_t)insn << 21)) >> 21;
-        val += (offset << 1) + 2;
+        val += (int32_t)((uint32_t)offset << 1) + 2;
         gen_jmp(s, val);
         break;
 

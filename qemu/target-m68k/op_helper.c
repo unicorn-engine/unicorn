@@ -210,8 +210,8 @@ void HELPER(divs)(CPUM68KState *env, uint32_t word)
     if (den == 0) {
         raise_exception(env, EXCP_DIV0);
     }
-    quot = num / den;
-    rem = num % den;
+    quot = (int64_t)num / den;
+    rem = (int64_t)num % den;
     flags = 0;
     if (word && quot != (int16_t)quot)
         flags |= CCF_V;
