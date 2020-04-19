@@ -17,121 +17,51 @@ UNAME_S := $(shell uname -s)
 # If you want to use 16 job threads, use "-j16".
 SMP_MFLAGS := -j4
 
-UC_TARGET_OBJ = $(shell for i in \
-    $$(grep 'obj-' qemu/Makefile.objs | \
+UC_GET_OBJ = $(shell for i in \
+    $$(grep '$(1)' $(2) | \
     grep '\.o' | cut -d '=' -f 2); do \
     echo $$i | grep '\.o' > /dev/null 2>&1; \
     if [ $$? = 0 ]; then \
-    if [ $$i != "../uc.o" -a $$i != "../list.o" ]; then \
-    echo " qemu/"$$i; \
-    fi; fi; done; echo)
+    echo '$(3)'$$i; \
+    fi; done; echo)
 
-UC_TARGET_OBJ += $(shell for i in \
-    $$(grep 'obj-' qemu/hw/core/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/hw/core/"$$i; done; echo)
+UC_TARGET_OBJ = $(filter-out qemu/../%,$(call UC_GET_OBJ,obj-,qemu/Makefile.objs, qemu/))
+UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-,qemu/hw/core/Makefile.objs, qemu/hw/core/)
+UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-,qemu/qapi/Makefile.objs, qemu/qapi/)
+UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-,qemu/qobject/Makefile.objs, qemu/qobject/)
+UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-,qemu/qom/Makefile.objs, qemu/qom/)
+UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-y,qemu/util/Makefile.objs, qemu/util/)
+UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-$$(CONFIG_POSIX),qemu/util/Makefile.objs, qemu/util/)
 
-UC_TARGET_OBJ += $(shell for i in \
-    $$(grep 'obj-' qemu/qapi/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/qapi/"$$i; done; echo)
+UC_TARGET_OBJ_X86 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/x86_64-softmmu/)
+UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/hw/i386/Makefile.objs, qemu/x86_64-softmmu/hw/i386/)
+UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/hw/intc/Makefile.objs, qemu/x86_64-softmmu/hw/intc/)
+UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/target-i386/Makefile.objs, qemu/x86_64-softmmu/target-i386/)
 
-UC_TARGET_OBJ += $(shell for i in \
-    $$(grep 'obj-' qemu/qobject/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/qobject/"$$i; done; echo)
-
-UC_TARGET_OBJ += $(shell for i in \
-    $$(grep 'obj-' qemu/qom/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/qom/"$$i; done; echo)
-
-UC_TARGET_OBJ += $(shell for i in \
-    $$(grep 'obj-' qemu/util/Makefile.objs | \
-    grep -v '(CONFIG_WIN32)' | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/util/"$$i; done; echo)
-
-UC_TARGET_OBJ_X86 = $(shell for i in \
-    $$(grep 'obj-' qemu/Makefile.target | grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/x86_64-softmmu/"$$i; done; echo)
-
-UC_TARGET_OBJ_X86 += $(shell for i in \
-    $$(grep 'obj-' qemu/hw/i386/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/x86_64-softmmu/hw/i386/"$$i; done; echo)
-
-UC_TARGET_OBJ_X86 += $(shell for i in \
-    $$(grep 'obj-' qemu/hw/intc/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/x86_64-softmmu/hw/intc/"$$i; done; echo)
-
-UC_TARGET_OBJ_X86 += $(shell for i in \
-    $$(grep 'obj-' qemu/target-i386/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/x86_64-softmmu/target-i386/"$$i; done; echo)
-
-UC_TARGET_OBJ_ARM = $(shell for i in \
-    $$(grep 'obj-' qemu/Makefile.target | grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/arm-softmmu/"$$i; done; echo)
-
-UC_TARGET_OBJ_ARM += $(shell for i in \
-    $$(grep 'obj-' qemu/hw/arm/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/arm-softmmu/hw/arm/"$$i; done; echo)
-
-UC_TARGET_OBJ_ARM += $(shell for i in \
-    $$(grep 'obj-' qemu/target-arm/Makefile.objs | \
-    grep -v '(TARGET_AARCH64)' | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/arm-softmmu/target-arm/"$$i; done; echo)
+UC_TARGET_OBJ_ARM = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/arm-softmmu/)
+UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-,qemu/hw/arm/Makefile.objs, qemu/arm-softmmu/hw/arm/)
+UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-y,qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
+UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-$$(CONFIG_SOFTMMU),qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
+UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-$$(TARGET_ARM),qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
 
 UC_TARGET_OBJ_ARMEB = $(subst /arm-softmmu/,/armeb-softmmu/,$(UC_TARGET_OBJ_ARM))
 
-UC_TARGET_OBJ_M68K = $(shell for i in \
-    $$(grep 'obj-' qemu/Makefile.target | grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/m68k-softmmu/"$$i; done; echo)
+UC_TARGET_OBJ_M68K = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/m68k-softmmu/)
+UC_TARGET_OBJ_M68K += $(call UC_GET_OBJ,obj-,qemu/hw/m68k/Makefile.objs, qemu/m68k-softmmu/hw/m68k/)
+UC_TARGET_OBJ_M68K += $(call UC_GET_OBJ,obj-,qemu/target-m68k/Makefile.objs, qemu/m68k-softmmu/target-m68k/)
 
-UC_TARGET_OBJ_M68K += $(shell for i in \
-    $$(grep 'obj-' qemu/hw/m68k/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/m68k-softmmu/hw/m68k/"$$i; done; echo)
-
-UC_TARGET_OBJ_M68K += $(shell for i in \
-    $$(grep 'obj-' qemu/target-m68k/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/m68k-softmmu/target-m68k/"$$i; done; echo)
-
-UC_TARGET_OBJ_AARCH64 = $(shell for i in \
-    $$(grep 'obj-' qemu/Makefile.target | grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/aarch64-softmmu/"$$i; done; echo)
-
-UC_TARGET_OBJ_AARCH64 += $(shell for i in \
-    $$(grep 'obj-' qemu/hw/arm/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/aarch64-softmmu/hw/arm/"$$i; done; echo)
-
-UC_TARGET_OBJ_AARCH64 += $(shell for i in \
-    $$(grep 'obj-' qemu/target-arm/Makefile.objs | \
-    grep -v '(TARGET_ARM)' | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/aarch64-softmmu/target-arm/"$$i; done; echo)
+UC_TARGET_OBJ_AARCH64 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/aarch64-softmmu/)
+UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-,qemu/hw/arm/Makefile.objs, qemu/aarch64-softmmu/hw/arm/)
+UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-y,qemu/target-arm/Makefile.objs, qemu/aarch64-softmmu/target-arm/)
+UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-$$(CONFIG_SOFTMMU),qemu/target-arm/Makefile.objs, qemu/aarch64-softmmu/target-arm/)
+UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-$$(TARGET_AARCH64),qemu/target-arm/Makefile.objs, qemu/aarch64-softmmu/target-arm/)
 
 UC_TARGET_OBJ_AARCH64EB = $(subst /aarch64-softmmu/,/aarch64eb-softmmu/,$(UC_TARGET_OBJ_AARCH64))
 
-UC_TARGET_OBJ_MIPS = $(shell for i in \
-    $$(grep 'obj-' qemu/Makefile.target | grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/mips-softmmu/"$$i; done; echo)
 
-UC_TARGET_OBJ_MIPS += $(shell for i in \
-    $$(grep 'obj-' qemu/hw/mips/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/mips-softmmu/hw/mips/"$$i; done; echo)
-
-UC_TARGET_OBJ_MIPS += $(shell for i in \
-    $$(grep 'obj-' qemu/target-mips/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/mips-softmmu/target-mips/"$$i; done; echo)
+UC_TARGET_OBJ_MIPS = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/mips-softmmu/)
+UC_TARGET_OBJ_MIPS += $(call UC_GET_OBJ,obj-,qemu/hw/mips/Makefile.objs, qemu/mips-softmmu/hw/mips/)
+UC_TARGET_OBJ_MIPS += $(call UC_GET_OBJ,obj-,qemu/target-mips/Makefile.objs, qemu/mips-softmmu/target-mips/)
 
 UC_TARGET_OBJ_MIPSEL = $(subst /mips-softmmu/,/mipsel-softmmu/,$(UC_TARGET_OBJ_MIPS))
 
@@ -139,35 +69,15 @@ UC_TARGET_OBJ_MIPS64 = $(subst /mips-softmmu/,/mips64-softmmu/,$(UC_TARGET_OBJ_M
 
 UC_TARGET_OBJ_MIPS64EL = $(subst /mips-softmmu/,/mips64el-softmmu/,$(UC_TARGET_OBJ_MIPS))
 
-UC_TARGET_OBJ_SPARC = $(shell for i in \
-    $$(grep 'obj-' qemu/Makefile.target | grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/sparc-softmmu/"$$i; done; echo)
+UC_TARGET_OBJ_SPARC = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/sparc-softmmu/)
+UC_TARGET_OBJ_SPARC += $(call UC_GET_OBJ,obj-,qemu/hw/sparc/Makefile.objs, qemu/sparc-softmmu/hw/sparc/)
+UC_TARGET_OBJ_SPARC += $(call UC_GET_OBJ,obj-y,qemu/target-sparc/Makefile.objs, qemu/sparc-softmmu/target-sparc/)
+UC_TARGET_OBJ_SPARC += $(call UC_GET_OBJ,obj-$$(TARGET_SPARC),qemu/target-sparc/Makefile.objs, qemu/sparc-softmmu/target-sparc/)
 
-UC_TARGET_OBJ_SPARC += $(shell for i in \
-    $$(grep 'obj-' qemu/hw/sparc/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/sparc-softmmu/hw/sparc/"$$i; done; echo)
-
-UC_TARGET_OBJ_SPARC += $(shell for i in \
-    $$(grep 'obj-' qemu/target-sparc/Makefile.objs | \
-    grep -v '(TARGET_SPARC64)' | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/sparc-softmmu/target-sparc/"$$i; done; echo)
-
-UC_TARGET_OBJ_SPARC64 = $(shell for i in \
-    $$(grep 'obj-' qemu/Makefile.target | grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/sparc64-softmmu/"$$i; done; echo)
-
-UC_TARGET_OBJ_SPARC64 += $(shell for i in \
-    $$(grep 'obj-' qemu/hw/sparc64/Makefile.objs | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/sparc64-softmmu/hw/sparc64/"$$i; done; echo)
-
-UC_TARGET_OBJ_SPARC64 += $(shell for i in \
-    $$(grep 'obj-' qemu/target-sparc/Makefile.objs | \
-    grep -v '(TARGET_SPARC)' | \
-    grep '\.o' | cut -d '=' -f 2); \
-    do echo -n " qemu/sparc64-softmmu/target-sparc/"$$i; done; echo)
+UC_TARGET_OBJ_SPARC64 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/sparc64-softmmu/)
+UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-,qemu/hw/sparc64/Makefile.objs, qemu/sparc64-softmmu/hw/sparc64/)
+UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-y,qemu/target-sparc/Makefile.objs, qemu/sparc64-softmmu/target-sparc/)
+UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-$$(TARGET_SPARC64),qemu/target-sparc/Makefile.objs, qemu/sparc64-softmmu/target-sparc/)
 
 ifneq (,$(findstring x86,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_X86)
@@ -498,8 +408,6 @@ clean:
 	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll $(LIBNAME)*.a $(LIBNAME)*.def $(LIBNAME)*.exp cyg$(LIBNAME)*.dll
 	$(MAKE) -C samples clean
 	$(MAKE) -C tests/unit clean
-	rm -f config.log
-	rm -rf bindings/python/unicorn/__pycache__/
 
 
 define generate-pkgcfg

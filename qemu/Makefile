@@ -170,7 +170,7 @@ clean:
 distclean: clean
 	rm -f config-host.mak config-host.h* config-host.ld qemu-img-cmds.texi qemu-monitor.texi
 	rm -f config-all-devices.mak config-all-disas.mak
-	rm -f config.log config.status
+	rm -f config.log
 	for d in $(TARGET_DIRS); do \
 	rm -rf $$d || exit 1 ; \
         done
