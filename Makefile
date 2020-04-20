@@ -281,7 +281,7 @@ endif
 
 $(LIBNAME)_LDFLAGS += -lm
 
-.PHONY: test fuzz FORCE
+.PHONY: test fuzz bindings clean FORCE
 
 all: unicorn
 	$(MAKE) -C samples
@@ -420,4 +420,3 @@ endef
 define log
 	@printf "  %-7s %s\n" "$(1)" "$(2)"
 endef
-
