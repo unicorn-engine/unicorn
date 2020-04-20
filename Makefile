@@ -58,7 +58,6 @@ UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-$$(TARGET_AARCH64),qemu/target-ar
 
 UC_TARGET_OBJ_AARCH64EB = $(subst /aarch64-softmmu/,/aarch64eb-softmmu/,$(UC_TARGET_OBJ_AARCH64))
 
-
 UC_TARGET_OBJ_MIPS = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/mips-softmmu/)
 UC_TARGET_OBJ_MIPS += $(call UC_GET_OBJ,obj-,qemu/hw/mips/Makefile.objs, qemu/mips-softmmu/hw/mips/)
 UC_TARGET_OBJ_MIPS += $(call UC_GET_OBJ,obj-,qemu/target-mips/Makefile.objs, qemu/mips-softmmu/target-mips/)
@@ -126,11 +125,7 @@ ifneq (,$(findstring sparc,$(UNICORN_ARCHS)))
 	UNICORN_TARGETS += sparc-softmmu,sparc64-softmmu,
 endif
 
-UC_TARGET_OBJ += list.o
-
-UC_TARGET_OBJ_LAST = uc.o
-
-UC_TARGET_OBJ_ALL = $(UC_TARGET_OBJ) $(UC_TARGET_OBJ_LAST)
+UC_OBJ_ALL = $(UC_TARGET_OBJ) list.o uc.o
 
 UNICORN_CFLAGS += -fPIC
 
@@ -296,22 +291,22 @@ qemu/config-host.mak: qemu/configure
 	./configure --cc="${CC}" --extra-cflags="$(UNICORN_CFLAGS)" --target-list="$(UNICORN_TARGETS)" ${UNICORN_QEMU_FLAGS}
 	printf "$(UNICORN_ARCHS)" > config.log
 
-$(UC_TARGET_OBJ_LAST): qemu/config-host.mak FORCE
+uc.o: qemu/config-host.mak FORCE
 	$(MAKE) -C qemu $(SMP_MFLAGS)
 
-$(UC_TARGET_OBJ): $(UC_TARGET_OBJ_LAST)
+$(UC_TARGET_OBJ) list.o: uc.o
 	@echo "--- $^ $@" > /dev/null
 
 unicorn: $(LIBRARY) $(ARCHIVE)
 
-$(LIBRARY): $(UC_TARGET_OBJ_ALL)
+$(LIBRARY): $(UC_OBJ_ALL)
 ifeq ($(UNICORN_SHARED),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(LIBRARY))
-	@$(CC) $(CFLAGS) -shared $(UC_TARGET_OBJ_ALL) -o $(LIBRARY) $($(LIBNAME)_LDFLAGS)
+	@$(CC) $(CFLAGS) -shared $(UC_OBJ_ALL) -o $(LIBRARY) $($(LIBNAME)_LDFLAGS)
 	@-ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
 else
-	$(CC) $(CFLAGS) -shared $(UC_TARGET_OBJ_ALL) -o $(LIBRARY) $($(LIBNAME)_LDFLAGS)
+	$(CC) $(CFLAGS) -shared $(UC_OBJ_ALL) -o $(LIBRARY) $($(LIBNAME)_LDFLAGS)
 	-ln -sf $(LIBRARY) $(LIBRARY_SYMLINK)
 endif
 ifeq ($(DO_WINDOWS_EXPORT),1)
@@ -323,14 +318,14 @@ endif
 endif
 endif
 
-$(ARCHIVE): $(UC_TARGET_OBJ_ALL)
+$(ARCHIVE): $(UC_OBJ_ALL)
 ifeq ($(UNICORN_STATIC),yes)
 ifeq ($(V),0)
 	$(call log,GEN,$(ARCHIVE))
-	@$(AR) q $(ARCHIVE) $(UC_TARGET_OBJ_ALL)
+	@$(AR) q $(ARCHIVE) $(UC_OBJ_ALL)
 	@$(RANLIB) $(ARCHIVE)
 else
-	$(AR) q $(ARCHIVE) $(UC_TARGET_OBJ_ALL)
+	$(AR) q $(ARCHIVE) $(UC_OBJ_ALL)
 	$(RANLIB) $(ARCHIVE)
 endif
 endif
