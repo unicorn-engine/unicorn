@@ -176,6 +176,8 @@ matrix:
           - /C/tools/msys64
       script:
         - $shell make; cp unicorn.dll /C/Windows/System32/; $shell make test
+  allow_failures:
+    - os: osx
 addons:
   apt:
     packages:
