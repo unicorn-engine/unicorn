@@ -17,6 +17,25 @@ UNAME_S := $(shell uname -s)
 # If you want to use 16 job threads, use "-j16".
 SMP_MFLAGS := -j4
 
+ifeq ($(UNICORN_ASAN),yes)
+CC = clang -fsanitize=address -fno-omit-frame-pointer
+CXX = clang++ -fsanitize=address -fno-omit-frame-pointer
+AR = llvm-ar
+LDFLAGS := -fsanitize=address ${LDFLAGS}
+endif
+
+ifeq ($(CROSS),)
+CC ?= cc
+AR ?= ar
+RANLIB ?= ranlib
+STRIP ?= strip
+else
+CC = $(CROSS)-gcc
+AR = $(CROSS)-ar
+RANLIB = $(CROSS)-ranlib
+STRIP = $(CROSS)-strip
+endif
+
 IS_WIN32 = $(shell $(CC) -dM -E - < /dev/null | grep '_WIN32'; \
     if [ $$? = 0 ]; then echo yes; \
     else echo no; fi)
@@ -148,25 +167,6 @@ CFLAGS += -g
 else
 CFLAGS += -O3
 UNICORN_QEMU_FLAGS += --disable-debug-info
-endif
-
-ifeq ($(UNICORN_ASAN),yes)
-CC = clang -fsanitize=address -fno-omit-frame-pointer
-CXX = clang++ -fsanitize=address -fno-omit-frame-pointer
-AR = llvm-ar
-LDFLAGS := -fsanitize=address ${LDFLAGS}
-endif
-
-ifeq ($(CROSS),)
-CC ?= cc
-AR ?= ar
-RANLIB ?= ranlib
-STRIP ?= strip
-else
-CC = $(CROSS)-gcc
-AR = $(CROSS)-ar
-RANLIB = $(CROSS)-ranlib
-STRIP = $(CROSS)-strip
 endif
 
 ifeq ($(PKG_EXTRA),)
