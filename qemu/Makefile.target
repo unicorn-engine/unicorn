@@ -15,8 +15,6 @@ QEMU_PROG=qemu-system-$(TARGET_NAME)$(EXESUF)
 ifneq (,$(findstring -mwindows,$(libs_softmmu)))
 # Terminate program name with a 'w' because the linker builds a windows executable.
 QEMU_PROGW=qemu-system-$(TARGET_NAME)w$(EXESUF)
-$(QEMU_PROG): $(QEMU_PROGW)
-	$(call quiet-command,$(OBJCOPY) --subsystem console $(QEMU_PROGW) $(QEMU_PROG),"  GEN   $(TARGET_DIR)$(QEMU_PROG)")
 QEMU_PROG_BUILD = $(QEMU_PROGW)
 else
 QEMU_PROG_BUILD = $(QEMU_PROG)
@@ -28,9 +26,6 @@ config-target.h: config-target.h-timestamp
 config-target.h-timestamp: config-target.mak
 
 all: $(PROGS)
-
-# Dummy command so that make thinks it has done something
-	@true
 
 #########################################################
 # cpu emulator library
