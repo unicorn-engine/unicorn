@@ -20,7 +20,6 @@ endif
 endif
 
 CONFIG_SOFTMMU := $(if $(filter %-softmmu,$(TARGET_DIRS)),y)
-CONFIG_USER_ONLY := $(if $(filter %-user,$(TARGET_DIRS)),y)
 CONFIG_ALL=y
 -include config-all-devices.mak
 
@@ -52,7 +51,7 @@ GENERATED_SOURCES += qapi-types.c qapi-visit.c
 Makefile: ;
 configure: ;
 
-.PHONY: all clean cscope distclean install recurse-all
+.PHONY: all clean cscope distclean recurse-all
 
 $(call set-vpath, $(SRC_PATH))
 
@@ -109,7 +108,7 @@ dummy := $(call unnest-vars,, \
                 common-obj-y \
                 common-obj-m)
 
-all: $(TOOLS) $(HELPERS-y) recurse-all modules
+all: $(HELPERS-y) recurse-all modules
 
 config-host.h: config-host.h-timestamp
 config-host.h-timestamp: config-host.mak
@@ -157,7 +156,7 @@ clean:
 # avoid old build problems by removing potentially incorrect old files
 	rm -f config.mak op-i386.h opc-i386.h gen-op-i386.h op-arm.h opc-arm.h gen-op-arm.h
 	find . \( -name '*.l[oa]' -o -name '*.so' -o -name '*.dll' -o -name '*.mo' -o -name '*.[oda]' \) -type f -exec rm {} +
-	rm -f $(filter-out %.tlb,$(TOOLS)) $(HELPERS-y) qemu-ga TAGS cscope.* *.pod *~ */*~
+	rm -f $(HELPERS-y) TAGS cscope.* *.pod *~ */*~
 	rm -rf .libs */.libs
 	@# May not be present in GENERATED_HEADERS
 	rm -f $(foreach f,$(GENERATED_HEADERS),$(f) $(f)-timestamp)
