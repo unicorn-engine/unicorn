@@ -174,7 +174,10 @@ def build_libraries():
 
         if SYSTEM == 'darwin':
             for file in glob.glob(MAC_LIBRARY_FILE):
-                shutil.copy(file, LIBS_DIR, follow_symlinks=False)
+                try:
+                    shutil.copy(file, LIBS_DIR, follow_symlinks=False)
+                except:
+                    shutil.copy(file, LIBS_DIR)
         else:
             shutil.copy(LIBRARY_FILE, LIBS_DIR)
         try:
