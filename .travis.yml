@@ -24,7 +24,9 @@ matrix:
     - name: "Linux 32bit"
       os: linux
       compiler: gcc
-      env: CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
+      env: 
+        - CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
+        - PATH=$PATH:/usr/local/opt/binutils/bin
       script: make && make -C tests/unit test && make -C tests/regress test
       addons:
         apt:
@@ -36,6 +38,41 @@ matrix:
             - libc6-dev-i386
             - gcc-multilib
             - libcmocka-dev:i386
+
+    - name: "Linux Cmake 32bit"
+      os: linux
+      compiler: gcc
+      env: 
+        - CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
+        - PATH=$PATH:/usr/local/opt/binutils/bin
+      script:
+        - mkdir build
+        - cd build
+        - ../cmake.sh x86
+        - cp libunicorn.* ../
+        - make -C ../tests/unit test && make -C ../tests/regress test
+      addons:
+        apt:
+          packages:
+            - lib32ncurses5-dev
+            - lib32z1-dev
+            - libpthread-stubs0-dev
+            - lib32gcc-4.8-dev
+            - libc6-dev-i386
+            - gcc-multilib
+            - libcmocka-dev:i386
+
+    - name: "Linux Cmake 64bit"
+      os: linux
+      compiler: gcc
+      env:
+        - PATH=$PATH:/usr/local/opt/binutils/bin
+      script:
+        - mkdir build
+        - cd build
+        - ../cmake.sh
+        - cp libunicorn.* ../
+        - make -C ../tests/unit test && make -C ../tests/regress test
 
     - name: "MacOSX brew"
       os: osx
