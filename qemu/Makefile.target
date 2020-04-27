@@ -52,7 +52,7 @@ dummy := $(call unnest-vars,..,util-obj-y)
 
 target-obj-y-save := $(target-obj-y) $(util-obj-y)
 
-dummy := $(call unnest-vars,..,common-obj-y,common-obj-m)
+dummy := $(call unnest-vars,..,common-obj-y)
 
 target-obj-y := $(target-obj-y-save)
 all-obj-y += $(common-obj-y)
