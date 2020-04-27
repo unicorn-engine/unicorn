@@ -12,20 +12,11 @@ QEMU_CFLAGS+=-I$(SRC_PATH)/include
 
 # system emulator name
 QEMU_PROG=qemu-system-$(TARGET_NAME)$(EXESUF)
-ifneq (,$(findstring -mwindows,$(libs_softmmu)))
-# Terminate program name with a 'w' because the linker builds a windows executable.
-QEMU_PROGW=qemu-system-$(TARGET_NAME)w$(EXESUF)
-QEMU_PROG_BUILD = $(QEMU_PROGW)
-else
-QEMU_PROG_BUILD = $(QEMU_PROG)
-endif
-
-PROGS=$(QEMU_PROG) $(QEMU_PROGW)
 
 config-target.h: config-target.h-timestamp
 config-target.h-timestamp: config-target.mak
 
-all: $(PROGS)
+all: $(QEMU_PROG)
 
 #########################################################
 # cpu emulator library
@@ -40,7 +31,6 @@ obj-y += cpus.o ioport.o
 obj-y += hw/
 obj-y += memory.o cputlb.o
 obj-y += memory_mapping.o
-LIBS+=$(libs_softmmu)
 
 # Hardware support
 ifeq ($(TARGET_NAME), sparc64)
@@ -83,10 +73,10 @@ endif
 endif
 
 # build either PROG or PROGW
-$(QEMU_PROG_BUILD): $(all-obj-y)
+$(QEMU_PROG): $(all-obj-y)
 
 clean:
-	rm -f *.a *~ $(PROGS)
+	rm -f *.a *~ $(QEMU_PROG)
 	rm -f $(shell find . -name '*.[od]')
 
 GENERATED_HEADERS += config-target.h
