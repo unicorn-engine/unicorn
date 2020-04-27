@@ -36,7 +36,6 @@ obj-y += target-$(TARGET_BASE_ARCH)/
 
 #########################################################
 # System emulator target
-ifdef CONFIG_SOFTMMU
 obj-y += cpus.o ioport.o
 obj-y += hw/
 obj-y += memory.o cputlb.o
@@ -49,8 +48,6 @@ obj-y += hw/sparc64/
 else
 obj-y += hw/$(TARGET_BASE_ARCH)/
 endif
-
-endif # CONFIG_SOFTMMU
 
 # Workaround for http://gcc.gnu.org/PR55489, see configure.
 %/translate.o: QEMU_CFLAGS += $(TRANSLATE_OPT_CFLAGS)
