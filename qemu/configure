@@ -1216,11 +1216,6 @@ echo "CFLAGS=$CFLAGS" >> $config_host_mak
 echo "CFLAGS_NOPIE=$CFLAGS_NOPIE" >> $config_host_mak
 echo "QEMU_CFLAGS=$QEMU_CFLAGS" >> $config_host_mak
 echo "QEMU_INCLUDES=$QEMU_INCLUDES" >> $config_host_mak
-if test "$cross_prefix" != ""; then
-  echo "AUTOCONF_HOST := --host=${cross_prefix%-}"     >> $config_host_mak
-else
-  echo "AUTOCONF_HOST := "                             >> $config_host_mak
-fi
 echo "LDFLAGS=$LDFLAGS" >> $config_host_mak
 echo "LDFLAGS_NOPIE=$LDFLAGS_NOPIE" >> $config_host_mak
 echo "LIBS+=$LIBS" >> $config_host_mak
