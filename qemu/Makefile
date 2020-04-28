@@ -90,11 +90,6 @@ $(SUBDIR_RULES): qapi-types.c qapi-types.h qapi-visit.c qapi-visit.h $(common-ob
 recurse-all: $(SUBDIR_RULES)
 
 ######################################################################
-# Build libraries
-
-util/module.o-cflags = -D'CONFIG_BLOCK_MODULES=$(block-modules)'
-
-######################################################################
 
 gen-out-type = $(subst .,-,$(suffix $@))
 
