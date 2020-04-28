@@ -72,7 +72,7 @@ endif
 
 dummy := $(call unnest-vars,,util-obj-y common-obj-y)
 
-all: $(HELPERS-y) recurse-all modules
+all: recurse-all
 
 config-host.h: config-host.h-timestamp
 config-host.h-timestamp: config-host.mak
@@ -86,8 +86,6 @@ subdir-%:
 	$(call quiet-command,$(MAKE) $(SUBDIR_MAKEFLAGS) -C $* V="$(V)" TARGET_DIR="$*/" all,)
 
 $(SUBDIR_RULES): qapi-types.c qapi-types.h qapi-visit.c qapi-visit.h $(common-obj-y) $(util-obj-y)
-
-ALL_SUBDIRS=$(TARGET_DIRS)
 
 recurse-all: $(SUBDIR_RULES)
 
@@ -116,27 +114,22 @@ $(qapi-modules) $(SRC_PATH)/scripts/qapi-visit.py $(qapi-py)
 		"  GEN   $@")
 
 clean:
-# avoid old build problems by removing potentially incorrect old files
-	rm -f config.mak op-i386.h opc-i386.h gen-op-i386.h op-arm.h opc-arm.h gen-op-arm.h
 	find . \( -name '*.l[oa]' -o -name '*.so' -o -name '*.dll' -o -name '*.mo' -o -name '*.[oda]' \) -type f -exec rm {} +
-	rm -f $(HELPERS-y) TAGS cscope.* *.pod *~ */*~
-	rm -rf .libs */.libs
+	rm -f TAGS cscope.* *~ */*~
 	@# May not be present in GENERATED_HEADERS
 	rm -f $(foreach f,$(GENERATED_HEADERS),$(f) $(f)-timestamp)
 	rm -f $(foreach f,$(GENERATED_SOURCES),$(f) $(f)-timestamp)
-	rm -rf qapi-generated
-	for d in $(ALL_SUBDIRS); do \
+	for d in $(TARGET_DIRS); do \
 	if test -d $$d; then $(MAKE) -C $$d $@ || exit 1; fi; \
         done
 
 distclean: clean
-	rm -f config-host.mak config-host.h* config-host.ld qemu-img-cmds.texi qemu-monitor.texi
-	rm -f config-all-devices.mak config-all-disas.mak
+	rm -f config-host.mak config-host.h*
+	rm -f config-all-devices.mak
 	rm -f config.log
 	for d in $(TARGET_DIRS); do \
 	rm -rf $$d || exit 1 ; \
         done
-	rm -Rf .sdk
 
 
 cscope:
