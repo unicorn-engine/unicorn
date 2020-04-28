@@ -122,6 +122,15 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     ret = cpu->exception_index;
                     break;
 #else
+#if defined(TARGET_X86_64)
+                    if (env->exception_is_int) {
+                        // point EIP to the next instruction after INT
+                        env->eip = env->exception_next_eip;
+                    }
+#endif
+#if defined(TARGET_MIPS) || defined(TARGET_MIPS64)
+                    env->active_tc.PC = uc->next_pc;
+#endif
                     if (uc->stop_interrupt && uc->stop_interrupt(cpu->exception_index)) {
                         // Unicorn: call registered invalid instruction callbacks
                         HOOK_FOREACH_VAR_DECLARE;
@@ -151,15 +160,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     }
 
                     cpu->exception_index = -1;
-#if defined(TARGET_X86_64)
-                    if (env->exception_is_int) {
-                        // point EIP to the next instruction after INT
-                        env->eip = env->exception_next_eip;
-                    }
-#endif
-#if defined(TARGET_MIPS) || defined(TARGET_MIPS64)
-                    env->active_tc.PC = uc->next_pc;
-#endif
 #endif
                 }
             }
