@@ -42,7 +42,7 @@ GENERATED_SOURCES += qapi-types.c qapi-visit.c
 Makefile: ;
 configure: ;
 
-.PHONY: all clean cscope distclean recurse-all
+.PHONY: all clean distclean recurse-all
 
 $(call set-vpath, $(SRC_PATH))
 
@@ -110,7 +110,7 @@ $(qapi-modules) $(SRC_PATH)/scripts/qapi-visit.py $(qapi-py)
 
 clean:
 	find . \( -name '*.l[oa]' -o -name '*.so' -o -name '*.dll' -o -name '*.mo' -o -name '*.[oda]' \) -type f -exec rm {} +
-	rm -f TAGS cscope.* *~ */*~
+	rm -f TAGS *~ */*~
 	@# May not be present in GENERATED_HEADERS
 	rm -f $(foreach f,$(GENERATED_HEADERS),$(f) $(f)-timestamp)
 	rm -f $(foreach f,$(GENERATED_SOURCES),$(f) $(f)-timestamp)
@@ -121,16 +121,10 @@ clean:
 distclean: clean
 	rm -f config-host.mak config-host.h*
 	rm -f config-all-devices.mak
-	rm -f config.log
+	rm -f config.log config.status
 	for d in $(TARGET_DIRS); do \
 	rm -rf $$d || exit 1 ; \
         done
-
-
-cscope:
-	rm -f ./cscope.*
-	find "$(SRC_PATH)" -name "*.[chsS]" -print | sed 's,^\./,,' > ./cscope.files
-	cscope -b
 
 
 # Add a dependency on the generated files, so that they are always
