@@ -34,8 +34,6 @@ endif
 endif
 
 GENERATED_HEADERS = config-host.h
-GENERATED_HEADERS += qapi-types.h qapi-visit.h
-GENERATED_SOURCES += qapi-types.c qapi-visit.c
 
 # Don't try to regenerate Makefile or configure
 # We don't generate any of them
@@ -91,29 +89,11 @@ recurse-all: $(SUBDIR_RULES)
 
 ######################################################################
 
-gen-out-type = $(subst .,-,$(suffix $@))
-
-qapi-py = $(SRC_PATH)/scripts/qapi.py $(SRC_PATH)/scripts/ordereddict.py
-
-qapi-modules = $(SRC_PATH)/qapi-schema.json $(SRC_PATH)/qapi/common.json
-
-qapi-types.c qapi-types.h :\
-$(qapi-modules) $(SRC_PATH)/scripts/qapi-types.py $(qapi-py)
-	$(call quiet-command,$(PYTHON) $(SRC_PATH)/scripts/qapi-types.py \
-		$(gen-out-type) -o "." -b -i $<, \
-		"  GEN   $@")
-qapi-visit.c qapi-visit.h :\
-$(qapi-modules) $(SRC_PATH)/scripts/qapi-visit.py $(qapi-py)
-	$(call quiet-command,$(PYTHON) $(SRC_PATH)/scripts/qapi-visit.py \
-		$(gen-out-type) -o "." -b -i $<, \
-		"  GEN   $@")
-
 clean:
 	find . \( -name '*.l[oa]' -o -name '*.so' -o -name '*.dll' -o -name '*.mo' -o -name '*.[oda]' \) -type f -exec rm {} +
 	rm -f TAGS *~ */*~
 	@# May not be present in GENERATED_HEADERS
 	rm -f $(foreach f,$(GENERATED_HEADERS),$(f) $(f)-timestamp)
-	rm -f $(foreach f,$(GENERATED_SOURCES),$(f) $(f)-timestamp)
 	for d in $(TARGET_DIRS); do \
 	if test -d $$d; then $(MAKE) -C $$d $@ || exit 1; fi; \
         done

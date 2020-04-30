@@ -82,17 +82,58 @@ if(MSVC)
         string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
     endif()
 else()
-# check python
-    find_program(PYTHON_CMD python)
-    if (NOT PYTHON_CMD)
-        find_program(PYTHON_CMD python3)
-        if (NOT PYTHON_CMD)
-            find_program(PYTHON_CMD python2)
-            if (NOT PYTHON_CMD)
-                message(FATAL_ERROR "Please install python.")
-            endif()
+# detect host arch.
+    execute_process(COMMAND ${CMAKE_C_COMPILER} -dM -E -
+        INPUT_FILE /dev/null
+        OUTPUT_VARIABLE UC_COMPILER_MACRO)
+    while(TRUE)
+        string(FIND ${UC_COMPILER_MACRO} "__x86_64__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "i386")
+            break()
         endif()
-    endif()
+        string(FIND ${UC_COMPILER_MACRO} "__i386__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "i386")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__arm__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "arm")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__aarch64__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "aarch64")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__mips__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "mips")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__sparc__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "sparc")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__ia64__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "ia64")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "_ARCH_PPC" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "ppc")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__s390__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "s390")
+            break()
+        endif()
+        message(FATAL_ERROR "Unknown host compiler: ${CMAKE_C_COMPILER}.")
+    endwhile(TRUE)
 
     set(EXTRA_CFLAGS "--extra-cflags=")
     if (UNICORN_HAS_X86)
@@ -138,7 +179,6 @@ else()
 
 # GEN dynamic source files
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
-        --python=${PYTHON_CMD}
         ${EXTRA_CFLAGS}
         ${TARGET_LIST}
     )
@@ -206,20 +246,8 @@ else()
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.h
         )
     endif()
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-types.py
-        -h -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-types.py
-        -c -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-visit.py
-        -h -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-visit.py
-        -c -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
     add_compile_options(
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/${UNICORN_TARGET_ARCH}
         -D_GNU_SOURCE
         -D_FILE_OFFSET_BITS=64
         -D_LARGEFILE_SOURCE
@@ -794,8 +822,8 @@ else()
         ${UNICORN_SRCS_COMMON}
         qemu/util/oslib-posix.c
         qemu/util/qemu-thread-posix.c
-        ${CMAKE_BINARY_DIR}/qapi-types.c
-        ${CMAKE_BINARY_DIR}/qapi-visit.c
+        qemu/qapi-types.c
+        qemu/qapi-visit.c
     )
 endif()
 
