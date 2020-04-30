@@ -27,5 +27,6 @@ int main()
         uc_mem_write (uc, UC_BUG_WRITE_ADDR, buf, size);
     }
     uc_close(uc);
+    free(buf);
     return 0;
 }
