@@ -451,7 +451,6 @@ Haiku)
 esac
 
 : ${make=${MAKE-make}}
-: ${python=${PYTHON-python}}
 
 # Default objcc to clang if available, otherwise use CC
 if has clang; then
@@ -493,8 +492,6 @@ for opt do
   --objcc=*) objcc="$optarg"
   ;;
   --make=*) make="$optarg"
-  ;;
-  --python=*) python="$optarg"
   ;;
   --extra-cflags=*)
   ;;
@@ -543,24 +540,6 @@ for opt do
   ;;
   esac
 done
-
-if ! has $python; then
-  error_exit "Python not found. Use --python=/path/to/python"
-fi
-
-# Note that if the Python conditional here evaluates True we will exit
-# with status 1 which is a shell 'false' value.
-if ! $python -c 'import sys; sys.exit(sys.version_info < (2,4))'; then
-  error_exit "Cannot use '$python', Python 2.4 or later is required." \
-      "Use --python=/path/to/python to specify a supported Python."
-fi
-
-# The -B switch was added in Python 2.6.
-# If it is supplied, compiled files are not written.
-# Use it for Python versions which support it.
-if $python -B -c 'import sys; sys.exit(0)' 2>/dev/null; then
-  python="$python -B"
-fi
 
 case "$cpu" in
     ppc)
@@ -641,7 +620,6 @@ Advanced options (experts only):
   --extra-cflags=CFLAGS    append extra C compiler flags QEMU_CFLAGS
   --extra-ldflags=LDFLAGS  append extra linker flags LDFLAGS
   --make=MAKE              use specified make [$make]
-  --python=PYTHON          use specified python [$python]
   --static                 enable static build [$static]
   --enable-debug-tcg       enable TCG debugging
   --disable-debug-tcg      disable TCG debugging (default)
@@ -1083,7 +1061,6 @@ echo "CFLAGS            $CFLAGS"
 echo "QEMU_CFLAGS       $QEMU_CFLAGS"
 echo "LDFLAGS           $LDFLAGS"
 echo "make              $make"
-echo "python            $python"
 echo "host CPU          $cpu"
 echo "host big endian   $bigendian"
 echo "target list       $target_list"
@@ -1185,7 +1162,6 @@ fi
 QEMU_INCLUDES="-I\$(SRC_PATH)/tcg $QEMU_INCLUDES"
 
 echo "MAKE=$make" >> $config_host_mak
-echo "PYTHON=$python" >> $config_host_mak
 echo "CC=$cc" >> $config_host_mak
 echo "CC_I386=$cc_i386" >> $config_host_mak
 echo "HOST_CC=$host_cc" >> $config_host_mak

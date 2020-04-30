@@ -135,18 +135,6 @@ else()
         message(FATAL_ERROR "Unknown host compiler: ${CMAKE_C_COMPILER}.")
     endwhile(TRUE)
 
-# check python
-    find_program(PYTHON_CMD python)
-    if (NOT PYTHON_CMD)
-        find_program(PYTHON_CMD python3)
-        if (NOT PYTHON_CMD)
-            find_program(PYTHON_CMD python2)
-            if (NOT PYTHON_CMD)
-                message(FATAL_ERROR "Please install python.")
-            endif()
-        endif()
-    endif()
-
     set(EXTRA_CFLAGS "--extra-cflags=")
     if (UNICORN_HAS_X86)
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_X86 ")
@@ -191,7 +179,6 @@ else()
 
 # GEN dynamic source files
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
-        --python=${PYTHON_CMD}
         ${EXTRA_CFLAGS}
         ${TARGET_LIST}
     )
@@ -259,18 +246,6 @@ else()
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.h
         )
     endif()
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-types.py
-        -h -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-types.py
-        -c -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-visit.py
-        -h -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-visit.py
-        -c -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
     add_compile_options(
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/${UNICORN_TARGET_ARCH}
         -D_GNU_SOURCE
@@ -847,8 +822,8 @@ else()
         ${UNICORN_SRCS_COMMON}
         qemu/util/oslib-posix.c
         qemu/util/qemu-thread-posix.c
-        ${CMAKE_BINARY_DIR}/qapi-types.c
-        ${CMAKE_BINARY_DIR}/qapi-visit.c
+        qemu/qapi-types.c
+        qemu/qapi-visit.c
     )
 endif()
 
