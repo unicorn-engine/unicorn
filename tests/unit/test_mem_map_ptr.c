@@ -63,6 +63,8 @@ static void test_basic(void **state)
     uc_assert_success(uc_mem_unmap(uc, mem_start, mem_len));
 
     assert_memory_equal(buf, host_mem, 4);
+
+    free(host_mem);
 }
 
 int main(void) {

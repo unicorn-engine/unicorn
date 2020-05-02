@@ -280,6 +280,7 @@ static void gdt_demo()
     assert(memcmp(buf, "\x67\x45\x23\x01\xef\xcd\xab\x89", 8) == 0);
 
     uc_close(uc);
+    free(gdt);
 }
 
 /******************************************************************************/
