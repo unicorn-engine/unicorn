@@ -1,18 +1,19 @@
 # Tested on window10(x64) with vs2019.
 # Open the "x86 Native Tools Command Prompt for VS 2019",
-# cd ${UNICORN_SOURCE_DIR}
-# mkdir build
-# cd build
-# cmake -G "NMake Makefiles" ..
-# nmake
+#   cd ${UNICORN_SOURCE_DIR}
+#   mkdir build
+#   cd build
+#   cmake -G "NMake Makefiles" ..
+#   nmake
 # Or Open "x64 Native Tools Command Prompt for VS 2019" for 64bit binary.
 # Tested on Ubuntu-1804-amd64 with gcc.
-# cd ${UNICORN_SOURCE_DIR}
-# mkdir build
-# cd build
-# cmake ..
-# make
+#   $ cd ${UNICORN_SOURCE_DIR}
+#   $ mkdir build
+#   $ cd build
+#   $ cmake ..
+#   $ make
 # By Huitao Chen, 2019
+
 cmake_minimum_required(VERSION 3.1)
 project(unicorn C)
 
@@ -21,6 +22,7 @@ set(UNICORN_VERSION_MINOR 0)
 set(UNICORN_VERSION_PATCH 2)
 
 if(NOT UNICORN_ARCH)
+    # build all architectures
     set(UNICORN_ARCH "x86 arm aarch64 m68k mips sparc")
 endif()
 
@@ -82,10 +84,11 @@ if(MSVC)
         string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
     endif()
 else()
-# detect host arch.
+    # detect host arch.
     execute_process(COMMAND ${CMAKE_C_COMPILER} -dM -E -
         INPUT_FILE /dev/null
         OUTPUT_VARIABLE UC_COMPILER_MACRO)
+
     while(TRUE)
         string(FIND ${UC_COMPILER_MACRO} "__x86_64__" UC_RET)
         if (${UC_RET} GREATER "0")
@@ -177,7 +180,7 @@ else()
     endif()
     set (TARGET_LIST "${TARGET_LIST} ")
 
-# GEN dynamic source files
+    # GEN config-host.mak & target directories
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
         ${EXTRA_CFLAGS}
         ${TARGET_LIST}
