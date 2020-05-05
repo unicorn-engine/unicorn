@@ -120,9 +120,7 @@ enum uc_hook_idx {
 #define HOOK_FOREACH(uc, hh, idx)                         \
     for (                                                 \
         cur = (uc)->hook[idx##_IDX].head;                 \
-        cur != NULL && ((hh) = (struct hook *)cur->data)  \
-            /* stop excuting callbacks on stop request */ \
-            && !uc->stop_request;                         \
+        cur != NULL && ((hh) = (struct hook *)cur->data); \
         cur = cur->next)
 
 // if statement to check hook bounds
