@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # Unicorn Engine
 # By Dang Hoang Vu, 2013
 from __future__ import print_function
@@ -118,7 +119,8 @@ def gen(lang):
         outfile.write((templ['header'] % (prefix)).encode("utf-8"))
         if target == 'unicorn.h':
             prefix = ''
-        lines = open(os.path.join(INCL_DIR, target)).readlines()
+        with open(os.path.join(INCL_DIR, target)) as f:
+            lines = f.readlines()
 
         previous = {}
         count = 0
@@ -185,12 +187,18 @@ def gen(lang):
 
 def main():
     lang = sys.argv[1]
-    if not lang in template:
-        raise RuntimeError("Unsupported binding %s" % lang)
-    gen(sys.argv[1])
+    if lang == "all":
+        for lang in template.keys():
+            print("Generating constants for {}".format(lang))
+            gen(lang)
+    else:
+        if not lang in template:
+            raise RuntimeError("Unsupported binding %s" % lang)
+        gen(lang)
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print("Usage:", sys.argv[0], " <python>")
+        print("Supported: {}".format(["all"] + [x for x in template.keys()]))
         sys.exit(1)
     main()
