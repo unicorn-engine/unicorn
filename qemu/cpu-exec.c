@@ -291,6 +291,9 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
         }
     } /* for(;;) */
 
+    // Unicorn: Clear any TCG exit flag that might have been left set by exit requests
+    uc->current_cpu->tcg_exit_req = 0;
+
     cc->cpu_exec_exit(cpu);
 
     // Unicorn: flush JIT cache to because emulation might stop in
