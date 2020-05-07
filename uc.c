@@ -536,19 +536,20 @@ static void clear_deleted_hooks(uc_engine *uc)
     struct hook * hook;
     int i;
     
-    for (cur = uc->hooks_to_del.head; cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next)
-    {
+    for (cur = uc->hooks_to_del.head; cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next) {
         assert(hook->to_delete);
         for (i = 0; i < UC_HOOK_MAX; i++) {
             if (list_remove(&uc->hook[i], (void *)hook)) {
                 if (--hook->refs == 0) {
                     free(hook);
                 }
+
                 // a hook cannot be twice in the same list
                 break;
             }
         }
     }
+
     list_clear(&uc->hooks_to_del);
 }
 
@@ -653,11 +654,8 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     // emulation is done
     uc->emulation_done = true;
 
-
-
     // remove hooks to delete
     clear_deleted_hooks(uc);
-
 
     if (timeout) {
         // wait for the timer to finish
@@ -1193,8 +1191,7 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
     // an optimization would be to align the hook pointer
     // and store the type mask in the hook pointer.
     for (i = 0; i < UC_HOOK_MAX; i++) {
-        if (list_exists(&uc->hook[i], (void *) hook))
-        {
+        if (list_exists(&uc->hook[i], (void *) hook)) {
             hook->to_delete = true;
             list_append(&uc->hooks_to_del, hook);
         }
@@ -1216,7 +1213,7 @@ void helper_uc_tracecode(int32_t size, uc_hook_type type, void *handle, int64_t 
         uc->set_pc(uc, address);
     }
 
-    for (cur = uc->hook[type].head; cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next){
+    for (cur = uc->hook[type].head; cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next) {
         if (hook->to_delete)
             continue;
         if (HOOK_BOUND_CHECK(hook, (uint64_t)address)) {
