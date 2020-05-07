@@ -949,6 +949,8 @@ void helper_syscall(CPUX86State *env, int next_eip_addend)
     struct hook *hook;
     HOOK_FOREACH_VAR_DECLARE;
     HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
         if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
         if (hook->insn == UC_X86_INS_SYSCALL)
@@ -2389,6 +2391,8 @@ void helper_sysenter(CPUX86State *env, int next_eip_addend)
     struct hook *hook;
     HOOK_FOREACH_VAR_DECLARE;
     HOOK_FOREACH(env->uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
         if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
         if (hook->insn == UC_X86_INS_SYSENTER)
