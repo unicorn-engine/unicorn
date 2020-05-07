@@ -118,7 +118,7 @@ uint32_t HELPER(double_saturate)(CPUARMState *env, int32_t val)
         res = SIGNBIT;
         env->QF = 1;
     } else {
-        res = val << 1;
+        res = (uint32_t)val << 1;
     }
     return res;
 }

@@ -1170,7 +1170,7 @@ DISAS_INSN(bitop_im)
         bitnum &= 7;
     else
         bitnum &= 31;
-    mask = 1 << bitnum;
+    mask = 1U << bitnum;
 
     tmp = tcg_temp_new(tcg_ctx);
     assert (CCF_Z == (1 << 2));
@@ -2142,8 +2142,6 @@ DISAS_INSN(wddata)
 
 DISAS_INSN(wdebug)
 {
-    M68kCPU *cpu = m68k_env_get_cpu(env);
-
     if (IS_USER(s)) {
         gen_exception(s, s->pc - 2, EXCP_PRIVILEGE);
         return;

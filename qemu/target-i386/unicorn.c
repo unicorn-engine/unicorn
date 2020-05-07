@@ -35,6 +35,8 @@ void x86_release(void *ctx)
     int i;
     TCGContext *s = (TCGContext *) ctx;
 
+    cpu_breakpoint_remove_all(s->uc->cpu, BP_CPU);
+
     release_common(ctx);
 
     // arch specific
@@ -158,6 +160,10 @@ void x86_reg_reset(struct uc_struct *uc)
             env->hflags &= ~(HF_ADDSEG_MASK);
             env->efer |= MSR_EFER_LMA | MSR_EFER_LME; // extended mode activated
             cpu_x86_update_cr0(env, CR0_PE_MASK); // protected mode
+            /* If we are operating in 64bit mode then add the Long Mode flag
+             * to the CPUID feature flag
+             */
+            env->features[FEAT_8000_0001_EDX] |= CPUID_EXT2_LM;
             break;
     }
 }
@@ -334,6 +340,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                     case UC_X86_REG_GS:
                         *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
                         continue;
+                    case UC_X86_REG_FS_BASE:
+                        *(uint32_t *)value = (uint32_t)X86_CPU(uc, mycpu)->env.segs[R_FS].base;
+                        continue;
                 }
                 // fall-thru
             case UC_MODE_32:
@@ -481,6 +490,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                         break;
                     case UC_X86_REG_MXCSR:
                         *(uint32_t *)value = X86_CPU(uc, mycpu)->env.mxcsr;
+                        break;
+                    case UC_X86_REG_FS_BASE:
+                        *(uint32_t *)value = (uint32_t)X86_CPU(uc, mycpu)->env.segs[R_FS].base;
                         break;
                 }
                 break;
@@ -782,6 +794,12 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                             dst[1] = reg->_d[1];
                             break;
                         }
+                    case UC_X86_REG_FS_BASE:
+                        *(uint64_t *)value = (uint64_t)X86_CPU(uc, mycpu)->env.segs[R_FS].base;
+                        break;
+                    case UC_X86_REG_GS_BASE:
+                        *(uint64_t *)value = (uint64_t)X86_CPU(uc, mycpu)->env.segs[R_GS].base;
+                        break;
                 }
                 break;
 #endif
@@ -795,6 +813,7 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
 {
     CPUState *mycpu = uc->cpu;
     int i;
+    int ret;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
@@ -1015,21 +1034,45 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         uc_emu_stop(uc);
                         break;
                     case UC_X86_REG_CS:
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_CS, *(uint16_t *)value);
+                        if (ret) {
+                            return ret;
+                        }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_CS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_DS:
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_DS, *(uint16_t *)value);
+                        if (ret) {
+                            return ret;
+                        }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_DS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_SS:
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_SS, *(uint16_t *)value);
+                        if (ret) {
+                            return ret;
+                        }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_SS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_ES:
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_ES, *(uint16_t *)value);
+                        if (ret) {
+                            return ret;
+                        }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_ES, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_FS:
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
+                        if (ret) {
+                            return ret;
+                        }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_GS:
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
+                        if (ret) {
+                            return ret;
+                        }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_IDTR:
@@ -1058,6 +1101,15 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                     case UC_X86_REG_MXCSR:
                         cpu_set_mxcsr(&X86_CPU(uc, mycpu)->env, *(uint32_t *)value);
                         break;
+                        /*
+                    // Don't think base registers are a "thing" on x86
+                    case UC_X86_REG_FS_BASE: 
+                        X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint32_t *)value;
+                        continue;
+                    case UC_X86_REG_GS_BASE:
+                        X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint32_t *)value;
+                        continue;
+                        */
                 }
                 break;
 
@@ -1226,9 +1278,17 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                         X86_CPU(uc, mycpu)->env.segs[R_ES].selector = *(uint16_t *)value;
                         break;
                     case UC_X86_REG_FS:
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
+                        if (ret) {
+                            return ret;
+                        }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_FS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_GS:
+                        ret = uc_check_cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
+                        if (ret) {
+                            return ret;
+                        }
                         cpu_x86_load_seg(&X86_CPU(uc, mycpu)->env, R_GS, *(uint16_t *)value);
                         break;
                     case UC_X86_REG_R8:
@@ -1368,6 +1428,12 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                             reg->_d[1] = src[1];
                             break;
                         }
+                    case UC_X86_REG_FS_BASE:
+                        X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint64_t *)value;
+                        continue;
+                    case UC_X86_REG_GS_BASE:
+                        X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint64_t *)value;
+                        continue;
                 }
                 break;
 #endif

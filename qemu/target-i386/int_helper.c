@@ -105,7 +105,7 @@ void helper_idivw_AX(CPUX86State *env, target_ulong t0)
     if (den == 0) {
         raise_exception(env, EXCP00_DIVZ);
     }
-    q = (num / den);
+    q = ((int64_t)num / den);
     if (q != (int16_t)q) {
         raise_exception(env, EXCP00_DIVZ);
     }
@@ -352,7 +352,7 @@ static int idiv64(uint64_t *plow, uint64_t *phigh, int64_t b)
         neg128(plow, phigh);
     }
     sb = (b < 0);
-    if (sb) {
+    if (sb && (b != 0x8000000000000000LL)) {
         b = -b;
     }
     if (div64(plow, phigh, b) != 0) {

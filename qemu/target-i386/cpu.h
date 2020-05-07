@@ -265,7 +265,7 @@
 #define PG_ADDRESS_MASK  0x000ffffffffff000LL
 #define PG_HI_RSVD_MASK  (PG_ADDRESS_MASK & ~PHYS_ADDR_MASK)
 #define PG_HI_USER_MASK  0x7ff0000000000000LL
-#define PG_NX_MASK       (1LL << PG_NX_BIT)
+#define PG_NX_MASK       (1ULL << PG_NX_BIT)
 
 #define PG_ERROR_W_BIT     1
 
@@ -1136,6 +1136,10 @@ floatx80 cpu_set_fp80(uint64_t mant, uint16_t upper);
 void cpu_x86_load_seg(CPUX86State *s, int seg_reg, int selector);
 void cpu_x86_fsave(CPUX86State *s, target_ulong ptr, int data32);
 void cpu_x86_frstor(CPUX86State *s, target_ulong ptr, int data32);
+
+/*  the binding language can not catch the exceptions.
+    check the arguments, return error instead of raise exceptions. */
+int uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel);
 
 /* you can call this signal handler from your SIGBUS and SIGSEGV
    signal handlers to inform the virtual CPU of exceptions. non zero

@@ -39,7 +39,7 @@ static void cpu_handle_guest_debug(CPUState *cpu);
 static int tcg_cpu_exec(struct uc_struct *uc, CPUArchState *env);
 static bool tcg_exec_all(struct uc_struct* uc);
 static int qemu_tcg_init_vcpu(CPUState *cpu);
-static void *qemu_tcg_cpu_loop(struct uc_struct *uc);
+static void qemu_tcg_cpu_loop(struct uc_struct *uc);
 
 int vm_start(struct uc_struct* uc)
 {
@@ -90,7 +90,7 @@ int qemu_init_vcpu(CPUState *cpu)
     return 0;
 }
 
-static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
+static void qemu_tcg_cpu_loop(struct uc_struct *uc)
 {
     CPUState *cpu = uc->cpu;
 
@@ -104,8 +104,6 @@ static void *qemu_tcg_cpu_loop(struct uc_struct *uc)
     }
 
     cpu->created = false;
-
-    return NULL;
 }
 
 static int qemu_tcg_init_vcpu(CPUState *cpu)
@@ -164,7 +162,7 @@ static bool tcg_exec_all(struct uc_struct* uc)
                 break;
             }
         } else if (cpu->stop || cpu->stopped) {
-                printf(">>> got stopped!!!\n");
+            // printf(">>> got stopped!!!\n");
             break;
         }
     }

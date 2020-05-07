@@ -91,7 +91,7 @@ typedef struct {
 static int sign_extend(int x, int len)
 {
     len = 32 - len;
-    return (x << len) >> len;
+    return ((int)(((unsigned int)x) << len)) >> len;
 }
 
 #define IS_IMM (insn & (1<<13))
@@ -2668,7 +2668,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     target = GET_FIELD_SP(insn, 0, 13) |
                         (GET_FIELD_SP(insn, 20, 21) << 14);
                     target = sign_extend(target, 16);
-                    target <<= 2;
+                    target = (int32_t)((uint32_t)target << 2);
                     cpu_src1 = get_src1(dc, insn);
                     do_branch_reg(dc, target, insn, cpu_src1);
                     goto jmp_insn;
@@ -2681,7 +2681,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     }
                     target = GET_FIELD_SP(insn, 0, 18);
                     target = sign_extend(target, 19);
-                    target <<= 2;
+                    target = (int32_t)((uint32_t)target << 2);
                     do_fbranch(dc, target, insn, cc);
                     goto jmp_insn;
                 }
@@ -2695,7 +2695,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                 {
                     target = GET_FIELD(insn, 10, 31);
                     target = sign_extend(target, 22);
-                    target <<= 2;
+                    target = (int32_t)((uint32_t)target << 2);
                     do_branch(dc, target, insn, 0);
                     goto jmp_insn;
                 }
@@ -2706,7 +2706,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
                     }
                     target = GET_FIELD(insn, 10, 31);
                     target = sign_extend(target, 22);
-                    target <<= 2;
+                    target = (int32_t)((uint32_t)target << 2);
                     do_fbranch(dc, target, insn, 0);
                     goto jmp_insn;
                 }
@@ -2728,7 +2728,7 @@ static void disas_sparc_insn(DisasContext * dc, unsigned int insn, bool hook_ins
         break;
     case 1:                     /*CALL*/
         {
-            target_long target = GET_FIELDs(insn, 2, 31) << 2;
+            target_long target = (int)(((unsigned int)(GET_FIELDs(insn, 2, 31))) << 2);
             TCGv o7 = gen_dest_gpr(dc, 15);
 
             tcg_gen_movi_tl(tcg_ctx, o7, dc->pc);

@@ -21,11 +21,6 @@ SYSTEM = sys.platform
 # sys.maxint is 2**31 - 1 on both 32 and 64 bit mingw
 IS_64BITS = platform.architecture()[0] == '64bit'
 
-ALL_WINDOWS_DLLS = (
-    "libwinpthread-1.dll",
-    "libgcc_s_seh-1.dll" if IS_64BITS else "libgcc_s_dw2-1.dll",
-)
-
 # are we building from the repository or from a source distribution?
 ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 LIBS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'lib')
@@ -65,6 +60,7 @@ else:
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
+    MAC_LIBRARY_FILE = "libunicorn*.dylib"
     STATIC_LIBRARY_FILE = None
 elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
@@ -89,6 +85,7 @@ def copy_sources():
     os.mkdir(SRC_DIR)
 
     shutil.copytree(os.path.join(ROOT_DIR, '../../qemu'), os.path.join(SRC_DIR, 'qemu/'))
+    shutil.copytree(os.path.join(ROOT_DIR, '../../msvc'), os.path.join(SRC_DIR, 'msvc/'))
     shutil.copytree(os.path.join(ROOT_DIR, '../../include'), os.path.join(SRC_DIR, 'include/'))
     # make -> configure -> clean -> clean tests fails unless tests is present
     shutil.copytree(os.path.join(ROOT_DIR, '../../tests'), os.path.join(SRC_DIR, 'tests/'))
@@ -131,65 +128,67 @@ def build_libraries():
     # copy public headers
     shutil.copytree(os.path.join(BUILD_DIR, 'include', 'unicorn'), os.path.join(HEADERS_DIR, 'unicorn'))
 
-    # copy special library dependencies
-    if SYSTEM == 'win32':
-        got_all = True
-        for dll in ALL_WINDOWS_DLLS:
-            dllpath = os.path.join(sys.prefix, 'bin', dll)
-            dllpath2 = os.path.join(ROOT_DIR, 'prebuilt', dll)
-            if os.path.exists(dllpath):
-                shutil.copy(dllpath, LIBS_DIR)
-            elif os.path.exists(dllpath2):
-                shutil.copy(dllpath2, LIBS_DIR)
-            else:
-                got_all = False
-
-        if not got_all:
-            print('Warning: not all DLLs were found! This build is not appropriate for a binary distribution')
-            # enforce this
-            if 'upload' in sys.argv:
-                sys.exit(1)
-
     # check if a prebuilt library exists
     # if so, use it instead of building
-    if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)) \
-            and (STATIC_LIBRARY_FILE is None \
-            or os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE))):
+    if os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE)):
         shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', LIBRARY_FILE), LIBS_DIR)
-        if STATIC_LIBRARY_FILE is not None:
+        if STATIC_LIBRARY_FILE is not None and os.path.exists(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE)):
             shutil.copy(os.path.join(ROOT_DIR, 'prebuilt', STATIC_LIBRARY_FILE), LIBS_DIR)
         return
 
     # otherwise, build!!
     os.chdir(BUILD_DIR)
 
-    # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
-    new_env = dict(os.environ)
-    new_env['UNICORN_BUILD_CORE_ONLY'] = 'yes'
-    cmd = ['sh', './make.sh']
-    if SYSTEM == "cygwin":
-        if IS_64BITS:
-            cmd.append('cygwin-mingw64')
-        else:
-            cmd.append('cygwin-mingw32')
-    elif SYSTEM == "win32":
-        if IS_64BITS:
-            cmd.append('cross-win64')
-        else:
-            cmd.append('cross-win32')
-
-    subprocess.call(cmd, env=new_env)
-
-    shutil.copy(LIBRARY_FILE, LIBS_DIR)
     try:
-        # static library may fail to build on windows if user doesn't have visual studio installed. this is fine.
-        if STATIC_LIBRARY_FILE is not None:
-            shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+        subprocess.check_call(['msbuild', '/help'])
     except:
-        print('Warning: Could not build static library file! This build is not appropriate for a binary distribution')
-        # enforce this
-        if 'upload' in sys.argv:
-            sys.exit(1)
+        has_msbuild = False
+    else:
+        has_msbuild = True
+
+    if has_msbuild and SYSTEM == 'win32':
+        plat = 'Win32' if platform.architecture()[0] == '32bit' else 'x64'
+        conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
+        subprocess.call(['msbuild', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=os.path.join(BUILD_DIR, 'msvc'))
+
+        obj_dir = os.path.join(BUILD_DIR, 'msvc', plat, conf)
+        shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
+        shutil.copy(os.path.join(obj_dir, STATIC_LIBRARY_FILE), LIBS_DIR)
+    else:
+        # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
+        new_env = dict(os.environ)
+        new_env['UNICORN_BUILD_CORE_ONLY'] = 'yes'
+        cmd = ['sh', './make.sh']
+        if SYSTEM == "cygwin":
+            if IS_64BITS:
+                cmd.append('cygwin-mingw64')
+            else:
+                cmd.append('cygwin-mingw32')
+        elif SYSTEM == "win32":
+            if IS_64BITS:
+                cmd.append('cross-win64')
+            else:
+                cmd.append('cross-win32')
+
+        subprocess.call(cmd, env=new_env)
+
+        if SYSTEM == 'darwin':
+            for file in glob.glob(MAC_LIBRARY_FILE):
+                try:
+                    shutil.copy(file, LIBS_DIR, follow_symlinks=False)
+                except:
+                    shutil.copy(file, LIBS_DIR)
+        else:
+            shutil.copy(LIBRARY_FILE, LIBS_DIR)
+        try:
+            # static library may fail to build on windows if user doesn't have visual studio installed. this is fine.
+            if STATIC_LIBRARY_FILE is not None:
+                shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+        except:
+            print('Warning: Could not build static library file! This build is not appropriate for a binary distribution')
+            # enforce this
+            if 'upload' in sys.argv:
+                sys.exit(1)
     os.chdir(cwd)
 
 

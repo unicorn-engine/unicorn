@@ -333,7 +333,7 @@ static void object_initialize_with_type(struct uc_struct *uc, void *data, size_t
     g_assert(size >= type->instance_size);
 
     memset(obj, 0, type->instance_size);
-    obj->class = type->class;
+    obj->class_ = type->class;
     object_ref(obj);
     QTAILQ_INIT(&obj->properties);
     object_init_with_type(uc, obj, type);
@@ -403,7 +403,7 @@ static void object_deinit(struct uc_struct *uc, Object *obj, TypeImpl *type)
 static void object_finalize(struct uc_struct *uc, void *data)
 {
     Object *obj = data;
-    TypeImpl *ti = obj->class->type;
+    TypeImpl *ti = obj->class_->type;
 
     object_property_del_all(uc, obj);
     object_deinit(uc, obj, ti);
@@ -571,12 +571,12 @@ out:
 
 const char *object_get_typename(Object *obj)
 {
-    return obj->class->type->name;
+    return obj->class_->type->name;
 }
 
 ObjectClass *object_get_class(Object *obj)
 {
-    return obj->class;
+    return obj->class_;
 }
 
 bool object_class_is_abstract(ObjectClass *klass)
@@ -1002,8 +1002,8 @@ static void object_finalize_child_property(struct uc_struct *uc, Object *obj, co
 {
     Object *child = opaque;
 
-    if (child->class->unparent) {
-        (child->class->unparent)(uc, child);
+    if (child->class_->unparent) {
+        (child->class_->unparent)(uc, child);
     }
     child->parent = NULL;
     object_unref(uc, child);
