@@ -32,6 +32,7 @@ typedef size_t uc_hook;
 #include "arm64.h"
 #include "mips.h"
 #include "sparc.h"
+#include "ppc.h"
 
 #ifdef __GNUC__
 #define DEFAULT_VISIBILITY __attribute__((visibility("default")))

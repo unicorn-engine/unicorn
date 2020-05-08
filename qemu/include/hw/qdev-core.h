@@ -32,7 +32,7 @@ typedef int (*qdev_initfn)(DeviceState *dev);
 typedef int (*qdev_event)(DeviceState *dev);
 typedef void (*qdev_resetfn)(DeviceState *dev);
 typedef int (*DeviceRealize)(struct uc_struct *uc, DeviceState *dev, Error **errp);
-typedef void (*DeviceUnrealize)(DeviceState *dev, Error **errp);
+typedef void (*DeviceUnrealize)(struct uc_struct *uc, DeviceState *dev, Error **errp);
 typedef void (*BusRealize)(BusState *bus, Error **errp);
 typedef void (*BusUnrealize)(BusState *bus, Error **errp);
 

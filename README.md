@@ -1,3 +1,8 @@
+An attempt to add PPC support to Unicorn Engine.
+
+The Unicorn Engine readme follows:
+
+
 Unicorn Engine
 ==============
 

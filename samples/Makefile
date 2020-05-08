@@ -10,11 +10,11 @@ BIN_EXT =
 AR_EXT = a
 
 # Verbose output?
-V ?= 0
+V ?= 1
 
 CFLAGS += -Wall -Werror -I../include
 
-LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm
+LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm -ggdb
 ifeq ($(UNAME_S), Linux)
 LDFLAGS += -lrt
 endif
@@ -73,9 +73,9 @@ endif
 ifneq (,$(findstring mips,$(UNICORN_ARCHS)))
 SOURCES += sample_mips.c
 endif
-#ifneq (,$(findstring ppc,$(UNICORN_ARCHS)))
-#SOURCES += sample_ppc.c
-#endif
+ifneq (,$(findstring ppc,$(UNICORN_ARCHS)))
+SOURCES += sample_ppc.c
+endif
 ifneq (,$(findstring sparc,$(UNICORN_ARCHS)))
 SOURCES += sample_sparc.c
 endif
