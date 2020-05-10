@@ -9116,7 +9116,7 @@ static int ppc_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     create_ppc_opcodes(uc, cpu, &local_err);
     if (local_err != NULL) {
         error_propagate(errp, local_err);
-        return;
+        return -1;
     }
     init_ppc_proc(uc, cpu);
 
