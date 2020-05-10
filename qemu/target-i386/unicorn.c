@@ -11,6 +11,8 @@
 #include <unicorn/x86.h>  /* needed for uc_x86_mmr */
 #include "uc_priv.h"
 
+#define FPST(n)  (X86_CPU(uc, mycpu)->env.fpregs[(X86_CPU(uc, mycpu)->env.fpstt + (n)) & 7].d)
+
 #define X86_NON_CS_FLAGS (DESC_P_MASK | DESC_S_MASK | DESC_W_MASK | DESC_A_MASK)
 static void load_seg_16_helper(CPUX86State *env, int seg, uint32_t selector)
 {
@@ -289,6 +291,19 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                     XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
                     dst[0] = reg->_d[0];
                     dst[1] = reg->_d[1];
+                    continue;
+                }
+            case UC_X86_REG_ST0:
+            case UC_X86_REG_ST1:
+            case UC_X86_REG_ST2:
+            case UC_X86_REG_ST3:
+            case UC_X86_REG_ST4:
+            case UC_X86_REG_ST5:
+            case UC_X86_REG_ST6:
+            case UC_X86_REG_ST7:
+                {
+                    // value must be big enough to keep 80 bits (10 bytes)
+                    memcpy(value, &FPST(regid - UC_X86_REG_ST0), 10);
                     continue;
                 }
             case UC_X86_REG_YMM0:
@@ -870,6 +885,19 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                     XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
                     reg->_d[0] = src[0];
                     reg->_d[1] = src[1];
+                    continue;
+                }
+            case UC_X86_REG_ST0:
+            case UC_X86_REG_ST1:
+            case UC_X86_REG_ST2:
+            case UC_X86_REG_ST3:
+            case UC_X86_REG_ST4:
+            case UC_X86_REG_ST5:
+            case UC_X86_REG_ST6:
+            case UC_X86_REG_ST7:
+                {
+                    // value must be big enough to keep 80 bits (10 bytes)
+                    memcpy(&FPST(regid - UC_X86_REG_ST0), value, 10);
                     continue;
                 }
             case UC_X86_REG_YMM0:
