@@ -86,6 +86,7 @@ struct hook {
     int type;            // UC_HOOK_*
     int insn;            // instruction for HOOK_INSN
     int refs;            // reference count to free hook stored in multiple lists
+    bool to_delete;      // set to true when the hook is deleted by the user. The destruction of the hook is delayed.
     uint64_t begin, end; // only trigger if PC or memory access is in this address (depends on hook type)
     void *callback;      // a uc_cb_* type
     void *user_data;
@@ -120,9 +121,7 @@ enum uc_hook_idx {
 #define HOOK_FOREACH(uc, hh, idx)                         \
     for (                                                 \
         cur = (uc)->hook[idx##_IDX].head;                 \
-        cur != NULL && ((hh) = (struct hook *)cur->data)  \
-            /* stop excuting callbacks on stop request */ \
-            && !uc->stop_request;                         \
+        cur != NULL && ((hh) = (struct hook *)cur->data); \
         cur = cur->next)
 
 // if statement to check hook bounds
@@ -214,6 +213,7 @@ struct uc_struct {
 
     // linked lists containing hooks per type
     struct list hook[UC_HOOK_MAX];
+    struct list hooks_to_del;
 
     // hook to count number of instructions for uc_emu_start()
     uc_hook count_hook;

@@ -550,6 +550,9 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
     reset_all_temps(s, nb_temps);
 
     nb_ops = tcg_opc_ptr - s->gen_opc_buf;
+    if (nb_ops > OPC_BUF_SIZE) {
+        return NULL;
+    }
     gen_args = args;
     for (op_index = 0; op_index < nb_ops; op_index++) {
         TCGOpcode op = s->gen_opc_buf[op_index];

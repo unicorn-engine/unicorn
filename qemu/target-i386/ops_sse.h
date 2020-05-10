@@ -441,7 +441,7 @@ void glue(helper_pmaddwd, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 #if SHIFT == 0
 static inline int abs1(int a)
 {
-    if (a < 0) {
+    if (a < 0 && a != 0x80000000) {
         return -a;
     } else {
         return a;

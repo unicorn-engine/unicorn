@@ -135,6 +135,8 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                         // Unicorn: call registered invalid instruction callbacks
                         HOOK_FOREACH_VAR_DECLARE;
                         HOOK_FOREACH(uc, hook, UC_HOOK_INSN_INVALID) {
+                            if (hook->to_delete)
+                                continue;
                             catched = ((uc_cb_hookinsn_invalid_t)hook->callback)(uc, hook->user_data);
                             if (catched)
                                 break;
@@ -145,6 +147,8 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                         // Unicorn: call registered interrupt callbacks
                         HOOK_FOREACH_VAR_DECLARE;
                         HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
+                            if (hook->to_delete)
+                                continue;
                             ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
                             catched = true;
                         }
@@ -290,6 +294,9 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
 #endif
         }
     } /* for(;;) */
+
+    // Unicorn: Clear any TCG exit flag that might have been left set by exit requests
+    uc->current_cpu->tcg_exit_req = 0;
 
     cc->cpu_exec_exit(cpu);
 
