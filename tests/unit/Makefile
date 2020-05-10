@@ -7,6 +7,7 @@ ASFLAGS += --32
 OBJCOPY = objcopy
 
 UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
 LDLIBS += -pthread
 ifeq ($(UNAME_S), Linux)
 LDLIBS += -lrt
@@ -32,12 +33,16 @@ TEST_PROGS = $(TEST_ASSEMBLY:%.s=%.o)
 TEST_BINS = $(TEST_PROGS:%.o=%.bin)
 ALL_TESTS = $(ALL_TESTS_SOURCES:%.c=%)
 
+ifneq (,$(findstring x86,$(UNAME_M)))
+ALL_TESTS += $(TEST_BINS)
+endif
+
 .PHONY: all
-all: ${TEST_BINS} ${ALL_TESTS}
+all: ${ALL_TESTS}
 
 .PHONY: clean
 clean:
-	rm -rf ${TEST_BINS} ${ALL_TESTS}
+	rm -rf ${ALL_TESTS}
 
 %.bin: %.o
 	${OBJCOPY} -O binary $^ $@
