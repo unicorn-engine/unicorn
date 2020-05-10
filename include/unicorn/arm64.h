@@ -289,7 +289,44 @@ typedef enum uc_arm64_reg {
     UC_ARM64_REG_TPIDR_EL0,
     UC_ARM64_REG_TPIDRRO_EL0,
     UC_ARM64_REG_TPIDR_EL1,
-    
+
+    UC_ARM64_REG_PSTATE,
+
+    //> exception link registers
+    UC_ARM64_REG_ELR_EL0,
+    UC_ARM64_REG_ELR_EL1,
+    UC_ARM64_REG_ELR_EL2,
+    UC_ARM64_REG_ELR_EL3,
+
+    //> stack pointers registers
+    UC_ARM64_REG_SP_EL0,
+    UC_ARM64_REG_SP_EL1,
+    UC_ARM64_REG_SP_EL2,
+    UC_ARM64_REG_SP_EL3,
+
+    //> other CP15 registers
+    UC_ARM64_REG_TTBR0_EL1,
+    UC_ARM64_REG_TTBR1_EL1,
+
+    UC_ARM64_REG_ESR_EL0,
+    UC_ARM64_REG_ESR_EL1,
+    UC_ARM64_REG_ESR_EL2,
+    UC_ARM64_REG_ESR_EL3,
+
+    UC_ARM64_REG_FAR_EL0,
+    UC_ARM64_REG_FAR_EL1,
+    UC_ARM64_REG_FAR_EL2,
+    UC_ARM64_REG_FAR_EL3,
+
+    UC_ARM64_REG_PAR_EL1,
+
+    UC_ARM64_REG_MAIR_EL1,
+
+    UC_ARM64_REG_VBAR_EL0,
+    UC_ARM64_REG_VBAR_EL1,
+    UC_ARM64_REG_VBAR_EL2,
+    UC_ARM64_REG_VBAR_EL3,
+
     UC_ARM64_REG_ENDING,		// <-- mark the end of the list of registers
 
     //> alias registers
