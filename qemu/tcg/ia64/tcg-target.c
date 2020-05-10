@@ -160,7 +160,7 @@ static const int tcg_target_reg_alloc_order[] = {
     TCG_REG_R11
 };
 
-static const int tcg_target_call_iarg_regs[8] = {
+static const int tcg_target_call_iarg_regs[] = {
     TCG_REG_R56,
     TCG_REG_R57,
     TCG_REG_R58,
@@ -170,6 +170,7 @@ static const int tcg_target_call_iarg_regs[8] = {
     TCG_REG_R62,
     TCG_REG_R63,
 };
+static const int nb_tcg_target_call_iarg_regs = ARRAY_SIZE(tcg_target_call_iarg_regs);
 
 static const int tcg_target_call_oarg_regs[] = {
     TCG_REG_R8

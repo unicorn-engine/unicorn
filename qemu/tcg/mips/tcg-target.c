@@ -109,12 +109,13 @@ static const TCGReg tcg_target_reg_alloc_order[] = {
     TCG_REG_A0,
 };
 
-static const TCGReg tcg_target_call_iarg_regs[4] = {
+static const TCGReg tcg_target_call_iarg_regs[] = {
     TCG_REG_A0,
     TCG_REG_A1,
     TCG_REG_A2,
     TCG_REG_A3
 };
+static const int nb_tcg_target_call_iarg_regs = ARRAY_SIZE(tcg_target_call_iarg_regs);
 
 static const TCGReg tcg_target_call_oarg_regs[2] = {
     TCG_REG_V0,
@@ -883,7 +884,7 @@ static void * const qemu_st_helpers[16] = {
 
 static int tcg_out_call_iarg_reg(TCGContext *s, int i, TCGReg arg)
 {
-    if (i < ARRAY_SIZE(tcg_target_call_iarg_regs)) {
+    if (i < nb_tcg_target_call_iarg_regs) {
         tcg_out_mov(s, TCG_TYPE_REG, tcg_target_call_iarg_regs[i], arg);
     } else {
         tcg_out_st(s, TCG_TYPE_REG, arg, TCG_REG_SP, 4 * i);
@@ -894,7 +895,7 @@ static int tcg_out_call_iarg_reg(TCGContext *s, int i, TCGReg arg)
 static int tcg_out_call_iarg_reg8(TCGContext *s, int i, TCGReg arg)
 {
     TCGReg tmp = TCG_TMP0;
-    if (i < ARRAY_SIZE(tcg_target_call_iarg_regs)) {
+    if (i < nb_tcg_target_call_iarg_regs) {
         tmp = tcg_target_call_iarg_regs[i];
     }
     tcg_out_opc_imm(s, OPC_ANDI, tmp, arg, 0xff);
@@ -904,7 +905,7 @@ static int tcg_out_call_iarg_reg8(TCGContext *s, int i, TCGReg arg)
 static int tcg_out_call_iarg_reg16(TCGContext *s, int i, TCGReg arg)
 {
     TCGReg tmp = TCG_TMP0;
-    if (i < ARRAY_SIZE(tcg_target_call_iarg_regs)) {
+    if (i < nb_tcg_target_call_iarg_regs) {
         tmp = tcg_target_call_iarg_regs[i];
     }
     tcg_out_opc_imm(s, OPC_ANDI, tmp, arg, 0xffff);
@@ -917,7 +918,7 @@ static int tcg_out_call_iarg_imm(TCGContext *s, int i, TCGArg arg)
     if (arg == 0) {
         tmp = TCG_REG_ZERO;
     } else {
-        if (i < ARRAY_SIZE(tcg_target_call_iarg_regs)) {
+        if (i < nb_tcg_target_call_iarg_regs) {
             tmp = tcg_target_call_iarg_regs[i];
         }
         tcg_out_movi(s, TCG_TYPE_REG, tmp, arg);
