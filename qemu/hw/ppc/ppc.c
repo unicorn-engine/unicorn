@@ -54,8 +54,8 @@
 
 #define NSEC_PER_SEC    1000000000LL
 
-static void cpu_ppc_tb_stop (CPUPPCState *env);
-static void cpu_ppc_tb_start (CPUPPCState *env);
+/*static void cpu_ppc_tb_stop (CPUPPCState *env);
+static void cpu_ppc_tb_start (CPUPPCState *env);*/
 
 void ppc_set_irq(PowerPCCPU *cpu, int n_IRQ, int level)
 {
@@ -84,6 +84,7 @@ void ppc_set_irq(PowerPCCPU *cpu, int n_IRQ, int level)
                 env->pending_interrupts, CPU(cpu)->interrupt_request);
 }
 
+#if 0
 /* PowerPC 6xx / 7xx internal IRQ controller */
 static void ppc6xx_set_irq(void *opaque, int pin, int level)
 {
@@ -163,6 +164,7 @@ static void ppc6xx_set_irq(void *opaque, int pin, int level)
             env->irq_input_state &= ~(1 << pin);
     }
 }
+#endif
 
 void ppc6xx_irq_init(CPUPPCState *env)
 {
@@ -296,10 +298,11 @@ void ppcPOWER7_irq_init(CPUPPCState *env)
 }
 #endif /* defined(TARGET_PPC64) */
 
+#if 0
 /* PowerPC 40x internal IRQ controller */
 static void ppc40x_set_irq(void *opaque, int pin, int level)
 {
-/*    PowerPCCPU *cpu = opaque;
+    PowerPCCPU *cpu = opaque;
     CPUPPCState *env = &cpu->env;
     int cur_level;
 
@@ -362,8 +365,9 @@ static void ppc40x_set_irq(void *opaque, int pin, int level)
             env->irq_input_state |= 1 << pin;
         else
             env->irq_input_state &= ~(1 << pin);
-    }*/
+    }
 }
+#endif
 
 void ppc40x_irq_init(CPUPPCState *env)
 {
@@ -374,6 +378,7 @@ void ppc40x_irq_init(CPUPPCState *env)
 }
 
 /* PowerPC E500 internal IRQ controller */
+#if 0
 static void ppce500_set_irq(void *opaque, int pin, int level)
 {
     PowerPCCPU *cpu = opaque;
@@ -428,6 +433,7 @@ static void ppce500_set_irq(void *opaque, int pin, int level)
             env->irq_input_state &= ~(1 << pin);
     }
 }
+#endif
 
 void ppce500_irq_init(CPUPPCState *env)
 {
@@ -440,7 +446,7 @@ void ppce500_irq_init(CPUPPCState *env)
 /* Enable or Disable the E500 EPR capability */
 void ppce500_set_mpic_proxy(bool enabled)
 {
-    CPUState *cs;
+//    CPUState *cs;
 
 //    CPU_FOREACH(cs) {
 //        PowerPCCPU *cpu = POWERPC_CPU(cs);
@@ -575,6 +581,7 @@ void cpu_ppc_store_atbu (CPUPPCState *env, uint32_t value)
                      &tb_env->atb_offset, ((uint64_t)value << 32) | tb);
 }
 
+#if 0
 static void cpu_ppc_tb_stop (CPUPPCState *env)
 {
     ppc_tb_t *tb_env = env->tb_env;
@@ -617,6 +624,7 @@ static void cpu_ppc_tb_start (CPUPPCState *env)
         cpu_ppc_store_tb(tb_env, vmclk, &tb_env->atb_offset, atb);
     }
 }
+#endif
 
 bool ppc_decr_clear_on_delivery(CPUPPCState *env)
 {
@@ -768,12 +776,12 @@ void cpu_ppc_store_decr (CPUPPCState *env, uint32_t value)
     _cpu_ppc_store_decr(cpu, cpu_ppc_load_decr(env), value);
 }
 
-static void cpu_ppc_decr_cb(void *opaque)
+/*static void cpu_ppc_decr_cb(void *opaque)
 {
     PowerPCCPU *cpu = opaque;
 
     cpu_ppc_decr_excp(cpu);
-}
+}*/
 
 static inline void _cpu_ppc_store_hdecr(PowerPCCPU *cpu, uint32_t hdecr,
                                         uint32_t value)
@@ -794,12 +802,12 @@ void cpu_ppc_store_hdecr (CPUPPCState *env, uint32_t value)
     _cpu_ppc_store_hdecr(cpu, cpu_ppc_load_hdecr(env), value);
 }
 
-static void cpu_ppc_hdecr_cb(void *opaque)
+/*static void cpu_ppc_hdecr_cb(void *opaque)
 {
     PowerPCCPU *cpu = opaque;
 
     cpu_ppc_hdecr_excp(cpu);
-}
+}*/
 
 static void cpu_ppc_store_purr(PowerPCCPU *cpu, uint64_t value)
 {
@@ -826,6 +834,7 @@ static void cpu_ppc_set_tb_clk (void *opaque, uint32_t freq)
     cpu_ppc_store_purr(cpu, 0x0000000000000000ULL);
 }
 
+#if 0
 static void timebase_pre_save(struct uc_struct *uc, void *opaque)
 {
     PPCTimebase *tb = opaque;
@@ -848,10 +857,10 @@ static void timebase_pre_save(struct uc_struct *uc, void *opaque)
 static int timebase_post_load(struct uc_struct *uc, void *opaque, int version_id)
 {
     PPCTimebase *tb_remote = opaque;
-    CPUState *cpu;
+//    CPUState *cpu;
 
     PowerPCCPU *first_ppc_cpu = POWERPC_CPU(uc, uc->cpu);
-    int64_t tb_off_adj, tb_off, ns_diff;
+    int64_t /*tb_off_adj, tb_off,*/ ns_diff;
     int64_t migration_duration_ns, migration_duration_tb, guest_tb, host_ns;
     unsigned long freq;
 
@@ -887,6 +896,7 @@ static int timebase_post_load(struct uc_struct *uc, void *opaque, int version_id
 
     return 0;
 }
+#endif
 
 /*const VMStateDescription vmstate_ppc_timebase = {
     .name = "timebase",
@@ -905,7 +915,7 @@ static int timebase_post_load(struct uc_struct *uc, void *opaque, int version_id
 /* Set up (once) timebase frequency (in Hz) */
 clk_setup_cb cpu_ppc_tb_init (CPUPPCState *env, uint32_t freq)
 {
-    PowerPCCPU *cpu = ppc_env_get_cpu(env);
+//    PowerPCCPU *cpu = ppc_env_get_cpu(env);
     ppc_tb_t *tb_env;
 
     tb_env = g_malloc0(sizeof(ppc_tb_t));
@@ -968,7 +978,7 @@ struct ppc40x_timer_t {
 };
 
 /* Fixed interval timer */
-static void cpu_4xx_fit_cb (void *opaque)
+/*static void cpu_4xx_fit_cb (void *opaque)
 {
     PowerPCCPU *cpu;
     CPUPPCState *env;
@@ -995,7 +1005,7 @@ static void cpu_4xx_fit_cb (void *opaque)
         next = 1 << 21;
         break;
     default:
-        /* Cannot occur, but makes gcc happy */
+        // Cannot occur, but makes gcc happy
         return;
     }
     next = now + muldiv64(next, get_ticks_per_sec(), tb_env->tb_freq);
@@ -1009,7 +1019,7 @@ static void cpu_4xx_fit_cb (void *opaque)
     LOG_TB("%s: ir %d TCR " TARGET_FMT_lx " TSR " TARGET_FMT_lx "\n", __func__,
            (int)((env->spr[SPR_40x_TCR] >> 23) & 0x1),
            env->spr[SPR_40x_TCR], env->spr[SPR_40x_TSR]);
-}
+}*/
 
 /* Programmable interval timer */
 static void start_stop_pit (CPUPPCState *env, ppc_tb_t *tb_env, int is_excp)
@@ -1039,7 +1049,7 @@ static void start_stop_pit (CPUPPCState *env, ppc_tb_t *tb_env, int is_excp)
     }
 }
 
-static void cpu_4xx_pit_cb (void *opaque)
+/*static void cpu_4xx_pit_cb (void *opaque)
 {
     PowerPCCPU *cpu;
     CPUPPCState *env;
@@ -1061,12 +1071,12 @@ static void cpu_4xx_pit_cb (void *opaque)
            (int)((env->spr[SPR_40x_TCR] >> 26) & 0x1),
            env->spr[SPR_40x_TCR], env->spr[SPR_40x_TSR],
            ppc40x_timer->pit_reload);
-}
+}*/
 
 /* Watchdog timer */
-static void cpu_4xx_wdt_cb (void *opaque)
+/*static void cpu_4xx_wdt_cb (void *opaque)
 {
-/*    PowerPCCPU *cpu;
+    PowerPCCPU *cpu;
     CPUPPCState *env;
     ppc_tb_t *tb_env;
     ppc40x_timer_t *ppc40x_timer;
@@ -1129,8 +1139,8 @@ static void cpu_4xx_wdt_cb (void *opaque)
             ppc40x_system_reset(cpu);
             break;
         }
-    }*/
-}
+    }
+}*/
 
 void store_40x_pit (CPUPPCState *env, target_ulong val)
 {
@@ -1473,7 +1483,7 @@ int ppc_get_vcpu_dt_id(PowerPCCPU *cpu)
 
 PowerPCCPU *ppc_get_vcpu_by_dt_id(struct uc_struct *uc, int cpu_dt_id)
 {
-    CPUState *cs;
+//    CPUState *cs;
 
 /*    CPU_FOREACH(cs) {
         PowerPCCPU *cpu = POWERPC_CPU(uc, cs);

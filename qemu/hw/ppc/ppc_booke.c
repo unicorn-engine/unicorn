@@ -186,6 +186,7 @@ static void booke_update_fixed_timer(CPUPPCState         *env,
     //timer_mod(timer, *next);
 }
 
+#if 0
 static void booke_decr_cb(void *opaque)
 {
     PowerPCCPU *cpu = opaque;
@@ -240,6 +241,7 @@ static void booke_wdt_cb(void *opaque)
                              booke_timer->wdt_timer,
                              TSR_WIS);
 }
+#endif
 
 void store_booke_tsr(CPUPPCState *env, target_ulong val)
 {
@@ -294,14 +296,14 @@ void store_booke_tcr(CPUPPCState *env, target_ulong val)
                              TSR_WIS);
 }
 
-static void ppc_booke_timer_reset_handle(void *opaque)
+/*static void ppc_booke_timer_reset_handle(void *opaque)
 {
     PowerPCCPU *cpu = opaque;
     CPUPPCState *env = &cpu->env;
 
     store_booke_tcr(env, 0);
     store_booke_tsr(env, -1);
-}
+}*/
 
 /*
  * This function will be called whenever the CPU state changes.

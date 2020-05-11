@@ -8918,6 +8918,7 @@ static void dump_ppc_insns (CPUPPCState *env)
 }
 #endif
 
+#if 0
 static int gdb_get_float_reg(CPUPPCState *env, uint8_t *mem_buf, int n)
 {
     if (n < 32) {
@@ -9033,6 +9034,7 @@ static int gdb_set_spe_reg(CPUPPCState *env, uint8_t *mem_buf, int n)
     }
     return 0;
 }
+#endif
 
 static int ppc_fixup_cpu(PowerPCCPU *cpu)
 {
@@ -9558,7 +9560,7 @@ PowerPCCPU *cpu_ppc_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 /* Sort by PVR, ordering special case "host" last. */
-static gint ppc_cpu_list_compare(struct uc_struct *uc, gconstpointer a, gconstpointer b)
+/*static gint ppc_cpu_list_compare(struct uc_struct *uc, gconstpointer a, gconstpointer b)
 {
     ObjectClass *oc_a = (ObjectClass *)a;
     ObjectClass *oc_b = (ObjectClass *)b;
@@ -9572,7 +9574,7 @@ static gint ppc_cpu_list_compare(struct uc_struct *uc, gconstpointer a, gconstpo
     } else if (strcmp(name_b, TYPE_HOST_POWERPC_CPU) == 0) {
         return -1;
     } else {
-        /* Avoid an integer overflow during subtraction */
+        // Avoid an integer overflow during subtraction
         if (pcc_a->pvr < pcc_b->pvr) {
             return -1;
         } else if (pcc_a->pvr > pcc_b->pvr) {
@@ -9581,7 +9583,7 @@ static gint ppc_cpu_list_compare(struct uc_struct *uc, gconstpointer a, gconstpo
             return 0;
         }
     }
-}
+}*/
 
 /*static void ppc_cpu_list_entry(struct uc_struct *uc, gpointer data, gpointer user_data)
 {
@@ -9799,7 +9801,7 @@ static void ppc_cpu_reset(CPUState *s)
     tlb_flush(s, 1);
 }
 
-#ifndef CONFIG_USER_ONLY
+/*#ifndef CONFIG_USER_ONLY
 static bool ppc_cpu_is_big_endian(struct uc_struct *uc, CPUState *cs)
 {
     PowerPCCPU *cpu = POWERPC_CPU(uc, cs);
@@ -9809,7 +9811,7 @@ static bool ppc_cpu_is_big_endian(struct uc_struct *uc, CPUState *cs)
 
     return !msr_le;
 }
-#endif
+#endif*/
 
 static void ppc_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {

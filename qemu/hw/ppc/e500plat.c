@@ -30,18 +30,18 @@
 
 static int e500plat_init(struct uc_struct *uc, MachineState *machine)
 {
-    PPCE500Params params = {
-//        .pci_first_slot = 0x1,
-//        .pci_nr_slots = PCI_SLOT_MAX - 1,
-//        .fixup_devtree = e500plat_fixup_devtree,
-//        .mpic_version = OPENPIC_MODEL_FSL_MPIC_42,
+/*    PPCE500Params params = {
+        .pci_first_slot = 0x1,
+        .pci_nr_slots = PCI_SLOT_MAX - 1,
+        .fixup_devtree = e500plat_fixup_devtree,
+        .mpic_version = OPENPIC_MODEL_FSL_MPIC_42,
         .has_mpc8xxx_gpio = true,
         .has_platform_bus = true,
         .platform_bus_base = 0xf00000000ULL,
         .platform_bus_size = (128ULL * 1024 * 1024),
         .platform_bus_first_irq = 5,
         .platform_bus_num_irqs = 10,
-    };
+    };*/
 
     /* Older KVM versions don't support EPR which breaks guests when we announce
        MPIC variants that support EPR. Revert to an older one for those */

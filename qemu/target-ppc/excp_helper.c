@@ -1038,8 +1038,8 @@ void helper_msgclr(CPUPPCState *env, target_ulong rb)
 void helper_msgsnd(target_ulong rb)
 {
     int irq = dbell2irq(rb);
-    int pir = rb & DBELL_PIRTAG_MASK;
-    CPUState *cs;
+//    int pir = rb & DBELL_PIRTAG_MASK;
+//    CPUState *cs;
 
     if (irq < 0) {
         return;

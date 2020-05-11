@@ -45,11 +45,11 @@ static void ppc_set_pc(struct uc_struct *uc, uint64_t address)
 void ppc_release(void *ctx);
 void ppc_release(void *ctx)
 {
-    PowerPCCPU* cpu;
+//    PowerPCCPU* cpu;
     int i;
     TCGContext *tcg_ctx = (TCGContext *) ctx;
     release_common(ctx);
-    cpu = POWERPC_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
+//    cpu = POWERPC_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
 //    g_free(cpu->env.tlb);
 //    g_free(cpu->env.mvp);
 
