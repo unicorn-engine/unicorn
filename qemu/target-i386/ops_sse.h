@@ -363,7 +363,7 @@ static inline int satsw(int x)
 #define FCMPGTL(a, b) ((int32_t)(a) > (int32_t)(b) ? -1 : 0)
 #define FCMPEQ(a, b) ((a) == (b) ? -1 : 0)
 
-#define FMULLW(a, b) ((a) * (b))
+#define FMULLW(a, b) ((int64_t)(a) * (b))
 #define FMULHRW(a, b) (((int16_t)(a) * (int16_t)(b) + 0x8000) >> 16)
 #define FMULHUW(a, b) ((a) * (b) >> 16)
 #define FMULHW(a, b) ((int16_t)(a) * (int16_t)(b) >> 16)
