@@ -87,6 +87,12 @@
 #define ELF_MACHINE     EM_PPC
 #endif
 
+// ffs() fix for MinGW
+#ifdef _WIN32
+#define ffs __builtin_ffs
+#endif
+
+
 /*****************************************************************************/
 /* MMU model                                                                 */
 typedef enum powerpc_mmu_t powerpc_mmu_t;
