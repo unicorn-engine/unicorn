@@ -4056,7 +4056,9 @@ sparc_symbols = (
     'cpu_cwp_inc',
     'cpu_cwp_dec',
     'helper_save',
-    'helper_restore')
+    'helper_restore',
+    'helper_divs',
+    'helper_fsqrt')
 
 
 if __name__ == '__main__':

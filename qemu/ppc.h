@@ -1,6 +1,7 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_PPC_H
 #define UNICORN_AUTOGEN_PPC_H
+#define helper_divs helper_divs_ppc
 #define helper_fsqrt helper_fsqrt_ppc
 #define arm_release arm_release_ppc
 #define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_ppc
