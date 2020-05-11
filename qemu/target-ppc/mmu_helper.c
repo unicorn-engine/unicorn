@@ -1366,10 +1366,6 @@ static int get_physical_address(CPUPPCState *env, mmu_ctx_t *ctx,
     qemu_log("%s\n", __func__);
 #endif
 
-printf("mmu model %d\n",env->mmu_model);			// 9 == POWERPC_MMU_BOOKE206
-//	ctx->raddr = eaddr;	// Disable MMU completely
-//    return 0;			
-
     switch (env->mmu_model) {
     case POWERPC_MMU_SOFT_6xx:
     case POWERPC_MMU_SOFT_74xx:
