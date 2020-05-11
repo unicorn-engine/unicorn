@@ -14,7 +14,8 @@ V ?= 1
 
 CFLAGS += -Wall -Werror -I../include
 
-LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm -ggdb
+LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm
+#LDFLAGS += -ggdb
 ifeq ($(UNAME_S), Linux)
 LDFLAGS += -lrt
 endif

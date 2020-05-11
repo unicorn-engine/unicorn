@@ -8,10 +8,7 @@
 
 
 // code to be emulated
-//#define PPC_CODE "\x7F\x46\x1A\x14" //  add       r26, r6, r3
-#define PPC_CODE "\x3C\x60\x12\x34\x60\x63\x56\x78" //  lis       r3, -0x1234 ;   ori       r3, r3, 0x5678
-
-
+#define PPC_CODE "\x7F\x46\x1A\x14" //  add       r26, r6, r3
 // memory address where emulation starts
 #define ADDRESS 0x10000
 
@@ -45,35 +42,19 @@ static void test_ppc(void)
         return;
     }
 
-    printf("uc_open() success\n");
-
-
     // map 2MB memory for this emulation
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
-
-    printf("uc_mem_map() success\n");
-
     // write machine code to be emulated to memory
     uc_mem_write(uc, ADDRESS, PPC_CODE, sizeof(PPC_CODE) - 1);
-
-    printf("uc_mem_write() success\n");
-
-
     // initialize machine registers
     uc_reg_write(uc, UC_PPC_REG_3, &r3);
     uc_reg_write(uc, UC_PPC_REG_6, &r6);
     uc_reg_write(uc, UC_PPC_REG_26, &r26);
-
-    printf("uc_reg_write() success\n");
-
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing one instruction at ADDRESS with customized callback
     uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, ADDRESS, ADDRESS);
-
-    printf("uc_hook_add() success\n");
-
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(PPC_CODE) -1, 0, 100);
@@ -85,10 +66,7 @@ static void test_ppc(void)
     printf(">>> Emulation done. Below is the CPU context\n");
 
     uc_reg_read(uc, UC_PPC_REG_26, &r26);
-    printf(">>> R26 = 0x%x\n", r26);
-    uc_reg_read(uc, UC_PPC_REG_3, &r3);
-    printf(">>> R3 = 0x%x\n", r3);
-
+    printf(">>> r26 = 0x%x\n", r26);
     uc_close(uc);
 }
 
