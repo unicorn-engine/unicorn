@@ -11409,6 +11409,14 @@ static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
         if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP | CPU_LOG_TB_OP_OPT))) {
             tcg_gen_debug_insn_start(tcg_ctx, ctx.nip);
         }
+
+    // Unicorn: trace this instruction on request
+	    if (HOOK_EXISTS_BOUNDED(ctx.uc, UC_HOOK_CODE, ctx.nip)) {
+        	gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, ctx.uc, ctx.nip);
+	        // the callback might want to stop emulation immediately
+        	check_exit_request(tcg_ctx);
+	    }
+
         ctx.nip += 4;
         table = env->opcodes;
         num_insns++;
