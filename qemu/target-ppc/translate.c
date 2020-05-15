@@ -11402,7 +11402,6 @@ static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
         } else {
             ctx.opcode = cpu_ldl_code(env, ctx.nip);
         }
-//		ctx.opcode = 0x7F461A14;
         LOG_DISAS("translate opcode %08x (%02x %02x %02x) (%s)\n",
                     ctx.opcode, opc1(ctx.opcode), opc2(ctx.opcode),
                     opc3(ctx.opcode), ctx.le_mode ? "little" : "big");
@@ -11411,11 +11410,11 @@ static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
         }
 
     // Unicorn: trace this instruction on request
-	    if (HOOK_EXISTS_BOUNDED(ctx.uc, UC_HOOK_CODE, ctx.nip)) {
-        	gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, ctx.uc, ctx.nip);
-	        // the callback might want to stop emulation immediately
-        	check_exit_request(tcg_ctx);
-	    }
+        if (HOOK_EXISTS_BOUNDED(ctx.uc, UC_HOOK_CODE, ctx.nip)) {
+            gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, ctx.uc, ctx.nip);
+            // the callback might want to stop emulation immediately
+            check_exit_request(tcg_ctx);
+        }
 
         ctx.nip += 4;
         table = env->opcodes;
