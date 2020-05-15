@@ -365,7 +365,7 @@ static inline int satsw(int x)
 
 #define FMULLW(a, b) ((int64_t)(a) * (b))
 #define FMULHRW(a, b) (((int16_t)(a) * (int16_t)(b) + 0x8000) >> 16)
-#define FMULHUW(a, b) ((a) * (b) >> 16)
+#define FMULHUW(a, b) ((int64_t)(a) * (b) >> 16)
 #define FMULHW(a, b) ((int16_t)(a) * (int16_t)(b) >> 16)
 
 #define FAVG(a, b) (((a) + (b) + 1) >> 1)
