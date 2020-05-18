@@ -2378,8 +2378,10 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def,
     flags = args[nb_oargs + nb_iargs + 1];
 
     nb_regs = ARRAY_SIZE(tcg_target_call_iarg_regs);
-#if TCG_TARGET_REG_BITS == 32
+#ifdef _UC_MSVC_ARRAY_DUMMY
     // do this because msvc cannot have arrays with 0 entries.
+    /* ref: tcg/i386/tcg-target.c: tcg_target_call_iarg_regs,
+        it is added a dummy value, set back to 0. */
     nb_regs = 0;
 #endif
     if (nb_regs > nb_params) {

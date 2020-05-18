@@ -77,6 +77,11 @@ static const int tcg_target_call_iarg_regs[] = {
     TCG_REG_R8,
     TCG_REG_R9,
 #else
+#ifdef _MSC_VER
+#ifdef _UC_MSVC_ARRAY_DUMMY
+#error "DUP DEF _UC_MSVC_ARRAY_DUMMY"
+#endif
+#define _UC_MSVC_ARRAY_DUMMY
     /* 32 bit mode uses stack based calling convention (GCC default).
     We add a dummy value here for MSVC compatibility for the error:
     "error C2466: cannot allocate an array of constant size 0"
@@ -84,6 +89,7 @@ static const int tcg_target_call_iarg_regs[] = {
     TCG_TARGET_REG_BITS == 32
     */
     0,
+#endif
 #endif
 };
 
