@@ -92,6 +92,9 @@ static void test_high_address_read_values(void **state)
     uc_engine *uc = *state;
     struct stat info;
     char * code = read_file("high_address.bin", &info);
+    if (code == NULL) {
+        return;
+    }
 
     uint64_t addr = 0x0010000000000001; 
     //addr = 0x000ffffffffffff8; // uncomment to fix wrong behaviour

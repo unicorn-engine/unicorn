@@ -363,9 +363,9 @@ static inline int satsw(int x)
 #define FCMPGTL(a, b) ((int32_t)(a) > (int32_t)(b) ? -1 : 0)
 #define FCMPEQ(a, b) ((a) == (b) ? -1 : 0)
 
-#define FMULLW(a, b) ((a) * (b))
+#define FMULLW(a, b) ((int64_t)(a) * (b))
 #define FMULHRW(a, b) (((int16_t)(a) * (int16_t)(b) + 0x8000) >> 16)
-#define FMULHUW(a, b) ((a) * (b) >> 16)
+#define FMULHUW(a, b) ((int64_t)(a) * (b) >> 16)
 #define FMULHW(a, b) ((int16_t)(a) * (int16_t)(b) >> 16)
 
 #define FAVG(a, b) (((a) + (b) + 1) >> 1)
@@ -441,7 +441,7 @@ void glue(helper_pmaddwd, SUFFIX)(CPUX86State *env, Reg *d, Reg *s)
 #if SHIFT == 0
 static inline int abs1(int a)
 {
-    if (a < 0) {
+    if (a < 0 && a != 0x80000000) {
         return -a;
     } else {
         return a;

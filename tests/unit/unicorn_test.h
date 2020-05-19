@@ -42,7 +42,14 @@ do {                                                                \
 char * read_file(const char *filename, struct stat *info) {
     stat(filename, info);
     char *code = malloc(info->st_size);
+    if (code == NULL) {
+        return NULL;
+    }
     FILE *fp = fopen(filename, "r");
+    if (fp == NULL) {
+        free(code);
+        return NULL;
+    }
     fread(code, info->st_size, 1, fp);
     return code;
 }

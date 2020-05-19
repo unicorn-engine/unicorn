@@ -1,18 +1,19 @@
 # Tested on window10(x64) with vs2019.
 # Open the "x86 Native Tools Command Prompt for VS 2019",
-# cd ${UNICORN_SOURCE_DIR}
-# mkdir build
-# cd build
-# cmake -G "NMake Makefiles" ..
-# nmake
+#   cd ${UNICORN_SOURCE_DIR}
+#   mkdir build
+#   cd build
+#   cmake -G "NMake Makefiles" ..
+#   nmake
 # Or Open "x64 Native Tools Command Prompt for VS 2019" for 64bit binary.
 # Tested on Ubuntu-1804-amd64 with gcc.
-# cd ${UNICORN_SOURCE_DIR}
-# mkdir build
-# cd build
-# cmake ..
-# make
+#   $ cd ${UNICORN_SOURCE_DIR}
+#   $ mkdir build
+#   $ cd build
+#   $ cmake ..
+#   $ make
 # By Huitao Chen, 2019
+
 cmake_minimum_required(VERSION 3.1)
 project(unicorn C)
 
@@ -21,6 +22,7 @@ set(UNICORN_VERSION_MINOR 0)
 set(UNICORN_VERSION_PATCH 2)
 
 if(NOT UNICORN_ARCH)
+    # build all architectures
     set(UNICORN_ARCH "x86 arm aarch64 m68k mips sparc")
 endif()
 
@@ -82,17 +84,59 @@ if(MSVC)
         string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
     endif()
 else()
-# check python
-    find_program(PYTHON_CMD python)
-    if (NOT PYTHON_CMD)
-        find_program(PYTHON_CMD python3)
-        if (NOT PYTHON_CMD)
-            find_program(PYTHON_CMD python2)
-            if (NOT PYTHON_CMD)
-                message(FATAL_ERROR "Please install python.")
-            endif()
+    # detect host arch.
+    execute_process(COMMAND ${CMAKE_C_COMPILER} -dM -E -
+        INPUT_FILE /dev/null
+        OUTPUT_VARIABLE UC_COMPILER_MACRO)
+
+    while(TRUE)
+        string(FIND ${UC_COMPILER_MACRO} "__x86_64__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "i386")
+            break()
         endif()
-    endif()
+        string(FIND ${UC_COMPILER_MACRO} "__i386__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "i386")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__arm__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "arm")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__aarch64__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "aarch64")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__mips__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "mips")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__sparc__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "sparc")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__ia64__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "ia64")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "_ARCH_PPC" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "ppc")
+            break()
+        endif()
+        string(FIND ${UC_COMPILER_MACRO} "__s390__" UC_RET)
+        if (${UC_RET} GREATER "0")
+            set(UNICORN_TARGET_ARCH "s390")
+            break()
+        endif()
+        message(FATAL_ERROR "Unknown host compiler: ${CMAKE_C_COMPILER}.")
+    endwhile(TRUE)
 
     set(EXTRA_CFLAGS "--extra-cflags=")
     if (UNICORN_HAS_X86)
@@ -136,9 +180,8 @@ else()
     endif()
     set (TARGET_LIST "${TARGET_LIST} ")
 
-# GEN dynamic source files
+    # GEN config-host.mak & target directories
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
-        --python=${PYTHON_CMD}
         ${EXTRA_CFLAGS}
         ${TARGET_LIST}
     )
@@ -206,20 +249,8 @@ else()
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/sparc64-softmmu/config-target.h
         )
     endif()
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-types.py
-        -h -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-types.py
-        -c -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-visit.py
-        -h -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
-    execute_process(COMMAND ${PYTHON_CMD} -B ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/qapi-visit.py
-        -c -o ${CMAKE_BINARY_DIR} -b -i ${CMAKE_CURRENT_SOURCE_DIR}/qemu/qapi-schema.json
-    )
     add_compile_options(
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/${UNICORN_TARGET_ARCH}
         -D_GNU_SOURCE
         -D_FILE_OFFSET_BITS=64
         -D_LARGEFILE_SOURCE
@@ -794,8 +825,8 @@ else()
         ${UNICORN_SRCS_COMMON}
         qemu/util/oslib-posix.c
         qemu/util/qemu-thread-posix.c
-        ${CMAKE_BINARY_DIR}/qapi-types.c
-        ${CMAKE_BINARY_DIR}/qapi-visit.c
+        qemu/qapi-types.c
+        qemu/qapi-visit.c
     )
 endif()
 

@@ -57,6 +57,9 @@ static void test_pc_change(void **state)
     int32_t r_ecx = 3, r_edx = 15;
     struct stat info;
     char *code = read_file("pc_change.bin", &info);
+    if (code == NULL) {
+        return;
+    }
 
 #define BASEADDR    0x1000000
 
