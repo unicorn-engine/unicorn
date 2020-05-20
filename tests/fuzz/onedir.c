@@ -31,12 +31,13 @@ int main(int argc, char** argv)
         return 2;
     }
 
+    printf("Starting directory %s\n", argv[1]);
     while((dir = readdir(d)) != NULL) {
         //opens the file, get its size, and reads it into a buffer
         if (dir->d_type != DT_REG) {
             continue;
         }
-        printf("Running file %s\n", dir->d_name);
+        //printf("Running file %s\n", dir->d_name);
         fflush(stdout);
         fp = fopen(dir->d_name, "rb");
         if (fp == NULL) {
@@ -73,7 +74,7 @@ int main(int argc, char** argv)
         fclose(fp);
     }
     closedir(d);
-    printf("Ok : whole directory finished\n");
+    printf("Ok : whole directory finished %s\n", argv[1]);
     return r;
 }
 
