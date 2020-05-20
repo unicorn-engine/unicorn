@@ -48,7 +48,7 @@ matrix:
         - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize=fuzzer-no-link"
         - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize=fuzzer-no-link"
         - LDFLAGS="-fsanitize=address"
-      script: make && make -C tests/fuzz
+      script: make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
 
     - name: "Linux clang MSAN"
       os: linux
@@ -59,7 +59,7 @@ matrix:
         - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=memory -fsanitize=fuzzer-no-link"
         - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=memory -fsanitize=fuzzer-no-link"
         - LDFLAGS="-fsanitize=memory"
-      script: make && make -C tests/fuzz
+      script: make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
 
     - name: "Linux clang USAN"
       os: linux
@@ -70,7 +70,7 @@ matrix:
         - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=undefined -fsanitize=fuzzer-no-link"
         - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=undefined -fsanitize=fuzzer-no-link"
         - LDFLAGS="-fsanitize=undefined"
-      script: make && make -C tests/fuzz
+      script: make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
 
     - name: "Linux 32bit"
       os: linux
