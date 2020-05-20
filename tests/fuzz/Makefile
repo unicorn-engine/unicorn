@@ -20,4 +20,4 @@ clean:
 	rm -rf ${ALL_TESTS}
 
 fuzz%: fuzz%.c
-	$(CC) $(CFLAGS) $^ onefile.c $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $^ onedir.c $(LDFLAGS) -o $@
