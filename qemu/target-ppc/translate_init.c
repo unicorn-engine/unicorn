@@ -8581,10 +8581,10 @@ static void init_ppc_proc(struct uc_struct *uc, PowerPCCPU *cpu)
         /* Pre-compute some useful values */
         env->tlb_per_way = env->nb_tlb / env->nb_ways;
     }
-    if (env->irq_inputs == NULL) {
+/*    if (env->irq_inputs == NULL) {
         fprintf(stderr, "WARNING: no internal IRQ controller registered.\n"
                 " Attempt QEMU to crash very soon !\n");
-    }
+    }*/
 #endif
     if (env->check_pow == NULL) {
         fprintf(stderr, "WARNING: no power management check handler "
