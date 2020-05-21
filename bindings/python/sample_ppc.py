@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-# Sample code for SPARC of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
-# Python sample ported by Loi Anh Tuan <loianhtuan@gmail.com>
+# Sample code for PPC of Unicorn. Nguyen Anh Quynh <aquynh@gmail.com>
+#
 
 from __future__ import print_function
 from unicorn import *
@@ -27,7 +27,7 @@ def hook_code(uc, address, size, user_data):
 def test_ppc():
     print("Emulate PPC code")
     try:
-        # Initialize emulator in SPARC EB mode
+        # Initialize emulator in PPC EB mode
         mu = Uc(UC_ARCH_PPC, UC_MODE_PPC32 | UC_MODE_BIG_ENDIAN)
 
         # map 2MB memory for this emulation

@@ -1,7 +1,7 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh, 2015 */
 
-/* Sample code to demonstrate how to emulate ARM code */
+/* Sample code to demonstrate how to emulate PPC code */
 
 #include <unicorn/unicorn.h>
 #include <string.h>
@@ -34,7 +34,7 @@ static void test_ppc(void)
 
     printf("Emulate PPC code\n");
 
-    // Initialize emulator in ARM mode
+    // Initialize emulator in PPC mode
     err = uc_open(UC_ARCH_PPC, UC_MODE_PPC32 | UC_MODE_BIG_ENDIAN , &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n",
