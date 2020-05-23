@@ -124,7 +124,9 @@ static int32 roundAndPackInt32( flag zSign, uint64_t absZ STATUS_PARAM)
         roundIncrement = zSign ? 0x7f : 0;
         break;
     default:
-        abort();
+        roundIncrement = 0;
+        float_raise(float_flag_invalid STATUS_VAR);
+        break;
     }
     roundBits = absZ & 0x7F;
     absZ = ( absZ + roundIncrement )>>7;
@@ -175,7 +177,9 @@ static int64 roundAndPackInt64( flag zSign, uint64_t absZ0, uint64_t absZ1 STATU
         increment = zSign && absZ1;
         break;
     default:
-        abort();
+        increment = 0;
+        float_raise(float_flag_invalid STATUS_VAR);
+        break;
     }
     if ( increment ) {
         ++absZ0;
@@ -229,7 +233,9 @@ static int64 roundAndPackUint64(flag zSign, uint64_t absZ0,
         increment = zSign && absZ1;
         break;
     default:
-        abort();
+        increment = 0;
+        float_raise(float_flag_invalid STATUS_VAR);
+        break;
     }
     if (increment) {
         ++absZ0;
@@ -382,7 +388,7 @@ static float32 roundAndPackFloat32(flag zSign, int_fast16_t zExp, uint32_t zSig 
         roundIncrement = zSign ? 0x7f : 0;
         break;
     default:
-        abort();
+        float_raise(float_flag_invalid STATUS_VAR);
         break;
     }
     roundBits = zSig & 0x7F;
@@ -567,7 +573,8 @@ static float64 roundAndPackFloat64(flag zSign, int_fast16_t zExp, uint64_t zSig 
         roundIncrement = zSign ? 0x3ff : 0;
         break;
     default:
-        abort();
+        float_raise(float_flag_invalid STATUS_VAR);
+        break;
     }
     roundBits = zSig & 0x3FF;
     if ( 0x7FD <= (uint16_t) zExp ) {
@@ -751,7 +758,8 @@ static floatx80
         roundIncrement = zSign ? roundMask : 0;
         break;
     default:
-        abort();
+        float_raise(float_flag_invalid STATUS_VAR);
+        break;
     }
     roundBits = zSig0 & roundMask;
     if ( 0x7FFD <= (uint32_t) ( zExp - 1 ) ) {
@@ -813,7 +821,8 @@ static floatx80
         increment = zSign && zSig1;
         break;
     default:
-        abort();
+        float_raise(float_flag_invalid STATUS_VAR);
+        break;
     }
     if ( 0x7FFD <= (uint32_t) ( zExp - 1 ) ) {
         if (    ( 0x7FFE < zExp )
@@ -858,7 +867,8 @@ static floatx80
                 increment = zSign && zSig1;
                 break;
             default:
-                abort();
+                float_raise(float_flag_invalid STATUS_VAR);
+                break;
             }
             if ( increment ) {
                 ++zSig0;
@@ -1073,7 +1083,8 @@ static float128
         increment = zSign && zSig2;
         break;
     default:
-        abort();
+        float_raise(float_flag_invalid STATUS_VAR);
+        break;
     }
     if ( 0x7FFD <= (uint32_t) zExp ) {
         if (    ( 0x7FFD < zExp )
@@ -1136,7 +1147,8 @@ static float128
                 increment = zSign && zSig2;
                 break;
             default:
-                abort();
+                float_raise(float_flag_invalid STATUS_VAR);
+                break;
             }
         }
     }
@@ -1856,7 +1868,8 @@ float32 float32_round_to_int( float32 a STATUS_PARAM)
         }
         break;
     default:
-        abort();
+        float_raise(float_flag_invalid STATUS_VAR);
+        break;
     }
     z &= ~ roundBitsMask;
     if ( z != float32_val(a) ) STATUS(float_exception_flags) |= float_flag_inexact;
@@ -3588,7 +3601,8 @@ float64 float64_round_to_int( float64 a STATUS_PARAM )
         }
         break;
     default:
-        abort();
+        float_raise(float_flag_invalid STATUS_VAR);
+        break;
     }
     z &= ~ roundBitsMask;
     if ( z != float64_val(a) )
@@ -4936,7 +4950,8 @@ floatx80 floatx80_round_to_int( floatx80 a STATUS_PARAM )
         }
         break;
     default:
-        abort();
+        float_raise(float_flag_invalid STATUS_VAR);
+        break;
     }
     z.low &= ~ roundBitsMask;
     if ( z.low == 0 ) {
@@ -6057,7 +6072,8 @@ float128 float128_round_to_int( float128 a STATUS_PARAM )
             }
             break;
         default:
-            abort();
+            float_raise(float_flag_invalid STATUS_VAR);
+            break;
         }
         z.low &= ~ roundBitsMask;
     }
@@ -6121,7 +6137,8 @@ float128 float128_round_to_int( float128 a STATUS_PARAM )
             }
             break;
         default:
-            abort();
+            float_raise(float_flag_invalid STATUS_VAR);
+            break;
         }
         z.high &= ~ roundBitsMask;
     }

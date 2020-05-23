@@ -21,10 +21,61 @@ os:
 matrix:
   fast_finish: true
   include:
+    - name: "Linux arm64 clang C"
+      arch: arm64
+      os: linux
+      compiler: clang
+      language: c
+      env:
+        - PATH=$PATH:/usr/local/opt/binutils/bin
+      script: make && make -C tests/unit test && make -C tests/regress test
+
+    - name: "Linux arm64 gcc C"
+      arch: arm64
+      os: linux
+      compiler: gcc
+      language: c
+      env:
+        - PATH=$PATH:/usr/local/opt/binutils/bin
+      script: make && make -C tests/unit test && make -C tests/regress test
+
+    - name: "Linux clang ASAN"
+      os: linux
+      compiler: clang
+      env:
+        - PATH=$PATH:/usr/local/opt/binutils/bin
+        - ASAN_OPTIONS=detect_leaks=0
+        - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize=fuzzer-no-link"
+        - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize=fuzzer-no-link"
+        - LDFLAGS="-fsanitize=address"
+      script: make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
+
+    - name: "Linux clang MSAN"
+      os: linux
+      compiler: clang
+      env:
+        - PATH=$PATH:/usr/local/opt/binutils/bin
+        - ASAN_OPTIONS=detect_leaks=0
+        - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=memory -fsanitize=fuzzer-no-link"
+        - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=memory -fsanitize=fuzzer-no-link"
+        - LDFLAGS="-fsanitize=memory"
+      script: make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
+
+    - name: "Linux clang USAN"
+      os: linux
+      compiler: clang
+      env:
+        - PATH=$PATH:/usr/local/opt/binutils/bin
+        - ASAN_OPTIONS=detect_leaks=0
+        - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=undefined -fsanitize=fuzzer-no-link"
+        - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=undefined -fsanitize=fuzzer-no-link"
+        - LDFLAGS="-fsanitize=undefined"
+      script: make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
+
     - name: "Linux 32bit"
       os: linux
       compiler: gcc
-      env: 
+      env:
         - CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
         - PATH=$PATH:/usr/local/opt/binutils/bin
       script: make && make -C tests/unit test && make -C tests/regress test
