@@ -32,7 +32,6 @@ void arm_release(void* ctx)
     g_free(cpu->cpreg_values);
     g_free(cpu->cpreg_vmstate_indexes);
     g_free(cpu->cpreg_vmstate_values);
-    cpu_watchpoint_remove_all(CPU(cpu), BP_CPU);
 
     release_common(ctx);
 }
