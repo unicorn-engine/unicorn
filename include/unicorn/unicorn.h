@@ -330,8 +330,8 @@ typedef enum uc_query_type {
     // Dynamically query current hardware mode.
     UC_QUERY_MODE = 1,
     UC_QUERY_PAGE_SIZE, // query pagesize of engine
-    UC_QUERY_ARCH,  // query architecture of engine
-    UC_QUERY_TIMEOUT,  // query if emulation stops because of timeout
+    UC_QUERY_ARCH,  // query architecture of engine (for ARM to query Thumb mode)
+    UC_QUERY_TIMEOUT,  // query if emulation stops due to timeout (indicated if result = True)
 } uc_query_type;
 
 // Opaque storage for CPU context, used with uc_context_*()
