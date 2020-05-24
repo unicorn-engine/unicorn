@@ -71,7 +71,6 @@ module Common =
     let UC_ERR_HOOK_EXIST = 19
     let UC_ERR_RESOURCE = 20
     let UC_ERR_EXCEPTION = 21
-    let UC_ERR_TIMEOUT = 22
     let UC_MEM_READ = 16
     let UC_MEM_WRITE = 17
     let UC_MEM_FETCH = 18
@@ -107,6 +106,7 @@ module Common =
     let UC_QUERY_MODE = 1
     let UC_QUERY_PAGE_SIZE = 2
     let UC_QUERY_ARCH = 3
+    let UC_QUERY_TIMEOUT = 4
 
     let UC_PROT_NONE = 0
     let UC_PROT_READ = 1
