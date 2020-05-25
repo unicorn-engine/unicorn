@@ -101,8 +101,6 @@ const char *uc_strerror(uc_err code)
             return "Insufficient resource (UC_ERR_RESOURCE)";
         case UC_ERR_EXCEPTION:
             return "Unhandled CPU exception (UC_ERR_EXCEPTION)";
-        case UC_ERR_TIMEOUT:
-            return "Emulation timed out (UC_ERR_TIMEOUT)";
     }
 }
 
@@ -561,6 +559,7 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     uc->invalid_error = UC_ERR_OK;
     uc->block_full = false;
     uc->emulation_done = false;
+    uc->size_recur_mem = 0;
     uc->timed_out = false;
 
     switch(uc->arch) {
@@ -661,9 +660,6 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
         // wait for the timer to finish
         qemu_thread_join(&uc->timer);
     }
-
-    if(uc->timed_out)
-        return UC_ERR_TIMEOUT;
 
     return uc->invalid_error;
 }
@@ -1252,23 +1248,29 @@ uint32_t uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
 UNICORN_EXPORT
 uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
 {
-    if (type == UC_QUERY_PAGE_SIZE) {
-        *result = uc->target_page_size;
-        return UC_ERR_OK;
-    }
-
-    if (type == UC_QUERY_ARCH) {
-        *result = uc->arch;
-        return UC_ERR_OK;
-    }
-
-    switch(uc->arch) {
-#ifdef UNICORN_HAS_ARM
-        case UC_ARCH_ARM:
-            return uc->query(uc, type, result);
-#endif
+    switch(type) {
         default:
             return UC_ERR_ARG;
+
+        case UC_QUERY_PAGE_SIZE:
+            *result = uc->target_page_size;
+            break;
+
+        case UC_QUERY_ARCH:
+            *result = uc->arch;
+            break;
+
+        case UC_QUERY_MODE:
+#ifdef UNICORN_HAS_ARM
+            if (uc->arch == UC_ARCH_ARM) {
+                return uc->query(uc, type, result);
+            }
+#endif
+            return UC_ERR_ARG;
+
+        case UC_QUERY_TIMEOUT:
+            *result = uc->timed_out;
+            break;
     }
 
     return UC_ERR_OK;

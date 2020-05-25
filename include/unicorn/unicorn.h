@@ -164,7 +164,6 @@ typedef enum uc_err {
     UC_ERR_HOOK_EXIST,  // hook for this event already existed
     UC_ERR_RESOURCE,    // Insufficient resource: uc_emu_start()
     UC_ERR_EXCEPTION, // Unhandled CPU exception
-    UC_ERR_TIMEOUT // Emulation timed out
 } uc_err;
 
 
@@ -330,8 +329,9 @@ typedef struct uc_mem_region {
 typedef enum uc_query_type {
     // Dynamically query current hardware mode.
     UC_QUERY_MODE = 1,
-    UC_QUERY_PAGE_SIZE,
-    UC_QUERY_ARCH,
+    UC_QUERY_PAGE_SIZE, // query pagesize of engine
+    UC_QUERY_ARCH,  // query architecture of engine (for ARM to query Thumb mode)
+    UC_QUERY_TIMEOUT,  // query if emulation stops due to timeout (indicated if result = True)
 } uc_query_type;
 
 // Opaque storage for CPU context, used with uc_context_*()

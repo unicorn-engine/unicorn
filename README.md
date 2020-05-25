@@ -4,6 +4,7 @@ Unicorn Engine
 [![Join the chat at https://gitter.im/unicorn-engine/chat](https://badges.gitter.im/unicorn-engine/unicorn.svg)](https://gitter.im/unicorn-engine/chat?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.org/unicorn-engine/unicorn.svg?branch=master)](https://travis-ci.org/unicorn-engine/unicorn)
 [![pypi downloads](https://pepy.tech/badge/unicorn)](https://pepy.tech/project/unicorn)
+[![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/unicorn.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:unicorn)
 
 Unicorn is a lightweight, multi-platform, multi-architecture CPU emulator framework
 based on [QEMU](http://qemu.org).

@@ -379,7 +379,7 @@ static void test_i386_loop(void **state)
     // emulate machine code in 2 seconds, so we can quit even
     // if the code loops
     err = uc_emu_start(uc, address, address+sizeof(code), 2*UC_SECOND_SCALE, 0);
-    uc_assert_err(err, UC_ERR_TIMEOUT);
+    uc_assert_success(err);
 
     // verify register values
     uc_assert_success(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
