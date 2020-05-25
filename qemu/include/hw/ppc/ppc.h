@@ -101,4 +101,6 @@ enum {
 /* ppc_booke.c */
 void ppc_booke_timers_init(PowerPCCPU *cpu, uint32_t freq, uint32_t flags);
 
+void ppc_machine_init(struct uc_struct *uc);
+void ppc_cpu_register_types(void *opaque);
 #endif

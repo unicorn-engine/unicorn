@@ -33,6 +33,8 @@
 #define CPU_BRANCH_STEP 0x2
 #define GDBSTUB_SINGLE_STEP 0x4
 
+void gen_update_current_nip(void *opaque);
+
 /* Include definitions for instructions classes and implementations flags */
 //#define PPC_DEBUG_DISAS
 //#define DO_PPC_STATISTICS
@@ -11063,6 +11065,7 @@ GEN_SPEOP_LDST(evstwwo, 0x1E, 2),
 
 /*****************************************************************************/
 /* Misc PowerPC helpers */
+#if 0
 void ppc_cpu_dump_state(struct uc_struct *uc, CPUState *cs, FILE *f, fprintf_function cpu_fprintf,
                         int flags)
 {
@@ -11217,6 +11220,7 @@ void ppc_cpu_dump_state(struct uc_struct *uc, CPUState *cs, FILE *f, fprintf_fun
 #undef RFPL
 }
 
+
 void ppc_cpu_dump_statistics(CPUState *cs, FILE*f,
                              fprintf_function cpu_fprintf, int flags)
 {
@@ -11264,7 +11268,7 @@ void ppc_cpu_dump_statistics(CPUState *cs, FILE*f,
     }
 #endif
 }
-
+#endif 		// #if 0
 /*****************************************************************************/
 static inline void gen_intermediate_code_internal(PowerPCCPU *cpu,
                                                   TranslationBlock *tb,

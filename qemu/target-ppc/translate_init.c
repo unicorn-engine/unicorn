@@ -43,6 +43,8 @@
 //#define PPC_DUMP_SPR_ACCESSES
 /* #define USE_APPLE_GDB */
 
+void ppc_cpu_register_types(void *opaque);
+
 /* For user-mode emulation, we don't emulate any IRQ controller */
 #if defined(CONFIG_USER_ONLY)
 #define PPC_IRQ_INIT_FN(name)                                                 \
@@ -3285,6 +3287,7 @@ static bool ppc_cpu_interrupts_big_endian_lpcr(PowerPCCPU *cpu)
         .class_init = glue(glue(ppc_, _name), _cpu_family_class_init),      \
     };                                                                      \
                                                                             \
+    void glue(glue(ppc_, _name), _cpu_family_register_types)(struct uc_struct *uc); \
     /*static*/ void glue(glue(ppc_, _name), _cpu_family_register_types)(struct uc_struct *uc)   \
     {                                                                       \
         type_register_static(uc,                                               \
@@ -9936,6 +9939,8 @@ static void ppc_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
     type_register_static(uc, &ppc_cpu_type_info);
 }
 */
+
+void CPU_POWERPC_e500v2_v10_0x40000000_e500v2_cpu_register_types(void *opaque);
 void ppc_cpu_register_types(void *opaque)
 {
 	TypeInfo ppc_cpu_type_info = { 0 };
