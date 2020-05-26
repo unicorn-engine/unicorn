@@ -683,24 +683,24 @@ uint64_t cpu_ppc_load_purr (CPUPPCState *env)
 /* When decrementer expires,
  * all we need to do is generate or queue a CPU exception
  */
-static inline void cpu_ppc_decr_excp(PowerPCCPU *cpu)
+/*static inline void cpu_ppc_decr_excp(PowerPCCPU *cpu)
 {
-    /* Raise it */
+    // Raise it
     LOG_TB("raise decrementer exception\n");
     ppc_set_irq(cpu, PPC_INTERRUPT_DECR, 1);
-}
+}*/
 
 static inline void cpu_ppc_decr_lower(PowerPCCPU *cpu)
 {
     ppc_set_irq(cpu, PPC_INTERRUPT_DECR, 0);
 }
 
-static inline void cpu_ppc_hdecr_excp(PowerPCCPU *cpu)
+/*static inline void cpu_ppc_hdecr_excp(PowerPCCPU *cpu)
 {
-    /* Raise it */
+    // Raise it
     LOG_TB("raise decrementer exception\n");
     ppc_set_irq(cpu, PPC_INTERRUPT_HDECR, 1);
-}
+}*/
 
 static inline void cpu_ppc_hdecr_lower(PowerPCCPU *cpu)
 {
