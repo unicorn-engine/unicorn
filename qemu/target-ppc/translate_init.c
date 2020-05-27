@@ -8460,16 +8460,20 @@ static void init_ppc_proc(struct uc_struct *uc, PowerPCCPU *cpu)
 #endif
     /* Register SPR common to all PowerPC implementations */
     gen_spr_generic(env);
+#if defined(CONFIG_LINUX_USER)
     spr_register(env, SPR_PVR, "PVR",
                  /* Linux permits userspace to read PVR */
-#if defined(CONFIG_LINUX_USER)
                  &spr_read_generic,
-#else
-                 SPR_NOACCESS,
-#endif
                  SPR_NOACCESS,
                  &spr_read_generic, SPR_NOACCESS,
                  pcc->pvr);
+#else
+    spr_register(env, SPR_PVR, "PVR",
+                 SPR_NOACCESS,
+                 SPR_NOACCESS,
+                 &spr_read_generic, SPR_NOACCESS,
+                 pcc->pvr);
+#endif
     /* Register SVR if it's defined to anything else than POWERPC_SVR_NONE */
     if (pcc->svr != POWERPC_SVR_NONE) {
         if (pcc->svr & POWERPC_SVR_E500) {
