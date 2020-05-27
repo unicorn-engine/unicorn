@@ -43,6 +43,10 @@
 #define UNUSED_FUNCTION
 #endif
 
+#if defined(_WIN32) && defined(_MSC_VER)
+#define strncasecmp _strnicmp
+#endif
+
 //#define PPC_DUMP_CPU
 //#define PPC_DEBUG_SPR
 //#define PPC_DUMP_SPR_ACCESSES
