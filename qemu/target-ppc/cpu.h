@@ -87,9 +87,20 @@
 #define ELF_MACHINE     EM_PPC
 #endif
 
-// ffs() fix for MinGW
+// ffs() fix for MinGW / Microsoft C
 #ifdef _WIN32
+#if defined(_MSC_VER)
+#include <intrin.h>
+#pragma intrinsic(_BitScanForward)
+
+inline static unsigned long ffs(unsigned long value)
+{
+    unsigned long index;
+    return _BitScanForward(&index, value) ? (index + 1) : 0;
+}
+#else
 #define ffs __builtin_ffs
+#endif
 #endif
 
 
