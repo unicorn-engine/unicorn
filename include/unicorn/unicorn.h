@@ -32,6 +32,7 @@ typedef size_t uc_hook;
 #include "arm64.h"
 #include "mips.h"
 #include "sparc.h"
+#include "ppc.h"
 
 #ifdef __GNUC__
 #define DEFAULT_VISIBILITY __attribute__((visibility("default")))
@@ -92,7 +93,7 @@ typedef enum uc_arch {
     UC_ARCH_ARM64,      // ARM-64, also called AArch64
     UC_ARCH_MIPS,       // Mips architecture
     UC_ARCH_X86,        // X86 architecture (including x86 & x86-64)
-    UC_ARCH_PPC,        // PowerPC architecture (currently unsupported)
+    UC_ARCH_PPC,        // PowerPC architecture
     UC_ARCH_SPARC,      // Sparc architecture
     UC_ARCH_M68K,       // M68K architecture
     UC_ARCH_MAX,

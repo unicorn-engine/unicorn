@@ -10,3 +10,5 @@ common-obj-y += qemu-log.o
 common-obj-y += tcg-runtime.o
 common-obj-y += hw/
 common-obj-y += qom/
+common-obj-y += libdecnumber/decContext.o libdecnumber/decNumber.o libdecnumber/dpd/decimal32.o libdecnumber/dpd/decimal64.o libdecnumber/dpd/decimal128.o
+

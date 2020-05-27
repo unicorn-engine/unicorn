@@ -213,7 +213,7 @@ static int device_set_realized(struct uc_struct *uc, Object *obj, bool value, Er
         }
         if (dc->unrealize) {
             local_errp = local_err ? NULL : &local_err;
-            dc->unrealize(dev, local_errp);
+            dc->unrealize(uc, dev, local_errp);
         }
         dev->pending_deleted_event = true;
     }
@@ -233,7 +233,7 @@ child_realize_fail:
 
 post_realize_fail:
     if (dc->unrealize) {
-        dc->unrealize(dev, NULL);
+        dc->unrealize(uc, dev, NULL);
     }
 
 fail:
