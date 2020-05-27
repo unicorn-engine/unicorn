@@ -191,7 +191,6 @@ struct uc_struct {
     void **l1_map;  // qemu/translate-all.c
     size_t l1_map_size;
     /* code generation context */
-//    void *tcg_ctx;  // for "TCGContext tcg_ctx" in qemu/translate-all.c
     TCGContext *tcg_ctx;
     /* memory.c */
     unsigned memory_region_transaction_depth;

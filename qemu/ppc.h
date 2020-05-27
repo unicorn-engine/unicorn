@@ -1,8 +1,6 @@
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
 #ifndef UNICORN_AUTOGEN_PPC_H
 #define UNICORN_AUTOGEN_PPC_H
-#define helper_divs helper_divs_ppc
-#define helper_fsqrt helper_fsqrt_ppc
 #define arm_release arm_release_ppc
 #define aarch64_tb_set_jmp_target aarch64_tb_set_jmp_target_ppc
 #define ppc_tb_set_jmp_target ppc_tb_set_jmp_target_ppc
@@ -2120,7 +2118,6 @@
 #define object_child_foreach object_child_foreach_ppc
 #define object_class_foreach object_class_foreach_ppc
 #define object_class_foreach_tramp object_class_foreach_tramp_ppc
-//#define object_class_get_list object_class_get_list_ppc
 #define object_class_get_list_tramp object_class_get_list_tramp_ppc
 #define object_class_get_parent object_class_get_parent_ppc
 #define object_deinit object_deinit_ppc
@@ -3023,4 +3020,6 @@
 #define xpsr_write xpsr_write_ppc
 #define xscale_cpar_write xscale_cpar_write_ppc
 #define xscale_cp_reginfo xscale_cp_reginfo_ppc
+#define helper_fsqrt helper_fsqrt_ppc
+#define helper_divs helper_divs_ppc
 #endif

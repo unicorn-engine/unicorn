@@ -4060,6 +4060,11 @@ sparc_symbols = (
     'helper_divs',
     'helper_fsqrt')
 
+ppc_symbols = (
+    'helper_fsqrt',
+    'helper_divs',
+    )
+
 
 if __name__ == '__main__':
   arch = sys.argv[1]
@@ -4085,6 +4090,10 @@ if __name__ == '__main__':
 
   if 'sparc' in arch:
     for s in sparc_symbols:
+      print("#define %s %s_%s" %(s, s, arch))
+
+  if 'ppc' in arch:
+    for s in ppc_symbols:
       print("#define %s %s_%s" %(s, s, arch))
 
   print("#endif")
