@@ -27,6 +27,8 @@ qemu/sparc64-softmmu/
 qemu/sparc-softmmu/
 qemu/i386-softmmu/
 qemu/x86_64-softmmu/
+qemu/ppc-softmmu/
+qemu/ppc64-softmmu/
 
 tags
 qemu/config-host.ld

@@ -662,6 +662,8 @@ symbols = (
     'gen_helper_double_saturate',
     'gen_helper_exception_internal',
     'gen_helper_exception_with_syndrome',
+    'gen_helper_float64_to_float32',
+    'gen_helper_float32_to_float64',
     'gen_helper_get_cp_reg',
     'gen_helper_get_cp_reg64',
     'gen_helper_get_r13_banked',
@@ -1382,6 +1384,8 @@ symbols = (
     'helper_exception_internal',
     'helper_exception_return',
     'helper_exception_with_syndrome',
+    'helper_float32_to_float64',
+    'helper_float64_to_float32',
     'helper_get_cp_reg',
     'helper_get_cp_reg64',
     'helper_get_r13_banked',
@@ -2120,7 +2124,7 @@ symbols = (
     'object_child_foreach',
     'object_class_foreach',
     'object_class_foreach_tramp',
-    'object_class_get_list',
+#    'object_class_get_list',
     'object_class_get_list_tramp',
     'object_class_get_parent',
     'object_deinit',
@@ -4052,7 +4056,14 @@ sparc_symbols = (
     'cpu_cwp_inc',
     'cpu_cwp_dec',
     'helper_save',
-    'helper_restore')
+    'helper_restore',
+    'helper_divs',
+    'helper_fsqrt')
+
+ppc_symbols = (
+    'helper_fsqrt',
+    'helper_divs',
+    )
 
 
 if __name__ == '__main__':
@@ -4079,6 +4090,10 @@ if __name__ == '__main__':
 
   if 'sparc' in arch:
     for s in sparc_symbols:
+      print("#define %s %s_%s" %(s, s, arch))
+
+  if 'ppc' in arch:
+    for s in ppc_symbols:
       print("#define %s %s_%s" %(s, s, arch))
 
   print("#endif")

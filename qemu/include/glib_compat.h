@@ -86,6 +86,8 @@ void g_slist_foreach(GSList *list, GFunc func, gpointer user_data);
 void g_slist_free(GSList *list);
 GSList *g_slist_prepend(GSList *list, gpointer data);
 GSList *g_slist_sort(GSList *list, GCompareFunc compare);
+GSList *g_slist_find_custom(GSList *list, gconstpointer data, GCompareFunc func);
+
 
 typedef guint (*GHashFunc)(gconstpointer key);
 typedef gboolean (*GEqualFunc)(gconstpointer a, gconstpointer b);

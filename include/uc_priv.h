@@ -145,6 +145,8 @@ static inline bool _hook_exists_bounded(struct list_item *cur, uint64_t addr)
 //relloc increment, KEEP THIS A POWER OF 2!
 #define MEM_BLOCK_INCR 32
 
+typedef struct TCGContext TCGContext;
+
 struct uc_struct {
     uc_arch arch;
     uc_mode mode;
@@ -189,7 +191,7 @@ struct uc_struct {
     void **l1_map;  // qemu/translate-all.c
     size_t l1_map_size;
     /* code generation context */
-    void *tcg_ctx;  // for "TCGContext tcg_ctx" in qemu/translate-all.c
+    TCGContext *tcg_ctx;
     /* memory.c */
     unsigned memory_region_transaction_depth;
     bool memory_region_update_pending;
@@ -223,11 +225,13 @@ struct uc_struct {
 
     uint64_t block_addr;    // save the last block address we hooked
 
+    int size_recur_mem; // size for mem access when in a recursive call
+
     bool init_tcg;      // already initialized local TCGv variables?
     bool stop_request;  // request to immediately stop emulation - for uc_emu_stop()
     bool quit_request;  // request to quit the current TB, but continue to emulate - for uc_mem_protect()
     bool emulation_done;  // emulation is done by uc_emu_start()
-    bool timed_out;     // emulation timed out, uc_emu_start() will result in EC_ERR_TIMEOUT
+    bool timed_out;     // emulation timed out, that can retrieve via uc_query(UC_QUERY_TIMEOUT)
     QemuThread timer;   // timer for emulation timeout
     uint64_t timeout;   // timeout for uc_emu_start()
 

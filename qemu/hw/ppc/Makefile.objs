@@ -1,0 +1,13 @@
+# shared objects
+obj-y += ppc.o ppc_booke.o
+# IBM pSeries (sPAPR)
+#obj-$(CONFIG_PSERIES) += spapr.o spapr_vio.o spapr_events.o
+#obj-$(CONFIG_PSERIES) += spapr_hcall.o spapr_iommu.o spapr_rtas.o
+#obj-$(CONFIG_PSERIES) += spapr_pci.o
+# PReP
+#obj-$(CONFIG_PREP) += prep.o
+# e500
+#obj-$(CONFIG_E500) += e500.o mpc8544ds.o e500plat.o
+#obj-$(CONFIG_E500) += mpc8544_guts.o ppce500_spin.o
+obj-y += e500plat.o
+
