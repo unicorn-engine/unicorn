@@ -7,9 +7,9 @@ script:
         choco install cygwin cyg-get && \
         cyg-get.bat default autoconf automake make gcc-core clang pkg-config libpcre-devel cmake python27-setuptools ruby wget && \
         export SHELLOPTS && set -o igncr \
-        cmd.exe //C "C:\\tools\\cygwin\\bin\\bash.exe -lc 'cd /cygdrive/$TRAVIS_BUILD_DIR; make; ./install-cmocka-linux.sh; export PATH="$PATH":/cygdrive/$TRAVIS_BUILD_DIR:/cygdrive/$TRAVIS_BUILD_DIR/cmocka/src; make test'" 
+        cmd.exe //C "C:\\tools\\cygwin\\bin\\bash.exe -lc 'cd /cygdrive/$TRAVIS_BUILD_DIR; make header; make; ./install-cmocka-linux.sh; export PATH="$PATH":/cygdrive/$TRAVIS_BUILD_DIR:/cygdrive/$TRAVIS_BUILD_DIR/cmocka/src; make test'" 
     else
-        make && make -C bindings/go && make -C bindings/go test && make test    
+        make header && make && make -C bindings/go && make -C bindings/go test && make test    
     fi
 compiler:
   - clang
@@ -28,7 +28,7 @@ matrix:
       language: c
       env:
         - PATH=$PATH:/usr/local/opt/binutils/bin
-      script: make && make -C tests/unit test && make -C tests/regress test
+      script: make header && make && make -C tests/unit test && make -C tests/regress test
 
     - name: "Linux arm64 gcc C"
       arch: arm64
@@ -37,7 +37,7 @@ matrix:
       language: c
       env:
         - PATH=$PATH:/usr/local/opt/binutils/bin
-      script: make && make -C tests/unit test && make -C tests/regress test
+      script: make header && make && make -C tests/unit test && make -C tests/regress test
 
     - name: "Linux clang ASAN"
       os: linux
@@ -48,7 +48,7 @@ matrix:
         - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize=fuzzer-no-link"
         - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize=fuzzer-no-link"
         - LDFLAGS="-fsanitize=address"
-      script: make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
+      script: make header && make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
 
     - name: "Linux clang MSAN"
       os: linux
@@ -59,7 +59,7 @@ matrix:
         - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=memory -fsanitize=fuzzer-no-link"
         - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=memory -fsanitize=fuzzer-no-link"
         - LDFLAGS="-fsanitize=memory"
-      script: make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
+      script: make header && make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
 
     - name: "Linux clang USAN"
       os: linux
@@ -70,7 +70,7 @@ matrix:
         - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=undefined -fsanitize=fuzzer-no-link"
         - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=undefined -fsanitize=fuzzer-no-link"
         - LDFLAGS="-fsanitize=undefined"
-      script: make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
+      script: make header && make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
 
     - name: "Linux 32bit"
       os: linux
@@ -78,7 +78,7 @@ matrix:
       env:
         - CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
         - PATH=$PATH:/usr/local/opt/binutils/bin
-      script: make && make -C tests/unit test && make -C tests/regress test
+      script: make header && make && make -C tests/unit test && make -C tests/regress test
       addons:
         apt:
           packages:
@@ -221,7 +221,7 @@ matrix:
           - $HOME/AppData/Local/Temp/chocolatey
           - /C/tools/msys64
       script:
-        - $shell make; cp unicorn.dll /C/Windows/SysWOW64/; $shell make test
+        - $shell make header; $shell make; cp unicorn.dll /C/Windows/SysWOW64/; $shell make test
 
     - name: "Windows MSYS2/MinGW64"
       os: windows
@@ -263,7 +263,7 @@ matrix:
           - $HOME/AppData/Local/Temp/chocolatey
           - /C/tools/msys64
       script:
-        - $shell make; cp unicorn.dll /C/Windows/System32/; $shell make test
+        - $shell make header; $shell make; cp unicorn.dll /C/Windows/System32/; $shell make test
 addons:
   apt:
     packages:
