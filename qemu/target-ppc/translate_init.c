@@ -37,6 +37,15 @@
 // From kvm_ppc.h
 #define TYPE_HOST_POWERPC_CPU "host-" TYPE_POWERPC_CPU
 
+#if defined(__GNUC__)
+#define UNUSED_FUNCTION __attribute__ (( unused ))
+#else
+#define UNUSED_FUNCTION
+#endif
+
+#if defined(_WIN32) && defined(_MSC_VER)
+#define strncasecmp _strnicmp
+#endif
 
 //#define PPC_DUMP_CPU
 //#define PPC_DEBUG_SPR
@@ -283,7 +292,7 @@ static void spr_read_tbu (void *opaque, int gprn, int sprn)
 //    }
 }
 
-__attribute__ (( unused ))
+UNUSED_FUNCTION
 static void spr_read_atbl (void *opaque, int gprn, int sprn)
 {
     DisasContext *ctx = opaque;
@@ -291,7 +300,7 @@ static void spr_read_atbl (void *opaque, int gprn, int sprn)
     gen_helper_load_atbl(ctx->uc->tcg_ctx, cpu_gpr[gprn], cpu_env);
 }
 
-__attribute__ (( unused ))
+UNUSED_FUNCTION
 static void spr_read_atbu (void *opaque, int gprn, int sprn)
 {
     DisasContext *ctx = opaque;
@@ -328,7 +337,7 @@ static void spr_write_tbu (void *opaque, int sprn, int gprn)
 //    }
 }
 
-__attribute__ (( unused ))
+UNUSED_FUNCTION
 static void spr_write_atbl (void *opaque, int sprn, int gprn)
 {
     DisasContext *ctx = opaque;
@@ -336,7 +345,7 @@ static void spr_write_atbl (void *opaque, int sprn, int gprn)
     gen_helper_store_atbl(ctx->uc->tcg_ctx, cpu_env, cpu_gpr[gprn]);
 }
 
-__attribute__ (( unused ))
+UNUSED_FUNCTION
 static void spr_write_atbu (void *opaque, int sprn, int gprn)
 {
     DisasContext *ctx = opaque;
@@ -345,7 +354,7 @@ static void spr_write_atbu (void *opaque, int sprn, int gprn)
 }
 
 #if defined(TARGET_PPC64)
-__attribute__ (( unused ))
+UNUSED_FUNCTION
 static void spr_read_purr (void *opaque, int gprn, int sprn)
 {
     DisasContext *ctx = opaque;
@@ -8451,16 +8460,20 @@ static void init_ppc_proc(struct uc_struct *uc, PowerPCCPU *cpu)
 #endif
     /* Register SPR common to all PowerPC implementations */
     gen_spr_generic(env);
+#if defined(CONFIG_LINUX_USER)
     spr_register(env, SPR_PVR, "PVR",
                  /* Linux permits userspace to read PVR */
-#if defined(CONFIG_LINUX_USER)
                  &spr_read_generic,
-#else
-                 SPR_NOACCESS,
-#endif
                  SPR_NOACCESS,
                  &spr_read_generic, SPR_NOACCESS,
                  pcc->pvr);
+#else
+    spr_register(env, SPR_PVR, "PVR",
+                 SPR_NOACCESS,
+                 SPR_NOACCESS,
+                 &spr_read_generic, SPR_NOACCESS,
+                 pcc->pvr);
+#endif
     /* Register SVR if it's defined to anything else than POWERPC_SVR_NONE */
     if (pcc->svr != POWERPC_SVR_NONE) {
         if (pcc->svr & POWERPC_SVR_E500) {
