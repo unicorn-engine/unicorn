@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -90,7 +90,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;UNICORN_DLL_EXPORTS;UNICORN_SHARED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;UNICORN_DLL_EXPORTS;UNICORN_SHARED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_PPC;UNICORN_HAS_SPARC;UNICORN_HAS_X86;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -99,7 +99,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;aarch64eb-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;aarch64eb-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;ppc-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -108,7 +108,7 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;UNICORN_DLL_EXPORTS;UNICORN_SHARED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;UNICORN_DLL_EXPORTS;UNICORN_SHARED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_PPC;UNICORN_HAS_SPARC;UNICORN_HAS_X86;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
@@ -118,7 +118,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;aarch64eb-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;aarch64eb-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;ppc-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
   </ItemDefinitionGroup>
@@ -129,7 +129,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;UNICORN_DLL_EXPORTS;UNICORN_SHARED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;UNICORN_DLL_EXPORTS;UNICORN_SHARED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__i386__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_PPC;UNICORN_HAS_SPARC;UNICORN_HAS_X86;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -141,7 +141,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;aarch64eb-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;aarch64eb-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;ppc-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
@@ -164,7 +164,7 @@ copy "$(SolutionDir)..\include\unicorn\*.h" "$(SolutionDir)distro\include\unicor
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;UNICORN_DLL_EXPORTS;UNICORN_SHARED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_SPARC;UNICORN_HAS_X86;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;UNICORN_DLL_EXPORTS;UNICORN_SHARED;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;__x86_64__;UNICORN_HAS_ARM;UNICORN_HAS_ARM64;UNICORN_HAS_M68K;UNICORN_HAS_MIPS;UNICORN_HAS_MIPS64;UNICORN_HAS_MIPSEL;UNICORN_HAS_MIPS64EL;UNICORN_HAS_PPC;UNICORN_HAS_SPARC;UNICORN_HAS_X86;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>.;..;../../../include;../../../qemu;../../../qemu/include;../../../qemu/tcg</AdditionalIncludeDirectories>
       <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
@@ -176,7 +176,7 @@ copy "$(SolutionDir)..\include\unicorn\*.h" "$(SolutionDir)distro\include\unicor
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;aarch64eb-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies);aarch64-softmmu.lib;aarch64eb-softmmu.lib;arm-softmmu.lib;armeb-softmmu.lib;m68k-softmmu.lib;mips-softmmu.lib;mips64-softmmu.lib;mipsel-softmmu.lib;mips64el-softmmu.lib;ppc-softmmu.lib;sparc-softmmu.lib;sparc64-softmmu.lib;x86_64-softmmu.lib</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(SolutionDir)$(Platform)\$(Configuration)\</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
