@@ -1,0 +1,161 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="fpu">
+      <UniqueIdentifier>{70d46eb5-5a8c-4f5a-8177-ff052e72ad16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hw">
+      <UniqueIdentifier>{3c697f87-41f1-42c8-9532-3b7569b2414a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="hw\ppc">
+      <UniqueIdentifier>{1f4169dc-0b51-4e73-aae3-fd2206b4ce12}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libdecnumber">
+      <UniqueIdentifier>{80731b46-a3f5-4f61-8eb5-f028138797fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="target-ppc">
+      <UniqueIdentifier>{b2e2301b-7983-47b6-ad06-6d8e41b3887e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tcg">
+      <UniqueIdentifier>{abb2c8a3-d95f-48a2-903a-47919c277de4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="tcg\i386">
+      <UniqueIdentifier>{675cc183-f2ba-4587-aa0f-35712756ced1}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h">
+      <Filter>fpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h">
+      <Filter>fpu</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\tcg.h">
+      <Filter>tcg</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h">
+      <Filter>tcg\i386</Filter>
+    </ClInclude>
+    <ClInclude Include="..\config-host.h" />
+    <ClInclude Include="config-target.h" />
+    <ClInclude Include="..\..\..\qemu\target-ppc\cpu-models.h">
+          <Filter>target-ppc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-ppc\cpu-qom.h">
+          <Filter>target-ppc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-ppc\cpu.h">
+          <Filter>target-ppc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-ppc\helper.h">
+          <Filter>target-ppc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-ppc\helper_regs.h">
+          <Filter>target-ppc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-ppc\mmu-hash32.h">
+          <Filter>target-ppc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-ppc\mmu-hash64.h">
+          <Filter>target-ppc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\target-ppc\unicorn.h">
+          <Filter>target-ppc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\qemu\ppc.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\qemu\fpu\softfloat.c">
+      <Filter>fpu</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\tcg\optimize.c">
+      <Filter>tcg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\tcg\tcg.c">
+      <Filter>tcg</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
+    <ClCompile Include="..\..\..\qemu\cpus.c" />
+    <ClCompile Include="..\..\..\qemu\cputlb.c" />
+    <ClCompile Include="..\..\..\qemu\exec.c" />
+    <ClCompile Include="..\..\..\qemu\ioport.c" />
+    <ClCompile Include="..\..\..\qemu\memory.c" />
+    <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
+    <ClCompile Include="..\..\..\qemu\translate-all.c" />
+    <ClCompile Include="..\..\..\qemu\hw\ppc\e500plat.c">
+          <Filter>hw\ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\hw\ppc\ppc_booke.c">
+          <Filter>hw\ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\hw\ppc\ppc.c">
+          <Filter>hw\ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\libdecnumber\decContext.c">
+          <Filter>libdecnumber</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\libdecnumber\decNumber.c">
+          <Filter>libdecnumber</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\libdecnumber\dpd\decimal128.c">
+          <Filter>libdecnumber</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\libdecnumber\dpd\decimal32.c">
+          <Filter>libdecnumber</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\libdecnumber\dpd\decimal64.c">
+          <Filter>libdecnumber</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\cpu-models.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\dfp_helper.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\excp_helper.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\fpu_helper.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\int_helper.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\mem_helper.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\misc_helper.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\mmu-hash32.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\mmu_helper.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\timebase_helper.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\translate.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\qemu\target-ppc\unicorn.c">
+          <Filter>target-ppc</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
