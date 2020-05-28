@@ -1,6 +1,6 @@
 This file details the changelog of Unicorn Engine.
 
-----------------------------------
+-----------------------------------
 [Version 1.0.2-rc4]: May 29th, 2020
 
 - No longer require Python to build
@@ -10,7 +10,7 @@ This file details the changelog of Unicorn Engine.
 - Fix UAF when deleting hook while in hook callback
 - Ensure that hooks are unaffected by a request to stop emulation.
 - Fix block hooks being called twice after an early exit from execution.
-- Fix binding install on python2
+- Fix binding install on python2 (MacOS)
 - X86:
     - Support read/write STn registers
     - Support read/write X64 base regs
