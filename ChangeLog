@@ -1,6 +1,23 @@
 This file details the changelog of Unicorn Engine.
 
 ----------------------------------
+[Version 1.0.2-rc4]: May 29th, 2020
+
+- No longer require Python to build
+- Fix recursive UC_HOOK_MEM callbacks for cross pages access
+- Remove UC_ERR_TIMEOUT, so timeout on uc_emu_start() is not considered error
+- Added UC_QUERY_TIMEOUT to query exit reason
+- Fix UAF when deleting hook while in hook callback
+- Ensure that hooks are unaffected by a request to stop emulation.
+- Fix block hooks being called twice after an early exit from execution.
+- Fix binding install on python2
+- X86:
+    - Support read/write STn registers
+    - Support read/write X64 base regs
+- ARM64:
+    - Support some new registers
+
+----------------------------------
 [Version 1.0.1]: April 20th, 2017
 
 - Properly handle selected-architecture build.
