@@ -28,6 +28,3 @@ UNICORN_STATIC ?= yes
 # a shared library.
 
 UNICORN_SHARED ?= yes
-
-#CFLAGS += -g
-

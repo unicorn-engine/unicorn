@@ -656,6 +656,8 @@
 #define gen_helper_double_saturate gen_helper_double_saturate_sparc64
 #define gen_helper_exception_internal gen_helper_exception_internal_sparc64
 #define gen_helper_exception_with_syndrome gen_helper_exception_with_syndrome_sparc64
+#define gen_helper_float64_to_float32 gen_helper_float64_to_float32_sparc64
+#define gen_helper_float32_to_float64 gen_helper_float32_to_float64_sparc64
 #define gen_helper_get_cp_reg gen_helper_get_cp_reg_sparc64
 #define gen_helper_get_cp_reg64 gen_helper_get_cp_reg64_sparc64
 #define gen_helper_get_r13_banked gen_helper_get_r13_banked_sparc64
@@ -1376,6 +1378,8 @@
 #define helper_exception_internal helper_exception_internal_sparc64
 #define helper_exception_return helper_exception_return_sparc64
 #define helper_exception_with_syndrome helper_exception_with_syndrome_sparc64
+#define helper_float32_to_float64 helper_float32_to_float64_sparc64
+#define helper_float64_to_float32 helper_float64_to_float32_sparc64
 #define helper_get_cp_reg helper_get_cp_reg_sparc64
 #define helper_get_cp_reg64 helper_get_cp_reg64_sparc64
 #define helper_get_r13_banked helper_get_r13_banked_sparc64
@@ -2114,7 +2118,6 @@
 #define object_child_foreach object_child_foreach_sparc64
 #define object_class_foreach object_class_foreach_sparc64
 #define object_class_foreach_tramp object_class_foreach_tramp_sparc64
-#define object_class_get_list object_class_get_list_sparc64
 #define object_class_get_list_tramp object_class_get_list_tramp_sparc64
 #define object_class_get_parent object_class_get_parent_sparc64
 #define object_deinit object_deinit_sparc64
@@ -3089,4 +3092,6 @@
 #define cpu_cwp_dec cpu_cwp_dec_sparc64
 #define helper_save helper_save_sparc64
 #define helper_restore helper_restore_sparc64
+#define helper_divs helper_divs_sparc64
+#define helper_fsqrt helper_fsqrt_sparc64
 #endif

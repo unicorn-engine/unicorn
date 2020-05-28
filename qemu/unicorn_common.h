@@ -51,6 +51,8 @@ static void release_common(void *t)
     memory_free(s->uc);
     tb_cleanup(s->uc);
     free_code_gen_buffer(s->uc);
+    cpu_watchpoint_remove_all(CPU(s->uc->cpu), BP_CPU);
+    cpu_breakpoint_remove_all(CPU(s->uc->cpu), BP_CPU);
 
 #if TCG_TARGET_REG_BITS == 32
     for(i = 0; i < s->nb_globals; i++) {

@@ -1,5 +1,5 @@
 /* Unicorn Emulator Engine */
-/* By Nguyen Anh Quynh, 2015 */
+/* By simigo79, 2020 */
 
 /* Sample code to demonstrate how to emulate PPC code */
 
@@ -9,8 +9,10 @@
 
 // code to be emulated
 #define PPC_CODE "\x7F\x46\x1A\x14" //  add       r26, r6, r3
+
 // memory address where emulation starts
 #define ADDRESS 0x10000
+
 
 static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
@@ -44,20 +46,24 @@ static void test_ppc(void)
 
     // map 2MB memory for this emulation
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+
     // write machine code to be emulated to memory
     uc_mem_write(uc, ADDRESS, PPC_CODE, sizeof(PPC_CODE) - 1);
+
     // initialize machine registers
     uc_reg_write(uc, UC_PPC_REG_3, &r3);
     uc_reg_write(uc, UC_PPC_REG_6, &r6);
     uc_reg_write(uc, UC_PPC_REG_26, &r26);
+
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing one instruction at ADDRESS with customized callback
     uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, ADDRESS, ADDRESS);
+
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(PPC_CODE) -1, 0, 100);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(PPC_CODE) -1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -67,6 +73,8 @@ static void test_ppc(void)
 
     uc_reg_read(uc, UC_PPC_REG_26, &r26);
     printf(">>> r26 = 0x%x\n", r26);
+
+    // close engine when done
     uc_close(uc);
 }
 

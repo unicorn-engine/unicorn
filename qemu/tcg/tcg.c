@@ -2378,8 +2378,10 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def,
     flags = args[nb_oargs + nb_iargs + 1];
 
     nb_regs = ARRAY_SIZE(tcg_target_call_iarg_regs);
-#if TCG_TARGET_REG_BITS == 32
+#ifdef _UC_MSVC_ARRAY_DUMMY
     // do this because msvc cannot have arrays with 0 entries.
+    /* ref: tcg/i386/tcg-target.c: tcg_target_call_iarg_regs,
+        it is added a dummy value, set back to 0. */
     nb_regs = 0;
 #endif
     if (nb_regs > nb_params) {
@@ -2394,7 +2396,7 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def,
     if (allocate_args) {
         /* XXX: if more than TCG_STATIC_CALL_ARGS_SIZE is needed,
            preallocate call stack */
-        tcg_abort();
+        return -1;
     }
 
     stack_offset = TCG_TARGET_CALL_STACK_OFFSET;
@@ -2420,7 +2422,7 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def,
                 tcg_out_movi(s, ts->type, reg, ts->val);
                 tcg_out_st(s, ts->type, reg, TCG_REG_CALL_STACK, stack_offset);
             } else {
-                tcg_abort();
+                return -1;
             }
         }
 #ifndef TCG_TARGET_STACK_GROWSUP
@@ -2446,7 +2448,7 @@ static int tcg_reg_alloc_call(TCGContext *s, const TCGOpDef *def,
                 /* XXX: sign extend ? */
                 tcg_out_movi(s, ts->type, reg, ts->val);
             } else {
-                tcg_abort();
+                return -1;
             }
             tcg_regset_set_reg(allocated_regs, reg);
         }
@@ -2530,6 +2532,7 @@ static inline int tcg_gen_code_common(TCGContext *s,
     int op_index;
     const TCGOpDef *def;
     const TCGArg *args;
+    int ret;
 
 #ifdef DEBUG_DISAS
     if (unlikely(qemu_loglevel_mask(CPU_LOG_TB_OP))) {
@@ -2622,16 +2625,21 @@ static inline int tcg_gen_code_common(TCGContext *s,
             tcg_out_label(s, args[0], s->code_ptr);
             break;
         case INDEX_op_call:
-            args += tcg_reg_alloc_call(s, def, opc, args,
+            ret = tcg_reg_alloc_call(s, def, opc, args,
                                        s->op_dead_args[op_index],
                                        s->op_sync_args[op_index]);
+            if (ret == -1) {
+                goto the_end;
+            } else {
+                args += ret;
+            }
             goto next;
         case INDEX_op_end:
             goto the_end;
         default:
             /* Sanity check that we've not introduced any unhandled opcodes. */
             if (def->flags & TCG_OPF_NOT_PRESENT) {
-                tcg_abort();
+                goto the_end;
             }
             /* Note: in order to speed up the code, it would be much
                faster to have specialized register allocator functions for
