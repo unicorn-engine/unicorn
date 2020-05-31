@@ -21,6 +21,8 @@ set(UNICORN_VERSION_MAJOR 1)
 set(UNICORN_VERSION_MINOR 0)
 set(UNICORN_VERSION_PATCH 3)
 
+option(UNICORN_BUILD_SHARED "Build shared instead of static library" ON)
+
 if(NOT UNICORN_ARCH)
     # build all architectures
     set(UNICORN_ARCH "x86 arm aarch64 m68k mips sparc ppc")
@@ -895,9 +897,15 @@ else()
     )
 endif()
 
-add_library(unicorn SHARED
-    ${UNICORN_SRCS}
-)
+if (UNICORN_BUILD_SHARED)
+    add_library(unicorn SHARED
+        ${UNICORN_SRCS}
+    )
+else()
+    add_library(unicorn STATIC
+        ${UNICORN_SRCS}
+    )
+endif()
 
 if (UNICORN_HAS_X86)
     set(UNICRON_COMPILE_OPTIONS ${UNICRON_COMPILE_OPTIONS} -DUNICORN_HAS_X86)
@@ -935,19 +943,21 @@ if (UNICORN_HAS_PPC)
     set(UNICRON_SAMPLE_FILE ${UNICRON_SAMPLE_FILE} sample_ppc)
 endif()
 
+target_compile_options(unicorn PRIVATE
+    ${UNICRON_COMPILE_OPTIONS}
+)
 
 if(MSVC)
-    target_compile_options(unicorn PRIVATE
-        ${UNICRON_COMPILE_OPTIONS}
-        -DUNICORN_SHARED
-    )
+    if (UNICORN_BUILD_SHARED)
+        target_compile_options(unicorn PRIVATE
+            -DUNICORN_SHARED
+        )
+    endif()
+
     target_link_libraries(unicorn
         ${UNICRON_LINK_LIBRARIES}
     )
 else()
-    target_compile_options(unicorn PRIVATE
-        ${UNICRON_COMPILE_OPTIONS}
-    )
     target_link_libraries(unicorn
         ${UNICRON_LINK_LIBRARIES}
         m
