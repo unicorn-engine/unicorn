@@ -824,7 +824,7 @@ add_library(ppc-softmmu
 if(MSVC)
     target_compile_options(ppc-softmmu PRIVATE
         -DNEED_CPU_H
-        /FI ppc.h
+        /FIppc.h
         /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/ppc-softmmu
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-ppc
     )
