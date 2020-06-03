@@ -1,0 +1,41 @@
+name: Build and publish pypi package
+
+on: [push]
+
+jobs:
+  deploy:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        platform: [x32, x64]
+        exclude:
+          - { platform: x32, os: macos-latest }
+          - { platform: x32, os: ubuntu-latest }  
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+    - name: Set up MSVC
+      if: matrix.os == 'windows-latest'
+      uses: microsoft/setup-msbuild@v1 
+    - name: Install dependencies
+      run: |
+        pip install setuptools wheel
+    - name: Build distribution 📦
+      shell: bash
+      run: |
+         if [ ${{ matrix.platform }} == 'x32' ] && [ ${{ matrix.os }} == 'windows-latest' ]; then
+             cd bindings/python && python setup.py build -p win32 sdist bdist_wheel -p win32
+         else
+             cd bindings/python && python setup.py bdist_wheel
+         fi
+    - name: Publish distribution 📦 to PyPI
+      if: startsWith(github.event.ref, 'refs/tags')
+      uses: pypa/gh-action-pypi-publish@master
+      with:
+        password: ${{ secrets.pypi_pass }}
