@@ -8,6 +8,8 @@ script:
         cyg-get.bat default autoconf automake make gcc-core clang pkg-config libpcre-devel cmake python27-setuptools ruby wget && \
         export SHELLOPTS && set -o igncr \
         cmd.exe //C "C:\\tools\\cygwin\\bin\\bash.exe -lc 'cd /cygdrive/$TRAVIS_BUILD_DIR; make header; make; ./install-cmocka-linux.sh; export PATH="$PATH":/cygdrive/$TRAVIS_BUILD_DIR:/cygdrive/$TRAVIS_BUILD_DIR/cmocka/src; make test'" 
+    elif [[ "$TRAVIS_CPU_ARCH" == "arm64" ]]; then
+        make header && make && make -C tests/unit test && make -C tests/regress test
     else
         make header && make && make -C bindings/go && make -C bindings/go test && make test    
     fi
@@ -18,27 +20,17 @@ os:
   - linux
   - osx
   - windows
+arch:
+  - amd64
+  - arm64
 matrix:
   fast_finish: true
+  exclude:
+    - os: windows
+      arch: arm64
+    - os: osx
+      arch: arm64
   include:
-    - name: "Linux arm64 clang C"
-      arch: arm64
-      os: linux
-      compiler: clang
-      language: c
-      env:
-        - PATH=$PATH:/usr/local/opt/binutils/bin
-      script: make header && make && make -C tests/unit test && make -C tests/regress test
-
-    - name: "Linux arm64 gcc C"
-      arch: arm64
-      os: linux
-      compiler: gcc
-      language: c
-      env:
-        - PATH=$PATH:/usr/local/opt/binutils/bin
-      script: make header && make && make -C tests/unit test && make -C tests/regress test
-
     - name: "Linux clang ASAN"
       os: linux
       compiler: clang
@@ -122,6 +114,41 @@ matrix:
         - mkdir build
         - cd build
         - ../cmake.sh
+        - cp libunicorn.* ../
+        - make -C ../tests/unit test && make -C ../tests/regress test
+
+    - name: "Linux Cmake Static 32bit"
+      os: linux
+      compiler: gcc
+      env: 
+        - CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
+        - PATH=$PATH:/usr/local/opt/binutils/bin
+      script:
+        - mkdir build
+        - cd build
+        - cmake -DCMAKE_BUILD_TYPE=Release -DUNICORN_ARCH=x86 -DUNICORN_BUILD_SHARED=OFF .. && make -j8
+        - cp libunicorn.* ../
+        - make -C ../tests/unit test && make -C ../tests/regress test
+      addons:
+        apt:
+          packages:
+            - lib32ncurses5-dev
+            - lib32z1-dev
+            - libpthread-stubs0-dev
+            - lib32gcc-4.8-dev
+            - libc6-dev-i386
+            - gcc-multilib
+            - libcmocka-dev:i386
+
+    - name: "Linux Cmake Static 64bit"
+      os: linux
+      compiler: gcc
+      env:
+        - PATH=$PATH:/usr/local/opt/binutils/bin
+      script:
+        - mkdir build
+        - cd build
+        - cmake -DCMAKE_BUILD_TYPE=Release -DUNICORN_BUILD_SHARED=OFF .. && make -j8
         - cp libunicorn.* ../
         - make -C ../tests/unit test && make -C ../tests/regress test
 
