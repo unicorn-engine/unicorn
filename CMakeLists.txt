@@ -23,7 +23,7 @@ set(UNICORN_VERSION_PATCH 3)
 
 option(UNICORN_BUILD_SHARED "Build shared instead of static library" ON)
 
-if(NOT UNICORN_ARCH)
+if (NOT UNICORN_ARCH)
     # build all architectures
     set(UNICORN_ARCH "x86 arm aarch64 m68k mips sparc ppc")
 endif()
@@ -305,6 +305,9 @@ add_library(x86_64-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(x86_64-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(x86_64-softmmu PRIVATE
@@ -348,6 +351,9 @@ add_library(arm-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(arm-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(arm-softmmu PRIVATE
@@ -389,6 +395,9 @@ add_library(armeb-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(armeb-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(armeb-softmmu PRIVATE
@@ -435,6 +444,9 @@ add_library(aarch64-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(aarch64-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(aarch64-softmmu PRIVATE
@@ -479,6 +491,9 @@ add_library(aarch64eb-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(aarch64eb-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(aarch64eb-softmmu PRIVATE
@@ -517,6 +532,9 @@ add_library(m68k-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(m68k-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(m68k-softmmu PRIVATE
@@ -560,6 +578,9 @@ add_library(mips-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(mips-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(mips-softmmu PRIVATE
@@ -601,6 +622,9 @@ add_library(mipsel-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(mipsel-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(mipsel-softmmu PRIVATE
@@ -642,6 +666,9 @@ add_library(mips64-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(mips64-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(mips64-softmmu PRIVATE
@@ -683,6 +710,9 @@ add_library(mips64el-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(mips64el-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(mips64el-softmmu PRIVATE
@@ -726,6 +756,9 @@ add_library(sparc-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(sparc-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(sparc-softmmu PRIVATE
@@ -768,6 +801,9 @@ add_library(sparc64-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(sparc64-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(sparc64-softmmu PRIVATE
@@ -820,6 +856,9 @@ add_library(ppc-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(ppc-softmmu unicorn)
+endif()
 
 if(MSVC)
     target_compile_options(ppc-softmmu PRIVATE
