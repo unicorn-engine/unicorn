@@ -596,15 +596,12 @@ class Uc(object):
         h = 0
 
     def context_save(self):
-        size = _uc.uc_context_size(self._uch)
-
-        context = context_factory(size)
-
-        status = _uc.uc_context_save(self._uch, ctypes.byref(context))
+        context = UcContext(self._uch)
+        status = _uc.uc_context_save(self._uch, context.context)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-        return ctypes.string_at(ctypes.byref(context), ctypes.sizeof(context))
+        return context
 
     def context_update(self, context):
         status = _uc.uc_context_save(self._uch, context)
@@ -612,7 +609,7 @@ class Uc(object):
             raise UcError(status)
 
     def context_restore(self, context):
-        status = _uc.uc_context_restore(self._uch, context)
+        status = _uc.uc_context_restore(self._uch, context.context)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
@@ -631,15 +628,17 @@ class Uc(object):
             _uc.uc_free(regions)
 
 
-def context_factory(size):
-    class SavedContext(ctypes.Structure):
-        _fields_ = [
-            ('size', ctypes.c_size_t),
-            ('data', ctypes.c_char*size)
-            ]
-    ctxt = SavedContext()
-    ctxt.size = size
-    return ctxt
+class UcContext(ctypes.Structure):
+    def __init__(self, h):
+        self.context = uc_context()
+
+        status = _uc.uc_context_alloc(h, ctypes.byref(self.context))
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+
+    def __del__(self):
+        _uc.uc_free(self.context)
+
 
 # print out debugging info
 def debug():
