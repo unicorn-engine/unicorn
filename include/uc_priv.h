@@ -255,9 +255,11 @@ struct uc_struct {
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
+// We also save cpu->jmp_env, so emulation can be reentrant
 struct uc_context {
-   size_t size;
-   char data[0];
+   size_t context_size;	// size of the real internal context structure
+   unsigned int jmp_env_size; // size of cpu->jmp_env
+   char data[0]; // context + cpu->jmp_env
 };
 
 // check if this address is mapped in (via uc_mem_map())

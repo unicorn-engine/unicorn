@@ -39,13 +39,9 @@ void cpu_loop_exit(CPUState *cpu)
 /* exit the current TB from a signal handler. The host registers are
    restored in a state compatible with the CPU emulator
    */
-#if defined(CONFIG_SOFTMMU)
-
 void cpu_resume_from_signal(CPUState *cpu, void *puc)
 {
-#endif
     /* XXX: restore cpu registers saved in host registers */
-
     cpu->exception_index = -1;
     siglongjmp(cpu->jmp_env, 1);
 }
@@ -65,7 +61,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     uint8_t *tc_ptr;
     uintptr_t next_tb;
     struct hook *hook;
-
 
     if (cpu->halted) {
         if (!cpu_has_work(cpu)) {
@@ -306,7 +301,8 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     tb_flush(env);
 
     /* fail safe : never use current_cpu outside cpu_exec() */
-    uc->current_cpu = NULL;
+    // uc->current_cpu = NULL;
+
     return ret;
 }
 
