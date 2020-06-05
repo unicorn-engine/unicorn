@@ -186,6 +186,7 @@ else()
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/configure
         ${EXTRA_CFLAGS}
         ${TARGET_LIST}
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
     execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
         INPUT_FILE ${CMAKE_BINARY_DIR}/config-host.mak
