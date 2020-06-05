@@ -23,7 +23,7 @@ SYSTEM = sys.platform
 IS_64BITS = platform.architecture()[0] == '64bit'
 
 # are we building from the repository or from a source distribution?
-ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
+ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
 LIBS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'lib')
 HEADERS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'include')
 SRC_DIR = os.path.join(ROOT_DIR, 'src')
@@ -226,6 +226,7 @@ class custom_bdist_egg(bdist_egg):
 
 def dummy_src():
     return []
+
 
 if 'bdist_wheel' in sys.argv and '--plat-name' not in sys.argv:
     idx = sys.argv.index('bdist_wheel') + 1
