@@ -1154,7 +1154,7 @@ void qemu_ram_remap(struct uc_struct *uc, ram_addr_t addr, ram_addr_t length)
                     area = mmap(vaddr, length, PROT_READ | PROT_WRITE,
                             flags, -1, 0);
                 }
-                if (area != vaddr) {
+                if (area == MAP_FAILED || area != vaddr) {
                     fprintf(stderr, "Could not remap addr: "
                             RAM_ADDR_FMT "@" RAM_ADDR_FMT "\n",
                             length, addr);
