@@ -71,6 +71,8 @@ int resume_all_vcpus(struct uc_struct *uc)
             return -1;
     }
 
+    cpu->exit_request = 0;
+
     //qemu_clock_enable(QEMU_CLOCK_VIRTUAL, true);
     cpu_resume(cpu);
     qemu_tcg_cpu_loop(uc);

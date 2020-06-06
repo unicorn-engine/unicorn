@@ -1,0 +1,236 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-macros.h" />
+    <ClInclude Include="..\..\..\qemu\fpu\softfloat-specialize.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\i386\tcg-target.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-ldst.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-be-null.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-op.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-opc.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg-runtime.h" />
+    <ClInclude Include="..\..\..\qemu\tcg\tcg.h" />
+    <ClInclude Include="..\..\..\qemu\target-ppc\cpu-models.h" />
+    <ClInclude Include="..\..\..\qemu\target-ppc\cpu-qom.h" />
+    <ClInclude Include="..\..\..\qemu\target-ppc\cpu.h" />
+    <ClInclude Include="..\..\..\qemu\target-ppc\helper.h" />
+    <ClInclude Include="..\..\..\qemu\target-ppc\helper_regs.h" />
+    <ClInclude Include="..\..\..\qemu\target-ppc\mmu-hash32.h" />
+    <ClInclude Include="..\..\..\qemu\target-ppc\mmu-hash64.h" />
+    <ClInclude Include="..\..\..\qemu\target-ppc\unicorn.h" />
+    <ClInclude Include="..\..\..\qemu\ppc.h" />
+    <ClInclude Include="..\config-host.h" />
+    <ClInclude Include="config-target.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\qemu\cpu-exec.c" />
+    <ClCompile Include="..\..\..\qemu\cpus.c" />
+    <ClCompile Include="..\..\..\qemu\cputlb.c" />
+    <ClCompile Include="..\..\..\qemu\exec.c" />
+    <ClCompile Include="..\..\..\qemu\fpu\softfloat.c" />
+    <ClCompile Include="..\..\..\qemu\hw\ppc\e500plat.c" />
+    <ClCompile Include="..\..\..\qemu\hw\ppc\ppc_booke.c" />
+    <ClCompile Include="..\..\..\qemu\hw\ppc\ppc.c" />
+    <ClCompile Include="..\..\..\qemu\ioport.c" />
+    <ClCompile Include="..\..\..\qemu\libdecnumber\decContext.c" />
+    <ClCompile Include="..\..\..\qemu\libdecnumber\decNumber.c" />
+    <ClCompile Include="..\..\..\qemu\libdecnumber\dpd\decimal128.c" />
+    <ClCompile Include="..\..\..\qemu\libdecnumber\dpd\decimal32.c" />
+    <ClCompile Include="..\..\..\qemu\libdecnumber\dpd\decimal64.c" />
+    <ClCompile Include="..\..\..\qemu\memory_mapping.c" />
+    <ClCompile Include="..\..\..\qemu\memory.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\cpu-models.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\dfp_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\excp_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\fpu_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\int_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\mem_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\misc_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\mmu-hash32.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\mmu_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\timebase_helper.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\translate.c" />
+    <ClCompile Include="..\..\..\qemu\target-ppc\unicorn.c" />
+    <ClCompile Include="..\..\..\qemu\tcg\optimize.c" />
+    <ClCompile Include="..\..\..\qemu\tcg\tcg.c" />
+    <ClCompile Include="..\..\..\qemu\translate-all.c" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4403A7BB-E2C5-443F-8711-EDF338E7D44F}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>ppcsoftmmu</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>$(DefaultPlatformToolset)</PlatformToolset>
+    <WholeProgramOptimization>false</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(ProjectDir)$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IntDir>$(ProjectDir)$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IntDir>$(ProjectDir)$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;__i386__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-ppc;../../../include</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <ExceptionHandling>false</ExceptionHandling>
+      <ForcedIncludeFiles>ppc.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>..\prebuild_script.bat</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;__x86_64__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-ppc;../../../include</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <ExceptionHandling>false</ExceptionHandling>
+      <ForcedIncludeFiles>ppc.h</ForcedIncludeFiles>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <PreBuildEvent>
+      <Command>..\prebuild_script.bat</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;__i386__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-ppc;../../../include</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <ExceptionHandling>false</ExceptionHandling>
+      <ForcedIncludeFiles>ppc.h</ForcedIncludeFiles>
+      <DebugInformationFormat>None</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>..\prebuild_script.bat</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;__x86_64__;%(PreprocessorDefinitions);_CRT_SECURE_NO_WARNINGS;inline=__inline;__func__=__FUNCTION__;NEED_CPU_H;WIN32_LEAN_AND_MEAN</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..;../../../qemu;../../../qemu/include;../../../qemu/tcg;../../../qemu/tcg/i386;../../../qemu/target-ppc;../../../include</AdditionalIncludeDirectories>
+      <AdditionalOptions>/wd4018 /wd4244 /wd4267 %(AdditionalOptions)</AdditionalOptions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <ExceptionHandling>false</ExceptionHandling>
+      <ForcedIncludeFiles>ppc.h</ForcedIncludeFiles>
+      <DebugInformationFormat>None</DebugInformationFormat>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+    <PreBuildEvent>
+      <Command>..\prebuild_script.bat</Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

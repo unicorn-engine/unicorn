@@ -1371,9 +1371,10 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
     struct uc_context **_context = context;
     size_t size = cpu_context_size(uc->arch, uc->mode);
 
-    *_context = malloc(size + sizeof(uc_context));
+    *_context = malloc(size);
     if (*_context) {
-        (*_context)->size = size;
+        (*_context)->jmp_env_size = sizeof(*uc->cpu->jmp_env);
+        (*_context)->context_size = size - sizeof(uc_context) - (*_context)->jmp_env_size;
         return UC_ERR_OK;
     } else {
         return UC_ERR_NOMEM;
@@ -1390,21 +1391,24 @@ uc_err uc_free(void *mem)
 UNICORN_EXPORT
 size_t uc_context_size(uc_engine *uc)
 {
-    return cpu_context_size(uc->arch, uc->mode);
+    // return the total size of struct uc_context
+    return sizeof(uc_context) + cpu_context_size(uc->arch, uc->mode) + sizeof(*uc->cpu->jmp_env);
 }
 
 UNICORN_EXPORT
 uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
-    struct uc_context *_context = context;
-    memcpy(_context->data, uc->cpu->env_ptr, _context->size);
+    memcpy(context->data, uc->cpu->env_ptr, context->context_size);
+    memcpy(context->data + context->context_size, uc->cpu->jmp_env, context->jmp_env_size);
+
     return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
-    struct uc_context *_context = context;
-    memcpy(uc->cpu->env_ptr, _context->data, _context->size);
+    memcpy(uc->cpu->env_ptr, context->data, context->context_size);
+    memcpy(uc->cpu->jmp_env, context->data + context->context_size, context->jmp_env_size);
+
     return UC_ERR_OK;
 }
