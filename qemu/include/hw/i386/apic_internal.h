@@ -17,11 +17,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #ifndef QEMU_APIC_INTERNAL_H
 #define QEMU_APIC_INTERNAL_H
 
 #include "exec/memory.h"
+#if 0
 #include "hw/cpu/icc_bus.h"
+#endif
 #include "qemu/timer.h"
 
 /* APIC Local Vector Table */
@@ -68,6 +72,7 @@
 
 typedef struct APICCommonState APICCommonState;
 
+#if 0
 #define TYPE_APIC_COMMON "apic-common"
 #define APIC_COMMON(uc, obj) \
      OBJECT_CHECK(uc, APICCommonState, (obj), TYPE_APIC_COMMON)
@@ -75,12 +80,16 @@ typedef struct APICCommonState APICCommonState;
      OBJECT_CLASS_CHECK(uc, APICCommonClass, (klass), TYPE_APIC_COMMON)
 #define APIC_COMMON_GET_CLASS(uc, obj) \
      OBJECT_GET_CLASS(uc, APICCommonClass, (obj), TYPE_APIC_COMMON)
+#endif
 
 typedef struct APICCommonClass
 {
+#if 0
     ICCDeviceClass parent_class;
 
     DeviceRealize realize;
+#endif
+#if 1
     void (*set_base)(APICCommonState *s, uint64_t val);
     void (*set_tpr)(APICCommonState *s, uint8_t val);
     uint8_t (*get_tpr)(APICCommonState *s);
@@ -90,10 +99,13 @@ typedef struct APICCommonClass
     void (*pre_save)(APICCommonState *s);
     void (*post_load)(APICCommonState *s);
     void (*reset)(APICCommonState *s);
+#endif
 } APICCommonClass;
 
 struct APICCommonState {
+#if 0
     ICCDevice busdev;
+#endif
 
     MemoryRegion io_memory;
     X86CPU *cpu;
@@ -126,7 +138,13 @@ struct APICCommonState {
     uint32_t vapic_control;
     DeviceState *vapic;
     hwaddr vapic_paddr; /* note: persistence via kvmvapic */
+
+    struct APICCommonClass ac;
 };
+
+#define APIC_COMMON(uc, obj) ((struct APICCommonState *)obj)
+#define APIC_COMMON_CLASS(uc, klass) ((struct APICCommonClass *)klass)
+#define APIC_COMMON_GET_CLASS(uc, obj) (&((struct APICCommonState *)obj)->ac)
 
 QEMU_PACK( typedef struct VAPICState {
     uint8_t tpr;

@@ -1,9 +1,12 @@
 #ifndef SYSEMU_H
 #define SYSEMU_H
 /* Misc. things related to the system emulator.  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "qemu/timer.h"
+#if 0
 #include "qapi/error.h"
+#endif
 
 /* vl.c */
 

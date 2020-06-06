@@ -1,8 +1,15 @@
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 #ifndef HW_PC_H
 #define HW_PC_H
 
+#if 0
 #include "hw/boards.h"
+#else
+#include "qemu/typedefs.h"
+#include "uc_priv.h"
+#endif
 
+#if 0
 /**
  * PCMachineState:
  */
@@ -40,13 +47,16 @@ FWCfgState *pc_memory_init(MachineState *machine,
                            MemoryRegion *system_memory,
                            ram_addr_t begin,
                            MemoryRegion **ram_memory);
+#endif
 typedef void (*cpu_set_smm_t)(int smm, void *arg);
 void cpu_smm_register(cpu_set_smm_t callback, void *arg);
 
+#if 0
 void pc_machine_register_types(struct uc_struct *uc);
 void x86_cpu_register_types(struct uc_struct *uc);
 
 #define PC_DEFAULT_MACHINE_OPTIONS \
     .max_cpus = 255
+#endif
 
 #endif

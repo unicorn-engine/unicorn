@@ -10,6 +10,7 @@
  * See the COPYING file in the top-level directory.
  *
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "cpu.h"
 #include "exec/cpu-all.h"
@@ -241,8 +242,7 @@ static void walk_pml4e(MemoryMappingList *list, AddressSpace *as,
 }
 #endif
 
-void x86_cpu_get_memory_mapping(CPUState *cs, MemoryMappingList *list,
-                                Error **errp)
+void x86_cpu_get_memory_mapping(CPUState *cs, MemoryMappingList *list)
 {
     X86CPU *cpu = X86_CPU(cs->uc, cs);
     CPUX86State *env = &cpu->env;

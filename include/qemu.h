@@ -1,4 +1,5 @@
 /* By Dang Hoang Vu <dang.hvu -at- gmail.com>, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #ifndef UC_QEMU_H
 #define UC_QEMU_H
@@ -13,7 +14,7 @@ struct uc_struct;
 #include "exec/memory.h"
 
 #include "qemu/thread.h"
-#include "include/qom/cpu.h"
+#include "qom/cpu.h"
 
 #include "vl.h"
 

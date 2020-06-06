@@ -24,8 +24,11 @@
 
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
+#if 0
 #include "hw/boards.h"  // MachineClass
+#endif
 #include "sysemu/sysemu.h"
 #include "sysemu/cpus.h"
 #include "vl.h"
@@ -54,6 +57,7 @@ void cpu_stop_current(struct uc_struct *uc)
 }
 
 
+#if 0
 /***********************************************************/
 /* machine registration */
 
@@ -74,10 +78,12 @@ MachineClass *find_default_machine(struct uc_struct *uc, int arch)
     g_slist_free(machines);
     return mc;
 }
+#endif
 
 DEFAULT_VISIBILITY
 int machine_initialize(struct uc_struct *uc)
 {
+#if 0
     MachineClass *machine_class;
     MachineState *current_machine;
 
@@ -87,10 +93,12 @@ int machine_initialize(struct uc_struct *uc)
     container_register_types(uc);
     cpu_register_types(uc);
     qdev_register_types(uc);
+#endif
 
     // Initialize arch specific.
     uc->init_arch(uc);
 
+#if 0
     module_call_init(uc, MODULE_INIT_MACHINE);
     // this will auto initialize all register objects above.
     machine_class = find_default_machine(uc, uc->arch);
@@ -104,14 +112,26 @@ int machine_initialize(struct uc_struct *uc)
                     OBJECT_CLASS(machine_class))));
     uc->machine_state = current_machine;
     current_machine->uc = uc;
+#endif
+    /* Init memory. */
     uc->cpu_exec_init_all(uc);
 
+#if 0
     machine_class->max_cpus = 1;
     configure_accelerator(current_machine);
+#else
+#define TCG_TB_SIZE 0
+    uc->tcg_exec_init(uc, TCG_TB_SIZE * 1024 * 1024);
+#endif
 
+#if 0
     current_machine->cpu_model = NULL;
 
     return machine_class->init(uc, current_machine);
+#else
+    /* Init cpu. */
+    return uc->cpus_init(uc, NULL);
+#endif
 }
 
 void qemu_system_reset_request(struct uc_struct* uc)
@@ -124,6 +144,7 @@ void qemu_system_shutdown_request(void)
     //shutdown_requested = 1;
 }
 
+#if 0
 static void machine_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
 {
     MachineClass *mc = MACHINE_CLASS(uc, oc);
@@ -154,3 +175,4 @@ void qemu_register_machine(struct uc_struct *uc, QEMUMachine *m, const char *typ
     type_register(uc, &ti);
     g_free(name);
 }
+#endif

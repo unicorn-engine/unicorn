@@ -817,6 +817,7 @@ static const mips_def_t *cpu_mips_find_by_name (const char *name)
     return NULL;
 }
 
+#if 0
 void mips_cpu_list (FILE *f, fprintf_function cpu_fprintf)
 {
     int i;
@@ -826,6 +827,7 @@ void mips_cpu_list (FILE *f, fprintf_function cpu_fprintf)
                        mips_defs[i].name);
     }
 }
+#endif
 
 #ifndef CONFIG_USER_ONLY
 static void no_mmu_init (CPUMIPSState *env, const mips_def_t *def)

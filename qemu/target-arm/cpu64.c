@@ -17,10 +17,13 @@
  * along with this program; if not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "cpu.h"
 #include "qemu-common.h"
+#if 0
 #include "hw/arm/arm.h"
+#endif
 #include "sysemu/sysemu.h"
 
 static inline void set_feature(CPUARMState *env, int feature)
@@ -70,7 +73,7 @@ static const ARMCPRegInfo cortexa57_cp_reginfo[] = {
     REGINFO_SENTINEL
 };
 
-static void aarch64_a57_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void aarch64_a57_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -121,7 +124,7 @@ static void aarch64_a57_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 }
 
 #ifdef CONFIG_USER_ONLY
-static void aarch64_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void aarch64_any_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -141,8 +144,8 @@ static void aarch64_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 
 typedef struct ARMCPUInfo {
     const char *name;
-    void (*initfn)(struct uc_struct *uc, Object *obj, void *opaque);
-    void (*class_init)(struct uc_struct *uc, ObjectClass *oc, void *data);
+    void (*initfn)(struct uc_struct *uc, CPUState *obj, void *opaque);
+    void (*class_init)(struct uc_struct *uc, CPUClass *oc, void *data);
 } ARMCPUInfo;
 
 static const ARMCPUInfo aarch64_cpus[] = {
@@ -150,16 +153,20 @@ static const ARMCPUInfo aarch64_cpus[] = {
 #ifdef CONFIG_USER_ONLY
     { "any",         aarch64_any_initfn },
 #endif
+#if 0
     { NULL }
+#endif
 };
 
-static void aarch64_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void aarch64_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
 }
 
-static void aarch64_cpu_finalizefn(struct uc_struct *uc, Object *obj, void *opaque)
+#if 0
+static void aarch64_cpu_finalizefn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
 }
+#endif
 
 static void aarch64_cpu_set_pc(CPUState *cs, vaddr value)
 {
@@ -176,7 +183,7 @@ static void aarch64_cpu_set_pc(CPUState *cs, vaddr value)
     }
 }
 
-static void aarch64_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
+static void aarch64_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
 {
     CPUClass *cc = CPU_CLASS(uc, oc);
 
@@ -187,6 +194,7 @@ static void aarch64_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *
     cc->set_pc = aarch64_cpu_set_pc;
 }
 
+#if 0
 static void aarch64_cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)
 {
     TypeInfo type_info = { 0 };
@@ -221,4 +229,46 @@ void aarch64_cpu_register_types(void *opaque)
         aarch64_cpu_register(opaque, info);
         info++;
     }
+}
+#endif
+
+#ifdef TARGET_WORDS_BIGENDIAN
+ARMCPU *cpu_aarch64eb_init(struct uc_struct *uc, const char *cpu_model)
+#else
+ARMCPU *cpu_aarch64_init(struct uc_struct *uc, const char *cpu_model)
+#endif
+{
+    int i;
+    ARMCPU *cpu;
+    CPUState *cs;
+    CPUClass *cc;
+
+    if (cpu_model == NULL) {
+        cpu_model = "cortex-a57";
+    }
+
+    cpu = cpu_arm_init(uc, cpu_model);
+
+    cs = (CPUState *)cpu;
+    cc = (CPUClass *)&cpu->cc;
+    cs->cc = cc;
+    cs->uc = uc;
+    /* init Aarch64CPUClass */
+    aarch64_cpu_class_init(uc, cc, NULL);
+    /* init Aarch64CPU */
+    aarch64_cpu_initfn(uc, cs, uc);
+    /* init Aarch64 types */
+    for (i = 0; i < ARRAY_SIZE(aarch64_cpus); i++) {
+        if (strcmp(cpu_model, aarch64_cpus[i].name) == 0) {
+            if (aarch64_cpus[i].class_init) {
+                aarch64_cpus[i].class_init(uc, cc, uc);
+            }
+            if (aarch64_cpus[i].initfn) {
+                aarch64_cpus[i].initfn(uc, cs, uc);
+            }
+            break;
+        }
+    }
+
+    return cpu;
 }

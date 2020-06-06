@@ -18,9 +18,11 @@
  */
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "config.h"
 #include "cpu.h"
+#include "qemu/bitmap.h"
 #include "exec/exec-all.h"
 #include "exec/memory.h"
 #include "exec/address-spaces.h"

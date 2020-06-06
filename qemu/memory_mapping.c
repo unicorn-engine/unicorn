@@ -12,6 +12,7 @@
  */
 
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "glib_compat.h"
 
@@ -199,20 +200,23 @@ typedef struct GuestPhysListener {
 
 void qemu_get_guest_memory_mapping(struct uc_struct *uc,
                                    MemoryMappingList *list,
-                                   const GuestPhysBlockList *guest_phys_blocks,
-                                   Error **errp)
+                                   const GuestPhysBlockList *guest_phys_blocks)
 {
     CPUState *cpu = uc->cpu;
     GuestPhysBlock *block;
     ram_addr_t offset, length;
 
     if (cpu_paging_enabled(cpu)) {
+#if 0
         Error *err = NULL;
-        cpu_get_memory_mapping(cpu, list, &err);
+#endif
+        cpu_get_memory_mapping(cpu, list);
+#if 0
         if (err) {
             error_propagate(errp, err);
             return;
         }
+#endif
         return;
     }
 

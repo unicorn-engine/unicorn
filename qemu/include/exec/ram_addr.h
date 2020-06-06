@@ -15,6 +15,7 @@
  * This header is for use by exec.c and memory.c ONLY.  Do not include it.
  * The functions declared here will be removed soon.
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #ifndef RAM_ADDR_H
 #define RAM_ADDR_H
@@ -24,8 +25,8 @@
 #ifndef CONFIG_USER_ONLY
 
 ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
-                                   MemoryRegion *mr, Error **errp);
-ram_addr_t qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr, Error **errp);
+                                   MemoryRegion *mr);
+ram_addr_t qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr);
 int qemu_get_ram_fd(struct uc_struct *uc, ram_addr_t addr);
 void *qemu_get_ram_block_host_ptr(struct uc_struct *uc, ram_addr_t addr);
 void *qemu_get_ram_ptr(struct uc_struct *uc, ram_addr_t addr);

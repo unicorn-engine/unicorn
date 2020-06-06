@@ -18,9 +18,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #ifndef TARGET_PPC_CPU_MODELS_H
 #define TARGET_PPC_CPU_MODELS_H
 
+#if 0
 /**
  * PowerPCCPUAlias:
  * @alias: The alias name.
@@ -35,6 +38,7 @@ typedef struct PowerPCCPUAlias {
 } PowerPCCPUAlias;
 
 extern PowerPCCPUAlias ppc_cpu_aliases[];
+#endif
 
 /*****************************************************************************/
 /* PVR definitions for most known PowerPC                                    */

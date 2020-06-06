@@ -1,3 +1,5 @@
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #ifndef APIC_H
 #define APIC_H
 
@@ -23,7 +25,9 @@ DeviceState *cpu_get_current_apic(struct uc_struct *uc);
 /* cpu.c */
 bool cpu_is_bsp(X86CPU *cpu);
 
+#if 0
 void apic_register_types(struct uc_struct *uc);
 void apic_common_register_types(struct uc_struct *uc);
+#endif
 
 #endif

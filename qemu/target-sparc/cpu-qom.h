@@ -17,12 +17,15 @@
  * License along with this library; if not, see
  * <http://www.gnu.org/licenses/lgpl-2.1.html>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #ifndef QEMU_SPARC_CPU_QOM_H
 #define QEMU_SPARC_CPU_QOM_H
 
 #include "qom/cpu.h"
 #include "cpu.h"
 
+#if 0
 #ifdef TARGET_SPARC64
 #define TYPE_SPARC_CPU "sparc64-cpu"
 #else
@@ -34,6 +37,7 @@
 #define SPARC_CPU(uc, obj) ((SPARCCPU *)obj)
 #define SPARC_CPU_GET_CLASS(uc, obj) \
     OBJECT_GET_CLASS(uc, SPARCCPUClass, (obj), TYPE_SPARC_CPU)
+#endif
 
 /**
  * SPARCCPUClass:
@@ -47,7 +51,9 @@ typedef struct SPARCCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
+#if 0
     DeviceRealize parent_realize;
+#endif
     void (*parent_reset)(CPUState *cpu);
 } SPARCCPUClass;
 
@@ -63,7 +69,13 @@ typedef struct SPARCCPU {
     /*< public >*/
 
     CPUSPARCState env;
+
+    struct SPARCCPUClass cc;
 } SPARCCPU;
+
+#define SPARC_CPU(uc, obj) ((SPARCCPU *)obj)
+#define SPARC_CPU_CLASS(uc, klass) ((SPARCCPUClass *)klass)
+#define SPARC_CPU_GET_CLASS(uc, obj) (&((SPARCCPU *)obj)->cc)
 
 static inline SPARCCPU *sparc_env_get_cpu(CPUSPARCState *env)
 {

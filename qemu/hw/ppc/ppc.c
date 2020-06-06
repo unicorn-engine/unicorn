@@ -21,15 +21,21 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #include "hw/hw.h"
 #include "hw/ppc/ppc.h"
+#if 0
 #include "hw/ppc/ppc_e500.h"
+#endif
 #include "qemu/timer.h"
 #include "sysemu/sysemu.h"
 #include "sysemu/cpus.h"
 //#include "hw/timer/m48t59.h"
+#if 0
 #include "qemu/log.h"
 #include "qapi-visit.h"
+#endif
 //#include "qemu/error-report.h"
 //#include "hw/loader.h"
 //#include "sysemu/kvm.h"
@@ -443,6 +449,7 @@ void ppce500_irq_init(CPUPPCState *env)
 //                                                  cpu, PPCE500_INPUT_NB);
 }
 
+#if 0
 /* Enable or Disable the E500 EPR capability */
 void ppce500_set_mpic_proxy(bool enabled)
 {
@@ -457,6 +464,7 @@ void ppce500_set_mpic_proxy(bool enabled)
 //        }
 //    }
 }
+#endif
 
 /*****************************************************************************/
 /* PowerPC time base and decrementer emulation */

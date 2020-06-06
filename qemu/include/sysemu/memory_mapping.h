@@ -10,6 +10,7 @@
  * See the COPYING file in the top-level directory.
  *
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #ifndef MEMORY_MAPPING_H
 #define MEMORY_MAPPING_H
@@ -70,8 +71,7 @@ void guest_phys_blocks_init(GuestPhysBlockList *list);
 
 void qemu_get_guest_memory_mapping(struct uc_struct *uc,
                                    MemoryMappingList *list,
-                                   const GuestPhysBlockList *guest_phys_blocks,
-                                   Error **errp);
+                                   const GuestPhysBlockList *guest_phys_blocks);
 
 /* get guest's memory mapping without do paging(virtual address is 0). */
 void qemu_get_guest_simple_memory_mapping(MemoryMappingList *list,

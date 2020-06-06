@@ -83,7 +83,7 @@ $(SOFTMMU_SUBDIR_RULES): config-all-devices.mak
 subdir-%:
 	$(call quiet-command,$(MAKE) $(SUBDIR_MAKEFLAGS) -C $* V="$(V)" TARGET_DIR="$*/" all,)
 
-$(SUBDIR_RULES): qapi-types.c qapi-types.h qapi-visit.c qapi-visit.h $(common-obj-y) $(util-obj-y)
+$(SUBDIR_RULES): $(common-obj-y) $(util-obj-y)
 
 recurse-all: $(SUBDIR_RULES)
 

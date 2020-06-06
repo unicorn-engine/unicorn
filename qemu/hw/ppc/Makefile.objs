@@ -9,5 +9,5 @@ obj-y += ppc.o ppc_booke.o
 # e500
 #obj-$(CONFIG_E500) += e500.o mpc8544ds.o e500plat.o
 #obj-$(CONFIG_E500) += mpc8544_guts.o ppce500_spin.o
-obj-y += e500plat.o
+#obj-y += e500plat.o
 

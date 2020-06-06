@@ -16,6 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #include "qemu/thread.h"
 #include "hw/i386/apic_internal.h"
 #include "hw/i386/apic.h"
@@ -30,6 +32,7 @@
 #define SYNC_TO_VAPIC                   0x2
 #define SYNC_ISR_IRR_TO_VAPIC           0x4
 
+#if 0
 static void apic_update_irq(APICCommonState *s);
 
 /* Find first bit starting from msb */
@@ -152,6 +155,7 @@ static uint8_t apic_get_tpr(APICCommonState *s)
 static void apic_update_irq(APICCommonState *s)
 {
 }
+#endif
 
 void apic_poll_irq(DeviceState *dev)
 {
@@ -171,6 +175,7 @@ int apic_accept_pic_intr(DeviceState *dev)
     return 0;
 }
 
+#if 0
 static void apic_pre_save(APICCommonState *s)
 {
     apic_sync_vapic(s, SYNC_FROM_VAPIC);
@@ -178,13 +183,11 @@ static void apic_pre_save(APICCommonState *s)
 
 static void apic_post_load(APICCommonState *s)
 {
-#if 0
     if (s->timer_expiry != -1) {
         timer_mod(s->timer, s->timer_expiry);
     } else {
         timer_del(s->timer);
     }
-#endif
 }
 
 static int apic_realize(struct uc_struct *uc, DeviceState *dev, Error **errp)
@@ -228,3 +231,4 @@ void apic_register_types(struct uc_struct *uc)
     //printf("... register apic types\n");
     type_register_static(uc, &apic_info);
 }
+#endif

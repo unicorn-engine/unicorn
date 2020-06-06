@@ -23,6 +23,7 @@
  * Most of them are not usable for now but have been kept
  * inside "#if defined(TODO) ... #endif" statements to make tests easier.
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "cpu.h"
 #include "cpu-models.h"
@@ -31,6 +32,7 @@
 #define TODO_USER_ONLY 1
 #endif
 
+#if 0
 /***************************************************************************/
 /* PowerPC CPU definitions                                                 */
 #define POWERPC_DEF_PREFIX(pvr, svr, type)                                  \
@@ -38,7 +40,7 @@
 #define POWERPC_DEF_SVR(_name, _desc, _pvr, _svr, _type)                    \
     static void                                                             \
     glue(POWERPC_DEF_PREFIX(_pvr, _svr, _type), _cpu_class_init)            \
-    (struct uc_struct *uc, ObjectClass *oc, void *data)                                           \
+    (struct uc_struct *uc, CPUClass *oc, void *data)                                           \
     {                                                                       \
         DeviceClass *dc = DEVICE_CLASS(uc, oc);                                 \
         PowerPCCPUClass *pcc = POWERPC_CPU_CLASS(uc, oc);                       \
@@ -1428,3 +1430,4 @@ PowerPCCPUAlias ppc_cpu_aliases[] = {
 	CPU_POWERPC_e500v2_v10_0x40000000_e500v2_cpu_register_types(opaque);
 //    CPU_POWERPC_e500v2_v20_POWERPC_SVR_8545E_v20_e500v2_cpu_register_types(opaque);
 }*/
+#endif

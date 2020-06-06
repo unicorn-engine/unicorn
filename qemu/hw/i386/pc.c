@@ -22,12 +22,15 @@
  * THE SOFTWARE.
  */
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 
 #include "hw/hw.h"
 #include "hw/i386/pc.h"
 #include "sysemu/sysemu.h"
+#if 0
 #include "qapi-visit.h"
-
+#endif
 
 /* XXX: add IGNNE support */
 void cpu_set_ferr(CPUX86State *s)
@@ -91,6 +94,7 @@ DeviceState *cpu_get_current_apic(struct uc_struct *uc)
     }
 }
 
+#if 0
 static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *cpu_model, int64_t apic_id,
                           Error **errp)
 {
@@ -111,13 +115,18 @@ static X86CPU *pc_new_cpu(struct uc_struct *uc, const char *cpu_model, int64_t a
         object_unref(uc, OBJECT(cpu));
         cpu = NULL;
     }
+
     return cpu;
 }
 
 int pc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     int i;
+#if 0
     Error *error = NULL;
+#else
+    X86CPU *cpu;
+#endif
 
     /* init CPUs */
     if (cpu_model == NULL) {
@@ -129,12 +138,17 @@ int pc_cpus_init(struct uc_struct *uc, const char *cpu_model)
     }
 
     for (i = 0; i < smp_cpus; i++) {
+#if 0
         uc->cpu = (CPUState *)pc_new_cpu(uc, cpu_model, x86_cpu_apic_id_from_index(i), &error);
         if (error) {
             //error_report("%s", error_get_pretty(error));
             error_free(error);
             return -1;
         }
+#else
+        cpu = cpu_x86_create(uc, cpu_model);
+        uc->cpu = (CPUState *)cpu;
+#endif
     }
 
     return 0;
@@ -179,3 +193,4 @@ void pc_machine_register_types(struct uc_struct *uc)
 {
     type_register_static(uc, &pc_machine_info);
 }
+#endif

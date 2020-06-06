@@ -17,6 +17,7 @@
  * along with this program; if not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "qemu-common.h"
 #include "qemu/log.h"
@@ -33,6 +34,7 @@ bool cpu_exists(struct uc_struct* uc, int64_t id)
     return false;
 }
 
+#if 0
 CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const char *cpu_model)
 {
     char *str, *name, *featurestr;
@@ -60,7 +62,9 @@ CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const cha
         goto out;
     }
 
+#if 0
     object_property_set_bool(uc, OBJECT(cpu), true, "realized", &err);
+#endif
 
 out:
     if (err != NULL) {
@@ -71,6 +75,7 @@ out:
 
     return cpu;
 }
+#endif
 
 bool cpu_paging_enabled(const CPUState *cpu)
 {
@@ -84,19 +89,19 @@ static bool cpu_common_get_paging_enabled(const CPUState *cpu)
     return false;
 }
 
-void cpu_get_memory_mapping(CPUState *cpu, MemoryMappingList *list,
-                            Error **errp)
+void cpu_get_memory_mapping(CPUState *cpu, MemoryMappingList *list)
 {
     CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
 
-    cc->get_memory_mapping(cpu, list, errp);
+    cc->get_memory_mapping(cpu, list);
 }
 
 static void cpu_common_get_memory_mapping(CPUState *cpu,
-                                          MemoryMappingList *list,
-                                          Error **errp)
+                                          MemoryMappingList *list)
 {
+#if 0
     error_setg(errp, "Obtaining memory mappings is unsupported on this CPU.");
+#endif
 }
 
 void cpu_reset_interrupt(CPUState *cpu, int mask)
@@ -173,6 +178,7 @@ static bool cpu_common_has_work(CPUState *cs)
     return false;
 }
 
+#if 0
 ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename, const char *cpu_model)
 {
     CPUClass *cc = CPU_CLASS(uc, object_class_by_name(uc, typename));
@@ -184,13 +190,12 @@ static ObjectClass *cpu_common_class_by_name(struct uc_struct *uc, const char *c
 {
     return NULL;
 }
+#endif
 
-static void cpu_common_parse_features(CPUState *cpu, char *features,
-                                      Error **errp)
+static void cpu_common_parse_features(CPUState *cpu, char *features)
 {
     char *featurestr; /* Single "key=value" string being parsed */
     char *val;
-    Error *err = NULL;
 
     featurestr = features ? strtok(features, ",") : NULL;
 
@@ -199,20 +204,25 @@ static void cpu_common_parse_features(CPUState *cpu, char *features,
         if (val) {
             *val = 0;
             val++;
+#if 0
             object_property_parse(cpu->uc, OBJECT(cpu), val, featurestr, &err);
             if (err) {
                 error_propagate(errp, err);
                 return;
             }
+#endif
         } else {
+#if 0
             error_setg(errp, "Expected key=value format, found %s.",
                        featurestr);
+#endif
             return;
         }
         featurestr = strtok(NULL, ",");
     }
 }
 
+#if 0
 static int cpu_common_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
 {
     CPUState *cpu = CPU(dev);
@@ -227,12 +237,14 @@ static int cpu_common_realizefn(struct uc_struct *uc, DeviceState *dev, Error **
 static void cpu_common_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 {
 }
+#endif
 
 static int64_t cpu_common_get_arch_id(CPUState *cpu)
 {
     return cpu->cpu_index;
 }
 
+#if 0
 static void cpu_class_init(struct uc_struct *uc, ObjectClass *klass, void *data)
 {
     DeviceClass *dc = DEVICE_CLASS(uc, klass);
@@ -282,3 +294,32 @@ void cpu_register_types(struct uc_struct *uc)
 {
     type_register_static(uc, &cpu_type_info);
 }
+#endif
+
+void cpu_klass_init(struct uc_struct *uc, CPUClass *k)
+{
+    k->parse_features = cpu_common_parse_features;
+    k->reset = cpu_common_reset;
+    k->get_arch_id = cpu_common_get_arch_id;
+    k->has_work = cpu_common_has_work;
+    k->get_paging_enabled = cpu_common_get_paging_enabled;
+    k->get_memory_mapping = cpu_common_get_memory_mapping;
+    k->debug_excp_handler = cpu_common_noop;
+    k->cpu_exec_enter = cpu_common_noop;
+    k->cpu_exec_exit = cpu_common_noop;
+    k->cpu_exec_interrupt = cpu_common_exec_interrupt;
+
+    return;
+}
+
+#ifdef NEED_CPU_INIT_REALIZE
+void cpu_object_init(struct uc_struct *uc, CPUState *cs)
+{
+    return;
+}
+
+void cpu_object_realize(struct uc_struct *uc, CPUState *cs)
+{
+    return;
+}
+#endif

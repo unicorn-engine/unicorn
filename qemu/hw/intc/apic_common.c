@@ -17,9 +17,13 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #include "hw/i386/apic.h"
 #include "hw/i386/apic_internal.h"
+#if 0
 #include "hw/qdev.h"
+#endif
 
 #include "uc_priv.h"
 
@@ -173,6 +177,7 @@ void apic_designate_bsp(struct uc_struct *uc, DeviceState *dev)
     s->apicbase |= MSR_IA32_APICBASE_BSP;
 }
 
+#if 0
 static void apic_reset_common(struct uc_struct *uc, DeviceState *dev)
 {
     APICCommonState *s = APIC_COMMON(uc, dev);
@@ -224,6 +229,7 @@ static int apic_common_realize(struct uc_struct *uc, DeviceState *dev, Error **e
         uc->vapic = NULL;
     }
     s->vapic = uc->vapic;
+
     if (uc->apic_report_tpr_access && info->enable_tpr_reporting) {
         info->enable_tpr_reporting(s, true);
     }
@@ -272,3 +278,4 @@ void apic_common_register_types(struct uc_struct *uc)
     //printf("... register apic common\n");
     type_register_static(uc, &apic_common_type);
 }
+#endif

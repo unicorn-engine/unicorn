@@ -17,12 +17,15 @@
  * License along with this library; if not, see
  * <http://www.gnu.org/licenses/lgpl-2.1.html>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #ifndef QEMU_PPC_CPU_QOM_H
 #define QEMU_PPC_CPU_QOM_H
 
 #include "qom/cpu.h"
 #include "cpu.h"
 
+#if 0
 #ifdef TARGET_PPC64
 #define TYPE_POWERPC_CPU "powerpc64-cpu"
 #elif defined(TARGET_PPCEMB)
@@ -36,6 +39,7 @@
 #define POWERPC_CPU(uc, obj) ((PowerPCCPU *)obj)
 #define POWERPC_CPU_GET_CLASS(uc, obj) \
     OBJECT_GET_CLASS(uc, PowerPCCPUClass, (obj), TYPE_POWERPC_CPU)
+#endif
 
 typedef struct PowerPCCPU PowerPCCPU;
 
@@ -51,7 +55,9 @@ typedef struct PowerPCCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
+#if 0
     DeviceRealize parent_realize;
+#endif
     void (*parent_reset)(CPUState *cpu);
 
     uint32_t pvr;
@@ -97,7 +103,13 @@ struct PowerPCCPU {
     int cpu_dt_id;
     uint32_t max_compat;
     uint32_t cpu_version;
+
+    struct PowerPCCPUClass cc;
 };
+
+#define POWERPC_CPU(uc, obj) ((PowerPCCPU *)obj)
+#define POWERPC_CPU_CLASS(uc, klass) ((PowerPCCPUClass *)klass)
+#define POWERPC_CPU_GET_CLASS(uc, obj) (&((PowerPCCPU *)obj)->cc)
 
 static inline PowerPCCPU *ppc_env_get_cpu(CPUPPCState *env)
 {

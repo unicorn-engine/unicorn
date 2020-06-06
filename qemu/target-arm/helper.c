@@ -1,3 +1,5 @@
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #include "cpu.h"
 #include "internals.h"
 #include "exec/helper-proto.h"
@@ -2724,11 +2726,6 @@ void register_cp_regs_for_features(ARMCPU *cpu)
         }
         define_one_arm_cp_reg(cpu, &sctlr);
     }
-}
-
-ARMCPU *cpu_arm_init(struct uc_struct *uc, const char *cpu_model)
-{
-    return ARM_CPU(uc, cpu_generic_init(uc, TYPE_ARM_CPU, cpu_model));
 }
 
 void arm_cpu_register_gdb_regs_for_features(ARMCPU *cpu)

@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 /**************************************************************************
  * IO ports API
@@ -25,7 +26,9 @@
 #define IOPORT_H
 
 #include "qemu-common.h"
+#if 0
 #include "qom/object.h"
+#endif
 #include "exec/memory.h"
 
 typedef uint32_t pio_addr_t;

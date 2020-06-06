@@ -17,11 +17,14 @@
  * License along with this library; if not, see
  * <http://www.gnu.org/licenses/lgpl-2.1.html>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #ifndef QEMU_M68K_CPU_QOM_H
 #define QEMU_M68K_CPU_QOM_H
 
 #include "qom/cpu.h"
 
+#if 0
 #define TYPE_M68K_CPU "m68k-cpu"
 
 #define M68K_CPU_CLASS(uc, klass) \
@@ -29,6 +32,7 @@
 #define M68K_CPU(uc, obj) ((M68kCPU *)obj)
 #define M68K_CPU_GET_CLASS(uc, obj) \
     OBJECT_GET_CLASS(uc, M68kCPUClass, (obj), TYPE_M68K_CPU)
+#endif
 
 /**
  * M68kCPUClass:
@@ -42,7 +46,9 @@ typedef struct M68kCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
+#if 0
     DeviceRealize parent_realize;
+#endif
     void (*parent_reset)(CPUState *cpu);
 } M68kCPUClass;
 
@@ -58,7 +64,13 @@ typedef struct M68kCPU {
     /*< public >*/
 
     CPUM68KState env;
+
+    struct M68kCPUClass cc;
 } M68kCPU;
+
+#define M68K_CPU(uc, obj) ((M68kCPU *)obj)
+#define M68K_CPU_CLASS(uc, klass) ((M68kCPUClass *)klass)
+#define M68K_CPU_GET_CLASS(uc, obj) (&((M68kCPU *)obj)->cc)
 
 static inline M68kCPU *m68k_env_get_cpu(CPUM68KState *env)
 {
