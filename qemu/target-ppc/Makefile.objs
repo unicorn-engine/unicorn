@@ -10,4 +10,4 @@ obj-y += misc_helper.o
 obj-y += mem_helper.o
 obj-y += translate.o
 obj-y += unicorn.o
-
+obj-y += ../libdecnumber/decContext.o ../libdecnumber/decNumber.o ../libdecnumber/dpd/decimal32.o ../libdecnumber/dpd/decimal64.o ../libdecnumber/dpd/decimal128.o

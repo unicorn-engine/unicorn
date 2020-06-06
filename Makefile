@@ -74,15 +74,9 @@ UC_TARGET_OBJ_SPARC64 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/sparc6
 UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-y,qemu/target-sparc/Makefile.objs, qemu/sparc64-softmmu/target-sparc/)
 UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-$$(TARGET_SPARC64),qemu/target-sparc/Makefile.objs, qemu/sparc64-softmmu/target-sparc/)
 
-
-UC_TARGET_OBJ_PPC = qemu/ppc-softmmu/exec.o qemu/ppc-softmmu/target-ppc/timebase_helper.o qemu/ppc-softmmu/target-ppc/translate.o
-UC_TARGET_OBJ_PPC += qemu/ppc-softmmu/target-ppc/fpu_helper.o qemu/ppc-softmmu/target-ppc/unicorn.o qemu/ppc-softmmu/target-ppc/int_helper.o
-UC_TARGET_OBJ_PPC += qemu/ppc-softmmu/target-ppc/excp_helper.o qemu/ppc-softmmu/target-ppc/mem_helper.o qemu/ppc-softmmu/target-ppc/mmu_helper.o
-UC_TARGET_OBJ_PPC += qemu/ppc-softmmu/target-ppc/cpu-models.o qemu/ppc-softmmu/target-ppc/misc_helper.o qemu/ppc-softmmu/target-ppc/mmu-hash32.o
-UC_TARGET_OBJ_PPC += qemu/ppc-softmmu/target-ppc/dfp_helper.o qemu/ppc-softmmu/hw/ppc/ppc.o qemu/ppc-softmmu/hw/ppc/ppc_booke.o
-UC_TARGET_OBJ_PPC += qemu/ppc-softmmu/cpus.o qemu/ppc-softmmu/fpu/softfloat.o qemu/ppc-softmmu/tcg/optimize.o
-UC_TARGET_OBJ_PPC += qemu/ppc-softmmu/tcg/tcg.o qemu/ppc-softmmu/ioport.o qemu/ppc-softmmu/memory_mapping.o qemu/ppc-softmmu/memory.o
-UC_TARGET_OBJ_PPC += qemu/ppc-softmmu/cpu-exec.o qemu/ppc-softmmu/cputlb.o qemu/ppc-softmmu/translate-all.o
+UC_TARGET_OBJ_PPC = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/ppc-softmmu/)
+UC_TARGET_OBJ_PPC += $(call UC_GET_OBJ,obj-,qemu/hw/ppc/Makefile.objs, qemu/ppc-softmmu/hw/ppc/)
+UC_TARGET_OBJ_PPC += $(call UC_GET_OBJ,obj-y,qemu/target-ppc/Makefile.objs, qemu/ppc-softmmu/target-ppc/)
 
 ifneq (,$(findstring x86,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_X86)
