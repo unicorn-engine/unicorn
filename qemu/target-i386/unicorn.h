@@ -12,9 +12,6 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
 void x86_reg_reset(struct uc_struct *uc);
 
 void x86_uc_init(struct uc_struct* uc);
-#if 0
-int x86_uc_machine_init(struct uc_struct *uc);
-#endif
 
 extern const int X86_REGS_STORAGE_SIZE;
 #endif

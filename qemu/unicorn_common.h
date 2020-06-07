@@ -70,9 +70,6 @@ static void release_common(void *t)
 
 static inline void uc_common_init(struct uc_struct* uc)
 {
-#if 0
-    memory_register_types(uc);
-#endif
     uc->write_mem = cpu_physical_mem_write;
     uc->read_mem = cpu_physical_mem_read;
     uc->tcg_enabled = tcg_enabled;

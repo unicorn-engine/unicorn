@@ -25,20 +25,6 @@
 #include "qom/cpu.h"
 #include "cpu.h"
 
-#if 0
-#ifdef TARGET_SPARC64
-#define TYPE_SPARC_CPU "sparc64-cpu"
-#else
-#define TYPE_SPARC_CPU "sparc-cpu"
-#endif
-
-#define SPARC_CPU_CLASS(uc, klass) \
-    OBJECT_CLASS_CHECK(uc, SPARCCPUClass, (klass), TYPE_SPARC_CPU)
-#define SPARC_CPU(uc, obj) ((SPARCCPU *)obj)
-#define SPARC_CPU_GET_CLASS(uc, obj) \
-    OBJECT_GET_CLASS(uc, SPARCCPUClass, (obj), TYPE_SPARC_CPU)
-#endif
-
 /**
  * SPARCCPUClass:
  * @parent_realize: The parent class' realize handler.
@@ -51,9 +37,6 @@ typedef struct SPARCCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
-#if 0
-    DeviceRealize parent_realize;
-#endif
     void (*parent_reset)(CPUState *cpu);
 } SPARCCPUClass;
 

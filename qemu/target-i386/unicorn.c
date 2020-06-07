@@ -2,9 +2,6 @@
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#if 0
-#include "hw/boards.h"
-#endif
 #include "hw/i386/pc.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
@@ -1510,14 +1507,6 @@ static int x86_cpus_init(struct uc_struct *uc, const char *cpu_model)
 DEFAULT_VISIBILITY
 void x86_uc_init(struct uc_struct* uc)
 {
-#if 0
-    apic_register_types(uc);
-    apic_common_register_types(uc);
-    register_accel_types(uc);
-    pc_machine_register_types(uc);
-    x86_cpu_register_types(uc);
-    pc_machine_init(uc); // pc_piix
-#endif
     uc->reg_read = x86_reg_read;
     uc->reg_write = x86_reg_write;
     uc->reg_reset = x86_reg_reset;

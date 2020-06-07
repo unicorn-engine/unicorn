@@ -30,12 +30,8 @@
 #include "cpu.h"
 #include "tcg.h"
 #include "hw/hw.h"
-#if 0
-#include "hw/qdev.h"
-#else
 #include "qemu/bitops.h"
 #include "qemu/bitmap.h"
-#endif
 #include "qemu/osdep.h"
 #include "sysemu/sysemu.h"
 #include "qemu/timer.h"
@@ -823,9 +819,6 @@ static void phys_section_destroy(MemoryRegion *mr)
 
     if (mr->subpage) {
         subpage_t *subpage = container_of(mr, subpage_t, iomem);
-#if 0
-        object_unref(mr->uc, OBJECT(&subpage->iomem));
-#endif
         g_free(subpage);
     }
 }
@@ -1013,11 +1006,6 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
         new_block->host = phys_mem_alloc(new_block->length,
                 &new_block->mr->align);
         if (!new_block->host) {
-#if 0
-            error_setg_errno(errp, errno,
-                    "cannot set up guest memory '%s'",
-                    memory_region_name(new_block->mr));
-#endif
             return -1;
         }
         memory_try_enable_merging(new_block->host, new_block->length);
@@ -1063,9 +1051,6 @@ ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
 {
     RAMBlock *new_block;
     ram_addr_t addr;
-#if 0
-    Error *local_err = NULL;
-#endif
 
     size = TARGET_PAGE_ALIGN(size);
     new_block = g_malloc0(sizeof(*new_block));
@@ -1080,13 +1065,7 @@ ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
         new_block->flags |= RAM_PREALLOC;
     }
     addr = ram_block_add(mr->uc, new_block);
-#if 0
-    if (local_err) {
-        g_free(new_block);
-        error_propagate(errp, local_err);
-        return -1;
-    }
-#endif
+
     return addr;
 }
 
@@ -1543,10 +1522,6 @@ void address_space_destroy_dispatch(AddressSpace *as)
 static void memory_map_init(struct uc_struct *uc)
 {
     uc->system_memory = g_malloc(sizeof(*(uc->system_memory)));
-#if 0
-    uc->root = uc->system_memory;
-    uc->owner = uc->system_memory;
-#endif
     memory_region_init(uc, uc->system_memory, NULL, "system", UINT64_MAX);
     address_space_init(uc, &uc->as, uc->system_memory, "memory");
 }

@@ -207,16 +207,7 @@ void qemu_get_guest_memory_mapping(struct uc_struct *uc,
     ram_addr_t offset, length;
 
     if (cpu_paging_enabled(cpu)) {
-#if 0
-        Error *err = NULL;
-#endif
         cpu_get_memory_mapping(cpu, list);
-#if 0
-        if (err) {
-            error_propagate(errp, err);
-            return;
-        }
-#endif
         return;
     }
 

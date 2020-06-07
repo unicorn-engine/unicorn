@@ -34,49 +34,6 @@ bool cpu_exists(struct uc_struct* uc, int64_t id)
     return false;
 }
 
-#if 0
-CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename, const char *cpu_model)
-{
-    char *str, *name, *featurestr;
-    CPUState *cpu;
-    ObjectClass *oc;
-    CPUClass *cc;
-    Error *err = NULL;
-
-    str = g_strdup(cpu_model);
-    name = strtok(str, ",");
-
-    oc = cpu_class_by_name(uc, typename, name);
-    if (oc == NULL) {
-        g_free(str);
-        return NULL;
-    }
-
-    cpu = CPU(object_new(uc, object_class_get_name(oc)));
-    cc = CPU_GET_CLASS(uc, cpu);
-
-    featurestr = strtok(NULL, ",");
-    cc->parse_features(cpu, featurestr, &err);
-    g_free(str);
-    if (err != NULL) {
-        goto out;
-    }
-
-#if 0
-    object_property_set_bool(uc, OBJECT(cpu), true, "realized", &err);
-#endif
-
-out:
-    if (err != NULL) {
-        error_free(err);
-        object_unref(uc, OBJECT(cpu));
-        return NULL;
-    }
-
-    return cpu;
-}
-#endif
-
 bool cpu_paging_enabled(const CPUState *cpu)
 {
     CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
@@ -99,9 +56,6 @@ void cpu_get_memory_mapping(CPUState *cpu, MemoryMappingList *list)
 static void cpu_common_get_memory_mapping(CPUState *cpu,
                                           MemoryMappingList *list)
 {
-#if 0
-    error_setg(errp, "Obtaining memory mappings is unsupported on this CPU.");
-#endif
 }
 
 void cpu_reset_interrupt(CPUState *cpu, int mask)
@@ -178,20 +132,6 @@ static bool cpu_common_has_work(CPUState *cs)
     return false;
 }
 
-#if 0
-ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename, const char *cpu_model)
-{
-    CPUClass *cc = CPU_CLASS(uc, object_class_by_name(uc, typename));
-
-    return cc->class_by_name(uc, cpu_model);
-}
-
-static ObjectClass *cpu_common_class_by_name(struct uc_struct *uc, const char *cpu_model)
-{
-    return NULL;
-}
-#endif
-
 static void cpu_common_parse_features(CPUState *cpu, char *features)
 {
     char *featurestr; /* Single "key=value" string being parsed */
@@ -204,97 +144,17 @@ static void cpu_common_parse_features(CPUState *cpu, char *features)
         if (val) {
             *val = 0;
             val++;
-#if 0
-            object_property_parse(cpu->uc, OBJECT(cpu), val, featurestr, &err);
-            if (err) {
-                error_propagate(errp, err);
-                return;
-            }
-#endif
         } else {
-#if 0
-            error_setg(errp, "Expected key=value format, found %s.",
-                       featurestr);
-#endif
             return;
         }
         featurestr = strtok(NULL, ",");
     }
 }
 
-#if 0
-static int cpu_common_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
-{
-    CPUState *cpu = CPU(dev);
-
-    if (dev->hotplugged) {
-        cpu_resume(cpu);
-    }
-
-    return 0;
-}
-
-static void cpu_common_initfn(struct uc_struct *uc, Object *obj, void *opaque)
-{
-}
-#endif
-
 static int64_t cpu_common_get_arch_id(CPUState *cpu)
 {
     return cpu->cpu_index;
 }
-
-#if 0
-static void cpu_class_init(struct uc_struct *uc, ObjectClass *klass, void *data)
-{
-    DeviceClass *dc = DEVICE_CLASS(uc, klass);
-    CPUClass *k = CPU_CLASS(uc, klass);
-
-    k->class_by_name = cpu_common_class_by_name;
-    k->parse_features = cpu_common_parse_features;
-    k->reset = cpu_common_reset;
-    k->get_arch_id = cpu_common_get_arch_id;
-    k->has_work = cpu_common_has_work;
-    k->get_paging_enabled = cpu_common_get_paging_enabled;
-    k->get_memory_mapping = cpu_common_get_memory_mapping;
-    k->debug_excp_handler = cpu_common_noop;
-    k->cpu_exec_enter = cpu_common_noop;
-    k->cpu_exec_exit = cpu_common_noop;
-    k->cpu_exec_interrupt = cpu_common_exec_interrupt;
-    dc->realize = cpu_common_realizefn;
-    /*
-     * Reason: CPUs still need special care by board code: wiring up
-     * IRQs, adding reset handlers, halting non-first CPUs, ...
-     */
-    dc->cannot_instantiate_with_device_add_yet = true;
-}
-
-static const TypeInfo cpu_type_info = {
-    TYPE_CPU,
-    TYPE_DEVICE,
-
-    sizeof(CPUClass),
-    sizeof(CPUState),
-    NULL,
-
-    cpu_common_initfn,
-    NULL,
-    NULL,
-
-    NULL,
-
-    cpu_class_init,
-    NULL,
-    NULL,
-
-    true,
-};
-
-void cpu_register_types(struct uc_struct *uc)
-{
-    type_register_static(uc, &cpu_type_info);
-}
-#endif
 
 void cpu_klass_init(struct uc_struct *uc, CPUClass *k)
 {

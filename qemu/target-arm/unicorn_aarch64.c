@@ -2,14 +2,8 @@
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#if 0
-#include "hw/boards.h"
-#endif
 #include "qemu/typedefs.h"
 #include "unicorn/unicorn.h"
-#if 0
-#include "hw/arm/arm.h"
-#endif
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
@@ -257,12 +251,6 @@ void arm64eb_uc_init(struct uc_struct* uc)
 void arm64_uc_init(struct uc_struct* uc)
 #endif
 {
-#if 0
-    register_accel_types(uc);
-    arm_cpu_register_types(uc);
-    aarch64_cpu_register_types(uc);
-    machvirt_machine_init(uc);
-#endif
     uc->reg_read = arm64_reg_read;
     uc->reg_write = arm64_reg_write;
     uc->reg_reset = arm64_reg_reset;

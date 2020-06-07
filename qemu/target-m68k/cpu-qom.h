@@ -24,16 +24,6 @@
 
 #include "qom/cpu.h"
 
-#if 0
-#define TYPE_M68K_CPU "m68k-cpu"
-
-#define M68K_CPU_CLASS(uc, klass) \
-    OBJECT_CLASS_CHECK(uc, M68kCPUClass, (klass), TYPE_M68K_CPU)
-#define M68K_CPU(uc, obj) ((M68kCPU *)obj)
-#define M68K_CPU_GET_CLASS(uc, obj) \
-    OBJECT_GET_CLASS(uc, M68kCPUClass, (obj), TYPE_M68K_CPU)
-#endif
-
 /**
  * M68kCPUClass:
  * @parent_realize: The parent class' realize handler.
@@ -46,9 +36,6 @@ typedef struct M68kCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
-#if 0
-    DeviceRealize parent_realize;
-#endif
     void (*parent_reset)(CPUState *cpu);
 } M68kCPUClass;
 

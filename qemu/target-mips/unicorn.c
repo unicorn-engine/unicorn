@@ -2,10 +2,6 @@
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#if 0
-#include "hw/boards.h"
-#include "hw/mips/mips.h"
-#endif
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
@@ -169,11 +165,6 @@ DEFAULT_VISIBILITY
 #endif
 #endif
 {
-#if 0
-    register_accel_types(uc);
-    mips_cpu_register_types(uc);
-    mips_machine_init(uc);
-#endif
     uc->reg_read = mips_reg_read;
     uc->reg_write = mips_reg_write;
     uc->reg_reset = mips_reg_reset;

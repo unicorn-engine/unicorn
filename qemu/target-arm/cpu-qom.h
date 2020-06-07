@@ -24,16 +24,6 @@
 
 #include "qom/cpu.h"
 
-#if 0
-#define TYPE_ARM_CPU "arm-cpu"
-
-#define ARM_CPU_CLASS(uc, klass) \
-    OBJECT_CLASS_CHECK(uc, ARMCPUClass, (klass), TYPE_ARM_CPU)
-#define ARM_CPU(uc, obj) ((ARMCPU *)obj)
-#define ARM_CPU_GET_CLASS(uc, obj) \
-    OBJECT_GET_CLASS(uc, ARMCPUClass, (obj), TYPE_ARM_CPU)
-#endif
-
 /**
  * ARMCPUClass:
  * @parent_realize: The parent class' realize handler.
@@ -46,9 +36,6 @@ typedef struct ARMCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
-#if 0
-    DeviceRealize parent_realize;
-#endif
     void (*parent_reset)(CPUState *cpu);
 } ARMCPUClass;
 
@@ -179,14 +166,6 @@ typedef struct ARMCPU {
 #define ARM_CPU(uc, obj) ((ARMCPU *)obj)
 #define ARM_CPU_CLASS(uc, klass) ((ARMCPUClass *)klass)
 #define ARM_CPU_GET_CLASS(uc, obj) (&((ARMCPU *)obj)->cc)
-
-#if 0
-#define TYPE_AARCH64_CPU "aarch64-cpu"
-#define AARCH64_CPU_CLASS(klass) \
-    OBJECT_CLASS_CHECK(AArch64CPUClass, (klass), TYPE_AARCH64_CPU)
-#define AARCH64_CPU_GET_CLASS(obj) \
-    OBJECT_GET_CLASS(AArch64CPUClass, (obj), TYPE_AArch64_CPU)
-#endif
 
 typedef struct AArch64CPUClass {
     /*< private >*/

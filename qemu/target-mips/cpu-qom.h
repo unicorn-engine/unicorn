@@ -24,20 +24,6 @@
 
 #include "qom/cpu.h"
 
-#if 0
-#ifdef TARGET_MIPS64
-#define TYPE_MIPS_CPU "mips64-cpu"
-#else
-#define TYPE_MIPS_CPU "mips-cpu"
-#endif
-
-#define MIPS_CPU_CLASS(uc, klass) \
-    OBJECT_CLASS_CHECK(uc, MIPSCPUClass, (klass), TYPE_MIPS_CPU)
-#define MIPS_CPU(uc, obj) ((MIPSCPU *)obj)
-#define MIPS_CPU_GET_CLASS(uc, obj) \
-    OBJECT_GET_CLASS(uc, MIPSCPUClass, (obj), TYPE_MIPS_CPU)
-#endif
-
 /**
  * MIPSCPUClass:
  * @parent_realize: The parent class' realize handler.
@@ -50,9 +36,6 @@ typedef struct MIPSCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
-#if 0
-    DeviceRealize parent_realize;
-#endif
     void (*parent_reset)(CPUState *cpu);
 } MIPSCPUClass;
 

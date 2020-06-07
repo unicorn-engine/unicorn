@@ -23,23 +23,6 @@
 
 #include "qom/cpu.h"
 #include "cpu.h"
-#if 0
-#include "qapi/error.h"
-#endif
-
-#if 0
-#ifdef TARGET_X86_64
-#define TYPE_X86_CPU "x86_64-cpu"
-#else
-#define TYPE_X86_CPU "i386-cpu"
-#endif
-
-#define X86_CPU(uc, obj) ((X86CPU *)obj)
-#define X86_CPU_CLASS(uc, klass) \
-    OBJECT_CLASS_CHECK(uc, X86CPUClass, (klass), TYPE_X86_CPU)
-#define X86_CPU_GET_CLASS(uc, obj) \
-    OBJECT_GET_CLASS(uc, X86CPUClass, (obj), TYPE_X86_CPU)
-#endif
 
 /**
  * X86CPUDefinition:
@@ -68,9 +51,6 @@ typedef struct X86CPUClass {
 
     bool kvm_required;
 
-#if 0
-    DeviceRealize parent_realize;
-#endif
     void (*parent_reset)(CPUState *cpu);
 } X86CPUClass;
 
@@ -115,12 +95,8 @@ typedef struct X86CPU {
 
     /* in order to simplify APIC support, we leave this pointer to the
        user */
-#if 0
-    struct DeviceState *apic_state;
-#else
     /* APICCommonState *apic_state; */
     void *apic_state;
-#endif
 
     struct X86CPUClass cc;
 } X86CPU;

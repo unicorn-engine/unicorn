@@ -19,9 +19,6 @@
  */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#if 0
-#include "hw/m68k/m68k.h"
-#endif
 #include "cpu.h"
 #include "qemu-common.h"
 #include "uc_priv.h"
@@ -64,29 +61,6 @@ static void m68k_cpu_reset(CPUState *s)
     env->pc = 0;
     tlb_flush(s, 1);
 }
-
-#if 0
-/* CPU models */
-
-static ObjectClass *m68k_cpu_class_by_name(struct uc_struct *uc, const char *cpu_model)
-{
-    ObjectClass *oc;
-    char *typename;
-
-    if (cpu_model == NULL) {
-        return NULL;
-    }
-
-    typename = g_strdup_printf("%s-" TYPE_M68K_CPU, cpu_model);
-    oc = object_class_by_name(uc, typename);
-    g_free(typename);
-    if (oc != NULL && (object_class_dynamic_cast(uc, oc, TYPE_M68K_CPU) == NULL ||
-                       object_class_is_abstract(oc))) {
-        return NULL;
-    }
-    return oc;
-}
-#endif
 
 static void m5206_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
@@ -155,16 +129,9 @@ static const M68kCPUInfo m68k_cpus[] = {
 static int m68k_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 {
     CPUState *cs = CPU(dev);
-#if 0
-    M68kCPUClass *mcc = M68K_CPU_GET_CLASS(uc, dev);
-#endif
 
     cpu_reset(cs);
     qemu_init_vcpu(cs);
-
-#if 0
-    mcc->parent_realize(cs->uc, devp);
-#endif
 
     return 0;
 }
@@ -187,19 +154,10 @@ static void m68k_cpu_class_init(struct uc_struct *uc, CPUClass *c, void *data)
 {
     M68kCPUClass *mcc = M68K_CPU_CLASS(uc, c);
     CPUClass *cc = CPU_CLASS(uc, c);
-#if 0
-    DeviceClass *dc = DEVICE_CLASS(uc, c);
-
-    mcc->parent_realize = dc->realize;
-    dc->realize = m68k_cpu_realizefn;
-#endif
 
     mcc->parent_reset = cc->reset;
     cc->reset = m68k_cpu_reset;
 
-#if 0
-    cc->class_by_name = m68k_cpu_class_by_name;
-#endif
     cc->has_work = m68k_cpu_has_work;
     cc->do_interrupt = m68k_cpu_do_interrupt;
     cc->cpu_exec_interrupt = m68k_cpu_exec_interrupt;
@@ -212,50 +170,6 @@ static void m68k_cpu_class_init(struct uc_struct *uc, CPUClass *c, void *data)
     cc->cpu_exec_enter = m68k_cpu_exec_enter;
     cc->cpu_exec_exit = m68k_cpu_exec_exit;
 }
-
-#if 0
-static void register_cpu_type(void *opaque, const M68kCPUInfo *info)
-{
-    TypeInfo type_info = {0};
-    type_info.parent = TYPE_M68K_CPU,
-    type_info.instance_init = info->instance_init,
-
-    type_info.name = g_strdup_printf("%s-" TYPE_M68K_CPU, info->name);
-    type_register(opaque, &type_info);
-    g_free((void *)type_info.name);
-}
-
-void m68k_cpu_register_types(void *opaque)
-{
-    const TypeInfo m68k_cpu_type_info = {
-        TYPE_M68K_CPU,
-        TYPE_CPU,
-        
-        sizeof(M68kCPUClass),
-        sizeof(M68kCPU),
-        opaque,
-        
-        m68k_cpu_initfn,
-        NULL,
-        NULL,
-
-        NULL,
-
-        m68k_cpu_class_init,
-        NULL,
-        NULL,
-
-        true,
-    };
-
-    int i;
-
-    type_register_static(opaque, &m68k_cpu_type_info);
-    for (i = 0; i < ARRAY_SIZE(m68k_cpus); i++) {
-        register_cpu_type(opaque, &m68k_cpus[i]);
-    }
-}
-#endif
 
 M68kCPU *cpu_m68k_init(struct uc_struct *uc, const char *cpu_model)
 {

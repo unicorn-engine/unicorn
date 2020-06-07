@@ -203,26 +203,6 @@ struct uc_struct {
     bool ioeventfd_update_pending;
     QTAILQ_HEAD(memory_listeners, MemoryListener) memory_listeners;
     QTAILQ_HEAD(, AddressSpace) address_spaces;
-#if 0
-    MachineState *machine_state;
-#endif
-#if 0
-    // qom/object.c
-    GHashTable *type_table;
-    Type type_interface;
-    Object *root;
-    Object *owner;
-    bool enumerating_types;
-    // util/module.c
-    ModuleTypeList init_type_list[MODULE_INIT_MAX];
-#endif
-#if 0
-    // hw/intc/apic_common.c
-    DeviceState *vapic;
-    int apic_no;
-    bool mmio_registered;
-    bool apic_report_tpr_access;
-#endif
 
     // linked lists containing hooks per type
     struct list hook[UC_HOOK_MAX];

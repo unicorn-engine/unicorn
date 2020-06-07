@@ -2,10 +2,6 @@
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#if 0
-#include "hw/boards.h"
-#include "hw/m68k/m68k.h"
-#endif
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
@@ -123,11 +119,6 @@ static int m68k_cpus_init(struct uc_struct *uc, const char *cpu_model)
 DEFAULT_VISIBILITY
 void m68k_uc_init(struct uc_struct* uc)
 {
-#if 0
-    register_accel_types(uc);
-    m68k_cpu_register_types(uc);
-    dummy_m68k_machine_init(uc);
-#endif
     uc->release = m68k_release;
     uc->reg_read = m68k_reg_read;
     uc->reg_write = m68k_reg_write;

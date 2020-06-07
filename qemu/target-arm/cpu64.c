@@ -21,9 +21,6 @@
 
 #include "cpu.h"
 #include "qemu-common.h"
-#if 0
-#include "hw/arm/arm.h"
-#endif
 #include "sysemu/sysemu.h"
 
 static inline void set_feature(CPUARMState *env, int feature)
@@ -153,20 +150,11 @@ static const ARMCPUInfo aarch64_cpus[] = {
 #ifdef CONFIG_USER_ONLY
     { "any",         aarch64_any_initfn },
 #endif
-#if 0
-    { NULL }
-#endif
 };
 
 static void aarch64_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
 }
-
-#if 0
-static void aarch64_cpu_finalizefn(struct uc_struct *uc, CPUState *obj, void *opaque)
-{
-}
-#endif
 
 static void aarch64_cpu_set_pc(CPUState *cs, vaddr value)
 {
@@ -193,44 +181,6 @@ static void aarch64_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *dat
     cc->cpu_exec_interrupt = arm_cpu_exec_interrupt;
     cc->set_pc = aarch64_cpu_set_pc;
 }
-
-#if 0
-static void aarch64_cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)
-{
-    TypeInfo type_info = { 0 };
-    type_info.parent = TYPE_AARCH64_CPU;
-    type_info.instance_size = sizeof(ARMCPU);
-    type_info.instance_init = info->initfn;
-    type_info.class_size = sizeof(ARMCPUClass);
-    type_info.class_init = info->class_init;
-
-    type_info.name = g_strdup_printf("%s-" TYPE_ARM_CPU, info->name);
-    type_register(uc, &type_info);
-    g_free((void *)type_info.name);
-}
-
-void aarch64_cpu_register_types(void *opaque)
-{
-    const ARMCPUInfo *info = aarch64_cpus;
-
-    static TypeInfo aarch64_cpu_type_info = { 0 };
-    aarch64_cpu_type_info.name = TYPE_AARCH64_CPU;
-    aarch64_cpu_type_info.parent = TYPE_ARM_CPU;
-    aarch64_cpu_type_info.instance_size = sizeof(ARMCPU);
-    aarch64_cpu_type_info.instance_init = aarch64_cpu_initfn;
-    aarch64_cpu_type_info.instance_finalize = aarch64_cpu_finalizefn;
-    aarch64_cpu_type_info.abstract = true;
-    aarch64_cpu_type_info.class_size = sizeof(AArch64CPUClass);
-    aarch64_cpu_type_info.class_init = aarch64_cpu_class_init;
-
-    type_register_static(opaque, &aarch64_cpu_type_info);
-
-    while (info->name) {
-        aarch64_cpu_register(opaque, info);
-        info++;
-    }
-}
-#endif
 
 #ifdef TARGET_WORDS_BIGENDIAN
 ARMCPU *cpu_aarch64eb_init(struct uc_struct *uc, const char *cpu_model)

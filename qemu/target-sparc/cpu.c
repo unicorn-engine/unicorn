@@ -19,9 +19,6 @@
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "cpu.h"
-#if 0
-#include "hw/sparc/sparc.h"
-#endif
 #include "unicorn_common.h"
 #include "uc_priv.h"
 
@@ -130,24 +127,6 @@ static int cpu_sparc_register(struct uc_struct *uc, SPARCCPU *cpu, const char *c
 #endif
     return 0;
 }
-
-#if 0
-SPARCCPU *cpu_sparc_init(struct uc_struct *uc, const char *cpu_model)
-{
-    SPARCCPU *cpu;
-
-    cpu = SPARC_CPU(uc, object_new(uc, TYPE_SPARC_CPU));
-
-    if (cpu_sparc_register(uc, cpu, cpu_model) < 0) {
-        object_unref(uc, OBJECT(cpu));
-        return NULL;
-    }
-
-    object_property_set_bool(uc, OBJECT(cpu), true, "realized", NULL);
-
-    return cpu;
-}
-#endif
 
 void cpu_sparc_set_id(CPUSPARCState *env, unsigned int cpu)
 {
@@ -552,23 +531,6 @@ static const char * const feature_name[] = {
     "gl",
 };
 
-#if 0
-static void print_features(FILE *f, fprintf_function cpu_fprintf,
-                           uint32_t features, const char *prefix)
-{
-    unsigned int i;
-
-    for (i = 0; i < ARRAY_SIZE(feature_name); i++) {
-        if (feature_name[i] && (features & (1 << i))) {
-            if (prefix) {
-                (*cpu_fprintf)(f, "%s", prefix);
-            }
-            (*cpu_fprintf)(f, "%s ", feature_name[i]);
-        }
-    }
-}
-#endif
-
 static void add_flagname_to_bitmaps(const char *flagname, uint32_t *features)
 {
     unsigned int i;
@@ -679,118 +641,6 @@ static void sparc_cpu_parse_features(CPUState *cs, char *features)
 #endif
 }
 
-#if 0
-void sparc_cpu_list(FILE *f, fprintf_function cpu_fprintf)
-{
-    unsigned int i;
-
-    for (i = 0; i < ARRAY_SIZE(sparc_defs); i++) {
-        (*cpu_fprintf)(f, "Sparc %16s IU " TARGET_FMT_lx
-                       " FPU %08x MMU %08x NWINS %d ",
-                       sparc_defs[i].name,
-                       sparc_defs[i].iu_version,
-                       sparc_defs[i].fpu_version,
-                       sparc_defs[i].mmu_version,
-                       sparc_defs[i].nwindows);
-        print_features(f, cpu_fprintf, CPU_DEFAULT_FEATURES &
-                       ~sparc_defs[i].features, "-");
-        print_features(f, cpu_fprintf, ~CPU_DEFAULT_FEATURES &
-                       sparc_defs[i].features, "+");
-        (*cpu_fprintf)(f, "\n");
-    }
-    (*cpu_fprintf)(f, "Default CPU feature flags (use '-' to remove): ");
-    print_features(f, cpu_fprintf, CPU_DEFAULT_FEATURES, NULL);
-    (*cpu_fprintf)(f, "\n");
-    (*cpu_fprintf)(f, "Available CPU feature flags (use '+' to add): ");
-    print_features(f, cpu_fprintf, ~CPU_DEFAULT_FEATURES, NULL);
-    (*cpu_fprintf)(f, "\n");
-    (*cpu_fprintf)(f, "Numerical features (use '=' to set): iu_version "
-                   "fpu_version mmu_version nwindows\n");
-}
-
-static void cpu_print_cc(FILE *f, fprintf_function cpu_fprintf,
-                         uint32_t cc)
-{
-    cpu_fprintf(f, "%c%c%c%c", cc & PSR_NEG ? 'N' : '-',
-                cc & PSR_ZERO ? 'Z' : '-', cc & PSR_OVF ? 'V' : '-',
-                cc & PSR_CARRY ? 'C' : '-');
-}
-
-#ifdef TARGET_SPARC64
-#define REGS_PER_LINE 4
-#else
-#define REGS_PER_LINE 8
-#endif
-
-void sparc_cpu_dump_state(CPUState *cs, FILE *f, fprintf_function cpu_fprintf,
-                          int flags)
-{
-    SPARCCPU *cpu = SPARC_CPU(cs);
-    CPUSPARCState *env = &cpu->env;
-    int i, x;
-
-    cpu_fprintf(f, "pc: " TARGET_FMT_lx "  npc: " TARGET_FMT_lx "\n", env->pc,
-                env->npc);
-
-    for (i = 0; i < 8; i++) {
-        if (i % REGS_PER_LINE == 0) {
-            cpu_fprintf(f, "%%g%d-%d:", i, i + REGS_PER_LINE - 1);
-        }
-        cpu_fprintf(f, " " TARGET_FMT_lx, env->gregs[i]);
-        if (i % REGS_PER_LINE == REGS_PER_LINE - 1) {
-            cpu_fprintf(f, "\n");
-        }
-    }
-    for (x = 0; x < 3; x++) {
-        for (i = 0; i < 8; i++) {
-            if (i % REGS_PER_LINE == 0) {
-                cpu_fprintf(f, "%%%c%d-%d: ",
-                            x == 0 ? 'o' : (x == 1 ? 'l' : 'i'),
-                            i, i + REGS_PER_LINE - 1);
-            }
-            cpu_fprintf(f, TARGET_FMT_lx " ", env->regwptr[i + x * 8]);
-            if (i % REGS_PER_LINE == REGS_PER_LINE - 1) {
-                cpu_fprintf(f, "\n");
-            }
-        }
-    }
-
-    for (i = 0; i < TARGET_DPREGS; i++) {
-        if ((i & 3) == 0) {
-            cpu_fprintf(f, "%%f%02d: ", i * 2);
-        }
-        cpu_fprintf(f, " %016" PRIx64, env->fpr[i].ll);
-        if ((i & 3) == 3) {
-            cpu_fprintf(f, "\n");
-        }
-    }
-#ifdef TARGET_SPARC64
-    cpu_fprintf(f, "pstate: %08x ccr: %02x (icc: ", env->pstate,
-                (unsigned)cpu_get_ccr(env));
-    cpu_print_cc(f, cpu_fprintf, cpu_get_ccr(env) << PSR_CARRY_SHIFT);
-    cpu_fprintf(f, " xcc: ");
-    cpu_print_cc(f, cpu_fprintf, cpu_get_ccr(env) << (PSR_CARRY_SHIFT - 4));
-    cpu_fprintf(f, ") asi: %02x tl: %d pil: %x\n", env->asi, env->tl,
-                env->psrpil);
-    cpu_fprintf(f, "cansave: %d canrestore: %d otherwin: %d wstate: %d "
-                "cleanwin: %d cwp: %d\n",
-                env->cansave, env->canrestore, env->otherwin, env->wstate,
-                env->cleanwin, env->nwindows - 1 - env->cwp);
-    cpu_fprintf(f, "fsr: " TARGET_FMT_lx " y: " TARGET_FMT_lx " fprs: "
-                TARGET_FMT_lx "\n", env->fsr, env->y, env->fprs);
-#else
-    cpu_fprintf(f, "psr: %08x (icc: ", cpu_get_psr(env));
-    cpu_print_cc(f, cpu_fprintf, cpu_get_psr(env));
-    cpu_fprintf(f, " SPE: %c%c%c) wim: %08x\n", env->psrs ? 'S' : '-',
-                env->psrps ? 'P' : '-', env->psret ? 'E' : '-',
-                env->wim);
-    cpu_fprintf(f, "fsr: " TARGET_FMT_lx " y: " TARGET_FMT_lx "\n",
-                env->fsr, env->y);
-#endif
-    cpu_fprintf(f, "\n");
-}
-#endif
-
 static void sparc_cpu_set_pc(CPUState *cs, vaddr value)
 {
     SPARCCPU *cpu = SPARC_CPU(cs->uc, cs);
@@ -818,23 +668,7 @@ static bool sparc_cpu_has_work(CPUState *cs)
 
 static int sparc_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 {
-#if 0
-    SPARCCPUClass *scc = SPARC_CPU_GET_CLASS(uc, dev);
-#endif
-#if defined(CONFIG_USER_ONLY)
-    SPARCCPU *cpu = SPARC_CPU(uc, dev);
-    CPUSPARCState *env = &cpu->env;
-
-    if ((env->def->features & CPU_FEATURE_FLOAT)) {
-        env->def->features |= CPU_FEATURE_FLOAT128;
-    }
-#endif
-
     qemu_init_vcpu(CPU(dev));
-
-#if 0
-    scc->parent_realize(uc, dev, errp);
-#endif
 
     return 0;
 }
@@ -853,26 +687,10 @@ static void sparc_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
     }
 }
 
-#if 0
-static void sparc_cpu_uninitfn(struct uc_struct *uc, CPUState *obj, void *opaque)
-{
-    SPARCCPU *cpu = SPARC_CPU(uc, obj);
-    CPUSPARCState *env = &cpu->env;
-
-    g_free(env->def);
-}
-#endif
-
 static void sparc_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
 {
     SPARCCPUClass *scc = SPARC_CPU_CLASS(uc, oc);
     CPUClass *cc = CPU_CLASS(uc, oc);
-#if 0
-    DeviceClass *dc = DEVICE_CLASS(uc, oc);
-
-    scc->parent_realize = dc->realize;
-    dc->realize = sparc_cpu_realizefn;
-#endif
 
     scc->parent_reset = cc->reset;
     cc->reset = sparc_cpu_reset;
@@ -895,35 +713,6 @@ static void sparc_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
     cc->get_phys_page_debug = sparc_cpu_get_phys_page_debug;
 #endif
 }
-
-# if 0
-void sparc_cpu_register_types(void *opaque)
-{
-    const TypeInfo sparc_cpu_type_info = {
-        TYPE_SPARC_CPU,
-        TYPE_CPU,
-        
-        sizeof(SPARCCPUClass),
-        sizeof(SPARCCPU),
-        opaque,
-        
-        sparc_cpu_initfn,
-        NULL,
-        sparc_cpu_uninitfn,
-        
-        NULL,
-
-        sparc_cpu_class_init,
-        NULL,
-        NULL,
-
-        false,
-    };
-
-    //printf(">>> sparc_cpu_register_types\n");
-    type_register_static(opaque, &sparc_cpu_type_info);
-}
-#endif
 
 SPARCCPU *cpu_sparc_init(struct uc_struct *uc, const char *cpu_model)
 {

@@ -22,10 +22,7 @@
 #include "exec/ioport.h"
 #include "qemu/bitops.h"
 #include "qemu/bitmap.h"
-#if 0
-#include "qapi/visitor.h"
-#include "qom/object.h"
-#endif
+
 #include <assert.h>
 
 #include "exec/memory-internal.h"
@@ -91,9 +88,6 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 {
     int i;
     target_ulong addr;
-#if 0
-    void *obj;
-#endif
 
     // Make sure all pages associated with the MemoryRegion are flushed
     // Only need to do this if we are in a running state
@@ -110,16 +104,8 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
             //shift remainder of array down over deleted pointer
             memmove(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
             mr->destructor(mr);
-#if 0
-            obj = OBJECT(mr);
-            obj->ref = 1;
-            obj->free = g_free;
-#endif
             g_free((char *)mr->name);
             mr->name = NULL;
-#if 0
-            object_property_del_child(mr->uc, qdev_get_machine(mr->uc), obj, &error_abort);
-#endif
             break;
         }
     }
@@ -128,9 +114,6 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 int memory_free(struct uc_struct *uc)
 {
     MemoryRegion *mr;
-#if 0
-    void *obj;
-#endif
     int i;
 
     for (i = 0; i < uc->mapped_block_count; i++) {
@@ -138,12 +121,6 @@ int memory_free(struct uc_struct *uc)
         mr->enabled = false;
         memory_region_del_subregion(get_system_memory(uc), mr);
         mr->destructor(mr);
-#if 0
-        obj = OBJECT(mr);
-        obj->ref = 1;
-        obj->free = g_free;
-        object_property_del_child(mr->uc, qdev_get_machine(mr->uc), obj, &error_abort);
-#endif
     }
 
     return 0;
@@ -787,64 +764,18 @@ static void memory_region_destructor_ram_from_ptr(MemoryRegion *mr)
     qemu_ram_free_from_ptr(mr->uc, mr->ram_addr);
 }
 
-#if 0
-static bool memory_region_need_escape(char c)
-{
-    return c == '/' || c == '[' || c == '\\' || c == ']';
-}
-
-static char *memory_region_escape_name(const char *name)
-{
-    const char *p;
-    char *escaped, *q;
-    uint8_t c;
-    size_t bytes = 0;
-
-    for (p = name; *p; p++) {
-        bytes += memory_region_need_escape(*p) ? 4 : 1;
-    }
-    if (bytes == p - name) {
-       return g_memdup(name, bytes + 1);
-    }
-
-    escaped = g_malloc(bytes + 1);
-    for (p = name, q = escaped; *p; p++) {
-        c = *p;
-        if (unlikely(memory_region_need_escape(c))) {
-            *q++ = '\\';
-            *q++ = 'x';
-            *q++ = "0123456789abcdef"[c >> 4];
-            c = "0123456789abcdef"[c & 15];
-        }
-        *q++ = c;
-    }
-    *q = 0;
-    return escaped;
-}
-#endif
-
 void memory_region_init(struct uc_struct *uc, MemoryRegion *mr,
                         void *owner,
                         const char *name,
                         uint64_t size)
 {
-#if 0
-    if (!owner) {
-        owner = qdev_get_machine(uc);
-        uc->owner = owner;
-    }
-#endif
 
-#if 0
-    object_initialize(uc, mr, sizeof(*mr), TYPE_MEMORY_REGION);
-#else
     memset(mr, 0, sizeof(*mr));
     mr->ops = &unassigned_mem_ops;
     mr->enabled = true;
     mr->romd_mode = true;
     mr->destructor = memory_region_destructor_none;
     QTAILQ_INIT(&mr->subregions);
-#endif
 
     mr->uc = uc;
     mr->size = int128_make64(size);
@@ -852,115 +783,7 @@ void memory_region_init(struct uc_struct *uc, MemoryRegion *mr,
         mr->size = int128_2_64();
     }
     mr->name = g_strdup(name);
-
-#if 0
-    if (name) {
-        char *escaped_name = memory_region_escape_name(name);
-        char *name_array = g_strdup_printf("%s[*]", escaped_name);
-        object_property_add_child(owner, name_array, OBJECT(mr), &error_abort);
-        object_unref(uc, OBJECT(mr));
-        g_free(name_array);
-        g_free(escaped_name);
-    }
-#endif
 }
-
-#if 0
-static void memory_region_get_addr(struct uc_struct *uc, void *obj, Visitor *v, void *opaque,
-                                   const char *name, Error **errp)
-{
-    MemoryRegion *mr = MEMORY_REGION(uc, obj);
-    uint64_t value = mr->addr;
-
-    visit_type_uint64(v, &value, name, errp);
-}
-
-static void memory_region_get_container(struct uc_struct *uc, void *obj, Visitor *v, void *opaque,
-                                        const char *name, Error **errp)
-{
-    MemoryRegion *mr = MEMORY_REGION(uc, obj);
-    gchar *path = (gchar *)"";
-
-    if (mr->container) {
-        path = object_get_canonical_path(OBJECT(mr->container));
-    }
-    visit_type_str(v, &path, name, errp);
-    if (mr->container) {
-        g_free(path);
-    }
-}
-
-static void *memory_region_resolve_container(struct uc_struct *uc, void *obj, void *opaque,
-                                               const char *part)
-{
-    MemoryRegion *mr = MEMORY_REGION(uc, obj);
-
-    return OBJECT(mr->container);
-}
-
-static void memory_region_get_priority(struct uc_struct *uc, void *obj, Visitor *v, void *opaque,
-                                       const char *name, Error **errp)
-{
-    MemoryRegion *mr = MEMORY_REGION(uc, obj);
-    int32_t value = mr->priority;
-
-    visit_type_int32(v, &value, name, errp);
-}
-
-static bool memory_region_get_may_overlap(struct uc_struct *uc, void *obj, Error **errp)
-{
-    MemoryRegion *mr = MEMORY_REGION(uc, obj);
-
-    return mr->may_overlap;
-}
-
-static void memory_region_get_size(struct uc_struct *uc, void *obj, Visitor *v, void *opaque,
-                                   const char *name, Error **errp)
-{
-    MemoryRegion *mr = MEMORY_REGION(uc, obj);
-    uint64_t value = memory_region_size(mr);
-
-    visit_type_uint64(v, &value, name, errp);
-}
-#endif
-
-#if 0
-static void memory_region_initfn(struct uc_struct *uc, void *obj, void *opaque)
-{
-    MemoryRegion *mr = MEMORY_REGION(uc, obj);
-    ObjectProperty *op;
-
-    mr->ops = &unassigned_mem_ops;
-    mr->enabled = true;
-    mr->romd_mode = true;
-    mr->destructor = memory_region_destructor_none;
-    QTAILQ_INIT(&mr->subregions);
-
-    op = object_property_add(OBJECT(mr), "container",
-                             "link<" TYPE_MEMORY_REGION ">",
-                             memory_region_get_container,
-                             NULL, /* memory_region_set_container */
-                             NULL, NULL, &error_abort);
-    op->resolve = memory_region_resolve_container;
-
-    object_property_add(OBJECT(mr), "addr", "uint64",
-                        memory_region_get_addr,
-                        NULL, /* memory_region_set_addr */
-                        NULL, NULL, &error_abort);
-    object_property_add(OBJECT(mr), "priority", "uint32",
-                        memory_region_get_priority,
-                        NULL, /* memory_region_set_priority */
-                        NULL, NULL, &error_abort);
-    object_property_add_bool(mr->uc, OBJECT(mr), "may-overlap",
-                             memory_region_get_may_overlap,
-                             NULL, /* memory_region_set_may_overlap */
-                             &error_abort);
-    object_property_add(OBJECT(mr), "size", "uint64",
-                        memory_region_get_size,
-                        NULL, /* memory_region_set_size, */
-                        NULL, NULL, &error_abort);
-}
-#endif
 
 static uint64_t unassigned_mem_read(struct uc_struct* uc, hwaddr addr, unsigned size)
 {
@@ -1145,26 +968,6 @@ void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
     mr->alias_offset = offset;
 }
 
-#if 0
-void memory_region_init_reservation(struct uc_struct *uc, MemoryRegion *mr,
-                                    void *owner,
-                                    const char *name,
-                                    uint64_t size)
-{
-    memory_region_init_io(uc, mr, owner, &unassigned_mem_ops, mr, name, size);
-}
-
-static void memory_region_finalize(struct uc_struct *uc, void *obj, void *opaque)
-{
-    MemoryRegion *mr = MEMORY_REGION(uc, obj);
-
-    assert(QTAILQ_EMPTY(&mr->subregions));
-    // assert(memory_region_transaction_depth == 0);
-    mr->destructor(mr);
-    g_free((char *)mr->name);
-}
-#endif
-
 void memory_region_ref(MemoryRegion *mr)
 {
     /* MMIO callbacks most likely will access data that belongs
@@ -1177,26 +980,10 @@ void memory_region_ref(MemoryRegion *mr)
      * Memory regions without an owner are supposed to never go away,
      * but we still ref/unref them for debugging purposes.
      */
-#if 0
-    void *obj = OBJECT(mr);
-    if (obj && obj->parent) {
-        object_ref(obj->parent);
-    } else {
-        object_ref(obj);
-    }
-#endif
 }
 
 void memory_region_unref(MemoryRegion *mr)
 {
-#if 0
-    void *obj = OBJECT(mr);
-    if (obj && obj->parent) {
-        object_unref(mr->uc, obj->parent);
-    } else {
-        object_unref(mr->uc, obj);
-    }
-#endif
 }
 
 uint64_t memory_region_size(MemoryRegion *mr)
@@ -1209,12 +996,6 @@ uint64_t memory_region_size(MemoryRegion *mr)
 
 const char *memory_region_name(const MemoryRegion *mr)
 {
-#if 0
-    if (!mr->name) {
-        ((MemoryRegion *)mr)->name =
-            object_get_canonical_path_component(OBJECT(mr));
-    }
-#endif
     return mr->name;
 }
 
@@ -1310,16 +1091,6 @@ static void memory_region_update_container_subregions(MemoryRegion *subregion)
                          int128_make64(other->addr))) {
             continue;
         }
-#if 0
-        printf("warning: subregion collision %llx/%llx (%s) "
-               "vs %llx/%llx (%s)\n",
-               (unsigned long long)offset,
-               (unsigned long long)int128_get64(subregion->size),
-               subregion->name,
-               (unsigned long long)other->addr,
-               (unsigned long long)int128_get64(other->size),
-               other->name);
-#endif
     }
     QTAILQ_FOREACH(other, &mr->subregions, subregions_link) {
         if (subregion->priority >= other->priority) {
@@ -1636,23 +1407,3 @@ struct MemoryRegionList {
 };
 
 typedef QTAILQ_HEAD(queue, MemoryRegionList) MemoryRegionListHead;
-
-#if 0
-static const TypeInfo memory_region_info = {
-    TYPE_MEMORY_REGION,
-    TYPE_OBJECT,
-
-    0,
-    sizeof(MemoryRegion),
-    NULL,
-
-    memory_region_initfn,
-    NULL,
-    memory_region_finalize,
-};
-
-void memory_register_types(struct uc_struct *uc)
-{
-    type_register_static(uc, &memory_region_info);
-}
-#endif

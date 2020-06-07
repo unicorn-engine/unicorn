@@ -2,10 +2,6 @@
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#if 0
-#include "hw/boards.h"
-#include "hw/sparc/sparc.h"
-#endif
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
@@ -153,11 +149,6 @@ static int sparc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 DEFAULT_VISIBILITY
 void sparc64_uc_init(struct uc_struct* uc)
 {
-#if 0
-    register_accel_types(uc);
-    sparc_cpu_register_types(uc);
-    sun4u_machine_init(uc);
-#endif
     uc->release = sparc_release;
     uc->reg_read = sparc_reg_read;
     uc->reg_write = sparc_reg_write;

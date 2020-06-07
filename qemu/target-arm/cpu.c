@@ -22,10 +22,6 @@
 #include "cpu.h"
 #include "internals.h"
 #include "qemu-common.h"
-#if 0
-#include "qapi/qmp/qerror.h"
-#include "hw/arm/arm.h"
-#endif
 #include "sysemu/sysemu.h"
 
 #include "uc_priv.h"
@@ -143,17 +139,6 @@ static void arm_cpu_reset(CPUState *s)
         uint32_t initial_pc; /* Loaded from 0x4 */
 
         env->daif &= ~PSTATE_I;
-#if 0
-        uint8_t *rom;
-        rom = rom_ptr(0);
-        if (rom) {
-            /* Address zero is covered by ROM which hasn't yet been
-             * copied into physical memory.
-             */
-            initial_msp = ldl_p(rom);
-            initial_pc = ldl_p(rom + 4);
-        } else
-#endif
         {
             /* Address zero not covered by a ROM blob, or the ROM blob
              * is in non-modifiable memory and this is a second reset after
@@ -193,9 +178,6 @@ static void arm_cpu_reset(CPUState *s)
 
 bool arm_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 {
-#if 0
-    CPUARMState *env = cs->env_ptr;
-#endif
     CPUClass *cc = CPU_GET_CLASS(cs->uc, cs);
     bool ret = false;
 
@@ -279,19 +261,6 @@ static void arm_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
     cpu->cp_regs = g_hash_table_new_full(g_int_hash, g_int_equal,
                                          g_free, g_free);
 
-#if 0
-#ifndef CONFIG_USER_ONLY
-    /* Our inbound IRQ and FIQ lines */
-
-    cpu->gt_timer[GTIMER_PHYS] = timer_new(QEMU_CLOCK_VIRTUAL, GTIMER_SCALE,
-                                                arm_gt_ptimer_cb, cpu);
-    cpu->gt_timer[GTIMER_VIRT] = timer_new(QEMU_CLOCK_VIRTUAL, GTIMER_SCALE,
-                                                arm_gt_vtimer_cb, cpu);
-    //qdev_init_gpio_out(DEVICE(cpu), cpu->gt_timer_outputs,
-    //                   ARRAY_SIZE(cpu->gt_timer_outputs));
-#endif
-#endif
-
     /* DTB consumers generally don't in fact care what the 'compatible'
      * string is, so always provide some string and trust that a hypothetical
      * picky DTB consumer will also provide a helpful error message.
@@ -327,21 +296,10 @@ static void arm_cpu_post_init(struct uc_struct *uc, CPUState *obj)
     }
 }
 
-#if 0
-static void arm_cpu_finalizefn(struct uc_struct *uc, CPUState *obj, void *opaque)
-{
-    ARMCPU *cpu = ARM_CPU(uc, obj);
-    g_hash_table_destroy(cpu->cp_regs);
-}
-#endif
-
 static int arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 {
     CPUState *cs = CPU(dev);
     ARMCPU *cpu = ARM_CPU(uc, dev);
-#if 0
-    ARMCPUClass *acc = ARM_CPU_GET_CLASS(uc, dev);
-#endif
     CPUARMState *env = &cpu->env;
 
     /* Some features automatically imply others: */
@@ -406,33 +364,8 @@ static int arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
     qemu_init_vcpu(cs);
     cpu_reset(cs);
 
-#if 0
-    acc->parent_realize(uc, dev, errp);
-#endif
-
     return 0;
 }
-
-#if 0
-static ObjectClass *arm_cpu_class_by_name(struct uc_struct *uc, const char *cpu_model)
-{
-    ObjectClass *oc;
-    char *typename;
-
-    if (!cpu_model) {
-        return NULL;
-    }
-
-    typename = g_strdup_printf("%s-" TYPE_ARM_CPU, cpu_model);
-    oc = object_class_by_name(uc, typename);
-    g_free(typename);
-    if (!oc || !object_class_dynamic_cast(uc, oc, TYPE_ARM_CPU) ||
-        object_class_is_abstract(oc)) {
-        return NULL;
-    }
-    return oc;
-}
-#endif
 
 /* CPU models. These are not needed for the AArch64 linux-user build. */
 #ifndef TARGET_AARCH64
@@ -1065,20 +998,10 @@ static void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
 {
     ARMCPUClass *acc = ARM_CPU_CLASS(uc, oc);
     CPUClass *cc = CPU_CLASS(uc, acc);
-#if 0
-    DeviceClass *dc = DEVICE_CLASS(uc, oc);
-
-    acc->parent_realize = dc->realize;
-    dc->realize = arm_cpu_realizefn;
-    //dc->props = arm_cpu_properties;
-#endif
 
     acc->parent_reset = cc->reset;
     cc->reset = arm_cpu_reset;
 
-#if 0
-    cc->class_by_name = arm_cpu_class_by_name;
-#endif
     cc->has_work = arm_cpu_has_work;
     cc->cpu_exec_interrupt = arm_cpu_exec_interrupt;
     //cc->dump_state = arm_cpu_dump_state;
@@ -1091,46 +1014,6 @@ static void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
 #endif
     cc->debug_excp_handler = arm_debug_excp_handler;
 }
-
-#if 0
-static void cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)
-{
-    TypeInfo type_info = { 0 };
-    type_info.parent = TYPE_ARM_CPU;
-    type_info.instance_size = sizeof(ARMCPU);
-    type_info.instance_init = info->initfn;
-    type_info.class_size = sizeof(ARMCPUClass);
-    type_info.class_init = info->class_init;
-
-    type_info.name = g_strdup_printf("%s-" TYPE_ARM_CPU, info->name);
-    type_register(uc, &type_info);
-    g_free((void *)type_info.name);
-}
-
-void arm_cpu_register_types(void *opaque)
-{
-    const ARMCPUInfo *info = arm_cpus;
-    
-    TypeInfo arm_cpu_type_info = { 0 };
-    arm_cpu_type_info.name = TYPE_ARM_CPU,
-    arm_cpu_type_info.parent = TYPE_CPU,
-    arm_cpu_type_info.instance_userdata = opaque,
-    arm_cpu_type_info.instance_size = sizeof(ARMCPU),
-    arm_cpu_type_info.instance_init = arm_cpu_initfn,
-    arm_cpu_type_info.instance_post_init = arm_cpu_post_init,
-    arm_cpu_type_info.instance_finalize = arm_cpu_finalizefn,
-    arm_cpu_type_info.abstract = true,
-    arm_cpu_type_info.class_size = sizeof(ARMCPUClass),
-    arm_cpu_type_info.class_init = arm_cpu_class_init,
-
-    type_register_static(opaque, &arm_cpu_type_info);
-
-    while (info->name) {
-        cpu_register(opaque, info);
-        info++;
-    }
-}
-#endif
 
 ARMCPU *cpu_arm_init(struct uc_struct *uc, const char *cpu_model)
 {

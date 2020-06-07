@@ -4,9 +4,6 @@
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "qemu/timer.h"
-#if 0
-#include "qapi/error.h"
-#endif
 
 /* vl.c */
 

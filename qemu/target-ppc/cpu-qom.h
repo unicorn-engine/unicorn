@@ -25,22 +25,6 @@
 #include "qom/cpu.h"
 #include "cpu.h"
 
-#if 0
-#ifdef TARGET_PPC64
-#define TYPE_POWERPC_CPU "powerpc64-cpu"
-#elif defined(TARGET_PPCEMB)
-#define TYPE_POWERPC_CPU "embedded-powerpc-cpu"
-#else
-#define TYPE_POWERPC_CPU "powerpc-cpu"
-#endif
-
-#define POWERPC_CPU_CLASS(uc, klass) \
-    OBJECT_CLASS_CHECK(uc, PowerPCCPUClass, (klass), TYPE_POWERPC_CPU)
-#define POWERPC_CPU(uc, obj) ((PowerPCCPU *)obj)
-#define POWERPC_CPU_GET_CLASS(uc, obj) \
-    OBJECT_GET_CLASS(uc, PowerPCCPUClass, (obj), TYPE_POWERPC_CPU)
-#endif
-
 typedef struct PowerPCCPU PowerPCCPU;
 
 /**
@@ -55,9 +39,6 @@ typedef struct PowerPCCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
-#if 0
-    DeviceRealize parent_realize;
-#endif
     void (*parent_reset)(CPUState *cpu);
 
     uint32_t pvr;

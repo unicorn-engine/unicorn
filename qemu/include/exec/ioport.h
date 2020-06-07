@@ -26,9 +26,6 @@
 #define IOPORT_H
 
 #include "qemu-common.h"
-#if 0
-#include "qom/object.h"
-#endif
 #include "exec/memory.h"
 
 typedef uint32_t pio_addr_t;

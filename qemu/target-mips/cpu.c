@@ -21,9 +21,6 @@
 
 #include "cpu.h"
 #include "qemu-common.h"
-#if 0
-#include "hw/mips/mips.h"
-#endif
 #include "tcg-op.h"
 #include "uc_priv.h"
 
@@ -98,16 +95,9 @@ static void mips_cpu_reset(CPUState *s)
 static int mips_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 {
     CPUState *cs = CPU(dev);
-#if 0
-    MIPSCPUClass *mcc = MIPS_CPU_GET_CLASS(uc, dev);
-#endif
 
     cpu_reset(cs);
     qemu_init_vcpu(cs);
-
-#if 0
-    mcc->parent_realize(uc, dev, errp);
-#endif
 
     return 0;
 }
@@ -130,12 +120,6 @@ static void mips_cpu_class_init(struct uc_struct *uc, CPUClass *c, void *data)
 {
     MIPSCPUClass *mcc = MIPS_CPU_CLASS(uc, c);
     CPUClass *cc = CPU_CLASS(uc, c);
-#if 0
-    DeviceClass *dc = DEVICE_CLASS(uc, c);
-
-    mcc->parent_realize = dc->realize;
-    dc->realize = mips_cpu_realizefn;
-#endif
 
     mcc->parent_reset = cc->reset;
     cc->reset = mips_cpu_reset;
@@ -329,34 +313,6 @@ void restore_state_to_opc(CPUMIPSState *env, TranslationBlock *tb, int pc_pos)
         break;
     }
 }
-
-#if 0
-void mips_cpu_register_types(void *opaque)
-{
-    const TypeInfo mips_cpu_type_info = {
-        TYPE_MIPS_CPU,
-        TYPE_CPU,
-        
-        sizeof(MIPSCPUClass),
-        sizeof(MIPSCPU),
-        opaque,
-        
-        mips_cpu_initfn,
-        NULL,
-        NULL,
-
-        NULL,
-
-        mips_cpu_class_init,
-        NULL,
-        NULL,
-
-        false,
-    };
-
-    type_register_static(opaque, &mips_cpu_type_info);
-}
-#endif
 
 MIPSCPU *cpu_mips_init(struct uc_struct *uc, const char *cpu_model)
 {

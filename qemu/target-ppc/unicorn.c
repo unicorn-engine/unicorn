@@ -2,9 +2,6 @@
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#if 0
-#include "hw/boards.h"
-#endif
 #include "hw/ppc/ppc.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
@@ -160,11 +157,6 @@ DEFAULT_VISIBILITY
   void ppc_uc_init(struct uc_struct* uc)
 #endif
 {
-#if 0
-    register_accel_types(uc);
-    ppc_cpu_register_types(uc);
-    ppc_machine_init(uc);
-#endif
     uc->reg_read = ppc_reg_read;
     uc->reg_write = ppc_reg_write;
     uc->reg_reset = ppc_reg_reset;

@@ -24,9 +24,6 @@
 
 #include <signal.h>
 #include <setjmp.h>
-#if 0
-#include "hw/qdev-core.h"
-#endif
 #include "exec/hwaddr.h"
 #include "qemu/queue.h"
 #include "qemu/thread.h"
@@ -61,11 +58,6 @@ typedef uint64_t vaddr;
  * an unchecked cast.
  */
 #define CPU(obj) ((CPUState *)(obj))
-
-#if 0
-#define CPU_CLASS(uc, class) OBJECT_CLASS_CHECK(uc, CPUClass, (class), TYPE_CPU)
-#define CPU_GET_CLASS(uc, obj) OBJECT_GET_CLASS(uc, CPUClass, (obj), TYPE_CPU)
-#endif
 
 typedef struct CPUState CPUState;
 
@@ -107,13 +99,6 @@ struct TranslationBlock;
  * Represents a CPU family or model.
  */
 typedef struct CPUClass {
-#if 0
-    /*< private >*/
-    DeviceClass parent_class;
-    /*< public >*/
-
-    ObjectClass *(*class_by_name)(struct uc_struct *uc, const char *cpu_model);
-#endif
     void (*parse_features)(CPUState *cpu, char *str);
 
     void (*reset)(CPUState *cpu);
@@ -210,12 +195,6 @@ struct kvm_run;
  * State of one CPU core or thread.
  */
 struct CPUState {
-#if 0
-    /*< private >*/
-    DeviceState parent_obj;
-#endif
-    /*< public >*/
-
     int nr_cores;
     int nr_threads;
     int numa_node;
@@ -405,30 +384,6 @@ static inline hwaddr cpu_get_phys_page_debug(CPUState *cpu, vaddr addr)
  * @cpu: The CPU whose state is to be reset.
  */
 void cpu_reset(CPUState *cpu);
-
-#if 0
-/**
- * cpu_class_by_name:
- * @typename: The CPU base type.
- * @cpu_model: The model string without any parameters.
- *
- * Looks up a CPU #ObjectClass matching name @cpu_model.
- *
- * Returns: A #CPUClass or %NULL if not matching class is found.
- */
-ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename_, const char *cpu_model);
-
-/**
- * cpu_generic_init:
- * @typename: The CPU base type.
- * @cpu_model: The model string including optional parameters.
- *
- * Instantiates a CPU, processes optional parameters and realizes the CPU.
- *
- * Returns: A #CPUState or %NULL if an error occurred.
- */
-CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename_, const char *cpu_model);
-#endif
 
 /**
  * cpu_has_work:
