@@ -587,17 +587,9 @@ esac
 QEMU_CFLAGS="$CPU_CFLAGS $QEMU_CFLAGS"
 EXTRA_CFLAGS="$CPU_CFLAGS $EXTRA_CFLAGS"
 
-default_target_list=""
-
-mak_wilds=""
-
-if [ "$softmmu" = "yes" ]; then
-    mak_wilds="${mak_wilds} $source_path/default-configs/*-softmmu.mak"
-fi
-
-for config in $mak_wilds; do
-    default_target_list="${default_target_list} $(basename "$config" .mak)"
-done
+default_target_list="aarch64eb-softmmu aarch64-softmmu armeb-softmmu \
+    arm-softmmu m68k-softmmu mips64el-softmmu mips64-softmmu mipsel-softmmu \
+    mips-softmmu ppc-softmmu sparc64-softmmu sparc-softmmu x86_64-softmmu"
 
 if test x"$show_help" = x"yes" ; then
 cat << EOF
