@@ -368,7 +368,7 @@ static float32 roundAndPackFloat32(flag zSign, int_fast16_t zExp, uint32_t zSig 
 {
     int8 roundingMode;
     flag roundNearestEven;
-    int8 roundIncrement, roundBits;
+    int8 roundIncrement = 0, roundBits;
     flag isTiny;
 
     roundingMode = STATUS(float_rounding_mode);
@@ -553,7 +553,7 @@ static float64 roundAndPackFloat64(flag zSign, int_fast16_t zExp, uint64_t zSig 
 {
     int8 roundingMode;
     flag roundNearestEven;
-    int_fast16_t roundIncrement, roundBits;
+    int_fast16_t roundIncrement = 0, roundBits;
     flag isTiny;
 
     roundingMode = STATUS(float_rounding_mode);
@@ -726,7 +726,7 @@ static floatx80
  STATUS_PARAM)
 {
     int8 roundingMode;
-    flag roundNearestEven, increment, isTiny;
+    flag roundNearestEven, increment = 0, isTiny;
     int64 roundIncrement, roundMask, roundBits;
 
     roundingMode = STATUS(float_rounding_mode);
@@ -1064,7 +1064,7 @@ static float128
      flag zSign, int32 zExp, uint64_t zSig0, uint64_t zSig1, uint64_t zSig2 STATUS_PARAM)
 {
     int8 roundingMode;
-    flag roundNearestEven, increment, isTiny;
+    flag roundNearestEven, increment = 0, isTiny;
 
     roundingMode = STATUS(float_rounding_mode);
     roundNearestEven = ( roundingMode == float_round_nearest_even );
