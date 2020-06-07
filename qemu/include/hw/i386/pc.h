@@ -6,6 +6,8 @@
 #include "uc_priv.h"
 
 typedef void (*cpu_set_smm_t)(int smm, void *arg);
+#if 0
 void cpu_smm_register(cpu_set_smm_t callback, void *arg);
+#endif
 
 #endif

@@ -1,1 +1,0 @@
-obj-$(CONFIG_APIC) += apic.o apic_common.o

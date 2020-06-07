@@ -112,7 +112,9 @@ target_ulong helper_read_crN(CPUX86State *env, int reg)
         break;
     case 8:
         if (!(env->hflags2 & HF2_VINTR_MASK)) {
-            val = cpu_get_apic_tpr(env->uc, x86_env_get_cpu(env)->apic_state);
+            /* val = cpu_get_apic_tpr(env->uc, x86_env_get_cpu(env)->apic_state);
+               cpu_get_apic_tpr() always return 0 when apic_state is NULL. */
+            val = 0;
         } else {
             val = env->v_tpr;
         }
@@ -135,9 +137,12 @@ void helper_write_crN(CPUX86State *env, int reg, target_ulong t0)
         cpu_x86_update_cr4(env, (uint32_t)t0);
         break;
     case 8:
+#if 0
+        /* do nothing when apic_state is NULL. */
         if (!(env->hflags2 & HF2_VINTR_MASK)) {
             cpu_set_apic_tpr(env->uc, x86_env_get_cpu(env)->apic_state, (uint8_t)t0);
         }
+#endif
         env->v_tpr = t0 & 0x0f;
         break;
     default:
@@ -245,7 +250,10 @@ void helper_wrmsr(CPUX86State *env)
         env->sysenter_eip = val;
         break;
     case MSR_IA32_APICBASE:
+#if 0
+        /* do nothing when apic_state is NULL. */
         cpu_set_apic_base(env->uc, x86_env_get_cpu(env)->apic_state, val);
+#endif
         break;
     case MSR_EFER:
         {
@@ -396,7 +404,10 @@ void helper_rdmsr(CPUX86State *env)
         val = env->sysenter_eip;
         break;
     case MSR_IA32_APICBASE:
-        val = cpu_get_apic_base(env->uc, x86_env_get_cpu(env)->apic_state);
+        /* val = cpu_get_apic_base(env->uc, x86_env_get_cpu(env)->apic_state);
+            cpu_get_apic_base() always return MSR_IA32_APICBASE_BSP
+            when apic_state is NULL.*/
+        val = MSR_IA32_APICBASE_BSP;
         break;
     case MSR_EFER:
         val = env->efer;

@@ -282,8 +282,6 @@ add_library(x86_64-softmmu
     qemu/exec.c
     qemu/fpu/softfloat.c
     qemu/hw/i386/pc.c
-    qemu/hw/intc/apic.c
-    qemu/hw/intc/apic_common.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c

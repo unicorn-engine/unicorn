@@ -1279,8 +1279,10 @@ void optimize_flags_init(struct uc_struct *);
 #include "exec/cpu-all.h"
 #include "svm.h"
 
+#if 0
 #if !defined(CONFIG_USER_ONLY)
 #include "hw/i386/apic.h"
+#endif
 #endif
 
 #include "exec/exec-all.h"
