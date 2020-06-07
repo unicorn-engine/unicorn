@@ -51,7 +51,7 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
 {
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
-    memory_region_init_ram(uc, ram, NULL, "pc.ram", size, perms);
+    memory_region_init_ram(uc, ram, "pc.ram", size, perms);
     if (ram->ram_addr == -1)
         // out of memory
         return NULL;
@@ -68,7 +68,7 @@ MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, ui
 {
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
-    memory_region_init_ram_ptr(uc, ram, NULL, "pc.ram", size, ptr);
+    memory_region_init_ram_ptr(uc, ram, "pc.ram", size, ptr);
     ram->perms = perms;
     if (ram->ram_addr == -1)
         // out of memory
@@ -121,6 +121,9 @@ int memory_free(struct uc_struct *uc)
         mr->enabled = false;
         memory_region_del_subregion(get_system_memory(uc), mr);
         mr->destructor(mr);
+        /* destroy subregion */
+        g_free((void *)(mr->name));
+        g_free(mr);
     }
 
     return 0;
@@ -765,7 +768,6 @@ static void memory_region_destructor_ram_from_ptr(MemoryRegion *mr)
 }
 
 void memory_region_init(struct uc_struct *uc, MemoryRegion *mr,
-                        void *owner,
                         const char *name,
                         uint64_t size)
 {
@@ -903,13 +905,12 @@ static bool memory_region_dispatch_write(MemoryRegion *mr,
 }
 
 void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
-                           void *owner,
                            const MemoryRegionOps *ops,
                            void *opaque,
                            const char *name,
                            uint64_t size)
 {
-    memory_region_init(uc, mr, owner, name, size);
+    memory_region_init(uc, mr, name, size);
     mr->ops = ops;
     mr->opaque = opaque;
     mr->terminates = true;
@@ -917,12 +918,11 @@ void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
 }
 
 void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
-                            void *owner,
                             const char *name,
                             uint64_t size,
                             uint32_t perms)
 {
-    memory_region_init(uc, mr, owner, name, size);
+    memory_region_init(uc, mr, name, size);
     mr->ram = true;
     if (!(perms & UC_PROT_WRITE)) {
         mr->readonly = true;
@@ -934,12 +934,11 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
 }
 
 void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
-                                void *owner,
                                 const char *name,
                                 uint64_t size,
                                 void *ptr)
 {
-    memory_region_init(uc, mr, owner, name, size);
+    memory_region_init(uc, mr, name, size);
     mr->ram = true;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram_from_ptr;
@@ -955,13 +954,12 @@ void memory_region_set_skip_dump(MemoryRegion *mr)
 }
 
 void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
-                              void *owner,
                               const char *name,
                               MemoryRegion *orig,
                               hwaddr offset,
                               uint64_t size)
 {
-    memory_region_init(uc, mr, owner, name, size);
+    memory_region_init(uc, mr, name, size);
     memory_region_ref(orig);
     mr->destructor = memory_region_destructor_alias;
     mr->alias = orig;
