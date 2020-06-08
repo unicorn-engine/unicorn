@@ -21,20 +21,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "unicorn/platform.h"
 
+#include "unicorn/platform.h"
 #include "cpu.h"
 #include "sysemu/cpus.h"
 #include "topology.h"
-
-#include "hw/hw.h"
-
 #include "sysemu/sysemu.h"
-#if 0
-#ifndef CONFIG_USER_ONLY
-#include "hw/i386/apic_internal.h"
-#endif
-#endif
 #include "uc_priv.h"
 
 /* Cache topology CPUID constants: */
@@ -2064,4 +2056,11 @@ X86CPU *cpu_x86_init(struct uc_struct *uc, const char *cpu_model)
     uc->cpu = (CPUState *)cpu;
 
     return cpu;
+}
+
+/* from qemu/hw/i386/pc.c */
+/* TSC handling */
+uint64_t cpu_get_tsc(CPUX86State *env)
+{
+    return cpu_get_ticks();
 }

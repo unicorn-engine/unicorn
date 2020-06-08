@@ -35,28 +35,24 @@ UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-$$(CONFIG_POSIX),qemu/util/Makefile.objs,
 endif
 
 UC_TARGET_OBJ_X86 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/x86_64-softmmu/)
-UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/hw/i386/Makefile.objs, qemu/x86_64-softmmu/hw/i386/)
 UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/target-i386/Makefile.objs, qemu/x86_64-softmmu/target-i386/)
-
-UC_TARGET_OBJ_ARM = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/arm-softmmu/)
-UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-y,qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
-UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-$$(CONFIG_SOFTMMU),qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
-UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-$$(TARGET_ARM),qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
-
-UC_TARGET_OBJ_ARMEB = $(subst /arm-softmmu/,/armeb-softmmu/,$(UC_TARGET_OBJ_ARM))
 
 UC_TARGET_OBJ_M68K = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/m68k-softmmu/)
 UC_TARGET_OBJ_M68K += $(call UC_GET_OBJ,obj-,qemu/target-m68k/Makefile.objs, qemu/m68k-softmmu/target-m68k/)
 
+UC_TARGET_OBJ_ARM = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/arm-softmmu/)
+UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-y,qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
+UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-$$(TARGET_ARM),qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
+
+UC_TARGET_OBJ_ARMEB = $(subst /arm-softmmu/,/armeb-softmmu/,$(UC_TARGET_OBJ_ARM))
+
 UC_TARGET_OBJ_AARCH64 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/aarch64-softmmu/)
 UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-y,qemu/target-arm/Makefile.objs, qemu/aarch64-softmmu/target-arm/)
-UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-$$(CONFIG_SOFTMMU),qemu/target-arm/Makefile.objs, qemu/aarch64-softmmu/target-arm/)
 UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-$$(TARGET_AARCH64),qemu/target-arm/Makefile.objs, qemu/aarch64-softmmu/target-arm/)
 
 UC_TARGET_OBJ_AARCH64EB = $(subst /aarch64-softmmu/,/aarch64eb-softmmu/,$(UC_TARGET_OBJ_AARCH64))
 
 UC_TARGET_OBJ_MIPS = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/mips-softmmu/)
-UC_TARGET_OBJ_MIPS += $(call UC_GET_OBJ,obj-,qemu/hw/mips/Makefile.objs, qemu/mips-softmmu/hw/mips/)
 UC_TARGET_OBJ_MIPS += $(call UC_GET_OBJ,obj-,qemu/target-mips/Makefile.objs, qemu/mips-softmmu/target-mips/)
 
 UC_TARGET_OBJ_MIPSEL = $(subst /mips-softmmu/,/mipsel-softmmu/,$(UC_TARGET_OBJ_MIPS))

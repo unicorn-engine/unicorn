@@ -1,1 +1,0 @@
-obj-y += addr.o cputimer.o

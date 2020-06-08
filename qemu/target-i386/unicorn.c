@@ -2,7 +2,6 @@
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#include "hw/i386/pc.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
