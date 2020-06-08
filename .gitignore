@@ -12,8 +12,6 @@
 *.jar
 *~
 
-qemu/config-all-devices.mak
-
 qemu/aarch64-softmmu/
 qemu/aarch64eb-softmmu/
 qemu/arm-softmmu/
