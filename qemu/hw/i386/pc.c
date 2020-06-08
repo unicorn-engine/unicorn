@@ -46,6 +46,7 @@ uint64_t cpu_get_tsc(CPUX86State *env)
 static cpu_set_smm_t smm_set;
 static void *smm_arg;
 
+#if 0
 void cpu_smm_register(cpu_set_smm_t callback, void *arg)
 {
     assert(smm_set == NULL);
@@ -53,6 +54,7 @@ void cpu_smm_register(cpu_set_smm_t callback, void *arg)
     smm_set = callback;
     smm_arg = arg;
 }
+#endif
 
 void cpu_smm_update(CPUX86State *env)
 {
@@ -63,6 +65,7 @@ void cpu_smm_update(CPUX86State *env)
     }
 }
 
+#if 0
 /* IRQ handling */
 int cpu_get_pic_interrupt(CPUX86State *env)
 {
@@ -90,4 +93,5 @@ DeviceState *cpu_get_current_apic(struct uc_struct *uc)
         return NULL;
     }
 }
+#endif
 

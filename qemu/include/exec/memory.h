@@ -26,19 +26,9 @@
 #include "exec/hwaddr.h"
 #include "qemu/queue.h"
 #include "qemu/int128.h"
-#if 0
-#include "qapi/error.h"
-#include "qom/object.h"
-#endif
 
 #define MAX_PHYS_ADDR_SPACE_BITS 62
 #define MAX_PHYS_ADDR            (((hwaddr)1 << MAX_PHYS_ADDR_SPACE_BITS) - 1)
-
-#if 0
-#define TYPE_MEMORY_REGION "qemu:memory-region"
-#define MEMORY_REGION(uc, obj) \
-        OBJECT_CHECK(uc, MemoryRegion, (obj), TYPE_MEMORY_REGION)
-#endif
 
 typedef struct MemoryRegionOps MemoryRegionOps;
 typedef struct MemoryRegionMmio MemoryRegionMmio;
@@ -132,9 +122,6 @@ struct MemoryRegionIOMMUOps {
 };
 
 struct MemoryRegion {
-#if 0
-    Object parent_obj;
-#endif
     /* All fields are private - violators will be prosecuted */
     const MemoryRegionOps *ops;
     const MemoryRegionIOMMUOps *iommu_ops;
@@ -253,7 +240,6 @@ static inline MemoryRegionSection MemoryRegionSection_make(MemoryRegion *mr, Add
  * @size: size of the region; any subregions beyond this size will be clipped
  */
 void memory_region_init(struct uc_struct *uc, MemoryRegion *mr,
-                        void *owner,
                         const char *name,
                         uint64_t size);
 
@@ -301,7 +287,6 @@ void memory_region_unref(MemoryRegion *mr);
  * @size: size of the region.
  */
 void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
-                           void *owner,
                            const MemoryRegionOps *ops,
                            void *opaque,
                            const char *name,
@@ -319,7 +304,6 @@ void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
  * @errp: pointer to Error*, to store an error if it happens.
  */
 void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
-                            void *owner,
                             const char *name,
                             uint64_t size,
                             uint32_t perms);
@@ -336,7 +320,6 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
  * @ptr: memory to be mapped; must contain at least @size bytes.
  */
 void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
-                                void *owner,
                                 const char *name,
                                 uint64_t size,
                                 void *ptr);
@@ -354,7 +337,6 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
  * @size: size of the region.
  */
 void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
-                              void *owner,
                               const char *name,
                               MemoryRegion *orig,
                               hwaddr offset,
@@ -372,7 +354,6 @@ void memory_region_init_alias(struct uc_struct *uc, MemoryRegion *mr,
  * @errp: pointer to Error*, to store an error if it happens.
  */
 void memory_region_init_rom_device(MemoryRegion *mr,
-                                   void *owner,
                                    const MemoryRegionOps *ops,
                                    void *opaque,
                                    const char *name,
@@ -392,7 +373,6 @@ void memory_region_init_rom_device(MemoryRegion *mr,
  * @size: size of the region.
  */
 void memory_region_init_reservation(struct uc_struct *uc, MemoryRegion *mr,
-                                    void *owner,
                                     const char *name,
                                     uint64_t size);
 
@@ -410,7 +390,6 @@ void memory_region_init_reservation(struct uc_struct *uc, MemoryRegion *mr,
  * @size: size of the region.
  */
 void memory_region_init_iommu(MemoryRegion *mr,
-                              void *owner,
                               const MemoryRegionIOMMUOps *ops,
                               const char *name,
                               uint64_t size);

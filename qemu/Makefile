@@ -61,8 +61,8 @@ endif
 
 -include $(SUBDIR_DEVICES_MAK_DEP)
 
-%/config-devices.mak: default-configs/%.mak
-	$(call quiet-command, cp $< $@, "  GEN   $@")
+%/config-devices.mak:
+	$(call quiet-command, touch $@, "  GEN   $@")
 
 ifneq ($(wildcard config-host.mak),)
 include $(SRC_PATH)/Makefile.objs

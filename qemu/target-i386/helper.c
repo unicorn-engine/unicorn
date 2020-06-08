@@ -1061,7 +1061,10 @@ void cpu_report_tpr_access(CPUX86State *env, TPRAccess access)
 
         cpu_restore_state(cs, cs->mem_io_pc);
 
+#if 0
+        /* do nothing */
         apic_handle_tpr_access_report(cpu->apic_state, env->eip, access);
+#endif
 }
 #endif /* !CONFIG_USER_ONLY */
 
@@ -1113,12 +1116,18 @@ void do_cpu_init(X86CPU *cpu)
            offsetof(CPUX86State, start_init_save));
     g_free(save);
 
+#if 0
+    /* do nothing */
     apic_init_reset(env->uc, cpu->apic_state);
+#endif
 }
 
 void do_cpu_sipi(X86CPU *cpu)
 {
+#if 0
+    /* do nothing */
     apic_sipi(cpu->apic_state);
+#endif
 }
 #else
 void do_cpu_init(X86CPU *cpu)

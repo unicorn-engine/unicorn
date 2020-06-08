@@ -36,7 +36,6 @@ endif
 
 UC_TARGET_OBJ_X86 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/x86_64-softmmu/)
 UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/hw/i386/Makefile.objs, qemu/x86_64-softmmu/hw/i386/)
-UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/hw/intc/Makefile.objs, qemu/x86_64-softmmu/hw/intc/)
 UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/target-i386/Makefile.objs, qemu/x86_64-softmmu/target-i386/)
 
 UC_TARGET_OBJ_ARM = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/arm-softmmu/)

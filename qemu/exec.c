@@ -1378,12 +1378,12 @@ static const MemoryRegionOps notdirty_mem_ops = {
 
 static void io_mem_init(struct uc_struct* uc)
 {
-    memory_region_init_io(uc, &uc->io_mem_rom, NULL, &unassigned_mem_ops, NULL, NULL, UINT64_MAX);
-    memory_region_init_io(uc, &uc->io_mem_unassigned, NULL, &unassigned_mem_ops, NULL,
+    memory_region_init_io(uc, &uc->io_mem_rom, &unassigned_mem_ops, NULL, NULL, UINT64_MAX);
+    memory_region_init_io(uc, &uc->io_mem_unassigned, &unassigned_mem_ops, NULL,
                           NULL, UINT64_MAX);
-    memory_region_init_io(uc, &uc->io_mem_notdirty, NULL, &notdirty_mem_ops, NULL,
+    memory_region_init_io(uc, &uc->io_mem_notdirty, &notdirty_mem_ops, NULL,
                           NULL, UINT64_MAX);
-    //memory_region_init_io(uc, &uc->io_mem_watch, NULL, &watch_mem_ops, NULL,
+    //memory_region_init_io(uc, &uc->io_mem_watch, &watch_mem_ops, NULL,
     //                      NULL, UINT64_MAX);
 }
 
@@ -1395,7 +1395,7 @@ static subpage_t *subpage_init(AddressSpace *as, hwaddr base)
 
     mmio->as = as;
     mmio->base = base;
-    memory_region_init_io(as->uc, &mmio->iomem, NULL, &subpage_ops, mmio,
+    memory_region_init_io(as->uc, &mmio->iomem, &subpage_ops, mmio,
             NULL, TARGET_PAGE_SIZE);
     mmio->iomem.subpage = true;
 #if defined(DEBUG_SUBPAGE)
@@ -1522,7 +1522,7 @@ void address_space_destroy_dispatch(AddressSpace *as)
 static void memory_map_init(struct uc_struct *uc)
 {
     uc->system_memory = g_malloc(sizeof(*(uc->system_memory)));
-    memory_region_init(uc, uc->system_memory, NULL, "system", UINT64_MAX);
+    memory_region_init(uc, uc->system_memory, "system", UINT64_MAX);
     address_space_init(uc, &uc->as, uc->system_memory, "memory");
 }
 
