@@ -23,17 +23,6 @@
 #include "qemu/log.h"
 #include "uc_priv.h"
 
-bool cpu_exists(struct uc_struct* uc, int64_t id)
-{
-    CPUState *cpu = uc->cpu;
-    CPUClass *cc = CPU_GET_CLASS(uc, cpu);
-
-    if (cc->get_arch_id(cpu) == id) {
-        return true;
-    }
-    return false;
-}
-
 bool cpu_paging_enabled(const CPUState *cpu)
 {
     CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);

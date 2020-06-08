@@ -285,46 +285,6 @@ bool cpu_paging_enabled(const CPUState *cpu);
 void cpu_get_memory_mapping(CPUState *cpu, MemoryMappingList *list);
 
 /**
- * cpu_write_elf64_note:
- * @f: pointer to a function that writes memory to a file
- * @cpu: The CPU whose memory is to be dumped
- * @cpuid: ID number of the CPU
- * @opaque: pointer to the CPUState struct
- */
-int cpu_write_elf64_note(WriteCoreDumpFunction f, CPUState *cpu,
-                         int cpuid, void *opaque);
-
-/**
- * cpu_write_elf64_qemunote:
- * @f: pointer to a function that writes memory to a file
- * @cpu: The CPU whose memory is to be dumped
- * @cpuid: ID number of the CPU
- * @opaque: pointer to the CPUState struct
- */
-int cpu_write_elf64_qemunote(WriteCoreDumpFunction f, CPUState *cpu,
-                             void *opaque);
-
-/**
- * cpu_write_elf32_note:
- * @f: pointer to a function that writes memory to a file
- * @cpu: The CPU whose memory is to be dumped
- * @cpuid: ID number of the CPU
- * @opaque: pointer to the CPUState struct
- */
-int cpu_write_elf32_note(WriteCoreDumpFunction f, CPUState *cpu,
-                         int cpuid, void *opaque);
-
-/**
- * cpu_write_elf32_qemunote:
- * @f: pointer to a function that writes memory to a file
- * @cpu: The CPU whose memory is to be dumped
- * @cpuid: ID number of the CPU
- * @opaque: pointer to the CPUState struct
- */
-int cpu_write_elf32_qemunote(WriteCoreDumpFunction f, CPUState *cpu,
-                             void *opaque);
-
-/**
  * CPUDumpFlags:
  * @CPU_DUMP_CODE:
  * @CPU_DUMP_FPU: dump FPU register state, not just integer
@@ -449,16 +409,6 @@ void async_run_on_cpu(CPUState *cpu, void (*func)(void *data), void *data);
  * Returns: The CPU or %NULL if there is no matching CPU.
  */
 CPUState *qemu_get_cpu(struct uc_struct *uc, int index);
-
-/**
- * cpu_exists:
- * @id: Guest-exposed CPU ID to lookup.
- *
- * Search for CPU with specified ID.
- *
- * Returns: %true - CPU is found, %false - CPU isn't found.
- */
-bool cpu_exists(struct uc_struct* uc, int64_t id);
 
 #ifndef CONFIG_USER_ONLY
 
