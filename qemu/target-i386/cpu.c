@@ -138,21 +138,6 @@
 #define L2_ITLB_4K_ASSOC       4
 #define L2_ITLB_4K_ENTRIES   512
 
-#if 0
-void x86_cpu_register_types(void *);
-
-static void x86_cpu_vendor_words2str(char *dst, uint32_t vendor1,
-                                     uint32_t vendor2, uint32_t vendor3)
-{
-    int i;
-    for (i = 0; i < 4; i++) {
-        dst[i] = vendor1 >> (8 * i);
-        dst[i + 4] = vendor2 >> (8 * i);
-        dst[i + 8] = vendor3 >> (8 * i);
-    }
-    dst[CPUID_VENDOR_SZ] = '\0';
-}
-#endif
 
 /* feature flags taken from "Intel Processor Identification and the CPUID
  * Instruction" and AMD's "CPUID Specification".  In cases of disagreement
@@ -569,11 +554,6 @@ static void add_flagname_to_bitmaps(const char *flagname,
             break;
         }
     }
-#if 0
-    if (w == FEATURE_WORDS) {
-        error_setg(errp, "CPU feature %s not found", flagname);
-    }
-#endif
 }
 
 struct X86CPUDefinition {
@@ -1765,27 +1745,7 @@ static void x86_cpu_reset(CPUState *s)
     env->mtrr_deftype = 0;
     memset(env->mtrr_var, 0, sizeof(env->mtrr_var));
     memset(env->mtrr_fixed, 0, sizeof(env->mtrr_fixed));
-
-#if 0
-#if !defined(CONFIG_USER_ONLY)
-    /* We hard-wire the BSP to the first CPU. */
-    if (s->cpu_index == 0) {
-        apic_designate_bsp(env->uc, cpu->apic_state);
-    }
-
-    s->halted = !cpu_is_bsp(cpu);
-#endif
-#endif
 }
-
-#if 0
-#ifndef CONFIG_USER_ONLY
-bool cpu_is_bsp(X86CPU *cpu)
-{
-    return (cpu_get_apic_base((&cpu->env)->uc, cpu->apic_state) & MSR_IA32_APICBASE_BSP) != 0;
-}
-#endif
-#endif
 
 static void mce_init(X86CPU *cpu)
 {
@@ -1954,6 +1914,7 @@ static bool x86_cpu_has_work(CPUState *cs)
 
     if (cs->interrupt_request & CPU_INTERRUPT_POLL) {
 #if 0
+        /* do nothing */
         apic_poll_irq(cpu->apic_state);
 #endif
         cpu_reset_interrupt(cs, CPU_INTERRUPT_POLL);
