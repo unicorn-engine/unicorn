@@ -105,7 +105,7 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
             memmove(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
             mr->destructor(mr);
             g_free((char *)mr->name);
-            mr->name = NULL;
+            g_free(mr);
             break;
         }
     }
@@ -122,7 +122,7 @@ int memory_free(struct uc_struct *uc)
         memory_region_del_subregion(get_system_memory(uc), mr);
         mr->destructor(mr);
         /* destroy subregion */
-        g_free((void *)(mr->name));
+        g_free((char *)(mr->name));
         g_free(mr);
     }
 
