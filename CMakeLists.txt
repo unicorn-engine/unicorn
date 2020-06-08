@@ -281,7 +281,6 @@ add_library(x86_64-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/i386/pc.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -549,8 +548,6 @@ add_library(mips-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/mips/addr.c
-    qemu/hw/mips/cputimer.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -592,8 +589,6 @@ add_library(mipsel-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/mips/addr.c
-    qemu/hw/mips/cputimer.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -635,8 +630,6 @@ add_library(mips64-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/mips/addr.c
-    qemu/hw/mips/cputimer.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -678,8 +671,6 @@ add_library(mips64el-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/mips/addr.c
-    qemu/hw/mips/cputimer.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
