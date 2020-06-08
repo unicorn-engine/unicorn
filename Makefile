@@ -118,14 +118,12 @@ ifneq (,$(findstring mips,$(UNICORN_ARCHS)))
 	UNICORN_TARGETS += mips64el-softmmu,
 endif
 ifneq (,$(findstring ppc,$(UNICORN_ARCHS)))
-#	CONFIG_LIBDECNUMBER=y
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPC)
 #	UC_TARGET_OBJ += $(call GENOBJ,ppc64-softmmu)
 	UNICORN_CFLAGS += -DUNICORN_HAS_PPC
 #	UNICORN_CFLAGS += -DUNICORN_HAS_PPC64
 	UNICORN_TARGETS += ppc-softmmu,
 #	UNICORN_TARGETS += ppc64-softmmu,
-	LIBDECNUMBER_O= qemu/libdecnumber/decContext.o qemu/libdecnumber/decNumber.o qemu/libdecnumber/dpd/decimal32.o qemu/libdecnumber/dpd/decimal64.o qemu/libdecnumber/dpd/decimal128.o
 endif
 ifneq (,$(findstring sparc,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_SPARC)
@@ -134,7 +132,6 @@ ifneq (,$(findstring sparc,$(UNICORN_ARCHS)))
 	UNICORN_TARGETS += sparc-softmmu,sparc64-softmmu,
 endif
 
-#UC_OBJ_ALL = $(UC_TARGET_OBJ) $(LIBDECNUMBER_O) list.o uc.o
 UC_OBJ_ALL = $(UC_TARGET_OBJ) list.o uc.o
 
 UNICORN_CFLAGS += -fPIC
