@@ -264,4 +264,3 @@ struct uc_context {
 MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address);
 
 #endif
-/* vim: set ts=4 noet:  */
