@@ -32,8 +32,6 @@
  * A Motorola 68k CPU model.
  */
 typedef struct M68kCPUClass {
-    /*< private >*/
-    CPUClass parent_class;
     /*< public >*/
 
     void (*parent_reset)(CPUState *cpu);

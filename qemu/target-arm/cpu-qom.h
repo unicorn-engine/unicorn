@@ -32,8 +32,6 @@
  * An ARM CPU model.
  */
 typedef struct ARMCPUClass {
-    /*< private >*/
-    CPUClass parent_class;
     /*< public >*/
 
     void (*parent_reset)(CPUState *cpu);
