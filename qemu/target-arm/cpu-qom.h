@@ -165,15 +165,6 @@ typedef struct ARMCPU {
 #define ARM_CPU_CLASS(uc, klass) ((ARMCPUClass *)klass)
 #define ARM_CPU_GET_CLASS(uc, obj) (&((ARMCPU *)obj)->cc)
 
-typedef struct AArch64CPUClass {
-    /*< private >*/
-    ARMCPUClass parent_class;
-    /*< public >*/
-} AArch64CPUClass;
-
-#define AARCH64_CPU_CLASS(uc, klass) ((AArch64CPUClass *)klass)
-#define AARCH64_CPU_GET_CLASS(uc, obj) ((AArch64CPUClass *)(&((ARMCPU *)obj)->cc))
-
 static inline ARMCPU *arm_env_get_cpu(CPUARMState *env)
 {
     return container_of(env, ARMCPU, env);
