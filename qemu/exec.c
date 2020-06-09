@@ -29,7 +29,6 @@
 #include "qemu-common.h"
 #include "cpu.h"
 #include "tcg.h"
-#include "hw/hw.h"
 #include "qemu/bitops.h"
 #include "qemu/bitmap.h"
 #include "qemu/osdep.h"

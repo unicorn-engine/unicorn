@@ -23,7 +23,6 @@
  */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#include "hw/hw.h"
 #include "hw/ppc/ppc.h"
 #include "qemu/timer.h"
 #include "sysemu/sysemu.h"

@@ -1199,7 +1199,6 @@ void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0);
 void cpu_x86_update_cr3(CPUX86State *env, target_ulong new_cr3);
 void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4);
 
-/* hw/pc.c */
 void cpu_smm_update(CPUX86State *env);
 uint64_t cpu_get_tsc(CPUX86State *env);
 
@@ -1278,13 +1277,6 @@ void optimize_flags_init(struct uc_struct *);
 
 #include "exec/cpu-all.h"
 #include "svm.h"
-
-#if 0
-#if !defined(CONFIG_USER_ONLY)
-#include "hw/i386/apic.h"
-#endif
-#endif
-
 #include "exec/exec-all.h"
 
 static inline void cpu_get_tb_cpu_state(CPUX86State *env, target_ulong *pc,

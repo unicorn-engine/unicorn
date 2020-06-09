@@ -24,74 +24,10 @@
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-
-#include "hw/hw.h"
-#include "hw/i386/pc.h"
 #include "sysemu/sysemu.h"
-
-/* XXX: add IGNNE support */
-void cpu_set_ferr(CPUX86State *s)
-{
-//    qemu_irq_raise(ferr_irq);
-}
 
 /* TSC handling */
 uint64_t cpu_get_tsc(CPUX86State *env)
 {
     return cpu_get_ticks();
 }
-
-/* SMM support */
-
-static cpu_set_smm_t smm_set;
-static void *smm_arg;
-
-#if 0
-void cpu_smm_register(cpu_set_smm_t callback, void *arg)
-{
-    assert(smm_set == NULL);
-    assert(smm_arg == NULL);
-    smm_set = callback;
-    smm_arg = arg;
-}
-#endif
-
-void cpu_smm_update(CPUX86State *env)
-{
-    struct uc_struct *uc = x86_env_get_cpu(env)->parent_obj.uc;
-
-    if (smm_set && smm_arg && CPU(x86_env_get_cpu(env)) == uc->cpu) {
-        smm_set(!!(env->hflags & HF_SMM_MASK), smm_arg);
-    }
-}
-
-#if 0
-/* IRQ handling */
-int cpu_get_pic_interrupt(CPUX86State *env)
-{
-    X86CPU *cpu = x86_env_get_cpu(env);
-    int intno;
-
-    intno = apic_get_interrupt(cpu->apic_state);
-    if (intno >= 0) {
-        return intno;
-    }
-    /* read the irq from the PIC */
-    if (!apic_accept_pic_intr(cpu->apic_state)) {
-        return -1;
-    }
-
-    return 0;
-}
-
-DeviceState *cpu_get_current_apic(struct uc_struct *uc)
-{
-    if (uc->current_cpu) {
-        X86CPU *cpu = X86_CPU(uc, uc->current_cpu);
-        return cpu->apic_state;
-    } else {
-        return NULL;
-    }
-}
-#endif
-

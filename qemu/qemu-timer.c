@@ -25,9 +25,6 @@
 /* Modified for Unicorn Engine by Nguyen Anh Quynh, 2015 */
 
 #include "sysemu/sysemu.h"
-
-#include "hw/hw.h"
-
 #include "qemu/timer.h"
 
 #ifdef CONFIG_PPOLL

@@ -19,11 +19,11 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#include "hw/hw.h"
-#include "hw/mips/cpudevs.h"
 #include "qemu/timer.h"
 
+/* from qemu/hw/mips/cpitimer.c */
 #define TIMER_FREQ	100 * 1000 * 1000
 
 /* XXX: do not use a global */
