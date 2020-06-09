@@ -35,6 +35,7 @@ UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-$$(CONFIG_POSIX),qemu/util/Makefile.objs,
 endif
 
 UC_TARGET_OBJ_X86 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/x86_64-softmmu/)
+UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/hw/i386/Makefile.objs, qemu/x86_64-softmmu/hw/i386/)
 UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/target-i386/Makefile.objs, qemu/x86_64-softmmu/target-i386/)
 
 UC_TARGET_OBJ_M68K = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/m68k-softmmu/)
@@ -53,6 +54,7 @@ UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-$$(TARGET_AARCH64),qemu/target-ar
 UC_TARGET_OBJ_AARCH64EB = $(subst /aarch64-softmmu/,/aarch64eb-softmmu/,$(UC_TARGET_OBJ_AARCH64))
 
 UC_TARGET_OBJ_MIPS = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/mips-softmmu/)
+UC_TARGET_OBJ_MIPS += $(call UC_GET_OBJ,obj-,qemu/hw/mips/Makefile.objs, qemu/mips-softmmu/hw/mips/)
 UC_TARGET_OBJ_MIPS += $(call UC_GET_OBJ,obj-,qemu/target-mips/Makefile.objs, qemu/mips-softmmu/target-mips/)
 
 UC_TARGET_OBJ_MIPSEL = $(subst /mips-softmmu/,/mipsel-softmmu/,$(UC_TARGET_OBJ_MIPS))

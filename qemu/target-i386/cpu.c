@@ -2018,10 +2018,3 @@ X86CPU *cpu_x86_init(struct uc_struct *uc, const char *cpu_model)
 
     return cpu;
 }
-
-/* from qemu/hw/i386/pc.c */
-/* TSC handling */
-uint64_t cpu_get_tsc(CPUX86State *env)
-{
-    return cpu_get_ticks();
-}
