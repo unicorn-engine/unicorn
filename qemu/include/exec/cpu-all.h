@@ -299,8 +299,6 @@ CPUArchState *cpu_copy(CPUArchState *env);
 #define TLB_MMIO        (1 << 5)
 
 ram_addr_t last_ram_offset(struct uc_struct *uc);
-void qemu_mutex_lock_ramlist(struct uc_struct *uc);
-void qemu_mutex_unlock_ramlist(struct uc_struct *uc);
 #endif /* !CONFIG_USER_ONLY */
 
 int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
