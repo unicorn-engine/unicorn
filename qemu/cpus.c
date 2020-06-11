@@ -189,25 +189,3 @@ static void cpu_handle_guest_debug(CPUState *cpu)
     cpu->stopped = true;
 }
 
-#if 0
-#ifndef _WIN32
-static void qemu_tcg_init_cpu_signals(void)
-{
-    sigset_t set;
-    struct sigaction sigact;
-
-    memset(&sigact, 0, sizeof(sigact));
-    sigact.sa_handler = cpu_signal;
-    sigaction(SIG_IPI, &sigact, NULL);
-
-    sigemptyset(&set);
-    sigaddset(&set, SIG_IPI);
-    pthread_sigmask(SIG_UNBLOCK, &set, NULL);
-}
-#else /* _WIN32 */
-static void qemu_tcg_init_cpu_signals(void)
-{
-}
-#endif /* _WIN32 */
-#endif
-

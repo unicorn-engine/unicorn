@@ -33,35 +33,6 @@
 
 #include "uc_priv.h"
 
-//#define DEBUG_IOPORT
-
-#ifdef DEBUG_IOPORT
-#  define LOG_IOPORT(...) qemu_log_mask(CPU_LOG_IOPORT, ## __VA_ARGS__)
-#else
-#  define LOG_IOPORT(...) do { } while (0)
-#endif
-
-typedef struct MemoryRegionPortioList {
-    MemoryRegion mr;
-    void *portio_opaque;
-    MemoryRegionPortio ports[];
-} MemoryRegionPortioList;
-
-static uint64_t unassigned_io_read(struct uc_struct* uc, void *opaque, hwaddr addr, unsigned size)
-{
-    return 0-1ULL;
-}
-
-static void unassigned_io_write(struct uc_struct* uc, void *opaque, hwaddr addr, uint64_t val,
-                                unsigned size)
-{
-}
-
-const MemoryRegionOps unassigned_io_ops = {
-    unassigned_io_read,
-    unassigned_io_write,
-    DEVICE_NATIVE_ENDIAN,
-};
 
 void cpu_outb(struct uc_struct *uc, pio_addr_t addr, uint8_t val)
 {
