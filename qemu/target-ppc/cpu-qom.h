@@ -35,6 +35,8 @@ typedef struct PowerPCCPU PowerPCCPU;
  * A PowerPC CPU model.
  */
 typedef struct PowerPCCPUClass {
+    /*< private >*/
+    CPUClass parent_class;
     /*< public >*/
 
     void (*parent_reset)(CPUState *cpu);

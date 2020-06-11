@@ -42,6 +42,8 @@ typedef struct X86CPUDefinition X86CPUDefinition;
  * An x86 CPU model or family.
  */
 typedef struct X86CPUClass {
+    /*< private >*/
+    CPUClass parent_class;
     /*< public >*/
 
     /* Should be eventually replaced by subclass-specific property defaults. */

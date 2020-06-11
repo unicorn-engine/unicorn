@@ -33,6 +33,8 @@
  * A SPARC CPU model.
  */
 typedef struct SPARCCPUClass {
+    /*< private >*/
+    CPUClass parent_class;
     /*< public >*/
 
     void (*parent_reset)(CPUState *cpu);

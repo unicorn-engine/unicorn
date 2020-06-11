@@ -32,6 +32,8 @@
  * A MIPS CPU model.
  */
 typedef struct MIPSCPUClass {
+    /*< private >*/
+    CPUClass parent_class;
     /*< public >*/
 
     void (*parent_reset)(CPUState *cpu);
