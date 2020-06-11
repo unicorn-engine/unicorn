@@ -720,32 +720,19 @@ static void address_space_update_topology(AddressSpace *as)
 
 void memory_region_transaction_begin(struct uc_struct *uc)
 {
-    ++uc->memory_region_transaction_depth;
-}
-
-static void memory_region_clear_pending(struct uc_struct *uc)
-{
-    uc->memory_region_update_pending = false;
 }
 
 void memory_region_transaction_commit(struct uc_struct *uc)
 {
     AddressSpace *as;
 
-    assert(uc->memory_region_transaction_depth);
-    --uc->memory_region_transaction_depth;
-    if (!uc->memory_region_transaction_depth) {
-        if (uc->memory_region_update_pending) {
-            MEMORY_LISTENER_CALL_GLOBAL(begin, Forward);
+    MEMORY_LISTENER_CALL_GLOBAL(begin, Forward);
 
-            QTAILQ_FOREACH(as, &uc->address_spaces, address_spaces_link) {
-                address_space_update_topology(as);
-            }
+    QTAILQ_FOREACH(as, &uc->address_spaces, address_spaces_link) {
+        address_space_update_topology(as);
+    }
 
-            MEMORY_LISTENER_CALL_GLOBAL(commit, Forward);
-        }
-        memory_region_clear_pending(uc);
-   }
+    MEMORY_LISTENER_CALL_GLOBAL(commit, Forward);
 }
 
 static void memory_region_destructor_none(MemoryRegion *mr)
@@ -1033,7 +1020,6 @@ void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
         else {
             mr->perms |= UC_PROT_WRITE;
         }
-        mr->uc->memory_region_update_pending |= mr->enabled;
         memory_region_transaction_commit(mr->uc);
     }
 }
@@ -1043,7 +1029,6 @@ void memory_region_rom_device_set_romd(MemoryRegion *mr, bool romd_mode)
     if (mr->romd_mode != romd_mode) {
         memory_region_transaction_begin(mr->uc);
         mr->romd_mode = romd_mode;
-        mr->uc->memory_region_update_pending |= mr->enabled;
         memory_region_transaction_commit(mr->uc);
     }
 }
@@ -1097,8 +1082,8 @@ static void memory_region_update_container_subregions(MemoryRegion *subregion)
         }
     }
     QTAILQ_INSERT_TAIL(&mr->subregions, subregion, subregions_link);
+
 done:
-    mr->uc->memory_region_update_pending |= mr->enabled && subregion->enabled;
     memory_region_transaction_commit(mr->uc);
 }
 
@@ -1140,7 +1125,6 @@ void memory_region_del_subregion(MemoryRegion *mr,
     subregion->container = NULL;
     QTAILQ_REMOVE(&mr->subregions, subregion, subregions_link);
     memory_region_unref(subregion);
-    mr->uc->memory_region_update_pending |= mr->enabled && subregion->enabled;
     memory_region_transaction_commit(mr->uc);
 }
 
@@ -1151,7 +1135,6 @@ void memory_region_set_enabled(MemoryRegion *mr, bool enabled)
     }
     memory_region_transaction_begin(mr->uc);
     mr->enabled = enabled;
-    mr->uc->memory_region_update_pending = true;
     memory_region_transaction_commit(mr->uc);
 }
 
@@ -1188,7 +1171,6 @@ void memory_region_set_alias_offset(MemoryRegion *mr, hwaddr offset)
 
     memory_region_transaction_begin(mr->uc);
     mr->alias_offset = offset;
-    mr->uc->memory_region_update_pending |= mr->enabled;
     memory_region_transaction_commit(mr->uc);
 }
 
@@ -1360,7 +1342,6 @@ void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *ro
     QTAILQ_INSERT_TAIL(&uc->address_spaces, as, address_spaces_link);
     as->name = g_strdup(name ? name : "anonymous");
     address_space_init_dispatch(as);
-    uc->memory_region_update_pending |= root->enabled;
     memory_region_transaction_commit(uc);
 }
 
