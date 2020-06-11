@@ -129,10 +129,6 @@ int memory_free(struct uc_struct *uc)
     return 0;
 }
 
-static void memory_init(struct uc_struct *uc)
-{
-}
-
 typedef struct AddrRange AddrRange;
 
 /*
@@ -1330,10 +1326,6 @@ void memory_listener_unregister(struct uc_struct *uc, MemoryListener *listener)
 
 void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *root, const char *name)
 {
-    if (QTAILQ_EMPTY(&uc->address_spaces)) {
-        memory_init(uc);
-    }
-
     memory_region_transaction_begin(uc);
     as->uc = uc;
     as->root = root;
