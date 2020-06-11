@@ -75,7 +75,7 @@ void qemu_system_reset_request(struct uc_struct* uc)
     cpu_stop_current(uc);
 }
 
-void qemu_system_shutdown_request(void)
+void qemu_system_shutdown_request(struct uc_struct *uc)
 {
-    //shutdown_requested = 1;
+    cpu_stop_current(uc);
 }

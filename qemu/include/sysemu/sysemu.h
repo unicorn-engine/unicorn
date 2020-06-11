@@ -12,9 +12,7 @@ struct uc_struct;
 int vm_start(struct uc_struct*);
 
 void qemu_system_reset_request(struct uc_struct*);
-void qemu_system_shutdown_request(void);
-void qemu_system_powerdown_request(void);
-void qemu_system_reset(bool report);
+void qemu_system_shutdown_request(struct uc_struct*);
 
 extern int smp_cpus;
 
