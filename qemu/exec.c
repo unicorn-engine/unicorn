@@ -995,9 +995,6 @@ static int memory_try_enable_merging(void *addr, size_t len)
 static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
 {
     RAMBlock *block;
-    ram_addr_t old_ram_size, new_ram_size;
-
-    old_ram_size = last_ram_offset(uc) >> TARGET_PAGE_BITS;
 
     new_block->offset = find_ram_offset(uc, new_block->length);
 
@@ -1025,16 +1022,6 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
 
     uc->ram_list.version++;
 
-    new_ram_size = last_ram_offset(uc) >> TARGET_PAGE_BITS;
-
-    if (new_ram_size > old_ram_size) {
-        int i;
-        for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
-            uc->ram_list.dirty_memory[i] =
-                bitmap_zero_extend(uc->ram_list.dirty_memory[i],
-                        old_ram_size, new_ram_size);
-        }
-    }
     cpu_physical_memory_set_dirty_range(uc, new_block->offset, new_block->length);
 
     qemu_ram_setup_dump(new_block->host, new_block->length);

@@ -334,10 +334,6 @@ uc_err uc_close(uc_engine *uc)
         free(uc->bounce.buffer);
     }
 
-    for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
-        free(uc->ram_list.dirty_memory[i]);
-    }
-
     // free hooks and hook lists
     for (i = 0; i < UC_HOOK_MAX; i++) {
         cur = uc->hook[i].head;

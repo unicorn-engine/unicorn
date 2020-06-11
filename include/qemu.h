@@ -42,8 +42,6 @@ typedef struct {
 } BounceBuffer;
 
 typedef struct RAMList {
-    /* Protected by the iothread lock.  */
-    unsigned long *dirty_memory[DIRTY_MEMORY_NUM];
     RAMBlock *mru_block;
     QTAILQ_HEAD(, RAMBlock) blocks;
     uint32_t version;
