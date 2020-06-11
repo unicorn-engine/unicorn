@@ -263,8 +263,6 @@ struct FlatRange {
     MemoryRegion *mr;
     hwaddr offset_in_region;
     AddrRange addr;
-    uint8_t dirty_log_mask;
-    bool romd_mode;
     bool readonly;
 };
 
@@ -288,7 +286,6 @@ static bool flatrange_equal(FlatRange *a, FlatRange *b)
     return a->mr == b->mr
         && addrrange_equal(a->addr, b->addr)
         && a->offset_in_region == b->offset_in_region
-        && a->romd_mode == b->romd_mode
         && a->readonly == b->readonly;
 }
 
@@ -341,8 +338,6 @@ static bool can_merge(FlatRange *r1, FlatRange *r2)
         && int128_eq(int128_add(int128_make64(r1->offset_in_region),
                                 r1->addr.size),
                      int128_make64(r2->offset_in_region))
-        && r1->dirty_log_mask == r2->dirty_log_mask
-        && r1->romd_mode == r2->romd_mode
         && r1->readonly == r2->readonly;
 }
 
@@ -543,13 +538,6 @@ static void render_memory_region(FlatView *view,
 
     clip = addrrange_intersection(tmp, clip);
 
-    if (mr->alias) {
-        int128_subfrom(&base, int128_make64(mr->alias->addr));
-        int128_subfrom(&base, int128_make64(mr->alias_offset));
-        render_memory_region(view, mr->alias, base, clip, readonly);
-        return;
-    }
-
     /* Render subregions in priority order. */
     QTAILQ_FOREACH(subregion, &mr->subregions, subregions_link) {
         render_memory_region(view, subregion, base, clip, readonly);
@@ -564,8 +552,6 @@ static void render_memory_region(FlatView *view,
     remain = clip.size;
 
     fr.mr = mr;
-    fr.dirty_log_mask = mr->dirty_log_mask;
-    fr.romd_mode = mr->romd_mode;
     fr.readonly = readonly;
 
     /* Render the region itself into any gaps left by the current view. */
@@ -666,11 +652,6 @@ static void address_space_update_topology_pass(AddressSpace *as,
 
             if (adding) {
                 MEMORY_LISTENER_UPDATE_REGION(frnew, as, Forward, region_nop);
-                if (frold->dirty_log_mask && !frnew->dirty_log_mask) {
-                    MEMORY_LISTENER_UPDATE_REGION(frnew, as, Reverse, log_stop);
-                } else if (frnew->dirty_log_mask && !frold->dirty_log_mask) {
-                    MEMORY_LISTENER_UPDATE_REGION(frnew, as, Forward, log_start);
-                }
             }
 
             ++iold;
@@ -747,7 +728,6 @@ void memory_region_init(struct uc_struct *uc, MemoryRegion *mr,
     memset(mr, 0, sizeof(*mr));
     mr->ops = &unassigned_mem_ops;
     mr->enabled = true;
-    mr->romd_mode = true;
     mr->destructor = memory_region_destructor_none;
     QTAILQ_INIT(&mr->subregions);
 
@@ -938,24 +918,9 @@ bool memory_region_is_ram(MemoryRegion *mr)
     return mr->ram;
 }
 
-bool memory_region_is_skip_dump(MemoryRegion *mr)
-{
-    return mr->skip_dump;
-}
-
-bool memory_region_is_logging(MemoryRegion *mr)
-{
-    return mr->dirty_log_mask;
-}
-
 bool memory_region_is_rom(MemoryRegion *mr)
 {
     return mr->ram && mr->readonly;
-}
-
-bool memory_region_is_iommu(MemoryRegion *mr)
-{
-    return mr->iommu_ops != 0;
 }
 
 void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
@@ -975,12 +940,6 @@ void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
 
 void *memory_region_get_ram_ptr(MemoryRegion *mr)
 {
-    if (mr->alias) {
-        return (char*)memory_region_get_ram_ptr(mr->alias) + mr->alias_offset;
-    }
-
-    assert(mr->terminates);
-
     return qemu_get_ram_ptr(mr->uc, mr->ram_addr & TARGET_PAGE_MASK);
 }
 
@@ -1176,12 +1135,6 @@ static void listener_add_address_space(MemoryListener *listener,
     if (listener->address_space_filter
         && listener->address_space_filter != as) {
         return;
-    }
-
-    if (listener->address_space_filter->uc->global_dirty_log) {
-        if (listener->log_global_start) {
-            listener->log_global_start(listener);
-        }
     }
 
     view = address_space_get_flatview(as);

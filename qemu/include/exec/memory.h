@@ -134,21 +134,14 @@ struct MemoryRegion {
     uint64_t align;
     bool subpage;
     bool terminates;
-    bool romd_mode;
     bool ram;
-    bool skip_dump;
     bool readonly; /* For RAM regions */
     bool enabled;
-    bool rom_device;
-    bool warning_printed; /* For reservations */
-    MemoryRegion *alias;
-    hwaddr alias_offset;
     int32_t priority;
     bool may_overlap;
     QTAILQ_HEAD(subregions, MemoryRegion) subregions;
     QTAILQ_ENTRY(MemoryRegion) subregions_link;
     const char *name;
-    uint8_t dirty_log_mask;
     struct uc_struct *uc;
     uint32_t perms;   //all perms, partially redundant with readonly
     uint64_t end;
@@ -168,11 +161,6 @@ struct MemoryListener {
     void (*region_add)(MemoryListener *listener, MemoryRegionSection *section);
     void (*region_del)(MemoryListener *listener, MemoryRegionSection *section);
     void (*region_nop)(MemoryListener *listener, MemoryRegionSection *section);
-    void (*log_start)(MemoryListener *listener, MemoryRegionSection *section);
-    void (*log_stop)(MemoryListener *listener, MemoryRegionSection *section);
-    void (*log_sync)(MemoryListener *listener, MemoryRegionSection *section);
-    void (*log_global_start)(MemoryListener *listener);
-    void (*log_global_stop)(MemoryListener *listener);
     /* Lower = earlier (during add), later (during del) */
     unsigned priority;
     AddressSpace *address_space_filter;
@@ -312,16 +300,6 @@ uint64_t memory_region_size(MemoryRegion *mr);
 bool memory_region_is_ram(MemoryRegion *mr);
 
 /**
- * memory_region_is_skip_dump: check whether a memory region should not be
- *                             dumped
- *
- * Returns %true is a memory region should not be dumped(e.g. VFIO BAR MMAP).
- *
- * @mr: the memory region being queried
- */
-bool memory_region_is_skip_dump(MemoryRegion *mr);
-
-/**
  * memory_region_is_iommu: check whether a memory region is an iommu
  *
  * Returns %true is a memory region is an iommu.
@@ -349,15 +327,6 @@ void memory_region_notify_iommu(MemoryRegion *mr,
  * @mr: the memory region being queried
  */
 const char *memory_region_name(const MemoryRegion *mr);
-
-/**
- * memory_region_is_logging: return whether a memory region is logging writes
- *
- * Returns %true if the memory region is logging writes
- *
- * @mr: the memory region being queried
- */
-bool memory_region_is_logging(MemoryRegion *mr);
 
 /**
  * memory_region_is_rom: check whether a memory region is ROM

@@ -287,7 +287,7 @@ static MemoryRegionSection *phys_page_find(PhysPageEntry lp, hwaddr addr,
 bool memory_region_is_unassigned(struct uc_struct* uc, MemoryRegion *mr)
 {
     return mr != &uc->io_mem_rom && mr != &uc->io_mem_notdirty &&
-        !mr->rom_device && mr != &uc->io_mem_watch;
+        mr != &uc->io_mem_watch;
 }
 
 static MemoryRegionSection *address_space_lookup_region(AddressSpaceDispatch *d,
