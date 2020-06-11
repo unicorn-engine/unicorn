@@ -231,7 +231,7 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
 #endif
 
     address = vaddr;
-    if (!memory_region_is_ram(section->mr) && !memory_region_is_romd(section->mr)) {
+    if (!memory_region_is_ram(section->mr)) {
         /* IO memory case */
         address |= TLB_MMIO;
         addend = 0;
@@ -266,8 +266,7 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
         te->addr_code = -1;
     }
     if (prot & PAGE_WRITE) {
-        if ((memory_region_is_ram(section->mr) && section->readonly)
-            || memory_region_is_romd(section->mr)) {
+        if (memory_region_is_ram(section->mr) && section->readonly) {
             /* Write access calls the I/O callback.  */
             te->addr_write = address | TLB_MMIO;
         } else if (memory_region_is_ram(section->mr)

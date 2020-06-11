@@ -1557,8 +1557,7 @@ void tb_invalidate_phys_addr(AddressSpace *as, hwaddr addr)
     hwaddr l = 1;
 
     mr = address_space_translate(as, addr, &addr, &l, false);
-    if (!(memory_region_is_ram(mr)
-          || memory_region_is_romd(mr))) {
+    if (!memory_region_is_ram(mr)) {
         return;
     }
     ram_addr = (ram_addr_t)((memory_region_get_ram_addr(mr) & TARGET_PAGE_MASK)

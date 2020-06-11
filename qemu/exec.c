@@ -329,9 +329,6 @@ static inline bool memory_access_is_direct(MemoryRegion *mr, bool is_write)
     if (memory_region_is_ram(mr)) {
         return !(is_write && mr->readonly);
     }
-    if (memory_region_is_romd(mr)) {
-        return !is_write;
-    }
 
     return false;
 }
@@ -808,14 +805,11 @@ static uint16_t phys_section_add(PhysPageMap *map,
                 map->sections_nb_alloc);
     }
     map->sections[map->sections_nb] = *section;
-    memory_region_ref(section->mr);
     return map->sections_nb++;
 }
 
 static void phys_section_destroy(MemoryRegion *mr)
 {
-    memory_region_unref(mr);
-
     if (mr->subpage) {
         subpage_t *subpage = container_of(mr, subpage_t, iomem);
         g_free(subpage);
@@ -1738,23 +1732,19 @@ static inline void cpu_physical_memory_write_rom_internal(AddressSpace *as,
         l = len;
         mr = address_space_translate(as, addr, &addr1, &l, true);
 
-        if (!(memory_region_is_ram(mr) ||
-                    memory_region_is_romd(mr))) {
-            /* do nothing */
-        } else {
-            addr1 += memory_region_get_ram_addr(mr);
-            /* ROM/RAM case */
-            ptr = qemu_get_ram_ptr(as->uc, addr1);
-            switch (type) {
-                case WRITE_DATA:
-                    memcpy(ptr, buf, l);
-                    invalidate_and_set_dirty(as->uc, addr1, l);
-                    break;
-                case FLUSH_CACHE:
-                    flush_icache_range((uintptr_t)ptr, (uintptr_t)ptr + l);
-                    break;
-            }
+        addr1 += memory_region_get_ram_addr(mr);
+        /* ROM/RAM case */
+        ptr = qemu_get_ram_ptr(as->uc, addr1);
+        switch (type) {
+            case WRITE_DATA:
+                memcpy(ptr, buf, l);
+                invalidate_and_set_dirty(as->uc, addr1, l);
+                break;
+            case FLUSH_CACHE:
+                flush_icache_range((uintptr_t)ptr, (uintptr_t)ptr + l);
+                break;
         }
+
         len -= l;
         buf += l;
         addr += l;
@@ -1841,7 +1831,6 @@ void *address_space_map(AddressSpace *as,
         as->uc->bounce.addr = addr;
         as->uc->bounce.len = l;
 
-        memory_region_ref(mr);
         as->uc->bounce.mr = mr;
         if (!is_write) {
             address_space_read(as, addr, as->uc->bounce.buffer, l);
@@ -1869,7 +1858,6 @@ void *address_space_map(AddressSpace *as,
         }
     }
 
-    memory_region_ref(mr);
     *plen = done;
     return qemu_ram_ptr_length(as->uc, raddr + base, plen);
 }
@@ -1890,7 +1878,6 @@ void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
         if (is_write) {
             invalidate_and_set_dirty(as->uc, addr1, access_len);
         }
-        memory_region_unref(mr);
         return;
     }
     if (is_write) {
@@ -1898,7 +1885,6 @@ void address_space_unmap(AddressSpace *as, void *buffer, hwaddr len,
     }
     qemu_vfree(as->uc->bounce.buffer);
     as->uc->bounce.buffer = NULL;
-    memory_region_unref(as->uc->bounce.mr);
 }
 
 void *cpu_physical_memory_map(AddressSpace *as, hwaddr addr,
@@ -2311,8 +2297,7 @@ bool cpu_physical_memory_is_io(AddressSpace *as, hwaddr phys_addr)
 
     mr = address_space_translate(as, phys_addr, &phys_addr, &l, false);
 
-    return !(memory_region_is_ram(mr) ||
-            memory_region_is_romd(mr));
+    return !(memory_region_is_ram(mr));
 }
 
 void qemu_ram_foreach_block(struct uc_struct *uc, RAMBlockIterFunc func, void *opaque)
