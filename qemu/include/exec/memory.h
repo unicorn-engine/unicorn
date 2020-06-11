@@ -114,17 +114,9 @@ struct MemoryRegionOps {
     const MemoryRegionMmio old_mmio;
 };
 
-typedef struct MemoryRegionIOMMUOps MemoryRegionIOMMUOps;
-
-struct MemoryRegionIOMMUOps {
-    /* Return a TLB entry that contains a given address. */
-    IOMMUTLBEntry (*translate)(MemoryRegion *iommu, hwaddr addr, bool is_write);
-};
-
 struct MemoryRegion {
     /* All fields are private - violators will be prosecuted */
     const MemoryRegionOps *ops;
-    const MemoryRegionIOMMUOps *iommu_ops;
     void *opaque;
     MemoryRegion *container;
     Int128 size;
