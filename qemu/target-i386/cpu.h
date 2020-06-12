@@ -1290,9 +1290,6 @@ static inline void cpu_get_tb_cpu_state(CPUX86State *env, target_ulong *pc,
 void do_cpu_init(X86CPU *cpu);
 void do_cpu_sipi(X86CPU *cpu);
 
-#define MCE_INJECT_BROADCAST    1
-#define MCE_INJECT_UNCOND_AO    2
-
 /* excp_helper.c */
 void QEMU_NORETURN raise_exception(CPUX86State *env, int exception_index);
 void QEMU_NORETURN raise_exception_err(CPUX86State *env, int exception_index,
@@ -1359,8 +1356,5 @@ const char *get_register_name_32(unsigned int reg);
 
 uint32_t x86_cpu_apic_id_from_index(unsigned int cpu_index);
 void enable_compat_apic_id_mode(void);
-
-#define APIC_DEFAULT_ADDRESS 0xfee00000
-#define APIC_SPACE_SIZE      0x100000
 
 #endif /* CPU_I386_H */
