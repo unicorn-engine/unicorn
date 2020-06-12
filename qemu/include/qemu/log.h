@@ -67,7 +67,6 @@ void GCC_FMT_ATTR(2, 3) qemu_log_mask(int mask, const char *fmt, ...);
 
 /* Special cases: */
 
-/* cpu_dump_state() logging functions: */
 /**
  * log_cpu_state:
  * @cpu: The CPU whose state is to be logged.
@@ -77,9 +76,6 @@ void GCC_FMT_ATTR(2, 3) qemu_log_mask(int mask, const char *fmt, ...);
  */
 static inline void log_cpu_state(CPUState *cpu, int flags)
 {
-    if (qemu_log_enabled()) {
-        cpu_dump_state(cpu, qemu_logfile, fprintf, flags);
-    }
 }
 
 /**

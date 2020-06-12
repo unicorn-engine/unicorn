@@ -1004,7 +1004,6 @@ static void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
 
     cc->has_work = arm_cpu_has_work;
     cc->cpu_exec_interrupt = arm_cpu_exec_interrupt;
-    //cc->dump_state = arm_cpu_dump_state;
     cc->set_pc = arm_cpu_set_pc;
 #ifdef CONFIG_USER_ONLY
     cc->handle_mmu_fault = arm_cpu_handle_mmu_fault;

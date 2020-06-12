@@ -107,29 +107,13 @@ PowerPCCPUClass *ppc_cpu_class_by_pvr_mask(struct uc_struct *uc, uint32_t pvr);
 void ppc_cpu_do_interrupt(CPUState *cpu);
 bool ppc_cpu_exec_interrupt(CPUState *cpu, int int_req);
 hwaddr ppc_cpu_get_phys_page_debug(CPUState *cpu, vaddr addr);
-int ppc_cpu_gdb_read_register(CPUState *cpu, uint8_t *buf, int reg);
-int ppc_cpu_gdb_read_register_apple(CPUState *cpu, uint8_t *buf, int reg);
-int ppc_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
-int ppc_cpu_gdb_write_register_apple(CPUState *cpu, uint8_t *buf, int reg);
 #ifndef CONFIG_USER_ONLY
 void ppc_cpu_do_system_reset(CPUState *cs);
-extern const struct VMStateDescription vmstate_ppc_cpu;
 
 typedef struct PPCTimebase {
     uint64_t guest_timebase;
     int64_t time_of_the_day_ns;
 } PPCTimebase;
-
-extern const struct VMStateDescription vmstate_ppc_timebase;
-
-#define VMSTATE_PPC_TIMEBASE_V(_field, _state, _version) {            \
-    .name       = (stringify(_field)),                                \
-    .version_id = (_version),                                         \
-    .size       = sizeof(PPCTimebase),                                \
-    .vmsd       = &vmstate_ppc_timebase,                              \
-    .flags      = VMS_STRUCT,                                         \
-    .offset     = vmstate_offset_value(_state, _field, PPCTimebase),  \
-}
 #endif
 
 #endif

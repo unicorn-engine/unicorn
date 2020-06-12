@@ -67,26 +67,6 @@ static bool cpu_common_exec_interrupt(CPUState *cpu, int int_req)
     return false;
 }
 
-void cpu_dump_state(CPUState *cpu, FILE *f, fprintf_function cpu_fprintf,
-                    int flags)
-{
-    CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
-
-    if (cc->dump_state) {
-        cc->dump_state(cpu, f, cpu_fprintf, flags);
-    }
-}
-
-void cpu_dump_statistics(CPUState *cpu, FILE *f, fprintf_function cpu_fprintf,
-                         int flags)
-{
-    CPUClass *cc = CPU_GET_CLASS(cpu->uc, cpu);
-
-    if (cc->dump_statistics) {
-        cc->dump_statistics(cpu, f, cpu_fprintf, flags);
-    }
-}
-
 void cpu_reset(CPUState *cpu)
 {
     CPUClass *klass = CPU_GET_CLASS(cpu->uc, cpu);
