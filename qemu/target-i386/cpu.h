@@ -1352,8 +1352,6 @@ void do_interrupt_x86_hardirq(CPUX86State *env, int intno, int is_hw);
 
 void do_smm_enter(X86CPU *cpu);
 
-void cpu_report_tpr_access(CPUX86State *env, TPRAccess access);
-
 void x86_cpu_compat_set_features(const char *cpu_model, FeatureWord w,
                                  uint32_t feat_add, uint32_t feat_remove);
 
