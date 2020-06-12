@@ -67,7 +67,6 @@ void *cpu_physical_memory_map(AddressSpace *as, hwaddr addr,
                               int is_write);
 void cpu_physical_memory_unmap(AddressSpace *as, void *buffer, hwaddr len,
                                int is_write, hwaddr access_len);
-void *cpu_register_map_client(void *opaque, void (*callback)(void *opaque));
 
 bool cpu_physical_memory_is_io(AddressSpace *as, hwaddr phys_addr);
 

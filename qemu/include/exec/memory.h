@@ -605,8 +605,6 @@ bool address_space_access_valid(AddressSpace *as, hwaddr addr, int len, bool is_
  * May map a subset of the requested range, given by and returned in @plen.
  * May return %NULL if resources needed to perform the mapping are exhausted.
  * Use only for reads OR writes - not for read-modify-write operations.
- * Use cpu_register_map_client() to know when retrying the map operation is
- * likely to succeed.
  *
  * @as: #AddressSpace to be accessed
  * @addr: address within that address space
