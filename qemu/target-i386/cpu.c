@@ -1868,7 +1868,6 @@ static void x86_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
     cs->env_ptr = env;
     cpu_exec_init(env, opaque);
 
-    cpu->hyperv_spinlock_attempts = HYPERV_SPINLOCK_NEVER_RETRY;
     env->cpuid_apic_id = x86_cpu_apic_id_from_index(cs->cpu_index);
 
     x86_cpu_load_def(cpu, xcc->cpu_def);

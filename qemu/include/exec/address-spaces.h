@@ -28,8 +28,6 @@
  */
 MemoryRegion *get_system_memory(struct uc_struct *uc);
 
-extern AddressSpace address_space_memory;
-
 #endif
 
 #endif
