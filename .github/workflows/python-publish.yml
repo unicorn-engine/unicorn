@@ -3,7 +3,7 @@ name: PyPI 📦 Distribution
 on: [push]
 
 jobs:
-  deploy:
+  build:
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -48,13 +48,28 @@ jobs:
 
     - uses: actions/upload-artifact@v2
       with:
-         name: unicorn-packages-${{ matrix.os }}-${{ matrix.platform }}
          path: ${{ github.workspace }}/bindings/python/dist/*
 
-    - name: Publish distribution 📦 to PyPI
-      if: startsWith(github.event.ref, 'refs/tags')
-      uses: pypa/gh-action-pypi-publish@master
-      with:
-        user: __token__
-        password: ${{ secrets.pypi_pass }}
-        packages_dir: ${{ github.workspace }}/bindings/python/dist/
+  publish:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags')
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: artifact
+          path: dist
+
+      - name: Publish distribution 📦 to test PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.testpypi_pass }}
+          repository_url: https://test.pypi.org/legacy/
+
+      - name: Publish distribution 📦 to PyPI
+        if: ${{ success() }}
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_pass }}
