@@ -32,6 +32,7 @@ typedef size_t uc_hook;
 #include "arm64.h"
 #include "mips.h"
 #include "sparc.h"
+#include "ppc.h"
 
 #ifdef __GNUC__
 #define DEFAULT_VISIBILITY __attribute__((visibility("default")))
@@ -128,7 +129,7 @@ typedef enum uc_mode {
 
     // ppc 
     UC_MODE_PPC32 = 1 << 2,       // 32-bit mode
-    UC_MODE_PPC64 = 1 << 3,       // 64-bit mode (currently unsupported)
+    UC_MODE_PPC64 = 1 << 3,       // 64-bit mode
     UC_MODE_QPX = 1 << 4,         // Quad Processing eXtensions mode (currently unsupported)
 
     // sparc

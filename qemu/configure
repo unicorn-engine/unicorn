@@ -335,7 +335,7 @@ ARCH=
 # Normalise host CPU name and set ARCH.
 # Note that this case should only have supported host CPUs, not guests.
 case "$cpu" in
-  ia64|ppc|ppc64|s390|s390x|sparc64|x32)
+  ia64|s390|s390x|sparc64|x32)
     cpu="$cpu"
   ;;
   i386|i486|i586|i686|i86pc|BePC)
@@ -352,6 +352,12 @@ case "$cpu" in
   ;;
   mips*)
     cpu="mips"
+  ;;
+  ppc64*)
+    cpu="ppc64"
+  ;;
+  ppc*) 
+    cpu="ppc"
   ;;
   sparc|sun4[cdmuv])
     cpu="sparc"
@@ -1259,6 +1265,9 @@ case "$target_name" in
     TARGET_BASE_ARCH=openrisc
   ;;
   ppc)
+  ;;
+  ppcle)
+    TARGET_BASE_ARCH=ppc
   ;;
   ppcemb)
     TARGET_BASE_ARCH=ppc
