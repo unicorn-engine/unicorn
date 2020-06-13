@@ -45,7 +45,7 @@ def test_arm64():
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
 
-        # tracing all instructions with customized callback
+        # tracing one instruction at ADDRESS with customized callback
         mu.hook_add(UC_HOOK_CODE, hook_code, begin=ADDRESS, end=ADDRESS)
 
         # emulate machine code in infinite time
