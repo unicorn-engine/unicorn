@@ -1416,14 +1416,14 @@ static subpage_t *subpage_init(AddressSpace *as, hwaddr base)
 static uint16_t dummy_section(PhysPageMap *map, AddressSpace *as,
         MemoryRegion *mr)
 {
+    assert(as);
+
     MemoryRegionSection section = MemoryRegionSection_make(
         mr, as, 0,
         int128_2_64(),
         false,
         0
     );
-    
-    assert(as);
 
     return phys_section_add(map, &section);
 }
@@ -1437,6 +1437,7 @@ void phys_mem_clean(struct uc_struct* uc)
 {
     AddressSpaceDispatch* d = uc->as.next_dispatch;
     g_free(d->map.sections);
+    d->map.sections = NULL;
 }
 
 static void mem_begin(MemoryListener *listener)
