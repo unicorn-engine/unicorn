@@ -141,8 +141,6 @@ static inline bool _hook_exists_bounded(struct list_item *cur, uint64_t addr)
 //relloc increment, KEEP THIS A POWER OF 2!
 #define MEM_BLOCK_INCR 32
 
-typedef struct TCGContext TCGContext;
-
 struct uc_struct {
     uc_arch arch;
     uc_mode mode;
@@ -187,7 +185,7 @@ struct uc_struct {
     void **l1_map;  // qemu/translate-all.c
     size_t l1_map_size;
     /* code generation context */
-    TCGContext *tcg_ctx;
+    void *tcg_ctx;  // for "TCGContext tcg_ctx" in qemu/translate-all.c
     /* memory.c */
     QTAILQ_HEAD(memory_listeners, MemoryListener) memory_listeners;
     QTAILQ_HEAD(, AddressSpace) address_spaces;

@@ -8,4 +8,3 @@ common-obj-y += ../uc.o ../list.o glib_compat.o
 common-obj-y += qemu-log.o
 common-obj-y += tcg-runtime.o
 common-obj-y += qom/
-

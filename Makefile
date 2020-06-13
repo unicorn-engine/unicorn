@@ -71,10 +71,6 @@ UC_TARGET_OBJ_SPARC64 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/sparc6
 UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-y,qemu/target-sparc/Makefile.objs, qemu/sparc64-softmmu/target-sparc/)
 UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-$$(TARGET_SPARC64),qemu/target-sparc/Makefile.objs, qemu/sparc64-softmmu/target-sparc/)
 
-UC_TARGET_OBJ_PPC = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/ppc-softmmu/)
-UC_TARGET_OBJ_PPC += $(call UC_GET_OBJ,obj-,qemu/hw/ppc/Makefile.objs, qemu/ppc-softmmu/hw/ppc/)
-UC_TARGET_OBJ_PPC += $(call UC_GET_OBJ,obj-y,qemu/target-ppc/Makefile.objs, qemu/ppc-softmmu/target-ppc/)
-
 ifneq (,$(findstring x86,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_X86)
 	UNICORN_CFLAGS += -DUNICORN_HAS_X86
@@ -114,14 +110,6 @@ ifneq (,$(findstring mips,$(UNICORN_ARCHS)))
 	UNICORN_TARGETS += mipsel-softmmu,
 	UNICORN_TARGETS += mips64-softmmu,
 	UNICORN_TARGETS += mips64el-softmmu,
-endif
-ifneq (,$(findstring ppc,$(UNICORN_ARCHS)))
-	UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPC)
-#	UC_TARGET_OBJ += $(call GENOBJ,ppc64-softmmu)
-	UNICORN_CFLAGS += -DUNICORN_HAS_PPC
-#	UNICORN_CFLAGS += -DUNICORN_HAS_PPC64
-	UNICORN_TARGETS += ppc-softmmu,
-#	UNICORN_TARGETS += ppc64-softmmu,
 endif
 ifneq (,$(findstring sparc,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_SPARC)
@@ -387,7 +375,7 @@ dist:
 # run "make header" whenever qemu/header_gen.py is modified
 header:
 	$(eval TARGETS := m68k arm armeb aarch64 aarch64eb mips mipsel mips64 mips64el\
-		sparc sparc64 x86_64 ppc)
+		sparc sparc64 x86_64)
 	$(foreach var,$(TARGETS),\
 		$(shell python qemu/header_gen.py $(var) > qemu/$(var).h;))
 	@echo "Generated headers for $(TARGETS)."
