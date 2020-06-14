@@ -915,37 +915,6 @@ ram_addr_t last_ram_offset(struct uc_struct *uc)
     return last;
 }
 
-static void qemu_ram_setup_dump(void *addr, ram_addr_t size)
-{
-}
-
-static RAMBlock *find_ram_block(struct uc_struct *uc, ram_addr_t addr)
-{
-    RAMBlock *block;
-
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
-        if (block->offset == addr) {
-            return block;
-        }
-    }
-
-    return NULL;
-}
-
-void qemu_ram_unset_idstr(struct uc_struct *uc, ram_addr_t addr)
-{
-    RAMBlock *block = find_ram_block(uc, addr);
-
-    if (block) {
-        memset(block->idstr, 0, sizeof(block->idstr));
-    }
-}
-
-static int memory_try_enable_merging(void *addr, size_t len)
-{
-    return 0;
-}
-
 static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
 {
     RAMBlock *block;
@@ -958,7 +927,6 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
         if (!new_block->host) {
             return -1;
         }
-        memory_try_enable_merging(new_block->host, new_block->length);
     }
 
     /* Keep the list sorted from biggest to smallest block.  */
@@ -978,10 +946,6 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
 
     cpu_physical_memory_set_dirty_range(uc, new_block->offset, new_block->length);
 
-    qemu_ram_setup_dump(new_block->host, new_block->length);
-    //qemu_madvise(new_block->host, new_block->length, QEMU_MADV_HUGEPAGE);
-    //qemu_madvise(new_block->host, new_block->length, QEMU_MADV_DONTFORK);
-
     return new_block->offset;
 }
 
@@ -999,7 +963,6 @@ ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
 
     new_block->mr = mr;
     new_block->length = size;
-    new_block->fd = -1;
     new_block->host = host;
     if (host) {
         new_block->flags |= RAM_PREALLOC;
@@ -1038,76 +1001,13 @@ void qemu_ram_free(struct uc_struct *uc, ram_addr_t addr)
             QTAILQ_REMOVE(&uc->ram_list.blocks, block, next);
             uc->ram_list.mru_block = NULL;
             uc->ram_list.version++;
-            if (block->flags & RAM_PREALLOC) {
-                ;
-#ifndef _WIN32
-            } else if (block->fd >= 0) {
-                munmap(block->host, block->length);
-                close(block->fd);
-#endif
-            } else {
+            if (!block->flags) {
                 qemu_anon_ram_free(block->host, block->length);
             }
             g_free(block);
             break;
         }
     }
-}
-
-#ifndef _WIN32
-void qemu_ram_remap(struct uc_struct *uc, ram_addr_t addr, ram_addr_t length)
-{
-    RAMBlock *block;
-    ram_addr_t offset;
-    int flags;
-    void *area, *vaddr;
-
-    QTAILQ_FOREACH(block, &uc->ram_list.blocks, next) {
-        offset = addr - block->offset;
-        if (offset < block->length) {
-            vaddr = block->host + offset;
-            if (block->flags & RAM_PREALLOC) {
-                ;
-            } else {
-                flags = MAP_FIXED;
-                munmap(vaddr, length);
-                if (block->fd >= 0) {
-                    flags |= (block->flags & RAM_SHARED ?
-                            MAP_SHARED : MAP_PRIVATE);
-                    area = mmap(vaddr, length, PROT_READ | PROT_WRITE,
-                            flags, block->fd, offset);
-                } else {
-                    /*
-                     * Remap needs to match alloc.  Accelerators that
-                     * set phys_mem_alloc never remap.  If they did,
-                     * we'd need a remap hook here.
-                     */
-                    assert(phys_mem_alloc == qemu_anon_ram_alloc);
-
-                    flags |= MAP_PRIVATE | MAP_ANONYMOUS;
-                    area = mmap(vaddr, length, PROT_READ | PROT_WRITE,
-                            flags, -1, 0);
-                }
-                if (area == MAP_FAILED || area != vaddr) {
-                    fprintf(stderr, "Could not remap addr: "
-                            RAM_ADDR_FMT "@" RAM_ADDR_FMT "\n",
-                            length, addr);
-                    exit(1);
-                }
-                memory_try_enable_merging(vaddr, length);
-                qemu_ram_setup_dump(vaddr, length);
-            }
-            return;
-        }
-    }
-}
-#endif /* !_WIN32 */
-
-int qemu_get_ram_fd(struct uc_struct *uc, ram_addr_t addr)
-{
-    RAMBlock *block = qemu_get_ram_block(uc, addr);
-
-    return block->fd;
 }
 
 void *qemu_get_ram_block_host_ptr(struct uc_struct *uc, ram_addr_t addr)
