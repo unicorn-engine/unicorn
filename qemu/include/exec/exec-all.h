@@ -28,11 +28,7 @@
 /* Page tracking code uses ram addresses in system mode, and virtual
    addresses in userspace mode.  Define tb_page_addr_t to be an appropriate
    type.  */
-#if defined(CONFIG_USER_ONLY)
-typedef abi_ulong tb_page_addr_t;
-#else
 typedef ram_addr_t tb_page_addr_t;
-#endif
 
 /* is_jmp field values */
 #define DISAS_NEXT    0 /* next instruction can be analyzed */
@@ -110,11 +106,8 @@ void tb_invalidate_phys_addr(AddressSpace *as, hwaddr addr);
 /* estimated block size for TB allocation */
 /* XXX: use a per code average code fragment size and modulate it
    according to the host CPU */
-#if defined(CONFIG_SOFTMMU)
+
 #define CODE_GEN_AVG_BLOCK_SIZE 128
-#else
-#define CODE_GEN_AVG_BLOCK_SIZE 64
-#endif
 
 #if defined(__arm__) || defined(_ARCH_PPC) \
     || defined(__x86_64__) || defined(__i386__) \
@@ -293,10 +286,7 @@ static inline void tb_add_jump(TranslationBlock *tb, int n,
 
 /* GETRA is the true target of the return instruction that we'll execute,
    defined here for simplicity of defining the follow-up macros.  */
-#if defined(CONFIG_TCG_INTERPRETER)
-extern uintptr_t tci_tb_ptr;
-# define GETRA() tci_tb_ptr
-#elif defined(_MSC_VER)
+#if defined(_MSC_VER)
 #include <intrin.h>
 # define GETRA() (uintptr_t)_ReturnAddress()
 #else
@@ -319,10 +309,6 @@ extern uintptr_t tci_tb_ptr;
 
 #define GETPC()  (GETRA() - GETPC_ADJ)
 
-#if !defined(CONFIG_USER_ONLY)
-
-void phys_mem_set_alloc(void *(*alloc)(size_t, uint64_t *align));
-
 struct MemoryRegion *iotlb_to_region(AddressSpace *as, hwaddr index);
 bool io_mem_read(struct MemoryRegion *mr, hwaddr addr,
                  uint64_t *pvalue, unsigned size);
@@ -332,23 +318,9 @@ bool io_mem_write(struct MemoryRegion *mr, hwaddr addr,
 
 void tlb_fill(CPUState *cpu, target_ulong addr, int is_write, int mmu_idx,
                    uintptr_t retaddr);
-#endif
 
-#if defined(CONFIG_USER_ONLY)
-static inline tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr)
-{
-    return addr;
-}
-#else
 /* cputlb.c */
 tb_page_addr_t get_page_addr_code(CPUArchState *env1, target_ulong addr);
-#endif
-
-/* vl.c */
-extern int singlestep;
-
-/* cpu-exec.c */
-extern volatile sig_atomic_t exit_request;
 
 /**
  * cpu_can_do_io:

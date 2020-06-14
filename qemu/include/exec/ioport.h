@@ -29,25 +29,8 @@
 #include "exec/memory.h"
 
 typedef uint32_t pio_addr_t;
-#define FMT_pioaddr     PRIx32
 
-#define MAX_IOPORTS     (64 * 1024)
-#define IOPORTS_MASK    (MAX_IOPORTS - 1)
-
-typedef struct MemoryRegionPortio {
-    uint32_t offset;
-    uint32_t len;
-    unsigned size;
-    uint32_t (*read)(void *opaque, uint32_t address);
-    void (*write)(void *opaque, uint32_t address, uint32_t data);
-    uint32_t base; /* private field */
-} MemoryRegionPortio;
-
-#define PORTIO_END_OF_LIST() { }
-
-#ifndef CONFIG_USER_ONLY
 extern const MemoryRegionOps unassigned_io_ops;
-#endif
 
 void cpu_outb(struct uc_struct *uc, pio_addr_t addr, uint8_t val);
 void cpu_outw(struct uc_struct *uc, pio_addr_t addr, uint16_t val);

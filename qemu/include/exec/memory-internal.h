@@ -19,7 +19,6 @@
 #ifndef MEMORY_INTERNAL_H
 #define MEMORY_INTERNAL_H
 
-#ifndef CONFIG_USER_ONLY
 typedef struct AddressSpaceDispatch AddressSpaceDispatch;
 
 void address_space_init_dispatch(AddressSpace *as);
@@ -32,5 +31,4 @@ bool memory_region_access_valid(MemoryRegion *mr, hwaddr addr,
 
 void address_space_unregister(AddressSpace *as);
 
-#endif
 #endif

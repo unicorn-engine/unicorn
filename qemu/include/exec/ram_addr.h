@@ -22,8 +22,6 @@
 
 #include "uc_priv.h"
 
-#ifndef CONFIG_USER_ONLY
-
 ram_addr_t qemu_ram_alloc_from_ptr(ram_addr_t size, void *host,
                                    MemoryRegion *mr);
 ram_addr_t qemu_ram_alloc(ram_addr_t size, MemoryRegion *mr);
@@ -90,5 +88,4 @@ static inline void cpu_physical_memory_clear_dirty_range(struct uc_struct *uc, r
 void cpu_physical_memory_reset_dirty(struct uc_struct *uc,
     ram_addr_t start, ram_addr_t length, unsigned client);
 
-#endif
 #endif

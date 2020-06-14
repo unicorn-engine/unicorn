@@ -19,7 +19,6 @@
 #ifndef CPUTLB_H
 #define CPUTLB_H
 
-#if !defined(CONFIG_USER_ONLY)
 /* cputlb.c */
 void tlb_protect_code(struct uc_struct *uc, ram_addr_t ram_addr);
 void tlb_unprotect_code_phys(CPUState *cpu, ram_addr_t ram_addr,
@@ -28,7 +27,6 @@ void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry,
     uintptr_t start, uintptr_t length);
 void cpu_tlb_reset_dirty_all(struct uc_struct *uc, ram_addr_t start1, ram_addr_t length);
 void tlb_set_dirty(CPUArchState *env, target_ulong vaddr);
-//extern int tlb_flush_count;
 
 /* exec.c */
 void tb_flush_jmp_cache(CPUState *cpu, target_ulong addr);
@@ -44,5 +42,4 @@ hwaddr memory_region_section_get_iotlb(CPUState *cpu,
                                        target_ulong *address);
 bool memory_region_is_unassigned(struct uc_struct* uc, MemoryRegion *mr);
 
-#endif
 #endif

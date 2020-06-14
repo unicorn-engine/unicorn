@@ -28,40 +28,10 @@
 #ifndef CPU_LDST_H
 #define CPU_LDST_H
 
-#if defined(CONFIG_USER_ONLY)
-/* All direct uses of g2h and h2g need to go away for usermode softmmu.  */
-#define g2h(x) ((void *)((unsigned long)(target_ulong)(x) + GUEST_BASE))
-
-#if HOST_LONG_BITS <= TARGET_VIRT_ADDR_SPACE_BITS
-#define h2g_valid(x) 1
-#else
-#define h2g_valid(x) ({ \
-    unsigned long __guest = (unsigned long)(x) - GUEST_BASE; \
-    (__guest < (1ul << TARGET_VIRT_ADDR_SPACE_BITS)) && \
-    (!RESERVED_VA || (__guest < RESERVED_VA)); \
-})
-#endif
-
-#define h2g_nocheck(x) ({ \
-    unsigned long __ret = (unsigned long)(x) - GUEST_BASE; \
-    (abi_ulong)__ret; \
-})
-
-#define h2g(x) ({ \
-    /* Check if given address fits target address space */ \
-    assert(h2g_valid(x)); \
-    h2g_nocheck(x); \
-})
-
-#define saddr(x) g2h(x)
-#define laddr(x) g2h(x)
-
-#else /* !CONFIG_USER_ONLY */
 /* NOTE: we use double casts if pointers and target_ulong have
    different sizes */
 #define saddr(x) (uint8_t *)(intptr_t)(x)
 #define laddr(x) (uint8_t *)(intptr_t)(x)
-#endif
 
 #define ldub_raw(p) ldub_p(laddr((p)))
 #define ldsb_raw(p) ldsb_p(laddr((p)))
@@ -77,79 +47,6 @@
 #define stq_raw(p, v) stq_p(saddr((p)), v)
 #define stfl_raw(p, v) stfl_p(saddr((p)), v)
 #define stfq_raw(p, v) stfq_p(saddr((p)), v)
-
-
-#if defined(CONFIG_USER_ONLY)
-
-/* if user mode, no other memory access functions */
-#define ldub(p) ldub_raw(p)
-#define ldsb(p) ldsb_raw(p)
-#define lduw(p) lduw_raw(p)
-#define ldsw(p) ldsw_raw(p)
-#define ldl(p) ldl_raw(p)
-#define ldq(p) ldq_raw(p)
-#define ldfl(p) ldfl_raw(p)
-#define ldfq(p) ldfq_raw(p)
-#define stb(p, v) stb_raw(p, v)
-#define stw(p, v) stw_raw(p, v)
-#define stl(p, v) stl_raw(p, v)
-#define stq(p, v) stq_raw(p, v)
-#define stfl(p, v) stfl_raw(p, v)
-#define stfq(p, v) stfq_raw(p, v)
-
-#define cpu_ldub_code(env1, p) ldub_raw(p)
-#define cpu_ldsb_code(env1, p) ldsb_raw(p)
-#define cpu_lduw_code(env1, p) lduw_raw(p)
-#define cpu_ldsw_code(env1, p) ldsw_raw(p)
-#define cpu_ldl_code(env1, p) ldl_raw(p)
-#define cpu_ldq_code(env1, p) ldq_raw(p)
-
-#define cpu_ldub_data(env, addr) ldub_raw(addr)
-#define cpu_lduw_data(env, addr) lduw_raw(addr)
-#define cpu_ldsw_data(env, addr) ldsw_raw(addr)
-#define cpu_ldl_data(env, addr) ldl_raw(addr)
-#define cpu_ldq_data(env, addr) ldq_raw(addr)
-
-#define cpu_stb_data(env, addr, data) stb_raw(addr, data)
-#define cpu_stw_data(env, addr, data) stw_raw(addr, data)
-#define cpu_stl_data(env, addr, data) stl_raw(addr, data)
-#define cpu_stq_data(env, addr, data) stq_raw(addr, data)
-
-#define cpu_ldub_kernel(env, addr) ldub_raw(addr)
-#define cpu_lduw_kernel(env, addr) lduw_raw(addr)
-#define cpu_ldsw_kernel(env, addr) ldsw_raw(addr)
-#define cpu_ldl_kernel(env, addr) ldl_raw(addr)
-#define cpu_ldq_kernel(env, addr) ldq_raw(addr)
-
-#define cpu_stb_kernel(env, addr, data) stb_raw(addr, data)
-#define cpu_stw_kernel(env, addr, data) stw_raw(addr, data)
-#define cpu_stl_kernel(env, addr, data) stl_raw(addr, data)
-#define cpu_stq_kernel(env, addr, data) stq_raw(addr, data)
-
-#define ldub_kernel(p) ldub_raw(p)
-#define ldsb_kernel(p) ldsb_raw(p)
-#define lduw_kernel(p) lduw_raw(p)
-#define ldsw_kernel(p) ldsw_raw(p)
-#define ldl_kernel(p) ldl_raw(p)
-#define ldq_kernel(p) ldq_raw(p)
-#define ldfl_kernel(p) ldfl_raw(p)
-#define ldfq_kernel(p) ldfq_raw(p)
-#define stb_kernel(p, v) stb_raw(p, v)
-#define stw_kernel(p, v) stw_raw(p, v)
-#define stl_kernel(p, v) stl_raw(p, v)
-#define stq_kernel(p, v) stq_raw(p, v)
-#define stfl_kernel(p, v) stfl_raw(p, v)
-#define stfq_kernel(p, vt) stfq_raw(p, v)
-
-#define cpu_ldub_data(env, addr) ldub_raw(addr)
-#define cpu_lduw_data(env, addr) lduw_raw(addr)
-#define cpu_ldl_data(env, addr) ldl_raw(addr)
-
-#define cpu_stb_data(env, addr, data) stb_raw(addr, data)
-#define cpu_stw_data(env, addr, data) stw_raw(addr, data)
-#define cpu_stl_data(env, addr, data) stl_raw(addr, data)
-
-#else
 
 /* XXX: find something cleaner.
  * Furthermore, this is false for 64 bits targets
@@ -394,7 +291,5 @@ static inline void *tlb_vaddr_to_host(CPUArchState *env, target_ulong addr,
     haddr = (uintptr_t)(addr + env->tlb_table[mmu_idx][index].addend);
     return (void *)haddr;
 }
-
-#endif /* defined(CONFIG_USER_ONLY) */
 
 #endif /* CPU_LDST_H */

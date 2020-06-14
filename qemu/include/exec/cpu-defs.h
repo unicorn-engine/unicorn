@@ -27,9 +27,7 @@
 #include "unicorn/platform.h"
 #include "qemu/osdep.h"
 #include "qemu/queue.h"
-#ifndef CONFIG_USER_ONLY
 #include "exec/hwaddr.h"
-#endif
 
 #ifndef TARGET_LONG_BITS
 #error TARGET_LONG_BITS must be defined before including this header

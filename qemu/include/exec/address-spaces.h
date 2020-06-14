@@ -21,13 +21,9 @@
 
 #include "exec/memory.h"
 
-#ifndef CONFIG_USER_ONLY
-
 /* Get the root memory region.  This interface should only be used temporarily
  * until a proper bus interface is available.
  */
 MemoryRegion *get_system_memory(struct uc_struct *uc);
-
-#endif
 
 #endif
