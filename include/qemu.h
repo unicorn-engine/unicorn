@@ -42,7 +42,6 @@ typedef struct {
 typedef struct RAMList {
     RAMBlock *mru_block;
     QTAILQ_HEAD(, RAMBlock) blocks;
-    uint32_t version;
 } RAMList;
 
 #endif

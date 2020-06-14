@@ -36,9 +36,6 @@
 #include "qemu/timer.h"
 #include "exec/memory.h"
 #include "exec/address-spaces.h"
-#if defined(CONFIG_USER_ONLY)
-#include <qemu.h>
-#endif
 #include "exec/cpu-all.h"
 
 #include "exec/cputlb.h"
@@ -53,20 +50,12 @@
 
 //#define DEBUG_SUBPAGE
 
-#if !defined(CONFIG_USER_ONLY)
-
 /* RAM is pre-allocated and passed into qemu_ram_alloc_from_ptr */
 #define RAM_PREALLOC   (1 << 0)
 
 /* RAM is mmap-ed with MAP_SHARED */
 #define RAM_SHARED     (1 << 1)
 
-#endif
-
-#if !defined(CONFIG_USER_ONLY)
-/* current CPU in the current thread. It is only valid inside
-   cpu_exec() */
-//DEFINE_TLS(CPUState *, current_cpu);
 
 typedef struct PhysPageEntry PhysPageEntry;
 
@@ -122,10 +111,6 @@ typedef struct subpage_t {
 
 static void memory_map_init(struct uc_struct *uc);
 static void tcg_commit(MemoryListener *listener);
-
-#endif
-
-#if !defined(CONFIG_USER_ONLY)
 
 static void phys_map_node_reserve(PhysPageMap *map, unsigned nodes)
 {
@@ -366,7 +351,6 @@ address_space_translate_for_iotlb(AddressSpace *as, hwaddr addr, hwaddr *xlat,
 
     return section;
 }
-#endif
 
 CPUState *qemu_get_cpu(struct uc_struct *uc, int index)
 {
@@ -377,7 +361,6 @@ CPUState *qemu_get_cpu(struct uc_struct *uc, int index)
     return NULL;
 }
 
-#if !defined(CONFIG_USER_ONLY)
 void tcg_cpu_address_space_init(CPUState *cpu, AddressSpace *as)
 {
     /* We only support one address space per cpu at the moment.  */
@@ -391,7 +374,6 @@ void tcg_cpu_address_space_init(CPUState *cpu, AddressSpace *as)
     cpu->tcg_as_listener->commit = tcg_commit;
     memory_listener_register(as->uc, cpu->tcg_as_listener, as);
 }
-#endif
 
 void cpu_exec_init(CPUArchState *env, void *opaque)
 {
@@ -413,12 +395,6 @@ void cpu_exec_init(CPUArchState *env, void *opaque)
 }
 
 #if defined(TARGET_HAS_ICE)
-#if defined(CONFIG_USER_ONLY)
-static void breakpoint_invalidate(CPUState *cpu, target_ulong pc)
-{
-    tb_invalidate_phys_page_range(pc, pc + 1, 0);
-}
-#else
 static void breakpoint_invalidate(CPUState *cpu, target_ulong pc)
 {
     hwaddr phys = cpu_get_phys_page_debug(cpu, pc);
@@ -427,31 +403,8 @@ static void breakpoint_invalidate(CPUState *cpu, target_ulong pc)
                 phys | (pc & ~TARGET_PAGE_MASK));
     }
 }
-#endif
 #endif /* TARGET_HAS_ICE */
 
-#if defined(CONFIG_USER_ONLY)
-void cpu_watchpoint_remove_all(CPUState *cpu, int mask)
-
-{
-}
-
-int cpu_watchpoint_remove(CPUState *cpu, vaddr addr, vaddr len,
-        int flags)
-{
-    return -ENOSYS;
-}
-
-void cpu_watchpoint_remove_by_ref(CPUState *cpu, CPUWatchpoint *watchpoint)
-{
-}
-
-int cpu_watchpoint_insert(CPUState *cpu, vaddr addr, vaddr len,
-        int flags, CPUWatchpoint **watchpoint)
-{
-    return -ENOSYS;
-}
-#else
 /* Add a watchpoint.  */
 int cpu_watchpoint_insert(CPUState *cpu, vaddr addr, vaddr len,
         int flags, CPUWatchpoint **watchpoint)
@@ -540,8 +493,6 @@ static inline bool cpu_watchpoint_address_matches(CPUWatchpoint *wp,
     return !(addr > wpend || wp->vaddr > addrend);
 }
 
-#endif
-
 /* Add a breakpoint.  */
 int cpu_breakpoint_insert(CPUState *cpu, vaddr pc, int flags,
         CPUBreakpoint **breakpoint)
@@ -616,28 +567,11 @@ void cpu_breakpoint_remove_all(CPUState *cpu, int mask)
 #endif
 }
 
-/* enable or disable single step mode. EXCP_DEBUG is returned by the
-   CPU loop after each instruction */
-void cpu_single_step(CPUState *cpu, int enabled)
-{
-#if defined(TARGET_HAS_ICE)
-    if (cpu->singlestep_enabled != enabled) {
-        CPUArchState *env;
-        cpu->singlestep_enabled = enabled;
-        /* must flush all the translated code to avoid inconsistencies */
-        /* XXX: only flush what is necessary */
-        env = cpu->env_ptr;
-        tb_flush(env);
-    }
-#endif
-}
-
 void cpu_abort(CPUState *cpu, const char *fmt, ...)
 {
     abort();
 }
 
-#if !defined(CONFIG_USER_ONLY)
 static RAMBlock *qemu_get_ram_block(struct uc_struct *uc, ram_addr_t addr)
 {
     RAMBlock *block;
@@ -729,9 +663,7 @@ hwaddr memory_region_section_get_iotlb(CPUState *cpu,
 
     return iotlb;
 }
-#endif /* defined(CONFIG_USER_ONLY) */
 
-#if !defined(CONFIG_USER_ONLY)
 
 static int subpage_register (subpage_t *mmio, uint32_t start, uint32_t end,
         uint16_t section);
@@ -739,16 +671,6 @@ static subpage_t *subpage_init(AddressSpace *as, hwaddr base);
 
 static void *(*phys_mem_alloc)(size_t size, uint64_t *align) =
 qemu_anon_ram_alloc;
-
-/*
- * Set a custom physical guest memory alloator.
- * Accelerators with unusual needs may need this.  Hopefully, we can
- * get rid of it eventually.
- */
-void phys_mem_set_alloc(void *(*alloc)(size_t, uint64_t *align))
-{
-    phys_mem_alloc = alloc;
-}
 
 static uint16_t phys_section_add(PhysPageMap *map,
         MemoryRegionSection *section)
@@ -861,14 +783,6 @@ static void mem_add(MemoryListener *listener, MemoryRegionSection *section)
     }
 }
 
-#ifdef __linux__
-
-#include <sys/vfs.h>
-
-#define HUGETLBFS_MAGIC       0x958458f6
-
-#endif
-
 static ram_addr_t find_ram_offset(struct uc_struct *uc, ram_addr_t size)
 {
     RAMBlock *block, *next_block;
@@ -942,8 +856,6 @@ static ram_addr_t ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
     }
     uc->ram_list.mru_block = NULL;
 
-    uc->ram_list.version++;
-
     cpu_physical_memory_set_dirty_range(uc, new_block->offset, new_block->length);
 
     return new_block->offset;
@@ -985,7 +897,6 @@ void qemu_ram_free_from_ptr(struct uc_struct *uc, ram_addr_t addr)
         if (addr == block->offset) {
             QTAILQ_REMOVE(&uc->ram_list.blocks, block, next);
             uc->ram_list.mru_block = NULL;
-            uc->ram_list.version++;
             g_free(block);
             break;
         }
@@ -1000,7 +911,6 @@ void qemu_ram_free(struct uc_struct *uc, ram_addr_t addr)
         if (addr == block->offset) {
             QTAILQ_REMOVE(&uc->ram_list.blocks, block, next);
             uc->ram_list.mru_block = NULL;
-            uc->ram_list.version++;
             if (!block->flags) {
                 qemu_anon_ram_free(block->host, block->length);
             }
@@ -1368,9 +1278,7 @@ static void memory_map_init(struct uc_struct *uc)
 
 void cpu_exec_init_all(struct uc_struct *uc)
 {
-#if !defined(CONFIG_USER_ONLY)
     memory_map_init(uc);
-#endif
     io_mem_init(uc);
 }
 
@@ -1379,51 +1287,7 @@ MemoryRegion *get_system_memory(struct uc_struct *uc)
     return uc->system_memory;
 }
 
-#endif /* !defined(CONFIG_USER_ONLY) */
-
 /* physical memory access (slow version, mainly for debug) */
-#if defined(CONFIG_USER_ONLY)
-int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
-        uint8_t *buf, int len, int is_write)
-{
-    int l, flags;
-    target_ulong page;
-    void * p;
-
-    while (len > 0) {
-        page = addr & TARGET_PAGE_MASK;
-        l = (page + TARGET_PAGE_SIZE) - addr;
-        if (l > len)
-            l = len;
-        flags = page_get_flags(page);
-        if (!(flags & PAGE_VALID))
-            return -1;
-        if (is_write) {
-            if (!(flags & PAGE_WRITE))
-                return -1;
-            /* XXX: this code should not depend on lock_user */
-            if (!(p = lock_user(VERIFY_WRITE, addr, l, 0)))
-                return -1;
-            memcpy(p, buf, l);
-            unlock_user(p, addr, l);
-        } else {
-            if (!(flags & PAGE_READ))
-                return -1;
-            /* XXX: this code should not depend on lock_user */
-            if (!(p = lock_user(VERIFY_READ, addr, l, 1)))
-                return -1;
-            memcpy(buf, p, l);
-            unlock_user(p, addr, 0);
-        }
-        len -= l;
-        buf += l;
-        addr += l;
-    }
-    return 0;
-}
-
-#else
-
 static void invalidate_and_set_dirty(struct uc_struct *uc, hwaddr addr,
         hwaddr length)
 {
@@ -2131,7 +1995,6 @@ int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
     }
     return 0;
 }
-#endif
 
 /*
  * A helper function for the _utterly broken_ virtio device model to find out if
@@ -2147,7 +2010,6 @@ bool target_words_bigendian(void)
 #endif
 }
 
-#ifndef CONFIG_USER_ONLY
 bool cpu_physical_memory_is_io(AddressSpace *as, hwaddr phys_addr)
 {
     MemoryRegion*mr;
@@ -2166,4 +2028,3 @@ void qemu_ram_foreach_block(struct uc_struct *uc, RAMBlockIterFunc func, void *o
         func(block->host, block->offset, block->length, opaque);
     }
 }
-#endif

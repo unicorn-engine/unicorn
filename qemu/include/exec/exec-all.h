@@ -91,7 +91,7 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
                                    int is_cpu_write_access);
 void tb_invalidate_phys_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end,
                               int is_cpu_write_access);
-#if !defined(CONFIG_USER_ONLY)
+
 void tcg_cpu_address_space_init(CPUState *cpu, AddressSpace *as);
 /* cputlb.c */
 void tlb_flush_page(CPUState *cpu, target_ulong addr);
@@ -101,16 +101,6 @@ void tlb_set_page(CPUState *cpu, target_ulong vaddr,
                   int mmu_idx, target_ulong size);
 
 void tb_invalidate_phys_addr(AddressSpace *as, hwaddr addr);
-
-#else
-static inline void tlb_flush_page(CPUState *cpu, target_ulong addr)
-{
-}
-
-static inline void tlb_flush(CPUState *cpu, int flush_global)
-{
-}
-#endif
 
 #define CODE_GEN_ALIGN           16 /* must be >= of the size of a icache line */
 
