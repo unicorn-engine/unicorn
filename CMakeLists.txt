@@ -160,7 +160,7 @@ else()
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_SPARC ")
     endif()
     if (UNICORN_HAS_PPC)
-        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_PPC ")
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_PPC -DUNICORN_HAS_PPCLE -DUNICORN_HAS_PPC64 -DUNICORN_HAS_PPC64LE")
     endif()
     set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-fPIC -fvisibility=hidden")
 
@@ -184,7 +184,7 @@ else()
         set (TARGET_LIST "${TARGET_LIST}sparc-softmmu, sparc64-softmmu, ")
     endif()
     if (UNICORN_HAS_PPC)
-        set (TARGET_LIST "${TARGET_LIST}ppc-softmmu, ")
+        set (TARGET_LIST "${TARGET_LIST}ppc-softmmu, ppcle-softmmu, ppc64-softmmu, ppc64le-softmmu ")
     endif()
     set (TARGET_LIST "${TARGET_LIST} ")
 
@@ -262,6 +262,22 @@ else()
         execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
             INPUT_FILE ${CMAKE_BINARY_DIR}/ppc-softmmu/config-target.mak
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/ppc-softmmu/config-target.h
+        )
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/ppcle-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/ppcle-softmmu/config-target.h
+        )
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/ppcle-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/ppcle-softmmu/config-target.h
+        )
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/ppc64-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/ppc64-softmmu/config-target.h
+        )
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/ppc64le-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/ppc64le-softmmu/config-target.h
         )
     endif()
     add_compile_options(
@@ -830,18 +846,23 @@ add_library(ppc-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/ppc/ppc.c
-    qemu/hw/ppc/ppc_booke.c
-    qemu/hw/ppc/e500plat.c
-    qemu/libdecnumber/decContext.c
-    qemu/libdecnumber/decNumber.c
-    qemu/libdecnumber/dpd/decimal128.c
-    qemu/libdecnumber/dpd/decimal32.c
-    qemu/libdecnumber/dpd/decimal64.c
+    qemu/hw/ppc/ppc-generic.c
+    qemu/target-ppc/libdecnumber/decContext.c
+    qemu/target-ppc/libdecnumber/decNumber.c
+    qemu/target-ppc/libdecnumber/dpd/decimal128.c
+    qemu/target-ppc/libdecnumber/dpd/decimal32.c
+    qemu/target-ppc/libdecnumber/dpd/decimal64.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
-    qemu/target-ppc/cpu-models.c
+    qemu/target-ppc/cpu.c
+    qemu/target-ppc/mach/cpu_401.c
+    qemu/target-ppc/mach/cpu_405.c
+    qemu/target-ppc/mach/cpu_604.c
+    qemu/target-ppc/mach/mpc8572e.c
+    qemu/target-ppc/decContext.c
+    qemu/target-ppc/decNumber.c
+    qemu/target-ppc/family.c
     qemu/target-ppc/mmu_helper.c
     qemu/target-ppc/mmu-hash32.c
     qemu/target-ppc/dfp_helper.c
@@ -852,7 +873,7 @@ add_library(ppc-softmmu
     qemu/target-ppc/misc_helper.c
     qemu/target-ppc/mem_helper.c
     qemu/target-ppc/translate.c
-    qemu/target-ppc/unicorn.c
+    qemu/target-ppc/unicorn_ppc.c
     qemu/tcg/optimize.c
     qemu/tcg/tcg.c
     qemu/translate-all.c
@@ -873,6 +894,176 @@ else()
         -DNEED_CPU_H
         -include ppc.h
         -I${CMAKE_BINARY_DIR}/ppc-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-ppc
+    )
+endif()
+
+add_library(ppcle-softmmu
+    qemu/cpu-exec.c
+    qemu/cpus.c
+    qemu/cputlb.c
+    qemu/exec.c
+    qemu/fpu/softfloat.c
+    qemu/hw/ppc/ppc-generic.c
+    qemu/target-ppc/libdecnumber/decContext.c
+    qemu/target-ppc/libdecnumber/decNumber.c
+    qemu/target-ppc/libdecnumber/dpd/decimal128.c
+    qemu/target-ppc/libdecnumber/dpd/decimal32.c
+    qemu/target-ppc/libdecnumber/dpd/decimal64.c
+    qemu/ioport.c
+    qemu/memory.c
+    qemu/memory_mapping.c
+    qemu/target-ppc/cpu.c
+    qemu/target-ppc/mach/cpu_401.c
+    qemu/target-ppc/mach/cpu_405.c
+    qemu/target-ppc/mach/cpu_604.c
+    qemu/target-ppc/mach/mpc8572e.c
+    qemu/target-ppc/decContext.c
+    qemu/target-ppc/decNumber.c
+    qemu/target-ppc/family.c
+    qemu/target-ppc/mmu_helper.c
+    qemu/target-ppc/mmu-hash32.c
+    qemu/target-ppc/dfp_helper.c
+    qemu/target-ppc/excp_helper.c
+    qemu/target-ppc/fpu_helper.c
+    qemu/target-ppc/int_helper.c
+    qemu/target-ppc/timebase_helper.c
+    qemu/target-ppc/misc_helper.c
+    qemu/target-ppc/mem_helper.c
+    qemu/target-ppc/translate.c
+    qemu/target-ppc/unicorn_ppc.c
+    qemu/tcg/optimize.c
+    qemu/tcg/tcg.c
+    qemu/translate-all.c
+)
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(ppcle-softmmu unicorn)
+endif()
+
+if(MSVC)
+    target_compile_options(ppcle-softmmu PRIVATE
+        -DNEED_CPU_H
+        /FIppc.h
+        /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/ppcle-softmmu
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-ppc
+    )
+else()
+    target_compile_options(ppcle-softmmu PRIVATE
+        -DNEED_CPU_H
+        -include ppcle.h
+        -I${CMAKE_BINARY_DIR}/ppcle-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-ppc
+    )
+endif()
+
+add_library(ppc64-softmmu
+    qemu/cpu-exec.c
+    qemu/cpus.c
+    qemu/cputlb.c
+    qemu/exec.c
+    qemu/fpu/softfloat.c
+    qemu/hw/ppc/ppc-generic.c
+    qemu/target-ppc/libdecnumber/decContext.c
+    qemu/target-ppc/libdecnumber/decNumber.c
+    qemu/target-ppc/libdecnumber/dpd/decimal128.c
+    qemu/target-ppc/libdecnumber/dpd/decimal32.c
+    qemu/target-ppc/libdecnumber/dpd/decimal64.c
+    qemu/ioport.c
+    qemu/memory.c
+    qemu/memory_mapping.c
+    qemu/target-ppc/cpu.c
+    qemu/target-ppc/mach/cpu_970.c
+    qemu/target-ppc/decContext.c
+    qemu/target-ppc/decNumber.c
+    qemu/target-ppc/family.c
+    qemu/target-ppc/mmu_helper.c
+    qemu/target-ppc/mmu-hash32.c
+    qemu/target-ppc/mmu-hash64.c
+    qemu/target-ppc/dfp_helper.c
+    qemu/target-ppc/excp_helper.c
+    qemu/target-ppc/fpu_helper.c
+    qemu/target-ppc/int_helper.c
+    qemu/target-ppc/timebase_helper.c
+    qemu/target-ppc/misc_helper.c
+    qemu/target-ppc/mem_helper.c
+    qemu/target-ppc/translate.c
+    qemu/target-ppc/unicorn_ppc.c
+    qemu/tcg/optimize.c
+    qemu/tcg/tcg.c
+    qemu/translate-all.c
+)
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(ppc64-softmmu unicorn)
+endif()
+
+if(MSVC)
+    target_compile_options(ppc64-softmmu PRIVATE
+        -DNEED_CPU_H
+        /FIppc64.h
+        /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/ppc64-softmmu
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-ppc
+    )
+else()
+    target_compile_options(ppc64-softmmu PRIVATE
+        -DNEED_CPU_H
+        -include ppc64.h
+        -I${CMAKE_BINARY_DIR}/ppc64-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-ppc
+    )
+endif()
+
+add_library(ppc64le-softmmu
+    qemu/cpu-exec.c
+    qemu/cpus.c
+    qemu/cputlb.c
+    qemu/exec.c
+    qemu/fpu/softfloat.c
+    qemu/hw/ppc/ppc-generic.c
+    qemu/target-ppc/libdecnumber/decContext.c
+    qemu/target-ppc/libdecnumber/decNumber.c
+    qemu/target-ppc/libdecnumber/dpd/decimal128.c
+    qemu/target-ppc/libdecnumber/dpd/decimal32.c
+    qemu/target-ppc/libdecnumber/dpd/decimal64.c
+    qemu/ioport.c
+    qemu/memory.c
+    qemu/memory_mapping.c
+    qemu/target-ppc/cpu.c
+    qemu/target-ppc/mach/cpu_970.c
+    qemu/target-ppc/decContext.c
+    qemu/target-ppc/decNumber.c
+    qemu/target-ppc/family.c
+    qemu/target-ppc/mmu_helper.c
+    qemu/target-ppc/mmu-hash32.c
+    qemu/target-ppc/mmu-hash64.c
+    qemu/target-ppc/dfp_helper.c
+    qemu/target-ppc/excp_helper.c
+    qemu/target-ppc/fpu_helper.c
+    qemu/target-ppc/int_helper.c
+    qemu/target-ppc/timebase_helper.c
+    qemu/target-ppc/misc_helper.c
+    qemu/target-ppc/mem_helper.c
+    qemu/target-ppc/translate.c
+    qemu/target-ppc/unicorn_ppc.c
+    qemu/tcg/optimize.c
+    qemu/tcg/tcg.c
+    qemu/translate-all.c
+)
+if (NOT UNICORN_BUILD_SHARED)
+    target_link_libraries(ppc64le-softmmu unicorn)
+endif()
+
+if(MSVC)
+    target_compile_options(ppc64le-softmmu PRIVATE
+        -DNEED_CPU_H
+        /FIppc64le.h
+        /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/ppc64le-softmmu
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-ppc
+    )
+else()
+    target_compile_options(ppc64le-softmmu PRIVATE
+        -DNEED_CPU_H
+        -include ppc64le.h
+        -I${CMAKE_BINARY_DIR}/ppc64le-softmmu
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target-ppc
     )
 endif()
@@ -978,8 +1169,8 @@ if (UNICORN_HAS_SPARC)
     set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_sparc)
 endif()
 if (UNICORN_HAS_PPC)
-    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_PPC)
-    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} ppc-softmmu)
+    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_PPC -DUNICORN_HAS_PPCLE -DUNICORN_HAS_PPC64 -DUNICORN_HAS_PPC64LE)
+    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} ppc-softmmu ppcle-softmmu ppc64-softmmu ppc64le-softmmu)
     set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_ppc)
 endif()
 
