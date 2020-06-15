@@ -18,9 +18,15 @@ jobs:
       with:
         python-version: '3.x'
 
-    - name: Set up MSVC
-      if: matrix.os == 'windows-latest'
-      uses: microsoft/setup-msbuild@v1
+    - name: Set up MSVC x86
+      if: matrix.os == 'windows-latest' && matrix.platform == 'x32'
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x86
+
+    - name: Set up MSVC x64
+      if: matrix.os == 'windows-latest' && matrix.platform == 'x64'
+      uses: ilammy/msvc-dev-cmd@v1
 
     - name: Install dependencies
       run: |
@@ -30,8 +36,7 @@ jobs:
       shell: bash 
       run: |
         if [ ${{ matrix.platform }} == 'x32' ] && [ ${{ matrix.os }} == 'windows-latest' ]; then
-             cd bindings/python && python setup.py build -p win32 sdist bdist_wheel -p win32
-             rm dist/*.tar.gz
+             cd bindings/python && python setup.py bdist_wheel -p win32
         elif [ ${{ matrix.platform }} == 'x32' ] && [ ${{ matrix.os }} == 'ubuntu-latest' ]; then
              docker run --rm -v `pwd`/:/work dockcross/manylinux1-x86 > ./dockcross
              chmod +x ./dockcross

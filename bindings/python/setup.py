@@ -278,6 +278,9 @@ setup(
     long_description_content_type="text/markdown",
     url='https://www.unicorn-engine.org',
     classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Developers',
+        'Topic :: Software Development :: Build Tools',
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
