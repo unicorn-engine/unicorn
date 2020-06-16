@@ -24,7 +24,6 @@
 //#include "cpu-models.h"
 #include "mmu-hash32.h"
 #include "mmu-hash64.h"
-#include "qapi/visitor.h"
 
 //#define PPC_DUMP_CPU
 //#define PPC_DEBUG_SPR
@@ -2870,8 +2869,6 @@ static inline bool ppc_cpu_is_valid(PowerPCCPUClass *pcc)
 
 
 #include <ctype.h>
-
-//static ObjectClass *ppc_cpu_class_by_name(struct uc_struct *uc,const char *name);
 
 /* CPUClass::reset() */
 void ppc_cpu_reset(CPUState *s)

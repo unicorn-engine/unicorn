@@ -31,18 +31,14 @@
 #define TYPE_POWERPC_CPU "powerpc-cpu"
 #endif
 
-#define POWERPC_CPU_CLASS(uc,klass) \
-    OBJECT_CLASS_CHECK(uc,PowerPCCPUClass, (klass), TYPE_POWERPC_CPU)
-#define POWERPC_CPU(uc,obj) \
-    OBJECT_CHECK(uc,PowerPCCPU, (obj), TYPE_POWERPC_CPU)
-#define POWERPC_CPU_GET_CLASS(uc,obj) \
-    OBJECT_GET_CLASS(uc,PowerPCCPUClass, (obj), TYPE_POWERPC_CPU)
+#define POWERPC_CPU_CLASS(uc,klass) ((PowerPCCPUClass *)klass)
+#define POWERPC_CPU(uc,obj) ((PowerPCCPU *)obj)
+#define POWERPC_CPU_GET_CLASS(uc,obj) (&((PowerPCCPU *)obj)->cc)
 
 typedef struct PowerPCCPU PowerPCCPU;
 
 /**
  * PowerPCCPUClass:
- * @parent_realize: The parent class' realize handler.
  * @parent_reset: The parent class' reset handler.
  *
  * A PowerPC CPU model.
@@ -52,7 +48,6 @@ typedef struct PowerPCCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
-    DeviceRealize parent_realize;
     void (*parent_reset)(CPUState *cpu);
 
     uint32_t pvr;
@@ -98,6 +93,7 @@ struct PowerPCCPU {
     int cpu_dt_id;
     uint32_t max_compat;
     uint32_t cpu_version;
+    struct PowerPCCPUClass cc;
 };
 
 static inline PowerPCCPU *ppc_env_get_cpu(CPUPPCState *env)

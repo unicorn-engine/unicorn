@@ -2,6 +2,7 @@
 #include "cpu.h"
 #include "hw/ppc/ppc.h"
 #include "family.h"
+#include "qemu-common.h"
 
 #if defined(TARGET_PPC)
 #include "mach/mpc8572e.h"
@@ -14,7 +15,7 @@
 #include "mach/cpu_970.h"
 #endif
 
-static void ppc_cpu_initfn(struct uc_struct* uc ,Object *obj,void* opaque)
+static void ppc_cpu_initfn(struct uc_struct* uc, CPUState *obj, void* opaque)
 {
     CPUState *cs = CPU(obj);
     PowerPCCPU *cpu = POWERPC_CPU(uc,obj);
@@ -62,25 +63,6 @@ static void ppc_cpu_initfn(struct uc_struct* uc ,Object *obj,void* opaque)
     }
 }
 
-static ObjectClass *ppc_cpu_class_by_name(struct uc_struct* uc,const char *cpu_model)
-{
-    ObjectClass *oc;
-    char *typename;
-
-    if (!cpu_model) {
-        return NULL;
-    }
-
-    typename = g_strdup_printf("%s-" TYPE_POWERPC_CPU, cpu_model);
-    oc = object_class_by_name(uc, typename);
-    g_free(typename);
-    if (!oc || !object_class_dynamic_cast(uc, oc, TYPE_POWERPC_CPU) ||
-        object_class_is_abstract(oc)) {
-        return NULL;
-    }
-    return oc;
-}
-
 void ppc_cpu_set_pc(CPUState *cs, vaddr value)
 {
     CPUPPCState *env = cs->env_ptr;
@@ -105,7 +87,7 @@ static bool ppc_cpu_has_work(CPUState *cs)
 }
 
 
-static void create_ppc_opcodes(PowerPCCPU *cpu, Error **errp)
+static void create_ppc_opcodes(PowerPCCPU *cpu)
 {
     CPUPPCState *env = &cpu->env;
     PowerPCCPUClass *pcc = POWERPC_CPU_GET_CLASS(env->uc,cpu);
@@ -279,34 +261,32 @@ static void init_ppc_proc(PowerPCCPU *cpu)
     }
 }
 
-static int ppc_cpu_realizefn(struct uc_struct *uc,DeviceState *dev, Error **errp)
+static int ppc_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 {
     CPUState *cs = CPU(dev);
     PowerPCCPU *cpu = POWERPC_CPU(uc,dev);
     PowerPCCPUClass *pcc = POWERPC_CPU_GET_CLASS(uc,cpu);
-    Error *local_err = NULL;
+
 #if !defined(CONFIG_USER_ONLY)
     int max_smt = 1;
 #endif
 
-#if !defined(CONFIG_USER_ONLY)
+/*#if !defined(CONFIG_USER_ONLY)
     if (smp_threads > max_smt) {
         error_setg(errp, "Cannot support more than %d threads on PPC with %s",
                    max_smt, "TCG");
         return 1;
     }
-    /*
     if (!is_power_of_2(smp_threads)) {
         error_setg(errp, "Cannot support %d threads on PPC with %s, "
                    "threads count must be a power of 2.",
                    smp_threads, "TCG");
         return;
     }
-    */
 
     cpu->cpu_dt_id = (cs->cpu_index / smp_threads) * max_smt
         + (cs->cpu_index % smp_threads);
-#endif
+#endif*/
 
     if (tcg_enabled(uc)) {
         /*
@@ -317,16 +297,12 @@ static int ppc_cpu_realizefn(struct uc_struct *uc,DeviceState *dev, Error **errp
         */
     }
 
-    create_ppc_opcodes(cpu, &local_err);
-    if (local_err != NULL) {
-        error_propagate(errp, local_err);
-        return 1;
-    }
+    create_ppc_opcodes(cpu);
+
     init_ppc_proc(cpu);
 
     qemu_init_vcpu(cs);
 
-    pcc->parent_realize(uc,dev, errp);
     return 0;
 }
 
@@ -344,7 +320,7 @@ static opc_handler_t invalid_handler = {
     .handler = gen_invalid,
 };
 
-static void ppc_cpu_unrealizefn(struct uc_struct* uc,DeviceState *dev, Error **errp)
+static void ppc_cpu_unrealizefn(struct uc_struct* uc, CPUState *dev)
 {
     PowerPCCPU *cpu = POWERPC_CPU(uc,dev);
     CPUPPCState *env = &cpu->env;
@@ -370,22 +346,16 @@ static void ppc_cpu_unrealizefn(struct uc_struct* uc,DeviceState *dev, Error **e
     }
 }
 
-static void ppc_cpu_class_init(struct uc_struct* uc,ObjectClass* oc, void *data)
+static void ppc_cpu_class_init(struct uc_struct* uc,CPUClass* oc, void *data)
 {
     PowerPCCPUClass *pcc = POWERPC_CPU_CLASS(uc,oc);
     CPUClass *cc = CPU_CLASS(uc,oc);
-    DeviceClass *dc = DEVICE_CLASS(uc,oc);
 
-    pcc->parent_realize = dc->realize;
     //pcc->pvr_match = ppc_pvr_match_default;
     //pcc->interrupts_big_endian = ppc_cpu_interrupts_big_endian_always;
-    dc->realize = ppc_cpu_realizefn;
-    dc->unrealize = ppc_cpu_unrealizefn;
 
     pcc->parent_reset = cc->reset;
     cc->reset = ppc_cpu_reset;
-
-    cc->class_by_name = ppc_cpu_class_by_name;
 
     cc->has_work = ppc_cpu_has_work;
     cc->do_interrupt = ppc_cpu_do_interrupt;
@@ -424,7 +394,6 @@ static void ppc_cpu_class_init(struct uc_struct* uc,ObjectClass* oc, void *data)
     //cc->virtio_is_big_endian = ppc_cpu_is_big_endian;
 #endif
 
-    dc->fw_name = "PowerPC,UNKNOWN";
 }
 
 /*
@@ -432,7 +401,7 @@ static void ppc_cpu_class_init(struct uc_struct* uc,ObjectClass* oc, void *data)
  */
 void ppc_cpu_register_types(struct uc_struct* uc)
 {
-    const TypeInfo ppc_cpu_type_info = {
+    /*const TypeInfo ppc_cpu_type_info = {
         TYPE_POWERPC_CPU,
         TYPE_CPU,
         sizeof(PowerPCCPUClass),
@@ -465,7 +434,7 @@ void ppc_cpu_register_types(struct uc_struct* uc)
     ppc64_970_cpu_register_types(uc);
 #endif
     
-    type_register_static(uc,&ppc_cpu_type_info);
+    //type_register_static(uc,&ppc_cpu_type_info);*/
 }
 
 //type_init(ppc_cpu_register_types)
