@@ -17,12 +17,11 @@
  * along with this program; if not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "cpu.h"
 #include "internals.h"
 #include "qemu-common.h"
-#include "qapi/qmp/qerror.h"
-#include "hw/arm/arm.h"
 #include "sysemu/sysemu.h"
 
 #include "uc_priv.h"
@@ -140,17 +139,6 @@ static void arm_cpu_reset(CPUState *s)
         uint32_t initial_pc; /* Loaded from 0x4 */
 
         env->daif &= ~PSTATE_I;
-#if 0
-        uint8_t *rom;
-        rom = rom_ptr(0);
-        if (rom) {
-            /* Address zero is covered by ROM which hasn't yet been
-             * copied into physical memory.
-             */
-            initial_msp = ldl_p(rom);
-            initial_pc = ldl_p(rom + 4);
-        } else
-#endif
         {
             /* Address zero not covered by a ROM blob, or the ROM blob
              * is in non-modifiable memory and this is a second reset after
@@ -190,8 +178,7 @@ static void arm_cpu_reset(CPUState *s)
 
 bool arm_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 {
-    CPUARMState *env = cs->env_ptr;
-    CPUClass *cc = CPU_GET_CLASS(env->uc, cs);
+    CPUClass *cc = CPU_GET_CLASS(cs->uc, cs);
     bool ret = false;
 
     if (interrupt_request & CPU_INTERRUPT_FIQ
@@ -222,6 +209,7 @@ bool arm_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     return ret;
 }
 
+#ifndef TARGET_AARCH64
 #if !defined(CONFIG_USER_ONLY) || !defined(TARGET_AARCH64)
 static bool arm_v7m_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 {
@@ -256,13 +244,14 @@ static bool arm_v7m_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     return ret;
 }
 #endif
+#endif
 
 static inline void set_feature(CPUARMState *env, int feature)
 {
     env->features |= 1ULL << feature;
 }
 
-static void arm_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void arm_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     CPUState *cs = CPU(obj);
     ARMCPU *cpu = ARM_CPU(uc, obj);
@@ -271,19 +260,6 @@ static void arm_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu_exec_init(&cpu->env, opaque);
     cpu->cp_regs = g_hash_table_new_full(g_int_hash, g_int_equal,
                                          g_free, g_free);
-
-#if 0
-#ifndef CONFIG_USER_ONLY
-    /* Our inbound IRQ and FIQ lines */
-
-    cpu->gt_timer[GTIMER_PHYS] = timer_new(QEMU_CLOCK_VIRTUAL, GTIMER_SCALE,
-                                                arm_gt_ptimer_cb, cpu);
-    cpu->gt_timer[GTIMER_VIRT] = timer_new(QEMU_CLOCK_VIRTUAL, GTIMER_SCALE,
-                                                arm_gt_vtimer_cb, cpu);
-    //qdev_init_gpio_out(DEVICE(cpu), cpu->gt_timer_outputs,
-    //                   ARRAY_SIZE(cpu->gt_timer_outputs));
-#endif
-#endif
 
     /* DTB consumers generally don't in fact care what the 'compatible'
      * string is, so always provide some string and trust that a hypothetical
@@ -299,7 +275,7 @@ static void arm_cpu_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     }
 }
 
-static void arm_cpu_post_init(struct uc_struct *uc, Object *obj)
+static void arm_cpu_post_init(struct uc_struct *uc, CPUState *obj)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -320,17 +296,10 @@ static void arm_cpu_post_init(struct uc_struct *uc, Object *obj)
     }
 }
 
-static void arm_cpu_finalizefn(struct uc_struct *uc, Object *obj, void *opaque)
-{
-    ARMCPU *cpu = ARM_CPU(uc, obj);
-    g_hash_table_destroy(cpu->cp_regs);
-}
-
-static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **errp)
+static int arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 {
     CPUState *cs = CPU(dev);
     ARMCPU *cpu = ARM_CPU(uc, dev);
-    ARMCPUClass *acc = ARM_CPU_GET_CLASS(uc, dev);
     CPUARMState *env = &cpu->env;
 
     /* Some features automatically imply others: */
@@ -395,34 +364,14 @@ static int arm_cpu_realizefn(struct uc_struct *uc, DeviceState *dev, Error **err
     qemu_init_vcpu(cs);
     cpu_reset(cs);
 
-    acc->parent_realize(uc, dev, errp);
-
     return 0;
 }
 
-static ObjectClass *arm_cpu_class_by_name(struct uc_struct *uc, const char *cpu_model)
-{
-    ObjectClass *oc;
-    char *typename;
-
-    if (!cpu_model) {
-        return NULL;
-    }
-
-    typename = g_strdup_printf("%s-" TYPE_ARM_CPU, cpu_model);
-    oc = object_class_by_name(uc, typename);
-    g_free(typename);
-    if (!oc || !object_class_dynamic_cast(uc, oc, TYPE_ARM_CPU) ||
-        object_class_is_abstract(oc)) {
-        return NULL;
-    }
-    return oc;
-}
-
 /* CPU models. These are not needed for the AArch64 linux-user build. */
+#ifndef TARGET_AARCH64
 #if !defined(CONFIG_USER_ONLY) || !defined(TARGET_AARCH64)
 
-static void arm926_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void arm926_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -437,7 +386,7 @@ static void arm926_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00090078;
 }
 
-static void arm946_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void arm946_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -450,7 +399,7 @@ static void arm946_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void arm1026_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void arm1026_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -481,7 +430,7 @@ static void arm1026_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     }
 }
 
-static void arm1136_r2_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void arm1136_r2_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
     /* What qemu calls "arm1136_r2" is actually the 1136 r0p2, ie an
@@ -519,7 +468,7 @@ static void arm1136_r2_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_auxcr = 7;
 }
 
-static void arm1136_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void arm1136_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -551,7 +500,7 @@ static void arm1136_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_auxcr = 7;
 }
 
-static void arm1176_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void arm1176_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -583,7 +532,7 @@ static void arm1176_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_auxcr = 7;
 }
 
-static void arm11mpcore_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void arm11mpcore_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -613,7 +562,7 @@ static void arm11mpcore_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_auxcr = 1;
 }
 
-static void cortex_m3_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void cortex_m3_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
     set_feature(&cpu->env, ARM_FEATURE_V7);
@@ -621,7 +570,7 @@ static void cortex_m3_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->midr = 0x410fc231;
 }
 
-static void arm_v7m_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
+static void arm_v7m_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
 {
     CPUClass *cc = CPU_CLASS(uc, oc);
 
@@ -640,7 +589,7 @@ static const ARMCPRegInfo cortexa8_cp_reginfo[] = {
     REGINFO_SENTINEL
 };
 
-static void cortex_a8_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void cortex_a8_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -704,7 +653,7 @@ static const ARMCPRegInfo cortexa9_cp_reginfo[] = {
     REGINFO_SENTINEL
 };
 
-static void cortex_a9_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void cortex_a9_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -767,7 +716,7 @@ static const ARMCPRegInfo cortexa15_cp_reginfo[] = {
     REGINFO_SENTINEL
 };
 
-static void cortex_a15_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void cortex_a15_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -809,7 +758,7 @@ static void cortex_a15_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     define_arm_cp_regs(cpu, cortexa15_cp_reginfo);
 }
 
-static void ti925t_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void ti925t_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
     set_feature(&cpu->env, ARM_FEATURE_V4T);
@@ -819,7 +768,7 @@ static void ti925t_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000070;
 }
 
-static void sa1100_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void sa1100_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -830,7 +779,7 @@ static void sa1100_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000070;
 }
 
-static void sa1110_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void sa1110_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
     set_feature(&cpu->env, ARM_FEATURE_STRONGARM);
@@ -839,7 +788,7 @@ static void sa1110_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000070;
 }
 
-static void pxa250_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa250_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -851,7 +800,7 @@ static void pxa250_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void pxa255_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa255_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -863,7 +812,7 @@ static void pxa255_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void pxa260_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa260_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -875,7 +824,7 @@ static void pxa260_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void pxa261_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa261_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -887,7 +836,7 @@ static void pxa261_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void pxa262_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa262_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -899,7 +848,7 @@ static void pxa262_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void pxa270a0_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa270a0_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -912,7 +861,7 @@ static void pxa270a0_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void pxa270a1_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa270a1_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -925,7 +874,7 @@ static void pxa270a1_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void pxa270b0_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa270b0_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -938,7 +887,7 @@ static void pxa270b0_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void pxa270b1_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa270b1_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -951,7 +900,7 @@ static void pxa270b1_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void pxa270c0_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa270c0_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -964,7 +913,7 @@ static void pxa270c0_initfn(struct uc_struct *uc, Object *obj, void *opaque)
     cpu->reset_sctlr = 0x00000078;
 }
 
-static void pxa270c5_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void pxa270c5_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -978,7 +927,7 @@ static void pxa270c5_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 }
 
 #ifdef CONFIG_USER_ONLY
-static void arm_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
+static void arm_any_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
     set_feature(&cpu->env, ARM_FEATURE_V8);
@@ -995,13 +944,15 @@ static void arm_any_initfn(struct uc_struct *uc, Object *obj, void *opaque)
 #endif
 
 #endif /* !defined(CONFIG_USER_ONLY) || !defined(TARGET_AARCH64) */
+#endif
 
 typedef struct ARMCPUInfo {
     const char *name;
-    void (*initfn)(struct uc_struct *uc, Object *obj, void *opaque);
-    void (*class_init)(struct uc_struct *uc, ObjectClass *oc, void *data);
+    void (*initfn)(struct uc_struct *uc, CPUState *obj, void *opaque);
+    void (*class_init)(struct uc_struct *uc, CPUClass *oc, void *data);
 } ARMCPUInfo;
 
+#ifndef TARGET_AARCH64
 static const ARMCPUInfo arm_cpus[] = {
 #if !defined(CONFIG_USER_ONLY) || !defined(TARGET_AARCH64)
     { "arm926",      arm926_initfn },
@@ -1041,24 +992,18 @@ static const ARMCPUInfo arm_cpus[] = {
 #endif
     { NULL }
 };
+#endif
 
-static void arm_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data)
+static void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
 {
     ARMCPUClass *acc = ARM_CPU_CLASS(uc, oc);
     CPUClass *cc = CPU_CLASS(uc, acc);
-    DeviceClass *dc = DEVICE_CLASS(uc, oc);
-
-    acc->parent_realize = dc->realize;
-    dc->realize = arm_cpu_realizefn;
-    //dc->props = arm_cpu_properties;
 
     acc->parent_reset = cc->reset;
     cc->reset = arm_cpu_reset;
 
-    cc->class_by_name = arm_cpu_class_by_name;
     cc->has_work = arm_cpu_has_work;
     cc->cpu_exec_interrupt = arm_cpu_exec_interrupt;
-    //cc->dump_state = arm_cpu_dump_state;
     cc->set_pc = arm_cpu_set_pc;
 #ifdef CONFIG_USER_ONLY
     cc->handle_mmu_fault = arm_cpu_handle_mmu_fault;
@@ -1069,40 +1014,69 @@ static void arm_cpu_class_init(struct uc_struct *uc, ObjectClass *oc, void *data
     cc->debug_excp_handler = arm_debug_excp_handler;
 }
 
-static void cpu_register(struct uc_struct *uc, const ARMCPUInfo *info)
+ARMCPU *cpu_arm_init(struct uc_struct *uc, const char *cpu_model)
 {
-    TypeInfo type_info = { 0 };
-    type_info.parent = TYPE_ARM_CPU;
-    type_info.instance_size = sizeof(ARMCPU);
-    type_info.instance_init = info->initfn;
-    type_info.class_size = sizeof(ARMCPUClass);
-    type_info.class_init = info->class_init;
+#ifndef TARGET_AARCH64
+    int i;
+#endif
+    ARMCPU *cpu;
+    CPUState *cs;
+    CPUClass *cc;
 
-    type_info.name = g_strdup_printf("%s-" TYPE_ARM_CPU, info->name);
-    type_register(uc, &type_info);
-    g_free((void *)type_info.name);
-}
-
-void arm_cpu_register_types(void *opaque)
-{
-    const ARMCPUInfo *info = arm_cpus;
-    
-    TypeInfo arm_cpu_type_info = { 0 };
-    arm_cpu_type_info.name = TYPE_ARM_CPU,
-    arm_cpu_type_info.parent = TYPE_CPU,
-    arm_cpu_type_info.instance_userdata = opaque,
-    arm_cpu_type_info.instance_size = sizeof(ARMCPU),
-    arm_cpu_type_info.instance_init = arm_cpu_initfn,
-    arm_cpu_type_info.instance_post_init = arm_cpu_post_init,
-    arm_cpu_type_info.instance_finalize = arm_cpu_finalizefn,
-    arm_cpu_type_info.abstract = true,
-    arm_cpu_type_info.class_size = sizeof(ARMCPUClass),
-    arm_cpu_type_info.class_init = arm_cpu_class_init,
-
-    type_register_static(opaque, &arm_cpu_type_info);
-
-    while (info->name) {
-        cpu_register(opaque, info);
-        info++;
+    if (uc->mode & UC_MODE_MCLASS) {
+        cpu_model = "cortex-m3";
+    } else if (uc->mode & UC_MODE_ARM926) {
+        cpu_model = "arm926";
+    } else if (uc->mode & UC_MODE_ARM946) {
+        cpu_model = "arm946";
+    } else if (uc->mode & UC_MODE_ARM1176) {
+        cpu_model = "arm1176";
+    } else {
+        cpu_model = "cortex-a15";
     }
+
+    cpu = malloc(sizeof(*cpu));
+    if (cpu == NULL) {
+        return NULL;
+    }
+    memset(cpu, 0, sizeof(*cpu));
+
+    cs = (CPUState *)cpu;
+    cc = (CPUClass *)&cpu->cc;
+    cs->cc = cc;
+    cs->uc = uc;
+    /* init CPUClass */
+    cpu_klass_init(uc, cc);
+    /* init ARMCPUClass */
+    arm_cpu_class_init(uc, cc, NULL);
+    /* init CPUState */
+#ifdef NEED_CPU_INIT_REALIZE
+    cpu_object_init(uc, cs);
+#endif
+    /* init ARMCPU */
+    arm_cpu_initfn(uc, cs, uc);
+#ifndef TARGET_AARCH64
+    /* init ARM types */
+    for (i = 0; i < ARRAY_SIZE(arm_cpus); i++) {
+        if (strcmp(cpu_model, arm_cpus[i].name) == 0) {
+            if (arm_cpus[i].class_init) {
+                arm_cpus[i].class_init(uc, cc, uc);
+            }
+            if (arm_cpus[i].initfn) {
+                arm_cpus[i].initfn(uc, cs, uc);
+            }
+            break;
+        }
+    }
+#endif
+    /* postinit ARMCPU */
+    arm_cpu_post_init(uc, cs);
+    /* realize ARMCPU */
+    arm_cpu_realizefn(uc, cs);
+    /* realize CPUState */
+#ifdef NEED_CPU_INIT_REALIZE
+    cpu_object_realize(uc, cs);
+#endif
+
+    return cpu;
 }

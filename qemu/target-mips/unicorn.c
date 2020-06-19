@@ -1,8 +1,7 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#include "hw/boards.h"
-#include "hw/mips/mips.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
@@ -42,8 +41,7 @@ static void mips_set_pc(struct uc_struct *uc, uint64_t address)
 }
 
 
-void mips_release(void *ctx);
-void mips_release(void *ctx)
+static void mips_release(void *ctx)
 {
     MIPSCPU* cpu;
     int i;
@@ -141,6 +139,17 @@ int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, 
     return 0;
 }
 
+static int mips_cpus_init(struct uc_struct *uc, const char *cpu_model)
+{
+    MIPSCPU *cpu;
+
+    cpu = cpu_mips_init(uc, cpu_model);
+    if (cpu == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
 DEFAULT_VISIBILITY
 #ifdef TARGET_MIPS64
 #ifdef TARGET_WORDS_BIGENDIAN
@@ -156,14 +165,12 @@ DEFAULT_VISIBILITY
 #endif
 #endif
 {
-    register_accel_types(uc);
-    mips_cpu_register_types(uc);
-    mips_machine_init(uc);
     uc->reg_read = mips_reg_read;
     uc->reg_write = mips_reg_write;
     uc->reg_reset = mips_reg_reset;
     uc->release = mips_release;
     uc->set_pc = mips_set_pc;
     uc->mem_redirect = mips_mem_redirect;
+    uc->cpus_init = mips_cpus_init;
     uc_common_init(uc);
 }

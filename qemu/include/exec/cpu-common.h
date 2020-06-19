@@ -44,11 +44,8 @@ extern ram_addr_t ram_size;
 typedef void CPUWriteMemoryFunc(void *opaque, hwaddr addr, uint32_t value);
 typedef uint32_t CPUReadMemoryFunc(void *opaque, hwaddr addr);
 
-void qemu_ram_remap(struct uc_struct *uc, ram_addr_t addr, ram_addr_t length);
 /* This should not be used by devices.  */
 MemoryRegion *qemu_ram_addr_from_host(struct uc_struct* uc, void *ptr, ram_addr_t *ram_addr);
-void qemu_ram_set_idstr(struct uc_struct *uc, ram_addr_t addr, const char *name, DeviceState *dev);
-void qemu_ram_unset_idstr(struct uc_struct *uc, ram_addr_t addr);
 
 bool cpu_physical_memory_rw(AddressSpace *as, hwaddr addr, uint8_t *buf,
                             int len, int is_write);
@@ -67,7 +64,6 @@ void *cpu_physical_memory_map(AddressSpace *as, hwaddr addr,
                               int is_write);
 void cpu_physical_memory_unmap(AddressSpace *as, void *buffer, hwaddr len,
                                int is_write, hwaddr access_len);
-void *cpu_register_map_client(void *opaque, void (*callback)(void *opaque));
 
 bool cpu_physical_memory_is_io(AddressSpace *as, hwaddr phys_addr);
 

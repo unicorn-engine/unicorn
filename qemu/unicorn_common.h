@@ -1,3 +1,4 @@
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 #ifndef UNICORN_COMMON_H_
 #define UNICORN_COMMON_H_
 
@@ -69,7 +70,6 @@ static void release_common(void *t)
 
 static inline void uc_common_init(struct uc_struct* uc)
 {
-    memory_register_types(uc);
     uc->write_mem = cpu_physical_mem_write;
     uc->read_mem = cpu_physical_mem_read;
     uc->tcg_enabled = tcg_enabled;

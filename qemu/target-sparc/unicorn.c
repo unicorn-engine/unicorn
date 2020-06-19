@@ -1,8 +1,7 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#include "hw/boards.h"
-#include "hw/sparc/sparc.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
@@ -28,11 +27,13 @@ static void sparc_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUSPARCState *)uc->current_cpu->env_ptr)->npc = address + 4;
 }
 
-void sparc_release(void *ctx);
-void sparc_release(void *ctx)
+static void sparc_release(void *ctx)
 {
     int i;
     TCGContext *tcg_ctx = (TCGContext *) ctx;
+    SPARCCPU *cpu = SPARC_CPU(tcg_ctx->uc, tcg_ctx->uc->cpu);
+    CPUSPARCState *env = &cpu->env;
+
     release_common(ctx);
     g_free(tcg_ctx->cpu_wim);
     g_free(tcg_ctx->cpu_cond);
@@ -58,6 +59,8 @@ void sparc_release(void *ctx)
     g_free(tcg_ctx->cpu_dspctrl);
 
     g_free(tcg_ctx->tb_ctx.tbs);
+
+    g_free(env->def);
 }
 
 void sparc_reg_reset(struct uc_struct *uc)
@@ -135,17 +138,26 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
     return 0;
 }
 
+static int sparc_cpus_init(struct uc_struct *uc, const char *cpu_model)
+{
+    SPARCCPU *cpu;
+
+    cpu = cpu_sparc_init(uc, cpu_model);
+    if (cpu == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
 DEFAULT_VISIBILITY
 void sparc_uc_init(struct uc_struct* uc)
 {
-    register_accel_types(uc);
-    sparc_cpu_register_types(uc);
-    leon3_machine_init(uc);
     uc->release = sparc_release;
     uc->reg_read = sparc_reg_read;
     uc->reg_write = sparc_reg_write;
     uc->reg_reset = sparc_reg_reset;
     uc->set_pc = sparc_set_pc;
     uc->stop_interrupt = sparc_stop_interrupt;
+    uc->cpus_init = sparc_cpus_init;
     uc_common_init(uc);
 }

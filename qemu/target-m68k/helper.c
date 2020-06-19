@@ -17,32 +17,13 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #include "cpu.h"
 
 #include "exec/helper-proto.h"
 
 #define SIGNBIT (1u << 31)
-
-M68kCPU *cpu_m68k_init(struct uc_struct *uc, const char *cpu_model)
-{
-    M68kCPU *cpu;
-    CPUM68KState *env;
-    ObjectClass *oc;
-
-    oc = cpu_class_by_name(uc, TYPE_M68K_CPU, cpu_model);
-    if (oc == NULL) {
-        return NULL;
-    }
-    cpu = M68K_CPU(uc, object_new(uc, object_class_get_name(oc)));
-    env = &cpu->env;
-
-    register_m68k_insns(env);
-
-    object_property_set_bool(uc, OBJECT(cpu), true, "realized", NULL);
-
-    return cpu;
-}
 
 void cpu_m68k_flush_flags(CPUM68KState *env, int cc_op)
 {

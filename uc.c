@@ -1,5 +1,6 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
 #if defined(UNICORN_HAS_OSXKERNEL)
 #include <libkern/libkern.h>
@@ -23,17 +24,7 @@
 #include "qemu/target-sparc/unicorn.h"
 #include "qemu/target-ppc/unicorn.h"
 
-#include "qemu/include/hw/boards.h"
 #include "qemu/include/qemu/queue.h"
-
-static void free_table(gpointer key, gpointer value, gpointer data)
-{
-    TypeInfo *ti = (TypeInfo*) value;
-    g_free((void *) ti->class_);
-    g_free((void *) ti->name);
-    g_free((void *) ti->parent);
-    g_free((void *) ti);
-}
 
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
@@ -316,6 +307,7 @@ uc_err uc_close(uc_engine *uc)
     int i;
     struct list_item *cur;
     struct hook *hook;
+    MemoryRegion *mr;
 
     // Cleanup internally.
     if (uc->release)
@@ -326,19 +318,21 @@ uc_err uc_close(uc_engine *uc)
     g_free(uc->cpu->tcg_as_listener);
     g_free(uc->cpu->thread);
 
-    // Cleanup all objects.
-    OBJECT(uc->machine_state->accelerator)->ref = 1;
-    OBJECT(uc->machine_state)->ref = 1;
-    OBJECT(uc->owner)->ref = 1;
-    OBJECT(uc->root)->ref = 1;
-
-    object_unref(uc, OBJECT(uc->machine_state->accelerator));
-    object_unref(uc, OBJECT(uc->machine_state));
-    object_unref(uc, OBJECT(uc->cpu));
-    object_unref(uc, OBJECT(&uc->io_mem_notdirty));
-    object_unref(uc, OBJECT(&uc->io_mem_unassigned));
-    object_unref(uc, OBJECT(&uc->io_mem_rom));
-    object_unref(uc, OBJECT(uc->root));
+    /* cpu */
+    free(uc->cpu);
+    /* memory */
+    mr = &uc->io_mem_notdirty;
+    mr->destructor(mr);
+    g_free((char *)mr->name);
+    mr = &uc->io_mem_unassigned;
+    mr->destructor(mr);
+    g_free((char *)mr->name);
+    mr = &uc->io_mem_rom;
+    mr->destructor(mr);
+    g_free((char *)mr->name);
+    mr = uc->system_memory;
+    mr->destructor(mr);
+    g_free((char *)mr->name);
 
     // System memory.
     g_free(uc->system_memory);
@@ -352,13 +346,6 @@ uc_err uc_close(uc_engine *uc)
 
     if (uc->bounce.buffer) {
         free(uc->bounce.buffer);
-    }
-
-    g_hash_table_foreach(uc->type_table, free_table, uc);
-    g_hash_table_destroy(uc->type_table);
-
-    for (i = 0; i < DIRTY_MEMORY_NUM; i++) {
-        free(uc->ram_list.dirty_memory[i]);
     }
 
     // free hooks and hook lists

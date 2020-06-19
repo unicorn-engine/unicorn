@@ -178,30 +178,6 @@ static inline void tswap64s(uint64_t *s)
 #define stfq_p(p, v) stfq_le_p(p, v)
 #endif
 
-/* MMU memory access macros */
-
-#if defined(CONFIG_USER_ONLY)
-#include <assert.h>
-#include "exec/user/abitypes.h"
-
-/* On some host systems the guest address space is reserved on the host.
- * This allows the guest address space to be offset to a convenient location.
- */
-#if defined(CONFIG_USE_GUEST_BASE)
-extern unsigned long guest_base;
-extern int have_guest_base;
-extern unsigned long reserved_va;
-#define GUEST_BASE guest_base
-#define RESERVED_VA reserved_va
-#else
-#define GUEST_BASE 0ul
-#define RESERVED_VA 0ul
-#endif
-
-#define GUEST_ADDR_MAX (RESERVED_VA ? RESERVED_VA : \
-                                    (1ul << TARGET_VIRT_ADDR_SPACE_BITS) - 1)
-#endif
-
 /* page related stuff */
 
 #define TARGET_PAGE_SIZE (1 << TARGET_PAGE_BITS)
@@ -219,16 +195,6 @@ extern unsigned long reserved_va;
 /* original state of the write flag (used when tracking self-modifying
    code */
 #define PAGE_WRITE_ORG 0x0010
-#if defined(CONFIG_BSD) && defined(CONFIG_USER_ONLY)
-/* FIXME: Code that sets/uses this is broken and needs to go away.  */
-#define PAGE_RESERVED  0x0020
-#endif
-
-#if defined(CONFIG_USER_ONLY)
-//void page_dump(FILE *f);
-
-int page_get_flags(target_ulong address);
-#endif
 
 CPUArchState *cpu_copy(CPUArchState *env);
 
@@ -284,8 +250,6 @@ CPUArchState *cpu_copy(CPUArchState *env);
      | CPU_INTERRUPT_TGT_EXT_3   \
      | CPU_INTERRUPT_TGT_EXT_4)
 
-#if !defined(CONFIG_USER_ONLY)
-
 /* memory API */
 
 /* Flags stored in the low bits of the TLB virtual address.  These are
@@ -299,9 +263,6 @@ CPUArchState *cpu_copy(CPUArchState *env);
 #define TLB_MMIO        (1 << 5)
 
 ram_addr_t last_ram_offset(struct uc_struct *uc);
-void qemu_mutex_lock_ramlist(struct uc_struct *uc);
-void qemu_mutex_unlock_ramlist(struct uc_struct *uc);
-#endif /* !CONFIG_USER_ONLY */
 
 int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
                         uint8_t *buf, int len, int is_write);

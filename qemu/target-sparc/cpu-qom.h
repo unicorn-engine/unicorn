@@ -17,23 +17,13 @@
  * License along with this library; if not, see
  * <http://www.gnu.org/licenses/lgpl-2.1.html>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #ifndef QEMU_SPARC_CPU_QOM_H
 #define QEMU_SPARC_CPU_QOM_H
 
 #include "qom/cpu.h"
 #include "cpu.h"
-
-#ifdef TARGET_SPARC64
-#define TYPE_SPARC_CPU "sparc64-cpu"
-#else
-#define TYPE_SPARC_CPU "sparc-cpu"
-#endif
-
-#define SPARC_CPU_CLASS(uc, klass) \
-    OBJECT_CLASS_CHECK(uc, SPARCCPUClass, (klass), TYPE_SPARC_CPU)
-#define SPARC_CPU(uc, obj) ((SPARCCPU *)obj)
-#define SPARC_CPU_GET_CLASS(uc, obj) \
-    OBJECT_GET_CLASS(uc, SPARCCPUClass, (obj), TYPE_SPARC_CPU)
 
 /**
  * SPARCCPUClass:
@@ -47,7 +37,6 @@ typedef struct SPARCCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
-    DeviceRealize parent_realize;
     void (*parent_reset)(CPUState *cpu);
 } SPARCCPUClass;
 
@@ -63,7 +52,13 @@ typedef struct SPARCCPU {
     /*< public >*/
 
     CPUSPARCState env;
+
+    struct SPARCCPUClass cc;
 } SPARCCPU;
+
+#define SPARC_CPU(uc, obj) ((SPARCCPU *)obj)
+#define SPARC_CPU_CLASS(uc, klass) ((SPARCCPUClass *)klass)
+#define SPARC_CPU_GET_CLASS(uc, obj) (&((SPARCCPU *)obj)->cc)
 
 static inline SPARCCPU *sparc_env_get_cpu(CPUSPARCState *env)
 {
@@ -75,11 +70,7 @@ static inline SPARCCPU *sparc_env_get_cpu(CPUSPARCState *env)
 #define ENV_OFFSET offsetof(SPARCCPU, env)
 
 void sparc_cpu_do_interrupt(CPUState *cpu);
-void sparc_cpu_dump_state(CPUState *cpu, FILE *f,
-                          fprintf_function cpu_fprintf, int flags);
 hwaddr sparc_cpu_get_phys_page_debug(CPUState *cpu, vaddr addr);
-int sparc_cpu_gdb_read_register(CPUState *cpu, uint8_t *buf, int reg);
-int sparc_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
 void QEMU_NORETURN sparc_cpu_do_unaligned_access(CPUState *cpu,
                                                  vaddr addr, int is_write,
                                                  int is_user, uintptr_t retaddr);

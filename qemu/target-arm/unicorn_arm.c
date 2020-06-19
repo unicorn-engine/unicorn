@@ -1,8 +1,9 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#include "hw/boards.h"
-#include "hw/arm/arm.h"
+#include "qemu/typedefs.h"
+#include "unicorn/unicorn.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
@@ -17,9 +18,7 @@ static void arm_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUARMState *)uc->current_cpu->env_ptr)->regs[15] = address;
 }
 
-void arm_release(void* ctx);
-
-void arm_release(void* ctx)
+static void arm_release(void* ctx)
 {
     ARMCPU* cpu;
     struct uc_struct* uc;
@@ -32,6 +31,7 @@ void arm_release(void* ctx)
     g_free(cpu->cpreg_values);
     g_free(cpu->cpreg_vmstate_indexes);
     g_free(cpu->cpreg_vmstate_values);
+    g_hash_table_destroy(cpu->cp_regs);
 
     release_common(ctx);
 }
@@ -217,15 +217,24 @@ static uc_err arm_query(struct uc_struct *uc, uc_query_type type, size_t *result
     }
 }
 
+static int arm_cpus_init(struct uc_struct *uc, const char *cpu_model)
+{
+    ARMCPU *cpu;
+
+    cpu = cpu_arm_init(uc, cpu_model);
+    if (cpu == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+
 #ifdef TARGET_WORDS_BIGENDIAN
 void armeb_uc_init(struct uc_struct* uc)
 #else
 void arm_uc_init(struct uc_struct* uc)
 #endif
 {
-    register_accel_types(uc);
-    arm_cpu_register_types(uc);
-    tosa_machine_init(uc);
     uc->reg_read = arm_reg_read;
     uc->reg_write = arm_reg_write;
     uc->reg_reset = arm_reg_reset;
@@ -233,5 +242,6 @@ void arm_uc_init(struct uc_struct* uc)
     uc->stop_interrupt = arm_stop_interrupt;
     uc->release = arm_release;
     uc->query = arm_query;
+    uc->cpus_init = arm_cpus_init;
     uc_common_init(uc);
 }

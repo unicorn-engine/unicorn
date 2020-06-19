@@ -16,6 +16,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #ifndef CPU_I386_H
 #define CPU_I386_H
 
@@ -839,7 +841,6 @@ typedef struct CPUX86State {
     /* standard registers */
     target_ulong regs[CPU_NB_REGS];
     target_ulong eip;
-    target_ulong eflags0; // copy of eflags that does not change thru the BB
     target_ulong eflags; /* eflags register. During CPU emulation, CC
                         flags and DF are set to zero because they are
                         stored elsewhere */
@@ -1032,7 +1033,7 @@ typedef struct CPUX86State {
 #include "cpu-qom.h"
 
 X86CPU *cpu_x86_init(struct uc_struct *uc, const char *cpu_model);
-X86CPU *cpu_x86_create(struct uc_struct *uc, const char *cpu_model, Error **errp);
+X86CPU *cpu_x86_create(struct uc_struct *uc, const char *cpu_model);
 int cpu_x86_exec(struct uc_struct *uc, CPUX86State *s);
 void x86_cpudef_setup(void);
 int cpu_x86_support_mca_broadcast(CPUX86State *env);
@@ -1197,7 +1198,6 @@ void cpu_x86_update_cr0(CPUX86State *env, uint32_t new_cr0);
 void cpu_x86_update_cr3(CPUX86State *env, target_ulong new_cr3);
 void cpu_x86_update_cr4(CPUX86State *env, uint32_t new_cr4);
 
-/* hw/pc.c */
 void cpu_smm_update(CPUX86State *env);
 uint64_t cpu_get_tsc(CPUX86State *env);
 
@@ -1221,15 +1221,6 @@ uint64_t cpu_get_tsc(CPUX86State *env);
 # else
 # define PHYS_ADDR_MASK 0xfffffffffLL
 # endif
-
-static inline CPUX86State *cpu_init(struct uc_struct *uc, const char *cpu_model)
-{
-    X86CPU *cpu = cpu_x86_init(uc, cpu_model);
-    if (cpu == NULL) {
-        return NULL;
-    }
-    return &cpu->env;
-}
 
 #ifdef TARGET_I386
 #define cpu_exec cpu_x86_exec
@@ -1285,11 +1276,6 @@ void optimize_flags_init(struct uc_struct *);
 
 #include "exec/cpu-all.h"
 #include "svm.h"
-
-#if !defined(CONFIG_USER_ONLY)
-#include "hw/i386/apic.h"
-#endif
-
 #include "exec/exec-all.h"
 
 static inline void cpu_get_tb_cpu_state(CPUX86State *env, target_ulong *pc,
@@ -1303,9 +1289,6 @@ static inline void cpu_get_tb_cpu_state(CPUX86State *env, target_ulong *pc,
 
 void do_cpu_init(X86CPU *cpu);
 void do_cpu_sipi(X86CPU *cpu);
-
-#define MCE_INJECT_BROADCAST    1
-#define MCE_INJECT_UNCOND_AO    2
 
 /* excp_helper.c */
 void QEMU_NORETURN raise_exception(CPUX86State *env, int exception_index);
@@ -1365,22 +1348,13 @@ void do_interrupt_x86_hardirq(CPUX86State *env, int intno, int is_hw);
 
 void do_smm_enter(X86CPU *cpu);
 
-void cpu_report_tpr_access(CPUX86State *env, TPRAccess access);
-
 void x86_cpu_compat_set_features(const char *cpu_model, FeatureWord w,
                                  uint32_t feat_add, uint32_t feat_remove);
-
-void x86_cpu_compat_kvm_no_autoenable(FeatureWord w, uint32_t features);
-void x86_cpu_compat_kvm_no_autodisable(FeatureWord w, uint32_t features);
-
 
 /* Return name of 32-bit register, from a R_* constant */
 const char *get_register_name_32(unsigned int reg);
 
 uint32_t x86_cpu_apic_id_from_index(unsigned int cpu_index);
 void enable_compat_apic_id_mode(void);
-
-#define APIC_DEFAULT_ADDRESS 0xfee00000
-#define APIC_SPACE_SIZE      0x100000
 
 #endif /* CPU_I386_H */

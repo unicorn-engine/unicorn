@@ -1,8 +1,7 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#include "hw/boards.h"
-#include "hw/m68k/m68k.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
@@ -17,8 +16,7 @@ static void m68k_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUM68KState *)uc->current_cpu->env_ptr)->pc = address;
 }
 
-void m68k_release(void* ctx);
-void m68k_release(void* ctx)
+static void m68k_release(void* ctx)
 {
     TCGContext *tcg_ctx;
     int i;
@@ -107,16 +105,25 @@ int m68k_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, 
     return 0;
 }
 
+static int m68k_cpus_init(struct uc_struct *uc, const char *cpu_model)
+{
+    M68kCPU *cpu;
+
+    cpu = cpu_m68k_init(uc, cpu_model);
+    if (cpu == NULL) {
+        return -1;
+    }
+    return 0;
+}
+
 DEFAULT_VISIBILITY
 void m68k_uc_init(struct uc_struct* uc)
 {
-    register_accel_types(uc);
-    m68k_cpu_register_types(uc);
-    dummy_m68k_machine_init(uc);
     uc->release = m68k_release;
     uc->reg_read = m68k_reg_read;
     uc->reg_write = m68k_reg_write;
     uc->reg_reset = m68k_reg_reset;
     uc->set_pc = m68k_set_pc;
+    uc->cpus_init = m68k_cpus_init;
     uc_common_init(uc);
 }

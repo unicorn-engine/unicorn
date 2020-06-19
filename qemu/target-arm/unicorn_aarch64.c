@@ -1,8 +1,9 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
-#include "hw/boards.h"
-#include "hw/arm/arm.h"
+#include "qemu/typedefs.h"
+#include "unicorn/unicorn.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
@@ -17,9 +18,7 @@ static void arm64_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUARMState *)uc->current_cpu->env_ptr)->pc = address;
 }
 
-void arm64_release(void* ctx);
-
-void arm64_release(void* ctx)
+static void arm64_release(void* ctx)
 {
     struct uc_struct* uc;
     ARMCPU* cpu;
@@ -32,6 +31,7 @@ void arm64_release(void* ctx)
     g_free(cpu->cpreg_values);
     g_free(cpu->cpreg_vmstate_indexes);
     g_free(cpu->cpreg_vmstate_values);
+    g_hash_table_destroy(cpu->cp_regs);
 
     release_common(ctx);
 }
@@ -228,6 +228,22 @@ int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals,
     return 0;
 }
 
+static int arm64_cpus_init(struct uc_struct *uc, const char *cpu_model)
+{
+    ARMCPU *cpu;
+
+#ifdef TARGET_WORDS_BIGENDIAN
+    cpu = cpu_aarch64eb_init(uc, cpu_model);
+#else
+    cpu = cpu_aarch64_init(uc, cpu_model);
+#endif
+    if (cpu == NULL) {
+        return -1;
+    }
+
+    return 0;
+}
+
 DEFAULT_VISIBILITY
 #ifdef TARGET_WORDS_BIGENDIAN
 void arm64eb_uc_init(struct uc_struct* uc)
@@ -235,14 +251,11 @@ void arm64eb_uc_init(struct uc_struct* uc)
 void arm64_uc_init(struct uc_struct* uc)
 #endif
 {
-    register_accel_types(uc);
-    arm_cpu_register_types(uc);
-    aarch64_cpu_register_types(uc);
-    machvirt_machine_init(uc);
     uc->reg_read = arm64_reg_read;
     uc->reg_write = arm64_reg_write;
     uc->reg_reset = arm64_reg_reset;
     uc->set_pc = arm64_set_pc;
     uc->release = arm64_release;
+    uc->cpus_init = arm64_cpus_init;
     uc_common_init(uc);
 }

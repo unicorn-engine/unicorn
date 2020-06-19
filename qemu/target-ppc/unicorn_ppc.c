@@ -1,14 +1,12 @@
 /* Unicorn Emulator Engine */
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 
-#include "hw/boards.h"
 #include "hw/ppc/ppc.h"
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
 #include "unicorn_common.h"
 #include "uc_priv.h"
-
 
 /*** HELPER PROTOTYPES ***/
 static target_ulong __read_xer(CPUPPCState* env);
@@ -23,6 +21,75 @@ const int PPC64_REGS_STORAGE_SIZE = offsetof(CPUPPCState, tlb_table);
 const int PPC_REGS_STORAGE_SIZE = offsetof(CPUPPCState, tlb_table);
 #endif
 #endif
+
+
+
+static PowerPCCPU *cpu_ppc_init(struct uc_struct *uc, const char *cpu_model)
+{
+    PowerPCCPU *cpu;
+    CPUState *cs;
+    CPUClass *cc;
+
+    cpu = malloc(sizeof(*cpu));
+    if (cpu == NULL) {
+        return NULL;
+    }
+    memset(cpu, 0, sizeof(*cpu));
+
+    cs = (CPUState *)cpu;
+    cc = (CPUClass *)&cpu->cc;
+    cs->cc = cc;
+    cs->uc = uc;
+    /* init CPUClass */
+    cpu_klass_init(uc, cc);
+    /* init PowerPCCPUClass */
+    ppc_cpu_class_init(uc, cc, NULL);
+    /* init PowerPC family class */
+#if defined(TARGET_PPC64)
+ #if defined(TARGET_WORDS_BIGENDIAN)
+    ppc64_970_cpu_family_class_init(uc, cc, NULL);
+    ppc64_970_cpu_class_init(uc, cc, NULL);
+ #else
+
+ #endif
+#else //32
+ #if defined(TARGET_WORDS_BIGENDIAN)
+    ppc_405_cpu_family_class_init(uc, cc, NULL);
+    ppc_405_cpu_class_init(uc, cc, NULL); 
+ #else
+    ppc_401_cpu_family_class_init(uc, cc, NULL);
+    ppc_401_cpu_class_init(uc, cc, NULL); 
+ #endif
+#endif
+    /* init CPUState */
+#ifdef NEED_CPU_INIT_REALIZE
+    cpu_object_init(uc, cs);
+#endif
+    /* init PowerPCCPU */
+    ppc_cpu_initfn(uc, cs, uc);
+    /* init PowerPC types */
+
+    /* realize PowerPCCPU */
+    ppc_cpu_realizefn(uc, cs);
+    /* realize CPUState */
+#ifdef NEED_CPU_INIT_REALIZE
+    cpu_object_realize(uc, cs);
+#endif
+
+    return cpu;
+}
+
+static int generic_ppc_init(struct uc_struct *uc, const char* cpu_model)
+{
+    uc->cpu = (CPUState *)cpu_ppc_init(uc, cpu_model); 
+    
+    if (uc->cpu == NULL) {
+        fprintf(stderr, "Unable to find CPU definition\n");
+        return -1;
+    }
+
+    return 0;
+}
 
 static void ppc_set_nip(struct uc_struct *uc, uint64_t address)
 {
@@ -178,10 +245,10 @@ static void ppc_release(void* ctx)
     
     g_free(s->tb_ctx.tbs);
 
-    //release opcodes
-    object_property_set_bool(uc, OBJECT(cpu), false, "realized", NULL);
-
     release_common(ctx);
+
+    ppc_cpu_unrealizefn(uc, uc->cpu);
+
 }
 
 __attribute__ ((visibility ("default")))
@@ -199,15 +266,15 @@ void ppcle_uc_init(struct uc_struct* uc)
 #endif
 #endif
 {
-    register_accel_types(uc);
-    ppc_cpu_register_types(uc);
-    generic_ppc_machine_init(uc);
+    //ppc_cpu_register_types(uc);
+    //generic_ppc_machine_init(uc);
     uc->reg_read = ppc_reg_read;
     uc->reg_write = ppc_reg_write;
     uc->reg_reset = ppc_reg_reset;
     uc->set_pc = ppc_set_nip;
     uc->stop_interrupt = ppc_stop_interrupt;
     uc->release = ppc_release;
+    uc->cpus_init = generic_ppc_init;
     //uc->query = arm_query;
     uc_common_init(uc);
 }

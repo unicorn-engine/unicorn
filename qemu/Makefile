@@ -20,7 +20,6 @@ endif
 endif
 
 CONFIG_SOFTMMU := $(if $(filter %-softmmu,$(TARGET_DIRS)),y)
--include config-all-devices.mak
 
 include $(SRC_PATH)/rules.mak
 config-host.mak: $(SRC_PATH)/configure
@@ -45,24 +44,6 @@ configure: ;
 $(call set-vpath, $(SRC_PATH))
 
 SUBDIR_MAKEFLAGS=$(if $(V),,--no-print-directory) BUILD_DIR=$(BUILD_DIR)
-SUBDIR_DEVICES_MAK=$(patsubst %, %/config-devices.mak, $(TARGET_DIRS))
-SUBDIR_DEVICES_MAK_DEP=$(patsubst %, %-config-devices.mak.d, $(TARGET_DIRS))
-
-ifeq ($(SUBDIR_DEVICES_MAK),)
-config-all-devices.mak:
-	$(call quiet-command,echo '# no devices' > $@,"  GEN   $@")
-else
-config-all-devices.mak: $(SUBDIR_DEVICES_MAK)
-	$(call quiet-command, sed -n \
-             's|^\([^=]*\)=\(.*\)$$|\1:=$$(findstring y,$$(\1)\2)|p' \
-             $(SUBDIR_DEVICES_MAK) | sort -u > $@, \
-             "  GEN   $@")
-endif
-
--include $(SUBDIR_DEVICES_MAK_DEP)
-
-%/config-devices.mak: default-configs/%.mak
-	$(call quiet-command, cp $< $@, "  GEN   $@")
 
 ifneq ($(wildcard config-host.mak),)
 include $(SRC_PATH)/Makefile.objs
@@ -76,14 +57,11 @@ config-host.h: config-host.h-timestamp
 config-host.h-timestamp: config-host.mak
 
 SUBDIR_RULES=$(patsubst %,subdir-%, $(TARGET_DIRS))
-SOFTMMU_SUBDIR_RULES=$(filter %-softmmu,$(SUBDIR_RULES))
-
-$(SOFTMMU_SUBDIR_RULES): config-all-devices.mak
 
 subdir-%:
 	$(call quiet-command,$(MAKE) $(SUBDIR_MAKEFLAGS) -C $* V="$(V)" TARGET_DIR="$*/" all,)
 
-$(SUBDIR_RULES): qapi-types.c qapi-types.h qapi-visit.c qapi-visit.h $(common-obj-y) $(util-obj-y)
+$(SUBDIR_RULES): $(common-obj-y) $(util-obj-y)
 
 recurse-all: $(SUBDIR_RULES)
 
@@ -100,7 +78,6 @@ clean:
 
 distclean: clean
 	rm -f config-host.mak config-host.h*
-	rm -f config-all-devices.mak
 	rm -f config.log config.status
 	for d in $(TARGET_DIRS); do \
 	rm -rf $$d || exit 1 ; \

@@ -18,7 +18,7 @@ UNAME_S := $(shell uname -s)
 SMP_MFLAGS := -j4
 
 UC_GET_OBJ = $(shell for i in \
-    $$(grep '$(1)' $(2) | \
+    $$(grep '$(1)' $(2) | sed '/^\#/d' | \
     grep '\.o' | cut -d '=' -f 2); do \
     echo $$i | grep '\.o' > /dev/null 2>&1; \
     if [ $$? = 0 ]; then \
@@ -26,9 +26,6 @@ UC_GET_OBJ = $(shell for i in \
     fi; done; echo)
 
 UC_TARGET_OBJ = $(filter-out qemu/../%,$(call UC_GET_OBJ,obj-,qemu/Makefile.objs, qemu/))
-UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-,qemu/hw/core/Makefile.objs, qemu/hw/core/)
-UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-,qemu/qapi/Makefile.objs, qemu/qapi/)
-UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-,qemu/qobject/Makefile.objs, qemu/qobject/)
 UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-,qemu/qom/Makefile.objs, qemu/qom/)
 UC_TARGET_OBJ += $(call UC_GET_OBJ,obj-y,qemu/util/Makefile.objs, qemu/util/)
 ifneq ($(filter MINGW%,$(UNAME_S)),)
@@ -39,25 +36,19 @@ endif
 
 UC_TARGET_OBJ_X86 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/x86_64-softmmu/)
 UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/hw/i386/Makefile.objs, qemu/x86_64-softmmu/hw/i386/)
-UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/hw/intc/Makefile.objs, qemu/x86_64-softmmu/hw/intc/)
 UC_TARGET_OBJ_X86 += $(call UC_GET_OBJ,obj-,qemu/target-i386/Makefile.objs, qemu/x86_64-softmmu/target-i386/)
 
+UC_TARGET_OBJ_M68K = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/m68k-softmmu/)
+UC_TARGET_OBJ_M68K += $(call UC_GET_OBJ,obj-,qemu/target-m68k/Makefile.objs, qemu/m68k-softmmu/target-m68k/)
+
 UC_TARGET_OBJ_ARM = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/arm-softmmu/)
-UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-,qemu/hw/arm/Makefile.objs, qemu/arm-softmmu/hw/arm/)
 UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-y,qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
-UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-$$(CONFIG_SOFTMMU),qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
 UC_TARGET_OBJ_ARM += $(call UC_GET_OBJ,obj-$$(TARGET_ARM),qemu/target-arm/Makefile.objs, qemu/arm-softmmu/target-arm/)
 
 UC_TARGET_OBJ_ARMEB = $(subst /arm-softmmu/,/armeb-softmmu/,$(UC_TARGET_OBJ_ARM))
 
-UC_TARGET_OBJ_M68K = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/m68k-softmmu/)
-UC_TARGET_OBJ_M68K += $(call UC_GET_OBJ,obj-,qemu/hw/m68k/Makefile.objs, qemu/m68k-softmmu/hw/m68k/)
-UC_TARGET_OBJ_M68K += $(call UC_GET_OBJ,obj-,qemu/target-m68k/Makefile.objs, qemu/m68k-softmmu/target-m68k/)
-
 UC_TARGET_OBJ_AARCH64 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/aarch64-softmmu/)
-UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-,qemu/hw/arm/Makefile.objs, qemu/aarch64-softmmu/hw/arm/)
 UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-y,qemu/target-arm/Makefile.objs, qemu/aarch64-softmmu/target-arm/)
-UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-$$(CONFIG_SOFTMMU),qemu/target-arm/Makefile.objs, qemu/aarch64-softmmu/target-arm/)
 UC_TARGET_OBJ_AARCH64 += $(call UC_GET_OBJ,obj-$$(TARGET_AARCH64),qemu/target-arm/Makefile.objs, qemu/aarch64-softmmu/target-arm/)
 
 UC_TARGET_OBJ_AARCH64EB = $(subst /aarch64-softmmu/,/aarch64eb-softmmu/,$(UC_TARGET_OBJ_AARCH64))
@@ -73,12 +64,10 @@ UC_TARGET_OBJ_MIPS64 = $(subst /mips-softmmu/,/mips64-softmmu/,$(UC_TARGET_OBJ_M
 UC_TARGET_OBJ_MIPS64EL = $(subst /mips-softmmu/,/mips64el-softmmu/,$(UC_TARGET_OBJ_MIPS))
 
 UC_TARGET_OBJ_SPARC = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/sparc-softmmu/)
-UC_TARGET_OBJ_SPARC += $(call UC_GET_OBJ,obj-,qemu/hw/sparc/Makefile.objs, qemu/sparc-softmmu/hw/sparc/)
 UC_TARGET_OBJ_SPARC += $(call UC_GET_OBJ,obj-y,qemu/target-sparc/Makefile.objs, qemu/sparc-softmmu/target-sparc/)
 UC_TARGET_OBJ_SPARC += $(call UC_GET_OBJ,obj-$$(TARGET_SPARC),qemu/target-sparc/Makefile.objs, qemu/sparc-softmmu/target-sparc/)
 
 UC_TARGET_OBJ_SPARC64 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/sparc64-softmmu/)
-UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-,qemu/hw/sparc64/Makefile.objs, qemu/sparc64-softmmu/hw/sparc64/)
 UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-y,qemu/target-sparc/Makefile.objs, qemu/sparc64-softmmu/target-sparc/)
 UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-$$(TARGET_SPARC64),qemu/target-sparc/Makefile.objs, qemu/sparc64-softmmu/target-sparc/)
 
@@ -129,16 +118,16 @@ ifneq (,$(findstring ppc,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPC)
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPCLE)
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPC64)
-	UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPC64LE)
+	# UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPC64LE)
 
 	UNICORN_CFLAGS += -DUNICORN_HAS_PPC
 	UNICORN_CFLAGS += -DUNICORN_HAS_PPCLE
 	UNICORN_CFLAGS += -DUNICORN_HAS_PPC64
-	UNICORN_CFLAGS += -DUNICORN_HAS_PPC64LE
+	#UNICORN_CFLAGS += -DUNICORN_HAS_PPC64LE
 	UNICORN_TARGETS += ppc-softmmu,
 	UNICORN_TARGETS += ppcle-softmmu,
 	UNICORN_TARGETS += ppc64-softmmu,
-	UNICORN_TARGETS += ppc64le-softmmu,
+	#UNICORN_TARGETS += ppc64le-softmmu,
 endif
 ifneq (,$(findstring mips,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_MIPS)

@@ -858,7 +858,6 @@ hwaddr sparc_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
         }
     }
     section = memory_region_find(get_system_memory(cs->uc), phys_addr, 1);
-    memory_region_unref(section.mr);
     if (!int128_nz(section.size)) {
         return -1;
     }

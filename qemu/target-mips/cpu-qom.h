@@ -17,22 +17,12 @@
  * License along with this library; if not, see
  * <http://www.gnu.org/licenses/lgpl-2.1.html>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #ifndef QEMU_MIPS_CPU_QOM_H
 #define QEMU_MIPS_CPU_QOM_H
 
 #include "qom/cpu.h"
-
-#ifdef TARGET_MIPS64
-#define TYPE_MIPS_CPU "mips64-cpu"
-#else
-#define TYPE_MIPS_CPU "mips-cpu"
-#endif
-
-#define MIPS_CPU_CLASS(uc, klass) \
-    OBJECT_CLASS_CHECK(uc, MIPSCPUClass, (klass), TYPE_MIPS_CPU)
-#define MIPS_CPU(uc, obj) ((MIPSCPU *)obj)
-#define MIPS_CPU_GET_CLASS(uc, obj) \
-    OBJECT_GET_CLASS(uc, MIPSCPUClass, (obj), TYPE_MIPS_CPU)
 
 /**
  * MIPSCPUClass:
@@ -46,7 +36,6 @@ typedef struct MIPSCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
-    DeviceRealize parent_realize;
     void (*parent_reset)(CPUState *cpu);
 } MIPSCPUClass;
 
@@ -62,7 +51,13 @@ typedef struct MIPSCPU {
     /*< public >*/
 
     CPUMIPSState env;
+
+    struct MIPSCPUClass cc;
 } MIPSCPU;
+
+#define MIPS_CPU(uc, obj) ((MIPSCPU *)obj)
+#define MIPS_CPU_CLASS(uc, klass) ((MIPSCPUClass *)klass)
+#define MIPS_CPU_GET_CLASS(uc, obj) (&((MIPSCPU *)obj)->cc)
 
 static inline MIPSCPU *mips_env_get_cpu(CPUMIPSState *env)
 {

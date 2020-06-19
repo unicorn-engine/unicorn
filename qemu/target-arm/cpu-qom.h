@@ -17,18 +17,12 @@
  * along with this program; if not, see
  * <http://www.gnu.org/licenses/gpl-2.0.html>
  */
+/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
+
 #ifndef QEMU_ARM_CPU_QOM_H
 #define QEMU_ARM_CPU_QOM_H
 
 #include "qom/cpu.h"
-
-#define TYPE_ARM_CPU "arm-cpu"
-
-#define ARM_CPU_CLASS(uc, klass) \
-    OBJECT_CLASS_CHECK(uc, ARMCPUClass, (klass), TYPE_ARM_CPU)
-#define ARM_CPU(uc, obj) ((ARMCPU *)obj)
-#define ARM_CPU_GET_CLASS(uc, obj) \
-    OBJECT_GET_CLASS(uc, ARMCPUClass, (obj), TYPE_ARM_CPU)
 
 /**
  * ARMCPUClass:
@@ -42,7 +36,6 @@ typedef struct ARMCPUClass {
     CPUClass parent_class;
     /*< public >*/
 
-    DeviceRealize parent_realize;
     void (*parent_reset)(CPUState *cpu);
 } ARMCPUClass;
 
@@ -166,19 +159,13 @@ typedef struct ARMCPU {
     /* DCZ blocksize, in log_2(words), ie low 4 bits of DCZID_EL0 */
     uint32_t dcz_blocksize;
     uint64_t rvbar;
+
+    struct ARMCPUClass cc;
 } ARMCPU;
 
-#define TYPE_AARCH64_CPU "aarch64-cpu"
-#define AARCH64_CPU_CLASS(klass) \
-    OBJECT_CLASS_CHECK(AArch64CPUClass, (klass), TYPE_AARCH64_CPU)
-#define AARCH64_CPU_GET_CLASS(obj) \
-    OBJECT_GET_CLASS(AArch64CPUClass, (obj), TYPE_AArch64_CPU)
-
-typedef struct AArch64CPUClass {
-    /*< private >*/
-    ARMCPUClass parent_class;
-    /*< public >*/
-} AArch64CPUClass;
+#define ARM_CPU(uc, obj) ((ARMCPU *)obj)
+#define ARM_CPU_CLASS(uc, klass) ((ARMCPUClass *)klass)
+#define ARM_CPU_GET_CLASS(uc, obj) (&((ARMCPU *)obj)->cc)
 
 static inline ARMCPU *arm_env_get_cpu(CPUARMState *env)
 {
@@ -189,10 +176,6 @@ static inline ARMCPU *arm_env_get_cpu(CPUARMState *env)
 
 #define ENV_OFFSET offsetof(ARMCPU, env)
 
-#ifndef CONFIG_USER_ONLY
-extern const struct VMStateDescription vmstate_arm_cpu;
-#endif
-
 void register_cp_regs_for_features(ARMCPU *cpu);
 void init_cpreg_list(ARMCPU *cpu);
 
@@ -202,17 +185,11 @@ bool arm_cpu_exec_interrupt(CPUState *cpu, int int_req);
 
 hwaddr arm_cpu_get_phys_page_debug(CPUState *cpu, vaddr addr);
 
-int arm_cpu_gdb_read_register(CPUState *cpu, uint8_t *buf, int reg);
-int arm_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
-
 /* Callback functions for the generic timer's timers. */
 void arm_gt_ptimer_cb(void *opaque);
 void arm_gt_vtimer_cb(void *opaque);
 
 #ifdef TARGET_AARCH64
-int aarch64_cpu_gdb_read_register(CPUState *cpu, uint8_t *buf, int reg);
-int aarch64_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
-
 void aarch64_cpu_do_interrupt(CPUState *cs);
 #endif
 

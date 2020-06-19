@@ -1145,6 +1145,10 @@ do {                                            \
 
 int cpu_ppc_exec (struct uc_struct *uc,CPUPPCState *s);
 void ppc_cpu_set_pc(CPUState *cs, vaddr value);
+void ppc_cpu_initfn(struct uc_struct* uc, CPUState *obj, void* opaque);
+void ppc_cpu_class_init(struct uc_struct* uc,CPUClass* oc, void *data);
+int ppc_cpu_realizefn(struct uc_struct *uc, CPUState *dev);
+void ppc_cpu_unrealizefn(struct uc_struct* uc, CPUState *dev);
 
 /* you can call this signal handler from your SIGBUS and SIGSEGV
    signal handlers to inform the virtual CPU of exceptions. non zero

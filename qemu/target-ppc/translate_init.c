@@ -24,7 +24,6 @@
 //#include "cpu-models.h"
 #include "mmu-hash32.h"
 #include "mmu-hash64.h"
-#include "qapi/visitor.h"
 
 //#define PPC_DUMP_CPU
 //#define PPC_DEBUG_SPR
@@ -1614,28 +1613,6 @@ static void init_excp_970 (CPUPPCState *env)
 /*****************************************************************************/
 /* PowerPC implementations definitions                                       */
 
-#define POWERPC_FAMILY(_name)                                               \
-    static void                                                             \
-    glue(glue(ppc_, _name), _cpu_family_class_init)(struct uc_struct* uc,ObjectClass *, void *); \
-                                                                            \
-    static const TypeInfo                                                   \
-    glue(glue(ppc_, _name), _cpu_family_type_info) = {                      \
-        .name = stringify(_name) "-family-" TYPE_POWERPC_CPU,               \
-        .parent = TYPE_POWERPC_CPU,                                         \
-        .abstract = true,                                                   \
-        .class_init = glue(glue(ppc_, _name), _cpu_family_class_init),      \
-    };                                                                      \
-                                                                            \
-    static void glue(glue(ppc_, _name), _cpu_family_register_types)(struct uc_struct* uc)   \
-    {                                                                       \
-        type_register_static(uc,                                               \
-            &glue(glue(ppc_, _name), _cpu_family_type_info));               \
-    }                                                                       \
-                                                                            \
-    type_init(glue(glue(ppc_, _name), _cpu_family_register_types))          \
-                                                                            \
-    static void glue(glue(ppc_, _name), _cpu_family_class_init)
-
 void init_proc_401 (CPUPPCState *env)
 {
     gen_spr_40x(env);
@@ -2870,8 +2847,6 @@ static inline bool ppc_cpu_is_valid(PowerPCCPUClass *pcc)
 
 
 #include <ctype.h>
-
-//static ObjectClass *ppc_cpu_class_by_name(struct uc_struct *uc,const char *name);
 
 /* CPUClass::reset() */
 void ppc_cpu_reset(CPUState *s)

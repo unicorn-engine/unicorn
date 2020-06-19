@@ -298,9 +298,6 @@ add_library(x86_64-softmmu
     qemu/exec.c
     qemu/fpu/softfloat.c
     qemu/hw/i386/pc.c
-    qemu/hw/i386/pc_piix.c
-    qemu/hw/intc/apic.c
-    qemu/hw/intc/apic_common.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -350,8 +347,6 @@ add_library(arm-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/arm/tosa.c
-    qemu/hw/arm/virt.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -394,8 +389,6 @@ add_library(armeb-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/arm/tosa.c
-    qemu/hw/arm/virt.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -440,8 +433,6 @@ add_library(aarch64-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/arm/tosa.c
-    qemu/hw/arm/virt.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -487,8 +478,6 @@ add_library(aarch64eb-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/arm/tosa.c
-    qemu/hw/arm/virt.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -536,7 +525,6 @@ add_library(m68k-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/m68k/dummy_m68k.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -577,9 +565,7 @@ add_library(mips-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/mips/addr.c
     qemu/hw/mips/cputimer.c
-    qemu/hw/mips/mips_r4k.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -621,9 +607,7 @@ add_library(mipsel-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/mips/addr.c
     qemu/hw/mips/cputimer.c
-    qemu/hw/mips/mips_r4k.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -665,9 +649,7 @@ add_library(mips64-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/mips/addr.c
     qemu/hw/mips/cputimer.c
-    qemu/hw/mips/mips_r4k.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -709,9 +691,7 @@ add_library(mips64el-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/mips/addr.c
     qemu/hw/mips/cputimer.c
-    qemu/hw/mips/mips_r4k.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -755,7 +735,6 @@ add_library(sparc-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/sparc/leon3.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -799,7 +778,6 @@ add_library(sparc64-softmmu
     qemu/cputlb.c
     qemu/exec.c
     qemu/fpu/softfloat.c
-    qemu/hw/sparc64/sun4u.c
     qemu/ioport.c
     qemu/memory.c
     qemu/memory_mapping.c
@@ -1072,38 +1050,18 @@ endif()
 
 set(UNICORN_SRCS_COMMON
     list.c
-    qemu/accel.c
     qemu/glib_compat.c
-    qemu/hw/core/machine.c
-    qemu/hw/core/qdev.c
-    qemu/qapi/qapi-dealloc-visitor.c
-    qemu/qapi/qapi-visit-core.c
-    qemu/qapi/qmp-input-visitor.c
-    qemu/qapi/qmp-output-visitor.c
-    qemu/qapi/string-input-visitor.c
     qemu/qemu-log.c
     qemu/qemu-timer.c
-    qemu/qobject/qbool.c
-    qemu/qobject/qdict.c
-    qemu/qobject/qerror.c
-    qemu/qobject/qfloat.c
-    qemu/qobject/qint.c
-    qemu/qobject/qlist.c
-    qemu/qobject/qstring.c
-    qemu/qom/container.c
     qemu/qom/cpu.c
-    qemu/qom/object.c
-    qemu/qom/qom-qobject.c
     qemu/tcg-runtime.c
     qemu/util/aes.c
     qemu/util/bitmap.c
     qemu/util/bitops.c
     qemu/util/crc32c.c
     qemu/util/cutils.c
-    qemu/util/error.c
     qemu/util/getauxval.c
     qemu/util/host-utils.c
-    qemu/util/module.c
     qemu/util/qemu-timer-common.c
     qemu/vl.c
     uc.c
@@ -1114,17 +1072,12 @@ if (MSVC)
         ${UNICORN_SRCS_COMMON}
         qemu/util/oslib-win32.c
         qemu/util/qemu-thread-win32.c
-        qemu/util/qemu-error.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/qapi-types.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/qapi-visit.c
     )
 else()
     set(UNICORN_SRCS
         ${UNICORN_SRCS_COMMON}
         qemu/util/oslib-posix.c
         qemu/util/qemu-thread-posix.c
-        qemu/qapi-types.c
-        qemu/qapi-visit.c
     )
 endif()
 

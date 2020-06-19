@@ -131,10 +131,13 @@ static void fpu_raise_exception(CPUX86State *env)
     if (env->cr[0] & CR0_NE_MASK) {
         raise_exception(env, EXCP10_COPR);
     }
+#if 0
 #if !defined(CONFIG_USER_ONLY)
+    /* not implemented. cpu_set_ferr(env) does nothing. */
     else {
         cpu_set_ferr(env);
     }
+#endif
 #endif
 }
 
