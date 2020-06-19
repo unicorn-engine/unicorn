@@ -1613,28 +1613,6 @@ static void init_excp_970 (CPUPPCState *env)
 /*****************************************************************************/
 /* PowerPC implementations definitions                                       */
 
-#define POWERPC_FAMILY(_name)                                               \
-    static void                                                             \
-    glue(glue(ppc_, _name), _cpu_family_class_init)(struct uc_struct* uc,ObjectClass *, void *); \
-                                                                            \
-    static const TypeInfo                                                   \
-    glue(glue(ppc_, _name), _cpu_family_type_info) = {                      \
-        .name = stringify(_name) "-family-" TYPE_POWERPC_CPU,               \
-        .parent = TYPE_POWERPC_CPU,                                         \
-        .abstract = true,                                                   \
-        .class_init = glue(glue(ppc_, _name), _cpu_family_class_init),      \
-    };                                                                      \
-                                                                            \
-    static void glue(glue(ppc_, _name), _cpu_family_register_types)(struct uc_struct* uc)   \
-    {                                                                       \
-        type_register_static(uc,                                               \
-            &glue(glue(ppc_, _name), _cpu_family_type_info));               \
-    }                                                                       \
-                                                                            \
-    type_init(glue(glue(ppc_, _name), _cpu_family_register_types))          \
-                                                                            \
-    static void glue(glue(ppc_, _name), _cpu_family_class_init)
-
 void init_proc_401 (CPUPPCState *env)
 {
     gen_spr_40x(env);

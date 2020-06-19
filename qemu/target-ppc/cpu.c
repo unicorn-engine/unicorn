@@ -15,7 +15,7 @@
 #include "mach/cpu_970.h"
 #endif
 
-static void ppc_cpu_initfn(struct uc_struct* uc, CPUState *obj, void* opaque)
+void ppc_cpu_initfn(struct uc_struct* uc, CPUState *obj, void* opaque)
 {
     CPUState *cs = CPU(obj);
     PowerPCCPU *cpu = POWERPC_CPU(uc,obj);
@@ -56,7 +56,6 @@ static void ppc_cpu_initfn(struct uc_struct* uc, CPUState *obj, void* opaque)
         env->sps = defsps;
     }
 #endif /* defined(TARGET_PPC64) */
-    cpu_reset(cs);
 
     if (tcg_enabled(uc)) {
         ppc_translate_init(uc);
@@ -65,7 +64,7 @@ static void ppc_cpu_initfn(struct uc_struct* uc, CPUState *obj, void* opaque)
 
 void ppc_cpu_set_pc(CPUState *cs, vaddr value)
 {
-    CPUPPCState *env = cs->env_ptr;
+    //CPUPPCState *env = cs->env_ptr;
     PowerPCCPU *cpu = POWERPC_CPU(env->uc,cs);
 
     cpu->env.nip = value;
@@ -247,7 +246,10 @@ static void init_ppc_proc(PowerPCCPU *cpu)
         
         /* Pre-compute some useful values */
         env->tlb_per_way = env->nb_tlb / env->nb_ways;
-        mmubooke_create_initial_mapping(env);
+        
+        // e500v2 specific: mmu initialization
+        if(pcc->mmu_model == POWERPC_MMU_BOOKE206)
+            mmubooke_create_initial_mapping(env);
     }
     /*if (env->irq_inputs == NULL) {
         fprintf(stderr, "WARNING: no internal IRQ controller registered.\n"
@@ -261,14 +263,14 @@ static void init_ppc_proc(PowerPCCPU *cpu)
     }
 }
 
-static int ppc_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
+int ppc_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 {
     CPUState *cs = CPU(dev);
     PowerPCCPU *cpu = POWERPC_CPU(uc,dev);
-    PowerPCCPUClass *pcc = POWERPC_CPU_GET_CLASS(uc,cpu);
+    //PowerPCCPUClass *pcc = POWERPC_CPU_GET_CLASS(uc,cpu);
 
 #if !defined(CONFIG_USER_ONLY)
-    int max_smt = 1;
+    //int max_smt = 1;
 #endif
 
 /*#if !defined(CONFIG_USER_ONLY)
@@ -303,6 +305,7 @@ static int ppc_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 
     qemu_init_vcpu(cs);
 
+    cpu_reset(cs);
     return 0;
 }
 
@@ -320,7 +323,7 @@ static opc_handler_t invalid_handler = {
     .handler = gen_invalid,
 };
 
-static void ppc_cpu_unrealizefn(struct uc_struct* uc, CPUState *dev)
+void ppc_cpu_unrealizefn(struct uc_struct* uc, CPUState *dev)
 {
     PowerPCCPU *cpu = POWERPC_CPU(uc,dev);
     CPUPPCState *env = &cpu->env;
@@ -346,7 +349,7 @@ static void ppc_cpu_unrealizefn(struct uc_struct* uc, CPUState *dev)
     }
 }
 
-static void ppc_cpu_class_init(struct uc_struct* uc,CPUClass* oc, void *data)
+void ppc_cpu_class_init(struct uc_struct* uc,CPUClass* oc, void *data)
 {
     PowerPCCPUClass *pcc = POWERPC_CPU_CLASS(uc,oc);
     CPUClass *cc = CPU_CLASS(uc,oc);
@@ -394,47 +397,6 @@ static void ppc_cpu_class_init(struct uc_struct* uc,CPUClass* oc, void *data)
     //cc->virtio_is_big_endian = ppc_cpu_is_big_endian;
 #endif
 
-}
-
-/*
- * Define abstract type PowerPCCPU and its different implementations
- */
-void ppc_cpu_register_types(struct uc_struct* uc)
-{
-    /*const TypeInfo ppc_cpu_type_info = {
-        TYPE_POWERPC_CPU,
-        TYPE_CPU,
-        sizeof(PowerPCCPUClass),
-        sizeof(PowerPCCPU),
-        uc,
-        ppc_cpu_initfn,
-        NULL,
-        NULL,
-        NULL,
-        ppc_cpu_class_init,
-        NULL,
-        NULL,
-        true
-    };
-
-#if !defined(TARGET_PPC64)
-    ppc_e500v2_cpu_family_register_types(uc);
-    ppc_mpc8572e_register_types(uc);
-
-    ppc_405_cpu_family_register_types(uc);
-    ppc_405_cpu_register_types(uc);
-    
-    ppc_401_cpu_family_register_types(uc);
-    ppc_401_cpu_register_types(uc);
-
-    ppc_604_cpu_family_register_types(uc);
-    ppc_604_cpu_register_types(uc);
-#else
-    ppc64_970_cpu_family_register_types(uc);
-    ppc64_970_cpu_register_types(uc);
-#endif
-    
-    //type_register_static(uc,&ppc_cpu_type_info);*/
 }
 
 //type_init(ppc_cpu_register_types)

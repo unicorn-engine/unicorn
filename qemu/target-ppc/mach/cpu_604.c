@@ -11,20 +11,3 @@ void ppc_604_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data){
     pcc->pvr = CPU_POWERPC_604;
     pcc->svr = POWERPC_SVR_NONE;
 }
-
-void ppc_604_cpu_register_types(void* opaque){
-    /*const TypeInfo ppc_604_cpu_type_info = {
-        "604-" TYPE_POWERPC_CPU,
-        "604-family-" TYPE_POWERPC_CPU,
-        0,
-        0,
-        opaque,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        ppc_604_cpu_class_init
-    };
-
-    type_register_static(opaque, &ppc_604_cpu_type_info);*/
-}

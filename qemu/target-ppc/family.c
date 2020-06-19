@@ -13,27 +13,6 @@ static int check_pow_nocheck(CPUPPCState *env)
 
 /*************************************************************************************/
 
-void ppc_e500v2_cpu_family_register_types(struct uc_struct* uc)
-{
-    /*const TypeInfo ppc_e500v2_cpu_family_type_info = {                      
-        "e500v2-family-" TYPE_POWERPC_CPU,
-        TYPE_POWERPC_CPU,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-        NULL,                                
-        NULL,
-        ppc_e500v2_cpu_family_class_init,
-        NULL,
-        NULL,
-        true
-    };
-
-    type_register_static(uc,&ppc_e500v2_cpu_family_type_info);  */
-}
-
 void ppc_e500v2_cpu_family_class_init(struct uc_struct* uc, CPUClass *oc, void *data)
 {
     PowerPCCPUClass *pcc = POWERPC_CPU_CLASS(uc,oc);
@@ -68,27 +47,6 @@ void ppc_e500v2_cpu_family_class_init(struct uc_struct* uc, CPUClass *oc, void *
     pcc->flags = POWERPC_FLAG_SPE | POWERPC_FLAG_CE |
                  POWERPC_FLAG_UBLE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_BUS_CLK;
-}
-
-void ppc_405_cpu_family_register_types(struct uc_struct* uc)
-{
-    /*const TypeInfo ppc_405_cpu_family_type_info = {                      
-        "405-family-" TYPE_POWERPC_CPU,
-        TYPE_POWERPC_CPU,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-        NULL,                                
-        NULL,
-        ppc_405_cpu_family_class_init,
-        NULL,
-        NULL,
-        true
-    };
-
-    type_register_static(uc,&ppc_405_cpu_family_type_info);  */
 }
 
 void ppc_405_cpu_family_class_init(struct uc_struct* uc,CPUClass *oc, void *data)
@@ -135,31 +93,10 @@ void ppc_405_cpu_family_class_init(struct uc_struct* uc,CPUClass *oc, void *data
     pcc->bfd_mach = 403; //bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DWE |
                  POWERPC_FLAG_DE | POWERPC_FLAG_BUS_CLK;
-
     //pcc->flags|= POWERPC_FLAG_SPE;
 
 }
 
-
-void ppc_401_cpu_family_register_types(struct uc_struct* uc)
-{
-    /*const TypeInfo ppc_401_cpu_family_type_info = {                      
-        "401-family-" TYPE_POWERPC_CPU,
-        TYPE_POWERPC_CPU,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-        NULL,                                
-        NULL,
-        ppc_401_cpu_family_class_init,
-        NULL,
-        NULL,
-        true
-    };
-    type_register_static(uc, &ppc_401_cpu_family_type_info);  */
-}
 
 void ppc_401_cpu_family_class_init(struct uc_struct* uc,CPUClass *oc, void *data)
 {
@@ -190,26 +127,6 @@ void ppc_401_cpu_family_class_init(struct uc_struct* uc,CPUClass *oc, void *data
                  POWERPC_FLAG_BUS_CLK;
 }
 
-
-void ppc_604_cpu_family_register_types(struct uc_struct* uc)
-{
-   /* const TypeInfo ppc_604_cpu_family_type_info = {                      
-        "604-family-" TYPE_POWERPC_CPU,
-        TYPE_POWERPC_CPU,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-        NULL,                                
-        NULL,
-        ppc_604_cpu_family_class_init,
-        NULL,
-        NULL,
-        true
-    };
-    type_register_static(uc, &ppc_604_cpu_family_type_info);  */
-}
 
 void ppc_604_cpu_family_class_init(struct uc_struct* uc,CPUClass *oc, void *data)
 {
@@ -311,27 +228,6 @@ void ppc64_970_cpu_family_class_init(struct uc_struct* uc,CPUClass* oc, void *da
                  POWERPC_FLAG_BUS_CLK;
     pcc->l1_dcache_size = 0x8000;
     pcc->l1_icache_size = 0x10000;
-}
-
-
-void ppc64_970_cpu_family_register_types(struct uc_struct* uc)
-{
-    /*const TypeInfo ppc64_970_cpu_family_type_info = {                      
-        "970-family-" TYPE_POWERPC_CPU,
-        TYPE_POWERPC_CPU,
-        0,
-        0,
-        NULL,
-        NULL,
-        NULL,
-        NULL,                                
-        NULL,
-        ppc64_970_cpu_family_class_init,
-        NULL,
-        NULL,
-        true
-    };
-    type_register_static(uc, &ppc64_970_cpu_family_type_info); */ 
 }
 
 #endif

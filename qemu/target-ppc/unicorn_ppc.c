@@ -8,21 +8,6 @@
 #include "unicorn_common.h"
 #include "uc_priv.h"
 
-
-#if defined(TARGET_PPC64)
- #if defined(TARGET_WORDS_BIGENDIAN)
-  #define GENERIC_PPC_CPU "970"
- #else
-  #define GENERIC_PPC_CPU "XXX" // TODO
- #endif
-#else //32
- #if defined(TARGET_WORDS_BIGENDIAN)
-  #define GENERIC_PPC_CPU "MPC8572E"
- #else
-  #define GENERIC_PPC_CPU "401" 
- #endif
-#endif
-
 /*** HELPER PROTOTYPES ***/
 static target_ulong __read_xer(CPUPPCState* env);
 static void __write_xer(CPUPPCState *env, target_ulong xer);
@@ -41,15 +26,9 @@ const int PPC_REGS_STORAGE_SIZE = offsetof(CPUPPCState, tlb_table);
 
 static PowerPCCPU *cpu_ppc_init(struct uc_struct *uc, const char *cpu_model)
 {
-    int i;
     PowerPCCPU *cpu;
     CPUState *cs;
     CPUClass *cc;
-    PowerPCCPUClass *pcc;
-
-    if (cpu_model == NULL) {
-        cpu_model = "e500v2_v10";
-    }
 
     cpu = malloc(sizeof(*cpu));
     if (cpu == NULL) {
@@ -58,25 +37,28 @@ static PowerPCCPU *cpu_ppc_init(struct uc_struct *uc, const char *cpu_model)
     memset(cpu, 0, sizeof(*cpu));
 
     cs = (CPUState *)cpu;
-    //cc = (CPUClass *)&cpu->cc;
-    //cs->cc = cc;
+    cc = (CPUClass *)&cpu->cc;
+    cs->cc = cc;
     cs->uc = uc;
     /* init CPUClass */
     cpu_klass_init(uc, cc);
     /* init PowerPCCPUClass */
     ppc_cpu_class_init(uc, cc, NULL);
     /* init PowerPC family class */
-
 #if defined(TARGET_PPC64)
  #if defined(TARGET_WORDS_BIGENDIAN)
-    
+    ppc64_970_cpu_family_class_init(uc, cc, NULL);
+    ppc64_970_cpu_class_init(uc, cc, NULL);
  #else
 
  #endif
 #else //32
  #if defined(TARGET_WORDS_BIGENDIAN)
+    ppc_405_cpu_family_class_init(uc, cc, NULL);
+    ppc_405_cpu_class_init(uc, cc, NULL); 
  #else
-    ppc_401_cpu_class_init(uc); 
+    ppc_401_cpu_family_class_init(uc, cc, NULL);
+    ppc_401_cpu_class_init(uc, cc, NULL); 
  #endif
 #endif
     /* init CPUState */
@@ -86,6 +68,7 @@ static PowerPCCPU *cpu_ppc_init(struct uc_struct *uc, const char *cpu_model)
     /* init PowerPCCPU */
     ppc_cpu_initfn(uc, cs, uc);
     /* init PowerPC types */
+
     /* realize PowerPCCPU */
     ppc_cpu_realizefn(uc, cs);
     /* realize CPUState */
@@ -96,9 +79,9 @@ static PowerPCCPU *cpu_ppc_init(struct uc_struct *uc, const char *cpu_model)
     return cpu;
 }
 
-static int generic_ppc_init(struct uc_struct *uc, MachineState *machine)
+static int generic_ppc_init(struct uc_struct *uc, const char* cpu_model)
 {
-    uc->cpu = (CPUState *)cpu_ppc_init(uc,GENERIC_PPC_CPU); 
+    uc->cpu = (CPUState *)cpu_ppc_init(uc, cpu_model); 
     
     if (uc->cpu == NULL) {
         fprintf(stderr, "Unable to find CPU definition\n");
@@ -263,6 +246,9 @@ static void ppc_release(void* ctx)
     g_free(s->tb_ctx.tbs);
 
     release_common(ctx);
+
+    ppc_cpu_unrealizefn(uc, uc->cpu);
+
 }
 
 __attribute__ ((visibility ("default")))
@@ -280,8 +266,8 @@ void ppcle_uc_init(struct uc_struct* uc)
 #endif
 #endif
 {
-    ppc_cpu_register_types(uc);
-    generic_ppc_machine_init(uc);
+    //ppc_cpu_register_types(uc);
+    //generic_ppc_machine_init(uc);
     uc->reg_read = ppc_reg_read;
     uc->reg_write = ppc_reg_write;
     uc->reg_reset = ppc_reg_reset;

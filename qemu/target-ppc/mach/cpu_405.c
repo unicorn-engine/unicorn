@@ -11,20 +11,3 @@ void ppc_405_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data){
     pcc->pvr = CPU_POWERPC_405D2;
     pcc->svr = POWERPC_SVR_NONE;
 }
-
-void ppc_405_cpu_register_types(void* opaque){
-    /*const TypeInfo ppc_405_cpu_type_info = {
-        "405-" TYPE_POWERPC_CPU,
-        "405-family-" TYPE_POWERPC_CPU,
-        0,
-        0,
-        opaque,
-        NULL,
-        NULL,
-        NULL,                                
-        NULL,
-        ppc_405_cpu_class_init,
-    };
-
-    type_register_static(opaque, &ppc_405_cpu_type_info);*/
-}

@@ -6,6 +6,4 @@
 
 void ppc_401_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data);
 
-void ppc_401_cpu_register_types(void* opaque);
-
 #endif // UC_CPU_401_PPC_H

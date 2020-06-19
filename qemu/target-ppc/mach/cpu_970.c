@@ -11,20 +11,3 @@ void ppc64_970_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data){
     pcc->pvr = CPU_POWERPC_970;
     pcc->svr = POWERPC_SVR_NONE;
 }
-
-void ppc64_970_cpu_register_types(void* opaque){
-    /*const TypeInfo ppc64_970_cpu_type_info = {
-        "970-" TYPE_POWERPC_CPU,
-        "970-family-" TYPE_POWERPC_CPU,
-        0,
-        0,
-        opaque,
-        NULL,
-        NULL,
-        NULL,
-        NULL,
-        ppc64_970_cpu_class_init
-    };
-
-    type_register_static(opaque, &ppc64_970_cpu_type_info);*/
-}

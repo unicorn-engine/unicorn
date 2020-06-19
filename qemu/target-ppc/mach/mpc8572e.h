@@ -6,6 +6,4 @@
 
 void ppc_mpc8572e_class_init(struct uc_struct *uc, CPUClass *oc, void *data);
 
-void ppc_mpc8572e_register_types(void* opaque);
-
 #endif //UC_MPC8572E_PPC_H
