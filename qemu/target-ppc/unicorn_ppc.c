@@ -5,6 +5,11 @@
 #include "sysemu/cpus.h"
 #include "unicorn.h"
 #include "cpu.h"
+#include "family.h"
+#include "mach/cpu_401.h"
+#include "mach/cpu_405.h"
+#include "mach/cpu_604.h"
+#include "mach/cpu_970.h"
 #include "unicorn_common.h"
 #include "uc_priv.h"
 

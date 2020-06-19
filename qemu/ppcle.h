@@ -3665,7 +3665,6 @@
 #define ppc_hash64_store_hpte ppc_hash64_store_hpte_ppcle
 #define kvmppc_kern_htab kvmppc_kern_htab_ppcle
 #define helper_load_purr helper_load_purr_ppcle
-#define ppc64_970_cpu_family_class_init ppc64_970_cpu_family_class_init_ppcle
 #define helper_divdeu helper_divdeu_ppcle
 #define helper_divde helper_divde_ppcle
 #define helper_cntlzd helper_cntlzd_ppcle
@@ -3675,7 +3674,6 @@
 #define helper_rfid helper_rfid_ppcle
 #define helper_hrfid helper_hrfid_ppcle
 #define helper_td helper_td_ppcle
-#define ppc64_970_cpu_class_init ppc64_970_cpu_class_init_ppcle
 #define init_proc_970 init_proc_970_ppcle
 #define ppc_e500v2_cpu_family_class_init ppc_e500v2_cpu_family_class_init_ppcle
 #define ppc_405_cpu_family_class_init ppc_405_cpu_family_class_init_ppcle
