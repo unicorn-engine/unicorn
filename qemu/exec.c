@@ -700,11 +700,13 @@ static void phys_section_destroy(MemoryRegion *mr)
 
 static void phys_sections_free(PhysPageMap *map)
 {
-    while (map->sections_nb > 0) {
-        MemoryRegionSection *section = &map->sections[--map->sections_nb];
-        phys_section_destroy(section->mr);
+    if(map->sections != NULL){
+        while (map->sections_nb > 0) {
+            MemoryRegionSection *section = &map->sections[--map->sections_nb];
+            phys_section_destroy(section->mr);
+        }
+        g_free(map->sections);
     }
-    g_free(map->sections);
     g_free(map->nodes);
 }
 
@@ -1168,7 +1170,7 @@ static uint16_t dummy_section(PhysPageMap *map, AddressSpace *as,
         false,
         0
     );
-
+    
     return phys_section_add(map, &section);
 }
 
