@@ -5043,7 +5043,6 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
 #ifdef TARGET_X86_64
     s->rex_x = 0;
     s->rex_b = 0;
-    s->uc = env->uc;
     tcg_ctx->x86_64_hregs = 0;
 #endif
     s->rip_offset = 0; /* for relative ip address */
