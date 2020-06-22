@@ -271,8 +271,7 @@ static MemoryRegionSection *phys_page_find(PhysPageEntry lp, hwaddr addr,
 
 bool memory_region_is_unassigned(struct uc_struct* uc, MemoryRegion *mr)
 {
-    return mr != &uc->io_mem_rom && mr != &uc->io_mem_notdirty &&
-        mr != &uc->io_mem_watch;
+    return mr != &uc->io_mem_rom && mr != &uc->io_mem_notdirty;
 }
 
 static MemoryRegionSection *address_space_lookup_region(AddressSpaceDispatch *d,
@@ -1195,8 +1194,6 @@ static void mem_begin(MemoryListener *listener)
     assert(n == PHYS_SECTION_NOTDIRTY);
     n = dummy_section(&d->map, as, &uc->io_mem_rom);
     assert(n == PHYS_SECTION_ROM);
-    // n = dummy_section(&d->map, as, &uc->io_mem_watch);
-    // assert(n == PHYS_SECTION_WATCH);
 
     d->phys_map = ppe;
     d->as = as;

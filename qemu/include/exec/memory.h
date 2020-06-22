@@ -97,6 +97,7 @@ struct MemoryRegion {
     bool terminates;
     bool ram;
     bool readonly; /* For RAM regions */
+    bool enabled;
     int32_t priority;
     bool may_overlap;
     QTAILQ_HEAD(subregions, MemoryRegion) subregions;
