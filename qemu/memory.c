@@ -51,7 +51,7 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
 {
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
-    memory_region_init_ram(uc, ram, "pc.ram", size, perms);
+    memory_region_init_ram(uc, ram, size, perms);
     if (ram->ram_addr == -1)
         // out of memory
         return NULL;
@@ -68,7 +68,7 @@ MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, ui
 {
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
-    memory_region_init_ram_ptr(uc, ram, "pc.ram", size, ptr);
+    memory_region_init_ram_ptr(uc, ram, size, ptr);
     ram->perms = perms;
     if (ram->ram_addr == -1)
         // out of memory
@@ -104,7 +104,6 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
             //shift remainder of array down over deleted pointer
             memmove(&uc->mapped_blocks[i], &uc->mapped_blocks[i + 1], sizeof(MemoryRegion*) * (uc->mapped_block_count - i));
             mr->destructor(mr);
-            g_free((char *)mr->name);
             g_free(mr);
             break;
         }
@@ -121,8 +120,6 @@ int memory_free(struct uc_struct *uc)
         mr->enabled = false;
         memory_region_del_subregion(get_system_memory(uc), mr);
         mr->destructor(mr);
-        /* destroy subregion */
-        g_free((char *)(mr->name));
         g_free(mr);
     }
 
@@ -400,19 +397,6 @@ static void adjust_endianness(MemoryRegion *mr, uint64_t *data, unsigned size)
     }
 }
 
-static void memory_region_oldmmio_read_accessor(MemoryRegion *mr,
-                                                hwaddr addr,
-                                                uint64_t *value,
-                                                unsigned size,
-                                                unsigned shift,
-                                                uint64_t mask)
-{
-    uint64_t tmp;
-
-    tmp = mr->ops->old_mmio.read[ctz32(size)](mr->opaque, addr);
-    *value |= (tmp & mask) << shift;
-}
-
 static void memory_region_read_accessor(MemoryRegion *mr,
                                         hwaddr addr,
                                         uint64_t *value,
@@ -424,19 +408,6 @@ static void memory_region_read_accessor(MemoryRegion *mr,
 
     tmp = mr->ops->read(mr->uc, mr->opaque, addr, size);
     *value |= (tmp & mask) << shift;
-}
-
-static void memory_region_oldmmio_write_accessor(MemoryRegion *mr,
-                                                 hwaddr addr,
-                                                 uint64_t *value,
-                                                 unsigned size,
-                                                 unsigned shift,
-                                                 uint64_t mask)
-{
-    uint64_t tmp;
-
-    tmp = (*value >> shift) & mask;
-    mr->ops->old_mmio.write[ctz32(size)](mr->opaque, addr, tmp);
 }
 
 static void memory_region_write_accessor(MemoryRegion *mr,
@@ -721,7 +692,6 @@ static void memory_region_destructor_ram_from_ptr(MemoryRegion *mr)
 }
 
 void memory_region_init(struct uc_struct *uc, MemoryRegion *mr,
-                        const char *name,
                         uint64_t size)
 {
 
@@ -736,7 +706,6 @@ void memory_region_init(struct uc_struct *uc, MemoryRegion *mr,
     if (size == UINT64_MAX) {
         mr->size = int128_2_64();
     }
-    mr->name = g_strdup(name);
 }
 
 static uint64_t unassigned_mem_read(struct uc_struct* uc, hwaddr addr, unsigned size)
@@ -810,8 +779,8 @@ static uint64_t memory_region_dispatch_read1(MemoryRegion *mr,
                                   mr->ops->impl.max_access_size,
                                   memory_region_read_accessor, mr);
     } else {
-        access_with_adjusted_size(addr, &data, size, 1, 4,
-                                  memory_region_oldmmio_read_accessor, mr);
+        //access_with_adjusted_size(addr, &data, size, 1, 4,
+        //                          memory_region_oldmmio_read_accessor, mr);
     }
 
     return data;
@@ -850,8 +819,8 @@ static bool memory_region_dispatch_write(MemoryRegion *mr,
                                   mr->ops->impl.max_access_size,
                                   memory_region_write_accessor, mr);
     } else {
-        access_with_adjusted_size(addr, &data, size, 1, 4,
-                                  memory_region_oldmmio_write_accessor, mr);
+        //access_with_adjusted_size(addr, &data, size, 1, 4,
+        //                          memory_region_oldmmio_write_accessor, mr);
     }
     return false;
 }
@@ -859,10 +828,9 @@ static bool memory_region_dispatch_write(MemoryRegion *mr,
 void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
                            const MemoryRegionOps *ops,
                            void *opaque,
-                           const char *name,
                            uint64_t size)
 {
-    memory_region_init(uc, mr, name, size);
+    memory_region_init(uc, mr, size);
     mr->ops = ops;
     mr->opaque = opaque;
     mr->terminates = true;
@@ -870,11 +838,10 @@ void memory_region_init_io(struct uc_struct *uc, MemoryRegion *mr,
 }
 
 void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
-                            const char *name,
                             uint64_t size,
                             uint32_t perms)
 {
-    memory_region_init(uc, mr, name, size);
+    memory_region_init(uc, mr, size);
     mr->ram = true;
     if (!(perms & UC_PROT_WRITE)) {
         mr->readonly = true;
@@ -886,11 +853,10 @@ void memory_region_init_ram(struct uc_struct *uc, MemoryRegion *mr,
 }
 
 void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
-                                const char *name,
                                 uint64_t size,
                                 void *ptr)
 {
-    memory_region_init(uc, mr, name, size);
+    memory_region_init(uc, mr, size);
     mr->ram = true;
     mr->terminates = true;
     mr->destructor = memory_region_destructor_ram_from_ptr;
@@ -900,27 +866,9 @@ void memory_region_init_ram_ptr(struct uc_struct *uc, MemoryRegion *mr,
     mr->ram_addr = qemu_ram_alloc_from_ptr(size, ptr, mr);
 }
 
-uint64_t memory_region_size(MemoryRegion *mr)
-{
-    if (int128_eq(mr->size, int128_2_64())) {
-        return UINT64_MAX;
-    }
-    return int128_get64(mr->size);
-}
-
-const char *memory_region_name(const MemoryRegion *mr)
-{
-    return mr->name;
-}
-
 bool memory_region_is_ram(MemoryRegion *mr)
 {
     return mr->ram;
-}
-
-bool memory_region_is_rom(MemoryRegion *mr)
-{
-    return mr->ram && mr->readonly;
 }
 
 void memory_region_set_readonly(MemoryRegion *mr, bool readonly)
@@ -994,16 +942,6 @@ void memory_region_add_subregion(MemoryRegion *mr,
     memory_region_add_subregion_common(mr, offset, subregion);
 }
 
-void memory_region_add_subregion_overlap(MemoryRegion *mr,
-                                         hwaddr offset,
-                                         MemoryRegion *subregion,
-                                         int priority)
-{
-    subregion->may_overlap = true;
-    subregion->priority = priority;
-    memory_region_add_subregion_common(mr, offset, subregion);
-}
-
 void memory_region_del_subregion(MemoryRegion *mr,
                                  MemoryRegion *subregion)
 {
@@ -1012,37 +950,6 @@ void memory_region_del_subregion(MemoryRegion *mr,
     subregion->container = NULL;
     QTAILQ_REMOVE(&mr->subregions, subregion, subregions_link);
     memory_region_transaction_commit(mr->uc);
-}
-
-void memory_region_set_enabled(MemoryRegion *mr, bool enabled)
-{
-    if (enabled == mr->enabled) {
-        return;
-    }
-    memory_region_transaction_begin(mr->uc);
-    mr->enabled = enabled;
-    memory_region_transaction_commit(mr->uc);
-}
-
-static void memory_region_readd_subregion(MemoryRegion *mr)
-{
-    MemoryRegion *container = mr->container;
-
-    if (container) {
-        memory_region_transaction_begin(mr->uc);
-        memory_region_del_subregion(container, mr);
-        mr->container = container;
-        memory_region_update_container_subregions(mr);
-        memory_region_transaction_commit(mr->uc);
-    }
-}
-
-void memory_region_set_address(MemoryRegion *mr, hwaddr addr)
-{
-    if (addr != mr->addr) {
-        mr->addr = addr;
-        memory_region_readd_subregion(mr);
-    }
 }
 
 ram_addr_t memory_region_get_ram_addr(MemoryRegion *mr)
@@ -1182,7 +1089,7 @@ void memory_listener_unregister(struct uc_struct *uc, MemoryListener *listener)
     QTAILQ_REMOVE(&uc->memory_listeners, listener, link);
 }
 
-void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *root, const char *name)
+void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *root)
 {
     memory_region_transaction_begin(uc);
     as->uc = uc;
@@ -1190,7 +1097,6 @@ void address_space_init(struct uc_struct *uc, AddressSpace *as, MemoryRegion *ro
     as->current_map = g_new(FlatView, 1);
     flatview_init(as->current_map);
     QTAILQ_INSERT_TAIL(&uc->address_spaces, as, address_spaces_link);
-    as->name = g_strdup(name ? name : "anonymous");
     address_space_init_dispatch(as);
     memory_region_transaction_commit(uc);
 }
@@ -1214,7 +1120,6 @@ void address_space_destroy(AddressSpace *as)
     }
 
     flatview_unref(as->current_map);
-    g_free(as->name);
 }
 
 bool io_mem_read(MemoryRegion *mr, hwaddr addr, uint64_t *pval, unsigned size)

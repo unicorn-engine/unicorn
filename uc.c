@@ -309,16 +309,12 @@ uc_err uc_close(uc_engine *uc)
     /* memory */
     mr = &uc->io_mem_notdirty;
     mr->destructor(mr);
-    g_free((char *)mr->name);
     mr = &uc->io_mem_unassigned;
     mr->destructor(mr);
-    g_free((char *)mr->name);
     mr = &uc->io_mem_rom;
     mr->destructor(mr);
-    g_free((char *)mr->name);
     mr = uc->system_memory;
     mr->destructor(mr);
-    g_free((char *)mr->name);
 
     // System memory.
     g_free(uc->system_memory);
