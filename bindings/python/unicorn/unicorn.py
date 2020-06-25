@@ -9,7 +9,7 @@ import os.path
 import sys
 import weakref
 
-from . import x86_const, arm64_const, unicorn_const as uc
+from . import x86_const, arm64_const, ppc_const, unicorn_const as uc
 
 if not hasattr(sys.modules[__name__], "__file__"):
     __file__ = inspect.getfile(inspect.currentframe())
@@ -359,6 +359,20 @@ class Uc(object):
                     raise UcError(status)
                 return reg.value
 
+        elif self._arch == uc.UC_ARCH_PPC:
+            if reg_id in range(ppc_const.UC_PPC_REG_FPR_0,ppc_const.UC_PPC_REG_FPR_0 + 32):
+                reg = ctypes.c_double(0)
+                status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
+                if status != uc.UC_ERR_OK:
+                    raise UcError(status)
+                return reg.value
+            elif reg_id in range(ppc_const.UC_PPC_REG_VR_0,ppc_const.UC_PPC_REG_VR_0 + 32):
+                reg = uc_ppc_avr()
+                status = _uc.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
+                if status != uc.UC_ERR_OK:
+                    raise UcError(status)
+                return reg.value
+
         if self._arch == uc.UC_ARCH_ARM64:
             if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
                 reg = uc_arm64_neon128()
@@ -405,9 +419,17 @@ class Uc(object):
                 reg.rid = value[0]
                 reg.value = value[1]
 
-        if self._arch == uc.UC_ARCH_ARM64:
+        elif self._arch == uc.UC_ARCH_ARM64:
             if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
                 reg = uc_arm64_neon128()
+                reg.low_qword = value & 0xffffffffffffffff
+                reg.high_qword = value >> 64
+
+        elif self._arch == uc.UC_ARCH_PPC:
+            if reg_id in range(ppc_const.UC_PPC_REG_FPR_0,ppc_const.UC_PPC_REG_FPR_0 + 32):
+                reg = ctypes.c_double(value)
+            elif reg_id in range(ppc_const.UC_PPC_REG_VR_0,ppc_const.UC_PPC_REG_VR_0 + 32):
+                reg = uc_pp_avr()
                 reg.low_qword = value & 0xffffffffffffffff
                 reg.high_qword = value >> 64
 

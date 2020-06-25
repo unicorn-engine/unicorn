@@ -112,7 +112,7 @@ void helper_store_403_pbr(CPUPPCState *env, uint32_t num, target_ulong value)
 
 void helper_store_40x_dbcr0(CPUPPCState *env, target_ulong val)
 {
-//    store_40x_dbcr0(env, val);			// This performs reset. etc.
+    //store_40x_dbcr0(env, val);
 }
 
 void helper_store_40x_sler(CPUPPCState *env, target_ulong val)
@@ -149,13 +149,4 @@ target_ulong helper_clcs(CPUPPCState *env, uint32_t arg)
         return 0;
         break;
     }
-}
-
-/*****************************************************************************/
-/* Special registers manipulation */
-
-/* GDBstub can read and write MSR... */
-void ppc_store_msr(CPUPPCState *env, target_ulong value)
-{
-    hreg_store_msr(env, value, 0);
 }

@@ -19,8 +19,6 @@
  */
 #include "cpu.h"
 #include "exec/helper-proto.h"
-//#include "sysemu/kvm.h"
-//#include "kvm_ppc.h"
 #include "mmu-hash64.h"
 
 //#define DEBUG_MMU
@@ -80,10 +78,11 @@ static ppc_slb_t *slb_lookup(CPUPPCState *env, target_ulong eaddr)
 
 void dump_slb(FILE *f, fprintf_function cpu_fprintf, CPUPPCState *env)
 {
+    #if 0
     int i;
     uint64_t slbe, slbv;
 
-//    cpu_synchronize_state(CPU(ppc_env_get_cpu(env)));
+    cpu_synchronize_state(CPU(ppc_env_get_cpu(env)));
 
     cpu_fprintf(f, "SLB\tESID\t\t\tVSID\n");
     for (i = 0; i < env->slb_nr; i++) {
@@ -95,6 +94,7 @@ void dump_slb(FILE *f, fprintf_function cpu_fprintf, CPUPPCState *env)
         cpu_fprintf(f, "%d\t0x%016" PRIx64 "\t0x%016" PRIx64 "\n",
                     i, slbe, slbv);
     }
+    #endif 
 }
 
 void helper_slbia(CPUPPCState *env)
@@ -323,6 +323,7 @@ uint64_t ppc_hash64_start_access(PowerPCCPU *cpu, target_ulong pte_index)
     hwaddr pte_offset;
 
     pte_offset = pte_index * HASH_PTE_SIZE_64;
+    #if 0
     if (kvmppc_kern_htab) {
         /*
          * HTAB is controlled by KVM. Fetch the PTEG into a new buffer.
@@ -337,6 +338,7 @@ uint64_t ppc_hash64_start_access(PowerPCCPU *cpu, target_ulong pte_index)
          */
         return 0;
     }
+    #endif
     /*
      * HTAB is controlled by QEMU. Just point to the internally
      * accessible PTEG.
@@ -351,9 +353,11 @@ uint64_t ppc_hash64_start_access(PowerPCCPU *cpu, target_ulong pte_index)
 
 void ppc_hash64_stop_access(uint64_t token)
 {
+    #if 0
     if (kvmppc_kern_htab) {
         return kvmppc_hash64_free_pteg(token);
     }
+    #endif 
 }
 
 static hwaddr ppc_hash64_pteg_search(CPUPPCState *env, hwaddr hash,
@@ -614,10 +618,12 @@ void ppc_hash64_store_hpte(CPUPPCState *env,
 {
     CPUState *cs = CPU(ppc_env_get_cpu(env));
 
+    #if 0
     if (kvmppc_kern_htab) {
         return kvmppc_hash64_write_pte(env, pte_index, pte0, pte1);
     }
-
+    #endif 
+    
     pte_index *= HASH_PTE_SIZE_64;
     if (env->external_htab) {
         stq_p(env->external_htab + pte_index, pte0);

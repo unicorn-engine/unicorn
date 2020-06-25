@@ -178,6 +178,35 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 uc->init_arch = x86_uc_init;
                 break;
 #endif
+#if  defined(UNICORN_HAS_PPC) || defined(UNICORN_HAS_PPC64) || defined(UNICORN_HAS_PPC64LE)
+            case UC_ARCH_PPC:
+                if((mode & ~UC_MODE_PPC_MASK) ||
+                        ((mode & UC_MODE_PPC64) && !(mode & UC_MODE_BIG_ENDIAN) ))
+                {
+                    free(uc);
+                    return UC_ERR_MODE;
+                }
+                if (mode & UC_MODE_BIG_ENDIAN) {
+#ifdef UNICORN_HAS_PPC
+                    if(mode & UC_MODE_PPC32)
+                        uc->init_arch = ppc_uc_init;
+#endif
+#ifdef UNICORN_HAS_PPC64
+                    if(mode & UC_MODE_PPC64)
+                        uc->init_arch = ppc64_uc_init;
+#endif
+                }else {
+#ifdef UNICORN_HAS_PPCLE
+                    if(mode & UC_MODE_PPC32)
+                        uc->init_arch = ppcle_uc_init;
+#endif
+#ifdef UNICORN_HAS_PPC64LE
+                    if(mode & UC_MODE_PPC64)
+                        uc->init_arch = ppc64le_uc_init;
+#endif
+                }
+                break;
+#endif
 #ifdef UNICORN_HAS_ARM
             case UC_ARCH_ARM:
                 if ((mode & ~UC_MODE_ARM_MASK)) {
@@ -251,21 +280,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                     uc->init_arch = sparc_uc_init;
                 break;
 #endif
-#ifdef UNICORN_HAS_PPC
-            case UC_ARCH_PPC:
-/*                if ((mode & ~UC_MODE_PPC_MASK) ||
-                        !(mode & UC_MODE_BIG_ENDIAN) ||
-                        !(mode & (UC_MODE_PPC32|UC_MODE_PPC64))) {
-                    free(uc);
-                    return UC_ERR_MODE;
-                }*/
-                if (mode & UC_MODE_PPC64)
-                    uc->init_arch = /*ppc64_uc_init*/ppc_uc_init;		// No PPC64 yet!
-                else
-                    uc->init_arch = ppc_uc_init;
-                break;
-#endif
-
         }
 
         if (uc->init_arch == NULL) {
@@ -593,6 +607,11 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
             }
             break;
 #endif
+#ifdef UNICORN_HAS_PPC
+        case UC_ARCH_PPC:
+            uc_reg_write(uc, UC_PPC_REG_NIP, &begin);
+            break;
+#endif
 #ifdef UNICORN_HAS_ARM
         case UC_ARCH_ARM:
             uc_reg_write(uc, UC_ARM_REG_R15, &begin);
@@ -613,11 +632,6 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
         case UC_ARCH_SPARC:
             // TODO: Sparc/Sparc64
             uc_reg_write(uc, UC_SPARC_REG_PC, &begin);
-            break;
-#endif
-#ifdef UNICORN_HAS_PPC
-        case UC_ARCH_PPC:
-            uc_reg_write(uc, UC_PPC_REG_PC, &begin);
             break;
 #endif
     }

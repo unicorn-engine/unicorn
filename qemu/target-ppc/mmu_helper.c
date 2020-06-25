@@ -18,8 +18,6 @@
  */
 #include "cpu.h"
 #include "exec/helper-proto.h"
-//#include "sysemu/kvm.h"
-//#include "kvm_ppc.h"
 #include "mmu-hash64.h"
 #include "mmu-hash32.h"
 #include "exec/cpu_ldst.h"
@@ -65,6 +63,8 @@ struct mmu_ctx_t {
     int key;                       /* Access key                */
     int nx;                        /* Non-execute area          */
 };
+
+#define DEFAULT_MMU_CTX_T { .raddr = -1ULL, .eaddr = -1ULL, .prot = -1, .hash = {-1, -1}, .ptem = 0, .key = -1, .nx = -1 }
 
 /* Common routines used by software and hardware TLBs emulation */
 static inline int pte_is_valid(target_ulong pte0)
@@ -1036,7 +1036,6 @@ static int mmubooke206_get_physical_address(CPUPPCState *env, mmu_ctx_t *ctx,
 
     for (i = 0; i < BOOKE206_MAX_TLBN; i++) {
         int ways = booke206_tlb_ways(env, i);
-
         for (j = 0; j < ways; j++) {
             tlb = booke206_get_tlbm(env, i, address, j);
             if (!tlb) {
@@ -1063,244 +1062,6 @@ found_tlb:
     }
 
     return ret;
-}
-
-static const char *book3e_tsize_to_str[32] = {
-    "1K", "2K", "4K", "8K", "16K", "32K", "64K", "128K", "256K", "512K",
-    "1M", "2M", "4M", "8M", "16M", "32M", "64M", "128M", "256M", "512M",
-    "1G", "2G", "4G", "8G", "16G", "32G", "64G", "128G", "256G", "512G",
-    "1T", "2T"
-};
-
-static void mmubooke_dump_mmu(FILE *f, fprintf_function cpu_fprintf,
-                                 CPUPPCState *env)
-{
-    ppcemb_tlb_t *entry;
-    int i;
-
-/*    if (kvm_enabled() && !env->kvm_sw_tlb) {
-        cpu_fprintf(f, "Cannot access KVM TLB\n");
-        return;
-    }*/
-
-    cpu_fprintf(f, "\nTLB:\n");
-    cpu_fprintf(f, "Effective          Physical           Size PID   Prot     "
-                "Attr\n");
-
-    entry = &env->tlb.tlbe[0];
-    for (i = 0; i < env->nb_tlb; i++, entry++) {
-        hwaddr ea, pa;
-        target_ulong mask;
-        uint64_t size = (uint64_t)entry->size;
-        char size_buf[20];
-
-        /* Check valid flag */
-        if (!(entry->prot & PAGE_VALID)) {
-            continue;
-        }
-
-        mask = ~(entry->size - 1);
-        ea = entry->EPN & mask;
-        pa = entry->RPN & mask;
-        /* Extend the physical address to 36 bits */
-        pa |= (hwaddr)(entry->RPN & 0xF) << 32;
-        size /= 1024;
-        if (size >= 1024) {
-            snprintf(size_buf, sizeof(size_buf), "%3" PRId64 "M", size / 1024);
-        } else {
-            snprintf(size_buf, sizeof(size_buf), "%3" PRId64 "k", size);
-        }
-        cpu_fprintf(f, "0x%016" PRIx64 " 0x%016" PRIx64 " %s %-5u %08x %08x\n",
-                    (uint64_t)ea, (uint64_t)pa, size_buf, (uint32_t)entry->PID,
-                    entry->prot, entry->attr);
-    }
-
-}
-
-static void mmubooke206_dump_one_tlb(FILE *f, fprintf_function cpu_fprintf,
-                                     CPUPPCState *env, int tlbn, int offset,
-                                     int tlbsize)
-{
-    ppcmas_tlb_t *entry;
-    int i;
-
-    cpu_fprintf(f, "\nTLB%d:\n", tlbn);
-    cpu_fprintf(f, "Effective          Physical           Size TID   TS SRWX"
-                " URWX WIMGE U0123\n");
-
-    entry = &env->tlb.tlbm[offset];
-    for (i = 0; i < tlbsize; i++, entry++) {
-        hwaddr ea, pa, size;
-        int tsize;
-
-        if (!(entry->mas1 & MAS1_VALID)) {
-            continue;
-        }
-
-        tsize = (entry->mas1 & MAS1_TSIZE_MASK) >> MAS1_TSIZE_SHIFT;
-        size = 1024ULL << tsize;
-        ea = entry->mas2 & ~(size - 1);
-        pa = entry->mas7_3 & ~(size - 1);
-
-        cpu_fprintf(f, "0x%016" PRIx64 " 0x%016" PRIx64 " %4s %-5u %1u  S%c%c%c"
-                    "U%c%c%c %c%c%c%c%c U%c%c%c%c\n",
-                    (uint64_t)ea, (uint64_t)pa,
-                    book3e_tsize_to_str[tsize],
-                    (entry->mas1 & MAS1_TID_MASK) >> MAS1_TID_SHIFT,
-                    (entry->mas1 & MAS1_TS) >> MAS1_TS_SHIFT,
-                    entry->mas7_3 & MAS3_SR ? 'R' : '-',
-                    entry->mas7_3 & MAS3_SW ? 'W' : '-',
-                    entry->mas7_3 & MAS3_SX ? 'X' : '-',
-                    entry->mas7_3 & MAS3_UR ? 'R' : '-',
-                    entry->mas7_3 & MAS3_UW ? 'W' : '-',
-                    entry->mas7_3 & MAS3_UX ? 'X' : '-',
-                    entry->mas2 & MAS2_W ? 'W' : '-',
-                    entry->mas2 & MAS2_I ? 'I' : '-',
-                    entry->mas2 & MAS2_M ? 'M' : '-',
-                    entry->mas2 & MAS2_G ? 'G' : '-',
-                    entry->mas2 & MAS2_E ? 'E' : '-',
-                    entry->mas7_3 & MAS3_U0 ? '0' : '-',
-                    entry->mas7_3 & MAS3_U1 ? '1' : '-',
-                    entry->mas7_3 & MAS3_U2 ? '2' : '-',
-                    entry->mas7_3 & MAS3_U3 ? '3' : '-');
-    }
-}
-
-static void mmubooke206_dump_mmu(FILE *f, fprintf_function cpu_fprintf,
-                                 CPUPPCState *env)
-{
-    int offset = 0;
-    int i;
-
-/*    if (kvm_enabled() && !env->kvm_sw_tlb) {
-        cpu_fprintf(f, "Cannot access KVM TLB\n");
-        return;
-    }*/
-
-    for (i = 0; i < BOOKE206_MAX_TLBN; i++) {
-        int size = booke206_tlb_size(env, i);
-
-        if (size == 0) {
-            continue;
-        }
-
-        mmubooke206_dump_one_tlb(f, cpu_fprintf, env, i, offset, size);
-        offset += size;
-    }
-}
-
-static void mmu6xx_dump_BATs(FILE *f, fprintf_function cpu_fprintf,
-                             CPUPPCState *env, int type)
-{
-    target_ulong *BATlt, *BATut, *BATu, *BATl;
-    target_ulong BEPIl, BEPIu, bl;
-    int i;
-
-    switch (type) {
-    case ACCESS_CODE:
-        BATlt = env->IBAT[1];
-        BATut = env->IBAT[0];
-        break;
-    default:
-        BATlt = env->DBAT[1];
-        BATut = env->DBAT[0];
-        break;
-    }
-
-    for (i = 0; i < env->nb_BATs; i++) {
-        BATu = &BATut[i];
-        BATl = &BATlt[i];
-        BEPIu = *BATu & 0xF0000000;
-        BEPIl = *BATu & 0x0FFE0000;
-        bl = (*BATu & 0x00001FFC) << 15;
-        cpu_fprintf(f, "%s BAT%d BATu " TARGET_FMT_lx
-                    " BATl " TARGET_FMT_lx "\n\t" TARGET_FMT_lx " "
-                    TARGET_FMT_lx " " TARGET_FMT_lx "\n",
-                    type == ACCESS_CODE ? "code" : "data", i,
-                    *BATu, *BATl, BEPIu, BEPIl, bl);
-    }
-}
-
-static void mmu6xx_dump_mmu(FILE *f, fprintf_function cpu_fprintf,
-                            CPUPPCState *env)
-{
-    ppc6xx_tlb_t *tlb;
-    target_ulong sr;
-    int type, way, entry, i;
-
-    cpu_fprintf(f, "HTAB base = 0x%"HWADDR_PRIx"\n", env->htab_base);
-    cpu_fprintf(f, "HTAB mask = 0x%"HWADDR_PRIx"\n", env->htab_mask);
-
-    cpu_fprintf(f, "\nSegment registers:\n");
-    for (i = 0; i < 32; i++) {
-        sr = env->sr[i];
-        if (sr & 0x80000000) {
-            cpu_fprintf(f, "%02d T=%d Ks=%d Kp=%d BUID=0x%03x "
-                        "CNTLR_SPEC=0x%05x\n", i,
-                        sr & 0x80000000 ? 1 : 0, sr & 0x40000000 ? 1 : 0,
-                        sr & 0x20000000 ? 1 : 0, (uint32_t)((sr >> 20) & 0x1FF),
-                        (uint32_t)(sr & 0xFFFFF));
-        } else {
-            cpu_fprintf(f, "%02d T=%d Ks=%d Kp=%d N=%d VSID=0x%06x\n", i,
-                        sr & 0x80000000 ? 1 : 0, sr & 0x40000000 ? 1 : 0,
-                        sr & 0x20000000 ? 1 : 0, sr & 0x10000000 ? 1 : 0,
-                        (uint32_t)(sr & 0x00FFFFFF));
-        }
-    }
-
-    cpu_fprintf(f, "\nBATs:\n");
-    mmu6xx_dump_BATs(f, cpu_fprintf, env, ACCESS_INT);
-    mmu6xx_dump_BATs(f, cpu_fprintf, env, ACCESS_CODE);
-
-    if (env->id_tlbs != 1) {
-        cpu_fprintf(f, "ERROR: 6xx MMU should have separated TLB"
-                    " for code and data\n");
-    }
-
-    cpu_fprintf(f, "\nTLBs                       [EPN    EPN + SIZE]\n");
-
-    for (type = 0; type < 2; type++) {
-        for (way = 0; way < env->nb_ways; way++) {
-            for (entry = env->nb_tlb * type + env->tlb_per_way * way;
-                 entry < (env->nb_tlb * type + env->tlb_per_way * (way + 1));
-                 entry++) {
-
-                tlb = &env->tlb.tlb6[entry];
-                cpu_fprintf(f, "%s TLB %02d/%02d way:%d %s ["
-                            TARGET_FMT_lx " " TARGET_FMT_lx "]\n",
-                            type ? "code" : "data", entry % env->nb_tlb,
-                            env->nb_tlb, way,
-                            pte_is_valid(tlb->pte0) ? "valid" : "inval",
-                            tlb->EPN, tlb->EPN + TARGET_PAGE_SIZE);
-            }
-        }
-    }
-}
-
-void dump_mmu(FILE *f, fprintf_function cpu_fprintf, CPUPPCState *env)
-{
-    switch (env->mmu_model) {
-    case POWERPC_MMU_BOOKE:
-        mmubooke_dump_mmu(f, cpu_fprintf, env);
-        break;
-    case POWERPC_MMU_BOOKE206:
-        mmubooke206_dump_mmu(f, cpu_fprintf, env);
-        break;
-    case POWERPC_MMU_SOFT_6xx:
-    case POWERPC_MMU_SOFT_74xx:
-        mmu6xx_dump_mmu(f, cpu_fprintf, env);
-        break;
-#if defined(TARGET_PPC64)
-    case POWERPC_MMU_64B:
-    case POWERPC_MMU_2_06:
-    case POWERPC_MMU_2_06a:
-    case POWERPC_MMU_2_06d:
-        dump_slb(f, cpu_fprintf, env);
-        break;
-#endif
-    default:
-        qemu_log_mask(LOG_UNIMP, "%s: unimplemented\n", __func__);
-    }
 }
 
 static inline int check_physical(CPUPPCState *env, mmu_ctx_t *ctx,
@@ -1366,6 +1127,7 @@ static int get_physical_address(CPUPPCState *env, mmu_ctx_t *ctx,
     qemu_log("%s\n", __func__);
 #endif
 
+    
     switch (env->mmu_model) {
     case POWERPC_MMU_SOFT_6xx:
     case POWERPC_MMU_SOFT_74xx:
@@ -1400,6 +1162,9 @@ static int get_physical_address(CPUPPCState *env, mmu_ctx_t *ctx,
         ret = mmubooke206_get_physical_address(env, ctx, eaddr, rw,
                                                access_type);
         break;
+    case POWERPC_MMU_32B:
+        ret = ppc_hash32_get_phys_page_debug(env, eaddr);
+        break;
     case POWERPC_MMU_MPC8xx:
         /* XXX: TODO */
         cpu_abort(CPU(cpu), "MPC8xx MMU model is not implemented\n");
@@ -1409,7 +1174,7 @@ static int get_physical_address(CPUPPCState *env, mmu_ctx_t *ctx,
             ret = check_physical(env, ctx, eaddr, rw);
         } else {
             cpu_abort(CPU(cpu), "PowerPC in real mode do not do any translation\n");
-	        return -1;
+            return -1;
         }
         break;
     default:
@@ -1422,44 +1187,6 @@ static int get_physical_address(CPUPPCState *env, mmu_ctx_t *ctx,
 #endif
 
     return ret;
-}
-
-hwaddr ppc_cpu_get_phys_page_debug(CPUState *cs, vaddr addr)
-{
-    PowerPCCPU *cpu = POWERPC_CPU(cs->uc, cs);
-    CPUPPCState *env = &cpu->env;
-    mmu_ctx_t ctx;
-
-    switch (env->mmu_model) {
-#if defined(TARGET_PPC64)
-    case POWERPC_MMU_64B:
-    case POWERPC_MMU_2_06:
-    case POWERPC_MMU_2_06a:
-    case POWERPC_MMU_2_06d:
-        return ppc_hash64_get_phys_page_debug(env, addr);
-#endif
-
-    case POWERPC_MMU_32B:
-    case POWERPC_MMU_601:
-        return ppc_hash32_get_phys_page_debug(env, addr);
-
-    default:
-        ;
-    }
-
-    if (unlikely(get_physical_address(env, &ctx, addr, 0, ACCESS_INT) != 0)) {
-
-        /* Some MMUs have separate TLBs for code and data. If we only try an
-         * ACCESS_INT, we may not be able to read instructions mapped by code
-         * TLBs, so we also try a ACCESS_CODE.
-         */
-        if (unlikely(get_physical_address(env, &ctx, addr, 0,
-                                          ACCESS_CODE) != 0)) {
-            return -1;
-        }
-    }
-
-    return ctx.raddr & TARGET_PAGE_MASK;
 }
 
 static void booke206_update_mas_tlb_miss(CPUPPCState *env, target_ulong address,
@@ -1507,7 +1234,7 @@ static int cpu_ppc_handle_mmu_fault(CPUPPCState *env, target_ulong address,
                                     int rw, int mmu_idx)
 {
     CPUState *cs = CPU(ppc_env_get_cpu(env));
-    mmu_ctx_t ctx;
+    mmu_ctx_t ctx = DEFAULT_MMU_CTX_T;
     int access_type;
     int ret = 0;
 
@@ -1950,7 +1677,7 @@ void ppc_tlb_invalidate_all(CPUPPCState *env)
     }
 }
 
-void ppc_tlb_invalidate_one(CPUPPCState *env, target_ulong addr)
+static void ppc_tlb_invalidate_one(CPUPPCState *env, target_ulong addr)
 {
 #if !defined(FLUSH_ALL_TLBS)
     PowerPCCPU *cpu = ppc_env_get_cpu(env);
@@ -2201,7 +1928,7 @@ void helper_74xx_tlbi(CPUPPCState *env, target_ulong EPN)
 
 target_ulong helper_rac(CPUPPCState *env, target_ulong addr)
 {
-    mmu_ctx_t ctx;
+    mmu_ctx_t ctx = DEFAULT_MMU_CTX_T;
     int nb_BATs;
     target_ulong ret = 0;
 
@@ -2917,9 +2644,10 @@ void helper_booke206_tlbflush(CPUPPCState *env, target_ulong type)
 void tlb_fill(CPUState *cs, target_ulong addr, int is_write, int mmu_idx,
               uintptr_t retaddr)
 {
-    PowerPCCPU *cpu = POWERPC_CPU(cs->uc, cs);
-    PowerPCCPUClass *pcc = POWERPC_CPU_GET_CLASS(cs->uc, cs);
-    CPUPPCState *env = &cpu->env;
+    PowerPCCPU *cpu = POWERPC_CPU(cs->uc,cs);
+    PowerPCCPUClass *pcc = POWERPC_CPU_GET_CLASS(cs->uc,cs);
+
+    CPUPPCState *env = cs->env_ptr;
     int ret;
 
     if (pcc->handle_mmu_fault) {
@@ -2927,6 +2655,7 @@ void tlb_fill(CPUState *cs, target_ulong addr, int is_write, int mmu_idx,
     } else {
         ret = cpu_ppc_handle_mmu_fault(env, addr, is_write, mmu_idx);
     }
+
     if (unlikely(ret != 0)) {
         if (likely(retaddr)) {
             /* now we have a real cpu fault */

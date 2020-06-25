@@ -97,7 +97,13 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)
 
             /* if an exception is pending, we execute it here */
             if (cpu->exception_index >= 0) {
-                //printf(">>> GOT INTERRUPT. exception idx = %x\n", cpu->exception_index);
+                if (uc->stop_interrupt && uc->stop_interrupt(cpu->exception_index)) {
+                    cpu->halted = 1;
+                    uc->invalid_error = UC_ERR_INSN_INVALID;
+                    ret = EXCP_HLT;
+                    break;
+                }
+
                 if (cpu->exception_index >= EXCP_INTERRUPT) {
                     /* exit request from the cpu execution loop */
                     ret = cpu->exception_index;
@@ -154,6 +160,7 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)
                     // Unicorn: If un-catched interrupt, stop executions.
                     if (!catched) {
                         cpu->halted = 1;
+                        uc->invalid_error = UC_ERR_EXCEPTION;
                         ret = EXCP_HLT;
                         break;
                     }

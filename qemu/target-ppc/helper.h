@@ -58,6 +58,7 @@ DEF_HELPER_3(compute_fprf, i32, env, i64, i32)
 DEF_HELPER_3(store_fpscr, void, env, i64, i32)
 DEF_HELPER_2(fpscr_clrbit, void, env, i32)
 DEF_HELPER_2(fpscr_setbit, void, env, i32)
+
 DEF_HELPER_2(float64_to_float32, i32, env, i64)
 DEF_HELPER_2(float32_to_float64, i64, env, i32)
 

@@ -23,7 +23,7 @@ package unicorn;
 
 import java.util.*;
 
-public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, SparcConst, MipsConst, X86Const {
+public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, SparcConst, MipsConst, PPCConst, X86Const {
 
    private long eng;
    private int arch;

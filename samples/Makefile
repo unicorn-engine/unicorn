@@ -10,12 +10,11 @@ BIN_EXT =
 AR_EXT = a
 
 # Verbose output?
-V ?= 1
+V ?= 0
 
 CFLAGS += -Wall -Werror -I../include
 
 LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm
-#LDFLAGS += -ggdb
 ifeq ($(UNAME_S), Linux)
 LDFLAGS += -lrt
 endif

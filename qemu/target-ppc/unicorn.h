@@ -10,10 +10,13 @@ int ppc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
 
 void ppc_reg_reset(struct uc_struct *uc);
 
+__attribute__ ((visibility ("default")))
 void ppc_uc_init(struct uc_struct* uc);
+void ppcle_uc_init(struct uc_struct* uc);
 void ppc64_uc_init(struct uc_struct* uc);
+void ppc64le_uc_init(struct uc_struct* uc);
 
-extern const int PPC_REGS_STORAGE_SIZE_ppc;
-extern const int PPC64_REGS_STORAGE_SIZE_ppc64;
+extern const int PPC_REGS_STORAGE_SIZE;
+extern const int PPC64_REGS_STORAGE_SIZE;
 
 #endif

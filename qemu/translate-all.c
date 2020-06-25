@@ -623,7 +623,11 @@ void free_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
     if (tcg_ctx->code_gen_buffer)
+    {
         munmap(tcg_ctx->code_gen_buffer, tcg_ctx->code_gen_buffer_size);
+        tcg_ctx->code_gen_buffer = NULL;
+        tcg_ctx->code_gen_buffer_size = 0;
+    }
 }
 
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)

@@ -19,7 +19,7 @@
 				|UC_MODE_ARM926|UC_MODE_ARM946|UC_MODE_ARM1176|UC_MODE_BIG_ENDIAN)
 #define UC_MODE_MIPS_MASK   (UC_MODE_MIPS32|UC_MODE_MIPS64|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN)
 #define UC_MODE_X86_MASK    (UC_MODE_16|UC_MODE_32|UC_MODE_64|UC_MODE_LITTLE_ENDIAN)
-#define UC_MODE_PPC_MASK    (UC_MODE_PPC64|UC_MODE_BIG_ENDIAN)
+#define UC_MODE_PPC_MASK    (UC_MODE_PPC32|UC_MODE_PPC64|UC_MODE_BIG_ENDIAN|UC_MODE_LITTLE_ENDIAN)
 #define UC_MODE_SPARC_MASK  (UC_MODE_SPARC32|UC_MODE_SPARC64|UC_MODE_BIG_ENDIAN)
 #define UC_MODE_M68K_MASK   (UC_MODE_BIG_ENDIAN)
 
@@ -141,8 +141,6 @@ static inline bool _hook_exists_bounded(struct list_item *cur, uint64_t addr)
 //relloc increment, KEEP THIS A POWER OF 2!
 #define MEM_BLOCK_INCR 32
 
-typedef struct TCGContext TCGContext;
-
 struct uc_struct {
     uc_arch arch;
     uc_mode mode;
@@ -186,7 +184,7 @@ struct uc_struct {
     void **l1_map;  // qemu/translate-all.c
     size_t l1_map_size;
     /* code generation context */
-    TCGContext *tcg_ctx;
+    void *tcg_ctx;  // for "TCGContext tcg_ctx" in qemu/translate-all.c
     /* memory.c */
     QTAILQ_HEAD(memory_listeners, MemoryListener) memory_listeners;
     QTAILQ_HEAD(, AddressSpace) address_spaces;

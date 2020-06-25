@@ -17,19 +17,28 @@
  * License along with this library; if not, see
  * <http://www.gnu.org/licenses/lgpl-2.1.html>
  */
-/* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
-
 #ifndef QEMU_PPC_CPU_QOM_H
 #define QEMU_PPC_CPU_QOM_H
 
 #include "qom/cpu.h"
 #include "cpu.h"
 
+#ifdef TARGET_PPC64
+#define TYPE_POWERPC_CPU "powerpc64-cpu"
+#elif defined(TARGET_PPCEMB)
+#define TYPE_POWERPC_CPU "embedded-powerpc-cpu"
+#else
+#define TYPE_POWERPC_CPU "powerpc-cpu"
+#endif
+
+#define POWERPC_CPU_CLASS(uc,klass) ((PowerPCCPUClass *)klass)
+#define POWERPC_CPU(uc,obj) ((PowerPCCPU *)obj)
+#define POWERPC_CPU_GET_CLASS(uc,obj) (&((PowerPCCPU *)obj)->cc)
+
 typedef struct PowerPCCPU PowerPCCPU;
 
 /**
  * PowerPCCPUClass:
- * @parent_realize: The parent class' realize handler.
  * @parent_reset: The parent class' reset handler.
  *
  * A PowerPC CPU model.
@@ -84,13 +93,8 @@ struct PowerPCCPU {
     int cpu_dt_id;
     uint32_t max_compat;
     uint32_t cpu_version;
-
     struct PowerPCCPUClass cc;
 };
-
-#define POWERPC_CPU(uc, obj) ((PowerPCCPU *)obj)
-#define POWERPC_CPU_CLASS(uc, klass) ((PowerPCCPUClass *)klass)
-#define POWERPC_CPU_GET_CLASS(uc, obj) (&((PowerPCCPU *)obj)->cc)
 
 static inline PowerPCCPU *ppc_env_get_cpu(CPUPPCState *env)
 {
@@ -101,19 +105,39 @@ static inline PowerPCCPU *ppc_env_get_cpu(CPUPPCState *env)
 
 #define ENV_OFFSET offsetof(PowerPCCPU, env)
 
-PowerPCCPUClass *ppc_cpu_class_by_pvr(struct uc_struct *uc, uint32_t pvr);
-PowerPCCPUClass *ppc_cpu_class_by_pvr_mask(struct uc_struct *uc, uint32_t pvr);
+PowerPCCPUClass *ppc_cpu_class_by_pvr(uint32_t pvr);
+PowerPCCPUClass *ppc_cpu_class_by_pvr_mask(uint32_t pvr);
 
 void ppc_cpu_do_interrupt(CPUState *cpu);
 bool ppc_cpu_exec_interrupt(CPUState *cpu, int int_req);
-hwaddr ppc_cpu_get_phys_page_debug(CPUState *cpu, vaddr addr);
+void ppc_cpu_dump_statistics(CPUState *cpu, FILE *f,
+                             fprintf_function cpu_fprintf, int flags);
+int ppc_cpu_gdb_read_register(CPUState *cpu, uint8_t *buf, int reg);
+int ppc_cpu_gdb_read_register_apple(CPUState *cpu, uint8_t *buf, int reg);
+int ppc_cpu_gdb_write_register(CPUState *cpu, uint8_t *buf, int reg);
+int ppc_cpu_gdb_write_register_apple(CPUState *cpu, uint8_t *buf, int reg);
+int ppc64_cpu_write_elf64_qemunote(WriteCoreDumpFunction f,
+                                   CPUState *cpu, void *opaque);
+int ppc64_cpu_write_elf64_note(WriteCoreDumpFunction f, CPUState *cs,
+                               int cpuid, void *opaque);
 #ifndef CONFIG_USER_ONLY
-void ppc_cpu_do_system_reset(CPUState *cs);
+extern const struct VMStateDescription vmstate_ppc_cpu;
 
 typedef struct PPCTimebase {
     uint64_t guest_timebase;
     int64_t time_of_the_day_ns;
 } PPCTimebase;
+
+extern const struct VMStateDescription vmstate_ppc_timebase;
+
+#define VMSTATE_PPC_TIMEBASE_V(_field, _state, _version) {            \
+    .name       = (stringify(_field)),                                \
+    .version_id = (_version),                                         \
+    .size       = sizeof(PPCTimebase),                                \
+    .vmsd       = &vmstate_ppc_timebase,                              \
+    .flags      = VMS_STRUCT,                                         \
+    .offset     = vmstate_offset_value(_state, _field, PPCTimebase),  \
+}
 #endif
 
 #endif

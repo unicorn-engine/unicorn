@@ -1455,18 +1455,3 @@ gchar** g_strsplit (const gchar *string,
 
   return str_array;
 }
-
-GSList *g_slist_find_custom (GSList *list, gconstpointer data, GCompareFunc func)
-{
-	if (!func)
-		return NULL;
-	
-	while (list) {
-		if (func (list->data, data) == 0)
-			return list;
-		
-		list = list->next;
-	}
-	
-	return NULL;
-}
