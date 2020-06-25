@@ -201,8 +201,6 @@ struct uc_struct {
     size_t emu_counter; // current counter of uc_emu_start()
     size_t emu_count; // save counter of uc_emu_start()
 
-    uint64_t block_addr;    // save the last block address we hooked
-
     int size_recur_mem; // size for mem access when in a recursive call
 
     bool init_tcg;      // already initialized local TCGv variables?
