@@ -1008,16 +1008,7 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
         }
     }
 
-    // DFLAG enum: tcg.h, case here to int
-    if (env->hflags & HF_CS64_MASK) {
-        cpu_stl_data(env, ptr, env->fpuc);
-        cpu_stl_data(env, ptr + 4, fpus);
-        cpu_stl_data(env, ptr + 8, fptag);
-        cpu_stl_data(env, ptr + 12, (uint32_t)env->fpip); /* fpip */
-        cpu_stl_data(env, ptr + 20, 0); /* fpcs */
-        cpu_stl_data(env, ptr + 24, 0); /* fpoo */
-        cpu_stl_data(env, ptr + 28, 0); /* fpos */
-    } else if (data32) {
+    if (data32) {
         /* 32 bit */
         cpu_stl_data(env, ptr, env->fpuc);
         cpu_stl_data(env, ptr + 4, fpus);
