@@ -37,7 +37,7 @@ static uint64_t mips_mem_redirect(uint64_t address)
 
 static void mips_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    ((CPUMIPSState *)uc->current_cpu->env_ptr)->active_tc.PC = address;
+    ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC = address;
 }
 
 

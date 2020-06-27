@@ -46,10 +46,10 @@ void cpu_resume(CPUState *cpu)
 
 void cpu_stop_current(struct uc_struct *uc)
 {
-    if (uc->current_cpu) {
-        uc->current_cpu->stop = false;
-        uc->current_cpu->stopped = true;
-        cpu_exit(uc->current_cpu);
+    if (uc->cpu) {
+        uc->cpu->stop = false;
+        uc->cpu->stopped = true;
+        cpu_exit(uc->cpu);
     }
 }
 

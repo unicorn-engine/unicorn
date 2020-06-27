@@ -26,7 +26,7 @@ const int X86_REGS_STORAGE_SIZE = offsetof(CPUX86State, tlb_table);
 
 static void x86_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    ((CPUX86State *)uc->current_cpu->env_ptr)->eip = address;
+    ((CPUX86State *)uc->cpu->env_ptr)->eip = address;
 }
 
 static void x86_release(void *ctx)

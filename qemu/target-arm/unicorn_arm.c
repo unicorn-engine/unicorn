@@ -14,8 +14,8 @@ const int ARM_REGS_STORAGE_SIZE = offsetof(CPUARMState, tlb_table);
 
 static void arm_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    ((CPUARMState *)uc->current_cpu->env_ptr)->pc = address;
-    ((CPUARMState *)uc->current_cpu->env_ptr)->regs[15] = address;
+    ((CPUARMState *)uc->cpu->env_ptr)->pc = address;
+    ((CPUARMState *)uc->cpu->env_ptr)->regs[15] = address;
 }
 
 static void arm_release(void* ctx)

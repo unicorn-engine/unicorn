@@ -1197,7 +1197,7 @@ void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, t
                                    int is_cpu_write_access)
 {
     TranslationBlock *tb, *tb_next, *saved_tb;
-    CPUState *cpu = uc->current_cpu;
+    CPUState *cpu = uc->cpu;
 #if defined(TARGET_HAS_PRECISE_SMC)
     CPUArchState *env = NULL;
 #endif
@@ -1320,7 +1320,7 @@ static void tb_invalidate_phys_page(struct uc_struct *uc, tb_page_addr_t addr,
     int n;
 #ifdef TARGET_HAS_PRECISE_SMC
     TranslationBlock *current_tb = NULL;
-    CPUState *cpu = uc->current_cpu;
+    CPUState *cpu = uc->cpu;
     CPUArchState *env = NULL;
     int current_tb_modified = 0;
     target_ulong current_pc = 0;

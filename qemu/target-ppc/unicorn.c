@@ -38,7 +38,7 @@ static uint64_t ppc_mem_redirect(uint64_t address)
 
 static void ppc_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    ((CPUPPCState *)uc->current_cpu->env_ptr)->nip = address;
+    ((CPUPPCState *)uc->cpu->env_ptr)->nip = address;
 }
 
 

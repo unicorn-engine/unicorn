@@ -23,8 +23,8 @@ static bool sparc_stop_interrupt(int intno)
 
 static void sparc_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    ((CPUSPARCState *)uc->current_cpu->env_ptr)->pc = address;
-    ((CPUSPARCState *)uc->current_cpu->env_ptr)->npc = address + 4;
+    ((CPUSPARCState *)uc->cpu->env_ptr)->pc = address;
+    ((CPUSPARCState *)uc->cpu->env_ptr)->npc = address + 4;
 }
 
 static void sparc_release(void *ctx)

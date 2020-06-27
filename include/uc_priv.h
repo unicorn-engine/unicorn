@@ -169,8 +169,7 @@ struct uc_struct {
     uc_readonly_mem_t readonly_mem;
     uc_mem_redirect_t mem_redirect;
     uc_cpus_init cpus_init;
-    // TODO: remove current_cpu, as it's a flag for something else ("cpu running"?)
-    CPUState *cpu, *current_cpu;
+    CPUState *cpu;
 
     uc_insn_hook_validate insn_hook_validate;
 

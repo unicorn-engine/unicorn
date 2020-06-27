@@ -677,9 +677,9 @@ uc_err uc_emu_stop(uc_engine *uc)
 
     uc->stop_request = true;
     // TODO: make this atomic somehow?
-    if (uc->current_cpu) {
+    if (uc->cpu) {
         // exit the current TB
-        cpu_exit(uc->current_cpu);
+        cpu_exit(uc->cpu);
     }
 
     return UC_ERR_OK;

@@ -58,8 +58,8 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
 
     memory_region_add_subregion(get_system_memory(uc), begin, ram);
 
-    if (uc->current_cpu)
-        tlb_flush(uc->current_cpu, 1);
+    if (uc->cpu)
+        tlb_flush(uc->cpu, 1);
 
     return ram;
 }
@@ -76,8 +76,8 @@ MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, ui
 
     memory_region_add_subregion(get_system_memory(uc), begin, ram);
 
-    if (uc->current_cpu)
-        tlb_flush(uc->current_cpu, 1);
+    if (uc->cpu)
+        tlb_flush(uc->cpu, 1);
 
     return ram;
 }
@@ -91,9 +91,9 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 
     // Make sure all pages associated with the MemoryRegion are flushed
     // Only need to do this if we are in a running state
-    if (uc->current_cpu) {
+    if (uc->cpu) {
         for (addr = mr->addr; addr < mr->end; addr += uc->target_page_size) {
-           tlb_flush_page(uc->current_cpu, addr);
+           tlb_flush_page(uc->cpu, addr);
         }
     }
     memory_region_del_subregion(get_system_memory(uc), mr);
@@ -713,8 +713,8 @@ static uint64_t unassigned_mem_read(struct uc_struct* uc, hwaddr addr, unsigned 
 #ifdef DEBUG_UNASSIGNED
     printf("Unassigned mem read " TARGET_FMT_plx "\n", addr);
 #endif
-    if (uc->current_cpu != NULL) {
-        cpu_unassigned_access(uc->current_cpu, addr, false, false, 0, size);
+    if (uc->cpu != NULL) {
+        cpu_unassigned_access(uc->cpu, addr, false, false, 0, size);
     }
     return 0;
 }
@@ -725,8 +725,8 @@ static void unassigned_mem_write(struct uc_struct* uc, hwaddr addr,
 #ifdef DEBUG_UNASSIGNED
     printf("Unassigned mem write " TARGET_FMT_plx " = 0x%"PRIx64"\n", addr, val);
 #endif
-    if (uc->current_cpu != NULL) {
-        cpu_unassigned_access(uc->current_cpu, addr, true, false, 0, size);
+    if (uc->cpu != NULL) {
+        cpu_unassigned_access(uc->cpu, addr, true, false, 0, size);
     }
 }
 
