@@ -182,6 +182,11 @@ static void aarch64_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *dat
     cc->set_pc = aarch64_cpu_set_pc;
 }
 
+void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data);
+void arm_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque);
+void arm_cpu_post_init(struct uc_struct *uc, CPUState *obj);
+int arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev);
+
 #ifdef TARGET_WORDS_BIGENDIAN
 ARMCPU *cpu_aarch64eb_init(struct uc_struct *uc, const char *cpu_model)
 #else
@@ -197,14 +202,28 @@ ARMCPU *cpu_aarch64_init(struct uc_struct *uc, const char *cpu_model)
         cpu_model = "cortex-a57";
     }
 
-    cpu = cpu_arm_init(uc, cpu_model);
+    cpu = malloc(sizeof(*cpu));
+    if (cpu == NULL) {
+        return NULL;
+    }
+    memset(cpu, 0, sizeof(*cpu));
 
     cs = (CPUState *)cpu;
     cc = (CPUClass *)&cpu->cc;
     cs->cc = cc;
     cs->uc = uc;
+    /* init CPUClass */
+    cpu_klass_init(uc, cc);
+    /* init ARMCPUClass */
+    arm_cpu_class_init(uc, cc, NULL);
     /* init Aarch64CPUClass */
     aarch64_cpu_class_init(uc, cc, NULL);
+    /* init CPUState */
+#ifdef NEED_CPU_INIT_REALIZE
+    cpu_object_init(uc, cs);
+#endif
+    /* init ARMCPU */
+    arm_cpu_initfn(uc, cs, uc);
     /* init Aarch64CPU */
     aarch64_cpu_initfn(uc, cs, uc);
     /* init Aarch64 types */
@@ -219,6 +238,14 @@ ARMCPU *cpu_aarch64_init(struct uc_struct *uc, const char *cpu_model)
             break;
         }
     }
+    /* postinit ARMCPU, do nothing. */
+    arm_cpu_post_init(uc, cs);
+    /* realize ARMCPU */
+    arm_cpu_realizefn(uc, cs);
+    /* realize CPUState */
+#ifdef NEED_CPU_INIT_REALIZE
+    cpu_object_realize(uc, cs);
+#endif
 
     return cpu;
 }
