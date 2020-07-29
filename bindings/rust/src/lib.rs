@@ -8,14 +8,14 @@
 //! ```rust
 //!
 //! use unicorn::RegisterARM;
-//! use unicorn::unicorn_const::{Arch, Mode, Protection, SECOND_SCALE};
+//! use unicorn::unicorn_const::{Arch, Mode, Permission, SECOND_SCALE};
 //! 
 //! fn main() {
 //!     let arm_code32: Vec<u8> = vec![0x17, 0x00, 0x40, 0xe2]; // sub r0, #23
 //! 
 //!     let mut unicorn = unicorn::Unicorn::new(Arch::ARM, Mode::LITTLE_ENDIAN, 0).expect("failed to initialize Unicorn instance");
 //!     let mut emu = unicorn.borrow();
-//!     emu.mem_map(0x1000, 0x4000, Protection::ALL).expect("failed to map code page");
+//!     emu.mem_map(0x1000, 0x4000, Permission::ALL).expect("failed to map code page");
 //!     emu.mem_write(0x1000, &arm_code32).expect("failed to write instructions");
 //! 
 //!     emu.reg_write(RegisterARM::R0 as i32, 123).expect("failed write R0");
@@ -93,6 +93,7 @@ pub struct UnicornInner<D> {
     pub uc: uc_handle,
     pub arch: Arch,
     pub code_hooks: HashMap<*mut libc::c_void, Box<ffi::CodeHook<D>>>,
+    pub block_hooks: HashMap<*mut libc::c_void, Box<ffi::BlockHook<D>>>,
     pub mem_hooks: HashMap<*mut libc::c_void, Box<ffi::MemHook<D>>>,
     pub intr_hooks: HashMap<*mut libc::c_void, Box<ffi::InterruptHook<D>>>,
     pub insn_in_hooks: HashMap<*mut libc::c_void, Box<ffi::InstructionInHook<D>>>,
@@ -116,6 +117,7 @@ impl<D> Unicorn<D> {
                 uc: handle,
                 arch: arch,
                 code_hooks: HashMap::new(),
+                block_hooks: HashMap::new(),
                 mem_hooks: HashMap::new(),
                 intr_hooks: HashMap::new(),
                 insn_in_hooks: HashMap::new(),
@@ -231,7 +233,7 @@ impl<'a, D> UnicornHandle<'a, D> {
     pub fn mem_map_ptr(&mut self, 
             address: u64, 
             size: usize, 
-            perms: Protection, 
+            perms: Permission,
             ptr: *mut c_void
     ) -> Result<(), uc_error> {
         let err = unsafe { ffi::uc_mem_map_ptr(self.inner.uc, address, size, perms.bits(), ptr) };
@@ -249,7 +251,7 @@ impl<'a, D> UnicornHandle<'a, D> {
     pub fn mem_map(&mut self, 
             address: u64, 
             size: libc::size_t, 
-            perms: Protection
+            perms: Permission
     ) -> Result<(), uc_error> {
         let err = unsafe { ffi::uc_mem_map(self.inner.uc, address, size, perms.bits()) };
         if err == uc_error::OK {
@@ -282,7 +284,7 @@ impl<'a, D> UnicornHandle<'a, D> {
     pub fn mem_protect(&mut self, 
             address: u64, 
             size: libc::size_t, 
-            perms: Protection
+            perms: Permission
     ) -> Result<(), uc_error> {
         let err = unsafe { ffi::uc_mem_protect(self.inner.uc, address, size, perms.bits()) };
         if err == uc_error::OK {
@@ -411,6 +413,38 @@ impl<'a, D> UnicornHandle<'a, D> {
         };
         if err == uc_error::OK {
             unsafe { self.inner.as_mut().get_unchecked_mut() }.code_hooks.insert(hook_ptr, user_data);
+            Ok(hook_ptr)
+        } else {
+            Err(err)
+        }
+    }
+
+    /// Add a block hook.
+    pub fn add_block_hook<F: 'static>(
+        &mut self,
+        callback: F,
+    ) -> Result<ffi::uc_hook, uc_error>
+    where F: FnMut(UnicornHandle<D>, u64, u32)
+    {
+        let mut hook_ptr = std::ptr::null_mut();
+        let mut user_data = Box::new(ffi::BlockHook {
+            unicorn: unsafe { self.inner.as_mut().get_unchecked_mut() } as _,
+            callback: Box::new(callback),
+        });
+
+        let err = unsafe {
+            ffi::uc_hook_add(
+                self.inner.uc,
+                &mut hook_ptr,
+                HookType::BLOCK,
+                ffi::block_hook_proxy::<D> as _,
+                user_data.as_mut() as *mut _ as _,
+                1,
+                0,
+            )
+        };
+        if err == uc_error::OK {
+            unsafe { self.inner.as_mut().get_unchecked_mut() }.block_hooks.insert(hook_ptr, user_data);
             Ok(hook_ptr)
         } else {
             Err(err)
@@ -596,14 +630,45 @@ impl<'a, D> UnicornHandle<'a, D> {
     pub fn remove_hook(&mut self, hook: ffi::uc_hook) -> Result<(), uc_error> {
         let handle = unsafe { self.inner.as_mut().get_unchecked_mut() };
         let err: uc_error;
-        if handle.code_hooks.contains_key(&hook) || 
-            handle.mem_hooks.contains_key(&hook) ||
-            handle.intr_hooks.contains_key(&hook) ||
-            handle.insn_in_hooks.contains_key(&hook) ||
-            handle.insn_out_hooks.contains_key(&hook) ||
-            handle.insn_sys_hooks.contains_key(&hook) {
-            err = unsafe { ffi::uc_hook_del(handle.uc, hook) };
+        let mut in_one_hashmap = false;
+
+        if handle.code_hooks.contains_key(&hook) {
+            in_one_hashmap = true;
+            handle.code_hooks.remove(&hook);
+        }
+
+        if handle.mem_hooks.contains_key(&hook) {
+            in_one_hashmap = true;
             handle.mem_hooks.remove(&hook);
+        }
+
+        if handle.block_hooks.contains_key(&hook) {
+            in_one_hashmap = true;
+            handle.block_hooks.remove(&hook);
+        }
+
+        if handle.intr_hooks.contains_key(&hook) {
+            in_one_hashmap = true;
+            handle.intr_hooks.remove(&hook);
+        }
+
+        if handle.insn_in_hooks.contains_key(&hook) {
+            in_one_hashmap = true;
+            handle.insn_in_hooks.remove(&hook);
+        }
+
+        if handle.insn_out_hooks.contains_key(&hook) {
+            in_one_hashmap = true;
+            handle.insn_out_hooks.remove(&hook);
+        }
+
+        if handle.insn_sys_hooks.contains_key(&hook) {
+            in_one_hashmap = true;
+            handle.insn_sys_hooks.remove(&hook);
+        }
+
+        if in_one_hashmap {
+            err = unsafe { ffi::uc_hook_del(handle.uc, hook) };
         } else {
             err = uc_error::HOOK;
         }
