@@ -4,10 +4,17 @@ env:
 script:
   - |
     if [[ "$TRAVIS_OS_NAME" == "windows" ]]; then
-        choco install cygwin cyg-get && \
-        cyg-get.bat default autoconf automake make gcc-core clang pkg-config libpcre-devel cmake python27-setuptools ruby wget && \
-        export SHELLOPTS && set -o igncr \
-        cmd.exe //C "C:\\tools\\cygwin\\bin\\bash.exe -lc 'cd /cygdrive/$TRAVIS_BUILD_DIR; make header; make; ./install-cmocka-linux.sh; export PATH="$PATH":/cygdrive/$TRAVIS_BUILD_DIR:/cygdrive/$TRAVIS_BUILD_DIR/cmocka/src; make test'" 
+        if [[ "$TRAVIS_COMPILER" == "clang" ]]; then
+           choco install cygwin cyg-get && \
+           cyg-get.bat default autoconf automake make gcc-core clang pkg-config libpcre-devel cmake python27-setuptools ruby wget && \
+           export SHELLOPTS && set -o igncr && \
+           cmd.exe //C "C:\\tools\\cygwin\\bin\\bash.exe -lc 'cd /cygdrive/$TRAVIS_BUILD_DIR; make header; make'" 
+        else
+           choco install cygwin cyg-get && \
+           cyg-get.bat default autoconf automake make gcc-core clang pkg-config libpcre-devel cmake python27-setuptools ruby wget && \
+           export SHELLOPTS && set -o igncr && \
+           cmd.exe //C "C:\\tools\\cygwin\\bin\\bash.exe -lc 'cd /cygdrive/$TRAVIS_BUILD_DIR; make header; make; ./install-cmocka-linux.sh; export PATH="$PATH":/cygdrive/$TRAVIS_BUILD_DIR:/cygdrive/$TRAVIS_BUILD_DIR/cmocka/src; make test'"
+        fi 
     elif [[ "$TRAVIS_CPU_ARCH" == "arm64" ]]; then
         make header && make && make -C tests/unit test && make -C tests/regress test
     else
@@ -18,7 +25,6 @@ compiler:
   - gcc
 os:
   - linux
-  - osx
   - windows
 arch:
   - amd64
@@ -28,9 +34,44 @@ matrix:
   exclude:
     - os: windows
       arch: arm64
-    - os: osx
-      arch: arm64
   include:
+
+    - name: "Compiler: clang C"
+      os: osx
+      osx_image: xcode10.1
+      python: 3.7
+      compiler: clang
+      before_cache:
+        - brew cleanup
+        - find /usr/local/Homebrew \! -regex ".+\.git.+" -delete;
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
+          - /usr/local/Homebrew
+      before_install:
+        - cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core && git stash && git clean -d -f
+      script:
+        - cd $TRAVIS_BUILD_DIR
+        - make header && make && make -C bindings/go && make -C bindings/go test && make test
+
+    - name: "Compiler: gcc C"
+      os: osx
+      osx_image: xcode10.1
+      python: 3.7
+      compiler: gcc
+      before_cache:
+        - brew cleanup
+        - find /usr/local/Homebrew \! -regex ".+\.git.+" -delete;
+      cache:
+        directories:
+          - $HOME/Library/Caches/Homebrew
+          - /usr/local/Homebrew
+      before_install:
+        - cd /usr/local/Homebrew/Library/Taps/homebrew/homebrew-core && git stash && git clean -d -f
+      script:
+        - cd $TRAVIS_BUILD_DIR
+        - make header && make && make -C bindings/go && make -C bindings/go test && make test
+
     - name: "Linux clang ASAN"
       os: linux
       compiler: clang
@@ -40,7 +81,9 @@ matrix:
         - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize=fuzzer-no-link"
         - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=address -fsanitize=fuzzer-no-link"
         - LDFLAGS="-fsanitize=address"
-      script: make header && make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
+      script: 
+        - make header && make
+        - make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
 
     - name: "Linux clang MSAN"
       os: linux
@@ -51,7 +94,9 @@ matrix:
         - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=memory -fsanitize=fuzzer-no-link"
         - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=memory -fsanitize=fuzzer-no-link"
         - LDFLAGS="-fsanitize=memory"
-      script: make header && make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
+      script: 
+        - make header && make
+        - make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
 
     - name: "Linux clang USAN"
       os: linux
@@ -62,7 +107,9 @@ matrix:
         - CXXFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=undefined -fsanitize=fuzzer-no-link"
         - CFLAGS="-DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION -fsanitize=undefined -fsanitize=fuzzer-no-link"
         - LDFLAGS="-fsanitize=undefined"
-      script: make header && make && make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
+      script: 
+        - make header && make
+        - make -C tests/fuzz && sh tests/fuzz/dlcorpus.sh
 
     - name: "Linux 32bit"
       os: linux
@@ -127,8 +174,9 @@ matrix:
         - mkdir build
         - cd build
         - cmake -DCMAKE_BUILD_TYPE=Release -DUNICORN_ARCH=x86 -DUNICORN_BUILD_SHARED=OFF .. && make -j8
-        - cp libunicorn.* ../
-        - make -C ../tests/unit test && make -C ../tests/regress test
+# temporarily disable test for static build
+#        - cp libunicorn.* ../
+#        - make -C ../tests/unit test && make -C ../tests/regress test
       addons:
         apt:
           packages:
@@ -149,8 +197,8 @@ matrix:
         - mkdir build
         - cd build
         - cmake -DCMAKE_BUILD_TYPE=Release -DUNICORN_BUILD_SHARED=OFF .. && make -j8
-        - cp libunicorn.* ../
-        - make -C ../tests/unit test && make -C ../tests/regress test
+#        - cp libunicorn.* ../
+#        - make -C ../tests/unit test && make -C ../tests/regress test
 
     - name: "MacOSX brew"
       os: osx
@@ -241,12 +289,14 @@ matrix:
         - export LDFLAGS="-m32"
         - export LDFLAGS_STATIC="-m32"
         - export UNICORN_QEMU_FLAGS="--cpu=i386"
-      before_cache:
-        - $msys2 pacman --sync --clean --noconfirm
-      cache:
-        directories:
-          - $HOME/AppData/Local/Temp/chocolatey
-          - /C/tools/msys64
+#      before_cache:
+#        - $msys2 pacman --sync --clean --noconfirm
+#      cache:
+#        timeout:
+#          1000
+#        directories:
+#          - $HOME/AppData/Local/Temp/chocolatey
+#          - /C/tools/msys64
       script:
         - $shell make header; $shell make; cp unicorn.dll /C/Windows/SysWOW64/; $shell make test
 
@@ -283,12 +333,14 @@ matrix:
         - export CC=x86_64-w64-mingw32-gcc
         - export AR=gcc-ar
         - export RANLIB=gcc-ranlib
-      before_cache:
-        - $msys2 pacman --sync --clean --noconfirm
-      cache:
-        directories:
-          - $HOME/AppData/Local/Temp/chocolatey
-          - /C/tools/msys64
+#      before_cache:
+#        - $msys2 pacman --sync --clean --noconfirm
+#      cache:
+#        timeout:
+#          1000
+#        directories:
+#          - $HOME/AppData/Local/Temp/chocolatey
+#          - /C/tools/msys64
       script:
         - $shell make header; $shell make; cp unicorn.dll /C/Windows/System32/; $shell make test
 addons:

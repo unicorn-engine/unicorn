@@ -284,7 +284,7 @@ setup(
     ],
     requires=['ctypes'],
     cmdclass={'build': custom_build, 'develop': custom_develop, 'sdist': custom_sdist, 'bdist_egg': custom_bdist_egg},
-    zip_safe=True,
+    zip_safe=False,
     include_package_data=True,
     is_pure=False,
     package_data={
