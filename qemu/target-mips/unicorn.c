@@ -137,10 +137,10 @@ int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, 
                          MIPS_CPU(uc, mycpu)->env.active_tc.CP0_UserLocal = *(mipsreg_t *)value;
                          break;                         
                 case UC_MIPS_REG_HI:
-                         MIPS_CPU(uc, mycpu)->env.HI[0] = *(mipsreg_t *)value;
+                         MIPS_CPU(uc, mycpu)->env.active_tc.HI[0] = *(mipsreg_t *)value;
                          break;
                 case UC_MIPS_REG_LO:
-                         MIPS_CPU(uc, mycpu)->env.LO[0] = *(mipsreg_t *)value;
+                         MIPS_CPU(uc, mycpu)->env.active_tc.LO[0] = *(mipsreg_t *)value;
                          break;
             }
         }
