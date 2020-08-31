@@ -63,9 +63,12 @@ if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
     MAC_LIBRARY_FILE = "libunicorn*.dylib"
     STATIC_LIBRARY_FILE = None
-elif SYSTEM in ('win32', 'cygwin'):
+elif SYSTEM == 'win32':
     LIBRARY_FILE = "unicorn.dll"
     STATIC_LIBRARY_FILE = "unicorn.lib"
+elif SYSTEM == 'cygwin':
+    LIBRARY_FILE = "cygunicorn.dll"
+    STATIC_LIBRARY_FILE = None
 else:
     LIBRARY_FILE = "libunicorn.so"
     STATIC_LIBRARY_FILE = None
@@ -166,12 +169,7 @@ def build_libraries():
         new_env = dict(os.environ)
         new_env['UNICORN_BUILD_CORE_ONLY'] = 'yes'
         cmd = ['sh', './make.sh']
-        if SYSTEM == "cygwin":
-            if IS_64BITS:
-                cmd.append('cygwin-mingw64')
-            else:
-                cmd.append('cygwin-mingw32')
-        elif SYSTEM == "win32":
+        if SYSTEM == "win32":
             if IS_64BITS:
                 cmd.append('cross-win64')
             else:
