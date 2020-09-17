@@ -3025,6 +3025,7 @@
 #define arm64_reg_reset arm64_reg_reset_aarch64
 #define arm64_reg_read arm64_reg_read_aarch64
 #define arm64_reg_write arm64_reg_write_aarch64
+#define arm_cpu_class_init arm_cpu_class_init_aarch64
 #define gen_a64_set_pc_im gen_a64_set_pc_im_aarch64
 #define aarch64_cpu_register_types aarch64_cpu_register_types_aarch64
 #define helper_udiv64 helper_udiv64_aarch64

@@ -209,7 +209,6 @@ bool arm_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     return ret;
 }
 
-#ifndef TARGET_AARCH64
 #if !defined(CONFIG_USER_ONLY) || !defined(TARGET_AARCH64)
 static bool arm_v7m_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
 {
@@ -244,14 +243,13 @@ static bool arm_v7m_cpu_exec_interrupt(CPUState *cs, int interrupt_request)
     return ret;
 }
 #endif
-#endif
 
 static inline void set_feature(CPUARMState *env, int feature)
 {
     env->features |= 1ULL << feature;
 }
 
-static void arm_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
+void arm_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 {
     CPUState *cs = CPU(obj);
     ARMCPU *cpu = ARM_CPU(uc, obj);
@@ -275,7 +273,7 @@ static void arm_cpu_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
     }
 }
 
-static void arm_cpu_post_init(struct uc_struct *uc, CPUState *obj)
+void arm_cpu_post_init(struct uc_struct *uc, CPUState *obj)
 {
     ARMCPU *cpu = ARM_CPU(uc, obj);
 
@@ -296,7 +294,7 @@ static void arm_cpu_post_init(struct uc_struct *uc, CPUState *obj)
     }
 }
 
-static int arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
+int arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 {
     CPUState *cs = CPU(dev);
     ARMCPU *cpu = ARM_CPU(uc, dev);
@@ -368,7 +366,6 @@ static int arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
 }
 
 /* CPU models. These are not needed for the AArch64 linux-user build. */
-#ifndef TARGET_AARCH64
 #if !defined(CONFIG_USER_ONLY) || !defined(TARGET_AARCH64)
 
 static void arm926_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
@@ -944,7 +941,6 @@ static void arm_any_initfn(struct uc_struct *uc, CPUState *obj, void *opaque)
 #endif
 
 #endif /* !defined(CONFIG_USER_ONLY) || !defined(TARGET_AARCH64) */
-#endif
 
 typedef struct ARMCPUInfo {
     const char *name;
@@ -952,7 +948,6 @@ typedef struct ARMCPUInfo {
     void (*class_init)(struct uc_struct *uc, CPUClass *oc, void *data);
 } ARMCPUInfo;
 
-#ifndef TARGET_AARCH64
 static const ARMCPUInfo arm_cpus[] = {
 #if !defined(CONFIG_USER_ONLY) || !defined(TARGET_AARCH64)
     { "arm926",      arm926_initfn },
@@ -992,9 +987,8 @@ static const ARMCPUInfo arm_cpus[] = {
 #endif
     { NULL }
 };
-#endif
 
-static void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
+void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
 {
     ARMCPUClass *acc = ARM_CPU_CLASS(uc, oc);
     CPUClass *cc = CPU_CLASS(uc, acc);
@@ -1016,9 +1010,7 @@ static void arm_cpu_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
 
 ARMCPU *cpu_arm_init(struct uc_struct *uc, const char *cpu_model)
 {
-#ifndef TARGET_AARCH64
     int i;
-#endif
     ARMCPU *cpu;
     CPUState *cs;
     CPUClass *cc;
@@ -1055,7 +1047,6 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc, const char *cpu_model)
 #endif
     /* init ARMCPU */
     arm_cpu_initfn(uc, cs, uc);
-#ifndef TARGET_AARCH64
     /* init ARM types */
     for (i = 0; i < ARRAY_SIZE(arm_cpus); i++) {
         if (strcmp(cpu_model, arm_cpus[i].name) == 0) {
@@ -1068,7 +1059,6 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc, const char *cpu_model)
             break;
         }
     }
-#endif
     /* postinit ARMCPU */
     arm_cpu_post_init(uc, cs);
     /* realize ARMCPU */

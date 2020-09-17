@@ -3021,4 +3021,5 @@
 #define xscale_cpar_write xscale_cpar_write_arm
 #define xscale_cp_reginfo xscale_cp_reginfo_arm
 #define ARM_REGS_STORAGE_SIZE ARM_REGS_STORAGE_SIZE_arm
+#define arm_cpu_class_init arm_cpu_class_init_arm
 #endif
