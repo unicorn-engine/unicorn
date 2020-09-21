@@ -1,5 +1,21 @@
 This file details the changelog of Unicorn Engine.
 
+------------------------------------
+[Version 1.0.2-rc5]: Sept 22th, 2020
+
+- Add cmake option to build Unicorn as a static library
+- Fix error handling of mmap()
+- uc_emu_start() can be reentrant
+- Fix naming conflicts when built with systemd
+- Fix setjmp/longjmp on native Windows
+- Fix enabled hooks even after deleting them
+- X86:
+    - Fix 64bit fstenv
+    - Fix IP value of 16bit mode
+- ARM:
+    - Fix APSR handling
+- Python: Remove UC_ERR_TIMEOUT
+
 -----------------------------------
 [Version 1.0.2-rc4]: May 29th, 2020
 
