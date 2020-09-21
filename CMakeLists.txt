@@ -859,6 +859,10 @@ if (MSVC)
         ${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/qapi-types.c
         ${CMAKE_CURRENT_SOURCE_DIR}/msvc/unicorn/qapi-visit.c
     )
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        enable_language(ASM_MASM)
+        set(UNICORN_SRCS ${UNICORN_SRCS} qemu/util/setjmp-wrapper-win32.asm)
+    endif()
 else()
     set(UNICORN_SRCS
         ${UNICORN_SRCS_COMMON}

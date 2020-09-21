@@ -499,4 +499,7 @@
     <ClInclude Include="..\..\..\include\unicorn\unicorn.h" />
     <ClInclude Include="..\..\..\include\unicorn\x86.h" />
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\..\..\qemu\util\setjmp-wrapper-win32.asm" />
+  </ItemGroup>
 </Project>
