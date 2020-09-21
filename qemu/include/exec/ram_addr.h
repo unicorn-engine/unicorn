@@ -93,7 +93,7 @@ static inline void cpu_physical_memory_set_dirty_range(struct uc_struct *uc, ram
 
     end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
     page = start >> TARGET_PAGE_BITS;
-    bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE], page, end - page);
+    qemu_bitmap_set(uc->ram_list.dirty_memory[DIRTY_MEMORY_CODE], page, end - page);
 }
 
 #if !defined(_WIN32)
@@ -153,7 +153,7 @@ static inline void cpu_physical_memory_clear_dirty_range(struct uc_struct *uc, r
     assert(client < DIRTY_MEMORY_NUM);
     end = TARGET_PAGE_ALIGN(start + length) >> TARGET_PAGE_BITS;
     page = start >> TARGET_PAGE_BITS;
-    bitmap_clear(uc->ram_list.dirty_memory[client], page, end - page);
+    qemu_bitmap_clear(uc->ram_list.dirty_memory[client], page, end - page);
 }
 
 void cpu_physical_memory_reset_dirty(struct uc_struct *uc,

@@ -127,7 +127,7 @@ enum uc_hook_idx {
 // if statement to check hook bounds
 #define HOOK_BOUND_CHECK(hh, addr)                  \
     ((((addr) >= (hh)->begin && (addr) <= (hh)->end) \
-         || (hh)->begin > (hh)->end))
+        || (hh)->begin > (hh)->end) && !((hh)->to_delete))
 
 #define HOOK_EXISTS(uc, idx) ((uc)->hook[idx##_IDX].head != NULL)
 #define HOOK_EXISTS_BOUNDED(uc, idx, addr) _hook_exists_bounded((uc)->hook[idx##_IDX].head, addr)
