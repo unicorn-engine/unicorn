@@ -384,15 +384,8 @@ def test_i386_loop():
         print(">>> EDX = 0x%x" %r_edx)
 
     except UcError as e:
-        # timeout is acceptable in this case
-        if e.errno == UC_ERR_TIMEOUT:
-            print(">>> Emulation done. Below is the CPU context")
-            r_ecx = mu.reg_read(UC_X86_REG_ECX)
-            r_edx = mu.reg_read(UC_X86_REG_EDX)
-            print(">>> ECX = 0x%x" %r_ecx)
-            print(">>> EDX = 0x%x" %r_edx)
-        else:
-            print("ERROR: %s" % e)
+        print("ERROR: %s" % e)
+
 
 # Test X86 32 bit with IN/OUT instruction
 def test_i386_inout():
