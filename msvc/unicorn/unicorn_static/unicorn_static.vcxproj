@@ -170,7 +170,12 @@
     <ClInclude Include="..\qapi-visit.h" />
   </ItemGroup>
   <ItemGroup>
-    <MASM Include="..\..\..\qemu\util\setjmp-wrapper-win32.asm" />
+    <MASM Include="..\..\..\qemu\util\setjmp-wrapper-win32.asm">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </MASM>
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{B6EFD6D7-C2D4-4FBB-B363-2E08CE09CC96}</ProjectGuid>
