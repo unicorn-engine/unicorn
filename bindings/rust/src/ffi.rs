@@ -80,6 +80,11 @@ pub struct CodeHook<D> {
     pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, u64, u32)>
 }
 
+pub struct BlockHook<D> {
+    pub unicorn: *mut crate::UnicornInner<D>,
+    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, u64, u32)>
+}
+
 pub struct MemHook<D> {
     pub unicorn: *mut crate::UnicornInner<D>,
     pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, MemType, u64, usize, i64)>
@@ -106,6 +111,13 @@ pub struct InstructionSysHook<D> {
 }
 
 pub extern "C" fn code_hook_proxy<D>(uc: uc_handle, address: u64, size: u32, user_data: *mut CodeHook<D>) {
+    let unicorn = unsafe { &mut *(*user_data).unicorn };
+    let callback = &mut unsafe { &mut *(*user_data).callback };
+    assert_eq!(uc, unicorn.uc);
+    callback(crate::UnicornHandle { inner: unsafe { Pin::new_unchecked(unicorn) } }, address, size);
+}
+
+pub extern "C" fn block_hook_proxy<D>(uc: uc_handle, address: u64, size: u32, user_data: *mut BlockHook<D>) {
     let unicorn = unsafe { &mut *(*user_data).unicorn };
     let callback = &mut unsafe { &mut *(*user_data).callback };
     assert_eq!(uc, unicorn.uc);
