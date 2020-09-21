@@ -63,7 +63,7 @@
  * lets longjmp try a stack unwinding which will crash with generated code. */
 
 // See qemu/include/utils/setjmp-wrapper-win32.asm for details.
-int _setjmp_wrapper(jmp_buf);
+extern int _setjmp_wrapper(jmp_buf);
 
 # undef setjmp
 # define setjmp(env) _setjmp_wrapper(env)
