@@ -62,7 +62,7 @@
  * That is what we need for QEMU. Passing the value of register rsp (default)
  * lets longjmp try a stack unwinding which will crash with generated code. */
 
-void _setjmp_wrapper(jmp_buf);
+int _setjmp_wrapper(jmp_buf);
 
 # undef setjmp
 # define setjmp(env) _setjmp_wrapper(env)
