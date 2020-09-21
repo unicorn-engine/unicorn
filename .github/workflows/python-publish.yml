@@ -60,15 +60,7 @@ jobs:
           name: artifact
           path: dist
 
-      - name: Publish distribution 📦 to test PyPI
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.testpypi_pass }}
-          repository_url: https://test.pypi.org/legacy/
-
       - name: Publish distribution 📦 to PyPI
-        if: ${{ success() }}
         uses: pypa/gh-action-pypi-publish@master
         with:
           user: __token__
