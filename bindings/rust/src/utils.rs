@@ -8,7 +8,7 @@ use super::x86::RegisterX86;
 use super::sparc::RegisterSPARC;
 use super::mips::RegisterMIPS;
 use super::m68k::RegisterM68K;
-use super::{Protection, Mode, Arch, HookType, MemType, uc_error};
+use super::{Permission, Mode, Arch, HookType, MemType, uc_error};
 use std::ptr;
 use std::cell::RefCell;
 use std::collections::HashMap;
@@ -119,7 +119,7 @@ pub fn init_emu_with_heap(arch: Arch,
     unsafe {
         // manually mmap space for heap to know location
         let arena_ptr = mmap(null_ptr, size as usize, PROT_READ | PROT_WRITE, MAP_ANON | MAP_PRIVATE, 0, 0);
-        uc.mem_map_ptr(base_addr, size as usize, Protection::READ | Protection::WRITE, arena_ptr)?;
+        uc.mem_map_ptr(base_addr, size as usize, Permission::READ | Permission::WRITE, arena_ptr)?;
         let h = uc.add_mem_hook(HookType::MEM_VALID, base_addr, base_addr + size as u64, Box::new(heap_unalloc))?;
         let chunks = HashMap::new();
         let heap: &mut Heap = &mut *uc.get_data().borrow_mut();
@@ -163,7 +163,7 @@ pub fn uc_alloc(uc: &mut super::UnicornHandle<RefCell<Heap>>, mut size: u64) -> 
             if increase_by % 8 != 0 {
                 increase_by = ((increase_by / 8) + 1) * 8;
             }
-            uc.mem_map(uc_base + len as u64, increase_by,  Protection::READ | Protection::WRITE)?;
+            uc.mem_map(uc_base + len as u64, increase_by,  Permission::READ | Permission::WRITE)?;
             uc.get_data().borrow_mut().len += increase_by;
             len = uc.get_data().borrow_mut().len;
         }
@@ -284,7 +284,7 @@ fn heap_uaf (uc: super::UnicornHandle<RefCell<Heap>>, _mem_type: MemType, addr: 
 }
 
 
-fn vmmap<D>(uc: &mut super::UnicornHandle<D>) {
+pub fn vmmap<D>(uc: &mut super::UnicornHandle<D>) {
     let regions = uc
         .mem_regions()
         .expect("failed to retrieve memory mappings");

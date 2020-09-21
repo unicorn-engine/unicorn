@@ -89,7 +89,7 @@ pub enum Query {
 
 bitflags! {
 #[repr(C)]
-pub struct Protection : u32 {
+pub struct Permission : u32 {
         const NONE = 0;
         const READ = 1;
         const WRITE = 2;
@@ -103,7 +103,7 @@ pub struct Protection : u32 {
 pub struct MemRegion {
     pub begin: u64,
     pub end: u64,
-    pub perms: Protection,
+    pub perms: Permission,
 }
 
 #[repr(C)]
