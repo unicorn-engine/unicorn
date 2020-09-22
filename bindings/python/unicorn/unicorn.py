@@ -598,6 +598,7 @@ class Uc(object):
     def context_save(self):
         context = UcContext(self._uch)
         status = _uc.uc_context_save(self._uch, context.context)
+
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
@@ -636,9 +637,16 @@ class UcContext(ctypes.Structure):
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-    def __del__(self):
-        _uc.uc_free(self.context)
+        self._h = h
 
+    @property
+    def raw(self):
+        _size = _uc.uc_context_size(self._h)
+        return ctypes.string_at(self.context, _size)
+
+    @raw.setter
+    def raw(self, raw_bytes):
+        self.context = ctypes.c_buffer(raw_bytes, len(raw_bytes))
 
 # print out debugging info
 def debug():
