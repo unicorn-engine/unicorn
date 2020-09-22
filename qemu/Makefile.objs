@@ -2,26 +2,10 @@
 # Common libraries for tools and emulators
 util-obj-y = util/ qobject/ qapi/ qapi-types.o qapi-visit.o
 
-#######################################################################
-# block-obj-y is code used by both qemu system emulation and qemu-img
-
-block-obj-y =
-block-obj-y += ../uc.o ../list.o glib_compat.o
-
-#######################################################################
-# Target independent part of system emulation. The long term path is to
-# suppress *all* target specific code in case of system emulation, i.e. a
-# single QEMU executable should support all CPUs and machines.
-
-ifeq ($(CONFIG_SOFTMMU),y)
 common-obj-y += hw/
 common-obj-y += accel.o
 common-obj-y += vl.o qemu-timer.o
-
-endif
-
-#######################################################################
-# Target-independent parts used in system and user emulation
+common-obj-y += ../uc.o ../list.o glib_compat.o
 common-obj-y += qemu-log.o
 common-obj-y += tcg-runtime.o
 common-obj-y += hw/

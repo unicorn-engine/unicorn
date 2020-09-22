@@ -883,6 +883,7 @@ static void write_vec_element(DisasContext *s, TCGv_i64 tcg_src, int destidx,
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int vect_off = vec_reg_offset(s, destidx, element, memop & MO_SIZE);
+    CPUState *cs;
     switch (memop) {
     case MO_8:
         tcg_gen_st8_i64(tcg_ctx, tcg_src, tcg_ctx->cpu_env, vect_off);
@@ -897,7 +898,10 @@ static void write_vec_element(DisasContext *s, TCGv_i64 tcg_src, int destidx,
         tcg_gen_st_i64(tcg_ctx, tcg_src, tcg_ctx->cpu_env, vect_off);
         break;
     default:
-        g_assert_not_reached();
+        cs = CPU(s->uc->cpu);
+        cs->exception_index = EXCP_UDEF;
+        cpu_loop_exit(cs);
+        break;
     }
 }
 
@@ -1084,7 +1088,7 @@ static void disas_uncond_b_imm(DisasContext *s, uint32_t insn)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     uint64_t addr = s->pc + sextract32(insn, 0, 26) * 4 - 4;
 
-    if (insn & (1 << 31)) {
+    if (insn & (1U << 31)) {
         /* C5.6.26 BL Branch with link */
         tcg_gen_movi_i64(tcg_ctx, cpu_reg(s, 30), s->pc);
     }
@@ -1283,7 +1287,7 @@ static void gen_get_nzcv(TCGContext *tcg_ctx, TCGv_i64 tcg_rt)
     TCGv_i32 nzcv = tcg_temp_new_i32(tcg_ctx);
 
     /* build bit 31, N */
-    tcg_gen_andi_i32(tcg_ctx, nzcv, tcg_ctx->cpu_NF, (1 << 31));
+    tcg_gen_andi_i32(tcg_ctx, nzcv, tcg_ctx->cpu_NF, (1U << 31));
     /* build bit 30, Z */
     tcg_gen_setcondi_i32(tcg_ctx, TCG_COND_EQ, tmp, tcg_ctx->cpu_ZF, 0);
     tcg_gen_deposit_i32(tcg_ctx, nzcv, nzcv, tmp, 30, 1);
@@ -1308,7 +1312,7 @@ static void gen_set_nzcv(TCGContext *tcg_ctx, TCGv_i64 tcg_rt)
     tcg_gen_trunc_i64_i32(tcg_ctx, nzcv, tcg_rt);
 
     /* bit 31, N */
-    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_NF, nzcv, (1 << 31));
+    tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_NF, nzcv, (1U << 31));
     /* bit 30, Z */
     tcg_gen_andi_i32(tcg_ctx, tcg_ctx->cpu_ZF, nzcv, (1 << 30));
     tcg_gen_setcondi_i32(tcg_ctx, TCG_COND_EQ, tcg_ctx->cpu_ZF, tcg_ctx->cpu_ZF, 0);
@@ -1859,7 +1863,7 @@ static void disas_ld_lit(DisasContext *s, uint32_t insn)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int rt = extract32(insn, 0, 5);
-    int64_t imm = sextract32(insn, 5, 19) << 2;
+    int64_t imm = (int32_t)(((uint32_t)sextract32(insn, 5, 19)) << 2);
     bool is_vector = extract32(insn, 26, 1);
     int opc = extract32(insn, 30, 2);
     bool is_signed = false;
@@ -1929,7 +1933,7 @@ static void disas_ldst_pair(DisasContext *s, uint32_t insn)
     int rt = extract32(insn, 0, 5);
     int rn = extract32(insn, 5, 5);
     int rt2 = extract32(insn, 10, 5);
-    int64_t offset = sextract32(insn, 15, 7);
+    uint64_t offset = sextract64(insn, 15, 7);
     int index = extract32(insn, 23, 2);
     bool is_vector = extract32(insn, 26, 1);
     bool is_load = extract32(insn, 22, 1);
@@ -2684,14 +2688,14 @@ static void disas_pc_rel_adr(DisasContext *s, uint32_t insn)
 
     page = extract32(insn, 31, 1);
     /* SignExtend(immhi:immlo) -> offset */
-    offset = ((int64_t)sextract32(insn, 5, 19) << 2) | extract32(insn, 29, 2);
+    offset = (int64_t)((uint64_t)sextract32(insn, 5, 19) << 2) | extract32(insn, 29, 2);
     rd = extract32(insn, 0, 5);
     base = s->pc - 4;
 
     if (page) {
         /* ADRP (page based) */
         base &= ~0xfff;
-        offset <<= 12;
+        offset = ((uint64_t)offset) << 12;
     }
 
     tcg_gen_movi_i64(tcg_ctx, cpu_reg(s, rd), base + offset);
@@ -2839,7 +2843,7 @@ static bool logic_imm_decode_wmask(uint64_t *result, unsigned int immn,
      * by r within the element (which is e bits wide)...
      */
     mask = bitmask64(s + 1);
-    mask = (mask >> r) | (mask << (e - r));
+    mask = (mask >> r) | (mask << ((e - r) & 0x3f) );
     /* ...then replicate the element over the whole 64 bit value */
     mask = bitfield_replicate(mask, e);
     *result = mask;
@@ -5584,7 +5588,7 @@ static void handle_simd_dupe(DisasContext *s, int is_q, int rd, int rn,
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int size = ctz32(imm5);
-    int esize = 8 << size;
+    int esize = 8 << (size & 0x1f);
     int elements = (is_q ? 128 : 64) / esize;
     int index, i;
     TCGv_i64 tmp;
@@ -5661,7 +5665,7 @@ static void handle_simd_dupg(DisasContext *s, int is_q, int rd, int rn,
                              int imm5)
 {
     int size = ctz32(imm5);
-    int esize = 8 << size;
+    int esize = 8 << (size & 0x1f);
     int elements = (is_q ? 128 : 64)/esize;
     int i = 0;
 

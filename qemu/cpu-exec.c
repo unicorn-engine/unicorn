@@ -39,13 +39,9 @@ void cpu_loop_exit(CPUState *cpu)
 /* exit the current TB from a signal handler. The host registers are
    restored in a state compatible with the CPU emulator
    */
-#if defined(CONFIG_SOFTMMU)
-
 void cpu_resume_from_signal(CPUState *cpu, void *puc)
 {
-#endif
     /* XXX: restore cpu registers saved in host registers */
-
     cpu->exception_index = -1;
     siglongjmp(cpu->jmp_env, 1);
 }
@@ -65,7 +61,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     uint8_t *tc_ptr;
     uintptr_t next_tb;
     struct hook *hook;
-
 
     if (cpu->halted) {
         if (!cpu_has_work(cpu)) {
@@ -103,13 +98,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
             /* if an exception is pending, we execute it here */
             if (cpu->exception_index >= 0) {
                 //printf(">>> GOT INTERRUPT. exception idx = %x\n", cpu->exception_index);	// qq
-                if (uc->stop_interrupt && uc->stop_interrupt(cpu->exception_index)) {
-                    cpu->halted = 1;
-                    uc->invalid_error = UC_ERR_INSN_INVALID;
-                    ret = EXCP_HLT;
-                    break;
-                }
-
                 if (cpu->exception_index >= EXCP_INTERRUPT) {
                     /* exit request from the cpu execution loop */
                     ret = cpu->exception_index;
@@ -129,22 +117,6 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
                     ret = cpu->exception_index;
                     break;
 #else
-                    // Unicorn: call registered interrupt callbacks
-                    HOOK_FOREACH_VAR_DECLARE;
-                    HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
-                        ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
-                        catched = true;
-                    }
-
-                    // Unicorn: If un-catched interrupt, stop executions.
-                    if (!catched) {
-                        cpu->halted = 1;
-                        uc->invalid_error = UC_ERR_EXCEPTION;
-                        ret = EXCP_HLT;
-                        break;
-                    }
-
-                    cpu->exception_index = -1;
 #if defined(TARGET_X86_64)
                     if (env->exception_is_int) {
                         // point EIP to the next instruction after INT
@@ -154,6 +126,39 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
 #if defined(TARGET_MIPS) || defined(TARGET_MIPS64)
                     env->active_tc.PC = uc->next_pc;
 #endif
+                    if (uc->stop_interrupt && uc->stop_interrupt(cpu->exception_index)) {
+                        // Unicorn: call registered invalid instruction callbacks
+                        HOOK_FOREACH_VAR_DECLARE;
+                        HOOK_FOREACH(uc, hook, UC_HOOK_INSN_INVALID) {
+                            if (hook->to_delete)
+                                continue;
+                            catched = ((uc_cb_hookinsn_invalid_t)hook->callback)(uc, hook->user_data);
+                            if (catched)
+                                break;
+                        }
+                        if (!catched)
+                            uc->invalid_error = UC_ERR_INSN_INVALID;
+                    } else {
+                        // Unicorn: call registered interrupt callbacks
+                        HOOK_FOREACH_VAR_DECLARE;
+                        HOOK_FOREACH(uc, hook, UC_HOOK_INTR) {
+                            if (hook->to_delete)
+                                continue;
+                            ((uc_cb_hookintr_t)hook->callback)(uc, cpu->exception_index, hook->user_data);
+                            catched = true;
+                        }
+                        if (!catched)
+                            uc->invalid_error = UC_ERR_EXCEPTION;
+                    }
+
+                    // Unicorn: If un-catched interrupt, stop executions.
+                    if (!catched) {
+                        cpu->halted = 1;
+                        ret = EXCP_HLT;
+                        break;
+                    }
+
+                    cpu->exception_index = -1;
 #endif
                 }
             }
@@ -285,6 +290,9 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
         }
     } /* for(;;) */
 
+    // Unicorn: Clear any TCG exit flag that might have been left set by exit requests
+    uc->current_cpu->tcg_exit_req = 0;
+
     cc->cpu_exec_exit(cpu);
 
     // Unicorn: flush JIT cache to because emulation might stop in
@@ -293,7 +301,8 @@ int cpu_exec(struct uc_struct *uc, CPUArchState *env)   // qq
     tb_flush(env);
 
     /* fail safe : never use current_cpu outside cpu_exec() */
-    uc->current_cpu = NULL;
+    // uc->current_cpu = NULL;
+
     return ret;
 }
 
@@ -313,24 +322,33 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
          */
         CPUClass *cc = CPU_GET_CLASS(env->uc, cpu);
         TranslationBlock *tb = (TranslationBlock *)(next_tb & ~TB_EXIT_MASK);
-        if (cc->synchronize_from_tb) {
-            // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count &&
-                    !env->uc->stop_request && !env->uc->quit_request)
-                cc->synchronize_from_tb(cpu, tb);
-        } else {
-            assert(cc->set_pc);
-            // avoid sync twice when helper_uc_tracecode() already did this.
-            if (env->uc->emu_counter <= env->uc->emu_count && !env->uc->quit_request)
-                cc->set_pc(cpu, tb->pc);
+
+        /* Both set_pc() & synchronize_fromtb() can be ignored when code tracing hook is installed,
+         * or timer mode is in effect, since these already fix the PC.
+         */
+        if (!HOOK_EXISTS(env->uc, UC_HOOK_CODE) && !env->uc->timeout) {
+            if (cc->synchronize_from_tb) {
+                // avoid sync twice when helper_uc_tracecode() already did this.
+                if (env->uc->emu_counter <= env->uc->emu_count &&
+                        !env->uc->stop_request && !env->uc->quit_request)
+                    cc->synchronize_from_tb(cpu, tb);
+            } else {
+                assert(cc->set_pc);
+                // avoid sync twice when helper_uc_tracecode() already did this.
+                if (env->uc->emu_counter <= env->uc->emu_count &&
+                        !env->uc->stop_request && !env->uc->quit_request)
+                    cc->set_pc(cpu, tb->pc);
+            }
         }
     }
+
     if ((next_tb & TB_EXIT_MASK) == TB_EXIT_REQUESTED) {
         /* We were asked to stop executing TBs (probably a pending
          * interrupt. We've now stopped, so clear the flag.
          */
         cpu->tcg_exit_req = 0;
     }
+
     return next_tb;
 }
 
@@ -380,6 +398,9 @@ static TranslationBlock *tb_find_slow(CPUArchState *env, target_ulong pc,
 not_found:
     /* if no translated code available, then translate it now */
     tb = tb_gen_code(cpu, pc, cs_base, (int)flags, 0);   // qq
+    if (tb == NULL) {
+        return NULL;
+    }
 
 found:
     /* Move the last found TB to the head of the list */

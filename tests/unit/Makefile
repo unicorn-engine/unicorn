@@ -2,12 +2,15 @@ CFLAGS += -Wall -Werror -Wno-unused-function -g
 CFLAGS += -D__USE_MINGW_ANSI_STDIO=1
 CFLAGS += -L ../../ -I ../../include
 CFLAGS += -L ../../cmocka/src -I ../../cmocka/include
+CFLAGS += -L /usr/local/lib -I /usr/local/include
 ASFLAGS += --32
 OBJCOPY = objcopy
 
 UNAME_S := $(shell uname -s)
+UNAME_M := $(shell uname -m)
+LDLIBS += -pthread
 ifeq ($(UNAME_S), Linux)
-LDLIBS += -lrt -pthread
+LDLIBS += -lrt
 else ifeq ($(UNAME_S), Darwin)
 OBJCOPY = gobjcopy
 ASFLAGS = -arch i386
@@ -30,12 +33,16 @@ TEST_PROGS = $(TEST_ASSEMBLY:%.s=%.o)
 TEST_BINS = $(TEST_PROGS:%.o=%.bin)
 ALL_TESTS = $(ALL_TESTS_SOURCES:%.c=%)
 
+ifneq (,$(findstring x86,$(UNAME_M)))
+ALL_TESTS += $(TEST_BINS)
+endif
+
 .PHONY: all
-all: ${TEST_BINS} ${ALL_TESTS}
+all: ${ALL_TESTS}
 
 .PHONY: clean
 clean:
-	rm -rf ${TEST_BINS} ${ALL_TESTS}
+	rm -rf ${ALL_TESTS}
 
 %.bin: %.o
 	${OBJCOPY} -O binary $^ $@

@@ -550,6 +550,9 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
     reset_all_temps(s, nb_temps);
 
     nb_ops = tcg_opc_ptr - s->gen_opc_buf;
+    if (nb_ops > OPC_BUF_SIZE) {
+        return NULL;
+    }
     gen_args = args;
     for (op_index = 0; op_index < nb_ops; op_index++) {
         TCGOpcode op = s->gen_opc_buf[op_index];
@@ -1370,6 +1373,9 @@ static TCGArg *tcg_constant_folding(TCGContext *s, uint16_t *tcg_opc_ptr,
             } else {
         do_reset_output:
                 for (i = 0; i < nb_oargs; i++) {
+                    if (args[i] >= TCG_MAX_TEMPS) {
+                        continue;
+                    }
                     reset_temp(s, args[i]);
                     /* Save the corresponding known-zero bits mask for the
                        first output argument (only one supported so far). */

@@ -28,6 +28,9 @@ public interface UnicornConst {
    public static final int UC_MODE_THUMB = 16;
    public static final int UC_MODE_MCLASS = 32;
    public static final int UC_MODE_V8 = 64;
+   public static final int UC_MODE_ARM926 = 128;
+   public static final int UC_MODE_ARM946 = 256;
+   public static final int UC_MODE_ARM1176 = 512;
    public static final int UC_MODE_MICRO = 16;
    public static final int UC_MODE_MIPS3 = 32;
    public static final int UC_MODE_MIPS32R6 = 64;
@@ -89,6 +92,7 @@ public interface UnicornConst {
    public static final int UC_HOOK_MEM_WRITE = 2048;
    public static final int UC_HOOK_MEM_FETCH = 4096;
    public static final int UC_HOOK_MEM_READ_AFTER = 8192;
+   public static final int UC_HOOK_INSN_INVALID = 16384;
    public static final int UC_HOOK_MEM_UNMAPPED = 112;
    public static final int UC_HOOK_MEM_PROT = 896;
    public static final int UC_HOOK_MEM_READ_INVALID = 144;
@@ -99,6 +103,7 @@ public interface UnicornConst {
    public static final int UC_QUERY_MODE = 1;
    public static final int UC_QUERY_PAGE_SIZE = 2;
    public static final int UC_QUERY_ARCH = 3;
+   public static final int UC_QUERY_TIMEOUT = 4;
 
    public static final int UC_PROT_NONE = 0;
    public static final int UC_PROT_READ = 1;

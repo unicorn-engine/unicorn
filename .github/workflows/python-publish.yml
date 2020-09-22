@@ -1,0 +1,67 @@
+name: PyPI 📦 Distribution
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+        platform: [x32, x64]
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Set up MSVC
+      if: matrix.os == 'windows-latest'
+      uses: microsoft/setup-msbuild@v1
+
+    - name: Install dependencies
+      run: |
+        pip install setuptools wheel
+
+    - name: Build distribution 📦
+      shell: bash 
+      run: |
+        if [ ${{ matrix.platform }} == 'x32' ] && [ ${{ matrix.os }} == 'windows-latest' ]; then
+             cd bindings/python && python setup.py build -p win32 sdist bdist_wheel -p win32
+             rm dist/*.tar.gz
+        elif [ ${{ matrix.platform }} == 'x32' ] && [ ${{ matrix.os }} == 'ubuntu-latest' ]; then
+             docker run --rm -v `pwd`/:/work dockcross/manylinux1-x86 > ./dockcross
+             chmod +x ./dockcross
+             ./dockcross bindings/python/build_wheel.sh
+        elif [ ${{ matrix.platform }} == 'x64' ] && [ ${{ matrix.os }} == 'ubuntu-latest' ]; then
+             docker run --rm -v `pwd`/:/work dockcross/manylinux1-x64 > ./dockcross
+             chmod +x ./dockcross
+             ./dockcross bindings/python/build_wheel.sh
+        elif [ ${{ matrix.platform }} == 'x32' ] && [ ${{ matrix.os }} == 'macos-latest' ]; then
+             cd bindings/python && python setup.py sdist
+        else
+             cd bindings/python && python setup.py bdist_wheel
+        fi
+
+    - uses: actions/upload-artifact@v2
+      with:
+         path: ${{ github.workspace }}/bindings/python/dist/*
+
+  publish:
+    needs: [build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags')
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: artifact
+          path: dist
+
+      - name: Publish distribution 📦 to PyPI
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_pass }}

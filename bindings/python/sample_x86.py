@@ -383,9 +383,9 @@ def test_i386_loop():
         print(">>> ECX = 0x%x" %r_ecx)
         print(">>> EDX = 0x%x" %r_edx)
 
-
     except UcError as e:
         print("ERROR: %s" % e)
+
 
 # Test X86 32 bit with IN/OUT instruction
 def test_i386_inout():

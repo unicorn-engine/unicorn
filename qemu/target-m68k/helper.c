@@ -125,9 +125,6 @@ void cpu_m68k_flush_flags(CPUM68KState *env, int cc_op)
     env->cc_dest = flags;
 }
 
-/* this function is implemented in op_helper.c: void HELPER(raise_exception) */
-void raise_exception(CPUM68KState *env, uint32_t tt);
-
 void HELPER(movec)(CPUM68KState *env, uint32_t reg, uint32_t val)
 {
     switch (reg) {
@@ -145,7 +142,7 @@ void HELPER(movec)(CPUM68KState *env, uint32_t reg, uint32_t val)
     default:
         qemu_log("Unimplemented control register write 0x%x = 0x%x\n",
                  reg, val);
-        raise_exception(env, EXCP_UNSUPPORTED);
+        helper_raise_exception(env, EXCP_UNSUPPORTED);
     }
 }
 
@@ -169,10 +166,10 @@ void HELPER(set_macsr)(CPUM68KState *env, uint32_t val)
             }
             if (env->macsr & MACSR_FI) {
                 regval = (((uint64_t)acc) << 8) | extlow;
-                regval |= ((int64_t)exthigh) << 40;
+                regval |= ((uint64_t)((int64_t)exthigh)) << 40;
             } else if (env->macsr & MACSR_SU) {
                 regval = acc | (((int64_t)extlow) << 32);
-                regval |= ((int64_t)exthigh) << 40;
+                regval |= ((uint64_t)((int64_t)exthigh)) << 40;
             } else {
                 regval = acc | (((uint64_t)extlow) << 32);
                 regval |= ((uint64_t)(uint8_t)exthigh) << 40;
@@ -510,7 +507,7 @@ uint64_t HELPER(macmuls)(CPUM68KState *env, uint32_t op1, uint32_t op2)
     int64_t res;
 
     product = (uint64_t)op1 * op2;
-    res = (product << 24) >> 24;
+    res = ((int64_t)(((uint64_t)product) << 24)) >> 24;
     if (res != product) {
         env->macsr |= MACSR_V;
         if (env->macsr & MACSR_OMC) {
@@ -565,7 +562,7 @@ void HELPER(macsats)(CPUM68KState *env, uint32_t acc)
     int64_t tmp;
     int64_t result;
     tmp = env->macc[acc];
-    result = ((tmp << 16) >> 16);
+    result = ((int64_t)((uint64_t)tmp << 16) >> 16);
     if (result != tmp) {
         env->macsr |= MACSR_V;
     }
@@ -609,7 +606,7 @@ void HELPER(macsatf)(CPUM68KState *env, uint32_t acc)
     int64_t result;
 
     sum = env->macc[acc];
-    result = (sum << 16) >> 16;
+    result = ((int64_t)((uint64_t)sum << 16)) >> 16;
     if (result != sum) {
         env->macsr |= MACSR_V;
     }
@@ -746,12 +743,12 @@ void HELPER(set_mac_extf)(CPUM68KState *env, uint32_t val, uint32_t acc)
     int32_t tmp;
     res = env->macc[acc] & 0xffffffff00ull;
     tmp = (int16_t)(val & 0xff00);
-    res |= ((int64_t)tmp) << 32;
+    res |= ((uint64_t)((int64_t)tmp)) << 32;
     res |= val & 0xff;
     env->macc[acc] = res;
     res = env->macc[acc + 1] & 0xffffffff00ull;
     tmp = (val & 0xff000000);
-    res |= ((int64_t)tmp) << 16;
+    res |= ((uint64_t)((int64_t)tmp)) << 16;
     res |= (val >> 16) & 0xff;
     env->macc[acc + 1] = res;
 }
@@ -762,11 +759,11 @@ void HELPER(set_mac_exts)(CPUM68KState *env, uint32_t val, uint32_t acc)
     int32_t tmp;
     res = (uint32_t)env->macc[acc];
     tmp = (int16_t)val;
-    res |= ((int64_t)tmp) << 32;
+    res |= ((uint64_t)((int64_t)tmp)) << 32;
     env->macc[acc] = res;
     res = (uint32_t)env->macc[acc + 1];
     tmp = val & 0xffff0000;
-    res |= (int64_t)tmp << 16;
+    res |= ((uint64_t)((int64_t)tmp)) << 16;
     env->macc[acc + 1] = res;
 }
 

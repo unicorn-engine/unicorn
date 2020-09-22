@@ -11,6 +11,8 @@
 #include <unicorn/x86.h>  /* needed for uc_x86_mmr */
 #include "uc_priv.h"
 
+#define FPST(n)  (X86_CPU(uc, mycpu)->env.fpregs[(X86_CPU(uc, mycpu)->env.fpstt + (n)) & 7].d)
+
 #define X86_NON_CS_FLAGS (DESC_P_MASK | DESC_S_MASK | DESC_W_MASK | DESC_A_MASK)
 static void load_seg_16_helper(CPUX86State *env, int seg, uint32_t selector)
 {
@@ -25,7 +27,12 @@ const int X86_REGS_STORAGE_SIZE = offsetof(CPUX86State, tlb_table);
 
 static void x86_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    ((CPUX86State *)uc->current_cpu->env_ptr)->eip = address;
+    CPUState* cpu = uc->cpu;
+    int16_t cs = (uint16_t)X86_CPU(uc, cpu)->env.segs[R_CS].selector;
+    if(uc->mode == UC_MODE_16)
+        ((CPUX86State *)uc->current_cpu->env_ptr)->eip = address - cs*16;
+    else
+        ((CPUX86State *)uc->current_cpu->env_ptr)->eip = address;
 }
 
 void x86_release(void *ctx);
@@ -34,6 +41,8 @@ void x86_release(void *ctx)
 {
     int i;
     TCGContext *s = (TCGContext *) ctx;
+
+    cpu_breakpoint_remove_all(s->uc->cpu, BP_CPU);
 
     release_common(ctx);
 
@@ -158,6 +167,10 @@ void x86_reg_reset(struct uc_struct *uc)
             env->hflags &= ~(HF_ADDSEG_MASK);
             env->efer |= MSR_EFER_LMA | MSR_EFER_LME; // extended mode activated
             cpu_x86_update_cr0(env, CR0_PE_MASK); // protected mode
+            /* If we are operating in 64bit mode then add the Long Mode flag
+             * to the CPUID feature flag
+             */
+            env->features[FEAT_8000_0001_EDX] |= CPUID_EXT2_LM;
             break;
     }
 }
@@ -285,6 +298,19 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                     dst[1] = reg->_d[1];
                     continue;
                 }
+            case UC_X86_REG_ST0:
+            case UC_X86_REG_ST1:
+            case UC_X86_REG_ST2:
+            case UC_X86_REG_ST3:
+            case UC_X86_REG_ST4:
+            case UC_X86_REG_ST5:
+            case UC_X86_REG_ST6:
+            case UC_X86_REG_ST7:
+                {
+                    // value must be big enough to keep 80 bits (10 bytes)
+                    memcpy(value, &FPST(regid - UC_X86_REG_ST0), 10);
+                    continue;
+                }
             case UC_X86_REG_YMM0:
             case UC_X86_REG_YMM1:
             case UC_X86_REG_YMM2:
@@ -333,6 +359,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                         continue;
                     case UC_X86_REG_GS:
                         *(int16_t *)value = X86_CPU(uc, mycpu)->env.segs[R_GS].selector;
+                        continue;
+                    case UC_X86_REG_FS_BASE:
+                        *(uint32_t *)value = (uint32_t)X86_CPU(uc, mycpu)->env.segs[R_FS].base;
                         continue;
                 }
                 // fall-thru
@@ -481,6 +510,9 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                         break;
                     case UC_X86_REG_MXCSR:
                         *(uint32_t *)value = X86_CPU(uc, mycpu)->env.mxcsr;
+                        break;
+                    case UC_X86_REG_FS_BASE:
+                        *(uint32_t *)value = (uint32_t)X86_CPU(uc, mycpu)->env.segs[R_FS].base;
                         break;
                 }
                 break;
@@ -782,6 +814,12 @@ int x86_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
                             dst[1] = reg->_d[1];
                             break;
                         }
+                    case UC_X86_REG_FS_BASE:
+                        *(uint64_t *)value = (uint64_t)X86_CPU(uc, mycpu)->env.segs[R_FS].base;
+                        break;
+                    case UC_X86_REG_GS_BASE:
+                        *(uint64_t *)value = (uint64_t)X86_CPU(uc, mycpu)->env.segs[R_GS].base;
+                        break;
                 }
                 break;
 #endif
@@ -852,6 +890,19 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                     XMMReg *reg = &X86_CPU(uc, mycpu)->env.xmm_regs[regid - UC_X86_REG_XMM0];
                     reg->_d[0] = src[0];
                     reg->_d[1] = src[1];
+                    continue;
+                }
+            case UC_X86_REG_ST0:
+            case UC_X86_REG_ST1:
+            case UC_X86_REG_ST2:
+            case UC_X86_REG_ST3:
+            case UC_X86_REG_ST4:
+            case UC_X86_REG_ST5:
+            case UC_X86_REG_ST6:
+            case UC_X86_REG_ST7:
+                {
+                    // value must be big enough to keep 80 bits (10 bytes)
+                    memcpy(&FPST(regid - UC_X86_REG_ST0), value, 10);
                     continue;
                 }
             case UC_X86_REG_YMM0:
@@ -1083,6 +1134,15 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                     case UC_X86_REG_MXCSR:
                         cpu_set_mxcsr(&X86_CPU(uc, mycpu)->env, *(uint32_t *)value);
                         break;
+                        /*
+                    // Don't think base registers are a "thing" on x86
+                    case UC_X86_REG_FS_BASE: 
+                        X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint32_t *)value;
+                        continue;
+                    case UC_X86_REG_GS_BASE:
+                        X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint32_t *)value;
+                        continue;
+                        */
                 }
                 break;
 
@@ -1401,6 +1461,12 @@ int x86_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, i
                             reg->_d[1] = src[1];
                             break;
                         }
+                    case UC_X86_REG_FS_BASE:
+                        X86_CPU(uc, mycpu)->env.segs[R_FS].base = *(uint64_t *)value;
+                        continue;
+                    case UC_X86_REG_GS_BASE:
+                        X86_CPU(uc, mycpu)->env.segs[R_GS].base = *(uint64_t *)value;
+                        continue;
                 }
                 break;
 #endif

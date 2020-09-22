@@ -49,7 +49,7 @@ uint32_t HELPER(neon_tbl)(CPUARMState *env, uint32_t ireg, uint32_t def,
             tmp = (table[index >> 3] >> ((index & 7) << 3)) & 0xff;
             val |= tmp << shift;
         } else {
-            val |= def & (0xff << shift);
+            val |= def & (0xffU << shift);
         }
     }
     return val;
@@ -118,7 +118,7 @@ uint32_t HELPER(double_saturate)(CPUARMState *env, int32_t val)
         res = SIGNBIT;
         env->QF = 1;
     } else {
-        res = val << 1;
+        res = (uint32_t)val << 1;
     }
     return res;
 }

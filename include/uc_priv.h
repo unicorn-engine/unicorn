@@ -13,7 +13,8 @@
 
 // These are masks of supported modes for each cpu/arch.
 // They should be updated when changes are made to the uc_mode enum typedef.
-#define UC_MODE_ARM_MASK    (UC_MODE_ARM|UC_MODE_THUMB|UC_MODE_LITTLE_ENDIAN|UC_MODE_MCLASS|UC_MODE_BIG_ENDIAN)
+#define UC_MODE_ARM_MASK    (UC_MODE_ARM|UC_MODE_THUMB|UC_MODE_LITTLE_ENDIAN|UC_MODE_MCLASS \
+				|UC_MODE_ARM926|UC_MODE_ARM946|UC_MODE_ARM1176|UC_MODE_BIG_ENDIAN)
 #define UC_MODE_MIPS_MASK   (UC_MODE_MIPS32|UC_MODE_MIPS64|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN)
 #define UC_MODE_X86_MASK    (UC_MODE_16|UC_MODE_32|UC_MODE_64|UC_MODE_LITTLE_ENDIAN)
 #define UC_MODE_PPC_MASK    (UC_MODE_PPC64|UC_MODE_BIG_ENDIAN)
@@ -85,6 +86,7 @@ struct hook {
     int type;            // UC_HOOK_*
     int insn;            // instruction for HOOK_INSN
     int refs;            // reference count to free hook stored in multiple lists
+    bool to_delete;      // set to true when the hook is deleted by the user. The destruction of the hook is delayed.
     uint64_t begin, end; // only trigger if PC or memory access is in this address (depends on hook type)
     void *callback;      // a uc_cb_* type
     void *user_data;
@@ -107,6 +109,7 @@ enum uc_hook_idx {
     UC_HOOK_MEM_WRITE_IDX,
     UC_HOOK_MEM_FETCH_IDX,
     UC_HOOK_MEM_READ_AFTER_IDX,
+    UC_HOOK_INSN_INVALID_IDX,
 
     UC_HOOK_MAX,
 };
@@ -118,15 +121,13 @@ enum uc_hook_idx {
 #define HOOK_FOREACH(uc, hh, idx)                         \
     for (                                                 \
         cur = (uc)->hook[idx##_IDX].head;                 \
-        cur != NULL && ((hh) = (struct hook *)cur->data)  \
-            /* stop excuting callbacks on stop request */ \
-            && !uc->stop_request;                         \
+        cur != NULL && ((hh) = (struct hook *)cur->data); \
         cur = cur->next)
 
 // if statement to check hook bounds
 #define HOOK_BOUND_CHECK(hh, addr)                  \
     ((((addr) >= (hh)->begin && (addr) <= (hh)->end) \
-         || (hh)->begin > (hh)->end))
+        || (hh)->begin > (hh)->end) && !((hh)->to_delete))
 
 #define HOOK_EXISTS(uc, idx) ((uc)->hook[idx##_IDX].head != NULL)
 #define HOOK_EXISTS_BOUNDED(uc, idx, addr) _hook_exists_bounded((uc)->hook[idx##_IDX].head, addr)
@@ -212,6 +213,7 @@ struct uc_struct {
 
     // linked lists containing hooks per type
     struct list hook[UC_HOOK_MAX];
+    struct list hooks_to_del;
 
     // hook to count number of instructions for uc_emu_start()
     uc_hook count_hook;
@@ -221,10 +223,13 @@ struct uc_struct {
 
     uint64_t block_addr;    // save the last block address we hooked
 
+    int size_recur_mem; // size for mem access when in a recursive call
+
     bool init_tcg;      // already initialized local TCGv variables?
     bool stop_request;  // request to immediately stop emulation - for uc_emu_stop()
     bool quit_request;  // request to quit the current TB, but continue to emulate - for uc_mem_protect()
     bool emulation_done;  // emulation is done by uc_emu_start()
+    bool timed_out;     // emulation timed out, that can retrieve via uc_query(UC_QUERY_TIMEOUT)
     QemuThread timer;   // timer for emulation timeout
     uint64_t timeout;   // timeout for uc_emu_start()
 
@@ -248,9 +253,11 @@ struct uc_struct {
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
+// We also save cpu->jmp_env, so emulation can be reentrant
 struct uc_context {
-   size_t size;
-   char data[0];
+   size_t context_size;	// size of the real internal context structure
+   unsigned int jmp_env_size; // size of cpu->jmp_env
+   char data[0]; // context + cpu->jmp_env
 };
 
 // check if this address is mapped in (via uc_mem_map())

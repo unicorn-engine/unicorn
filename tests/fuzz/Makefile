@@ -1,11 +1,12 @@
 CFLAGS += -L ../../ -I ../../include
 
 UNAME_S := $(shell uname -s)
+LDFLAGS += -pthread
 ifeq ($(UNAME_S), Linux)
-LDFLAGS += -lrt -pthread
+LDFLAGS += -lrt
 endif
 
-LDFLAGS += -lunicorn
+LDFLAGS += ../../libunicorn.a
 
 
 ALL_TESTS_SOURCES = $(wildcard fuzz*.c)
@@ -19,4 +20,4 @@ clean:
 	rm -rf ${ALL_TESTS}
 
 fuzz%: fuzz%.c
-	$(CC) $(CFLAGS) $^ onefile.c $(LDFLAGS) -o $@
+	$(CC) $(CFLAGS) $^ onedir.c $(LDFLAGS) -o $@

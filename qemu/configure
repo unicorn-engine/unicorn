@@ -24,8 +24,6 @@ fi
 TMPB="qemu-conf"
 TMPC="${TMPDIR1}/${TMPB}.c"
 TMPO="${TMPDIR1}/${TMPB}.o"
-TMPL="${TMPDIR1}/${TMPB}.lo"
-TMPA="${TMPDIR1}/lib${TMPB}.la"
 TMPE="${TMPDIR1}/${TMPB}.exe"
 
 rm -f config.log
@@ -139,7 +137,6 @@ cpu=""
 static="no"
 cross_prefix=""
 host_cc="cc"
-libs_softmmu=""
 cc_i386=i386-pc-linux-gnu-gcc
 debug_info="yes"
 stack_protector=""
@@ -162,7 +159,6 @@ unset target_list
 debug_tcg="no"
 debug="no"
 strip_opt="yes"
-tcg_interpreter="no"
 bigendian="no"
 mingw32="no"
 EXESUF=""
@@ -455,7 +451,6 @@ Haiku)
 esac
 
 : ${make=${MAKE-make}}
-: ${python=${PYTHON-python}}
 
 # Default objcc to clang if available, otherwise use CC
 if has clang; then
@@ -497,8 +492,6 @@ for opt do
   --objcc=*) objcc="$optarg"
   ;;
   --make=*) make="$optarg"
-  ;;
-  --python=*) python="$optarg"
   ;;
   --extra-cflags=*)
   ;;
@@ -547,24 +540,6 @@ for opt do
   ;;
   esac
 done
-
-if ! has $python; then
-  error_exit "Python not found. Use --python=/path/to/python"
-fi
-
-# Note that if the Python conditional here evaluates True we will exit
-# with status 1 which is a shell 'false' value.
-if ! $python -c 'import sys; sys.exit(sys.version_info < (2,4))'; then
-  error_exit "Cannot use '$python', Python 2.4 or later is required." \
-      "Use --python=/path/to/python to specify a supported Python."
-fi
-
-# The -B switch was added in Python 2.6.
-# If it is supplied, compiled files are not written.
-# Use it for Python versions which support it.
-if $python -B -c 'import sys; sys.exit(0)' 2>/dev/null; then
-  python="$python -B"
-fi
 
 case "$cpu" in
     ppc)
@@ -645,7 +620,6 @@ Advanced options (experts only):
   --extra-cflags=CFLAGS    append extra C compiler flags QEMU_CFLAGS
   --extra-ldflags=LDFLAGS  append extra linker flags LDFLAGS
   --make=MAKE              use specified make [$make]
-  --python=PYTHON          use specified python [$python]
   --static                 enable static build [$static]
   --enable-debug-tcg       enable TCG debugging
   --disable-debug-tcg      disable TCG debugging (default)
@@ -996,11 +970,6 @@ elif compile_prog "" "$pthread_lib -lrt" ; then
   LIBS="$LIBS -lrt"
 fi
 
-if test "$darwin" != "yes" -a "$mingw32" != "yes" -a "$solaris" != yes -a \
-        "$aix" != "yes" -a "$haiku" != "yes" ; then
-    libs_softmmu="-lutil $libs_softmmu"
-fi
-
 ########################################
 # check if we have valgrind/valgrind.h
 
@@ -1092,7 +1061,6 @@ echo "CFLAGS            $CFLAGS"
 echo "QEMU_CFLAGS       $QEMU_CFLAGS"
 echo "LDFLAGS           $LDFLAGS"
 echo "make              $make"
-echo "python            $python"
 echo "host CPU          $cpu"
 echo "host big endian   $bigendian"
 echo "target list       $target_list"
@@ -1113,7 +1081,6 @@ echo >> $config_host_mak
 echo all: >> $config_host_mak
 echo "extra_cflags=$EXTRA_CFLAGS" >> $config_host_mak
 echo "extra_ldflags=$EXTRA_LDFLAGS" >> $config_host_mak
-echo "libs_softmmu=$libs_softmmu" >> $config_host_mak
 
 echo "ARCH=$ARCH" >> $config_host_mak
 
@@ -1163,9 +1130,6 @@ fi
 if test "$bswap_h" = "yes" ; then
   echo "CONFIG_MACHINE_BSWAP_H=y" >> $config_host_mak
 fi
-if test "$tcg_interpreter" = "yes" ; then
-  echo "CONFIG_TCG_INTERPRETER=y" >> $config_host_mak
-fi
 
 # XXX: suppress that
 if [ "$bsd" = "yes" ] ; then
@@ -1184,9 +1148,7 @@ if test "$int128" = "yes" ; then
   echo "CONFIG_INT128=y" >> $config_host_mak
 fi
 
-if test "$tcg_interpreter" = "yes"; then
-  QEMU_INCLUDES="-I\$(SRC_PATH)/tcg/tci $QEMU_INCLUDES"
-elif test "$ARCH" = "sparc64" ; then
+if test "$ARCH" = "sparc64" ; then
   QEMU_INCLUDES="-I\$(SRC_PATH)/tcg/sparc $QEMU_INCLUDES"
 elif test "$ARCH" = "s390x" ; then
   QEMU_INCLUDES="-I\$(SRC_PATH)/tcg/s390 $QEMU_INCLUDES"
@@ -1200,7 +1162,6 @@ fi
 QEMU_INCLUDES="-I\$(SRC_PATH)/tcg $QEMU_INCLUDES"
 
 echo "MAKE=$make" >> $config_host_mak
-echo "PYTHON=$python" >> $config_host_mak
 echo "CC=$cc" >> $config_host_mak
 echo "CC_I386=$cc_i386" >> $config_host_mak
 echo "HOST_CC=$host_cc" >> $config_host_mak
@@ -1216,11 +1177,6 @@ echo "CFLAGS=$CFLAGS" >> $config_host_mak
 echo "CFLAGS_NOPIE=$CFLAGS_NOPIE" >> $config_host_mak
 echo "QEMU_CFLAGS=$QEMU_CFLAGS" >> $config_host_mak
 echo "QEMU_INCLUDES=$QEMU_INCLUDES" >> $config_host_mak
-if test "$cross_prefix" != ""; then
-  echo "AUTOCONF_HOST := --host=${cross_prefix%-}"     >> $config_host_mak
-else
-  echo "AUTOCONF_HOST := "                             >> $config_host_mak
-fi
 echo "LDFLAGS=$LDFLAGS" >> $config_host_mak
 echo "LDFLAGS_NOPIE=$LDFLAGS_NOPIE" >> $config_host_mak
 echo "LIBS+=$LIBS" >> $config_host_mak

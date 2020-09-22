@@ -246,7 +246,7 @@ static inline flag get_default_nan_mode(float_status *status)
 | Routine to raise any or all of the software IEC/IEEE floating-point
 | exception flags.
 *----------------------------------------------------------------------------*/
-void float_raise( int8 flags STATUS_PARAM);
+void float_raise( uint8_t flags STATUS_PARAM);
 
 /*----------------------------------------------------------------------------
 | If `a' is denormal and we are in flush-to-zero mode then set the
@@ -419,7 +419,7 @@ static inline int float32_is_zero(float32 a)
 
 static inline int float32_is_any_nan(float32 a)
 {
-    return ((float32_val(a) & ~(1 << 31)) > 0x7f800000UL);
+    return ((float32_val(a) & ~(1U << 31)) > 0x7f800000UL);
 }
 
 static inline int float32_is_zero_or_denormal(float32 a)

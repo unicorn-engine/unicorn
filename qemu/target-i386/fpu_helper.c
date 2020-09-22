@@ -654,7 +654,9 @@ void helper_fbst_ST0(CPUX86State *env, target_ulong ptr)
     mem_end = mem_ref + 9;
     if (val < 0) {
         cpu_stb_data(env, mem_end, 0x80);
-        val = -val;
+        if (val != 0x8000000000000000LL) {
+            val = -val;
+        }
     } else {
         cpu_stb_data(env, mem_end, 0x00);
     }
@@ -664,7 +666,7 @@ void helper_fbst_ST0(CPUX86State *env, target_ulong ptr)
         }
         v = val % 100;
         val = val / 100;
-        v = ((v / 10) << 4) | (v % 10);
+        v = (int)((unsigned int)(v / 10) << 4) | (v % 10);
         cpu_stb_data(env, mem_ref++, v);
     }
     while (mem_ref < mem_end) {
@@ -999,23 +1001,14 @@ void helper_fstenv(CPUX86State *env, target_ulong ptr, int data32)
                 /* zero */
                 fptag |= 1;
             } else if (exp == 0 || exp == MAXEXPD
-                       || (mant & (1LL << 63)) == 0) {
+                       || (mant & (1ULL << 63)) == 0) {
                 /* NaNs, infinity, denormal */
                 fptag |= 2;
             }
         }
     }
 
-    // DFLAG enum: tcg.h, case here to int
-    if (env->hflags & HF_CS64_MASK) {
-        cpu_stl_data(env, ptr, env->fpuc);
-        cpu_stl_data(env, ptr + 4, fpus);
-        cpu_stl_data(env, ptr + 8, fptag);
-        cpu_stl_data(env, ptr + 12, (uint32_t)env->fpip); /* fpip */
-        cpu_stl_data(env, ptr + 20, 0); /* fpcs */
-        cpu_stl_data(env, ptr + 24, 0); /* fpoo */
-        cpu_stl_data(env, ptr + 28, 0); /* fpos */
-    } else if (data32) {
+    if (data32) {
         /* 32 bit */
         cpu_stl_data(env, ptr, env->fpuc);
         cpu_stl_data(env, ptr + 4, fpus);

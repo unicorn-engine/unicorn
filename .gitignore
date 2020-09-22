@@ -27,11 +27,9 @@ qemu/sparc64-softmmu/
 qemu/sparc-softmmu/
 qemu/i386-softmmu/
 qemu/x86_64-softmmu/
+qemu/ppc-softmmu/
+qemu/ppc64-softmmu/
 
-qemu/qapi-types.h
-qemu/qapi-visit.h
-qemu/qapi-types.c
-qemu/qapi-visit.c
 tags
 qemu/config-host.ld
 qemu/config.log

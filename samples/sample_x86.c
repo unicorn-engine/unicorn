@@ -301,6 +301,7 @@ static void test_i386_map_ptr(void)
         printf(">>> Failed to read 4 bytes from [0x%x]\n", ADDRESS);
 
     uc_close(uc);
+    free(mem);
 }
 
 static void test_i386_jump(void)

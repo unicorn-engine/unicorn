@@ -90,3 +90,22 @@ bool list_remove(struct list *list, void *data)
     }
     return false;
 }
+
+// returns true if the data exists in the list
+bool list_exists(struct list *list, void *data)
+{
+    struct list_item *next, *cur = NULL;
+    // is list empty?
+    if (list->head == NULL) {
+        return false;
+    }
+    cur = list->head;
+    while (cur != NULL) {
+        next = cur->next;
+        if (cur->data == data) {
+            return true;
+        }
+        cur = next;
+    }
+    return false;
+}

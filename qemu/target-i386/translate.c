@@ -1014,7 +1014,7 @@ static CCPrepare gen_prepare_eflags_c(DisasContext *s, TCGv reg)
         /* (CC_SRC >> (DATA_BITS - 1)) & 1 */
             size = s->cc_op - CC_OP_SHLB;
         shift = (8 << size) - 1;
-        return ccprepare_make(TCG_COND_NE, cpu_cc_src, 0, 0, (target_ulong)(1 << shift), false, false);
+        return ccprepare_make(TCG_COND_NE, cpu_cc_src, 0, 0, (target_ulong)(1ULL << shift), false, false);
 
     case CC_OP_MULB: case CC_OP_MULW: case CC_OP_MULL: case CC_OP_MULQ:
         return ccprepare_make(TCG_COND_NE, cpu_cc_src, 0, 0, -1, false, false);
@@ -2743,7 +2743,7 @@ static void gen_pusha(DisasContext *s)
     TCGv **cpu_T = (TCGv **)tcg_ctx->cpu_T;
 
     gen_op_movl_A0_reg(tcg_ctx, R_ESP);
-    gen_op_addl_A0_im(tcg_ctx, -8 << s->dflag);
+    gen_op_addl_A0_im(tcg_ctx, ((unsigned int)(-8)) << s->dflag);
     if (!s->ss32)
         tcg_gen_ext16u_tl(tcg_ctx, cpu_A0, cpu_A0);
     tcg_gen_mov_tl(tcg_ctx, *cpu_T[1], cpu_A0);

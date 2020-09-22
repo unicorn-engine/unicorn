@@ -41,6 +41,7 @@ int main()
     uc_hook_add(uc, &uh_trap, UC_HOOK_INTR, _interrupt, NULL, 1, 0);
     uc_emu_start(uc, UC_BUG_WRITE_ADDR, UC_BUG_WRITE_ADDR+8, 0, 1);
     uc_close(uc);
+    free(buf);
     printf ("Correct: %s\n", got_sigill? "YES": "NO");
     return got_sigill? 0: 1;
 }

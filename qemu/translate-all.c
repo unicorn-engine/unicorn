@@ -135,24 +135,57 @@ static void cpu_gen_init(struct uc_struct *uc)
     tcg_context_init(uc->tcg_ctx);
 }
 
-static void tb_clean_internal(struct uc_struct *uc, int i, void** lp)
+static void tb_clean_internal(void **p, int x)
 {
-    if (i == 0 || lp == 0) {
-        return;
-    }
-    tb_clean_internal(uc, i-1, (void*)(((char*)*lp) + ((0 >> (i * V_L2_BITS)) & (V_L2_SIZE - 1))));
-    if (lp && *lp) {
-        g_free(*lp);
+    int i;
+    void **q;
+
+    if (x <= 1) {
+        for (i = 0; i < V_L2_SIZE; i++) {
+            q = p[i];
+            if (q) {
+                g_free(q);
+            }
+        }
+        g_free(p);
+    } else {
+        for (i = 0; i < V_L2_SIZE; i++) {
+            q = p[i];
+            if (q) {
+                tb_clean_internal(q, x - 1);
+            }
+        }
+        g_free(p);
     }
 }
 
 void tb_cleanup(struct uc_struct *uc)
 {
-    int index = 0;
-    /* Level 1.  Always allocated.  */
-    void** lp = uc->l1_map + ((index >> V_L1_SHIFT) & (V_L1_SIZE - 1));
-    /* Level 2..N-1.  */
-    tb_clean_internal(uc, V_L1_SHIFT / V_L2_BITS, lp);
+    int i, x;
+    void **p;
+
+    if (uc) {
+        if (uc->l1_map) {
+            x = V_L1_SHIFT / V_L2_BITS;
+            if (x <= 1) {
+                for (i = 0; i < V_L1_SIZE; i++) {
+                    p = uc->l1_map[i];
+                    if (p) {
+                        g_free(p);
+                        uc->l1_map[i] = NULL;
+                    }
+                }
+            } else {
+                for (i = 0; i < V_L1_SIZE; i++) {
+                    p = uc->l1_map[i];
+                    if (p) {
+                        tb_clean_internal(p, x - 1);
+                        uc->l1_map[i] = NULL;
+                    }
+                }
+            }
+        }
+    }
 }
 
 /* return non zero if the very first instruction is invalid so that
@@ -206,6 +239,9 @@ static int cpu_gen_code(CPUArchState *env, TranslationBlock *tb, int *gen_code_s
     s->code_time -= profile_getclock();
 #endif
     gen_code_size = tcg_gen_code(s, gen_code_buf);
+    if (gen_code_size == -1) {
+        return -1;
+    }
     //printf(">>> code size = %u: ", gen_code_size);
     //int i;
     //for (i = 0; i < gen_code_size; i++) {
@@ -1097,6 +1133,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     TranslationBlock *tb;
     tb_page_addr_t phys_pc, phys_page2;
     int code_gen_size;
+    int ret;
 
     phys_pc = get_page_addr_code(env, pc);
     tb = tb_alloc(env->uc, pc);
@@ -1112,7 +1149,11 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     tb->cs_base = cs_base;
     tb->flags = flags;
     tb->cflags = cflags;
-    cpu_gen_code(env, tb, &code_gen_size);  // qq
+    ret = cpu_gen_code(env, tb, &code_gen_size);  // qq
+    if (ret == -1) {
+        tb_free(env->uc, tb);
+        return NULL;
+    }
     tcg_ctx->code_gen_ptr = (void *)(((uintptr_t)tcg_ctx->code_gen_ptr +
             code_gen_size + CODE_GEN_ALIGN - 1) & ~(CODE_GEN_ALIGN - 1));
 
@@ -1420,7 +1461,7 @@ void tb_invalidate_phys_page_fast(struct uc_struct* uc, tb_page_addr_t start, in
         unsigned long b;
 
         nr = start & ~TARGET_PAGE_MASK;
-        b = p->code_bitmap[BIT_WORD(nr)] >> (nr & (BITS_PER_LONG - 1));
+        b = p->code_bitmap[BIT_WORD(nr)] >> ((nr & (BITS_PER_LONG - 1)) & 0x1f);
         if (b & ((1 << len) - 1)) {
             goto do_invalidate;
         }
