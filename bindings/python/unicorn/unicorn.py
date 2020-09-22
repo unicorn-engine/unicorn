@@ -601,7 +601,7 @@ class Uc(object):
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-        return context
+        return ctypes.string_at(ctypes.byref(context), ctypes.sizeof(context))
 
     def context_update(self, context):
         status = _uc.uc_context_save(self._uch, context)
