@@ -1321,12 +1321,12 @@ UNICORN_EXPORT
 uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 {
     struct uc_context **_context = context;
-    size_t size = cpu_context_size(uc->arch, uc->mode);
+    size_t size = uc_context_size(uc);
 
     *_context = malloc(size);
     if (*_context) {
         (*_context)->jmp_env_size = sizeof(*uc->cpu->jmp_env);
-        (*_context)->context_size = size - sizeof(uc_context) - (*_context)->jmp_env_size;
+        (*_context)->context_size = cpu_context_size(uc->arch, uc->mode);
         return UC_ERR_OK;
     } else {
         return UC_ERR_NOMEM;
