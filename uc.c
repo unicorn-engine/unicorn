@@ -284,7 +284,7 @@ UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc)
 {
     int i;
-    struct list_item *cur;
+    struct list_item *cur, *next;
     struct hook *hook;
 
     // Cleanup internally.
@@ -347,6 +347,18 @@ uc_err uc_close(uc_engine *uc)
     }
 
     free(uc->mapped_blocks);
+
+    // free the saved contexts list and notify them that uc has been closed.
+    cur = NULL;
+    next = NULL;
+    cur = uc->saved_contexts.head;
+    while (cur != NULL){
+        next = cur->next;
+        struct uc_context* context = (struct uc_context*)cur->data;
+        context->uc = NULL;
+        cur = next;
+    }
+    list_clear(&uc->saved_contexts);
 
     // finally, free uc itself.
     memset(uc, 0, sizeof(*uc));
@@ -1327,7 +1339,12 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
     if (*_context) {
         (*_context)->jmp_env_size = sizeof(*uc->cpu->jmp_env);
         (*_context)->context_size = cpu_context_size(uc->arch, uc->mode);
-        return UC_ERR_OK;
+        (*_context)->uc = uc;
+        if(list_insert(&uc->saved_contexts, *_context)){
+            return UC_ERR_OK;
+        } else {
+            return UC_ERR_NOMEM;
+        }
     } else {
         return UC_ERR_NOMEM;
     }
@@ -1360,7 +1377,19 @@ UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
     memcpy(uc->cpu->env_ptr, context->data, context->context_size);
-    memcpy(uc->cpu->jmp_env, context->data + context->context_size, context->jmp_env_size);
+    if(list_exists(&uc->saved_contexts, context)) {
+        memcpy(uc->cpu->jmp_env, context->data + context->context_size, context->jmp_env_size);
+    }
 
     return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_context_free(uc_context *context){
+    uc_engine* uc = context->uc;
+    // if uc is NULL, it means that uc_engine has been free-ed.
+    if(uc){
+        list_remove(&uc->saved_contexts, context);
+    }
+    return uc_free(context);
 }
