@@ -250,13 +250,15 @@ struct uc_struct {
     uint32_t target_page_align;
     uint64_t next_pc;   // save next PC for some special cases
     bool hook_insert;	// insert new hook at begin of the hook list (append by default)
+    struct list saved_contexts; // The contexts saved by this uc_struct.
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
 // We also save cpu->jmp_env, so emulation can be reentrant
 struct uc_context {
    size_t context_size;	// size of the real internal context structure
-   unsigned int jmp_env_size; // size of cpu->jmp_env
+   size_t jmp_env_size; // size of cpu->jmp_env
+   struct uc_struct* uc; // the uc_struct which creates this context
    char data[0]; // context + cpu->jmp_env
 };
 
