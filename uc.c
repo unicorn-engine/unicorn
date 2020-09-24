@@ -284,9 +284,8 @@ UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc)
 {
     int i;
-    struct list_item *cur, *next;
+    struct list_item *cur;
     struct hook *hook;
-    struct uc_context *context;
 
     // Cleanup internally.
     if (uc->release)
@@ -352,8 +351,8 @@ uc_err uc_close(uc_engine *uc)
     // free the saved contexts list and notify them that uc has been closed.
     cur = uc->saved_contexts.head;
     while (cur != NULL) {
-        next = cur->next;
-        context = (struct uc_context*)cur->data;
+        struct list_item *next = cur->next;
+        struct uc_context *context = (struct uc_context*)cur->data;
         context->uc = NULL;
         cur = next;
     }
