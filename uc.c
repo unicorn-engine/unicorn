@@ -675,6 +675,8 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
 }
 
 
+pthread_mutex_t EMU_STOP_MUTEX;
+
 UNICORN_EXPORT
 uc_err uc_emu_stop(uc_engine *uc)
 {
@@ -682,11 +684,14 @@ uc_err uc_emu_stop(uc_engine *uc)
         return UC_ERR_OK;
 
     uc->stop_request = true;
-    // TODO: make this atomic somehow?
+    // Wrapping this in a mutex to prevent a common race condition.
+    // See https://github.com/unicorn-engine/unicorn/issues/636 for details.
+    pthread_mutex_lock(&EMU_STOP_MUTEX);
     if (uc->current_cpu) {
         // exit the current TB
         cpu_exit(uc->current_cpu);
     }
+    pthread_mutex_unlock(&EMU_STOP_MUTEX);
 
     return UC_ERR_OK;
 }
