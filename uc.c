@@ -193,7 +193,11 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                     return UC_ERR_MODE;
                 }
                 if (mode & UC_MODE_BIG_ENDIAN) {
+#ifdef UNICORN_HAS_ARMEB
                     uc->init_arch = armeb_uc_init;
+#else
+                    return UC_ERR_MODE;
+#endif
                 } else {
                     uc->init_arch = arm_uc_init;
                 }
@@ -1299,7 +1303,13 @@ static size_t cpu_context_size(uc_arch arch, uc_mode mode)
         case UC_ARCH_X86:   return X86_REGS_STORAGE_SIZE;
 #endif
 #ifdef UNICORN_HAS_ARM
-        case UC_ARCH_ARM:   return mode & UC_MODE_BIG_ENDIAN ? ARM_REGS_STORAGE_SIZE_armeb : ARM_REGS_STORAGE_SIZE_arm;
+        case UC_ARCH_ARM:   return mode & UC_MODE_BIG_ENDIAN ?
+#ifdef UNICORN_HAS_ARMEB
+       ARM_REGS_STORAGE_SIZE_armeb
+#else
+       0
+#endif
+       : ARM_REGS_STORAGE_SIZE_arm;
 #endif
 #ifdef UNICORN_HAS_ARM64
         case UC_ARCH_ARM64: return mode & UC_MODE_BIG_ENDIAN ? ARM64_REGS_STORAGE_SIZE_aarch64eb : ARM64_REGS_STORAGE_SIZE_aarch64;
