@@ -327,7 +327,7 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
   @user_data: user data passed to tracing APIs
 
   @return: return true to continue, or false to stop program (due to invalid memory).
-           NOTE: returning true to continue execution will only work if if the accessed
+           NOTE: returning true to continue execution will only work if the accessed
            memory is made accessible with the correct permissions during the hook.
 
            In the event of a UC_MEM_READ_UNMAPPED or UC_MEM_WRITE_UNMAPPED callback,
@@ -440,7 +440,7 @@ UNICORN_EXPORT
 uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result);
 
 /*
- Report the last error number when some API function fail.
+ Report the last error number when some API function fails.
  Like glibc's errno, uc_errno might not retain its old value once accessed.
 
  @uc: handle returned by uc_open()
@@ -552,7 +552,7 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size);
 
  @uc: handle returned by uc_open()
  @begin: address where emulation starts
- @until: address where emulation stops (i.e when this address is hit)
+ @until: address where emulation stops (i.e. when this address is hit)
  @timeout: duration to emulate the code (in microseconds). When this value is 0,
         we will emulate the code in infinite time, until the code is finished.
  @count: the number of instructions to be emulated. When this value is 0,
@@ -586,12 +586,12 @@ uc_err uc_emu_stop(uc_engine *uc);
 
  @uc: handle returned by uc_open()
  @hh: hook handle returned from this registration. To be used in uc_hook_del() API
- @type: hook type
+ @type: hook type, refer to uc_hook_type enum
  @callback: callback to be run when instruction is hit
  @user_data: user-defined data. This will be passed to callback function in its
       last argument @user_data
- @begin: start address of the area where the callback is effect (inclusive)
- @end: end address of the area where the callback is effect (inclusive)
+ @begin: start address of the area where the callback is in effect (inclusive)
+ @end: end address of the area where the callback is in effect (inclusive)
    NOTE 1: the callback is called only if related address is in range [@begin, @end]
    NOTE 2: if @begin > @end, callback is called whenever this hook type is triggered
  @...: variable arguments (depending on @type)
@@ -609,7 +609,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
  Unregister (remove) a hook callback.
  This API removes the hook callback registered by uc_hook_add().
  NOTE: this should be called only when you no longer want to trace.
- After this, @hh is invalid, and nolonger usable.
+ After this, @hh is invalid, and no longer usable.
 
  @uc: handle returned by uc_open()
  @hh: handle returned by uc_hook_add()
@@ -636,7 +636,7 @@ typedef enum uc_prot {
  @address: starting address of the new memory region to be mapped in.
     This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
  @size: size of the new memory region to be mapped in.
-    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+    This size must be a multiple of 4KB, or this will return with UC_ERR_ARG error.
  @perms: Permissions for the newly mapped region.
     This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
     or this will return with UC_ERR_ARG error.
@@ -655,12 +655,12 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
  @address: starting address of the new memory region to be mapped in.
     This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
  @size: size of the new memory region to be mapped in.
-    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+    This size must be a multiple of 4KB, or this will return with UC_ERR_ARG error.
  @perms: Permissions for the newly mapped region.
     This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
     or this will return with UC_ERR_ARG error.
  @ptr: pointer to host memory backing the newly mapped memory. This host memory is
-    expected to be an equal or larger size than provided, and be mapped with at
+    expected to be of equal or larger size than provided, and be mapped with at
     least PROT_READ | PROT_WRITE. If it is not, the resulting behavior is undefined.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
@@ -700,7 +700,7 @@ uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
  @address: starting address of the memory region to be unmapped.
     This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
  @size: size of the memory region to be modified.
-    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+    This size must be a multiple of 4KB, or this will return with UC_ERR_ARG error.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
@@ -716,7 +716,7 @@ uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size);
  @address: starting address of the memory region to be modified.
     This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
  @size: size of the memory region to be modified.
-    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+    This size must be a multiple of 4KB, or this will return with UC_ERR_ARG error.
  @perms: New permissions for the mapped region.
     This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
     or this will return with UC_ERR_ARG error.
@@ -730,8 +730,8 @@ uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t per
 /*
  Retrieve all memory regions mapped by uc_mem_map() and uc_mem_map_ptr()
  This API allocates memory for @regions, and user must free this memory later
- by free() to avoid leaking memory.
- NOTE: memory regions may be splitted by uc_mem_unmap()
+ by uc_free() to avoid leaking memory.
+ NOTE: memory regions may be split by uc_mem_unmap()
 
  @uc: handle returned by uc_open()
  @regions: pointer to an array of uc_mem_region struct. This is allocated by
@@ -751,9 +751,9 @@ uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count);
  differing arches or modes.
 
  @uc: handle returned by uc_open()
- @context: pointer to a uc_engine*. This will be updated with the pointer to
+ @context: pointer to a uc_context*. This will be updated with the pointer to
    the new context on successful return of this function.
-   Later, this allocated memory must be freed with uc_free().
+   Later, this allocated memory must be freed with uc_context_free().
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
@@ -764,7 +764,7 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context);
 /*
  Free the memory allocated by uc_mem_regions.
  WARNING: After Unicorn 1.0.1rc5, the memory allocated by uc_context_alloc should
- be free-ed by uc_context_free(). Calling uc_free() may still work, but the result
+ be freed by uc_context_free(). Calling uc_free() may still work, but the result
  is **undefined**.
 
  @mem: memory allocated by uc_mem_regions (returned in *regions).
