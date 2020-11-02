@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #endif
 
+#include <sys/types.h>
+
 #include <time.h>   // nanosleep
 
 #include <string.h>
