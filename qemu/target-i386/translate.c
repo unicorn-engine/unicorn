@@ -5050,6 +5050,13 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
     s->vex_l = 0;
     s->vex_v = 0;
  next_byte:
+    /* x86 has an upper limit of 15 bytes for an instruction. Since we
+     * do not want to decode and generate IR for an illegal
+     * instruction, the following check limits the instruction size to
+     * 25 bytes: 14 prefix + 1 opc + 6 (modrm+sib+ofs) + 4 imm */
+    if (s->pc - pc_start > 14) {
+        goto illegal_op;
+    }
     b = cpu_ldub_code(env, s->pc);
     s->pc++;
     /* Collect prefixes.  */
@@ -8766,6 +8773,12 @@ static inline void gen_intermediate_code_internal(uint8_t *gen_opc_cc_op,
             block_full = true;
             break;
         }
+        if (cpu_slow_self_unpack_enabled(cs)) {
+            gen_jmp_im(dc, pc_ptr - dc->cs_base);
+            gen_eob(dc);
+            block_full = true;
+            break;
+        }        
     }
     //if (tb->cflags & CF_LAST_IO)
     //    gen_io_end();

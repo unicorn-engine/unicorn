@@ -122,6 +122,7 @@ _setup_prototype(_uc, "uc_open", ucerr, ctypes.c_uint, ctypes.c_uint, ctypes.POI
 _setup_prototype(_uc, "uc_close", ucerr, uc_engine)
 _setup_prototype(_uc, "uc_strerror", ctypes.c_char_p, ucerr)
 _setup_prototype(_uc, "uc_errno", ucerr, uc_engine)
+_setup_prototype(_uc, "uc_set_slow_self_unpack", None, uc_engine, ctypes.c_bool)
 _setup_prototype(_uc, "uc_reg_read", ucerr, uc_engine, ctypes.c_int, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_reg_write", ucerr, uc_engine, ctypes.c_int, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_mem_read", ucerr, uc_engine, ctypes.c_uint64, ctypes.POINTER(ctypes.c_char), ctypes.c_size_t)
@@ -321,7 +322,9 @@ class Uc(object):
         status = _uc.uc_emu_stop(self._uch)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
-
+    def set_slow_self_unpack(self, state):
+        _uc.uc_set_slow_self_unpack(self._uch, state)
+        
     # return the value of a register
     def reg_read(self, reg_id, opt=None):
         if self._arch == uc.UC_ARCH_X86:

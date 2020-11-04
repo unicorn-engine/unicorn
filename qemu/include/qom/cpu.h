@@ -210,6 +210,7 @@ struct CPUState {
     int nr_cores;
     int nr_threads;
     int numa_node;
+    bool slow_self_unpack;
 
     struct QemuThread *thread;
 #ifdef _WIN32
@@ -414,6 +415,34 @@ ObjectClass *cpu_class_by_name(struct uc_struct *uc, const char *typename_, cons
  * Returns: A #CPUState or %NULL if an error occurred.
  */
 CPUState *cpu_generic_init(struct uc_struct *uc, const char *typename_, const char *cpu_model);
+
+	/**
+ * cpu_slow_self_unpack_enabled
+ * @cpu: The vCPU to check.
+ *
+ * Checks where the codegen for CPU should injects EOB after each instruction.
+ * Useful to emulate self-modifying shellcode.
+ *
+ * Returns: %true if the mode is enabled for the CPU, %false otherwise.
+ */
+static inline bool cpu_slow_self_unpack_enabled(CPUState *cpu)
+{
+    return cpu->slow_self_unpack;
+}
+
+/**
+ * cpu_slow_self_unpack_enabled
+ * @cpu: The vCPU to set.
+ * @state: %true to enable mode, %false to disable.
+ *
+ * Set where the codegen for CPU should injects EOB after each instruction.
+ * Useful to emulate self-modifying shellcode.
+ */
+static inline void cpu_set_slow_self_unpack(CPUState *cpu, bool state)
+{
+    cpu->slow_self_unpack = state;
+}
+
 
 /**
  * cpu_has_work:
