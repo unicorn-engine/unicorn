@@ -193,7 +193,11 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                     return UC_ERR_MODE;
                 }
                 if (mode & UC_MODE_BIG_ENDIAN) {
+#ifdef UNICORN_HAS_ARMEB
                     uc->init_arch = armeb_uc_init;
+#else
+                    return UC_ERR_MODE;
+#endif
                 } else {
                     uc->init_arch = arm_uc_init;
                 }
@@ -347,6 +351,16 @@ uc_err uc_close(uc_engine *uc)
     }
 
     free(uc->mapped_blocks);
+
+    // free the saved contexts list and notify them that uc has been closed.
+    cur = uc->saved_contexts.head;
+    while (cur != NULL) {
+        struct list_item *next = cur->next;
+        struct uc_context *context = (struct uc_context*)cur->data;
+        context->uc = NULL;
+        cur = next;
+    }
+    list_clear(&uc->saved_contexts);
 
     // finally, free uc itself.
     memset(uc, 0, sizeof(*uc));
@@ -1298,7 +1312,13 @@ static size_t cpu_context_size(uc_arch arch, uc_mode mode)
         case UC_ARCH_X86:   return X86_REGS_STORAGE_SIZE;
 #endif
 #ifdef UNICORN_HAS_ARM
-        case UC_ARCH_ARM:   return mode & UC_MODE_BIG_ENDIAN ? ARM_REGS_STORAGE_SIZE_armeb : ARM_REGS_STORAGE_SIZE_arm;
+        case UC_ARCH_ARM:   return mode & UC_MODE_BIG_ENDIAN ?
+#ifdef UNICORN_HAS_ARMEB
+       ARM_REGS_STORAGE_SIZE_armeb
+#else
+       0
+#endif
+       : ARM_REGS_STORAGE_SIZE_arm;
 #endif
 #ifdef UNICORN_HAS_ARM64
         case UC_ARCH_ARM64: return mode & UC_MODE_BIG_ENDIAN ? ARM64_REGS_STORAGE_SIZE_aarch64eb : ARM64_REGS_STORAGE_SIZE_aarch64;
@@ -1330,13 +1350,18 @@ UNICORN_EXPORT
 uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 {
     struct uc_context **_context = context;
-    size_t size = cpu_context_size(uc->arch, uc->mode);
+    size_t size = uc_context_size(uc);
 
     *_context = malloc(size);
     if (*_context) {
         (*_context)->jmp_env_size = sizeof(*uc->cpu->jmp_env);
-        (*_context)->context_size = size - sizeof(uc_context) - (*_context)->jmp_env_size;
-        return UC_ERR_OK;
+        (*_context)->context_size = cpu_context_size(uc->arch, uc->mode);
+        (*_context)->uc = uc;
+        if (list_insert(&uc->saved_contexts, *_context)) {
+            return UC_ERR_OK;
+        } else {
+            return UC_ERR_NOMEM;
+        }
     } else {
         return UC_ERR_NOMEM;
     }
@@ -1369,7 +1394,20 @@ UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
     memcpy(uc->cpu->env_ptr, context->data, context->context_size);
-    memcpy(uc->cpu->jmp_env, context->data + context->context_size, context->jmp_env_size);
+    if (list_exists(&uc->saved_contexts, context)) {
+        memcpy(uc->cpu->jmp_env, context->data + context->context_size, context->jmp_env_size);
+    }
 
     return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_context_free(uc_context *context)
+{
+    uc_engine* uc = context->uc;
+    // if uc is NULL, it means that uc_engine has been free-ed.
+    if (uc) {
+        list_remove(&uc->saved_contexts, context);
+    }
+    return uc_free(context);
 }

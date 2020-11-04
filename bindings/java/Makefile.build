@@ -3,7 +3,7 @@
 
 JAVA_HOME := $(shell jrunscript -e 'java.lang.System.out.println(java.lang.System.getProperty("java.home"));')
 
-JAVA_INC := $(shell realpath $(JAVA_HOME)/../include)
+JAVA_INC := $(shell realpath $(JAVA_HOME)/include)
 
 JAVA_PLATFORM_INC := $(shell dirname `find $(JAVA_INC) -name jni_md.h`)
 

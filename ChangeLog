@@ -1,7 +1,19 @@
 This file details the changelog of Unicorn Engine.
 
+-----------------------------------
+[Version 1.0.2]: October 21st, 2020
+
+- Fix Java binding compilation
+- Enable building for ARM little-endian only (ignore big-endian)
+
 ------------------------------------
-[Version 1.0.2-rc5]: Sept 22th, 2020
+[Version 1.0.2-rc6]: Sept 24th, 2020
+
+- Add uc_context_free() API
+- Fix context saving/retoring API (core & Python binding)
+
+------------------------------------
+[Version 1.0.2-rc5]: Sept 22nd, 2020
 
 - Add cmake option to build Unicorn as a static library
 - Fix error handling of mmap()

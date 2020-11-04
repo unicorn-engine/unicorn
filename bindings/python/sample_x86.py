@@ -4,7 +4,7 @@
 from __future__ import print_function
 from unicorn import *
 from unicorn.x86_const import *
-
+import pickle
 
 X86_CODE32 = b"\x41\x4a\x66\x0f\xef\xc1" # INC ecx; DEC edx; PXOR xmm0, xmm1
 X86_CODE32_LOOP = b"\x41\x4a\xeb\xfe" # INC ecx; DEC edx; JMP self-loop
@@ -453,10 +453,16 @@ def test_i386_context_save():
         print(">>> Saving CPU context")
         saved_context = mu.context_save()
 
+        print(">>> Pickling CPU context")
+        pickled_saved_context = pickle.dumps(saved_context)
+
         print(">>> Running emulation for the second time")
         mu.emu_start(address, address+1)
         print(">>> Emulation done. Below is the CPU context")
         print(">>> EAX = 0x%x" %(mu.reg_read(UC_X86_REG_EAX)))
+
+        print(">>> Unpickling CPU context")
+        saved_context = pickle.loads(pickled_saved_context)
 
         print(">>> CPU context restored. Below is the CPU context")
         mu.context_restore(saved_context)

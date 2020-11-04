@@ -1,0 +1,7 @@
+* Version 1.0.2 - October 21st, 2020
+
+Release 1.0.2 was sponsored by the following companies (in no particular order).
+
+- Catena Cyber: https://catenacyber.fr
+- Grayshift: https://grayshift.com
+- Google: https://google.com

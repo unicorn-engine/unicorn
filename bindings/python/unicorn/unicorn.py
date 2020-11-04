@@ -140,6 +140,7 @@ _setup_prototype(_uc, "uc_free", ucerr, ctypes.c_void_p)
 _setup_prototype(_uc, "uc_context_save", ucerr, uc_engine, uc_context)
 _setup_prototype(_uc, "uc_context_restore", ucerr, uc_engine, uc_context)
 _setup_prototype(_uc, "uc_context_size", ctypes.c_size_t, uc_engine)
+_setup_prototype(_uc, "uc_context_free", ucerr, uc_context)
 _setup_prototype(_uc, "uc_mem_regions", ucerr, uc_engine, ctypes.POINTER(ctypes.POINTER(_uc_mem_region)), ctypes.POINTER(ctypes.c_uint32))
 
 # uc_hook_add is special due to variable number of arguments
@@ -607,7 +608,7 @@ class Uc(object):
         return context
 
     def context_update(self, context):
-        status = _uc.uc_context_save(self._uch, context)
+        status = _uc.uc_context_save(self._uch, context.context)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
@@ -631,16 +632,40 @@ class Uc(object):
             _uc.uc_free(regions)
 
 
-class UcContext(ctypes.Structure):
+class UcContext:
     def __init__(self, h):
-        self.context = uc_context()
-
-        status = _uc.uc_context_alloc(h, ctypes.byref(self.context))
+        self._context = uc_context()
+        self._size = _uc.uc_context_size(h)
+        self._to_free = True
+        status = _uc.uc_context_alloc(h, ctypes.byref(self._context))
         if status != uc.UC_ERR_OK:
             raise UcError(status)
+    
+    @property
+    def context(self):
+        return self._context
+
+    @property
+    def size(self):
+        return self._size
+
+    # Make UcContext picklable
+    def __getstate__(self):
+        return (bytes(self), self.size)
+    
+    def __setstate__(self, state):
+        self._size = state[1]
+        self._context = ctypes.cast(ctypes.create_string_buffer(state[0], self._size), uc_context)
+        # __init__ won'e be invoked, so we are safe to set it here.
+        self._to_free = False
+        
+    def __bytes__(self):
+        return ctypes.string_at(self.context, self.size)
 
     def __del__(self):
-        _uc.uc_free(self.context)
+        # We need this property since we shouldn't free it if the object is constructed from pickled bytes.
+        if self._to_free:
+            _uc.uc_context_free(self._context)
 
 
 # print out debugging info
