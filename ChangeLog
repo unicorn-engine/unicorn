@@ -1,5 +1,50 @@
 This file details the changelog of Unicorn Engine.
 
+-----------------------------------
+[Version 1.0.2]: October 21st, 2020
+
+- Fix Java binding compilation
+- Enable building for ARM little-endian only (ignore big-endian)
+
+------------------------------------
+[Version 1.0.2-rc6]: Sept 24th, 2020
+
+- Add uc_context_free() API
+- Fix context saving/retoring API (core & Python binding)
+
+------------------------------------
+[Version 1.0.2-rc5]: Sept 22nd, 2020
+
+- Add cmake option to build Unicorn as a static library
+- Fix error handling of mmap()
+- uc_emu_start() can be reentrant
+- Fix naming conflicts when built with systemd
+- Fix setjmp/longjmp on native Windows
+- Fix enabled hooks even after deleting them
+- X86:
+    - Fix 64bit fstenv
+    - Fix IP value of 16bit mode
+- ARM:
+    - Fix APSR handling
+- Python: Remove UC_ERR_TIMEOUT
+
+-----------------------------------
+[Version 1.0.2-rc4]: May 29th, 2020
+
+- No longer require Python to build
+- Fix recursive UC_HOOK_MEM callbacks for cross pages access
+- Remove UC_ERR_TIMEOUT, so timeout on uc_emu_start() is not considered error
+- Added UC_QUERY_TIMEOUT to query exit reason
+- Fix UAF when deleting hook while in hook callback
+- Ensure that hooks are unaffected by a request to stop emulation.
+- Fix block hooks being called twice after an early exit from execution.
+- Fix binding install on python2 (MacOS)
+- X86:
+    - Support read/write STn registers
+    - Support read/write X64 base regs
+- ARM64:
+    - Support some new registers
+
 ----------------------------------
 [Version 1.0.1]: April 20th, 2017
 

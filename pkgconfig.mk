@@ -11,3 +11,4 @@ PKG_EXTRA = 3
 
 # version tag. Examples: rc1, b2, post1
 PKG_TAG =
+# PKG_TAG = rc6

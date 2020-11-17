@@ -881,6 +881,10 @@ if (MSVC)
         qemu/util/oslib-win32.c
         qemu/util/qemu-thread-win32.c
     )
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        enable_language(ASM_MASM)
+        set(UNICORN_SRCS ${UNICORN_SRCS} qemu/util/setjmp-wrapper-win32.asm)
+    endif()
 else()
     set(UNICORN_SRCS
         ${UNICORN_SRCS_COMMON}
@@ -985,6 +989,7 @@ if(NOT MSVC)
     file(GLOB UNICORN_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/unicorn/*.h)
     install(TARGETS unicorn
         RUNTIME DESTINATION bin
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
     )
     install(FILES ${UNICORN_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unicorn)

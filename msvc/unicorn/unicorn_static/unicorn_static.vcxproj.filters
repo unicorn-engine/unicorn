@@ -498,4 +498,7 @@
       <Filter>qemu</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <MASM Include="..\..\..\qemu\util\setjmp-wrapper-win32.asm" />
+  </ItemGroup>
 </Project>
