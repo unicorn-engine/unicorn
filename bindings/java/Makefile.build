@@ -46,7 +46,7 @@ all: lib jar samples
 	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
 
 unicorn_Unicorn.h: unicorn/Unicorn.java
-	javah unicorn.Unicorn
+	javac -h unicorn/ unicorn/*.java
 
 unicorn_Unicorn.o: unicorn_Unicorn.c unicorn_Unicorn.h
 	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
