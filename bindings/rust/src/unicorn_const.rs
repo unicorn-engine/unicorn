@@ -51,32 +51,40 @@ pub enum MemType {
     READ_AFTER = 25,
 }
 
-#[repr(i32)]
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub enum HookType {
-    INTR = 1,
-    INSN = 2,
-    CODE = 4,
-    BLOCK = 8,
-    MEM_READ_UNMAPPED = 16,
-    MEM_WRITE_UNMAPPED = 32,
-    MEM_FETCH_UNMAPPED = 64,
-    MEM_READ_PROT = 128,
-    MEM_WRITE_PROT = 256,
-    MEM_FETCH_PROT = 512,
-    MEM_READ = 1024,
-    MEM_WRITE = 2048,
-    MEM_FETCH = 4096,
-    MEM_READ_AFTER = 8192,
-    INSN_INVALID = 16384,
-    MEM_UNMAPPED = 112,
-    MEM_PROT = 896,
-    MEM_READ_INVALID = 144,
-    MEM_WRITE_INVALID = 288,
-    MEM_FETCH_INVALID = 576,
-    MEM_INVALID = 1008,
-    MEM_VALID = 7168,
-    MEM_ALL = 8176,
+bitflags! {
+    #[repr(C)]
+    pub struct HookType: i32 {
+        const INTR = 1;
+        const INSN = 2;
+        const CODE = 4;
+        const BLOCK = 8;
+
+        const MEM_READ_UNMAPPED = 0x10;
+        const MEM_WRITE_UNMAPPED = 0x20;
+        const MEM_FETCH_UNMAPPED = 0x40;
+        const MEM_UNMAPPED = Self::MEM_READ_UNMAPPED.bits | Self::MEM_WRITE_UNMAPPED.bits | Self::MEM_FETCH_UNMAPPED.bits;
+
+        const MEM_READ_PROT = 0x80;
+        const MEM_WRITE_PROT = 0x100;
+        const MEM_FETCH_PROT = 0x200;
+        const MEM_PROT = Self::MEM_READ_PROT.bits | Self::MEM_WRITE_PROT.bits | Self::MEM_FETCH_PROT.bits;
+
+        const MEM_READ = 0x400;
+        const MEM_WRITE = 0x800;
+        const MEM_FETCH = 0x1000;
+        const MEM_VALID = Self::MEM_READ.bits | Self::MEM_WRITE.bits | Self::MEM_FETCH.bits;
+
+        const MEM_READ_AFTER = 0x2000;
+
+        const INSN_INVALID = 0x4000;
+
+        const MEM_READ_INVALID = Self::MEM_READ_UNMAPPED.bits | Self::MEM_READ_PROT.bits;
+        const MEM_WRITE_INVALID = Self::MEM_WRITE_UNMAPPED.bits | Self::MEM_WRITE_PROT.bits;
+        const MEM_FETCH_INVALID = Self::MEM_FETCH_UNMAPPED.bits | Self::MEM_FETCH_PROT.bits;
+        const MEM_INVALID = Self::MEM_READ_INVALID.bits | Self::MEM_WRITE_INVALID.bits | Self::MEM_FETCH_INVALID.bits;
+
+        const MEM_ALL = Self::MEM_VALID.bits | Self::MEM_INVALID.bits;
+    }
 }
 
 #[repr(C)]
