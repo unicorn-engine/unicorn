@@ -127,47 +127,32 @@ pub enum Arch {
     MAX = 8,
 }
 
-#[repr(C)]
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub enum Mode {
+bitflags! {
+    #[repr(C)]
+    pub struct Mode: i32 {
+        const LITTLE_ENDIAN = 0;
+        const BIG_ENDIAN = 0x4000_0000;
 
-    LITTLE_ENDIAN = 0,
-    BIG_ENDIAN = 1073741824,
-
-    // use LITTLE_ENDIAN.
-    // MODE_ARM = 0,
-    THUMB = 16,
-    MCLASS = 32,
-    V8 = 64,
-    ARM926 = 128,
-    ARM946 = 256,
-    ARM1176 = 512,
-    // (assoc) MICRO = 16,
-    // (assoc) MIPS3 = 32,
-    // (assoc) MIPS32R6 = 64,
-    MIPS32 = 4,
-    MIPS64 = 8,
-    MODE_16 = 2,
-    // (assoc) MODE_32 = 4,
-    // (assoc) MODE_64 = 8,
-    // (assoc) PPC32 = 4,
-    // (assoc) PPC64 = 8,
-    // (assoc) QPX = 16,
-    // (assoc) SPARC32 = 4,
-    // (assoc) SPARC64 = 8,
-    // (assoc) V9 = 16,
-}
-
-impl Mode {
-    pub const MICRO: Mode = Mode::THUMB;
-    pub const MIPS3: Mode = Mode::MCLASS;
-    pub const MIPS32R6: Mode = Mode::V8;
-    pub const MODE_32: Mode = Mode::MIPS32;
-    pub const MODE_64: Mode = Mode::MIPS64;
-    pub const PPC32: Mode = Mode::MIPS32;
-    pub const PPC64: Mode = Mode::MIPS64;
-    pub const QPX: Mode = Mode::THUMB;
-    pub const SPARC32: Mode = Mode::MIPS32;
-    pub const SPARC64: Mode = Mode::MIPS64;
-    pub const V9: Mode = Mode::THUMB;
+        const ARM = 0;
+        const THUMB = 0x10;
+        const MCLASS = 0x20;
+        const V8 = 0x40;
+        const ARM926 = 0x80;
+        const ARM946 = 0x100;
+        const ARM1176 = 0x200;
+        const MICRO = Self::THUMB.bits;
+        const MIPS3 = Self::MCLASS.bits;
+        const MIPS32R6 = Self::V8.bits;
+        const MIPS32 = 4;
+        const MIPS64 = 8;
+        const MODE_16 = 2;
+        const MODE_32 = Self::MIPS32.bits;
+        const MODE_64 = Self::MIPS64.bits;
+        const PPC32 = Self::MIPS32.bits;
+        const PPC64 = Self::MIPS64.bits;
+        const QPX = Self::THUMB.bits;
+        const SPARC32 = Self::MIPS32.bits;
+        const SPARC64 = Self::MIPS64.bits;
+        const V9 = Self::THUMB.bits;
+    }
 }
