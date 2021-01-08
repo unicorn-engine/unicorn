@@ -277,6 +277,7 @@ fn x86_mem_callback() {
     let expects = vec![
         MemExpectation(MemType::WRITE, 0x2000, 4, 0xdeadbeef),
         MemExpectation(MemType::READ_UNMAPPED, 0x10000, 4, 0),
+        MemExpectation(MemType::READ, 0x10000, 4, 0),
     ];
     let mems: Vec<MemExpectation> = Vec::new();
     let mems_cell = Rc::new(RefCell::new(mems));
@@ -668,7 +669,7 @@ fn x86_context_save_and_restore() {
 fn x86_block_callback() {
     #[derive(PartialEq, Debug)]
     struct BlockExpectation(u64, u32);
-    let expects = vec![BlockExpectation(0x1000, 2)];
+    let expects = vec![BlockExpectation(0x1000, 2), BlockExpectation(0x1000, 2)];
     let blocks: Vec<BlockExpectation> = Vec::new();
     let blocks_cell = Rc::new(RefCell::new(blocks));
 
