@@ -102,7 +102,7 @@ pub struct Permission : u32 {
         const READ = 1;
         const WRITE = 2;
         const EXEC = 4;
-        const ALL = 7;
+        const ALL = Self::READ.bits | Self::WRITE.bits | Self::EXEC.bits;
     }
 }
 
