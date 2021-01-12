@@ -338,19 +338,19 @@ impl<'a, D> UnicornHandle<'a, D> {
             if curr_reg_id >= x86::RegisterX86::XMM0 as i32
                 && curr_reg_id <= x86::RegisterX86::XMM31 as i32
             {
-                value = vec![0; 16 as usize];
+                value = vec![0; 16];
             } else if curr_reg_id >= x86::RegisterX86::YMM0 as i32
                 && curr_reg_id <= x86::RegisterX86::YMM31 as i32
             {
-                value = vec![0; 32 as usize];
+                value = vec![0; 32];
             } else if curr_reg_id >= x86::RegisterX86::ZMM0 as i32
                 && curr_reg_id <= x86::RegisterX86::ZMM31 as i32
             {
-                value = vec![0; 64 as usize];
+                value = vec![0; 64];
             } else if curr_reg_id == x86::RegisterX86::GDTR as i32
                 || curr_reg_id == x86::RegisterX86::IDTR as i32
             {
-                value = vec![0; 10 as usize]; // 64 bit base address in IA-32e mode
+                value = vec![0; 10]; // 64 bit base address in IA-32e mode
             } else {
                 return Err(uc_error::ARG);
             }
@@ -360,7 +360,7 @@ impl<'a, D> UnicornHandle<'a, D> {
                 || (curr_reg_id >= arm64::RegisterARM64::V0 as i32
                     && curr_reg_id <= arm64::RegisterARM64::V31 as i32)
             {
-                value = vec![0; 16 as usize];
+                value = vec![0; 16];
             } else {
                 return Err(uc_error::ARG);
             }
