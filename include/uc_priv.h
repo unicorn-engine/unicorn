@@ -14,7 +14,7 @@
 // These are masks of supported modes for each cpu/arch.
 // They should be updated when changes are made to the uc_mode enum typedef.
 #define UC_MODE_ARM_MASK    (UC_MODE_ARM|UC_MODE_THUMB|UC_MODE_LITTLE_ENDIAN|UC_MODE_MCLASS \
-				|UC_MODE_ARM926|UC_MODE_ARM946|UC_MODE_ARM1176|UC_MODE_BIG_ENDIAN)
+				|UC_MODE_ARM926|UC_MODE_ARM946|UC_MODE_ARM1176|UC_MODE_BIG_ENDIAN|UC_MODE_ARMBE8)
 #define UC_MODE_MIPS_MASK   (UC_MODE_MIPS32|UC_MODE_MIPS64|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN)
 #define UC_MODE_X86_MASK    (UC_MODE_16|UC_MODE_32|UC_MODE_64|UC_MODE_LITTLE_ENDIAN)
 #define UC_MODE_PPC_MASK    (UC_MODE_PPC64|UC_MODE_BIG_ENDIAN)
@@ -239,6 +239,7 @@ struct uc_struct {
     uint64_t addr_end;  // address where emulation stops (@end param of uc_emu_start())
 
     int thumb;  // thumb mode for ARM
+    int bswap_code; // For mixed endian mode
     // full TCG cache leads to middle-block break in the last translation?
     bool block_full;
     int size_arg;     // what tcg arg slot do we need to update with the size of the block?
