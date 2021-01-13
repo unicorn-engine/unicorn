@@ -15,7 +15,7 @@
 #define X86_CODE32_LOOP "\x41\x4a\xeb\xfe" // INC ecx; DEC edx; JMP self-loop
 #define X86_CODE32_MEM_WRITE "\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a" // mov [0xaaaaaaaa], ecx; INC ecx; DEC edx
 #define X86_CODE32_MEM_READ "\x8B\x0D\xAA\xAA\xAA\xAA\x41\x4a" // mov ecx,[0xaaaaaaaa]; INC ecx; DEC edx
-#define X86_CODE32_MEM_WRITE_IN_TB "\x40\x8b\x1d\x00\x00\x10\x00\x42" // inc eax; mov ebx, [0x100000]; inc edx
+#define X86_CODE32_MEM_READ_IN_TB "\x40\x8b\x1d\x00\x00\x10\x00\x42" // inc eax; mov ebx, [0x100000]; inc edx
 
 #define X86_CODE32_JMP_INVALID "\xe9\xe9\xee\xee\xee\x41\x4a" //  JMP outside; INC ecx; DEC edx
 #define X86_CODE32_INOUT "\x41\xE4\x3F\x4a\xE6\x46\x43" // INC ecx; IN AL, 0x3f; DEC edx; OUT 0x46, AL; INC ebx
@@ -1035,7 +1035,7 @@ static void test_x86_16(void)
     uc_close(uc);
 }
 
-static void test_i386_invalid_mem_write_in_tb(void)
+static void test_i386_invalid_mem_read_in_tb(void)
 {
     uc_engine *uc;
     uc_err err;
@@ -1046,7 +1046,7 @@ static void test_i386_invalid_mem_write_in_tb(void)
     int r_eip = 0;
 
     printf("===================================\n");
-    printf("Emulate i386 code that write to invalid memory in the middle of a TB\n");
+    printf("Emulate i386 code that read invalid memory in the middle of a TB\n");
 
     // Initialize emulator in X86-32bit mode
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
@@ -1059,7 +1059,7 @@ static void test_i386_invalid_mem_write_in_tb(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // write machine code to be emulated to memory
-    if (uc_mem_write(uc, ADDRESS, X86_CODE32_MEM_WRITE_IN_TB, sizeof(X86_CODE32_MEM_WRITE_IN_TB) - 1)) {
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_MEM_READ_IN_TB, sizeof(X86_CODE32_MEM_READ_IN_TB) - 1)) {
         printf("Failed to write emulation code to memory, quit!\n");
         return;
     }
@@ -1072,7 +1072,7 @@ static void test_i386_invalid_mem_write_in_tb(void)
     uc_hook_add(uc, &trace1, UC_HOOK_MEM_READ, hook_mem_invalid_dummy, NULL, 1, 0);
     
     // Let it crash by design.
-    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_MEM_WRITE_IN_TB) - 1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_MEM_READ_IN_TB) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned %u: %s\n",
                 err, uc_strerror(err));
@@ -1087,6 +1087,10 @@ static void test_i386_invalid_mem_write_in_tb(void)
     printf(">>> EAX = 0x%x\n", r_eax);
     printf(">>> EDX = 0x%x\n", r_edx);
     printf(">>> EIP = 0x%x\n", r_eip);
+
+    if (r_eip != ADDRESS + 1) {
+        printf("Warning: Wrong PC 0x%x when reading unmapped memory in the middle of TB!\n", r_eip);
+    }
 
     uc_close(uc);
 }
@@ -1131,7 +1135,7 @@ int main(int argc, char **argv, char **envp)
         //test_i386_invalid_c6c7();
         test_x86_64();
         test_x86_64_syscall();
-        test_i386_invalid_mem_write_in_tb();
+        test_i386_invalid_mem_read_in_tb();
     }
 
     return 0;
