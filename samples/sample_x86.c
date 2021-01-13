@@ -15,6 +15,7 @@
 #define X86_CODE32_LOOP "\x41\x4a\xeb\xfe" // INC ecx; DEC edx; JMP self-loop
 #define X86_CODE32_MEM_WRITE "\x89\x0D\xAA\xAA\xAA\xAA\x41\x4a" // mov [0xaaaaaaaa], ecx; INC ecx; DEC edx
 #define X86_CODE32_MEM_READ "\x8B\x0D\xAA\xAA\xAA\xAA\x41\x4a" // mov ecx,[0xaaaaaaaa]; INC ecx; DEC edx
+#define X86_CODE32_MEM_WRITE_IN_TB "\x40\x8b\x1d\x00\x00\x10\x00\x42" // inc eax; mov ebx, [0x100000]; inc edx
 
 #define X86_CODE32_JMP_INVALID "\xe9\xe9\xee\xee\xee\x41\x4a" //  JMP outside; INC ecx; DEC edx
 #define X86_CODE32_INOUT "\x41\xE4\x3F\x4a\xE6\x46\x43" // INC ecx; IN AL, 0x3f; DEC edx; OUT 0x46, AL; INC ebx
@@ -79,6 +80,14 @@ static bool hook_mem_invalid(uc_engine *uc, uc_mem_type type,
                  // return true to indicate we want to continue
                  return true;
     }
+}
+
+// dummy callback
+static bool hook_mem_invalid_dummy(uc_engine *uc, uc_mem_type type,
+        uint64_t address, int size, int64_t value, void *user_data)
+{
+    // Stop emulation.
+    return false;
 }
 
 static void hook_mem64(uc_engine *uc, uc_mem_type type,
@@ -1026,6 +1035,62 @@ static void test_x86_16(void)
     uc_close(uc);
 }
 
+static void test_i386_invalid_mem_write_in_tb(void)
+{
+    uc_engine *uc;
+    uc_err err;
+    uc_hook trace1;
+
+    int r_eax = 0x1234;     // EAX register
+    int r_edx = 0x7890;     // EDX register
+    int r_eip = 0;
+
+    printf("===================================\n");
+    printf("Emulate i386 code that write to invalid memory in the middle of a TB\n");
+
+    // Initialize emulator in X86-32bit mode
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        return;
+    }
+
+    // map 2MB memory for this emulation
+    uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
+
+    // write machine code to be emulated to memory
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_MEM_WRITE_IN_TB, sizeof(X86_CODE32_MEM_WRITE_IN_TB) - 1)) {
+        printf("Failed to write emulation code to memory, quit!\n");
+        return;
+    }
+
+    // initialize machine registers
+    uc_reg_write(uc, UC_X86_REG_EAX, &r_eax);
+    uc_reg_write(uc, UC_X86_REG_EDX, &r_edx);
+
+    // Add a dummy callback.
+    uc_hook_add(uc, &trace1, UC_HOOK_MEM_READ, hook_mem_invalid_dummy, NULL, 1, 0);
+    
+    // Let it crash by design.
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_MEM_WRITE_IN_TB) - 1, 0, 0);
+    if (err) {
+        printf("Failed on uc_emu_start() with error returned %u: %s\n",
+                err, uc_strerror(err));
+    }
+
+    // now print out some registers
+    printf(">>> Emulation done. Below is the CPU context\n");
+
+    uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
+    uc_reg_read(uc, UC_X86_REG_EDX, &r_edx);
+    uc_reg_read(uc, UC_X86_REG_EIP, &r_eip);
+    printf(">>> EAX = 0x%x\n", r_eax);
+    printf(">>> EDX = 0x%x\n", r_edx);
+    printf(">>> EIP = 0x%x\n", r_eip);
+
+    uc_close(uc);
+}
+
 int main(int argc, char **argv, char **envp)
 {
     if (argc == 2) {
@@ -1066,7 +1131,7 @@ int main(int argc, char **argv, char **envp)
         //test_i386_invalid_c6c7();
         test_x86_64();
         test_x86_64_syscall();
-
+        test_i386_invalid_mem_write_in_tb();
     }
 
     return 0;

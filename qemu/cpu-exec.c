@@ -327,17 +327,31 @@ static tcg_target_ulong cpu_tb_exec(CPUState *cpu, uint8_t *tb_ptr)
          * or timer mode is in effect, since these already fix the PC.
          */
         if (!HOOK_EXISTS(env->uc, UC_HOOK_CODE) && !env->uc->timeout) {
-            if (cc->synchronize_from_tb) {
-                // avoid sync twice when helper_uc_tracecode() already did this.
-                if (env->uc->emu_counter <= env->uc->emu_count &&
-                        !env->uc->stop_request && !env->uc->quit_request)
-                    cc->synchronize_from_tb(cpu, tb);
-            } else {
-                assert(cc->set_pc);
-                // avoid sync twice when helper_uc_tracecode() already did this.
-                if (env->uc->emu_counter <= env->uc->emu_count &&
-                        !env->uc->stop_request && !env->uc->quit_request)
-                    cc->set_pc(cpu, tb->pc);
+            // We should sync pc for R/W error.
+            switch (env->invalid_error) {
+                case UC_ERR_WRITE_PROT:
+                case UC_ERR_READ_PROT:
+                case UC_ERR_FETCH_PROT:
+                case UC_ERR_WRITE_UNMAPPED:
+                case UC_ERR_READ_UNMAPPED:
+                case UC_ERR_FETCH_UNMAPPED:
+                case UC_ERR_WRITE_UNALIGNED:
+                case UC_ERR_READ_UNALIGNED:
+                case UC_ERR_FETCH_UNALIGNED:
+                    break;
+                default:
+                    if (cc->synchronize_from_tb) {
+                        // avoid sync twice when helper_uc_tracecode() already did this.
+                        if (env->uc->emu_counter <= env->uc->emu_count &&
+                                !env->uc->stop_request && !env->uc->quit_request)
+                            cc->synchronize_from_tb(cpu, tb);
+                    } else {
+                        assert(cc->set_pc);
+                        // avoid sync twice when helper_uc_tracecode() already did this.
+                        if (env->uc->emu_counter <= env->uc->emu_count &&
+                                !env->uc->stop_request && !env->uc->quit_request)
+                            cc->set_pc(cpu, tb->pc);
+                    }
             }
         }
     }
