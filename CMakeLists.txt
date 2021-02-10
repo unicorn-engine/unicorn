@@ -21,11 +21,14 @@ set(UNICORN_VERSION_MAJOR 1)
 set(UNICORN_VERSION_MINOR 0)
 set(UNICORN_VERSION_PATCH 2)
 
-option(UNICORN_BUILD_SHARED "Build shared instead of static library" ON)
+option(BUILD_SHARED_LIBS "Build shared instead of static library" ON)
+option(UNICORN_INSTALL "Install unicorn" ON)
+option(UNICORN_BUILD_SAMPLES "Build samples" ON)
+set(UNICORN_ARCH "x86 arm aarch64 m68k mips sparc" CACHE STRING "Supported architectures")
 
-if (NOT UNICORN_ARCH)
-    # build all architectures
-    set(UNICORN_ARCH "x86 arm aarch64 m68k mips sparc")
+# Deprecated option (CMake has this feature built-in)
+if(UNICORN_BUILD_SHARED)
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 endif()
 
 string(TOUPPER ${UNICORN_ARCH} UNICORN_ARCH)
@@ -61,9 +64,9 @@ include_directories(
 
 if(MSVC)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        set(MSVC_FLAG  -D__x86_64__)
+        set(MSVC_FLAG -D__x86_64__)
     elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
-        set(MSVC_FLAG  -D__i386__)
+        set(MSVC_FLAG -D__i386__)
     else()
         message(FATAL_ERROR "Neither WIN64 or WIN32!")
     endif()
@@ -263,7 +266,7 @@ else()
 endif()
 
 if (UNICORN_HAS_X86)
-add_library(x86_64-softmmu
+add_library(x86_64-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -294,9 +297,6 @@ add_library(x86_64-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(x86_64-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(x86_64-softmmu PRIVATE
@@ -316,7 +316,7 @@ endif()
 endif()
 
 if (UNICORN_HAS_ARM)
-add_library(arm-softmmu
+add_library(arm-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -340,9 +340,6 @@ add_library(arm-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(arm-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(arm-softmmu PRIVATE
@@ -360,7 +357,7 @@ else()
     )
 endif()
 
-add_library(armeb-softmmu
+add_library(armeb-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -384,9 +381,6 @@ add_library(armeb-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(armeb-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(armeb-softmmu PRIVATE
@@ -406,7 +400,7 @@ endif()
 endif()
 
 if (UNICORN_HAS_AARCH64)
-add_library(aarch64-softmmu
+add_library(aarch64-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -433,9 +427,6 @@ add_library(aarch64-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(aarch64-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(aarch64-softmmu PRIVATE
@@ -453,7 +444,7 @@ else()
     )
 endif()
 
-add_library(aarch64eb-softmmu
+add_library(aarch64eb-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -480,9 +471,6 @@ add_library(aarch64eb-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(aarch64eb-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(aarch64eb-softmmu PRIVATE
@@ -502,7 +490,7 @@ endif()
 endif()
 
 if (UNICORN_HAS_M68K)
-add_library(m68k-softmmu
+add_library(m68k-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -521,9 +509,6 @@ add_library(m68k-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(m68k-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(m68k-softmmu PRIVATE
@@ -543,7 +528,7 @@ endif()
 endif()
 
 if (UNICORN_HAS_MIPS)
-add_library(mips-softmmu
+add_library(mips-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -567,9 +552,6 @@ add_library(mips-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(mips-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(mips-softmmu PRIVATE
@@ -587,7 +569,7 @@ else()
     )
 endif()
 
-add_library(mipsel-softmmu
+add_library(mipsel-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -611,9 +593,6 @@ add_library(mipsel-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(mipsel-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(mipsel-softmmu PRIVATE
@@ -631,7 +610,7 @@ else()
     )
 endif()
 
-add_library(mips64-softmmu
+add_library(mips64-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -655,9 +634,6 @@ add_library(mips64-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(mips64-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(mips64-softmmu PRIVATE
@@ -675,7 +651,7 @@ else()
     )
 endif()
 
-add_library(mips64el-softmmu
+add_library(mips64el-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -699,9 +675,6 @@ add_library(mips64el-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(mips64el-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(mips64el-softmmu PRIVATE
@@ -721,7 +694,7 @@ endif()
 endif()
 
 if (UNICORN_HAS_SPARC)
-add_library(sparc-softmmu
+add_library(sparc-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -745,9 +718,6 @@ add_library(sparc-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(sparc-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(sparc-softmmu PRIVATE
@@ -765,7 +735,7 @@ else()
     )
 endif()
 
-add_library(sparc64-softmmu
+add_library(sparc64-softmmu OBJECT
     qemu/cpu-exec.c
     qemu/cpus.c
     qemu/cputlb.c
@@ -790,9 +760,6 @@ add_library(sparc64-softmmu
     qemu/tcg/tcg.c
     qemu/translate-all.c
 )
-if (NOT UNICORN_BUILD_SHARED)
-    target_link_libraries(sparc64-softmmu unicorn)
-endif()
 
 if(MSVC)
     target_compile_options(sparc64-softmmu PRIVATE
@@ -873,93 +840,85 @@ else()
     )
 endif()
 
-if (UNICORN_BUILD_SHARED)
-    add_library(unicorn SHARED
-        ${UNICORN_SRCS}
-    )
-else()
-    add_library(unicorn STATIC
-        ${UNICORN_SRCS}
-    )
-endif()
-
 if (UNICORN_HAS_X86)
-    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_X86)
-    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} x86_64-softmmu)
-    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_x86 sample_x86_32_gdt_and_seg_regs sample_batch_reg mem_apis shellcode)
+    list(APPEND UNICORN_COMPILE_OPTIONS -DUNICORN_HAS_X86)
+    list(APPEND UNICORN_OBJECT_LIBRARIES x86_64-softmmu)
+    list(APPEND UNICORN_SAMPLE_FILE sample_x86 sample_x86_32_gdt_and_seg_regs sample_batch_reg mem_apis shellcode)
 endif()
 if (UNICORN_HAS_ARM)
-    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_ARM -DUNICORN_HAS_ARMEB)
-    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} arm-softmmu armeb-softmmu)
-    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_arm sample_armeb)
+    list(APPEND UNICORN_COMPILE_OPTIONS -DUNICORN_HAS_ARM -DUNICORN_HAS_ARMEB)
+    list(APPEND UNICORN_OBJECT_LIBRARIES arm-softmmu armeb-softmmu)
+    list(APPEND UNICORN_SAMPLE_FILE sample_arm sample_armeb)
 endif()
 if (UNICORN_HAS_AARCH64)
-    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_ARM64)
-    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} aarch64-softmmu aarch64eb-softmmu)
-    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_arm64 sample_arm64eb)
+    list(APPEND UNICORN_COMPILE_OPTIONS -DUNICORN_HAS_ARM64)
+    list(APPEND UNICORN_OBJECT_LIBRARIES aarch64-softmmu aarch64eb-softmmu)
+    list(APPEND UNICORN_SAMPLE_FILE sample_arm64 sample_arm64eb)
 endif()
 if (UNICORN_HAS_M68K)
-    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_M68K)
-    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} m68k-softmmu)
-    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_m68k)
+    list(APPEND UNICORN_COMPILE_OPTIONS -DUNICORN_HAS_M68K)
+    list(APPEND UNICORN_OBJECT_LIBRARIES m68k-softmmu)
+    list(APPEND UNICORN_SAMPLE_FILE sample_m68k)
 endif()
 if (UNICORN_HAS_MIPS)
-    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_MIPS -DUNICORN_HAS_MIPSEL -DUNICORN_HAS_MIPS64 -DUNICORN_HAS_MIPS64EL)
-    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu)
-    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_mips)
+    list(APPEND UNICORN_COMPILE_OPTIONS -DUNICORN_HAS_MIPS -DUNICORN_HAS_MIPSEL -DUNICORN_HAS_MIPS64 -DUNICORN_HAS_MIPS64EL)
+    list(APPEND UNICORN_OBJECT_LIBRARIES mips-softmmu mipsel-softmmu mips64-softmmu mips64el-softmmu)
+    list(APPEND UNICORN_SAMPLE_FILE sample_mips)
 endif()
 if (UNICORN_HAS_SPARC)
-    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_SPARC)
-    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} sparc-softmmu sparc64-softmmu)
-    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_sparc)
+    list(APPEND UNICORN_COMPILE_OPTIONS -DUNICORN_HAS_SPARC)
+    list(APPEND UNICORN_OBJECT_LIBRARIES sparc-softmmu sparc64-softmmu)
+    list(APPEND UNICORN_SAMPLE_FILE sample_sparc)
 endif()
 
-target_compile_options(unicorn PRIVATE
-    ${UNICORN_COMPILE_OPTIONS}
+foreach(OBJECT_LIBRARY ${UNICORN_OBJECT_LIBRARIES})
+    list(APPEND UNICORN_SRCS $<TARGET_OBJECTS:${OBJECT_LIBRARY}>)
+endforeach()
+
+add_library(unicorn
+    ${UNICORN_SRCS}
 )
 
 if(WIN32)
-    if (UNICORN_BUILD_SHARED)
-        target_compile_options(unicorn PRIVATE
-            -DUNICORN_SHARED
-        )
+    if(BUILD_SHARED_LIBS)
+        list(APPEND UNICORN_COMPILE_OPTIONS -DUNICORN_SHARED)
     endif()
 
-    target_link_libraries(unicorn
-        ${UNICORN_LINK_LIBRARIES}
+    set_target_properties(unicorn PROPERTIES
+        VERSION "${UNICORN_VERSION_MAJOR}.${UNICORN_VERSION_MINOR}"
     )
 else()
-    target_link_libraries(unicorn
-        ${UNICORN_LINK_LIBRARIES}
-        m
-    )
+    target_link_libraries(unicorn PRIVATE m)
+
     set_target_properties(unicorn PROPERTIES
         VERSION ${UNICORN_VERSION_MAJOR}
         SOVERSION ${UNICORN_VERSION_MAJOR}
     )
 endif()
 
-if(WIN32)
-    set(SAMPLES_LIB
-        unicorn
-    )
-else()
-    set(SAMPLES_LIB
-        unicorn
-        pthread
-    )
+target_compile_options(unicorn PRIVATE
+    ${UNICORN_COMPILE_OPTIONS}
+)
+
+target_include_directories(unicorn PUBLIC
+    include
+)
+
+if(UNICORN_BUILD_SAMPLES)
+    find_package(Threads REQUIRED)
+
+    foreach(SAMPLE_FILE ${UNICORN_SAMPLE_FILE})
+        add_executable(${SAMPLE_FILE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/samples/${SAMPLE_FILE}.c
+        )
+        target_link_libraries(${SAMPLE_FILE} PRIVATE
+            unicorn
+            ${CMAKE_THREAD_LIBS_INIT}
+        )
+    endforeach()
 endif()
 
-foreach(SAMPLE_FILE ${UNICORN_SAMPLE_FILE})
-    add_executable(${SAMPLE_FILE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/samples/${SAMPLE_FILE}.c
-    )
-    target_link_libraries(${SAMPLE_FILE}
-        ${SAMPLES_LIB}
-    )
-endforeach(SAMPLE_FILE)
-
-if(NOT MSVC)
+if(UNICORN_INSTALL)
     include("GNUInstallDirs")
     file(GLOB UNICORN_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/unicorn/*.h)
     install(TARGETS unicorn
