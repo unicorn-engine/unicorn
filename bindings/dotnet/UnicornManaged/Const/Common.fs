@@ -34,6 +34,7 @@ module Common =
     let UC_MODE_ARM926 = 128
     let UC_MODE_ARM946 = 256
     let UC_MODE_ARM1176 = 512
+    let UC_MODE_ARMBE8 = 1024
     let UC_MODE_MICRO = 16
     let UC_MODE_MIPS3 = 32
     let UC_MODE_MIPS32R6 = 64

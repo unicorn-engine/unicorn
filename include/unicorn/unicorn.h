@@ -114,6 +114,9 @@ typedef enum uc_mode {
     UC_MODE_ARM946 = 1 << 8,	  // ARM946 CPU type
     UC_MODE_ARM1176 = 1 << 9,	  // ARM1176 CPU type
 
+    // ARM BE8
+    UC_MODE_ARMBE8 = 1 << 10,     // Big-endian data and Little-endian code
+
     // mips
     UC_MODE_MICRO = 1 << 4,       // MicroMips mode (currently unsupported)
     UC_MODE_MIPS3 = 1 << 5,       // Mips III ISA (currently unsupported)

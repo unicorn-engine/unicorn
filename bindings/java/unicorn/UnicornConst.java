@@ -31,6 +31,7 @@ public interface UnicornConst {
    public static final int UC_MODE_ARM926 = 128;
    public static final int UC_MODE_ARM946 = 256;
    public static final int UC_MODE_ARM1176 = 512;
+   public static final int UC_MODE_ARMBE8 = 1024;
    public static final int UC_MODE_MICRO = 16;
    public static final int UC_MODE_MIPS3 = 32;
    public static final int UC_MODE_MIPS32R6 = 64;

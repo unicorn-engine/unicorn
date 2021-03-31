@@ -192,7 +192,9 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                     free(uc);
                     return UC_ERR_MODE;
                 }
-                if (mode & UC_MODE_BIG_ENDIAN) {
+                if (mode & (UC_MODE_BIG_ENDIAN | UC_MODE_ARMBE8)) {
+                    if (mode & UC_MODE_ARMBE8)
+                        uc->bswap_code = 1;
 #ifdef UNICORN_HAS_ARMEB
                     uc->init_arch = armeb_uc_init;
 #else
