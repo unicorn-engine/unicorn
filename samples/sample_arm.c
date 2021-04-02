@@ -132,7 +132,8 @@ static void test_thumb(void)
     uc_close(uc);
 }
 
-static void test_thumb_ite_internal(bool step, uint32_t *r2_out, uint32_t *r3_out) {
+static void test_thumb_ite_internal(bool step, uint32_t *r2_out, uint32_t *r3_out) 
+{
     uc_engine *uc;
     uc_err err;
 
@@ -180,7 +181,8 @@ static void test_thumb_ite_internal(bool step, uint32_t *r2_out, uint32_t *r3_ou
     *r3_out = r3;
 }
 
-static void test_thumb_ite() {
+static void test_thumb_ite() 
+{
     uint32_t r2, r3;
     uint32_t step_r2, step_r3;
 
