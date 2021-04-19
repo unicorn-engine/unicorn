@@ -6875,6 +6875,8 @@ static target_ulong disas_insn(CPUX86State *env, DisasContext *s,
                 goto illegal_op;
             }
         }
+        tcg_gen_movi_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_tmp0, pc_start - s->cs_base);
+        tcg_gen_st_tl(tcg_ctx, *(TCGv *)tcg_ctx->cpu_tmp0, cpu_env, offsetof(CPUX86State, fpip));
         break;
         /************************/
         /* string ops */
