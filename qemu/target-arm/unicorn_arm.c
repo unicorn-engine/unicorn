@@ -215,7 +215,7 @@ static uc_err arm_query(struct uc_struct *uc, uc_query_type type, size_t *result
             // zero out ARM/THUMB mode
             mode = uc->mode & ~(UC_MODE_ARM | UC_MODE_THUMB);
             // THUMB mode or ARM MOde
-            mode += ((ARM_CPU(uc, mycpu)->env.thumb != 0)? UC_MODE_THUMB : UC_MODE_ARM);
+            mode |= ((ARM_CPU(uc, mycpu)->env.thumb != 0)? UC_MODE_THUMB : UC_MODE_ARM);
             *result = mode;
             return UC_ERR_OK;
         default:
