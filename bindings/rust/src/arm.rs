@@ -125,7 +125,6 @@ pub enum RegisterARM {
     CONTROL = 117,
     XPSR = 118,
     ENDING = 119,
-
     // alias registers
     // (assoc) R13 = 12,
     // (assoc) R14 = 10,
