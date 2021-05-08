@@ -38,5 +38,5 @@ pub enum RegisterPPC {
     GPR28 = 30,
     GPR29 = 31,
     GPR30 = 32,
-    GPR31 = 33
+    GPR31 = 33,
 }

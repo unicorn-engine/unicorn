@@ -6,8 +6,8 @@ pub const API_MINOR: u64 = 0;
 pub const VERSION_MAJOR: u64 = 1;
 pub const VERSION_MINOR: u64 = 0;
 pub const VERSION_EXTRA: u64 = 2;
-pub const SECOND_SCALE: u64 = 1000000;
-pub const MILISECOND_SCALE: u64 = 1000;
+pub const SECOND_SCALE: u64 = 1_000_000;
+pub const MILISECOND_SCALE: u64 = 1_000;
 
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -51,32 +51,40 @@ pub enum MemType {
     READ_AFTER = 25,
 }
 
-#[repr(i32)]
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub enum HookType {
-    INTR = 1,
-    INSN = 2,
-    CODE = 4,
-    BLOCK = 8,
-    MEM_READ_UNMAPPED = 16,
-    MEM_WRITE_UNMAPPED = 32,
-    MEM_FETCH_UNMAPPED = 64,
-    MEM_READ_PROT = 128,
-    MEM_WRITE_PROT = 256,
-    MEM_FETCH_PROT = 512,
-    MEM_READ = 1024,
-    MEM_WRITE = 2048,
-    MEM_FETCH = 4096,
-    MEM_READ_AFTER = 8192,
-    INSN_INVALID = 16384,
-    MEM_UNMAPPED = 112,
-    MEM_PROT = 896,
-    MEM_READ_INVALID = 144,
-    MEM_WRITE_INVALID = 288,
-    MEM_FETCH_INVALID = 576,
-    MEM_INVALID = 1008,
-    MEM_VALID = 7168,
-    MEM_ALL = 8176,
+bitflags! {
+    #[repr(C)]
+    pub struct HookType: i32 {
+        const INTR = 1;
+        const INSN = 2;
+        const CODE = 4;
+        const BLOCK = 8;
+
+        const MEM_READ_UNMAPPED = 0x10;
+        const MEM_WRITE_UNMAPPED = 0x20;
+        const MEM_FETCH_UNMAPPED = 0x40;
+        const MEM_UNMAPPED = Self::MEM_READ_UNMAPPED.bits | Self::MEM_WRITE_UNMAPPED.bits | Self::MEM_FETCH_UNMAPPED.bits;
+
+        const MEM_READ_PROT = 0x80;
+        const MEM_WRITE_PROT = 0x100;
+        const MEM_FETCH_PROT = 0x200;
+        const MEM_PROT = Self::MEM_READ_PROT.bits | Self::MEM_WRITE_PROT.bits | Self::MEM_FETCH_PROT.bits;
+
+        const MEM_READ = 0x400;
+        const MEM_WRITE = 0x800;
+        const MEM_FETCH = 0x1000;
+        const MEM_VALID = Self::MEM_READ.bits | Self::MEM_WRITE.bits | Self::MEM_FETCH.bits;
+
+        const MEM_READ_AFTER = 0x2000;
+
+        const INSN_INVALID = 0x4000;
+
+        const MEM_READ_INVALID = Self::MEM_READ_UNMAPPED.bits | Self::MEM_READ_PROT.bits;
+        const MEM_WRITE_INVALID = Self::MEM_WRITE_UNMAPPED.bits | Self::MEM_WRITE_PROT.bits;
+        const MEM_FETCH_INVALID = Self::MEM_FETCH_UNMAPPED.bits | Self::MEM_FETCH_PROT.bits;
+        const MEM_INVALID = Self::MEM_READ_INVALID.bits | Self::MEM_WRITE_INVALID.bits | Self::MEM_FETCH_INVALID.bits;
+
+        const MEM_ALL = Self::MEM_VALID.bits | Self::MEM_INVALID.bits;
+    }
 }
 
 #[repr(C)]
@@ -94,7 +102,7 @@ pub struct Permission : u32 {
         const READ = 1;
         const WRITE = 2;
         const EXEC = 4;
-        const ALL = 7;
+        const ALL = Self::READ.bits | Self::WRITE.bits | Self::EXEC.bits;
     }
 }
 
@@ -119,47 +127,32 @@ pub enum Arch {
     MAX = 8,
 }
 
-#[repr(C)]
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub enum Mode {
+bitflags! {
+    #[repr(C)]
+    pub struct Mode: i32 {
+        const LITTLE_ENDIAN = 0;
+        const BIG_ENDIAN = 0x4000_0000;
 
-    LITTLE_ENDIAN = 0,
-    BIG_ENDIAN = 1073741824,
-
-    // use LITTLE_ENDIAN.
-    // MODE_ARM = 0,
-    THUMB = 16,
-    MCLASS = 32,
-    V8 = 64,
-    ARM926 = 128,
-    ARM946 = 256,
-    ARM1176 = 512,
-    // (assoc) MICRO = 16,
-    // (assoc) MIPS3 = 32,
-    // (assoc) MIPS32R6 = 64,
-    MIPS32 = 4,
-    MIPS64 = 8,
-    MODE_16 = 2,
-    // (assoc) MODE_32 = 4,
-    // (assoc) MODE_64 = 8,
-    // (assoc) PPC32 = 4,
-    // (assoc) PPC64 = 8,
-    // (assoc) QPX = 16,
-    // (assoc) SPARC32 = 4,
-    // (assoc) SPARC64 = 8,
-    // (assoc) V9 = 16,
-}
-
-impl Mode {
-    pub const MICRO: Mode = Mode::THUMB;
-    pub const MIPS3: Mode = Mode::MCLASS;
-    pub const MIPS32R6: Mode = Mode::V8;
-    pub const MODE_32: Mode = Mode::MIPS32;
-    pub const MODE_64: Mode = Mode::MIPS64;
-    pub const PPC32: Mode = Mode::MIPS32;
-    pub const PPC64: Mode = Mode::MIPS64;
-    pub const QPX: Mode = Mode::THUMB;
-    pub const SPARC32: Mode = Mode::MIPS32;
-    pub const SPARC64: Mode = Mode::MIPS64;
-    pub const V9: Mode = Mode::THUMB;
+        const ARM = 0;
+        const THUMB = 0x10;
+        const MCLASS = 0x20;
+        const V8 = 0x40;
+        const ARM926 = 0x80;
+        const ARM946 = 0x100;
+        const ARM1176 = 0x200;
+        const MICRO = Self::THUMB.bits;
+        const MIPS3 = Self::MCLASS.bits;
+        const MIPS32R6 = Self::V8.bits;
+        const MIPS32 = 4;
+        const MIPS64 = 8;
+        const MODE_16 = 2;
+        const MODE_32 = Self::MIPS32.bits;
+        const MODE_64 = Self::MIPS64.bits;
+        const PPC32 = Self::MIPS32.bits;
+        const PPC64 = Self::MIPS64.bits;
+        const QPX = Self::THUMB.bits;
+        const SPARC32 = Self::MIPS32.bits;
+        const SPARC64 = Self::MIPS64.bits;
+        const V9 = Self::THUMB.bits;
+    }
 }
