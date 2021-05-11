@@ -1074,22 +1074,19 @@ static void test_i386_invalid_mem_read_in_tb(void)
     // Let it crash by design.
     err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_MEM_READ_IN_TB) - 1, 0, 0);
     if (err) {
-        printf("Failed on uc_emu_start() with error returned %u: %s\n",
+        printf("uc_emu_start() failed BY DESIGN with error returned %u: %s\n",
                 err, uc_strerror(err));
     }
 
-    // now print out some registers
     printf(">>> Emulation done. Below is the CPU context\n");
 
-    uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
-    uc_reg_read(uc, UC_X86_REG_EDX, &r_edx);
     uc_reg_read(uc, UC_X86_REG_EIP, &r_eip);
-    printf(">>> EAX = 0x%x\n", r_eax);
-    printf(">>> EDX = 0x%x\n", r_edx);
     printf(">>> EIP = 0x%x\n", r_eip);
 
     if (r_eip != ADDRESS + 1) {
-        printf("Warning: Wrong PC 0x%x when reading unmapped memory in the middle of TB!\n", r_eip);
+        printf(">>> ERROR: Wrong PC 0x%x when reading unmapped memory in the middle of TB!\n", r_eip);
+    } else {
+        printf(">>> The PC is correct after reading unmapped memory in the middle of TB.\n");
     }
 
     uc_close(uc);
