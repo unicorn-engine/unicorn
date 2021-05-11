@@ -530,6 +530,10 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size);
         we will emulate the code in infinite time, until the code is finished.
  @count: the number of instructions to be emulated. When this value is 0,
         we will emulate all the code available, until the code is finished.
+  
+ NOTE: The internal states of the engine is guranteed to be correct if and only
+       if uc_emu_start returns without any errors or errors have been handled in
+       the callbacks.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
