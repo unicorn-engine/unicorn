@@ -1,5 +1,29 @@
 This file details the changelog of Unicorn Engine.
 
+-------------------------------
+[Version 1.0.3]: May xxxx, 2021
+
+- Fix some building issues
+    - Fix build with LLVM on Powerpc64(le)
+    - cmake: enable UNICORN_HAS_ARMEB when ARM is on
+    - Better support MingW building
+    - Better support FreeBSD host
+
+- Fix some issues in the core:
+    - Fix wrong sync after UC_ERR_[READ, WRITE, FETCH]_[UNMAPPED, PROT]
+    - Support querying architecture mode besides arm
+    - Fix pausing within Thumb2 ITE blocks
+
+- Arm:
+    - Support Arm BE8 mode
+
+- X86:
+    - Fix FPIP & FTST instructions
+
+- Bindings:
+    - Java: remove deprecated javah and build with javac
+    - Python: handle exceptions raised in hook functions
+
 -----------------------------------
 [Version 1.0.2]: October 21st, 2020
 
