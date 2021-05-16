@@ -8,6 +8,7 @@ This file details the changelog of Unicorn Engine.
     - cmake: enable UNICORN_HAS_ARMEB when ARM is on
     - Better support MingW building
     - Better support FreeBSD host
+	- Better support VS2008/VS2010
 
 - Fix some issues in the core:
     - Fix wrong sync after UC_ERR_[READ, WRITE, FETCH]_[UNMAPPED, PROT]
