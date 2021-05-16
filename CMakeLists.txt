@@ -19,7 +19,7 @@ project(unicorn C)
 
 set(UNICORN_VERSION_MAJOR 1)
 set(UNICORN_VERSION_MINOR 0)
-set(UNICORN_VERSION_PATCH 2)
+set(UNICORN_VERSION_PATCH 3)
 
 option(BUILD_SHARED_LIBS "Build shared instead of static library" ON)
 option(UNICORN_INSTALL "Install unicorn" ON)
