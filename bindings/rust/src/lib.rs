@@ -12,7 +12,7 @@
 //! fn main() {
 //!     let arm_code32: Vec<u8> = vec![0x17, 0x00, 0x40, 0xe2]; // sub r0, #23
 //!
-//!     let mut unicorn = unicorn::Unicorn::new(Arch::ARM, Mode::LITTLE_ENDIAN, 0).expect("failed to initialize Unicorn instance");
+//!     let mut unicorn = unicorn::Unicorn::new(Arch::ARM, Mode::LITTLE_ENDIAN).expect("failed to initialize Unicorn instance");
 //!     let mut emu = unicorn.borrow();
 //!     emu.mem_map(0x1000, 0x4000, Permission::ALL).expect("failed to map code page");
 //!     emu.mem_write(0x1000, &arm_code32).expect("failed to write instructions");
@@ -29,7 +29,6 @@
 
 mod ffi;
 pub mod unicorn_const;
-pub mod utils;
 
 mod arm;
 mod arm64;
@@ -69,35 +68,34 @@ impl Drop for Context {
 
 #[derive(Debug)]
 /// A Unicorn emulator instance.
-pub struct Unicorn<D> {
-    inner: Pin<Box<UnicornInner<D>>>,
+pub struct Unicorn {
+    inner: Pin<Box<UnicornInner>>,
 }
 
 #[derive(Debug)]
 /// Handle used to safely access exposed functions and data of a Unicorn instance.
-pub struct UnicornHandle<'a, D> {
-    inner: Pin<&'a mut UnicornInner<D>>,
+pub struct UnicornHandle<'a> {
+    inner: Pin<&'a mut UnicornInner>,
 }
 
 /// Internal Management struct
-pub struct UnicornInner<D> {
+pub struct UnicornInner {
     pub uc: uc_handle,
     pub arch: Arch,
-    pub code_hooks: HashMap<*mut libc::c_void, Box<ffi::CodeHook<D>>>,
-    pub block_hooks: HashMap<*mut libc::c_void, Box<ffi::BlockHook<D>>>,
-    pub mem_hooks: HashMap<*mut libc::c_void, Box<ffi::MemHook<D>>>,
-    pub intr_hooks: HashMap<*mut libc::c_void, Box<ffi::InterruptHook<D>>>,
-    pub insn_in_hooks: HashMap<*mut libc::c_void, Box<ffi::InstructionInHook<D>>>,
-    pub insn_out_hooks: HashMap<*mut libc::c_void, Box<ffi::InstructionOutHook<D>>>,
-    pub insn_sys_hooks: HashMap<*mut libc::c_void, Box<ffi::InstructionSysHook<D>>>,
-    pub data: D,
+    pub code_hooks: HashMap<*mut libc::c_void, Box<ffi::CodeHook>>,
+    pub block_hooks: HashMap<*mut libc::c_void, Box<ffi::BlockHook>>,
+    pub mem_hooks: HashMap<*mut libc::c_void, Box<ffi::MemHook>>,
+    pub intr_hooks: HashMap<*mut libc::c_void, Box<ffi::InterruptHook>>,
+    pub insn_in_hooks: HashMap<*mut libc::c_void, Box<ffi::InstructionInHook>>,
+    pub insn_out_hooks: HashMap<*mut libc::c_void, Box<ffi::InstructionOutHook>>,
+    pub insn_sys_hooks: HashMap<*mut libc::c_void, Box<ffi::InstructionSysHook>>,
     _pin: PhantomPinned,
 }
 
-impl<D> Unicorn<D> {
+impl Unicorn {
     /// Create a new instance of the unicorn engine for the specified architecture
     /// and hardware mode.
-    pub fn new(arch: Arch, mode: Mode, data: D) -> Result<Unicorn<D>, uc_error> {
+    pub fn new(arch: Arch, mode: Mode) -> Result<Unicorn, uc_error> {
         let mut handle = std::ptr::null_mut();
         let err = unsafe { ffi::uc_open(arch, mode, &mut handle) };
         if err == uc_error::OK {
@@ -112,7 +110,6 @@ impl<D> Unicorn<D> {
                     insn_in_hooks: HashMap::new(),
                     insn_out_hooks: HashMap::new(),
                     insn_sys_hooks: HashMap::new(),
-                    data: data,
                     _pin: std::marker::PhantomPinned,
                 }),
             })
@@ -121,43 +118,26 @@ impl<D> Unicorn<D> {
         }
     }
 
-    pub fn borrow<'a>(&'a mut self) -> UnicornHandle<'a, D> {
+    pub fn borrow<'a>(&'a mut self) -> UnicornHandle<'a> {
         UnicornHandle {
             inner: self.inner.as_mut(),
         }
     }
 }
 
-impl<D> Drop for Unicorn<D> {
+impl Drop for Unicorn {
     fn drop(&mut self) {
         unsafe { ffi::uc_close(self.inner.uc) };
     }
 }
 
-impl<D> UnicornInner<D> {
-    pub fn get_data(self: Pin<&mut Self>) -> &mut D {
-        unsafe { &mut self.get_unchecked_mut().data }
-    }
-}
-impl<D> std::fmt::Debug for UnicornInner<D> {
+impl std::fmt::Debug for UnicornInner {
     fn fmt(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
         write!(formatter, "Unicorn {{ uc: {:p} }}", self.uc)
     }
 }
 
-impl<'a, D> UnicornHandle<'a, D> {
-    /// Return whatever data was passed during initialization.
-    ///
-    /// For an example, have a look at utils::init_emu_with_heap where
-    /// a struct is passed which is used for a custom allocator.
-    pub fn get_data(&self) -> &D {
-        &self.inner.data
-    }
-
-    /// Return a mutable reference to whatever data was passed during initialization.
-    pub fn get_data_mut(&mut self) -> &mut D {
-        unsafe { &mut self.inner.as_mut().get_unchecked_mut().data }
-    }
+impl<'a> UnicornHandle<'a> {
 
     /// Return the architecture of the current emulator.
     pub fn get_arch(&self) -> Arch {
@@ -398,7 +378,7 @@ impl<'a, D> UnicornHandle<'a, D> {
         callback: F,
     ) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(UnicornHandle<D>, u64, u32),
+        F: FnMut(UnicornHandle, u64, u32),
     {
         let mut hook_ptr = std::ptr::null_mut();
         let mut user_data = Box::new(ffi::CodeHook {
@@ -411,7 +391,7 @@ impl<'a, D> UnicornHandle<'a, D> {
                 self.inner.uc,
                 &mut hook_ptr,
                 HookType::CODE,
-                ffi::code_hook_proxy::<D> as _,
+                ffi::code_hook_proxy as _,
                 user_data.as_mut() as *mut _ as _,
                 begin,
                 end,
@@ -430,7 +410,7 @@ impl<'a, D> UnicornHandle<'a, D> {
     /// Add a block hook.
     pub fn add_block_hook<F: 'static>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(UnicornHandle<D>, u64, u32),
+        F: FnMut(UnicornHandle, u64, u32),
     {
         let mut hook_ptr = std::ptr::null_mut();
         let mut user_data = Box::new(ffi::BlockHook {
@@ -443,7 +423,7 @@ impl<'a, D> UnicornHandle<'a, D> {
                 self.inner.uc,
                 &mut hook_ptr,
                 HookType::BLOCK,
-                ffi::block_hook_proxy::<D> as _,
+                ffi::block_hook_proxy as _,
                 user_data.as_mut() as *mut _ as _,
                 1,
                 0,
@@ -468,7 +448,7 @@ impl<'a, D> UnicornHandle<'a, D> {
         callback: F,
     ) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(UnicornHandle<D>, MemType, u64, usize, i64),
+        F: FnMut(UnicornHandle, MemType, u64, usize, i64),
     {
         if !(HookType::MEM_ALL | HookType::MEM_READ_AFTER).contains(hook_type) {
             return Err(uc_error::ARG);
@@ -485,7 +465,7 @@ impl<'a, D> UnicornHandle<'a, D> {
                 self.inner.uc,
                 &mut hook_ptr,
                 hook_type,
-                ffi::mem_hook_proxy::<D> as _,
+                ffi::mem_hook_proxy as _,
                 user_data.as_mut() as *mut _ as _,
                 begin,
                 end,
@@ -504,7 +484,7 @@ impl<'a, D> UnicornHandle<'a, D> {
     /// Add an interrupt hook.
     pub fn add_intr_hook<F: 'static>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(UnicornHandle<D>, u32),
+        F: FnMut(UnicornHandle, u32),
     {
         let mut hook_ptr = std::ptr::null_mut();
         let mut user_data = Box::new(ffi::InterruptHook {
@@ -517,7 +497,7 @@ impl<'a, D> UnicornHandle<'a, D> {
                 self.inner.uc,
                 &mut hook_ptr,
                 HookType::INTR,
-                ffi::intr_hook_proxy::<D> as _,
+                ffi::intr_hook_proxy as _,
                 user_data.as_mut() as *mut _ as _,
                 0,
                 0,
@@ -536,7 +516,7 @@ impl<'a, D> UnicornHandle<'a, D> {
     /// Add hook for x86 IN instruction.
     pub fn add_insn_in_hook<F: 'static>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(UnicornHandle<D>, u32, usize),
+        F: FnMut(UnicornHandle, u32, usize),
     {
         let mut hook_ptr = std::ptr::null_mut();
         let mut user_data = Box::new(ffi::InstructionInHook {
@@ -549,7 +529,7 @@ impl<'a, D> UnicornHandle<'a, D> {
                 self.inner.uc,
                 &mut hook_ptr,
                 HookType::INSN,
-                ffi::insn_in_hook_proxy::<D> as _,
+                ffi::insn_in_hook_proxy as _,
                 user_data.as_mut() as *mut _ as _,
                 0,
                 0,
@@ -569,7 +549,7 @@ impl<'a, D> UnicornHandle<'a, D> {
     /// Add hook for x86 OUT instruction.
     pub fn add_insn_out_hook<F: 'static>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(UnicornHandle<D>, u32, usize, u32),
+        F: FnMut(UnicornHandle, u32, usize, u32),
     {
         let mut hook_ptr = std::ptr::null_mut();
         let mut user_data = Box::new(ffi::InstructionOutHook {
@@ -582,7 +562,7 @@ impl<'a, D> UnicornHandle<'a, D> {
                 self.inner.uc,
                 &mut hook_ptr,
                 HookType::INSN,
-                ffi::insn_out_hook_proxy::<D> as _,
+                ffi::insn_out_hook_proxy as _,
                 user_data.as_mut() as *mut _ as _,
                 0,
                 0,
@@ -608,7 +588,7 @@ impl<'a, D> UnicornHandle<'a, D> {
         callback: F,
     ) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(UnicornHandle<D>),
+        F: FnMut(UnicornHandle),
     {
         let mut hook_ptr = std::ptr::null_mut();
         let mut user_data = Box::new(ffi::InstructionSysHook {
@@ -621,7 +601,7 @@ impl<'a, D> UnicornHandle<'a, D> {
                 self.inner.uc,
                 &mut hook_ptr,
                 HookType::INSN,
-                ffi::insn_sys_hook_proxy::<D> as _,
+                ffi::insn_sys_hook_proxy as _,
                 user_data.as_mut() as *mut _ as _,
                 begin,
                 end,
