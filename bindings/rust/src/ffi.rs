@@ -77,46 +77,46 @@ extern "C" {
     pub fn uc_context_restore(engine: uc_handle, context: uc_context) -> uc_error;
 }
 
-pub struct CodeHook<D> {
-    pub unicorn: *mut crate::UnicornInner<D>,
-    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, u64, u32)>,
+pub struct CodeHook {
+    pub unicorn: *mut crate::UnicornInner,
+    pub callback: Box<dyn FnMut(crate::UnicornHandle, u64, u32)>,
 }
 
-pub struct BlockHook<D> {
-    pub unicorn: *mut crate::UnicornInner<D>,
-    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, u64, u32)>,
+pub struct BlockHook {
+    pub unicorn: *mut crate::UnicornInner,
+    pub callback: Box<dyn FnMut(crate::UnicornHandle, u64, u32)>,
 }
 
-pub struct MemHook<D> {
-    pub unicorn: *mut crate::UnicornInner<D>,
-    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, MemType, u64, usize, i64)>,
+pub struct MemHook {
+    pub unicorn: *mut crate::UnicornInner,
+    pub callback: Box<dyn FnMut(crate::UnicornHandle, MemType, u64, usize, i64)>,
 }
 
-pub struct InterruptHook<D> {
-    pub unicorn: *mut crate::UnicornInner<D>,
-    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, u32)>,
+pub struct InterruptHook {
+    pub unicorn: *mut crate::UnicornInner,
+    pub callback: Box<dyn FnMut(crate::UnicornHandle, u32)>,
 }
 
-pub struct InstructionInHook<D> {
-    pub unicorn: *mut crate::UnicornInner<D>,
-    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, u32, usize)>,
+pub struct InstructionInHook {
+    pub unicorn: *mut crate::UnicornInner,
+    pub callback: Box<dyn FnMut(crate::UnicornHandle, u32, usize)>,
 }
 
-pub struct InstructionOutHook<D> {
-    pub unicorn: *mut crate::UnicornInner<D>,
-    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, u32, usize, u32)>,
+pub struct InstructionOutHook {
+    pub unicorn: *mut crate::UnicornInner,
+    pub callback: Box<dyn FnMut(crate::UnicornHandle, u32, usize, u32)>,
 }
 
-pub struct InstructionSysHook<D> {
-    pub unicorn: *mut crate::UnicornInner<D>,
-    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>)>,
+pub struct InstructionSysHook {
+    pub unicorn: *mut crate::UnicornInner,
+    pub callback: Box<dyn FnMut(crate::UnicornHandle)>,
 }
 
-pub extern "C" fn code_hook_proxy<D>(
+pub extern "C" fn code_hook_proxy(
     uc: uc_handle,
     address: u64,
     size: u32,
-    user_data: *mut CodeHook<D>,
+    user_data: *mut CodeHook,
 ) {
     let unicorn = unsafe { &mut *(*user_data).unicorn };
     let callback = &mut unsafe { &mut *(*user_data).callback };
@@ -130,11 +130,11 @@ pub extern "C" fn code_hook_proxy<D>(
     );
 }
 
-pub extern "C" fn block_hook_proxy<D>(
+pub extern "C" fn block_hook_proxy(
     uc: uc_handle,
     address: u64,
     size: u32,
-    user_data: *mut BlockHook<D>,
+    user_data: *mut BlockHook,
 ) {
     let unicorn = unsafe { &mut *(*user_data).unicorn };
     let callback = &mut unsafe { &mut *(*user_data).callback };
@@ -148,13 +148,13 @@ pub extern "C" fn block_hook_proxy<D>(
     );
 }
 
-pub extern "C" fn mem_hook_proxy<D>(
+pub extern "C" fn mem_hook_proxy(
     uc: uc_handle,
     mem_type: MemType,
     address: u64,
     size: u32,
     value: i64,
-    user_data: *mut MemHook<D>,
+    user_data: *mut MemHook,
 ) {
     let unicorn = unsafe { &mut *(*user_data).unicorn };
     let callback = &mut unsafe { &mut *(*user_data).callback };
@@ -170,7 +170,7 @@ pub extern "C" fn mem_hook_proxy<D>(
     );
 }
 
-pub extern "C" fn intr_hook_proxy<D>(uc: uc_handle, value: u32, user_data: *mut InterruptHook<D>) {
+pub extern "C" fn intr_hook_proxy(uc: uc_handle, value: u32, user_data: *mut InterruptHook) {
     let unicorn = unsafe { &mut *(*user_data).unicorn };
     let callback = &mut unsafe { &mut *(*user_data).callback };
     assert_eq!(uc, unicorn.uc);
@@ -182,11 +182,11 @@ pub extern "C" fn intr_hook_proxy<D>(uc: uc_handle, value: u32, user_data: *mut 
     );
 }
 
-pub extern "C" fn insn_in_hook_proxy<D>(
+pub extern "C" fn insn_in_hook_proxy(
     uc: uc_handle,
     port: u32,
     size: usize,
-    user_data: *mut InstructionInHook<D>,
+    user_data: *mut InstructionInHook,
 ) {
     let unicorn = unsafe { &mut *(*user_data).unicorn };
     let callback = &mut unsafe { &mut *(*user_data).callback };
@@ -200,12 +200,12 @@ pub extern "C" fn insn_in_hook_proxy<D>(
     );
 }
 
-pub extern "C" fn insn_out_hook_proxy<D>(
+pub extern "C" fn insn_out_hook_proxy(
     uc: uc_handle,
     port: u32,
     size: usize,
     value: u32,
-    user_data: *mut InstructionOutHook<D>,
+    user_data: *mut InstructionOutHook,
 ) {
     let unicorn = unsafe { &mut *(*user_data).unicorn };
     let callback = &mut unsafe { &mut *(*user_data).callback };
@@ -220,7 +220,7 @@ pub extern "C" fn insn_out_hook_proxy<D>(
     );
 }
 
-pub extern "C" fn insn_sys_hook_proxy<D>(uc: uc_handle, user_data: *mut InstructionSysHook<D>) {
+pub extern "C" fn insn_sys_hook_proxy(uc: uc_handle, user_data: *mut InstructionSysHook) {
     let unicorn = unsafe { &mut *(*user_data).unicorn };
     let callback = &mut unsafe { &mut *(*user_data).callback };
     assert_eq!(uc, unicorn.uc);

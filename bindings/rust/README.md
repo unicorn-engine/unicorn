@@ -11,7 +11,7 @@ use unicorn::unicorn_const::{Arch, Mode, Permission, SECOND_SCALE};
 fn main() {
     let arm_code32: Vec<u8> = vec![0x17, 0x00, 0x40, 0xe2]; // sub r0, #23
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::ARM, Mode::LITTLE_ENDIAN, 0).expect("failed to initialize Unicorn instance");
+    let mut unicorn = unicorn::Unicorn::new(Arch::ARM, Mode::LITTLE_ENDIAN).expect("failed to initialize Unicorn instance");
     let mut emu = unicorn.borrow();
     emu.mem_map(0x1000, 0x4000, Permission::ALL).expect("failed to map code page");
     emu.mem_write(0x1000, &arm_code32).expect("failed to write instructions");
@@ -25,10 +25,6 @@ fn main() {
 }
 ```
 Further sample code can be found in ```tests/unicorn.rs```.
-
-In addition, the bindings offer some basic utility functionalities, such as
-a simple heap allocator utilizing Unicorn hooks for sanitization or easily accessible debug prints. 
-These are WIP and only tested in ARM LITTLE_ENDIAN mode.
 
 ## Installation
 
