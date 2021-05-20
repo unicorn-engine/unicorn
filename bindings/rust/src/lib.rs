@@ -63,7 +63,7 @@ impl Context {
 
 impl Drop for Context {
     fn drop(&mut self) {
-        unsafe { ffi::uc_free(self.context) };
+        unsafe { ffi::uc_context_free(self.context) };
     }
 }
 
@@ -736,7 +736,7 @@ impl<'a, D> UnicornHandle<'a, D> {
                 context: new_context,
             })
         } else {
-            unsafe { ffi::uc_free(new_context) };
+            unsafe { ffi::uc_context_free(new_context) };
             Err(err)
         }
     }
