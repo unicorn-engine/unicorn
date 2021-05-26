@@ -1,7 +1,7 @@
 This file details the changelog of Unicorn Engine.
 
 -------------------------------
-[Version 1.0.3]: May xxxx, 2021
+[Version 1.0.3]: May 26th, 2021
 
 - Fix some building issues
     - Fix build with LLVM on Powerpc64(le)
@@ -24,6 +24,7 @@ This file details the changelog of Unicorn Engine.
 - Bindings:
     - Java: remove deprecated javah and build with javac
     - Python: handle exceptions raised in hook functions
+    - Rust binding
 
 -----------------------------------
 [Version 1.0.2]: October 21st, 2020
