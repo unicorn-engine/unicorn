@@ -14,12 +14,18 @@ V ?= 0
 
 CFLAGS += -Wall -Werror -I../include
 
-LDFLAGS += -L$(LIBDIR) -lunicorn -lpthread -lm
+LDFLAGS += -L$(LIBDIR) -lunicorn -lm
 ifeq ($(UNAME_S), Linux)
 LDFLAGS += -lrt
 endif
 
-LDLIBS += -lpthread -lunicorn -lm
+LDLIBS += -lunicorn -lm
+
+# android don't have pthread.so
+ifeq ($(ANDROID), )
+LDFLAGS += -lpthread
+LDLIBS += -lpthread
+endif
 
 ifneq ($(CROSS),)
 CC = $(CROSS)gcc
@@ -31,6 +37,14 @@ CXX = clang++
 AR = llvm-ar
 CFLAGS += -fsanitize=address -fno-omit-frame-pointer
 LDFLAGS := -fsanitize=address ${LDFLAGS}
+endif
+
+ifeq ($(ANDROID), 1)
+CC = $(CROSS)/../../bin/clang
+AR = $(CROSS)/ar
+RANLIB = $(CROSS)/ranlib
+STRIP = $(CROSS)/strip
+LDFLAGS += -pie -fPIE
 endif
 
 # Cygwin?
