@@ -765,26 +765,52 @@ uc_err uc_emu_stop(uc_engine *uc)
     return UC_ERR_OK;
 }
 
+// return target index where a memory region at the address exists, or could be inserted
+//
+// address either is inside the mapping at the returned index, or is in free space before
+// the next mapping.
+//
+// if there is overlap, between regions, ending address will be higher than the starting
+// address of the mapping at returned index
+static int bsearch_mapped_blocks(const uc_engine *uc, uint64_t address) {
+    int left, right, mid;
+    MemoryRegion *mapping;
+
+    left = 0;
+    right = uc->mapped_block_count;
+
+    while (left < right) {
+        mid = left + (right - left) / 2;
+
+        mapping = uc->mapped_blocks[mid];
+
+        if (mapping->end - 1 < address) {
+            left = mid + 1;
+        } else if (mapping->addr > address) {
+            right = mid;
+        } else {
+            return mid;
+        }
+    }
+
+    return left;
+}
+
 // find if a memory range overlaps with existing mapped regions
 static bool memory_overlap(struct uc_struct *uc, uint64_t begin, size_t size)
 {
     unsigned int i;
     uint64_t end = begin + size - 1;
 
-    for(i = 0; i < uc->mapped_block_count; i++) {
-        // begin address falls inside this region?
-        if (begin >= uc->mapped_blocks[i]->addr && begin <= uc->mapped_blocks[i]->end - 1) {
-            return true;
-        }
-        // end address falls inside this region?
-        if (end >= uc->mapped_blocks[i]->addr && end <= uc->mapped_blocks[i]->end - 1) {
-            return true;
-        }
-        // this region falls totally inside this range?
-        if (begin < uc->mapped_blocks[i]->addr && end > uc->mapped_blocks[i]->end - 1) {
-            return true;
-        }
-    }
+    i = bsearch_mapped_blocks(uc, begin);
+
+    // is this the highest region with no possible overlap?
+    if (i >= uc->mapped_block_count)
+        return false;
+
+    // end address overlaps this region?
+    if (end >= uc->mapped_blocks[i]->addr)
+        return true;
 
     // not found
     return false;
@@ -794,6 +820,7 @@ static bool memory_overlap(struct uc_struct *uc, uint64_t begin, size_t size)
 static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, MemoryRegion *block)
 {
     MemoryRegion **regions;
+    int pos;
 
     if (block == NULL) {
         return UC_ERR_NOMEM;
@@ -808,7 +835,12 @@ static uc_err mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t per
         uc->mapped_blocks = regions;
     }
 
-    uc->mapped_blocks[uc->mapped_block_count] = block;
+    pos = bsearch_mapped_blocks(uc, block->addr);
+
+    // shift the array right to give space for the new pointer
+    memmove(&uc->mapped_blocks[pos + 1], &uc->mapped_blocks[pos], sizeof(MemoryRegion*) * (uc->mapped_block_count - pos));
+
+    uc->mapped_blocks[pos] = block;
     uc->mapped_block_count++;
 
     return UC_ERR_OK;
@@ -1225,13 +1257,10 @@ MemoryRegion *memory_mapping(struct uc_struct* uc, uint64_t address)
         return uc->mapped_blocks[i];
     }
 
-    for(i = 0; i < uc->mapped_block_count; i++) {
-        if (address >= uc->mapped_blocks[i]->addr && address <= uc->mapped_blocks[i]->end - 1) {
-            // cache this index for the next query
-            uc->mapped_block_cache_index = i;
-            return uc->mapped_blocks[i];
-        }
-    }
+    i = bsearch_mapped_blocks(uc, address);
+
+    if (i < uc->mapped_block_count && address >= uc->mapped_blocks[i]->addr && address <= uc->mapped_blocks[i]->end - 1)
+        return uc->mapped_blocks[i];
 
     // not found
     return NULL;
