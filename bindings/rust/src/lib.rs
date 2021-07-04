@@ -468,7 +468,7 @@ impl<'a, D> UnicornHandle<'a, D> {
         callback: F,
     ) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(UnicornHandle<D>, MemType, u64, usize, i64),
+        F: FnMut(UnicornHandle<D>, MemType, u64, usize, i64) -> bool,
     {
         if !(HookType::MEM_ALL | HookType::MEM_READ_AFTER).contains(hook_type) {
             return Err(uc_error::ARG);

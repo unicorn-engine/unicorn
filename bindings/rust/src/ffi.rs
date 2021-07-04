@@ -89,7 +89,7 @@ pub struct BlockHook<D> {
 
 pub struct MemHook<D> {
     pub unicorn: *mut crate::UnicornInner<D>,
-    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, MemType, u64, usize, i64)>,
+    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, MemType, u64, usize, i64) -> bool>,
 }
 
 pub struct InterruptHook<D> {

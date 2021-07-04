@@ -324,7 +324,7 @@ fn heap_unalloc(
     addr: u64,
     _size: usize,
     _val: i64,
-) {
+) -> bool {
     let arch = uc.get_arch();
     let reg = match arch {
         Arch::X86 => RegisterX86::RIP as i32,
@@ -346,7 +346,7 @@ fn heap_oob(
     addr: u64,
     _size: usize,
     _val: i64,
-) {
+) -> bool {
     let arch = uc.get_arch();
     let reg = match arch {
         Arch::X86 => RegisterX86::RIP as i32,
@@ -370,7 +370,7 @@ fn heap_bo(
     addr: u64,
     _size: usize,
     _val: i64,
-) {
+) -> bool {
     let arch = uc.get_arch();
     let reg = match arch {
         Arch::X86 => RegisterX86::RIP as i32,
@@ -394,7 +394,7 @@ fn heap_uaf(
     addr: u64,
     _size: usize,
     _val: i64,
-) {
+) -> bool {
     let arch = uc.get_arch();
     let reg = match arch {
         Arch::X86 => RegisterX86::RIP as i32,
