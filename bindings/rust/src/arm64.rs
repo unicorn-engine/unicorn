@@ -1,10 +1,12 @@
+#![allow(non_camel_case_types)]
+
 // ARM64 registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum RegisterARM64 {
     INVALID = 0,
-    FP = 1,
-    LR = 2,
+    X29 = 1,
+    X30 = 2,
     NZCV = 3,
     SP = 4,
     WSP = 5,
@@ -217,8 +219,8 @@ pub enum RegisterARM64 {
     X13 = 212,
     X14 = 213,
     X15 = 214,
-    IP1 = 215,
-    IP0 = 216,
+    X16 = 215,
+    X17 = 216,
     X18 = 217,
     X19 = 218,
     X20 = 219,
@@ -265,4 +267,55 @@ pub enum RegisterARM64 {
 
     // pseudo registers
     PC = 260,
+    CPACR_EL1 = 261,
+
+    // thread registers
+    TPIDR_EL0 = 262,
+    TPIDRRO_EL0 = 263,
+    TPIDR_EL1 = 264,
+    PSTATE = 265,
+
+    // exception link registers
+    ELR_EL0 = 266,
+    ELR_EL1 = 267,
+    ELR_EL2 = 268,
+    ELR_EL3 = 269,
+
+    // stack pointers registers
+    SP_EL0 = 270,
+    SP_EL1 = 271,
+    SP_EL2 = 272,
+    SP_EL3 = 273,
+
+    // other CP15 registers
+    TTBR0_EL1 = 274,
+    TTBR1_EL1 = 275,
+    ESR_EL0 = 276,
+    ESR_EL1 = 277,
+    ESR_EL2 = 278,
+    ESR_EL3 = 279,
+    FAR_EL0 = 280,
+    FAR_EL1 = 281,
+    FAR_EL2 = 282,
+    FAR_EL3 = 283,
+    PAR_EL1 = 284,
+    MAIR_EL1 = 285,
+    VBAR_EL0 = 286,
+    VBAR_EL1 = 287,
+    VBAR_EL2 = 288,
+    VBAR_EL3 = 289,
+    ENDING = 290,
+
+    // alias registers
+    // (assoc) IP0 = 215,
+    // (assoc) IP1 = 216,
+    // (assoc) FP = 1,
+    // (assoc) LR = 2,
+}
+
+impl RegisterARM64 {
+    pub const IP0: RegisterARM64 = RegisterARM64::X16;
+    pub const IP1: RegisterARM64 = RegisterARM64::X17;
+    pub const FP: RegisterARM64 = RegisterARM64::X29;
+    pub const LR: RegisterARM64 = RegisterARM64::X30;
 }
