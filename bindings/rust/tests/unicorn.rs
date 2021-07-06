@@ -278,9 +278,10 @@ fn x86_mem_callback() {
 
     let callback_mems = mems_cell.clone();
     let callback =
-        move |_: Unicorn<'_>, mem_type: MemType, address: u64, size: usize, value: i64| {
+        move |_: Unicorn<'_>, mem_type: MemType, address: u64, size: usize, value: i64| -> bool {
             let mut mems = callback_mems.borrow_mut();
             mems.push(MemExpectation(mem_type, address, size, value));
+            true
         };
 
     // mov eax, 0xdeadbeef;

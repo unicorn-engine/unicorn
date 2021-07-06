@@ -89,7 +89,7 @@ pub struct BlockHook<D> {
 
 pub struct MemHook<D> {
     pub unicorn: *mut crate::UnicornInner<D>,
-    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, MemType, u64, usize, i64)>,
+    pub callback: Box<dyn FnMut(crate::UnicornHandle<D>, MemType, u64, usize, i64) -> bool>,
 }
 
 pub struct InterruptHook<D> {
@@ -155,7 +155,7 @@ pub extern "C" fn mem_hook_proxy<D>(
     size: u32,
     value: i64,
     user_data: *mut MemHook<D>,
-) {
+) -> bool {
     let unicorn = unsafe { &mut *(*user_data).unicorn };
     let callback = &mut unsafe { &mut *(*user_data).callback };
     assert_eq!(uc, unicorn.uc);
@@ -167,7 +167,7 @@ pub extern "C" fn mem_hook_proxy<D>(
         address,
         size as usize,
         value,
-    );
+    )
 }
 
 pub extern "C" fn intr_hook_proxy<D>(uc: uc_handle, value: u32, user_data: *mut InterruptHook<D>) {
