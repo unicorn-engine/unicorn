@@ -508,12 +508,16 @@ class Uc(object):
 
     @_catch_hook_exception
     def _hook_mem_invalid_cb(self, handle, access, address, size, value, user_data):
+        # transform to unsigned
+        value &= 2 ** (size * 8) - 1
         # call user's callback with self object
         (cb, data) = self._callbacks[user_data]
         return cb(self, access, address, size, value, data)
 
     @_catch_hook_exception
     def _hook_mem_access_cb(self, handle, access, address, size, value, user_data):
+        # transform to unsigned
+        value &= 2 ** (size * 8) - 1
         # call user's callback with self object
         (cb, data) = self._callbacks[user_data]
         cb(self, access, address, size, value, data)
