@@ -803,6 +803,31 @@ static void test_i386_reg_save(void **state)
     uc_free(saved_context);
     uc_assert_success(uc_close(uc));
 }
+
+/******************************************************************************/
+
+static void test_i386_lock(void **state)
+{
+    uc_engine *uc;
+
+    static const uint64_t address = 0;
+    static const uint8_t code[] = "\xf0\x90"; // lock nop
+
+    // Initialize emulator
+    uc_assert_success(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+
+    // map 8KB memory for this emulation
+    uc_assert_success(uc_mem_map(uc, address, 8 * 1024, UC_PROT_ALL));
+
+    // write machine code to be emulated to memory
+    uc_assert_success(uc_mem_write(uc, address, code, sizeof(code) - 1));
+
+    // step one instruction
+    uc_assert_err(UC_ERR_INSN_INVALID, uc_emu_start(uc, address, address + sizeof(code) - 1, 0, 0));
+
+    // clean up;
+    uc_assert_success(uc_close(uc));
+}
 /******************************************************************************/
 
 int main(void) {
@@ -815,6 +840,7 @@ int main(void) {
         cmocka_unit_test(test_i386_invalid_mem_write),
         cmocka_unit_test(test_i386_jump_invalid),
         cmocka_unit_test(test_i386_reg_save),
+        cmocka_unit_test(test_i386_lock),
 
         cmocka_unit_test(test_x86_64),
         cmocka_unit_test(test_x86_64_syscall),
