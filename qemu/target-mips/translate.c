@@ -19213,6 +19213,16 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
         goto done_generating;
     }
 
+	// Verify code exec barrier if set
+	if (env->uc->code_exec_barrier_start || env->uc->code_exec_barrier_end) {
+		if (tb->pc < env->uc->code_exec_barrier_start || tb->pc >= env->uc->code_exec_barrier_end) {
+			gen_tb_start(tcg_ctx);
+			gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
+			ctx.bstate = BS_EXCP;
+			goto done_generating;
+		}
+	}
+
     // Unicorn: trace this block on request
     // Only hook this block if it is not broken from previous translation due to
     // full translation cache
@@ -19264,6 +19274,14 @@ gen_intermediate_code_internal(MIPSCPU *cpu, TranslationBlock *tb,
             ctx.bstate = BS_EXCP;
             break;
         } else {
+			// Verify code exec barrier if set
+			if (ctx.uc->code_exec_barrier_start || ctx.uc->code_exec_barrier_end) {
+				if (ctx.pc < ctx.uc->code_exec_barrier_start || ctx.pc >= ctx.uc->code_exec_barrier_end) {
+					gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
+					ctx.bstate = BS_EXCP;
+					break;
+				}
+			}
             bool insn_need_patch = false;
             int insn_patch_offset = 1;
 
