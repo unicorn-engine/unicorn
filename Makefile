@@ -158,6 +158,11 @@ CC ?= cc
 AR ?= ar
 RANLIB ?= ranlib
 STRIP ?= strip
+else ifeq ($(ANDROID), 1)
+CC = $(CROSS)/../../bin/clang
+AR = $(CROSS)/ar
+RANLIB = $(CROSS)/ranlib
+STRIP = $(CROSS)/strip
 else
 CC = $(CROSS)-gcc
 AR = $(CROSS)-ar
@@ -405,6 +410,7 @@ clean:
 	rm -rf lib$(LIBNAME)* $(LIBNAME)*.lib $(LIBNAME)*.dll $(LIBNAME)*.a $(LIBNAME)*.def $(LIBNAME)*.exp cyg$(LIBNAME)*.dll
 	$(MAKE) -C samples clean
 	$(MAKE) -C tests/unit clean
+	[ "${ANDROID}" = "1" ] && rm -rf android-ndk-* || true
 
 
 define generate-pkgcfg

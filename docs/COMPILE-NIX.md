@@ -113,11 +113,11 @@ To cross-compile for Android (smartphone/tablet), Android NDK is required.
 
 - To cross-compile for Android Arm, run:
 
-        $ NDK=~/android/android-ndk-r20 ./make.sh cross-android_arm
+        $ NDK=~/android/android-ndk-r20 ./make.sh cross-android arm
 
 - To cross-compile for Android Arm64, run:
 
-        $ NDK=~/android/android-ndk-r20 ./make.sh cross-android_arm64
+        $ NDK=~/android/android-ndk-r20 ./make.sh cross-android arm64
 
 Resulted files libunicorn.so, libunicorn.a & tests/test* can then
 be used on Android devices.

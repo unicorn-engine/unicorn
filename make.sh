@@ -52,6 +52,51 @@ build_linux32() {
   ${MAKE}
 }
 
+# build Android lib for only one supported architecture
+build_android() {
+  if [ -z "$NDK" ]; then
+    echo "ERROR! Please set \$NDK to point at your Android NDK directory."
+    exit 1
+  fi
+
+  HOSTOS=$(uname -s | tr 'LD' 'ld')
+  HOSTARCH=$(uname -m)
+
+  TARGARCH="$1"
+  shift
+
+  case "$TARGARCH" in
+    arm)
+      [ -n "$APILEVEL" ] || APILEVEL="android-14"  # default to ICS
+      CROSS=arm-linux-androideabi
+      ;;
+    arm64)
+      [ -n "$APILEVEL" ] || APILEVEL="android-21"  # first with arm64
+      CROSS=aarch64-linux-android
+      ;;
+    x86)
+      [ -n "$APILEVEL" ] || APILEVEL="android-21"  # second with x86
+      CROSS=i686-linux-android
+      ;;
+
+    *)
+      echo "ERROR! Building for Android on $1 is not currently supported."
+      exit 1
+      ;;
+  esac
+
+  STANDALONE=`realpath android-ndk-${TARGARCH}-${APILEVEL}`
+
+  [ -d $STANDALONE ] || {
+      python ${NDK}/build/tools/make_standalone_toolchain.py \
+             --arch ${TARGARCH} \
+             --api ${APILEVEL##*-} \
+             --install-dir ${STANDALONE}
+  }
+
+  ANDROID=1 CROSS="${STANDALONE}/${CROSS}/bin/" CC=clang CFLAGS="--sysroot=${STANDALONE}/sysroot" ${MAKE} $*
+}
+
 install() {
   # Mac OSX needs to find the right directory for pkgconfig
   if [ "$UNAME" = Darwin ]; then
@@ -119,7 +164,10 @@ fi
 
 export CC INSTALL_BIN PREFIX PKGCFGDIR LIBDIRARCH LIBARCHS CFLAGS LDFLAGS
 
-case "$1" in
+TARGET="$1"
+[ -n "$TARGET" ] && shift
+
+case "$TARGET" in
   "" ) ${MAKE};;
   "asan" ) asan;;
   "install" ) install;;
@@ -128,7 +176,7 @@ case "$1" in
   "macos-universal-no" ) MACOS_UNIVERSAL=no ${MAKE};;
   "cross-win32" ) build_cross i686-w64-mingw32;;
   "cross-win64" ) build_cross x86_64-w64-mingw32;;
-  "cross-android_arm" ) CROSS=arm-linux-androideabi ${MAKE};;
+  "cross-android" ) build_android $*;;
   "cross-android_arm64" ) CROSS=aarch64-linux-android ${MAKE};;
   "linux32" ) build_linux32;;
   "msvc_update_genfiles" ) msvc_update_genfiles;;
