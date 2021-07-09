@@ -27,6 +27,7 @@
 #include "exec/address-spaces.h"
 #include "exec/memory.h"
 #include "uc_priv.h"
+#include "translate-all.h"
 
 #define DATA_SIZE (1 << SHIFT)
 
@@ -192,12 +193,31 @@ WORD_TYPE helper_le_ld_name(CPUArchState *env, target_ulong addr, int mmu_idx,
     struct hook *hook;
     bool handled;
     HOOK_FOREACH_VAR_DECLARE;
+    TranslationBlock* tb;
+    TCGContext* tcg_ctx;
+    int j;
 
     struct uc_struct *uc = env->uc;
     MemoryRegion *mr = memory_mapping(uc, addr);
+    tcg_ctx = uc->tcg_ctx;
 
     // memory might be still unmapped while reading or fetching
     if (mr == NULL) {
+        tb = tb_find_pc(env->uc, retaddr);
+        if (tb) {
+            // This branch should always be taken
+            tcg_func_start(tcg_ctx);
+            gen_intermediate_code_pc(env, tb);
+            j = tcg_gen_code_search_pc(tcg_ctx, (tcg_insn_unit *)tb->tc_ptr,
+                                              retaddr - (uintptr_t)tb->tc_ptr);
+            if (j >= 0) {
+                // This branch should always be taken too
+                while (tcg_ctx->gen_opc_instr_start[j] == 0) {
+                    --j;
+                }
+                uc->set_pc(uc, tcg_ctx->gen_opc_pc[j]);
+            }
+        }
         handled = false;
 #if defined(SOFTMMU_CODE_ACCESS)
         error_code = UC_ERR_FETCH_UNMAPPED;

@@ -124,7 +124,6 @@ static uintptr_t qemu_host_page_mask;
 
 static void tb_link_page(struct uc_struct *uc, TranslationBlock *tb,
     tb_page_addr_t phys_pc, tb_page_addr_t phys_page2);
-static TranslationBlock *tb_find_pc(struct uc_struct *uc, uintptr_t tc_ptr);
 
 // Unicorn: for cleaning up memory later.
 void free_code_gen_buffer(struct uc_struct *uc);
@@ -1517,7 +1516,7 @@ static void tb_link_page(struct uc_struct *uc,
 
 /* find the TB 'tb' such that tb[0].tc_ptr <= tc_ptr <
    tb[1].tc_ptr. Return NULL if not found */
-static TranslationBlock *tb_find_pc(struct uc_struct *uc, uintptr_t tc_ptr)
+TranslationBlock *tb_find_pc(struct uc_struct *uc, uintptr_t tc_ptr)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
     int m_min, m_max, m;
