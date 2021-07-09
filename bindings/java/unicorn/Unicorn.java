@@ -26,50 +26,26 @@ import java.util.*;
 public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, SparcConst, MipsConst, X86Const {
 
    private long eng;
+   private boolean closed = false;
    private int arch;
    private int mode;
 
-   private long blockHandle = 0;
-   private long interruptHandle = 0;
-   private long codeHandle = 0;
-
-   private Hashtable<Integer, Long> eventMemHandles = new Hashtable<Integer, Long>();
-   private long readInvalidHandle = 0;
-   private long writeInvalidHandle = 0;
-   private long fetchProtHandle = 0;
-   private long readProtHandle = 0;
-   private long writeProtHandle = 0;
-
-   private long readHandle = 0;
-   private long writeHandle = 0;
-   private long inHandle = 0;
-   private long outHandle = 0;
-   private long syscallHandle = 0;
-
    private class Tuple {
-      public Hook function;
-      public Object data;
-      public Tuple(Hook f, Object d) {
+      long handle;
+      Hook function;
+      Object data;
+      Tuple(long h, Hook f, Object d) {
+         handle = h;
          function = f;
          data = d;
       }
    }
 
-   private ArrayList<Tuple> blockList = new ArrayList<Tuple>();
-   private ArrayList<Tuple> intrList = new ArrayList<Tuple>();
-   private ArrayList<Tuple> codeList = new ArrayList<Tuple>();
-   private ArrayList<Tuple> readList = new ArrayList<Tuple>();
-   private ArrayList<Tuple> writeList = new ArrayList<Tuple>();
-   private ArrayList<Tuple> inList = new ArrayList<Tuple>();
-   private ArrayList<Tuple> outList = new ArrayList<Tuple>();
-   private ArrayList<Tuple> syscallList = new ArrayList<Tuple>();
+   private long hookCounter = 1;
+   private HashMap<Long, Tuple> hookMap = new HashMap<Long, Tuple>();
 
-   private Hashtable<Integer, ArrayList<Tuple> > eventMemLists = new Hashtable<Integer, ArrayList<Tuple> >();
-
-   private ArrayList<ArrayList<Tuple>> allLists = new ArrayList<ArrayList<Tuple>>();
-
-   private static Hashtable<Integer,Integer> eventMemMap = new Hashtable<Integer,Integer>();
-   private static Hashtable<Long,Unicorn> unicorns = new Hashtable<Long,Unicorn>();
+   private static final Hashtable<Integer,Integer> eventMemMap = new Hashtable<Integer, Integer>();
+   private static final Hashtable<Long,Unicorn> unicorns = new Hashtable<Long, Unicorn>();
 
    //required to load native method implementations
    static {
@@ -94,16 +70,22 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address The address of the instruction being executed
  * @param  size    The size of the basic block being executed
+ * @param  hook_id id for find Hook
  * @see         hook_add, unicorn.BlockHook
  */
-    private static void invokeBlockCallbacks(long eng, long address, int size) {
-      Unicorn u = unicorns.get(eng);
-      if (u != null) {
-         for (Tuple p : u.blockList) {
-            BlockHook bh = (BlockHook)p.function;
-            bh.hook(u, address, size, p.data);
-         }
-      }
+    private static void invokeBlockCallbacks(long eng, long address, int size, long hook_id) {
+       Unicorn u;
+       synchronized (unicorns)
+       {
+          u = unicorns.get(eng);
+       }
+
+       if (u != null) {
+          Tuple p = u.hookMap.get(hook_id);
+          assert p.function instanceof BlockHook;
+          BlockHook bh = (BlockHook)p.function;
+          bh.hook(u, address, size, p.data);
+       }
    }
 
 /**
@@ -113,15 +95,21 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  intno   The interrupt number
+ * @param  hook_id id for find Hook
  * @see         hook_add, unicorn.InterruptHook
  */
-   private static void invokeInterruptCallbacks(long eng, int intno) {
-      Unicorn u = unicorns.get(eng);
+   private static void invokeInterruptCallbacks(long eng, int intno, long hook_id) {
+      Unicorn u;
+      synchronized (unicorns)
+      {
+         u = unicorns.get(eng);
+      }
+
       if (u != null) {
-         for (Tuple p : u.intrList) {
-            InterruptHook ih = (InterruptHook)p.function;
-            ih.hook(u, intno, p.data);
-         }
+         Tuple p = u.hookMap.get(hook_id);
+         assert p.function instanceof InterruptHook;
+         InterruptHook ih = (InterruptHook)p.function;
+         ih.hook(u, intno, p.data);
       }
    }
 
@@ -133,15 +121,21 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address The address of the instruction being executed
  * @param  size    The size of the instruction being executed
+ * @param  hook_id id for find Hook
  * @see         hook_add, unicorn.CodeHook
  */
-   private static void invokeCodeCallbacks(long eng, long address, int size) {
-      Unicorn u = unicorns.get(eng);
+   private static void invokeCodeCallbacks(long eng, long address, int size, long hook_id) {
+      Unicorn u;
+      synchronized (unicorns)
+      {
+         u = unicorns.get(eng);
+      }
+
       if (u != null) {
-         for (Tuple p : u.codeList) {
-            CodeHook ch = (CodeHook)p.function;
-            ch.hook(u, address, size, p.data);
-         }
+         Tuple p = u.hookMap.get(hook_id);
+         assert p.function instanceof CodeHook;
+         CodeHook ch = (CodeHook)p.function;
+         ch.hook(u, address, size, p.data);
       }
    }
 
@@ -156,21 +150,25 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param  address Address of instruction being executed
  * @param  size    Size of data being read or written
  * @param  value   Value of data being written to memory, or irrelevant if type = READ.
+ * @param  hook_id id for find Hook
  * @return         true to continue, or false to stop program (due to invalid memory).
  * @see            hook_add, unicorn.EventMemHook
  */
-   private static boolean invokeEventMemCallbacks(long eng, int type, long address, int size, long value) {
-      Unicorn u = unicorns.get(eng);
-      boolean result = true;
-      if (u != null) {
-         ArrayList<Tuple> funcList = u.eventMemLists.get(type);
-         if (funcList != null) {
-            for (Tuple p : funcList) {
-               EventMemHook emh = (EventMemHook)p.function;
-               result &= emh.hook(u, address, size, value, p.data);
-            }
-         }
+   private static boolean invokeEventMemCallbacks(long eng, int type, long address, int size, long value, long hook_id) {
+      Unicorn u;
+      synchronized (unicorns)
+      {
+         u = unicorns.get(eng);
       }
+
+      boolean result = false;
+      if (u != null) {
+         Tuple p = u.hookMap.get(hook_id);
+         assert p.function instanceof EventMemHook;
+         EventMemHook emh = (EventMemHook)p.function;
+         result = emh.hook(u, address, size, value, p.data);
+      }
+
       return result;
    }
 
@@ -182,15 +180,21 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  address Address of instruction being executed
  * @param  size    Size of data being read
+ * @param  hook_id id for find Hook
  * @see         hook_add, unicorn.ReadHook
  */
-   private static void invokeReadCallbacks(long eng, long address, int size) {
-      Unicorn u = unicorns.get(eng);
+   private static void invokeReadCallbacks(long eng, long address, int size, long hook_id) {
+      Unicorn u;
+      synchronized (unicorns)
+      {
+         u = unicorns.get(eng);
+      }
+
       if (u != null) {
-         for (Tuple p : u.readList) {
-            ReadHook rh = (ReadHook)p.function;
-            rh.hook(u, address, size, p.data);
-         }
+         Tuple p = u.hookMap.get(hook_id);
+         assert p.function instanceof ReadHook;
+         ReadHook rh = (ReadHook)p.function;
+         rh.hook(u, address, size, p.data);
       }
    }
 
@@ -203,15 +207,21 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param  address Address of instruction being executed
  * @param  size    Size of data being read
  * @param  value   value being written
+ * @param  hook_id id for find Hook
  * @see         hook_add, unicorn.WriteHook
  */
-   private static void invokeWriteCallbacks(long eng, long address, int size, long value) {
-      Unicorn u = unicorns.get(eng);
+   private static void invokeWriteCallbacks(long eng, long address, int size, long value, long hook_id) {
+      Unicorn u;
+      synchronized (unicorns)
+      {
+         u = unicorns.get(eng);
+      }
+
       if (u != null) {
-         for (Tuple p : u.writeList) {
-            WriteHook wh = (WriteHook)p.function;
-            wh.hook(u, address, size, value, p.data);
-         }
+         Tuple p = u.hookMap.get(hook_id);
+         assert p.function instanceof WriteHook;
+         WriteHook wh = (WriteHook)p.function;
+         wh.hook(u, address, size, value, p.data);
       }
    }
 
@@ -224,17 +234,23 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  port    I/O Port number
  * @param  size    Data size (1/2/4) to be read from this port
+ * @param  hook_id id for find Hook
  * @return  Data supplied from the input port
  * @see         hook_add, unicorn.InHook
  */
-   private static int invokeInCallbacks(long eng, int port, int size) {
-      Unicorn u = unicorns.get(eng);
+   private static int invokeInCallbacks(long eng, int port, int size, long hook_id) {
+      Unicorn u;
+      synchronized (unicorns)
+      {
+         u = unicorns.get(eng);
+      }
+
       int result = 0;
       if (u != null) {
-         for (Tuple p : u.inList) {
-            InHook ih = (InHook)p.function;
-            result = ih.hook(u, port, size, p.data);
-         }
+         Tuple p = u.hookMap.get(hook_id);
+         assert p.function instanceof InHook;
+         InHook ih = (InHook)p.function;
+         result = ih.hook(u, port, size, p.data);
       }
       return result;
    }
@@ -248,16 +264,21 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
  * @param  port    I/O Port number
  * @param  size    Data size (1/2/4) to be written to this port
+ * @param  hook_id id for find Hook
  * @see         hook_add, unicorn.OutHook
  */
-   private static void invokeOutCallbacks(long eng, int port, int size, int value) {
-      Unicorn u = unicorns.get(eng);
-      int result = 0;
+   private static void invokeOutCallbacks(long eng, int port, int size, int value, long hook_id) {
+      Unicorn u;
+      synchronized (unicorns)
+      {
+         u = unicorns.get(eng);
+      }
+
       if (u != null) {
-         for (Tuple p : u.outList) {
-            OutHook oh = (OutHook)p.function;
-            oh.hook(u, port, size, value, p.data);
-         }
+         Tuple p = u.hookMap.get(hook_id);
+         assert p.function instanceof OutHook;
+         OutHook oh = (OutHook)p.function;
+         oh.hook(u, port, size, value, p.data);
       }
    }
 
@@ -268,16 +289,21 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * for UC_HOOK_INSN
  *
  * @param  eng     A Unicorn uc_engine* eng returned by uc_open
+ * @param  hook_id id for find Hook
  * @see         hook_add, unicorn.SyscallHook
  */
-   private static void invokeSyscallCallbacks(long eng) {
-      Unicorn u = unicorns.get(eng);
-      int result = 0;
+   private static void invokeSyscallCallbacks(long eng, long hook_id) {
+      Unicorn u;
+      synchronized (unicorns)
+      {
+         u = unicorns.get(eng);
+      }
+
       if (u != null) {
-         for (Tuple p : u.syscallList) {
-            SyscallHook sh = (SyscallHook)p.function;
-            sh.hook(u, p.data);
-         }
+         Tuple p = u.hookMap.get(hook_id);
+         assert p.function instanceof SyscallHook;
+         SyscallHook sh = (SyscallHook)p.function;
+         sh.hook(u, p.data);
       }
    }
 
@@ -335,14 +361,6 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       this.mode = mode;
       eng = open(arch, mode);
       unicorns.put(eng, this);
-      allLists.add(blockList);
-      allLists.add(intrList);
-      allLists.add(codeList);
-      allLists.add(readList);
-      allLists.add(writeList);
-      allLists.add(inList);
-      allLists.add(outList);
-      allLists.add(syscallList);
    }
 
 /**
@@ -350,8 +368,13 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  *
  */
    protected void finalize() {
-      unicorns.remove(eng);
-      close();
+      synchronized (unicorns) {
+         unicorns.remove(eng);
+      }
+
+      if (!closed) {
+         close();
+      }
    }
 
 /**
@@ -535,7 +558,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param type     UC_HOOK_* hook type
  * @return         Unicorn uch returned for registered hook function
  */
-   private native static long registerHook(long eng, int type);
+   private native static long registerHook(long eng, int type, long id);
 
 /**
  * Hook registration helper for hook types that require one additional argument.
@@ -545,7 +568,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param arg1     Additional varargs argument
  * @return         Unicorn uch returned for registered hook function
  */
-   private native static long registerHook(long eng, int type, int arg1);
+   private native static long registerHook(long eng, int type, int arg1, long id);
 
 /**
  * Hook registration helper for hook types that require two additional arguments.
@@ -556,7 +579,7 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param arg2     Second additional varargs argument
  * @return         Unicorn uch returned for registered hook function
  */
-   private native static long registerHook(long eng, int type, long arg1, long arg2);
+   private native static long registerHook(long eng, int type, long arg1, long arg2, long id);
 
 /**
  * Hook registration for UC_HOOK_BLOCK hooks. The registered callback function will be
@@ -570,10 +593,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
    public void hook_add(BlockHook callback, long begin, long end, Object user_data) throws UnicornException {
-      if (blockHandle == 0) {
-         blockHandle = registerHook(eng, UC_HOOK_BLOCK, begin, end);
-      }
-      blockList.add(new Tuple(callback, user_data));
+      long id = hookCounter++;
+      long handle = registerHook(eng, UC_HOOK_BLOCK, begin, end, id);
+      hookMap.put(id, new Tuple(handle, callback, user_data));
    }
 
 /**
@@ -584,10 +606,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
    public void hook_add(InterruptHook callback, Object user_data) throws UnicornException {
-      if (interruptHandle == 0) {
-         interruptHandle = registerHook(eng, UC_HOOK_INTR);
-      }
-      intrList.add(new Tuple(callback, user_data));
+      long id = hookCounter++;
+      long handle = registerHook(eng, UC_HOOK_INTR, id);
+      hookMap.put(id, new Tuple(handle, callback, user_data));
    }
 
 /**
@@ -601,10 +622,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
    public void hook_add(CodeHook callback, long begin, long end, Object user_data) throws UnicornException {
-      if (codeHandle == 0) {
-         codeHandle = registerHook(eng, UC_HOOK_CODE, begin, end);
-      }
-      codeList.add(new Tuple(callback, user_data));
+      long id = hookCounter++;
+      long handle = registerHook(eng, UC_HOOK_CODE, begin, end, id);
+      hookMap.put(id, new Tuple(handle, callback, user_data));
    }
 
 /**
@@ -618,10 +638,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
    public void hook_add(ReadHook callback, long begin, long end, Object user_data) throws UnicornException {
-      if (readHandle == 0) {
-         readHandle = registerHook(eng, UC_HOOK_MEM_READ, begin, end);
-      }
-      readList.add(new Tuple(callback, user_data));
+      long id = hookCounter++;
+      long handle = registerHook(eng, UC_HOOK_MEM_READ, begin, end, id);
+      hookMap.put(id, new Tuple(handle, callback, user_data));
    }
 
 /**
@@ -635,10 +654,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
    public void hook_add(WriteHook callback, long begin, long end, Object user_data) throws UnicornException {
-      if (writeHandle == 0) {
-         writeHandle = registerHook(eng, UC_HOOK_MEM_WRITE, begin, end);
-      }
-      writeList.add(new Tuple(callback, user_data));
+      long id = hookCounter++;
+      long handle = registerHook(eng, UC_HOOK_MEM_WRITE, begin, end, id);
+      hookMap.put(id, new Tuple(handle, callback, user_data));
    }
 
 /**
@@ -669,18 +687,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
       //test all of the EventMem related bits in type
       for (Integer htype : eventMemMap.keySet()) {
          if ((type & htype) != 0) { //the 'htype' bit is set in type
-            Long handle = eventMemHandles.get(htype);
-            if (handle == null) {
-               eventMemHandles.put(htype, registerHook(eng, htype));
-            }
-            int cbType = eventMemMap.get(htype);
-            ArrayList<Tuple> flist = eventMemLists.get(cbType);
-            if (flist == null) {
-               flist = new ArrayList<Tuple>();
-               allLists.add(flist);
-               eventMemLists.put(cbType, flist);
-            }
-            flist.add(new Tuple(callback, user_data));
+            long id = hookCounter++;
+            long handle = registerHook(eng, htype, id);
+            hookMap.put(id, new Tuple(handle, callback, user_data));
          }
       }
    }
@@ -693,10 +702,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
    public void hook_add(InHook callback, Object user_data) throws UnicornException {
-      if (inHandle == 0) {
-         inHandle = registerHook(eng, UC_HOOK_INSN, Unicorn.UC_X86_INS_IN);
-      }
-      inList.add(new Tuple(callback, user_data));
+      long id = hookCounter++;
+      long handle = registerHook(eng, UC_HOOK_INSN, Unicorn.UC_X86_INS_IN, id);
+      hookMap.put(id, new Tuple(handle, callback, user_data));
    }
 
 /**
@@ -707,10 +715,9 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
    public void hook_add(OutHook callback, Object user_data) throws UnicornException {
-      if (outHandle == 0) {
-         outHandle = registerHook(eng, UC_HOOK_INSN, Unicorn.UC_X86_INS_OUT);
-      }
-      outList.add(new Tuple(callback, user_data));
+      long id = hookCounter++;
+      long handle = registerHook(eng, UC_HOOK_INSN, Unicorn.UC_X86_INS_OUT, id);
+      hookMap.put(id, new Tuple(handle, callback, user_data));
    }
 
 /**
@@ -721,20 +728,32 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
  * @param user_data  User data to be passed to the callback function each time the event is triggered
  */
    public void hook_add(SyscallHook callback, Object user_data) throws UnicornException {
-      if (syscallHandle == 0) {
-         syscallHandle = registerHook(eng, UC_HOOK_INSN, Unicorn.UC_X86_INS_SYSCALL);
-      }
-      syscallList.add(new Tuple(callback, user_data));
+      long id = hookCounter++;
+      long handle = registerHook(eng, UC_HOOK_INSN, Unicorn.UC_X86_INS_SYSCALL, id);
+      hookMap.put(id, new Tuple(handle, callback, user_data));
    }
 
+/**
+ * Remove hook
+ *
+ * @param handle ?
+ */
+   public native void hook_del(long handle) throws UnicornException;
+
    public void hook_del(Hook hook) throws UnicornException {
-      for (ArrayList<Tuple> l : allLists) {
-         for (Tuple t : l) {
-            if (t.function.equals(hook)) {
-               allLists.remove(t);
-               return;
-            }
+      Long target = null;
+      Tuple tuple = null;
+      for (Map.Entry<Long, Tuple> pair : hookMap.entrySet()) {
+         if (pair.getValue().function.equals(hook)) {
+            target = pair.getKey();
+            tuple = pair.getValue();
+            break;
          }
+      }
+
+      if (target != null) {
+         hookMap.remove(target);
+         hook_del(tuple.handle);
       }
    }
 
