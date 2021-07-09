@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #endif
 
+#include <sys/types.h>
+
 #include <time.h>   // nanosleep
 
 #include <string.h>
@@ -680,6 +682,15 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     return uc->invalid_error;
 }
 
+#if defined(_WIN32) || defined(_WIN64)
+int EMU_STOP_MUTEX = 0;
+#define enter_critical_section(_lock)
+#define exit_critical_section(_lock)
+#else
+pthread_mutex_t EMU_STOP_MUTEX;
+#define enter_critical_section(lock) pthread_mutex_lock(lock);
+#define exit_critical_section(lock) pthread_mutex_unlock(lock);
+#endif
 
 UNICORN_EXPORT
 uc_err uc_emu_stop(uc_engine *uc)
@@ -688,11 +699,14 @@ uc_err uc_emu_stop(uc_engine *uc)
         return UC_ERR_OK;
 
     uc->stop_request = true;
-    // TODO: make this atomic somehow?
+    // Wrapping this in a mutex to prevent a common race condition.
+    // See https://github.com/unicorn-engine/unicorn/issues/636 for details.
+    enter_critical_section(&EMU_STOP_MUTEX);
     if (uc->current_cpu) {
         // exit the current TB
         cpu_exit(uc->current_cpu);
     }
+    exit_critical_section(&EMU_STOP_MUTEX);
 
     return UC_ERR_OK;
 }
