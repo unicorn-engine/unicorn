@@ -759,6 +759,54 @@ struct TCGContext {
     void *cpu_wim;
 
     int exitreq_label;  // gen_tb_start()
+
+    /* qemu/target-ppc/translate.c */
+
+    char ppc_cpu_reg_names[10*3 + 22*4 /* GPR */
+    + 10*4 + 22*5 /* SPE GPRh */
+    + 10*4 + 22*5 /* FPR */
+    + 2*(10*6 + 22*7) /* AVRh, AVRl */
+    + 10*5 + 22*6 /* VSR */
+    + 8*5 /* CRF */];
+
+//quick fix for the lack of TCGv definition 
+#if defined(TARGET_PPC64)
+    TCGv_i64 ppc_cpu_gpr[32];
+    TCGv_i64 ppc_cpu_gprh[32];
+#else
+    TCGv_i32 ppc_cpu_gpr[32];
+    TCGv_i32 ppc_cpu_gprh[32];
+#endif
+    TCGv_i64 ppc_cpu_fpr[32];
+    TCGv_i64 cpu_avrh[32], cpu_avrl[32];
+    TCGv_i64 cpu_vsr[32];
+    TCGv_i32 cpu_crf[8];
+#if defined(TARGET_PPC64)
+    TCGv_i64 cpu_nip;
+    TCGv_i64 cpu_msr;
+    TCGv_i64 cpu_ctr;
+    TCGv_i64 cpu_lr;
+#else
+    TCGv_i32 cpu_nip;
+    TCGv_i32 cpu_msr;
+    TCGv_i32 cpu_ctr;
+    TCGv_i32 cpu_lr;
+#endif
+
+#if defined(TARGET_PPC64)
+    TCGv_i64 cpu_cfar;
+#endif
+
+#if defined(TARGET_PPC64)
+    TCGv_i64 cpu_xer, cpu_so, cpu_ov, cpu_ca;
+    TCGv_i64 cpu_reserve;
+    TCGv_i64 cpu_fpscr;
+#else
+    TCGv_i32 cpu_xer, cpu_so, cpu_ov, cpu_ca;
+    TCGv_i32 cpu_reserve;
+    TCGv_i32 cpu_fpscr;
+#endif
+    TCGv_i32 cpu_access_type;
 };
 
 typedef struct TCGTargetOpDef {

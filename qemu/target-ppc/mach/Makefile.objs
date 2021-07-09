@@ -1,0 +1,9 @@
+ifeq ($(TARGET_PPC64),y)
+obj-y += cpu_970.o
+else
+obj-y += cpu_401.o
+obj-y += cpu_604.o
+obj-y += mpc8572e.o
+obj-y += cpu_405.o
+endif
+

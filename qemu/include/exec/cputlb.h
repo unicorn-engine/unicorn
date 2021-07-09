@@ -28,7 +28,6 @@ void tlb_reset_dirty_range(CPUTLBEntry *tlb_entry,
     uintptr_t start, uintptr_t length);
 void cpu_tlb_reset_dirty_all(struct uc_struct *uc, ram_addr_t start1, ram_addr_t length);
 void tlb_set_dirty(CPUArchState *env, target_ulong vaddr);
-//extern int tlb_flush_count;
 
 /* exec.c */
 void tb_flush_jmp_cache(CPUState *cpu, target_ulong addr);

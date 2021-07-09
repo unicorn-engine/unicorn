@@ -13,7 +13,7 @@ UNICORN_DEBUG ?= yes
 ################################################################################
 # Specify which archs you want to compile in. By default, we build all archs.
 
-UNICORN_ARCHS ?= x86 m68k arm aarch64 mips sparc
+UNICORN_ARCHS ?= x86 m68k arm aarch64 mips sparc ppc
 
 
 ################################################################################

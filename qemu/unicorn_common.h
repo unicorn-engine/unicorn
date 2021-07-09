@@ -37,6 +37,10 @@ static void release_common(void *t)
     g_free(def->sorted_args);
     g_free(s->tcg_op_defs);
 
+    def->args_ct = NULL;
+    def->sorted_args = NULL;
+    s->tcg_op_defs = NULL;
+
     for (po = s->pool_first; po; po = to) {
         to = po->next;
         g_free(po);

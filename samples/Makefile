@@ -73,9 +73,9 @@ endif
 ifneq (,$(findstring mips,$(UNICORN_ARCHS)))
 SOURCES += sample_mips.c
 endif
-#ifneq (,$(findstring ppc,$(UNICORN_ARCHS)))
-#SOURCES += sample_ppc.c
-#endif
+ifneq (,$(findstring ppc,$(UNICORN_ARCHS)))
+SOURCES += sample_ppc.c
+endif
 ifneq (,$(findstring sparc,$(UNICORN_ARCHS)))
 SOURCES += sample_sparc.c
 endif

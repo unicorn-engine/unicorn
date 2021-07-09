@@ -82,6 +82,23 @@ UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-,qemu/hw/sparc64/Makefile.objs, q
 UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-y,qemu/target-sparc/Makefile.objs, qemu/sparc64-softmmu/target-sparc/)
 UC_TARGET_OBJ_SPARC64 += $(call UC_GET_OBJ,obj-$$(TARGET_SPARC64),qemu/target-sparc/Makefile.objs, qemu/sparc64-softmmu/target-sparc/)
 
+UC_TARGET_OBJ_PPC = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/ppc-softmmu/)
+UC_TARGET_OBJ_PPC += $(call UC_GET_OBJ,obj-, qemu/hw/ppc/Makefile.objs, qemu/ppc-softmmu/hw/ppc/)
+UC_TARGET_OBJ_PPC += $(call UC_GET_OBJ,obj-y, qemu/target-ppc/Makefile.objs, qemu/ppc-softmmu/target-ppc/)
+UC_TARGET_OBJ_PPC += $(call UC_GET_OBJ,obj-$$(CONFIG_LIBDECNUMBER), qemu/target-ppc/Makefile.objs, qemu/ppc-softmmu/target-ppc/)
+UC_TARGET_OBJ_PPC += $(call UC_GET_OBJ,obj-y, qemu/target-ppc/mach/Makefile.32.objs, qemu/ppc-softmmu/target-ppc/mach/)
+
+UC_TARGET_OBJ_PPC64 = $(call UC_GET_OBJ,obj-,qemu/Makefile.target, qemu/ppc64-softmmu/)
+UC_TARGET_OBJ_PPC64 += $(call UC_GET_OBJ,obj-, qemu/hw/ppc/Makefile.objs, qemu/ppc64-softmmu/hw/ppc/)
+UC_TARGET_OBJ_PPC64 += $(call UC_GET_OBJ,obj-y, qemu/target-ppc/Makefile.objs, qemu/ppc64-softmmu/target-ppc/)
+UC_TARGET_OBJ_PPC64 += $(call UC_GET_OBJ,obj-$$(CONFIG_LIBDECNUMBER), qemu/target-ppc/Makefile.objs, qemu/ppc64-softmmu/target-ppc/)
+UC_TARGET_OBJ_PPC64 += $(call UC_GET_OBJ,obj-$$(TARGET_PPC64), qemu/target-ppc/Makefile.objs, qemu/ppc64-softmmu/target-ppc/)
+UC_TARGET_OBJ_PPC64 += $(call UC_GET_OBJ,obj-y, qemu/target-ppc/mach/Makefile.64.objs, qemu/ppc64-softmmu/target-ppc/mach/)
+
+UC_TARGET_OBJ_PPCLE = $(subst /ppc-softmmu/,/ppcle-softmmu/,$(UC_TARGET_OBJ_PPC))
+
+UC_TARGET_OBJ_PPC64LE = $(subst /ppc64-softmmu/,/ppc64le-softmmu/,$(UC_TARGET_OBJ_PPC64))
+
 ifneq (,$(findstring x86,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_X86)
 	UNICORN_CFLAGS += -DUNICORN_HAS_X86
@@ -107,6 +124,21 @@ ifneq (,$(findstring aarch64,$(UNICORN_ARCHS)))
 	UNICORN_CFLAGS += -DUNICORN_HAS_ARM64EB
 	UNICORN_TARGETS += aarch64-softmmu,
 	UNICORN_TARGETS += aarch64eb-softmmu,
+endif
+ifneq (,$(findstring ppc,$(UNICORN_ARCHS)))
+	UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPC)
+	UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPCLE)
+	UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPC64)
+	UC_TARGET_OBJ += $(UC_TARGET_OBJ_PPC64LE)
+
+	UNICORN_CFLAGS += -DUNICORN_HAS_PPC
+	UNICORN_CFLAGS += -DUNICORN_HAS_PPCLE
+	UNICORN_CFLAGS += -DUNICORN_HAS_PPC64
+	UNICORN_CFLAGS += -DUNICORN_HAS_PPC64LE
+	UNICORN_TARGETS += ppc-softmmu,
+	UNICORN_TARGETS += ppcle-softmmu,
+	UNICORN_TARGETS += ppc64-softmmu,
+	UNICORN_TARGETS += ppc64le-softmmu,
 endif
 ifneq (,$(findstring mips,$(UNICORN_ARCHS)))
 	UC_TARGET_OBJ += $(UC_TARGET_OBJ_MIPS)
@@ -386,7 +418,7 @@ dist:
 # run "make header" whenever qemu/header_gen.py is modified
 header:
 	$(eval TARGETS := m68k arm armeb aarch64 aarch64eb mips mipsel mips64 mips64el\
-		sparc sparc64 x86_64)
+		ppc ppc64 ppcle ppc64le sparc sparc64 x86_64)
 	$(foreach var,$(TARGETS),\
 		$(shell python qemu/header_gen.py $(var) > qemu/$(var).h;))
 	@echo "Generated headers for $(TARGETS)."

@@ -44,8 +44,6 @@ static void tlb_add_large_page(CPUArchState *env, target_ulong vaddr,
                                target_ulong size);
 static void tlb_set_dirty1(CPUTLBEntry *tlb_entry, target_ulong vaddr);
 
-/* statistics */
-//int tlb_flush_count;
 
 /* NOTE:
  * If flush_global is true (the usual case), flush all tlb entries.
@@ -77,7 +75,6 @@ void tlb_flush(CPUState *cpu, int flush_global)
     env->vtlb_index = 0;
     env->tlb_flush_addr = -1;
     env->tlb_flush_mask = 0;
-    //tlb_flush_count++;
 }
 
 void tlb_flush_page(CPUState *cpu, target_ulong addr)
