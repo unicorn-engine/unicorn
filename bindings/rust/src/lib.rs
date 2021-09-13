@@ -306,7 +306,7 @@ impl<'a> UnicornHandle<'a> {
 
     /// Read 128, 256 or 512 bit register value into heap allocated byte array.
     ///
-    /// This adds safe support for registers >64 bit (GDTR/IDTR, XMM, YMM, ZMM (x86); Q, V (arm64)).
+    /// This adds safe support for registers >64 bit (GDTR/IDTR, XMM, YMM, ZMM, ST (x86); Q, V (arm64)).
     pub fn reg_read_long<T: Into<i32>>(&self, regid: T) -> Result<Box<[u8]>, uc_error> {
         let err: uc_error;
         let boxed: Box<[u8]>;
@@ -329,6 +329,8 @@ impl<'a> UnicornHandle<'a> {
                 value = vec![0; 64];
             } else if curr_reg_id == x86::RegisterX86::GDTR as i32
                 || curr_reg_id == x86::RegisterX86::IDTR as i32
+                || (curr_reg_id >= x86::RegisterX86::ST0 as i32
+                    && curr_reg_id <= x86::RegisterX86::ST7 as i32)
             {
                 value = vec![0; 10]; // 64 bit base address in IA-32e mode
             } else {
