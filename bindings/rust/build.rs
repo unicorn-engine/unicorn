@@ -1,20 +1,17 @@
-use std::{env, process::Command};
-
-use build_helper::rustc::{link_lib, link_search};
+use std::env;
+use std::path::PathBuf;
 
 fn main() {
-    println!("cargo:rerun-if-changed=unicorn");
-    let out_dir = env::var("OUT_DIR").unwrap();
-    let unicorn = "libunicorn.a";
-    let _ = Command::new("cp")
-        .current_dir("../..")
-        .arg(&unicorn)
-        .arg(&out_dir)
-        .status()
-        .unwrap();
-    link_search(
-        Some(build_helper::SearchKind::Native),
-        build_helper::out_dir(),
+    let manifest_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    let unicorn_dir = manifest_dir.parent().unwrap().parent().unwrap();
+    println!("cargo:rerun-if-changed={}", unicorn_dir.display());
+
+    let install_dir = cmake::Config::new(unicorn_dir)
+        .define("BUILD_SHARED_LIBS", "OFF")
+        .build();
+    println!(
+        "cargo:rustc-link-search=native={}",
+        install_dir.join("lib").display()
     );
-    link_lib(Some(build_helper::LibKind::Static), "unicorn");
+    println!("cargo:rustc-link-lib=static=unicorn");
 }
