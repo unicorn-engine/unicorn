@@ -1,0 +1,318 @@
+name: Build UC2
+on: [push, pull_request]
+env:
+  CI: true
+
+jobs:
+  Windows:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }} - ${{ matrix.compiler }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { 
+              os: windows-latest,
+              arch: x64,
+              python-arch: x64,
+              python-ver: '3.8',
+              name: 'windows-x64 MINGW64',
+              mingw: MINGW64,
+              mingw-arch: x86_64,
+              artifact: 'windows_mingw64.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: windows-latest,
+              arch: x64,
+              python-arch: x64,
+              python-ver: '3.8',
+              name: 'windows-x64 MINGW32',
+              mingw: MINGW32,
+              mingw-arch: i686,
+              artifact: 'windows_mingw32.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: windows-latest,
+              arch: x64,
+              python-arch: x64,
+              python-ver: '3.8',
+              name: 'windows-x64 MSVC 64bit',
+              msvc-arch: x64,
+              artifact: 'windows_msvc64.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Visual Studio 16 2019'
+            }
+        compiler: [ gcc ]
+    steps:
+    - uses: actions/checkout@v2
+
+    # - name: '🛠️ Python setup'
+      # uses: actions/setup-python@v2
+      # with:
+        # python-version: ${{ matrix.config.python-ver }}
+
+    - name: '🛠️ Win MINGW setup'
+      if: contains(matrix.config.mingw, 'MINGW')
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: ${{ matrix.config.mingw }}
+        install: >-
+          git
+          mingw-w64-${{ matrix.config.mingw-arch }}-cmake
+          mingw-w64-${{ matrix.config.mingw-arch }}-ninja
+          mingw-w64-${{ matrix.config.mingw-arch }}-cmocka
+          mingw-w64-${{ matrix.config.mingw-arch }}-${{ matrix.compiler }}
+          mingw-w64-${{ matrix.config.mingw-arch }}-toolchain
+
+    - name: '🛠️ Win MSVC setup'
+      if: contains(matrix.config.name, 'MSVC')
+      uses: microsoft/setup-msbuild@v1
+
+    - name: '🚧 Win MSVC build'
+      if: contains(matrix.config.name, 'MSVC')
+      shell: bash
+      run: |
+        choco install ninja cmake
+        ninja --version
+        cmake --version
+        mkdir build
+        cmake \
+          -S . \
+          -B . \
+          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+          -G "${{ matrix.config.generators }}" \
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+        cmake --build . --config ${{ matrix.config.build_type }}
+        cmake --install . --strip --config ${{ matrix.config.build_type }}
+        ctest -C ${{ matrix.config.build_type }}
+        mv Debug instdir
+
+    - name: '🚧 Win MINGW build'
+      if: contains(matrix.config.mingw, 'MINGW')
+      shell: msys2 {0}
+      run: |
+        if [ ${{ matrix.config.mingw }} == 'MINGW32' ]; then
+          export CPPFLAGS=-D__USE_MINGW_ANSI_STDIO=1
+          #export CC=i686-w64-mingw32-gcc
+          export AR=gcc-ar
+          export RANLIB=gcc-ranlib
+          export CFLAGS="-m32"
+          export LDFLAGS="-m32"
+          export LDFLAGS_STATIC="-m32"
+          export UNICORN_QEMU_FLAGS="--cpu=i386"
+        fi
+        mkdir build
+        mkdir instdir
+        cmake \
+          -S . \
+          -B . \
+          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+          -G "${{ matrix.config.generators }}" \
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+        cmake --build . --config ${{ matrix.config.build_type }}
+        cmake --install . --strip
+        ctest -C ${{ matrix.config.build_type }}
+
+    - name: '📦 Pack artifact'
+      shell: bash
+      working-directory: instdir
+      run: |
+        ls -laR
+        ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
+
+    - name: '📤 Upload artifact'
+      uses: actions/upload-artifact@v1
+      with:
+        path: ./${{ matrix.config.artifact }}
+        name: ${{ matrix.config.artifact }}
+
+  Macos:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }} - ${{ matrix.compiler }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { 
+              os: macos-latest,
+              arch: x64,
+              python-arch: x64,
+              python-ver: '3.8',
+              name: 'macos-x64 cmake',
+              artifact: 'macos-cmake-x64.7z',
+              build_type: 'Debug',
+              archiver: '7za a',
+              generators: 'Ninja'
+            }
+        compiler: [ gcc ]
+    steps:
+    - uses: actions/checkout@v2
+
+    # - name: '🛠️ Python setup'
+      # uses: actions/setup-python@v2
+      # with:
+        # python-version: ${{ matrix.config.python-ver }}
+
+    - name: '🚧 Mac build'
+      if: contains(matrix.config.os, 'macos')
+      shell: bash
+      run: |
+          brew install p7zip cmake ninja
+          ninja --version
+          cmake --version
+          mkdir build
+          mkdir instdir
+          cmake \
+            -S . \
+            -B . \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_INSTALL_PREFIX:PATH=instdir
+          cmake --build . --config ${{ matrix.config.build_type }}
+          cmake --install . --strip
+          ctest -C ${{ matrix.config.build_type }}
+  
+    - name: '📦 Pack artifact'
+      shell: bash
+      working-directory: instdir
+      run: |
+        ls -laR
+        ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
+
+    - name: '📤 Upload artifact'
+      uses: actions/upload-artifact@v1
+      with:
+        path: ./${{ matrix.config.artifact }}
+        name: ${{ matrix.config.artifact }}
+
+  Linux:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }} - ${{ matrix.compiler }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { 
+              os: ubuntu-latest, 
+              arch: x64, 
+              python-arch: x64, 
+              python-ver: '3.8', 
+              name: 'ubuntu-x64 cmake',
+              artifact: 'ubuntu-cmake-x64.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: ubuntu-latest,
+              arch: x86,
+              python-arch: x86,
+              python-ver: '3.8',
+              name: 'ubuntu-x86 cmake',
+              artifact: 'ubuntu-cmake-x86.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Ninja' 
+            }
+          - { 
+              os: ubuntu-latest,
+              arch: aarch64,
+              python-arch: aarch64,
+              python-ver: '3.8',
+              name: 'ubuntu-aarch64 cmake',
+              artifact: 'ubuntu-cmake-aarch64.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Ninja',
+              distro: ubuntu20.04
+            }
+          - { 
+              os: ubuntu-latest,
+              arch: ppc64le,
+              python-arch: ppc,
+              python-ver: '3.8',
+              name: 'ubuntu-ppc64le cmake',
+              artifact: 'ubuntu-cmake-ppc64le.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Ninja',
+              distro: ubuntu20.04
+            }
+        compiler: [ gcc ]
+    steps:
+    - uses: actions/checkout@v2
+
+    # - name: '🛠️ Python setup'
+      # uses: actions/setup-python@v2
+      # with:
+        # python-version: ${{ matrix.config.python-ver }}
+
+    - name: '🚧 Linux x64/x86 build'
+      if: contains(matrix.config.arch, 'x64') || contains(matrix.config.arch, 'x86')
+      shell: 'script -q -e -c "bash {0}"'
+      run: |
+        if [ ${{ matrix.config.arch }} == 'x64' ]; then
+              sudo apt install -q -y libcmocka-dev ninja-build 
+        else
+              export CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386" 
+              sudo dpkg --add-architecture i386
+              sudo apt install -q -y lib32ncurses-dev lib32z1-dev lib32gcc-9-dev libc6-dev-i386 gcc-multilib \
+                libcmocka-dev:i386 libcmocka0:i386 libc6:i386 libgcc-s1:i386 ninja-build
+        fi
+        mkdir build
+        mkdir instdir
+        cmake \
+          -S . \
+          -B . \
+          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+          -G "${{ matrix.config.generators }}" \
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+        cmake --build . --config ${{ matrix.config.build_type }}
+        cmake --install . --strip
+        ctest -C ${{ matrix.config.build_type }}
+    
+    - name: '🚧 Linux ppc64le/aarch64 build'
+      if: contains(matrix.config.arch, 'ppc64le') || contains(matrix.config.arch, 'aarch64')
+      uses: uraimo/run-on-arch-action@v2.0.5
+      with:
+        arch: ${{ matrix.config.arch }}
+        distro: ${{ matrix.config.distro }}
+        setup: |
+          mkdir -p "${PWD}/instdir"
+        dockerRunArgs: |
+          --volume "${PWD}/instdir:/instdir"
+        shell: /bin/sh
+        install: |
+          apt-get update -q -y
+          apt-get install -q -y git cmake build-essential automake libcmocka-dev pkg-config ${{ matrix.compiler }} ninja-build
+        run: |
+          mkdir build
+          cmake \
+            -S . \
+            -B . \
+            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+            -G "${{ matrix.config.generators }}" \
+            -DCMAKE_INSTALL_PREFIX:PATH=/instdir
+          cmake --build . --config ${{ matrix.config.build_type }}
+          cmake --install . --strip
+          ctest -C ${{ matrix.config.build_type }}
+
+    - name: '📦 Pack artifact'
+      shell: bash
+      working-directory: instdir
+      run: |
+        ls -laR
+        ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
+
+    - name: '📤 Upload artifact'
+      uses: actions/upload-artifact@v1
+      with:
+        path: ./${{ matrix.config.artifact }}
+        name: ${{ matrix.config.artifact }}
