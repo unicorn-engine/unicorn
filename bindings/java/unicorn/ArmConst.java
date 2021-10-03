@@ -124,7 +124,28 @@ public interface ArmConst {
    public static final int UC_ARM_REG_MSP = 115;
    public static final int UC_ARM_REG_PSP = 116;
    public static final int UC_ARM_REG_CONTROL = 117;
-   public static final int UC_ARM_REG_ENDING = 118;
+   public static final int UC_ARM_REG_IAPSR = 118;
+   public static final int UC_ARM_REG_EAPSR = 119;
+   public static final int UC_ARM_REG_XPSR = 120;
+   public static final int UC_ARM_REG_EPSR = 121;
+   public static final int UC_ARM_REG_IEPSR = 122;
+   public static final int UC_ARM_REG_PRIMASK = 123;
+   public static final int UC_ARM_REG_BASEPRI = 124;
+   public static final int UC_ARM_REG_BASEPRI_MAX = 125;
+   public static final int UC_ARM_REG_FAULTMASK = 126;
+   public static final int UC_ARM_REG_APSR_NZCVQ = 127;
+   public static final int UC_ARM_REG_APSR_G = 128;
+   public static final int UC_ARM_REG_APSR_NZCVQG = 129;
+   public static final int UC_ARM_REG_IAPSR_NZCVQ = 130;
+   public static final int UC_ARM_REG_IAPSR_G = 131;
+   public static final int UC_ARM_REG_IAPSR_NZCVQG = 132;
+   public static final int UC_ARM_REG_EAPSR_NZCVQ = 133;
+   public static final int UC_ARM_REG_EAPSR_G = 134;
+   public static final int UC_ARM_REG_EAPSR_NZCVQG = 135;
+   public static final int UC_ARM_REG_XPSR_NZCVQ = 136;
+   public static final int UC_ARM_REG_XPSR_G = 137;
+   public static final int UC_ARM_REG_XPSR_NZCVQG = 138;
+   public static final int UC_ARM_REG_ENDING = 139;
 
 // alias registers
    public static final int UC_ARM_REG_R13 = 12;
