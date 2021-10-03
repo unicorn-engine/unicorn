@@ -469,6 +469,10 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
     size_t count = 0, len;
     uint8_t *bytes = _bytes;
 
+    // qemu cpu_physical_memory_rw() size is an int
+    if (size > INT_MAX)
+        return UC_ERR_ARG;
+
     if (uc->mem_redirect) {
         address = uc->mem_redirect(address);
     }
@@ -505,6 +509,10 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes, size_t 
 {
     size_t count = 0, len;
     const uint8_t *bytes = _bytes;
+
+    // qemu cpu_physical_memory_rw() size is an int
+    if (size > INT_MAX)
+        return UC_ERR_ARG;
 
     if (uc->mem_redirect) {
         address = uc->mem_redirect(address);
