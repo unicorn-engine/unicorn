@@ -7,6 +7,7 @@
 #include "unicorn_common.h"
 #include "uc_priv.h"
 #include "unicorn.h"
+#include "internal.h"
 
 #ifdef TARGET_MIPS64
 typedef uint64_t mipsreg_t;
@@ -82,6 +83,9 @@ static void reg_read(CPUMIPSState *env, unsigned int regid, void *value)
             case UC_MIPS_REG_CP0_CONFIG3:
                         *(mipsreg_t *)value = env->CP0_Config3;
                         break;
+            case UC_MIPS_REG_CP0_STATUS:
+                        *(mipsreg_t *)value = env->CP0_Status;
+                        break;
             case UC_MIPS_REG_CP0_USERLOCAL:
                         *(mipsreg_t *)value = env->active_tc.CP0_UserLocal;
                         break;                              
@@ -103,6 +107,13 @@ static void reg_write(CPUMIPSState *env, unsigned int regid, const void *value)
                 break;
             case UC_MIPS_REG_CP0_CONFIG3:
                 env->CP0_Config3 = *(mipsreg_t *)value;
+                break;
+            case UC_MIPS_REG_CP0_STATUS:
+                // TODO: ALL CP0 REGS
+                // https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00090-2B-MIPS32PRA-AFP-06.02.pdf
+                // https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00582-2B-microMIPS32-AFP-05.04.pdf
+                env->CP0_Status = *(mipsreg_t *)value;
+                compute_hflags(env);
                 break;
             case UC_MIPS_REG_CP0_USERLOCAL:
                 env->active_tc.CP0_UserLocal = *(mipsreg_t *)value;

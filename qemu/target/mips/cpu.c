@@ -162,7 +162,8 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc, const char *cpu_model)
 #ifdef TARGET_MIPS64
         cpu_model = "R4000";
 #else
-        cpu_model = "24Kf";
+        // Add UC_MODE_ flag to select model?
+        cpu_model = "74Kf";
 #endif
     }
 

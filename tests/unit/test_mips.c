@@ -81,10 +81,42 @@ static void test_mips_stop_at_delay_slot() {
     OK(uc_close(uc));
 }
 
+static void test_mips_lwx_exception_issue_1314() {
+    uc_engine* uc;
+    char code[] = "\x0a\xc8\x79\x7e"; // lwx $t9, $t9($s3)
+    int reg;
+
+    uc_common_setup(&uc, UC_ARCH_MIPS, UC_MODE_32 | UC_MODE_LITTLE_ENDIAN, code, sizeof(code) - 1);
+    OK(uc_mem_map(uc, 0x10000, 0x4000, UC_PROT_ALL));
+
+    // Enable DSP
+    // https://s3-eu-west-1.amazonaws.com/downloads-mips/documents/MD00090-2B-MIPS32PRA-AFP-06.02.pdf
+    OK(uc_reg_read(uc, UC_MIPS_REG_CP0_STATUS, &reg));
+    reg |= (1 << 24);
+    OK(uc_reg_write(uc, UC_MIPS_REG_CP0_STATUS, &reg));
+
+    reg = 0;
+    OK(uc_reg_write(uc, UC_MIPS_REG_1, &reg));
+    OK(uc_reg_write(uc, UC_MIPS_REG_T9, &reg));
+    reg = 0xdeadbeef;
+    OK(uc_mem_write(uc, 0x10000, &reg, 4));
+    reg = 0x10000;
+    OK(uc_reg_write(uc, UC_MIPS_REG_S3, &reg));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_MIPS_REG_T9, &reg));
+
+    TEST_CHECK(reg == 0xdeadbeef);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     { "test_mips_stop_at_branch", test_mips_stop_at_branch },
     { "test_mips_stop_at_delay_slot", test_mips_stop_at_delay_slot},
     { "test_mips_el_ori", test_mips_el_ori},
     { "test_mips_eb_ori", test_mips_eb_ori},
+    { "test_mips_lwx_exception_issue_1314", test_mips_lwx_exception_issue_1314},
     { NULL, NULL }
 };

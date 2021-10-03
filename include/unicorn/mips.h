@@ -177,6 +177,7 @@ typedef enum UC_MIPS_REG {
 
     UC_MIPS_REG_CP0_CONFIG3,
     UC_MIPS_REG_CP0_USERLOCAL,
+    UC_MIPS_REG_CP0_STATUS,
 
     UC_MIPS_REG_ENDING,	// <-- mark the end of the list or registers
 
