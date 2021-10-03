@@ -26,6 +26,12 @@
 #define X86_CODE64 "\x41\xBC\x3B\xB0\x28\x2A\x49\x0F\xC9\x90\x4D\x0F\xAD\xCF\x49\x87\xFD\x90\x48\x81\xD2\x8A\xCE\x77\x35\x48\xF7\xD9\x4D\x29\xF4\x49\x81\xC9\xF6\x8A\xC6\x53\x4D\x87\xED\x48\x0F\xAD\xD2\x49\xF7\xD4\x48\xF7\xE1\x4D\x19\xC5\x4D\x89\xC5\x48\xF7\xD6\x41\xB8\x4F\x8D\x6B\x59\x4D\x87\xD0\x68\x6A\x1E\x09\x3C\x59"
 #define X86_CODE16 "\x00\x00"   // add   byte ptr [bx + si], al
 #define X86_CODE64_SYSCALL "\x0f\x05" // SYSCALL
+#define X86_MMIO_CODE "\x89\x0d\x04\x00\x02\x00\x8b\x0d\x04\x00\x02\x00" // mov [0x20004], ecx; mov ecx, [0x20004]
+/*
+ * 0x1000 xor dword ptr [edi+0x3], eax ; edi=0x1000, eax=0xbc4177e6
+ * 0x1003 dw 0x3ea98b13
+ */
+#define X86_CODE32_SMC "\x31\x47\x03\x13\x8b\xa9\x3e"
 
 // memory address where emulation starts
 #define ADDRESS 0x1000000
@@ -86,7 +92,7 @@ static bool hook_mem_invalid(uc_engine *uc, uc_mem_type type,
 static bool hook_mem_invalid_dummy(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
 {
-    // Stop emulation.
+    // stop emulation
     return false;
 }
 
@@ -171,6 +177,73 @@ static void hook_syscall(uc_engine *uc, void *user_data)
         uc_reg_write(uc, UC_X86_REG_RAX, &rax);
     } else
         printf("ERROR: was not expecting rax=0x%"PRIx64 " in syscall\n", rax);
+}
+
+static bool hook_memalloc(uc_engine *uc, uc_mem_type type, uint64_t address,
+        int size, int64_t value, void *user_data)
+{
+    uint64_t algined_address = address & 0xFFFFFFFFFFFFF000ULL;
+    int aligned_size = ((int)(size / 0x1000) + 1) * 0x1000;
+
+    printf(">>> Allocating block at 0x%" PRIx64 " (0x%" PRIx64 "), block size = 0x%x (0x%x)\n",
+            address, algined_address, size, aligned_size);
+
+    uc_mem_map(uc, algined_address, aligned_size, UC_PROT_ALL);
+
+    // write machine code to be emulated to memory
+    if (uc_mem_write(uc, algined_address, X86_CODE32, sizeof(X86_CODE32) - 1)) {
+        printf("Failed to write emulation code to memory, quit!\n");
+        return false;
+    }
+
+    // this recovers from missing memory, so we return true
+    return true;
+}
+
+static void test_miss_code(void)
+{
+    uc_engine *uc;
+    uc_err err;
+    uc_hook trace1, trace2;
+
+    int r_ecx = 0x1234;     // ECX register
+    int r_edx = 0x7890;     // EDX register
+
+    printf("Emulate i386 code - missing code\n");
+
+    // Initialize emulator in X86-32bit mode
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        return;
+    }
+
+    // initialize machine registers
+    uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_write(uc, UC_X86_REG_EDX, &r_edx);
+
+    // tracing all instruction by having @begin > @end
+    uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code, NULL, 1, 0);
+
+    // auto-allocate memory on access
+    uc_hook_add(uc, &trace2, UC_HOOK_MEM_UNMAPPED, hook_memalloc, NULL, 1, 0);
+
+    // emulate machine code, without having the code in yet
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32) - 1, 0, 0);
+    if (err) {
+        printf("Failed on uc_emu_start() with error returned %u: %s\n",
+                err, uc_strerror(err));
+    }
+
+    // now print out some registers
+    printf(">>> Emulation done. Below is the CPU context\n");
+
+    uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx);
+    uc_reg_read(uc, UC_X86_REG_EDX, &r_edx);
+    printf(">>> ECX = 0x%x\n", r_ecx);
+    printf(">>> EDX = 0x%x\n", r_edx);
+
+    uc_close(uc);
 }
 
 static void test_i386(void)
@@ -745,6 +818,23 @@ static void test_i386_context_save(void)
     uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
     printf(">>> EAX = 0x%x\n", r_eax);
 
+    // modify some registers of the context
+    r_eax = 0xc8;
+    uc_context_reg_write(context, UC_X86_REG_EAX, &r_eax);
+
+    // and restore CPU context again
+    err = uc_context_restore(uc, context);
+    if (err) {
+        printf("Failed on uc_context_restore() with error returned: %u\n", err);
+        return;
+    }
+
+    // now print out some registers
+    printf(">>> CPU context restored with modification. Below is the CPU context\n");
+
+    uc_reg_read(uc, UC_X86_REG_EAX, &r_eax);
+    printf(">>> EAX = 0x%x\n", r_eax);
+
     // free the CPU context
     err = uc_context_free(context);
     if (err) {
@@ -1092,6 +1182,133 @@ static void test_i386_invalid_mem_read_in_tb(void)
     uc_close(uc);
 }
 
+static void test_i386_smc_xor() 
+{
+    uc_engine *uc;
+    uc_err err;
+
+    uint32_t r_edi = ADDRESS;     // ECX register
+    uint32_t r_eax = 0xbc4177e6;     // EDX register
+    uint32_t result;
+
+    printf("===================================\n");
+    printf("Emulate i386 code that modfies itself\n");
+
+    // Initialize emulator in X86-32bit mode
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        return;
+    }
+
+    // map 1KB memory for this emulation
+    uc_mem_map(uc, ADDRESS, 0x1000, UC_PROT_ALL);
+
+    // write machine code to be emulated to memory
+    if (uc_mem_write(uc, ADDRESS, X86_CODE32_SMC, sizeof(X86_CODE32_SMC) - 1)) {
+        printf("Failed to write emulation code to memory, quit!\n");
+        return;
+    }
+
+    // initialize machine registers
+    uc_reg_write(uc, UC_X86_REG_EDI, &r_edi);
+    uc_reg_write(uc, UC_X86_REG_EAX, &r_eax);
+
+    // **Important Note**
+    //
+    // Since SMC code will cause TB regeneration, the XOR in fact would executed 
+    // twice (the first execution won't take effect.). Thus, if you would like to
+    // use count to control the emulation, the count should be set to 2.
+    //
+    // err = uc_emu_start(uc, ADDRESS, ADDRESS + 3, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, 0, 0, 2);
+    if (err) {
+        printf("Failed on uc_emu_start() with error returned %u: %s\n",
+                err, uc_strerror(err));
+    }
+
+    printf(">>> Emulation done. Below is the result.\n");
+
+    uc_mem_read(uc, ADDRESS + 3, (void *)&result, 4);
+
+    if (result == (0x3ea98b13 ^ 0xbc4177e6)) {
+        printf(">>> SMC emulation is correct. 0x3ea98b13 ^ 0xbc4177e6 = 0x%x\n", result);
+    } else {
+        printf(">>> SMC emulation is wrong. 0x3ea98b13 ^ 0xbc4177e6 = 0x%x\n", result);
+    }
+
+    uc_close(uc);
+}
+
+static uint64_t mmio_read_callback(uc_engine* uc, uint64_t offset, unsigned size, void* user_data)
+{
+    printf(">>> Read IO memory at offset 0x%"PRIu64" with 0x%"PRIu32" bytes and return 0x19260817\n", offset, size);
+    // The value returned here would be written to ecx.
+    return 0x19260817;
+}
+
+static void mmio_write_callback(uc_engine* uc, uint64_t offset, unsigned size, uint64_t value, void* user_data)
+{
+    printf(">>> Write value 0x%"PRIu64" to IO memory at offset 0x%"PRIu64" with 0x%"PRIu32" bytes\n", value, offset, size);
+    return;
+}
+
+static void test_i386_mmio()
+{
+    uc_engine* uc;
+    int r_ecx = 0xdeadbeef;
+    uc_err err;
+
+    printf("===================================\n");
+    printf("Emulate i386 code that uses MMIO\n");
+
+    // Initialize emulator in X86-32bit mode
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        return;
+    }
+
+    // map 1KB memory for this emulation
+    err = uc_mem_map(uc, ADDRESS, 0x1000, UC_PROT_ALL);
+    if (err) {
+        printf("Failed on uc_mem_map() with error returned: %u\n", err);
+        return;
+    }
+
+    // write machine code to be emulated to memory
+    err = uc_mem_write(uc, ADDRESS, X86_MMIO_CODE, sizeof(X86_MMIO_CODE) - 1);
+    if (err) {
+        printf("Failed on uc_mem_write() with error returned: %u\n", err);
+        return;
+    }
+
+    err = uc_mmio_map(uc, 0x20000, 0x4000, mmio_read_callback, NULL, mmio_write_callback, NULL);
+    if (err) {
+        printf("Failed on uc_mmio_map() with error returned: %u\n", err);
+        return;
+    }
+
+    // prepare ecx
+    err = uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx);
+    if (err) {
+        printf("Failed on uc_reg_write() with error returned: %u\n", err);
+        return;
+    }
+
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_MMIO_CODE) - 1, 0, 0);
+    if (err) {
+        printf("Failed on uc_emu_start() with error returned: %u\n", err);
+        return;
+    }
+
+    uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx);
+
+    printf(">>> Emulation done. ECX=0x%x\n", r_ecx);
+
+    uc_close(uc);
+}
+
 int main(int argc, char **argv, char **envp)
 {
     if (argc == 2) {
@@ -1099,6 +1316,7 @@ int main(int argc, char **argv, char **envp)
             test_x86_16();
         }
         else if (!strcmp(argv[1], "-32")) {
+            test_miss_code();
             test_i386();
             test_i386_map_ptr();
             test_i386_inout();
@@ -1120,6 +1338,7 @@ int main(int argc, char **argv, char **envp)
    }
    else {
         test_x86_16();
+        test_miss_code();
         test_i386();
         test_i386_map_ptr();
         test_i386_inout();
@@ -1133,6 +1352,8 @@ int main(int argc, char **argv, char **envp)
         test_x86_64();
         test_x86_64_syscall();
         test_i386_invalid_mem_read_in_tb();
+        test_i386_smc_xor();
+        test_i386_mmio();
     }
 
     return 0;

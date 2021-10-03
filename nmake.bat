@@ -1,6 +1,6 @@
 :: Unicorn Emulator Engine
 :: Build Unicorn libs on Windows with CMake & Nmake
-:: Usage: nmake.bat [x86 arm aarch64 m68k mips sparc], default build all.
+:: Usage: nmake.bat [x86 arm aarch64 m68k mips sparc riscv], default build all.
 :: By Huitao Chen, 2019
 
 @echo off

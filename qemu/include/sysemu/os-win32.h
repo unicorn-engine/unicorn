@@ -28,56 +28,27 @@
 
 #include <winsock2.h>
 #include <windows.h>
-#include <setjmp.h>
-
-/* Workaround for older versions of MinGW. */
-#ifndef ECONNREFUSED
-# define ECONNREFUSED WSAECONNREFUSED
-#endif
-#ifndef EINPROGRESS
-# define EINPROGRESS  WSAEINPROGRESS
-#endif
-#ifndef EHOSTUNREACH
-# define EHOSTUNREACH WSAEHOSTUNREACH
-#endif
-#ifndef EINTR
-# define EINTR        WSAEINTR
-#endif
-#ifndef EINPROGRESS
-# define EINPROGRESS  WSAEINPROGRESS
-#endif
-#ifndef ENETUNREACH
-# define ENETUNREACH  WSAENETUNREACH
-#endif
-#ifndef ENOTCONN
-# define ENOTCONN     WSAENOTCONN
-#endif
-#ifndef EWOULDBLOCK
-# define EWOULDBLOCK  WSAEWOULDBLOCK
-#endif
+#include <ws2tcpip.h>
 
 #if defined(_WIN64)
 /* On w64, setjmp is implemented by _setjmp which needs a second parameter.
  * If this parameter is NULL, longjump does no stack unwinding.
  * That is what we need for QEMU. Passing the value of register rsp (default)
  * lets longjmp try a stack unwinding which will crash with generated code. */
-
-#if defined(_MSC_VER) // MSVC
-
+#if defined(_MSC_VER)   // MSVC
 // See qemu/include/utils/setjmp-wrapper-win32.asm for details.
 extern int _setjmp_wrapper(jmp_buf);
+#undef setjmp
+#define setjmp(env) _setjmp_wrapper(env)
 
-# undef setjmp
-# define setjmp(env) _setjmp_wrapper(env)
+#else // MingW
 
-#else // MinGW
-
-// Original QEMU patch.
-# undef setjmp
-# define setjmp(env) _setjmp(env, NULL)
+#undef setjmp
+#define setjmp(env) _setjmp(env, NULL)
 #endif
 
 #endif
+
 /* QEMU uses sigsetjmp()/siglongjmp() as the portable way to specify
  * "longjmp and don't touch the signal masks". Since we know that the
  * savemask parameter will always be zero we can safely define these
@@ -87,10 +58,6 @@ extern int _setjmp_wrapper(jmp_buf);
 #define sigsetjmp(env, savemask) setjmp(env)
 #define siglongjmp(env, val) longjmp(env, val)
 
-size_t getpagesize(void);
-
-#if !defined(EPROTONOSUPPORT)
-# define EPROTONOSUPPORT EINVAL
-#endif
+int getpagesize(void);
 
 #endif

@@ -15,7 +15,6 @@ from distutils.util import get_platform
 from distutils.command.build import build
 from distutils.command.sdist import sdist
 from setuptools.command.bdist_egg import bdist_egg
-from setuptools.command.develop import develop
 
 SYSTEM = sys.platform
 
@@ -23,36 +22,18 @@ SYSTEM = sys.platform
 IS_64BITS = platform.architecture()[0] == '64bit'
 
 # are we building from the repository or from a source distribution?
-ROOT_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 LIBS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'lib')
 HEADERS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'include')
 SRC_DIR = os.path.join(ROOT_DIR, 'src')
-BUILD_DIR = SRC_DIR if os.path.exists(SRC_DIR) else os.path.join(ROOT_DIR, '../..')
+UC_DIR = os.path.join(ROOT_DIR, '../..')
+BUILD_DIR = os.path.join(UC_DIR, 'build')
 
-# Parse version from pkgconfig.mk
 VERSION_DATA = {}
-with open(os.path.join(BUILD_DIR, 'pkgconfig.mk')) as fp:
-    lines = fp.readlines()
-    for line in lines:
-        line = line.strip()
-        if len(line) == 0:
-            continue
-        if line.startswith('#'):
-            continue
-        if '=' not in line:
-            continue
-
-        k, v = line.split('=', 1)
-        k = k.strip()
-        v = v.strip()
-        if len(k) == 0 or len(v) == 0:
-            continue
-        VERSION_DATA[k] = v
-
-if 'PKG_MAJOR' not in VERSION_DATA or \
-        'PKG_MINOR' not in VERSION_DATA or \
-        'PKG_EXTRA' not in VERSION_DATA:
-    raise Exception("Malformed pkgconfig.mk")
+VERSION_DATA['PKG_MAJOR'] = "2"
+VERSION_DATA['PKG_MINOR'] = "0"
+VERSION_DATA['PKG_EXTRA'] = "0"
+# VERSION_DATA['PKG_TAG'] = "0"
 
 if 'PKG_TAG' in VERSION_DATA:
     VERSION = '{PKG_MAJOR}.{PKG_MINOR}.{PKG_EXTRA}.{PKG_TAG}'.format(**VERSION_DATA)
@@ -63,12 +44,9 @@ if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
     MAC_LIBRARY_FILE = "libunicorn*.dylib"
     STATIC_LIBRARY_FILE = None
-elif SYSTEM == 'win32':
+elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
     STATIC_LIBRARY_FILE = "unicorn.lib"
-elif SYSTEM == 'cygwin':
-    LIBRARY_FILE = "cygunicorn.dll"
-    STATIC_LIBRARY_FILE = None
 else:
     LIBRARY_FILE = "libunicorn.so"
     STATIC_LIBRARY_FILE = None
@@ -84,7 +62,6 @@ def copy_sources():
     """
     src = []
 
-    os.system('make -C %s clean' % os.path.join(ROOT_DIR, '../..'))
     shutil.rmtree(SRC_DIR, ignore_errors=True)
     os.mkdir(SRC_DIR)
 
@@ -108,9 +85,8 @@ def copy_sources():
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../README.md")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.TXT")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../RELEASE_NOTES")))
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../make.sh")))
+    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../cmake.sh")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../CMakeLists.txt")))
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../pkgconfig.mk")))
 
     for filename in src:
         outpath = os.path.join(SRC_DIR, os.path.basename(filename))
@@ -130,7 +106,7 @@ def build_libraries():
     os.mkdir(LIBS_DIR)
 
     # copy public headers
-    shutil.copytree(os.path.join(BUILD_DIR, 'include', 'unicorn'), os.path.join(HEADERS_DIR, 'unicorn'))
+    shutil.copytree(os.path.join(UC_DIR, 'include', 'unicorn'), os.path.join(HEADERS_DIR, 'unicorn'))
 
     # check if a prebuilt library exists
     # if so, use it instead of building
@@ -141,35 +117,37 @@ def build_libraries():
         return
 
     # otherwise, build!!
-    os.chdir(BUILD_DIR)
+    os.chdir(UC_DIR)
 
     try:
-        subprocess.check_call(['msbuild', '-ver'])
+        subprocess.check_call(['msbuild', '/help'])
     except:
         has_msbuild = False
     else:
         has_msbuild = True
 
     if has_msbuild and SYSTEM == 'win32':
-        if platform.architecture()[0] == '32bit':
-            plat = 'Win32'
-        elif 'win32' in sys.argv:
-            plat = 'Win32'
-        else:
-            plat = 'x64'
-
+        plat = 'Win32' if platform.architecture()[0] == '32bit' else 'x64'
         conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
-        subprocess.call(['msbuild', 'unicorn.sln', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=os.path.join(BUILD_DIR, 'msvc'))
+        subprocess.call(['msbuild', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=os.path.join(UC_DIR, 'msvc'))
 
-        obj_dir = os.path.join(BUILD_DIR, 'msvc', plat, conf)
+        obj_dir = os.path.join(UC_DIR, 'msvc', plat, conf)
         shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
         shutil.copy(os.path.join(obj_dir, STATIC_LIBRARY_FILE), LIBS_DIR)
     else:
         # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
         new_env = dict(os.environ)
         new_env['UNICORN_BUILD_CORE_ONLY'] = 'yes'
-        cmd = ['sh', './make.sh']
-        if SYSTEM == "win32":
+        if not os.path.exists(BUILD_DIR):
+            os.mkdir(BUILD_DIR)
+        os.chdir(BUILD_DIR)
+        cmd = ['sh', '../cmake.sh']
+        if SYSTEM == "cygwin":
+            if IS_64BITS:
+                cmd.append('cygwin-mingw64')
+            else:
+                cmd.append('cygwin-mingw32')
+        elif SYSTEM == "win32":
             if IS_64BITS:
                 cmd.append('cross-win64')
             else:
@@ -196,6 +174,7 @@ def build_libraries():
                 sys.exit(1)
     os.chdir(cwd)
 
+
 class custom_sdist(sdist):
     def run(self):
         clean_bins()
@@ -211,12 +190,6 @@ class custom_build(build):
             build_libraries()
         return build.run(self)
 
-class custom_develop(develop):
-    def run(self):
-        log.info("Building C extensions")
-        build_libraries()
-        return develop.run(self)
-
 class custom_bdist_egg(bdist_egg):
     def run(self):
         self.run_command('build')
@@ -225,6 +198,10 @@ class custom_bdist_egg(bdist_egg):
 def dummy_src():
     return []
 
+cmdclass = {}
+cmdclass['build'] = custom_build
+cmdclass['sdist'] = custom_sdist
+cmdclass['bdist_egg'] = custom_bdist_egg
 
 if 'bdist_wheel' in sys.argv and '--plat-name' not in sys.argv:
     idx = sys.argv.index('bdist_wheel') + 1
@@ -245,14 +222,28 @@ if 'bdist_wheel' in sys.argv and '--plat-name' not in sys.argv:
         # https://www.python.org/dev/peps/pep-0425/
         sys.argv.insert(idx + 1, name.replace('.', '_').replace('-', '_'))
 
+try:
+    from setuptools.command.develop import develop
+    class custom_develop(develop):
+        def run(self):
+            log.info("Building C extensions")
+            build_libraries()
+            return develop.run(self)
+
+    cmdclass['develop'] = custom_develop
+except ImportError:
+    print("Proper 'develop' support unavailable.")
+
+def join_all(src, files):
+    return tuple(os.path.join(src, f) for f in files)
 
 long_desc = '''
 Unicorn is a lightweight, multi-platform, multi-architecture CPU emulator framework
-based on [QEMU](https://qemu.org).
+based on [QEMU](http://qemu.org).
 
 Unicorn offers some unparalleled features:
 
-- Multi-architecture: ARM, ARM64 (ARMv8), M68K, MIPS, SPARC, and X86 (16, 32, 64-bit)
+- Multi-architecture: ARM, ARM64 (ARMv8), M68K, MIPS, PowerPC, SPARC and X86 (16, 32, 64-bit)
 - Clean/simple/lightweight/intuitive architecture-neutral API
 - Implemented in pure C language, with bindings for Crystal, Clojure, Visual Basic, Perl, Rust, Ruby, Python, Java, .NET, Go, Delphi/Free Pascal, Haskell, Pharo, and Lua.
 - Native support for Windows & *nix (with Mac OSX, Linux, *BSD & Solaris confirmed)
@@ -261,7 +252,7 @@ Unicorn offers some unparalleled features:
 - Thread-safety by design
 - Distributed under free software license GPLv2
 
-Further information is available at https://www.unicorn-engine.org
+Further information is available at http://www.unicorn-engine.org
 '''
 
 setup(
@@ -273,18 +264,18 @@ setup(
     author_email='aquynh@gmail.com',
     description='Unicorn CPU emulator engine',
     long_description=long_desc,
-    long_description_content_type="text/markdown",
-    url='https://www.unicorn-engine.org',
+    #long_description_content_type="text/markdown",
+    url='http://www.unicorn-engine.org',
     classifiers=[
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 3',
     ],
     requires=['ctypes'],
-    cmdclass={'build': custom_build, 'develop': custom_develop, 'sdist': custom_sdist, 'bdist_egg': custom_bdist_egg},
-    zip_safe=False,
+    cmdclass=cmdclass,
+    zip_safe=True,
     include_package_data=True,
-    is_pure=False,
+    is_pure=True,
     package_data={
         'unicorn': ['lib/*', 'include/unicorn/*']
     }

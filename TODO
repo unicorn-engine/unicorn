@@ -1,0 +1,11 @@
+Optimization:
+- avoid checking BB exit after every instruction. this need new OPT option?
+
+----
+- cleanup code
+
+----
+when we hook both BB & instruction, we insert 2 consecuritve calls to uc_tracecode.
+optimize it by removing one
+
+support Makefile, not just cmake?

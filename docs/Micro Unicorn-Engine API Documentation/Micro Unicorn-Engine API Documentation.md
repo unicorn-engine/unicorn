@@ -215,7 +215,7 @@ typedef enum uc_mode {
     UC_MODE_32 = 1 << 2,          // 32-bit 模式
     UC_MODE_64 = 1 << 3,          // 64-bit 模式
 
-    // ppc 
+    // ppc
     UC_MODE_PPC32 = 1 << 2,       // 32-bit 模式 (暂不支持)
     UC_MODE_PPC64 = 1 << 3,       // 64-bit 模式 (暂不支持)
     UC_MODE_QPX = 1 << 4,         // Quad Processing eXtensions 模式 (暂不支持)
@@ -344,7 +344,7 @@ typedef enum uc_hook_type {
 // Hook 所有非法的内存访问事件
 #define UC_HOOK_MEM_INVALID (UC_HOOK_MEM_UNMAPPED + UC_HOOK_MEM_PROT)
 // Hook 所有有效内存访问的事件
-// 注意: UC_HOOK_MEM_READ 在 UC_HOOK_MEM_READ_PROT 和 UC_HOOK_MEM_READ_UNMAPPED 之前触发 , 
+// 注意: UC_HOOK_MEM_READ 在 UC_HOOK_MEM_READ_PROT 和 UC_HOOK_MEM_READ_UNMAPPED 之前触发 ,
 //       因此这个Hook可能会触发一些无效的读取。
 #define UC_HOOK_MEM_VALID (UC_HOOK_MEM_READ + UC_HOOK_MEM_WRITE + UC_HOOK_MEM_FETCH)
 ```
@@ -708,7 +708,7 @@ int main()
 {
     uc_engine* uc;
     uc_err err;
-    
+
     //// 初始化 X86-32bit 模式模拟器
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
     if (err != UC_ERR_OK) {
@@ -728,7 +728,7 @@ int main()
 
     if (!err)
         cout << "uc引擎关闭成功" << endl;
-        
+
     return 0;
 }
 ```
@@ -825,7 +825,7 @@ uc_err uc_close(uc_engine *uc)
     // 最后释放uc自身
     memset(uc, 0, sizeof(*uc));
     free(uc);
-    
+
     return UC_ERR_OK;
 }
 ```
@@ -911,7 +911,7 @@ int main()
     }
     if (!err)
         cout << "uc实例关闭成功" << endl;
-        
+
     return 0;
 }
 ```
@@ -977,7 +977,7 @@ int main()
     }
     if (!err)
         cout << "uc实例关闭成功" << endl;
-        
+
     return 0;
 }
 ```
@@ -1071,7 +1071,7 @@ int main()
 {
     uc_engine* uc;
     uc_err err;
-    
+
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
     if (err != UC_ERR_OK) {
         printf("Failed on uc_open() with error returned: %u\n", err);
@@ -1090,7 +1090,7 @@ int main()
     }
     if (!err)
         cout << "uc实例关闭成功" << endl;
-        
+
     return 0;
 }
 ```
@@ -1131,7 +1131,7 @@ uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
     if (uc->reg_write)
         ret = uc->reg_write(uc, (unsigned int *)ids, vals, count);    //结构体中写入
     else
-        return UC_ERR_EXCEPTION; 
+        return UC_ERR_EXCEPTION;
 
     return ret;
 }
@@ -1169,7 +1169,7 @@ int main()
     }
     if (!err)
         cout << "uc实例关闭成功" << endl;
-    
+
     return 0;
 }
 ```
@@ -1209,7 +1209,7 @@ uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
     if (uc->reg_read)
         uc->reg_read(uc, (unsigned int *)ids, vals, count);
     else
-        return -1;  
+        return -1;
 
     return UC_ERR_OK;
 }
@@ -1239,7 +1239,7 @@ int main()
     err = uc_reg_write(uc, UC_X86_REG_ECX, &r_eax);
     if (!err)
         cout << "写入成功: " << r_eax << endl;
-    
+
     int recv_eax;
     err = uc_reg_read(uc, UC_X86_REG_ECX, &recv_eax);
     if (!err)
@@ -1289,7 +1289,7 @@ uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
     if (uc->reg_write)
         ret = uc->reg_write(uc, (unsigned int *)ids, vals, count);
     else
-        return UC_ERR_EXCEPTION; 
+        return UC_ERR_EXCEPTION;
 
     return ret;
 }
@@ -1394,7 +1394,7 @@ uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
     if (uc->reg_read)
         uc->reg_read(uc, (unsigned int *)ids, vals, count);
     else
-        return -1; 
+        return -1;
 
     return UC_ERR_OK;
 }
@@ -1490,7 +1490,7 @@ int main()
         printf("Failed on uc_open() with error returned: %u\n", err);
         return -1;
     }
-    
+
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     if (uc_mem_write(uc, ADDRESS, X86_CODE32, sizeof(X86_CODE32) - 1)) {
@@ -1511,7 +1511,7 @@ int main()
     if (err != UC_ERR_OK) {
         printf("Failed on uc_close() with error returned: %u\n", err);
         return -1;
-    }    
+    }
     return 0;
 }
 ```
@@ -1727,15 +1727,15 @@ int main()
 {
     uc_engine* uc;
     uc_err err;
-    
+
     int r_eax = 0x111;
-    
+
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
     if (err != UC_ERR_OK) {
         printf("Failed on uc_open() with error returned: %u\n", err);
         return -1;
-    }   
-    
+    }
+
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     if (uc_mem_write(uc, ADDRESS, X86_CODE32, sizeof(X86_CODE32) - 1)) {
@@ -1760,7 +1760,7 @@ int main()
         printf("Failed on uc_close() with error returned: %u\n", err);
         return -1;
     }
-    
+
     return 0;
 }
 ```
@@ -2435,7 +2435,7 @@ int main()
     }
 
     cout << "起始地址： 0x" << hex << region->begin << "  结束地址： 0x" << hex << region->end << "  内存权限：  " <<region->perms << "  已申请内存块数： " << count << endl;
-      
+
     if ((err = uc_free(region))) {    ////注意释放内存
         uc_perror("uc_free", err);
         return 1;
@@ -2505,11 +2505,12 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context);
 uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 {
     struct uc_context **_context = context;
-    size_t size = cpu_context_size(uc->arch, uc->mode);
+    size_t size = uc->cpu_context_size;
 
-    *_context = malloc(size + sizeof(uc_context));
+    *_context = g_malloc(size);
     if (*_context) {
-        (*_context)->size = size;
+        (*_context)->jmp_env_size = sizeof(*uc->cpu->jmp_env);
+        (*_context)->context_size = size - sizeof(uc_context) - (*_context)->jmp_env_size;
         return UC_ERR_OK;
     } else {
         return UC_ERR_NOMEM;
@@ -2706,45 +2707,7 @@ size_t uc_context_size(uc_engine *uc);
 ```c
 size_t uc_context_size(uc_engine *uc)
 {
-    return cpu_context_size(uc->arch, uc->mode);
-}
-
-static size_t cpu_context_size(uc_arch arch, uc_mode mode)
-{
-    switch (arch) {
-#ifdef UNICORN_HAS_M68K
-        case UC_ARCH_M68K:  return M68K_REGS_STORAGE_SIZE;
-#endif
-#ifdef UNICORN_HAS_X86
-        case UC_ARCH_X86:   return X86_REGS_STORAGE_SIZE;
-#endif
-#ifdef UNICORN_HAS_ARM
-        case UC_ARCH_ARM:   return mode & UC_MODE_BIG_ENDIAN ? ARM_REGS_STORAGE_SIZE_armeb : ARM_REGS_STORAGE_SIZE_arm;
-#endif
-#ifdef UNICORN_HAS_ARM64
-        case UC_ARCH_ARM64: return mode & UC_MODE_BIG_ENDIAN ? ARM64_REGS_STORAGE_SIZE_aarch64eb : ARM64_REGS_STORAGE_SIZE_aarch64;
-#endif
-#ifdef UNICORN_HAS_MIPS
-        case UC_ARCH_MIPS:
-            if (mode & UC_MODE_MIPS64) {
-                if (mode & UC_MODE_BIG_ENDIAN) {
-                    return MIPS64_REGS_STORAGE_SIZE_mips64;
-                } else {
-                    return MIPS64_REGS_STORAGE_SIZE_mips64el;
-                }
-            } else {
-                if (mode & UC_MODE_BIG_ENDIAN) {
-                    return MIPS_REGS_STORAGE_SIZE_mips;
-                } else {
-                    return MIPS_REGS_STORAGE_SIZE_mipsel;
-                }
-            }
-#endif
-#ifdef UNICORN_HAS_SPARC
-        case UC_ARCH_SPARC: return mode & UC_MODE_SPARC64 ? SPARC64_REGS_STORAGE_SIZE : SPARC_REGS_STORAGE_SIZE;
-#endif
-        default: return 0;
-    }
+    return sizeof(uc_context) + uc->cpu_context_size + sizeof(*uc->cpu->jmp_env);
 }
 ```
 

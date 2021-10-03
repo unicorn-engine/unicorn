@@ -6,13 +6,14 @@ open System
 
 [<AutoOpen>]
 module Common =
-    let UC_API_MAJOR = 1
+    let UC_API_MAJOR = 2
 
     let UC_API_MINOR = 0
-    let UC_VERSION_MAJOR = 1
+    let UC_VERSION_MAJOR = 2
 
     let UC_VERSION_MINOR = 0
-    let UC_VERSION_EXTRA = 3
+
+    let UC_VERSION_EXTRA = 0
     let UC_SECOND_SCALE = 1000000
     let UC_MILISECOND_SCALE = 1000
     let UC_ARCH_ARM = 1
@@ -22,7 +23,8 @@ module Common =
     let UC_ARCH_PPC = 5
     let UC_ARCH_SPARC = 6
     let UC_ARCH_M68K = 7
-    let UC_ARCH_MAX = 8
+    let UC_ARCH_RISCV = 8
+    let UC_ARCH_MAX = 9
 
     let UC_MODE_LITTLE_ENDIAN = 0
     let UC_MODE_BIG_ENDIAN = 1073741824
@@ -34,7 +36,6 @@ module Common =
     let UC_MODE_ARM926 = 128
     let UC_MODE_ARM946 = 256
     let UC_MODE_ARM1176 = 512
-    let UC_MODE_ARMBE8 = 1024
     let UC_MODE_MICRO = 16
     let UC_MODE_MIPS3 = 32
     let UC_MODE_MIPS32R6 = 64
@@ -49,6 +50,8 @@ module Common =
     let UC_MODE_SPARC32 = 4
     let UC_MODE_SPARC64 = 8
     let UC_MODE_V9 = 16
+    let UC_MODE_RISCV32 = 4
+    let UC_MODE_RISCV64 = 8
 
     let UC_ERR_OK = 0
     let UC_ERR_NOMEM = 1

@@ -110,5 +110,6 @@ int main()
         return 1;
     }
 
+    uc_close(uc);
     return 0;
 }

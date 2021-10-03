@@ -3,13 +3,14 @@
 package unicorn;
 
 public interface UnicornConst {
-   public static final int UC_API_MAJOR = 1;
+   public static final int UC_API_MAJOR = 2;
 
    public static final int UC_API_MINOR = 0;
-   public static final int UC_VERSION_MAJOR = 1;
+   public static final int UC_VERSION_MAJOR = 2;
 
    public static final int UC_VERSION_MINOR = 0;
-   public static final int UC_VERSION_EXTRA = 3;
+
+   public static final int UC_VERSION_EXTRA = 0;
    public static final int UC_SECOND_SCALE = 1000000;
    public static final int UC_MILISECOND_SCALE = 1000;
    public static final int UC_ARCH_ARM = 1;
@@ -19,7 +20,8 @@ public interface UnicornConst {
    public static final int UC_ARCH_PPC = 5;
    public static final int UC_ARCH_SPARC = 6;
    public static final int UC_ARCH_M68K = 7;
-   public static final int UC_ARCH_MAX = 8;
+   public static final int UC_ARCH_RISCV = 8;
+   public static final int UC_ARCH_MAX = 9;
 
    public static final int UC_MODE_LITTLE_ENDIAN = 0;
    public static final int UC_MODE_BIG_ENDIAN = 1073741824;
@@ -31,7 +33,6 @@ public interface UnicornConst {
    public static final int UC_MODE_ARM926 = 128;
    public static final int UC_MODE_ARM946 = 256;
    public static final int UC_MODE_ARM1176 = 512;
-   public static final int UC_MODE_ARMBE8 = 1024;
    public static final int UC_MODE_MICRO = 16;
    public static final int UC_MODE_MIPS3 = 32;
    public static final int UC_MODE_MIPS32R6 = 64;
@@ -46,6 +47,8 @@ public interface UnicornConst {
    public static final int UC_MODE_SPARC32 = 4;
    public static final int UC_MODE_SPARC64 = 8;
    public static final int UC_MODE_V9 = 16;
+   public static final int UC_MODE_RISCV32 = 4;
+   public static final int UC_MODE_RISCV64 = 8;
 
    public static final int UC_ERR_OK = 0;
    public static final int UC_ERR_NOMEM = 1;

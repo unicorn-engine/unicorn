@@ -6,7 +6,7 @@ import sys, re, os
 
 INCL_DIR = os.path.join('..', 'include', 'unicorn')
 
-include = [ 'arm.h', 'arm64.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'unicorn.h' ]
+include = [ 'arm.h', 'arm64.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'ppc.h', 'riscv.h', 'unicorn.h' ]
 
 template = {
     'python': {
@@ -21,6 +21,8 @@ template = {
             'x86.h': 'x86',
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
+            'ppc.h': 'ppc',
+            'riscv.h': 'riscv',
             'unicorn.h': 'unicorn',
             'comment_open': '#',
             'comment_close': '',
@@ -37,6 +39,8 @@ template = {
             'x86.h': 'x86',
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
+            'ppc.h': 'ppc',
+            'riscv.h': 'riscv',
             'unicorn.h': 'unicorn',
             'comment_open': '#',
             'comment_close': '',
@@ -53,6 +57,8 @@ template = {
             'x86.h': 'x86',
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
+            'ppc.h': 'ppc',
+            'riscv.h': 'riscv',
             'unicorn.h': 'unicorn',
             'comment_open': '//',
             'comment_close': '',
@@ -69,6 +75,8 @@ template = {
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
+            'ppc.h': 'Ppc',
+            'riscv.h': 'Riscv',
             'unicorn.h': 'Unicorn',
             'comment_open': '//',
             'comment_close': '',
@@ -85,6 +93,8 @@ template = {
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
+            'ppc.h': 'Ppc',
+            'riscv.h': 'Riscv',
             'unicorn.h': 'Common',
             'comment_open': '    //',
             'comment_close': '',
@@ -101,6 +111,8 @@ template = {
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
+            'ppc.h': 'Ppc',
+            'riscv.h': 'Riscv',
             'unicorn.h': 'Unicorn',
             'comment_open': '//',
             'comment_close': '',

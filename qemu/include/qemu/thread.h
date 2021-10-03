@@ -1,11 +1,13 @@
-#ifndef __QEMU_THREAD_H
-#define __QEMU_THREAD_H 1
+#ifndef QEMU_THREAD_H
+#define QEMU_THREAD_H
 
 #include "unicorn/platform.h"
+#include "qemu/processor.h"
 
+struct uc_struct;
 typedef struct QemuThread QemuThread;
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(__MINGW32__)
 #include "qemu/thread-win32.h"
 #else
 #include "qemu/thread-posix.h"
@@ -14,8 +16,6 @@ typedef struct QemuThread QemuThread;
 #define QEMU_THREAD_JOINABLE 0
 #define QEMU_THREAD_DETACHED 1
 
-struct uc_struct;
-// return -1 on error, 0 on success
 int qemu_thread_create(struct uc_struct *uc, QemuThread *thread, const char *name,
                         void *(*start_routine)(void *),
                         void *arg, int mode);

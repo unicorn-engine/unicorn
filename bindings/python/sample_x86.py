@@ -16,6 +16,7 @@ X86_CODE64 = b"\x41\xBC\x3B\xB0\x28\x2A\x49\x0F\xC9\x90\x4D\x0F\xAD\xCF\x49\x87\
 X86_CODE32_INOUT = b"\x41\xE4\x3F\x4a\xE6\x46\x43" # INC ecx; IN AL, 0x3f; DEC edx; OUT 0x46, AL; INC ebx
 X86_CODE64_SYSCALL = b'\x0f\x05' # SYSCALL
 X86_CODE16 = b'\x00\x00' # add   byte ptr [bx + si], al
+X86_MMIO_CODE = b"\x89\x0d\x04\x00\x02\x00\x8b\x0d\x04\x00\x02\x00" # mov [0x20004], ecx; mov ecx, [0x20004]
 
 # memory address where emulation starts
 ADDRESS = 0x1000000
@@ -386,7 +387,6 @@ def test_i386_loop():
     except UcError as e:
         print("ERROR: %s" % e)
 
-
 # Test X86 32 bit with IN/OUT instruction
 def test_i386_inout():
     print("Emulate i386 code with IN/OUT instructions")
@@ -463,6 +463,9 @@ def test_i386_context_save():
 
         print(">>> Unpickling CPU context")
         saved_context = pickle.loads(pickled_saved_context)
+
+        print(">>> Modifying some register.")
+        saved_context.reg_write(UC_X86_REG_EAX, 0xc8c8)
 
         print(">>> CPU context restored. Below is the CPU context")
         mu.context_restore(saved_context)
@@ -628,6 +631,38 @@ def test_x86_16():
     except UcError as e:
         print("ERROR: %s" % e)
 
+def mmio_read_cb(uc, offset, size, data):
+    print(f">>> Read IO memory at offset {hex(offset)} with {hex(size)} bytes and return 0x19260817")
+
+    return 0x19260817
+
+def mmio_write_cb(uc, offset, size, value, data):
+    print(f">>> Write value {hex(value)} to IO memory at offset {hex(offset)} with {hex(size)} bytes")
+
+def test_i386_mmio():
+    print("Test i386 IO memory")
+    try:
+        # Initialize emulator in X86-32bit mode
+        mu = Uc(UC_ARCH_X86, UC_MODE_32)
+
+        # map 8KB memory for this emulation and write the code
+        mu.mem_map(0x10000, 0x8000)
+        mu.mem_write(0x10000, X86_MMIO_CODE)
+
+        # map the IO memory
+        mu.mmio_map(0x20000, 0x4000, mmio_read_cb, None, mmio_write_cb, None)
+
+        # prepare registers.
+        mu.reg_write(UC_X86_REG_ECX, 0xdeadbeef)
+
+        # emulate machine code in infinite time
+        mu.emu_start(0x10000, 0x10000 + len(X86_MMIO_CODE))
+
+        # now print out some registers
+        print(f">>> Emulation done. ECX={hex(mu.reg_read(UC_X86_REG_ECX))}")
+
+    except UcError as e:
+        print("ERROR: %s" % e)
 
 if __name__ == '__main__':
     test_x86_16()
@@ -651,3 +686,5 @@ if __name__ == '__main__':
     test_x86_64()
     print("=" * 35)
     test_x86_64_syscall()
+    print("=" * 35)
+    test_i386_mmio()
