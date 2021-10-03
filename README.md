@@ -4,8 +4,12 @@ Unicorn Engine
 [![pypi downloads](https://pepy.tech/badge/unicorn)](https://pepy.tech/project/unicorn)
 [![Fuzzing Status](https://oss-fuzz-build-logs.storage.googleapis.com/badges/unicorn.svg)](https://bugs.chromium.org/p/oss-fuzz/issues/list?sort=-opened&can=1&q=proj:unicorn)
 
-Unicorn is a lightweight, multi-platform, multi-architecture CPU emulator framework
-based on [QEMU](http://qemu.org).
+
+<p align="center">
+<img width="250" src="docs/unicorn-logo.png">
+</p>
+
+Unicorn is a lightweight, multi-platform, multi-architecture CPU emulator framework, based on [QEMU](http://qemu.org).
 
 Unicorn offers some unparalleled features:
 
