@@ -777,7 +777,30 @@ static inline int64_t get_max_clock_jump(void)
 /*
  * Low level clock functions
  */
+#ifdef _WIN32
+static inline int64_t get_clock_realtime(void)
+{
+    // code from https://stackoverflow.com/questions/10905892/equivalent-of-gettimeday-for-windows
+    // >>>>>>>>>
+    const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
 
+    long tv_sec, tv_usec;
+    SYSTEMTIME system_time;
+    FILETIME file_time;
+    uint64_t time;
+
+    GetSystemTime(&system_time);
+    SystemTimeToFileTime(&system_time, &file_time);
+    time = ((uint64_t)file_time.dwLowDateTime);
+    time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+    tv_sec = (long)((time - EPOCH) / 10000000L);
+    tv_usec = (long)(system_time.wMilliseconds * 1000);
+    // <<<<<<<<<
+
+    return tv_sec * 1000000000LL + (tv_usec * 1000);
+}
+#else
 /* get host real time in nanosecond */
 static inline int64_t get_clock_realtime(void)
 {
@@ -786,6 +809,7 @@ static inline int64_t get_clock_realtime(void)
     gettimeofday(&tv, NULL);
     return tv.tv_sec * 1000000000LL + (tv.tv_usec * 1000);
 }
+#endif
 
 /* Warning: don't insert tracepoints into these functions, they are
    also used by simpletrace backend and tracepoints would cause
