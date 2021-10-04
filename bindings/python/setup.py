@@ -29,16 +29,7 @@ SRC_DIR = os.path.join(ROOT_DIR, 'src')
 UC_DIR = os.path.join(ROOT_DIR, '../..')
 BUILD_DIR = os.path.join(UC_DIR, 'build')
 
-VERSION_DATA = {}
-VERSION_DATA['PKG_MAJOR'] = "2"
-VERSION_DATA['PKG_MINOR'] = "0"
-VERSION_DATA['PKG_EXTRA'] = "0"
-# VERSION_DATA['PKG_TAG'] = "0"
-
-if 'PKG_TAG' in VERSION_DATA:
-    VERSION = '{PKG_MAJOR}.{PKG_MINOR}.{PKG_EXTRA}.{PKG_TAG}'.format(**VERSION_DATA)
-else:
-    VERSION = '{PKG_MAJOR}.{PKG_MINOR}.{PKG_EXTRA}'.format(**VERSION_DATA)
+VERSION = "2.0.0rc1"
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
@@ -129,9 +120,14 @@ def build_libraries():
     if has_msbuild and SYSTEM == 'win32':
         plat = 'Win32' if platform.architecture()[0] == '32bit' else 'x64'
         conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
-        subprocess.call(['msbuild', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=os.path.join(UC_DIR, 'msvc'))
+        if not os.path.exists(BUILD_DIR):
+            os.mkdir(BUILD_DIR)
+        
+        subprocess.call(['cmake', '-B', BUILD_DIR, '-G', "Visual Studio 16 2019", "-A", plat, f"-DCMAKE_BUILD_TYPE={conf}"])
+        print(BUILD_DIR)
+        subprocess.call(['msbuild', 'unicorn.sln', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=BUILD_DIR)
 
-        obj_dir = os.path.join(UC_DIR, 'msvc', plat, conf)
+        obj_dir = os.path.join(BUILD_DIR, conf)
         shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
         shutil.copy(os.path.join(obj_dir, STATIC_LIBRARY_FILE), LIBS_DIR)
     else:

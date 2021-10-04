@@ -454,11 +454,10 @@ void tcg_region_reset_all(TCGContext *tcg_ctx)
 
 #ifndef NDEBUG
     bool err = tcg_region_initial_alloc__locked(tcg_ctx);
+    g_assert(!err);
 #else
     tcg_region_initial_alloc__locked(tcg_ctx);
 #endif
-
-    g_assert(!err);
 
     tcg_region_tree_reset_all(tcg_ctx);
 }
