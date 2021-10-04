@@ -260,7 +260,7 @@ setup(
     author_email='aquynh@gmail.com',
     description='Unicorn CPU emulator engine',
     long_description=long_desc,
-    #long_description_content_type="text/markdown",
+    long_description_content_type="text/markdown",
     url='http://www.unicorn-engine.org',
     classifiers=[
         'License :: OSI Approved :: BSD License',
