@@ -504,6 +504,27 @@ static void test_x86_mmio_uc_mem_rw() {
     OK(uc_close(uc));
 }
 
+static void test_x86_sysenter_hook(uc_engine* uc, void* user) {
+    *(int*)user = 1;
+}
+
+static void test_x86_sysenter() {
+    uc_engine* uc;
+    char code[] = "\x0F\x34"; // sysenter
+    uc_hook h;
+    int called = 0;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &h, UC_HOOK_INSN, test_x86_sysenter_hook, &called, 1, 0, UC_X86_INS_SYSENTER));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(called == 1);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     { "test_x86_in", test_x86_in },
     { "test_x86_out", test_x86_out },
@@ -523,5 +544,6 @@ TEST_LIST = {
     { "test_x86_missing_code", test_x86_missing_code},
     { "test_x86_smc_xor", test_x86_smc_xor},
     { "test_x86_mmio_uc_mem_rw", test_x86_mmio_uc_mem_rw},
+    { "test_x86_sysenter", test_x86_sysenter},
     { NULL, NULL }
 };

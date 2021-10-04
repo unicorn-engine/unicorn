@@ -7851,8 +7851,10 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
         if (!s->pe) {
             gen_exception(s, EXCP0D_GPF, pc_start - s->cs_base);
         } else {
-            gen_helper_sysenter(tcg_ctx, tcg_ctx->cpu_env, 0);
+            TCGv_i32 addend = tcg_const_i32(tcg_ctx, s->pc - pc_start);
+            gen_helper_sysenter(tcg_ctx, tcg_ctx->cpu_env, addend);
             gen_eob(s);
+            tcg_temp_free_i32(tcg_ctx, addend);
         }
         break;
     case 0x135: /* sysexit */
