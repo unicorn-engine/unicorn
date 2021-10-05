@@ -143,8 +143,8 @@ static void cp_reg_check_reset(gpointer key, gpointer value,  gpointer opaque)
     cp_reg_reset(key, value, opaque);
 #ifndef NDEBUG
     newvalue = read_raw_cp_reg(&cpu->env, ri);
-#endif
     assert(oldvalue == newvalue);
+#endif
 }
 
 static void arm_cpu_reset(CPUState *dev)
@@ -919,7 +919,9 @@ void arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
          * Presence of EL2 itself is ARM_FEATURE_EL2, and of the
          * Security Extensions is ARM_FEATURE_EL3.
          */
+#ifndef NDEBUG
         assert(no_aa32 || cpu_isar_feature(aa32_arm_div, cpu));
+#endif
         set_feature(env, ARM_FEATURE_LPAE);
         set_feature(env, ARM_FEATURE_V7);
     }
@@ -945,7 +947,9 @@ void arm_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
     if (arm_feature(env, ARM_FEATURE_V6)) {
         set_feature(env, ARM_FEATURE_V5);
         if (!arm_feature(env, ARM_FEATURE_M)) {
+#ifndef NDEBUG
             assert(no_aa32 || cpu_isar_feature(aa32_jazelle, cpu));
+#endif
             set_feature(env, ARM_FEATURE_AUXCR);
         }
     }

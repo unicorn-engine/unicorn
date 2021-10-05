@@ -88,6 +88,20 @@ else()
             set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -m64")
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m64")
         endif()
+    elseif(ANDROID_ABI)
+        string(FIND "${ANDROID_ABI}" "arm64" UC_RET)
+
+        if (${UC_RET} GREATER_EQUAL "0")
+            set(UNICORN_TARGET_ARCH "aarch64")
+        else()
+            string(FIND "${ANDROID_ABI}" "armeabi" UC_RET)
+
+            if (${UC_RET} GREATER_EQUAL "0")
+                set(UNICORN_TARGET_ARCH "arm")
+            else()
+                set(UNICORN_TARGET_ARCH "i386")
+            endif()
+        endif()
     else()
         execute_process(COMMAND ${CMAKE_C_COMPILER} -dM -E -
             INPUT_FILE /dev/null
@@ -185,6 +199,10 @@ else()
     endif()
 
     set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-fPIC")
+    if(ANDROID_ABI)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS} --target=${CMAKE_C_COMPILER_TARGET}")
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS} --sysroot=${CMAKE_SYSROOT}")
+    endif()
 
     set(TARGET_LIST "--target-list=")
     if (UNICORN_HAS_X86)
@@ -994,7 +1012,7 @@ add_library(unicorn-common
     ${UNICORN_COMMON_SRCS}
 )
 
-if (NOT MSVC)
+if (NOT MSVC AND NOT ANDROID_ABI)
     target_link_libraries(unicorn-common pthread)
 endif()
 
@@ -1112,10 +1130,14 @@ if(MSVC)
     set(SAMPLES_LIB
         unicorn
     )
-else()
+elseif(NOT ANDROID_ABI)
     set(SAMPLES_LIB
         unicorn
         pthread
+    )
+else()
+    set(SAMPLES_LIB
+        unicorn
     )
 endif()
 

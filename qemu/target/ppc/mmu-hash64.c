@@ -1172,7 +1172,9 @@ void ppc_hash64_init(PowerPCCPU *cpu)
     PowerPCCPUClass *pcc = POWERPC_CPU_GET_CLASS(cpu);
 
     if (!pcc->hash64_opts) {
+#ifndef NDEBUG
         assert(!(env->mmu_model & POWERPC_MMU_64));
+#endif
         return;
     }
 

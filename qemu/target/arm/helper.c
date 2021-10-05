@@ -6027,11 +6027,10 @@ static void define_debug_regs(ARMCPU *cpu)
     wrps = arm_num_wrps(cpu);
 #ifndef NDEBUG
     ctx_cmps = arm_num_ctx_cmps(cpu);
+    assert(ctx_cmps <= brps);
 #else
     arm_num_ctx_cmps(cpu);
 #endif
-
-    assert(ctx_cmps <= brps);
 
     define_one_arm_cp_reg(cpu, &dbgdidr);
     define_arm_cp_regs(cpu, debug_cp_reginfo);

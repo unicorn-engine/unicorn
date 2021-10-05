@@ -82,10 +82,8 @@ typedef enum {
 
 #define TCG_TARGET_NB_REGS 16
 
-#ifdef __ARM_ARCH_EXT_IDIV__
-#define use_idiv_instructions  1
-#else
-extern bool use_idiv_instructions;
+#ifndef __ARM_ARCH_EXT_IDIV__
+extern bool use_idiv_instructions;  // Unicorn: Don't have the same name with macro
 #endif
 
 
@@ -122,7 +120,11 @@ extern bool use_idiv_instructions;
 #define TCG_TARGET_HAS_muls2_i32        1
 #define TCG_TARGET_HAS_muluh_i32        0
 #define TCG_TARGET_HAS_mulsh_i32        0
+#ifdef __ARM_ARCH_EXT_IDIV__
+#define TCG_TARGET_HAS_div_i32          1
+#else
 #define TCG_TARGET_HAS_div_i32          use_idiv_instructions
+#endif
 #define TCG_TARGET_HAS_rem_i32          0
 #define TCG_TARGET_HAS_goto_ptr         1
 #define TCG_TARGET_HAS_direct_jump      0

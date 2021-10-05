@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _riscv32
 #endif
+#define use_idiv_instructions use_idiv_instructions_riscv32
 #define arm_arch arm_arch_riscv32
 #define tb_target_set_jmp_target tb_target_set_jmp_target_riscv32
 #define have_bmi1 have_bmi1_riscv32

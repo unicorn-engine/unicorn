@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _mipsel
 #endif
+#define use_idiv_instructions use_idiv_instructions_mipsel
 #define arm_arch arm_arch_mipsel
 #define tb_target_set_jmp_target tb_target_set_jmp_target_mipsel
 #define have_bmi1 have_bmi1_mipsel

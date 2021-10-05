@@ -963,10 +963,10 @@ static void tlb_fill(CPUState *cpu, target_ulong addr, int size,
      * should result in exception + longjmp to the cpu loop.
      */
     ok = cc->tlb_fill(cpu, addr, size, access_type, mmu_idx, false, retaddr);
+    assert(ok);
 #else
     cc->tlb_fill(cpu, addr, size, access_type, mmu_idx, false, retaddr);
 #endif
-    assert(ok);
 }
 
 static uint64_t io_readx(CPUArchState *env, CPUIOTLBEntry *iotlbentry,

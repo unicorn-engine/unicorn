@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _arm
 #endif
+#define use_idiv_instructions use_idiv_instructions_arm
 #define arm_arch arm_arch_arm
 #define tb_target_set_jmp_target tb_target_set_jmp_target_arm
 #define have_bmi1 have_bmi1_arm

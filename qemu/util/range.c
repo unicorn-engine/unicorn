@@ -68,10 +68,10 @@ GList *range_list_insert(GList *list, Range *data)
         g_free(l->next->data);
 #ifndef NDEBUG
         new_l = g_list_delete_link(list, l->next);
+        assert(new_l == list);
 #else
         g_list_delete_link(list, l->next);
 #endif
-        assert(new_l == list);
     }
 
     return list;

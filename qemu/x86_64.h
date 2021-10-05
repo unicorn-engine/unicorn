@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _x86_64
 #endif
+#define use_idiv_instructions use_idiv_instructions_x86_64
 #define arm_arch arm_arch_x86_64
 #define tb_target_set_jmp_target tb_target_set_jmp_target_x86_64
 #define have_bmi1 have_bmi1_x86_64
