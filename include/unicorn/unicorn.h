@@ -595,7 +595,8 @@ uc_err uc_emu_stop(uc_engine *uc);
    NOTE 1: the callback is called only if related address is in range [@begin, @end]
    NOTE 2: if @begin > @end, callback is called whenever this hook type is triggered
  @...: variable arguments (depending on @type)
-   NOTE: if @type = UC_HOOK_INSN, this is the instruction ID (ex: UC_X86_INS_OUT)
+   NOTE: if @type = UC_HOOK_INSN, this is the instruction ID.
+         currently, only x86 in, out, syscall, sysenter, cpuid are supported.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
