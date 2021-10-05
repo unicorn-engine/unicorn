@@ -1,10 +1,6 @@
 name: PyPI 📦 Distribution
 
-on:
-  push:
-    tags:
-      - "*"
-  workflow_dispatch:
+on: [push]
 
 jobs:
   build:
@@ -101,6 +97,7 @@ jobs:
   publish:
     needs: [build]
     runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags')
     steps:
       - uses: actions/download-artifact@v2
         with:
