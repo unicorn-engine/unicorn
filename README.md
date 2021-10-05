@@ -50,7 +50,7 @@ Contribute
 
 If you want to contribute, please pick up something from our [Github issues](https://github.com/unicorn-engine/unicorn/issues).
 
-We also maintain a list of more challenged problems in a [TODO list](https://github.com/unicorn-engine/unicorn/wiki/TODO).
+We also maintain a list of more challenged problems in [milestones](https://github.com/unicorn-engine/unicorn/milestones) for our regular release.
 
 [CREDITS.TXT](CREDITS.TXT) records important contributors of our project.
 
