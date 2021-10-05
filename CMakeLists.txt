@@ -388,6 +388,9 @@ else()
         -I${CMAKE_BINARY_DIR}/x86_64-softmmu
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/i386
     )
+
+    # Log and pow
+    target_link_libraries(x86_64-softmmu m)
 endif()
 endif()
 
