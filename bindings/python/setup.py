@@ -29,7 +29,7 @@ SRC_DIR = os.path.join(ROOT_DIR, 'src')
 UC_DIR = os.path.join(ROOT_DIR, '../..')
 BUILD_DIR = os.path.join(UC_DIR, 'build')
 
-VERSION = "2.0.0rc1"
+VERSION = "2.0.0rc2"
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
@@ -249,9 +249,9 @@ setup(
     ],
     requires=['ctypes'],
     cmdclass=cmdclass,
-    zip_safe=True,
+    zip_safe=False,
     include_package_data=True,
-    is_pure=True,
+    is_pure=False,
     package_data={
         'unicorn': ['lib/*', 'include/unicorn/*']
     }
