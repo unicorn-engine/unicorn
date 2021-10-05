@@ -70,12 +70,9 @@ def copy_sources():
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.[ch]")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.mk")))
 
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../Makefile")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../LICENSE*")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../README.md")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.TXT")))
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../RELEASE_NOTES")))
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../cmake.sh")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../CMakeLists.txt")))
 
     for filename in src:
