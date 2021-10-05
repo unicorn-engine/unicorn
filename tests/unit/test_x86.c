@@ -525,6 +525,31 @@ static void test_x86_sysenter() {
     OK(uc_close(uc));
 }
 
+static void test_x86_hook_cpuid_callback(uc_engine* uc, void* data) {
+    int reg = 7;
+
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &reg));
+}
+
+static void test_x86_hook_cpuid() {
+    uc_engine* uc;
+    char code[] = "\x40\x0F\xA2"; // INC EAX; CPUID
+    uc_hook h;
+    int reg;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &h, UC_HOOK_INSN, test_x86_hook_cpuid_callback, NULL, 1, 0, UC_X86_INS_CPUID));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &reg));
+
+    TEST_CHECK(reg == 7);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     { "test_x86_in", test_x86_in },
     { "test_x86_out", test_x86_out },
@@ -545,5 +570,6 @@ TEST_LIST = {
     { "test_x86_smc_xor", test_x86_smc_xor},
     { "test_x86_mmio_uc_mem_rw", test_x86_mmio_uc_mem_rw},
     { "test_x86_sysenter", test_x86_sysenter},
+    { "test_x86_hook_cpuid", test_x86_hook_cpuid},
     { NULL, NULL }
 };
