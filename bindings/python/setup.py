@@ -123,8 +123,7 @@ def build_libraries():
         if not os.path.exists(BUILD_DIR):
             os.mkdir(BUILD_DIR)
         
-        subprocess.call(['cmake', '-B', BUILD_DIR, '-G', "Visual Studio 16 2019", "-A", plat, f"-DCMAKE_BUILD_TYPE={conf}"])
-        print(BUILD_DIR)
+        subprocess.call(['cmake', '-B', BUILD_DIR, '-G', "Visual Studio 16 2019", "-A", plat, "-DCMAKE_BUILD_TYPE=" + conf])
         subprocess.call(['msbuild', 'unicorn.sln', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=BUILD_DIR)
 
         obj_dir = os.path.join(BUILD_DIR, conf)
