@@ -61,7 +61,6 @@ def _load_lib(path):
             _load_win_support(path)
 
         lib_file = os.path.join(path, _lib.get(sys.platform, 'libunicorn.so'))
-        #print('Trying to load shared library', lib_file)
         dll = ctypes.cdll.LoadLibrary(lib_file)
         #print('SUCCESS')
         return dll
@@ -101,8 +100,11 @@ __version__ = "%u.%u.%u" % (uc.UC_VERSION_MAJOR, uc.UC_VERSION_MINOR, uc.UC_VERS
 
 # setup all the function prototype
 def _setup_prototype(lib, fname, restype, *argtypes):
-    getattr(lib, fname).restype = restype
-    getattr(lib, fname).argtypes = argtypes
+    try:
+        getattr(lib, fname).restype = restype
+        getattr(lib, fname).argtypes = argtypes
+    except AttributeError:
+        raise ImportError("ERROR: Fail to setup some function prototypes. Make sure you have cleaned your unicorn1 installation.")
 
 ucerr = ctypes.c_int
 uc_mode = ctypes.c_int

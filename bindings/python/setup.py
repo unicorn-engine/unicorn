@@ -33,7 +33,6 @@ VERSION = "2.0.0rc1"
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
-    MAC_LIBRARY_FILE = "libunicorn*.dylib"
     STATIC_LIBRARY_FILE = None
 elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
@@ -123,46 +122,28 @@ def build_libraries():
         if not os.path.exists(BUILD_DIR):
             os.mkdir(BUILD_DIR)
         
-        subprocess.call(['cmake', '-B', BUILD_DIR, '-G', "Visual Studio 16 2019", "-A", plat, "-DCMAKE_BUILD_TYPE=" + conf])
-        subprocess.call(['msbuild', 'unicorn.sln', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=BUILD_DIR)
+        subprocess.check_call(['cmake', '-B', BUILD_DIR, '-G', "Visual Studio 16 2019", "-A", plat, "-DCMAKE_BUILD_TYPE=" + conf])
+        subprocess.check_call(['msbuild', 'unicorn.sln', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=BUILD_DIR)
 
         obj_dir = os.path.join(BUILD_DIR, conf)
         shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
         shutil.copy(os.path.join(obj_dir, STATIC_LIBRARY_FILE), LIBS_DIR)
     else:
         # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
-        new_env = dict(os.environ)
-        new_env['UNICORN_BUILD_CORE_ONLY'] = 'yes'
         if not os.path.exists(BUILD_DIR):
             os.mkdir(BUILD_DIR)
+        conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
+
+        subprocess.check_call(["cmake", '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf])
         os.chdir(BUILD_DIR)
-        cmd = ['sh', '../cmake.sh']
-        if SYSTEM == "cygwin":
-            if IS_64BITS:
-                cmd.append('cygwin-mingw64')
-            else:
-                cmd.append('cygwin-mingw32')
-        elif SYSTEM == "win32":
-            if IS_64BITS:
-                cmd.append('cross-win64')
-            else:
-                cmd.append('cross-win32')
-
-        subprocess.call(cmd, env=new_env)
-
-        if SYSTEM == 'darwin':
-            for file in glob.glob(MAC_LIBRARY_FILE):
-                try:
-                    shutil.copy(file, LIBS_DIR, follow_symlinks=False)
-                except:
-                    shutil.copy(file, LIBS_DIR)
-        else:
-            shutil.copy(LIBRARY_FILE, LIBS_DIR)
+        subprocess.check_call(["make", "-j4"])
+    
+        shutil.copy(LIBRARY_FILE, LIBS_DIR)
         try:
             # static library may fail to build on windows if user doesn't have visual studio installed. this is fine.
             if STATIC_LIBRARY_FILE is not None:
                 shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
-        except:
+        except FileNotFoundError:
             print('Warning: Could not build static library file! This build is not appropriate for a binary distribution')
             # enforce this
             if 'upload' in sys.argv:
