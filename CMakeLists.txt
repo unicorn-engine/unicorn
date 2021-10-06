@@ -1145,25 +1145,6 @@ else()
 endif()
 
 
-foreach(SAMPLE_FILE ${UNICORN_SAMPLE_FILE})
-    add_executable(${SAMPLE_FILE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/samples/${SAMPLE_FILE}.c
-    )
-    target_link_libraries(${SAMPLE_FILE}
-        ${SAMPLES_LIB}
-    )
-endforeach(SAMPLE_FILE)
-
-foreach(TEST_FILE ${UNICORN_TEST_FILE})
-    add_executable(${TEST_FILE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/${TEST_FILE}.c
-    )
-    target_link_libraries(${TEST_FILE}
-        ${SAMPLES_LIB}
-    )
-    add_test(${TEST_FILE} ${TEST_FILE})
-endforeach(TEST_FILE)
-
 if(UNICORN_FUZZ)
     set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_armbe;arm_thumb;arm64_arm;arm64_armbe;m68k_be;mips_32be;mips_32le;sparc_32be;x86_16;x86_32;x86_64")
     set(SAMPLES_LIB ${SAMPLES_LIB} rt)
@@ -1175,11 +1156,26 @@ if(UNICORN_FUZZ)
         target_link_libraries(fuzz_emu_${SUFFIX}
             ${SAMPLES_LIB}
         )
-        # oss-fuzz requires statically linked executables.
-        target_link_options(fuzz_emu_${SUFFIX} PRIVATE
-            -static
-        )
     endforeach()
+else()
+    foreach(SAMPLE_FILE ${UNICORN_SAMPLE_FILE})
+    add_executable(${SAMPLE_FILE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/samples/${SAMPLE_FILE}.c
+    )
+    target_link_libraries(${SAMPLE_FILE}
+        ${SAMPLES_LIB}
+    )
+    endforeach(SAMPLE_FILE)
+
+    foreach(TEST_FILE ${UNICORN_TEST_FILE})
+    add_executable(${TEST_FILE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/${TEST_FILE}.c
+    )
+    target_link_libraries(${TEST_FILE}
+        ${SAMPLES_LIB}
+    )
+    add_test(${TEST_FILE} ${TEST_FILE})
+    endforeach(TEST_FILE)
 endif()
 
 if(NOT MSVC)
