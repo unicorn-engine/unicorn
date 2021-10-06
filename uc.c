@@ -339,6 +339,11 @@ uc_err uc_close(uc_engine *uc)
     /* cpu */
     free(uc->cpu);
 
+    /* flatviews */
+    g_hash_table_destroy(uc->flat_views);
+    
+    // During flatviews destruction, we may still access memory regions.
+    // So we free them afterwards.
     /* memory */
     mr = &uc->io_mem_unassigned;
     mr->destructor(mr);
@@ -347,10 +352,7 @@ uc_err uc_close(uc_engine *uc)
     mr = uc->system_memory;
     mr->destructor(mr);
     g_free(uc->system_memory);
-    //g_free(uc->system_io);
-
-    /* flatviews */
-    g_hash_table_destroy(uc->flat_views);
+    g_free(uc->system_io);
 
     // Thread relateds.
     if (uc->qemu_thread_data) {
