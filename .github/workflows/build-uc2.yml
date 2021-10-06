@@ -1,5 +1,20 @@
 name: Build UC2
-on: [push, pull_request]
+on: 
+  push:
+    tags-ignore:
+      - "*"
+    paths-ignore:
+      - ".github/**"
+      - ".gitignore"
+      - "docs/**"
+      - "README"
+      - "CREDITS.TXT"
+      - "COPYING_GLIB"
+      - "COPYING.LGPL2"
+      - "AUTHORS.TXT"
+      - "CHANGELOG"
+      - "COPYING"
+
 env:
   CI: true
 
