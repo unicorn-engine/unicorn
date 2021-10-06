@@ -618,8 +618,8 @@ fn x86_context_save_and_restore() {
         let x86_code: Vec<u8> = vec![
             0x48, 0xB8, 0xEF, 0xBE, 0xAD, 0xDE, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x05,
         ];
-        let mut unicorn = unicorn::Unicorn::new(Arch::X86, mode)
-            .expect("failed to initialize unicorn instance");
+        let mut unicorn =
+            unicorn::Unicorn::new(Arch::X86, mode).expect("failed to initialize unicorn instance");
         let mut emu = unicorn.borrow();
         assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
         assert_eq!(emu.mem_write(0x1000, &x86_code), Ok(()));
@@ -635,8 +635,8 @@ fn x86_context_save_and_restore() {
         let context = context.unwrap();
 
         /* and create a new emulator, into which we will "restore" that context */
-        let mut unicorn2 = unicorn::Unicorn::new(Arch::X86, mode)
-            .expect("failed to initialize unicorn instance");
+        let mut unicorn2 =
+            unicorn::Unicorn::new(Arch::X86, mode).expect("failed to initialize unicorn instance");
         let emu2 = unicorn2.borrow();
         assert_eq!(emu2.context_restore(&context), Ok(()));
         for register in X86_REGISTERS.iter() {
