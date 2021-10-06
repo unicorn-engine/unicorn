@@ -1141,6 +1141,7 @@ else()
     )
 endif()
 
+
 foreach(SAMPLE_FILE ${UNICORN_SAMPLE_FILE})
     add_executable(${SAMPLE_FILE}
         ${CMAKE_CURRENT_SOURCE_DIR}/samples/${SAMPLE_FILE}.c
@@ -1160,6 +1161,19 @@ foreach(TEST_FILE ${UNICORN_TEST_FILE})
     add_test(${TEST_FILE} ${TEST_FILE})
 endforeach(TEST_FILE)
 
+if(UNICORN_FUZZ)
+    set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_armbe;arm_thumb;arm64_arm;arm64_armbe;m68k_be;mips_32be;mips_32le;sparc_32be;x86_16;x86_32;x86_64")
+    set(SAMPLES_LIB ${SAMPLES_LIB} rt)
+    foreach(SUFFIX ${UNICORN_FUZZ_SUFFIX})
+        add_executable(fuzz_emu_${SUFFIX}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/fuzz/fuzz_emu_${SUFFIX}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/fuzz/onedir.c
+        )
+        target_link_libraries(fuzz_emu_${SUFFIX}
+            ${SAMPLES_LIB}
+        )
+    endforeach()
+endif()
 
 if(NOT MSVC)
     include("GNUInstallDirs")
