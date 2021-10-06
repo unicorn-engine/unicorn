@@ -1172,6 +1172,10 @@ if(UNICORN_FUZZ)
         target_link_libraries(fuzz_emu_${SUFFIX}
             ${SAMPLES_LIB}
         )
+        # oss-fuzz requires statically linked executables.
+        target_link_options(fuzz_emu_${SUFFIX} PRIVATE
+            -static
+        )
     endforeach()
 endif()
 
