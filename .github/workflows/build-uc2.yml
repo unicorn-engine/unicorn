@@ -1,19 +1,5 @@
 name: Build UC2
-on: 
-  push:
-    tags-ignore:
-      - "*"
-    paths-ignore:
-      - ".github/**"
-      - ".gitignore"
-      - "docs/**"
-      - "README"
-      - "CREDITS.TXT"
-      - "COPYING_GLIB"
-      - "COPYING.LGPL2"
-      - "AUTHORS.TXT"
-      - "CHANGELOG"
-      - "COPYING"
+on: [push, pull_request]
 
 env:
   CI: true
@@ -21,7 +7,7 @@ env:
 jobs:
   Windows:
     runs-on: ${{ matrix.config.os }}
-    name: ${{ matrix.config.name }} - ${{ matrix.compiler }}
+    name: ${{ matrix.config.name }}
     strategy:
       fail-fast: false
       matrix:
@@ -64,14 +50,21 @@ jobs:
               archiver: '7z a',
               generators: 'Visual Studio 16 2019'
             }
+          - { 
+              os: windows-latest,
+              arch: x86,
+              python-arch: x86,
+              python-ver: '3.8',
+              name: 'windows-x86 MSVC 32bit',
+              msvc-arch: x86,
+              artifact: 'windows_msvc32.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Visual Studio 16 2019'
+            }
         compiler: [ gcc ]
     steps:
     - uses: actions/checkout@v2
-
-    # - name: '🛠️ Python setup'
-      # uses: actions/setup-python@v2
-      # with:
-        # python-version: ${{ matrix.config.python-ver }}
 
     - name: '🛠️ Win MINGW setup'
       if: contains(matrix.config.mingw, 'MINGW')
@@ -86,12 +79,12 @@ jobs:
           mingw-w64-${{ matrix.config.mingw-arch }}-${{ matrix.compiler }}
           mingw-w64-${{ matrix.config.mingw-arch }}-toolchain
 
-    - name: '🛠️ Win MSVC setup'
-      if: contains(matrix.config.name, 'MSVC')
+    - name: '🛠️ Win MSVC 64 setup'
+      if: contains(matrix.config.name, 'MSVC 64')
       uses: microsoft/setup-msbuild@v1
 
-    - name: '🚧 Win MSVC build'
-      if: contains(matrix.config.name, 'MSVC')
+    - name: '🚧 Win MSVC 64 build'
+      if: contains(matrix.config.name, 'MSVC 64')
       shell: bash
       run: |
         choco install ninja cmake
@@ -101,6 +94,32 @@ jobs:
         cmake \
           -S . \
           -B . \
+          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+          -G "${{ matrix.config.generators }}" \
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+        cmake --build . --config ${{ matrix.config.build_type }}
+        cmake --install . --strip --config ${{ matrix.config.build_type }}
+        ctest -C ${{ matrix.config.build_type }}
+        mv Debug instdir
+
+    - name: '🛠️ Win MSVC 32 setup'
+      if: contains(matrix.config.name, 'MSVC 32')
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x86
+
+    - name: '🚧 Win MSVC 32 build'
+      if: contains(matrix.config.name, 'MSVC 32')
+      shell: bash
+      run: |
+        choco install ninja cmake
+        ninja --version
+        cmake --version
+        mkdir build
+        cmake \
+          -S . \
+          -B . \
+          -A "win32" \
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -G "${{ matrix.config.generators }}" \
           -DCMAKE_INSTALL_PREFIX:PATH=instdir
@@ -166,6 +185,17 @@ jobs:
               archiver: '7za a',
               generators: 'Ninja'
             }
+          - { 
+              os: macos-11,
+              arch: x86_64,
+              python-arch: x86_64,
+              python-ver: '3.8',
+              name: 'android cmake',
+              artifact: 'Android-x86_64.7z',
+              build_type: 'Debug',
+              archiver: '7za a',
+              generators: 'Ninja'
+            }
         compiler: [ gcc ]
     steps:
     - uses: actions/checkout@v2
@@ -176,24 +206,56 @@ jobs:
         # python-version: ${{ matrix.config.python-ver }}
 
     - name: '🚧 Mac build'
-      if: contains(matrix.config.os, 'macos')
+      if: contains(matrix.config.name, 'macos-x64')
       shell: bash
       run: |
-          brew install p7zip cmake ninja
-          ninja --version
-          cmake --version
-          mkdir build
-          mkdir instdir
-          cmake \
-            -S . \
-            -B . \
-            -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
-            -G "${{ matrix.config.generators }}" \
-            -DCMAKE_INSTALL_PREFIX:PATH=instdir
-          cmake --build . --config ${{ matrix.config.build_type }}
-          cmake --install . --strip
-          ctest -C ${{ matrix.config.build_type }}
+        brew install p7zip cmake ninja
+        ninja --version
+        cmake --version
+        mkdir build
+        mkdir instdir
+        cmake \
+          -S . \
+          -B . \
+          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+          -G "${{ matrix.config.generators }}" \
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+        cmake --build . --config ${{ matrix.config.build_type }}
+        cmake --install . --strip
+        ctest -C ${{ matrix.config.build_type }}
   
+    - name: '🚧 Android x86_64 build'
+      if: contains(matrix.config.name, 'android')
+      shell: bash
+      run: |
+        brew install p7zip cmake ninja
+        mkdir build
+        mkdir instdir
+        cmake . -DCMAKE_TOOLCHAIN_FILE="$ANDROID_HOME/ndk/21.4.7075529/build/cmake/android.toolchain.cmake" \
+        	-DANDROID_PLATFORM=android-28 \
+          -DANDROID_NDK="$ANDROID_HOME/ndk/21.4.7075529" \
+          -DANDROID_ABI=${{ matrix.config.arch }} \
+          -DOLP_SDK_ENABLE_TESTING=NO \
+          -DOLP_SDK_BUILD_EXAMPLES=ON \
+          -S . \
+          -B . \
+          -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
+          -G "${{ matrix.config.generators }}" \
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+        cmake --build . --config ${{ matrix.config.build_type }}
+        cmake --install . --strip
+
+    - name: '🚧 Android x86_64 tests'
+      if: contains(matrix.config.name, 'android')
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 28
+        arch: ${{ matrix.config.arch }}
+        target: default
+        profile: Nexus 6
+        emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -verbose -show-kernel
+        script: ctest -C ${{ matrix.config.build_type }}
+
     - name: '📦 Pack artifact'
       shell: bash
       working-directory: instdir

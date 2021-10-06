@@ -1,6 +1,19 @@
 name: PyPI 📦 Distribution
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - ".github/**"
+      - ".gitignore"
+      - "docs/**"
+      - "README"
+      - "CREDITS.TXT"
+      - "COPYING_GLIB"
+      - "COPYING.LGPL2"
+      - "AUTHORS.TXT"
+      - "CHANGELOG"
+      - "COPYING"
+  pull_request:
 
 jobs:
   build:
