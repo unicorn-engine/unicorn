@@ -203,6 +203,9 @@ else()
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS} --target=${CMAKE_C_COMPILER_TARGET}")
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS} --sysroot=${CMAKE_SYSROOT}")
     endif()
+    if (UNICORN_FUZZ)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS} ${CMAKE_C_FLAGS}")
+    endif()
 
     set(TARGET_LIST "--target-list=")
     if (UNICORN_HAS_X86)
@@ -1166,7 +1169,7 @@ if(UNICORN_FUZZ)
     set(SAMPLES_LIB ${SAMPLES_LIB} rt)
     foreach(SUFFIX ${UNICORN_FUZZ_SUFFIX})
         add_executable(fuzz_emu_${SUFFIX}
-            ${CMAKE_CURRENT_SOURCE_DIR}/tests/fuzz/fuzz_emu_${SUFFIX}
+            ${CMAKE_CURRENT_SOURCE_DIR}/tests/fuzz/fuzz_emu_${SUFFIX}.c
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/fuzz/onedir.c
         )
         target_link_libraries(fuzz_emu_${SUFFIX}
