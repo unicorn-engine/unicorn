@@ -155,7 +155,7 @@ struct uc_struct;
  * All supported versions of Glib's g_assert() satisfy this requirement.
  */
 // Unfortunately, NDK also has this problem.
-#if defined(__MINGW32__ ) || defined(__ANDROID__)
+#if defined(__MINGW32__ ) || defined(__ANDROID__) || defined(__i386__)
 #undef assert
 #define assert(x)  g_assert(x)
 #endif
