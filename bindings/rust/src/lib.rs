@@ -138,7 +138,6 @@ impl std::fmt::Debug for UnicornInner {
 }
 
 impl<'a> UnicornHandle<'a> {
-
     /// Return the architecture of the current emulator.
     pub fn get_arch(&self) -> Arch {
         self.inner.arch

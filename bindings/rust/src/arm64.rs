@@ -305,7 +305,6 @@ pub enum RegisterARM64 {
     VBAR_EL2 = 288,
     VBAR_EL3 = 289,
     ENDING = 290,
-
     // alias registers
     // (assoc) IP0 = 215,
     // (assoc) IP1 = 216,

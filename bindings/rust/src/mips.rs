@@ -156,7 +156,6 @@ pub enum RegisterMIPS {
     CP0_CONFIG3 = 137,
     CP0_USERLOCAL = 138,
     ENDING = 139,
-
     // alias registers
     // (assoc) ZERO = 2,
     // (assoc) AT = 3,
