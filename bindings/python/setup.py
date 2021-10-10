@@ -133,7 +133,8 @@ def build_libraries():
 
         subprocess.check_call(["cmake", '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf])
         os.chdir(BUILD_DIR)
-        subprocess.check_call(["make", "-j4"])
+        threads = os.getenv("THREADS", "4")
+        subprocess.check_call(["make", "-j" + threads])
     
         shutil.copy(LIBRARY_FILE, LIBS_DIR)
         try:
