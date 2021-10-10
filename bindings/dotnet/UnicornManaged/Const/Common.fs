@@ -12,8 +12,7 @@ module Common =
     let UC_VERSION_MAJOR = 2
 
     let UC_VERSION_MINOR = 0
-
-    let UC_VERSION_EXTRA = 0
+    let UC_VERSION_EXTRA = 2
     let UC_SECOND_SCALE = 1000000
     let UC_MILISECOND_SCALE = 1000
     let UC_ARCH_ARM = 1

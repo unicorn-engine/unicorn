@@ -71,7 +71,7 @@ uninstall:
 	rm $(JAVA_HOME)/lib/ext/$(JARFILE)
 
 gen_const:
-	cd .. && python const_generator.py java
+	cd .. && make tmp_headers && python const_generator.py java
 
 clean:
 	rm unicorn/*.class

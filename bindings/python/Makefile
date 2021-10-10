@@ -3,7 +3,7 @@
 .PHONY: gen_const install install3 clean sdist sdist3 bdist bdist3 sdist_win bdist_win
 
 gen_const:
-	cd .. && python const_generator.py python
+	cd .. && make tmp_headers && python const_generator.py python
 
 install:
 	rm -rf src/ dist/

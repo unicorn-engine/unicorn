@@ -1,4 +1,11 @@
 #!/usr/bin/python
+"""
+This script allows to generate the contents of arm_cpreg.h and arm64_preg.h
+
+Usage example :
+    ./arm64_list_coprocregs | python ../utils/gen_arm_cpregs.py 1
+    ./arm_list_coprocregs | python ../utils/gen_arm_cpregs.py 0
+"""
 
 import os
 import sys
@@ -86,9 +93,12 @@ COPROC_REGS_IGNORE.append({'reg_name': 'MIDR', 'cp': 15, 'CRn': 0, 'CRm': 0, 'op
 COPROC_REGS_IGNORE.append({'reg_name': 'NZCV', 'cp': 19, 'CRn': 4, 'CRm': 2, 'opc0': 3, 'opc1': 3, 'opc2': 0})
 
 # Add a mask specific to unicorn to make the distinction with others enums of uc_arm64_reg and uc_arm_reg
-UNICORN_COPREG_MASK = (1 << 31)
+UNICORN_CPREGS_MASK = (1 << 31)
 
 def get_max_reg_name_len(objs):
+    """
+    Return the size of the longest register name.
+    """
 
     max_len = 0
 
@@ -101,17 +111,26 @@ def get_max_reg_name_len(objs):
 
 
 def gen_enum(objs, is_arm64):
+    """
+    Generate the header file content.
+    """
 
     max_reg_name_len = get_max_reg_name_len(objs) + 4
     if is_arm64:
         prefix = "ARM64_"
+        gen_cmd_note = "./arm64_list_coprocregs | python ../utils/gen_arm_cpregs.py 1"
     else:
         prefix = "ARM_"
+        gen_cmd_note = "./arm_list_coprocregs | python ../utils/gen_arm_cpregs.py 0"
+
     s = """
 /* Autogen header for Unicorn Engine - DONOT MODIFY */
+/* The content of this file can be regenerated with : */
+/* %s */
+
 #ifndef UNICORN_%s_CPREG_H
 #define UNICORN_%s_CPREG_H
-""" % (prefix,prefix)
+""" % (gen_cmd_note, prefix, prefix)
 
     prefix = "UC_"+prefix
 
@@ -135,6 +154,9 @@ def gen_enum(objs, is_arm64):
 
 
 def need_ignore(entry):
+    """
+    Check if the entry should be ignored
+    """
 
     if entry["reg_name"] in COPROC_REGS_IGNORE_NAME:
         return True
@@ -152,10 +174,15 @@ def need_ignore(entry):
             entry["reg_name"] = reg["reg_name"]
 
             return True
+
     return False
 
 
 def try_patching_reg_name(entry):
+    """
+    Check if the name of the entry should be
+    changed.
+    """
 
     for reg in COPROC_REGS:
 
@@ -172,6 +199,9 @@ def try_patching_reg_name(entry):
             return reg
 
 def parse_registers(data, is_arm64):
+    """
+    Parses the cpregs list.
+    """
 
     results = OrderedDict()
 
@@ -191,7 +221,7 @@ def parse_registers(data, is_arm64):
         entry["opc1"] = int(fields[5])
         entry["opc2"] = int(fields[6])
         regid = int(fields[7], 0x10)
-        entry["regid"] = regid | UNICORN_COPREG_MASK
+        entry["regid"] = regid | UNICORN_CPREGS_MASK
 
         if need_ignore(entry):
             continue
@@ -208,7 +238,7 @@ def parse_registers(data, is_arm64):
 
 def filter_registers(entries):
     """
-    Check if they are duplicate and apply specifics behaviour for some of them
+    Check if they are duplicates and apply specific behaviour for some of them.
     """
 
     filtered_dict = OrderedDict()
@@ -239,7 +269,7 @@ def filter_registers(entries):
         filtered_dict[key] = entry_to_keep
 
     if has_duplicates:
-        print("** WARNING : Please fix duplicates reg entries **")
+        print("** WARNING : Please fix duplicates regs entries **")
         exit(-1)
 
     filtered_dict = OrderedDict(sorted(filtered_dict.items()))

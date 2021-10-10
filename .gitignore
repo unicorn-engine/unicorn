@@ -69,6 +69,7 @@ bindings/python/unicorn/include/
 bindings/python/MANIFEST
 bindings/rust/target/
 bindings/rust/Cargo.lock
+bindings/tmp/
 config.log
 
 

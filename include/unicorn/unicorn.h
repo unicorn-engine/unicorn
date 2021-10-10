@@ -67,14 +67,18 @@ typedef size_t uc_hook;
 #endif
 
 // Unicorn API version
-#define UC_API_MAJOR 2
-#define UC_API_MINOR 0
+typedef enum {
+    UC_API_MAJOR = 2,
+    UC_API_MINOR = 0,
+} uc_api_info;
 
 // Unicorn package version
-#define UC_VERSION_MAJOR UC_API_MAJOR
-#define UC_VERSION_MINOR UC_API_MINOR
-#define UC_VERSION_EXTRA 0
 
+typedef enum {
+    UC_VERSION_MAJOR =  UC_API_MAJOR,
+    UC_VERSION_MINOR =  UC_API_MINOR,
+    UC_VERSION_EXTRA =  2,
+} uc_version_info;
 
 /*
   Macro to create combined version which can be compared to
@@ -82,11 +86,14 @@ typedef size_t uc_hook;
 */
 #define UC_MAKE_VERSION(major, minor) ((major << 8) + minor)
 
-// Scales to calculate timeout on microsecond unit
-// 1 second = 1000,000 microseconds
-#define UC_SECOND_SCALE 1000000
-// 1 milisecond = 1000 nanoseconds
-#define UC_MILISECOND_SCALE 1000
+typedef enum {
+    // Scales to calculate timeout on microsecond unit
+    // 1 second = 1000,000 microseconds
+    UC_SECOND_SCALE = 1000000,
+    // 1 milisecond = 1000 nanoseconds
+    UC_MILISECOND_SCALE = 1000,
+} uc_time_scale;
+
 
 // Architecture type
 typedef enum uc_arch {
@@ -285,24 +292,25 @@ typedef enum uc_hook_type {
     UC_HOOK_MEM_READ_AFTER = 1 << 13,
     // Hook invalid instructions exceptions.
     UC_HOOK_INSN_INVALID = 1 << 14,
+  
+   // Hook type for all events of unmapped memory access
+    UC_HOOK_MEM_UNMAPPED = (UC_HOOK_MEM_READ_UNMAPPED + UC_HOOK_MEM_WRITE_UNMAPPED + UC_HOOK_MEM_FETCH_UNMAPPED),
+    // Hook type for all events of illegal protected memory access
+    UC_HOOK_MEM_PROT = (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_FETCH_PROT),
+    // Hook type for all events of illegal read memory access
+    UC_HOOK_MEM_READ_INVALID = (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_READ_UNMAPPED),
+    // Hook type for all events of illegal write memory access
+    UC_HOOK_MEM_WRITE_INVALID = (UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_WRITE_UNMAPPED),
+    // Hook type for all events of illegal fetch memory access
+    UC_HOOK_MEM_FETCH_INVALID = (UC_HOOK_MEM_FETCH_PROT + UC_HOOK_MEM_FETCH_UNMAPPED),
+    // Hook type for all events of illegal memory access
+    UC_HOOK_MEM_INVALID = (UC_HOOK_MEM_UNMAPPED + UC_HOOK_MEM_PROT),
+    // Hook type for all events of valid memory access
+    // NOTE: UC_HOOK_MEM_READ is triggered before UC_HOOK_MEM_READ_PROT and UC_HOOK_MEM_READ_UNMAPPED, so
+    //       this hook may technically trigger on some invalid reads. 
+    UC_HOOK_MEM_VALID = (UC_HOOK_MEM_READ + UC_HOOK_MEM_WRITE + UC_HOOK_MEM_FETCH),
 } uc_hook_type;
 
-// Hook type for all events of unmapped memory access
-#define UC_HOOK_MEM_UNMAPPED (UC_HOOK_MEM_READ_UNMAPPED + UC_HOOK_MEM_WRITE_UNMAPPED + UC_HOOK_MEM_FETCH_UNMAPPED)
-// Hook type for all events of illegal protected memory access
-#define UC_HOOK_MEM_PROT (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_FETCH_PROT)
-// Hook type for all events of illegal read memory access
-#define UC_HOOK_MEM_READ_INVALID (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_READ_UNMAPPED)
-// Hook type for all events of illegal write memory access
-#define UC_HOOK_MEM_WRITE_INVALID (UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_WRITE_UNMAPPED)
-// Hook type for all events of illegal fetch memory access
-#define UC_HOOK_MEM_FETCH_INVALID (UC_HOOK_MEM_FETCH_PROT + UC_HOOK_MEM_FETCH_UNMAPPED)
-// Hook type for all events of illegal memory access
-#define UC_HOOK_MEM_INVALID (UC_HOOK_MEM_UNMAPPED + UC_HOOK_MEM_PROT)
-// Hook type for all events of valid memory access
-// NOTE: UC_HOOK_MEM_READ is triggered before UC_HOOK_MEM_READ_PROT and UC_HOOK_MEM_READ_UNMAPPED, so
-//       this hook may technically trigger on some invalid reads. 
-#define UC_HOOK_MEM_VALID (UC_HOOK_MEM_READ + UC_HOOK_MEM_WRITE + UC_HOOK_MEM_FETCH)
 
 /*
   Callback function for hooking memory (READ, WRITE & FETCH)
