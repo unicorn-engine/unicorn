@@ -236,6 +236,33 @@ static void test_arm_m_exc_return() {
     OK(uc_close(uc));
 }
 
+
+static void test_arm_copregs() {
+    uc_engine* uc;
+    int val1= 0,val2 =0;
+
+    /*
+    mov r1, 1
+    LSL R1,R1,31
+    MCR p15, 0, R1, c9, c12, 1 (UC_ARM_REG_PMCNTENSET)
+    MRC p15, 0, R1, c9, c12, 5 (UC_ARM_REG_PMSELR)
+    */
+    char code[] = "\x01\x10\xa0\xe3\x81\x1f\xa0\xe1\x3c\x1f\x09\xee";
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) );
+    
+    val1= 0x42;
+    OK(uc_reg_write(uc, UC_ARM_REG_PMSELR, &val1));
+    OK(uc_emu_start(uc, code_start , code_start + sizeof(code) -1 , 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_PMCNTENSET, &val1));
+    TEST_CHECK(val1 == 0x80000000);
+   
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &val2));
+    TEST_CHECK(val1 == val2);
+
+}
+
 TEST_LIST = {
     { "test_arm_nop", test_arm_nop },
     { "test_arm_thumb_sub", test_arm_thumb_sub },
@@ -245,5 +272,7 @@ TEST_LIST = {
     { "test_arm_m_thumb_mrs", test_arm_m_thumb_mrs },
     { "test_arm_m_control", test_arm_m_control },
     { "test_arm_m_exc_return", test_arm_m_exc_return },
+    { "test_arm_copregs", test_arm_copregs },
+    
     { NULL, NULL }
 };

@@ -1917,6 +1917,7 @@ arm_debug_check_watchpoint \
 arm_debug_excp_handler \
 arm_adjust_watchpoint_address \
 read_raw_cp_reg \
+write_raw_cp_reg \
 pmu_init \
 pmu_op_start \
 pmu_op_finish \
@@ -2702,6 +2703,7 @@ helper_exception_return \
 helper_sqrt_f16 \
 helper_dc_zva \
 read_raw_cp_reg \
+write_raw_cp_reg \
 pmu_init \
 pmu_op_start \
 pmu_op_finish \

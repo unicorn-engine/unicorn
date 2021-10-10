@@ -2725,6 +2725,9 @@ static inline bool cp_access_ok(int current_el,
 /* Raw read of a coprocessor register (as needed for migration, etc) */
 uint64_t read_raw_cp_reg(CPUARMState *env, const ARMCPRegInfo *ri);
 
+/* Raw write of a coprocessor register (as needed for migration, etc) */
+void write_raw_cp_reg(CPUARMState *env, const ARMCPRegInfo *ri, uint64_t v);
+
 /**
  * write_list_to_cpustate
  * @cpu: ARMCPU

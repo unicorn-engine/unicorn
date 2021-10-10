@@ -1379,6 +1379,7 @@
 #define helper_sqrt_f16 helper_sqrt_f16_aarch64eb
 #define helper_dc_zva helper_dc_zva_aarch64eb
 #define read_raw_cp_reg read_raw_cp_reg_aarch64eb
+#define write_raw_cp_reg write_raw_cp_reg_aarch64eb
 #define pmu_init pmu_init_aarch64eb
 #define pmu_op_start pmu_op_start_aarch64eb
 #define pmu_op_finish pmu_op_finish_aarch64eb

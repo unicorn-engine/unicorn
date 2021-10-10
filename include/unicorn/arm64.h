@@ -7,6 +7,8 @@
 #ifndef UNICORN_ARM64_H
 #define UNICORN_ARM64_H
 
+#include "arm64_cpreg.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -285,47 +287,7 @@ typedef enum uc_arm64_reg {
 
     UC_ARM64_REG_CPACR_EL1,
 
-    //> thread registers
-    UC_ARM64_REG_TPIDR_EL0,
-    UC_ARM64_REG_TPIDRRO_EL0,
-    UC_ARM64_REG_TPIDR_EL1,
-
     UC_ARM64_REG_PSTATE,
-
-    //> exception link registers
-    UC_ARM64_REG_ELR_EL0,
-    UC_ARM64_REG_ELR_EL1,
-    UC_ARM64_REG_ELR_EL2,
-    UC_ARM64_REG_ELR_EL3,
-
-    //> stack pointers registers
-    UC_ARM64_REG_SP_EL0,
-    UC_ARM64_REG_SP_EL1,
-    UC_ARM64_REG_SP_EL2,
-    UC_ARM64_REG_SP_EL3,
-
-    //> other CP15 registers
-    UC_ARM64_REG_TTBR0_EL1,
-    UC_ARM64_REG_TTBR1_EL1,
-
-    UC_ARM64_REG_ESR_EL0,
-    UC_ARM64_REG_ESR_EL1,
-    UC_ARM64_REG_ESR_EL2,
-    UC_ARM64_REG_ESR_EL3,
-
-    UC_ARM64_REG_FAR_EL0,
-    UC_ARM64_REG_FAR_EL1,
-    UC_ARM64_REG_FAR_EL2,
-    UC_ARM64_REG_FAR_EL3,
-
-    UC_ARM64_REG_PAR_EL1,
-
-    UC_ARM64_REG_MAIR_EL1,
-
-    UC_ARM64_REG_VBAR_EL0,
-    UC_ARM64_REG_VBAR_EL1,
-    UC_ARM64_REG_VBAR_EL2,
-    UC_ARM64_REG_VBAR_EL3,
 
     UC_ARM64_REG_ENDING,		// <-- mark the end of the list of registers
 
@@ -335,6 +297,12 @@ typedef enum uc_arm64_reg {
     UC_ARM64_REG_IP1 = UC_ARM64_REG_X17,
     UC_ARM64_REG_FP = UC_ARM64_REG_X29,
     UC_ARM64_REG_LR = UC_ARM64_REG_X30,
+
+    //> CP registers
+    UC_ARM64_CPREG_LIST       // C macro, see arm64_cpgreg.h
+
+    UC_ARM64_REG_VBAR_EL1 = UC_ARM64_REG_VBAR,
+
 } uc_arm64_reg;
 
 #ifdef __cplusplus

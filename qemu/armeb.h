@@ -1307,6 +1307,7 @@
 #define arm_debug_excp_handler arm_debug_excp_handler_armeb
 #define arm_adjust_watchpoint_address arm_adjust_watchpoint_address_armeb
 #define read_raw_cp_reg read_raw_cp_reg_armeb
+#define write_raw_cp_reg write_raw_cp_reg_armeb
 #define pmu_init pmu_init_armeb
 #define pmu_op_start pmu_op_start_armeb
 #define pmu_op_finish pmu_op_finish_armeb

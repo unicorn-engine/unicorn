@@ -110,31 +110,9 @@ static void reg_read(CPUARMState *env, unsigned int regid, void *value)
         *(int16_t*)value = READ_WORD(env->vfp.zregs[regid - UC_ARM64_REG_H0].d[0]);
     } else if (regid >= UC_ARM64_REG_B0 && regid <= UC_ARM64_REG_B31) {
         *(int8_t*)value = READ_BYTE_L(env->vfp.zregs[regid - UC_ARM64_REG_B0].d[0]);
-    } else if (regid >= UC_ARM64_REG_ELR_EL0 && regid <= UC_ARM64_REG_ELR_EL3) {
-        *(uint64_t*)value = env->elr_el[regid - UC_ARM64_REG_ELR_EL0];
-    } else if (regid >= UC_ARM64_REG_SP_EL0 && regid <= UC_ARM64_REG_SP_EL3) {
-        *(uint64_t*)value = env->sp_el[regid - UC_ARM64_REG_SP_EL0];
-    } else if (regid >= UC_ARM64_REG_ESR_EL0 && regid <= UC_ARM64_REG_ESR_EL3) {
-        *(uint64_t*)value = env->cp15.esr_el[regid - UC_ARM64_REG_ESR_EL0];
-    } else if (regid >= UC_ARM64_REG_FAR_EL0 && regid <= UC_ARM64_REG_FAR_EL3) {
-        *(uint64_t*)value = env->cp15.far_el[regid - UC_ARM64_REG_FAR_EL0];
-    } else if (regid >= UC_ARM64_REG_VBAR_EL0 && regid <= UC_ARM64_REG_VBAR_EL3) {
-        *(uint64_t*)value = env->cp15.vbar_el[regid - UC_ARM64_REG_VBAR_EL0];
     } else {
         switch(regid) {
             default: break;
-            case UC_ARM64_REG_CPACR_EL1:
-                // *(uint32_t *)value = env->cp15.c1_coproc;
-                break;
-            case UC_ARM64_REG_TPIDR_EL0:
-                // *(int64_t *)value = env->cp15.tpidr_el0;
-                break;
-            case UC_ARM64_REG_TPIDRRO_EL0:
-                // *(int64_t *)value = env->cp15.tpidrro_el0;
-                break;
-            case UC_ARM64_REG_TPIDR_EL1:
-                // *(int64_t *)value = env->cp15.tpidr_el1;
-                break;
             case UC_ARM64_REG_X29:
                 *(int64_t *)value = env->xregs[29];
                 break;
@@ -152,18 +130,6 @@ static void reg_read(CPUARMState *env, unsigned int regid, void *value)
                 break;
             case UC_ARM64_REG_PSTATE:
                 *(uint32_t *)value = pstate_read(env);
-                break;
-            case UC_ARM64_REG_TTBR0_EL1:
-                // *(uint64_t *)value = env->cp15.ttbr0_el1;
-                break;
-            case UC_ARM64_REG_TTBR1_EL1:
-                // *(uint64_t *)value = env->cp15.ttbr1_el1;
-                break;
-            case UC_ARM64_REG_PAR_EL1:
-                // *(uint64_t *)value = env->cp15.par_el1;
-                break;
-            case UC_ARM64_REG_MAIR_EL1:
-                // *(uint64_t *)value = env->cp15.mair_el1;
                 break;
         }
     }
@@ -193,31 +159,9 @@ static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
         WRITE_WORD(env->vfp.zregs[regid - UC_ARM64_REG_H0].d[0], *(int16_t*) value);
     } else if (regid >= UC_ARM64_REG_B0 && regid <= UC_ARM64_REG_B31) {
         WRITE_BYTE_L(env->vfp.zregs[regid - UC_ARM64_REG_B0].d[0], *(int8_t*) value);
-    } else if (regid >= UC_ARM64_REG_ELR_EL0 && regid <= UC_ARM64_REG_ELR_EL3) {
-        env->elr_el[regid - UC_ARM64_REG_ELR_EL0] = *(uint64_t*)value;
-    } else if (regid >= UC_ARM64_REG_SP_EL0 && regid <= UC_ARM64_REG_SP_EL3) {
-        env->sp_el[regid - UC_ARM64_REG_SP_EL0] = *(uint64_t*)value;
-    } else if (regid >= UC_ARM64_REG_ESR_EL0 && regid <= UC_ARM64_REG_ESR_EL3) {
-        env->cp15.esr_el[regid - UC_ARM64_REG_ESR_EL0] = *(uint64_t*)value;
-    } else if (regid >= UC_ARM64_REG_FAR_EL0 && regid <= UC_ARM64_REG_FAR_EL3) {
-        env->cp15.far_el[regid - UC_ARM64_REG_FAR_EL0] = *(uint64_t*)value;
-    } else if (regid >= UC_ARM64_REG_VBAR_EL0 && regid <= UC_ARM64_REG_VBAR_EL3) {
-        env->cp15.vbar_el[regid - UC_ARM64_REG_VBAR_EL0] = *(uint64_t*)value;
     } else {
         switch(regid) {
             default: break;
-            case UC_ARM64_REG_CPACR_EL1:
-                //env->cp15.c1_coproc = *(uint32_t *)value;
-                break;
-            case UC_ARM64_REG_TPIDR_EL0:
-                //env->cp15.tpidr_el0 = *(uint64_t *)value;
-                break;
-            case UC_ARM64_REG_TPIDRRO_EL0:
-                //env->cp15.tpidrro_el0 = *(uint64_t *)value;
-                break;
-            case UC_ARM64_REG_TPIDR_EL1:
-                //env->cp15.tpidr_el1 = *(uint64_t *)value;
-                break;
             case UC_ARM64_REG_X29:
                 env->xregs[29] = *(uint64_t *)value;
                 break;
@@ -236,18 +180,6 @@ static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
             case UC_ARM64_REG_PSTATE:
                 pstate_write(env, *(uint32_t *)value);
                 break;
-            case UC_ARM64_REG_TTBR0_EL1:
-                //env->cp15.ttbr0_el1 = *(uint64_t *)value;
-                break;
-            case UC_ARM64_REG_TTBR1_EL1:
-                //env->cp15.ttbr1_el1 = *(uint64_t *)value;
-                break;
-            case UC_ARM64_REG_PAR_EL1:
-                //env->cp15.par_el1 = *(uint64_t *)value;
-                break;
-            case UC_ARM64_REG_MAIR_EL1:
-                //env->cp15.mair_el1 = *(uint64_t *)value;
-                break;
         }
     }
 
@@ -257,12 +189,27 @@ static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
 int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
     CPUARMState *env= &(ARM_CPU(uc->cpu)->env);
+    const ARMCPRegInfo *ri = NULL;
     int i;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        if (regid & UNICORN_CPREGS_MASK){
+            // Try to read a coproc register
+            ri = get_arm_cp_reginfo(ARM_CPU(uc->cpu)->cp_regs, regid&~UNICORN_CPREGS_MASK);
+            if (ri){
+                if (cpreg_field_is_64bit(ri)) {
+                    *(int64_t *)value = read_raw_cp_reg(env,ri);
+                } else {
+                    *(int32_t *)value = read_raw_cp_reg(env,ri);
+                }
+            }
+        }
+        else{
+            reg_read(env, regid, value);
+        }
+
     }
 
     return 0;
@@ -271,16 +218,31 @@ int arm64_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
 int arm64_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, int count)
 {
     CPUARMState *env= &(ARM_CPU(uc->cpu)->env);
+    const ARMCPRegInfo *ri = NULL;
     int i;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
-        if(regid == UC_ARM64_REG_PC){
-            // force to quit execution and flush TB
-            uc->quit_request = true;
-            uc_emu_stop(uc);
+
+         if (regid & UNICORN_CPREGS_MASK){
+            // Try to write a coproc register
+            ri = get_arm_cp_reginfo(ARM_CPU(uc->cpu)->cp_regs, regid&~UNICORN_CPREGS_MASK);
+            if (ri){
+                if (cpreg_field_is_64bit(ri)) {
+                    write_raw_cp_reg(env, ri,*(uint64_t *)value);
+                } else {
+                    write_raw_cp_reg(env, ri,*(uint32_t *)value);
+                }
+            }
+        }
+        else{
+            reg_write(env, regid, value);
+            if(regid == UC_ARM64_REG_PC){
+                // force to quit execution and flush TB
+                uc->quit_request = true;
+                uc_emu_stop(uc);
+            }
         }
     }
 

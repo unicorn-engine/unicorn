@@ -364,12 +364,27 @@ static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
 int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
 {
     CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
+    const ARMCPRegInfo *ri = NULL;
     int i;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        if (regid & UNICORN_CPREGS_MASK){
+            // Try to read a coproc register
+            ri = get_arm_cp_reginfo(ARM_CPU(uc->cpu)->cp_regs, regid&~UNICORN_CPREGS_MASK);
+            if (ri){
+                if (cpreg_field_is_64bit(ri)) {
+                    *(int64_t *)value = read_raw_cp_reg(env,ri);
+                } else {
+                    *(int32_t *)value = read_raw_cp_reg(env,ri);
+                }
+            }
+        }
+        else{
+            reg_read(env, regid, value);
+        }
+
     }
 
     return 0;
@@ -378,16 +393,31 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int coun
 int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void* const* vals, int count)
 {
     CPUArchState *env = &(ARM_CPU(uc->cpu)->env);
+    const ARMCPRegInfo *ri = NULL;
     int i;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
-        if(regid == UC_ARM_REG_R15){
-            // force to quit execution and flush TB
-            uc->quit_request = true;
-            uc_emu_stop(uc);
+        if (regid & UNICORN_CPREGS_MASK){
+            // Try to write a coproc register
+            ri = get_arm_cp_reginfo(ARM_CPU(uc->cpu)->cp_regs, regid&~UNICORN_CPREGS_MASK);
+            if (ri){
+                if (cpreg_field_is_64bit(ri)) {
+
+                    write_raw_cp_reg(env, ri,*(uint64_t *)value);
+                } else {
+                    write_raw_cp_reg(env, ri,*(uint32_t *)value);
+                }
+            }
+        }
+        else{
+            reg_write(env, regid, value);
+            if(regid == UC_ARM_REG_R15){
+                // force to quit execution and flush TB
+                uc->quit_request = true;
+                uc_emu_stop(uc);
+            }
         }
     }
 

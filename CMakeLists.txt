@@ -1176,6 +1176,31 @@ else()
     )
     add_test(${TEST_FILE} ${TEST_FILE})
     endforeach(TEST_FILE)
+
+    # arm and arm64
+    # Build utils/arm_list_coprocregs.c to get the list of all coproc registers implemented in qemu
+    if (UNICORN_HAS_AARCH64)
+        add_executable(arm64_list_coprocregs ${CMAKE_CURRENT_SOURCE_DIR}/utils/arm_list_coprocregs.c)
+        target_link_libraries(arm64_list_coprocregs unicorn )
+        target_link_libraries(arm64_list_coprocregs unicorn-common)
+        target_compile_options(arm64_list_coprocregs PRIVATE
+            -DNEED_CPU_H
+            -include aarch64.h
+            -I${CMAKE_BINARY_DIR}/aarch64-softmmu
+            -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/arm
+        )
+    endif()
+    if (UNICORN_HAS_ARM)
+        add_executable(arm_list_coprocregs ${CMAKE_CURRENT_SOURCE_DIR}/utils/arm_list_coprocregs.c)
+        target_link_libraries(arm_list_coprocregs unicorn )
+        target_link_libraries(arm_list_coprocregs unicorn-common)
+        target_compile_options(arm_list_coprocregs PRIVATE
+            -DNEED_CPU_H
+            -include arm.h
+            -I${CMAKE_BINARY_DIR}/arm-softmmu
+            -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/arm
+        )
+    endif()
 endif()
 
 if(NOT MSVC)
@@ -1197,3 +1222,4 @@ Cflags: -I\$\{includedir\}\n"
     )
     install(FILES ${CMAKE_BINARY_DIR}/unicorn.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
 endif()
+
