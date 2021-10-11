@@ -93,6 +93,12 @@ int mips_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int cou
         else {
             switch(regid) {
                 default: break;
+                case UC_MIPS_REG_HI:
+                         *(mipsreg_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.HI[0];
+                         break;
+                case UC_MIPS_REG_LO:
+                         *(mipsreg_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.LO[0];
+                         break;
                 case UC_MIPS_REG_PC:
                          *(mipsreg_t *)value = MIPS_CPU(uc, mycpu)->env.active_tc.PC;
                          break;
@@ -122,6 +128,12 @@ int mips_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, 
         else {
             switch(regid) {
                 default: break;
+                case UC_MIPS_REG_HI:
+                         MIPS_CPU(uc, mycpu)->env.active_tc.HI[0] = *(mipsreg_t *)value;
+                         break;
+                case UC_MIPS_REG_LO:
+                         MIPS_CPU(uc, mycpu)->env.active_tc.LO[0] = *(mipsreg_t *)value;
+                         break;
                 case UC_MIPS_REG_PC:
                          MIPS_CPU(uc, mycpu)->env.active_tc.PC = *(mipsreg_t *)value;
                          // force to quit execution and flush TB
