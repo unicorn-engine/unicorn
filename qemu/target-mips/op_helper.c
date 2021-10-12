@@ -21,6 +21,7 @@
 #include "qemu/host-utils.h"
 #include "exec/helper-proto.h"
 #include "exec/cpu_ldst.h"
+#include "uc_priv.h"
 
 #ifndef CONFIG_USER_ONLY
 static inline void cpu_mips_tlb_flush (CPUMIPSState *env, int flush_global);
@@ -84,6 +85,7 @@ static inline type do_##name(CPUMIPSState *env, target_ulong addr,      \
 static inline type do_##name(CPUMIPSState *env, target_ulong addr,      \
                              int mem_idx)                               \
 {                                                                       \
+    helper_unicorn_hook_read(env->uc, addr, sizeof(type));              \
     switch (mem_idx)                                                    \
     {                                                                   \
     case 0: return (type) cpu_##insn##_kernel(env, addr); break;        \
@@ -99,8 +101,6 @@ HELPER_LD(lw, ldl, int32_t)
 HELPER_LD(ld, ldq, int64_t)
 #undef HELPER_LD
 
-void helper_unicorn_hook_write(struct uc_struct *uc, target_ulong addr, uint64_t val, int size);
-
 #if defined(CONFIG_USER_ONLY)
 #define HELPER_ST(name, insn, type)                                     \
 static inline void do_##name(CPUMIPSState *env, target_ulong addr,      \
@@ -113,6 +113,7 @@ static inline void do_##name(CPUMIPSState *env, target_ulong addr,      \
 static inline void do_##name(CPUMIPSState *env, target_ulong addr,      \
                              type val, int mem_idx)                     \
 {                                                                       \
+    helper_unicorn_hook_write(env->uc, addr, val, sizeof(type));        \
     switch (mem_idx)                                                    \
     {                                                                   \
     case 0: cpu_##insn##_kernel(env, addr, val); break;                 \
@@ -120,7 +121,6 @@ static inline void do_##name(CPUMIPSState *env, target_ulong addr,      \
     default:                                                            \
     case 2: cpu_##insn##_user(env, addr, val); break;                   \
     }                                                                   \
-    helper_unicorn_hook_write(env->uc, addr, val, sizeof(type)); \
 }
 #endif
 HELPER_ST(sb, stb, uint8_t)

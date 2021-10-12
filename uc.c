@@ -25,10 +25,23 @@
 #include "qemu/include/hw/boards.h"
 #include "qemu/include/qemu/queue.h"
 
-void helper_unicorn_hook_write(struct uc_struct *uc, uint64_t addr, uint64_t val, int size) {
-    HOOK_FOREACH_VAR_DECLARE;
+void helper_unicorn_hook_read(struct uc_struct *uc, uint64_t addr, int size)
+{
     struct hook *hook;
-    //printf("helper_unicorn_hook_write %llx %llx %d\n", addr, val, size);
+    HOOK_FOREACH_VAR_DECLARE;
+    HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ) {
+        if (hook->to_delete)
+            continue;
+        if (!HOOK_BOUND_CHECK(hook, addr))
+            continue;
+        ((uc_cb_hookmem_t)hook->callback)(uc, UC_MEM_READ, addr, size, 0, hook->user_data);
+    }
+}
+
+void helper_unicorn_hook_write(struct uc_struct *uc, uint64_t addr, uint64_t val, int size)
+{
+    struct hook *hook;
+    HOOK_FOREACH_VAR_DECLARE;
     HOOK_FOREACH(uc, hook, UC_HOOK_MEM_WRITE) {
         if (hook->to_delete)
             continue;

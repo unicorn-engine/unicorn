@@ -18501,7 +18501,7 @@ static void gen_msa(CPUMIPSState *env, DisasContext *ctx)
 static void hook_insn(CPUMIPSState *env, DisasContext *ctx, bool *insn_need_patch, int *insn_patch_offset, int offset_value)
 {
     TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
-    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, ctx->pc) && !(ctx->hflags & MIPS_HFLAG_BMASK) ) {
+    if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, ctx->pc) && !(ctx->hflags & MIPS_HFLAG_BMASK)) {
         gen_uc_tracecode(tcg_ctx, 0xf8f8f8f8, UC_HOOK_CODE_IDX, env->uc, ctx->pc);
         *insn_need_patch = true;
         // the callback might want to stop emulation immediately

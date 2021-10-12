@@ -142,6 +142,9 @@ static inline bool _hook_exists_bounded(struct list_item *cur, uint64_t addr)
     return false;
 }
 
+void helper_unicorn_hook_read(struct uc_struct *uc, uint64_t addr, int size);
+void helper_unicorn_hook_write(struct uc_struct *uc, uint64_t addr, uint64_t val, int size);
+
 //relloc increment, KEEP THIS A POWER OF 2!
 #define MEM_BLOCK_INCR 32
 
