@@ -68,26 +68,26 @@ public class Sample_m68k {
    
    static void test_m68k()
    {
-       Long d0 = new Long(0x0000);     // d0 data register
-       Long d1 = new Long(0x0000);     // d1 data register
-       Long d2 = new Long(0x0000);     // d2 data register
-       Long d3 = new Long(0x0000);     // d3 data register
-       Long d4 = new Long(0x0000);     // d4 data register
-       Long d5 = new Long(0x0000);     // d5 data register
-       Long d6 = new Long(0x0000);     // d6 data register
-       Long d7 = new Long(0x0000);     // d7 data register
-   
-       Long a0 = new Long(0x0000);     // a0 address register
-       Long a1 = new Long(0x0000);     // a1 address register
-       Long a2 = new Long(0x0000);     // a2 address register
-       Long a3 = new Long(0x0000);     // a3 address register
-       Long a4 = new Long(0x0000);     // a4 address register
-       Long a5 = new Long(0x0000);     // a5 address register
-       Long a6 = new Long(0x0000);     // a6 address register
-       Long a7 = new Long(0x0000);     // a6 address register
-   
-       Long pc = new Long(0x0000);     // program counter
-       Long sr = new Long(0x0000);     // status register
+       Long d0 = 0x0000L;     // d0 data register
+       Long d1 = 0x0000L;     // d1 data register
+       Long d2 = 0x0000L;     // d2 data register
+       Long d3 = 0x0000L;     // d3 data register
+       Long d4 = 0x0000L;     // d4 data register
+       Long d5 = 0x0000L;     // d5 data register
+       Long d6 = 0x0000L;     // d6 data register
+       Long d7 = 0x0000L;     // d7 data register
+
+       Long a0 = 0x0000L;     // a0 address register
+       Long a1 = 0x0000L;     // a1 address register
+       Long a2 = 0x0000L;     // a2 address register
+       Long a3 = 0x0000L;     // a3 address register
+       Long a4 = 0x0000L;     // a4 address register
+       Long a5 = 0x0000L;     // a5 address register
+       Long a6 = 0x0000L;     // a6 address register
+       Long a7 = 0x0000L;     // a6 address register
+
+       Long pc = 0x0000L;     // program counter
+       Long sr = 0x0000L;     // status register
    
        System.out.print("Emulate M68K code\n");
    

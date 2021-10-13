@@ -69,9 +69,9 @@ public class Sample_arm64 {
    static void test_arm64()
    {
    
-       Long x11 = new Long(0x1234);     // X11 register
-       Long x13 = new Long(0x6789);     // X13 register
-       Long x15 = new Long(0x3333);     // X15 register
+       Long x11 = 0x1234L;     // X11 register
+       Long x13 = 0x6789L;     // X13 register
+       Long x15 = 0x3333L;     // X15 register
    
        System.out.print("Emulate ARM64 code\n");
    

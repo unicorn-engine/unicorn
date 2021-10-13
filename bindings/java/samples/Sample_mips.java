@@ -70,7 +70,7 @@ public class Sample_mips {
    static void test_mips_eb()
    {
    
-       Long r1 = new Long(0x6789);     // R1 register
+       Long r1 = 0x6789L;     // R1 register
    
        System.out.print("Emulate MIPS code (big-endian)\n");
    
@@ -107,7 +107,7 @@ public class Sample_mips {
    
    static void test_mips_el()
    {
-       Long r1 = new Long(0x6789);     // R1 register
+       Long r1 = 0x6789L;     // R1 register
    
        System.out.print("===========================\n");
        System.out.print("Emulate MIPS code (little-endian)\n");

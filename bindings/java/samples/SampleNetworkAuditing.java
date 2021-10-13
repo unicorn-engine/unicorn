@@ -30,12 +30,12 @@ import java.util.*;
 
 public class SampleNetworkAuditing {
 
-   public static int next_id = 3;
+   public static long next_id = 3;
    public static final int SIZE_REG = 4;
 
    private static LogChain fd_chains = new LogChain();
 
-   public static int get_id() {
+   public static long get_id() {
       return next_id++;
    }
 
@@ -112,7 +112,7 @@ public class SampleNetworkAuditing {
             long mode = edx;
             String filename = read_string(uc, filename_addr);
             
-            Long dummy_fd = new Long(get_id());
+            Long dummy_fd = get_id();
             uc.reg_write(Unicorn.UC_X86_REG_EAX, dummy_fd);
             
             String msg = String.format("open file (filename=%s flags=%d mode=%d) with fd(%d)", filename, flags, mode, dummy_fd);
@@ -144,8 +144,8 @@ public class SampleNetworkAuditing {
                long sock_type = toInt(uc.mem_read(args + SIZE_REG, SIZE_REG));
                long protocol = toInt(uc.mem_read(args + SIZE_REG * 2, SIZE_REG));
                
-               Long dummy_fd = new Long(get_id());
-               uc.reg_write(Unicorn.UC_X86_REG_EAX, dummy_fd.intValue());
+               Long dummy_fd = get_id();
+               uc.reg_write(Unicorn.UC_X86_REG_EAX, dummy_fd);
                
                if (family == 2) {  // AF_INET            
                   String msg = String.format("create socket (%s, %s) with fd(%d)", ADDR_FAMILY.get(family), SOCKET_TYPES.get(sock_type), dummy_fd);
@@ -401,7 +401,7 @@ public class SampleNetworkAuditing {
          mu.mem_write(ADDRESS, code);
          
          // initialize stack
-         mu.reg_write(Unicorn.UC_X86_REG_ESP, new Long(ADDRESS + 0x200000));
+         mu.reg_write(Unicorn.UC_X86_REG_ESP, ADDRESS + 0x200000L);
          
          // handle interrupt ourself
          mu.hook_add(new MyInterruptHook(), null);
