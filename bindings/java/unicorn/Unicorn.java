@@ -25,7 +25,7 @@ import java.util.*;
 
 public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, SparcConst, MipsConst, X86Const {
 
-   private long eng;
+   public long eng;
    private int arch;
    private int mode;
 

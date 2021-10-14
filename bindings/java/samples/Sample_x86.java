@@ -171,8 +171,8 @@ public class Sample_x86 {
    }
    
    static void test_i386() {
-       Long r_ecx = new Long(0x1234);     // ECX register
-       Long r_edx = new Long(0x7890);     // EDX register
+       Long r_ecx = 0x1234L;     // ECX register
+       Long r_edx = 0x7890L;     // EDX register
    
        System.out.print("Emulate i386 code\n");
    
@@ -234,8 +234,8 @@ public class Sample_x86 {
 
    static void test_i386_inout()
    {
-       Long r_eax = new Long(0x1234);     // ECX register
-       Long r_ecx = new Long(0x6789);     // EDX register
+       Long r_eax = 0x1234L;     // ECX register
+       Long r_ecx = 0x6789L;     // EDX register
    
        System.out.print("===================================\n");
        System.out.print("Emulate i386 code with IN/OUT instructions\n");
@@ -309,8 +309,8 @@ public class Sample_x86 {
    // emulate code that loop forever
    static void test_i386_loop()
    {
-       Long r_ecx = new Long(0x1234);     // ECX register
-       Long r_edx = new Long(0x7890);     // EDX register
+       Long r_ecx = 0x1234L;     // ECX register
+       Long r_edx = 0x7890L;     // EDX register
    
        System.out.print("===================================\n");
        System.out.print("Emulate i386 code that loop forever\n");
@@ -346,8 +346,8 @@ public class Sample_x86 {
    // emulate code that read invalid memory
    static void test_i386_invalid_mem_read()
    {
-       Long r_ecx = new Long(0x1234);     // ECX register
-       Long r_edx = new Long(0x7890);     // EDX register
+       Long r_ecx = 0x1234L;     // ECX register
+       Long r_edx = 0x7890L;     // EDX register
    
        System.out.print("===================================\n");
        System.out.print("Emulate i386 code that read from invalid memory\n");
@@ -393,8 +393,8 @@ public class Sample_x86 {
    // emulate code that read invalid memory
    static void test_i386_invalid_mem_write()
    {
-       Long r_ecx = new Long(0x1234);     // ECX register
-       Long r_edx = new Long(0x7890);     // EDX register
+       Long r_ecx = 0x1234L;     // ECX register
+       Long r_edx = 0x7890L;     // EDX register
    
        System.out.print("===================================\n");
        System.out.print("Emulate i386 code that write to invalid memory\n");
@@ -453,8 +453,8 @@ public class Sample_x86 {
    // emulate code that jump to invalid memory
    static void test_i386_jump_invalid()
    {
-       Long r_ecx = new Long(0x1234);     // ECX register
-       Long r_edx = new Long(0x7890);     // EDX register
+       Long r_ecx = 0x1234L;     // ECX register
+       Long r_edx = 0x7890L;     // EDX register
    
        System.out.print("===================================\n");
        System.out.print("Emulate i386 code that jumps to invalid memory\n");
@@ -527,22 +527,22 @@ public class Sample_x86 {
        u.mem_write(ADDRESS, X86_CODE64);
    
        // initialize machine registers
-       u.reg_write(Unicorn.UC_X86_REG_RSP, new Long(rsp));
-   
-       u.reg_write(Unicorn.UC_X86_REG_RAX, new Long(rax));
-       u.reg_write(Unicorn.UC_X86_REG_RBX, new Long(rbx));
-       u.reg_write(Unicorn.UC_X86_REG_RCX, new Long(rcx));
-       u.reg_write(Unicorn.UC_X86_REG_RDX, new Long(rdx));
-       u.reg_write(Unicorn.UC_X86_REG_RSI, new Long(rsi));
-       u.reg_write(Unicorn.UC_X86_REG_RDI, new Long(rdi));
-       u.reg_write(Unicorn.UC_X86_REG_R8, new Long(r8));
-       u.reg_write(Unicorn.UC_X86_REG_R9, new Long(r9));
-       u.reg_write(Unicorn.UC_X86_REG_R10, new Long(r10));
-       u.reg_write(Unicorn.UC_X86_REG_R11, new Long(r11));
-       u.reg_write(Unicorn.UC_X86_REG_R12, new Long(r12));
-       u.reg_write(Unicorn.UC_X86_REG_R13, new Long(r13));
-       u.reg_write(Unicorn.UC_X86_REG_R14, new Long(r14));
-       u.reg_write(Unicorn.UC_X86_REG_R15, new Long(r15));
+       u.reg_write(Unicorn.UC_X86_REG_RSP, rsp);
+
+       u.reg_write(Unicorn.UC_X86_REG_RAX, rax);
+       u.reg_write(Unicorn.UC_X86_REG_RBX, rbx);
+       u.reg_write(Unicorn.UC_X86_REG_RCX, rcx);
+       u.reg_write(Unicorn.UC_X86_REG_RDX, rdx);
+       u.reg_write(Unicorn.UC_X86_REG_RSI, rsi);
+       u.reg_write(Unicorn.UC_X86_REG_RDI, rdi);
+       u.reg_write(Unicorn.UC_X86_REG_R8, r8);
+       u.reg_write(Unicorn.UC_X86_REG_R9, r9);
+       u.reg_write(Unicorn.UC_X86_REG_R10, r10);
+       u.reg_write(Unicorn.UC_X86_REG_R11, r11);
+       u.reg_write(Unicorn.UC_X86_REG_R12, r12);
+       u.reg_write(Unicorn.UC_X86_REG_R13, r13);
+       u.reg_write(Unicorn.UC_X86_REG_R14, r14);
+       u.reg_write(Unicorn.UC_X86_REG_R15, r15);
    
        // tracing all basic blocks with customized callback
        u.hook_add(new MyBlockHook(), 1, 0, null);
@@ -598,9 +598,9 @@ public class Sample_x86 {
 
    static void test_x86_16()
    {
-       Long eax = new Long(7);
-       Long ebx = new Long(5);
-       Long esi = new Long(6);
+       Long eax = 7L;
+       Long ebx = 5L;
+       Long esi = 6L;
    
        System.out.print("Emulate x86 16-bit code\n");
    

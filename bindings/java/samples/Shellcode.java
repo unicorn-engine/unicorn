@@ -113,7 +113,7 @@ public class Shellcode {
 
    static void test_i386()
    {
-       Long r_esp = new Long(ADDRESS + 0x200000);  // ESP register
+       Long r_esp = ADDRESS + 0x200000L;  // ESP register
    
        System.out.print("Emulate i386 code\n");
    
