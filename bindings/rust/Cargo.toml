@@ -21,7 +21,7 @@ links = "unicorn"
 [features]
 # one of the following features must be enabled.
 build = ["cmake"]
-system = ["pkg-config"]
+system = []
 
 [dependencies]
 bitflags = "1.0"
@@ -30,4 +30,4 @@ capstone="0.6.0"
 
 [build-dependencies]
 cmake = { version = "0.1", optional = true }
-pkg-config = { version = "0.3", optional = true }
+pkg-config = "0.3"

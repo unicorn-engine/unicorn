@@ -10,11 +10,15 @@ fn main() {
     let install_dir = cmake::Config::new(unicorn_dir)
         .define("UNICORN_BUILD_SHARED", "OFF")
         .build();
-    println!(
-        "cargo:rustc-link-search=native={}",
-        install_dir.join("lib").display(),
+    env::remove_var("PKG_CONFIG_PATH");
+    env::set_var(
+        "PKG_CONFIG_LIBDIR",
+        install_dir.join("lib").join("pkgconfig"),
     );
-    println!("cargo:rustc-link-lib=static=unicorn");
+    pkg_config::Config::new()
+        .statik(true)
+        .probe("unicorn")
+        .unwrap();
 }
 
 #[cfg(feature = "system")]
