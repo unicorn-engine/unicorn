@@ -35,9 +35,10 @@ mod arm64;
 mod m68k;
 mod mips;
 mod ppc;
+mod riscv;
 mod sparc;
 mod x86;
-pub use crate::{arm::*, arm64::*, m68k::*, mips::*, ppc::*, sparc::*, x86::*};
+pub use crate::{arm::*, arm64::*, m68k::*, mips::*, ppc::*, riscv::*, sparc::*, x86::*};
 
 use ffi::uc_handle;
 use std::collections::HashMap;

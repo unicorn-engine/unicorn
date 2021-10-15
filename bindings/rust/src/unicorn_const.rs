@@ -1,11 +1,11 @@
 #![allow(non_camel_case_types)]
 use bitflags::bitflags;
 
-pub const API_MAJOR: u64 = 1;
+pub const API_MAJOR: u64 = 2;
 pub const API_MINOR: u64 = 0;
-pub const VERSION_MAJOR: u64 = 1;
+pub const VERSION_MAJOR: u64 = 2;
 pub const VERSION_MINOR: u64 = 0;
-pub const VERSION_EXTRA: u64 = 2;
+pub const VERSION_EXTRA: u64 = 0;
 pub const SECOND_SCALE: u64 = 1_000_000;
 pub const MILISECOND_SCALE: u64 = 1_000;
 
@@ -93,6 +93,7 @@ pub enum Query {
     MODE = 1,
     PAGE_SIZE = 2,
     ARCH = 3,
+    TIMEOUT = 4,
 }
 
 bitflags! {
@@ -124,7 +125,8 @@ pub enum Arch {
     PPC = 5,
     SPARC = 6,
     M68K = 7,
-    MAX = 8,
+    RISCV = 8,
+    MAX = 9,
 }
 
 bitflags! {
@@ -154,5 +156,7 @@ bitflags! {
         const SPARC32 = Self::MIPS32.bits;
         const SPARC64 = Self::MIPS64.bits;
         const V9 = Self::THUMB.bits;
+        const RISCV32 = Self::MIPS32.bits;
+        const RISCV64 = Self::MIPS64.bits;
     }
 }
