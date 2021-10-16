@@ -14,6 +14,9 @@ on:
       - "COPYING"
   pull_request:
 
+env:
+  UNICORN_VERSION: ${{ GITHUB_SHA }}
+
 jobs:
   build:
     runs-on: ${{ matrix.config.os }}
