@@ -1,11 +1,9 @@
-#![deny(rust_2018_idioms)]
-
 use std::cell::RefCell;
 use std::rc::Rc;
 use unicorn::unicorn_const::{uc_error, Arch, HookType, MemType, Mode, Permission, SECOND_SCALE};
 use unicorn::{InsnSysX86, RegisterARM, RegisterMIPS, RegisterPPC, RegisterX86};
 
-pub static X86_REGISTERS: [RegisterX86; 145] = [
+pub static X86_REGISTERS: [RegisterX86; 125] = [
     RegisterX86::AH,
     RegisterX86::AL,
     RegisterX86::AX,
@@ -32,7 +30,6 @@ pub static X86_REGISTERS: [RegisterX86; 145] = [
     RegisterX86::EDX,
     RegisterX86::EFLAGS,
     RegisterX86::EIP,
-    RegisterX86::EIZ,
     RegisterX86::ES,
     RegisterX86::ESI,
     RegisterX86::ESP,
@@ -47,7 +44,6 @@ pub static X86_REGISTERS: [RegisterX86; 145] = [
     RegisterX86::RDI,
     RegisterX86::RDX,
     RegisterX86::RIP,
-    RegisterX86::RIZ,
     RegisterX86::RSI,
     RegisterX86::RSP,
     RegisterX86::SI,
@@ -60,17 +56,7 @@ pub static X86_REGISTERS: [RegisterX86; 145] = [
     RegisterX86::CR2,
     RegisterX86::CR3,
     RegisterX86::CR4,
-    RegisterX86::CR5,
-    RegisterX86::CR6,
-    RegisterX86::CR7,
     RegisterX86::CR8,
-    RegisterX86::CR9,
-    RegisterX86::CR10,
-    RegisterX86::CR11,
-    RegisterX86::CR12,
-    RegisterX86::CR13,
-    RegisterX86::CR14,
-    RegisterX86::CR15,
     RegisterX86::DR0,
     RegisterX86::DR1,
     RegisterX86::DR2,
@@ -79,14 +65,6 @@ pub static X86_REGISTERS: [RegisterX86; 145] = [
     RegisterX86::DR5,
     RegisterX86::DR6,
     RegisterX86::DR7,
-    RegisterX86::DR8,
-    RegisterX86::DR9,
-    RegisterX86::DR10,
-    RegisterX86::DR11,
-    RegisterX86::DR12,
-    RegisterX86::DR13,
-    RegisterX86::DR14,
-    RegisterX86::DR15,
     RegisterX86::FP0,
     RegisterX86::FP1,
     RegisterX86::FP2,

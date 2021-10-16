@@ -1,4 +1,5 @@
 #![allow(non_camel_case_types)]
+// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT
 
 // MIPS registers
 #[repr(C)]
@@ -155,7 +156,11 @@ pub enum RegisterMIPS {
     MPL2 = 136,
     CP0_CONFIG3 = 137,
     CP0_USERLOCAL = 138,
-    ENDING = 139,
+    CP0_STATUS = 139,
+    ENDING = 140,
+}
+
+impl RegisterMIPS {
     // alias registers
     // (assoc) ZERO = 2,
     // (assoc) AT = 3,
@@ -198,9 +203,6 @@ pub enum RegisterMIPS {
     // (assoc) LO1 = 46,
     // (assoc) LO2 = 47,
     // (assoc) LO3 = 48,
-}
-
-impl RegisterMIPS {
     pub const ZERO: RegisterMIPS = RegisterMIPS::GPR0;
     pub const AT: RegisterMIPS = RegisterMIPS::GPR1;
     pub const V0: RegisterMIPS = RegisterMIPS::GPR2;
