@@ -256,9 +256,15 @@ fn x86_mem_callback() {
 
     let callback_mems = mems_cell.clone();
     let callback =
-        move |_: Unicorn<'_>, mem_type: MemType, address: u64, size: usize, value: i64| {
+        move |uc: Unicorn<'_>, mem_type: MemType, address: u64, size: usize, value: i64| {
             let mut mems = callback_mems.borrow_mut();
+            let mut uc = uc;
+
             mems.push(MemExpectation(mem_type, address, size, value));
+
+            if mem_type == MemType::READ_UNMAPPED {
+                uc.mem_map(address, 0x1000, Permission::ALL).unwrap();
+            }
         };
 
     // mov eax, 0xdeadbeef;
@@ -285,7 +291,7 @@ fn x86_mem_callback() {
             10 * SECOND_SCALE,
             0x1000
         ),
-        Err(uc_error::READ_UNMAPPED)
+        Ok(())
     );
 
     assert_eq!(expects, *mems_cell.borrow());
@@ -479,7 +485,7 @@ fn emulate_mips() {
 fn emulate_ppc() {
     let ppc_code32 = vec![0x7F, 0x46, 0x1A, 0x14]; // add 26, 6, 3
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::PPC, Mode::PPC32)
+    let mut unicorn = unicorn::Unicorn::new(Arch::PPC, Mode::PPC32 | Mode::BIG_ENDIAN)
         .expect("failed to initialize unicorn instance");
     let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
@@ -631,7 +637,7 @@ fn x86_context_save_and_restore() {
 fn x86_block_callback() {
     #[derive(PartialEq, Debug)]
     struct BlockExpectation(u64, u32);
-    let expects = vec![BlockExpectation(0x1000, 2), BlockExpectation(0x1000, 2)];
+    let expects = vec![BlockExpectation(0x1000, 2)];
     let blocks: Vec<BlockExpectation> = Vec::new();
     let blocks_cell = Rc::new(RefCell::new(blocks));
 
