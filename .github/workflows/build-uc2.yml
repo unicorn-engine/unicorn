@@ -223,7 +223,7 @@ jobs:
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip
         ctest -C ${{ matrix.config.build_type }}
-  
+
     - name: '🚧 Android x86_64 build'
       if: contains(matrix.config.name, 'android')
       shell: bash
@@ -245,16 +245,41 @@ jobs:
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip
 
+    - name: '🚧 AVD Cache'
+      if: contains(matrix.config.name, 'android')
+      uses: actions/cache@v2
+      id: avd-cache
+      with:
+        path: |
+          ~/.android/avd/*
+          ~/.android/adb*
+        key: avd-28
+    
+    - name: '🚧 Create x86_64 tests environment'
+      if: contains(matrix.config.name, 'android') && steps.avd-cache.outputs.cache-hit != 'true'
+      uses: reactivecircus/android-emulator-runner@v2
+      with:
+        api-level: 28
+        arch: ${{ matrix.config.arch }}
+        force-avd-creation: false
+        disable-animations: false
+        target: default
+        profile: Nexus 6
+        emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -verbose -show-kernel
+        script: echo "Generated AVD snapshot for caching."
+
     - name: '🚧 Android x86_64 tests'
       if: contains(matrix.config.name, 'android')
       uses: reactivecircus/android-emulator-runner@v2
       with:
         api-level: 28
+        force-avd-creation: false
+        disable-animations: true
         arch: ${{ matrix.config.arch }}
         target: default
         profile: Nexus 6
         emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -verbose -show-kernel
-        script: ctest -C ${{ matrix.config.build_type }}
+        script: bash ./adb.sh
 
     - name: '📦 Pack artifact'
       shell: bash
