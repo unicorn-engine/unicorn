@@ -1,0 +1,80 @@
+name: Crate 📦 Distribution
+
+on:
+  push:
+    paths-ignore:
+      - ".gitignore"
+      - "docs/**"
+      - "README"
+      - "CREDITS.TXT"
+      - "COPYING_GLIB"
+      - "COPYING.LGPL2"
+      - "AUTHORS.TXT"
+      - "CHANGELOG"
+      - "COPYING"
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { 
+              os: windows-latest,
+              arch: x64,
+              name: 'win_amd64'
+            }
+          - { 
+              os: windows-latest,
+              arch: x32,
+              name: 'win32'
+            }
+          - { 
+              os: ubuntu-latest,
+              arch: x64,
+              name: 'sdist'
+            }
+          - { 
+             os: macos-latest,
+             arch: x64,
+             name: 'macos_x86_64'
+            }
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: '🛠️ Set up Rust'
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        default: true
+        componets: rustfmt, clippy
+
+    - name: '🚧 Cargo test'
+      shell: actions-rs/cargo@v1
+      with:
+        command: test
+
+    # - name: '📤 Upload artifact'
+    #   uses: actions/upload-artifact@v2
+    #   with:
+    #      path: ${{ github.workspace }}/bindings/python/dist/*
+
+  # publish:
+  #   needs: [build]
+  #   runs-on: ubuntu-latest
+  #   if: startsWith(github.ref, 'refs/tags')
+  #   steps:
+  #     - uses: actions/download-artifact@v2
+  #       with:
+  #         name: artifact
+  #         path: dist
+
+  #     - name: '📦 Publish distribution to PyPI'
+  #       uses: pypa/gh-action-pypi-publish@master
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.pypi_pass }}
