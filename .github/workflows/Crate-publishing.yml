@@ -15,7 +15,7 @@ on:
   pull_request:
 
 env:
-  UNICORN_VERSION: ${{ github.sha }}
+  CI: true
 
 jobs:
   build:
@@ -28,7 +28,7 @@ jobs:
           - { 
               os: windows-latest,
               arch: x64,
-              name: 'Windows x84_64'
+              name: 'Windows x86_64'
             }
           - { 
               os: windows-latest,
@@ -43,7 +43,7 @@ jobs:
           - { 
              os: macos-latest,
              arch: x64,
-             name: 'macos x86_64'
+             name: 'macOS x86_64'
             }
     steps:
     - uses: actions/checkout@v2
@@ -54,7 +54,18 @@ jobs:
         toolchain: stable
         override: true
         default: true
-        componets: rustfmt, clippy
+
+    - name: '🛠️ Add msbuild to PATH'
+      if: contains(matrix.config.name, 'win')
+      uses: microsoft/setup-msbuild@v1.0.3
+      with:
+        vs-version: '16.5'
+
+    - name: '🛠️ Win build dependencies'
+      if: contains(matrix.config.name, 'win')
+      shell: bash
+      run: |
+        choco install ninja cmake
 
     - name: '🚧 Cargo test'
       run: |
