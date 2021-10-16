@@ -28,22 +28,22 @@ jobs:
           - { 
               os: windows-latest,
               arch: x64,
-              name: 'win_amd64'
+              name: 'Windows x84_64'
             }
           - { 
               os: windows-latest,
               arch: x32,
-              name: 'win32'
+              name: 'Windows x86'
             }
           - { 
               os: ubuntu-latest,
               arch: x64,
-              name: 'sdist'
+              name: 'Ubuntu x86_64'
             }
           - { 
              os: macos-latest,
              arch: x64,
-             name: 'macos_x86_64'
+             name: 'macos x86_64'
             }
     steps:
     - uses: actions/checkout@v2
@@ -57,9 +57,8 @@ jobs:
         componets: rustfmt, clippy
 
     - name: '🚧 Cargo test'
-      uses: actions-rs/cargo@v1
-      with:
-        command: test
+      run: |
+         cd bindings/rust && cargo test
 
     # - name: '📤 Upload artifact'
     #   uses: actions/upload-artifact@v2
