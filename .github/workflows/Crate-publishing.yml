@@ -15,7 +15,7 @@ on:
   pull_request:
 
 env:
-  UNICORN_VERSION: ${{ GITHUB_SHA }}
+  UNICORN_VERSION: ${{ github.sha }}
 
 jobs:
   build:
