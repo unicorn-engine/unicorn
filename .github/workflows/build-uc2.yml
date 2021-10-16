@@ -2,8 +2,6 @@ name: Build UC2
 
 on: 
   push:
-    tags-ignore:
-      - "*"
     paths-ignore:
       - ".gitignore"
       - "docs/**"
