@@ -2018,9 +2018,13 @@ enum {
     PPC_MEM_TLBIA      = 0x0000000010000000ULL,
     PPC_MEM_TLBIE      = 0x0000000020000000ULL,
     PPC_MEM_TLBSYNC    = 0x0000000040000000ULL,
+
+// The enum in msvc is 32bit **signed**.
+// https://godbolt.org/z/nYbvWPWET
+#ifndef _MSC_VER
     /*   sync instruction                                                    */
     PPC_MEM_SYNC       = 0x0000000080000000ULL,
-#ifndef _MSC_VER
+
     /*   eieio instruction                                                   */
     PPC_MEM_EIEIO      = 0x0000000100000000ULL,
 
@@ -2084,6 +2088,7 @@ enum {
     /* popcntw and popcntd instructions                                      */
     PPC_POPCNTWD       = 0x8000000000000000ULL,
 #else
+#define PPC_MEM_SYNC        0x0000000080000000ULL
 #define PPC_MEM_EIEIO       0x0000000100000000ULL
 #define PPC_CACHE           0x0000000200000000ULL
 #define PPC_CACHE_ICBI      0x0000000400000000ULL

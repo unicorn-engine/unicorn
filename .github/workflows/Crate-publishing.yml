@@ -1,0 +1,93 @@
+name: Crate 📦 Distribution
+
+on:
+  push:
+    paths-ignore:
+      - ".gitignore"
+      - "docs/**"
+      - "README"
+      - "CREDITS.TXT"
+      - "COPYING_GLIB"
+      - "COPYING.LGPL2"
+      - "AUTHORS.TXT"
+      - "CHANGELOG"
+      - "COPYING"
+  pull_request:
+
+env:
+  CI: true
+
+jobs:
+  build:
+    runs-on: ${{ matrix.config.os }}
+    name: ${{ matrix.config.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - { 
+              os: windows-latest,
+              arch: x64,
+              name: 'Windows x86_64'
+            }
+          - { 
+              os: windows-latest,
+              arch: x32,
+              name: 'Windows x86'
+            }
+          - { 
+              os: ubuntu-latest,
+              arch: x64,
+              name: 'Ubuntu x86_64'
+            }
+          - { 
+             os: macos-latest,
+             arch: x64,
+             name: 'macOS x86_64'
+            }
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: '🛠️ Set up Rust'
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+        default: true
+
+    - name: '🛠️ Add msbuild to PATH'
+      if: contains(matrix.config.name, 'win')
+      uses: microsoft/setup-msbuild@v1.0.3
+      with:
+        vs-version: '16.5'
+
+    - name: '🛠️ Win build dependencies'
+      if: contains(matrix.config.name, 'win')
+      shell: bash
+      run: |
+        choco install ninja cmake
+
+    - name: '🚧 Cargo test'
+      run: |
+         cd bindings/rust && cargo test
+
+    # - name: '📤 Upload artifact'
+    #   uses: actions/upload-artifact@v2
+    #   with:
+    #      path: ${{ github.workspace }}/bindings/python/dist/*
+
+  # publish:
+  #   needs: [build]
+  #   runs-on: ubuntu-latest
+  #   if: startsWith(github.ref, 'refs/tags')
+  #   steps:
+  #     - uses: actions/download-artifact@v2
+  #       with:
+  #         name: artifact
+  #         path: dist
+
+  #     - name: '📦 Publish distribution to PyPI'
+  #       uses: pypa/gh-action-pypi-publish@master
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.pypi_pass }}

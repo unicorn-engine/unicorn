@@ -1,3 +1,5 @@
+// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT
+
 // SPARC registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -91,4 +93,13 @@ pub enum RegisterSPARC {
     Y = 86,
     XCC = 87,
     PC = 88,
+    ENDING = 89,
+}
+
+impl RegisterSPARC {
+    // alias registers
+    // (assoc) O6 = 84,
+    // (assoc) I6 = 67,
+    pub const O6: RegisterSPARC = RegisterSPARC::SP;
+    pub const I6: RegisterSPARC = RegisterSPARC::FP;
 }

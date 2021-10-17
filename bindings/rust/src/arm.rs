@@ -123,8 +123,31 @@ pub enum RegisterARM {
     MSP = 115,
     PSP = 116,
     CONTROL = 117,
-    XPSR = 118,
-    ENDING = 119,
+    IAPSR = 118,
+    EAPSR = 119,
+    XPSR = 120,
+    EPSR = 121,
+    IEPSR = 122,
+    PRIMASK = 123,
+    BASEPRI = 124,
+    BASEPRI_MAX = 125,
+    FAULTMASK = 126,
+    APSR_NZCVQ = 127,
+    APSR_G = 128,
+    APSR_NZCVQG = 129,
+    IAPSR_NZCVQ = 130,
+    IAPSR_G = 131,
+    IAPSR_NZCVQG = 132,
+    EAPSR_NZCVQ = 133,
+    EAPSR_G = 134,
+    EAPSR_NZCVQG = 135,
+    XPSR_NZCVQ = 136,
+    XPSR_G = 137,
+    XPSR_NZCVQG = 138,
+    ENDING = 139,
+}
+
+impl RegisterARM {
     // alias registers
     // (assoc) R13 = 12,
     // (assoc) R14 = 10,
@@ -133,9 +156,6 @@ pub enum RegisterARM {
     // (assoc) SL = 76,
     // (assoc) FP = 77,
     // (assoc) IP = 78,
-}
-
-impl RegisterARM {
     pub const R13: RegisterARM = RegisterARM::SP;
     pub const R14: RegisterARM = RegisterARM::LR;
     pub const R15: RegisterARM = RegisterARM::PC;

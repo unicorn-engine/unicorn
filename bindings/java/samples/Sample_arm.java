@@ -40,9 +40,9 @@ public class Sample_arm {
    static void test_arm()
    {
    
-       Long r0 = new Long(0x1234); // R0 register
-       Long r2 = new Long(0x6789); // R1 register
-       Long r3 = new Long(0x3333); // R2 register
+       Long r0 = 0x1234L; // R0 register
+       Long r2 = 0x6789L; // R1 register
+       Long r3 = 0x3333L; // R2 register
        Long r1;     // R1 register
    
        System.out.print("Emulate ARM code\n");
@@ -85,7 +85,7 @@ public class Sample_arm {
    static void test_thumb()
    {
    
-       Long sp = new Long(0x1234); // R0 register
+       Long sp = 0x1234L; // R0 register
    
        System.out.print("Emulate THUMB code\n");
    

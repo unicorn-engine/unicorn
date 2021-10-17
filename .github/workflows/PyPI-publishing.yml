@@ -3,7 +3,6 @@ name: PyPI 📦 Distribution
 on:
   push:
     paths-ignore:
-      - ".github/**"
       - ".gitignore"
       - "docs/**"
       - "README"

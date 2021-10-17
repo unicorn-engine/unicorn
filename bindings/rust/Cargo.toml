@@ -1,8 +1,8 @@
 [package]
-name = "unicorn"
-version = "1.0.0"
-authors = ["Lukas Seidel"]
-documentation = ""
+name = "unicorn-engine"
+version = "2.0.0-rc3"
+authors = ["Ziqiao Kong", "Lukas Seidel"]
+documentation = "https://github.com/unicorn-engine/unicorn/wiki"
 edition = "2018"
 include = [
     "/.gitmodules",
@@ -10,6 +10,7 @@ include = [
     "/Cargo.toml",
     "/README.md",
     "/src/*",
+    "build.rs"
 ]
 license = "GPL-2.0"
 readme = "README.md"
