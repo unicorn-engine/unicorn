@@ -1,7 +1,7 @@
 [package]
-name = "unicorn"
-version = "1.0.0"
-authors = ["Lukas Seidel"]
+name = "unicorn-engine"
+version = "2.0.0-rc3"
+authors = ["Ziqiao Kong", "Lukas Seidel"]
 documentation = ""
 edition = "2018"
 include = [
@@ -10,6 +10,7 @@ include = [
     "/Cargo.toml",
     "/README.md",
     "/src/*",
+    "build.rs"
 ]
 license = "GPL-2.0"
 readme = "README.md"

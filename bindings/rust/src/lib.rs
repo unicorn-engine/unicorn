@@ -6,13 +6,13 @@
 //!
 //! ```rust
 //!
-//! use unicorn::RegisterARM;
-//! use unicorn::unicorn_const::{Arch, Mode, Permission, SECOND_SCALE};
+//! use unicorn_engine::RegisterARM;
+//! use unicorn_engine::unicorn_const::{Arch, Mode, Permission, SECOND_SCALE};
 //!
 //! fn main() {
 //!     let arm_code32: Vec<u8> = vec![0x17, 0x00, 0x40, 0xe2]; // sub r0, #23
 //!
-//!     let mut unicorn = unicorn::Unicorn::new(Arch::ARM, Mode::LITTLE_ENDIAN).expect("failed to initialize Unicorn instance");
+//!     let mut unicorn = unicorn_engine::Unicorn::new(Arch::ARM, Mode::LITTLE_ENDIAN).expect("failed to initialize Unicorn instance");
 //!     let mut emu = unicorn.borrow();
 //!     emu.mem_map(0x1000, 0x4000, Permission::ALL).expect("failed to map code page");
 //!     emu.mem_write(0x1000, &arm_code32).expect("failed to write instructions");
