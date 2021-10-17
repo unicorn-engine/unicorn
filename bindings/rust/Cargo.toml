@@ -2,7 +2,7 @@
 name = "unicorn-engine"
 version = "2.0.0-rc3"
 authors = ["Ziqiao Kong", "Lukas Seidel"]
-documentation = ""
+documentation = "https://github.com/unicorn-engine/unicorn/wiki"
 edition = "2018"
 include = [
     "/.gitmodules",
