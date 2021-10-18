@@ -1,12 +1,11 @@
-use std::fmt::format;
-use std::result::Result;
-use std::{env, process::Command};
-use std::path::{Path, PathBuf};
 use bytes::Buf;
 use flate2::read::GzDecoder;
 use reqwest::header::USER_AGENT;
+use std::fmt::format;
+use std::path::{Path, PathBuf};
+use std::result::Result;
+use std::{env, process::Command};
 use tar::Archive;
-
 
 fn find_unicorn(unicorn_dir: &PathBuf) -> Option<PathBuf> {
     for entry in std::fs::read_dir(unicorn_dir).ok()? {
@@ -37,8 +36,10 @@ fn download_unicorn() -> Option<String> {
             pkg_version
         ))
         .header(USER_AGENT, "unicorn-engine-rust-bindings")
-        .send().unwrap()
-        .bytes().unwrap();
+        .send()
+        .unwrap()
+        .bytes()
+        .unwrap();
     let tar = GzDecoder::new(resp.reader());
 
     let mut archive = Archive::new(tar);
@@ -46,12 +47,11 @@ fn download_unicorn() -> Option<String> {
 
     match find_unicorn(&out_dir) {
         Some(dir) => Some(String::from(out_dir.join(dir).to_str()?)),
-        None => None
+        None => None,
     }
 }
 
 fn main() {
-    
     let profile = env::var("PROFILE").unwrap();
 
     let unicorn_dir = download_unicorn().unwrap();
