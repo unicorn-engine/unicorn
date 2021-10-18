@@ -1,9 +1,7 @@
 use bytes::Buf;
 use flate2::read::GzDecoder;
 use reqwest::header::USER_AGENT;
-use std::fmt::format;
-use std::path::{Path, PathBuf};
-use std::result::Result;
+use std::path::PathBuf;
 use std::{env, process::Command};
 use tar::Archive;
 
