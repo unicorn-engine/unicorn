@@ -19,7 +19,7 @@ fn main() {
 
         Command::new("git")
             .arg("clone")
-            .arg("git@github.com:unicorn-engine/unicorn.git")
+            .arg("https://github.com/unicorn-engine/unicorn.git")
             .arg("-b")
             .arg(version)
             .arg(&unicorn_dir)
