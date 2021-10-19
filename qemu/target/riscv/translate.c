@@ -899,6 +899,7 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 static void riscv_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *ctx = container_of(dcbase, DisasContext, base);
+    TCGContext *tcg_ctx = ctx->uc->tcg_ctx;
 
     switch (ctx->base.is_jmp) {
     case DISAS_TOO_MANY:
@@ -907,6 +908,7 @@ static void riscv_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     case DISAS_NORETURN:
         break;
     case DISAS_UC_EXIT:
+        tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
         gen_helper_uc_riscv_exit(ctx->uc->tcg_ctx, ctx->uc->tcg_ctx->cpu_env);
         break;
     default:
