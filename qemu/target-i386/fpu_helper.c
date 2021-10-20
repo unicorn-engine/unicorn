@@ -1127,12 +1127,12 @@ void helper_fxsave(CPUX86State *env, target_ulong ptr, int data64)
     cpu_stw_data(env, ptr + 4, fptag ^ 0xff);
 #ifdef TARGET_X86_64
     if (data64) {
-        cpu_stq_data(env, ptr + 0x08, 0); /* rip */
+        cpu_stq_data(env, ptr + 0x08, env->fpip); /* rip */
         cpu_stq_data(env, ptr + 0x10, 0); /* rdp */
     } else
 #endif
     {
-        cpu_stl_data(env, ptr + 0x08, 0); /* eip */
+        cpu_stl_data(env, ptr + 0x08, (uint32_t) env->fpip); /* eip */
         cpu_stl_data(env, ptr + 0x0c, 0); /* sel  */
         cpu_stl_data(env, ptr + 0x10, 0); /* dp */
         cpu_stl_data(env, ptr + 0x14, 0); /* sel  */
