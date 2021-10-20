@@ -1100,6 +1100,9 @@ if (UNICORN_HAS_RISCV)
     set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_riscv)
 endif()
 
+# Extra tests
+set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_mem)
+
 target_compile_options(unicorn PRIVATE
     ${UNICORN_COMPILE_OPTIONS}
 )
