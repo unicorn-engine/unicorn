@@ -203,6 +203,105 @@ static void test_riscv64_3steps_pc_update() {
   OK(uc_close(uc));
 }
 
+static void test_riscv32_fp_move(void) {
+  uc_engine *uc;
+  char code[] = "\xd3\x81\x10\x22"; // fmv.d f3, f1
+
+  uint32_t r_f1 = 0x1234;
+  uint32_t r_f3 = 0x5678;
+
+  uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code, sizeof(code) - 1);
+
+  // initialize machine registers
+  uc_reg_write(uc, UC_RISCV_REG_F1, &r_f1);
+  uc_reg_write(uc, UC_RISCV_REG_F3, &r_f3);
+
+  // emulate the instruction
+  OK(uc_emu_start(uc, code_start, -1, 0, 1));
+
+  OK(uc_reg_read(uc, UC_RISCV_REG_F1, &r_f1));
+  OK(uc_reg_read(uc, UC_RISCV_REG_F3, &r_f3));
+
+  TEST_CHECK(r_f1 == 0x1234);
+  TEST_CHECK(r_f3 == 0x1234);
+
+  uc_close(uc);
+}
+
+static void test_riscv64_fp_move(void) {
+  uc_engine *uc;
+  char code[] = "\xd3\x81\x10\x22"; // fmv.d f3, f1
+
+  uint64_t r_f1 = 0x12341234;
+  uint64_t r_f3 = 0x56785678;
+
+  uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code, sizeof(code) - 1);
+
+  // initialize machine registers
+  uc_reg_write(uc, UC_RISCV_REG_F1, &r_f1);
+  uc_reg_write(uc, UC_RISCV_REG_F3, &r_f3);
+
+  // emulate the instruction
+  OK(uc_emu_start(uc, code_start, -1, 0, 1));
+
+  OK(uc_reg_read(uc, UC_RISCV_REG_F1, &r_f1));
+  OK(uc_reg_read(uc, UC_RISCV_REG_F3, &r_f3));
+
+  TEST_CHECK(r_f1 == 0x12341234);
+  TEST_CHECK(r_f3 == 0x12341234);
+
+  uc_close(uc);
+}
+
+static void test_riscv64_fp_move_from_int(void) {
+  uc_engine *uc;
+  char code[] = "\x53\x00\x0b\xf2"; // fmvd.d.x ft0, s6
+
+  uint64_t r_ft0 = 0x12341234;
+  uint64_t r_s6 = 0x56785678;
+
+  uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code, sizeof(code) - 1);
+
+  // initialize machine registers
+  uc_reg_write(uc, UC_RISCV_REG_FT0, &r_ft0);
+  uc_reg_write(uc, UC_RISCV_REG_S6, &r_s6);
+
+  // emulate the instruction
+  OK(uc_emu_start(uc, code_start, -1, 0, 1));
+
+  OK(uc_reg_read(uc, UC_RISCV_REG_FT0, &r_ft0));
+  OK(uc_reg_read(uc, UC_RISCV_REG_S6, &r_s6));
+
+  TEST_CHECK(r_ft0 == 0x56785678);
+  TEST_CHECK(r_s6 == 0x56785678);
+
+  uc_close(uc);
+}
+
+static void test_riscv64_fp_move_to_int(void) {
+  uc_engine *uc;
+  char code[] = "\x53\x0b\x00\xf2"; // fmv.x.d s6, ft0
+
+  uint64_t r_ft0 = 0x12341234;
+  uint64_t r_s6 = 0x56785678;
+
+  uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code, sizeof(code) - 1);
+
+  // initialize machine registers
+  uc_reg_write(uc, UC_RISCV_REG_FT0, &r_ft0);
+  uc_reg_write(uc, UC_RISCV_REG_S6, &r_s6);
+
+  // emulate the instruction
+  OK(uc_emu_start(uc, code_start, -1, 0, 1));
+
+  OK(uc_reg_read(uc, UC_RISCV_REG_FT0, &r_ft0));
+  OK(uc_reg_read(uc, UC_RISCV_REG_S6, &r_s6));
+
+  TEST_CHECK(r_ft0 == 0x12341234);
+  TEST_CHECK(r_s6 == 0x12341234);
+
+  uc_close(uc);
+}
 
 TEST_LIST = {
     { "test_riscv32_nop", test_riscv32_nop },
@@ -211,5 +310,9 @@ TEST_LIST = {
     { "test_riscv64_3steps_pc_update", test_riscv64_3steps_pc_update },
     { "test_riscv32_until_pc_update", test_riscv32_until_pc_update },
     { "test_riscv64_until_pc_update", test_riscv64_until_pc_update },
+    { "test_riscv32_fp_move", test_riscv32_fp_move },
+    { "test_riscv64_fp_move", test_riscv64_fp_move },
+    { "test_riscv64_fp_move_from_int", test_riscv64_fp_move_from_int },
+    { "test_riscv64_fp_move_from_int", test_riscv64_fp_move_to_int },
     { NULL, NULL }
 };
