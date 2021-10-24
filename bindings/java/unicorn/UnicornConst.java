@@ -25,6 +25,7 @@ public interface UnicornConst {
 
    public static final int UC_MODE_LITTLE_ENDIAN = 0;
    public static final int UC_MODE_BIG_ENDIAN = 1073741824;
+   public static final int UC_MODE_AFL = 536870912;
 
    public static final int UC_MODE_ARM = 0;
    public static final int UC_MODE_THUMB = 16;
@@ -72,6 +73,10 @@ public interface UnicornConst {
    public static final int UC_ERR_HOOK_EXIST = 19;
    public static final int UC_ERR_RESOURCE = 20;
    public static final int UC_ERR_EXCEPTION = 21;
+   public static final int UC_ERR_AFL_RET_ERROR = 22;
+   public static final int UC_ERR_AFL_RET_NO_AFL = 23;
+   public static final int UC_ERR_AFL_RET_CALLED_TWICE = 24;
+   public static final int UC_ERR_AFL_RET_FINISHED = 25;
    public static final int UC_MEM_READ = 16;
    public static final int UC_MEM_WRITE = 17;
    public static final int UC_MEM_FETCH = 18;
