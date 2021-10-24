@@ -111,7 +111,7 @@ const char *uc_strerror(uc_err code)
         case UC_ERR_AFL_RET_CALLED_TWICE:
             return "AFL has already been started before (UC_ERR_AFL_RET_CALLED_TWICE)";
         case UC_ERR_AFL_RET_FINISHED:
-            return "We forked before but now parent is gone (UC_ERR_AFL_REG_FINISHED)";
+            return "We forked before but now parent is gone (UC_ERR_AFL_RET_FINISHED)";
     }
 }
 
