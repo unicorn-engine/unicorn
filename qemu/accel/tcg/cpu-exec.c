@@ -29,6 +29,10 @@
 #include "sysemu/cpus.h"
 #include "uc_priv.h"
 
+#ifdef UNICORN_HAS_AFL
+#include "afl/afl-cpu-inl.h"
+#endif
+
 /* -icount align implementation. */
 
 typedef struct SyncClocks {
@@ -254,6 +258,11 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
         /* We add the TB in the virtual pc hash table for the fast lookup */
         cpu->tb_jmp_cache[tb_jmp_cache_hash_func(cpu->uc, pc)] = tb;
     }
+
+#if defined(UNICORN_HAS_AFL)
+    afl_request_tsl(cpu, pc, cs_base, flags, cf_mask);
+#endif
+
     /* We don't take care of direct jumps when address mapping changes in
      * system emulation. So it's not safe to make a direct jump to a TB
      * spanning two pages because the mapping for the second page can change.
@@ -579,3 +588,31 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
 
     return ret;
 }
+
+#ifdef UNICORN_HAS_AFL
+int afl_forkserver_start(struct uc_struct *uc) 
+{
+    // Not sure if we need all of this setup foo.
+    CPUState *cpu = uc->cpu;
+    if (!cpu->created) {
+        cpu->created = true;
+        cpu->halted = 0;
+        qemu_init_vcpu(cpu);
+            
+    }
+    cpu_resume(cpu);
+
+    if (uc->count_hook != 0) { 
+        uc_hook_del(uc, uc->count_hook);
+        uc->count_hook = 0;
+    }
+
+    uc->quit_request = false;
+    uc->cpu = cpu;
+    smp_mb(); 
+    
+    // Would love to not have the extra step in cpus.c, but it doesn't work otherwise(?)
+    afl_setup(uc);
+    return afl_forkserver(cpu);
+}
+#endif

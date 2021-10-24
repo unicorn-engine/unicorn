@@ -194,6 +194,21 @@ void resume_all_vcpus(struct uc_struct* uc)
         tb_flush_jmp_cache(cpu, uc->addr_end);
     }
 
+    if (uc->mode & UC_MODE_AFL) {
+        // UNICORN-AFL supports (and needs) multiple exits.
+        uint64_t *exits = uc->exits;
+        size_t exit_count = uc->exit_count;
+        if (exit_count) {
+            size_t i;
+            for (i = 0; i < exit_count; i++) {
+                TranslationBlock *tb = cpu->tb_jmp_cache[tb_jmp_cache_hash_func(uc, exits[i])];
+                if (tb) {
+                    qht_remove(&uc->tcg_ctx->tb_ctx.htable, tb, tb->hash);
+                    tb_flush_jmp_cache(cpu, uc->exits[i]);
+                }
+            }
+        }
+    }
 
     cpu->created = false;
 }

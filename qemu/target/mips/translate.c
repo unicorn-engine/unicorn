@@ -30930,6 +30930,22 @@ static void mips_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     bool hook_insn = false;
 
     is_slot = ctx->hflags & MIPS_HFLAG_BMASK;
+    
+    if (uc->mode & UC_MODE_AFL) {
+        // UNICORN-AFL supports (and needs) multiple exits.
+        uint64_t *exits = uc->exits;
+        size_t exit_count = uc->exit_count;
+        if (exit_count) {
+            size_t i;
+            for (i = 0; i < exit_count; i++) {
+                if (ctx->base.pc_next == exits[i]) {// raise a special interrupt to quit
+                    gen_helper_wait(tcg_ctx, tcg_ctx->cpu_env);
+                    ctx->base.is_jmp = DISAS_NORETURN;
+                    return;
+                }
+            }
+        }
+    }
 
     // Unicorn: end address tells us to stop emulation
     if (ctx->base.pc_next == uc->addr_end) {

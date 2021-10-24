@@ -4764,6 +4764,25 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 
     s->uc = env->uc;
 
+    if (s->uc->mode & UC_MODE_AFL) {
+        // UNICORN-AFL supports (and needs) multiple exits.
+        uint64_t *exits = s->uc->exits;
+        size_t exit_count = s->uc->exit_count;
+        if (exit_count) {
+            size_t i;
+            for (i = 0; i < exit_count; i++) {
+                if (s->pc == exits[i]) {
+                    // imitate the HLT instruction
+                    gen_update_cc_op(s);
+                    gen_jmp_im(s, pc_start - s->cs_base);
+                    gen_helper_hlt(tcg_ctx, tcg_ctx->cpu_env, tcg_const_i32(tcg_ctx, s->pc - pc_start));
+                    s->base.is_jmp = DISAS_NORETURN;
+                    return s->pc;
+                }
+            }
+        }
+    }
+
     // Unicorn: end address tells us to stop emulation
     if (s->pc == s->uc->addr_end) {
         // imitate the HLT instruction

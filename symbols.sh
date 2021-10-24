@@ -4,6 +4,11 @@ CMD_PATH=$(realpath $0)
 SOURCE_DIR=$(dirname ${CMD_PATH})
 
 COMMON_SYMBOLS="
+afl_forkserver_start \
+helper_afl_maybe_log \
+helper_afl_compcov_log_16 \
+helper_afl_compcov_log_32 \
+helper_afl_compcov_log_64 \
 use_idiv_instructions \
 arm_arch \
 tb_target_set_jmp_target \

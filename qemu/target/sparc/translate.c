@@ -5950,6 +5950,24 @@ static void sparc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     CPUSPARCState *env = cs->env_ptr;
     unsigned int insn;
 
+    if (uc->mode & UC_MODE_AFL) {
+        // UNICORN-AFL supports (and needs) multiple exits.
+        uint64_t *exits = uc->exits;
+        size_t exit_count = uc->exit_count;
+        if (exit_count) {
+            size_t i;
+            for (i = 0; i < exit_count; i++) {
+                if (dc->pc == exits[i]) {
+#ifndef TARGET_SPARC64
+                    gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
+#endif
+                    dcbase->is_jmp = DISAS_NORETURN;
+                    return;
+                }
+            }
+        }
+    }
+
     // Unicorn: end address tells us to stop emulation
     if (dc->pc == uc->addr_end) {
 #ifndef TARGET_SPARC64

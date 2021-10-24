@@ -37,6 +37,11 @@
 #include "qemu/atomic128.h"
 #include "kvm-consts.h"
 
+#if defined(UNICORN_HAS_AFL)
+#undef ARCH_HAS_COMPCOV
+#include "afl/afl-cpu-translate-inl.h"
+#endif
+
 static const char *regnames[] = {
     "x0", "x1", "x2", "x3", "x4", "x5", "x6", "x7",
     "x8", "x9", "x10", "x11", "x12", "x13", "x14", "x15",
@@ -14635,6 +14640,21 @@ static void aarch64_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 {
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     CPUARMState *env = cpu->env_ptr;
+
+    if (dc->uc->mode & UC_MODE_AFL) {
+        // UNICORN-AFL supports (and needs) multiple exits.
+        uint64_t *exits = dc->uc->exits;
+        size_t exit_count = dc->uc->exit_count;
+        if (exit_count) {
+            size_t i;
+            for (i = 0; i < exit_count; i++) {
+                if (dcbase->pc_next == exits[i]) {
+                    dcbase->is_jmp = DISAS_WFI;
+                    return;
+                }
+            }
+        }
+    }
 
     // Unicorn: end address tells us to stop emulation
     if (dcbase->pc_next == dc->uc->addr_end) {

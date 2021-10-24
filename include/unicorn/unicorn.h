@@ -105,6 +105,7 @@ typedef enum uc_arch {
 typedef enum uc_mode {
     UC_MODE_LITTLE_ENDIAN = 0,    // little-endian mode (default mode)
     UC_MODE_BIG_ENDIAN = 1 << 30, // big-endian mode
+    UC_MODE_AFL = 1 << 29,
 
     // arm / arm64
     UC_MODE_ARM = 0,              // ARM mode
@@ -171,6 +172,10 @@ typedef enum uc_err {
     UC_ERR_HOOK_EXIST,  // hook for this event already existed
     UC_ERR_RESOURCE,    // Insufficient resource: uc_emu_start()
     UC_ERR_EXCEPTION, // Unhandled CPU exception
+    UC_ERR_AFL_RET_ERROR, // Something went horribly wrong in the parent
+    UC_ERR_AFL_RET_NO_AFL, // No AFL, no need to fork.
+    UC_ERR_AFL_RET_CALLED_TWICE, // AFL has already been started before.
+    UC_ERR_AFL_RET_FINISHED, // We forked before but now AFL is gone (parent)
 } uc_err;
 
 
@@ -567,6 +572,82 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size);
 */
 UNICORN_EXPORT
 uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
+
+/* Callback function called for each input from AFL.
+ This function is mandatory.
+ It's purpose is to place the input at the right place in unicorn.
+ @uc: Unicorn instance
+ @input: The current input we're working on. Place this somewhere in unicorn's memory now.
+ @input_len: length of the input
+ @persistent_round: which round we are currently crashing in, if using persistent mode.
+ @data: Data pointer passed to uc_afl_fuzz(...).
+ @return:
+  If you return is true, all is well. Fuzzing starts.
+  If you return false, the input is rejected; we will continue with the next input.
+*/
+typedef bool (*uc_afl_cb_place_input_t)(uc_engine *uc, char *input, size_t input_len, uint32_t persistent_round, void *data);
+
+/* Callback function called after a non-UC_ERR_OK returncode was returned by Unicorn.
+ This function is not mandatory (pass NULL).
+ @uc: Unicorn instance
+ @unicorn_result: The error state returned by the current testcase
+ @input: The current input we're workin with.
+ @input_len: length of the input
+ @persistent_round: which round we are currently crashing in, if using persistent mode.
+ @data: Data pointer passed to uc_afl_fuzz(...).
+@Return:
+  If you return false, the crash is considered invalid and not reported to AFL.
+  If return is true, the crash is reported.
+  -> The child will die and the forkserver will spawn a new child.
+*/
+typedef bool (*uc_afl_cb_validate_crash_t)(uc_engine *uc, uc_err unicorn_result, char *input, int input_len, int persistent_round, void *data);
+
+/*
+ The main fuzzer.
+ Starts uc_afl_forkserver(), then beginns a persistent loop.
+ Reads input, calls the place_input callback, emulates, uc_afl_next(...), repeats.
+ If unicorn errors out, will call the validate_crash_callback, if set.
+ Will only retrun in the parent after the whole fuzz thing has been finished and afl died.
+ The child processes never return from here.
+
+ Note: This API is not supported on Windows.
+
+ @uc: handle returned by uc_open()
+ @input_file: filename/path to the (AFL) inputfile. Usualy suplied on the commandline.
+ @place_input_callback: Callback function that will be called before each test runs.
+         This function needs to write the input from afl to the correct position on the unicorn object.
+ @exits: address list of exits where fuzzing should stop (len == exit_count)
+ @exit_count: number of exits where fuzzing should stop
+ @validate_crash_callback: Optional callback (if not needed, pass NULL), that determines
+         if a non-OK uc_err is an actual error. If false is returned, the test-case will not crash.
+ @always_validate: If false, validate_crash_callback will only be called for crashes.
+ @persistent_iters:
+  The amount of loop iterations in persistent mode before restarteing with a new forked child.
+  If your target cannot be fuzzed using persistent mode (global state changes a lot),
+   set persistent_iters = 1 for the normal fork-server experience.
+  Else, the default is usually around 1000.
+  If your target is super stable (and unicorn is, too - not sure about that one),
+   you may pass persistent_iter = 0 for that an infinite fuzz loop.
+ @data: Your very own data pointer. This will passed into every callback.
+ @return uc_afl_ret:
+        >UC_AFL_RET_ERROR = 0, // Something went horribly wrong in the parent
+        >UC_AFL_RET_CHILD, // Can never happen, the child will loop happily or exit.
+        >UC_AFL_RET_NO_AFL, // No AFL, we ran the testacse once and are done.
+        >UC_AFL_RET_FINISHED, // We forked before but now AFL is gone (parent)
+          >> We're retuning after having fuzzed. We may now pack our bags and exit.
+*/
+UNICORN_EXPORT
+uc_err uc_afl_fuzz(
+    uc_engine *uc,
+    char* input_file,
+    uc_afl_cb_place_input_t place_input_callback,
+    uint64_t *exits,
+    size_t exit_count,
+    uc_afl_cb_validate_crash_t validate_crash_callback,
+    bool always_validate,
+    uint32_t persistent_iters,
+    void *data
+);
 
 /*
  Stop emulation (which was started by uc_emu_start() API.

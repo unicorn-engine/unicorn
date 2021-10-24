@@ -15,14 +15,26 @@
 
 // These are masks of supported modes for each cpu/arch.
 // They should be updated when changes are made to the uc_mode enum typedef.
+#ifdef UNICORN_HAS_AFL
+#define UC_MODE_ARM_MASK    (UC_MODE_ARM|UC_MODE_THUMB|UC_MODE_LITTLE_ENDIAN|UC_MODE_MCLASS \
+				|UC_MODE_ARM926|UC_MODE_ARM946|UC_MODE_ARM1176|UC_MODE_BIG_ENDIAN|UC_MODE_AFL)
+#define UC_MODE_X86_MASK    (UC_MODE_16|UC_MODE_32|UC_MODE_64|UC_MODE_LITTLE_ENDIAN|UC_MODE_AFL)
+#define UC_MODE_MIPS_MASK   (UC_MODE_MIPS32|UC_MODE_MIPS64|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN|UC_MODE_AFL)
+#define UC_MODE_PPC_MASK    (UC_MODE_PPC32|UC_MODE_PPC64|UC_MODE_BIG_ENDIAN|UC_MODE_AFL)
+#define UC_MODE_SPARC_MASK  (UC_MODE_SPARC32|UC_MODE_SPARC64|UC_MODE_BIG_ENDIAN|UC_MODE_AFL)
+#define UC_MODE_M68K_MASK   (UC_MODE_BIG_ENDIAN|UC_MODE_AFL)
+#define UC_MODE_RISCV_MASK  (UC_MODE_RISCV32|UC_MODE_RISCV64|UC_MODE_LITTLE_ENDIAN|UC_MODE_AFL)
+#else
 #define UC_MODE_ARM_MASK    (UC_MODE_ARM|UC_MODE_THUMB|UC_MODE_LITTLE_ENDIAN|UC_MODE_MCLASS \
 				|UC_MODE_ARM926|UC_MODE_ARM946|UC_MODE_ARM1176|UC_MODE_BIG_ENDIAN)
-#define UC_MODE_MIPS_MASK   (UC_MODE_MIPS32|UC_MODE_MIPS64|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN)
 #define UC_MODE_X86_MASK    (UC_MODE_16|UC_MODE_32|UC_MODE_64|UC_MODE_LITTLE_ENDIAN)
+#define UC_MODE_MIPS_MASK   (UC_MODE_MIPS32|UC_MODE_MIPS64|UC_MODE_LITTLE_ENDIAN|UC_MODE_BIG_ENDIAN)
 #define UC_MODE_PPC_MASK    (UC_MODE_PPC32|UC_MODE_PPC64|UC_MODE_BIG_ENDIAN)
 #define UC_MODE_SPARC_MASK  (UC_MODE_SPARC32|UC_MODE_SPARC64|UC_MODE_BIG_ENDIAN)
 #define UC_MODE_M68K_MASK   (UC_MODE_BIG_ENDIAN)
 #define UC_MODE_RISCV_MASK  (UC_MODE_RISCV32|UC_MODE_RISCV64|UC_MODE_LITTLE_ENDIAN)
+#endif
+
 
 #define ARR_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
@@ -94,6 +106,20 @@ typedef void (*uc_softfloat_initialize)(void);
 
 // tcg flush softmmu tlb
 typedef void (*uc_tcg_flush_tlb)(struct uc_struct *uc);
+
+typedef enum uc_afl_ret {
+  UC_AFL_RET_ERROR = 0, // Something went horribly wrong in the parent
+  UC_AFL_RET_CHILD, // Fork worked. we are a child
+  UC_AFL_RET_NO_AFL, // No AFL, no need to fork.
+  UC_AFL_RET_CALLED_TWICE, // AFL has already been started before.
+  UC_AFL_RET_FINISHED, // We forked before but now AFL is gone (parent)
+} uc_afl_ret;
+
+// we use this as shortcut deep inside uc_afl for the arch specific uc_afl_next(uc, bool)
+typedef uc_afl_ret(*uc_afl_ret_uc_bool_t)(struct uc_struct*, bool);
+
+// afl_forkserver_start
+typedef int (*uc_afl_forkserver_t)(struct uc_struct*);
 
 struct hook {
     int type;            // UC_HOOK_*
@@ -282,6 +308,22 @@ struct uc_struct {
     bool first_tb; // is this the first Translation-Block ever generated since uc_emu_start()?
     struct list saved_contexts; // The contexts saved by this uc_struct.
     bool no_exit_request; // Disable check_exit_request temporarily. A workaround to treat the IT block as a whole block.
+
+#ifdef UNICORN_HAS_AFL
+    uc_afl_forkserver_t afl_forkserver_start; // function to start afl forkserver
+    uc_afl_ret_uc_bool_t afl_child_request_next; // function from child to ask for new testcase (if in child)
+    int afl_child_pipe[2]; // pipe used to send information from child process to forkserver
+    int afl_parent_pipe[2]; // pipe used to send information from parent to child in forkserver
+    uint8_t *afl_area_ptr; // map, shared with afl, to report coverage feedback etc. during runs
+    uint64_t afl_prev_loc; // previous location
+    int afl_compcov_level; // how much compcove we want
+    unsigned int afl_inst_rms;
+    size_t exit_count; // number of exits set in afl_fuzz or afl_forkserver
+    uint64_t *exits; // pointer to the actual exits
+    char *afl_testcase_ptr; // map, shared with afl, to get testcases delivered from for each run
+    uint32_t *afl_testcase_size_p; // size of the current testcase, if using shared map fuzzing with afl.
+    void *afl_data_ptr; // Pointer for various (bindings-related) uses.
+#endif
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
