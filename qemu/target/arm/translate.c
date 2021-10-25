@@ -11420,7 +11420,7 @@ static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         return;
     }
 
-    if (dc->uc->mode & UC_MODE_AFL) {
+    if (dc->uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = dc->uc->exits;
         size_t exit_count = dc->uc->exit_count;

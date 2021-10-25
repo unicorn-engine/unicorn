@@ -315,6 +315,7 @@ struct uc_struct {
     bool no_exit_request; // Disable check_exit_request temporarily. A workaround to treat the IT block as a whole block.
 
 #ifdef UNICORN_HAS_AFL
+    bool afl;
     uc_afl_forkserver_t afl_forkserver_start; // function to start afl forkserver
     uc_afl_ret_uc_bool_t afl_child_request_next; // function from child to ask for new testcase (if in child)
     int afl_child_pipe[2]; // pipe used to send information from child process to forkserver

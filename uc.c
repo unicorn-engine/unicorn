@@ -162,6 +162,11 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
             return UC_ERR_NOMEM;
         }
 
+        if (mode & UC_MODE_AFL) {
+            uc->afl = true;
+            mode &= (~UC_MODE_AFL);
+        }
+
         /* qemu/exec.c: phys_map_node_reserve() */
         uc->alloc_hint = 16;
         uc->errnum = UC_ERR_OK;
@@ -937,7 +942,7 @@ uc_err uc_afl_fuzz(
         UCLOG(stderr, "[!] Unicorn Engine passed to uc_afl_fuzz is NULL!\n");
         return UC_ERR_AFL_RET_ERROR;
     }
-    if (!(uc->mode & UC_MODE_AFL)) {
+    if (!(uc->afl)) {
         return UC_ERR_MODE;
     }
     if (!input_file || input_file[0] == 0) {

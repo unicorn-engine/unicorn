@@ -6325,7 +6325,7 @@ static void m68k_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     CPUM68KState *env = cpu->env_ptr;
     uint16_t insn;
 
-    if (uc->mode & UC_MODE_AFL) {
+    if (uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = uc->exits;
         size_t exit_count = uc->exit_count;

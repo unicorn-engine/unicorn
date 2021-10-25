@@ -61,7 +61,7 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
     /* Reset the temp count so that we can identify leaks */
     tcg_clear_temp_count();
 
-    if (uc->mode & UC_MODE_AFL) {
+    if (uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = cpu->uc->exits;
         size_t exit_count = cpu->uc->exit_count;

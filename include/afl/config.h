@@ -10,7 +10,7 @@
                      Dominik Maier <mail@dmnk.co>
 
    Copyright 2016, 2017 Google Inc. All rights reserved.
-   Copyright 2019-2020 AFLplusplus Project. All rights reserved.
+   Copyright 2019-2021 AFLplusplus Project. All rights reserved.
 
    Licensed under the Apache License, Version 2.0 (the "License");
    you may not use this file except in compliance with the License.
@@ -25,14 +25,63 @@
 
 /* Version string: */
 
-// c = release, d = volatile github dev, e = experimental branch
-#define VERSION "++3.01a"
+// c = release, a = volatile github dev, e = experimental branch
+#define VERSION "++3.15a"
 
 /******************************************************
  *                                                    *
  *  Settings that may be of interest to power users:  *
  *                                                    *
  ******************************************************/
+
+/* Default shared memory map size. Most targets just need a coverage map
+   between 20-250kb. Plus there is an auto-detection feature in afl-fuzz.
+   However if a target has problematic constructors and init arrays then
+   this can fail. Hence afl-fuzz deploys a larger default map. The largest
+   map seen so far is the xlsx fuzzer for libreoffice which is 5MB.
+   At runtime this value can be overriden via AFL_MAP_SIZE.
+   Default: 8MB (defined in bytes) */
+#define DEFAULT_SHMEM_SIZE (8 * 1024 * 1024)
+
+/* Default file permission umode when creating files (default: 0600) */
+#define DEFAULT_PERMISSION 0600
+
+/* CMPLOG/REDQUEEN TUNING
+ *
+ * Here you can modify tuning and solving options for CMPLOG.
+ * Note that these are run-time options for afl-fuzz, no target
+ * recompilation required.
+ *
+ */
+
+/* if TRANSFORM is enabled with '-l T', this additionally enables base64
+   encoding/decoding */
+// #define CMPLOG_SOLVE_TRANSFORM_BASE64
+
+/* If a redqueen pass finds more than one solution, try to combine them? */
+#define CMPLOG_COMBINE
+
+/* Minimum % of the corpus to perform cmplog on. Default: 10% */
+#define CMPLOG_CORPUS_PERCENT 5U
+
+/* Number of potential positions from which we decide if cmplog becomes
+   useless, default 8096 */
+#define CMPLOG_POSITIONS_MAX (12 * 1024)
+
+/* Maximum allowed fails per CMP value. Default: 128 */
+#define CMPLOG_FAIL_MAX 96
+
+/* -------------------------------------*/
+/* Now non-cmplog configuration options */
+/* -------------------------------------*/
+
+/* If a persistent target keeps state and found crashes are not reproducable
+   then enable this option and set the AFL_PERSISTENT_RECORD env variable
+   to a number. These number of testcases prior and including the crash case
+   will be kept and written to the crash/ directory as RECORD:... files.
+   Note that every crash will be written, not only unique ones! */
+
+//#define AFL_PERSISTENT_RECORD
 
 /* console output colors: There are three ways to configure its behavior
  * 1. default: colored outputs fixed on: defined USE_COLOR && defined
@@ -67,7 +116,7 @@
 /* If you want to have the original afl internal memory corruption checks.
    Disabled by default for speed. it is better to use "make ASAN_BUILD=1". */
 
-//#define _WANT_ORIGINAL_AFL_ALLOC
+// #define _WANT_ORIGINAL_AFL_ALLOC
 
 /* Comment out to disable fancy ANSI boxes and use poor man's 7-bit UI: */
 
@@ -105,7 +154,7 @@
    cases that show variable behavior): */
 
 #define CAL_CYCLES 8U
-#define CAL_CYCLES_LONG 40U
+#define CAL_CYCLES_LONG 20U
 
 /* Number of subsequent timeouts before abandoning an input file: */
 
@@ -114,7 +163,7 @@
 /* Maximum number of unique hangs or crashes to record: */
 
 #define KEEP_UNIQUE_HANG 500U
-#define KEEP_UNIQUE_CRASH 5000U
+#define KEEP_UNIQUE_CRASH 10000U
 
 /* Baseline number of random tweaks during a single 'havoc' stage: */
 
@@ -188,11 +237,11 @@
    (note that if this value is changed, several areas in afl-cc.c, afl-fuzz.c
    and afl-fuzz-state.c have to be changed as well! */
 
-#define MAX_FILE (1 * 1024 * 1024U)
+#define MAX_FILE (1 * 1024 * 1024L)
 
 /* The same, for the test case minimizer: */
 
-#define TMIN_MAX_FILE (10 * 1024 * 1024)
+#define TMIN_MAX_FILE (10 * 1024 * 1024L)
 
 /* Block normalization steps for afl-tmin: */
 
@@ -252,6 +301,11 @@
 /* Sync interval (every n havoc cycles): */
 
 #define SYNC_INTERVAL 8
+
+/* Sync time (minimum time between syncing in ms, time is halfed for -M main
+   nodes) - default is 30 minutes: */
+
+#define SYNC_TIME (30 * 60 * 1000)
 
 /* Output directory reuse grace period (minutes): */
 
@@ -351,6 +405,10 @@
 /* Distinctive exit code used to indicate MSAN trip condition: */
 
 #define MSAN_ERROR 86
+
+/* Distinctive exit code used to indicate LSAN trip condition: */
+
+#define LSAN_ERROR 23
 
 /* Designated file descriptors for forkserver commands (the application will
    use FORKSRV_FD and FORKSRV_FD + 1): */

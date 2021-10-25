@@ -30931,7 +30931,7 @@ static void mips_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
 
     is_slot = ctx->hflags & MIPS_HFLAG_BMASK;
     
-    if (uc->mode & UC_MODE_AFL) {
+    if (uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = uc->exits;
         size_t exit_count = uc->exit_count;

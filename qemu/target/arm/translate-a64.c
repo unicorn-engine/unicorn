@@ -14641,7 +14641,7 @@ static void aarch64_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     DisasContext *dc = container_of(dcbase, DisasContext, base);
     CPUARMState *env = cpu->env_ptr;
 
-    if (dc->uc->mode & UC_MODE_AFL) {
+    if (dc->uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = dc->uc->exits;
         size_t exit_count = dc->uc->exit_count;

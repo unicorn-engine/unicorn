@@ -4764,7 +4764,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 
     s->uc = env->uc;
 
-    if (s->uc->mode & UC_MODE_AFL) {
+    if (s->uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = s->uc->exits;
         size_t exit_count = s->uc->exit_count;

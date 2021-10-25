@@ -849,7 +849,7 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     TCGOp *tcg_op, *prev_op = NULL;
     bool insn_hook = false;
 
-    if (uc->mode & UC_MODE_AFL) {
+    if (uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = ctx->uc->exits;
         size_t exit_count = ctx->uc->exit_count;

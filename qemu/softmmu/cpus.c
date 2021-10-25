@@ -194,7 +194,7 @@ void resume_all_vcpus(struct uc_struct* uc)
         tb_flush_jmp_cache(cpu, uc->addr_end);
     }
 
-    if (uc->mode & UC_MODE_AFL) {
+    if (uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = uc->exits;
         size_t exit_count = uc->exit_count;
