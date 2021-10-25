@@ -75,8 +75,8 @@ struct afl_tsl {
   uint64_t     flags;
   uint32_t     cf_mask;
 #if defined(TARGET_MIPS)
-  TCGv_i32 hflags;
-  TCGv_i32 btarget;
+  target_ulong hflags;
+  target_ulong btarget;
 #endif
 
 };
@@ -390,6 +390,9 @@ static inline void afl_request_tsl(CPUState *cpu, target_ulong pc, target_ulong 
   struct uc_struct* uc = cpu->uc;
   if (uc->afl_child_request_next == NULL) return;
   enum afl_child_ret tsl_req = AFL_CHILD_TSL_REQUEST;
+#if defined(TARGET_MIPS)
+  CPUArchState* env = cpu->env_ptr;
+#endif
 
   struct afl_tsl t = {
     .pc = pc,
@@ -397,8 +400,8 @@ static inline void afl_request_tsl(CPUState *cpu, target_ulong pc, target_ulong 
     .flags = flags,
     .cf_mask = cf_mask,
 #if defined(TARGET_MIPS)
-    .hflags = cpu->uc->tcg_ctx->hflags,
-    .btarget = cpu->uc->tcg_ctx->btarget,
+    .hflags = env->hflags,
+    .btarget = env->btarget,
 #endif
   };
 
@@ -469,6 +472,9 @@ static enum afl_child_ret afl_handle_child_requests(CPUState* cpu) {
 
   enum afl_child_ret child_msg;
   struct afl_tsl t;
+#if defined(TARGET_MIPS)
+  CPUArchState* env = cpu->env_ptr;
+#endif
 
   while (1) {
 
@@ -491,10 +497,10 @@ static enum afl_child_ret afl_handle_child_requests(CPUState* cpu) {
       // Prepare hflags for delay slot
 #if defined(TARGET_MIPS)
       struct afl_tsl tmp;
-      tmp.hflags = cpu->uc->tcg_ctx->hflags;
-      tmp.btarget = cpu->uc->tcg_ctx->btarget;
-      cpu->uc->tcg_ctx->hflags = t.hflags;
-      cpu->uc->tcg_ctx->btarget = t.btarget;
+      tmp.hflags = env->hflags;
+      tmp.btarget = env->btarget;
+      env->hflags = t.hflags;
+      env->btarget = t.btarget;
 #endif
 
       // Cache.
@@ -504,8 +510,8 @@ static enum afl_child_ret afl_handle_child_requests(CPUState* cpu) {
 
       // Restore hflags
 #if defined(TARGET_MIPS)
-      cpu->uc->tcg_ctx->hflags = tmp.hflags;
-      cpu->uc->tcg_ctx->btarget = tmp.btarget;
+      env->hflags = tmp.hflags;
+      env->btarget = tmp.btarget;
 #endif
 
     } else {

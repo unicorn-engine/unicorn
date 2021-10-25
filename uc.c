@@ -934,24 +934,27 @@ uc_err uc_afl_fuzz(
     return UC_ERR_MODE;
 #else
     if (!uc) {
-        fprintf(stderr, "[!] Unicorn Engine passed to uc_afl_fuzz is NULL!\n");
-        return UC_AFL_RET_ERROR;
+        UCLOG(stderr, "[!] Unicorn Engine passed to uc_afl_fuzz is NULL!\n");
+        return UC_ERR_AFL_RET_ERROR;
+    }
+    if (!(uc->mode & UC_MODE_AFL)) {
+        return UC_ERR_MODE;
     }
     if (!input_file || input_file[0] == 0) {
-        fprintf(stderr, "[!] No input file provided to uc_afl_fuzz.\n");
-        return UC_AFL_RET_ERROR;
+        UCLOG(stderr, "[!] No input file provided to uc_afl_fuzz.\n");
+        return UC_ERR_AFL_RET_ERROR;
     }
     if (!place_input_callback) {
-        fprintf(stderr, "[!] no place_input_callback set.\n");
-        return UC_AFL_RET_ERROR;
+        UCLOG(stderr, "[!] no place_input_callback set.\n");
+        return UC_ERR_AFL_RET_ERROR;
     }
     if (always_validate && !validate_crash_callback) {
-        fprintf(stderr, "[!] always_validate set but validate_crash_callback is missing.\n");
-        return UC_AFL_RET_ERROR;
+        UCLOG(stderr, "[!] always_validate set but validate_crash_callback is missing.\n");
+        return UC_ERR_AFL_RET_ERROR;
     }
     if (!exit_count) {
-        fprintf(stderr, "[!] Nullptr provided for exits.\n");
-        return UC_AFL_RET_ERROR;
+        UCLOG(stderr, "[!] Nullptr provided for exits.\n");
+        return UC_ERR_AFL_RET_ERROR;
     }
 
     uint32_t mmap_in_len = 0;
@@ -977,15 +980,16 @@ uc_err uc_afl_fuzz(
             break;
         case UC_AFL_RET_FINISHED:
             // Nothing more to do
-            return afl_ret;
+            return UC_ERR_AFL_RET_FINISHED;
         case UC_AFL_RET_ERROR:
+            return UC_ERR_AFL_RET_ERROR;
         case UC_AFL_RET_CALLED_TWICE:
             // Nothing more we can do
-            return afl_ret;
+            return UC_ERR_AFL_RET_CALLED_TWICE;
         default:
             // What have we done
-            fprintf(stderr, "[!] Unexpected forkserver return: %d", afl_ret);
-            return UC_AFL_RET_ERROR;
+            UCLOG(stderr, "[!] Unexpected forkserver return: %d", afl_ret);
+            return UC_ERR_AFL_RET_ERROR;
     }
 
     bool first_round = true;
@@ -993,7 +997,7 @@ uc_err uc_afl_fuzz(
 
 #if defined(AFL_DEBUG)
     if (uc->afl_testcase_ptr) {
-        printf("[d] uc->afl_testcase_ptr = %p, len = %d\n", uc->afl_testcase_ptr, *uc->afl_testcase_size_p);
+        UCLOG("[d] uc->afl_testcase_ptr = %p, len = %d\n", uc->afl_testcase_ptr, *uc->afl_testcase_size_p);
     }
 #endif
 
@@ -1018,7 +1022,7 @@ uc_err uc_afl_fuzz(
                No shmap fuzzing involved - Let's read a "normal" file. */
             off_t in_len = uc_afl_mmap_file(input_file, &in_buf);
             if (unlikely(in_len < 0)) {
-                fprintf(stderr, "[!] Unable to mmap file: %s (return was %ld)\n", input_file, (long int) in_len);
+                UCLOG(stderr, "[!] Unable to mmap file: %s (return was %ld)\n", input_file, (long int) in_len);
                 perror("mmap");
                 fflush(stderr);
                 return UC_AFL_RET_ERROR;
@@ -1047,7 +1051,7 @@ uc_err uc_afl_fuzz(
                 goto next_iter;
             }
 
-            fprintf(stderr, "[!] UC returned Error: '%s' - let's abort().\n", uc_strerror(uc_emu_ret));
+            UCLOG(stderr, "[!] UC returned Error: '%s' - let's abort().\n", uc_strerror(uc_emu_ret));
             fflush(stderr);
 
             abort();

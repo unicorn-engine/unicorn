@@ -35,6 +35,11 @@
 #define UC_MODE_RISCV_MASK  (UC_MODE_RISCV32|UC_MODE_RISCV64|UC_MODE_LITTLE_ENDIAN)
 #endif
 
+#ifndef NDEBUG
+#define UCLOG(...) fprintf(stderr, __VA_ARGS__)
+#else
+#define UCLOG(...)
+#endif
 
 #define ARR_SIZE(a) (sizeof(a)/sizeof(a[0]))
 
