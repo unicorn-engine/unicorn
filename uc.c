@@ -771,7 +771,7 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
     return uc->invalid_error;
 }
 
-
+#ifdef UNICORN_HAS_AFL
 static inline uc_afl_ret uc_afl_forkserver_start(uc_engine *uc, uint64_t *exits, size_t exit_count)
 {
     /*
@@ -922,6 +922,7 @@ static inline uc_afl_ret uc_afl_next(uc_engine *uc, bool crash_found)
 
     return UC_AFL_RET_NO_AFL;
 }
+#endif
 
 UNICORN_EXPORT
 uc_err uc_afl_fuzz(

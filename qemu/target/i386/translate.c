@@ -4764,6 +4764,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
 
     s->uc = env->uc;
 
+#ifdef UNICORN_HAS_AFL
     if (s->uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = s->uc->exits;
@@ -4782,6 +4783,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             }
         }
     }
+#endif
 
     // Unicorn: end address tells us to stop emulation
     if (s->pc == s->uc->addr_end) {

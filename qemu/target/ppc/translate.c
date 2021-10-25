@@ -7625,6 +7625,7 @@ static void ppc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     LOG_DISAS("nip=" TARGET_FMT_lx " super=%d ir=%d\n",
               ctx->base.pc_next, ctx->mem_idx, (int)msr_ir);
 
+#ifdef UNICORN_HAS_AFL
     if (uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = uc->exits;
@@ -7639,6 +7640,7 @@ static void ppc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
             }
         }
     }
+#endif
 
     // Unicorn: end address tells us to stop emulation
     if (ctx->base.pc_next == uc->addr_end) {

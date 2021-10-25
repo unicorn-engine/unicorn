@@ -61,6 +61,7 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
     /* Reset the temp count so that we can identify leaks */
     tcg_clear_temp_count();
 
+#ifdef UNICORN_HAS_AFL
     if (uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = cpu->uc->exits;
@@ -81,6 +82,7 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
             }
         }
     }
+#endif
 
     /* Unicorn: early check to see if the address of this block is
      * the "run until" address. */

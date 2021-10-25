@@ -5950,6 +5950,7 @@ static void sparc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     CPUSPARCState *env = cs->env_ptr;
     unsigned int insn;
 
+#ifdef UNICORN_HAS_AFL
     if (uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = uc->exits;
@@ -5967,6 +5968,7 @@ static void sparc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
             }
         }
     }
+#endif
 
     // Unicorn: end address tells us to stop emulation
     if (dc->pc == uc->addr_end) {

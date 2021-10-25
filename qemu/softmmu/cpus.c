@@ -194,6 +194,7 @@ void resume_all_vcpus(struct uc_struct* uc)
         tb_flush_jmp_cache(cpu, uc->addr_end);
     }
 
+#ifdef UNICORN_HAS_AFL
     if (uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = uc->exits;
@@ -209,6 +210,7 @@ void resume_all_vcpus(struct uc_struct* uc)
             }
         }
     }
+#endif
 
     cpu->created = false;
 }

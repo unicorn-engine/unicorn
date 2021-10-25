@@ -849,6 +849,7 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     TCGOp *tcg_op, *prev_op = NULL;
     bool insn_hook = false;
 
+#ifdef UNICORN_HAS_AFL
     if (uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = ctx->uc->exits;
@@ -864,6 +865,7 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
             }
         }
     }
+#endif
 
     // Unicorn: end address tells us to stop emulation
     if (ctx->base.pc_next == ctx->uc->addr_end) {

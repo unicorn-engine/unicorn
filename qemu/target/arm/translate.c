@@ -11420,6 +11420,7 @@ static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         return;
     }
 
+#ifdef UNICORN_HAS_AFL
     if (dc->uc->afl) {
         // UNICORN-AFL supports (and needs) multiple exits.
         uint64_t *exits = dc->uc->exits;
@@ -11434,6 +11435,7 @@ static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
             }
         } 
     }
+#endif
 
     // Unicorn: end address tells us to stop emulation
     if (dcbase->pc_next == dc->uc->addr_end) {
