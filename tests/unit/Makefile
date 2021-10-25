@@ -58,6 +58,7 @@ test: all
 	${EXECUTE_VARS} ./test_multihook
 	${EXECUTE_VARS} ./test_pc_change
 	${EXECUTE_VARS} ./test_hookcounts
+	${EXECUTE_VARS} ./test_x86_fxsave_fpip
 	echo "skipping test_tb_x86"
 	echo "skipping test_x86_soft_paging"
 	echo "skipping test_hang"
