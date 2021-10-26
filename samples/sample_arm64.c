@@ -6,48 +6,53 @@
 #include <unicorn/unicorn.h>
 #include <string.h>
 
-
 // code to be emulated
-#define ARM64_CODE "\xab\x05\x00\xb8\xaf\x05\x40\x38" // str w11, [x13], #0; ldrb w15, [x13], #0
-//#define ARM64_CODE_EB "\xb8\x00\x05\xab\x38\x40\x05\xaf" // str w11, [x13]; ldrb w15, [x13]
+#define ARM64_CODE                                                             \
+    "\xab\x05\x00\xb8\xaf\x05\x40\x38" // str w11, [x13], #0; ldrb w15, [x13],
+                                       // #0
+//#define ARM64_CODE_EB "\xb8\x00\x05\xab\x38\x40\x05\xaf" // str w11, [x13];
+// ldrb w15, [x13]
 #define ARM64_CODE_EB ARM64_CODE
 
 // memory address where emulation starts
 #define ADDRESS 0x10000
 
-static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_block(uc_engine *uc, uint64_t address, uint32_t size,
+                       void *user_data)
 {
-    printf(">>> Tracing basic block at 0x%"PRIx64 ", block size = 0x%x\n", address, size);
+    printf(">>> Tracing basic block at 0x%" PRIx64 ", block size = 0x%x\n",
+           address, size);
 }
 
-static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size,
+                      void *user_data)
 {
-    printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
+    printf(">>> Tracing instruction at 0x%" PRIx64
+           ", instruction size = 0x%x\n",
+           address, size);
 }
 
 static void test_arm64_mem_fetch(void)
 {
-    uc_engine* uc;
+    uc_engine *uc;
     uc_err err;
     uint64_t x1, sp, x0;
     // msr x0, CurrentEL
-    unsigned char shellcode0[4] = {
-        64, 66, 56, 213
-    };
+    unsigned char shellcode0[4] = {64, 66, 56, 213};
     // .text:00000000004002C0                 LDR             X1, [SP,#arg_0]
-    unsigned char shellcode[4] = {
-        0xE1, 0x03, 0x40, 0xF9
-    };
+    unsigned char shellcode[4] = {0xE1, 0x03, 0x40, 0xF9};
     unsigned shellcode_address = 0x4002C0;
     uint64_t data_address = 0x10000000000000;
 
-    printf(">>> Emulate ARM64 fetching stack data from high address %"PRIx64"\n", data_address);
+    printf(">>> Emulate ARM64 fetching stack data from high address %" PRIx64
+           "\n",
+           data_address);
 
     // Initialize emulator in ARM mode
     err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -60,16 +65,16 @@ static void test_arm64_mem_fetch(void)
     uc_mem_write(uc, shellcode_address, shellcode0, 4);
     uc_mem_write(uc, shellcode_address + 4, shellcode, 4);
 
-    err = uc_emu_start(uc, shellcode_address, shellcode_address+4, 0, 0);
+    err = uc_emu_start(uc, shellcode_address, shellcode_address + 4, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
 
     x0 = 0;
     uc_reg_read(uc, UC_ARM64_REG_X0, &x0);
-    printf(">>> x0(Exception Level)=%"PRIx64"\n", x0>>2);
+    printf(">>> x0(Exception Level)=%" PRIx64 "\n", x0 >> 2);
 
-    err = uc_emu_start(uc, shellcode_address+4, shellcode_address+8, 0, 0);
+    err = uc_emu_start(uc, shellcode_address + 4, shellcode_address + 8, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -87,17 +92,17 @@ static void test_arm64(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    int64_t x11 = 0x12345678;        // X11 register
-    int64_t x13 = 0x10000 + 0x8;     // X13 register
-    int64_t x15 = 0x33;              // X15 register
+    int64_t x11 = 0x12345678;    // X11 register
+    int64_t x13 = 0x10000 + 0x8; // X13 register
+    int64_t x15 = 0x33;          // X15 register
 
     printf("Emulate ARM64 code\n");
 
     // Initialize emulator in ARM mode
     err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -120,7 +125,7 @@ static void test_arm64(void)
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(ARM64_CODE) -1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(ARM64_CODE) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -141,17 +146,17 @@ static void test_arm64eb(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    int64_t x11 = 0x12345678;        // X11 register
-    int64_t x13 = 0x10000 + 0x8;     // X13 register
-    int64_t x15 = 0x33;              // X15 register
+    int64_t x11 = 0x12345678;    // X11 register
+    int64_t x13 = 0x10000 + 0x8; // X13 register
+    int64_t x15 = 0x33;          // X15 register
 
     printf("Emulate ARM64 Big-Endian code\n");
 
     // Initialize emulator in ARM mode
     err = uc_open(UC_ARCH_ARM64, UC_MODE_ARM + UC_MODE_BIG_ENDIAN, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -174,7 +179,7 @@ static void test_arm64eb(void)
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(ARM64_CODE_EB) -1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(ARM64_CODE_EB) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -190,7 +195,7 @@ static void test_arm64eb(void)
 }
 
 int main(int argc, char **argv, char **envp)
-{  
+{
     test_arm64_mem_fetch();
     test_arm64();
 

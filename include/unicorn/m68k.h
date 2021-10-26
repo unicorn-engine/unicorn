@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
 
 typedef enum uc_m68k_cpu {
@@ -52,7 +52,7 @@ typedef enum uc_m68k_reg {
     UC_M68K_REG_SR,
     UC_M68K_REG_PC,
 
-    UC_M68K_REG_ENDING,   // <-- mark the end of the list of registers
+    UC_M68K_REG_ENDING, // <-- mark the end of the list of registers
 } uc_m68k_reg;
 
 #ifdef __cplusplus
