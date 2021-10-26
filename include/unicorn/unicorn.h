@@ -361,6 +361,26 @@ typedef enum uc_query_type {
     UC_QUERY_TIMEOUT,  // query if emulation stops due to timeout (indicated if result = True)
 } uc_query_type;
 
+// All type of options for uc_option() API.
+// The options are organized in a tree level.
+typedef enum uc_option_type {
+  UC_OPT_UC_MODE_OUT, // Current mode. @len = 4
+  UC_OPT_UC_PAGE_SIZE_OUT, // Curent page size. @len = 4
+  UC_OPT_UC_PAGE_SIZE_IN, // Set page size. @len =4
+  UC_OPT_UC_ARCH_OUT, // Current arch. @len = 4
+  UC_OPT_UC_TIMEOUT_OUT, // Current timeout. @len = 8
+  UC_OPT_UC_EXIT_IN, // Add an extra exit to Unicorn. @len = 8
+  UC_OPT_UC_EXIT_LEN_OUT, // The number of exits. @len = 8
+  UC_OPT_UC_EXITS_OUT, // Current exists. @len = (UC_OPT_UC_EXIT_LEN) * 8
+  
+  UC_OPT_CPU_MODEL_IN, // Set the cpu model of uc.
+                       // Note this option can only be set before any Unicorn API is called
+                       // except for uc_open. @len = 4
+  UC_OPT_CPU_MODEL_OUT, // Current cpu model. @len = 4
+  UC_OPT_CPU_REMOVE_CACHE_IN, // Remove TB cache at a specifc address. @len = 8
+  UC_OPT_CPU_REQUEST_CACHE_IN // Request cache a TB at a specifc address. @len = 8
+} uc_option_type;
+
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
 typedef struct uc_context uc_context;
@@ -438,6 +458,23 @@ uc_err uc_close(uc_engine *uc);
 */
 UNICORN_EXPORT
 uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result);
+
+/*
+ Query or set internal status of engine.
+
+ This is an extended version of uc_query. The buffer should be pre-allocated and
+ free-ed by users. If an option has _OUT suffix, uc_option would write data to the
+ buffer while for _IN suffix, we do the vice versa.
+
+ See uc_option_type for how to determine @len for _IN options.
+
+ @uc: handle returned by uc_open()
+ @option: option type. See uc_option_type
+ @buffer: the buffer for read/write use
+
+ @return: error code of uc_err enum type (UC_ERR_*, see above)
+*/
+uc_err uc_option(uc_engine* uc, uc_option_type option, void* buffer, size_t len);
 
 /*
  Report the last error number when some API function fail.

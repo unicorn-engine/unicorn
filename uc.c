@@ -1484,6 +1484,11 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
 }
 
 UNICORN_EXPORT
+uc_err uc_option(uc_engine* uc, uc_option_type option, void* buffer, size_t len) {
+    return UC_ERR_ARG;
+}
+
+UNICORN_EXPORT
 uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 {
     struct uc_context **_context = context;

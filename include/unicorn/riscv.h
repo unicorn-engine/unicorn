@@ -15,6 +15,20 @@ extern "C" {
 #pragma warning(disable:4201)
 #endif
 
+typedef enum uc_riscv32_cpu {
+    UC_RISCV32_ANY,
+    UC_RISCV32_BASE32,
+    UC_RISCV32_SIFIVE_E31,
+    UC_RISCV32_SIFIVE_U34,
+} uc_riscv32_cpu;
+
+typedef enum uc_riscv64_cpu {
+    UC_RISCV64_ANY,
+    UC_RISCV64_BASE64,
+    UC_RISCV64_SIFIVE_E51,
+    UC_RISCV64_SIFIVE_U54,
+} uc_riscv64_cpu;
+
 //> RISCV registers
 typedef enum uc_riscv_reg {
     UC_RISCV_REG_INVALID = 0,
