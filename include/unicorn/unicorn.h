@@ -393,39 +393,41 @@ typedef enum uc_query_type {
 
 // All type of states for uc_state_get/set() API.
 // The states are organized in a tree level.
-typedef enum uc_state_type {
+typedef enum uc_control_type {
     // Current mode.
     // @len = 4. r/o
-    UC_STATE_UC_MODE,
+    UC_CTL_UC_MODE,
     // Curent page size.
     // @len = 4 r/o
-    UC_STATE_UC_PAGE_SIZE,
+    UC_CTL_UC_PAGE_SIZE,
     // Current arch.
     // @len = 4 r/o
-    UC_STATE_UC_ARCH,
+    UC_CTL_UC_ARCH,
     // Current timeout.
     // @len = 8 r/o
-    UC_STATE_UC_TIMEOUT,
+    UC_CTL_UC_TIMEOUT,
     // The number of current exists.
     // @len = 8 r/o
-    UC_STATE_UC_EXITS_LEN,
+    UC_CTL_UC_EXITS_LEN,
     // Current exists.
     // @len = (UC_CTL_UC_EXITS_LEN) * 8
-    UC_STATE_UC_EXITS,
+    UC_CTL_UC_EXITS,
 
     // Set the cpu model of uc.
     // Note this option can only be set before any Unicorn
     // API is called except for uc_open.
     // @len = 4 r/w (limited)
-    UC_STATE_CPU_MODEL,
+    UC_CTL_CPU_MODEL,
     // Remove TB cache at a specifc address.
     // @len = 8
-    UC_STATE_CPU_REMOVE_CACHE,
+    UC_CTL_CPU_REMOVE_CACHE,
     // Request cache a TB at a specifc address.
     // @len = 8
-    UC_STATE_CPU_REQUEST_CACHE
+    UC_CTL_CPU_REQUEST_CACHE,
+    // Request the edge of two TBs.
+    UC_CTL_CPU_TB_EDGE
 
-} uc_state_type;
+} uc_control_type;
 
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
@@ -504,7 +506,7 @@ UNICORN_EXPORT
 uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result);
 
 /*
- Get internal states of engine.
+ Get or set internal states of engine.
 
  @uc: handle returned by uc_open()
  @option: state type. See uc_state_type
@@ -512,20 +514,8 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result);
 
  @return: error code of uc_err enum type (UC_ERR_*, see above)
 */
-uc_err uc_state_get(uc_engine *uc, uc_state_type option, void *buffer,
-                    size_t len);
-
-/*
- Set internal states of engine.
-
- @uc: handle returned by uc_open()
- @option: state type. See uc_state_type
- @buffer: the buffer for read/write use
-
- @return: error code of uc_err enum type (UC_ERR_*, see above)
-*/
-uc_err uc_state_set(uc_engine *uc, uc_state_type option, void *buffer,
-                    size_t len);
+uc_err uc_ctl(uc_engine *uc, uc_control_type option, void *in_buffer,
+              size_t in_len, void *out_buffer, size_t out_len);
 
 /*
  Report the last error number when some API function fail.

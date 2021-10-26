@@ -1520,15 +1520,7 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
 }
 
 UNICORN_EXPORT
-uc_err uc_state_get(uc_engine *uc, uc_state_type option, void *buffer,
-                    size_t len)
-{
-    return UC_ERR_ARG;
-}
-
-UNICORN_EXPORT
-uc_err uc_state_set(uc_engine *uc, uc_state_type option, void *buffer,
-                    size_t len)
+uc_err uc_ctl(uc_engine *uc, uc_control_type option, void *in_buffer, size_t in_len), void *out_buffer, size_t out_len)
 {
     return UC_ERR_ARG;
 }
