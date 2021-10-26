@@ -19,7 +19,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
-typedef enum uc_mips_cpu {
+typedef enum uc_cpu_mips {
     UC_CPU_MIPS_4KC,
     UC_CPU_MIPS_4KM,
     UC_CPU_MIPS_4KECR1,
@@ -49,7 +49,7 @@ typedef enum uc_mips_cpu {
     UC_CPU_MIPS_LOONGSON_2E,
     UC_CPU_MIPS_LOONGSON_2F,
     UC_CPU_MIPS_MIPS64DSPR2
-} uc_mips_cpu;
+} uc_cpu_mips;
 
 //> MIPS registers
 typedef enum UC_MIPS_REG {

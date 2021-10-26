@@ -15,12 +15,12 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
-typedef enum uc_aarch64_cpu {
+typedef enum uc_cpu_aarch64 {
     UC_CPU_AARCH64_A57,
     UC_CPU_AARCH64_A53,
     UC_CPU_AARCH64_A72,
     UC_CPU_AARCH64_MAX
-} uc_aarh64_cpu;
+} uc_cpu_aarch64;
 
 //> ARM64 registers
 typedef enum uc_arm64_reg {

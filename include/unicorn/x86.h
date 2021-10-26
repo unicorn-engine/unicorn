@@ -13,7 +13,7 @@ extern "C" {
 
 #include "platform.h"
 
-typedef enum uc_x86_cpu {
+typedef enum uc_cpu_x86 {
     UC_CPU_X86_QEMU64,
     UC_CPU_X86_PHENOM,
     UC_CPU_X86_CORE2DUO,
@@ -52,7 +52,7 @@ typedef enum uc_x86_cpu {
     UC_CPU_X86_EPYC,
     UC_CPU_X86_DHYANA,
     UC_CPU_X86_EPYC_ROME
-} uc_x86_cpu;
+} uc_cpu_x86;
 
 // Memory-Management Register for instructions IDTR, GDTR, LDTR, TR.
 // Borrow from SegmentCache in qemu/target-i386/cpu.h

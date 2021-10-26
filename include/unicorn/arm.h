@@ -15,7 +15,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
-typedef enum uc_arm_cpu {
+typedef enum uc_cpu_arm {
     UC_CPU_ARM_926,
     UC_CPU_ARM_946,
     UC_CPU_ARM_1026,
@@ -49,7 +49,7 @@ typedef enum uc_arm_cpu {
     UC_CPU_ARM_PXA270C0,
     UC_CPU_ARM_PXA270C5,
     UC_CPU_ARM_MAX
-} uc_arm_cpu;
+} uc_cpu_arm;
 
 //> ARM registers
 typedef enum uc_arm_reg {

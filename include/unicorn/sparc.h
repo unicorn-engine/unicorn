@@ -19,7 +19,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
-typedef enum uc_sparc_cpu {
+typedef enum uc_cpu_sparc {
     UC_CPU_SPARC_FUJITSU_MB86904,
     UC_CPU_SPARC_FUJITSU_MB86907,
     UC_CPU_SPARC_TI_MICROSPARC_I,
@@ -33,9 +33,9 @@ typedef enum uc_sparc_cpu {
     UC_CPU_SPARC_TI_SUPERSPARC_II,
     UC_CPU_SPARC_LEON2,
     UC_CPU_SPARC_LEON3
-} uc_sparc_cpu;
+} uc_cpu_sparc;
 
-typedef enum uc_sparc64_cpu {
+typedef enum uc_cpu_sparc64 {
     UC_CPU_SPARC64_FUJITSU,
     UC_CPU_SPARC64_FUJITSU_III,
     UC_CPU_SPARC64_FUJITSU_IV,
@@ -53,7 +53,7 @@ typedef enum uc_sparc64_cpu {
     UC_CPU_SPARC64_SUN_ULTRASPARC_T1,
     UC_CPU_SPARC64_SUN_ULTRASPARC_T2,
     UC_CPU_SPARC64_NEC_ULTRASPARC_I,
-} uc_sparc64_cpu;
+} uc_cpu_sparc64;
 
 //> SPARC registers
 typedef enum uc_sparc_reg {

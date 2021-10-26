@@ -15,7 +15,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
-typedef enum uc_m68k_cpu {
+typedef enum uc_cpu_m68k {
     UC_CPU_M5206_CPU,
     UC_CPU_M68000_CPU,
     UC_CPU_M68020_CPU,
@@ -25,7 +25,7 @@ typedef enum uc_m68k_cpu {
     UC_CPU_M5208_CPU,
     UC_CPU_CFV4E_CPU,
     UC_CPU_ANY_CPU,
-} uc_m68k_cpu;
+} uc_cpu_m68k;
 
 //> M68K registers
 typedef enum uc_m68k_reg {

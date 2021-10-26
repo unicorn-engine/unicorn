@@ -15,7 +15,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
-typedef enum uc_ppc_cpu {
+typedef enum uc_cpu_ppc {
     UC_CPU_PPC_401A1,
     UC_CPU_PPC_401B2,
     UC_CPU_PPC_401C2,
@@ -274,9 +274,9 @@ typedef enum uc_ppc_cpu {
     UC_CPU_PPC_74X7A_V10,
     UC_CPU_PPC_74X7A_V11,
     UC_CPU_PPC_74X7A_V12,
-} uc_ppc_cpu;
+} uc_cpu_ppc;
 
-typedef enum uc_ppc64_cpu {
+typedef enum uc_cpu_ppc64 {
     UC_CPU_PPC64_620,
     UC_CPU_PPC64_630,
     UC_CPU_PPC64_631,
@@ -319,7 +319,7 @@ typedef enum uc_ppc64_cpu {
     UC_CPU_PPC64_RS64II,
     UC_CPU_PPC64_RS64III,
     UC_CPU_PPC64_RS64IV,
-} uc_ppc64_cpu;
+} uc_cpu_ppc64;
 
 //> PPC registers
 typedef enum uc_ppc_reg {
