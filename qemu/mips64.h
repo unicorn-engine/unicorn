@@ -4,11 +4,6 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _mips64
 #endif
-#define afl_forkserver_start afl_forkserver_start_mips64
-#define helper_afl_maybe_log helper_afl_maybe_log_mips64
-#define helper_afl_compcov_log_16 helper_afl_compcov_log_16_mips64
-#define helper_afl_compcov_log_32 helper_afl_compcov_log_32_mips64
-#define helper_afl_compcov_log_64 helper_afl_compcov_log_64_mips64
 #define use_idiv_instructions use_idiv_instructions_mips64
 #define arm_arch arm_arch_mips64
 #define tb_target_set_jmp_target tb_target_set_jmp_target_mips64

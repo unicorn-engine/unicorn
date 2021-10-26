@@ -17,11 +17,6 @@
 
 #include <uc_priv.h>
 
-#if defined(UNICORN_HAS_AFL)
-#undef ARCH_HAS_COMPCOV
-#include "afl/afl-cpu-translate-inl.h"
-#endif
-
 /* Pairs with tcg_clear_temp_count.
    To be called by #TranslatorOps.{translate_insn,tb_stop} if
    (1) the target is sufficiently clean to support reporting,
@@ -61,29 +56,6 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
     /* Reset the temp count so that we can identify leaks */
     tcg_clear_temp_count();
 
-#ifdef UNICORN_HAS_AFL
-    if (uc->afl) {
-        // UNICORN-AFL supports (and needs) multiple exits.
-        uint64_t *exits = cpu->uc->exits;
-        size_t exit_count = cpu->uc->exit_count;
-        if (exit_count) {
-            size_t i;
-            for (i = 0; i < exit_count; i++) {
-                if (tb->pc == exits[i]) {
-                    // This should catch that instruction is at the end
-                    // and generate appropriate halting code.
-                    gen_tb_start(tcg_ctx, db->tb);
-                    ops->tb_start(db, cpu);
-                    db->num_insns++;
-                    ops->insn_start(db, cpu);
-                    ops->translate_insn(db, cpu);
-                    goto _end_loop;
-                }
-            }
-        }
-    }
-#endif
-
     /* Unicorn: early check to see if the address of this block is
      * the "run until" address. */
     if (tb->pc == cpu->uc->addr_end) {
@@ -108,10 +80,6 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
     }
 
     // tcg_dump_ops(tcg_ctx, false, "translator loop");
-
-#ifdef UNICORN_HAS_AFL
-    afl_gen_maybe_log(tcg_ctx, tb->pc);
-#endif
 
     /* Start translating.  */
     gen_tb_start(tcg_ctx, db->tb);

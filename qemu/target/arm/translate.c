@@ -11420,23 +11420,6 @@ static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         return;
     }
 
-#ifdef UNICORN_HAS_AFL
-    if (dc->uc->afl) {
-        // UNICORN-AFL supports (and needs) multiple exits.
-        uint64_t *exits = dc->uc->exits;
-        size_t exit_count = dc->uc->exit_count;
-        if (exit_count) {
-            size_t i;
-            for (i = 0; i < exit_count; i++) {
-                if (dcbase->pc_next == exits[i]) {
-                    dcbase->is_jmp = DISAS_WFI;
-                    return;
-                }
-            }
-        } 
-    }
-#endif
-
     // Unicorn: end address tells us to stop emulation
     if (dcbase->pc_next == dc->uc->addr_end) {
         // imitate WFI instruction to halt emulation

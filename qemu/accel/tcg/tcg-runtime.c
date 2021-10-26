@@ -32,10 +32,6 @@
 
 #include <uc_priv.h>
 
-#ifdef UNICORN_HAS_AFL
-#include "afl/afl-tcg-runtime-inl.h"
-#endif
-
 /* 32-bit helpers */
 
 int32_t HELPER(div_i32)(int32_t arg1, int32_t arg2)

@@ -11,7 +11,6 @@
 
 void vm_start(struct uc_struct*);
 void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size);
-int afl_forkserver_start(struct uc_struct*);
 
 // return true on success, false on failure
 static inline bool cpu_physical_mem_read(AddressSpace *as, hwaddr addr,
@@ -107,9 +106,7 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->softfloat_initialize = softfloat_init;
     uc->tcg_flush_tlb = tcg_flush_softmmu_tlb;
     uc->memory_map_io = memory_map_io;
-#ifdef UNICORN_HAS_AFL
-    uc->afl_forkserver_start = afl_forkserver_start;
-#endif
+
     if (!uc->release)
         uc->release = release_common;
 }

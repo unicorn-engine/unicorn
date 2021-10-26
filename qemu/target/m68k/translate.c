@@ -6325,23 +6325,6 @@ static void m68k_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     CPUM68KState *env = cpu->env_ptr;
     uint16_t insn;
 
-#ifdef UNICORN_HAS_AFL
-    if (uc->afl) {
-        // UNICORN-AFL supports (and needs) multiple exits.
-        uint64_t *exits = uc->exits;
-        size_t exit_count = uc->exit_count;
-        if (exit_count) {
-            size_t i;
-            for (i = 0; i < exit_count; i++) {
-                if (dc->pc == exits[i]) {
-                    gen_exception(dc, dc->pc, EXCP_HLT);
-                    return;
-                }
-            }
-        }
-    }
-#endif
-
     // Unicorn: end address tells us to stop emulation
     if (dc->pc == uc->addr_end) {
         gen_exception(dc, dc->pc, EXCP_HLT);

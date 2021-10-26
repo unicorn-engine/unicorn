@@ -35,8 +35,6 @@ else()
     include_directories(
         ${CMAKE_BINARY_DIR}
     )
-    # Try to build AFL support on all other platform.
-    set(UNICORN_HAS_AFL TRUE)
 endif()
 
 include_directories(
@@ -327,10 +325,6 @@ else()
             INPUT_FILE ${CMAKE_BINARY_DIR}/riscv64-softmmu/config-target.mak
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/riscv64-softmmu/config-target.h
         )
-    endif()
-    if (UNICORN_HAS_AFL)
-        # Make it globally
-        set (UNICORN_CFLAGS ${UNICORN_CFLAGS} -DUNICORN_HAS_AFL)
     endif()
     add_compile_options(
         ${UNICORN_CFLAGS}

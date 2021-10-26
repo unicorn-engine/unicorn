@@ -259,10 +259,3 @@ DEF_HELPER_FLAGS_4(gvec_leu32, TCG_CALL_NO_RWG, void, ptr, ptr, ptr, i32)
 DEF_HELPER_FLAGS_4(gvec_leu64, TCG_CALL_NO_RWG, void, ptr, ptr, ptr, i32)
 
 DEF_HELPER_FLAGS_5(gvec_bitsel, TCG_CALL_NO_RWG, void, ptr, ptr, ptr, ptr, i32)
-
-#if defined(UNICORN_HAS_AFL)
-DEF_HELPER_FLAGS_2(afl_maybe_log, 0, void, ptr, i64)
-DEF_HELPER_FLAGS_4(afl_compcov_log_16, 0, void, ptr, i64, i32, i32)
-DEF_HELPER_FLAGS_4(afl_compcov_log_32, 0, void, ptr, i64, i32, i32)
-DEF_HELPER_FLAGS_4(afl_compcov_log_64, 0, void, ptr, i64, i64, i64)
-#endif
