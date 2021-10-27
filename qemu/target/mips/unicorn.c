@@ -77,6 +77,12 @@ static void reg_read(CPUMIPSState *env, unsigned int regid, void *value)
         switch (regid) {
         default:
             break;
+        case UC_MIPS_REG_HI:
+            *(mipsreg_t *)value = env->active_tc.HI[0];
+            break;
+        case UC_MIPS_REG_LO:
+            *(mipsreg_t *)value = env->active_tc.LO[0];
+            break;
         case UC_MIPS_REG_PC:
             *(mipsreg_t *)value = env->active_tc.PC;
             break;
@@ -102,6 +108,12 @@ static void reg_write(CPUMIPSState *env, unsigned int regid, const void *value)
     else {
         switch (regid) {
         default:
+            break;
+        case UC_MIPS_REG_HI:
+            env->active_tc.HI[0] = *(mipsreg_t *)value;
+            break;
+        case UC_MIPS_REG_LO:
+            env->active_tc.LO[0] = *(mipsreg_t *)value;
             break;
         case UC_MIPS_REG_PC:
             env->active_tc.PC = *(mipsreg_t *)value;
