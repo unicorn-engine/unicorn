@@ -414,41 +414,25 @@ typedef enum uc_control_type {
     // Current mode.
     // Get: @args = (*int)
     UC_CTL_UC_MODE,
-#define uc_ctl_get_mode(uc, mode)                                              \
-    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_MODE, 1), (mode))
     // Curent page size.
     // Set: @args = (int)
     // Get: @args = (*int)
     UC_CTL_UC_PAGE_SIZE,
-#define uc_ctl_get_page_size(uc, ptr)                                          \
-    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_PAGE_SIZE, 1, (ptr))
-#define uc_ctl_set_page_size(uc, page_size)                                    \
-    uc_ctl(uc, UC_CTL_W(UC_CTL_UC_PAGE_SIZE, 1), (page_size))
     // Current arch.
     // Get: @args = (*int)
     UC_CTL_UC_ARCH,
-#define uc_ctl_get_arch(uc, arch)                                              \
-    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_ARCH, 1), (arch))
     // Current timeout.
     // Get: @args = (*uint64_t)
     UC_CTL_UC_TIMEOUT,
-#define uc_ctl_get_timeout(uc, ptr)                                            \
-    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_TIMEOUT, 1), (ptr))
     // The number of current exists.
     // Get: @args = (*size_t)
     UC_CTL_UC_EXITS_CNT,
-#define uc_ctl_get_exists_cnt(uc, ptr)                                         \
-    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_EXITS_CNT, 1), (ptr))
     // Current exists.
     // Set: @args = (*uint64_t exists, size_t len)
     //      @len = UC_CTL_UC_EXITS_CNT
     // Get: @args = (*uint64_t exists, size_t len)
     //      @len = UC_CTL_UC_EXITS_CNT
     UC_CTL_UC_EXITS,
-#define uc_ctl_get_exists(uc, buffer, len)                                     \
-    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_EXITS, 2), (buffer), (len))
-#define uc_ctl_set_exists(uc, buffer, len)                                     \
-    uc_ctl(uc, UC_CTL_W(UC_CTL_UC_EXITS, 2), (buffer), (len))
 
     // Set the cpu model of uc.
     // Note this option can only be set before any Unicorn
@@ -456,24 +440,42 @@ typedef enum uc_control_type {
     // Set: @args = (int)
     // Get: @args = (int)
     UC_CTL_CPU_MODEL,
-#define uc_ctl_get_cpu_model(uc, model)                                        \
-    uc_ctl(uc, UC_CTL_R(UC_CTL_CPU_MODEL, 1), (model))
-#define uc_ctl_set_cpu_model(uc, model)                                        \
-    uc_ctl(uc, UC_CTL_W(UC_CTL_CPU_MODEL, 1), (model))
     // Remove TB cache at a specifc address.
     // Del: @args = (uint64_t)
     // Set: @args = (uint64_t)
     UC_CTL_CPU_CACHE,
+    // Request the edge of two TBs.
+    // Get: @args = (uint64_t, uint64_t, *uint64_t)
+    UC_CTL_CPU_TB_EDGE
+
+} uc_control_type;
+
+#define uc_ctl_get_mode(uc, mode)                                              \
+    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_MODE, 1), (mode))
+#define uc_ctl_get_page_size(uc, ptr)                                          \
+    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_PAGE_SIZE, 1, (ptr))
+#define uc_ctl_set_page_size(uc, page_size)                                    \
+    uc_ctl(uc, UC_CTL_W(UC_CTL_UC_PAGE_SIZE, 1), (page_size))
+#define uc_ctl_get_arch(uc, arch)                                              \
+    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_ARCH, 1), (arch))
+#define uc_ctl_get_timeout(uc, ptr)                                            \
+    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_TIMEOUT, 1), (ptr))
+#define uc_ctl_get_exists_cnt(uc, ptr)                                         \
+    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_EXITS_CNT, 1), (ptr))
+#define uc_ctl_get_exists(uc, buffer, len)                                     \
+    uc_ctl(uc, UC_CTL_R(UC_CTL_UC_EXITS, 2), (buffer), (len))
+#define uc_ctl_set_exists(uc, buffer, len)                                     \
+    uc_ctl(uc, UC_CTL_W(UC_CTL_UC_EXITS, 2), (buffer), (len))
+#define uc_ctl_get_cpu_model(uc, model)                                        \
+    uc_ctl(uc, UC_CTL_R(UC_CTL_CPU_MODEL, 1), (model))
+#define uc_ctl_set_cpu_model(uc, model)                                        \
+    uc_ctl(uc, UC_CTL_W(UC_CTL_CPU_MODEL, 1), (model))
 #define uc_ctl_del_cache(uc, address)                                          \
     uc_ctl(uc, UC_CTL_N(UC_CTL_REMOTE_CACHE, 1), (address))
 #define uc_ctl_set_cache(uc, address)                                          \
     uc_ctl(uc, UC_CTL_W(UC_CTL_REMOTE_CACHE, 1), (address))
-    // Request the edge of two TBs.
-    // Get: @args = (uint64_t, uint64_t, *uint64_t)
-    UC_CTL_CPU_TB_EDGE
 #define uc_ctl_get_edge(uc, addr1, addr2, ptr)                                 \
     uc_ctl(uc, UC_CTL_RW(UC_CTL_CPU_TB_EDGE, 3), (address))
-} uc_control_type;
 
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
