@@ -16,7 +16,7 @@ extern "C" {
 #undef mips
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
 
 //> MIPS registers
@@ -179,7 +179,7 @@ typedef enum UC_MIPS_REG {
     UC_MIPS_REG_CP0_USERLOCAL,
     UC_MIPS_REG_CP0_STATUS,
 
-    UC_MIPS_REG_ENDING,	// <-- mark the end of the list or registers
+    UC_MIPS_REG_ENDING, // <-- mark the end of the list or registers
 
     // alias registers
     UC_MIPS_REG_ZERO = UC_MIPS_REG_0,
@@ -212,7 +212,8 @@ typedef enum UC_MIPS_REG {
     UC_MIPS_REG_K1 = UC_MIPS_REG_27,
     UC_MIPS_REG_GP = UC_MIPS_REG_28,
     UC_MIPS_REG_SP = UC_MIPS_REG_29,
-    UC_MIPS_REG_FP = UC_MIPS_REG_30, UC_MIPS_REG_S8 = UC_MIPS_REG_30,
+    UC_MIPS_REG_FP = UC_MIPS_REG_30,
+    UC_MIPS_REG_S8 = UC_MIPS_REG_30,
     UC_MIPS_REG_RA = UC_MIPS_REG_31,
 
     UC_MIPS_REG_HI0 = UC_MIPS_REG_AC0,

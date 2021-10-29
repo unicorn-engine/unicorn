@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
 
 //> PPC registers

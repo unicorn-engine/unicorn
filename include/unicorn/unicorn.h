@@ -42,11 +42,11 @@ typedef size_t uc_hook;
 #endif
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
-#pragma warning(disable:4100)
+#pragma warning(disable : 4201)
+#pragma warning(disable : 4100)
 #ifdef UNICORN_SHARED
 #define UNICORN_EXPORT __declspec(dllexport)
-#else    // defined(UNICORN_STATIC)
+#else // defined(UNICORN_STATIC)
 #define UNICORN_EXPORT
 #endif
 #else
@@ -62,7 +62,8 @@ typedef size_t uc_hook;
 #elif defined(_MSC_VER)
 #define UNICORN_DEPRECATED __declspec(deprecated)
 #else
-#pragma message("WARNING: You need to implement UNICORN_DEPRECATED for this compiler")
+#pragma message(                                                               \
+    "WARNING: You need to implement UNICORN_DEPRECATED for this compiler")
 #define UNICORN_DEPRECATED
 #endif
 
@@ -74,7 +75,6 @@ typedef size_t uc_hook;
 #define UC_VERSION_MAJOR UC_API_MAJOR
 #define UC_VERSION_MINOR UC_API_MINOR
 #define UC_VERSION_EXTRA 0
-
 
 /*
   Macro to create combined version which can be compared to
@@ -90,14 +90,14 @@ typedef size_t uc_hook;
 
 // Architecture type
 typedef enum uc_arch {
-    UC_ARCH_ARM = 1,    // ARM architecture (including Thumb, Thumb-2)
-    UC_ARCH_ARM64,      // ARM-64, also called AArch64
-    UC_ARCH_MIPS,       // Mips architecture
-    UC_ARCH_X86,        // X86 architecture (including x86 & x86-64)
-    UC_ARCH_PPC,        // PowerPC architecture
-    UC_ARCH_SPARC,      // Sparc architecture
-    UC_ARCH_M68K,       // M68K architecture
-    UC_ARCH_RISCV,      // RISCV architecture
+    UC_ARCH_ARM = 1, // ARM architecture (including Thumb, Thumb-2)
+    UC_ARCH_ARM64,   // ARM-64, also called AArch64
+    UC_ARCH_MIPS,    // Mips architecture
+    UC_ARCH_X86,     // X86 architecture (including x86 & x86-64)
+    UC_ARCH_PPC,     // PowerPC architecture
+    UC_ARCH_SPARC,   // Sparc architecture
+    UC_ARCH_M68K,    // M68K architecture
+    UC_ARCH_RISCV,   // RISCV architecture
     UC_ARCH_MAX,
 } uc_arch;
 
@@ -107,41 +107,42 @@ typedef enum uc_mode {
     UC_MODE_BIG_ENDIAN = 1 << 30, // big-endian mode
 
     // arm / arm64
-    UC_MODE_ARM = 0,              // ARM mode
-    UC_MODE_THUMB = 1 << 4,       // THUMB mode (including Thumb-2)
-    UC_MODE_MCLASS = 1 << 5,      // ARM's Cortex-M series
-    UC_MODE_V8 = 1 << 6,          // ARMv8 A32 encodings for ARM (currently unsupported)
+    UC_MODE_ARM = 0,         // ARM mode
+    UC_MODE_THUMB = 1 << 4,  // THUMB mode (including Thumb-2)
+    UC_MODE_MCLASS = 1 << 5, // ARM's Cortex-M series
+    UC_MODE_V8 = 1 << 6, // ARMv8 A32 encodings for ARM (currently unsupported)
 
     // arm (32bit) cpu types
-    UC_MODE_ARM926 = 1 << 7,	  // ARM926 CPU type
-    UC_MODE_ARM946 = 1 << 8,	  // ARM946 CPU type
-    UC_MODE_ARM1176 = 1 << 9,	  // ARM1176 CPU type
+    UC_MODE_ARM926 = 1 << 7,  // ARM926 CPU type
+    UC_MODE_ARM946 = 1 << 8,  // ARM946 CPU type
+    UC_MODE_ARM1176 = 1 << 9, // ARM1176 CPU type
 
     // mips
-    UC_MODE_MICRO = 1 << 4,       // MicroMips mode (currently unsupported)
-    UC_MODE_MIPS3 = 1 << 5,       // Mips III ISA (currently unsupported)
-    UC_MODE_MIPS32R6 = 1 << 6,    // Mips32r6 ISA (currently unsupported)
-    UC_MODE_MIPS32 = 1 << 2,      // Mips32 ISA
-    UC_MODE_MIPS64 = 1 << 3,      // Mips64 ISA
+    UC_MODE_MICRO = 1 << 4,    // MicroMips mode (currently unsupported)
+    UC_MODE_MIPS3 = 1 << 5,    // Mips III ISA (currently unsupported)
+    UC_MODE_MIPS32R6 = 1 << 6, // Mips32r6 ISA (currently unsupported)
+    UC_MODE_MIPS32 = 1 << 2,   // Mips32 ISA
+    UC_MODE_MIPS64 = 1 << 3,   // Mips64 ISA
 
     // x86 / x64
-    UC_MODE_16 = 1 << 1,          // 16-bit mode
-    UC_MODE_32 = 1 << 2,          // 32-bit mode
-    UC_MODE_64 = 1 << 3,          // 64-bit mode
+    UC_MODE_16 = 1 << 1, // 16-bit mode
+    UC_MODE_32 = 1 << 2, // 32-bit mode
+    UC_MODE_64 = 1 << 3, // 64-bit mode
 
-    // ppc 
-    UC_MODE_PPC32 = 1 << 2,       // 32-bit mode
-    UC_MODE_PPC64 = 1 << 3,       // 64-bit mode (currently unsupported)
-    UC_MODE_QPX = 1 << 4,         // Quad Processing eXtensions mode (currently unsupported)
+    // ppc
+    UC_MODE_PPC32 = 1 << 2, // 32-bit mode
+    UC_MODE_PPC64 = 1 << 3, // 64-bit mode (currently unsupported)
+    UC_MODE_QPX =
+        1 << 4, // Quad Processing eXtensions mode (currently unsupported)
 
     // sparc
-    UC_MODE_SPARC32 = 1 << 2,     // 32-bit mode
-    UC_MODE_SPARC64 = 1 << 3,     // 64-bit mode
-    UC_MODE_V9 = 1 << 4,          // SparcV9 mode (currently unsupported)
+    UC_MODE_SPARC32 = 1 << 2, // 32-bit mode
+    UC_MODE_SPARC64 = 1 << 3, // 64-bit mode
+    UC_MODE_V9 = 1 << 4,      // SparcV9 mode (currently unsupported)
 
     // riscv
-    UC_MODE_RISCV32 = 1 << 2,     // 32-bit mode
-    UC_MODE_RISCV64 = 1 << 3,     // 64-bit mode
+    UC_MODE_RISCV32 = 1 << 2, // 32-bit mode
+    UC_MODE_RISCV64 = 1 << 3, // 64-bit mode
 
     // m68k
 } uc_mode;
@@ -149,39 +150,48 @@ typedef enum uc_mode {
 // All type of errors encountered by Unicorn API.
 // These are values returned by uc_errno()
 typedef enum uc_err {
-    UC_ERR_OK = 0,   // No error: everything was fine
-    UC_ERR_NOMEM,      // Out-Of-Memory error: uc_open(), uc_emulate()
-    UC_ERR_ARCH,     // Unsupported architecture: uc_open()
-    UC_ERR_HANDLE,   // Invalid handle
-    UC_ERR_MODE,     // Invalid/unsupported mode: uc_open()
-    UC_ERR_VERSION,  // Unsupported version (bindings)
-    UC_ERR_READ_UNMAPPED, // Quit emulation due to READ on unmapped memory: uc_emu_start()
-    UC_ERR_WRITE_UNMAPPED, // Quit emulation due to WRITE on unmapped memory: uc_emu_start()
-    UC_ERR_FETCH_UNMAPPED, // Quit emulation due to FETCH on unmapped memory: uc_emu_start()
-    UC_ERR_HOOK,    // Invalid hook type: uc_hook_add()
-    UC_ERR_INSN_INVALID, // Quit emulation due to invalid instruction: uc_emu_start()
-    UC_ERR_MAP, // Invalid memory mapping: uc_mem_map()
-    UC_ERR_WRITE_PROT, // Quit emulation due to UC_MEM_WRITE_PROT violation: uc_emu_start()
-    UC_ERR_READ_PROT, // Quit emulation due to UC_MEM_READ_PROT violation: uc_emu_start()
-    UC_ERR_FETCH_PROT, // Quit emulation due to UC_MEM_FETCH_PROT violation: uc_emu_start()
-    UC_ERR_ARG,     // Inavalid argument provided to uc_xxx function (See specific function API)
+    UC_ERR_OK = 0,         // No error: everything was fine
+    UC_ERR_NOMEM,          // Out-Of-Memory error: uc_open(), uc_emulate()
+    UC_ERR_ARCH,           // Unsupported architecture: uc_open()
+    UC_ERR_HANDLE,         // Invalid handle
+    UC_ERR_MODE,           // Invalid/unsupported mode: uc_open()
+    UC_ERR_VERSION,        // Unsupported version (bindings)
+    UC_ERR_READ_UNMAPPED,  // Quit emulation due to READ on unmapped memory:
+                           // uc_emu_start()
+    UC_ERR_WRITE_UNMAPPED, // Quit emulation due to WRITE on unmapped memory:
+                           // uc_emu_start()
+    UC_ERR_FETCH_UNMAPPED, // Quit emulation due to FETCH on unmapped memory:
+                           // uc_emu_start()
+    UC_ERR_HOOK,           // Invalid hook type: uc_hook_add()
+    UC_ERR_INSN_INVALID,   // Quit emulation due to invalid instruction:
+                           // uc_emu_start()
+    UC_ERR_MAP,            // Invalid memory mapping: uc_mem_map()
+    UC_ERR_WRITE_PROT,     // Quit emulation due to UC_MEM_WRITE_PROT violation:
+                           // uc_emu_start()
+    UC_ERR_READ_PROT,      // Quit emulation due to UC_MEM_READ_PROT violation:
+                           // uc_emu_start()
+    UC_ERR_FETCH_PROT,     // Quit emulation due to UC_MEM_FETCH_PROT violation:
+                           // uc_emu_start()
+    UC_ERR_ARG, // Inavalid argument provided to uc_xxx function (See specific
+                // function API)
     UC_ERR_READ_UNALIGNED,  // Unaligned read
-    UC_ERR_WRITE_UNALIGNED,  // Unaligned write
-    UC_ERR_FETCH_UNALIGNED,  // Unaligned fetch
-    UC_ERR_HOOK_EXIST,  // hook for this event already existed
-    UC_ERR_RESOURCE,    // Insufficient resource: uc_emu_start()
-    UC_ERR_EXCEPTION, // Unhandled CPU exception
+    UC_ERR_WRITE_UNALIGNED, // Unaligned write
+    UC_ERR_FETCH_UNALIGNED, // Unaligned fetch
+    UC_ERR_HOOK_EXIST,      // hook for this event already existed
+    UC_ERR_RESOURCE,        // Insufficient resource: uc_emu_start()
+    UC_ERR_EXCEPTION,       // Unhandled CPU exception
 } uc_err;
-
 
 /*
   Callback function for tracing code (UC_HOOK_CODE & UC_HOOK_BLOCK)
 
   @address: address where the code is being executed
-  @size: size of machine instruction(s) being executed, or 0 when size is unknown
+  @size: size of machine instruction(s) being executed, or 0 when size is
+  unknown
   @user_data: user data passed to tracing APIs.
 */
-typedef void (*uc_cb_hookcode_t)(uc_engine *uc, uint64_t address, uint32_t size, void *user_data);
+typedef void (*uc_cb_hookcode_t)(uc_engine *uc, uint64_t address, uint32_t size,
+                                 void *user_data);
 
 /*
   Callback function for tracing interrupts (for uc_hook_intr())
@@ -189,14 +199,16 @@ typedef void (*uc_cb_hookcode_t)(uc_engine *uc, uint64_t address, uint32_t size,
   @intno: interrupt number
   @user_data: user data passed to tracing APIs.
 */
-typedef void (*uc_cb_hookintr_t)(uc_engine *uc, uint32_t intno, void *user_data);
+typedef void (*uc_cb_hookintr_t)(uc_engine *uc, uint32_t intno,
+                                 void *user_data);
 
 /*
   Callback function for tracing invalid instructions
 
   @user_data: user data passed to tracing APIs.
 
-  @return: return true to continue, or false to stop program (due to invalid instruction).
+  @return: return true to continue, or false to stop program (due to invalid
+  instruction).
 */
 typedef bool (*uc_cb_hookinsn_invalid_t)(uc_engine *uc, void *user_data);
 
@@ -207,7 +219,8 @@ typedef bool (*uc_cb_hookinsn_invalid_t)(uc_engine *uc, void *user_data);
   @size: data size (1/2/4) to be read from this port
   @user_data: user data passed to tracing APIs.
 */
-typedef uint32_t (*uc_cb_insn_in_t)(uc_engine *uc, uint32_t port, int size, void *user_data);
+typedef uint32_t (*uc_cb_insn_in_t)(uc_engine *uc, uint32_t port, int size,
+                                    void *user_data);
 
 /*
   Callback function for OUT instruction of X86
@@ -216,7 +229,8 @@ typedef uint32_t (*uc_cb_insn_in_t)(uc_engine *uc, uint32_t port, int size, void
   @size: data size (1/2/4) to be written to this port
   @value: data value to be written to this port
 */
-typedef void (*uc_cb_insn_out_t)(uc_engine *uc, uint32_t port, int size, uint32_t value, void *user_data);
+typedef void (*uc_cb_insn_out_t)(uc_engine *uc, uint32_t port, int size,
+                                 uint32_t value, void *user_data);
 
 /*
   Callback function for MMIO read
@@ -225,7 +239,8 @@ typedef void (*uc_cb_insn_out_t)(uc_engine *uc, uint32_t port, int size, uint32_
   @size: data size to read
   @user_data: user data passed to uc_mmio_map()
 */
-typedef uint64_t (*uc_cb_mmio_read_t)(uc_engine *uc, uint64_t offset, unsigned size, void *user_data);
+typedef uint64_t (*uc_cb_mmio_read_t)(uc_engine *uc, uint64_t offset,
+                                      unsigned size, void *user_data);
 
 /*
   Callback function for MMIO write
@@ -235,28 +250,30 @@ typedef uint64_t (*uc_cb_mmio_read_t)(uc_engine *uc, uint64_t offset, unsigned s
   @value: data value to be written
   @user_data: user data passed to uc_mmio_map()
 */
-typedef void (*uc_cb_mmio_write_t)(uc_engine *uc, uint64_t offset, unsigned size, uint64_t value, void *user_data);
-
+typedef void (*uc_cb_mmio_write_t)(uc_engine *uc, uint64_t offset,
+                                   unsigned size, uint64_t value,
+                                   void *user_data);
 
 // All type of memory accesses for UC_HOOK_MEM_*
 typedef enum uc_mem_type {
-    UC_MEM_READ = 16,   // Memory is read from
-    UC_MEM_WRITE,       // Memory is written to
-    UC_MEM_FETCH,       // Memory is fetched
-    UC_MEM_READ_UNMAPPED,    // Unmapped memory is read from
-    UC_MEM_WRITE_UNMAPPED,   // Unmapped memory is written to
-    UC_MEM_FETCH_UNMAPPED,   // Unmapped memory is fetched
-    UC_MEM_WRITE_PROT,  // Write to write protected, but mapped, memory
-    UC_MEM_READ_PROT,   // Read from read protected, but mapped, memory
-    UC_MEM_FETCH_PROT,  // Fetch from non-executable, but mapped, memory
-    UC_MEM_READ_AFTER,   // Memory is read from (successful access)
+    UC_MEM_READ = 16,      // Memory is read from
+    UC_MEM_WRITE,          // Memory is written to
+    UC_MEM_FETCH,          // Memory is fetched
+    UC_MEM_READ_UNMAPPED,  // Unmapped memory is read from
+    UC_MEM_WRITE_UNMAPPED, // Unmapped memory is written to
+    UC_MEM_FETCH_UNMAPPED, // Unmapped memory is fetched
+    UC_MEM_WRITE_PROT,     // Write to write protected, but mapped, memory
+    UC_MEM_READ_PROT,      // Read from read protected, but mapped, memory
+    UC_MEM_FETCH_PROT,     // Fetch from non-executable, but mapped, memory
+    UC_MEM_READ_AFTER,     // Memory is read from (successful access)
 } uc_mem_type;
 
 // All type of hooks for uc_hook_add() API.
 typedef enum uc_hook_type {
     // Hook all interrupt/syscall events
     UC_HOOK_INTR = 1 << 0,
-    // Hook a particular instruction - only a very small subset of instructions supported here
+    // Hook a particular instruction - only a very small subset of instructions
+    // supported here
     UC_HOOK_INSN = 1 << 1,
     // Hook a range of code
     UC_HOOK_CODE = 1 << 2,
@@ -288,21 +305,29 @@ typedef enum uc_hook_type {
 } uc_hook_type;
 
 // Hook type for all events of unmapped memory access
-#define UC_HOOK_MEM_UNMAPPED (UC_HOOK_MEM_READ_UNMAPPED + UC_HOOK_MEM_WRITE_UNMAPPED + UC_HOOK_MEM_FETCH_UNMAPPED)
+#define UC_HOOK_MEM_UNMAPPED                                                   \
+    (UC_HOOK_MEM_READ_UNMAPPED + UC_HOOK_MEM_WRITE_UNMAPPED +                  \
+     UC_HOOK_MEM_FETCH_UNMAPPED)
 // Hook type for all events of illegal protected memory access
-#define UC_HOOK_MEM_PROT (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_FETCH_PROT)
+#define UC_HOOK_MEM_PROT                                                       \
+    (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_FETCH_PROT)
 // Hook type for all events of illegal read memory access
-#define UC_HOOK_MEM_READ_INVALID (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_READ_UNMAPPED)
+#define UC_HOOK_MEM_READ_INVALID                                               \
+    (UC_HOOK_MEM_READ_PROT + UC_HOOK_MEM_READ_UNMAPPED)
 // Hook type for all events of illegal write memory access
-#define UC_HOOK_MEM_WRITE_INVALID (UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_WRITE_UNMAPPED)
+#define UC_HOOK_MEM_WRITE_INVALID                                              \
+    (UC_HOOK_MEM_WRITE_PROT + UC_HOOK_MEM_WRITE_UNMAPPED)
 // Hook type for all events of illegal fetch memory access
-#define UC_HOOK_MEM_FETCH_INVALID (UC_HOOK_MEM_FETCH_PROT + UC_HOOK_MEM_FETCH_UNMAPPED)
+#define UC_HOOK_MEM_FETCH_INVALID                                              \
+    (UC_HOOK_MEM_FETCH_PROT + UC_HOOK_MEM_FETCH_UNMAPPED)
 // Hook type for all events of illegal memory access
 #define UC_HOOK_MEM_INVALID (UC_HOOK_MEM_UNMAPPED + UC_HOOK_MEM_PROT)
 // Hook type for all events of valid memory access
-// NOTE: UC_HOOK_MEM_READ is triggered before UC_HOOK_MEM_READ_PROT and UC_HOOK_MEM_READ_UNMAPPED, so
-//       this hook may technically trigger on some invalid reads. 
-#define UC_HOOK_MEM_VALID (UC_HOOK_MEM_READ + UC_HOOK_MEM_WRITE + UC_HOOK_MEM_FETCH)
+// NOTE: UC_HOOK_MEM_READ is triggered before UC_HOOK_MEM_READ_PROT and
+// UC_HOOK_MEM_READ_UNMAPPED, so
+//       this hook may technically trigger on some invalid reads.
+#define UC_HOOK_MEM_VALID                                                      \
+    (UC_HOOK_MEM_READ + UC_HOOK_MEM_WRITE + UC_HOOK_MEM_FETCH)
 
 /*
   Callback function for hooking memory (READ, WRITE & FETCH)
@@ -314,7 +339,8 @@ typedef enum uc_hook_type {
   @user_data: user data passed to tracing APIs
 */
 typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
-        uint64_t address, int size, int64_t value, void *user_data);
+                                uint64_t address, int size, int64_t value,
+                                void *user_data);
 
 /*
   Callback function for handling invalid memory access events (UNMAPPED and
@@ -326,21 +352,24 @@ typedef void (*uc_cb_hookmem_t)(uc_engine *uc, uc_mem_type type,
   @value: value of data being written to memory, or irrelevant if type = READ.
   @user_data: user data passed to tracing APIs
 
-  @return: return true to continue, or false to stop program (due to invalid memory).
-           NOTE: returning true to continue execution will only work if if the accessed
-           memory is made accessible with the correct permissions during the hook.
+  @return: return true to continue, or false to stop program (due to invalid
+  memory). NOTE: returning true to continue execution will only work if if the
+  accessed memory is made accessible with the correct permissions during the
+  hook.
 
-           In the event of a UC_MEM_READ_UNMAPPED or UC_MEM_WRITE_UNMAPPED callback,
-           the memory should be uc_mem_map()-ed with the correct permissions, and the
-           instruction will then read or write to the address as it was supposed to.
+           In the event of a UC_MEM_READ_UNMAPPED or UC_MEM_WRITE_UNMAPPED
+  callback, the memory should be uc_mem_map()-ed with the correct permissions,
+  and the instruction will then read or write to the address as it was supposed
+  to.
 
-           In the event of a UC_MEM_FETCH_UNMAPPED callback, the memory can be mapped
-           in as executable, in which case execution will resume from the fetched address.
-           The instruction pointer may be written to in order to change where execution resumes,
-           but the fetch must succeed if execution is to resume.
+           In the event of a UC_MEM_FETCH_UNMAPPED callback, the memory can be
+  mapped in as executable, in which case execution will resume from the fetched
+  address. The instruction pointer may be written to in order to change where
+  execution resumes, but the fetch must succeed if execution is to resume.
 */
 typedef bool (*uc_cb_eventmem_t)(uc_engine *uc, uc_mem_type type,
-        uint64_t address, int size, int64_t value, void *user_data);
+                                 uint64_t address, int size, int64_t value,
+                                 void *user_data);
 
 /*
   Memory region mapped by uc_mem_map() and uc_mem_map_ptr()
@@ -357,8 +386,9 @@ typedef enum uc_query_type {
     // Dynamically query current hardware mode.
     UC_QUERY_MODE = 1,
     UC_QUERY_PAGE_SIZE, // query pagesize of engine
-    UC_QUERY_ARCH,  // query architecture of engine (for ARM to query Thumb mode)
-    UC_QUERY_TIMEOUT,  // query if emulation stops due to timeout (indicated if result = True)
+    UC_QUERY_ARCH, // query architecture of engine (for ARM to query Thumb mode)
+    UC_QUERY_TIMEOUT, // query if emulation stops due to timeout (indicated if
+                      // result = True)
 } uc_query_type;
 
 // Opaque storage for CPU context, used with uc_context_*()
@@ -385,7 +415,6 @@ typedef struct uc_context uc_context;
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor);
 
-
 /*
  Determine if the given architecture is supported by this library.
 
@@ -395,7 +424,6 @@ unsigned int uc_version(unsigned int *major, unsigned int *minor);
 */
 UNICORN_EXPORT
 bool uc_arch_supported(uc_arch arch);
-
 
 /*
  Create new instance of unicorn engine.
@@ -499,7 +527,8 @@ uc_err uc_reg_read(uc_engine *uc, int regid, void *value);
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals, int count);
+uc_err uc_reg_write_batch(uc_engine *uc, int *regs, void *const *vals,
+                          int count);
 
 /*
  Read multiple register values.
@@ -529,7 +558,8 @@ uc_err uc_reg_read_batch(uc_engine *uc, int *regs, void **vals, int count);
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *bytes, size_t size);
+uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *bytes,
+                    size_t size);
 
 /*
  Read a range of bytes in memory.
@@ -566,7 +596,8 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *bytes, size_t size);
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
+uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
+                    uint64_t timeout, size_t count);
 
 /*
  Stop emulation (which was started by uc_emu_start() API.
@@ -585,15 +616,17 @@ uc_err uc_emu_stop(uc_engine *uc);
  The callback will be run when the hook event is hit.
 
  @uc: handle returned by uc_open()
- @hh: hook handle returned from this registration. To be used in uc_hook_del() API
+ @hh: hook handle returned from this registration. To be used in uc_hook_del()
+ API
  @type: hook type
  @callback: callback to be run when instruction is hit
  @user_data: user-defined data. This will be passed to callback function in its
       last argument @user_data
  @begin: start address of the area where the callback is effect (inclusive)
  @end: end address of the area where the callback is effect (inclusive)
-   NOTE 1: the callback is called only if related address is in range [@begin, @end]
-   NOTE 2: if @begin > @end, callback is called whenever this hook type is triggered
+   NOTE 1: the callback is called only if related address is in range [@begin,
+ @end] NOTE 2: if @begin > @end, callback is called whenever this hook type is
+ triggered
  @...: variable arguments (depending on @type)
    NOTE: if @type = UC_HOOK_INSN, this is the instruction ID.
          currently, only x86 in, out, syscall, sysenter, cpuid are supported.
@@ -603,7 +636,7 @@ uc_err uc_emu_stop(uc_engine *uc);
 */
 UNICORN_EXPORT
 uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
-        void *user_data, uint64_t begin, uint64_t end, ...);
+                   void *user_data, uint64_t begin, uint64_t end, ...);
 
 /*
  Unregister (remove) a hook callback.
@@ -621,11 +654,11 @@ UNICORN_EXPORT
 uc_err uc_hook_del(uc_engine *uc, uc_hook hh);
 
 typedef enum uc_prot {
-   UC_PROT_NONE = 0,
-   UC_PROT_READ = 1,
-   UC_PROT_WRITE = 2,
-   UC_PROT_EXEC = 4,
-   UC_PROT_ALL = 7,
+    UC_PROT_NONE = 0,
+    UC_PROT_READ = 1,
+    UC_PROT_WRITE = 2,
+    UC_PROT_EXEC = 4,
+    UC_PROT_ALL = 7,
 } uc_prot;
 
 /*
@@ -634,12 +667,14 @@ typedef enum uc_prot {
 
  @uc: handle returned by uc_open()
  @address: starting address of the new memory region to be mapped in.
-    This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
+    This address must be aligned to 4KB, or this will return with UC_ERR_ARG
+ error.
  @size: size of the new memory region to be mapped in.
-    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+    This size must be multiple of 4KB, or this will return with UC_ERR_ARG
+ error.
  @perms: Permissions for the newly mapped region.
-    This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
-    or this will return with UC_ERR_ARG error.
+    This must be some combination of UC_PROT_READ | UC_PROT_WRITE |
+ UC_PROT_EXEC, or this will return with UC_ERR_ARG error.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
@@ -653,21 +688,25 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
 
  @uc: handle returned by uc_open()
  @address: starting address of the new memory region to be mapped in.
-    This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
+    This address must be aligned to 4KB, or this will return with UC_ERR_ARG
+ error.
  @size: size of the new memory region to be mapped in.
-    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+    This size must be multiple of 4KB, or this will return with UC_ERR_ARG
+ error.
  @perms: Permissions for the newly mapped region.
-    This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
-    or this will return with UC_ERR_ARG error.
- @ptr: pointer to host memory backing the newly mapped memory. This host memory is
-    expected to be an equal or larger size than provided, and be mapped with at
-    least PROT_READ | PROT_WRITE. If it is not, the resulting behavior is undefined.
+    This must be some combination of UC_PROT_READ | UC_PROT_WRITE |
+ UC_PROT_EXEC, or this will return with UC_ERR_ARG error.
+ @ptr: pointer to host memory backing the newly mapped memory. This host memory
+ is expected to be an equal or larger size than provided, and be mapped with at
+    least PROT_READ | PROT_WRITE. If it is not, the resulting behavior is
+ undefined.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t perms, void *ptr);
+uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size,
+                      uint32_t perms, void *ptr);
 
 /*
  Map MMIO in for emulation.
@@ -675,15 +714,16 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size, uint32_t per
 
  @uc: handle returned by uc_open()
  @address: starting address of the new MMIO region to be mapped in.
-   This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
+   This address must be aligned to 4KB, or this will return with UC_ERR_ARG
+ error.
  @size: size of the new MMIO region to be mapped in.
    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
  @read_cb: function for handling reads from this MMIO region.
- @user_data_read: user-defined data. This will be passed to @read_cb function in its
-   last argument @user_data
+ @user_data_read: user-defined data. This will be passed to @read_cb function in
+ its last argument @user_data
  @write_cb: function for handling writes to this MMIO region.
- @user_data_write: user-defined data. This will be passed to @write_cb function in its
-   last argument @user_data
+ @user_data_write: user-defined data. This will be passed to @write_cb function
+ in its last argument @user_data
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
  */
@@ -698,9 +738,11 @@ uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
 
  @uc: handle returned by uc_open()
  @address: starting address of the memory region to be unmapped.
-    This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
+    This address must be aligned to 4KB, or this will return with UC_ERR_ARG
+ error.
  @size: size of the memory region to be modified.
-    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+    This size must be multiple of 4KB, or this will return with UC_ERR_ARG
+ error.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
@@ -714,18 +756,21 @@ uc_err uc_mem_unmap(uc_engine *uc, uint64_t address, size_t size);
 
  @uc: handle returned by uc_open()
  @address: starting address of the memory region to be modified.
-    This address must be aligned to 4KB, or this will return with UC_ERR_ARG error.
+    This address must be aligned to 4KB, or this will return with UC_ERR_ARG
+ error.
  @size: size of the memory region to be modified.
-    This size must be multiple of 4KB, or this will return with UC_ERR_ARG error.
+    This size must be multiple of 4KB, or this will return with UC_ERR_ARG
+ error.
  @perms: New permissions for the mapped region.
-    This must be some combination of UC_PROT_READ | UC_PROT_WRITE | UC_PROT_EXEC,
-    or this will return with UC_ERR_ARG error.
+    This must be some combination of UC_PROT_READ | UC_PROT_WRITE |
+ UC_PROT_EXEC, or this will return with UC_ERR_ARG error.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size, uint32_t perms);
+uc_err uc_mem_protect(uc_engine *uc, uint64_t address, size_t size,
+                      uint32_t perms);
 
 /*
  Retrieve all memory regions mapped by uc_mem_map() and uc_mem_map_ptr()
@@ -763,9 +808,9 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context);
 
 /*
  Free the memory allocated by uc_mem_regions.
- WARNING: After Unicorn 1.0.1rc5, the memory allocated by uc_context_alloc should
- be free-ed by uc_context_free(). Calling uc_free() may still work, but the result
- is **undefined**.
+ WARNING: After Unicorn 1.0.1rc5, the memory allocated by uc_context_alloc
+ should be free-ed by uc_context_free(). Calling uc_free() may still work, but
+ the result is **undefined**.
 
  @mem: memory allocated by uc_mem_regions (returned in *regions).
 
@@ -827,7 +872,8 @@ uc_err uc_context_reg_read(uc_context *ctx, int regid, void *value);
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_context_reg_write_batch(uc_context *ctx, int *regs, void *const *vals, int count);
+uc_err uc_context_reg_write_batch(uc_context *ctx, int *regs, void *const *vals,
+                                  int count);
 
 /*
  Read multiple register values from a context.
@@ -841,7 +887,8 @@ uc_err uc_context_reg_write_batch(uc_context *ctx, int *regs, void *const *vals,
    for detailed error).
 */
 UNICORN_EXPORT
-uc_err uc_context_reg_read_batch(uc_context *ctx, int *regs, void **vals, int count);
+uc_err uc_context_reg_read_batch(uc_context *ctx, int *regs, void **vals,
+                                 int count);
 
 /*
  Restore the current CPU context from a saved copy.
@@ -849,7 +896,8 @@ uc_err uc_context_reg_read_batch(uc_context *ctx, int *regs, void **vals, int co
  state saved by uc_context_save().
 
  @uc: handle returned by uc_open()
- @context: handle returned by uc_context_alloc that has been used with uc_context_save
+ @context: handle returned by uc_context_alloc that has been used with
+ uc_context_save
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).
@@ -857,10 +905,9 @@ uc_err uc_context_reg_read_batch(uc_context *ctx, int *regs, void **vals, int co
 UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context);
 
-
 /*
-  Return the size needed to store the cpu context. Can be used to allocate a buffer
-  to contain the cpu context and directly call uc_context_save.
+  Return the size needed to store the cpu context. Can be used to allocate a
+  buffer to contain the cpu context and directly call uc_context_save.
 
   @uc: handle returned by uc_open()
 
@@ -868,7 +915,6 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context);
 */
 UNICORN_EXPORT
 size_t uc_context_size(uc_engine *uc);
-
 
 /*
   Free the context allocated by uc_context_alloc().

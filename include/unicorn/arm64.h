@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
 
 //> ARM64 registers
@@ -281,7 +281,7 @@ typedef enum uc_arm64_reg {
     UC_ARM64_REG_V31,
 
     //> pseudo registers
-    UC_ARM64_REG_PC,			// program counter register
+    UC_ARM64_REG_PC, // program counter register
 
     UC_ARM64_REG_CPACR_EL1,
 
@@ -327,7 +327,7 @@ typedef enum uc_arm64_reg {
     UC_ARM64_REG_VBAR_EL2,
     UC_ARM64_REG_VBAR_EL3,
 
-    UC_ARM64_REG_ENDING,		// <-- mark the end of the list of registers
+    UC_ARM64_REG_ENDING, // <-- mark the end of the list of registers
 
     //> alias registers
 

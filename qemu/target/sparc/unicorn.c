@@ -10,11 +10,11 @@
 
 static bool sparc_stop_interrupt(struct uc_struct *uc, int intno)
 {
-    switch(intno) {
-        default:
-            return false;
-        case TT_ILL_INSN:
-            return true;
+    switch (intno) {
+    default:
+        return false;
+    case TT_ILL_INSN:
+        return true;
     }
 }
 
@@ -63,15 +63,16 @@ static void reg_read(CPUSPARCState *env, unsigned int regid, void *value)
     else if (regid >= UC_SPARC_REG_O0 && regid <= UC_SPARC_REG_O7)
         *(int32_t *)value = env->regwptr[regid - UC_SPARC_REG_O0];
     else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7)
-            *(int32_t *)value = env->regwptr[8 + regid - UC_SPARC_REG_L0];
+        *(int32_t *)value = env->regwptr[8 + regid - UC_SPARC_REG_L0];
     else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7)
-            *(int32_t *)value = env->regwptr[16 + regid - UC_SPARC_REG_I0];
+        *(int32_t *)value = env->regwptr[16 + regid - UC_SPARC_REG_I0];
     else {
-        switch(regid) {
-            default: break;
-            case UC_SPARC_REG_PC:
-                *(int32_t *)value = env->pc;
-                break;
+        switch (regid) {
+        default:
+            break;
+        case UC_SPARC_REG_PC:
+            *(int32_t *)value = env->pc;
+            break;
         }
     }
 
@@ -87,21 +88,23 @@ static void reg_write(CPUSPARCState *env, unsigned int regid, const void *value)
     else if (regid >= UC_SPARC_REG_L0 && regid <= UC_SPARC_REG_L7)
         env->regwptr[8 + regid - UC_SPARC_REG_L0] = *(uint32_t *)value;
     else if (regid >= UC_SPARC_REG_I0 && regid <= UC_SPARC_REG_I7)
-            env->regwptr[16 + regid - UC_SPARC_REG_I0] = *(uint32_t *)value;
+        env->regwptr[16 + regid - UC_SPARC_REG_I0] = *(uint32_t *)value;
     else {
-        switch(regid) {
-            default: break;
-            case UC_SPARC_REG_PC:
-                env->pc = *(uint32_t *)value;
-                env->npc = *(uint32_t *)value + 4;
-                break;
+        switch (regid) {
+        default:
+            break;
+        case UC_SPARC_REG_PC:
+            env->pc = *(uint32_t *)value;
+            env->npc = *(uint32_t *)value + 4;
+            break;
         }
     }
 
     return;
 }
 
-int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
+int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
+                   int count)
 {
     CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
     int i;
@@ -115,7 +118,8 @@ int sparc_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
     return 0;
 }
 
-int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, int count)
+int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                    int count)
 {
     CPUSPARCState *env = &(SPARC_CPU(uc->cpu)->env);
     int i;
@@ -124,7 +128,7 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
         unsigned int regid = regs[i];
         const void *value = vals[i];
         reg_write(env, regid, value);
-        if( regid == UC_SPARC_REG_PC){
+        if (regid == UC_SPARC_REG_PC) {
             // force to quit execution and flush TB
             uc->quit_request = true;
             uc_emu_stop(uc);
@@ -136,7 +140,8 @@ int sparc_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 }
 
 DEFAULT_VISIBILITY
-int sparc_context_reg_read(struct uc_context *ctx, unsigned int *regs, void **vals, int count)
+int sparc_context_reg_read(struct uc_context *ctx, unsigned int *regs,
+                           void **vals, int count)
 {
     CPUSPARCState *env = (CPUSPARCState *)ctx->data;
     int i;
@@ -151,7 +156,8 @@ int sparc_context_reg_read(struct uc_context *ctx, unsigned int *regs, void **va
 }
 
 DEFAULT_VISIBILITY
-int sparc_context_reg_write(struct uc_context *ctx, unsigned int *regs, void *const *vals, int count)
+int sparc_context_reg_write(struct uc_context *ctx, unsigned int *regs,
+                            void *const *vals, int count)
 {
     CPUSPARCState *env = (CPUSPARCState *)ctx->data;
     int i;
@@ -177,7 +183,7 @@ static int sparc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-void sparc_uc_init(struct uc_struct* uc)
+void sparc_uc_init(struct uc_struct *uc)
 {
     uc->release = sparc_release;
     uc->reg_read = sparc_reg_read;

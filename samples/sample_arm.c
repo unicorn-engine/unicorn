@@ -6,29 +6,37 @@
 #include <unicorn/unicorn.h>
 #include <string.h>
 
-
 // code to be emulated
 // #define ARM_CODE "\x37\x00\xa0\xe3" // mov r0, #0x37
 #define ARM_CODE "\x00\xf0\x20\xe3" // nop
-// #define ARM_CODE "\x37\x00\xa0\xe3\x03\x10\x42\xe0" // mov r0, #0x37; sub r1, r2, r3
+// #define ARM_CODE "\x37\x00\xa0\xe3\x03\x10\x42\xe0" // mov r0, #0x37; sub r1,
+// r2, r3
 #define THUMB_CODE "\x83\xb0" // sub    sp, #0xc
 
-#define ARM_THUM_COND_CODE "\x9a\x42\x14\xbf\x68\x22\x4d\x22" // 'cmp r2, r3\nit ne\nmov r2, #0x68\nmov r2, #0x4d'
+#define ARM_THUM_COND_CODE                                                     \
+    "\x9a\x42\x14\xbf\x68\x22\x4d\x22" // 'cmp r2, r3\nit ne\nmov r2, #0x68\nmov
+                                       // r2, #0x4d'
 
 // code to be emulated
-#define ARM_CODE_EB "\xe3\xa0\x00\x37\xe0\x42\x10\x03" // mov r0, #0x37; sub r1, r2, r3
-#define THUMB_CODE_EB "\xb0\x83" // sub    sp, #0xc
+#define ARM_CODE_EB                                                            \
+    "\xe3\xa0\x00\x37\xe0\x42\x10\x03" // mov r0, #0x37; sub r1, r2, r3
+#define THUMB_CODE_EB "\xb0\x83"       // sub    sp, #0xc
 // memory address where emulation starts
 #define ADDRESS 0x10000
 
-static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_block(uc_engine *uc, uint64_t address, uint32_t size,
+                       void *user_data)
 {
-    printf(">>> Tracing basic block at 0x%"PRIx64 ", block size = 0x%x\n", address, size);
+    printf(">>> Tracing basic block at 0x%" PRIx64 ", block size = 0x%x\n",
+           address, size);
 }
 
-static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size,
+                      void *user_data)
 {
-    printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
+    printf(">>> Tracing instruction at 0x%" PRIx64
+           ", instruction size = 0x%x\n",
+           address, size);
 }
 
 static void test_arm(void)
@@ -37,18 +45,18 @@ static void test_arm(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    int r0 = 0x1234;     // R0 register
-    int r2 = 0x6789;     // R1 register
-    int r3 = 0x3333;     // R2 register
-    int r1;     // R1 register
+    int r0 = 0x1234; // R0 register
+    int r2 = 0x6789; // R1 register
+    int r3 = 0x3333; // R2 register
+    int r1;          // R1 register
 
     printf("Emulate ARM code\n");
 
     // Initialize emulator in ARM mode
     err = uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -71,7 +79,7 @@ static void test_arm(void)
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(ARM_CODE) -1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(ARM_CODE) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -93,15 +101,15 @@ static void test_thumb(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    int sp = 0x1234;     // R0 register
+    int sp = 0x1234; // R0 register
 
     printf("Emulate THUMB code\n");
 
     // Initialize emulator in ARM mode
     err = uc_open(UC_ARCH_ARM, UC_MODE_THUMB, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -123,7 +131,7 @@ static void test_thumb(void)
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
     // Note we start at ADDRESS | 1 to indicate THUMB mode.
-    err = uc_emu_start(uc, ADDRESS | 1, ADDRESS + sizeof(THUMB_CODE) -1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS | 1, ADDRESS + sizeof(THUMB_CODE) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -143,18 +151,18 @@ static void test_armeb(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    int r0 = 0x1234;     // R0 register
-    int r2 = 0x6789;     // R1 register
-    int r3 = 0x3333;     // R2 register
-    int r1;     // R1 register
+    int r0 = 0x1234; // R0 register
+    int r2 = 0x6789; // R1 register
+    int r3 = 0x3333; // R2 register
+    int r1;          // R1 register
 
     printf("Emulate ARM Big-Endian code\n");
 
     // Initialize emulator in ARM mode
     err = uc_open(UC_ARCH_ARM, UC_MODE_ARM + UC_MODE_BIG_ENDIAN, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -177,7 +185,7 @@ static void test_armeb(void)
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(ARM_CODE_EB) -1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(ARM_CODE_EB) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -199,15 +207,15 @@ static void test_thumbeb(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    int sp = 0x1234;     // R0 register
+    int sp = 0x1234; // R0 register
 
     printf("Emulate THUMB Big-Endian code\n");
 
     // Initialize emulator in ARM mode
     err = uc_open(UC_ARCH_ARM, UC_MODE_THUMB + UC_MODE_BIG_ENDIAN, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -229,7 +237,8 @@ static void test_thumbeb(void)
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
     // Note we start at ADDRESS | 1 to indicate THUMB mode.
-    err = uc_emu_start(uc, ADDRESS | 1, ADDRESS + sizeof(THUMB_CODE_EB) -1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS | 1, ADDRESS + sizeof(THUMB_CODE_EB) - 1, 0,
+                       0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -257,8 +266,8 @@ static void test_thumb_mrs(void)
     // Initialize emulator in ARM mode
     err = uc_open(UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -288,14 +297,15 @@ static void test_thumb_mrs(void)
 
     uc_reg_read(uc, UC_ARM_REG_PC, &pc);
     printf(">>> PC = 0x%x\n", pc);
-    if (pc != ADDRESS + 4){
+    if (pc != ADDRESS + 4) {
         printf("Error, PC was 0x%x, expected was 0x%x.\n", pc, ADDRESS + 4);
     }
 
     uc_close(uc);
 }
 
-static void test_thumb_ite_internal(bool step, uint32_t *r2_out, uint32_t *r3_out) 
+static void test_thumb_ite_internal(bool step, uint32_t *r2_out,
+                                    uint32_t *r3_out)
 {
     uc_engine *uc;
     uc_err err;
@@ -305,14 +315,15 @@ static void test_thumb_ite_internal(bool step, uint32_t *r2_out, uint32_t *r3_ou
 
     err = uc_open(UC_ARCH_ARM, UC_MODE_THUMB, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
-    uc_mem_write(uc, ADDRESS, ARM_THUM_COND_CODE, sizeof(ARM_THUM_COND_CODE) - 1);
+    uc_mem_write(uc, ADDRESS, ARM_THUM_COND_CODE,
+                 sizeof(ARM_THUM_COND_CODE) - 1);
 
     uc_reg_write(uc, UC_ARM_REG_SP, &sp);
 
@@ -320,16 +331,19 @@ static void test_thumb_ite_internal(bool step, uint32_t *r2_out, uint32_t *r3_ou
     uc_reg_write(uc, UC_ARM_REG_R3, &r3);
 
     if (!step) {
-        err = uc_emu_start(uc, ADDRESS | 1, ADDRESS + sizeof(ARM_THUM_COND_CODE) - 1, 0, 0);
+        err = uc_emu_start(uc, ADDRESS | 1,
+                           ADDRESS + sizeof(ARM_THUM_COND_CODE) - 1, 0, 0);
         if (err) {
             printf("Failed on uc_emu_start() with error returned: %u\n", err);
         }
     } else {
         int i, addr = ADDRESS;
         for (i = 0; i < sizeof(ARM_THUM_COND_CODE) / 2; i++) {
-            err = uc_emu_start(uc, addr | 1, ADDRESS + sizeof(ARM_THUM_COND_CODE) - 1, 0, 1);
+            err = uc_emu_start(uc, addr | 1,
+                               ADDRESS + sizeof(ARM_THUM_COND_CODE) - 1, 0, 1);
             if (err) {
-                printf("Failed on uc_emu_start() with error returned: %u\n", err);
+                printf("Failed on uc_emu_start() with error returned: %u\n",
+                       err);
             }
             uc_reg_read(uc, UC_ARM_REG_PC, &addr);
         }
@@ -344,13 +358,13 @@ static void test_thumb_ite_internal(bool step, uint32_t *r2_out, uint32_t *r3_ou
     *r3_out = r3;
 }
 
-static void test_thumb_ite() 
+static void test_thumb_ite()
 {
     uint32_t r2, r3;
     uint32_t step_r2, step_r3;
 
     printf("Emulate a THUMB ITE block as a whole or per instruction.\n");
-    
+
     // Run once.
     printf("Running the entire binary.\n");
     test_thumb_ite_internal(false, &r2, &r3);
