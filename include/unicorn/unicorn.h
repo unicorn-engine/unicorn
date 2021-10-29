@@ -391,13 +391,21 @@ typedef enum uc_query_type {
                       // result = True)
 } uc_query_type;
 
-// Like What Kernel ioctl does but slightly different.
-// A uc_control_type is constructed as:
+// The implementation of uc_ctl is like what Linux ioctl does but slightly
+// different.
+//
+// A uc_control_type passed to uc_ctl is constructed as:
 //
 //    R/W       NR       Reserved     Type
 //  [      ] [      ]  [         ] [       ]
 //  31    30 29     26 25       16 15      0
 //
+//  @R/W: Whether the operation is a read or write access.
+//  @NR: Number of arguments.
+//  @Reserved: Should be zero, reserved for future extension.
+//  @Type: Taken from uc_control_type enum.
+//
+// See the helper macros below.
 
 // No input and output arguments.
 #define UC_CTL_IO_NONE (0)
