@@ -109,6 +109,22 @@ public interface UnicornConst {
    public static final int UC_QUERY_ARCH = 3;
    public static final int UC_QUERY_TIMEOUT = 4;
 
+   public static final int UC_CTL_IO_NONE = 0;
+   public static final int UC_CTL_IO_WRITE = 1;
+   public static final int UC_CTL_IO_READ = 2;
+   public static final int UC_CTL_IO_READ_WRITE = 3;
+
+   public static final int UC_CTL_UC_MODE = 0;
+   public static final int UC_CTL_UC_PAGE_SIZE = 1;
+   public static final int UC_CTL_UC_ARCH = 2;
+   public static final int UC_CTL_UC_TIMEOUT = 3;
+   public static final int UC_CTL_UC_EXITS_CNT = 4;
+   public static final int UC_CTL_UC_EXITS = 5;
+   public static final int UC_CTL_CPU_MODEL = 6;
+   public static final int UC_CTL_TB_EDGE = 7;
+   public static final int UC_CTL_TB_REQUEST_CACHE = 8;
+   public static final int UC_CTL_TB_REMOVE_CACHE = 9;
+
    public static final int UC_PROT_NONE = 0;
    public static final int UC_PROT_READ = 1;
    public static final int UC_PROT_WRITE = 2;

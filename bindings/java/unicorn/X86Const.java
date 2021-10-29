@@ -4,6 +4,45 @@ package unicorn;
 
 public interface X86Const {
 
+   public static final int UC_CPU_X86_QEMU64 = 0;
+   public static final int UC_CPU_X86_PHENOM = 1;
+   public static final int UC_CPU_X86_CORE2DUO = 2;
+   public static final int UC_CPU_X86_KVM64 = 3;
+   public static final int UC_CPU_X86_QEMU32 = 4;
+   public static final int UC_CPU_X86_KVM32 = 5;
+   public static final int UC_CPU_X86_COREDUO = 6;
+   public static final int UC_CPU_X86_486 = 7;
+   public static final int UC_CPU_X86_PENTIUM = 8;
+   public static final int UC_CPU_X86_PENTIUM2 = 9;
+   public static final int UC_CPU_X86_PENTIUM3 = 10;
+   public static final int UC_CPU_X86_ATHLON = 11;
+   public static final int UC_CPU_X86_N270 = 12;
+   public static final int UC_CPU_X86_CONROE = 13;
+   public static final int UC_CPU_X86_PENRYN = 14;
+   public static final int UC_CPU_X86_NEHALEM = 15;
+   public static final int UC_CPU_X86_WESTMERE = 16;
+   public static final int UC_CPU_X86_SANDYBRIDGE = 17;
+   public static final int UC_CPU_X86_IVYBRIDGE = 18;
+   public static final int UC_CPU_X86_HASWELL = 19;
+   public static final int UC_CPU_X86_BROADWELL = 20;
+   public static final int UC_CPU_X86_SKYLAKE_CLIENT = 21;
+   public static final int UC_CPU_X86_SKYLAKE_SERVER = 22;
+   public static final int UC_CPU_X86_CASCADELAKE_SERVER = 23;
+   public static final int UC_CPU_X86_COOPERLAKE = 24;
+   public static final int UC_CPU_X86_ICELAKE_CLIENT = 25;
+   public static final int UC_CPU_X86_ICELAKE_SERVER = 26;
+   public static final int UC_CPU_X86_DENVERTON = 27;
+   public static final int UC_CPU_X86_SNOWRIDGE = 28;
+   public static final int UC_CPU_X86_KNIGHTSMILL = 29;
+   public static final int UC_CPU_X86_OPTERON_G1 = 30;
+   public static final int UC_CPU_X86_OPTERON_G2 = 31;
+   public static final int UC_CPU_X86_OPTERON_G3 = 32;
+   public static final int UC_CPU_X86_OPTERON_G4 = 33;
+   public static final int UC_CPU_X86_OPTERON_G5 = 34;
+   public static final int UC_CPU_X86_EPYC = 35;
+   public static final int UC_CPU_X86_DHYANA = 36;
+   public static final int UC_CPU_X86_EPYC_ROME = 37;
+
 // X86 registers
 
    public static final int UC_X86_REG_INVALID = 0;

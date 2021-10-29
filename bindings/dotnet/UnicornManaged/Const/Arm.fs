@@ -7,6 +7,40 @@ open System
 [<AutoOpen>]
 module Arm =
 
+    let UC_CPU_ARM_926 = 0
+    let UC_CPU_ARM_946 = 1
+    let UC_CPU_ARM_1026 = 2
+    let UC_CPU_ARM_1136_R2 = 3
+    let UC_CPU_ARM_1136 = 4
+    let UC_CPU_ARM_1176 = 5
+    let UC_CPU_ARM_11MPCORE = 6
+    let UC_CPU_ARM_CORTEX_M0 = 7
+    let UC_CPU_ARM_CORTEX_M3 = 8
+    let UC_CPU_ARM_CORTEX_M4 = 9
+    let UC_CPU_ARM_CORTEX_M7 = 10
+    let UC_CPU_ARM_CORTEX_M33 = 11
+    let UC_CPU_ARM_CORTEX_R5 = 12
+    let UC_CPU_ARM_CORTEX_R5F = 13
+    let UC_CPU_ARM_CORTEX_A8 = 14
+    let UC_CPU_ARM_CORTEX_A9 = 15
+    let UC_CPU_ARM_CORTEX_A7 = 16
+    let UC_CPU_ARM_CORTEX_A15 = 17
+    let UC_CPU_ARM_TI925T = 18
+    let UC_CPU_ARM_SA1100 = 19
+    let UC_CPU_ARM_SA1110 = 20
+    let UC_CPU_ARM_PXA250 = 21
+    let UC_CPU_ARM_PXA255 = 22
+    let UC_CPU_ARM_PXA260 = 23
+    let UC_CPU_ARM_PXA261 = 24
+    let UC_CPU_ARM_PXA262 = 25
+    let UC_CPU_ARM_PXA270A0 = 26
+    let UC_CPU_ARM_PXA270A1 = 27
+    let UC_CPU_ARM_PXA270B0 = 28
+    let UC_CPU_ARM_PXA270B1 = 29
+    let UC_CPU_ARM_PXA270C0 = 30
+    let UC_CPU_ARM_PXA270C5 = 31
+    let UC_CPU_ARM_MAX = 32
+
     // ARM registers
 
     let UC_ARM_REG_INVALID = 0

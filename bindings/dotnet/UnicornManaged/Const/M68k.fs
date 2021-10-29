@@ -7,6 +7,16 @@ open System
 [<AutoOpen>]
 module M68k =
 
+    let UC_CPU_M5206_CPU = 0
+    let UC_CPU_M68000_CPU = 1
+    let UC_CPU_M68020_CPU = 2
+    let UC_CPU_M68030_CPU = 3
+    let UC_CPU_M68040_CPU = 4
+    let UC_CPU_M68060_CPU = 5
+    let UC_CPU_M5208_CPU = 6
+    let UC_CPU_CFV4E_CPU = 7
+    let UC_CPU_ANY_CPU = 8
+
     // M68K registers
 
     let UC_M68K_REG_INVALID = 0
