@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
 
 //> ARM registers
@@ -158,7 +158,7 @@ typedef enum uc_arm_reg {
     UC_ARM_REG_XPSR_NZCVQ,
     UC_ARM_REG_XPSR_G,
     UC_ARM_REG_XPSR_NZCVQG,
-    UC_ARM_REG_ENDING,		// <-- mark the end of the list or registers
+    UC_ARM_REG_ENDING, // <-- mark the end of the list or registers
 
     //> alias registers
     UC_ARM_REG_R13 = UC_ARM_REG_SP,

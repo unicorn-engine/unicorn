@@ -16,7 +16,7 @@ extern "C" {
 #undef sparc
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
 
 //> SPARC registers
@@ -71,7 +71,7 @@ typedef enum uc_sparc_reg {
     UC_SPARC_REG_F58,
     UC_SPARC_REG_F60,
     UC_SPARC_REG_F62,
-    UC_SPARC_REG_FCC0,	// Floating condition codes
+    UC_SPARC_REG_FCC0, // Floating condition codes
     UC_SPARC_REG_FCC1,
     UC_SPARC_REG_FCC2,
     UC_SPARC_REG_FCC3,
@@ -91,7 +91,7 @@ typedef enum uc_sparc_reg {
     UC_SPARC_REG_I5,
     UC_SPARC_REG_FP,
     UC_SPARC_REG_I7,
-    UC_SPARC_REG_ICC,	// Integer condition codes
+    UC_SPARC_REG_ICC, // Integer condition codes
     UC_SPARC_REG_L0,
     UC_SPARC_REG_L1,
     UC_SPARC_REG_L2,
@@ -114,9 +114,9 @@ typedef enum uc_sparc_reg {
     UC_SPARC_REG_XCC,
 
     // pseudo register
-    UC_SPARC_REG_PC,   // program counter register
+    UC_SPARC_REG_PC, // program counter register
 
-    UC_SPARC_REG_ENDING,   // <-- mark the end of the list of registers
+    UC_SPARC_REG_ENDING, // <-- mark the end of the list of registers
 
     // extras
     UC_SPARC_REG_O6 = UC_SPARC_REG_SP,

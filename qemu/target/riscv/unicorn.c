@@ -36,99 +36,97 @@ static void riscv_release(void *ctx)
     }
 }
 
-void riscv_reg_reset(struct uc_struct *uc)
-{
-}
+void riscv_reg_reset(struct uc_struct *uc) {}
 
 static void reg_read(CPURISCVState *env, unsigned int regid, void *value)
 {
-    switch(regid) {
-        case UC_RISCV_REG_X0:
-        case UC_RISCV_REG_X1:
-        case UC_RISCV_REG_X2:
-        case UC_RISCV_REG_X3:
-        case UC_RISCV_REG_X4:
-        case UC_RISCV_REG_X5:
-        case UC_RISCV_REG_X6:
-        case UC_RISCV_REG_X7:
-        case UC_RISCV_REG_X8:
-        case UC_RISCV_REG_X9:
-        case UC_RISCV_REG_X10:
-        case UC_RISCV_REG_X11:
-        case UC_RISCV_REG_X12:
-        case UC_RISCV_REG_X13:
-        case UC_RISCV_REG_X14:
-        case UC_RISCV_REG_X15:
-        case UC_RISCV_REG_X16:
-        case UC_RISCV_REG_X17:
-        case UC_RISCV_REG_X18:
-        case UC_RISCV_REG_X19:
-        case UC_RISCV_REG_X20:
-        case UC_RISCV_REG_X21:
-        case UC_RISCV_REG_X22:
-        case UC_RISCV_REG_X23:
-        case UC_RISCV_REG_X24:
-        case UC_RISCV_REG_X25:
-        case UC_RISCV_REG_X26:
-        case UC_RISCV_REG_X27:
-        case UC_RISCV_REG_X28:
-        case UC_RISCV_REG_X29:
-        case UC_RISCV_REG_X30:
-        case UC_RISCV_REG_X31:
+    switch (regid) {
+    case UC_RISCV_REG_X0:
+    case UC_RISCV_REG_X1:
+    case UC_RISCV_REG_X2:
+    case UC_RISCV_REG_X3:
+    case UC_RISCV_REG_X4:
+    case UC_RISCV_REG_X5:
+    case UC_RISCV_REG_X6:
+    case UC_RISCV_REG_X7:
+    case UC_RISCV_REG_X8:
+    case UC_RISCV_REG_X9:
+    case UC_RISCV_REG_X10:
+    case UC_RISCV_REG_X11:
+    case UC_RISCV_REG_X12:
+    case UC_RISCV_REG_X13:
+    case UC_RISCV_REG_X14:
+    case UC_RISCV_REG_X15:
+    case UC_RISCV_REG_X16:
+    case UC_RISCV_REG_X17:
+    case UC_RISCV_REG_X18:
+    case UC_RISCV_REG_X19:
+    case UC_RISCV_REG_X20:
+    case UC_RISCV_REG_X21:
+    case UC_RISCV_REG_X22:
+    case UC_RISCV_REG_X23:
+    case UC_RISCV_REG_X24:
+    case UC_RISCV_REG_X25:
+    case UC_RISCV_REG_X26:
+    case UC_RISCV_REG_X27:
+    case UC_RISCV_REG_X28:
+    case UC_RISCV_REG_X29:
+    case UC_RISCV_REG_X30:
+    case UC_RISCV_REG_X31:
 #ifdef TARGET_RISCV64
-            *(int64_t *)value = env->gpr[regid - UC_RISCV_REG_X0];
+        *(int64_t *)value = env->gpr[regid - UC_RISCV_REG_X0];
 #else
-            *(int32_t *)value = env->gpr[regid - UC_RISCV_REG_X0];
+        *(int32_t *)value = env->gpr[regid - UC_RISCV_REG_X0];
 #endif
-            break;
-        case UC_RISCV_REG_PC:
+        break;
+    case UC_RISCV_REG_PC:
 #ifdef TARGET_RISCV64
-            *(int64_t *)value = env->pc;
+        *(int64_t *)value = env->pc;
 #else
-            *(int32_t *)value = env->pc;
+        *(int32_t *)value = env->pc;
 #endif
-            break;
+        break;
 
-        case UC_RISCV_REG_F0:	// "ft0"
-        case UC_RISCV_REG_F1:	// "ft1"
-        case UC_RISCV_REG_F2:	// "ft2"
-        case UC_RISCV_REG_F3:	// "ft3"
-        case UC_RISCV_REG_F4:	// "ft4"
-        case UC_RISCV_REG_F5:	// "ft5"
-        case UC_RISCV_REG_F6:	// "ft6"
-        case UC_RISCV_REG_F7:	// "ft7"
-        case UC_RISCV_REG_F8:	// "fs0"
-        case UC_RISCV_REG_F9:	// "fs1"
-        case UC_RISCV_REG_F10:	// "fa0"
-        case UC_RISCV_REG_F11:	// "fa1"
-        case UC_RISCV_REG_F12:	// "fa2"
-        case UC_RISCV_REG_F13:	// "fa3"
-        case UC_RISCV_REG_F14:	// "fa4"
-        case UC_RISCV_REG_F15:	// "fa5"
-        case UC_RISCV_REG_F16:	// "fa6"
-        case UC_RISCV_REG_F17:	// "fa7"
-        case UC_RISCV_REG_F18:	// "fs2"
-        case UC_RISCV_REG_F19:	// "fs3"
-        case UC_RISCV_REG_F20:	// "fs4"
-        case UC_RISCV_REG_F21:	// "fs5"
-        case UC_RISCV_REG_F22:	// "fs6"
-        case UC_RISCV_REG_F23:	// "fs7"
-        case UC_RISCV_REG_F24:	// "fs8"
-        case UC_RISCV_REG_F25:	// "fs9"
-        case UC_RISCV_REG_F26:	// "fs10"
-        case UC_RISCV_REG_F27:	// "fs11"
-        case UC_RISCV_REG_F28:	// "ft8"
-        case UC_RISCV_REG_F29:	// "ft9"
-        case UC_RISCV_REG_F30:	// "ft10"
-        case UC_RISCV_REG_F31:	// "ft11"
+    case UC_RISCV_REG_F0:  // "ft0"
+    case UC_RISCV_REG_F1:  // "ft1"
+    case UC_RISCV_REG_F2:  // "ft2"
+    case UC_RISCV_REG_F3:  // "ft3"
+    case UC_RISCV_REG_F4:  // "ft4"
+    case UC_RISCV_REG_F5:  // "ft5"
+    case UC_RISCV_REG_F6:  // "ft6"
+    case UC_RISCV_REG_F7:  // "ft7"
+    case UC_RISCV_REG_F8:  // "fs0"
+    case UC_RISCV_REG_F9:  // "fs1"
+    case UC_RISCV_REG_F10: // "fa0"
+    case UC_RISCV_REG_F11: // "fa1"
+    case UC_RISCV_REG_F12: // "fa2"
+    case UC_RISCV_REG_F13: // "fa3"
+    case UC_RISCV_REG_F14: // "fa4"
+    case UC_RISCV_REG_F15: // "fa5"
+    case UC_RISCV_REG_F16: // "fa6"
+    case UC_RISCV_REG_F17: // "fa7"
+    case UC_RISCV_REG_F18: // "fs2"
+    case UC_RISCV_REG_F19: // "fs3"
+    case UC_RISCV_REG_F20: // "fs4"
+    case UC_RISCV_REG_F21: // "fs5"
+    case UC_RISCV_REG_F22: // "fs6"
+    case UC_RISCV_REG_F23: // "fs7"
+    case UC_RISCV_REG_F24: // "fs8"
+    case UC_RISCV_REG_F25: // "fs9"
+    case UC_RISCV_REG_F26: // "fs10"
+    case UC_RISCV_REG_F27: // "fs11"
+    case UC_RISCV_REG_F28: // "ft8"
+    case UC_RISCV_REG_F29: // "ft9"
+    case UC_RISCV_REG_F30: // "ft10"
+    case UC_RISCV_REG_F31: // "ft11"
 #ifdef TARGET_RISCV64
-            *(int64_t *)value = env->fpr[regid - UC_RISCV_REG_F0];
+        *(int64_t *)value = env->fpr[regid - UC_RISCV_REG_F0];
 #else
-            *(int32_t *)value = env->fpr[regid - UC_RISCV_REG_F0];
+        *(int32_t *)value = env->fpr[regid - UC_RISCV_REG_F0];
 #endif
-            break;
-        default:
-            break;
+        break;
+    default:
+        break;
     }
 
     return;
@@ -136,96 +134,97 @@ static void reg_read(CPURISCVState *env, unsigned int regid, void *value)
 
 static void reg_write(CPURISCVState *env, unsigned int regid, const void *value)
 {
-    switch(regid) {
-        case UC_RISCV_REG_X0:
-        case UC_RISCV_REG_X1:
-        case UC_RISCV_REG_X2:
-        case UC_RISCV_REG_X3:
-        case UC_RISCV_REG_X4:
-        case UC_RISCV_REG_X5:
-        case UC_RISCV_REG_X6:
-        case UC_RISCV_REG_X7:
-        case UC_RISCV_REG_X8:
-        case UC_RISCV_REG_X9:
-        case UC_RISCV_REG_X10:
-        case UC_RISCV_REG_X11:
-        case UC_RISCV_REG_X12:
-        case UC_RISCV_REG_X13:
-        case UC_RISCV_REG_X14:
-        case UC_RISCV_REG_X15:
-        case UC_RISCV_REG_X16:
-        case UC_RISCV_REG_X17:
-        case UC_RISCV_REG_X18:
-        case UC_RISCV_REG_X19:
-        case UC_RISCV_REG_X20:
-        case UC_RISCV_REG_X21:
-        case UC_RISCV_REG_X22:
-        case UC_RISCV_REG_X23:
-        case UC_RISCV_REG_X24:
-        case UC_RISCV_REG_X25:
-        case UC_RISCV_REG_X26:
-        case UC_RISCV_REG_X27:
-        case UC_RISCV_REG_X28:
-        case UC_RISCV_REG_X29:
-        case UC_RISCV_REG_X30:
-        case UC_RISCV_REG_X31:
+    switch (regid) {
+    case UC_RISCV_REG_X0:
+    case UC_RISCV_REG_X1:
+    case UC_RISCV_REG_X2:
+    case UC_RISCV_REG_X3:
+    case UC_RISCV_REG_X4:
+    case UC_RISCV_REG_X5:
+    case UC_RISCV_REG_X6:
+    case UC_RISCV_REG_X7:
+    case UC_RISCV_REG_X8:
+    case UC_RISCV_REG_X9:
+    case UC_RISCV_REG_X10:
+    case UC_RISCV_REG_X11:
+    case UC_RISCV_REG_X12:
+    case UC_RISCV_REG_X13:
+    case UC_RISCV_REG_X14:
+    case UC_RISCV_REG_X15:
+    case UC_RISCV_REG_X16:
+    case UC_RISCV_REG_X17:
+    case UC_RISCV_REG_X18:
+    case UC_RISCV_REG_X19:
+    case UC_RISCV_REG_X20:
+    case UC_RISCV_REG_X21:
+    case UC_RISCV_REG_X22:
+    case UC_RISCV_REG_X23:
+    case UC_RISCV_REG_X24:
+    case UC_RISCV_REG_X25:
+    case UC_RISCV_REG_X26:
+    case UC_RISCV_REG_X27:
+    case UC_RISCV_REG_X28:
+    case UC_RISCV_REG_X29:
+    case UC_RISCV_REG_X30:
+    case UC_RISCV_REG_X31:
 #ifdef TARGET_RISCV64
-            env->gpr[regid - UC_RISCV_REG_X0] = *(uint64_t *)value;
+        env->gpr[regid - UC_RISCV_REG_X0] = *(uint64_t *)value;
 #else
-            env->gpr[regid - UC_RISCV_REG_X0] = *(uint32_t *)value;
+        env->gpr[regid - UC_RISCV_REG_X0] = *(uint32_t *)value;
 #endif
-            break;
-        case UC_RISCV_REG_PC:
+        break;
+    case UC_RISCV_REG_PC:
 #ifdef TARGET_RISCV64
-            env->pc = *(uint64_t *)value;
+        env->pc = *(uint64_t *)value;
 #else
-            env->pc = *(uint32_t *)value;
+        env->pc = *(uint32_t *)value;
 #endif
-            break;
-        case UC_RISCV_REG_F0:	// "ft0"
-        case UC_RISCV_REG_F1:	// "ft1"
-        case UC_RISCV_REG_F2:	// "ft2"
-        case UC_RISCV_REG_F3:	// "ft3"
-        case UC_RISCV_REG_F4:	// "ft4"
-        case UC_RISCV_REG_F5:	// "ft5"
-        case UC_RISCV_REG_F6:	// "ft6"
-        case UC_RISCV_REG_F7:	// "ft7"
-        case UC_RISCV_REG_F8:	// "fs0"
-        case UC_RISCV_REG_F9:	// "fs1"
-        case UC_RISCV_REG_F10:	// "fa0"
-        case UC_RISCV_REG_F11:	// "fa1"
-        case UC_RISCV_REG_F12:	// "fa2"
-        case UC_RISCV_REG_F13:	// "fa3"
-        case UC_RISCV_REG_F14:	// "fa4"
-        case UC_RISCV_REG_F15:	// "fa5"
-        case UC_RISCV_REG_F16:	// "fa6"
-        case UC_RISCV_REG_F17:	// "fa7"
-        case UC_RISCV_REG_F18:	// "fs2"
-        case UC_RISCV_REG_F19:	// "fs3"
-        case UC_RISCV_REG_F20:	// "fs4"
-        case UC_RISCV_REG_F21:	// "fs5"
-        case UC_RISCV_REG_F22:	// "fs6"
-        case UC_RISCV_REG_F23:	// "fs7"
-        case UC_RISCV_REG_F24:	// "fs8"
-        case UC_RISCV_REG_F25:	// "fs9"
-        case UC_RISCV_REG_F26:	// "fs10"
-        case UC_RISCV_REG_F27:	// "fs11"
-        case UC_RISCV_REG_F28:	// "ft8"
-        case UC_RISCV_REG_F29:	// "ft9"
-        case UC_RISCV_REG_F30:	// "ft10"
-        case UC_RISCV_REG_F31:	// "ft11"
+        break;
+    case UC_RISCV_REG_F0:  // "ft0"
+    case UC_RISCV_REG_F1:  // "ft1"
+    case UC_RISCV_REG_F2:  // "ft2"
+    case UC_RISCV_REG_F3:  // "ft3"
+    case UC_RISCV_REG_F4:  // "ft4"
+    case UC_RISCV_REG_F5:  // "ft5"
+    case UC_RISCV_REG_F6:  // "ft6"
+    case UC_RISCV_REG_F7:  // "ft7"
+    case UC_RISCV_REG_F8:  // "fs0"
+    case UC_RISCV_REG_F9:  // "fs1"
+    case UC_RISCV_REG_F10: // "fa0"
+    case UC_RISCV_REG_F11: // "fa1"
+    case UC_RISCV_REG_F12: // "fa2"
+    case UC_RISCV_REG_F13: // "fa3"
+    case UC_RISCV_REG_F14: // "fa4"
+    case UC_RISCV_REG_F15: // "fa5"
+    case UC_RISCV_REG_F16: // "fa6"
+    case UC_RISCV_REG_F17: // "fa7"
+    case UC_RISCV_REG_F18: // "fs2"
+    case UC_RISCV_REG_F19: // "fs3"
+    case UC_RISCV_REG_F20: // "fs4"
+    case UC_RISCV_REG_F21: // "fs5"
+    case UC_RISCV_REG_F22: // "fs6"
+    case UC_RISCV_REG_F23: // "fs7"
+    case UC_RISCV_REG_F24: // "fs8"
+    case UC_RISCV_REG_F25: // "fs9"
+    case UC_RISCV_REG_F26: // "fs10"
+    case UC_RISCV_REG_F27: // "fs11"
+    case UC_RISCV_REG_F28: // "ft8"
+    case UC_RISCV_REG_F29: // "ft9"
+    case UC_RISCV_REG_F30: // "ft10"
+    case UC_RISCV_REG_F31: // "ft11"
 #ifdef TARGET_RISCV64
-            env->fpr[regid - UC_RISCV_REG_F0] = *(uint64_t *)value;
+        env->fpr[regid - UC_RISCV_REG_F0] = *(uint64_t *)value;
 #else
-            env->fpr[regid - UC_RISCV_REG_F0] = *(uint32_t *)value;
+        env->fpr[regid - UC_RISCV_REG_F0] = *(uint32_t *)value;
 #endif
-            break;
-        default:
-            break;
+        break;
+    default:
+        break;
     }
 }
 
-int riscv_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int count)
+int riscv_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
+                   int count)
 {
     CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
     int i;
@@ -239,7 +238,8 @@ int riscv_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals, int co
     return 0;
 }
 
-int riscv_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals, int count)
+int riscv_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
+                    int count)
 {
     CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
     int i;
@@ -248,11 +248,11 @@ int riscv_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
         unsigned int regid = regs[i];
         const void *value = vals[i];
         reg_write(env, regid, value);
-        if(regid == UC_RISCV_REG_PC){
+        if (regid == UC_RISCV_REG_PC) {
             // force to quit execution and flush TB
             uc->quit_request = true;
             uc_emu_stop(uc);
-        } 
+        }
     }
 
     return 0;
@@ -260,10 +260,12 @@ int riscv_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 
 DEFAULT_VISIBILITY
 #ifdef TARGET_RISCV32
-int riscv32_context_reg_read(struct uc_context *ctx, unsigned int *regs, void **vals, int count)
+int riscv32_context_reg_read(struct uc_context *ctx, unsigned int *regs,
+                             void **vals, int count)
 #else
-    /* TARGET_RISCV64 */
-int riscv64_context_reg_read(struct uc_context *ctx, unsigned int *regs, void **vals, int count)
+/* TARGET_RISCV64 */
+int riscv64_context_reg_read(struct uc_context *ctx, unsigned int *regs,
+                             void **vals, int count)
 #endif
 {
     CPURISCVState *env = (CPURISCVState *)ctx->data;
@@ -280,10 +282,12 @@ int riscv64_context_reg_read(struct uc_context *ctx, unsigned int *regs, void **
 
 DEFAULT_VISIBILITY
 #ifdef TARGET_RISCV32
-int riscv32_context_reg_write(struct uc_context *ctx, unsigned int *regs, void *const *vals, int count)
+int riscv32_context_reg_write(struct uc_context *ctx, unsigned int *regs,
+                              void *const *vals, int count)
 #else
-    /* TARGET_RISCV64 */
-int riscv64_context_reg_write(struct uc_context *ctx, unsigned int *regs, void *const *vals, int count)
+/* TARGET_RISCV64 */
+int riscv64_context_reg_write(struct uc_context *ctx, unsigned int *regs,
+                              void *const *vals, int count)
 #endif
 {
     CPURISCVState *env = (CPURISCVState *)ctx->data;
@@ -301,14 +305,14 @@ int riscv64_context_reg_write(struct uc_context *ctx, unsigned int *regs, void *
 static bool riscv_stop_interrupt(struct uc_struct *uc, int intno)
 {
     // detect stop exception
-    switch(intno){
-        default:
-            return false;
-        case RISCV_EXCP_UNICORN_END:
-            return true;
-        case RISCV_EXCP_BREAKPOINT:
-            uc->invalid_error = UC_ERR_EXCEPTION;
-            return true;
+    switch (intno) {
+    default:
+        return false;
+    case RISCV_EXCP_UNICORN_END:
+        return true;
+    case RISCV_EXCP_BREAKPOINT:
+        uc->invalid_error = UC_ERR_EXCEPTION;
+        return true;
     }
 }
 
@@ -332,10 +336,10 @@ static int riscv_cpus_init(struct uc_struct *uc, const char *cpu_model)
 
 DEFAULT_VISIBILITY
 #ifdef TARGET_RISCV32
-void riscv32_uc_init(struct uc_struct* uc)
+void riscv32_uc_init(struct uc_struct *uc)
 #else
-    /* TARGET_RISCV64 */
-void riscv64_uc_init(struct uc_struct* uc)
+/* TARGET_RISCV64 */
+void riscv64_uc_init(struct uc_struct *uc)
 #endif
 {
     uc->reg_read = riscv_reg_read;
