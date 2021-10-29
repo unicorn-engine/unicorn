@@ -391,6 +391,100 @@ typedef enum uc_query_type {
                       // result = True)
 } uc_query_type;
 
+// Like What Kernel ioctl does but slightly different.
+// A uc_control_type is constructed as:
+//
+//    R/W       NR       Reserved     Type
+//  [      ] [      ]  [         ] [       ]
+//  31    30 29     26 25       16 15      0
+//
+
+// No input and output arguments.
+#define UC_CTL_IO_NONE (0)
+// The arguments are used for input.
+#define UC_CTL_IO_WRITE (1)
+// The arguments are used for ouput.
+#define UC_CTL_IO_READ (2)
+// The arguments include both input and output arugments.
+#define UC_CTL_IO_READ_WRITE (UC_CTL_IO_WRITE | UC_CTL_IO_READ)
+
+#define UC_CTL(type, nr, rw) ((type) | ((nr) << 26) | ((rw) << 30))
+#define UC_CTL_NONE(type, nr) UC_CTL(type, nr, UC_CTL_IO_NONE)
+#define UC_CTL_READ(type, nr) UC_CTL(type, nr, UC_CTL_IO_READ)
+#define UC_CTL_WRITE(type, nr) UC_CTL(type, nr, UC_CTL_IO_WRITE)
+#define UC_CTL_READ_WRITE(type, nr) UC_CTL(type, nr, UC_CTL_IO_READ_WRITE)
+
+// All type of controls for uc_ctl API.
+// The controls are organized in a tree level.
+// If a control don't have `Set` or `Get` for @args, it means it's r/o or w/o.
+typedef enum uc_control_type {
+    // Current mode.
+    // Read: @args = (*int)
+    UC_CTL_UC_MODE,
+    // Curent page size.
+    // Write: @args = (int)
+    // Read: @args = (*int)
+    UC_CTL_UC_PAGE_SIZE,
+    // Current arch.
+    // Read: @args = (*int)
+    UC_CTL_UC_ARCH,
+    // Current timeout.
+    // Read: @args = (*uint64_t)
+    UC_CTL_UC_TIMEOUT,
+    // The number of current exists.
+    // Read: @args = (*size_t)
+    UC_CTL_UC_EXITS_CNT,
+    // Current exists.
+    // Write: @args = (*uint64_t exists, size_t len)
+    //        @len = UC_CTL_UC_EXITS_CNT
+    // Read: @args = (*uint64_t exists, size_t len)
+    //       @len = UC_CTL_UC_EXITS_CNT
+    UC_CTL_UC_EXITS,
+    // Set the cpu model of uc.
+    // Note this option can only be set before any Unicorn
+    // API is called except for uc_open.
+    // Write: @args = (int)
+    // Read:  @args = (int)
+    UC_CTL_CPU_MODEL,
+    // Request the edge of two TBs.
+    // Read: @args = (uint64_t, uint64_t, *uint64_t)
+    UC_CTL_TB_EDGE,
+    // Request a tb cache at a specific address
+    // Read: @args = (uint64_t)
+    UC_CTL_TB_REQUEST_CACHE,
+    // Remove a tb cache at a specific address
+    // Read: @args = (uint64_t)
+    UC_CTL_TB_REMOVE_CACHE
+
+} uc_control_type;
+
+#define uc_ctl_get_mode(uc, mode)                                              \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_MODE, 1), (mode))
+#define uc_ctl_get_page_size(uc, ptr)                                          \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_PAGE_SIZE, 1, (ptr))
+#define uc_ctl_set_page_size(uc, page_size)                                    \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_PAGE_SIZE, 1), (page_size))
+#define uc_ctl_get_arch(uc, arch)                                              \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_ARCH, 1), (arch))
+#define uc_ctl_get_timeout(uc, ptr)                                            \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_TIMEOUT, 1), (ptr))
+#define uc_ctl_get_exists_cnt(uc, ptr)                                         \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_EXITS_CNT, 1), (ptr))
+#define uc_ctl_get_exists(uc, buffer, len)                                     \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_EXITS, 2), (buffer), (len))
+#define uc_ctl_set_exists(uc, buffer, len)                                     \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_EXITS, 2), (buffer), (len))
+#define uc_ctl_get_cpu_model(uc, model)                                        \
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_CPU_MODEL, 1), (model))
+#define uc_ctl_set_cpu_model(uc, model)                                        \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_CPU_MODEL, 1), (model))
+#define uc_ctl_remove_cache(uc, address)                                       \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_REMOVE_CACHE, 1), (address))
+#define uc_ctl_request_cache(uc, address)                                      \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_REQUEST_CACHE, 1), (address))
+#define uc_ctl_get_edge(uc, addr1, addr2, ptr)                                 \
+    uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_TB_EDGE, 3), (addr1), (addr2), (ptr))
+
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
 typedef struct uc_context uc_context;
@@ -466,6 +560,20 @@ uc_err uc_close(uc_engine *uc);
 */
 UNICORN_EXPORT
 uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result);
+
+/*
+ Control internal states of engine.
+
+ Also see uc_ctl_* macro helpers for easy use.
+
+ @uc: handle returned by uc_open()
+ @option: control type.
+ @args: See uc_control_type for details about variadic arguments.
+
+ @return: error code of uc_err enum type (UC_ERR_*, see above)
+*/
+UNICORN_EXPORT
+uc_err uc_ctl(uc_engine *uc, uc_control_type option, ...);
 
 /*
  Report the last error number when some API function fail.
