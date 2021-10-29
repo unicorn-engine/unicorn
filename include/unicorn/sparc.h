@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 typedef enum uc_cpu_sparc {
-    UC_CPU_SPARC_FUJITSU_MB86904,
+    UC_CPU_SPARC_FUJITSU_MB86904 = 0,
     UC_CPU_SPARC_FUJITSU_MB86907,
     UC_CPU_SPARC_TI_MICROSPARC_I,
     UC_CPU_SPARC_TI_MICROSPARC_II,
@@ -36,7 +36,7 @@ typedef enum uc_cpu_sparc {
 } uc_cpu_sparc;
 
 typedef enum uc_cpu_sparc64 {
-    UC_CPU_SPARC64_FUJITSU,
+    UC_CPU_SPARC64_FUJITSU = 0,
     UC_CPU_SPARC64_FUJITSU_III,
     UC_CPU_SPARC64_FUJITSU_IV,
     UC_CPU_SPARC64_FUJITSU_V,

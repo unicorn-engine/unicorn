@@ -14,7 +14,7 @@ extern "C" {
 #include "platform.h"
 
 typedef enum uc_cpu_x86 {
-    UC_CPU_X86_QEMU64,
+    UC_CPU_X86_QEMU64 = 0,
     UC_CPU_X86_PHENOM,
     UC_CPU_X86_CORE2DUO,
     UC_CPU_X86_KVM64,

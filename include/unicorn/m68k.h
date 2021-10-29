@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 typedef enum uc_cpu_m68k {
-    UC_CPU_M5206_CPU,
+    UC_CPU_M5206_CPU = 0,
     UC_CPU_M68000_CPU,
     UC_CPU_M68020_CPU,
     UC_CPU_M68030_CPU,

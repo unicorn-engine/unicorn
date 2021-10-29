@@ -20,7 +20,7 @@ extern "C" {
 #endif
 
 typedef enum uc_cpu_mips {
-    UC_CPU_MIPS_4KC,
+    UC_CPU_MIPS_4KC = 0,
     UC_CPU_MIPS_4KM,
     UC_CPU_MIPS_4KECR1,
     UC_CPU_MIPS_4KEMR1,

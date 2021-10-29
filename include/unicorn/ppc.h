@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 typedef enum uc_cpu_ppc {
-    UC_CPU_PPC_401A1,
+    UC_CPU_PPC_401A1 = 0,
     UC_CPU_PPC_401B2,
     UC_CPU_PPC_401C2,
     UC_CPU_PPC_401D2,
@@ -276,7 +276,7 @@ typedef enum uc_cpu_ppc {
 } uc_cpu_ppc;
 
 typedef enum uc_cpu_ppc64 {
-    UC_CPU_PPC64_620,
+    UC_CPU_PPC64_620 = 0,
     UC_CPU_PPC64_630,
     UC_CPU_PPC64_631,
     UC_CPU_PPC64_POWER4,

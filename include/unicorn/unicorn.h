@@ -428,7 +428,7 @@ typedef enum uc_query_type {
 typedef enum uc_control_type {
     // Current mode.
     // Read: @args = (*int)
-    UC_CTL_UC_MODE,
+    UC_CTL_UC_MODE = 0,
     // Curent page size.
     // Write: @args = (int)
     // Read: @args = (*int)

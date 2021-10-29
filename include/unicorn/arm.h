@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 typedef enum uc_cpu_arm {
-    UC_CPU_ARM_926,
+    UC_CPU_ARM_926 = 0,
     UC_CPU_ARM_946,
     UC_CPU_ARM_1026,
     UC_CPU_ARM_1136_R2,

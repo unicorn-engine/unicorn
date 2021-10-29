@@ -16,7 +16,7 @@ extern "C" {
 #endif
 
 typedef enum uc_cpu_aarch64 {
-    UC_CPU_AARCH64_A57,
+    UC_CPU_AARCH64_A57 = 0,
     UC_CPU_AARCH64_A53,
     UC_CPU_AARCH64_A72,
     UC_CPU_AARCH64_MAX
