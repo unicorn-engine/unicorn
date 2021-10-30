@@ -112,6 +112,22 @@ module Common =
     let UC_QUERY_ARCH = 3
     let UC_QUERY_TIMEOUT = 4
 
+    let UC_CTL_IO_NONE = 0
+    let UC_CTL_IO_WRITE = 1
+    let UC_CTL_IO_READ = 2
+    let UC_CTL_IO_READ_WRITE = 3
+
+    let UC_CTL_UC_MODE = 0
+    let UC_CTL_UC_PAGE_SIZE = 1
+    let UC_CTL_UC_ARCH = 2
+    let UC_CTL_UC_TIMEOUT = 3
+    let UC_CTL_UC_EXITS_CNT = 4
+    let UC_CTL_UC_EXITS = 5
+    let UC_CTL_CPU_MODEL = 6
+    let UC_CTL_TB_EDGE = 7
+    let UC_CTL_TB_REQUEST_CACHE = 8
+    let UC_CTL_TB_REMOVE_CACHE = 9
+
     let UC_PROT_NONE = 0
     let UC_PROT_READ = 1
     let UC_PROT_WRITE = 2

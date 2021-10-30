@@ -7,6 +7,36 @@ open System
 [<AutoOpen>]
 module Mips =
 
+    let UC_CPU_MIPS_4KC = 0
+    let UC_CPU_MIPS_4KM = 1
+    let UC_CPU_MIPS_4KECR1 = 2
+    let UC_CPU_MIPS_4KEMR1 = 3
+    let UC_CPU_MIPS_4KEC = 4
+    let UC_CPU_MIPS_4KEM = 5
+    let UC_CPU_MIPS_24KC = 6
+    let UC_CPU_MIPS_24KEC = 7
+    let UC_CPU_MIPS_24KF = 8
+    let UC_CPU_MIPS_34KF = 9
+    let UC_CPU_MIPS_74KF = 10
+    let UC_CPU_MIPS_M14K = 11
+    let UC_CPU_MIPS_M14KC = 12
+    let UC_CPU_MIPS_P5600 = 13
+    let UC_CPU_MIPS_MIPS32R6_GENERIC = 14
+    let UC_CPU_MIPS_I7200 = 15
+    let UC_CPU_MIPS_R4000 = 16
+    let UC_CPU_MIPS_VR5432 = 17
+    let UC_CPU_MIPS_5KC = 18
+    let UC_CPU_MIPS_5KF = 19
+    let UC_CPU_MIPS_20KC = 20
+    let UC_CPU_MIPS_MIPS64R2_GENERIC = 21
+    let UC_CPU_MIPS_5KEC = 22
+    let UC_CPU_MIPS_5KEF = 23
+    let UC_CPU_MIPS_I6400 = 24
+    let UC_CPU_MIPS_I6500 = 25
+    let UC_CPU_MIPS_LOONGSON_2E = 26
+    let UC_CPU_MIPS_LOONGSON_2F = 27
+    let UC_CPU_MIPS_MIPS64DSPR2 = 28
+
     // MIPS registers
 
     let UC_MIPS_REG_INVALID = 0

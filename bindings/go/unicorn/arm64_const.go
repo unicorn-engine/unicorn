@@ -2,6 +2,11 @@ package unicorn
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [arm64_const.go]
 const (
 
+	CPU_AARCH64_A57 = 0
+	CPU_AARCH64_A53 = 1
+	CPU_AARCH64_A72 = 2
+	CPU_AARCH64_MAX = 3
+
 // ARM64 registers
 
 	ARM64_REG_INVALID = 0
