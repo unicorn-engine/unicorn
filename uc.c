@@ -639,6 +639,12 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     uc->timed_out = false;
     uc->first_tb = true;
 
+    // In this case, we don't do any emulation because it will generate
+    // an empty translation block which we can't invalidate.
+    if (begin == until) {
+        return UC_ERR_OK;
+    }
+    
     switch (uc->arch) {
     default:
         break;

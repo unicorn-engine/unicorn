@@ -1753,7 +1753,8 @@ void tb_invalidate_phys_range(struct uc_struct *uc, ram_addr_t start, ram_addr_t
 
     pages = page_collection_lock(uc, start, end);
     for (next = (start & TARGET_PAGE_MASK) + TARGET_PAGE_SIZE;
-         start < end;
+         //start < end; Unicorn: Fix possible wrap around
+         (intptr_t)(end - start) > 0;
          start = next, next += TARGET_PAGE_SIZE) {
         PageDesc *pd = page_find(uc, start >> TARGET_PAGE_BITS);
         tb_page_addr_t bound = MIN(next, end);
