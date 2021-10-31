@@ -644,7 +644,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     if (begin == until) {
         return UC_ERR_OK;
     }
-    
+
     switch (uc->arch) {
     default:
         break;
