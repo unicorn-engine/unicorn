@@ -11,7 +11,7 @@
     "\xab\x05\x00\xb8\xaf\x05\x40\x38" // str w11, [x13], #0; ldrb w15, [x13],
                                        // #0
 //#define ARM64_CODE_EB "\xb8\x00\x05\xab\x38\x40\x05\xaf" // str w11, [x13];
-//ldrb w15, [x13]
+// ldrb w15, [x13]
 #define ARM64_CODE_EB ARM64_CODE
 
 // memory address where emulation starts
