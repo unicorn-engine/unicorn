@@ -629,6 +629,36 @@ static void test_x86_hook_cpuid()
     OK(uc_close(uc));
 }
 
+// This is a regression bug.
+static void test_x86_clear_tb_cache() {
+    uc_engine *uc;
+    char code[] =
+        "\x41\x4a"; // INC ecx; DEC edx;
+    int r_ecx = 0x1234;
+    int r_edx = 0x7890;
+    uint64_t code_start = 0x1240; // Choose this address by design
+    uint64_t code_len = 0x1000;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_mem_map(uc, code_start & (1<<12), code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code)));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+
+    OK(uc_emu_start(uc, code_start, code_start + 1, 0, 0));
+    
+    // If tb cache is not cleared, edx would be still 0x7890
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+
+    TEST_CHECK(r_ecx == 0x1236);
+    TEST_CHECK(r_edx == 0x788f);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_out", test_x86_out},
              {"test_x86_mem_hook_all", test_x86_mem_hook_all},
@@ -650,4 +680,5 @@ TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_mmio_uc_mem_rw", test_x86_mmio_uc_mem_rw},
              {"test_x86_sysenter", test_x86_sysenter},
              {"test_x86_hook_cpuid", test_x86_hook_cpuid},
+             {"test_x86_clear_tb_cache", test_x86_clear_tb_cache},
              {NULL, NULL}};
