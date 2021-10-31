@@ -27,6 +27,7 @@
 #include "qemu/bitmap.h"
 #include "tcg/tcg.h"
 #include "exec/tb-hash.h"
+#include "accel/tcg/translate-all.h"
 
 #include "uc_priv.h"
 
@@ -173,6 +174,7 @@ void cpu_stop_current(struct uc_struct *uc)
 void resume_all_vcpus(struct uc_struct* uc)
 {
     CPUState *cpu = uc->cpu;
+    tb_page_addr_t addr;
     cpu->halted = 0;
     cpu->exit_request = 0;
     cpu->exception_index = -1;
@@ -188,12 +190,15 @@ void resume_all_vcpus(struct uc_struct* uc)
     // clear the cache of the addr_end address, since the generated code
     // at that address is to exit emulation, but not for the instruction there.
     // if we dont do this, next time we cannot emulate at that address
-    TranslationBlock *tb = cpu->tb_jmp_cache[tb_jmp_cache_hash_func(uc, uc->addr_end)];
-    if (tb) {
-        qht_remove(&uc->tcg_ctx->tb_ctx.htable, tb, tb->hash);
-        tb_flush_jmp_cache(cpu, uc->addr_end);
-    }
 
+    // GVA to GPA (GPA -> HVA via page_find, HVA->HPA via host mmu)
+    addr = get_page_addr_code(uc->cpu->env_ptr, uc->addr_end);
+    // Unicorn: Why addr - 1?
+    // 0: INC ecx
+    // 1: DEC edx <--- We put exit here, then the range of TB is [0, 1)
+    //
+    // While tb_invalidate_phys_range invalides [start, end)
+    tb_invalidate_phys_range(uc, addr - 1, addr - 1 + 8);
 
     cpu->created = false;
 }

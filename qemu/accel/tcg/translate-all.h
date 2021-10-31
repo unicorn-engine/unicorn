@@ -30,6 +30,7 @@ void tb_invalidate_phys_page_fast(struct uc_struct *uc, struct page_collection *
                                   tb_page_addr_t start, int len,
                                   uintptr_t retaddr);
 void tb_invalidate_phys_page_range(struct uc_struct *uc, tb_page_addr_t start, tb_page_addr_t end);
+void tb_invalidate_phys_range(struct uc_struct *uc, ram_addr_t start, ram_addr_t end);
 void tb_check_watchpoint(CPUState *cpu, uintptr_t retaddr);
 
 #endif /* TRANSLATE_ALL_H */

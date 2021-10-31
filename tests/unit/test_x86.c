@@ -630,23 +630,23 @@ static void test_x86_hook_cpuid()
 }
 
 // This is a regression bug.
-static void test_x86_clear_tb_cache() {
+static void test_x86_clear_tb_cache()
+{
     uc_engine *uc;
-    char code[] =
-        "\x41\x4a"; // INC ecx; DEC edx;
+    char code[] = "\x83\xc1\x01\x4a"; // INC ecx; DEC edx;
     int r_ecx = 0x1234;
     int r_edx = 0x7890;
     uint64_t code_start = 0x1240; // Choose this address by design
     uint64_t code_len = 0x1000;
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
-    OK(uc_mem_map(uc, code_start & (1<<12), code_len, UC_PROT_ALL));
+    OK(uc_mem_map(uc, code_start & (1 << 12), code_len, UC_PROT_ALL));
     OK(uc_mem_write(uc, code_start, code, sizeof(code)));
     OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
     OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
 
-    OK(uc_emu_start(uc, code_start, code_start + 1, 0, 0));
-    
+    OK(uc_emu_start(uc, code_start, code_start + 3, 0, 0));
+
     // If tb cache is not cleared, edx would be still 0x7890
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 

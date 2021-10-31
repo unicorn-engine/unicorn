@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _aarch64eb
 #endif
+#define tb_invalidate_phys_range tb_invalidate_phys_range_aarch64eb
 #define use_idiv_instructions use_idiv_instructions_aarch64eb
 #define arm_arch arm_arch_aarch64eb
 #define tb_target_set_jmp_target tb_target_set_jmp_target_aarch64eb

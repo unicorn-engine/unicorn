@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _mips64el
 #endif
+#define tb_invalidate_phys_range tb_invalidate_phys_range_mips64el
 #define use_idiv_instructions use_idiv_instructions_mips64el
 #define arm_arch arm_arch_mips64el
 #define tb_target_set_jmp_target tb_target_set_jmp_target_mips64el

@@ -4,6 +4,7 @@ CMD_PATH=$(realpath $0)
 SOURCE_DIR=$(dirname ${CMD_PATH})
 
 COMMON_SYMBOLS="
+tb_invalidate_phys_range \
 use_idiv_instructions \
 arm_arch \
 tb_target_set_jmp_target \
