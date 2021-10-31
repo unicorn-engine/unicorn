@@ -5951,7 +5951,7 @@ static void sparc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     unsigned int insn;
 
     // Unicorn: end address tells us to stop emulation
-    if (dc->pc == uc->addr_end) {
+    if (uc_addr_is_exit(uc, dc->pc)) {
 #ifndef TARGET_SPARC64
         gen_helper_power_down(tcg_ctx, tcg_ctx->cpu_env);
 #endif

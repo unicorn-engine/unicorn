@@ -427,40 +427,43 @@ typedef enum uc_query_type {
 // If a control don't have `Set` or `Get` for @args, it means it's r/o or w/o.
 typedef enum uc_control_type {
     // Current mode.
-    // Read: @args = (*int)
+    // Read: @args = (int*)
     UC_CTL_UC_MODE = 0,
     // Curent page size.
-    // Write: @args = (int)
-    // Read: @args = (*int)
+    // Write: @args = (uint32_t)
+    // Read: @args = (uint32_t*)
     UC_CTL_UC_PAGE_SIZE,
     // Current arch.
-    // Read: @args = (*int)
+    // Read: @args = (int*)
     UC_CTL_UC_ARCH,
     // Current timeout.
-    // Read: @args = (*uint64_t)
+    // Read: @args = (uint64_t*)
     UC_CTL_UC_TIMEOUT,
+    // Enable multiple exists.
+    // Without this control, reading/setting exists won't work.
+    // This is for API backward compatibility.
+    // Write: @args = (int)
+    UC_CTL_UC_USE_EXITS,
     // The number of current exists.
-    // Read: @args = (*size_t)
+    // Read: @args = (size_t*)
     UC_CTL_UC_EXITS_CNT,
     // Current exists.
-    // Write: @args = (*uint64_t exists, size_t len)
+    // Write: @args = (uint64_t* exists, size_t len)
     //        @len = UC_CTL_UC_EXITS_CNT
-    // Read: @args = (*uint64_t exists, size_t len)
+    // Read: @args = (uint64_t* exists, size_t len)
     //       @len = UC_CTL_UC_EXITS_CNT
     UC_CTL_UC_EXITS,
+
     // Set the cpu model of uc.
     // Note this option can only be set before any Unicorn
     // API is called except for uc_open.
     // Write: @args = (int)
     // Read:  @args = (int)
     UC_CTL_CPU_MODEL,
-    // Request the edge of two TBs.
-    // Read: @args = (uint64_t, uint64_t, *uint64_t)
-    UC_CTL_TB_EDGE,
     // Request a tb cache at a specific address
     // Read: @args = (uint64_t)
     UC_CTL_TB_REQUEST_CACHE,
-    // Remove a tb cache at a specific address
+    // Invalidate a tb cache at a specific address
     // Read: @args = (uint64_t)
     UC_CTL_TB_REMOVE_CACHE
 
@@ -469,13 +472,15 @@ typedef enum uc_control_type {
 #define uc_ctl_get_mode(uc, mode)                                              \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_MODE, 1), (mode))
 #define uc_ctl_get_page_size(uc, ptr)                                          \
-    uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_PAGE_SIZE, 1, (ptr))
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_PAGE_SIZE, 1), (ptr))
 #define uc_ctl_set_page_size(uc, page_size)                                    \
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_PAGE_SIZE, 1), (page_size))
 #define uc_ctl_get_arch(uc, arch)                                              \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_ARCH, 1), (arch))
 #define uc_ctl_get_timeout(uc, ptr)                                            \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_TIMEOUT, 1), (ptr))
+#define uc_ctl_exits_enabled(uc, enabled)                                      \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_USE_EXITS, 1), (enabled))
 #define uc_ctl_get_exists_cnt(uc, ptr)                                         \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_EXITS_CNT, 1), (ptr))
 #define uc_ctl_get_exists(uc, buffer, len)                                     \
@@ -487,11 +492,9 @@ typedef enum uc_control_type {
 #define uc_ctl_set_cpu_model(uc, model)                                        \
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_CPU_MODEL, 1), (model))
 #define uc_ctl_remove_cache(uc, address)                                       \
-    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_REMOVE_CACHE, 1), (address))
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_TB_REMOVE_CACHE, 1), (address))
 #define uc_ctl_request_cache(uc, address)                                      \
-    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_REQUEST_CACHE, 1), (address))
-#define uc_ctl_get_edge(uc, addr1, addr2, ptr)                                 \
-    uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_TB_EDGE, 3), (addr1), (addr2), (ptr))
+    uc_ctl(uc, UC_CTL_READ(UC_CTL_TB_REQUEST_CACHE, 1), (address))
 
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;

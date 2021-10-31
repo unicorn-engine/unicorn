@@ -4765,7 +4765,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     s->uc = env->uc;
 
     // Unicorn: end address tells us to stop emulation
-    if (s->pc == s->uc->addr_end) {
+    if (uc_addr_is_exit(env->uc, s->pc)) {
         // imitate the HLT instruction
         gen_update_cc_op(s);
         gen_jmp_im(s, pc_start - s->cs_base);

@@ -44,6 +44,8 @@ void     g_tree_destroy (GTree *tree);
 
 void     g_tree_insert (GTree *tree, gpointer key, gpointer value);
 
+void g_tree_remove_all (GTree *tree);
+
 gboolean g_tree_remove (GTree *tree, gconstpointer key);
 
 gpointer g_tree_lookup (GTree *tree, gconstpointer key);

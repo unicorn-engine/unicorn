@@ -1102,6 +1102,8 @@ endif()
 
 # Extra tests
 set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_mem)
+set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_ctl)
+set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_ctl)
 
 target_compile_options(unicorn PRIVATE
     ${UNICORN_COMPILE_OPTIONS}

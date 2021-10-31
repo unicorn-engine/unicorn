@@ -6326,7 +6326,7 @@ static void m68k_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     uint16_t insn;
 
     // Unicorn: end address tells us to stop emulation
-    if (dc->pc == uc->addr_end) {
+    if (uc_addr_is_exit(uc, dc->pc)) {
         gen_exception(dc, dc->pc, EXCP_HLT);
         return;
     }

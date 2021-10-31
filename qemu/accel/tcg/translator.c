@@ -58,7 +58,7 @@ void translator_loop(const TranslatorOps *ops, DisasContextBase *db,
 
     /* Unicorn: early check to see if the address of this block is
      * the "run until" address. */
-    if (tb->pc == cpu->uc->addr_end) {
+    if (uc_addr_is_exit(uc, tb->pc)) {
         // This should catch that instruction is at the end
         // and generate appropriate halting code.
         gen_tb_start(tcg_ctx, db->tb);

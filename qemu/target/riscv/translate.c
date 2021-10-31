@@ -850,7 +850,7 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     bool insn_hook = false;
 
     // Unicorn: end address tells us to stop emulation
-    if (ctx->base.pc_next == ctx->uc->addr_end) {
+    if (uc_addr_is_exit(uc, ctx->base.pc_next)) {
         // Unicorn: We have to exit current execution here.
         dcbase->is_jmp = DISAS_UC_EXIT;
     } else {

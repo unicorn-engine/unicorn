@@ -41,6 +41,8 @@
 #define WRITE_BYTE_H(x, b) (x = (x & ~0xff00) | ((b & 0xff) << 8))
 #define WRITE_BYTE_L(x, b) (x = (x & ~0xff) | (b & 0xff))
 
+struct TranslationBlock;
+
 typedef uc_err (*query_t)(struct uc_struct *uc, uc_query_type type,
                           size_t *result);
 
@@ -113,6 +115,14 @@ typedef void (*uc_softfloat_initialize)(void);
 
 // tcg flush softmmu tlb
 typedef void (*uc_tcg_flush_tlb)(struct uc_struct *uc);
+
+// Invalidate the TB at given address
+typedef void (*uc_invalidate_tb_t)(struct uc_struct *uc, uint64_t start,
+                                   size_t len);
+
+// Request generating TB at given address
+typedef struct TranslationBlock *(*uc_gen_tb_t)(struct uc_struct *uc,
+                                                uint64_t pc);
 
 struct hook {
     int type;       // UC_HOOK_*
@@ -226,6 +236,8 @@ struct uc_struct {
     uc_target_page_init target_page;
     uc_softfloat_initialize softfloat_initialize;
     uc_tcg_flush_tlb tcg_flush_tlb;
+    uc_invalidate_tb_t uc_invalidate_tb;
+    uc_gen_tb_t uc_gen_tb;
 
     /*  only 1 cpu in unicorn,
         do not need current_cpu to handle current running cpu. */
@@ -288,8 +300,9 @@ struct uc_struct {
     uint64_t invalid_addr; // invalid address to be accessed
     int invalid_error;     // invalid memory code: 1 = READ, 2 = WRITE, 3 = CODE
 
-    uint64_t addr_end; // address where emulation stops (@end param of
-                       // uc_emu_start())
+    int use_exit;
+    GTree *exits; // addresses where emulation stops (@until param of
+                  // uc_emu_start()) Also see UC_CTL_USE_EXITS for more details.
 
     int thumb; // thumb mode for ARM
     MemoryRegion **mapped_blocks;
@@ -327,6 +340,21 @@ struct uc_context {
 
 // check if this address is mapped in (via uc_mem_map())
 MemoryRegion *memory_mapping(struct uc_struct *uc, uint64_t address);
+
+// We have to support 32bit system so we can't hold uint64_t on void*
+static inline void uc_add_exit(uc_engine *uc, uint64_t addr)
+{
+    uint64_t *new_exit = g_malloc(sizeof(uint64_t));
+    *new_exit = addr;
+    g_tree_insert(uc->exits, (gpointer)new_exit, (gpointer)1);
+}
+
+// This function has to exist since we would like to accept uint32_t or
+// it's complex to achieve so.
+static inline int uc_addr_is_exit(uc_engine *uc, uint64_t addr)
+{
+    return g_tree_lookup(uc->exits, (gpointer)(&addr)) == (gpointer)1;
+}
 
 #endif
 /* vim: set ts=4 noet:  */

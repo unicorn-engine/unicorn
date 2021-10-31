@@ -980,6 +980,99 @@ static void tb_htable_init(struct uc_struct *uc)
     qht_init(&uc->tcg_ctx->tb_ctx.htable, tb_cmp, CODE_GEN_HTABLE_SIZE, mode);
 }
 
+// GVA to GPA (GPA -> HVA via page_find, HVA->HPA via host mmu)
+// Unicorn: Why addr - 1?
+// 0: INC ecx
+// 1: DEC edx <--- We put exit here, then the range of TB is [0, 1)
+//
+// While tb_invalidate_phys_range invalides [start, end)
+//
+// This function is designed to used with g_tree_foreach
+static inline gboolean uc_exit_invalidate_iter(gpointer key, gpointer val, gpointer data) {
+    uint64_t exit = *((uint64_t*)key);
+    uc_engine* uc = (uc_engine*)data;
+    tb_page_addr_t start, end;
+    
+    if (exit != 0) {
+        end = get_page_addr_code(uc->cpu->env_ptr, exit);
+
+        start = (end-1) ;
+        end = end & (target_ulong)(-1);
+
+        tb_invalidate_phys_range(uc, start, end);
+    }
+
+    return false;
+}
+
+static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t len) {
+    tb_page_addr_t start, end;
+
+    // GVA to GPA (GPA -> HVA via page_find, HVA->HPA via host mmu)
+    start = get_page_addr_code(uc->cpu->env_ptr, start_addr) & (target_ulong)(-1);
+    
+    // For 32bit target.
+    end = (start + len) & (target_ulong)(-1);
+
+    // We get a wrap?
+    if (start > end) {
+        return;
+    }
+
+    tb_invalidate_phys_range(uc, start, end);
+}
+
+static TranslationBlock* uc_gen_tb(struct uc_struct *uc, uint64_t addr) {
+    TranslationBlock *tb;
+    target_ulong cs_base, pc;
+    CPUState *cpu = uc->cpu;
+    CPUArchState *env = (CPUArchState *)cpu->env_ptr;
+    uint32_t flags;
+    uint32_t hash;
+    uint32_t cflags = cpu->cflags_next_tb;
+
+    if (cflags == -1) {
+        cflags = curr_cflags();
+    }
+
+    cpu_get_tb_cpu_state(env, &pc, &cs_base, &flags);
+
+    // Unicorn: Our hack here.
+    pc = addr;
+
+    hash = tb_jmp_cache_hash_func(env->uc, pc);
+    tb = cpu->tb_jmp_cache[hash];
+
+    cflags &= ~CF_CLUSTER_MASK;
+    cflags |= cpu->cluster_index << CF_CLUSTER_SHIFT;
+
+    if (likely(tb &&
+               tb->pc == pc &&
+               tb->cs_base == cs_base &&
+               tb->flags == flags &&
+               tb->trace_vcpu_dstate == *cpu->trace_dstate &&
+               (tb_cflags(tb) & (CF_HASH_MASK | CF_INVALID)) == cflags)) {
+        return tb;
+    }
+
+    tb = tb_htable_lookup(cpu, pc, cs_base, flags, cflags);
+    cpu->tb_jmp_cache[hash] = tb;
+
+    if (tb != NULL) {
+        return tb;
+    }
+
+    if (tb == NULL) {
+        mmap_lock();
+        tb = tb_gen_code(cpu, pc, cs_base, flags, cflags);
+        mmap_unlock();
+        /* We add the TB in the virtual pc hash table for the fast lookup */
+        cpu->tb_jmp_cache[hash] = tb;
+    }
+
+    return tb;
+}
+
 /* Must be called before using the QEMU cpus. 'tb_size' is the size
    (in bytes) allocated to the translation buffer. Zero means default
    size. */
@@ -1000,6 +1093,9 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
     tcg_prologue_init(uc->tcg_ctx);
     /* cpu_interrupt_handler is not used in uc1 */
     uc->l1_map = g_malloc0(sizeof(void *) * V_L1_MAX_SIZE);
+    /* Invalidate / Cache TBs */
+    uc->uc_invalidate_tb = uc_invalidate_tb;
+    uc->uc_gen_tb = uc_gen_tb;
 }
 
 /* call with @p->lock held */

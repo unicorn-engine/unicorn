@@ -171,10 +171,28 @@ void cpu_stop_current(struct uc_struct *uc)
     }
 }
 
+
+// Unicorn: Why addr - 1?
+// 0: INC ecx
+// 1: DEC edx <--- We put exit here, then the range of TB is [0, 1)
+//
+// While tb_invalidate_phys_range invalides [start, end)
+//
+// This function is designed to used with g_tree_foreach
+static inline gboolean uc_exit_invalidate_iter(gpointer key, gpointer val, gpointer data) {
+    uint64_t exit = *((uint64_t*)key);
+    uc_engine* uc = (uc_engine*)data;
+    
+    if (exit != 0) {
+        uc->uc_invalidate_tb(uc, exit - 1, 1);
+    }
+
+    return false;
+}
+
 void resume_all_vcpus(struct uc_struct* uc)
 {
     CPUState *cpu = uc->cpu;
-    tb_page_addr_t start, end;
     cpu->halted = 0;
     cpu->exit_request = 0;
     cpu->exception_index = -1;
@@ -187,23 +205,11 @@ void resume_all_vcpus(struct uc_struct* uc)
         }
     }
 
-    // clear the cache of the addr_end address, since the generated code
+    // clear the cache of the exits address, since the generated code
     // at that address is to exit emulation, but not for the instruction there.
     // if we dont do this, next time we cannot emulate at that address
-    if (uc->addr_end != 0) {
-        // GVA to GPA (GPA -> HVA via page_find, HVA->HPA via host mmu)
-        end = get_page_addr_code(uc->cpu->env_ptr, uc->addr_end);
 
-        // For 32bit target.
-        start = (end - 1) & (target_ulong)(-1);
-        end = end & (target_ulong)(-1);
-        // Unicorn: Why start - 1?
-        // 0: INC ecx
-        // 1: DEC edx <--- We put exit here, then the range of TB is [0, 1)
-        //
-        // While tb_invalidate_phys_range invalides [start, end)
-        tb_invalidate_phys_range(uc, start, end);
-    }
+    g_tree_foreach(uc->exits, uc_exit_invalidate_iter, (void*)uc);
 
     cpu->created = false;
 }

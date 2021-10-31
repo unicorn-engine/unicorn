@@ -136,6 +136,20 @@ bool uc_arch_supported(uc_arch arch)
     }
 }
 
+static gint uc_exits_cmp(gconstpointer a, gconstpointer b, gpointer user_data)
+{
+    uint64_t lhs = *((uint64_t *)a);
+    uint64_t rhs = *((uint64_t *)b);
+
+    if (lhs < rhs) {
+        return -1;
+    } else if (lhs == rhs) {
+        return 0;
+    } else {
+        return 1;
+    }
+}
+
 UNICORN_EXPORT
 uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
 {
@@ -160,6 +174,8 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         QTAILQ_INIT(&uc->memory_listeners);
 
         QTAILQ_INIT(&uc->address_spaces);
+
+        uc->exits = g_tree_new_full(uc_exits_cmp, NULL, g_free, NULL);
 
         switch (arch) {
         default:
@@ -395,6 +411,8 @@ uc_err uc_close(uc_engine *uc)
         cur = next;
     }
     list_clear(&uc->saved_contexts);
+
+    g_tree_destroy(uc->exits);
 
     // finally, free uc itself.
     memset(uc, 0, sizeof(*uc));
@@ -735,7 +753,10 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         }
     }
 
-    uc->addr_end = until;
+    // This is low efficiency for compatibility.
+    // Consider a new uc_ctl to set not updating uc->exists in uc_emu_start?
+    g_tree_remove_all(uc->exits);
+    uc_add_exit(uc, until);
 
     if (timeout) {
         enable_emu_timer(uc, timeout * 1000); // microseconds -> nanoseconds
@@ -1526,12 +1547,6 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
 }
 
 UNICORN_EXPORT
-uc_err uc_ctl(uc_engine *uc, uc_control_type option, ...)
-{
-    return UC_ERR_ARG;
-}
-
-UNICORN_EXPORT
 uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 {
     struct uc_context **_context = context;
@@ -1761,4 +1776,158 @@ uc_err uc_context_free(uc_context *context)
         list_remove(&uc->saved_contexts, context);
     }
     return uc_free(context);
+}
+
+typedef struct _uc_ctl_exit_request {
+    uint64_t *array;
+    size_t len;
+} uc_ctl_exit_request;
+
+static inline gboolean uc_read_exit_iter(gpointer key, gpointer val,
+                                         gpointer data)
+{
+    uc_ctl_exit_request *req = (uc_ctl_exit_request *)data;
+
+    req->array[req->len++] = *(uint64_t *)key;
+
+    return false;
+}
+
+UNICORN_EXPORT
+uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
+{
+    int rw, type;
+    uc_err err = UC_ERR_OK;
+    va_list args;
+
+    rw = control >> 30;
+    type = (control & ((1 << 16) - 1));
+    va_start(args, control);
+
+    switch (type) {
+    case UC_CTL_UC_MODE: {
+        if (rw == UC_CTL_IO_READ) {
+            int *pmode = va_arg(args, int *);
+            *pmode = uc->mode;
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
+
+    case UC_CTL_UC_ARCH: {
+        if (rw == UC_CTL_IO_READ) {
+            int *arch = va_arg(args, int *);
+            *arch = uc->arch;
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
+
+    case UC_CTL_UC_TIMEOUT: {
+        if (rw == UC_CTL_IO_READ) {
+            size_t *arch = va_arg(args, size_t *);
+            *arch = uc->timeout;
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
+
+    case UC_CTL_UC_PAGE_SIZE: {
+        if (rw == UC_CTL_IO_READ) {
+            uint32_t *page_size = va_arg(args, uint32_t *);
+            *page_size = uc->target_page_size;
+        } else {
+            // Not implemented.
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
+    case UC_CTL_UC_USE_EXITS: {
+        if (rw == UC_CTL_IO_WRITE) {
+            int use_exit = va_arg(args, int);
+            uc->use_exit = use_exit;
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
+
+    case UC_CTL_UC_EXITS_CNT: {
+        if (!uc->use_exit) {
+            err = UC_ERR_ARG;
+        } else if (rw == UC_CTL_IO_READ) {
+            size_t *exits_cnt = va_arg(args, size_t *);
+            *exits_cnt = g_tree_nnodes(uc->exits);
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
+
+    case UC_CTL_UC_EXITS: {
+        if (!uc->use_exit) {
+            err = UC_ERR_ARG;
+        } else if (rw == UC_CTL_IO_READ) {
+            uint64_t *exits = va_arg(args, uint64_t *);
+            size_t cnt = va_arg(args, size_t);
+            if (cnt < g_tree_nnodes(uc->exits)) {
+                err = UC_ERR_ARG;
+            } else {
+                uc_ctl_exit_request req;
+                req.array = exits;
+                req.len = 0;
+
+                g_tree_foreach(uc->exits, uc_read_exit_iter, (void *)&req);
+            }
+        } else if (rw == UC_CTL_IO_WRITE) {
+            uint64_t *exits = va_arg(args, uint64_t *);
+            size_t cnt = va_arg(args, size_t);
+
+            g_tree_remove_all(uc->exits);
+
+            for (size_t i = 0; i < cnt; i++) {
+                uc_add_exit(uc, exits[i]);
+            }
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
+
+    case UC_CTL_CPU_MODEL:
+        // Not implemented.
+        err = UC_ERR_ARG;
+        break;
+
+    case UC_CTL_TB_REQUEST_CACHE: {
+        if (rw == UC_CTL_IO_READ) {
+            uint64_t addr = va_arg(args, uint64_t);
+            uc->uc_gen_tb(uc, addr);
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
+
+    case UC_CTL_TB_REMOVE_CACHE: {
+        if (rw == UC_CTL_IO_READ) {
+            uint64_t addr = va_arg(args, uint64_t);
+            uc->uc_invalidate_tb(uc, addr, 1);
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
+    }
+
+    default:
+        err = UC_ERR_ARG;
+        break;
+    }
+
+    va_end(args);
+
+    return err;
 }
