@@ -1800,7 +1800,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     uc_err err = UC_ERR_OK;
     va_list args;
 
-    rw = control >> 30;
+    // MSVC Would do signed shift on signed integers.
+    rw = (uint32_t)control >> 30;
     type = (control & ((1 << 16) - 1));
     va_start(args, control);
 
