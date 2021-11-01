@@ -391,6 +391,13 @@ typedef enum uc_query_type {
                       // result = True)
 } uc_query_type;
 
+// Represent a TranslationBlock.
+typedef struct uc_tb {
+    uint64_t pc;
+    uint16_t icount;
+    uint16_t size;
+} uc_tb;
+
 // The implementation of uc_ctl is like what Linux ioctl does but slightly
 // different.
 //
@@ -461,7 +468,7 @@ typedef enum uc_control_type {
     // Read:  @args = (int)
     UC_CTL_CPU_MODEL,
     // Request a tb cache at a specific address
-    // Read: @args = (uint64_t)
+    // Read: @args = (uint64_t, uc_tb*)
     UC_CTL_TB_REQUEST_CACHE,
     // Invalidate a tb cache at a specific address
     // Read: @args = (uint64_t)
@@ -493,8 +500,8 @@ typedef enum uc_control_type {
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_CPU_MODEL, 1), (model))
 #define uc_ctl_remove_cache(uc, address)                                       \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_TB_REMOVE_CACHE, 1), (address))
-#define uc_ctl_request_cache(uc, address)                                      \
-    uc_ctl(uc, UC_CTL_READ(UC_CTL_TB_REQUEST_CACHE, 1), (address))
+#define uc_ctl_request_cache(uc, address, tb)                                  \
+    uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_TB_REQUEST_CACHE, 2), (address), (tb))
 
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;

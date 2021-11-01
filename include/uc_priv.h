@@ -121,8 +121,7 @@ typedef void (*uc_invalidate_tb_t)(struct uc_struct *uc, uint64_t start,
                                    size_t len);
 
 // Request generating TB at given address
-typedef struct TranslationBlock *(*uc_gen_tb_t)(struct uc_struct *uc,
-                                                uint64_t pc);
+typedef uc_err (*uc_gen_tb_t)(struct uc_struct *uc, uint64_t pc, uc_tb *out_tb);
 
 struct hook {
     int type;       // UC_HOOK_*

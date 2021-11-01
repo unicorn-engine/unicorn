@@ -999,7 +999,7 @@ static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t l
     tb_invalidate_phys_range(uc, start, end);
 }
 
-static TranslationBlock* uc_gen_tb(struct uc_struct *uc, uint64_t addr) 
+static uc_err uc_gen_tb(struct uc_struct *uc, uint64_t addr, uc_tb *out_tb) 
 {
     TranslationBlock *tb;
     target_ulong cs_base, pc;
@@ -1024,31 +1024,37 @@ static TranslationBlock* uc_gen_tb(struct uc_struct *uc, uint64_t addr)
     cflags &= ~CF_CLUSTER_MASK;
     cflags |= cpu->cluster_index << CF_CLUSTER_SHIFT;
 
-    if (likely(tb &&
-               tb->pc == pc &&
-               tb->cs_base == cs_base &&
-               tb->flags == flags &&
-               tb->trace_vcpu_dstate == *cpu->trace_dstate &&
-               (tb_cflags(tb) & (CF_HASH_MASK | CF_INVALID)) == cflags)) {
-        return tb;
-    }
+    if (unlikely(!(tb &&
+                   tb->pc == pc &&
+                   tb->cs_base == cs_base &&
+                   tb->flags == flags &&
+                   tb->trace_vcpu_dstate == *cpu->trace_dstate &&
+                   (tb_cflags(tb) & (CF_HASH_MASK | CF_INVALID)) == cflags))) {
 
-    tb = tb_htable_lookup(cpu, pc, cs_base, flags, cflags);
-    cpu->tb_jmp_cache[hash] = tb;
-
-    if (tb != NULL) {
-        return tb;
-    }
-
-    if (tb == NULL) {
-        mmap_lock();
-        tb = tb_gen_code(cpu, pc, cs_base, flags, cflags);
-        mmap_unlock();
-        /* We add the TB in the virtual pc hash table for the fast lookup */
+        tb = tb_htable_lookup(cpu, pc, cs_base, flags, cflags);
         cpu->tb_jmp_cache[hash] = tb;
+
+        if (tb == NULL) {
+            mmap_lock();
+            tb = tb_gen_code(cpu, pc, cs_base, flags, cflags);
+            mmap_unlock();
+            /* We add the TB in the virtual pc hash table for the fast lookup */
+            cpu->tb_jmp_cache[hash] = tb;
+        }
     }
 
-    return tb;
+    // If we still couldn't generate a TB, it must be out of memory.
+    if (tb == NULL) {
+        return UC_ERR_NOMEM;
+    }
+
+    if (out_tb != NULL) {
+        out_tb->pc = tb->pc;
+        out_tb->size = tb->size;
+        out_tb->icount = tb->icount;
+    }
+
+    return UC_ERR_OK;
 }
 
 /* Must be called before using the QEMU cpus. 'tb_size' is the size

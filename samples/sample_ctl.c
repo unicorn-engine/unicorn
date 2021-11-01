@@ -182,8 +182,11 @@ static void test_uc_ctl_tb_cache()
 {
     uc_engine *uc;
     uc_err err;
+    uc_tb tb;
     char code[CODE_LEN];
     double standard, cached, evicted;
+
+    printf("Controling the TB cache in a finer granularity by uc_ctl.\n");
 
     // Fill the code buffer with NOP.
     memset(code, 0x90, CODE_LEN);
@@ -213,7 +216,10 @@ static void test_uc_ctl_tb_cache()
 
     // Now we request cache for all TBs.
     for (int i = 0; i < TB_COUNT; i++) {
-        err = uc_ctl_request_cache(uc, ADDRESS + i * TCG_MAX_INSNS);
+        err = uc_ctl_request_cache(uc, ADDRESS + i * TCG_MAX_INSNS, &tb);
+        printf(">>> TB is cached at 0x%" PRIx64 " which has %" PRIu16
+               " instructions with %" PRIu16 " bytes.\n",
+               tb.pc, tb.icount, tb.size);
         if (err) {
             printf("Failed on uc_ctl() with error returned: %u\n", err);
             return;
