@@ -1,4 +1,6 @@
 #include "unicorn_test.h"
+#include <time.h>
+#include <string.h>
 
 const uint64_t code_start = 0x1000;
 const uint64_t code_len = 0x4000;
@@ -63,9 +65,58 @@ static void test_uc_ctl_exits()
     OK(uc_close(uc));
 }
 
+double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
+{
+    time_t t1, t2;
+
+    t1 = clock();
+
+    OK(uc_emu_start(uc, start, end, 0, 0));
+
+    t2 = clock();
+
+    return (t2 - t1) * 1000.0 / CLOCKS_PER_SEC;
+}
+
+#define TB_COUNT (8)
+#define TCG_MAX_INSNS (512) // from tcg.h
+#define CODE_LEN TB_COUNT *TCG_MAX_INSNS
+
+static void test_uc_ctl_tb_cache()
+{
+    uc_engine *uc;
+    char code[CODE_LEN];
+    double standard, cached, evicted;
+
+    memset(code, 0x90, CODE_LEN);
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    standard = time_emulation(uc, code_start, code_start + sizeof(code) - 1);
+
+    for (int i = 0; i < TB_COUNT; i++) {
+        OK(uc_ctl_request_cache(uc, code_start + i * TCG_MAX_INSNS));
+    }
+
+    cached = time_emulation(uc, code_start, code_start + sizeof(code) - 1);
+
+    for (int i = 0; i < TB_COUNT; i++) {
+        OK(uc_ctl_remove_cache(uc, code_start + i * TCG_MAX_INSNS));
+    }
+    evicted = time_emulation(uc, code_start, code_start + sizeof(code) - 1);
+
+    // In fact, evicted is also slightly faster than standard but we don't do
+    // this guarantee.
+    TEST_CHECK(cached < standard);
+    TEST_CHECK(evicted > cached);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_page_size", test_uc_ctl_page_size},
              {"test_uc_ctl_arch", test_uc_ctl_arch},
              {"test_uc_ctl_time_out", test_uc_ctl_time_out},
              {"test_uc_ctl_exits", test_uc_ctl_exits},
+             {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
              {NULL, NULL}};

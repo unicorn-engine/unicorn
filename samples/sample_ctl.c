@@ -5,6 +5,7 @@
 
 #include <unicorn/unicorn.h>
 #include <string.h>
+#include <time.h>
 
 // code to be emulated
 
@@ -160,11 +161,93 @@ void test_uc_ctl_exits()
     uc_close(uc);
 }
 
+#define TB_COUNT (8)
+#define TCG_MAX_INSNS (512) // from tcg.h
+#define CODE_LEN TB_COUNT *TCG_MAX_INSNS
+
+double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
+{
+    time_t t1, t2;
+
+    t1 = clock();
+
+    uc_emu_start(uc, start, end, 0, 0);
+
+    t2 = clock();
+
+    return (t2 - t1) * 1000.0 / CLOCKS_PER_SEC;
+}
+
+static void test_uc_ctl_tb_cache()
+{
+    uc_engine *uc;
+    uc_err err;
+    char code[CODE_LEN];
+    double standard, cached, evicted;
+
+    // Fill the code buffer with NOP.
+    memset(code, 0x90, CODE_LEN);
+
+    // Initialize emulator in X86-32bit mode
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        return;
+    }
+
+    err = uc_mem_map(uc, ADDRESS, 0x10000, UC_PROT_ALL);
+    if (err) {
+        printf("Failed on uc_mem_map() with error returned: %u\n", err);
+        return;
+    }
+
+    // Write our code to the memory.
+    err = uc_mem_write(uc, ADDRESS, code, sizeof(code) - 1);
+    if (err) {
+        printf("Failed on uc_mem_write() with error returned: %u\n", err);
+        return;
+    }
+
+    // Do emulation without any cache.
+    standard = time_emulation(uc, ADDRESS, ADDRESS + sizeof(code) - 1);
+
+    // Now we request cache for all TBs.
+    for (int i = 0; i < TB_COUNT; i++) {
+        err = uc_ctl_request_cache(uc, ADDRESS + i * TCG_MAX_INSNS);
+        if (err) {
+            printf("Failed on uc_ctl() with error returned: %u\n", err);
+            return;
+        }
+    }
+
+    // Do emulation with all TB cached.
+    cached = time_emulation(uc, ADDRESS, ADDRESS + sizeof(code) - 1);
+
+    // Now we clear cache for all TBs.
+    for (int i = 0; i < TB_COUNT; i++) {
+        err = uc_ctl_remove_cache(uc, ADDRESS + i * TCG_MAX_INSNS);
+        if (err) {
+            printf("Failed on uc_ctl() with error returned: %u\n", err);
+            return;
+        }
+    }
+
+    // Do emulation with all TB cache evicted.
+    evicted = time_emulation(uc, ADDRESS, ADDRESS + sizeof(code) - 1);
+
+    printf(">>> Run time: First time: %f, Cached: %f, Cache evicted: %f\n",
+           standard, cached, evicted);
+
+    uc_close(uc);
+}
+
 int main(int argc, char **argv, char **envp)
 {
     test_uc_ctl_read();
     printf("====================\n");
     test_uc_ctl_exits();
+    printf("====================\n");
+    test_uc_ctl_tb_cache();
 
     return 0;
 }
