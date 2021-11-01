@@ -20,9 +20,6 @@ static void test_uc_ctl_read(void)
     uint32_t pagesize;
     uint64_t timeout;
 
-    int r_ecx = 0x1234; // ECX register
-    int r_edx = 0x7890; // EDX register
-
     printf("Reading some properties by uc_ctl.\n");
 
     // Initialize emulator in X86-32bit mode
