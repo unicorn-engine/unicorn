@@ -172,18 +172,21 @@ void cpu_stop_current(struct uc_struct *uc)
 }
 
 
-// Unicorn: Why addr - 1?
-// 0: INC ecx
-// 1: DEC edx <--- We put exit here, then the range of TB is [0, 1)
-//
-// While tb_invalidate_phys_range invalides [start, end)
-//
-// This function is designed to used with g_tree_foreach
-static inline gboolean uc_exit_invalidate_iter(gpointer key, gpointer val, gpointer data) {
+
+static inline gboolean uc_exit_invalidate_iter(gpointer key, gpointer val, gpointer data) 
+{
     uint64_t exit = *((uint64_t*)key);
-    uc_engine* uc = (uc_engine*)data;
+    uc_engine *uc = (uc_engine*)data;
     
     if (exit != 0) {
+        // Unicorn: Why addr - 1?
+        // 
+        // 0: INC ecx
+        // 1: DEC edx <--- We put exit here, then the range of TB is [0, 1)
+        //
+        // While tb_invalidate_phys_range invalides [start, end)
+        //
+        // This function is designed to used with g_tree_foreach
         uc->uc_invalidate_tb(uc, exit - 1, 1);
     }
 

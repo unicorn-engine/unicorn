@@ -980,32 +980,9 @@ static void tb_htable_init(struct uc_struct *uc)
     qht_init(&uc->tcg_ctx->tb_ctx.htable, tb_cmp, CODE_GEN_HTABLE_SIZE, mode);
 }
 
-// GVA to GPA (GPA -> HVA via page_find, HVA->HPA via host mmu)
-// Unicorn: Why addr - 1?
-// 0: INC ecx
-// 1: DEC edx <--- We put exit here, then the range of TB is [0, 1)
-//
-// While tb_invalidate_phys_range invalides [start, end)
-//
-// This function is designed to used with g_tree_foreach
-static inline gboolean uc_exit_invalidate_iter(gpointer key, gpointer val, gpointer data) {
-    uint64_t exit = *((uint64_t*)key);
-    uc_engine* uc = (uc_engine*)data;
-    tb_page_addr_t start, end;
-    
-    if (exit != 0) {
-        end = get_page_addr_code(uc->cpu->env_ptr, exit);
 
-        start = (end-1) ;
-        end = end & (target_ulong)(-1);
-
-        tb_invalidate_phys_range(uc, start, end);
-    }
-
-    return false;
-}
-
-static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t len) {
+static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t len) 
+{
     tb_page_addr_t start, end;
 
     // GVA to GPA (GPA -> HVA via page_find, HVA->HPA via host mmu)
@@ -1022,7 +999,8 @@ static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t l
     tb_invalidate_phys_range(uc, start, end);
 }
 
-static TranslationBlock* uc_gen_tb(struct uc_struct *uc, uint64_t addr) {
+static TranslationBlock* uc_gen_tb(struct uc_struct *uc, uint64_t addr) 
+{
     TranslationBlock *tb;
     target_ulong cs_base, pc;
     CPUState *cpu = uc->cpu;

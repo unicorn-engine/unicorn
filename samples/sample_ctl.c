@@ -7,7 +7,6 @@
 #include <string.h>
 
 // code to be emulated
-// code to be emulated
 #define X86_CODE32 "\x41\x4a" // INC ecx; DEC edx; PXOR xmm0, xmm1
 
 // memory address where emulation starts
