@@ -2,6 +2,94 @@
 #include <time.h>
 #include <string.h>
 
+// We have to copy this for Android.
+#ifdef _WIN32
+
+#include "windows.h"
+
+static int64_t clock_freq;
+
+static inline int64_t get_clock_realtime(void)
+{
+    // code from
+    // https://stackoverflow.com/questions/10905892/equivalent-of-gettimeday-for-windows
+    // >>>>>>>>>
+    const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
+
+    long tv_sec, tv_usec;
+    SYSTEMTIME system_time;
+    FILETIME file_time;
+    uint64_t time;
+
+    GetSystemTime(&system_time);
+    SystemTimeToFileTime(&system_time, &file_time);
+    time = ((uint64_t)file_time.dwLowDateTime);
+    time += ((uint64_t)file_time.dwHighDateTime) << 32;
+
+    tv_sec = (long)((time - EPOCH) / 10000000L);
+    tv_usec = (long)(system_time.wMilliseconds * 1000);
+    // <<<<<<<<<
+
+    return tv_sec * 1000000000LL + (tv_usec * 1000);
+}
+
+static void init_get_clock(void)
+{
+    LARGE_INTEGER freq;
+    int ret = QueryPerformanceFrequency(&freq);
+    if (ret == 0) {
+        fprintf(stderr, "Could not calibrate ticks\n");
+        exit(1);
+    }
+    clock_freq = freq.QuadPart;
+}
+
+static inline int64_t get_clock(void)
+{
+    LARGE_INTEGER ti;
+    QueryPerformanceCounter(&ti);
+    return muldiv64(ti.QuadPart, NANOSECONDS_PER_SECOND, clock_freq);
+}
+
+#else
+
+#include <sys/time.h>
+
+static int use_rt_clock;
+
+/* get host real time in nanosecond */
+static inline int64_t get_clock_realtime(void)
+{
+    struct timeval tv;
+
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000000000LL + (tv.tv_usec * 1000);
+}
+
+static void init_get_clock(void)
+{
+    struct timespec ts;
+
+    use_rt_clock = 0;
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
+        use_rt_clock = 1;
+    }
+}
+
+static inline int64_t get_clock(void)
+{
+    if (use_rt_clock) {
+        struct timespec ts;
+        clock_gettime(CLOCK_MONOTONIC, &ts);
+        return ts.tv_sec * 1000000000LL + ts.tv_nsec;
+    } else {
+        /* XXX: using gettimeofday leads to problems if the date
+           changes, so it should be avoided. */
+        return get_clock_realtime();
+    }
+}
+#endif
+
 const uint64_t code_start = 0x1000;
 const uint64_t code_len = 0x4000;
 
@@ -67,15 +155,15 @@ static void test_uc_ctl_exits()
 
 double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
 {
-    time_t t1, t2;
+    int64_t t1, t2;
 
-    t1 = clock();
+    t1 = get_clock();
 
     OK(uc_emu_start(uc, start, end, 0, 0));
 
-    t2 = clock();
+    t2 = get_clock();
 
-    return (t2 - t1) * 1000.0 / CLOCKS_PER_SEC;
+    return t2 - t1;
 }
 
 #define TB_COUNT (8)
@@ -87,6 +175,8 @@ static void test_uc_ctl_tb_cache()
     uc_engine *uc;
     char code[CODE_LEN];
     double standard, cached, evicted;
+
+    init_get_clock();
 
     memset(code, 0x90, CODE_LEN);
 

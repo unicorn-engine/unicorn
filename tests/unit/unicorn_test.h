@@ -2,6 +2,7 @@
 #define UNICORN_TEST_H
 
 #include <stdio.h>
+#include <stdint.h>
 #include <unicorn/unicorn.h>
 #include "acutest.h"
 
