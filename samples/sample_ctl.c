@@ -73,10 +73,17 @@ static void test_uc_ctl_read(void)
     uc_close(uc);
 }
 
+static void trace_new_edge(uc_engine *uc, uc_tb *cur, uc_tb *prev, void *data)
+{
+    printf(">>> Getting a new edge from 0x%" PRIx64 " to 0x%" PRIx64 ".\n",
+           prev->pc + prev->size - 1, cur->pc);
+}
+
 void test_uc_ctl_exits()
 {
     uc_engine *uc;
     uc_err err;
+    uc_hook h;
     int r_eax, r_ebx;
     uint64_t exits[] = {ADDRESS + 6, ADDRESS + 8};
 
@@ -99,6 +106,14 @@ void test_uc_ctl_exits()
     err = uc_mem_write(uc, ADDRESS, X86_JUMP_CODE, sizeof(X86_JUMP_CODE) - 1);
     if (err) {
         printf("Failed on uc_mem_write() with error returned: %u\n", err);
+        return;
+    }
+
+    // We trace if any new edge is generated.
+    err = uc_hook_add(uc, &h, UC_HOOK_EDGE_GENERATED, trace_new_edge, NULL, 0,
+                      -1);
+    if (err) {
+        printf("Failed on uc_hook_add() with error returned: %u\n", err);
         return;
     }
 
@@ -183,6 +198,7 @@ static void test_uc_ctl_tb_cache()
     uc_engine *uc;
     uc_err err;
     uc_tb tb;
+    uc_hook h;
     char code[CODE_LEN];
     double standard, cached, evicted;
 
@@ -208,6 +224,17 @@ static void test_uc_ctl_tb_cache()
     err = uc_mem_write(uc, ADDRESS, code, sizeof(code) - 1);
     if (err) {
         printf("Failed on uc_mem_write() with error returned: %u\n", err);
+        return;
+    }
+
+    // We trace if any new edge is generated.
+    // Note: In this sample, there is only **one** basic block while muliple
+    // translation blocks is generated due to QEMU tcg buffer limit. In this
+    // case, we don't consider it as a new edge.
+    err = uc_hook_add(uc, &h, UC_HOOK_EDGE_GENERATED, trace_new_edge, NULL, 0,
+                      -1);
+    if (err) {
+        printf("Failed on uc_hook_add() with error returned: %u\n", err);
         return;
     }
 

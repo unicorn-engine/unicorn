@@ -232,6 +232,22 @@ typedef uint32_t (*uc_cb_insn_in_t)(uc_engine *uc, uint32_t port, int size,
 typedef void (*uc_cb_insn_out_t)(uc_engine *uc, uint32_t port, int size,
                                  uint32_t value, void *user_data);
 
+// Represent a TranslationBlock.
+typedef struct uc_tb {
+    uint64_t pc;
+    uint16_t icount;
+    uint16_t size;
+} uc_tb;
+
+/*
+  Callback function for new edges between translation blocks.
+
+  @cur_tb: Current TB which is to be generated.
+  @prev_tb: The previous TB.
+*/
+typedef void (*uc_hook_edge_gen_t)(uc_engine *uc, uc_tb *cur_tb, uc_tb *prev_tb,
+                                   void *user_data);
+
 /*
   Callback function for MMIO read
 
@@ -302,6 +318,12 @@ typedef enum uc_hook_type {
     UC_HOOK_MEM_READ_AFTER = 1 << 13,
     // Hook invalid instructions exceptions.
     UC_HOOK_INSN_INVALID = 1 << 14,
+    // Hook on new edge generation. Could be useful in program analysis.
+    //
+    // NOTE: This is different from UC_HOOK_BLOCK in 2 ways:
+    //       1. The hook is called before executing code.
+    //       2. The hook is only called when generation is triggered.
+    UC_HOOK_EDGE_GENERATED = 1 << 15
 } uc_hook_type;
 
 // Hook type for all events of unmapped memory access
@@ -390,13 +412,6 @@ typedef enum uc_query_type {
     UC_QUERY_TIMEOUT, // query if emulation stops due to timeout (indicated if
                       // result = True)
 } uc_query_type;
-
-// Represent a TranslationBlock.
-typedef struct uc_tb {
-    uint64_t pc;
-    uint16_t icount;
-    uint16_t size;
-} uc_tb;
 
 // The implementation of uc_ctl is like what Linux ioctl does but slightly
 // different.

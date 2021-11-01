@@ -1049,9 +1049,7 @@ static uc_err uc_gen_tb(struct uc_struct *uc, uint64_t addr, uc_tb *out_tb)
     }
 
     if (out_tb != NULL) {
-        out_tb->pc = tb->pc;
-        out_tb->size = tb->size;
-        out_tb->icount = tb->icount;
+        UC_TB_COPY(out_tb, tb);
     }
 
     return UC_ERR_OK;

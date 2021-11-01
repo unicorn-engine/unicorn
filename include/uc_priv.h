@@ -157,9 +157,18 @@ typedef enum uc_hook_idx {
     UC_HOOK_MEM_FETCH_IDX,
     UC_HOOK_MEM_READ_AFTER_IDX,
     UC_HOOK_INSN_INVALID_IDX,
+    UC_HOOK_EDGE_GENERATED_IDX,
 
     UC_HOOK_MAX,
 } uc_hook_idx;
+
+// Copy the essential information from TranslationBlock
+#define UC_TB_COPY(uc_tb, tb)                                                  \
+    do {                                                                       \
+        (uc_tb)->pc = tb->pc;                                                  \
+        (uc_tb)->icount = tb->icount;                                          \
+        (uc_tb)->size = tb->size;                                              \
+    } while (0)
 
 // The lowest 6 bits are used for hook type index.
 #define UC_HOOK_IDX_MASK ((1 << 6) - 1)
