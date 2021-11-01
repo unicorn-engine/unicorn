@@ -11,6 +11,7 @@ const uint64_t code_len = 0x4000;
         OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));                             \
         OK(uc_ctl(uc, UC_CTL_READ(ctl_type, 1), &arg));                        \
         TEST_CHECK(arg == expected);                                           \
+        OK(uc_close(uc));                                                      \
     }
 
 GEN_SIMPLE_READ_TEST(mode, UC_CTL_UC_MODE, int, 4)
