@@ -753,10 +753,12 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         }
     }
 
-    // This is low efficiency for compatibility.
-    // Consider a new uc_ctl to set not updating uc->exists in uc_emu_start?
-    g_tree_remove_all(uc->exits);
-    uc_add_exit(uc, until);
+    // If UC_CTL_UC_USE_EXITS is set, then the @until param won't have any
+    // effect. This is designed for the backward compatibility.
+    if (!uc->use_exits) {
+        g_tree_remove_all(uc->exits);
+        uc_add_exit(uc, until);
+    }
 
     if (timeout) {
         enable_emu_timer(uc, timeout * 1000); // microseconds -> nanoseconds
@@ -1848,8 +1850,8 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     }
     case UC_CTL_UC_USE_EXITS: {
         if (rw == UC_CTL_IO_WRITE) {
-            int use_exit = va_arg(args, int);
-            uc->use_exit = use_exit;
+            int use_exits = va_arg(args, int);
+            uc->use_exits = use_exits;
         } else {
             err = UC_ERR_ARG;
         }
@@ -1857,7 +1859,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     }
 
     case UC_CTL_UC_EXITS_CNT: {
-        if (!uc->use_exit) {
+        if (!uc->use_exits) {
             err = UC_ERR_ARG;
         } else if (rw == UC_CTL_IO_READ) {
             size_t *exits_cnt = va_arg(args, size_t *);
@@ -1869,7 +1871,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     }
 
     case UC_CTL_UC_EXITS: {
-        if (!uc->use_exit) {
+        if (!uc->use_exits) {
             err = UC_ERR_ARG;
         } else if (rw == UC_CTL_IO_READ) {
             uint64_t *exits = va_arg(args, uint64_t *);

@@ -300,7 +300,7 @@ struct uc_struct {
     uint64_t invalid_addr; // invalid address to be accessed
     int invalid_error;     // invalid memory code: 1 = READ, 2 = WRITE, 3 = CODE
 
-    int use_exit;
+    int use_exits;
     GTree *exits; // addresses where emulation stops (@until param of
                   // uc_emu_start()) Also see UC_CTL_USE_EXITS for more details.
 
