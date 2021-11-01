@@ -1828,7 +1828,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
 
     case UC_CTL_UC_TIMEOUT: {
         if (rw == UC_CTL_IO_READ) {
-            size_t *arch = va_arg(args, size_t *);
+            uint64_t *arch = va_arg(args, uint64_t *);
             *arch = uc->timeout;
         } else {
             err = UC_ERR_ARG;
