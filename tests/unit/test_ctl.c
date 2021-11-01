@@ -7,8 +7,6 @@
 
 #include "windows.h"
 
-static int64_t clock_freq;
-
 static inline int64_t get_clock_realtime(void)
 {
     // code from
@@ -32,30 +30,9 @@ static inline int64_t get_clock_realtime(void)
 
     return tv_sec * 1000000000LL + (tv_usec * 1000);
 }
-
-static void init_get_clock(void)
-{
-    LARGE_INTEGER freq;
-    int ret = QueryPerformanceFrequency(&freq);
-    if (ret == 0) {
-        fprintf(stderr, "Could not calibrate ticks\n");
-        exit(1);
-    }
-    clock_freq = freq.QuadPart;
-}
-
-static inline int64_t get_clock(void)
-{
-    LARGE_INTEGER ti;
-    QueryPerformanceCounter(&ti);
-    return muldiv64(ti.QuadPart, NANOSECONDS_PER_SECOND, clock_freq);
-}
-
 #else
 
 #include <sys/time.h>
-
-static int use_rt_clock;
 
 /* get host real time in nanosecond */
 static inline int64_t get_clock_realtime(void)
@@ -66,28 +43,6 @@ static inline int64_t get_clock_realtime(void)
     return tv.tv_sec * 1000000000LL + (tv.tv_usec * 1000);
 }
 
-static void init_get_clock(void)
-{
-    struct timespec ts;
-
-    use_rt_clock = 0;
-    if (clock_gettime(CLOCK_MONOTONIC, &ts) == 0) {
-        use_rt_clock = 1;
-    }
-}
-
-static inline int64_t get_clock(void)
-{
-    if (use_rt_clock) {
-        struct timespec ts;
-        clock_gettime(CLOCK_MONOTONIC, &ts);
-        return ts.tv_sec * 1000000000LL + ts.tv_nsec;
-    } else {
-        /* XXX: using gettimeofday leads to problems if the date
-           changes, so it should be avoided. */
-        return get_clock_realtime();
-    }
-}
 #endif
 
 const uint64_t code_start = 0x1000;
@@ -157,11 +112,11 @@ double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
 {
     int64_t t1, t2;
 
-    t1 = get_clock();
+    t1 = get_clock_realtime();
 
     OK(uc_emu_start(uc, start, end, 0, 0));
 
-    t2 = get_clock();
+    t2 = get_clock_realtime();
 
     return t2 - t1;
 }
@@ -175,8 +130,6 @@ static void test_uc_ctl_tb_cache()
     uc_engine *uc;
     char code[CODE_LEN];
     double standard, cached, evicted;
-
-    init_get_clock();
 
     memset(code, 0x90, CODE_LEN);
 
