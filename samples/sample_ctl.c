@@ -16,8 +16,6 @@ static void test_uc_ctl_read(void)
 {
     uc_engine *uc;
     uc_err err;
-    uint32_t tmp;
-    uc_hook trace1, trace2;
     int mode, arch;
     uint32_t pagesize;
     uint64_t timeout;
