@@ -1,31 +1,58 @@
-use std::result::Result;
+use bytes::Buf;
+use flate2::read::GzDecoder;
+use reqwest::header::USER_AGENT;
+use std::path::PathBuf;
 use std::{env, process::Command};
+use tar::Archive;
+
+fn find_unicorn(unicorn_dir: &PathBuf) -> Option<PathBuf> {
+    for entry in std::fs::read_dir(unicorn_dir).ok()? {
+        let entry = entry.unwrap();
+        let path = entry.path();
+
+        if path.is_dir() && path.file_name()?.to_str()?.contains("unicorn") {
+            return Some(path);
+        }
+    }
+
+    None
+}
+
+fn download_unicorn() -> Option<String> {
+    // https://docs.github.com/en/rest/reference/repos#download-a-repository-archive-tar
+    let pkg_version;
+    if let Ok(unicorn_version) = env::var("UNICORN_VERSION") {
+        pkg_version = unicorn_version;
+    } else {
+        pkg_version = env::var("CARGO_PKG_VERSION").unwrap();
+    }
+    let out_dir = PathBuf::from(env::var("OUT_DIR").unwrap());
+    let client = reqwest::blocking::Client::new();
+    let resp = client
+        .get(format!(
+            "https://api.github.com/repos/unicorn-engine/unicorn/tarball/{}",
+            pkg_version
+        ))
+        .header(USER_AGENT, "unicorn-engine-rust-bindings")
+        .send()
+        .unwrap()
+        .bytes()
+        .unwrap();
+    let tar = GzDecoder::new(resp.reader());
+
+    let mut archive = Archive::new(tar);
+    archive.unpack(&out_dir).unwrap();
+
+    match find_unicorn(&out_dir) {
+        Some(dir) => Some(String::from(out_dir.join(dir).to_str()?)),
+        None => None,
+    }
+}
 
 fn main() {
-    let out_dir = env::var("OUT_DIR").unwrap();
     let profile = env::var("PROFILE").unwrap();
-    let mut version = String::from("dev");
-    if let Result::Ok(version_env) = env::var("UNICORN_BRANCH") {
-        version = version_env;
-    }
 
-    let unicorn_dir;
-    if let Result::Ok(_) = env::var("CI") {
-        unicorn_dir = format!("../..");
-    } else {
-        unicorn_dir = format!("{}/unicorn_git", out_dir);
-
-        Command::new("rm").arg("-rf").arg(&unicorn_dir);
-
-        Command::new("git")
-            .arg("clone")
-            .arg("git@github.com:unicorn-engine/unicorn.git")
-            .arg("-b")
-            .arg(version)
-            .arg(&unicorn_dir)
-            .output()
-            .expect("Fail to clone Unicorn repository.");
-    }
+    let unicorn_dir = download_unicorn().unwrap();
 
     println!("cargo:rerun-if-changed={}", &unicorn_dir);
 

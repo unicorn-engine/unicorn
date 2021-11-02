@@ -16,8 +16,40 @@ extern "C" {
 #undef mips
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
+
+typedef enum uc_cpu_mips {
+    UC_CPU_MIPS_4KC = 0,
+    UC_CPU_MIPS_4KM,
+    UC_CPU_MIPS_4KECR1,
+    UC_CPU_MIPS_4KEMR1,
+    UC_CPU_MIPS_4KEC,
+    UC_CPU_MIPS_4KEM,
+    UC_CPU_MIPS_24KC,
+    UC_CPU_MIPS_24KEC,
+    UC_CPU_MIPS_24KF,
+    UC_CPU_MIPS_34KF,
+    UC_CPU_MIPS_74KF,
+    UC_CPU_MIPS_M14K,
+    UC_CPU_MIPS_M14KC,
+    UC_CPU_MIPS_P5600,
+    UC_CPU_MIPS_MIPS32R6_GENERIC,
+    UC_CPU_MIPS_I7200,
+    UC_CPU_MIPS_R4000,
+    UC_CPU_MIPS_VR5432,
+    UC_CPU_MIPS_5KC,
+    UC_CPU_MIPS_5KF,
+    UC_CPU_MIPS_20KC,
+    UC_CPU_MIPS_MIPS64R2_GENERIC,
+    UC_CPU_MIPS_5KEC,
+    UC_CPU_MIPS_5KEF,
+    UC_CPU_MIPS_I6400,
+    UC_CPU_MIPS_I6500,
+    UC_CPU_MIPS_LOONGSON_2E,
+    UC_CPU_MIPS_LOONGSON_2F,
+    UC_CPU_MIPS_MIPS64DSPR2
+} uc_cpu_mips;
 
 //> MIPS registers
 typedef enum UC_MIPS_REG {
@@ -179,7 +211,7 @@ typedef enum UC_MIPS_REG {
     UC_MIPS_REG_CP0_USERLOCAL,
     UC_MIPS_REG_CP0_STATUS,
 
-    UC_MIPS_REG_ENDING,	// <-- mark the end of the list or registers
+    UC_MIPS_REG_ENDING, // <-- mark the end of the list or registers
 
     // alias registers
     UC_MIPS_REG_ZERO = UC_MIPS_REG_0,
@@ -212,7 +244,8 @@ typedef enum UC_MIPS_REG {
     UC_MIPS_REG_K1 = UC_MIPS_REG_27,
     UC_MIPS_REG_GP = UC_MIPS_REG_28,
     UC_MIPS_REG_SP = UC_MIPS_REG_29,
-    UC_MIPS_REG_FP = UC_MIPS_REG_30, UC_MIPS_REG_S8 = UC_MIPS_REG_30,
+    UC_MIPS_REG_FP = UC_MIPS_REG_30,
+    UC_MIPS_REG_S8 = UC_MIPS_REG_30,
     UC_MIPS_REG_RA = UC_MIPS_REG_31,
 
     UC_MIPS_REG_HI0 = UC_MIPS_REG_AC0,

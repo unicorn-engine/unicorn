@@ -5,7 +5,6 @@
 #include <unicorn/unicorn.h>
 #include <string.h>
 
-
 // code to be emulated
 #if 0
 $ cstool riscv64 1305100093850502
@@ -15,23 +14,30 @@ $ cstool riscv64 1305100093850502
 //#define RISCV_CODE "\x13\x05\x10\x00\x93\x85\x05\x02\x93\x85\x05\x02"
 #define RISCV_CODE "\x13\x05\x10\x00\x93\x85\x05\x02"
 
-
 // memory address where emulation starts
 #define ADDRESS 0x10000
 
-static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_block(uc_engine *uc, uint64_t address, uint32_t size,
+                       void *user_data)
 {
-    printf(">>> Tracing basic block at 0x%"PRIx64 ", block size = 0x%x\n", address, size);
+    printf(">>> Tracing basic block at 0x%" PRIx64 ", block size = 0x%x\n",
+           address, size);
 }
 
-static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size,
+                      void *user_data)
 {
-    printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
+    printf(">>> Tracing instruction at 0x%" PRIx64
+           ", instruction size = 0x%x\n",
+           address, size);
 }
 
-static void hook_code3(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code3(uc_engine *uc, uint64_t address, uint32_t size,
+                       void *user_data)
 {
-    printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
+    printf(">>> Tracing instruction at 0x%" PRIx64
+           ", instruction size = 0x%x\n",
+           address, size);
     if (address == ADDRESS) {
         printf("stop emulation\n");
         uc_emu_stop(uc);
@@ -52,8 +58,8 @@ static void test_riscv(void)
     // Initialize emulator in RISCV64 mode
     err = uc_open(UC_ARCH_RISCV, UC_MODE_RISCV32, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -106,8 +112,8 @@ static void test_riscv2(void)
     // Initialize emulator in RISCV64 mode
     err = uc_open(UC_ARCH_RISCV, UC_MODE_RISCV32, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -171,8 +177,8 @@ static void test_riscv3(void)
     // Initialize emulator in RISCV64 mode
     err = uc_open(UC_ARCH_RISCV, UC_MODE_RISCV32, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -226,8 +232,8 @@ static void test_riscv_step(void)
     // Initialize emulator in RISCV64 mode
     err = uc_open(UC_ARCH_RISCV, UC_MODE_RISCV32, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-            err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -297,8 +303,8 @@ static void test_riscv_timeout(void)
     // Initialize emulator in RISCV64 mode
     err = uc_open(UC_ARCH_RISCV, UC_MODE_RISCV32, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-            err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -365,8 +371,8 @@ static void test_riscv_sd64(void)
     // Initialize emulator in RISCV64 mode
     err = uc_open(UC_ARCH_RISCV, UC_MODE_RISCV64, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-            err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -401,13 +407,14 @@ static void test_riscv_sd64(void)
 }
 
 static bool hook_memalloc(uc_engine *uc, uc_mem_type type, uint64_t address,
-        int size, int64_t value, void *user_data)
+                          int size, int64_t value, void *user_data)
 {
     uint64_t algined_address = address & 0xFFFFFFFFFFFFF000ULL;
     int aligned_size = ((int)(size / 0x1000) + 1) * 0x1000;
 
-    printf(">>> Allocating block at 0x%" PRIx64 " (0x%" PRIx64 "), block size = 0x%x (0x%x)\n",
-            address, algined_address, size, aligned_size);
+    printf(">>> Allocating block at 0x%" PRIx64 " (0x%" PRIx64
+           "), block size = 0x%x (0x%x)\n",
+           address, algined_address, size, aligned_size);
 
     uc_mem_map(uc, algined_address, aligned_size, UC_PROT_ALL);
 
@@ -439,7 +446,8 @@ static void test_recover_from_illegal(void)
     uc_mem_map(uc, ADDRESS, 2 * 1024 * 1024, UC_PROT_ALL);
 
     // auto-allocate memory on access
-    uc_hook_add(uc, &mem_alloc, UC_HOOK_MEM_UNMAPPED, hook_memalloc, NULL, 1, 0);
+    uc_hook_add(uc, &mem_alloc, UC_HOOK_MEM_UNMAPPED, hook_memalloc, NULL, 1,
+                0);
 
     // tracing all basic blocks with customized callback
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
@@ -469,8 +477,8 @@ static void test_recover_from_illegal(void)
     uc_reg_read(uc, UC_RISCV_REG_A0, &a0);
     uc_reg_read(uc, UC_RISCV_REG_A1, &a1);
 
-    printf(">>> A0 = 0x%"PRIx64 "\n", a0);
-    printf(">>> A1 = 0x%"PRIx64 "\n", a1);
+    printf(">>> A0 = 0x%" PRIx64 "\n", a0);
+    printf(">>> A1 = 0x%" PRIx64 "\n", a1);
 
     uc_close(uc);
 }
@@ -495,8 +503,8 @@ static void test_riscv_func_return(void)
     // Initialize emulator in RISCV64 mode
     err = uc_open(UC_ARCH_RISCV, UC_MODE_RISCV64, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -527,7 +535,9 @@ static void test_riscv_func_return(void)
 
     uc_reg_read(uc, UC_RISCV_REG_PC, &pc);
     if (pc != ra) {
-        printf("Error after execution: PC is: 0x%"PRIx64 ", expected was 0x%"PRIx64 "\n", pc, ra);
+        printf("Error after execution: PC is: 0x%" PRIx64
+               ", expected was 0x%" PRIx64 "\n",
+               pc, ra);
         if (pc == 0x10000) {
             printf("  PC did not change during execution\n");
         }
@@ -551,7 +561,9 @@ static void test_riscv_func_return(void)
 
     uc_reg_read(uc, UC_RISCV_REG_PC, &pc);
     if (pc != ra) {
-        printf("Error after execution: PC is: 0x%"PRIx64 ", expected was 0x%"PRIx64 "\n", pc, ra);
+        printf("Error after execution: PC is: 0x%" PRIx64
+               ", expected was 0x%" PRIx64 "\n",
+               pc, ra);
         if (pc == 0x10004) {
             printf("  PC did not change during execution\n");
         }

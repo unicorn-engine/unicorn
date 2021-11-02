@@ -14637,7 +14637,7 @@ static void aarch64_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     CPUARMState *env = cpu->env_ptr;
 
     // Unicorn: end address tells us to stop emulation
-    if (dcbase->pc_next == dc->uc->addr_end) {
+    if (uc_addr_is_exit(dc->uc, dcbase->pc_next)) {
         // imitate WFI instruction to halt emulation
         dcbase->is_jmp = DISAS_WFI;
     } else {

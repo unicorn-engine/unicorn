@@ -6,22 +6,25 @@
 #include <unicorn/unicorn.h>
 #include <string.h>
 
-
 // code to be emulated
 #define PPC_CODE "\x7F\x46\x1A\x14" //  add       r26, r6, r3
 
 // memory address where emulation starts
 #define ADDRESS 0x10000
 
-
-static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_block(uc_engine *uc, uint64_t address, uint32_t size,
+                       void *user_data)
 {
-    printf(">>> Tracing basic block at 0x%"PRIx64 ", block size = 0x%x\n", address, size);
+    printf(">>> Tracing basic block at 0x%" PRIx64 ", block size = 0x%x\n",
+           address, size);
 }
 
-static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size,
+                      void *user_data)
 {
-    printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
+    printf(">>> Tracing instruction at 0x%" PRIx64
+           ", instruction size = 0x%x\n",
+           address, size);
 }
 
 static void test_ppc(void)
@@ -30,17 +33,17 @@ static void test_ppc(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    int r3 = 0x1234;     // R3 register
-    int r6 = 0x6789;     // R6 register
-    int r26 = 0x8877;     // R26 register	(result)
+    int r3 = 0x1234;  // R3 register
+    int r6 = 0x6789;  // R6 register
+    int r26 = 0x8877; // R26 register	(result)
 
     printf("Emulate PPC code\n");
 
     // Initialize emulator in PPC mode
-    err = uc_open(UC_ARCH_PPC, UC_MODE_PPC32 | UC_MODE_BIG_ENDIAN , &uc);
+    err = uc_open(UC_ARCH_PPC, UC_MODE_PPC32 | UC_MODE_BIG_ENDIAN, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -63,7 +66,7 @@ static void test_ppc(void)
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(PPC_CODE) -1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(PPC_CODE) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
         return;
@@ -78,7 +81,6 @@ static void test_ppc(void)
     // close engine when done
     uc_close(uc);
 }
-
 
 int main(int argc, char **argv, char **envp)
 {

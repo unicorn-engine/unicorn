@@ -260,7 +260,7 @@ static inline GTreeNode *g_tree_node_next (GTreeNode *node)
     return tmp;
 }
 
-static void g_tree_remove_all (GTree *tree)
+void g_tree_remove_all (GTree *tree)
 {
     GTreeNode *node;
     GTreeNode *next;

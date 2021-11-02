@@ -4,6 +4,16 @@ package unicorn;
 
 public interface RiscvConst {
 
+   public static final int UC_CPU_RISCV32_ANY = 0;
+   public static final int UC_CPU_RISCV32_BASE32 = 1;
+   public static final int UC_CPU_RISCV32_SIFIVE_E31 = 2;
+   public static final int UC_CPU_RISCV32_SIFIVE_U34 = 3;
+
+   public static final int UC_CPU_RISCV64_ANY = 0;
+   public static final int UC_CPU_RISCV64_BASE64 = 1;
+   public static final int UC_CPU_RISCV64_SIFIVE_E51 = 2;
+   public static final int UC_CPU_RISCV64_SIFIVE_U54 = 3;
+
 // RISCV registers
 
    public static final int UC_RISCV_REG_INVALID = 0;

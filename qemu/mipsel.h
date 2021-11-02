@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _mipsel
 #endif
+#define tb_invalidate_phys_range tb_invalidate_phys_range_mipsel
 #define use_idiv_instructions use_idiv_instructions_mipsel
 #define arm_arch arm_arch_mipsel
 #define tb_target_set_jmp_target tb_target_set_jmp_target_mipsel

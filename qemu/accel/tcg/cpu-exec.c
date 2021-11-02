@@ -245,6 +245,10 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
     TranslationBlock *tb;
     target_ulong cs_base, pc;
     uint32_t flags;
+    uc_tb cur_tb, prev_tb;
+    uc_engine *uc = cpu->uc;
+    struct list_item *cur;
+    struct hook *hook;
 
     tb = tb_lookup__cpu_state(cpu, &pc, &cs_base, &flags, cf_mask);
     if (tb == NULL) {
@@ -265,6 +269,23 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
     if (last_tb) {
         tb_add_jump(last_tb, tb_exit, tb);
     }
+
+    UC_TB_COPY(&cur_tb, tb);
+
+    if (last_tb) {
+        UC_TB_COPY(&prev_tb, last_tb);
+        for (cur = uc->hook[UC_HOOK_EDGE_GENERATED_IDX].head;
+            cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next) {
+            if (hook->to_delete) {
+                continue;
+            }
+
+            if (HOOK_BOUND_CHECK(hook, (uint64_t)tb->pc)) {
+                ((uc_hook_edge_gen_t)hook->callback)(uc, &cur_tb, &prev_tb, hook->user_data);
+            }
+        }
+    }
+
     return tb;
 }
 

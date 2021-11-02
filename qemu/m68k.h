@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _m68k
 #endif
+#define tb_invalidate_phys_range tb_invalidate_phys_range_m68k
 #define use_idiv_instructions use_idiv_instructions_m68k
 #define arm_arch arm_arch_m68k
 #define tb_target_set_jmp_target tb_target_set_jmp_target_m68k

@@ -8,4 +8,4 @@ install: gen_const
 	cd unicorn_gem && gem install --local pkg/unicorn-engine-1.0.1.gem
 
 gen_const:
-	cd .. && python const_generator.py ruby
+	cd .. && python3 const_generator.py ruby

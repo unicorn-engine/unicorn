@@ -19,7 +19,7 @@ uninstall:
 	$(MAKE) -f Makefile.build uninstall
 
 gen_const:
-	cd .. && python const_generator.py java
+	cd .. && python3 const_generator.py java
 
 clean:
 	rm -f unicorn/*.class

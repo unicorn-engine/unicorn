@@ -7626,7 +7626,7 @@ static void ppc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
               ctx->base.pc_next, ctx->mem_idx, (int)msr_ir);
 
     // Unicorn: end address tells us to stop emulation
-    if (ctx->base.pc_next == uc->addr_end) {
+    if (uc_addr_is_exit(uc, ctx->base.pc_next)) {
         gen_wait(ctx);
         return;
     }

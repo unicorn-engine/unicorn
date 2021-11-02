@@ -11421,7 +11421,7 @@ static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     }
 
     // Unicorn: end address tells us to stop emulation
-    if (dcbase->pc_next == dc->uc->addr_end) {
+    if (uc_addr_is_exit(dc->uc, dcbase->pc_next)) {
         // imitate WFI instruction to halt emulation
         dcbase->is_jmp = DISAS_WFI;
     } else {
@@ -11499,7 +11499,7 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     }
 
     // Unicorn: end address tells us to stop emulation
-    if (dcbase->pc_next == uc->addr_end) {
+    if (uc_addr_is_exit(uc, dcbase->pc_next)) {
         // imitate WFI instruction to halt emulation
         dcbase->is_jmp = DISAS_WFI;
         return;

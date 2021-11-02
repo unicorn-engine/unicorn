@@ -15,7 +15,7 @@ on:
   pull_request:
 
 env:
-  CI: true
+  UNICORN_VERSION: dev
 
 jobs:
   build:

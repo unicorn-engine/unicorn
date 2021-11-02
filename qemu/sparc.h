@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _sparc
 #endif
+#define tb_invalidate_phys_range tb_invalidate_phys_range_sparc
 #define use_idiv_instructions use_idiv_instructions_sparc
 #define arm_arch arm_arch_sparc
 #define tb_target_set_jmp_target tb_target_set_jmp_target_sparc
