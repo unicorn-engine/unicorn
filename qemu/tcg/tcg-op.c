@@ -894,7 +894,27 @@ void tcg_gen_add2_i32(TCGContext *tcg_ctx, TCGv_i32 rl, TCGv_i32 rh, TCGv_i32 al
 void tcg_gen_sub2_i32(TCGContext *tcg_ctx, TCGv_i32 rl, TCGv_i32 rh, TCGv_i32 al,
                       TCGv_i32 ah, TCGv_i32 bl, TCGv_i32 bh)
 {
+    uc_engine *uc = tcg_ctx->uc;
+
     if (TCG_TARGET_HAS_sub2_i32) {
+        if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_TCG_OPCODE, tcg_ctx->pc_start)) {
+            struct hook *hook;
+            HOOK_FOREACH_VAR_DECLARE;
+            HOOK_FOREACH(uc, hook, UC_HOOK_TCG_OPCODE) {
+                if (hook->to_delete)
+                    continue;
+                if (hook->op == UC_TCG_OP_SUB && hook->op_flags == 0) {
+                    // Calling tcg_gen_sub_i64 will cause infinite recursion.
+                    TCGv_i64 t0 = tcg_temp_new_i64(tcg_ctx);
+                    TCGv_i64 t1 = tcg_temp_new_i64(tcg_ctx);
+                    tcg_gen_concat_i32_i64(tcg_ctx, t0, al, ah);
+                    tcg_gen_concat_i32_i64(tcg_ctx, t1, bl, bh);
+                    gen_uc_traceopcode(tcg_ctx, hook, t0, t1, uc, tcg_ctx->pc_start);
+                    tcg_temp_free_i64(tcg_ctx, t0);
+                    tcg_temp_free_i64(tcg_ctx, t1);
+                }
+            }
+        }
         tcg_gen_op6_i32(tcg_ctx, INDEX_op_sub2_i32, rl, rh, al, ah, bl, bh);
     } else {
         TCGv_i64 t0 = tcg_temp_new_i64(tcg_ctx);
