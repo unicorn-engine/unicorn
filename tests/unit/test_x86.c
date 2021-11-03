@@ -769,6 +769,49 @@ static void test_x86_hook_tcg_op()
     OK(uc_close(uc));
 }
 
+static void test_x86_cmpxchg_mem_hook(uc_engine *uc, uc_mem_type type,
+                                      uint64_t address, int size, int64_t val,
+                                      void *data)
+{
+    if (type == UC_MEM_READ) {
+        *((int *)data) |= 1;
+    } else {
+        *((int *)data) |= 2;
+    }
+}
+
+static void test_x86_cmpxchg()
+{
+    uc_engine *uc;
+    char code[] = "\x0F\xC7\x0D\xE0\xBE\xAD\xDE"; // cmpxchg8b [0xdeadbee0]
+    int r_zero = 0;
+    int r_aaaa = 0x41414141;
+    uint64_t mem;
+    uc_hook h;
+    int result = 0;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_mem_map(uc, 0xdeadb000, 0x1000, UC_PROT_ALL));
+    OK(uc_hook_add(uc, &h, UC_HOOK_MEM_READ | UC_HOOK_MEM_WRITE,
+                   test_x86_cmpxchg_mem_hook, &result, 1, 0));
+
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_zero));
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_zero));
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_aaaa));
+    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_aaaa));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_mem_read(uc, 0xdeadbee0, &mem, 8));
+
+    TEST_CHECK(mem == 0x4141414141414141);
+
+    // Both read and write happened.
+    TEST_CHECK(result == 3);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_out", test_x86_out},
              {"test_x86_mem_hook_all", test_x86_mem_hook_all},
@@ -793,4 +836,5 @@ TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_clear_tb_cache", test_x86_clear_tb_cache},
              {"test_x86_clear_empty_tb", test_x86_clear_empty_tb},
              {"test_x86_hook_tcg_op", test_x86_hook_tcg_op},
+             {"test_x86_cmpxchg", test_x86_cmpxchg},
              {NULL, NULL}};
