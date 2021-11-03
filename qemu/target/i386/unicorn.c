@@ -1569,6 +1569,32 @@ static bool x86_insn_hook_validate(uint32_t insn_enum)
     return true;
 }
 
+static bool x86_opcode_hook_invalidate(uint32_t op, uint32_t flags)
+{
+    if (op != UC_TCG_OP_SUB) {
+        return false;
+    }
+
+    switch (op) {
+    case UC_TCG_OP_SUB:
+
+        if (flags == UC_TCG_OP_FLAG_IMM) {
+            return false;
+        }
+
+        if ((flags & UC_TCG_OP_FLAG_CMP) && (flags & UC_TCG_OP_FLAG_DIRECT)) {
+            return false;
+        }
+
+        break;
+
+    default:
+        return false;
+    }
+
+    return true;
+}
+
 static int x86_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
 
@@ -1592,6 +1618,7 @@ void x86_uc_init(struct uc_struct *uc)
     uc->set_pc = x86_set_pc;
     uc->stop_interrupt = x86_stop_interrupt;
     uc->insn_hook_validate = x86_insn_hook_validate;
+    uc->opcode_hook_invalidate = x86_opcode_hook_invalidate;
     uc->cpus_init = x86_cpus_init;
     uc->cpu_context_size = offsetof(CPUX86State, retaddr);
     uc_common_init(uc);

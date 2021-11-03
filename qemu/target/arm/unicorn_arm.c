@@ -477,6 +477,19 @@ static uc_err arm_query(struct uc_struct *uc, uc_query_type type,
     }
 }
 
+static bool arm_opcode_hook_invalidate(uint32_t op, uint32_t flags)
+{
+    if (op != UC_TCG_OP_SUB) {
+        return false;
+    }
+
+    if (flags == UC_TCG_OP_FLAG_CMP && op != UC_TCG_OP_SUB) {
+        return false;
+    }
+
+    return true;
+}
+
 static int arm_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     ARMCPU *cpu;
@@ -503,6 +516,7 @@ void arm_uc_init(struct uc_struct *uc)
     uc->release = arm_release;
     uc->query = arm_query;
     uc->cpus_init = arm_cpus_init;
+    uc->opcode_hook_invalidate = arm_opcode_hook_invalidate;
     uc->cpu_context_size = offsetof(CPUARMState, cpu_watchpoint);
     uc_common_init(uc);
 }

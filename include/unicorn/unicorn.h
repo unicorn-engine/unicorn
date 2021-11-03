@@ -249,6 +249,18 @@ typedef void (*uc_hook_edge_gen_t)(uc_engine *uc, uc_tb *cur_tb, uc_tb *prev_tb,
                                    void *user_data);
 
 /*
+  Callback function for tcg opcodes that fits in two arguments.
+
+  @address: Current pc.
+  @arg1: The first argument.
+  @arg2: The second argument.
+*/
+typedef void (*uc_hook_tcg_op_2)(uc_engine *uc, uint64_t address, uint64_t arg1,
+                                 uint64_t arg2, void *user_data);
+
+typedef uc_hook_tcg_op_2 uc_hook_tcg_sub;
+
+/*
   Callback function for MMIO read
 
   @offset: offset to the base address of the IO memory.
@@ -283,6 +295,26 @@ typedef enum uc_mem_type {
     UC_MEM_FETCH_PROT,     // Fetch from non-executable, but mapped, memory
     UC_MEM_READ_AFTER,     // Memory is read from (successful access)
 } uc_mem_type;
+
+// These are all op codes we support to hook for UC_HOOK_TCG_OP_CODE.
+// Be cautious since it may bring much more overhead than UC_HOOK_CODE without
+// proper flags.
+// TODO: Tracing UC_TCG_OP_CALL should be interesting.
+typedef enum uc_tcg_op_code {
+    UC_TCG_OP_SUB = 0, // Both sub_i32 and sub_i64
+} uc_tcg_op_code;
+
+// These are extra flags to be paired with uc_tcg_op_code which is helpful to
+// instrument in some certain cases.
+typedef enum uc_tcg_op_flag {
+    // Only instrument opcode if one of the arguments is an immediate value.
+    UC_TCG_OP_FLAG_IMM = 1 << 0,
+    // Only instrument opcode if it would set cc_dst, i.e. cmp instruction.
+    UC_TCG_OP_FLAG_CMP = 1 << 1,
+    // Only instrument opcode which is directly translated. i.e. x86 sub -> tcg
+    // sub_i32/64
+    UC_TCG_OP_FLAG_DIRECT = 1 << 2
+} uc_tcg_op_flag;
 
 // All type of hooks for uc_hook_add() API.
 typedef enum uc_hook_type {
@@ -323,7 +355,10 @@ typedef enum uc_hook_type {
     // NOTE: This is different from UC_HOOK_BLOCK in 2 ways:
     //       1. The hook is called before executing code.
     //       2. The hook is only called when generation is triggered.
-    UC_HOOK_EDGE_GENERATED = 1 << 15
+    UC_HOOK_EDGE_GENERATED = 1 << 15,
+    // Hook on specific tcg op code. The usage of this hook is similar to
+    // UC_HOOK_INSN.
+    UC_HOOK_TCG_OPCODE = 1 << 16,
 } uc_hook_type;
 
 // Hook type for all events of unmapped memory access
@@ -771,6 +806,8 @@ uc_err uc_emu_stop(uc_engine *uc);
  @...: variable arguments (depending on @type)
    NOTE: if @type = UC_HOOK_INSN, this is the instruction ID.
          currently, only x86 in, out, syscall, sysenter, cpuid are supported.
+   NOTE: if @type = UC_HOOK_TCG_OPCODE, arguments are @opcode and @flags. See
+ @uc_tcg_op_code and @uc_tcg_op_flag for details.
 
  @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
    for detailed error).

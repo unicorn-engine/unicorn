@@ -1368,6 +1368,37 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         return UC_ERR_OK;
     }
 
+    if (type & UC_HOOK_TCG_OPCODE) {
+        va_list valist;
+
+        va_start(valist, end);
+        hook->op = va_arg(valist, int);
+        hook->op_flags = va_arg(valist, int);
+        va_end(valist);
+
+        if (uc->opcode_hook_invalidate) {
+            if (!uc->opcode_hook_invalidate(hook->op, hook->op_flags)) {
+                free(hook);
+                return UC_ERR_HOOK;
+            }
+        }
+
+        if (uc->hook_insert) {
+            if (list_insert(&uc->hook[UC_HOOK_TCG_OPCODE_IDX], hook) == NULL) {
+                free(hook);
+                return UC_ERR_NOMEM;
+            }
+        } else {
+            if (list_append(&uc->hook[UC_HOOK_TCG_OPCODE_IDX], hook) == NULL) {
+                free(hook);
+                return UC_ERR_NOMEM;
+            }
+        }
+
+        hook->refs++;
+        return UC_ERR_OK;
+    }
+
     while ((type >> i) > 0) {
         if ((type >> i) & 1) {
             // TODO: invalid hook error?
@@ -1424,6 +1455,39 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
 }
 
 // TCG helper
+// 2 arguments are enough for most opcodes. Load/Store needs 3 arguments but we
+// have memory hooks already. We may exceed the maximum arguments of a tcg
+// helper but that's easy to extend.
+void helper_uc_traceopcode(struct hook *hook, uint64_t arg1, uint64_t arg2,
+                           void *handle, uint64_t address);
+void helper_uc_traceopcode(struct hook *hook, uint64_t arg1, uint64_t arg2,
+                           void *handle, uint64_t address)
+{
+    struct uc_struct *uc = handle;
+
+    if (unlikely(uc->stop_request)) {
+        return;
+    }
+
+    if (unlikely(hook->to_delete)) {
+        return;
+    }
+
+    // We did all checks in translation time.
+    //
+    // This could optimize the case that we have multiple hooks with different
+    // opcodes and have one callback per opcode. Note that the assumption don't
+    // hold in most cases for uc_tracecode.
+    //
+    // TODO: Shall we have a flag to allow users to control whether updating PC?
+    ((uc_hook_tcg_op_2)hook->callback)(uc, address, arg1, arg2,
+                                       hook->user_data);
+
+    if (unlikely(uc->stop_request)) {
+        return;
+    }
+}
+
 void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
                          int64_t address);
 void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,

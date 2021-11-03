@@ -1,4 +1,5 @@
 DEF_HELPER_4(uc_tracecode, void, i32, i32, ptr, i64)
+DEF_HELPER_5(uc_traceopcode, void, ptr, i64, i64, ptr, i64)
 
 #ifndef TARGET_SPARC64
 DEF_HELPER_1(rett, void, env)

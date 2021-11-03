@@ -791,6 +791,9 @@ struct TCGContext {
     TCGv NULL_QREG;
     /* Used to distinguish stores from bad addressing modes.  */
     TCGv store_dummy;
+    
+    // Used to store the start of current instrution.
+    uint64_t pc_start;
 };
 
 static inline size_t temp_idx(TCGContext *tcg_ctx, TCGTemp *ts)

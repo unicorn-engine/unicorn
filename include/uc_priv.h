@@ -107,6 +107,8 @@ typedef uint64_t (*uc_mem_redirect_t)(uint64_t address);
 // validate if Unicorn supports hooking a given instruction
 typedef bool (*uc_insn_hook_validate)(uint32_t insn_enum);
 
+typedef bool (*uc_opcode_hook_validate_t)(uint32_t op, uint32_t flags);
+
 // init target page
 typedef void (*uc_target_page_init)(struct uc_struct *);
 
@@ -127,6 +129,8 @@ struct hook {
     int type;       // UC_HOOK_*
     int insn;       // instruction for HOOK_INSN
     int refs;       // reference count to free hook stored in multiple lists
+    int op;         // opcode for HOOK_TCG_OPCODE
+    int op_flags;   // opcode flags for HOOK_TCG_OPCODE
     bool to_delete; // set to true when the hook is deleted by the user. The
                     // destruction of the hook is delayed.
     uint64_t begin, end; // only trigger if PC or memory access is in this
@@ -158,6 +162,7 @@ typedef enum uc_hook_idx {
     UC_HOOK_MEM_READ_AFTER_IDX,
     UC_HOOK_INSN_INVALID_IDX,
     UC_HOOK_EDGE_GENERATED_IDX,
+    UC_HOOK_TCG_OPCODE_IDX,
 
     UC_HOOK_MAX,
 } uc_hook_idx;
@@ -252,6 +257,7 @@ struct uc_struct {
     CPUState *cpu;
 
     uc_insn_hook_validate insn_hook_validate;
+    uc_opcode_hook_validate_t opcode_hook_invalidate;
 
     MemoryRegion *system_memory;    // qemu/exec.c
     MemoryRegion *system_io;        // qemu/exec.c

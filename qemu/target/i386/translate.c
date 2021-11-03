@@ -1479,6 +1479,7 @@ static void gen_illegal_opcode(DisasContext *s)
 static void gen_op(DisasContext *s1, int op, MemOp ot, int d)
 {
     TCGContext *tcg_ctx = s1->uc->tcg_ctx;
+    uc_engine *uc = s1->uc;
 
     if (d != OR_TMP0) {
         if (s1->prefix & PREFIX_LOCK) {
@@ -1542,6 +1543,23 @@ static void gen_op(DisasContext *s1, int op, MemOp ot, int d)
             tcg_gen_sub_tl(tcg_ctx, s1->T0, s1->T0, s1->T1);
             gen_op_st_rm_T0_A0(s1, ot, d);
         }
+        
+        if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_TCG_OPCODE, s1->pc_start)) {
+            struct hook *hook;
+            HOOK_FOREACH_VAR_DECLARE;
+            HOOK_FOREACH(uc, hook, UC_HOOK_TCG_OPCODE) {
+                if (hook->to_delete)
+                    continue;
+                if (hook->op == UC_TCG_OP_SUB && (hook->op_flags & UC_TCG_OP_FLAG_DIRECT) ) {
+                    // TCGv is just an offset to tcg_ctx so it's safe to do so.
+                    if ( (hook->op_flags & UC_TCG_OP_FLAG_IMM) && d != OR_EAX) {
+                        continue;
+                    }
+                    gen_uc_traceopcode(tcg_ctx, hook, (TCGv_i64)s1->T0, (TCGv_i64)s1->T1, uc, s1->pc_start);
+                }
+            }
+        }
+
         gen_op_update2_cc(s1);
         set_cc_op(s1, CC_OP_SUBB + ot);
         break;
@@ -1583,6 +1601,23 @@ static void gen_op(DisasContext *s1, int op, MemOp ot, int d)
         tcg_gen_mov_tl(tcg_ctx, tcg_ctx->cpu_cc_src, s1->T1);
         tcg_gen_mov_tl(tcg_ctx, s1->cc_srcT, s1->T0);
         tcg_gen_sub_tl(tcg_ctx, tcg_ctx->cpu_cc_dst, s1->T0, s1->T1);
+
+        if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_TCG_OPCODE, s1->pc_start)) {
+            struct hook *hook;
+            HOOK_FOREACH_VAR_DECLARE;
+            HOOK_FOREACH(uc, hook, UC_HOOK_TCG_OPCODE) {
+                if (hook->to_delete)
+                    continue;
+                if (hook->op == UC_TCG_OP_SUB && (hook->op_flags & UC_TCG_OP_FLAG_CMP) ) {
+                    // TCGv is just an offset to tcg_ctx so it's safe to do so.
+                    if ( (hook->op_flags & UC_TCG_OP_FLAG_IMM) && d != OR_EAX) {
+                        continue;
+                    }
+                    gen_uc_traceopcode(tcg_ctx, hook, (TCGv_i64)s1->T0, (TCGv_i64)s1->T1, uc, s1->pc_start);
+                }
+            }
+        }
+
         set_cc_op(s1, CC_OP_SUBB + ot);
         break;
     }
@@ -4759,7 +4794,7 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
     TCGOp *tcg_op, *prev_op = NULL;
     bool insn_hook = false;
 
-    s->pc_start = s->pc = pc_start;
+    s->pc_start = tcg_ctx->pc_start = s->pc = pc_start;
     s->prefix = 0;
 
     s->uc = env->uc;
