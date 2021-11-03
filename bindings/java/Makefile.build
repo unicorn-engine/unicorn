@@ -35,13 +35,13 @@ CLASSPATH=./
 .SUFFIXES: .java .class
 
 %.class: %.java
-	$(JC) $(JFLAGS) $<
+	$(JC) -classpath .:unicorn.jar $(JFLAGS) $<
 
 OBJS=unicorn_Unicorn.o
 
 JARFILE=unicorn.jar
 
-all: lib jar samples
+all: jar lib samples
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
