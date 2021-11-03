@@ -381,6 +381,10 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
         CPUMIPSState *env = &(MIPS_CPU(cpu)->env);
         env->active_tc.PC = uc->next_pc;
 #endif
+#if defined(TARGET_RISCV)
+        CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
+        env->pc += 4;
+#endif
         // Unicorn: call registered interrupt callbacks
         catched = false;
         HOOK_FOREACH_VAR_DECLARE;

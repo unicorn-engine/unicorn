@@ -341,6 +341,32 @@ static void test_riscv64_fp_move_to_int(void)
     uc_close(uc);
 }
 
+static void test_riscv64_ecall_cb(uc_engine *uc, uint32_t intno, void *data)
+{
+    uc_emu_stop(uc);
+    return;
+}
+
+static void test_riscv64_ecall()
+{
+    uc_engine *uc;
+    char code[] = "\x73\x00\x00\x00"; // ecall
+    uint64_t r_pc;
+    uc_hook h;
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &h, UC_HOOK_INTR, test_riscv64_ecall_cb, NULL, 1, 0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+
+    TEST_CHECK(r_pc == code_start + 4);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_riscv32_nop", test_riscv32_nop},
              {"test_riscv64_nop", test_riscv64_nop},
              {"test_riscv32_3steps_pc_update", test_riscv32_3steps_pc_update},
@@ -351,4 +377,5 @@ TEST_LIST = {{"test_riscv32_nop", test_riscv32_nop},
              {"test_riscv64_fp_move", test_riscv64_fp_move},
              {"test_riscv64_fp_move_from_int", test_riscv64_fp_move_from_int},
              {"test_riscv64_fp_move_to_int", test_riscv64_fp_move_to_int},
+             {"test_riscv64_ecall", test_riscv64_ecall},
              {NULL, NULL}};
