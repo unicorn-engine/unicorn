@@ -1578,10 +1578,6 @@ static bool x86_opcode_hook_invalidate(uint32_t op, uint32_t flags)
     switch (op) {
     case UC_TCG_OP_SUB:
 
-        if (flags == UC_TCG_OP_FLAG_IMM) {
-            return false;
-        }
-
         if ((flags & UC_TCG_OP_FLAG_CMP) && (flags & UC_TCG_OP_FLAG_DIRECT)) {
             return false;
         }

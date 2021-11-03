@@ -696,6 +696,79 @@ static void test_x86_clear_empty_tb()
     OK(uc_close(uc));
 }
 
+typedef struct _HOOK_TCG_OP_RESULT {
+    uint64_t address;
+    uint64_t arg1;
+    uint64_t arg2;
+} HOOK_TCG_OP_RESULT;
+
+typedef struct _HOOK_TCG_OP_RESULTS {
+    HOOK_TCG_OP_RESULT results[128];
+    uint64_t len;
+} HOOK_TCG_OP_RESULTS;
+
+static void test_x86_hook_tcg_op_cb(uc_engine *uc, uint64_t address,
+                                    uint64_t arg1, uint64_t arg2, void *data)
+{
+    HOOK_TCG_OP_RESULTS *results = (HOOK_TCG_OP_RESULTS *)data;
+    HOOK_TCG_OP_RESULT *result = &results->results[results->len++];
+
+    result->address = address;
+    result->arg1 = arg1;
+    result->arg2 = arg2;
+}
+
+static void test_x86_hook_tcg_op()
+{
+    uc_engine *uc;
+    uc_hook h;
+    int flag;
+    HOOK_TCG_OP_RESULTS results;
+    // sub esi, [0x1000];
+    // sub eax, ebx;
+    // sub eax, 1;
+    // cmp eax, 0;
+    // cmp ebx, edx;
+    // cmp esi, [0x1000];
+    char code[] = "\x2b\x35\x00\x10\x00\x00\x29\xd8\x83\xe8\x01\x83\xf8\x00\x39"
+                  "\xd3\x3b\x35\x00\x10\x00\x00";
+    int r_eax = 0x1234;
+    int r_ebx = 2;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_ebx));
+
+    memset(&results, 0, sizeof(HOOK_TCG_OP_RESULTS));
+    flag = 0;
+    OK(uc_hook_add(uc, &h, UC_HOOK_TCG_OPCODE, test_x86_hook_tcg_op_cb,
+                   &results, 0, -1, UC_TCG_OP_SUB, flag));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_hook_del(uc, h));
+
+    TEST_CHECK(results.len == 6);
+
+    memset(&results, 0, sizeof(HOOK_TCG_OP_RESULTS));
+    flag = UC_TCG_OP_FLAG_DIRECT;
+    OK(uc_hook_add(uc, &h, UC_HOOK_TCG_OPCODE, test_x86_hook_tcg_op_cb,
+                   &results, 0, -1, UC_TCG_OP_SUB, flag));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_hook_del(uc, h));
+
+    TEST_CHECK(results.len == 3);
+
+    memset(&results, 0, sizeof(HOOK_TCG_OP_RESULTS));
+    flag = UC_TCG_OP_FLAG_CMP;
+    OK(uc_hook_add(uc, &h, UC_HOOK_TCG_OPCODE, test_x86_hook_tcg_op_cb,
+                   &results, 0, -1, UC_TCG_OP_SUB, flag));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_hook_del(uc, h));
+
+    TEST_CHECK(results.len == 3);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_out", test_x86_out},
              {"test_x86_mem_hook_all", test_x86_mem_hook_all},
@@ -719,4 +792,5 @@ TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_hook_cpuid", test_x86_hook_cpuid},
              {"test_x86_clear_tb_cache", test_x86_clear_tb_cache},
              {"test_x86_clear_empty_tb", test_x86_clear_empty_tb},
+             {"test_x86_hook_tcg_op", test_x86_hook_tcg_op},
              {NULL, NULL}};

@@ -1552,9 +1552,6 @@ static void gen_op(DisasContext *s1, int op, MemOp ot, int d)
                     continue;
                 if (hook->op == UC_TCG_OP_SUB && (hook->op_flags & UC_TCG_OP_FLAG_DIRECT) ) {
                     // TCGv is just an offset to tcg_ctx so it's safe to do so.
-                    if ( (hook->op_flags & UC_TCG_OP_FLAG_IMM) && d != OR_EAX) {
-                        continue;
-                    }
                     gen_uc_traceopcode(tcg_ctx, hook, (TCGv_i64)s1->T0, (TCGv_i64)s1->T1, uc, s1->pc_start);
                 }
             }
@@ -1610,9 +1607,6 @@ static void gen_op(DisasContext *s1, int op, MemOp ot, int d)
                     continue;
                 if (hook->op == UC_TCG_OP_SUB && (hook->op_flags & UC_TCG_OP_FLAG_CMP) ) {
                     // TCGv is just an offset to tcg_ctx so it's safe to do so.
-                    if ( (hook->op_flags & UC_TCG_OP_FLAG_IMM) && d != OR_EAX) {
-                        continue;
-                    }
                     gen_uc_traceopcode(tcg_ctx, hook, (TCGv_i64)s1->T0, (TCGv_i64)s1->T1, uc, s1->pc_start);
                 }
             }

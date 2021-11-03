@@ -307,13 +307,11 @@ typedef enum uc_tcg_op_code {
 // These are extra flags to be paired with uc_tcg_op_code which is helpful to
 // instrument in some certain cases.
 typedef enum uc_tcg_op_flag {
-    // Only instrument opcode if one of the arguments is an immediate value.
-    UC_TCG_OP_FLAG_IMM = 1 << 0,
     // Only instrument opcode if it would set cc_dst, i.e. cmp instruction.
-    UC_TCG_OP_FLAG_CMP = 1 << 1,
-    // Only instrument opcode which is directly translated. i.e. x86 sub -> tcg
-    // sub_i32/64
-    UC_TCG_OP_FLAG_DIRECT = 1 << 2
+    UC_TCG_OP_FLAG_CMP = 1 << 0,
+    // Only instrument opcode which is directly translated.
+    // i.e. x86 sub/subc -> tcg sub_i32/64
+    UC_TCG_OP_FLAG_DIRECT = 1 << 1
 } uc_tcg_op_flag;
 
 // All type of hooks for uc_hook_add() API.
