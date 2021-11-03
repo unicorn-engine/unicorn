@@ -1745,7 +1745,8 @@ tb_invalidate_phys_page_range__locked(struct uc_struct *uc, struct page_collecti
             tb_start = tb->page_addr[1];
             tb_end = tb_start + ((tb->pc + tb->size) & ~TARGET_PAGE_MASK);
         }
-        if (!(tb_end <= start || tb_start >= end)) {
+        // Unicorn: We may indeed generate a TB without any instruction which breaks qemu assumption.
+        if ( (!(tb_end <= start || tb_start >= end)) || (tb_start == tb_end) ) {
 #ifdef TARGET_HAS_PRECISE_SMC
             if (current_tb_not_found) {
                 current_tb_not_found = false;
