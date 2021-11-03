@@ -108,7 +108,7 @@ type
   @user_data: user data passed to tracing APIs
 
   @return: return true to continue, or false to stop program (due to invalid memory).
-           NOTE: returning true to continue execution will only work if if the accessed
+           NOTE: returning true to continue execution will only work if the accessed
            memory is made accessible with the correct permissions during the hook.
 
            In the event of a UC_MEM_READ_UNMAPPED or UC_MEM_WRITE_UNMAPPED callback,

@@ -570,7 +570,7 @@ void helper_fldz_FT0(CPUX86State *env)
 {
     //FT0 = floatx80_zero;
     floatx80 zero = { 0x0000000000000000LL, 0x0000 };
-    ST0 = zero;
+    FT0 = zero;
 }
 
 uint32_t helper_fnstsw(CPUX86State *env)

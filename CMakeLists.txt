@@ -1001,7 +1001,15 @@ if (MSVC)
         qemu/util/qemu-thread-win32.c
     )
     if (CMAKE_SIZEOF_VOID_P EQUAL 8)
-        enable_language(ASM_MASM)
+        if (MSVC_VERSION LESS 1600 AND MSVC_IDE)
+            add_custom_command(OUTPUT "${CMAKE_CURRENT_SOURCE_DIR}/build/setjmp-wrapper-win32.dir/setjmp-wrapper-win32.obj"
+                COMMAND ml64 /c /nologo /Fo"${CMAKE_CURRENT_SOURCE_DIR}/build/setjmp-wrapper-win32.dir/setjmp-wrapper-win32.obj" /W3 /errorReport:prompt /Ta"${CMAKE_CURRENT_SOURCE_DIR}/qemu/util/setjmp-wrapper-win32.asm"
+                DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/qemu/util/setjmp-wrapper-win32.asm"
+            )
+            set(UNICORN_SRCS ${UNICORN_SRCS} "${CMAKE_CURRENT_SOURCE_DIR}/build/setjmp-wrapper-win32.dir/setjmp-wrapper-win32.obj")
+        else()
+            enable_language(ASM_MASM)
+        endif()
         set(UNICORN_COMMON_SRCS ${UNICORN_COMMON_SRCS} qemu/util/setjmp-wrapper-win32.asm)
     endif()
 else()

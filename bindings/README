@@ -33,3 +33,6 @@ More bindings created & maintained externally by community are available as foll
 
 - pharo-unicorn: Pharo binding (by Guille Polito)
     https://github.com/guillep/pharo-unicorn
+
+- Unicorn.js: JavaScript binding (by Alexandro Sanchez)
+    https://github.com/AlexAltea/unicorn.js

@@ -1596,7 +1596,8 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
             return uc->query(uc, type, result);
         }
 #endif
-        return UC_ERR_ARG;
+        *result = uc->mode;
+        break;
 
     case UC_QUERY_TIMEOUT:
         *result = uc->timed_out;

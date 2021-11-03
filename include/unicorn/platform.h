@@ -67,6 +67,23 @@ typedef unsigned int uint32_t;
 typedef signed long long int64_t;
 typedef unsigned long long uint64_t;
 
+typedef signed char int_fast8_t;
+typedef int int_fast16_t;
+typedef int int_fast32_t;
+typedef long long int_fast64_t;
+typedef unsigned char uint_fast8_t;
+typedef unsigned int uint_fast16_t;
+typedef unsigned int uint_fast32_t;
+typedef unsigned long long uint_fast64_t;
+
+#if !defined(_W64)
+#if !defined(__midl) && (defined(_X86_) || defined(_M_IX86)) && _MSC_VER >= 1300
+#define _W64 __w64
+#else
+#define _W64
+#endif
+#endif
+
 #ifndef _INTPTR_T_DEFINED
 #define _INTPTR_T_DEFINED
 #ifdef _WIN64
@@ -97,7 +114,36 @@ typedef _W64 unsigned int uintptr_t;
 #define UINT16_MAX 0xffffui16
 #define UINT32_MAX 0xffffffffui32
 #define UINT64_MAX 0xffffffffffffffffui64
+
+#define INT_FAST8_MIN INT8_MIN
+#define INT_FAST16_MIN INT32_MIN
+#define INT_FAST32_MIN INT32_MIN
+#define INT_FAST64_MIN INT64_MIN
+#define INT_FAST8_MAX INT8_MAX
+#define INT_FAST16_MAX INT32_MAX
+#define INT_FAST32_MAX INT32_MAX
+#define INT_FAST64_MAX INT64_MAX
+#define UINT_FAST8_MAX UINT8_MAX
+#define UINT_FAST16_MAX UINT32_MAX
+#define UINT_FAST32_MAX UINT32_MAX
+#define UINT_FAST64_MAX UINT64_MAX
+
+#ifdef _WIN64
+#define INTPTR_MIN INT64_MIN
+#define INTPTR_MAX INT64_MAX
+#define UINTPTR_MAX UINT64_MAX
+#else /* _WIN64 */
+#define INTPTR_MIN INT32_MIN
+#define INTPTR_MAX INT32_MAX
+#define UINTPTR_MAX UINT32_MAX
+#endif /* _WIN64 */
+
 #else // this system has stdint.h
+
+#if defined(_MSC_VER) && (_MSC_VER == MSC_VER_VS2010)
+#define _INTPTR 2
+#endif
+
 #include <stdint.h>
 #endif // (defined(_MSC_VER) && (_MSC_VER < MSC_VER_VS2010)) ||
        // defined(_KERNEL_MODE)
