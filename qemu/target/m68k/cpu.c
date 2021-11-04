@@ -259,19 +259,21 @@ static struct M68kCPUInfo m68k_cpus_type_infos[] = {
     { "any", any_cpu_initfn },
 };
 
-M68kCPU *cpu_m68k_init(struct uc_struct *uc, const char *cpu_model)
+M68kCPU *cpu_m68k_init(struct uc_struct *uc)
 {
     M68kCPU *cpu;
     CPUState *cs;
     CPUClass *cc;
-    int i;
-
-    if (cpu_model == NULL) {
-        cpu_model = "cfv4e";
-    }
 
     cpu = calloc(1, sizeof(*cpu));
     if (cpu == NULL) {
+        return NULL;
+    }
+
+    if (uc->cpu_model == INT_MAX) {
+        uc->cpu_model = 7; // cfv4e
+    } else if (uc->cpu_model >= ARRAY_SIZE(m68k_cpus_type_infos)) {
+        free(cpu);
         return NULL;
     }
 
@@ -289,12 +291,7 @@ M68kCPU *cpu_m68k_init(struct uc_struct *uc, const char *cpu_model)
 
     m68k_cpu_initfn(uc, cs);
 
-    for (i = 0; i < ARRAY_SIZE(m68k_cpus_type_infos); i++) {
-        if (strcasecmp(cpu_model, m68k_cpus_type_infos[i].name) == 0) {
-            m68k_cpus_type_infos[i].initfn(cs);
-            break;
-        }
-    }
+    m68k_cpus_type_infos[uc->cpu_model].initfn(cs);
 
     m68k_cpu_realizefn(cs);
 

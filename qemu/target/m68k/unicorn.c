@@ -8,7 +8,7 @@
 #include "uc_priv.h"
 #include "unicorn.h"
 
-M68kCPU *cpu_m68k_init(struct uc_struct *uc, const char *cpu_model);
+M68kCPU *cpu_m68k_init(struct uc_struct *uc);
 
 static void m68k_set_pc(struct uc_struct *uc, uint64_t address)
 {
@@ -151,7 +151,7 @@ static int m68k_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     M68kCPU *cpu;
 
-    cpu = cpu_m68k_init(uc, cpu_model);
+    cpu = cpu_m68k_init(uc);
     if (cpu == NULL) {
         return -1;
     }
