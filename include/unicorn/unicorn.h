@@ -496,18 +496,18 @@ typedef enum uc_control_type {
     // Current timeout.
     // Read: @args = (uint64_t*)
     UC_CTL_UC_TIMEOUT,
-    // Enable multiple exists.
-    // Without this control, reading/setting exists won't work.
+    // Enable multiple exits.
+    // Without this control, reading/setting exits won't work.
     // This is for API backward compatibility.
     // Write: @args = (int)
     UC_CTL_UC_USE_EXITS,
-    // The number of current exists.
+    // The number of current exits.
     // Read: @args = (size_t*)
     UC_CTL_UC_EXITS_CNT,
-    // Current exists.
-    // Write: @args = (uint64_t* exists, size_t len)
+    // Current exits.
+    // Write: @args = (uint64_t* exits, size_t len)
     //        @len = UC_CTL_UC_EXITS_CNT
-    // Read: @args = (uint64_t* exists, size_t len)
+    // Read: @args = (uint64_t* exits, size_t len)
     //       @len = UC_CTL_UC_EXITS_CNT
     UC_CTL_UC_EXITS,
 
@@ -538,11 +538,11 @@ typedef enum uc_control_type {
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_TIMEOUT, 1), (ptr))
 #define uc_ctl_exits_enabled(uc, enabled)                                      \
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_USE_EXITS, 1), (enabled))
-#define uc_ctl_get_exists_cnt(uc, ptr)                                         \
+#define uc_ctl_get_exits_cnt(uc, ptr)                                          \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_EXITS_CNT, 1), (ptr))
-#define uc_ctl_get_exists(uc, buffer, len)                                     \
+#define uc_ctl_get_exits(uc, buffer, len)                                      \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_EXITS, 2), (buffer), (len))
-#define uc_ctl_set_exists(uc, buffer, len)                                     \
+#define uc_ctl_set_exits(uc, buffer, len)                                      \
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_EXITS, 2), (buffer), (len))
 #define uc_ctl_get_cpu_model(uc, model)                                        \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_CPU_MODEL, 1), (model))

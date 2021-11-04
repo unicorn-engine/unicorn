@@ -89,7 +89,7 @@ static void test_uc_ctl_exits()
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
     OK(uc_ctl_exits_enabled(uc, true));
-    OK(uc_ctl_set_exists(uc, exits, 2));
+    OK(uc_ctl_set_exits(uc, exits, 2));
     r_eax = 0;
     r_ebx = 0;
     OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
