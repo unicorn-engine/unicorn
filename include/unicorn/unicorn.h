@@ -107,12 +107,14 @@ typedef enum uc_mode {
     UC_MODE_BIG_ENDIAN = 1 << 30, // big-endian mode
 
     // arm / arm64
-    UC_MODE_ARM = 0,         // ARM mode
-    UC_MODE_THUMB = 1 << 4,  // THUMB mode (including Thumb-2)
-    UC_MODE_MCLASS = 1 << 5, // ARM's Cortex-M series
+    UC_MODE_ARM = 0,        // ARM mode
+    UC_MODE_THUMB = 1 << 4, // THUMB mode (including Thumb-2)
+    // Depreciated, use UC_ARM_CPU_* with uc_ctl instead.
+    UC_MODE_MCLASS = 1 << 5, // ARM's Cortex-M series.
     UC_MODE_V8 = 1 << 6, // ARMv8 A32 encodings for ARM (currently unsupported)
 
     // arm (32bit) cpu types
+    // Depreciated, use UC_ARM_CPU_* with uc_ctl instead.
     UC_MODE_ARM926 = 1 << 7,  // ARM926 CPU type
     UC_MODE_ARM946 = 1 << 8,  // ARM946 CPU type
     UC_MODE_ARM1176 = 1 << 9, // ARM1176 CPU type
