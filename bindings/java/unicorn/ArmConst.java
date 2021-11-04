@@ -18,9 +18,9 @@ public interface ArmConst {
    public static final int UC_CPU_ARM_CORTEX_M33 = 11;
    public static final int UC_CPU_ARM_CORTEX_R5 = 12;
    public static final int UC_CPU_ARM_CORTEX_R5F = 13;
-   public static final int UC_CPU_ARM_CORTEX_A8 = 14;
-   public static final int UC_CPU_ARM_CORTEX_A9 = 15;
-   public static final int UC_CPU_ARM_CORTEX_A7 = 16;
+   public static final int UC_CPU_ARM_CORTEX_A7 = 14;
+   public static final int UC_CPU_ARM_CORTEX_A8 = 15;
+   public static final int UC_CPU_ARM_CORTEX_A9 = 16;
    public static final int UC_CPU_ARM_CORTEX_A15 = 17;
    public static final int UC_CPU_ARM_TI925T = 18;
    public static final int UC_CPU_ARM_SA1100 = 19;
