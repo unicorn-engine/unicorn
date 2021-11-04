@@ -334,7 +334,6 @@ RISCVCPU *cpu_riscv_init(struct uc_struct *uc)
     RISCVCPU *cpu;
     CPUState *cs;
     CPUClass *cc;
-    int i;
 
     cpu = calloc(1, sizeof(*cpu));
     if (cpu == NULL) {
