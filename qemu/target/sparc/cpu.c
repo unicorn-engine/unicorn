@@ -527,7 +527,7 @@ SPARCCPU *cpu_sparc_init(struct uc_struct *uc)
 #ifdef TARGET_SPARC64
         uc->cpu_model = 11; // Sun UltraSparc IV
 #else
-        uc->cpu_model = 12;
+        uc->cpu_model = 12; // Leon 3
 #endif
     } else if (uc->cpu_model >= ARRAY_SIZE(sparc_defs)) {
         free(cpu);
