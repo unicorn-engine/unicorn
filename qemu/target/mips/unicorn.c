@@ -15,7 +15,7 @@ typedef uint64_t mipsreg_t;
 typedef uint32_t mipsreg_t;
 #endif
 
-MIPSCPU *cpu_mips_init(struct uc_struct *uc, const char *cpu_model);
+MIPSCPU *cpu_mips_init(struct uc_struct *uc);
 
 static uint64_t mips_mem_redirect(uint64_t address)
 {
@@ -226,7 +226,7 @@ static int mips_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     MIPSCPU *cpu;
 
-    cpu = cpu_mips_init(uc, NULL);
+    cpu = cpu_mips_init(uc);
     if (cpu == NULL) {
         return -1;
     }
