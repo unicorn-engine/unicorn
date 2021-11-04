@@ -1969,8 +1969,6 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     case UC_CTL_UC_PAGE_SIZE: {
         if (rw == UC_CTL_IO_READ) {
 
-            UC_INIT(uc);
-
             uint32_t *page_size = va_arg(args, uint32_t *);
             *page_size = uc->target_page_size;
         } else {
