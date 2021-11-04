@@ -2103,7 +2103,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
 
         UC_INIT(uc);
 
-        if (rw == UC_CTL_IO_READ) {
+        if (rw == UC_CTL_IO_WRITE) {
             uint64_t addr = va_arg(args, uint64_t);
             uc->uc_invalidate_tb(uc, addr, 1);
         } else {

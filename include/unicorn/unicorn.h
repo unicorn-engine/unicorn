@@ -466,9 +466,9 @@ typedef enum uc_query_type {
 
 // No input and output arguments.
 #define UC_CTL_IO_NONE (0)
-// Only input arguments for users for a write control.
+// Only input arguments for a write operation.
 #define UC_CTL_IO_WRITE (1)
-// Only output arguments for users for a read control.
+// Only output arguments for a read operation.
 #define UC_CTL_IO_READ (2)
 // The arguments include both input and output arugments.
 #define UC_CTL_IO_READ_WRITE (UC_CTL_IO_WRITE | UC_CTL_IO_READ)
@@ -521,7 +521,7 @@ typedef enum uc_control_type {
     // Read: @args = (uint64_t, uc_tb*)
     UC_CTL_TB_REQUEST_CACHE,
     // Invalidate a tb cache at a specific address
-    // Read: @args = (uint64_t)
+    // Write: @args = (uint64_t)
     UC_CTL_TB_REMOVE_CACHE
 
 } uc_control_type;
@@ -549,7 +549,7 @@ typedef enum uc_control_type {
 #define uc_ctl_set_cpu_model(uc, model)                                        \
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_CPU_MODEL, 1), (model))
 #define uc_ctl_remove_cache(uc, address)                                       \
-    uc_ctl(uc, UC_CTL_READ(UC_CTL_TB_REMOVE_CACHE, 1), (address))
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_REMOVE_CACHE, 1), (address))
 #define uc_ctl_request_cache(uc, address, tb)                                  \
     uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_TB_REQUEST_CACHE, 2), (address), (tb))
 
