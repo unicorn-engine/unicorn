@@ -466,9 +466,9 @@ typedef enum uc_query_type {
 
 // No input and output arguments.
 #define UC_CTL_IO_NONE (0)
-// The arguments are used for input.
+// Only input arguments for users for a write control.
 #define UC_CTL_IO_WRITE (1)
-// The arguments are used for ouput.
+// Only output arguments for users for a read control.
 #define UC_CTL_IO_READ (2)
 // The arguments include both input and output arugments.
 #define UC_CTL_IO_READ_WRITE (UC_CTL_IO_WRITE | UC_CTL_IO_READ)
