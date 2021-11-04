@@ -264,9 +264,17 @@ static void test_thumb_mrs(void)
     // 0xf3ef8014 - mrs r0, control
 
     // Initialize emulator in ARM mode
-    err = uc_open(UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, &uc);
+    err = uc_open(UC_ARCH_ARM, UC_MODE_THUMB, &uc);
     if (err) {
         printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
+        return;
+    }
+
+    // Setup the cpu model.
+    err = uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_M33);
+    if (err) {
+        printf("Failed on uc_ctl() with error returned: %u (%s)\n", err,
                uc_strerror(err));
         return;
     }
