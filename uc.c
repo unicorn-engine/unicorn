@@ -348,6 +348,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         }
 
         uc->init_done = false;
+        uc->cpu_model = INT_MAX; // INT_MAX means the default cpu model.
 
         *result = uc;
 
@@ -1975,6 +1976,11 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
             uint32_t page_size = va_arg(args, uint32_t);
             int bits = 0;
 
+            if (uc->init_done) {
+                err = UC_ERR_ARG;
+                break;
+            }
+
             if (uc->arch != UC_ARCH_ARM) {
                 err = UC_ERR_ARG;
                 break;
@@ -1996,6 +2002,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         }
         break;
     }
+
     case UC_CTL_UC_USE_EXITS: {
         if (rw == UC_CTL_IO_WRITE) {
             int use_exits = va_arg(args, int);
@@ -2054,10 +2061,24 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         break;
     }
 
-    case UC_CTL_CPU_MODEL:
-        // Not implemented.
-        err = UC_ERR_ARG;
+    case UC_CTL_CPU_MODEL: {
+        if (rw == UC_CTL_IO_READ) {
+            int *model = va_arg(args, int *);
+            *model = uc->cpu_model;
+        } else {
+            int model = va_arg(args, int);
+
+            if (uc->init_done) {
+                err = UC_ERR_ARG;
+                break;
+            }
+
+            uc->cpu_model = model;
+
+            err = UC_ERR_OK;
+        }
         break;
+    }
 
     case UC_CTL_TB_REQUEST_CACHE: {
 

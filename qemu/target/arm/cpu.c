@@ -2017,32 +2017,31 @@ static void arm_cpu_instance_init(CPUState *obj)
 
 ARMCPU *cpu_arm_init(struct uc_struct *uc)
 {
-#if !defined(TARGET_AARCH64)
-    int i;
-    char *cpu_model;
-#endif
     ARMCPU *cpu;
     CPUState *cs;
     CPUClass *cc;
-
-#if !defined(TARGET_AARCH64)
-    if (uc->mode & UC_MODE_MCLASS) {
-        cpu_model = "cortex-m33";
-    } else if (uc->mode & UC_MODE_ARM926) {
-        cpu_model = "arm926";
-    } else if (uc->mode & UC_MODE_ARM946) {
-        cpu_model = "arm946";
-    } else if (uc->mode & UC_MODE_ARM1176) {
-        cpu_model = "arm1176";
-    } else {
-        cpu_model = "cortex-a15";
-    }
-#endif
 
     cpu = calloc(1, sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
+
+#if !defined(TARGET_AARCH64)
+    if (uc->mode & UC_MODE_MCLASS) {
+        uc->cpu_model = 11;
+    } else if (uc->mode & UC_MODE_ARM926) {
+        uc->cpu_model = 0;
+    } else if (uc->mode & UC_MODE_ARM946) {
+        uc->cpu_model = 1;
+    } else if (uc->mode & UC_MODE_ARM1176) {
+        uc->cpu_model = 5;
+    } else if (uc->cpu_model == INT_MAX) {
+        uc->cpu_model = 17; // cortex-a15
+    } else if (uc->cpu_model >= ARR_SIZE(arm_cpus)) {
+        free(cpu);
+        return NULL;
+    }
+#endif
 
     cs = (CPUState *)cpu;
     cc = (CPUClass *)&cpu->cc;
@@ -2064,20 +2063,11 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
 
 #if !defined(TARGET_AARCH64)
     /* init ARM types */
-    for (i = 0; i < ARRAY_SIZE(arm_cpus); i++) {
-        if (strcmp(cpu_model, arm_cpus[i].name) == 0) {
-            if (arm_cpus[i].class_init) {
-                arm_cpus[i].class_init(uc, cc, uc);
-            }
-            if (arm_cpus[i].initfn) {
-                arm_cpus[i].initfn(uc, cs);
-            }
-            break;
-        }
+    if (arm_cpus[uc->cpu_model].class_init) {
+        arm_cpus[uc->cpu_model].class_init(uc, cc, uc);
     }
-    if (i == ARRAY_SIZE(arm_cpus)) {
-        free(cpu);
-        return NULL;
+    if (arm_cpus[uc->cpu_model].initfn) {
+        arm_cpus[uc->cpu_model].initfn(uc, cs);
     }
 #endif
 

@@ -513,7 +513,7 @@ typedef enum uc_control_type {
     // Note this option can only be set before any Unicorn
     // API is called except for uc_open.
     // Write: @args = (int)
-    // Read:  @args = (int)
+    // Read:  @args = (int*)
     UC_CTL_CPU_MODEL,
     // Request a tb cache at a specific address
     // Read: @args = (uint64_t, uc_tb*)

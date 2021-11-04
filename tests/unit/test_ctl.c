@@ -160,7 +160,6 @@ static void test_uc_ctl_change_page_size()
 {
     uc_engine *uc;
     uc_engine *uc2;
-    int r_pc;
 
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
     OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc2));
@@ -174,6 +173,40 @@ static void test_uc_ctl_change_page_size()
     OK(uc_close(uc2));
 }
 
+// Copy from test_arm.c but with new API.
+static void test_uc_ctl_arm_cpu() {
+    uc_engine *uc;
+    int r_control, r_msp, r_psp;
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_THUMB, &uc));
+
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_M7));
+
+    r_control = 0; // Make sure we are using MSP.
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
+
+    r_msp = 0x1000;
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_msp));
+
+    r_control = 0b10; // Make the switch.
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_psp));
+    TEST_CHECK(r_psp != r_msp);
+
+    r_psp = 0x2000;
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_psp));
+
+    r_control = 0; // Switch again
+    OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_msp));
+    TEST_CHECK(r_psp != r_msp);
+    TEST_CHECK(r_msp == 0x1000);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_page_size", test_uc_ctl_page_size},
              {"test_uc_ctl_arch", test_uc_ctl_arch},
@@ -181,4 +214,5 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_exits", test_uc_ctl_exits},
              {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
              {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
+              {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
              {NULL, NULL}};
