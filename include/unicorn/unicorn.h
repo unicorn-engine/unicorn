@@ -635,13 +635,13 @@ uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result);
  Also see uc_ctl_* macro helpers for easy use.
 
  @uc: handle returned by uc_open()
- @option: control type.
+ @control: the control type.
  @args: See uc_control_type for details about variadic arguments.
 
  @return: error code of uc_err enum type (UC_ERR_*, see above)
 */
 UNICORN_EXPORT
-uc_err uc_ctl(uc_engine *uc, uc_control_type option, ...);
+uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...);
 
 /*
  Report the last error number when some API function fails.
