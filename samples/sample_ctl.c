@@ -124,7 +124,7 @@ void test_uc_ctl_exits()
         return;
     }
 
-    err = uc_ctl_set_exists(uc, exits, 2);
+    err = uc_ctl_set_exits(uc, exits, 2);
     if (err) {
         printf("Failed on uc_ctl() with error returned: %u\n", err);
         return;
