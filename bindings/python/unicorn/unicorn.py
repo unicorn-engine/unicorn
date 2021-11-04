@@ -121,6 +121,13 @@ class _uc_mem_region(ctypes.Structure):
         ("perms", ctypes.c_uint32),
     ]
 
+class uc_tb(ctypes.Structure):
+    """"TranslationBlock"""
+    _fields_ = [
+        ("pc", ctypes.c_uint64),
+        ("icount", ctypes.c_uint16),
+        ("size", ctypes.c_uint16)
+    ]
 
 _setup_prototype(_uc, "uc_version", ctypes.c_uint, ctypes.POINTER(ctypes.c_int), ctypes.POINTER(ctypes.c_int))
 _setup_prototype(_uc, "uc_arch_supported", ctypes.c_bool, ctypes.c_int)
@@ -152,6 +159,7 @@ _setup_prototype(_uc, "uc_context_free", ucerr, uc_context)
 _setup_prototype(_uc, "uc_mem_regions", ucerr, uc_engine, ctypes.POINTER(ctypes.POINTER(_uc_mem_region)), ctypes.POINTER(ctypes.c_uint32))
 # https://bugs.python.org/issue42880
 _setup_prototype(_uc, "uc_hook_add", ucerr, uc_engine, ctypes.POINTER(uc_hook_h), ctypes.c_int, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint64)
+_setup_prototype(_uc, "uc_ctl", ucerr, uc_engine, ctypes.c_int)
 
 UC_HOOK_CODE_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint64, ctypes.c_size_t, ctypes.c_void_p)
 UC_HOOK_INSN_INVALID_CB = ctypes.CFUNCTYPE(ctypes.c_bool, uc_engine, ctypes.c_void_p)
@@ -179,6 +187,12 @@ UC_MMIO_READ_CB = ctypes.CFUNCTYPE(
 )
 UC_MMIO_WRITE_CB = ctypes.CFUNCTYPE(
     None, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.c_uint64, ctypes.c_void_p
+)
+UC_HOOK_EDGE_GEN_CB = ctypes.CFUNCTYPE(
+    None, uc_engine, ctypes.POINTER(uc_tb), ctypes.POINTER(uc_tb), ctypes.c_void_p
+)
+UC_HOOK_TCG_OPCODE_CB = ctypes.CFUNCTYPE(
+    None, uc_engine, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_uint64, ctypes.c_void_p
 )
 
 # access to error code via @errno of UcError
@@ -549,6 +563,16 @@ class Uc(object):
         return result.value
 
     @_catch_hook_exception
+    def _hook_tcg_op_cb(self, handle, address, arg1, arg2, user_data):
+        (cb, data) = self._callbacks[user_data]
+        cb(self, address, arg1, arg2, user_data)
+
+    @_catch_hook_exception
+    def _hook_edge_gen_cb(self, handle, cur, prev, user_data):
+        (cb, data) = self._callbacks[user_data]
+        cb(self, cur.contents, prev.contents, user_data)
+
+    @_catch_hook_exception
     def _hookcode_cb(self, handle, address, size, user_data):
         # call user's callback with self object
         (cb, data) = self._callbacks[user_data]
@@ -596,8 +620,86 @@ class Uc(object):
         (cb, data) = self._callbacks[user_data]
         cb(self, data)
 
+    def ctl(self, control, *args):
+        status = _uc.uc_ctl(self._uch, control, *args)
+        if status != uc.UC_ERR_OK:
+            raise UcError(status)
+        return status
+
+    def __ctl(self, ctl, nr, rw):
+        return ctl | (nr << 26) | (rw << 30)
+
+    def __ctl_r(self, ctl, nr):
+        return self.__ctl(ctl, nr, uc.UC_CTL_IO_READ)
+    
+    def __ctl_w(self, ctl, nr):
+        return self.__ctl(ctl, nr, uc.UC_CTL_IO_WRITE)
+    
+    def __ctl_rw(self, ctl, nr):
+        return self.__ctl(ctl, nr, uc.UC_CTL_IO_READ_WRITE) 
+
+    def __ctl_r_1_arg(self, ctl, ctp):
+        arg = ctp()
+        self.ctl(self.__ctl_r(ctl, 1), ctypes.byref(arg))
+        return arg.value
+
+    def __ctl_w_1_arg(self, ctl, val, ctp):
+        arg = ctp(val)
+        self.ctl(self.__ctl_w(ctl, 1), arg)
+    
+    def __ctl_rw_1_1_arg(self, ctl, val, ctp1, ctp2):
+        arg1 = ctp1(val)
+        arg2 = ctp2()
+        self.ctl(self.__ctl_rw(ctl, 2), arg1, ctypes.byref(arg2))
+        return arg2
+
+    def ctl_get_mode(self):
+        return self.__ctl_r_1_arg(uc.UC_CTL_UC_MODE, ctypes.c_int)
+
+    def ctl_get_page_size(self):
+        return self.__ctl_r_1_arg(uc.UC_CTL_UC_PAGE_SIZE, ctypes.c_uint32)
+    
+    def ctl_set_page_size(self, val):
+        self.__ctl_w_1_arg(uc.UC_CTL_UC_PAGE_SIZE, val, ctypes.c_uint32)
+
+    def ctl_get_arch(self):
+        return self.__ctl_r_1_arg(uc.UC_CTL_UC_ARCH, ctypes.c_int)
+
+    def ctl_get_timeout(self):
+        return self.__ctl_r_1_arg(uc.UC_CTL_UC_TIMEOUT, ctypes.c_uint64)
+    
+    def ctl_exits_enabled(self, val):
+        self.__ctl_w_1_arg(uc.UC_CTL_UC_USE_EXITS, val, ctypes.c_int)
+    
+    def ctl_get_exits_cnt(self):
+        return self.__ctl_r_1_arg(uc.UC_CTL_UC_EXITS_CNT, ctypes.c_size_t)
+
+    def ctl_get_exits(self):
+        l = self.ctl_get_exits_cnt()
+        arr = (ctypes.c_uint64 * l)()
+        self.ctl(self.__ctl_r(uc.UC_CTL_UC_EXITS, 2), ctypes.cast(arr, ctypes.c_void_p), ctypes.c_size_t(l))
+        return [i for i in arr]
+
+    def ctl_set_exits(self, exits):
+        arr = (ctypes.c_uint64 * len(exits))()
+        for idx, exit in enumerate(exits):
+            arr[idx] = exit
+        self.ctl(self.__ctl_w(uc.UC_CTL_UC_EXITS, 2), ctypes.cast(arr, ctypes.c_void_p), ctypes.c_size_t(len(exits)))
+
+    def ctl_get_cpu_model(self):
+        return self.__ctl_r_1_arg(uc.UC_CTL_CPU_MODEL, ctypes.c_int)
+    
+    def ctl_set_cpu_model(self, val):
+        self.__ctl_w_1_arg(uc.UC_CTL_CPU_MODEL, val, ctypes.c_int)
+
+    def ctl_remove_cache(self, addr):
+        self.__ctl_w_1_arg(uc.UC_CTL_TB_REMOVE_CACHE, addr, ctypes.c_uint64)
+
+    def ctl_request_cache(self, addr):
+        return self.__ctl_rw_1_1_arg(uc.UC_CTL_TB_REQUEST_CACHE, addr, ctypes.c_uint64, uc_tb)
+
     # add a hook
-    def hook_add(self, htype, callback, user_data=None, begin=1, end=0, arg1=0):
+    def hook_add(self, htype, callback, user_data=None, begin=1, end=0, arg1=0, arg2=0):
         _h2 = uc_hook_h()
 
         # save callback & user_data
@@ -618,6 +720,15 @@ class Uc(object):
                 ctypes.cast(self._callback_count, ctypes.c_void_p),
                 ctypes.c_uint64(begin), ctypes.c_uint64(end), insn
             )
+        elif htype == uc.UC_HOOK_TCG_OPCODE:
+            opcode = ctypes.c_int(arg1)
+            flags = ctypes.c_int(arg2)
+
+            status = _uc.uc_hook_add(
+                self._uch, ctypes.byref(_h2), htype, ctypes.cast(UC_HOOK_TCG_OPCODE_CB(self._hook_tcg_op_cb), UC_HOOK_TCG_OPCODE_CB),
+                ctypes.cast(self._callback_count, ctypes.c_void_p),
+                ctypes.c_uint64(begin), ctypes.c_uint64(end), opcode, flags
+            )
         elif htype == uc.UC_HOOK_INTR:
             cb = ctypes.cast(UC_HOOK_INTR_CB(self._hook_intr_cb), UC_HOOK_INTR_CB)
             status = _uc.uc_hook_add(
@@ -627,6 +738,13 @@ class Uc(object):
             )
         elif htype == uc.UC_HOOK_INSN_INVALID:
             cb = ctypes.cast(UC_HOOK_INSN_INVALID_CB(self._hook_insn_invalid_cb), UC_HOOK_INSN_INVALID_CB)
+            status = _uc.uc_hook_add(
+                self._uch, ctypes.byref(_h2), htype, cb,
+                ctypes.cast(self._callback_count, ctypes.c_void_p),
+                ctypes.c_uint64(begin), ctypes.c_uint64(end)
+            )
+        elif htype == uc.UC_HOOK_EDGE_GENERATED:
+            cb = ctypes.cast(UC_HOOK_EDGE_GEN_CB(self._hook_edge_gen_cb), UC_HOOK_EDGE_GEN_CB)
             status = _uc.uc_hook_add(
                 self._uch, ctypes.byref(_h2), htype, cb,
                 ctypes.cast(self._callback_count, ctypes.c_void_p),
