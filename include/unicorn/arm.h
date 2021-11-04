@@ -15,6 +15,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
+//> ARM CPU
 typedef enum uc_cpu_arm {
     UC_CPU_ARM_926 = 0,
     UC_CPU_ARM_946,

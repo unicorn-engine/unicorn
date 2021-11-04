@@ -7,6 +7,8 @@ open System
 [<AutoOpen>]
 module Arm64 =
 
+    // ARM64 CPU
+
     let UC_CPU_AARCH64_A57 = 0
     let UC_CPU_AARCH64_A53 = 1
     let UC_CPU_AARCH64_A72 = 2

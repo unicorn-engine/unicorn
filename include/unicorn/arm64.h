@@ -15,6 +15,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
+//> ARM64 CPU
 typedef enum uc_cpu_aarch64 {
     UC_CPU_AARCH64_A57 = 0,
     UC_CPU_AARCH64_A53,

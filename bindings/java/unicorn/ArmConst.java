@@ -4,6 +4,8 @@ package unicorn;
 
 public interface ArmConst {
 
+// ARM CPU
+
    public static final int UC_CPU_ARM_926 = 0;
    public static final int UC_CPU_ARM_946 = 1;
    public static final int UC_CPU_ARM_1026 = 2;

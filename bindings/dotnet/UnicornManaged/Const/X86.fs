@@ -7,6 +7,8 @@ open System
 [<AutoOpen>]
 module X86 =
 
+    // X86 CPU
+
     let UC_CPU_X86_QEMU64 = 0
     let UC_CPU_X86_PHENOM = 1
     let UC_CPU_X86_CORE2DUO = 2

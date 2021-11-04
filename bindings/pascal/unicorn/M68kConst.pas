@@ -5,6 +5,8 @@ unit M68kConst;
 interface
 
 const
+// M68K CPU
+
   UC_CPU_M5206_CPU = 0;
   UC_CPU_M68000_CPU = 1;
   UC_CPU_M68020_CPU = 2;

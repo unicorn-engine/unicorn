@@ -4,6 +4,8 @@ package unicorn;
 
 public interface M68kConst {
 
+// M68K CPU
+
    public static final int UC_CPU_M5206_CPU = 0;
    public static final int UC_CPU_M68000_CPU = 1;
    public static final int UC_CPU_M68020_CPU = 2;

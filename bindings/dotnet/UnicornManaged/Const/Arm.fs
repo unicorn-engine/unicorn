@@ -7,6 +7,8 @@ open System
 [<AutoOpen>]
 module Arm =
 
+    // ARM CPU
+
     let UC_CPU_ARM_926 = 0
     let UC_CPU_ARM_946 = 1
     let UC_CPU_ARM_1026 = 2

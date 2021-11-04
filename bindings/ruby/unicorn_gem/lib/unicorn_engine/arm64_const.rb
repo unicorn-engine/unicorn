@@ -2,6 +2,8 @@
 
 module UnicornEngine
 
+# ARM64 CPU
+
 	UC_CPU_AARCH64_A57 = 0
 	UC_CPU_AARCH64_A53 = 1
 	UC_CPU_AARCH64_A72 = 2

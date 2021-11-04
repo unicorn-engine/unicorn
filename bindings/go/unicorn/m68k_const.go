@@ -2,6 +2,8 @@ package unicorn
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [m68k_const.go]
 const (
 
+// M68K CPU
+
 	CPU_M5206_CPU = 0
 	CPU_M68000_CPU = 1
 	CPU_M68020_CPU = 2

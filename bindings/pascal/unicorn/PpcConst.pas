@@ -5,6 +5,8 @@ unit PpcConst;
 interface
 
 const
+// PPC CPU
+
   UC_CPU_PPC_401 = 0;
   UC_CPU_PPC_401A1 = 1;
   UC_CPU_PPC_401B2 = 2;
@@ -295,6 +297,8 @@ const
   UC_CPU_PPC_7457A_V1_1 = 287;
   UC_CPU_PPC_7447A_V1_2 = 288;
   UC_CPU_PPC_7457A_V1_2 = 289;
+
+// PPC64 CPU
 
   UC_CPU_PPC_E5500 = 0;
   UC_CPU_PPC_E6500 = 1;

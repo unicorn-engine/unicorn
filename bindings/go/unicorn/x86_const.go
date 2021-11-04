@@ -2,6 +2,8 @@ package unicorn
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [x86_const.go]
 const (
 
+// X86 CPU
+
 	CPU_X86_QEMU64 = 0
 	CPU_X86_PHENOM = 1
 	CPU_X86_CORE2DUO = 2

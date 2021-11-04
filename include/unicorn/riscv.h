@@ -15,6 +15,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
+//> RISCV32 CPU
 typedef enum uc_cpu_riscv32 {
     UC_CPU_RISCV32_ANY = 0,
     UC_CPU_RISCV32_BASE32,
@@ -22,6 +23,7 @@ typedef enum uc_cpu_riscv32 {
     UC_CPU_RISCV32_SIFIVE_U34,
 } uc_cpu_riscv32;
 
+//> RISCV64 CPU
 typedef enum uc_cpu_riscv64 {
     UC_CPU_RISCV64_ANY = 0,
     UC_CPU_RISCV64_BASE64,

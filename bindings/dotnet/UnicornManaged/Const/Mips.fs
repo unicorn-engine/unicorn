@@ -7,6 +7,8 @@ open System
 [<AutoOpen>]
 module Mips =
 
+    // MIPS32 CPUS
+
     let UC_CPU_MIPS32_4KC = 0
     let UC_CPU_MIPS32_4KM = 1
     let UC_CPU_MIPS32_4KECR1 = 2
@@ -23,6 +25,8 @@ module Mips =
     let UC_CPU_MIPS32_P5600 = 13
     let UC_CPU_MIPS32_MIPS32R6_GENERIC = 14
     let UC_CPU_MIPS32_I7200 = 15
+
+    // MIPS64 CPUS
 
     let UC_CPU_MIPS64_R4000 = 0
     let UC_CPU_MIPS64_VR5432 = 1

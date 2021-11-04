@@ -7,6 +7,8 @@ open System
 [<AutoOpen>]
 module M68k =
 
+    // M68K CPU
+
     let UC_CPU_M5206_CPU = 0
     let UC_CPU_M68000_CPU = 1
     let UC_CPU_M68020_CPU = 2

@@ -4,6 +4,8 @@ package unicorn;
 
 public interface PpcConst {
 
+// PPC CPU
+
    public static final int UC_CPU_PPC_401 = 0;
    public static final int UC_CPU_PPC_401A1 = 1;
    public static final int UC_CPU_PPC_401B2 = 2;
@@ -294,6 +296,8 @@ public interface PpcConst {
    public static final int UC_CPU_PPC_7457A_V1_1 = 287;
    public static final int UC_CPU_PPC_7447A_V1_2 = 288;
    public static final int UC_CPU_PPC_7457A_V1_2 = 289;
+
+// PPC64 CPU
 
    public static final int UC_CPU_PPC_E5500 = 0;
    public static final int UC_CPU_PPC_E6500 = 1;

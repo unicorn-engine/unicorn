@@ -2,6 +2,8 @@ package unicorn
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [arm_const.go]
 const (
 
+// ARM CPU
+
 	CPU_ARM_926 = 0
 	CPU_ARM_946 = 1
 	CPU_ARM_1026 = 2

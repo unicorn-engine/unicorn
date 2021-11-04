@@ -4,6 +4,8 @@ package unicorn;
 
 public interface X86Const {
 
+// X86 CPU
+
    public static final int UC_CPU_X86_QEMU64 = 0;
    public static final int UC_CPU_X86_PHENOM = 1;
    public static final int UC_CPU_X86_CORE2DUO = 2;

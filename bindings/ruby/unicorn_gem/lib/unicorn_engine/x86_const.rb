@@ -2,6 +2,8 @@
 
 module UnicornEngine
 
+# X86 CPU
+
 	UC_CPU_X86_QEMU64 = 0
 	UC_CPU_X86_PHENOM = 1
 	UC_CPU_X86_CORE2DUO = 2

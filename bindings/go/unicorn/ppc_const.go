@@ -2,6 +2,8 @@ package unicorn
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [ppc_const.go]
 const (
 
+// PPC CPU
+
 	CPU_PPC_401 = 0
 	CPU_PPC_401A1 = 1
 	CPU_PPC_401B2 = 2
@@ -292,6 +294,8 @@ const (
 	CPU_PPC_7457A_V1_1 = 287
 	CPU_PPC_7447A_V1_2 = 288
 	CPU_PPC_7457A_V1_2 = 289
+
+// PPC64 CPU
 
 	CPU_PPC_E5500 = 0
 	CPU_PPC_E6500 = 1

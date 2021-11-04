@@ -15,6 +15,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
+//> M68K CPU
 typedef enum uc_cpu_m68k {
     UC_CPU_M5206_CPU = 0,
     UC_CPU_M68000_CPU,

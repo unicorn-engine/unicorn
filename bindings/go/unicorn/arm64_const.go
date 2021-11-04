@@ -2,6 +2,8 @@ package unicorn
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [arm64_const.go]
 const (
 
+// ARM64 CPU
+
 	CPU_AARCH64_A57 = 0
 	CPU_AARCH64_A53 = 1
 	CPU_AARCH64_A72 = 2

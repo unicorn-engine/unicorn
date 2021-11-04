@@ -15,6 +15,7 @@ extern "C" {
 #pragma warning(disable : 4201)
 #endif
 
+//> PPC CPU
 typedef enum uc_cpu_ppc {
     UC_CPU_PPC_401 = 0,
     UC_CPU_PPC_401A1,
@@ -308,6 +309,7 @@ typedef enum uc_cpu_ppc {
     UC_CPU_PPC_7457A_V1_2,
 } uc_cpu_ppc;
 
+//> PPC64 CPU
 typedef enum uc_cpu_ppc64 {
     UC_CPU_PPC_E5500 = 0,
     UC_CPU_PPC_E6500,

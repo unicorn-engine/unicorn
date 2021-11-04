@@ -7,6 +7,8 @@ open System
 [<AutoOpen>]
 module Ppc =
 
+    // PPC CPU
+
     let UC_CPU_PPC_401 = 0
     let UC_CPU_PPC_401A1 = 1
     let UC_CPU_PPC_401B2 = 2
@@ -297,6 +299,8 @@ module Ppc =
     let UC_CPU_PPC_7457A_V1_1 = 287
     let UC_CPU_PPC_7447A_V1_2 = 288
     let UC_CPU_PPC_7457A_V1_2 = 289
+
+    // PPC64 CPU
 
     let UC_CPU_PPC_E5500 = 0
     let UC_CPU_PPC_E6500 = 1

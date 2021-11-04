@@ -1,5 +1,7 @@
 # For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [arm_const.py]
 
+# ARM CPU
+
 UC_CPU_ARM_926 = 0
 UC_CPU_ARM_946 = 1
 UC_CPU_ARM_1026 = 2
