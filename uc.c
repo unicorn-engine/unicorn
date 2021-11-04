@@ -2065,6 +2065,9 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
 
     case UC_CTL_CPU_MODEL: {
         if (rw == UC_CTL_IO_READ) {
+
+            UC_INIT(uc);
+
             int *model = va_arg(args, int *);
             *model = uc->cpu_model;
         } else {
