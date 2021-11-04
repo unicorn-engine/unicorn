@@ -35,7 +35,17 @@ bool set_preferred_target_page_bits(struct uc_struct *uc, int bits)
      * a particular size.
      */
 #ifdef TARGET_PAGE_BITS_VARY
-    assert(bits >= TARGET_PAGE_BITS_MIN);
+    //assert(bits >= TARGET_PAGE_BITS_MIN);
+    if (uc->init_target_page == NULL) {
+        uc->init_target_page = calloc(1, sizeof(TargetPageBits));
+    } else {
+        return false;
+    }
+
+    if (bits < TARGET_PAGE_BITS_MIN) {
+        return false;
+    }
+
     if (uc->init_target_page->bits == 0 || uc->init_target_page->bits > bits) {
         if (uc->init_target_page->decided) {
             return false;
@@ -50,10 +60,15 @@ void finalize_target_page_bits(struct uc_struct *uc)
 {
 #ifdef TARGET_PAGE_BITS_VARY
     if (uc->init_target_page == NULL) {
-        uc->init_target_page = g_new0(TargetPageBits, 1);
+        uc->init_target_page = calloc(1, sizeof(TargetPageBits));
     } else {
         return;
     }
+
+    if (uc->target_bits != 0) {
+        uc->init_target_page->bits = uc->target_bits;
+    }
+
     if (uc->init_target_page->bits == 0) {
         uc->init_target_page->bits = TARGET_PAGE_BITS_MIN;
     }

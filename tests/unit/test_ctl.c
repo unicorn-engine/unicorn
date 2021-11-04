@@ -156,10 +156,29 @@ static void test_uc_ctl_tb_cache()
     OK(uc_close(uc));
 }
 
+static void test_uc_ctl_change_page_size()
+{
+    uc_engine *uc;
+    uc_engine *uc2;
+    int r_pc;
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc2));
+
+    OK(uc_ctl_set_page_size(uc, 4096));
+
+    OK(uc_mem_map(uc2, 1 << 10, 1 << 10, UC_PROT_ALL));
+    uc_assert_err(UC_ERR_ARG, uc_mem_map(uc, 1 << 10, 1 << 10, UC_PROT_ALL));
+
+    OK(uc_close(uc));
+    OK(uc_close(uc2));
+}
+
 TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_page_size", test_uc_ctl_page_size},
              {"test_uc_ctl_arch", test_uc_ctl_arch},
              {"test_uc_ctl_time_out", test_uc_ctl_time_out},
              {"test_uc_ctl_exits", test_uc_ctl_exits},
              {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
+             {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
              {NULL, NULL}};

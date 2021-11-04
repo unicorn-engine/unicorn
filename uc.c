@@ -25,6 +25,7 @@
 #include "qemu/target/riscv/unicorn.h"
 
 #include "qemu/include/qemu/queue.h"
+#include "qemu-common.h"
 
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
@@ -136,6 +137,14 @@ bool uc_arch_supported(uc_arch arch)
     }
 }
 
+#define UC_INIT(uc)                                                            \
+    if (unlikely(!(uc)->init_done)) {                                          \
+        int __init_ret = uc_init(uc);                                          \
+        if (unlikely(__init_ret != UC_ERR_OK)) {                               \
+            return __init_ret;                                                 \
+        }                                                                      \
+    }
+
 static gint uc_exits_cmp(gconstpointer a, gconstpointer b, gpointer user_data)
 {
     uint64_t lhs = *((uint64_t *)a);
@@ -148,6 +157,31 @@ static gint uc_exits_cmp(gconstpointer a, gconstpointer b, gpointer user_data)
     } else {
         return 1;
     }
+}
+
+static uc_err uc_init(uc_engine *uc)
+{
+
+    if (uc->init_done) {
+        return UC_ERR_HANDLE;
+    }
+
+    uc->exits = g_tree_new_full(uc_exits_cmp, NULL, g_free, NULL);
+
+    if (machine_initialize(uc)) {
+        return UC_ERR_RESOURCE;
+    }
+
+    // init fpu softfloat
+    uc->softfloat_initialize();
+
+    if (uc->reg_reset) {
+        uc->reg_reset(uc);
+    }
+
+    uc->init_done = true;
+
+    return UC_ERR_OK;
 }
 
 UNICORN_EXPORT
@@ -174,8 +208,6 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         QTAILQ_INIT(&uc->memory_listeners);
 
         QTAILQ_INIT(&uc->address_spaces);
-
-        uc->exits = g_tree_new_full(uc_exits_cmp, NULL, g_free, NULL);
 
         switch (arch) {
         default:
@@ -315,18 +347,9 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
             return UC_ERR_ARCH;
         }
 
-        if (machine_initialize(uc)) {
-            return UC_ERR_RESOURCE;
-        }
-
-        // init fpu softfloat
-        uc->softfloat_initialize();
+        uc->init_done = false;
 
         *result = uc;
-
-        if (uc->reg_reset) {
-            uc->reg_reset(uc);
-        }
 
         return UC_ERR_OK;
     } else {
@@ -341,6 +364,11 @@ uc_err uc_close(uc_engine *uc)
     struct list_item *cur;
     struct hook *hook;
     MemoryRegion *mr;
+
+    if (!uc->init_done) {
+        free(uc);
+        return UC_ERR_OK;
+    }
 
     // Cleanup internally.
     if (uc->release) {
@@ -425,6 +453,9 @@ UNICORN_EXPORT
 uc_err uc_reg_read_batch(uc_engine *uc, int *ids, void **vals, int count)
 {
     int ret = UC_ERR_OK;
+
+    UC_INIT(uc);
+
     if (uc->reg_read) {
         ret = uc->reg_read(uc, (unsigned int *)ids, vals, count);
     } else {
@@ -438,6 +469,9 @@ UNICORN_EXPORT
 uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
 {
     int ret = UC_ERR_OK;
+
+    UC_INIT(uc);
+
     if (uc->reg_write) {
         ret = uc->reg_write(uc, (unsigned int *)ids, vals, count);
     } else {
@@ -450,12 +484,14 @@ uc_err uc_reg_write_batch(uc_engine *uc, int *ids, void *const *vals, int count)
 UNICORN_EXPORT
 uc_err uc_reg_read(uc_engine *uc, int regid, void *value)
 {
+    UC_INIT(uc);
     return uc_reg_read_batch(uc, &regid, &value, 1);
 }
 
 UNICORN_EXPORT
 uc_err uc_reg_write(uc_engine *uc, int regid, const void *value)
 {
+    UC_INIT(uc);
     return uc_reg_write_batch(uc, &regid, (void *const *)&value, 1);
 }
 
@@ -484,6 +520,8 @@ uc_err uc_mem_read(uc_engine *uc, uint64_t address, void *_bytes, size_t size)
 {
     size_t count = 0, len;
     uint8_t *bytes = _bytes;
+
+    UC_INIT(uc);
 
     // qemu cpu_physical_memory_rw() size is an int
     if (size > INT_MAX)
@@ -527,6 +565,8 @@ uc_err uc_mem_write(uc_engine *uc, uint64_t address, const void *_bytes,
 {
     size_t count = 0, len;
     const uint8_t *bytes = _bytes;
+
+    UC_INIT(uc);
 
     // qemu cpu_physical_memory_rw() size is an int
     if (size > INT_MAX)
@@ -657,6 +697,8 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     uc->timed_out = false;
     uc->first_tb = true;
 
+    UC_INIT(uc);
+
     switch (uc->arch) {
     default:
         break;
@@ -777,6 +819,8 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 UNICORN_EXPORT
 uc_err uc_emu_stop(uc_engine *uc)
 {
+    UC_INIT(uc);
+
     if (uc->emulation_done) {
         return UC_ERR_OK;
     }
@@ -918,6 +962,8 @@ uc_err uc_mem_map(uc_engine *uc, uint64_t address, size_t size, uint32_t perms)
 {
     uc_err res;
 
+    UC_INIT(uc);
+
     if (uc->mem_redirect) {
         address = uc->mem_redirect(address);
     }
@@ -936,6 +982,8 @@ uc_err uc_mem_map_ptr(uc_engine *uc, uint64_t address, size_t size,
                       uint32_t perms, void *ptr)
 {
     uc_err res;
+
+    UC_INIT(uc);
 
     if (ptr == NULL) {
         return UC_ERR_ARG;
@@ -960,6 +1008,8 @@ uc_err uc_mmio_map(uc_engine *uc, uint64_t address, size_t size,
                    uc_cb_mmio_write_t write_cb, void *user_data_write)
 {
     uc_err res;
+
+    UC_INIT(uc);
 
     if (uc->mem_redirect) {
         address = uc->mem_redirect(address);
@@ -1167,6 +1217,8 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     size_t count, len;
     bool remove_exec = false;
 
+    UC_INIT(uc);
+
     if (size == 0) {
         // trivial case, no change
         return UC_ERR_OK;
@@ -1236,6 +1288,8 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
     MemoryRegion *mr;
     uint64_t addr;
     size_t count, len;
+
+    UC_INIT(uc);
 
     if (size == 0) {
         // nothing to unmap
@@ -1322,6 +1376,8 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
 {
     int ret = UC_ERR_OK;
     int i = 0;
+
+    UC_INIT(uc);
 
     struct hook *hook = calloc(1, sizeof(struct hook));
     if (hook == NULL) {
@@ -1439,6 +1495,8 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
     int i;
     struct hook *hook = (struct hook *)hh;
 
+    UC_INIT(uc);
+
     // we can't dereference hook->type if hook is invalid
     // so for now we need to iterate over all possible types to remove the hook
     // which is less efficient
@@ -1554,6 +1612,8 @@ uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
     uint32_t i;
     uc_mem_region *r = NULL;
 
+    UC_INIT(uc);
+
     *count = uc->mapped_block_count;
 
     if (*count) {
@@ -1578,6 +1638,8 @@ uc_err uc_mem_regions(uc_engine *uc, uc_mem_region **regions, uint32_t *count)
 UNICORN_EXPORT
 uc_err uc_query(uc_engine *uc, uc_query_type type, size_t *result)
 {
+    UC_INIT(uc);
+
     switch (type) {
     default:
         return UC_ERR_ARG;
@@ -1613,6 +1675,8 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
     struct uc_context **_context = context;
     size_t size = uc_context_size(uc);
 
+    UC_INIT(uc);
+
     *_context = g_malloc(size);
     if (*_context) {
         (*_context)->jmp_env_size = sizeof(*uc->cpu->jmp_env);
@@ -1640,6 +1704,7 @@ uc_err uc_free(void *mem)
 UNICORN_EXPORT
 size_t uc_context_size(uc_engine *uc)
 {
+    UC_INIT(uc);
     // return the total size of struct uc_context
     return sizeof(uc_context) + uc->cpu_context_size +
            sizeof(*uc->cpu->jmp_env);
@@ -1648,6 +1713,8 @@ size_t uc_context_size(uc_engine *uc)
 UNICORN_EXPORT
 uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
+    UC_INIT(uc);
+
     memcpy(context->data, uc->cpu->env_ptr, context->context_size);
     memcpy(context->data + context->context_size, uc->cpu->jmp_env,
            context->jmp_env_size);
@@ -1819,6 +1886,8 @@ uc_err uc_context_reg_read_batch(uc_context *ctx, int *ids, void **vals,
 UNICORN_EXPORT
 uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
+    UC_INIT(uc);
+
     memcpy(uc->cpu->env_ptr, context->data, context->context_size);
     if (list_exists(&uc->saved_contexts, context)) {
         memcpy(uc->cpu->jmp_env, context->data + context->context_size,
@@ -1899,11 +1968,33 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
 
     case UC_CTL_UC_PAGE_SIZE: {
         if (rw == UC_CTL_IO_READ) {
+
+            UC_INIT(uc);
+
             uint32_t *page_size = va_arg(args, uint32_t *);
             *page_size = uc->target_page_size;
         } else {
-            // Not implemented.
-            err = UC_ERR_ARG;
+            uint32_t page_size = va_arg(args, uint32_t);
+            int bits = 0;
+
+            if (uc->arch != UC_ARCH_ARM) {
+                err = UC_ERR_ARG;
+                break;
+            }
+
+            if ((page_size & (page_size - 1))) {
+                err = UC_ERR_ARG;
+                break;
+            }
+
+            while (page_size) {
+                bits++;
+                page_size >>= 1;
+            }
+
+            uc->target_bits = bits;
+
+            err = UC_ERR_OK;
         }
         break;
     }
@@ -1918,6 +2009,9 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     }
 
     case UC_CTL_UC_EXITS_CNT: {
+
+        UC_INIT(uc);
+
         if (!uc->use_exits) {
             err = UC_ERR_ARG;
         } else if (rw == UC_CTL_IO_READ) {
@@ -1930,6 +2024,9 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     }
 
     case UC_CTL_UC_EXITS: {
+
+        UC_INIT(uc);
+
         if (!uc->use_exits) {
             err = UC_ERR_ARG;
         } else if (rw == UC_CTL_IO_READ) {
@@ -1965,6 +2062,9 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         break;
 
     case UC_CTL_TB_REQUEST_CACHE: {
+
+        UC_INIT(uc);
+
         if (rw == UC_CTL_IO_READ_WRITE) {
             uint64_t addr = va_arg(args, uint64_t);
             uc_tb *tb = va_arg(args, uc_tb *);
@@ -1976,6 +2076,9 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
     }
 
     case UC_CTL_TB_REMOVE_CACHE: {
+
+        UC_INIT(uc);
+
         if (rw == UC_CTL_IO_READ) {
             uint64_t addr = va_arg(args, uint64_t);
             uc->uc_invalidate_tb(uc, addr, 1);

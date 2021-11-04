@@ -267,6 +267,7 @@ struct uc_struct {
     unsigned int alloc_hint;
     /* qemu/exec-vary.c */
     TargetPageBits *init_target_page;
+    int target_bits;                    // User defined page bits by uc_ctl
     BounceBuffer bounce;                // qemu/cpu-exec.c
     volatile sig_atomic_t exit_request; // qemu/cpu-exec.c
     /* qemu/accel/tcg/cpu-exec-common.c */
@@ -339,6 +340,7 @@ struct uc_struct {
     struct list saved_contexts; // The contexts saved by this uc_struct.
     bool no_exit_request;       // Disable check_exit_request temporarily. A
                           // workaround to treat the IT block as a whole block.
+    bool init_done; // Whether the initialization is done.
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
