@@ -181,7 +181,7 @@ static int sparc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     SPARCCPU *cpu;
 
-    cpu = cpu_sparc_init(uc, cpu_model);
+    cpu = cpu_sparc_init(uc);
     if (cpu == NULL) {
         return -1;
     }

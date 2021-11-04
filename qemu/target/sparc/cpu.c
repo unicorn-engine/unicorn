@@ -510,27 +510,29 @@ static void sparc_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
     cc->tcg_initialize = sparc_tcg_init;
 }
 
-SPARCCPU *cpu_sparc_init(struct uc_struct *uc, const char *cpu_model)
+SPARCCPU *cpu_sparc_init(struct uc_struct *uc)
 {
     SPARCCPU *cpu;
     CPUState *cs;
     CPUClass *cc;
     SPARCCPUClass *scc;
-    int i;
-
-    if (cpu_model == NULL) {
-#ifdef TARGET_SPARC64
-        cpu_model = "Sun UltraSparc IV";
-#else
-        cpu_model = "LEON3";
-#endif
-    }
 
     cpu = malloc(sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
     memset(cpu, 0, sizeof(*cpu));
+
+    if (uc->cpu_model == INT_MAX) {
+#ifdef TARGET_SPARC64
+        uc->cpu_model = 11; // Sun UltraSparc IV
+#else
+        uc->cpu_model = 12;
+#endif
+    } else if (uc->cpu_model >= ARRAY_SIZE(sparc_defs)) {
+        free(cpu);
+        return NULL;
+    }
 
     cs = (CPUState *)cpu;
     cc = (CPUClass *)&cpu->cc;
@@ -546,16 +548,8 @@ SPARCCPU *cpu_sparc_init(struct uc_struct *uc, const char *cpu_model)
     cpu_common_initfn(uc, cs);
     /* init SPARC types scc->def */
     scc = SPARC_CPU_CLASS(cc);
-    for (i = 0; i < ARRAY_SIZE(sparc_defs); i++) {
-        if (strcmp(cpu_model, sparc_defs[i].name) == 0) {
-            scc->cpu_def = &sparc_defs[i];
-            break;
-        }
-    }
-    if (i == ARRAY_SIZE(sparc_defs)) {
-        free(cpu);
-        return NULL;
-    }
+    scc->cpu_def = &sparc_defs[uc->cpu_model];
+
     /* init SPARCCPU */
     sparc_cpu_initfn(uc, cs);
     /* realize SPARCCPU */

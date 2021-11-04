@@ -815,6 +815,6 @@ static inline bool tb_am_enabled(int tb_flags)
 #endif
 }
 
-SPARCCPU *cpu_sparc_init(struct uc_struct *uc, const char *cpu_model);
+SPARCCPU *cpu_sparc_init(struct uc_struct *uc);
 
 #endif
