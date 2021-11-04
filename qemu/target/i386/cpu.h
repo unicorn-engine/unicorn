@@ -2129,6 +2129,6 @@ void x86_cpu_xsave_all_areas(X86CPU *cpu, X86XSaveArea *buf);
 void x86_update_hflags(CPUX86State* env);
 
 int uc_check_cpu_x86_load_seg(CPUX86State *env, int seg_reg, int sel);
-X86CPU *cpu_x86_init(struct uc_struct *uc, const char *cpu_model);
+X86CPU *cpu_x86_init(struct uc_struct *uc);
 
 #endif /* I386_CPU_H */

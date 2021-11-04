@@ -1596,7 +1596,7 @@ static int x86_cpus_init(struct uc_struct *uc, const char *cpu_model)
 
     X86CPU *cpu;
 
-    cpu = cpu_x86_init(uc, cpu_model);
+    cpu = cpu_x86_init(uc);
     if (cpu == NULL) {
         return -1;
     }

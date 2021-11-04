@@ -4776,24 +4776,26 @@ static void x86_cpu_common_class_init(struct uc_struct *uc, CPUClass *oc, void *
     cc->tlb_fill = x86_cpu_tlb_fill;
 }
 
-X86CPU *cpu_x86_init(struct uc_struct *uc, const char *cpu_model)
+X86CPU *cpu_x86_init(struct uc_struct *uc)
 {
-    int i;
     X86CPU *cpu;
     CPUState *cs;
     CPUClass *cc;
     X86CPUClass *xcc;
 
-    if (cpu_model == NULL) {
-#ifdef TARGET_X86_64
-        cpu_model = "qemu64";
-#else
-        cpu_model = "qemu32";
-#endif
-    }
-
     cpu = calloc(1, sizeof(*cpu));
     if (cpu == NULL) {
+        return NULL;
+    }
+
+    if (uc->cpu_model == INT_MAX) {
+#ifdef TARGET_X86_64
+        uc->cpu_model = 0; // qemu64
+#else
+        uc->cpu_model = 4; // qemu32
+#endif
+    } else if (uc->cpu_model >= ARRAY_SIZE(builtin_x86_defs)) {
+        free(cpu);
         return NULL;
     }
 
@@ -4822,12 +4824,7 @@ X86CPU *cpu_x86_init(struct uc_struct *uc, const char *cpu_model)
     }
 
     xcc->model->version = CPU_VERSION_AUTO;
-    for (i = 0; i < ARRAY_SIZE(builtin_x86_defs); i++) {
-        if (strcmp(cpu_model, builtin_x86_defs[i].name) == 0) {
-            xcc->model->cpudef = &builtin_x86_defs[i];
-            break;
-        }
-    }
+    xcc->model->cpudef = &builtin_x86_defs[uc->cpu_model];
 
     if (xcc->model->cpudef == NULL) {
         free(xcc->model);
