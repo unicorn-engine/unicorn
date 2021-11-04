@@ -10696,12 +10696,6 @@ static const PowerPCCPUInfo ppc_cpus[] = {
                     CPU_POWERPC_e500v2_v30,   POWERPC_SVR_E500,      e500v2)
     POWERPC_DEF_SVR("e500mc", "e500mc",
                     CPU_POWERPC_e500mc,       POWERPC_SVR_E500,      e500mc)
-#ifdef TARGET_PPC64
-    POWERPC_DEF_SVR("e5500", "e5500",
-                    CPU_POWERPC_e5500,        POWERPC_SVR_E500,      e5500)
-    POWERPC_DEF_SVR("e6500", "e6500",
-                    CPU_POWERPC_e6500,        POWERPC_SVR_E500,      e6500)
-#endif
     /* PowerPC e500 microcontrollers                                         */
     POWERPC_DEF_SVR("mpc8533_v10", "MPC8533 v1.0",
                     CPU_POWERPC_MPC8533_v10,  POWERPC_SVR_8533_v10,  e500v2)
@@ -11099,8 +11093,11 @@ static const PowerPCCPUInfo ppc_cpus[] = {
                 "PowerPC 7447A v1.2 (G4)")
     POWERPC_DEF("7457a_v1.2",    CPU_POWERPC_74x7A_v12,              7455,
                 "PowerPC 7457A v1.2 (G4)")
-    /* 64 bits PowerPC                                                       */
-#if defined(TARGET_PPC64)
+#ifdef TARGET_PPC64
+    POWERPC_DEF_SVR("e5500", "e5500",
+                    CPU_POWERPC_e5500,        POWERPC_SVR_E500,      e5500)
+    POWERPC_DEF_SVR("e6500", "e6500",
+                    CPU_POWERPC_e6500,        POWERPC_SVR_E500,      e6500)
     POWERPC_DEF("970_v2.2",      CPU_POWERPC_970_v22,                970,
                 "PowerPC 970 v2.2")
     POWERPC_DEF("970fx_v1.0",    CPU_POWERPC_970FX_v10,              970,
@@ -11138,28 +11135,34 @@ static const PowerPCCPUInfo ppc_cpus[] = {
 #endif /* defined (TARGET_PPC64) */
 };
 
-PowerPCCPU *cpu_ppc_init(struct uc_struct *uc, const char *cpu_model)
+PowerPCCPU *cpu_ppc_init(struct uc_struct *uc)
 {
-    int i;
     PowerPCCPU *cpu;
     CPUState *cs;
     CPUClass *cc;
     PowerPCCPUClass *pcc;
-
-    if (cpu_model == NULL) {
-#ifdef TARGET_PPC64
-        cpu_model = "power10_v1.0";
-#else
-//        cpu_model = "e500v2_v10";
-        cpu_model = "7457a_v1.2";
-#endif
-    }
 
     cpu = malloc(sizeof(*cpu));
     if (cpu == NULL) {
         return NULL;
     }
     memset(cpu, 0, sizeof(*cpu));
+#ifdef TARGET_PPC64
+    if (uc->cpu_model == INT_MAX) {
+        uc->cpu_model = 18 + UC_CPU_PPC_7457A_V1_2 + 1; // power10_v1.0
+    } else if (uc->cpu_model + UC_CPU_PPC_7457A_V1_2 + 1 >= ARRAY_SIZE(ppc_cpus)) {
+        free(cpu);
+        return NULL;
+    }
+#else
+    if (uc->cpu_model == INT_MAX) {
+        uc->cpu_model = 289; // 7457a_v1.2
+    } else if (uc->cpu_model >= ARRAY_SIZE(ppc_cpus)) {
+        free(cpu);
+        return NULL;
+    }
+#endif
+
 
     cs = (CPUState *)cpu;
     cc = (CPUClass *)&cpu->cc;
@@ -11173,15 +11176,10 @@ PowerPCCPU *cpu_ppc_init(struct uc_struct *uc, const char *cpu_model)
     ppc_cpu_class_init(uc, cc);
     /* init PowerPC family class */
     pcc = &cpu->cc;
-    for (i = 0; i < ARRAY_SIZE(ppc_cpus); i++) {
-        if (strcmp(cpu_model, ppc_cpus[i].name) == 0) {
-            pcc->pvr = ppc_cpus[i].pvr;
-            pcc->svr = ppc_cpus[i].svr;
-            if (ppc_cpus[i].cpu_family_class_init) {
-                ppc_cpus[i].cpu_family_class_init(cc, uc);
-            }
-            break;
-        }
+    pcc->pvr = ppc_cpus[uc->cpu_model].pvr;
+    pcc->svr = ppc_cpus[uc->cpu_model].svr;
+    if (ppc_cpus[uc->cpu_model].cpu_family_class_init) {
+        ppc_cpus[uc->cpu_model].cpu_family_class_init(cc, uc);
     }
     /* init CPUState */
     cpu_common_initfn(uc, cs);

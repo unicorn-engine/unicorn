@@ -202,12 +202,12 @@ int ppc_context_reg_write(struct uc_context *ctx, unsigned int *regs,
     return 0;
 }
 
-PowerPCCPU *cpu_ppc_init(struct uc_struct *uc, const char *cpu_model);
+PowerPCCPU *cpu_ppc_init(struct uc_struct *uc);
 static int ppc_cpus_init(struct uc_struct *uc, const char *cpu_model)
 {
     PowerPCCPU *cpu;
 
-    cpu = cpu_ppc_init(uc, cpu_model);
+    cpu = cpu_ppc_init(uc);
     if (cpu == NULL) {
         return -1;
     }
