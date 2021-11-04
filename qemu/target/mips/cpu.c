@@ -162,16 +162,21 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc)
         return NULL;
     }
 
-    if (uc->cpu_model == INT_MAX) {
 #ifdef TARGET_MIPS64
+    if (uc->cpu_model == INT_MAX) {
         uc->cpu_model = 17; // R4000
+    } else if (uc->cpu_model + UC_CPU_MIPS32_I7200 + 1 >= mips_defs_number ) {
+        free(cpu);
+        return NULL;
+    }
 #else
+    if (uc->cpu_model == INT_MAX) {
         uc->cpu_model = 10; // 74kf
-#endif
     } else if (uc->cpu_model >= mips_defs_number) {
         free(cpu);
         return NULL;
     }
+#endif
 
     cs = (CPUState *)cpu;
     cc = (CPUClass *)&cpu->cc;
