@@ -10,7 +10,7 @@
 #include <unicorn/riscv.h>
 #include "unicorn.h"
 
-RISCVCPU *cpu_riscv_init(struct uc_struct *uc, const char *cpu_model);
+RISCVCPU *cpu_riscv_init(struct uc_struct *uc);
 
 static void riscv_set_pc(struct uc_struct *uc, uint64_t address)
 {
@@ -326,7 +326,7 @@ static int riscv_cpus_init(struct uc_struct *uc, const char *cpu_model)
 
     RISCVCPU *cpu;
 
-    cpu = cpu_riscv_init(uc, cpu_model);
+    cpu = cpu_riscv_init(uc);
     if (cpu == NULL) {
         return -1;
     }
