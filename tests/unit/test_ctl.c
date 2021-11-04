@@ -174,7 +174,8 @@ static void test_uc_ctl_change_page_size()
 }
 
 // Copy from test_arm.c but with new API.
-static void test_uc_ctl_arm_cpu() {
+static void test_uc_ctl_arm_cpu()
+{
     uc_engine *uc;
     int r_control, r_msp, r_psp;
 
@@ -214,5 +215,5 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_exits", test_uc_ctl_exits},
              {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
              {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
-              {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
+             {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
              {NULL, NULL}};
