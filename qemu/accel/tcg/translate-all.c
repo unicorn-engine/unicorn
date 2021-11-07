@@ -1552,7 +1552,9 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     int gen_code_size, search_size, max_insns;
 
     assert_memory_lock();
-
+#ifdef HAVE_PTHREAD_JIT_PROTECT
+    tb_exec_unlock(false);
+#endif
     phys_pc = get_page_addr_code(env, pc);
 
     if (phys_pc == -1) {
