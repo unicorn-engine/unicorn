@@ -1132,11 +1132,15 @@ if(MSVC)
         )
     endif()
 
-    target_link_libraries(unicorn
+    target_link_libraries(unicorn PRIVATE
         ${UNICORN_LINK_LIBRARIES}
     )
+
+    set_target_properties(unicorn PROPERTIES
+        VERSION "${UNICORN_VERSION_MAJOR}.${UNICORN_VERSION_MINOR}"
+    )
 else()
-    target_link_libraries(unicorn
+    target_link_libraries(unicorn PRIVATE
         ${UNICORN_LINK_LIBRARIES}
         m
     )
@@ -1199,6 +1203,10 @@ else()
         endif()
     endforeach(TEST_FILE)
 endif()
+
+target_include_directories(unicorn PUBLIC
+    include
+)
 
 if(NOT MSVC)
     include("GNUInstallDirs")
