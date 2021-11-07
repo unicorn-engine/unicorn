@@ -306,6 +306,37 @@ static void test_riscv64_fp_move_from_int(void)
     uc_close(uc);
 }
 
+static void test_riscv64_fp_move_from_int_reg_write(void)
+{
+    uc_engine *uc;
+    char code[] = "\x53\x00\x0b\xf2"; // fmvd.d.x ft0, s6
+
+    uint64_t r_ft0 = 0x12341234;
+    uint64_t r_s6 = 0x56785678;
+    uint64_t r_mstatus = 0x6000;
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
+
+    // initialize machine registers
+    OK(uc_reg_write(uc, UC_RISCV_REG_FT0, &r_ft0));
+    OK(uc_reg_write(uc, UC_RISCV_REG_S6, &r_s6));
+
+    // mstatus.fs
+    OK(uc_reg_write(uc, UC_RISCV_REG_MSTATUS, &r_mstatus));
+
+    // emulate the instruction
+    OK(uc_emu_start(uc, code_start, -1, 0, 1));
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_FT0, &r_ft0));
+    OK(uc_reg_read(uc, UC_RISCV_REG_S6, &r_s6));
+
+    TEST_CHECK(r_ft0 == 0x56785678);
+    TEST_CHECK(r_s6 == 0x56785678);
+
+    OK(uc_close(uc));
+}
+
 static void test_riscv64_fp_move_to_int(void)
 {
     uc_engine *uc;
@@ -376,6 +407,8 @@ TEST_LIST = {{"test_riscv32_nop", test_riscv32_nop},
              {"test_riscv32_fp_move", test_riscv32_fp_move},
              {"test_riscv64_fp_move", test_riscv64_fp_move},
              {"test_riscv64_fp_move_from_int", test_riscv64_fp_move_from_int},
+             {"test_riscv64_fp_move_from_int_reg_write",
+              test_riscv64_fp_move_from_int_reg_write},
              {"test_riscv64_fp_move_to_int", test_riscv64_fp_move_to_int},
              {"test_riscv64_ecall", test_riscv64_ecall},
              {NULL, NULL}};
