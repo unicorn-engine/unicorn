@@ -144,7 +144,8 @@ static void test_uc_ctl_tb_cache()
     cached = time_emulation(uc, code_start, code_start + sizeof(code) - 1);
 
     for (int i = 0; i < TB_COUNT; i++) {
-        OK(uc_ctl_remove_cache(uc, code_start + i * TCG_MAX_INSNS));
+        OK(uc_ctl_remove_cache(uc, code_start + i * TCG_MAX_INSNS,
+                               code_start + i * TCG_MAX_INSNS + 1));
     }
     evicted = time_emulation(uc, code_start, code_start + sizeof(code) - 1);
 

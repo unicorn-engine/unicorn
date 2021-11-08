@@ -522,7 +522,7 @@ typedef enum uc_control_type {
     // Read: @args = (uint64_t, uc_tb*)
     UC_CTL_TB_REQUEST_CACHE,
     // Invalidate a tb cache at a specific address
-    // Write: @args = (uint64_t)
+    // Write: @args = (uint64_t, uint64_t)
     UC_CTL_TB_REMOVE_CACHE
 
 } uc_control_type;
@@ -594,8 +594,8 @@ See sample_ctl.c for a detailed example.
     uc_ctl(uc, UC_CTL_READ(UC_CTL_CPU_MODEL, 1), (model))
 #define uc_ctl_set_cpu_model(uc, model)                                        \
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_CPU_MODEL, 1), (model))
-#define uc_ctl_remove_cache(uc, address)                                       \
-    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_REMOVE_CACHE, 1), (address))
+#define uc_ctl_remove_cache(uc, address, end)                                  \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_REMOVE_CACHE, 2), (address), (end))
 #define uc_ctl_request_cache(uc, address, tb)                                  \
     uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_TB_REQUEST_CACHE, 2), (address), (tb))
 
