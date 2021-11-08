@@ -29,7 +29,7 @@ SRC_DIR = os.path.join(ROOT_DIR, 'src')
 UC_DIR = os.path.join(ROOT_DIR, '../..')
 BUILD_DIR = os.path.join(UC_DIR, 'build')
 
-VERSION = "2.0.0rc3"
+VERSION = "2.0.0rc4"
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
