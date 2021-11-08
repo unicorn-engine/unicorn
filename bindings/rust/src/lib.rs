@@ -101,12 +101,6 @@ where
 {
     /// Create a new instance of the unicorn engine for the specified architecture
     /// and hardware mode.
-    pub fn new(arch: Arch, mode: Mode) -> Result<Unicorn<'a, ()>, uc_error> {
-        Self::new_with_data(arch, mode, ())
-    }
-
-    /// Create a new instance of the unicorn engine for the specified architecture
-    /// and hardware mode.
     pub fn new_with_data(arch: Arch, mode: Mode, data: D) -> Result<Unicorn<'a, D>, uc_error> {
         let mut handle = std::ptr::null_mut();
         let err = unsafe { ffi::uc_open(arch, mode, &mut handle) };
