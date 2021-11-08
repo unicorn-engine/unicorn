@@ -260,7 +260,7 @@ typedef void (*uc_hook_edge_gen_t)(uc_engine *uc, uc_tb *cur_tb, uc_tb *prev_tb,
 typedef void (*uc_hook_tcg_op_2)(uc_engine *uc, uint64_t address, uint64_t arg1,
                                  uint64_t arg2, void *user_data);
 
-typedef uc_hook_tcg_op_2 uc_hook_tcg_sub;
+typedef uc_hook_tcg_op_2 uc_hook_tcg_sub_t;
 
 /*
   Callback function for MMIO read
