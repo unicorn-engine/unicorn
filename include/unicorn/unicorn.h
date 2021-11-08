@@ -527,6 +527,49 @@ typedef enum uc_control_type {
 
 } uc_control_type;
 
+/*
+
+Exits Mechanism
+
+In some cases, users may have multiple exits and the @until parameter of
+uc_emu_start is not sufficient to control the emulation. The exits mechanism is
+designed to solve this problem. Note that using hooks is aslo feasible, but the
+exits could be slightly more efficient and easy to implement.
+
+By default, the exits mechanism is disabled to keep backward compatibility. That
+is to say, calling uc_ctl_set/get_exits would return an error. Thus, to enable
+the exits firstly, call:
+
+  uc_ctl_exits_enable(uc)
+
+After this call, the @until parameter of uc_emu_start would have no effect on
+the emulation, so:
+
+  uc_emu_start(uc, 0x1000, 0 ...)
+  uc_emu_start(uc, 0x1000, 0x1000 ...)
+  uc_emu_start(uc, 0x1000, -1 ...)
+
+The three calls are totally equavelent since the @until is ignored.
+
+To setup the exits, users may call:
+
+  uc_ctl_set/get_exits(uc, exits, len)
+
+For example, with an exits array [0x1000, 0x2000], uc_emu_start would stop at
+either 0x1000 and 0x2000. With an exits array [], uc_emu_start won't stop unless
+some hooks request a stop.
+
+If users would like to restore the default behavior of @until parameter, users
+may call:
+
+  uc_ctl_exits_disable(uc)
+
+After that, all exits setup previously would be cleared and @until parameter
+would take effect again.
+
+See sample_ctl.c for a detailed example.
+
+*/
 #define uc_ctl_get_mode(uc, mode)                                              \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_MODE, 1), (mode))
 #define uc_ctl_get_page_size(uc, ptr)                                          \
