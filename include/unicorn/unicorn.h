@@ -259,7 +259,7 @@ typedef void (*uc_hook_edge_gen_t)(uc_engine *uc, uc_tb *cur_tb, uc_tb *prev_tb,
   @arg2: The second argument.
 */
 typedef void (*uc_hook_tcg_op_2)(uc_engine *uc, uint64_t address, uint64_t arg1,
-                                 uint64_t arg2, void *user_data);
+                                 uint64_t arg2, uint32_t size, void *user_data);
 
 typedef uc_hook_tcg_op_2 uc_hook_tcg_sub_t;
 

@@ -1518,9 +1518,9 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
 // have memory hooks already. We may exceed the maximum arguments of a tcg
 // helper but that's easy to extend.
 void helper_uc_traceopcode(struct hook *hook, uint64_t arg1, uint64_t arg2,
-                           void *handle, uint64_t address);
+                           uint32_t size, void *handle, uint64_t address);
 void helper_uc_traceopcode(struct hook *hook, uint64_t arg1, uint64_t arg2,
-                           void *handle, uint64_t address)
+                           uint32_t size, void *handle, uint64_t address)
 {
     struct uc_struct *uc = handle;
 
@@ -1539,7 +1539,7 @@ void helper_uc_traceopcode(struct hook *hook, uint64_t arg1, uint64_t arg2,
     // hold in most cases for uc_tracecode.
     //
     // TODO: Shall we have a flag to allow users to control whether updating PC?
-    ((uc_hook_tcg_op_2)hook->callback)(uc, address, arg1, arg2,
+    ((uc_hook_tcg_op_2)hook->callback)(uc, address, arg1, arg2, size,
                                        hook->user_data);
 
     if (unlikely(uc->stop_request)) {

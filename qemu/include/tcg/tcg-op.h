@@ -42,11 +42,12 @@ static inline void gen_uc_tracecode(TCGContext *tcg_ctx, int32_t size, int32_t t
     tcg_temp_free_i32(tcg_ctx, tsize);
 }
 
-static inline void gen_uc_traceopcode(TCGContext *tcg_ctx, void* hook, TCGv_i64 arg1, TCGv_i64 arg2, void *uc, uint64_t pc)
+static inline void gen_uc_traceopcode(TCGContext *tcg_ctx, void* hook, TCGv_i64 arg1, TCGv_i64 arg2, uint32_t size, void *uc, uint64_t pc)
 {
     TCGv_ptr thook = tcg_const_ptr(tcg_ctx, hook);
     TCGv_ptr tuc = tcg_const_ptr(tcg_ctx, uc);
     TCGv_i64 tpc = tcg_const_i64(tcg_ctx, pc);
+    TCGv_i32 tsz = tcg_const_i32(tcg_ctx, size);
 // #if TARGET_LONG_BITS == 32
 //     TCGv_i64 targ1 = temp_tcgv_i64(tcg_ctx, tcgv_i32_temp(tcg_ctx, arg1));
 //     TCGv_i64 targ2 = temp_tcgv_i64(tcg_ctx, tcgv_i32_temp(tcg_ctx, arg2));
@@ -54,7 +55,8 @@ static inline void gen_uc_traceopcode(TCGContext *tcg_ctx, void* hook, TCGv_i64 
 //     TCGv_i64 targ1 = arg1;
 //     TCGv_i64 targ2 = arg2;
 // #endif
-    gen_helper_uc_traceopcode(tcg_ctx, thook, arg1, arg2, tuc, tpc);
+    gen_helper_uc_traceopcode(tcg_ctx, thook, arg1, arg2, tsz, tuc, tpc);
+    tcg_temp_free_i32(tcg_ctx, tsz);
     tcg_temp_free_i64(tcg_ctx, tpc);
     tcg_temp_free_ptr(tcg_ctx, tuc);
     tcg_temp_free_ptr(tcg_ctx, thook);
@@ -449,7 +451,7 @@ static inline void tcg_gen_sub_i32(TCGContext *tcg_ctx, TCGv_i32 ret, TCGv_i32 a
             if (hook->to_delete)
                 continue;
             if (hook->op == UC_TCG_OP_SUB && hook->op_flags == 0) {
-                gen_uc_traceopcode(tcg_ctx, hook, (TCGv_i64)arg1, (TCGv_i64)arg2, uc, tcg_ctx->pc_start);
+                gen_uc_traceopcode(tcg_ctx, hook, (TCGv_i64)arg1, (TCGv_i64)arg2, 32, uc, tcg_ctx->pc_start);
             }
         }
     }
@@ -682,7 +684,7 @@ static inline void tcg_gen_sub_i64(TCGContext *tcg_ctx, TCGv_i64 ret, TCGv_i64 a
             if (hook->to_delete)
                 continue;
             if (hook->op == UC_TCG_OP_SUB && hook->op_flags == 0) {
-                gen_uc_traceopcode(tcg_ctx, hook, arg1, arg2, uc, tcg_ctx->pc_start);
+                gen_uc_traceopcode(tcg_ctx, hook, arg1, arg2, 64, uc, tcg_ctx->pc_start);
             }
         }
     }

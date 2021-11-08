@@ -708,7 +708,8 @@ typedef struct _HOOK_TCG_OP_RESULTS {
 } HOOK_TCG_OP_RESULTS;
 
 static void test_x86_hook_tcg_op_cb(uc_engine *uc, uint64_t address,
-                                    uint64_t arg1, uint64_t arg2, void *data)
+                                    uint64_t arg1, uint64_t arg2, uint32_t size,
+                                    void *data)
 {
     HOOK_TCG_OP_RESULTS *results = (HOOK_TCG_OP_RESULTS *)data;
     HOOK_TCG_OP_RESULT *result = &results->results[results->len++];

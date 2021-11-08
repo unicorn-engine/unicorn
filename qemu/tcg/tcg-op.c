@@ -909,7 +909,7 @@ void tcg_gen_sub2_i32(TCGContext *tcg_ctx, TCGv_i32 rl, TCGv_i32 rh, TCGv_i32 al
                     TCGv_i64 t1 = tcg_temp_new_i64(tcg_ctx);
                     tcg_gen_concat_i32_i64(tcg_ctx, t0, al, ah);
                     tcg_gen_concat_i32_i64(tcg_ctx, t1, bl, bh);
-                    gen_uc_traceopcode(tcg_ctx, hook, t0, t1, uc, tcg_ctx->pc_start);
+                    gen_uc_traceopcode(tcg_ctx, hook, t0, t1, 32, uc, tcg_ctx->pc_start);
                     tcg_temp_free_i64(tcg_ctx, t0);
                     tcg_temp_free_i64(tcg_ctx, t1);
                 }
