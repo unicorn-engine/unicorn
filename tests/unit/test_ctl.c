@@ -88,7 +88,7 @@ static void test_uc_ctl_exits()
     uint64_t exits[] = {code_start + 6, code_start + 8};
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
-    OK(uc_ctl_exits_enabled(uc, true));
+    OK(uc_ctl_exits_enable(uc));
     OK(uc_ctl_set_exits(uc, exits, 2));
     r_eax = 0;
     r_ebx = 0;

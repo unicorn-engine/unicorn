@@ -473,7 +473,8 @@ typedef enum uc_query_type {
 // The arguments include both input and output arugments.
 #define UC_CTL_IO_READ_WRITE (UC_CTL_IO_WRITE | UC_CTL_IO_READ)
 
-#define UC_CTL(type, nr, rw) ((type) | ((nr) << 26) | ((rw) << 30))
+#define UC_CTL(type, nr, rw)                                                   \
+    (uc_control_type)((type) | ((nr) << 26) | ((rw) << 30))
 #define UC_CTL_NONE(type, nr) UC_CTL(type, nr, UC_CTL_IO_NONE)
 #define UC_CTL_READ(type, nr) UC_CTL(type, nr, UC_CTL_IO_READ)
 #define UC_CTL_WRITE(type, nr) UC_CTL(type, nr, UC_CTL_IO_WRITE)
@@ -536,8 +537,10 @@ typedef enum uc_control_type {
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_ARCH, 1), (arch))
 #define uc_ctl_get_timeout(uc, ptr)                                            \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_TIMEOUT, 1), (ptr))
-#define uc_ctl_exits_enabled(uc, enabled)                                      \
-    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_USE_EXITS, 1), (enabled))
+#define uc_ctl_exits_enable(uc)                                                \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_USE_EXITS, 1), 1)
+#define uc_ctl_exits_disable(uc)                                               \
+    uc_ctl(uc, UC_CTL_WRITE(UC_CTL_UC_USE_EXITS, 1), 0)
 #define uc_ctl_get_exits_cnt(uc, ptr)                                          \
     uc_ctl(uc, UC_CTL_READ(UC_CTL_UC_EXITS_CNT, 1), (ptr))
 #define uc_ctl_get_exits(uc, buffer, len)                                      \
