@@ -87,7 +87,7 @@ pub struct Unicorn<'a, D: 'a> {
     pub data: D,
 }
 
-impl Unicorn<()> {
+impl<'a> Unicorn<'a, ()> {
     /// Create a new instance of the unicorn engine for the specified architecture
     /// and hardware mode.
     pub fn new(arch: Arch, mode: Mode) -> Result<Unicorn<'a, ()>, uc_error> {
