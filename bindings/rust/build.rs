@@ -1,11 +1,11 @@
 use bytes::Buf;
 use flate2::read::GzDecoder;
 use reqwest::header::USER_AGENT;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::{env, process::Command};
 use tar::Archive;
 
-fn find_unicorn(unicorn_dir: &PathBuf) -> Option<PathBuf> {
+fn find_unicorn(unicorn_dir: &Path) -> Option<PathBuf> {
     for entry in std::fs::read_dir(unicorn_dir).ok()? {
         let entry = entry.unwrap();
         let path = entry.path();
@@ -49,6 +49,7 @@ fn download_unicorn() -> Option<String> {
     }
 }
 
+#[allow(clippy::branches_sharing_code)]
 fn main() {
     let profile = env::var("PROFILE").unwrap();
 

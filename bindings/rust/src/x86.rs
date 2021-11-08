@@ -1,9 +1,7 @@
-#![allow(non_camel_case_types)]
-// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT
-
 // X86 registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
+#[allow(clippy::upper_case_acronyms, non_camel_case_types)]
 pub enum RegisterX86 {
     INVALID = 0,
     AH = 1,
@@ -242,8 +240,15 @@ pub enum RegisterX86 {
     ENDING = 234,
 }
 
+impl From<RegisterX86> for i32 {
+    fn from(r: RegisterX86) -> Self {
+        r as i32
+    }
+}
+
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum InsnX86 {
     IN = 218,
     OUT = 500,
@@ -254,6 +259,7 @@ pub enum InsnX86 {
 
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum InsnSysX86 {
     SYSCALL = InsnX86::SYSCALL as isize,
     SYSENTER = InsnX86::SYSENTER as isize,

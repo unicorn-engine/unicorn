@@ -342,6 +342,7 @@ struct uc_struct {
     bool no_exit_request;       // Disable check_exit_request temporarily. A
                           // workaround to treat the IT block as a whole block.
     bool init_done; // Whether the initialization is done.
+    void *data_ptr; // optional data pointer for bindings
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()

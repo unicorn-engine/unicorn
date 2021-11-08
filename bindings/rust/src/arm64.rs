@@ -1,9 +1,7 @@
-#![allow(non_camel_case_types)]
-// For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT
-
 // ARM64 registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
 pub enum RegisterARM64 {
     INVALID = 0,
     X29 = 1,
@@ -318,4 +316,10 @@ impl RegisterARM64 {
     pub const IP1: RegisterARM64 = RegisterARM64::X17;
     pub const FP: RegisterARM64 = RegisterARM64::X29;
     pub const LR: RegisterARM64 = RegisterARM64::X30;
+}
+
+impl From<RegisterARM64> for i32 {
+    fn from(r: RegisterARM64) -> Self {
+        r as i32
+    }
 }

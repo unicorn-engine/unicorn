@@ -686,6 +686,27 @@ static void clear_deleted_hooks(uc_engine *uc)
     list_clear(&uc->hooks_to_del);
 }
 
+// set a data ptr (for use in bindings)
+UNICORN_EXPORT
+uc_err uc_emu_set_data_ptr(uc_engine *uc, void *data)
+{
+    if (uc == NULL) {
+        return UC_ERR_ARG;
+    }
+    uc->data_ptr = data;
+}
+
+// get a data ptr (for use in bindings)
+UNICORN_EXPORT
+void *uc_emu_get_data_ptr(uc_engine *uc, void *data)
+{
+    if (uc == NULL) {
+        return NULL;
+    }
+    return uc->data_ptr;
+}
+
+
 UNICORN_EXPORT
 uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
                     uint64_t timeout, size_t count)

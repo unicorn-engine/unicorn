@@ -211,3 +211,9 @@ impl RegisterRISCV {
     pub const FT10: RegisterRISCV = RegisterRISCV::F30;
     pub const FT11: RegisterRISCV = RegisterRISCV::F31;
 }
+
+impl From<RegisterRISCV> for i32 {
+    fn from(r: RegisterRISCV) -> Self {
+        r as i32
+    }
+}
