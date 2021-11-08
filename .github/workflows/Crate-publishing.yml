@@ -70,7 +70,7 @@ jobs:
     - name: '🚧 Cargo test'
       if: "!startsWith(github.ref, 'refs/tags')"
       env:
-        QNICORN_VERSION: dev
+        UNICORN_VERSION: dev
       run: |
         cd bindings/rust && cargo test
     
@@ -78,5 +78,6 @@ jobs:
       if: startsWith(github.ref, 'refs/tags') && contains(matrix.config.os, 'ubuntu')
       env:
         TOKEN: ${{ secrets.cratesio_pass }}
+        UNICORN_VERSION: dev
       run: |
         cd bindings/rust && cargo login $TOKEN && cargo test && cargo publish
