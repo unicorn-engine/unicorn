@@ -52,7 +52,12 @@ fn download_unicorn() -> Option<String> {
 fn main() {
     let profile = env::var("PROFILE").unwrap();
 
-    let unicorn_dir = download_unicorn().unwrap();
+    let unicorn_dir;
+    if let Result::Ok(_) = env::var("CI") {
+        unicorn_dir = format!("../..");
+    } else {
+        unicorn_dir = download_unicorn().unwrap();
+    }
 
     println!("cargo:rerun-if-changed={}", &unicorn_dir);
 
