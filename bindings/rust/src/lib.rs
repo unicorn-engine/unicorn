@@ -118,15 +118,10 @@ where
 }
 
 /// Drop UC
-/// TODO: !!! Right now, this leaks the unicorn instance on purpose.
-/// UC 1 for some platforms, for example aarch64, seems to crash on cleanup.
-/// After updating to Unicorn 2, we should call `uc_close` again!
 impl<'a, D> Drop for Unicorn<'a, D> {
     fn drop(&mut self) {
         if !self.uc.is_null() {
-            // TODO: !!!
-            // This is a deliberate leak, get rid of it after updating to UC2!
-            // unsafe { ffi::uc_close(self.uc) };
+            unsafe { ffi::uc_close(self.uc) };
         }
         self.uc = ptr::null_mut();
     }
