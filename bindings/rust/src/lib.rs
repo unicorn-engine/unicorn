@@ -761,6 +761,8 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::MIPS => RegisterMIPS::PC as i32,
             Arch::SPARC => RegisterSPARC::PC as i32,
             Arch::M68K => RegisterM68K::PC as i32,
+            Arch::PPC => RegisterPPC::PC as i32,
+            Arch::RISCV => RegisterRISCV::PC as i32,
             _ => panic!("Arch pc not yet know to the unicorn rust bindings"),
         };
         self.reg_read(reg)
@@ -777,6 +779,8 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::MIPS => RegisterMIPS::PC as i32,
             Arch::SPARC => RegisterSPARC::PC as i32,
             Arch::M68K => RegisterM68K::PC as i32,
+            Arch::PPC => RegisterPPC::PC as i32,
+            Arch::RISCV => RegisterRISCV::PC as i32,
             _ => panic!("Arch not yet known to the unicorn rust bindings"),
         };
         self.reg_write(reg, value)
