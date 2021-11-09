@@ -131,16 +131,16 @@ static void reg_read(CPUARMState *env, unsigned int regid, void *value)
         default:
             break;
         case UC_ARM64_REG_CPACR_EL1:
-            // *(uint32_t *)value = env->cp15.c1_coproc;
+            *(uint32_t *)value = env->cp15.cpacr_el1;
             break;
         case UC_ARM64_REG_TPIDR_EL0:
-            // *(int64_t *)value = env->cp15.tpidr_el0;
+            *(int64_t *)value = env->cp15.tpidr_el[0];
             break;
         case UC_ARM64_REG_TPIDRRO_EL0:
-            // *(int64_t *)value = env->cp15.tpidrro_el0;
+            *(int64_t *)value = env->cp15.tpidrro_el[0];
             break;
         case UC_ARM64_REG_TPIDR_EL1:
-            // *(int64_t *)value = env->cp15.tpidr_el1;
+            *(int64_t *)value = env->cp15.tpidr_el[1];
             break;
         case UC_ARM64_REG_X29:
             *(int64_t *)value = env->xregs[29];
@@ -161,16 +161,16 @@ static void reg_read(CPUARMState *env, unsigned int regid, void *value)
             *(uint32_t *)value = pstate_read(env);
             break;
         case UC_ARM64_REG_TTBR0_EL1:
-            // *(uint64_t *)value = env->cp15.ttbr0_el1;
+            *(uint64_t *)value = env->cp15.ttbr0_el[1];
             break;
         case UC_ARM64_REG_TTBR1_EL1:
-            // *(uint64_t *)value = env->cp15.ttbr1_el1;
+            *(uint64_t *)value = env->cp15.ttbr1_el[1];
             break;
         case UC_ARM64_REG_PAR_EL1:
-            // *(uint64_t *)value = env->cp15.par_el1;
+            *(uint64_t *)value = env->cp15.par_el[1];
             break;
         case UC_ARM64_REG_MAIR_EL1:
-            // *(uint64_t *)value = env->cp15.mair_el1;
+            *(uint64_t *)value = env->cp15.mair_el[1];
             break;
         }
     }
@@ -219,16 +219,16 @@ static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
         default:
             break;
         case UC_ARM64_REG_CPACR_EL1:
-            // env->cp15.c1_coproc = *(uint32_t *)value;
+            env->cp15.cpacr_el1 = *(uint32_t *)value;
             break;
         case UC_ARM64_REG_TPIDR_EL0:
-            // env->cp15.tpidr_el0 = *(uint64_t *)value;
+            env->cp15.tpidr_el[0] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_TPIDRRO_EL0:
-            // env->cp15.tpidrro_el0 = *(uint64_t *)value;
+            env->cp15.tpidrro_el[0] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_TPIDR_EL1:
-            // env->cp15.tpidr_el1 = *(uint64_t *)value;
+            env->cp15.tpidr_el[1] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_X29:
             env->xregs[29] = *(uint64_t *)value;
@@ -243,22 +243,22 @@ static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
             env->xregs[31] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_NZCV:
-            // cpsr_write(env, *(uint32_t *)value, CPSR_NZCV);
+            cpsr_write(env, *(uint32_t *)value, CPSR_NZCV, CPSRWriteRaw);
             break;
         case UC_ARM64_REG_PSTATE:
             pstate_write(env, *(uint32_t *)value);
             break;
         case UC_ARM64_REG_TTBR0_EL1:
-            // env->cp15.ttbr0_el1 = *(uint64_t *)value;
+            env->cp15.ttbr0_el[1] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_TTBR1_EL1:
-            // env->cp15.ttbr1_el1 = *(uint64_t *)value;
+            env->cp15.ttbr1_el[1] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_PAR_EL1:
-            // env->cp15.par_el1 = *(uint64_t *)value;
+            env->cp15.par_el[1] = *(uint64_t *)value;
             break;
         case UC_ARM64_REG_MAIR_EL1:
-            // env->cp15.mair_el1 = *(uint64_t *)value;
+            env->cp15.mair_el[1] = *(uint64_t *)value;
             break;
         }
     }
