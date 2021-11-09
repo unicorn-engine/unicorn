@@ -9,7 +9,7 @@ use std::{ffi::c_void, marker::PhantomData};
 
 pub type uc_handle = *mut c_void;
 pub type uc_hook = *mut c_void;
-pub type uc_context = libc::size_t;
+pub type uc_context = *mut c_void;
 
 extern "C" {
     pub fn uc_version(major: *mut u32, minor: *mut u32) -> u32;

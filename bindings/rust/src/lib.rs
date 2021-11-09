@@ -35,11 +35,12 @@ mod arm64;
 mod m68k;
 mod mips;
 mod ppc;
+mod riscv;
 mod sparc;
 mod x86;
 use std::{marker::PhantomData, ptr};
 
-pub use crate::{arm::*, arm64::*, m68k::*, mips::*, ppc::*, sparc::*, x86::*};
+pub use crate::{arm::*, arm64::*, m68k::*, mips::*, ppc::*, riscv::*, sparc::*, x86::*};
 
 use ffi::uc_handle;
 use libc::c_void;
@@ -52,18 +53,8 @@ pub struct Context {
 
 impl Context {
     #[must_use]
-    pub fn new() -> Self {
-        Context { context: 0 }
-    }
-    #[must_use]
     pub fn is_initialized(&self) -> bool {
-        self.context != 0
-    }
-}
-
-impl Default for Context {
-    fn default() -> Self {
-        Self::new()
+        !self.context.is_null()
     }
 }
 
@@ -74,7 +65,7 @@ impl Drop for Context {
                 ffi::uc_context_free(self.context);
             }
         }
-        self.context = 0;
+        self.context = ptr::null_mut();
     }
 }
 
@@ -642,7 +633,7 @@ impl<'a, D> Unicorn<'a, D> {
     ///
     /// To be populated via `context_save`.
     pub fn context_alloc(&self) -> Result<Context, uc_error> {
-        let mut empty_context: ffi::uc_context = Default::default();
+        let mut empty_context: ffi::uc_context = ptr::null_mut();
         let err = unsafe { ffi::uc_context_alloc(self.uc, &mut empty_context) };
         if err == uc_error::OK {
             Ok(Context {
@@ -669,7 +660,7 @@ impl<'a, D> Unicorn<'a, D> {
     /// In case of many non-concurrent context saves, use `context_alloc` and *_save
     /// individually to avoid unnecessary allocations.
     pub fn context_init(&self) -> Result<Context, uc_error> {
-        let mut new_context: ffi::uc_context = Default::default();
+        let mut new_context: ffi::uc_context = ptr::null_mut();
         let err = unsafe { ffi::uc_context_alloc(self.uc, &mut new_context) };
         if err != uc_error::OK {
             return Err(err);
