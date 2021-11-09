@@ -289,7 +289,7 @@ impl<'a, D> Unicorn<'a, D> {
     /// Write variable sized values into registers.
     ///
     /// The user has to make sure that the buffer length matches the register size.
-    /// This adds support for registers >64 bit (GDTR/IDTR, XMM, YMM, ZMM (x86); Q, V (arm64)).
+    /// This adds support for registers >64 bit (GDTR/IDTR, XMM, YMM, ZMM, ST (x86); Q, V (arm64)).
     pub fn reg_write_long<T: Into<i32>>(&self, regid: T, value: &[u8]) -> Result<(), uc_error> {
         let err = unsafe { ffi::uc_reg_write(self.uc, regid.into(), value.as_ptr() as _) };
         if err == uc_error::OK {
@@ -337,6 +337,8 @@ impl<'a, D> Unicorn<'a, D> {
                 value = vec![0; 64];
             } else if curr_reg_id == x86::RegisterX86::GDTR as i32
                 || curr_reg_id == x86::RegisterX86::IDTR as i32
+                || (curr_reg_id >= x86::RegisterX86::ST0 as i32
+                    && curr_reg_id <= x86::RegisterX86::ST7 as i32)
             {
                 value = vec![0; 10]; // 64 bit base address in IA-32e mode
             } else {
