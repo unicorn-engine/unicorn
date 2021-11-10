@@ -80,12 +80,12 @@ extern "C" {
 
 pub struct UcHook<'a, D: 'a, F: 'a> {
     pub callback: F,
-    pub uc: Unicorn<'a, D>,
+    pub uc: Unicorn,
 }
 
-pub trait IsUcHook<'a> {}
+pub trait IsUcHook {}
 
-impl<'a, D, F> IsUcHook<'a> for UcHook<'a, D, F> {}
+impl<'a, D, F> IsUcHook for UcHook<'a, D, F> {}
 
 pub extern "C" fn code_hook_proxy<D, F>(
     uc: uc_handle,

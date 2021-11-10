@@ -77,16 +77,15 @@ impl Drop for Context {
     }
 }
 
-pub struct UnicornInner<'a, D> {
+pub struct UnicornInner {
     pub uc: uc_handle,
     pub arch: Arch,
     /// to keep ownership over the hook for this uc instance's lifetime
-    pub hooks: Vec<(ffi::uc_hook, Box<dyn ffi::IsUcHook<'a> + 'a>)>,
-    pub data: D,
+    pub hooks: Vec<(ffi::uc_hook, Box<dyn ffi::IsUcHook>)>,
 }
 
 /// Drop UC
-impl<'a, D> Drop for UnicornInner<'a, D> {
+impl Drop for UnicornInner {
     fn drop(&mut self) {
         if !self.uc.is_null() {
             unsafe { ffi::uc_close(self.uc) };
@@ -96,25 +95,25 @@ impl<'a, D> Drop for UnicornInner<'a, D> {
 }
 
 /// A Unicorn emulator instance.
-pub struct Unicorn<'a, D: 'a> {
-    inner: Rc<UnsafeCell<UnicornInner<'a, D>>>,
+pub struct Unicorn {
+    inner: Rc<UnsafeCell<UnicornInner<'a>>>,
 }
 
-impl<'a> Unicorn<'a, ()> {
+impl<'a> Unicorn<'a> {
     /// Create a new instance of the unicorn engine for the specified architecture
     /// and hardware mode.
-    pub fn new(arch: Arch, mode: Mode) -> Result<Unicorn<'a, ()>, uc_error> {
+    pub fn new(arch: Arch, mode: Mode) -> Result<Unicorn<'a>, uc_error> {
         Self::new_with_data(arch, mode, ())
     }
 }
 
-impl<'a, D> Unicorn<'a, D>
+impl<'a, D> Unicorn<'a>
 where
     D: 'a,
 {
     /// Create a new instance of the unicorn engine for the specified architecture
     /// and hardware mode.
-    pub fn new_with_data(arch: Arch, mode: Mode, data: D) -> Result<Unicorn<'a, D>, uc_error> {
+    pub fn new_with_data(arch: Arch, mode: Mode, data: D) -> Result<Unicorn<'a>, uc_error> {
         let mut handle = core::ptr::null_mut();
         let err = unsafe { ffi::uc_open(arch, mode, &mut handle) };
         if err == uc_error::OK {
