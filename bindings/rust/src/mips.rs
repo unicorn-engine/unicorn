@@ -245,3 +245,9 @@ impl RegisterMIPS {
     pub const LO2: RegisterMIPS = RegisterMIPS::AC2;
     pub const LO3: RegisterMIPS = RegisterMIPS::AC3;
 }
+
+impl From<RegisterMIPS> for i32 {
+    fn from(r: RegisterMIPS) -> Self {
+        r as i32
+    }
+}

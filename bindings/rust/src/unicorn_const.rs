@@ -11,6 +11,7 @@ pub const MILISECOND_SCALE: u64 = 1_000;
 
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum uc_error {
     OK = 0,
     NOMEM = 1,
@@ -89,6 +90,7 @@ bitflags! {
 
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum Query {
     MODE = 1,
     PAGE_SIZE = 2,

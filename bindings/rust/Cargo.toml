@@ -3,14 +3,14 @@ name = "unicorn-engine"
 version = "2.0.0-rc4"
 authors = ["Ziqiao Kong", "Lukas Seidel"]
 documentation = "https://github.com/unicorn-engine/unicorn/wiki"
-edition = "2018"
+edition = "2021"
 include = [
     "/.gitmodules",
     "/COPYING",
     "/Cargo.toml",
     "/README.md",
     "/src/*",
-    "build.rs"
+    "build.rs",
 ]
 license = "GPL-2.0"
 readme = "README.md"

@@ -51,6 +51,7 @@ fn download_unicorn() -> PathBuf {
     find_unicorn(&out_dir).unwrap()
 }
 
+#[allow(clippy::branches_sharing_code)]
 fn main() {
     let profile = env::var("PROFILE").unwrap();
 

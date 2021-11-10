@@ -164,3 +164,9 @@ impl RegisterARM {
     pub const FP: RegisterARM = RegisterARM::R11;
     pub const IP: RegisterARM = RegisterARM::R12;
 }
+
+impl From<RegisterARM> for i32 {
+    fn from(r: RegisterARM) -> Self {
+        r as i32
+    }
+}
