@@ -69,7 +69,7 @@ fn main() {
             rust_build_path.join("Release").to_str().unwrap()
         );
     } else {
-        let unicorn_dir = if let Result::Ok(_) = env::var("CI") {
+        let unicorn_dir = if let Result::Ok(_) = env::var("UNICORN_LOCAL") {
             Path::new("..").join("..")
         } else {
             println!("cargo:warning=Unicorn not found. Downloading...");
