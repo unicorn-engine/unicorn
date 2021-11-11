@@ -257,6 +257,22 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
         mmap_unlock();
         /* We add the TB in the virtual pc hash table for the fast lookup */
         cpu->tb_jmp_cache[tb_jmp_cache_hash_func(cpu->uc, pc)] = tb;
+
+        UC_TB_COPY(&cur_tb, tb);
+
+        if (last_tb) {
+            UC_TB_COPY(&prev_tb, last_tb);
+            for (cur = uc->hook[UC_HOOK_EDGE_GENERATED_IDX].head;
+                cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next) {
+                if (hook->to_delete) {
+                    continue;
+                }
+
+                if (HOOK_BOUND_CHECK(hook, (uint64_t)tb->pc)) {
+                    ((uc_hook_edge_gen_t)hook->callback)(uc, &cur_tb, &prev_tb, hook->user_data);
+                }
+            }
+        }
     }
     /* We don't take care of direct jumps when address mapping changes in
      * system emulation. So it's not safe to make a direct jump to a TB
@@ -268,22 +284,6 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
     /* See if we can patch the calling TB. */
     if (last_tb) {
         tb_add_jump(last_tb, tb_exit, tb);
-    }
-
-    UC_TB_COPY(&cur_tb, tb);
-
-    if (last_tb) {
-        UC_TB_COPY(&prev_tb, last_tb);
-        for (cur = uc->hook[UC_HOOK_EDGE_GENERATED_IDX].head;
-            cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next) {
-            if (hook->to_delete) {
-                continue;
-            }
-
-            if (HOOK_BOUND_CHECK(hook, (uint64_t)tb->pc)) {
-                ((uc_hook_edge_gen_t)hook->callback)(uc, &cur_tb, &prev_tb, hook->user_data);
-            }
-        }
     }
 
     return tb;
