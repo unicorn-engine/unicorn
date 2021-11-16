@@ -700,6 +700,14 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 
     UC_INIT(uc);
 
+    // Advance the nested levels. We must decrease the level count by one when
+    // we return from uc_emu_start.
+    if (uc->nested_level >= UC_MAX_NESTED_LEVEL) {
+        // We can't support so many nested levels.
+        return UC_ERR_RESOURCE;
+    }
+    uc->nested_level++;
+
     switch (uc->arch) {
     default:
         break;
@@ -786,6 +794,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         // restore to append mode for uc_hook_add()
         uc->hook_insert = 0;
         if (err != UC_ERR_OK) {
+            uc->nested_level--;
             return err;
         }
     }
@@ -814,6 +823,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         qemu_thread_join(&uc->timer);
     }
 
+    uc->nested_level--;
     return uc->invalid_error;
 }
 

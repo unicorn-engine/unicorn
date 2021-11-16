@@ -551,8 +551,10 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
      */
     // init_delay_params(&sc, cpu);
 
+    // Unicorn: We would like to support nested uc_emu_start calls.
     /* prepare setjmp context for exception handling */
-    if (sigsetjmp(cpu->jmp_env, 0) != 0) {
+    // if (sigsetjmp(cpu->jmp_env, 0) != 0) {
+    if (sigsetjmp(uc->jmp_bufs[uc->nested_level - 1], 0) != 0) {
 #if defined(__clang__) || !QEMU_GNUC_PREREQ(4, 6)
         /* Some compilers wrongly smash all local variables after
          * siglongjmp. There were bug reports for gcc 4.5.0 and clang.

@@ -12,6 +12,9 @@
 #include "unicorn/unicorn.h"
 #include "list.h"
 
+// The max recursive nested uc_emu_start levels
+#define UC_MAX_NESTED_LEVEL (64)
+
 // These are masks of supported modes for each cpu/arch.
 // They should be updated when changes are made to the uc_mode enum typedef.
 #define UC_MODE_ARM_MASK                                                       \
@@ -342,6 +345,9 @@ struct uc_struct {
     bool no_exit_request;       // Disable check_exit_request temporarily. A
                           // workaround to treat the IT block as a whole block.
     bool init_done; // Whether the initialization is done.
+
+    sigjmp_buf jmp_bufs[UC_MAX_NESTED_LEVEL]; // To support nested uc_emu_start
+    int nested_level;                         // Current nested_level
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()

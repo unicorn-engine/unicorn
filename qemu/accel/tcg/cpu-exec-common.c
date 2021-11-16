@@ -40,7 +40,7 @@ void cpu_loop_exit(CPUState *cpu)
     tb_exec_unlock(cpu->uc->tcg_ctx);
     /* Undo the setting in cpu_tb_exec.  */
     cpu->can_do_io = 1;
-    siglongjmp(cpu->jmp_env, 1);
+    siglongjmp(cpu->uc->jmp_bufs[cpu->uc->nested_level - 1], 1);
 }
 
 void cpu_loop_exit_restore(CPUState *cpu, uintptr_t pc)
