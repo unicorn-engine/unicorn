@@ -431,16 +431,6 @@ uc_err uc_close(uc_engine *uc)
 
     free(uc->mapped_blocks);
 
-    // free the saved contexts list and notify them that uc has been closed.
-    cur = uc->saved_contexts.head;
-    while (cur != NULL) {
-        struct list_item *next = cur->next;
-        struct uc_context *context = (struct uc_context *)cur->data;
-        context->uc = NULL;
-        cur = next;
-    }
-    list_clear(&uc->saved_contexts);
-
     g_tree_destroy(uc->exits);
 
     // finally, free uc itself.
@@ -1690,16 +1680,10 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 
     *_context = g_malloc(size);
     if (*_context) {
-        (*_context)->jmp_env_size = sizeof(*uc->cpu->jmp_env);
         (*_context)->context_size = uc->cpu_context_size;
         (*_context)->arch = uc->arch;
         (*_context)->mode = uc->mode;
-        (*_context)->uc = uc;
-        if (list_insert(&uc->saved_contexts, *_context)) {
-            return UC_ERR_OK;
-        } else {
-            return UC_ERR_NOMEM;
-        }
+        return UC_ERR_OK;
     } else {
         return UC_ERR_NOMEM;
     }
@@ -1717,8 +1701,7 @@ size_t uc_context_size(uc_engine *uc)
 {
     UC_INIT(uc);
     // return the total size of struct uc_context
-    return sizeof(uc_context) + uc->cpu_context_size +
-           sizeof(*uc->cpu->jmp_env);
+    return sizeof(uc_context) + uc->cpu_context_size;
 }
 
 UNICORN_EXPORT
@@ -1727,8 +1710,6 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
     UC_INIT(uc);
 
     memcpy(context->data, uc->cpu->env_ptr, context->context_size);
-    memcpy(context->data + context->context_size, uc->cpu->jmp_env,
-           context->jmp_env_size);
 
     return UC_ERR_OK;
 }
@@ -1900,10 +1881,6 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
     UC_INIT(uc);
 
     memcpy(uc->cpu->env_ptr, context->data, context->context_size);
-    if (list_exists(&uc->saved_contexts, context)) {
-        memcpy(uc->cpu->jmp_env, context->data + context->context_size,
-               context->jmp_env_size);
-    }
 
     return UC_ERR_OK;
 }
@@ -1911,11 +1888,7 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 UNICORN_EXPORT
 uc_err uc_context_free(uc_context *context)
 {
-    uc_engine *uc = context->uc;
-    // if uc is NULL, it means that uc_engine has been free-ed.
-    if (uc) {
-        list_remove(&uc->saved_contexts, context);
-    }
+
     return uc_free(context);
 }
 
