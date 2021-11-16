@@ -1376,6 +1376,71 @@ static void test_i386_mmio()
     uc_close(uc);
 }
 
+static bool test_i386_hook_mem_invalid_cb(uc_engine *uc, uc_mem_type type,
+                                          uint64_t address, int size,
+                                          uint64_t value, void *user_data)
+{
+    if (type == UC_MEM_READ_UNMAPPED || type == UC_MEM_WRITE_UNMAPPED) {
+        printf(">>> We have to add a map at 0x%" PRIx64
+               " before continue execution!\n",
+               address);
+        uc_mem_map(uc, address, 0x1000, UC_PROT_ALL);
+    }
+
+    // If you really would like to continue the execution, make sure the memory
+    // is already mapped properly!
+    return true;
+}
+
+static void test_i386_hook_mem_invalid()
+{
+    uc_engine *uc;
+    uc_hook hook;
+    // mov eax, 0xdeadbeef;
+    // mov [0x8000], eax;
+    // mov eax, [0x10000];
+    char code[] =
+        "\xb8\xef\xbe\xad\xde\xa3\x00\x80\x00\x00\xa1\x00\x00\x01\x00";
+    uc_err err;
+
+    printf("===================================\n");
+    printf("Emulate i386 code that tiggers invalid memory read/write.\n");
+
+    err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        return;
+    }
+
+    err = uc_mem_map(uc, ADDRESS, 0x1000, UC_PROT_ALL);
+    if (err) {
+        printf("Failed on uc_mem_map() with error returned: %u\n", err);
+        return;
+    }
+
+    err = uc_mem_write(uc, ADDRESS, code, sizeof(code) - 1);
+    if (err) {
+        printf("Failed on uc_mem_write() with error returned: %u\n", err);
+        return;
+    }
+
+    err = uc_hook_add(uc, &hook, UC_HOOK_MEM_VALID | UC_HOOK_MEM_INVALID,
+                      test_i386_hook_mem_invalid_cb, NULL, 1, 0);
+    if (err) {
+        printf("Failed on uc_hook_add() with error returned: %u\n", err);
+        return;
+    }
+
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(code) - 1, 0, 0);
+    if (err) {
+        printf("Failed on uc_emu_start() with error returned: %u\n", err);
+        return;
+    }
+
+    uc_hook_del(uc, hook);
+    uc_close(uc);
+}
+
 int main(int argc, char **argv, char **envp)
 {
     if (argc == 2) {
@@ -1417,6 +1482,7 @@ int main(int argc, char **argv, char **envp)
         test_i386_invalid_mem_read_in_tb();
         test_i386_smc_xor();
         test_i386_mmio();
+        test_i386_hook_mem_invalid();
     }
 
     return 0;
