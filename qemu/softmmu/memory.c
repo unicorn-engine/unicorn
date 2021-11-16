@@ -88,6 +88,8 @@ static uint64_t mmio_read_wrapper(struct uc_struct *uc, void *opaque, hwaddr add
 {
     mmio_cbs* cbs = (mmio_cbs*)opaque;
     
+    // We have to care about 32bit target.
+    addr = addr & ( (target_ulong)(-1) );
     if (cbs->read) {
         return cbs->read(uc, addr, size, cbs->user_data_read);
     } else {
@@ -99,6 +101,8 @@ static void mmio_write_wrapper(struct uc_struct *uc, void *opaque, hwaddr addr, 
 {
     mmio_cbs* cbs = (mmio_cbs*)opaque;
     
+    // We have to care about 32bit target.
+    addr = addr & ( (target_ulong)(-1) );
     if (cbs->write) {
         cbs->write(uc, addr, size, data, cbs->user_data_write);
     }

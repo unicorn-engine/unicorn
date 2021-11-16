@@ -398,6 +398,84 @@ static void test_riscv64_ecall()
     OK(uc_close(uc));
 }
 
+static uint64_t test_riscv32_mmio_map_read_cb(uc_engine *uc, uint64_t offset,
+                                              unsigned size, void *data)
+{
+    int r_a4;
+    OK(uc_reg_read(uc, UC_RISCV_REG_A4, &r_a4));
+    TEST_CHECK(r_a4 == 0x40021 << 12);
+    TEST_CHECK(offset == 0x21018);
+    return 0;
+}
+
+static void test_riscv32_mmio_map()
+{
+    uc_engine *uc;
+    // 37 17 02 40   lui          a4, 0x40021
+    // 1c 4f         c.lw         a5, 0x18(a4)
+    //
+    char code[] = "\x37\x17\x02\x40\x1c\x4f";
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
+                    sizeof(code) - 1);
+
+    OK(uc_mmio_map(uc, 0x40000000, 0x40000, test_riscv32_mmio_map_read_cb, NULL,
+                   NULL, NULL));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
+static void test_riscv32_map()
+{
+    uc_engine *uc;
+    // 37 17 02 40   lui          a4, 0x40021
+    // 1c 4f         c.lw         a5, 0x18(a4)
+    //
+    char code[] = "\x37\x17\x02\x40\x1c\x4f";
+    uint64_t val = 0xdeadbeef;
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV32, code,
+                    sizeof(code) - 1);
+
+    OK(uc_mem_map(uc, 0x40000000, 0x40000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x40000000 + 0x21018, &val, 8));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_A5, &val));
+
+    TEST_CHECK(val == 0xdeadbeef);
+    OK(uc_close(uc));
+}
+
+static uint64_t test_riscv64_mmio_map_read_cb(uc_engine *uc, uint64_t offset,
+                                              unsigned size, void *data)
+{
+    int r_a4;
+    OK(uc_reg_read(uc, UC_RISCV_REG_A4, &r_a4));
+    TEST_CHECK(r_a4 == 0x40021 << 12);
+    TEST_CHECK(offset == 0x21018);
+    return 0;
+}
+
+static void test_riscv64_mmio_map()
+{
+    uc_engine *uc;
+    // 37 17 02 40   lui          a4, 0x40021
+    // 1c 4f         c.lw         a5, 0x18(a4)
+    //
+    char code[] = "\x37\x17\x02\x40\x1c\x4f";
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
+
+    OK(uc_mmio_map(uc, 0x40000000, 0x40000, test_riscv64_mmio_map_read_cb, NULL,
+                   NULL, NULL));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_riscv32_nop", test_riscv32_nop},
              {"test_riscv64_nop", test_riscv64_nop},
              {"test_riscv32_3steps_pc_update", test_riscv32_3steps_pc_update},
@@ -411,4 +489,7 @@ TEST_LIST = {{"test_riscv32_nop", test_riscv32_nop},
               test_riscv64_fp_move_from_int_reg_write},
              {"test_riscv64_fp_move_to_int", test_riscv64_fp_move_to_int},
              {"test_riscv64_ecall", test_riscv64_ecall},
+             {"test_riscv32_mmio_map", test_riscv32_mmio_map},
+             {"test_riscv64_mmio_map", test_riscv64_mmio_map},
+             {"test_riscv32_map", test_riscv32_map},
              {NULL, NULL}};
