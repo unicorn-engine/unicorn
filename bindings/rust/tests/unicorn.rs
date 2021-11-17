@@ -413,6 +413,116 @@ fn x86_insn_sys_callback() {
 }
 
 #[test]
+fn x86_mmio() {
+    #[derive(PartialEq, Debug)]
+    struct MmioReadExpectation(u64, usize);
+    #[derive(PartialEq, Debug)]
+    struct MmioWriteExpectation(u64, usize, u64);
+    let read_expect = MmioReadExpectation(4, 4);
+    let write_expect = MmioWriteExpectation(8, 2, 42);
+
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_64)
+        .expect("failed to initialize unicorn instance");
+    assert_eq!(emu.mem_map(0x1000, 0x1000, Permission::ALL), Ok(()));
+
+    {
+        // MOV eax, [0x2004]; MOV [0x2008], ax;
+        let x86_code: Vec<u8> = vec![0x8B, 0x04, 0x25, 0x04, 0x20, 0x00, 0x00, 0x66, 0x89, 0x04, 0x25, 0x08, 0x20, 0x00, 0x00];
+
+        let read_cell = Rc::new(RefCell::new(MmioReadExpectation(0, 0)));
+        let cb_read_cell = read_cell.clone();
+        let read_callback = move |_: &mut Unicorn<'_, ()>, offset, size| {
+            *cb_read_cell.borrow_mut() = MmioReadExpectation(offset, size);
+            42
+        };
+
+        let write_cell = Rc::new(RefCell::new(MmioWriteExpectation(0,0,0)));
+        let cb_write_cell = write_cell.clone();
+        let write_callback = move |_: &mut Unicorn<'_, ()>, offset, size, value| {
+            *cb_write_cell.borrow_mut() = MmioWriteExpectation(offset, size, value);
+        };
+
+        assert_eq!(emu.mem_write(0x1000, &x86_code), Ok(()));
+
+        assert_eq!(emu.mmio_map(0x2000, 0x1000, Some(read_callback), Some(write_callback)), Ok(()));
+
+        assert_eq!(
+            emu.emu_start(
+                0x1000,
+                0x1000 + x86_code.len() as u64,
+                10 * SECOND_SCALE,
+                1000
+            ),
+            Ok(())
+        );
+
+        assert_eq!(read_expect, *read_cell.borrow());
+        assert_eq!(write_expect, *write_cell.borrow());
+
+        assert_eq!(emu.mem_unmap(0x2000, 0x1000), Ok(()));
+    }
+
+    {
+        // MOV eax, [0x2004];
+        let x86_code: Vec<u8> = vec![0x8B, 0x04, 0x25, 0x04, 0x20, 0x00, 0x00];
+
+        let read_cell = Rc::new(RefCell::new(MmioReadExpectation(0, 0)));
+        let cb_read_cell = read_cell.clone();
+        let read_callback = move |_: &mut Unicorn<'_, ()>, offset, size| {
+            *cb_read_cell.borrow_mut() = MmioReadExpectation(offset, size);
+            42
+        };
+
+        assert_eq!(emu.mem_write(0x1000, &x86_code), Ok(()));
+
+        assert_eq!(emu.mmio_map_ro(0x2000, 0x1000, read_callback), Ok(()));
+
+        assert_eq!(
+            emu.emu_start(
+                0x1000,
+                0x1000 + x86_code.len() as u64,
+                10 * SECOND_SCALE,
+                1000
+            ),
+            Ok(())
+        );
+
+        assert_eq!(read_expect, *read_cell.borrow());
+
+        assert_eq!(emu.mem_unmap(0x2000, 0x1000), Ok(()));
+    }
+
+    {
+        // MOV ax, 42; MOV [0x2008], ax;
+        let x86_code: Vec<u8> = vec![0x66, 0xB8, 0x2A, 0x00, 0x66, 0x89, 0x04, 0x25, 0x08, 0x20, 0x00, 0x00];
+
+        let write_cell = Rc::new(RefCell::new(MmioWriteExpectation(0,0,0)));
+        let cb_write_cell = write_cell.clone();
+        let write_callback = move |_: &mut Unicorn<'_, ()>, offset, size, value| {
+            *cb_write_cell.borrow_mut() = MmioWriteExpectation(offset, size, value);
+        };
+
+        assert_eq!(emu.mem_write(0x1000, &x86_code), Ok(()));
+
+        assert_eq!(emu.mmio_map_wo(0x2000, 0x1000, write_callback), Ok(()));
+
+        assert_eq!(
+            emu.emu_start(
+                0x1000,
+                0x1000 + x86_code.len() as u64,
+                10 * SECOND_SCALE,
+                1000
+            ),
+            Ok(())
+        );
+
+        assert_eq!(write_expect, *write_cell.borrow());
+
+        assert_eq!(emu.mem_unmap(0x2000, 0x1000), Ok(()));
+    }
+}
+
+#[test]
 fn emulate_arm() {
     let arm_code32: Vec<u8> = vec![0x83, 0xb0]; // sub    sp, #0xc
 
