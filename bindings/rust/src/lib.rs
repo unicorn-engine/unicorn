@@ -76,13 +76,60 @@ impl Drop for Context {
     }
 }
 
+pub struct MmioCallbackScope<'a> {
+    pub regions: Vec<(u64, usize)>,
+    pub read_callback: Option<Box<dyn ffi::IsUcHook<'a> + 'a>>,
+    pub write_callback: Option<Box<dyn ffi::IsUcHook<'a> + 'a>>,
+}
+
+impl<'a> MmioCallbackScope<'a> {
+    fn has_regions(&self) -> bool {
+        self.regions.len() > 0
+    }
+
+    fn unmap(&mut self, begin: u64, size: usize) {
+        let end: u64 = begin + size as u64;
+        self.regions = self.regions.iter().flat_map( |(b, s)| {
+            let e: u64 = b + *s as u64;
+            if begin > *b {
+                if begin >= e {
+                    // The unmapped region is completely after this region
+                    vec![(*b, *s)]
+                } else {
+                    if end >= e {
+                        // The unmapped region overlaps with the end of this region
+                        vec![(*b, (begin - *b) as usize)]
+                    } else {
+                        // The unmapped region is in the middle of this region
+                        let second_b = end + 1;
+                        vec![(*b, (begin - *b) as usize), (second_b, (e - second_b) as usize)]
+                    }
+                }
+            } else {
+                if end > *b {
+                    if end >= e {
+                        // The unmapped region completely contains this region
+                        vec![]
+                    } else {
+                        // The unmapped region overlaps with the start of this region
+                        vec![(end, (e - end) as usize)]
+                    }
+                } else {
+                    // The unmapped region is completely before this region
+                    vec![(*b, *s)]
+                }
+            }
+        }).collect();
+    }
+}
+
 pub struct UnicornInner<'a, D> {
     pub uc: uc_handle,
     pub arch: Arch,
     /// to keep ownership over the hook for this uc instance's lifetime
     pub hooks: Vec<(ffi::uc_hook, Box<dyn ffi::IsUcHook<'a> + 'a>)>,
     /// To keep ownership over the mmio callbacks for this uc instance's lifetime
-    pub mmio_callbacks: Vec<(Option<Box<dyn ffi::IsUcHook<'a> + 'a>>, Option<Box<dyn ffi::IsUcHook<'a> + 'a>>)>,
+    pub mmio_callbacks: Vec<MmioCallbackScope<'a>>,
     pub data: D,
 }
 
@@ -318,7 +365,11 @@ impl<'a, D> Unicorn<'a, D> {
         if err == uc_error::OK {
             let rd = read_data.map( |c| c as Box<dyn ffi::IsUcHook> );
             let wd = write_data.map( |c| c as Box<dyn ffi::IsUcHook> );
-            self.inner_mut().mmio_callbacks.push((rd, wd));
+            self.inner_mut().mmio_callbacks.push(MmioCallbackScope{
+                regions: vec![(address, size)],
+                read_callback: rd,
+                write_callback: wd,
+            });
 
             Ok(())
         } else {
@@ -364,11 +415,21 @@ impl<'a, D> Unicorn<'a, D> {
     /// `size` must be a multiple of 4kb or this will return `Error::ARG`.
     pub fn mem_unmap(&mut self, address: u64, size: libc::size_t) -> Result<(), uc_error> {
         let err = unsafe { ffi::uc_mem_unmap(self.inner().uc, address, size) };
+
+        self.mmio_unmap(address, size);
+
         if err == uc_error::OK {
             Ok(())
         } else {
             Err(err)
         }
+    }
+
+    fn mmio_unmap(&mut self, address: u64, size: libc::size_t) {
+        for scope in self.inner_mut().mmio_callbacks.iter_mut() {
+            scope.unmap(address, size);
+        }
+        self.inner_mut().mmio_callbacks.retain( |scope| scope.has_regions() );
     }
 
     /// Set the memory permissions for an existing memory region.
