@@ -4,6 +4,8 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _mips
 #endif
+#define uc_add_inline_hook uc_add_inline_hook_mips
+#define uc_del_inline_hook uc_del_inline_hook_mips
 #define tb_invalidate_phys_range tb_invalidate_phys_range_mips
 #define use_idiv_instructions use_idiv_instructions_mips
 #define arm_arch arm_arch_mips

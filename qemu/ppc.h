@@ -4,6 +4,8 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _ppc
 #endif
+#define uc_add_inline_hook uc_add_inline_hook_ppc
+#define uc_del_inline_hook uc_del_inline_hook_ppc
 #define tb_invalidate_phys_range tb_invalidate_phys_range_ppc
 #define use_idiv_instructions use_idiv_instructions_ppc
 #define arm_arch arm_arch_ppc

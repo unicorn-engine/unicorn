@@ -6333,6 +6333,10 @@ static void m68k_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, dc->pc)) {
+
+        // Sync PC in advance
+        tcg_gen_movi_i32(tcg_ctx, QREG_PC, dc->pc);
+
         gen_uc_tracecode(tcg_ctx, 2, UC_HOOK_CODE_IDX, uc, dc->pc);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);

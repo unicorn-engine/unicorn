@@ -30941,6 +30941,10 @@ static void mips_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
 
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, ctx->base.pc_next)) {
+
+        // Sync PC in advance
+        gen_save_pc(tcg_ctx, ctx->base.pc_next);
+
         // save the last operand
         prev_op = tcg_last_op(tcg_ctx);
         hook_insn = true;

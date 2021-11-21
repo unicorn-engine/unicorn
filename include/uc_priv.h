@@ -142,6 +142,13 @@ struct hook {
     void *user_data;
 };
 
+// Add an inline hook to helper_table
+typedef void (*uc_add_inline_hook_t)(struct uc_struct *uc, struct hook *hk,
+                                     void **args, int args_len);
+
+// Delete a hook from helper_table
+typedef void (*uc_del_inline_hook_t)(struct uc_struct *uc, struct hook *hk);
+
 // hook list offsets
 //
 // The lowest 6 bits are used for hook type index while the others
@@ -254,6 +261,8 @@ struct uc_struct {
     uc_tcg_flush_tlb tcg_flush_tlb;
     uc_invalidate_tb_t uc_invalidate_tb;
     uc_gen_tb_t uc_gen_tb;
+    uc_add_inline_hook_t add_inline_hook;
+    uc_del_inline_hook_t del_inline_hook;
 
     /*  only 1 cpu in unicorn,
         do not need current_cpu to handle current running cpu. */
@@ -296,6 +305,7 @@ struct uc_struct {
     // linked lists containing hooks per type
     struct list hook[UC_HOOK_MAX];
     struct list hooks_to_del;
+    int hooks_count[UC_HOOK_MAX];
 
     // hook to count number of instructions for uc_emu_start()
     uc_hook count_hook;

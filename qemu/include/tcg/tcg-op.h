@@ -32,13 +32,41 @@
 static inline void gen_uc_tracecode(TCGContext *tcg_ctx, int32_t size, int32_t type, void *uc, uint64_t pc)
 {
     TCGv_i32 tsize = tcg_const_i32(tcg_ctx, size);
-    TCGv_i32 ttype = tcg_const_i32(tcg_ctx, type);
+    TCGv_i32 ttype;
     TCGv_ptr tuc = tcg_const_ptr(tcg_ctx, uc);
     TCGv_i64 tpc = tcg_const_i64(tcg_ctx, pc);
-    gen_helper_uc_tracecode(tcg_ctx, tsize, ttype, tuc, tpc);
+    TCGv_ptr tdata;
+    uc_engine* puc = uc;
+    struct list_item *cur;
+    struct hook* hk;
+    TCGTemp* args[] = {
+        tcgv_ptr_temp(tcg_ctx, tuc),
+        tcgv_i64_temp(tcg_ctx, tpc),
+        tcgv_i32_temp(tcg_ctx, tsize),
+        0
+    };
+
+    if (puc->hooks_count[type] == 1) {
+        cur = puc->hook[type].head;
+        
+        while (cur) {
+            hk = cur->data;
+            if (!hk->to_delete) {
+                tdata = tcg_const_ptr(tcg_ctx, hk->user_data);
+                args[3] = tcgv_ptr_temp(tcg_ctx, tdata);
+                puc->add_inline_hook(uc, hk, (void**)args, 4);
+                tcg_temp_free_ptr(tcg_ctx, tdata);
+            }
+            cur = cur->next;
+        }
+
+    } else {
+        ttype = tcg_const_i32(tcg_ctx, type);
+        gen_helper_uc_tracecode(tcg_ctx, tsize, ttype, tuc, tpc);
+        tcg_temp_free_i32(tcg_ctx, ttype);
+    }
     tcg_temp_free_i64(tcg_ctx, tpc);
     tcg_temp_free_ptr(tcg_ctx, tuc);
-    tcg_temp_free_i32(tcg_ctx, ttype);
     tcg_temp_free_i32(tcg_ctx, tsize);
 }
 

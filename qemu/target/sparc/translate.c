@@ -5961,6 +5961,10 @@ static void sparc_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
 
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, dc->pc)) {
+
+        // Sync PC in advance
+        tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, dc->pc);
+
         gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, uc, dc->pc);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);

@@ -4,6 +4,8 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _m68k
 #endif
+#define uc_add_inline_hook uc_add_inline_hook_m68k
+#define uc_del_inline_hook uc_del_inline_hook_m68k
 #define tb_invalidate_phys_range tb_invalidate_phys_range_m68k
 #define use_idiv_instructions use_idiv_instructions_m68k
 #define arm_arch arm_arch_m68k

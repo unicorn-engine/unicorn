@@ -1078,6 +1078,10 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
     /* Invalidate / Cache TBs */
     uc->uc_invalidate_tb = uc_invalidate_tb;
     uc->uc_gen_tb = uc_gen_tb;
+
+    /* Inline hooks optimization */
+    uc->add_inline_hook = uc_add_inline_hook;
+    uc->del_inline_hook = uc_del_inline_hook;
 }
 
 /* call with @p->lock held */

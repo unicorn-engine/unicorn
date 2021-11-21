@@ -664,6 +664,7 @@ static void clear_deleted_hooks(uc_engine *uc)
         for (i = 0; i < UC_HOOK_MAX; i++) {
             if (list_remove(&uc->hook[i], (void *)hook)) {
                 if (--hook->refs == 0) {
+                    uc->del_inline_hook(uc, hook);
                     free(hook);
                 }
 
@@ -1421,6 +1422,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
             }
         }
 
+        uc->hooks_count[UC_HOOK_INSN_IDX]++;
         hook->refs++;
         return UC_ERR_OK;
     }
@@ -1452,6 +1454,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
             }
         }
 
+        uc->hooks_count[UC_HOOK_TCG_OPCODE_IDX]++;
         hook->refs++;
         return UC_ERR_OK;
     }
@@ -1475,6 +1478,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
                         return UC_ERR_NOMEM;
                     }
                 }
+                uc->hooks_count[i]++;
                 hook->refs++;
             }
         }
@@ -1506,6 +1510,7 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
     for (i = 0; i < UC_HOOK_MAX; i++) {
         if (list_exists(&uc->hook[i], (void *)hook)) {
             hook->to_delete = true;
+            uc->hooks_count[i]--;
             list_append(&uc->hooks_to_del, hook);
         }
     }
@@ -1562,10 +1567,11 @@ void helper_uc_tracecode(int32_t size, uc_hook_idx index, void *handle,
 
     index = index & UC_HOOK_IDX_MASK;
 
+    // This has been done in tcg code.
     // sync PC in CPUArchState with address
-    if (uc->set_pc) {
-        uc->set_pc(uc, address);
-    }
+    // if (uc->set_pc) {
+    //     uc->set_pc(uc, address);
+    // }
 
     // the last callback may already asked to stop emulation
     if (uc->stop_request && !(hook_flags & UC_HOOK_FLAG_NO_STOP)) {

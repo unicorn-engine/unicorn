@@ -1561,4 +1561,7 @@ struct jit_code_entry {
     uint64_t symfile_size;
 };
 
+void uc_del_inline_hook(uc_engine *uc, struct hook *hk);
+void uc_add_inline_hook(uc_engine *uc, struct hook *hk, void** args, int args_len);
+
 #endif /* TCG_H */

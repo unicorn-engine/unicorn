@@ -856,6 +856,10 @@ static void riscv_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     } else {
         // Unicorn: trace this instruction on request
         if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, ctx->base.pc_next)) {
+
+            // Sync PC in advance
+            tcg_gen_movi_tl(tcg_ctx, tcg_ctx->cpu_pc, ctx->base.pc_next);
+
             // save the last operand
             prev_op = tcg_last_op(tcg_ctx);
             insn_hook = true;

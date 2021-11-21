@@ -662,6 +662,54 @@ static void process_op_defs(TCGContext *s);
 static TCGTemp *tcg_global_reg_new_internal(TCGContext *s, TCGType type,
                                             TCGReg reg, const char *name);
 
+void uc_add_inline_hook(uc_engine *uc, struct hook *hk, void** args, int args_len)
+{
+    TCGHelperInfo* info = g_malloc(sizeof(TCGHelperInfo));
+    char *name = g_malloc(64);
+    unsigned sizemask = 0xFFFFFFFF;
+    TCGContext *tcg_ctx = uc->tcg_ctx;
+    GHashTable *helper_table = uc->tcg_ctx->helper_table;
+
+    info->func = hk->callback;
+    info->name = name;
+    info->flags = 0; // From helper-head.h
+
+    // Only UC_HOOK_BLOCK and UC_HOOK_CODE is generated into tcg code and can be inlined.
+    switch (hk->type) {
+    case UC_HOOK_BLOCK:
+    case UC_HOOK_CODE:
+        // (*uc_cb_hookcode_t)(uc_engine *uc, uint64_t address, uint32_t size, void *user_data);
+        sizemask = dh_sizemask(void, 0) | dh_sizemask(i64, 1) | dh_sizemask(i32, 2) | dh_sizemask(void, 3);
+        snprintf(name, 63, "hookcode_%d_%" PRIx64 , hk->type, (uint64_t)hk->callback);
+        break;
+
+    default:
+        break;
+    }
+
+    name[63] = 0;
+    info->name = name;
+    info->sizemask = sizemask;
+
+    g_hash_table_insert(helper_table, (gpointer)info->func, (gpointer)info);
+
+    tcg_gen_callN(tcg_ctx, info->func, NULL, args_len, (TCGTemp**)args);
+}
+
+void uc_del_inline_hook(uc_engine *uc, struct hook *hk)
+{
+    GHashTable *helper_table = uc->tcg_ctx->helper_table;
+    TCGHelperInfo* info = g_hash_table_lookup(helper_table, hk->callback);
+
+    if (info) {
+        g_hash_table_remove(helper_table, info);
+        
+        g_free((gpointer)info->name);
+        g_free(info);
+    }
+}
+
+
 void tcg_context_init(TCGContext *s)
 {
     int op, total_args, n, i;

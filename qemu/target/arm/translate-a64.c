@@ -14420,7 +14420,10 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
 
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(env->uc, UC_HOOK_CODE, s->pc_curr)) {
+
+        // Sync PC in advance
         TCGContext *tcg_ctx = env->uc->tcg_ctx;
+        gen_a64_set_pc_im(tcg_ctx, s->pc_curr);
 
         gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, env->uc, s->pc_curr);
         // the callback might want to stop emulation immediately

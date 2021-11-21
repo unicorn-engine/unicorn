@@ -4,6 +4,8 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _sparc
 #endif
+#define uc_add_inline_hook uc_add_inline_hook_sparc
+#define uc_del_inline_hook uc_del_inline_hook_sparc
 #define tb_invalidate_phys_range tb_invalidate_phys_range_sparc
 #define use_idiv_instructions use_idiv_instructions_sparc
 #define arm_arch arm_arch_sparc

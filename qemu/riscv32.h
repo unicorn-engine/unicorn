@@ -4,6 +4,8 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _riscv32
 #endif
+#define uc_add_inline_hook uc_add_inline_hook_riscv32
+#define uc_del_inline_hook uc_del_inline_hook_riscv32
 #define tb_invalidate_phys_range tb_invalidate_phys_range_riscv32
 #define use_idiv_instructions use_idiv_instructions_riscv32
 #define arm_arch arm_arch_riscv32

@@ -10910,6 +10910,10 @@ static void disas_arm_insn(DisasContext *s, unsigned int insn)
 
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(s->uc, UC_HOOK_CODE, s->pc_curr)) {
+
+        // Sync PC in advance
+        gen_set_pc_im(s, s->pc_curr);
+        
         gen_uc_tracecode(tcg_ctx, 4, UC_HOOK_CODE_IDX, s->uc, s->pc_curr);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
@@ -11538,6 +11542,10 @@ static void thumb_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
     // Unicorn: trace this instruction on request
     insn_size = is_16bit ? 2 : 4;
     if (HOOK_EXISTS_BOUNDED(uc, UC_HOOK_CODE, dc->base.pc_next - insn_size)) {
+        
+        // Sync PC in advance
+        gen_set_pc_im(dc, dc->base.pc_next - insn_size);
+
         if (uc->no_exit_request) {
             gen_uc_tracecode(tcg_ctx, insn_size, UC_HOOK_CODE_IDX | UC_HOOK_FLAG_NO_STOP, uc, dc->base.pc_next - insn_size);
         } else {

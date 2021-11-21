@@ -4811,6 +4811,9 @@ static target_ulong disas_insn(DisasContext *s, CPUState *cpu)
             s->last_cc_op = s->cc_op;
         }
 
+        // Sync PC in advance
+        gen_jmp_im(s, pc_start);
+
         // save the last operand
         prev_op = tcg_last_op(tcg_ctx);
         insn_hook = true;
