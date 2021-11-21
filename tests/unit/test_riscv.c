@@ -451,7 +451,7 @@ static void test_riscv32_map()
 static uint64_t test_riscv64_mmio_map_read_cb(uc_engine *uc, uint64_t offset,
                                               unsigned size, void *data)
 {
-    int r_a4;
+    uint64_t r_a4;
     OK(uc_reg_read(uc, UC_RISCV_REG_A4, &r_a4));
     TEST_CHECK(r_a4 == 0x40021 << 12);
     TEST_CHECK(offset == 0x21018);
