@@ -258,10 +258,9 @@ static inline TranslationBlock *tb_find(CPUState *cpu,
         /* We add the TB in the virtual pc hash table for the fast lookup */
         cpu->tb_jmp_cache[tb_jmp_cache_hash_func(cpu->uc, pc)] = tb;
 
-        UC_TB_COPY(&cur_tb, tb);
-
-        if (last_tb) {
-            UC_TB_COPY(&prev_tb, last_tb);
+        if (uc->last_tb) {
+            UC_TB_COPY(&cur_tb, tb);
+            UC_TB_COPY(&prev_tb, uc->last_tb);
             for (cur = uc->hook[UC_HOOK_EDGE_GENERATED_IDX].head;
                 cur != NULL && (hook = (struct hook *)cur->data); cur = cur->next) {
                 if (hook->to_delete) {
@@ -494,6 +493,7 @@ static inline void cpu_loop_exec_tb(CPUState *cpu, TranslationBlock *tb,
 
     // trace_exec_tb(tb, tb->pc);
     ret = cpu_tb_exec(cpu, tb);
+    cpu->uc->last_tb = tb; // Trace the last tb we executed.
     tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
     *tb_exit = ret & TB_EXIT_MASK;
     if (*tb_exit != TB_EXIT_REQUESTED) {
