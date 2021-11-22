@@ -1703,7 +1703,7 @@ void tcg_dump_op(TCGContext *s, bool have_prefs, TCGOp* op)
     def = &s->tcg_op_defs[c];
     if (c == INDEX_op_insn_start) {
         nb_oargs = 0;
-        printf(" ----");
+        fprintf(stderr, " ----");
 
         for (i = 0; i < TARGET_INSN_START_WORDS; ++i) {
             target_ulong a;
@@ -1712,7 +1712,7 @@ void tcg_dump_op(TCGContext *s, bool have_prefs, TCGOp* op)
 #else
             a = op->args[i];
 #endif
-            printf(" " TARGET_FMT_lx, a);
+            fprintf(stderr, " " TARGET_FMT_lx, a);
         }
     } else if (c == INDEX_op_call) {
         /* variable number of arguments */
@@ -1721,11 +1721,11 @@ void tcg_dump_op(TCGContext *s, bool have_prefs, TCGOp* op)
         nb_cargs = def->nb_cargs;
 
         /* function name, flags, out args */
-        printf(" %s %s,$0x%" TCG_PRIlx ",$%d", def->name,
+        fprintf(stderr, " %s %s,$0x%" TCG_PRIlx ",$%d", def->name,
                       tcg_find_helper(s, op->args[nb_oargs + nb_iargs]),
                       op->args[nb_oargs + nb_iargs + 1], nb_oargs);
         for (i = 0; i < nb_oargs; i++) {
-            printf(",%s", tcg_get_arg_str(s, buf, sizeof(buf),
+            fprintf(stderr, ",%s", tcg_get_arg_str(s, buf, sizeof(buf),
                                                  op->args[i]));
         }
         for (i = 0; i < nb_iargs; i++) {
@@ -1734,33 +1734,33 @@ void tcg_dump_op(TCGContext *s, bool have_prefs, TCGOp* op)
             if (arg != TCG_CALL_DUMMY_ARG) {
                 t = tcg_get_arg_str(s, buf, sizeof(buf), arg);
             }
-            printf(",%s", t);
+            fprintf(stderr, ",%s", t);
         }
     } else {
-        printf(" %s ", def->name);
+        fprintf(stderr, " %s ", def->name);
 
         nb_oargs = def->nb_oargs;
         nb_iargs = def->nb_iargs;
         nb_cargs = def->nb_cargs;
 
         if (def->flags & TCG_OPF_VECTOR) {
-            printf("v%d,e%d,", 64 << TCGOP_VECL(op),
+            fprintf(stderr, "v%d,e%d,", 64 << TCGOP_VECL(op),
                           8 << TCGOP_VECE(op));
         }
 
         k = 0;
         for (i = 0; i < nb_oargs; i++) {
             if (k != 0) {
-                printf(",");
+                fprintf(stderr, ",");
             }
-            printf("%s", tcg_get_arg_str(s, buf, sizeof(buf),
+            fprintf(stderr, "%s", tcg_get_arg_str(s, buf, sizeof(buf),
                                                 op->args[k++]));
         }
         for (i = 0; i < nb_iargs; i++) {
             if (k != 0) {
-                printf(",");
+                fprintf(stderr, ",");
             }
-            printf("%s", tcg_get_arg_str(s, buf, sizeof(buf),
+            fprintf(stderr, "%s", tcg_get_arg_str(s, buf, sizeof(buf),
                                                 op->args[k++]));
         }
         switch (c) {
@@ -1776,9 +1776,9 @@ void tcg_dump_op(TCGContext *s, bool have_prefs, TCGOp* op)
             case INDEX_op_cmpsel_vec:
                 if (op->args[k] < ARRAY_SIZE(cond_name)
                     && cond_name[op->args[k]]) {
-                    printf(",%s", cond_name[op->args[k++]]);
+                    fprintf(stderr, ",%s", cond_name[op->args[k++]]);
                 } else {
-                    printf(",$0x%" TCG_PRIlx, op->args[k++]);
+                    fprintf(stderr, ",$0x%" TCG_PRIlx, op->args[k++]);
                 }
                 i = 1;
                 break;
@@ -1792,12 +1792,12 @@ void tcg_dump_op(TCGContext *s, bool have_prefs, TCGOp* op)
                 unsigned ix = get_mmuidx(oi);
 
                 if (op & ~(MO_AMASK | MO_BSWAP | MO_SSIZE)) {
-                    printf(",$0x%x,%u", op, ix);
+                    fprintf(stderr, ",$0x%x,%u", op, ix);
                 } else {
                     const char *s_al, *s_op;
                     s_al = alignment_name[(op & MO_AMASK) >> MO_ASHIFT];
                     s_op = ldst_name[op & (MO_BSWAP | MO_SSIZE)];
-                    printf(",%s%s,%u", s_al, s_op, ix);
+                    fprintf(stderr, ",%s%s,%u", s_al, s_op, ix);
                 }
                 i = 1;
             }
@@ -1812,7 +1812,7 @@ void tcg_dump_op(TCGContext *s, bool have_prefs, TCGOp* op)
             case INDEX_op_brcond_i32:
             case INDEX_op_brcond_i64:
             case INDEX_op_brcond2_i32:
-                printf("%s$L%d", k ? "," : "",
+                fprintf(stderr, "%s$L%d", k ? "," : "",
                               arg_label(op->args[k])->id);
                 i++, k++;
                 break;
@@ -1820,12 +1820,12 @@ void tcg_dump_op(TCGContext *s, bool have_prefs, TCGOp* op)
                 break;
         }
         for (; i < nb_cargs; i++, k++) {
-            printf("%s$0x%" TCG_PRIlx, k ? "," : "", op->args[k]);
+            fprintf(stderr, "%s$0x%" TCG_PRIlx, k ? "," : "", op->args[k]);
         }
         if(c == INDEX_op_mov_i64){
             struct TCGTemp* tp = arg_temp(op->args[1]);
             if (tp && tp->val_type == TEMP_VAL_MEM){
-                printf(" mem_base=%p ", tp->mem_base);
+                fprintf(stderr, " mem_base=%p ", tp->mem_base);
             }
         }
     }
@@ -1834,19 +1834,19 @@ void tcg_dump_op(TCGContext *s, bool have_prefs, TCGOp* op)
         unsigned life = op->life;
 
         if (life & (SYNC_ARG * 3)) {
-            printf("  sync:");
+            fprintf(stderr, "  sync:");
             for (i = 0; i < 2; ++i) {
                 if (life & (SYNC_ARG << i)) {
-                    printf(" %d", i);
+                    fprintf(stderr, " %d", i);
                 }
             }
         }
         life /= DEAD_ARG;
         if (life) {
-            printf("  dead:");
+            fprintf(stderr, "  dead:");
             for (i = 0; life; ++i, life >>= 1) {
                 if (life & 1) {
-                    printf(" %d", i);
+                    fprintf(stderr, " %d", i);
                 }
             }
         }
@@ -1857,28 +1857,28 @@ void tcg_dump_op(TCGContext *s, bool have_prefs, TCGOp* op)
             TCGRegSet set = op->output_pref[i];
 
             if (i == 0) {
-                printf("  pref=");
+                fprintf(stderr, "  pref=");
             } else {
-                printf(",");
+                fprintf(stderr, ",");
             }
             if (set == 0) {
-                printf("none");
+                fprintf(stderr, "none");
             } else if (set == MAKE_64BIT_MASK(0, TCG_TARGET_NB_REGS)) {
-                printf("all");
+                fprintf(stderr, "all");
 #ifdef CONFIG_DEBUG_TCG
                 } else if (tcg_regset_single(set)) {
                     TCGReg reg = tcg_regset_first(set);
-                    printf("%s", tcg_target_reg_names[reg]);
+                    fprintf(stderr, "%s", tcg_target_reg_names[reg]);
 #endif
             } else if (TCG_TARGET_NB_REGS <= 32) {
-                printf("%#x", (uint32_t)set);
+                fprintf(stderr, "%#x", (uint32_t)set);
             } else {
-                printf("%#" PRIx64, (uint64_t)set);
+                fprintf(stderr, "%#" PRIx64, (uint64_t)set);
             }
         }
     }
 
-    printf("\n");
+    fprintf(stderr, "\n");
 }
 
 #if 0
@@ -1886,7 +1886,7 @@ static gboolean tcg_dump_tb(gpointer key, gpointer value, gpointer data)
 {
     TranslationBlock* tb = (TranslationBlock*)value;
 
-    printf("  TB "TARGET_FMT_lx"->"TARGET_FMT_lx", flag=%x, cflag=%x\n", tb->pc, tb->pc + tb->size, tb->flags, tb->cflags);
+    fprintf(stderr, "  TB "TARGET_FMT_lx"->"TARGET_FMT_lx", flag=%x, cflag=%x\n", tb->pc, tb->pc + tb->size, tb->flags, tb->cflags);
 
     return false;
 }
@@ -1898,9 +1898,9 @@ static gboolean tcg_dump_tb(gpointer key, gpointer value, gpointer data)
  */
 static void tcg_dump_tbs(TCGContext *s)
 {
-    printf(" TBs:\n");
+    fprintf(stderr, " TBs:\n");
     tcg_tb_foreach(s, tcg_dump_tb, NULL);
-    printf("\n");
+    fprintf(stderr, "\n");
     return;
 }
 #endif
@@ -1911,16 +1911,16 @@ void tcg_dump_ops(TCGContext *s, bool have_prefs, const char *headline)
     int insn_idx = 0;
     int op_idx = 0;
 
-    printf("\n*** %s\n", headline);
+    fprintf(stderr, "\n*** %s\n", headline);
     // tcg_dump_tbs(s, tcg_dump_tb, NULL);
 
     QTAILQ_FOREACH(op, &s->ops, link) {
         if (op->opc == INDEX_op_insn_start) {
-            printf("\n insn_idx=%d", insn_idx);
+            fprintf(stderr, "\n insn_idx=%d", insn_idx);
             insn_idx++;
             op_idx = 0;
         } else {
-            printf(" %d: ", op_idx);
+            fprintf(stderr, " %d: ", op_idx);
         }
         op_idx++;
         tcg_dump_op(s, have_prefs, op);
@@ -2810,31 +2810,31 @@ static void dump_regs(TCGContext *s)
 
     for(i = 0; i < s->nb_temps; i++) {
         ts = &s->temps[i];
-        printf("  %10s: ", tcg_get_arg_str_ptr(s, buf, sizeof(buf), ts));
+        fprintf(stderr, "  %10s: ", tcg_get_arg_str_ptr(s, buf, sizeof(buf), ts));
         switch(ts->val_type) {
         case TEMP_VAL_REG:
-            printf("%s", tcg_target_reg_names[ts->reg]);
+            fprintf(stderr, "%s", tcg_target_reg_names[ts->reg]);
             break;
         case TEMP_VAL_MEM:
-            printf("%d(%s)", (int)ts->mem_offset,
+            fprintf(stderr, "%d(%s)", (int)ts->mem_offset,
                    tcg_target_reg_names[ts->mem_base->reg]);
             break;
         case TEMP_VAL_CONST:
-            printf("$0x%" TCG_PRIlx, ts->val);
+            fprintf(stderr, "$0x%" TCG_PRIlx, ts->val);
             break;
         case TEMP_VAL_DEAD:
-            printf("D");
+            fprintf(stderr, "D");
             break;
         default:
-            printf("???");
+            fprintf(stderr, "???");
             break;
         }
-        printf("\n");
+        fprintf(stderr, "\n");
     }
 
     for(i = 0; i < TCG_TARGET_NB_REGS; i++) {
         if (s->reg_to_temp[i] != NULL) {
-            printf("%s: %s\n", 
+            fprintf(stderr, "%s: %s\n", 
                    tcg_target_reg_names[i], 
                    tcg_get_arg_str_ptr(s, buf, sizeof(buf), s->reg_to_temp[i]));
         }
@@ -2852,7 +2852,7 @@ static void check_regs(TCGContext *s)
         ts = s->reg_to_temp[reg];
         if (ts != NULL) {
             if (ts->val_type != TEMP_VAL_REG || ts->reg != reg) {
-                printf("Inconsistency for register %s:\n", 
+                fprintf(stderr, "Inconsistency for register %s:\n", 
                        tcg_target_reg_names[reg]);
                 goto fail;
             }
@@ -2862,10 +2862,10 @@ static void check_regs(TCGContext *s)
         ts = &s->temps[k];
         if (ts->val_type == TEMP_VAL_REG && !ts->fixed_reg
             && s->reg_to_temp[ts->reg] != ts) {
-            printf("Inconsistency for temp %s:\n",
+            fprintf(stderr, "Inconsistency for temp %s:\n",
                    tcg_get_arg_str_ptr(s, buf, sizeof(buf), ts));
         fail:
-            printf("reg state:\n");
+            fprintf(stderr, "reg state:\n");
             dump_regs(s);
             tcg_abort();
         }
