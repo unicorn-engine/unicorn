@@ -846,20 +846,6 @@ static void test_x86_nested_emu_start()
     OK(uc_close(uc));
 }
 
-static void test_x86_splitting_mem_unmap()
-{
-    uc_engine *uc;
-
-    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
-
-    OK(uc_mem_map(uc, 0x20000, 0x1000, UC_PROT_NONE));
-    OK(uc_mem_map(uc, 0x21000, 0x2000, UC_PROT_NONE));
-
-    OK(uc_mem_unmap(uc, 0x21000, 0x1000));
-
-    OK(uc_close(uc));
-}
-
 TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_out", test_x86_out},
              {"test_x86_mem_hook_all", test_x86_mem_hook_all},
@@ -886,5 +872,4 @@ TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_hook_tcg_op", test_x86_hook_tcg_op},
              {"test_x86_cmpxchg", test_x86_cmpxchg},
              {"test_x86_nested_emu_start", test_x86_nested_emu_start},
-             {"test_x86_splitting_mem_unmap", test_x86_splitting_mem_unmap},
              {NULL, NULL}};
