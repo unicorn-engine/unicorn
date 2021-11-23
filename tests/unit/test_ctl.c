@@ -7,29 +7,45 @@
 
 #include "windows.h"
 
+#define NANOSECONDS_PER_SECOND 1000000000LL
+
+static inline uint64_t muldiv64(uint64_t a, uint32_t b, uint32_t c)
+{
+    union {
+        uint64_t ll;
+        struct {
+            uint32_t low, high;
+        } l;
+    } u, res;
+    uint64_t rl, rh;
+
+    u.ll = a;
+    rl = (uint64_t)u.l.low * (uint64_t)b;
+    rh = (uint64_t)u.l.high * (uint64_t)b;
+    rh += (rl >> 32);
+    res.l.high = rh / c;
+    res.l.low = (((rh % c) << 32) + (rl & 0xffffffff)) / c;
+    return res.ll;
+}
+
+static int64_t get_freq(void)
+{
+    LARGE_INTEGER freq;
+    int ret = QueryPerformanceFrequency(&freq);
+    if (ret == 0) {
+        fprintf(stderr, "Could not calibrate ticks\n");
+        exit(1);
+    }
+    return freq.QuadPart;
+}
+
 static inline int64_t get_clock_realtime(void)
 {
-    // code from
-    // https://stackoverflow.com/questions/10905892/equivalent-of-gettimeday-for-windows
-    // >>>>>>>>>
-    const uint64_t EPOCH = ((uint64_t)116444736000000000ULL);
-
-    long tv_sec, tv_usec;
-    SYSTEMTIME system_time;
-    FILETIME file_time;
-    uint64_t time;
-
-    GetSystemTime(&system_time);
-    SystemTimeToFileTime(&system_time, &file_time);
-    time = ((uint64_t)file_time.dwLowDateTime);
-    time += ((uint64_t)file_time.dwHighDateTime) << 32;
-
-    tv_sec = (long)((time - EPOCH) / 10000000L);
-    tv_usec = (long)(system_time.wMilliseconds * 1000);
-    // <<<<<<<<<
-
-    return tv_sec * 1000000000LL + (tv_usec * 1000);
+    LARGE_INTEGER ti;
+    QueryPerformanceCounter(&ti);
+    return muldiv64(ti.QuadPart, NANOSECONDS_PER_SECOND, get_freq());
 }
+
 #else
 
 #include <sys/time.h>
