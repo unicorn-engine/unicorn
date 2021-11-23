@@ -91,5 +91,5 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
              {"test_splitting_mem_unmap", test_splitting_mem_unmap},
-             {"test_x86_splitting_mmio_unmap", test_splitting_mmio_unmap},
+             {"test_splitting_mmio_unmap", test_splitting_mmio_unmap},
              {NULL, NULL}};
