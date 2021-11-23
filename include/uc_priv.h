@@ -358,7 +358,7 @@ struct uc_struct {
     sigjmp_buf jmp_bufs[UC_MAX_NESTED_LEVEL]; // To support nested uc_emu_start
     int nested_level;                         // Current nested_level
 
-    struct TranslationBlock* last_tb; // The real last tb we executed.
+    struct TranslationBlock *last_tb; // The real last tb we executed.
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()
