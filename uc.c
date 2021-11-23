@@ -1090,7 +1090,8 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr,
 
     QLIST_FOREACH(block, &uc->ram_list.blocks, next)
     {
-        if (block->offset <= mr->addr &&
+        // block->offset is the offset within ram_addr_t, not GPA
+        if (block->mr->addr <= mr->addr &&
             block->used_length >= (mr->end - mr->addr)) {
             break;
         }

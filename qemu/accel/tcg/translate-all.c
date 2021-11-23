@@ -985,7 +985,9 @@ static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t l
 {
     tb_page_addr_t start, end;
 
-    // GVA to GPA (GPA -> HVA via page_find, HVA->HPA via host mmu)
+    // GVA to GPA 
+    // (GPA -> HVA via memory_region_get_ram_addr(mr) + GPA + block->host,
+    // HVA->HPA via host mmu)
     start = get_page_addr_code(uc->cpu->env_ptr, start_addr) & (target_ulong)(-1);
     
     // For 32bit target.
