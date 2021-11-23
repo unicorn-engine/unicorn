@@ -46,6 +46,15 @@
 
 struct TranslationBlock;
 
+// Place the struct here since we need it in uc.c
+typedef struct _mmio_cbs {
+    uc_cb_mmio_read_t read;
+    void *user_data_read;
+    uc_cb_mmio_write_t write;
+    void *user_data_write;
+    MemoryRegionOps ops;
+} mmio_cbs;
+
 typedef uc_err (*query_t)(struct uc_struct *uc, uc_query_type type,
                           size_t *result);
 

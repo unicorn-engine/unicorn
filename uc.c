@@ -1046,6 +1046,79 @@ static uint8_t *copy_region(struct uc_struct *uc, MemoryRegion *mr)
 }
 
 /*
+    This function is similar to split_region, but for MMIO memory.
+
+    This function would delete the region unconditionally.
+
+    Note this function may be called recursively.
+*/
+static bool split_mmio_region(struct uc_struct *uc, MemoryRegion *mr,
+                              uint64_t address, size_t size)
+{
+    uint64_t begin, end, chunk_end;
+    size_t l_size, r_size;
+    mmio_cbs backup;
+
+    chunk_end = address + size;
+
+    // This branch also break recursion.
+    if (address <= mr->addr && chunk_end >= mr->end) {
+        return true;
+    }
+
+    if (size == 0) {
+        return false;
+    }
+
+    begin = mr->addr;
+    end = mr->end;
+
+    memcpy(&backup, mr->opaque, sizeof(mmio_cbs));
+
+    /* overlapping cases
+     *               |------mr------|
+     * case 1    |---size--|            // Is it possible???
+     * case 2           |--size--|
+     * case 3                  |---size--|
+     */
+
+    // unmap this region first, then do split it later
+    if (uc_mem_unmap(uc, mr->addr, (size_t)int128_get64(mr->size)) !=
+        UC_ERR_OK) {
+        return false;
+    }
+
+    // adjust some things
+    if (address < begin) {
+        address = begin;
+    }
+    if (chunk_end > end) {
+        chunk_end = end;
+    }
+
+    // compute sub region sizes
+    l_size = (size_t)(address - begin);
+    r_size = (size_t)(end - chunk_end);
+
+    if (l_size > 0) {
+        if (uc_mmio_map(uc, begin, l_size, backup.read, backup.user_data_read,
+                        backup.write, backup.user_data_write) != UC_ERR_OK) {
+            return false;
+        }
+    }
+
+    if (r_size > 0) {
+        if (uc_mmio_map(uc, chunk_end, r_size, backup.read,
+                        backup.user_data_read, backup.write,
+                        backup.user_data_write) != UC_ERR_OK) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+/*
    Split the given MemoryRegion at the indicated address for the indicated size
    this may result in the create of up to 3 spanning sections. If the delete
    parameter is true, the no new section will be created to replace the indicate
@@ -1325,8 +1398,14 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
     while (count < size) {
         mr = memory_mapping(uc, addr);
         len = (size_t)MIN(size - count, mr->end - addr);
-        if (!split_region(uc, mr, addr, len, true)) {
-            return UC_ERR_NOMEM;
+        if (!mr->ram) {
+            if (!split_mmio_region(uc, mr, addr, len)) {
+                return UC_ERR_NOMEM;
+            }
+        } else {
+            if (!split_region(uc, mr, addr, len, true)) {
+                return UC_ERR_NOMEM;
+            }
         }
 
         // if we can retrieve the mapping, then no splitting took place

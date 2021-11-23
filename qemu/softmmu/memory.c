@@ -77,14 +77,6 @@ MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, ui
     return ram;
 }
 
-typedef struct _mmio_cbs {
-    uc_cb_mmio_read_t read;
-    void *user_data_read;
-    uc_cb_mmio_write_t write;
-    void *user_data_write;
-    MemoryRegionOps ops;
-} mmio_cbs;
-
 static uint64_t mmio_read_wrapper(struct uc_struct *uc, void *opaque, hwaddr addr, unsigned size)
 {
     mmio_cbs* cbs = (mmio_cbs*)opaque;
