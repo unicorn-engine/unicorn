@@ -266,6 +266,48 @@ static void test_arm_m_exc_return()
     OK(uc_close(uc));
 }
 
+// For details, see https://github.com/unicorn-engine/unicorn/issues/1494.
+static void test_arm_und32_to_svc32()
+{
+    uc_engine *uc;
+    // # MVN r0, #0
+    // # MOVS pc, lr
+    // # MVN r0, #0
+    // # MVN r0, #0
+    char code[] =
+        "\x00\x00\xe0\xe3\x0e\xf0\xb0\xe1\x00\x00\xe0\xe3\x00\x00\xe0\xe3";
+    int r_cpsr, r_sp, r_spsr, r_lr;
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_A9));
+
+    OK(uc_mem_map(uc, code_start, code_len, UC_PROT_ALL));
+    OK(uc_mem_write(uc, code_start, code, sizeof(code) - 1));
+
+    // https://www.keil.com/pack/doc/CMSIS/Core_A/html/group__CMSIS__CPSR__M.html
+    r_cpsr = 0x40000093; // SVC32
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    r_sp = 0x12345678;
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+
+    r_cpsr = 0x4000009b; // UND32
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    r_spsr = 0x40000093; // Save previous CPSR
+    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr));
+    r_sp = 0xDEAD0000;
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    r_lr = code_start + 8;
+    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 3));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp));
+
+    TEST_CHECK(r_sp == 0x12345678);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -274,4 +316,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_m_thumb_mrs", test_arm_m_thumb_mrs},
              {"test_arm_m_control", test_arm_m_control},
              {"test_arm_m_exc_return", test_arm_m_exc_return},
+             {"test_arm_und32_to_svc32", test_arm_und32_to_svc32},
              {NULL, NULL}};
