@@ -76,11 +76,60 @@ impl Drop for Context {
     }
 }
 
+pub struct MmioCallbackScope<'a> {
+    pub regions: Vec<(u64, usize)>,
+    pub read_callback: Option<Box<dyn ffi::IsUcHook<'a> + 'a>>,
+    pub write_callback: Option<Box<dyn ffi::IsUcHook<'a> + 'a>>,
+}
+
+impl<'a> MmioCallbackScope<'a> {
+    fn has_regions(&self) -> bool {
+        self.regions.len() > 0
+    }
+
+    fn unmap(&mut self, begin: u64, size: usize) {
+        let end: u64 = begin + size as u64;
+        self.regions = self.regions.iter().flat_map( |(b, s)| {
+            let e: u64 = b + *s as u64;
+            if begin > *b {
+                if begin >= e {
+                    // The unmapped region is completely after this region
+                    vec![(*b, *s)]
+                } else {
+                    if end >= e {
+                        // The unmapped region overlaps with the end of this region
+                        vec![(*b, (begin - *b) as usize)]
+                    } else {
+                        // The unmapped region is in the middle of this region
+                        let second_b = end + 1;
+                        vec![(*b, (begin - *b) as usize), (second_b, (e - second_b) as usize)]
+                    }
+                }
+            } else {
+                if end > *b {
+                    if end >= e {
+                        // The unmapped region completely contains this region
+                        vec![]
+                    } else {
+                        // The unmapped region overlaps with the start of this region
+                        vec![(end, (e - end) as usize)]
+                    }
+                } else {
+                    // The unmapped region is completely before this region
+                    vec![(*b, *s)]
+                }
+            }
+        }).collect();
+    }
+}
+
 pub struct UnicornInner<'a, D> {
     pub uc: uc_handle,
     pub arch: Arch,
     /// to keep ownership over the hook for this uc instance's lifetime
     pub hooks: Vec<(ffi::uc_hook, Box<dyn ffi::IsUcHook<'a> + 'a>)>,
+    /// To keep ownership over the mmio callbacks for this uc instance's lifetime
+    pub mmio_callbacks: Vec<MmioCallbackScope<'a>>,
     pub data: D,
 }
 
@@ -123,6 +172,7 @@ where
                     arch,
                     data,
                     hooks: vec![],
+                    mmio_callbacks: vec![],
                 })),
             })
         } else {
@@ -262,17 +312,124 @@ impl<'a, D> Unicorn<'a, D> {
         }
     }
 
+    /// Map in am MMIO region backed by callbacks.
+    ///
+    /// `address` must be aligned to 4kb or this will return `Error::ARG`.
+    /// `size` must be a multiple of 4kb or this will return `Error::ARG`.
+    pub fn mmio_map<R: 'a, W: 'a>(
+        &mut self,
+        address: u64, 
+        size: libc::size_t,
+        read_callback: Option<R>,
+        write_callback: Option<W>,
+    ) -> Result<(), uc_error>
+    where
+        R: FnMut(&mut Unicorn<D>, u64, usize) -> u64,
+        W: FnMut(&mut Unicorn<D>, u64, usize, u64),
+    {
+        let mut read_data = read_callback.map( |c| {
+            Box::new(ffi::UcHook {
+                callback: c,
+                uc: Unicorn {
+                    inner: self.inner.clone(),
+                },
+            })
+        });
+        let mut write_data = write_callback.map( |c| {
+            Box::new(ffi::UcHook {
+                callback: c,
+                uc: Unicorn {
+                    inner: self.inner.clone(),
+                },
+            })
+        });
+
+        let err = unsafe {
+            ffi::uc_mmio_map(
+                self.inner().uc,
+                address,
+                size,
+                ffi::mmio_read_callback_proxy::<D, R> as _,
+                match read_data {
+                    Some(ref mut d) => d.as_mut() as *mut _ as _,
+                    None => ptr::null_mut(),
+                },
+                ffi::mmio_write_callback_proxy::<D, W> as _,
+                match write_data {
+                    Some(ref mut d) => d.as_mut() as *mut _ as _,
+                    None => ptr::null_mut(),
+                },
+            )
+        };
+
+        if err == uc_error::OK {
+            let rd = read_data.map( |c| c as Box<dyn ffi::IsUcHook> );
+            let wd = write_data.map( |c| c as Box<dyn ffi::IsUcHook> );
+            self.inner_mut().mmio_callbacks.push(MmioCallbackScope{
+                regions: vec![(address, size)],
+                read_callback: rd,
+                write_callback: wd,
+            });
+
+            Ok(())
+        } else {
+            Err(err)
+        }
+    }
+
+    /// Map in a read-only MMIO region backed by a callback.
+    ///
+    /// `address` must be aligned to 4kb or this will return `Error::ARG`.
+    /// `size` must be a multiple of 4kb or this will return `Error::ARG`.
+    pub fn mmio_map_ro<F: 'a>(
+        &mut self,
+        address: u64,
+        size: libc::size_t,
+        callback: F,
+    ) -> Result<(), uc_error>
+    where
+        F: FnMut(&mut Unicorn<D>, u64, usize) -> u64,
+    {
+        self.mmio_map(address, size, Some(callback), None::<fn(&mut Unicorn<D>, u64, usize, u64)>)
+    }
+
+    /// Map in a write-only MMIO region backed by a callback.
+    ///
+    /// `address` must be aligned to 4kb or this will return `Error::ARG`.
+    /// `size` must be a multiple of 4kb or this will return `Error::ARG`.
+    pub fn mmio_map_wo<F: 'a>(
+        &mut self,
+        address: u64,
+        size: libc::size_t,
+        callback: F,
+    ) -> Result<(), uc_error>
+    where
+        F: FnMut(&mut Unicorn<D>, u64, usize, u64),
+    {
+        self.mmio_map(address, size, None::<fn(&mut Unicorn<D>, u64, usize) -> u64>, Some(callback))
+    }
+
     /// Unmap a memory region.
     ///
     /// `address` must be aligned to 4kb or this will return `Error::ARG`.
     /// `size` must be a multiple of 4kb or this will return `Error::ARG`.
     pub fn mem_unmap(&mut self, address: u64, size: libc::size_t) -> Result<(), uc_error> {
         let err = unsafe { ffi::uc_mem_unmap(self.inner().uc, address, size) };
+
+        self.mmio_unmap(address, size);
+
         if err == uc_error::OK {
             Ok(())
         } else {
             Err(err)
         }
+    }
+
+    fn mmio_unmap(&mut self, address: u64, size: libc::size_t) {
+        for scope in self.inner_mut().mmio_callbacks.iter_mut() {
+            scope.unmap(address, size);
+        }
+        self.inner_mut().mmio_callbacks.retain( |scope| scope.has_regions() );
     }
 
     /// Set the memory permissions for an existing memory region.

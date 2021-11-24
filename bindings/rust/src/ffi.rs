@@ -41,6 +41,15 @@ extern "C" {
         perms: u32,
         ptr: *mut c_void,
     ) -> uc_error;
+    pub fn uc_mmio_map(
+        engine: uc_handle,
+        address: u64,
+        size: libc::size_t,
+        read_cb: *mut c_void,
+        user_data_read: *mut c_void,
+        write_cb: *mut c_void,
+        user_data_write: *mut c_void,
+    ) -> uc_error;
     pub fn uc_mem_unmap(engine: uc_handle, address: u64, size: libc::size_t) -> uc_error;
     pub fn uc_mem_protect(
         engine: uc_handle,
@@ -86,6 +95,33 @@ pub struct UcHook<'a, D: 'a, F: 'a> {
 pub trait IsUcHook<'a> {}
 
 impl<'a, D, F> IsUcHook<'a> for UcHook<'a, D, F> {}
+
+pub extern "C" fn mmio_read_callback_proxy<D, F> (
+    uc: uc_handle,
+    offset: u64,
+    size: usize,
+    user_data: *mut UcHook<D, F>,
+) -> u64 where
+    F: FnMut(&mut crate::Unicorn<D>, u64, usize) -> u64,
+{
+    let user_data = unsafe { &mut *user_data };
+    debug_assert_eq!(uc, user_data.uc.inner().uc);
+    (user_data.callback)(&mut user_data.uc, offset, size)
+}
+
+pub extern "C" fn mmio_write_callback_proxy<D, F> (
+    uc: uc_handle,
+    offset: u64,
+    size: usize,
+    value: u64,
+    user_data: *mut UcHook<D, F>,
+) where
+    F: FnMut(&mut crate::Unicorn<D>, u64, usize, u64),
+{
+    let user_data = unsafe { &mut *user_data };
+    debug_assert_eq!(uc, user_data.uc.inner().uc);
+    (user_data.callback)(&mut user_data.uc, offset, size, value);
+}
 
 pub extern "C" fn code_hook_proxy<D, F>(
     uc: uc_handle,
