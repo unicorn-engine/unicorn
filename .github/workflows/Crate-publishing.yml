@@ -78,6 +78,6 @@ jobs:
       if: startsWith(github.ref, 'refs/tags') && contains(matrix.config.os, 'ubuntu')
       env:
         TOKEN: ${{ secrets.cratesio_token }}
-        UNICORN_LOCAL: uc
+        UNICORN_VERSION: dev
       run: |
         cd bindings/rust && cargo login $TOKEN && cargo test && cargo publish
