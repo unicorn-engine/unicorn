@@ -169,6 +169,7 @@ jobs:
         ctest -VV -C ${{ matrix.config.build_type }}
 
     - name: '📦 Pack artifact'
+      if: always()
       shell: bash
       working-directory: instdir
       run: |
@@ -176,6 +177,7 @@ jobs:
         ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
 
     - name: '📤 Upload artifact'
+      if: always()
       uses: actions/upload-artifact@v1
       with:
         path: ./${{ matrix.config.artifact }}
@@ -296,6 +298,7 @@ jobs:
         script: bash ./adb.sh
 
     - name: '📦 Pack artifact'
+      if: always()
       shell: bash
       working-directory: instdir
       run: |
@@ -303,6 +306,7 @@ jobs:
         ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
 
     - name: '📤 Upload artifact'
+      if: always()
       uses: actions/upload-artifact@v1
       with:
         path: ./${{ matrix.config.artifact }}
