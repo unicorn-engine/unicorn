@@ -70,11 +70,13 @@ typedef size_t uc_hook;
 // Unicorn API version
 #define UC_API_MAJOR 2
 #define UC_API_MINOR 0
+#define UC_API_PATCH 0
 #define UC_API_EXTRA 4
 
 // Unicorn package version
 #define UC_VERSION_MAJOR UC_API_MAJOR
 #define UC_VERSION_MINOR UC_API_MINOR
+#define UC_VERSION_PATCH UC_API_PATCH
 #define UC_VERSION_EXTRA UC_API_EXTRA
 
 /*
