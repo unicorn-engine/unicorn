@@ -57,10 +57,11 @@ static void reg_read(CPUM68KState *env, unsigned int regid, void *value)
         case UC_M68K_REG_PC:
             *(int32_t *)value = env->pc;
             break;
+        case UC_M68K_REG_SR:
+            *(int32_t *)value = env->sr;
+            break;
         }
     }
-
-    return;
 }
 
 static void reg_write(CPUM68KState *env, unsigned int regid, const void *value)
@@ -75,6 +76,9 @@ static void reg_write(CPUM68KState *env, unsigned int regid, const void *value)
             break;
         case UC_M68K_REG_PC:
             env->pc = *(uint32_t *)value;
+            break;
+        case UC_M68K_REG_SR:
+            env->sr = *(uint32_t *)value;
             break;
         }
     }
