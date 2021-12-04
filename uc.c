@@ -35,7 +35,8 @@ unsigned int uc_version(unsigned int *major, unsigned int *minor)
         *minor = UC_API_MINOR;
     }
 
-    return (UC_API_MAJOR << 24) + (UC_API_MINOR << 16) + (UC_API_PATCH << 8) + UC_API_EXTRA;
+    return (UC_API_MAJOR << 24) + (UC_API_MINOR << 16) + (UC_API_PATCH << 8) +
+           UC_API_EXTRA;
 }
 
 UNICORN_EXPORT
