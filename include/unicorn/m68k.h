@@ -17,15 +17,15 @@ extern "C" {
 
 //> M68K CPU
 typedef enum uc_cpu_m68k {
-    UC_CPU_M5206_CPU = 0,
-    UC_CPU_M68000_CPU,
-    UC_CPU_M68020_CPU,
-    UC_CPU_M68030_CPU,
-    UC_CPU_M68040_CPU,
-    UC_CPU_M68060_CPU,
-    UC_CPU_M5208_CPU,
-    UC_CPU_CFV4E_CPU,
-    UC_CPU_ANY_CPU,
+    UC_CPU_M68K_M5206 = 0,
+    UC_CPU_M68K_M68000,
+    UC_CPU_M68K_M68020,
+    UC_CPU_M68K_M68030,
+    UC_CPU_M68K_M68040,
+    UC_CPU_M68K_M68060,
+    UC_CPU_M68K_M5208,
+    UC_CPU_M68K_CFV4E,
+    UC_CPU_M68K_ANY,
 } uc_cpu_m68k;
 
 //> M68K registers
