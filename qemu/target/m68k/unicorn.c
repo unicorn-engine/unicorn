@@ -78,7 +78,7 @@ static void reg_write(CPUM68KState *env, unsigned int regid, const void *value)
             env->pc = *(uint32_t *)value;
             break;
         case UC_M68K_REG_SR:
-            env->sr = *(uint32_t *)value;
+            cpu_m68k_set_sr(env, *(uint32_t *)value);
             break;
         }
     }
