@@ -17,7 +17,8 @@ option(UNICORN_BUILD_SHARED "Build shared instead of static library" ON)
 
 if (NOT UNICORN_ARCH)
     # build all architectures
-    set(UNICORN_ARCH "x86 arm aarch64 riscv mips sparc m68k ppc")
+    # set(UNICORN_ARCH "x86 arm aarch64 riscv mips sparc m68k ppc s390x")
+    set(UNICORN_ARCH "s390x")
 endif()
 
 string(TOUPPER ${UNICORN_ARCH} UNICORN_ARCH)
@@ -197,6 +198,9 @@ else()
     if (UNICORN_HAS_RISCV)
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_RISCV ")
     endif()
+    if (UNICORN_HAS_S390X)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_S390X ")
+    endif()
 
     set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-fPIC")
     if(ANDROID_ABI)
@@ -231,6 +235,9 @@ else()
     endif()
     if (UNICORN_HAS_RISCV)
         set (TARGET_LIST "${TARGET_LIST}riscv32-softmmu, riscv64-softmmu, ")
+    endif()
+    if (UNICORN_HAS_S390X)
+        set (TARGET_LIST "${TARGET_LIST}s390x-softmmu, ")
     endif()
     set (TARGET_LIST "${TARGET_LIST} ")
 
@@ -323,6 +330,12 @@ else()
         execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
             INPUT_FILE ${CMAKE_BINARY_DIR}/riscv64-softmmu/config-target.mak
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/riscv64-softmmu/config-target.h
+        )
+    endif()
+    if (UNICORN_HAS_S390X)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/s390x-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/s390x-softmmu/config-target.h
         )
     endif()
     add_compile_options(
@@ -950,6 +963,54 @@ else()
 endif()
 endif()
 
+if (UNICORN_HAS_S390X)
+add_library(s390x-softmmu
+    ${UNICORN_ARCH_COMMON}
+
+    qemu/hw/s390x/s390-skeys.c
+
+    qemu/target/s390x/cc_helper.c
+    qemu/target/s390x/cpu.c
+    qemu/target/s390x/cpu_features.c
+    qemu/target/s390x/cpu_models.c
+    qemu/target/s390x/crypto_helper.c
+    qemu/target/s390x/excp_helper.c
+    qemu/target/s390x/fpu_helper.c
+    qemu/target/s390x/helper.c
+    qemu/target/s390x/interrupt.c
+    qemu/target/s390x/int_helper.c
+    qemu/target/s390x/ioinst.c
+    qemu/target/s390x/mem_helper.c
+    qemu/target/s390x/misc_helper.c
+    qemu/target/s390x/mmu_helper.c
+    qemu/target/s390x/sigp.c
+    qemu/target/s390x/tcg-stub.c
+    qemu/target/s390x/translate.c
+    # qemu/target/s390x/translate_vx.inc.c
+    qemu/target/s390x/vec_fpu_helper.c
+    qemu/target/s390x/vec_helper.c
+    qemu/target/s390x/vec_int_helper.c
+    qemu/target/s390x/vec_string_helper.c
+    qemu/target/s390x/unicorn.c
+)
+
+if(MSVC)
+    target_compile_options(s390x-softmmu PRIVATE
+        -DNEED_CPU_H
+        /FIs390x.h
+        /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/s390x-softmmu
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/s390x
+    )
+else()
+    target_compile_options(s390x-softmmu PRIVATE
+        -DNEED_CPU_H
+        -include s390x.h
+        -I${CMAKE_BINARY_DIR}/s390x-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/s390x
+    )
+endif()
+endif()
+
 
 set(UNICORN_SRCS
     uc.c
@@ -1095,6 +1156,13 @@ if (UNICORN_HAS_RISCV)
     target_link_libraries(riscv64-softmmu unicorn-common)
     set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_riscv)
 endif()
+if (UNICORN_HAS_S390X)
+    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_S390X)
+    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} s390x-softmmu)
+    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_s390x)
+    target_link_libraries(s390x-softmmu unicorn-common)
+    set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_s390x)
+endif()
 
 target_compile_options(unicorn PRIVATE
     ${UNICORN_COMPILE_OPTIONS}
@@ -1146,7 +1214,7 @@ endif()
 
 
 if(UNICORN_FUZZ)
-    set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_armbe;arm_thumb;arm64_arm;arm64_armbe;m68k_be;mips_32be;mips_32le;sparc_32be;x86_16;x86_32;x86_64")
+    set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_armbe;arm_thumb;arm64_arm;arm64_armbe;m68k_be;mips_32be;mips_32le;sparc_32be;x86_16;x86_32;x86_64;s390x")
     set(SAMPLES_LIB ${SAMPLES_LIB} rt)
     foreach(SUFFIX ${UNICORN_FUZZ_SUFFIX})
         add_executable(fuzz_emu_${SUFFIX}

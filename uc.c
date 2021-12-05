@@ -23,6 +23,7 @@
 #include "qemu/target/sparc/unicorn.h"
 #include "qemu/target/ppc/unicorn.h"
 #include "qemu/target/riscv/unicorn.h"
+#include "qemu/target/s390x/unicorn.h"
 
 #include "qemu/include/qemu/queue.h"
 
@@ -124,6 +125,9 @@ bool uc_arch_supported(uc_arch arch)
 #endif
 #ifdef UNICORN_HAS_RISCV
         case UC_ARCH_RISCV:   return true;
+#endif
+#ifdef UNICORN_HAS_S390X
+        case UC_ARCH_S390X:  return true;
 #endif
         /* Invalid or disabled arch */
         default:            return false;
@@ -289,6 +293,16 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                     free(uc);
                     return UC_ERR_MODE;
                 }
+                break;
+#endif
+#ifdef UNICORN_HAS_S390X
+            case UC_ARCH_S390X:
+                if ((mode & ~UC_MODE_S390X_MASK) ||
+                        !(mode & UC_MODE_BIG_ENDIAN)) {
+                    free(uc);
+                    return UC_ERR_MODE;
+                }
+                uc->init_arch = s390_uc_init;
                 break;
 #endif
 
@@ -698,6 +712,11 @@ uc_err uc_emu_start(uc_engine* uc, uint64_t begin, uint64_t until, uint64_t time
 #ifdef UNICORN_HAS_RISCV
         case UC_ARCH_RISCV:
             uc_reg_write(uc, UC_RISCV_REG_PC, &begin);
+            break;
+#endif
+#ifdef UNICORN_HAS_S390X
+        case UC_ARCH_S390X:
+            uc_reg_write(uc, UC_S390X_REG_PC, &begin);
             break;
 #endif
     }
@@ -1620,6 +1639,12 @@ static void find_context_reg_rw_function(uc_arch arch, uc_mode mode, context_reg
                 rw->context_reg_read = riscv64_context_reg_read;
                 rw->context_reg_write = riscv64_context_reg_write;
             }
+            break;
+#endif
+#ifdef UNICORN_HAS_S390X
+        case UC_ARCH_S390X:
+            rw->context_reg_read = s390_context_reg_read;
+            rw->context_reg_write = s390_context_reg_write;
             break;
 #endif
     }
