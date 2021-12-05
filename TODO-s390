@@ -9,4 +9,5 @@ Todo:
 - enable building all arch to fix conflicts
 - remove all static vars in qemu/target/s390x/translate.c
 - support more registers in qemu/target/s390x/unicorn.c
+- storage-keys needed?
 - find & fix potential memory leaking with valgrind
