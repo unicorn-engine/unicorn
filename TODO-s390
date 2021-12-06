@@ -7,7 +7,7 @@ Todo:
 
 - fix qemu/target/s390x/cpu.c, so sample_s390x works
 - enable building all arch to fix conflicts
-- remove all static vars in qemu/target/s390x/translate.c
+- remove all static vars in qemu/target/s390x/translate.c   [DONE in branch "static-vars"]
 - support more registers in qemu/target/s390x/unicorn.c
 - storage-keys needed?
 - find & fix potential memory leaking with valgrind
