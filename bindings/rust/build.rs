@@ -1,10 +1,19 @@
+#[cfg(feature = "build_unicorn_cmake")]
 use bytes::Buf;
+#[cfg(feature = "build_unicorn_cmake")]
 use flate2::read::GzDecoder;
+#[cfg(feature = "use_system_unicorn")]
+use pkg_config;
+#[cfg(feature = "build_unicorn_cmake")]
 use reqwest::header::USER_AGENT;
+#[cfg(feature = "build_unicorn_cmake")]
 use std::path::{Path, PathBuf};
+#[cfg(feature = "build_unicorn_cmake")]
 use std::{env, process::Command};
+#[cfg(feature = "build_unicorn_cmake")]
 use tar::Archive;
 
+#[cfg(feature = "build_unicorn_cmake")]
 fn find_unicorn(unicorn_dir: &Path) -> Option<PathBuf> {
     for entry in std::fs::read_dir(unicorn_dir).ok()? {
         let entry = entry.unwrap();
@@ -18,11 +27,13 @@ fn find_unicorn(unicorn_dir: &Path) -> Option<PathBuf> {
     None
 }
 
+#[cfg(feature = "build_unicorn_cmake")]
 fn out_dir() -> PathBuf {
     let out_dir = env::var("OUT_DIR").unwrap();
     Path::new(&out_dir).to_path_buf()
 }
 
+#[cfg(feature = "build_unicorn_cmake")]
 fn download_unicorn() -> PathBuf {
     // https://docs.github.com/en/rest/reference/repos#download-a-repository-archive-tar
     let pkg_version;
@@ -51,8 +62,9 @@ fn download_unicorn() -> PathBuf {
     find_unicorn(&out_dir).unwrap()
 }
 
+#[cfg(feature = "build_unicorn_cmake")]
 #[allow(clippy::branches_sharing_code)]
-fn main() {
+fn build_with_cmake() {
     let profile = env::var("PROFILE").unwrap();
 
     if let Some(unicorn_dir) = find_unicorn(&out_dir()) {
@@ -183,4 +195,17 @@ fn main() {
 
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=src");
+}
+
+fn main() {
+    if cfg!(feature = "use_system_unicorn") {
+        #[cfg(feature = "use_system_unicorn")]
+        pkg_config::Config::new()
+            .atleast_version("2")
+            .probe("unicorn")
+            .expect("Could not find system unicorn2");
+    } else {
+        #[cfg(feature = "build_unicorn_cmake")]
+        build_with_cmake();
+    }
 }
