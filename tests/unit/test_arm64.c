@@ -50,4 +50,64 @@ static void test_arm64_until()
     OK(uc_close(uc));
 }
 
-TEST_LIST = {{"test_arm64_until", test_arm64_until}, {NULL, NULL}};
+
+static void test_arm64_code_patching() {
+    uc_engine *uc;
+    char code[] = "\x00\x04\x00\x11"; // add w0, w0, 0x1
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1);
+    // zero out x0
+    uint64_t r_x0 = 0x0;
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
+    // emulate the instruction
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) -1, 0, 0));
+    // check value
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    TEST_CHECK(r_x0 == 0x1);
+    // patch instruction
+    char patch_code[] = "\x00\xfc\x1f\x11"; // add w0, w0, 0x7FF
+    OK(uc_mem_write(uc, code_start, patch_code, sizeof(patch_code) - 1));
+    // zero out x0
+    r_x0 = 0x0;
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(patch_code) -1, 0, 0));
+    // check value
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    TEST_CHECK(r_x0 != 0x1);
+    TEST_CHECK(r_x0 == 0x7ff);
+
+    OK(uc_close(uc));
+}
+
+static void test_arm64_code_patching_count() {
+    uc_engine *uc;
+    char code[] = "\x00\x04\x00\x11"; // add w0, w0, 0x1
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1);
+    // zero out x0
+    uint64_t r_x0 = 0x0;
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
+    // emulate the instruction
+    OK(uc_emu_start(uc, code_start, -1, 0, 1));
+    // check value
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    TEST_CHECK(r_x0 == 0x1);
+    // patch instruction
+    char patch_code[] = "\x00\xfc\x1f\x11"; // add w0, w0, 0x7FF
+    OK(uc_mem_write(uc, code_start, patch_code, sizeof(patch_code) - 1));
+    // zero out x0
+    r_x0 = 0x0;
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_emu_start(uc, code_start, -1, 0, 1));
+    // check value
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    TEST_CHECK(r_x0 != 0x1);
+    TEST_CHECK(r_x0 == 0x7ff);
+
+    OK(uc_close(uc));
+}
+
+TEST_LIST = {
+  {"test_arm64_until", test_arm64_until},
+  {"test_arm64_code_patching", test_arm64_code_patching},
+  {"test_arm64_code_patching_count", test_arm64_code_patching_count},
+  {NULL, NULL}
+};
