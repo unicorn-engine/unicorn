@@ -78,6 +78,7 @@ static void test_arm64_code_patching() {
     OK(uc_close(uc));
 }
 
+// Need to flush the cache before running the emulation after patching
 static void test_arm64_code_patching_count() {
     uc_engine *uc;
     char code[] = "\x00\x04\x00\x11"; // add w0, w0, 0x1
@@ -93,6 +94,7 @@ static void test_arm64_code_patching_count() {
     // patch instruction
     char patch_code[] = "\x00\xfc\x1f\x11"; // add w0, w0, 0x7FF
     OK(uc_mem_write(uc, code_start, patch_code, sizeof(patch_code) - 1));
+    OK(uc_ctl_remove_cache(uc, code_start, code_start + sizeof(patch_code) - 1));
     // zero out x0
     r_x0 = 0x0;
     OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
