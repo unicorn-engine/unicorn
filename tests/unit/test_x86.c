@@ -632,6 +632,30 @@ static void test_x86_hook_cpuid()
     OK(uc_close(uc));
 }
 
+static void test_x86_486_cpuid(void)
+{
+    uc_engine *uc;
+    uint32_t eax;
+    uint32_t ebx;
+
+    char code[] = {0x31, 0xC0, 0x0F, 0xA2}; // XOR EAX EAX; CPUID
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_X86_486));
+    OK(uc_mem_map(uc, 0, 4 * 1024, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0, code, sizeof(code) / sizeof(code[0])));
+    OK(uc_emu_start(uc, 0, sizeof(code) / sizeof(code[0]), 0, 0));
+
+    /* Read eax after emulation */
+    OK(uc_reg_read(uc, UC_X86_REG_EAX, &eax));
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &ebx));
+
+    TEST_CHECK(eax != 0);
+    TEST_CHECK(ebx == 0x756e6547); // magic string "Genu" for intel cpu
+
+    OK(uc_close(uc));
+}
+
 // This is a regression bug.
 static void test_x86_clear_tb_cache()
 {
@@ -870,6 +894,7 @@ TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_mmio_uc_mem_rw", test_x86_mmio_uc_mem_rw},
              {"test_x86_sysenter", test_x86_sysenter},
              {"test_x86_hook_cpuid", test_x86_hook_cpuid},
+             {"test_x86_486_cpuid", test_x86_486_cpuid},
              {"test_x86_clear_tb_cache", test_x86_clear_tb_cache},
              {"test_x86_clear_empty_tb", test_x86_clear_empty_tb},
              {"test_x86_hook_tcg_op", test_x86_hook_tcg_op},

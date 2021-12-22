@@ -30,6 +30,11 @@
 
 #include "uc_priv.h"
 
+static void x86_cpuid_version_set_family(X86CPU *cpu, int64_t value);
+static void x86_cpuid_version_set_model(X86CPU *cpu, int64_t value);
+static void x86_cpuid_version_set_stepping(X86CPU *cpu, int64_t value);
+static void x86_cpuid_set_model_id(X86CPU *cpu, const char* model_id);
+static void x86_cpuid_set_vendor(X86CPU *cpu , const char *value);
 
 /* Helpers for building CPUID[2] descriptors: */
 
@@ -3855,6 +3860,12 @@ static void x86_cpu_load_model(X86CPU *cpu, X86CPUModel *model)
     CPUX86State *env = &cpu->env;
     FeatureWord w;
 
+    env->cpuid_min_level = def->level;
+    env->cpuid_xlevel = def->xlevel;
+    x86_cpuid_version_set_family(cpu, def->family);
+    x86_cpuid_version_set_model(cpu, def->model);
+    x86_cpuid_version_set_stepping(cpu, def->stepping);
+    x86_cpuid_set_model_id(cpu, def->model_id);
     for (w = 0; w < FEATURE_WORDS; w++) {
         env->features[w] = def->features[w];
     }
@@ -3875,11 +3886,105 @@ static void x86_cpu_load_model(X86CPU *cpu, X86CPUModel *model)
         uint32_t  ebx = 0, ecx = 0, edx = 0;
         host_cpuid(0, 0, NULL, &ebx, &ecx, &edx);
     }
+
+    x86_cpuid_set_vendor(cpu, def->vendor);
 }
 
 void cpu_clear_apic_feature(CPUX86State *env)
 {
     env->features[FEAT_1_EDX] &= ~CPUID_APIC;
+}
+
+static void x86_cpuid_version_set_family(X86CPU *cpu, int64_t value)
+{
+    CPUX86State *env = &cpu->env;
+    const int64_t min = 0;
+    const int64_t max = 0xff + 0xf;
+
+    if (value < min || value > max) {
+        // error_setg(errp, QERR_PROPERTY_VALUE_OUT_OF_RANGE, "",
+        //            name ? name : "null", value, min, max);
+        return;
+    }
+
+    env->cpuid_version &= ~0xff00f00;
+    if (value > 0x0f) {
+        env->cpuid_version |= 0xf00 | ((value - 0x0f) << 20);
+    } else {
+        env->cpuid_version |= value << 8;
+    }
+}
+
+static void x86_cpuid_version_set_model(X86CPU *cpu, int64_t value)
+{
+    CPUX86State *env = &cpu->env;
+    const int64_t min = 0;
+    const int64_t max = 0xff;
+
+    if (value < min || value > max) {
+        // error_setg(errp, QERR_PROPERTY_VALUE_OUT_OF_RANGE, "",
+        //            name ? name : "null", value, min, max);
+        return;
+    }
+
+    env->cpuid_version &= ~0xf00f0;
+    env->cpuid_version |= ((value & 0xf) << 4) | ((value >> 4) << 16);
+}
+
+static void x86_cpuid_version_set_stepping(X86CPU *cpu, int64_t value)
+{
+    CPUX86State *env = &cpu->env;
+    const int64_t min = 0;
+    const int64_t max = 0xf;
+
+    if (value < min || value > max) {
+        // error_setg(errp, QERR_PROPERTY_VALUE_OUT_OF_RANGE, "",
+        //            name ? name : "null", value, min, max);
+        return;
+    }
+
+    env->cpuid_version &= ~0xf;
+    env->cpuid_version |= value & 0xf;
+}
+
+static void x86_cpuid_set_model_id(X86CPU *cpu, const char* model_id)
+{
+    CPUX86State *env = &cpu->env;
+    int c, len, i;
+
+    if (model_id == NULL) {
+        model_id = "";
+    }
+    len = strlen(model_id);
+    memset(env->cpuid_model, 0, 48);
+    for (i = 0; i < 48; i++) {
+        if (i >= len) {
+            c = '\0';
+        } else {
+            c = (uint8_t)model_id[i];
+        }
+        env->cpuid_model[i >> 2] |= c << (8 * (i & 3));
+    }
+}
+
+static void x86_cpuid_set_vendor(X86CPU *cpu , const char *value)
+{
+    CPUX86State *env = &cpu->env;
+    int i;
+
+    if (strlen(value) != CPUID_VENDOR_SZ) {
+        // error_setg(errp, QERR_PROPERTY_VALUE_BAD, "", "vendor", value);
+        return;
+    }
+
+    env->cpuid_vendor1 = 0;
+    env->cpuid_vendor2 = 0;
+    env->cpuid_vendor3 = 0;
+    for (i = 0; i < 4; i++) {
+        env->cpuid_vendor1 |= ((uint8_t)value[i    ]) << (8 * i);
+        env->cpuid_vendor2 |= ((uint8_t)value[i + 4]) << (8 * i);
+        env->cpuid_vendor3 |= ((uint8_t)value[i + 8]) << (8 * i);
+    }
 }
 
 void cpu_x86_cpuid(CPUX86State *env, uint32_t index, uint32_t count,
@@ -4484,6 +4589,192 @@ static void mce_init(X86CPU *cpu)
     }
 }
 
+static void x86_cpu_adjust_level(X86CPU *cpu, uint32_t *min, uint32_t value)
+{
+    if (*min < value) {
+        *min = value;
+    }
+}
+
+/* Increase cpuid_min_{level,xlevel,xlevel2} automatically, if appropriate */
+static void x86_cpu_adjust_feat_level(X86CPU *cpu, FeatureWord w)
+{
+    CPUX86State *env = &cpu->env;
+    FeatureWordInfo *fi = &feature_word_info[w];
+    uint32_t eax = fi->cpuid.eax;
+    uint32_t region = eax & 0xF0000000;
+
+    assert(feature_word_info[w].type == CPUID_FEATURE_WORD);
+    if (!env->features[w]) {
+        return;
+    }
+
+    switch (region) {
+    case 0x00000000:
+        x86_cpu_adjust_level(cpu, &env->cpuid_min_level, eax);
+    break;
+    case 0x80000000:
+        x86_cpu_adjust_level(cpu, &env->cpuid_min_xlevel, eax);
+    break;
+    case 0xC0000000:
+        x86_cpu_adjust_level(cpu, &env->cpuid_min_xlevel2, eax);
+    break;
+    }
+
+    if (eax == 7) {
+        x86_cpu_adjust_level(cpu, &env->cpuid_min_level_func7,
+                             fi->cpuid.ecx);
+    }
+}
+
+/* Calculate XSAVE components based on the configured CPU feature flags */
+static void x86_cpu_enable_xsave_components(X86CPU *cpu)
+{
+    CPUX86State *env = &cpu->env;
+    int i;
+    uint64_t mask;
+
+    if (!(env->features[FEAT_1_ECX] & CPUID_EXT_XSAVE)) {
+        return;
+    }
+
+    mask = 0;
+    for (i = 0; i < ARRAY_SIZE(x86_ext_save_areas); i++) {
+        const ExtSaveArea *esa = &x86_ext_save_areas[i];
+        if (env->features[esa->feature] & esa->bits) {
+            mask |= (1ULL << i);
+        }
+    }
+
+    env->features[FEAT_XSAVE_COMP_LO] = mask;
+    env->features[FEAT_XSAVE_COMP_HI] = mask >> 32;
+}
+
+/***** Steps involved on loading and filtering CPUID data
+ *
+ * When initializing and realizing a CPU object, the steps
+ * involved in setting up CPUID data are:
+ *
+ * 1) Loading CPU model definition (X86CPUDefinition). This is
+ *    implemented by x86_cpu_load_model() and should be completely
+ *    transparent, as it is done automatically by instance_init.
+ *    No code should need to look at X86CPUDefinition structs
+ *    outside instance_init.
+ *
+ * 2) CPU expansion. This is done by realize before CPUID
+ *    filtering, and will make sure host/accelerator data is
+ *    loaded for CPU models that depend on host capabilities
+ *    (e.g. "host"). Done by x86_cpu_expand_features().
+ *
+ * 3) CPUID filtering. This initializes extra data related to
+ *    CPUID, and checks if the host supports all capabilities
+ *    required by the CPU. Runnability of a CPU model is
+ *    determined at this step. Done by x86_cpu_filter_features().
+ *
+ * Some operations don't require all steps to be performed.
+ * More precisely:
+ *
+ * - CPU instance creation (instance_init) will run only CPU
+ *   model loading. CPU expansion can't run at instance_init-time
+ *   because host/accelerator data may be not available yet.
+ * - CPU realization will perform both CPU model expansion and CPUID
+ *   filtering, and return an error in case one of them fails.
+ * - query-cpu-definitions needs to run all 3 steps. It needs
+ *   to run CPUID filtering, as the 'unavailable-features'
+ *   field is set based on the filtering results.
+ * - The query-cpu-model-expansion QMP command only needs to run
+ *   CPU model loading and CPU expansion. It should not filter
+ *   any CPUID data based on host capabilities.
+ */
+
+/* Expand CPU configuration data, based on configured features
+ * and host/accelerator capabilities when appropriate.
+ */
+static void x86_cpu_expand_features(X86CPU *cpu)
+{
+    CPUX86State *env = &cpu->env;
+    FeatureWord w;
+
+    /*TODO: Now cpu->max_features doesn't overwrite features
+     * set using QOM properties, and we can convert
+     * plus_features & minus_features to global properties
+     * inside x86_cpu_parse_featurestr() too.
+     */
+    if (cpu->max_features) {
+        for (w = 0; w < FEATURE_WORDS; w++) {
+            /* Override only features that weren't set explicitly
+             * by the user.
+             */
+            env->features[w] |=
+                x86_cpu_get_supported_feature_word(w, cpu->migratable) &
+                ~env->user_features[w] & \
+                ~feature_word_info[w].no_autoenable_flags;
+        }
+    }
+
+    env->features[FEAT_KVM] = 0;
+
+    x86_cpu_enable_xsave_components(cpu);
+
+    /* CPUID[EAX=7,ECX=0].EBX always increased level automatically: */
+    x86_cpu_adjust_feat_level(cpu, FEAT_7_0_EBX);
+    if (cpu->full_cpuid_auto_level) {
+        x86_cpu_adjust_feat_level(cpu, FEAT_1_EDX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_1_ECX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_6_EAX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_7_0_ECX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_7_1_EAX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_8000_0001_EDX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_8000_0001_ECX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_8000_0007_EDX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_8000_0008_EBX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_C000_0001_EDX);
+        x86_cpu_adjust_feat_level(cpu, FEAT_SVM);
+        x86_cpu_adjust_feat_level(cpu, FEAT_XSAVE);
+
+        /* Intel Processor Trace requires CPUID[0x14] */
+        if ((env->features[FEAT_7_0_EBX] & CPUID_7_0_EBX_INTEL_PT)) {
+            if (cpu->intel_pt_auto_level) {
+                x86_cpu_adjust_level(cpu, &cpu->env.cpuid_min_level, 0x14);
+            } else if (cpu->env.cpuid_min_level < 0x14) {
+                // TODO: Add a warning?
+                // mark_unavailable_features(cpu, FEAT_7_0_EBX,
+                //     CPUID_7_0_EBX_INTEL_PT,
+                //     "Intel PT need CPUID leaf 0x14, please set by \"-cpu ...,+intel-pt,level=0x14\"");
+            }
+        }
+
+        /* CPU topology with multi-dies support requires CPUID[0x1F] */
+        if (env->nr_dies > 1) {
+            x86_cpu_adjust_level(cpu, &env->cpuid_min_level, 0x1F);
+        }
+
+        /* SVM requires CPUID[0x8000000A] */
+        if (env->features[FEAT_8000_0001_ECX] & CPUID_EXT3_SVM) {
+            x86_cpu_adjust_level(cpu, &env->cpuid_min_xlevel, 0x8000000A);
+        }
+
+        /* SEV requires CPUID[0x8000001F] */
+        // if (sev_enabled()) {
+        //     x86_cpu_adjust_level(cpu, &env->cpuid_min_xlevel, 0x8000001F);
+        // }
+    }
+
+    /* Set cpuid_*level* based on cpuid_min_*level, if not explicitly set */
+    if (env->cpuid_level_func7 == UINT32_MAX) {
+        env->cpuid_level_func7 = env->cpuid_min_level_func7;
+    }
+    if (env->cpuid_level == UINT32_MAX) {
+        env->cpuid_level = env->cpuid_min_level;
+    }
+    if (env->cpuid_xlevel == UINT32_MAX) {
+        env->cpuid_xlevel = env->cpuid_min_xlevel;
+    }
+    if (env->cpuid_xlevel2 == UINT32_MAX) {
+        env->cpuid_xlevel2 = env->cpuid_min_xlevel2;
+    }
+}
+
 /*
  * Finishes initialization of CPUID data, filters CPU feature
  * words based on host availability of each feature.
@@ -4529,6 +4820,8 @@ static void x86_cpu_realizefn(struct uc_struct *uc, CPUState *dev)
         //error_setg(errp, "apic-id property was not initialized properly");
         return;
     }
+
+    x86_cpu_expand_features(cpu);
 
     x86_cpu_filter_features(cpu, cpu->check_cpuid || cpu->enforce_cpuid);
 
@@ -4804,6 +5097,10 @@ X86CPU *cpu_x86_init(struct uc_struct *uc)
     cs->cc = cc;
     cs->uc = uc;
     uc->cpu = (CPUState *)cpu;
+    cpu->env.cpuid_level_func7 = UINT32_MAX;
+    cpu->env.cpuid_level = UINT32_MAX;
+    cpu->env.cpuid_xlevel = UINT32_MAX;
+    cpu->env.cpuid_xlevel2 = UINT32_MAX;
 
     /* init CPUClass */
     cpu_class_init(uc, cc);
