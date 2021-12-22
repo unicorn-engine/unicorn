@@ -75,6 +75,14 @@ typedef struct uc_x86_msr {
 // @user_data: user data passed to tracing APIs.
 typedef void (*uc_cb_insn_syscall_t)(struct uc_struct *uc, void *user_data);
 
+// Callback function for tracing cpuid (for uc_hook_intr())
+// @user_data: user data passed to tracing APIs.
+//
+// @return: true indicates the callback overwrites the cpuid instruction while
+// false
+//          indicates cpuid instruction will still be executed.
+typedef int (*uc_cb_insn_cpuid_t)(struct uc_struct *uc, void *user_data);
+
 //> X86 registers
 typedef enum uc_x86_reg {
     UC_X86_REG_INVALID = 0,

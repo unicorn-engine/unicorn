@@ -601,11 +601,14 @@ static void test_x86_sysenter()
     OK(uc_close(uc));
 }
 
-static void test_x86_hook_cpuid_callback(uc_engine *uc, void *data)
+static int test_x86_hook_cpuid_callback(uc_engine *uc, void *data)
 {
     int reg = 7;
 
     OK(uc_reg_write(uc, UC_X86_REG_EAX, &reg));
+
+    // Overwrite the cpuid instruction.
+    return 1;
 }
 
 static void test_x86_hook_cpuid()

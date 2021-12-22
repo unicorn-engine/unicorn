@@ -106,15 +106,9 @@ void helper_cpuid(CPUX86State *env)
 {
     uint32_t eax, ebx, ecx, edx;
     struct hook *hook;
+    int skip_cpuid = 0;
 
     cpu_svm_check_intercept_param(env, SVM_EXIT_CPUID, 0, GETPC());
-
-    cpu_x86_cpuid(env, (uint32_t)env->regs[R_EAX], (uint32_t)env->regs[R_ECX],
-                  &eax, &ebx, &ecx, &edx);
-    env->regs[R_EAX] = eax;
-    env->regs[R_EBX] = ebx;
-    env->regs[R_ECX] = ecx;
-    env->regs[R_EDX] = edx;
 
     // Unicorn: call registered CPUID hooks
     HOOK_FOREACH_VAR_DECLARE;
@@ -123,13 +117,26 @@ void helper_cpuid(CPUX86State *env)
             continue;
         if (!HOOK_BOUND_CHECK(hook, env->eip))
             continue;
+        
+        // Multiple cpuid callbacks returning different values is undefined.
+        // true -> skip the cpuid instruction
         if (hook->insn == UC_X86_INS_CPUID)
-            ((uc_cb_insn_syscall_t)hook->callback)(env->uc, hook->user_data);
+            skip_cpuid = ((uc_cb_insn_cpuid_t)hook->callback)(env->uc, hook->user_data);
 
         // the last callback may already asked to stop emulation
         if (env->uc->stop_request)
             break;
     }
+
+    if (!skip_cpuid) {
+        cpu_x86_cpuid(env, (uint32_t)env->regs[R_EAX], (uint32_t)env->regs[R_ECX],
+                    &eax, &ebx, &ecx, &edx);
+        env->regs[R_EAX] = eax;
+        env->regs[R_EBX] = ebx;
+        env->regs[R_ECX] = ecx;
+        env->regs[R_EDX] = edx;
+    }
+    
 }
 
 target_ulong helper_read_crN(CPUX86State *env, int reg)
