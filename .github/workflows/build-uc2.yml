@@ -174,7 +174,7 @@ jobs:
       working-directory: instdir
       run: |
         ls -laR
-        ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
+        ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} . ../test*
 
     - name: '📤 Upload artifact'
       if: always()
@@ -303,7 +303,7 @@ jobs:
       working-directory: instdir
       run: |
         ls -laR
-        ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
+        ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} . ../test*
 
     - name: '📤 Upload artifact'
       if: always()
@@ -430,7 +430,7 @@ jobs:
       working-directory: instdir
       run: |
         ls -laR
-        ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} .
+        ${{ matrix.config.archiver }} ../${{ matrix.config.artifact }} . ../test*
 
     - name: '📤 Upload artifact'
       if: always()
