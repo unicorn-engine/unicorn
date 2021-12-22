@@ -372,10 +372,12 @@ static void test_riscv64_fp_move_to_int(void)
     uc_close(uc);
 }
 
-static void test_riscv64_code_patching() {
+static void test_riscv64_code_patching()
+{
     uc_engine *uc;
     char code[] = "\x93\x82\x12\x00"; // addi t0, t0, 0x1
-    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code, sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
     // Zero out t0 and t1
     uint64_t r_t0 = 0x0;
     OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
@@ -390,7 +392,7 @@ static void test_riscv64_code_patching() {
     // zero out t0
     r_t0 = 0x0;
     OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
-    OK(uc_emu_start(uc, code_start, code_start + sizeof(patch_code) -1, 0, 0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(patch_code) - 1, 0, 0));
     // check value
     OK(uc_reg_read(uc, UC_RISCV_REG_T0, &r_t0));
     TEST_CHECK(r_t0 != 0x1);
@@ -400,10 +402,12 @@ static void test_riscv64_code_patching() {
 }
 
 // Need to flush the cache before running the emulation after patching
-static void test_riscv64_code_patching_count() {
+static void test_riscv64_code_patching_count()
+{
     uc_engine *uc;
     char code[] = "\x93\x82\x12\x00"; // addi t0, t0, 0x1
-    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code, sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
     // Zero out t0 and t1
     uint64_t r_t0 = 0x0;
     OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
@@ -415,7 +419,8 @@ static void test_riscv64_code_patching_count() {
     // patch instruction
     char patch_code[] = "\x93\x82\xf2\x7f"; // addi t0, t0, 0x7FF
     OK(uc_mem_write(uc, code_start, patch_code, sizeof(patch_code) - 1));
-    OK(uc_ctl_remove_cache(uc, code_start, code_start + sizeof(patch_code) - 1));
+    OK(uc_ctl_remove_cache(uc, code_start,
+                           code_start + sizeof(patch_code) - 1));
     // zero out t0
     r_t0 = 0x0;
     OK(uc_reg_write(uc, UC_RISCV_REG_T0, &r_t0));
@@ -532,22 +537,23 @@ static void test_riscv64_mmio_map()
     OK(uc_close(uc));
 }
 
-TEST_LIST = {{"test_riscv32_nop", test_riscv32_nop},
-             {"test_riscv64_nop", test_riscv64_nop},
-             {"test_riscv32_3steps_pc_update", test_riscv32_3steps_pc_update},
-             {"test_riscv64_3steps_pc_update", test_riscv64_3steps_pc_update},
-             {"test_riscv32_until_pc_update", test_riscv32_until_pc_update},
-             {"test_riscv64_until_pc_update", test_riscv64_until_pc_update},
-             {"test_riscv32_fp_move", test_riscv32_fp_move},
-             {"test_riscv64_fp_move", test_riscv64_fp_move},
-             {"test_riscv64_fp_move_from_int", test_riscv64_fp_move_from_int},
-             {"test_riscv64_fp_move_from_int_reg_write",
-              test_riscv64_fp_move_from_int_reg_write},
-             {"test_riscv64_fp_move_to_int", test_riscv64_fp_move_to_int},
-             {"test_riscv64_ecall", test_riscv64_ecall},
-             {"test_riscv32_mmio_map", test_riscv32_mmio_map},
-             {"test_riscv64_mmio_map", test_riscv64_mmio_map},
-             {"test_riscv32_map", test_riscv32_map},
-             {"test_riscv64_code_patching", test_riscv64_code_patching},
-             {"test_riscv64_code_patching_count", test_riscv64_code_patching_count},
-             {NULL, NULL}};
+TEST_LIST = {
+    {"test_riscv32_nop", test_riscv32_nop},
+    {"test_riscv64_nop", test_riscv64_nop},
+    {"test_riscv32_3steps_pc_update", test_riscv32_3steps_pc_update},
+    {"test_riscv64_3steps_pc_update", test_riscv64_3steps_pc_update},
+    {"test_riscv32_until_pc_update", test_riscv32_until_pc_update},
+    {"test_riscv64_until_pc_update", test_riscv64_until_pc_update},
+    {"test_riscv32_fp_move", test_riscv32_fp_move},
+    {"test_riscv64_fp_move", test_riscv64_fp_move},
+    {"test_riscv64_fp_move_from_int", test_riscv64_fp_move_from_int},
+    {"test_riscv64_fp_move_from_int_reg_write",
+     test_riscv64_fp_move_from_int_reg_write},
+    {"test_riscv64_fp_move_to_int", test_riscv64_fp_move_to_int},
+    {"test_riscv64_ecall", test_riscv64_ecall},
+    {"test_riscv32_mmio_map", test_riscv32_mmio_map},
+    {"test_riscv64_mmio_map", test_riscv64_mmio_map},
+    {"test_riscv32_map", test_riscv32_map},
+    {"test_riscv64_code_patching", test_riscv64_code_patching},
+    {"test_riscv64_code_patching_count", test_riscv64_code_patching_count},
+    {NULL, NULL}};
