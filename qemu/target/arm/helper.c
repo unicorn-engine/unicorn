@@ -7983,7 +7983,9 @@ void cpsr_write(CPUARMState *env, uint32_t val, uint32_t mask,
              * to switch mode. (Those are caught by translate.c for writes
              * triggered by guest instructions.)
              */
-            mask &= ~CPSR_M;
+            // mask &= ~CPSR_M;
+            // Unicorn: No, it can also be uc_reg_write
+            switch_mode(env, val & CPSR_M);
         } else if (bad_mode_switch(env, val & CPSR_M, write_type)) {
             /* Attempt to switch to an invalid mode: this is UNPREDICTABLE in
              * v7, and has defined behaviour in v8:

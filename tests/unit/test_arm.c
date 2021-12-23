@@ -308,6 +308,43 @@ static void test_arm_und32_to_svc32()
     OK(uc_close(uc));
 }
 
+static void test_arm_usr32_to_svc32()
+{
+    uc_engine *uc;
+    int r_cpsr, r_sp, r_spsr, r_lr;
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_A9));
+
+    // https://www.keil.com/pack/doc/CMSIS/Core_A/html/group__CMSIS__CPSR__M.html
+    r_cpsr = 0x40000093; // SVC32
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    r_sp = 0x12345678;
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+
+    r_cpsr = 0x4000009b; // UND32
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    r_spsr = 0x40000093; // Save previous CPSR
+    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr));
+    r_sp = 0xDEAD0000;
+    OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
+    r_lr = code_start + 8;
+    OK(uc_reg_write(uc, UC_ARM_REG_LR, &r_lr));
+
+    r_cpsr = 0x40000090; // USR32
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    r_sp = 0x0010000;
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_sp));
+
+    r_cpsr = 0x40000093; // SVC32
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp));
+    TEST_CHECK(r_sp == 0x12345678);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -317,4 +354,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_m_control", test_arm_m_control},
              {"test_arm_m_exc_return", test_arm_m_exc_return},
              {"test_arm_und32_to_svc32", test_arm_und32_to_svc32},
+             {"test_arm_usr32_to_svc32", test_arm_usr32_to_svc32},
              {NULL, NULL}};
