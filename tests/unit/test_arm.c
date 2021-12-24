@@ -373,6 +373,31 @@ static void test_arm_v8()
     OK(uc_close(uc));
 }
 
+static void test_arm_thumb_smlabb()
+{
+    char code[] = "\x13\xfb\x01\x23";
+    uint32_t r_r1, r_r2, r_r3;
+    uc_engine *uc;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_M7);
+
+    r_r3 = 5;
+    r_r1 = 7;
+    r_r2 = 9;
+    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r_r1));
+    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r_r3));
+
+    TEST_CHECK(r_r3 == 5 * 7 + 9);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -384,4 +409,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_und32_to_svc32", test_arm_und32_to_svc32},
              {"test_arm_usr32_to_svc32", test_arm_usr32_to_svc32},
              {"test_arm_v8", test_arm_v8},
+             {"test_arm_thumb_smlabb", test_arm_thumb_smlabb},
              {NULL, NULL}};

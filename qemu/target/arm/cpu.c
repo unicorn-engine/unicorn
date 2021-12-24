@@ -692,6 +692,19 @@ void arm_cpu_post_init(CPUState *obj)
         set_feature(&cpu->env, ARM_FEATURE_PMSA);
     }
 
+    if (arm_feature(&cpu->env, ARM_FEATURE_CBAR) ||
+        arm_feature(&cpu->env, ARM_FEATURE_CBAR_RO)) {
+        cpu->reset_cbar = 0;
+    }
+
+    if (!arm_feature(&cpu->env, ARM_FEATURE_M)) {
+        cpu->reset_hivecs = false;
+    }
+
+    if (arm_feature(&cpu->env, ARM_FEATURE_AARCH64)) {
+        cpu->rvbar = 0;
+    }
+
     if (arm_feature(&cpu->env, ARM_FEATURE_PMU)) {
         cpu->has_pmu = true;
     }
@@ -709,6 +722,21 @@ void arm_cpu_post_init(CPUState *obj)
 
     if (arm_feature(&cpu->env, ARM_FEATURE_NEON)) {
         cpu->has_neon = true;
+    }
+
+    if (arm_feature(&cpu->env, ARM_FEATURE_M) &&
+        arm_feature(&cpu->env, ARM_FEATURE_THUMB_DSP)) {
+        cpu->has_dsp = true;
+    }
+
+    if (arm_feature(&cpu->env, ARM_FEATURE_PMSA)) {
+        cpu->has_mpu = true;
+    }
+
+    cpu->cfgend = false;
+
+    if (arm_feature(&cpu->env, ARM_FEATURE_GENERIC_TIMER)) {
+        cpu->gt_cntfrq_hz = NANOSECONDS_PER_SECOND / GTIMER_SCALE;
     }
 }
 
