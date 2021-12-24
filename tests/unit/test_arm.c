@@ -4,9 +4,10 @@ const uint64_t code_start = 0x1000;
 const uint64_t code_len = 0x4000;
 
 static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
-                            const char *code, uint64_t size)
+                            const char *code, uint64_t size, uc_cpu_arm cpu)
 {
     OK(uc_open(arch, mode, uc));
+    OK(uc_ctl_set_cpu_model(*uc, cpu));
     OK(uc_mem_map(*uc, code_start, code_len, UC_PROT_ALL));
     OK(uc_mem_write(*uc, code_start, code, size));
 }
@@ -18,7 +19,8 @@ static void test_arm_nop()
     int r_r0 = 0x1234;
     int r_r2 = 0x6789;
 
-    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
     OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
     OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
 
@@ -38,7 +40,8 @@ static void test_arm_thumb_sub()
     char code[] = "\x83\xb0"; // sub    sp, #0xc
     int r_sp = 0x1234;
 
-    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
     OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
@@ -60,7 +63,7 @@ static void test_armeb_sub()
     int r_r1;
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_BIG_ENDIAN, code,
-                    sizeof(code) - 1);
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
     OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
     OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
     OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
@@ -87,7 +90,7 @@ static void test_arm_thumbeb_sub()
     int r_sp = 0x1234;
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_BIG_ENDIAN, code,
-                    sizeof(code) - 1);
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
     OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
@@ -123,7 +126,8 @@ static void test_arm_thumb_ite()
     int r_pc = 0;
     uint64_t count = 0;
 
-    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
     OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
     OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
     OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
@@ -175,7 +179,7 @@ static void test_arm_m_thumb_mrs()
     uint32_t r_r0, r_r1;
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, code,
-                    sizeof(code) - 1);
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
 
     OK(uc_reg_write(uc, UC_ARM_REG_CONTROL, &r_control));
     OK(uc_reg_write(uc, UC_ARM_REG_APSR_NZCVQ, &r_apsr));
@@ -248,7 +252,7 @@ static void test_arm_m_exc_return()
     uc_hook hook;
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_MCLASS, code,
-                    sizeof(code) - 1);
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
     OK(uc_mem_map(uc, r_sp - 0x1000, 0x1000, UC_PROT_ALL));
     OK(uc_hook_add(uc, &hook, UC_HOOK_INTR,
                    test_arm_m_exc_return_hook_interrupt, NULL, 0, 0));
@@ -345,6 +349,30 @@ static void test_arm_usr32_to_svc32()
     OK(uc_close(uc));
 }
 
+static void test_arm_v8()
+{
+    char code[] = "\xd0\xe8\xff\x17"; // LDAEXD.W R1, [R0]
+    uc_engine *uc;
+    uint32_t r_r1 = 0xdeadbeef;
+    uint32_t r_r0;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_M33);
+
+    r_r0 = 0x8000;
+    OK(uc_mem_map(uc, r_r0, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, r_r0, (void *)&r_r1, 4));
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r_r1));
+
+    TEST_CHECK(r_r1 == 0xdeadbeef);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -355,4 +383,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_m_exc_return", test_arm_m_exc_return},
              {"test_arm_und32_to_svc32", test_arm_und32_to_svc32},
              {"test_arm_usr32_to_svc32", test_arm_usr32_to_svc32},
+             {"test_arm_v8", test_arm_v8},
              {NULL, NULL}};
