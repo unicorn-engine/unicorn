@@ -4,6 +4,9 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _s390x
 #endif
+#define uc_add_inline_hook uc_add_inline_hook_s390x
+#define uc_del_inline_hook uc_del_inline_hook_s390x
+#define tb_invalidate_phys_range tb_invalidate_phys_range_s390x
 #define use_idiv_instructions use_idiv_instructions_s390x
 #define arm_arch arm_arch_s390x
 #define tb_target_set_jmp_target tb_target_set_jmp_target_s390x
@@ -48,7 +51,7 @@
 #define address_space_dispatch_compact address_space_dispatch_compact_s390x
 #define flatview_translate flatview_translate_s390x
 #define address_space_translate_for_iotlb address_space_translate_for_iotlb_s390x
-//#define qemu_get_cpu qemu_get_cpu_s390x
+#define qemu_get_cpu qemu_get_cpu_s390x
 #define cpu_address_space_init cpu_address_space_init_s390x
 #define cpu_get_address_space cpu_get_address_space_s390x
 #define cpu_exec_unrealizefn cpu_exec_unrealizefn_s390x

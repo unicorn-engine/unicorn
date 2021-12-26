@@ -27,6 +27,7 @@
 #include "sysemu/sysemu.h"
 #include "sysemu/tcg.h"
 #include "fpu/softfloat-helpers.h"
+#include "exec/exec-all.h"
 
 #define CR0_RESET       0xE0UL
 #define CR14_RESET      0xC2000000UL;

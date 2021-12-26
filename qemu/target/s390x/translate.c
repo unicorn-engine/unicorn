@@ -6844,7 +6844,7 @@ static void s390x_tr_translate_insn(DisasContextBase *dcbase, CPUState *cs)
     DisasContext *dc = container_of(dcbase, DisasContext, base);
 
     // Unicorn: end address tells us to stop emulation
-    if (dcbase->pc_next == dc->uc->addr_end) {
+    if (uc_addr_is_exit(dc->uc, dcbase->pc_next)) {
         // imitate PGM exception to halt emulation
         dcbase->is_jmp = DISAS_UNICORN_HALT;
     } else {
