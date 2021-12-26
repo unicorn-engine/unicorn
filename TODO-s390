@@ -1,0 +1,13 @@
+current status:
+
+- only build s390x arch (see CMakeLists.txt)
+- sample_s390x crash, due to qemu/target/s390x/cpu.c :: cpu_s390_init() still has bugs
+
+Todo:
+
+- fix qemu/target/s390x/cpu.c, so sample_s390x works
+- enable building all arch to fix conflicts
+- support more registers in qemu/target/s390x/unicorn.c
+- storage-keys needed?
+- find & fix potential memory leaking with valgrind
+- sync with "dev" branch of github unicorn

@@ -78,4 +78,6 @@ void os_setup_early_signal_handling(void);
 
 void page_size_init(struct uc_struct *uc);
 
+CPUState *qemu_get_cpu(struct uc_struct *uc, int index);
+
 #endif
