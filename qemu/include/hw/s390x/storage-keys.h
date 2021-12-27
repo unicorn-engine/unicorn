@@ -12,6 +12,8 @@
 #ifndef S390_STORAGE_KEYS_H
 #define S390_STORAGE_KEYS_H
 
+#include "uc_priv.h"
+
 /*
 #define TYPE_S390_SKEYS "s390-skeys"
 #define S390_SKEYS(obj) \
@@ -23,7 +25,8 @@
 */
 
 typedef struct S390SKeysState {
-    CPUState parent_obj;
+    //CPUState parent_obj;
+    bool migration_enabled; // Unicorn: Dummy struct member
 } S390SKeysState;
 
 /*
@@ -36,11 +39,11 @@ typedef struct S390SKeysState {
 #define S390_SKEYS_GET_CLASS(obj) \
     OBJECT_GET_CLASS(S390SKeysClass, (obj), TYPE_S390_SKEYS)
 */
-#define S390_SKEYS_GET_CLASS(obj) (&((S390CPU *)obj)->skey)
+#define S390_SKEYS_GET_CLASS(obj) (((QEMUS390SKeysState *)obj)->class)
 
 
 typedef struct S390SKeysClass {
-    CPUClass parent_class;
+    //CPUClass parent_class;
     int (*skeys_enabled)(S390SKeysState *ks);
     int (*get_skeys)(S390SKeysState *ks, uint64_t start_gfn, uint64_t count,
                      uint8_t *keys);
@@ -50,17 +53,21 @@ typedef struct S390SKeysClass {
 
 #define TYPE_KVM_S390_SKEYS "s390-skeys-kvm"
 #define TYPE_QEMU_S390_SKEYS "s390-skeys-qemu"
+// #define QEMU_S390_SKEYS(obj) \
+//     OBJECT_CHECK(QEMUS390SKeysState, (obj), TYPE_QEMU_S390_SKEYS)
 #define QEMU_S390_SKEYS(obj) \
-    OBJECT_CHECK(QEMUS390SKeysState, (obj), TYPE_QEMU_S390_SKEYS)
-
+    (QEMUS390SKeysState*)(obj)
 typedef struct QEMUS390SKeysState {
     S390SKeysState parent_obj;
     uint8_t *keydata;
     uint32_t key_count;
+
+    // Unicorn
+    S390SKeysClass *class;
 } QEMUS390SKeysState;
 
-void s390_skeys_init(void);
+void s390_skeys_init(uc_engine *uc);
 
-S390SKeysState *s390_get_skeys_device(void);
+S390SKeysState *s390_get_skeys_device(uc_engine *uc);
 
 #endif /* S390_STORAGE_KEYS_H */

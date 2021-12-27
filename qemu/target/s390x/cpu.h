@@ -166,6 +166,7 @@ struct S390CPU {
     // unicorn
     struct S390CPUClass cc;
     struct S390SKeysClass skey;
+    struct QEMUS390SKeysState ss;
 };
 
 

@@ -33,6 +33,13 @@ static void s390_release(void *ctx)
         g_free(fast->table);
     }
 #endif
+    TCGContext *tcg_ctx = (TCGContext *)ctx;
+    S390CPU *cpu = (S390CPU *)tcg_ctx->uc->cpu;
+
+    release_common(ctx);
+
+    s390_cpu_model_finalize(cpu);
+    // TODO: Anymore to free?
 }
 
 void s390_reg_reset(struct uc_struct *uc)

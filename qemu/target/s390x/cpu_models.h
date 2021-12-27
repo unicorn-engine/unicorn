@@ -16,6 +16,8 @@
 #include "cpu_features.h"
 #include "gen-features.h"
 #include "hw/core/cpu.h"
+#include "unicorn/s390x.h"
+#include "uc_priv.h"
 
 /* static CPU definition */
 struct S390CPUDef {
@@ -105,5 +107,9 @@ static inline uint64_t s390_cpuid_from_cpu_model(const S390CPUModel *model)
 }
 S390CPUDef const *s390_find_cpu_def(uint16_t type, uint8_t gen, uint8_t ec_ga,
                                     S390FeatBitmap features);
+
+void s390_init_cpu_model(uc_engine *uc, uc_cpu_s390x cpu_model);
+
+void s390_cpu_model_finalize(CPUState *obj);
 
 #endif /* TARGET_S390X_CPU_MODELS_H */

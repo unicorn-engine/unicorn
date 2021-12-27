@@ -137,6 +137,8 @@ static void s390_cpu_initfn(struct uc_struct *uc, CPUState *obj)
     // cpu->env.cpu_timer =
     //     timer_new_ns(QEMU_CLOCK_VIRTUAL, s390x_cpu_timer, cpu);
     s390_cpu_set_state(S390_CPU_STATE_STOPPED, cpu);
+
+    cpu->env.uc = uc;
 }
 
 static unsigned s390_count_running_cpus(void)
@@ -255,6 +257,13 @@ S390CPU *cpu_s390_init(struct uc_struct *uc, const char *cpu_model)
         return NULL;
     }
 
+    if (uc->cpu_model == INT_MAX) {
+        uc->cpu_model = 36; // qemu-s390x-cpu
+    } else if (uc->cpu_model >= 38) {
+        free(cpu);
+        return NULL;
+    }
+
     cs = (CPUState *)cpu;
     cc = (CPUClass *)&cpu->cc;
     cs->cc = cc;
@@ -267,28 +276,17 @@ S390CPU *cpu_s390_init(struct uc_struct *uc, const char *cpu_model)
     /* init CPUClass */
     s390_cpu_class_init(uc, cc);
 
+    // init skeys
+    s390_skeys_init(uc);
+
+    // init s390 models
+    s390_init_cpu_model(uc, uc->cpu_model);
+
     /* init CPUState */
     cpu_common_initfn(uc, cs);
 
     /* init CPU */
     s390_cpu_initfn(uc, cs);
-
-    /* init specific CPU model */
-/*
-    for (i = 0; i < ARRAY_SIZE(cpu_models); i++) {
-        if (strcmp(cpu_model, cpu_models[i].name) == 0) {
-            cpu_models[i].initfn(cs);
-
-            if (arm_cpus[i].class_init) {
-                arm_cpus[i].class_init(uc, cc, uc);
-            }
-            if (arm_cpus[i].initfn) {
-                arm_cpus[i].initfn(uc, cs);
-            }
-            break;
-        }
-    }
-*/
 
     /* realize CPU */
     s390_cpu_realizefn(uc, cs);

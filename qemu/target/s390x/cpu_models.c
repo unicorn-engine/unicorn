@@ -409,7 +409,7 @@ static void s390_max_cpu_model_initfn(CPUState *obj)
     memcpy(cpu->model, max_model, sizeof(*cpu->model));
 }
 
-static void s390_cpu_model_finalize(CPUState *obj)
+void s390_cpu_model_finalize(CPUState *obj)
 {
     S390CPU *cpu = S390_CPU(obj);
 
@@ -424,7 +424,7 @@ static void s390_base_cpu_model_class_init(struct uc_struct *uc, CPUClass *oc, v
     /* all base models are migration safe */
     xcc->cpu_def = (const S390CPUDef *) data;
     xcc->is_static = true;
-    //xcc->desc = xcc->cpu_def->desc;
+    // xcc->desc = xcc->cpu_def->desc;
 }
 
 static void s390_cpu_model_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
@@ -433,7 +433,8 @@ static void s390_cpu_model_class_init(struct uc_struct *uc, CPUClass *oc, void *
 
     /* model that can change between QEMU versions */
     xcc->cpu_def = (const S390CPUDef *) data;
-    //xcc->desc = xcc->cpu_def->desc;
+    // xcc->is_migration_safe = true;
+    // xcc->desc = xcc->cpu_def->desc;
 }
 
 static void s390_qemu_cpu_model_class_init(struct uc_struct *uc, CPUClass *oc, void *data)
@@ -524,9 +525,8 @@ static void init_ignored_base_feat(void)
     }
 }
 
-static void register_types(void)
+void s390_init_cpu_model(uc_engine *uc, uc_cpu_s390x cpu_model)
 {
-#if 0
     static const S390FeatInit qemu_latest_init = { S390_FEAT_LIST_QEMU_LATEST };
     int i;
 
@@ -547,33 +547,16 @@ static void register_types(void)
     s390_set_qemu_cpu_model(QEMU_MAX_CPU_TYPE, QEMU_MAX_CPU_GEN,
                             QEMU_MAX_CPU_EC_GA, qemu_latest_init);
 
-    for (i = 0; i < ARRAY_SIZE(s390_cpu_defs); i++) {
-        char *base_name = s390_base_cpu_type_name(s390_cpu_defs[i].name);
-        TypeInfo ti_base = {
-            .name = base_name,
-            .parent = TYPE_S390_CPU,
-            .instance_init = s390_cpu_model_initfn,
-            .instance_finalize = s390_cpu_model_finalize,
-            .class_init = s390_base_cpu_model_class_init,
-            .class_data = (void *) &s390_cpu_defs[i],
-        };
-        char *name = s390_cpu_type_name(s390_cpu_defs[i].name);
-        TypeInfo ti = {
-            .name = name,
-            .parent = TYPE_S390_CPU,
-            .instance_init = s390_cpu_model_initfn,
-            .instance_finalize = s390_cpu_model_finalize,
-            .class_init = s390_cpu_model_class_init,
-            .class_data = (void *) &s390_cpu_defs[i],
-        };
-
-        type_register_static(&ti_base);
-        type_register_static(&ti);
-        g_free(base_name);
-        g_free(name);
+    if (cpu_model < ARRAY_SIZE(s390_cpu_defs)) {
+        s390_base_cpu_model_class_init(uc, uc->cpu->cc, (void *) &s390_cpu_defs[cpu_model]);
+        s390_cpu_model_class_init(uc, uc->cpu->cc, (void *) &s390_cpu_defs[cpu_model]);
+        s390_cpu_model_initfn(uc->cpu);
+    } else if (cpu_model == UC_CPU_S390X_MAX) {
+        s390_max_cpu_model_class_init(uc, uc->cpu->cc, NULL);
+        s390_max_cpu_model_initfn(uc->cpu);
+    } else if (cpu_model == UC_CPU_S390X_QEMU) {
+        s390_qemu_cpu_model_class_init(uc, uc->cpu->cc, NULL);
+        s390_qemu_cpu_model_initfn(uc->cpu);
     }
 
-    type_register_static(&qemu_s390_cpu_type_info);
-    type_register_static(&max_s390_cpu_type_info);
-#endif
 }

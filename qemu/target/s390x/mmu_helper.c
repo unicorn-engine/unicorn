@@ -282,7 +282,7 @@ static int mmu_translate_asce(CPUS390XState *env, target_ulong vaddr,
     return 0;
 }
 
-static void mmu_handle_skey(target_ulong addr, int rw, int *flags)
+static void mmu_handle_skey(uc_engine *uc, target_ulong addr, int rw, int *flags)
 {
     static S390SKeysClass *skeyclass;
     static S390SKeysState *ss;
@@ -296,8 +296,8 @@ static void mmu_handle_skey(target_ulong addr, int rw, int *flags)
 #endif
 
     if (unlikely(!ss)) {
-        // ss = s390_get_skeys_device();
-        // skeyclass = S390_SKEYS_GET_CLASS(ss);
+        ss = s390_get_skeys_device(uc);
+        skeyclass = S390_SKEYS_GET_CLASS(ss);
     }
 
     /*
@@ -437,7 +437,7 @@ nodat:
     /* Convert real address -> absolute address */
     *raddr = mmu_real2abs(env, *raddr);
 
-    mmu_handle_skey(*raddr, rw, flags);
+    mmu_handle_skey(env->uc, *raddr, rw, flags);
     return 0;
 }
 
@@ -549,6 +549,6 @@ int mmu_translate_real(CPUS390XState *env, target_ulong raddr, int rw,
 
     *addr = mmu_real2abs(env, raddr & TARGET_PAGE_MASK);
 
-    mmu_handle_skey(*addr, rw, flags);
+    mmu_handle_skey(env->uc, *addr, rw, flags);
     return 0;
 }
