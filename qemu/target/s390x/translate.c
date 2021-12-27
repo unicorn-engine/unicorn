@@ -6652,15 +6652,15 @@ static DisasJumpType translate_one(CPUS390XState *env, DisasContext *s)
     /* Search for the insn in the table.  */
     insn = extract_insn(env, s);
 
+    /* Emit insn_start now that we know the ILEN.  */
+    tcg_gen_insn_start(tcg_ctx, s->base.pc_next, s->cc_op, s->ilen);
+
     // Unicorn: trace this instruction on request
     if (HOOK_EXISTS_BOUNDED(s->uc, UC_HOOK_CODE, s->base.pc_next)) {
         gen_uc_tracecode(tcg_ctx, s->ilen, UC_HOOK_CODE_IDX, s->uc, s->base.pc_next);
         // the callback might want to stop emulation immediately
         check_exit_request(tcg_ctx);
     }
-
-    /* Emit insn_start now that we know the ILEN.  */
-    tcg_gen_insn_start(tcg_ctx, s->base.pc_next, s->cc_op, s->ilen);
 
     /* Not found means unimplemented/illegal opcode.  */
     if (insn == NULL) {
@@ -6867,7 +6867,8 @@ static void s390x_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
 
     switch (dc->base.is_jmp) {
     case DISAS_UNICORN_HALT:
-        gen_exception(tcg_ctx, EXCP_PGM);
+        tcg_gen_insn_start(tcg_ctx, dc->base.pc_next, 0, 0);
+        gen_helper_uc_s390x_exit(tcg_ctx, tcg_ctx->cpu_env);
         break;
     case DISAS_GOTO_TB:
     case DISAS_NORETURN:

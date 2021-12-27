@@ -6271,6 +6271,9 @@ ppc_irq_reset \
 
 ppc64_SYMBOLS=${ppc_SYMBOLS}
 
+s390x_SYMBOLS="helper_uc_s390x_exit \
+"
+
 ARCHS="x86_64 arm armeb aarch64 aarch64eb riscv32 riscv64 mips mipsel mips64 mips64el sparc sparc64 m68k ppc ppc64 s390x"
 
 for arch in $ARCHS; do

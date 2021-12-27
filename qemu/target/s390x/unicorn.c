@@ -38,7 +38,7 @@ static void s390_release(void *ctx)
 
     release_common(ctx);
 
-    s390_cpu_model_finalize(cpu);
+    s390_cpu_model_finalize((CPUState *)cpu);
     // TODO: Anymore to free?
 }
 

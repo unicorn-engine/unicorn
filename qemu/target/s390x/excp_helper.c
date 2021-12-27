@@ -598,3 +598,12 @@ void s390x_cpu_do_unaligned_access(CPUState *cs, vaddr addr,
 
     tcg_s390_program_interrupt(env, PGM_SPECIFICATION, retaddr);
 }
+
+void helper_uc_s390x_exit(CPUS390XState *env)
+{
+    CPUState *cs = env_cpu(env);
+
+    cs->exception_index = EXCP_HLT;
+    cs->halted = 1;
+    cpu_loop_exit(cs);
+}
