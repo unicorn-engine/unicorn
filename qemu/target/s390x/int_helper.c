@@ -28,9 +28,9 @@
 
 /* #define DEBUG_HELPER */
 #ifdef DEBUG_HELPER
-#define HELPER_LOG(x...) qemu_log(x)
+#define HELPER_LOG(x, ...) qemu_log(x)
 #else
-#define HELPER_LOG(x...)
+#define HELPER_LOG(x, ...)
 #endif
 
 /* 64/32 -> 32 signed division */

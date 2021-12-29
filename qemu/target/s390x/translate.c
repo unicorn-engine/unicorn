@@ -6595,14 +6595,42 @@ static const DisasInsn *extract_insn(CPUS390XState *env, DisasContext *s)
         break;
     case 0xc5: /* MII */
     case 0xc7: /* SMI */
-    case 0xd0 ... 0xdf: /* SS */
+    case 0xd0:
+    case 0xd1:
+    case 0xd2:
+    case 0xd3:
+    case 0xd4:
+    case 0xd5:
+    case 0xd6:
+    case 0xd7:
+    case 0xd8:
+    case 0xd9:
+    case 0xda:
+    case 0xdb:
+    case 0xdc:
+    case 0xdd:
+    case 0xde:
+    case 0xdf:
+    // case 0xd0 ... 0xdf: /* SS */
     case 0xe1: /* SS */
     case 0xe2: /* SS */
     case 0xe8: /* SS */
     case 0xe9: /* SS */
     case 0xea: /* SS */
-    case 0xee ... 0xf3: /* SS */
-    case 0xf8 ... 0xfd: /* SS */
+    case 0xee:
+    case 0xef:
+    case 0xf0:
+    case 0xf1:
+    case 0xf2:
+    case 0xf3:
+    // case 0xee ... 0xf3: /* SS */
+    case 0xf8:
+    case 0xf9:
+    case 0xfa:
+    case 0xfb:
+    case 0xfc:
+    case 0xfd:
+    // case 0xf8 ... 0xfd: /* SS */
         op2 = 0;
         break;
     default:

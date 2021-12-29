@@ -508,7 +508,7 @@ int s390_cpu_virt_mem_rw(S390CPU *cpu, vaddr laddr, uint8_t ar, void *hostbuf,
             cpu_physical_memory_rw(env_cpu(env)->as, pages[i] | (laddr & ~TARGET_PAGE_MASK),
                                    hostbuf, currlen, is_write);
             laddr += currlen;
-            hostbuf += currlen;
+            hostbuf = (void *)(((char *)hostbuf) + currlen);
             len -= currlen;
         }
     }

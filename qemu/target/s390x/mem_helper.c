@@ -36,9 +36,9 @@
 
 /* #define DEBUG_HELPER */
 #ifdef DEBUG_HELPER
-#define HELPER_LOG(x...) qemu_log(x)
+#define HELPER_LOG(x, ...) qemu_log(x)
 #else
-#define HELPER_LOG(x...)
+#define HELPER_LOG(x, ...)
 #endif
 
 static inline bool psw_key_valid(CPUS390XState *env, uint8_t psw_key)
@@ -1425,7 +1425,9 @@ static inline uint32_t do_unpkau(CPUS390XState *env, uint64_t dest,
     switch (b & 0xf) {
     case 0xa:
     case 0xc:
-    case 0xe ... 0xf:
+    // case 0xe ... 0xf:
+    case 0xe:
+    case 0xf:
         cc = 0;  /* plus */
         break;
     case 0xb:
@@ -1433,7 +1435,17 @@ static inline uint32_t do_unpkau(CPUS390XState *env, uint64_t dest,
         cc = 1;  /* minus */
         break;
     default:
-    case 0x0 ... 0x9:
+    // case 0x0 ... 0x9:
+    case 0x0:
+    case 0x1:
+    case 0x2:
+    case 0x3:
+    case 0x4:
+    case 0x5:
+    case 0x6:
+    case 0x7:
+    case 0x8:
+    case 0x9:
         cc = 3;  /* invalid */
         break;
     }
