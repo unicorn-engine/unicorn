@@ -97,6 +97,7 @@ void ioinst_handle_hsch(S390CPU *cpu, uint64_t reg1, uintptr_t ra)
 #endif
 }
 
+#if 0
 static int ioinst_schib_valid(SCHIB *schib)
 {
     if ((be16_to_cpu(schib->pmcw.flags) & PMCW_FLAGS_MASK_INVALID) ||
@@ -109,6 +110,7 @@ static int ioinst_schib_valid(SCHIB *schib)
     }
     return 1;
 }
+#endif
 
 void ioinst_handle_msch(S390CPU *cpu, uint64_t reg1, uint32_t ipb, uintptr_t ra)
 {
@@ -144,6 +146,7 @@ void ioinst_handle_msch(S390CPU *cpu, uint64_t reg1, uint32_t ipb, uintptr_t ra)
 #endif
 }
 
+#if 0
 static void copy_orb_from_guest(ORB *dest, const ORB *src)
 {
     dest->intparm = be32_to_cpu(src->intparm);
@@ -168,6 +171,7 @@ static int ioinst_orb_valid(ORB *orb)
     }
     return 1;
 }
+#endif
 
 void ioinst_handle_ssch(S390CPU *cpu, uint64_t reg1, uint32_t ipb, uintptr_t ra)
 {
@@ -350,20 +354,20 @@ int ioinst_handle_tsch(S390CPU *cpu, uint64_t reg1, uint32_t ipb, uintptr_t ra)
     return 0;
 }
 
-typedef struct ChscReq {
+QEMU_PACK(typedef struct ChscReq {
     uint16_t len;
     uint16_t command;
     uint32_t param0;
     uint32_t param1;
     uint32_t param2;
-} QEMU_PACKED ChscReq;
+}) ChscReq;
 
-typedef struct ChscResp {
+QEMU_PACK(typedef struct ChscResp {
     uint16_t len;
     uint16_t code;
     uint32_t param;
     char data[];
-} QEMU_PACKED ChscResp;
+}) ChscResp;
 
 #define CHSC_MIN_RESP_LEN 0x0008
 
@@ -546,6 +550,7 @@ out:
 #endif
 }
 
+#if 0
 static int chsc_sei_nt0_get_event(void *res)
 {
     /* no events yet */
@@ -557,6 +562,7 @@ static int chsc_sei_nt0_have_event(void)
     /* no events yet */
     return 0;
 }
+#endif
 
 #if 0
 static int chsc_sei_nt2_get_event(void *res)

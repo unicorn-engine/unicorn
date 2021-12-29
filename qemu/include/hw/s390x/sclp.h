@@ -90,27 +90,27 @@
  * So we have to double check that all users of sclp data structures use the
  * right endianness wrappers.
  */
-typedef struct SCCBHeader {
+QEMU_PACK(typedef struct SCCBHeader {
     uint16_t length;
     uint8_t function_code;
     uint8_t control_mask[3];
     uint16_t response_code;
-} QEMU_PACKED SCCBHeader;
+}) SCCBHeader;
 
 #define SCCB_DATA_LEN (SCCB_SIZE - sizeof(SCCBHeader))
 #define SCCB_CPU_FEATURE_LEN 6
 
 /* CPU information */
-typedef struct CPUEntry {
+QEMU_PACK(typedef struct CPUEntry {
     uint8_t address;
     uint8_t reserved0;
     uint8_t features[SCCB_CPU_FEATURE_LEN];
     uint8_t reserved2[6];
     uint8_t type;
     uint8_t reserved1;
-} QEMU_PACKED CPUEntry;
+}) CPUEntry;
 
-typedef struct ReadInfo {
+QEMU_PACK(typedef struct ReadInfo {
     SCCBHeader h;
     uint16_t rnmax;
     uint8_t rnsize;
@@ -133,9 +133,9 @@ typedef struct ReadInfo {
     uint8_t  _reserved5[124 - 122];     /* 122-123 */
     uint32_t hmfai;
     struct CPUEntry entries[];
-} QEMU_PACKED ReadInfo;
+}) ReadInfo;
 
-typedef struct ReadCpuInfo {
+QEMU_PACK(typedef struct ReadCpuInfo {
     SCCBHeader h;
     uint16_t nr_configured;         /* 8-9 */
     uint16_t offset_configured;     /* 10-11 */
@@ -143,42 +143,42 @@ typedef struct ReadCpuInfo {
     uint16_t offset_standby;        /* 14-15 */
     uint8_t reserved0[24-16];       /* 16-23 */
     struct CPUEntry entries[];
-} QEMU_PACKED ReadCpuInfo;
+}) ReadCpuInfo;
 
-typedef struct ReadStorageElementInfo {
+QEMU_PACK(typedef struct ReadStorageElementInfo {
     SCCBHeader h;
     uint16_t max_id;
     uint16_t assigned;
     uint16_t standby;
     uint8_t _reserved0[16 - 14]; /* 14-15 */
     uint32_t entries[];
-} QEMU_PACKED ReadStorageElementInfo;
+}) ReadStorageElementInfo;
 
-typedef struct AttachStorageElement {
+QEMU_PACK(typedef struct AttachStorageElement {
     SCCBHeader h;
     uint8_t _reserved0[10 - 8];  /* 8-9 */
     uint16_t assigned;
     uint8_t _reserved1[16 - 12]; /* 12-15 */
     uint32_t entries[];
-} QEMU_PACKED AttachStorageElement;
+}) AttachStorageElement;
 
-typedef struct AssignStorage {
+QEMU_PACK(typedef struct AssignStorage {
     SCCBHeader h;
     uint16_t rn;
-} QEMU_PACKED AssignStorage;
+}) AssignStorage;
 
-typedef struct IoaCfgSccb {
+QEMU_PACK(typedef struct IoaCfgSccb {
     SCCBHeader header;
     uint8_t atype;
     uint8_t reserved1;
     uint16_t reserved2;
     uint32_t aid;
-} QEMU_PACKED IoaCfgSccb;
+}) IoaCfgSccb;
 
-typedef struct SCCB {
+QEMU_PACK(typedef struct SCCB {
     SCCBHeader h;
     char data[SCCB_DATA_LEN];
- } QEMU_PACKED SCCB;
+}) SCCB;
 
 #define TYPE_SCLP "sclp"
 #define SCLP(obj) OBJECT_CHECK(SCLPDevice, (obj), TYPE_SCLP)

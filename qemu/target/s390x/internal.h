@@ -13,7 +13,7 @@
 #include "cpu.h"
 
 #ifndef CONFIG_USER_ONLY
-typedef struct LowCore {
+QEMU_PACK(typedef struct LowCore {
     /* prefix area: defined by architecture */
     uint32_t        ccw1[2];                  /* 0x000 */
     uint32_t        ccw2[4];                  /* 0x008 */
@@ -91,7 +91,7 @@ typedef struct LowCore {
     /* align to the top of the prefix area */
 
     uint8_t         pad18[0x2000 - 0x1400];    /* 0x1400 */
-} QEMU_PACKED LowCore;
+}) LowCore;
 QEMU_BUILD_BUG_ON(sizeof(LowCore) != 8192);
 #endif /* CONFIG_USER_ONLY */
 

@@ -116,12 +116,12 @@ QEMU_BUILD_BUG_MSG(sizeof(PMCW) != 28, "size of PMCW is wrong");
 #define PMCW_CHARS_MASK_INVALID 0xff1ffff8
 
 /* subchannel information block */
-typedef struct SCHIB {
+QEMU_PACK(typedef struct SCHIB {
     PMCW pmcw;
     SCSW scsw;
     uint64_t mba;
     uint8_t mda[4];
-} QEMU_PACKED SCHIB;
+}) SCHIB;
 
 /* interruption response block */
 typedef struct IRB {
@@ -224,11 +224,11 @@ QEMU_BUILD_BUG_MSG(sizeof(CRW) != 4, "size of CRW is wrong");
 #define CRW_RSC_CSS   0xb
 
 /* I/O interruption code */
-typedef struct IOIntCode {
+QEMU_PACK(typedef struct IOIntCode {
     uint32_t subsys_id;
     uint32_t intparm;
     uint32_t interrupt_id;
-} QEMU_PACKED IOIntCode;
+}) IOIntCode;
 
 /* schid disintegration */
 #define IOINST_SCHID_ONE(_schid)   ((_schid & 0x00010000) >> 16)

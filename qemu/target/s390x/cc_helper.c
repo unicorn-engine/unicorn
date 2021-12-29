@@ -28,9 +28,9 @@
 
 /* #define DEBUG_HELPER */
 #ifdef DEBUG_HELPER
-#define HELPER_LOG(x...) qemu_log(x)
+#define HELPER_LOG(x, ...) qemu_log(x)
 #else
-#define HELPER_LOG(x...)
+#define HELPER_LOG(x, ...)
 #endif
 
 static uint32_t cc_calc_ltgt_32(int32_t src, int32_t dst)
