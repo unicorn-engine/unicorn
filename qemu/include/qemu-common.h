@@ -11,6 +11,7 @@
 #define QEMU_COMMON_H
 
 #include <unicorn/platform.h>
+#include <qemu/typedefs.h>
 
 #define TFR(expr) do { if ((expr) != -1) break; } while (errno == EINTR)
 
