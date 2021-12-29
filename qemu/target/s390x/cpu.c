@@ -258,8 +258,8 @@ S390CPU *cpu_s390_init(struct uc_struct *uc, const char *cpu_model)
     }
 
     if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = 36; // qemu-s390x-cpu
-    } else if (uc->cpu_model >= 38) {
+        uc->cpu_model = UC_CPU_S390X_QEMU; // qemu-s390x-cpu
+    } else if (uc->cpu_model > UC_CPU_S390X_MAX) {
         free(cpu);
         return NULL;
     }
