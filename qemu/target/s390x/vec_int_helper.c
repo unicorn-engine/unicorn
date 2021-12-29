@@ -186,7 +186,7 @@ DEF_GALOIS_MULTIPLY(32, 64)
 
 static S390Vector galois_multiply64(uint64_t a, uint64_t b)
 {
-    S390Vector res = {};
+    S390Vector res = { 0 };
     S390Vector va = {
         .doubleword[1] = a,
     };

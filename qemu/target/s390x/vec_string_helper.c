@@ -350,7 +350,7 @@ static int vstrc(void *v1, const void *v2, const void *v3, const void *v4,
     uint64_t a0 = s390_vec_read_element64(v2, 0);
     uint64_t a1 = s390_vec_read_element64(v2, 1);
     int first_zero = 16, first_match = 16;
-    S390Vector rt_result = {};
+    S390Vector rt_result = { 0 };
     uint64_t z0, z1;
     int i, j;
 

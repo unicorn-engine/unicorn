@@ -1132,7 +1132,7 @@ typedef struct DisasFormatInfo {
 #define I(N, B, S)    {  B,  S, 1, FLD_C_i##N, FLD_O_i##N }
 #define L(N, B, S)    {  B,  S, 0, FLD_C_l##N, FLD_O_l##N }
 
-#define F0(N)                     { { } },
+#define F0(N)                     { { 0 } },
 #define F1(N, X1)                 { { X1 } },
 #define F2(N, X1, X2)             { { X1, X2 } },
 #define F3(N, X1, X2, X3)         { { X1, X2, X3 } },
@@ -6675,7 +6675,7 @@ static DisasJumpType translate_one(CPUS390XState *env, DisasContext *s)
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     const DisasInsn *insn;
     DisasJumpType ret = DISAS_NEXT;
-    DisasOps o = {};
+    DisasOps o = { 0 };
 
     /* Search for the insn in the table.  */
     insn = extract_insn(env, s);

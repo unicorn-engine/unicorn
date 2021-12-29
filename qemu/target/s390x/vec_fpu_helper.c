@@ -84,7 +84,7 @@ static void vop64_2(S390Vector *v1, const S390Vector *v2, CPUS390XState *env,
                     uintptr_t retaddr)
 {
     uint8_t vxc, vec_exc = 0;
-    S390Vector tmp = {};
+    S390Vector tmp = { 0 };
     int i, old_mode;
 
     old_mode = s390_swap_bfp_rounding_mode(env, erm);
@@ -108,7 +108,7 @@ static void vop64_3(S390Vector *v1, const S390Vector *v2, const S390Vector *v3,
                     uintptr_t retaddr)
 {
     uint8_t vxc, vec_exc = 0;
-    S390Vector tmp = {};
+    S390Vector tmp = { 0 };
     int i;
 
     for (i = 0; i < 2; i++) {
@@ -179,7 +179,7 @@ static int vfc64(S390Vector *v1, const S390Vector *v2, const S390Vector *v3,
                  CPUS390XState *env, bool s, vfc64_fn fn, uintptr_t retaddr)
 {
     uint8_t vxc, vec_exc = 0;
-    S390Vector tmp = {};
+    S390Vector tmp = { 0 };
     int match = 0;
     int i;
 
@@ -414,7 +414,7 @@ static void vfll32(S390Vector *v1, const S390Vector *v2, CPUS390XState *env,
                    bool s, uintptr_t retaddr)
 {
     uint8_t vxc, vec_exc = 0;
-    S390Vector tmp = {};
+    S390Vector tmp = { 0 };
     int i;
 
     for (i = 0; i < 2; i++) {
@@ -449,7 +449,7 @@ static void vflr64(S390Vector *v1, const S390Vector *v2, CPUS390XState *env,
                    bool s, bool XxC, uint8_t erm, uintptr_t retaddr)
 {
     uint8_t vxc, vec_exc = 0;
-    S390Vector tmp = {};
+    S390Vector tmp = { 0 };
     int i, old_mode;
 
     old_mode = s390_swap_bfp_rounding_mode(env, erm);
@@ -510,7 +510,7 @@ static void vfma64(S390Vector *v1, const S390Vector *v2, const S390Vector *v3,
                    uintptr_t retaddr)
 {
     uint8_t vxc, vec_exc = 0;
-    S390Vector tmp = {};
+    S390Vector tmp = { 0 };
     int i;
 
     for (i = 0; i < 2; i++) {

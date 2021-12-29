@@ -30,7 +30,7 @@ void HELPER(vll)(CPUS390XState *env, void *v1, uint64_t addr, uint64_t bytes)
         s390_vec_write_element64(v1, 0, t0);
         s390_vec_write_element64(v1, 1, t1);
     } else {
-        S390Vector tmp = {};
+        S390Vector tmp = { 0 };
         int i;
 
         for (i = 0; i < bytes; i++) {
@@ -178,7 +178,7 @@ void HELPER(vstl)(CPUS390XState *env, const void *v1, uint64_t addr,
         addr = wrap_address(env, addr + 8);
         cpu_stq_data_ra(env, addr, s390_vec_read_element64(v1, 1), GETPC());
     } else {
-        S390Vector tmp = {};
+        S390Vector tmp = { 0 };
         int i;
 
         for (i = 0; i < bytes; i++) {
