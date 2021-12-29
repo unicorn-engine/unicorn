@@ -31,4 +31,4 @@ static void test_s390x_lr()
     OK(uc_close(uc));
 }
 
-TEST_LIST = {{"test_s390x_lr", test_s390x_lr}};
+TEST_LIST = {{"test_s390x_lr", test_s390x_lr}, {NULL, NULL}};
