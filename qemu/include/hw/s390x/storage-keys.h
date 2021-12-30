@@ -53,8 +53,6 @@ typedef struct S390SKeysClass {
 
 #define TYPE_KVM_S390_SKEYS "s390-skeys-kvm"
 #define TYPE_QEMU_S390_SKEYS "s390-skeys-qemu"
-// #define QEMU_S390_SKEYS(obj) \
-//     OBJECT_CHECK(QEMUS390SKeysState, (obj), TYPE_QEMU_S390_SKEYS)
 #define QEMU_S390_SKEYS(obj) \
     (QEMUS390SKeysState*)(obj)
 typedef struct QEMUS390SKeysState {
