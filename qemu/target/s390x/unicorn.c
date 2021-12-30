@@ -16,10 +16,10 @@ static void s390_set_pc(struct uc_struct *uc, uint64_t address)
 
 static void s390_release(void *ctx)
 {
-#if 0
+
     int i;
     TCGContext *tcg_ctx = (TCGContext *)ctx;
-    S390XCPU *cpu = (S390XCPU *)tcg_ctx->uc->cpu;
+    S390CPU *cpu = (S390CPU *)tcg_ctx->uc->cpu;
     CPUTLBDesc *d = cpu->neg.tlb.d;
     CPUTLBDescFast *f = cpu->neg.tlb.f;
     CPUTLBDesc *desc;
@@ -32,11 +32,6 @@ static void s390_release(void *ctx)
         g_free(desc->iotlb);
         g_free(fast->table);
     }
-#endif
-    TCGContext *tcg_ctx = (TCGContext *)ctx;
-    S390CPU *cpu = (S390CPU *)tcg_ctx->uc->cpu;
-
-    release_common(ctx);
 
     s390_cpu_model_finalize((CPUState *)cpu);
     // TODO: Anymore to free?

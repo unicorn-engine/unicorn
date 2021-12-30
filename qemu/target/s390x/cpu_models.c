@@ -414,6 +414,7 @@ void s390_cpu_model_finalize(CPUState *obj)
     S390CPU *cpu = S390_CPU(obj);
 
     g_free(cpu->model);
+    g_free(cpu->ss.keydata);
     cpu->model = NULL;
 }
 
