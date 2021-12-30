@@ -5,6 +5,5 @@ current status:
 
 Todo:
 
-- win32(mingw32) build
 - support more registers in qemu/target/s390x/unicorn.c
 - find & fix potential memory leaking with valgrind
