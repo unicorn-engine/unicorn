@@ -2056,15 +2056,15 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
 
 #if !defined(TARGET_AARCH64)
     if (uc->mode & UC_MODE_MCLASS) {
-        uc->cpu_model = 11;
+        uc->cpu_model = UC_CPU_ARM_CORTEX_M33;
     } else if (uc->mode & UC_MODE_ARM926) {
-        uc->cpu_model = 0;
+        uc->cpu_model = UC_CPU_ARM_926;
     } else if (uc->mode & UC_MODE_ARM946) {
-        uc->cpu_model = 1;
+        uc->cpu_model = UC_CPU_ARM_946;
     } else if (uc->mode & UC_MODE_ARM1176) {
-        uc->cpu_model = 5;
+        uc->cpu_model = UC_CPU_ARM_1176;
     } else if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = 17; // cortex-a15
+        uc->cpu_model = UC_CPU_ARM_CORTEX_A15; // cortex-a15
     } else if (uc->cpu_model >= ARR_SIZE(arm_cpus)) {
         free(cpu);
         return NULL;

@@ -164,14 +164,14 @@ MIPSCPU *cpu_mips_init(struct uc_struct *uc)
 
 #ifdef TARGET_MIPS64
     if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = 17; // R4000
+        uc->cpu_model = UC_CPU_MIPS64_R4000; // R4000
     } else if (uc->cpu_model + UC_CPU_MIPS32_I7200 + 1 >= mips_defs_number ) {
         free(cpu);
         return NULL;
     }
 #else
     if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = 10; // 74kf
+        uc->cpu_model = UC_CPU_MIPS32_74KF; // 74kf
     } else if (uc->cpu_model >= mips_defs_number) {
         free(cpu);
         return NULL;
