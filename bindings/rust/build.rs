@@ -174,6 +174,7 @@ fn main() {
         "m68k",
         "ppc",
         "ppc64",
+        "s390x"
     ]
     .iter()
     {
