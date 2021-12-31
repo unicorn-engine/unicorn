@@ -6,7 +6,7 @@ import sys, re, os
 
 INCL_DIR = os.path.join('..', 'include', 'unicorn')
 
-include = [ 'arm.h', 'arm64.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'ppc.h', 'riscv.h', 'unicorn.h' ]
+include = [ 'arm.h', 'arm64.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'ppc.h', 'riscv.h', 's390x.h', 'unicorn.h' ]
 
 template = {
     'python': {
@@ -23,6 +23,7 @@ template = {
             'm68k.h': 'm68k',
             'ppc.h': 'ppc',
             'riscv.h': 'riscv',
+            's390x.h' : "s390x",
             'unicorn.h': 'unicorn',
             'comment_open': '#',
             'comment_close': '',
