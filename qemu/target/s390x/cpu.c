@@ -219,13 +219,6 @@ void s390_enable_css_support(S390CPU *cpu)
 {
 }
 
-#if 0
-static void s390_cpu_reset_full(CPUState *dev)
-{
-    return s390_cpu_reset(dev, S390_CPU_RESET_CLEAR);
-}
-#endif
-
 static void s390_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
 {
     S390CPUClass *scc = S390_CPU_CLASS(oc);

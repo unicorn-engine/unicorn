@@ -2061,9 +2061,6 @@ uint32_t HELPER(tprot)(CPUS390XState *env, uint64_t a1, uint64_t a2)
 /* insert storage key extended */
 uint64_t HELPER(iske)(CPUS390XState *env, uint64_t r2)
 {
-    return 0;
-
-#if 0
     static S390SKeysState *ss;
     static S390SKeysClass *skeyclass;
     uint64_t addr = wrap_address(env, r2);
@@ -2076,7 +2073,7 @@ uint64_t HELPER(iske)(CPUS390XState *env, uint64_t r2)
 #endif
 
     if (unlikely(!ss)) {
-        ss = s390_get_skeys_device();
+        ss = s390_get_skeys_device(env->uc);
         skeyclass = S390_SKEYS_GET_CLASS(ss);
     }
 
@@ -2084,13 +2081,11 @@ uint64_t HELPER(iske)(CPUS390XState *env, uint64_t r2)
         return 0;
     }
     return key;
-#endif
 }
 
 /* set storage key extended */
 void HELPER(sske)(CPUS390XState *env, uint64_t r1, uint64_t r2)
 {
-#if 0
     static S390SKeysState *ss;
     static S390SKeysClass *skeyclass;
     uint64_t addr = wrap_address(env, r2);
@@ -2103,7 +2098,7 @@ void HELPER(sske)(CPUS390XState *env, uint64_t r1, uint64_t r2)
 #endif
 
     if (unlikely(!ss)) {
-        ss = s390_get_skeys_device();
+        ss = s390_get_skeys_device(env->uc);
         skeyclass = S390_SKEYS_GET_CLASS(ss);
     }
 
@@ -2114,14 +2109,11 @@ void HELPER(sske)(CPUS390XState *env, uint64_t r1, uint64_t r2)
     * that point to a physical address we have to flush the whole TLB.
     */
     tlb_flush_all_cpus_synced(env_cpu(env));
-#endif
 }
 
 /* reset reference bit extended */
 uint32_t HELPER(rrbe)(CPUS390XState *env, uint64_t r2)
 {
-    return 0;
-#if 0
     static S390SKeysState *ss;
     static S390SKeysClass *skeyclass;
     uint8_t re, key;
@@ -2133,7 +2125,7 @@ uint32_t HELPER(rrbe)(CPUS390XState *env, uint64_t r2)
 #endif
 
     if (unlikely(!ss)) {
-        ss = s390_get_skeys_device();
+        ss = s390_get_skeys_device(env->uc);
         skeyclass = S390_SKEYS_GET_CLASS(ss);
     }
 
@@ -2163,7 +2155,6 @@ uint32_t HELPER(rrbe)(CPUS390XState *env, uint64_t r2)
      */
 
     return re >> 1;
-#endif
 }
 
 uint32_t HELPER(mvcs)(CPUS390XState *env, uint64_t l, uint64_t a1, uint64_t a2)

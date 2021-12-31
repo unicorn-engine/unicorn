@@ -460,47 +460,6 @@ static void s390_max_cpu_model_class_init(struct uc_struct *uc, CPUClass *oc, vo
     //    "Enables all features supported by the accelerator in the current host";
 }
 
-#if 0
-
-/* Generate type name for a cpu model. Caller has to free the string. */
-static char *s390_cpu_type_name(const char *model_name)
-{
-    return g_strdup_printf(S390_CPU_TYPE_NAME("%s"), model_name);
-}
-
-/* Generate type name for a base cpu model. Caller has to free the string. */
-static char *s390_base_cpu_type_name(const char *model_name)
-{
-    return g_strdup_printf(S390_CPU_TYPE_NAME("%s-base"), model_name);
-}
-
-CPUClass *s390_cpu_class_by_name(const char *name)
-{
-    char *typename = s390_cpu_type_name(name);
-    CPUClass *oc;
-
-    oc = object_class_by_name(typename);
-    g_free(typename);
-    return oc;
-}
-
-static const TypeInfo qemu_s390_cpu_type_info = {
-    //.name = S390_CPU_TYPE_NAME("qemu"),
-    .parent = TYPE_S390_CPU,
-    .instance_init = s390_qemu_cpu_model_initfn,
-    .instance_finalize = s390_cpu_model_finalize,
-    .class_init = s390_qemu_cpu_model_class_init,
-};
-
-static const TypeInfo max_s390_cpu_type_info = {
-    //.name = S390_CPU_TYPE_NAME("max"),
-    .parent = TYPE_S390_CPU,
-    .instance_init = s390_max_cpu_model_initfn,
-    .instance_finalize = s390_cpu_model_finalize,
-    .class_init = s390_max_cpu_model_class_init,
-};
-#endif
-
 static void init_ignored_base_feat(void)
 {
     static const int feats[] = {
