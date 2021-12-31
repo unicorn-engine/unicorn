@@ -160,8 +160,8 @@ struct S390CPU {
     CPUS390XState env;
     S390CPUModel *model;
     /* needed for live migration */
-    void *irqstate;
-    uint32_t irqstate_saved_size;
+    // void *irqstate;
+    // uint32_t irqstate_saved_size;
 
     // unicorn
     struct S390CPUClass cc;
