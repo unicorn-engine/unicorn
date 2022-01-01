@@ -1,9 +1,0 @@
-current status:
-
-- probably memory leak
-- more registers
-
-Todo:
-
-- support more registers in qemu/target/s390x/unicorn.c
-- find & fix potential memory leaking with valgrind
