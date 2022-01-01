@@ -9,11 +9,15 @@ module Common =
     let UC_API_MAJOR = 2
 
     let UC_API_MINOR = 0
+
+    let UC_API_PATCH = 0
+    let UC_API_EXTRA = 5
     let UC_VERSION_MAJOR = 2
 
     let UC_VERSION_MINOR = 0
 
-    let UC_VERSION_EXTRA = 0
+    let UC_VERSION_PATCH = 0
+    let UC_VERSION_EXTRA = 5
     let UC_SECOND_SCALE = 1000000
     let UC_MILISECOND_SCALE = 1000
     let UC_ARCH_ARM = 1
@@ -24,7 +28,8 @@ module Common =
     let UC_ARCH_SPARC = 6
     let UC_ARCH_M68K = 7
     let UC_ARCH_RISCV = 8
-    let UC_ARCH_MAX = 9
+    let UC_ARCH_S390X = 9
+    let UC_ARCH_MAX = 10
 
     let UC_MODE_LITTLE_ENDIAN = 0
     let UC_MODE_BIG_ENDIAN = 1073741824
