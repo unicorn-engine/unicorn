@@ -986,7 +986,6 @@ add_library(s390x-softmmu
     qemu/target/s390x/sigp.c
     qemu/target/s390x/tcg-stub.c
     qemu/target/s390x/translate.c
-    # qemu/target/s390x/translate_vx.inc.c
     qemu/target/s390x/vec_fpu_helper.c
     qemu/target/s390x/vec_helper.c
     qemu/target/s390x/vec_int_helper.c
