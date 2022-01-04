@@ -1264,6 +1264,7 @@ typedef enum CPSRWriteType {
     CPSRWriteExceptionReturn = 1, /* from guest exception return insn */
     CPSRWriteRaw = 2,             /* trust values, do not switch reg banks */
     CPSRWriteByGDBStub = 3,       /* from the GDB stub */
+    CPSRWriteByUnicorn = 4        /* from uc_reg_write */
 } CPSRWriteType;
 
 /* Set the CPSR.  Note that some bits of mask must be all-set or all-clear.*/
