@@ -319,6 +319,11 @@ typedef enum uc_x86_reg {
     UC_X86_REG_GS_BASE,
     UC_X86_REG_FLAGS,
     UC_X86_REG_RFLAGS,
+    UC_X86_REG_FIP,
+    UC_X86_REG_FCS,
+    UC_X86_REG_FDP,
+    UC_X86_REG_FDS,
+    UC_X86_REG_FOP,
     UC_X86_REG_ENDING // <-- mark the end of the list of registers
 } uc_x86_reg;
 

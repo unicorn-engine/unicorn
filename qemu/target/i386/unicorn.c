@@ -321,6 +321,22 @@ static void reg_read(CPUX86State *env, unsigned int regid, void *value,
         dst[3] = hi_reg->_d[1];
         return;
     }
+
+    case UC_X86_REG_FIP:
+        *(uint64_t *)value = env->fpip;
+        return;
+    case UC_X86_REG_FCS:
+        *(uint16_t *)value = env->fpcs;
+        return;
+    case UC_X86_REG_FDP:
+        *(uint64_t *)value = env->fpdp;
+        return;
+    case UC_X86_REG_FDS:
+        *(uint16_t *)value = env->fpds;
+        return;
+    case UC_X86_REG_FOP:
+        *(uint16_t *)value = env->fpop;
+        return;
     }
 
     switch (mode) {
@@ -912,6 +928,22 @@ static int reg_write(CPUX86State *env, unsigned int regid, const void *value,
         hi_reg->_d[1] = src[3];
         return 0;
     }
+
+    case UC_X86_REG_FIP:
+        env->fpip = *(uint64_t *)value;
+        return 0;
+    case UC_X86_REG_FCS:
+        env->fpcs = *(uint16_t *)value;
+        return 0;
+    case UC_X86_REG_FDP:
+        env->fpdp = *(uint64_t *)value;
+        return 0;
+    case UC_X86_REG_FDS:
+        env->fpds = *(uint16_t *)value;
+        return 0;
+    case UC_X86_REG_FOP:
+        env->fpop = *(uint16_t *)value;
+        return 0;
     }
 
     switch (mode) {
