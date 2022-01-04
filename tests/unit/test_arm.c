@@ -405,12 +405,13 @@ static void test_arm_not_allow_privilege_escalation()
     // E3C6601F : BIC     r6, r6, #&1F
     // E3866013 : ORR     r6, r6, #&13
     // E121F006 : MSR     cpsr_c, r6 ; switch to SVC32 (should be ineffective
-    // from USR32) E1A00000 : MOV     r0,r0 EF000011 : SWI     OS_Exit
+    // from USR32)
+    // E1A00000 : MOV     r0,r0 EF000011 : SWI     OS_Exit
     char code[] = "\x1f\x60\xc6\xe3\x13\x60\x86\xe3\x06\xf0\x21\xe1\x00\x00\xa0"
                   "\xe1\x11\x00\x00\xef";
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
-                    UC_CPU_ARM_CORTEX_A9);
+                    UC_CPU_ARM_CORTEX_A15);
 
     // https://www.keil.com/pack/doc/CMSIS/Core_A/html/group__CMSIS__CPSR.html
     r_cpsr = 0x40000013; // SVC32
@@ -433,13 +434,13 @@ static void test_arm_not_allow_privilege_escalation()
         UC_ERR_EXCEPTION,
         uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
     OK(uc_reg_read(uc, UC_ARM_REG_SP, &r_sp));
     OK(uc_reg_read(uc, UC_ARM_REG_LR, &r_lr));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
 
-    OK((r_cpsr & ((1 << 4) - 1)) == 0); // Stay in USR32
-    OK(r_lr == 0x1234);
-    OK(r_sp == 0x10000);
+    TEST_CHECK((r_cpsr & ((1 << 4) - 1)) == 0); // Stay in USR32
+    TEST_CHECK(r_lr == 0x1234);
+    TEST_CHECK(r_sp == 0x10000);
 
     OK(uc_close(uc));
 }
