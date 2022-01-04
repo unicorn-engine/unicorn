@@ -9,15 +9,15 @@ module M68k =
 
     // M68K CPU
 
-    let UC_CPU_M5206_CPU = 0
-    let UC_CPU_M68000_CPU = 1
-    let UC_CPU_M68020_CPU = 2
-    let UC_CPU_M68030_CPU = 3
-    let UC_CPU_M68040_CPU = 4
-    let UC_CPU_M68060_CPU = 5
-    let UC_CPU_M5208_CPU = 6
-    let UC_CPU_CFV4E_CPU = 7
-    let UC_CPU_ANY_CPU = 8
+    let UC_CPU_M68K_M5206 = 0
+    let UC_CPU_M68K_M68000 = 1
+    let UC_CPU_M68K_M68020 = 2
+    let UC_CPU_M68K_M68030 = 3
+    let UC_CPU_M68K_M68040 = 4
+    let UC_CPU_M68K_M68060 = 5
+    let UC_CPU_M68K_M5208 = 6
+    let UC_CPU_M68K_CFV4E = 7
+    let UC_CPU_M68K_ANY = 8
 
     // M68K registers
 

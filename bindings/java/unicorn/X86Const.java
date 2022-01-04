@@ -281,7 +281,12 @@ public interface X86Const {
    public static final int UC_X86_REG_GS_BASE = 231;
    public static final int UC_X86_REG_FLAGS = 232;
    public static final int UC_X86_REG_RFLAGS = 233;
-   public static final int UC_X86_REG_ENDING = 234;
+   public static final int UC_X86_REG_FIP = 234;
+   public static final int UC_X86_REG_FCS = 235;
+   public static final int UC_X86_REG_FDP = 236;
+   public static final int UC_X86_REG_FDS = 237;
+   public static final int UC_X86_REG_FOP = 238;
+   public static final int UC_X86_REG_ENDING = 239;
 
 // X86 instructions
 
