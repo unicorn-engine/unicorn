@@ -35,13 +35,14 @@ module Arm =
     let UC_CPU_ARM_PXA260 = 23
     let UC_CPU_ARM_PXA261 = 24
     let UC_CPU_ARM_PXA262 = 25
-    let UC_CPU_ARM_PXA270A0 = 26
-    let UC_CPU_ARM_PXA270A1 = 27
-    let UC_CPU_ARM_PXA270B0 = 28
-    let UC_CPU_ARM_PXA270B1 = 29
-    let UC_CPU_ARM_PXA270C0 = 30
-    let UC_CPU_ARM_PXA270C5 = 31
-    let UC_CPU_ARM_MAX = 32
+    let UC_CPU_ARM_PXA270 = 26
+    let UC_CPU_ARM_PXA270A0 = 27
+    let UC_CPU_ARM_PXA270A1 = 28
+    let UC_CPU_ARM_PXA270B0 = 29
+    let UC_CPU_ARM_PXA270B1 = 30
+    let UC_CPU_ARM_PXA270C0 = 31
+    let UC_CPU_ARM_PXA270C5 = 32
+    let UC_CPU_ARM_MAX = 33
 
     // ARM registers
 
