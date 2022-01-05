@@ -361,17 +361,6 @@ ARMCPU *cpu_aarch64_init(struct uc_struct *uc)
     /* postinit ARMCPU */
     arm_cpu_post_init(cs);
 
-    /*
-     * Unicorn: Hack to force to enable EL2/EL3 for aarch64 so that we can
-     *          use the full 64bits virtual address space.
-     * 
-     *          While EL2/EL3 is enabled but running within EL1, we could
-     *          get somewhat like "x86 flat mode", though aarch64 only allows
-     *          a maximum of 52bits virtual address space.
-     */
-    ARM_CPU(cs)->has_el2 = true;
-    ARM_CPU(cs)->has_el3 = true;
-
     /* realize ARMCPU */
     arm_cpu_realizefn(uc, cs);
 
