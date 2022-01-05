@@ -457,6 +457,20 @@ static void test_arm_not_allow_privilege_escalation()
     OK(uc_close(uc));
 }
 
+static void test_arm_mrc()
+{
+    uc_engine *uc;
+    // mrc p15, #0, r0, c1, c1, #0
+    char code[] = "\x11\x0F\x11\xEE";
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM_MAX);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -471,4 +485,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_smlabb", test_arm_thumb_smlabb},
              {"test_arm_not_allow_privilege_escalation",
               test_arm_not_allow_privilege_escalation},
+             {"test_arm_mrc", test_arm_mrc},
              {NULL, NULL}};
