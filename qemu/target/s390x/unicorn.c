@@ -6,6 +6,7 @@
 #include "unicorn_common.h"
 #include "uc_priv.h"
 #include "unicorn.h"
+#include "internal.h"
 
 S390CPU *cpu_s390_init(struct uc_struct *uc, const char *cpu_model);
 
@@ -65,6 +66,9 @@ static void reg_read(CPUS390XState *env, unsigned int regid, void *value)
     case UC_S390X_REG_PC:
         *(uint64_t *)value = env->psw.addr;
         break;
+    case UC_S390X_REG_PSWM:
+        *(uint64_t *)value = get_psw_mask(env);
+        break;
     }
 }
 
@@ -85,6 +89,10 @@ static void reg_write(CPUS390XState *env, unsigned int regid, const void *value)
         break;
     case UC_S390X_REG_PC:
         env->psw.addr = *(uint64_t *)value;
+        break;
+    case UC_S390X_REG_PSWM:
+        env->psw.mask = *(uint64_t *)value;
+        env->cc_op = (env->psw.mask >> 44) & 3;
         break;
     }
 }

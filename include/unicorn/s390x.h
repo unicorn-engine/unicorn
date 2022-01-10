@@ -128,6 +128,7 @@ typedef enum uc_s390x_reg {
     UC_S390X_REG_A15,
 
     UC_S390X_REG_PC, // PC register
+    UC_S390X_REG_PSWM,
 
     UC_S390X_REG_ENDING, // <-- mark the end of the list or registers
 
