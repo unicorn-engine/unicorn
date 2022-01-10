@@ -14,7 +14,7 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
 static void test_s390x_lr()
 {
     char code[] = "\x18\x23"; // lr %r2, %r3
-    uint64_t r_r2, r_r3 = 0x114514;
+    uint64_t r_pc, r_r2, r_r3 = 0x114514;
     uc_engine *uc;
 
     uc_common_setup(&uc, UC_ARCH_S390X, UC_MODE_BIG_ENDIAN, code,
@@ -25,8 +25,10 @@ static void test_s390x_lr()
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
     OK(uc_reg_read(uc, UC_S390X_REG_R2, &r_r2));
+    OK(uc_reg_read(uc, UC_S390X_REG_PC, &r_pc));
 
     TEST_CHECK(r_r2 == 0x114514);
+    TEST_CHECK(r_pc == code_start + sizeof(code) - 1);
 
     OK(uc_close(uc));
 }
