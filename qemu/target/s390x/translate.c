@@ -6897,6 +6897,7 @@ static void s390x_tr_tb_stop(DisasContextBase *dcbase, CPUState *cs)
     case DISAS_UNICORN_HALT:
         tcg_gen_insn_start(tcg_ctx, dc->base.pc_next, 0, 0);
         update_psw_addr(dc);
+        update_cc_op(dc);
         gen_helper_uc_s390x_exit(tcg_ctx, tcg_ctx->cpu_env);
         break;
     case DISAS_GOTO_TB:
