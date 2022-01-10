@@ -2061,8 +2061,8 @@ uint32_t HELPER(tprot)(CPUS390XState *env, uint64_t a1, uint64_t a2)
 /* insert storage key extended */
 uint64_t HELPER(iske)(CPUS390XState *env, uint64_t r2)
 {
-    static S390SKeysState *ss;
-    static S390SKeysClass *skeyclass;
+    S390SKeysState *ss = (S390SKeysState *)(&((S390CPU *)env->uc->cpu)->ss);
+    S390SKeysClass *skeyclass = S390_SKEYS_GET_CLASS(ss);
     uint64_t addr = wrap_address(env, r2);
     uint8_t key;
 
@@ -2071,11 +2071,6 @@ uint64_t HELPER(iske)(CPUS390XState *env, uint64_t r2)
         return 0;
     }
 #endif
-
-    if (unlikely(!ss)) {
-        ss = s390_get_skeys_device(env->uc);
-        skeyclass = S390_SKEYS_GET_CLASS(ss);
-    }
 
     if (skeyclass->get_skeys(ss, addr / TARGET_PAGE_SIZE, 1, &key)) {
         return 0;
@@ -2086,8 +2081,8 @@ uint64_t HELPER(iske)(CPUS390XState *env, uint64_t r2)
 /* set storage key extended */
 void HELPER(sske)(CPUS390XState *env, uint64_t r1, uint64_t r2)
 {
-    static S390SKeysState *ss;
-    static S390SKeysClass *skeyclass;
+    S390SKeysState *ss = (S390SKeysState *)(&((S390CPU *)env->uc->cpu)->ss);
+    S390SKeysClass *skeyclass = S390_SKEYS_GET_CLASS(ss);
     uint64_t addr = wrap_address(env, r2);
     uint8_t key;
 
@@ -2096,11 +2091,6 @@ void HELPER(sske)(CPUS390XState *env, uint64_t r1, uint64_t r2)
         return;
     }
 #endif
-
-    if (unlikely(!ss)) {
-        ss = s390_get_skeys_device(env->uc);
-        skeyclass = S390_SKEYS_GET_CLASS(ss);
-    }
 
     key = (uint8_t) r1;
     skeyclass->set_skeys(ss, addr / TARGET_PAGE_SIZE, 1, &key);
@@ -2114,8 +2104,8 @@ void HELPER(sske)(CPUS390XState *env, uint64_t r1, uint64_t r2)
 /* reset reference bit extended */
 uint32_t HELPER(rrbe)(CPUS390XState *env, uint64_t r2)
 {
-    static S390SKeysState *ss;
-    static S390SKeysClass *skeyclass;
+    S390SKeysState *ss = (S390SKeysState *)(&((S390CPU *)env->uc->cpu)->ss);
+    S390SKeysClass *skeyclass = S390_SKEYS_GET_CLASS(ss);
     uint8_t re, key;
 
 #if 0
@@ -2123,11 +2113,6 @@ uint32_t HELPER(rrbe)(CPUS390XState *env, uint64_t r2)
         return 0;
     }
 #endif
-
-    if (unlikely(!ss)) {
-        ss = s390_get_skeys_device(env->uc);
-        skeyclass = S390_SKEYS_GET_CLASS(ss);
-    }
 
     if (skeyclass->get_skeys(ss, r2 / TARGET_PAGE_SIZE, 1, &key)) {
         return 0;

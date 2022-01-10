@@ -24,13 +24,6 @@ static void qemu_s390_skeys_class_init(uc_engine *uc, S390SKeysClass* skeyclass)
 static void s390_skeys_instance_init(uc_engine *uc, S390SKeysState* ss);
 static void qemu_s390_skeys_init(uc_engine *uc, QEMUS390SKeysState *skey);
 
-S390SKeysState *s390_get_skeys_device(uc_engine *uc)
-{
-    S390CPU *cpu = S390_CPU(uc->cpu);
-
-    return (S390SKeysState*)&cpu->ss;
-}
-
 void s390_skeys_init(uc_engine *uc)
 {
     S390CPU *cpu = S390_CPU(uc->cpu);

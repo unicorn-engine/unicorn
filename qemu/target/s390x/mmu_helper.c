@@ -283,9 +283,9 @@ static int mmu_translate_asce(CPUS390XState *env, target_ulong vaddr,
 }
 
 static void mmu_handle_skey(uc_engine *uc, target_ulong addr, int rw, int *flags)
-{
-    static S390SKeysClass *skeyclass;
-    static S390SKeysState *ss;
+{ 
+    S390SKeysState *ss = (S390SKeysState *)(&((S390CPU *)uc->cpu)->ss);
+    S390SKeysClass *skeyclass = S390_SKEYS_GET_CLASS(ss);
     uint8_t key;
     int rc;
 
@@ -294,11 +294,6 @@ static void mmu_handle_skey(uc_engine *uc, target_ulong addr, int rw, int *flags
         return;
     }
 #endif
-
-    if (unlikely(!ss)) {
-        ss = s390_get_skeys_device(uc);
-        skeyclass = S390_SKEYS_GET_CLASS(ss);
-    }
 
     /*
      * Whenever we create a new TLB entry, we set the storage key reference

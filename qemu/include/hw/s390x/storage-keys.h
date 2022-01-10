@@ -66,6 +66,4 @@ typedef struct QEMUS390SKeysState {
 
 void s390_skeys_init(uc_engine *uc);
 
-S390SKeysState *s390_get_skeys_device(uc_engine *uc);
-
 #endif /* S390_STORAGE_KEYS_H */
