@@ -284,7 +284,12 @@ module X86 =
     let UC_X86_REG_GS_BASE = 231
     let UC_X86_REG_FLAGS = 232
     let UC_X86_REG_RFLAGS = 233
-    let UC_X86_REG_ENDING = 234
+    let UC_X86_REG_FIP = 234
+    let UC_X86_REG_FCS = 235
+    let UC_X86_REG_FDP = 236
+    let UC_X86_REG_FDS = 237
+    let UC_X86_REG_FOP = 238
+    let UC_X86_REG_ENDING = 239
 
     // X86 instructions
 

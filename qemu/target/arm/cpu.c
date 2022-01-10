@@ -184,13 +184,6 @@ static void arm_cpu_reset(CPUState *dev)
         } else {
             env->pstate = PSTATE_MODE_EL1h;
         }
-        /*
-        * Unicorn: Hack to force to enable EL2/EL3 for aarch64 so that we can
-        *          use the full 64bits virtual address space.
-        *          
-        *          See cpu_aarch64_init for details.
-        */
-        env->pstate = PSTATE_MODE_EL1h;
         env->pc = cpu->rvbar;
     }
 
@@ -703,6 +696,17 @@ void arm_cpu_post_init(CPUState *obj)
 
     if (arm_feature(&cpu->env, ARM_FEATURE_AARCH64)) {
         cpu->rvbar = 0;
+    }
+
+    if (arm_feature(&cpu->env, ARM_FEATURE_EL3)) {
+        /* Add the has_el3 state CPU property only if EL3 is allowed.  This will
+         * prevent "has_el3" from existing on CPUs which cannot support EL3.
+         */
+        cpu->has_el3 = true;
+    }
+
+    if (arm_feature(&cpu->env, ARM_FEATURE_EL2)) {
+        cpu->has_el2 = true;
     }
 
     if (arm_feature(&cpu->env, ARM_FEATURE_PMU)) {
@@ -1954,6 +1958,54 @@ static void arm_max_initfn(struct uc_struct *uc, CPUState *obj)
 
         /* old-style VFP short-vector support */
         FIELD_DP32(cpu->isar.mvfr0, MVFR0, FPSHVEC, 1, cpu->isar.mvfr0);
+
+// Unicorn: Enable this on ARM_MAX
+//#ifdef CONFIG_USER_ONLY
+        /* We don't set these in system emulation mode for the moment,
+         * since we don't correctly set (all of) the ID registers to
+         * advertise them.
+         */
+        set_feature(&cpu->env, ARM_FEATURE_V8);
+        {
+            uint32_t t;
+
+            t = cpu->isar.id_isar5;
+            FIELD_DP32(t, ID_ISAR5, AES, 2, t);
+            FIELD_DP32(t, ID_ISAR5, SHA1, 1, t);
+            FIELD_DP32(t, ID_ISAR5, SHA2, 1, t);
+            FIELD_DP32(t, ID_ISAR5, CRC32, 1, t);
+            FIELD_DP32(t, ID_ISAR5, RDM, 1, t);
+            FIELD_DP32(t, ID_ISAR5, VCMA, 1, t);
+            cpu->isar.id_isar5 = t;
+
+            t = cpu->isar.id_isar6;
+            FIELD_DP32(t, ID_ISAR6, JSCVT, 1, t);
+            FIELD_DP32(t, ID_ISAR6, DP, 1, t);
+            FIELD_DP32(t, ID_ISAR6, FHM, 1, t);
+            FIELD_DP32(t, ID_ISAR6, SB, 1, t);
+            FIELD_DP32(t, ID_ISAR6, SPECRES, 1, t);
+            cpu->isar.id_isar6 = t;
+
+            t = cpu->isar.mvfr1;
+            FIELD_DP32(t, MVFR1, FPHP, 2, t);     /* v8.0 FP support */
+            cpu->isar.mvfr1 = t;
+
+            t = cpu->isar.mvfr2;
+            FIELD_DP32(t, MVFR2, SIMDMISC, 3, t); /* SIMD MaxNum */
+            FIELD_DP32(t, MVFR2, FPMISC, 4, t);   /* FP MaxNum */
+            cpu->isar.mvfr2 = t;
+
+            t = cpu->isar.id_mmfr3;
+            FIELD_DP32(t, ID_MMFR3, PAN, 2, t); /* ATS1E1 */
+            cpu->isar.id_mmfr3 = t;
+
+            t = cpu->isar.id_mmfr4;
+            FIELD_DP32(t, ID_MMFR4, HPDS, 1, t); /* AA32HPD */
+            FIELD_DP32(t, ID_MMFR4, AC2, 1, t); /* ACTLR2, HACTLR2 */
+            FIELD_DP32(t, ID_MMFR4, CNP, 1, t); /* TTCNP */
+            cpu->isar.id_mmfr4 = t;
+        }
+//#endif
     }
 }
 #endif
@@ -2056,15 +2108,15 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
 
 #if !defined(TARGET_AARCH64)
     if (uc->mode & UC_MODE_MCLASS) {
-        uc->cpu_model = 11;
+        uc->cpu_model = UC_CPU_ARM_CORTEX_M33;
     } else if (uc->mode & UC_MODE_ARM926) {
-        uc->cpu_model = 0;
+        uc->cpu_model = UC_CPU_ARM_926;
     } else if (uc->mode & UC_MODE_ARM946) {
-        uc->cpu_model = 1;
+        uc->cpu_model = UC_CPU_ARM_946;
     } else if (uc->mode & UC_MODE_ARM1176) {
-        uc->cpu_model = 5;
+        uc->cpu_model = UC_CPU_ARM_1176;
     } else if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = 17; // cortex-a15
+        uc->cpu_model = UC_CPU_ARM_CORTEX_A15; // cortex-a15
     } else if (uc->cpu_model >= ARR_SIZE(arm_cpus)) {
         free(cpu);
         return NULL;

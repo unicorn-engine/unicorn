@@ -4,9 +4,10 @@ const uint64_t code_start = 0x1000;
 const uint64_t code_len = 0x4000;
 
 static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
-                            const char *code, uint64_t size)
+                            const char *code, uint64_t size, uc_cpu_arm cpu)
 {
     OK(uc_open(arch, mode, uc));
+    OK(uc_ctl_set_cpu_model(*uc, cpu));
     OK(uc_mem_map(*uc, code_start, code_len, UC_PROT_ALL));
     OK(uc_mem_write(*uc, code_start, code, size));
 }
@@ -27,7 +28,8 @@ static void test_arm64_until()
     uint64_t r_pc = 0x00000000;
     uint64_t r_x28 = 0x12341234;
 
-    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_AARCH64_A72);
 
     // initialize machine registers
     OK(uc_reg_write(uc, UC_ARM64_REG_X16, &r_x16));
@@ -54,7 +56,8 @@ static void test_arm64_code_patching()
 {
     uc_engine *uc;
     char code[] = "\x00\x04\x00\x11"; // add w0, w0, 0x1
-    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_AARCH64_A72);
     // zero out x0
     uint64_t r_x0 = 0x0;
     OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
@@ -83,7 +86,8 @@ static void test_arm64_code_patching_count()
 {
     uc_engine *uc;
     char code[] = "\x00\x04\x00\x11"; // add w0, w0, 0x1
-    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_AARCH64_A72);
     // zero out x0
     uint64_t r_x0 = 0x0;
     OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
@@ -109,7 +113,33 @@ static void test_arm64_code_patching_count()
     OK(uc_close(uc));
 }
 
+static void test_arm64_v8_pac()
+{
+    uc_engine *uc;
+    char code[] = "\x28\xfd\xea\xc8"; // casal x10, x8, [x9]
+    uint64_t r_x9, r_x8, mem;
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_AARCH64_MAX);
+
+    OK(uc_mem_map(uc, 0x40000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x40000, "\x00\x00\x00\x00\x00\x00\x00\x00", 8));
+    r_x9 = 0x40000;
+    OK(uc_reg_write(uc, UC_ARM64_REG_X9, &r_x9));
+    r_x8 = 0xdeadbeafdeadbeaf;
+    OK(uc_reg_write(uc, UC_ARM64_REG_X8, &r_x8));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_mem_read(uc, 0x40000, (void *)&mem, 8));
+
+    TEST_CHECK(mem == r_x8);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
+             {"test_arm64_v8_pac", test_arm64_v8_pac},
              {NULL, NULL}};

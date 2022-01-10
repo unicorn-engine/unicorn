@@ -985,11 +985,22 @@ static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t l
 {
     tb_page_addr_t start, end;
 
-    // GVA to GPA 
+    uc->nested_level++;
+    if (sigsetjmp(uc->jmp_bufs[uc->nested_level - 1], 0) != 0) {
+        // We a get cpu fault in get_page_addr_code, ignore it.
+        uc->nested_level--;
+        return;
+    }
+
+    // GPA to GVA
+    // start_addr : GPA
+    // addr: GVA
     // (GPA -> HVA via memory_region_get_ram_addr(mr) + GPA + block->host,
     // HVA->HPA via host mmu)
     start = get_page_addr_code(uc->cpu->env_ptr, start_addr) & (target_ulong)(-1);
-    
+
+    uc->nested_level--;
+
     // For 32bit target.
     end = (start + len) & (target_ulong)(-1);
 
