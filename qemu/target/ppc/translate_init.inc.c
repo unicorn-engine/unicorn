@@ -11196,5 +11196,7 @@ PowerPCCPU *cpu_ppc_init(struct uc_struct *uc)
 
     qemu_init_vcpu(cs);
 
+    ppc_cpu_reset((CPUState *)cpu);
+
     return cpu;
 }

@@ -34,4 +34,35 @@ static void test_ppc32_add()
     OK(uc_close(uc));
 }
 
-TEST_LIST = {{"test_ppc32_add", test_ppc32_add}, {NULL, NULL}};
+// https://www.ibm.com/docs/en/aix/7.2?topic=set-fadd-fa-floating-add-instruction
+static void test_ppc32_fadd()
+{
+    uc_engine *uc;
+    char code[] = "\xfc\xc4\x28\x2a"; // fadd 6, 4, 5
+    uint32_t r_msr;
+    uint64_t r_fpr4, r_fpr5, r_fpr6;
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1);
+
+    OK(uc_reg_read(uc, UC_PPC_REG_MSR, &r_msr));
+    r_msr |= (1 << 13);                           // Big endian
+    OK(uc_reg_write(uc, UC_PPC_REG_MSR, &r_msr)); // enable FP
+
+    r_fpr4 = 0xC053400000000000ul;
+    r_fpr5 = 0x400C000000000000ul;
+    OK(uc_reg_write(uc, UC_PPC_REG_FPR4, &r_fpr4));
+    OK(uc_reg_write(uc, UC_PPC_REG_FPR5, &r_fpr5));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_PPC_REG_FPR6, &r_fpr6));
+
+    TEST_CHECK(r_fpr6 == 0xC052600000000000ul);
+
+    OK(uc_close(uc));
+}
+
+TEST_LIST = {{"test_ppc32_add", test_ppc32_add},
+             {"test_ppc32_fadd", test_ppc32_fadd},
+             {NULL, NULL}};

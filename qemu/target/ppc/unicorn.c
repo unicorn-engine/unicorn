@@ -9,12 +9,73 @@
 #include "unicorn_common.h"
 #include "uc_priv.h"
 #include "unicorn.h"
+#include "helper_regs.h"
+#include "cpu.h"
 
 #ifdef TARGET_PPC64
 typedef uint64_t ppcreg_t;
 #else
 typedef uint32_t ppcreg_t;
 #endif
+
+// Unicorn version to ensure writing MSR without exception
+static inline int uc_ppc_store_msr(CPUPPCState *env, target_ulong value,
+                                   int alter_hv)
+{
+    // int excp;
+    // CPUState *cs = env_cpu(env);
+
+    // excp = 0;
+    value &= env->msr_mask;
+
+    /* Neither mtmsr nor guest state can alter HV */
+    if (!alter_hv || !(env->msr & MSR_HVB)) {
+        value &= ~MSR_HVB;
+        value |= env->msr & MSR_HVB;
+    }
+    if (((value >> MSR_IR) & 1) != msr_ir ||
+        ((value >> MSR_DR) & 1) != msr_dr) {
+        // cpu_interrupt_exittb(cs);
+    }
+    if ((env->mmu_model & POWERPC_MMU_BOOKE) &&
+        ((value >> MSR_GS) & 1) != msr_gs) {
+        // cpu_interrupt_exittb(cs);
+    }
+    if (unlikely((env->flags & POWERPC_FLAG_TGPR) &&
+                 ((value ^ env->msr) & (1 << MSR_TGPR)))) {
+        /* Swap temporary saved registers with GPRs */
+        hreg_swap_gpr_tgpr(env);
+    }
+    if (unlikely((value >> MSR_EP) & 1) != msr_ep) {
+        /* Change the exception prefix on PowerPC 601 */
+        env->excp_prefix = ((value >> MSR_EP) & 1) * 0xFFF00000;
+    }
+    /*
+     * If PR=1 then EE, IR and DR must be 1
+     *
+     * Note: We only enforce this on 64-bit server processors.
+     * It appears that:
+     * - 32-bit implementations supports PR=1 and EE/DR/IR=0 and MacOS
+     *   exploits it.
+     * - 64-bit embedded implementations do not need any operation to be
+     *   performed when PR is set.
+     */
+    if (is_book3s_arch2x(env) && ((value >> MSR_PR) & 1)) {
+        value |= (1 << MSR_EE) | (1 << MSR_DR) | (1 << MSR_IR);
+    }
+
+    env->msr = value;
+    hreg_compute_hflags(env);
+
+    // if (unlikely(msr_pow == 1)) {
+    //     if (!env->pending_interrupts && (*env->check_pow)(env)) {
+    //         cs->halted = 1;
+    //         excp = EXCP_HALTED;
+    //     }
+    // }
+
+    return 0;
+}
 
 static uint64_t ppc_mem_redirect(uint64_t address)
 {
@@ -79,6 +140,7 @@ void ppc_reg_reset(struct uc_struct *uc)
     env->nip = 0;
 }
 
+// http://www.csit-sun.pub.ro/~cpop/Documentatie_SMP/Motorola_PowerPC/PowerPc/GenInfo/pemch2.pdf
 static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
 {
     if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31)
@@ -90,12 +152,65 @@ static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
         case UC_PPC_REG_PC:
             *(ppcreg_t *)value = env->nip;
             break;
-            /*          case UC_PPC_REG_CP0_CONFIG3:
-                            *(mipsreg_t *)value = env->CP0_Config3;
-                            break;
-                        case UC_MIPS_REG_CP0_USERLOCAL:
-                            *(mipsreg_t *)value = env->active_tc.CP0_UserLocal;
-                            break;                              */
+        case UC_PPC_REG_FPR0:
+        case UC_PPC_REG_FPR1:
+        case UC_PPC_REG_FPR2:
+        case UC_PPC_REG_FPR3:
+        case UC_PPC_REG_FPR4:
+        case UC_PPC_REG_FPR5:
+        case UC_PPC_REG_FPR6:
+        case UC_PPC_REG_FPR7:
+        case UC_PPC_REG_FPR8:
+        case UC_PPC_REG_FPR9:
+        case UC_PPC_REG_FPR10:
+        case UC_PPC_REG_FPR11:
+        case UC_PPC_REG_FPR12:
+        case UC_PPC_REG_FPR13:
+        case UC_PPC_REG_FPR14:
+        case UC_PPC_REG_FPR15:
+        case UC_PPC_REG_FPR16:
+        case UC_PPC_REG_FPR17:
+        case UC_PPC_REG_FPR18:
+        case UC_PPC_REG_FPR19:
+        case UC_PPC_REG_FPR20:
+        case UC_PPC_REG_FPR21:
+        case UC_PPC_REG_FPR22:
+        case UC_PPC_REG_FPR23:
+        case UC_PPC_REG_FPR24:
+        case UC_PPC_REG_FPR25:
+        case UC_PPC_REG_FPR26:
+        case UC_PPC_REG_FPR27:
+        case UC_PPC_REG_FPR28:
+        case UC_PPC_REG_FPR29:
+        case UC_PPC_REG_FPR30:
+        case UC_PPC_REG_FPR31:
+            *(uint64_t *)value = env->vsr[regid - UC_PPC_REG_FPR0].VsrD(0);
+            break;
+        case UC_PPC_REG_CR0:
+        case UC_PPC_REG_CR1:
+        case UC_PPC_REG_CR2:
+        case UC_PPC_REG_CR3:
+        case UC_PPC_REG_CR4:
+        case UC_PPC_REG_CR5:
+        case UC_PPC_REG_CR6:
+        case UC_PPC_REG_CR7:
+            *(uint32_t *)value = env->crf[regid - UC_PPC_REG_CR0];
+            break;
+        case UC_PPC_REG_LR:
+            *(ppcreg_t *)value = env->lr;
+            break;
+        case UC_PPC_REG_CTR:
+            *(ppcreg_t *)value = env->ctr;
+            break;
+        case UC_PPC_REG_MSR:
+            *(ppcreg_t *)value = env->msr;
+            break;
+        case UC_PPC_REG_XER:
+            *(uint32_t *)value = env->xer;
+            break;
+        case UC_PPC_REG_FPSCR:
+            *(uint32_t *)value = env->fpscr;
+            break;
         }
     }
 
@@ -113,12 +228,65 @@ static void reg_write(CPUPPCState *env, unsigned int regid, const void *value)
         case UC_PPC_REG_PC:
             env->nip = *(ppcreg_t *)value;
             break;
-            /*          case UC_MIPS_REG_CP0_CONFIG3:
-                            env->CP0_Config3 = *(mipsreg_t *)value;
-                            break;
-                        case UC_MIPS_REG_CP0_USERLOCAL:
-                            env->active_tc.CP0_UserLocal = *(mipsreg_t *)value;
-                            break;                         */
+        case UC_PPC_REG_FPR0:
+        case UC_PPC_REG_FPR1:
+        case UC_PPC_REG_FPR2:
+        case UC_PPC_REG_FPR3:
+        case UC_PPC_REG_FPR4:
+        case UC_PPC_REG_FPR5:
+        case UC_PPC_REG_FPR6:
+        case UC_PPC_REG_FPR7:
+        case UC_PPC_REG_FPR8:
+        case UC_PPC_REG_FPR9:
+        case UC_PPC_REG_FPR10:
+        case UC_PPC_REG_FPR11:
+        case UC_PPC_REG_FPR12:
+        case UC_PPC_REG_FPR13:
+        case UC_PPC_REG_FPR14:
+        case UC_PPC_REG_FPR15:
+        case UC_PPC_REG_FPR16:
+        case UC_PPC_REG_FPR17:
+        case UC_PPC_REG_FPR18:
+        case UC_PPC_REG_FPR19:
+        case UC_PPC_REG_FPR20:
+        case UC_PPC_REG_FPR21:
+        case UC_PPC_REG_FPR22:
+        case UC_PPC_REG_FPR23:
+        case UC_PPC_REG_FPR24:
+        case UC_PPC_REG_FPR25:
+        case UC_PPC_REG_FPR26:
+        case UC_PPC_REG_FPR27:
+        case UC_PPC_REG_FPR28:
+        case UC_PPC_REG_FPR29:
+        case UC_PPC_REG_FPR30:
+        case UC_PPC_REG_FPR31:
+            env->vsr[regid - UC_PPC_REG_FPR0].VsrD(0) = *(uint64_t *)value;
+            break;
+        case UC_PPC_REG_CR0:
+        case UC_PPC_REG_CR1:
+        case UC_PPC_REG_CR2:
+        case UC_PPC_REG_CR3:
+        case UC_PPC_REG_CR4:
+        case UC_PPC_REG_CR5:
+        case UC_PPC_REG_CR6:
+        case UC_PPC_REG_CR7:
+            env->crf[regid - UC_PPC_REG_CR0] = *(uint32_t *)value;
+            break;
+        case UC_PPC_REG_LR:
+            env->lr = *(ppcreg_t *)value;
+            break;
+        case UC_PPC_REG_CTR:
+            env->ctr = *(ppcreg_t *)value;
+            break;
+        case UC_PPC_REG_MSR:
+            uc_ppc_store_msr(env, *(ppcreg_t *)value, 0);
+            break;
+        case UC_PPC_REG_XER:
+            env->xer = *(uint32_t *)value;
+            break;
+        case UC_PPC_REG_FPSCR:
+            store_fpscr(env, *(uint32_t *)value, 0xffffffff);
+            break;
         }
     }
 
