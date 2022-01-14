@@ -471,6 +471,64 @@ static void test_arm_mrc()
     OK(uc_close(uc));
 }
 
+static void test_arm_hflags_rebuilt()
+{
+    // MRS     r6, apsr
+    // BIC     r6, r6, #&1F
+    // ORR     r6, r6, #&10
+    // MSR     cpsr_c, r6
+    // SWI     OS_EnterOS
+    // MSR     cpsr_c, r6
+    char code[] = "\x00\x60\x0f\xe1\x1f\x60\xc6\xe3\x10\x60\x86\xe3\x06\xf0\x21"
+                  "\xe1\x16\x00\x02\xef\x06\xf0\x21\xe1";
+    uc_engine *uc;
+    uint32_t r_cpsr, r_spsr, r_r13, r_r14, r_pc;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A9);
+
+    r_cpsr = 0x40000013; // SVC32
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    r_spsr = 0x40000013;
+    OK(uc_reg_write(uc, UC_ARM_REG_SPSR, &r_spsr));
+    r_r13 = 0x12345678; // SP
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_r13));
+    r_r14 = 0x00102220; // LR
+    OK(uc_reg_write(uc, UC_ARM_REG_R14, &r_r14));
+
+    r_cpsr = 0x40000010; // USR32
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    r_r13 = 0x0010000; // SP
+    OK(uc_reg_write(uc, UC_ARM_REG_R13, &r_r13));
+    r_r14 = 0x0001234; // LR
+    OK(uc_reg_write(uc, UC_ARM_REG_R14, &r_r14));
+
+    uc_assert_err(
+        UC_ERR_EXCEPTION,
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    r_cpsr = 0x60000013;
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    r_cpsr = 0x60000010;
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    r_cpsr = 0x60000013;
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc));
+
+    OK(uc_emu_start(uc, r_pc, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    OK(uc_reg_read(uc, UC_ARM_REG_R13, &r_r13));
+    OK(uc_reg_read(uc, UC_ARM_REG_R14, &r_r14));
+
+    TEST_CHECK(r_cpsr == 0x60000010);
+    TEST_CHECK(r_r13 == 0x00010000);
+    TEST_CHECK(r_r14 == 0x00001234);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -486,4 +544,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_not_allow_privilege_escalation",
               test_arm_not_allow_privilege_escalation},
              {"test_arm_mrc", test_arm_mrc},
+             {"test_arm_hflags_rebuilt", test_arm_hflags_rebuilt},
              {NULL, NULL}};
