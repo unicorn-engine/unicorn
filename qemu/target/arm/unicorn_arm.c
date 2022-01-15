@@ -252,6 +252,7 @@ static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
             if (!arm_feature(env, ARM_FEATURE_M)) {
                 cpsr_write(env, *(uint32_t *)value,
                            (CPSR_NZCV | CPSR_Q | CPSR_GE), CPSRWriteByUnicorn);
+                arm_rebuild_hflags(env);
             } else {
                 // Same with UC_ARM_REG_APSR_NZCVQ
                 v7m_msr_xpsr(env, 0b1000, 0, *(uint32_t *)value);
@@ -259,9 +260,11 @@ static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
             break;
         case UC_ARM_REG_APSR_NZCV:
             cpsr_write(env, *(uint32_t *)value, CPSR_NZCV, CPSRWriteByUnicorn);
+            arm_rebuild_hflags(env);
             break;
         case UC_ARM_REG_CPSR:
             cpsr_write(env, *(uint32_t *)value, ~0, CPSRWriteByUnicorn);
+            arm_rebuild_hflags(env);
             break;
         case UC_ARM_REG_SPSR:
             env->spsr = *(uint32_t *)value;
