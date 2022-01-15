@@ -368,6 +368,8 @@ struct uc_struct {
     int nested_level;                         // Current nested_level
 
     struct TranslationBlock *last_tb; // The real last tb we executed.
+
+    FlatView *empty_view; // Static function variable moved from flatviews_init
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()

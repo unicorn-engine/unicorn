@@ -783,8 +783,6 @@ static void address_space_update_topology_pass(AddressSpace *as,
 
 static void flatviews_init(struct uc_struct *uc)
 {
-    static FlatView *empty_view;
-
     if (uc->flat_views) {
         return;
     }
@@ -792,13 +790,13 @@ static void flatviews_init(struct uc_struct *uc)
     uc->flat_views = g_hash_table_new_full(NULL, NULL, NULL,
                                        (GDestroyNotify) flatview_unref);
 
-    if (!empty_view) {
-        empty_view = generate_memory_topology(uc, NULL);
+    if (!uc->empty_view) {
+        uc->empty_view = generate_memory_topology(uc, NULL);
         /* We keep it alive forever in the global variable.  */
-        flatview_ref(empty_view);
+        flatview_ref(uc->empty_view);
     } else {
-        g_hash_table_replace(uc->flat_views, NULL, empty_view);
-        flatview_ref(empty_view);
+        g_hash_table_replace(uc->flat_views, NULL, uc->empty_view);
+        flatview_ref(uc->empty_view);
     }
 }
 
