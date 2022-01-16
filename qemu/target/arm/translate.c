@@ -11432,6 +11432,21 @@ static void arm_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         dc->pc_curr = dc->base.pc_next;
         insn = arm_ldl_code(env, dc->base.pc_next, dc->sctlr_b);
         dc->insn = insn;
+
+        // Unicorn:
+        //
+        // If we get an error during fetching code, we have to skip the instruction decoding
+        // to ensure the PC remains unchanged.
+        //
+        // This is to keep the same behavior with Unicorn1, though, it's inconsistent with
+        // official arm documents.
+        //
+        // See discussion here: https://github.com/unicorn-engine/unicorn/issues/1536
+        if (dc->uc->invalid_error) {
+            dcbase->is_jmp = DISAS_WFI;
+            return;
+        }
+
         dc->base.pc_next += 4;
         disas_arm_insn(dc, insn);
 

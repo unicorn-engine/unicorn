@@ -529,6 +529,69 @@ static void test_arm_hflags_rebuilt()
     OK(uc_close(uc));
 }
 
+static bool test_arm_mem_access_abort_hook_mem(uc_engine *uc, uc_mem_type type,
+                                               uint64_t addr, int size,
+                                               int64_t val, void *data)
+{
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, data));
+    return false;
+}
+
+static bool test_arm_mem_access_abort_hook_insn_invalid(uc_engine *uc,
+                                                        void *data)
+{
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, data));
+    return false;
+}
+
+static void test_arm_mem_access_abort()
+{
+    // LDR     r0, [r0]
+    // Undefined instruction
+    char code[] = "\x00\x00\x90\xe5\x00\xa0\xf0\xf7";
+    uc_engine *uc;
+    uint32_t r_pc, r_r0, r_pc_in_hook;
+    uc_hook hk, hkk;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A9);
+
+    r_r0 = 0x990000;
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
+
+    OK(uc_hook_add(uc, &hk,
+                   UC_HOOK_MEM_READ_UNMAPPED | UC_HOOK_MEM_WRITE_UNMAPPED |
+                       UC_HOOK_MEM_FETCH_UNMAPPED,
+                   test_arm_mem_access_abort_hook_mem, (void *)&r_pc_in_hook, 1,
+                   0));
+    OK(uc_hook_add(uc, &hkk, UC_HOOK_INSN_INVALID,
+                   test_arm_mem_access_abort_hook_insn_invalid,
+                   (void *)&r_pc_in_hook, 1, 0));
+
+    uc_assert_err(UC_ERR_READ_UNMAPPED,
+                  uc_emu_start(uc, code_start, code_start + 4, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc));
+
+    TEST_CHECK(r_pc == r_pc_in_hook);
+
+    uc_assert_err(UC_ERR_INSN_INVALID,
+                  uc_emu_start(uc, code_start + 4, code_start + 8, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc));
+
+    TEST_CHECK(r_pc == r_pc_in_hook);
+
+    uc_assert_err(UC_ERR_FETCH_UNMAPPED,
+                  uc_emu_start(uc, 0x900000, 0x900000 + 8, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_PC, &r_pc));
+
+    TEST_CHECK(r_pc == r_pc_in_hook);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -545,4 +608,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
               test_arm_not_allow_privilege_escalation},
              {"test_arm_mrc", test_arm_mrc},
              {"test_arm_hflags_rebuilt", test_arm_hflags_rebuilt},
+             {"test_arm_mem_access_abort", test_arm_mem_access_abort},
              {NULL, NULL}};
