@@ -96,12 +96,13 @@ pub trait IsUcHook<'a> {}
 
 impl<'a, D, F> IsUcHook<'a> for UcHook<'a, D, F> {}
 
-pub extern "C" fn mmio_read_callback_proxy<D, F> (
+pub extern "C" fn mmio_read_callback_proxy<D, F>(
     uc: uc_handle,
     offset: u64,
     size: usize,
     user_data: *mut UcHook<D, F>,
-) -> u64 where
+) -> u64
+where
     F: FnMut(&mut crate::Unicorn<D>, u64, usize) -> u64,
 {
     let user_data = unsafe { &mut *user_data };
@@ -109,7 +110,7 @@ pub extern "C" fn mmio_read_callback_proxy<D, F> (
     (user_data.callback)(&mut user_data.uc, offset, size)
 }
 
-pub extern "C" fn mmio_write_callback_proxy<D, F> (
+pub extern "C" fn mmio_write_callback_proxy<D, F>(
     uc: uc_handle,
     offset: u64,
     size: usize,
