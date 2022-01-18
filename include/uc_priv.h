@@ -398,5 +398,31 @@ static inline int uc_addr_is_exit(uc_engine *uc, uint64_t addr)
     return g_tree_lookup(uc->exits, (gpointer)(&addr)) == (gpointer)1;
 }
 
+#ifdef UNICORN_TRACER
+#define UC_TRACE_START(loc) trace_start(get_tracer(), loc)
+#define UC_TRACE_END(loc, fmt, ...)                                            \
+    trace_end(get_tracer(), loc, fmt, __VA_ARGS__)
+
+typedef enum trace_loc {
+    UC_TRACE_TB_EXEC = 0,
+    UC_TRACE_TB_TRANS,
+    UC_TRACER_MAX
+} trace_loc;
+
+typedef struct uc_tracer {
+    int64_t starts[UC_TRACER_MAX];
+} uc_tracer;
+
+uc_tracer *get_tracer();
+
+void trace_start(uc_tracer *tracer, trace_loc loc);
+
+void trace_end(uc_tracer *tracer, trace_loc loc, const char *fmt, ...);
+
+#else
+#define UC_TRACE_START(loc)
+#define UC_TRACE_END(loc, fmt, ...)
+#endif
+
 #endif
 /* vim: set ts=4 noet:  */

@@ -55,9 +55,12 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
     int tb_exit;
     uint8_t *tb_ptr = itb->tc.ptr;
 
+    UC_TRACE_START(UC_TRACE_TB_EXEC);
     tb_exec_lock(cpu->uc->tcg_ctx);
     ret = tcg_qemu_tb_exec(env, tb_ptr);
     tb_exec_unlock(cpu->uc->tcg_ctx);
+    UC_TRACE_END(UC_TRACE_TB_EXEC, "[uc] exec tb 0x%" PRIx64 ": ", itb->pc);
+
     cpu->can_do_io = 1;
     last_tb = (TranslationBlock *)(ret & ~TB_EXIT_MASK);
     tb_exit = ret & TB_EXIT_MASK;

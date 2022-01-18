@@ -20,6 +20,8 @@ if (NOT UNICORN_ARCH)
     set(UNICORN_ARCH "x86 arm aarch64 riscv mips sparc m68k ppc")
 endif()
 
+option(UNICORN_TRACER "Trace unicorn execution" OFF)
+
 string(TOUPPER ${UNICORN_ARCH} UNICORN_ARCH)
 string(REPLACE " " ";" UNICORN_ARCH_LIST ${UNICORN_ARCH})
 
@@ -206,6 +208,9 @@ else()
     endif()
     if (UNICORN_FUZZ)
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS} ${CMAKE_C_FLAGS}")
+    endif()
+    if(UNICORN_TRACER)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS} -DUNICORN_TRACER")
     endif()
 
     set(TARGET_LIST "--target-list=")
@@ -414,6 +419,11 @@ else()
     # Log and pow
     target_link_libraries(x86_64-softmmu m)
 endif()
+
+if(UNICORN_TRACER)
+    target_compile_options(x86_64-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 endif()
 
 if (UNICORN_HAS_ARM)
@@ -452,6 +462,10 @@ else()
     )
 endif()
 
+if(UNICORN_TRACER)
+    target_compile_options(arm-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 add_library(armeb-softmmu
     ${UNICORN_ARCH_COMMON}
 
@@ -486,6 +500,11 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/arm
     )
 endif()
+
+if(UNICORN_TRACER)
+    target_compile_options(armeb-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 endif()
 
 if (UNICORN_HAS_AARCH64)
@@ -530,6 +549,10 @@ else()
     )
 endif()
 
+if(UNICORN_TRACER)
+    target_compile_options(aarch64-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 add_library(aarch64eb-softmmu
     ${UNICORN_ARCH_COMMON}
 
@@ -570,6 +593,11 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/arm
     )
 endif()
+
+if(UNICORN_TRACER)
+    target_compile_options(aarch64eb-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 endif()
 
 if (UNICORN_HAS_M68K)
@@ -600,6 +628,11 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/m68k
     )
 endif()
+
+if(UNICORN_TRACER)
+    target_compile_options(m68k-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 endif()
 
 if (UNICORN_HAS_MIPS)
@@ -635,6 +668,10 @@ else()
     )
 endif()
 
+if(UNICORN_TRACER)
+    target_compile_options(mips-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 add_library(mipsel-softmmu
     ${UNICORN_ARCH_COMMON}
 
@@ -665,6 +702,10 @@ else()
         -I${CMAKE_BINARY_DIR}/mipsel-softmmu
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/mips
     )
+endif()
+
+if(UNICORN_TRACER)
+    target_compile_options(mipsel-softmmu PRIVATE -DUNICORN_TRACER)
 endif()
 
 add_library(mips64-softmmu
@@ -699,6 +740,10 @@ else()
     )
 endif()
 
+if(UNICORN_TRACER)
+    target_compile_options(mips64-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 add_library(mips64el-softmmu
     ${UNICORN_ARCH_COMMON}
 
@@ -730,6 +775,11 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/mips
     )
 endif()
+
+if(UNICORN_TRACER)
+    target_compile_options(mips64el-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 endif()
 
 if (UNICORN_HAS_SPARC)
@@ -764,6 +814,10 @@ else()
     )
 endif()
 
+if(UNICORN_TRACER)
+    target_compile_options(sparc-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 add_library(sparc64-softmmu
     ${UNICORN_ARCH_COMMON}
 
@@ -795,6 +849,11 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/sparc
     )
 endif()
+
+if(UNICORN_TRACER)
+    target_compile_options(sparc64-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 endif()
 
 if (UNICORN_HAS_PPC)
@@ -840,6 +899,10 @@ else()
         -I${CMAKE_BINARY_DIR}/ppc-softmmu
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/ppc
     )
+endif()
+
+if(UNICORN_TRACER)
+    target_compile_options(ppc-softmmu PRIVATE -DUNICORN_TRACER)
 endif()
 
 add_library(ppc64-softmmu
@@ -889,6 +952,11 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/ppc
     )
 endif()
+
+if(UNICORN_TRACER)
+    target_compile_options(ppc64-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 endif()
 
 if (UNICORN_HAS_RISCV)
@@ -921,6 +989,10 @@ else()
     )
 endif()
 
+if(UNICORN_TRACER)
+    target_compile_options(riscv32-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 add_library(riscv64-softmmu
     ${UNICORN_ARCH_COMMON}
 
@@ -949,6 +1021,11 @@ else()
         -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/riscv
     )
 endif()
+
+if(UNICORN_TRACER)
+    target_compile_options(riscv64-softmmu PRIVATE -DUNICORN_TRACER)
+endif()
+
 endif()
 
 
@@ -1112,6 +1189,15 @@ endif()
 set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_mem)
 set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_ctl)
 set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_ctl)
+
+if(UNICORN_TRACER)
+    target_compile_options(unicorn-common PRIVATE -DUNICORN_TRACER)
+    target_compile_options(unicorn PRIVATE -DUNICORN_TRACER)
+endif()
+
+target_compile_options(unicorn-common PRIVATE 
+    ${UNICORN_COMPILE_OPTIONS}
+)
 
 target_compile_options(unicorn PRIVATE
     ${UNICORN_COMPILE_OPTIONS}
