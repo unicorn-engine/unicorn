@@ -84,29 +84,32 @@ pub struct MmioCallbackScope<'a> {
 
 impl<'a> MmioCallbackScope<'a> {
     fn has_regions(&self) -> bool {
-        self.regions.len() > 0
+        !self.regions.is_empty()
     }
 
     fn unmap(&mut self, begin: u64, size: usize) {
         let end: u64 = begin + size as u64;
-        self.regions = self.regions.iter().flat_map( |(b, s)| {
-            let e: u64 = b + *s as u64;
-            if begin > *b {
-                if begin >= e {
-                    // The unmapped region is completely after this region
-                    vec![(*b, *s)]
-                } else {
-                    if end >= e {
+        self.regions = self
+            .regions
+            .iter()
+            .flat_map(|(b, s)| {
+                let e: u64 = b + *s as u64;
+                if begin > *b {
+                    if begin >= e {
+                        // The unmapped region is completely after this region
+                        vec![(*b, *s)]
+                    } else if end >= e {
                         // The unmapped region overlaps with the end of this region
                         vec![(*b, (begin - *b) as usize)]
                     } else {
                         // The unmapped region is in the middle of this region
                         let second_b = end + 1;
-                        vec![(*b, (begin - *b) as usize), (second_b, (e - second_b) as usize)]
+                        vec![
+                            (*b, (begin - *b) as usize),
+                            (second_b, (e - second_b) as usize),
+                        ]
                     }
-                }
-            } else {
-                if end > *b {
+                } else if end > *b {
                     if end >= e {
                         // The unmapped region completely contains this region
                         vec![]
@@ -118,8 +121,8 @@ impl<'a> MmioCallbackScope<'a> {
                     // The unmapped region is completely before this region
                     vec![(*b, *s)]
                 }
-            }
-        }).collect();
+            })
+            .collect();
     }
 }
 
@@ -318,7 +321,7 @@ impl<'a, D> Unicorn<'a, D> {
     /// `size` must be a multiple of 4kb or this will return `Error::ARG`.
     pub fn mmio_map<R: 'a, W: 'a>(
         &mut self,
-        address: u64, 
+        address: u64,
         size: libc::size_t,
         read_callback: Option<R>,
         write_callback: Option<W>,
@@ -327,7 +330,7 @@ impl<'a, D> Unicorn<'a, D> {
         R: FnMut(&mut Unicorn<D>, u64, usize) -> u64,
         W: FnMut(&mut Unicorn<D>, u64, usize, u64),
     {
-        let mut read_data = read_callback.map( |c| {
+        let mut read_data = read_callback.map(|c| {
             Box::new(ffi::UcHook {
                 callback: c,
                 uc: Unicorn {
@@ -335,7 +338,7 @@ impl<'a, D> Unicorn<'a, D> {
                 },
             })
         });
-        let mut write_data = write_callback.map( |c| {
+        let mut write_data = write_callback.map(|c| {
             Box::new(ffi::UcHook {
                 callback: c,
                 uc: Unicorn {
@@ -363,9 +366,9 @@ impl<'a, D> Unicorn<'a, D> {
         };
 
         if err == uc_error::OK {
-            let rd = read_data.map( |c| c as Box<dyn ffi::IsUcHook> );
-            let wd = write_data.map( |c| c as Box<dyn ffi::IsUcHook> );
-            self.inner_mut().mmio_callbacks.push(MmioCallbackScope{
+            let rd = read_data.map(|c| c as Box<dyn ffi::IsUcHook>);
+            let wd = write_data.map(|c| c as Box<dyn ffi::IsUcHook>);
+            self.inner_mut().mmio_callbacks.push(MmioCallbackScope {
                 regions: vec![(address, size)],
                 read_callback: rd,
                 write_callback: wd,
@@ -390,7 +393,12 @@ impl<'a, D> Unicorn<'a, D> {
     where
         F: FnMut(&mut Unicorn<D>, u64, usize) -> u64,
     {
-        self.mmio_map(address, size, Some(callback), None::<fn(&mut Unicorn<D>, u64, usize, u64)>)
+        self.mmio_map(
+            address,
+            size,
+            Some(callback),
+            None::<fn(&mut Unicorn<D>, u64, usize, u64)>,
+        )
     }
 
     /// Map in a write-only MMIO region backed by a callback.
@@ -406,7 +414,12 @@ impl<'a, D> Unicorn<'a, D> {
     where
         F: FnMut(&mut Unicorn<D>, u64, usize, u64),
     {
-        self.mmio_map(address, size, None::<fn(&mut Unicorn<D>, u64, usize) -> u64>, Some(callback))
+        self.mmio_map(
+            address,
+            size,
+            None::<fn(&mut Unicorn<D>, u64, usize) -> u64>,
+            Some(callback),
+        )
     }
 
     /// Unmap a memory region.
@@ -429,7 +442,9 @@ impl<'a, D> Unicorn<'a, D> {
         for scope in self.inner_mut().mmio_callbacks.iter_mut() {
             scope.unmap(address, size);
         }
-        self.inner_mut().mmio_callbacks.retain( |scope| scope.has_regions() );
+        self.inner_mut()
+            .mmio_callbacks
+            .retain(|scope| scope.has_regions());
     }
 
     /// Set the memory permissions for an existing memory region.
@@ -817,11 +832,12 @@ impl<'a, D> Unicorn<'a, D> {
         let err: uc_error;
 
         // drop the hook
-        self.inner_mut()
+        let inner = self.inner_mut();
+        inner
             .hooks
             .retain(|(hook_ptr, _hook_impl)| hook_ptr != &hook);
 
-        err = unsafe { ffi::uc_hook_del(self.inner().uc, hook) };
+        err = unsafe { ffi::uc_hook_del(inner.uc, hook) };
 
         if err == uc_error::OK {
             Ok(())

@@ -2221,3 +2221,31 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
 
     return err;
 }
+
+#ifdef UNICORN_TRACER
+uc_tracer *get_tracer()
+{
+    static uc_tracer tracer;
+    return &tracer;
+}
+
+void trace_start(uc_tracer *tracer, trace_loc loc)
+{
+    tracer->starts[loc] = get_clock();
+}
+
+void trace_end(uc_tracer *tracer, trace_loc loc, const char *fmt, ...)
+{
+    va_list args;
+    int64_t end = get_clock();
+
+    va_start(args, fmt);
+
+    vfprintf(stderr, fmt, args);
+
+    va_end(args);
+
+    fprintf(stderr, "%.6fus\n",
+            (double)(end - tracer->starts[loc]) / (double)(1000));
+}
+#endif

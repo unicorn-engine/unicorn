@@ -27,7 +27,7 @@ LIBS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'lib')
 HEADERS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'include')
 SRC_DIR = os.path.join(ROOT_DIR, 'src')
 UC_DIR = os.path.join(ROOT_DIR, '../..')
-BUILD_DIR = os.path.join(UC_DIR, 'build')
+BUILD_DIR = os.path.join(UC_DIR, 'build_python')
 
 VERSION = "2.0.0rc5.post1"
 
@@ -131,7 +131,10 @@ def build_libraries():
             os.mkdir(BUILD_DIR)
         conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
 
-        subprocess.check_call(["cmake", '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf])
+        cmake_args = ["cmake", '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
+        if os.getenv("TRACE", ""):
+            cmake_args += ["-DUNICORN_TRACER=on"]
+        subprocess.check_call(cmake_args)
         os.chdir(BUILD_DIR)
         threads = os.getenv("THREADS", "4")
         subprocess.check_call(["cmake", "--build", ".", "-j" + threads])

@@ -460,6 +460,7 @@ class Uc(object):
 
     # emulate from @begin, and stop when reaching address @until
     def emu_start(self, begin, until, timeout=0, count=0):
+        self._hook_exception = None
         status = _uc.uc_emu_start(self._uch, begin, until, timeout, count)
         if status != uc.UC_ERR_OK:
             raise UcError(status)

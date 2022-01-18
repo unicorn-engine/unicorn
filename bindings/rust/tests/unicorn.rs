@@ -427,7 +427,10 @@ fn x86_mmio() {
 
     {
         // MOV eax, [0x2004]; MOV [0x2008], ax;
-        let x86_code: Vec<u8> = vec![0x8B, 0x04, 0x25, 0x04, 0x20, 0x00, 0x00, 0x66, 0x89, 0x04, 0x25, 0x08, 0x20, 0x00, 0x00];
+        let x86_code: Vec<u8> = vec![
+            0x8B, 0x04, 0x25, 0x04, 0x20, 0x00, 0x00, 0x66, 0x89, 0x04, 0x25, 0x08, 0x20, 0x00,
+            0x00,
+        ];
 
         let read_cell = Rc::new(RefCell::new(MmioReadExpectation(0, 0)));
         let cb_read_cell = read_cell.clone();
@@ -436,7 +439,7 @@ fn x86_mmio() {
             42
         };
 
-        let write_cell = Rc::new(RefCell::new(MmioWriteExpectation(0,0,0)));
+        let write_cell = Rc::new(RefCell::new(MmioWriteExpectation(0, 0, 0)));
         let cb_write_cell = write_cell.clone();
         let write_callback = move |_: &mut Unicorn<'_, ()>, offset, size, value| {
             *cb_write_cell.borrow_mut() = MmioWriteExpectation(offset, size, value);
@@ -444,7 +447,10 @@ fn x86_mmio() {
 
         assert_eq!(emu.mem_write(0x1000, &x86_code), Ok(()));
 
-        assert_eq!(emu.mmio_map(0x2000, 0x1000, Some(read_callback), Some(write_callback)), Ok(()));
+        assert_eq!(
+            emu.mmio_map(0x2000, 0x1000, Some(read_callback), Some(write_callback)),
+            Ok(())
+        );
 
         assert_eq!(
             emu.emu_start(
@@ -494,9 +500,11 @@ fn x86_mmio() {
 
     {
         // MOV ax, 42; MOV [0x2008], ax;
-        let x86_code: Vec<u8> = vec![0x66, 0xB8, 0x2A, 0x00, 0x66, 0x89, 0x04, 0x25, 0x08, 0x20, 0x00, 0x00];
+        let x86_code: Vec<u8> = vec![
+            0x66, 0xB8, 0x2A, 0x00, 0x66, 0x89, 0x04, 0x25, 0x08, 0x20, 0x00, 0x00,
+        ];
 
-        let write_cell = Rc::new(RefCell::new(MmioWriteExpectation(0,0,0)));
+        let write_cell = Rc::new(RefCell::new(MmioWriteExpectation(0, 0, 0)));
         let cb_write_cell = write_cell.clone();
         let write_callback = move |_: &mut Unicorn<'_, ()>, offset, size, value| {
             *cb_write_cell.borrow_mut() = MmioWriteExpectation(offset, size, value);
