@@ -87,7 +87,7 @@ fn main() {
             cmd.current_dir(&unicorn_dir)
                 .arg("-B")
                 .arg("rust_build")
-                .arg("-DUNICORN_BUILD_SHARED=off")
+                .arg("-DBUILD_SHARED_LIBS=OFF")
                 .arg("-G")
                 .arg("Visual Studio 16 2019");
 
@@ -127,7 +127,7 @@ fn main() {
             cmd.current_dir(&unicorn_dir)
                 .arg("-B")
                 .arg("rust_build")
-                .arg("-DUNICORN_BUILD_SHARED=off");
+                .arg("-DBUILD_SHARED_LIBS=OFF");
 
             if profile == "debug" {
                 cmd.arg("-DCMAKE_BUILD_TYPE=Debug");
