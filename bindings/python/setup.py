@@ -27,7 +27,7 @@ LIBS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'lib')
 HEADERS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'include')
 SRC_DIR = os.path.join(ROOT_DIR, 'src')
 UC_DIR = os.path.join(ROOT_DIR, '../..')
-BUILD_DIR = os.path.join(UC_DIR, 'build')
+BUILD_DIR = os.path.join(UC_DIR, 'build_python')
 
 VERSION = "2.0.0rc5.post1"
 
