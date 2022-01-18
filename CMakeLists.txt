@@ -1254,7 +1254,9 @@ endif()
 
 if(UNICORN_FUZZ)
     set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_armbe;arm_thumb;arm64_arm;arm64_armbe;m68k_be;mips_32be;mips_32le;sparc_32be;x86_16;x86_32;x86_64")
-    set(SAMPLES_LIB ${SAMPLES_LIB} rt)
+    if (NOT APPLE)
+        set(SAMPLES_LIB ${SAMPLES_LIB} rt)
+    endif()
     foreach(SUFFIX ${UNICORN_FUZZ_SUFFIX})
         add_executable(fuzz_emu_${SUFFIX}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/fuzz/fuzz_emu_${SUFFIX}.c

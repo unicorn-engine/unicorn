@@ -14,7 +14,6 @@ int main(int argc, char** argv)
     DIR *d;
     struct dirent *dir;
     int r = 0;
-    int i;
 
     if (argc != 2) {
         return 1;
