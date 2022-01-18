@@ -119,18 +119,13 @@ struct uc_struct;
  * Only allow MAP_JIT for Mojave or later.
  * 
  * Source: https://github.com/moby/hyperkit/pull/259/files#diff-e6b5417230ff2daff9155d9b15aefae12e89410ec2dca1f59d04be511f6737fcR41
+ * 
+ * But using MAP_JIT causes performance regression for fork() so we only use MAP_JIT on Apple M1.
+ * 
+ * Issue: https://github.com/desktop/desktop/issues/12978
  */
-#if defined(__APPLE__)
-    #if defined(HAVE_PTHREAD_JIT_PROTECT)
-        #define USE_MAP_JIT
-    #else
-        #include <Availability.h>
-        #ifdef __MAC_OS_X_VERSION_MIN_REQUIRED
-            #if __MAC_OS_X_VERSION_MIN_REQUIRED >= 101400 && defined(MAP_JIT)
-                #define USE_MAP_JIT
-            #endif
-        #endif
-    #endif
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && defined(__arm__)
+#define USE_MAP_JIT
 #endif
 
 #include <glib_compat.h>
