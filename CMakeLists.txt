@@ -1053,7 +1053,7 @@ endif()
 endif()
 
 if (UNICORN_HAS_S390X)
-add_library(s390x-softmmu
+add_library(s390x-softmmu STATIC
     ${UNICORN_ARCH_COMMON}
 
     qemu/hw/s390x/s390-skeys.c
