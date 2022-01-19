@@ -794,6 +794,19 @@ struct TCGContext {
     
     // Used to store the start of current instrution.
     uint64_t pc_start;
+
+    // target/s390x/translate.c
+    TCGv_i64 psw_addr;
+    TCGv_i64 psw_mask;
+    TCGv_i64 gbea;
+
+    TCGv_i32 cc_op;
+    TCGv_i64 cc_src;
+    TCGv_i64 cc_dst;
+    TCGv_i64 cc_vr;
+
+    char s390x_cpu_reg_names[16][4]; // renamed from original cpu_reg_names[][] to avoid name clash with m68k
+    TCGv_i64 regs[16];
 };
 
 static inline size_t temp_idx(TCGContext *tcg_ctx, TCGTemp *ts)

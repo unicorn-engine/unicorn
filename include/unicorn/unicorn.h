@@ -34,6 +34,7 @@ typedef size_t uc_hook;
 #include "sparc.h"
 #include "ppc.h"
 #include "riscv.h"
+#include "s390x.h"
 
 #ifdef __GNUC__
 #define DEFAULT_VISIBILITY __attribute__((visibility("default")))
@@ -101,6 +102,7 @@ typedef enum uc_arch {
     UC_ARCH_SPARC,   // Sparc architecture
     UC_ARCH_M68K,    // M68K architecture
     UC_ARCH_RISCV,   // RISCV architecture
+    UC_ARCH_S390X,   // S390X architecture
     UC_ARCH_MAX,
 } uc_arch;
 

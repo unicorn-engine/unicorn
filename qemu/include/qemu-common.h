@@ -11,6 +11,7 @@
 #define QEMU_COMMON_H
 
 #include <unicorn/platform.h>
+#include <qemu/typedefs.h>
 
 #define TFR(expr) do { if ((expr) != -1) break; } while (errno == EINTR)
 
@@ -77,5 +78,7 @@ void finalize_target_page_bits(struct uc_struct *uc);
 void os_setup_early_signal_handling(void);
 
 void page_size_init(struct uc_struct *uc);
+
+CPUState *qemu_get_cpu(struct uc_struct *uc, int index);
 
 #endif
