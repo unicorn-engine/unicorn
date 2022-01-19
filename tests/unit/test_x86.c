@@ -873,6 +873,41 @@ static void test_x86_nested_emu_start()
     OK(uc_close(uc));
 }
 
+static void test_x86_nested_emu_stop_cb(uc_engine *uc, uint64_t addr,
+                                        size_t size, void *data)
+{
+    OK(uc_emu_start(uc, code_start + 1, code_start + 2, 0, 0));
+    // ecx shouldn't be changed!
+    OK(uc_emu_stop(uc));
+}
+
+static void test_x86_nested_emu_stop()
+{
+    uc_engine *uc;
+    // INC ecx; DEC edx; DEC edx;
+    char code[] = "\x41\x4a\x4a";
+    int r_ecx = 0x1234;
+    int r_edx = 0x7890;
+    uc_hook h;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+    // Emulate DEC in the nested hook.
+    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, test_x86_nested_emu_stop_cb, NULL,
+                   code_start, code_start));
+
+    OK(uc_emu_start(uc, code_start, code_start + 3, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+
+    TEST_CHECK(r_ecx == 0x1234);
+    TEST_CHECK(r_edx == 0x788f);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_out", test_x86_out},
              {"test_x86_mem_hook_all", test_x86_mem_hook_all},
@@ -900,4 +935,5 @@ TEST_LIST = {{"test_x86_in", test_x86_in},
              {"test_x86_hook_tcg_op", test_x86_hook_tcg_op},
              {"test_x86_cmpxchg", test_x86_cmpxchg},
              {"test_x86_nested_emu_start", test_x86_nested_emu_start},
+             {"test_x86_nested_emu_stop", test_x86_nested_emu_stop},
              {NULL, NULL}};

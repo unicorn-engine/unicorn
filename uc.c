@@ -804,8 +804,13 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 
     uc->vm_start(uc);
 
-    // emulation is done
-    uc->emulation_done = true;
+    uc->nested_level--;
+
+    // emulation is done if and only if we exit the outer uc_emu_start
+    // or we may lost uc_emu_stop
+    if (uc->nested_level == 0) {
+        uc->emulation_done = true;
+    }
 
     // remove hooks to delete
     clear_deleted_hooks(uc);
@@ -815,7 +820,6 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         qemu_thread_join(&uc->timer);
     }
 
-    uc->nested_level--;
     return uc->invalid_error;
 }
 
