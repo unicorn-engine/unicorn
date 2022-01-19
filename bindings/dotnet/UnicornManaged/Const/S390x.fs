@@ -122,7 +122,8 @@ module S390x =
     let UC_S390X_REG_A14 = 63
     let UC_S390X_REG_A15 = 64
     let UC_S390X_REG_PC = 65
-    let UC_S390X_REG_ENDING = 66
+    let UC_S390X_REG_PSWM = 66
+    let UC_S390X_REG_ENDING = 67
 
     // Alias registers
 

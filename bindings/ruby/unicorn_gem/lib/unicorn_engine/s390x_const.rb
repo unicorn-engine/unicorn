@@ -117,7 +117,8 @@ module UnicornEngine
 	UC_S390X_REG_A14 = 63
 	UC_S390X_REG_A15 = 64
 	UC_S390X_REG_PC = 65
-	UC_S390X_REG_ENDING = 66
+	UC_S390X_REG_PSWM = 66
+	UC_S390X_REG_ENDING = 67
 
 # Alias registers
 end

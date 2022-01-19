@@ -119,7 +119,8 @@ public interface S390xConst {
    public static final int UC_S390X_REG_A14 = 63;
    public static final int UC_S390X_REG_A15 = 64;
    public static final int UC_S390X_REG_PC = 65;
-   public static final int UC_S390X_REG_ENDING = 66;
+   public static final int UC_S390X_REG_PSWM = 66;
+   public static final int UC_S390X_REG_ENDING = 67;
 
 // Alias registers
 
