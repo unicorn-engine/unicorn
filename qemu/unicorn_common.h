@@ -49,6 +49,7 @@ static void release_common(void *t)
     }
     tcg_pool_reset(s);
     g_hash_table_destroy(s->helper_table);
+    g_hash_table_destroy(s->custom_helper_infos);
     g_free(s->indirect_reg_alloc_order);
     /* qemu/tcg/tcg/c:4018: img = g_malloc(img_size); */
     g_free((void *)(s->one_entry->symfile_addr));

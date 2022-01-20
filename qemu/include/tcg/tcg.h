@@ -692,6 +692,7 @@ struct TCGContext {
     TCGOp *icount_start_insn;
     /* qemu/tcg/tcg.c */
     GHashTable *helper_table;
+    GHashTable *custom_helper_infos; // To support inline hooks.
     TCGv_ptr cpu_env;
     struct tcg_region_state region;
     GTree *tree;

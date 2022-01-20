@@ -692,6 +692,7 @@ void uc_add_inline_hook(uc_engine *uc, struct hook *hk, void** args, int args_le
     info->sizemask = sizemask;
 
     g_hash_table_insert(helper_table, (gpointer)info->func, (gpointer)info);
+    g_hash_table_insert(uc->tcg_ctx->custom_helper_infos, (gpointer)info->func, (gpointer)info);
 
     tcg_gen_callN(tcg_ctx, info->func, NULL, args_len, (TCGTemp**)args);
 }
@@ -751,6 +752,9 @@ void tcg_context_init(TCGContext *s)
     /* Use g_direct_hash/equal for direct pointer comparisons on func.  */
     helper_table = g_hash_table_new(NULL, NULL);
     s->helper_table = helper_table;
+
+    // Unicorn: Store our custom inline hooks infomation
+    s->custom_helper_infos = g_hash_table_new_full(NULL, NULL, NULL, g_free);
 
     for (i = 0; i < ARRAY_SIZE(all_helpers); ++i) {
         g_hash_table_insert(helper_table, (gpointer)all_helpers[i].func,
