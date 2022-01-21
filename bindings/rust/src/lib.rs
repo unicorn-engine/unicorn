@@ -128,6 +128,7 @@ impl<'a> MmioCallbackScope<'a> {
 
 pub struct UnicornInner<'a, D> {
     pub uc: uc_handle,
+    pub ffi: bool,
     pub arch: Arch,
     /// to keep ownership over the hook for this uc instance's lifetime
     pub hooks: Vec<(ffi::uc_hook, Box<dyn ffi::IsUcHook<'a> + 'a>)>,
@@ -139,7 +140,7 @@ pub struct UnicornInner<'a, D> {
 /// Drop UC
 impl<'a, D> Drop for UnicornInner<'a, D> {
     fn drop(&mut self) {
-        if !self.uc.is_null() {
+        if !self.ffi && !self.uc.is_null() {
             unsafe { ffi::uc_close(self.uc) };
         }
         self.uc = ptr::null_mut();
@@ -157,6 +158,27 @@ impl<'a> Unicorn<'a, ()> {
     pub fn new(arch: Arch, mode: Mode) -> Result<Unicorn<'a, ()>, uc_error> {
         Self::new_with_data(arch, mode, ())
     }
+
+    pub fn new_with_handle(handle: uc_handle) -> Result<Unicorn<'a, ()>, uc_error> {
+        if handle == ptr::null_mut() {
+            return Err(uc_error::HANDLE);
+        }
+        let mut arch: libc::size_t = Default::default();
+        let err = unsafe { ffi::uc_query(handle, Query::ARCH, &mut arch) };
+        if err != uc_error::OK {
+            return Err(err);
+        }
+        Ok(Unicorn {
+            inner: Rc::new(UnsafeCell::from(UnicornInner {
+                uc: handle,
+                ffi: true,
+                arch: arch.try_into()?,
+                data: (),
+                hooks: vec![],
+                mmio_callbacks: vec![],
+            })),
+        })
+    }
 }
 
 impl<'a, D> Unicorn<'a, D>
@@ -172,6 +194,7 @@ where
             Ok(Unicorn {
                 inner: Rc::new(UnsafeCell::from(UnicornInner {
                     uc: handle,
+                    ffi: false,
                     arch,
                     data,
                     hooks: vec![],
