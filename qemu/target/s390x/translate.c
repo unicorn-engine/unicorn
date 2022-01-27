@@ -658,8 +658,7 @@ static void gen_op_calc_cc(DisasContext *s)
     case CC_OP_LTUGTU_64:
     case CC_OP_TM_32:
     case CC_OP_TM_64:
-    case CC_OP_SLA_32:
-    case CC_OP_SLA_64:
+    case CC_OP_SLA:
     case CC_OP_NZ_F128:
     case CC_OP_VC:
         /* 2 arguments */
@@ -1242,21 +1241,6 @@ struct DisasInsn {
 
 /* ====================================================================== */
 /* Miscellaneous helpers, used by several operations.  */
-
-static void help_l2_shift(DisasContext *s, DisasOps *o, int mask)
-{
-    TCGContext *tcg_ctx = s->uc->tcg_ctx;
-
-    int b2 = get_field(s, b2);
-    int d2 = get_field(s, d2);
-
-    if (b2 == 0) {
-        o->in2 = tcg_const_i64(tcg_ctx, d2 & mask);
-    } else {
-        o->in2 = get_address(s, 0, b2, d2);
-        tcg_gen_andi_i64(tcg_ctx, o->in2, o->in2, mask);
-    }
-}
 
 static DisasJumpType help_goto_direct(DisasContext *s, uint64_t dest)
 {
@@ -4278,10 +4262,19 @@ static DisasJumpType op_soc(DisasContext *s, DisasOps *o)
 
 static DisasJumpType op_sla(DisasContext *s, DisasOps *o)
 {
+    TCGv_i64 t;
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     uint64_t sign = 1ull << s->insn->data;
-    enum cc_op cco = s->insn->data == 31 ? CC_OP_SLA_32 : CC_OP_SLA_64;
-    gen_op_update2_cc_i64(s, cco, o->in1, o->in2);
+    if (s->insn->data == 31) {
+        t = tcg_temp_new_i64(tcg_ctx);
+        tcg_gen_shli_i64(tcg_ctx, t, o->in1, 32);
+    } else {
+        t = o->in1;
+    }
+    gen_op_update2_cc_i64(s, CC_OP_SLA, t, o->in2);
+    if (s->insn->data == 31) {
+        tcg_temp_free_i64(tcg_ctx, t);
+    }
     tcg_gen_shl_i64(tcg_ctx, o->out, o->in1, o->in2);
     /* The arithmetic left shift is curious in that it does not affect
        the sign bit.  Copy that over from the source unchanged.  */
@@ -5648,9 +5641,11 @@ static void wout_r1_D32(DisasContext *s, DisasOps *o)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     int r1 = get_field(s, r1);
+    TCGv_i64 t = tcg_temp_new_i64(tcg_ctx);
     store_reg32_i64(tcg_ctx, r1 + 1, o->out);
-    tcg_gen_shri_i64(tcg_ctx, o->out, o->out, 32);
-    store_reg32_i64(tcg_ctx, r1, o->out);
+    tcg_gen_shri_i64(tcg_ctx, t, o->out, 32);
+    store_reg32_i64(tcg_ctx, r1, t);
+    tcg_temp_free_i64(tcg_ctx, t);
 }
 #define SPEC_wout_r1_D32 SPEC_r1_even
 
@@ -6190,17 +6185,20 @@ static void in2_ri2(DisasContext *s, DisasOps *o)
 }
 #define SPEC_in2_ri2 0
 
-static void in2_sh32(DisasContext *s, DisasOps *o)
+static void in2_sh(DisasContext *s, DisasOps *o)
 {
-    help_l2_shift(s, o, 31);
-}
-#define SPEC_in2_sh32 0
+    TCGContext *tcg_ctx = s->uc->tcg_ctx;
+    int b2 = get_field(s, b2);
+    int d2 = get_field(s, d2);
 
-static void in2_sh64(DisasContext *s, DisasOps *o)
-{
-    help_l2_shift(s, o, 63);
+    if (b2 == 0) {
+        o->in2 = tcg_const_i64(tcg_ctx, d2 & 0x3f);
+    } else {
+        o->in2 = get_address(s, 0, b2, d2);
+        tcg_gen_andi_i64(tcg_ctx, o->in2, o->in2, 0x3f);
+    }
 }
-#define SPEC_in2_sh64 0
+#define SPEC_in2_sh 0
 
 static void in2_m2_8u(DisasContext *s, DisasOps *o)
 {
