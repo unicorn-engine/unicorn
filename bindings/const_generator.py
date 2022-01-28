@@ -6,7 +6,7 @@ import sys, re, os
 
 INCL_DIR = os.path.join('..', 'include', 'unicorn')
 
-include = [ 'arm.h', 'arm64.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'unicorn.h' ]
+include = [ 'arm.h', 'arm64.h', 'mips.h', 'x86.h', 'sparc.h', 'm68k.h', 'ppc.h', 'riscv.h', 's390x.h', 'unicorn.h' ]
 
 template = {
     'python': {
@@ -21,6 +21,9 @@ template = {
             'x86.h': 'x86',
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
+            'ppc.h': 'ppc',
+            'riscv.h': 'riscv',
+            's390x.h' : 's390x',
             'unicorn.h': 'unicorn',
             'comment_open': '#',
             'comment_close': '',
@@ -37,6 +40,9 @@ template = {
             'x86.h': 'x86',
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
+            'ppc.h': 'ppc',
+            'riscv.h': 'riscv',
+            's390x.h' : 's390x',
             'unicorn.h': 'unicorn',
             'comment_open': '#',
             'comment_close': '',
@@ -53,6 +59,9 @@ template = {
             'x86.h': 'x86',
             'sparc.h': 'sparc',
             'm68k.h': 'm68k',
+            'ppc.h': 'ppc',
+            'riscv.h': 'riscv',
+            's390x.h' : 's390x',
             'unicorn.h': 'unicorn',
             'comment_open': '//',
             'comment_close': '',
@@ -69,6 +78,9 @@ template = {
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
+            'ppc.h': 'Ppc',
+            'riscv.h': 'Riscv',
+            's390x.h' : 'S390x',
             'unicorn.h': 'Unicorn',
             'comment_open': '//',
             'comment_close': '',
@@ -85,6 +97,9 @@ template = {
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
+            'ppc.h': 'Ppc',
+            'riscv.h': 'Riscv',
+            's390x.h' : 'S390x',
             'unicorn.h': 'Common',
             'comment_open': '    //',
             'comment_close': '',
@@ -101,6 +116,9 @@ template = {
             'x86.h': 'X86',
             'sparc.h': 'Sparc',
             'm68k.h': 'M68k',
+            'ppc.h': 'Ppc',
+            'riscv.h': 'Riscv',
+            's390x.h' : 'S390x',
             'unicorn.h': 'Unicorn',
             'comment_open': '//',
             'comment_close': '',
@@ -124,7 +142,20 @@ def gen(lang):
 
         previous = {}
         count = 0
-        for line in lines:
+        skip = 0
+        in_comment = False
+        
+        for lno, line in enumerate(lines):
+            if "/*" in line:
+                in_comment = True
+            if "*/" in line:
+                in_comment = False
+            if in_comment:
+                continue
+            if skip > 0:
+                # Due to clang-format, values may come up in the next line
+                skip -= 1
+                continue
             line = line.strip()
 
             if line.startswith(MARKUP):  # markup for comments
@@ -136,6 +167,8 @@ def gen(lang):
                 continue
 
             tmp = line.strip().split(',')
+            if len(tmp) >= 2 and tmp[0] != "#define" and not tmp[0].startswith("UC_"):
+                continue
             for t in tmp:
                 t = t.strip()
                 if not t or t.startswith('//'): continue
@@ -147,18 +180,52 @@ def gen(lang):
                     define = True
                     f.pop(0)
                     f.insert(1, '=')
-
-                if f[0].startswith("UC_" + prefix.upper()):
+                if f[0].startswith("UC_" + prefix.upper()) or f[0].startswith("UC_CPU"):
                     if len(f) > 1 and f[1] not in ('//', '='):
                         print("WARNING: Unable to convert %s" % f)
                         print("  Line =", line)
                         continue
                     elif len(f) > 1 and f[1] == '=':
-                        rhs = ''.join(f[2:])
+                        # Like:
+                        # UC_A = 
+                        #       (1 << 2)
+                        # #define UC_B \
+                        #              (UC_A | UC_C)
+                        # Let's search the next line
+                        if len(f) == 2:
+                            if lno == len(lines) - 1:
+                                print("WARNING: Unable to convert %s" % f)
+                                print("  Line =", line)
+                                continue
+                            skip += 1
+                            next_line = lines[lno + 1]
+                            next_line_tmp = next_line.strip().split(",")
+                            rhs = next_line_tmp[0]
+                        elif f[-1] == "\\":
+                            idx = 0
+                            rhs = ""
+                            while True:
+                                idx += 1
+                                if lno + idx == len(lines):
+                                    print("WARNING: Unable to convert %s" % f)
+                                    print("  Line =", line)
+                                    continue
+                                skip += 1
+                                next_line = lines[lno + idx]
+                                next_line_f = re.split('\s+', next_line.strip())
+                                if next_line_f[-1] == "\\":
+                                    rhs += "".join(next_line_f[:-1])
+                                else:
+                                    rhs += next_line.strip()
+                                    break
+                        else:
+                            rhs = ''.join(f[2:])
                     else:
                         rhs = str(count)
 
+                    
                     lhs = f[0].strip()
+                    #print(f'lhs: {lhs} rhs: {rhs} f:{f}')
                     # evaluate bitshifts in constants e.g. "UC_X86 = 1 << 1"
                     match = re.match(r'(?P<rhs>\s*\d+\s*<<\s*\d+\s*)', rhs)
                     if match:

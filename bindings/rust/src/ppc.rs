@@ -40,3 +40,9 @@ pub enum RegisterPPC {
     GPR30 = 32,
     GPR31 = 33,
 }
+
+impl From<RegisterPPC> for i32 {
+    fn from(r: RegisterPPC) -> Self {
+        r as i32
+    }
+}

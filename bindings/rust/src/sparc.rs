@@ -1,6 +1,7 @@
 // SPARC registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
+#[allow(clippy::upper_case_acronyms)]
 pub enum RegisterSPARC {
     INVALID = 0,
     F0 = 1,
@@ -91,4 +92,19 @@ pub enum RegisterSPARC {
     Y = 86,
     XCC = 87,
     PC = 88,
+    ENDING = 89,
+}
+
+impl RegisterSPARC {
+    // alias registers
+    // (assoc) O6 = 84,
+    // (assoc) I6 = 67,
+    pub const O6: RegisterSPARC = RegisterSPARC::SP;
+    pub const I6: RegisterSPARC = RegisterSPARC::FP;
+}
+
+impl From<RegisterSPARC> for i32 {
+    fn from(r: RegisterSPARC) -> Self {
+        r as i32
+    }
 }

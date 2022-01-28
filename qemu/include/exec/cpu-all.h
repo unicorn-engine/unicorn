@@ -19,21 +19,28 @@
 #ifndef CPU_ALL_H
 #define CPU_ALL_H
 
-#include "qemu-common.h"
 #include "exec/cpu-common.h"
 #include "exec/memory.h"
 #include "qemu/thread.h"
-#include "qom/cpu.h"
+#include "hw/core/cpu.h"
+
+#include <uc_priv.h>
+
+#if 0
+#include "qemu/rcu.h"
+#endif
+
+#define EXCP_INTERRUPT 	0x10000 /* async interruption */
+#define EXCP_HLT        0x10001 /* hlt instruction reached */
+#define EXCP_DEBUG      0x10002 /* cpu stopped after a breakpoint or singlestep */
+#define EXCP_HALTED     0x10003 /* cpu is halted (waiting for external event) */
+#define EXCP_YIELD      0x10004 /* cpu wants to yield timeslice to another */
+#define EXCP_ATOMIC     0x10005 /* stop-the-world and emulate atomic */
 
 /* some important defines:
  *
- * WORDS_ALIGNED : if defined, the host cpu can only make word aligned
- * memory accesses.
- *
  * HOST_WORDS_BIGENDIAN : if defined, the host cpu is big endian and
  * otherwise little endian.
- *
- * (TARGET_WORDS_ALIGNED : same for target cpu (not supported yet))
  *
  * TARGET_WORDS_BIGENDIAN : same for target cpu
  */
@@ -115,43 +122,9 @@ static inline void tswap64s(uint64_t *s)
 #define bswaptls(s) bswap64s(s)
 #endif
 
-/* CPU memory access without any memory or io remapping */
-
-/*
- * the generic syntax for the memory accesses is:
- *
- * load: ld{type}{sign}{size}{endian}_{access_type}(ptr)
- *
- * store: st{type}{size}{endian}_{access_type}(ptr, val)
- *
- * type is:
- * (empty): integer access
- *   f    : float access
- *
- * sign is:
- * (empty): for floats or 32 bit size
- *   u    : unsigned
- *   s    : signed
- *
- * size is:
- *   b: 8 bits
- *   w: 16 bits
- *   l: 32 bits
- *   q: 64 bits
- *
- * endian is:
- * (empty): target cpu endianness or 8 bit access
- *   r    : reversed target cpu endianness (not implemented yet)
- *   be   : big endian (not implemented yet)
- *   le   : little endian (not implemented yet)
- *
- * access_type is:
- *   raw    : host memory access
- *   user   : user mode access using soft MMU
- *   kernel : kernel mode access using soft MMU
+/* Target-endianness CPU memory access functions. These fit into the
+ * {ld,st}{type}{sign}{size}{endian}_p naming scheme described in bswap.h.
  */
-
-/* target-endianness CPU memory access functions */
 #if defined(TARGET_WORDS_BIGENDIAN)
 #define lduw_p(p) lduw_be_p(p)
 #define ldsw_p(p) ldsw_be_p(p)
@@ -164,6 +137,8 @@ static inline void tswap64s(uint64_t *s)
 #define stq_p(p, v) stq_be_p(p, v)
 #define stfl_p(p, v) stfl_be_p(p, v)
 #define stfq_p(p, v) stfq_be_p(p, v)
+#define ldn_p(p, sz) ldn_be_p(p, sz)
+#define stn_p(p, sz, v) stn_be_p(p, sz, v)
 #else
 #define lduw_p(p) lduw_le_p(p)
 #define ldsw_p(p) ldsw_le_p(p)
@@ -176,39 +151,102 @@ static inline void tswap64s(uint64_t *s)
 #define stq_p(p, v) stq_le_p(p, v)
 #define stfl_p(p, v) stfl_le_p(p, v)
 #define stfq_p(p, v) stfq_le_p(p, v)
+#define ldn_p(p, sz) ldn_le_p(p, sz)
+#define stn_p(p, sz, v) stn_le_p(p, sz, v)
 #endif
 
 /* MMU memory access macros */
+#include "exec/hwaddr.h"
 
-#if defined(CONFIG_USER_ONLY)
-#include <assert.h>
-#include "exec/user/abitypes.h"
-
-/* On some host systems the guest address space is reserved on the host.
- * This allows the guest address space to be offset to a convenient location.
- */
-#if defined(CONFIG_USE_GUEST_BASE)
-extern unsigned long guest_base;
-extern int have_guest_base;
-extern unsigned long reserved_va;
-#define GUEST_BASE guest_base
-#define RESERVED_VA reserved_va
+#ifdef UNICORN_ARCH_POSTFIX
+#define SUFFIX       UNICORN_ARCH_POSTFIX
 #else
-#define GUEST_BASE 0ul
-#define RESERVED_VA 0ul
+#define SUFFIX
 #endif
+#define ARG1         as
+#define ARG1_DECL    AddressSpace *as
+#define TARGET_ENDIANNESS
+#include "exec/memory_ldst.inc.h"
 
-#define GUEST_ADDR_MAX (RESERVED_VA ? RESERVED_VA : \
-                                    (1ul << TARGET_VIRT_ADDR_SPACE_BITS) - 1)
+#ifdef UNICORN_ARCH_POSTFIX
+#define SUFFIX       glue(_cached_slow, UNICORN_ARCH_POSTFIX)
+#else
+#define SUFFIX       _cached_slow
 #endif
+#define ARG1         cache
+#define ARG1_DECL    MemoryRegionCache *cache
+#define TARGET_ENDIANNESS
+#include "exec/memory_ldst.inc.h"
+
+static inline void stl_phys_notdirty(AddressSpace *as, hwaddr addr, uint32_t val)
+{
+#ifdef UNICORN_ARCH_POSTFIX
+    glue(address_space_stl_notdirty, UNICORN_ARCH_POSTFIX)
+        (as->uc, as, addr, val, MEMTXATTRS_UNSPECIFIED, NULL);
+#else
+    address_space_stl_notdirty(as->uc, as, addr, val,
+                               MEMTXATTRS_UNSPECIFIED, NULL);
+#endif
+}
+
+#ifdef UNICORN_ARCH_POSTFIX
+#define SUFFIX       UNICORN_ARCH_POSTFIX
+#else
+#define SUFFIX
+#endif
+#define ARG1         as
+#define ARG1_DECL    AddressSpace *as
+#define TARGET_ENDIANNESS
+#include "exec/memory_ldst_phys.inc.h"
+
+/* Inline fast path for direct RAM access.  */
+#define ENDIANNESS
+#include "exec/memory_ldst_cached.inc.h"
+
+#ifdef UNICORN_ARCH_POSTFIX
+#define SUFFIX       glue(_cached, UNICORN_ARCH_POSTFIX)
+#else
+#define SUFFIX       _cached
+#endif
+#define ARG1         cache
+#define ARG1_DECL    MemoryRegionCache *cache
+#define TARGET_ENDIANNESS
+#include "exec/memory_ldst_phys.inc.h"
 
 /* page related stuff */
 
-#define TARGET_PAGE_SIZE (1 << TARGET_PAGE_BITS)
-#define TARGET_PAGE_MASK ~(TARGET_PAGE_SIZE - 1)
-#define TARGET_PAGE_ALIGN(addr) (((addr) + TARGET_PAGE_SIZE - 1) & TARGET_PAGE_MASK)
+#ifdef TARGET_PAGE_BITS_VARY
+typedef struct TargetPageBits {
+    bool decided;
+    int bits;
+    target_long mask;
+} TargetPageBits;
+#if defined(CONFIG_ATTRIBUTE_ALIAS) || !defined(IN_EXEC_VARY)
+extern const TargetPageBits target_page;
+#else
+extern TargetPageBits target_page;
+#endif
 
-#define HOST_PAGE_ALIGN(addr) (((addr) + qemu_host_page_size - 1) & qemu_host_page_mask)
+#ifdef CONFIG_DEBUG_TCG
+#define TARGET_PAGE_BITS   ({ assert(target_page.decided); target_page.bits; })
+#define TARGET_PAGE_MASK   ({ assert(target_page.decided); target_page.mask; })
+#else
+#define TARGET_PAGE_BITS   uc->init_target_page->bits
+#define TARGET_PAGE_MASK   uc->init_target_page->mask
+#endif
+#define TARGET_PAGE_SIZE   (-(int)TARGET_PAGE_MASK) // qq
+#else
+#define TARGET_PAGE_BITS_MIN TARGET_PAGE_BITS
+#define TARGET_PAGE_SIZE   (1 << TARGET_PAGE_BITS)
+#define TARGET_PAGE_MASK   ((target_ulong)-1 << TARGET_PAGE_BITS)
+#endif
+
+#define TARGET_PAGE_ALIGN(addr) ROUND_UP((addr), TARGET_PAGE_SIZE)
+
+#define HOST_PAGE_ALIGN(uc, addr) ROUND_UP((addr), uc->qemu_host_page_size)
+#if 0
+#define REAL_HOST_PAGE_ALIGN(addr) ROUND_UP((addr), uc->qemu_real_host_page_size)
+#endif
 
 /* same as PROT_xxx */
 #define PAGE_READ      0x0001
@@ -219,16 +257,9 @@ extern unsigned long reserved_va;
 /* original state of the write flag (used when tracking self-modifying
    code */
 #define PAGE_WRITE_ORG 0x0010
-#if defined(CONFIG_BSD) && defined(CONFIG_USER_ONLY)
-/* FIXME: Code that sets/uses this is broken and needs to go away.  */
-#define PAGE_RESERVED  0x0020
-#endif
-
-#if defined(CONFIG_USER_ONLY)
-//void page_dump(FILE *f);
-
-int page_get_flags(target_ulong address);
-#endif
+/* Invalidate the TLB entry immediately, helpful for s390x
+ * Low-Address-Protection. Used with PAGE_WRITE in tlb_set_page_with_attrs() */
+#define PAGE_WRITE_INV 0x0040
 
 CPUArchState *cpu_copy(CPUArchState *env);
 
@@ -284,26 +315,131 @@ CPUArchState *cpu_copy(CPUArchState *env);
      | CPU_INTERRUPT_TGT_EXT_3   \
      | CPU_INTERRUPT_TGT_EXT_4)
 
-#if !defined(CONFIG_USER_ONLY)
-
-/* memory API */
-
-/* Flags stored in the low bits of the TLB virtual address.  These are
-   defined so that fast path ram access is all zeros.  */
+/*
+ * Flags stored in the low bits of the TLB virtual address.
+ * These are defined so that fast path ram access is all zeros.
+ * The flags all must be between TARGET_PAGE_BITS and
+ * maximum address alignment bit.
+ *
+ * Use TARGET_PAGE_BITS_MIN so that these bits are constant
+ * when TARGET_PAGE_BITS_VARY is in effect.
+ */
 /* Zero if TLB entry is valid.  */
-#define TLB_INVALID_MASK   (1 << 3)
+#define TLB_INVALID_MASK    (1 << (TARGET_PAGE_BITS_MIN - 1))
 /* Set if TLB entry references a clean RAM page.  The iotlb entry will
    contain the page physical address.  */
-#define TLB_NOTDIRTY    (1 << 4)
+#define TLB_NOTDIRTY        (1 << (TARGET_PAGE_BITS_MIN - 2))
 /* Set if TLB entry is an IO callback.  */
-#define TLB_MMIO        (1 << 5)
+#define TLB_MMIO            (1 << (TARGET_PAGE_BITS_MIN - 3))
+/* Set if TLB entry contains a watchpoint.  */
+#define TLB_WATCHPOINT      (1 << (TARGET_PAGE_BITS_MIN - 4))
+/* Set if TLB entry requires byte swap.  */
+#define TLB_BSWAP           (1 << (TARGET_PAGE_BITS_MIN - 5))
+/* Set if TLB entry writes ignored.  */
+#define TLB_DISCARD_WRITE   (1 << (TARGET_PAGE_BITS_MIN - 6))
 
-ram_addr_t last_ram_offset(struct uc_struct *uc);
-void qemu_mutex_lock_ramlist(struct uc_struct *uc);
-void qemu_mutex_unlock_ramlist(struct uc_struct *uc);
-#endif /* !CONFIG_USER_ONLY */
+/* Use this mask to check interception with an alignment mask
+ * in a TCG backend.
+ */
+#define TLB_FLAGS_MASK \
+    (TLB_INVALID_MASK | TLB_NOTDIRTY | TLB_MMIO \
+    | TLB_WATCHPOINT | TLB_BSWAP | TLB_DISCARD_WRITE)
+
+/**
+ * tlb_hit_page: return true if page aligned @addr is a hit against the
+ * TLB entry @tlb_addr
+ *
+ * @addr: virtual address to test (must be page aligned)
+ * @tlb_addr: TLB entry address (a CPUTLBEntry addr_read/write/code value)
+ */
+static inline bool tlb_hit_page(struct uc_struct *uc, target_ulong tlb_addr, target_ulong addr)
+{
+    return addr == (tlb_addr & (TARGET_PAGE_MASK | TLB_INVALID_MASK));
+}
+
+/**
+ * tlb_hit: return true if @addr is a hit against the TLB entry @tlb_addr
+ *
+ * @addr: virtual address to test (need not be page aligned)
+ * @tlb_addr: TLB entry address (a CPUTLBEntry addr_read/write/code value)
+ */
+static inline bool tlb_hit(struct uc_struct *uc, target_ulong tlb_addr, target_ulong addr)
+{
+    return tlb_hit_page(uc, tlb_addr, addr & TARGET_PAGE_MASK);
+}
 
 int cpu_memory_rw_debug(CPUState *cpu, target_ulong addr,
-                        uint8_t *buf, int len, int is_write);
+                        void *ptr, target_ulong len, bool is_write);
+
+int cpu_exec(struct uc_struct *uc, CPUState *cpu);
+
+/**
+ * cpu_set_cpustate_pointers(cpu)
+ * @cpu: The cpu object
+ *
+ * Set the generic pointers in CPUState into the outer object.
+ */
+static inline void cpu_set_cpustate_pointers(ArchCPU *cpu)
+{
+    cpu->parent_obj.env_ptr = &cpu->env;
+    cpu->parent_obj.icount_decr_ptr = &cpu->neg.icount_decr;
+}
+
+/**
+ * env_archcpu(env)
+ * @env: The architecture environment
+ *
+ * Return the ArchCPU associated with the environment.
+ */
+static inline ArchCPU *env_archcpu(CPUArchState *env)
+{
+    return container_of(env, ArchCPU, env);
+}
+
+/**
+ * env_cpu(env)
+ * @env: The architecture environment
+ *
+ * Return the CPUState associated with the environment.
+ */
+static inline CPUState *env_cpu(CPUArchState *env)
+{
+    return &env_archcpu(env)->parent_obj;
+}
+
+/**
+ * env_neg(env)
+ * @env: The architecture environment
+ *
+ * Return the CPUNegativeOffsetState associated with the environment.
+ */
+static inline CPUNegativeOffsetState *env_neg(CPUArchState *env)
+{
+    ArchCPU *arch_cpu = container_of(env, ArchCPU, env);
+    return &arch_cpu->neg;
+}
+
+/**
+ * cpu_neg(cpu)
+ * @cpu: The generic CPUState
+ *
+ * Return the CPUNegativeOffsetState associated with the cpu.
+ */
+static inline CPUNegativeOffsetState *cpu_neg(CPUState *cpu)
+{
+    ArchCPU *arch_cpu = container_of(cpu, ArchCPU, parent_obj);
+    return &arch_cpu->neg;
+}
+
+/**
+ * env_tlb(env)
+ * @env: The architecture environment
+ *
+ * Return the CPUTLB state associated with the environment.
+ */
+static inline CPUTLB *env_tlb(CPUArchState *env)
+{
+    return &env_neg(env)->tlb;
+}
 
 #endif /* CPU_ALL_H */

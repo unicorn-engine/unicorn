@@ -12,8 +12,21 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
+
+//> M68K CPU
+typedef enum uc_cpu_m68k {
+    UC_CPU_M68K_M5206 = 0,
+    UC_CPU_M68K_M68000,
+    UC_CPU_M68K_M68020,
+    UC_CPU_M68K_M68030,
+    UC_CPU_M68K_M68040,
+    UC_CPU_M68K_M68060,
+    UC_CPU_M68K_M5208,
+    UC_CPU_M68K_CFV4E,
+    UC_CPU_M68K_ANY,
+} uc_cpu_m68k;
 
 //> M68K registers
 typedef enum uc_m68k_reg {
@@ -40,7 +53,7 @@ typedef enum uc_m68k_reg {
     UC_M68K_REG_SR,
     UC_M68K_REG_PC,
 
-    UC_M68K_REG_ENDING,   // <-- mark the end of the list of registers
+    UC_M68K_REG_ENDING, // <-- mark the end of the list of registers
 } uc_m68k_reg;
 
 #ifdef __cplusplus

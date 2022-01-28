@@ -1,0 +1,5 @@
+code under arm/ is from arm-softmmu/target/arm/*.inc.c
+code under aarch64/ is from aarch64-softmmu/target/aarch64/*.inc.c
+
+WARNING: these code are autogen from scripts/decodetree.py, DO NOT modify them.
+

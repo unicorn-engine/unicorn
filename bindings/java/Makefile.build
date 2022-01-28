@@ -1,7 +1,9 @@
 
 .PHONY: gen_const clean
 
-JAVA_HOME := $(shell jrunscript -e 'java.lang.System.out.println(java.lang.System.getProperty("java.home"));')
+JC=javac
+
+JAVA_HOME := $(shell readlink -f `which $(JC)` | sed "s:/bin/$(JC)::")
 
 JAVA_INC := $(shell realpath $(JAVA_HOME)/include)
 
@@ -28,25 +30,24 @@ LIBS=-lunicorn
 LIBDIR=-L../../
 INCS=-I$(JAVA_INC) -I$(JAVA_PLATFORM_INC) -I$(UNICORN_INC)
 
-JC=javac
 CLASSPATH=./
 
 .SUFFIXES: .java .class
 
 %.class: %.java
-	$(JC) $(JFLAGS) $<
+	$(JC) -classpath .:unicorn.jar $(JFLAGS) $<
 
 OBJS=unicorn_Unicorn.o
 
 JARFILE=unicorn.jar
 
-all: lib jar samples
+all: jar lib samples
 
 %.o: %.c
 	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
 
 unicorn_Unicorn.h: unicorn/Unicorn.java
-	javac -h unicorn/ unicorn/*.java
+	javac -h . $<
 
 unicorn_Unicorn.o: unicorn_Unicorn.c unicorn_Unicorn.h
 	$(CC) -c $(CFLAGS) $(INCS) $< -o $@
@@ -63,12 +64,12 @@ jar: jarfiles
 	jar cf $(JARFILE) unicorn/*.class
 
 install: lib jar
-	cp libunicorn_java$(LIB_EXT) $(JAVA_HOME)/lib/ext
-	cp $(JARFILE) $(JAVA_HOME)/lib/ext
+	cp libunicorn_java$(LIB_EXT) /usr/lib
+	cp $(JARFILE) /usr/share/java
 
 uninstall:
-	rm $(JAVA_HOME)/lib/ext/libunicorn_java$(LIB_EXT)
-	rm $(JAVA_HOME)/lib/ext/$(JARFILE)
+	rm /usr/lib/libunicorn_java$(LIB_EXT)
+	rm /usr/share/java/$(JARFILE)
 
 gen_const:
 	cd .. && python const_generator.py java

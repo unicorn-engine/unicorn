@@ -49,7 +49,7 @@ public class Sample_x86_mmr {
 
        uc.reg_write(Unicorn.UC_X86_REG_LDTR, ldtr1);       
        uc.reg_write(Unicorn.UC_X86_REG_GDTR, gdtr1);
-       uc.reg_write(Unicorn.UC_X86_REG_EAX, new Long(0xdddddddd));
+       uc.reg_write(Unicorn.UC_X86_REG_EAX, 0xddddddddL);
       
        // read the registers back out   
        eax = (int)((Long)uc.reg_read(Unicorn.UC_X86_REG_EAX)).longValue();

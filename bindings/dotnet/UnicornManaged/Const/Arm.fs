@@ -7,6 +7,43 @@ open System
 [<AutoOpen>]
 module Arm =
 
+    // ARM CPU
+
+    let UC_CPU_ARM_926 = 0
+    let UC_CPU_ARM_946 = 1
+    let UC_CPU_ARM_1026 = 2
+    let UC_CPU_ARM_1136_R2 = 3
+    let UC_CPU_ARM_1136 = 4
+    let UC_CPU_ARM_1176 = 5
+    let UC_CPU_ARM_11MPCORE = 6
+    let UC_CPU_ARM_CORTEX_M0 = 7
+    let UC_CPU_ARM_CORTEX_M3 = 8
+    let UC_CPU_ARM_CORTEX_M4 = 9
+    let UC_CPU_ARM_CORTEX_M7 = 10
+    let UC_CPU_ARM_CORTEX_M33 = 11
+    let UC_CPU_ARM_CORTEX_R5 = 12
+    let UC_CPU_ARM_CORTEX_R5F = 13
+    let UC_CPU_ARM_CORTEX_A7 = 14
+    let UC_CPU_ARM_CORTEX_A8 = 15
+    let UC_CPU_ARM_CORTEX_A9 = 16
+    let UC_CPU_ARM_CORTEX_A15 = 17
+    let UC_CPU_ARM_TI925T = 18
+    let UC_CPU_ARM_SA1100 = 19
+    let UC_CPU_ARM_SA1110 = 20
+    let UC_CPU_ARM_PXA250 = 21
+    let UC_CPU_ARM_PXA255 = 22
+    let UC_CPU_ARM_PXA260 = 23
+    let UC_CPU_ARM_PXA261 = 24
+    let UC_CPU_ARM_PXA262 = 25
+    let UC_CPU_ARM_PXA270 = 26
+    let UC_CPU_ARM_PXA270A0 = 27
+    let UC_CPU_ARM_PXA270A1 = 28
+    let UC_CPU_ARM_PXA270B0 = 29
+    let UC_CPU_ARM_PXA270B1 = 30
+    let UC_CPU_ARM_PXA270C0 = 31
+    let UC_CPU_ARM_PXA270C5 = 32
+    let UC_CPU_ARM_MAX = 33
+
     // ARM registers
 
     let UC_ARM_REG_INVALID = 0
@@ -127,7 +164,28 @@ module Arm =
     let UC_ARM_REG_MSP = 115
     let UC_ARM_REG_PSP = 116
     let UC_ARM_REG_CONTROL = 117
-    let UC_ARM_REG_ENDING = 118
+    let UC_ARM_REG_IAPSR = 118
+    let UC_ARM_REG_EAPSR = 119
+    let UC_ARM_REG_XPSR = 120
+    let UC_ARM_REG_EPSR = 121
+    let UC_ARM_REG_IEPSR = 122
+    let UC_ARM_REG_PRIMASK = 123
+    let UC_ARM_REG_BASEPRI = 124
+    let UC_ARM_REG_BASEPRI_MAX = 125
+    let UC_ARM_REG_FAULTMASK = 126
+    let UC_ARM_REG_APSR_NZCVQ = 127
+    let UC_ARM_REG_APSR_G = 128
+    let UC_ARM_REG_APSR_NZCVQG = 129
+    let UC_ARM_REG_IAPSR_NZCVQ = 130
+    let UC_ARM_REG_IAPSR_G = 131
+    let UC_ARM_REG_IAPSR_NZCVQG = 132
+    let UC_ARM_REG_EAPSR_NZCVQ = 133
+    let UC_ARM_REG_EAPSR_G = 134
+    let UC_ARM_REG_EAPSR_NZCVQG = 135
+    let UC_ARM_REG_XPSR_NZCVQ = 136
+    let UC_ARM_REG_XPSR_G = 137
+    let UC_ARM_REG_XPSR_NZCVQG = 138
+    let UC_ARM_REG_ENDING = 139
 
     // alias registers
     let UC_ARM_REG_R13 = 12

@@ -1,8 +1,7 @@
-#![allow(non_camel_case_types)]
-
 // ARM64 registers
 #[repr(C)]
 #[derive(PartialEq, Debug, Clone, Copy)]
+#[allow(non_camel_case_types)]
 pub enum RegisterARM64 {
     INVALID = 0,
     X29 = 1,
@@ -305,7 +304,6 @@ pub enum RegisterARM64 {
     VBAR_EL2 = 288,
     VBAR_EL3 = 289,
     ENDING = 290,
-
     // alias registers
     // (assoc) IP0 = 215,
     // (assoc) IP1 = 216,
@@ -318,4 +316,10 @@ impl RegisterARM64 {
     pub const IP1: RegisterARM64 = RegisterARM64::X17;
     pub const FP: RegisterARM64 = RegisterARM64::X29;
     pub const LR: RegisterARM64 = RegisterARM64::X30;
+}
+
+impl From<RegisterARM64> for i32 {
+    fn from(r: RegisterARM64) -> Self {
+        r as i32
+    }
 }

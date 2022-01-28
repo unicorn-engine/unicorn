@@ -5,7 +5,10 @@ Key developers
 ==============
 Nguyen Anh Quynh <aquynh -at- gmail.com>
 Dang Hoang Vu <dang.hvu -at- gmail.com>
+Huitao Chen (chenhuitao)
 Ziqiao Kong (lazymio)
+KaiJernLau (xwings)
+
 
 Beta testers (in no particular order)
 ==============================
@@ -72,5 +75,8 @@ Philippe Antoine (Catena cyber): fuzzing
 Huitao Chen (chenhuitao) & KaiJern Lau (xwings): Cmake support
 Huitao Chen (chenhuitao) & KaiJern Lau (xwings): Python3 support for building
 Kevin Foo (chfl4gs): Travis-CI migration
+Simon Gorchakov: PowerPC target
+Stuart Dootson (studoot): MSVC compatibility with PowerPC target support
 Ziqiao Kong (lazymio): uc_context_free() API and various bug fix & improvement.
 Sven Almgren (blindmatrix): bug fix
+Chenxu Wu (kabeor): Documentation

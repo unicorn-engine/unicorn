@@ -4,6 +4,13 @@ package unicorn;
 
 public interface Arm64Const {
 
+// ARM64 CPU
+
+   public static final int UC_CPU_AARCH64_A57 = 0;
+   public static final int UC_CPU_AARCH64_A53 = 1;
+   public static final int UC_CPU_AARCH64_A72 = 2;
+   public static final int UC_CPU_AARCH64_MAX = 3;
+
 // ARM64 registers
 
    public static final int UC_ARM64_REG_INVALID = 0;

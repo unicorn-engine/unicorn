@@ -12,8 +12,46 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
+
+//> ARM CPU
+typedef enum uc_cpu_arm {
+    UC_CPU_ARM_926 = 0,
+    UC_CPU_ARM_946,
+    UC_CPU_ARM_1026,
+    UC_CPU_ARM_1136_R2,
+    UC_CPU_ARM_1136,
+    UC_CPU_ARM_1176,
+    UC_CPU_ARM_11MPCORE,
+    UC_CPU_ARM_CORTEX_M0,
+    UC_CPU_ARM_CORTEX_M3,
+    UC_CPU_ARM_CORTEX_M4,
+    UC_CPU_ARM_CORTEX_M7,
+    UC_CPU_ARM_CORTEX_M33,
+    UC_CPU_ARM_CORTEX_R5,
+    UC_CPU_ARM_CORTEX_R5F,
+    UC_CPU_ARM_CORTEX_A7,
+    UC_CPU_ARM_CORTEX_A8,
+    UC_CPU_ARM_CORTEX_A9,
+    UC_CPU_ARM_CORTEX_A15,
+    UC_CPU_ARM_TI925T,
+    UC_CPU_ARM_SA1100,
+    UC_CPU_ARM_SA1110,
+    UC_CPU_ARM_PXA250,
+    UC_CPU_ARM_PXA255,
+    UC_CPU_ARM_PXA260,
+    UC_CPU_ARM_PXA261,
+    UC_CPU_ARM_PXA262,
+    UC_CPU_ARM_PXA270,
+    UC_CPU_ARM_PXA270A0,
+    UC_CPU_ARM_PXA270A1,
+    UC_CPU_ARM_PXA270B0,
+    UC_CPU_ARM_PXA270B1,
+    UC_CPU_ARM_PXA270C0,
+    UC_CPU_ARM_PXA270C5,
+    UC_CPU_ARM_MAX
+} uc_cpu_arm;
 
 //> ARM registers
 typedef enum uc_arm_reg {
@@ -137,7 +175,28 @@ typedef enum uc_arm_reg {
     UC_ARM_REG_MSP,
     UC_ARM_REG_PSP,
     UC_ARM_REG_CONTROL,
-    UC_ARM_REG_ENDING,		// <-- mark the end of the list or registers
+    UC_ARM_REG_IAPSR,
+    UC_ARM_REG_EAPSR,
+    UC_ARM_REG_XPSR,
+    UC_ARM_REG_EPSR,
+    UC_ARM_REG_IEPSR,
+    UC_ARM_REG_PRIMASK,
+    UC_ARM_REG_BASEPRI,
+    UC_ARM_REG_BASEPRI_MAX,
+    UC_ARM_REG_FAULTMASK,
+    UC_ARM_REG_APSR_NZCVQ,
+    UC_ARM_REG_APSR_G,
+    UC_ARM_REG_APSR_NZCVQG,
+    UC_ARM_REG_IAPSR_NZCVQ,
+    UC_ARM_REG_IAPSR_G,
+    UC_ARM_REG_IAPSR_NZCVQG,
+    UC_ARM_REG_EAPSR_NZCVQ,
+    UC_ARM_REG_EAPSR_G,
+    UC_ARM_REG_EAPSR_NZCVQG,
+    UC_ARM_REG_XPSR_NZCVQ,
+    UC_ARM_REG_XPSR_G,
+    UC_ARM_REG_XPSR_NZCVQG,
+    UC_ARM_REG_ENDING, // <-- mark the end of the list or registers
 
     //> alias registers
     UC_ARM_REG_R13 = UC_ARM_REG_SP,

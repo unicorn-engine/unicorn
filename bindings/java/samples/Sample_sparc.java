@@ -69,9 +69,9 @@ public class Sample_sparc {
       
    static void test_sparc()
    {
-       Long g1 = new Long(0x1230);     // G1 register
-       Long g2 = new Long(0x6789);     // G2 register
-       Long g3 = new Long(0x5555);     // G3 register
+       Long g1 = 0x1230L;     // G1 register
+       Long g2 = 0x6789L;     // G2 register
+       Long g3 = 0x5555L;     // G3 register
    
        System.out.print("Emulate SPARC code\n");
    

@@ -8,8 +8,8 @@ import (
 
 /*
 #cgo CFLAGS: -O3 -Wall -Werror -I../../../include
-#cgo LDFLAGS: -L../../../ -lunicorn
-#cgo linux LDFLAGS: -L../../../ -lunicorn -lrt
+#cgo LDFLAGS: -L../../../ -lunicorn -Wl,-rpath,${SRCDIR}/../../../
+#cgo linux LDFLAGS: -L../../../ -lunicorn -lrt -Wl,-rpath,${SRCDIR}/../../../
 #include <unicorn/unicorn.h>
 #include "uc.h"
 */
@@ -62,6 +62,7 @@ type Unicorn interface {
 	Handle() *C.uc_engine
 	RegWriteX86Msr(reg uint64, val uint64) error
 	RegReadX86Msr(reg uint64) (uint64, error)
+	SetCPUModel(model int) error
 }
 
 type uc struct {
@@ -232,4 +233,9 @@ func (u *uc) Query(queryType int) (uint64, error) {
 
 func (u *uc) Handle() *C.uc_engine {
 	return u.handle
+}
+
+func (u *uc) SetCPUModel(model int) error {
+	ucerr := C.uc_ctl_set_cpu_model_helper(u.handle, C.int(model))
+	return errReturn(ucerr)
 }

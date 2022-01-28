@@ -1,11 +1,13 @@
-#![deny(rust_2018_idioms)]
+extern crate alloc;
 
-use std::cell::RefCell;
-use std::rc::Rc;
-use unicorn::unicorn_const::{uc_error, Arch, HookType, MemType, Mode, Permission, SECOND_SCALE};
-use unicorn::{InsnSysX86, RegisterARM, RegisterMIPS, RegisterPPC, RegisterX86};
+use alloc::rc::Rc;
+use core::cell::RefCell;
+use unicorn_engine::unicorn_const::{
+    uc_error, Arch, HookType, MemType, Mode, Permission, SECOND_SCALE,
+};
+use unicorn_engine::{InsnSysX86, RegisterARM, RegisterMIPS, RegisterPPC, RegisterX86, Unicorn};
 
-pub static X86_REGISTERS: [RegisterX86; 145] = [
+pub static X86_REGISTERS: [RegisterX86; 125] = [
     RegisterX86::AH,
     RegisterX86::AL,
     RegisterX86::AX,
@@ -32,7 +34,6 @@ pub static X86_REGISTERS: [RegisterX86; 145] = [
     RegisterX86::EDX,
     RegisterX86::EFLAGS,
     RegisterX86::EIP,
-    RegisterX86::EIZ,
     RegisterX86::ES,
     RegisterX86::ESI,
     RegisterX86::ESP,
@@ -47,7 +48,6 @@ pub static X86_REGISTERS: [RegisterX86; 145] = [
     RegisterX86::RDI,
     RegisterX86::RDX,
     RegisterX86::RIP,
-    RegisterX86::RIZ,
     RegisterX86::RSI,
     RegisterX86::RSP,
     RegisterX86::SI,
@@ -60,17 +60,7 @@ pub static X86_REGISTERS: [RegisterX86; 145] = [
     RegisterX86::CR2,
     RegisterX86::CR3,
     RegisterX86::CR4,
-    RegisterX86::CR5,
-    RegisterX86::CR6,
-    RegisterX86::CR7,
     RegisterX86::CR8,
-    RegisterX86::CR9,
-    RegisterX86::CR10,
-    RegisterX86::CR11,
-    RegisterX86::CR12,
-    RegisterX86::CR13,
-    RegisterX86::CR14,
-    RegisterX86::CR15,
     RegisterX86::DR0,
     RegisterX86::DR1,
     RegisterX86::DR2,
@@ -79,14 +69,6 @@ pub static X86_REGISTERS: [RegisterX86; 145] = [
     RegisterX86::DR5,
     RegisterX86::DR6,
     RegisterX86::DR7,
-    RegisterX86::DR8,
-    RegisterX86::DR9,
-    RegisterX86::DR10,
-    RegisterX86::DR11,
-    RegisterX86::DR12,
-    RegisterX86::DR13,
-    RegisterX86::DR14,
-    RegisterX86::DR15,
     RegisterX86::FP0,
     RegisterX86::FP1,
     RegisterX86::FP2,
@@ -153,17 +135,14 @@ pub static X86_REGISTERS: [RegisterX86; 145] = [
     RegisterX86::R15W,
 ];
 
-type Unicorn<'a> = unicorn::UnicornHandle<'a>;
-
 #[test]
 fn emulate_x86() {
     let x86_code32: Vec<u8> = vec![0x41, 0x4a]; // INC ecx; DEC edx
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::X86, Mode::MODE_32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_32)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
-    assert_eq!(emu.reg_write(RegisterX86::EAX as i32, 123), Ok(()));
-    assert_eq!(emu.reg_read(RegisterX86::EAX as i32), Ok(123));
+    assert_eq!(emu.reg_write(RegisterX86::EAX, 123), Ok(()));
+    assert_eq!(emu.reg_read(RegisterX86::EAX), Ok(123));
 
     // Attempt to write to memory before mapping it.
     assert_eq!(
@@ -178,8 +157,8 @@ fn emulate_x86() {
         Ok(x86_code32.clone())
     );
 
-    assert_eq!(emu.reg_write(RegisterX86::ECX as i32, 10), Ok(()));
-    assert_eq!(emu.reg_write(RegisterX86::EDX as i32, 50), Ok(()));
+    assert_eq!(emu.reg_write(RegisterX86::ECX, 10), Ok(()));
+    assert_eq!(emu.reg_write(RegisterX86::EDX, 50), Ok(()));
 
     assert_eq!(
         emu.emu_start(
@@ -190,8 +169,8 @@ fn emulate_x86() {
         ),
         Ok(())
     );
-    assert_eq!(emu.reg_read(RegisterX86::ECX as i32), Ok(11));
-    assert_eq!(emu.reg_read(RegisterX86::EDX as i32), Ok(49));
+    assert_eq!(emu.reg_read(RegisterX86::ECX), Ok(11));
+    assert_eq!(emu.reg_read(RegisterX86::EDX), Ok(49));
 }
 
 #[test]
@@ -203,16 +182,15 @@ fn x86_code_callback() {
     let codes_cell = Rc::new(RefCell::new(codes));
 
     let callback_codes = codes_cell.clone();
-    let callback = move |_: Unicorn<'_>, address: u64, size: u32| {
+    let callback = move |_: &mut Unicorn<'_, ()>, address: u64, size: u32| {
         let mut codes = callback_codes.borrow_mut();
         codes.push(CodeExpectation(address, size));
     };
 
     let x86_code32: Vec<u8> = vec![0x41, 0x4a]; // INC ecx; DEC edx
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::X86, Mode::MODE_32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_32)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
 
@@ -235,15 +213,14 @@ fn x86_intr_callback() {
     let intr_cell = Rc::new(RefCell::new(IntrExpectation(0)));
 
     let callback_intr = intr_cell.clone();
-    let callback = move |_: Unicorn<'_>, intno: u32| {
+    let callback = move |_: &mut Unicorn<'_, ()>, intno: u32| {
         *callback_intr.borrow_mut() = IntrExpectation(intno);
     };
 
     let x86_code32: Vec<u8> = vec![0xcd, 0x80]; // INT 0x80;
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::X86, Mode::MODE_32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_32)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
 
@@ -277,11 +254,20 @@ fn x86_mem_callback() {
     let mems_cell = Rc::new(RefCell::new(mems));
 
     let callback_mems = mems_cell.clone();
-    let callback =
-        move |_: Unicorn<'_>, mem_type: MemType, address: u64, size: usize, value: i64| {
-            let mut mems = callback_mems.borrow_mut();
-            mems.push(MemExpectation(mem_type, address, size, value));
-        };
+    let callback = move |uc: &mut Unicorn<'_, ()>,
+                         mem_type: MemType,
+                         address: u64,
+                         size: usize,
+                         value: i64| {
+        let mut mems = callback_mems.borrow_mut();
+
+        mems.push(MemExpectation(mem_type, address, size, value));
+
+        if mem_type == MemType::READ_UNMAPPED {
+            uc.mem_map(address, 0x1000, Permission::ALL).unwrap();
+        }
+        true
+    };
 
     // mov eax, 0xdeadbeef;
     // mov [0x2000], eax;
@@ -290,16 +276,15 @@ fn x86_mem_callback() {
         0xB8, 0xEF, 0xBE, 0xAD, 0xDE, 0xA3, 0x00, 0x20, 0x00, 0x00, 0xA1, 0x00, 0x00, 0x01, 0x00,
     ];
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::X86, Mode::MODE_32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_32)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
 
     let hook = emu
-        .add_mem_hook(HookType::MEM_ALL, 0, std::u64::MAX, callback)
+        .add_mem_hook(HookType::MEM_ALL, 0, u64::MAX, callback)
         .expect("failed to add memory hook");
-    assert_eq!(emu.reg_write(RegisterX86::EAX as i32, 0x123), Ok(()));
+    assert_eq!(emu.reg_write(RegisterX86::EAX, 0x123), Ok(()));
     assert_eq!(
         emu.emu_start(
             0x1000,
@@ -307,7 +292,7 @@ fn x86_mem_callback() {
             10 * SECOND_SCALE,
             0x1000
         ),
-        Err(uc_error::READ_UNMAPPED)
+        Ok(())
     );
 
     assert_eq!(expects, *mems_cell.borrow());
@@ -322,15 +307,14 @@ fn x86_insn_in_callback() {
     let insn_cell = Rc::new(RefCell::new(InsnInExpectation(0, 0)));
 
     let callback_insn = insn_cell.clone();
-    let callback = move |_: Unicorn<'_>, port: u32, size: usize| {
+    let callback = move |_: &mut Unicorn<()>, port: u32, size: usize| {
         *callback_insn.borrow_mut() = InsnInExpectation(port, size);
     };
 
     let x86_code32: Vec<u8> = vec![0xe5, 0x10]; // IN eax, 0x10;
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::X86, Mode::MODE_32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_32)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
 
@@ -359,15 +343,14 @@ fn x86_insn_out_callback() {
     let insn_cell = Rc::new(RefCell::new(InsnOutExpectation(0, 0, 0)));
 
     let callback_insn = insn_cell.clone();
-    let callback = move |_: Unicorn<'_>, port: u32, size: usize, value: u32| {
+    let callback = move |_: &mut Unicorn<'_, ()>, port: u32, size: usize, value: u32| {
         *callback_insn.borrow_mut() = InsnOutExpectation(port, size, value);
     };
 
     let x86_code32: Vec<u8> = vec![0xb0, 0x32, 0xe6, 0x46]; // MOV al, 0x32; OUT  0x46, al;
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::X86, Mode::MODE_32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_32)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
 
@@ -396,9 +379,9 @@ fn x86_insn_sys_callback() {
     let insn_cell = Rc::new(RefCell::new(InsnSysExpectation(0)));
 
     let callback_insn = insn_cell.clone();
-    let callback = move |uc: Unicorn<'_>| {
+    let callback = move |uc: &mut Unicorn<'_, ()>| {
         println!("!!!!");
-        let rax = uc.reg_read(RegisterX86::RAX as i32).unwrap();
+        let rax = uc.reg_read(RegisterX86::RAX).unwrap();
         *callback_insn.borrow_mut() = InsnSysExpectation(rax);
     };
 
@@ -407,9 +390,8 @@ fn x86_insn_sys_callback() {
         0x48, 0xB8, 0xEF, 0xBE, 0xAD, 0xDE, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x05,
     ];
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::X86, Mode::MODE_64)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_64)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &x86_code), Ok(()));
 
@@ -431,14 +413,131 @@ fn x86_insn_sys_callback() {
 }
 
 #[test]
+fn x86_mmio() {
+    #[derive(PartialEq, Debug)]
+    struct MmioReadExpectation(u64, usize);
+    #[derive(PartialEq, Debug)]
+    struct MmioWriteExpectation(u64, usize, u64);
+    let read_expect = MmioReadExpectation(4, 4);
+    let write_expect = MmioWriteExpectation(8, 2, 42);
+
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_64)
+        .expect("failed to initialize unicorn instance");
+    assert_eq!(emu.mem_map(0x1000, 0x1000, Permission::ALL), Ok(()));
+
+    {
+        // MOV eax, [0x2004]; MOV [0x2008], ax;
+        let x86_code: Vec<u8> = vec![
+            0x8B, 0x04, 0x25, 0x04, 0x20, 0x00, 0x00, 0x66, 0x89, 0x04, 0x25, 0x08, 0x20, 0x00,
+            0x00,
+        ];
+
+        let read_cell = Rc::new(RefCell::new(MmioReadExpectation(0, 0)));
+        let cb_read_cell = read_cell.clone();
+        let read_callback = move |_: &mut Unicorn<'_, ()>, offset, size| {
+            *cb_read_cell.borrow_mut() = MmioReadExpectation(offset, size);
+            42
+        };
+
+        let write_cell = Rc::new(RefCell::new(MmioWriteExpectation(0, 0, 0)));
+        let cb_write_cell = write_cell.clone();
+        let write_callback = move |_: &mut Unicorn<'_, ()>, offset, size, value| {
+            *cb_write_cell.borrow_mut() = MmioWriteExpectation(offset, size, value);
+        };
+
+        assert_eq!(emu.mem_write(0x1000, &x86_code), Ok(()));
+
+        assert_eq!(
+            emu.mmio_map(0x2000, 0x1000, Some(read_callback), Some(write_callback)),
+            Ok(())
+        );
+
+        assert_eq!(
+            emu.emu_start(
+                0x1000,
+                0x1000 + x86_code.len() as u64,
+                10 * SECOND_SCALE,
+                1000
+            ),
+            Ok(())
+        );
+
+        assert_eq!(read_expect, *read_cell.borrow());
+        assert_eq!(write_expect, *write_cell.borrow());
+
+        assert_eq!(emu.mem_unmap(0x2000, 0x1000), Ok(()));
+    }
+
+    {
+        // MOV eax, [0x2004];
+        let x86_code: Vec<u8> = vec![0x8B, 0x04, 0x25, 0x04, 0x20, 0x00, 0x00];
+
+        let read_cell = Rc::new(RefCell::new(MmioReadExpectation(0, 0)));
+        let cb_read_cell = read_cell.clone();
+        let read_callback = move |_: &mut Unicorn<'_, ()>, offset, size| {
+            *cb_read_cell.borrow_mut() = MmioReadExpectation(offset, size);
+            42
+        };
+
+        assert_eq!(emu.mem_write(0x1000, &x86_code), Ok(()));
+
+        assert_eq!(emu.mmio_map_ro(0x2000, 0x1000, read_callback), Ok(()));
+
+        assert_eq!(
+            emu.emu_start(
+                0x1000,
+                0x1000 + x86_code.len() as u64,
+                10 * SECOND_SCALE,
+                1000
+            ),
+            Ok(())
+        );
+
+        assert_eq!(read_expect, *read_cell.borrow());
+
+        assert_eq!(emu.mem_unmap(0x2000, 0x1000), Ok(()));
+    }
+
+    {
+        // MOV ax, 42; MOV [0x2008], ax;
+        let x86_code: Vec<u8> = vec![
+            0x66, 0xB8, 0x2A, 0x00, 0x66, 0x89, 0x04, 0x25, 0x08, 0x20, 0x00, 0x00,
+        ];
+
+        let write_cell = Rc::new(RefCell::new(MmioWriteExpectation(0, 0, 0)));
+        let cb_write_cell = write_cell.clone();
+        let write_callback = move |_: &mut Unicorn<'_, ()>, offset, size, value| {
+            *cb_write_cell.borrow_mut() = MmioWriteExpectation(offset, size, value);
+        };
+
+        assert_eq!(emu.mem_write(0x1000, &x86_code), Ok(()));
+
+        assert_eq!(emu.mmio_map_wo(0x2000, 0x1000, write_callback), Ok(()));
+
+        assert_eq!(
+            emu.emu_start(
+                0x1000,
+                0x1000 + x86_code.len() as u64,
+                10 * SECOND_SCALE,
+                1000
+            ),
+            Ok(())
+        );
+
+        assert_eq!(write_expect, *write_cell.borrow());
+
+        assert_eq!(emu.mem_unmap(0x2000, 0x1000), Ok(()));
+    }
+}
+
+#[test]
 fn emulate_arm() {
     let arm_code32: Vec<u8> = vec![0x83, 0xb0]; // sub    sp, #0xc
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::ARM, Mode::THUMB)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::ARM, Mode::THUMB)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
-    assert_eq!(emu.reg_write(RegisterARM::R1 as i32, 123), Ok(()));
-    assert_eq!(emu.reg_read(RegisterARM::R1 as i32), Ok(123));
+    assert_eq!(emu.reg_write(RegisterARM::R1, 123), Ok(()));
+    assert_eq!(emu.reg_read(RegisterARM::R1), Ok(123));
 
     // Attempt to write to memory before mapping it.
     assert_eq!(
@@ -453,8 +552,8 @@ fn emulate_arm() {
         Ok(arm_code32.clone())
     );
 
-    assert_eq!(emu.reg_write(RegisterARM::SP as i32, 12), Ok(()));
-    assert_eq!(emu.reg_write(RegisterARM::R0 as i32, 10), Ok(()));
+    assert_eq!(emu.reg_write(RegisterARM::SP, 12), Ok(()));
+    assert_eq!(emu.reg_write(RegisterARM::R0, 10), Ok(()));
 
     // ARM checks the least significant bit of the address to know
     // if the code is in Thumb mode.
@@ -467,24 +566,23 @@ fn emulate_arm() {
         ),
         Ok(())
     );
-    assert_eq!(emu.reg_read(RegisterARM::SP as i32), Ok(0));
-    assert_eq!(emu.reg_read(RegisterARM::R0 as i32), Ok(10));
+    assert_eq!(emu.reg_read(RegisterARM::SP), Ok(0));
+    assert_eq!(emu.reg_read(RegisterARM::R0), Ok(10));
 }
 
 #[test]
 fn emulate_mips() {
     let mips_code32 = vec![0x56, 0x34, 0x21, 0x34]; // ori $at, $at, 0x3456;
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::MIPS, Mode::MODE_32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::MIPS, Mode::MODE_32)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &mips_code32), Ok(()));
     assert_eq!(
         emu.mem_read_as_vec(0x1000, mips_code32.len()),
         Ok(mips_code32.clone())
     );
-    assert_eq!(emu.reg_write(RegisterMIPS::AT as i32, 0), Ok(()));
+    assert_eq!(emu.reg_write(RegisterMIPS::AT, 0), Ok(()));
     assert_eq!(
         emu.emu_start(
             0x1000,
@@ -494,24 +592,23 @@ fn emulate_mips() {
         ),
         Ok(())
     );
-    assert_eq!(emu.reg_read(RegisterMIPS::AT as i32), Ok(0x3456));
+    assert_eq!(emu.reg_read(RegisterMIPS::AT), Ok(0x3456));
 }
 
 #[test]
 fn emulate_ppc() {
     let ppc_code32 = vec![0x7F, 0x46, 0x1A, 0x14]; // add 26, 6, 3
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::PPC, Mode::PPC32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::PPC, Mode::PPC32 | Mode::BIG_ENDIAN)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &ppc_code32), Ok(()));
     assert_eq!(
         emu.mem_read_as_vec(0x1000, ppc_code32.len()),
         Ok(ppc_code32.clone())
     );
-    assert_eq!(emu.reg_write(RegisterPPC::GPR3 as i32, 42), Ok(()));
-    assert_eq!(emu.reg_write(RegisterPPC::GPR6 as i32, 1337), Ok(()));
+    assert_eq!(emu.reg_write(RegisterPPC::GPR3, 42), Ok(()));
+    assert_eq!(emu.reg_write(RegisterPPC::GPR6, 1337), Ok(()));
     assert_eq!(
         emu.emu_start(
             0x1000,
@@ -521,14 +618,13 @@ fn emulate_ppc() {
         ),
         Ok(())
     );
-    assert_eq!(emu.reg_read(RegisterPPC::GPR26 as i32), Ok(1379));
+    assert_eq!(emu.reg_read(RegisterPPC::GPR26), Ok(1379));
 }
 
 #[test]
 fn mem_unmapping() {
-    let mut unicorn = unicorn::Unicorn::new(Arch::X86, Mode::MODE_32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_32)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_unmap(0x1000, 0x4000), Ok(()));
 }
@@ -539,9 +635,8 @@ fn mem_map_ptr() {
     let mut mem: [u8; 4000] = [0; 4000];
     let x86_code32: Vec<u8> = vec![0x41, 0x4a]; // INC ecx; DEC edx
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::X86, Mode::MODE_32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_32)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
 
     // Attempt to write to memory before mapping it.
     assert_eq!(
@@ -550,7 +645,7 @@ fn mem_map_ptr() {
     );
 
     assert_eq!(
-        emu.mem_map_ptr(0x1000, 0x4000, Permission::ALL, mem.as_mut_ptr() as _),
+        unsafe { emu.mem_map_ptr(0x1000, 0x4000, Permission::ALL, mem.as_mut_ptr() as _) },
         Ok(())
     );
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
@@ -559,8 +654,8 @@ fn mem_map_ptr() {
         Ok(x86_code32.clone())
     );
 
-    assert_eq!(emu.reg_write(RegisterX86::ECX as i32, 10), Ok(()));
-    assert_eq!(emu.reg_write(RegisterX86::EDX as i32, 50), Ok(()));
+    assert_eq!(emu.reg_write(RegisterX86::ECX, 10), Ok(()));
+    assert_eq!(emu.reg_write(RegisterX86::EDX, 50), Ok(()));
 
     assert_eq!(
         emu.emu_start(
@@ -571,8 +666,8 @@ fn mem_map_ptr() {
         ),
         Ok(())
     );
-    assert_eq!(emu.reg_read(RegisterX86::ECX as i32), Ok(11));
-    assert_eq!(emu.reg_read(RegisterX86::EDX as i32), Ok(49));
+    assert_eq!(emu.reg_read(RegisterX86::ECX), Ok(11));
+    assert_eq!(emu.reg_read(RegisterX86::EDX), Ok(49));
     assert_eq!(emu.mem_unmap(0x1000, 0x4000), Ok(()));
 
     // Use a Vec for the emulator memory.
@@ -586,7 +681,7 @@ fn mem_map_ptr() {
     );
 
     assert_eq!(
-        emu.mem_map_ptr(0x1000, 0x4000, Permission::ALL, mem.as_mut_ptr() as _),
+        unsafe { emu.mem_map_ptr(0x1000, 0x4000, Permission::ALL, mem.as_mut_ptr() as _) },
         Ok(())
     );
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
@@ -595,8 +690,8 @@ fn mem_map_ptr() {
         Ok(x86_code32.clone())
     );
 
-    assert_eq!(emu.reg_write(RegisterX86::ECX as i32, 10), Ok(()));
-    assert_eq!(emu.reg_write(RegisterX86::EDX as i32, 50), Ok(()));
+    assert_eq!(emu.reg_write(RegisterX86::ECX, 10), Ok(()));
+    assert_eq!(emu.reg_write(RegisterX86::EDX, 50), Ok(()));
 
     assert_eq!(
         emu.emu_start(
@@ -607,20 +702,19 @@ fn mem_map_ptr() {
         ),
         Ok(())
     );
-    assert_eq!(emu.reg_read(RegisterX86::ECX as i32), Ok(11));
-    assert_eq!(emu.reg_read(RegisterX86::EDX as i32), Ok(49));
+    assert_eq!(emu.reg_read(RegisterX86::ECX), Ok(11));
+    assert_eq!(emu.reg_read(RegisterX86::EDX), Ok(49));
     assert_eq!(emu.mem_unmap(0x1000, 0x4000), Ok(()));
 }
 
 #[test]
 fn x86_context_save_and_restore() {
-    for mode in vec![Mode::MODE_32, Mode::MODE_64] {
-        let x86_code: Vec<u8> = vec![
+    for mode in [Mode::MODE_32, Mode::MODE_64] {
+        let x86_code = [
             0x48, 0xB8, 0xEF, 0xBE, 0xAD, 0xDE, 0x00, 0x00, 0x00, 0x00, 0x0F, 0x05,
         ];
-        let mut unicorn = unicorn::Unicorn::new(Arch::X86, mode)
+        let mut emu = unicorn_engine::Unicorn::new(Arch::X86, mode)
             .expect("failed to initialize unicorn instance");
-        let mut emu = unicorn.borrow();
         assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
         assert_eq!(emu.mem_write(0x1000, &x86_code), Ok(()));
         let _ = emu.emu_start(
@@ -635,16 +729,12 @@ fn x86_context_save_and_restore() {
         let context = context.unwrap();
 
         /* and create a new emulator, into which we will "restore" that context */
-        let mut unicorn2 = unicorn::Unicorn::new(Arch::X86, mode)
+        let emu2 = unicorn_engine::Unicorn::new(Arch::X86, mode)
             .expect("failed to initialize unicorn instance");
-        let emu2 = unicorn2.borrow();
         assert_eq!(emu2.context_restore(&context), Ok(()));
         for register in X86_REGISTERS.iter() {
             println!("Testing register {:?}", register);
-            assert_eq!(
-                emu2.reg_read(*register as i32),
-                emu.reg_read(*register as i32)
-            );
+            assert_eq!(emu2.reg_read(*register), emu.reg_read(*register));
         }
     }
 }
@@ -653,21 +743,20 @@ fn x86_context_save_and_restore() {
 fn x86_block_callback() {
     #[derive(PartialEq, Debug)]
     struct BlockExpectation(u64, u32);
-    let expects = vec![BlockExpectation(0x1000, 2), BlockExpectation(0x1000, 2)];
+    let expects = vec![BlockExpectation(0x1000, 2)];
     let blocks: Vec<BlockExpectation> = Vec::new();
     let blocks_cell = Rc::new(RefCell::new(blocks));
 
     let callback_blocks = blocks_cell.clone();
-    let callback = move |_: Unicorn<'_>, address: u64, size: u32| {
+    let callback = move |_: &mut Unicorn<'_, ()>, address: u64, size: u32| {
         let mut blocks = callback_blocks.borrow_mut();
         blocks.push(BlockExpectation(address, size));
     };
 
     let x86_code32: Vec<u8> = vec![0x41, 0x4a]; // INC ecx; DEC edx
 
-    let mut unicorn = unicorn::Unicorn::new(Arch::X86, Mode::MODE_32)
+    let mut emu = unicorn_engine::Unicorn::new(Arch::X86, Mode::MODE_32)
         .expect("failed to initialize unicorn instance");
-    let mut emu = unicorn.borrow();
     assert_eq!(emu.mem_map(0x1000, 0x4000, Permission::ALL), Ok(()));
     assert_eq!(emu.mem_write(0x1000, &x86_code32), Ok(()));
 

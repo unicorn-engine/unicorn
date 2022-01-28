@@ -6,21 +6,25 @@
 #include <unicorn/unicorn.h>
 #include <string.h>
 
-
 // code to be emulated
 #define M68K_CODE "\x76\xed" // movq #-19, %d3
 
 // memory address where emulation starts
 #define ADDRESS 0x10000
 
-static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_block(uc_engine *uc, uint64_t address, uint32_t size,
+                       void *user_data)
 {
-    printf(">>> Tracing basic block at 0x%"PRIx64 ", block size = 0x%x\n", address, size);
+    printf(">>> Tracing basic block at 0x%" PRIx64 ", block size = 0x%x\n",
+           address, size);
 }
 
-static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size,
+                      void *user_data)
 {
-    printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
+    printf(">>> Tracing instruction at 0x%" PRIx64
+           ", instruction size = 0x%x\n",
+           address, size);
 }
 
 static void test_m68k(void)
@@ -29,34 +33,34 @@ static void test_m68k(void)
     uc_hook trace1, trace2;
     uc_err err;
 
-    int d0 = 0x0000;     // d0 data register
-    int d1 = 0x0000;     // d1 data register
-    int d2 = 0x0000;     // d2 data register
-    int d3 = 0x0000;     // d3 data register
-    int d4 = 0x0000;     // d4 data register
-    int d5 = 0x0000;     // d5 data register
-    int d6 = 0x0000;     // d6 data register
-    int d7 = 0x0000;     // d7 data register
+    int d0 = 0x0000; // d0 data register
+    int d1 = 0x0000; // d1 data register
+    int d2 = 0x0000; // d2 data register
+    int d3 = 0x0000; // d3 data register
+    int d4 = 0x0000; // d4 data register
+    int d5 = 0x0000; // d5 data register
+    int d6 = 0x0000; // d6 data register
+    int d7 = 0x0000; // d7 data register
 
-    int a0 = 0x0000;     // a0 address register
-    int a1 = 0x0000;     // a1 address register
-    int a2 = 0x0000;     // a2 address register
-    int a3 = 0x0000;     // a3 address register
-    int a4 = 0x0000;     // a4 address register
-    int a5 = 0x0000;     // a5 address register
-    int a6 = 0x0000;     // a6 address register
-    int a7 = 0x0000;     // a6 address register
+    int a0 = 0x0000; // a0 address register
+    int a1 = 0x0000; // a1 address register
+    int a2 = 0x0000; // a2 address register
+    int a3 = 0x0000; // a3 address register
+    int a4 = 0x0000; // a4 address register
+    int a5 = 0x0000; // a5 address register
+    int a6 = 0x0000; // a6 address register
+    int a7 = 0x0000; // a6 address register
 
-    int pc = 0x0000;     // program counter
-    int sr = 0x0000;     // status register
+    int pc = 0x0000; // program counter
+    int sr = 0x0000; // status register
 
     printf("Emulate M68K code\n");
 
     // Initialize emulator in M68K mode
     err = uc_open(UC_ARCH_M68K, UC_MODE_BIG_ENDIAN, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -96,7 +100,7 @@ static void test_m68k(void)
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(M68K_CODE)-1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(M68K_CODE) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -141,23 +145,7 @@ static void test_m68k(void)
 
 int main(int argc, char **argv, char **envp)
 {
-    // dynamically load shared library
-#ifdef DYNLOAD
-    if (!uc_dyn_load(NULL, 0)) {
-        printf("Error dynamically loading shared library.\n");
-        printf("Please check that unicorn.dll/unicorn.so is available as well as\n");
-        printf("any other dependent dll/so files.\n");
-        printf("The easiest way is to place them in the same directory as this app.\n");
-        return 1;
-    }
-#endif
-    
     test_m68k();
 
-    // dynamically free shared library
-#ifdef DYNLOAD
-    uc_dyn_free();
-#endif
-    
     return 0;
 }

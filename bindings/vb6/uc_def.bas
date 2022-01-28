@@ -59,7 +59,8 @@ Public Enum uc_arch
     UC_ARCH_PPC = 5    ' PowerPC architecture (currently unsupported)
     UC_ARCH_SPARC = 6  ' Sparc architecture
     UC_ARCH_M68K = 7   ' M68K architecture
-    UC_ARCH_MAX = 8
+    UC_ARCH_RISCV = 8  ' RISCV architecture
+    UC_ARCH_MAX = 9
 End Enum
 
 Public Enum uc_prot
@@ -130,6 +131,8 @@ Public Enum uc_mode                   'from /bindings/dotnet/common.fs
 '     UC_MODE_SPARC32 = 4              '32-bit mode
 '     UC_MODE_SPARC64 = 8              '64-bit mode
 '     UC_MODE_V9 = 16                  'SparcV9 mode (currently unsupported)
+'     UC_MODE_RISCV32 = 4              '32-bit mode
+'     UC_MODE_RISCV64 = 8              '64-bit mode
 End Enum
 
 Public Enum uc_hook_type              'from /bindings/dotnet/common.fs

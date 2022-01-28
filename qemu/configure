@@ -8,6 +8,9 @@
 CLICOLOR_FORCE= GREP_OPTIONS=
 unset CLICOLOR_FORCE GREP_OPTIONS
 
+# Don't allow CCACHE, if present, to use cached results of compile tests!
+export CCACHE_RECACHE=yes
+
 # Temporary directory used for files created while
 # configure runs. Since it is in the build directory
 # we can safely blow away any previous version of it
@@ -24,7 +27,10 @@ fi
 TMPB="qemu-conf"
 TMPC="${TMPDIR1}/${TMPB}.c"
 TMPO="${TMPDIR1}/${TMPB}.o"
+TMPCXX="${TMPDIR1}/${TMPB}.cxx"
 TMPE="${TMPDIR1}/${TMPB}.exe"
+TMPMO="${TMPDIR1}/${TMPB}.mo"
+TMPTXT="${TMPDIR1}/${TMPB}.txt"
 
 rm -f config.log
 
@@ -35,14 +41,18 @@ printf " '%s'" "$0" "$@" >> config.log
 echo >> config.log
 echo "#" >> config.log
 
-error_exit() {
-    echo
+print_error() {
+    (echo
     echo "ERROR: $1"
     while test -n "$2"; do
         echo "       $2"
         shift
     done
-    echo
+    echo) >&2
+}
+
+error_exit() {
+    print_error "$@"
     exit 1
 }
 
@@ -51,6 +61,11 @@ do_compiler() {
     # is compiler binary to execute.
     local compiler="$1"
     shift
+    if test -n "$BASH_VERSION"; then eval '
+        echo >>config.log "
+funcs: ${FUNCNAME[*]}
+lines: ${BASH_LINENO[*]}"
+    '; fi
     echo $compiler "$@" >> config.log
     $compiler "$@" >> config.log 2>&1 || return $?
     # Test passed. If this is an --enable-werror build, rerun
@@ -78,14 +93,40 @@ do_cc() {
     do_compiler "$cc" "$@"
 }
 
+do_cxx() {
+    do_compiler "$cxx" "$@"
+}
+
+update_cxxflags() {
+    # Set QEMU_CXXFLAGS from QEMU_CFLAGS by filtering out those
+    # options which some versions of GCC's C++ compiler complain about
+    # because they only make sense for C programs.
+    QEMU_CXXFLAGS="$QEMU_CXXFLAGS -D__STDC_LIMIT_MACROS -D__STDC_CONSTANT_MACROS -D__STDC_FORMAT_MACROS"
+
+    for arg in $QEMU_CFLAGS; do
+        case $arg in
+            -Wstrict-prototypes|-Wmissing-prototypes|-Wnested-externs|\
+            -Wold-style-declaration|-Wold-style-definition|-Wredundant-decls)
+                ;;
+            -std=gnu99)
+                QEMU_CXXFLAGS=${QEMU_CXXFLAGS:+$QEMU_CXXFLAGS }"-std=gnu++98"
+                ;;
+            *)
+                QEMU_CXXFLAGS=${QEMU_CXXFLAGS:+$QEMU_CXXFLAGS }$arg
+                ;;
+        esac
+    done
+}
+
 compile_object() {
-  do_cc $QEMU_CFLAGS -c -o $TMPO $TMPC
+  local_cflags="$1"
+  do_cc $QEMU_CFLAGS $local_cflags -c -o $TMPO $TMPC
 }
 
 compile_prog() {
   local_cflags="$1"
   local_ldflags="$2"
-  do_cc $QEMU_CFLAGS $local_cflags -o $TMPE $TMPC $LDFLAGS $local_ldflags
+  do_cc $QEMU_CFLAGS $local_cflags -o $TMPE $TMPC $QEMU_LDFLAGS $local_ldflags
 }
 
 # symbolically link $1 to $2.  Portable version of "ln -sf".
@@ -131,18 +172,58 @@ path_of() {
     return 1
 }
 
+glob() {
+    eval test -z '"${1#'"$2"'}"'
+}
+
+supported_target() {
+    case "$1" in
+        *-softmmu)
+            ;;
+        *)
+            print_error "Invalid target name '$target'"
+            return 1
+            ;;
+    esac
+    test "$tcg" = "yes" && return 0
+    print_error "TCG disabled, but hardware accelerator not available for '$target'"
+    return 1
+}
+
+
+ld_has() {
+    $ld --help 2>/dev/null | grep ".$1" >/dev/null 2>&1
+}
+
+# make source path absolute
+source_path=$(cd "$(dirname -- "$0")"; pwd)
+
+if printf %s\\n "$source_path" "$PWD" | grep -q "[[:space:]:]";
+then
+  error_exit "main directory cannot contain spaces nor colons"
+fi
+
 # default parameters
-source_path=`dirname "$0"`
 cpu=""
+iasl="iasl"
+interp_prefix="/usr/gnemul/qemu-%M"
 static="no"
 cross_prefix=""
 host_cc="cc"
-cc_i386=i386-pc-linux-gnu-gcc
+libs_cpu=""
+libs_softmmu=""
+libs_tools=""
 debug_info="yes"
 stack_protector=""
 
+git_update=no
+git_submodules=""
+
+git="git"
+
 # Don't accept a target_list environment variable.
 unset target_list
+unset target_list_exclude
 
 # Default value for a variable defining feature "foo".
 #  * foo="no"  feature will only be used if --enable-foo arg is given
@@ -156,40 +237,76 @@ unset target_list
 # Distributions want to ensure that several features are compiled in, and it
 # is impossible without a --enable-foo that exits if a feature is not found.
 
-debug_tcg="no"
+tcg="yes"
+membarrier=""
 debug="no"
+sanitizers="no"
 strip_opt="yes"
 bigendian="no"
 mingw32="no"
 EXESUF=""
 DSOSUF=".so"
 LDFLAGS_SHARED="-shared"
+prefix="/usr/local"
+bindir="\${prefix}/bin"
+libdir="\${prefix}/lib"
+libexecdir="\${prefix}/libexec"
+includedir="\${prefix}/include"
+sysconfdir="\${prefix}/etc"
+local_statedir="\${prefix}/var"
+confsuffix="/qemu"
 bsd="no"
 linux="no"
 solaris="no"
 softmmu="yes"
-aix="no"
+pkgversion=""
 pie=""
+cpuid_h="no"
+avx2_opt=""
+debug_stack_usage="no"
+gtk_gl="no"
+tcmalloc="no"
+jemalloc="no"
+
+supported_cpu="no"
+supported_os="no"
+bogus_os="no"
+malloc_trim=""
 
 # parse CC options first
 for opt do
-  optarg=`expr "x$opt" : 'x[^=]*=\(.*\)'`
+  optarg=$(expr "x$opt" : 'x[^=]*=\(.*\)')
   case "$opt" in
+  --cross-prefix=*) cross_prefix="$optarg"
+  ;;
   --cc=*) CC="$optarg"
   ;;
-  --source-path=*) source_path="$optarg"
+  --cxx=*) CXX="$optarg"
   ;;
   --cpu=*) cpu="$optarg"
   ;;
-  --extra-cflags=*) QEMU_CFLAGS="$optarg $QEMU_CFLAGS"
-                    EXTRA_CFLAGS="$optarg"
+  --extra-cflags=*) QEMU_CFLAGS="$QEMU_CFLAGS $optarg"
+                    QEMU_LDFLAGS="$QEMU_LDFLAGS $optarg"
   ;;
-  --extra-ldflags=*) LDFLAGS="$optarg $LDFLAGS"
+  --extra-cxxflags=*) QEMU_CXXFLAGS="$QEMU_CXXFLAGS $optarg"
+  ;;
+  --extra-ldflags=*) QEMU_LDFLAGS="$QEMU_LDFLAGS $optarg"
                      EXTRA_LDFLAGS="$optarg"
   ;;
   --enable-debug-info) debug_info="yes"
   ;;
   --disable-debug-info) debug_info="no"
+  ;;
+  --cross-cc-*[!a-zA-Z0-9_-]*=*) error_exit "Passed bad --cross-cc-FOO option"
+  ;;
+  --cross-cc-cflags-*) cc_arch=${opt#--cross-cc-flags-}; cc_arch=${cc_arch%%=*}
+                      eval "cross_cc_cflags_${cc_arch}=\$optarg"
+                      cross_cc_vars="$cross_cc_vars cross_cc_cflags_${cc_arch}"
+  ;;
+  --cross-cc-*) cc_arch=${opt#--cross-cc-}; cc_arch=${cc_arch%%=*}
+                cc_archs="$cc_archs $cc_arch"
+                eval "cross_cc_${cc_arch}=\$optarg"
+                cross_cc_vars="$cross_cc_vars cross_cc_${cc_arch}"
   ;;
   esac
 done
@@ -207,33 +324,44 @@ else
   cc="${CC-${cross_prefix}gcc}"
 fi
 
+if test -z "${CXX}${cross_prefix}"; then
+  cxx="c++"
+else
+  cxx="${CXX-${cross_prefix}g++}"
+fi
+
 ar="${AR-${cross_prefix}ar}"
 as="${AS-${cross_prefix}as}"
+ccas="${CCAS-$cc}"
 cpp="${CPP-$cc -E}"
 objcopy="${OBJCOPY-${cross_prefix}objcopy}"
 ld="${LD-${cross_prefix}ld}"
+ranlib="${RANLIB-${cross_prefix}ranlib}"
 nm="${NM-${cross_prefix}nm}"
 strip="${STRIP-${cross_prefix}strip}"
+pkg_config_exe="${PKG_CONFIG-${cross_prefix}pkg-config}"
+query_pkg_config() {
+    "${pkg_config_exe}" ${QEMU_PKG_CONFIG_FLAGS} "$@"
+}
+pkg_config=query_pkg_config
 
 # If the user hasn't specified ARFLAGS, default to 'rv', just as make does.
 ARFLAGS="${ARFLAGS-rv}"
 
 # default flags for all hosts
-QEMU_CFLAGS="-fno-strict-aliasing -fno-common $QEMU_CFLAGS"
+# We use -fwrapv to tell the compiler that we require a C dialect where
+# left shift of signed integers is well defined and has the expected
+# 2s-complement style results. (Both clang and gcc agree that it
+# provides these semantics.)
+QEMU_CFLAGS="-fno-strict-aliasing -fno-common -fwrapv -std=gnu99 $QEMU_CFLAGS"
 QEMU_CFLAGS="-Wall -Wundef -Wwrite-strings -Wmissing-prototypes $QEMU_CFLAGS"
 QEMU_CFLAGS="-Wstrict-prototypes -Wredundant-decls $QEMU_CFLAGS"
 QEMU_CFLAGS="-D_GNU_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE $QEMU_CFLAGS"
-QEMU_INCLUDES="-I. -I\$(SRC_PATH) -I\$(SRC_PATH)/include"
+QEMU_INCLUDES="-iquote . -iquote \$(SRC_PATH) -iquote \$(SRC_PATH)/accel/tcg -iquote \$(SRC_PATH)/include"
+QEMU_INCLUDES="$QEMU_INCLUDES -iquote \$(SRC_PATH)/disas/libvixl"
 if test "$debug_info" = "yes"; then
     CFLAGS="-g $CFLAGS"
-    LDFLAGS="-g $LDFLAGS"
-else
-    CFLAGS="-O3 $CFLAGS"
-    LDFLAGS="-O3 $LDFLAGS"
 fi
-
-# make source path absolute
-source_path=`cd "$source_path"; pwd`
 
 # running configure in the source tree?
 # we know that's the case if configure is there.
@@ -253,6 +381,20 @@ EOF
   compile_object
 }
 
+check_include() {
+cat > $TMPC <<EOF
+#include <$1>
+int main(void) { return 0; }
+EOF
+  compile_object
+}
+
+write_c_skeleton() {
+    cat > $TMPC <<EOF
+int main(void) { return 0; }
+EOF
+}
+
 if check_define __linux__ ; then
   targetos="Linux"
 elif check_define _WIN32 ; then
@@ -263,8 +405,22 @@ elif check_define __sun__ ; then
   targetos='SunOS'
 elif check_define __HAIKU__ ; then
   targetos='Haiku'
+elif check_define __FreeBSD__ ; then
+  targetos='FreeBSD'
+elif check_define __FreeBSD_kernel__ && check_define __GLIBC__; then
+  targetos='GNU/kFreeBSD'
+elif check_define __DragonFly__ ; then
+  targetos='DragonFly'
+elif check_define __NetBSD__; then
+  targetos='NetBSD'
+elif check_define __APPLE__; then
+  targetos='Darwin'
 else
-  targetos=`uname -s`
+  # This is a fatal error, but don't report it yet, because we
+  # might be going to just print the --help text, or it might
+  # be the result of a missing compiler.
+  targetos='bogus'
+  bogus_os='yes'
 fi
 
 # Some host OSes need non-standard checks for which CPU to use.
@@ -282,7 +438,7 @@ Darwin)
   fi
   ;;
 SunOS)
-  # `uname -m` returns i86pc even on an x86_64 box, so default based on isainfo
+  # $(uname -m) returns i86pc even on an x86_64 box, so default based on isainfo
   if test -z "$cpu" && test "$(isainfo -k)" = "amd64"; then
     cpu="x86_64"
   fi
@@ -307,54 +463,70 @@ elif check_define __sparc__ ; then
   fi
 elif check_define _ARCH_PPC ; then
   if check_define _ARCH_PPC64 ; then
-    cpu="ppc64"
+    if check_define _LITTLE_ENDIAN ; then
+      cpu="ppc64le"
+    else
+      cpu="ppc64"
+    fi
   else
     cpu="ppc"
   fi
 elif check_define __mips__ ; then
   cpu="mips"
-elif check_define __ia64__ ; then
-  cpu="ia64"
 elif check_define __s390__ ; then
   if check_define __s390x__ ; then
     cpu="s390x"
   else
     cpu="s390"
   fi
+elif check_define __riscv ; then
+  if check_define _LP64 ; then
+    cpu="riscv64"
+  else
+    cpu="riscv32"
+  fi
 elif check_define __arm__ ; then
   cpu="arm"
 elif check_define __aarch64__ ; then
   cpu="aarch64"
-elif check_define __hppa__ ; then
-  cpu="hppa"
 else
-  cpu=`uname -m`
+  cpu=$(uname -m)
 fi
 
 ARCH=
 # Normalise host CPU name and set ARCH.
 # Note that this case should only have supported host CPUs, not guests.
 case "$cpu" in
-  ia64|ppc|ppc64|s390|s390x|sparc64|x32)
-    cpu="$cpu"
+  ppc|ppc64|s390x|sparc64|x32|riscv32|riscv64)
+    supported_cpu="yes"
+  ;;
+  ppc64le)
+    ARCH="ppc64"
+    supported_cpu="yes"
   ;;
   i386|i486|i586|i686|i86pc|BePC)
     cpu="i386"
+    supported_cpu="yes"
   ;;
   x86_64|amd64)
     cpu="x86_64"
+    supported_cpu="yes"
   ;;
   armv*b|armv*l|arm)
     cpu="arm"
+    supported_cpu="yes"
   ;;
-  aarch64|aarch64eb)
+  aarch64)
     cpu="aarch64"
+    supported_cpu="yes"
   ;;
   mips*)
     cpu="mips"
+    supported_cpu="yes"
   ;;
   sparc|sun4[cdmuv])
     cpu="sparc"
+    supported_cpu="yes"
   ;;
   *)
     # This will result in either an error or falling back to TCI later
@@ -367,12 +539,14 @@ fi
 
 # OS specific
 
+# host *BSD for user mode
+HOST_VARIANT_DIR=""
+
 case $targetos in
-CYGWIN*)
-  linux="yes"
-;;
 MINGW32*)
   mingw32="yes"
+  supported_os="yes"
+  pie="no"
 ;;
 GNU/kFreeBSD)
   bsd="yes"
@@ -382,18 +556,26 @@ FreeBSD)
   make="${MAKE-gmake}"
   # needed for kinfo_getvmmap(3) in libutil.h
   LIBS="-lutil $LIBS"
+  # needed for kinfo_getproc
+  HOST_VARIANT_DIR="freebsd"
+  supported_os="yes"
 ;;
 DragonFly)
   bsd="yes"
   make="${MAKE-gmake}"
+  HOST_VARIANT_DIR="dragonfly"
 ;;
 NetBSD)
   bsd="yes"
   make="${MAKE-gmake}"
+  HOST_VARIANT_DIR="netbsd"
+  supported_os="yes"
 ;;
 OpenBSD)
   bsd="yes"
   make="${MAKE-gmake}"
+  HOST_VARIANT_DIR="openbsd"
+  supported_os="yes"
 ;;
 Darwin)
   bsd="yes"
@@ -401,33 +583,20 @@ Darwin)
   LDFLAGS_SHARED="-bundle -undefined dynamic_lookup"
   if [ "$cpu" = "x86_64" ] ; then
     QEMU_CFLAGS="-arch x86_64 $QEMU_CFLAGS"
-    LDFLAGS="-arch x86_64 $LDFLAGS"
+    QEMU_LDFLAGS="-arch x86_64 $QEMU_LDFLAGS"
   fi
+  QEMU_LDFLAGS="-framework CoreFoundation -framework IOKit $QEMU_LDFLAGS"
+  libs_softmmu="-F/System/Library/Frameworks -framework -framework IOKit $libs_softmmu"
   # Disable attempts to use ObjectiveC features in os/object.h since they
   # won't work when we're compiling with gcc as a C compiler.
   QEMU_CFLAGS="-DOS_OBJECT_USE_OBJC=0 $QEMU_CFLAGS"
+  HOST_VARIANT_DIR="darwin"
+  supported_os="yes"
 ;;
 SunOS)
   solaris="yes"
   make="${MAKE-gmake}"
-  ld="gld"
-  needs_libsunmath="no"
-  solarisrev=`uname -r | cut -f2 -d.`
-  if [ "$cpu" = "i386" -o "$cpu" = "x86_64" ] ; then
-    if test "$solarisrev" -le 9 ; then
-      if test -f /opt/SUNWspro/prod/lib/libsunmath.so.1; then
-        needs_libsunmath="yes"
-        QEMU_CFLAGS="-I/opt/SUNWspro/prod/include/cc $QEMU_CFLAGS"
-        LDFLAGS="-L/opt/SUNWspro/prod/lib -R/opt/SUNWspro/prod/lib $LDFLAGS"
-        LIBS="-lsunmath $LIBS"
-      else
-        error_exit "QEMU will not link correctly on Solaris 8/X86 or 9/x86 without" \
-            "libsunmath from the Sun Studio compilers tools, due to a lack of" \
-            "C99 math features in libm.so in Solaris 8/x86 and Solaris 9/x86" \
-            "Studio 11 can be downloaded from www.sun.com."
-      fi
-    fi
-  fi
+  install="${INSTALL-ginstall}"
 # needed for CMSG_ macros in sys/socket.h
   QEMU_CFLAGS="-D_XOPEN_SOURCE=600 $QEMU_CFLAGS"
 # needed for TIOCWIN* defines in termios.h
@@ -436,21 +605,20 @@ SunOS)
   solarisnetlibs="-lsocket -lnsl -lresolv"
   LIBS="$solarisnetlibs $LIBS"
 ;;
-AIX)
-  aix="yes"
-  make="${MAKE-gmake}"
-;;
 Haiku)
   haiku="yes"
   QEMU_CFLAGS="-DB_USE_POSITIVE_POSIX_ERRORS $QEMU_CFLAGS"
   LIBS="-lposix_error_mapper -lnetwork $LIBS"
 ;;
-*)
+Linux)
   linux="yes"
+  QEMU_INCLUDES="-isystem \$(SRC_PATH)/linux-headers -isystem $PWD/linux-headers $QEMU_INCLUDES"
+  supported_os="yes"
 ;;
 esac
 
 : ${make=${MAKE-make}}
+: ${install=${INSTALL-install}}
 
 # Default objcc to clang if available, otherwise use CC
 if has clang; then
@@ -462,38 +630,52 @@ fi
 if test "$mingw32" = "yes" ; then
   EXESUF=".exe"
   DSOSUF=".dll"
-  QEMU_CFLAGS="-DWIN32_LEAN_AND_MEAN -DWINVER=0x501 $QEMU_CFLAGS"
-  # enable C99/POSIX format strings (needs mingw32-runtime 3.15 or later)
-  QEMU_CFLAGS="-D__USE_MINGW_ANSI_STDIO=1 $QEMU_CFLAGS"
-  LIBS="-lwinmm -lws2_32 -liphlpapi $LIBS"
-cat > $TMPC << EOF
-int main(void) { return 0; }
-EOF
+  # MinGW needs -mthreads for TLS and macro _MT.
+  QEMU_CFLAGS="-mthreads $QEMU_CFLAGS"
+  LIBS="-lwinmm -lws2_32 $LIBS"
+  write_c_skeleton;
   if compile_prog "" "-liberty" ; then
     LIBS="-liberty $LIBS"
   fi
+  prefix="c:/Program Files/QEMU"
+  bindir="\${prefix}"
+  sysconfdir="\${prefix}"
+  local_statedir=
+  confsuffix=""
 fi
 
 werror=""
 
 for opt do
-  optarg=`expr "x$opt" : 'x[^=]*=\(.*\)'`
+  optarg=$(expr "x$opt" : 'x[^=]*=\(.*\)')
   case "$opt" in
   --help|-h) show_help=yes
   ;;
   --version|-V) exec cat $source_path/VERSION
   ;;
-  --source-path=*)
+  --prefix=*) prefix="$optarg"
+  ;;
+  --interp-prefix=*) interp_prefix="$optarg"
+  ;;
+  --cross-prefix=*)
   ;;
   --cc=*)
   ;;
   --host-cc=*) host_cc="$optarg"
   ;;
+  --cxx=*)
+  ;;
+  --iasl=*) iasl="$optarg"
+  ;;
   --objcc=*) objcc="$optarg"
   ;;
   --make=*) make="$optarg"
   ;;
+  --install=*) install="$optarg"
+  ;;
   --extra-cflags=*)
+  ;;
+  --extra-cxxflags=*)
   ;;
   --extra-ldflags=*)
   ;;
@@ -501,25 +683,68 @@ for opt do
   ;;
   --disable-debug-info)
   ;;
+  --cross-cc-*)
+  ;;
   --cpu=*)
   ;;
   --target-list=*) target_list="$optarg"
+                   if test "$target_list_exclude"; then
+                       error_exit "Can't mix --target-list with --target-list-exclude"
+                   fi
+  ;;
+  --target-list-exclude=*) target_list_exclude="$optarg"
+                   if test "$target_list"; then
+                       error_exit "Can't mix --target-list-exclude with --target-list"
+                   fi
   ;;
   --static)
     static="yes"
-    LDFLAGS="-static $LDFLAGS"
+    QEMU_PKG_CONFIG_FLAGS="--static $QEMU_PKG_CONFIG_FLAGS"
   ;;
-  --enable-debug-tcg) debug_tcg="yes"
+  --bindir=*) bindir="$optarg"
   ;;
-  --disable-debug-tcg) debug_tcg="no"
+  --libdir=*) libdir="$optarg"
+  ;;
+  --libexecdir=*) libexecdir="$optarg"
+  ;;
+  --includedir=*) includedir="$optarg"
+  ;;
+  --with-confsuffix=*) confsuffix="$optarg"
+  ;;
+  --sysconfdir=*) sysconfdir="$optarg"
+  ;;
+  --localstatedir=*) local_statedir="$optarg"
+  ;;
+  --host=*|--build=*|\
+  --disable-dependency-tracking|\
+  --sbindir=*|--sharedstatedir=*|\
+  --oldincludedir=*|--datarootdir=*|--infodir=*|--localedir=*|\
+  --htmldir=*|--dvidir=*|--pdfdir=*|--psdir=*)
+    # These switches are silently ignored, for compatibility with
+    # autoconf-generated configure scripts. This allows QEMU's
+    # configure to be used by RPM and similar macros that set
+    # lots of directory switches by default.
   ;;
   --enable-debug)
       # Enable debugging options that aren't excessively noisy
-      debug_tcg="yes"
       debug="yes"
       strip_opt="no"
   ;;
+  --enable-sanitizers) sanitizers="yes"
+  ;;
+  --disable-sanitizers) sanitizers="no"
+  ;;
   --disable-strip) strip_opt="no"
+  ;;
+  --disable-tcg) tcg="no"
+  ;;
+  --enable-tcg) tcg="yes"
+  ;;
+  --disable-malloc-trim) malloc_trim="no"
+  ;;
+  --enable-malloc-trim) malloc_trim="yes"
+  ;;
+  --enable-system) softmmu="yes"
   ;;
   --enable-pie) pie="yes"
   ;;
@@ -533,6 +758,42 @@ for opt do
   ;;
   --disable-stack-protector) stack_protector="no"
   ;;
+  --disable-membarrier) membarrier="no"
+  ;;
+  --enable-membarrier) membarrier="yes"
+  ;;
+  --with-pkgversion=*) pkgversion="$optarg"
+  ;;
+  --enable-debug-stack-usage) debug_stack_usage="yes"
+  ;;
+  --disable-avx2) avx2_opt="no"
+  ;;
+  --enable-avx2) avx2_opt="yes"
+  ;;
+  --disable-avx512f) avx512f_opt="no"
+  ;;
+  --enable-avx512f) avx512f_opt="yes"
+  ;;
+
+  --disable-virtio-blk-data-plane|--enable-virtio-blk-data-plane)
+      echo "$0: $opt is obsolete, virtio-blk data-plane is always on" >&2
+  ;;
+  --enable-vhdx|--disable-vhdx)
+      echo "$0: $opt is obsolete, VHDX driver is always built" >&2
+  ;;
+  --enable-uuid|--disable-uuid)
+      echo "$0: $opt is obsolete, UUID support is always built" >&2
+  ;;
+  --disable-tcmalloc) tcmalloc="no"
+  ;;
+  --enable-tcmalloc) tcmalloc="yes"
+  ;;
+  --disable-jemalloc) jemalloc="no"
+  ;;
+  --enable-jemalloc) jemalloc="yes"
+  ;;
+  --with-git=*) git="$optarg"
+  ;;
   *)
       echo "ERROR: unknown option $opt"
       echo "Try '$0 --help' for more information"
@@ -544,60 +805,54 @@ done
 case "$cpu" in
     ppc)
            CPU_CFLAGS="-m32"
-           LDFLAGS="-m32 $LDFLAGS"
+           QEMU_LDFLAGS="-m32 $QEMU_LDFLAGS"
            ;;
     ppc64)
            CPU_CFLAGS="-m64"
-           LDFLAGS="-m64 $LDFLAGS"
+           QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
            ;;
     sparc)
-           LDFLAGS="-m32 $LDFLAGS"
-           CPU_CFLAGS="-m32 -mcpu=ultrasparc"
+           CPU_CFLAGS="-m32 -mv8plus -mcpu=ultrasparc"
+           QEMU_LDFLAGS="-m32 -mv8plus $QEMU_LDFLAGS"
            ;;
     sparc64)
-           LDFLAGS="-m64 $LDFLAGS"
            CPU_CFLAGS="-m64 -mcpu=ultrasparc"
+           QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
            ;;
     s390)
            CPU_CFLAGS="-m31"
-           LDFLAGS="-m31 $LDFLAGS"
+           QEMU_LDFLAGS="-m31 $QEMU_LDFLAGS"
            ;;
     s390x)
            CPU_CFLAGS="-m64"
-           LDFLAGS="-m64 $LDFLAGS"
+           QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
            ;;
     i386)
            CPU_CFLAGS="-m32"
-           LDFLAGS="-m32 $LDFLAGS"
-           cc_i386='$(CC) -m32'
+           QEMU_LDFLAGS="-m32 $QEMU_LDFLAGS"
            ;;
     x86_64)
-           CPU_CFLAGS="-m64"
-           LDFLAGS="-m64 $LDFLAGS"
-           cc_i386='$(CC) -m32'
+           # ??? Only extremely old AMD cpus do not have cmpxchg16b.
+           # If we truly care, we should simply detect this case at
+           # runtime and generate the fallback to serial emulation.
+           CPU_CFLAGS="-m64 -mcx16"
+           QEMU_LDFLAGS="-m64 $QEMU_LDFLAGS"
            ;;
     x32)
            CPU_CFLAGS="-mx32"
-           LDFLAGS="-mx32 $LDFLAGS"
-           cc_i386='$(CC) -m32'
+           QEMU_LDFLAGS="-mx32 $QEMU_LDFLAGS"
            ;;
     # No special flags required for other host CPUs
 esac
 
+eval "cross_cc_${cpu}=\$host_cc"
+cross_cc_vars="$cross_cc_vars cross_cc_${cpu}"
 QEMU_CFLAGS="$CPU_CFLAGS $QEMU_CFLAGS"
-EXTRA_CFLAGS="$CPU_CFLAGS $EXTRA_CFLAGS"
 
-default_target_list=""
-
-mak_wilds=""
-
-if [ "$softmmu" = "yes" ]; then
-    mak_wilds="${mak_wilds} $source_path/default-configs/*-softmmu.mak"
-fi
-
-for config in $mak_wilds; do
-    default_target_list="${default_target_list} $(basename "$config" .mak)"
-done
+default_target_list="aarch64eb-softmmu aarch64-softmmu armeb-softmmu \
+    arm-softmmu m68k-softmmu mips64el-softmmu mips64-softmmu mipsel-softmmu \
+    mips-softmmu ppc64-softmmu ppc-softmmu sparc64-softmmu sparc-softmmu \
+    x86_64-softmmu riscv32-softmmu riscv64-softmmu s390x-softmmu"
 
 if test x"$show_help" = x"yes" ; then
 cat << EOF
@@ -607,85 +862,170 @@ Options: [defaults in brackets after descriptions]
 
 Standard options:
   --help                   print this message
+  --prefix=PREFIX          install in PREFIX [$prefix]
+  --interp-prefix=PREFIX   where to find shared libraries, etc.
+                           use %M for cpu name [$interp_prefix]
   --target-list=LIST       set target list (default: build everything)
 $(echo Available targets: $default_target_list | \
   fold -s -w 53 | sed -e 's/^/                           /')
+  --target-list-exclude=LIST exclude a set of targets from the default target-list
 
 Advanced options (experts only):
-  --source-path=PATH       path of source code [$source_path]
+  --cross-prefix=PREFIX    use PREFIX for compile tools [$cross_prefix]
   --cc=CC                  use C compiler CC [$cc]
+  --iasl=IASL              use ACPI compiler IASL [$iasl]
   --host-cc=CC             use C compiler CC [$host_cc] for code run at
                            build time
+  --cxx=CXX                use C++ compiler CXX [$cxx]
   --objcc=OBJCC            use Objective-C compiler OBJCC [$objcc]
   --extra-cflags=CFLAGS    append extra C compiler flags QEMU_CFLAGS
+  --extra-cxxflags=CXXFLAGS append extra C++ compiler flags QEMU_CXXFLAGS
   --extra-ldflags=LDFLAGS  append extra linker flags LDFLAGS
+  --cross-cc-ARCH=CC       use compiler when building ARCH guest test cases
+  --cross-cc-flags-ARCH=   use compiler flags when building ARCH guest tests
   --make=MAKE              use specified make [$make]
+  --install=INSTALL        use specified install [$install]
+  --with-git=GIT           use specified git [$git]
   --static                 enable static build [$static]
-  --enable-debug-tcg       enable TCG debugging
-  --disable-debug-tcg      disable TCG debugging (default)
-  --enable-debug-info      enable debugging information (default)
-  --disable-debug-info     disable debugging information
+  --docdir=PATH            install documentation in PATH$confsuffix
+  --bindir=PATH            install binaries in PATH
+  --libdir=PATH            install libraries in PATH
+  --libexecdir=PATH        install helper binaries in PATH
+  --sysconfdir=PATH        install config in PATH$confsuffix
+  --localstatedir=PATH     install local state in PATH (set at runtime on win32)
+  --with-confsuffix=SUFFIX suffix for QEMU data inside datadir/libdir/sysconfdir [$confsuffix]
+  --with-pkgversion=VERS   use specified string as sub-version of the package
   --enable-debug           enable common debug build options
+  --enable-sanitizers      enable default sanitizers
   --disable-strip          disable stripping binaries
   --disable-werror         disable compilation abort on warning
   --disable-stack-protector disable compiler-provided stack protection
-  --enable-pie             build Position Independent Executables
-  --disable-pie            do not build Position Independent Executables
+  --enable-malloc-trim     enable libc malloc_trim() for memory optimization
   --cpu=CPU                Build for host CPU [$cpu]
+  --enable-debug-stack-usage
+                           track the maximum stack usage of stacks created by qemu_alloc_stack
+
+Optional features, enabled with --enable-FEATURE and
+disabled with --disable-FEATURE, default is enabled if available:
+
+  pie             Position Independent Executables
+  debug-tcg       TCG debugging (default is disabled)
+  membarrier      membarrier system call (for Linux 4.14+ or Windows)
+  tcmalloc        tcmalloc support
+  jemalloc        jemalloc support
+  avx2            AVX2 optimization support
+  avx512f         AVX512F optimization support
 
 NOTE: The object files are built at the place where configure is launched
 EOF
 exit 0
 fi
 
+# Remove old dependency files to make sure that they get properly regenerated
+rm -f */config-devices.mak.d
+
+# Check that the C compiler works. Doing this here before testing
+# the host CPU ensures that we had a valid CC to autodetect the
+# $cpu var (and we should bail right here if that's not the case).
+# It also allows the help message to be printed without a CC.
+write_c_skeleton;
+if compile_object ; then
+  : C compiler works ok
+else
+    error_exit "\"$cc\" either does not exist or does not work"
+fi
+if ! compile_prog ; then
+    error_exit "\"$cc\" cannot build an executable (is your linker broken?)"
+fi
+
+# Now we have handled --enable-tcg-interpreter and know we're not just
+# printing the help message, bail out if the host CPU isn't supported.
+if test "$ARCH" = "unknown"; then
+    error_exit "Unsupported CPU = $cpu, try --enable-tcg-interpreter"
+fi
+
 # Consult white-list to determine whether to enable werror
 # by default.  Only enable by default for git builds
-z_version=`cut -f3 -d. $source_path/VERSION`
-
 if test -z "$werror" ; then
-    if test -d "$source_path/.git" -a \
-        "$linux" = "yes" ; then
+    if test -e "$source_path/.git" && \
+        { test "$linux" = "yes" || test "$mingw32" = "yes"; }; then
         werror="yes"
     else
         werror="no"
     fi
 fi
 
-# check that the C compiler works.
-cat > $TMPC <<EOF
-int main(void) { return 0; }
-EOF
+if test "$bogus_os" = "yes"; then
+    # Now that we know that we're not printing the help and that
+    # the compiler works (so the results of the check_defines we used
+    # to identify the OS are reliable), if we didn't recognize the
+    # host OS we should stop now.
+    error_exit "Unrecognized host OS (uname -s reports '$(uname -s)')"
+fi
 
-if compile_object ; then
-  : C compiler works ok
-else
-    error_exit "\"$cc\" either does not exist or does not work"
+# Check whether the compiler matches our minimum requirements:
+cat > $TMPC << EOF
+#if defined(__clang_major__) && defined(__clang_minor__)
+# ifdef __apple_build_version__
+#  if __clang_major__ < 5 || (__clang_major__ == 5 && __clang_minor__ < 1)
+#   error You need at least XCode Clang v5.1 to compile QEMU
+#  endif
+# else
+#  if __clang_major__ < 3 || (__clang_major__ == 3 && __clang_minor__ < 4)
+#   error You need at least Clang v3.4 to compile QEMU
+#  endif
+# endif
+#elif defined(__GNUC__) && defined(__GNUC_MINOR__)
+# if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 8)
+#  error You need at least GCC v4.8 to compile QEMU
+# endif
+#else
+# error You either need GCC or Clang to compiler QEMU
+#endif
+int main (void) { return 0; }
+EOF
+if ! compile_prog "" "" ; then
+    error_exit "You need at least GCC v4.8 or Clang v3.4 (or XCode Clang v5.1)"
 fi
 
 gcc_flags="-Wold-style-declaration -Wold-style-definition -Wtype-limits"
 gcc_flags="-Wformat-security -Wformat-y2k -Winit-self -Wignored-qualifiers $gcc_flags"
-gcc_flags="-Wmissing-include-dirs -Wempty-body -Wnested-externs $gcc_flags"
-gcc_flags="-Wendif-labels $gcc_flags"
-gcc_flags="-Wno-initializer-overrides $gcc_flags"
-gcc_flags="-Wno-string-plus-int $gcc_flags"
+gcc_flags="-Wno-missing-include-dirs -Wempty-body -Wnested-externs $gcc_flags"
+gcc_flags="-Wendif-labels -Wno-shift-negative-value $gcc_flags"
+gcc_flags="-Wno-initializer-overrides -Wexpansion-to-defined $gcc_flags"
+gcc_flags="-Wno-string-plus-int -Wno-typedef-redefinition $gcc_flags"
 # Note that we do not add -Werror to gcc_flags here, because that would
 # enable it for all configure tests. If a configure test failed due
 # to -Werror this would just silently disable some features,
 # so it's too error prone.
-cat > $TMPC << EOF
-int main(void) { return 0; }
-EOF
-for flag in $gcc_flags; do
+
+cc_has_warning_flag() {
+    write_c_skeleton;
+
     # Use the positive sense of the flag when testing for -Wno-wombat
     # support (gcc will happily accept the -Wno- form of unknown
     # warning options).
-    optflag="$(echo $flag | sed -e 's/^-Wno-/-W/')"
-    if compile_prog "-Werror $optflag" "" ; then
-	QEMU_CFLAGS="$QEMU_CFLAGS $flag"
+    optflag="$(echo $1 | sed -e 's/^-Wno-/-W/')"
+    compile_prog "-Werror $optflag" ""
+}
+
+for flag in $gcc_flags; do
+    if cc_has_warning_flag $flag ; then
+        QEMU_CFLAGS="$QEMU_CFLAGS $flag"
     fi
 done
 
 if test "$stack_protector" != "no"; then
+  cat > $TMPC << EOF
+int main(int argc, char *argv[])
+{
+    char arr[64], *p = arr, *c = argv[0];
+    while (*c) {
+        *p++ = *c++;
+    }
+    return 0;
+}
+EOF
   gcc_flags="-fstack-protector-strong -fstack-protector-all"
   sp_on=0
   for flag in $gcc_flags; do
@@ -694,6 +1034,7 @@ if test "$stack_protector" != "no"; then
     if do_cc $QEMU_CFLAGS -Werror $flag -c -o $TMPO $TMPC &&
        compile_prog "-Werror $flag" ""; then
       QEMU_CFLAGS="$QEMU_CFLAGS $flag"
+      QEMU_LDFLAGS="$QEMU_LDFLAGS $flag"
       sp_on=1
       break
     fi
@@ -705,73 +1046,70 @@ if test "$stack_protector" != "no"; then
   fi
 fi
 
-# Workaround for http://gcc.gnu.org/PR55489.  Happens with -fPIE/-fPIC and
-# large functions that use global variables.  The bug is in all releases of
-# GCC, but it became particularly acute in 4.6.x and 4.7.x.  It is fixed in
-# 4.7.3 and 4.8.0.  We should be able to delete this at the end of 2013.
+# Disable -Wmissing-braces on older compilers that warn even for
+# the "universal" C zero initializer {0}.
 cat > $TMPC << EOF
-#if __GNUC__ == 4 && (__GNUC_MINOR__ == 6 || (__GNUC_MINOR__ == 7 && __GNUC_PATCHLEVEL__ <= 2))
-int main(void) { return 0; }
-#else
-#error No bug in this compiler.
-#endif
+struct {
+  int a[2];
+} x = {0};
 EOF
-if compile_prog "-Werror -fno-gcse" "" ; then
-  TRANSLATE_OPT_CFLAGS=-fno-gcse
+if compile_object "-Werror" "" ; then
+  :
+else
+  QEMU_CFLAGS="$QEMU_CFLAGS -Wno-missing-braces"
 fi
 
-if test "$static" = "yes" ; then
-  if test "$pie" = "yes" ; then
-    error_exit "static and pie are mutually incompatible"
-  else
-    pie="no"
-  fi
-fi
-
-if test "$pie" = ""; then
-  case "$cpu-$targetos" in
-    i386-Linux|x86_64-Linux|x32-Linux|i386-OpenBSD|x86_64-OpenBSD)
-      ;;
-    *)
-      pie="no"
-      ;;
-  esac
-fi
-
-if test "$pie" != "no" ; then
+# Unconditional check for compiler __thread support
   cat > $TMPC << EOF
+static __thread int tls_var;
+int main(void) { return tls_var; }
+EOF
+
+if ! compile_prog "-Werror" "" ; then
+    error_exit "Your compiler does not support the __thread specifier for " \
+	"Thread-Local Storage (TLS). Please upgrade to a version that does."
+fi
+
+cat > $TMPC << EOF
 
 #ifdef __linux__
 #  define THREAD __thread
 #else
 #  define THREAD
 #endif
-
 static THREAD int tls_var;
-
 int main(void) { return tls_var; }
-
 EOF
-  if compile_prog "-fPIE -DPIE" "-pie"; then
-    QEMU_CFLAGS="-fPIE -DPIE $QEMU_CFLAGS"
-    LDFLAGS="-pie $LDFLAGS"
-    pie="yes"
-    if compile_prog "" "-Wl,-z,relro -Wl,-z,now" ; then
-      LDFLAGS="-Wl,-z,relro -Wl,-z,now $LDFLAGS"
-    fi
-  else
-    if test "$pie" = "yes"; then
-      error_exit "PIE not available due to missing toolchain support"
-    else
-      echo "Disabling PIE due to missing toolchain support"
-      pie="no"
-    fi
-  fi
 
-  if compile_prog "-fno-pie" "-nopie"; then
-    CFLAGS_NOPIE="-fno-pie"
-    LDFLAGS_NOPIE="-nopie"
+if test "$static" = "yes"; then
+  if test "$pie" != "no" && compile_prog "-Werror -fPIE -DPIE" "-static-pie"; then
+    QEMU_CFLAGS="-fPIE -DPIE $QEMU_CFLAGS"
+    QEMU_LDFLAGS="-static-pie $QEMU_LDFLAGS"
+    pie="yes"
+  elif test "$pie" = "yes"; then
+    error_exit "-static-pie not available due to missing toolchain support"
+  else
+    QEMU_LDFLAGS="-static $QEMU_LDFLAGS"
+    pie="no"
   fi
+elif test "$pie" = "no"; then
+  QEMU_CFLAGS="$CFLAGS_NOPIE $QEMU_CFLAGS"
+  QEMU_LDFLAGS="$LDFLAGS_NOPIE $QEMU_LDFLAGS"
+elif compile_prog "-Werror -fPIE -DPIE" "-pie"; then
+  QEMU_CFLAGS="-fPIE -DPIE $QEMU_CFLAGS"
+  QEMU_LDFLAGS="-pie $QEMU_LDFLAGS"
+  pie="yes"
+elif test "$pie" = "yes"; then
+  error_exit "PIE not available due to missing toolchain support"
+else
+  echo "Disabling PIE due to missing toolchain support"
+  pie="no"
+fi
+
+# Detect support for PT_GNU_RELRO + DT_BIND_NOW.
+# The combination is known as "full relro", because .got.plt is read-only too.
+if compile_prog "" "-Wl,-z,relro -Wl,-z,now" ; then
+  QEMU_LDFLAGS="-Wl,-z,relro -Wl,-z,now $QEMU_LDFLAGS"
 fi
 
 ##########################################
@@ -803,6 +1141,18 @@ fi
 # Solaris specific configure tool chain decisions
 
 if test "$solaris" = "yes" ; then
+  if has $install; then
+    :
+  else
+    error_exit "Solaris install program not found. Use --install=/usr/ucb/install or" \
+        "install fileutils from www.blastwave.org using pkg-get -i fileutils" \
+        "to get ginstall which is used by default (which lives in /opt/csw/bin)"
+  fi
+  if test "$(path_of $install)" = "/usr/sbin/install" ; then
+    error_exit "Solaris /usr/sbin/install is not an appropriate install program." \
+        "try ginstall from the GNU fileutils available from www.blastwave.org" \
+        "using pkg-get -i fileutils, or use --install=/usr/ucb/install"
+  fi
   if has ar; then
     :
   else
@@ -815,22 +1165,26 @@ if test "$solaris" = "yes" ; then
 fi
 
 if test -z "${target_list+xxx}" ; then
-    target_list="$default_target_list"
+    for target in $default_target_list; do
+        supported_target $target 2>/dev/null && \
+            target_list="$target_list $target"
+    done
+    target_list="${target_list# }"
 else
-    target_list=`echo "$target_list" | sed -e 's/,/ /g'`
+    target_list=$(echo "$target_list" | sed -e 's/,/ /g')
+    for target in $target_list; do
+        # Check that we recognised the target name; this allows a more
+        # friendly error message than if we let it fall through.
+        case " $default_target_list " in
+            *" $target "*)
+                ;;
+            *)
+                error_exit "Unknown target name '$target'"
+                ;;
+        esac
+        supported_target $target || exit 1
+    done
 fi
-
-# Check that we recognised the target name; this allows a more
-# friendly error message than if we let it fall through.
-for target in $target_list; do
-    case " $default_target_list " in
-        *" $target "*)
-            ;;
-        *)
-            error_exit "Unknown target name '$target'"
-            ;;
-    esac
-done
 
 # see if system emulation was really requested
 case " $target_list " in
@@ -861,15 +1215,22 @@ int main(int argc, char *argv[]) {
 EOF
 
 if compile_object ; then
-    if grep -q BiGeNdIaN $TMPO ; then
+    if strings -a $TMPO | grep -q BiGeNdIaN ; then
         bigendian="yes"
-    elif grep -q LiTtLeEnDiAn $TMPO ; then
+    elif strings -a $TMPO | grep -q LiTtLeEnDiAn ; then
         bigendian="no"
     else
         echo big/little test failed
     fi
 else
     echo big/little test failed
+fi
+
+##########################################
+# pkg-config probe
+
+if ! has "$pkg_config_exe"; then
+  error_exit "pkg-config binary '$pkg_config_exe' not found"
 fi
 
 ##########################################
@@ -902,14 +1263,215 @@ else
       if test "$found" = "no"; then
         LIBS="$pthread_lib $LIBS"
       fi
+      PTHREAD_LIB="$pthread_lib"
       break
     fi
   done
 fi
 
-if test "$mingw32" != yes -a "$pthread" = no; then
+if test "$mingw32" != yes && test "$pthread" = no; then
   error_exit "pthread check failed" \
       "Make sure to have the pthread libs and headers installed."
+fi
+
+# check for pthread_setname_np with thread id
+pthread_setname_np_w_tid=no
+cat > $TMPC << EOF
+#include <pthread.h>
+
+static void *f(void *p) { return NULL; }
+int main(void)
+{
+    pthread_t thread;
+    pthread_create(&thread, 0, f, 0);
+    pthread_setname_np(thread, "QEMU");
+    return 0;
+}
+EOF
+if compile_prog "" "$pthread_lib" ; then
+  pthread_setname_np_w_tid=yes
+fi
+
+# check for pthread_setname_np without thread id
+pthread_setname_np_wo_tid=no
+cat > $TMPC << EOF
+#include <pthread.h>
+
+static void *f(void *p) { pthread_setname_np("QEMU"); }
+int main(void)
+{
+    pthread_t thread;
+    pthread_create(&thread, 0, f, 0);
+    return 0;
+}
+EOF
+if compile_prog "" "$pthread_lib" ; then
+  pthread_setname_np_wo_tid=yes
+fi
+
+if test "$tcmalloc" = "yes" && test "$jemalloc" = "yes" ; then
+    echo "ERROR: tcmalloc && jemalloc can't be used at the same time"
+    exit 1
+fi
+
+# Even if malloc_trim() is available, these non-libc memory allocators
+# do not support it.
+if test "$tcmalloc" = "yes" || test "$jemalloc" = "yes" ; then
+    if test "$malloc_trim" = "yes" ; then
+        echo "Disabling malloc_trim with non-libc memory allocator"
+    fi
+    malloc_trim="no"
+fi
+
+#######################################
+# malloc_trim
+
+if test "$malloc_trim" != "no" ; then
+    cat > $TMPC << EOF
+#include <malloc.h>
+int main(void) { malloc_trim(0); return 0; }
+EOF
+    if compile_prog "" "" ; then
+        malloc_trim="yes"
+    else
+        malloc_trim="no"
+    fi
+fi
+
+##########################################
+# tcmalloc probe
+
+if test "$tcmalloc" = "yes" ; then
+  cat > $TMPC << EOF
+#include <stdlib.h>
+int main(void) { malloc(1); return 0; }
+EOF
+
+  if compile_prog "" "-ltcmalloc" ; then
+    LIBS="-ltcmalloc $LIBS"
+  else
+    feature_not_found "tcmalloc" "install gperftools devel"
+  fi
+fi
+
+##########################################
+# jemalloc probe
+
+if test "$jemalloc" = "yes" ; then
+  cat > $TMPC << EOF
+#include <stdlib.h>
+int main(void) { malloc(1); return 0; }
+EOF
+
+  if compile_prog "" "-ljemalloc" ; then
+    LIBS="-ljemalloc $LIBS"
+  else
+    feature_not_found "jemalloc" "install jemalloc devel"
+  fi
+fi
+
+##########################################
+# signalfd probe
+signalfd="no"
+cat > $TMPC << EOF
+#include <unistd.h>
+#include <sys/syscall.h>
+#include <signal.h>
+int main(void) { return syscall(SYS_signalfd, -1, NULL, _NSIG / 8); }
+EOF
+
+if compile_prog "" "" ; then
+  signalfd=yes
+fi
+
+# check for sync_file_range
+sync_file_range=no
+cat > $TMPC << EOF
+#include <fcntl.h>
+
+int main(void)
+{
+    sync_file_range(0, 0, 0, 0);
+    return 0;
+}
+EOF
+if compile_prog "" "" ; then
+  sync_file_range=yes
+fi
+
+# check for dup3
+dup3=no
+cat > $TMPC << EOF
+#include <unistd.h>
+
+int main(void)
+{
+    dup3(0, 0, 0);
+    return 0;
+}
+EOF
+if compile_prog "" "" ; then
+  dup3=yes
+fi
+
+# check for prctl(PR_SET_TIMERSLACK , ... ) support
+prctl_pr_set_timerslack=no
+cat > $TMPC << EOF
+#include <sys/prctl.h>
+
+int main(void)
+{
+    prctl(PR_SET_TIMERSLACK, 1, 0, 0, 0);
+    return 0;
+}
+EOF
+if compile_prog "" "" ; then
+  prctl_pr_set_timerslack=yes
+fi
+
+# check for epoll support
+epoll=no
+cat > $TMPC << EOF
+#include <sys/epoll.h>
+
+int main(void)
+{
+    epoll_create(0);
+    return 0;
+}
+EOF
+if compile_prog "" "" ; then
+  epoll=yes
+fi
+
+# clock_adjtime probe
+clock_adjtime=no
+cat > $TMPC <<EOF
+#include <time.h>
+
+int main(void)
+{
+    return clock_adjtime(0, 0);
+}
+EOF
+clock_adjtime=no
+if compile_prog "" "" ; then
+  clock_adjtime=yes
+fi
+
+# syncfs probe
+syncfs=no
+cat > $TMPC <<EOF
+#include <unistd.h>
+
+int main(void)
+{
+    return syncfs(0);
+}
+EOF
+syncfs=no
+if compile_prog "" "" ; then
+  syncfs=yes
 fi
 
 # Search for bswap_32 function
@@ -970,24 +1532,186 @@ elif compile_prog "" "$pthread_lib -lrt" ; then
   LIBS="$LIBS -lrt"
 fi
 
-########################################
-# check if we have valgrind/valgrind.h
-
-valgrind_h=no
+# Check whether we need to link libutil for openpty()
 cat > $TMPC << EOF
-#include <valgrind/valgrind.h>
+extern int openpty(int *am, int *as, char *name, void *termp, void *winp);
+int main(void) { return openpty(0, 0, 0, 0, 0); }
+EOF
+
+if ! compile_prog "" "" ; then
+  if compile_prog "" "-lutil" ; then
+    libs_softmmu="-lutil $libs_softmmu"
+    libs_tools="-lutil $libs_tools"
+  fi
+fi
+
+##########################################
+# check if we have madvise
+
+madvise=no
+cat > $TMPC << EOF
+#include <sys/types.h>
+#include <sys/mman.h>
+#include <stddef.h>
+int main(void) { return madvise(NULL, 0, MADV_DONTNEED); }
+EOF
+if compile_prog "" "" ; then
+    madvise=yes
+fi
+
+##########################################
+# check if we have posix_madvise
+
+posix_madvise=no
+cat > $TMPC << EOF
+#include <sys/mman.h>
+#include <stddef.h>
+int main(void) { return posix_madvise(NULL, 0, POSIX_MADV_DONTNEED); }
+EOF
+if compile_prog "" "" ; then
+    posix_madvise=yes
+fi
+
+##########################################
+# check if we have posix_memalign()
+
+posix_memalign=no
+cat > $TMPC << EOF
+#include <stdlib.h>
+int main(void) {
+    void *p;
+    return posix_memalign(&p, 8, 8);
+}
+EOF
+if compile_prog "" "" ; then
+    posix_memalign=yes
+fi
+
+##########################################
+# check if we have posix_syslog
+
+posix_syslog=no
+cat > $TMPC << EOF
+#include <syslog.h>
+int main(void) { openlog("qemu", LOG_PID, LOG_DAEMON); syslog(LOG_INFO, "configure"); return 0; }
+EOF
+if compile_prog "" "" ; then
+    posix_syslog=yes
+fi
+
+##########################################
+# check if we have sem_timedwait
+
+sem_timedwait=no
+cat > $TMPC << EOF
+#include <semaphore.h>
+int main(void) { sem_t s; struct timespec t = {0}; return sem_timedwait(&s, &t); }
+EOF
+if compile_prog "" "" ; then
+    sem_timedwait=yes
+fi
+
+##########################################
+# check if we have strchrnul
+
+strchrnul=no
+cat > $TMPC << EOF
+#include <string.h>
+int main(void);
+// Use a haystack that the compiler shouldn't be able to constant fold
+char *haystack = (char*)&main;
+int main(void) { return strchrnul(haystack, 'x') != &haystack[6]; }
+EOF
+if compile_prog "" "" ; then
+    strchrnul=yes
+fi
+
+#########################################
+# check if we have st_atim
+
+st_atim=no
+cat > $TMPC << EOF
+#include <sys/stat.h>
+#include <stddef.h>
+int main(void) { return offsetof(struct stat, st_atim); }
+EOF
+if compile_prog "" "" ; then
+    st_atim=yes
+fi
+
+##########################################
+# check if we have open_by_handle_at
+
+open_by_handle_at=no
+cat > $TMPC << EOF
+#include <fcntl.h>
+#if !defined(AT_EMPTY_PATH)
+# error missing definition
+#else
+int main(void) { struct file_handle fh; return open_by_handle_at(0, &fh, 0); }
+#endif
+EOF
+if compile_prog "" "" ; then
+    open_by_handle_at=yes
+fi
+
+########################################
+# check if we have linux/magic.h
+
+linux_magic_h=no
+cat > $TMPC << EOF
+#include <linux/magic.h>
 int main(void) {
   return 0;
 }
 EOF
 if compile_prog "" "" ; then
-    valgrind_h=yes
+    linux_magic_h=yes
+fi
+
+########################################
+# check whether we can disable warning option with a pragma (this is needed
+# to silence warnings in the headers of some versions of external libraries).
+# This test has to be compiled with -Werror as otherwise an unknown pragma is
+# only a warning.
+#
+# If we can't selectively disable warning in the code, disable -Werror so that
+# the build doesn't fail anyway.
+
+pragma_disable_unused_but_set=no
+cat > $TMPC << EOF
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-prototypes"
+#pragma GCC diagnostic pop
+
+int main(void) {
+    return 0;
+}
+EOF
+if compile_prog "-Werror" "" ; then
+    pragma_diagnostic_available=yes
+else
+    werror=no
+fi
+
+########################################
+# check if environ is declared
+
+has_environ=no
+cat > $TMPC << EOF
+#include <unistd.h>
+int main(void) {
+    environ = 0;
+    return 0;
+}
+EOF
+if compile_prog "" "" ; then
+    has_environ=yes
 fi
 
 ########################################
 # check if cpuid.h is usable.
 
-cpuid_h=no
 cat > $TMPC << EOF
 #include <cpuid.h>
 int main(void) {
@@ -1009,16 +1733,66 @@ if compile_prog "" "" ; then
     cpuid_h=yes
 fi
 
+##########################################
+# avx2 optimization requirement check
+#
+# There is no point enabling this if cpuid.h is not usable,
+# since we won't be able to select the new routines.
+
+if test "$cpuid_h" = "yes" && test "$avx2_opt" != "no"; then
+  cat > $TMPC << EOF
+#pragma GCC push_options
+#pragma GCC target("avx2")
+#include <cpuid.h>
+#include <immintrin.h>
+static int bar(void *a) {
+    __m256i x = *(__m256i *)a;
+    return _mm256_testz_si256(x, x);
+}
+int main(int argc, char *argv[]) { return bar(argv[0]); }
+EOF
+  if compile_object "" ; then
+    avx2_opt="yes"
+  else
+    avx2_opt="no"
+  fi
+fi
+
+##########################################
+# avx512f optimization requirement check
+#
+# There is no point enabling this if cpuid.h is not usable,
+# since we won't be able to select the new routines.
+# by default, it is turned off.
+# if user explicitly want to enable it, check environment
+
+if test "$cpuid_h" = "yes" && test "$avx512f_opt" = "yes"; then
+  cat > $TMPC << EOF
+#pragma GCC push_options
+#pragma GCC target("avx512f")
+#include <cpuid.h>
+#include <immintrin.h>
+static int bar(void *a) {
+    __m512i x = *(__m512i *)a;
+    return _mm512_test_epi64_mask(x, x);
+}
+int main(int argc, char *argv[])
+{
+	return bar(argv[0]);
+}
+EOF
+  if ! compile_object "" ; then
+    avx512f_opt="no"
+  fi
+else
+  avx512f_opt="no"
+fi
+
 ########################################
 # check if __[u]int128_t is usable.
 
 int128=no
 cat > $TMPC << EOF
-#if defined(__clang_major__) && defined(__clang_minor__)
-# if ((__clang_major__ < 3) || (__clang_major__ == 3) && (__clang_minor__ < 2))
-#  error __int128_t does not work in CLANG before 3.2
-# endif
-#endif
 __int128_t a;
 __uint128_t b;
 int main (void) {
@@ -1032,6 +1806,363 @@ if compile_prog "" "" ; then
     int128=yes
 fi
 
+#########################################
+# See if 128-bit atomic operations are supported.
+
+atomic128=no
+if test "$int128" = "yes"; then
+  cat > $TMPC << EOF
+int main(void)
+{
+  unsigned __int128 x = 0, y = 0;
+  y = __atomic_load_16(&x, 0);
+  __atomic_store_16(&x, y, 0);
+  __atomic_compare_exchange_16(&x, &y, x, 0, 0, 0);
+  return 0;
+}
+EOF
+  if compile_prog "" "" ; then
+    atomic128=yes
+  fi
+fi
+
+cmpxchg128=no
+if test "$int128" = yes && test "$atomic128" = no; then
+  cat > $TMPC << EOF
+int main(void)
+{
+  unsigned __int128 x = 0, y = 0;
+  __sync_val_compare_and_swap_16(&x, y, x);
+  return 0;
+}
+EOF
+  if compile_prog "" "" ; then
+    cmpxchg128=yes
+  fi
+fi
+
+#########################################
+# See if 64-bit atomic operations are supported.
+# Note that without __atomic builtins, we can only
+# assume atomic loads/stores max at pointer size.
+
+cat > $TMPC << EOF
+#include <stdint.h>
+int main(void)
+{
+  uint64_t x = 0, y = 0;
+#ifdef __ATOMIC_RELAXED
+  y = __atomic_load_8(&x, 0);
+  __atomic_store_8(&x, y, 0);
+  __atomic_compare_exchange_8(&x, &y, x, 0, 0, 0);
+  __atomic_exchange_8(&x, y, 0);
+  __atomic_fetch_add_8(&x, y, 0);
+#else
+  typedef char is_host64[sizeof(void *) >= sizeof(uint64_t) ? 1 : -1];
+  __sync_lock_test_and_set(&x, y);
+  __sync_val_compare_and_swap(&x, y, 0);
+  __sync_fetch_and_add(&x, y);
+#endif
+  return 0;
+}
+EOF
+if compile_prog "" "" ; then
+  atomic64=yes
+fi
+
+#########################################
+# See if --dynamic-list is supported by the linker
+ld_dynamic_list="no"
+if test "$static" = "no" ; then
+    cat > $TMPTXT <<EOF
+{
+  foo;
+};
+EOF
+
+    cat > $TMPC <<EOF
+#include <stdio.h>
+void foo(void);
+
+void foo(void)
+{
+  printf("foo\n");
+}
+
+int main(void)
+{
+  foo();
+  return 0;
+}
+EOF
+
+    if compile_prog "" "-Wl,--dynamic-list=$TMPTXT" ; then
+        ld_dynamic_list="yes"
+    fi
+fi
+
+#########################################
+# See if -exported_symbols_list is supported by the linker
+
+ld_exported_symbols_list="no"
+if test "$static" = "no" ; then
+    cat > $TMPTXT <<EOF
+  _foo
+EOF
+
+    if compile_prog "" "-Wl,-exported_symbols_list,$TMPTXT" ; then
+        ld_exported_symbols_list="yes"
+    fi
+fi
+
+########################################
+# See if __attribute__((alias)) is supported.
+# This false for Xcode 9, but has been remedied for Xcode 10.
+# Unfortunately, travis uses Xcode 9 by default.
+
+attralias=no
+cat > $TMPC << EOF
+int x = 1;
+extern const int y __attribute__((alias("x")));
+int main(void) { return 0; }
+EOF
+if compile_prog "" "" ; then
+    attralias=yes
+fi
+
+########################################
+# check if getauxval is available.
+
+getauxval=no
+cat > $TMPC << EOF
+#include <sys/auxv.h>
+int main(void) {
+  return getauxval(AT_HWCAP) == 0;
+}
+EOF
+if compile_prog "" "" ; then
+    getauxval=yes
+fi
+
+########################################
+# check if ccache is interfering with
+# semantic analysis of macros
+
+unset CCACHE_CPP2
+ccache_cpp2=no
+cat > $TMPC << EOF
+static const int Z = 1;
+#define fn() ({ Z; })
+#define TAUT(X) ((X) == Z)
+#define PAREN(X, Y) (X == Y)
+#define ID(X) (X)
+int main(int argc, char *argv[])
+{
+    int x = 0, y = 0;
+    x = ID(x);
+    x = fn();
+    fn();
+    if (PAREN(x, y)) return 0;
+    if (TAUT(Z)) return 0;
+    return 0;
+}
+EOF
+
+if ! compile_object "-Werror"; then
+    ccache_cpp2=yes
+fi
+
+##########################################
+# check for usable membarrier system call
+if test "$membarrier" = "yes"; then
+    have_membarrier=no
+    if test "$mingw32" = "yes" ; then
+        have_membarrier=yes
+    elif test "$linux" = "yes" ; then
+        cat > $TMPC << EOF
+    #include <linux/membarrier.h>
+    #include <sys/syscall.h>
+    #include <unistd.h>
+    #include <stdlib.h>
+    int main(void) {
+        syscall(__NR_membarrier, MEMBARRIER_CMD_QUERY, 0);
+        syscall(__NR_membarrier, MEMBARRIER_CMD_SHARED, 0);
+	exit(0);
+    }
+EOF
+        if compile_prog "" "" ; then
+            have_membarrier=yes
+        fi
+    fi
+    if test "$have_membarrier" = "no"; then
+      feature_not_found "membarrier" "membarrier system call not available"
+    fi
+else
+    # Do not enable it by default even for Mingw32, because it doesn't
+    # work on Wine.
+    membarrier=no
+fi
+
+#################################################
+# Sparc implicitly links with --relax, which is
+# incompatible with -r, so --no-relax should be
+# given. It does no harm to give it on other
+# platforms too.
+
+# Note: the prototype is needed since QEMU_CFLAGS
+#       contains -Wmissing-prototypes
+cat > $TMPC << EOF
+extern int foo(void);
+int foo(void) { return 0; }
+EOF
+if ! compile_object ""; then
+  error_exit "Failed to compile object file for LD_REL_FLAGS test"
+fi
+for i in '-Wl,-r -Wl,--no-relax' -Wl,-r -r; do
+  if do_cc -nostdlib $i -o $TMPMO $TMPO; then
+    LD_REL_FLAGS=$i
+    break
+  fi
+done
+
+##########################################
+# check for sysmacros.h
+
+have_sysmacros=no
+cat > $TMPC << EOF
+#include <sys/sysmacros.h>
+int main(void) {
+    return makedev(0, 0);
+}
+EOF
+if compile_prog "" "" ; then
+    have_sysmacros=yes
+fi
+
+##########################################
+# check for _Static_assert()
+
+have_static_assert=no
+cat > $TMPC << EOF
+_Static_assert(1, "success");
+int main(void) {
+    return 0;
+}
+EOF
+if compile_prog "" "" ; then
+    have_static_assert=yes
+fi
+
+##########################################
+# check for utmpx.h, it is missing e.g. on OpenBSD
+
+have_utmpx=no
+cat > $TMPC << EOF
+#include <utmpx.h>
+struct utmpx user_info;
+int main(void) {
+    return 0;
+}
+EOF
+if compile_prog "" "" ; then
+    have_utmpx=yes
+fi
+
+##########################################
+# check for getrandom()
+
+have_getrandom=no
+cat > $TMPC << EOF
+#include <sys/random.h>
+int main(void) {
+    return getrandom(0, 0, GRND_NONBLOCK);
+}
+EOF
+if compile_prog "" "" ; then
+    have_getrandom=yes
+fi
+
+##########################################
+# checks for sanitizers
+
+have_asan=no
+have_ubsan=no
+have_asan_iface_h=no
+have_asan_iface_fiber=no
+
+if test "$sanitizers" = "yes" ; then
+  write_c_skeleton
+  if compile_prog "$CPU_CFLAGS -Werror -fsanitize=address" ""; then
+      have_asan=yes
+  fi
+
+  # we could use a simple skeleton for flags checks, but this also
+  # detect the static linking issue of ubsan, see also:
+  # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=84285
+  cat > $TMPC << EOF
+#include <stdlib.h>
+int main(void) {
+    void *tmp = malloc(10);
+    return *(int *)(tmp + 2);
+}
+EOF
+  if compile_prog "$CPU_CFLAGS -Werror -fsanitize=undefined" ""; then
+      have_ubsan=yes
+  fi
+
+  if check_include "sanitizer/asan_interface.h" ; then
+      have_asan_iface_h=yes
+  fi
+
+  cat > $TMPC << EOF
+#include <sanitizer/asan_interface.h>
+int main(void) {
+  __sanitizer_start_switch_fiber(0, 0, 0);
+  return 0;
+}
+EOF
+  if compile_prog "$CPU_CFLAGS -Werror -fsanitize=address" "" ; then
+      have_asan_iface_fiber=yes
+  fi
+fi
+
+##########################################
+# check for Apple Silicon JIT function
+
+if [ "$darwin" = "yes" ] ; then
+  cat > $TMPC << EOF
+#include <pthread.h>
+int main() { pthread_jit_write_protect_np(0); return 0; }
+EOF
+  if ! compile_prog ""; then
+    have_pthread_jit_protect='no'
+  else
+    have_pthread_jit_protect='yes'
+  fi
+fi
+
+##########################################
+# End of CC checks
+# After here, no more $cc or $ld runs
+
+write_c_skeleton
+
+if test "$have_asan" = "yes"; then
+  QEMU_CFLAGS="-fsanitize=address $QEMU_CFLAGS"
+  QEMU_LDFLAGS="-fsanitize=address $QEMU_LDFLAGS"
+  if test "$have_asan_iface_h" = "no" ; then
+      echo "ASAN build enabled, but ASAN header missing." \
+           "Without code annotation, the report may be inferior."
+  elif test "$have_asan_iface_fiber" = "no" ; then
+      echo "ASAN build enabled, but ASAN header is too old." \
+           "Without code annotation, the report may be inferior."
+  fi
+fi
+if test "$have_ubsan" = "yes"; then
+  QEMU_CFLAGS="-fsanitize=undefined $QEMU_CFLAGS"
+  QEMU_LDFLAGS="-fsanitize=undefined $QEMU_LDFLAGS"
+fi
+
 # Now we've finished running tests it's OK to add -Werror to the compiler flags
 if test "$werror" = "yes"; then
     QEMU_CFLAGS="-Werror $QEMU_CFLAGS"
@@ -1039,39 +2170,141 @@ fi
 
 if test "$solaris" = "no" ; then
     if $ld --version 2>/dev/null | grep "GNU ld" >/dev/null 2>/dev/null ; then
-        LDFLAGS="-Wl,--warn-common $LDFLAGS"
+        QEMU_LDFLAGS="-Wl,--warn-common $QEMU_LDFLAGS"
     fi
 fi
 
 # Use ASLR, no-SEH and DEP if available
 if test "$mingw32" = "yes" ; then
     for flag in --dynamicbase --no-seh --nxcompat; do
-        if $ld --help 2>/dev/null | grep ".$flag" >/dev/null 2>/dev/null ; then
-            LDFLAGS="-Wl,$flag $LDFLAGS"
+        if ld_has $flag ; then
+            QEMU_LDFLAGS="-Wl,$flag $QEMU_LDFLAGS"
         fi
     done
 fi
 
+# Disable OpenBSD W^X if available
+if test "$tcg" = "yes" && test "$targetos" = "OpenBSD"; then
+    cat > $TMPC <<EOF
+    int main(void) { return 0; }
+EOF
+    wx_ldflags="-Wl,-z,wxneeded"
+    if compile_prog "" "$wx_ldflags"; then
+        QEMU_LDFLAGS="$QEMU_LDFLAGS $wx_ldflags"
+    fi
+fi
+
+qemu_confdir=$sysconfdir$confsuffix
+qemu_localedir="$datadir/locale"
+
+# Check that the C++ compiler exists and works with the C compiler.
+# All the QEMU_CXXFLAGS are based on QEMU_CFLAGS. Keep this at the end to don't miss any other that could be added.
+if has $cxx; then
+    cat > $TMPC <<EOF
+int c_function(void);
+int main(void) { return c_function(); }
+EOF
+
+    compile_object
+
+    cat > $TMPCXX <<EOF
+extern "C" {
+   int c_function(void);
+}
+int c_function(void) { return 42; }
+EOF
+
+    update_cxxflags
+
+    if do_cxx $QEMU_CXXFLAGS -o $TMPE $TMPCXX $TMPO $QEMU_LDFLAGS; then
+        # C++ compiler $cxx works ok with C compiler $cc
+        :
+    else
+        echo "C++ compiler $cxx does not work with C compiler $cc"
+        echo "Disabling C++ specific optional code"
+        cxx=
+    fi
+else
+    echo "No C++ compiler available; disabling C++ specific optional code"
+    cxx=
+fi
+
+echo_version() {
+    if test "$1" = "yes" ; then
+        echo "($2)"
+    fi
+}
+
+echo "Install prefix    $prefix"
+echo "binary directory  $(eval echo $bindir)"
+echo "library directory $(eval echo $libdir)"
+echo "libexec directory $(eval echo $libexecdir)"
+echo "include directory $(eval echo $includedir)"
+echo "config directory  $(eval echo $sysconfdir)"
+if test "$mingw32" = "no" ; then
+echo "local state directory   $(eval echo $local_statedir)"
+echo "ELF interp prefix $interp_prefix"
+else
+echo "local state directory   queried at runtime"
+fi
+echo "Build directory   $(pwd)"
 echo "Source path       $source_path"
+echo "GIT binary        $git"
+echo "GIT submodules    $git_submodules"
 echo "C compiler        $cc"
 echo "Host C compiler   $host_cc"
+echo "C++ compiler      $cxx"
 echo "Objective-C compiler $objcc"
 echo "ARFLAGS           $ARFLAGS"
 echo "CFLAGS            $CFLAGS"
 echo "QEMU_CFLAGS       $QEMU_CFLAGS"
-echo "LDFLAGS           $LDFLAGS"
+echo "QEMU_LDFLAGS      $QEMU_LDFLAGS"
 echo "make              $make"
+echo "install           $install"
 echo "host CPU          $cpu"
 echo "host big endian   $bigendian"
 echo "target list       $target_list"
-echo "tcg debug enabled $debug_tcg"
 echo "strip binaries    $strip_opt"
 echo "static build      $static"
 echo "mingw32 support   $mingw32"
-if test -n "$sparc_cpu"; then
-    echo "Target Sparc Arch $sparc_cpu"
-fi
 echo "PIE               $pie"
+echo "TCG support       $tcg"
+echo "malloc trim support $malloc_trim"
+echo "membarrier        $membarrier"
+echo "madvise           $madvise"
+echo "posix_madvise     $posix_madvise"
+echo "posix_memalign    $posix_memalign"
+echo "debug stack usage $debug_stack_usage"
+echo "tcmalloc support  $tcmalloc"
+echo "jemalloc support  $jemalloc"
+echo "avx2 optimization $avx2_opt"
+echo "avx512f optimization $avx512f_opt"
+
+if test "$supported_cpu" = "no"; then
+    echo
+    echo "WARNING: SUPPORT FOR THIS HOST CPU WILL GO AWAY IN FUTURE RELEASES!"
+    echo
+    echo "CPU host architecture $cpu support is not currently maintained."
+    echo "The QEMU project intends to remove support for this host CPU in"
+    echo "a future release if nobody volunteers to maintain it and to"
+    echo "provide a build host for our continuous integration setup."
+    echo "configure has succeeded and you can continue to build, but"
+    echo "if you care about QEMU on this platform you should contact"
+    echo "us upstream at qemu-devel@nongnu.org."
+fi
+
+if test "$supported_os" = "no"; then
+    echo
+    echo "WARNING: SUPPORT FOR THIS HOST OS WILL GO AWAY IN FUTURE RELEASES!"
+    echo
+    echo "Host OS $targetos support is not currently maintained."
+    echo "The QEMU project intends to remove support for this host OS in"
+    echo "a future release if nobody volunteers to maintain it and to"
+    echo "provide a build host for our continuous integration setup."
+    echo "configure has succeeded and you can continue to build, but"
+    echo "if you care about QEMU on this platform you should contact"
+    echo "us upstream at qemu-devel@nongnu.org."
+fi
 
 config_host_mak="config-host.mak"
 
@@ -1079,14 +2312,26 @@ echo "# Automatically generated by configure - do not modify" > $config_host_mak
 echo >> $config_host_mak
 
 echo all: >> $config_host_mak
-echo "extra_cflags=$EXTRA_CFLAGS" >> $config_host_mak
-echo "extra_ldflags=$EXTRA_LDFLAGS" >> $config_host_mak
+echo "prefix=$prefix" >> $config_host_mak
+echo "bindir=$bindir" >> $config_host_mak
+echo "libdir=$libdir" >> $config_host_mak
+echo "libexecdir=$libexecdir" >> $config_host_mak
+echo "includedir=$includedir" >> $config_host_mak
+echo "sysconfdir=$sysconfdir" >> $config_host_mak
+echo "qemu_confdir=$qemu_confdir" >> $config_host_mak
+if test "$mingw32" = "no" ; then
+  echo "qemu_localstatedir=$local_statedir" >> $config_host_mak
+fi
+echo "qemu_helperdir=$libexecdir" >> $config_host_mak
+echo "qemu_localedir=$qemu_localedir" >> $config_host_mak
+echo "libs_cpu=$libs_cpu" >> $config_host_mak
+echo "libs_softmmu=$libs_softmmu" >> $config_host_mak
+echo "GIT=$git" >> $config_host_mak
+echo "GIT_SUBMODULES=$git_submodules" >> $config_host_mak
+echo "GIT_UPDATE=$git_update" >> $config_host_mak
 
 echo "ARCH=$ARCH" >> $config_host_mak
 
-if test "$debug_tcg" = "yes" ; then
-  echo "CONFIG_DEBUG_TCG=y" >> $config_host_mak
-fi
 if test "$strip_opt" = "yes" ; then
   echo "STRIP=${strip}" >> $config_host_mak
 fi
@@ -1095,7 +2340,7 @@ if test "$bigendian" = "yes" ; then
 fi
 if test "$mingw32" = "yes" ; then
   echo "CONFIG_WIN32=y" >> $config_host_mak
-  rc_version=`cat $source_path/VERSION`
+  rc_version=$(cat $source_path/VERSION)
   version_major=${rc_version%%.*}
   rc_version=${rc_version#*.}
   version_minor=${rc_version%%.*}
@@ -1112,23 +2357,90 @@ if test "$linux" = "yes" ; then
   echo "CONFIG_LINUX=y" >> $config_host_mak
 fi
 
+if test "$darwin" = "yes" ; then
+  echo "CONFIG_DARWIN=y" >> $config_host_mak
+fi
+
 if test "$solaris" = "yes" ; then
   echo "CONFIG_SOLARIS=y" >> $config_host_mak
-  echo "CONFIG_SOLARIS_VERSION=$solarisrev" >> $config_host_mak
-  if test "$needs_libsunmath" = "yes" ; then
-    echo "CONFIG_NEEDS_LIBSUNMATH=y" >> $config_host_mak
-  fi
+fi
+if test "$haiku" = "yes" ; then
+  echo "CONFIG_HAIKU=y" >> $config_host_mak
 fi
 if test "$static" = "yes" ; then
   echo "CONFIG_STATIC=y" >> $config_host_mak
 fi
+qemu_version=$(head $source_path/VERSION)
+echo "VERSION=$qemu_version" >>$config_host_mak
+echo "PKGVERSION=$pkgversion" >>$config_host_mak
 echo "SRC_PATH=$source_path" >> $config_host_mak
 echo "TARGET_DIRS=$target_list" >> $config_host_mak
+if test "$sync_file_range" = "yes" ; then
+  echo "CONFIG_SYNC_FILE_RANGE=y" >> $config_host_mak
+fi
+if test "$dup3" = "yes" ; then
+  echo "CONFIG_DUP3=y" >> $config_host_mak
+fi
+if test "$prctl_pr_set_timerslack" = "yes" ; then
+  echo "CONFIG_PRCTL_PR_SET_TIMERSLACK=y" >> $config_host_mak
+fi
+if test "$epoll" = "yes" ; then
+  echo "CONFIG_EPOLL=y" >> $config_host_mak
+fi
+if test "$clock_adjtime" = "yes" ; then
+  echo "CONFIG_CLOCK_ADJTIME=y" >> $config_host_mak
+fi
+if test "$syncfs" = "yes" ; then
+  echo "CONFIG_SYNCFS=y" >> $config_host_mak
+fi
+if test "$sem_timedwait" = "yes" ; then
+  echo "CONFIG_SEM_TIMEDWAIT=y" >> $config_host_mak
+fi
+if test "$strchrnul" = "yes" ; then
+  echo "HAVE_STRCHRNUL=y" >> $config_host_mak
+fi
+if test "$st_atim" = "yes" ; then
+  echo "HAVE_STRUCT_STAT_ST_ATIM=y" >> $config_host_mak
+fi
 if test "$byteswap_h" = "yes" ; then
   echo "CONFIG_BYTESWAP_H=y" >> $config_host_mak
 fi
 if test "$bswap_h" = "yes" ; then
   echo "CONFIG_MACHINE_BSWAP_H=y" >> $config_host_mak
+fi
+if test "$have_broken_size_max" = "yes" ; then
+    echo "HAVE_BROKEN_SIZE_MAX=y" >> $config_host_mak
+fi
+
+if test "$membarrier" = "yes" ; then
+  echo "CONFIG_MEMBARRIER=y" >> $config_host_mak
+fi
+if test "$signalfd" = "yes" ; then
+  echo "CONFIG_SIGNALFD=y" >> $config_host_mak
+fi
+if test "$tcg" = "yes"; then
+  echo "CONFIG_TCG=y" >> $config_host_mak
+fi
+if test "$madvise" = "yes" ; then
+  echo "CONFIG_MADVISE=y" >> $config_host_mak
+fi
+if test "$posix_madvise" = "yes" ; then
+  echo "CONFIG_POSIX_MADVISE=y" >> $config_host_mak
+fi
+if test "$posix_memalign" = "yes" ; then
+  echo "CONFIG_POSIX_MEMALIGN=y" >> $config_host_mak
+fi
+
+if test "$malloc_trim" = "yes" ; then
+  echo "CONFIG_MALLOC_TRIM=y" >> $config_host_mak
+fi
+
+if test "$avx2_opt" = "yes" ; then
+  echo "CONFIG_AVX2_OPT=y" >> $config_host_mak
+fi
+
+if test "$avx512f_opt" = "yes" ; then
+  echo "CONFIG_AVX512F_OPT=y" >> $config_host_mak
 fi
 
 # XXX: suppress that
@@ -1136,8 +2448,28 @@ if [ "$bsd" = "yes" ] ; then
   echo "CONFIG_BSD=y" >> $config_host_mak
 fi
 
-if test "$valgrind_h" = "yes" ; then
-  echo "CONFIG_VALGRIND_H=y" >> $config_host_mak
+if test "$debug_stack_usage" = "yes" ; then
+  echo "CONFIG_DEBUG_STACK_USAGE=y" >> $config_host_mak
+fi
+
+if test "$open_by_handle_at" = "yes" ; then
+  echo "CONFIG_OPEN_BY_HANDLE=y" >> $config_host_mak
+fi
+
+if test "$linux_magic_h" = "yes" ; then
+  echo "CONFIG_LINUX_MAGIC_H=y" >> $config_host_mak
+fi
+
+if test "$pragma_diagnostic_available" = "yes" ; then
+  echo "CONFIG_PRAGMA_DIAGNOSTIC_AVAILABLE=y" >> $config_host_mak
+fi
+
+if test "$have_asan_iface_fiber" = "yes" ; then
+    echo "CONFIG_ASAN_IFACE_FIBER=y" >> $config_host_mak
+fi
+
+if test "$has_environ" = "yes" ; then
+  echo "CONFIG_HAS_ENVIRON=y" >> $config_host_mak
 fi
 
 if test "$cpuid_h" = "yes" ; then
@@ -1148,161 +2480,280 @@ if test "$int128" = "yes" ; then
   echo "CONFIG_INT128=y" >> $config_host_mak
 fi
 
-if test "$ARCH" = "sparc64" ; then
-  QEMU_INCLUDES="-I\$(SRC_PATH)/tcg/sparc $QEMU_INCLUDES"
-elif test "$ARCH" = "s390x" ; then
-  QEMU_INCLUDES="-I\$(SRC_PATH)/tcg/s390 $QEMU_INCLUDES"
-elif test "$ARCH" = "x86_64" -o "$ARCH" = "x32" ; then
-  QEMU_INCLUDES="-I\$(SRC_PATH)/tcg/i386 $QEMU_INCLUDES"
-elif test "$ARCH" = "ppc64" ; then
-  QEMU_INCLUDES="-I\$(SRC_PATH)/tcg/ppc $QEMU_INCLUDES"
-else
-  QEMU_INCLUDES="-I\$(SRC_PATH)/tcg/\$(ARCH) $QEMU_INCLUDES"
+if test "$atomic128" = "yes" ; then
+  echo "CONFIG_ATOMIC128=y" >> $config_host_mak
 fi
-QEMU_INCLUDES="-I\$(SRC_PATH)/tcg $QEMU_INCLUDES"
 
+if test "$cmpxchg128" = "yes" ; then
+  echo "CONFIG_CMPXCHG128=y" >> $config_host_mak
+fi
+
+if test "$atomic64" = "yes" ; then
+  echo "CONFIG_ATOMIC64=y" >> $config_host_mak
+fi
+
+if test "$attralias" = "yes" ; then
+  echo "CONFIG_ATTRIBUTE_ALIAS=y" >> $config_host_mak
+fi
+
+if test "$getauxval" = "yes" ; then
+  echo "CONFIG_GETAUXVAL=y" >> $config_host_mak
+fi
+
+if test "$have_sysmacros" = "yes" ; then
+  echo "CONFIG_SYSMACROS=y" >> $config_host_mak
+fi
+
+if test "$have_static_assert" = "yes" ; then
+  echo "CONFIG_STATIC_ASSERT=y" >> $config_host_mak
+fi
+
+if test "$have_utmpx" = "yes" ; then
+  echo "HAVE_UTMPX=y" >> $config_host_mak
+fi
+if test "$have_getrandom" = "yes" ; then
+  echo "CONFIG_GETRANDOM=y" >> $config_host_mak
+fi
+
+if test "$have_pthread_jit_protect" = "yes" ; then
+  echo "HAVE_PTHREAD_JIT_PROTECT=y" >> $config_host_mak
+fi
+
+# Hold two types of flag:
+#   CONFIG_THREAD_SETNAME_BYTHREAD  - we've got a way of setting the name on
+#                                     a thread we have a handle to
+#   CONFIG_PTHREAD_SETNAME_NP_W_TID - A way of doing it on a particular
+#                                     platform
+if test "$pthread_setname_np_w_tid" = "yes" ; then
+  echo "CONFIG_THREAD_SETNAME_BYTHREAD=y" >> $config_host_mak
+  echo "CONFIG_PTHREAD_SETNAME_NP_W_TID=y" >> $config_host_mak
+elif test "$pthread_setname_np_wo_tid" = "yes" ; then
+  echo "CONFIG_THREAD_SETNAME_BYTHREAD=y" >> $config_host_mak
+  echo "CONFIG_PTHREAD_SETNAME_NP_WO_TID=y" >> $config_host_mak
+fi
+
+if test "$ARCH" = "sparc64" ; then
+  QEMU_INCLUDES="-iquote \$(SRC_PATH)/tcg/sparc $QEMU_INCLUDES"
+elif test "$ARCH" = "s390x" ; then
+  QEMU_INCLUDES="-iquote \$(SRC_PATH)/tcg/s390 $QEMU_INCLUDES"
+elif test "$ARCH" = "x86_64" || test "$ARCH" = "x32" ; then
+  QEMU_INCLUDES="-iquote \$(SRC_PATH)/tcg/i386 $QEMU_INCLUDES"
+elif test "$ARCH" = "ppc64" ; then
+  QEMU_INCLUDES="-iquote \$(SRC_PATH)/tcg/ppc $QEMU_INCLUDES"
+elif test "$ARCH" = "riscv32" || test "$ARCH" = "riscv64" ; then
+  QEMU_INCLUDES="-I\$(SRC_PATH)/tcg/riscv $QEMU_INCLUDES"
+else
+  QEMU_INCLUDES="-iquote \$(SRC_PATH)/tcg/\$(ARCH) $QEMU_INCLUDES"
+fi
+
+echo "TOOLS=$tools" >> $config_host_mak
 echo "MAKE=$make" >> $config_host_mak
+echo "INSTALL=$install" >> $config_host_mak
+echo "INSTALL_DIR=$install -d -m 0755" >> $config_host_mak
+echo "INSTALL_DATA=$install -c -m 0644" >> $config_host_mak
+echo "INSTALL_PROG=$install -c -m 0755" >> $config_host_mak
+echo "INSTALL_LIB=$install -c -m 0644" >> $config_host_mak
 echo "CC=$cc" >> $config_host_mak
-echo "CC_I386=$cc_i386" >> $config_host_mak
+if $iasl -h > /dev/null 2>&1; then
+  echo "IASL=$iasl" >> $config_host_mak
+fi
 echo "HOST_CC=$host_cc" >> $config_host_mak
+echo "CXX=$cxx" >> $config_host_mak
 echo "OBJCC=$objcc" >> $config_host_mak
 echo "AR=$ar" >> $config_host_mak
 echo "ARFLAGS=$ARFLAGS" >> $config_host_mak
 echo "AS=$as" >> $config_host_mak
+echo "CCAS=$ccas" >> $config_host_mak
 echo "CPP=$cpp" >> $config_host_mak
 echo "OBJCOPY=$objcopy" >> $config_host_mak
 echo "LD=$ld" >> $config_host_mak
+echo "RANLIB=$ranlib" >> $config_host_mak
 echo "NM=$nm" >> $config_host_mak
+echo "PKG_CONFIG=$pkg_config_exe" >> $config_host_mak
 echo "CFLAGS=$CFLAGS" >> $config_host_mak
 echo "CFLAGS_NOPIE=$CFLAGS_NOPIE" >> $config_host_mak
 echo "QEMU_CFLAGS=$QEMU_CFLAGS" >> $config_host_mak
+echo "QEMU_CXXFLAGS=$QEMU_CXXFLAGS" >> $config_host_mak
 echo "QEMU_INCLUDES=$QEMU_INCLUDES" >> $config_host_mak
-echo "LDFLAGS=$LDFLAGS" >> $config_host_mak
+echo "QEMU_LDFLAGS=$QEMU_LDFLAGS" >> $config_host_mak
 echo "LDFLAGS_NOPIE=$LDFLAGS_NOPIE" >> $config_host_mak
+echo "LD_REL_FLAGS=$LD_REL_FLAGS" >> $config_host_mak
+echo "LD_I386_EMULATION=$ld_i386_emulation" >> $config_host_mak
 echo "LIBS+=$LIBS" >> $config_host_mak
+echo "LIBS_TOOLS+=$libs_tools" >> $config_host_mak
+echo "PTHREAD_LIB=$PTHREAD_LIB" >> $config_host_mak
 echo "EXESUF=$EXESUF" >> $config_host_mak
 echo "DSOSUF=$DSOSUF" >> $config_host_mak
 echo "LDFLAGS_SHARED=$LDFLAGS_SHARED" >> $config_host_mak
-echo "TRANSLATE_OPT_CFLAGS=$TRANSLATE_OPT_CFLAGS" >> $config_host_mak
 
 for target in $target_list; do
 target_dir="$target"
 config_target_mak=$target_dir/config-target.mak
-target_name=`echo $target | cut -d '-' -f 1`
-target_bigendian="no"
-
+target_name=$(echo $target | cut -d '-' -f 1)
+target_aligned_only="no"
 case "$target_name" in
-  aarch64eb|armeb|lm32|m68k|microblaze|mips|mipsn32|mips64|moxie|or32|ppc|ppcemb|ppc64|ppc64abi32|s390x|sh4eb|sparc|sparc64|sparc32plus|xtensaeb)
-  target_bigendian=yes
+  alpha|hppa|mips64el|mips64|mipsel|mips|mipsn32|mipsn32el|sh4|sh4eb|sparc|sparc64|sparc32plus|xtensa|xtensaeb)
+  target_aligned_only="yes"
   ;;
 esac
-target_softmmu="yes"
-case "$target" in
-  ${target_name}-softmmu)
-    target_softmmu="yes"
-    ;;
-  *)
-    error_exit "Target '$target' not recognised"
-    exit 1
-    ;;
+target_bigendian="no"
+case "$target_name" in
+  armeb|aarch64eb|hppa|lm32|m68k|microblaze|mips|mipsn32|mips64|moxie|or1k|ppc|ppc64|ppc64abi32|s390x|sh4eb|sparc|sparc64|sparc32plus|xtensaeb)
+  target_bigendian="yes"
+  ;;
 esac
+target_user_only="no"
+target_linux_user="no"
+target_bsd_user="no"
+target_softmmu="yes"
 
 mkdir -p $target_dir
 echo "# Automatically generated by configure - do not modify" > $config_target_mak
 
-bflt="no"
+mttcg="no"
 
 TARGET_ARCH="$target_name"
 TARGET_BASE_ARCH=""
+TARGET_ABI_DIR=""
 
 case "$target_name" in
   i386)
+    mttcg="yes"
+    TARGET_SYSTBL_ABI=i386
   ;;
   x86_64)
     TARGET_BASE_ARCH=i386
+    TARGET_SYSTBL_ABI=common,64
+    mttcg="yes"
   ;;
   alpha)
+    mttcg="yes"
+    TARGET_SYSTBL_ABI=common
   ;;
   arm|armeb)
     TARGET_ARCH=arm
-    bflt="yes"
+    TARGET_SYSTBL_ABI=common,oabi
+    mttcg="yes"
   ;;
   aarch64|aarch64eb)
-    TARGET_BASE_ARCH=arm
     TARGET_ARCH=aarch64
-    bflt="yes"
+    TARGET_BASE_ARCH=arm
+    mttcg="yes"
   ;;
   cris)
+  ;;
+  hppa)
+    mttcg="yes"
+    TARGET_SYSTBL_ABI=common,32
   ;;
   lm32)
   ;;
   m68k)
-    bflt="yes"
+    TARGET_SYSTBL_ABI=common
   ;;
   microblaze|microblazeel)
     TARGET_ARCH=microblaze
-    bflt="yes"
+    TARGET_SYSTBL_ABI=common
+    echo "TARGET_ABI32=y" >> $config_target_mak
   ;;
   mips|mipsel)
+    mttcg="yes"
     TARGET_ARCH=mips
     echo "TARGET_ABI_MIPSO32=y" >> $config_target_mak
+    TARGET_SYSTBL_ABI=o32
   ;;
   mipsn32|mipsn32el)
+    mttcg="yes"
     TARGET_ARCH=mips64
     TARGET_BASE_ARCH=mips
     echo "TARGET_ABI_MIPSN32=y" >> $config_target_mak
     echo "TARGET_ABI32=y" >> $config_target_mak
+    TARGET_SYSTBL_ABI=n32
   ;;
   mips64|mips64el)
+    mttcg="no"
     TARGET_ARCH=mips64
     TARGET_BASE_ARCH=mips
     echo "TARGET_ABI_MIPSN64=y" >> $config_target_mak
-  ;;
-  tricore)
+    TARGET_SYSTBL_ABI=n64
   ;;
   moxie)
   ;;
-  or32)
+  nios2)
+  ;;
+  or1k)
     TARGET_ARCH=openrisc
     TARGET_BASE_ARCH=openrisc
   ;;
   ppc)
-  ;;
-  ppcemb)
-    TARGET_BASE_ARCH=ppc
+    TARGET_SYSTBL_ABI=common,nospu,32
   ;;
   ppc64)
     TARGET_BASE_ARCH=ppc
+    TARGET_ABI_DIR=ppc
+    TARGET_SYSTBL_ABI=common,nospu,64
+    mttcg=yes
   ;;
   ppc64le)
     TARGET_ARCH=ppc64
     TARGET_BASE_ARCH=ppc
+    TARGET_ABI_DIR=ppc
+    TARGET_SYSTBL_ABI=common,nospu,64
+    mttcg=yes
   ;;
   ppc64abi32)
     TARGET_ARCH=ppc64
     TARGET_BASE_ARCH=ppc
+    TARGET_ABI_DIR=ppc
+    TARGET_SYSTBL_ABI=common,nospu,32
     echo "TARGET_ABI32=y" >> $config_target_mak
+  ;;
+  riscv32)
+    TARGET_BASE_ARCH=riscv
+    TARGET_ABI_DIR=riscv
+    mttcg=yes
+  ;;
+  riscv64)
+    TARGET_BASE_ARCH=riscv
+    TARGET_ABI_DIR=riscv
+    mttcg=yes
+  ;;
+  rx)
+    TARGET_ARCH=rx
+    target_compiler=$cross_cc_rx
   ;;
   sh4|sh4eb)
     TARGET_ARCH=sh4
-    bflt="yes"
+    TARGET_SYSTBL_ABI=common
   ;;
   sparc)
+    TARGET_SYSTBL_ABI=common,32
   ;;
   sparc64)
     TARGET_BASE_ARCH=sparc
+    TARGET_SYSTBL_ABI=common,64
   ;;
   sparc32plus)
     TARGET_ARCH=sparc64
     TARGET_BASE_ARCH=sparc
+    TARGET_ABI_DIR=sparc
+    TARGET_SYSTBL_ABI=common,32
     echo "TARGET_ABI32=y" >> $config_target_mak
   ;;
   s390x)
+    TARGET_SYSTBL_ABI=common,64
+    mttcg=yes
+  ;;
+  tilegx)
+  ;;
+  tricore)
   ;;
   unicore32)
   ;;
   xtensa|xtensaeb)
     TARGET_ARCH=xtensa
+    TARGET_SYSTBL_ABI=common
+    mttcg="yes"
   ;;
   *)
     error_exit "Unsupported target CPU"
@@ -1313,24 +2764,52 @@ if [ "$TARGET_BASE_ARCH" = "" ]; then
   TARGET_BASE_ARCH=$TARGET_ARCH
 fi
 
-symlink "$source_path/Makefile.target" "$target_dir/Makefile"
+#symlink "$source_path/Makefile.target" "$target_dir/Makefile"
 
 upper() {
     echo "$@"| LC_ALL=C tr '[a-z]' '[A-Z]'
 }
 
-target_arch_name="`upper $TARGET_ARCH`"
+target_arch_name="$(upper $TARGET_ARCH)"
 echo "TARGET_$target_arch_name=y" >> $config_target_mak
 echo "TARGET_NAME=$target_name" >> $config_target_mak
 echo "TARGET_BASE_ARCH=$TARGET_BASE_ARCH" >> $config_target_mak
+if [ "$TARGET_ABI_DIR" = "" ]; then
+  TARGET_ABI_DIR=$TARGET_ARCH
+fi
+echo "TARGET_ABI_DIR=$TARGET_ABI_DIR" >> $config_target_mak
+if [ "$HOST_VARIANT_DIR" != "" ]; then
+    echo "HOST_VARIANT_DIR=$HOST_VARIANT_DIR" >> $config_target_mak
+fi
+if [ "$TARGET_SYSTBL_ABI" != "" ]; then
+    echo "TARGET_SYSTBL_ABI=$TARGET_SYSTBL_ABI" >> $config_target_mak
+fi
+
+if test "$target_aligned_only" = "yes" ; then
+  echo "TARGET_ALIGNED_ONLY=y" >> $config_target_mak
+fi
 if test "$target_bigendian" = "yes" ; then
   echo "TARGET_WORDS_BIGENDIAN=y" >> $config_target_mak
 fi
 if test "$target_softmmu" = "yes" ; then
   echo "CONFIG_SOFTMMU=y" >> $config_target_mak
+  if test "$mttcg" = "yes" ; then
+    echo "TARGET_SUPPORTS_MTTCG=y" >> $config_target_mak
+  fi
+fi
+if test "$target_user_only" = "yes" ; then
+  echo "CONFIG_USER_ONLY=y" >> $config_target_mak
+fi
+if test "$target_linux_user" = "yes" ; then
+  echo "CONFIG_LINUX_USER=y" >> $config_target_mak
 fi
 
-# generate QEMU_CFLAGS/LDFLAGS for targets
+if test "$target_bsd_user" = "yes" ; then
+  echo "CONFIG_BSD_USER=y" >> $config_target_mak
+fi
+
+
+# generate QEMU_CFLAGS/QEMU_LDFLAGS for targets
 
 cflags=""
 ldflags=""
@@ -1342,11 +2821,14 @@ alpha)
 ;;
 esac
 
-echo "LDFLAGS+=$ldflags" >> $config_target_mak
+echo "QEMU_LDFLAGS+=$ldflags" >> $config_target_mak
 echo "QEMU_CFLAGS+=$cflags" >> $config_target_mak
-echo "QEMU_CFLAGS+=-include ${target_name}.h" >> $config_target_mak
 
 done # for target in $targets
+
+if test "$ccache_cpp2" = "yes"; then
+  echo "export CCACHE_CPP2=y" >> $config_host_mak
+fi
 
 # Save the configure command line for later reuse.
 cat <<EOD >config.status
@@ -1356,9 +2838,44 @@ cat <<EOD >config.status
 # Compiler output produced by configure, useful for debugging
 # configure, is in config.log if it exists.
 EOD
+
+preserve_env() {
+    envname=$1
+
+    eval envval=\$$envname
+
+    if test -n "$envval"
+    then
+	echo "$envname='$envval'" >> config.status
+	echo "export $envname" >> config.status
+    else
+	echo "unset $envname" >> config.status
+    fi
+}
+
+# Preserve various env variables that influence what
+# features/build target configure will detect
+preserve_env AR
+preserve_env AS
+preserve_env CC
+preserve_env CPP
+preserve_env CXX
+preserve_env INSTALL
+preserve_env LD
+preserve_env LD_LIBRARY_PATH
+preserve_env LIBTOOL
+preserve_env MAKE
+preserve_env NM
+preserve_env OBJCOPY
+preserve_env PATH
+preserve_env PKG_CONFIG
+preserve_env PKG_CONFIG_LIBDIR
+preserve_env PKG_CONFIG_PATH
+preserve_env STRIP
+
 printf "exec" >>config.status
 printf " '%s'" "$0" "$@" >>config.status
-echo >>config.status
+echo ' "$@"' >>config.status
 chmod +x config.status
 
 rm -r "$TMPDIR1"

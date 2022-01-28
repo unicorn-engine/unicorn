@@ -16,8 +16,46 @@ extern "C" {
 #undef sparc
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
+
+//> SPARC32 CPU
+typedef enum uc_cpu_sparc32 {
+    UC_CPU_SPARC32_FUJITSU_MB86904 = 0,
+    UC_CPU_SPARC32_FUJITSU_MB86907,
+    UC_CPU_SPARC32_TI_MICROSPARC_I,
+    UC_CPU_SPARC32_TI_MICROSPARC_II,
+    UC_CPU_SPARC32_TI_MICROSPARC_IIEP,
+    UC_CPU_SPARC32_TI_SUPERSPARC_40,
+    UC_CPU_SPARC32_TI_SUPERSPARC_50,
+    UC_CPU_SPARC32_TI_SUPERSPARC_51,
+    UC_CPU_SPARC32_TI_SUPERSPARC_60,
+    UC_CPU_SPARC32_TI_SUPERSPARC_61,
+    UC_CPU_SPARC32_TI_SUPERSPARC_II,
+    UC_CPU_SPARC32_LEON2,
+    UC_CPU_SPARC32_LEON3
+} uc_cpu_sparc32;
+
+//> SPARC64 CPU
+typedef enum uc_cpu_sparc64 {
+    UC_CPU_SPARC64_FUJITSU = 0,
+    UC_CPU_SPARC64_FUJITSU_III,
+    UC_CPU_SPARC64_FUJITSU_IV,
+    UC_CPU_SPARC64_FUJITSU_V,
+    UC_CPU_SPARC64_TI_ULTRASPARC_I,
+    UC_CPU_SPARC64_TI_ULTRASPARC_II,
+    UC_CPU_SPARC64_TI_ULTRASPARC_III,
+    UC_CPU_SPARC64_TI_ULTRASPARC_IIE,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_III,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_III_CU,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_IIII,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_IV,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_IV_PLUS,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_IIII_PLUS,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_T1,
+    UC_CPU_SPARC64_SUN_ULTRASPARC_T2,
+    UC_CPU_SPARC64_NEC_ULTRASPARC_I,
+} uc_cpu_sparc64;
 
 //> SPARC registers
 typedef enum uc_sparc_reg {
@@ -71,7 +109,7 @@ typedef enum uc_sparc_reg {
     UC_SPARC_REG_F58,
     UC_SPARC_REG_F60,
     UC_SPARC_REG_F62,
-    UC_SPARC_REG_FCC0,	// Floating condition codes
+    UC_SPARC_REG_FCC0, // Floating condition codes
     UC_SPARC_REG_FCC1,
     UC_SPARC_REG_FCC2,
     UC_SPARC_REG_FCC3,
@@ -91,7 +129,7 @@ typedef enum uc_sparc_reg {
     UC_SPARC_REG_I5,
     UC_SPARC_REG_FP,
     UC_SPARC_REG_I7,
-    UC_SPARC_REG_ICC,	// Integer condition codes
+    UC_SPARC_REG_ICC, // Integer condition codes
     UC_SPARC_REG_L0,
     UC_SPARC_REG_L1,
     UC_SPARC_REG_L2,
@@ -114,9 +152,9 @@ typedef enum uc_sparc_reg {
     UC_SPARC_REG_XCC,
 
     // pseudo register
-    UC_SPARC_REG_PC,   // program counter register
+    UC_SPARC_REG_PC, // program counter register
 
-    UC_SPARC_REG_ENDING,   // <-- mark the end of the list of registers
+    UC_SPARC_REG_ENDING, // <-- mark the end of the list of registers
 
     // extras
     UC_SPARC_REG_O6 = UC_SPARC_REG_SP,

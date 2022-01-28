@@ -11,17 +11,16 @@
  * 2 of the License, or (at your option) any later version.
  */
 
+#include "qemu/osdep.h"
 #include "qemu/bitops.h"
-
-#define BITOP_WORD(nr)		((nr) / BITS_PER_LONG)
 
 /*
  * Find the next set bit in a memory region.
  */
 unsigned long find_next_bit(const unsigned long *addr, unsigned long size,
-                unsigned long offset)
+                            unsigned long offset)
 {
-    const unsigned long *p = addr + BITOP_WORD(offset);
+    const unsigned long *p = addr + BIT_WORD(offset);
     unsigned long result = offset & ~(BITS_PER_LONG-1);
     unsigned long tmp;
 
@@ -84,9 +83,9 @@ found_middle:
  * Linus' asm-alpha/bitops.h.
  */
 unsigned long find_next_zero_bit(const unsigned long *addr, unsigned long size,
-                 unsigned long offset)
+                                 unsigned long offset)
 {
-    const unsigned long *p = addr + BITOP_WORD(offset);
+    const unsigned long *p = addr + BIT_WORD(offset);
     unsigned long result = offset & ~(BITS_PER_LONG-1);
     unsigned long tmp;
 
@@ -126,4 +125,33 @@ found_first:
     }
 found_middle:
     return result + ctzl(~tmp);
+}
+
+unsigned long find_last_bit(const unsigned long *addr, unsigned long size)
+{
+    unsigned long words;
+    unsigned long tmp;
+
+    /* Start at final word. */
+    words = size / BITS_PER_LONG;
+
+    /* Partial final word? */
+    if (size & (BITS_PER_LONG-1)) {
+        tmp = (addr[words] & (~0UL >> (BITS_PER_LONG
+                                       - (size & (BITS_PER_LONG-1)))));
+        if (tmp) {
+            goto found;
+        }
+    }
+
+    while (words) {
+        tmp = addr[--words];
+        if (tmp) {
+        found:
+            return words * BITS_PER_LONG + BITS_PER_LONG - 1 - clzl(tmp);
+        }
+    }
+
+    /* Not found */
+    return size;
 }
