@@ -131,6 +131,25 @@ pub enum Arch {
     MAX = 9,
 }
 
+impl TryFrom<usize> for Arch {
+    type Error = uc_error;
+
+    fn try_from(v: usize) -> Result<Self, Self::Error> {
+        match v {
+            x if x == Self::ARM as usize => Ok(Self::ARM),
+            x if x == Self::ARM64 as usize => Ok(Self::ARM64),
+            x if x == Self::MIPS as usize => Ok(Self::MIPS),
+            x if x == Self::X86 as usize => Ok(Self::X86),
+            x if x == Self::PPC as usize => Ok(Self::PPC),
+            x if x == Self::SPARC as usize => Ok(Self::SPARC),
+            x if x == Self::M68K as usize => Ok(Self::M68K),
+            x if x == Self::RISCV as usize => Ok(Self::RISCV),
+            x if x == Self::MAX as usize => Ok(Self::MAX),
+            _ => Err(uc_error::ARCH),
+        }
+    }
+}
+
 bitflags! {
     #[repr(C)]
     pub struct Mode: i32 {
