@@ -11,7 +11,7 @@ import sys
 import weakref
 import functools
 
-from . import x86_const, arm64_const, unicorn_const as uc
+from . import x86_const, arm_const, arm64_const, unicorn_const as uc
 
 if not hasattr(sys.modules[__name__], "__file__"):
     __file__ = inspect.getfile(inspect.currentframe())
@@ -261,8 +261,29 @@ def reg_read(reg_read_func, arch, reg_id, opt=None):
                 raise UcError(status)
             return reg.value
 
+    if arch == uc.UC_ARCH_ARM:
+        if reg_id == arm_const.UC_ARM_REG_CP_REG:
+            reg = uc_arm_cp_reg()
+            if not isinstance(opt, tuple) or len(opt) != 7:
+                raise UcError(uc.UC_ERR_ARG)
+            reg.cp, reg.is64, reg.sec, reg.crn, reg.crm, reg.opc1, reg.opc2 = opt
+            status = reg_read_func(reg_id, ctypes.byref(reg))
+            if status != uc.UC_ERR_OK:
+                raise UcError(status)
+            return reg.val
+
     if arch == uc.UC_ARCH_ARM64:
-        if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+        if reg_id == arm64_const.UC_ARM64_REG_CP_REG:
+            reg = uc_arm64_cp_reg()
+            if not isinstance(opt, tuple) or len(opt) != 5:
+                raise UcError(uc.UC_ERR_ARG)
+            reg.crn, reg.crm, reg.op0, reg.op1, reg.op2 = opt
+            status = reg_read_func(reg_id, ctypes.byref(reg))
+            if status != uc.UC_ERR_OK:
+                raise UcError(status)
+            return reg.val
+
+        elif reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
             reg = uc_arm64_neon128()
             status = reg_read_func(reg_id, ctypes.byref(reg))
             if status != uc.UC_ERR_OK:
@@ -312,6 +333,19 @@ def reg_write(reg_write_func, arch, reg_id, value):
             reg.low_qword = value & 0xffffffffffffffff
             reg.high_qword = value >> 64
 
+    if arch == uc.UC_ARCH_ARM:
+        if reg_id == arm64_const.UC_ARM64_REG_CP_REG:
+            reg = uc_arm64_cp_reg()
+            if not isinstance(value, tuple) or len(value) != 6:
+                raise UcError(uc.UC_ERR_ARG)
+            reg.crn, reg.crm, reg.op0, reg.op1, reg.op2, reg.val = value
+
+        elif reg_id == arm_const.UC_ARM_REG_CP_REG:
+            reg = uc_arm_cp_reg()
+            if not isinstance(value, tuple) or len(value) != 8:
+                raise UcError(uc.UC_ERR_ARG)
+            reg.cp, reg.is64, reg.sec, reg.crn, reg.crm, reg.opc1, reg.opc2, reg.val = value
+
     if reg is None:
         # convert to 64bit number to be safe
         reg = ctypes.c_uint64(value)
@@ -342,6 +376,29 @@ def _catch_hook_exception(func):
     return wrapper
 
 
+class uc_arm_cp_reg(ctypes.Structure):
+    """ARM coprocessors registers for instructions MRC, MCR, MRRC, MCRR"""
+    _fields_ = [
+        ("cp", ctypes.c_uint32),
+        ("is64", ctypes.c_uint32),
+        ("sec", ctypes.c_uint32),
+        ("crn", ctypes.c_uint32),
+        ("crm", ctypes.c_uint32),
+        ("opc1", ctypes.c_uint32),
+        ("opc2", ctypes.c_uint32),
+        ("val", ctypes.c_uint64)
+    ]
+
+class uc_arm64_cp_reg(ctypes.Structure):
+    """ARM64 coprocessors registers for instructions MRS, MSR"""
+    _fields_ = [
+        ("crn", ctypes.c_uint32),
+        ("crm", ctypes.c_uint32),
+        ("op0", ctypes.c_uint32),
+        ("op1", ctypes.c_uint32),
+        ("op2", ctypes.c_uint32),
+        ("val", ctypes.c_uint64)
+    ]
 
 class uc_x86_mmr(ctypes.Structure):
     """Memory-Management Register for instructions IDTR, GDTR, LDTR, TR."""

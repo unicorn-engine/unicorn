@@ -98,8 +98,29 @@ def test_thumb():
     except UcError as e:
         print("ERROR: %s" % e)
 
+def test_read_sctlr():
+    print("Read SCTLR")
+    try:
+        # Initialize emulator in thumb mode
+        mu = Uc(UC_ARCH_ARM, UC_MODE_ARM)
+
+        # Read SCTLR
+        # cp = 15
+        # is64 = 0
+        # sec = 0
+        # crn = 1
+        # crm = 0
+        # opc1 = 0
+        # opc2 = 0
+        val = mu.reg_read(UC_ARM_REG_CP_REG, (15, 0, 0, 1, 0, 0, 0))
+        print(">>> SCTLR = 0x%x" % val)
+
+    except UcError as e:
+        print("ERROR: %s" % e)
 
 if __name__ == '__main__':
     test_arm()
     print("=" * 26)
     test_thumb()
+    print("=" * 26)
+    test_read_sctlr()
