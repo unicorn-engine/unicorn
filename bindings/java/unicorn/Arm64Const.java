@@ -278,25 +278,25 @@ public interface Arm64Const {
    public static final int UC_ARM64_REG_PC = 260;
    public static final int UC_ARM64_REG_CPACR_EL1 = 261;
 
-// thread registers
+// thread registers, depreciated, use UC_ARM64_REG_CP_REG instead
    public static final int UC_ARM64_REG_TPIDR_EL0 = 262;
    public static final int UC_ARM64_REG_TPIDRRO_EL0 = 263;
    public static final int UC_ARM64_REG_TPIDR_EL1 = 264;
    public static final int UC_ARM64_REG_PSTATE = 265;
 
-// exception link registers
+// exception link registers, depreciated, use UC_ARM64_REG_CP_REG instead
    public static final int UC_ARM64_REG_ELR_EL0 = 266;
    public static final int UC_ARM64_REG_ELR_EL1 = 267;
    public static final int UC_ARM64_REG_ELR_EL2 = 268;
    public static final int UC_ARM64_REG_ELR_EL3 = 269;
 
-// stack pointers registers
+// stack pointers registers, depreciated, use UC_ARM64_REG_CP_REG instead
    public static final int UC_ARM64_REG_SP_EL0 = 270;
    public static final int UC_ARM64_REG_SP_EL1 = 271;
    public static final int UC_ARM64_REG_SP_EL2 = 272;
    public static final int UC_ARM64_REG_SP_EL3 = 273;
 
-// other CP15 registers
+// other CP15 registers, depreciated, use UC_ARM64_REG_CP_REG instead
    public static final int UC_ARM64_REG_TTBR0_EL1 = 274;
    public static final int UC_ARM64_REG_TTBR1_EL1 = 275;
    public static final int UC_ARM64_REG_ESR_EL0 = 276;
@@ -313,7 +313,8 @@ public interface Arm64Const {
    public static final int UC_ARM64_REG_VBAR_EL1 = 287;
    public static final int UC_ARM64_REG_VBAR_EL2 = 288;
    public static final int UC_ARM64_REG_VBAR_EL3 = 289;
-   public static final int UC_ARM64_REG_ENDING = 290;
+   public static final int UC_ARM64_REG_CP_REG = 290;
+   public static final int UC_ARM64_REG_ENDING = 291;
 
 // alias registers
    public static final int UC_ARM64_REG_IP0 = 215;
