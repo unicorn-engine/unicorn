@@ -138,8 +138,30 @@ static void test_arm64_v8_pac()
     OK(uc_close(uc));
 }
 
+static void test_arm64_read_sctlr()
+{
+    uc_engine *uc;
+    uc_arm64_cp_reg reg;
+
+    OK(uc_open(UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN | UC_MODE_ARM, &uc));
+
+    // SCTLR_EL1. See arm reference.
+    reg.crn = 1;
+    reg.crm = 0;
+    reg.op0 = 0b11;
+    reg.op1 = 0;
+    reg.op2 = 0;
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg));
+
+    TEST_CHECK((reg.val >> 58) == 0);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
              {"test_arm64_v8_pac", test_arm64_v8_pac},
+             {"test_arm64_read_sctlr", test_arm64_read_sctlr},
              {NULL, NULL}};

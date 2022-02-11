@@ -23,6 +23,17 @@ typedef enum uc_cpu_aarch64 {
     UC_CPU_AARCH64_MAX
 } uc_cpu_aarch64;
 
+// ARM64 coprocessor registers, use this with UC_ARM64_REG_CP_REG to
+// in call to uc_reg_write/read() to access the registers.
+typedef struct uc_arm64_cp_reg {
+    int crn;      // Coprocessor register number
+    int crm;      // Coprocessor register number
+    int op0;      // Opcode0
+    int op1;      // Opcode1
+    int op2;      // Opcode2
+    uint64_t val; // The value to read/write
+} uc_arm64_cp_reg;
+
 //> ARM64 registers
 typedef enum uc_arm64_reg {
     UC_ARM64_REG_INVALID = 0,
@@ -293,26 +304,26 @@ typedef enum uc_arm64_reg {
 
     UC_ARM64_REG_CPACR_EL1,
 
-    //> thread registers
+    //> thread registers, depreciated, use UC_ARM64_REG_CP_REG instead
     UC_ARM64_REG_TPIDR_EL0,
     UC_ARM64_REG_TPIDRRO_EL0,
     UC_ARM64_REG_TPIDR_EL1,
 
     UC_ARM64_REG_PSTATE,
 
-    //> exception link registers
+    //> exception link registers, depreciated, use UC_ARM64_REG_CP_REG instead
     UC_ARM64_REG_ELR_EL0,
     UC_ARM64_REG_ELR_EL1,
     UC_ARM64_REG_ELR_EL2,
     UC_ARM64_REG_ELR_EL3,
 
-    //> stack pointers registers
+    //> stack pointers registers, depreciated, use UC_ARM64_REG_CP_REG instead
     UC_ARM64_REG_SP_EL0,
     UC_ARM64_REG_SP_EL1,
     UC_ARM64_REG_SP_EL2,
     UC_ARM64_REG_SP_EL3,
 
-    //> other CP15 registers
+    //> other CP15 registers, depreciated, use UC_ARM64_REG_CP_REG instead
     UC_ARM64_REG_TTBR0_EL1,
     UC_ARM64_REG_TTBR1_EL1,
 
@@ -334,6 +345,8 @@ typedef enum uc_arm64_reg {
     UC_ARM64_REG_VBAR_EL1,
     UC_ARM64_REG_VBAR_EL2,
     UC_ARM64_REG_VBAR_EL3,
+
+    UC_ARM64_REG_CP_REG,
 
     UC_ARM64_REG_ENDING, // <-- mark the end of the list of registers
 

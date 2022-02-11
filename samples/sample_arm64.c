@@ -194,6 +194,44 @@ static void test_arm64eb(void)
     uc_close(uc);
 }
 
+static void test_arm64_sctlr()
+{
+    uc_engine *uc;
+    uc_err err;
+    uc_arm64_cp_reg reg;
+
+    printf("Read the SCTLR register.\n");
+
+    err = uc_open(UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN | UC_MODE_ARM, &uc);
+    if (err != UC_ERR_OK) {
+        printf("Failed on uc_emu_start() with error returned: %u\n", err);
+    }
+
+    // SCTLR_EL1. See arm reference.
+    reg.crn = 1;
+    reg.crm = 0;
+    reg.op0 = 0b11;
+    reg.op1 = 0;
+    reg.op2 = 0;
+
+    err = uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg);
+    if (err != UC_ERR_OK) {
+        printf("Failed on uc_reg_read() with error returned: %u\n", err);
+    }
+
+    printf(">>> SCTLR_EL1 = 0x%" PRIx64 "\n", reg.val);
+
+    reg.op1 = 0b100;
+    err = uc_reg_read(uc, UC_ARM64_REG_CP_REG, &reg);
+    if (err != UC_ERR_OK) {
+        printf("Failed on uc_reg_read() with error returned: %u\n", err);
+    }
+
+    printf(">>> SCTLR_EL2 = 0x%" PRIx64 "\n", reg.val);
+
+    uc_close(uc);
+}
+
 int main(int argc, char **argv, char **envp)
 {
     test_arm64_mem_fetch();
@@ -201,6 +239,9 @@ int main(int argc, char **argv, char **envp)
 
     printf("-------------------------\n");
     test_arm64eb();
+
+    printf("-------------------------\n");
+    test_arm64_sctlr();
 
     return 0;
 }
