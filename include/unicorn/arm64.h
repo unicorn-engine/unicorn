@@ -26,11 +26,11 @@ typedef enum uc_cpu_aarch64 {
 // ARM64 coprocessor registers, use this with UC_ARM64_REG_CP_REG to
 // in call to uc_reg_write/read() to access the registers.
 typedef struct uc_arm64_cp_reg {
-    int crn;      // Coprocessor register number
-    int crm;      // Coprocessor register number
-    int op0;      // Opcode0
-    int op1;      // Opcode1
-    int op2;      // Opcode2
+    uint32_t crn; // Coprocessor register number
+    uint32_t crm; // Coprocessor register number
+    uint32_t op0; // Opcode0
+    uint32_t op1; // Opcode1
+    uint32_t op2; // Opcode2
     uint64_t val; // The value to read/write
 } uc_arm64_cp_reg;
 

@@ -56,14 +56,14 @@ typedef enum uc_cpu_arm {
 // ARM coprocessor registers, use this with UC_ARM_REG_CP_REG to
 // in call to uc_reg_write/read() to access the registers.
 typedef struct uc_arm_cp_reg {
-    int cp;       // The coprocessor identifier
-    int is64;     // Is it a 64 bit control register
-    int sec;      // Security state
-    int crn;      // Coprocessor register number
-    int crm;      // Coprocessor register number
-    int opc1;     // Opcode1
-    int opc2;     // Opcode2
-    uint64_t val; // The value to read/write
+    uint32_t cp;   // The coprocessor identifier
+    uint32_t is64; // Is it a 64 bit control register
+    uint32_t sec;  // Security state
+    uint32_t crn;  // Coprocessor register number
+    uint32_t crm;  // Coprocessor register number
+    uint32_t opc1; // Opcode1
+    uint32_t opc2; // Opcode2
+    uint64_t val;  // The value to read/write
 } uc_arm_cp_reg;
 
 //> ARM registers
