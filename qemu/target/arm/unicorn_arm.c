@@ -147,8 +147,60 @@ static void v7m_msr_xpsr(CPUARMState *env, uint32_t mask, uint32_t reg,
     xpsr_write(env, val, xpsrmask);
 }
 
-static void reg_read(CPUARMState *env, unsigned int regid, void *value)
+static uc_err read_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
 {
+    ARMCPU *cpu = ARM_CPU(env->uc->cpu);
+    const ARMCPRegInfo *ri = get_arm_cp_reginfo(
+        cpu->cp_regs, ENCODE_CP_REG(cp->cp, cp->is64, cp->sec, cp->crn, cp->crm,
+                                    cp->opc1, cp->opc2));
+
+    if (!ri) {
+        return UC_ERR_ARG;
+    }
+
+    cp->val = read_raw_cp_reg(env, ri);
+
+    if (!cp->is64) {
+        cp->val = cp->val & 0xFFFFFFFF;
+    }
+
+    return UC_ERR_OK;
+}
+
+static uc_err write_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
+{
+    ARMCPU *cpu = ARM_CPU(env->uc->cpu);
+    const ARMCPRegInfo *ri = get_arm_cp_reginfo(
+        cpu->cp_regs, ENCODE_CP_REG(cp->cp, cp->is64, cp->sec, cp->crn, cp->crm,
+                                    cp->opc1, cp->opc2));
+
+    if (!ri) {
+        return UC_ERR_ARG;
+    }
+
+    if (!cp->is64) {
+        cp->val = cp->val & 0xFFFFFFFF;
+    }
+
+    if (ri->raw_writefn) {
+        ri->raw_writefn(env, ri, cp->val);
+    } else if (ri->writefn) {
+        ri->writefn(env, ri, cp->val);
+    } else {
+        if (cpreg_field_is_64bit(ri)) {
+            CPREG_FIELD64(env, ri) = cp->val;
+        } else {
+            CPREG_FIELD32(env, ri) = cp->val;
+        }
+    }
+
+    return UC_ERR_OK;
+}
+
+static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
+{
+    uc_err ret = UC_ERR_OK;
+
     if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
         *(int32_t *)value = env->regs[regid - UC_ARM_REG_R0];
     } else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31) {
@@ -233,14 +285,19 @@ static void reg_read(CPUARMState *env, unsigned int regid, void *value)
         case UC_ARM_REG_CONTROL:
             *(uint32_t *)value = helper_v7m_mrs(env, 20);
             break;
+        case UC_ARM_REG_CP_REG:
+            ret = read_cp_reg(env, (uc_arm_cp_reg *)value);
+            break;
         }
     }
 
-    return;
+    return ret;
 }
 
-static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
+static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
 {
+    uc_err ret = UC_ERR_OK;
+
     if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
         env->regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
     } else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31) {
@@ -363,10 +420,13 @@ static void reg_write(CPUARMState *env, unsigned int regid, const void *value)
         case UC_ARM_REG_XPSR_NZCVQG:
             v7m_msr_xpsr(env, 0b1100, 3, *(uint32_t *)value);
             break;
+        case UC_ARM_REG_CP_REG:
+            ret = write_cp_reg(env, (uc_arm_cp_reg *)value);
+            break;
         }
     }
 
-    return;
+    return ret;
 }
 
 int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
@@ -374,11 +434,15 @@ int arm_reg_read(struct uc_struct *uc, unsigned int *regs, void **vals,
 {
     CPUARMState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        err = reg_read(env, regid, value);
+        if (err) {
+            return err;
+        }
     }
 
     return 0;
@@ -389,11 +453,15 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 {
     CPUArchState *env = &(ARM_CPU(uc->cpu)->env);
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        err = reg_write(env, regid, value);
+        if (err) {
+            return err;
+        }
         if (regid == UC_ARM_REG_R15) {
             // force to quit execution and flush TB
             uc->quit_request = true;

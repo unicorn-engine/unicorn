@@ -390,6 +390,40 @@ static void test_thumb_ite()
     }
 }
 
+static void test_read_sctlr()
+{
+    uc_engine *uc;
+    uc_err err;
+    uc_arm_cp_reg reg;
+
+    printf("Read the SCTLR register.\n");
+
+    err = uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc);
+    if (err != UC_ERR_OK) {
+        printf("Failed on uc_emu_start() with error returned: %u\n", err);
+    }
+
+    // SCTLR. See arm reference.
+    reg.cp = 15;
+    reg.is64 = 0;
+    reg.sec = 0;
+    reg.crn = 1;
+    reg.crm = 0;
+    reg.opc1 = 0;
+    reg.opc2 = 0;
+
+    err = uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg);
+    if (err != UC_ERR_OK) {
+        printf("Failed on uc_reg_read() with error returned: %u\n", err);
+    }
+
+    printf(">>> SCTLR = 0x%" PRIx32 "\n", (uint32_t)reg.val);
+    printf(">>> SCTLR.IE = %" PRId32 "\n", (uint32_t)((reg.val >> 31) & 1));
+    printf(">>> SCTLR.B = %" PRId32 "\n", (uint32_t)((reg.val >> 7) & 1));
+
+    uc_close(uc);
+}
+
 int main(int argc, char **argv, char **envp)
 {
     test_arm();
@@ -408,6 +442,9 @@ int main(int argc, char **argv, char **envp)
 
     printf("==========================\n");
     test_thumb_ite();
+
+    printf("==========================\n");
+    test_read_sctlr();
 
     return 0;
 }

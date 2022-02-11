@@ -53,6 +53,19 @@ typedef enum uc_cpu_arm {
     UC_CPU_ARM_MAX
 } uc_cpu_arm;
 
+// ARM coprocessor registers, use this with UC_ARM_REG_CP_REG to
+// in call to uc_reg_write/read() to access the registers.
+typedef struct uc_arm_cp_reg {
+    int cp;       // The coprocessor identifier
+    int is64;     // Is it a 64 bit control register
+    int sec;      // Security state
+    int crn;      // Coprocessor register number
+    int crm;      // Coprocessor register number
+    int opc1;     // Opcode1
+    int opc2;     // Opcode2
+    uint64_t val; // The value to read/write
+} uc_arm_cp_reg;
+
 //> ARM registers
 typedef enum uc_arm_reg {
     UC_ARM_REG_INVALID = 0,
@@ -167,9 +180,9 @@ typedef enum uc_arm_reg {
     UC_ARM_REG_S30,
     UC_ARM_REG_S31,
 
-    UC_ARM_REG_C1_C0_2,
-    UC_ARM_REG_C13_C0_2,
-    UC_ARM_REG_C13_C0_3,
+    UC_ARM_REG_C1_C0_2,  // Depreciated, use UC_ARM_REG_CP_REG instead
+    UC_ARM_REG_C13_C0_2, // Depreciated, use UC_ARM_REG_CP_REG instead
+    UC_ARM_REG_C13_C0_3, // Depreciated, use UC_ARM_REG_CP_REG instead
 
     UC_ARM_REG_IPSR,
     UC_ARM_REG_MSP,
@@ -196,6 +209,7 @@ typedef enum uc_arm_reg {
     UC_ARM_REG_XPSR_NZCVQ,
     UC_ARM_REG_XPSR_G,
     UC_ARM_REG_XPSR_NZCVQG,
+    UC_ARM_REG_CP_REG,
     UC_ARM_REG_ENDING, // <-- mark the end of the list or registers
 
     //> alias registers

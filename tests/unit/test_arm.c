@@ -592,6 +592,29 @@ static void test_arm_mem_access_abort()
     OK(uc_close(uc));
 }
 
+static void test_arm_read_sctlr()
+{
+    uc_engine *uc;
+    uc_arm_cp_reg reg;
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc));
+
+    // SCTLR. See arm reference.
+    reg.cp = 15;
+    reg.is64 = 0;
+    reg.sec = 0;
+    reg.crn = 1;
+    reg.crm = 0;
+    reg.opc1 = 0;
+    reg.opc2 = 0;
+
+    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg));
+
+    TEST_CHECK((uint32_t)((reg.val >> 31) & 1) == 0);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -609,4 +632,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_mrc", test_arm_mrc},
              {"test_arm_hflags_rebuilt", test_arm_hflags_rebuilt},
              {"test_arm_mem_access_abort", test_arm_mem_access_abort},
+             {"test_arm_read_sctlr", test_arm_read_sctlr},
              {NULL, NULL}};
