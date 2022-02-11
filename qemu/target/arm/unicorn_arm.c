@@ -483,11 +483,15 @@ int arm_context_reg_read(struct uc_context *ctx, unsigned int *regs,
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         void *value = vals[i];
-        reg_read(env, regid, value);
+        err = reg_read(env, regid, value);
+        if (err) {
+            return err;
+        }
     }
 
     return 0;
@@ -504,11 +508,15 @@ int arm_context_reg_write(struct uc_context *ctx, unsigned int *regs,
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
     int i;
+    uc_err err;
 
     for (i = 0; i < count; i++) {
         unsigned int regid = regs[i];
         const void *value = vals[i];
-        reg_write(env, regid, value);
+        err = reg_write(env, regid, value);
+        if (err) {
+            return err;
+        }
     }
 
     return 0;
