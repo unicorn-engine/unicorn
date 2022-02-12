@@ -685,7 +685,6 @@ static FlatView *generate_memory_topology(struct uc_struct *uc, MemoryRegion *mr
 {
     int i;
     FlatView *view;
-    FlatView *old_view;
 
     view = flatview_new(mr);
 
@@ -703,14 +702,7 @@ static FlatView *generate_memory_topology(struct uc_struct *uc, MemoryRegion *mr
         flatview_add_to_dispatch(uc, view, &mrs);
     }
     address_space_dispatch_compact(view->dispatch);
-
-    old_view = g_hash_table_lookup(uc->flat_views, mr);
-    if (old_view != view) {
-        g_hash_table_replace(uc->flat_views, mr, view);
-        if (old_view) {
-            flatview_unref(old_view);
-        }
-    }
+    g_hash_table_replace(uc->flat_views, mr, view);
 
     return view;
 }
@@ -794,9 +786,7 @@ static void flatviews_init(struct uc_struct *uc)
         uc->empty_view = generate_memory_topology(uc, NULL);
         /* We keep it alive forever in the global variable.  */
         flatview_ref(uc->empty_view);
-    } else {
         g_hash_table_replace(uc->flat_views, NULL, uc->empty_view);
-        flatview_ref(uc->empty_view);
     }
 }
 
