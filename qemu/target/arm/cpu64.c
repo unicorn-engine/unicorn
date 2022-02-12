@@ -378,6 +378,9 @@ ARMCPU *cpu_aarch64_init(struct uc_struct *uc)
         }
     }
 
+    // Backward compatability to enable FULL 64bits address space.
+    env->pstate = PSTATE_MODE_EL1h;
+
     arm_rebuild_hflags(env);
 
     return cpu;
