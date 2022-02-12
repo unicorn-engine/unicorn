@@ -695,6 +695,39 @@ static void test_arm_be_cpsr_sctlr()
     OK(uc_close(uc));
 }
 
+static void test_arm_switch_endian()
+{
+    uc_engine *uc;
+    char code[] =
+        "\x00\x00\x91\xe5"; // ldr r0, [r1]
+    uint32_t r_r1 = (uint32_t)code_start;
+    uint32_t r_r0, r_cpsr;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code,
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
+    OK(uc_reg_write(uc, UC_ARM_REG_R1, &r_r1));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+
+    // Little endian
+    TEST_CHECK(r_r0 == 0xe5910000);
+    
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
+    r_cpsr |= (1<<9);
+    OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+
+    // Big endian
+    TEST_CHECK(r_r0 == 0x000091e5);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -715,4 +748,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_mem_access_abort", test_arm_mem_access_abort},
              {"test_arm_read_sctlr", test_arm_read_sctlr},
              {"test_arm_be_cpsr_sctlr", test_arm_be_cpsr_sctlr},
+             {"test_arm_switch_endian", test_arm_switch_endian},
              {NULL, NULL}};
