@@ -470,7 +470,7 @@ static inline uint32_t syn_data_abort_with_iss(int same_el,
                                                int wnr, int fsc,
                                                bool is_16bit)
 {
-    return (EC_DATAABORT << ARM_EL_EC_SHIFT) | (same_el << ARM_EL_EC_SHIFT)
+    return ( (uint32_t)EC_DATAABORT << ARM_EL_EC_SHIFT) | ( (uint32_t)same_el << ARM_EL_EC_SHIFT)
            | (is_16bit ? 0 : ARM_EL_IL)
            | ARM_EL_ISV | (sas << 22) | (sse << 21) | (srt << 16)
            | (sf << 15) | (ar << 14)
