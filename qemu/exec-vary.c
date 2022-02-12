@@ -72,7 +72,7 @@ void finalize_target_page_bits(struct uc_struct *uc)
     if (uc->init_target_page->bits == 0) {
         uc->init_target_page->bits = TARGET_PAGE_BITS_MIN;
     }
-    uc->init_target_page->mask = (target_long)-1 << uc->init_target_page->bits;
+    uc->init_target_page->mask = ((target_ulong)-1) << uc->init_target_page->bits;
     uc->init_target_page->decided = true;
 
     /*

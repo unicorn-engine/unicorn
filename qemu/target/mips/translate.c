@@ -37,7 +37,7 @@
 #define MIPS_DEBUG_DISAS 0
 
 /* MIPS major opcodes */
-#define MASK_OP_MAJOR(op)       (op & (0x3F << 26))
+#define MASK_OP_MAJOR(op)       (op & (0x3FL << 26))
 
 enum {
     /* indirect opcode tables */
