@@ -3,6 +3,8 @@
 
 #include "unicorn/platform.h"
 
+typedef void (*delete_fn)(void *data);
+
 struct list_item {
     struct list_item *next;
     void *data;
@@ -10,6 +12,7 @@ struct list_item {
 
 struct list {
     struct list_item *head, *tail;
+    delete_fn delete_fn;
 };
 
 // create a new list

@@ -28,6 +28,37 @@
 #include "qemu/include/qemu/queue.h"
 #include "qemu-common.h"
 
+static void clear_deleted_hooks(uc_engine *uc);
+
+static void *hook_insert(struct list *l, struct hook *h)
+{
+    void *item = list_insert(l, (void *)h);
+    if (item) {
+        h->refs++;
+    }
+    return item;
+}
+
+static void *hook_append(struct list *l, struct hook *h)
+{
+    void *item = list_append(l, (void *)h);
+    if (item) {
+        h->refs++;
+    }
+    return item;
+}
+
+static void hook_delete(void *data)
+{
+    struct hook *h = (struct hook *)data;
+
+    h->refs--;
+
+    if (h->refs == 0) {
+        free(h);
+    }
+}
+
 UNICORN_EXPORT
 unsigned int uc_version(unsigned int *major, unsigned int *minor)
 {
@@ -170,6 +201,12 @@ static uc_err uc_init(uc_engine *uc)
 
     if (uc->init_done) {
         return UC_ERR_HANDLE;
+    }
+
+    uc->hooks_to_del.delete_fn = hook_delete;
+
+    for (int i = 0; i < UC_HOOK_MAX; i++) {
+        uc->hook[i].delete_fn = hook_delete;
     }
 
     uc->exits = g_tree_new_full(uc_exits_cmp, NULL, g_free, NULL);
@@ -369,8 +406,6 @@ UNICORN_EXPORT
 uc_err uc_close(uc_engine *uc)
 {
     int i;
-    struct list_item *cur;
-    struct hook *hook;
     MemoryRegion *mr;
 
     if (!uc->init_done) {
@@ -422,17 +457,9 @@ uc_err uc_close(uc_engine *uc)
     }
 
     // free hooks and hook lists
+    clear_deleted_hooks(uc);
+
     for (i = 0; i < UC_HOOK_MAX; i++) {
-        cur = uc->hook[i].head;
-        // hook can be in more than one list
-        // so we refcount to know when to free
-        while (cur) {
-            hook = (struct hook *)cur->data;
-            if (--hook->refs == 0) {
-                free(hook);
-            }
-            cur = cur->next;
-        }
         list_clear(&uc->hook[i]);
     }
 
@@ -670,12 +697,6 @@ static void clear_deleted_hooks(uc_engine *uc)
         assert(hook->to_delete);
         for (i = 0; i < UC_HOOK_MAX; i++) {
             if (list_remove(&uc->hook[i], (void *)hook)) {
-                if (--hook->refs == 0) {
-                    uc->del_inline_hook(uc, hook);
-                    free(hook);
-                }
-
-                // a hook cannot be twice in the same list
                 break;
             }
         }
@@ -1507,19 +1528,18 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         }
 
         if (uc->hook_insert) {
-            if (list_insert(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
+            if (hook_insert(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
                 free(hook);
                 return UC_ERR_NOMEM;
             }
         } else {
-            if (list_append(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
+            if (hook_append(&uc->hook[UC_HOOK_INSN_IDX], hook) == NULL) {
                 free(hook);
                 return UC_ERR_NOMEM;
             }
         }
 
         uc->hooks_count[UC_HOOK_INSN_IDX]++;
-        hook->refs++;
         return UC_ERR_OK;
     }
 
@@ -1539,19 +1559,18 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
         }
 
         if (uc->hook_insert) {
-            if (list_insert(&uc->hook[UC_HOOK_TCG_OPCODE_IDX], hook) == NULL) {
+            if (hook_insert(&uc->hook[UC_HOOK_TCG_OPCODE_IDX], hook) == NULL) {
                 free(hook);
                 return UC_ERR_NOMEM;
             }
         } else {
-            if (list_append(&uc->hook[UC_HOOK_TCG_OPCODE_IDX], hook) == NULL) {
+            if (hook_append(&uc->hook[UC_HOOK_TCG_OPCODE_IDX], hook) == NULL) {
                 free(hook);
                 return UC_ERR_NOMEM;
             }
         }
 
         uc->hooks_count[UC_HOOK_TCG_OPCODE_IDX]++;
-        hook->refs++;
         return UC_ERR_OK;
     }
 
@@ -1560,22 +1579,17 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
             // TODO: invalid hook error?
             if (i < UC_HOOK_MAX) {
                 if (uc->hook_insert) {
-                    if (list_insert(&uc->hook[i], hook) == NULL) {
-                        if (hook->refs == 0) {
-                            free(hook);
-                        }
+                    if (hook_insert(&uc->hook[i], hook) == NULL) {
+                        free(hook);
                         return UC_ERR_NOMEM;
                     }
                 } else {
-                    if (list_append(&uc->hook[i], hook) == NULL) {
-                        if (hook->refs == 0) {
-                            free(hook);
-                        }
+                    if (hook_append(&uc->hook[i], hook) == NULL) {
+                        free(hook);
                         return UC_ERR_NOMEM;
                     }
                 }
                 uc->hooks_count[i]++;
-                hook->refs++;
             }
         }
         i++;
@@ -1607,7 +1621,7 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
         if (list_exists(&uc->hook[i], (void *)hook)) {
             hook->to_delete = true;
             uc->hooks_count[i]--;
-            list_append(&uc->hooks_to_del, hook);
+            hook_append(&uc->hooks_to_del, hook);
         }
     }
 

@@ -15,6 +15,9 @@ void list_clear(struct list *list)
     struct list_item *next, *cur = list->head;
     while (cur != NULL) {
         next = cur->next;
+        if (list->delete_fn) {
+            list->delete_fn(cur->data);
+        }
         free(cur);
         cur = next;
     }
@@ -81,6 +84,9 @@ bool list_remove(struct list *list, void *data)
             }
             if (cur == list->tail) {
                 list->tail = prev;
+            }
+            if (list->delete_fn) {
+                list->delete_fn(cur->data);
             }
             free(cur);
             return true;
