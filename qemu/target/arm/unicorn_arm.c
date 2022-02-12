@@ -150,8 +150,9 @@ static void v7m_msr_xpsr(CPUARMState *env, uint32_t mask, uint32_t reg,
 static uc_err read_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
 {
     ARMCPU *cpu = ARM_CPU(env->uc->cpu);
+    int ns = cp->sec ? 0 : 1;
     const ARMCPRegInfo *ri = get_arm_cp_reginfo(
-        cpu->cp_regs, ENCODE_CP_REG(cp->cp, cp->is64, cp->sec, cp->crn, cp->crm,
+        cpu->cp_regs, ENCODE_CP_REG(cp->cp, cp->is64, ns, cp->crn, cp->crm,
                                     cp->opc1, cp->opc2));
 
     if (!ri) {
@@ -170,8 +171,9 @@ static uc_err read_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
 static uc_err write_cp_reg(CPUARMState *env, uc_arm_cp_reg *cp)
 {
     ARMCPU *cpu = ARM_CPU(env->uc->cpu);
+    int ns = cp->sec ? 0 : 1;
     const ARMCPRegInfo *ri = get_arm_cp_reginfo(
-        cpu->cp_regs, ENCODE_CP_REG(cp->cp, cp->is64, cp->sec, cp->crn, cp->crm,
+        cpu->cp_regs, ENCODE_CP_REG(cp->cp, cp->is64, ns, cp->crn, cp->crm,
                                     cp->opc1, cp->opc2));
 
     if (!ri) {
