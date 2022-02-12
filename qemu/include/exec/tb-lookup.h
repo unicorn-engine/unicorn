@@ -30,7 +30,7 @@ tb_lookup__cpu_state(CPUState *cpu, target_ulong *pc, target_ulong *cs_base,
     tb = cpu->tb_jmp_cache[hash];
 
     cf_mask &= ~CF_CLUSTER_MASK;
-    cf_mask |= cpu->cluster_index << CF_CLUSTER_SHIFT;
+    cf_mask |= ((uint32_t)cpu->cluster_index) << CF_CLUSTER_SHIFT;
 
     if (likely(tb &&
                tb->pc == *pc &&

@@ -1035,7 +1035,7 @@ static uc_err uc_gen_tb(struct uc_struct *uc, uint64_t addr, uc_tb *out_tb)
     tb = cpu->tb_jmp_cache[hash];
 
     cflags &= ~CF_CLUSTER_MASK;
-    cflags |= cpu->cluster_index << CF_CLUSTER_SHIFT;
+    cflags |= ((uint32_t)cpu->cluster_index) << CF_CLUSTER_SHIFT;
 
     if (unlikely(!(tb &&
                    tb->pc == pc &&
@@ -1581,7 +1581,7 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     }
 
     cflags &= ~CF_CLUSTER_MASK;
-    cflags |= cpu->cluster_index << CF_CLUSTER_SHIFT;
+    cflags |= ((uint32_t)cpu->cluster_index) << CF_CLUSTER_SHIFT;
 
     max_insns = cflags & CF_COUNT_MASK;
     if (max_insns == 0) {
