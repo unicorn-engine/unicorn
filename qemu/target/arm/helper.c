@@ -623,7 +623,7 @@ static void cpacr_write(CPUARMState *env, const ARMCPRegInfo *ri,
 
             if (!arm_feature(env, ARM_FEATURE_NEON)) {
                 /* ASEDIS [31] bit is RAO/WI */
-                value |= (1 << 31);
+                value |= (1UL << 31);
             }
 
             /* VFPv3 and upwards with NEON implement 32 double precision
