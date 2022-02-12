@@ -41,9 +41,11 @@ static inline uint16_t arm_lduw_code(CPUARMState *env, target_ulong addr,
     TCGContext *tcg_ctx = env->uc->tcg_ctx;
     /* In big-endian (BE32) mode, adjacent Thumb instructions have been swapped
        within each word.  Undo that now.  */
-    if (sctlr_b) {
-        addr ^= 2;
-    }
+    // Unicorn: Note that we don't have any loader so this patch makes no sense.
+    //          And sctlr_b is 0 in aarch64.
+    // if (sctlr_b) {
+    //     addr ^= 2;
+    // }
     return translator_lduw_swap(tcg_ctx, env, addr, bswap_code(sctlr_b));
 }
 

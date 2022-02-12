@@ -192,10 +192,10 @@ else()
         set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_X86 ")
     endif()
     if(UNICORN_HAS_ARM)
-        set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_ARM -DUNICORN_HAS_ARMEB ")
+        set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_ARM ")
     endif()
     if(UNICORN_HAS_AARCH64)
-        set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_ARM64 -DUNICORN_HAS_ARM64EB ")
+        set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_ARM64 ")
     endif()
     if(UNICORN_HAS_M68K)
         set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_M68K ")
@@ -233,10 +233,10 @@ else()
         set(TARGET_LIST "${TARGET_LIST}x86_64-softmmu, ")
     endif()
     if(UNICORN_HAS_ARM)
-        set(TARGET_LIST "${TARGET_LIST}arm-softmmu, armeb-softmmu, ")
+        set(TARGET_LIST "${TARGET_LIST}arm-softmmu, ")
     endif()
     if(UNICORN_HAS_AARCH64)
-        set(TARGET_LIST "${TARGET_LIST}aarch64-softmmu, aarch64eb-softmmu, ")
+        set(TARGET_LIST "${TARGET_LIST}aarch64-softmmu, ")
     endif()
     if(UNICORN_HAS_M68K)
         set(TARGET_LIST "${TARGET_LIST}m68k-softmmu, ")
@@ -280,19 +280,11 @@ else()
             INPUT_FILE ${CMAKE_BINARY_DIR}/arm-softmmu/config-target.mak
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/arm-softmmu/config-target.h
         )
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/armeb-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/armeb-softmmu/config-target.h
-        )
     endif()
     if(UNICORN_HAS_AARCH64)
         execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
             INPUT_FILE ${CMAKE_BINARY_DIR}/aarch64-softmmu/config-target.mak
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/aarch64-softmmu/config-target.h
-        )
-        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
-            INPUT_FILE ${CMAKE_BINARY_DIR}/aarch64eb-softmmu/config-target.mak
-            OUTPUT_FILE ${CMAKE_BINARY_DIR}/aarch64eb-softmmu/config-target.h
         )
     endif()
     if(UNICORN_HAS_M68K)
@@ -490,45 +482,6 @@ if(UNICORN_TRACER)
     target_compile_options(arm-softmmu PRIVATE -DUNICORN_TRACER)
 endif()
 
-add_library(armeb-softmmu STATIC
-    ${UNICORN_ARCH_COMMON}
-
-    qemu/target/arm/cpu.c
-    qemu/target/arm/crypto_helper.c
-    qemu/target/arm/debug_helper.c
-    qemu/target/arm/helper.c
-    qemu/target/arm/iwmmxt_helper.c
-    qemu/target/arm/m_helper.c
-    qemu/target/arm/neon_helper.c
-    qemu/target/arm/op_helper.c
-    qemu/target/arm/psci.c
-    qemu/target/arm/tlb_helper.c
-    qemu/target/arm/translate.c
-    qemu/target/arm/vec_helper.c
-    qemu/target/arm/vfp_helper.c
-    qemu/target/arm/unicorn_arm.c
-)
-
-if(MSVC)
-    target_compile_options(armeb-softmmu PRIVATE
-        -DNEED_CPU_H
-        /FIarmeb.h
-        /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/armeb-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/arm
-    )
-else()
-    target_compile_options(armeb-softmmu PRIVATE
-        -DNEED_CPU_H
-        -include armeb.h
-        -I${CMAKE_BINARY_DIR}/armeb-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/arm
-    )
-endif()
-
-if(UNICORN_TRACER)
-    target_compile_options(armeb-softmmu PRIVATE -DUNICORN_TRACER)
-endif()
-
 endif()
 
 if(UNICORN_HAS_AARCH64)
@@ -575,51 +528,6 @@ endif()
 
 if(UNICORN_TRACER)
     target_compile_options(aarch64-softmmu PRIVATE -DUNICORN_TRACER)
-endif()
-
-add_library(aarch64eb-softmmu STATIC
-    ${UNICORN_ARCH_COMMON}
-
-    qemu/target/arm/cpu64.c
-    qemu/target/arm/cpu.c
-    qemu/target/arm/crypto_helper.c
-    qemu/target/arm/debug_helper.c
-    qemu/target/arm/helper-a64.c
-    qemu/target/arm/helper.c
-    qemu/target/arm/iwmmxt_helper.c
-    qemu/target/arm/m_helper.c
-    qemu/target/arm/neon_helper.c
-    qemu/target/arm/op_helper.c
-    qemu/target/arm/pauth_helper.c
-    qemu/target/arm/psci.c
-    qemu/target/arm/sve_helper.c
-    qemu/target/arm/tlb_helper.c
-    qemu/target/arm/translate-a64.c
-    qemu/target/arm/translate.c
-    qemu/target/arm/translate-sve.c
-    qemu/target/arm/vec_helper.c
-    qemu/target/arm/vfp_helper.c
-    qemu/target/arm/unicorn_aarch64.c
-)
-
-if(MSVC)
-    target_compile_options(aarch64eb-softmmu PRIVATE
-        -DNEED_CPU_H
-        /FIaarch64eb.h
-        /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/aarch64eb-softmmu
-        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/arm
-    )
-else()
-    target_compile_options(aarch64eb-softmmu PRIVATE
-        -DNEED_CPU_H
-        -include aarch64eb.h
-        -I${CMAKE_BINARY_DIR}/aarch64eb-softmmu
-        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/arm
-    )
-endif()
-
-if(UNICORN_TRACER)
-    target_compile_options(aarch64eb-softmmu PRIVATE -DUNICORN_TRACER)
 endif()
 
 endif()
@@ -1196,18 +1104,16 @@ if(UNICORN_HAS_X86)
 endif()
 if(UNICORN_HAS_ARM)
     set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_ARM)
-    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} arm-softmmu armeb-softmmu)
+    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} arm-softmmu)
     set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_arm)
     target_link_libraries(arm-softmmu PRIVATE unicorn-common)
-    target_link_libraries(armeb-softmmu PRIVATE unicorn-common)
     set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_arm)
 endif()
 if(UNICORN_HAS_AARCH64)
     set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_ARM64)
-    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} aarch64-softmmu aarch64eb-softmmu)
+    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} aarch64-softmmu)
     set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_arm64)
     target_link_libraries(aarch64-softmmu PRIVATE unicorn-common)
-    target_link_libraries(aarch64eb-softmmu PRIVATE unicorn-common)
     set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_arm64)
 endif()
 if(UNICORN_HAS_M68K)
@@ -1327,7 +1233,7 @@ endif()
 
 
 if(UNICORN_FUZZ)
-    set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_armbe;arm_thumb;arm64_arm;arm64_armbe;m68k_be;mips_32be;mips_32le;sparc_32be;x86_16;x86_32;x86_64;s390x_be")
+    set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_thumb;arm64_arm;m68k_be;mips_32be;mips_32le;sparc_32be;x86_16;x86_32;x86_64;s390x_be")
     if (NOT APPLE)
         set(SAMPLES_LIB ${SAMPLES_LIB} rt)
     endif()

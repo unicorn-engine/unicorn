@@ -14411,10 +14411,7 @@ static void disas_a64_insn(CPUARMState *env, DisasContext *s)
 
     s->pc_curr = s->base.pc_next;
     insn = arm_ldl_code(env, s->base.pc_next, s->sctlr_b);
-#ifdef TARGET_WORDS_BIGENDIAN
-    /* aarch64eb swap again to little endian */
-    insn = bswap32(insn);
-#endif
+
     s->insn = insn;
     s->base.pc_next += 4;
 

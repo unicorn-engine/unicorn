@@ -473,13 +473,8 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
 }
 
 DEFAULT_VISIBILITY
-#ifdef TARGET_WORDS_BIGENDIAN
-int armeb_context_reg_read(struct uc_context *ctx, unsigned int *regs,
-                           void **vals, int count)
-#else
 int arm_context_reg_read(struct uc_context *ctx, unsigned int *regs,
                          void **vals, int count)
-#endif
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
     int i;
@@ -498,13 +493,8 @@ int arm_context_reg_read(struct uc_context *ctx, unsigned int *regs,
 }
 
 DEFAULT_VISIBILITY
-#ifdef TARGET_WORDS_BIGENDIAN
-int armeb_context_reg_write(struct uc_context *ctx, unsigned int *regs,
-                            void *const *vals, int count)
-#else
 int arm_context_reg_write(struct uc_context *ctx, unsigned int *regs,
                           void *const *vals, int count)
-#endif
 {
     CPUARMState *env = (CPUARMState *)ctx->data;
     int i;
@@ -581,11 +571,7 @@ static int arm_cpus_init(struct uc_struct *uc, const char *cpu_model)
     return 0;
 }
 
-#ifdef TARGET_WORDS_BIGENDIAN
-void armeb_uc_init(struct uc_struct *uc)
-#else
 void arm_uc_init(struct uc_struct *uc)
-#endif
 {
     uc->reg_read = arm_reg_read;
     uc->reg_write = arm_reg_write;

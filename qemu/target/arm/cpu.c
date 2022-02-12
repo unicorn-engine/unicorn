@@ -2100,6 +2100,7 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
     ARMCPU *cpu;
     CPUState *cs;
     CPUClass *cc;
+    CPUARMState *env;
 
     cpu = calloc(1, sizeof(*cpu));
     if (cpu == NULL) {
@@ -2116,7 +2117,11 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
     } else if (uc->mode & UC_MODE_ARM1176) {
         uc->cpu_model = UC_CPU_ARM_1176;
     } else if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = UC_CPU_ARM_CORTEX_A15; // cortex-a15
+        if (uc->mode & UC_MODE_BIG_ENDIAN) {
+            uc->cpu_model = UC_CPU_ARM_1176; // For BE32 mode.
+        } else {
+            uc->cpu_model = UC_CPU_ARM_CORTEX_A15; // cortex-a15
+        }
     } else if (uc->cpu_model >= ARR_SIZE(arm_cpus)) {
         free(cpu);
         return NULL;
@@ -2161,6 +2166,33 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
     cpu_address_space_init(cs, 0, cs->memory);
 
     qemu_init_vcpu(cs);
+
+    // UC_MODE_BIG_ENDIAN means big endian code and big endian
+    // data (BE32), which is only supported before ARMv7-A.
+    //
+    // UC_MODE_ARMBE8 shouldn't exist in fact. We do this for
+    // backward compatibility.
+    //
+    // UC_MODE_ARMBE8 -> little endian code, big endian data
+    // UC_MODE_ARMBE8 | UC_MODE_BIG_ENDIAN -> big endian code, big endian data
+    //
+    // In QEMU, all arm instruction fetch **should be** little endian, however
+    // we hack it to support BE32.
+    //
+    // Reference:
+    // https://developer.arm.com/documentation/ddi0406/c/Application-Level-Architecture/Application-Level-Memory-Model/Endian-support/Instruction-endianness?lang=en
+    // https://developer.arm.com/documentation/den0024/a/ARMv8-Registers/Endianness
+    env = &cpu->env;
+    if (uc->mode & UC_MODE_ARMBE8 || uc->mode & UC_MODE_BIG_ENDIAN) {
+        // Big endian data access.
+        env->uncached_cpsr |= CPSR_E;
+    }
+
+    if (uc->mode & UC_MODE_BIG_ENDIAN && !arm_feature(env, ARM_FEATURE_V7) && !arm_feature(env, ARM_FEATURE_V8)) {
+        // Big endian code access.
+        env->cp15.sctlr_ns |= SCTLR_B;
+    }
+    arm_rebuild_hflags(env);
 
     return cpu;
 }

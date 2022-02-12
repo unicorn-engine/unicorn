@@ -3233,7 +3233,10 @@ static inline bool bswap_code(bool sctlr_b)
     /* All code access in ARM is little endian, and there are no loaders
      * doing swaps that need to be reversed
      */
-    return 0;
+    // return 0;
+    // Unicorn: Our hack to support BE32 for system emulation, which
+    //          I believe shouldn't have existed...
+    return sctlr_b;
 }
 
 void cpu_get_tb_cpu_state(CPUARMState *env, target_ulong *pc,

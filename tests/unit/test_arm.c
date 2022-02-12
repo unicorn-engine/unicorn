@@ -63,6 +63,37 @@ static void test_armeb_sub()
     int r_r1;
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1, UC_CPU_ARM_1176);
+    OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
+    OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
+    OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+    OK(uc_reg_read(uc, UC_ARM_REG_R1, &r_r1));
+    OK(uc_reg_read(uc, UC_ARM_REG_R2, &r_r2));
+    OK(uc_reg_read(uc, UC_ARM_REG_R3, &r_r3));
+
+    TEST_CHECK(r_r0 == 0x37);
+    TEST_CHECK(r_r2 == 0x6789);
+    TEST_CHECK(r_r3 == 0x3333);
+    TEST_CHECK(r_r1 == 0x3456);
+
+    OK(uc_close(uc));
+}
+
+static void test_armeb_be8_sub()
+{
+    uc_engine *uc;
+    char code[] =
+        "\x37\x00\xa0\xe3\x03\x10\x42\xe0"; // mov r0, #0x37; sub r1, r2, r3
+    int r_r0 = 0x1234;
+    int r_r2 = 0x6789;
+    int r_r3 = 0x3333;
+    int r_r1;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_ARMBE8, code,
                     sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
     OK(uc_reg_write(uc, UC_ARM_REG_R0, &r_r0));
     OK(uc_reg_write(uc, UC_ARM_REG_R2, &r_r2));
@@ -90,7 +121,7 @@ static void test_arm_thumbeb_sub()
     int r_sp = 0x1234;
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_BIG_ENDIAN, code,
-                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
+                    sizeof(code) - 1, UC_CPU_ARM_1176);
     OK(uc_reg_write(uc, UC_ARM_REG_SP, &r_sp));
 
     OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
@@ -618,6 +649,7 @@ static void test_arm_read_sctlr()
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
+             {"test_armeb_be8_sub", test_armeb_be8_sub},
              {"test_arm_thumbeb_sub", test_arm_thumbeb_sub},
              {"test_arm_thumb_ite", test_arm_thumb_ite},
              {"test_arm_m_thumb_mrs", test_arm_m_thumb_mrs},

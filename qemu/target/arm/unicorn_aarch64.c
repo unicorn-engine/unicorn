@@ -425,11 +425,7 @@ static int arm64_cpus_init(struct uc_struct *uc, const char *cpu_model)
 }
 
 DEFAULT_VISIBILITY
-#ifdef TARGET_WORDS_BIGENDIAN
-void arm64eb_uc_init(struct uc_struct *uc)
-#else
 void arm64_uc_init(struct uc_struct *uc)
-#endif
 {
     uc->reg_read = arm64_reg_read;
     uc->reg_write = arm64_reg_write;

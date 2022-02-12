@@ -243,11 +243,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 free(uc);
                 return UC_ERR_MODE;
             }
-            if (mode & UC_MODE_BIG_ENDIAN) {
-                uc->init_arch = armeb_uc_init;
-            } else {
-                uc->init_arch = arm_uc_init;
-            }
+            uc->init_arch = arm_uc_init;
 
             if (mode & UC_MODE_THUMB) {
                 uc->thumb = 1;
@@ -260,11 +256,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 free(uc);
                 return UC_ERR_MODE;
             }
-            if (mode & UC_MODE_BIG_ENDIAN) {
-                uc->init_arch = arm64eb_uc_init;
-            } else {
-                uc->init_arch = arm64_uc_init;
-            }
+            uc->init_arch = arm64_uc_init;
             break;
 #endif
 
@@ -1860,23 +1852,14 @@ static void find_context_reg_rw_function(uc_arch arch, uc_mode mode,
 #endif
 #ifdef UNICORN_HAS_ARM
     case UC_ARCH_ARM:
-        if (mode & UC_MODE_BIG_ENDIAN) {
-            rw->context_reg_read = armeb_context_reg_read;
-            rw->context_reg_write = armeb_context_reg_write;
-        } else {
-            rw->context_reg_read = arm_context_reg_read;
-            rw->context_reg_write = arm_context_reg_write;
-        }
+        rw->context_reg_read = arm_context_reg_read;
+        rw->context_reg_write = arm_context_reg_write;
+        break;
 #endif
 #ifdef UNICORN_HAS_ARM64
     case UC_ARCH_ARM64:
-        if (mode & UC_MODE_BIG_ENDIAN) {
-            rw->context_reg_read = arm64eb_context_reg_read;
-            rw->context_reg_write = arm64eb_context_reg_write;
-        } else {
-            rw->context_reg_read = arm64_context_reg_read;
-            rw->context_reg_write = arm64_context_reg_write;
-        }
+        rw->context_reg_read = arm64_context_reg_read;
+        rw->context_reg_write = arm64_context_reg_write;
         break;
 #endif
 
@@ -2175,6 +2158,17 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
             if (uc->init_done) {
                 err = UC_ERR_ARG;
                 break;
+            }
+
+            if (uc->arch == UC_ARCH_ARM) {
+                if (uc->mode & UC_MODE_BIG_ENDIAN) {
+                    // These cpu models don't support big endian code access.
+                    if (model <= UC_CPU_ARM_CORTEX_A15 &&
+                        model >= UC_CPU_ARM_CORTEX_A7) {
+                        err = UC_ERR_ARG;
+                        break;
+                    }
+                }
             }
 
             uc->cpu_model = model;
