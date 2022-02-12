@@ -646,6 +646,55 @@ static void test_arm_read_sctlr()
     OK(uc_close(uc));
 }
 
+static void test_arm_be_cpsr_sctlr()
+{
+    uc_engine *uc;
+    uc_arm_cp_reg reg;
+    uint32_t cpsr;
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_BIG_ENDIAN, &uc));
+    OK(uc_ctl_set_cpu_model(
+        uc, UC_CPU_ARM_1176)); // big endian code, big endian data
+
+    // SCTLR. See arm reference.
+    reg.cp = 15;
+    reg.is64 = 0;
+    reg.sec = 0;
+    reg.crn = 1;
+    reg.crm = 0;
+    reg.opc1 = 0;
+    reg.opc2 = 0;
+
+    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &cpsr));
+
+    TEST_CHECK((reg.val & (1 << 7)) != 0);
+    TEST_CHECK((cpsr & (1 << 9)) != 0);
+
+    OK(uc_close(uc));
+
+    OK(uc_open(UC_ARCH_ARM, UC_MODE_ARMBE8, &uc));
+    OK(uc_ctl_set_cpu_model(uc, UC_CPU_ARM_CORTEX_A15));
+
+    // SCTLR. See arm reference.
+    reg.cp = 15;
+    reg.is64 = 0;
+    reg.sec = 0;
+    reg.crn = 1;
+    reg.crm = 0;
+    reg.opc1 = 0;
+    reg.opc2 = 0;
+
+    OK(uc_reg_read(uc, UC_ARM_REG_CP_REG, &reg));
+    OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &cpsr));
+
+    // SCTLR.B == 0
+    TEST_CHECK((reg.val & (1 << 7)) == 0);
+    TEST_CHECK((cpsr & (1 << 9)) != 0);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -665,4 +714,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_hflags_rebuilt", test_arm_hflags_rebuilt},
              {"test_arm_mem_access_abort", test_arm_mem_access_abort},
              {"test_arm_read_sctlr", test_arm_read_sctlr},
+             {"test_arm_be_cpsr_sctlr", test_arm_be_cpsr_sctlr},
              {NULL, NULL}};
