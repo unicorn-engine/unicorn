@@ -2192,6 +2192,10 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
         // Big endian code access.
         env->cp15.sctlr_ns |= SCTLR_B;
     }
+
+    // Backward compatiblity, start arm CPU in non-secure state.
+    env->cp15.scr_el3 |= SCR_NS;
+
     arm_rebuild_hflags(env);
 
     return cpu;
