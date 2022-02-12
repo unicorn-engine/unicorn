@@ -698,13 +698,12 @@ static void test_arm_be_cpsr_sctlr()
 static void test_arm_switch_endian()
 {
     uc_engine *uc;
-    char code[] =
-        "\x00\x00\x91\xe5"; // ldr r0, [r1]
+    char code[] = "\x00\x00\x91\xe5"; // ldr r0, [r1]
     uint32_t r_r1 = (uint32_t)code_start;
     uint32_t r_r0, r_cpsr;
 
-    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code,
-                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_A15);
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A15);
     OK(uc_reg_write(uc, UC_ARM_REG_R1, &r_r1));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
@@ -713,9 +712,9 @@ static void test_arm_switch_endian()
 
     // Little endian
     TEST_CHECK(r_r0 == 0xe5910000);
-    
+
     OK(uc_reg_read(uc, UC_ARM_REG_CPSR, &r_cpsr));
-    r_cpsr |= (1<<9);
+    r_cpsr |= (1 << 9);
     OK(uc_reg_write(uc, UC_ARM_REG_CPSR, &r_cpsr));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
