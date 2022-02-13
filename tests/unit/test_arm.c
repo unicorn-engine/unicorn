@@ -491,13 +491,13 @@ static void test_arm_not_allow_privilege_escalation()
 static void test_arm_mrc()
 {
     uc_engine *uc;
-    // mrc p15, #0, r0, c1, c1, #0
-    char code[] = "\x11\x0F\x11\xEE";
+    // mrc p15, #0, r1, c13, c0, #3
+    char code[] = "\x1d\xee\x70\x1f";
 
-    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM, code, sizeof(code) - 1,
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
                     UC_CPU_ARM_MAX);
 
-    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
 
     OK(uc_close(uc));
 }

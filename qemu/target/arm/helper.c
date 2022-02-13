@@ -7927,7 +7927,9 @@ void cpsr_write(CPUARMState *env, uint32_t val, uint32_t mask,
      * In a V8 implementation, it is permitted for privileged software to
      * change the CPSR A/F bits regardless of the SCR.AW/FW bits.
      */
-    if (write_type != CPSRWriteRaw && !arm_feature(env, ARM_FEATURE_V8) &&
+    if (write_type != CPSRWriteByUnicorn &&
+         write_type != CPSRWriteRaw && 
+         !arm_feature(env, ARM_FEATURE_V8) &&
         arm_feature(env, ARM_FEATURE_EL3) &&
         !arm_feature(env, ARM_FEATURE_EL2) &&
         !arm_is_secure(env)) {
