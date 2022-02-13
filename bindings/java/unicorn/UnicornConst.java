@@ -8,13 +8,13 @@ public interface UnicornConst {
    public static final int UC_API_MINOR = 0;
 
    public static final int UC_API_PATCH = 0;
-   public static final int UC_API_EXTRA = 5;
+   public static final int UC_API_EXTRA = 6;
    public static final int UC_VERSION_MAJOR = 2;
 
    public static final int UC_VERSION_MINOR = 0;
 
    public static final int UC_VERSION_PATCH = 0;
-   public static final int UC_VERSION_EXTRA = 5;
+   public static final int UC_VERSION_EXTRA = 6;
    public static final int UC_SECOND_SCALE = 1000000;
    public static final int UC_MILISECOND_SCALE = 1000;
    public static final int UC_ARCH_ARM = 1;
@@ -35,6 +35,7 @@ public interface UnicornConst {
    public static final int UC_MODE_THUMB = 16;
    public static final int UC_MODE_MCLASS = 32;
    public static final int UC_MODE_V8 = 64;
+   public static final int UC_MODE_ARMBE8 = 128;
    public static final int UC_MODE_ARM926 = 128;
    public static final int UC_MODE_ARM946 = 256;
    public static final int UC_MODE_ARM1176 = 512;
