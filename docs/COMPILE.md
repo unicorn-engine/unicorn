@@ -52,7 +52,7 @@ msbuild unicorn.sln -p:Plaform=Win32 -p:Configuration=Release
 
 ## Cross build with NDK
 
-To build Unicorn2 on the Android platform, firstly you need to download [NDK](https://developer.android.com/ndk/downloads).
+To cross-build and run Unicorn2 on the Android platform, firstly you need to download [NDK](https://developer.android.com/ndk/downloads).
 
 For newer NDK, please make sure your cmake version is above 3.19.
 
@@ -68,7 +68,7 @@ You may get the possible values from this [page](https://developer.android.com/n
 
 Unicorn2 support cross-build for `armeabi-v7a`, `arm64-v8a`, `x86` and `x86_64`.
 
-Note the build is only tested and guaranteed to work under Linux, however, other systems may still work.
+Note the build is only tested and guaranteed to work under Linux and macOS, however, other systems may still work.
 
 ## Cross build from Linux host to Windows, with Mingw
 
@@ -97,15 +97,16 @@ This requires MSYS2 to be installed on the Windows machine. You need to download
 Then from MSYS2 console, install packages below:
 
 ```bash
-pacman -S mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake
+pacman -S mingw-w64-x86_64-toolchain mingw-w64-x86_64-cmake mingw-w64-x86_64-ninja
 ```
 
 - Build Unicorn and samples with the following commands.
 
 ```bash
+export PATH=/mingw64/bin:$PATH
 mkdir build; cd build
-/mingw64/bin/cmake .. -G "MSYS Makefiles" -DCMAKE_C_COMPILER=/mingw64/bin/gcc.exe -DCMAKE_MAKE_PROGRAM=/mingw64/bin/mingw32-make.exe -DCMAKE_AR=/mingw64/bin/ar.exe -DUNICORN_ARCH=x86
-mingw32-make
+/mingw64/bin/cmake .. -G "Ninja"
+ninja -C .
 ```
 
 Note that the way to build on MSYS changes as time goes, please keep in mind that always use the cmake shipped with mingw64 and choose MSYS Makefiles.
