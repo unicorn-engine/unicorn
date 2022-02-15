@@ -403,6 +403,7 @@ const
   UC_PPC_REG_CTR = 76;
   UC_PPC_REG_MSR = 77;
   UC_PPC_REG_FPSCR = 78;
+  UC_PPC_REG_CR = 79;
 
 implementation
 end.

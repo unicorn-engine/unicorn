@@ -400,4 +400,5 @@ const (
 	PPC_REG_CTR = 76
 	PPC_REG_MSR = 77
 	PPC_REG_FPSCR = 78
+	PPC_REG_CR = 79
 )
