@@ -417,7 +417,8 @@ typedef enum uc_ppc_reg {
     UC_PPC_REG_XER,
     UC_PPC_REG_CTR,
     UC_PPC_REG_MSR,
-    UC_PPC_REG_FPSCR
+    UC_PPC_REG_FPSCR,
+    UC_PPC_REG_CR
 } uc_ppc_reg;
 
 #ifdef __cplusplus

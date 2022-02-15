@@ -196,6 +196,13 @@ static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
         case UC_PPC_REG_CR7:
             *(uint32_t *)value = env->crf[regid - UC_PPC_REG_CR0];
             break;
+        case UC_PPC_REG_CR: {
+            uint32_t cr = 0;
+            for (int i = 0; i < 8; i++) {
+                cr <<= 4;
+                cr |= env->crf[i];
+            }
+        } break;
         case UC_PPC_REG_LR:
             *(ppcreg_t *)value = env->lr;
             break;
@@ -270,8 +277,15 @@ static void reg_write(CPUPPCState *env, unsigned int regid, const void *value)
         case UC_PPC_REG_CR5:
         case UC_PPC_REG_CR6:
         case UC_PPC_REG_CR7:
-            env->crf[regid - UC_PPC_REG_CR0] = *(uint32_t *)value;
+            env->crf[regid - UC_PPC_REG_CR0] = (*(uint32_t *)value) & 0b1111;
             break;
+        case UC_PPC_REG_CR: {
+            uint32_t cr = *(uint32_t *)value;
+            for (int i = 0; i < 8; i++) {
+                env->crf[i] = cr & 0b1111;
+                cr >>= 4;
+            }
+        } break;
         case UC_PPC_REG_LR:
             env->lr = *(ppcreg_t *)value;
             break;
