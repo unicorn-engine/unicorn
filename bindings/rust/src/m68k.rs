@@ -21,6 +21,7 @@ pub enum RegisterM68K {
     D7,
     SR,
     PC,
+    ENDING,
 }
 
 impl From<RegisterM68K> for i32 {

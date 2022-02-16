@@ -403,5 +403,6 @@ public interface PpcConst {
    public static final int UC_PPC_REG_MSR = 77;
    public static final int UC_PPC_REG_FPSCR = 78;
    public static final int UC_PPC_REG_CR = 79;
+   public static final int UC_PPC_REG_ENDING = 80;
 
 }

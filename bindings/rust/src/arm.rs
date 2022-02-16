@@ -144,7 +144,8 @@ pub enum RegisterARM {
     XPSR_NZCVQ = 136,
     XPSR_G = 137,
     XPSR_NZCVQG = 138,
-    ENDING = 139,
+    CP_REG = 139,
+    ENDING = 140,
 }
 
 impl RegisterARM {

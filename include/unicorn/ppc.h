@@ -418,7 +418,9 @@ typedef enum uc_ppc_reg {
     UC_PPC_REG_CTR,
     UC_PPC_REG_MSR,
     UC_PPC_REG_FPSCR,
-    UC_PPC_REG_CR
+    UC_PPC_REG_CR,
+
+    UC_PPC_REG_ENDING, // <-- mark the end of the list or registers
 } uc_ppc_reg;
 
 #ifdef __cplusplus

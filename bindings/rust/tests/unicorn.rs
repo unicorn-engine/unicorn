@@ -607,8 +607,8 @@ fn emulate_ppc() {
         emu.mem_read_as_vec(0x1000, ppc_code32.len()),
         Ok(ppc_code32.clone())
     );
-    assert_eq!(emu.reg_write(RegisterPPC::GPR3, 42), Ok(()));
-    assert_eq!(emu.reg_write(RegisterPPC::GPR6, 1337), Ok(()));
+    assert_eq!(emu.reg_write(RegisterPPC::R3, 42), Ok(()));
+    assert_eq!(emu.reg_write(RegisterPPC::R6, 1337), Ok(()));
     assert_eq!(
         emu.emu_start(
             0x1000,
@@ -618,7 +618,7 @@ fn emulate_ppc() {
         ),
         Ok(())
     );
-    assert_eq!(emu.reg_read(RegisterPPC::GPR26), Ok(1379));
+    assert_eq!(emu.reg_read(RegisterPPC::R26), Ok(1379));
 }
 
 #[test]
