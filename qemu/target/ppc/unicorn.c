@@ -143,6 +143,9 @@ void ppc_reg_reset(struct uc_struct *uc)
 // http://www.csit-sun.pub.ro/~cpop/Documentatie_SMP/Motorola_PowerPC/PowerPc/GenInfo/pemch2.pdf
 static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
 {
+    uint32_t val;
+    int i;
+
     if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31)
         *(ppcreg_t *)value = env->gpr[regid - UC_PPC_REG_0];
     else {
@@ -196,13 +199,14 @@ static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
         case UC_PPC_REG_CR7:
             *(uint32_t *)value = env->crf[regid - UC_PPC_REG_CR0];
             break;
-        case UC_PPC_REG_CR: {
-            uint32_t cr = 0;
+        case UC_PPC_REG_CR:
+            val = 0;
             for (int i = 0; i < 8; i++) {
-                cr <<= 4;
-                cr |= env->crf[i];
+                val <<= 4;
+                val |= env->crf[i];
             }
-        } break;
+            *(uint32_t *)value = val;
+            break;
         case UC_PPC_REG_LR:
             *(ppcreg_t *)value = env->lr;
             break;
@@ -226,6 +230,9 @@ static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
 
 static void reg_write(CPUPPCState *env, unsigned int regid, const void *value)
 {
+    uint32_t val;
+    int i;
+
     if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31)
         env->gpr[regid - UC_PPC_REG_0] = *(ppcreg_t *)value;
     else {
@@ -279,13 +286,13 @@ static void reg_write(CPUPPCState *env, unsigned int regid, const void *value)
         case UC_PPC_REG_CR7:
             env->crf[regid - UC_PPC_REG_CR0] = (*(uint32_t *)value) & 0b1111;
             break;
-        case UC_PPC_REG_CR: {
-            uint32_t cr = *(uint32_t *)value;
-            for (int i = 0; i < 8; i++) {
-                env->crf[i] = cr & 0b1111;
-                cr >>= 4;
+        case UC_PPC_REG_CR:
+            val = *(uint32_t *)value;
+            for (i = 0; i < 8; i++) {
+                env->crf[i] = val & 0b1111;
+                val >>= 4;
             }
-        } break;
+            break;
         case UC_PPC_REG_LR:
             env->lr = *(ppcreg_t *)value;
             break;
