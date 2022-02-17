@@ -23,13 +23,13 @@ jobs:
       matrix:
         config:
           - { 
-              os: windows-latest,
+              os: windows-2019,
               arch: x64,
               python-ver: '3.8',
               name: 'win_amd64'
             }
           - { 
-              os: windows-latest,
+              os: windows-2019,
               arch: x32,
               python-ver: '3.8',
               name: 'win32'
