@@ -27,7 +27,7 @@ jobs:
       matrix:
         config:
           - { 
-              os: windows-latest,
+              os: windows-2019,
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
@@ -40,7 +40,7 @@ jobs:
               generators: 'Ninja'
             }
           - { 
-              os: windows-latest,
+              os: windows-2019,
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
@@ -53,7 +53,7 @@ jobs:
               generators: 'Ninja'
             }
           - { 
-              os: windows-latest,
+              os: windows-2019,
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
@@ -65,7 +65,7 @@ jobs:
               generators: 'Visual Studio 16 2019'
             }
           - { 
-              os: windows-latest,
+              os: windows-2019,
               arch: x86,
               python-arch: x86,
               python-ver: '3.8',
