@@ -406,4 +406,5 @@ module Ppc =
     let UC_PPC_REG_MSR = 77
     let UC_PPC_REG_FPSCR = 78
     let UC_PPC_REG_CR = 79
+    let UC_PPC_REG_ENDING = 80
 

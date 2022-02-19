@@ -401,4 +401,5 @@ module UnicornEngine
 	UC_PPC_REG_MSR = 77
 	UC_PPC_REG_FPSCR = 78
 	UC_PPC_REG_CR = 79
+	UC_PPC_REG_ENDING = 80
 end

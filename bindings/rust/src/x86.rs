@@ -237,7 +237,12 @@ pub enum RegisterX86 {
     GS_BASE = 231,
     FLAGS = 232,
     RFLAGS = 233,
-    ENDING = 234,
+    FIP = 234,
+    FCS = 235,
+    FDP = 236,
+    FDS = 237,
+    FOP = 238,
+    ENDING = 239,
 }
 
 impl From<RegisterX86> for i32 {
