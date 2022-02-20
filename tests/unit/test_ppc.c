@@ -63,6 +63,33 @@ static void test_ppc32_fadd()
     OK(uc_close(uc));
 }
 
+static void test_ppc32_sc_cb(uc_engine *uc, uint32_t intno, void *data)
+{
+    uc_emu_stop(uc);
+    return;
+}
+
+static void test_ppc32_sc()
+{
+    uc_engine *uc;
+    char code[] = "\x44\x00\x00\x02"; // sc
+    uint32_t r_pc;
+    uc_hook h;
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &h, UC_HOOK_INTR, test_ppc32_sc_cb, NULL, 1, 0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_PPC_REG_PC, &r_pc));
+
+    TEST_CHECK(r_pc == code_start + 4);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_ppc32_add", test_ppc32_add},
              {"test_ppc32_fadd", test_ppc32_fadd},
+             {"test_ppc32_sc", test_ppc32_sc},
              {NULL, NULL}};

@@ -387,6 +387,10 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
         CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
         env->pc += 4;
 #endif
+#if defined(TARGET_PPC)
+        CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
+        env->nip += 4;
+#endif
         // Unicorn: call registered interrupt callbacks
         catched = false;
         HOOK_FOREACH_VAR_DECLARE;
