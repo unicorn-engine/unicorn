@@ -908,32 +908,58 @@ static void test_x86_nested_emu_stop()
     OK(uc_close(uc));
 }
 
-TEST_LIST = {{"test_x86_in", test_x86_in},
-             {"test_x86_out", test_x86_out},
-             {"test_x86_mem_hook_all", test_x86_mem_hook_all},
-             {"test_x86_inc_dec_pxor", test_x86_inc_dec_pxor},
-             {"test_x86_relative_jump", test_x86_relative_jump},
-             {"test_x86_loop", test_x86_loop},
-             {"test_x86_invalid_mem_read", test_x86_invalid_mem_read},
-             {"test_x86_invalid_mem_write", test_x86_invalid_mem_write},
-             {"test_x86_invalid_jump", test_x86_invalid_jump},
-             {"test_x86_64_syscall", test_x86_64_syscall},
-             {"test_x86_16_add", test_x86_16_add},
-             {"test_x86_reg_save", test_x86_reg_save},
-             {"test_x86_invalid_mem_read_stop_in_cb",
-              test_x86_invalid_mem_read_stop_in_cb},
-             {"test_x86_x87_fnstenv", test_x86_x87_fnstenv},
-             {"test_x86_mmio", test_x86_mmio},
-             {"test_x86_missing_code", test_x86_missing_code},
-             {"test_x86_smc_xor", test_x86_smc_xor},
-             {"test_x86_mmio_uc_mem_rw", test_x86_mmio_uc_mem_rw},
-             {"test_x86_sysenter", test_x86_sysenter},
-             {"test_x86_hook_cpuid", test_x86_hook_cpuid},
-             {"test_x86_486_cpuid", test_x86_486_cpuid},
-             {"test_x86_clear_tb_cache", test_x86_clear_tb_cache},
-             {"test_x86_clear_empty_tb", test_x86_clear_empty_tb},
-             {"test_x86_hook_tcg_op", test_x86_hook_tcg_op},
-             {"test_x86_cmpxchg", test_x86_cmpxchg},
-             {"test_x86_nested_emu_start", test_x86_nested_emu_start},
-             {"test_x86_nested_emu_stop", test_x86_nested_emu_stop},
-             {NULL, NULL}};
+static void test_x86_nested_emu_start_error_cb(uc_engine *uc, uint64_t addr,
+                                               size_t size, void *data)
+{
+    uc_assert_err(UC_ERR_READ_UNMAPPED,
+                  uc_emu_start(uc, code_start + 2, 0, 0, 0));
+}
+
+static void test_x86_nested_emu_start_error()
+{
+    uc_engine *uc;
+    // "nop;nop;mov rax, [0x10000]"
+    char code[] = "\x90\x90\x48\xa1\x00\x00\x01\x00\x00\x00\x00\x00";
+    uc_hook hk;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_x86_nested_emu_start_error_cb,
+                   NULL, code_start, code_start));
+
+    // This call shouldn't fail!
+    OK(uc_emu_start(uc, code_start, code_start + 2, 0, 0));
+
+    OK(uc_close(uc));
+}
+
+TEST_LIST = {
+    {"test_x86_in", test_x86_in},
+    {"test_x86_out", test_x86_out},
+    {"test_x86_mem_hook_all", test_x86_mem_hook_all},
+    {"test_x86_inc_dec_pxor", test_x86_inc_dec_pxor},
+    {"test_x86_relative_jump", test_x86_relative_jump},
+    {"test_x86_loop", test_x86_loop},
+    {"test_x86_invalid_mem_read", test_x86_invalid_mem_read},
+    {"test_x86_invalid_mem_write", test_x86_invalid_mem_write},
+    {"test_x86_invalid_jump", test_x86_invalid_jump},
+    {"test_x86_64_syscall", test_x86_64_syscall},
+    {"test_x86_16_add", test_x86_16_add},
+    {"test_x86_reg_save", test_x86_reg_save},
+    {"test_x86_invalid_mem_read_stop_in_cb",
+     test_x86_invalid_mem_read_stop_in_cb},
+    {"test_x86_x87_fnstenv", test_x86_x87_fnstenv},
+    {"test_x86_mmio", test_x86_mmio},
+    {"test_x86_missing_code", test_x86_missing_code},
+    {"test_x86_smc_xor", test_x86_smc_xor},
+    {"test_x86_mmio_uc_mem_rw", test_x86_mmio_uc_mem_rw},
+    {"test_x86_sysenter", test_x86_sysenter},
+    {"test_x86_hook_cpuid", test_x86_hook_cpuid},
+    {"test_x86_486_cpuid", test_x86_486_cpuid},
+    {"test_x86_clear_tb_cache", test_x86_clear_tb_cache},
+    {"test_x86_clear_empty_tb", test_x86_clear_empty_tb},
+    {"test_x86_hook_tcg_op", test_x86_hook_tcg_op},
+    {"test_x86_cmpxchg", test_x86_cmpxchg},
+    {"test_x86_nested_emu_start", test_x86_nested_emu_start},
+    {"test_x86_nested_emu_stop", test_x86_nested_emu_stop},
+    {"test_x86_nested_emu_start_error", test_x86_nested_emu_start_error},
+    {NULL, NULL}};
