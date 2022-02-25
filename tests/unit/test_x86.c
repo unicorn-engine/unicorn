@@ -932,6 +932,26 @@ static void test_x86_64_nested_emu_start_error()
     OK(uc_close(uc));
 }
 
+static void test_x86_eflags_reserved_bit()
+{
+    uc_engine *uc;
+    uint32_t r_eflags;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &r_eflags));
+
+    TEST_CHECK((r_eflags & 2) != 0);
+
+    OK(uc_reg_write(uc, UC_X86_REG_EFLAGS, &r_eflags));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EFLAGS, &r_eflags));
+
+    TEST_CHECK((r_eflags & 2) != 0);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -962,4 +982,5 @@ TEST_LIST = {
     {"test_x86_nested_emu_start", test_x86_nested_emu_start},
     {"test_x86_nested_emu_stop", test_x86_nested_emu_stop},
     {"test_x86_64_nested_emu_start_error", test_x86_64_nested_emu_start_error},
+    {"test_x86_eflags_reserved_bit", test_x86_eflags_reserved_bit},
     {NULL, NULL}};

@@ -80,7 +80,7 @@ void x86_reg_reset(struct uc_struct *uc)
     memset(&env->idt, 0, sizeof(env->idt));
 
     env->eip = 0;
-    env->eflags = 0;
+    cpu_load_eflags(env, 0, -1);
     env->cc_op = CC_OP_EFLAGS;
 
     env->fpstt = 0; /* top of stack index */
