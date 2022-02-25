@@ -144,7 +144,6 @@ void ppc_reg_reset(struct uc_struct *uc)
 static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
 {
     uint32_t val;
-    int i;
 
     if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31)
         *(ppcreg_t *)value = env->gpr[regid - UC_PPC_REG_0];
