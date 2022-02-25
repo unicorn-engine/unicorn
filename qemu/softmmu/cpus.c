@@ -128,6 +128,9 @@ static int tcg_cpu_exec(struct uc_struct *uc)
         }
     }
     uc->exit_request = 0;
+    uc->cpu->exit_request = 0;
+    uc->cpu->icount_decr_ptr->u16.high = 0;
+    uc->cpu->tcg_exit_req = 0;
 
     return finish;
 }

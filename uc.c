@@ -709,6 +709,8 @@ UNICORN_EXPORT
 uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
                     uint64_t timeout, size_t count)
 {
+    uc_err err;
+
     // reset the counter
     uc->emu_counter = 0;
     uc->invalid_error = UC_ERR_OK;
@@ -852,7 +854,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         qemu_thread_join(&uc->timer);
     }
 
-    return uc->invalid_error;
+    // We may be in a nested uc_emu_start and thus clear invalid_error
+    // once we are done.
+    err = uc->invalid_error;
+    uc->invalid_error = 0;
+    return err;
 }
 
 UNICORN_EXPORT
