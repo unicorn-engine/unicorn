@@ -915,14 +915,14 @@ static void test_x86_nested_emu_start_error_cb(uc_engine *uc, uint64_t addr,
                   uc_emu_start(uc, code_start + 2, 0, 0, 0));
 }
 
-static void test_x86_nested_emu_start_error()
+static void test_x86_64_nested_emu_start_error()
 {
     uc_engine *uc;
     // "nop;nop;mov rax, [0x10000]"
     char code[] = "\x90\x90\x48\xa1\x00\x00\x01\x00\x00\x00\x00\x00";
     uc_hook hk;
 
-    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
     OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_x86_nested_emu_start_error_cb,
                    NULL, code_start, code_start));
 
@@ -961,5 +961,5 @@ TEST_LIST = {
     {"test_x86_cmpxchg", test_x86_cmpxchg},
     {"test_x86_nested_emu_start", test_x86_nested_emu_start},
     {"test_x86_nested_emu_stop", test_x86_nested_emu_stop},
-    {"test_x86_nested_emu_start_error", test_x86_nested_emu_start_error},
+    {"test_x86_64_nested_emu_start_error", test_x86_64_nested_emu_start_error},
     {NULL, NULL}};
