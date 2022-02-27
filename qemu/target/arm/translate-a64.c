@@ -1748,6 +1748,38 @@ static void gen_set_nzcv(TCGContext *tcg_ctx, TCGv_i64 tcg_rt)
     tcg_temp_free_i32(tcg_ctx, nzcv);
 }
 
+
+static TCGLabel *gen_hook_sys(DisasContext *s, uint32_t insn, struct hook *hk)
+{
+    uc_engine *uc = s->uc;
+    TCGContext *tcg_ctx = uc->tcg_ctx;
+    TCGLabel *label = gen_new_label(tcg_ctx);
+    TCGv_i32 tcg_skip, tcg_insn;
+    TCGv_ptr tcg_hk;
+
+    tcg_skip = tcg_temp_new_i32(tcg_ctx);
+    tcg_insn = tcg_const_i32(tcg_ctx, insn);
+    tcg_hk = tcg_const_ptr(tcg_ctx, (void*)hk);
+
+    // Only one hook per instruction for SYS/SYSL/MRS/MSR is allowed.
+    // This is intended and may be extended if it's really necessary.
+    gen_helper_uc_hooksys64(tcg_ctx, tcg_skip, tcg_ctx->cpu_env, tcg_insn, tcg_hk);
+
+    tcg_gen_brcondi_i32(tcg_ctx, TCG_COND_NE, tcg_skip, 0, label);
+    
+    tcg_temp_free_i32(tcg_ctx, tcg_skip);
+    tcg_temp_free_i32(tcg_ctx, tcg_insn);
+    tcg_temp_free_ptr(tcg_ctx, tcg_hk);
+
+    return label;
+}
+
+static void may_gen_set_label(DisasContext *s, TCGLabel *label) {
+    if (label) {
+        gen_set_label(s->uc->tcg_ctx, label);
+    }
+}
+
 /* MRS - move from system register
  * MSR (register) - move to system register
  * SYS
@@ -1762,6 +1794,52 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     const ARMCPRegInfo *ri;
     TCGv_i64 tcg_rt;
+    uc_engine *uc = s->uc;
+    TCGLabel *label = NULL;
+    struct hook *hook;
+    HOOK_FOREACH_VAR_DECLARE;
+
+    HOOK_FOREACH(uc, hook, UC_HOOK_INSN) {
+        if (hook->to_delete)
+            continue;
+
+        if (!HOOK_BOUND_CHECK(hook, s->pc_curr)) {
+            continue;
+        }
+
+        switch (hook->insn) {
+            case UC_ARM64_INS_MRS: {
+                if (isread && (op0 == 2 || op0 == 3)) {
+                    label = gen_hook_sys(s, insn, hook);
+                }
+                break;
+            }
+            case UC_ARM64_INS_MSR: {
+                if (!isread && (op0 == 2 || op0 == 3)) {
+                    label = gen_hook_sys(s, insn, hook);
+                }
+                break;
+            }
+            case UC_ARM64_INS_SYSL: {
+                if (isread && op0 == 1) {
+                    label = gen_hook_sys(s, insn, hook);
+                }
+                break;
+            }
+            case UC_ARM64_INS_SYS: {
+                if (!isread && op0 == 1) {
+                    label = gen_hook_sys(s, insn, hook);
+                }
+                break;
+            }
+            default:
+                break;
+        }
+
+        if (label) {
+            break;
+        }
+    }
 
     ri = get_arm_cp_reginfo(s->cp_regs,
                             ENCODE_AA64_CP_REG(CP_REG_ARM64_SYSREG_CP,
@@ -1775,12 +1853,14 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
                       "system register op0:%d op1:%d crn:%d crm:%d op2:%d\n",
                       isread ? "read" : "write", op0, op1, crn, crm, op2);
         unallocated_encoding(s);
+        may_gen_set_label(s, label);
         return;
     }
 
     /* Check access permissions */
     if (!cp_access_ok(s->current_el, ri, isread)) {
         unallocated_encoding(s);
+        may_gen_set_label(s, label);
         return;
     }
 
@@ -1812,6 +1892,7 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
     /* Handle special cases first */
     switch (ri->type & ~(ARM_CP_FLAG_MASK & ~ARM_CP_SPECIAL)) {
     case ARM_CP_NOP:
+        may_gen_set_label(s, label);
         return;
     case ARM_CP_NZCV:
         tcg_rt = cpu_reg(s, rt);
@@ -1820,6 +1901,7 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
         } else {
             gen_set_nzcv(tcg_ctx, tcg_rt);
         }
+        may_gen_set_label(s, label);
         return;
     case ARM_CP_CURRENTEL:
         /* Reads as current EL value from pstate, which is
@@ -1827,18 +1909,22 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
          */
         tcg_rt = cpu_reg(s, rt);
         tcg_gen_movi_i64(tcg_ctx, tcg_rt, s->current_el << 2);
+        may_gen_set_label(s, label);
         return;
     case ARM_CP_DC_ZVA:
         /* Writes clear the aligned block of memory which rt points into. */
         tcg_rt = clean_data_tbi(s, cpu_reg(s, rt));
         gen_helper_dc_zva(tcg_ctx, tcg_ctx->cpu_env, tcg_rt);
+        may_gen_set_label(s, label);
         return;
     default:
         break;
     }
     if ((ri->type & ARM_CP_FPU) && !fp_access_check(s)) {
+        may_gen_set_label(s, label);
         return;
     } else if ((ri->type & ARM_CP_SVE) && !sve_access_check(s)) {
+        may_gen_set_label(s, label);
         return;
     }
 
@@ -1858,6 +1944,7 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
     } else {
         if (ri->type & ARM_CP_CONST) {
             /* If not forbidden by access permissions, treat as WI */
+            may_gen_set_label(s, label);
             return;
         } else if (ri->writefn) {
             TCGv_ptr tmpptr;
@@ -1888,6 +1975,8 @@ static void handle_sys(DisasContext *s, uint32_t insn, bool isread,
          */
         s->base.is_jmp = DISAS_UPDATE;
     }
+
+    may_gen_set_label(s, label);
 }
 
 /* System

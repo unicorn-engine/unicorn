@@ -358,6 +358,28 @@ typedef enum uc_arm64_reg {
     UC_ARM64_REG_LR = UC_ARM64_REG_X30,
 } uc_arm64_reg;
 
+// Callback function for tracing MRS/MSR/SYS/SYSL. If this callback returns
+// true, the read/write to system registers would be skipped. Note one callback
+// per instruction is allowed.
+// @reg: The source/destination register.
+// @cp_reg: The source/destincation system register.
+// @user_data: The user data.
+typedef uint32_t (*uc_cb_insn_sys_t)(uc_engine *uc, uc_arm64_reg reg,
+                                     const uc_arm64_cp_reg *cp_reg,
+                                     void *user_data);
+
+//> ARM64 instructions
+typedef enum uc_arm64_insn {
+    UC_ARM64_INS_INVALID = 0,
+
+    UC_ARM64_INS_MRS,
+    UC_ARM64_INS_MSR,
+    UC_ARM64_INS_SYS,
+    UC_ARM64_INS_SYSL,
+
+    UC_ARM64_INS_ENDING
+} uc_arm64_insn;
+
 #ifdef __cplusplus
 }
 #endif

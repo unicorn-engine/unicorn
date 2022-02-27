@@ -4297,6 +4297,7 @@ usra_op \
 ssra_op \
 aarch64_translator_ops \
 pred_esz_masks \
+helper_uc_hooksys64 \
 "
 
 riscv32_SYMBOLS="

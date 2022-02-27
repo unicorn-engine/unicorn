@@ -932,3 +932,38 @@ uint32_t HELPER(ror_cc)(CPUARMState *env, uint32_t x, uint32_t i)
         return ((uint32_t)x >> shift) | (x << (32 - shift));
     }
 }
+
+uint32_t HELPER(uc_hooksys64)(CPUARMState *env, uint32_t insn, void *hk)
+{
+    uc_arm64_reg uc_rt;
+    struct hook *hook = (struct hook*)hk;
+    uc_arm64_cp_reg cp_reg;
+    uint32_t rt;
+
+    if (hook->to_delete) {
+        return 0;
+    }
+
+    rt = extract32(insn, 0, 5);
+    cp_reg.op0 = extract32(insn, 19, 2);
+    cp_reg.op1 = extract32(insn, 16, 3);
+    cp_reg.crn = extract32(insn, 12, 4);
+    cp_reg.crm = extract32(insn, 8, 4);
+    cp_reg.op2 = extract32(insn, 5, 3);
+
+    if (rt <= 28 && rt >= 0) {
+        uc_rt = UC_ARM64_REG_X0 + rt;
+        cp_reg.val = env->xregs[rt];
+    } else if (rt == 29 ) {
+        uc_rt = UC_ARM64_REG_X29;
+        cp_reg.val = env->xregs[29];
+    } else if (rt == 30) {
+        uc_rt = UC_ARM64_REG_X30;
+        cp_reg.val = env->xregs[30];
+    } else {
+        uc_rt = UC_ARM64_REG_XZR;
+        cp_reg.val = 0;
+    }
+
+    return ((uc_cb_insn_sys_t)(hook->callback))(env->uc, uc_rt, &cp_reg, hook->user_data);
+}

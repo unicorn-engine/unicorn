@@ -159,9 +159,46 @@ static void test_arm64_read_sctlr()
     OK(uc_close(uc));
 }
 
+static uint32_t test_arm64_mrs_hook_cb(uc_engine *uc, uc_arm64_reg reg,
+                                       const uc_arm64_cp_reg *cp_reg)
+{
+    uint64_t r_x2 = 0x114514;
+
+    OK(uc_reg_write(uc, reg, &r_x2));
+
+    // Skip
+    return 1;
+}
+
+static void test_arm64_mrs_hook()
+{
+    uc_engine *uc;
+    uc_hook hk;
+    uint64_t r_x2;
+    // mrs        x2, tpidrro_el0
+    char code[] = "\x62\xd0\x3b\xd5";
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN | UC_MODE_ARM,
+                    code, sizeof(code) - 1, UC_CPU_AARCH64_A72);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_INSN, (void *)test_arm64_mrs_hook_cb, NULL,
+                   1, 0, UC_ARM64_INS_MRS));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_X2, &r_x2));
+
+    TEST_CHECK(r_x2 == 0x114514);
+
+    OK(uc_hook_del(uc, hk));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
              {"test_arm64_v8_pac", test_arm64_v8_pac},
              {"test_arm64_read_sctlr", test_arm64_read_sctlr},
+             {"test_arm64_mrs_hook", test_arm64_mrs_hook},
              {NULL, NULL}};
