@@ -359,8 +359,8 @@ typedef enum uc_arm64_reg {
 } uc_arm64_reg;
 
 // Callback function for tracing MRS/MSR/SYS/SYSL. If this callback returns
-// true, the read/write to system registers would be skipped. Note one callback
-// per instruction is allowed.
+// true, the read/write to system registers would be skipped (even though it may
+// cause exceptions!). Note one callback per instruction is allowed.
 // @reg: The source/destination register.
 // @cp_reg: The source/destincation system register.
 // @user_data: The user data.
