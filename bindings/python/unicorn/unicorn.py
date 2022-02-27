@@ -10,6 +10,7 @@ import os.path
 import sys
 import weakref
 import functools
+from collections import namedtuple
 
 from . import x86_const, arm_const, arm64_const, unicorn_const as uc
 
@@ -182,6 +183,7 @@ UC_HOOK_INSN_OUT_CB = ctypes.CFUNCTYPE(
     ctypes.c_int, ctypes.c_uint32, ctypes.c_void_p
 )
 UC_HOOK_INSN_SYSCALL_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_void_p)
+UC_HOOK_INSN_SYS_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_void_p)
 UC_MMIO_READ_CB = ctypes.CFUNCTYPE(
     ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.c_void_p
 )
@@ -667,6 +669,16 @@ class Uc(object):
         return cb(self, port, size, data)
 
     @_catch_hook_exception
+    def _hook_insn_sys_cb(self, handle, reg, pcp_reg, user_data):
+        cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(uc_arm64_cp_reg)).contents
+
+        uc_arm64_cp_reg_tuple = namedtuple("uc_arm64_cp_reg_tuple", ["crn", "crm", "op0", "op1", "op2", "val"])
+
+        (cb, data) = self._callbacks[user_data]
+
+        return cb(self, reg, uc_arm64_cp_reg_tuple(cp_reg.crn, cp_reg.crm, cp_reg.op0, cp_reg.op1, cp_reg.op2, cp_reg.val), data)
+
+    @_catch_hook_exception
     def _hook_insn_out_cb(self, handle, port, size, value, user_data):
         # call user's callback with self object
         (cb, data) = self._callbacks[user_data]
@@ -773,6 +785,8 @@ class Uc(object):
                 cb = ctypes.cast(UC_HOOK_INSN_OUT_CB(self._hook_insn_out_cb), UC_HOOK_INSN_OUT_CB)
             if arg1 in (x86_const.UC_X86_INS_SYSCALL, x86_const.UC_X86_INS_SYSENTER):  # SYSCALL/SYSENTER instruction
                 cb = ctypes.cast(UC_HOOK_INSN_SYSCALL_CB(self._hook_insn_syscall_cb), UC_HOOK_INSN_SYSCALL_CB)
+            if arg1 in (arm64_const.UC_ARM64_INS_MRS, arm64_const.UC_ARM64_INS_MSR, arm64_const.UC_ARM64_INS_SYS, arm64_const.UC_ARM64_INS_SYSL):
+                cb = ctypes.cast(UC_HOOK_INSN_SYS_CB(self._hook_insn_sys_cb), UC_HOOK_INSN_SYS_CB)
             status = _uc.uc_hook_add(
                 self._uch, ctypes.byref(_h2), htype, cb,
                 ctypes.cast(self._callback_count, ctypes.c_void_p),
