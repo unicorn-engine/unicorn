@@ -325,3 +325,12 @@ module Arm64 =
     let UC_ARM64_REG_FP = 1
     let UC_ARM64_REG_LR = 2
 
+    // ARM64 instructions
+
+    let UC_ARM64_INS_INVALID = 0
+    let UC_ARM64_INS_MRS = 1
+    let UC_ARM64_INS_MSR = 2
+    let UC_ARM64_INS_SYS = 3
+    let UC_ARM64_INS_SYSL = 4
+    let UC_ARM64_INS_ENDING = 5
+

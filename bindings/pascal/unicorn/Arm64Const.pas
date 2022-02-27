@@ -323,5 +323,14 @@ const
   UC_ARM64_REG_FP = 1;
   UC_ARM64_REG_LR = 2;
 
+// ARM64 instructions
+
+  UC_ARM64_INS_INVALID = 0;
+  UC_ARM64_INS_MRS = 1;
+  UC_ARM64_INS_MSR = 2;
+  UC_ARM64_INS_SYS = 3;
+  UC_ARM64_INS_SYSL = 4;
+  UC_ARM64_INS_ENDING = 5;
+
 implementation
 end.

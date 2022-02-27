@@ -322,4 +322,13 @@ public interface Arm64Const {
    public static final int UC_ARM64_REG_FP = 1;
    public static final int UC_ARM64_REG_LR = 2;
 
+// ARM64 instructions
+
+   public static final int UC_ARM64_INS_INVALID = 0;
+   public static final int UC_ARM64_INS_MRS = 1;
+   public static final int UC_ARM64_INS_MSR = 2;
+   public static final int UC_ARM64_INS_SYS = 3;
+   public static final int UC_ARM64_INS_SYSL = 4;
+   public static final int UC_ARM64_INS_ENDING = 5;
+
 }
