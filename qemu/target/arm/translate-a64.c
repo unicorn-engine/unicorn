@@ -1761,6 +1761,9 @@ static TCGLabel *gen_hook_sys(DisasContext *s, uint32_t insn, struct hook *hk)
     tcg_insn = tcg_const_i32(tcg_ctx, insn);
     tcg_hk = tcg_const_ptr(tcg_ctx, (void*)hk);
 
+    // Sync pc in advance.
+    gen_a64_set_pc_im(tcg_ctx, s->pc_curr);
+
     // Only one hook per instruction for SYS/SYSL/MRS/MSR is allowed.
     // This is intended and may be extended if it's really necessary.
     gen_helper_uc_hooksys64(tcg_ctx, tcg_skip, tcg_ctx->cpu_env, tcg_insn, tcg_hk);
