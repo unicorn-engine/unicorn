@@ -43,7 +43,7 @@ Option Explicit
 
 'Contributed by: FireEye FLARE team
 'Author:         David Zimmer <david.zimmer@fireeye.com>, <dzzie@yahoo.com>
-'License:        Apache
+'License:        Apache 2.0
 
 Public WithEvents uc As ucIntel32
 Attribute uc.VB_VarHelpID = -1
