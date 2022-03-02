@@ -5,7 +5,7 @@
 	
 	Contributed by: FireEye FLARE team
 	Author:         David Zimmer <david.zimmer@fireeye.com>, <dzzie@yahoo.com>
-	License:        Apache
+	License:        Apache 2.0
 
 	Disassembler support can be optionally compiled in using:
 	   libdasm (c) 2004 - 2006  jt / nologin.org

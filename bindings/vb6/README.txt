@@ -5,7 +5,7 @@ A sample class for the 32bit x86 emulator is provided.
 
 Contributed by: FireEye FLARE team
 Author:         David Zimmer <david.zimmer@fireeye.com>, <dzzie@yahoo.com>
-License:        Apache
+License:        Apache 2.0
 
 ' supported api: 
 '        ucs_version
