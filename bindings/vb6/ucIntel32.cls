@@ -17,7 +17,7 @@ Option Explicit
 
 'Contributed by: FireEye FLARE team
 'Author:         David Zimmer <david.zimmer@fireeye.com>, <dzzie@yahoo.com>
-'License:        Apache
+'License:        Apache 2.0
 
 'we hide the extra labor of x64 conversion from the user. I could simplify
 'this at the C shim layer but I might write an x64 class later
