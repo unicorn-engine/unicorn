@@ -343,7 +343,8 @@ struct uc_struct {
     int use_exits;
     uint64_t exits[UC_MAX_NESTED_LEVEL]; // When multiple exits is not enabled.
     GTree *ctl_exits; // addresses where emulation stops (@until param of
-                  // uc_emu_start()) Also see UC_CTL_USE_EXITS for more details.
+                      // uc_emu_start()) Also see UC_CTL_USE_EXITS for more
+                      // details.
 
     int thumb; // thumb mode for ARM
     MemoryRegion **mapped_blocks;
