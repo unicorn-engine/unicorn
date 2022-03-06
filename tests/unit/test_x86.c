@@ -952,6 +952,35 @@ static void test_x86_eflags_reserved_bit()
     OK(uc_close(uc));
 }
 
+static void test_x86_nested_uc_emu_start_exits_cb(uc_engine *uc, uint64_t addr,
+                                                  size_t size, void *data)
+{
+    OK(uc_emu_start(uc, code_start + 5, code_start + 6, 0, 0));
+}
+
+static void test_x86_nested_uc_emu_start_exits()
+{
+    uc_engine *uc;
+    //  cmp eax, 0
+    //  jnz t
+    //  nop <-- nested emu_start
+    // t:mov dword ptr [eax], 0
+    char code[] = "\x83\xf8\x00\x75\x01\x90\xc7\x00\x00\x00\x00\x00";
+    uc_hook hk;
+    uint32_t r_pc;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_CODE, test_x86_nested_uc_emu_start_exits_cb,
+                   NULL, code_start, code_start));
+    OK(uc_emu_start(uc, code_start, code_start + 5, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_pc));
+
+    TEST_CHECK(r_pc == code_start + 5);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -983,4 +1012,5 @@ TEST_LIST = {
     {"test_x86_nested_emu_stop", test_x86_nested_emu_stop},
     {"test_x86_64_nested_emu_start_error", test_x86_64_nested_emu_start_error},
     {"test_x86_eflags_reserved_bit", test_x86_eflags_reserved_bit},
+    {"test_x86_nested_uc_emu_start_exits", test_x86_nested_uc_emu_start_exits},
     {NULL, NULL}};
