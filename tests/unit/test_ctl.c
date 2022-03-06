@@ -144,10 +144,11 @@ double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
 static void test_uc_ctl_tb_cache()
 {
     uc_engine *uc;
-    char code[CODE_LEN];
+    char code[CODE_LEN + 1];
     double standard, cached, evicted;
 
     memset(code, 0x90, CODE_LEN);
+    code[CODE_LEN] = 0;
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
