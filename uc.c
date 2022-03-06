@@ -209,7 +209,7 @@ static uc_err uc_init(uc_engine *uc)
         uc->hook[i].delete_fn = hook_delete;
     }
 
-    uc->exits = g_tree_new_full(uc_exits_cmp, NULL, g_free, NULL);
+    uc->ctl_exits = g_tree_new_full(uc_exits_cmp, NULL, g_free, NULL);
 
     if (machine_initialize(uc)) {
         return UC_ERR_RESOURCE;
@@ -465,7 +465,7 @@ uc_err uc_close(uc_engine *uc)
 
     free(uc->mapped_blocks);
 
-    g_tree_destroy(uc->exits);
+    g_tree_destroy(uc->ctl_exits);
 
     // finally, free uc itself.
     memset(uc, 0, sizeof(*uc));
@@ -828,8 +828,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     // If UC_CTL_UC_USE_EXITS is set, then the @until param won't have any
     // effect. This is designed for the backward compatibility.
     if (!uc->use_exits) {
-        g_tree_remove_all(uc->exits);
-        uc_add_exit(uc, until);
+        uc->exits[uc->nested_level - 1] = until;
     }
 
     if (timeout) {
@@ -2127,7 +2126,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
             err = UC_ERR_ARG;
         } else if (rw == UC_CTL_IO_READ) {
             size_t *exits_cnt = va_arg(args, size_t *);
-            *exits_cnt = g_tree_nnodes(uc->exits);
+            *exits_cnt = g_tree_nnodes(uc->ctl_exits);
         } else {
             err = UC_ERR_ARG;
         }
@@ -2143,20 +2142,20 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else if (rw == UC_CTL_IO_READ) {
             uint64_t *exits = va_arg(args, uint64_t *);
             size_t cnt = va_arg(args, size_t);
-            if (cnt < g_tree_nnodes(uc->exits)) {
+            if (cnt < g_tree_nnodes(uc->ctl_exits)) {
                 err = UC_ERR_ARG;
             } else {
                 uc_ctl_exit_request req;
                 req.array = exits;
                 req.len = 0;
 
-                g_tree_foreach(uc->exits, uc_read_exit_iter, (void *)&req);
+                g_tree_foreach(uc->ctl_exits, uc_read_exit_iter, (void *)&req);
             }
         } else if (rw == UC_CTL_IO_WRITE) {
             uint64_t *exits = va_arg(args, uint64_t *);
             size_t cnt = va_arg(args, size_t);
 
-            g_tree_remove_all(uc->exits);
+            g_tree_remove_all(uc->ctl_exits);
 
             for (size_t i = 0; i < cnt; i++) {
                 uc_add_exit(uc, exits[i]);

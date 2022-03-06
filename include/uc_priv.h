@@ -341,7 +341,8 @@ struct uc_struct {
     int invalid_error;     // invalid memory code: 1 = READ, 2 = WRITE, 3 = CODE
 
     int use_exits;
-    GTree *exits; // addresses where emulation stops (@until param of
+    uint64_t exits[UC_MAX_NESTED_LEVEL]; // When multiple exits is not enabled.
+    GTree *ctl_exits; // addresses where emulation stops (@until param of
                   // uc_emu_start()) Also see UC_CTL_USE_EXITS for more details.
 
     int thumb; // thumb mode for ARM
@@ -390,14 +391,18 @@ static inline void uc_add_exit(uc_engine *uc, uint64_t addr)
 {
     uint64_t *new_exit = g_malloc(sizeof(uint64_t));
     *new_exit = addr;
-    g_tree_insert(uc->exits, (gpointer)new_exit, (gpointer)1);
+    g_tree_insert(uc->ctl_exits, (gpointer)new_exit, (gpointer)1);
 }
 
 // This function has to exist since we would like to accept uint32_t or
 // it's complex to achieve so.
 static inline int uc_addr_is_exit(uc_engine *uc, uint64_t addr)
 {
-    return g_tree_lookup(uc->exits, (gpointer)(&addr)) == (gpointer)1;
+    if (uc->use_exits) {
+        return g_tree_lookup(uc->ctl_exits, (gpointer)(&addr)) == (gpointer)1;
+    } else {
+        return uc->exits[uc->nested_level - 1] == addr;
+    }
 }
 
 #ifdef UNICORN_TRACER
