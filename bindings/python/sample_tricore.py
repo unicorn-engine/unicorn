@@ -1,30 +1,26 @@
 #!/usr/bin/env python
 
-/*
-   Modified for Unicorn Engine by Eric Poole <eric.poole@aptiv.com>, 2022
+'''
+   Created for Unicorn Engine by Eric Poole <eric.poole@aptiv.com>, 2022
    Copyright 2022 Aptiv 
-*/
+'''
 
 from __future__ import print_function
 from unicorn import *
 from unicorn.tricore_const import *
 
-
 # code to be emulated
-TRICORE_CODE   = b"\x82\x72\x82\x4f\xa2\xf2" # mov d2, #0x7; mov d15, #0x4; sub d2, d15
+TRICORE_CODE   = b"\x82\x72\x82\x4f\xa2\xf2\x76\x83" # mov d2, #0x7; mov d15, #0x4; sub d2, d15
 # memory address where emulation starts
 ADDRESS    = 0x10000
-
 
 # callback for tracing basic blocks
 def hook_block(uc, address, size, user_data):
     print(">>> Tracing basic block at 0x%x, block size = 0x%x" %(address, size))
 
-
 # callback for tracing instructions
 def hook_code(uc, address, size, user_data):
     print(">>> Tracing instruction at 0x%x, instruction size = 0x%x" %(address, size))
-
 
 # Test TriCore
 def test_tricore():
@@ -33,20 +29,20 @@ def test_tricore():
         # Initialize emulator in TriCore mode
         mu = Uc(UC_ARCH_TRICORE, UC_MODE_LITTLE_ENDIAN)
 
+        # tracing all basic blocks with customized callback
+        mu.hook_add(UC_HOOK_BLOCK, hook_block)
+
+        # tracing one instruction at ADDRESS with customized callback
+        mu.hook_add(UC_HOOK_CODE, hook_code, begin=ADDRESS, end=ADDRESS + len(TRICORE_CODE))
+
         # map 2MB memory for this emulation
         mu.mem_map(ADDRESS, 2 * 1024 * 1024)
 
         # write machine code to be emulated to memory
         mu.mem_write(ADDRESS, TRICORE_CODE)
 
-        # tracing all basic blocks with customized callback
-        mu.hook_add(UC_HOOK_BLOCK, hook_block)
-
-        # tracing one instruction at ADDRESS with customized callback
-        mu.hook_add(UC_HOOK_CODE, hook_code, begin=ADDRESS, end=ADDRESS)
-
         # emulate machine code in infinite time
-        mu.emu_start(ADDRESS, ADDRESS + len(TRICORE_CODE))
+        mu.emu_start(ADDRESS, ADDRESS + len(TRICORE_CODE) + 10)
 
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
