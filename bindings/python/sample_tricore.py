@@ -1,6 +1,9 @@
 #!/usr/bin/env python
-# Sample code for TriCore of Unicorn. Eric Poole <pappypoole@gmail.com>
-# Python sample ported by Eric Poole <pappypoole@gmail.com>
+
+/*
+   Modified for Unicorn Engine by Eric Poole <eric.poole@aptiv.com>, 2022
+   Copyright 2022 Aptiv 
+*/
 
 from __future__ import print_function
 from unicorn import *
