@@ -42,7 +42,7 @@ def test_tricore():
         mu.mem_write(ADDRESS, TRICORE_CODE)
 
         # emulate machine code in infinite time
-        mu.emu_start(ADDRESS, ADDRESS + len(TRICORE_CODE) + 10)
+        mu.emu_start(ADDRESS, ADDRESS + len(TRICORE_CODE))
 
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
