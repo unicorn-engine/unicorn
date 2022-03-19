@@ -3,6 +3,8 @@
 
 #include "unicorn/platform.h"
 
+typedef void (*delete_fn)(void *data);
+
 struct list_item {
     struct list_item *next;
     void *data;
@@ -10,6 +12,7 @@ struct list_item {
 
 struct list {
     struct list_item *head, *tail;
+    delete_fn delete_fn;
 };
 
 // create a new list
@@ -26,5 +29,8 @@ void *list_append(struct list *list, void *data);
 
 // returns true if entry was removed, false otherwise
 bool list_remove(struct list *list, void *data);
+
+// returns true if the data exists in the list
+bool list_exists(struct list *list, void *data);
 
 #endif

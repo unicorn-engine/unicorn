@@ -1,6 +1,12 @@
 This file details the changelog of Unicorn Engine.
 
 ----------------------------------
+[Unicorn2-beta]: October 3rd, 2021
+
+- Release Unicorn2 beta to public.
+- New logo to celebrate this important milestone!
+
+----------------------------------
 [Version 1.0.1]: April 20th, 2017
 
 - Properly handle selected-architecture build.

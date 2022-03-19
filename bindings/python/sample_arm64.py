@@ -45,7 +45,7 @@ def test_arm64():
         # tracing all basic blocks with customized callback
         mu.hook_add(UC_HOOK_BLOCK, hook_block)
 
-        # tracing all instructions with customized callback
+        # tracing one instruction with customized callback
         mu.hook_add(UC_HOOK_CODE, hook_code, begin=ADDRESS, end=ADDRESS)
 
         # emulate machine code in infinite time
@@ -64,5 +64,25 @@ def test_arm64():
         print("ERROR: %s" % e)
 
 
+def test_arm64_read_sctlr():
+    print("Read SCTLR_EL1")
+    try:
+        # Initialize emulator in ARM mode
+        mu = Uc(UC_ARCH_ARM64, UC_MODE_ARM)
+
+        # Read SCTLR_EL1
+        # crn = 1;
+        # crm = 0;
+        # op0 = 3;
+        # op1 = 0;
+        # op2 = 0;
+        val = mu.reg_read(UC_ARM64_REG_CP_REG, (1, 0, 3, 0, 0))
+        print(">>> SCTLR_EL1 = 0x%x" % val)
+
+    except UcError as e:
+        print("ERROR: %s" % e)
+
 if __name__ == '__main__':
     test_arm64()
+    print("=" * 26)
+    test_arm64_read_sctlr()

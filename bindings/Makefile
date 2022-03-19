@@ -24,8 +24,8 @@ build:
 	$(MAKE) -C go gen_const
 	$(MAKE) -C java gen_const
 	$(MAKE) -C ruby gen_const
-	python const_generator.py dotnet
-	python const_generator.py pascal
+	python3 const_generator.py dotnet
+	python3 const_generator.py pascal
 
 install: build
 	$(MAKE) -C python install
@@ -40,7 +40,7 @@ python:
 %.c.txt: c
 	$(ENV_VARS) ../samples/$(@:%.c.txt=%) > $@
 %.py.txt: python
-	$(ENV_VARS) python python/$(@:%.txt=%) > $@
+	$(ENV_VARS) python3 python/$(@:%.txt=%) > $@
 
 %.py.test: %.c.txt %.py.txt
 	$(DIFF) -u $(@:%.py.test=%.c.txt) $(@:%.py.test=%.py.txt)

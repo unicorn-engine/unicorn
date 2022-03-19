@@ -4,6 +4,42 @@ package unicorn;
 
 public interface SparcConst {
 
+// SPARC32 CPU
+
+   public static final int UC_CPU_SPARC32_FUJITSU_MB86904 = 0;
+   public static final int UC_CPU_SPARC32_FUJITSU_MB86907 = 1;
+   public static final int UC_CPU_SPARC32_TI_MICROSPARC_I = 2;
+   public static final int UC_CPU_SPARC32_TI_MICROSPARC_II = 3;
+   public static final int UC_CPU_SPARC32_TI_MICROSPARC_IIEP = 4;
+   public static final int UC_CPU_SPARC32_TI_SUPERSPARC_40 = 5;
+   public static final int UC_CPU_SPARC32_TI_SUPERSPARC_50 = 6;
+   public static final int UC_CPU_SPARC32_TI_SUPERSPARC_51 = 7;
+   public static final int UC_CPU_SPARC32_TI_SUPERSPARC_60 = 8;
+   public static final int UC_CPU_SPARC32_TI_SUPERSPARC_61 = 9;
+   public static final int UC_CPU_SPARC32_TI_SUPERSPARC_II = 10;
+   public static final int UC_CPU_SPARC32_LEON2 = 11;
+   public static final int UC_CPU_SPARC32_LEON3 = 12;
+
+// SPARC64 CPU
+
+   public static final int UC_CPU_SPARC64_FUJITSU = 0;
+   public static final int UC_CPU_SPARC64_FUJITSU_III = 1;
+   public static final int UC_CPU_SPARC64_FUJITSU_IV = 2;
+   public static final int UC_CPU_SPARC64_FUJITSU_V = 3;
+   public static final int UC_CPU_SPARC64_TI_ULTRASPARC_I = 4;
+   public static final int UC_CPU_SPARC64_TI_ULTRASPARC_II = 5;
+   public static final int UC_CPU_SPARC64_TI_ULTRASPARC_III = 6;
+   public static final int UC_CPU_SPARC64_TI_ULTRASPARC_IIE = 7;
+   public static final int UC_CPU_SPARC64_SUN_ULTRASPARC_III = 8;
+   public static final int UC_CPU_SPARC64_SUN_ULTRASPARC_III_CU = 9;
+   public static final int UC_CPU_SPARC64_SUN_ULTRASPARC_IIII = 10;
+   public static final int UC_CPU_SPARC64_SUN_ULTRASPARC_IV = 11;
+   public static final int UC_CPU_SPARC64_SUN_ULTRASPARC_IV_PLUS = 12;
+   public static final int UC_CPU_SPARC64_SUN_ULTRASPARC_IIII_PLUS = 13;
+   public static final int UC_CPU_SPARC64_SUN_ULTRASPARC_T1 = 14;
+   public static final int UC_CPU_SPARC64_SUN_ULTRASPARC_T2 = 15;
+   public static final int UC_CPU_SPARC64_NEC_ULTRASPARC_I = 16;
+
 // SPARC registers
 
    public static final int UC_SPARC_REG_INVALID = 0;

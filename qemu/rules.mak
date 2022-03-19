@@ -1,10 +1,19 @@
 
+# These are used when we want to do substitutions without confusing Make
+NULL  :=
+SPACE := $(NULL) #
+COMMA := ,
+
 # Don't use implicit rules or variables
 # we have explicit rules for everything
 MAKEFLAGS += -rR
 
 # Files with this suffixes are final, don't try to generate them
 # using implicit rules
+%/trace-events:
+%.hx:
+%.py:
+%.objs:
 %.d:
 %.h:
 %.c:
@@ -12,12 +21,18 @@ MAKEFLAGS += -rR
 %.cpp:
 %.m:
 %.mak:
+clean-target:
 
 # Flags for dependency generation
-QEMU_DGFLAGS += -MMD -MP -MT $@ -MF $(*D)/$(*F).d
+QEMU_DGFLAGS += -MMD -MP -MT $@ -MF $(@D)/$(*F).d
 
-# Same as -I$(SRC_PATH) -I., but for the nested source/object directories
-QEMU_INCLUDES += -I$(<D) -I$(@D) -I$(SRC_PATH)/../include
+# Compiler searches the source file dir first, but in vpath builds
+# we need to make it search the build dir too, before any other
+# explicit search paths. There are two search locations in the build
+# dir, one absolute and the other relative to the compiler working
+# directory. These are the same for target-independent files, but
+# different for target-dependent ones.
+QEMU_LOCAL_INCLUDES = -iquote $(BUILD_DIR)/$(@D) -iquote $(@D)
 
 WL_U := -Wl,-u,
 find-symbols = $(if $1, $(sort $(shell $(NM) -P -g $1 | $2)))
@@ -45,85 +60,91 @@ process-archive-undefs = $(filter-out %.a %.mo,$1) \
                               $(call undefined-symbols,$(filter %.mo,$1)))) \
                 $(filter %.a,$1)
 
-extract-libs = $(strip $(foreach o,$1,$($o-libs)))
+extract-libs = $(strip $(foreach o,$(filter-out %.mo,$1),$($o-libs)))
 expand-objs = $(strip $(sort $(filter %.o,$1)) \
                   $(foreach o,$(filter %.mo,$1),$($o-objs)) \
                   $(filter-out %.o %.mo,$1))
 
 %.o: %.c
-	$(call quiet-command,$(CC) $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(QEMU_DGFLAGS)\
-		$(CFLAGS) $($@-cflags) -c -o $@\
-		$<,"  CC    $(TARGET_DIR)$@")
+	$(call quiet-command,$(CC) $(QEMU_LOCAL_INCLUDES) $(QEMU_INCLUDES) \
+	       $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) $($@-cflags) \
+	       -c -o $@ $<,"CC","$(TARGET_DIR)$@")
 %.o: %.rc
-	$(call quiet-command,$(WINDRES) -I. -o $@ $<,"  RC    $(TARGET_DIR)$@")
+	$(call quiet-command,$(WINDRES) -I. -o $@ $<,"RC","$(TARGET_DIR)$@")
 
-LINKPROG = $(CC)
+# If we have a CXX we might have some C++ objects, in which case we
+# must link with the C++ compiler, not the plain C compiler.
+LINKPROG = $(or $(CXX),$(CC))
 
-ifeq ($(LIBTOOL),)
-LINK = $(call quiet-command, $(LINKPROG) $(QEMU_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ \
+LINK = $(call quiet-command, $(LINKPROG) $(CFLAGS) $(QEMU_LDFLAGS) -o $@ \
        $(call process-archive-undefs, $1) \
-       $(version-obj-y) $(call extract-libs,$1) $(LIBS),"  LINK  $(TARGET_DIR)$@")
-else
-LIBTOOL += $(if $(V),,--quiet)
-%.lo: %.c
-	$(call quiet-command,$(LIBTOOL) --mode=compile --tag=CC $(CC) $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) $($*.o-cflags) -c -o $@ $<,"  lt CC $@")
-%.lo: %.rc
-	$(call quiet-command,$(LIBTOOL) --mode=compile --tag=RC $(WINDRES) -I. -o $@ $<,"lt RC   $(TARGET_DIR)$@")
-%.lo: %.dtrace
-	$(call quiet-command,$(LIBTOOL) --mode=compile --tag=CC dtrace -o $@ -G -s $<, " lt GEN $(TARGET_DIR)$@")
+       $(version-obj-y) $(call extract-libs,$1) $(LIBS),"LINK","$(TARGET_DIR)$@")
 
-LINK = $(call quiet-command,\
-       $(if $(filter %.lo %.la,$1),$(LIBTOOL) --mode=link --tag=CC \
-       )$(LINKPROG) $(QEMU_CFLAGS) $(CFLAGS) $(LDFLAGS) -o $@ \
-       $(call process-archive-undefs, $1)\
-       $(if $(filter %.lo %.la,$1),$(version-lobj-y),$(version-obj-y)) \
-       $(if $(filter %.lo %.la,$1),$(LIBTOOLFLAGS)) \
-       $(call extract-libs,$(1:.lo=.o)) $(LIBS),$(if $(filter %.lo %.la,$1),"lt LINK ", "  LINK  ")"$(TARGET_DIR)$@")
-endif
+%.o: %.S
+	$(call quiet-command,$(CCAS) $(QEMU_LOCAL_INCLUDES) $(QEMU_INCLUDES) \
+	       $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) \
+	       -c -o $@ $<,"CCAS","$(TARGET_DIR)$@")
 
-%.asm: %.S
-	$(call quiet-command,$(CPP) $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) -o $@ $<,"  CPP   $(TARGET_DIR)$@")
+%.o: %.cc
+	$(call quiet-command,$(CXX) $(QEMU_LOCAL_INCLUDES) $(QEMU_INCLUDES) \
+	       $(QEMU_CXXFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) $($@-cflags) \
+	       -c -o $@ $<,"CXX","$(TARGET_DIR)$@")
 
-%.o: %.asm
-	$(call quiet-command,$(AS) $(ASFLAGS) -o $@ $<,"  AS    $(TARGET_DIR)$@")
+%.o: %.cpp
+	$(call quiet-command,$(CXX) $(QEMU_LOCAL_INCLUDES) $(QEMU_INCLUDES) \
+	       $(QEMU_CXXFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) $($@-cflags) \
+	       -c -o $@ $<,"CXX","$(TARGET_DIR)$@")
 
 %.o: %.m
-	$(call quiet-command,$(OBJCC) $(QEMU_INCLUDES) $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) $($@-cflags) -c -o $@ $<,"  OBJC  $(TARGET_DIR)$@")
+	$(call quiet-command,$(OBJCC) $(QEMU_LOCAL_INCLUDES) $(QEMU_INCLUDES) \
+	       $(QEMU_CFLAGS) $(QEMU_DGFLAGS) $(CFLAGS) $($@-cflags) \
+	       -c -o $@ $<,"OBJC","$(TARGET_DIR)$@")
 
 %.o: %.dtrace
-	$(call quiet-command,dtrace -o $@ -G -s $<, "  GEN   $(TARGET_DIR)$@")
+	$(call quiet-command,dtrace -o $@ -G -s $<,"GEN","$(TARGET_DIR)$@")
 
-%$(DSOSUF): CFLAGS += -fPIC -DBUILD_DSO
-%$(DSOSUF): LDFLAGS += $(LDFLAGS_SHARED)
+DSO_OBJ_CFLAGS := -fPIC -DBUILD_DSO
+module-common.o: CFLAGS += $(DSO_OBJ_CFLAGS)
+%$(DSOSUF): QEMU_LDFLAGS += $(LDFLAGS_SHARED)
 %$(DSOSUF): %.mo
 	$(call LINK,$^)
 	@# Copy to build root so modules can be loaded when program started without install
-	$(if $(findstring /,$@),$(call quiet-command,cp $@ $(subst /,-,$@), "  CP    $(subst /,-,$@)"))
+	$(if $(findstring /,$@),$(call quiet-command,cp $@ $(subst /,-,$@),"CP","$(subst /,-,$@)"))
 
 
-LD_REL := $(CC) -nostdlib -Wl,-r
+LD_REL := $(CC) -nostdlib $(LD_REL_FLAGS)
 
 %.mo:
-	$(call quiet-command,$(LD_REL) -o $@ $^,"  LD -r $(TARGET_DIR)$@")
+	$(call quiet-command,$(LD_REL) -o $@ $^,"LD","$(TARGET_DIR)$@")
 
 .PHONY: modules
 modules:
 
 %$(EXESUF): %.o
-	$(call LINK,$^)
+	$(call LINK,$(filter %.o %.a %.mo, $^))
 
 %.a:
-	$(call quiet-command,rm -f $@ && $(AR) rcs $@ $^,"  AR    $(TARGET_DIR)$@")
+	$(call quiet-command,rm -f $@ && $(AR) rcs $@ $^,"AR","$(TARGET_DIR)$@")
 
-quiet-command = $(if $(V),$1,$(if $(2),@echo $2 && $1, @$1))
+# Usage: $(call quiet-command,command and args,"NAME","args to print")
+# This will run "command and args", and either:
+#  if V=1 just print the whole command and args
+#  otherwise print the 'quiet' output in the format "  NAME     args to print"
+# NAME should be a short name of the command, 7 letters or fewer.
+# If called with only a single argument, will print nothing in quiet mode.
+quiet-command-run = $(if $(V),,$(if $2,printf "  %-7s %s\n" $2 $3 && ))$1
+quiet-@ = $(if $(V),,@)
+quiet-command = $(quiet-@)$(call quiet-command-run,$1,$2,$3)
 
 # cc-option
 # Usage: CFLAGS+=$(call cc-option, -falign-functions=0, -malign-functions=0)
 
 cc-option = $(if $(shell $(CC) $1 $2 -S -o /dev/null -xc /dev/null \
               >/dev/null 2>&1 && echo OK), $2, $3)
+cc-c-option = $(if $(shell $(CC) $1 $2 -c -o /dev/null -xc /dev/null \
+                >/dev/null 2>&1 && echo OK), $2, $3)
 
-VPATH_SUFFIXES = %.c %.h %.S %.cc %.cpp %.m %.mak %.texi %.sh %.rc
+VPATH_SUFFIXES = %.c %.h %.S %.cc %.cpp %.m %.mak %.texi %.sh %.rc Kconfig% %.json.in
 set-vpath = $(if $1,$(foreach PATTERN,$(VPATH_SUFFIXES),$(eval vpath $(PATTERN) $1)))
 
 # install-prog list, dir
@@ -138,7 +159,7 @@ endef
 # Looks in the PATH if the argument contains no slash, else only considers one
 # specific directory.  Returns an # empty string if the program doesn't exist
 # there.
-find-in-path = $(if $(find-string /, $1), \
+find-in-path = $(if $(findstring /, $1), \
         $(wildcard $1), \
         $(wildcard $(patsubst %, %/$1, $(subst :, ,$(PATH)))))
 
@@ -178,8 +199,8 @@ TRACETOOL=$(PYTHON) $(SRC_PATH)/scripts/tracetool.py
 config-%.h: config-%.h-timestamp
 	@cmp $< $@ >/dev/null 2>&1 || cp $< $@
 
-config-%.h-timestamp: config-%.mak
-	$(call quiet-command, sh $(SRC_PATH)/scripts/create_config < $< > $@, "  GEN   $(TARGET_DIR)config-$*.h")
+config-%.h-timestamp: config-%.mak $(SRC_PATH)/scripts/create_config
+	$(call quiet-command, sh $(SRC_PATH)/scripts/create_config < $< > $@,"GEN","$(TARGET_DIR)config-$*.h")
 
 .PHONY: clean-timestamp
 clean-timestamp:
@@ -192,15 +213,15 @@ clean: clean-timestamp
 # save-vars
 # Usage: $(call save-vars, vars)
 # Save each variable $v in $vars as save-vars-$v, save their object's
-# variables, then clear $v.
+# variables, then clear $v.  saved-vars-$v contains the variables that
+# where saved for the objects, in order to speedup load-vars.
 define save-vars
     $(foreach v,$1,
         $(eval save-vars-$v := $(value $v))
-        $(foreach o,$($v),
-            $(foreach k,cflags libs objs,
-                $(if $($o-$k),
-                    $(eval save-vars-$o-$k := $($o-$k))
-                    $(eval $o-$k := ))))
+        $(eval saved-vars-$v := $(foreach o,$($v), \
+            $(if $($o-cflags), $o-cflags $(eval save-vars-$o-cflags := $($o-cflags))$(eval $o-cflags := )) \
+            $(if $($o-libs), $o-libs $(eval save-vars-$o-libs := $($o-libs))$(eval $o-libs := )) \
+            $(if $($o-objs), $o-objs $(eval save-vars-$o-objs := $($o-objs))$(eval $o-objs := ))))
         $(eval $v := ))
 endef
 
@@ -213,12 +234,10 @@ define load-vars
     $(eval $2-new-value := $(value $2))
     $(foreach v,$1,
         $(eval $v := $(value save-vars-$v))
-        $(foreach o,$($v),
-            $(foreach k,cflags libs objs,
-                $(if $(save-vars-$o-$k),
-                    $(eval $o-$k := $(save-vars-$o-$k))
-                    $(eval save-vars-$o-$k := ))))
-        $(eval save-vars-$v := ))
+        $(foreach o,$(saved-vars-$v),
+            $(eval $o := $(save-vars-$o)) $(eval save-vars-$o := ))
+        $(eval save-vars-$v := )
+        $(eval saved-vars-$v := ))
     $(eval $2 := $(value $2) $($2-new-value))
 endef
 
@@ -308,7 +327,7 @@ endef
 #     ../water/ice.mo-libs = -licemaker
 #     ../water/ice.mo-objs = ../water/ice1.o ../water/ice2.o
 #
-# Note that 'hot' didn't include 'season/' in the input, so 'summer.o' is not
+# Note that 'hot' didn't include 'water/' in the input, so 'steam.o' is not
 # included.
 #
 define unnest-vars
@@ -317,7 +336,17 @@ define unnest-vars
     $(if $1,$(call fix-paths,$1/,,$2))
 
     # Descend and include every subdir Makefile.objs
-    $(foreach v, $2, $(call unnest-var-recursive,$1,$2,$v))
+    $(foreach v, $2,
+        $(call unnest-var-recursive,$1,$2,$v)
+        # Pass the .mo-cflags and .mo-libs along to its member objects
+        $(foreach o, $(filter %.mo,$($v)),
+            $(foreach p,$($o-objs),
+                $(if $($o-cflags), $(eval $p-cflags += $($o-cflags)))
+                $(if $($o-libs), $(eval $p-libs += $($o-libs))))))
+
+    # For all %.mo objects that are directly added into -y, just expand them
+    $(foreach v,$(filter %-y,$2),
+        $(eval $v := $(foreach o,$($v),$(if $($o-objs),$($o-objs),$o))))
 
     $(foreach v,$(filter %-m,$2),
         # All .o found in *-m variables are single object modules, create .mo
@@ -332,6 +361,7 @@ define unnest-vars
         # For non-module build, add -m to -y
         $(if $(CONFIG_MODULES),
              $(foreach o,$($v),
+                   $(eval $($o-objs): CFLAGS += $(DSO_OBJ_CFLAGS))
                    $(eval $o: $($o-objs)))
              $(eval $(patsubst %-m,%-y,$v) += $($v))
              $(eval modules: $($v:%.mo=%$(DSOSUF))),
@@ -344,18 +374,67 @@ define unnest-vars
             # according to .mo-objs. Report error if not set
             $(if $($o-objs),
                 $(eval $(o:%.mo=%$(DSOSUF)): module-common.o $($o-objs)),
-                $(error $o added in $v but $o-objs is not set))
-            # Pass the .mo-cflags and .mo-libs along to member objects
-            $(foreach p,$($o-objs),
-                $(if $($o-cflags), $(eval $p-cflags += $($o-cflags)))
-                $(if $($o-libs), $(eval $p-libs += $($o-libs)))))
+                $(error $o added in $v but $o-objs is not set)))
         $(shell mkdir -p ./ $(sort $(dir $($v))))
         # Include all the .d files
-        $(eval -include $(addsuffix *.d, $(sort $(dir $($v)))))
+        $(eval -include $(patsubst %.o,%.d,$(patsubst %.mo,%.d,$($v))))
         $(eval $v := $(filter-out %/,$($v))))
-
-    # For all %.mo objects that are directly added into -y, expand them to %.mo-objs
-    $(foreach v,$2,
-        $(eval $v := $(foreach o,$($v),$(if $($o-objs),$($o-objs),$o))))
-
 endef
+
+TEXI2MAN = $(call quiet-command, \
+	perl -Ww -- $(SRC_PATH)/scripts/texi2pod.pl $(TEXI2PODFLAGS) $< $@.pod && \
+	$(POD2MAN) --section=$(subst .,,$(suffix $@)) --center=" " --release=" " $@.pod > $@, \
+	"GEN","$@")
+
+%.1:
+	$(call TEXI2MAN)
+%.7:
+	$(call TEXI2MAN)
+%.8:
+	$(call TEXI2MAN)
+
+GEN_SUBST = $(call quiet-command, \
+	sed -e "s!@libexecdir@!$(libexecdir)!g" < $< > $@, \
+	"GEN","$@")
+
+%.json: %.json.in
+	$(call GEN_SUBST)
+
+# Support for building multiple output files by atomically executing
+# a single rule which depends on several input files (so the rule
+# will be executed exactly once, not once per output file, and
+# not multiple times in parallel.) For more explanation see:
+# https://www.cmcrossroads.com/article/atomic-rules-gnu-make
+
+# Given a space-separated list of filenames, create the name of
+# a 'sentinel' file to use to indicate that they have been built.
+# We use fixed text on the end to avoid accidentally triggering
+# automatic pattern rules, and . on the start to make the file
+# not show up in ls output.
+sentinel = .$(subst $(SPACE),_,$(subst /,_,$1)).sentinel.
+
+# Define an atomic rule that builds multiple outputs from multiple inputs.
+# To use:
+#    $(call atomic,out1 out2 ...,in1 in2 ...)
+#    <TAB>rule to do the operation
+#
+# Make 4.3 will have native support for this, and you would be able
+# to instead write:
+#    out1 out2 ... &: in1 in2 ...
+#    <TAB>rule to do the operation
+#
+# The way this works is that it creates a make rule
+# "out1 out2 ... : sentinel-file ; @:" which says that the sentinel
+# depends on the dependencies, and the rule to do that is "do nothing".
+# Then we have a rule
+# "sentinel-file : in1 in2 ..."
+# whose commands start with "touch sentinel-file" and then continue
+# with the rule text provided by the user of this 'atomic' function.
+# The foreach... is there to delete the sentinel file if any of the
+# output files don't exist, so that we correctly rebuild in that situation.
+atomic = $(eval $1: $(call sentinel,$1) ; @:) \
+         $(call sentinel,$1) : $2 ; @touch $$@ \
+         $(foreach t,$1,$(if $(wildcard $t),,$(shell rm -f $(call sentinel,$1))))
+
+print-%:
+	@echo '$*=$($*)'

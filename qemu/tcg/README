@@ -8,6 +8,11 @@ in the QOP code generator written by Paul Brook.
 
 2) Definitions
 
+TCG receives RISC-like "TCG ops" and performs some optimizations on them,
+including liveness analysis and trivial constant expression
+evaluation.  TCG ops are then implemented in the host CPU back end,
+also known as the TCG "target".
+
 The TCG "target" is the architecture for which we generate the
 code. It is of course not the same as the "target" of QEMU which is
 the emulated architecture. As TCG started as a generic C backend used
@@ -96,7 +101,7 @@ This can be overridden using the following function modifiers:
   canonical locations before calling the helper.
 - TCG_CALL_NO_WRITE_GLOBALS means that the helper does not modify any globals.
   They will only be saved to their canonical location before calling helpers,
-  but they won't be reloaded afterwise.
+  but they won't be reloaded afterwards.
 - TCG_CALL_NO_SIDE_EFFECTS means that the call to the function is removed if
   the return value is not used.
 
@@ -241,6 +246,14 @@ t0=~(t1|t2)
 
 t0=t1|~t2
 
+* clz_i32/i64 t0, t1, t2
+
+t0 = t1 ? clz(t1) : t2
+
+* ctz_i32/i64 t0, t1, t2
+
+t0 = t1 ? ctz(t1) : t2
+
 ********* Shifts/Rotates
 
 * shl_i32/i64 t0, t1, t2
@@ -309,16 +322,45 @@ The bitfield is described by POS/LEN, which are immediate values:
   LEN - the length of the bitfield
   POS - the position of the first bit, counting from the LSB
 
-For example, pos=8, len=4 indicates a 4-bit field at bit 8.
-This operation would be equivalent to
+For example, "deposit_i32 dest, t1, t2, 8, 4" indicates a 4-bit field
+at bit 8.  This operation would be equivalent to
 
   dest = (t1 & ~0x0f00) | ((t2 << 8) & 0x0f00)
 
-* trunc_shr_i32 t0, t1, pos
+* extract_i32/i64 dest, t1, pos, len
+* sextract_i32/i64 dest, t1, pos, len
 
-For 64-bit hosts only, right shift the 64-bit input T1 by POS and
-truncate to 32-bit output T0.  Depending on the host, this may be
-a simple mov/shift, or may require additional canonicalization.
+Extract a bitfield from T1, placing the result in DEST.
+The bitfield is described by POS/LEN, which are immediate values,
+as above for deposit.  For extract_*, the result will be extended
+to the left with zeros; for sextract_*, the result will be extended
+to the left with copies of the bitfield sign bit at pos + len - 1.
+
+For example, "sextract_i32 dest, t1, 8, 4" indicates a 4-bit field
+at bit 8.  This operation would be equivalent to
+
+  dest = (t1 << 20) >> 28
+
+(using an arithmetic right shift).
+
+* extract2_i32/i64 dest, t1, t2, pos
+
+For N = {32,64}, extract an N-bit quantity from the concatenation
+of t2:t1, beginning at pos.  The tcg_gen_extract2_{i32,i64} expander
+accepts 0 <= pos <= N as inputs.  The backend code generator will
+not see either 0 or N as inputs for these opcodes.
+
+* extrl_i64_i32 t0, t1
+
+For 64-bit hosts only, extract the low 32-bits of input T1 and place it
+into 32-bit output T0.  Depending on the host, this may be a simple move,
+or may require additional canonicalization.
+
+* extrh_i64_i32 t0, t1
+
+For 64-bit hosts only, extract the high 32-bits of input T1 and place it
+into 32-bit output T0.  Depending on the host, this may be a simple shift,
+or may require additional canonicalization.
 
 ********* Conditional moves
 
@@ -396,6 +438,31 @@ double-word product T0.  The later is returned in two single-word outputs.
 
 Similar to mulu2, except the two inputs T1 and T2 are signed.
 
+* mulsh_i32/i64 t0, t1, t2
+* muluh_i32/i64 t0, t1, t2
+
+Provide the high part of a signed or unsigned multiply, respectively.
+If mulu2/muls2 are not provided by the backend, the tcg-op generator
+can obtain the same results can be obtained by emitting a pair of
+opcodes, mul+muluh/mulsh.
+
+********* Memory Barrier support
+
+* mb <$arg>
+
+Generate a target memory barrier instruction to ensure memory ordering as being
+enforced by a corresponding guest memory barrier instruction. The ordering
+enforced by the backend may be stricter than the ordering required by the guest.
+It cannot be weaker. This opcode takes a constant argument which is required to
+generate the appropriate barrier instruction. The backend should take care to
+emit the target barrier instruction only when necessary i.e., for SMP guests and
+when MTTCG is enabled.
+
+The guest translators should generate this opcode for all guest instructions
+which have ordering side effects.
+
+Please see docs/devel/atomics.txt for more information on memory barriers.
+
 ********* 64-bit guest on 32-bit host support
 
 The following opcodes are internal to TCG.  Thus they are to be implemented by
@@ -425,6 +492,14 @@ current TB was linked to this TB. Otherwise execute the next
 instructions. Only indices 0 and 1 are valid and tcg_gen_goto_tb may be issued
 at most once with each slot index per TB.
 
+* lookup_and_goto_ptr tb_addr
+
+Look up a TB address ('tb_addr') and jump to it if valid. If not valid,
+jump to the TCG epilogue to go back to the exec loop.
+
+This operation is optional. If the TCG backend does not implement the
+goto_ptr opcode, emitting this op is equivalent to emitting exit_tb(0).
+
 * qemu_ld_i32/i64 t0, t1, flags, memidx
 * qemu_st_i32/i64 t0, t1, flags, memidx
 
@@ -437,11 +512,131 @@ Both t0 and t1 may be split into little-endian ordered pairs of registers
 if dealing with 64-bit quantities on a 32-bit host.
 
 The memidx selects the qemu tlb index to use (e.g. user or kernel access).
-The flags are the TCGMemOp bits, selecting the sign, width, and endianness
+The flags are the MemOp bits, selecting the sign, width, and endianness
 of the memory access.
 
 For a 32-bit host, qemu_ld/st_i64 is guaranteed to only be used with a
 64-bit memory access specified in flags.
+
+********* Host vector operations
+
+All of the vector ops have two parameters, TCGOP_VECL & TCGOP_VECE.
+The former specifies the length of the vector in log2 64-bit units; the
+later specifies the length of the element (if applicable) in log2 8-bit units.
+E.g. VECL=1 -> 64 << 1 -> v128, and VECE=2 -> 1 << 2 -> i32.
+
+* mov_vec   v0, v1
+* ld_vec    v0, t1
+* st_vec    v0, t1
+
+  Move, load and store.
+
+* dup_vec  v0, r1
+
+  Duplicate the low N bits of R1 into VECL/VECE copies across V0.
+
+* dupi_vec v0, c
+
+  Similarly, for a constant.
+  Smaller values will be replicated to host register size by the expanders.
+
+* dup2_vec v0, r1, r2
+
+  Duplicate r2:r1 into VECL/64 copies across V0.  This opcode is
+  only present for 32-bit hosts.
+
+* add_vec   v0, v1, v2
+
+  v0 = v1 + v2, in elements across the vector.
+
+* sub_vec   v0, v1, v2
+
+  Similarly, v0 = v1 - v2.
+
+* mul_vec   v0, v1, v2
+
+  Similarly, v0 = v1 * v2.
+
+* neg_vec   v0, v1
+
+  Similarly, v0 = -v1.
+
+* abs_vec   v0, v1
+
+  Similarly, v0 = v1 < 0 ? -v1 : v1, in elements across the vector.
+
+* smin_vec:
+* umin_vec:
+
+  Similarly, v0 = MIN(v1, v2), for signed and unsigned element types.
+
+* smax_vec:
+* umax_vec:
+
+  Similarly, v0 = MAX(v1, v2), for signed and unsigned element types.
+
+* ssadd_vec:
+* sssub_vec:
+* usadd_vec:
+* ussub_vec:
+
+  Signed and unsigned saturating addition and subtraction.  If the true
+  result is not representable within the element type, the element is
+  set to the minimum or maximum value for the type.
+
+* and_vec   v0, v1, v2
+* or_vec    v0, v1, v2
+* xor_vec   v0, v1, v2
+* andc_vec  v0, v1, v2
+* orc_vec   v0, v1, v2
+* not_vec   v0, v1
+
+  Similarly, logical operations with and without complement.
+  Note that VECE is unused.
+
+* shli_vec   v0, v1, i2
+* shls_vec   v0, v1, s2
+
+  Shift all elements from v1 by a scalar i2/s2.  I.e.
+
+    for (i = 0; i < VECL/VECE; ++i) {
+      v0[i] = v1[i] << s2;
+    }
+
+* shri_vec   v0, v1, i2
+* sari_vec   v0, v1, i2
+* shrs_vec   v0, v1, s2
+* sars_vec   v0, v1, s2
+
+  Similarly for logical and arithmetic right shift.
+
+* shlv_vec   v0, v1, v2
+
+  Shift elements from v1 by elements from v2.  I.e.
+
+    for (i = 0; i < VECL/VECE; ++i) {
+      v0[i] = v1[i] << v2[i];
+    }
+
+* shrv_vec   v0, v1, v2
+* sarv_vec   v0, v1, v2
+
+  Similarly for logical and arithmetic right shift.
+
+* cmp_vec  v0, v1, v2, cond
+
+  Compare vectors by element, storing -1 for true and 0 for false.
+
+* bitsel_vec v0, v1, v2, v3
+
+  Bitwise select, v0 = (v2 & v1) | (v3 & ~v1), across the entire vector.
+
+* cmpsel_vec v0, c1, c2, v3, v4, cond
+
+  Select elements based on comparison results:
+  for (i = 0; i < n; ++i) {
+    v0[i] = (c1[i] cond c2[i]) ? v3[i] : v4[i].
+  }
 
 *********
 
@@ -454,8 +649,9 @@ function tcg_gen_xxx(args).
 
 4) Backend
 
-tcg-target.h contains the target specific definitions. tcg-target.c
-contains the target specific code.
+tcg-target.h contains the target specific definitions. tcg-target.inc.c
+contains the target specific code; it is #included by tcg/tcg.c, rather
+than being a standalone C file.
 
 4.1) Assumptions
 
@@ -466,12 +662,24 @@ On a 32 bit target, all 64 bit operations are converted to 32 bits. A
 few specific operations must be implemented to allow it (see add2_i32,
 sub2_i32, brcond2_i32).
 
+On a 64 bit target, the values are transferred between 32 and 64-bit
+registers using the following ops:
+- trunc_shr_i64_i32
+- ext_i32_i64
+- extu_i32_i64
+
+They ensure that the values are correctly truncated or extended when
+moved from a 32-bit to a 64-bit register or vice-versa. Note that the
+trunc_shr_i64_i32 is an optional op. It is not necessary to implement
+it if all the following conditions are met:
+- 64-bit registers can hold 32-bit values
+- 32-bit values in a 64-bit register do not need to stay zero or
+  sign extended
+- all 32-bit TCG ops ignore the high part of 64-bit registers
+
 Floating point operations are not supported in this version. A
 previous incarnation of the code generator had full support of them,
 but it is better to concentrate on integer operations first.
-
-On a 64 bit target, no assumption is made in TCG about the storage of
-the 32 bit values in 64 bit registers.
 
 4.2) Constraints
 
@@ -482,23 +690,28 @@ version. Aliases are specified in the input operands as for GCC.
 The same register may be used for both an input and an output, even when
 they are not explicitly aliased.  If an op expands to multiple target
 instructions then care must be taken to avoid clobbering input values.
-GCC style "early clobber" outputs are not currently supported.
+GCC style "early clobber" outputs are supported, with '&'.
 
 A target can define specific register or constant constraints. If an
 operation uses a constant input constraint which does not allow all
 constants, it must also accept registers in order to have a fallback.
+The constraint 'i' is defined generically to accept any constant.
+The constraint 'r' is not defined generically, but is consistently
+used by each backend to indicate all registers.
 
 The movi_i32 and movi_i64 operations must accept any constants.
 
 The mov_i32 and mov_i64 operations must accept any registers of the
 same type.
 
-The ld/st instructions must accept signed 32 bit constant offsets. It
-can be implemented by reserving a specific register to compute the
-address if the offset is too big.
+The ld/st/sti instructions must accept signed 32 bit constant offsets.
+This can be implemented by reserving a specific register in which to
+compute the address if the offset is too big.
 
 The ld/st instructions must accept any destination (ld) or source (st)
 register.
+
+The sti instruction may fail if it cannot store the given constant.
 
 4.3) Function call assumptions
 

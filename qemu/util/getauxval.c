@@ -22,7 +22,6 @@
  * THE SOFTWARE.
  */
 
-#include "qemu-common.h"
 #include "qemu/osdep.h"
 
 #ifdef CONFIG_GETAUXVAL
@@ -76,7 +75,7 @@ static const ElfW_auxv_t *qemu_init_auxval(void)
             auxv = a = g_realloc(a, size);
             r = read(fd, (char *)a + ofs, ofs);
         } while (r == ofs);
-}
+    }
 
     close(fd);
     return a;
@@ -97,6 +96,16 @@ unsigned long qemu_getauxval(unsigned long type)
     }
 
     return 0;
+}
+
+#elif defined(__FreeBSD__)
+#include <sys/auxv.h>
+
+unsigned long qemu_getauxval(unsigned long type)
+{
+    unsigned long aux = 0;
+    elf_aux_info(type, &aux, sizeof(aux));
+    return aux;
 }
 
 #else

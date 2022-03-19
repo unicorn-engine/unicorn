@@ -2,6 +2,18 @@ package unicorn
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [m68k_const.go]
 const (
 
+// M68K CPU
+
+	CPU_M68K_M5206 = 0
+	CPU_M68K_M68000 = 1
+	CPU_M68K_M68020 = 2
+	CPU_M68K_M68030 = 3
+	CPU_M68K_M68040 = 4
+	CPU_M68K_M68060 = 5
+	CPU_M68K_M5208 = 6
+	CPU_M68K_CFV4E = 7
+	CPU_M68K_ANY = 8
+
 // M68K registers
 
 	M68K_REG_INVALID = 0

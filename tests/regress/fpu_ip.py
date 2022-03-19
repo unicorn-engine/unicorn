@@ -28,7 +28,7 @@ disasm = SimpleEngine()
 def hook_code(uc, addr, size, user_data):
 	mem = uc.mem_read(addr, size)
 	print("  0x%X:" % (addr)),
-	disasm.disas_single(str(mem))
+	disasm.disas_single(bytes(mem))
 
 class FpuIP(regress.RegressTest):
 

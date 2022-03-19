@@ -4,6 +4,43 @@ package unicorn;
 
 public interface ArmConst {
 
+// ARM CPU
+
+   public static final int UC_CPU_ARM_926 = 0;
+   public static final int UC_CPU_ARM_946 = 1;
+   public static final int UC_CPU_ARM_1026 = 2;
+   public static final int UC_CPU_ARM_1136_R2 = 3;
+   public static final int UC_CPU_ARM_1136 = 4;
+   public static final int UC_CPU_ARM_1176 = 5;
+   public static final int UC_CPU_ARM_11MPCORE = 6;
+   public static final int UC_CPU_ARM_CORTEX_M0 = 7;
+   public static final int UC_CPU_ARM_CORTEX_M3 = 8;
+   public static final int UC_CPU_ARM_CORTEX_M4 = 9;
+   public static final int UC_CPU_ARM_CORTEX_M7 = 10;
+   public static final int UC_CPU_ARM_CORTEX_M33 = 11;
+   public static final int UC_CPU_ARM_CORTEX_R5 = 12;
+   public static final int UC_CPU_ARM_CORTEX_R5F = 13;
+   public static final int UC_CPU_ARM_CORTEX_A7 = 14;
+   public static final int UC_CPU_ARM_CORTEX_A8 = 15;
+   public static final int UC_CPU_ARM_CORTEX_A9 = 16;
+   public static final int UC_CPU_ARM_CORTEX_A15 = 17;
+   public static final int UC_CPU_ARM_TI925T = 18;
+   public static final int UC_CPU_ARM_SA1100 = 19;
+   public static final int UC_CPU_ARM_SA1110 = 20;
+   public static final int UC_CPU_ARM_PXA250 = 21;
+   public static final int UC_CPU_ARM_PXA255 = 22;
+   public static final int UC_CPU_ARM_PXA260 = 23;
+   public static final int UC_CPU_ARM_PXA261 = 24;
+   public static final int UC_CPU_ARM_PXA262 = 25;
+   public static final int UC_CPU_ARM_PXA270 = 26;
+   public static final int UC_CPU_ARM_PXA270A0 = 27;
+   public static final int UC_CPU_ARM_PXA270A1 = 28;
+   public static final int UC_CPU_ARM_PXA270B0 = 29;
+   public static final int UC_CPU_ARM_PXA270B1 = 30;
+   public static final int UC_CPU_ARM_PXA270C0 = 31;
+   public static final int UC_CPU_ARM_PXA270C5 = 32;
+   public static final int UC_CPU_ARM_MAX = 33;
+
 // ARM registers
 
    public static final int UC_ARM_REG_INVALID = 0;
@@ -124,7 +161,29 @@ public interface ArmConst {
    public static final int UC_ARM_REG_MSP = 115;
    public static final int UC_ARM_REG_PSP = 116;
    public static final int UC_ARM_REG_CONTROL = 117;
-   public static final int UC_ARM_REG_ENDING = 118;
+   public static final int UC_ARM_REG_IAPSR = 118;
+   public static final int UC_ARM_REG_EAPSR = 119;
+   public static final int UC_ARM_REG_XPSR = 120;
+   public static final int UC_ARM_REG_EPSR = 121;
+   public static final int UC_ARM_REG_IEPSR = 122;
+   public static final int UC_ARM_REG_PRIMASK = 123;
+   public static final int UC_ARM_REG_BASEPRI = 124;
+   public static final int UC_ARM_REG_BASEPRI_MAX = 125;
+   public static final int UC_ARM_REG_FAULTMASK = 126;
+   public static final int UC_ARM_REG_APSR_NZCVQ = 127;
+   public static final int UC_ARM_REG_APSR_G = 128;
+   public static final int UC_ARM_REG_APSR_NZCVQG = 129;
+   public static final int UC_ARM_REG_IAPSR_NZCVQ = 130;
+   public static final int UC_ARM_REG_IAPSR_G = 131;
+   public static final int UC_ARM_REG_IAPSR_NZCVQG = 132;
+   public static final int UC_ARM_REG_EAPSR_NZCVQ = 133;
+   public static final int UC_ARM_REG_EAPSR_G = 134;
+   public static final int UC_ARM_REG_EAPSR_NZCVQG = 135;
+   public static final int UC_ARM_REG_XPSR_NZCVQ = 136;
+   public static final int UC_ARM_REG_XPSR_G = 137;
+   public static final int UC_ARM_REG_XPSR_NZCVQG = 138;
+   public static final int UC_ARM_REG_CP_REG = 139;
+   public static final int UC_ARM_REG_ENDING = 140;
 
 // alias registers
    public static final int UC_ARM_REG_R13 = 12;

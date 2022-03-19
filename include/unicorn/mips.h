@@ -16,8 +16,45 @@ extern "C" {
 #undef mips
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
+
+//> MIPS32 CPUS
+typedef enum uc_cpu_mips32 {
+    UC_CPU_MIPS32_4KC = 0,
+    UC_CPU_MIPS32_4KM,
+    UC_CPU_MIPS32_4KECR1,
+    UC_CPU_MIPS32_4KEMR1,
+    UC_CPU_MIPS32_4KEC,
+    UC_CPU_MIPS32_4KEM,
+    UC_CPU_MIPS32_24KC,
+    UC_CPU_MIPS32_24KEC,
+    UC_CPU_MIPS32_24KF,
+    UC_CPU_MIPS32_34KF,
+    UC_CPU_MIPS32_74KF,
+    UC_CPU_MIPS32_M14K,
+    UC_CPU_MIPS32_M14KC,
+    UC_CPU_MIPS32_P5600,
+    UC_CPU_MIPS32_MIPS32R6_GENERIC,
+    UC_CPU_MIPS32_I7200,
+} uc_cpu_mips32;
+
+//> MIPS64 CPUS
+typedef enum uc_cpu_mips64 {
+    UC_CPU_MIPS64_R4000 = 0,
+    UC_CPU_MIPS64_VR5432,
+    UC_CPU_MIPS64_5KC,
+    UC_CPU_MIPS64_5KF,
+    UC_CPU_MIPS64_20KC,
+    UC_CPU_MIPS64_MIPS64R2_GENERIC,
+    UC_CPU_MIPS64_5KEC,
+    UC_CPU_MIPS64_5KEF,
+    UC_CPU_MIPS64_I6400,
+    UC_CPU_MIPS64_I6500,
+    UC_CPU_MIPS64_LOONGSON_2E,
+    UC_CPU_MIPS64_LOONGSON_2F,
+    UC_CPU_MIPS64_MIPS64DSPR2
+} uc_cpu_mips64;
 
 //> MIPS registers
 typedef enum UC_MIPS_REG {
@@ -177,8 +214,9 @@ typedef enum UC_MIPS_REG {
 
     UC_MIPS_REG_CP0_CONFIG3,
     UC_MIPS_REG_CP0_USERLOCAL,
+    UC_MIPS_REG_CP0_STATUS,
 
-    UC_MIPS_REG_ENDING,	// <-- mark the end of the list or registers
+    UC_MIPS_REG_ENDING, // <-- mark the end of the list or registers
 
     // alias registers
     UC_MIPS_REG_ZERO = UC_MIPS_REG_0,
@@ -211,7 +249,8 @@ typedef enum UC_MIPS_REG {
     UC_MIPS_REG_K1 = UC_MIPS_REG_27,
     UC_MIPS_REG_GP = UC_MIPS_REG_28,
     UC_MIPS_REG_SP = UC_MIPS_REG_29,
-    UC_MIPS_REG_FP = UC_MIPS_REG_30, UC_MIPS_REG_S8 = UC_MIPS_REG_30,
+    UC_MIPS_REG_FP = UC_MIPS_REG_30,
+    UC_MIPS_REG_S8 = UC_MIPS_REG_30,
     UC_MIPS_REG_RA = UC_MIPS_REG_31,
 
     UC_MIPS_REG_HI0 = UC_MIPS_REG_AC0,

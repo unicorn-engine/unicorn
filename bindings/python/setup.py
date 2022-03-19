@@ -26,41 +26,13 @@ ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 LIBS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'lib')
 HEADERS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'include')
 SRC_DIR = os.path.join(ROOT_DIR, 'src')
-BUILD_DIR = SRC_DIR if os.path.exists(SRC_DIR) else os.path.join(ROOT_DIR, '../..')
+UC_DIR = os.path.join(ROOT_DIR, '../..')
+BUILD_DIR = os.path.join(UC_DIR, 'build_python')
 
-# Parse version from pkgconfig.mk
-VERSION_DATA = {}
-with open(os.path.join(BUILD_DIR, 'pkgconfig.mk')) as fp:
-    lines = fp.readlines()
-    for line in lines:
-        line = line.strip()
-        if len(line) == 0:
-            continue
-        if line.startswith('#'):
-            continue
-        if '=' not in line:
-            continue
-
-        k, v = line.split('=', 1)
-        k = k.strip()
-        v = v.strip()
-        if len(k) == 0 or len(v) == 0:
-            continue
-        VERSION_DATA[k] = v
-
-if 'PKG_MAJOR' not in VERSION_DATA or \
-        'PKG_MINOR' not in VERSION_DATA or \
-        'PKG_EXTRA' not in VERSION_DATA:
-    raise Exception("Malformed pkgconfig.mk")
-
-if 'PKG_TAG' in VERSION_DATA:
-    VERSION = '{PKG_MAJOR}.{PKG_MINOR}.{PKG_EXTRA}.{PKG_TAG}'.format(**VERSION_DATA)
-else:
-    VERSION = '{PKG_MAJOR}.{PKG_MINOR}.{PKG_EXTRA}'.format(**VERSION_DATA)
+VERSION = "2.0.0rc6"
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.dylib"
-    MAC_LIBRARY_FILE = "libunicorn*.dylib"
     STATIC_LIBRARY_FILE = None
 elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
@@ -80,7 +52,6 @@ def copy_sources():
     """
     src = []
 
-    os.system('make -C %s clean' % os.path.join(ROOT_DIR, '../..'))
     shutil.rmtree(SRC_DIR, ignore_errors=True)
     os.mkdir(SRC_DIR)
 
@@ -99,14 +70,10 @@ def copy_sources():
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.[ch]")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.mk")))
 
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../Makefile")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../LICENSE*")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../README.md")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.TXT")))
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../RELEASE_NOTES")))
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../make.sh")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../CMakeLists.txt")))
-    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../pkgconfig.mk")))
 
     for filename in src:
         outpath = os.path.join(SRC_DIR, os.path.basename(filename))
@@ -126,7 +93,7 @@ def build_libraries():
     os.mkdir(LIBS_DIR)
 
     # copy public headers
-    shutil.copytree(os.path.join(BUILD_DIR, 'include', 'unicorn'), os.path.join(HEADERS_DIR, 'unicorn'))
+    shutil.copytree(os.path.join(UC_DIR, 'include', 'unicorn'), os.path.join(HEADERS_DIR, 'unicorn'))
 
     # check if a prebuilt library exists
     # if so, use it instead of building
@@ -137,7 +104,7 @@ def build_libraries():
         return
 
     # otherwise, build!!
-    os.chdir(BUILD_DIR)
+    os.chdir(UC_DIR)
 
     try:
         subprocess.check_call(['msbuild', '/help'])
@@ -149,39 +116,35 @@ def build_libraries():
     if has_msbuild and SYSTEM == 'win32':
         plat = 'Win32' if platform.architecture()[0] == '32bit' else 'x64'
         conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
-        subprocess.call(['msbuild', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=os.path.join(BUILD_DIR, 'msvc'))
+        if not os.path.exists(BUILD_DIR):
+            os.mkdir(BUILD_DIR)
+        
+        subprocess.check_call(['cmake', '-B', BUILD_DIR, '-G', "Visual Studio 16 2019", "-A", plat, "-DCMAKE_BUILD_TYPE=" + conf])
+        subprocess.check_call(['msbuild', 'unicorn.sln', '-m', '-p:Platform=' + plat, '-p:Configuration=' + conf], cwd=BUILD_DIR)
 
-        obj_dir = os.path.join(BUILD_DIR, 'msvc', plat, conf)
+        obj_dir = os.path.join(BUILD_DIR, conf)
         shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
         shutil.copy(os.path.join(obj_dir, STATIC_LIBRARY_FILE), LIBS_DIR)
     else:
         # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
-        new_env = dict(os.environ)
-        new_env['UNICORN_BUILD_CORE_ONLY'] = 'yes'
-        cmd = ['sh', './make.sh']
-        if SYSTEM == "cygwin":
-            if IS_64BITS:
-                cmd.append('cygwin-mingw64')
-            else:
-                cmd.append('cygwin-mingw32')
-        elif SYSTEM == "win32":
-            if IS_64BITS:
-                cmd.append('cross-win64')
-            else:
-                cmd.append('cross-win32')
+        if not os.path.exists(BUILD_DIR):
+            os.mkdir(BUILD_DIR)
+        conf = 'Debug' if os.getenv('DEBUG', '') else 'Release'
 
-        subprocess.call(cmd, env=new_env)
-
-        if SYSTEM == 'darwin':
-            for file in glob.glob(MAC_LIBRARY_FILE):
-                shutil.copy(file, LIBS_DIR, follow_symlinks=False)
-        else:
-            shutil.copy(LIBRARY_FILE, LIBS_DIR)
+        cmake_args = ["cmake", '-B', BUILD_DIR, "-DCMAKE_BUILD_TYPE=" + conf]
+        if os.getenv("TRACE", ""):
+            cmake_args += ["-DUNICORN_TRACER=on"]
+        subprocess.check_call(cmake_args)
+        os.chdir(BUILD_DIR)
+        threads = os.getenv("THREADS", "4")
+        subprocess.check_call(["cmake", "--build", ".", "-j" + threads])
+    
+        shutil.copy(LIBRARY_FILE, LIBS_DIR)
         try:
             # static library may fail to build on windows if user doesn't have visual studio installed. this is fine.
             if STATIC_LIBRARY_FILE is not None:
                 shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
-        except:
+        except FileNotFoundError:
             print('Warning: Could not build static library file! This build is not appropriate for a binary distribution')
             # enforce this
             if 'upload' in sys.argv:
@@ -251,6 +214,24 @@ except ImportError:
 def join_all(src, files):
     return tuple(os.path.join(src, f) for f in files)
 
+long_desc = '''
+Unicorn is a lightweight, multi-platform, multi-architecture CPU emulator framework
+based on [QEMU](http://qemu.org).
+
+Unicorn offers some unparalleled features:
+
+- Multi-architecture: ARM, ARM64 (ARMv8), M68K, MIPS, PowerPC, SPARC and X86 (16, 32, 64-bit)
+- Clean/simple/lightweight/intuitive architecture-neutral API
+- Implemented in pure C language, with bindings for Crystal, Clojure, Visual Basic, Perl, Rust, Ruby, Python, Java, .NET, Go, Delphi/Free Pascal, Haskell, Pharo, and Lua.
+- Native support for Windows & *nix (with Mac OSX, Linux, *BSD & Solaris confirmed)
+- High performance via Just-In-Time compilation
+- Support for fine-grained instrumentation at various levels
+- Thread-safety by design
+- Distributed under free software license GPLv2
+
+Further information is available at http://www.unicorn-engine.org
+'''
+
 setup(
     provides=['unicorn'],
     packages=['unicorn'],
@@ -259,6 +240,8 @@ setup(
     author='Nguyen Anh Quynh',
     author_email='aquynh@gmail.com',
     description='Unicorn CPU emulator engine',
+    long_description=long_desc,
+    long_description_content_type="text/markdown",
     url='http://www.unicorn-engine.org',
     classifiers=[
         'License :: OSI Approved :: BSD License',
@@ -267,9 +250,9 @@ setup(
     ],
     requires=['ctypes'],
     cmdclass=cmdclass,
-    zip_safe=True,
+    zip_safe=False,
     include_package_data=True,
-    is_pure=True,
+    is_pure=False,
     package_data={
         'unicorn': ['lib/*', 'include/unicorn/*']
     }

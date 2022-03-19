@@ -7,6 +7,13 @@ open System
 [<AutoOpen>]
 module Arm64 =
 
+    // ARM64 CPU
+
+    let UC_CPU_AARCH64_A57 = 0
+    let UC_CPU_AARCH64_A53 = 1
+    let UC_CPU_AARCH64_A72 = 2
+    let UC_CPU_AARCH64_MAX = 3
+
     // ARM64 registers
 
     let UC_ARM64_REG_INVALID = 0
@@ -274,11 +281,43 @@ module Arm64 =
     let UC_ARM64_REG_PC = 260
     let UC_ARM64_REG_CPACR_EL1 = 261
 
-    // thread registers
+    // thread registers, depreciated, use UC_ARM64_REG_CP_REG instead
     let UC_ARM64_REG_TPIDR_EL0 = 262
     let UC_ARM64_REG_TPIDRRO_EL0 = 263
     let UC_ARM64_REG_TPIDR_EL1 = 264
-    let UC_ARM64_REG_ENDING = 265
+    let UC_ARM64_REG_PSTATE = 265
+
+    // exception link registers, depreciated, use UC_ARM64_REG_CP_REG instead
+    let UC_ARM64_REG_ELR_EL0 = 266
+    let UC_ARM64_REG_ELR_EL1 = 267
+    let UC_ARM64_REG_ELR_EL2 = 268
+    let UC_ARM64_REG_ELR_EL3 = 269
+
+    // stack pointers registers, depreciated, use UC_ARM64_REG_CP_REG instead
+    let UC_ARM64_REG_SP_EL0 = 270
+    let UC_ARM64_REG_SP_EL1 = 271
+    let UC_ARM64_REG_SP_EL2 = 272
+    let UC_ARM64_REG_SP_EL3 = 273
+
+    // other CP15 registers, depreciated, use UC_ARM64_REG_CP_REG instead
+    let UC_ARM64_REG_TTBR0_EL1 = 274
+    let UC_ARM64_REG_TTBR1_EL1 = 275
+    let UC_ARM64_REG_ESR_EL0 = 276
+    let UC_ARM64_REG_ESR_EL1 = 277
+    let UC_ARM64_REG_ESR_EL2 = 278
+    let UC_ARM64_REG_ESR_EL3 = 279
+    let UC_ARM64_REG_FAR_EL0 = 280
+    let UC_ARM64_REG_FAR_EL1 = 281
+    let UC_ARM64_REG_FAR_EL2 = 282
+    let UC_ARM64_REG_FAR_EL3 = 283
+    let UC_ARM64_REG_PAR_EL1 = 284
+    let UC_ARM64_REG_MAIR_EL1 = 285
+    let UC_ARM64_REG_VBAR_EL0 = 286
+    let UC_ARM64_REG_VBAR_EL1 = 287
+    let UC_ARM64_REG_VBAR_EL2 = 288
+    let UC_ARM64_REG_VBAR_EL3 = 289
+    let UC_ARM64_REG_CP_REG = 290
+    let UC_ARM64_REG_ENDING = 291
 
     // alias registers
     let UC_ARM64_REG_IP0 = 215

@@ -1,2 +1,0 @@
-obj-y += mips_r4k.o
-obj-y += addr.o cputimer.o

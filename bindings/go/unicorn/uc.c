@@ -23,3 +23,7 @@ uc_err uc_reg_write_batch_helper(uc_engine *handle, int *regs, uint64_t *val_in,
     free(val_ref);
     return ret;
 }
+
+uc_err uc_ctl_set_cpu_model_helper(uc_engine *handle, int model) {
+    return uc_ctl_set_cpu_model(handle, model);
+}

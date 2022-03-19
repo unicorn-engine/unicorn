@@ -1,0 +1,16 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+UseTab: Never
+BreakBeforeBraces: Linux
+AllowShortIfStatementsOnASingleLine: Never
+AllowShortCaseLabelsOnASingleLine: false
+AllowShortBlocksOnASingleLine: Empty
+AllowShortFunctionsOnASingleLine: Empty
+AllowShortLoopsOnASingleLine: false
+IndentCaseLabels: false
+ColumnLimit: 80
+SortIncludes: false
+AllowShortLambdasOnASingleLine: Inline
+AlwaysBreakBeforeMultilineStrings: false
+BreakStringLiterals: true
+PointerAlignment: Right

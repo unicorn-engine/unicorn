@@ -2,17 +2,15 @@
 #include <string.h>
 #include <stdio.h>
 
+int syscall_abi[] = {UC_X86_REG_RAX, UC_X86_REG_RDI, UC_X86_REG_RSI,
+                     UC_X86_REG_RDX, UC_X86_REG_R10, UC_X86_REG_R8,
+                     UC_X86_REG_R9};
 
-int syscall_abi[] = {
-    UC_X86_REG_RAX, UC_X86_REG_RDI, UC_X86_REG_RSI, UC_X86_REG_RDX,
-    UC_X86_REG_R10, UC_X86_REG_R8, UC_X86_REG_R9
-};
+uint64_t vals[7] = {200, 10, 11, 12, 13, 14, 15};
 
-uint64_t vals[7] = { 200, 10, 11, 12, 13, 14, 15 };
-
-// This part of the API is less... clean... because Unicorn supports arbitrary register types.
-// So the least intrusive solution is passing individual pointers.
-// On the plus side, you only need to make this pointer array once.
+// This part of the API is less... clean... because Unicorn supports arbitrary
+// register types. So the least intrusive solution is passing individual
+// pointers. On the plus side, you only need to make this pointer array once.
 void *ptrs[7];
 
 void uc_perror(const char *func, uc_err err)
@@ -22,8 +20,12 @@ void uc_perror(const char *func, uc_err err)
 
 #define BASE 0x10000
 
-// mov rax, 100; mov rdi, 1; mov rsi, 2; mov rdx, 3; mov r10, 4; mov r8, 5; mov r9, 6; syscall
-#define CODE "\x48\xc7\xc0\x64\x00\x00\x00\x48\xc7\xc7\x01\x00\x00\x00\x48\xc7\xc6\x02\x00\x00\x00\x48\xc7\xc2\x03\x00\x00\x00\x49\xc7\xc2\x04\x00\x00\x00\x49\xc7\xc0\x05\x00\x00\x00\x49\xc7\xc1\x06\x00\x00\x00\x0f\x05"
+// mov rax, 100; mov rdi, 1; mov rsi, 2; mov rdx, 3; mov r10, 4; mov r8, 5; mov
+// r9, 6; syscall
+#define CODE                                                                   \
+    "\x48\xc7\xc0\x64\x00\x00\x00\x48\xc7\xc7\x01\x00\x00\x00\x48\xc7\xc6\x02" \
+    "\x00\x00\x00\x48\xc7\xc2\x03\x00\x00\x00\x49\xc7\xc2\x04\x00\x00\x00\x49" \
+    "\xc7\xc0\x05\x00\x00\x00\x49\xc7\xc1\x06\x00\x00\x00\x0f\x05"
 
 void hook_syscall(uc_engine *uc, void *user_data)
 {
@@ -34,7 +36,8 @@ void hook_syscall(uc_engine *uc, void *user_data)
     printf("syscall: {");
 
     for (i = 0; i < 7; i++) {
-        if (i != 0) printf(", ");
+        if (i != 0)
+            printf(", ");
         printf("%" PRIu64, vals[i]);
     }
 
@@ -80,7 +83,8 @@ int main()
     printf("reg_read_batch = {");
 
     for (i = 0; i < 7; i++) {
-        if (i != 0) printf(", ");
+        if (i != 0)
+            printf(", ");
         printf("%" PRIu64, vals[i]);
     }
 
@@ -90,7 +94,8 @@ int main()
     printf("\n");
     printf("running syscall shellcode\n");
 
-    if ((err = uc_hook_add(uc, &sys_hook, UC_HOOK_INSN, hook_syscall, NULL, 1, 0, UC_X86_INS_SYSCALL))) {
+    if ((err = uc_hook_add(uc, &sys_hook, UC_HOOK_INSN, hook_syscall, NULL, 1,
+                           0, UC_X86_INS_SYSCALL))) {
         uc_perror("uc_hook_add", err);
         return 1;
     }
@@ -110,5 +115,6 @@ int main()
         return 1;
     }
 
+    uc_close(uc);
     return 0;
 }

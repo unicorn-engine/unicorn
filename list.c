@@ -15,6 +15,9 @@ void list_clear(struct list *list)
     struct list_item *next, *cur = list->head;
     while (cur != NULL) {
         next = cur->next;
+        if (list->delete_fn) {
+            list->delete_fn(cur->data);
+        }
         free(cur);
         cur = next;
     }
@@ -82,10 +85,32 @@ bool list_remove(struct list *list, void *data)
             if (cur == list->tail) {
                 list->tail = prev;
             }
+            if (list->delete_fn) {
+                list->delete_fn(cur->data);
+            }
             free(cur);
             return true;
         }
         prev = cur;
+        cur = next;
+    }
+    return false;
+}
+
+// returns true if the data exists in the list
+bool list_exists(struct list *list, void *data)
+{
+    struct list_item *next, *cur = NULL;
+    // is list empty?
+    if (list->head == NULL) {
+        return false;
+    }
+    cur = list->head;
+    while (cur != NULL) {
+        next = cur->next;
+        if (cur->data == data) {
+            return true;
+        }
         cur = next;
     }
     return false;

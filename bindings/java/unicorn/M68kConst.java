@@ -4,6 +4,18 @@ package unicorn;
 
 public interface M68kConst {
 
+// M68K CPU
+
+   public static final int UC_CPU_M68K_M5206 = 0;
+   public static final int UC_CPU_M68K_M68000 = 1;
+   public static final int UC_CPU_M68K_M68020 = 2;
+   public static final int UC_CPU_M68K_M68030 = 3;
+   public static final int UC_CPU_M68K_M68040 = 4;
+   public static final int UC_CPU_M68K_M68060 = 5;
+   public static final int UC_CPU_M68K_M5208 = 6;
+   public static final int UC_CPU_M68K_CFV4E = 7;
+   public static final int UC_CPU_M68K_ANY = 8;
+
 // M68K registers
 
    public static final int UC_M68K_REG_INVALID = 0;

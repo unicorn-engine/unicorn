@@ -3,16 +3,16 @@
 .PHONY: gen_const install install3 clean sdist sdist3 bdist bdist3 sdist_win bdist_win
 
 gen_const:
-	cd .. && python const_generator.py python
+	cd .. && python3 const_generator.py python
 
 install:
 	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
 	if test -n "${DESTDIR}"; then \
-		python setup.py install --root="${DESTDIR}"; \
+		python3 setup.py install --root="${DESTDIR}"; \
 	else \
-		python setup.py install; \
+		python3 setup.py install; \
 	fi
 
 install3:
@@ -30,7 +30,7 @@ sdist:
 	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
-	python setup.py sdist register upload
+	python3 setup.py sdist register upload
 
 # build & upload PyPi package with source code of the core
 sdist3:
@@ -44,7 +44,7 @@ bdist:
 	rm -rf src/ dist/
 	rm -rf prebuilt/win64/unicorn.dll
 	rm -rf prebuilt/win32/unicorn.dll
-	python setup.py bdist_wheel register upload
+	python3 setup.py bdist_wheel register upload
 
 # build & upload PyPi package with precompiled core
 bdist3:
@@ -57,7 +57,7 @@ bdist3:
 # NOTE: be sure to have precompiled core under prebuilt/win*/ beforehand
 sdist_win:
 	rm -rf src/ dist/
-	python setup.py sdist register upload
+	python3 setup.py sdist register upload
 
 # build & upload PyPi package with prebuilt core
 # NOTE: be sure to have precompiled core under prebuilt/win*/ beforehand
