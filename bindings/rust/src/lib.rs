@@ -758,7 +758,7 @@ impl<'a, D> Unicorn<'a, D> {
     /// Add hook for x86 IN instruction.
     pub fn add_insn_in_hook<F: 'a>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(&mut Unicorn<D>, u32, usize),
+        F: FnMut(&mut Unicorn<D>, u32, usize) -> u32,
     {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
