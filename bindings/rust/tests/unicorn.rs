@@ -309,6 +309,7 @@ fn x86_insn_in_callback() {
     let callback_insn = insn_cell.clone();
     let callback = move |_: &mut Unicorn<()>, port: u32, size: usize| {
         *callback_insn.borrow_mut() = InsnInExpectation(port, size);
+        42
     };
 
     let x86_code32: Vec<u8> = vec![0xe5, 0x10]; // IN eax, 0x10;
@@ -332,6 +333,7 @@ fn x86_insn_in_callback() {
         Ok(())
     );
     assert_eq!(expect, *insn_cell.borrow());
+    assert_eq!(emu.reg_read(RegisterX86::EAX), Ok(42));
     assert_eq!(emu.remove_hook(hook), Ok(()));
 }
 
