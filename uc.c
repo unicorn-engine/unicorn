@@ -855,8 +855,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     return uc->invalid_error;
 }
 
-UNICORN_EXPORT
-uc_err uc_emu_stop(uc_engine *uc)
+uc_err uc_emu_soft_stop(uc_engine *uc)
 {
     UC_INIT(uc);
 
@@ -872,6 +871,16 @@ uc_err uc_emu_stop(uc_engine *uc)
     }
 
     return UC_ERR_OK;
+}
+
+UNICORN_EXPORT
+uc_err uc_emu_stop(uc_engine *uc)
+{
+    uc_err err;
+
+    err = uc_emu_soft_stop(uc);
+    uc->stop_request = true;
+    return err;
 }
 
 // return target index where a memory region at the address exists, or could be
@@ -1391,7 +1400,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     // place
     if (remove_exec) {
         uc->quit_request = true;
-        uc_emu_stop(uc);
+        uc_emu_soft_stop(uc);
     }
 
     return UC_ERR_OK;

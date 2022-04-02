@@ -95,12 +95,7 @@ static int tcg_cpu_exec(struct uc_struct *uc)
             uc->quit_request = false;
             r = cpu_exec(uc, cpu);
 
-            // quit current TB but continue emulating?
-            if (uc->quit_request) {
-                // reset stop_request
-                uc->stop_request = false;
-            } else if (uc->stop_request) {
-                //printf(">>> got STOP request!!!\n");
+            if (uc->stop_request) {
                 finish = true;
                 break;
             }

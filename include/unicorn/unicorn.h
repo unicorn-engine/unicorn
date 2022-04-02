@@ -828,6 +828,20 @@ UNICORN_EXPORT
 uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
                     uint64_t timeout, size_t count);
 
+
+/*
+ "Soft" stop emulation: perform all the logic of stopping emulation
+ without setting the uc.stop_request. Most callers will use this when
+ setting quit_request to flush TB and continue execution. The function
+ uc_emu_stop() calls this function and then sets uc.stop_request.
+
+ @uc: handle returned by uc_open()
+
+ @return UC_ERR_OK on success, or other value on failure (refer to uc_err enum
+   for detailed error).
+*/
+uc_err uc_emu_soft_stop(uc_engine *uc);
+
 /*
  Stop emulation (which was started by uc_emu_start() API.
  This is typically called from callback functions registered via tracing APIs.

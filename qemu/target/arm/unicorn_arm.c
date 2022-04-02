@@ -479,7 +479,7 @@ int arm_reg_write(struct uc_struct *uc, unsigned int *regs, void *const *vals,
         if (regid == UC_ARM_REG_R15) {
             // force to quit execution and flush TB
             uc->quit_request = true;
-            uc_emu_stop(uc);
+            uc_emu_soft_stop(uc);
         }
     }
 
