@@ -642,6 +642,8 @@ struct TCGContext {
     void *code_gen_prologue;
     void *code_gen_epilogue;
     void *code_gen_buffer;
+    void *initial_buffer;
+    size_t initial_buffer_size;
     size_t code_gen_buffer_size;
     void *code_gen_ptr;
     void *data_gen_ptr;
