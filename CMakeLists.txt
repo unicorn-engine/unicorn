@@ -1282,7 +1282,7 @@ target_include_directories(unicorn PUBLIC
 )
 
 if (NOT BUILD_SHARED_LIBS)
-    bundle_static_library(unicorn unicorn_static)
+    bundle_static_library(unicorn unicorn-static)
 endif()
 
 if(UNICORN_INSTALL AND NOT MSVC)
