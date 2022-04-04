@@ -68,7 +68,7 @@ fn build_with_cmake() {
     let profile = env::var("PROFILE").unwrap();
 
     if let Some(unicorn_dir) = find_unicorn(&out_dir()) {
-        let rust_build_path = unicorn_dir.join("rust_build");
+        let rust_build_path = unicorn_dir.join("build_rust");
         println!(
             "cargo:rustc-link-search={}",
             rust_build_path.to_str().unwrap()
@@ -89,7 +89,7 @@ fn build_with_cmake() {
             download_unicorn()
         };
 
-        let rust_build_path = unicorn_dir.join("rust_build");
+        let rust_build_path = unicorn_dir.join("build_rust");
 
         let mut cmd = Command::new("cmake");
 
@@ -98,7 +98,7 @@ fn build_with_cmake() {
             // Windows
             cmd.current_dir(&unicorn_dir)
                 .arg("-B")
-                .arg("rust_build")
+                .arg("build_rust")
                 .arg("-DBUILD_SHARED_LIBS=OFF")
                 .arg("-G")
                 .arg("Visual Studio 16 2019");
@@ -138,7 +138,7 @@ fn build_with_cmake() {
             let mut cmd = Command::new("cmake");
             cmd.current_dir(&unicorn_dir)
                 .arg("-B")
-                .arg("rust_build")
+                .arg("build_rust")
                 .arg("-DBUILD_SHARED_LIBS=OFF");
 
             if profile == "debug" {
@@ -163,35 +163,8 @@ fn build_with_cmake() {
         }
     }
 
-    // This is a workaround for Unicorn static link since libunicorn.a is also linked again lib*-softmmu.a.
-    // Static libs is just a bundle of objects files. The link relation defined in CMakeLists is only
-    // valid within the cmake project scope and cmake would help link again sub static libs automatically.
-    //
     // Lazymio(@wtdcode): Why do I stick to static link? See: https://github.com/rust-lang/cargo/issues/5077
-    println!("cargo:rustc-link-lib=unicorn");
-    for arch in [
-        "x86_64",
-        "arm",
-        "aarch64",
-        "riscv32",
-        "riscv64",
-        "mips",
-        "mipsel",
-        "mips64",
-        "mips64el",
-        "sparc",
-        "sparc64",
-        "m68k",
-        "ppc",
-        "ppc64",
-        "s390x"
-    ]
-    .iter()
-    {
-        println!("cargo:rustc-link-lib={}-softmmu", arch);
-    }
-    println!("cargo:rustc-link-lib=unicorn-common");
-
+    println!("cargo:rustc-link-lib=unicorn-static");
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=src");
 }

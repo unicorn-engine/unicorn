@@ -23,6 +23,8 @@ set(UNICORN_VERSION_MAJOR 2)
 set(UNICORN_VERSION_MINOR 0)
 set(UNICORN_VERSION_PATCH 0)
 
+include(bundle_static.cmake)
+
 option(BUILD_SHARED_LIBS "Build shared instead of static library" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_FUZZ "Enable fuzzing" OFF)
 option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
@@ -1332,6 +1334,10 @@ endif()
 target_include_directories(unicorn PUBLIC
     include
 )
+
+if (NOT BUILD_SHARED_LIBS)
+    bundle_static_library(unicorn unicorn-static)
+endif()
 
 if(UNICORN_INSTALL AND NOT MSVC)
     include("GNUInstallDirs")
