@@ -40,8 +40,6 @@ typedef struct MemoryRegionPortio {
 
 #define PORTIO_END_OF_LIST() { }
 
-extern const MemoryRegionOps unassigned_io_ops;
-
 void cpu_outb(struct uc_struct *uc, uint32_t addr, uint8_t val);
 void cpu_outw(struct uc_struct *uc, uint32_t addr, uint16_t val);
 void cpu_outl(struct uc_struct *uc, uint32_t addr, uint32_t val);
