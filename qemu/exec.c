@@ -1439,6 +1439,25 @@ static void tcg_commit(MemoryListener *listener)
     tlb_flush(cpuas->cpu);
 }
 
+static uint64_t unassigned_io_read(struct uc_struct *uc, void* opaque, hwaddr addr, unsigned size)
+{
+#ifdef _MSC_VER
+    return (uint64_t)0xffffffffffffffffULL;
+#else
+    return (uint64_t)-1ULL;
+#endif
+}
+
+static void unassigned_io_write(struct uc_struct *uc, void* opaque, hwaddr addr, uint64_t data, unsigned size)
+{
+}
+
+static const MemoryRegionOps unassigned_io_ops = {
+    .read = unassigned_io_read,
+    .write = unassigned_io_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+};
+
 static void memory_map_init(struct uc_struct *uc)
 {
     uc->system_memory = g_malloc(sizeof(*(uc->system_memory)));

@@ -30,24 +30,6 @@
 #include "exec/memory.h"
 #include "uc_priv.h"
 
-static uint64_t unassigned_io_read(struct uc_struct *uc, void* opaque, hwaddr addr, unsigned size)
-{
-#ifdef _MSC_VER
-    return (uint64_t)0xffffffffffffffffULL;
-#else
-    return (uint64_t)-1ULL;
-#endif
-}
-
-static void unassigned_io_write(struct uc_struct *uc, void* opaque, hwaddr addr, uint64_t data, unsigned size)
-{
-}
-
-const MemoryRegionOps unassigned_io_ops = {
-    .read = unassigned_io_read,
-    .write = unassigned_io_write,
-    .endianness = DEVICE_NATIVE_ENDIAN,
-};
 
 void cpu_outb(struct uc_struct *uc, uint32_t addr, uint8_t val)
 {

@@ -755,10 +755,43 @@ impl<'a, D> Unicorn<'a, D> {
         }
     }
 
+    /// Add hook for invalid instructions
+    pub fn add_insn_invalid_hook<F: 'a>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
+    where
+        F: FnMut(&mut Unicorn<D>) -> bool,
+    {
+        let mut hook_ptr = core::ptr::null_mut();
+        let mut user_data = Box::new(ffi::UcHook {
+            callback,
+            uc: Unicorn {
+                inner: self.inner.clone(),
+            },
+        });
+
+        let err = unsafe {
+            ffi::uc_hook_add(
+                self.get_handle(),
+                &mut hook_ptr,
+                HookType::INSN_INVALID,
+                ffi::insn_invalid_hook_proxy::<D, F> as _,
+                user_data.as_mut() as *mut _ as _,
+                0,
+                0,
+            )
+        };
+        if err == uc_error::OK {
+            self.inner_mut().hooks.push((hook_ptr, user_data));
+
+            Ok(hook_ptr)
+        } else {
+            Err(err)
+        }
+    }
+
     /// Add hook for x86 IN instruction.
     pub fn add_insn_in_hook<F: 'a>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(&mut Unicorn<D>, u32, usize),
+        F: FnMut(&mut Unicorn<D>, u32, usize) -> u32,
     {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
