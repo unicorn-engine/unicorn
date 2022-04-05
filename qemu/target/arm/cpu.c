@@ -2167,17 +2167,17 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
 
     qemu_init_vcpu(cs);
 
-    // UC_MODE_BIG_ENDIAN means big endian code and big endian
-    // data (BE32), which is only supported before ARMv7-A.
+    // UC_MODE_BIG_ENDIAN means big endian code and big endian data (BE32), which 
+    // is only supported before ARMv7-A (and it only makes sense in qemu usermode!).
     //
-    // UC_MODE_ARMBE8 shouldn't exist in fact. We do this for
+    // UC_MODE_ARMBE8 & BE32 difference shouldn't exist in fact. We do this for
     // backward compatibility.
     //
     // UC_MODE_ARMBE8 -> little endian code, big endian data
     // UC_MODE_ARMBE8 | UC_MODE_BIG_ENDIAN -> big endian code, big endian data
     //
-    // In QEMU, all arm instruction fetch **should be** little endian, however
-    // we hack it to support BE32.
+    // In QEMU system, all arm instruction fetch **should be** little endian, however
+    // we hack it to support (usermode) BE32.
     //
     // Reference:
     // https://developer.arm.com/documentation/ddi0406/c/Application-Level-Architecture/Application-Level-Memory-Model/Endian-support/Instruction-endianness?lang=en
