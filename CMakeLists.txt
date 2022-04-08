@@ -1,7 +1,7 @@
 # CMake setup for Unicorn 2.
 # By Huitao Chen & Nguyen Anh Quynh, 2019-2020
 
-cmake_minimum_required(VERSION 3.1)
+cmake_minimum_required(VERSION 3.15)
 
 # Workaround to fix wrong compiler on macos.
 if(APPLE AND NOT CMAKE_C_COMPILER)
@@ -12,7 +12,7 @@ endif()
 set(PROJECT_IS_TOP_LEVEL OFF)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(PROJECT_IS_TOP_LEVEL ON)
-    
+
     # Enable folder support
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
@@ -31,6 +31,12 @@ option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
 set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x" CACHE STRING "Enabled unicorn architectures")
 option(UNICORN_TRACER "Trace unicorn execution" OFF)
+
+if(DEFINED ENV{CARGO})
+    set(CARGO TRUE)
+    set(BUILD_SHARED_LIBS OFF)
+    set(UNICORN_BUILD_TESTS OFF)
+endif()
 
 foreach(ARCH_LOOP ${UNICORN_ARCH})
     string(TOUPPER "${ARCH_LOOP}" ARCH_LOOP)
@@ -63,6 +69,7 @@ if(MSVC)
     else()
         message(FATAL_ERROR "Neither WIN64 or WIN32!")
     endif()
+
     add_compile_options(
         -Dinline=__inline
         -D__func__=__FUNCTION__
@@ -71,21 +78,30 @@ if(MSVC)
         ${MSVC_FLAG}
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
     )
+
     # Disable some warnings
-    add_compile_options(
-        /wd4018
-        /wd4098
-        /wd4244
-        /wd4267
-    )
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        string(REPLACE "/ZI" "/Zi" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
-    endif()
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4018>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4098>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4244>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4267>)
+
     # default use the multithread, static version of the run-time library.
     option(UNICORN_STATIC_MSVCRT "Embed static runtime library" ${PROJECT_IS_TOP_LEVEL})
-    if(UNICORN_STATIC_MSVCRT)
-        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
-        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
+
+    if(CARGO)
+        # rust always links against the non-debug MT or MD
+        if(CMAKE_C_FLAGS MATCHES "[/-]MT")
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+        elseif(CMAKE_C_FLAGS MATCHES "[/-]MD")
+            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+        else()
+            message(FATAL_ERROR "didn't find expected msvcrt type")
+        endif()
+
+        # prevent the arg from occurring more than once (not a big deal, just to keep tidy)
+        string(REGEX REPLACE "[/-]M[TD]" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
+    elseif(UNICORN_STATIC_MSVCRT)
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
     endif()
 else()
     if(MINGW)
@@ -1181,7 +1197,7 @@ if(UNICORN_TRACER)
     target_compile_options(unicorn PRIVATE -DUNICORN_TRACER)
 endif()
 
-target_compile_options(unicorn-common PRIVATE 
+target_compile_options(unicorn-common PRIVATE
     ${UNICORN_COMPILE_OPTIONS}
 )
 
