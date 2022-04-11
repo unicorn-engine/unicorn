@@ -388,6 +388,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         }
 
         if (uc->init_arch == NULL) {
+            free(uc);
             return UC_ERR_ARCH;
         }
 
