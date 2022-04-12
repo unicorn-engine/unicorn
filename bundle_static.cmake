@@ -1,6 +1,7 @@
 # https://cristianadam.eu/20190501/bundling-together-static-libraries-with-cmake/
 function(bundle_static_library tgt_name bundled_tgt_name)
   list(APPEND static_libs ${tgt_name})
+  set(dep_libs "")
 
   function(_recursively_collect_dependencies input_target)
     set(_input_link_libraries LINK_LIBRARIES)
@@ -26,7 +27,7 @@ function(bundle_static_library tgt_name bundled_tgt_name)
           set_property(GLOBAL PROPERTY _${tgt_name}_static_bundle_${dependency} ON)
           _recursively_collect_dependencies(${dependency})
         endif()
-      else()
+      elseif(${dependency})
         list(APPEND dep_libs ${dependency})
       endif()
     endforeach()
