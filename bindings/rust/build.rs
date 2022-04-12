@@ -131,7 +131,7 @@ fn build_with_cmake() {
                 .expect("Fail to build unicorn on Win32.");
             println!(
                 "cargo:rustc-link-search={}",
-                rust_build_path.join(conf).to_str().unwrap()
+                rust_build_path.to_str().unwrap()
             );
         } else {
             // Most Unix-like systems
