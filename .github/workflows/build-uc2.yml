@@ -196,7 +196,20 @@ jobs:
               python-arch: x64,
               python-ver: '3.8',
               name: 'macos-x64 cmake',
-              artifact: 'macos-cmake-x64.7z',
+              shared: 'yes',
+              artifact: 'macos-cmake-shared-x64.7z',
+              build_type: 'Debug',
+              archiver: '7za a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: macos-latest,
+              arch: x64,
+              python-arch: x64,
+              python-ver: '3.8',
+              name: 'macos-x64 cmake',
+              shared: 'no',
+              artifact: 'macos-cmake-static-x64.7z',
               build_type: 'Debug',
               archiver: '7za a',
               generators: 'Ninja'
@@ -235,7 +248,8 @@ jobs:
           -B . \
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -G "${{ matrix.config.generators }}" \
-          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+          -DBUILD_SHARED_LIB= ${{ matrix.config.shared }}
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip
         ctest -VV -C ${{ matrix.config.build_type }}
@@ -325,7 +339,8 @@ jobs:
               python-arch: x64, 
               python-ver: '3.8', 
               name: 'ubuntu-x64 cmake',
-              artifact: 'ubuntu-cmake-x64.7z',
+              shared: 'yes',
+              artifact: 'ubuntu-cmake-shared-x64.7z',
               build_type: 'Debug',
               archiver: '7z a',
               generators: 'Ninja'
@@ -336,7 +351,32 @@ jobs:
               python-arch: x86,
               python-ver: '3.8',
               name: 'ubuntu-x86 cmake',
-              artifact: 'ubuntu-cmake-x86.7z',
+              shared: 'yes',
+              artifact: 'ubuntu-cmake-shared-x86.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Ninja' 
+            }
+          - { 
+              os: ubuntu-latest, 
+              arch: x64, 
+              python-arch: x64, 
+              python-ver: '3.8', 
+              name: 'ubuntu-x64 cmake',
+              shared: 'no',
+              artifact: 'ubuntu-cmake-static-x64.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: ubuntu-latest,
+              arch: x86,
+              python-arch: x86,
+              python-ver: '3.8',
+              name: 'ubuntu-x86 cmake',
+              shared: 'no',
+              artifact: 'ubuntu-cmake-static-x86.7z',
               build_type: 'Debug',
               archiver: '7z a',
               generators: 'Ninja' 
@@ -393,7 +433,8 @@ jobs:
           -B . \
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -G "${{ matrix.config.generators }}" \
-          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+          -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip
         ctest -VV -C ${{ matrix.config.build_type }}
