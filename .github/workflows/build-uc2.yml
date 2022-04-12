@@ -59,7 +59,8 @@ jobs:
               python-ver: '3.8',
               name: 'windows-x64 MSVC 64bit',
               msvc-arch: x64,
-              artifact: 'windows_msvc64.7z',
+              artifact: 'windows_msvc64_shared.7z',
+              shared: 'yes',
               build_type: 'Debug',
               archiver: '7z a',
               generators: 'Visual Studio 16 2019'
@@ -71,7 +72,34 @@ jobs:
               python-ver: '3.8',
               name: 'windows-x86 MSVC 32bit',
               msvc-arch: x86,
-              artifact: 'windows_msvc32.7z',
+              artifact: 'windows_msvc32_shared.7z',
+              shared: 'yes',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Visual Studio 16 2019'
+            }
+          - { 
+              os: windows-2019,
+              arch: x64,
+              python-arch: x64,
+              python-ver: '3.8',
+              name: 'windows-x64 MSVC 64bit',
+              msvc-arch: x64,
+              artifact: 'windows_msvc64_static.7z',
+              shared: 'no',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Visual Studio 16 2019'
+            }
+          - { 
+              os: windows-2019,
+              arch: x86,
+              python-arch: x86,
+              python-ver: '3.8',
+              name: 'windows-x86 MSVC 32bit',
+              msvc-arch: x86,
+              artifact: 'windows_msvc32_static.7z',
+              shared: 'no',
               build_type: 'Debug',
               archiver: '7z a',
               generators: 'Visual Studio 16 2019'
