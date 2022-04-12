@@ -164,7 +164,11 @@ fn build_with_cmake() {
     }
 
     // Lazymio(@wtdcode): Why do I stick to static link? See: https://github.com/rust-lang/cargo/issues/5077
-    println!("cargo:rustc-link-lib=unicorn-static");
+    println!("cargo:rustc-link-lib=unicorn");
+    if env::consts::OS != "windows" {
+        println!("cargo:rustc-link-lib=pthread");
+        println!("cargo:rustc-link-lib=m");
+    }
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=src");
 }
