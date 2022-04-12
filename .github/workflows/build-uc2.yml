@@ -235,7 +235,7 @@ jobs:
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
-              name: 'macos-x64 cmake',
+              name: 'macos-x64 cmake static',
               shared: 'no',
               artifact: 'macos-cmake-static-x64.7z',
               build_type: 'Debug',
