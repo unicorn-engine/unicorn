@@ -979,6 +979,10 @@ static uc_err mem_map_check(uc_engine *uc, uint64_t address, size_t size,
         return UC_ERR_ARG;
     }
 
+    if (address + size < address || address + size < size) {
+        return UC_ERR_ARG;
+    }
+
     // address must be aligned to uc->target_page_size
     if ((address & uc->target_page_align) != 0) {
         return UC_ERR_ARG;
