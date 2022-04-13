@@ -1086,9 +1086,13 @@ if(NOT MSVC AND NOT ANDROID_ABI)
     target_link_libraries(unicorn-common PRIVATE pthread)
 endif()
 
-add_library(unicorn
-    ${UNICORN_SRCS}
-)
+if (BUILD_SHARED_LIBS)
+    set(UNICORN_LIB_NAME "unicorn")
+else()
+    set(UNICORN_LIB_NAME "unicorn-static") # This static lib is useless and it's just an intermediate target
+endif()
+
+add_library(${UNICORN_LIB_NAME} ${UNICORN_SRCS})
 
 if(BUILD_SHARED_LIBS)
     if(ANDROID_ABI)
@@ -1181,7 +1185,7 @@ target_compile_options(unicorn-common PRIVATE
     ${UNICORN_COMPILE_OPTIONS}
 )
 
-target_compile_options(unicorn PRIVATE
+target_compile_options(${UNICORN_LIB_NAME} PRIVATE
     ${UNICORN_COMPILE_OPTIONS}
 )
 
@@ -1195,24 +1199,29 @@ endif()
 
 if(MSVC)
     if(BUILD_SHARED_LIBS)
-        target_compile_options(unicorn PRIVATE
+        target_compile_options(${UNICORN_LIB_NAME} PRIVATE
             -DUNICORN_SHARED
         )
     endif()
 
-    target_link_libraries(unicorn PRIVATE
+    target_link_libraries(${UNICORN_LIB_NAME} PRIVATE
         ${UNICORN_LINK_LIBRARIES}
     )
 
-    set_target_properties(unicorn PROPERTIES
+    set_target_properties(${UNICORN_LIB_NAME} PROPERTIES
         VERSION "${UNICORN_VERSION_MAJOR}.${UNICORN_VERSION_MINOR}"
     )
 else()
-    target_link_libraries(unicorn PRIVATE
+    target_link_libraries(${UNICORN_LIB_NAME} PRIVATE
         ${UNICORN_LINK_LIBRARIES}
         m
     )
-    set_target_properties(unicorn PROPERTIES
+
+    target_link_libraries(${UNICORN_LIB_NAME} PUBLIC
+        m
+    )
+
+    set_target_properties(${UNICORN_LIB_NAME} PROPERTIES
         VERSION ${UNICORN_VERSION_MAJOR}
         SOVERSION ${UNICORN_VERSION_MAJOR}
     )
@@ -1233,6 +1242,13 @@ else()
     )
 endif()
 
+target_include_directories(${UNICORN_LIB_NAME} PUBLIC
+    include
+)
+
+if (NOT BUILD_SHARED_LIBS)
+    bundle_static_library(${UNICORN_LIB_NAME} unicorn) # Bundle our real unicorn static lib
+endif()
 
 if(UNICORN_FUZZ)
     set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_armbe;arm_thumb;arm64_arm;arm64_armbe;m68k_be;mips_32be;mips_32le;sparc_32be;x86_16;x86_32;x86_64;s390x_be")
@@ -1277,29 +1293,28 @@ if(UNICORN_BUILD_TESTS)
     endforeach()
 endif()
 
-target_include_directories(unicorn PUBLIC
-    include
-)
-
-if (NOT BUILD_SHARED_LIBS)
-    bundle_static_library(unicorn unicorn-static)
-endif()
 
 if(UNICORN_INSTALL AND NOT MSVC)
     include("GNUInstallDirs")
     file(GLOB UNICORN_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/unicorn/*.h)
-    install(TARGETS unicorn
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    )
+    set(config_libs "-lunicorn")
+    if (BUILD_SHARED_LIBS)
+        install(TARGETS unicorn
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        )
+    else()
+        install(FILES $<TARGET_FILE:unicorn> DESTINATION ${CMAKE_INSTALL_BINDIR})
+        set(config_libs "${config_libs} -lpthread -lm")
+    endif()
     install(FILES ${UNICORN_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unicorn)
     file(WRITE ${CMAKE_BINARY_DIR}/unicorn.pc "Name: unicorn\n\
 Description: Unicorn emulator engine\n\
 Version: ${UNICORN_VERSION_MAJOR}.${UNICORN_VERSION_MINOR}.${UNICORN_VERSION_PATCH}\n\
 libdir=${CMAKE_INSTALL_FULL_LIBDIR}\n\
 includedir=${CMAKE_INSTALL_FULL_INCLUDEDIR}\n\
-Libs: -L\$\{libdir\} -lunicorn\n\
+Libs: -L\$\{libdir\} ${config_libs}\n\
 Cflags: -I\$\{includedir\}\n"
     )
     install(FILES ${CMAKE_BINARY_DIR}/unicorn.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)

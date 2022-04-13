@@ -32,7 +32,7 @@ jobs:
             }
           - { 
               os: windows-2019,
-              arch: x32,
+              arch: x86,
               name: 'Windows x86'
             }
           - { 
@@ -55,11 +55,11 @@ jobs:
         override: true
         default: true
 
-    - name: '🛠️ Add msbuild to PATH'
+    - name: '🛠️ Activate Developer Command Prompt'
       if: contains(matrix.config.os, 'win')
-      uses: microsoft/setup-msbuild@v1.0.3
+      uses: ilammy/msvc-dev-cmd@v1
       with:
-        vs-version: '16.5'
+        arch: ${{ matrix.config.arch }}
 
     - name: '🛠️ Win build dependencies'
       if: contains(matrix.config.os, 'win')

@@ -131,7 +131,7 @@ fn build_with_cmake() {
                 .expect("Fail to build unicorn on Win32.");
             println!(
                 "cargo:rustc-link-search={}",
-                rust_build_path.join(conf).to_str().unwrap()
+                rust_build_path.to_str().unwrap()
             );
         } else {
             // Most Unix-like systems
@@ -164,7 +164,11 @@ fn build_with_cmake() {
     }
 
     // Lazymio(@wtdcode): Why do I stick to static link? See: https://github.com/rust-lang/cargo/issues/5077
-    println!("cargo:rustc-link-lib=unicorn-static");
+    println!("cargo:rustc-link-lib=unicorn");
+    if env::consts::OS != "windows" {
+        println!("cargo:rustc-link-lib=pthread");
+        println!("cargo:rustc-link-lib=m");
+    }
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=src");
 }
