@@ -1130,7 +1130,7 @@ void qemu_ram_free(struct uc_struct *uc, RAMBlock *block)
     //    ram_block_notify_remove(block->host, block->max_length);
     //}
 
-    QLIST_SAFE_REMOVE(block, next);
+    QLIST_REMOVE(block, next);
     uc->ram_list.mru_block = NULL;
     /* Write list before version */
     //smp_wmb();

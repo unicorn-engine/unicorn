@@ -43,12 +43,17 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
     memory_region_init_ram(uc, ram, size, perms);
-    if (ram->addr == -1) {
-        // out of memory
+    if (!ram->ram_block->host) {
+        g_free(ram->ram_block);
+        g_free(ram);
         return NULL;
     }
 
     memory_region_add_subregion(uc->system_memory, begin, ram);
+    if (ram->addr == -1) {
+        // out of memory
+        return NULL;
+    }
 
     if (uc->cpu) {
         tlb_flush(uc->cpu);
