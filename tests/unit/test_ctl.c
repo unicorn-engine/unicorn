@@ -73,7 +73,7 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
 }
 
 #define GEN_SIMPLE_READ_TEST(field, ctl_type, arg_type, expected)              \
-    static void test_uc_ctl_##field()                                          \
+    static void test_uc_ctl_##field(void)                                      \
     {                                                                          \
         uc_engine *uc;                                                         \
         arg_type arg;                                                          \
@@ -88,7 +88,7 @@ GEN_SIMPLE_READ_TEST(arch, UC_CTL_UC_ARCH, int, 4)
 GEN_SIMPLE_READ_TEST(page_size, UC_CTL_UC_PAGE_SIZE, uint32_t, 4096)
 GEN_SIMPLE_READ_TEST(time_out, UC_CTL_UC_TIMEOUT, uint64_t, 0)
 
-static void test_uc_ctl_exits()
+static void test_uc_ctl_exits(void)
 {
     uc_engine *uc;
     //   cmp eax, 0;
@@ -141,7 +141,7 @@ double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
 #define TCG_MAX_INSNS (512) // from tcg.h
 #define CODE_LEN TB_COUNT *TCG_MAX_INSNS
 
-static void test_uc_ctl_tb_cache()
+static void test_uc_ctl_tb_cache(void)
 {
     uc_engine *uc;
     char code[CODE_LEN + 1];
@@ -174,7 +174,7 @@ static void test_uc_ctl_tb_cache()
     OK(uc_close(uc));
 }
 
-static void test_uc_ctl_change_page_size()
+static void test_uc_ctl_change_page_size(void)
 {
     uc_engine *uc;
     uc_engine *uc2;
@@ -192,7 +192,7 @@ static void test_uc_ctl_change_page_size()
 }
 
 // Copy from test_arm.c but with new API.
-static void test_uc_ctl_arm_cpu()
+static void test_uc_ctl_arm_cpu(void)
 {
     uc_engine *uc;
     int r_control, r_msp, r_psp;

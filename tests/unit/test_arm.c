@@ -12,7 +12,7 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_write(*uc, code_start, code, size));
 }
 
-static void test_arm_nop()
+static void test_arm_nop(void)
 {
     uc_engine *uc;
     char code[] = "\x00\xf0\x20\xe3"; // nop
@@ -34,7 +34,7 @@ static void test_arm_nop()
     OK(uc_close(uc));
 }
 
-static void test_arm_thumb_sub()
+static void test_arm_thumb_sub(void)
 {
     uc_engine *uc;
     char code[] = "\x83\xb0"; // sub    sp, #0xc
@@ -52,7 +52,7 @@ static void test_arm_thumb_sub()
     OK(uc_close(uc));
 }
 
-static void test_armeb_sub()
+static void test_armeb_sub(void)
 {
     uc_engine *uc;
     char code[] =
@@ -83,7 +83,7 @@ static void test_armeb_sub()
     OK(uc_close(uc));
 }
 
-static void test_armeb_be8_sub()
+static void test_armeb_be8_sub(void)
 {
     uc_engine *uc;
     char code[] =
@@ -114,7 +114,7 @@ static void test_armeb_be8_sub()
     OK(uc_close(uc));
 }
 
-static void test_arm_thumbeb_sub()
+static void test_arm_thumbeb_sub(void)
 {
     uc_engine *uc;
     char code[] = "\xb0\x83"; // sub    sp, #0xc
@@ -140,7 +140,7 @@ static void test_arm_thumb_ite_count_callback(uc_engine *uc, uint64_t address,
     (*count) += 1;
 }
 
-static void test_arm_thumb_ite()
+static void test_arm_thumb_ite(void)
 {
     uc_engine *uc;
     uc_hook hook;
@@ -200,7 +200,7 @@ static void test_arm_thumb_ite()
     OK(uc_close(uc));
 }
 
-static void test_arm_m_thumb_mrs()
+static void test_arm_m_thumb_mrs(void)
 {
     uc_engine *uc;
     char code[] =
@@ -225,7 +225,7 @@ static void test_arm_m_thumb_mrs()
     OK(uc_close(uc));
 }
 
-static void test_arm_m_control()
+static void test_arm_m_control(void)
 {
     uc_engine *uc;
     int r_control, r_msp, r_psp;
@@ -274,7 +274,7 @@ static void test_arm_m_exc_return_hook_interrupt(uc_engine *uc, int intno,
     OK(uc_emu_stop(uc));
 }
 
-static void test_arm_m_exc_return()
+static void test_arm_m_exc_return(void)
 {
     uc_engine *uc;
     char code[] = "\x6f\xf0\x02\x00\x00\x47"; // mov r0, #0xFFFFFFFD; bx r0;
@@ -302,7 +302,7 @@ static void test_arm_m_exc_return()
 }
 
 // For details, see https://github.com/unicorn-engine/unicorn/issues/1494.
-static void test_arm_und32_to_svc32()
+static void test_arm_und32_to_svc32(void)
 {
     uc_engine *uc;
     // # MVN r0, #0
@@ -343,7 +343,7 @@ static void test_arm_und32_to_svc32()
     OK(uc_close(uc));
 }
 
-static void test_arm_usr32_to_svc32()
+static void test_arm_usr32_to_svc32(void)
 {
     uc_engine *uc;
     int r_cpsr, r_sp, r_spsr, r_lr;
@@ -392,7 +392,7 @@ static void test_arm_usr32_to_svc32()
     OK(uc_close(uc));
 }
 
-static void test_arm_v8()
+static void test_arm_v8(void)
 {
     char code[] = "\xd0\xe8\xff\x17"; // LDAEXD.W R1, [R0]
     uc_engine *uc;
@@ -416,7 +416,7 @@ static void test_arm_v8()
     OK(uc_close(uc));
 }
 
-static void test_arm_thumb_smlabb()
+static void test_arm_thumb_smlabb(void)
 {
     char code[] = "\x13\xfb\x01\x23";
     uint32_t r_r1, r_r2, r_r3;
@@ -441,7 +441,7 @@ static void test_arm_thumb_smlabb()
     OK(uc_close(uc));
 }
 
-static void test_arm_not_allow_privilege_escalation()
+static void test_arm_not_allow_privilege_escalation(void)
 {
     uc_engine *uc;
     int r_cpsr, r_sp, r_spsr, r_lr;
@@ -488,7 +488,7 @@ static void test_arm_not_allow_privilege_escalation()
     OK(uc_close(uc));
 }
 
-static void test_arm_mrc()
+static void test_arm_mrc(void)
 {
     uc_engine *uc;
     // mrc p15, #0, r1, c13, c0, #3
@@ -502,7 +502,7 @@ static void test_arm_mrc()
     OK(uc_close(uc));
 }
 
-static void test_arm_hflags_rebuilt()
+static void test_arm_hflags_rebuilt(void)
 {
     // MRS     r6, apsr
     // BIC     r6, r6, #&1F
@@ -575,7 +575,7 @@ static bool test_arm_mem_access_abort_hook_insn_invalid(uc_engine *uc,
     return false;
 }
 
-static void test_arm_mem_access_abort()
+static void test_arm_mem_access_abort(void)
 {
     // LDR     r0, [r0]
     // Undefined instruction
@@ -623,7 +623,7 @@ static void test_arm_mem_access_abort()
     OK(uc_close(uc));
 }
 
-static void test_arm_read_sctlr()
+static void test_arm_read_sctlr(void)
 {
     uc_engine *uc;
     uc_arm_cp_reg reg;
@@ -646,7 +646,7 @@ static void test_arm_read_sctlr()
     OK(uc_close(uc));
 }
 
-static void test_arm_be_cpsr_sctlr()
+static void test_arm_be_cpsr_sctlr(void)
 {
     uc_engine *uc;
     uc_arm_cp_reg reg;
@@ -695,7 +695,7 @@ static void test_arm_be_cpsr_sctlr()
     OK(uc_close(uc));
 }
 
-static void test_arm_switch_endian()
+static void test_arm_switch_endian(void)
 {
     uc_engine *uc;
     char code[] = "\x00\x00\x91\xe5"; // ldr r0, [r1]

@@ -1,6 +1,6 @@
 #include "unicorn_test.h"
 
-static void test_map_correct()
+static void test_map_correct(void)
 {
     uc_engine *uc;
 
@@ -24,7 +24,7 @@ static void test_map_correct()
     OK(uc_close(uc));
 }
 
-static void test_map_wrapping()
+static void test_map_wrapping(void)
 {
     uc_engine *uc;
 
@@ -35,7 +35,7 @@ static void test_map_wrapping()
     OK(uc_close(uc));
 }
 
-static void test_mem_protect()
+static void test_mem_protect(void)
 {
     uc_engine *qc;
     int r_eax = 0x2000;
@@ -60,7 +60,7 @@ static void test_mem_protect()
     OK(uc_close(qc));
 }
 
-static void test_splitting_mem_unmap()
+static void test_splitting_mem_unmap(void)
 {
     uc_engine *uc;
 
@@ -85,7 +85,7 @@ static uint64_t test_splitting_mmio_unmap_read_callback(uc_engine *uc,
     return 0x19260817;
 }
 
-static void test_splitting_mmio_unmap()
+static void test_splitting_mmio_unmap(void)
 {
     uc_engine *uc;
     // mov ecx, [0x3004] <-- normal read
@@ -118,7 +118,7 @@ static void test_splitting_mmio_unmap()
     OK(uc_close(uc));
 }
 
-static void test_mem_protect_map_ptr()
+static void test_mem_protect_map_ptr(void)
 {
     uc_engine *uc;
     uint64_t val = 0x114514;
