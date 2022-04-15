@@ -19,6 +19,9 @@ endif()
 
 project(unicorn C)
 
+# mainline qemu mostly just uses compiler default
+set(CMAKE_C_STANDARD 11)
+
 set(UNICORN_VERSION_MAJOR 2)
 set(UNICORN_VERSION_MINOR 0)
 set(UNICORN_VERSION_PATCH 0)
