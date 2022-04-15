@@ -74,6 +74,8 @@ fn build_with_cmake() {
         println!("cargo:rustc-link-arg=/FORCE:MULTIPLE");
         true
     } else {
+        // see comment on /FORCE:MULTIPLE
+        println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
         ninja_available()
     };
 
