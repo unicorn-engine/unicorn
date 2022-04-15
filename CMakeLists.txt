@@ -1,7 +1,19 @@
 # CMake setup for Unicorn 2.
 # By Huitao Chen & Nguyen Anh Quynh, 2019-2020
 
-cmake_minimum_required(VERSION 3.15)
+cmake_minimum_required(VERSION 3.1)
+
+if(MSVC)
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
+        # set all policies to max supported by actual running cmake version
+        # mainly want the following:
+        # CMP0091: prevent msvcrt flags being added to default CMAKE_<LANG>_FLAGS_<CONFIG>
+        # CMP0092: prevent warning flags being added to default CMAKE_<LANG>_FLAGS
+        cmake_policy(VERSION ${CMAKE_VERSION})
+    else()
+        message(FATAL_ERROR "please update cmake")
+    endif()
+endif()
 
 # Workaround to fix wrong compiler on macos.
 if(APPLE AND NOT CMAKE_C_COMPILER)
@@ -34,10 +46,6 @@ option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
 set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x" CACHE STRING "Enabled unicorn architectures")
 option(UNICORN_TRACER "Trace unicorn execution" OFF)
-
-if(DEFINED ENV{CARGO})
-    set(CARGO TRUE)
-endif()
 
 foreach(ARCH_LOOP ${UNICORN_ARCH})
     string(TOUPPER "${ARCH_LOOP}" ARCH_LOOP)
@@ -86,24 +94,23 @@ if(MSVC)
     add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4244>)
     add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4267>)
 
-    # default use the multithread, static version of the run-time library.
-    option(UNICORN_STATIC_MSVCRT "Embed static runtime library" ${PROJECT_IS_TOP_LEVEL})
-
-    if(CARGO)
-        # rust always links against the non-debug MT or MD
-        if(CMAKE_C_FLAGS MATCHES "[/-]MT")
-            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
-        elseif(CMAKE_C_FLAGS MATCHES "[/-]MD")
-            set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
-        else()
-            message(FATAL_ERROR "didn't find expected msvcrt type")
-        endif()
-
-        # prevent the arg from occurring more than once (not a big deal, just to keep tidy)
-        string(REGEX REPLACE "[/-]M[TD]" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
-    elseif(UNICORN_STATIC_MSVCRT)
-        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+    # handle msvcrt setting being passed in CMAKE_C_FLAGS
+    if(DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+        # do not support other methods of setting this (it would be more conformant, tho)
+        message(FATAL_ERROR "please set msvcrt via CMAKE_C_FLAGS")
     endif()
+    if(CMAKE_C_FLAGS MATCHES "[/-]MTd")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug")
+    elseif(CMAKE_C_FLAGS MATCHES "[/-]MDd")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL")
+    elseif(CMAKE_C_FLAGS MATCHES "[/-]MT")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+    elseif(CMAKE_C_FLAGS MATCHES "[/-]MD")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
+    endif()
+
+    # prevent the arg from occurring more than once (not a big deal, just to keep tidy)
+    string(REGEX REPLACE "[/-]M[TD]d?" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
 else()
     if(MINGW)
         execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine
