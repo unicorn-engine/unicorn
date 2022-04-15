@@ -1028,7 +1028,7 @@ endif()
 
 
 if (UNICORN_HAS_TRICORE)
-add_library(tricore-softmmu
+add_library(tricore-softmmu STATIC
     ${UNICORN_ARCH_COMMON}
 
     qemu/target/tricore/cpu.c

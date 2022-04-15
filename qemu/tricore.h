@@ -1277,4 +1277,13 @@
 #define gen_helper_vfp_set_fpscr gen_helper_vfp_set_fpscr_tricore
 #define gen_helper_cpsr_read gen_helper_cpsr_read_tricore
 #define gen_helper_cpsr_write gen_helper_cpsr_write_tricore
+#define helper_fadd helper_fadd_tricore
+#define helper_fsub helper_fsub_tricore
+#define helper_fmul helper_fmul_tricore
+#define helper_fdiv helper_fdiv_tricore
+#define helper_fmadd helper_fmadd_tricore
+#define helper_fmsub helper_fmsub_tricore
+#define helper_pack helper_pack_tricore
+#define gen_intermediate_code gen_intermediate_code_tricore
+#define restore_state_to_opc restore_state_to_opc_tricore
 #endif

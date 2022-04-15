@@ -17,8 +17,15 @@
  * License along with this library; if not, see <http://www.gnu.org/licenses/>.
  */
 
+/*
+   Modified for Unicorn Engine by Eric Poole <eric.poole@aptiv.com>, 2022
+   Copyright 2022 Aptiv 
+*/
+
 #include "qemu/osdep.h"
 #include "cpu.h"
+#include "qemu/host-utils.h"
+#include "exec/exec-all.h"
 #include "exec/helper-proto.h"
 #include "fpu/softfloat.h"
 
