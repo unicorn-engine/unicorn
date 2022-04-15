@@ -74,10 +74,12 @@ fn build_with_cmake() {
         println!("cargo:rustc-link-arg=/FORCE:MULTIPLE");
         true
     } else {
-        // see comment on /FORCE:MULTIPLE
-        println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
         ninja_available()
     };
+    if compiler.is_like_gnu() {
+        // see comment on /FORCE:MULTIPLE
+        println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
+    }
 
     let mut config = cmake::Config::new(&uc_dir);
     if has_ninja {
