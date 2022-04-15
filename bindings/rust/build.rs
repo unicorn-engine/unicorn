@@ -76,7 +76,9 @@ fn build_with_cmake() {
     } else {
         ninja_available()
     };
-    if compiler.is_like_gnu() {
+
+    // cc crate (as of 1.0.73) misdetects clang as gnu on apple
+    if compiler.is_like_gnu() && env::consts::OS != "macos" {
         // see comment on /FORCE:MULTIPLE
         println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
     }
