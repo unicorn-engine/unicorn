@@ -86,7 +86,10 @@ fn build_with_cmake() {
     // unicorn's CMakeLists.txt doesn't properly support 'install', so we use
     // the build artifacts from the build directory, which cmake crate sets
     // to "<out_dir>/build/"
-    let dst = config.no_build_target(true).build();
+    let dst = config.define("BUILD_SHARED_LIBS", "OFF")
+        .define("UNICORN_BUILD_TESTS", "OFF")
+        .define("UNICORN_INSTALL", "OFF")
+        .no_build_target(true).build();
     println!("cargo:rustc-link-search=native={}", dst.join("build").display());
 
     // Lazymio(@wtdcode): Why do I stick to static link? See: https://github.com/rust-lang/cargo/issues/5077

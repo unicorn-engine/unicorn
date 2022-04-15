@@ -37,8 +37,6 @@ option(UNICORN_TRACER "Trace unicorn execution" OFF)
 
 if(DEFINED ENV{CARGO})
     set(CARGO TRUE)
-    set(BUILD_SHARED_LIBS OFF)
-    set(UNICORN_BUILD_TESTS OFF)
 endif()
 
 foreach(ARCH_LOOP ${UNICORN_ARCH})
