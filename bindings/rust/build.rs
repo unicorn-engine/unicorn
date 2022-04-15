@@ -69,6 +69,9 @@ fn build_with_cmake() {
     let compiler = cc::Build::new().get_compiler();
     let has_ninja = if compiler.is_like_msvc() {
         setup_env_msvc(&compiler);
+        // this is a BIG HACK that should be fixed in unicorn's cmake!!
+        // but for now, tell link.exe to ignore multiply defined symbol names
+        println!("cargo:rustc-link-arg=/FORCE:MULTIPLE");
         true
     } else {
         ninja_available()
