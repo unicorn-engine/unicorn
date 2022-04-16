@@ -6,10 +6,11 @@ public interface Arm64Const {
 
 // ARM64 CPU
 
-   public static final int UC_CPU_AARCH64_A57 = 0;
-   public static final int UC_CPU_AARCH64_A53 = 1;
-   public static final int UC_CPU_AARCH64_A72 = 2;
-   public static final int UC_CPU_AARCH64_MAX = 3;
+   public static final int UC_CPU_ARM64_A57 = 0;
+   public static final int UC_CPU_ARM64_A53 = 1;
+   public static final int UC_CPU_ARM64_A72 = 2;
+   public static final int UC_CPU_ARM64_MAX = 3;
+   public static final int UC_CPU_ARM64_ENDING = 4;
 
 // ARM64 registers
 

@@ -47,6 +47,7 @@ module S390x =
     let UC_CPU_S390X_GEN15B = 35
     let UC_CPU_S390X_QEMU = 36
     let UC_CPU_S390X_MAX = 37
+    let UC_CPU_S390X_ENDING = 38
 
     // S390X registers
 

@@ -40,6 +40,7 @@ public interface ArmConst {
    public static final int UC_CPU_ARM_PXA270C0 = 31;
    public static final int UC_CPU_ARM_PXA270C5 = 32;
    public static final int UC_CPU_ARM_MAX = 33;
+   public static final int UC_CPU_ARM_ENDING = 34;
 
 // ARM registers
 

@@ -18,6 +18,7 @@ module M68k =
     let UC_CPU_M68K_M5208 = 6
     let UC_CPU_M68K_CFV4E = 7
     let UC_CPU_M68K_ANY = 8
+    let UC_CPU_M68K_ENDING = 9
 
     // M68K registers
 

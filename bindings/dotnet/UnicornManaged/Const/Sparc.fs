@@ -22,6 +22,7 @@ module Sparc =
     let UC_CPU_SPARC32_TI_SUPERSPARC_II = 10
     let UC_CPU_SPARC32_LEON2 = 11
     let UC_CPU_SPARC32_LEON3 = 12
+    let UC_CPU_SPARC32_ENDING = 13
 
     // SPARC64 CPU
 
@@ -42,6 +43,7 @@ module Sparc =
     let UC_CPU_SPARC64_SUN_ULTRASPARC_T1 = 14
     let UC_CPU_SPARC64_SUN_ULTRASPARC_T2 = 15
     let UC_CPU_SPARC64_NEC_ULTRASPARC_I = 16
+    let UC_CPU_SPARC64_ENDING = 17
 
     // SPARC registers
 
