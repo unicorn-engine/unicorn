@@ -51,7 +51,7 @@ typedef enum uc_cpu_arm {
     UC_CPU_ARM_PXA270C0,
     UC_CPU_ARM_PXA270C5,
     UC_CPU_ARM_MAX,
-    
+
     UC_CPU_ARM_ENDING
 } uc_cpu_arm;
 

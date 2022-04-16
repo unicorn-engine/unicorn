@@ -734,17 +734,18 @@ static void test_armeb_ldrb(void)
     uint64_t data_address = 0x800000;
     int r1 = 0x1234;
     int r2 = data_address;
- 
-    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_BIG_ENDIAN, test_code, sizeof(test_code) - 1, UC_CPU_ARM_1176);
- 
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_ARM | UC_MODE_BIG_ENDIAN,
+                    test_code, sizeof(test_code) - 1, UC_CPU_ARM_1176);
+
     OK(uc_mem_map(uc, data_address, 1024 * 1024, UC_PROT_ALL));
     OK(uc_mem_write(uc, data_address, "\x66\x67\x68\x69", 4));
     OK(uc_reg_write(uc, UC_ARM_REG_R2, &r2));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(test_code) - 1, 0, 0));
- 
+
     OK(uc_reg_read(uc, UC_ARM_REG_R1, &r1));
-    
+
     TEST_CHECK(r1 == 0x66);
 
     OK(uc_close(uc));
