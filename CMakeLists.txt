@@ -1321,7 +1321,6 @@ endif()
 if(UNICORN_INSTALL AND NOT MSVC)
     include("GNUInstallDirs")
     file(GLOB UNICORN_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/unicorn/*.h)
-    set(config_libs "-lunicorn")
     if (BUILD_SHARED_LIBS)
         install(TARGETS unicorn
             RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
@@ -1330,7 +1329,6 @@ if(UNICORN_INSTALL AND NOT MSVC)
         )
     else()
         install(FILES $<TARGET_FILE:unicorn> DESTINATION ${CMAKE_INSTALL_BINDIR})
-        set(config_libs "${config_libs} -lpthread -lm")
     endif()
     install(FILES ${UNICORN_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unicorn)
     file(WRITE ${CMAKE_BINARY_DIR}/unicorn.pc "Name: unicorn\n\
@@ -1338,7 +1336,8 @@ Description: Unicorn emulator engine\n\
 Version: ${UNICORN_VERSION_MAJOR}.${UNICORN_VERSION_MINOR}.${UNICORN_VERSION_PATCH}\n\
 libdir=${CMAKE_INSTALL_FULL_LIBDIR}\n\
 includedir=${CMAKE_INSTALL_FULL_INCLUDEDIR}\n\
-Libs: -L\$\{libdir\} ${config_libs}\n\
+Libs: -L\$\{libdir\} -lunicorn\n\
+Libs.private: -lpthread -lm\n\
 Cflags: -I\$\{includedir\}\n"
     )
     install(FILES ${CMAKE_BINARY_DIR}/unicorn.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)
