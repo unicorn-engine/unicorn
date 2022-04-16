@@ -199,13 +199,12 @@
 /* These will only be atomic if the processor does the fetch or store
  * in a single issue memory operation
  */
-#define atomic_read__nocheck(p)   (*(__typeof__(*(p)) volatile*) (p))
-#define atomic_set__nocheck(p, i) ((*(__typeof__(*(p)) volatile*) (p)) = (i))
 
-#define atomic_read(ptr)       atomic_read__nocheck(ptr)
-#define atomic_set(ptr, i)     atomic_set__nocheck(ptr,i)
+#define atomic_read(ptr)    *(ptr)
+#define atomic_set(ptr, i)  *(ptr) = (i)
 
 /**
+ * 
  * atomic_rcu_read - reads a RCU-protected pointer to a local variable
  * into a RCU read-side critical section. The pointer can later be safely
  * dereferenced within the critical section.
@@ -224,9 +223,7 @@
  * Should match atomic_rcu_set(), atomic_xchg(), atomic_cmpxchg().
  */
 #define atomic_rcu_read(ptr)    ({                \
-    typeof(*ptr) _val = atomic_read(ptr);         \
-    smp_read_barrier_depends();                   \
-    _val;                                         \
+    atomic_read(ptr);                             \
 })
 
 /**
@@ -241,7 +238,6 @@
  * Should match atomic_rcu_read().
  */
 #define atomic_rcu_set(ptr, i)  do {              \
-    smp_wmb();                                    \
     atomic_set(ptr, i);                           \
 } while (0)
 
