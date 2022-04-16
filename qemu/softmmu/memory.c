@@ -43,8 +43,9 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
     MemoryRegion *ram = g_new(MemoryRegion, 1);
 
     memory_region_init_ram(uc, ram, size, perms);
-    if (ram->addr == -1) {
+    if (ram->addr == -1 || !ram->ram_block) {
         // out of memory
+        g_free(ram);
         return NULL;
     }
 
@@ -63,8 +64,9 @@ MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, ui
 
     memory_region_init_ram_ptr(uc, ram, size, ptr);
     ram->perms = perms;
-    if (ram->addr == -1) {
+    if (ram->addr == -1 || !ram->ram_block) {
         // out of memory
+        g_free(ram);
         return NULL;
     }
 

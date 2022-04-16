@@ -175,6 +175,18 @@ static void test_map_wrap(void)
     OK(uc_close(uc));
 }
 
+static void test_map_big_memory(void)
+{
+    uc_engine *uc;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+
+    uc_assert_err(UC_ERR_NOMEM,
+                  uc_mem_map(uc, 0x0, 0xfffffffffffff000, UC_PROT_ALL));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -183,4 +195,5 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_mem_protect_map_ptr", test_mem_protect_map_ptr},
              {"test_map_at_the_end", test_map_at_the_end},
              {"test_map_wrap", test_map_wrap},
+             {"test_map_big_memory", test_map_big_memory},
              {NULL, NULL}};
