@@ -11,7 +11,7 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_write(*uc, code_start, code, size));
 }
 
-static void test_s390x_lr()
+static void test_s390x_lr(void)
 {
     char code[] = "\x18\x23"; // lr %r2, %r3
     uint64_t r_pc, r_r2, r_r3 = 0x114514;

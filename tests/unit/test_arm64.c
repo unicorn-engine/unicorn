@@ -12,7 +12,7 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_write(*uc, code_start, code, size));
 }
 
-static void test_arm64_until()
+static void test_arm64_until(void)
 {
     uc_engine *uc;
     char code[] = "\x30\x00\x80\xd2\x11\x04\x80\xd2\x9c\x23\x00\x91";
@@ -52,7 +52,7 @@ static void test_arm64_until()
     OK(uc_close(uc));
 }
 
-static void test_arm64_code_patching()
+static void test_arm64_code_patching(void)
 {
     uc_engine *uc;
     char code[] = "\x00\x04\x00\x11"; // add w0, w0, 0x1
@@ -82,7 +82,7 @@ static void test_arm64_code_patching()
 }
 
 // Need to flush the cache before running the emulation after patching
-static void test_arm64_code_patching_count()
+static void test_arm64_code_patching_count(void)
 {
     uc_engine *uc;
     char code[] = "\x00\x04\x00\x11"; // add w0, w0, 0x1
@@ -113,7 +113,7 @@ static void test_arm64_code_patching_count()
     OK(uc_close(uc));
 }
 
-static void test_arm64_v8_pac()
+static void test_arm64_v8_pac(void)
 {
     uc_engine *uc;
     char code[] = "\x28\xfd\xea\xc8"; // casal x10, x8, [x9]
@@ -138,7 +138,7 @@ static void test_arm64_v8_pac()
     OK(uc_close(uc));
 }
 
-static void test_arm64_read_sctlr()
+static void test_arm64_read_sctlr(void)
 {
     uc_engine *uc;
     uc_arm64_cp_reg reg;
@@ -170,7 +170,7 @@ static uint32_t test_arm64_mrs_hook_cb(uc_engine *uc, uc_arm64_reg reg,
     return 1;
 }
 
-static void test_arm64_mrs_hook()
+static void test_arm64_mrs_hook(void)
 {
     uc_engine *uc;
     uc_hook hk;

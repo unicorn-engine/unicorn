@@ -1,176 +1,109 @@
-#[cfg(feature = "build_unicorn_cmake")]
-use bytes::Buf;
-#[cfg(feature = "build_unicorn_cmake")]
-use flate2::read::GzDecoder;
 #[cfg(feature = "use_system_unicorn")]
 use pkg_config;
 #[cfg(feature = "build_unicorn_cmake")]
-use reqwest::header::USER_AGENT;
+use std::env;
 #[cfg(feature = "build_unicorn_cmake")]
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 #[cfg(feature = "build_unicorn_cmake")]
-use std::{env, process::Command};
-#[cfg(feature = "build_unicorn_cmake")]
-use tar::Archive;
+use std::process::Command;
 
-#[cfg(feature = "build_unicorn_cmake")]
-fn find_unicorn(unicorn_dir: &Path) -> Option<PathBuf> {
-    for entry in std::fs::read_dir(unicorn_dir).ok()? {
-        let entry = entry.unwrap();
-        let path = entry.path();
+#[cfg(all(feature = "build_unicorn_cmake"))]
+fn ninja_available() -> bool {
+    Command::new("ninja").arg("--version").spawn().is_ok()
+}
 
-        if path.is_dir() && path.file_name()?.to_str()?.contains("unicorn") {
-            return Some(path);
+#[cfg(all(feature = "build_unicorn_cmake"))]
+fn msvc_cmake_tools_available() -> bool {
+    Command::new("cmake").arg("--version").spawn().is_ok() && ninja_available()
+}
+
+#[cfg(all(feature = "build_unicorn_cmake"))]
+fn setup_env_msvc(compiler: &cc::Tool) {
+    // If PATH already contains what we need, skip this
+    if msvc_cmake_tools_available() {
+        return;
+    }
+
+    let target = env::var("TARGET").unwrap();
+    let devenv = cc::windows_registry::find_tool(target.as_str(), "devenv");
+    let tool_root: PathBuf = match devenv {
+        Some(devenv_tool) => {
+            devenv_tool.path().parent().unwrap().to_path_buf()
+        },
+        None => {
+            // if devenv (i.e. Visual Studio) was not found, assume compiler is
+            // from standalone Build Tools and look there instead.
+            // this should be done properly in cc crate, but for now it's not.
+            let tools_name = std::ffi::OsStr::new("BuildTools");
+            let compiler_path = compiler.path().to_path_buf();
+            compiler_path.iter().find(|x| *x == tools_name)
+                .expect("Failed to find devenv or Build Tools");
+            compiler_path.iter().take_while(|x| *x != tools_name)
+                .collect::<PathBuf>().join(tools_name).join(r"Common7\IDE")
+        },
+    };
+    let cmake_pkg_dir = tool_root.join(r"CommonExtensions\Microsoft\CMake");
+    let cmake_path = cmake_pkg_dir.join(r"CMake\bin\cmake.exe");
+    let ninja_path = cmake_pkg_dir.join(r"Ninja\ninja.exe");
+    if !cmake_path.is_file() {
+        panic!("missing cmake");
+    }
+    if !ninja_path.is_file() {
+        panic!("missing ninja");
+    }
+
+    // append cmake and ninja location to PATH
+    if let Some(path) = env::var_os("PATH") {
+        let mut paths = env::split_paths(&path).collect::<Vec<_>>();
+        for tool_path in [cmake_path, ninja_path] {
+            paths.push(tool_path.parent().unwrap().to_path_buf());
         }
+        let new_path = env::join_paths(paths).unwrap();
+        env::set_var("PATH", &new_path);
     }
-
-    None
 }
 
 #[cfg(feature = "build_unicorn_cmake")]
-fn out_dir() -> PathBuf {
-    let out_dir = env::var("OUT_DIR").unwrap();
-    Path::new(&out_dir).to_path_buf()
-}
-
-#[cfg(feature = "build_unicorn_cmake")]
-fn download_unicorn() -> PathBuf {
-    // https://docs.github.com/en/rest/reference/repos#download-a-repository-archive-tar
-    let pkg_version;
-    if let Ok(unicorn_version) = env::var("UNICORN_VERSION") {
-        pkg_version = unicorn_version;
-    } else {
-        pkg_version = env::var("CARGO_PKG_VERSION").unwrap();
-    }
-    let out_dir = out_dir();
-    let client = reqwest::blocking::Client::new();
-    let resp = client
-        .get(format!(
-            "https://api.github.com/repos/unicorn-engine/unicorn/tarball/{}",
-            pkg_version
-        ))
-        .header(USER_AGENT, "unicorn-engine-rust-bindings")
-        .send()
-        .unwrap()
-        .bytes()
-        .unwrap();
-    let tar = GzDecoder::new(resp.reader());
-
-    let mut archive = Archive::new(tar);
-    archive.unpack(&out_dir).unwrap();
-
-    find_unicorn(&out_dir).unwrap()
-}
-
-#[cfg(feature = "build_unicorn_cmake")]
-#[allow(clippy::branches_sharing_code)]
 fn build_with_cmake() {
-    let profile = env::var("PROFILE").unwrap();
-
-    if let Some(unicorn_dir) = find_unicorn(&out_dir()) {
-        let rust_build_path = unicorn_dir.join("build_rust");
-        println!(
-            "cargo:rustc-link-search={}",
-            rust_build_path.to_str().unwrap()
-        );
-        println!(
-            "cargo:rustc-link-search={}",
-            rust_build_path.join("Debug").to_str().unwrap()
-        );
-        println!(
-            "cargo:rustc-link-search={}",
-            rust_build_path.join("Release").to_str().unwrap()
-        );
+    let uc_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    let compiler = cc::Build::new().get_compiler();
+    let has_ninja = if compiler.is_like_msvc() {
+        setup_env_msvc(&compiler);
+        // this is a BIG HACK that should be fixed in unicorn's cmake!!
+        // but for now, tell link.exe to ignore multiply defined symbol names
+        println!("cargo:rustc-link-arg=/FORCE:MULTIPLE");
+        true
     } else {
-        let unicorn_dir = if let Result::Ok(_) = env::var("UNICORN_LOCAL") {
-            Path::new("..").join("..")
-        } else {
-            println!("cargo:warning=Unicorn not found. Downloading...");
-            download_unicorn()
-        };
+        ninja_available()
+    };
 
-        let rust_build_path = unicorn_dir.join("build_rust");
-
-        let mut cmd = Command::new("cmake");
-
-        // We don't use TARGET since we can't cross-build.
-        if env::consts::OS == "windows" {
-            // Windows
-            cmd.current_dir(&unicorn_dir)
-                .arg("-B")
-                .arg("build_rust")
-                .arg("-DBUILD_SHARED_LIBS=OFF")
-                .arg("-G")
-                .arg("Visual Studio 16 2019");
-
-            if profile == "debug" {
-                cmd.arg("-DCMAKE_BUILD_TYPE=Debug");
-            } else {
-                cmd.arg("-DCMAKE_BUILD_TYPE=Release");
-            }
-
-            cmd.output()
-                .expect("Fail to create build directory on Windows.");
-
-            let mut platform = "x64";
-            let mut conf = "Release";
-            if std::mem::size_of::<usize>() == 4 {
-                platform = "Win32";
-            }
-            if profile == "debug" {
-                conf = "Debug";
-            }
-
-            Command::new("msbuild")
-                .current_dir(&rust_build_path)
-                .arg("unicorn.sln")
-                .arg("-m")
-                .arg("-p:Platform=".to_owned() + platform)
-                .arg("-p:Configuration=".to_owned() + conf)
-                .output()
-                .expect("Fail to build unicorn on Win32.");
-            println!(
-                "cargo:rustc-link-search={}",
-                rust_build_path.to_str().unwrap()
-            );
-        } else {
-            // Most Unix-like systems
-            let mut cmd = Command::new("cmake");
-            cmd.current_dir(&unicorn_dir)
-                .arg("-B")
-                .arg("build_rust")
-                .arg("-DBUILD_SHARED_LIBS=OFF");
-
-            if profile == "debug" {
-                cmd.arg("-DCMAKE_BUILD_TYPE=Debug");
-            } else {
-                cmd.arg("-DCMAKE_BUILD_TYPE=Release");
-            }
-
-            cmd.output()
-                .expect("Fail to create build directory on *nix.");
-
-            Command::new("make")
-                .current_dir(&rust_build_path)
-                .arg("-j6")
-                .output()
-                .expect("Fail to build unicorn on *nix.");
-
-            println!(
-                "cargo:rustc-link-search={}",
-                rust_build_path.to_str().unwrap()
-            );
-        }
+    // cc crate (as of 1.0.73) misdetects clang as gnu on apple
+    if compiler.is_like_gnu() && env::consts::OS != "macos" {
+        // see comment on /FORCE:MULTIPLE
+        println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
     }
+
+    let mut config = cmake::Config::new(&uc_dir);
+    if has_ninja {
+        config.generator("Ninja");
+    }
+
+    // need to clear build target and append "build" to the path because
+    // unicorn's CMakeLists.txt doesn't properly support 'install', so we use
+    // the build artifacts from the build directory, which cmake crate sets
+    // to "<out_dir>/build/"
+    let dst = config.define("BUILD_SHARED_LIBS", "OFF")
+        .define("UNICORN_BUILD_TESTS", "OFF")
+        .define("UNICORN_INSTALL", "OFF")
+        .no_build_target(true).build();
+    println!("cargo:rustc-link-search=native={}", dst.join("build").display());
 
     // Lazymio(@wtdcode): Why do I stick to static link? See: https://github.com/rust-lang/cargo/issues/5077
-    println!("cargo:rustc-link-lib=unicorn");
-    if env::consts::OS != "windows" {
+    println!("cargo:rustc-link-lib=static=unicorn");
+    if !compiler.is_like_msvc() {
         println!("cargo:rustc-link-lib=pthread");
         println!("cargo:rustc-link-lib=m");
     }
-    println!("cargo:rerun-if-changed=build.rs");
-    println!("cargo:rerun-if-changed=src");
 }
 
 fn main() {

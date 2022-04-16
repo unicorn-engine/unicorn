@@ -11,7 +11,7 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_write(*uc, code_start, code, size));
 }
 
-static void test_mips_el_ori()
+static void test_mips_el_ori(void)
 {
     uc_engine *uc;
     char code[] = "\x56\x34\x21\x34"; // ori $at, $at, 0x3456;
@@ -30,7 +30,7 @@ static void test_mips_el_ori()
     OK(uc_close(uc));
 }
 
-static void test_mips_eb_ori()
+static void test_mips_eb_ori(void)
 {
     uc_engine *uc;
     char code[] = "\x34\x21\x34\x56"; // ori $at, $at, 0x3456;
@@ -49,7 +49,7 @@ static void test_mips_eb_ori()
     OK(uc_close(uc));
 }
 
-static void test_mips_stop_at_branch()
+static void test_mips_stop_at_branch(void)
 {
     uc_engine *uc;
     char code[] =
@@ -71,7 +71,7 @@ static void test_mips_stop_at_branch()
     OK(uc_close(uc));
 }
 
-static void test_mips_stop_at_delay_slot()
+static void test_mips_stop_at_delay_slot(void)
 {
     uc_engine *uc;
     char code[] =
@@ -93,7 +93,7 @@ static void test_mips_stop_at_delay_slot()
     OK(uc_close(uc));
 }
 
-static void test_mips_lwx_exception_issue_1314()
+static void test_mips_lwx_exception_issue_1314(void)
 {
     uc_engine *uc;
     char code[] = "\x0a\xc8\x79\x7e"; // lwx $t9, $t9($s3)

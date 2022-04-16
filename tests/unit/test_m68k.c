@@ -13,7 +13,7 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_write(*uc, code_start, code, size));
 }
 
-static void test_move_to_sr()
+static void test_move_to_sr(void)
 {
 
     uc_engine *uc;
