@@ -29,7 +29,7 @@ static void test_arm64_until(void)
     uint64_t r_x28 = 0x12341234;
 
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
-                    UC_CPU_AARCH64_A72);
+                    UC_CPU_ARM64_A72);
 
     // initialize machine registers
     OK(uc_reg_write(uc, UC_ARM64_REG_X16, &r_x16));
@@ -57,7 +57,7 @@ static void test_arm64_code_patching(void)
     uc_engine *uc;
     char code[] = "\x00\x04\x00\x11"; // add w0, w0, 0x1
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
-                    UC_CPU_AARCH64_A72);
+                    UC_CPU_ARM64_A72);
     // zero out x0
     uint64_t r_x0 = 0x0;
     OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
@@ -87,7 +87,7 @@ static void test_arm64_code_patching_count(void)
     uc_engine *uc;
     char code[] = "\x00\x04\x00\x11"; // add w0, w0, 0x1
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
-                    UC_CPU_AARCH64_A72);
+                    UC_CPU_ARM64_A72);
     // zero out x0
     uint64_t r_x0 = 0x0;
     OK(uc_reg_write(uc, UC_ARM64_REG_X0, &r_x0));
@@ -120,7 +120,7 @@ static void test_arm64_v8_pac(void)
     uint64_t r_x9, r_x8, mem;
 
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
-                    UC_CPU_AARCH64_MAX);
+                    UC_CPU_ARM64_MAX);
 
     OK(uc_mem_map(uc, 0x40000, 0x1000, UC_PROT_ALL));
     OK(uc_mem_write(uc, 0x40000, "\x00\x00\x00\x00\x00\x00\x00\x00", 8));
@@ -179,7 +179,7 @@ static void test_arm64_mrs_hook(void)
     char code[] = "\x62\xd0\x3b\xd5";
 
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_LITTLE_ENDIAN | UC_MODE_ARM,
-                    code, sizeof(code) - 1, UC_CPU_AARCH64_A72);
+                    code, sizeof(code) - 1, UC_CPU_ARM64_A72);
 
     OK(uc_hook_add(uc, &hk, UC_HOOK_INSN, (void *)test_arm64_mrs_hook_cb, NULL,
                    1, 0, UC_ARM64_INS_MRS));

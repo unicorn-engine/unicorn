@@ -21,6 +21,8 @@ typedef enum uc_cpu_riscv32 {
     UC_CPU_RISCV32_BASE32,
     UC_CPU_RISCV32_SIFIVE_E31,
     UC_CPU_RISCV32_SIFIVE_U34,
+
+    UC_CPU_RISCV32_ENDING
 } uc_cpu_riscv32;
 
 //> RISCV64 CPU
@@ -29,6 +31,8 @@ typedef enum uc_cpu_riscv64 {
     UC_CPU_RISCV64_BASE64,
     UC_CPU_RISCV64_SIFIVE_E51,
     UC_CPU_RISCV64_SIFIVE_U54,
+
+    UC_CPU_RISCV64_ENDING
 } uc_cpu_riscv64;
 
 //> RISCV registers

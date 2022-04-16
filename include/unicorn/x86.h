@@ -52,7 +52,9 @@ typedef enum uc_cpu_x86 {
     UC_CPU_X86_OPTERON_G5,
     UC_CPU_X86_EPYC,
     UC_CPU_X86_DHYANA,
-    UC_CPU_X86_EPYC_ROME
+    UC_CPU_X86_EPYC_ROME,
+
+    UC_CPU_X86_ENDING
 } uc_cpu_x86;
 
 // Memory-Management Register for instructions IDTR, GDTR, LDTR, TR.

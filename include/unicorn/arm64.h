@@ -16,12 +16,14 @@ extern "C" {
 #endif
 
 //> ARM64 CPU
-typedef enum uc_cpu_aarch64 {
-    UC_CPU_AARCH64_A57 = 0,
-    UC_CPU_AARCH64_A53,
-    UC_CPU_AARCH64_A72,
-    UC_CPU_AARCH64_MAX
-} uc_cpu_aarch64;
+typedef enum uc_cpu_arm64 {
+    UC_CPU_ARM64_A57 = 0,
+    UC_CPU_ARM64_A53,
+    UC_CPU_ARM64_A72,
+    UC_CPU_ARM64_MAX,
+
+    UC_CPU_ARM64_ENDING
+} uc_cpu_arm64;
 
 // ARM64 coprocessor registers, use this with UC_ARM64_REG_CP_REG to
 // in call to uc_reg_write/read() to access the registers.
