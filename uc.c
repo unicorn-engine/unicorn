@@ -975,6 +975,10 @@ static uc_err mem_map_check(uc_engine *uc, uint64_t address, size_t size,
     }
 
     // address cannot wrapp around
+    if (address + size < address || address + size < size) {
+        return UC_ERR_ARG;
+    }
+    
     if (address + size - 1 < address) {
         return UC_ERR_ARG;
     }
