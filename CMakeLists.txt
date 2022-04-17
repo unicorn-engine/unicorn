@@ -1191,7 +1191,7 @@ if (UNICORN_HAS_S390X)
     set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_S390X)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} s390x-softmmu)
     set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_s390x)
-    target_link_libraries(s390x-softmmu unicorn-common)
+    target_link_libraries(s390x-softmmu PRIVATE unicorn-common)
     set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_s390x)
 endif()
 
@@ -1328,7 +1328,7 @@ if(UNICORN_INSTALL AND NOT MSVC)
             LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         )
     else()
-        install(FILES $<TARGET_FILE:unicorn> DESTINATION ${CMAKE_INSTALL_BINDIR})
+        install(FILES $<TARGET_FILE:unicorn> DESTINATION ${CMAKE_INSTALL_LIBDIR})
     endif()
     install(FILES ${UNICORN_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unicorn)
     file(WRITE ${CMAKE_BINARY_DIR}/unicorn.pc "Name: unicorn\n\
