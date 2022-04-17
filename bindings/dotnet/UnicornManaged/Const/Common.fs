@@ -11,13 +11,13 @@ module Common =
     let UC_API_MINOR = 0
 
     let UC_API_PATCH = 0
-    let UC_API_EXTRA = 6
+    let UC_API_EXTRA = 7
     let UC_VERSION_MAJOR = 2
 
     let UC_VERSION_MINOR = 0
 
     let UC_VERSION_PATCH = 0
-    let UC_VERSION_EXTRA = 6
+    let UC_VERSION_EXTRA = 7
     let UC_SECOND_SCALE = 1000000
     let UC_MILISECOND_SCALE = 1000
     let UC_ARCH_ARM = 1
