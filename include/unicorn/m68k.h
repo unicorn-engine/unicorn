@@ -26,6 +26,8 @@ typedef enum uc_cpu_m68k {
     UC_CPU_M68K_M5208,
     UC_CPU_M68K_CFV4E,
     UC_CPU_M68K_ANY,
+
+    UC_CPU_M68K_ENDING
 } uc_cpu_m68k;
 
 //> M68K registers

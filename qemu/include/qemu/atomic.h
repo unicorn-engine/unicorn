@@ -115,6 +115,19 @@
     atomic_set__nocheck(ptr, i);                      \
 } while(0)
 
+#define atomic_rcu_read(ptr)                          \
+    ({                                                \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > ATOMIC_REG_SIZE); \
+    typeof_strip_qual(*ptr) _val;                     \
+    atomic_rcu_read__nocheck(ptr, &_val);             \
+    _val;                                             \
+    })
+
+#define atomic_rcu_set(ptr, i) do {                   \
+    QEMU_BUILD_BUG_ON(sizeof(*ptr) > ATOMIC_REG_SIZE); \
+    __atomic_store_n(ptr, i, __ATOMIC_RELEASE);       \
+} while(0)
+
 /* All the remaining operations are fully sequentially consistent */
 
 #define atomic_xchg__nocheck(ptr, i)    ({                  \
@@ -186,11 +199,47 @@
 /* These will only be atomic if the processor does the fetch or store
  * in a single issue memory operation
  */
-#define atomic_read__nocheck(p)   (*(__typeof__(*(p)) volatile*) (p))
-#define atomic_set__nocheck(p, i) ((*(__typeof__(*(p)) volatile*) (p)) = (i))
 
-#define atomic_read(ptr)       atomic_read__nocheck(ptr)
-#define atomic_set(ptr, i)     atomic_set__nocheck(ptr,i)
+#define atomic_read(ptr)    *(ptr)
+#define atomic_set(ptr, i)  *(ptr) = (i)
+
+/**
+ * 
+ * atomic_rcu_read - reads a RCU-protected pointer to a local variable
+ * into a RCU read-side critical section. The pointer can later be safely
+ * dereferenced within the critical section.
+ *
+ * This ensures that the pointer copy is invariant thorough the whole critical
+ * section.
+ *
+ * Inserts memory barriers on architectures that require them (currently only
+ * Alpha) and documents which pointers are protected by RCU.
+ *
+ * atomic_rcu_read also includes a compiler barrier to ensure that
+ * value-speculative optimizations (e.g. VSS: Value Speculation
+ * Scheduling) does not perform the data read before the pointer read
+ * by speculating the value of the pointer.
+ *
+ * Should match atomic_rcu_set(), atomic_xchg(), atomic_cmpxchg().
+ */
+#define atomic_rcu_read(ptr)    ({                \
+    atomic_read(ptr);                             \
+})
+
+/**
+ * atomic_rcu_set - assigns (publicizes) a pointer to a new data structure
+ * meant to be read by RCU read-side critical sections.
+ *
+ * Documents which pointers will be dereferenced by RCU read-side critical
+ * sections and adds the required memory barriers on architectures requiring
+ * them. It also makes sure the compiler does not reorder code initializing the
+ * data structure before its publication.
+ *
+ * Should match atomic_rcu_read().
+ */
+#define atomic_rcu_set(ptr, i)  do {              \
+    atomic_set(ptr, i);                           \
+} while (0)
 
 #define atomic_xchg__nocheck  atomic_xchg
 

@@ -13,6 +13,7 @@ module Riscv =
     let UC_CPU_RISCV32_BASE32 = 1
     let UC_CPU_RISCV32_SIFIVE_E31 = 2
     let UC_CPU_RISCV32_SIFIVE_U34 = 3
+    let UC_CPU_RISCV32_ENDING = 4
 
     // RISCV64 CPU
 
@@ -20,6 +21,7 @@ module Riscv =
     let UC_CPU_RISCV64_BASE64 = 1
     let UC_CPU_RISCV64_SIFIVE_E51 = 2
     let UC_CPU_RISCV64_SIFIVE_U54 = 3
+    let UC_CPU_RISCV64_ENDING = 4
 
     // RISCV registers
 

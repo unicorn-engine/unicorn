@@ -44,6 +44,7 @@ public interface S390xConst {
    public static final int UC_CPU_S390X_GEN15B = 35;
    public static final int UC_CPU_S390X_QEMU = 36;
    public static final int UC_CPU_S390X_MAX = 37;
+   public static final int UC_CPU_S390X_ENDING = 38;
 
 // S390X registers
 

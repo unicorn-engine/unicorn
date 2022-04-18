@@ -11149,14 +11149,14 @@ PowerPCCPU *cpu_ppc_init(struct uc_struct *uc)
     memset(cpu, 0, sizeof(*cpu));
 #ifdef TARGET_PPC64
     if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = UC_CPU_PPC_POWER10_V1_0 + UC_CPU_PPC_7457A_V1_2 + 1; // power10_v1.0
-    } else if (uc->cpu_model + UC_CPU_PPC_7457A_V1_2 + 1 >= ARRAY_SIZE(ppc_cpus)) {
+        uc->cpu_model = UC_CPU_PPC64_POWER10_V1_0 + UC_CPU_PPC32_7457A_V1_2 + 1; // power10_v1.0
+    } else if (uc->cpu_model + UC_CPU_PPC32_7457A_V1_2 + 1 >= ARRAY_SIZE(ppc_cpus)) {
         free(cpu);
         return NULL;
     }
 #else
     if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = UC_CPU_PPC_7457A_V1_2; // 7457a_v1.2
+        uc->cpu_model = UC_CPU_PPC32_7457A_V1_2; // 7457a_v1.2
     } else if (uc->cpu_model >= ARRAY_SIZE(ppc_cpus)) {
         free(cpu);
         return NULL;

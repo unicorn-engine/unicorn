@@ -1,6 +1,179 @@
 This file details the changelog of Unicorn Engine.
 
 ----------------------------------
+[Version 2.0.0 rc7]: April 17, 2022
+
+This release is expected to be the real last RC release of Unicorn2. ;)
+
+Features:
+
+- Correctly generate static archives for the static build and have CI auto-tested.
+- Rust bindings revised. #1584 
+- Compatible with clang-cl compiler. #1581 
+- Implement UC_HOOK_INSN for aarch64 MRS/MSR/SYS/SYSL
+
+Fixes/Improvements:
+
+- Several corner cases on our API. #1587 #1595 
+- Fix the codegen buffer leak. 
+- Rust bindins improvements. #1574 #1575 
+- Add "holes" to allow unicorn lib as a drop-in replacement for older ones. #1572 
+- s390x backports. #1570 
+- Fix exits wrongly removed in nested uc_emu_start
+- Fix a possible endless loop for only one translation block in a multithreaded environment.
+- Fix wrong PC without `UC_HOOK_CODE` installed.
+- Update vb6 bindings license. #1563 
+- Fix buffer allocation failure on M1. #1559 
+- Fix wrong EFLAGS on startup.
+- Fix wrong internal states on nested uc_emu_start.
+- Remove armeb-softmmu and aarcheb-softmmu which are usermode targets.
+- Advance PPC32 PC. #1558 
+- Support UC_PPC_REG_CR.
+- Update CI to windows-2019
+
+Thanks:
+
+@shuffle2 @liyansong2018 @rose4096 @nviennot @n1tram1 @iii-i @dzzie @yrashk @bet4it 
+
+----------------------------------
+[Version 2.0.0 rc6]: Feburary 13, 2022
+
+This release is expected to be the last RC release of Unicorn2.
+
+Features:
+
+- SystemZ (aka. s390x) support.  #1521   #1547 
+- CPUID hook now may return a bool to indicate whether skipping the CPUID instruction.
+- ARM/AARCH64 coprocessor registers read/write support. #889 
+
+Fixes/Improvements:
+
+- Rust improvements. More registers enums #1504 Easier to use #1543 #1545 
+- M68k improvements. #1507 
+- Golang improvements. Enable `uc_ctl_set_model` #1506 
+- Unit tests improvements. #1512 
+- Various ARM system mode fixes. #1500 #1520 #1525  #1531 
+- Read/write arm FPSCR and FPSID. #1453 
+- Fix the support for ARMv8
+- Fix a large number of memory leaks and unicorn2 now goes with google/oss-fuzz!
+- Add more X87 registers.  #1524 
+- Add more PPC registers.
+- Fix the exception not cleared in python bindings. #1537 
+- Correctly support ARM big endian and drops `armeb-softmmu` and `aarch64eb-softmmu`
+- Fix ARM CPSR.E not reflected during runtime.
+- Resolve fuzzing speed problem on macOS.
+- Modernize CmakeFileLists.txt. #1544 
+- Fix an issue in nested `uc_emu_start`
+
+Thanks:
+
+@Kritzefitz @zznop @QDucasse @gerph @bet4it @mrexodia @iii-i @jbcayrou @scribam
+
+----------------------------------
+[Version 2.0.0 rc5]: November 25, 2021
+
+This release fixes a few urgent bugs and improves performance.
+
+Fixes/Improvements:
+
+- Rust bindings improvements. #1480 #1483
+- Allow R/W to cp15 registers. #1481 
+- Fix `UC_HOOK_EDGE_GENERATED` not calling for indirect jumps.
+- Python bindings build improvements. #1486
+- Fix bindings on m1 macOS.
+- Support nested `uc_emu_start` calls without context save/restore
+- Fix wrong MMIO offset for 32bit targets.
+- Fix wrong `uc_mem_unmap` logic for both ram and mmio memory.
+- Inline `uc_trace_code` and PC sync to improve performance.
+- Various fixes in tests.
+- Allow writing to CPSR to switch bank registers.
+- Implement MMIO in rust bindings. #1499 
+
+Thanks:
+
+- @domenukk 
+- @bet4it 
+- @mid-kid
+- @Kritzefitz
+
+----------------------------------
+[Version 2.0.0 rc4]: November 09, 2021
+
+This is a big release of Unicorn and introduces a few powerful new features and a bunch of fixes. 
+
+New Features:
+
+- New API: uc_ctl, by which you could control CPU models, TB caches or multiple exits etc.
+- New Hook: UC_HOOK_EDGE_GENERATED, UC_HOOK_TCG_OPCODE
+- RISCV CSR read/write.
+- Support reading MIPS hi/lo regs. 7268c2a19bce2db72b90e3ea3b133482c3ff4e58
+- OSS Fuzzing building support.
+- MSVC 32bit and Android build support.
+- Introduce clang-format.
+
+Fixes/Improvements:
+
+- Java bindings improvements. unicorn-engine/unicorn#1461
+- API Documents updates. unicorn-engine/unicorn#1459
+- Rust bindings improvements. unicorn-engine/unicorn#1462
+- Add a go.mod for go bindings.
+- CMakeLists.txt improvements as a subproject. #1373
+- Fix rust bindings build script and add CI.
+- Use binary search to find mappings. unicorn-engine/unicorn#1414
+- RISCV:
+  - Update pc when exiting execution. unicorn-engine/unicorn#1465
+  - Add RISCV control status registers to enable floating. unicorn-engine/unicorn#1469 unicorn-engine/unicorn#1478
+  - After `ecall`, pc not advanced. unicorn-engine/unicorn#1477
+- Fix tb not invalidated when exiting.
+- Fix bindings makefile.
+- Fix uc_mem_protect not working. unicorn-engine/unicorn#1468
+
+Thanks:
+
+- @bet4it
+- @kabeor
+- @chfl4gs 
+- @QDucasse
+- @h33p
+- @geohot
+- @cla7aye15I4nd
+- @jcalabres
+
+----------------------------------
+[Version 2.0.0 rc3]: October 06, 2021
+
+This is an urgent pre-release regarding python bindings on older Linux systems.
+
+- Support older Linux distribution, e.g. prior to Ubuntu 19.04
+- Fix a memory leak in `uc_close`
+- Support building on Android
+- Support hooking CPUID instruction.
+
+Enjoy.
+
+----------------------------------
+[Version 2.0.0 rc2]: October 05, 2021
+
+This is an urgent pre-release regarding the packaging problem of python bindings.
+
+- Set `zip_false` and `is_pure` to `False` to avoid issues on some Linux distributions.
+- Link to `libm` to make sure our libraries work.
+- Support to read ST registers in rust bindings.
+- Fix #1450
+
+Enjoy.
+
+----------------------------------
+[Version 2.0.0 rc1]: October 04, 2021
+
+Unicorn2 first release candidate!
+
+- Based on Qemu 5.0.1
+- Remain backward compatible with Unicorn 1.x
+- Update ISA of all existing architectures
+- Support 2 new architectures in PowerPC & RISCV
+
+----------------------------------
 [Unicorn2-beta]: October 3rd, 2021
 
 - Release Unicorn2 beta to public.

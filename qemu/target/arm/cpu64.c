@@ -331,7 +331,7 @@ ARMCPU *cpu_aarch64_init(struct uc_struct *uc)
     }
 
     if (uc->cpu_model == INT_MAX) {
-        uc->cpu_model = UC_CPU_AARCH64_A72;
+        uc->cpu_model = UC_CPU_ARM64_A72;
     } else if (uc->cpu_model >= sizeof(aarch64_cpus)) {
         free(cpu);
         return NULL;

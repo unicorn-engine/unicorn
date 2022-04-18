@@ -1,6 +1,7 @@
 # https://cristianadam.eu/20190501/bundling-together-static-libraries-with-cmake/
 function(bundle_static_library tgt_name bundled_tgt_name)
   list(APPEND static_libs ${tgt_name})
+  set(dep_libs "")
 
   function(_recursively_collect_dependencies input_target)
     set(_input_link_libraries LINK_LIBRARIES)
@@ -26,14 +27,18 @@ function(bundle_static_library tgt_name bundled_tgt_name)
           set_property(GLOBAL PROPERTY _${tgt_name}_static_bundle_${dependency} ON)
           _recursively_collect_dependencies(${dependency})
         endif()
+      elseif(dependency)
+        list(APPEND dep_libs ${dependency})
       endif()
     endforeach()
     set(static_libs ${static_libs} PARENT_SCOPE)
+    set(dep_libs ${dep_libs} PARENT_SCOPE)
   endfunction()
 
   _recursively_collect_dependencies(${tgt_name})
 
   list(REMOVE_DUPLICATES static_libs)
+  list(REMOVE_DUPLICATES dep_libs)
 
   set(bundled_tgt_full_name 
     ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
@@ -99,7 +104,9 @@ function(bundle_static_library tgt_name bundled_tgt_name)
   set_target_properties(${bundled_tgt_name} 
     PROPERTIES 
       IMPORTED_LOCATION ${bundled_tgt_full_name}
-      INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${tgt_name},INTERFACE_INCLUDE_DIRECTORIES>)
+      INTERFACE_INCLUDE_DIRECTORIES $<TARGET_PROPERTY:${tgt_name},INTERFACE_INCLUDE_DIRECTORIES>
+      INTERFACE_LINK_LIBRARIES "${dep_libs}")
+      #IMPORTED_LINK_INTERFACE_LIBRARIES "${dep_libs}") # Deprecated
   add_dependencies(${bundled_tgt_name} bundling_target)
 
 endfunction()

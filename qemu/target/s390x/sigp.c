@@ -418,6 +418,7 @@ static int sigp_set_architecture(S390CPU *cpu, uint32_t param,
     return SIGP_CC_STATUS_STORED;
 }
 
+#if 0
 int handle_sigp(CPUS390XState *env, uint8_t order, uint64_t r1, uint64_t r3)
 {
     uint64_t *status_reg = &env->regs[r1];
@@ -438,6 +439,7 @@ int handle_sigp(CPUS390XState *env, uint8_t order, uint64_t r1, uint64_t r3)
 
     return ret;
 }
+#endif
 
 int s390_cpu_restart(S390CPU *cpu)
 {

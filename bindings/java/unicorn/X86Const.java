@@ -44,6 +44,7 @@ public interface X86Const {
    public static final int UC_CPU_X86_EPYC = 35;
    public static final int UC_CPU_X86_DHYANA = 36;
    public static final int UC_CPU_X86_EPYC_ROME = 37;
+   public static final int UC_CPU_X86_ENDING = 38;
 
 // X86 registers
 

@@ -9,10 +9,11 @@ module Arm64 =
 
     // ARM64 CPU
 
-    let UC_CPU_AARCH64_A57 = 0
-    let UC_CPU_AARCH64_A53 = 1
-    let UC_CPU_AARCH64_A72 = 2
-    let UC_CPU_AARCH64_MAX = 3
+    let UC_CPU_ARM64_A57 = 0
+    let UC_CPU_ARM64_A53 = 1
+    let UC_CPU_ARM64_A72 = 2
+    let UC_CPU_ARM64_MAX = 3
+    let UC_CPU_ARM64_ENDING = 4
 
     // ARM64 registers
 

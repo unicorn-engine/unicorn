@@ -42,6 +42,7 @@ const (
 	CPU_X86_EPYC = 35
 	CPU_X86_DHYANA = 36
 	CPU_X86_EPYC_ROME = 37
+	CPU_X86_ENDING = 38
 
 // X86 registers
 

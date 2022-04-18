@@ -42,6 +42,7 @@ module UnicornEngine
 	UC_CPU_X86_EPYC = 35
 	UC_CPU_X86_DHYANA = 36
 	UC_CPU_X86_EPYC_ROME = 37
+	UC_CPU_X86_ENDING = 38
 
 # X86 registers
 

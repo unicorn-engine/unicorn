@@ -1,6 +1,6 @@
 #include "unicorn_test.h"
 
-static void test_map_correct()
+static void test_map_correct(void)
 {
     uc_engine *uc;
 
@@ -24,7 +24,7 @@ static void test_map_correct()
     OK(uc_close(uc));
 }
 
-static void test_map_wrapping()
+static void test_map_wrapping(void)
 {
     uc_engine *uc;
 
@@ -35,7 +35,7 @@ static void test_map_wrapping()
     OK(uc_close(uc));
 }
 
-static void test_mem_protect()
+static void test_mem_protect(void)
 {
     uc_engine *qc;
     int r_eax = 0x2000;
@@ -60,7 +60,7 @@ static void test_mem_protect()
     OK(uc_close(qc));
 }
 
-static void test_splitting_mem_unmap()
+static void test_splitting_mem_unmap(void)
 {
     uc_engine *uc;
 
@@ -85,7 +85,7 @@ static uint64_t test_splitting_mmio_unmap_read_callback(uc_engine *uc,
     return 0x19260817;
 }
 
-static void test_splitting_mmio_unmap()
+static void test_splitting_mmio_unmap(void)
 {
     uc_engine *uc;
     // mov ecx, [0x3004] <-- normal read
@@ -118,7 +118,7 @@ static void test_splitting_mmio_unmap()
     OK(uc_close(uc));
 }
 
-static void test_mem_protect_map_ptr()
+static void test_mem_protect_map_ptr(void)
 {
     uc_engine *uc;
     uint64_t val = 0x114514;
@@ -144,10 +144,56 @@ static void test_mem_protect_map_ptr()
     OK(uc_close(uc));
 }
 
+static void test_map_at_the_end(void)
+{
+    uc_engine *uc;
+    uint8_t mem[0x1000];
+
+    memset(mem, 0xff, 0x100);
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+
+    OK(uc_mem_map(uc, 0xfffffffffffff000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0xfffffffffffff000, mem, sizeof(mem)));
+
+    uc_assert_err(UC_ERR_WRITE_UNMAPPED,
+                  uc_mem_write(uc, 0xffffffffffffff00, mem, sizeof(mem)));
+    uc_assert_err(UC_ERR_WRITE_UNMAPPED, uc_mem_write(uc, 0, mem, sizeof(mem)));
+
+    OK(uc_close(uc));
+}
+
+static void test_map_wrap(void)
+{
+    uc_engine *uc;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+
+    uc_assert_err(UC_ERR_ARG,
+                  uc_mem_map(uc, 0xfffffffffffff000, 0x2000, UC_PROT_ALL));
+
+    OK(uc_close(uc));
+}
+
+static void test_map_big_memory(void)
+{
+    uc_engine *uc;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+
+    uc_assert_err(UC_ERR_NOMEM,
+                  uc_mem_map(uc, 0x0, 0xfffffffffffff000, UC_PROT_ALL));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
              {"test_splitting_mem_unmap", test_splitting_mem_unmap},
              {"test_splitting_mmio_unmap", test_splitting_mmio_unmap},
              {"test_mem_protect_map_ptr", test_mem_protect_map_ptr},
+             {"test_map_at_the_end", test_map_at_the_end},
+             {"test_map_wrap", test_map_wrap},
+             {"test_map_big_memory", test_map_big_memory},
              {NULL, NULL}};

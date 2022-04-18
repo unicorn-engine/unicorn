@@ -47,6 +47,7 @@ module X86 =
     let UC_CPU_X86_EPYC = 35
     let UC_CPU_X86_DHYANA = 36
     let UC_CPU_X86_EPYC_ROME = 37
+    let UC_CPU_X86_ENDING = 38
 
     // X86 registers
 

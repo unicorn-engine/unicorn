@@ -16,6 +16,7 @@ const
   UC_CPU_M68K_M5208 = 6;
   UC_CPU_M68K_CFV4E = 7;
   UC_CPU_M68K_ANY = 8;
+  UC_CPU_M68K_ENDING = 9;
 
 // M68K registers
 

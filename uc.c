@@ -402,6 +402,7 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
         }
 
         if (uc->init_arch == NULL) {
+            free(uc);
             return UC_ERR_ARCH;
         }
 
@@ -2201,12 +2202,22 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             int model = va_arg(args, int);
 
-            if (uc->init_done) {
+            if (model <= 0 || uc->init_done) {
                 err = UC_ERR_ARG;
                 break;
             }
 
-            if (uc->arch == UC_ARCH_ARM) {
+            if (uc->arch == UC_ARCH_X86) {
+                if (model >= UC_CPU_X86_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+            } else if (uc->arch == UC_ARCH_ARM) {
+                if (model >= UC_CPU_ARM_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+
                 if (uc->mode & UC_MODE_BIG_ENDIAN) {
                     // These cpu models don't support big endian code access.
                     if (model <= UC_CPU_ARM_CORTEX_A15 &&
@@ -2215,6 +2226,64 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
                         break;
                     }
                 }
+            } else if (uc->arch == UC_ARCH_ARM64) {
+                if (model >= UC_CPU_ARM64_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+            } else if (uc->arch == UC_ARCH_MIPS) {
+                if (uc->mode & UC_MODE_32 && model >= UC_CPU_MIPS32_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+
+                if (uc->mode & UC_MODE_64 && model >= UC_CPU_MIPS64_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+            } else if (uc->arch == UC_ARCH_PPC) {
+                // UC_MODE_PPC32 == UC_MODE_32
+                if (uc->mode & UC_MODE_32 && model >= UC_CPU_PPC32_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+
+                if (uc->mode & UC_MODE_64 && model >= UC_CPU_PPC64_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+            } else if (uc->arch == UC_ARCH_RISCV) {
+                if (uc->mode & UC_MODE_32 && model >= UC_CPU_RISCV32_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+
+                if (uc->mode & UC_MODE_64 && model >= UC_CPU_RISCV64_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+            } else if (uc->arch == UC_ARCH_S390X) {
+                if (model >= UC_CPU_S390X_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+            } else if (uc->arch == UC_ARCH_SPARC) {
+                if (uc->mode & UC_MODE_32 && model >= UC_CPU_SPARC32_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+                if (uc->mode & UC_MODE_64 && model >= UC_CPU_SPARC64_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+            } else if (uc->arch == UC_ARCH_M68K) {
+                if (model >= UC_CPU_M68K_ENDING) {
+                    err = UC_ERR_ARG;
+                    break;
+                }
+            } else {
+                err = UC_ERR_ARG;
+                break;
             }
 
             uc->cpu_model = model;

@@ -918,7 +918,9 @@ static inline TCGv gen_aa32_addr(DisasContext *s, TCGv_i32 a32, MemOp op)
     tcg_gen_extu_i32_tl(tcg_ctx, addr, a32);
 
     /* Not needed for user-mode BE32, where we use MO_BE instead.  */
-    if (!IS_USER_ONLY && s->sctlr_b && (op & MO_SIZE) < MO_32) {
+    // Unicorn: By default UC_MODE_BIG_MODE is BE32 mode, which in fact qemu-usermode.
+    //          Thus, we only do this in BE8 (qemu system) mode.
+    if ( (s->uc->mode & UC_MODE_ARMBE8) && s->sctlr_b && (op & MO_SIZE) < MO_32) {
         tcg_gen_xori_tl(tcg_ctx, addr, addr, 4 - (1 << (op & MO_SIZE)));
     }
     return addr;
@@ -974,7 +976,9 @@ static inline void gen_aa32_frob64(DisasContext *s, TCGv_i64 val)
 {
     TCGContext *tcg_ctx = s->uc->tcg_ctx;
     /* Not needed for user-mode BE32, where we use MO_BE instead.  */
-    if (!IS_USER_ONLY && s->sctlr_b) {
+    // Unicorn: By default UC_MODE_BIG_MODE is BE32 mode, which in fact qemu-usermode.
+    //          Thus, we only do this in BE8 (qemu system) mode.
+    if ( (s->uc->mode & UC_MODE_ARMBE8) && s->sctlr_b) {
         tcg_gen_rotri_i64(tcg_ctx, val, val, 32);
     }
 }
@@ -1002,7 +1006,9 @@ static void gen_aa32_st_i64(DisasContext *s, TCGv_i64 val, TCGv_i32 a32,
     TCGv addr = gen_aa32_addr(s, a32, opc);
 
     /* Not needed for user-mode BE32, where we use MO_BE instead.  */
-    if (!IS_USER_ONLY && s->sctlr_b) {
+    // Unicorn: By default UC_MODE_BIG_MODE is BE32 mode, which in fact qemu-usermode.
+    //          Thus, we only do this in BE8 (qemu system) mode.
+    if ( (s->uc->mode & UC_MODE_ARMBE8) && s->sctlr_b) {
         TCGv_i64 tmp = tcg_temp_new_i64(tcg_ctx);
         tcg_gen_rotri_i64(tcg_ctx, tmp, val, 32);
         tcg_gen_qemu_st_i64(tcg_ctx, tmp, addr, index, opc);

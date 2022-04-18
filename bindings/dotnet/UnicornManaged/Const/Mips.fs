@@ -25,6 +25,7 @@ module Mips =
     let UC_CPU_MIPS32_P5600 = 13
     let UC_CPU_MIPS32_MIPS32R6_GENERIC = 14
     let UC_CPU_MIPS32_I7200 = 15
+    let UC_CPU_MIPS32_ENDING = 16
 
     // MIPS64 CPUS
 
@@ -41,6 +42,7 @@ module Mips =
     let UC_CPU_MIPS64_LOONGSON_2E = 10
     let UC_CPU_MIPS64_LOONGSON_2F = 11
     let UC_CPU_MIPS64_MIPS64DSPR2 = 12
+    let UC_CPU_MIPS64_ENDING = 13
 
     // MIPS registers
 
