@@ -20,7 +20,7 @@
 #include "exec/helper-proto.h"
 #include "exec/exec-all.h"
 #include "exec/cpu_ldst.h"
-#include <zlib.h> /* for crc32 */
+#include "qemu/crc32c.h"
 
 
 /* Exception helpers */
