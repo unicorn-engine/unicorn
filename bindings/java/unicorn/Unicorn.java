@@ -821,5 +821,11 @@ public class Unicorn implements UnicornConst, ArmConst, Arm64Const, M68kConst, S
 */
    public native void context_restore(long context);
 
+   /**
+ * Set the emulated cpu model.
+ *
+ * @param cpu_model CPU model type (see UC_CPU_*).
+*/
+   public native void ctl_set_cpu_model(int cpu_model);
 }
 
