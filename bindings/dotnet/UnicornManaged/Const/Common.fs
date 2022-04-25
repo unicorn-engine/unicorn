@@ -139,6 +139,7 @@ module Common =
     let UC_CTL_CPU_MODEL = 7
     let UC_CTL_TB_REQUEST_CACHE = 8
     let UC_CTL_TB_REMOVE_CACHE = 9
+    let UC_CTL_TB_FLUSH = 10
 
     let UC_PROT_NONE = 0
     let UC_PROT_READ = 1
