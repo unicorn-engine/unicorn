@@ -693,7 +693,13 @@ static void test_x86_clear_tb_cache(void)
 static void test_x86_clear_count_cache(void)
 {
     uc_engine *uc;
-    char code[] = "\x83\xc1\x01\x4a"; // ADD ecx, 1; DEC edx;
+    // uc_emu_start will clear last TB when exiting so generating a tb at last
+    // by design
+    char code[] =
+        "\x83\xc1\x01\x4a\xeb\x00\x83\xc3\x01"; // ADD ecx, 1; DEC edx;
+                                                // jmp t;
+                                                // t:
+                                                // ADD ebx, 1
     int r_ecx = 0x1234;
     int r_edx = 0x7890;
 
