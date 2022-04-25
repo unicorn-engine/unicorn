@@ -847,10 +847,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     // or we may lost uc_emu_stop
     if (uc->nested_level == 0) {
         uc->emulation_done = true;
-    }
 
-    // remove hooks to delete
-    clear_deleted_hooks(uc);
+        // remove hooks to delete
+        // make sure we delete all hooks at the first level.
+        clear_deleted_hooks(uc);
+    }
 
     if (timeout) {
         // wait for the timer to finish
