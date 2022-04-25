@@ -808,6 +808,9 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     if (count <= 0 && uc->count_hook != 0) {
         uc_hook_del(uc, uc->count_hook);
         uc->count_hook = 0;
+
+        // In this case, we have to drop all translated blocks.
+        uc->tb_flush(uc);
     }
     // set up count hook to count instructions.
     if (count > 0 && uc->count_hook == 0) {
@@ -2299,6 +2302,16 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         }
         break;
     }
+
+    case UC_CTL_TB_FLUSH:
+
+        UC_INIT(uc);
+
+        if (rw == UC_CTL_IO_WRITE) {
+            uc->tb_flush(uc);
+        } else {
+            err = UC_ERR_ARG;
+        }
 
     default:
         err = UC_ERR_ARG;

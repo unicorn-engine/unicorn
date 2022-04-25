@@ -139,6 +139,9 @@ typedef void (*uc_invalidate_tb_t)(struct uc_struct *uc, uint64_t start,
 // Request generating TB at given address
 typedef uc_err (*uc_gen_tb_t)(struct uc_struct *uc, uint64_t pc, uc_tb *out_tb);
 
+// tb flush
+typedef uc_tcg_flush_tlb uc_tb_flush_t;
+
 struct hook {
     int type;       // UC_HOOK_*
     int insn;       // instruction for HOOK_INSN
@@ -272,6 +275,7 @@ struct uc_struct {
     uc_tcg_flush_tlb tcg_flush_tlb;
     uc_invalidate_tb_t uc_invalidate_tb;
     uc_gen_tb_t uc_gen_tb;
+    uc_tb_flush_t tb_flush;
     uc_add_inline_hook_t add_inline_hook;
     uc_del_inline_hook_t del_inline_hook;
 
