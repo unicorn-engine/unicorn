@@ -772,6 +772,9 @@ class Uc(object):
 
     def ctl_request_cache(self, addr):
         return self.__ctl_rw_1_1_arg(uc.UC_CTL_TB_REQUEST_CACHE, addr, ctypes.c_uint64, uc_tb)
+    
+    def ctl_flush_tb(self):
+        self.ctl(self.__ctl_w(uc.UC_CTL_TB_FLUSH, 0))
 
     # add a hook
     def hook_add(self, htype, callback, user_data=None, begin=1, end=0, arg1=0, arg2=0):
