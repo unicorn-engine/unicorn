@@ -41,3 +41,4 @@ pkg-config = { version = "0.3" }
 [features]
 default = []
 build_unicorn_cmake = []
+dynamic_linkage = []

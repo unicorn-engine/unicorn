@@ -84,12 +84,17 @@ fn build_with_cmake() {
         config.generator("Ninja");
     }
 
+    if !cfg!(feature = "dynamic_linkage") {
+        config.define("BUILD_SHARED_LIBS", "OFF");
+    } else {
+        config.define("BUILD_SHARED_LIBS", "ON");
+    }
+
     // need to clear build target and append "build" to the path because
     // unicorn's CMakeLists.txt doesn't properly support 'install', so we use
     // the build artifacts from the build directory, which cmake crate sets
     // to "<out_dir>/build/"
     let dst = config
-        .define("BUILD_SHARED_LIBS", "OFF")
         .define("UNICORN_BUILD_TESTS", "OFF")
         .define("UNICORN_INSTALL", "OFF")
         .no_build_target(true)
@@ -99,8 +104,13 @@ fn build_with_cmake() {
         dst.join("build").display()
     );
 
-    // Lazymio(@wtdcode): Why do I stick to static link? See: https://github.com/rust-lang/cargo/issues/5077
-    println!("cargo:rustc-link-lib=static=unicorn");
+    // Lazymio(@wtdcode): Dynamic linkage might not work with local installation.
+    // See: https://github.com/rust-lang/cargo/issues/5077
+    if !cfg!(feature = "dynamic_linkage") {
+        println!("cargo:rustc-link-lib=static=unicorn");
+    } else {
+        println!("cargo:rustc-link-lib=dylib=unicorn");
+    }
     if !compiler.is_like_msvc() {
         println!("cargo:rustc-link-lib=pthread");
         println!("cargo:rustc-link-lib=m");
@@ -111,11 +121,11 @@ fn main() {
     if cfg!(feature = "build_unicorn_cmake") {
         build_with_cmake();
     } else {
-        if !pkg_config::Config::new()
-            .atleast_version("2")
-            .probe("unicorn")
-            .is_ok()
-        {
+        let mut config = pkg_config::Config::new();
+        if !cfg!(feature = "dynamic_linkage") {
+            config.statik(true);
+        }
+        if !config.atleast_version("2").probe("unicorn").is_ok() {
             build_with_cmake();
         }
     }
