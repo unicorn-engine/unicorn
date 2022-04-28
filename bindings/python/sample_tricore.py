@@ -10,7 +10,7 @@ from unicorn import *
 from unicorn.tricore_const import *
 
 # code to be emulated
-TRICORE_CODE   = b"\x82\x72\x82\x4f\xa2\xf2\x76\x83" # mov d2, #0x7; mov d15, #0x4; sub d2, d15
+TRICORE_CODE   = b"\x82\x11\xbb\x00\x00\x08" # mov d0, #0x1; mov.u d0, #0x8000
 # memory address where emulation starts
 ADDRESS    = 0x10000
 
@@ -29,17 +29,17 @@ def test_tricore():
         # Initialize emulator in TriCore mode
         mu = Uc(UC_ARCH_TRICORE, UC_MODE_LITTLE_ENDIAN)
 
-        # tracing all basic blocks with customized callback
-        mu.hook_add(UC_HOOK_BLOCK, hook_block)
-
-        # tracing one instruction at ADDRESS with customized callback
-        mu.hook_add(UC_HOOK_CODE, hook_code, begin=ADDRESS, end=ADDRESS + len(TRICORE_CODE))
-
         # map 2MB memory for this emulation
         mu.mem_map(ADDRESS, 2 * 1024 * 1024)
 
         # write machine code to be emulated to memory
         mu.mem_write(ADDRESS, TRICORE_CODE)
+
+        # tracing all basic blocks with customized callback
+        mu.hook_add(UC_HOOK_BLOCK, hook_block)
+
+        # tracing one instruction at ADDRESS with customized callback
+        mu.hook_add(UC_HOOK_CODE, hook_code)
 
         # emulate machine code in infinite time
         mu.emu_start(ADDRESS, ADDRESS + len(TRICORE_CODE))
@@ -47,10 +47,8 @@ def test_tricore():
         # now print out some registers
         print(">>> Emulation done. Below is the CPU context")
 
-        r0 = mu.reg_read(UC_TRICORE_REG_D2)
-        r1 = mu.reg_read(UC_TRICORE_REG_D15)
-        print(">>> D2 = 0x%x" %r0)
-        print(">>> D15 = 0x%x" %r1)
+        r0 = mu.reg_read(UC_TRICORE_REG_D0)
+        print(">>> D0 = 0x%x" %r0)
 
     except UcError as e:
         print("ERROR: %s" % e)

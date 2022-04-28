@@ -31,7 +31,7 @@ static void test_tricore(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    int d0 = 0x0;     // d0 register
+    uint32_t d0 = 0x0;     // d0 register
 
     printf("Emulate TriCore code\n");
 
@@ -53,11 +53,12 @@ static void test_tricore(void)
     uc_hook_add(uc, &trace1, UC_HOOK_BLOCK, hook_block, NULL, 1, 0);
 
     // tracing one instruction at ADDRESS with customized callback
-    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, ADDRESS, ADDRESS);
+    uc_hook_add(uc, &trace2, UC_HOOK_CODE, hook_code, NULL, ADDRESS,
+                ADDRESS + sizeof(CODE) - 1);
 
     // emulate machine code in infinite time (last param = 0), or when
     // finishing all the code.
-    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(CODE) -1, 0, 0);
+    err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(CODE) - 1, 0, 0);
     if (err) {
         printf("Failed on uc_emu_start() with error returned: %u\n", err);
     }
@@ -67,10 +68,6 @@ static void test_tricore(void)
 
     uc_reg_read(uc, UC_TRICORE_REG_D0, &d0);
     printf(">>> d0 = 0x%x\n", d0);
-    uc_reg_read(uc, UC_TRICORE_REG_D2, &d0);
-    printf(">>> d2 = 0x%x\n", d0);
-    uc_reg_read(uc, UC_TRICORE_REG_D15, &d0);
-    printf(">>> d15 = 0x%x\n", d0);
 
     uc_close(uc);
 }
