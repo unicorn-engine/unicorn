@@ -137,6 +137,7 @@ public interface UnicornConst {
    public static final int UC_CTL_CPU_MODEL = 7;
    public static final int UC_CTL_TB_REQUEST_CACHE = 8;
    public static final int UC_CTL_TB_REMOVE_CACHE = 9;
+   public static final int UC_CTL_TB_FLUSH = 10;
 
    public static final int UC_PROT_NONE = 0;
    public static final int UC_PROT_READ = 1;

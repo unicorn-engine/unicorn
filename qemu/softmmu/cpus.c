@@ -99,6 +99,12 @@ static int tcg_cpu_exec(struct uc_struct *uc)
             if (uc->quit_request) {
                 // reset stop_request
                 uc->stop_request = false;
+
+                // resume cpu
+                cpu->halted = 0;
+                cpu->exit_request = 0;
+                cpu->exception_index = -1;
+                cpu_resume(cpu);
             } else if (uc->stop_request) {
                 //printf(">>> got STOP request!!!\n");
                 finish = true;

@@ -690,6 +690,35 @@ static void test_x86_clear_tb_cache(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_clear_count_cache(void)
+{
+    uc_engine *uc;
+    // uc_emu_start will clear last TB when exiting so generating a tb at last
+    // by design
+    char code[] =
+        "\x83\xc1\x01\x4a\xeb\x00\x83\xc3\x01"; // ADD ecx, 1; DEC edx;
+                                                // jmp t;
+                                                // t:
+                                                // ADD ebx, 1
+    int r_ecx = 0x1234;
+    int r_edx = 0x7890;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 2));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+
+    TEST_CHECK(r_ecx == 0x1236);
+    TEST_CHECK(r_edx == 0x788e);
+
+    OK(uc_close(uc));
+}
+
 // This is a regression bug.
 static void test_x86_clear_empty_tb(void)
 {
@@ -1013,4 +1042,5 @@ TEST_LIST = {
     {"test_x86_64_nested_emu_start_error", test_x86_64_nested_emu_start_error},
     {"test_x86_eflags_reserved_bit", test_x86_eflags_reserved_bit},
     {"test_x86_nested_uc_emu_start_exits", test_x86_nested_uc_emu_start_exits},
+    {"test_x86_clear_count_cache", test_x86_clear_count_cache},
     {NULL, NULL}};

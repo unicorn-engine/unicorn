@@ -717,6 +717,11 @@ class Uc(object):
         arg = ctp(val)
         self.ctl(self.__ctl_w(ctl, 1), arg)
     
+    def __ctl_w_2_arg(self, ctl, val1, val2, ctp1, ctp2):
+        arg1 = ctp1(val1)
+        arg2 = ctp2(val2)
+        self.ctl(self.__ctl_w(ctl, 2), arg1, arg2)
+
     def __ctl_rw_1_1_arg(self, ctl, val, ctp1, ctp2):
         arg1 = ctp1(val)
         arg2 = ctp2()
@@ -762,11 +767,14 @@ class Uc(object):
     def ctl_set_cpu_model(self, val):
         self.__ctl_w_1_arg(uc.UC_CTL_CPU_MODEL, val, ctypes.c_int)
 
-    def ctl_remove_cache(self, addr):
-        self.__ctl_w_1_arg(uc.UC_CTL_TB_REMOVE_CACHE, addr, ctypes.c_uint64)
+    def ctl_remove_cache(self, addr, len):
+        self.__ctl_w_2_arg(uc.UC_CTL_TB_REMOVE_CACHE, addr, len, ctypes.c_uint64, ctypes.c_uint64)
 
     def ctl_request_cache(self, addr):
         return self.__ctl_rw_1_1_arg(uc.UC_CTL_TB_REQUEST_CACHE, addr, ctypes.c_uint64, uc_tb)
+    
+    def ctl_flush_tb(self):
+        self.ctl(self.__ctl_w(uc.UC_CTL_TB_FLUSH, 0))
 
     # add a hook
     def hook_add(self, htype, callback, user_data=None, begin=1, end=0, arg1=0, arg2=0):

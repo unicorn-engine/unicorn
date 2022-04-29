@@ -779,3 +779,17 @@ JNIEXPORT void JNICALL Java_unicorn_Unicorn_context_1restore
       throwException(env, err);
    }
 }
+
+/*
+ * Class:     unicorn_Unicorn
+ * Method:    ctl_set_cpu_model
+ * Signature: (I)V
+ */
+JNIEXPORT void JNICALL Java_unicorn_Unicorn_ctl_1set_1cpu_1model
+  (JNIEnv *env, jobject self, jint cpu_model) {
+   uc_engine *eng = getEngine(env, self);
+   uc_err err = uc_ctl_set_cpu_model(eng, cpu_model);
+   if (err != UC_ERR_OK) {
+      throwException(env, err);
+   }
+}

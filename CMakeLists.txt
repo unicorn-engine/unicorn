@@ -119,7 +119,7 @@ else()
         string(FIND "${UC_COMPILER_VERSION}" "i686" UC_RET)
         if(${UC_RET} GREATER_EQUAL "0")
             set(UNICORN_TARGET_ARCH "i386")
-            set(UNICORN_CFLAGS -m32)
+            set(UNICORN_CFLAGS -m32 -static-libgcc) # Workaround for github action bugs
             set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -m32")
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m32")
         else()
