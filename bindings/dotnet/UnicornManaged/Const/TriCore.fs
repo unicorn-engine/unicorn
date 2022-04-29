@@ -7,6 +7,13 @@ open System
 [<AutoOpen>]
 module TriCore =
 
+    // TRICORE CPU
+
+    let UC_CPU_TRICORE_TC1796 = 0
+    let UC_CPU_TRICORE_TC1797 = 1
+    let UC_CPU_TRICORE_TC27X = 2
+    let UC_CPU_TRICORE_ENDING = 3
+
     // TRICORE registers
 
     let UC_TRICORE_REG_INVALID = 0

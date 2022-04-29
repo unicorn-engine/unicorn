@@ -4,6 +4,13 @@ package unicorn;
 
 public interface TriCoreConst {
 
+// TRICORE CPU
+
+   public static final int UC_CPU_TRICORE_TC1796 = 0;
+   public static final int UC_CPU_TRICORE_TC1797 = 1;
+   public static final int UC_CPU_TRICORE_TC27X = 2;
+   public static final int UC_CPU_TRICORE_ENDING = 3;
+
 // TRICORE registers
 
    public static final int UC_TRICORE_REG_INVALID = 0;

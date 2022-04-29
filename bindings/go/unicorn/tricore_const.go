@@ -2,6 +2,13 @@ package unicorn
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT [tricore_const.go]
 const (
 
+// TRICORE CPU
+
+	CPU_TRICORE_TC1796 = 0
+	CPU_TRICORE_TC1797 = 1
+	CPU_TRICORE_TC27X = 2
+	CPU_TRICORE_ENDING = 3
+
 // TRICORE registers
 
 	TRICORE_REG_INVALID = 0

@@ -5,6 +5,13 @@ unit TriCoreConst;
 interface
 
 const
+// TRICORE CPU
+
+  UC_CPU_TRICORE_TC1796 = 0;
+  UC_CPU_TRICORE_TC1797 = 1;
+  UC_CPU_TRICORE_TC27X = 2;
+  UC_CPU_TRICORE_ENDING = 3;
+
 // TRICORE registers
 
   UC_TRICORE_REG_INVALID = 0;
