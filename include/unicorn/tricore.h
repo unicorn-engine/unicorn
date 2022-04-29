@@ -19,6 +19,15 @@ extern "C" {
 #pragma warning(disable:4201)
 #endif
 
+//> TRICORE CPU
+typedef enum uc_cpu_tricore {
+   UC_CPU_TRICORE_TC1796,
+   UC_CPU_TRICORE_TC1797,
+   UC_CPU_TRICORE_TC27X,
+
+   UC_CPU_TRICORE_ENDING
+} uc_cpu_tricore;
+
 //> TRICORE registers
 typedef enum uc_tricore_reg {
     UC_TRICORE_REG_INVALID = 0,
