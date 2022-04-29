@@ -1,5 +1,5 @@
 # https://cristianadam.eu/20190501/bundling-together-static-libraries-with-cmake/
-function(bundle_static_library tgt_name bundled_tgt_name)
+function(bundle_static_library tgt_name bundled_tgt_name library_name)
   list(APPEND static_libs ${tgt_name})
   set(dep_libs "")
 
@@ -41,7 +41,7 @@ function(bundle_static_library tgt_name bundled_tgt_name)
   list(REMOVE_DUPLICATES dep_libs)
 
   set(bundled_tgt_full_name 
-    ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
+    ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${library_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
   
   if (APPLE)
     find_program(lib_tool libtool)
