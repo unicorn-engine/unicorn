@@ -12,8 +12,6 @@
 *.jar
 *~
 
-qemu/*-softmmu/
-
 tags
 qemu/config-host.ld
 qemu/config.log

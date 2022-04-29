@@ -24,6 +24,7 @@
 #include "qemu/target/ppc/unicorn.h"
 #include "qemu/target/riscv/unicorn.h"
 #include "qemu/target/s390x/unicorn.h"
+#include "qemu/target/tricore/unicorn.h"
 
 #include "qemu/include/qemu/queue.h"
 #include "qemu-common.h"
@@ -166,6 +167,10 @@ bool uc_arch_supported(uc_arch arch)
 #endif
 #ifdef UNICORN_HAS_S390X
     case UC_ARCH_S390X:
+        return true;
+#endif
+#ifdef UNICORN_HAS_TRICORE
+    case UC_ARCH_TRICORE:
         return true;
 #endif
     /* Invalid or disabled arch */
@@ -383,6 +388,15 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 return UC_ERR_MODE;
             }
             uc->init_arch = s390_uc_init;
+            break;
+#endif
+#ifdef UNICORN_HAS_TRICORE
+        case UC_ARCH_TRICORE:
+            if ((mode & ~UC_MODE_TRICORE_MASK)) {
+                free(uc);
+                return UC_ERR_MODE;
+            }
+            uc->init_arch = tricore_uc_init;
             break;
 #endif
         }
@@ -797,6 +811,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 #ifdef UNICORN_HAS_S390X
     case UC_ARCH_S390X:
         uc_reg_write(uc, UC_S390X_REG_PC, &begin);
+        break;
+#endif
+#ifdef UNICORN_HAS_TRICORE
+    case UC_ARCH_TRICORE:
+        uc_reg_write(uc, UC_TRICORE_REG_PC, &begin);
         break;
 #endif
     }
@@ -1959,6 +1978,12 @@ static void find_context_reg_rw_function(uc_arch arch, uc_mode mode,
     case UC_ARCH_S390X:
         rw->context_reg_read = s390_context_reg_read;
         rw->context_reg_write = s390_context_reg_write;
+        break;
+#endif
+#ifdef UNICORN_HAS_TRICORE
+    case UC_ARCH_TRICORE:
+        rw->context_reg_read = tricore_context_reg_read;
+        rw->context_reg_write = tricore_context_reg_write;
         break;
 #endif
     }

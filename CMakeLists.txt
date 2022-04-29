@@ -44,7 +44,7 @@ option(BUILD_SHARED_LIBS "Build shared instead of static library" ${PROJECT_IS_T
 option(UNICORN_FUZZ "Enable fuzzing" OFF)
 option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
-set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x" CACHE STRING "Enabled unicorn architectures")
+set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x;tricore" CACHE STRING "Enabled unicorn architectures")
 option(UNICORN_TRACER "Trace unicorn execution" OFF)
 
 foreach(ARCH_LOOP ${UNICORN_ARCH})
@@ -209,6 +209,11 @@ else()
                 set(UNICORN_TARGET_ARCH "s390")
                 break()
             endif()
+            string(FIND ${UC_COMPILER_MACRO} "__tricore__" UC_RET)
+            if (${UC_RET} GREATER_EQUAL "0")
+                set(UNICORN_TARGET_ARCH "tricore")
+                break()
+            endif()
             message(FATAL_ERROR "Unknown host compiler: ${CMAKE_C_COMPILER}.")
         endwhile(TRUE)
     endif()
@@ -240,6 +245,9 @@ else()
     endif()
     if (UNICORN_HAS_S390X)
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_S390X ")
+    endif()
+    if (UNICORN_HAS_TRICORE)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_TRICORE ")
     endif()
 
     set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-fPIC")
@@ -281,6 +289,9 @@ else()
     endif()
     if(UNICORN_HAS_S390X)
         set(TARGET_LIST "${TARGET_LIST}s390x-softmmu, ")
+    endif()
+    if (UNICORN_HAS_TRICORE)
+        set (TARGET_LIST "${TARGET_LIST}tricore-softmmu, ")
     endif()
     set(TARGET_LIST "${TARGET_LIST} ")
 
@@ -371,6 +382,12 @@ else()
         execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
             INPUT_FILE ${CMAKE_BINARY_DIR}/s390x-softmmu/config-target.mak
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/s390x-softmmu/config-target.h
+        )
+    endif()
+    if (UNICORN_HAS_TRICORE)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/tricore-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/tricore-softmmu/config-target.h
         )
     endif()
     add_compile_options(
@@ -1034,6 +1051,36 @@ endif()
 endif()
 
 
+if (UNICORN_HAS_TRICORE)
+add_library(tricore-softmmu STATIC
+    ${UNICORN_ARCH_COMMON}
+
+    qemu/target/tricore/cpu.c
+    qemu/target/tricore/fpu_helper.c
+    qemu/target/tricore/helper.c
+    qemu/target/tricore/op_helper.c
+    qemu/target/tricore/translate.c
+    qemu/target/tricore/unicorn.c
+)
+
+if(MSVC)
+    target_compile_options(tricore-softmmu PRIVATE
+        -DNEED_CPU_H
+        /FItricore.h
+        /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/tricore-softmmu
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/tricore
+    )
+else()
+    target_compile_options(tricore-softmmu PRIVATE
+        -DNEED_CPU_H
+        -include tricore.h
+        -I${CMAKE_BINARY_DIR}/tricore-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/tricore
+    )
+endif()
+endif()
+
+
 set(UNICORN_SRCS
     uc.c
 
@@ -1193,6 +1240,13 @@ if (UNICORN_HAS_S390X)
     set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_s390x)
     target_link_libraries(s390x-softmmu PRIVATE unicorn-common)
     set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_s390x)
+endif()
+if (UNICORN_HAS_TRICORE)
+    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_TRICORE)
+    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} tricore-softmmu)
+    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_tricore)
+    target_link_libraries(tricore-softmmu unicorn-common)
+    set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_tricore)
 endif()
 
 # Extra tests
