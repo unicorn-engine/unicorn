@@ -1,6 +1,6 @@
 This HOWTO introduces how to build Unicorn2 natively on Linux/Mac/Windows or cross-build to Windows from Linux host.
 
-Note: Please run `make clean` before you switch to `dev` branch.
+Note: By default, CMake will build both the shared and static libraries while only static libraries are built if unicorn is used as a Cmake subdirectory. In most cases, you don't need to care about which kind of library to build. ONLY use `BUILD_SHARED_LIBS=no`if you know what you are doing.
 
 ## Native build on Linux/macOS
 
