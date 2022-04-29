@@ -3,7 +3,7 @@
 
 /*
    Modified for Unicorn Engine by Eric Poole <eric.poole@aptiv.com>, 2022
-   Copyright 2022 Aptiv 
+   Copyright 2022 Aptiv
 */
 
 #ifndef UC_QEMU_TARGET_TRICORE_H
@@ -22,6 +22,6 @@ int tricore_context_reg_write(struct uc_context *uc, unsigned int *regs,
 
 void tricore_reg_reset(struct uc_struct *uc);
 
-void tricore_uc_init(struct uc_struct* uc);
+void tricore_uc_init(struct uc_struct *uc);
 
 #endif

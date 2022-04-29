@@ -4,9 +4,8 @@
 
 /*
    Created for Unicorn Engine by Eric Poole <eric.poole@aptiv.com>, 2022
-   Copyright 2022 Aptiv 
+   Copyright 2022 Aptiv
 */
-
 
 #ifndef UNICORN_TRICORE_H
 #define UNICORN_TRICORE_H
@@ -16,16 +15,16 @@ extern "C" {
 #endif
 
 #ifdef _MSC_VER
-#pragma warning(disable:4201)
+#pragma warning(disable : 4201)
 #endif
 
 //> TRICORE CPU
 typedef enum uc_cpu_tricore {
-   UC_CPU_TRICORE_TC1796,
-   UC_CPU_TRICORE_TC1797,
-   UC_CPU_TRICORE_TC27X,
+    UC_CPU_TRICORE_TC1796,
+    UC_CPU_TRICORE_TC1797,
+    UC_CPU_TRICORE_TC27X,
 
-   UC_CPU_TRICORE_ENDING
+    UC_CPU_TRICORE_ENDING
 } uc_cpu_tricore;
 
 //> TRICORE registers
@@ -68,16 +67,16 @@ typedef enum uc_tricore_reg {
     UC_TRICORE_REG_D14,
     UC_TRICORE_REG_D15,
 
-    /* CSFR Register */ 
+    /* CSFR Register */
     UC_TRICORE_REG_PCXI,
 
     UC_TRICORE_REG_PSW,
 
     /* PSW flag cache for faster execution */
     UC_TRICORE_REG_PSW_USB_C,
-    UC_TRICORE_REG_PSW_USB_V,  
-    UC_TRICORE_REG_PSW_USB_SV, 
-    UC_TRICORE_REG_PSW_USB_AV, 
+    UC_TRICORE_REG_PSW_USB_V,
+    UC_TRICORE_REG_PSW_USB_SV,
+    UC_TRICORE_REG_PSW_USB_AV,
     UC_TRICORE_REG_PSW_USB_SAV,
 
     UC_TRICORE_REG_PC,
@@ -154,8 +153,8 @@ typedef enum uc_tricore_reg {
     UC_TRICORE_REG_M1CNT,
     UC_TRICORE_REG_M2CNT,
     UC_TRICORE_REG_M3CNT,
-    
-    UC_TRICORE_REG_ENDING,   // <-- mark the end of the list of registers
+
+    UC_TRICORE_REG_ENDING, // <-- mark the end of the list of registers
 
     // alias registers
     UC_TRICORE_REG_GA0 = UC_TRICORE_REG_A0,

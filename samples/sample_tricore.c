@@ -1,6 +1,6 @@
 /*
    Created for Unicorn Engine by Eric Poole <eric.poole@aptiv.com>, 2022
-   Copyright 2022 Aptiv 
+   Copyright 2022 Aptiv
 */
 
 /* Sample code to demonstrate how to emulate TriCore code */
@@ -8,21 +8,25 @@
 #include <unicorn/unicorn.h>
 #include <string.h>
 
-
 // code to be emulated
 #define CODE "\x82\x11\xbb\x00\x00\x08" // mov d0, #0x1; mov.u d0, #0x8000
 
 // memory address where emulation starts
 #define ADDRESS 0x10000
 
-static void hook_block(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_block(uc_engine *uc, uint64_t address, uint32_t size,
+                       void *user_data)
 {
-    printf(">>> Tracing basic block at 0x%"PRIx64 ", block size = 0x%x\n", address, size);
+    printf(">>> Tracing basic block at 0x%" PRIx64 ", block size = 0x%x\n",
+           address, size);
 }
 
-static void hook_code(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code(uc_engine *uc, uint64_t address, uint32_t size,
+                      void *user_data)
 {
-    printf(">>> Tracing instruction at 0x%"PRIx64 ", instruction size = 0x%x\n", address, size);
+    printf(">>> Tracing instruction at 0x%" PRIx64
+           ", instruction size = 0x%x\n",
+           address, size);
 }
 
 static void test_tricore(void)
@@ -31,15 +35,15 @@ static void test_tricore(void)
     uc_err err;
     uc_hook trace1, trace2;
 
-    uint32_t d0 = 0x0;     // d0 register
+    uint32_t d0 = 0x0; // d0 register
 
     printf("Emulate TriCore code\n");
 
     // Initialize emulator in TriCore mode
     err = uc_open(UC_ARCH_TRICORE, UC_MODE_LITTLE_ENDIAN, &uc);
     if (err) {
-        printf("Failed on uc_open() with error returned: %u (%s)\n",
-                err, uc_strerror(err));
+        printf("Failed on uc_open() with error returned: %u (%s)\n", err,
+               uc_strerror(err));
         return;
     }
 
@@ -78,17 +82,19 @@ int main(int argc, char **argv, char **envp)
 #ifdef DYNLOAD
     if (!uc_dyn_load(NULL, 0)) {
         printf("Error dynamically loading shared library.\n");
-        printf("Please check that unicorn.dll/unicorn.so is available as well as\n");
+        printf("Please check that unicorn.dll/unicorn.so is available as well "
+               "as\n");
         printf("any other dependent dll/so files.\n");
-        printf("The easiest way is to place them in the same directory as this app.\n");
+        printf("The easiest way is to place them in the same directory as this "
+               "app.\n");
         return 1;
     }
 #endif
-    
+
     test_tricore();
 #ifdef DYNLOAD
     uc_dyn_free();
 #endif
-    
+
     return 0;
 }
