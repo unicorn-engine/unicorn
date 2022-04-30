@@ -1,16 +1,23 @@
+#[cfg(feature = "use_system_unicorn")]
 use pkg_config;
+#[cfg(feature = "build_unicorn_cmake")]
 use std::env;
+#[cfg(feature = "build_unicorn_cmake")]
 use std::path::PathBuf;
+#[cfg(feature = "build_unicorn_cmake")]
 use std::process::Command;
 
+#[cfg(all(feature = "build_unicorn_cmake"))]
 fn ninja_available() -> bool {
     Command::new("ninja").arg("--version").spawn().is_ok()
 }
 
+#[cfg(all(feature = "build_unicorn_cmake"))]
 fn msvc_cmake_tools_available() -> bool {
     Command::new("cmake").arg("--version").spawn().is_ok() && ninja_available()
 }
 
+#[cfg(all(feature = "build_unicorn_cmake"))]
 fn setup_env_msvc(compiler: &cc::Tool) {
     // If PATH already contains what we need, skip this
     if msvc_cmake_tools_available() {
@@ -60,6 +67,7 @@ fn setup_env_msvc(compiler: &cc::Tool) {
     }
 }
 
+#[cfg(feature = "build_unicorn_cmake")]
 fn build_with_cmake() {
     let uc_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let compiler = cc::Build::new().get_compiler();
@@ -84,12 +92,6 @@ fn build_with_cmake() {
         config.generator("Ninja");
     }
 
-    if !cfg!(feature = "dynamic_linkage") {
-        config.define("BUILD_SHARED_LIBS", "OFF");
-    } else {
-        config.define("BUILD_SHARED_LIBS", "ON");
-    }
-
     // need to clear build target and append "build" to the path because
     // unicorn's CMakeLists.txt doesn't properly support 'install', so we use
     // the build artifacts from the build directory, which cmake crate sets
@@ -104,12 +106,11 @@ fn build_with_cmake() {
         dst.join("build").display()
     );
 
-    // Lazymio(@wtdcode): Dynamic linkage might not work with local installation.
-    // See: https://github.com/rust-lang/cargo/issues/5077
-    if !cfg!(feature = "dynamic_linkage") {
-        println!("cargo:rustc-link-lib=static=unicorn");
-    } else {
+    // Lazymio(@wtdcode): Dynamic link may break. See: https://github.com/rust-lang/cargo/issues/5077
+    if cfg!(feature = "dynamic_linkage") {
         println!("cargo:rustc-link-lib=dylib=unicorn");
+    } else {
+        println!("cargo:rustc-link-lib=static=unicorn");
     }
     if !compiler.is_like_msvc() {
         println!("cargo:rustc-link-lib=pthread");
@@ -118,15 +119,25 @@ fn build_with_cmake() {
 }
 
 fn main() {
-    if cfg!(feature = "build_unicorn_cmake") {
-        build_with_cmake();
+    if cfg!(feature = "use_system_unicorn") {
+        #[cfg(feature = "use_system_unicorn")]
+        {
+            let lib = pkg_config::Config::new().atleast_version("2").cargo_metadata(false)
+            .probe("unicorn").expect("Fail to find globally installed unicorn");
+            for dir in lib.link_paths {
+                println!("cargo:rustc-link-search=native={}", dir.to_str().unwrap());
+            }
+            if cfg!(feature = "dynamic_linkage") {
+                println!("cargo:rustc-link-lib=dylib=unicorn");
+            } else {
+                println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
+                println!("cargo:rustc-link-lib=static=unicorn");
+                println!("cargo:rustc-link-lib=pthread");
+                println!("cargo:rustc-link-lib=m");
+            }
+        }
     } else {
-        let mut config = pkg_config::Config::new();
-        if !cfg!(feature = "dynamic_linkage") {
-            config.statik(true);
-        }
-        if !config.atleast_version("2").probe("unicorn").is_ok() {
-            build_with_cmake();
-        }
+        #[cfg(feature = "build_unicorn_cmake")]
+        build_with_cmake();
     }
 }
