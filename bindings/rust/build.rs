@@ -122,8 +122,11 @@ fn main() {
     if cfg!(feature = "use_system_unicorn") {
         #[cfg(feature = "use_system_unicorn")]
         {
-            let lib = pkg_config::Config::new().atleast_version("2").cargo_metadata(false)
-            .probe("unicorn").expect("Fail to find globally installed unicorn");
+            let lib = pkg_config::Config::new()
+                .atleast_version("2")
+                .cargo_metadata(false)
+                .probe("unicorn")
+                .expect("Fail to find globally installed unicorn");
             for dir in lib.link_paths {
                 println!("cargo:rustc-link-search=native={}", dir.to_str().unwrap());
             }
