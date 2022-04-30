@@ -39,7 +39,7 @@ cmake = { optional = true, version = "0.1" }
 pkg-config = { optional = true, version = "0.3" }
 
 [features]
-default = ["use_system_unicorn"]
+default = ["build_unicorn_cmake"]
 build_unicorn_cmake = ["cc", "cmake"]
 use_system_unicorn = ["pkg-config"]
 dynamic_linkage = []
