@@ -71,6 +71,18 @@ jobs:
       uses: microsoft/setup-msbuild@v1.0.3
       with:
         vs-version: '16.5'
+    
+    - name: '🛠️ Win MSVC 32 dev cmd setup'
+      if: contains(matrix.config.name, 'win32')
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x86
+
+    - name: '🛠️ Win MSVC 64 dev cmd setup'
+      if: contains(matrix.config.name, 'win_amd64')
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
 
     - name: '🛠️ Win build dependencies'
       if: contains(matrix.config.name, 'win')
