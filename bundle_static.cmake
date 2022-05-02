@@ -44,7 +44,7 @@ function(bundle_static_library tgt_name bundled_tgt_name library_name)
     ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${library_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
   
   if (APPLE)
-    find_program(lib_tool libtool)
+    find_program(lib_tool libtool REQUIRED)
 
     foreach(tgt IN LISTS static_libs)
       list(APPEND static_libs_full_names $<TARGET_FILE:${tgt}>)
@@ -82,7 +82,10 @@ function(bundle_static_library tgt_name bundled_tgt_name library_name)
         COMMENT "Bundling ${bundled_tgt_name}"
         VERBATIM)
   elseif(WIN32)
-    find_program(lib_tool lib)
+    # https://stackoverflow.com/a/38096930/1806760
+    get_filename_component(vs_bin_path "${CMAKE_LINKER}" DIRECTORY)
+
+    find_program(lib_tool lib HINTS "${vs_bin_path}" REQUIRED)
 
     foreach(tgt IN LISTS static_libs)
       list(APPEND static_libs_full_names $<TARGET_FILE:${tgt}>)
