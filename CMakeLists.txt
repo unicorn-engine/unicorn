@@ -1364,8 +1364,7 @@ if (BUILD_SHARED_LIBS)
         # Avoid the import lib built by MVSC clash with our archive.
         set_target_properties(unicorn PROPERTIES OUTPUT_NAME "unicorn-import")
     endif()
-        bundle_static_library(unicorn_static unicorn_archive unicorn)
-    endif()
+    bundle_static_library(unicorn_static unicorn_archive unicorn)
 else()
     # Rename the "static" lib to avoid filename clash.
     set_target_properties(unicorn PROPERTIES OUTPUT_NAME "unicorn-static")
