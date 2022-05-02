@@ -1362,7 +1362,7 @@ endif()
 if (BUILD_SHARED_LIBS)
     if (MSVC)
         # Avoid the import lib built by MVSC clash with our archive.
-        set_target_properties(unicorn PROPERTIES OUTPUT_NAME "unicorn-import")
+        set_target_properties(unicorn PROPERTIES ARCHIVE_OUTPUT_NAME "unicorn-import")
     endif()
     bundle_static_library(unicorn_static unicorn_archive unicorn)
 else()
