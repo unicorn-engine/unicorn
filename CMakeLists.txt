@@ -1145,6 +1145,7 @@ if(MSVC)
             enable_language(ASM_MASM)
         endif()
         set(UNICORN_COMMON_SRCS ${UNICORN_COMMON_SRCS} qemu/util/setjmp-wrapper-win32.asm)
+        set_property(SOURCE qemu/util/setjmp-wrapper-win32.asm PROPERTY LANGUAGE ASM_MASM)
     endif()
 else()
     set(UNICORN_COMMON_SRCS
