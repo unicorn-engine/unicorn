@@ -154,6 +154,12 @@ jobs:
     - name: '🛠️ Win MSVC 64 setup'
       if: contains(matrix.config.name, 'MSVC 64')
       uses: microsoft/setup-msbuild@v1
+    
+    - name: '🛠️ Win MSVC 64 dev cmd setup'
+      if: contains(matrix.config.name, 'MSVC 64')
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
 
     - name: '🚧 Win MSVC 64 build'
       if: contains(matrix.config.name, 'MSVC 64')
@@ -180,12 +186,6 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x86
-    
-    - name: '🛠️ Win MSVC 64 setup'
-      if: contains(matrix.config.name, 'MSVC 64')
-      uses: ilammy/msvc-dev-cmd@v1
-      with:
-        arch: x64
 
     - name: '🚧 Win MSVC 32 build'
       if: contains(matrix.config.name, 'MSVC 32')
