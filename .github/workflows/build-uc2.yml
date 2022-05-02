@@ -31,7 +31,8 @@ jobs:
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
-              name: 'windows-x64 MINGW64',
+              name: 'windows-x64 MINGW64 shared',
+              shared: 'yes',
               mingw: MINGW64,
               mingw-arch: x86_64,
               artifact: 'windows_mingw64.7z',
@@ -44,7 +45,36 @@ jobs:
               arch: x64,
               python-arch: x64,
               python-ver: '3.8',
-              name: 'windows-x64 MINGW32',
+              name: 'windows-x64 MINGW64 static',
+              shared: 'no',
+              mingw: MINGW64,
+              mingw-arch: x86_64,
+              artifact: 'windows_mingw64.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: windows-2019,
+              arch: x64,
+              python-arch: x64,
+              python-ver: '3.8',
+              name: 'windows-x64 MINGW32 shared',
+              shared: "yes",
+              mingw: MINGW32,
+              mingw-arch: i686,
+              artifact: 'windows_mingw32.7z',
+              build_type: 'Debug',
+              archiver: '7z a',
+              generators: 'Ninja'
+            }
+          - { 
+              os: windows-2019,
+              arch: x64,
+              python-arch: x64,
+              python-ver: '3.8',
+              name: 'windows-x64 MINGW32 static',
+              shared: "no",
               mingw: MINGW32,
               mingw-arch: i686,
               artifact: 'windows_mingw32.7z',
@@ -124,6 +154,12 @@ jobs:
     - name: '🛠️ Win MSVC 64 setup'
       if: contains(matrix.config.name, 'MSVC 64')
       uses: microsoft/setup-msbuild@v1
+    
+    - name: '🛠️ Win MSVC 64 dev cmd setup'
+      if: contains(matrix.config.name, 'MSVC 64')
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
 
     - name: '🚧 Win MSVC 64 build'
       if: contains(matrix.config.name, 'MSVC 64')
@@ -138,7 +174,8 @@ jobs:
           -B . \
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -G "${{ matrix.config.generators }}" \
-          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+          -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip --config ${{ matrix.config.build_type }}
         ctest -VV -C ${{ matrix.config.build_type }}
@@ -164,7 +201,8 @@ jobs:
           -A "win32" \
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -G "${{ matrix.config.generators }}" \
-          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+          -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip --config ${{ matrix.config.build_type }}
         ctest -VV -C ${{ matrix.config.build_type }}
@@ -191,7 +229,8 @@ jobs:
           -B . \
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -G "${{ matrix.config.generators }}" \
-          -DCMAKE_INSTALL_PREFIX:PATH=instdir
+          -DCMAKE_INSTALL_PREFIX:PATH=instdir \
+          -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip
         ctest -VV -C ${{ matrix.config.build_type }}
@@ -277,7 +316,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ matrix.config.build_type }} \
           -G "${{ matrix.config.generators }}" \
           -DCMAKE_INSTALL_PREFIX:PATH=instdir \
-          -DBUILD_SHARED_LIB= ${{ matrix.config.shared }}
+          -DBUILD_SHARED_LIBS=${{ matrix.config.shared }}
         cmake --build . --config ${{ matrix.config.build_type }}
         cmake --install . --strip
         ctest -VV -C ${{ matrix.config.build_type }}
