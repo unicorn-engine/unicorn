@@ -182,7 +182,7 @@ jobs:
         arch: x86
     
     - name: '🛠️ Win MSVC 64 setup'
-      if: contains(matrix.config.name, 'MSVC 32')
+      if: contains(matrix.config.name, 'MSVC 64')
       uses: ilammy/msvc-dev-cmd@v1
       with:
         arch: x64
