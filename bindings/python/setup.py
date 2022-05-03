@@ -137,7 +137,7 @@ def build_libraries():
         subprocess.check_call(cmake_args)
         os.chdir(BUILD_DIR)
         threads = os.getenv("THREADS", "4")
-        subprocess.check_call(["cmake", "--build", ".", "--", "-j" + threads])
+        subprocess.check_call(["cmake", "--build", ".", "-j" + threads])
     
         shutil.copy(LIBRARY_FILE, LIBS_DIR)
         try:
