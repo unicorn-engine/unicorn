@@ -124,7 +124,7 @@ def build_libraries():
 
         obj_dir = os.path.join(BUILD_DIR, conf)
         shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
-        shutil.copy(os.path.join(obj_dir, STATIC_LIBRARY_FILE), LIBS_DIR)
+        shutil.copy(os.path.join(BUILD_DIR, STATIC_LIBRARY_FILE), LIBS_DIR)
     else:
         # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
         if not os.path.exists(BUILD_DIR):
