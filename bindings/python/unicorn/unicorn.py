@@ -21,11 +21,11 @@ _python2 = sys.version_info[0] < 3
 if _python2:
     range = xrange
 
-_lib = { 'darwin': 'libunicorn.dylib',
+_lib = { 'darwin': 'libunicorn.2.dylib',
          'win32': 'unicorn.dll',
          'cygwin': 'cygunicorn.dll',
-         'linux': 'libunicorn.so',
-         'linux2': 'libunicorn.so' }
+         'linux': 'libunicorn.so.2',
+         'linux2': 'libunicorn.so.2' }
 
 
 # Windows DLL in dependency order
@@ -57,12 +57,12 @@ def _load_win_support(path):
 if sys.platform in ('win32', 'cygwin'):
     _load_win_support('')
 
-def _load_lib(path):
+def _load_lib(path, lib_name):
     try:
         if sys.platform in ('win32', 'cygwin'):
             _load_win_support(path)
 
-        lib_file = os.path.join(path, _lib.get(sys.platform, 'libunicorn.so'))
+        lib_file = os.path.join(path, lib_name)
         dll = ctypes.cdll.LoadLibrary(lib_file)
         #print('SUCCESS')
         return dll
@@ -93,9 +93,23 @@ _path_list = [os.getenv('LIBUNICORN_PATH', None),
 
 for _path in _path_list:
     if _path is None: continue
-    _uc = _load_lib(_path)
-    if _uc is not None: break
-else:
+    _uc = _load_lib(_path, _lib.get(sys.platform, "libunicorn.so"))
+    if _uc is not None:
+        break
+
+# Try to search old unicorn1 library without SONAME
+if _uc is None:
+    for _path in _path_list:
+        if _path is None:
+            continue
+        
+        _uc = _load_lib(_path, "libunicorn.so")
+        if _uc is not None:
+            # In this case, show a warning for users
+            print("Found an old style dynamic library libunicorn.so, consider checking your installation", file=sys.stderr)
+            break
+
+if _uc is None:
     raise ImportError("ERROR: fail to load the dynamic library.")
 
 __version__ = "%u.%u.%u" % (uc.UC_VERSION_MAJOR, uc.UC_VERSION_MINOR, uc.UC_VERSION_PATCH)
