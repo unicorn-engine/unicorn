@@ -999,7 +999,7 @@ static void test_x86_correct_address_in_small_jump_hook_callback(uc_engine *uc, 
 static void test_x86_correct_address_in_small_jump_hook(void)
 {
     uc_engine *uc;
-    // movabs $0x7FFFFFFFFEFBEC9C, %rax
+    // movabs $0x7F00, %rax
     // jmp  *%rax
     char code[] = "\x48\xb8\x00\x7F\x00\x00\x00\x00\x00\x00\xff\xe0";
 
@@ -1041,7 +1041,7 @@ static void test_x86_correct_address_in_long_jump_hook_callback(uc_engine *uc, i
 static void test_x86_correct_address_in_long_jump_hook(void)
 {
     uc_engine *uc;
-    // movabs $0x7FFFFFFFFEFBEC9C, %rax
+    // movabs $0x7FFFFFFFFFFFFF00, %rax
     // jmp  *%rax
     char code[] = "\x48\xb8\x00\xff\xff\xff\xff\xff\xff\x7f\xff\xe0";
 
