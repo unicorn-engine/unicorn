@@ -10,7 +10,10 @@
 *.dll
 *.class
 *.jar
+*.gem
 *~
+
+qemu/*-softmmu/
 
 tags
 qemu/config-host.ld
