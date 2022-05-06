@@ -17,10 +17,16 @@
 
 TriCoreCPU *cpu_tricore_init(struct uc_struct *uc);
 
-void tricore_set_pc(struct uc_struct *uc, uint64_t address)
+static void tricore_set_pc(struct uc_struct *uc, uint64_t address)
 {
     ((CPUTriCoreState *)uc->cpu->env_ptr)->PC = address;
 }
+
+static uint64_t tricore_get_pc(struct uc_struct *uc)
+{
+    return ((CPUTriCoreState *)uc->cpu->env_ptr)->PC;
+}
+
 
 void tricore_reg_reset(struct uc_struct *uc)
 {
@@ -264,6 +270,7 @@ void tricore_uc_init(struct uc_struct *uc)
     uc->reg_write = tricore_reg_write;
     uc->reg_reset = tricore_reg_reset;
     uc->set_pc = tricore_set_pc;
+    uc->get_pc = tricore_get_pc;
     uc->cpus_init = tricore_cpus_init;
     uc->cpu_context_size = offsetof(CPUTriCoreState, end_reset_fields);
     uc_common_init(uc);

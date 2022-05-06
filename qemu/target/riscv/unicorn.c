@@ -52,6 +52,11 @@ static void riscv_set_pc(struct uc_struct *uc, uint64_t address)
     RISCV_CPU(uc->cpu)->env.pc = address;
 }
 
+static uint64_t riscv_get_pc(struct uc_struct *uc)
+{
+    return RISCV_CPU(uc->cpu)->env.pc;
+}
+
 static void riscv_release(void *ctx)
 {
     int i;

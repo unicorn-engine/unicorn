@@ -97,6 +97,11 @@ static void ppc_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUPPCState *)uc->cpu->env_ptr)->nip = address;
 }
 
+static uint64_t ppc_get_pc(struct uc_struct *uc)
+{
+    return ((CPUPPCState *)uc->cpu->env_ptr)->nip;
+}
+
 void ppc_cpu_instance_finalize(CPUState *obj);
 void ppc_cpu_unrealize(CPUState *dev);
 static void ppc_release(void *ctx)
@@ -414,6 +419,7 @@ void ppc_uc_init(struct uc_struct *uc)
     uc->reg_reset = ppc_reg_reset;
     uc->release = ppc_release;
     uc->set_pc = ppc_set_pc;
+    uc->get_pc = ppc_get_pc;
     uc->mem_redirect = ppc_mem_redirect;
     uc->cpus_init = ppc_cpus_init;
     uc->cpu_context_size = offsetof(CPUPPCState, uc);

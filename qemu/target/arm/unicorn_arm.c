@@ -16,7 +16,13 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc);
 static void arm_set_pc(struct uc_struct *uc, uint64_t address)
 {
     ((CPUARMState *)uc->cpu->env_ptr)->pc = address;
-    ((CPUARMState *)uc->cpu->env_ptr)->regs[15] = address;
+    ((CPUARMState *)uc->cpu->env_ptr)->regs[15] = address & ~1;
+    ((CPUARMState *)uc->cpu->env_ptr)->thumb = address & 1;
+}
+
+static uint64_t arm_get_pc(struct uc_struct *uc)
+{
+    return ((CPUARMState *)uc->cpu->env_ptr)->regs[15] | ((CPUARMState *)uc->cpu->env_ptr)->thumb;
 }
 
 static void arm_release(void *ctx)
@@ -591,6 +597,7 @@ void arm_uc_init(struct uc_struct *uc)
     uc->reg_write = arm_reg_write;
     uc->reg_reset = arm_reg_reset;
     uc->set_pc = arm_set_pc;
+    uc->get_pc = arm_get_pc;
     uc->stop_interrupt = arm_stop_interrupt;
     uc->release = arm_release;
     uc->query = arm_query;

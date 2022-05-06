@@ -93,6 +93,8 @@ typedef void (*uc_args_uc_long_t)(struct uc_struct *, unsigned long);
 
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
+typedef uint64_t (*uc_get_pc_t)(struct uc_struct*);
+
 typedef MemoryRegion *(*uc_args_uc_ram_size_t)(struct uc_struct *, hwaddr begin,
                                                size_t size, uint32_t perms);
 
@@ -258,6 +260,7 @@ struct uc_struct {
     uc_read_mem_t read_mem;
     uc_args_void_t release;  // release resource when uc_close()
     uc_args_uc_u64_t set_pc; // set PC for tracecode
+    uc_get_pc_t get_pc;
     uc_args_int_t
         stop_interrupt; // check if the interrupt should stop emulation
     uc_memory_map_io_t memory_map_io;

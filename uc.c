@@ -1358,6 +1358,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
 {
     MemoryRegion *mr;
     uint64_t addr = address;
+    uint64_t pc;
     size_t count, len;
     bool remove_exec = false;
 
@@ -1419,8 +1420,11 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     // if EXEC permission is removed, then quit TB and continue at the same
     // place
     if (remove_exec) {
-        uc->quit_request = true;
-        uc_emu_stop(uc);
+        pc = uc->get_pc(uc);
+        if (pc < address + size && pc >= address) {
+            uc->quit_request = true;
+            uc_emu_stop(uc);
+        }
     }
 
     return UC_ERR_OK;

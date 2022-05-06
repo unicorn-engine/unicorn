@@ -37,6 +37,11 @@ static void mips_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC = address;
 }
 
+static uint64_t mips_get_pc(struct uc_struct *uc)
+{
+    return ((CPUMIPSState *)uc->cpu->env_ptr)->active_tc.PC;
+}
+
 static void mips_release(void *ctx)
 {
     int i;
@@ -266,6 +271,7 @@ void mipsel_uc_init(struct uc_struct *uc)
     uc->reg_reset = mips_reg_reset;
     uc->release = mips_release;
     uc->set_pc = mips_set_pc;
+    uc->get_pc = mips_get_pc;
     uc->mem_redirect = mips_mem_redirect;
     uc->cpus_init = mips_cpus_init;
     uc->cpu_context_size = offsetof(CPUMIPSState, end_reset_fields);
