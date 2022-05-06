@@ -27,7 +27,6 @@ static uint64_t tricore_get_pc(struct uc_struct *uc)
     return ((CPUTriCoreState *)uc->cpu->env_ptr)->PC;
 }
 
-
 void tricore_reg_reset(struct uc_struct *uc)
 {
     CPUTriCoreState *env;

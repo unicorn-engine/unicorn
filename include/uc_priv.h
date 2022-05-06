@@ -93,7 +93,7 @@ typedef void (*uc_args_uc_long_t)(struct uc_struct *, unsigned long);
 
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
-typedef uint64_t (*uc_get_pc_t)(struct uc_struct*);
+typedef uint64_t (*uc_get_pc_t)(struct uc_struct *);
 
 typedef MemoryRegion *(*uc_args_uc_ram_size_t)(struct uc_struct *, hwaddr begin,
                                                size_t size, uint32_t perms);

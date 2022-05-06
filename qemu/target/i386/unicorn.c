@@ -33,10 +33,11 @@ static void x86_set_pc(struct uc_struct *uc, uint64_t address)
         ((CPUX86State *)uc->cpu->env_ptr)->eip = address;
 }
 
-static uint64_t x86_get_pc(struct uc_struct *uc) 
+static uint64_t x86_get_pc(struct uc_struct *uc)
 {
     if (uc->mode == UC_MODE_16) {
-        return X86_CPU(uc->cpu)->env.segs[R_CS].selector * 16 + ((CPUX86State *)uc->cpu->env_ptr)->eip;
+        return X86_CPU(uc->cpu)->env.segs[R_CS].selector * 16 +
+               ((CPUX86State *)uc->cpu->env_ptr)->eip;
     } else {
         return ((CPUX86State *)uc->cpu->env_ptr)->eip;
     }

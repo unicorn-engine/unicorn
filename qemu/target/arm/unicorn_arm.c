@@ -22,7 +22,8 @@ static void arm_set_pc(struct uc_struct *uc, uint64_t address)
 
 static uint64_t arm_get_pc(struct uc_struct *uc)
 {
-    return ((CPUARMState *)uc->cpu->env_ptr)->regs[15] | ((CPUARMState *)uc->cpu->env_ptr)->thumb;
+    return ((CPUARMState *)uc->cpu->env_ptr)->regs[15] |
+           ((CPUARMState *)uc->cpu->env_ptr)->thumb;
 }
 
 static void arm_release(void *ctx)
