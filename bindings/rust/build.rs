@@ -1,23 +1,16 @@
-#[cfg(feature = "use_system_unicorn")]
 use pkg_config;
-#[cfg(feature = "build_unicorn_cmake")]
 use std::env;
-#[cfg(feature = "build_unicorn_cmake")]
 use std::path::PathBuf;
-#[cfg(feature = "build_unicorn_cmake")]
 use std::process::Command;
 
-#[cfg(all(feature = "build_unicorn_cmake"))]
 fn ninja_available() -> bool {
     Command::new("ninja").arg("--version").spawn().is_ok()
 }
 
-#[cfg(all(feature = "build_unicorn_cmake"))]
 fn msvc_cmake_tools_available() -> bool {
     Command::new("cmake").arg("--version").spawn().is_ok() && ninja_available()
 }
 
-#[cfg(all(feature = "build_unicorn_cmake"))]
 fn setup_env_msvc(compiler: &cc::Tool) {
     // If PATH already contains what we need, skip this
     if msvc_cmake_tools_available() {
@@ -67,7 +60,6 @@ fn setup_env_msvc(compiler: &cc::Tool) {
     }
 }
 
-#[cfg(feature = "build_unicorn_cmake")]
 fn build_with_cmake() {
     let uc_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let compiler = cc::Build::new().get_compiler();
@@ -119,14 +111,12 @@ fn build_with_cmake() {
 }
 
 fn main() {
-    if cfg!(feature = "use_system_unicorn") {
-        #[cfg(feature = "use_system_unicorn")]
-        {
-            let lib = pkg_config::Config::new()
-                .atleast_version("2")
-                .cargo_metadata(false)
-                .probe("unicorn")
-                .expect("Fail to find globally installed unicorn");
+    match pkg_config::Config::new()
+        .atleast_version("2")
+        .cargo_metadata(false)
+        .probe("unicorn")
+    {
+        Ok(lib) => {
             for dir in lib.link_paths {
                 println!("cargo:rustc-link-search=native={}", dir.to_str().unwrap());
             }
@@ -139,8 +129,8 @@ fn main() {
                 println!("cargo:rustc-link-lib=m");
             }
         }
-    } else {
-        #[cfg(feature = "build_unicorn_cmake")]
-        build_with_cmake();
-    }
+        Err(_) => {
+            build_with_cmake();
+        }
+    };
 }
