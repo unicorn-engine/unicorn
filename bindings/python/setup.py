@@ -33,7 +33,7 @@ VERSION = "2.0.0rc7"
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.2.dylib"
-    STATIC_LIBRARY_FILE = None
+    STATIC_LIBRARY_FILE = "libunicorn.a"
 elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
     STATIC_LIBRARY_FILE = "unicorn.lib"
