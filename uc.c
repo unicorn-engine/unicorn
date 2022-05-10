@@ -2342,6 +2342,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             err = UC_ERR_ARG;
         }
+        break;
 
     default:
         err = UC_ERR_ARG;
