@@ -1,5 +1,5 @@
 # Unicorn Python bindings, by Nguyen Anh Quynnh <aquynh@gmail.com>
-
+from __future__ import annotations
 import ctypes
 import ctypes.util
 import distutils.sysconfig
@@ -594,8 +594,8 @@ class Uc(object):
         cb(self, offset, size, value, data)
 
     def mmio_map(self, address: int, size: int, 
-                 read_cb: Callable[["Uc", int, int, Any], int], user_data_read: Any,
-                 write_cb: Callable[["Uc", int, int, int, Any], None], user_data_write: Any):
+                 read_cb: Callable[[Uc, int, int, Any], int], user_data_read: Any,
+                 write_cb: Callable[[Uc, int, int, int, Any], None], user_data_write: Any):
         internal_read_cb = ctypes.cast(UC_MMIO_READ_CB(self._mmio_map_read_cb), UC_MMIO_READ_CB)
         internal_write_cb = ctypes.cast(UC_MMIO_WRITE_CB(self._mmio_map_write_cb), UC_MMIO_WRITE_CB)
 
@@ -695,8 +695,6 @@ class Uc(object):
     @_catch_hook_exception
     def _hook_insn_sys_cb(self, handle, reg, pcp_reg, user_data):
         cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(uc_arm64_cp_reg)).contents
-
-        uc_arm64_cp_reg_tuple = namedtuple("uc_arm64_cp_reg_tuple", ["crn", "crm", "op0", "op1", "op2", "val"])
 
         (cb, data) = self._callbacks[user_data]
 
@@ -801,7 +799,7 @@ class Uc(object):
         self.ctl(self.__ctl_w(uc.UC_CTL_TB_FLUSH, 0))
 
     # add a hook
-    def hook_add(self, htype: int, callback: Callable, user_data: Any=None, begin: int=1, end: int=0, arg1: int=0, arg2: int=0):
+    def hook_add(self, htype: int, callback: UC_HOOK_CALLBACK_TYPE , user_data: Any=None, begin: int=1, end: int=0, arg1: int=0, arg2: int=0):
         _h2 = uc_hook_h()
 
         # save callback & user_data
@@ -908,12 +906,12 @@ class Uc(object):
 
         return context
 
-    def context_update(self, context: "UcContext"):
+    def context_update(self, context: UcContext):
         status = _uc.uc_context_save(self._uch, context.context)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-    def context_restore(self, context: "UcContext"):
+    def context_restore(self, context: UcContext):
         status = _uc.uc_context_restore(self._uch, context.context)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
@@ -988,6 +986,32 @@ class UcContext:
         if self._to_free:
             _uc.uc_context_free(self._context)
 
+UC_HOOK_CODE_TYPE = Callable[[Uc, int, int, Any], None]
+UC_HOOK_INSN_INVALID_TYPE = Callable[[Uc, Any], bool]
+UC_HOOK_MEM_INVALID_TYPE = Callable[[Uc, int, int, int, int, Any], bool]
+UC_HOOK_MEM_ACCESS_TYPE = Callable[[Uc, int, int, int, int, Any], None]
+UC_HOOK_INTR_TYPE = Callable[[Uc, int, Any], None]
+UC_HOOK_INSN_IN_TYPE = Callable[[Uc, int, int, Any], int]
+UC_HOOK_INSN_OUT_TYPE = Callable[[Uc, int, int, int, Any], None]
+UC_HOOK_INSN_SYSCALL_TYPE = Callable[[Uc, Any], None]
+UC_HOOK_INSN_SYS_TYPE = Callable[[Uc, int, Tuple[int, int, int, int, int, int], Any], int]
+UC_MMIO_READ_TYPE = Callable[[Uc, int, int, Any], int]
+UC_MMIO_WRITE_TYPE = Callable[[Uc, int, int, int, Any], None]
+UC_HOOK_EDGE_GEN_TYPE = Callable[[Uc, uc_tb, uc_tb, Any], None]
+UC_HOOK_TCG_OPCODE_TYPE = Callable[[Uc, int, int, int, Any], None]
+
+UC_HOOK_CALLBACK_TYPE = Union[
+    UC_HOOK_CODE_TYPE, 
+    UC_HOOK_INSN_INVALID_TYPE, 
+    UC_HOOK_MEM_INVALID_TYPE, 
+    UC_HOOK_MEM_ACCESS_TYPE, 
+    UC_HOOK_INSN_IN_TYPE, 
+    UC_HOOK_INSN_OUT_TYPE,
+    UC_HOOK_INSN_SYSCALL_TYPE,
+    UC_HOOK_INSN_SYS_TYPE,
+    UC_HOOK_EDGE_GEN_TYPE,
+    UC_HOOK_TCG_OPCODE_TYPE
+]
 
 # print out debugging info
 def debug():
