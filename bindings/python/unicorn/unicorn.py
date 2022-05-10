@@ -696,6 +696,8 @@ class Uc(object):
     def _hook_insn_sys_cb(self, handle, reg, pcp_reg, user_data):
         cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(uc_arm64_cp_reg)).contents
 
+        uc_arm64_cp_reg_tuple = namedtuple("uc_arm64_cp_reg_tuple", ["crn", "crm", "op0", "op1", "op2", "val"])
+
         (cb, data) = self._callbacks[user_data]
 
         return cb(self, reg, uc_arm64_cp_reg_tuple(cp_reg.crn, cp_reg.crm, cp_reg.op0, cp_reg.op1, cp_reg.op2, cp_reg.val), data)
