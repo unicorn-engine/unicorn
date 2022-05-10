@@ -241,6 +241,13 @@ def version_bind():
 def uc_arch_supported(query):
     return _uc.uc_arch_supported(query)
 
+ARMCPReg = Tuple[int, int, int, int, int, int, int]
+ARM64CPReg = Tuple[int, int, int, int, int]
+ARMCPRegValue = Tuple[int, int, int, int, int, int, int, int]
+ARM64CPRegValue = Tuple[int, int, int, int, int, int]
+X86MMRReg = Tuple[int, int, int, int]
+X86FPReg = Tuple[int, int]
+
 # uc_reg_read/write and uc_context_reg_read/write.
 def reg_read(reg_read_func, arch, reg_id, opt=None):
     if arch == uc.UC_ARCH_X86:
@@ -533,7 +540,7 @@ class Uc(object):
                 pass
 
     # emulate from @begin, and stop when reaching address @until
-    def emu_start(self, begin: int, until: int, timeout: int=0, count: int=0):
+    def emu_start(self, begin: int, until: int, timeout: int=0, count: int=0) -> None:
         self._hook_exception = None
         status = _uc.uc_emu_start(self._uch, begin, until, timeout, count)
         if status != uc.UC_ERR_OK:
@@ -543,17 +550,17 @@ class Uc(object):
             raise self._hook_exception
 
     # stop emulation
-    def emu_stop(self):
+    def emu_stop(self) -> None:
         status = _uc.uc_emu_stop(self._uch)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
     # return the value of a register, for @opt parameter, specify int for x86 msr, tuple for arm cp/neon regs.
-    def reg_read(self, reg_id: int, opt: Union[None, int, Tuple]=None):
+    def reg_read(self, reg_id: int, opt: Union[None, int, ARMCPReg, ARM64CPReg]=None) -> Union[int, X86MMRReg, X86FPReg]:
         return reg_read(functools.partial(_uc.uc_reg_read, self._uch), self._arch, reg_id, opt)
 
     # write to a register, tuple for arm cp regs.
-    def reg_write(self, reg_id: Union[int, Tuple], value: int):
+    def reg_write(self, reg_id: Union[int, ARMCPRegValue, ARM64CPRegValue, X86MMRReg, X86FPReg], value: int):
         return reg_write(functools.partial(_uc.uc_reg_write, self._uch), self._arch, reg_id, value)
 
     # read from MSR - X86 only
@@ -573,7 +580,7 @@ class Uc(object):
         return bytearray(data)
 
     # write to memory
-    def mem_write(self, address: int, data: Union[bytes, bytearray]):
+    def mem_write(self, address: int, data: bytes):
         status = _uc.uc_mem_write(self._uch, address, data, len(data))
         if status != uc.UC_ERR_OK:
             raise UcError(status)
