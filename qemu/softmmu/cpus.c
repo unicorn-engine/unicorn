@@ -220,6 +220,9 @@ void resume_all_vcpus(struct uc_struct* uc)
         uc_exit_invalidate_iter((gpointer)&uc->exits[uc->nested_level - 1], NULL, (gpointer)uc);
     }
 
+    // Why?
+    tb_exec_lock(uc->tcg_ctx);
+
     cpu->created = false;
 }
 
