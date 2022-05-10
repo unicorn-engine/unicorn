@@ -24,7 +24,7 @@ fn main() {
     assert_eq!(emu.reg_read(RegisterARM::R5), Ok(1337));
 }
 ```
-Further sample code can be found in ```tests/unicorn.rs```.
+Further sample code can be found in [tests](../../tests/rust-tests/main.rs).
 
 ## Usage
 
