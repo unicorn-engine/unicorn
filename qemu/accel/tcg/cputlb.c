@@ -1449,7 +1449,10 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, addr))
                     continue;
-                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                tb_exec_lock(uc->tcg_ctx);
+                handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data);
+                tb_exec_unlock(uc->tcg_ctx);
+                if ((handled))
                     break;
 
                 // the last callback may already asked to stop emulation

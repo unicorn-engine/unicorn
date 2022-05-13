@@ -1090,6 +1090,7 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
     code_gen_alloc(uc, tb_size);
     tb_exec_unlock(uc->tcg_ctx);
     tcg_prologue_init(uc->tcg_ctx);
+    tb_exec_lock(uc->tcg_ctx);
     /* cpu_interrupt_handler is not used in uc1 */
     uc->l1_map = g_malloc0(sizeof(void *) * V_L1_MAX_SIZE);
     /* Invalidate / Cache TBs */
