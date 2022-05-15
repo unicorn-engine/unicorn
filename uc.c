@@ -2078,6 +2078,11 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         if (rw == UC_CTL_IO_READ) {
             int *pmode = va_arg(args, int *);
             *pmode = uc->mode;
+#ifdef UNICORN_HAS_ARM
+            if (uc->arch == UC_ARCH_ARM) {
+                err = uc->query(uc, UC_QUERY_MODE, pmode);
+            }
+#endif
         } else {
             err = UC_ERR_ARG;
         }

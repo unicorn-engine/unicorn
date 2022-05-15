@@ -557,7 +557,7 @@ static uc_err arm_query(struct uc_struct *uc, uc_query_type type,
     case UC_QUERY_MODE:
         // zero out ARM/THUMB mode
         mode = uc->mode & ~(UC_MODE_ARM | UC_MODE_THUMB);
-        // THUMB mode or ARM MOde
+        // THUMB mode or ARM mode
         mode |=
             ((ARM_CPU(mycpu)->env.thumb != 0) ? UC_MODE_THUMB : UC_MODE_ARM);
         *result = mode;
