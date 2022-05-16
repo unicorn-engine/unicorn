@@ -911,7 +911,6 @@ static void test_x86_nested_emu_stop(void)
 static void test_x86_nested_emu_start_error_cb(uc_engine *uc, uint64_t addr,
                                                size_t size, void *data)
 {
-      printf("ADDRESS: %lx\n", addr);
     uc_assert_err(UC_ERR_READ_UNMAPPED,
                   uc_emu_start(uc, code_start + 2, 0, 0, 0));
 }
@@ -993,7 +992,6 @@ static bool test_x86_correct_address_in_small_jump_hook_callback(uc_engine *uc, 
   TEST_CHECK(r_rip == 0x7F00);
 
   // Check address
-  printf("ADDRESS: %lx\n", address);
   TEST_CHECK(address == 0x7F00);
 
   return false;
@@ -1026,6 +1024,23 @@ static void test_x86_correct_address_in_small_jump_hook(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_cpuid_1()
+{
+    uc_engine *uc;
+    char code[] = "\xB8\x01\x00\x00\x00\x0F\xA2"; // MOV EAX,1; CPUID
+    int reg;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &reg));
+
+    TEST_CHECK(reg == 0x7088100);
+
+    OK(uc_close(uc));
+}
+
 static bool test_x86_correct_address_in_long_jump_hook_callback(uc_engine *uc, int type, uint64_t address, int size, int64_t value, void *user_data)
 {
   // Check registers
@@ -1037,7 +1052,6 @@ static bool test_x86_correct_address_in_long_jump_hook_callback(uc_engine *uc, i
   TEST_CHECK(r_rip == 0x7FFFFFFFFFFFFF00);
 
   // Check address
-  printf("ADDRESS: %lx\n", address);
   TEST_CHECK(address == 0x7FFFFFFFFFFFFF00);
 
   return false;
@@ -1105,4 +1119,5 @@ TEST_LIST = {
     {"test_x86_nested_uc_emu_start_exits", test_x86_nested_uc_emu_start_exits},
     {"test_x86_correct_address_in_small_jump_hook", test_x86_correct_address_in_small_jump_hook},
     {"test_x86_correct_address_in_long_jump_hook", test_x86_correct_address_in_long_jump_hook},
+    {"test_x86_cpuid_1", test_x86_cpuid_1},
     {NULL, NULL}};
