@@ -199,6 +199,7 @@ UC_HOOK_INSN_OUT_CB = ctypes.CFUNCTYPE(
 )
 UC_HOOK_INSN_SYSCALL_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_void_p)
 UC_HOOK_INSN_SYS_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_void_p)
+UC_HOOK_INSN_CPUID_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_void_p)
 UC_MMIO_READ_CB = ctypes.CFUNCTYPE(
     ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.c_void_p
 )
@@ -714,6 +715,12 @@ class Uc(object):
         (cb, data) = self._callbacks[user_data]
         cb(self, data)
 
+    @_catch_hook_exception
+    def _hook_insn_cpuid_cb(self, handle: int, user_data: int) -> int:
+        # call user's callback with self object
+        (cb, data) = self._callbacks[user_data]
+        return cb(self, data)
+
     def ctl(self, control: int, *args):
         status = _uc.uc_ctl(self._uch, control, *args)
         if status != uc.UC_ERR_OK:
@@ -817,6 +824,8 @@ class Uc(object):
                 cb = ctypes.cast(UC_HOOK_INSN_OUT_CB(self._hook_insn_out_cb), UC_HOOK_INSN_OUT_CB)
             if arg1 in (x86_const.UC_X86_INS_SYSCALL, x86_const.UC_X86_INS_SYSENTER):  # SYSCALL/SYSENTER instruction
                 cb = ctypes.cast(UC_HOOK_INSN_SYSCALL_CB(self._hook_insn_syscall_cb), UC_HOOK_INSN_SYSCALL_CB)
+            if arg1 == x86_const.UC_X86_INS_CPUID:  # CPUID instruction
+                cb = ctypes.cast(UC_HOOK_INSN_CPUID_CB(self._hook_insn_cpuid_cb), UC_HOOK_INSN_CPUID_CB)
             if arg1 in (arm64_const.UC_ARM64_INS_MRS, arm64_const.UC_ARM64_INS_MSR, arm64_const.UC_ARM64_INS_SYS, arm64_const.UC_ARM64_INS_SYSL):
                 cb = ctypes.cast(UC_HOOK_INSN_SYS_CB(self._hook_insn_sys_cb), UC_HOOK_INSN_SYS_CB)
             status = _uc.uc_hook_add(
@@ -997,6 +1006,7 @@ UC_HOOK_INSN_IN_TYPE = Callable[[Uc, int, int, Any], int]
 UC_HOOK_INSN_OUT_TYPE = Callable[[Uc, int, int, int, Any], None]
 UC_HOOK_INSN_SYSCALL_TYPE = Callable[[Uc, Any], None]
 UC_HOOK_INSN_SYS_TYPE = Callable[[Uc, int, Tuple[int, int, int, int, int, int], Any], int]
+UC_HOOK_INSN_CPUID_TYPE = Callable[[Uc, Any], int]
 UC_MMIO_READ_TYPE = Callable[[Uc, int, int, Any], int]
 UC_MMIO_WRITE_TYPE = Callable[[Uc, int, int, int, Any], None]
 UC_HOOK_EDGE_GEN_TYPE = Callable[[Uc, uc_tb, uc_tb, Any], None]
@@ -1011,6 +1021,7 @@ UC_HOOK_CALLBACK_TYPE = Union[
     UC_HOOK_INSN_OUT_TYPE,
     UC_HOOK_INSN_SYSCALL_TYPE,
     UC_HOOK_INSN_SYS_TYPE,
+    UC_HOOK_INSN_CPUID_TYPE,
     UC_HOOK_EDGE_GEN_TYPE,
     UC_HOOK_TCG_OPCODE_TYPE
 ]
