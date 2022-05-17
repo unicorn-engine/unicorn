@@ -42,11 +42,12 @@ mod ppc;
 mod riscv;
 mod s390x;
 mod sparc;
+mod tricore;
 mod x86;
 
 pub use crate::{
-    arm::*, arm64::*, m68k::*, mips::*, ppc::*, riscv::*, s390x::*, sparc::*, unicorn_const::*,
-    x86::*,
+    arm::*, arm64::*, m68k::*, mips::*, ppc::*, riscv::*, s390x::*, sparc::*, tricore::*,
+    unicorn_const::*, x86::*,
 };
 
 use alloc::{boxed::Box, rc::Rc, vec::Vec};
@@ -544,7 +545,6 @@ impl<'a, D> Unicorn<'a, D> {
     ///
     /// This adds safe support for registers >64 bit (GDTR/IDTR, XMM, YMM, ZMM, ST (x86); Q, V (arm64)).
     pub fn reg_read_long<T: Into<i32>>(&self, regid: T) -> Result<Box<[u8]>, uc_error> {
-        let err: uc_error;
         let boxed: Box<[u8]>;
         let mut value: Vec<u8>;
         let curr_reg_id = regid.into();
@@ -586,7 +586,7 @@ impl<'a, D> Unicorn<'a, D> {
             return Err(uc_error::ARCH);
         }
 
-        err = unsafe { ffi::uc_reg_read(self.get_handle(), curr_reg_id, value.as_mut_ptr() as _) };
+        let err: uc_error = unsafe { ffi::uc_reg_read(self.get_handle(), curr_reg_id, value.as_mut_ptr() as _) };
 
         if err == uc_error::OK {
             boxed = value.into_boxed_slice();
@@ -900,15 +900,13 @@ impl<'a, D> Unicorn<'a, D> {
     ///
     /// `hook` is the value returned by `add_*_hook` functions.
     pub fn remove_hook(&mut self, hook: ffi::uc_hook) -> Result<(), uc_error> {
-        let err: uc_error;
-
         // drop the hook
         let inner = self.inner_mut();
         inner
             .hooks
             .retain(|(hook_ptr, _hook_impl)| hook_ptr != &hook);
 
-        err = unsafe { ffi::uc_hook_del(inner.handle, hook) };
+        let err: uc_error = unsafe { ffi::uc_hook_del(inner.handle, hook) };
 
         if err == uc_error::OK {
             Ok(())
@@ -1041,6 +1039,7 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::PPC => RegisterPPC::PC as i32,
             Arch::RISCV => RegisterRISCV::PC as i32,
             Arch::S390X => RegisterS390X::PC as i32,
+            Arch::TRICORE => RegisterTRICORE::PC as i32,
             Arch::MAX => panic!("Illegal Arch specified"),
         };
         self.reg_read(reg)
@@ -1060,6 +1059,7 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::PPC => RegisterPPC::PC as i32,
             Arch::RISCV => RegisterRISCV::PC as i32,
             Arch::S390X => RegisterS390X::PC as i32,
+            Arch::TRICORE => RegisterTRICORE::PC as i32,
             Arch::MAX => panic!("Illegal Arch specified"),
         };
         self.reg_write(reg, value)
