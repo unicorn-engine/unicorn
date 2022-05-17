@@ -1006,6 +1006,7 @@ UC_HOOK_INSN_IN_TYPE = Callable[[Uc, int, int, Any], int]
 UC_HOOK_INSN_OUT_TYPE = Callable[[Uc, int, int, int, Any], None]
 UC_HOOK_INSN_SYSCALL_TYPE = Callable[[Uc, Any], None]
 UC_HOOK_INSN_SYS_TYPE = Callable[[Uc, int, Tuple[int, int, int, int, int, int], Any], int]
+UC_HOOK_INSN_CPUID_TYPE = Callable[[Uc, Any], int]
 UC_MMIO_READ_TYPE = Callable[[Uc, int, int, Any], int]
 UC_MMIO_WRITE_TYPE = Callable[[Uc, int, int, int, Any], None]
 UC_HOOK_EDGE_GEN_TYPE = Callable[[Uc, uc_tb, uc_tb, Any], None]
@@ -1020,6 +1021,7 @@ UC_HOOK_CALLBACK_TYPE = Union[
     UC_HOOK_INSN_OUT_TYPE,
     UC_HOOK_INSN_SYSCALL_TYPE,
     UC_HOOK_INSN_SYS_TYPE,
+    UC_HOOK_INSN_CPUID_TYPE,
     UC_HOOK_EDGE_GEN_TYPE,
     UC_HOOK_TCG_OPCODE_TYPE
 ]
