@@ -595,8 +595,8 @@ class Uc(object):
         cb(self, offset, size, value, data)
 
     def mmio_map(self, address: int, size: int, 
-                 read_cb: Callable[[Uc, int, int, Any], int], user_data_read: Any,
-                 write_cb: Callable[[Uc, int, int, int, Any], None], user_data_write: Any):
+                 read_cb: UC_MMIO_READ_TYPE, user_data_read: Any,
+                 write_cb: UC_MMIO_WRITE_TYPE, user_data_write: Any):
         internal_read_cb = ctypes.cast(UC_MMIO_READ_CB(self._mmio_map_read_cb), UC_MMIO_READ_CB)
         internal_write_cb = ctypes.cast(UC_MMIO_WRITE_CB(self._mmio_map_write_cb), UC_MMIO_WRITE_CB)
 
