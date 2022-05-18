@@ -1419,6 +1419,9 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             uintptr_t retaddr, MemOp op, bool code_read,
             FullLoadHelper *full_load)
 {
+    // Hack for double load on error
+    if (env->uc->cpu->exit_request) return 0;
+
     uintptr_t mmu_idx = get_mmuidx(oi);
     uintptr_t index = tlb_index(env, mmu_idx, addr);
     CPUTLBEntry *entry = tlb_entry(env, mmu_idx, addr);
@@ -1449,7 +1452,10 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, addr))
                     continue;
-                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                tb_exec_lock(uc->tcg_ctx);
+                handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data);
+                tb_exec_unlock(uc->tcg_ctx);
+                if ((handled))
                     break;
 
                 // the last callback may already asked to stop emulation

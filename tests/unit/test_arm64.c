@@ -196,7 +196,7 @@ static void test_arm64_mrs_hook(void)
 }
 
 
-static void test_arm64_correct_address_in_small_jump_hook_callback(uc_engine *uc, int type, uint64_t address, int size, int64_t value, void *user_data)
+static bool test_arm64_correct_address_in_small_jump_hook_callback(uc_engine *uc, int type, uint64_t address, int size, int64_t value, void *user_data)
 {
   // Check registers
   uint64_t r_x0 = 0x0;
@@ -209,6 +209,8 @@ static void test_arm64_correct_address_in_small_jump_hook_callback(uc_engine *uc
   // Check address
   // printf("%lx\n", address);
   TEST_CHECK(address == 0x7F00);
+
+  return false;
 }
 
 static void test_arm64_correct_address_in_small_jump_hook(void)
@@ -237,7 +239,7 @@ static void test_arm64_correct_address_in_small_jump_hook(void)
     OK(uc_close(uc));
 }
 
-static void test_arm64_correct_address_in_long_jump_hook_callback(uc_engine *uc, int type, uint64_t address, int size, int64_t value, void *user_data)
+static bool test_arm64_correct_address_in_long_jump_hook_callback(uc_engine *uc, int type, uint64_t address, int size, int64_t value, void *user_data)
 {
   // Check registers
   uint64_t r_x0 = 0x0;
@@ -250,6 +252,8 @@ static void test_arm64_correct_address_in_long_jump_hook_callback(uc_engine *uc,
   // Check address
   // printf("%lx\n", address);
   TEST_CHECK(address == 0x7FFFFFFFFFFFFF00);
+
+  return false;
 }
 
 static void test_arm64_correct_address_in_long_jump_hook(void)
