@@ -211,10 +211,23 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
     uc_err ret = UC_ERR_OK;
 
     if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
-        *(int32_t *)value = env->regs[regid - UC_ARM_REG_R0];
+        *(uint32_t *)value = env->regs[regid - UC_ARM_REG_R0];
+    } else if (regid >= UC_ARM_REG_Q0 && regid <= UC_ARM_REG_Q15) {
+        uint32_t reg_index = regid - UC_ARM_REG_Q0;
+        *(uint64_t *)value = env->vfp.zregs[reg_index].d[0];
+        *(((uint64_t *)value) + 1) = env->vfp.zregs[reg_index].d[1];
     } else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31) {
         uint32_t reg_index = regid - UC_ARM_REG_D0;
-        *(float64 *)value = env->vfp.zregs[reg_index / 2].d[reg_index & 1];
+        *(uint64_t *)value = env->vfp.zregs[reg_index / 2].d[reg_index & 1];
+    } else if (regid >= UC_ARM_REG_S0 && regid <= UC_ARM_REG_S31) {
+        uint32_t reg_index = regid - UC_ARM_REG_S0;
+        uint64_t reg_value = env->vfp.zregs[reg_index / 4].d[reg_index % 4 / 2];
+
+        if (reg_index % 2 == 0) {
+            *(uint32_t *)value = (uint32_t)(reg_value & 0xffffffff);
+        } else {
+            *(uint32_t *)value = (uint32_t)(reg_value >> 32);
+        }
     } else {
         switch (regid) {
         case UC_ARM_REG_APSR:
@@ -315,9 +328,24 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
 
     if (regid >= UC_ARM_REG_R0 && regid <= UC_ARM_REG_R12) {
         env->regs[regid - UC_ARM_REG_R0] = *(uint32_t *)value;
+    } else if (regid >= UC_ARM_REG_Q0 && regid <= UC_ARM_REG_Q15) {
+        uint32_t reg_index = regid - UC_ARM_REG_Q0;
+        env->vfp.zregs[reg_index].d[0] = *(uint64_t *)value;
+        env->vfp.zregs[reg_index].d[1] = *(((uint64_t *)value) + 1);
     } else if (regid >= UC_ARM_REG_D0 && regid <= UC_ARM_REG_D31) {
         uint32_t reg_index = regid - UC_ARM_REG_D0;
-        env->vfp.zregs[reg_index / 2].d[reg_index & 1] = *(float64 *)value;
+        env->vfp.zregs[reg_index / 2].d[reg_index & 1] = *(uint64_t *)value;
+    } else if (regid >= UC_ARM_REG_S0 && regid <= UC_ARM_REG_S31) {
+        uint32_t reg_index = regid - UC_ARM_REG_S0;
+        uint64_t *p_reg_value = &env->vfp.zregs[reg_index / 4].d[reg_index % 4 / 2];
+        uint64_t in_value = *((uint32_t *)value);
+        if (reg_index % 2 == 0) {
+            in_value |= *p_reg_value & 0xffffffff00000000ul;
+        } else {
+            in_value = (in_value << 32) | (*p_reg_value & 0xfffffffful);
+        }
+
+        *p_reg_value = in_value;
     } else {
         switch (regid) {
         case UC_ARM_REG_APSR:
