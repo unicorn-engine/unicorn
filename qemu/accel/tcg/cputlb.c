@@ -1441,36 +1441,41 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
     // memory might be still unmapped while reading or fetching
     if (mr == NULL) {
         handled = false;
-        if (code_read) {
-            // code fetching
-            error_code = UC_ERR_FETCH_UNMAPPED;
-            HOOK_FOREACH(uc, hook, UC_HOOK_MEM_FETCH_UNMAPPED) {
-                if (hook->to_delete)
-                    continue;
-                if (!HOOK_BOUND_CHECK(hook, addr))
-                    continue;
-                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data)))
-                    break;
+        // if there is already an unhandled eror, skip callbacks.
+        if (uc->invalid_error == UC_ERR_OK) {
+            if (code_read) {
+                // code fetching
+                error_code = UC_ERR_FETCH_UNMAPPED;
+                HOOK_FOREACH(uc, hook, UC_HOOK_MEM_FETCH_UNMAPPED) {
+                    if (hook->to_delete)
+                        continue;
+                    if (!HOOK_BOUND_CHECK(hook, addr))
+                        continue;
+                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                        break;
 
-                // the last callback may already asked to stop emulation
-                if (uc->stop_request)
-                    break;
+                    // the last callback may already asked to stop emulation
+                    if (uc->stop_request)
+                        break;
+                }
+            } else {
+                // data reading
+                error_code = UC_ERR_READ_UNMAPPED;
+                HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_UNMAPPED) {
+                    if (hook->to_delete)
+                        continue;
+                    if (!HOOK_BOUND_CHECK(hook, addr))
+                        continue;
+                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                        break;
+
+                    // the last callback may already asked to stop emulation
+                    if (uc->stop_request)
+                        break;
+                }
             }
         } else {
-            // data reading
-            error_code = UC_ERR_READ_UNMAPPED;
-            HOOK_FOREACH(uc, hook, UC_HOOK_MEM_READ_UNMAPPED) {
-                if (hook->to_delete)
-                    continue;
-                if (!HOOK_BOUND_CHECK(hook, addr))
-                    continue;
-                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data)))
-                    break;
-
-                // the last callback may already asked to stop emulation
-                if (uc->stop_request)
-                    break;
-            }
+            error_code = uc->invalid_error;
         }
 
         if (handled) {
