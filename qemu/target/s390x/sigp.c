@@ -21,50 +21,50 @@ typedef struct SigpInfo {
     uint64_t *status_reg;
 } SigpInfo;
 
-static void set_sigp_status(SigpInfo *si, uint64_t status)
-{
-    *si->status_reg &= 0xffffffff00000000ULL;
-    *si->status_reg |= status;
-    si->cc = SIGP_CC_STATUS_STORED;
-}
+// static void set_sigp_status(SigpInfo *si, uint64_t status)
+// {
+//     *si->status_reg &= 0xffffffff00000000ULL;
+//     *si->status_reg |= status;
+//     si->cc = SIGP_CC_STATUS_STORED;
+// }
 
-static void sigp_sense(S390CPU *dst_cpu, SigpInfo *si)
-{
-    uint8_t state = s390_cpu_get_state(dst_cpu);
-    bool ext_call = dst_cpu->env.pending_int & INTERRUPT_EXTERNAL_CALL;
-    uint64_t status = 0;
+// static void sigp_sense(S390CPU *dst_cpu, SigpInfo *si)
+// {
+//     uint8_t state = s390_cpu_get_state(dst_cpu);
+//     bool ext_call = dst_cpu->env.pending_int & INTERRUPT_EXTERNAL_CALL;
+//     uint64_t status = 0;
 
-    /* sensing without locks is racy, but it's the same for real hw */
-    if (state != S390_CPU_STATE_STOPPED && !ext_call) {
-        si->cc = SIGP_CC_ORDER_CODE_ACCEPTED;
-    } else {
-        if (ext_call) {
-            status |= SIGP_STAT_EXT_CALL_PENDING;
-        }
-        if (state == S390_CPU_STATE_STOPPED) {
-            status |= SIGP_STAT_STOPPED;
-        }
-        set_sigp_status(si, status);
-    }
-}
+//     /* sensing without locks is racy, but it's the same for real hw */
+//     if (state != S390_CPU_STATE_STOPPED && !ext_call) {
+//         si->cc = SIGP_CC_ORDER_CODE_ACCEPTED;
+//     } else {
+//         if (ext_call) {
+//             status |= SIGP_STAT_EXT_CALL_PENDING;
+//         }
+//         if (state == S390_CPU_STATE_STOPPED) {
+//             status |= SIGP_STAT_STOPPED;
+//         }
+//         set_sigp_status(si, status);
+//     }
+// }
 
-static void sigp_external_call(S390CPU *src_cpu, S390CPU *dst_cpu, SigpInfo *si)
-{
-    int ret;
+// static void sigp_external_call(S390CPU *src_cpu, S390CPU *dst_cpu, SigpInfo *si)
+// {
+//     int ret;
 
-    ret = cpu_inject_external_call(dst_cpu, src_cpu->env.core_id);
-    if (!ret) {
-        si->cc = SIGP_CC_ORDER_CODE_ACCEPTED;
-    } else {
-        set_sigp_status(si, SIGP_STAT_EXT_CALL_PENDING);
-    }
-}
+//     ret = cpu_inject_external_call(dst_cpu, src_cpu->env.core_id);
+//     if (!ret) {
+//         si->cc = SIGP_CC_ORDER_CODE_ACCEPTED;
+//     } else {
+//         set_sigp_status(si, SIGP_STAT_EXT_CALL_PENDING);
+//     }
+// }
 
-static void sigp_emergency(S390CPU *src_cpu, S390CPU *dst_cpu, SigpInfo *si)
-{
-    cpu_inject_emergency_signal(dst_cpu, src_cpu->env.core_id);
-    si->cc = SIGP_CC_ORDER_CODE_ACCEPTED;
-}
+// static void sigp_emergency(S390CPU *src_cpu, S390CPU *dst_cpu, SigpInfo *si)
+// {
+//     cpu_inject_emergency_signal(dst_cpu, src_cpu->env.core_id);
+//     si->cc = SIGP_CC_ORDER_CODE_ACCEPTED;
+// }
 
 #if 0
 static void sigp_start(CPUState *cs, run_on_cpu_data arg)
@@ -277,49 +277,49 @@ static void sigp_set_prefix(CPUState *cs, run_on_cpu_data arg)
 }
 #endif
 
-static void sigp_cond_emergency(S390CPU *src_cpu, S390CPU *dst_cpu,
-                                SigpInfo *si)
-{
-    const uint64_t psw_int_mask = PSW_MASK_IO | PSW_MASK_EXT;
-    uint16_t p_asn, s_asn, asn;
-    uint64_t psw_addr, psw_mask;
-    bool idle;
+// static void sigp_cond_emergency(S390CPU *src_cpu, S390CPU *dst_cpu,
+//                                 SigpInfo *si)
+// {
+//     const uint64_t psw_int_mask = PSW_MASK_IO | PSW_MASK_EXT;
+//     uint16_t p_asn, s_asn, asn;
+//     uint64_t psw_addr, psw_mask;
+//     bool idle;
 
-    /* this looks racy, but these values are only used when STOPPED */
-    idle = CPU(dst_cpu)->halted;
-    psw_addr = dst_cpu->env.psw.addr;
-    psw_mask = dst_cpu->env.psw.mask;
-    asn = si->param;
-    p_asn = dst_cpu->env.cregs[4] & 0xffff;  /* Primary ASN */
-    s_asn = dst_cpu->env.cregs[3] & 0xffff;  /* Secondary ASN */
+//     /* this looks racy, but these values are only used when STOPPED */
+//     idle = CPU(dst_cpu)->halted;
+//     psw_addr = dst_cpu->env.psw.addr;
+//     psw_mask = dst_cpu->env.psw.mask;
+//     asn = si->param;
+//     p_asn = dst_cpu->env.cregs[4] & 0xffff;  /* Primary ASN */
+//     s_asn = dst_cpu->env.cregs[3] & 0xffff;  /* Secondary ASN */
 
-    if (s390_cpu_get_state(dst_cpu) != S390_CPU_STATE_STOPPED ||
-        (psw_mask & psw_int_mask) != psw_int_mask ||
-        (idle && psw_addr != 0) ||
-        (!idle && (asn == p_asn || asn == s_asn))) {
-        cpu_inject_emergency_signal(dst_cpu, src_cpu->env.core_id);
-    } else {
-        set_sigp_status(si, SIGP_STAT_INCORRECT_STATE);
-    }
+//     if (s390_cpu_get_state(dst_cpu) != S390_CPU_STATE_STOPPED ||
+//         (psw_mask & psw_int_mask) != psw_int_mask ||
+//         (idle && psw_addr != 0) ||
+//         (!idle && (asn == p_asn || asn == s_asn))) {
+//         cpu_inject_emergency_signal(dst_cpu, src_cpu->env.core_id);
+//     } else {
+//         set_sigp_status(si, SIGP_STAT_INCORRECT_STATE);
+//     }
 
-    si->cc = SIGP_CC_ORDER_CODE_ACCEPTED;
-}
+//     si->cc = SIGP_CC_ORDER_CODE_ACCEPTED;
+// }
 
-static void sigp_sense_running(S390CPU *dst_cpu, SigpInfo *si)
-{
-    /* sensing without locks is racy, but it's the same for real hw */
-    //if (!s390_has_feat(S390_FEAT_SENSE_RUNNING_STATUS)) {
-    //    set_sigp_status(si, SIGP_STAT_INVALID_ORDER);
-    //    return;
-    //}
+// static void sigp_sense_running(S390CPU *dst_cpu, SigpInfo *si)
+// {
+//     /* sensing without locks is racy, but it's the same for real hw */
+//     //if (!s390_has_feat(S390_FEAT_SENSE_RUNNING_STATUS)) {
+//     //    set_sigp_status(si, SIGP_STAT_INVALID_ORDER);
+//     //    return;
+//     //}
 
-    /* If halted (which includes also STOPPED), it is not running */
-    if (CPU(dst_cpu)->halted) {
-        set_sigp_status(si, SIGP_STAT_NOT_RUNNING);
-    } else {
-        si->cc = SIGP_CC_ORDER_CODE_ACCEPTED;
-    }
-}
+//     /* If halted (which includes also STOPPED), it is not running */
+//     if (CPU(dst_cpu)->halted) {
+//         set_sigp_status(si, SIGP_STAT_NOT_RUNNING);
+//     } else {
+//         si->cc = SIGP_CC_ORDER_CODE_ACCEPTED;
+//     }
+// }
 
 // static int handle_sigp_single_dst(S390CPU *cpu, S390CPU *dst_cpu, uint8_t order,
 //                                   uint64_t param, uint64_t *status_reg)
