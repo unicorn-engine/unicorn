@@ -656,6 +656,7 @@ void riscv64_uc_init(struct uc_struct *uc)
     uc->reg_reset = riscv_reg_reset;
     uc->release = riscv_release;
     uc->set_pc = riscv_set_pc;
+    uc->get_pc = riscv_get_pc;
     uc->stop_interrupt = riscv_stop_interrupt;
     uc->insn_hook_validate = riscv_insn_hook_validate;
     uc->cpus_init = riscv_cpus_init;
