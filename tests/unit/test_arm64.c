@@ -195,22 +195,23 @@ static void test_arm64_mrs_hook(void)
     OK(uc_close(uc));
 }
 
-
-static bool test_arm64_correct_address_in_small_jump_hook_callback(uc_engine *uc, int type, uint64_t address, int size, int64_t value, void *user_data)
+static bool test_arm64_correct_address_in_small_jump_hook_callback(
+    uc_engine *uc, int type, uint64_t address, int size, int64_t value,
+    void *user_data)
 {
-  // Check registers
-  uint64_t r_x0 = 0x0;
-  uint64_t r_pc = 0x0;
-  OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
-  OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
-  TEST_CHECK(r_x0 == 0x7F00);
-  TEST_CHECK(r_pc == 0x7F00);
+    // Check registers
+    uint64_t r_x0 = 0x0;
+    uint64_t r_pc = 0x0;
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
+    TEST_CHECK(r_x0 == 0x7F00);
+    TEST_CHECK(r_pc == 0x7F00);
 
-  // Check address
-  // printf("%lx\n", address);
-  TEST_CHECK(address == 0x7F00);
+    // Check address
+    // printf("%lx\n", address);
+    TEST_CHECK(address == 0x7F00);
 
-  return false;
+    return false;
 }
 
 static void test_arm64_correct_address_in_small_jump_hook(void)
@@ -224,8 +225,11 @@ static void test_arm64_correct_address_in_small_jump_hook(void)
     uint64_t r_pc = 0x0;
     uc_hook hook;
 
-    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1, UC_CPU_ARM64_A72);
-    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED, test_arm64_correct_address_in_small_jump_hook_callback, NULL, 1, 0));
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM64_A72);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED,
+                   test_arm64_correct_address_in_small_jump_hook_callback, NULL,
+                   1, 0));
 
     uc_assert_err(
         UC_ERR_FETCH_UNMAPPED,
@@ -239,21 +243,23 @@ static void test_arm64_correct_address_in_small_jump_hook(void)
     OK(uc_close(uc));
 }
 
-static bool test_arm64_correct_address_in_long_jump_hook_callback(uc_engine *uc, int type, uint64_t address, int size, int64_t value, void *user_data)
+static bool test_arm64_correct_address_in_long_jump_hook_callback(
+    uc_engine *uc, int type, uint64_t address, int size, int64_t value,
+    void *user_data)
 {
-  // Check registers
-  uint64_t r_x0 = 0x0;
-  uint64_t r_pc = 0x0;
-  OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
-  OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
-  TEST_CHECK(r_x0 == 0x7FFFFFFFFFFFFF00);
-  TEST_CHECK(r_pc == 0x7FFFFFFFFFFFFF00);
+    // Check registers
+    uint64_t r_x0 = 0x0;
+    uint64_t r_pc = 0x0;
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
+    TEST_CHECK(r_x0 == 0x7FFFFFFFFFFFFF00);
+    TEST_CHECK(r_pc == 0x7FFFFFFFFFFFFF00);
 
-  // Check address
-  // printf("%lx\n", address);
-  TEST_CHECK(address == 0x7FFFFFFFFFFFFF00);
+    // Check address
+    // printf("%lx\n", address);
+    TEST_CHECK(address == 0x7FFFFFFFFFFFFF00);
 
-  return false;
+    return false;
 }
 
 static void test_arm64_correct_address_in_long_jump_hook(void)
@@ -267,8 +273,11 @@ static void test_arm64_correct_address_in_long_jump_hook(void)
     uint64_t r_pc = 0x0;
     uc_hook hook;
 
-    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1, UC_CPU_ARM64_A72);
-    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED, test_arm64_correct_address_in_long_jump_hook_callback, NULL, 1, 0));
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM64_A72);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED,
+                   test_arm64_correct_address_in_long_jump_hook_callback, NULL,
+                   1, 0));
 
     uc_assert_err(
         UC_ERR_FETCH_UNMAPPED,
@@ -282,15 +291,14 @@ static void test_arm64_correct_address_in_long_jump_hook(void)
     OK(uc_close(uc));
 }
 
-
-
-
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
              {"test_arm64_v8_pac", test_arm64_v8_pac},
              {"test_arm64_read_sctlr", test_arm64_read_sctlr},
              {"test_arm64_mrs_hook", test_arm64_mrs_hook},
-             {"test_arm64_correct_address_in_small_jump_hook", test_arm64_correct_address_in_small_jump_hook},
-             {"test_arm64_correct_address_in_long_jump_hook", test_arm64_correct_address_in_long_jump_hook},
+             {"test_arm64_correct_address_in_small_jump_hook",
+              test_arm64_correct_address_in_small_jump_hook},
+             {"test_arm64_correct_address_in_long_jump_hook",
+              test_arm64_correct_address_in_long_jump_hook},
              {NULL, NULL}};

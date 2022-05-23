@@ -337,7 +337,8 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
         env->vfp.zregs[reg_index / 2].d[reg_index & 1] = *(uint64_t *)value;
     } else if (regid >= UC_ARM_REG_S0 && regid <= UC_ARM_REG_S31) {
         uint32_t reg_index = regid - UC_ARM_REG_S0;
-        uint64_t *p_reg_value = &env->vfp.zregs[reg_index / 4].d[reg_index % 4 / 2];
+        uint64_t *p_reg_value =
+            &env->vfp.zregs[reg_index / 4].d[reg_index % 4 / 2];
         uint64_t in_value = *((uint32_t *)value);
         if (reg_index % 2 == 0) {
             in_value |= *p_reg_value & 0xffffffff00000000ul;
