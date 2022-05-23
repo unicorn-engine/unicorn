@@ -1355,7 +1355,7 @@ target_include_directories(unicorn PUBLIC
 # For static archive
 if (BUILD_SHARED_LIBS)
     target_include_directories(unicorn_static PUBLIC
-        include()
+        include
     )
 endif()
 
