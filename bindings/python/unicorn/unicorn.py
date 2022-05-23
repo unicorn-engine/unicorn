@@ -308,7 +308,7 @@ def reg_read(reg_read_func, arch, reg_id, opt=None):
                 raise UcError(status)
             return reg.val
 
-        elif reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+        elif reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or reg_id in range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
             reg = uc_arm64_neon128()
             status = reg_read_func(reg_id, ctypes.byref(reg))
             if status != uc.UC_ERR_OK:
@@ -353,7 +353,7 @@ def reg_write(reg_write_func, arch, reg_id, value):
             reg.value = value[1]
 
     if arch == uc.UC_ARCH_ARM64:
-        if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+        if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or reg_id in range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
             reg = uc_arm64_neon128()
             reg.low_qword = value & 0xffffffffffffffff
             reg.high_qword = value >> 64
