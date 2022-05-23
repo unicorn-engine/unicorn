@@ -73,7 +73,8 @@ typedef size_t uc_hook;
 #define UC_API_MAJOR 2
 #define UC_API_MINOR 0
 #define UC_API_PATCH 0
-#define UC_API_EXTRA 7
+// Release candidate version, 255 means the official release.
+#define UC_API_EXTRA 255
 
 // Unicorn package version
 #define UC_VERSION_MAJOR UC_API_MAJOR
