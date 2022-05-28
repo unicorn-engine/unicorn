@@ -1366,7 +1366,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     uint64_t addr = address;
     uint64_t pc;
     size_t count, len;
-    mmio_cbs* new_cb;
+    mmio_cbs *mmio;
     bool remove_exec = false;
 
     UC_INIT(uc);
@@ -1422,20 +1422,12 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
             uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
 
         } else {
-            if(!split_mmio_region(uc, mr, addr, len, false)) {
+            if (!split_mmio_region(uc, mr, addr, len, false)) {
                 return UC_ERR_NOMEM;
             }
 
             mr = memory_mapping(uc, addr);
-            new_cb = (mmio_cbs*)mr->opaque;
-
-            if (!(perms & UC_PROT_READ)) {
-                new_cb->read = NULL;
-            }
-
-            if (!(perms & UC_PROT_WRITE)) {
-                new_cb->write = NULL;
-            }
+            mr->perms = perms;
         }
 
         count += len;
