@@ -1657,6 +1657,13 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
     res = load_memop(haddr, op);
 
 _out:
+    // mmio error check
+    if (uc->invalid_error != UC_ERR_OK) {
+        uc->invalid_addr = addr;
+        cpu_exit(uc->cpu);
+        return 0;
+    }
+
     // Unicorn: callback on successful data read
     if (!code_read) {
         if (!uc->size_recur_mem) { // disabling read callback if in recursive call

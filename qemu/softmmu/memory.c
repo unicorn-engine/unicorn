@@ -88,6 +88,7 @@ static uint64_t mmio_read_wrapper(struct uc_struct *uc, void *opaque, hwaddr add
     if (cbs->read) {
         return cbs->read(uc, addr, size, cbs->user_data_read);
     } else {
+        uc->invalid_error = UC_ERR_READ_PROT;
         return 0;
     }
 }
@@ -100,6 +101,8 @@ static void mmio_write_wrapper(struct uc_struct *uc, void *opaque, hwaddr addr, 
     addr = addr & ( (target_ulong)(-1) );
     if (cbs->write) {
         cbs->write(uc, addr, size, data, cbs->user_data_write);
+    } else {
+        uc->invalid_error = UC_ERR_WRITE_PROT;
     }
 }
 
@@ -123,7 +126,9 @@ MemoryRegion *memory_map_io(struct uc_struct *uc, ram_addr_t begin, size_t size,
     memset(ops, 0, sizeof(*ops));
 
     ops->read = mmio_read_wrapper;
+    ops->read_with_attrs = NULL;
     ops->write = mmio_write_wrapper;
+    ops->write_with_attrs = NULL;
     ops->endianness = DEVICE_NATIVE_ENDIAN;
 
     memory_region_init_io(uc, mmio, ops, opaques, size);

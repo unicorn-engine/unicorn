@@ -1114,15 +1114,13 @@ static uint8_t *copy_region(struct uc_struct *uc, MemoryRegion *mr)
 /*
     This function is similar to split_region, but for MMIO memory.
 
-    This function would delete the region unconditionally.
-
     Note this function may be called recursively.
 */
 static bool split_mmio_region(struct uc_struct *uc, MemoryRegion *mr,
-                              uint64_t address, size_t size)
+                              uint64_t address, size_t size, bool do_delete)
 {
     uint64_t begin, end, chunk_end;
-    size_t l_size, r_size;
+    size_t l_size, r_size, m_size;
     mmio_cbs backup;
 
     chunk_end = address + size;
@@ -1165,9 +1163,17 @@ static bool split_mmio_region(struct uc_struct *uc, MemoryRegion *mr,
     // compute sub region sizes
     l_size = (size_t)(address - begin);
     r_size = (size_t)(end - chunk_end);
+    m_size = (size_t)(chunk_end - address);
 
     if (l_size > 0) {
         if (uc_mmio_map(uc, begin, l_size, backup.read, backup.user_data_read,
+                        backup.write, backup.user_data_write) != UC_ERR_OK) {
+            return false;
+        }
+    }
+
+    if (m_size > 0 && !do_delete) {
+        if (uc_mmio_map(uc, address, m_size, backup.read, backup.user_data_read,
                         backup.write, backup.user_data_write) != UC_ERR_OK) {
             return false;
         }
@@ -1360,6 +1366,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     uint64_t addr = address;
     uint64_t pc;
     size_t count, len;
+    mmio_cbs* new_cb;
     bool remove_exec = false;
 
     UC_INIT(uc);
@@ -1400,18 +1407,36 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     while (count < size) {
         mr = memory_mapping(uc, addr);
         len = (size_t)MIN(size - count, mr->end - addr);
-        if (!split_region(uc, mr, addr, len, false)) {
-            return UC_ERR_NOMEM;
-        }
+        if (mr->ram) {
+            if (!split_region(uc, mr, addr, len, false)) {
+                return UC_ERR_NOMEM;
+            }
 
-        mr = memory_mapping(uc, addr);
-        // will this remove EXEC permission?
-        if (((mr->perms & UC_PROT_EXEC) != 0) &&
-            ((perms & UC_PROT_EXEC) == 0)) {
-            remove_exec = true;
+            mr = memory_mapping(uc, addr);
+            // will this remove EXEC permission?
+            if (((mr->perms & UC_PROT_EXEC) != 0) &&
+                ((perms & UC_PROT_EXEC) == 0)) {
+                remove_exec = true;
+            }
+            mr->perms = perms;
+            uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+
+        } else {
+            if(!split_mmio_region(uc, mr, addr, len, false)) {
+                return UC_ERR_NOMEM;
+            }
+
+            mr = memory_mapping(uc, addr);
+            new_cb = (mmio_cbs*)mr->opaque;
+
+            if (!(perms & UC_PROT_READ)) {
+                new_cb->read = NULL;
+            }
+
+            if (!(perms & UC_PROT_WRITE)) {
+                new_cb->write = NULL;
+            }
         }
-        mr->perms = perms;
-        uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
 
         count += len;
         addr += len;
@@ -1471,7 +1496,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
         mr = memory_mapping(uc, addr);
         len = (size_t)MIN(size - count, mr->end - addr);
         if (!mr->ram) {
-            if (!split_mmio_region(uc, mr, addr, len)) {
+            if (!split_mmio_region(uc, mr, addr, len, true)) {
                 return UC_ERR_NOMEM;
             }
         } else {
