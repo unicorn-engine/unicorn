@@ -219,35 +219,44 @@ static void test_mem_protect_remove_exec(void)
     OK(uc_close(uc));
 }
 
-static uint64_t test_mem_protect_mmio_read_cb(struct uc_struct *uc, uint64_t addr, unsigned size, void *user_data) {
+static uint64_t test_mem_protect_mmio_read_cb(struct uc_struct *uc,
+                                              uint64_t addr, unsigned size,
+                                              void *user_data)
+{
     TEST_CHECK(addr == 0x20); // note, it's not 0x1020
 
-    *(uint64_t*)user_data = *(uint64_t*)user_data + 1;
+    *(uint64_t *)user_data = *(uint64_t *)user_data + 1;
     return 0x114514;
 }
 
-static void test_mem_protect_mmio_write_cb(struct uc_struct *uc, uint64_t addr, unsigned size, uint64_t data, void *user_data) {
+static void test_mem_protect_mmio_write_cb(struct uc_struct *uc, uint64_t addr,
+                                           unsigned size, uint64_t data,
+                                           void *user_data)
+{
     TEST_CHECK(false);
     return;
 }
-
 
 static void test_mem_protect_mmio(void)
 {
     uc_engine *uc;
     // mov eax, [0x2020]; mov [0x2020], eax
-    char code[] = "\xa1\x20\x20\x00\x00\x00\x00\x00\x00\xa3\x20\x20\x00\x00\x00\x00\x00\x00";
+    char code[] = "\xa1\x20\x20\x00\x00\x00\x00\x00\x00\xa3\x20\x20\x00\x00\x00"
+                  "\x00\x00\x00";
     uint64_t called = 0;
     uint64_t r_eax;
-    
+
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
     OK(uc_mem_map(uc, 0x8000, 0x1000, UC_PROT_ALL));
     OK(uc_mem_write(uc, 0x8000, code, sizeof(code) - 1));
 
-    OK(uc_mmio_map(uc, 0x1000, 0x3000, test_mem_protect_mmio_read_cb, (void*)&called, test_mem_protect_mmio_write_cb, (void*)&called));
+    OK(uc_mmio_map(uc, 0x1000, 0x3000, test_mem_protect_mmio_read_cb,
+                   (void *)&called, test_mem_protect_mmio_write_cb,
+                   (void *)&called));
     OK(uc_mem_protect(uc, 0x2000, 0x1000, UC_PROT_READ));
 
-    uc_assert_err(UC_ERR_WRITE_PROT, uc_emu_start(uc, 0x8000, 0x8000 + sizeof(code) - 1, 0, 0));
+    uc_assert_err(UC_ERR_WRITE_PROT,
+                  uc_emu_start(uc, 0x8000, 0x8000 + sizeof(code) - 1, 0, 0));
     OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_eax));
 
     TEST_CHECK(called == 1);
