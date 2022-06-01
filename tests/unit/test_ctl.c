@@ -226,6 +226,45 @@ static void test_uc_ctl_arm_cpu(void)
     OK(uc_close(uc));
 }
 
+static void test_uc_hook_cached_cb(uc_engine* uc, uint64_t addr, size_t size, void* user_data) {
+    uint64_t* p = (uint64_t*)user_data;
+    TEST_CHECK( (addr == code_start) || (addr == code_start + 1));
+    (*p)++;
+    return;
+}
+
+static void test_uc_hook_cached_uaf(void)
+{
+    uc_engine* uc;
+    char code[] = "\x41\x4a";
+    uc_hook h;
+    uint64_t count = 0;
+    char callback[8192];
+
+    memcpy(callback, (void*)test_uc_hook_cached_cb, sizeof(callback));
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, (void*)callback, (void*)&count, 1, 0));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    // Move the hook to the deleted hooks list.
+    OK(uc_hook_del(uc, h));
+
+    // This will clear deleted hooks and SHOULD clear cache.
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    memset(callback, 0, sizeof(callback));
+
+    // Now hooks are deleted and thus this will trigger a UAF
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(count == 2);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_page_size", test_uc_ctl_page_size},
              {"test_uc_ctl_arch", test_uc_ctl_arch},
@@ -234,4 +273,5 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
              {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
              {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
+             {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
              {NULL, NULL}};
