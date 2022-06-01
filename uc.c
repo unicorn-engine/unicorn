@@ -1366,7 +1366,6 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     uint64_t addr = address;
     uint64_t pc;
     size_t count, len;
-    mmio_cbs *mmio;
     bool remove_exec = false;
 
     UC_INIT(uc);
