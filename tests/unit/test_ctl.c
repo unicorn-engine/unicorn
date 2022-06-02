@@ -237,7 +237,8 @@ static void test_uc_hook_cached_cb(uc_engine* uc, uint64_t addr, size_t size, vo
 static void test_uc_hook_cached_uaf(void)
 {
     uc_engine* uc;
-    char code[] = "\x41\x4a";
+    // "INC ecx; DEC edx; jmp t; t: nop"
+    char code[] = "\x41\x4a\xeb\x00\x90";
     uc_hook h;
     uint64_t count = 0;
 #ifndef _WIN32
@@ -265,7 +266,7 @@ static void test_uc_hook_cached_uaf(void)
     // Now hooks are deleted and thus this will trigger a UAF
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    TEST_CHECK(count == 2);
+    TEST_CHECK(count == 4);
 
     OK(uc_close(uc));
 
