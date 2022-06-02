@@ -227,31 +227,37 @@ static void test_uc_ctl_arm_cpu(void)
     OK(uc_close(uc));
 }
 
-static void test_uc_hook_cached_cb(uc_engine* uc, uint64_t addr, size_t size, void* user_data) {
-    // Don't add any TEST_CHECK here since we can't refer to the global variable here.
-    uint64_t* p = (uint64_t*)user_data;
+static void test_uc_hook_cached_cb(uc_engine *uc, uint64_t addr, size_t size,
+                                   void *user_data)
+{
+    // Don't add any TEST_CHECK here since we can't refer to the global variable
+    // here.
+    uint64_t *p = (uint64_t *)user_data;
     (*p)++;
     return;
 }
 
 static void test_uc_hook_cached_uaf(void)
 {
-    uc_engine* uc;
+    uc_engine *uc;
     // "INC ecx; DEC edx; jmp t; t: nop"
     char code[] = "\x41\x4a\xeb\x00\x90";
     uc_hook h;
     uint64_t count = 0;
 #ifndef _WIN32
-    void* callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    void *callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE | PROT_EXEC,
+                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #else
-    void* callback = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE)
+    void *callback = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT,
+                                  PAGE_EXECUTE_READWRITE)
 #endif
 
-    memcpy(callback, (void*)test_uc_hook_cached_cb, 4096);
+    memcpy(callback, (void *)test_uc_hook_cached_cb, 4096);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
-    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, (void*)callback, (void*)&count, 1, 0));
+    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, (void *)callback, (void *)&count, 1,
+                   0));
 
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
@@ -275,7 +281,6 @@ static void test_uc_hook_cached_uaf(void)
 #else
     VirtualFree(callback, 0, MEM_RELEASE);
 #endif
-
 }
 
 TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
