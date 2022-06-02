@@ -249,7 +249,7 @@ static void test_uc_hook_cached_uaf(void)
                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 #else
     void *callback = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT,
-                                  PAGE_EXECUTE_READWRITE)
+                                  PAGE_EXECUTE_READWRITE);
 #endif
 
     memcpy(callback, (void *)test_uc_hook_cached_cb, 4096);
