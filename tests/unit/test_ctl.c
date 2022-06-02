@@ -49,6 +49,7 @@ static inline int64_t get_clock_realtime(void)
 #else
 
 #include <sys/time.h>
+#include "sys/mman.h"
 
 /* get host real time in nanosecond */
 static inline int64_t get_clock_realtime(void)
@@ -227,8 +228,8 @@ static void test_uc_ctl_arm_cpu(void)
 }
 
 static void test_uc_hook_cached_cb(uc_engine* uc, uint64_t addr, size_t size, void* user_data) {
+    // Don't add any TEST_CHECK here since we can't refer to the global variable here.
     uint64_t* p = (uint64_t*)user_data;
-    TEST_CHECK( (addr == code_start) || (addr == code_start + 1));
     (*p)++;
     return;
 }
@@ -239,9 +240,13 @@ static void test_uc_hook_cached_uaf(void)
     char code[] = "\x41\x4a";
     uc_hook h;
     uint64_t count = 0;
-    char callback[8192];
+#ifndef _WIN32
+    void* callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#else
+    void* callback = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT, PAGE_EXECUTE_READWRITE)
+#endif
 
-    memcpy(callback, (void*)test_uc_hook_cached_cb, sizeof(callback));
+    memcpy(callback, (void*)test_uc_hook_cached_cb, 4096);
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
@@ -255,7 +260,7 @@ static void test_uc_hook_cached_uaf(void)
     // This will clear deleted hooks and SHOULD clear cache.
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    memset(callback, 0, sizeof(callback));
+    memset(callback, 0, 4096);
 
     // Now hooks are deleted and thus this will trigger a UAF
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
@@ -263,6 +268,13 @@ static void test_uc_hook_cached_uaf(void)
     TEST_CHECK(count == 2);
 
     OK(uc_close(uc));
+
+#ifndef _WIN32
+    munmap(callback, 4096);
+#else
+    VirtualFree(callback, 0, MEM_RELEASE);
+#endif
+
 }
 
 TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
