@@ -49,6 +49,14 @@ static void *hook_append(struct list *l, struct hook *h)
     return item;
 }
 
+static void hook_invalidate_region(void* key, void* data, void* opaq)
+{
+    uc_engine* uc = (uc_engine*)opaq;
+    HookedRegion* region = (HookedRegion*)key;
+
+    uc->uc_invalidate_tb(uc, region->start, region->length);
+}
+
 static void hook_delete(void *data)
 {
     struct hook *h = (struct hook *)data;
@@ -56,6 +64,7 @@ static void hook_delete(void *data)
     h->refs--;
 
     if (h->refs == 0) {
+        g_hash_table_destroy(h->hooked_regions);
         free(h);
     }
 }
@@ -1561,6 +1570,7 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
     hook->user_data = user_data;
     hook->refs = 0;
     hook->to_delete = false;
+    hook->hooked_regions = g_hash_table_new_full(hooked_regions_hash, hooked_regions_equal, g_free, NULL);
     *hh = (uc_hook)hook;
 
     // UC_HOOK_INSN has an extra argument for instruction ID
@@ -1670,6 +1680,8 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
     // and store the type mask in the hook pointer.
     for (i = 0; i < UC_HOOK_MAX; i++) {
         if (list_exists(&uc->hook[i], (void *)hook)) {
+            g_hash_table_foreach(hook->hooked_regions, hook_invalidate_region, uc);
+            g_hash_table_remove_all(hook->hooked_regions);
             hook->to_delete = true;
             uc->hooks_count[i]--;
             hook_append(&uc->hooks_to_del, hook);

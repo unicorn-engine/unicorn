@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #include "qemu.h"
+#include "qemu/xxhash.h"
 #include "unicorn/unicorn.h"
 #include "list.h"
 
@@ -157,6 +158,7 @@ struct hook {
                          // address (depends on hook type)
     void *callback;      // a uc_cb_* type
     void *user_data;
+    GHashTable *hooked_regions; // The regions this hook instrumented on
 };
 
 // Add an inline hook to helper_table
@@ -412,6 +414,53 @@ static inline int uc_addr_is_exit(uc_engine *uc, uint64_t addr)
     } else {
         return uc->exits[uc->nested_level - 1] == addr;
     }
+}
+
+typedef struct HookedRegion {
+    uint64_t start;
+    uint64_t length;
+} HookedRegion;
+
+// hooked_regions related functions
+static inline guint hooked_regions_hash(const void* p) {
+    HookedRegion *region = (HookedRegion*)p;
+
+    return qemu_xxhash4(region->start, region->length);
+}
+
+static inline gboolean hooked_regions_equal(const void* lhs, const void* rhs) {
+    HookedRegion *l = (HookedRegion*)lhs;
+    HookedRegion *r = (HookedRegion*)rhs;
+
+    return l->start == r->start && l->length == r->length;
+}
+
+static inline void hooked_regions_add(struct hook* h, uint64_t start, uint64_t length) {
+    HookedRegion tmp;
+    tmp.start = start;
+    tmp.length = length;
+
+    if (!g_hash_table_lookup(h->hooked_regions, (void*)&tmp)) {
+        HookedRegion* r = malloc(sizeof(HookedRegion));
+        r->start = start;
+        r->length = length;
+        g_hash_table_insert(h->hooked_regions, (void*)r, (void*)1);
+    }
+}
+
+static inline void hooked_regions_check_single(struct list_item *cur, uint64_t start, uint64_t length) {
+    while (cur != NULL) {
+        if (HOOK_BOUND_CHECK((struct hook *)cur->data, start)) {
+            hooked_regions_add((struct hook *)cur->data, start, length);
+        }
+        cur = cur->next;
+    }
+}
+
+static inline void hooked_regions_check(uc_engine *uc, uint64_t start, uint64_t length) {
+    // Only UC_HOOK_BLOCK and UC_HOOK_CODE might be wrongle cached!
+    hooked_regions_check_single(uc->hook[UC_HOOK_CODE_IDX].head, start, length);
+    hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_IDX].head, start, length);
 }
 
 #ifdef UNICORN_TRACER
