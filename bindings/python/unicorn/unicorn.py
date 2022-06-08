@@ -1,4 +1,4 @@
-# Unicorn Python bindings by elicn
+# New and improved Unicorn Python bindings by elicn
 # based on Nguyen Anh Quynnh's work
 
 from __future__ import annotations
@@ -6,10 +6,12 @@ from typing import Any, Callable, Iterator, Mapping, MutableMapping, Optional, S
 
 import ctypes
 import weakref
-# import functools
 
 from . import unicorn_const as uc
 from .arch.types import *
+
+__version__ = f'{uc.UC_VERSION_MAJOR}.{uc.UC_VERSION_MINOR}.{uc.UC_VERSION_PATCH}'
+
 
 class _uc_mem_region(ctypes.Structure):
     _fields_ = (
@@ -177,8 +179,6 @@ def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
 uclib = __load_uc_lib()
 __set_lib_prototypes(uclib)
 
-__version__ = f'{uc.UC_VERSION_MAJOR}.{uc.UC_VERSION_MINOR}.{uc.UC_VERSION_PATCH}'
-
 
 # native hook callback signatures
 HOOK_INTR_CFUNC         = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_uint32, ctypes.c_void_p)
@@ -289,12 +289,14 @@ class UcCleanupManager:
     def __init__(self):
         self._refs = {}
 
+
     def register(self, obj: Uc):
         ref = UcRef(obj, self._finalizer)
         ref._uch = obj._uch
         ref._class = obj.__class__
 
         self._refs[id(ref)] = ref
+
 
     def _finalizer(self, ref: UcRef) -> None:
         # note: this method must be completely self-contained and cannot have any references
@@ -482,6 +484,13 @@ class Uc(RegStateManager):
 
 
     def __init__(self, arch: int, mode: int) -> None:
+        """Initialize a Unicorn engine instance.
+
+        Args:
+            arch: emulated architecture identifier (see UC_ARCH_* constants)
+            mode: emulated processor mode (see UC_MODE_* constants)
+        """
+
         self._arch = arch
         self._mode = mode
 
@@ -493,7 +502,7 @@ class Uc(RegStateManager):
             self._uch = None
             raise UcError(status)
 
-        # we have to keep a reference to the callbacks so they do not het gc-ed
+        # we have to keep a reference to the callbacks so they do not get gc-ed
         # see: https://docs.python.org/3/library/ctypes.html#callback-functions
         self._callbacks: MutableMapping[int, ctypes._FuncPointer] = {}
         self._mmio_callbacks: MutableMapping[Tuple[int, int], Tuple[Optional[ctypes._FuncPointer], Optional[ctypes._FuncPointer]]] = {}
@@ -527,7 +536,7 @@ class Uc(RegStateManager):
             begin   : emulation starting address
             until   : emulation ending address
             timeout : limit emulation to a certain amount of time (milliseconds)
-            count   : limit emulation to a certain amount of intstructions
+            count   : limit emulation to a certain amount of instructions
 
         Raises:
             `UcError`   : in case emulation could not be started properly
@@ -562,6 +571,7 @@ class Uc(RegStateManager):
 
     def _do_reg_read(self, reg_id: int, reg_obj) -> int:
         """Private register read implementation.
+        Do not call directly.
         """
 
         return uclib.uc_reg_read(self._uch, reg_id, reg_obj)
@@ -569,6 +579,7 @@ class Uc(RegStateManager):
 
     def _do_reg_write(self, reg_id: int, reg_obj) -> int:
         """Private register write implementation.
+        Do not call directly.
         """
 
         return uclib.uc_reg_write(self._uch, reg_id, reg_obj)
@@ -782,7 +793,7 @@ class Uc(RegStateManager):
         """Hook emulated events of a certain type.
 
         Args:
-            htype     : event type(s) to hook
+            htype     : event type(s) to hook (see UC_HOOK_* constants)
             callback  : a method to call each time the hooked event occurs
             user_data : an additional context to pass to the callback when it is called
             begin     : address where hook scope starts
@@ -1057,7 +1068,7 @@ class Uc(RegStateManager):
         )
 
 
-    def ctl_get_exits(self):
+    def ctl_get_exits(self) -> Sequence[int]:
         l = self.ctl_get_exits_cnt()
         arr = (ctypes.c_uint64 * l)()
 
@@ -1156,6 +1167,7 @@ class UcContext(RegStateManager):
     def __getstate__(self):
         return bytes(self), self.size, self.arch, self.mode
 
+
     def __setstate__(self, state) -> None:
         context, size, arch, mode = state
 
@@ -1170,6 +1182,7 @@ class UcContext(RegStateManager):
 
     def __bytes__(self) -> bytes:
         return ctypes.string_at(self.context, self.size)
+
 
     def __del__(self) -> None:
         # We need this property since we shouldn't free it if the object is constructed from pickled bytes.
