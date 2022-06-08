@@ -55,7 +55,7 @@ def test_uc_ctl_tb_cache():
 
     # Now we clear cache for all TBs.
     for i in range(8):
-        uc.ctl_remove_cache(addr + i * 512)
+        uc.ctl_remove_cache(addr + i * 512, addr + 0x1000)
     
     evicted = time_emulation(uc, addr, addr + len(code))
 
