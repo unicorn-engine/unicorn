@@ -383,9 +383,9 @@ class Uc:
             return __wrapped
 
         def __uc_generic():
-            return UcGeneric
+            return Uc
 
-        wrapped = {
+        wrapped: Callable[[], Type[Uc]] = {
             uc.UC_ARCH_ARM     : __uc_subclass('arm', 'UcAArch32'),
             uc.UC_ARCH_ARM64   : __uc_subclass('arm64', 'UcAArch64'),
             uc.UC_ARCH_MIPS    : __uc_generic,
@@ -1047,13 +1047,6 @@ class Uc:
 
     def ctl_flush_tb(self) -> None:
         self.__ctl_w(uc.UC_CTL_TB_FLUSH)
-
-
-class UcGeneric(Uc):
-    """Unicorn generic architecture subclass.
-    """
-
-    pass
 
 
 class UcContext:
