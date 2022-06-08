@@ -341,7 +341,84 @@ def _catch_hook_exception(func: Callable) -> Callable:
     return wrapper
 
 
-class Uc:
+class RegStateManager:
+    """Registers state manager.
+
+    Designed as a mixin class; not to be instantiated directly.
+    Some methods must be implemented by mixin instances
+    """
+
+    _DEFAULT_REGTYPE = ctypes.c_uint64
+
+    def _do_reg_read(self, reg_id: int, reg_obj) -> int:
+        """Private register read implementation.
+        Must be implemented by the mixin object
+        """
+
+        raise NotImplementedError
+
+
+    def _do_reg_write(self, reg_id: int, reg_obj) -> int:
+        """Private register write implementation.
+        Must be implemented by the mixin object
+        """
+
+        raise NotImplementedError
+
+
+    def _reg_read(self, reg_id: int, regtype, *args):
+        """Register read helper method.
+        """
+
+        reg = regtype(*args)
+        status = self._do_reg_read(reg_id, ctypes.byref(reg))
+
+        if status != uc.UC_ERR_OK:
+            raise UcError(status, reg_id)
+
+        return reg.value
+
+
+    def _reg_write(self, reg_id: int, regtype, value) -> None:
+        """Register write helper method.
+        """
+
+        reg = regtype.from_param(value) if issubclass(regtype, ctypes.Structure) else regtype(value)
+        status = self._do_reg_write(reg_id, ctypes.byref(reg))
+
+        if status != uc.UC_ERR_OK:
+            raise UcError(status, reg_id)
+
+
+    def reg_read(self, reg_id: int, aux: Any = None):
+        """Read architectural register value.
+
+        Args:
+            reg_id : register identifier (architecture-specific enumeration)
+            aux    : auxiliary data (register specific)
+
+        Returns: register value (register-specific format)
+
+        Raises: `UcError` in case of invalid register id or auxiliary data
+        """
+
+        return self._reg_read(reg_id, self._DEFAULT_REGTYPE)
+
+
+    def reg_write(self, reg_id: int, value) -> None:
+        """Write to architectural register.
+
+        Args:
+            reg_id : register identifier (architecture-specific enumeration)
+            value  : value to write (register-specific format)
+
+        Raises: `UcError` in case of invalid register id or value format
+        """
+
+        self._reg_write(reg_id, self._DEFAULT_REGTYPE, value)
+
+
+class Uc(RegStateManager):
     """Unicorn Engine class.
     """
 
@@ -483,39 +560,18 @@ class Uc:
     #  CPU state accessors    #
     ###########################
 
-    def _reg_read(self, reg_id: int, regtype, *args):
-        """Register read helper method.
+    def _do_reg_read(self, reg_id: int, reg_obj) -> int:
+        """Private register read implementation.
         """
 
-        reg = regtype(*args)
-        status = uclib.uc_reg_read(self._uch, reg_id, ctypes.byref(reg))
-
-        if status != uc.UC_ERR_OK:
-            raise UcError(status)
-
-        return reg.value
+        return uclib.uc_reg_read(self._uch, reg_id, reg_obj)
 
 
-    def _reg_write(self, reg_id: int, regtype, value) -> None:
-        """Register write helper method.
+    def _do_reg_write(self, reg_id: int, reg_obj) -> int:
+        """Private register write implementation.
         """
 
-        reg = regtype.from_param(value) if issubclass(regtype, ctypes.Structure) else regtype(value)
-        # reg = regtype.from_param(value) if hasattr(regtype, '_fields_') else regtype(value)
-        status = uclib.uc_reg_write(self._uch, reg_id, ctypes.byref(reg))
-
-        if status != uc.UC_ERR_OK:
-            raise UcError(status)
-
-
-    def reg_read(self, reg_id: int, aux: Any = None):
-        # TODO: have a configurable default register type?
-        return self._reg_read(reg_id, ctypes.c_uint64)
-
-
-    def reg_write(self, reg_id: int, value) -> None:
-        # TODO: same as above
-        self._reg_write(reg_id, ctypes.c_uint64, value)
+        return uclib.uc_reg_write(self._uch, reg_id, reg_obj)
 
 
     ###########################
@@ -1049,7 +1105,7 @@ class Uc:
         self.__ctl_w(uc.UC_CTL_TB_FLUSH)
 
 
-class UcContext:
+class UcContext(RegStateManager):
     def __init__(self, h, arch: int, mode: int):
         self._context = uc_context()
         self._size = uclib.uc_context_size(h)
@@ -1079,32 +1135,43 @@ class UcContext:
     def mode(self) -> int:
         return self._mode
 
-    # return the value of a register
-    def reg_read(self, reg_id: int, opt=None):
-        # return reg_read(functools.partial(_uc.uc_context_reg_read, self._context), self.arch, reg_id, opt)
-        raise NotImplementedError
 
-    # write to a register
-    def reg_write(self, reg_id: int, value):
-        # return reg_write(functools.partial(_uc.uc_context_reg_write, self._context), self.arch, reg_id, value)
-        raise NotImplementedError
+    # RegStateManager mixin method implementation
+    def _do_reg_read(self, reg_id: int, reg_obj) -> int:
+        """Private register read implementation.
+        """
+
+        return uclib.uc_context_reg_read(self._context, reg_id, reg_obj)
+
+
+    # RegStateManager mixin method implementation
+    def _do_reg_write(self, reg_id: int, reg_obj) -> int:
+        """Private register write implementation.
+        """
+
+        return uclib.uc_context_reg_write(self._context, reg_id, reg_obj)
+
 
     # Make UcContext picklable
     def __getstate__(self):
-        return (bytes(self), self.size, self.arch, self.mode)
+        return bytes(self), self.size, self.arch, self.mode
 
-    def __setstate__(self, state):
-        self._size = state[1]
-        self._context = ctypes.cast(ctypes.create_string_buffer(state[0], self.size), uc_context)
+    def __setstate__(self, state) -> None:
+        context, size, arch, mode = state
+
+        self._context = ctypes.cast(ctypes.create_string_buffer(context, size), uc_context)
+        self._size = size
+        self._arch = arch
+        self._mode = mode
+
         # __init__ won't be invoked, so we are safe to set it here.
         self._to_free = False
-        self._arch = state[2]
-        self._mode = state[3]
 
-    def __bytes__(self):
+
+    def __bytes__(self) -> bytes:
         return ctypes.string_at(self.context, self.size)
 
-    def __del__(self):
+    def __del__(self) -> None:
         # We need this property since we shouldn't free it if the object is constructed from pickled bytes.
         if self._to_free:
             uclib.uc_context_free(self._context)
