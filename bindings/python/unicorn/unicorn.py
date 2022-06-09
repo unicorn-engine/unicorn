@@ -2,7 +2,7 @@
 # based on Nguyen Anh Quynnh's work
 
 from __future__ import annotations
-from typing import Any, Callable, Iterator, Mapping, MutableMapping, Optional, Sequence, Tuple, Type
+from typing import Any, Callable, Iterable, Iterator, Mapping, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
 
 import ctypes
 import weakref
@@ -39,7 +39,6 @@ class uc_tb(ctypes.Structure):
 def __load_uc_lib() -> ctypes.CDLL:
     from pathlib import Path, PurePath
 
-    import distutils.sysconfig
     import inspect
     import os
     import pkg_resources
@@ -90,41 +89,41 @@ def __load_uc_lib() -> ctypes.CDLL:
     # - we can get the path to the local libraries by parsing our filename
     # - global load
     # - python's lib directory
-    # - last-gasp attempt at some hardcoded paths on darwin and linux
 
-    lib_locations = (
+    lib_locations = [
         os.getenv('LIBUNICORN_PATH'),
         pkg_resources.resource_filename(__name__, 'lib'),
-        PurePath(inspect.getfile(__load_uc_lib)) / 'lib',
-        '',
-        distutils.sysconfig.get_python_lib(),
-        "/usr/local/lib/" if platform == 'darwin' else '/usr/lib64',
-        os.getenv('PATH')
-    )
+        PurePath(inspect.getfile(__load_uc_lib)).parent / 'lib',
+        ''
+    ] + [PurePath(p) / 'unicorn' / 'lib' for p in sys.path]
 
     # filter out None elements
     lib_locations = tuple(Path(loc) for loc in lib_locations if loc is not None)
 
     lib_name = {
-        'darwin' : 'libunicorn.2.dylib',
-        'win32'  : 'unicorn.dll',
         'cygwin' : 'cygunicorn.dll',
+        'darwin' : 'libunicorn.2.dylib',
         'linux'  : 'libunicorn.so.2',
-        'linux2' : 'libunicorn.so.2' 
+        'win32'  : 'unicorn.dll'
     }.get(platform, "libunicorn.so")
 
-    uc_lib = None
+    def __attempt_load(libname: str):
+        T = TypeVar('T')
 
-    for basedir in lib_locations:
-        uc_lib = _load_lib(basedir, lib_name)
+        def __pick_first_valid(iter: Iterable[T]) -> Optional[T]:
+            """Iterate till encountering a non-None element
+            """
 
-        if uc_lib is not None:
-            break
+            return next((elem for elem in iter if elem is not None), None)
 
-    if uc_lib is None:
+        return __pick_first_valid(_load_lib(loc, libname) for loc in lib_locations)
+
+    lib = __attempt_load(lib_name) or __attempt_load('libunicorn.so')
+
+    if lib is None:
         raise ImportError('Failed to load the Unicorn dynamic library')
 
-    return uc_lib
+    return lib
 
 
 def __set_lib_prototypes(lib: ctypes.CDLL) -> None:
