@@ -88,13 +88,20 @@ extern "C" {
 }
 
 pub struct UcHook<'a, D: 'a, F: 'a> {
+    pub unicorn: *mut Unicorn<'a, D>,
     pub callback: F,
-    pub uc: Unicorn<'a, D>,
 }
 
 pub trait IsUcHook<'a> {}
 
 impl<'a, D, F> IsUcHook<'a> for UcHook<'a, D, F> {}
+
+macro_rules! destructure_hook {
+    ($hook:ident) => {{
+        let UcHook { unicorn, callback } = unsafe { &mut *$hook };
+        (unsafe { &mut **unicorn }, callback)
+    }};
+}
 
 pub extern "C" fn mmio_read_callback_proxy<D, F>(
     uc: uc_handle,
@@ -103,11 +110,11 @@ pub extern "C" fn mmio_read_callback_proxy<D, F>(
     user_data: *mut UcHook<D, F>,
 ) -> u64
 where
-    F: FnMut(&mut crate::Unicorn<D>, u64, usize) -> u64,
+    F: FnMut(&mut Unicorn<D>, u64, usize) -> u64,
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, offset, size)
+    let (unicorn, callback) = destructure_hook!(user_data);
+    debug_assert_eq!(uc, unicorn.get_handle());
+    callback(unicorn, offset, size)
 }
 
 pub extern "C" fn mmio_write_callback_proxy<D, F>(
@@ -117,11 +124,11 @@ pub extern "C" fn mmio_write_callback_proxy<D, F>(
     value: u64,
     user_data: *mut UcHook<D, F>,
 ) where
-    F: FnMut(&mut crate::Unicorn<D>, u64, usize, u64),
+    F: FnMut(&mut Unicorn<D>, u64, usize, u64),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, offset, size, value);
+    let (unicorn, callback) = destructure_hook!(user_data);
+    debug_assert_eq!(uc, unicorn.get_handle());
+    callback(unicorn, offset, size, value);
 }
 
 pub extern "C" fn code_hook_proxy<D, F>(
@@ -130,11 +137,11 @@ pub extern "C" fn code_hook_proxy<D, F>(
     size: u32,
     user_data: *mut UcHook<D, F>,
 ) where
-    F: FnMut(&mut crate::Unicorn<D>, u64, u32),
+    F: FnMut(&mut Unicorn<D>, u64, u32),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, address, size);
+    let (unicorn, callback) = destructure_hook!(user_data);
+    debug_assert_eq!(uc, unicorn.get_handle());
+    callback(unicorn, address, size);
 }
 
 pub extern "C" fn block_hook_proxy<D, F>(
@@ -143,11 +150,11 @@ pub extern "C" fn block_hook_proxy<D, F>(
     size: u32,
     user_data: *mut UcHook<D, F>,
 ) where
-    F: FnMut(&mut crate::Unicorn<D>, u64, u32),
+    F: FnMut(&mut Unicorn<D>, u64, u32),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, address, size);
+    let (unicorn, callback) = destructure_hook!(user_data);
+    debug_assert_eq!(uc, unicorn.get_handle());
+    callback(unicorn, address, size);
 }
 
 pub extern "C" fn mem_hook_proxy<D, F>(
@@ -159,20 +166,20 @@ pub extern "C" fn mem_hook_proxy<D, F>(
     user_data: *mut UcHook<D, F>,
 ) -> bool
 where
-    F: FnMut(&mut crate::Unicorn<D>, MemType, u64, usize, i64) -> bool,
+    F: FnMut(&mut Unicorn<D>, MemType, u64, usize, i64) -> bool,
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, mem_type, address, size as usize, value)
+    let (unicorn, callback) = destructure_hook!(user_data);
+    debug_assert_eq!(uc, unicorn.get_handle());
+    callback(unicorn, mem_type, address, size as usize, value)
 }
 
 pub extern "C" fn intr_hook_proxy<D, F>(uc: uc_handle, value: u32, user_data: *mut UcHook<D, F>)
 where
-    F: FnMut(&mut crate::Unicorn<D>, u32),
+    F: FnMut(&mut Unicorn<D>, u32),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, value);
+    let (unicorn, callback) = destructure_hook!(user_data);
+    debug_assert_eq!(uc, unicorn.get_handle());
+    callback(unicorn, value);
 }
 
 pub extern "C" fn insn_in_hook_proxy<D, F>(
@@ -181,20 +188,20 @@ pub extern "C" fn insn_in_hook_proxy<D, F>(
     size: usize,
     user_data: *mut UcHook<D, F>,
 ) where
-    F: FnMut(&mut crate::Unicorn<D>, u32, usize) -> u32,
+    F: FnMut(&mut Unicorn<D>, u32, usize) -> u32,
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, port, size);
+    let (unicorn, callback) = destructure_hook!(user_data);
+    debug_assert_eq!(uc, unicorn.get_handle());
+    callback(unicorn, port, size);
 }
 
 pub extern "C" fn insn_invalid_hook_proxy<D, F>(uc: uc_handle, user_data: *mut UcHook<D, F>) -> bool
 where
-    F: FnMut(&mut crate::Unicorn<D>) -> bool,
+    F: FnMut(&mut Unicorn<D>) -> bool,
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc)
+    let (unicorn, callback) = destructure_hook!(user_data);
+    debug_assert_eq!(uc, unicorn.get_handle());
+    callback(unicorn)
 }
 
 pub extern "C" fn insn_out_hook_proxy<D, F>(
@@ -204,18 +211,18 @@ pub extern "C" fn insn_out_hook_proxy<D, F>(
     value: u32,
     user_data: *mut UcHook<D, F>,
 ) where
-    F: FnMut(&mut crate::Unicorn<D>, u32, usize, u32),
+    F: FnMut(&mut Unicorn<D>, u32, usize, u32),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc, port, size, value);
+    let (unicorn, callback) = destructure_hook!(user_data);
+    debug_assert_eq!(uc, unicorn.get_handle());
+    callback(unicorn, port, size, value);
 }
 
 pub extern "C" fn insn_sys_hook_proxy<D, F>(uc: uc_handle, user_data: *mut UcHook<D, F>)
 where
-    F: FnMut(&mut crate::Unicorn<D>),
+    F: FnMut(&mut Unicorn<D>),
 {
-    let user_data = unsafe { &mut *user_data };
-    debug_assert_eq!(uc, user_data.uc.get_handle());
-    (user_data.callback)(&mut user_data.uc);
+    let (unicorn, callback) = destructure_hook!(user_data);
+    debug_assert_eq!(uc, unicorn.get_handle());
+    callback(unicorn);
 }
