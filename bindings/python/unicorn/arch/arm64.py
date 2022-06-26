@@ -5,6 +5,9 @@
 from typing import Any, Callable, NamedTuple, Tuple
 
 import ctypes
+import weakref
+
+from unicorn.arch.generic import UcHookImplGeneric, UcRegImplGeneric
 
 from .. import Uc, UcError
 from .. import arm64_const as const
@@ -42,13 +45,64 @@ class UcRegCP(ctypes.Structure):
 
         return cls(*param)
 
-
-class UcAArch64(Uc):
-    """Unicorn subclass for ARM64 architecture.
+class UcAArch64RegImpl(UcRegImplGeneric):
+    """Unicorn registers subclass for ARM64 architecture.
     """
 
     REG_RANGE_Q = range(const.UC_ARM64_REG_Q0, const.UC_ARM64_REG_Q31 + 1)
     REG_RANGE_V = range(const.UC_ARM64_REG_V0, const.UC_ARM64_REG_V31 + 1)
+
+    def __init__(self, uc: Uc) -> None:
+        super().__init__(uc)
+
+    @staticmethod
+    def __select_reg_class(reg_id: int):
+        """Select class for special architectural registers.
+        """
+
+        reg_class = (
+            (UcAArch64RegImpl.REG_RANGE_Q, UcReg128),
+            (UcAArch64RegImpl.REG_RANGE_V, UcReg128)
+        )
+
+        return next((cls for rng, cls in reg_class if reg_id in rng), None)
+
+
+    def reg_read(self, reg_id: int, aux: Any = None):
+        # select register class for special cases
+        reg_cls = self.__select_reg_class(reg_id)
+
+        if reg_cls is None:
+            if reg_id == const.UC_ARM64_REG_CP_REG:
+                return self.uc._reg_read(reg_id, UcRegCP, *aux)
+
+            else:
+                # fallback to default reading method
+                return super().reg_read(reg_id, aux)
+
+        return self.uc._reg_read(reg_id, reg_cls)
+
+    def reg_write(self, reg_id: int, value) -> None:
+        # select register class for special cases
+        reg_cls = self.__select_reg_class(reg_id)
+
+        if reg_cls is None:
+            if reg_id == const.UC_ARM64_REG_CP_REG:
+                self.uc._reg_write(reg_id, UcRegCP, value)
+
+            else:
+                # fallback to default writing method
+                super().reg_write(reg_id, value)
+
+        else:
+            self.uc._reg_write(reg_id, reg_cls, value)
+
+class UcAArch64HookImpl(UcHookImplGeneric):
+    """Unicorn hook subclass for ARM64 architecture.
+    """
+
+    def __init__(self, uc: Uc) -> None:
+        super().__init__(uc)
 
     def hook_add(self, htype: int, callback: Callable, user_data: Any = None, begin: int = 1, end: int = 0, aux1: int = 0, aux2: int = 0) -> int:
         if htype != UC_HOOK_INSN:
@@ -89,47 +143,4 @@ class UcAArch64(Uc):
 
         fptr = handler()
 
-        return getattr(self, '_Uc__do_hook_add')(htype, fptr, begin, end, insn)
-
-
-    @staticmethod
-    def __select_reg_class(reg_id: int):
-        """Select class for special architectural registers.
-        """
-
-        reg_class = (
-            (UcAArch64.REG_RANGE_Q, UcReg128),
-            (UcAArch64.REG_RANGE_V, UcReg128)
-        )
-
-        return next((cls for rng, cls in reg_class if reg_id in rng), None)
-
-
-    def reg_read(self, reg_id: int, aux: Any = None):
-        # select register class for special cases
-        reg_cls = UcAArch64.__select_reg_class(reg_id)
-
-        if reg_cls is None:
-            if reg_id == const.UC_ARM64_REG_CP_REG:
-                return self._reg_read(reg_id, UcRegCP, *aux)
-
-            else:
-                # fallback to default reading method
-                return super().reg_read(reg_id, aux)
-
-        return self._reg_read(reg_id, reg_cls)
-
-    def reg_write(self, reg_id: int, value) -> None:
-        # select register class for special cases
-        reg_cls = UcAArch64.__select_reg_class(reg_id)
-
-        if reg_cls is None:
-            if reg_id == const.UC_ARM64_REG_CP_REG:
-                self._reg_write(reg_id, UcRegCP, value)
-
-            else:
-                # fallback to default writing method
-                super().reg_write(reg_id, value)
-
-        else:
-            self._reg_write(reg_id, reg_cls, value)
+        return self.uc._do_hook_add(htype, fptr, begin, end, insn)

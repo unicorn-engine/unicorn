@@ -390,34 +390,12 @@ class RegStateManager:
         if status != uc.UC_ERR_OK:
             raise UcError(status, reg_id)
 
-
     def reg_read(self, reg_id: int, aux: Any = None):
-        """Read architectural register value.
-
-        Args:
-            reg_id : register identifier (architecture-specific enumeration)
-            aux    : auxiliary data (register specific)
-
-        Returns: register value (register-specific format)
-
-        Raises: `UcError` in case of invalid register id or auxiliary data
-        """
-
-        return self._reg_read(reg_id, self._DEFAULT_REGTYPE)
+        raise NotImplementedError
 
 
     def reg_write(self, reg_id: int, value) -> None:
-        """Write to architectural register.
-
-        Args:
-            reg_id : register identifier (architecture-specific enumeration)
-            value  : value to write (register-specific format)
-
-        Raises: `UcError` in case of invalid register id or value format
-        """
-
-        self._reg_write(reg_id, self._DEFAULT_REGTYPE, value)
-
+        raise NotImplementedError
 
 class Uc(RegStateManager):
     """Unicorn Engine class.
@@ -438,13 +416,16 @@ class Uc(RegStateManager):
         return (uc_maj, uc_min) == (bnd_maj, bnd_min)
 
 
-    def __new__(cls, arch: int, mode: int):
-        # prevent direct instantiation of unicorn subclasses
-        assert cls is Uc, f'{cls.__name__} is not meant to be instantiated directly'
+    def __init__(self, arch: int, mode: int) -> None:
+        """Initialize a Unicorn engine instance.
 
-        # verify version compatibility with the core before doing anything
-        if not Uc.__is_compliant():
-            raise UcError(uc.UC_ERR_VERSION)
+        Args:
+            arch: emulated architecture identifier (see UC_ARCH_* constants)
+            mode: emulated processor mode (see UC_MODE_* constants)
+        """
+
+        self._arch = arch
+        self._mode = mode
 
         import importlib
 
@@ -460,38 +441,33 @@ class Uc(RegStateManager):
 
             return __wrapped
 
-        def __uc_generic():
-            return Uc
+        # Initialize arch specifc register implementation
+        self._regs = {
+            uc.UC_ARCH_ARM     : __uc_subclass("arm", "UcAArch32RegImpl"),
+            uc.UC_ARCH_ARM64   : __uc_subclass("arm64", "UcAArch64RegImpl"),
+            uc.UC_ARCH_MIPS    : __uc_subclass("generic", "UcRegImplGeneric"),
+            uc.UC_ARCH_X86     : __uc_subclass("intel", "UcIntelRegImpl"),
+            uc.UC_ARCH_PPC     : __uc_subclass("generic", "UcRegImplGeneric"),
+            uc.UC_ARCH_SPARC   : __uc_subclass("generic", "UcRegImplGeneric"),
+            uc.UC_ARCH_M68K    : __uc_subclass("generic", "UcRegImplGeneric"),
+            uc.UC_ARCH_RISCV   : __uc_subclass("generic", "UcRegImplGeneric"),
+            uc.UC_ARCH_S390X   : __uc_subclass("generic", "UcRegImplGeneric"),
+            uc.UC_ARCH_TRICORE : __uc_subclass("generic", "UcRegImplGeneric")
+        }[self._arch]()(self)
 
-        wrapped: Callable[[], Type[Uc]] = {
-            uc.UC_ARCH_ARM     : __uc_subclass('arm', 'UcAArch32'),
-            uc.UC_ARCH_ARM64   : __uc_subclass('arm64', 'UcAArch64'),
-            uc.UC_ARCH_MIPS    : __uc_generic,
-            uc.UC_ARCH_X86     : __uc_subclass('intel', 'UcIntel'),
-            uc.UC_ARCH_PPC     : __uc_generic,
-            uc.UC_ARCH_SPARC   : __uc_generic,
-            uc.UC_ARCH_M68K    : __uc_generic,
-            uc.UC_ARCH_RISCV   : __uc_generic,
-            uc.UC_ARCH_S390X   : __uc_generic,
-            uc.UC_ARCH_TRICORE : __uc_generic
-        }[arch]
-
-        subclass = wrapped()
-
-        # return the appropriate unicorn subclass type
-        return super(Uc, cls).__new__(subclass)
-
-
-    def __init__(self, arch: int, mode: int) -> None:
-        """Initialize a Unicorn engine instance.
-
-        Args:
-            arch: emulated architecture identifier (see UC_ARCH_* constants)
-            mode: emulated processor mode (see UC_MODE_* constants)
-        """
-
-        self._arch = arch
-        self._mode = mode
+        # Initialize arch specifc hook implementation
+        self._hooks = {
+            uc.UC_ARCH_ARM     : __uc_subclass("generic", "UcHookImplGeneric"),
+            uc.UC_ARCH_ARM64   : __uc_subclass("arm64", "UcAArm64HookImpl"),
+            uc.UC_ARCH_MIPS    : __uc_subclass("generic", "UcHookImplGeneric"),
+            uc.UC_ARCH_X86     : __uc_subclass("intel", "UcIntelHookImpl"),
+            uc.UC_ARCH_PPC     : __uc_subclass("generic", "UcHookImplGeneric"),
+            uc.UC_ARCH_SPARC   : __uc_subclass("generic", "UcHookImplGeneric"),
+            uc.UC_ARCH_M68K    : __uc_subclass("generic", "UcHookImplGeneric"),
+            uc.UC_ARCH_RISCV   : __uc_subclass("generic", "UcHookImplGeneric"),
+            uc.UC_ARCH_S390X   : __uc_subclass("generic", "UcHookImplGeneric"),
+            uc.UC_ARCH_TRICORE : __uc_subclass("generic", "UcHookImplGeneric")
+        }[self._arch]()(self)
 
         # initialize the unicorn instance
         self._uch = ctypes.c_void_p()
@@ -583,6 +559,33 @@ class Uc(RegStateManager):
 
         return uclib.uc_reg_write(self._uch, reg_id, reg_obj)
 
+
+    def reg_read(self, reg_id: int, aux: Any = None):
+        """Read architectural register value.
+
+        Args:
+            reg_id : register identifier (architecture-specific enumeration)
+            aux    : auxiliary data (register specific)
+
+        Returns: register value (register-specific format)
+
+        Raises: `UcError` in case of invalid register id or auxiliary data
+        """
+
+        return self._regs.reg_read(reg_id)
+
+
+    def reg_write(self, reg_id: int, value) -> None:
+        """Write to architectural register.
+
+        Args:
+            reg_id : register identifier (architecture-specific enumeration)
+            value  : value to write (register-specific format)
+
+        Raises: `UcError` in case of invalid register id or value format
+        """
+
+        self._regs.reg_write(reg_id, value)
 
     ###########################
     #  Memory management      #
@@ -761,7 +764,7 @@ class Uc(RegStateManager):
     #  Event hooks management #
     ###########################
 
-    def __do_hook_add(self, htype: int, fptr: ctypes._FuncPointer, begin: int, end: int, *args: ctypes.c_int) -> int:
+    def _do_hook_add(self, htype: int, fptr: ctypes._FuncPointer, begin: int, end: int, *args: ctypes.c_int) -> int:
         handle = uc_hook_h()
 
         # TODO: we do not need a callback counter to reference the callback and user data anymore.
@@ -788,23 +791,7 @@ class Uc(RegStateManager):
         return handle.value
 
 
-    def hook_add(self, htype: int, callback: Callable, user_data: Any = None, begin: int = 1, end: int = 0, aux1: int = 0, aux2: int = 0) -> int:
-        """Hook emulated events of a certain type.
-
-        Args:
-            htype     : event type(s) to hook (see UC_HOOK_* constants)
-            callback  : a method to call each time the hooked event occurs
-            user_data : an additional context to pass to the callback when it is called
-            begin     : address where hook scope starts
-            end       : address where hook scope ends
-            aux1      : auxiliary parameter; needed for some hook types
-            aux2      : auxiliary parameter; needed for some hook types
-
-        Returns: hook handle
-
-        Raises: `UcError` in case of an invalid htype value
-        """
-
+    def _hook_add(self, htype: int, callback: Callable, user_data: Any = None, begin: int = 1, end: int = 0, aux1: int = 0, aux2: int = 0) -> int:
         def __hook_intr():
             @_catch_hook_exception
             def __hook_intr_cb(handle: int, intno: int, key: int):
@@ -917,8 +904,25 @@ class Uc(RegStateManager):
 
         fptr, *aux = handler()
 
-        return self.__do_hook_add(htype, fptr, begin, end, *aux)
+        return self._do_hook_add(htype, fptr, begin, end, *aux)
 
+    def hook_add(self, htype: int, callback: Callable, user_data: Any = None, begin: int = 1, end: int = 0, aux1: int = 0, aux2: int = 0) -> int:
+        """Hook emulated events of a certain type.
+
+        Args:
+            htype     : event type(s) to hook (see UC_HOOK_* constants)
+            callback  : a method to call each time the hooked event occurs
+            user_data : an additional context to pass to the callback when it is called
+            begin     : address where hook scope starts
+            end       : address where hook scope ends
+            aux1      : auxiliary parameter; needed for some hook types
+            aux2      : auxiliary parameter; needed for some hook types
+
+        Returns: hook handle
+
+        Raises: `UcError` in case of an invalid htype value
+        """
+        return self._hooks.hook_add(htype, callback, user_data, begin, end, aux1, aux2)
 
     def hook_del(self, handle: int) -> None:
         """Remove an existing hook.
@@ -1161,6 +1165,12 @@ class UcContext(RegStateManager):
 
         return uclib.uc_context_reg_write(self._context, reg_id, reg_obj)
 
+    def reg_read(self, reg_id: int, aux: Any = None):
+        return self._reg_read(reg_id, self._DEFAULT_REGTYPE, aux)
+
+
+    def reg_write(self, reg_id: int, value) -> None:
+        self._reg_write(reg_id, self._DEFAULT_REGTYPE, value)
 
     # Make UcContext picklable
     def __getstate__(self):

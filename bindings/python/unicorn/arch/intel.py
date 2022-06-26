@@ -5,6 +5,9 @@
 from typing import Any, Callable, Tuple
 
 import ctypes
+import weakref
+
+from unicorn.arch.generic import UcHookImplGeneric, UcRegImplGeneric
 
 from .. import Uc, UcError
 from .. import x86_const as const
@@ -77,9 +80,8 @@ class UcRegFPR(ctypes.Structure):
 
         return cls(*param)
 
-
-class UcIntel(Uc):
-    """Unicorn subclass for Intel architecture.
+class UcIntelRegImpl(UcRegImplGeneric):
+    """Unicorn Intel subclass for Intel architecture.
     """
 
     REG_RANGE_MMR = (
@@ -93,6 +95,76 @@ class UcIntel(Uc):
     REG_RANGE_XMM = range(const.UC_X86_REG_XMM0, const.UC_X86_REG_XMM31 + 1)
     REG_RANGE_YMM = range(const.UC_X86_REG_YMM0, const.UC_X86_REG_YMM31 + 1)
     REG_RANGE_ZMM = range(const.UC_X86_REG_ZMM0, const.UC_X86_REG_ZMM31 + 1)
+
+    def __init__(self, uc: Uc) -> None:
+        super().__init__(uc)
+
+    @staticmethod
+    def __select_reg_class(reg_id: int):
+        """Select class for special architectural registers.
+        """
+
+        reg_class = (
+            (UcIntelRegImpl.REG_RANGE_MMR, UcRegMMR),
+            (UcIntelRegImpl.REG_RANGE_FP,  UcRegFPR),
+            (UcIntelRegImpl.REG_RANGE_XMM, UcReg128),
+            (UcIntelRegImpl.REG_RANGE_YMM, UcReg256),
+            (UcIntelRegImpl.REG_RANGE_ZMM, UcReg512)
+        )
+
+        return next((cls for rng, cls in reg_class if reg_id in rng), None)
+
+
+    def reg_read(self, reg_id: int, aux: Any = None):
+        # select register class for special cases
+        reg_cls = UcIntelRegImpl.__select_reg_class(reg_id)
+
+        if reg_cls is None:
+            # backward compatibility: msr read through reg_read
+            if reg_id == const.UC_X86_REG_MSR:
+                if type(aux) is not int:
+                    raise UcError(UC_ERR_ARG)
+
+                value = self.msr_read(aux)
+
+            else:
+                value = super().reg_read(reg_id, aux)
+        else:
+            value = self.uc._reg_read(reg_id, reg_cls)
+
+        return value
+
+    def reg_write(self, reg_id: int, value) -> None:
+        # select register class for special cases
+        reg_cls = UcIntelRegImpl.__select_reg_class(reg_id)
+
+        if reg_cls is None:
+            # backward compatibility: msr write through reg_write
+            if reg_id == const.UC_X86_REG_MSR:
+                if type(value) is not tuple or len(value) != 2:
+                    raise UcError(UC_ERR_ARG)
+
+                self.msr_write(*value)
+                return
+
+            super().reg_write(reg_id, value)
+        else:
+            self.uc._reg_write(reg_id, reg_cls, value)
+
+
+    def msr_read(self, msr_id: int) -> int:
+        return self.uc._reg_read(const.UC_X86_REG_MSR, UcRegMSR, msr_id)
+
+
+    def msr_write(self, msr_id: int, value: int) -> None:
+        self.uc._reg_write(const.UC_X86_REG_MSR, UcRegMSR, (msr_id, value))
+
+class UcIntelHookImpl(UcHookImplGeneric):
+    """Unicorn hook subclass for Intel architecture.
+    """
+
+    def __init__(self, uc: Uc) -> None:
+        super().__init__(uc)
 
     def hook_add(self, htype: int, callback: Callable, user_data: Any = None, begin: int = 1, end: int = 0, aux1: int = 0, aux2: int = 0) -> int:
         if htype != UC_HOOK_INSN:
@@ -143,65 +215,5 @@ class UcIntel(Uc):
 
         fptr = handler()
 
-        return getattr(self, '_Uc__do_hook_add')(htype, fptr, begin, end, insn)
+        return self.uc._do_hook_add(htype, fptr, begin, end, insn)
 
-
-    @staticmethod
-    def __select_reg_class(reg_id: int):
-        """Select class for special architectural registers.
-        """
-
-        reg_class = (
-            (UcIntel.REG_RANGE_MMR, UcRegMMR),
-            (UcIntel.REG_RANGE_FP,  UcRegFPR),
-            (UcIntel.REG_RANGE_XMM, UcReg128),
-            (UcIntel.REG_RANGE_YMM, UcReg256),
-            (UcIntel.REG_RANGE_ZMM, UcReg512)
-        )
-
-        return next((cls for rng, cls in reg_class if reg_id in rng), None)
-
-
-    def reg_read(self, reg_id: int, aux: Any = None):
-        # select register class for special cases
-        reg_cls = UcIntel.__select_reg_class(reg_id)
-
-        if reg_cls is None:
-            # backward compatibility: msr read through reg_read
-            if reg_id == const.UC_X86_REG_MSR:
-                if type(aux) is not int:
-                    raise UcError(UC_ERR_ARG)
-
-                value = self.msr_read(aux)
-
-            else:
-                value = super().reg_read(reg_id, aux)
-        else:
-            value = self._reg_read(reg_id, reg_cls)
-
-        return value
-
-    def reg_write(self, reg_id: int, value) -> None:
-        # select register class for special cases
-        reg_cls = UcIntel.__select_reg_class(reg_id)
-
-        if reg_cls is None:
-            # backward compatibility: msr write through reg_write
-            if reg_id == const.UC_X86_REG_MSR:
-                if type(value) is not tuple or len(value) != 2:
-                    raise UcError(UC_ERR_ARG)
-
-                self.msr_write(*value)
-                return
-
-            super().reg_write(reg_id, value)
-        else:
-            self._reg_write(reg_id, reg_cls, value)
-
-
-    def msr_read(self, msr_id: int) -> int:
-        return self._reg_read(const.UC_X86_REG_MSR, UcRegMSR, msr_id)
-
-
-    def msr_write(self, msr_id: int, value: int) -> None:
-        self._reg_write(const.UC_X86_REG_MSR, UcRegMSR, (msr_id, value))

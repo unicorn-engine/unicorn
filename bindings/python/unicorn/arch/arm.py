@@ -5,6 +5,9 @@
 from typing import Any, Tuple
 
 import ctypes
+import weakref
+
+from unicorn.arch.generic import UcRegImplGeneric
 
 from .. import Uc, UcError
 from .. import arm_const as const
@@ -39,20 +42,23 @@ class UcRegCP(ctypes.Structure):
         return cls(*param)
 
 
-class UcAArch32(Uc):
-    """Unicorn subclass for ARM architecture.
+class UcAArch32RegImpl(UcRegImplGeneric):
+    """Unicorn registers subclass for ARM architecture.
     """
+
+    def __init__(self, uc: Uc) -> None:
+        super().__init__(uc)
 
     def reg_read(self, reg_id: int, aux: Any = None):
         if reg_id == const.UC_ARM_REG_CP_REG:
-            return self._reg_read(reg_id, UcRegCP, *aux)
+            return self.uc._reg_read(reg_id, UcRegCP, *aux)
 
         # fallback to default reading method
         return super().reg_read(reg_id, aux)
 
     def reg_write(self, reg_id: int, value) -> None:
         if reg_id == const.UC_ARM_REG_CP_REG:
-            self._reg_write(reg_id, UcRegCP, value)
+            self._uc()._reg_write(reg_id, UcRegCP, value)
             return
 
         # fallback to default writing method
