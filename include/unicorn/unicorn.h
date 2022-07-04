@@ -120,8 +120,8 @@ typedef enum uc_mode {
     // Depreciated, use UC_ARM_CPU_* with uc_ctl instead.
     UC_MODE_MCLASS = 1 << 5, // ARM's Cortex-M series.
     UC_MODE_V8 = 1 << 6,     // ARMv8 A32 encodings for ARM
-    UC_MODE_ARMBE8 = 1 << 7, // Big-endian data and Little-endian code.
-                             // Legacy support for UC1 only.
+    UC_MODE_ARMBE8 = 1 << 10, // Big-endian data and Little-endian code.
+                              // Legacy support for UC1 only.
 
     // arm (32bit) cpu types
     // Depreciated, use UC_ARM_CPU_* with uc_ctl instead.
