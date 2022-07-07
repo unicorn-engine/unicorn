@@ -187,6 +187,84 @@ static void test_map_big_memory(void)
     OK(uc_close(uc));
 }
 
+static void test_mem_protect_remove_exec_callback(uc_engine *uc, uint64_t addr,
+                                                  size_t size, void *data)
+{
+    uint64_t *p = (uint64_t *)data;
+    (*p)++;
+
+    OK(uc_mem_protect(uc, 0x2000, 0x1000, UC_PROT_READ));
+}
+
+static void test_mem_protect_remove_exec(void)
+{
+    uc_engine *uc;
+    char code[] = "\x90\xeb\x00\x90";
+    uc_hook hk;
+    uint64_t called_count = 0;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_ALL));
+
+    OK(uc_mem_write(uc, 0x1000, code, sizeof(code) - 1));
+    OK(uc_hook_add(uc, &hk, UC_HOOK_BLOCK,
+                   test_mem_protect_remove_exec_callback, (void *)&called_count,
+                   1, 0));
+
+    OK(uc_emu_start(uc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(called_count == 2);
+
+    OK(uc_close(uc));
+}
+
+static uint64_t test_mem_protect_mmio_read_cb(struct uc_struct *uc,
+                                              uint64_t addr, unsigned size,
+                                              void *user_data)
+{
+    TEST_CHECK(addr == 0x20); // note, it's not 0x1020
+
+    *(uint64_t *)user_data = *(uint64_t *)user_data + 1;
+    return 0x114514;
+}
+
+static void test_mem_protect_mmio_write_cb(struct uc_struct *uc, uint64_t addr,
+                                           unsigned size, uint64_t data,
+                                           void *user_data)
+{
+    TEST_CHECK(false);
+    return;
+}
+
+static void test_mem_protect_mmio(void)
+{
+    uc_engine *uc;
+    // mov eax, [0x2020]; mov [0x2020], eax
+    char code[] = "\xa1\x20\x20\x00\x00\x00\x00\x00\x00\xa3\x20\x20\x00\x00\x00"
+                  "\x00\x00\x00";
+    uint64_t called = 0;
+    uint64_t r_eax;
+
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0x8000, 0x1000, UC_PROT_ALL));
+    OK(uc_mem_write(uc, 0x8000, code, sizeof(code) - 1));
+
+    OK(uc_mmio_map(uc, 0x1000, 0x3000, test_mem_protect_mmio_read_cb,
+                   (void *)&called, test_mem_protect_mmio_write_cb,
+                   (void *)&called));
+    OK(uc_mem_protect(uc, 0x2000, 0x1000, UC_PROT_READ));
+
+    uc_assert_err(UC_ERR_WRITE_PROT,
+                  uc_emu_start(uc, 0x8000, 0x8000 + sizeof(code) - 1, 0, 0));
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_eax));
+
+    TEST_CHECK(called == 1);
+    TEST_CHECK(r_eax == 0x114514);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_wrapping", test_map_wrapping},
              {"test_mem_protect", test_mem_protect},
@@ -196,4 +274,6 @@ TEST_LIST = {{"test_map_correct", test_map_correct},
              {"test_map_at_the_end", test_map_at_the_end},
              {"test_map_wrap", test_map_wrap},
              {"test_map_big_memory", test_map_big_memory},
+             {"test_mem_protect_remove_exec", test_mem_protect_remove_exec},
+             {"test_mem_protect_mmio", test_mem_protect_mmio},
              {NULL, NULL}};

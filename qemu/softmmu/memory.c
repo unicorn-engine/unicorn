@@ -82,7 +82,7 @@ MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, ui
 static uint64_t mmio_read_wrapper(struct uc_struct *uc, void *opaque, hwaddr addr, unsigned size)
 {
     mmio_cbs* cbs = (mmio_cbs*)opaque;
-    
+
     // We have to care about 32bit target.
     addr = addr & ( (target_ulong)(-1) );
     if (cbs->read) {
@@ -123,7 +123,9 @@ MemoryRegion *memory_map_io(struct uc_struct *uc, ram_addr_t begin, size_t size,
     memset(ops, 0, sizeof(*ops));
 
     ops->read = mmio_read_wrapper;
+    ops->read_with_attrs = NULL;
     ops->write = mmio_write_wrapper;
+    ops->write_with_attrs = NULL;
     ops->endianness = DEVICE_NATIVE_ENDIAN;
 
     memory_region_init_io(uc, mmio, ops, opaques, size);

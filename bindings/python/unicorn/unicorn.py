@@ -1,9 +1,10 @@
 # Unicorn Python bindings, by Nguyen Anh Quynnh <aquynh@gmail.com>
-
+from __future__ import annotations
 import ctypes
 import ctypes.util
 import distutils.sysconfig
 from functools import wraps
+from typing import Any, Callable, List, Tuple, Union
 import pkg_resources
 import inspect
 import os.path
@@ -21,11 +22,11 @@ _python2 = sys.version_info[0] < 3
 if _python2:
     range = xrange
 
-_lib = { 'darwin': 'libunicorn.dylib',
+_lib = { 'darwin': 'libunicorn.2.dylib',
          'win32': 'unicorn.dll',
          'cygwin': 'cygunicorn.dll',
-         'linux': 'libunicorn.so',
-         'linux2': 'libunicorn.so' }
+         'linux': 'libunicorn.so.2',
+         'linux2': 'libunicorn.so.2' }
 
 
 # Windows DLL in dependency order
@@ -57,12 +58,12 @@ def _load_win_support(path):
 if sys.platform in ('win32', 'cygwin'):
     _load_win_support('')
 
-def _load_lib(path):
+def _load_lib(path, lib_name):
     try:
         if sys.platform in ('win32', 'cygwin'):
             _load_win_support(path)
 
-        lib_file = os.path.join(path, _lib.get(sys.platform, 'libunicorn.so'))
+        lib_file = os.path.join(path, lib_name)
         dll = ctypes.cdll.LoadLibrary(lib_file)
         #print('SUCCESS')
         return dll
@@ -93,12 +94,26 @@ _path_list = [os.getenv('LIBUNICORN_PATH', None),
 
 for _path in _path_list:
     if _path is None: continue
-    _uc = _load_lib(_path)
-    if _uc is not None: break
-else:
+    _uc = _load_lib(_path, _lib.get(sys.platform, "libunicorn.so"))
+    if _uc is not None:
+        break
+
+# Try to search old unicorn1 library without SONAME
+if _uc is None:
+    for _path in _path_list:
+        if _path is None:
+            continue
+        
+        _uc = _load_lib(_path, "libunicorn.so")
+        if _uc is not None:
+            # In this case, show a warning for users
+            print("Found an old style dynamic library libunicorn.so, consider checking your installation", file=sys.stderr)
+            break
+
+if _uc is None:
     raise ImportError("ERROR: fail to load the dynamic library.")
 
-__version__ = "%u.%u.%u" % (uc.UC_VERSION_MAJOR, uc.UC_VERSION_MINOR, uc.UC_VERSION_EXTRA)
+__version__ = "%u.%u.%u" % (uc.UC_VERSION_MAJOR, uc.UC_VERSION_MINOR, uc.UC_VERSION_PATCH)
 
 # setup all the function prototype
 def _setup_prototype(lib, fname, restype, *argtypes):
@@ -184,6 +199,7 @@ UC_HOOK_INSN_OUT_CB = ctypes.CFUNCTYPE(
 )
 UC_HOOK_INSN_SYSCALL_CB = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_void_p)
 UC_HOOK_INSN_SYS_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_void_p)
+UC_HOOK_INSN_CPUID_CB = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_void_p)
 UC_MMIO_READ_CB = ctypes.CFUNCTYPE(
     ctypes.c_uint64, uc_engine, ctypes.c_uint64, ctypes.c_int, ctypes.c_void_p
 )
@@ -225,6 +241,13 @@ def version_bind():
 # check to see if this engine supports a particular arch
 def uc_arch_supported(query):
     return _uc.uc_arch_supported(query)
+
+ARMCPReg = Tuple[int, int, int, int, int, int, int]
+ARM64CPReg = Tuple[int, int, int, int, int]
+ARMCPRegValue = Tuple[int, int, int, int, int, int, int, int]
+ARM64CPRegValue = Tuple[int, int, int, int, int, int]
+X86MMRReg = Tuple[int, int, int, int]
+X86FPReg = Tuple[int, int]
 
 # uc_reg_read/write and uc_context_reg_read/write.
 def reg_read(reg_read_func, arch, reg_id, opt=None):
@@ -285,7 +308,7 @@ def reg_read(reg_read_func, arch, reg_id, opt=None):
                 raise UcError(status)
             return reg.val
 
-        elif reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+        elif reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or reg_id in range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
             reg = uc_arm64_neon128()
             status = reg_read_func(reg_id, ctypes.byref(reg))
             if status != uc.UC_ERR_OK:
@@ -330,7 +353,7 @@ def reg_write(reg_write_func, arch, reg_id, value):
             reg.value = value[1]
 
     if arch == uc.UC_ARCH_ARM64:
-        if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
+        if reg_id in range(arm64_const.UC_ARM64_REG_Q0, arm64_const.UC_ARM64_REG_Q31+1) or reg_id in range(arm64_const.UC_ARM64_REG_V0, arm64_const.UC_ARM64_REG_V31+1):
             reg = uc_arm64_neon128()
             reg.low_qword = value & 0xffffffffffffffff
             reg.high_qword = value >> 64
@@ -484,7 +507,7 @@ class UcCleanupManager(object):
 class Uc(object):
     _cleanup = UcCleanupManager()
 
-    def __init__(self, arch, mode):
+    def __init__(self, arch: int, mode: int):
         # verify version compatibility with the core before doing anything
         (major, minor, _combined) = uc_version()
         # print("core version =", uc_version())
@@ -508,7 +531,7 @@ class Uc(object):
         self._hook_exception = None  # The exception raised in a hook
 
     @staticmethod
-    def release_handle(uch):
+    def release_handle(uch: ctypes.CDLL):
         if uch:
             try:
                 status = _uc.uc_close(uch)
@@ -518,7 +541,7 @@ class Uc(object):
                 pass
 
     # emulate from @begin, and stop when reaching address @until
-    def emu_start(self, begin, until, timeout=0, count=0):
+    def emu_start(self, begin: int, until: int, timeout: int=0, count: int=0) -> None:
         self._hook_exception = None
         status = _uc.uc_emu_start(self._uch, begin, until, timeout, count)
         if status != uc.UC_ERR_OK:
@@ -528,29 +551,29 @@ class Uc(object):
             raise self._hook_exception
 
     # stop emulation
-    def emu_stop(self):
+    def emu_stop(self) -> None:
         status = _uc.uc_emu_stop(self._uch)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-    # return the value of a register
-    def reg_read(self, reg_id, opt=None):
+    # return the value of a register, for @opt parameter, specify int for x86 msr, tuple for arm cp/neon regs.
+    def reg_read(self, reg_id: int, opt: Union[None, int, ARMCPReg, ARM64CPReg]=None) -> Union[int, X86MMRReg, X86FPReg]:
         return reg_read(functools.partial(_uc.uc_reg_read, self._uch), self._arch, reg_id, opt)
 
-    # write to a register
-    def reg_write(self, reg_id, value):
+    # write to a register, tuple for arm cp regs.
+    def reg_write(self, reg_id: Union[int, ARMCPRegValue, ARM64CPRegValue, X86MMRReg, X86FPReg], value: int):
         return reg_write(functools.partial(_uc.uc_reg_write, self._uch), self._arch, reg_id, value)
 
     # read from MSR - X86 only
-    def msr_read(self, msr_id):
+    def msr_read(self, msr_id: int):
         return self.reg_read(x86_const.UC_X86_REG_MSR, msr_id)
 
     # write to MSR - X86 only
-    def msr_write(self, msr_id, value):
+    def msr_write(self, msr_id, value: int):
         return self.reg_write(x86_const.UC_X86_REG_MSR, (msr_id, value))
 
     # read data from memory
-    def mem_read(self, address, size):
+    def mem_read(self, address: int, size: int):
         data = ctypes.create_string_buffer(size)
         status = _uc.uc_mem_read(self._uch, address, data, size)
         if status != uc.UC_ERR_OK:
@@ -558,7 +581,7 @@ class Uc(object):
         return bytearray(data)
 
     # write to memory
-    def mem_write(self, address, data):
+    def mem_write(self, address: int, data: bytes):
         status = _uc.uc_mem_write(self._uch, address, data, len(data))
         if status != uc.UC_ERR_OK:
             raise UcError(status)
@@ -571,7 +594,9 @@ class Uc(object):
         (cb, data) = self._callbacks[user_data]
         cb(self, offset, size, value, data)
 
-    def mmio_map(self, address, size, read_cb, user_data_read, write_cb, user_data_write):
+    def mmio_map(self, address: int, size: int, 
+                 read_cb: UC_MMIO_READ_TYPE, user_data_read: Any,
+                 write_cb: UC_MMIO_WRITE_TYPE, user_data_write: Any):
         internal_read_cb = ctypes.cast(UC_MMIO_READ_CB(self._mmio_map_read_cb), UC_MMIO_READ_CB)
         internal_write_cb = ctypes.cast(UC_MMIO_WRITE_CB(self._mmio_map_write_cb), UC_MMIO_WRITE_CB)
 
@@ -591,31 +616,31 @@ class Uc(object):
         self._ctype_cbs.append(internal_write_cb)
 
     # map a range of memory
-    def mem_map(self, address, size, perms=uc.UC_PROT_ALL):
+    def mem_map(self, address: int, size: int, perms: int=uc.UC_PROT_ALL):
         status = _uc.uc_mem_map(self._uch, address, size, perms)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
     # map a range of memory from a raw host memory address
-    def mem_map_ptr(self, address, size, perms, ptr):
+    def mem_map_ptr(self, address: int, size: int, perms: int, ptr: int):
         status = _uc.uc_mem_map_ptr(self._uch, address, size, perms, ptr)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
     # unmap a range of memory
-    def mem_unmap(self, address, size):
+    def mem_unmap(self, address: int, size: int):
         status = _uc.uc_mem_unmap(self._uch, address, size)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
     # protect a range of memory
-    def mem_protect(self, address, size, perms=uc.UC_PROT_ALL):
+    def mem_protect(self, address: int, size: int, perms: int=uc.UC_PROT_ALL):
         status = _uc.uc_mem_protect(self._uch, address, size, perms)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
     # return CPU mode at runtime
-    def query(self, query_mode):
+    def query(self, query_mode: int):
         result = ctypes.c_size_t(0)
         status = _uc.uc_query(self._uch, query_mode, ctypes.byref(result))
         if status != uc.UC_ERR_OK:
@@ -690,7 +715,13 @@ class Uc(object):
         (cb, data) = self._callbacks[user_data]
         cb(self, data)
 
-    def ctl(self, control, *args):
+    @_catch_hook_exception
+    def _hook_insn_cpuid_cb(self, handle: int, user_data: int) -> int:
+        # call user's callback with self object
+        (cb, data) = self._callbacks[user_data]
+        return cb(self, data)
+
+    def ctl(self, control: int, *args):
         status = _uc.uc_ctl(self._uch, control, *args)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
@@ -717,6 +748,11 @@ class Uc(object):
         arg = ctp(val)
         self.ctl(self.__ctl_w(ctl, 1), arg)
     
+    def __ctl_w_2_arg(self, ctl, val1, val2, ctp1, ctp2):
+        arg1 = ctp1(val1)
+        arg2 = ctp2(val2)
+        self.ctl(self.__ctl_w(ctl, 2), arg1, arg2)
+
     def __ctl_rw_1_1_arg(self, ctl, val, ctp1, ctp2):
         arg1 = ctp1(val)
         arg2 = ctp2()
@@ -729,7 +765,7 @@ class Uc(object):
     def ctl_get_page_size(self):
         return self.__ctl_r_1_arg(uc.UC_CTL_UC_PAGE_SIZE, ctypes.c_uint32)
     
-    def ctl_set_page_size(self, val):
+    def ctl_set_page_size(self, val: int):
         self.__ctl_w_1_arg(uc.UC_CTL_UC_PAGE_SIZE, val, ctypes.c_uint32)
 
     def ctl_get_arch(self):
@@ -738,7 +774,7 @@ class Uc(object):
     def ctl_get_timeout(self):
         return self.__ctl_r_1_arg(uc.UC_CTL_UC_TIMEOUT, ctypes.c_uint64)
     
-    def ctl_exits_enabled(self, val):
+    def ctl_exits_enabled(self, val: bool):
         self.__ctl_w_1_arg(uc.UC_CTL_UC_USE_EXITS, val, ctypes.c_int)
     
     def ctl_get_exits_cnt(self):
@@ -750,7 +786,7 @@ class Uc(object):
         self.ctl(self.__ctl_r(uc.UC_CTL_UC_EXITS, 2), ctypes.cast(arr, ctypes.c_void_p), ctypes.c_size_t(l))
         return [i for i in arr]
 
-    def ctl_set_exits(self, exits):
+    def ctl_set_exits(self, exits: List[int]):
         arr = (ctypes.c_uint64 * len(exits))()
         for idx, exit in enumerate(exits):
             arr[idx] = exit
@@ -759,17 +795,20 @@ class Uc(object):
     def ctl_get_cpu_model(self):
         return self.__ctl_r_1_arg(uc.UC_CTL_CPU_MODEL, ctypes.c_int)
     
-    def ctl_set_cpu_model(self, val):
+    def ctl_set_cpu_model(self, val: int):
         self.__ctl_w_1_arg(uc.UC_CTL_CPU_MODEL, val, ctypes.c_int)
 
-    def ctl_remove_cache(self, addr):
-        self.__ctl_w_1_arg(uc.UC_CTL_TB_REMOVE_CACHE, addr, ctypes.c_uint64)
+    def ctl_remove_cache(self, addr: int, end: int):
+        self.__ctl_w_2_arg(uc.UC_CTL_TB_REMOVE_CACHE, addr, end, ctypes.c_uint64, ctypes.c_uint64)
 
-    def ctl_request_cache(self, addr):
+    def ctl_request_cache(self, addr: int):
         return self.__ctl_rw_1_1_arg(uc.UC_CTL_TB_REQUEST_CACHE, addr, ctypes.c_uint64, uc_tb)
+    
+    def ctl_flush_tb(self):
+        self.ctl(self.__ctl_w(uc.UC_CTL_TB_FLUSH, 0))
 
     # add a hook
-    def hook_add(self, htype, callback, user_data=None, begin=1, end=0, arg1=0, arg2=0):
+    def hook_add(self, htype: int, callback: UC_HOOK_CALLBACK_TYPE , user_data: Any=None, begin: int=1, end: int=0, arg1: int=0, arg2: int=0):
         _h2 = uc_hook_h()
 
         # save callback & user_data
@@ -785,6 +824,8 @@ class Uc(object):
                 cb = ctypes.cast(UC_HOOK_INSN_OUT_CB(self._hook_insn_out_cb), UC_HOOK_INSN_OUT_CB)
             if arg1 in (x86_const.UC_X86_INS_SYSCALL, x86_const.UC_X86_INS_SYSENTER):  # SYSCALL/SYSENTER instruction
                 cb = ctypes.cast(UC_HOOK_INSN_SYSCALL_CB(self._hook_insn_syscall_cb), UC_HOOK_INSN_SYSCALL_CB)
+            if arg1 == x86_const.UC_X86_INS_CPUID:  # CPUID instruction
+                cb = ctypes.cast(UC_HOOK_INSN_CPUID_CB(self._hook_insn_cpuid_cb), UC_HOOK_INSN_CPUID_CB)
             if arg1 in (arm64_const.UC_ARM64_INS_MRS, arm64_const.UC_ARM64_INS_MSR, arm64_const.UC_ARM64_INS_SYS, arm64_const.UC_ARM64_INS_SYSL):
                 cb = ctypes.cast(UC_HOOK_INSN_SYS_CB(self._hook_insn_sys_cb), UC_HOOK_INSN_SYS_CB)
             status = _uc.uc_hook_add(
@@ -861,7 +902,7 @@ class Uc(object):
         return _h2.value
 
     # delete a hook
-    def hook_del(self, h):
+    def hook_del(self, h: int):
         _h = uc_hook_h(h)
         status = _uc.uc_hook_del(self._uch, _h)
         if status != uc.UC_ERR_OK:
@@ -876,12 +917,12 @@ class Uc(object):
 
         return context
 
-    def context_update(self, context):
+    def context_update(self, context: UcContext):
         status = _uc.uc_context_save(self._uch, context.context)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-    def context_restore(self, context):
+    def context_restore(self, context: UcContext):
         status = _uc.uc_context_restore(self._uch, context.context)
         if status != uc.UC_ERR_OK:
             raise UcError(status)
@@ -956,6 +997,34 @@ class UcContext:
         if self._to_free:
             _uc.uc_context_free(self._context)
 
+UC_HOOK_CODE_TYPE = Callable[[Uc, int, int, Any], None]
+UC_HOOK_INSN_INVALID_TYPE = Callable[[Uc, Any], bool]
+UC_HOOK_MEM_INVALID_TYPE = Callable[[Uc, int, int, int, int, Any], bool]
+UC_HOOK_MEM_ACCESS_TYPE = Callable[[Uc, int, int, int, int, Any], None]
+UC_HOOK_INTR_TYPE = Callable[[Uc, int, Any], None]
+UC_HOOK_INSN_IN_TYPE = Callable[[Uc, int, int, Any], int]
+UC_HOOK_INSN_OUT_TYPE = Callable[[Uc, int, int, int, Any], None]
+UC_HOOK_INSN_SYSCALL_TYPE = Callable[[Uc, Any], None]
+UC_HOOK_INSN_SYS_TYPE = Callable[[Uc, int, Tuple[int, int, int, int, int, int], Any], int]
+UC_HOOK_INSN_CPUID_TYPE = Callable[[Uc, Any], int]
+UC_MMIO_READ_TYPE = Callable[[Uc, int, int, Any], int]
+UC_MMIO_WRITE_TYPE = Callable[[Uc, int, int, int, Any], None]
+UC_HOOK_EDGE_GEN_TYPE = Callable[[Uc, uc_tb, uc_tb, Any], None]
+UC_HOOK_TCG_OPCODE_TYPE = Callable[[Uc, int, int, int, Any], None]
+
+UC_HOOK_CALLBACK_TYPE = Union[
+    UC_HOOK_CODE_TYPE, 
+    UC_HOOK_INSN_INVALID_TYPE, 
+    UC_HOOK_MEM_INVALID_TYPE, 
+    UC_HOOK_MEM_ACCESS_TYPE, 
+    UC_HOOK_INSN_IN_TYPE, 
+    UC_HOOK_INSN_OUT_TYPE,
+    UC_HOOK_INSN_SYSCALL_TYPE,
+    UC_HOOK_INSN_SYS_TYPE,
+    UC_HOOK_INSN_CPUID_TYPE,
+    UC_HOOK_EDGE_GEN_TYPE,
+    UC_HOOK_TCG_OPCODE_TYPE
+]
 
 # print out debugging info
 def debug():

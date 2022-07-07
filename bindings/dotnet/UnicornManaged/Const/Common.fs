@@ -11,13 +11,13 @@ module Common =
     let UC_API_MINOR = 0
 
     let UC_API_PATCH = 0
-    let UC_API_EXTRA = 7
+    let UC_API_EXTRA = 255
     let UC_VERSION_MAJOR = 2
 
     let UC_VERSION_MINOR = 0
 
     let UC_VERSION_PATCH = 0
-    let UC_VERSION_EXTRA = 7
+    let UC_VERSION_EXTRA = 255
     let UC_SECOND_SCALE = 1000000
     let UC_MILISECOND_SCALE = 1000
     let UC_ARCH_ARM = 1
@@ -29,7 +29,8 @@ module Common =
     let UC_ARCH_M68K = 7
     let UC_ARCH_RISCV = 8
     let UC_ARCH_S390X = 9
-    let UC_ARCH_MAX = 10
+    let UC_ARCH_TRICORE = 10
+    let UC_ARCH_MAX = 11
 
     let UC_MODE_LITTLE_ENDIAN = 0
     let UC_MODE_BIG_ENDIAN = 1073741824
@@ -38,7 +39,7 @@ module Common =
     let UC_MODE_THUMB = 16
     let UC_MODE_MCLASS = 32
     let UC_MODE_V8 = 64
-    let UC_MODE_ARMBE8 = 128
+    let UC_MODE_ARMBE8 = 1024
     let UC_MODE_ARM926 = 128
     let UC_MODE_ARM946 = 256
     let UC_MODE_ARM1176 = 512
@@ -139,6 +140,7 @@ module Common =
     let UC_CTL_CPU_MODEL = 7
     let UC_CTL_TB_REQUEST_CACHE = 8
     let UC_CTL_TB_REMOVE_CACHE = 9
+    let UC_CTL_TB_FLUSH = 10
 
     let UC_PROT_NONE = 0
     let UC_PROT_READ = 1

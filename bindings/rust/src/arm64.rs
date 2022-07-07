@@ -305,14 +305,14 @@ pub enum RegisterARM64 {
     VBAR_EL3 = 289,
     CP_REG = 290,
     ENDING = 291,
+}
+
+impl RegisterARM64 {
     // alias registers
     // (assoc) IP0 = 215,
     // (assoc) IP1 = 216,
     // (assoc) FP = 1,
     // (assoc) LR = 2,
-}
-
-impl RegisterARM64 {
     pub const IP0: RegisterARM64 = RegisterARM64::X16;
     pub const IP1: RegisterARM64 = RegisterARM64::X17;
     pub const FP: RegisterARM64 = RegisterARM64::X29;

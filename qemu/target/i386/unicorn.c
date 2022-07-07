@@ -33,6 +33,16 @@ static void x86_set_pc(struct uc_struct *uc, uint64_t address)
         ((CPUX86State *)uc->cpu->env_ptr)->eip = address;
 }
 
+static uint64_t x86_get_pc(struct uc_struct *uc)
+{
+    if (uc->mode == UC_MODE_16) {
+        return X86_CPU(uc->cpu)->env.segs[R_CS].selector * 16 +
+               ((CPUX86State *)uc->cpu->env_ptr)->eip;
+    } else {
+        return ((CPUX86State *)uc->cpu->env_ptr)->eip;
+    }
+}
+
 static void x86_release(void *ctx)
 {
     int i;
@@ -1644,6 +1654,7 @@ void x86_uc_init(struct uc_struct *uc)
     uc->reg_reset = x86_reg_reset;
     uc->release = x86_release;
     uc->set_pc = x86_set_pc;
+    uc->get_pc = x86_get_pc;
     uc->stop_interrupt = x86_stop_interrupt;
     uc->insn_hook_validate = x86_insn_hook_validate;
     uc->opcode_hook_invalidate = x86_opcode_hook_invalidate;

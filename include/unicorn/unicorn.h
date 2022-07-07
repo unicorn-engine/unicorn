@@ -35,6 +35,7 @@ typedef size_t uc_hook;
 #include "ppc.h"
 #include "riscv.h"
 #include "s390x.h"
+#include "tricore.h"
 
 #ifdef __GNUC__
 #define DEFAULT_VISIBILITY __attribute__((visibility("default")))
@@ -72,7 +73,8 @@ typedef size_t uc_hook;
 #define UC_API_MAJOR 2
 #define UC_API_MINOR 0
 #define UC_API_PATCH 0
-#define UC_API_EXTRA 7
+// Release candidate version, 255 means the official release.
+#define UC_API_EXTRA 255
 
 // Unicorn package version
 #define UC_VERSION_MAJOR UC_API_MAJOR
@@ -103,6 +105,7 @@ typedef enum uc_arch {
     UC_ARCH_M68K,    // M68K architecture
     UC_ARCH_RISCV,   // RISCV architecture
     UC_ARCH_S390X,   // S390X architecture
+    UC_ARCH_TRICORE, // TriCore architecture
     UC_ARCH_MAX,
 } uc_arch;
 
@@ -117,8 +120,8 @@ typedef enum uc_mode {
     // Depreciated, use UC_ARM_CPU_* with uc_ctl instead.
     UC_MODE_MCLASS = 1 << 5, // ARM's Cortex-M series.
     UC_MODE_V8 = 1 << 6,     // ARMv8 A32 encodings for ARM
-    UC_MODE_ARMBE8 = 1 << 7, // Big-endian data and Little-endian code.
-                             // Legacy support for UC1 only.
+    UC_MODE_ARMBE8 = 1 << 10, // Big-endian data and Little-endian code.
+                              // Legacy support for UC1 only.
 
     // arm (32bit) cpu types
     // Depreciated, use UC_ARM_CPU_* with uc_ctl instead.
@@ -530,7 +533,10 @@ typedef enum uc_control_type {
     UC_CTL_TB_REQUEST_CACHE,
     // Invalidate a tb cache at a specific address
     // Write: @args = (uint64_t, uint64_t)
-    UC_CTL_TB_REMOVE_CACHE
+    UC_CTL_TB_REMOVE_CACHE,
+    // Invalidate all translation blocks.
+    // No arguments.
+    UC_CTL_TB_FLUSH
 
 } uc_control_type;
 
@@ -605,7 +611,7 @@ See sample_ctl.c for a detailed example.
     uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_REMOVE_CACHE, 2), (address), (end))
 #define uc_ctl_request_cache(uc, address, tb)                                  \
     uc_ctl(uc, UC_CTL_READ_WRITE(UC_CTL_TB_REQUEST_CACHE, 2), (address), (tb))
-
+#define uc_ctl_flush_tlb(uc) uc_ctl(uc, UC_CTL_WRITE(UC_CTL_TB_FLUSH, 0))
 // Opaque storage for CPU context, used with uc_context_*()
 struct uc_context;
 typedef struct uc_context uc_context;

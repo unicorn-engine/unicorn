@@ -9,6 +9,7 @@
 #include <stdio.h>
 
 #include "qemu.h"
+#include "qemu/xxhash.h"
 #include "unicorn/unicorn.h"
 #include "list.h"
 
@@ -33,6 +34,7 @@
 #define UC_MODE_RISCV_MASK                                                     \
     (UC_MODE_RISCV32 | UC_MODE_RISCV64 | UC_MODE_LITTLE_ENDIAN)
 #define UC_MODE_S390X_MASK (UC_MODE_BIG_ENDIAN)
+#define UC_MODE_TRICORE_MASK (UC_MODE_LITTLE_ENDIAN)
 
 #define ARR_SIZE(a) (sizeof(a) / sizeof(a[0]))
 
@@ -92,6 +94,8 @@ typedef void (*uc_args_uc_long_t)(struct uc_struct *, unsigned long);
 
 typedef void (*uc_args_uc_u64_t)(struct uc_struct *, uint64_t addr);
 
+typedef uint64_t (*uc_get_pc_t)(struct uc_struct *);
+
 typedef MemoryRegion *(*uc_args_uc_ram_size_t)(struct uc_struct *, hwaddr begin,
                                                size_t size, uint32_t perms);
 
@@ -139,6 +143,9 @@ typedef void (*uc_invalidate_tb_t)(struct uc_struct *uc, uint64_t start,
 // Request generating TB at given address
 typedef uc_err (*uc_gen_tb_t)(struct uc_struct *uc, uint64_t pc, uc_tb *out_tb);
 
+// tb flush
+typedef uc_tcg_flush_tlb uc_tb_flush_t;
+
 struct hook {
     int type;       // UC_HOOK_*
     int insn;       // instruction for HOOK_INSN
@@ -151,6 +158,7 @@ struct hook {
                          // address (depends on hook type)
     void *callback;      // a uc_cb_* type
     void *user_data;
+    GHashTable *hooked_regions; // The regions this hook instrumented on
 };
 
 // Add an inline hook to helper_table
@@ -254,6 +262,7 @@ struct uc_struct {
     uc_read_mem_t read_mem;
     uc_args_void_t release;  // release resource when uc_close()
     uc_args_uc_u64_t set_pc; // set PC for tracecode
+    uc_get_pc_t get_pc;
     uc_args_int_t
         stop_interrupt; // check if the interrupt should stop emulation
     uc_memory_map_io_t memory_map_io;
@@ -272,6 +281,7 @@ struct uc_struct {
     uc_tcg_flush_tlb tcg_flush_tlb;
     uc_invalidate_tb_t uc_invalidate_tb;
     uc_gen_tb_t uc_gen_tb;
+    uc_tb_flush_t tb_flush;
     uc_add_inline_hook_t add_inline_hook;
     uc_del_inline_hook_t del_inline_hook;
 
@@ -404,6 +414,62 @@ static inline int uc_addr_is_exit(uc_engine *uc, uint64_t addr)
     } else {
         return uc->exits[uc->nested_level - 1] == addr;
     }
+}
+
+typedef struct HookedRegion {
+    uint64_t start;
+    uint64_t length;
+} HookedRegion;
+
+// hooked_regions related functions
+static inline guint hooked_regions_hash(const void *p)
+{
+    HookedRegion *region = (HookedRegion *)p;
+
+    return qemu_xxhash4(region->start, region->length);
+}
+
+static inline gboolean hooked_regions_equal(const void *lhs, const void *rhs)
+{
+    HookedRegion *l = (HookedRegion *)lhs;
+    HookedRegion *r = (HookedRegion *)rhs;
+
+    return l->start == r->start && l->length == r->length;
+}
+
+static inline void hooked_regions_add(struct hook *h, uint64_t start,
+                                      uint64_t length)
+{
+    HookedRegion tmp;
+    tmp.start = start;
+    tmp.length = length;
+
+    if (!g_hash_table_lookup(h->hooked_regions, (void *)&tmp)) {
+        HookedRegion *r = malloc(sizeof(HookedRegion));
+        r->start = start;
+        r->length = length;
+        g_hash_table_insert(h->hooked_regions, (void *)r, (void *)1);
+    }
+}
+
+static inline void hooked_regions_check_single(struct list_item *cur,
+                                               uint64_t start, uint64_t length)
+{
+    while (cur != NULL) {
+        if (HOOK_BOUND_CHECK((struct hook *)cur->data, start)) {
+            hooked_regions_add((struct hook *)cur->data, start, length);
+        }
+        cur = cur->next;
+    }
+}
+
+static inline void hooked_regions_check(uc_engine *uc, uint64_t start,
+                                        uint64_t length)
+{
+    // Only UC_HOOK_BLOCK and UC_HOOK_CODE might be wrongle cached!
+    hooked_regions_check_single(uc->hook[UC_HOOK_CODE_IDX].head, start, length);
+    hooked_regions_check_single(uc->hook[UC_HOOK_BLOCK_IDX].head, start,
+                                length);
 }
 
 #ifdef UNICORN_TRACER

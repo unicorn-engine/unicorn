@@ -24,6 +24,7 @@
 #include "qemu/target/ppc/unicorn.h"
 #include "qemu/target/riscv/unicorn.h"
 #include "qemu/target/s390x/unicorn.h"
+#include "qemu/target/tricore/unicorn.h"
 
 #include "qemu/include/qemu/queue.h"
 #include "qemu-common.h"
@@ -48,6 +49,14 @@ static void *hook_append(struct list *l, struct hook *h)
     return item;
 }
 
+static void hook_invalidate_region(void *key, void *data, void *opaq)
+{
+    uc_engine *uc = (uc_engine *)opaq;
+    HookedRegion *region = (HookedRegion *)key;
+
+    uc->uc_invalidate_tb(uc, region->start, region->length);
+}
+
 static void hook_delete(void *data)
 {
     struct hook *h = (struct hook *)data;
@@ -55,6 +64,7 @@ static void hook_delete(void *data)
     h->refs--;
 
     if (h->refs == 0) {
+        g_hash_table_destroy(h->hooked_regions);
         free(h);
     }
 }
@@ -166,6 +176,10 @@ bool uc_arch_supported(uc_arch arch)
 #endif
 #ifdef UNICORN_HAS_S390X
     case UC_ARCH_S390X:
+        return true;
+#endif
+#ifdef UNICORN_HAS_TRICORE
+    case UC_ARCH_TRICORE:
         return true;
 #endif
     /* Invalid or disabled arch */
@@ -383,6 +397,15 @@ uc_err uc_open(uc_arch arch, uc_mode mode, uc_engine **result)
                 return UC_ERR_MODE;
             }
             uc->init_arch = s390_uc_init;
+            break;
+#endif
+#ifdef UNICORN_HAS_TRICORE
+        case UC_ARCH_TRICORE:
+            if ((mode & ~UC_MODE_TRICORE_MASK)) {
+                free(uc);
+                return UC_ERR_MODE;
+            }
+            uc->init_arch = tricore_uc_init;
             break;
 #endif
         }
@@ -799,6 +822,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         uc_reg_write(uc, UC_S390X_REG_PC, &begin);
         break;
 #endif
+#ifdef UNICORN_HAS_TRICORE
+    case UC_ARCH_TRICORE:
+        uc_reg_write(uc, UC_TRICORE_REG_PC, &begin);
+        break;
+#endif
     }
 
     uc->stop_request = false;
@@ -808,6 +836,9 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     if (count <= 0 && uc->count_hook != 0) {
         uc_hook_del(uc, uc->count_hook);
         uc->count_hook = 0;
+
+        // In this case, we have to drop all translated blocks.
+        uc->tb_flush(uc);
     }
     // set up count hook to count instructions.
     if (count > 0 && uc->count_hook == 0) {
@@ -844,10 +875,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     // or we may lost uc_emu_stop
     if (uc->nested_level == 0) {
         uc->emulation_done = true;
-    }
 
-    // remove hooks to delete
-    clear_deleted_hooks(uc);
+        // remove hooks to delete
+        // make sure we delete all hooks at the first level.
+        clear_deleted_hooks(uc);
+    }
 
     if (timeout) {
         // wait for the timer to finish
@@ -1091,15 +1123,13 @@ static uint8_t *copy_region(struct uc_struct *uc, MemoryRegion *mr)
 /*
     This function is similar to split_region, but for MMIO memory.
 
-    This function would delete the region unconditionally.
-
     Note this function may be called recursively.
 */
 static bool split_mmio_region(struct uc_struct *uc, MemoryRegion *mr,
-                              uint64_t address, size_t size)
+                              uint64_t address, size_t size, bool do_delete)
 {
     uint64_t begin, end, chunk_end;
-    size_t l_size, r_size;
+    size_t l_size, r_size, m_size;
     mmio_cbs backup;
 
     chunk_end = address + size;
@@ -1142,9 +1172,17 @@ static bool split_mmio_region(struct uc_struct *uc, MemoryRegion *mr,
     // compute sub region sizes
     l_size = (size_t)(address - begin);
     r_size = (size_t)(end - chunk_end);
+    m_size = (size_t)(chunk_end - address);
 
     if (l_size > 0) {
         if (uc_mmio_map(uc, begin, l_size, backup.read, backup.user_data_read,
+                        backup.write, backup.user_data_write) != UC_ERR_OK) {
+            return false;
+        }
+    }
+
+    if (m_size > 0 && !do_delete) {
+        if (uc_mmio_map(uc, address, m_size, backup.read, backup.user_data_read,
                         backup.write, backup.user_data_write) != UC_ERR_OK) {
             return false;
         }
@@ -1335,6 +1373,7 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
 {
     MemoryRegion *mr;
     uint64_t addr = address;
+    uint64_t pc;
     size_t count, len;
     bool remove_exec = false;
 
@@ -1376,18 +1415,28 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     while (count < size) {
         mr = memory_mapping(uc, addr);
         len = (size_t)MIN(size - count, mr->end - addr);
-        if (!split_region(uc, mr, addr, len, false)) {
-            return UC_ERR_NOMEM;
-        }
+        if (mr->ram) {
+            if (!split_region(uc, mr, addr, len, false)) {
+                return UC_ERR_NOMEM;
+            }
 
-        mr = memory_mapping(uc, addr);
-        // will this remove EXEC permission?
-        if (((mr->perms & UC_PROT_EXEC) != 0) &&
-            ((perms & UC_PROT_EXEC) == 0)) {
-            remove_exec = true;
+            mr = memory_mapping(uc, addr);
+            // will this remove EXEC permission?
+            if (((mr->perms & UC_PROT_EXEC) != 0) &&
+                ((perms & UC_PROT_EXEC) == 0)) {
+                remove_exec = true;
+            }
+            mr->perms = perms;
+            uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
+
+        } else {
+            if (!split_mmio_region(uc, mr, addr, len, false)) {
+                return UC_ERR_NOMEM;
+            }
+
+            mr = memory_mapping(uc, addr);
+            mr->perms = perms;
         }
-        mr->perms = perms;
-        uc->readonly_mem(mr, (perms & UC_PROT_WRITE) == 0);
 
         count += len;
         addr += len;
@@ -1396,8 +1445,11 @@ uc_err uc_mem_protect(struct uc_struct *uc, uint64_t address, size_t size,
     // if EXEC permission is removed, then quit TB and continue at the same
     // place
     if (remove_exec) {
-        uc->quit_request = true;
-        uc_emu_stop(uc);
+        pc = uc->get_pc(uc);
+        if (pc < address + size && pc >= address) {
+            uc->quit_request = true;
+            uc_emu_stop(uc);
+        }
     }
 
     return UC_ERR_OK;
@@ -1444,7 +1496,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
         mr = memory_mapping(uc, addr);
         len = (size_t)MIN(size - count, mr->end - addr);
         if (!mr->ram) {
-            if (!split_mmio_region(uc, mr, addr, len)) {
+            if (!split_mmio_region(uc, mr, addr, len, true)) {
                 return UC_ERR_NOMEM;
             }
         } else {
@@ -1518,6 +1570,8 @@ uc_err uc_hook_add(uc_engine *uc, uc_hook *hh, int type, void *callback,
     hook->user_data = user_data;
     hook->refs = 0;
     hook->to_delete = false;
+    hook->hooked_regions = g_hash_table_new_full(
+        hooked_regions_hash, hooked_regions_equal, g_free, NULL);
     *hh = (uc_hook)hook;
 
     // UC_HOOK_INSN has an extra argument for instruction ID
@@ -1627,6 +1681,9 @@ uc_err uc_hook_del(uc_engine *uc, uc_hook hh)
     // and store the type mask in the hook pointer.
     for (i = 0; i < UC_HOOK_MAX; i++) {
         if (list_exists(&uc->hook[i], (void *)hook)) {
+            g_hash_table_foreach(hook->hooked_regions, hook_invalidate_region,
+                                 uc);
+            g_hash_table_remove_all(hook->hooked_regions);
             hook->to_delete = true;
             uc->hooks_count[i]--;
             hook_append(&uc->hooks_to_del, hook);
@@ -1955,6 +2012,12 @@ static void find_context_reg_rw_function(uc_arch arch, uc_mode mode,
     case UC_ARCH_S390X:
         rw->context_reg_read = s390_context_reg_read;
         rw->context_reg_write = s390_context_reg_write;
+        break;
+#endif
+#ifdef UNICORN_HAS_TRICORE
+    case UC_ARCH_TRICORE:
+        rw->context_reg_read = tricore_context_reg_read;
+        rw->context_reg_write = tricore_context_reg_write;
         break;
 #endif
     }
@@ -2299,6 +2362,17 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         }
         break;
     }
+
+    case UC_CTL_TB_FLUSH:
+
+        UC_INIT(uc);
+
+        if (rw == UC_CTL_IO_WRITE) {
+            uc->tb_flush(uc);
+        } else {
+            err = UC_ERR_ARG;
+        }
+        break;
 
     default:
         err = UC_ERR_ARG;

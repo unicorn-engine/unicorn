@@ -985,6 +985,10 @@ static void tb_htable_init(struct uc_struct *uc)
 }
 
 
+static void uc_tb_flush(struct uc_struct *uc) {
+    tb_flush(uc->cpu);
+}
+
 static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t len) 
 {
     tb_page_addr_t start, end;
@@ -1095,6 +1099,7 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
     /* Invalidate / Cache TBs */
     uc->uc_invalidate_tb = uc_invalidate_tb;
     uc->uc_gen_tb = uc_gen_tb;
+    uc->tb_flush = uc_tb_flush;
 
     /* Inline hooks optimization */
     uc->add_inline_hook = uc_add_inline_hook;

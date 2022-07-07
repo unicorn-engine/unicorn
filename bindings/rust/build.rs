@@ -1,23 +1,16 @@
-#[cfg(feature = "use_system_unicorn")]
 use pkg_config;
-#[cfg(feature = "build_unicorn_cmake")]
 use std::env;
-#[cfg(feature = "build_unicorn_cmake")]
 use std::path::PathBuf;
-#[cfg(feature = "build_unicorn_cmake")]
 use std::process::Command;
 
-#[cfg(all(feature = "build_unicorn_cmake"))]
 fn ninja_available() -> bool {
     Command::new("ninja").arg("--version").spawn().is_ok()
 }
 
-#[cfg(all(feature = "build_unicorn_cmake"))]
 fn msvc_cmake_tools_available() -> bool {
     Command::new("cmake").arg("--version").spawn().is_ok() && ninja_available()
 }
 
-#[cfg(all(feature = "build_unicorn_cmake"))]
 fn setup_env_msvc(compiler: &cc::Tool) {
     // If PATH already contains what we need, skip this
     if msvc_cmake_tools_available() {
@@ -27,20 +20,24 @@ fn setup_env_msvc(compiler: &cc::Tool) {
     let target = env::var("TARGET").unwrap();
     let devenv = cc::windows_registry::find_tool(target.as_str(), "devenv");
     let tool_root: PathBuf = match devenv {
-        Some(devenv_tool) => {
-            devenv_tool.path().parent().unwrap().to_path_buf()
-        },
+        Some(devenv_tool) => devenv_tool.path().parent().unwrap().to_path_buf(),
         None => {
             // if devenv (i.e. Visual Studio) was not found, assume compiler is
             // from standalone Build Tools and look there instead.
             // this should be done properly in cc crate, but for now it's not.
             let tools_name = std::ffi::OsStr::new("BuildTools");
             let compiler_path = compiler.path().to_path_buf();
-            compiler_path.iter().find(|x| *x == tools_name)
+            compiler_path
+                .iter()
+                .find(|x| *x == tools_name)
                 .expect("Failed to find devenv or Build Tools");
-            compiler_path.iter().take_while(|x| *x != tools_name)
-                .collect::<PathBuf>().join(tools_name).join(r"Common7\IDE")
-        },
+            compiler_path
+                .iter()
+                .take_while(|x| *x != tools_name)
+                .collect::<PathBuf>()
+                .join(tools_name)
+                .join(r"Common7\IDE")
+        }
     };
     let cmake_pkg_dir = tool_root.join(r"CommonExtensions\Microsoft\CMake");
     let cmake_path = cmake_pkg_dir.join(r"CMake\bin\cmake.exe");
@@ -63,7 +60,6 @@ fn setup_env_msvc(compiler: &cc::Tool) {
     }
 }
 
-#[cfg(feature = "build_unicorn_cmake")]
 fn build_with_cmake() {
     let uc_dir = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
     let compiler = cc::Build::new().get_compiler();
@@ -92,14 +88,22 @@ fn build_with_cmake() {
     // unicorn's CMakeLists.txt doesn't properly support 'install', so we use
     // the build artifacts from the build directory, which cmake crate sets
     // to "<out_dir>/build/"
-    let dst = config.define("BUILD_SHARED_LIBS", "OFF")
+    let dst = config
         .define("UNICORN_BUILD_TESTS", "OFF")
         .define("UNICORN_INSTALL", "OFF")
-        .no_build_target(true).build();
-    println!("cargo:rustc-link-search=native={}", dst.join("build").display());
+        .no_build_target(true)
+        .build();
+    println!(
+        "cargo:rustc-link-search=native={}",
+        dst.join("build").display()
+    );
 
-    // Lazymio(@wtdcode): Why do I stick to static link? See: https://github.com/rust-lang/cargo/issues/5077
-    println!("cargo:rustc-link-lib=static=unicorn");
+    // Lazymio(@wtdcode): Dynamic link may break. See: https://github.com/rust-lang/cargo/issues/5077
+    if cfg!(feature = "dynamic_linkage") {
+        println!("cargo:rustc-link-lib=dylib=unicorn");
+    } else {
+        println!("cargo:rustc-link-lib=static=unicorn");
+    }
     if !compiler.is_like_msvc() {
         println!("cargo:rustc-link-lib=pthread");
         println!("cargo:rustc-link-lib=m");
@@ -107,14 +111,26 @@ fn build_with_cmake() {
 }
 
 fn main() {
-    if cfg!(feature = "use_system_unicorn") {
-        #[cfg(feature = "use_system_unicorn")]
-        pkg_config::Config::new()
-            .atleast_version("2")
-            .probe("unicorn")
-            .expect("Could not find system unicorn2");
-    } else {
-        #[cfg(feature = "build_unicorn_cmake")]
-        build_with_cmake();
-    }
+    match pkg_config::Config::new()
+        .atleast_version("2")
+        .cargo_metadata(false)
+        .probe("unicorn")
+    {
+        Ok(lib) => {
+            for dir in lib.link_paths {
+                println!("cargo:rustc-link-search=native={}", dir.to_str().unwrap());
+            }
+            if cfg!(feature = "dynamic_linkage") {
+                println!("cargo:rustc-link-lib=dylib=unicorn");
+            } else {
+                println!("cargo:rustc-link-arg=-Wl,-allow-multiple-definition");
+                println!("cargo:rustc-link-lib=static=unicorn");
+                println!("cargo:rustc-link-lib=pthread");
+                println!("cargo:rustc-link-lib=m");
+            }
+        }
+        Err(_) => {
+            build_with_cmake();
+        }
+    };
 }

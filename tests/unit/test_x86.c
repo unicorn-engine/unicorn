@@ -690,6 +690,35 @@ static void test_x86_clear_tb_cache(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_clear_count_cache(void)
+{
+    uc_engine *uc;
+    // uc_emu_start will clear last TB when exiting so generating a tb at last
+    // by design
+    char code[] =
+        "\x83\xc1\x01\x4a\xeb\x00\x83\xc3\x01"; // ADD ecx, 1; DEC edx;
+                                                // jmp t;
+                                                // t:
+                                                // ADD ebx, 1
+    int r_ecx = 0x1234;
+    int r_edx = 0x7890;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_reg_write(uc, UC_X86_REG_ECX, &r_ecx));
+    OK(uc_reg_write(uc, UC_X86_REG_EDX, &r_edx));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 2));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_ECX, &r_ecx));
+    OK(uc_reg_read(uc, UC_X86_REG_EDX, &r_edx));
+
+    TEST_CHECK(r_ecx == 0x1236);
+    TEST_CHECK(r_edx == 0x788e);
+
+    OK(uc_close(uc));
+}
+
 // This is a regression bug.
 static void test_x86_clear_empty_tb(void)
 {
@@ -797,7 +826,7 @@ static void test_x86_hook_tcg_op(void)
     OK(uc_close(uc));
 }
 
-static void test_x86_cmpxchg_mem_hook(uc_engine *uc, uc_mem_type type,
+static bool test_x86_cmpxchg_mem_hook(uc_engine *uc, uc_mem_type type,
                                       uint64_t address, int size, int64_t val,
                                       void *data)
 {
@@ -806,6 +835,8 @@ static void test_x86_cmpxchg_mem_hook(uc_engine *uc, uc_mem_type type,
     } else {
         *((int *)data) |= 2;
     }
+
+    return true;
 }
 
 static void test_x86_cmpxchg(void)
@@ -981,6 +1012,100 @@ static void test_x86_nested_uc_emu_start_exits(void)
     OK(uc_close(uc));
 }
 
+static bool test_x86_correct_address_in_small_jump_hook_callback(
+    uc_engine *uc, int type, uint64_t address, int size, int64_t value,
+    void *user_data)
+{
+    // Check registers
+    uint64_t r_rax = 0x0;
+    uint64_t r_rip = 0x0;
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip));
+    TEST_CHECK(r_rax == 0x7F00);
+    TEST_CHECK(r_rip == 0x7F00);
+
+    // Check address
+    // printf("%lx\n", address);
+    TEST_CHECK(address == 0x7F00);
+
+    return false;
+}
+
+static void test_x86_correct_address_in_small_jump_hook(void)
+{
+    uc_engine *uc;
+    // movabs $0x7F00, %rax
+    // jmp  *%rax
+    char code[] = "\x48\xb8\x00\x7F\x00\x00\x00\x00\x00\x00\xff\xe0";
+
+    uint64_t r_rax = 0x0;
+    uint64_t r_rip = 0x0;
+    uc_hook hook;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED,
+                   test_x86_correct_address_in_small_jump_hook_callback, NULL,
+                   1, 0));
+
+    uc_assert_err(
+        UC_ERR_FETCH_UNMAPPED,
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip));
+    TEST_CHECK(r_rax == 0x7F00);
+    TEST_CHECK(r_rip == 0x7F00);
+
+    OK(uc_close(uc));
+}
+
+static bool test_x86_correct_address_in_long_jump_hook_callback(
+    uc_engine *uc, int type, uint64_t address, int size, int64_t value,
+    void *user_data)
+{
+    // Check registers
+    uint64_t r_rax = 0x0;
+    uint64_t r_rip = 0x0;
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip));
+    TEST_CHECK(r_rax == 0x7FFFFFFFFFFFFF00);
+    TEST_CHECK(r_rip == 0x7FFFFFFFFFFFFF00);
+
+    // Check address
+    // printf("%lx\n", address);
+    TEST_CHECK(address == 0x7FFFFFFFFFFFFF00);
+
+    return false;
+}
+
+static void test_x86_correct_address_in_long_jump_hook(void)
+{
+    uc_engine *uc;
+    // movabs $0x7FFFFFFFFFFFFF00, %rax
+    // jmp  *%rax
+    char code[] = "\x48\xb8\x00\xff\xff\xff\xff\xff\xff\x7f\xff\xe0";
+
+    uint64_t r_rax = 0x0;
+    uint64_t r_rip = 0x0;
+    uc_hook hook;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_64, code, sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED,
+                   test_x86_correct_address_in_long_jump_hook_callback, NULL, 1,
+                   0));
+
+    uc_assert_err(
+        UC_ERR_FETCH_UNMAPPED,
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_RAX, &r_rax));
+    OK(uc_reg_read(uc, UC_X86_REG_RIP, &r_rip));
+    TEST_CHECK(r_rax == 0x7FFFFFFFFFFFFF00);
+    TEST_CHECK(r_rip == 0x7FFFFFFFFFFFFF00);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1013,4 +1138,9 @@ TEST_LIST = {
     {"test_x86_64_nested_emu_start_error", test_x86_64_nested_emu_start_error},
     {"test_x86_eflags_reserved_bit", test_x86_eflags_reserved_bit},
     {"test_x86_nested_uc_emu_start_exits", test_x86_nested_uc_emu_start_exits},
+    {"test_x86_clear_count_cache", test_x86_clear_count_cache},
+    {"test_x86_correct_address_in_small_jump_hook",
+     test_x86_correct_address_in_small_jump_hook},
+    {"test_x86_correct_address_in_long_jump_hook",
+     test_x86_correct_address_in_long_jump_hook},
     {NULL, NULL}};

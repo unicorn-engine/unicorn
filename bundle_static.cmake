@@ -1,5 +1,5 @@
 # https://cristianadam.eu/20190501/bundling-together-static-libraries-with-cmake/
-function(bundle_static_library tgt_name bundled_tgt_name)
+function(bundle_static_library tgt_name bundled_tgt_name library_name)
   list(APPEND static_libs ${tgt_name})
   set(dep_libs "")
 
@@ -41,10 +41,10 @@ function(bundle_static_library tgt_name bundled_tgt_name)
   list(REMOVE_DUPLICATES dep_libs)
 
   set(bundled_tgt_full_name 
-    ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${bundled_tgt_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
+    ${CMAKE_BINARY_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}${library_name}${CMAKE_STATIC_LIBRARY_SUFFIX})
   
   if (APPLE)
-    find_program(lib_tool libtool)
+    find_program(lib_tool libtool REQUIRED)
 
     foreach(tgt IN LISTS static_libs)
       list(APPEND static_libs_full_names $<TARGET_FILE:${tgt}>)
@@ -55,7 +55,7 @@ function(bundle_static_library tgt_name bundled_tgt_name)
       OUTPUT ${bundled_tgt_full_name}
       COMMENT "Bundling ${bundled_tgt_name}"
       VERBATIM)
-  elseif(UNIX)
+  elseif(UNIX OR MINGW)
     file(WRITE ${CMAKE_BINARY_DIR}/${bundled_tgt_name}.ar.in
     "CREATE ${bundled_tgt_full_name}\n" )
         
@@ -82,7 +82,10 @@ function(bundle_static_library tgt_name bundled_tgt_name)
         COMMENT "Bundling ${bundled_tgt_name}"
         VERBATIM)
   elseif(WIN32)
-    find_program(lib_tool lib)
+    # https://stackoverflow.com/a/38096930/1806760
+    get_filename_component(vs_bin_path "${CMAKE_LINKER}" DIRECTORY)
+
+    find_program(lib_tool lib HINTS "${vs_bin_path}" REQUIRED)
 
     foreach(tgt IN LISTS static_libs)
       list(APPEND static_libs_full_names $<TARGET_FILE:${tgt}>)

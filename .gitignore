@@ -10,6 +10,7 @@
 *.dll
 *.class
 *.jar
+*.gem
 *~
 
 qemu/*-softmmu/
@@ -52,7 +53,7 @@ bindings/python/unicorn.egg-info/
 bindings/python/unicorn/lib/
 bindings/python/unicorn/include/
 bindings/python/MANIFEST
-target/
+/target/
 Cargo.lock
 config.log
 

@@ -29,17 +29,17 @@ SRC_DIR = os.path.join(ROOT_DIR, 'src')
 UC_DIR = os.path.join(ROOT_DIR, '../..')
 BUILD_DIR = os.path.join(UC_DIR, 'build_python')
 
-VERSION = "2.0.0rc7"
+VERSION = "2.0.0"
 
 if SYSTEM == 'darwin':
-    LIBRARY_FILE = "libunicorn.dylib"
-    STATIC_LIBRARY_FILE = None
+    LIBRARY_FILE = "libunicorn.2.dylib"
+    STATIC_LIBRARY_FILE = "libunicorn.a"
 elif SYSTEM in ('win32', 'cygwin'):
     LIBRARY_FILE = "unicorn.dll"
     STATIC_LIBRARY_FILE = "unicorn.lib"
 else:
-    LIBRARY_FILE = "libunicorn.so"
-    STATIC_LIBRARY_FILE = None
+    LIBRARY_FILE = "libunicorn.so.2"
+    STATIC_LIBRARY_FILE = "libunicorn.a"
 
 def clean_bins():
     shutil.rmtree(LIBS_DIR, ignore_errors=True)
@@ -124,7 +124,7 @@ def build_libraries():
 
         obj_dir = os.path.join(BUILD_DIR, conf)
         shutil.copy(os.path.join(obj_dir, LIBRARY_FILE), LIBS_DIR)
-        shutil.copy(os.path.join(obj_dir, STATIC_LIBRARY_FILE), LIBS_DIR)
+        shutil.copy(os.path.join(BUILD_DIR, STATIC_LIBRARY_FILE), LIBS_DIR)
     else:
         # platform description refs at https://docs.python.org/2/library/sys.html#sys.platform
         if not os.path.exists(BUILD_DIR):
@@ -140,15 +140,8 @@ def build_libraries():
         subprocess.check_call(["cmake", "--build", ".", "-j" + threads])
     
         shutil.copy(LIBRARY_FILE, LIBS_DIR)
-        try:
-            # static library may fail to build on windows if user doesn't have visual studio installed. this is fine.
-            if STATIC_LIBRARY_FILE is not None:
-                shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
-        except FileNotFoundError:
-            print('Warning: Could not build static library file! This build is not appropriate for a binary distribution')
-            # enforce this
-            if 'upload' in sys.argv:
-                sys.exit(1)
+        shutil.copy(STATIC_LIBRARY_FILE, LIBS_DIR)
+
     os.chdir(cwd)
 
 

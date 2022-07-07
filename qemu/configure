@@ -489,6 +489,8 @@ elif check_define __arm__ ; then
   cpu="arm"
 elif check_define __aarch64__ ; then
   cpu="aarch64"
+elif check_define __tricore__ ; then
+  cpu="tricore"
 else
   cpu=$(uname -m)
 fi
@@ -526,6 +528,10 @@ case "$cpu" in
   ;;
   sparc|sun4[cdmuv])
     cpu="sparc"
+    supported_cpu="yes"
+  ;;
+  tricore)
+    cpu="tricore"
     supported_cpu="yes"
   ;;
   *)
@@ -852,7 +858,8 @@ QEMU_CFLAGS="$CPU_CFLAGS $QEMU_CFLAGS"
 default_target_list="aarch64-softmmu \
     arm-softmmu m68k-softmmu mips64el-softmmu mips64-softmmu mipsel-softmmu \
     mips-softmmu ppc64-softmmu ppc-softmmu sparc64-softmmu sparc-softmmu \
-    x86_64-softmmu riscv32-softmmu riscv64-softmmu s390x-softmmu"
+    x86_64-softmmu riscv32-softmmu riscv64-softmmu s390x-softmmu \
+    tricore-softmmu"
 
 if test x"$show_help" = x"yes" ; then
 cat << EOF
@@ -2747,6 +2754,8 @@ case "$target_name" in
   tilegx)
   ;;
   tricore)
+    TARGET_ARCH=tricore
+    TARGET_BASE_ARCH=tricore
   ;;
   unicore32)
   ;;

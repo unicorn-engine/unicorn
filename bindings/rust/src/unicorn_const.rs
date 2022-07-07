@@ -5,7 +5,8 @@ pub const API_MAJOR: u64 = 2;
 pub const API_MINOR: u64 = 0;
 pub const VERSION_MAJOR: u64 = 2;
 pub const VERSION_MINOR: u64 = 0;
-pub const VERSION_EXTRA: u64 = 6;
+pub const VERSION_PATCH: u64 = 0;
+pub const VERSION_EXTRA: u64 = 7;
 pub const SECOND_SCALE: u64 = 1_000_000;
 pub const MILISECOND_SCALE: u64 = 1_000;
 
@@ -129,7 +130,8 @@ pub enum Arch {
     M68K = 7,
     RISCV = 8,
     S390X = 9,
-    MAX = 10,
+    TRICORE = 10,
+    MAX = 11,
 }
 
 impl TryFrom<usize> for Arch {
@@ -146,6 +148,7 @@ impl TryFrom<usize> for Arch {
             x if x == Self::M68K as usize => Ok(Self::M68K),
             x if x == Self::RISCV as usize => Ok(Self::RISCV),
             x if x == Self::S390X as usize => Ok(Self::S390X),
+            x if x == Self::TRICORE as usize => Ok(Self::TRICORE),
             x if x == Self::MAX as usize => Ok(Self::MAX),
             _ => Err(uc_error::ARCH),
         }
@@ -162,8 +165,8 @@ bitflags! {
         const THUMB = 0x10;
         const MCLASS = 0x20;
         const V8 = 0x40;
-        const ARMBE8 = 0x80;
-        const ARM926 = Self::ARMBE8.bits;
+        const ARMBE8 = 0x400;
+        const ARM926 = 0x80;
         const ARM946 = 0x100;
         const ARM1176 = 0x200;
         const MICRO = Self::THUMB.bits;

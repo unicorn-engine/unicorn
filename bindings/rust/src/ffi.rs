@@ -188,10 +188,7 @@ pub extern "C" fn insn_in_hook_proxy<D, F>(
     (user_data.callback)(&mut user_data.uc, port, size);
 }
 
-pub extern "C" fn insn_invalid_hook_proxy<D, F>(
-    uc: uc_handle,
-    user_data: *mut UcHook<D, F>,
-) -> bool
+pub extern "C" fn insn_invalid_hook_proxy<D, F>(uc: uc_handle, user_data: *mut UcHook<D, F>) -> bool
 where
     F: FnMut(&mut crate::Unicorn<D>) -> bool,
 {
