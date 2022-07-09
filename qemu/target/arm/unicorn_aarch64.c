@@ -18,6 +18,11 @@ static void arm64_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUARMState *)uc->cpu->env_ptr)->pc = address;
 }
 
+static uint64_t arm64_get_pc(struct uc_struct *uc)
+{
+    return ((CPUARMState *)uc->cpu->env_ptr)->pc;
+}
+
 static void arm64_release(void *ctx)
 {
     int i;
@@ -431,6 +436,7 @@ void arm64_uc_init(struct uc_struct *uc)
     uc->reg_write = arm64_reg_write;
     uc->reg_reset = arm64_reg_reset;
     uc->set_pc = arm64_set_pc;
+    uc->get_pc = arm64_get_pc;
     uc->release = arm64_release;
     uc->cpus_init = arm64_cpus_init;
     uc->cpu_context_size = offsetof(CPUARMState, cpu_watchpoint);

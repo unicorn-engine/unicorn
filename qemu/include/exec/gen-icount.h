@@ -36,13 +36,6 @@ static inline void gen_tb_start(TCGContext *tcg_ctx, TranslationBlock *tb)
 
     tcg_ctx->exitreq_label = gen_new_label(tcg_ctx);
 
-    // first TB ever does not need to check exit request
-    if (tcg_ctx->uc->first_tb) {
-        // next TB is not the first anymore
-        tcg_ctx->uc->first_tb = false;
-        return;
-    }
-
     count = tcg_temp_new_i32(tcg_ctx);
 
     tcg_gen_ld_i32(tcg_ctx, count, tcg_ctx->cpu_env,

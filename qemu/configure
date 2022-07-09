@@ -489,6 +489,8 @@ elif check_define __arm__ ; then
   cpu="arm"
 elif check_define __aarch64__ ; then
   cpu="aarch64"
+elif check_define __tricore__ ; then
+  cpu="tricore"
 else
   cpu=$(uname -m)
 fi
@@ -526,6 +528,10 @@ case "$cpu" in
   ;;
   sparc|sun4[cdmuv])
     cpu="sparc"
+    supported_cpu="yes"
+  ;;
+  tricore)
+    cpu="tricore"
     supported_cpu="yes"
   ;;
   *)
@@ -849,10 +855,11 @@ eval "cross_cc_${cpu}=\$host_cc"
 cross_cc_vars="$cross_cc_vars cross_cc_${cpu}"
 QEMU_CFLAGS="$CPU_CFLAGS $QEMU_CFLAGS"
 
-default_target_list="aarch64eb-softmmu aarch64-softmmu armeb-softmmu \
+default_target_list="aarch64-softmmu \
     arm-softmmu m68k-softmmu mips64el-softmmu mips64-softmmu mipsel-softmmu \
     mips-softmmu ppc64-softmmu ppc-softmmu sparc64-softmmu sparc-softmmu \
-    x86_64-softmmu riscv32-softmmu riscv64-softmmu s390x-softmmu"
+    x86_64-softmmu riscv32-softmmu riscv64-softmmu s390x-softmmu \
+    tricore-softmmu"
 
 if test x"$show_help" = x"yes" ; then
 cat << EOF
@@ -2598,7 +2605,7 @@ case "$target_name" in
 esac
 target_bigendian="no"
 case "$target_name" in
-  armeb|aarch64eb|hppa|lm32|m68k|microblaze|mips|mipsn32|mips64|moxie|or1k|ppc|ppc64|ppc64abi32|s390x|sh4eb|sparc|sparc64|sparc32plus|xtensaeb)
+  hppa|lm32|m68k|microblaze|mips|mipsn32|mips64|moxie|or1k|ppc|ppc64|ppc64abi32|s390x|sh4eb|sparc|sparc64|sparc32plus|xtensaeb)
   target_bigendian="yes"
   ;;
 esac
@@ -2630,12 +2637,12 @@ case "$target_name" in
     mttcg="yes"
     TARGET_SYSTBL_ABI=common
   ;;
-  arm|armeb)
+  arm)
     TARGET_ARCH=arm
     TARGET_SYSTBL_ABI=common,oabi
     mttcg="yes"
   ;;
-  aarch64|aarch64eb)
+  aarch64)
     TARGET_ARCH=aarch64
     TARGET_BASE_ARCH=arm
     mttcg="yes"
@@ -2747,6 +2754,8 @@ case "$target_name" in
   tilegx)
   ;;
   tricore)
+    TARGET_ARCH=tricore
+    TARGET_BASE_ARCH=tricore
   ;;
   unicore32)
   ;;

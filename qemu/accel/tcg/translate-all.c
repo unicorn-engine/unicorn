@@ -879,16 +879,18 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 void free_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
-    if (tcg_ctx->code_gen_buffer) {
-        VirtualFree(tcg_ctx->code_gen_buffer, 0, MEM_RELEASE);
+    if (tcg_ctx->initial_buffer) {
+        VirtualFree(tcg_ctx->initial_buffer, 0, MEM_RELEASE);
     }
 }
 #else
 void free_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
-    if (tcg_ctx->code_gen_buffer) {
-        munmap(tcg_ctx->code_gen_buffer, tcg_ctx->code_gen_buffer_size);
+    if (tcg_ctx->initial_buffer) {
+        if (munmap(tcg_ctx->initial_buffer, tcg_ctx->initial_buffer_size)) {
+            perror("fail code_gen_buffer");
+        }
     }
 }
 
@@ -953,6 +955,8 @@ static inline void code_gen_alloc(struct uc_struct *uc, size_t tb_size)
     TCGContext *tcg_ctx = uc->tcg_ctx;
     tcg_ctx->code_gen_buffer_size = size_code_gen_buffer(tb_size);
     tcg_ctx->code_gen_buffer = alloc_code_gen_buffer(uc);
+    tcg_ctx->initial_buffer = tcg_ctx->code_gen_buffer;
+    tcg_ctx->initial_buffer_size = tcg_ctx->code_gen_buffer_size;
     if (tcg_ctx->code_gen_buffer == NULL) {
         fprintf(stderr, "Could not allocate dynamic translator buffer\n");
         exit(1);
@@ -980,6 +984,10 @@ static void tb_htable_init(struct uc_struct *uc)
     qht_init(&uc->tcg_ctx->tb_ctx.htable, tb_cmp, CODE_GEN_HTABLE_SIZE, mode);
 }
 
+
+static void uc_tb_flush(struct uc_struct *uc) {
+    tb_flush(uc->cpu);
+}
 
 static void uc_invalidate_tb(struct uc_struct *uc, uint64_t start_addr, size_t len) 
 {
@@ -1091,6 +1099,7 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
     /* Invalidate / Cache TBs */
     uc->uc_invalidate_tb = uc_invalidate_tb;
     uc->uc_gen_tb = uc_gen_tb;
+    uc->tb_flush = uc_tb_flush;
 
     /* Inline hooks optimization */
     uc->add_inline_hook = uc_add_inline_hook;

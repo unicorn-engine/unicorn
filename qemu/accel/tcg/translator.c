@@ -147,6 +147,8 @@ _end_loop:
     db->tb->size = db->pc_next - db->pc_first;
     db->tb->icount = db->num_insns;
 
+    hooked_regions_check(uc, db->tb->pc, db->tb->size);
+
     if (block_hook) {
         TCGOp *tcg_op;
 

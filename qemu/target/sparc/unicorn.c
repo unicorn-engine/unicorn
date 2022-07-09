@@ -24,6 +24,11 @@ static void sparc_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUSPARCState *)uc->cpu->env_ptr)->npc = address + 4;
 }
 
+static uint64_t sparc_get_pc(struct uc_struct *uc)
+{
+    return ((CPUSPARCState *)uc->cpu->env_ptr)->pc;
+}
+
 static void sparc_release(void *ctx)
 {
     int i;
@@ -190,6 +195,7 @@ void sparc_uc_init(struct uc_struct *uc)
     uc->reg_write = sparc_reg_write;
     uc->reg_reset = sparc_reg_reset;
     uc->set_pc = sparc_set_pc;
+    uc->get_pc = sparc_get_pc;
     uc->stop_interrupt = sparc_stop_interrupt;
     uc->cpus_init = sparc_cpus_init;
     uc->cpu_context_size = offsetof(CPUSPARCState, irq_manager);

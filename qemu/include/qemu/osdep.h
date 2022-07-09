@@ -124,7 +124,7 @@ struct uc_struct;
  * 
  * Issue: https://github.com/desktop/desktop/issues/12978
  */
-#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && defined(__arm__)
+#if defined(__APPLE__) && defined(HAVE_PTHREAD_JIT_PROTECT) && (defined(__arm__) || defined(__aarch64__))
 #define USE_MAP_JIT
 #endif
 

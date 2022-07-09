@@ -42,7 +42,7 @@
 #include "exec/ram_addr.h"
 
 #include "qemu/range.h"
-
+#include "qemu/rcu_queue.h"
 #include "uc_priv.h"
 
 typedef struct PhysPageEntry PhysPageEntry;
@@ -966,7 +966,7 @@ static ram_addr_t find_ram_offset(struct uc_struct *uc, ram_addr_t size)
 
     assert(size != 0); /* it would hand out same offset multiple times */
 
-    if (QLIST_EMPTY(&uc->ram_list.blocks)) {
+    if (QLIST_EMPTY_RCU(&uc->ram_list.blocks)) {
         return 0;
     }
 
@@ -1043,6 +1043,8 @@ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
         new_block->host = phys_mem_alloc(uc, new_block->max_length,
                 &new_block->mr->align);
         if (!new_block->host) {
+            // mmap fails.
+            uc->invalid_error = UC_ERR_NOMEM;
             // error_setg_errno(errp, errno,
             //         "cannot set up guest memory '%s'",
             //         memory_region_name(new_block->mr));
@@ -1062,11 +1064,11 @@ static void ram_block_add(struct uc_struct *uc, RAMBlock *new_block)
         }
     }
     if (block) {
-        QLIST_INSERT_BEFORE(block, new_block, next);
+        QLIST_INSERT_BEFORE_RCU(block, new_block, next);
     } else if (last_block) {
-        QLIST_INSERT_AFTER(last_block, new_block, next);
+        QLIST_INSERT_AFTER_RCU(last_block, new_block, next);
     } else { /* list is empty */
-        QLIST_INSERT_HEAD(&uc->ram_list.blocks, new_block, next);
+        QLIST_INSERT_HEAD_RCU(&uc->ram_list.blocks, new_block, next);
     }
     uc->ram_list.mru_block = NULL;
 
@@ -1099,7 +1101,14 @@ RAMBlock *qemu_ram_alloc_from_ptr(struct uc_struct *uc, ram_addr_t size, void *h
     if (host) {
         new_block->flags |= RAM_PREALLOC;
     }
+
+    uc->invalid_addr = UC_ERR_OK;
     ram_block_add(mr->uc, new_block);
+
+    if (uc->invalid_error != UC_ERR_OK) {
+        g_free(new_block);
+        return NULL;
+    }
 
     return new_block;
 }
@@ -1130,7 +1139,7 @@ void qemu_ram_free(struct uc_struct *uc, RAMBlock *block)
     //    ram_block_notify_remove(block->host, block->max_length);
     //}
 
-    QLIST_REMOVE(block, next);
+    QLIST_REMOVE_RCU(block, next);
     uc->ram_list.mru_block = NULL;
     /* Write list before version */
     //smp_wmb();
@@ -1438,6 +1447,25 @@ static void tcg_commit(MemoryListener *listener)
     cpuas->memory_dispatch = d;
     tlb_flush(cpuas->cpu);
 }
+
+static uint64_t unassigned_io_read(struct uc_struct *uc, void* opaque, hwaddr addr, unsigned size)
+{
+#ifdef _MSC_VER
+    return (uint64_t)0xffffffffffffffffULL;
+#else
+    return (uint64_t)-1ULL;
+#endif
+}
+
+static void unassigned_io_write(struct uc_struct *uc, void* opaque, hwaddr addr, uint64_t data, unsigned size)
+{
+}
+
+static const MemoryRegionOps unassigned_io_ops = {
+    .read = unassigned_io_read,
+    .write = unassigned_io_write,
+    .endianness = DEVICE_NATIVE_ENDIAN,
+};
 
 static void memory_map_init(struct uc_struct *uc)
 {

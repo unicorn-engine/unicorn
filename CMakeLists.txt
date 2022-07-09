@@ -3,6 +3,18 @@
 
 cmake_minimum_required(VERSION 3.1)
 
+if(MSVC)
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
+        # set all policies to max supported by actual running cmake version
+        # mainly want the following:
+        # CMP0091: prevent msvcrt flags being added to default CMAKE_<LANG>_FLAGS_<CONFIG>
+        # CMP0092: prevent warning flags being added to default CMAKE_<LANG>_FLAGS
+        cmake_policy(VERSION ${CMAKE_VERSION})
+    else()
+        message(FATAL_ERROR "please update cmake")
+    endif()
+endif()
+
 # Workaround to fix wrong compiler on macos.
 if(APPLE AND NOT CMAKE_C_COMPILER)
     set(CMAKE_C_COMPILER "/usr/bin/cc")
@@ -12,22 +24,32 @@ endif()
 set(PROJECT_IS_TOP_LEVEL OFF)
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     set(PROJECT_IS_TOP_LEVEL ON)
-    
+
     # Enable folder support
     set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
 
 project(unicorn C)
 
+# mainline qemu mostly just uses compiler default
+set(CMAKE_C_STANDARD 11)
+
 set(UNICORN_VERSION_MAJOR 2)
 set(UNICORN_VERSION_MINOR 0)
 set(UNICORN_VERSION_PATCH 0)
 
+include(bundle_static.cmake)
+
+# Even though we generate shared lib and static archive at the same time, we still support
+# using unicorn as a subdirectory so we have to respect BUILD_SHARED_LIBS.
+#
+# Also we would like users to link a native cmake target, instead of a custom target for better
+# compatability.
 option(BUILD_SHARED_LIBS "Build shared instead of static library" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_FUZZ "Enable fuzzing" OFF)
 option(UNICORN_BUILD_TESTS "Build unicorn tests" ${PROJECT_IS_TOP_LEVEL})
 option(UNICORN_INSTALL "Enable unicorn installation" ${PROJECT_IS_TOP_LEVEL})
-set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x" CACHE STRING "Enabled unicorn architectures")
+set(UNICORN_ARCH "x86;arm;aarch64;riscv;mips;sparc;m68k;ppc;s390x;tricore" CACHE STRING "Enabled unicorn architectures")
 option(UNICORN_TRACER "Trace unicorn execution" OFF)
 
 foreach(ARCH_LOOP ${UNICORN_ARCH})
@@ -61,6 +83,7 @@ if(MSVC)
     else()
         message(FATAL_ERROR "Neither WIN64 or WIN32!")
     endif()
+
     add_compile_options(
         -Dinline=__inline
         -D__func__=__FUNCTION__
@@ -69,22 +92,30 @@ if(MSVC)
         ${MSVC_FLAG}
         /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/tcg/i386
     )
+
     # Disable some warnings
-    add_compile_options(
-        /wd4018
-        /wd4098
-        /wd4244
-        /wd4267
-    )
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        string(REPLACE "/ZI" "/Zi" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4018>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4098>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4244>)
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:/wd4267>)
+
+    # handle msvcrt setting being passed in CMAKE_C_FLAGS
+    if(DEFINED CMAKE_MSVC_RUNTIME_LIBRARY)
+        # do not support other methods of setting this (it would be more conformant, tho)
+        message(FATAL_ERROR "please set msvcrt via CMAKE_C_FLAGS")
     endif()
-    # default use the multithread, static version of the run-time library.
-    option(UNICORN_STATIC_MSVCRT "Embed static runtime library" ${PROJECT_IS_TOP_LEVEL})
-    if(UNICORN_STATIC_MSVCRT)
-        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_DEBUG ${CMAKE_C_FLAGS_DEBUG})
-        string(REPLACE "/MD" "/MT" CMAKE_C_FLAGS_RELEASE ${CMAKE_C_FLAGS_RELEASE})
+    if(CMAKE_C_FLAGS MATCHES "[/-]MTd")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebug")
+    elseif(CMAKE_C_FLAGS MATCHES "[/-]MDd")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDebugDLL")
+    elseif(CMAKE_C_FLAGS MATCHES "[/-]MT")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded")
+    elseif(CMAKE_C_FLAGS MATCHES "[/-]MD")
+        set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreadedDLL")
     endif()
+
+    # prevent the arg from occurring more than once (not a big deal, just to keep tidy)
+    string(REGEX REPLACE "[/-]M[TD]d?" "" CMAKE_C_FLAGS ${CMAKE_C_FLAGS})
 else()
     if(MINGW)
         execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine
@@ -93,7 +124,7 @@ else()
         string(FIND "${UC_COMPILER_VERSION}" "i686" UC_RET)
         if(${UC_RET} GREATER_EQUAL "0")
             set(UNICORN_TARGET_ARCH "i386")
-            set(UNICORN_CFLAGS -m32)
+            set(UNICORN_CFLAGS -m32 -static-libgcc) # Workaround for github action bugs
             set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -m32")
             set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -m32")
         else()
@@ -183,6 +214,11 @@ else()
                 set(UNICORN_TARGET_ARCH "s390")
                 break()
             endif()
+            string(FIND ${UC_COMPILER_MACRO} "__tricore__" UC_RET)
+            if (${UC_RET} GREATER_EQUAL "0")
+                set(UNICORN_TARGET_ARCH "tricore")
+                break()
+            endif()
             message(FATAL_ERROR "Unknown host compiler: ${CMAKE_C_COMPILER}.")
         endwhile(TRUE)
     endif()
@@ -214,6 +250,9 @@ else()
     endif()
     if (UNICORN_HAS_S390X)
         set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_S390X ")
+    endif()
+    if (UNICORN_HAS_TRICORE)
+        set (EXTRA_CFLAGS "${EXTRA_CFLAGS}-DUNICORN_HAS_TRICORE ")
     endif()
 
     set(EXTRA_CFLAGS "${EXTRA_CFLAGS}-fPIC")
@@ -255,6 +294,9 @@ else()
     endif()
     if(UNICORN_HAS_S390X)
         set(TARGET_LIST "${TARGET_LIST}s390x-softmmu, ")
+    endif()
+    if (UNICORN_HAS_TRICORE)
+        set (TARGET_LIST "${TARGET_LIST}tricore-softmmu, ")
     endif()
     set(TARGET_LIST "${TARGET_LIST} ")
 
@@ -345,6 +387,12 @@ else()
         execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
             INPUT_FILE ${CMAKE_BINARY_DIR}/s390x-softmmu/config-target.mak
             OUTPUT_FILE ${CMAKE_BINARY_DIR}/s390x-softmmu/config-target.h
+        )
+    endif()
+    if (UNICORN_HAS_TRICORE)
+        execute_process(COMMAND sh ${CMAKE_CURRENT_SOURCE_DIR}/qemu/scripts/create_config
+            INPUT_FILE ${CMAKE_BINARY_DIR}/tricore-softmmu/config-target.mak
+            OUTPUT_FILE ${CMAKE_BINARY_DIR}/tricore-softmmu/config-target.h
         )
     endif()
     add_compile_options(
@@ -1008,6 +1056,36 @@ endif()
 endif()
 
 
+if (UNICORN_HAS_TRICORE)
+add_library(tricore-softmmu STATIC
+    ${UNICORN_ARCH_COMMON}
+
+    qemu/target/tricore/cpu.c
+    qemu/target/tricore/fpu_helper.c
+    qemu/target/tricore/helper.c
+    qemu/target/tricore/op_helper.c
+    qemu/target/tricore/translate.c
+    qemu/target/tricore/unicorn.c
+)
+
+if(MSVC)
+    target_compile_options(tricore-softmmu PRIVATE
+        -DNEED_CPU_H
+        /FItricore.h
+        /I${CMAKE_CURRENT_SOURCE_DIR}/msvc/tricore-softmmu
+        /I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/tricore
+    )
+else()
+    target_compile_options(tricore-softmmu PRIVATE
+        -DNEED_CPU_H
+        -include tricore.h
+        -I${CMAKE_BINARY_DIR}/tricore-softmmu
+        -I${CMAKE_CURRENT_SOURCE_DIR}/qemu/target/tricore
+    )
+endif()
+endif()
+
+
 set(UNICORN_SRCS
     uc.c
 
@@ -1067,6 +1145,7 @@ if(MSVC)
             enable_language(ASM_MASM)
         endif()
         set(UNICORN_COMMON_SRCS ${UNICORN_COMMON_SRCS} qemu/util/setjmp-wrapper-win32.asm)
+        set_property(SOURCE qemu/util/setjmp-wrapper-win32.asm PROPERTY LANGUAGE ASM_MASM)
     endif()
 else()
     set(UNICORN_COMMON_SRCS
@@ -1084,9 +1163,11 @@ if(NOT MSVC AND NOT ANDROID_ABI)
     target_link_libraries(unicorn-common PRIVATE pthread)
 endif()
 
-add_library(unicorn
-    ${UNICORN_SRCS}
-)
+add_library(unicorn ${UNICORN_SRCS})
+# For static archive
+if (BUILD_SHARED_LIBS)
+    add_library(unicorn_static STATIC ${UNICORN_SRCS})
+endif()
 
 if(BUILD_SHARED_LIBS)
     if(ANDROID_ABI)
@@ -1161,8 +1242,15 @@ if (UNICORN_HAS_S390X)
     set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_S390X)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} s390x-softmmu)
     set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_s390x)
-    target_link_libraries(s390x-softmmu unicorn-common)
+    target_link_libraries(s390x-softmmu PRIVATE unicorn-common)
     set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_s390x)
+endif()
+if (UNICORN_HAS_TRICORE)
+    set(UNICORN_COMPILE_OPTIONS ${UNICORN_COMPILE_OPTIONS} -DUNICORN_HAS_TRICORE)
+    set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} tricore-softmmu)
+    set(UNICORN_SAMPLE_FILE ${UNICORN_SAMPLE_FILE} sample_tricore)
+    target_link_libraries(tricore-softmmu unicorn-common)
+    set(UNICORN_TEST_FILE ${UNICORN_TEST_FILE} test_tricore)
 endif()
 
 # Extra tests
@@ -1175,13 +1263,20 @@ if(UNICORN_TRACER)
     target_compile_options(unicorn PRIVATE -DUNICORN_TRACER)
 endif()
 
-target_compile_options(unicorn-common PRIVATE 
+target_compile_options(unicorn-common PRIVATE
     ${UNICORN_COMPILE_OPTIONS}
 )
 
 target_compile_options(unicorn PRIVATE
     ${UNICORN_COMPILE_OPTIONS}
 )
+
+# For static archive
+if (BUILD_SHARED_LIBS)
+    target_compile_options(unicorn_static PRIVATE
+        ${UNICORN_COMPILE_OPTIONS}
+    )
+endif()
 
 if(MINGW)
     set(UNICORN_LINK_LIBRARIES ${UNICORN_LINK_LIBRARIES} pthread)
@@ -1195,6 +1290,11 @@ if(MSVC)
     if(BUILD_SHARED_LIBS)
         target_compile_options(unicorn PRIVATE
             -DUNICORN_SHARED
+        )
+
+        # For static archive
+        target_link_libraries(unicorn_static PRIVATE
+            ${UNICORN_LINK_LIBRARIES}
         )
     endif()
 
@@ -1210,6 +1310,23 @@ else()
         ${UNICORN_LINK_LIBRARIES}
         m
     )
+
+    target_link_libraries(unicorn PUBLIC
+        m
+    )
+
+    # For static archive
+    if (BUILD_SHARED_LIBS)
+        target_link_libraries(unicorn_static PUBLIC
+            m
+        )
+
+        target_link_libraries(unicorn_static PRIVATE
+            ${UNICORN_LINK_LIBRARIES}
+            m
+        )
+    endif()
+
     set_target_properties(unicorn PROPERTIES
         VERSION ${UNICORN_VERSION_MAJOR}
         SOVERSION ${UNICORN_VERSION_MAJOR}
@@ -1231,6 +1348,29 @@ else()
     )
 endif()
 
+target_include_directories(unicorn PUBLIC
+    include
+)
+
+# For static archive
+if (BUILD_SHARED_LIBS)
+    target_include_directories(unicorn_static PUBLIC
+        include
+    )
+endif()
+
+# Black magic for generating static archives...
+if (BUILD_SHARED_LIBS)
+    if (MSVC)
+        # Avoid the import lib built by MVSC clash with our archive.
+        set_target_properties(unicorn PROPERTIES ARCHIVE_OUTPUT_NAME "unicorn-import")
+    endif()
+    bundle_static_library(unicorn_static unicorn_archive unicorn)
+else()
+    # Rename the "static" lib to avoid filename clash.
+    set_target_properties(unicorn PROPERTIES OUTPUT_NAME "unicorn-static")
+    bundle_static_library(unicorn unicorn_archive unicorn)
+endif()
 
 if(UNICORN_FUZZ)
     set(UNICORN_FUZZ_SUFFIX "arm_arm;arm_armbe;arm_thumb;arm64_arm;arm64_armbe;m68k_be;mips_32be;mips_32le;sparc_32be;x86_16;x86_32;x86_64;s390x_be")
@@ -1275,18 +1415,18 @@ if(UNICORN_BUILD_TESTS)
     endforeach()
 endif()
 
-target_include_directories(unicorn PUBLIC
-    include
-)
 
 if(UNICORN_INSTALL AND NOT MSVC)
     include("GNUInstallDirs")
     file(GLOB UNICORN_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/include/unicorn/*.h)
-    install(TARGETS unicorn
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    )
+    if (BUILD_SHARED_LIBS)
+        install(TARGETS unicorn
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+            ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        )
+    endif()
+    install(FILES $<TARGET_FILE:unicorn_archive> DESTINATION ${CMAKE_INSTALL_LIBDIR})
     install(FILES ${UNICORN_HEADERS} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/unicorn)
     file(WRITE ${CMAKE_BINARY_DIR}/unicorn.pc "Name: unicorn\n\
 Description: Unicorn emulator engine\n\
@@ -1294,6 +1434,7 @@ Version: ${UNICORN_VERSION_MAJOR}.${UNICORN_VERSION_MINOR}.${UNICORN_VERSION_PAT
 libdir=${CMAKE_INSTALL_FULL_LIBDIR}\n\
 includedir=${CMAKE_INSTALL_FULL_INCLUDEDIR}\n\
 Libs: -L\$\{libdir\} -lunicorn\n\
+Libs.private: -lpthread -lm\n\
 Cflags: -I\$\{includedir\}\n"
     )
     install(FILES ${CMAKE_BINARY_DIR}/unicorn.pc DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig)

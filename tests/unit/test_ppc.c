@@ -11,7 +11,7 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_write(*uc, code_start, code, size));
 }
 
-static void test_ppc32_add()
+static void test_ppc32_add(void)
 {
     uc_engine *uc;
     char code[] = "\x7f\x46\x1a\x14"; // ADD 26, 6, 3
@@ -35,7 +35,7 @@ static void test_ppc32_add()
 }
 
 // https://www.ibm.com/docs/en/aix/7.2?topic=set-fadd-fa-floating-add-instruction
-static void test_ppc32_fadd()
+static void test_ppc32_fadd(void)
 {
     uc_engine *uc;
     char code[] = "\xfc\xc4\x28\x2a"; // fadd 6, 4, 5
@@ -63,6 +63,33 @@ static void test_ppc32_fadd()
     OK(uc_close(uc));
 }
 
+static void test_ppc32_sc_cb(uc_engine *uc, uint32_t intno, void *data)
+{
+    uc_emu_stop(uc);
+    return;
+}
+
+static void test_ppc32_sc(void)
+{
+    uc_engine *uc;
+    char code[] = "\x44\x00\x00\x02"; // sc
+    uint32_t r_pc;
+    uc_hook h;
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &h, UC_HOOK_INTR, test_ppc32_sc_cb, NULL, 1, 0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_PPC_REG_PC, &r_pc));
+
+    TEST_CHECK(r_pc == code_start + 4);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_ppc32_add", test_ppc32_add},
              {"test_ppc32_fadd", test_ppc32_fadd},
+             {"test_ppc32_sc", test_ppc32_sc},
              {NULL, NULL}};

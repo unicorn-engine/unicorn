@@ -309,6 +309,7 @@ fn x86_insn_in_callback() {
     let callback_insn = insn_cell.clone();
     let callback = move |_: &mut Unicorn<()>, port: u32, size: usize| {
         *callback_insn.borrow_mut() = InsnInExpectation(port, size);
+        42
     };
 
     let x86_code32: Vec<u8> = vec![0xe5, 0x10]; // IN eax, 0x10;
@@ -332,6 +333,7 @@ fn x86_insn_in_callback() {
         Ok(())
     );
     assert_eq!(expect, *insn_cell.borrow());
+    assert_eq!(emu.reg_read(RegisterX86::EAX), Ok(42));
     assert_eq!(emu.remove_hook(hook), Ok(()));
 }
 
@@ -607,8 +609,8 @@ fn emulate_ppc() {
         emu.mem_read_as_vec(0x1000, ppc_code32.len()),
         Ok(ppc_code32.clone())
     );
-    assert_eq!(emu.reg_write(RegisterPPC::GPR3, 42), Ok(()));
-    assert_eq!(emu.reg_write(RegisterPPC::GPR6, 1337), Ok(()));
+    assert_eq!(emu.reg_write(RegisterPPC::R3, 42), Ok(()));
+    assert_eq!(emu.reg_write(RegisterPPC::R6, 1337), Ok(()));
     assert_eq!(
         emu.emu_start(
             0x1000,
@@ -618,7 +620,7 @@ fn emulate_ppc() {
         ),
         Ok(())
     );
-    assert_eq!(emu.reg_read(RegisterPPC::GPR26), Ok(1379));
+    assert_eq!(emu.reg_read(RegisterPPC::R26), Ok(1379));
 }
 
 #[test]

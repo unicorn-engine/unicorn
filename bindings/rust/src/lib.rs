@@ -40,11 +40,14 @@ mod m68k;
 mod mips;
 mod ppc;
 mod riscv;
+mod s390x;
 mod sparc;
+mod tricore;
 mod x86;
 
 pub use crate::{
-    arm::*, arm64::*, m68k::*, mips::*, ppc::*, riscv::*, sparc::*, unicorn_const::*, x86::*,
+    arm::*, arm64::*, m68k::*, mips::*, ppc::*, riscv::*, s390x::*, sparc::*, tricore::*,
+    unicorn_const::*, x86::*,
 };
 
 use alloc::{boxed::Box, rc::Rc, vec::Vec};
@@ -164,7 +167,7 @@ impl<'a> TryFrom<uc_handle> for Unicorn<'a, ()> {
     type Error = uc_error;
 
     fn try_from(handle: uc_handle) -> Result<Unicorn<'a, ()>, uc_error> {
-        if handle == ptr::null_mut() {
+        if handle.is_null() {
             return Err(uc_error::HANDLE);
         }
         let mut arch: libc::size_t = Default::default();
@@ -514,7 +517,8 @@ impl<'a, D> Unicorn<'a, D> {
     /// The user has to make sure that the buffer length matches the register size.
     /// This adds support for registers >64 bit (GDTR/IDTR, XMM, YMM, ZMM (x86); Q, V (arm64)).
     pub fn reg_write_long<T: Into<i32>>(&self, regid: T, value: &[u8]) -> Result<(), uc_error> {
-        let err = unsafe { ffi::uc_reg_write(self.get_handle(), regid.into(), value.as_ptr() as _) };
+        let err =
+            unsafe { ffi::uc_reg_write(self.get_handle(), regid.into(), value.as_ptr() as _) };
         if err == uc_error::OK {
             Ok(())
         } else {
@@ -527,8 +531,9 @@ impl<'a, D> Unicorn<'a, D> {
     /// Not to be used with registers larger than 64 bit.
     pub fn reg_read<T: Into<i32>>(&self, regid: T) -> Result<u64, uc_error> {
         let mut value: u64 = 0;
-        let err =
-            unsafe { ffi::uc_reg_read(self.get_handle(), regid.into(), &mut value as *mut u64 as _) };
+        let err = unsafe {
+            ffi::uc_reg_read(self.get_handle(), regid.into(), &mut value as *mut u64 as _)
+        };
         if err == uc_error::OK {
             Ok(value)
         } else {
@@ -540,7 +545,6 @@ impl<'a, D> Unicorn<'a, D> {
     ///
     /// This adds safe support for registers >64 bit (GDTR/IDTR, XMM, YMM, ZMM, ST (x86); Q, V (arm64)).
     pub fn reg_read_long<T: Into<i32>>(&self, regid: T) -> Result<Box<[u8]>, uc_error> {
-        let err: uc_error;
         let boxed: Box<[u8]>;
         let mut value: Vec<u8>;
         let curr_reg_id = regid.into();
@@ -582,7 +586,7 @@ impl<'a, D> Unicorn<'a, D> {
             return Err(uc_error::ARCH);
         }
 
-        err = unsafe { ffi::uc_reg_read(self.get_handle(), curr_reg_id, value.as_mut_ptr() as _) };
+        let err: uc_error = unsafe { ffi::uc_reg_read(self.get_handle(), curr_reg_id, value.as_mut_ptr() as _) };
 
         if err == uc_error::OK {
             boxed = value.into_boxed_slice();
@@ -595,8 +599,9 @@ impl<'a, D> Unicorn<'a, D> {
     /// Read a signed 32-bit value from a register.
     pub fn reg_read_i32<T: Into<i32>>(&self, regid: T) -> Result<i32, uc_error> {
         let mut value: i32 = 0;
-        let err =
-            unsafe { ffi::uc_reg_read(self.get_handle(), regid.into(), &mut value as *mut i32 as _) };
+        let err = unsafe {
+            ffi::uc_reg_read(self.get_handle(), regid.into(), &mut value as *mut i32 as _)
+        };
         if err == uc_error::OK {
             Ok(value)
         } else {
@@ -750,10 +755,43 @@ impl<'a, D> Unicorn<'a, D> {
         }
     }
 
+    /// Add hook for invalid instructions
+    pub fn add_insn_invalid_hook<F: 'a>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
+    where
+        F: FnMut(&mut Unicorn<D>) -> bool,
+    {
+        let mut hook_ptr = core::ptr::null_mut();
+        let mut user_data = Box::new(ffi::UcHook {
+            callback,
+            uc: Unicorn {
+                inner: self.inner.clone(),
+            },
+        });
+
+        let err = unsafe {
+            ffi::uc_hook_add(
+                self.get_handle(),
+                &mut hook_ptr,
+                HookType::INSN_INVALID,
+                ffi::insn_invalid_hook_proxy::<D, F> as _,
+                user_data.as_mut() as *mut _ as _,
+                0,
+                0,
+            )
+        };
+        if err == uc_error::OK {
+            self.inner_mut().hooks.push((hook_ptr, user_data));
+
+            Ok(hook_ptr)
+        } else {
+            Err(err)
+        }
+    }
+
     /// Add hook for x86 IN instruction.
     pub fn add_insn_in_hook<F: 'a>(&mut self, callback: F) -> Result<ffi::uc_hook, uc_error>
     where
-        F: FnMut(&mut Unicorn<D>, u32, usize),
+        F: FnMut(&mut Unicorn<D>, u32, usize) -> u32,
     {
         let mut hook_ptr = core::ptr::null_mut();
         let mut user_data = Box::new(ffi::UcHook {
@@ -862,15 +900,13 @@ impl<'a, D> Unicorn<'a, D> {
     ///
     /// `hook` is the value returned by `add_*_hook` functions.
     pub fn remove_hook(&mut self, hook: ffi::uc_hook) -> Result<(), uc_error> {
-        let err: uc_error;
-
         // drop the hook
         let inner = self.inner_mut();
         inner
             .hooks
             .retain(|(hook_ptr, _hook_impl)| hook_ptr != &hook);
 
-        err = unsafe { ffi::uc_hook_del(inner.handle, hook) };
+        let err: uc_error = unsafe { ffi::uc_hook_del(inner.handle, hook) };
 
         if err == uc_error::OK {
             Ok(())
@@ -1002,6 +1038,8 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::M68K => RegisterM68K::PC as i32,
             Arch::PPC => RegisterPPC::PC as i32,
             Arch::RISCV => RegisterRISCV::PC as i32,
+            Arch::S390X => RegisterS390X::PC as i32,
+            Arch::TRICORE => RegisterTRICORE::PC as i32,
             Arch::MAX => panic!("Illegal Arch specified"),
         };
         self.reg_read(reg)
@@ -1020,6 +1058,8 @@ impl<'a, D> Unicorn<'a, D> {
             Arch::M68K => RegisterM68K::PC as i32,
             Arch::PPC => RegisterPPC::PC as i32,
             Arch::RISCV => RegisterRISCV::PC as i32,
+            Arch::S390X => RegisterS390X::PC as i32,
+            Arch::TRICORE => RegisterTRICORE::PC as i32,
             Arch::MAX => panic!("Illegal Arch specified"),
         };
         self.reg_write(reg, value)

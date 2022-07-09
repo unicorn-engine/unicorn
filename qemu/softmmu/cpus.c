@@ -99,6 +99,12 @@ static int tcg_cpu_exec(struct uc_struct *uc)
             if (uc->quit_request) {
                 // reset stop_request
                 uc->stop_request = false;
+
+                // resume cpu
+                cpu->halted = 0;
+                cpu->exit_request = 0;
+                cpu->exception_index = -1;
+                cpu_resume(cpu);
             } else if (uc->stop_request) {
                 //printf(">>> got STOP request!!!\n");
                 finish = true;
@@ -128,6 +134,9 @@ static int tcg_cpu_exec(struct uc_struct *uc)
         }
     }
     uc->exit_request = 0;
+    uc->cpu->exit_request = 0;
+    uc->cpu->icount_decr_ptr->u16.high = 0;
+    uc->cpu->tcg_exit_req = 0;
 
     return finish;
 }
@@ -211,8 +220,11 @@ void resume_all_vcpus(struct uc_struct* uc)
     // clear the cache of the exits address, since the generated code
     // at that address is to exit emulation, but not for the instruction there.
     // if we dont do this, next time we cannot emulate at that address
-
-    g_tree_foreach(uc->exits, uc_exit_invalidate_iter, (void*)uc);
+    if (uc->use_exits) {
+        g_tree_foreach(uc->ctl_exits, uc_exit_invalidate_iter, (void*)uc);
+    } else {
+        uc_exit_invalidate_iter((gpointer)&uc->exits[uc->nested_level - 1], NULL, (gpointer)uc);
+    }
 
     cpu->created = false;
 }

@@ -1,6 +1,6 @@
 This HOWTO introduces how to build Unicorn2 natively on Linux/Mac/Windows or cross-build to Windows from Linux host.
 
-Note: Please run `make clean` before you switch to `dev` branch.
+Note: By default, CMake will build both the shared and static libraries while only static libraries are built if unicorn is used as a Cmake subdirectory. In most cases, you don't need to care about which kind of library to build. ONLY use `BUILD_SHARED_LIBS=no`if you know what you are doing.
 
 ## Native build on Linux/macOS
 
@@ -32,7 +32,7 @@ make
 
 This builds Unicorn2 on Windows, using Microsoft MSVC compiler.
 
-- Require `cmake` & `Microsoft Visual Studio`.
+- Require `cmake` & `Microsoft Visual Studio` (>=16.8).
 
 - From Visual Studio Command Prompt, build with the following commands.
 
@@ -109,7 +109,7 @@ mkdir build; cd build
 ninja -C .
 ```
 
-Note that the way to build on MSYS changes as time goes, please keep in mind that always use the cmake shipped with mingw64 and choose MSYS Makefiles.
+Note that the way to build on MSYS changes as time goes, please keep in mind that always use the cmake shipped with mingw64.
 
 ## Cross build from Linux host to other architectures
 

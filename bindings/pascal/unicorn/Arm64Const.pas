@@ -7,10 +7,11 @@ interface
 const
 // ARM64 CPU
 
-  UC_CPU_AARCH64_A57 = 0;
-  UC_CPU_AARCH64_A53 = 1;
-  UC_CPU_AARCH64_A72 = 2;
-  UC_CPU_AARCH64_MAX = 3;
+  UC_CPU_ARM64_A57 = 0;
+  UC_CPU_ARM64_A53 = 1;
+  UC_CPU_ARM64_A72 = 2;
+  UC_CPU_ARM64_MAX = 3;
+  UC_CPU_ARM64_ENDING = 4;
 
 // ARM64 registers
 
@@ -322,6 +323,15 @@ const
   UC_ARM64_REG_IP1 = 216;
   UC_ARM64_REG_FP = 1;
   UC_ARM64_REG_LR = 2;
+
+// ARM64 instructions
+
+  UC_ARM64_INS_INVALID = 0;
+  UC_ARM64_INS_MRS = 1;
+  UC_ARM64_INS_MSR = 2;
+  UC_ARM64_INS_SYS = 3;
+  UC_ARM64_INS_SYSL = 4;
+  UC_ARM64_INS_ENDING = 5;
 
 implementation
 end.

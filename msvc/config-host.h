@@ -5,5 +5,5 @@
 #define CONFIG_CPUID_H 1
 // #define CONFIG_INT128 1
 #define CONFIG_CMPXCHG128 1
-#define CONFIG_ATOMIC64 1
+// #define CONFIG_ATOMIC64 1
 #define CONFIG_PLUGIN 1

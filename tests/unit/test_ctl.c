@@ -49,6 +49,7 @@ static inline int64_t get_clock_realtime(void)
 #else
 
 #include <sys/time.h>
+#include "sys/mman.h"
 
 /* get host real time in nanosecond */
 static inline int64_t get_clock_realtime(void)
@@ -73,7 +74,7 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
 }
 
 #define GEN_SIMPLE_READ_TEST(field, ctl_type, arg_type, expected)              \
-    static void test_uc_ctl_##field()                                          \
+    static void test_uc_ctl_##field(void)                                      \
     {                                                                          \
         uc_engine *uc;                                                         \
         arg_type arg;                                                          \
@@ -88,7 +89,7 @@ GEN_SIMPLE_READ_TEST(arch, UC_CTL_UC_ARCH, int, 4)
 GEN_SIMPLE_READ_TEST(page_size, UC_CTL_UC_PAGE_SIZE, uint32_t, 4096)
 GEN_SIMPLE_READ_TEST(time_out, UC_CTL_UC_TIMEOUT, uint64_t, 0)
 
-static void test_uc_ctl_exits()
+static void test_uc_ctl_exits(void)
 {
     uc_engine *uc;
     //   cmp eax, 0;
@@ -141,13 +142,14 @@ double time_emulation(uc_engine *uc, uint64_t start, uint64_t end)
 #define TCG_MAX_INSNS (512) // from tcg.h
 #define CODE_LEN TB_COUNT *TCG_MAX_INSNS
 
-static void test_uc_ctl_tb_cache()
+static void test_uc_ctl_tb_cache(void)
 {
     uc_engine *uc;
-    char code[CODE_LEN];
+    char code[CODE_LEN + 1];
     double standard, cached, evicted;
 
     memset(code, 0x90, CODE_LEN);
+    code[CODE_LEN] = 0;
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
@@ -173,7 +175,7 @@ static void test_uc_ctl_tb_cache()
     OK(uc_close(uc));
 }
 
-static void test_uc_ctl_change_page_size()
+static void test_uc_ctl_change_page_size(void)
 {
     uc_engine *uc;
     uc_engine *uc2;
@@ -191,7 +193,7 @@ static void test_uc_ctl_change_page_size()
 }
 
 // Copy from test_arm.c but with new API.
-static void test_uc_ctl_arm_cpu()
+static void test_uc_ctl_arm_cpu(void)
 {
     uc_engine *uc;
     int r_control, r_msp, r_psp;
@@ -225,6 +227,62 @@ static void test_uc_ctl_arm_cpu()
     OK(uc_close(uc));
 }
 
+static void test_uc_hook_cached_cb(uc_engine *uc, uint64_t addr, size_t size,
+                                   void *user_data)
+{
+    // Don't add any TEST_CHECK here since we can't refer to the global variable
+    // here.
+    uint64_t *p = (uint64_t *)user_data;
+    (*p)++;
+    return;
+}
+
+static void test_uc_hook_cached_uaf(void)
+{
+    uc_engine *uc;
+    // "INC ecx; DEC edx; jmp t; t: nop"
+    char code[] = "\x41\x4a\xeb\x00\x90";
+    uc_hook h;
+    uint64_t count = 0;
+#ifndef _WIN32
+    void *callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE | PROT_EXEC,
+                          MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+#else
+    void *callback = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT,
+                                  PAGE_EXECUTE_READWRITE);
+#endif
+
+    memcpy(callback, (void *)test_uc_hook_cached_cb, 4096);
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_hook_add(uc, &h, UC_HOOK_CODE, (void *)callback, (void *)&count, 1,
+                   0));
+
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    // Move the hook to the deleted hooks list.
+    OK(uc_hook_del(uc, h));
+
+    // This will clear deleted hooks and SHOULD clear cache.
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    memset(callback, 0, 4096);
+
+    // Now hooks are deleted and thus this will trigger a UAF
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(count == 4);
+
+    OK(uc_close(uc));
+
+#ifndef _WIN32
+    munmap(callback, 4096);
+#else
+    VirtualFree(callback, 0, MEM_RELEASE);
+#endif
+}
+
 TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_page_size", test_uc_ctl_page_size},
              {"test_uc_ctl_arch", test_uc_ctl_arch},
@@ -233,4 +291,5 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
              {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
              {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
+             {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
              {NULL, NULL}};

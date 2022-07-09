@@ -12,7 +12,12 @@ S390CPU *cpu_s390_init(struct uc_struct *uc, const char *cpu_model);
 
 static void s390_set_pc(struct uc_struct *uc, uint64_t address)
 {
-    // ((CPUS390XState *)uc->cpu->env_ptr)->pc = address;
+    ((CPUS390XState *)uc->cpu->env_ptr)->psw.addr = address;
+}
+
+static uint64_t s390_get_pc(struct uc_struct *uc)
+{
+    return ((CPUS390XState *)uc->cpu->env_ptr)->psw.addr;
 }
 
 static void s390_release(void *ctx)
@@ -183,6 +188,7 @@ void s390_uc_init(struct uc_struct *uc)
     uc->reg_write = s390_reg_write;
     uc->reg_reset = s390_reg_reset;
     uc->set_pc = s390_set_pc;
+    uc->get_pc = s390_get_pc;
     uc->cpus_init = s390_cpus_init;
     uc->cpu_context_size = offsetof(CPUS390XState, end_reset_fields);
     uc_common_init(uc);

@@ -2976,4 +2976,5 @@
 #define ssra_op ssra_op_aarch64
 #define aarch64_translator_ops aarch64_translator_ops_aarch64
 #define pred_esz_masks pred_esz_masks_aarch64
+#define helper_uc_hooksys64 helper_uc_hooksys64_aarch64
 #endif

@@ -4297,6 +4297,7 @@ usra_op \
 ssra_op \
 aarch64_translator_ops \
 pred_esz_masks \
+helper_uc_hooksys64 \
 "
 
 riscv32_SYMBOLS="
@@ -6268,9 +6269,24 @@ ppc_irq_reset \
 ppc64_SYMBOLS=${ppc_SYMBOLS}
 
 s390x_SYMBOLS="helper_uc_s390x_exit \
+tcg_s390_tod_updated \
+tcg_s390_program_interrupt \
+tcg_s390_data_exception \
 "
 
-ARCHS="x86_64 arm aarch64 riscv32 riscv64 mips mipsel mips64 mips64el sparc sparc64 m68k ppc ppc64 s390x"
+tricore_SYMBOLS="
+helper_fadd \
+helper_fsub \
+helper_fmul \
+helper_fdiv \
+helper_fmadd \
+helper_fmsub \
+helper_pack \
+gen_intermediate_code \
+restore_state_to_opc \
+"
+
+ARCHS="x86_64 arm aarch64 riscv32 riscv64 mips mipsel mips64 mips64el sparc sparc64 m68k ppc ppc64 s390x tricore"
 
 for arch in $ARCHS; do
 

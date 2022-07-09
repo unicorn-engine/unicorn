@@ -15,6 +15,11 @@ static void m68k_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUM68KState *)uc->cpu->env_ptr)->pc = address;
 }
 
+static uint64_t m68k_get_pc(struct uc_struct *uc)
+{
+    return ((CPUM68KState *)uc->cpu->env_ptr)->pc;
+}
+
 static void m68k_release(void *ctx)
 {
     int i;
@@ -170,6 +175,7 @@ void m68k_uc_init(struct uc_struct *uc)
     uc->reg_write = m68k_reg_write;
     uc->reg_reset = m68k_reg_reset;
     uc->set_pc = m68k_set_pc;
+    uc->get_pc = m68k_get_pc;
     uc->cpus_init = m68k_cpus_init;
     uc->cpu_context_size = offsetof(CPUM68KState, end_reset_fields);
     uc_common_init(uc);

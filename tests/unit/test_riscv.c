@@ -11,7 +11,7 @@ static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
     OK(uc_mem_write(*uc, code_start, code, size));
 }
 
-static void test_riscv32_nop()
+static void test_riscv32_nop(void)
 {
     uc_engine *uc;
     char code[] = "\x13\x00\x00\x00"; // nop
@@ -33,7 +33,7 @@ static void test_riscv32_nop()
     OK(uc_close(uc));
 }
 
-static void test_riscv64_nop()
+static void test_riscv64_nop(void)
 {
     uc_engine *uc;
     char code[] = "\x13\x00\x00\x00"; // nop
@@ -55,7 +55,7 @@ static void test_riscv64_nop()
     OK(uc_close(uc));
 }
 
-static void test_riscv32_until_pc_update()
+static void test_riscv32_until_pc_update(void)
 {
     uc_engine *uc;
     char code[] = "\x93\x02\x10\x00\x13\x03\x00\x02\x13\x01\x81\x00";
@@ -96,7 +96,7 @@ static void test_riscv32_until_pc_update()
     OK(uc_close(uc));
 }
 
-static void test_riscv64_until_pc_update()
+static void test_riscv64_until_pc_update(void)
 {
     uc_engine *uc;
     char code[] = "\x93\x02\x10\x00\x13\x03\x00\x02\x13\x01\x81\x00";
@@ -136,7 +136,7 @@ static void test_riscv64_until_pc_update()
     OK(uc_close(uc));
 }
 
-static void test_riscv32_3steps_pc_update()
+static void test_riscv32_3steps_pc_update(void)
 {
     uc_engine *uc;
     char code[] = "\x93\x02\x10\x00\x13\x03\x00\x02\x13\x01\x81\x00";
@@ -177,7 +177,7 @@ static void test_riscv32_3steps_pc_update()
     OK(uc_close(uc));
 }
 
-static void test_riscv64_3steps_pc_update()
+static void test_riscv64_3steps_pc_update(void)
 {
     uc_engine *uc;
     char code[] = "\x93\x02\x10\x00\x13\x03\x00\x02\x13\x01\x81\x00";
@@ -372,7 +372,7 @@ static void test_riscv64_fp_move_to_int(void)
     uc_close(uc);
 }
 
-static void test_riscv64_code_patching()
+static void test_riscv64_code_patching(void)
 {
     uc_engine *uc;
     char code[] = "\x93\x82\x12\x00"; // addi t0, t0, 0x1
@@ -402,7 +402,7 @@ static void test_riscv64_code_patching()
 }
 
 // Need to flush the cache before running the emulation after patching
-static void test_riscv64_code_patching_count()
+static void test_riscv64_code_patching_count(void)
 {
     uc_engine *uc;
     char code[] = "\x93\x82\x12\x00"; // addi t0, t0, 0x1
@@ -439,7 +439,7 @@ static void test_riscv64_ecall_cb(uc_engine *uc, uint32_t intno, void *data)
     return;
 }
 
-static void test_riscv64_ecall()
+static void test_riscv64_ecall(void)
 {
     uc_engine *uc;
     char code[] = "\x73\x00\x00\x00"; // ecall
@@ -469,7 +469,7 @@ static uint64_t test_riscv32_mmio_map_read_cb(uc_engine *uc, uint64_t offset,
     return 0;
 }
 
-static void test_riscv32_mmio_map()
+static void test_riscv32_mmio_map(void)
 {
     uc_engine *uc;
     // 37 17 02 40   lui          a4, 0x40021
@@ -487,7 +487,7 @@ static void test_riscv32_mmio_map()
     OK(uc_close(uc));
 }
 
-static void test_riscv32_map()
+static void test_riscv32_map(void)
 {
     uc_engine *uc;
     // 37 17 02 40   lui          a4, 0x40021
@@ -519,7 +519,7 @@ static uint64_t test_riscv64_mmio_map_read_cb(uc_engine *uc, uint64_t offset,
     return 0;
 }
 
-static void test_riscv64_mmio_map()
+static void test_riscv64_mmio_map(void)
 {
     uc_engine *uc;
     // 37 17 02 40   lui          a4, 0x40021
@@ -533,6 +533,103 @@ static void test_riscv64_mmio_map()
     OK(uc_mmio_map(uc, 0x40000000, 0x40000, test_riscv64_mmio_map_read_cb, NULL,
                    NULL, NULL));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_close(uc));
+}
+
+static bool test_riscv_correct_address_in_small_jump_hook_callback(
+    uc_engine *uc, int type, uint64_t address, int size, int64_t value,
+    void *user_data)
+{
+    // Check registers
+    uint64_t r_x5 = 0x0;
+    uint64_t r_pc = 0x0;
+    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    TEST_CHECK(r_x5 == 0x7F00);
+    TEST_CHECK(r_pc == 0x7F00);
+
+    // Check address
+    // printf("%lx\n", address);
+    TEST_CHECK(address == 0x7F00);
+
+    return false;
+}
+
+static void test_riscv_correct_address_in_small_jump_hook(void)
+{
+    uc_engine *uc;
+    // li 0x7F00, x5  >  lui t0, 8; addiw t0, t0, -256;
+    // jr x5
+    char code[] = "\xb7\x82\x00\x00\x9b\x82\x02\xf0\x67\x80\x02\x00";
+
+    uint64_t r_x5 = 0x0;
+    uint64_t r_pc = 0x0;
+    uc_hook hook;
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED,
+                   test_riscv_correct_address_in_small_jump_hook_callback, NULL,
+                   1, 0));
+
+    uc_assert_err(
+        UC_ERR_FETCH_UNMAPPED,
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    TEST_CHECK(r_x5 == 0x7F00);
+    TEST_CHECK(r_pc == 0x7F00);
+
+    OK(uc_close(uc));
+}
+
+static bool test_riscv_correct_address_in_long_jump_hook_callback(
+    uc_engine *uc, int type, uint64_t address, int size, int64_t value,
+    void *user_data)
+{
+    // Check registers
+    uint64_t r_x5 = 0x0;
+    uint64_t r_pc = 0x0;
+    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    TEST_CHECK(r_x5 == 0x7FFFFFFFFFFFFF00);
+    TEST_CHECK(r_pc == 0x7FFFFFFFFFFFFF00);
+
+    // Check address
+    // printf("%lx\n", address);
+    TEST_CHECK(address == 0x7FFFFFFFFFFFFF00);
+
+    return false;
+}
+
+static void test_riscv_correct_address_in_long_jump_hook(void)
+{
+    uc_engine *uc;
+    // li 0x7FFFFFFFFFFFFF00, x5  >  addi t0, zero, -1; slli t0, t0, 63; addi
+    // t0, t0, -256; jr x5
+    char code[] =
+        "\x93\x02\xf0\xff\x93\x92\xf2\x03\x93\x82\x02\xf0\x67\x80\x02\x00";
+
+    uint64_t r_x5 = 0x0;
+    uint64_t r_pc = 0x0;
+    uc_hook hook;
+
+    uc_common_setup(&uc, UC_ARCH_RISCV, UC_MODE_RISCV64, code,
+                    sizeof(code) - 1);
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_UNMAPPED,
+                   test_riscv_correct_address_in_long_jump_hook_callback, NULL,
+                   1, 0));
+
+    uc_assert_err(
+        UC_ERR_FETCH_UNMAPPED,
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_RISCV_REG_X5, &r_x5));
+    OK(uc_reg_read(uc, UC_RISCV_REG_PC, &r_pc));
+    TEST_CHECK(r_x5 == 0x7FFFFFFFFFFFFF00);
+    TEST_CHECK(r_pc == 0x7FFFFFFFFFFFFF00);
 
     OK(uc_close(uc));
 }
@@ -556,4 +653,8 @@ TEST_LIST = {
     {"test_riscv32_map", test_riscv32_map},
     {"test_riscv64_code_patching", test_riscv64_code_patching},
     {"test_riscv64_code_patching_count", test_riscv64_code_patching_count},
+    {"test_riscv_correct_address_in_small_jump_hook",
+     test_riscv_correct_address_in_small_jump_hook},
+    {"test_riscv_correct_address_in_long_jump_hook",
+     test_riscv_correct_address_in_long_jump_hook},
     {NULL, NULL}};

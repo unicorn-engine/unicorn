@@ -51,7 +51,9 @@ typedef enum uc_cpu_s390x {
     UC_CPU_S390X_GEN15A,
     UC_CPU_S390X_GEN15B,
     UC_CPU_S390X_QEMU,
-    UC_CPU_S390X_MAX
+    UC_CPU_S390X_MAX,
+
+    UC_CPU_S390X_ENDING
 } uc_cpu_s390x;
 
 //> S390X registers

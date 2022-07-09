@@ -72,7 +72,7 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
          * of the start of the TB.
          */
         CPUClass *cc = CPU_GET_CLASS(cpu);
-        if (!HOOK_EXISTS(env->uc, UC_HOOK_CODE) && !env->uc->timeout) {
+        if (!HOOK_EXISTS(env->uc, UC_HOOK_CODE)) {
             // We should sync pc for R/W error.
             switch (env->uc->invalid_error) {
                 case UC_ERR_WRITE_PROT:
@@ -87,9 +87,6 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
                     break;
                 default:
                     if (cc->synchronize_from_tb) {
-                        // avoid sync twice when helper_uc_tracecode() already did this.
-                        if (env->uc->emu_counter <= env->uc->emu_count &&
-                                !env->uc->stop_request && !env->uc->quit_request)
                         cc->synchronize_from_tb(cpu, last_tb);
                     } else {
                         assert(cc->set_pc);
@@ -386,6 +383,10 @@ static inline bool cpu_handle_exception(CPUState *cpu, int *ret)
 #if defined(TARGET_RISCV)
         CPURISCVState *env = &(RISCV_CPU(uc->cpu)->env);
         env->pc += 4;
+#endif
+#if defined(TARGET_PPC)
+        CPUPPCState *env = &(POWERPC_CPU(uc->cpu)->env);
+        env->nip += 4;
 #endif
         // Unicorn: call registered interrupt callbacks
         catched = false;

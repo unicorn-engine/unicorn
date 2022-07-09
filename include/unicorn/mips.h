@@ -37,6 +37,8 @@ typedef enum uc_cpu_mips32 {
     UC_CPU_MIPS32_P5600,
     UC_CPU_MIPS32_MIPS32R6_GENERIC,
     UC_CPU_MIPS32_I7200,
+
+    UC_CPU_MIPS32_ENDING
 } uc_cpu_mips32;
 
 //> MIPS64 CPUS
@@ -53,7 +55,9 @@ typedef enum uc_cpu_mips64 {
     UC_CPU_MIPS64_I6500,
     UC_CPU_MIPS64_LOONGSON_2E,
     UC_CPU_MIPS64_LOONGSON_2F,
-    UC_CPU_MIPS64_MIPS64DSPR2
+    UC_CPU_MIPS64_MIPS64DSPR2,
+
+    UC_CPU_MIPS64_ENDING
 } uc_cpu_mips64;
 
 //> MIPS registers

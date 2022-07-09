@@ -38,6 +38,7 @@ module UnicornEngine
 	UC_CPU_ARM_PXA270C0 = 31
 	UC_CPU_ARM_PXA270C5 = 32
 	UC_CPU_ARM_MAX = 33
+	UC_CPU_ARM_ENDING = 34
 
 # ARM registers
 

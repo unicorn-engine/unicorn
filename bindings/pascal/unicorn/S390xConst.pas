@@ -45,6 +45,7 @@ const
   UC_CPU_S390X_GEN15B = 35;
   UC_CPU_S390X_QEMU = 36;
   UC_CPU_S390X_MAX = 37;
+  UC_CPU_S390X_ENDING = 38;
 
 // S390X registers
 

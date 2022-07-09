@@ -642,6 +642,8 @@ struct TCGContext {
     void *code_gen_prologue;
     void *code_gen_epilogue;
     void *code_gen_buffer;
+    void *initial_buffer;
+    size_t initial_buffer_size;
     size_t code_gen_buffer_size;
     void *code_gen_ptr;
     void *data_gen_ptr;
@@ -792,6 +794,12 @@ struct TCGContext {
     TCGv NULL_QREG;
     /* Used to distinguish stores from bad addressing modes.  */
     TCGv store_dummy;
+
+    // target/tricore/translate.c
+    TCGv_i32 cpu_gpr_a[16];
+    TCGv_i32 cpu_gpr_d[16];
+    TCGv_i32 cpu_PSW_C, cpu_PSW_V, cpu_PSW_SV, cpu_PSW_AV, cpu_PSW_SAV;
+    TCGv_i32 cpu_PC, cpu_PCXI, cpu_PSW, cpu_ICR;
     
     // Used to store the start of current instrution.
     uint64_t pc_start;

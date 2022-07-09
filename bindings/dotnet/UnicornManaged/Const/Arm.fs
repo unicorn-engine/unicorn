@@ -43,6 +43,7 @@ module Arm =
     let UC_CPU_ARM_PXA270C0 = 31
     let UC_CPU_ARM_PXA270C5 = 32
     let UC_CPU_ARM_MAX = 33
+    let UC_CPU_ARM_ENDING = 34
 
     // ARM registers
 

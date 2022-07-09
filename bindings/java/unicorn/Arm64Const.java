@@ -6,10 +6,11 @@ public interface Arm64Const {
 
 // ARM64 CPU
 
-   public static final int UC_CPU_AARCH64_A57 = 0;
-   public static final int UC_CPU_AARCH64_A53 = 1;
-   public static final int UC_CPU_AARCH64_A72 = 2;
-   public static final int UC_CPU_AARCH64_MAX = 3;
+   public static final int UC_CPU_ARM64_A57 = 0;
+   public static final int UC_CPU_ARM64_A53 = 1;
+   public static final int UC_CPU_ARM64_A72 = 2;
+   public static final int UC_CPU_ARM64_MAX = 3;
+   public static final int UC_CPU_ARM64_ENDING = 4;
 
 // ARM64 registers
 
@@ -321,5 +322,14 @@ public interface Arm64Const {
    public static final int UC_ARM64_REG_IP1 = 216;
    public static final int UC_ARM64_REG_FP = 1;
    public static final int UC_ARM64_REG_LR = 2;
+
+// ARM64 instructions
+
+   public static final int UC_ARM64_INS_INVALID = 0;
+   public static final int UC_ARM64_INS_MRS = 1;
+   public static final int UC_ARM64_INS_MSR = 2;
+   public static final int UC_ARM64_INS_SYS = 3;
+   public static final int UC_ARM64_INS_SYSL = 4;
+   public static final int UC_ARM64_INS_ENDING = 5;
 
 }

@@ -97,6 +97,11 @@ static void ppc_set_pc(struct uc_struct *uc, uint64_t address)
     ((CPUPPCState *)uc->cpu->env_ptr)->nip = address;
 }
 
+static uint64_t ppc_get_pc(struct uc_struct *uc)
+{
+    return ((CPUPPCState *)uc->cpu->env_ptr)->nip;
+}
+
 void ppc_cpu_instance_finalize(CPUState *obj);
 void ppc_cpu_unrealize(CPUState *dev);
 static void ppc_release(void *ctx)
@@ -143,6 +148,8 @@ void ppc_reg_reset(struct uc_struct *uc)
 // http://www.csit-sun.pub.ro/~cpop/Documentatie_SMP/Motorola_PowerPC/PowerPc/GenInfo/pemch2.pdf
 static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
 {
+    uint32_t val;
+
     if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31)
         *(ppcreg_t *)value = env->gpr[regid - UC_PPC_REG_0];
     else {
@@ -196,6 +203,14 @@ static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
         case UC_PPC_REG_CR7:
             *(uint32_t *)value = env->crf[regid - UC_PPC_REG_CR0];
             break;
+        case UC_PPC_REG_CR:
+            val = 0;
+            for (int i = 0; i < 8; i++) {
+                val <<= 4;
+                val |= env->crf[i];
+            }
+            *(uint32_t *)value = val;
+            break;
         case UC_PPC_REG_LR:
             *(ppcreg_t *)value = env->lr;
             break;
@@ -219,6 +234,9 @@ static void reg_read(CPUPPCState *env, unsigned int regid, void *value)
 
 static void reg_write(CPUPPCState *env, unsigned int regid, const void *value)
 {
+    uint32_t val;
+    int i;
+
     if (regid >= UC_PPC_REG_0 && regid <= UC_PPC_REG_31)
         env->gpr[regid - UC_PPC_REG_0] = *(ppcreg_t *)value;
     else {
@@ -270,7 +288,14 @@ static void reg_write(CPUPPCState *env, unsigned int regid, const void *value)
         case UC_PPC_REG_CR5:
         case UC_PPC_REG_CR6:
         case UC_PPC_REG_CR7:
-            env->crf[regid - UC_PPC_REG_CR0] = *(uint32_t *)value;
+            env->crf[regid - UC_PPC_REG_CR0] = (*(uint32_t *)value) & 0b1111;
+            break;
+        case UC_PPC_REG_CR:
+            val = *(uint32_t *)value;
+            for (i = 0; i < 8; i++) {
+                env->crf[i] = val & 0b1111;
+                val >>= 4;
+            }
             break;
         case UC_PPC_REG_LR:
             env->lr = *(ppcreg_t *)value;
@@ -394,6 +419,7 @@ void ppc_uc_init(struct uc_struct *uc)
     uc->reg_reset = ppc_reg_reset;
     uc->release = ppc_release;
     uc->set_pc = ppc_set_pc;
+    uc->get_pc = ppc_get_pc;
     uc->mem_redirect = ppc_mem_redirect;
     uc->cpus_init = ppc_cpus_init;
     uc->cpu_context_size = offsetof(CPUPPCState, uc);

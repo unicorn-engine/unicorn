@@ -89,6 +89,9 @@ endif
 ifneq (,$(findstring m68k,$(UNICORN_ARCHS)))
 SOURCES += sample_m68k.c
 endif
+ifneq (,$(findstring tricore,$(UNICORN_ARCHS)))
+SOURCES += sample_tricore.c
+endif
 
 BINS = $(SOURCES:.c=$(BIN_EXT))
 OBJS = $(SOURCES:.c=.o)
