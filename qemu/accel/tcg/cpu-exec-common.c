@@ -37,7 +37,7 @@ void cpu_reloading_memory_map(void)
 void cpu_loop_exit(CPUState *cpu)
 {
     /* Unlock JIT write protect if applicable. */
-    tb_exec_lock(cpu->uc->tcg_ctx);
+    tb_exec_unlock(cpu->uc->tcg_ctx);
     /* Undo the setting in cpu_tb_exec.  */
     cpu->can_do_io = 1;
     siglongjmp(cpu->uc->jmp_bufs[cpu->uc->nested_level - 1], 1);

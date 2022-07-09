@@ -601,6 +601,7 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
             // align_clocks(&sc, cpu);
         }
     }
+    tb_exec_lock(cpu->uc->tcg_ctx);
 
     // Unicorn: Clear any TCG exit flag that might have been left set by exit requests
     uc->cpu->tcg_exit_req = 0;
