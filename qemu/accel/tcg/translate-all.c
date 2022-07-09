@@ -1104,6 +1104,7 @@ void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size)
     /* Inline hooks optimization */
     uc->add_inline_hook = uc_add_inline_hook;
     uc->del_inline_hook = uc_del_inline_hook;
+    tb_exec_lock(uc->tcg_ctx);
 }
 
 /* call with @p->lock held */

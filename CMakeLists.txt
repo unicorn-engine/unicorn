@@ -1086,7 +1086,7 @@ endif()
 endif()
 
 
-set(UNICORN_SRCS
+set(UNICORN_SRCS STATIC
     uc.c
 
     qemu/softmmu/vl.c
