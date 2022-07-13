@@ -1451,7 +1451,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                         continue;
                     if (!HOOK_BOUND_CHECK(hook, addr))
                         continue;
-                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, size, 0, hook->user_data)))
                         break;
 
                     // the last callback may already asked to stop emulation
@@ -1466,7 +1466,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                         continue;
                     if (!HOOK_BOUND_CHECK(hook, addr))
                         continue;
-                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, addr, size, 0, hook->user_data)))
                         break;
 
                     // the last callback may already asked to stop emulation
@@ -1518,7 +1518,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, addr))
                     continue;
-                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, addr, size, 0, hook->user_data)))
                     break;
 
                 // the last callback may already asked to stop emulation
@@ -1546,7 +1546,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, addr))
                     continue;
-                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, addr, size, 0, hook->user_data)))
                     break;
 
                 // the last callback may already asked to stop emulation
@@ -2136,6 +2136,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
         CPUTLBEntry *entry2;
         target_ulong page2, tlb_addr2;
         size_t size2;
+        int old_size;
 
     do_unaligned_access:
         /*
@@ -2178,6 +2179,8 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
          * This loop must go in the forward direction to avoid issues
          * with self-modifying code in Windows 64-bit.
          */
+        old_size = uc->size_recur_mem;
+        uc->size_recur_mem = size;
         for (i = 0; i < size; ++i) {
             uint8_t val8;
             if (memop_big_endian(op)) {
@@ -2189,6 +2192,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             }
             helper_ret_stb_mmu(env, addr + i, val8, oi, retaddr);
         }
+        uc->size_recur_mem = old_size;
         return;
     }
 
