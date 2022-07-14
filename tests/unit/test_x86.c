@@ -1106,6 +1106,60 @@ static void test_x86_correct_address_in_long_jump_hook(void)
     OK(uc_close(uc));
 }
 
+struct writelog_t {
+    uint32_t addr, size;
+};
+
+static void test_x86_unaligned_write_callback(uc_engine *uc, uc_mem_type type,
+        uint64_t address, int size, int64_t value, void *user_data)
+{
+    TEST_CHECK(size != 0);
+    struct writelog_t *write_log = (struct writelog_t *)user_data;
+
+    for (int i = 0; i < 10; i++) {
+        if (write_log[i].size == 0) {
+            write_log[i].addr = (uint32_t) address;
+            write_log[i].size = (uint32_t) size;
+            return;
+        }
+    }
+    TEST_ASSERT(false);
+}
+
+static void test_x86_unaligned_write(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\xa3\x01\x00\x20\x00"; // mov dword ptr [0x200001], eax
+    uint32_t r_eax = 0x41424344;
+    struct writelog_t write_log[10];
+    memset(write_log, 0, sizeof(write_log));
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+    OK(uc_mem_map(uc, 0x200000, 0x1000, UC_PROT_ALL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE, test_x86_unaligned_write_callback,
+                write_log, 1, 0));
+
+    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    TEST_CHECK(write_log[0].addr == 0x200001);
+    TEST_CHECK(write_log[0].size == 4);
+    TEST_CHECK(write_log[1].size == 0);
+
+    char b;
+    OK(uc_mem_read(uc, 0x200001, &b, 1));
+    TEST_CHECK(b == 0x44);
+    OK(uc_mem_read(uc, 0x200002, &b, 1));
+    TEST_CHECK(b == 0x43);
+    OK(uc_mem_read(uc, 0x200003, &b, 1));
+    TEST_CHECK(b == 0x42);
+    OK(uc_mem_read(uc, 0x200004, &b, 1));
+    TEST_CHECK(b == 0x41);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1143,4 +1197,5 @@ TEST_LIST = {
      test_x86_correct_address_in_small_jump_hook},
     {"test_x86_correct_address_in_long_jump_hook",
      test_x86_correct_address_in_long_jump_hook},
+    {"test_x86_unaligned_write", test_x86_unaligned_write},
     {NULL, NULL}};
