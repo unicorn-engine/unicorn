@@ -292,7 +292,7 @@ static void reg_write(CPUPPCState *env, unsigned int regid, const void *value)
             break;
         case UC_PPC_REG_CR:
             val = *(uint32_t *)value;
-            for (i = 0; i < 8; i++) {
+            for (i = 7; i >= 0; i--) {
                 env->crf[i] = val & 0b1111;
                 val >>= 4;
             }
