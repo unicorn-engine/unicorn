@@ -47,12 +47,37 @@ static void test_vmovdqu(void)
     OK(uc_close(uc));
 }
 
+/* https://github.com/unicorn-engine/unicorn/issues/1656 */
+static void test_vex_l(void)
+{
+    uc_engine *uc;
+    uc_err err;
+
+    /* vmovdqu ymm1, [rcx] */
+    char code[] = { '\xC5', '\xFE', '\x6F', '\x09' };
+
+    /* initialize memory and run emulation  */
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0, 2 * 1024 * 1024, UC_PROT_ALL));
+
+    OK(uc_mem_write(uc, 0, code, sizeof(code) / sizeof(code[0])));
+
+    err = uc_emu_start(uc, 0, sizeof(code) / sizeof(code[0]), 0, 0);
+    if(err != UC_ERR_INSN_INVALID) {
+        fprintf(stderr, "%s", uc_strerror(err));
+        assert(false);
+    }
+
+    OK(uc_close(uc));
+}
+
 
 /* TODO: Add more vex prefixed instructions
          Suggestions: vxorpd, vxorps, vandpd, ... */
 int main(int argc, char **argv, char **envp)
 {
         test_vmovdqu();
+        test_vex_l();
         return 0;
 }
 
