@@ -68,20 +68,20 @@ jobs:
               archiver: '7z a',
               generators: 'Ninja'
             }
-          - { 
-              os: windows-2019,
-              arch: x64,
-              python-arch: x64,
-              python-ver: '3.8',
-              name: 'windows-x64 MINGW32 static',
-              shared: "no",
-              mingw: MINGW32,
-              mingw-arch: i686,
-              artifact: 'windows_mingw32.7z',
-              build_type: 'Debug',
-              archiver: '7z a',
-              generators: 'Ninja'
-            }
+          # - { # This fails randomly which can't be reproduced.
+          #     os: windows-2019,
+          #     arch: x64,
+          #     python-arch: x64,
+          #     python-ver: '3.8',
+          #     name: 'windows-x64 MINGW32 static',
+          #     shared: "no",
+          #     mingw: MINGW32,
+          #     mingw-arch: i686,
+          #     artifact: 'windows_mingw32.7z',
+          #     build_type: 'Debug',
+          #     archiver: '7z a',
+          #     generators: 'Ninja'
+          #   }
           - { 
               os: windows-2019,
               arch: x64,
@@ -95,19 +95,19 @@ jobs:
               archiver: '7z a',
               generators: 'Visual Studio 16 2019'
             }
-          - { 
-              os: windows-2019,
-              arch: x86,
-              python-arch: x86,
-              python-ver: '3.8',
-              name: 'windows-x86 MSVC 32bit shared',
-              msvc-arch: x86,
-              artifact: 'windows_msvc32_shared.7z',
-              shared: 'yes',
-              build_type: 'Debug',
-              archiver: '7z a',
-              generators: 'Visual Studio 16 2019'
-            }
+          # - { # This fails randomly which can't be reproduced.
+          #     os: windows-2019,
+          #     arch: x86,
+          #     python-arch: x86,
+          #     python-ver: '3.8',
+          #     name: 'windows-x86 MSVC 32bit shared',
+          #     msvc-arch: x86,
+          #     artifact: 'windows_msvc32_shared.7z',
+          #     shared: 'yes',
+          #     build_type: 'Debug',
+          #     archiver: '7z a',
+          #     generators: 'Visual Studio 16 2019'
+          #   }
           - { 
               os: windows-2019,
               arch: x64,
