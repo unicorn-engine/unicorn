@@ -89,7 +89,24 @@ static void test_ppc32_sc(void)
     OK(uc_close(uc));
 }
 
+static void test_ppc32_cr(void)
+{
+    uc_engine *uc;
+    uint32_t r_cr = 0x12345678;
+
+    uc_common_setup(&uc, UC_ARCH_PPC, UC_MODE_32 | UC_MODE_BIG_ENDIAN, NULL, 0);
+
+    OK(uc_reg_write(uc, UC_PPC_REG_CR, &r_cr));
+    r_cr = 0;
+    OK(uc_reg_read(uc, UC_PPC_REG_CR, &r_cr));
+
+    TEST_CHECK(r_cr == 0x12345678);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_ppc32_add", test_ppc32_add},
              {"test_ppc32_fadd", test_ppc32_fadd},
              {"test_ppc32_sc", test_ppc32_sc},
+             {"test_ppc32_cr", test_ppc32_cr},
              {NULL, NULL}};
