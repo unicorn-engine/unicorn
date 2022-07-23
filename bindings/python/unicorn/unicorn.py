@@ -357,15 +357,14 @@ def reg_write(reg_write_func, arch, reg_id, value):
             reg = uc_arm64_neon128()
             reg.low_qword = value & 0xffffffffffffffff
             reg.high_qword = value >> 64
-
-    if arch == uc.UC_ARCH_ARM:
-        if reg_id == arm64_const.UC_ARM64_REG_CP_REG:
+        elif reg_id == arm64_const.UC_ARM64_REG_CP_REG:
             reg = uc_arm64_cp_reg()
             if not isinstance(value, tuple) or len(value) != 6:
                 raise UcError(uc.UC_ERR_ARG)
             reg.crn, reg.crm, reg.op0, reg.op1, reg.op2, reg.val = value
 
-        elif reg_id == arm_const.UC_ARM_REG_CP_REG:
+    if arch == uc.UC_ARCH_ARM:
+        if reg_id == arm_const.UC_ARM_REG_CP_REG:
             reg = uc_arm_cp_reg()
             if not isinstance(value, tuple) or len(value) != 8:
                 raise UcError(uc.UC_ERR_ARG)
