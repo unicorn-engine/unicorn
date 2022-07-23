@@ -1106,6 +1106,25 @@ static void test_x86_correct_address_in_long_jump_hook(void)
     OK(uc_close(uc));
 }
 
+static void test_x86_invalid_vex_l(void)
+{
+    uc_engine *uc;
+    uc_err err;
+
+    /* vmovdqu ymm1, [rcx] */
+    char code[] = { '\xC5', '\xFE', '\x6F', '\x09' };
+
+    /* initialize memory and run emulation  */
+    OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
+    OK(uc_mem_map(uc, 0, 2 * 1024 * 1024, UC_PROT_ALL));
+
+    OK(uc_mem_write(uc, 0, code, sizeof(code) / sizeof(code[0])));
+
+    uc_assert_err(UC_ERR_INSN_INVALID, uc_emu_start(uc, 0, sizeof(code) / sizeof(code[0]), 0, 0));
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1143,4 +1162,5 @@ TEST_LIST = {
      test_x86_correct_address_in_small_jump_hook},
     {"test_x86_correct_address_in_long_jump_hook",
      test_x86_correct_address_in_long_jump_hook},
+     {"test_x86_invalid_vex_l", test_x86_invalid_vex_l},
     {NULL, NULL}};
