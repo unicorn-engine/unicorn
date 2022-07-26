@@ -22,6 +22,7 @@
 
 DEF_HELPER_4(uc_tracecode, void, i32, i32, ptr, i64)
 DEF_HELPER_6(uc_traceopcode, void, ptr, i64, i64, i32, ptr, i64)
+DEF_HELPER_1(uc_tricore_exit,void, env)
 
 /* Arithmetic */
 DEF_HELPER_3(add_ssov, i32, env, i32, i32)
