@@ -1635,11 +1635,15 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
         target_ulong addr1, addr2;
         uint64_t r1, r2;
         unsigned shift;
+        int old_size;
     do_unaligned_access:
         addr1 = addr & ~((target_ulong)size - 1);
         addr2 = addr1 + size;
+        old_size = uc->size_recur_mem;
+        uc->size_recur_mem = size;
         r1 = full_load(env, addr1, oi, retaddr);
         r2 = full_load(env, addr2, oi, retaddr);
+        uc->size_recur_mem = old_size;
         shift = (addr & (size - 1)) * 8;
 
         if (memop_big_endian(op)) {

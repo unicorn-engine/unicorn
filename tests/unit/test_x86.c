@@ -1110,7 +1110,7 @@ struct writelog_t {
     uint32_t addr, size;
 };
 
-static void test_x86_unaligned_write_callback(uc_engine *uc, uc_mem_type type,
+static void test_x86_unaligned_access_callback(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
 {
     TEST_CHECK(size != 0);
@@ -1126,19 +1126,24 @@ static void test_x86_unaligned_write_callback(uc_engine *uc, uc_mem_type type,
     TEST_ASSERT(false);
 }
 
-static void test_x86_unaligned_write(void)
+static void test_x86_unaligned_access(void)
 {
     uc_engine *uc;
     uc_hook hook;
-    char code[] = "\xa3\x01\x00\x20\x00"; // mov dword ptr [0x200001], eax
+    // mov dword ptr [0x200001], eax; mov eax, dword ptr [0x200001]
+    char code[] = "\xa3\x01\x00\x20\x00\xa1\x01\x00\x20\x00";
     uint32_t r_eax = 0x41424344;
     struct writelog_t write_log[10];
+    struct writelog_t read_log[10];
     memset(write_log, 0, sizeof(write_log));
+    memset(read_log, 0, sizeof(read_log));
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
     OK(uc_mem_map(uc, 0x200000, 0x1000, UC_PROT_ALL));
-    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE, test_x86_unaligned_write_callback,
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE, test_x86_unaligned_access_callback,
                 write_log, 1, 0));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ, test_x86_unaligned_access_callback,
+                read_log, 1, 0));
 
     OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
@@ -1146,6 +1151,10 @@ static void test_x86_unaligned_write(void)
     TEST_CHECK(write_log[0].addr == 0x200001);
     TEST_CHECK(write_log[0].size == 4);
     TEST_CHECK(write_log[1].size == 0);
+
+    TEST_CHECK(read_log[0].addr == 0x200001);
+    TEST_CHECK(read_log[0].size == 4);
+    TEST_CHECK(read_log[1].size == 0);
 
     char b;
     OK(uc_mem_read(uc, 0x200001, &b, 1));
@@ -1164,7 +1173,7 @@ static void test_x86_lazy_mapping_mem_callback(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
 {
     OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
-    OK(uc_mem_write(uc, 0x1000, "\x90\x90", 2));
+    OK(uc_mem_write(uc, 0x1000, "\x90\x90", 2)); // nop; nop
 }
 
 static void test_x86_lazy_mapping_block_callback(uc_engine *uc,
@@ -1178,12 +1187,11 @@ static void test_x86_lazy_mapping(void)
 {
     uc_engine *uc;
     uc_hook mem_hook, block_hook;
-    char code[] = "\x90\x90"; // nop; nop
     int block_count = 0;
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
     OK(uc_hook_add(uc, &mem_hook, UC_HOOK_MEM_FETCH_UNMAPPED, test_x86_lazy_mapping_mem_callback, NULL, 1, 0));
-    OK(uc_hook_add(uc, &mem_hook, UC_HOOK_BLOCK, test_x86_lazy_mapping_block_callback, &block_count, 1, 0));
+    OK(uc_hook_add(uc, &block_hook, UC_HOOK_BLOCK, test_x86_lazy_mapping_block_callback, &block_count, 1, 0));
 
     OK(uc_emu_start(uc, 0x1000, 0x1002, 0, 0));
     TEST_CHECK(block_count == 1);
@@ -1227,6 +1235,6 @@ TEST_LIST = {
      test_x86_correct_address_in_small_jump_hook},
     {"test_x86_correct_address_in_long_jump_hook",
      test_x86_correct_address_in_long_jump_hook},
-    {"test_x86_unaligned_write", test_x86_unaligned_write},
+    {"test_x86_unaligned_access", test_x86_unaligned_access},
     {"test_x86_lazy_mapping", test_x86_lazy_mapping},
     {NULL, NULL}};
