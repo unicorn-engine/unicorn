@@ -1977,7 +1977,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
     size_t size = memop_size(op);
     struct hook *hook;
     bool handled;
-    MemoryRegion *mr = memory_mapping(uc, addr);
+    MemoryRegion *mr;
 
     if (!uc->size_recur_mem) { // disabling write callback if in recursive call
         // Unicorn: callback on memory write
@@ -1993,6 +1993,9 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 break;
         }
     }
+
+    // Load the latest memory mapping.
+    mr = memory_mapping(uc, addr);
 
     // Unicorn: callback on invalid memory
     if (mr == NULL) {
