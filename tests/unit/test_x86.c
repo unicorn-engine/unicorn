@@ -1189,11 +1189,14 @@ static void test_x86_unaligned_access(void)
     OK(uc_close(uc));
 }
 
-static void test_x86_lazy_mapping_mem_callback(uc_engine *uc, uc_mem_type type,
+static bool test_x86_lazy_mapping_mem_callback(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
 {
     OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
     OK(uc_mem_write(uc, 0x1000, "\x90\x90", 2)); // nop; nop
+
+    // Handled!
+    return true;
 }
 
 static void test_x86_lazy_mapping_block_callback(uc_engine *uc,
