@@ -1126,6 +1126,7 @@ static void test_x86_invalid_vex_l(void)
     OK(uc_close(uc));
 }
 
+#ifndef TARGET_READ_INLINED
 struct writelog_t {
     uint32_t addr, size;
 };
@@ -1188,6 +1189,7 @@ static void test_x86_unaligned_access(void)
 
     OK(uc_close(uc));
 }
+#endif
 
 static bool test_x86_lazy_mapping_mem_callback(uc_engine *uc, uc_mem_type type,
         uint64_t address, int size, int64_t value, void *user_data)
@@ -1259,6 +1261,8 @@ TEST_LIST = {
     {"test_x86_correct_address_in_long_jump_hook",
      test_x86_correct_address_in_long_jump_hook},
     {"test_x86_invalid_vex_l", test_x86_invalid_vex_l},
+#ifndef TARGET_READ_INLINED
     {"test_x86_unaligned_access", test_x86_unaligned_access},
+#endif
     {"test_x86_lazy_mapping", test_x86_lazy_mapping},
     {NULL, NULL}};
