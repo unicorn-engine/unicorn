@@ -65,7 +65,7 @@
         (unsigned short)1,                                                             \
       (expr)+0))))))
 
-#ifdef __ATOMIC_RELAXED
+#if defined(__ATOMIC_RELAXED) && !(defined(_MSC_VER) && defined(__clang__))
 /* For C11 atomic ops */
 
 /* Sanity check that the size of an atomic operation isn't "overly large".
