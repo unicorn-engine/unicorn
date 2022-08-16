@@ -109,6 +109,7 @@ static void ppc_release(void *ctx)
     int i;
     TCGContext *tcg_ctx = (TCGContext *)ctx;
     PowerPCCPU *cpu = (PowerPCCPU *)tcg_ctx->uc->cpu;
+    CPUPPCState *env = &cpu->env;
     CPUTLBDesc *d = cpu->neg.tlb.d;
     CPUTLBDescFast *f = cpu->neg.tlb.f;
     CPUTLBDesc *desc;
@@ -131,6 +132,20 @@ static void ppc_release(void *ctx)
     g_free(tcg_ctx->cpu_dspctrl);
 
     //    g_free(tcg_ctx->tb_ctx.tbs);
+
+    if (env->nb_tlb != 0) {
+        switch(env->tlb_type) {
+        case TLB_6XX:
+            g_free(env->tlb.tlb6);
+            break;
+        case TLB_EMB:
+            g_free(env->tlb.tlbe);
+            break;
+        case TLB_MAS:
+            g_free(env->tlb.tlbm);
+            break;
+        }
+    }
 
     ppc_cpu_instance_finalize(tcg_ctx->uc->cpu);
     ppc_cpu_unrealize(tcg_ctx->uc->cpu);
