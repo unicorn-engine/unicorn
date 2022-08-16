@@ -251,14 +251,21 @@ static void test_uc_hook_cached_uaf(void)
     uc_hook h;
     uint64_t count = 0;
 #ifndef _WIN32
-    void *callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE | PROT_EXEC,
+    // Apple Silicon does not allow RWX pages.
+    void *callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE,
                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    TEST_CHECK(callback != (void*)-1);
 #else
     void *callback = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT,
                                   PAGE_EXECUTE_READWRITE);
+    TEST_CHECK(callback != NULL);
 #endif
 
     memcpy(callback, (void *)test_uc_hook_cached_cb, 4096);
+
+#ifndef _WIN32
+    TEST_CHECK(mprotect(callback, 4096, PROT_READ | PROT_EXEC) == 0);
+#endif
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
@@ -273,7 +280,15 @@ static void test_uc_hook_cached_uaf(void)
     // This will clear deleted hooks and SHOULD clear cache.
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
+#ifndef _WIN32
+    TEST_CHECK(mprotect(callback, 4096, PROT_READ | PROT_WRITE) == 0);
+#endif
+
     memset(callback, 0, 4096);
+
+#ifndef _WIN32
+    TEST_CHECK(mprotect(callback, 4096, PROT_READ | PROT_EXEC) == 0);
+#endif
 
     // Now hooks are deleted and thus this will trigger a UAF
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
