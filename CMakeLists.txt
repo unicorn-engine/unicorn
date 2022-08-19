@@ -3,16 +3,18 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-if(MSVC)
-    if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
-        # set all policies to max supported by actual running cmake version
-        # mainly want the following:
-        # CMP0091: prevent msvcrt flags being added to default CMAKE_<LANG>_FLAGS_<CONFIG>
-        # CMP0092: prevent warning flags being added to default CMAKE_<LANG>_FLAGS
-        cmake_policy(VERSION ${CMAKE_VERSION})
-    else()
-        message(FATAL_ERROR "please update cmake")
-    endif()
+# Only required for MSVC, but we can't know the compiler at this point because we haven't
+# called enable_language() or project(), and if we did that it would lock in the old
+# policy. Setting these policies is harmless for non-MSVC though, so just enable them
+# always.
+if(CMAKE_VERSION VERSION_GREATER_EQUAL "3.15")
+    # Set explicitly the policies we want rather than raising the base to the current
+    # version. This prevents unintended behavior changes as CMake evolves and provides a
+    # consistent experience across different CMake versions.
+    # CMP0091: prevent msvcrt flags being added to default CMAKE_<LANG>_FLAGS_<CONFIG>
+    cmake_policy(SET CMP0091 NEW)
+    # CMP0092: prevent warning flags being added to default CMAKE_<LANG>_FLAGS for MSVC
+    cmake_policy(SET CMP0092 NEW)
 endif()
 
 # Workaround to fix wrong compiler on macos.
@@ -30,6 +32,13 @@ if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 project(unicorn C)
+
+# We depend on the availability of the CMAKE_MSVC_RUNTIME_LIBRARY, which is only
+# available in CMake 3.15 and above (see also the comments above in regards to policy
+# CMP0091).
+if(MSVC AND CMAKE_VERSION VERSION_LESS "3.15")
+    message(FATAL_ERROR "Please update CMake to 3.15 or greater.")
+endif()
 
 # mainline qemu mostly just uses compiler default
 set(CMAKE_C_STANDARD 11)
