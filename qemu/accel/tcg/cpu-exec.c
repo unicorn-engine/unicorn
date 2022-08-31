@@ -86,11 +86,14 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
                 case UC_ERR_FETCH_UNALIGNED:
                     break;
                 default:
-                    if (cc->synchronize_from_tb) {
-                        cc->synchronize_from_tb(cpu, last_tb);
-                    } else {
-                        assert(cc->set_pc);
-                        cc->set_pc(cpu, last_tb->pc);
+                    // If we receive a quit request, users has sync-ed PC themselves.
+                    if (!cpu->uc->quit_request) {
+                        if (cc->synchronize_from_tb) {
+                            cc->synchronize_from_tb(cpu, last_tb);
+                        } else {
+                            assert(cc->set_pc);
+                            cc->set_pc(cpu, last_tb->pc);
+                        }
                     }
             }
         }
