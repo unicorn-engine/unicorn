@@ -1106,7 +1106,6 @@ static void test_x86_correct_address_in_long_jump_hook(void)
     OK(uc_close(uc));
 }
 
-
 static void test_x86_invalid_vex_l(void)
 {
     uc_engine *uc;
@@ -1132,15 +1131,16 @@ struct writelog_t {
 };
 
 static void test_x86_unaligned_access_callback(uc_engine *uc, uc_mem_type type,
-        uint64_t address, int size, int64_t value, void *user_data)
+                                               uint64_t address, int size,
+                                               int64_t value, void *user_data)
 {
     TEST_CHECK(size != 0);
     struct writelog_t *write_log = (struct writelog_t *)user_data;
 
     for (int i = 0; i < 10; i++) {
         if (write_log[i].size == 0) {
-            write_log[i].addr = (uint32_t) address;
-            write_log[i].size = (uint32_t) size;
+            write_log[i].addr = (uint32_t)address;
+            write_log[i].size = (uint32_t)size;
             return;
         }
     }
@@ -1161,10 +1161,10 @@ static void test_x86_unaligned_access(void)
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
     OK(uc_mem_map(uc, 0x200000, 0x1000, UC_PROT_ALL));
-    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE, test_x86_unaligned_access_callback,
-                write_log, 1, 0));
-    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ, test_x86_unaligned_access_callback,
-                read_log, 1, 0));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_WRITE,
+                   test_x86_unaligned_access_callback, write_log, 1, 0));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_MEM_READ,
+                   test_x86_unaligned_access_callback, read_log, 1, 0));
 
     OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
@@ -1192,7 +1192,8 @@ static void test_x86_unaligned_access(void)
 #endif
 
 static bool test_x86_lazy_mapping_mem_callback(uc_engine *uc, uc_mem_type type,
-        uint64_t address, int size, int64_t value, void *user_data)
+                                               uint64_t address, int size,
+                                               int64_t value, void *user_data)
 {
     OK(uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL));
     OK(uc_mem_write(uc, 0x1000, "\x90\x90", 2)); // nop; nop
@@ -1202,9 +1203,10 @@ static bool test_x86_lazy_mapping_mem_callback(uc_engine *uc, uc_mem_type type,
 }
 
 static void test_x86_lazy_mapping_block_callback(uc_engine *uc,
-        uint64_t address, uint32_t size, void *user_data)
+                                                 uint64_t address,
+                                                 uint32_t size, void *user_data)
 {
-    int *block_count = (int*)user_data;
+    int *block_count = (int *)user_data;
     (*block_count)++;
 }
 
@@ -1215,8 +1217,10 @@ static void test_x86_lazy_mapping(void)
     int block_count = 0;
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
-    OK(uc_hook_add(uc, &mem_hook, UC_HOOK_MEM_FETCH_UNMAPPED, test_x86_lazy_mapping_mem_callback, NULL, 1, 0));
-    OK(uc_hook_add(uc, &block_hook, UC_HOOK_BLOCK, test_x86_lazy_mapping_block_callback, &block_count, 1, 0));
+    OK(uc_hook_add(uc, &mem_hook, UC_HOOK_MEM_FETCH_UNMAPPED,
+                   test_x86_lazy_mapping_mem_callback, NULL, 1, 0));
+    OK(uc_hook_add(uc, &block_hook, UC_HOOK_BLOCK,
+                   test_x86_lazy_mapping_block_callback, &block_count, 1, 0));
 
     OK(uc_emu_start(uc, 0x1000, 0x1002, 0, 0));
     TEST_CHECK(block_count == 1);

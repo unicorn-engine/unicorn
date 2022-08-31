@@ -243,7 +243,8 @@ static void test_uc_ctl_tb_cache()
 
     // Now we request cache for all TBs.
     for (int i = 0; i < TB_COUNT; i++) {
-        err = uc_ctl_request_cache(uc, (uint64_t)(ADDRESS + i * TCG_MAX_INSNS), &tb);
+        err = uc_ctl_request_cache(uc, (uint64_t)(ADDRESS + i * TCG_MAX_INSNS),
+                                   &tb);
         printf(">>> TB is cached at 0x%" PRIx64 " which has %" PRIu16
                " instructions with %" PRIu16 " bytes.\n",
                tb.pc, tb.icount, tb.size);

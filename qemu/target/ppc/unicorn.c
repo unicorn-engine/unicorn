@@ -134,7 +134,7 @@ static void ppc_release(void *ctx)
     //    g_free(tcg_ctx->tb_ctx.tbs);
 
     if (env->nb_tlb != 0) {
-        switch(env->tlb_type) {
+        switch (env->tlb_type) {
         case TLB_6XX:
             g_free(env->tlb.tlb6);
             break;

@@ -295,19 +295,20 @@ static void test_arm64_correct_address_in_long_jump_hook(void)
     OK(uc_close(uc));
 }
 
-static void test_arm64_block_sync_pc_cb(uc_engine* uc, uint64_t addr, uint32_t size, void* data)
+static void test_arm64_block_sync_pc_cb(uc_engine *uc, uint64_t addr,
+                                        uint32_t size, void *data)
 {
     uint64_t val = code_start;
-    bool first = *(bool*)data;
+    bool first = *(bool *)data;
     if (first) {
-        OK(uc_reg_write(uc, UC_ARM64_REG_PC, (void*)&val));
-        *(bool*)data = false;
+        OK(uc_reg_write(uc, UC_ARM64_REG_PC, (void *)&val));
+        *(bool *)data = false;
     }
 }
 
 static void test_arm64_block_sync_pc(void)
 {
-    uc_engine* uc;
+    uc_engine *uc;
     // add x0, x0, #1234;bl t;t:mov x1, #5678;
     const char code[] = "\x00\x48\x13\x91\x01\x00\x00\x94\xc1\xc5\x82\xd2";
     uc_hook hk;
@@ -316,20 +317,20 @@ static void test_arm64_block_sync_pc(void)
 
     uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
                     UC_CPU_ARM64_A72);
-    OK(uc_hook_add(uc, &hk, UC_HOOK_BLOCK, test_arm64_block_sync_pc_cb, (void*)&data, code_start + 8, code_start + 12));    
-    
+    OK(uc_hook_add(uc, &hk, UC_HOOK_BLOCK, test_arm64_block_sync_pc_cb,
+                   (void *)&data, code_start + 8, code_start + 12));
+
     x0 = 0;
-    OK(uc_reg_write(uc, UC_ARM64_REG_X0, (void*)&x0));
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, (void *)&x0));
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
-    OK(uc_reg_read(uc, UC_ARM64_REG_X0, (void*)&x0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, (void *)&x0));
 
     TEST_CHECK(x0 == (1234 * 2));
 
     OK(uc_hook_del(uc, hk));
     OK(uc_close(uc));
 }
-
 
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
@@ -341,5 +342,5 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
               test_arm64_correct_address_in_small_jump_hook},
              {"test_arm64_correct_address_in_long_jump_hook",
               test_arm64_correct_address_in_long_jump_hook},
-              {"test_arm64_block_sync_pc", test_arm64_block_sync_pc},
+             {"test_arm64_block_sync_pc", test_arm64_block_sync_pc},
              {NULL, NULL}};
