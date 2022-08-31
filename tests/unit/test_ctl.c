@@ -175,6 +175,8 @@ static void test_uc_ctl_tb_cache(void)
     OK(uc_close(uc));
 }
 
+// Test requires UC_ARCH_ARM.
+#ifdef UNICORN_HAS_ARM
 static void test_uc_ctl_change_page_size(void)
 {
     uc_engine *uc;
@@ -191,7 +193,10 @@ static void test_uc_ctl_change_page_size(void)
     OK(uc_close(uc));
     OK(uc_close(uc2));
 }
+#endif
 
+// Test requires UC_ARCH_ARM.
+#ifdef UNICORN_HAS_ARM
 // Copy from test_arm.c but with new API.
 static void test_uc_ctl_arm_cpu(void)
 {
@@ -226,6 +231,7 @@ static void test_uc_ctl_arm_cpu(void)
 
     OK(uc_close(uc));
 }
+#endif
 
 static void test_uc_hook_cached_cb(uc_engine *uc, uint64_t addr, size_t size,
                                    void *user_data)
@@ -289,7 +295,9 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_time_out", test_uc_ctl_time_out},
              {"test_uc_ctl_exits", test_uc_ctl_exits},
              {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
+#ifdef UNICORN_HAS_ARM
              {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
              {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
+#endif
              {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
              {NULL, NULL}};

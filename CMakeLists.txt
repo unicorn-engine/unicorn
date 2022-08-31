@@ -1412,6 +1412,9 @@ if(UNICORN_BUILD_TESTS)
         add_executable(${TEST_FILE}
             ${CMAKE_CURRENT_SOURCE_DIR}/tests/unit/${TEST_FILE}.c
         )
+        target_compile_options(${TEST_FILE} PRIVATE
+            ${UNICORN_COMPILE_OPTIONS}
+        )
         target_link_libraries(${TEST_FILE} PRIVATE
             ${SAMPLES_LIB}
         )
