@@ -270,54 +270,6 @@ def debug() -> str:
     return f'python-{all_archs}-c{lib_maj}.{lib_min}-b{bnd_maj}.{bnd_min}'
 
 
-class UcRef(weakref.ref):
-    """A simple subclass to allow property assignment.
-    """
-
-    _uch: Optional[uc_engine]
-    _class: Type[Uc]
-
-
-class UcCleanupManager:
-    """A utility class to track `Uc` instances and properly release their resources
-    upon destruction.
-    """
-
-    _refs: MutableMapping[int, UcRef]
-
-    def __init__(self):
-        self._refs = {}
-
-
-    def register(self, obj: Uc):
-        ref = UcRef(obj, self._finalizer)
-        ref._uch = obj._uch
-        ref._class = obj.__class__
-
-        self._refs[id(ref)] = ref
-
-
-    def _finalizer(self, ref: UcRef) -> None:
-        # note: this method must be completely self-contained and cannot have any references
-        # to anything else in this module.
-        #
-        # This is because it may be called late in the Python interpreter's shutdown phase, at
-        # which point the module's variables may already have been deinitialized and set to None.
-        #
-        # Not respecting that can lead to errors such as:
-        #     Exception AttributeError:
-        #       "'NoneType' object has no attribute 'release_handle'"
-        #       in <bound method UcCleanupManager._finalizer of
-        #       <unicorn.unicorn.UcCleanupManager object at 0x7f0bb83e4310>> ignored
-        #
-        # For that reason, we do not try to access the `Uc` class directly here but instead use
-        # the saved `._class` reference.
-        del self._refs[id(ref)]
-
-        if ref._uch is not None:
-            ref._class.release_handle(ref._uch)
-
-
 def _cast_func(functype: Type[ctypes._FuncPointer], pyfunc: Callable):
     return ctypes.cast(functype(pyfunc), functype)
 
@@ -423,8 +375,6 @@ class Uc(RegStateManager):
     """Unicorn Engine class.
     """
 
-    __cleanup = UcCleanupManager()
-
     @staticmethod
     def __is_compliant() -> bool:
         """Checks whether Unicorn binding version complies with Unicorn library.
@@ -507,11 +457,17 @@ class Uc(RegStateManager):
         self._mmio_callbacks: MutableMapping[Tuple[int, int], Tuple[Optional[ctypes._FuncPointer], Optional[ctypes._FuncPointer]]] = {}
 
         self._hook_exception: Optional[Exception] = None
-        Uc.__cleanup.register(self)
+
+        # create a finalizer object that will apropriately free up resources when
+        # this instance undergoes garbage collection.
+        self.__finalizer = weakref.finalize(self, Uc.release_handle, self._uch)
 
 
     @staticmethod
     def release_handle(uch: uc_engine) -> None:
+        # this method and its arguments must not have any reference to the Uc instance being
+        # destroyed. namely, this method cannot be a bound method.
+
         if uch:
             try:
                 status = uclib.uc_close(uch)
