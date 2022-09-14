@@ -444,7 +444,7 @@ class Uc(RegStateManager):
         self._mode = mode
 
         # initialize the unicorn instance
-        self._uch = ctypes.c_void_p()
+        self._uch = uc_engine()
         status = uclib.uc_open(arch, mode, ctypes.byref(self._uch))
 
         if status != uc.UC_ERR_OK:
@@ -814,7 +814,7 @@ class Uc(RegStateManager):
 
         def __hook_edge_gen():
             @_catch_hook_exception
-            def __hook_edge_gen_cb(handle: int, cur: ctypes.pointer[uc_tb], prev: ctypes.pointer[uc_tb], key: int):
+            def __hook_edge_gen_cb(handle: int, cur: ctypes._Pointer[uc_tb], prev: ctypes._Pointer[uc_tb], key: int):
                 callback(self, cur.contents, prev.contents, user_data)
 
             cb = _cast_func(HOOK_EDGE_GEN_CFUNC, __hook_edge_gen_cb)

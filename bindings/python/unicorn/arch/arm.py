@@ -6,9 +6,8 @@ from typing import Any, Tuple
 
 import ctypes
 
-from .. import Uc, UcError
+from .. import Uc
 from .. import arm_const as const
-from ..unicorn_const import UC_ERR_ARG
 
 from .types import UcReg128
 
