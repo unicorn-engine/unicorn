@@ -9,7 +9,7 @@ import ctypes
 from .. import Uc, UcError
 from .. import arm64_const as const
 
-from ..unicorn import _catch_hook_exception, _cast_func
+from ..unicorn import uccallback
 from ..unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
 from .types import uc_engine, UcReg128
 
@@ -57,7 +57,7 @@ class UcAArch64(Uc):
         insn = ctypes.c_int(aux1)
 
         def __hook_insn_sys():
-            @_catch_hook_exception
+            @uccallback(HOOK_INSN_SYS_CFUNC)
             def __hook_insn_sys_cb(handle: int, reg: int, pcp_reg: Any, key: int) -> int:
                 cp_reg = ctypes.cast(pcp_reg, ctypes.POINTER(UcRegCP)).contents
 
@@ -73,7 +73,7 @@ class UcAArch64(Uc):
 
                 return callback(self, reg, cp_reg, user_data)
 
-            return _cast_func(HOOK_INSN_SYS_CFUNC, __hook_insn_sys_cb)
+            return __hook_insn_sys_cb
 
         handlers = {
             const.UC_ARM64_INS_MRS  : __hook_insn_sys,

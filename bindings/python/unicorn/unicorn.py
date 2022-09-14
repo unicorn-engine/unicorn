@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any, Callable, Iterable, Iterator, Mapping, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
 
 import ctypes
+import functools
 import weakref
 
 from . import unicorn_const as uc
@@ -270,28 +271,32 @@ def debug() -> str:
     return f'python-{all_archs}-c{lib_maj}.{lib_min}-b{bnd_maj}.{bnd_min}'
 
 
-def _cast_func(functype: Type[ctypes._FuncPointer], pyfunc: Callable):
-    return ctypes.cast(functype(pyfunc), functype)
+def uccallback(functype: Type[ctypes._FuncPointer]):
+    """Unicorn callback decorator.
 
+    Wraps a Python function meant to be dispatched by Unicorn as a hook callback.
+    The function call is wrapped with an exception guard to catch and record
+    exceptions thrown during hook handling.
 
-def _catch_hook_exception(func: Callable) -> Callable:
-    def wrapper(uc: Uc, *args, **kwargs):
-        """Catches exceptions raised in hook functions.
+    If an exception occurs, it is saved to the Uc object and emulation is stopped.
+    """
 
-        If an exception is raised, it is saved to the Uc object and a call to stop
-        emulation is issued.
-        """
+    def decorate(func):
 
-        try:
-            return func(uc, *args, **kwargs)
-        except Exception as e:
-            # If multiple hooks raise exceptions, just use the first one
-            if uc._hook_exception is None:
-                uc._hook_exception = e
+        @functools.wraps(func)
+        def wrapper(uc: Uc, *args, **kwargs):
+            try:
+                return func(uc, *args, **kwargs)
+            except Exception as e:
+                # If multiple hooks raise exceptions, just use the first one
+                if uc._hook_exception is None:
+                    uc._hook_exception = e
 
-            uc.emu_stop()
+                uc.emu_stop()
 
-    return wrapper
+        return ctypes.cast(functype(wrapper), functype)
+
+    return decorate
 
 
 class RegStateManager:
@@ -627,18 +632,20 @@ class Uc(RegStateManager):
             read_cb: Optional[UC_MMIO_READ_TYPE], user_data_read: Any,
             write_cb: Optional[UC_MMIO_WRITE_TYPE], user_data_write: Any) -> None:
 
+        @uccallback(MMIO_READ_CFUNC)
         def __mmio_map_read_cb(handle: int, offset: int, size: int, key: int) -> int:
             assert read_cb is not None
 
             return read_cb(self, offset, size, user_data_read)
 
+        @uccallback(MMIO_WRITE_CFUNC)
         def __mmio_map_write_cb(handle: int, offset: int, size: int, value: int, key: int) -> None:
             assert write_cb is not None
 
             write_cb(self, offset, size, value, user_data_write)
 
-        read_cb_fptr = read_cb and _cast_func(MMIO_READ_CFUNC, __mmio_map_read_cb)
-        write_cb_fptr = write_cb and _cast_func(MMIO_WRITE_CFUNC, __mmio_map_write_cb)
+        read_cb_fptr = read_cb and __mmio_map_read_cb
+        write_cb_fptr = write_cb and __mmio_map_write_cb
 
         status = uclib.uc_mmio_map(self._uch, address, size, read_cb_fptr, 0, write_cb_fptr, 0)
 
@@ -762,13 +769,11 @@ class Uc(RegStateManager):
         """
 
         def __hook_intr():
-            @_catch_hook_exception
+            @uccallback(HOOK_INTR_CFUNC)
             def __hook_intr_cb(handle: int, intno: int, key: int):
                 callback(self, intno, user_data)
 
-            cb = _cast_func(HOOK_INTR_CFUNC, __hook_intr_cb)
-
-            return cb,
+            return __hook_intr_cb,
 
         def __hook_insn():
             # each arch is expected to overload hook_add and implement this handler on their own.
@@ -777,60 +782,49 @@ class Uc(RegStateManager):
             raise UcError(uc.UC_ERR_ARG)
 
         def __hook_code():
-            @_catch_hook_exception
+            @uccallback(HOOK_CODE_CFUNC)
             def __hook_code_cb(handle: int, address: int, size: int, key: int):
                 callback(self, address, size, user_data)
 
-            cb = _cast_func(HOOK_CODE_CFUNC, __hook_code_cb)
-
-            return cb,
+            return __hook_code_cb,
 
         def __hook_invalid_mem():
-            @_catch_hook_exception
+            @uccallback(HOOK_MEM_INVALID_CFUNC)
             def __hook_mem_invalid_cb(handle: int, access: int, address: int, size: int, value: int, key: int) -> bool:
                 return callback(self, access, address, size, value, user_data)
 
-            cb = _cast_func(HOOK_MEM_INVALID_CFUNC, __hook_mem_invalid_cb)
-
-            return cb,
+            return __hook_mem_invalid_cb,
 
         def __hook_mem():
-            @_catch_hook_exception
+            @uccallback(HOOK_MEM_ACCESS_CFUNC)
             def __hook_mem_access_cb(handle: int, access: int, address: int, size: int, value: int, key: int) -> None:
                 callback(self, access, address, size, value, user_data)
 
-            cb = _cast_func(HOOK_MEM_ACCESS_CFUNC, __hook_mem_access_cb)
-
-            return cb,
+            return __hook_mem_access_cb,
 
         def __hook_invalid_insn():
-            @_catch_hook_exception
+            @uccallback(HOOK_INSN_INVALID_CFUNC)
             def __hook_insn_invalid_cb(handle: int, key: int) -> bool:
                 return callback(self, user_data)
 
-            cb = _cast_func(HOOK_INSN_INVALID_CFUNC, __hook_insn_invalid_cb)
-
-            return cb,
+            return __hook_insn_invalid_cb,
 
         def __hook_edge_gen():
-            @_catch_hook_exception
+            @uccallback(HOOK_EDGE_GEN_CFUNC)
             def __hook_edge_gen_cb(handle: int, cur: ctypes._Pointer[uc_tb], prev: ctypes._Pointer[uc_tb], key: int):
                 callback(self, cur.contents, prev.contents, user_data)
 
-            cb = _cast_func(HOOK_EDGE_GEN_CFUNC, __hook_edge_gen_cb)
-
-            return cb,
+            return __hook_edge_gen_cb,
 
         def __hook_tcg_opcode():
-            @_catch_hook_exception
+            @uccallback(HOOK_TCG_OPCODE_CFUNC)
             def _hook_tcg_op_cb(handle: int, address: int, arg1: int, arg2: int, key: int):
                 callback(self, address, arg1, arg2, user_data)
 
-            cb = _cast_func(HOOK_TCG_OPCODE_CFUNC, _hook_tcg_op_cb)
             opcode = ctypes.c_int(aux1)
             flags = ctypes.c_int(aux2)
 
-            return cb, opcode, flags
+            return _hook_tcg_op_cb, opcode, flags
 
         handlers: Mapping[int, Callable[[], Tuple]] = {
             uc.UC_HOOK_INTR               : __hook_intr,

@@ -9,7 +9,7 @@ import ctypes
 from .. import Uc, UcError
 from .. import x86_const as const
 
-from ..unicorn import _catch_hook_exception, _cast_func
+from ..unicorn import uccallback
 from ..unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
 from .types import uc_engine, UcReg128, UcReg256, UcReg512
 
@@ -101,32 +101,32 @@ class UcIntel(Uc):
         insn = ctypes.c_int(aux1)
 
         def __hook_insn_in():
-            @_catch_hook_exception
+            @uccallback(HOOK_INSN_IN_CFUNC)
             def __hook_insn_in_cb(handle: int, port: int, size: int, key: int) -> int:
                 return callback(self, port, size, user_data)
 
-            return _cast_func(HOOK_INSN_IN_CFUNC, __hook_insn_in_cb)
+            return __hook_insn_in_cb
 
         def __hook_insn_out():
-            @_catch_hook_exception
+            @uccallback(HOOK_INSN_OUT_CFUNC)
             def __hook_insn_out_cb(handle: int, port: int, size: int, value: int, key: int):
                 callback(self, port, size, value, user_data)
 
-            return _cast_func(HOOK_INSN_OUT_CFUNC, __hook_insn_out_cb)
+            return __hook_insn_out_cb
 
         def __hook_insn_syscall():
-            @_catch_hook_exception
+            @uccallback(HOOK_INSN_SYSCALL_CFUNC)
             def __hook_insn_syscall_cb(handle: int, key: int):
                 callback(self, user_data)
 
-            return _cast_func(HOOK_INSN_SYSCALL_CFUNC, __hook_insn_syscall_cb)
+            return __hook_insn_syscall_cb
 
         def __hook_insn_cpuid():
-            @_catch_hook_exception
+            @uccallback(HOOK_INSN_CPUID_CFUNC)
             def __hook_insn_cpuid_cb(handle: int, key: int) -> int:
                 return callback(self, user_data)
 
-            return _cast_func(HOOK_INSN_CPUID_CFUNC, __hook_insn_cpuid_cb)
+            return __hook_insn_cpuid_cb
 
         handlers = {
             const.UC_X86_INS_IN       : __hook_insn_in,
