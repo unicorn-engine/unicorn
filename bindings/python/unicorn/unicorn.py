@@ -376,6 +376,53 @@ class RegStateManager:
         self._reg_write(reg_id, self._DEFAULT_REGTYPE, value)
 
 
+def ucsubclass(cls):
+    """Uc subclass decorator.
+
+    Use it to decorate user-defined Uc subclasses.
+
+    Example:
+    >>> @ucsubclass
+    ... class Pegasus(Uc):
+    ...     '''A Unicorn impl with wings
+    ...     '''
+    ...     pass
+    """
+
+    # to maintain proper inheritance for user-defined Uc subclasses, the Uc
+    # base class is replaced with the appropriate Uc pre-defined subclass on
+    # first instantiation.
+    #
+    # for example, if the Pegasus class from the example above instantiates
+    # with Intel arch and 64-bit mode, the Pegasus class will be modified to
+    # inherit from UcIntel and only then Uc, instead of Uc directly. that is:
+    # Pegasus -> UcIntel -> Uc -> RegStateManager -> object
+    #
+    # note that all Pegasus subclasses will have the same inheritence chain,
+    # regardless of the arch and mode the might use to initialize.
+
+    def __replace(seq: Tuple, item, repl) -> Tuple:
+        if item not in seq:
+            return seq
+
+        i = seq.index(item)
+
+        return seq[:i] + tuple([repl]) + seq[i + 1:]
+
+    def __new_uc_subclass(cls, arch: int, mode: int):
+        # resolve the appropriate Uc subclass
+        subcls = Uc.__new__(cls, arch, mode)
+
+        # set the resolved subclass as base class instead of Uc (if there)
+        cls.__bases__ = __replace(cls.__bases__, Uc, type(subcls))
+
+        return object.__new__(cls)
+
+    setattr(cls, '__new__', __new_uc_subclass)
+
+    return cls
+
+
 class Uc(RegStateManager):
     """Unicorn Engine class.
     """
@@ -394,9 +441,6 @@ class Uc(RegStateManager):
 
 
     def __new__(cls, arch: int, mode: int):
-        # prevent direct instantiation of unicorn subclasses
-        assert cls is Uc, f'{cls.__name__} is not meant to be instantiated directly'
-
         # verify version compatibility with the core before doing anything
         if not Uc.__is_compliant():
             raise UcError(uc.UC_ERR_VERSION)
@@ -1143,4 +1187,4 @@ UC_MMIO_READ_TYPE = Callable[[Uc, int, int, Any], int]
 UC_MMIO_WRITE_TYPE = Callable[[Uc, int, int, int, Any], None]
 
 
-__all__ = ['Uc', 'UcContext']
+__all__ = ['Uc', 'UcContext', 'ucsubclass']
