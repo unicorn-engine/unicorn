@@ -2240,7 +2240,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             int model = va_arg(args, int);
 
-            if (model <= 0 || uc->init_done) {
+            if (model < 0 || uc->init_done) {
                 err = UC_ERR_ARG;
                 break;
             }

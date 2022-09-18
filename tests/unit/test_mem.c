@@ -142,6 +142,9 @@ static void test_mem_protect_map_ptr(void)
     TEST_CHECK(val == mem);
 
     OK(uc_close(uc));
+
+    free(data2);
+    free(data1);
 }
 
 static void test_map_at_the_end(void)

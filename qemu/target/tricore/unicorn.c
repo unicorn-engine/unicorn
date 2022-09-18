@@ -263,6 +263,25 @@ static int tricore_cpus_init(struct uc_struct *uc, const char *cpu_model)
     return 0;
 }
 
+static void tricore_release(void *ctx)
+{
+    int i;
+    TCGContext *tcg_ctx = (TCGContext *)ctx;
+    TriCoreCPU *cpu = (TriCoreCPU *)tcg_ctx->uc->cpu;
+    CPUTLBDesc *d = cpu->neg.tlb.d;
+    CPUTLBDescFast *f = cpu->neg.tlb.f;
+    CPUTLBDesc *desc;
+    CPUTLBDescFast *fast;
+
+    release_common(ctx);
+    for (i = 0; i < NB_MMU_MODES; i++) {
+        desc = &(d[i]);
+        fast = &(f[i]);
+        g_free(desc->iotlb);
+        g_free(fast->table);
+    }
+}
+
 void tricore_uc_init(struct uc_struct *uc)
 {
     uc->reg_read = tricore_reg_read;
@@ -271,6 +290,7 @@ void tricore_uc_init(struct uc_struct *uc)
     uc->set_pc = tricore_set_pc;
     uc->get_pc = tricore_get_pc;
     uc->cpus_init = tricore_cpus_init;
+    uc->release = tricore_release;
     uc->cpu_context_size = offsetof(CPUTriCoreState, end_reset_fields);
     uc_common_init(uc);
 }

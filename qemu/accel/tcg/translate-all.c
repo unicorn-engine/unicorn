@@ -1584,9 +1584,8 @@ TranslationBlock *tb_gen_code(CPUState *cpu,
     phys_pc = get_page_addr_code(env, pc);
 
     if (phys_pc == -1) {
-        /* Generate a temporary TB with 1 insn in it */
-        cflags &= ~CF_COUNT_MASK;
-        cflags |= CF_NOCACHE | 1;
+        /* Generate a temporary TB; do not cache */
+        cflags |= CF_NOCACHE;
     }
 
     cflags &= ~CF_CLUSTER_MASK;

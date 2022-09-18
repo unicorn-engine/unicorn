@@ -165,8 +165,8 @@ bitflags! {
         const THUMB = 0x10;
         const MCLASS = 0x20;
         const V8 = 0x40;
-        const ARMBE8 = 0x80;
-        const ARM926 = Self::ARMBE8.bits;
+        const ARMBE8 = 0x400;
+        const ARM926 = 0x80;
         const ARM946 = 0x100;
         const ARM1176 = 0x200;
         const MICRO = Self::THUMB.bits;

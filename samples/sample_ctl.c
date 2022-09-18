@@ -243,7 +243,8 @@ static void test_uc_ctl_tb_cache()
 
     // Now we request cache for all TBs.
     for (int i = 0; i < TB_COUNT; i++) {
-        err = uc_ctl_request_cache(uc, ADDRESS + i * TCG_MAX_INSNS, &tb);
+        err = uc_ctl_request_cache(uc, (uint64_t)(ADDRESS + i * TCG_MAX_INSNS),
+                                   &tb);
         printf(">>> TB is cached at 0x%" PRIx64 " which has %" PRIu16
                " instructions with %" PRIu16 " bytes.\n",
                tb.pc, tb.icount, tb.size);
@@ -258,8 +259,8 @@ static void test_uc_ctl_tb_cache()
 
     // Now we clear cache for all TBs.
     for (int i = 0; i < TB_COUNT; i++) {
-        err = uc_ctl_remove_cache(uc, ADDRESS + i * TCG_MAX_INSNS,
-                                  ADDRESS + i * TCG_MAX_INSNS + 1);
+        err = uc_ctl_remove_cache(uc, (uint64_t)(ADDRESS + i * TCG_MAX_INSNS),
+                                  (uint64_t)(ADDRESS + i * TCG_MAX_INSNS + 1));
         if (err) {
             printf("Failed on uc_ctl() with error returned: %u\n", err);
             return;

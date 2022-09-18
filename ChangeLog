@@ -1,7 +1,7 @@
 This file details the changelog of Unicorn Engine.
 
-----------------------------------
-[Version 2.0.0]: May 25, 2022
+-------------------------------
+[Version 2.0.0]: July 7th, 2022
 
 Features:
 
@@ -10,7 +10,7 @@ Features:
 Fixes/Improvements:
 
 - Build both shared library and static archive as unicorn1 does.
-- Misc bindings improvements. #1569 #1600 #1609  #1613 #1616 
+- Misc bindings improvements. #1569 #1600 #1609  #1613 #1616
 - Make sure setjmp-setjmp-wrapper-win32 participates in the build. #1604 
 - Improve Rust bindings build logic.
 - Fix wrong python binding for UC_CTL_TB_REMOVE_CACHE
@@ -21,11 +21,15 @@ Fixes/Improvements:
 - Add type annotations for python bindings.
 - Add CPUID hook for python bindings. #1618 
 - Don't repeat memory hooks if there is already an unhandled error. #1618 
-- Support reads and writes over all Arm SIMD registers #1621 
+- Support reads and writes over all Arm SIMD registers #1621
+- Fix wrong registers range in python bindings.
+- Fix uc_mem_protect on mmio regions
+- Fix a UAF caused by hook cache.
+- Fix the value collision between UC_MODE_ARMBE8 and UC_MODE_ARM926
 
 Thanks:
 
-@AfoHT @mrexodia @bet4it @lowlyw @ekilmer @ondryaso @QDucasse @PalumboN
+@AfoHT @mrexodia @bet4it @lowlyw @ekilmer @ondryaso @QDucasse @PalumboN @uberwoozle
 
 ----------------------------------
 [Version 2.0.0 rc7]: April 17, 2022

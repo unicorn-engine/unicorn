@@ -33,6 +33,11 @@
 #include "exec/translator.h"
 #include "exec/gen-icount.h"
 
+/*
+ * Unicorn: Special disas state for exiting in the middle of tb.
+ */
+#define DISAS_UC_EXIT    DISAS_TARGET_6
+
 static const char *regnames_a[] = {
       "a0"  , "a1"  , "a2"  , "a3" , "a4"  , "a5" ,
       "a6"  , "a7"  , "a8"  , "a9" , "sp" , "a11" ,
@@ -9227,11 +9232,7 @@ static void tricore_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
 
     // Unicorn: end address tells us to stop emulation
     if (uc_addr_is_exit(uc, ctx->base.pc_next)) {
-        gen_helper_rfe(tcg_ctx, tcg_ctx->cpu_env);
-        tcg_gen_exit_tb(tcg_ctx, NULL, 0);
-        cpu->exception_index = EXCP_HLT;
-        cpu->halted = 1;
-        ctx->base.is_jmp = DISAS_NORETURN;
+        ctx->base.is_jmp = DISAS_UC_EXIT;
     } else {
         insn_lo = cpu_lduw_code(env, ctx->base.pc_next);
         is_16bit = tricore_insn_is_16bit(insn_lo);
@@ -9239,6 +9240,9 @@ static void tricore_tr_translate_insn(DisasContextBase *dcbase, CPUState *cpu)
         insn_size = is_16bit ? 2 : 4;
         // Unicorn: trace this instruction on request
         if (HOOK_EXISTS_BOUNDED(ctx->uc, UC_HOOK_CODE, ctx->base.pc_next)) {
+            // Sync PC in advance
+            gen_save_pc(ctx, ctx->base.pc_next);
+
             gen_uc_tracecode(tcg_ctx, insn_size, UC_HOOK_CODE_IDX, ctx->uc,
                              ctx->base.pc_next);
             // the callback might want to stop emulation immediately
@@ -9281,6 +9285,10 @@ static void tricore_tr_tb_stop(DisasContextBase *dcbase, CPUState *cpu)
     switch (ctx->base.is_jmp) {
     case DISAS_TOO_MANY:
         gen_goto_tb(ctx, 0, ctx->base.pc_next);
+        break;
+    case DISAS_UC_EXIT:
+        gen_save_pc(ctx, ctx->base.pc_next);
+        gen_helper_uc_tricore_exit(ctx->uc->tcg_ctx, ctx->uc->tcg_ctx->cpu_env);
         break;
     case DISAS_NORETURN:
         break;

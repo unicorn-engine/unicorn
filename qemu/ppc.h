@@ -1708,4 +1708,12 @@
 #define ppc_dcr_init ppc_dcr_init_ppc
 #define ppc_cpu_pir ppc_cpu_pir_ppc
 #define ppc_irq_reset ppc_irq_reset_ppc
+#define store_booke_tsr store_booke_tsr_ppc
+#define get_pteg_offset32 get_pteg_offset32_ppc
+#define ppc_booke_timers_init ppc_booke_timers_init_ppc
+#define ppc_hash32_handle_mmu_fault ppc_hash32_handle_mmu_fault_ppc
+#define gen_helper_store_booke_tsr gen_helper_store_booke_tsr_ppc
+#define gen_helper_store_booke_tcr gen_helper_store_booke_tcr_ppc
+#define store_booke_tcr store_booke_tcr_ppc
+#define ppc_hash32_get_phys_page_debug ppc_hash32_get_phys_page_debug_ppc
 #endif

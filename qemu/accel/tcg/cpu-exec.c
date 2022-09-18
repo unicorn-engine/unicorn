@@ -86,11 +86,14 @@ static inline tcg_target_ulong cpu_tb_exec(CPUState *cpu, TranslationBlock *itb)
                 case UC_ERR_FETCH_UNALIGNED:
                     break;
                 default:
-                    if (cc->synchronize_from_tb) {
-                        cc->synchronize_from_tb(cpu, last_tb);
-                    } else {
-                        assert(cc->set_pc);
-                        cc->set_pc(cpu, last_tb->pc);
+                    // If we receive a quit request, users has sync-ed PC themselves.
+                    if (!cpu->uc->quit_request) {
+                        if (cc->synchronize_from_tb) {
+                            cc->synchronize_from_tb(cpu, last_tb);
+                        } else {
+                            assert(cc->set_pc);
+                            cc->set_pc(cpu, last_tb->pc);
+                        }
                     }
             }
         }
@@ -595,6 +598,9 @@ int cpu_exec(struct uc_struct *uc, CPUState *cpu)
             }
 
             tb = tb_find(cpu, last_tb, tb_exit, cflags);
+            if (unlikely(cpu->exit_request)) {
+                continue;
+            }
             cpu_loop_exec_tb(cpu, tb, &last_tb, &tb_exit);
             /* Try to align the host and virtual clocks
                if the guest is in advance */
