@@ -862,13 +862,13 @@ class Uc(RegStateManager):
 
         def __hook_tcg_opcode():
             @uccallback(HOOK_TCG_OPCODE_CFUNC)
-            def _hook_tcg_op_cb(handle: int, address: int, arg1: int, arg2: int, key: int):
+            def __hook_tcg_op_cb(handle: int, address: int, arg1: int, arg2: int, key: int):
                 callback(self, address, arg1, arg2, user_data)
 
             opcode = ctypes.c_int(aux1)
             flags = ctypes.c_int(aux2)
 
-            return _hook_tcg_op_cb, opcode, flags
+            return __hook_tcg_op_cb, opcode, flags
 
         handlers: Mapping[int, Callable[[], Tuple]] = {
             uc.UC_HOOK_INTR               : __hook_intr,
@@ -934,7 +934,7 @@ class Uc(RegStateManager):
         """Query an internal Unicorn property.
 
         Args:
-            mode: property identifier (see: UC_QUERY_* constants)
+            prop: property identifier (see: UC_QUERY_* constants)
 
         Returns: property value
         """
