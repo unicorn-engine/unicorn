@@ -181,8 +181,15 @@ static void test_map_big_memory(void)
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
 
+#if defined(_WIN32) || defined(__WIN32__) || defined(__WINDOWS__)
+    uint64_t requested_size = 0xfffffffffffff000;  // assume 4K page size
+#else
+    long ps = sysconf(_SC_PAGESIZE);
+    uint64_t requested_size = (uint64_t)(-ps);
+#endif
+
     uc_assert_err(UC_ERR_NOMEM,
-                  uc_mem_map(uc, 0x0, 0xfffffffffffff000, UC_PROT_ALL));
+                  uc_mem_map(uc, 0x0, requested_size, UC_PROT_ALL));
 
     OK(uc_close(uc));
 }
