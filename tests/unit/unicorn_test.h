@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unicorn/unicorn.h>
+#include "qemu/bswap.h"
 #include "acutest.h"
 
 /**
