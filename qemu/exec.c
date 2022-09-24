@@ -1087,8 +1087,6 @@ RAMBlock *qemu_ram_alloc_from_ptr(struct uc_struct *uc, ram_addr_t size, void *h
     RAMBlock *new_block;
     ram_addr_t max_size = size;
 
-    size = HOST_PAGE_ALIGN(uc, size);
-    max_size = HOST_PAGE_ALIGN(uc, max_size);
     new_block = g_malloc0(sizeof(*new_block));
     if (new_block == NULL)
         return NULL;
@@ -1100,6 +1098,9 @@ RAMBlock *qemu_ram_alloc_from_ptr(struct uc_struct *uc, ram_addr_t size, void *h
     new_block->host = host;
     if (host) {
         new_block->flags |= RAM_PREALLOC;
+    } else {
+        size = HOST_PAGE_ALIGN(uc, size);
+        max_size = HOST_PAGE_ALIGN(uc, max_size);
     }
 
     uc->invalid_addr = UC_ERR_OK;
