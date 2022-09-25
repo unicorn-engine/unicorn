@@ -560,7 +560,7 @@ class Uc(object):
         return reg_read(functools.partial(_uc.uc_reg_read, self._uch), self._arch, reg_id, opt)
 
     # write to a register, tuple for arm cp regs.
-    def reg_write(self, reg_id: Union[int, ARMCPRegValue, ARM64CPRegValue, X86MMRReg, X86FPReg], value: int):
+    def reg_write(self, reg_id: int, value: Union[int, ARMCPRegValue, ARM64CPRegValue, X86MMRReg, X86FPReg]):
         return reg_write(functools.partial(_uc.uc_reg_write, self._uch), self._arch, reg_id, value)
 
     # read from MSR - X86 only
