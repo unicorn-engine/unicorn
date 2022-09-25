@@ -128,3 +128,17 @@ mkdir build; cd build
 cmake .. -DCMAKE_C_COMPILER=gcc-arm-linux-gnueabihf
 make
 ```
+
+## Building from vcpkg
+
+The Unicorn port in vcpkg is kept up to date by Microsoft team members and community contributors. The url of vcpkg is: https://github.com/Microsoft/vcpkg . You can download and install unicorn using the vcpkg dependency manager:
+
+```bash
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh  # ./bootstrap-vcpkg.bat for Windows
+./vcpkg integrate install
+./vcpkg install unicorn
+```
+
+If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
