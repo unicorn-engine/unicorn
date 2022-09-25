@@ -60,6 +60,9 @@ def copy_sources():
     shutil.copytree(os.path.join(ROOT_DIR, '../../include'), os.path.join(SRC_DIR, 'include/'))
     # make -> configure -> clean -> clean tests fails unless tests is present
     shutil.copytree(os.path.join(ROOT_DIR, '../../tests'), os.path.join(SRC_DIR, 'tests/'))
+    shutil.copytree(os.path.join(ROOT_DIR, '../../samples'), os.path.join(SRC_DIR, 'samples/'))
+    shutil.copytree(os.path.join(ROOT_DIR, '../../glib_compat'), os.path.join(SRC_DIR, 'glib_compat/'))
+
     try:
         # remove site-specific configuration file
         # might not exist
