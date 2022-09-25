@@ -328,9 +328,9 @@ jobs:
         brew install p7zip cmake ninja
         mkdir build
         mkdir instdir
-        cmake . -DCMAKE_TOOLCHAIN_FILE="$ANDROID_HOME/ndk/25.0.8775105/build/cmake/android.toolchain.cmake" \
+        cmake . -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
         	-DANDROID_PLATFORM=android-28 \
-          -DANDROID_NDK="$ANDROID_HOME/ndk/25.0.8775105" \
+          -DANDROID_NDK="$ANDROID_NDK" \
           -DANDROID_ABI=${{ matrix.config.arch }} \
           -DOLP_SDK_ENABLE_TESTING=NO \
           -DOLP_SDK_BUILD_EXAMPLES=ON \
