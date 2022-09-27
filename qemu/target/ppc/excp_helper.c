@@ -1061,7 +1061,11 @@ void helper_store_msr(CPUPPCState *env, target_ulong val)
 }
 
 #if defined(TARGET_PPC64)
+#if defined(_MSC_VER) && defined(__clang__)
+void helper_pminsn(CPUPPCState *env, uint32_t insn)
+#else
 void helper_pminsn(CPUPPCState *env, powerpc_pm_insn_t insn)
+#endif
 {
     CPUState *cs;
 
