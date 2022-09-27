@@ -30,6 +30,13 @@ On x86, all available instructions are: `in` `out` `syscall` `sysenter` `cpuid`.
 
 If you are still using Unicorn1, please upgrade to Unicorn2 for better support.
 
+## Memory hooks get called multiple times for a single instruction
+
+There are several possibilities, e.g.:
+
+- The instruction might access memory multiple times like `rep stos` in x86.
+- The address to access is bad-aligned and thus the MMU emulation will split the access into several aligned memory access. In worst cases on some arch, it leads to byte by byte access.
+
 ## I can't recover from unmapped read/write even I return `true` in the hook, why?
 
 This is a minor change in memory hooks behavior between Unicorn1 and Unicorn2. To gracefully recover from memory read/write error, you have to map the invalid memory before you return true.
@@ -38,9 +45,11 @@ It is due to the fact that, if users return `true` without memory mapping set up
 
 See the [sample](https://github.com/unicorn-engine/unicorn/blob/c05fbb7e63aed0b60fc2888e08beceb17bce8ac4/samples/sample_x86.c#L1379-L1393) for details.
 
-## My MIPS emulation gets weird read/write error and CPU exceptions.
+## My emulation gets weird read/write error and CPU exceptions.
 
-Note you might have an address that falls in MIPS `kseg` segments. In that case, MMU is bypassed and you have to make sure the corresponding physical memory is mapped. See [#217](https://github.com/unicorn-engine/unicorn/issues/217), [#1371](https://github.com/unicorn-engine/unicorn/issues/1371), [#1550](https://github.com/unicorn-engine/unicorn/issues/1371).
+For MIPS, you might have an address that falls in MIPS `kseg` segments. In that case, MMU is bypassed and you have to make sure the corresponding physical memory is mapped. See [#217](https://github.com/unicorn-engine/unicorn/issues/217), [#1371](https://github.com/unicorn-engine/unicorn/issues/1371), [#1550](https://github.com/unicorn-engine/unicorn/issues/1371).
+
+For ARM, you might have an address that falls in some non-executable segments. For example, for m-class ARM cpu, some memory area is not executable according to [the ARM document](https://developer.arm.com/documentation/ddi0403/d/System-Level-Architecture/System-Address-Map/The-system-address-map?lang=en). 
 
 ## KeyboardInterrupt is not raised during `uc.emu_start`
 
