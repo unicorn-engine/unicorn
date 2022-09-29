@@ -635,7 +635,12 @@ do_check_protect_pse36:
     /* align to page_size */
     pte &= PG_ADDRESS_MASK & ~(page_size - 1);
     page_offset = addr & (page_size - 1);
-    paddr = get_hphys(cs, pte + page_offset, is_write1, &prot);
+    /* HACK allow full 64 bit mapping in u64 without paging */
+    if (env->cr[0] & CR0_PG_MASK) {
+        paddr = get_hphys(cs, pte + page_offset, is_write1, &prot);
+    } else {
+        paddr = addr;
+    }
 
     /* Even if 4MB pages, we map only one 4KB page in the cache to
        avoid filling it too fast */
@@ -643,11 +648,6 @@ do_check_protect_pse36:
     paddr &= TARGET_PAGE_MASK;
     assert(prot & (1 << is_write1));
 
-    // Unicorn: indentity map guest virtual address to host virtual address
-    vaddr = addr & TARGET_PAGE_MASK;
-    paddr = vaddr;
-    //printf(">>> map address %"PRIx64" to %"PRIx64"\n", vaddr, paddr);
- 
     tlb_set_page_with_attrs(cs, vaddr, paddr, cpu_get_mem_attrs(env),
                             prot, mmu_idx, page_size);
     return 0;
