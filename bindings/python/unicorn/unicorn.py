@@ -315,14 +315,12 @@ class RegStateManager:
 
         raise NotImplementedError
 
-
     def _do_reg_write(self, reg_id: int, reg_obj) -> int:
         """Private register write implementation.
         Must be implemented by the mixin object
         """
 
         raise NotImplementedError
-
 
     def _reg_read(self, reg_id: int, regtype, *args):
         """Register read helper method.
@@ -336,7 +334,6 @@ class RegStateManager:
 
         return reg.value
 
-
     def _reg_write(self, reg_id: int, regtype, value) -> None:
         """Register write helper method.
         """
@@ -346,7 +343,6 @@ class RegStateManager:
 
         if status != uc.UC_ERR_OK:
             raise UcError(status, reg_id)
-
 
     def reg_read(self, reg_id: int, aux: Any = None):
         """Read architectural register value.
@@ -361,7 +357,6 @@ class RegStateManager:
         """
 
         return self._reg_read(reg_id, self._DEFAULT_REGTYPE)
-
 
     def reg_write(self, reg_id: int, value) -> None:
         """Write to architectural register.
@@ -439,7 +434,6 @@ class Uc(RegStateManager):
 
         return (uc_maj, uc_min) == (bnd_maj, bnd_min)
 
-
     def __new__(cls, arch: int, mode: int):
         # verify version compatibility with the core before doing anything
         if not Uc.__is_compliant():
@@ -480,7 +474,6 @@ class Uc(RegStateManager):
         # return the appropriate unicorn subclass type
         return super(Uc, cls).__new__(subclass)
 
-
     def __init__(self, arch: int, mode: int) -> None:
         """Initialize a Unicorn engine instance.
 
@@ -510,7 +503,6 @@ class Uc(RegStateManager):
         # create a finalizer object that will apropriately free up resources when
         # this instance undergoes garbage collection.
         self.__finalizer = weakref.finalize(self, Uc.release_handle, self._uch)
-
 
     @staticmethod
     def release_handle(uch: uc_engine) -> None:
@@ -568,7 +560,6 @@ class Uc(RegStateManager):
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-
     ###########################
     #  CPU state accessors    #
     ###########################
@@ -580,14 +571,12 @@ class Uc(RegStateManager):
 
         return uclib.uc_reg_read(self._uch, reg_id, reg_obj)
 
-
     def _do_reg_write(self, reg_id: int, reg_obj) -> int:
         """Private register write implementation.
         Do not call directly.
         """
 
         return uclib.uc_reg_write(self._uch, reg_id, reg_obj)
-
 
     ###########################
     #  Memory management      #
@@ -611,7 +600,6 @@ class Uc(RegStateManager):
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-
     def mem_map_ptr(self, address: int, size: int, perms: int, ptr: int) -> None:
         """Map a memory range and point to existing data on host memory.
 
@@ -630,7 +618,6 @@ class Uc(RegStateManager):
 
         if status != uc.UC_ERR_OK:
             raise UcError(status)
-
 
     def mem_unmap(self, address: int, size: int) -> None:
         """Reclaim a mapped memory range.
@@ -652,7 +639,6 @@ class Uc(RegStateManager):
         # might be splitted by 'map_protect' after they were mapped, so the
         # (start, end) tuple may not be suitable for retrieving the callbacks
 
-
     def mem_protect(self, address: int, size: int, perms: int = uc.UC_PROT_ALL) -> None:
         """Modify access protection bitmask of a mapped memory range.
 
@@ -670,7 +656,6 @@ class Uc(RegStateManager):
 
         if status != uc.UC_ERR_OK:
             raise UcError(status)
-
 
     def mmio_map(self, address: int, size: int,
             read_cb: Optional[UC_MMIO_READ_TYPE], user_data_read: Any,
@@ -702,7 +687,6 @@ class Uc(RegStateManager):
 
         self._mmio_callbacks[(rng_starts, rng_ends)] = (read_cb_fptr, write_cb_fptr)
 
-
     def mem_regions(self) -> Iterator[Tuple[int, int, int]]:
         """Iterate through mapped memory regions.
 
@@ -725,7 +709,6 @@ class Uc(RegStateManager):
         finally:
             uclib.uc_free(regions)
 
-
     def mem_read(self, address: int, size: int) -> bytearray:
         """Read data from emulated memory subsystem.
 
@@ -746,7 +729,6 @@ class Uc(RegStateManager):
 
         return bytearray(data)
 
-
     def mem_write(self, address: int, data: bytes) -> None:
         """Write data to emulated memory subsystem.
 
@@ -762,7 +744,6 @@ class Uc(RegStateManager):
 
         if status != uc.UC_ERR_OK:
             raise UcError(status, address, size)
-
 
     ###########################
     #  Event hooks management #
@@ -793,7 +774,6 @@ class Uc(RegStateManager):
         self._callbacks[handle.value] = fptr
 
         return handle.value
-
 
     def hook_add(self, htype: int, callback: Callable, user_data: Any = None, begin: int = 1, end: int = 0, aux1: int = 0, aux2: int = 0) -> int:
         """Hook emulated events of a certain type.
@@ -913,7 +893,6 @@ class Uc(RegStateManager):
 
         return self.__do_hook_add(htype, fptr, begin, end, *aux)
 
-
     def hook_del(self, handle: int) -> None:
         """Remove an existing hook.
 
@@ -928,7 +907,6 @@ class Uc(RegStateManager):
             raise UcError(status)
 
         del self._callbacks[handle]
-
 
     def query(self, prop: int) -> int:
         """Query an internal Unicorn property.
@@ -947,7 +925,6 @@ class Uc(RegStateManager):
 
         return result.value
 
-
     def context_save(self) -> UcContext:
         context = UcContext(self._uch, self._arch, self._mode)
         status = uclib.uc_context_save(self._uch, context.context)
@@ -957,13 +934,11 @@ class Uc(RegStateManager):
 
         return context
 
-
     def context_update(self, context: UcContext) -> None:
         status = uclib.uc_context_save(self._uch, context.context)
 
         if status != uc.UC_ERR_OK:
             raise UcError(status)
-
 
     def context_restore(self, context: UcContext) -> None:
         status = uclib.uc_context_restore(self._uch, context.context)
@@ -971,14 +946,12 @@ class Uc(RegStateManager):
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-
     @staticmethod
     def __ctl_encode(ctl: int, op: int, nargs: int) -> int:
         assert nargs and (nargs & ~0b1111) == 0
         assert op and (op & ~0b11) == 0
 
         return (op << 30) | (nargs << 26) | ctl
-
 
     def ctl(self, ctl: int, op: int, *args):
         code = Uc.__ctl_encode(ctl, op, len(args))
@@ -988,9 +961,7 @@ class Uc(RegStateManager):
         if status != uc.UC_ERR_OK:
             raise UcError(status)
 
-
     Arg = Tuple[Type, Optional[int]]
-
 
     def __ctl_r(self, ctl: int, arg0: Arg):
         atype, _ = arg0
@@ -1000,12 +971,10 @@ class Uc(RegStateManager):
 
         return carg.value
 
-
     def __ctl_w(self, ctl: int, *args: Arg):
         cargs = (atype(avalue) for atype, avalue in args)
 
         self.ctl(ctl, uc.UC_CTL_IO_WRITE, *cargs)
-
 
     def __ctl_wr(self, ctl: int, arg0: Arg, arg1: Arg):
         atype, avalue = arg0
@@ -1018,48 +987,40 @@ class Uc(RegStateManager):
 
         return carg1
 
-
     def ctl_get_mode(self) -> int:
         return self.__ctl_r(uc.UC_CTL_UC_MODE,
             (ctypes.c_int, None)
         )
-
 
     def ctl_get_page_size(self) -> int:
         return self.__ctl_r(uc.UC_CTL_UC_PAGE_SIZE,
             (ctypes.c_uint32, None)
         )
 
-
     def ctl_set_page_size(self, val: int) -> None:
         self.__ctl_w(uc.UC_CTL_UC_PAGE_SIZE,
             (ctypes.c_uint32, val)
         )
-
 
     def ctl_get_arch(self) -> int:
         return self.__ctl_r(uc.UC_CTL_UC_ARCH,
             (ctypes.c_int, None)
         )
 
-
     def ctl_get_timeout(self) -> int:
         return self.__ctl_r(uc.UC_CTL_UC_TIMEOUT,
             (ctypes.c_uint64, None)
         )
-
 
     def ctl_exits_enabled(self, val: bool) -> None:
         self.__ctl_w(uc.UC_CTL_UC_USE_EXITS,
             (ctypes.c_int, val)
         )
 
-
     def ctl_get_exits_cnt(self) -> int:
         return self.__ctl_r(uc.UC_CTL_UC_EXITS_CNT,
             (ctypes.c_size_t, None)
         )
-
 
     def ctl_get_exits(self) -> Sequence[int]:
         l = self.ctl_get_exits_cnt()
@@ -1069,7 +1030,6 @@ class Uc(RegStateManager):
 
         return tuple(i for i in arr)
 
-
     def ctl_set_exits(self, exits: Sequence[int]) -> None:
         arr = (ctypes.c_uint64 * len(exits))()
 
@@ -1078,18 +1038,15 @@ class Uc(RegStateManager):
 
         self.ctl(uc.UC_CTL_UC_EXITS, uc.UC_CTL_IO_WRITE, ctypes.cast(arr, ctypes.c_void_p), ctypes.c_size_t(len(exits)))
 
-
     def ctl_get_cpu_model(self) -> int:
         return self.__ctl_r(uc.UC_CTL_CPU_MODEL,
             (ctypes.c_int, None)
         )
 
-
     def ctl_set_cpu_model(self, val: int) -> None:
         self.__ctl_w(uc.UC_CTL_CPU_MODEL,
             (ctypes.c_int, val)
         )
-
 
     def ctl_remove_cache(self, addr: int, end: int) -> None:
         self.__ctl_w(uc.UC_CTL_TB_REMOVE_CACHE,
@@ -1097,13 +1054,11 @@ class Uc(RegStateManager):
             (ctypes.c_uint64, end)
         )
 
-
     def ctl_request_cache(self, addr: int):
         return self.__ctl_wr(uc.UC_CTL_TB_REQUEST_CACHE,
             (ctypes.c_uint64, addr),
             (uc_tb, None)
         )
-
 
     def ctl_flush_tb(self) -> None:
         self.__ctl_w(uc.UC_CTL_TB_FLUSH)
@@ -1134,11 +1089,10 @@ class UcContext(RegStateManager):
     @property
     def arch(self) -> int:
         return self._arch
-    
+
     @property
     def mode(self) -> int:
         return self._mode
-
 
     # RegStateManager mixin method implementation
     def _do_reg_read(self, reg_id: int, reg_obj) -> int:
@@ -1147,7 +1101,6 @@ class UcContext(RegStateManager):
 
         return uclib.uc_context_reg_read(self._context, reg_id, reg_obj)
 
-
     # RegStateManager mixin method implementation
     def _do_reg_write(self, reg_id: int, reg_obj) -> int:
         """Private register write implementation.
@@ -1155,11 +1108,9 @@ class UcContext(RegStateManager):
 
         return uclib.uc_context_reg_write(self._context, reg_id, reg_obj)
 
-
     # Make UcContext picklable
     def __getstate__(self):
         return bytes(self), self.size, self.arch, self.mode
-
 
     def __setstate__(self, state) -> None:
         context, size, arch, mode = state
@@ -1172,10 +1123,8 @@ class UcContext(RegStateManager):
         # __init__ won't be invoked, so we are safe to set it here.
         self._to_free = False
 
-
     def __bytes__(self) -> bytes:
         return ctypes.string_at(self.context, self.size)
-
 
     def __del__(self) -> None:
         # We need this property since we shouldn't free it if the object is constructed from pickled bytes.
