@@ -254,7 +254,7 @@ static void test_uc_hook_cached_uaf(void)
     // Apple Silicon does not allow RWX pages.
     void *callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE,
                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    TEST_CHECK(callback != (void*)-1);
+    TEST_CHECK(callback != (void *)-1);
 #else
     void *callback = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT,
                                   PAGE_EXECUTE_READWRITE);

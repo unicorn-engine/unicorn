@@ -185,7 +185,7 @@ static void test_map_big_memory(void)
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(__WINDOWS__)
-    uint64_t requested_size = 0xfffffffffffff000;  // assume 4K page size
+    uint64_t requested_size = 0xfffffffffffff000; // assume 4K page size
 #else
     long ps = sysconf(_SC_PAGESIZE);
     uint64_t requested_size = (uint64_t)(-ps);
