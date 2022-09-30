@@ -751,6 +751,30 @@ static void test_armeb_ldrb(void)
     OK(uc_close(uc));
 }
 
+static void test_arm_context_save(void)
+{
+    uc_engine *uc;
+    uc_engine *uc2;
+    char code[] = "\x83\xb0"; // sub    sp, #0xc
+    uc_context *ctx;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_R5);
+
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+    OK(uc_context_restore(uc, ctx));
+
+    uc_common_setup(&uc2, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A7); // Note the different CPU model
+
+    OK(uc_context_restore(uc2, ctx));
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+    OK(uc_close(uc2));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -773,4 +797,5 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_be_cpsr_sctlr", test_arm_be_cpsr_sctlr},
              {"test_arm_switch_endian", test_arm_switch_endian},
              {"test_armeb_ldrb", test_armeb_ldrb},
+             {"test_arm_context_save", test_arm_context_save},
              {NULL, NULL}};

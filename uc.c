@@ -2,6 +2,7 @@
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
+#include "unicorn/unicorn.h"
 #if defined(UNICORN_HAS_OSXKERNEL)
 #include <libkern/libkern.h>
 #else
@@ -1861,7 +1862,7 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 
     *_context = g_malloc(size);
     if (*_context) {
-        (*_context)->context_size = uc->cpu_context_size;
+        (*_context)->context_size = size - sizeof(uc_context);
         (*_context)->arch = uc->arch;
         (*_context)->mode = uc->mode;
         return UC_ERR_OK;
@@ -1881,8 +1882,13 @@ UNICORN_EXPORT
 size_t uc_context_size(uc_engine *uc)
 {
     UC_INIT(uc);
-    // return the total size of struct uc_context
-    return sizeof(uc_context) + uc->cpu_context_size;
+
+    if (!uc->context_size) {
+        // return the total size of struct uc_context
+        return sizeof(uc_context) + uc->cpu_context_size;
+    } else {
+        return sizeof(uc_context) + uc->context_size(uc);
+    }
 }
 
 UNICORN_EXPORT
@@ -1890,9 +1896,12 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
     UC_INIT(uc);
 
-    memcpy(context->data, uc->cpu->env_ptr, context->context_size);
-
-    return UC_ERR_OK;
+    if (!uc->context_save) {
+        memcpy(context->data, uc->cpu->env_ptr, context->context_size);
+        return UC_ERR_OK;
+    } else {
+        return uc->context_save(uc, context);
+    }
 }
 
 UNICORN_EXPORT
@@ -2064,9 +2073,12 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
     UC_INIT(uc);
 
-    memcpy(uc->cpu->env_ptr, context->data, context->context_size);
-
-    return UC_ERR_OK;
+    if (!uc->context_restore) {
+        memcpy(uc->cpu->env_ptr, context->data, context->context_size);
+        return UC_ERR_OK;
+    } else {
+        return uc->context_restore(uc, context);
+    }
 }
 
 UNICORN_EXPORT
