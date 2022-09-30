@@ -48,7 +48,7 @@ jobs:
             }
           - { 
               os: ubuntu-latest,
-              arch: x64,
+              arch: aarch64,
               python-ver: '3.8',
               name: 'manylinux2014_aarch64'
             }
