@@ -111,7 +111,9 @@ jobs:
               chmod +x ./dockcross
               ./dockcross bindings/python/build_wheel.sh
         elif [ ${{ matrix.config.name }} == 'manylinux2014_aarch64' ]; then
-              docker run --rm -v `pwd`/:/work quay.io/pypa/manylinux2014_aarch64 bash /work/bindings/python/build_wheel_aarch64.sh
+              docker run --rm -v `pwd`/:/work dockcross/manylinux2014-aarch64 > ./dockcross
+              chmod +x ./dockcross
+              ./dockcross bindings/python/build_wheel.sh --plat-name manylinux2014_aarch64
         elif [ ${{ matrix.config.name }} == 'manylinux2014_x86_64' ]; then
               docker run --rm -v `pwd`/:/work dockcross/manylinux2014-x64 > ./dockcross
               chmod +x ./dockcross
