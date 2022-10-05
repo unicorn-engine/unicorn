@@ -446,6 +446,8 @@ set(UNICORN_ARCH_COMMON
     qemu/accel/tcg/tcg-runtime-gvec.c
     qemu/accel/tcg/translate-all.c
     qemu/accel/tcg/translator.c
+
+    qemu/softmmu/unicorn_vtlb.c
 )
 
 if(UNICORN_HAS_X86)

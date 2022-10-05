@@ -4,6 +4,7 @@
 #ifndef UNICORN_ARCH_POSTFIX
 #define UNICORN_ARCH_POSTFIX _aarch64
 #endif
+#define unicorn_fill_tlb unicorn_fill_tlb_aarch64
 #define uc_add_inline_hook uc_add_inline_hook_aarch64
 #define uc_del_inline_hook uc_del_inline_hook_aarch64
 #define tb_invalidate_phys_range tb_invalidate_phys_range_aarch64

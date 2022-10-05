@@ -11,6 +11,9 @@
 
 void vm_start(struct uc_struct*);
 void tcg_exec_init(struct uc_struct *uc, unsigned long tb_size);
+bool unicorn_fill_tlb(CPUState *cs, vaddr address, int size,
+                      MMUAccessType rw, int mmu_idx,
+                      bool probe, uintptr_t retaddr);
 
 // return true on success, false on failure
 static inline bool cpu_physical_mem_read(AddressSpace *as, hwaddr addr,
@@ -91,6 +94,19 @@ static inline void target_page_init(struct uc_struct* uc)
     uc->target_page_align = TARGET_PAGE_SIZE - 1;
 }
 
+static uc_err uc_set_tlb(struct uc_struct *uc, int mode) {
+    switch (mode) {
+        case UC_TLB_VIRTUAL:
+            uc->cpu->cc->tlb_fill = unicorn_fill_tlb;
+            return UC_ERR_OK;
+        case UC_TLB_CPU:
+            uc->cpu->cc->tlb_fill = uc->cpu->cc->tlb_fill_cpu;
+            return UC_ERR_OK;
+        default:
+            return UC_ERR_ARG;
+    }
+}
+
 void softfloat_init(void);
 static inline void uc_common_init(struct uc_struct* uc)
 {
@@ -107,6 +123,7 @@ static inline void uc_common_init(struct uc_struct* uc)
     uc->softfloat_initialize = softfloat_init;
     uc->tcg_flush_tlb = tcg_flush_softmmu_tlb;
     uc->memory_map_io = memory_map_io;
+    uc->set_tlb = uc_set_tlb;
 
     if (!uc->release)
         uc->release = release_common;

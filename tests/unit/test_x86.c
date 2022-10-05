@@ -1384,6 +1384,36 @@ static void test_x86_mmu(void)
     TEST_CHECK(child == 42);
 }
 
+static bool test_x86_vtlb_callback(uc_engine *uc, uint64_t addr, uc_mem_type type, uc_tlb_entry *result, void *user_data)
+{
+    result->paddr = addr;
+    result->perms = UC_PROT_ALL;
+    return true;
+}
+
+static void test_x86_vtlb(void)
+{
+    uc_engine *uc;
+    uc_hook hook;
+    char code[] = "\xeb\x02\x90\x90\x90\x90\x90\x90"; // jmp 4; nop; nop; nop;
+                                                      // nop; nop; nop
+    uint64_t r_eip = 0;
+
+    uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
+
+    OK(uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL));
+    OK(uc_hook_add(uc, &hook, UC_HOOK_TLB_FILL, test_x86_vtlb_callback, NULL, 1, 0));
+
+    OK(uc_emu_start(uc, code_start, code_start + 4, 0, 0));
+
+    OK(uc_reg_read(uc, UC_X86_REG_EIP, &r_eip));
+
+    TEST_CHECK(r_eip == code_start + 4);
+
+    OK(uc_close(uc));
+}
+
+
 TEST_LIST = {
     {"test_x86_in", test_x86_in},
     {"test_x86_out", test_x86_out},
@@ -1428,4 +1458,5 @@ TEST_LIST = {
     {"test_x86_lazy_mapping", test_x86_lazy_mapping},
     {"test_x86_16_incorrect_ip", test_x86_16_incorrect_ip},
     {"test_x86_mmu", test_x86_mmu},
+    {"test_x86_vtlb", test_x86_vtlb},
     {NULL, NULL}};

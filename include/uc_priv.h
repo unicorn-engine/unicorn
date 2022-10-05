@@ -146,6 +146,8 @@ typedef uc_err (*uc_gen_tb_t)(struct uc_struct *uc, uint64_t pc, uc_tb *out_tb);
 // tb flush
 typedef uc_tcg_flush_tlb uc_tb_flush_t;
 
+typedef uc_err (*uc_set_tlb_t)(struct uc_struct *uc, int mode);
+
 struct hook {
     int type;       // UC_HOOK_*
     int insn;       // instruction for HOOK_INSN
@@ -202,6 +204,7 @@ typedef enum uc_hook_idx {
     UC_HOOK_INSN_INVALID_IDX,
     UC_HOOK_EDGE_GENERATED_IDX,
     UC_HOOK_TCG_OPCODE_IDX,
+    UC_HOOK_TLB_FILL_IDX,
 
     UC_HOOK_MAX,
 } uc_hook_idx;
@@ -336,6 +339,8 @@ struct uc_struct {
     QTAILQ_HEAD(, AddressSpace) address_spaces;
     GHashTable *flat_views;
     bool memory_region_update_pending;
+
+    uc_set_tlb_t set_tlb;
 
     // linked lists containing hooks per type
     struct list hook[UC_HOOK_MAX];
