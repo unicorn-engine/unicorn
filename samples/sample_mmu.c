@@ -1,6 +1,25 @@
 #include <unicorn/unicorn.h>
 #include <stdio.h>
 
+/*
+ * mov rax, 57
+ * syscall
+ * test rax, rax
+ * jz child
+ * xor rax, rax
+ * mov rax, 60
+ * mov [0x4000], rax
+ * syscall
+ *
+ * child:
+ * xor rcx, rcx
+ * mov rcx, 42
+ * mov [0x4000], rcx
+ * mov rax, 60
+ * syscall
+ */
+char code[] = "\xB8\x39\x00\x00\x00\x0F\x05\x48\x85\xC0\x74\x0F\xB8\x3C\x00\x00\x00\x48\x89\x04\x25\x00\x40\x00\x00\x0F\x05\xB9\x2A\x00\x00\x00\x48\x89\x0C\x25\x00\x40\x00\x00\xB8\x3C\x00\x00\x00\x0F\x05";
+
 static void mmu_write_callback(uc_engine *uc, uc_mem_type type, uint64_t address, int size, int64_t value, void *user_data)
 {
     printf("write at 0x%lx: 0x%lx\n", address, value);
@@ -83,7 +102,7 @@ static void x86_mmu_pt_set(uc_engine *uc, uint64_t vaddr, uint64_t paddr, uint64
     uc_mem_write(uc, tlb_base + 0x3000 + pto, &pte, sizeof(pte));
 }
 
-static void x86_mmu_callback(uc_engine *uc, void *userdata)
+static void x86_mmu_syscall_callback(uc_engine *uc, void *userdata)
 {
     uc_err err;
     bool *parrent_done = userdata;
@@ -99,6 +118,7 @@ static void x86_mmu_callback(uc_engine *uc, void *userdata)
         break;
     case 60:
         /* exit */
+        *parrent_done = true;
         uc_emu_stop(uc);
         return;
     default:
@@ -107,7 +127,6 @@ static void x86_mmu_callback(uc_engine *uc, void *userdata)
     }
 
     if (!(*parrent_done)) {
-        *parrent_done = true;
         rax = 27;
         err = uc_reg_write(uc, UC_X86_REG_RAX, &rax);
         if (err) {
@@ -118,7 +137,7 @@ static void x86_mmu_callback(uc_engine *uc, void *userdata)
     }
 }
 
-int main(void)
+void cpu_tlb(void)
 {
     uint64_t tlb_base = 0x3000;
     uint64_t rax, rip;
@@ -129,24 +148,6 @@ int main(void)
     uc_err err;
     uc_hook h1, h2;
 
-    /*
-     * mov rax, 57
-     * syscall
-     * test rax, rax
-     * jz child
-     * xor rax, rax
-     * mov rax, 60
-     * mov [0x4000], rax
-     * syscall
-     *
-     * child:
-     * xor rcx, rcx
-     * mov rcx, 42
-     * mov [0x4000], rcx
-     * mov rax, 60
-     * syscall
-     */
-    char code[] = "\xB8\x39\x00\x00\x00\x0F\x05\x48\x85\xC0\x74\x0F\xB8\x3C\x00\x00\x00\x48\x89\x04\x25\x00\x40\x00\x00\x0F\x05\xB9\x2A\x00\x00\x00\x48\x89\x0C\x25\x00\x40\x00\x00\xB8\x3C\x00\x00\x00\x0F\x05";
     printf("Emulate x86 amd64 code with mmu enabled and switch mappings\n");
 
     err = uc_open(UC_ARCH_X86, UC_MODE_64, &uc);
@@ -154,13 +155,14 @@ int main(void)
         printf("Failed on uc_open() with error returned: %u\n", err);
         exit(1);
     }
+    uc_ctl_tlb_mode(uc, UC_TLB_CPU);
     err = uc_context_alloc(uc, &context);
     if (err) {
         printf("Failed on uc_context_alloc() with error returned: %u\n", err);
         exit(1);
     }
 
-    err = uc_hook_add(uc, &h1, UC_HOOK_INSN, &x86_mmu_callback, &parrent_done, 1, 0, UC_X86_INS_SYSCALL);
+    err = uc_hook_add(uc, &h1, UC_HOOK_INSN, &x86_mmu_syscall_callback, &parrent_done, 1, 0, UC_X86_INS_SYSCALL);
     if (err) {
         printf("Failed on uc_hook_add() with error returned: %u\n", err);
         exit(1);
@@ -272,4 +274,157 @@ int main(void)
     }
     printf("parrent result == %lu\n", parrent);
     printf("child result == %lu\n", child);
+    uc_close(uc);
+}
+
+static bool virtual_tlb_callback(uc_engine *uc, uint64_t addr, uc_mem_type type, uc_tlb_entry *result, void *user_data)
+{
+    bool *parrent_done = user_data;
+    printf("tlb lookup for address: 0x%lX\n", addr);
+    switch (addr & ~(0xfff)) {
+    case 0x2000:
+        result->paddr = 0x0;
+        result->perms = UC_PROT_EXEC;
+        return true;
+    case 0x4000:
+        if (*parrent_done) {
+            result->paddr = 0x2000;
+        } else {
+            result->paddr = 0x1000;
+        }
+        result->perms = UC_PROT_READ | UC_PROT_WRITE;
+        return true;
+    default:
+        break;
+    }
+    return false;
+}
+
+void virtual_tlb(void)
+{
+    uint64_t rax, rip;
+    bool parrent_done = false;
+    uint64_t parrent, child;
+    uc_context *context;
+    uc_engine *uc;
+    uc_err err;
+    uc_hook h1, h2, h3;
+
+    printf("Emulate x86 amd64 code with virtual mmu\n");
+
+    err = uc_open(UC_ARCH_X86, UC_MODE_64, &uc);
+    if (err) {
+        printf("Failed on uc_open() with error returned: %u\n", err);
+        exit(1);
+    }
+    uc_ctl_tlb_mode(uc, UC_TLB_VIRTUAL);
+    err = uc_context_alloc(uc, &context);
+    if (err) {
+        printf("Failed on uc_context_alloc() with error returned: %u\n", err);
+        exit(1);
+    }
+
+    err = uc_hook_add(uc, &h1, UC_HOOK_INSN, &x86_mmu_syscall_callback, &parrent_done, 1, 0, UC_X86_INS_SYSCALL);
+    if (err) {
+        printf("Failed on uc_hook_add() with error returned: %u\n", err);
+        exit(1);
+    }
+
+    // Memory hooks are called after the mmu translation, so hook the physicall addresses
+    err = uc_hook_add(uc, &h2, UC_HOOK_MEM_WRITE, &mmu_write_callback, NULL, 0x1000, 0x3000);
+    if (err) {
+        printf("Faled on uc_hook_add() with error returned: %u\n", err);
+    }
+
+    printf("map code\n");
+    err = uc_mem_map(uc, 0x0, 0x1000, UC_PROT_ALL); //Code
+    if (err) {
+        printf("Failed on uc_mem_map() with error return: %u\n", err);
+        exit(1);
+    }
+    err = uc_mem_write(uc, 0x0, code, sizeof(code) - 1);
+    if (err) {
+        printf("Failed on uc_mem_wirte() with error return: %u\n", err);
+        exit(1);
+    }
+    printf("map parrent memory\n");
+    err = uc_mem_map(uc, 0x1000, 0x1000, UC_PROT_ALL); //Parrent
+    if (err) {
+        printf("Failed on uc_mem_map() with error return: %u\n", err);
+        exit(1);
+    }
+    printf("map child memory\n");
+    err = uc_mem_map(uc, 0x2000, 0x1000, UC_PROT_ALL); //Child
+    if (err) {
+        printf("failed to map child memory\n");
+        exit(1);
+    }
+
+    err = uc_hook_add(uc, &h3, UC_HOOK_TLB_FILL, virtual_tlb_callback, &parrent_done, 1, 0);
+
+    printf("run the parrent\n");
+    err = uc_emu_start(uc, 0x2000, 0x0, 0, 0);
+    if (err) {
+        printf("failed to run parrent\n");
+        exit(1);
+    }
+
+    printf("save the context for the child\n");
+    err = uc_context_save(uc, context);
+    printf("finish the parrent\n");
+    err = uc_reg_read(uc, UC_X86_REG_RIP, &rip);
+    if (err) {
+        printf("failed to read rip\n");
+        exit(1);
+    }
+
+    err = uc_emu_start(uc, rip, 0x0, 0, 0);
+    if (err) {
+        printf("failed to flush tlb\n");
+        exit(1);
+    }
+
+    printf("restore the context for the child\n");
+    err = uc_context_restore(uc, context);
+    if (err) {
+        printf("failed to restore context\n");
+        exit(1);
+    }
+    rax = 0;
+    parrent_done = true;
+    err = uc_reg_write(uc, UC_X86_REG_RAX, &rax);
+    if (err) {
+        printf("failed to write rax\n");
+        exit(1);
+    }
+    err = uc_ctl_flush_tlb(uc);
+    if (err) {
+        printf("failed to flush tlb\n");
+        exit(1);
+    }
+
+    err = uc_emu_start(uc, rip, 0x0, 0, 0);
+    if (err) {
+        printf("failed to run child\n");
+        exit(1);
+    }
+    err = uc_mem_read(uc, 0x1000, &parrent, sizeof(parrent));
+    if (err) {
+        printf("failed to read from parrent memory\n");
+        exit(1);
+    }
+    err = uc_mem_read(uc, 0x2000, &child, sizeof(child));
+    if (err) {
+        printf("failed to read from child memory\n");
+        exit(1);
+    }
+    printf("parrent result == %lu\n", parrent);
+    printf("child result == %lu\n", child);
+    uc_close(uc);
+}
+
+int main(void)
+{
+    cpu_tlb();
+    virtual_tlb();
 }
