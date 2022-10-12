@@ -1109,7 +1109,6 @@ static void test_x86_correct_address_in_long_jump_hook(void)
 static void test_x86_invalid_vex_l(void)
 {
     uc_engine *uc;
-    uc_err err;
 
     /* vmovdqu ymm1, [rcx] */
     char code[] = {'\xC5', '\xFE', '\x6F', '\x09'};
