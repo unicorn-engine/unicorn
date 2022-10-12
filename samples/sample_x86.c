@@ -1404,7 +1404,7 @@ static void test_i386_hook_mem_invalid()
     uc_err err;
 
     printf("===================================\n");
-    printf("Emulate i386 code that tiggers invalid memory read/write.\n");
+    printf("Emulate i386 code that triggers invalid memory read/write.\n");
 
     err = uc_open(UC_ARCH_X86, UC_MODE_32, &uc);
     if (err) {
