@@ -14,6 +14,7 @@ from .types import UcReg128
 ARMCPReg = Tuple[int, int, int, int, int, int, int]
 ARMCPRegValue = Tuple[int, int, int, int, int, int, int, int]
 
+
 class UcRegCP(ctypes.Structure):
     """ARM coprocessors registers for instructions MRC, MCR, MRRC, MCRR
     """
@@ -56,7 +57,6 @@ class UcAArch32(Uc):
         )
 
         return next((cls for rng, cls in reg_class if reg_id in rng), None)
-
 
     def reg_read(self, reg_id: int, aux: Any = None):
         # select register class for special cases

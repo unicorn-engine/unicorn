@@ -4,7 +4,6 @@
 
 import ctypes
 
-
 uc_err	   = ctypes.c_int
 uc_mode	   = ctypes.c_int
 uc_arch	   = ctypes.c_int

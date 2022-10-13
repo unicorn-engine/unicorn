@@ -334,7 +334,7 @@ class RegStateManager:
 
         return reg.value
 
-    def _reg_write(self, reg_id: int, regtype, value) -> None:
+    def _reg_write(self, reg_id: int, regtype: Type, value) -> None:
         """Register write helper method.
         """
 
@@ -496,7 +496,7 @@ class Uc(RegStateManager):
         # we have to keep a reference to the callbacks so they do not get gc-ed
         # see: https://docs.python.org/3/library/ctypes.html#callback-functions
         self._callbacks: MutableMapping[int, ctypes._FuncPointer] = {}
-        self._mmio_callbacks: MutableMapping[Tuple[int, int], Tuple[Optional[ctypes._FuncPointer], Optional[ctypes._FuncPointer]]] = {}
+        self._mmio_callbacks: MutableMapping[Tuple[int, int], Tuple[Optional[MMIO_READ_CFUNC], Optional[MMIO_WRITE_CFUNC]]] = {}
 
         self._hook_exception: Optional[Exception] = None
 
@@ -547,7 +547,6 @@ class Uc(RegStateManager):
 
         if self._hook_exception is not None:
             raise self._hook_exception
-
 
     def emu_stop(self) -> None:
         """Stop emulation.
@@ -752,15 +751,15 @@ class Uc(RegStateManager):
     def __do_hook_add(self, htype: int, fptr: ctypes._FuncPointer, begin: int, end: int, *args: ctypes.c_int) -> int:
         handle = uc_hook_h()
 
-        # TODO: we do not need a callback counter to reference the callback and user data anymore.
-        # that said, we could still use the hook handler as auxiliary data - but for that we would
-        # need to pass a pointer since the handler is set by this very function call.
-        #
-        # for now just pass a dummy value
+        # TODO: we do not need a callback counter to reference the callback and user data anymore,
+        # so just pass a dummy value. that value will become the unused 'key' argument
         dummy = 0
 
         status = uclib.uc_hook_add(
-            self._uch, ctypes.byref(handle), htype, fptr,
+            self._uch,
+            ctypes.byref(handle),
+            htype,
+            fptr,
             ctypes.cast(dummy, ctypes.c_void_p),
             ctypes.c_uint64(begin),
             ctypes.c_uint64(end),
@@ -1023,10 +1022,10 @@ class Uc(RegStateManager):
         )
 
     def ctl_get_exits(self) -> Sequence[int]:
-        l = self.ctl_get_exits_cnt()
-        arr = (ctypes.c_uint64 * l)()
+        count = self.ctl_get_exits_cnt()
+        arr = (ctypes.c_uint64 * count)()
 
-        self.ctl(uc.UC_CTL_UC_EXITS, uc.UC_CTL_IO_READ, ctypes.cast(arr, ctypes.c_void_p), ctypes.c_size_t(l))
+        self.ctl(uc.UC_CTL_UC_EXITS, uc.UC_CTL_IO_READ, ctypes.cast(arr, ctypes.c_void_p), ctypes.c_size_t(count))
 
         return tuple(i for i in arr)
 

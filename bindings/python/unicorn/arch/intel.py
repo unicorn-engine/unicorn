@@ -145,7 +145,6 @@ class UcIntel(Uc):
 
         return getattr(self, '_Uc__do_hook_add')(htype, fptr, begin, end, insn)
 
-
     @staticmethod
     def __select_reg_class(reg_id: int):
         """Select class for special architectural registers.
@@ -160,7 +159,6 @@ class UcIntel(Uc):
         )
 
         return next((cls for rng, cls in reg_class if reg_id in rng), None)
-
 
     def reg_read(self, reg_id: int, aux: Any = None):
         # select register class for special cases
@@ -198,10 +196,8 @@ class UcIntel(Uc):
         else:
             self._reg_write(reg_id, reg_cls, value)
 
-
     def msr_read(self, msr_id: int) -> int:
         return self._reg_read(const.UC_X86_REG_MSR, UcRegMSR, msr_id)
-
 
     def msr_write(self, msr_id: int, value: int) -> None:
         self._reg_write(const.UC_X86_REG_MSR, UcRegMSR, (msr_id, value))
