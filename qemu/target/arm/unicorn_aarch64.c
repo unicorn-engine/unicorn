@@ -225,6 +225,12 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
         case UC_ARM64_REG_CP_REG:
             ret = read_cp_reg(env, (uc_arm64_cp_reg *)value);
             break;
+        case UC_ARM64_REG_FPCR:
+            *(uint32_t *)value = vfp_get_fpcr(env);
+            break;
+        case UC_ARM64_REG_FPSR:
+            *(uint32_t *)value = vfp_get_fpsr(env);
+            break;
         }
     }
 
@@ -317,6 +323,12 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
             break;
         case UC_ARM64_REG_CP_REG:
             ret = write_cp_reg(env, (uc_arm64_cp_reg *)value);
+            break;
+        case UC_ARM64_REG_FPCR:
+            vfp_set_fpcr(env, *(uint32_t *)value);
+            break;
+        case UC_ARM64_REG_FPSR:
+            vfp_set_fpsr(env, *(uint32_t *)value);
             break;
         }
     }

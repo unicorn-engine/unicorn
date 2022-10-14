@@ -315,7 +315,11 @@ public interface Arm64Const {
    public static final int UC_ARM64_REG_VBAR_EL2 = 288;
    public static final int UC_ARM64_REG_VBAR_EL3 = 289;
    public static final int UC_ARM64_REG_CP_REG = 290;
-   public static final int UC_ARM64_REG_ENDING = 291;
+
+// floating point control and status registers
+   public static final int UC_ARM64_REG_FPCR = 291;
+   public static final int UC_ARM64_REG_FPSR = 292;
+   public static final int UC_ARM64_REG_ENDING = 293;
 
 // alias registers
    public static final int UC_ARM64_REG_IP0 = 215;
