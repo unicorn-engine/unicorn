@@ -210,6 +210,12 @@ static uc_err reg_read(CPUARMState *env, unsigned int regid, void *value)
         case UC_ARM64_REG_PSTATE:
             *(uint32_t *)value = pstate_read(env);
             break;
+        case UC_ARM64_REG_FPCR:
+            *(uint32_t *)value = vfp_get_fpcr(env);
+            break;
+        case UC_ARM64_REG_FPSR:
+            *(uint32_t *)value = vfp_get_fpsr(env);
+            break;
         case UC_ARM64_REG_TTBR0_EL1:
             *(uint64_t *)value = env->cp15.ttbr0_el[1];
             break;
@@ -302,6 +308,12 @@ static uc_err reg_write(CPUARMState *env, unsigned int regid, const void *value)
             break;
         case UC_ARM64_REG_PSTATE:
             pstate_write(env, *(uint32_t *)value);
+            break;
+        case UC_ARM64_REG_FPCR:
+            vfp_set_fpcr(env, *(uint32_t *)value);
+            break;
+        case UC_ARM64_REG_FPSR:
+            vfp_set_fpsr(env, *(uint32_t *)value);
             break;
         case UC_ARM64_REG_TTBR0_EL1:
             env->cp15.ttbr0_el[1] = *(uint64_t *)value;

@@ -313,6 +313,10 @@ typedef enum uc_arm64_reg {
 
     UC_ARM64_REG_PSTATE,
 
+    //> floating point control and status registers
+    UC_ARM64_REG_FPCR,
+    UC_ARM64_REG_FPSR,
+
     //> exception link registers, depreciated, use UC_ARM64_REG_CP_REG instead
     UC_ARM64_REG_ELR_EL0,
     UC_ARM64_REG_ELR_EL1,
