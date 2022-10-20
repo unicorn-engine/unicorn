@@ -3845,7 +3845,7 @@ static void disas_ldst_single_struct(DisasContext *s, uint32_t insn)
 /* Loads and stores */
 static void disas_ldst(DisasContext *s, uint32_t insn)
 {
-    if (HOOK_EXISTS(s->uc, UC_HOOK_MEM_READ) || HOOK_EXISTS(s->uc, UC_HOOK_MEM_WRITE)) {
+    if (HOOK_EXISTS_BOUNDED(s->uc, UC_HOOK_MEM_READ, s->pc_curr) || HOOK_EXISTS_BOUNDED(s->uc, UC_HOOK_MEM_WRITE, s->pc_curr)) {
         // sync PC if there are memory hooks.
         // TODO: Better granularity by checking ldst type and corresponding hook type
         gen_a64_set_pc_im(s->uc->tcg_ctx, s->pc_curr);
