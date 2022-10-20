@@ -15,20 +15,6 @@
     <WarningLevel>3</WarningLevel>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-      <DebugSymbols>true</DebugSymbols>
-      <DebugType>full</DebugType>
-      <Optimize>false</Optimize>
-      <Tailcalls>false</Tailcalls>
-      <DefineConstants>DEBUG;TRACE</DefineConstants>
-    </PropertyGroup>
-    <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-      <DebugType>pdbonly</DebugType>
-      <Optimize>true</Optimize>
-      <Tailcalls>true</Tailcalls>
-      <DefineConstants>TRACE</DefineConstants>
-    </PropertyGroup>
-
   <ItemGroup>
     <Compile Include="Const\Arm.fs" />
     <Compile Include="Const\Arm64.fs" />
