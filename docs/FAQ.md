@@ -9,7 +9,30 @@ Optimize your program with less instrumentation, e.g. by using `UC_HOOK_BLOCK` i
 
 ## Why do I get a wrong PC after emulation stops?
 
-PC is only guaranteed to be correct if you install `UC_HOOK_CODE`. This is due to the fact that updating PC is a big performance overhead during emulation.
+Updating PC is a very large overhead (10x slower in the worst case, see FAQ above) for emulation so the PC sync guarantee is explained below:
+
+- A `UC_HOOK_CODE` is installed. In this case, the PC is sync-ed _everywhere_ within the effective range of the hook. However, on some architectures, the PC might by sync-ed all the time if the hook is installed.
+- A `UC_HOOK_MEM_READ` or `UC_HOOK_MEM_WRITE` is installed. In this case, the PC is sync-ed exactly before any read/write events within the effective range of the hook.
+- Emulation (`uc_emu_start`) terminates without any exception. In this case, the PC will point to the next instruction.
+- No hook mentioned above is installed and emulation terminates with exceptions. In this case, the PC is sync-ed at the basic block boundary, in other words, the first instruction of the basic block where the exception happens.
+
+Below is an example:
+
+```
+mov x0, #1 <--- the PC will be here
+mov x1, #2
+ldr x0, [x1] <--- exception here
+```
+
+If `ldr x0, [x1]` fails with memory exceptions, the PC will be left at the beginning of the basic block, in this case `mov x0, #1`.
+
+However, if a `UC_HOOK_MEM_READ` hook is installed, the PC will be sync-ed:
+
+```
+mov x0, #1 
+mov x1, #2
+ldr x0, [x1] <--- exception here and PC sync-ed here
+```
 
 ## I get an “Unhandled CPU Exception”, why?
 
