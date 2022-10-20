@@ -641,7 +641,14 @@ class Uc(RegStateManager):
         # TODO: this is where mmio callbacks need to be released from cache,
         # but we cannot tell whether this is an mmio range. also, memory ranges
         # might be splitted by 'map_protect' after they were mapped, so the
-        # (start, end) tuple may not be suitable for retrieving the callbacks
+        # (start, end) tuple may not be suitable for retrieving the callbacks.
+        #
+        # here we try to do that on a best-effort basis:
+
+        rng = (address, address + size)
+
+        if rng in self._mmio_callbacks:
+            del self._mmio_callbacks[rng]
 
     def mem_protect(self, address: int, size: int, perms: int = uc.UC_PROT_ALL) -> None:
         """Modify access protection bitmask of a mapped memory range.
@@ -686,10 +693,9 @@ class Uc(RegStateManager):
             raise UcError(status)
 
         # hold a reference to mmio callbacks
-        rng_starts = address
-        rng_ends = address + size
+        rng = (address, address + size)
 
-        self._mmio_callbacks[(rng_starts, rng_ends)] = (read_cb_fptr, write_cb_fptr)
+        self._mmio_callbacks[rng] = (read_cb_fptr, write_cb_fptr)
 
     def mem_regions(self) -> Iterator[Tuple[int, int, int]]:
         """Iterate through mapped memory regions.
