@@ -11,15 +11,14 @@ from .. import arm64_const as const
 
 from ..unicorn import uccallback
 from ..unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
-from .types import uc_engine, UcReg128
+from .types import uc_engine, UcTupledReg, UcReg128
 
-ARM64CPReg = Tuple[int, int, int, int, int]
-ARM64CPRegValue = Tuple[int, int, int, int, int, int]
+ARM64CPReg = Tuple[int, int, int, int, int, int]
 
 HOOK_INSN_SYS_CFUNC = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_uint32, ctypes.c_void_p, ctypes.c_void_p)
 
 
-class UcRegCP(ctypes.Structure):
+class UcRegCP(UcTupledReg[ARM64CPReg]):
     """ARM64 coprocessors registers for instructions MRS, MSR
     """
 
@@ -35,12 +34,6 @@ class UcRegCP(ctypes.Structure):
     @property
     def value(self) -> int:
         return self.val
-
-    @classmethod
-    def from_param(cls, param: ARM64CPRegValue):
-        assert type(param) is tuple and len(param) == len(cls._fields_)
-
-        return cls(*param)
 
 
 class UcAArch64(Uc):

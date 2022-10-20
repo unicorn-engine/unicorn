@@ -338,7 +338,7 @@ class RegStateManager:
         """Register write helper method.
         """
 
-        reg = regtype.from_param(value) if issubclass(regtype, ctypes.Structure) else regtype(value)
+        reg = regtype.from_value(value) if issubclass(regtype, UcReg) else regtype(value)
         status = self._do_reg_write(reg_id, ctypes.byref(reg))
 
         if status != uc.UC_ERR_OK:

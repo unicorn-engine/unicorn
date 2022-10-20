@@ -9,13 +9,12 @@ import ctypes
 from .. import Uc
 from .. import arm_const as const
 
-from .types import UcReg128
+from .types import UcTupledReg, UcReg128
 
-ARMCPReg = Tuple[int, int, int, int, int, int, int]
-ARMCPRegValue = Tuple[int, int, int, int, int, int, int, int]
+ARMCPReg = Tuple[int, int, int, int, int, int, int, int]
 
 
-class UcRegCP(ctypes.Structure):
+class UcRegCP(UcTupledReg[ARMCPReg]):
     """ARM coprocessors registers for instructions MRC, MCR, MRRC, MCRR
     """
 
@@ -33,12 +32,6 @@ class UcRegCP(ctypes.Structure):
     @property
     def value(self) -> int:
         return self.val
-
-    @classmethod
-    def from_param(cls, param: ARMCPRegValue):
-        assert type(param) is tuple and len(param) == len(cls._fields_)
-
-        return cls(*param)
 
 
 class UcAArch32(Uc):

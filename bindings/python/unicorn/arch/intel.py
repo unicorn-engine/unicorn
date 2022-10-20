@@ -11,9 +11,10 @@ from .. import x86_const as const
 
 from ..unicorn import uccallback
 from ..unicorn_const import UC_ERR_ARG, UC_HOOK_INSN
-from .types import uc_engine, UcReg128, UcReg256, UcReg512
+from .types import uc_engine, UcTupledReg, UcReg128, UcReg256, UcReg512
 
 X86MMRReg = Tuple[int, int, int, int]
+X86MSRReg = Tuple[int, int]
 X86FPReg = Tuple[int, int]
 
 HOOK_INSN_IN_CFUNC      = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_uint32, ctypes.c_int, ctypes.c_void_p)
@@ -22,7 +23,7 @@ HOOK_INSN_SYSCALL_CFUNC = ctypes.CFUNCTYPE(None, uc_engine, ctypes.c_void_p)
 HOOK_INSN_CPUID_CFUNC   = ctypes.CFUNCTYPE(ctypes.c_uint32, uc_engine, ctypes.c_void_p)
 
 
-class UcRegMMR(ctypes.Structure):
+class UcRegMMR(UcTupledReg[X86MMRReg]):
     """Memory-Management Register for instructions IDTR, GDTR, LDTR, TR.
     """
 
@@ -33,18 +34,8 @@ class UcRegMMR(ctypes.Structure):
         ('flags',    ctypes.c_uint32)   # not used by GDTR and IDTR
     )
 
-    @property
-    def value(self) -> X86MMRReg:
-        return tuple(getattr(self, fname) for fname, _ in self._fields_)
 
-    @classmethod
-    def from_param(cls, param: X86MMRReg):
-        assert type(param) is tuple and len(param) == len(cls._fields_)
-
-        return cls(*param)
-
-
-class UcRegMSR(ctypes.Structure):
+class UcRegMSR(UcTupledReg[X86MSRReg]):
     _fields_ = (
         ('rid', ctypes.c_uint32),
         ('val', ctypes.c_uint64)
@@ -54,28 +45,12 @@ class UcRegMSR(ctypes.Structure):
     def value(self) -> int:
         return self.val
 
-    @classmethod
-    def from_param(cls, param: Tuple[int, int]):
-        assert type(param) is tuple and len(param) == len(cls._fields_)
 
-        return cls(*param)
-
-
-class UcRegFPR(ctypes.Structure):
+class UcRegFPR(UcTupledReg[X86FPReg]):
     _fields_ = (
         ('mantissa', ctypes.c_uint64),
         ('exponent', ctypes.c_uint16)
     )
-
-    @property
-    def value(self) -> X86FPReg:
-        return tuple(getattr(self, fname) for fname, _ in self._fields_)
-
-    @classmethod
-    def from_param(cls, param: X86FPReg):
-        assert type(param) is tuple and len(param) == len(cls._fields_)
-
-        return cls(*param)
 
 
 class UcIntel(Uc):
