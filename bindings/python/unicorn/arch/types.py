@@ -8,8 +8,6 @@ from typing import Generic, Tuple, TypeVar
 import ctypes
 
 uc_err	   = ctypes.c_int
-uc_mode	   = ctypes.c_int
-uc_arch	   = ctypes.c_int
 uc_engine  = ctypes.c_void_p
 uc_context = ctypes.c_void_p
 uc_hook_h  = ctypes.c_size_t
