@@ -366,7 +366,7 @@ static void test_arm64_block_invalid_mem_read_write_sync(void)
     OK(uc_reg_read(uc, UC_ARM64_REG_X1, &r_x1));
 
     TEST_CHECK(r_pc == code_start + 8);
-    // TEST_CHECK(r_x0 == 1); // Unfortunately this can't be guarantee-ed
+    TEST_CHECK(r_x0 == 1);
     TEST_CHECK(r_x1 == 2);
 
     OK(uc_close(uc));
