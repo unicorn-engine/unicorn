@@ -2,7 +2,7 @@
 # based on Nguyen Anh Quynnh's work
 
 from __future__ import annotations
-from typing import Any, Callable, Iterable, Iterator, Mapping, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Iterator, Mapping, MutableMapping, Optional, Sequence, Tuple, Type, TypeVar
 
 import ctypes
 import functools
@@ -271,7 +271,12 @@ def debug() -> str:
     return f'python-{all_archs}-c{lib_maj}.{lib_min}-b{bnd_maj}.{bnd_min}'
 
 
-def uccallback(functype: Type[ctypes._FuncPointer]):
+if TYPE_CHECKING:
+    # _FuncPointer is not recognized at runtime; use it only for type annotation
+    _CFP = TypeVar('_CFP', bound=ctypes._FuncPointer)
+
+
+def uccallback(functype: Type[_CFP]):
     """Unicorn callback decorator.
 
     Wraps a Python function meant to be dispatched by Unicorn as a hook callback.
@@ -281,7 +286,7 @@ def uccallback(functype: Type[ctypes._FuncPointer]):
     If an exception occurs, it is saved to the Uc object and emulation is stopped.
     """
 
-    def decorate(func):
+    def decorate(func) -> _CFP:
 
         @functools.wraps(func)
         def wrapper(uc: Uc, *args, **kwargs):
