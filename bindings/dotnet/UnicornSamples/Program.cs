@@ -2,9 +2,9 @@
 
 namespace UnicornSamples
 {
-    class Program
+    internal static class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             // X86 tests 32bit
             X86Sample32.X86Code32();

@@ -7,15 +7,19 @@ from source.
 
 1. Compile the code
 
-	[Windows]
-	To compile the code open the UnicornSln.sln with Microsoft Visual 
-	Studio 12 or with a newer version and just press Ctrl+Shift+B to build 
-	the solution.
-	
-	You need to have installed at least version 4.5 of the .NET framework.
-	
-	[Linux]
-	TODO
+    You need to have at least version 5.0 of .NET installed.
+
+    1. Windows
+
+        To compile the code open the UnicornSln.sln with Microsoft Visual
+        Studio 12 or with a newer version and just press Ctrl+Shift+B to build 
+        the solution.
+
+    2. Linux
+
+        To compile the code open a terminal in this directory
+        and enter the following command to build the solution:
+        `dotnet build`
 	
 2. Usage
 
