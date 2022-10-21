@@ -775,6 +775,46 @@ static void test_arm_context_save(void)
     OK(uc_close(uc2));
 }
 
+static void test_arm_thumb2(void)
+{
+    uc_engine *uc;
+    // MOVS  R0, #0x24
+    // AND.W R0, R0, #4
+    char code[] = "\x24\x20\x00\xF0\x04\x00";
+    uint32_t r_r0;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_LITTLE_ENDIAN,
+                    code, sizeof(code) - 1, UC_CPU_ARM_CORTEX_R5);
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+
+    TEST_CHECK(r_r0 == 0x4);
+
+    OK(uc_close(uc));
+}
+
+static void test_armeb_be32_thumb2(void)
+{
+    uc_engine *uc;
+    // MOVS  R0, #0x24
+    // AND.W R0, R0, #4
+    char code[] = "\x20\x24\xF0\x00\x00\x04";
+    uint32_t r_r0;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_R5);
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+
+    TEST_CHECK(r_r0 == 0x4);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -798,4 +838,6 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_switch_endian", test_arm_switch_endian},
              {"test_armeb_ldrb", test_armeb_ldrb},
              {"test_arm_context_save", test_arm_context_save},
+             {"test_arm_thumb2", test_arm_thumb2},
+             {"test_armeb_be32_thumb2", test_armeb_be32_thumb2},
              {NULL, NULL}};
