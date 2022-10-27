@@ -62,8 +62,8 @@ static inline int64_t get_clock_realtime(void)
 
 #endif
 
-const uint64_t code_start = LEINT64(0x1000);
-const uint64_t code_len = LEINT64(0x4000);
+const uint64_t code_start = 0x1000;
+const uint64_t code_len = 0x4000;
 
 static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
                             const char *code, uint64_t size)
