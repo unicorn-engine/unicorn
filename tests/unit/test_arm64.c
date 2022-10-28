@@ -137,7 +137,7 @@ static void test_arm64_v8_pac(void)
 
     OK(uc_mem_read(uc, 0x40000, (void *)&mem, 8));
 
-    TEST_CHECK(mem == r_x8);
+    TEST_CHECK(LEINT64(mem) == r_x8);
 
     OK(uc_close(uc));
 }

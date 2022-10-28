@@ -164,9 +164,9 @@ static void test_arm_thumb_ite(void)
     OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
 
     OK(uc_mem_map(uc, r_sp, 0x1000, UC_PROT_ALL));
-    r_r2 = 0x68;
+    r_r2 = LEINT32(0x68);
     OK(uc_mem_write(uc, r_sp, &r_r2, 4));
-    r_r2 = 0x4d;
+    r_r2 = LEINT32(0x4d);
     OK(uc_mem_write(uc, r_sp + 4, &r_r2, 4));
 
     OK(uc_hook_add(uc, &hook, UC_HOOK_CODE, test_arm_thumb_ite_count_callback,
@@ -396,7 +396,7 @@ static void test_arm_v8(void)
 {
     char code[] = "\xd0\xe8\xff\x17"; // LDAEXD.W R1, [R0]
     uc_engine *uc;
-    uint32_t r_r1 = 0xdeadbeef;
+    uint32_t r_r1 = LEINT32(0xdeadbeef);
     uint32_t r_r0;
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,

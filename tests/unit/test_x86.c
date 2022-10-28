@@ -422,7 +422,7 @@ static void test_x86_x87_fnstenv(void)
 
     OK(uc_mem_read(uc, base, fnstenv, sizeof(fnstenv)));
     // But update FCS:FIP for fld.
-    TEST_CHECK(fnstenv[3] == last_eip);
+    TEST_CHECK(LEINT32(fnstenv[3]) == last_eip);
 
     OK(uc_close(uc));
 }
@@ -530,7 +530,7 @@ static void test_x86_smc_xor(void)
 
     OK(uc_mem_read(uc, code_start + 3, (void *)&result, 4));
 
-    TEST_CHECK(result == (0x3ea98b13 ^ 0xbc4177e6));
+    TEST_CHECK(LEINT32(result) == (0x3ea98b13 ^ 0xbc4177e6));
 
     OK(uc_close(uc));
 }
@@ -562,7 +562,7 @@ static void test_x86_mmio_uc_mem_rw_write_callback(uc_engine *uc,
 static void test_x86_mmio_uc_mem_rw(void)
 {
     uc_engine *uc;
-    int data = 0xdeadbeef;
+    int data = LEINT32(0xdeadbeef);
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
 
@@ -572,7 +572,7 @@ static void test_x86_mmio_uc_mem_rw(void)
     OK(uc_mem_write(uc, 0x20004, (void *)&data, 4));
     OK(uc_mem_read(uc, 0x20008, (void *)&data, 4));
 
-    TEST_CHECK(data == 0x19260817);
+    TEST_CHECK(LEINT32(data) == 0x19260817);
 
     OK(uc_close(uc));
 }
