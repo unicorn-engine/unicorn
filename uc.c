@@ -769,7 +769,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         default:
             break;
         case UC_MODE_16: {
-            uint64_t ip;
+            uint16_t ip;
             uint16_t cs;
 
             uc_reg_read(uc, UC_X86_REG_CS, &cs);
