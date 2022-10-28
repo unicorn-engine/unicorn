@@ -1267,7 +1267,7 @@ TEST_LIST = {
     {"test_x86_correct_address_in_long_jump_hook",
      test_x86_correct_address_in_long_jump_hook},
     {"test_x86_invalid_vex_l", test_x86_invalid_vex_l},
-#ifndef TARGET_READ_INLINED
+#if !defined(TARGET_READ_INLINED) && defined(BOOST_LITTLE_ENDIAN)
     {"test_x86_unaligned_access", test_x86_unaligned_access},
 #endif
     {"test_x86_lazy_mapping", test_x86_lazy_mapping},
