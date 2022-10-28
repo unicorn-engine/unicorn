@@ -811,7 +811,11 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 #endif
 #ifdef UNICORN_HAS_PPC
     case UC_ARCH_PPC:
-        uc_reg_write(uc, UC_PPC_REG_PC, &begin);
+        if (uc->mode & UC_MODE_PPC64) {
+            uc_reg_write(uc, UC_PPC_REG_PC, &begin);
+        } else {
+            uc_reg_write(uc, UC_PPC_REG_PC, &begin_pc32);
+        }
         break;
 #endif
 #ifdef UNICORN_HAS_RISCV
