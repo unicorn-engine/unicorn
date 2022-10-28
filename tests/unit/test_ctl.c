@@ -110,14 +110,14 @@ static void test_uc_ctl_exits(void)
     r_eax = 0;
     r_ebx = 0;
     OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_ebx));
+    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_ebx));
 
     // Run two times.
     OK(uc_emu_start(uc, code_start, 0, 0, 0));
     OK(uc_emu_start(uc, code_start, 0, 0, 0));
 
     OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_ebx));
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx));
 
     TEST_CHECK(r_eax == 1);
     TEST_CHECK(r_ebx == 1);
