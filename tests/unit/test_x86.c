@@ -1152,7 +1152,7 @@ static void test_x86_unaligned_access(void)
     uc_hook hook;
     // mov dword ptr [0x200001], eax; mov eax, dword ptr [0x200001]
     char code[] = "\xa3\x01\x00\x20\x00\xa1\x01\x00\x20\x00";
-    uint32_t r_eax = 0x41424344;
+    uint32_t r_eax = LEINT32(0x41424344);
     struct writelog_t write_log[10];
     struct writelog_t read_log[10];
     memset(write_log, 0, sizeof(write_log));
