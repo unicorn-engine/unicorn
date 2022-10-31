@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Sample code for S390x of Unicorn.
 
 from unicorn import *
 from unicorn.s390x_const import *
