@@ -1,0 +1,51 @@
+name: Nuget 📦 Distribution
+
+on:
+  push:
+    branches:
+      - dev
+      - master
+    paths-ignore:
+      - ".gitignore"
+      - "docs/**"
+      - "README"
+      - "CREDITS.TXT"
+      - "COPYING_GLIB"
+      - "COPYING.LGPL2"
+      - "AUTHORS.TXT"
+      - "CHANGELOG"
+      - "COPYING"
+
+permissions:
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: bindings/dotnet/UnicornEngine
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get short sha
+        id: git_short_sha
+        run: echo "result=$(git rev-parse --short "${{ github.sha }}")" >> $GITHUB_OUTPUT
+
+      - uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 6.0.x
+
+      - name: Authenticate to Github Packages
+        run: dotnet nuget add source --username "${{ github.repository_owner }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+
+      - name: Package .NET bindings
+        run: |
+          [[ "${{ github.ref_name }}" == "master" ]] \
+            && dotnet pack -c Release \
+            || dotnet pack -c Release --version-suffix="${{ steps.git_short_sha.outputs.result }}"
+
+      - name: 📦 Publish to Github Packages
+        run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" --source "github" --api-key "${{ secrets.GHPR_TOKEN }}"
