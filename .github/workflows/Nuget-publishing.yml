@@ -5,16 +5,8 @@ on:
     branches:
       - dev
       - master
-    paths-ignore:
-      - ".gitignore"
-      - "docs/**"
-      - "README"
-      - "CREDITS.TXT"
-      - "COPYING_GLIB"
-      - "COPYING.LGPL2"
-      - "AUTHORS.TXT"
-      - "CHANGELOG"
-      - "COPYING"
+    paths:
+      - "bindings/dotnet/UnicornEngine/**"
 
 permissions:
   packages: write
