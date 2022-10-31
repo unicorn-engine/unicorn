@@ -3,8 +3,8 @@ using Gee.External.Capstone.X86;
 using System;
 using System.Diagnostics;
 using System.Text;
-using UnicornManaged;
-using UnicornManaged.Const;
+using UnicornEngine;
+using UnicornEngine.Const;
 
 namespace UnicornSamples
 {

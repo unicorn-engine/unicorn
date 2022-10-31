@@ -1,6 +1,6 @@
 // For Unicorn Engine. AUTO-GENERATED FILE, DO NOT EDIT
 
-namespace UnicornManaged.Const
+namespace UnicornEngine.Const
 
 open System
 

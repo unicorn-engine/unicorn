@@ -1,4 +1,4 @@
-﻿namespace UnicornManaged
+﻿namespace UnicornEngine
 
 open System
 open System.Runtime.InteropServices

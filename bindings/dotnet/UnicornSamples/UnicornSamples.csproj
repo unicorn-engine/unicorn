@@ -17,9 +17,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UnicornManaged\UnicornManaged.fsproj">
+    <ProjectReference Include="..\UnicornEngine\UnicornEngine.fsproj">
       <Project>{0c21f1c1-2725-4a46-9022-1905f85822a5}</Project>
-      <Name>UnicornManaged</Name>
+      <Name>UnicornEngine</Name>
     </ProjectReference>
   </ItemGroup>
   
