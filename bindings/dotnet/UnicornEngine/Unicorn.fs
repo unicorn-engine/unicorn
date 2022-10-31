@@ -1,11 +1,11 @@
-﻿namespace UnicornManaged
+﻿namespace UnicornEngine
 
 open System
 open System.Collections.Generic
 open System.Runtime.InteropServices
 open System.Linq
-open UnicornManaged.Const
-open UnicornManaged.Binding
+open UnicornEngine.Const
+open UnicornEngine.Binding
 
 // exported hooks
 type CodeHook = delegate of Unicorn * Int64 * Int32 * Object -> unit
