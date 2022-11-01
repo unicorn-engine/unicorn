@@ -6,14 +6,12 @@ public interface UnicornConst {
    public static final int UC_API_MAJOR = 2;
 
    public static final int UC_API_MINOR = 0;
-
-   public static final int UC_API_PATCH = 0;
+   public static final int UC_API_PATCH = 1;
    public static final int UC_API_EXTRA = 255;
    public static final int UC_VERSION_MAJOR = 2;
 
    public static final int UC_VERSION_MINOR = 0;
-
-   public static final int UC_VERSION_PATCH = 0;
+   public static final int UC_VERSION_PATCH = 1;
    public static final int UC_VERSION_EXTRA = 255;
    public static final int UC_SECOND_SCALE = 1000000;
    public static final int UC_MILISECOND_SCALE = 1000;
