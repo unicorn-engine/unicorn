@@ -3378,6 +3378,10 @@ static void gen_sse(CPUX86State *env, DisasContext *s, int b,
     if (is_xmm)
         reg |= rex_r;
     mod = (modrm >> 6) & 3;
+    /* VEX.L (256 bit) encodings are not supported */
+    if (s->vex_l != 0) {
+        goto illegal_op; // perhaps it should be unknown_op?
+    }
     if (sse_fn_epp == SSE_SPECIAL) {
         b |= (b1 << 8);
         switch(b) {

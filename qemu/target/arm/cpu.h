@@ -3098,7 +3098,8 @@ static inline bool arm_sctlr_b(CPUARMState *env)
          * let linux-user ignore the fact that it conflicts with SCTLR_B.
          * This lets people run BE32 binaries with "-cpu any".
          */
-        !arm_feature(env, ARM_FEATURE_V7) &&
+        // Unicorn: Our hack to support BE32 mode
+        // !arm_feature(env, ARM_FEATURE_V7) &&
         (env->cp15.sctlr_el[1] & SCTLR_B) != 0;
 }
 

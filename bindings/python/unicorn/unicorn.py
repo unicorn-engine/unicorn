@@ -357,15 +357,14 @@ def reg_write(reg_write_func, arch, reg_id, value):
             reg = uc_arm64_neon128()
             reg.low_qword = value & 0xffffffffffffffff
             reg.high_qword = value >> 64
-
-    if arch == uc.UC_ARCH_ARM:
-        if reg_id == arm64_const.UC_ARM64_REG_CP_REG:
+        elif reg_id == arm64_const.UC_ARM64_REG_CP_REG:
             reg = uc_arm64_cp_reg()
             if not isinstance(value, tuple) or len(value) != 6:
                 raise UcError(uc.UC_ERR_ARG)
             reg.crn, reg.crm, reg.op0, reg.op1, reg.op2, reg.val = value
 
-        elif reg_id == arm_const.UC_ARM_REG_CP_REG:
+    if arch == uc.UC_ARCH_ARM:
+        if reg_id == arm_const.UC_ARM_REG_CP_REG:
             reg = uc_arm_cp_reg()
             if not isinstance(value, tuple) or len(value) != 8:
                 raise UcError(uc.UC_ERR_ARG)
@@ -561,7 +560,7 @@ class Uc(object):
         return reg_read(functools.partial(_uc.uc_reg_read, self._uch), self._arch, reg_id, opt)
 
     # write to a register, tuple for arm cp regs.
-    def reg_write(self, reg_id: Union[int, ARMCPRegValue, ARM64CPRegValue, X86MMRReg, X86FPReg], value: int):
+    def reg_write(self, reg_id: int, value: Union[int, ARMCPRegValue, ARM64CPRegValue, X86MMRReg, X86FPReg]):
         return reg_write(functools.partial(_uc.uc_reg_write, self._uch), self._arch, reg_id, value)
 
     # read from MSR - X86 only

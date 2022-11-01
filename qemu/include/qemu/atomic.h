@@ -31,41 +31,41 @@
  * implicit promotion.  int and larger types, as well as pointers, can be
  * converted to a non-qualified type just by applying a binary operator.
  */
-#define typeof_strip_qual(expr)                                                    \
-  typeof(                                                                          \
-    __builtin_choose_expr(                                                         \
-      __builtin_types_compatible_p(typeof(expr), bool) ||                          \
-        __builtin_types_compatible_p(typeof(expr), const bool) ||                  \
-        __builtin_types_compatible_p(typeof(expr), volatile bool) ||               \
-        __builtin_types_compatible_p(typeof(expr), const volatile bool),           \
-        (bool)1,                                                                   \
-    __builtin_choose_expr(                                                         \
-      __builtin_types_compatible_p(typeof(expr), signed char) ||                   \
-        __builtin_types_compatible_p(typeof(expr), const signed char) ||           \
-        __builtin_types_compatible_p(typeof(expr), volatile signed char) ||        \
-        __builtin_types_compatible_p(typeof(expr), const volatile signed char),    \
-        (signed char)1,                                                            \
-    __builtin_choose_expr(                                                         \
-      __builtin_types_compatible_p(typeof(expr), unsigned char) ||                 \
-        __builtin_types_compatible_p(typeof(expr), const unsigned char) ||         \
-        __builtin_types_compatible_p(typeof(expr), volatile unsigned char) ||      \
-        __builtin_types_compatible_p(typeof(expr), const volatile unsigned char),  \
-        (unsigned char)1,                                                          \
-    __builtin_choose_expr(                                                         \
-      __builtin_types_compatible_p(typeof(expr), signed short) ||                  \
-        __builtin_types_compatible_p(typeof(expr), const signed short) ||          \
-        __builtin_types_compatible_p(typeof(expr), volatile signed short) ||       \
-        __builtin_types_compatible_p(typeof(expr), const volatile signed short),   \
-        (signed short)1,                                                           \
-    __builtin_choose_expr(                                                         \
-      __builtin_types_compatible_p(typeof(expr), unsigned short) ||                \
-        __builtin_types_compatible_p(typeof(expr), const unsigned short) ||        \
-        __builtin_types_compatible_p(typeof(expr), volatile unsigned short) ||     \
-        __builtin_types_compatible_p(typeof(expr), const volatile unsigned short), \
-        (unsigned short)1,                                                         \
+#define typeof_strip_qual(expr)                                                        \
+  __typeof__(                                                                          \
+    __builtin_choose_expr(                                                             \
+      __builtin_types_compatible_p(__typeof__(expr), bool) ||                          \
+        __builtin_types_compatible_p(__typeof__(expr), const bool) ||                  \
+        __builtin_types_compatible_p(__typeof__(expr), volatile bool) ||               \
+        __builtin_types_compatible_p(__typeof__(expr), const volatile bool),           \
+        (bool)1,                                                                       \
+    __builtin_choose_expr(                                                             \
+      __builtin_types_compatible_p(__typeof__(expr), signed char) ||                   \
+        __builtin_types_compatible_p(__typeof__(expr), const signed char) ||           \
+        __builtin_types_compatible_p(__typeof__(expr), volatile signed char) ||        \
+        __builtin_types_compatible_p(__typeof__(expr), const volatile signed char),    \
+        (signed char)1,                                                                \
+    __builtin_choose_expr(                                                             \
+      __builtin_types_compatible_p(__typeof__(expr), unsigned char) ||                 \
+        __builtin_types_compatible_p(__typeof__(expr), const unsigned char) ||         \
+        __builtin_types_compatible_p(__typeof__(expr), volatile unsigned char) ||      \
+        __builtin_types_compatible_p(__typeof__(expr), const volatile unsigned char),  \
+        (unsigned char)1,                                                              \
+    __builtin_choose_expr(                                                             \
+      __builtin_types_compatible_p(__typeof__(expr), signed short) ||                  \
+        __builtin_types_compatible_p(__typeof__(expr), const signed short) ||          \
+        __builtin_types_compatible_p(__typeof__(expr), volatile signed short) ||       \
+        __builtin_types_compatible_p(__typeof__(expr), const volatile signed short),   \
+        (signed short)1,                                                               \
+    __builtin_choose_expr(                                                             \
+      __builtin_types_compatible_p(__typeof__(expr), unsigned short) ||                \
+        __builtin_types_compatible_p(__typeof__(expr), const unsigned short) ||        \
+        __builtin_types_compatible_p(__typeof__(expr), volatile unsigned short) ||     \
+        __builtin_types_compatible_p(__typeof__(expr), const volatile unsigned short), \
+        (unsigned short)1,                                                             \
       (expr)+0))))))
 
-#ifdef __ATOMIC_RELAXED
+#if defined(__ATOMIC_RELAXED) && !(defined(_MSC_VER) && defined(__clang__))
 /* For C11 atomic ops */
 
 /* Sanity check that the size of an atomic operation isn't "overly large".

@@ -621,6 +621,145 @@ static int arm_cpus_init(struct uc_struct *uc, const char *cpu_model)
     return 0;
 }
 
+static size_t uc_arm_context_size(struct uc_struct *uc)
+{
+    size_t ret = offsetof(CPUARMState, cpu_watchpoint);
+    ARMCPU *cpu = (ARMCPU *)uc->cpu;
+    CPUARMState *env = (CPUARMState *)&cpu->env;
+    uint32_t nr;
+
+#define ARM_ENV_CHECK(field)                                                   \
+    if (field) {                                                               \
+        ret += sizeof(uint32_t) * (nr + 1);                                    \
+    } else {                                                                   \
+        ret += sizeof(uint32_t);                                               \
+    }
+
+    // /* PMSAv7 MPU */
+    // struct {
+    //     uint32_t *drbar;
+    //     uint32_t *drsr;
+    //     uint32_t *dracr;
+    //     uint32_t rnr[M_REG_NUM_BANKS];
+    // } pmsav7;
+    // /* PMSAv8 MPU */
+    // struct {
+    //     /* The PMSAv8 implementation also shares some PMSAv7 config
+    //      * and state:
+    //      *  pmsav7.rnr (region number register)
+    //      *  pmsav7_dregion (number of configured regions)
+    //      */
+    //     uint32_t *rbar[M_REG_NUM_BANKS];
+    //     uint32_t *rlar[M_REG_NUM_BANKS];
+    //     uint32_t mair0[M_REG_NUM_BANKS];
+    //     uint32_t mair1[M_REG_NUM_BANKS];
+    // } pmsav8;
+    nr = cpu->pmsav7_dregion;
+    ARM_ENV_CHECK(env->pmsav7.drbar)
+    ARM_ENV_CHECK(env->pmsav7.drsr)
+    ARM_ENV_CHECK(env->pmsav7.dracr)
+    ARM_ENV_CHECK(env->pmsav8.rbar[M_REG_NS])
+    ARM_ENV_CHECK(env->pmsav8.rbar[M_REG_S])
+    ARM_ENV_CHECK(env->pmsav8.rlar[M_REG_NS])
+    ARM_ENV_CHECK(env->pmsav8.rlar[M_REG_S])
+
+    // /* v8M SAU */
+    // struct {
+    //     uint32_t *rbar;
+    //     uint32_t *rlar;
+    //     uint32_t rnr;
+    //     uint32_t ctrl;
+    // } sau;
+    nr = cpu->sau_sregion;
+    ARM_ENV_CHECK(env->sau.rbar)
+    ARM_ENV_CHECK(env->sau.rlar)
+#undef ARM_ENV_CHECK
+    // These fields are never used:
+    // void *nvic;
+    // const struct arm_boot_info *boot_info;
+    // void *gicv3state;
+    return ret;
+}
+
+static uc_err uc_arm_context_save(struct uc_struct *uc, uc_context *context)
+{
+    char *p = NULL;
+    ARMCPU *cpu = (ARMCPU *)uc->cpu;
+    CPUARMState *env = (CPUARMState *)&cpu->env;
+    uint32_t nr = 0;
+
+#define ARM_ENV_SAVE(field)                                                    \
+    if (!field) {                                                              \
+        *(uint32_t *)p = 0;                                                    \
+        p += sizeof(uint32_t);                                                 \
+    } else {                                                                   \
+        *(uint32_t *)p = nr;                                                   \
+        p += sizeof(uint32_t);                                                 \
+        memcpy(p, (void *)field, sizeof(uint32_t) * nr);                       \
+        p += sizeof(uint32_t) * nr;                                            \
+    }
+    p = context->data;
+    memcpy(p, uc->cpu->env_ptr, uc->cpu_context_size);
+    p += uc->cpu_context_size;
+
+    nr = cpu->pmsav7_dregion;
+    ARM_ENV_SAVE(env->pmsav7.drbar)
+    ARM_ENV_SAVE(env->pmsav7.drsr)
+    ARM_ENV_SAVE(env->pmsav7.dracr)
+    ARM_ENV_SAVE(env->pmsav8.rbar[M_REG_NS])
+    ARM_ENV_SAVE(env->pmsav8.rbar[M_REG_S])
+    ARM_ENV_SAVE(env->pmsav8.rlar[M_REG_NS])
+    ARM_ENV_SAVE(env->pmsav8.rlar[M_REG_S])
+
+    nr = cpu->sau_sregion;
+    ARM_ENV_SAVE(env->sau.rbar)
+    ARM_ENV_SAVE(env->sau.rlar)
+
+#undef ARM_ENV_SAVE
+    return UC_ERR_OK;
+}
+
+static uc_err uc_arm_context_restore(struct uc_struct *uc, uc_context *context)
+{
+    char *p = NULL;
+    ARMCPU *cpu = (ARMCPU *)uc->cpu;
+    CPUARMState *env = (CPUARMState *)&cpu->env;
+    uint32_t nr, ctx_nr;
+
+#define ARM_ENV_RESTORE(field)                                                 \
+    ctx_nr = *(uint32_t *)p;                                                   \
+    if (ctx_nr != 0) {                                                         \
+        p += sizeof(uint32_t);                                                 \
+        if (field && ctx_nr == nr) {                                           \
+            memcpy(field, p, sizeof(uint32_t) * ctx_nr);                       \
+        }                                                                      \
+        p += sizeof(uint32_t) * ctx_nr;                                        \
+    } else {                                                                   \
+        p += sizeof(uint32_t);                                                 \
+    }
+
+    p = context->data;
+    memcpy(uc->cpu->env_ptr, p, uc->cpu_context_size);
+    p += uc->cpu_context_size;
+
+    nr = cpu->pmsav7_dregion;
+    ARM_ENV_RESTORE(env->pmsav7.drbar)
+    ARM_ENV_RESTORE(env->pmsav7.drsr)
+    ARM_ENV_RESTORE(env->pmsav7.dracr)
+    ARM_ENV_RESTORE(env->pmsav8.rbar[M_REG_NS])
+    ARM_ENV_RESTORE(env->pmsav8.rbar[M_REG_S])
+    ARM_ENV_RESTORE(env->pmsav8.rlar[M_REG_NS])
+    ARM_ENV_RESTORE(env->pmsav8.rlar[M_REG_S])
+
+    nr = cpu->sau_sregion;
+    ARM_ENV_RESTORE(env->sau.rbar)
+    ARM_ENV_RESTORE(env->sau.rlar)
+
+#undef ARM_ENV_RESTORE
+
+    return UC_ERR_OK;
+}
+
 void arm_uc_init(struct uc_struct *uc)
 {
     uc->reg_read = arm_reg_read;
@@ -634,5 +773,8 @@ void arm_uc_init(struct uc_struct *uc)
     uc->cpus_init = arm_cpus_init;
     uc->opcode_hook_invalidate = arm_opcode_hook_invalidate;
     uc->cpu_context_size = offsetof(CPUARMState, cpu_watchpoint);
+    uc->context_size = uc_arm_context_size;
+    uc->context_save = uc_arm_context_save;
+    uc->context_restore = uc_arm_context_restore;
     uc_common_init(uc);
 }

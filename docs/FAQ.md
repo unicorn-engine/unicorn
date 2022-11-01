@@ -9,7 +9,30 @@ Optimize your program with less instrumentation, e.g. by using `UC_HOOK_BLOCK` i
 
 ## Why do I get a wrong PC after emulation stops?
 
-PC is only guaranteed to be correct if you install `UC_HOOK_CODE`. This is due to the fact that updating PC is a big performance overhead during emulation.
+Updating PC is a very large overhead (10x slower in the worst case, see FAQ above) for emulation so the PC sync guarantee is explained below:
+
+- A `UC_HOOK_CODE` is installed. In this case, the PC is sync-ed _everywhere_ within the effective range of the hook. However, on some architectures, the PC might by sync-ed all the time if the hook is installed.
+- A `UC_HOOK_MEM_READ` or `UC_HOOK_MEM_WRITE` is installed. In this case, the PC is sync-ed exactly before any read/write events within the effective range of the hook.
+- Emulation (`uc_emu_start`) terminates without any exception. In this case, the PC will point to the next instruction.
+- No hook mentioned above is installed and emulation terminates with exceptions. In this case, the PC is sync-ed at the basic block boundary, in other words, the first instruction of the basic block where the exception happens.
+
+Below is an example:
+
+```
+mov x0, #1 <--- the PC will be here
+mov x1, #2
+ldr x0, [x1] <--- exception here
+```
+
+If `ldr x0, [x1]` fails with memory exceptions, the PC will be left at the beginning of the basic block, in this case `mov x0, #1`.
+
+However, if a `UC_HOOK_MEM_READ` hook is installed, the PC will be sync-ed:
+
+```
+mov x0, #1 
+mov x1, #2
+ldr x0, [x1] <--- exception here and PC sync-ed here
+```
 
 ## I get an “Unhandled CPU Exception”, why?
 
@@ -30,6 +53,13 @@ On x86, all available instructions are: `in` `out` `syscall` `sysenter` `cpuid`.
 
 If you are still using Unicorn1, please upgrade to Unicorn2 for better support.
 
+## Memory hooks get called multiple times for a single instruction
+
+There are several possibilities, e.g.:
+
+- The instruction might access memory multiple times like `rep stos` in x86.
+- The address to access is bad-aligned and thus the MMU emulation will split the access into several aligned memory access. In worst cases on some arch, it leads to byte by byte access.
+
 ## I can't recover from unmapped read/write even I return `true` in the hook, why?
 
 This is a minor change in memory hooks behavior between Unicorn1 and Unicorn2. To gracefully recover from memory read/write error, you have to map the invalid memory before you return true.
@@ -38,9 +68,11 @@ It is due to the fact that, if users return `true` without memory mapping set up
 
 See the [sample](https://github.com/unicorn-engine/unicorn/blob/c05fbb7e63aed0b60fc2888e08beceb17bce8ac4/samples/sample_x86.c#L1379-L1393) for details.
 
-## My MIPS emulation gets weird read/write error and CPU exceptions.
+## My emulation gets weird read/write error and CPU exceptions.
 
-Note you might have an address that falls in MIPS `kseg` segments. In that case, MMU is bypassed and you have to make sure the corresponding physical memory is mapped. See [#217](https://github.com/unicorn-engine/unicorn/issues/217), [#1371](https://github.com/unicorn-engine/unicorn/issues/1371), [#1550](https://github.com/unicorn-engine/unicorn/issues/1371).
+For MIPS, you might have an address that falls in MIPS `kseg` segments. In that case, MMU is bypassed and you have to make sure the corresponding physical memory is mapped. See [#217](https://github.com/unicorn-engine/unicorn/issues/217), [#1371](https://github.com/unicorn-engine/unicorn/issues/1371), [#1550](https://github.com/unicorn-engine/unicorn/issues/1371).
+
+For ARM, you might have an address that falls in some non-executable segments. For example, for m-class ARM cpu, some memory area is not executable according to [the ARM document](https://developer.arm.com/documentation/ddi0403/d/System-Level-Architecture/System-Address-Map/The-system-address-map?lang=en). 
 
 ## KeyboardInterrupt is not raised during `uc.emu_start`
 

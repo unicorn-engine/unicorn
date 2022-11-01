@@ -168,6 +168,16 @@ typedef void (*uc_add_inline_hook_t)(struct uc_struct *uc, struct hook *hk,
 // Delete a hook from helper_table
 typedef void (*uc_del_inline_hook_t)(struct uc_struct *uc, struct hook *hk);
 
+// Return the size of a CPU context
+typedef size_t (*uc_context_size_t)(struct uc_struct *uc);
+
+// Generate a CPU context
+typedef uc_err (*uc_context_save_t)(struct uc_struct *uc, uc_context *context);
+
+// Restore a CPU context
+typedef uc_err (*uc_context_restore_t)(struct uc_struct *uc,
+                                       uc_context *context);
+
 // hook list offsets
 //
 // The lowest 6 bits are used for hook type index while the others
@@ -284,6 +294,10 @@ struct uc_struct {
     uc_tb_flush_t tb_flush;
     uc_add_inline_hook_t add_inline_hook;
     uc_del_inline_hook_t del_inline_hook;
+
+    uc_context_size_t context_size;
+    uc_context_save_t context_save;
+    uc_context_restore_t context_restore;
 
     /*  only 1 cpu in unicorn,
         do not need current_cpu to handle current running cpu. */

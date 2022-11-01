@@ -1451,7 +1451,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                         continue;
                     if (!HOOK_BOUND_CHECK(hook, addr))
                         continue;
-                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_UNMAPPED, addr, size, 0, hook->user_data)))
                         break;
 
                     // the last callback may already asked to stop emulation
@@ -1466,7 +1466,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                         continue;
                     if (!HOOK_BOUND_CHECK(hook, addr))
                         continue;
-                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                    if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_UNMAPPED, addr, size, 0, hook->user_data)))
                         break;
 
                     // the last callback may already asked to stop emulation
@@ -1484,6 +1484,11 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             if (mr == NULL) {
                 uc->invalid_error = UC_ERR_MAP;
                 cpu_exit(uc->cpu);
+                // XXX(@lazymio): We have to exit early so that the target register won't be overwritten
+                //                because qemu might generate tcg code like:
+                //                       qemu_ld_i64 x0,x1,leq,8  sync: 0  dead: 0 1
+                //                where we don't have a change to recover x0 value
+                cpu_loop_exit(uc->cpu);
                 return 0;
             }
         } else {
@@ -1491,6 +1496,8 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             uc->invalid_error = error_code;
             // printf("***** Invalid fetch (unmapped memory) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->cpu);
+            // See comments above
+            cpu_loop_exit(uc->cpu);
             return 0;
         }
     }
@@ -1518,7 +1525,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, addr))
                     continue;
-                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_READ_PROT, addr, size, 0, hook->user_data)))
                     break;
 
                 // the last callback may already asked to stop emulation
@@ -1533,6 +1540,8 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 uc->invalid_error = UC_ERR_READ_PROT;
                 // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
                 cpu_exit(uc->cpu);
+                // See comments above
+                cpu_loop_exit(uc->cpu);
                 return 0;
             }
         }
@@ -1546,7 +1555,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                     continue;
                 if (!HOOK_BOUND_CHECK(hook, addr))
                     continue;
-                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, addr, size - uc->size_recur_mem, 0, hook->user_data)))
+                if ((handled = ((uc_cb_eventmem_t)hook->callback)(uc, UC_MEM_FETCH_PROT, addr, size, 0, hook->user_data)))
                     break;
 
                 // the last callback may already asked to stop emulation
@@ -1561,6 +1570,8 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 uc->invalid_error = UC_ERR_FETCH_PROT;
                 // printf("***** Invalid fetch (non-executable) at " TARGET_FMT_lx "\n", addr);
                 cpu_exit(uc->cpu);
+                // See comments above
+                cpu_loop_exit(uc->cpu);
                 return 0;
             }
         }
@@ -1635,11 +1646,15 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
         target_ulong addr1, addr2;
         uint64_t r1, r2;
         unsigned shift;
+        int old_size;
     do_unaligned_access:
         addr1 = addr & ~((target_ulong)size - 1);
         addr2 = addr1 + size;
+        old_size = uc->size_recur_mem;
+        uc->size_recur_mem = size;
         r1 = full_load(env, addr1, oi, retaddr);
         r2 = full_load(env, addr2, oi, retaddr);
+        uc->size_recur_mem = old_size;
         shift = (addr & (size - 1)) * 8;
 
         if (memop_big_endian(op)) {
@@ -1977,7 +1992,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
     size_t size = memop_size(op);
     struct hook *hook;
     bool handled;
-    MemoryRegion *mr = memory_mapping(uc, addr);
+    MemoryRegion *mr;
 
     if (!uc->size_recur_mem) { // disabling write callback if in recursive call
         // Unicorn: callback on memory write
@@ -1993,6 +2008,9 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 break;
         }
     }
+
+    // Load the latest memory mapping.
+    mr = memory_mapping(uc, addr);
 
     // Unicorn: callback on invalid memory
     if (mr == NULL) {
@@ -2136,6 +2154,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
         CPUTLBEntry *entry2;
         target_ulong page2, tlb_addr2;
         size_t size2;
+        int old_size;
 
     do_unaligned_access:
         /*
@@ -2178,6 +2197,8 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
          * This loop must go in the forward direction to avoid issues
          * with self-modifying code in Windows 64-bit.
          */
+        old_size = uc->size_recur_mem;
+        uc->size_recur_mem = size;
         for (i = 0; i < size; ++i) {
             uint8_t val8;
             if (memop_big_endian(op)) {
@@ -2189,6 +2210,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
             }
             helper_ret_stb_mmu(env, addr + i, val8, oi, retaddr);
         }
+        uc->size_recur_mem = old_size;
         return;
     }
 

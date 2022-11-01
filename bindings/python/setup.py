@@ -26,7 +26,7 @@ ROOT_DIR = os.path.dirname(os.path.realpath(__file__))
 LIBS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'lib')
 HEADERS_DIR = os.path.join(ROOT_DIR, 'unicorn', 'include')
 SRC_DIR = os.path.join(ROOT_DIR, 'src')
-UC_DIR = os.path.join(ROOT_DIR, '../..')
+UC_DIR = SRC_DIR if os.path.exists(SRC_DIR) else os.path.join(ROOT_DIR, '../..')
 BUILD_DIR = os.path.join(UC_DIR, 'build_python')
 
 VERSION = "2.0.0"
@@ -60,6 +60,9 @@ def copy_sources():
     shutil.copytree(os.path.join(ROOT_DIR, '../../include'), os.path.join(SRC_DIR, 'include/'))
     # make -> configure -> clean -> clean tests fails unless tests is present
     shutil.copytree(os.path.join(ROOT_DIR, '../../tests'), os.path.join(SRC_DIR, 'tests/'))
+    shutil.copytree(os.path.join(ROOT_DIR, '../../samples'), os.path.join(SRC_DIR, 'samples/'))
+    shutil.copytree(os.path.join(ROOT_DIR, '../../glib_compat'), os.path.join(SRC_DIR, 'glib_compat/'))
+
     try:
         # remove site-specific configuration file
         # might not exist
@@ -69,6 +72,7 @@ def copy_sources():
 
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.[ch]")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.mk")))
+    src.extend(glob.glob(os.path.join(ROOT_DIR, "../../*.cmake")))
 
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../LICENSE*")))
     src.extend(glob.glob(os.path.join(ROOT_DIR, "../../README.md")))

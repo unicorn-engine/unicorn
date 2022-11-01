@@ -110,14 +110,14 @@ static void test_uc_ctl_exits(void)
     r_eax = 0;
     r_ebx = 0;
     OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_ebx));
+    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_ebx));
 
     // Run two times.
     OK(uc_emu_start(uc, code_start, 0, 0, 0));
     OK(uc_emu_start(uc, code_start, 0, 0, 0));
 
     OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_ebx));
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx));
 
     TEST_CHECK(r_eax == 1);
     TEST_CHECK(r_ebx == 1);
@@ -175,6 +175,8 @@ static void test_uc_ctl_tb_cache(void)
     OK(uc_close(uc));
 }
 
+// Test requires UC_ARCH_ARM.
+#ifdef UNICORN_HAS_ARM
 static void test_uc_ctl_change_page_size(void)
 {
     uc_engine *uc;
@@ -191,7 +193,10 @@ static void test_uc_ctl_change_page_size(void)
     OK(uc_close(uc));
     OK(uc_close(uc2));
 }
+#endif
 
+// Test requires UC_ARCH_ARM.
+#ifdef UNICORN_HAS_ARM
 // Copy from test_arm.c but with new API.
 static void test_uc_ctl_arm_cpu(void)
 {
@@ -226,6 +231,7 @@ static void test_uc_ctl_arm_cpu(void)
 
     OK(uc_close(uc));
 }
+#endif
 
 static void test_uc_hook_cached_cb(uc_engine *uc, uint64_t addr, size_t size,
                                    void *user_data)
@@ -245,14 +251,21 @@ static void test_uc_hook_cached_uaf(void)
     uc_hook h;
     uint64_t count = 0;
 #ifndef _WIN32
-    void *callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE | PROT_EXEC,
+    // Apple Silicon does not allow RWX pages.
+    void *callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE,
                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    TEST_CHECK(callback != (void *)-1);
 #else
     void *callback = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT,
                                   PAGE_EXECUTE_READWRITE);
+    TEST_CHECK(callback != NULL);
 #endif
 
     memcpy(callback, (void *)test_uc_hook_cached_cb, 4096);
+
+#ifndef _WIN32
+    TEST_CHECK(mprotect(callback, 4096, PROT_READ | PROT_EXEC) == 0);
+#endif
 
     uc_common_setup(&uc, UC_ARCH_X86, UC_MODE_32, code, sizeof(code) - 1);
 
@@ -267,7 +280,15 @@ static void test_uc_hook_cached_uaf(void)
     // This will clear deleted hooks and SHOULD clear cache.
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
 
+#ifndef _WIN32
+    TEST_CHECK(mprotect(callback, 4096, PROT_READ | PROT_WRITE) == 0);
+#endif
+
     memset(callback, 0, 4096);
+
+#ifndef _WIN32
+    TEST_CHECK(mprotect(callback, 4096, PROT_READ | PROT_EXEC) == 0);
+#endif
 
     // Now hooks are deleted and thus this will trigger a UAF
     OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
@@ -289,7 +310,9 @@ TEST_LIST = {{"test_uc_ctl_mode", test_uc_ctl_mode},
              {"test_uc_ctl_time_out", test_uc_ctl_time_out},
              {"test_uc_ctl_exits", test_uc_ctl_exits},
              {"test_uc_ctl_tb_cache", test_uc_ctl_tb_cache},
+#ifdef UNICORN_HAS_ARM
              {"test_uc_ctl_change_page_size", test_uc_ctl_change_page_size},
              {"test_uc_ctl_arm_cpu", test_uc_ctl_arm_cpu},
+#endif
              {"test_uc_hook_cached_uaf", test_uc_hook_cached_uaf},
              {NULL, NULL}};

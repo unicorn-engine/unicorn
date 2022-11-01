@@ -1,45 +1,41 @@
-﻿using Gee.External.Capstone;
-using Gee.External.Capstone.X86;
+﻿using Gee.External.Capstone.X86;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace UnicornSamples
 {
     internal static class Utils
     {
-        public static Int64 ToInt(Byte[] val)
+        public static long ToInt(byte[] val)
         {
-            UInt64 res = 0;
+            ulong res = 0;
             for (var i = 0; i < val.Length; i++)
             {
                 var v = val[i] & 0xFF;
-                res += (UInt64)(v << (i * 8));
+                res += (ulong)(v << (i * 8));
             }
-            return (Int64)res;
+            return (long)res;
         }
 
-        public static Byte[] Int64ToBytes(Int64 intVal)
+        public static byte[] Int64ToBytes(long intVal)
         {
-            var res = new Byte[8];
-            var uval = (UInt64)intVal;
+            var res = new byte[8];
+            var uval = (ulong)intVal;
             for (var i = 0; i < res.Length; i++)
             {
-                res[i] = (Byte)(uval & 0xff);
+                res[i] = (byte)(uval & 0xff);
                 uval = uval >> 8;
             }
             return res;
         }
 
-        public static String Disassemble(CapstoneDisassembler<X86Instruction, X86Register, X86InstructionGroup, X86InstructionDetail> disassembler, Byte[] code)
+        public static string Disassemble(CapstoneX86Disassembler disassembler, byte[] code)
         {
             var sb = new StringBuilder();
-            var instructions = disassembler.DisassembleAll(code);
+            var instructions = disassembler.Disassemble(code);
             foreach (var instruction in instructions)
             {
-                sb.AppendFormat("{0} {1}{2}", instruction.Mnemonic, instruction.Operand, Environment.NewLine);
+                sb.AppendFormat($"{instruction.Mnemonic} {instruction.Operand}{Environment.NewLine}");
             }
             return sb.ToString().Trim();
         }

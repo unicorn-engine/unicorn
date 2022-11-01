@@ -1,10 +1,14 @@
+#include "acutest.h"
+#include "unicorn/unicorn.h"
 #include "unicorn_test.h"
+#include <stdbool.h>
+#include <stdio.h>
 
 const uint64_t code_start = 0x1000;
 const uint64_t code_len = 0x4000;
 
 static void uc_common_setup(uc_engine **uc, uc_arch arch, uc_mode mode,
-                            const char *code, uint64_t size, uc_cpu_arm cpu)
+                            const char *code, uint64_t size, uc_cpu_arm64 cpu)
 {
     OK(uc_open(arch, mode, uc));
     OK(uc_ctl_set_cpu_model(*uc, cpu));
@@ -133,7 +137,7 @@ static void test_arm64_v8_pac(void)
 
     OK(uc_mem_read(uc, 0x40000, (void *)&mem, 8));
 
-    TEST_CHECK(mem == r_x8);
+    TEST_CHECK(LEINT64(mem) == r_x8);
 
     OK(uc_close(uc));
 }
@@ -291,6 +295,83 @@ static void test_arm64_correct_address_in_long_jump_hook(void)
     OK(uc_close(uc));
 }
 
+static void test_arm64_block_sync_pc_cb(uc_engine *uc, uint64_t addr,
+                                        uint32_t size, void *data)
+{
+    uint64_t val = code_start;
+    bool first = *(bool *)data;
+    if (first) {
+        OK(uc_reg_write(uc, UC_ARM64_REG_PC, (void *)&val));
+        *(bool *)data = false;
+    }
+}
+
+static void test_arm64_block_sync_pc(void)
+{
+    uc_engine *uc;
+    // add x0, x0, #1234;bl t;t:mov x1, #5678;
+    const char code[] = "\x00\x48\x13\x91\x01\x00\x00\x94\xc1\xc5\x82\xd2";
+    uc_hook hk;
+    uint64_t x0;
+    bool data = true;
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM64_A72);
+    OK(uc_hook_add(uc, &hk, UC_HOOK_BLOCK, test_arm64_block_sync_pc_cb,
+                   (void *)&data, code_start + 8, code_start + 12));
+
+    x0 = 0;
+    OK(uc_reg_write(uc, UC_ARM64_REG_X0, (void *)&x0));
+    OK(uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, (void *)&x0));
+
+    TEST_CHECK(x0 == (1234 * 2));
+
+    OK(uc_hook_del(uc, hk));
+    OK(uc_close(uc));
+}
+
+static bool
+test_arm64_block_invalid_mem_read_write_sync_cb(uc_engine *uc, int type,
+                                                uint64_t address, int size,
+                                                int64_t value, void *user_data)
+{
+    return 0;
+}
+
+static void test_arm64_block_invalid_mem_read_write_sync(void)
+{
+    uc_engine *uc;
+    // mov x0, #1
+    // mov x1, #2
+    // ldr x0, [x1]
+    const char code[] = "\x20\x00\x80\xd2\x41\x00\x80\xd2\x20\x00\x40\xf9";
+    uint64_t r_pc, r_x0, r_x1;
+    uc_hook hk;
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM64_A72);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_READ,
+                   test_arm64_block_invalid_mem_read_write_sync_cb, NULL, 1,
+                   0));
+
+    uc_assert_err(
+        UC_ERR_READ_UNMAPPED,
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X1, &r_x1));
+
+    TEST_CHECK(r_pc == code_start + 8);
+    TEST_CHECK(r_x0 == 1);
+    TEST_CHECK(r_x1 == 2);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -301,4 +382,7 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
               test_arm64_correct_address_in_small_jump_hook},
              {"test_arm64_correct_address_in_long_jump_hook",
               test_arm64_correct_address_in_long_jump_hook},
+             {"test_arm64_block_sync_pc", test_arm64_block_sync_pc},
+             {"test_arm64_block_invalid_mem_read_write_sync",
+              test_arm64_block_invalid_mem_read_write_sync},
              {NULL, NULL}};

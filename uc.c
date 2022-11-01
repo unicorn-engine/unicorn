@@ -2,6 +2,7 @@
 /* By Nguyen Anh Quynh <aquynh@gmail.com>, 2015 */
 /* Modified for Unicorn Engine by Chen Huitao<chenhuitao@hfmrit.com>, 2020 */
 
+#include "unicorn/unicorn.h"
 #if defined(UNICORN_HAS_OSXKERNEL)
 #include <libkern/libkern.h>
 #else
@@ -753,12 +754,13 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
     }
     uc->nested_level++;
 
+    uint32_t begin_pc32 = READ_DWORD(begin);
     switch (uc->arch) {
     default:
         break;
 #ifdef UNICORN_HAS_M68K
     case UC_ARCH_M68K:
-        uc_reg_write(uc, UC_M68K_REG_PC, &begin);
+        uc_reg_write(uc, UC_M68K_REG_PC, &begin_pc32);
         break;
 #endif
 #ifdef UNICORN_HAS_X86
@@ -767,7 +769,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
         default:
             break;
         case UC_MODE_16: {
-            uint64_t ip;
+            uint16_t ip;
             uint16_t cs;
 
             uc_reg_read(uc, UC_X86_REG_CS, &cs);
@@ -777,7 +779,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
             break;
         }
         case UC_MODE_32:
-            uc_reg_write(uc, UC_X86_REG_EIP, &begin);
+            uc_reg_write(uc, UC_X86_REG_EIP, &begin_pc32);
             break;
         case UC_MODE_64:
             uc_reg_write(uc, UC_X86_REG_RIP, &begin);
@@ -787,7 +789,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 #endif
 #ifdef UNICORN_HAS_ARM
     case UC_ARCH_ARM:
-        uc_reg_write(uc, UC_ARM_REG_R15, &begin);
+        uc_reg_write(uc, UC_ARM_REG_R15, &begin_pc32);
         break;
 #endif
 #ifdef UNICORN_HAS_ARM64
@@ -798,7 +800,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 #ifdef UNICORN_HAS_MIPS
     case UC_ARCH_MIPS:
         // TODO: MIPS32/MIPS64/BIGENDIAN etc
-        uc_reg_write(uc, UC_MIPS_REG_PC, &begin);
+        uc_reg_write(uc, UC_MIPS_REG_PC, &begin_pc32);
         break;
 #endif
 #ifdef UNICORN_HAS_SPARC
@@ -809,12 +811,20 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 #endif
 #ifdef UNICORN_HAS_PPC
     case UC_ARCH_PPC:
-        uc_reg_write(uc, UC_PPC_REG_PC, &begin);
+        if (uc->mode & UC_MODE_PPC64) {
+            uc_reg_write(uc, UC_PPC_REG_PC, &begin);
+        } else {
+            uc_reg_write(uc, UC_PPC_REG_PC, &begin_pc32);
+        }
         break;
 #endif
 #ifdef UNICORN_HAS_RISCV
     case UC_ARCH_RISCV:
-        uc_reg_write(uc, UC_RISCV_REG_PC, &begin);
+        if (uc->mode & UC_MODE_RISCV64) {
+            uc_reg_write(uc, UC_RISCV_REG_PC, &begin);
+        } else {
+            uc_reg_write(uc, UC_RISCV_REG_PC, &begin_pc32);
+        }
         break;
 #endif
 #ifdef UNICORN_HAS_S390X
@@ -824,7 +834,7 @@ uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until,
 #endif
 #ifdef UNICORN_HAS_TRICORE
     case UC_ARCH_TRICORE:
-        uc_reg_write(uc, UC_TRICORE_REG_PC, &begin);
+        uc_reg_write(uc, UC_TRICORE_REG_PC, &begin_pc32);
         break;
 #endif
     }
@@ -1861,7 +1871,7 @@ uc_err uc_context_alloc(uc_engine *uc, uc_context **context)
 
     *_context = g_malloc(size);
     if (*_context) {
-        (*_context)->context_size = uc->cpu_context_size;
+        (*_context)->context_size = size - sizeof(uc_context);
         (*_context)->arch = uc->arch;
         (*_context)->mode = uc->mode;
         return UC_ERR_OK;
@@ -1881,8 +1891,13 @@ UNICORN_EXPORT
 size_t uc_context_size(uc_engine *uc)
 {
     UC_INIT(uc);
-    // return the total size of struct uc_context
-    return sizeof(uc_context) + uc->cpu_context_size;
+
+    if (!uc->context_size) {
+        // return the total size of struct uc_context
+        return sizeof(uc_context) + uc->cpu_context_size;
+    } else {
+        return sizeof(uc_context) + uc->context_size(uc);
+    }
 }
 
 UNICORN_EXPORT
@@ -1890,9 +1905,12 @@ uc_err uc_context_save(uc_engine *uc, uc_context *context)
 {
     UC_INIT(uc);
 
-    memcpy(context->data, uc->cpu->env_ptr, context->context_size);
-
-    return UC_ERR_OK;
+    if (!uc->context_save) {
+        memcpy(context->data, uc->cpu->env_ptr, context->context_size);
+        return UC_ERR_OK;
+    } else {
+        return uc->context_save(uc, context);
+    }
 }
 
 UNICORN_EXPORT
@@ -2064,9 +2082,12 @@ uc_err uc_context_restore(uc_engine *uc, uc_context *context)
 {
     UC_INIT(uc);
 
-    memcpy(uc->cpu->env_ptr, context->data, context->context_size);
-
-    return UC_ERR_OK;
+    if (!uc->context_restore) {
+        memcpy(uc->cpu->env_ptr, context->data, context->context_size);
+        return UC_ERR_OK;
+    } else {
+        return uc->context_restore(uc, context);
+    }
 }
 
 UNICORN_EXPORT
@@ -2240,7 +2261,7 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         } else {
             int model = va_arg(args, int);
 
-            if (model <= 0 || uc->init_done) {
+            if (model < 0 || uc->init_done) {
                 err = UC_ERR_ARG;
                 break;
             }

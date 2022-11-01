@@ -6264,6 +6264,14 @@ ppc_dcr_register \
 ppc_dcr_init \
 ppc_cpu_pir \
 ppc_irq_reset \
+store_booke_tsr \
+get_pteg_offset32 \
+ppc_booke_timers_init \
+ppc_hash32_handle_mmu_fault \
+gen_helper_store_booke_tsr \
+gen_helper_store_booke_tcr \
+store_booke_tcr \
+ppc_hash32_get_phys_page_debug \
 "
 
 ppc64_SYMBOLS=${ppc_SYMBOLS}
@@ -6284,6 +6292,7 @@ helper_fmsub \
 helper_pack \
 gen_intermediate_code \
 restore_state_to_opc \
+helper_uc_tricore_exit \
 "
 
 ARCHS="x86_64 arm aarch64 riscv32 riscv64 mips mipsel mips64 mips64el sparc sparc64 m68k ppc ppc64 s390x tricore"
