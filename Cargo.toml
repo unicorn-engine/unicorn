@@ -1,6 +1,6 @@
 [package]
 name = "unicorn-engine"
-version = "2.0.0"
+version = "2.0.1"
 authors = ["Ziqiao Kong", "Lukas Seidel"]
 documentation = "https://github.com/unicorn-engine/unicorn/wiki"
 edition = "2021"
