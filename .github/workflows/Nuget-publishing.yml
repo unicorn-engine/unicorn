@@ -27,7 +27,7 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_branch }}
 
-      - name: 'Download and extract artifacts'
+      - name: Download and extract artifacts
         uses: actions/github-script@v6
         with:
           script: |
@@ -125,7 +125,10 @@ jobs:
       - name: Authenticate to Github Packages
         run: dotnet nuget add source --username "${{ github.repository_owner }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
-      - name: Package .NET bindings
+      - name: List all native libraries
+        run: find ./runtimes -type f -print
+
+      - name: Package .NET distribution
         run: |
           [[ "${{ github.event.workflow_run.head_branch }}" == "master" ]] \
             && dotnet pack -c Release \
