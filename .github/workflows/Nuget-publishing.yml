@@ -102,12 +102,12 @@ jobs:
                artifact_id: artifact.id,
                archive_format: 'zip',
               });
-              fs.writeFileSync(`/tmp/${artifact.name}.zip`, Buffer.from(download.data));
+              fs.writeFileSync(`/home/runner/${artifact.name}.zip`, Buffer.from(download.data));
             
-              console.log(`Unzipping: /tmp/${artifact.name}.zip`);            
-              await exec.exec("unzip", [`/tmp/${artifact.name}.zip`]);
-              console.log(`Extracting library from 7z file to: ${destDir}${sourceFile}`);
-              await exec.exec("7z", ["e", `-o${destDir}`, `/tmp/${artifact.name}`, `${sourceDir}${sourceFile}`], options);
+              console.log(`Unzipping: /home/runner/${artifact.name}.zip`);            
+              await exec.exec("unzip", [`/home/runner/${artifact.name}.zip`]);
+              console.log(`Extracting library from 7z file to: ${destDir}/${sourceFile}`);
+              await exec.exec("7z", ["e", `-o${destDir}/`, `/home/runner/${artifact.name}`, `${sourceDir}${sourceFile}`], options);
               if (sourceFile != destFile) {
                 console.log(`Renaming library to: ${destFile}`);
                 await exec.exec("mv", [`${destDir}/${sourceFile}`, `${destDir}/${destFile}`], options);
