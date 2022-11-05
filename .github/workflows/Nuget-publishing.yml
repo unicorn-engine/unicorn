@@ -45,6 +45,7 @@ jobs:
             let sourceFile = "";
             let destDir = "";
             let destFile = "";
+            var output = {};
             for (const artifact of allArtifacts.data.artifacts) {
               switch(artifact.name) {
                 case 'ubuntu-cmake-aarch64.7z':
@@ -109,7 +110,9 @@ jobs:
               console.log(`Extracting library from 7z file to: ${destDir}/${sourceFile}`);
               await exec.exec("7z", ["e", `-o${destDir}/`, `/home/runner/${artifact.name}`, `${sourceDir}${sourceFile}`], options);
               if (sourceFile != destFile) {
-                console.log(`Renaming library to: ${destFile}`);
+                output = await exec.getExecOutput("ls", [destDir], options);
+                sourceFile = output.stdout.trim();
+                console.log(`Renaming ${sourceFile} to ${destFile}`);
                 await exec.exec("mv", [`${destDir}/${sourceFile}`, `${destDir}/${destFile}`], options);
               }
             }
