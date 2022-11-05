@@ -107,7 +107,7 @@ jobs:
               console.log(`Unzipping: /tmp/${artifact.name}.zip`);            
               await exec.exec("unzip", [`/tmp/${artifact.name}.zip`]);
               console.log(`Extracting library from 7z file to: ${destDir}${sourceFile}`);
-              await exec.exec("7z", ["e", "-o", destDir, `/tmp/${artifact.name}`, `${sourceDir}${sourceFile}`], options);
+              await exec.exec("7z", ["e", `-o${destDir}`, `/tmp/${artifact.name}`, `${sourceDir}${sourceFile}`], options);
               if (sourceFile != destFile) {
                 console.log(`Renaming library to: ${destFile}`);
                 await exec.exec("mv", [`${destDir}/${sourceFile}`, `${destDir}/${destFile}`], options);
