@@ -105,7 +105,7 @@ jobs:
               fs.writeFileSync(`/home/runner/${artifact.name}.zip`, Buffer.from(download.data));
             
               console.log(`Unzipping: /home/runner/${artifact.name}.zip`);            
-              await exec.exec("unzip", [`/home/runner/${artifact.name}.zip`]);
+              await exec.exec("unzip", [`/home/runner/${artifact.name}.zip`, "-d", "/home/runner/"]);
               console.log(`Extracting library from 7z file to: ${destDir}/${sourceFile}`);
               await exec.exec("7z", ["e", `-o${destDir}/`, `/home/runner/${artifact.name}`, `${sourceDir}${sourceFile}`], options);
               if (sourceFile != destFile) {
