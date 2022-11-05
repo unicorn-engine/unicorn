@@ -42,4 +42,8 @@
     <Compile Include="ConvertUtility.fs" />
     <Compile Include="Unicorn.fs" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="runtimes\**" PackagePath="runtimes" Visible="false" />
+  </ItemGroup>
 </Project>
