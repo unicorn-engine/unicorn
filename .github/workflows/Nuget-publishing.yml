@@ -1,18 +1,21 @@
 name: Nuget 📦 Distribution
 
 on:
-  push:
+  workflow_run:
+    workflows:
+      - "Build UC2"
+    types:
+      - completed
     branches:
       - dev
       - master
-    paths:
-      - "bindings/dotnet/UnicornEngine/**"
 
 permissions:
   packages: write
 
 jobs:
   publish:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     defaults:
@@ -21,10 +24,99 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.workflow_run.head_branch }}
+
+      - name: 'Download and extract artifacts'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            let fs = require('fs');
+            const options = {};
+            options.cwd = './bindings/dotnet/UnicornEngine';
+            
+            let allArtifacts = await github.rest.actions.listWorkflowRunArtifacts({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               run_id: context.payload.workflow_run.id,
+            });
+            
+            let sourceDir = "";
+            let sourceFile = "";
+            let destDir = "";
+            let destFile = "";
+            for (const artifact of allArtifacts.data.artifacts) {
+              switch(artifact.name) {
+                case 'ubuntu-cmake-aarch64.7z':
+                  sourceDir = "lib/";
+                  sourceFile = "libunicorn.so.*";
+                  destDir = "runtimes/linux-arm64/native";
+                  destFile = "libunicorn.so";
+                  break;
+                case 'ubuntu-cmake-ppc64le.7z':
+                  sourceDir = "lib/";
+                  sourceFile = "libunicorn.so.*";
+                  destDir = "runtimes/linux-ppc64le/native";
+                  destFile = "libunicorn.so";
+                  break;
+                case 'ubuntu-cmake-shared-x64.7z':
+                  sourceDir = "lib/";
+                  sourceFile = "libunicorn.so.*";
+                  destDir = "runtimes/linux-x64/native";
+                  destFile = "libunicorn.so";
+                  break;
+                case 'ubuntu-cmake-shared-x86.7z':
+                  sourceDir = "lib/";
+                  sourceFile = "libunicorn.so.*";
+                  destDir = "runtimes/linux-x86/native";
+                  destFile = "libunicorn.so";
+                  break;
+                case 'macos-cmake-shared-x64.7z':
+                  sourceDir = "lib/";
+                  sourceFile = "libunicorn.*.dylib";
+                  destDir = "runtimes/osx-x64/native";
+                  destFile = "libunicorn.dylib";
+                  break;
+                case 'windows_msvc64_shared.7z':
+                  sourceDir = "";
+                  sourceFile = "unicorn.dll";
+                  destDir = "runtimes/win-x64/native";
+                  destFile = "unicorn.dll";
+                  break;
+                case 'windows_msvc32_shared.7z':
+                  sourceDir = "";
+                  sourceFile = "unicorn.dll";
+                  destDir = "runtimes/win-x86/native";
+                  destFile = "unicorn.dll";
+                  break;
+                default:
+                  continue;
+              }
+              console.log(`Creating destination directory: ${destDir}`);
+              await exec.exec("mkdir", ["-p", destDir], options);
+            
+              console.log(`Downloading artifact: ${artifact.name}.zip`);            
+              let download = await github.rest.actions.downloadArtifact({
+               owner: context.repo.owner,
+               repo: context.repo.repo,
+               artifact_id: artifact.id,
+               archive_format: 'zip',
+              });
+              fs.writeFileSync(`/tmp/${artifact.name}.zip`, Buffer.from(download.data));
+            
+              console.log(`Unzipping: /tmp/${artifact.name}.zip`);            
+              await exec.exec("unzip", [`/tmp/${artifact.name}.zip`]);
+              console.log(`Extracting library from 7z file to: ${destDir}${sourceFile}`);
+              await exec.exec("7z", ["e", "-o", destDir, `/tmp/${artifact.name}`, `${sourceDir}${sourceFile}`], options);
+              if (sourceFile != destFile) {
+                console.log(`Renaming library to: ${destFile}`);
+                await exec.exec("mv", [`${destDir}/${sourceFile}`, `${destDir}/${destFile}`], options);
+              }
+            }
 
       - name: Get short sha
         id: git_short_sha
-        run: echo "result=$(git rev-parse --short "${{ github.sha }}")" >> $GITHUB_OUTPUT
+        run: echo "result=$(git rev-parse --short "${{ github.event.workflow_run.head_sha }}")" >> $GITHUB_OUTPUT
 
       - uses: actions/setup-dotnet@v3
         with:
@@ -35,7 +127,7 @@ jobs:
 
       - name: Package .NET bindings
         run: |
-          [[ "${{ github.ref_name }}" == "master" ]] \
+          [[ "${{ github.event.workflow_run.head_branch }}" == "master" ]] \
             && dotnet pack -c Release \
             || dotnet pack -c Release --version-suffix="${{ steps.git_short_sha.outputs.result }}"
 
