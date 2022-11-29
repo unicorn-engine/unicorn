@@ -85,6 +85,7 @@ SOURCES += shellcode.c
 SOURCES += mem_apis.c
 SOURCES += sample_x86_32_gdt_and_seg_regs.c
 SOURCES += sample_batch_reg.c
+SOURCES += sample_mmu.c
 endif
 ifneq (,$(findstring m68k,$(UNICORN_ARCHS)))
 SOURCES += sample_m68k.c
