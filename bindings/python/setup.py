@@ -29,7 +29,7 @@ SRC_DIR = os.path.join(ROOT_DIR, 'src')
 UC_DIR = SRC_DIR if os.path.exists(SRC_DIR) else os.path.join(ROOT_DIR, '../..')
 BUILD_DIR = os.path.join(UC_DIR, 'build_python')
 
-VERSION = "2.0.1"
+VERSION = "2.0.1.post1"
 
 if SYSTEM == 'darwin':
     LIBRARY_FILE = "libunicorn.2.dylib"
