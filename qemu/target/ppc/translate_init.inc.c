@@ -27,7 +27,6 @@
 #include "mmu-book3s-v3.h"
 #include "qemu/cutils.h"
 #include "fpu/softfloat.h"
-#include "disas/dis-asm.h"
 
 /*
  * Generic callbacks:
@@ -3456,7 +3455,6 @@ POWERPC_FAMILY(401)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_REAL;
     pcc->excp_model = POWERPC_EXCP_40x;
     pcc->bus_model = PPC_FLAGS_INPUT_401;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_BUS_CLK;
 }
@@ -3511,7 +3509,6 @@ POWERPC_FAMILY(401x2)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_4xx_Z;
     pcc->excp_model = POWERPC_EXCP_40x;
     pcc->bus_model = PPC_FLAGS_INPUT_401;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_BUS_CLK;
 }
@@ -3564,7 +3561,6 @@ POWERPC_FAMILY(401x3)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_4xx_Z;
     pcc->excp_model = POWERPC_EXCP_40x;
     pcc->bus_model = PPC_FLAGS_INPUT_401;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_BUS_CLK;
 }
@@ -3620,7 +3616,6 @@ POWERPC_FAMILY(IOP480)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_4xx_Z;
     pcc->excp_model = POWERPC_EXCP_40x;
     pcc->bus_model = PPC_FLAGS_INPUT_401;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_BUS_CLK;
 }
@@ -3666,7 +3661,6 @@ POWERPC_FAMILY(403)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_REAL;
     pcc->excp_model = POWERPC_EXCP_40x;
     pcc->bus_model = PPC_FLAGS_INPUT_401;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_PX |
                  POWERPC_FLAG_BUS_CLK;
 }
@@ -3730,7 +3724,6 @@ POWERPC_FAMILY(403GCX)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_4xx_Z;
     pcc->excp_model = POWERPC_EXCP_40x;
     pcc->bus_model = PPC_FLAGS_INPUT_401;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_PX |
                  POWERPC_FLAG_BUS_CLK;
 }
@@ -3794,7 +3787,6 @@ POWERPC_FAMILY(405)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_4xx;
     pcc->excp_model = POWERPC_EXCP_40x;
     pcc->bus_model = PPC_FLAGS_INPUT_405;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DWE |
                  POWERPC_FLAG_DE | POWERPC_FLAG_BUS_CLK;
 }
@@ -3896,7 +3888,6 @@ POWERPC_FAMILY(440EP)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_BOOKE;
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DWE |
                  POWERPC_FLAG_DE | POWERPC_FLAG_BUS_CLK;
 }
@@ -3933,7 +3924,6 @@ POWERPC_FAMILY(460EX)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_BOOKE;
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DWE |
                  POWERPC_FLAG_DE | POWERPC_FLAG_BUS_CLK;
 }
@@ -4015,7 +4005,6 @@ POWERPC_FAMILY(440GP)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_BOOKE;
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DWE |
                  POWERPC_FLAG_DE | POWERPC_FLAG_BUS_CLK;
 }
@@ -4098,7 +4087,6 @@ POWERPC_FAMILY(440x4)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_BOOKE;
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DWE |
                  POWERPC_FLAG_DE | POWERPC_FLAG_BUS_CLK;
 }
@@ -4198,7 +4186,6 @@ POWERPC_FAMILY(440x5)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_BOOKE;
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DWE |
                  POWERPC_FLAG_DE | POWERPC_FLAG_BUS_CLK;
 }
@@ -4235,7 +4222,6 @@ POWERPC_FAMILY(440x5wDFPU)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_BOOKE;
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
-    pcc->bfd_mach = bfd_mach_ppc_403;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DWE |
                  POWERPC_FLAG_DE | POWERPC_FLAG_BUS_CLK;
 }
@@ -4279,7 +4265,6 @@ POWERPC_FAMILY(MPC5xx)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_REAL;
     pcc->excp_model = POWERPC_EXCP_603;
     pcc->bus_model = PPC_FLAGS_INPUT_RCPU;
-    pcc->bfd_mach = bfd_mach_ppc_505;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_BUS_CLK;
 }
@@ -4323,7 +4308,6 @@ POWERPC_FAMILY(MPC8xx)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_MPC8xx;
     pcc->excp_model = POWERPC_EXCP_603;
     pcc->bus_model = PPC_FLAGS_INPUT_RCPU;
-    pcc->bfd_mach = bfd_mach_ppc_860;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_BUS_CLK;
 }
@@ -4404,7 +4388,6 @@ POWERPC_FAMILY(G2)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_6xx;
     pcc->excp_model = POWERPC_EXCP_G2;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_ec603e;
     pcc->flags = POWERPC_FLAG_TGPR | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_BUS_CLK;
 }
@@ -4485,7 +4468,6 @@ POWERPC_FAMILY(G2LE)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_6xx;
     pcc->excp_model = POWERPC_EXCP_G2;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_ec603e;
     pcc->flags = POWERPC_FLAG_TGPR | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_BUS_CLK;
 }
@@ -4637,7 +4619,6 @@ POWERPC_FAMILY(e200)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_BOOKE206;
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
-    pcc->bfd_mach = bfd_mach_ppc_860;
     pcc->flags = POWERPC_FLAG_SPE | POWERPC_FLAG_CE |
                  POWERPC_FLAG_UBLE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_BUS_CLK;
@@ -4737,7 +4718,6 @@ POWERPC_FAMILY(e300)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_6xx;
     pcc->excp_model = POWERPC_EXCP_603;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_603;
     pcc->flags = POWERPC_FLAG_TGPR | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_BUS_CLK;
 }
@@ -5024,7 +5004,6 @@ POWERPC_FAMILY(e500v1)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_BOOKE206;
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
-    pcc->bfd_mach = bfd_mach_ppc_860;
     pcc->flags = POWERPC_FLAG_SPE | POWERPC_FLAG_CE |
                  POWERPC_FLAG_UBLE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_BUS_CLK;
@@ -5071,7 +5050,6 @@ POWERPC_FAMILY(e500v2)(CPUClass *oc, void *data)
 #endif
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
-    pcc->bfd_mach = bfd_mach_ppc_860;
     pcc->flags = POWERPC_FLAG_SPE | POWERPC_FLAG_CE |
                  POWERPC_FLAG_UBLE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_BUS_CLK;
@@ -5116,7 +5094,6 @@ POWERPC_FAMILY(e500mc)(CPUClass *oc, void *data)
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
     /* FIXME: figure out the correct flag for e500mc */
-    pcc->bfd_mach = bfd_mach_ppc_e500;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -5164,7 +5141,6 @@ POWERPC_FAMILY(e5500)(CPUClass *oc, void *data)
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
     /* FIXME: figure out the correct flag for e5500 */
-    pcc->bfd_mach = bfd_mach_ppc_e500;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -5211,7 +5187,6 @@ POWERPC_FAMILY(e6500)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_BOOKE206;
     pcc->excp_model = POWERPC_EXCP_BOOKE;
     pcc->bus_model = PPC_FLAGS_INPUT_BookE;
-    pcc->bfd_mach = bfd_mach_ppc_e500;
     pcc->flags = POWERPC_FLAG_CE | POWERPC_FLAG_DE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK | POWERPC_FLAG_VRE;
 }
@@ -5287,7 +5262,6 @@ POWERPC_FAMILY(601)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_601;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_601;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_RTC_CLK;
 }
 
@@ -5328,7 +5302,6 @@ POWERPC_FAMILY(601v)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_601;
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_601;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_RTC_CLK;
 }
 
@@ -5396,7 +5369,6 @@ POWERPC_FAMILY(602)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_6xx;
     pcc->excp_model = POWERPC_EXCP_602;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_602;
     pcc->flags = POWERPC_FLAG_TGPR | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_BUS_CLK;
 }
@@ -5462,7 +5434,6 @@ POWERPC_FAMILY(603)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_6xx;
     pcc->excp_model = POWERPC_EXCP_603;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_603;
     pcc->flags = POWERPC_FLAG_TGPR | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_BUS_CLK;
 }
@@ -5528,7 +5499,6 @@ POWERPC_FAMILY(603E)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_6xx;
     pcc->excp_model = POWERPC_EXCP_603E;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_ec603e;
     pcc->flags = POWERPC_FLAG_TGPR | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_BUS_CLK;
 }
@@ -5589,7 +5559,6 @@ POWERPC_FAMILY(604)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_604;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_604;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -5670,7 +5639,6 @@ POWERPC_FAMILY(604E)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_604;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_604;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -5738,7 +5706,6 @@ POWERPC_FAMILY(740)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_7x0;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_750;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -5815,7 +5782,6 @@ POWERPC_FAMILY(750)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_7x0;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_750;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -6015,7 +5981,6 @@ POWERPC_FAMILY(750cl)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_7x0;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_750;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -6095,7 +6060,6 @@ POWERPC_FAMILY(750cx)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_7x0;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_750;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -6180,7 +6144,6 @@ POWERPC_FAMILY(750fx)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_7x0;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_750;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -6265,7 +6228,6 @@ POWERPC_FAMILY(750gx)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_7x0;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_750;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -6340,7 +6302,6 @@ POWERPC_FAMILY(745)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_6xx;
     pcc->excp_model = POWERPC_EXCP_7x5;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_750;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -6426,7 +6387,6 @@ POWERPC_FAMILY(755)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_6xx;
     pcc->excp_model = POWERPC_EXCP_7x5;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_750;
     pcc->flags = POWERPC_FLAG_SE | POWERPC_FLAG_BE |
                  POWERPC_FLAG_PMM | POWERPC_FLAG_BUS_CLK;
 }
@@ -6501,7 +6461,6 @@ POWERPC_FAMILY(7400)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_74xx;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_7400;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK;
@@ -6583,7 +6542,6 @@ POWERPC_FAMILY(7410)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_74xx;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_7400;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK;
@@ -6690,7 +6648,6 @@ POWERPC_FAMILY(7440)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_74xx;
     pcc->excp_model = POWERPC_EXCP_74xx;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_7400;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK;
@@ -6823,7 +6780,6 @@ POWERPC_FAMILY(7450)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_74xx;
     pcc->excp_model = POWERPC_EXCP_74xx;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_7400;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK;
@@ -6959,7 +6915,6 @@ POWERPC_FAMILY(7445)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_74xx;
     pcc->excp_model = POWERPC_EXCP_74xx;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_7400;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK;
@@ -7097,7 +7052,6 @@ POWERPC_FAMILY(7455)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_74xx;
     pcc->excp_model = POWERPC_EXCP_74xx;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_7400;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK;
@@ -7260,7 +7214,6 @@ POWERPC_FAMILY(7457)(CPUClass *oc, void *data)
     pcc->mmu_model = POWERPC_MMU_SOFT_74xx;
     pcc->excp_model = POWERPC_EXCP_74xx;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_7400;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK;
@@ -7400,7 +7353,6 @@ POWERPC_FAMILY(e600)(CPUClass *oc, void *data)
     pcc->handle_mmu_fault = ppc_hash32_handle_mmu_fault;
     pcc->excp_model = POWERPC_EXCP_74xx;
     pcc->bus_model = PPC_FLAGS_INPUT_6xx;
-    pcc->bfd_mach = bfd_mach_ppc_7400;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK;
@@ -8264,7 +8216,6 @@ POWERPC_FAMILY(970)(CPUClass *oc, void *data)
     pcc->hash64_opts = &ppc_hash64_opts_basic;
     pcc->excp_model = POWERPC_EXCP_970;
     pcc->bus_model = PPC_FLAGS_INPUT_970;
-    pcc->bfd_mach = bfd_mach_ppc64;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK;
@@ -8340,7 +8291,6 @@ POWERPC_FAMILY(POWER5P)(CPUClass *oc, void *data)
     pcc->lrg_decr_bits = 32;
     pcc->excp_model = POWERPC_EXCP_970;
     pcc->bus_model = PPC_FLAGS_INPUT_970;
-    pcc->bfd_mach = bfd_mach_ppc64;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK;
@@ -8481,7 +8431,6 @@ POWERPC_FAMILY(POWER7)(CPUClass *oc, void *data)
     pcc->lrg_decr_bits = 32;
     pcc->excp_model = POWERPC_EXCP_POWER7;
     pcc->bus_model = PPC_FLAGS_INPUT_POWER7;
-    pcc->bfd_mach = bfd_mach_ppc64;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK | POWERPC_FLAG_CFAR |
@@ -8656,7 +8605,6 @@ POWERPC_FAMILY(POWER8)(CPUClass *oc, void *data)
     pcc->n_host_threads = 8;
     pcc->excp_model = POWERPC_EXCP_POWER8;
     pcc->bus_model = PPC_FLAGS_INPUT_POWER7;
-    pcc->bfd_mach = bfd_mach_ppc64;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK | POWERPC_FLAG_CFAR |
@@ -8869,7 +8817,6 @@ POWERPC_FAMILY(POWER9)(CPUClass *oc, void *data)
     pcc->n_host_threads = 4;
     pcc->excp_model = POWERPC_EXCP_POWER9;
     pcc->bus_model = PPC_FLAGS_INPUT_POWER9;
-    pcc->bfd_mach = bfd_mach_ppc64;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK | POWERPC_FLAG_CFAR |
@@ -9080,7 +9027,6 @@ POWERPC_FAMILY(POWER10)(CPUClass *oc, void *data)
     pcc->lrg_decr_bits = 56;
     pcc->excp_model = POWERPC_EXCP_POWER9;
     pcc->bus_model = PPC_FLAGS_INPUT_POWER9;
-    pcc->bfd_mach = bfd_mach_ppc64;
     pcc->flags = POWERPC_FLAG_VRE | POWERPC_FLAG_SE |
                  POWERPC_FLAG_BE | POWERPC_FLAG_PMM |
                  POWERPC_FLAG_BUS_CLK | POWERPC_FLAG_CFAR |
@@ -10257,7 +10203,6 @@ static void ppc_cpu_instance_init(struct uc_struct *uc, CPUState *obj)
     env->insns_flags = pcc->insns_flags;
     env->insns_flags2 = pcc->insns_flags2;
     env->flags = pcc->flags;
-    env->bfd_mach = pcc->bfd_mach;
     env->check_pow = pcc->check_pow;
 
     /*
@@ -10290,74 +10235,12 @@ static bool ppc_pvr_match_default(PowerPCCPUClass *pcc, uint32_t pvr)
     return pcc->pvr == pvr;
 }
 
-#if 0
-static gchar *ppc_gdb_arch_name(CPUState *cs)
-{
-#if defined(TARGET_PPC64)
-    return g_strdup("powerpc:common64");
-#else
-    return g_strdup("powerpc:common");
-#endif
-}
-
-static void ppc_disas_set_info(CPUState *cs, disassemble_info *info)
-{
-    PowerPCCPU *cpu = POWERPC_CPU(cs);
-    CPUPPCState *env = &cpu->env;
-
-    if ((env->hflags >> MSR_LE) & 1) {
-        info->endian = BFD_ENDIAN_LITTLE;
-    }
-    info->mach = env->bfd_mach;
-    if (!env->bfd_mach) {
-#ifdef TARGET_PPC64
-        info->mach = bfd_mach_ppc64;
-#else
-        info->mach = bfd_mach_ppc;
-#endif
-    }
-    info->disassembler_options = (char *)"any";
-    info->print_insn = print_insn_ppc;
-
-    info->cap_arch = CS_ARCH_PPC;
-#ifdef TARGET_PPC64
-    info->cap_mode = CS_MODE_64;
-#endif
-}
-
-static Property ppc_cpu_properties[] = {
-    DEFINE_PROP_BOOL("pre-2.8-migration", PowerPCCPU, pre_2_8_migration, false),
-    DEFINE_PROP_BOOL("pre-2.10-migration", PowerPCCPU, pre_2_10_migration,
-                     false),
-    DEFINE_PROP_BOOL("pre-3.0-migration", PowerPCCPU, pre_3_0_migration,
-                     false),
-    DEFINE_PROP_END_OF_LIST(),
-};
-#endif
-
 static void ppc_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
 {
     PowerPCCPUClass *pcc = POWERPC_CPU_CLASS(oc);
     CPUClass *cc = CPU_CLASS(oc);
-#if 0
-    DeviceClass *dc = DEVICE_CLASS(oc);
-
-    device_class_set_parent_realize(dc, ppc_cpu_realize,
-                                    &pcc->parent_realize);
-    device_class_set_parent_unrealize(dc, ppc_cpu_unrealize,
-                                      &pcc->parent_unrealize);
-#endif
     pcc->pvr_match = ppc_pvr_match_default;
     pcc->interrupts_big_endian = ppc_cpu_interrupts_big_endian_always;
-#if 0
-    device_class_set_props(dc, ppc_cpu_properties);
-
-    device_class_set_parent_reset(dc, ppc_cpu_reset, &pcc->parent_reset);
-
-    cc->class_by_name = ppc_cpu_class_by_name;
-    pcc->parent_parse_features = cc->parse_features;
-    cc->parse_features = ppc_cpu_parse_featurestr;
-#endif
     /* parent class is CPUClass, parent_reset() is cpu_common_reset(). */
     pcc->parent_reset = cc->reset;
     /* overwrite the CPUClass->reset to arch reset: arm_cpu_reset(). */
@@ -10366,47 +10249,13 @@ static void ppc_cpu_class_init(struct uc_struct *uc, CPUClass *oc)
     cc->has_work = ppc_cpu_has_work;
     cc->do_interrupt = ppc_cpu_do_interrupt;
     cc->cpu_exec_interrupt = ppc_cpu_exec_interrupt;
-#if 0
-    cc->dump_state = ppc_cpu_dump_state;
-    cc->dump_statistics = ppc_cpu_dump_statistics;
-#endif
     cc->set_pc = ppc_cpu_set_pc;
-#if 0
-    cc->gdb_read_register = ppc_cpu_gdb_read_register;
-    cc->gdb_write_register = ppc_cpu_gdb_write_register;
-#endif
     cc->do_unaligned_access = ppc_cpu_do_unaligned_access;
     cc->get_phys_page_debug = ppc_cpu_get_phys_page_debug;
-#if 0
-    cc->vmsd = &vmstate_ppc_cpu;
-    cc->write_elf64_note = ppc64_cpu_write_elf64_note;
-    cc->write_elf32_note = ppc32_cpu_write_elf32_note;
-
-    cc->gdb_num_core_regs = 71;
-    cc->gdb_get_dynamic_xml = ppc_gdb_get_dynamic_xml;
-#ifdef USE_APPLE_GDB
-    cc->gdb_read_register = ppc_cpu_gdb_read_register_apple;
-    cc->gdb_write_register = ppc_cpu_gdb_write_register_apple;
-    cc->gdb_num_core_regs = 71 + 32;
-#endif
-
-    cc->gdb_arch_name = ppc_gdb_arch_name;
-#if defined(TARGET_PPC64)
-    cc->gdb_core_xml_file = "power64-core.xml";
-#else
-    cc->gdb_core_xml_file = "power-core.xml";
-#endif
-    cc->virtio_is_big_endian = ppc_cpu_is_big_endian;
-#endif
     cc->tcg_initialize = ppc_translate_init;
     cc->tlb_fill = ppc_cpu_tlb_fill;
     cc->cpu_exec_enter = ppc_cpu_exec_enter;
     cc->cpu_exec_exit = ppc_cpu_exec_exit;
-
-#if 0
-    cc->disas_set_info = ppc_disas_set_info;
-    dc->fw_name = "PowerPC,UNKNOWN";
-#endif
 }
 
 /* PowerPC CPU definitions from cpu-models.c*/
