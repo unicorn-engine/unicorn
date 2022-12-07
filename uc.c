@@ -2395,6 +2395,17 @@ uc_err uc_ctl(uc_engine *uc, uc_control_type control, ...)
         }
         break;
 
+    case UC_CTL_TCG_BUFFER_SIZE:
+        
+        if (rw == UC_CTL_IO_WRITE) {
+            unsigned long size = va_arg(args, unsigned long);
+            uc->tcg_buffer_size = size;
+        } else {
+            unsigned long *size = va_arg(args, unsigned long *);
+            *size = uc->tcg_buffer_size;
+        }
+        break;
+
     default:
         err = UC_ERR_ARG;
         break;

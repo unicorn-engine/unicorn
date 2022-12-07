@@ -315,6 +315,7 @@ struct uc_struct {
     /* qemu/exec-vary.c */
     TargetPageBits *init_target_page;
     int target_bits; // User defined page bits by uc_ctl
+    unsigned long tcg_buffer_size; // User defined tcg buffer size by uc_ctl
     int cpu_model;
     BounceBuffer bounce;                // qemu/cpu-exec.c
     volatile sig_atomic_t exit_request; // qemu/cpu-exec.c
