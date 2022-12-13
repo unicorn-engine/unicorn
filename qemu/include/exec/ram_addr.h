@@ -67,12 +67,6 @@ static inline bool cpu_physical_memory_all_dirty(ram_addr_t start,
     return false;
 }
 
-static inline bool cpu_physical_memory_get_dirty_flag(ram_addr_t addr,
-                                                      unsigned client)
-{
-    return cpu_physical_memory_get_dirty(addr, 1, client);
-}
-
 static inline bool cpu_physical_memory_is_clean(ram_addr_t addr)
 {
     return true;

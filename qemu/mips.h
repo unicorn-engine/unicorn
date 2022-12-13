@@ -787,6 +787,7 @@
 #define tlb_protect_code tlb_protect_code_mips
 #define tlb_unprotect_code tlb_unprotect_code_mips
 #define tlb_reset_dirty tlb_reset_dirty_mips
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_mips
 #define tlb_set_dirty tlb_set_dirty_mips
 #define tlb_set_page_with_attrs tlb_set_page_with_attrs_mips
 #define tlb_set_page tlb_set_page_mips

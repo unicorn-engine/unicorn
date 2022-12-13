@@ -787,6 +787,7 @@
 #define tlb_protect_code tlb_protect_code_sparc
 #define tlb_unprotect_code tlb_unprotect_code_sparc
 #define tlb_reset_dirty tlb_reset_dirty_sparc
+#define tlb_reset_dirty_by_vaddr tlb_reset_dirty_by_vaddr_sparc
 #define tlb_set_dirty tlb_set_dirty_sparc
 #define tlb_set_page_with_attrs tlb_set_page_with_attrs_sparc
 #define tlb_set_page tlb_set_page_sparc
