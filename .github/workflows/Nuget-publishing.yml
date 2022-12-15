@@ -416,7 +416,7 @@ jobs:
       - name: Package .NET distribution
         working-directory: bindings/dotnet/UnicornEngine
         run: |
-          [[ "${{ github.event.workflow_run.head_branch }}" == "master" ]] \
+          [[ "${{ github.ref_name }}" == "master" ]] \
             && dotnet pack -c Release \
             || dotnet pack -c Release --version-suffix="${{ steps.git_short_sha.outputs.result }}"
 
