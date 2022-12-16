@@ -1116,8 +1116,10 @@ static void memory_region_update_container_subregions(MemoryRegion *subregion)
     memory_region_transaction_begin();
 
     QTAILQ_FOREACH(other, &mr->subregions, subregions_link) {
-        QTAILQ_INSERT_BEFORE(other, subregion, subregions_link);
-        goto done;
+        if (subregion->priority >= other->priority) {
+            QTAILQ_INSERT_BEFORE(other, subregion, subregions_link);
+            goto done;
+        }
     }
     QTAILQ_INSERT_TAIL(&mr->subregions, subregion, subregions_link);
 
@@ -1141,6 +1143,16 @@ void memory_region_add_subregion(MemoryRegion *mr,
                                  hwaddr offset,
                                  MemoryRegion *subregion)
 {
+    subregion->priority = 0;
+    memory_region_add_subregion_common(mr, offset, subregion);
+}
+
+void memory_region_add_subregion_overlap(MemoryRegion *mr,
+                                         hwaddr offset,
+                                         MemoryRegion *subregion,
+                                         int priority)
+{
+    subregion->priority = priority;
     memory_region_add_subregion_common(mr, offset, subregion);
 }
 

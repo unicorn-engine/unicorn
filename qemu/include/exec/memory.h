@@ -1186,6 +1186,7 @@ MemoryRegion *memory_map(struct uc_struct *uc, hwaddr begin, size_t size, uint32
 MemoryRegion *memory_map_ptr(struct uc_struct *uc, hwaddr begin, size_t size, uint32_t perms, void *ptr);
  MemoryRegion *memory_map_io(struct uc_struct *uc, ram_addr_t begin, size_t size, uc_cb_mmio_read_t read_cb,
                              uc_cb_mmio_write_t write_cb, void *user_data_read, void *user_data_write);
+MemoryRegion *memory_cow(struct uc_struct *uc, MemoryRegion *parrent, hwaddr begin, size_t size);
 void memory_unmap(struct uc_struct *uc, MemoryRegion *mr);
 int memory_free(struct uc_struct *uc);
 
