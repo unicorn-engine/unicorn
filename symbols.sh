@@ -142,6 +142,7 @@ memory_region_from_host \
 memory_region_get_ram_addr \
 memory_region_add_subregion \
 memory_region_del_subregion \
+memory_region_add_subregion_overlap \
 memory_region_find \
 memory_listener_register \
 memory_listener_unregister \
