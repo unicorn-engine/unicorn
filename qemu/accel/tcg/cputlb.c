@@ -1460,7 +1460,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
     }
 
     paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-    mr = find_memory_region(uc, paddr);
+    mr = uc->memory_mapping(uc, paddr);
 
     // memory might be still unmapped while reading or fetching
     if (mr == NULL) {
@@ -1517,7 +1517,7 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 tlb_addr &= ~TLB_INVALID_MASK;
             }
             paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-            mr = find_memory_region(uc, paddr);
+            mr = uc->memory_mapping(uc, paddr);
             if (mr == NULL) {
                 uc->invalid_error = UC_ERR_MAP;
                 if (uc->nested_level > 0 && !uc->cpu->stopped) {
@@ -2053,7 +2053,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
 
     // Load the latest memory mapping.
     paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-    mr = find_memory_region(uc, paddr);
+    mr = uc->memory_mapping(uc, paddr);
 
     if (!uc->size_recur_mem) { // disabling write callback if in recursive call
         // Unicorn: callback on memory write
@@ -2107,7 +2107,7 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
                 tlb_addr = tlb_addr_write(entry) & ~TLB_INVALID_MASK;
             }
             paddr = entry->paddr | (addr & ~TARGET_PAGE_MASK);
-            mr = find_memory_region(uc, paddr);
+            mr = uc->memory_mapping(uc, paddr);
             if (mr == NULL) {
                 uc->invalid_error = UC_ERR_MAP;
                 cpu_exit(uc->cpu);

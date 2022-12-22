@@ -151,6 +151,7 @@
 #define address_space_destroy address_space_destroy_mips
 #define memory_region_init_ram memory_region_init_ram_mips
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_mips
+#define find_memory_mapping find_memory_mapping_mips
 #define exec_inline_op exec_inline_op_mips
 #define floatx80_default_nan floatx80_default_nan_mips
 #define float_raise float_raise_mips

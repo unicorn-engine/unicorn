@@ -151,6 +151,7 @@
 #define address_space_destroy address_space_destroy_mipsel
 #define memory_region_init_ram memory_region_init_ram_mipsel
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_mipsel
+#define find_memory_mapping find_memory_mapping_mipsel
 #define exec_inline_op exec_inline_op_mipsel
 #define floatx80_default_nan floatx80_default_nan_mipsel
 #define float_raise float_raise_mipsel

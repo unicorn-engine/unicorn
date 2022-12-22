@@ -179,8 +179,8 @@ void memory_unmap(struct uc_struct *uc, MemoryRegion *mr)
 
 int memory_free(struct uc_struct *uc)
 {
-    MemoryRegion *mr;
     int i;
+    MemoryRegion *mr;
 
     for (i = 0; i < uc->mapped_block_count; i++) {
         mr = uc->mapped_blocks[i];
