@@ -100,6 +100,8 @@ typedef MemoryRegion *(*uc_args_uc_ram_size_ptr_t)(struct uc_struct *,
 
 typedef void (*uc_mem_unmap_t)(struct uc_struct *, MemoryRegion *mr);
 
+typedef MemoryRegion *(*uc_memory_mapping_t)(struct uc_struct *, hwaddr addr);
+
 typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
 typedef int (*uc_cpus_init)(struct uc_struct *, const char *);
@@ -277,6 +279,7 @@ struct uc_struct {
     uc_args_uc_long_t tcg_exec_init;
     uc_args_uc_ram_size_t memory_map;
     uc_args_uc_ram_size_ptr_t memory_map_ptr;
+    uc_memory_mapping_t memory_mapping;
     uc_mem_unmap_t memory_unmap;
     uc_readonly_mem_t readonly_mem;
     uc_cpus_init cpus_init;
@@ -409,9 +412,6 @@ struct uc_context {
     uc_arch arch;        // the arch of this context
     char data[0];        // context
 };
-
-// check if this address is mapped in (via uc_mem_map())
-MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address);
 
 // We have to support 32bit system so we can't hold uint64_t on void*
 static inline void uc_add_exit(uc_engine *uc, uint64_t addr)

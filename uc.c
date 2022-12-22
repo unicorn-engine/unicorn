@@ -32,6 +32,7 @@
 #include "qemu-common.h"
 
 static void clear_deleted_hooks(uc_engine *uc);
+static MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address);
 
 static void *hook_insert(struct list *l, struct hook *h)
 {
@@ -1103,12 +1104,14 @@ static bool memory_overlap(struct uc_struct *uc, uint64_t begin, size_t size)
         return true;
 
     // not found
+
     return false;
 }
 
 // common setup/error checking shared between uc_mem_map and uc_mem_map_ptr
 static uc_err mem_map(uc_engine *uc, MemoryRegion *block)
 {
+
     MemoryRegion **regions;
     int pos;
 
@@ -1629,7 +1632,7 @@ uc_err uc_mem_unmap(struct uc_struct *uc, uint64_t address, size_t size)
 }
 
 // find the memory region of this address
-MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address)
+static MemoryRegion *find_memory_region(struct uc_struct *uc, uint64_t address)
 {
     unsigned int i;
 

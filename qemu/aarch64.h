@@ -151,6 +151,7 @@
 #define address_space_destroy address_space_destroy_aarch64
 #define memory_region_init_ram memory_region_init_ram_aarch64
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_aarch64
+#define find_memory_mapping find_memory_mapping_aarch64
 #define exec_inline_op exec_inline_op_aarch64
 #define floatx80_default_nan floatx80_default_nan_aarch64
 #define float_raise float_raise_aarch64

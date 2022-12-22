@@ -151,6 +151,7 @@
 #define address_space_destroy address_space_destroy_sparc
 #define memory_region_init_ram memory_region_init_ram_sparc
 #define memory_mapping_list_add_merge_sorted memory_mapping_list_add_merge_sorted_sparc
+#define find_memory_mapping find_memory_mapping_sparc
 #define exec_inline_op exec_inline_op_sparc
 #define floatx80_default_nan floatx80_default_nan_sparc
 #define float_raise float_raise_sparc

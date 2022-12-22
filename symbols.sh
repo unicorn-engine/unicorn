@@ -151,6 +151,7 @@ address_space_init \
 address_space_destroy \
 memory_region_init_ram \
 memory_mapping_list_add_merge_sorted \
+find_memory_mapping \
 exec_inline_op \
 floatx80_default_nan \
 float_raise \
