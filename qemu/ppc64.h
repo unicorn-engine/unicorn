@@ -123,6 +123,7 @@
 #define memory_map memory_map_ppc64
 #define memory_map_io memory_map_io_ppc64
 #define memory_map_ptr memory_map_ptr_ppc64
+#define memory_cow memory_cow_ppc64
 #define memory_unmap memory_unmap_ppc64
 #define memory_free memory_free_ppc64
 #define flatview_unref flatview_unref_ppc64
@@ -144,6 +145,7 @@
 #define memory_region_del_subregion memory_region_del_subregion_ppc64
 #define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_ppc64
 #define memory_region_find memory_region_find_ppc64
+#define memory_region_filter_subregions memory_region_filter_subregions_ppc64
 #define memory_listener_register memory_listener_register_ppc64
 #define memory_listener_unregister memory_listener_unregister_ppc64
 #define address_space_remove_listeners address_space_remove_listeners_ppc64

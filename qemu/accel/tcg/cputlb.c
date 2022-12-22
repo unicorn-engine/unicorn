@@ -2155,6 +2155,22 @@ store_helper(CPUArchState *env, target_ulong addr, uint64_t val,
         }
     }
 
+    if (uc->snapshot_level && mr->ram && mr->priority < uc->snapshot_level) {
+        mr = memory_cow(uc, mr, addr & TARGET_PAGE_MASK, TARGET_PAGE_SIZE);
+        if (!mr) {
+            uc->invalid_addr = paddr;
+            uc->invalid_error = UC_ERR_NOMEM;
+            cpu_exit(uc->cpu);
+            return;
+        }
+        /* refill tlb after CoW */
+        tlb_fill(env_cpu(env), paddr, size, MMU_DATA_STORE,
+                 mmu_idx, retaddr);
+        index = tlb_index(env, mmu_idx, addr);
+        entry = tlb_entry(env, mmu_idx, addr);
+        tlb_addr = tlb_addr_write(entry);
+    }
+
     /* Handle anything that isn't just a straight memory access.  */
     if (unlikely(tlb_addr & ~TARGET_PAGE_MASK)) {
         CPUIOTLBEntry *iotlbentry;

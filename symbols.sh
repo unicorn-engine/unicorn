@@ -123,6 +123,7 @@ cpu_inl \
 memory_map \
 memory_map_io \
 memory_map_ptr \
+memory_cow \
 memory_unmap \
 memory_free \
 flatview_unref \
@@ -144,6 +145,7 @@ memory_region_add_subregion \
 memory_region_del_subregion \
 memory_region_add_subregion_overlap \
 memory_region_find \
+memory_region_filter_subregions \
 memory_listener_register \
 memory_listener_unregister \
 address_space_remove_listeners \

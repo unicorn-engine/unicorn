@@ -123,6 +123,7 @@
 #define memory_map memory_map_riscv32
 #define memory_map_io memory_map_io_riscv32
 #define memory_map_ptr memory_map_ptr_riscv32
+#define memory_cow memory_cow_riscv32
 #define memory_unmap memory_unmap_riscv32
 #define memory_free memory_free_riscv32
 #define flatview_unref flatview_unref_riscv32
@@ -144,6 +145,7 @@
 #define memory_region_del_subregion memory_region_del_subregion_riscv32
 #define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_riscv32
 #define memory_region_find memory_region_find_riscv32
+#define memory_region_filter_subregions memory_region_filter_subregions_riscv32
 #define memory_listener_register memory_listener_register_riscv32
 #define memory_listener_unregister memory_listener_unregister_riscv32
 #define address_space_remove_listeners address_space_remove_listeners_riscv32

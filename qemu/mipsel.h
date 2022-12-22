@@ -123,6 +123,7 @@
 #define memory_map memory_map_mipsel
 #define memory_map_io memory_map_io_mipsel
 #define memory_map_ptr memory_map_ptr_mipsel
+#define memory_cow memory_cow_mipsel
 #define memory_unmap memory_unmap_mipsel
 #define memory_free memory_free_mipsel
 #define flatview_unref flatview_unref_mipsel
@@ -144,6 +145,7 @@
 #define memory_region_del_subregion memory_region_del_subregion_mipsel
 #define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_mipsel
 #define memory_region_find memory_region_find_mipsel
+#define memory_region_filter_subregions memory_region_filter_subregions_mipsel
 #define memory_listener_register memory_listener_register_mipsel
 #define memory_listener_unregister memory_listener_unregister_mipsel
 #define address_space_remove_listeners address_space_remove_listeners_mipsel

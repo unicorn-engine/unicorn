@@ -123,6 +123,7 @@
 #define memory_map memory_map_s390x
 #define memory_map_io memory_map_io_s390x
 #define memory_map_ptr memory_map_ptr_s390x
+#define memory_cow memory_cow_s390x
 #define memory_unmap memory_unmap_s390x
 #define memory_free memory_free_s390x
 #define flatview_unref flatview_unref_s390x
@@ -144,6 +145,7 @@
 #define memory_region_del_subregion memory_region_del_subregion_s390x
 #define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_s390x
 #define memory_region_find memory_region_find_s390x
+#define memory_region_filter_subregions memory_region_filter_subregions_s390x
 #define memory_listener_register memory_listener_register_s390x
 #define memory_listener_unregister memory_listener_unregister_s390x
 #define address_space_remove_listeners address_space_remove_listeners_s390x

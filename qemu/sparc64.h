@@ -123,6 +123,7 @@
 #define memory_map memory_map_sparc64
 #define memory_map_io memory_map_io_sparc64
 #define memory_map_ptr memory_map_ptr_sparc64
+#define memory_cow memory_cow_sparc64
 #define memory_unmap memory_unmap_sparc64
 #define memory_free memory_free_sparc64
 #define flatview_unref flatview_unref_sparc64
@@ -144,6 +145,7 @@
 #define memory_region_del_subregion memory_region_del_subregion_sparc64
 #define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_sparc64
 #define memory_region_find memory_region_find_sparc64
+#define memory_region_filter_subregions memory_region_filter_subregions_sparc64
 #define memory_listener_register memory_listener_register_sparc64
 #define memory_listener_unregister memory_listener_unregister_sparc64
 #define address_space_remove_listeners address_space_remove_listeners_sparc64
