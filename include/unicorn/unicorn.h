@@ -1350,6 +1350,12 @@ size_t uc_context_size(uc_engine *uc);
 UNICORN_EXPORT
 uc_err uc_context_free(uc_context *context);
 
+UNICORN_EXPORT
+uc_err uc_snapshot(uc_engine *uc);
+
+UNICORN_EXPORT
+uc_err uc_restore_latest_snapshot(uc_engine *uc);
+
 #ifdef __cplusplus
 }
 #endif

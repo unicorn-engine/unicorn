@@ -80,6 +80,10 @@ typedef bool (*uc_write_mem_t)(AddressSpace *as, hwaddr addr,
 typedef bool (*uc_read_mem_t)(AddressSpace *as, hwaddr addr, uint8_t *buf,
                               int len);
 
+typedef MemoryRegion* (*uc_mem_cow_t)(struct uc_struct *uc,
+                                      MemoryRegion *current, hwaddr begin,
+                                      size_t size);
+
 typedef void (*uc_args_void_t)(void *);
 
 typedef void (*uc_args_uc_t)(struct uc_struct *);
@@ -101,6 +105,8 @@ typedef MemoryRegion *(*uc_args_uc_ram_size_ptr_t)(struct uc_struct *,
 typedef void (*uc_mem_unmap_t)(struct uc_struct *, MemoryRegion *mr);
 
 typedef MemoryRegion *(*uc_memory_mapping_t)(struct uc_struct *, hwaddr addr);
+
+typedef void (*uc_memory_filter_t)(MemoryRegion *, int32_t);
 
 typedef void (*uc_readonly_mem_t)(MemoryRegion *mr, bool readonly);
 
@@ -267,6 +273,7 @@ struct uc_struct {
 
     uc_write_mem_t write_mem;
     uc_read_mem_t read_mem;
+    uc_mem_cow_t memory_cow;
     uc_args_void_t release;  // release resource when uc_close()
     uc_args_uc_u64_t set_pc; // set PC for tracecode
     uc_get_pc_t get_pc;
@@ -280,6 +287,7 @@ struct uc_struct {
     uc_args_uc_ram_size_t memory_map;
     uc_args_uc_ram_size_ptr_t memory_map_ptr;
     uc_memory_mapping_t memory_mapping;
+    uc_memory_filter_t memory_filter_subregions;
     uc_mem_unmap_t memory_unmap;
     uc_readonly_mem_t readonly_mem;
     uc_cpus_init cpus_init;
@@ -403,6 +411,7 @@ struct uc_struct {
     PVOID seh_handle;
     void *seh_closure;
 #endif
+    int32_t snapshot_level;
 };
 
 // Metadata stub for the variable-size cpu context used with uc_context_*()

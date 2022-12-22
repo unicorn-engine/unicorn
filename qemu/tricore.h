@@ -123,6 +123,7 @@
 #define memory_map memory_map_tricore
 #define memory_map_io memory_map_io_tricore
 #define memory_map_ptr memory_map_ptr_tricore
+#define memory_cow memory_cow_tricore
 #define memory_unmap memory_unmap_tricore
 #define memory_free memory_free_tricore
 #define flatview_unref flatview_unref_tricore
@@ -144,6 +145,7 @@
 #define memory_region_del_subregion memory_region_del_subregion_tricore
 #define memory_region_add_subregion_overlap memory_region_add_subregion_overlap_tricore
 #define memory_region_find memory_region_find_tricore
+#define memory_region_filter_subregions memory_region_filter_subregions_tricore
 #define memory_listener_register memory_listener_register_tricore
 #define memory_listener_unregister memory_listener_unregister_tricore
 #define address_space_remove_listeners address_space_remove_listeners_tricore
