@@ -422,7 +422,7 @@ static void test_x86_x87_fnstenv(void)
 
     OK(uc_mem_read(uc, base, fnstenv, sizeof(fnstenv)));
     // But update FCS:FIP for fld.
-    TEST_CHECK(fnstenv[3] == last_eip);
+    TEST_CHECK(LEINT32(fnstenv[3]) == last_eip);
 
     OK(uc_close(uc));
 }
@@ -530,7 +530,7 @@ static void test_x86_smc_xor(void)
 
     OK(uc_mem_read(uc, code_start + 3, (void *)&result, 4));
 
-    TEST_CHECK(result == (0x3ea98b13 ^ 0xbc4177e6));
+    TEST_CHECK(LEINT32(result) == (0x3ea98b13 ^ 0xbc4177e6));
 
     OK(uc_close(uc));
 }
@@ -562,7 +562,7 @@ static void test_x86_mmio_uc_mem_rw_write_callback(uc_engine *uc,
 static void test_x86_mmio_uc_mem_rw(void)
 {
     uc_engine *uc;
-    int data = 0xdeadbeef;
+    int data = LEINT32(0xdeadbeef);
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
 
@@ -572,7 +572,7 @@ static void test_x86_mmio_uc_mem_rw(void)
     OK(uc_mem_write(uc, 0x20004, (void *)&data, 4));
     OK(uc_mem_read(uc, 0x20008, (void *)&data, 4));
 
-    TEST_CHECK(data == 0x19260817);
+    TEST_CHECK(LEINT32(data) == 0x19260817);
 
     OK(uc_close(uc));
 }
@@ -1109,7 +1109,6 @@ static void test_x86_correct_address_in_long_jump_hook(void)
 static void test_x86_invalid_vex_l(void)
 {
     uc_engine *uc;
-    uc_err err;
 
     /* vmovdqu ymm1, [rcx] */
     char code[] = {'\xC5', '\xFE', '\x6F', '\x09'};
@@ -1125,7 +1124,10 @@ static void test_x86_invalid_vex_l(void)
     OK(uc_close(uc));
 }
 
-#ifndef TARGET_READ_INLINED
+// AARCH64 inline the read while s390x won't split the access. Though not tested on other hosts
+// but we restrict a bit more.
+#if !defined(TARGET_READ_INLINED) && defined(BOOST_LITTLE_ENDIAN)
+
 struct writelog_t {
     uint32_t addr, size;
 };
@@ -1153,7 +1155,7 @@ static void test_x86_unaligned_access(void)
     uc_hook hook;
     // mov dword ptr [0x200001], eax; mov eax, dword ptr [0x200001]
     char code[] = "\xa3\x01\x00\x20\x00\xa1\x01\x00\x20\x00";
-    uint32_t r_eax = 0x41424344;
+    uint32_t r_eax = LEINT32(0x41424344);
     struct writelog_t write_log[10];
     struct writelog_t read_log[10];
     memset(write_log, 0, sizeof(write_log));
@@ -1265,7 +1267,7 @@ TEST_LIST = {
     {"test_x86_correct_address_in_long_jump_hook",
      test_x86_correct_address_in_long_jump_hook},
     {"test_x86_invalid_vex_l", test_x86_invalid_vex_l},
-#ifndef TARGET_READ_INLINED
+#if !defined(TARGET_READ_INLINED) && defined(BOOST_LITTLE_ENDIAN)
     {"test_x86_unaligned_access", test_x86_unaligned_access},
 #endif
     {"test_x86_lazy_mapping", test_x86_lazy_mapping},

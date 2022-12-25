@@ -110,14 +110,14 @@ static void test_uc_ctl_exits(void)
     r_eax = 0;
     r_ebx = 0;
     OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_write(uc, UC_X86_REG_EAX, &r_ebx));
+    OK(uc_reg_write(uc, UC_X86_REG_EBX, &r_ebx));
 
     // Run two times.
     OK(uc_emu_start(uc, code_start, 0, 0, 0));
     OK(uc_emu_start(uc, code_start, 0, 0, 0));
 
     OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_eax));
-    OK(uc_reg_read(uc, UC_X86_REG_EAX, &r_ebx));
+    OK(uc_reg_read(uc, UC_X86_REG_EBX, &r_ebx));
 
     TEST_CHECK(r_eax == 1);
     TEST_CHECK(r_ebx == 1);
@@ -254,7 +254,7 @@ static void test_uc_hook_cached_uaf(void)
     // Apple Silicon does not allow RWX pages.
     void *callback = mmap(NULL, 4096, PROT_READ | PROT_WRITE,
                           MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-    TEST_CHECK(callback != (void*)-1);
+    TEST_CHECK(callback != (void *)-1);
 #else
     void *callback = VirtualAlloc(NULL, 4096, MEM_RESERVE | MEM_COMMIT,
                                   PAGE_EXECUTE_READWRITE);

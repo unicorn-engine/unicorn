@@ -9,7 +9,30 @@ Optimize your program with less instrumentation, e.g. by using `UC_HOOK_BLOCK` i
 
 ## Why do I get a wrong PC after emulation stops?
 
-PC is only guaranteed to be correct if you install `UC_HOOK_CODE`. This is due to the fact that updating PC is a big performance overhead during emulation.
+Updating PC is a very large overhead (10x slower in the worst case, see FAQ above) for emulation so the PC sync guarantee is explained below in several cases:
+
+- A `UC_HOOK_CODE` hook is installed. In this case, the PC is sync-ed _everywhere_ within the effective range of the hook. However, on some architectures, the PC might by sync-ed all the time if the hook is installed in any range. Note using `count` in `uc_emu_start` implies installing a `UC_HOOK_CODE` hook.
+- A `UC_HOOK_MEM_READ` or `UC_HOOK_MEM_WRITE` hook is installed. In this case, the PC is sync-ed exactly before any read/write events within the effective range of the hook.
+- Emulation (`uc_emu_start`) terminates without any exception. In this case, the PC will point to the next instruction.
+- No hook mentioned above is installed and emulation terminates with exceptions. In this case, the PC is sync-ed at the basic block boundary, in other words, the first instruction of the basic block where the exception happens.
+
+Below is an example:
+
+```
+mov x0, #1 <--- the PC will be here
+mov x1, #2
+ldr x0, [x1] <--- exception here
+```
+
+If `ldr x0, [x1]` fails with memory exceptions, the PC will be left at the beginning of the basic block, in this case `mov x0, #1`.
+
+However, if a `UC_HOOK_MEM_READ` hook is installed, the PC will be sync-ed:
+
+```
+mov x0, #1 
+mov x1, #2
+ldr x0, [x1] <--- exception here and PC sync-ed here
+```
 
 ## I get an “Unhandled CPU Exception”, why?
 
@@ -21,12 +44,13 @@ Currently, only a small subset of the instructions can be instrumented.
 
 On x86, all available instructions are: `in` `out` `syscall` `sysenter` `cpuid`.
 
-## Emulating some instructions gives an error, what should I do?
+## Emulating some instructions gives an error like "Invalid Instruction", what should I do?
 
 1. Some instructions are not enabled by default on some architectures. For example, you have to setup CSR on RISC-V or VFP on ARM before emulating floating-point instructions. Refer to the corresponding manual to check if you leave out possible switches in special registers.
-2. If you are on ARM, please check whether you are emulating a THUMB instruction. If so, please use `UC_MODE_THUMB` and make sure the starting address is odd. 
-3. If either is not the case, it might be some newer instruction sets that qemu5 doesn’t support.
-4. Note some instruction sets are not implemented by QEMU.
+2. Different CPU models support different sets of instructions. This is especially observed on ARM CPUs. For example, for `THUMB2` big-endian instructions, consider setting CPU model to `cortex-r5` or `arm_max`. See [#1725](https://github.com/unicorn-engine/unicorn/issues/1725) and [#1724](https://github.com/unicorn-engine/unicorn/issues/1724).
+3. If you are on ARM, please check whether you are emulating a THUMB instruction. If so, please use `UC_MODE_THUMB` and make sure the starting address is odd. 
+4. If it's not the cases above, it might be some newer instruction sets that qemu5 doesn’t support.
+5. Note some instruction sets are not implemented by the latest QEMU.
 
 If you are still using Unicorn1, please upgrade to Unicorn2 for better support.
 

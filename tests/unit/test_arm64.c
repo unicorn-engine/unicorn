@@ -137,7 +137,7 @@ static void test_arm64_v8_pac(void)
 
     OK(uc_mem_read(uc, 0x40000, (void *)&mem, 8));
 
-    TEST_CHECK(mem == r_x8);
+    TEST_CHECK(LEINT64(mem) == r_x8);
 
     OK(uc_close(uc));
 }
@@ -332,6 +332,46 @@ static void test_arm64_block_sync_pc(void)
     OK(uc_close(uc));
 }
 
+static bool
+test_arm64_block_invalid_mem_read_write_sync_cb(uc_engine *uc, int type,
+                                                uint64_t address, int size,
+                                                int64_t value, void *user_data)
+{
+    return 0;
+}
+
+static void test_arm64_block_invalid_mem_read_write_sync(void)
+{
+    uc_engine *uc;
+    // mov x0, #1
+    // mov x1, #2
+    // ldr x0, [x1]
+    const char code[] = "\x20\x00\x80\xd2\x41\x00\x80\xd2\x20\x00\x40\xf9";
+    uint64_t r_pc, r_x0, r_x1;
+    uc_hook hk;
+
+    uc_common_setup(&uc, UC_ARCH_ARM64, UC_MODE_ARM, code, sizeof(code) - 1,
+                    UC_CPU_ARM64_A72);
+
+    OK(uc_hook_add(uc, &hk, UC_HOOK_MEM_READ,
+                   test_arm64_block_invalid_mem_read_write_sync_cb, NULL, 1,
+                   0));
+
+    uc_assert_err(
+        UC_ERR_READ_UNMAPPED,
+        uc_emu_start(uc, code_start, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM64_REG_PC, &r_pc));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X0, &r_x0));
+    OK(uc_reg_read(uc, UC_ARM64_REG_X1, &r_x1));
+
+    TEST_CHECK(r_pc == code_start + 8);
+    TEST_CHECK(r_x0 == 1);
+    TEST_CHECK(r_x1 == 2);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_code_patching", test_arm64_code_patching},
              {"test_arm64_code_patching_count", test_arm64_code_patching_count},
@@ -343,4 +383,6 @@ TEST_LIST = {{"test_arm64_until", test_arm64_until},
              {"test_arm64_correct_address_in_long_jump_hook",
               test_arm64_correct_address_in_long_jump_hook},
              {"test_arm64_block_sync_pc", test_arm64_block_sync_pc},
+             {"test_arm64_block_invalid_mem_read_write_sync",
+              test_arm64_block_invalid_mem_read_write_sync},
              {NULL, NULL}};

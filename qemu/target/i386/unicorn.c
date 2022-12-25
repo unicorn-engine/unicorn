@@ -289,9 +289,9 @@ static void reg_read(CPUX86State *env, unsigned int regid, void *value,
     case UC_X86_REG_XMM6:
     case UC_X86_REG_XMM7: {
         float64 *dst = (float64 *)value;
-        XMMReg *reg = (XMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
-        dst[0] = reg->_d[0];
-        dst[1] = reg->_d[1];
+        ZMMReg *reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
+        dst[0] = reg->ZMM_Q(0);
+        dst[1] = reg->ZMM_Q(1);
         return;
     }
     case UC_X86_REG_ST0:
@@ -323,10 +323,10 @@ static void reg_read(CPUX86State *env, unsigned int regid, void *value,
     case UC_X86_REG_YMM14:
     case UC_X86_REG_YMM15: {
         float64 *dst = (float64 *)value;
-        XMMReg *lo_reg = (XMMReg *)&env->xmm_regs[regid - UC_X86_REG_YMM0];
+        ZMMReg *lo_reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_YMM0];
         XMMReg *hi_reg = &env->ymmh_regs[regid - UC_X86_REG_YMM0];
-        dst[0] = lo_reg->_d[0];
-        dst[1] = lo_reg->_d[1];
+        dst[0] = lo_reg->ZMM_Q(0);
+        dst[1] = lo_reg->ZMM_Q(1);
         dst[2] = hi_reg->_d[0];
         dst[3] = hi_reg->_d[1];
         return;
@@ -828,9 +828,9 @@ static void reg_read(CPUX86State *env, unsigned int regid, void *value,
         case UC_X86_REG_XMM14:
         case UC_X86_REG_XMM15: {
             float64 *dst = (float64 *)value;
-            XMMReg *reg = (XMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
-            dst[0] = reg->_d[0];
-            dst[1] = reg->_d[1];
+            ZMMReg *reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
+            dst[0] = reg->ZMM_Q(0);
+            dst[1] = reg->ZMM_Q(1);
             break;
         }
         case UC_X86_REG_FS_BASE:
@@ -896,9 +896,9 @@ static int reg_write(CPUX86State *env, unsigned int regid, const void *value,
     case UC_X86_REG_XMM6:
     case UC_X86_REG_XMM7: {
         float64 *src = (float64 *)value;
-        XMMReg *reg = (XMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
-        reg->_d[0] = src[0];
-        reg->_d[1] = src[1];
+        ZMMReg *reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
+        reg->ZMM_Q(0) = src[0];
+        reg->ZMM_Q(1) = src[1];
         return 0;
     }
     case UC_X86_REG_ST0:
@@ -930,10 +930,12 @@ static int reg_write(CPUX86State *env, unsigned int regid, const void *value,
     case UC_X86_REG_YMM14:
     case UC_X86_REG_YMM15: {
         float64 *src = (float64 *)value;
-        XMMReg *lo_reg = (XMMReg *)&env->xmm_regs[regid - UC_X86_REG_YMM0];
+        ZMMReg *lo_reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_YMM0];
         XMMReg *hi_reg = &env->ymmh_regs[regid - UC_X86_REG_YMM0];
-        lo_reg->_d[0] = src[0];
-        lo_reg->_d[1] = src[1];
+        lo_reg->ZMM_Q(0) = src[0];
+        lo_reg->ZMM_Q(1) = src[1];
+        // YMM is not supported by QEMU at all
+        // As of qemu 5.0.1, ymmh_regs is nowhere used.
         hi_reg->_d[0] = src[2];
         hi_reg->_d[1] = src[3];
         return 0;
@@ -1471,9 +1473,9 @@ static int reg_write(CPUX86State *env, unsigned int regid, const void *value,
         case UC_X86_REG_XMM14:
         case UC_X86_REG_XMM15: {
             float64 *src = (float64 *)value;
-            XMMReg *reg = (XMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
-            reg->_d[0] = src[0];
-            reg->_d[1] = src[1];
+            ZMMReg *reg = (ZMMReg *)&env->xmm_regs[regid - UC_X86_REG_XMM0];
+            reg->ZMM_Q(0) = src[0];
+            reg->ZMM_Q(1) = src[1];
             break;
         }
         case UC_X86_REG_FS_BASE:

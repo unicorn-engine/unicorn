@@ -1,4 +1,5 @@
-# Unicorn Emulator Engine
+#!/usr/bin/env python
+# Sample code for Unicorn.
 # By Lazymio(@wtdcode), 2021
 
 from unicorn import *

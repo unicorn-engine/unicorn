@@ -2188,7 +2188,7 @@ ARMCPU *cpu_arm_init(struct uc_struct *uc)
         env->uncached_cpsr |= CPSR_E;
     }
 
-    if (uc->mode & UC_MODE_BIG_ENDIAN && !arm_feature(env, ARM_FEATURE_V7) && !arm_feature(env, ARM_FEATURE_V8)) {
+    if (uc->mode & UC_MODE_BIG_ENDIAN) {
         // Big endian code access.
         env->cp15.sctlr_ns |= SCTLR_B;
     }

@@ -1603,7 +1603,7 @@ static void gen_xxspltw(DisasContext *ctx)
     tofs = vsr_full_offset(rt);
     bofs = vsr_full_offset(rb);
     bofs += uim << MO_32;
-#ifndef HOST_WORDS_BIG_ENDIAN
+#ifndef HOST_WORDS_BIGENDIAN
     bofs ^= 8 | 4;
 #endif
 

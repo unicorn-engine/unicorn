@@ -1484,6 +1484,11 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             if (mr == NULL) {
                 uc->invalid_error = UC_ERR_MAP;
                 cpu_exit(uc->cpu);
+                // XXX(@lazymio): We have to exit early so that the target register won't be overwritten
+                //                because qemu might generate tcg code like:
+                //                       qemu_ld_i64 x0,x1,leq,8  sync: 0  dead: 0 1
+                //                where we don't have a change to recover x0 value
+                cpu_loop_exit(uc->cpu);
                 return 0;
             }
         } else {
@@ -1491,6 +1496,8 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
             uc->invalid_error = error_code;
             // printf("***** Invalid fetch (unmapped memory) at " TARGET_FMT_lx "\n", addr);
             cpu_exit(uc->cpu);
+            // See comments above
+            cpu_loop_exit(uc->cpu);
             return 0;
         }
     }
@@ -1533,6 +1540,8 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 uc->invalid_error = UC_ERR_READ_PROT;
                 // printf("***** Invalid memory read (non-readable) at " TARGET_FMT_lx "\n", addr);
                 cpu_exit(uc->cpu);
+                // See comments above
+                cpu_loop_exit(uc->cpu);
                 return 0;
             }
         }
@@ -1561,6 +1570,8 @@ load_helper(CPUArchState *env, target_ulong addr, TCGMemOpIdx oi,
                 uc->invalid_error = UC_ERR_FETCH_PROT;
                 // printf("***** Invalid fetch (non-executable) at " TARGET_FMT_lx "\n", addr);
                 cpu_exit(uc->cpu);
+                // See comments above
+                cpu_loop_exit(uc->cpu);
                 return 0;
             }
         }

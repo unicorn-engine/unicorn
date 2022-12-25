@@ -164,9 +164,9 @@ static void test_arm_thumb_ite(void)
     OK(uc_reg_write(uc, UC_ARM_REG_R3, &r_r3));
 
     OK(uc_mem_map(uc, r_sp, 0x1000, UC_PROT_ALL));
-    r_r2 = 0x68;
+    r_r2 = LEINT32(0x68);
     OK(uc_mem_write(uc, r_sp, &r_r2, 4));
-    r_r2 = 0x4d;
+    r_r2 = LEINT32(0x4d);
     OK(uc_mem_write(uc, r_sp + 4, &r_r2, 4));
 
     OK(uc_hook_add(uc, &hook, UC_HOOK_CODE, test_arm_thumb_ite_count_callback,
@@ -396,7 +396,7 @@ static void test_arm_v8(void)
 {
     char code[] = "\xd0\xe8\xff\x17"; // LDAEXD.W R1, [R0]
     uc_engine *uc;
-    uint32_t r_r1 = 0xdeadbeef;
+    uint32_t r_r1 = LEINT32(0xdeadbeef);
     uint32_t r_r0;
 
     uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
@@ -751,6 +751,70 @@ static void test_armeb_ldrb(void)
     OK(uc_close(uc));
 }
 
+static void test_arm_context_save(void)
+{
+    uc_engine *uc;
+    uc_engine *uc2;
+    char code[] = "\x83\xb0"; // sub    sp, #0xc
+    uc_context *ctx;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_R5);
+
+    OK(uc_context_alloc(uc, &ctx));
+    OK(uc_context_save(uc, ctx));
+    OK(uc_context_restore(uc, ctx));
+
+    uc_common_setup(&uc2, UC_ARCH_ARM, UC_MODE_THUMB, code, sizeof(code) - 1,
+                    UC_CPU_ARM_CORTEX_A7); // Note the different CPU model
+
+    OK(uc_context_restore(uc2, ctx));
+
+    OK(uc_context_free(ctx));
+    OK(uc_close(uc));
+    OK(uc_close(uc2));
+}
+
+static void test_arm_thumb2(void)
+{
+    uc_engine *uc;
+    // MOVS  R0, #0x24
+    // AND.W R0, R0, #4
+    char code[] = "\x24\x20\x00\xF0\x04\x00";
+    uint32_t r_r0;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_LITTLE_ENDIAN,
+                    code, sizeof(code) - 1, UC_CPU_ARM_CORTEX_R5);
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+
+    TEST_CHECK(r_r0 == 0x4);
+
+    OK(uc_close(uc));
+}
+
+static void test_armeb_be32_thumb2(void)
+{
+    uc_engine *uc;
+    // MOVS  R0, #0x24
+    // AND.W R0, R0, #4
+    char code[] = "\x20\x24\xF0\x00\x00\x04";
+    uint32_t r_r0;
+
+    uc_common_setup(&uc, UC_ARCH_ARM, UC_MODE_THUMB | UC_MODE_BIG_ENDIAN, code,
+                    sizeof(code) - 1, UC_CPU_ARM_CORTEX_R5);
+
+    OK(uc_emu_start(uc, code_start | 1, code_start + sizeof(code) - 1, 0, 0));
+
+    OK(uc_reg_read(uc, UC_ARM_REG_R0, &r_r0));
+
+    TEST_CHECK(r_r0 == 0x4);
+
+    OK(uc_close(uc));
+}
+
 TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_thumb_sub", test_arm_thumb_sub},
              {"test_armeb_sub", test_armeb_sub},
@@ -773,4 +837,7 @@ TEST_LIST = {{"test_arm_nop", test_arm_nop},
              {"test_arm_be_cpsr_sctlr", test_arm_be_cpsr_sctlr},
              {"test_arm_switch_endian", test_arm_switch_endian},
              {"test_armeb_ldrb", test_armeb_ldrb},
+             {"test_arm_context_save", test_arm_context_save},
+             {"test_arm_thumb2", test_arm_thumb2},
+             {"test_armeb_be32_thumb2", test_armeb_be32_thumb2},
              {NULL, NULL}};

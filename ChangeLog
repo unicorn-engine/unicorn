@@ -1,6 +1,44 @@
 This file details the changelog of Unicorn Engine.
 
 -------------------------------
+[Version 2.0.1]: Nov 1st, 2022
+
+Unicorn2 makes the first step to [Debian packages](https://tracker.debian.org/pkg/unicorn-engine) and [vcpkg](https://github.com/microsoft/vcpkg/pull/26101)! Thanks @roehling and @LilyWangL !
+
+Features:
+
+- Support building & running on BE hosts. #1710 
+- Fix and support `clang-cl` on Windows. #1687 
+- Fix python `sdist` and add aarch64 Linux wheels. Note `pip` can build Unicorn2 on M1 now!
+- C# binding is refined and upgraded to .Net 6. #1723 
+
+Fix/Improvements:
+
+- Various bindings improvements. #1723
+- Improvements for tests. #1684 #1683 #1691 #1711 
+- Fail explicitly when VEX.L is set. #1658 
+- Fix endianness when writing PPC32 CR register. #1659 
+- Fix a bug in `uc_ctl_set_cpu_model` check.
+- Fix Tricore PC not updating. #1668 
+- Fix the mapping not updated if users modify the mappings in the hooks.
+- Handle pathological cases consistently. #1651 
+- Fix memory leaks in PPC target. #1680 
+- Fix memory leaks in Tricore target. #1681
+- Fix MSVC handling in cmake. #1693  
+- Fix PC sync-ing problems for `UC_HOOK_BLOCK` hooks.
+- Fix PC sync-ed twice when users request a soft restart.
+- Prevent overflow with pre-allocated RAM blocks. #1712 
+- Add FPCR and FPSR registers #1722 
+- Fix ARM CPU state not deep copied.
+- Fix PC not sync-ed for memory operation on aarch64.
+- Exit invalid store operations early to avoid the target registers being overwritten.
+- Improve the support for ARM BE32.
+
+Thanks:
+
+@roehling @LilyWangL @mrexodia @zachriggle @Yu3H0 @rhelmot @relapids @sh4w1 @TSRBerry
+
+-------------------------------
 [Version 2.0.0]: July 7th, 2022
 
 Features:

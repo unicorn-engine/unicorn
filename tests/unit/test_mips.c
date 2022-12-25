@@ -112,7 +112,7 @@ static void test_mips_lwx_exception_issue_1314(void)
     reg = 0;
     OK(uc_reg_write(uc, UC_MIPS_REG_1, &reg));
     OK(uc_reg_write(uc, UC_MIPS_REG_T9, &reg));
-    reg = 0xdeadbeef;
+    reg = LEINT32(0xdeadbeef);
     OK(uc_mem_write(uc, 0x10000, &reg, 4));
     reg = 0x10000;
     OK(uc_reg_write(uc, UC_MIPS_REG_S3, &reg));

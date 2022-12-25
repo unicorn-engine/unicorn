@@ -55,7 +55,7 @@ static void test_mem_protect(void)
     OK(uc_emu_start(qc, 0x1000, 0x1000 + sizeof(code) - 1, 0, 1));
     OK(uc_mem_read(qc, 0x2000 + 4, &mem, 4));
 
-    TEST_CHECK(mem == 0xdeadbeef);
+    TEST_CHECK(LEINT32(mem) == 0xdeadbeef);
 
     OK(uc_close(qc));
 }
@@ -92,7 +92,7 @@ static void test_splitting_mmio_unmap(void)
     // mov ebx, [0x4004] <-- mmio read
     char code[] = "\x8b\x0d\x04\x30\x00\x00\x8b\x1d\x04\x40\x00\x00";
     int r_ecx, r_ebx;
-    int bytes = 0xdeadbeef;
+    int bytes = LEINT32(0xdeadbeef);
 
     OK(uc_open(UC_ARCH_X86, UC_MODE_32, &uc));
 
@@ -185,7 +185,7 @@ static void test_map_big_memory(void)
     OK(uc_open(UC_ARCH_X86, UC_MODE_64, &uc));
 
 #if defined(_WIN32) || defined(__WIN32__) || defined(__WINDOWS__)
-    uint64_t requested_size = 0xfffffffffffff000;  // assume 4K page size
+    uint64_t requested_size = 0xfffffffffffff000; // assume 4K page size
 #else
     long ps = sysconf(_SC_PAGESIZE);
     uint64_t requested_size = (uint64_t)(-ps);
