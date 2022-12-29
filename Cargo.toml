@@ -39,5 +39,16 @@ cmake = { version = "0.1" }
 pkg-config = { version = "0.3" }
 
 [features]
-default = []
+default = ["arch_all"]
 dynamic_linkage = []
+arch_all = ["arch_x86", "arch_arm", "arch_aarch64", "arch_riscv", "arch_mips", "arch_sparc", "arch_m68k", "arch_ppc", "arch_s390x", "arch_tricore"]
+arch_x86 = []
+arch_arm = []
+arch_aarch64 = []
+arch_riscv = []
+arch_mips = []
+arch_sparc = []
+arch_m68k = []
+arch_ppc = []
+arch_s390x = []
+arch_tricore = []
