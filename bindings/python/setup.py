@@ -8,6 +8,7 @@ import subprocess
 import shutil
 import sys
 import platform
+import setuptools
 
 from distutils import log
 from distutils.core import setup
