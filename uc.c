@@ -1274,14 +1274,7 @@ static bool split_region(struct uc_struct *uc, MemoryRegion *mr,
 
     // Find the correct and large enough (which contains our target mr)
     // to create the content backup.
-    QLIST_FOREACH(block, &uc->ram_list.blocks, next)
-    {
-        // block->offset is the offset within ram_addr_t, not GPA
-        if (block->mr->addr <= mr->addr &&
-            block->used_length + block->mr->addr >= mr->end) {
-            break;
-        }
-    }
+    block = mr->ram_block;
 
     if (block == NULL) {
         return false;
