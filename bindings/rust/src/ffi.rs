@@ -199,7 +199,8 @@ pub extern "C" fn insn_in_hook_proxy<D, F>(
     port: u32,
     size: usize,
     user_data: *mut UcHook<D, F>,
-) where
+) -> u32
+where
     F: FnMut(&mut crate::Unicorn<D>, u32, usize) -> u32,
 {
     let user_data = unsafe { &mut *user_data };
@@ -207,7 +208,7 @@ pub extern "C" fn insn_in_hook_proxy<D, F>(
         inner: user_data.uc.upgrade().unwrap(),
     };
     debug_assert_eq!(uc, user_data_uc.get_handle());
-    (user_data.callback)(&mut user_data_uc, port, size);
+    (user_data.callback)(&mut user_data_uc, port, size)
 }
 
 pub extern "C" fn insn_invalid_hook_proxy<D, F>(uc: uc_handle, user_data: *mut UcHook<D, F>) -> bool
