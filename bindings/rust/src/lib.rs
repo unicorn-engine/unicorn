@@ -384,12 +384,18 @@ impl<'a, D> Unicorn<'a, D> {
                 self.get_handle(),
                 address,
                 size,
-                ffi::mmio_read_callback_proxy::<D, R> as _,
+                match read_data {
+                    Some(_) => ffi::mmio_read_callback_proxy::<D, R> as _,
+                    None => ptr::null_mut(),
+                },
                 match read_data {
                     Some(ref mut d) => d.as_mut() as *mut _ as _,
                     None => ptr::null_mut(),
                 },
-                ffi::mmio_write_callback_proxy::<D, W> as _,
+                match write_data {
+                    Some(_) => ffi::mmio_write_callback_proxy::<D, W> as _,
+                    None => ptr::null_mut(),
+                },
                 match write_data {
                     Some(ref mut d) => d.as_mut() as *mut _ as _,
                     None => ptr::null_mut(),
