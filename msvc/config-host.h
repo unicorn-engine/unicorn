@@ -11,6 +11,6 @@
 // QEMU by default allocates (and commits) 1GB memory on Windows, and multiple Unicorn instances will result in OOM error easily.
 // Unfortunately, Windows doesn't have a similar demand paging feature like mmap(), therefore a workaround is to use tcg regions mechanism.
 // Note most Unicorn hacks (and even QEMU!) relies on the assumption that the translation memory won't run out and thus it might result
-// in some unexpected errors. If that is case, define to align with QEMU and Unicorn <= 2.0.1 behavior.
+// in some unexpected errors. If that is case, define WIN32_QEMU_ALLOC_BUFFER to align with QEMU and Unicorn <= 2.0.1 behavior.
 // 
-// #define USE_STATIC_CODE_GEN_BUFFER
+// #define WIN32_QEMU_ALLOC_BUFFER

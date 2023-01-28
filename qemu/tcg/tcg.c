@@ -408,7 +408,7 @@ static void tcg_region_assign(TCGContext *s, size_t curr_region)
     s->code_gen_buffer = start;
     s->code_gen_ptr = start;
     s->code_gen_buffer_size = (char *)end - (char *)start;
-#if defined(WIN32) && !defined(USE_STATIC_CODE_GEN_BUFFER)
+#if defined(WIN32) && !defined(WIN32_QEMU_ALLOC_BUFFER)
     VirtualAlloc(
         s->code_gen_buffer, 
         ROUND_UP(s->code_gen_buffer_size, s->uc->qemu_real_host_page_size), 
@@ -509,7 +509,7 @@ void tcg_region_init(TCGContext *tcg_ctx)
     size_t n_regions;
     size_t i;
 
-#if defined(WIN32) && !defined(USE_STATIC_CODE_GEN_BUFFER)
+#if defined(WIN32) && !defined(WIN32_QEMU_ALLOC_BUFFER)
     n_regions = size / (tcg_ctx->uc->qemu_real_host_page_size * UC_TCG_REGION_PAGES_COUNT);
 #else
     n_regions = 1;
@@ -551,7 +551,7 @@ void tcg_region_init(TCGContext *tcg_ctx)
 
     tcg_ctx->tree = g_tree_new(tb_tc_cmp);
 
-#if defined(WIN32) && !defined(USE_STATIC_CODE_GEN_BUFFER)
+#if defined(WIN32) && !defined(WIN32_QEMU_ALLOC_BUFFER)
     // Allocate a region immediately, or the highwater is not set correctly.
     tcg_region_alloc(tcg_ctx);
 #endif

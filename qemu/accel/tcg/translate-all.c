@@ -869,7 +869,7 @@ static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
     return buf;
 }
 #elif defined(_WIN32)
-#ifdef USE_STATIC_CODE_GEN_BUFFER
+#ifdef WIN32_QEMU_ALLOC_BUFFER
 static inline void *alloc_code_gen_buffer(struct uc_struct *uc)
 {
     TCGContext *tcg_ctx = uc->tcg_ctx;
