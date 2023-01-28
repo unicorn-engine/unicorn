@@ -124,7 +124,7 @@ jobs:
 
       - name: '📤 Upload artifact'
         if: always()
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           path: ./${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
@@ -182,7 +182,7 @@ jobs:
 
       - name: '📤 Upload artifact'
         if: always()
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           path: ./${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
@@ -251,9 +251,9 @@ jobs:
         shell: 'script -q -e -c "bash {0}"'
         run: |
           if [ ${{ matrix.config.arch }} == 'x64' ]; then
-                sudo apt install -q -y libcmocka-dev ninja-build 
+                sudo apt install -q -y libcmocka-dev ninja-build
           else
-                export CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386" 
+                export CFLAGS="-m32" LDFLAGS="-m32" LDFLAGS_STATIC="-m32" UNICORN_QEMU_FLAGS="--cpu=i386"
                 sudo dpkg --add-architecture i386
                 sudo apt install -q -y lib32ncurses-dev lib32z1-dev lib32gcc-9-dev libc6-dev-i386 gcc-multilib \
                   libcmocka-dev:i386 libcmocka0:i386 libc6:i386 libgcc-s1:i386 ninja-build
@@ -307,7 +307,7 @@ jobs:
 
       - name: '📤 Upload artifact'
         if: always()
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           path: ./${{ matrix.config.artifact }}
           name: ${{ matrix.config.artifact }}
@@ -320,20 +320,20 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Download artifacts
+      - name: 🛠️ Download artifacts
         uses: actions/download-artifact@v3
         with:
           path: artifacts
 
-      - name: Extract artifacts
+      - name: 🛠️ Extract artifacts
         shell: python
         run: |
           import subprocess
           import os
-          
+
           artifactPath = os.path.join(os.getcwd(), "artifacts")
           bindingsPath = os.path.join(os.getcwd(), "bindings", "dotnet", "UnicornEngine")
-          
+
           ARTIFACT_CONFIG = {
             "ubuntu-cmake-aarch64.7z": {
               "sourceDir": "lib/",
@@ -372,11 +372,11 @@ jobs:
               "destFile": "unicorn.dll"
             }
           }
-          
+
           if len(os.listdir(artifactPath)) < len(ARTIFACT_CONFIG.keys()):
             print("Some artifacts are missing. Aborting.")
             exit(1)
-          
+
           for artifact in os.listdir(artifactPath):
             if artifact in ARTIFACT_CONFIG.keys():
               print("Working on:", artifact)
@@ -384,20 +384,20 @@ jobs:
               destDir = os.path.join(bindingsPath, config["destDir"])
               print("Creating dir:", destDir)
               os.makedirs(destDir, exist_ok=True)
-              
+
               print(f"Extracting library from 7z file to: {config['destDir']}/{config['sourceFile']}")
               result = subprocess.run(["7z", "e", f"-o{destDir}/", os.path.join(artifactPath, artifact), f"{config['sourceDir']}{config['sourceFile']}"])
               result.check_returncode()
-              
+
               if config["sourceFile"] != config["destFile"]:
                 output = subprocess.run(["ls", destDir], stdout=subprocess.PIPE)
                 sourceFile = output.stdout.decode().strip()
                 print(f"Renaming {sourceFile} to {config['destFile']}")
                 os.rename(os.path.join(destDir, sourceFile), os.path.join(destDir, config["destFile"]))
-          
+
           print("Done!")
 
-      - name: Get short sha
+      - name: 🛠️ Get short sha
         id: git_short_sha
         run: echo "result=$(git rev-parse --short "${{ github.sha }}")" >> $GITHUB_OUTPUT
 
@@ -405,21 +405,32 @@ jobs:
         with:
           dotnet-version: 6.0.x
 
-      - name: Authenticate to Github Packages
+      - name: 🛠️ Authenticate to Github Packages
         working-directory: bindings/dotnet/UnicornEngine
         run: dotnet nuget add source --username "${{ github.repository_owner }}" --password "${{ secrets.GITHUB_TOKEN }}" --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
 
-      - name: List all native libraries
+      - name: 🛠️ List all native libraries
         working-directory: bindings/dotnet/UnicornEngine
         run: find ./runtimes -type f -print
 
-      - name: Package .NET distribution
+      - name: 🚧 Package .NET distribution
         working-directory: bindings/dotnet/UnicornEngine
         run: |
           [[ "${{ github.ref_name }}" == "master" ]] \
             && dotnet pack -c Release \
             || dotnet pack -c Release --version-suffix="${{ steps.git_short_sha.outputs.result }}"
 
+      - name: '📤 Upload artifact'
+        uses: actions/upload-artifact@v2
+        with:
+          path: ${{ github.workspace }}/bindings/dotnet/UnicornEngine/bin/Release/UnicornEngine.Unicorn.*.nupkg
+
       - name: 📦 Publish to Github Packages
         working-directory: bindings/dotnet/UnicornEngine
         run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" --source "github" --api-key "${{ secrets.GHPR_TOKEN }}"
+
+      - name: 📦 Publish Nuget package
+        working-directory: bindings/dotnet/UnicornEngine
+        run: dotnet nuget push "bin/Release/UnicornEngine.Unicorn.*.nupkg" -k "$NUGET_AUTH_TOKEN" -s https://api.nuget.org/v3/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.NUGET_KEY }}
